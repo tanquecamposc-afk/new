@@ -127,6 +127,34 @@ canvas#lienzo{display:block; width:100%; height:auto; background:#0a0f18; touch-
 .tarjetaModal h1{font-size:34px; letter-spacing:2px; margin-bottom:2px;}
 .tarjetaModal h1 .nexo{color:var(--azul);}
 .tarjetaModal .sub{color:var(--tenue); margin-bottom:18px;}
+#listaModos{display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin-bottom:16px;}
+.btnModo{
+  min-width:170px; text-align:center; border:2px solid var(--borde); border-radius:11px;
+  background:linear-gradient(180deg,#2a3652,#20293e); padding:9px 14px; cursor:pointer;
+  transition:transform .08s, border-color .12s;
+}
+.btnModo:hover{transform:translateY(-2px);}
+.btnModo b{font-size:15px; display:block;}
+.btnModo span{font-size:11.5px; color:var(--tenue);}
+.btnModo.activo{border-color:var(--oro); box-shadow:0 0 12px rgba(255,210,94,.3);}
+.btnModo.activo.medio{border-color:#ffb74d; box-shadow:0 0 12px rgba(255,183,77,.35);}
+.btnModo.activo.dificil{border-color:var(--morado); box-shadow:0 0 12px rgba(177,140,255,.4);}
+.tituloSec{font-weight:800; font-size:14px; margin:2px 0 8px; color:var(--texto);}
+#listaLoadout{display:flex; gap:7px; justify-content:center; flex-wrap:wrap; margin-bottom:16px;}
+.cartaEquipo{
+  width:76px; padding:5px 3px 5px; border-radius:10px; text-align:center; cursor:pointer;
+  background:linear-gradient(180deg,#2a3652,#20293e); border:2px solid var(--borde);
+  transition:transform .08s, border-color .12s; position:relative; opacity:.55;
+}
+.cartaEquipo:hover{transform:translateY(-2px); opacity:.85;}
+.cartaEquipo.elegida{border-color:var(--verde); opacity:1; box-shadow:0 0 9px rgba(111,224,139,.3);}
+.cartaEquipo canvas{display:block; margin:0 auto 2px; border-radius:8px;
+  background:radial-gradient(circle at 50% 35%, #3a4a70, #232d48);}
+.cartaEquipo .nom{font-weight:800; font-size:10px;}
+.cartaEquipo .ranura{
+  position:absolute; top:2px; left:4px; font-size:10px; font-weight:800; color:var(--verde);
+  background:rgba(0,0,0,.45); border-radius:4px; padding:0 4px;
+}
 #listaMapas{display:flex; gap:14px; justify-content:center; flex-wrap:wrap; margin-bottom:18px;}
 .cartaMapa{
   width:230px; border:2px solid var(--borde); border-radius:13px; overflow:hidden; cursor:pointer;
@@ -208,11 +236,17 @@ canvas#lienzo{display:block; width:100%; height:auto; background:#0a0f18; touch-
     <div class="modal visible" id="modalMenu">
       <div class="tarjetaModal">
         <h1><span class="nexo">NEXO</span> TOWER DEFENSE</h1>
-        <div class="sub">Recluta a tu ejército, mejora a tus soldados y detén las 40 olas del enjambre.</div>
+        <div class="sub">Elige modo, mapa y escuadrón. Mejora a tus soldados y detén el enjambre.</div>
+        <div id="listaModos"></div>
         <div id="listaMapas"></div>
+        <div class="tituloSec">🎖 Tu escuadrón — elige hasta 5 unidades (teclas 1–5)</div>
+        <div id="listaLoadout"></div>
         <div class="instrucciones">
-          <b>Cómo jugar:</b> elige una unidad abajo (o teclas <b>1–9, 0, Q, W</b>) y haz clic en el mapa para desplegarla.
-          Haz clic en una unidad desplegada para <b>mejorarla</b> (5 niveles), <b>venderla</b> o cambiar su <b>objetivo</b>.<br>
+          <b>Cómo jugar:</b> arma tu escuadrón de hasta 5 unidades, elige modo y mapa. En partida selecciona
+          una unidad abajo (o teclas <b>1–5</b>) y haz clic en el mapa para desplegarla.
+          Haz clic en una unidad desplegada para <b>mejorarla</b> (5 niveles), <b>venderla</b> o cambiar su
+          <b>objetivo</b> (primero, último, fuerte, débil o cercano).<br>
+          El <b>DJ 🎧</b> abarata las mejoras y amplía el alcance de las torres dentro de su aura.<br>
           <b>Sombras 👁</b>: invisibles sin detección · <b>Voladores ✈</b>: solo torres antiaéreas ·
           <b>Curanderos</b>: sanan a sus aliados · <b>Gemelos</b>: se dividen al morir ·
           El <b>Cuartel</b> despliega tropas que combaten en el camino.<br>
@@ -549,13 +583,48 @@ const TORRES = {
       {costo:1100, nom:'Mayor',      aura:0.25, alcance:180},
       {costo:2100, nom:'General',    aura:0.32, alcance:200},
       {costo:4200, nom:'Mariscal',   aura:0.40, alcance:220}
+    ]},
+  dj:{
+    nombre:'DJ', color:'#e05a9e', tecla:'E', arma:'edificio',
+    desc:'No ataca: abarata las mejoras y amplía el alcance de las torres cercanas.',
+    niveles:[
+      {costo:750,  nom:'DJ',       alcance:140, descuento:0.05, bonoAlcance:0.06},
+      {costo:550,  nom:'Animador', alcance:155, descuento:0.08, bonoAlcance:0.10},
+      {costo:1050, nom:'Fiestero', alcance:170, descuento:0.12, bonoAlcance:0.14},
+      {costo:2100, nom:'Rave',     alcance:190, descuento:0.16, bonoAlcance:0.18},
+      {costo:4100, nom:'Leyenda',  alcance:210, descuento:0.20, bonoAlcance:0.25}
     ]}
 };
-const ORDEN_TORRES = Object.keys(TORRES);
-const TECLAS_TORRE = {'1':0,'2':1,'3':2,'4':3,'5':4,'6':5,'7':6,'8':7,'9':8,'0':9,'q':10,'w':11};
 const CASCOS_NIVEL = ['gorra','gorra','casco','visor','corona'];
-const MODOS_OBJETIVO = ['primero','último','fuerte','cercano'];
-const OLA_FINAL = 40;
+const MODOS_OBJETIVO = ['primero','último','fuerte','débil','cercano'];
+
+// ---------- Modos de dificultad ----------
+const MODOS = [
+  {id:'normal',  nombre:'Normal',  olas:40, multHP:1,    vidas:150, dinero:550, clase:'facil',
+   desc:'La experiencia clásica: 40 olas y el Coloso al final.'},
+  {id:'fundido', nombre:'Fundido', olas:40, multHP:1.45, vidas:125, dinero:600, clase:'medio', fuego:true,
+   desc:'Jefes de fuego: inmunes a quemaduras y resistentes al hielo.'},
+  {id:'caido',   nombre:'Caído',   olas:50, multHP:2.1,  vidas:100, dinero:700, clase:'dificil', elite:true,
+   desc:'50 olas de élite con muchísima más vida. Solo para veteranos.'}
+];
+let modoSel = MODOS[0];
+
+// ---------- Loadout (escuadrón de 5 ranuras) ----------
+const MAX_LOADOUT = 5;
+function cargarLoadout(){
+  try{
+    const g = JSON.parse(localStorage.getItem('nexo_loadout') || 'null');
+    if (Array.isArray(g)){
+      const v = g.filter(c => TORRES[c]).slice(0, MAX_LOADOUT);
+      if (v.length) return v;
+    }
+  }catch(e){}
+  return ['recluta','artillero','franco','granja','comandante'];
+}
+let loadout = cargarLoadout();
+function guardarLoadout(){
+  localStorage.setItem('nexo_loadout', JSON.stringify(loadout));
+}
 
 // ---------- Estado global ----------
 const lienzo = $('lienzo');
@@ -580,9 +649,10 @@ function nuevaPartida(mapa){
     segs.push({ax,ay,bx,by,l,acum:total});
     total += l;
   }
+  const modo = modoSel;
   G = {
-    mapa, segs, largoCamino: total,
-    vidas: 150, dinero: 550, ola: 0,
+    mapa, modo, olaFinal: modo.olas, segs, largoCamino: total,
+    vidas: modo.vidas, dinero: modo.dinero, ola: 0,
     enemigos: [], torres: [], unidades: [], balas: [], particulas: [], textos: [], rayos: [],
     colaSpawn: [], tOla: 0, olaActiva: false, entreOlas: true, cuentaAtras: 0,
     velocidad: 1, pausa: false, terminado: false, infinito: false,
@@ -591,6 +661,7 @@ function nuevaPartida(mapa){
   };
   avisados.clear();
   torreSel = null; colocando = null;
+  construirBarraTorres(); // la hotbar refleja el escuadrón elegido
   prerenderizarFondo();
   actualizarUI();
   actualizarProxima();
@@ -600,7 +671,7 @@ function nuevaPartida(mapa){
 }
 
 function multHP(n){
-  return (1 + 0.09*(n-1) + (n>18 ? Math.pow(n-18, 1.7)*0.013 : 0)) * G.mapa.multHP;
+  return (1 + 0.09*(n-1) + (n>18 ? Math.pow(n-18, 1.7)*0.013 : 0)) * G.mapa.multHP * G.modo.multHP;
 }
 
 // ---------- Composición de olas ----------
@@ -611,12 +682,13 @@ function componerOla(n){
     t += retraso;
     for (let i=0;i<cant;i++){ cola.push({tipo, t}); t += intervalo; }
   };
-  if (n === OLA_FINAL){
+  if (n === G.olaFinal){
     add('jefe', 1, 0, 1);
     add('sombra', 14, 0.8, 5);
     add('volador', 8, 1.1, 2);
     add('blindado', 12, 1.0, 3);
     add('curandero', 4, 2.0, 2);
+    if (G.modo.elite){ add('tanque', 4, 3, 2); add('gigante', 2, 4, 3); add('jefe', 1, 0, 4); }
     add('coloso', 1, 0, 7);
   } else if (n % 10 === 0){
     add('blindado', Math.floor(n/2), 1.15, 0.8);
@@ -645,7 +717,7 @@ function resumenOla(n){
 }
 function actualizarProxima(){
   const n = G.ola + 1;
-  if (!G.infinito && n > OLA_FINAL){ $('proximaStat').style.display = 'none'; return; }
+  if (!G.infinito && n > G.olaFinal){ $('proximaStat').style.display = 'none'; return; }
   $('proximaStat').style.display = '';
   $('proximaTxt').textContent = resumenOla(n);
 }
@@ -682,7 +754,7 @@ function finDeOla(){
   ganarDinero(bono + ingresoGranjas);
   aviso(`Ola ${G.ola} superada · +${fmt$(bono)} bono` + (ingresoGranjas ? ` · +${fmt$(ingresoGranjas)} granjas` : ''));
   Sonido.fx('dinero');
-  if (G.ola >= OLA_FINAL && !G.infinito){ victoria(); return; }
+  if (G.ola >= G.olaFinal && !G.infinito){ victoria(); return; }
   G.entreOlas = true;
   G.cuentaAtras = 4;
   $('btnOla').style.display = '';
@@ -696,14 +768,23 @@ function crearEnemigo(tipo, dInicial=0, fraccionHP=1){
   const base = ENEMIGOS[tipo];
   const m = base.jefe ? multHP(G.ola)*0.9 : multHP(G.ola);
   const hp = Math.max(1, Math.round(base.hp * m * fraccionHP));
-  G.enemigos.push({
+  const e = {
     tipo, ...base,
     hpMax: hp, hp,
     d: dInicial, x: G.segs[0].ax, y: G.segs[0].ay, ang: 0,
     carril: rnd(-13, 13),
     lentoHasta: 0, lentoMult: 1, quemaDPS: 0, quemaHasta: 0, tCura: 0, tPisada: 0,
     osc: Math.random()*Math.PI*2
-  });
+  };
+  // en modo Fundido los jefes son de fuego: inmunes a quemaduras y resistentes al hielo
+  if (base.jefe && G.modo.fuego){
+    e.fuego = true;
+    if (!avisados.has('fuego')){
+      avisados.add('fuego');
+      aviso('🔥 ¡Jefe de fuego! Inmune a quemaduras y resistente al hielo', true);
+    }
+  }
+  G.enemigos.push(e);
   if (base.oculto && !avisados.has('sombra')){
     avisados.add('sombra');
     aviso('👁 ¡Sombras! Solo las unidades con detección pueden verlas', true);
@@ -859,7 +940,7 @@ function costoTotal(t){
   return s;
 }
 function auraCadencia(t){
-  if (t.clave === 'comandante' || t.clave === 'granja') return 1;
+  if (t.clave === 'comandante' || t.clave === 'granja' || t.clave === 'dj') return 1;
   let mejor = 0;
   for (const c of G.torres){
     if (c.clave !== 'comandante') continue;
@@ -867,6 +948,32 @@ function auraCadencia(t){
     if (dist(t.x,t.y,c.x,c.y) <= nc.alcance) mejor = Math.max(mejor, nc.aura);
   }
   return 1 - mejor;
+}
+// Bono de alcance otorgado por los DJ cercanos (multiplicador ≥ 1)
+function auraAlcance(t){
+  if (t.clave === 'dj') return 1;
+  let mejor = 0;
+  for (const c of G.torres){
+    if (c.clave !== 'dj') continue;
+    const nc = nivelDe(c);
+    if (dist(t.x,t.y,c.x,c.y) <= nc.alcance) mejor = Math.max(mejor, nc.bonoAlcance);
+  }
+  return 1 + mejor;
+}
+// Descuento de mejora otorgado por los DJ cercanos (fracción 0–1)
+function descuentoMejora(t){
+  let mejor = 0;
+  for (const c of G.torres){
+    if (c.clave !== 'dj' || c === t) continue;
+    const nc = nivelDe(c);
+    if (dist(t.x,t.y,c.x,c.y) <= nc.alcance) mejor = Math.max(mejor, nc.descuento);
+  }
+  return mejor;
+}
+function costoMejora(t){
+  const sig = TORRES[t.clave].niveles[t.nivel+1];
+  if (!sig) return 0;
+  return Math.max(1, Math.round(sig.costo * (1 - descuentoMejora(t))));
 }
 
 function objetivoValido(e, nivel){
@@ -877,14 +984,16 @@ function objetivoValido(e, nivel){
 
 function elegirObjetivo(t, nivel){
   let candidatos = [];
+  const alcance = nivel.alcance * auraAlcance(t);
   for (const e of G.enemigos){
     if (!objetivoValido(e, nivel)) continue;
-    if (dist(t.x,t.y,e.x,e.y) <= nivel.alcance + e.radio) candidatos.push(e);
+    if (dist(t.x,t.y,e.x,e.y) <= alcance + e.radio) candidatos.push(e);
   }
   if (!candidatos.length) return null;
   switch(t.objetivo){
     case 'último':  return candidatos.reduce((a,b)=> a.d < b.d ? a : b);
     case 'fuerte':  return candidatos.reduce((a,b)=> a.hp > b.hp ? a : b);
+    case 'débil':   return candidatos.reduce((a,b)=> a.hp < b.hp ? a : b);
     case 'cercano': return candidatos.reduce((a,b)=>
       dist(t.x,t.y,a.x,a.y) < dist(t.x,t.y,b.x,b.y) ? a : b);
     default:        return candidatos.reduce((a,b)=> a.d > b.d ? a : b);
@@ -896,7 +1005,7 @@ function actualizarTorres(dt){
   for (const t of G.torres){
     const n = nivelDe(t);
     t.anim = (t.anim || 0) + dt;
-    if (t.clave === 'granja' || t.clave === 'comandante') continue;
+    if (t.clave === 'granja' || t.clave === 'comandante' || t.clave === 'dj') continue;
     if (ahora < (t.aturdidaHasta || 0)) continue;
     if (t.clave === 'cuartel'){
       const vivas = G.unidades.filter(u=>u.cuartel === t).length;
@@ -920,9 +1029,10 @@ function actualizarTorres(dt){
         let alguno = false;
         for (const e of [...G.enemigos]){
           if (!objetivoValido(e, n)) continue;
-          if (dist(t.x,t.y,e.x,e.y) <= n.alcance + e.radio){
+          if (dist(t.x,t.y,e.x,e.y) <= n.alcance * auraAlcance(t) + e.radio){
             alguno = true;
-            e.lentoMult = n.lento;
+            // los jefes de fuego resisten el hielo: solo la mitad del efecto
+            e.lentoMult = e.fuego ? (1 + n.lento)/2 : n.lento;
             e.lentoHasta = ahora + n.durLento;
             dañarEnemigo(e, n.dano, true);
           }
@@ -983,8 +1093,10 @@ function disparar(t, n, obj){
       break;
     case 'piromante':
       dañarEnemigo(obj, n.dano, true);
-      obj.quemaDPS = Math.max(obj.quemaDPS, n.quema);
-      obj.quemaHasta = G.tGlobal + n.durQuema;
+      if (!obj.fuego){
+        obj.quemaDPS = Math.max(obj.quemaDPS, n.quema);
+        obj.quemaHasta = G.tGlobal + n.durQuema;
+      }
       for (let k=0;k<2;k++){
         const a = t.ang + rnd(-0.25,0.25);
         const d0 = rnd(18, Math.min(n.alcance, dist(t.x,t.y,obj.x,obj.y)));
@@ -1222,7 +1334,7 @@ function colocarTorre(clave, x, y){
 function mejorarTorre(t){
   const def = TORRES[t.clave];
   if (t.nivel >= def.niveles.length-1) return;
-  const costo = def.niveles[t.nivel+1].costo;
+  const costo = costoMejora(t);
   if (G.dinero < costo) return;
   G.dinero -= costo;
   t.nivel++;
@@ -1250,8 +1362,12 @@ function seleccionarTorre(t){
 }
 
 // ---------- Fin de partida ----------
+function claveRecord(mapa, modo){
+  // el modo normal conserva los récords antiguos (clave sin sufijo)
+  return 'nexo_record_' + mapa.id + (modo.id === 'normal' ? '' : '_' + modo.id);
+}
 function guardarRecord(){
-  const clave = 'nexo_record_' + G.mapa.id;
+  const clave = claveRecord(G.mapa, G.modo);
   const previo = parseInt(localStorage.getItem(clave) || '0', 10);
   const olas = G.olaActiva ? G.ola-1 : G.ola;
   if (olas > previo) localStorage.setItem(clave, String(olas));
@@ -1274,8 +1390,10 @@ function mostrarFin(gano){
   ti.textContent = gano ? '🏆 ¡VICTORIA!' : '💀 DERROTA';
   ti.className = gano ? 'victoria' : 'derrota';
   $('subFin').textContent = gano
-    ? 'Has repelido las 40 olas y destruido al Coloso del Vacío en ' + G.mapa.nombre + '.'
-    : 'La base ha caído en la ola ' + G.ola + ' de ' + G.mapa.nombre + '.';
+    ? 'Has repelido las ' + G.olaFinal + ' olas del modo ' + G.modo.nombre +
+      ' y destruido al Coloso del Vacío en ' + G.mapa.nombre + '.'
+    : 'La base ha caído en la ola ' + G.ola + ' de ' + G.mapa.nombre +
+      ' (modo ' + G.modo.nombre + ').';
   $('finOlas').textContent = G.olaActiva ? G.ola-1 : G.ola;
   $('finBajas').textContent = G.bajas.toLocaleString('es-PE');
   $('finDinero').textContent = fmt$(G.dineroGanado);
@@ -1298,7 +1416,7 @@ function actualizarUI(){
   if (!G) return;
   $('vidasTxt').textContent = Math.max(0, G.vidas);
   $('dineroTxt').textContent = fmt$(G.dinero);
-  $('olaTxt').textContent = 'Ola ' + G.ola + (G.infinito ? ' (∞)' : '/' + OLA_FINAL);
+  $('olaTxt').textContent = 'Ola ' + G.ola + (G.infinito ? ' (∞)' : '/' + G.olaFinal);
   for (const clave in TORRES){
     const carta = $('carta_' + clave);
     if (!carta) continue;
@@ -1335,6 +1453,8 @@ function actualizarPanelTorre(){
   if (n.quema) filas.push(['Quemadura', n.quema + '/s']);
   if (n.ingreso) filas.push(['Ingreso/ola', fmt$(n.ingreso)]);
   if (n.aura) filas.push(['Aura cadencia', '+' + Math.round(n.aura*100) + '%']);
+  if (n.descuento) filas.push(['Desc. mejoras', '-' + Math.round(n.descuento*100) + '%']);
+  if (n.bonoAlcance) filas.push(['Bono alcance', '+' + Math.round(n.bonoAlcance*100) + '%']);
   if (n.maxU){
     filas.push(['Tropas máx.', n.maxU]);
     filas.push(['Vida tropa', n.hpU]);
@@ -1345,13 +1465,16 @@ function actualizarPanelTorre(){
   const sig = def.niveles[t.nivel+1];
   const btnM = $('btnMejorar');
   if (sig){
-    btnM.textContent = '⬆ ' + sig.nom + ' — ' + fmt$(sig.costo);
-    btnM.disabled = G.dinero < sig.costo;
+    const cm = costoMejora(t);
+    btnM.textContent = '⬆ ' + sig.nom + ' — ' + fmt$(cm) + (cm < sig.costo ? ' 🎧' : '');
+    btnM.disabled = G.dinero < cm;
     const cambios = [];
     if (sig.dano !== undefined && sig.dano !== n.dano) cambios.push('daño ' + n.dano + '→' + sig.dano);
     if (sig.alcance && sig.alcance !== n.alcance) cambios.push('alcance ' + n.alcance + '→' + sig.alcance);
     if (sig.ingreso) cambios.push('ingreso ' + fmt$(n.ingreso) + '→' + fmt$(sig.ingreso));
     if (sig.aura) cambios.push('aura ' + Math.round(n.aura*100) + '%→' + Math.round(sig.aura*100) + '%');
+    if (sig.descuento) cambios.push('desc. ' + Math.round(n.descuento*100) + '%→' + Math.round(sig.descuento*100) + '%');
+    if (sig.bonoAlcance) cambios.push('bono alcance ' + Math.round(n.bonoAlcance*100) + '%→' + Math.round(sig.bonoAlcance*100) + '%');
     if (sig.maxU) cambios.push('tropas: vida ' + n.hpU + '→' + sig.hpU + ', daño ' + n.danoU + '→' + sig.danoU);
     if (sig.detecta && !n.detecta) cambios.push('👁 ¡detección!');
     if (sig.aereo && !n.aereo) cambios.push('✈ ¡antiaéreo!');
@@ -1362,7 +1485,7 @@ function actualizarPanelTorre(){
     $('mejoraInfo').textContent = '';
   }
   $('btnVender').textContent = '💸 Vender — ' + fmt$(Math.floor(costoTotal(t)*0.7));
-  const sinObjetivo = ['granja','comandante','congelador','cuartel'];
+  const sinObjetivo = ['granja','comandante','congelador','cuartel','dj'];
   $('objetivoBtn').style.display = sinObjetivo.includes(t.clave) ? 'none' : '';
   $('objetivoBtn').textContent = '🎯 ' + t.objetivo.charAt(0).toUpperCase() + t.objetivo.slice(1);
 }
@@ -1707,6 +1830,42 @@ function dibujarEdificio(c, clave, x, y, nivel, animT){
     c.beginPath(); c.moveTo(-18, -20); c.lineTo(-9, -27); c.lineTo(0, -20); c.closePath(); c.fill();
     c.fillStyle = '#4a2418';
     c.fillRect(-12, -13, 5, 6);
+  } else if (clave === 'dj'){
+    // cabina de DJ: mesa, altavoces y foco giratorio
+    c.fillStyle = '#3a2a44';
+    c.fillRect(-17, -8, 34, 18);
+    c.fillStyle = '#241a2c';
+    c.fillRect(-17, -12, 34, 5);
+    // altavoces
+    for (const lado of [-1,1]){
+      c.fillStyle = '#1c1522';
+      c.fillRect(lado*23-5, -14, 10, 24);
+      c.fillStyle = '#544266';
+      c.beginPath(); c.arc(lado*23, -7, 3.2, 0, Math.PI*2); c.fill();
+      const bum = 1 + Math.max(0, Math.sin(animT*9 + lado))*0.7;
+      c.beginPath(); c.arc(lado*23, 3, 2.6*bum, 0, Math.PI*2); c.fill();
+    }
+    // tornamesas
+    c.fillStyle = '#0f0c14';
+    c.beginPath(); c.arc(-7, -2, 4.6, 0, Math.PI*2); c.arc(7, -2, 4.6, 0, Math.PI*2); c.fill();
+    c.strokeStyle = '#e05a9e'; c.lineWidth = 1.4;
+    for (const lado of [-1,1]){
+      c.save(); c.translate(lado*7, -2); c.rotate(animT*4*lado);
+      c.beginPath(); c.moveTo(0,0); c.lineTo(3.6,0); c.stroke();
+      c.restore();
+    }
+    // foco de discoteca con haces giratorios
+    c.strokeStyle = '#6b5330'; c.lineWidth = 2;
+    c.beginPath(); c.moveTo(0, -12); c.lineTo(0, -26); c.stroke();
+    c.fillStyle = '#e8e4f0';
+    c.beginPath(); c.arc(0, -29, 4, 0, Math.PI*2); c.fill();
+    for (let i=0;i<3;i++){
+      const a = animT*2.4 + i*Math.PI*2/3;
+      c.strokeStyle = ['rgba(224,90,158,.55)','rgba(92,200,255,.55)','rgba(255,210,94,.55)'][i];
+      c.lineWidth = 2.4;
+      c.beginPath(); c.moveTo(0, -29);
+      c.lineTo(Math.cos(a)*20, -29 + Math.sin(a)*9); c.stroke();
+    }
   } else {
     // cuartel: tienda + muros
     c.fillStyle = '#5a6b52';
@@ -1879,6 +2038,17 @@ function dibujarEnemigo(e){
     ctx.fillStyle = 'rgba(255,120,50,.85)';
     ctx.beginPath(); ctx.arc(rnd(-4,4), -e.radio-3, 3, 0, Math.PI*2); ctx.fill();
   }
+  if (e.fuego){
+    // llamas propias de los jefes de fuego (modo Fundido)
+    for (let i=0;i<4;i++){
+      const a = t*5 + i*1.57;
+      ctx.fillStyle = i%2 ? 'rgba(255,140,40,.8)' : 'rgba(255,210,90,.75)';
+      ctx.beginPath();
+      ctx.arc(Math.cos(a)*e.radio*0.8, -e.radio*0.5 + Math.sin(a*1.6)*e.radio*0.35,
+        e.radio*0.16 + Math.sin(t*9+i)*1.2, 0, Math.PI*2);
+      ctx.fill();
+    }
+  }
   if (e.hp < e.hpMax){
     const w = e.radio*2.2;
     ctx.fillStyle = 'rgba(0,0,0,.6)';
@@ -1930,11 +2100,11 @@ function dibujar(){
     ctx.restore();
   }
 
-  // rango de la torre seleccionada
+  // rango de la torre seleccionada (con bono de alcance del DJ)
   if (torreSel){
     const n = nivelDe(torreSel);
     if (n.alcance){
-      ctx.beginPath(); ctx.arc(torreSel.x, torreSel.y, n.alcance, 0, Math.PI*2);
+      ctx.beginPath(); ctx.arc(torreSel.x, torreSel.y, n.alcance * auraAlcance(torreSel), 0, Math.PI*2);
       ctx.fillStyle = 'rgba(120,180,255,.10)'; ctx.fill();
       ctx.strokeStyle = 'rgba(150,200,255,.5)'; ctx.lineWidth = 2; ctx.stroke();
     }
@@ -2107,8 +2277,8 @@ function dibujarTorre(t){
       def.color, CASCOS_NIVEL[t.nivel], def.arma, t.fogonazo, aturdida, t.anim || 0);
     if (t.fogonazo > 0) t.fogonazo -= 0.016;
   }
-  // aura del comandante
-  if (t.clave === 'comandante'){
+  // auras de soporte (comandante y DJ)
+  if (t.clave === 'comandante' || t.clave === 'dj'){
     ctx.save();
     ctx.globalAlpha = 0.1 + Math.sin((t.anim||0)*3)*0.04;
     ctx.beginPath(); ctx.arc(t.x, t.y, n.alcance, 0, Math.PI*2);
@@ -2184,7 +2354,7 @@ function refrescoLento(){
   refrescarHabilidades();
   if (torreSel){
     const sig = TORRES[torreSel.clave].niveles[torreSel.nivel+1];
-    if (sig) $('btnMejorar').disabled = G.dinero < sig.costo;
+    if (sig) $('btnMejorar').disabled = G.dinero < costoMejora(torreSel);
   }
 }
 
@@ -2193,7 +2363,7 @@ function actualizarBarraJefe(){
   const barra = $('barraJefe');
   if (!jefe){ barra.style.display = 'none'; return; }
   barra.style.display = 'block';
-  $('jefeNombre').textContent = '☠ ' + jefe.nombre + ' ☠';
+  $('jefeNombre').textContent = (jefe.fuego ? '🔥 ' : '☠ ') + jefe.nombre + (jefe.fuego ? ' ÍGNEO 🔥' : ' ☠');
   $('jefeRelleno').style.width = clamp(jefe.hp/jefe.hpMax*100, 0, 100) + '%';
 }
 
@@ -2257,8 +2427,8 @@ document.addEventListener('keydown', ev => {
   if (k === 'f'){ cicloVelocidad(); return; }
   if (k === 'a'){ armarBomba(); return; }
   if (k === 's'){ usarSuministros(); refrescarHabilidades(); return; }
-  if (k in TECLAS_TORRE){
-    const clave = ORDEN_TORRES[TECLAS_TORRE[k]];
+  if (k >= '1' && k <= '5'){
+    const clave = loadout[+k - 1];
     if (clave) alternarColocacion(clave);
   }
 });
@@ -2367,7 +2537,7 @@ function volverAlMenu(){
 function construirBarraTorres(){
   const barra = $('barraTorres');
   barra.innerHTML = '';
-  for (const clave in TORRES){
+  loadout.forEach((clave, idx) => {
     const def = TORRES[clave];
     const carta = document.createElement('div');
     carta.className = 'cartaTorre';
@@ -2378,7 +2548,7 @@ function construirBarraTorres(){
     dibujarRetrato(cv.getContext('2d'), clave, 0, 26, 26, 1.05);
     carta.appendChild(cv);
     const tec = document.createElement('span');
-    tec.className = 'tecla'; tec.textContent = def.tecla;
+    tec.className = 'tecla'; tec.textContent = String(idx + 1);
     carta.appendChild(tec);
     const nom = document.createElement('div');
     nom.className = 'nom'; nom.textContent = def.nombre;
@@ -2388,10 +2558,65 @@ function construirBarraTorres(){
     carta.appendChild(cos);
     carta.addEventListener('click', () => alternarColocacion(clave));
     barra.appendChild(carta);
+  });
+}
+
+function pintarModos(){
+  const lista = $('listaModos');
+  lista.innerHTML = '';
+  for (const m of MODOS){
+    const b = document.createElement('div');
+    b.className = 'btnModo ' + m.clase + (m === modoSel ? ' activo' : '');
+    b.innerHTML = '<b>' + m.nombre + ' · ' + m.olas + ' olas</b><span>' + m.desc + '</span>';
+    b.addEventListener('click', () => {
+      Sonido.activar();
+      modoSel = m;
+      pintarMenu(); // repinta récords y resaltado
+    });
+    lista.appendChild(b);
+  }
+}
+
+function pintarLoadout(){
+  const lista = $('listaLoadout');
+  lista.innerHTML = '';
+  for (const clave in TORRES){
+    const def = TORRES[clave];
+    const idx = loadout.indexOf(clave);
+    const carta = document.createElement('div');
+    carta.className = 'cartaEquipo' + (idx >= 0 ? ' elegida' : '');
+    carta.title = def.desc + ' · ' + fmt$(def.niveles[0].costo);
+    const cv = document.createElement('canvas');
+    cv.width = 46; cv.height = 40;
+    dibujarRetrato(cv.getContext('2d'), clave, 0, 23, 23, 0.92);
+    carta.appendChild(cv);
+    if (idx >= 0){
+      const r = document.createElement('span');
+      r.className = 'ranura'; r.textContent = idx + 1;
+      carta.appendChild(r);
+    }
+    const nom = document.createElement('div');
+    nom.className = 'nom'; nom.textContent = def.nombre;
+    carta.appendChild(nom);
+    carta.addEventListener('click', () => {
+      Sonido.activar();
+      if (idx >= 0){
+        if (loadout.length <= 1){ return; } // siempre al menos una unidad
+        loadout.splice(idx, 1);
+      } else {
+        if (loadout.length >= MAX_LOADOUT) return;
+        loadout.push(clave);
+      }
+      guardarLoadout();
+      pintarLoadout();
+    });
+    lista.appendChild(carta);
   }
 }
 
 function pintarMenu(){
+  pintarModos();
+  pintarLoadout();
   const lista = $('listaMapas');
   lista.innerHTML = '';
   for (const mapa of MAPAS){
@@ -2408,12 +2633,12 @@ function pintarMenu(){
     for (let i=1;i<mapa.puntos.length;i++) c.lineTo(mapa.puntos[i][0]*ex, mapa.puntos[i][1]*ey);
     c.stroke();
     c.strokeStyle = mapa.camino; c.lineWidth = 8; c.stroke();
-    const record = parseInt(localStorage.getItem('nexo_record_' + mapa.id) || '0', 10);
+    const record = parseInt(localStorage.getItem(claveRecord(mapa, modoSel)) || '0', 10);
     const info = document.createElement('div');
     info.className = 'info';
     info.innerHTML = '<b>' + mapa.nombre + '</b>' +
       '<span class="dif ' + mapa.clase + '">' + mapa.dif + '</span>' +
-      '<span class="record">🏅 Récord: ' + (record ? 'ola ' + record : '—') + '</span>';
+      '<span class="record">🏅 Récord (' + modoSel.nombre + '): ' + (record ? 'ola ' + record : '—') + '</span>';
     carta.appendChild(cv);
     carta.appendChild(info);
     carta.addEventListener('click', () => {

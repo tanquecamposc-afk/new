@@ -6,7 +6,21 @@ Juego de defensa de torres hecho en **HTML5 + Canvas + JavaScript puro** — un 
 
 Abre `index.html` en cualquier navegador moderno. No necesita servidor ni instalación.
 
-**Objetivo:** sobrevive a las **40 olas** de enemigos y derrota al **Coloso del Vacío**. Si lo logras, se desbloquea el **modo infinito ∞**.
+**Objetivo:** sobrevive a todas las olas de enemigos y derrota al **Coloso del Vacío**. Si lo logras, se desbloquea el **modo infinito ∞**.
+
+## ⚔ Modos de dificultad
+
+| Modo | Olas | Vidas | Particularidad |
+|---|---|---|---|
+| Normal | 40 | 150 | La experiencia clásica |
+| Fundido | 40 | 125 | +45% vida enemiga; **jefes de fuego** inmunes a quemaduras y resistentes al hielo |
+| Caído | 50 | 100 | +110% vida enemiga; oleada final con doble jefe, tanques y gigantes |
+
+Cada combinación de mapa y modo guarda su propio récord.
+
+## 🎖 Escuadrón (loadout)
+
+Antes de jugar eliges **hasta 5 unidades** de entre las 13 disponibles. Tu escuadrón se guarda en el navegador y se controla en partida con las teclas **1–5**.
 
 ## 🗺 Mapas
 
@@ -31,8 +45,11 @@ El récord de olas de cada mapa se guarda en tu navegador.
 | ⚡ Tesla | $900 | Rayos en cadena; ve ocultos |
 | 🌾 Granja | $300 | Genera dinero al final de cada ola |
 | 📣 Comandante | $850 | Aura que acelera la cadencia de torres cercanas |
+| 🎧 DJ | $750 | Aura que abarata las mejoras y amplía el alcance de torres cercanas |
 
-Cada torre puede **mejorarse** (⬆), **venderse** (70% de reembolso) y cambiar su **modo de objetivo**: primero, último, más fuerte o más cercano.
+(La tabla omite Escopetero, Demoledor, Cohetero y Cuartel — 13 unidades en total.)
+
+Cada torre puede **mejorarse** (⬆, con descuento si hay un DJ cerca), **venderse** (70% de reembolso) y cambiar su **modo de objetivo**: primero, último, más fuerte, más débil o más cercano.
 
 ## 👾 Enemigos
 
@@ -47,7 +64,7 @@ Cada torre puede **mejorarse** (⬆), **venderse** (70% de reembolso) y cambiar 
 
 | Tecla / acción | Efecto |
 |---|---|
-| `1`–`9` | Seleccionar torre para colocar |
+| `1`–`5` | Seleccionar unidad del escuadrón para colocar |
 | Clic izquierdo | Colocar / seleccionar torre |
 | `Shift` + clic | Colocar varias torres seguidas |
 | Clic derecho / `ESC` | Cancelar |
