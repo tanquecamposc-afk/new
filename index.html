@@ -1,0 +1,1626 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NEXO: Tower Defense</title>
+<style>
+:root{
+  --bg:#0f1420; --panel:#1a2233; --panel2:#232e46; --borde:#33415e;
+  --texto:#e8eefc; --tenue:#93a3c4; --oro:#ffd25e; --verde:#6fe08b;
+  --rojo:#ff6b6b; --azul:#5cc8ff; --morado:#b18cff;
+}
+*{box-sizing:border-box; margin:0; padding:0; user-select:none; -webkit-user-select:none;}
+html,body{height:100%;}
+body{
+  background:radial-gradient(1200px 700px at 50% -10%, #1b2438 0%, var(--bg) 60%);
+  color:var(--texto);
+  font-family:"Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif;
+  display:flex; flex-direction:column; align-items:center; min-height:100%;
+  overflow-x:hidden;
+}
+#juego{
+  width:min(1280px, 100vw); display:flex; flex-direction:column; gap:8px; padding:8px;
+}
+/* ---------- Barra superior ---------- */
+#barraSuperior{
+  display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+  background:linear-gradient(180deg, var(--panel2), var(--panel));
+  border:1px solid var(--borde); border-radius:12px; padding:8px 14px;
+  box-shadow:0 4px 14px rgba(0,0,0,.35);
+}
+#barraSuperior .stat{
+  display:flex; align-items:center; gap:7px; font-weight:700; font-size:17px;
+  padding:4px 10px; border-radius:9px; background:rgba(0,0,0,.22);
+}
+#vidasTxt{color:var(--rojo);} #dineroTxt{color:var(--oro);} #olaTxt{color:var(--azul);}
+#barraSuperior .sep{flex:1;}
+button{
+  font-family:inherit; font-weight:700; color:var(--texto); cursor:pointer;
+  background:linear-gradient(180deg,#31405f,#26334e); border:1px solid var(--borde);
+  border-radius:9px; padding:7px 13px; font-size:14px; transition:filter .12s, transform .06s;
+}
+button:hover{filter:brightness(1.18);}
+button:active{transform:translateY(1px);}
+button:disabled{opacity:.45; cursor:not-allowed; filter:none;}
+button.primario{background:linear-gradient(180deg,#2f9e5f,#1f7a46); border-color:#3fbf78;}
+button.peligro{background:linear-gradient(180deg,#a03b3b,#7c2b2b); border-color:#c25555;}
+button.oro{background:linear-gradient(180deg,#b98a1f,#8e6a13); border-color:#e0b34a;}
+/* ---------- Zona de juego ---------- */
+#zona{position:relative; border-radius:14px; overflow:hidden; border:1px solid var(--borde);
+  box-shadow:0 10px 30px rgba(0,0,0,.45);}
+canvas#lienzo{display:block; width:100%; height:auto; background:#0a0f18; touch-action:none;}
+/* Barra de jefe */
+#barraJefe{
+  position:absolute; top:10px; left:50%; transform:translateX(-50%);
+  width:min(520px, 80%); display:none; text-align:center; pointer-events:none;
+}
+#barraJefe .nombre{font-weight:800; letter-spacing:1px; text-shadow:0 2px 6px #000; margin-bottom:4px;}
+#barraJefe .tubo{height:14px; border-radius:8px; background:rgba(0,0,0,.55); border:1px solid #000; overflow:hidden;}
+#barraJefe .relleno{height:100%; width:100%; background:linear-gradient(90deg,#ff4d4d,#b30000); transition:width .1s linear;}
+/* Avisos */
+#avisos{position:absolute; top:52px; left:50%; transform:translateX(-50%); display:flex;
+  flex-direction:column; gap:6px; align-items:center; pointer-events:none; width:90%; z-index:5;}
+.aviso{
+  background:rgba(10,14,24,.88); border:1px solid var(--borde); color:var(--texto);
+  padding:7px 16px; border-radius:10px; font-weight:700; font-size:15px;
+  animation:aparecer .25s ease-out; text-align:center; box-shadow:0 4px 12px rgba(0,0,0,.5);
+}
+.aviso.importante{border-color:var(--oro); color:var(--oro);}
+@keyframes aparecer{from{opacity:0; transform:translateY(-8px);} to{opacity:1; transform:none;}}
+/* Panel de torre seleccionada */
+#panelTorre{
+  position:absolute; right:10px; top:10px; width:232px; display:none;
+  background:rgba(16,22,36,.94); border:1px solid var(--borde); border-radius:12px;
+  padding:12px; box-shadow:0 8px 22px rgba(0,0,0,.5); z-index:6;
+}
+#panelTorre h3{font-size:16px; margin-bottom:2px;}
+#panelTorre .nivel{color:var(--tenue); font-size:12px; margin-bottom:8px;}
+#panelTorre .filas{display:flex; flex-direction:column; gap:3px; font-size:13px; margin-bottom:9px;}
+#panelTorre .filas div{display:flex; justify-content:space-between;}
+#panelTorre .filas span:last-child{font-weight:700;}
+#mejoraInfo{font-size:12px; color:var(--verde); margin-bottom:8px; min-height:15px;}
+#panelTorre .botones{display:flex; flex-direction:column; gap:6px;}
+#panelTorre .botones button{width:100%;}
+/* Barra de torres */
+#barraTorres{
+  display:flex; gap:8px; flex-wrap:wrap; justify-content:center;
+  background:linear-gradient(180deg, var(--panel2), var(--panel));
+  border:1px solid var(--borde); border-radius:12px; padding:10px;
+}
+.cartaTorre{
+  width:106px; padding:8px 6px 7px; border-radius:11px; text-align:center; cursor:pointer;
+  background:linear-gradient(180deg,#2a3652,#20293e); border:2px solid var(--borde);
+  transition:transform .08s, border-color .12s, filter .12s; position:relative;
+}
+.cartaTorre:hover{transform:translateY(-3px); filter:brightness(1.12);}
+.cartaTorre.activa{border-color:var(--oro); box-shadow:0 0 12px rgba(255,210,94,.35);}
+.cartaTorre.pobre{opacity:.45; filter:grayscale(.5);}
+.cartaTorre .icono{width:40px; height:40px; margin:0 auto 4px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center; font-size:21px;
+  border:3px solid rgba(255,255,255,.25); box-shadow:inset 0 -4px 8px rgba(0,0,0,.35);}
+.cartaTorre .nom{font-weight:800; font-size:12.5px;}
+.cartaTorre .costo{color:var(--oro); font-weight:700; font-size:12px;}
+.cartaTorre .tecla{position:absolute; top:4px; left:6px; font-size:10px; color:var(--tenue);
+  background:rgba(0,0,0,.4); border-radius:4px; padding:1px 4px;}
+/* Modales */
+.modal{
+  position:absolute; inset:0; background:rgba(6,9,16,.82); display:none;
+  align-items:center; justify-content:center; z-index:20; backdrop-filter:blur(3px);
+}
+.modal.visible{display:flex;}
+.tarjetaModal{
+  background:linear-gradient(180deg,#212c45,#161e31); border:1px solid var(--borde);
+  border-radius:16px; padding:26px 30px; max-width:860px; width:94%; text-align:center;
+  box-shadow:0 20px 60px rgba(0,0,0,.6); max-height:92%; overflow-y:auto;
+}
+.tarjetaModal h1{font-size:34px; letter-spacing:2px; margin-bottom:2px;}
+.tarjetaModal h1 .nexo{color:var(--azul);}
+.tarjetaModal .sub{color:var(--tenue); margin-bottom:18px;}
+#listaMapas{display:flex; gap:14px; justify-content:center; flex-wrap:wrap; margin-bottom:18px;}
+.cartaMapa{
+  width:230px; border:2px solid var(--borde); border-radius:13px; overflow:hidden; cursor:pointer;
+  background:#141b2c; transition:transform .1s, border-color .15s; text-align:left;
+}
+.cartaMapa:hover{transform:translateY(-4px); border-color:var(--azul);}
+.cartaMapa canvas{display:block; width:100%; height:auto;}
+.cartaMapa .info{padding:9px 12px;}
+.cartaMapa .info b{font-size:15px;}
+.cartaMapa .info .dif{font-size:12px; font-weight:700; float:right; padding:1px 8px; border-radius:6px;}
+.dif.facil{background:#1d5c35; color:#8ff0ae;}
+.dif.medio{background:#6b5313; color:#ffd25e;}
+.dif.dificil{background:#6e1f1f; color:#ff9c9c;}
+.cartaMapa .info .record{display:block; clear:both; color:var(--tenue); font-size:12px; margin-top:4px;}
+.instrucciones{
+  text-align:left; font-size:13.5px; color:var(--tenue); background:rgba(0,0,0,.25);
+  border-radius:10px; padding:12px 16px; line-height:1.55;
+}
+.instrucciones b{color:var(--texto);}
+.statsFin{display:flex; gap:18px; justify-content:center; margin:14px 0 20px; flex-wrap:wrap;}
+.statsFin .caja{background:rgba(0,0,0,.3); border-radius:10px; padding:10px 20px;}
+.statsFin .caja .num{font-size:26px; font-weight:800; color:var(--oro);}
+.statsFin .caja .eti{font-size:12px; color:var(--tenue);}
+.filaBotones{display:flex; gap:10px; justify-content:center; flex-wrap:wrap;}
+#tituloFin.derrota{color:var(--rojo);}
+#tituloFin.victoria{color:var(--verde);}
+@media (max-width:700px){
+  .cartaTorre{width:88px;} .cartaTorre .icono{width:32px;height:32px;font-size:17px;}
+  #panelTorre{width:190px;}
+}
+</style>
+</head>
+<body>
+<div id="juego">
+  <div id="barraSuperior">
+    <div class="stat">❤️ <span id="vidasTxt">150</span></div>
+    <div class="stat">💰 <span id="dineroTxt">550</span></div>
+    <div class="stat">🌊 <span id="olaTxt">Ola 0/40</span></div>
+    <div class="sep"></div>
+    <button id="btnOla" class="primario">▶ Iniciar ola</button>
+    <button id="btnVelocidad" title="Cambiar velocidad">⏩ x1</button>
+    <button id="btnPausa" title="Pausa (Espacio)">⏸</button>
+    <button id="btnSonido" title="Sonido">🔊</button>
+    <button id="btnMenu" title="Volver al menú">⌂</button>
+  </div>
+
+  <div id="zona">
+    <canvas id="lienzo" width="1280" height="720"></canvas>
+
+    <div id="barraJefe">
+      <div class="nombre" id="jefeNombre">JEFE</div>
+      <div class="tubo"><div class="relleno" id="jefeRelleno"></div></div>
+    </div>
+    <div id="avisos"></div>
+
+    <div id="panelTorre">
+      <h3 id="ptNombre">Torre</h3>
+      <div class="nivel" id="ptNivel">Nivel 1</div>
+      <div class="filas" id="ptStats"></div>
+      <div id="mejoraInfo"></div>
+      <div class="botones">
+        <button id="objetivoBtn">🎯 Primero</button>
+        <button id="btnMejorar" class="primario">Mejorar</button>
+        <button id="btnVender" class="peligro">Vender</button>
+      </div>
+    </div>
+
+    <!-- Menú principal -->
+    <div class="modal visible" id="modalMenu">
+      <div class="tarjetaModal">
+        <h1><span class="nexo">NEXO</span> TOWER DEFENSE</h1>
+        <div class="sub">Coloca torres, mejóralas y detén las 40 olas del enjambre. ¡Sobrevive al Coloso!</div>
+        <div id="listaMapas"></div>
+        <div class="instrucciones">
+          <b>Cómo jugar:</b> elige una torre abajo (o teclas <b>1–9</b>) y haz clic en el mapa para colocarla.
+          Haz clic en una torre colocada para <b>mejorarla</b>, <b>venderla</b> o cambiar su <b>objetivo</b>.<br>
+          Los enemigos <b>Sombra 👻</b> solo pueden ser vistos por torres con <b>detección 👁</b>.
+          Los <b>Curanderos ✚</b> sanan a sus aliados: elimínalos primero.
+          Cada 10 olas llega un <b>JEFE</b> — la ola 40 esconde algo enorme…<br>
+          <b>Atajos:</b> Espacio = pausa · F = velocidad · ESC = cancelar · Clic derecho = cancelar colocación.
+        </div>
+      </div>
+    </div>
+
+    <!-- Fin de partida -->
+    <div class="modal" id="modalFin">
+      <div class="tarjetaModal">
+        <h1 id="tituloFin">FIN</h1>
+        <div class="sub" id="subFin"></div>
+        <div class="statsFin">
+          <div class="caja"><div class="num" id="finOlas">0</div><div class="eti">olas superadas</div></div>
+          <div class="caja"><div class="num" id="finBajas">0</div><div class="eti">enemigos eliminados</div></div>
+          <div class="caja"><div class="num" id="finDinero">0</div><div class="eti">dinero ganado</div></div>
+        </div>
+        <div class="filaBotones">
+          <button id="btnSeguir" class="oro" style="display:none">∞ Modo infinito</button>
+          <button id="btnReintentar" class="primario">↻ Jugar de nuevo</button>
+          <button id="btnAlMenu">⌂ Menú</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="barraTorres"></div>
+</div>
+
+<script>
+'use strict';
+/* =========================================================
+   NEXO: Tower Defense — juego original de defensa de torres
+   Un solo archivo, sin dependencias. Interfaz en español.
+   ========================================================= */
+
+// ---------- Utilidades ----------
+const $ = id => document.getElementById(id);
+const clamp = (v,a,b) => Math.max(a, Math.min(b,v));
+const rnd = (a,b) => a + Math.random()*(b-a);
+const dist = (x1,y1,x2,y2) => Math.hypot(x2-x1, y2-y1);
+const fmt$ = n => '$' + Math.floor(n).toLocaleString('es-PE');
+
+function distPuntoSegmento(px,py, ax,ay, bx,by){
+  const dx = bx-ax, dy = by-ay;
+  const l2 = dx*dx + dy*dy;
+  if (l2 === 0) return dist(px,py,ax,ay);
+  let t = ((px-ax)*dx + (py-ay)*dy) / l2;
+  t = clamp(t, 0, 1);
+  return dist(px,py, ax + t*dx, ay + t*dy);
+}
+
+// ---------- Audio (WebAudio, sin archivos) ----------
+const Sonido = {
+  ctx: null, silencio: false, ultimo: {},
+  activar(){
+    if (!this.ctx) {
+      try { this.ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e){}
+    }
+    if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
+  },
+  tono(f1, f2, dur, tipo, vol){
+    if (this.silencio || !this.ctx) return;
+    const c = this.ctx, t = c.currentTime;
+    const o = c.createOscillator(), g = c.createGain();
+    o.type = tipo || 'square';
+    o.frequency.setValueAtTime(f1, t);
+    o.frequency.exponentialRampToValueAtTime(Math.max(30, f2), t + dur);
+    g.gain.setValueAtTime(vol, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+    o.connect(g); g.connect(c.destination);
+    o.start(t); o.stop(t + dur + 0.02);
+  },
+  ruido(dur, filtro, vol){
+    if (this.silencio || !this.ctx) return;
+    const c = this.ctx, t = c.currentTime;
+    const n = Math.floor(c.sampleRate * dur);
+    const buf = c.createBuffer(1, n, c.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i=0;i<n;i++) d[i] = (Math.random()*2-1) * (1 - i/n);
+    const src = c.createBufferSource(); src.buffer = buf;
+    const f = c.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = filtro;
+    const g = c.createGain(); g.gain.value = vol;
+    src.connect(f); f.connect(g); g.connect(c.destination);
+    src.start(t);
+  },
+  fx(nombre){
+    if (this.silencio || !this.ctx) return;
+    const ahora = performance.now();
+    // limita la repetición de sonidos muy frecuentes
+    const min = {disparo:45, rafaga:60, fuego:90, hielo:120, muerte:70}[nombre] || 0;
+    if (min && this.ultimo[nombre] && ahora - this.ultimo[nombre] < min) return;
+    this.ultimo[nombre] = ahora;
+    switch(nombre){
+      case 'disparo':  this.tono(760, 240, 0.07, 'square', 0.045); break;
+      case 'rafaga':   this.tono(520, 300, 0.04, 'square', 0.03); break;
+      case 'franco':   this.tono(1400, 180, 0.16, 'sawtooth', 0.06); this.ruido(0.1, 3200, 0.05); break;
+      case 'canon':    this.ruido(0.32, 900, 0.16); this.tono(140, 50, 0.28, 'sine', 0.1); break;
+      case 'tesla':    this.tono(1900, 200, 0.11, 'sawtooth', 0.05); break;
+      case 'hielo':    this.tono(620, 980, 0.1, 'sine', 0.045); break;
+      case 'fuego':    this.ruido(0.09, 1500, 0.035); break;
+      case 'colocar':  this.tono(420, 640, 0.09, 'triangle', 0.07); break;
+      case 'vender':   this.tono(600, 380, 0.12, 'triangle', 0.07); break;
+      case 'mejorar':  this.tono(500, 500, 0.07, 'triangle', 0.07);
+                       setTimeout(()=>this.tono(660,660,0.07,'triangle',0.07), 70);
+                       setTimeout(()=>this.tono(880,880,0.1,'triangle',0.07), 140); break;
+      case 'dinero':   this.tono(980, 1300, 0.08, 'triangle', 0.05); break;
+      case 'fuga':     this.tono(300, 90, 0.3, 'sawtooth', 0.09); break;
+      case 'jefe':     this.tono(70, 55, 0.7, 'sawtooth', 0.14); this.ruido(0.5, 500, 0.08); break;
+      case 'muerte':   this.tono(220, 90, 0.12, 'square', 0.035); break;
+      case 'derrota':  [392,330,262,196].forEach((f,i)=>setTimeout(()=>this.tono(f,f*0.97,0.28,'triangle',0.09), i*220)); break;
+      case 'victoria': [523,659,784,1047].forEach((f,i)=>setTimeout(()=>this.tono(f,f,0.22,'triangle',0.09), i*150)); break;
+      case 'ola':      this.tono(330, 500, 0.14, 'triangle', 0.06); break;
+    }
+  }
+};
+
+// ---------- Mapas ----------
+const MAPAS = [
+  {
+    id:'pradera', nombre:'Pradera Verde', dif:'Fácil', clase:'facil', multHP:1.0,
+    pasto1:'#3d7a3f', pasto2:'#468a48', camino:'#c9a86a', caminoBorde:'#8a6f42',
+    deco:'arbol',
+    puntos:[[-40,150],[300,150],[300,430],[700,430],[700,180],[1050,180],[1050,560],[1320,560]]
+  },
+  {
+    id:'desierto', nombre:'Desierto Carmesí', dif:'Medio', clase:'medio', multHP:1.15,
+    pasto1:'#b5814c', pasto2:'#c08d57', camino:'#7d5a36', caminoBorde:'#5c4126',
+    deco:'cactus',
+    puntos:[[-40,600],[200,600],[200,150],[480,150],[480,560],[760,560],[760,150],[1040,150],[1040,600],[1320,600]]
+  },
+  {
+    id:'glaciar', nombre:'Glaciar Nocturno', dif:'Difícil', clase:'dificil', multHP:1.3,
+    pasto1:'#31415f', pasto2:'#3a4c6e', camino:'#a8c4e0', caminoBorde:'#6f8cb0',
+    deco:'cristal',
+    puntos:[[640,-40],[640,150],[170,150],[170,600],[1120,600],[1120,290],[400,290],[400,470],[880,470]]
+  }
+];
+
+// ---------- Enemigos ----------
+const ENEMIGOS = {
+  normal:    {nombre:'Normal',    hp:16,   vel:52, rec:4,   dano:2,  color:'#e05f5f', radio:11},
+  veloz:     {nombre:'Veloz',     hp:10,   vel:98, rec:5,   dano:2,  color:'#f0a13c', radio:9},
+  blindado:  {nombre:'Blindado',  hp:70,   vel:37, rec:10,  dano:4,  color:'#8fa3b0', radio:13},
+  sombra:    {nombre:'Sombra',    hp:32,   vel:72, rec:9,   dano:3,  color:'#8a63d2', radio:10, oculto:true},
+  curandero: {nombre:'Curandero', hp:95,   vel:44, rec:16,  dano:4,  color:'#43b9a7', radio:12, cura:14, radioCura:95},
+  tanque:    {nombre:'Tanque',    hp:520,  vel:26, rec:55,  dano:12, color:'#6d4c35', radio:17},
+  jefe:      {nombre:'DEVORADOR', hp:2300, vel:21, rec:280, dano:60, color:'#c62828', radio:24, jefe:true},
+  coloso:    {nombre:'EL COLOSO DEL VACÍO', hp:9500, vel:15, rec:2000, dano:999, color:'#5e2e91', radio:31, jefe:true}
+};
+
+// ---------- Torres ----------
+// cad = segundos entre disparos. detecta = ve enemigos ocultos.
+const TORRES = {
+  recluta:{
+    nombre:'Recluta', icono:'🔫', color:'#7cb342', tecla:'1',
+    desc:'Soldado básico y barato. Todo terreno.',
+    niveles:[
+      {costo:200,  nom:'Recluta',  dano:4,  cad:0.55, alcance:130},
+      {costo:150,  nom:'Soldado',  dano:6,  cad:0.48, alcance:140},
+      {costo:325,  nom:'Veterano', dano:9,  cad:0.38, alcance:152},
+      {costo:700,  nom:'Élite',    dano:14, cad:0.3,  alcance:165, detecta:true},
+      {costo:1500, nom:'Comando',  dano:26, cad:0.22, alcance:180, detecta:true}
+    ]},
+  artillero:{
+    nombre:'Artillero', icono:'🌀', color:'#29b6f6', tecla:'2',
+    desc:'Ametralladora de altísima cadencia.',
+    niveles:[
+      {costo:550,  nom:'Artillero',   dano:2, cad:0.12, alcance:112},
+      {costo:400,  nom:'Doble tambor',dano:3, cad:0.1,  alcance:120},
+      {costo:900,  nom:'Gatling',     dano:4, cad:0.08, alcance:130, detecta:true},
+      {costo:1900, nom:'Vulcan',      dano:6, cad:0.06, alcance:142, detecta:true},
+      {costo:4200, nom:'Tormenta',    dano:9, cad:0.045,alcance:155, detecta:true}
+    ]},
+  franco:{
+    nombre:'Francotirador', icono:'🎯', color:'#8d6e63', tecla:'3',
+    desc:'Alcance enorme y gran daño. Ve ocultos.',
+    niveles:[
+      {costo:400,  nom:'Tirador',   dano:26,  cad:2.3, alcance:270, detecta:true},
+      {costo:350,  nom:'Cazador',   dano:48,  cad:2.1, alcance:300, detecta:true},
+      {costo:850,  nom:'Letal',     dano:90,  cad:1.9, alcance:330, detecta:true},
+      {costo:1800, nom:'Fantasma',  dano:170, cad:1.7, alcance:365, detecta:true},
+      {costo:3800, nom:'Juicio',    dano:340, cad:1.5, alcance:400, detecta:true}
+    ]},
+  congelador:{
+    nombre:'Congelador', icono:'❄️', color:'#4dd0e1', tecla:'4',
+    desc:'Pulsos de hielo que frenan a todos en el área.',
+    niveles:[
+      {costo:450,  nom:'Congelador', dano:1, cad:0.9, alcance:105, lento:0.65, durLento:1.3},
+      {costo:380,  nom:'Escarcha',   dano:2, cad:0.85,alcance:118, lento:0.55, durLento:1.6},
+      {costo:800,  nom:'Ventisca',   dano:3, cad:0.8, alcance:130, lento:0.45, durLento:1.9},
+      {costo:1600, nom:'Glacial',    dano:5, cad:0.75,alcance:145, lento:0.35, durLento:2.2, detecta:true},
+      {costo:3200, nom:'Cero Absoluto',dano:8,cad:0.7, alcance:160, lento:0.25, durLento:2.6, detecta:true}
+    ]},
+  demoledor:{
+    nombre:'Demoledor', icono:'💣', color:'#ff7043', tecla:'5',
+    desc:'Cañón de área: daña a grupos enteros.',
+    niveles:[
+      {costo:700,  nom:'Demoledor', dano:15, cad:1.9, alcance:150, area:60},
+      {costo:550,  nom:'Obús',      dano:24, cad:1.75,alcance:162, area:68},
+      {costo:1200, nom:'Mortero',   dano:40, cad:1.6, alcance:176, area:78},
+      {costo:2500, nom:'Bombardero',dano:70, cad:1.45,alcance:190, area:88},
+      {costo:5200, nom:'Apocalipsis',dano:125,cad:1.3, alcance:205, area:100}
+    ]},
+  piromante:{
+    nombre:'Piromante', icono:'🔥', color:'#ef5350', tecla:'6',
+    desc:'Chorro de fuego continuo que incendia.',
+    niveles:[
+      {costo:500,  nom:'Piromante',  dano:1.5, cad:0.16, alcance:100, quema:5,  durQuema:2},
+      {costo:420,  nom:'Incendiario',dano:2,   cad:0.14, alcance:110, quema:9,  durQuema:2.3},
+      {costo:900,  nom:'Infernal',   dano:3,   cad:0.12, alcance:120, quema:15, durQuema:2.6},
+      {costo:1900, nom:'Magma',      dano:4.5, cad:0.1,  alcance:132, quema:24, durQuema:3, detecta:true},
+      {costo:3900, nom:'Sol Ardiente',dano:7,  cad:0.08, alcance:145, quema:40, durQuema:3.5, detecta:true}
+    ]},
+  tesla:{
+    nombre:'Tesla', icono:'⚡', color:'#ffee58', tecla:'7',
+    desc:'Rayos en cadena. Ve enemigos ocultos.',
+    niveles:[
+      {costo:900,  nom:'Tesla',       dano:14, cad:1.15, alcance:140, saltos:3, detecta:true},
+      {costo:650,  nom:'Bobina',      dano:22, cad:1.05, alcance:152, saltos:4, detecta:true},
+      {costo:1400, nom:'Alto Voltaje',dano:36, cad:0.95, alcance:165, saltos:5, detecta:true},
+      {costo:2800, nom:'Supercarga',  dano:60, cad:0.85, alcance:178, saltos:6, detecta:true},
+      {costo:5600, nom:'Dios Trueno', dano:100,cad:0.75, alcance:192, saltos:8, detecta:true}
+    ]},
+  granja:{
+    nombre:'Granja', icono:'🌾', color:'#d4b13c', tecla:'8',
+    desc:'No ataca: genera dinero al final de cada ola.',
+    niveles:[
+      {costo:300,  nom:'Granja',      ingreso:80},
+      {costo:450,  nom:'Molino',      ingreso:190},
+      {costo:900,  nom:'Plantación',  ingreso:400},
+      {costo:1800, nom:'Hacienda',    ingreso:850},
+      {costo:3600, nom:'Imperio Agro',ingreso:1800}
+    ]},
+  comandante:{
+    nombre:'Comandante', icono:'📣', color:'#ab47bc', tecla:'9',
+    desc:'No ataca: acelera la cadencia de torres cercanas.',
+    niveles:[
+      {costo:850,  nom:'Comandante', aura:0.12, alcance:150},
+      {costo:600,  nom:'Capitán',    aura:0.18, alcance:165},
+      {costo:1100, nom:'Mayor',      aura:0.25, alcance:180},
+      {costo:2100, nom:'General',    aura:0.32, alcance:200},
+      {costo:4200, nom:'Mariscal',   aura:0.40, alcance:220}
+    ]}
+};
+
+const MODOS_OBJETIVO = ['primero','último','fuerte','cercano'];
+const OLA_FINAL = 40;
+
+// ---------- Estado global ----------
+const lienzo = $('lienzo');
+const ctx = lienzo.getContext('2d');
+const ANCHO = lienzo.width, ALTO = lienzo.height;
+const MITAD_CAMINO = 27;      // medio ancho del camino
+let fondo = null;             // canvas prerenderizado del mapa
+let G = null;                 // estado de la partida
+let colocando = null;         // clave de torre en colocación
+let torreSel = null;          // torre seleccionada
+let raton = {x:-999, y:-999, dentro:false};
+let ultimaT = 0;
+const avisados = new Set();   // avisos de nuevos enemigos ya mostrados
+
+// ---------- Creación de partida ----------
+function nuevaPartida(mapa){
+  const segs = [];
+  let total = 0;
+  for (let i=0;i<mapa.puntos.length-1;i++){
+    const [ax,ay] = mapa.puntos[i], [bx,by] = mapa.puntos[i+1];
+    const l = dist(ax,ay,bx,by);
+    segs.push({ax,ay,bx,by,l,acum:total});
+    total += l;
+  }
+  G = {
+    mapa, segs, largoCamino: total,
+    vidas: 150, dinero: 550, ola: 0,
+    enemigos: [], torres: [], balas: [], particulas: [], textos: [], rayos: [],
+    colaSpawn: [], tOla: 0, olaActiva: false, entreOlas: true, cuentaAtras: 0,
+    velocidad: 1, pausa: false, terminado: false, infinito: false,
+    bajas: 0, dineroGanado: 0
+  };
+  avisados.clear();
+  torreSel = null; colocando = null;
+  prerenderizarFondo();
+  actualizarUI();
+  $('btnOla').style.display = '';
+  $('btnOla').textContent = '▶ Iniciar ola';
+}
+
+function multHP(n){
+  return (1 + 0.09*(n-1) + (n>18 ? Math.pow(n-18, 1.7)*0.013 : 0)) * G.mapa.multHP;
+}
+
+// ---------- Composición de olas ----------
+function componerOla(n){
+  const cola = [];
+  let t = 0.5;
+  const add = (tipo, cant, intervalo, retraso=0.8) => {
+    t += retraso;
+    for (let i=0;i<cant;i++){ cola.push({tipo, t}); t += intervalo; }
+  };
+  if (n === OLA_FINAL){
+    add('jefe', 1, 0, 1);
+    add('sombra', 14, 0.8, 5);
+    add('blindado', 12, 1.0, 3);
+    add('curandero', 4, 2.0, 2);
+    add('coloso', 1, 0, 7);
+  } else if (n % 10 === 0){
+    add('blindado', Math.floor(n/2), 1.15, 0.8);
+    add('jefe', 1, 0, 3.5);
+    if (n >= 20) add('sombra', Math.floor(n/2), 0.75, 4);
+    if (n >= 30) add('tanque', 2, 3.5, 5);
+  } else {
+    add('normal', Math.round(5 + n*1.35), Math.max(0.32, 0.9 - n*0.018), 0.4);
+    if (n >= 3)  add('veloz', Math.round(2 + n*0.7), Math.max(0.28, 0.7 - n*0.014), 2);
+    if (n >= 4)  add('blindado', Math.round(1 + n*0.45), Math.max(0.55, 1.4 - n*0.02), 2.5);
+    if (n >= 6)  add('sombra', Math.round(1 + n*0.42), 0.85, 3);
+    if (n >= 8 && n % 3 === 2) add('curandero', Math.max(1, Math.round(n/6)), 2.2, 3);
+    if (n >= 12 && n % 4 === 1) add('tanque', Math.max(1, Math.round(n/9)), 4, 4);
+  }
+  return cola;
+}
+
+function iniciarOla(){
+  if (!G || G.terminado || G.olaActiva) return;
+  G.ola++;
+  G.colaSpawn = componerOla(G.ola);
+  G.tOla = 0;
+  G.olaActiva = true;
+  G.entreOlas = false;
+  $('btnOla').style.display = 'none';
+  Sonido.fx('ola');
+  const esJefe = G.ola % 10 === 0;
+  aviso(esJefe ? `⚠️ OLA ${G.ola} — ¡SE ACERCA UN JEFE! ⚠️` : `Ola ${G.ola}`, esJefe);
+  if (esJefe) Sonido.fx('jefe');
+  actualizarUI();
+}
+
+function finDeOla(){
+  G.olaActiva = false;
+  const bono = 60 + G.ola*8;
+  let ingresoGranjas = 0;
+  for (const t of G.torres){
+    if (t.clave === 'granja'){
+      const ing = TORRES.granja.niveles[t.nivel].ingreso;
+      ingresoGranjas += ing;
+      texto(t.x, t.y-26, '+' + fmt$(ing), '#ffd25e');
+    }
+  }
+  ganarDinero(bono + ingresoGranjas);
+  aviso(`Ola ${G.ola} superada · +${fmt$(bono)} bono` + (ingresoGranjas ? ` · +${fmt$(ingresoGranjas)} granjas` : ''));
+  Sonido.fx('dinero');
+
+  if (G.ola >= OLA_FINAL && !G.infinito){
+    victoria();
+    return;
+  }
+  G.entreOlas = true;
+  G.cuentaAtras = 4;
+  $('btnOla').style.display = '';
+  $('btnOla').textContent = '⏭ ¡Ya! (+' + fmt$(25 + G.ola*3) + ')';
+  actualizarUI();
+}
+
+// ---------- Enemigos ----------
+function crearEnemigo(tipo){
+  const base = ENEMIGOS[tipo];
+  const m = base.jefe ? multHP(G.ola)*0.9 : multHP(G.ola);
+  const hp = Math.round(base.hp * m);
+  G.enemigos.push({
+    tipo, ...base,
+    hpMax: hp, hp,
+    d: 0, x: G.segs[0].ax, y: G.segs[0].ay,
+    lentoHasta: 0, lentoMult: 1, quemaDPS: 0, quemaHasta: 0, tCura: 0,
+    osc: Math.random()*Math.PI*2
+  });
+  if (base.oculto && !avisados.has('sombra')){
+    avisados.add('sombra');
+    aviso('👻 ¡Sombras! Solo las torres con detección 👁 pueden verlas', true);
+  }
+  if (base.cura && !avisados.has('curandero')){
+    avisados.add('curandero');
+    aviso('✚ ¡Curanderos! Sanan a los enemigos cercanos: elimínalos primero', true);
+  }
+  if (tipo === 'coloso'){
+    aviso('💀 EL COLOSO DEL VACÍO HA DESPERTADO 💀', true);
+    Sonido.fx('jefe');
+  }
+}
+
+function posEnCamino(d){
+  d = clamp(d, 0, G.largoCamino);
+  let seg = G.segs[G.segs.length-1];
+  for (const s of G.segs){ if (d <= s.acum + s.l){ seg = s; break; } }
+  const t = seg.l ? (d - seg.acum)/seg.l : 0;
+  return {
+    x: seg.ax + (seg.bx-seg.ax)*t,
+    y: seg.ay + (seg.by-seg.ay)*t,
+    ang: Math.atan2(seg.by-seg.ay, seg.bx-seg.ax)
+  };
+}
+
+function distAlCamino(x,y){
+  let m = Infinity;
+  for (const s of G.segs) m = Math.min(m, distPuntoSegmento(x,y,s.ax,s.ay,s.bx,s.by));
+  return m;
+}
+
+function actualizarEnemigos(dt){
+  const ahora = G.tOla;
+  for (let i=G.enemigos.length-1; i>=0; i--){
+    const e = G.enemigos[i];
+    // quemadura
+    if (e.quemaHasta > ahora && e.quemaDPS > 0){
+      e.hp -= e.quemaDPS * dt;
+      if (Math.random() < dt*8) particula(e.x+rnd(-6,6), e.y+rnd(-6,6), '#ff7043', 2.5, 0.4);
+      if (e.hp <= 0){ matarEnemigo(i); continue; }
+    }
+    // curación
+    if (e.cura){
+      e.tCura += dt;
+      if (e.tCura >= 0.5){
+        e.tCura = 0;
+        for (const otro of G.enemigos){
+          if (otro !== e && otro.hp < otro.hpMax && dist(e.x,e.y,otro.x,otro.y) < e.radioCura){
+            otro.hp = Math.min(otro.hpMax, otro.hp + e.cura * multHP(G.ola) * 0.5);
+            particula(otro.x, otro.y-10, '#4de0c8', 3, 0.5);
+          }
+        }
+      }
+    }
+    // movimiento
+    const lento = (e.lentoHasta > ahora) ? e.lentoMult : 1;
+    e.d += e.vel * lento * dt;
+    e.osc += dt*6;
+    if (e.d >= G.largoCamino){
+      // fuga: daña la base
+      G.vidas -= e.dano;
+      G.enemigos.splice(i,1);
+      Sonido.fx('fuga');
+      const fin = G.mapa.puntos[G.mapa.puntos.length-1];
+      texto(Math.min(fin[0], ANCHO-60), fin[1]-20, '-' + e.dano + ' ❤', '#ff6b6b');
+      if (G.vidas <= 0){ derrota(); return; }
+      actualizarUI();
+      continue;
+    }
+    const p = posEnCamino(e.d);
+    e.x = p.x; e.y = p.y; e.ang = p.ang;
+  }
+}
+
+function dañarEnemigo(e, cantidad){
+  e.hp -= cantidad;
+  if (e.hp <= 0){
+    const i = G.enemigos.indexOf(e);
+    if (i >= 0) matarEnemigo(i);
+    return true;
+  }
+  return false;
+}
+
+function matarEnemigo(i){
+  const e = G.enemigos[i];
+  G.enemigos.splice(i,1);
+  G.bajas++;
+  const rec = Math.round(e.rec * (1 + G.ola*0.015));
+  ganarDinero(rec);
+  texto(e.x, e.y-18, '+' + fmt$(rec), '#ffd25e');
+  for (let k=0;k<(e.jefe?26:8);k++)
+    particula(e.x, e.y, e.color, rnd(2,e.jefe?6:4), rnd(0.3,0.7));
+  Sonido.fx(e.jefe ? 'canon' : 'muerte');
+}
+
+// ---------- Torres ----------
+function nivelDe(t){ return TORRES[t.clave].niveles[t.nivel]; }
+
+function costoTotal(t){
+  let s = 0;
+  for (let i=0;i<=t.nivel;i++) s += TORRES[t.clave].niveles[i].costo;
+  return s;
+}
+
+function auraCadencia(t){
+  if (t.clave === 'comandante' || t.clave === 'granja') return 1;
+  let mejor = 0;
+  for (const c of G.torres){
+    if (c.clave !== 'comandante') continue;
+    const nc = nivelDe(c);
+    if (dist(t.x,t.y,c.x,c.y) <= nc.alcance) mejor = Math.max(mejor, nc.aura);
+  }
+  return 1 - mejor;
+}
+
+function elegirObjetivo(t, nivel){
+  let candidatos = [];
+  for (const e of G.enemigos){
+    if (e.oculto && !nivel.detecta) continue;
+    if (dist(t.x,t.y,e.x,e.y) <= nivel.alcance + e.radio) candidatos.push(e);
+  }
+  if (!candidatos.length) return null;
+  switch(t.objetivo){
+    case 'último':  return candidatos.reduce((a,b)=> a.d < b.d ? a : b);
+    case 'fuerte':  return candidatos.reduce((a,b)=> a.hp > b.hp ? a : b);
+    case 'cercano': return candidatos.reduce((a,b)=>
+      dist(t.x,t.y,a.x,a.y) < dist(t.x,t.y,b.x,b.y) ? a : b);
+    default:        return candidatos.reduce((a,b)=> a.d > b.d ? a : b); // primero
+  }
+}
+
+function actualizarTorres(dt){
+  const ahora = G.tOla;
+  for (const t of G.torres){
+    const n = nivelDe(t);
+    if (t.clave === 'granja' || t.clave === 'comandante'){
+      t.anim = (t.anim || 0) + dt;
+      continue;
+    }
+    t.enfriamiento -= dt;
+    // congelador: pulso de área
+    if (t.clave === 'congelador'){
+      if (t.enfriamiento <= 0){
+        let alguno = false;
+        for (const e of [...G.enemigos]){
+          if (e.oculto && !n.detecta) continue;
+          if (dist(t.x,t.y,e.x,e.y) <= n.alcance + e.radio){
+            alguno = true;
+            e.lentoMult = n.lento;
+            e.lentoHasta = ahora + n.durLento;
+            dañarEnemigo(e, n.dano);
+          }
+        }
+        if (alguno){
+          t.enfriamiento = n.cad * auraCadencia(t);
+          t.pulso = 0.35;
+          Sonido.fx('hielo');
+        }
+      }
+      t.pulso = Math.max(0, (t.pulso||0) - dt);
+      continue;
+    }
+    // torres con objetivo
+    const obj = elegirObjetivo(t, n);
+    if (obj){
+      const angObj = Math.atan2(obj.y - t.y, obj.x - t.x);
+      let da = angObj - t.ang;
+      while (da > Math.PI) da -= Math.PI*2;
+      while (da < -Math.PI) da += Math.PI*2;
+      t.ang += da * Math.min(1, dt*12);
+    }
+    if (t.enfriamiento > 0 || !obj) continue;
+    t.enfriamiento = nivelDe(t).cad * auraCadencia(t);
+    t.fogonazo = 0.06;
+    disparar(t, n, obj);
+  }
+}
+
+function disparar(t, n, obj){
+  switch(t.clave){
+    case 'recluta':
+      dañarEnemigo(obj, n.dano);
+      trazo(t, obj, '#ffe082', 1.5, 0.05);
+      Sonido.fx('disparo');
+      break;
+    case 'artillero':
+      dañarEnemigo(obj, n.dano);
+      trazo(t, obj, '#80d8ff', 1.2, 0.035);
+      Sonido.fx('rafaga');
+      break;
+    case 'franco':
+      dañarEnemigo(obj, n.dano);
+      trazo(t, obj, '#ffffff', 2.2, 0.09);
+      particula(obj.x, obj.y, '#fff', 3, 0.25);
+      Sonido.fx('franco');
+      break;
+    case 'piromante':
+      dañarEnemigo(obj, n.dano);
+      obj.quemaDPS = Math.max(obj.quemaDPS, n.quema);
+      obj.quemaHasta = G.tOla + n.durQuema;
+      for (let k=0;k<2;k++){
+        const a = t.ang + rnd(-0.25,0.25);
+        const d0 = rnd(18, Math.min(n.alcance, dist(t.x,t.y,obj.x,obj.y)));
+        particula(t.x + Math.cos(a)*d0, t.y + Math.sin(a)*d0,
+          ['#ff7043','#ffca28','#ef5350'][Math.floor(Math.random()*3)], rnd(2.5,4.5), 0.35);
+      }
+      Sonido.fx('fuego');
+      break;
+    case 'demoledor':
+      G.balas.push({x:t.x, y:t.y, obj, vel:430, dano:n.dano, area:n.area, t:0});
+      Sonido.fx('canon');
+      break;
+    case 'tesla': {
+      let actual = obj, previo = t, hechos = new Set([obj]);
+      let dano = n.dano;
+      for (let s=0; s<n.saltos && actual; s++){
+        G.rayos.push({x1:previo.x, y1:previo.y, x2:actual.x, y2:actual.y, ttl:0.14});
+        const objetivo = actual;
+        dañarEnemigo(objetivo, dano);
+        dano *= 0.78;
+        previo = objetivo;
+        actual = null;
+        let mejor = 130;
+        for (const e of G.enemigos){
+          if (hechos.has(e)) continue;
+          if (e.oculto && !n.detecta) continue;
+          const dd = dist(previo.x, previo.y, e.x, e.y);
+          if (dd < mejor){ mejor = dd; actual = e; }
+        }
+        if (actual) hechos.add(actual);
+      }
+      Sonido.fx('tesla');
+      break;
+    }
+  }
+}
+
+function actualizarBalas(dt){
+  for (let i=G.balas.length-1; i>=0; i--){
+    const b = G.balas[i];
+    // si el objetivo murió, sigue hacia su última posición
+    if (b.obj && G.enemigos.includes(b.obj)){ b.tx = b.obj.x; b.ty = b.obj.y; }
+    if (b.tx === undefined){ b.tx = b.obj.x; b.ty = b.obj.y; }
+    const d = dist(b.x, b.y, b.tx, b.ty);
+    const paso = b.vel * dt;
+    b.t += dt;
+    if (d <= paso || b.t > 4){
+      // explosión de área
+      for (let j=G.enemigos.length-1; j>=0; j--){
+        const e = G.enemigos[j];
+        if (dist(b.tx, b.ty, e.x, e.y) <= b.area + e.radio){
+          e.hp -= b.dano;
+          if (e.hp <= 0) matarEnemigo(j);
+        }
+      }
+      for (let k=0;k<14;k++) particula(b.tx, b.ty, k%2 ? '#ffb74d' : '#ff7043', rnd(2.5,5.5), rnd(0.25,0.55));
+      G.particulas.push({x:b.tx, y:b.ty, vx:0, vy:0, r:b.area, vida:0.22, vidaMax:0.22, color:'rgba(255,160,60,.35)', anillo:true});
+      G.balas.splice(i,1);
+      continue;
+    }
+    b.x += (b.tx-b.x)/d * paso;
+    b.y += (b.ty-b.y)/d * paso;
+  }
+}
+
+// ---------- Efectos ----------
+function particula(x,y,color,r,vida){
+  const a = Math.random()*Math.PI*2, v = rnd(20,90);
+  G.particulas.push({x, y, vx:Math.cos(a)*v, vy:Math.sin(a)*v - 30, r, vida, vidaMax:vida, color});
+}
+function texto(x,y,txt,color){
+  G.textos.push({x, y, txt, color, vida:0.9, vidaMax:0.9});
+}
+function trazo(t, obj, color, grosor, ttl){
+  const bx = t.x + Math.cos(t.ang)*16, by = t.y + Math.sin(t.ang)*16;
+  G.rayos.push({x1:bx, y1:by, x2:obj.x, y2:obj.y, ttl, color, grosor, recto:true});
+}
+function actualizarEfectos(dt){
+  for (let i=G.particulas.length-1;i>=0;i--){
+    const p = G.particulas[i];
+    p.vida -= dt;
+    if (p.vida <= 0){ G.particulas.splice(i,1); continue; }
+    p.x += p.vx*dt; p.y += p.vy*dt; p.vy += 140*dt;
+  }
+  for (let i=G.textos.length-1;i>=0;i--){
+    const t = G.textos[i];
+    t.vida -= dt; t.y -= 26*dt;
+    if (t.vida <= 0) G.textos.splice(i,1);
+  }
+  for (let i=G.rayos.length-1;i>=0;i--){
+    G.rayos[i].ttl -= dt;
+    if (G.rayos[i].ttl <= 0) G.rayos.splice(i,1);
+  }
+}
+
+// ---------- Economía ----------
+function ganarDinero(n){
+  G.dinero += n;
+  G.dineroGanado += n;
+  actualizarUI();
+}
+
+// ---------- Colocación y selección ----------
+function puedeColocar(x, y, clave){
+  if (x < 24 || x > ANCHO-24 || y < 24 || y > ALTO-24) return false;
+  if (distAlCamino(x,y) < MITAD_CAMINO + 20) return false;
+  for (const t of G.torres) if (dist(x,y,t.x,t.y) < 36) return false;
+  return true;
+}
+
+function colocarTorre(clave, x, y){
+  const def = TORRES[clave];
+  const costo = def.niveles[0].costo;
+  if (G.dinero < costo || !puedeColocar(x,y,clave)) return false;
+  G.dinero -= costo;
+  G.torres.push({
+    clave, x, y, nivel:0, ang:-Math.PI/2, enfriamiento:0,
+    objetivo:'primero', fogonazo:0, anim:0
+  });
+  Sonido.fx('colocar');
+  for (let k=0;k<8;k++) particula(x, y, def.color, 3, 0.4);
+  actualizarUI();
+  return true;
+}
+
+function mejorarTorre(t){
+  const def = TORRES[t.clave];
+  if (t.nivel >= def.niveles.length-1) return;
+  const costo = def.niveles[t.nivel+1].costo;
+  if (G.dinero < costo) return;
+  G.dinero -= costo;
+  t.nivel++;
+  Sonido.fx('mejorar');
+  for (let k=0;k<12;k++) particula(t.x, t.y, '#ffd25e', 3, 0.5);
+  texto(t.x, t.y-26, '¡Nivel ' + (t.nivel+1) + '!', '#6fe08b');
+  actualizarUI(); actualizarPanelTorre();
+}
+
+function venderTorre(t){
+  const i = G.torres.indexOf(t);
+  if (i < 0) return;
+  const reembolso = Math.floor(costoTotal(t)*0.7);
+  G.torres.splice(i,1);
+  ganarDinero(reembolso);
+  texto(t.x, t.y-20, '+' + fmt$(reembolso), '#ffd25e');
+  Sonido.fx('vender');
+  seleccionarTorre(null);
+  actualizarUI();
+}
+
+function seleccionarTorre(t){
+  torreSel = t;
+  if (t) colocando = null;
+  actualizarPanelTorre();
+}
+
+// ---------- Fin de partida ----------
+function guardarRecord(){
+  const clave = 'nexo_record_' + G.mapa.id;
+  const previo = parseInt(localStorage.getItem(clave) || '0', 10);
+  const olas = G.olaActiva ? G.ola-1 : G.ola;
+  if (olas > previo) localStorage.setItem(clave, String(olas));
+}
+function derrota(){
+  if (G.terminado) return;
+  G.terminado = true;
+  guardarRecord();
+  Sonido.fx('derrota');
+  mostrarFin(false);
+}
+function victoria(){
+  G.terminado = true;
+  guardarRecord();
+  Sonido.fx('victoria');
+  mostrarFin(true);
+}
+function mostrarFin(gano){
+  const ti = $('tituloFin');
+  ti.textContent = gano ? '🏆 ¡VICTORIA!' : '💀 DERROTA';
+  ti.className = gano ? 'victoria' : 'derrota';
+  $('subFin').textContent = gano
+    ? 'Has repelido las 40 olas y destruido al Coloso del Vacío en ' + G.mapa.nombre + '.'
+    : 'La base ha caído en la ola ' + G.ola + ' de ' + G.mapa.nombre + '.';
+  $('finOlas').textContent = G.olaActiva ? G.ola-1 : G.ola;
+  $('finBajas').textContent = G.bajas.toLocaleString('es-PE');
+  $('finDinero').textContent = fmt$(G.dineroGanado);
+  $('btnSeguir').style.display = gano ? '' : 'none';
+  $('modalFin').classList.add('visible');
+}
+
+// ---------- Avisos ----------
+function aviso(txt, importante){
+  const d = document.createElement('div');
+  d.className = 'aviso' + (importante ? ' importante' : '');
+  d.textContent = txt;
+  $('avisos').appendChild(d);
+  setTimeout(()=>{ d.style.transition='opacity .4s'; d.style.opacity='0'; }, 2600);
+  setTimeout(()=> d.remove(), 3100);
+}
+
+// ---------- Interfaz ----------
+function actualizarUI(){
+  if (!G) return;
+  $('vidasTxt').textContent = Math.max(0, G.vidas);
+  $('dineroTxt').textContent = fmt$(G.dinero);
+  $('olaTxt').textContent = 'Ola ' + G.ola + (G.infinito ? ' (∞)' : '/' + OLA_FINAL);
+  // cartas de torres
+  for (const clave in TORRES){
+    const carta = $('carta_' + clave);
+    if (!carta) continue;
+    carta.classList.toggle('pobre', G.dinero < TORRES[clave].niveles[0].costo);
+    carta.classList.toggle('activa', colocando === clave);
+  }
+}
+
+function actualizarPanelTorre(){
+  const p = $('panelTorre');
+  if (!torreSel){ p.style.display = 'none'; return; }
+  const t = torreSel, def = TORRES[t.clave], n = nivelDe(t);
+  p.style.display = 'block';
+  $('ptNombre').textContent = def.icono + ' ' + n.nom;
+  $('ptNivel').textContent = 'Nivel ' + (t.nivel+1) + ' de ' + def.niveles.length +
+    (n.detecta ? ' · 👁 detección' : '');
+  const filas = [];
+  if (n.dano !== undefined){
+    filas.push(['Daño', n.dano]);
+    filas.push(['Cadencia', n.cad.toFixed(2) + ' s']);
+    filas.push(['DPS', (n.dano/n.cad).toFixed(1)]);
+  }
+  if (n.alcance) filas.push(['Alcance', n.alcance]);
+  if (n.area) filas.push(['Área', n.area]);
+  if (n.saltos) filas.push(['Saltos', n.saltos]);
+  if (n.lento) filas.push(['Ralentiza', Math.round((1-n.lento)*100) + '%']);
+  if (n.quema) filas.push(['Quemadura', n.quema + '/s']);
+  if (n.ingreso) filas.push(['Ingreso/ola', fmt$(n.ingreso)]);
+  if (n.aura) filas.push(['Aura cadencia', '+' + Math.round(n.aura*100) + '%']);
+  $('ptStats').innerHTML = filas.map(f=>'<div><span>'+f[0]+'</span><span>'+f[1]+'</span></div>').join('');
+  // mejora
+  const sig = def.niveles[t.nivel+1];
+  const btnM = $('btnMejorar');
+  if (sig){
+    btnM.textContent = '⬆ ' + sig.nom + ' — ' + fmt$(sig.costo);
+    btnM.disabled = G.dinero < sig.costo;
+    const cambios = [];
+    if (sig.dano !== undefined && sig.dano !== n.dano) cambios.push('daño ' + n.dano + '→' + sig.dano);
+    if (sig.alcance && sig.alcance !== n.alcance) cambios.push('alcance ' + n.alcance + '→' + sig.alcance);
+    if (sig.ingreso) cambios.push('ingreso ' + fmt$(n.ingreso) + '→' + fmt$(sig.ingreso));
+    if (sig.aura) cambios.push('aura ' + Math.round(n.aura*100) + '%→' + Math.round(sig.aura*100) + '%');
+    if (sig.detecta && !n.detecta) cambios.push('👁 ¡detección!');
+    $('mejoraInfo').textContent = cambios.join(' · ');
+  } else {
+    btnM.textContent = '★ NIVEL MÁXIMO';
+    btnM.disabled = true;
+    $('mejoraInfo').textContent = '';
+  }
+  $('btnVender').textContent = '💸 Vender — ' + fmt$(Math.floor(costoTotal(t)*0.7));
+  $('objetivoBtn').style.display = (t.clave === 'granja' || t.clave === 'comandante' || t.clave === 'congelador') ? 'none' : '';
+  $('objetivoBtn').textContent = '🎯 ' + t.objetivo.charAt(0).toUpperCase() + t.objetivo.slice(1);
+}
+
+// ---------- Prerender del fondo ----------
+function prerenderizarFondo(){
+  fondo = document.createElement('canvas');
+  fondo.width = ANCHO; fondo.height = ALTO;
+  const c = fondo.getContext('2d');
+  const m = G.mapa;
+  // terreno con textura
+  const grad = c.createLinearGradient(0,0,0,ALTO);
+  grad.addColorStop(0, m.pasto2); grad.addColorStop(1, m.pasto1);
+  c.fillStyle = grad;
+  c.fillRect(0,0,ANCHO,ALTO);
+  for (let i=0;i<900;i++){
+    c.fillStyle = 'rgba(0,0,0,' + rnd(0.02,0.06) + ')';
+    const s = rnd(2,7);
+    c.fillRect(rnd(0,ANCHO), rnd(0,ALTO), s, s);
+  }
+  // camino
+  c.lineCap = 'round'; c.lineJoin = 'round';
+  const trazar = () => {
+    c.beginPath();
+    c.moveTo(m.puntos[0][0], m.puntos[0][1]);
+    for (let i=1;i<m.puntos.length;i++) c.lineTo(m.puntos[i][0], m.puntos[i][1]);
+  };
+  trazar(); c.strokeStyle = m.caminoBorde; c.lineWidth = MITAD_CAMINO*2 + 10; c.stroke();
+  trazar(); c.strokeStyle = m.camino; c.lineWidth = MITAD_CAMINO*2; c.stroke();
+  trazar(); c.strokeStyle = 'rgba(255,255,255,.25)'; c.lineWidth = 3; c.setLineDash([14,18]); c.stroke();
+  c.setLineDash([]);
+  // decoraciones (no bloquean)
+  for (let i=0;i<26;i++){
+    let x, y, ok = false;
+    for (let intento=0; intento<20 && !ok; intento++){
+      x = rnd(40, ANCHO-40); y = rnd(40, ALTO-40);
+      ok = distAlCamino(x,y) > MITAD_CAMINO + 46;
+    }
+    if (!ok) continue;
+    if (m.deco === 'arbol'){
+      c.fillStyle = '#5d4037'; c.fillRect(x-3, y, 6, 12);
+      c.fillStyle = '#2e7d32';
+      c.beginPath(); c.arc(x, y-6, 13, 0, Math.PI*2); c.fill();
+      c.fillStyle = '#43a047';
+      c.beginPath(); c.arc(x-5, y-10, 8, 0, Math.PI*2); c.fill();
+    } else if (m.deco === 'cactus'){
+      c.fillStyle = '#33691e';
+      c.fillRect(x-4, y-16, 8, 26);
+      c.fillRect(x-13, y-8, 8, 5); c.fillRect(x-13, y-14, 5, 10);
+      c.fillRect(x+5, y-4, 8, 5); c.fillRect(x+8, y-12, 5, 12);
+    } else {
+      c.fillStyle = 'rgba(180,220,255,.85)';
+      c.beginPath();
+      c.moveTo(x, y-18); c.lineTo(x+8, y); c.lineTo(x, y+6); c.lineTo(x-8, y); c.closePath();
+      c.fill();
+      c.fillStyle = 'rgba(255,255,255,.5)';
+      c.beginPath(); c.moveTo(x, y-18); c.lineTo(x+3, y-4); c.lineTo(x-3, y-4); c.closePath(); c.fill();
+    }
+  }
+  // portal de entrada
+  const ini = m.puntos[0];
+  c.save();
+  c.translate(clamp(ini[0], 20, ANCHO-20), clamp(ini[1], 20, ALTO-20));
+  c.fillStyle = '#311b92';
+  c.beginPath(); c.arc(0, 0, 26, 0, Math.PI*2); c.fill();
+  c.strokeStyle = '#7c4dff'; c.lineWidth = 4;
+  c.beginPath(); c.arc(0, 0, 26, 0, Math.PI*2); c.stroke();
+  c.fillStyle = '#b388ff';
+  c.beginPath(); c.arc(0, 0, 12, 0, Math.PI*2); c.fill();
+  c.restore();
+  // base a defender
+  const fin = m.puntos[m.puntos.length-1];
+  const bx = clamp(fin[0], 30, ANCHO-30), by = clamp(fin[1], 34, ALTO-30);
+  c.save();
+  c.translate(bx, by);
+  c.fillStyle = '#455a64'; c.fillRect(-26, -18, 52, 38);
+  c.fillStyle = '#37474f'; c.fillRect(-30, -26, 60, 12);
+  c.fillStyle = '#263238';
+  for (let i=-1;i<=1;i++) c.fillRect(i*18-5, -34, 10, 10);
+  c.fillStyle = '#90a4ae'; c.fillRect(-7, 2, 14, 18);
+  c.fillStyle = '#ffd25e';
+  c.beginPath(); c.moveTo(6, -34); c.lineTo(26, -28); c.lineTo(6, -22); c.closePath(); c.fill();
+  c.strokeStyle = '#eceff1'; c.lineWidth = 2;
+  c.beginPath(); c.moveTo(6, -34); c.lineTo(6, -14); c.stroke();
+  c.restore();
+}
+
+// ---------- Dibujo ----------
+function dibujar(){
+  ctx.clearRect(0,0,ANCHO,ALTO);
+  if (!G){ return; }
+  ctx.drawImage(fondo, 0, 0);
+
+  // rango de la torre seleccionada
+  if (torreSel){
+    const n = nivelDe(torreSel);
+    if (n.alcance){
+      ctx.beginPath(); ctx.arc(torreSel.x, torreSel.y, n.alcance, 0, Math.PI*2);
+      ctx.fillStyle = 'rgba(120,180,255,.10)'; ctx.fill();
+      ctx.strokeStyle = 'rgba(150,200,255,.5)'; ctx.lineWidth = 2; ctx.stroke();
+    }
+  }
+
+  // torres
+  for (const t of G.torres) dibujarTorre(t);
+
+  // enemigos (orden por distancia para que los de delante tapen)
+  const orden = [...G.enemigos].sort((a,b)=>a.d-b.d);
+  for (const e of orden) dibujarEnemigo(e);
+
+  // balas de cañón
+  for (const b of G.balas){
+    ctx.beginPath(); ctx.arc(b.x, b.y, 6, 0, Math.PI*2);
+    ctx.fillStyle = '#37474f'; ctx.fill();
+    ctx.strokeStyle = '#90a4ae'; ctx.lineWidth = 1.5; ctx.stroke();
+  }
+
+  // rayos y trazos
+  for (const r of G.rayos){
+    ctx.save();
+    ctx.globalAlpha = clamp(r.ttl/0.14, 0, 1);
+    if (r.recto){
+      ctx.strokeStyle = r.color; ctx.lineWidth = r.grosor;
+      ctx.beginPath(); ctx.moveTo(r.x1, r.y1); ctx.lineTo(r.x2, r.y2); ctx.stroke();
+    } else {
+      ctx.strokeStyle = '#fff176'; ctx.lineWidth = 2.5;
+      ctx.shadowColor = '#ffee58'; ctx.shadowBlur = 8;
+      ctx.beginPath(); ctx.moveTo(r.x1, r.y1);
+      const pasos = 5;
+      for (let i=1;i<=pasos;i++){
+        const t = i/pasos;
+        const mx = r.x1 + (r.x2-r.x1)*t + (i<pasos ? rnd(-7,7) : 0);
+        const my = r.y1 + (r.y2-r.y1)*t + (i<pasos ? rnd(-7,7) : 0);
+        ctx.lineTo(mx, my);
+      }
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  // partículas
+  for (const p of G.particulas){
+    ctx.save();
+    ctx.globalAlpha = clamp(p.vida/p.vidaMax, 0, 1);
+    if (p.anillo){
+      ctx.strokeStyle = p.color; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.r*(1-(p.vida/p.vidaMax))+p.r*0.4, 0, Math.PI*2); ctx.stroke();
+    } else {
+      ctx.fillStyle = p.color;
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI*2); ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  // textos flotantes
+  ctx.textAlign = 'center'; ctx.font = 'bold 14px "Segoe UI", sans-serif';
+  for (const t of G.textos){
+    ctx.save();
+    ctx.globalAlpha = clamp(t.vida/t.vidaMax, 0, 1);
+    ctx.fillStyle = '#000'; ctx.fillText(t.txt, t.x+1, t.y+1);
+    ctx.fillStyle = t.color; ctx.fillText(t.txt, t.x, t.y);
+    ctx.restore();
+  }
+
+  // fantasma de colocación
+  if (colocando && raton.dentro){
+    const def = TORRES[colocando];
+    const n0 = def.niveles[0];
+    const ok = puedeColocar(raton.x, raton.y, colocando) && G.dinero >= n0.costo;
+    ctx.save();
+    ctx.globalAlpha = 0.85;
+    if (n0.alcance){
+      ctx.beginPath(); ctx.arc(raton.x, raton.y, n0.alcance, 0, Math.PI*2);
+      ctx.fillStyle = ok ? 'rgba(110,220,140,.14)' : 'rgba(255,90,90,.14)';
+      ctx.fill();
+      ctx.strokeStyle = ok ? 'rgba(110,220,140,.6)' : 'rgba(255,90,90,.6)';
+      ctx.lineWidth = 2; ctx.stroke();
+    }
+    ctx.beginPath(); ctx.arc(raton.x, raton.y, 16, 0, Math.PI*2);
+    ctx.fillStyle = ok ? def.color : '#b71c1c';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,.7)'; ctx.lineWidth = 2; ctx.stroke();
+    ctx.restore();
+  }
+
+  // cuenta atrás entre olas
+  if (G.entreOlas && G.ola > 0 && !G.terminado){
+    ctx.save();
+    ctx.textAlign = 'center';
+    ctx.font = 'bold 26px "Segoe UI", sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,.85)';
+    ctx.shadowColor = '#000'; ctx.shadowBlur = 8;
+    ctx.fillText('Siguiente ola en ' + Math.ceil(G.cuentaAtras) + '…', ANCHO/2, 64);
+    ctx.restore();
+  }
+
+  // pausa
+  if (G.pausa && !G.terminado){
+    ctx.save();
+    ctx.fillStyle = 'rgba(5,8,15,.55)';
+    ctx.fillRect(0,0,ANCHO,ALTO);
+    ctx.textAlign = 'center';
+    ctx.font = 'bold 46px "Segoe UI", sans-serif';
+    ctx.fillStyle = '#fff';
+    ctx.fillText('⏸ PAUSA', ANCHO/2, ALTO/2);
+    ctx.restore();
+  }
+}
+
+function dibujarTorre(t){
+  const def = TORRES[t.clave], n = nivelDe(t);
+  ctx.save();
+  ctx.translate(t.x, t.y);
+  // sombra
+  ctx.fillStyle = 'rgba(0,0,0,.3)';
+  ctx.beginPath(); ctx.ellipse(0, 6, 16, 8, 0, 0, Math.PI*2); ctx.fill();
+  // base
+  ctx.fillStyle = '#263041';
+  ctx.beginPath(); ctx.arc(0, 0, 15, 0, Math.PI*2); ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,.25)'; ctx.lineWidth = 2; ctx.stroke();
+  ctx.fillStyle = def.color;
+  ctx.beginPath(); ctx.arc(0, 0, 10.5, 0, Math.PI*2); ctx.fill();
+
+  if (t.clave === 'granja'){
+    // parcela animada
+    ctx.fillStyle = '#8d6e63';
+    ctx.fillRect(-11, -11, 22, 22);
+    ctx.fillStyle = '#d4b13c';
+    for (let i=-1;i<=1;i++){
+      const h = 7 + Math.sin((t.anim||0)*2 + i)*2;
+      ctx.fillRect(i*7-1.5, -h, 3, h+8);
+    }
+  } else if (t.clave === 'comandante'){
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 13px sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText('★', 0, 4.5);
+    // aura sutil
+    ctx.globalAlpha = 0.12 + Math.sin((t.anim||0)*3)*0.05;
+    ctx.beginPath(); ctx.arc(0, 0, n.alcance, 0, Math.PI*2);
+    ctx.strokeStyle = def.color; ctx.lineWidth = 2; ctx.stroke();
+    ctx.globalAlpha = 1;
+  } else if (t.clave === 'congelador'){
+    ctx.rotate((G.tOla||0)*0.8);
+    ctx.strokeStyle = '#e0f7fa'; ctx.lineWidth = 2.5;
+    for (let i=0;i<3;i++){
+      ctx.rotate(Math.PI/3);
+      ctx.beginPath(); ctx.moveTo(-9,0); ctx.lineTo(9,0); ctx.stroke();
+    }
+    if (t.pulso > 0){
+      ctx.globalAlpha = t.pulso*2;
+      ctx.beginPath(); ctx.arc(0, 0, n.alcance*(1-t.pulso*2.2), 0, Math.PI*2);
+      ctx.strokeStyle = '#b3e5fc'; ctx.lineWidth = 3; ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
+  } else {
+    // cañón giratorio
+    ctx.rotate(t.ang);
+    ctx.fillStyle = '#1a2130';
+    const larg = t.clave === 'franco' ? 24 : (t.clave === 'demoledor' ? 18 : 20);
+    const ancho = t.clave === 'demoledor' ? 9 : (t.clave === 'artillero' ? 7 : 5);
+    ctx.fillRect(2, -ancho/2, larg, ancho);
+    ctx.strokeStyle = 'rgba(255,255,255,.3)'; ctx.lineWidth = 1; ctx.strokeRect(2, -ancho/2, larg, ancho);
+    if (t.fogonazo > 0){
+      ctx.fillStyle = '#ffe082';
+      ctx.beginPath(); ctx.arc(larg+4, 0, 5, 0, Math.PI*2); ctx.fill();
+      t.fogonazo -= 0.016;
+    }
+  }
+  ctx.restore();
+
+  // marcas de nivel
+  ctx.save();
+  ctx.translate(t.x, t.y);
+  ctx.fillStyle = '#ffd25e';
+  for (let i=0;i<t.nivel;i++){
+    const a = -Math.PI/2 + (i - (t.nivel-1)/2) * 0.5;
+    ctx.beginPath();
+    ctx.arc(Math.cos(a)*21, Math.sin(a)*21 - 2, 2.4, 0, Math.PI*2);
+    ctx.fill();
+  }
+  // anillo de selección
+  if (t === torreSel){
+    ctx.strokeStyle = '#ffd25e'; ctx.lineWidth = 2; ctx.setLineDash([5,4]);
+    ctx.beginPath(); ctx.arc(0, 0, 20, 0, Math.PI*2); ctx.stroke();
+    ctx.setLineDash([]);
+  }
+  ctx.restore();
+}
+
+function dibujarEnemigo(e){
+  ctx.save();
+  ctx.translate(e.x, e.y + Math.sin(e.osc)*1.5);
+  if (e.oculto) ctx.globalAlpha = 0.45;
+  // sombra
+  ctx.fillStyle = 'rgba(0,0,0,.3)';
+  ctx.beginPath(); ctx.ellipse(0, e.radio*0.7, e.radio, e.radio*0.45, 0, 0, Math.PI*2); ctx.fill();
+  // cuerpo
+  ctx.fillStyle = e.color;
+  ctx.beginPath(); ctx.arc(0, 0, e.radio, 0, Math.PI*2); ctx.fill();
+  ctx.strokeStyle = 'rgba(0,0,0,.45)'; ctx.lineWidth = 2; ctx.stroke();
+  // detalle según tipo
+  ctx.fillStyle = 'rgba(255,255,255,.85)';
+  if (e.tipo === 'blindado' || e.tipo === 'tanque'){
+    ctx.strokeStyle = 'rgba(255,255,255,.5)'; ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.arc(0, 0, e.radio-4, 0, Math.PI*2); ctx.stroke();
+  } else if (e.tipo === 'curandero'){
+    ctx.fillRect(-2, -7, 4, 14); ctx.fillRect(-7, -2, 14, 4);
+  } else if (e.tipo === 'veloz'){
+    ctx.save(); ctx.rotate(e.ang || 0);
+    ctx.beginPath(); ctx.moveTo(e.radio, 0); ctx.lineTo(-e.radio*0.5, -e.radio*0.55);
+    ctx.lineTo(-e.radio*0.5, e.radio*0.55); ctx.closePath(); ctx.fill();
+    ctx.restore();
+  } else if (e.jefe){
+    // corona
+    ctx.fillStyle = '#ffd25e';
+    ctx.beginPath();
+    ctx.moveTo(-12, -e.radio-2);
+    ctx.lineTo(-12, -e.radio-12); ctx.lineTo(-6, -e.radio-5);
+    ctx.lineTo(0, -e.radio-14); ctx.lineTo(6, -e.radio-5);
+    ctx.lineTo(12, -e.radio-12); ctx.lineTo(12, -e.radio-2);
+    ctx.closePath(); ctx.fill();
+  }
+  // ojos
+  ctx.fillStyle = '#fff';
+  ctx.beginPath(); ctx.arc(-e.radio*0.32, -2, e.radio*0.2, 0, Math.PI*2);
+  ctx.arc(e.radio*0.32, -2, e.radio*0.2, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#111';
+  ctx.beginPath(); ctx.arc(-e.radio*0.32, -2, e.radio*0.09, 0, Math.PI*2);
+  ctx.arc(e.radio*0.32, -2, e.radio*0.09, 0, Math.PI*2); ctx.fill();
+  // efectos de estado
+  if (e.lentoHasta > G.tOla){
+    ctx.strokeStyle = 'rgba(120,220,255,.9)'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(0, 0, e.radio+3, 0, Math.PI*2); ctx.stroke();
+  }
+  if (e.quemaHasta > G.tOla){
+    ctx.fillStyle = 'rgba(255,120,50,.8)';
+    ctx.beginPath(); ctx.arc(rnd(-4,4), -e.radio-3, 3, 0, Math.PI*2); ctx.fill();
+  }
+  // barra de vida
+  if (e.hp < e.hpMax){
+    const w = e.radio*2.2;
+    ctx.fillStyle = 'rgba(0,0,0,.6)';
+    ctx.fillRect(-w/2, -e.radio-9, w, 4.5);
+    const frac = clamp(e.hp/e.hpMax, 0, 1);
+    ctx.fillStyle = frac > 0.5 ? '#66d97a' : (frac > 0.25 ? '#ffd25e' : '#ff6b6b');
+    ctx.fillRect(-w/2, -e.radio-9, w*frac, 4.5);
+  }
+  ctx.restore();
+}
+
+// ---------- Bucle principal ----------
+function paso(ts){
+  requestAnimationFrame(paso);
+  const dtReal = Math.min(0.05, (ts - ultimaT)/1000 || 0);
+  ultimaT = ts;
+  if (!G){ return; }
+  if (!G.pausa && !G.terminado){
+    const dt = dtReal * G.velocidad;
+    G.tOla += dt;
+    // spawns
+    if (G.olaActiva){
+      while (G.colaSpawn.length && G.colaSpawn[0].t <= G.tOla){
+        crearEnemigo(G.colaSpawn.shift().tipo);
+      }
+      if (!G.colaSpawn.length && !G.enemigos.length && !G.terminado){
+        finDeOla();
+      }
+    } else if (G.entreOlas && G.ola > 0 && !G.terminado){
+      G.cuentaAtras -= dt;
+      if (G.cuentaAtras <= 0) iniciarOla();
+    }
+    actualizarEnemigos(dt);
+    if (!G.terminado){
+      actualizarTorres(dt);
+      actualizarBalas(dt);
+    }
+    actualizarEfectos(dt);
+  }
+  dibujar();
+  actualizarBarraJefe();
+  if (torreSel && !G.pausa) refrescarBotonesMejora();
+}
+
+let ultimoRefresco = 0;
+function refrescarBotonesMejora(){
+  const ahora = performance.now();
+  if (ahora - ultimoRefresco < 300) return;
+  ultimoRefresco = ahora;
+  if (!torreSel) return;
+  const sig = TORRES[torreSel.clave].niveles[torreSel.nivel+1];
+  if (sig) $('btnMejorar').disabled = G.dinero < sig.costo;
+}
+
+function actualizarBarraJefe(){
+  const jefe = G && G.enemigos.find(e=>e.jefe);
+  const barra = $('barraJefe');
+  if (!jefe){ barra.style.display = 'none'; return; }
+  barra.style.display = 'block';
+  $('jefeNombre').textContent = '☠ ' + jefe.nombre + ' ☠';
+  $('jefeRelleno').style.width = clamp(jefe.hp/jefe.hpMax*100, 0, 100) + '%';
+}
+
+// ---------- Entrada ----------
+function coordsCanvas(ev){
+  const r = lienzo.getBoundingClientRect();
+  return {
+    x: (ev.clientX - r.left) * (ANCHO / r.width),
+    y: (ev.clientY - r.top) * (ALTO / r.height)
+  };
+}
+
+lienzo.addEventListener('pointermove', ev => {
+  const p = coordsCanvas(ev);
+  raton.x = p.x; raton.y = p.y; raton.dentro = true;
+});
+lienzo.addEventListener('pointerleave', () => { raton.dentro = false; });
+
+lienzo.addEventListener('pointerdown', ev => {
+  Sonido.activar();
+  if (!G || G.terminado) return;
+  const p = coordsCanvas(ev);
+  if (ev.button === 2) return;
+  if (colocando){
+    if (colocarTorre(colocando, p.x, p.y)){
+      if (!ev.shiftKey || G.dinero < TORRES[colocando].niveles[0].costo){
+        colocando = null;
+      }
+      actualizarUI();
+    }
+    return;
+  }
+  // seleccionar torre bajo el cursor
+  let elegida = null, mejor = 24;
+  for (const t of G.torres){
+    const d = dist(p.x, p.y, t.x, t.y);
+    if (d < mejor){ mejor = d; elegida = t; }
+  }
+  seleccionarTorre(elegida);
+});
+
+lienzo.addEventListener('contextmenu', ev => {
+  ev.preventDefault();
+  colocando = null;
+  seleccionarTorre(null);
+  actualizarUI();
+});
+
+document.addEventListener('keydown', ev => {
+  if (!G) return;
+  if (ev.code === 'Space'){ ev.preventDefault(); alternarPausa(); return; }
+  if (ev.key === 'Escape'){ colocando = null; seleccionarTorre(null); actualizarUI(); return; }
+  if (ev.key === 'f' || ev.key === 'F'){ cicloVelocidad(); return; }
+  const num = parseInt(ev.key, 10);
+  if (num >= 1 && num <= 9){
+    const claves = Object.keys(TORRES);
+    const clave = claves[num-1];
+    if (clave) alternarColocacion(clave);
+  }
+});
+
+function alternarColocacion(clave){
+  Sonido.activar();
+  if (!G || G.terminado) return;
+  colocando = (colocando === clave) ? null : clave;
+  if (colocando) seleccionarTorre(null);
+  actualizarUI();
+}
+
+function alternarPausa(){
+  if (!G || G.terminado) return;
+  G.pausa = !G.pausa;
+  $('btnPausa').textContent = G.pausa ? '▶' : '⏸';
+}
+
+function cicloVelocidad(){
+  if (!G) return;
+  G.velocidad = G.velocidad === 1 ? 2 : (G.velocidad === 2 ? 3 : 1);
+  $('btnVelocidad').textContent = '⏩ x' + G.velocidad;
+}
+
+// ---------- Botones ----------
+$('btnOla').addEventListener('click', () => {
+  Sonido.activar();
+  if (!G || G.terminado) return;
+  if (G.entreOlas && G.ola > 0){
+    ganarDinero(25 + G.ola*3); // bono por adelantar la ola
+  }
+  iniciarOla();
+});
+$('btnVelocidad').addEventListener('click', () => { Sonido.activar(); cicloVelocidad(); });
+$('btnPausa').addEventListener('click', () => { Sonido.activar(); alternarPausa(); });
+$('btnSonido').addEventListener('click', () => {
+  Sonido.activar();
+  Sonido.silencio = !Sonido.silencio;
+  $('btnSonido').textContent = Sonido.silencio ? '🔇' : '🔊';
+});
+$('btnMenu').addEventListener('click', () => {
+  if (G && !G.terminado && G.ola > 0){
+    if (!confirm('¿Abandonar la partida y volver al menú?')) return;
+    guardarRecord();
+  }
+  volverAlMenu();
+});
+$('btnMejorar').addEventListener('click', () => { if (torreSel) mejorarTorre(torreSel); });
+$('btnVender').addEventListener('click', () => { if (torreSel) venderTorre(torreSel); });
+$('objetivoBtn').addEventListener('click', () => {
+  if (!torreSel) return;
+  const i = MODOS_OBJETIVO.indexOf(torreSel.objetivo);
+  torreSel.objetivo = MODOS_OBJETIVO[(i+1) % MODOS_OBJETIVO.length];
+  actualizarPanelTorre();
+});
+$('btnReintentar').addEventListener('click', () => {
+  $('modalFin').classList.remove('visible');
+  nuevaPartida(G.mapa);
+});
+$('btnAlMenu').addEventListener('click', volverAlMenu);
+$('btnSeguir').addEventListener('click', () => {
+  $('modalFin').classList.remove('visible');
+  G.terminado = false;
+  G.infinito = true;
+  G.entreOlas = true;
+  G.cuentaAtras = 5;
+  aviso('∞ MODO INFINITO: las olas no se detendrán jamás…', true);
+  actualizarUI();
+});
+
+function volverAlMenu(){
+  $('modalFin').classList.remove('visible');
+  $('modalMenu').classList.add('visible');
+  pintarMenu();
+  G = null;
+  $('barraJefe').style.display = 'none';
+  $('panelTorre').style.display = 'none';
+  dibujar();
+}
+
+// ---------- Menú y construcción de la interfaz ----------
+function construirBarraTorres(){
+  const barra = $('barraTorres');
+  barra.innerHTML = '';
+  for (const clave in TORRES){
+    const def = TORRES[clave];
+    const carta = document.createElement('div');
+    carta.className = 'cartaTorre';
+    carta.id = 'carta_' + clave;
+    carta.title = def.desc;
+    carta.innerHTML =
+      '<span class="tecla">' + def.tecla + '</span>' +
+      '<div class="icono" style="background:' + def.color + '">' + def.icono + '</div>' +
+      '<div class="nom">' + def.nombre + '</div>' +
+      '<div class="costo">' + fmt$(def.niveles[0].costo) + '</div>';
+    carta.addEventListener('click', () => alternarColocacion(clave));
+    barra.appendChild(carta);
+  }
+}
+
+function pintarMenu(){
+  const lista = $('listaMapas');
+  lista.innerHTML = '';
+  for (const mapa of MAPAS){
+    const carta = document.createElement('div');
+    carta.className = 'cartaMapa';
+    const cv = document.createElement('canvas');
+    cv.width = 230; cv.height = 128;
+    const c = cv.getContext('2d');
+    const esc = 230/ANCHO;
+    c.fillStyle = mapa.pasto1; c.fillRect(0,0,230,128);
+    c.strokeStyle = mapa.caminoBorde; c.lineWidth = 12; c.lineCap='round'; c.lineJoin='round';
+    c.beginPath();
+    c.moveTo(mapa.puntos[0][0]*esc, mapa.puntos[0][1]*esc);
+    for (let i=1;i<mapa.puntos.length;i++) c.lineTo(mapa.puntos[i][0]*esc, mapa.puntos[i][1]*esc);
+    c.stroke();
+    c.strokeStyle = mapa.camino; c.lineWidth = 8; c.stroke();
+    const record = parseInt(localStorage.getItem('nexo_record_' + mapa.id) || '0', 10);
+    const info = document.createElement('div');
+    info.className = 'info';
+    info.innerHTML = '<b>' + mapa.nombre + '</b>' +
+      '<span class="dif ' + mapa.clase + '">' + mapa.dif + '</span>' +
+      '<span class="record">🏅 Récord: ' + (record ? 'ola ' + record : '—') + '</span>';
+    carta.appendChild(cv);
+    carta.appendChild(info);
+    carta.addEventListener('click', () => {
+      Sonido.activar();
+      $('modalMenu').classList.remove('visible');
+      nuevaPartida(mapa);
+    });
+    lista.appendChild(carta);
+  }
+}
+
+// ---------- Arranque ----------
+construirBarraTorres();
+pintarMenu();
+requestAnimationFrame(ts => { ultimaT = ts; requestAnimationFrame(paso); });
+</script>
+</body>
+</html>
