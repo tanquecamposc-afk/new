@@ -52,8 +52,11 @@ Antes de jugar eliges **hasta 5 unidades** de entre las 13 disponibles. Tu escua
 | Desierto Carmesí | Medio (+15% vida enemiga) |
 | Glaciar Nocturno | Difícil (+30% vida enemiga) |
 | Cráter Volcánico | Extremo (+45% vida enemiga) |
+| Abismo Gemelo | Pesadilla (+60% vida enemiga, **dos rutas de invasión simultáneas**) |
 
-El récord de olas de cada mapa se guarda en tu navegador.
+En los mapas de varias rutas los enemigos se reparten entre los caminos, y el Cuartel y el Trampero operan sobre la ruta que tengan más cerca.
+
+El récord de olas de cada mapa se guarda en tu navegador, junto a tus **estadísticas históricas** (partidas, victorias, bajas y olas superadas), visibles en el menú principal.
 
 ## 🗼 Torres (9 tipos, 5 niveles cada una)
 
