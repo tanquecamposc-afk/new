@@ -36,6 +36,10 @@ Opcionales y combinables desde el menú; endurecen la partida a cambio de multip
 
 Cada **victoria** desbloquea la skin dorada de una unidad aleatoria de tu escuadrón. Son puramente cosméticas (uniforme dorado y destellos) y se activan o desactivan con el botón ✨ de cada carta del escuadrón.
 
+## 🎲 Desafío del día
+
+Cada día se genera un reto fijo a partir de la fecha: mapa, modo, modificadores y **escuadrón obligatorio de 5 unidades** iguales para todos. Otorga **XP ×1.5**, guarda tu mejor ola del día y marca ✔ si lo superas. No requiere nivel: es la vía rápida para probar los modos avanzados.
+
 ## 🎖 Escuadrón (loadout)
 
 Antes de jugar eliges **hasta 5 unidades** de entre las 13 disponibles. Tu escuadrón se guarda en el navegador y se controla en partida con las teclas **1–5**.
@@ -65,8 +69,9 @@ El récord de olas de cada mapa se guarda en tu navegador.
 | 🌾 Granja | $300 | Genera dinero al final de cada ola |
 | 📣 Comandante | $850 | Aura que acelera la cadencia; habilidad activa **¡A la carga!** (+30% extra durante 8 s, recarga 45 s) |
 | 🎧 DJ | $750 | Aura que abarata las mejoras y amplía el alcance de torres cercanas |
+| 🪤 Trampero | $650 | Siembra trampas de pinchos en el camino: dañan, frenan y pillan a los ocultos |
 
-(La tabla omite Escopetero, Demoledor, Cohetero y Cuartel — 13 unidades en total.)
+(La tabla omite Escopetero, Demoledor, Cohetero y Cuartel — 14 unidades en total.)
 
 Cada torre puede **mejorarse** (⬆, con descuento si hay un DJ cerca), **venderse** (70% de reembolso) y cambiar su **modo de objetivo**: primero, último, más fuerte, más débil o más cercano.
 

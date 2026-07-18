@@ -181,6 +181,14 @@ canvas#lienzo{display:block; width:100%; height:auto; background:#0a0f18; touch-
   position:absolute; top:2px; left:4px; font-size:10px; font-weight:800; color:var(--verde);
   background:rgba(0,0,0,.45); border-radius:4px; padding:0 4px;
 }
+#cartaDiario{
+  display:flex; gap:14px; align-items:center; justify-content:center; flex-wrap:wrap;
+  border:2px solid var(--morado); border-radius:12px; padding:10px 16px; margin-bottom:16px;
+  background:rgba(177,140,255,.08);
+}
+#cartaDiario .info{text-align:left; font-size:12.5px; color:var(--tenue); line-height:1.5;}
+#cartaDiario .info b{color:var(--texto); font-size:14px;}
+#cartaDiario .hecho{color:var(--verde); font-weight:800;}
 #listaMapas{display:flex; gap:14px; justify-content:center; flex-wrap:wrap; margin-bottom:18px;}
 .cartaMapa{
   width:200px; border:2px solid var(--borde); border-radius:13px; overflow:hidden; cursor:pointer;
@@ -271,6 +279,7 @@ canvas#lienzo{display:block; width:100%; height:auto; background:#0a0f18; touch-
         </div>
         <div id="listaModos"></div>
         <div id="listaMods"></div>
+        <div id="cartaDiario"></div>
         <div id="listaMapas"></div>
         <div class="tituloSec">🎖 Tu escuadrón — elige hasta 5 unidades (teclas 1–5)</div>
         <div id="listaLoadout"></div>
@@ -609,6 +618,16 @@ const TORRES = {
       {costo:2600, nom:'Fortaleza',  intervalo:6,   hpU:300, danoU:16, cadU:0.35, maxU:3},
       {costo:5200, nom:'Ciudadela',  intervalo:5,   hpU:520, danoU:28, cadU:0.3,  maxU:4}
     ]},
+  trampero:{
+    nombre:'Trampero', color:'#8a7444', tecla:'T', arma:'pistola',
+    desc:'Siembra trampas de pinchos en el camino: dañan, frenan y pillan a los ocultos.',
+    niveles:[
+      {costo:650,  nom:'Trampero',   dano:18,  lento:0.6, durLento:1.2, maxTrampas:2, intervalo:4,   alcance:120},
+      {costo:500,  nom:'Cazador',    dano:30,  lento:0.55,durLento:1.5, maxTrampas:3, intervalo:3.6, alcance:132},
+      {costo:1000, nom:'Furtivo',    dano:52,  lento:0.5, durLento:1.8, maxTrampas:3, intervalo:3.2, alcance:145},
+      {costo:2000, nom:'Depredador', dano:90,  lento:0.45,durLento:2.2, maxTrampas:4, intervalo:2.8, alcance:158},
+      {costo:4000, nom:'Pesadilla',  dano:160, lento:0.4, durLento:2.6, maxTrampas:5, intervalo:2.4, alcance:172}
+    ]},
   granja:{
     nombre:'Granja', color:'#b3922f', tecla:'Q', arma:'edificio',
     desc:'No ataca: genera dinero al final de cada ola.',
@@ -733,7 +752,9 @@ let ultimaT = 0;
 const avisados = new Set();
 
 // ---------- Creación de partida ----------
-function nuevaPartida(mapa){
+// opciones: {modo, mods, loadout, diario} — usadas por el Desafío del día
+function nuevaPartida(mapa, opciones){
+  opciones = opciones || {};
   const segs = [];
   let total = 0;
   for (let i=0;i<mapa.puntos.length-1;i++){
@@ -742,14 +763,16 @@ function nuevaPartida(mapa){
     segs.push({ax,ay,bx,by,l,acum:total});
     total += l;
   }
-  const modo = modoSel;
-  const mods = new Set(modsSel);
+  const modo = opciones.modo || modoSel;
+  const mods = new Set(opciones.mods || modsSel);
   G = {
     mapa, modo, mods, olaFinal: modo.olas, segs, largoCamino: total,
+    loadout: (opciones.loadout || loadout).slice(),
+    diario: opciones.diario || null,
     vidas: modo.vidas,
     dinero: Math.round(modo.dinero * (mods.has('espartano') ? 0.6 : 1)),
     ola: 0,
-    enemigos: [], torres: [], unidades: [], balas: [], particulas: [], textos: [], rayos: [],
+    enemigos: [], torres: [], unidades: [], balas: [], particulas: [], textos: [], rayos: [], trampas: [],
     colaSpawn: [], tOla: 0, olaActiva: false, entreOlas: true, cuentaAtras: 0,
     velocidad: 1, pausa: false, terminado: false, infinito: false,
     bajas: 0, dineroGanado: 0, sacudida: 0, tGlobal: 0,
@@ -757,18 +780,46 @@ function nuevaPartida(mapa){
   };
   avisados.clear();
   torreSel = null; colocando = null;
-  construirBarraTorres(); // la hotbar refleja el escuadrón elegido
+  construirBarraTorres(G.loadout); // la hotbar refleja el escuadrón de esta partida
   prerenderizarFondo();
   actualizarUI();
   actualizarProxima();
   $('habilidades').style.display = 'flex';
   $('btnOla').style.display = '';
   $('btnOla').textContent = '▶ Iniciar ola';
+  if (G.diario) aviso('🎲 Desafío del día ' + G.diario + ' — XP ×1.5', true);
   if (G.mods.size){
     const nombres = MODIFICADORES.filter(m => G.mods.has(m.id)).map(m => m.icono + ' ' + m.nombre);
     aviso('Modificadores activos: ' + nombres.join(' · ') +
       ' — XP ×' + multXpMods(G.mods).toFixed(2), true);
   }
+}
+
+// ---------- Desafío del día ----------
+function semillaDeTexto(s){
+  let h = 0;
+  for (const ch of s) h = (h*31 + ch.charCodeAt(0)) | 0;
+  return h;
+}
+function desafioDeHoy(){
+  const d = new Date();
+  const clave = d.getFullYear() + '-' +
+    String(d.getMonth()+1).padStart(2,'0') + '-' +
+    String(d.getDate()).padStart(2,'0');
+  const rng = rngSemilla(semillaDeTexto(clave));
+  const mapa = MAPAS[Math.floor(rng()*MAPAS.length)];
+  const modo = MODOS[Math.floor(rng()*MODOS.length)];
+  const mods = new Set();
+  for (const m of MODIFICADORES) if (rng() < 0.4) mods.add(m.id);
+  // escuadrón fijo del día: garantiza al menos una torre de ataque
+  const ataque = ['recluta','artillero','franco','escopetero','tesla','demoledor','cohetero','piromante'];
+  const eq = [ataque[Math.floor(rng()*ataque.length)]];
+  const resto = Object.keys(TORRES).filter(c => c !== eq[0]);
+  while (eq.length < MAX_LOADOUT){
+    const i = Math.floor(rng()*resto.length);
+    eq.push(resto.splice(i,1)[0]);
+  }
+  return {clave, mapa, modo, mods, loadout: eq};
 }
 
 function multHP(n){
@@ -1167,6 +1218,28 @@ function actualizarTorres(dt){
     t.anim = (t.anim || 0) + dt;
     if (t.clave === 'granja' || t.clave === 'comandante' || t.clave === 'dj') continue;
     if (ahora < (t.aturdidaHasta || 0)) continue;
+    if (t.clave === 'trampero'){
+      t.enfriamiento -= dt;
+      if (t.enfriamiento <= 0){
+        let mias = 0;
+        for (const tr of G.trampas) if (tr.dueño === t) mias++;
+        if (mias < n.maxTrampas){
+          // busca un punto del camino dentro del alcance para la nueva trampa
+          for (let intento=0; intento<8; intento++){
+            const d = clamp(t.dCamino + rnd(-n.alcance*1.3, n.alcance*1.3), 8, G.largoCamino-30);
+            const p = posEnCamino(d);
+            if (dist(t.x,t.y,p.x,p.y) <= n.alcance){
+              G.trampas.push({x:p.x, y:p.y, d, dueño:t, anim:rnd(0,6)});
+              t.ang = Math.atan2(p.y-t.y, p.x-t.x);
+              t.enfriamiento = n.intervalo;
+              Sonido.fx('tropa');
+              break;
+            }
+          }
+        }
+      }
+      continue;
+    }
     if (t.clave === 'cuartel'){
       const vivas = G.unidades.filter(u=>u.cuartel === t).length;
       t.enfriamiento -= dt;
@@ -1358,6 +1431,26 @@ function actualizarUnidades(dt){
   }
 }
 
+// ---------- Trampas del Trampero ----------
+function actualizarTrampas(){
+  for (let i=G.trampas.length-1; i>=0; i--){
+    const tr = G.trampas[i];
+    for (const e of G.enemigos){
+      if (e.aereo) continue; // las trampas son terrestres, pero sí pillan ocultos
+      if (Math.abs(e.d - tr.d) < e.radio + 6){
+        const n = nivelDe(tr.dueño);
+        e.lentoMult = Math.min(e.lentoHasta > G.tGlobal ? e.lentoMult : 1, n.lento);
+        e.lentoHasta = G.tGlobal + n.durLento;
+        for (let k=0;k<7;k++) particula(tr.x, tr.y, k%2 ? '#c9c2b0' : '#8a7444', rnd(2,3.5), rnd(0.3,0.6));
+        Sonido.fx('tropa');
+        dañarEnemigo(e, n.dano);
+        G.trampas.splice(i,1);
+        break;
+      }
+    }
+  }
+}
+
 // ---------- Proyectiles ----------
 function actualizarBalas(dt){
   for (let i=G.balas.length-1; i>=0; i--){
@@ -1491,7 +1584,7 @@ function colocarTorre(clave, x, y){
     objetivo:'primero', fogonazo:0, anim:rnd(0,5), aturdidaHasta:0,
     skin: skinsEnUso.has(clave) ? 'dorada' : 'base' // cosmética: no altera estadísticas
   };
-  if (clave === 'cuartel') t.dCamino = dMasCercano(x,y);
+  if (clave === 'cuartel' || clave === 'trampero') t.dCamino = dMasCercano(x,y);
   G.torres.push(t);
   Sonido.fx('colocar');
   for (let k=0;k<8;k++) particula(x, y, def.color, 3, 0.4);
@@ -1516,6 +1609,7 @@ function venderTorre(t){
   const reembolso = Math.floor(costoTotal(t)*0.7);
   G.torres.splice(i,1);
   G.unidades = G.unidades.filter(u=>u.cuartel !== t);
+  G.trampas = G.trampas.filter(tr=>tr.dueño !== t);
   ganarDinero(reembolso);
   texto(t.x, t.y-20, '+' + fmt$(reembolso), '#ffd25e');
   Sonido.fx('vender');
@@ -1533,22 +1627,34 @@ function claveRecord(mapa, modo){
   // el modo normal conserva los récords antiguos (clave sin sufijo)
   return 'nexo_record_' + mapa.id + (modo.id === 'normal' ? '' : '_' + modo.id);
 }
-function guardarRecord(){
+function guardarRecord(gano){
+  const olas = G.olaActiva ? G.ola-1 : G.ola;
+  if (G.diario){
+    // el desafío diario tiene registro propio y no toca los récords de mapa
+    const k = 'nexo_diario_' + G.diario;
+    let previo = null;
+    try{ previo = JSON.parse(localStorage.getItem(k) || 'null'); }catch(e){}
+    previo = previo || {olas:0, gano:false};
+    localStorage.setItem(k, JSON.stringify({
+      olas: Math.max(previo.olas, olas),
+      gano: previo.gano || !!gano
+    }));
+    return;
+  }
   const clave = claveRecord(G.mapa, G.modo);
   const previo = parseInt(localStorage.getItem(clave) || '0', 10);
-  const olas = G.olaActiva ? G.ola-1 : G.ola;
   if (olas > previo) localStorage.setItem(clave, String(olas));
 }
 function derrota(){
   if (G.terminado) return;
   G.terminado = true;
-  guardarRecord();
+  guardarRecord(false);
   Sonido.fx('derrota');
   mostrarFin(false);
 }
 function victoria(){
   G.terminado = true;
-  guardarRecord();
+  guardarRecord(true);
   Sonido.fx('victoria');
   mostrarFin(true);
 }
@@ -1567,7 +1673,8 @@ function mostrarFin(gano){
   $('finDinero').textContent = fmt$(G.dineroGanado);
   // XP: por ola superada según el modo, más bono de victoria.
   // En modo infinito solo se otorga la diferencia respecto a lo ya entregado.
-  const xpPartida = Math.round(olasHechas * G.modo.xpOla * multXpMods(G.mods)) + (gano ? 250 : 0);
+  const xpPartida = Math.round(olasHechas * G.modo.xpOla * multXpMods(G.mods) *
+    (G.diario ? 1.5 : 1)) + (gano ? 250 : 0);
   const xpNueva = Math.max(0, xpPartida - (G.xpOtorgada || 0));
   G.xpOtorgada = (G.xpOtorgada || 0) + xpNueva;
   const nivelAntes = nivelJugador();
@@ -1580,10 +1687,11 @@ function mostrarFin(gano){
     const desbloqueo = MODOS.find(m => m.nivelReq > nivelAntes && m.nivelReq <= nivelDespues);
     if (desbloqueo) extra.push('🔓 Modo ' + desbloqueo.nombre + ' desbloqueado');
   }
+  if (G.diario && gano) extra.push('🎲 ¡Desafío del día superado!');
   // cada victoria desbloquea la skin dorada de una unidad del escuadrón
   if (gano && !G.skinOtorgada){
     G.skinOtorgada = true;
-    const candidatas = loadout.filter(c => !skinsDoradas.has(c));
+    const candidatas = G.loadout.filter(c => !skinsDoradas.has(c));
     if (candidatas.length){
       const elegida = candidatas[Math.floor(Math.random()*candidatas.length)];
       skinsDoradas.add(elegida);
@@ -1636,12 +1744,17 @@ function actualizarPanelTorre(){
   $('ptNivel').textContent = 'Nivel ' + (t.nivel+1) + ' de ' + def.niveles.length +
     (extras.length ? ' · ' + extras.join(' · ') : '');
   const filas = [];
-  if (n.dano !== undefined){
+  if (n.dano !== undefined && n.cad !== undefined){
     filas.push(['Daño', n.dano]);
     filas.push(['Cadencia', n.cad.toFixed(2) + ' s']);
     filas.push(['DPS', (n.dano/n.cad).toFixed(1)]);
   }
   if (def.aceleracion) filas.push(['Aceleración', def.aceleracion + ' s']);
+  if (n.maxTrampas){
+    filas.push(['Daño trampa', n.dano]);
+    filas.push(['Trampas máx.', n.maxTrampas]);
+    filas.push(['Nueva trampa', 'cada ' + n.intervalo + ' s']);
+  }
   if (n.alcance) filas.push(['Alcance', n.alcance]);
   if (n.area) filas.push(['Área', n.area]);
   if (n.perdigones) filas.push(['Perdigones', n.perdigones]);
@@ -1674,6 +1787,7 @@ function actualizarPanelTorre(){
     if (sig.descuento) cambios.push('desc. ' + Math.round(n.descuento*100) + '%→' + Math.round(sig.descuento*100) + '%');
     if (sig.bonoAlcance) cambios.push('bono alcance ' + Math.round(n.bonoAlcance*100) + '%→' + Math.round(sig.bonoAlcance*100) + '%');
     if (sig.maxU) cambios.push('tropas: vida ' + n.hpU + '→' + sig.hpU + ', daño ' + n.danoU + '→' + sig.danoU);
+    if (sig.maxTrampas && sig.maxTrampas !== n.maxTrampas) cambios.push('trampas ' + n.maxTrampas + '→' + sig.maxTrampas);
     if (sig.detecta && !n.detecta) cambios.push('👁 ¡detección!');
     if (sig.aereo && !n.aereo) cambios.push('✈ ¡antiaéreo!');
     $('mejoraInfo').textContent = cambios.join(' · ');
@@ -1683,7 +1797,7 @@ function actualizarPanelTorre(){
     $('mejoraInfo').textContent = '';
   }
   $('btnVender').textContent = '💸 Vender — ' + fmt$(Math.floor(costoTotal(t)*0.7));
-  const sinObjetivo = ['granja','comandante','congelador','cuartel','dj'];
+  const sinObjetivo = ['granja','comandante','congelador','cuartel','dj','trampero'];
   $('objetivoBtn').style.display = sinObjetivo.includes(t.clave) ? 'none' : '';
   $('objetivoBtn').textContent = '🎯 ' + t.objetivo.charAt(0).toUpperCase() + t.objetivo.slice(1);
   $('btnHabilidad').style.display = def.habilidad ? '' : 'none';
@@ -2387,6 +2501,27 @@ function dibujar(){
     }
   }
 
+  // trampas de pinchos sobre el camino
+  for (const tr of G.trampas){
+    ctx.save();
+    ctx.translate(tr.x, tr.y);
+    ctx.fillStyle = 'rgba(0,0,0,.3)';
+    ctx.beginPath(); ctx.ellipse(0, 2, 9, 4.5, 0, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#5a4a2a';
+    ctx.beginPath(); ctx.arc(0, 0, 7, 0, Math.PI*2); ctx.fill();
+    ctx.strokeStyle = '#3d3220'; ctx.lineWidth = 1.4; ctx.stroke();
+    ctx.fillStyle = '#d5cdb8';
+    for (let i=0;i<5;i++){
+      const a = tr.anim + i*Math.PI*2/5;
+      ctx.beginPath();
+      ctx.moveTo(Math.cos(a)*6, Math.sin(a)*6);
+      ctx.lineTo(Math.cos(a)*2 - Math.sin(a)*1.6, Math.sin(a)*2 + Math.cos(a)*1.6);
+      ctx.lineTo(Math.cos(a)*2 + Math.sin(a)*1.6, Math.sin(a)*2 - Math.cos(a)*1.6);
+      ctx.closePath(); ctx.fill();
+    }
+    ctx.restore();
+  }
+
   // torres
   for (const t of G.torres) dibujarTorre(t);
 
@@ -2629,6 +2764,7 @@ function paso(ts){
     if (!G.terminado){
       actualizarTorres(dt);
       actualizarUnidades(dt);
+      actualizarTrampas();
       actualizarBalas(dt);
       actualizarHabilidades(dt);
     }
@@ -2722,7 +2858,7 @@ document.addEventListener('keydown', ev => {
   if (k === 'a'){ armarBomba(); return; }
   if (k === 's'){ usarSuministros(); refrescarHabilidades(); return; }
   if (k >= '1' && k <= '5'){
-    const clave = loadout[+k - 1];
+    const clave = (G && G.loadout ? G.loadout : loadout)[+k - 1];
     if (clave) alternarColocacion(clave);
   }
 });
@@ -2783,7 +2919,7 @@ $('btnMusica').addEventListener('click', () => {
 $('btnMenu').addEventListener('click', () => {
   if (G && !G.terminado && G.ola > 0){
     if (!confirm('¿Abandonar la partida y volver al menú?')) return;
-    guardarRecord();
+    guardarRecord(false);
   }
   volverAlMenu();
 });
@@ -2802,7 +2938,7 @@ $('habDinero').addEventListener('click', () => {
 });
 $('btnReintentar').addEventListener('click', () => {
   $('modalFin').classList.remove('visible');
-  nuevaPartida(G.mapa);
+  nuevaPartida(G.mapa, {modo:G.modo, mods:G.mods, loadout:G.loadout, diario:G.diario});
 });
 $('btnAlMenu').addEventListener('click', volverAlMenu);
 $('btnSeguir').addEventListener('click', () => {
@@ -2829,10 +2965,10 @@ function volverAlMenu(){
 }
 
 // ---------- Construcción de la interfaz ----------
-function construirBarraTorres(){
+function construirBarraTorres(lista){
   const barra = $('barraTorres');
   barra.innerHTML = '';
-  loadout.forEach((clave, idx) => {
+  (lista || loadout).forEach((clave, idx) => {
     const def = TORRES[clave];
     const carta = document.createElement('div');
     carta.className = 'cartaTorre';
@@ -2962,10 +3098,38 @@ function pintarMods(){
   }
 }
 
+function pintarDiario(){
+  const d = desafioDeHoy();
+  const cont = $('cartaDiario');
+  cont.innerHTML = '';
+  let reg = null;
+  try{ reg = JSON.parse(localStorage.getItem('nexo_diario_' + d.clave) || 'null'); }catch(e){}
+  const mods = MODIFICADORES.filter(m => d.mods.has(m.id))
+    .map(m => m.icono + ' ' + m.nombre).join(' · ') || 'sin modificadores';
+  const estado = reg && reg.gano ? ' <span class="hecho">✔ superado</span>'
+    : (reg && reg.olas ? ' · mejor: ola ' + reg.olas : '');
+  const info = document.createElement('div');
+  info.className = 'info';
+  info.innerHTML = '<b>🎲 Desafío del día</b> · ' + d.clave + estado +
+    '<br>' + d.mapa.nombre + ' · modo ' + d.modo.nombre + ' · ' + mods +
+    '<br>Escuadrón fijo: ' + d.loadout.map(c => TORRES[c].nombre).join(', ') + ' · XP ×1.5';
+  cont.appendChild(info);
+  const btn = document.createElement('button');
+  btn.className = 'oro';
+  btn.textContent = '▶ Jugar';
+  btn.addEventListener('click', () => {
+    Sonido.activar();
+    $('modalMenu').classList.remove('visible');
+    nuevaPartida(d.mapa, {modo:d.modo, mods:d.mods, loadout:d.loadout, diario:d.clave});
+  });
+  cont.appendChild(btn);
+}
+
 function pintarMenu(){
   pintarNivel();
   pintarModos();
   pintarMods();
+  pintarDiario();
   pintarLoadout();
   const lista = $('listaMapas');
   lista.innerHTML = '';
