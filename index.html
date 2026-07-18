@@ -127,7 +127,24 @@ canvas#lienzo{display:block; width:100%; height:auto; background:#0a0f18; touch-
 .tarjetaModal h1{font-size:34px; letter-spacing:2px; margin-bottom:2px;}
 .tarjetaModal h1 .nexo{color:var(--azul);}
 .tarjetaModal .sub{color:var(--tenue); margin-bottom:18px;}
+#nivelJug{display:flex; align-items:center; gap:10px; justify-content:center; margin-bottom:14px; font-size:13px; font-weight:800;}
+#nivelJug .tubo{width:210px; height:10px; border-radius:6px; background:rgba(0,0,0,.5); border:1px solid var(--borde); overflow:hidden;}
+#nivelJug .relleno{height:100%; width:0; background:linear-gradient(90deg,#5cc8ff,#6fe08b); transition:width .3s;}
+#nivelJug #xpTxt{color:var(--tenue); font-weight:600; font-size:12px;}
 #listaModos{display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin-bottom:16px;}
+.btnModo.bloqueado{opacity:.55; filter:grayscale(.4);}
+.btnModo.bloqueado:hover{transform:none;}
+.btnModo.negado{animation:sacudir .3s;}
+@keyframes sacudir{
+  0%,100%{transform:translateX(0);} 25%{transform:translateX(-5px);} 75%{transform:translateX(5px);}
+}
+.cartaEquipo .skinBtn{
+  position:absolute; top:1px; right:3px; font-size:12px; cursor:pointer; opacity:.35;
+  transition:opacity .12s, transform .12s;
+}
+.cartaEquipo .skinBtn:hover{transform:scale(1.25); opacity:1;}
+.cartaEquipo .skinBtn.on{opacity:1;}
+.cartaEquipo.doradaOn{border-color:var(--oro); box-shadow:0 0 9px rgba(255,210,94,.4);}
 .btnModo{
   min-width:170px; text-align:center; border:2px solid var(--borde); border-radius:11px;
   background:linear-gradient(180deg,#2a3652,#20293e); padding:9px 14px; cursor:pointer;
@@ -237,6 +254,11 @@ canvas#lienzo{display:block; width:100%; height:auto; background:#0a0f18; touch-
       <div class="tarjetaModal">
         <h1><span class="nexo">NEXO</span> TOWER DEFENSE</h1>
         <div class="sub">Elige modo, mapa y escuadrón. Mejora a tus soldados y detén el enjambre.</div>
+        <div id="nivelJug">
+          <span id="nivelTxt">⭐ Nivel 1</span>
+          <div class="tubo"><div class="relleno" id="nivelRelleno"></div></div>
+          <span id="xpTxt">0/120 XP</span>
+        </div>
         <div id="listaModos"></div>
         <div id="listaMapas"></div>
         <div class="tituloSec">🎖 Tu escuadrón — elige hasta 5 unidades (teclas 1–5)</div>
@@ -266,7 +288,9 @@ canvas#lienzo{display:block; width:100%; height:auto; background:#0a0f18; touch-
           <div class="caja"><div class="num" id="finOlas">0</div><div class="eti">olas superadas</div></div>
           <div class="caja"><div class="num" id="finBajas">0</div><div class="eti">enemigos eliminados</div></div>
           <div class="caja"><div class="num" id="finDinero">0</div><div class="eti">dinero ganado</div></div>
+          <div class="caja"><div class="num" id="finXP">0</div><div class="eti">XP ganada</div></div>
         </div>
+        <div class="sub" id="extraFin" style="color:var(--oro); font-weight:700; min-height:0"></div>
         <div class="filaBotones">
           <button id="btnSeguir" class="oro" style="display:none">∞ Modo infinito</button>
           <button id="btnReintentar" class="primario">↻ Jugar de nuevo</button>
@@ -485,8 +509,8 @@ const TORRES = {
       {costo:3100, nom:'Trueno',     dano:34, cad:0.72, alcance:148, perdigones:8, detecta:true}
     ]},
   artillero:{
-    nombre:'Artillero', color:'#2f7fb5', tecla:'3', arma:'minigun',
-    desc:'Ametralladora de altísima cadencia.',
+    nombre:'Artillero', color:'#2f7fb5', tecla:'3', arma:'minigun', aceleracion:2.2,
+    desc:'Ametralladora de altísima cadencia. El cañón tarda unos segundos en acelerar.',
     niveles:[
       {costo:600,  nom:'Artillero',   dano:2, cad:0.12, alcance:112},
       {costo:420,  nom:'Doble tambor',dano:3, cad:0.1,  alcance:120, aereo:true},
@@ -601,13 +625,39 @@ const MODOS_OBJETIVO = ['primero','último','fuerte','débil','cercano'];
 // ---------- Modos de dificultad ----------
 const MODOS = [
   {id:'normal',  nombre:'Normal',  olas:40, multHP:1,    vidas:150, dinero:550, clase:'facil',
-   desc:'La experiencia clásica: 40 olas y el Coloso al final.'},
+   xpOla:10, nivelReq:1, desc:'La experiencia clásica: 40 olas y el Coloso al final.'},
   {id:'fundido', nombre:'Fundido', olas:40, multHP:1.45, vidas:125, dinero:600, clase:'medio', fuego:true,
-   desc:'Jefes de fuego: inmunes a quemaduras y resistentes al hielo.'},
+   xpOla:16, nivelReq:3, desc:'Jefes de fuego: inmunes a quemaduras y resistentes al hielo.'},
   {id:'caido',   nombre:'Caído',   olas:50, multHP:2.1,  vidas:100, dinero:700, clase:'dificil', elite:true,
-   desc:'50 olas de élite con muchísima más vida. Solo para veteranos.'}
+   xpOla:22, nivelReq:7, desc:'50 olas de élite con muchísima más vida. Solo para veteranos.'}
 ];
 let modoSel = MODOS[0];
+
+// ---------- Nivel de jugador (XP) ----------
+function xpTotal(){ return parseInt(localStorage.getItem('nexo_xp') || '0', 10); }
+function datosNivel(xp){
+  // cada nivel cuesta 120 + 40 por nivel previo
+  let nivel = 1, resto = xp, coste = 120;
+  while (resto >= coste){ resto -= coste; nivel++; coste = 120 + (nivel-1)*40; }
+  return {nivel, resto, coste};
+}
+function nivelJugador(){ return datosNivel(xpTotal()).nivel; }
+
+// ---------- Skins doradas (cosméticas: solo cambian lo visual) ----------
+const ORO_SKIN = '#d4a017';
+function cargarSet(clave){
+  try{
+    const g = JSON.parse(localStorage.getItem(clave) || '[]');
+    if (Array.isArray(g)) return new Set(g.filter(c => TORRES[c]));
+  }catch(e){}
+  return new Set();
+}
+const skinsDoradas = cargarSet('nexo_skins');   // desbloqueadas
+const skinsEnUso  = cargarSet('nexo_skins_on'); // activadas por el jugador
+function guardarSkins(){
+  localStorage.setItem('nexo_skins', JSON.stringify([...skinsDoradas]));
+  localStorage.setItem('nexo_skins_on', JSON.stringify([...skinsEnUso]));
+}
 
 // ---------- Loadout (escuadrón de 5 ranuras) ----------
 const MAX_LOADOUT = 5;
@@ -1054,8 +1104,14 @@ function actualizarTorres(dt){
       while (da < -Math.PI) da += Math.PI*2;
       t.ang += da * Math.min(1, dt*12);
     }
+    // aceleración de cañón: gana "calor" mientras tiene objetivo y lo pierde al descansar
+    const acc = TORRES[t.clave].aceleracion;
+    if (acc !== undefined){
+      t.calor = obj ? Math.min(1, (t.calor||0) + dt/acc)
+                    : Math.max(0, (t.calor||0) - dt*1.8);
+    }
     if (t.enfriamiento > 0 || !obj) continue;
-    t.enfriamiento = n.cad * auraCadencia(t);
+    t.enfriamiento = n.cad * auraCadencia(t) * (acc !== undefined ? 2.4 - 1.4*t.calor : 1);
     t.fogonazo = 0.07;
     disparar(t, n, obj);
   }
@@ -1322,7 +1378,8 @@ function colocarTorre(clave, x, y){
   G.dinero -= costo;
   const t = {
     clave, x, y, nivel:0, ang:-Math.PI/2, enfriamiento:0,
-    objetivo:'primero', fogonazo:0, anim:rnd(0,5), aturdidaHasta:0
+    objetivo:'primero', fogonazo:0, anim:rnd(0,5), aturdidaHasta:0,
+    skin: skinsEnUso.has(clave) ? 'dorada' : 'base' // cosmética: no altera estadísticas
   };
   if (clave === 'cuartel') t.dCamino = dMasCercano(x,y);
   G.torres.push(t);
@@ -1394,9 +1451,38 @@ function mostrarFin(gano){
       ' y destruido al Coloso del Vacío en ' + G.mapa.nombre + '.'
     : 'La base ha caído en la ola ' + G.ola + ' de ' + G.mapa.nombre +
       ' (modo ' + G.modo.nombre + ').';
-  $('finOlas').textContent = G.olaActiva ? G.ola-1 : G.ola;
+  const olasHechas = G.olaActiva ? G.ola-1 : G.ola;
+  $('finOlas').textContent = olasHechas;
   $('finBajas').textContent = G.bajas.toLocaleString('es-PE');
   $('finDinero').textContent = fmt$(G.dineroGanado);
+  // XP: por ola superada según el modo, más bono de victoria.
+  // En modo infinito solo se otorga la diferencia respecto a lo ya entregado.
+  const xpPartida = olasHechas * G.modo.xpOla + (gano ? 250 : 0);
+  const xpNueva = Math.max(0, xpPartida - (G.xpOtorgada || 0));
+  G.xpOtorgada = (G.xpOtorgada || 0) + xpNueva;
+  const nivelAntes = nivelJugador();
+  localStorage.setItem('nexo_xp', String(xpTotal() + xpNueva));
+  const nivelDespues = nivelJugador();
+  $('finXP').textContent = '+' + xpNueva;
+  const extra = [];
+  if (nivelDespues > nivelAntes){
+    extra.push('⭐ ¡Has alcanzado el nivel ' + nivelDespues + '!');
+    const desbloqueo = MODOS.find(m => m.nivelReq > nivelAntes && m.nivelReq <= nivelDespues);
+    if (desbloqueo) extra.push('🔓 Modo ' + desbloqueo.nombre + ' desbloqueado');
+  }
+  // cada victoria desbloquea la skin dorada de una unidad del escuadrón
+  if (gano && !G.skinOtorgada){
+    G.skinOtorgada = true;
+    const candidatas = loadout.filter(c => !skinsDoradas.has(c));
+    if (candidatas.length){
+      const elegida = candidatas[Math.floor(Math.random()*candidatas.length)];
+      skinsDoradas.add(elegida);
+      skinsEnUso.add(elegida);
+      guardarSkins();
+      extra.push('✨ ¡Skin DORADA de ' + TORRES[elegida].nombre + ' desbloqueada!');
+    }
+  }
+  $('extraFin').innerHTML = extra.join('<br>');
   $('btnSeguir').style.display = gano ? '' : 'none';
   $('modalFin').classList.add('visible');
 }
@@ -1432,7 +1518,7 @@ function actualizarPanelTorre(){
   p.style.display = 'block';
   const rc = $('ptRetrato').getContext('2d');
   rc.clearRect(0,0,40,40);
-  dibujarRetrato(rc, t.clave, t.nivel, 20, 24, 1.15);
+  dibujarRetrato(rc, t.clave, t.nivel, 20, 24, 1.15, t.skin === 'dorada');
   $('ptNombre').textContent = n.nom;
   const extras = [];
   if (n.detecta) extras.push('👁 detección');
@@ -1445,6 +1531,7 @@ function actualizarPanelTorre(){
     filas.push(['Cadencia', n.cad.toFixed(2) + ' s']);
     filas.push(['DPS', (n.dano/n.cad).toFixed(1)]);
   }
+  if (def.aceleracion) filas.push(['Aceleración', def.aceleracion + ' s']);
   if (n.alcance) filas.push(['Alcance', n.alcance]);
   if (n.area) filas.push(['Área', n.area]);
   if (n.perdigones) filas.push(['Perdigones', n.perdigones]);
@@ -1888,13 +1975,30 @@ function dibujarEdificio(c, clave, x, y, nivel, animT){
 }
 
 // Retrato para las cartas y el panel
-function dibujarRetrato(c, clave, nivel, x, y, esc){
+function dibujarRetrato(c, clave, nivel, x, y, esc, dorada){
   const def = TORRES[clave];
   if (def.arma === 'edificio'){
     dibujarEdificio(c, clave, x, y+2, nivel, 1.2);
+    if (dorada) dibujarDestelloOro(c, x, y-16, 5);
   } else {
-    dibujarSoldado(c, x, y, -Math.PI/2.4, esc, def.color, CASCOS_NIVEL[nivel], def.arma, 0, false, 0);
+    dibujarSoldado(c, x, y, -Math.PI/2.4, esc, dorada ? ORO_SKIN : def.color,
+      CASCOS_NIVEL[nivel], def.arma, 0, false, 0);
   }
+}
+
+// Estrella de 4 puntas para marcar las skins doradas
+function dibujarDestelloOro(c, x, y, r){
+  c.save();
+  c.translate(x, y);
+  c.fillStyle = '#ffd25e';
+  c.beginPath();
+  c.moveTo(0, -r);
+  c.quadraticCurveTo(0, 0, r, 0);
+  c.quadraticCurveTo(0, 0, 0, r);
+  c.quadraticCurveTo(0, 0, -r, 0);
+  c.quadraticCurveTo(0, 0, 0, -r);
+  c.fill();
+  c.restore();
 }
 
 // Monstruos enemigos: criaturas humanoides con animación de caminado
@@ -2260,8 +2364,13 @@ function dibujar(){
 function dibujarTorre(t){
   const def = TORRES[t.clave], n = nivelDe(t);
   const aturdida = G.tGlobal < (t.aturdidaHasta || 0);
+  const dorada = t.skin === 'dorada';
   if (def.arma === 'edificio'){
     dibujarEdificio(ctx, t.clave, t.x, t.y, t.nivel, t.anim || 0);
+    if (dorada){
+      const brillo = 4 + Math.sin((t.anim||0)*4)*1.5;
+      dibujarDestelloOro(ctx, t.x + 20, t.y - 26, brillo);
+    }
   } else {
     // peana de piedra
     ctx.save();
@@ -2274,7 +2383,7 @@ function dibujarTorre(t){
     ctx.beginPath(); ctx.ellipse(0, 4, 15, 7, 0, 0, Math.PI*2); ctx.fill();
     ctx.restore();
     dibujarSoldado(ctx, t.x, t.y - 4, t.ang, 1,
-      def.color, CASCOS_NIVEL[t.nivel], def.arma, t.fogonazo, aturdida, t.anim || 0);
+      dorada ? ORO_SKIN : def.color, CASCOS_NIVEL[t.nivel], def.arma, t.fogonazo, aturdida, t.anim || 0);
     if (t.fogonazo > 0) t.fogonazo -= 0.016;
   }
   // auras de soporte (comandante y DJ)
@@ -2545,7 +2654,7 @@ function construirBarraTorres(){
     carta.title = def.desc;
     const cv = document.createElement('canvas');
     cv.width = 52; cv.height = 46;
-    dibujarRetrato(cv.getContext('2d'), clave, 0, 26, 26, 1.05);
+    dibujarRetrato(cv.getContext('2d'), clave, 0, 26, 26, 1.05, skinsEnUso.has(clave));
     carta.appendChild(cv);
     const tec = document.createElement('span');
     tec.className = 'tecla'; tec.textContent = String(idx + 1);
@@ -2561,15 +2670,31 @@ function construirBarraTorres(){
   });
 }
 
+function pintarNivel(){
+  const d = datosNivel(xpTotal());
+  $('nivelTxt').textContent = '⭐ Nivel ' + d.nivel;
+  $('nivelRelleno').style.width = Math.round(d.resto/d.coste*100) + '%';
+  $('xpTxt').textContent = d.resto + '/' + d.coste + ' XP';
+}
+
 function pintarModos(){
   const lista = $('listaModos');
   lista.innerHTML = '';
+  const nivel = nivelJugador();
   for (const m of MODOS){
+    const bloqueado = nivel < m.nivelReq;
     const b = document.createElement('div');
-    b.className = 'btnModo ' + m.clase + (m === modoSel ? ' activo' : '');
-    b.innerHTML = '<b>' + m.nombre + ' · ' + m.olas + ' olas</b><span>' + m.desc + '</span>';
+    b.className = 'btnModo ' + m.clase + (m === modoSel ? ' activo' : '') + (bloqueado ? ' bloqueado' : '');
+    b.innerHTML = '<b>' + (bloqueado ? '🔒 ' : '') + m.nombre + ' · ' + m.olas + ' olas</b><span>' +
+      (bloqueado ? 'Se desbloquea al nivel ' + m.nivelReq + ' — gana XP superando olas' : m.desc) + '</span>';
     b.addEventListener('click', () => {
       Sonido.activar();
+      if (bloqueado){
+        b.classList.remove('negado');
+        void b.offsetWidth; // reinicia la animación
+        b.classList.add('negado');
+        return;
+      }
       modoSel = m;
       pintarMenu(); // repinta récords y resaltado
     });
@@ -2583,17 +2708,32 @@ function pintarLoadout(){
   for (const clave in TORRES){
     const def = TORRES[clave];
     const idx = loadout.indexOf(clave);
+    const usaDorada = skinsEnUso.has(clave);
     const carta = document.createElement('div');
-    carta.className = 'cartaEquipo' + (idx >= 0 ? ' elegida' : '');
+    carta.className = 'cartaEquipo' + (idx >= 0 ? ' elegida' : '') + (usaDorada ? ' doradaOn' : '');
     carta.title = def.desc + ' · ' + fmt$(def.niveles[0].costo);
     const cv = document.createElement('canvas');
     cv.width = 46; cv.height = 40;
-    dibujarRetrato(cv.getContext('2d'), clave, 0, 23, 23, 0.92);
+    dibujarRetrato(cv.getContext('2d'), clave, 0, 23, 23, 0.92, usaDorada);
     carta.appendChild(cv);
     if (idx >= 0){
       const r = document.createElement('span');
       r.className = 'ranura'; r.textContent = idx + 1;
       carta.appendChild(r);
+    }
+    if (skinsDoradas.has(clave)){
+      const sk = document.createElement('span');
+      sk.className = 'skinBtn' + (usaDorada ? ' on' : '');
+      sk.textContent = '✨';
+      sk.title = usaDorada ? 'Skin dorada activa: clic para usar la base' : 'Activar skin dorada';
+      sk.addEventListener('click', ev => {
+        ev.stopPropagation();
+        Sonido.activar();
+        if (usaDorada) skinsEnUso.delete(clave); else skinsEnUso.add(clave);
+        guardarSkins();
+        pintarLoadout();
+      });
+      carta.appendChild(sk);
     }
     const nom = document.createElement('div');
     nom.className = 'nom'; nom.textContent = def.nombre;
@@ -2615,6 +2755,7 @@ function pintarLoadout(){
 }
 
 function pintarMenu(){
+  pintarNivel();
   pintarModos();
   pintarLoadout();
   const lista = $('listaMapas');

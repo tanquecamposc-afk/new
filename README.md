@@ -16,7 +16,15 @@ Abre `index.html` en cualquier navegador moderno. No necesita servidor ni instal
 | Fundido | 40 | 125 | +45% vida enemiga; **jefes de fuego** inmunes a quemaduras y resistentes al hielo |
 | Caído | 50 | 100 | +110% vida enemiga; oleada final con doble jefe, tanques y gigantes |
 
-Cada combinación de mapa y modo guarda su propio récord.
+Cada combinación de mapa y modo guarda su propio récord. Los modos **Fundido** y **Caído** requieren nivel de jugador 3 y 7 respectivamente.
+
+## ⭐ Nivel de jugador y XP
+
+Ganas XP por cada ola superada (más en los modos difíciles, +250 por victoria). Subir de nivel desbloquea los modos avanzados. Tu progreso se guarda en el navegador.
+
+## ✨ Skins doradas
+
+Cada **victoria** desbloquea la skin dorada de una unidad aleatoria de tu escuadrón. Son puramente cosméticas (uniforme dorado y destellos) y se activan o desactivan con el botón ✨ de cada carta del escuadrón.
 
 ## 🎖 Escuadrón (loadout)
 
@@ -37,7 +45,7 @@ El récord de olas de cada mapa se guarda en tu navegador.
 | Torre | Costo | Rol |
 |---|---|---|
 | 🔫 Recluta | $200 | Básica y barata; gana detección al nivel 4 |
-| 🌀 Artillero | $550 | Cadencia altísima |
+| 🌀 Artillero | $600 | Cadencia altísima; el cañón tarda ~2 s en acelerar |
 | 🎯 Francotirador | $400 | Enorme alcance y daño; ve ocultos desde nivel 1 |
 | ❄️ Congelador | $450 | Pulsos de área que ralentizan |
 | 💣 Demoledor | $700 | Daño explosivo en área |
