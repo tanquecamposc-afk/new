@@ -157,6 +157,15 @@ canvas#lienzo{display:block; width:100%; height:auto; background:#0a0f18; touch-
 .btnModo.activo.medio{border-color:#ffb74d; box-shadow:0 0 12px rgba(255,183,77,.35);}
 .btnModo.activo.dificil{border-color:var(--morado); box-shadow:0 0 12px rgba(177,140,255,.4);}
 .tituloSec{font-weight:800; font-size:14px; margin:2px 0 8px; color:var(--texto);}
+#listaMods{display:flex; gap:8px; justify-content:center; flex-wrap:wrap; margin:-6px 0 14px; align-items:center;}
+#listaMods .eti{font-size:12px; color:var(--tenue); font-weight:700;}
+.chipMod{
+  font-size:12px; font-weight:800; padding:4px 11px; border-radius:20px; cursor:pointer;
+  border:2px solid var(--borde); background:rgba(0,0,0,.25); color:var(--tenue);
+  transition:border-color .12s, color .12s, transform .08s;
+}
+.chipMod:hover{transform:translateY(-1px);}
+.chipMod.on{border-color:var(--rojo); color:var(--texto); background:rgba(255,107,107,.12);}
 #listaLoadout{display:flex; gap:7px; justify-content:center; flex-wrap:wrap; margin-bottom:16px;}
 .cartaEquipo{
   width:76px; padding:5px 3px 5px; border-radius:10px; text-align:center; cursor:pointer;
@@ -244,6 +253,7 @@ canvas#lienzo{display:block; width:100%; height:auto; background:#0a0f18; touch-
       <div id="mejoraInfo"></div>
       <div class="botones">
         <button id="objetivoBtn">🎯 Primero</button>
+        <button id="btnHabilidad" class="oro" style="display:none">📣 ¡A la carga!</button>
         <button id="btnMejorar" class="primario">Mejorar</button>
         <button id="btnVender" class="peligro">Vender</button>
       </div>
@@ -260,6 +270,7 @@ canvas#lienzo{display:block; width:100%; height:auto; background:#0a0f18; touch-
           <span id="xpTxt">0/120 XP</span>
         </div>
         <div id="listaModos"></div>
+        <div id="listaMods"></div>
         <div id="listaMapas"></div>
         <div class="tituloSec">🎖 Tu escuadrón — elige hasta 5 unidades (teclas 1–5)</div>
         <div id="listaLoadout"></div>
@@ -268,7 +279,9 @@ canvas#lienzo{display:block; width:100%; height:auto; background:#0a0f18; touch-
           una unidad abajo (o teclas <b>1–5</b>) y haz clic en el mapa para desplegarla.
           Haz clic en una unidad desplegada para <b>mejorarla</b> (5 niveles), <b>venderla</b> o cambiar su
           <b>objetivo</b> (primero, último, fuerte, débil o cercano).<br>
-          El <b>DJ 🎧</b> abarata las mejoras y amplía el alcance de las torres dentro de su aura.<br>
+          El <b>DJ 🎧</b> abarata las mejoras y amplía el alcance de las torres dentro de su aura.
+          El <b>Comandante 📣</b> tiene la habilidad activa <b>¡A la carga!</b> desde su panel.
+          Los <b>modificadores ☠</b> endurecen la partida a cambio de más XP.<br>
           <b>Sombras 👁</b>: invisibles sin detección · <b>Voladores ✈</b>: solo torres antiaéreas ·
           <b>Curanderos</b>: sanan a sus aliados · <b>Gemelos</b>: se dividen al morir ·
           El <b>Cuartel</b> despliega tropas que combaten en el camino.<br>
@@ -600,7 +613,8 @@ const TORRES = {
     ]},
   comandante:{
     nombre:'Comandante', color:'#8a4a9e', tecla:'W', arma:'bandera',
-    desc:'No ataca: acelera la cadencia de torres cercanas.',
+    habilidad:{extra:0.3, dur:8, cd:45}, // ¡A la carga!: +30% de cadencia extra
+    desc:'No ataca: acelera torres cercanas. Habilidad activa: ¡A la carga!',
     niveles:[
       {costo:850,  nom:'Comandante', aura:0.12, alcance:150},
       {costo:600,  nom:'Capitán',    aura:0.18, alcance:165},
@@ -632,6 +646,27 @@ const MODOS = [
    xpOla:22, nivelReq:7, desc:'50 olas de élite con muchísima más vida. Solo para veteranos.'}
 ];
 let modoSel = MODOS[0];
+
+// ---------- Modificadores de partida ----------
+const MODIFICADORES = [
+  {id:'horda',     nombre:'Horda',     icono:'👥', xp:1.35, desc:'+40% de enemigos por ola'},
+  {id:'veloz',     nombre:'Veloz',     icono:'💨', xp:1.30, desc:'Enemigos un 25% más rápidos'},
+  {id:'espartano', nombre:'Espartano', icono:'🛡', xp:1.40, desc:'-40% dinero inicial y bonos de ola reducidos'}
+];
+function cargarMods(){
+  try{
+    const g = JSON.parse(localStorage.getItem('nexo_mods') || '[]');
+    if (Array.isArray(g)) return new Set(g.filter(id => MODIFICADORES.some(m => m.id === id)));
+  }catch(e){}
+  return new Set();
+}
+let modsSel = cargarMods();
+function guardarMods(){ localStorage.setItem('nexo_mods', JSON.stringify([...modsSel])); }
+function multXpMods(mods){
+  let m = 1;
+  for (const mod of MODIFICADORES) if (mods.has(mod.id)) m *= mod.xp;
+  return m;
+}
 
 // ---------- Nivel de jugador (XP) ----------
 function xpTotal(){ return parseInt(localStorage.getItem('nexo_xp') || '0', 10); }
@@ -700,9 +735,12 @@ function nuevaPartida(mapa){
     total += l;
   }
   const modo = modoSel;
+  const mods = new Set(modsSel);
   G = {
-    mapa, modo, olaFinal: modo.olas, segs, largoCamino: total,
-    vidas: modo.vidas, dinero: modo.dinero, ola: 0,
+    mapa, modo, mods, olaFinal: modo.olas, segs, largoCamino: total,
+    vidas: modo.vidas,
+    dinero: Math.round(modo.dinero * (mods.has('espartano') ? 0.6 : 1)),
+    ola: 0,
     enemigos: [], torres: [], unidades: [], balas: [], particulas: [], textos: [], rayos: [],
     colaSpawn: [], tOla: 0, olaActiva: false, entreOlas: true, cuentaAtras: 0,
     velocidad: 1, pausa: false, terminado: false, infinito: false,
@@ -718,6 +756,11 @@ function nuevaPartida(mapa){
   $('habilidades').style.display = 'flex';
   $('btnOla').style.display = '';
   $('btnOla').textContent = '▶ Iniciar ola';
+  if (G.mods.size){
+    const nombres = MODIFICADORES.filter(m => G.mods.has(m.id)).map(m => m.icono + ' ' + m.nombre);
+    aviso('Modificadores activos: ' + nombres.join(' · ') +
+      ' — XP ×' + multXpMods(G.mods).toFixed(2), true);
+  }
 }
 
 function multHP(n){
@@ -728,7 +771,9 @@ function multHP(n){
 function componerOla(n){
   const cola = [];
   let t = 0.5;
+  const horda = G.mods.has('horda');
   const add = (tipo, cant, intervalo, retraso=0.8) => {
+    if (horda && !ENEMIGOS[tipo].jefe) cant = Math.max(1, Math.round(cant * 1.4));
     t += retraso;
     for (let i=0;i<cant;i++){ cola.push({tipo, t}); t += intervalo; }
   };
@@ -792,7 +837,7 @@ function iniciarOla(){
 
 function finDeOla(){
   G.olaActiva = false;
-  const bono = 60 + G.ola*8;
+  const bono = Math.round((60 + G.ola*8) * (G.mods.has('espartano') ? 0.7 : 1));
   let ingresoGranjas = 0;
   for (const t of G.torres){
     if (t.clave === 'granja'){
@@ -826,6 +871,7 @@ function crearEnemigo(tipo, dInicial=0, fraccionHP=1){
     lentoHasta: 0, lentoMult: 1, quemaDPS: 0, quemaHasta: 0, tCura: 0, tPisada: 0,
     osc: Math.random()*Math.PI*2
   };
+  if (G.mods.has('veloz')) e.vel *= 1.25;
   // en modo Fundido los jefes son de fuego: inmunes a quemaduras y resistentes al hielo
   if (base.jefe && G.modo.fuego){
     e.fuego = true;
@@ -995,9 +1041,26 @@ function auraCadencia(t){
   for (const c of G.torres){
     if (c.clave !== 'comandante') continue;
     const nc = nivelDe(c);
-    if (dist(t.x,t.y,c.x,c.y) <= nc.alcance) mejor = Math.max(mejor, nc.aura);
+    if (dist(t.x,t.y,c.x,c.y) <= nc.alcance){
+      let a = nc.aura;
+      // habilidad ¡A la carga! activa: bonus extra temporal
+      if ((c.cargaHasta || 0) > G.tGlobal)
+        a = Math.min(0.7, a + TORRES.comandante.habilidad.extra);
+      mejor = Math.max(mejor, a);
+    }
   }
   return 1 - mejor;
+}
+function usarCarga(t){
+  if (!G || t.clave !== 'comandante') return;
+  const hab = TORRES.comandante.habilidad;
+  if ((t.habCdHasta || 0) > G.tGlobal) return;
+  t.cargaHasta = G.tGlobal + hab.dur;
+  t.habCdHasta = G.tGlobal + hab.cd;
+  aviso('📣 ¡A LA CARGA! Las torres cercanas disparan mucho más rápido');
+  Sonido.fx('mejorar');
+  for (let k=0;k<14;k++) particula(t.x, t.y, '#ffd25e', 3, 0.6);
+  actualizarPanelTorre();
 }
 // Bono de alcance otorgado por los DJ cercanos (multiplicador ≥ 1)
 function auraAlcance(t){
@@ -1457,7 +1520,7 @@ function mostrarFin(gano){
   $('finDinero').textContent = fmt$(G.dineroGanado);
   // XP: por ola superada según el modo, más bono de victoria.
   // En modo infinito solo se otorga la diferencia respecto a lo ya entregado.
-  const xpPartida = olasHechas * G.modo.xpOla + (gano ? 250 : 0);
+  const xpPartida = Math.round(olasHechas * G.modo.xpOla * multXpMods(G.mods)) + (gano ? 250 : 0);
   const xpNueva = Math.max(0, xpPartida - (G.xpOtorgada || 0));
   G.xpOtorgada = (G.xpOtorgada || 0) + xpNueva;
   const nivelAntes = nivelJugador();
@@ -1540,6 +1603,7 @@ function actualizarPanelTorre(){
   if (n.quema) filas.push(['Quemadura', n.quema + '/s']);
   if (n.ingreso) filas.push(['Ingreso/ola', fmt$(n.ingreso)]);
   if (n.aura) filas.push(['Aura cadencia', '+' + Math.round(n.aura*100) + '%']);
+  if (def.habilidad) filas.push(['¡A la carga!', '+' + Math.round(def.habilidad.extra*100) + '% · ' + def.habilidad.dur + ' s']);
   if (n.descuento) filas.push(['Desc. mejoras', '-' + Math.round(n.descuento*100) + '%']);
   if (n.bonoAlcance) filas.push(['Bono alcance', '+' + Math.round(n.bonoAlcance*100) + '%']);
   if (n.maxU){
@@ -1575,6 +1639,23 @@ function actualizarPanelTorre(){
   const sinObjetivo = ['granja','comandante','congelador','cuartel','dj'];
   $('objetivoBtn').style.display = sinObjetivo.includes(t.clave) ? 'none' : '';
   $('objetivoBtn').textContent = '🎯 ' + t.objetivo.charAt(0).toUpperCase() + t.objetivo.slice(1);
+  $('btnHabilidad').style.display = def.habilidad ? '' : 'none';
+  if (def.habilidad) refrescarBotonHabilidad(t);
+}
+
+function refrescarBotonHabilidad(t){
+  const b = $('btnHabilidad');
+  const resta = (t.habCdHasta || 0) - G.tGlobal;
+  if ((t.cargaHasta || 0) > G.tGlobal){
+    b.disabled = true;
+    b.textContent = '📣 ¡CARGANDO! ' + Math.ceil(t.cargaHasta - G.tGlobal) + ' s';
+  } else if (resta > 0){
+    b.disabled = true;
+    b.textContent = '📣 Recargando… ' + Math.ceil(resta) + ' s';
+  } else {
+    b.disabled = false;
+    b.textContent = '📣 ¡A la carga!';
+  }
 }
 
 // ---------- Prerender del fondo ----------
@@ -2394,6 +2475,17 @@ function dibujarTorre(t){
     ctx.strokeStyle = def.color; ctx.lineWidth = 2; ctx.stroke();
     ctx.restore();
   }
+  // ondas doradas mientras dura ¡A la carga!
+  if ((t.cargaHasta || 0) > G.tGlobal){
+    ctx.save();
+    for (const desfase of [0, 0.5]){
+      const f = (G.tGlobal*0.9 + desfase) % 1;
+      ctx.globalAlpha = (1-f) * 0.5;
+      ctx.beginPath(); ctx.arc(t.x, t.y, n.alcance * f, 0, Math.PI*2);
+      ctx.strokeStyle = '#ffd25e'; ctx.lineWidth = 3; ctx.stroke();
+    }
+    ctx.restore();
+  }
   // pulso del congelador
   if (t.clave === 'congelador' && t.pulso > 0){
     ctx.save();
@@ -2464,6 +2556,7 @@ function refrescoLento(){
   if (torreSel){
     const sig = TORRES[torreSel.clave].niveles[torreSel.nivel+1];
     if (sig) $('btnMejorar').disabled = G.dinero < costoMejora(torreSel);
+    if (TORRES[torreSel.clave].habilidad) refrescarBotonHabilidad(torreSel);
   }
 }
 
@@ -2602,6 +2695,7 @@ $('btnMenu').addEventListener('click', () => {
   }
   volverAlMenu();
 });
+$('btnHabilidad').addEventListener('click', () => { if (torreSel) usarCarga(torreSel); });
 $('btnMejorar').addEventListener('click', () => { if (torreSel) mejorarTorre(torreSel); });
 $('btnVender').addEventListener('click', () => { if (torreSel) venderTorre(torreSel); });
 $('objetivoBtn').addEventListener('click', () => {
@@ -2754,9 +2848,32 @@ function pintarLoadout(){
   }
 }
 
+function pintarMods(){
+  const lista = $('listaMods');
+  lista.innerHTML = '';
+  const eti = document.createElement('span');
+  eti.className = 'eti';
+  eti.textContent = '☠ Modificadores (más XP):';
+  lista.appendChild(eti);
+  for (const m of MODIFICADORES){
+    const chip = document.createElement('span');
+    chip.className = 'chipMod' + (modsSel.has(m.id) ? ' on' : '');
+    chip.textContent = m.icono + ' ' + m.nombre + ' ×' + m.xp.toFixed(2);
+    chip.title = m.desc;
+    chip.addEventListener('click', () => {
+      Sonido.activar();
+      if (modsSel.has(m.id)) modsSel.delete(m.id); else modsSel.add(m.id);
+      guardarMods();
+      pintarMods();
+    });
+    lista.appendChild(chip);
+  }
+}
+
 function pintarMenu(){
   pintarNivel();
   pintarModos();
+  pintarMods();
   pintarLoadout();
   const lista = $('listaMapas');
   lista.innerHTML = '';

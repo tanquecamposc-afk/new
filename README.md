@@ -22,6 +22,16 @@ Cada combinación de mapa y modo guarda su propio récord. Los modos **Fundido**
 
 Ganas XP por cada ola superada (más en los modos difíciles, +250 por victoria). Subir de nivel desbloquea los modos avanzados. Tu progreso se guarda en el navegador.
 
+## ☠ Modificadores
+
+Opcionales y combinables desde el menú; endurecen la partida a cambio de multiplicar la XP ganada:
+
+| Modificador | Efecto | XP |
+|---|---|---|
+| 👥 Horda | +40% de enemigos por ola | ×1.35 |
+| 💨 Veloz | Enemigos un 25% más rápidos | ×1.30 |
+| 🛡 Espartano | -40% dinero inicial y bonos de ola reducidos | ×1.40 |
+
 ## ✨ Skins doradas
 
 Cada **victoria** desbloquea la skin dorada de una unidad aleatoria de tu escuadrón. Son puramente cosméticas (uniforme dorado y destellos) y se activan o desactivan con el botón ✨ de cada carta del escuadrón.
@@ -52,7 +62,7 @@ El récord de olas de cada mapa se guarda en tu navegador.
 | 🔥 Piromante | $500 | Chorro de fuego que incendia (daño con el tiempo) |
 | ⚡ Tesla | $900 | Rayos en cadena; ve ocultos |
 | 🌾 Granja | $300 | Genera dinero al final de cada ola |
-| 📣 Comandante | $850 | Aura que acelera la cadencia de torres cercanas |
+| 📣 Comandante | $850 | Aura que acelera la cadencia; habilidad activa **¡A la carga!** (+30% extra durante 8 s, recarga 45 s) |
 | 🎧 DJ | $750 | Aura que abarata las mejoras y amplía el alcance de torres cercanas |
 
 (La tabla omite Escopetero, Demoledor, Cohetero y Cuartel — 13 unidades en total.)
