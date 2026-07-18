@@ -47,6 +47,7 @@ Antes de jugar eliges **hasta 5 unidades** de entre las 13 disponibles. Tu escua
 | Pradera Verde | Fácil |
 | Desierto Carmesí | Medio (+15% vida enemiga) |
 | Glaciar Nocturno | Difícil (+30% vida enemiga) |
+| Cráter Volcánico | Extremo (+45% vida enemiga) |
 
 El récord de olas de cada mapa se guarda en tu navegador.
 
@@ -74,6 +75,8 @@ Cada torre puede **mejorarse** (⬆, con descuento si hay un DJ cerca), **vender
 - **Normal / Veloz / Blindado** — la carne del enjambre.
 - **👻 Sombra** — invisible para torres sin detección 👁.
 - **✚ Curandero** — sana a los enemigos cercanos: elimínalo primero.
+- **🐦 Fénix** — volador que renace de sus cenizas una vez: mátalo dos veces.
+- **🔧 Saboteador** — aturde periódicamente a la torre que tenga más cerca.
 - **Tanque** — lento pero enorme.
 - **☠ DEVORADOR** — jefe cada 10 olas, con barra de vida propia.
 - **💀 EL COLOSO DEL VACÍO** — jefe final de la ola 40.

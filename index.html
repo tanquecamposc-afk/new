@@ -183,7 +183,7 @@ canvas#lienzo{display:block; width:100%; height:auto; background:#0a0f18; touch-
 }
 #listaMapas{display:flex; gap:14px; justify-content:center; flex-wrap:wrap; margin-bottom:18px;}
 .cartaMapa{
-  width:230px; border:2px solid var(--borde); border-radius:13px; overflow:hidden; cursor:pointer;
+  width:200px; border:2px solid var(--borde); border-radius:13px; overflow:hidden; cursor:pointer;
   background:#141b2c; transition:transform .1s, border-color .15s; text-align:left;
 }
 .cartaMapa:hover{transform:translateY(-4px); border-color:var(--azul);}
@@ -478,6 +478,12 @@ const MAPAS = [
     pasto1:'#31415f', pasto2:'#3a4c6e', camino:'#93aecb', piedra1:'#a8c0dc', piedra2:'#7f9ab8',
     caminoBorde:'#5c7796', deco:'cristal',
     puntos:[[640,-40],[640,150],[170,150],[170,600],[1120,600],[1120,290],[400,290],[400,470],[880,470]]
+  },
+  {
+    id:'volcan', nombre:'Cráter Volcánico', dif:'Extremo', clase:'dificil', multHP:1.45, semilla:131,
+    pasto1:'#3d2723', pasto2:'#4a2f29', camino:'#7a4a30', piedra1:'#8a5638', piedra2:'#6b4028',
+    caminoBorde:'#4a2c1a', deco:'roca',
+    puntos:[[-40,110],[1060,110],[1060,320],[220,320],[220,560],[900,560],[900,430],[1320,430]]
   }
 ];
 
@@ -490,13 +496,15 @@ const ENEMIGOS = {
   gemelo:    {nombre:'Gemelo',    hp:28,   vel:58, rec:8,   dano:3,  color:'#b05fa8', piel:'#c77fc0', radio:12, divide:true},
   curandero: {nombre:'Curandero', hp:95,   vel:44, rec:16,  dano:4,  color:'#2e8f80', piel:'#4bb5a4', radio:12, cura:14, radioCura:95},
   volador:   {nombre:'Volador',   hp:42,   vel:80, rec:12,  dano:4,  color:'#4a7ab5', piel:'#6d99cc', radio:11, aereo:true},
+  fenix:     {nombre:'Fénix',     hp:120,  vel:70, rec:22,  dano:6,  color:'#d1651f', piel:'#f08c3a', radio:12, aereo:true, revive:true},
+  saboteador:{nombre:'Saboteador',hp:60,   vel:60, rec:16,  dano:3,  color:'#4a6b6b', piel:'#6a8f8f', radio:11, aturde:true},
   tanque:    {nombre:'Tanque',    hp:520,  vel:26, rec:55,  dano:12, color:'#5a4632', piel:'#7a6248', radio:17, casco:true},
   gigante:   {nombre:'Gigante',   hp:1500, vel:22, rec:150, dano:25, color:'#496b3a', piel:'#5f8a4c', radio:21},
   jefe:      {nombre:'DEVORADOR', hp:2300, vel:21, rec:280, dano:60, color:'#8f2222', piel:'#b03a3a', radio:24, jefe:true},
   coloso:    {nombre:'EL COLOSO DEL VACÍO', hp:9500, vel:15, rec:2000, dano:999, color:'#452368', piel:'#5e2e91', radio:31, jefe:true, pisada:true}
 };
 const EMOJI_ENEMIGO = {zombi:'🧟', corredor:'🏃', blindado:'🛡', sombra:'👁', gemelo:'👥',
-  curandero:'✚', volador:'✈', tanque:'🚜', gigante:'🗿', jefe:'☠', coloso:'💀'};
+  curandero:'✚', volador:'✈', fenix:'🐦', saboteador:'🔧', tanque:'🚜', gigante:'🗿', jefe:'☠', coloso:'💀'};
 
 // ---------- Torres ----------
 // cad = seg entre disparos · detecta = ve ocultos · aereo = alcanza voladores
@@ -783,6 +791,8 @@ function componerOla(n){
     add('volador', 8, 1.1, 2);
     add('blindado', 12, 1.0, 3);
     add('curandero', 4, 2.0, 2);
+    add('fenix', 3, 1.8, 2);
+    add('saboteador', 4, 1.6, 2);
     if (G.modo.elite){ add('tanque', 4, 3, 2); add('gigante', 2, 4, 3); add('jefe', 1, 0, 4); }
     add('coloso', 1, 0, 7);
   } else if (n % 10 === 0){
@@ -800,7 +810,9 @@ function componerOla(n){
     if (n >= 8 && n % 3 === 2) add('curandero', Math.max(1, Math.round(n/6)), 2.2, 3);
     if (n >= 9 && n % 2 === 1) add('volador', Math.round(1 + n*0.25), 1.3, 3);
     if (n >= 12 && n % 4 === 1) add('tanque', Math.max(1, Math.round(n/9)), 4, 4);
+    if (n >= 14 && n % 4 === 2) add('saboteador', Math.max(1, Math.round(n/7)), 2.5, 3);
     if (n >= 15 && n % 5 === 0) add('gigante', 1 + Math.floor((n-15)/10), 6, 5);
+    if (n >= 16 && n % 5 === 1) add('fenix', Math.max(1, Math.round(n/9)), 2.2, 3);
   }
   return cola;
 }
@@ -868,7 +880,7 @@ function crearEnemigo(tipo, dInicial=0, fraccionHP=1){
     hpMax: hp, hp,
     d: dInicial, x: G.segs[0].ax, y: G.segs[0].ay, ang: 0,
     carril: rnd(-13, 13),
-    lentoHasta: 0, lentoMult: 1, quemaDPS: 0, quemaHasta: 0, tCura: 0, tPisada: 0,
+    lentoHasta: 0, lentoMult: 1, quemaDPS: 0, quemaHasta: 0, tCura: 0, tPisada: 0, tSabot: 0,
     osc: Math.random()*Math.PI*2
   };
   if (G.mods.has('veloz')) e.vel *= 1.25;
@@ -896,6 +908,14 @@ function crearEnemigo(tipo, dInicial=0, fraccionHP=1){
   if (base.divide && !avisados.has('gemelo')){
     avisados.add('gemelo');
     aviso('👥 ¡Gemelos! Se dividen en dos corredores al morir', true);
+  }
+  if (base.revive && !avisados.has('fenix')){
+    avisados.add('fenix');
+    aviso('🐦 ¡Fénix! Renace de sus cenizas una vez: mátalo dos veces', true);
+  }
+  if (base.aturde && !avisados.has('saboteador')){
+    avisados.add('saboteador');
+    aviso('🔧 ¡Saboteadores! Aturden a las torres que tengan cerca', true);
   }
   if (tipo === 'gigante' && !avisados.has('gigante')){
     avisados.add('gigante');
@@ -976,6 +996,25 @@ function actualizarEnemigos(dt){
       e.tPisada += dt;
       if (e.tPisada >= 6){ e.tPisada = 0; pisadaColoso(e); }
     }
+    if (e.aturde){
+      e.tSabot += dt;
+      if (e.tSabot >= 5){
+        e.tSabot = 0;
+        // aturde a la torre atacante más cercana a su alrededor
+        let obj = null, mejor = 130;
+        for (const t of G.torres){
+          if (t.clave === 'granja' || t.clave === 'dj' || t.clave === 'comandante') continue;
+          const dd = dist(e.x,e.y,t.x,t.y);
+          if (dd < mejor){ mejor = dd; obj = t; }
+        }
+        if (obj){
+          obj.aturdidaHasta = Math.max(obj.aturdidaHasta || 0, ahora + 1.6);
+          G.rayos.push({x1:e.x, y1:e.y, x2:obj.x, y2:obj.y, ttl:0.18, color:'#80cbc4', grosor:2, recto:true});
+          for (let k=0;k<5;k++) particula(obj.x, obj.y-8, '#80cbc4', 2.5, 0.5);
+          Sonido.fx('tesla');
+        }
+      }
+    }
     const lento = (e.lentoHasta > ahora) ? e.lentoMult : 1;
     e.d += e.vel * lento * dt;
     e.osc += dt * (4 + e.vel*0.06);
@@ -1023,6 +1062,14 @@ function matarEnemigo(i){
   if (e.divide){
     crearEnemigo('corredor', e.d, 0.7);
     crearEnemigo('corredor', Math.max(0, e.d-14), 0.7);
+  }
+  if (e.revive && !e.esRenacido){
+    // el fénix renace una sola vez con la mitad de vida
+    crearEnemigo(e.tipo, e.d, 0.5);
+    const renacido = G.enemigos[G.enemigos.length-1];
+    renacido.esRenacido = true;
+    texto(e.x, e.y-28, '¡RENACE!', '#ffab40');
+    for (let k=0;k<10;k++) particula(e.x, e.y, k%2 ? '#ffca28' : '#ff7043', rnd(2.5,4.5), rnd(0.4,0.8));
   }
   if (e.jefe) G.sacudida = Math.max(G.sacudida, 0.5);
   Sonido.fx(e.jefe ? 'canon' : 'muerte');
@@ -1725,6 +1772,24 @@ function prerenderizarFondo(){
       c.beginPath(); c.arc(x-5, y-10, 8, 0, Math.PI*2); c.fill();
       c.fillStyle = '#66bb6a';
       c.beginPath(); c.arc(x+5, y-9, 6, 0, Math.PI*2); c.fill();
+    } else if (m.deco === 'roca'){
+      // peñasco oscuro con grietas de lava
+      c.fillStyle = 'rgba(0,0,0,.3)';
+      c.beginPath(); c.ellipse(x+2, y+10, 13, 5, 0, 0, Math.PI*2); c.fill();
+      c.fillStyle = '#38333c';
+      c.beginPath();
+      c.moveTo(x-13, y+8); c.lineTo(x-9, y-8); c.lineTo(x-2, y-14);
+      c.lineTo(x+8, y-9); c.lineTo(x+13, y+3); c.lineTo(x+9, y+9);
+      c.closePath(); c.fill();
+      c.fillStyle = '#4a4450';
+      c.beginPath();
+      c.moveTo(x-9, y-8); c.lineTo(x-2, y-14); c.lineTo(x+8, y-9); c.lineTo(x+1, y-4);
+      c.closePath(); c.fill();
+      c.strokeStyle = 'rgba(255,110,60,.85)'; c.lineWidth = 1.6;
+      c.beginPath();
+      c.moveTo(x-6, y+7); c.lineTo(x-3, y-1); c.lineTo(x+3, y-5);
+      c.moveTo(x+2, y+8); c.lineTo(x+5, y+1);
+      c.stroke();
     } else if (m.deco === 'cactus'){
       c.fillStyle = 'rgba(0,0,0,.2)';
       c.beginPath(); c.ellipse(x+2, y+12, 10, 4, 0, 0, Math.PI*2); c.fill();
@@ -2171,6 +2236,33 @@ function dibujarEnemigo(e){
     ctx.fillStyle = '#e04444';
     ctx.fillRect(-r*0.09, -r*0.62, r*0.18, r*0.48);
     ctx.fillRect(-r*0.3, -r*0.47, r*0.6, r*0.18);
+  }
+  if (e.tipo === 'fenix'){
+    // cresta de llamas y plumas de la cola
+    ctx.fillStyle = e.esRenacido ? 'rgba(255,171,64,.6)' : '#ffca28';
+    ctx.beginPath();
+    ctx.moveTo(-r*0.35, -r*0.6); ctx.lineTo(0, -r*1.15); ctx.lineTo(r*0.35, -r*0.6);
+    ctx.closePath(); ctx.fill();
+    ctx.fillStyle = e.esRenacido ? 'rgba(255,112,67,.55)' : '#ff7043';
+    for (const lado of [-1,0,1]){
+      ctx.beginPath();
+      ctx.ellipse(lado*r*0.35, -r*0.85, r*0.13, r*0.35, lado*0.35, 0, Math.PI*2);
+      ctx.fill();
+    }
+  }
+  if (e.tipo === 'saboteador'){
+    // gafas de soldador y llave inglesa al hombro
+    ctx.fillStyle = '#2c3a3a';
+    ctx.fillRect(-r*0.5, r*0.42, r, r*0.26);
+    ctx.fillStyle = '#ffd25e';
+    ctx.beginPath();
+    ctx.arc(-r*0.2, r*0.55, r*0.11, 0, Math.PI*2);
+    ctx.arc( r*0.2, r*0.55, r*0.11, 0, Math.PI*2);
+    ctx.fill();
+    ctx.strokeStyle = '#b0bec5'; ctx.lineWidth = 2.4;
+    ctx.beginPath(); ctx.moveTo(r*0.5, -r*0.5); ctx.lineTo(r*0.95, -r*1.0); ctx.stroke();
+    ctx.fillStyle = '#b0bec5';
+    ctx.beginPath(); ctx.arc(r*0.95, -r*1.0, r*0.22, 0, Math.PI*2); ctx.fill();
   }
   if (e.tipo === 'gemelo'){
     ctx.fillStyle = e.piel;
