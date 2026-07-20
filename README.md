@@ -106,4 +106,4 @@ Todos los efectos de sonido se generan en tiempo real con WebAudio (sin archivos
 
 El botón de música alterna entre **dos pistas originales** compuestas por código: 🎵 **Épica** (arpegios en La menor) y 🎧 **Ritmo urbano** (groove estilo dembow con bajo sincopado y gancho pentatónico), además del modo silencio.
 
-Con el botón **📂** puedes cargar **tu propia canción** (MP3/audio) desde tu dispositivo: se reproduce en bucle como música de fondo (🎶 en el ciclo del botón de música). El archivo no se sube a ningún servidor: suena solo en tu navegador.
+Con el botón **📂** puedes cargar **tu propia canción** (MP3/audio) desde tu dispositivo: se reproduce en bucle como música de fondo (🎶 en el ciclo del botón de música) y **queda guardada en tu navegador**, así sonará automáticamente cada vez que abras el juego. El archivo no se sube a ningún servidor: suena solo en tu navegador.

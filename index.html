@@ -468,12 +468,14 @@ const Musica = {
     if (this.audioEl) orden.push('propia'); // tu canción, si cargaste una
     orden.push('off');
     this.pista = orden[(orden.indexOf(this.pista) + 1) % orden.length];
+    try{ localStorage.setItem('nexo_pista', this.pista); }catch(e){}
     this.parar();
     this.paso = 0;
     this.arrancar();
   },
   // reproduce un archivo de audio del propio jugador (no viaja a ningún servidor)
-  cargarArchivo(archivo, alListo){
+  cargarArchivo(archivo, alListo, opciones){
+    opciones = opciones || {};
     const lector = new FileReader();
     lector.onload = () => {
       if (!this.audioEl){
@@ -482,13 +484,57 @@ const Musica = {
         this.audioEl.volume = 0.55;
       }
       this.audioEl.src = lector.result;
-      this.nombreArchivo = archivo.name;
-      this.parar();
-      this.pista = 'propia';
-      this.arrancar();
+      this.nombreArchivo = opciones.nombre || archivo.name || 'tu canción';
+      if (!opciones.restaurar){
+        // carga manual: pasa a sonar tu canción y queda como preferida
+        this.parar();
+        this.pista = 'propia';
+        try{ localStorage.setItem('nexo_pista', 'propia'); }catch(e){}
+        this.arrancar();
+        this.guardarCancion(archivo);
+      } else {
+        // restauración al abrir: respeta la pista que dejaste elegida
+        let pref = null;
+        try{ pref = localStorage.getItem('nexo_pista'); }catch(e){}
+        if (!pref || pref === 'propia'){
+          this.parar();
+          this.pista = 'propia';
+          this.arrancar();
+        }
+      }
       if (alListo) alListo();
     };
     lector.readAsDataURL(archivo);
+  },
+  // guarda la canción en el navegador (IndexedDB) para que suene siempre
+  guardarCancion(archivo){
+    try{
+      const pet = indexedDB.open('nexo_musica', 1);
+      pet.onupgradeneeded = () => pet.result.createObjectStore('cancion');
+      pet.onsuccess = () => {
+        const bd = pet.result;
+        const tx = bd.transaction('cancion', 'readwrite');
+        tx.objectStore('cancion').put({archivo, nombre: this.nombreArchivo}, 'actual');
+        tx.oncomplete = () => bd.close();
+      };
+    }catch(e){}
+  },
+  // al abrir el juego, restaura la canción guardada y la deja lista para sonar
+  recuperarCancion(alListo){
+    try{
+      const pet = indexedDB.open('nexo_musica', 1);
+      pet.onupgradeneeded = () => pet.result.createObjectStore('cancion');
+      pet.onsuccess = () => {
+        const bd = pet.result;
+        const lect = bd.transaction('cancion', 'readonly').objectStore('cancion').get('actual');
+        lect.onsuccess = () => {
+          const g = lect.result;
+          if (g && g.archivo)
+            this.cargarArchivo(g.archivo, alListo, {restaurar:true, nombre:g.nombre});
+          bd.close();
+        };
+      };
+    }catch(e){}
   },
   programar(){
     if (!Sonido.ctx) return;
@@ -3470,6 +3516,14 @@ function pintarMenu(){
 // ---------- Arranque ----------
 construirBarraTorres();
 pintarMenu();
+// restaura la pista de música elegida y la canción propia guardada;
+// sonará con el primer clic o tecla (los navegadores exigen un gesto para el audio)
+{
+  const guardada = localStorage.getItem('nexo_pista');
+  if (guardada === 'urbana' || guardada === 'off') Musica.pista = guardada;
+  Musica.recuperarCancion(() => refrescarBotonMusica(false));
+  refrescarBotonMusica(false);
+}
 requestAnimationFrame(ts => { ultimaT = ts; requestAnimationFrame(paso); });
 </script>
 </body>
