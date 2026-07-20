@@ -236,6 +236,8 @@ canvas#lienzo{display:block; width:100%; height:auto; background:#0a0f18; touch-
     <button id="btnPausa" title="Pausa (Espacio)">⏸</button>
     <button id="btnSonido" title="Efectos de sonido">🔊</button>
     <button id="btnMusica" title="Música">🎵</button>
+    <button id="btnCancion" title="Cargar tu propia canción (MP3) para que suene en el juego">📂</button>
+    <input type="file" id="archivoMusica" accept="audio/*" style="display:none">
     <button id="btnMenu" title="Volver al menú">⌂</button>
   </div>
 
@@ -444,8 +446,14 @@ const Musica = {
     {2:293.66, 5:349.23, 10:440, 13:349.23},
     {2:329.63, 5:440, 10:392, 13:293.66}
   ],
+  audioEl: null, nombreArchivo: '',
   arrancar(){
-    if (this.pista === 'off' || this.sonando || !Sonido.ctx) return;
+    if (this.pista === 'off') return;
+    if (this.pista === 'propia'){
+      if (this.audioEl) this.audioEl.play().catch(()=>{});
+      return;
+    }
+    if (this.sonando || !Sonido.ctx) return;
     this.sonando = true;
     this.proximaNota = Sonido.ctx.currentTime + 0.1;
     this.intervalo = setInterval(()=>this.programar(), 90);
@@ -453,12 +461,34 @@ const Musica = {
   parar(){
     this.sonando = false;
     if (this.intervalo){ clearInterval(this.intervalo); this.intervalo = null; }
+    if (this.audioEl) this.audioEl.pause();
   },
   cambiar(){
-    this.pista = this.pista === 'epica' ? 'urbana' : (this.pista === 'urbana' ? 'off' : 'epica');
+    const orden = ['epica','urbana'];
+    if (this.audioEl) orden.push('propia'); // tu canción, si cargaste una
+    orden.push('off');
+    this.pista = orden[(orden.indexOf(this.pista) + 1) % orden.length];
     this.parar();
     this.paso = 0;
     this.arrancar();
+  },
+  // reproduce un archivo de audio del propio jugador (no viaja a ningún servidor)
+  cargarArchivo(archivo, alListo){
+    const lector = new FileReader();
+    lector.onload = () => {
+      if (!this.audioEl){
+        this.audioEl = new Audio();
+        this.audioEl.loop = true;
+        this.audioEl.volume = 0.55;
+      }
+      this.audioEl.src = lector.result;
+      this.nombreArchivo = archivo.name;
+      this.parar();
+      this.pista = 'propia';
+      this.arrancar();
+      if (alListo) alListo();
+    };
+    lector.readAsDataURL(archivo);
   },
   programar(){
     if (!Sonido.ctx) return;
@@ -3160,13 +3190,25 @@ $('btnSonido').addEventListener('click', () => {
   Sonido.silencio = !Sonido.silencio;
   $('btnSonido').textContent = Sonido.silencio ? '🔇' : '🔊';
 });
+function refrescarBotonMusica(avisar){
+  $('btnMusica').textContent = {epica:'🎵', urbana:'🎧', propia:'🎶', off:'🎵̸'}[Musica.pista];
+  $('btnMusica').style.opacity = Musica.pista === 'off' ? '.5' : '1';
+  $('btnMusica').title = {epica:'Música: épica', urbana:'Música: ritmo urbano',
+    propia:'Música: tu canción (' + Musica.nombreArchivo + ')', off:'Música: apagada'}[Musica.pista];
+  if (avisar && G) aviso({epica:'🎵 Música épica', urbana:'🎧 Ritmo urbano',
+    propia:'🎶 Sonando tu canción: ' + Musica.nombreArchivo, off:'Música apagada'}[Musica.pista]);
+}
 $('btnMusica').addEventListener('click', () => {
   Sonido.activar();
   Musica.cambiar();
-  $('btnMusica').textContent = {epica:'🎵', urbana:'🎧', off:'🎵̸'}[Musica.pista];
-  $('btnMusica').style.opacity = Musica.pista === 'off' ? '.5' : '1';
-  $('btnMusica').title = {epica:'Música: épica', urbana:'Música: ritmo urbano', off:'Música: apagada'}[Musica.pista];
-  if (G) aviso({epica:'🎵 Música épica', urbana:'🎧 Ritmo urbano', off:'Música apagada'}[Musica.pista]);
+  refrescarBotonMusica(true);
+});
+$('btnCancion').addEventListener('click', () => $('archivoMusica').click());
+$('archivoMusica').addEventListener('change', ev => {
+  const archivo = ev.target.files && ev.target.files[0];
+  if (!archivo) return;
+  Sonido.activar();
+  Musica.cargarArchivo(archivo, () => refrescarBotonMusica(true));
 });
 $('btnMenu').addEventListener('click', () => {
   if (G && !G.terminado && G.ola > 0){
