@@ -429,14 +429,23 @@ const Sonido = {
   }
 };
 
-// ---------- Audio: música de fondo ----------
+// ---------- Audio: música de fondo (dos pistas originales) ----------
 const Musica = {
-  activa: true, sonando: false, intervalo: null, paso: 0, proximaNota: 0,
-  // progresión en La menor, compás de 8 corcheas
+  pista: 'epica', // 'epica' | 'urbana' | 'off'
+  sonando: false, intervalo: null, paso: 0, proximaNota: 0,
+  // pista épica: progresión en La menor, compás de 8 corcheas
   bajo:  [110, 110, 87.31, 87.31, 130.81, 130.81, 98, 98],
   arp:   [220, 261.63, 329.63, 261.63, 220, 261.63, 329.63, 392],
+  // pista urbana: gancho pentatónico propio sobre ritmo dembow (composición original)
+  raices: [55, 43.65, 65.41, 49], // La – Fa – Do – Sol
+  ganchos: [
+    {2:329.63, 5:392, 10:440, 13:392},
+    {2:329.63, 5:392, 10:523.25, 13:440},
+    {2:293.66, 5:349.23, 10:440, 13:349.23},
+    {2:329.63, 5:440, 10:392, 13:293.66}
+  ],
   arrancar(){
-    if (!this.activa || this.sonando || !Sonido.ctx) return;
+    if (this.pista === 'off' || this.sonando || !Sonido.ctx) return;
     this.sonando = true;
     this.proximaNota = Sonido.ctx.currentTime + 0.1;
     this.intervalo = setInterval(()=>this.programar(), 90);
@@ -445,8 +454,18 @@ const Musica = {
     this.sonando = false;
     if (this.intervalo){ clearInterval(this.intervalo); this.intervalo = null; }
   },
+  cambiar(){
+    this.pista = this.pista === 'epica' ? 'urbana' : (this.pista === 'urbana' ? 'off' : 'epica');
+    this.parar();
+    this.paso = 0;
+    this.arrancar();
+  },
   programar(){
-    if (!Sonido.ctx || Sonido.silencio && false) return;
+    if (!Sonido.ctx) return;
+    if (this.pista === 'urbana') this.programarUrbana();
+    else this.programarEpica();
+  },
+  programarEpica(){
     const c = Sonido.ctx;
     const dur = 0.22; // corchea a ~136 bpm
     while (this.proximaNota < c.currentTime + 0.35){
@@ -458,6 +477,52 @@ const Musica = {
       this.paso++;
     }
   },
+  programarUrbana(){
+    const c = Sonido.ctx;
+    const dur = 0.15; // semicorchea a ~100 bpm
+    while (this.proximaNota < c.currentTime + 0.4){
+      const t = this.proximaNota;
+      const s = this.paso % 16, compas = Math.floor(this.paso/16) % 4;
+      if (s % 4 === 0) this.bombo(t);                                  // bombo a negras
+      if (s === 3 || s === 6 || s === 11 || s === 14) this.caja(t);    // patrón dembow
+      if (s % 2 === 1) this.charles(t);                                // charles a contratiempo
+      const raiz = this.raices[compas];
+      if (s===0 || s===3 || s===6 || s===8 || s===11 || s===14)        // bajo en tresillo
+        this.nota(raiz*2, t, dur*1.7, 'sawtooth', 0.04);
+      const g = this.ganchos[compas][s];
+      if (g){
+        this.nota(g, t, dur*2.2, 'triangle', 0.035);
+        this.nota(g/2, t, dur*2.2, 'sine', 0.018);
+      }
+      this.proximaNota += dur;
+      this.paso++;
+    }
+  },
+  bombo(t){
+    const c = Sonido.ctx;
+    const o = c.createOscillator(), g = c.createGain();
+    o.type = 'sine';
+    o.frequency.setValueAtTime(130, t);
+    o.frequency.exponentialRampToValueAtTime(40, t + 0.12);
+    g.gain.setValueAtTime(0.16, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.16);
+    o.connect(g); g.connect(c.destination);
+    o.start(t); o.stop(t + 0.18);
+  },
+  ruidoCorto(t, durR, filtroTipo, frec, vol){
+    const c = Sonido.ctx;
+    const n = Math.floor(c.sampleRate * durR);
+    const buf = c.createBuffer(1, n, c.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i=0;i<n;i++) d[i] = (Math.random()*2-1) * (1 - i/n);
+    const src = c.createBufferSource(); src.buffer = buf;
+    const f = c.createBiquadFilter(); f.type = filtroTipo; f.frequency.value = frec;
+    const g = c.createGain(); g.gain.value = vol;
+    src.connect(f); f.connect(g); g.connect(c.destination);
+    src.start(t);
+  },
+  caja(t){ this.ruidoCorto(t, 0.09, 'bandpass', 1900, 0.11); },
+  charles(t){ this.ruidoCorto(t, 0.03, 'highpass', 7000, 0.03); },
   nota(f, t, dur, tipo, vol){
     const c = Sonido.ctx;
     const o = c.createOscillator(), g = c.createGain();
@@ -2015,39 +2080,93 @@ function dibujarSoldado(c, x, y, ang, esc, uniforme, casco, arma, fogonazo, atur
   c.save();
   c.translate(x, y);
   c.scale(esc, esc);
+  const oscuro = sombrear(uniforme, -32);
   // sombra
   c.fillStyle = 'rgba(0,0,0,.32)';
   c.beginPath(); c.ellipse(0, 9, 13, 6, 0, 0, Math.PI*2); c.fill();
-  // pies
-  c.fillStyle = '#2a2620';
+  // botas con puntera
+  c.fillStyle = '#241f1a';
   c.beginPath();
-  c.ellipse(-5, 8, 3.4, 2.4, 0, 0, Math.PI*2);
-  c.ellipse(5, 8, 3.4, 2.4, 0, 0, Math.PI*2);
+  c.ellipse(-5, 8, 3.5, 2.5, 0, 0, Math.PI*2);
+  c.ellipse(5, 8, 3.5, 2.5, 0, 0, Math.PI*2);
   c.fill();
-  // torso (uniforme)
-  const oscuro = sombrear(uniforme, -28);
+  c.fillStyle = '#3d352c';
+  c.beginPath();
+  c.ellipse(-5, 7.2, 2.2, 1.2, 0, 0, Math.PI*2);
+  c.ellipse(5, 7.2, 2.2, 1.2, 0, 0, Math.PI*2);
+  c.fill();
+  // torso (uniforme) con volumen
   c.fillStyle = uniforme;
   c.beginPath(); c.ellipse(0, 1, 9.5, 11, 0, 0, Math.PI*2); c.fill();
   c.strokeStyle = oscuro; c.lineWidth = 1.6; c.stroke();
-  // correaje
-  c.strokeStyle = 'rgba(0,0,0,.35)'; c.lineWidth = 2.2;
-  c.beginPath(); c.moveTo(-6, -5); c.lineTo(6, 6); c.stroke();
+  c.fillStyle = 'rgba(0,0,0,.20)'; // sombra inferior del cuerpo
+  c.beginPath(); c.ellipse(0, 5.5, 7.6, 4.6, 0, 0, Math.PI*2); c.fill();
+  c.fillStyle = 'rgba(255,255,255,.13)'; // luz superior
+  c.beginPath(); c.ellipse(-2.2, -4.2, 5.2, 3.2, -0.4, 0, Math.PI*2); c.fill();
+  // chaleco táctico con bolsillos
+  c.fillStyle = 'rgba(0,0,0,.30)';
+  c.fillRect(-4.6, -6.5, 9.2, 13);
+  c.strokeStyle = 'rgba(0,0,0,.35)'; c.lineWidth = 2;
+  c.beginPath();
+  c.moveTo(-4.6, -6.5); c.lineTo(-8, -2);
+  c.moveTo(4.6, -6.5); c.lineTo(8, -2);
+  c.stroke();
+  c.fillStyle = sombrear(uniforme, -12);
+  c.fillRect(-3.4, -2.5, 2.8, 3.4);
+  c.fillRect(0.8, -2.5, 2.8, 3.4);
+  c.fillRect(-3.4, 2.2, 2.8, 3.4);
+  c.fillRect(0.8, 2.2, 2.8, 3.4);
+  // hombreras
+  c.fillStyle = oscuro;
+  c.beginPath();
+  c.arc(-8.6, -0.5, 3.1, 0, Math.PI*2);
+  c.arc(8.6, -0.5, 3.1, 0, Math.PI*2);
+  c.fill();
+  c.fillStyle = 'rgba(255,255,255,.18)';
+  c.beginPath();
+  c.arc(-9.2, -1.4, 1.1, 0, Math.PI*2);
+  c.arc(8.0, -1.4, 1.1, 0, Math.PI*2);
+  c.fill();
   // brazos + arma apuntando
   c.save();
   c.rotate(ang);
-  dibujarArma(c, arma, fogonazo, animT);
+  dibujarArma(c, arma, fogonazo, animT, uniforme);
   c.restore();
-  // cabeza
+  // cuello
+  c.fillStyle = '#c99a6d';
+  c.beginPath(); c.ellipse(0, -3.6, 3.2, 2.2, 0, 0, Math.PI*2); c.fill();
+  // cabeza con tono de piel sombreado
   c.fillStyle = '#e8b98a';
   c.beginPath(); c.arc(0, -7, 6.6, 0, Math.PI*2); c.fill();
   c.strokeStyle = 'rgba(0,0,0,.3)'; c.lineWidth = 1; c.stroke();
-  // ojos mirando hacia el objetivo
-  const ex = Math.cos(ang)*2.4, ey = Math.sin(ang)*1.6;
-  c.fillStyle = '#222';
+  c.fillStyle = 'rgba(140,90,50,.28)'; // mandíbula
+  c.beginPath(); c.ellipse(0, -3.4, 4.6, 2.2, 0, 0, Math.PI); c.fill();
+  c.fillStyle = 'rgba(255,255,255,.22)'; // brillo de frente
+  c.beginPath(); c.ellipse(-2, -9.6, 3, 1.7, -0.3, 0, Math.PI*2); c.fill();
+  // orejas
+  c.fillStyle = '#d8a878';
   c.beginPath();
-  c.arc(-2 + ex, -8 + ey, 1.1, 0, Math.PI*2);
-  c.arc( 2 + ex, -8 + ey, 1.1, 0, Math.PI*2);
+  c.arc(-6.4, -7, 1.5, 0, Math.PI*2);
+  c.arc(6.4, -7, 1.5, 0, Math.PI*2);
   c.fill();
+  // ojos con esclerótica mirando hacia el objetivo
+  const ex = Math.cos(ang)*2.2, ey = Math.sin(ang)*1.5;
+  c.fillStyle = '#fff';
+  c.beginPath();
+  c.ellipse(-2.2 + ex*0.6, -8 + ey*0.6, 1.7, 1.4, 0, 0, Math.PI*2);
+  c.ellipse( 2.2 + ex*0.6, -8 + ey*0.6, 1.7, 1.4, 0, 0, Math.PI*2);
+  c.fill();
+  c.fillStyle = '#3d2b1a';
+  c.beginPath();
+  c.arc(-2.2 + ex, -8 + ey, 0.9, 0, Math.PI*2);
+  c.arc( 2.2 + ex, -8 + ey, 0.9, 0, Math.PI*2);
+  c.fill();
+  // cejas
+  c.strokeStyle = 'rgba(60,40,20,.8)'; c.lineWidth = 1.1; c.lineCap = 'round';
+  c.beginPath();
+  c.moveTo(-3.6 + ex*0.5, -10 + ey*0.5); c.lineTo(-1 + ex*0.5, -10.4 + ey*0.5);
+  c.moveTo(1 + ex*0.5, -10.4 + ey*0.5); c.lineTo(3.6 + ex*0.5, -10 + ey*0.5);
+  c.stroke();
   // casco / gorro
   dibujarCasco(c, casco, uniforme, ang);
   // estrellas si está aturdido
@@ -2061,8 +2180,17 @@ function dibujarSoldado(c, x, y, ang, esc, uniforme, casco, arma, fogonazo, atur
   c.restore();
 }
 
-function dibujarArma(c, arma, fogonazo, animT){
+function dibujarArma(c, arma, fogonazo, animT, uniforme){
   // se dibuja en el sistema rotado: +x apunta al objetivo
+  if (uniforme){
+    // mangas del uniforme hacia el arma
+    c.strokeStyle = sombrear(uniforme, -16);
+    c.lineCap = 'round'; c.lineWidth = 4.4;
+    c.beginPath();
+    c.moveTo(-2, -6); c.lineTo(7, -3.5);
+    c.moveTo(-2, 6); c.lineTo(11, 0.5);
+    c.stroke();
+  }
   c.fillStyle = '#e8b98a'; // manos
   switch(arma){
     case 'pistola':
@@ -2162,24 +2290,45 @@ function dibujarCasco(c, casco, uniforme, ang){
       c.fillStyle = uniforme;
       c.beginPath(); c.arc(0, -9, 6.4, Math.PI, 0); c.fill();
       c.fillRect(-6.4, -9.5, 12.8, 2.4);
-      c.fillStyle = oscuro;
+      c.strokeStyle = 'rgba(0,0,0,.25)'; c.lineWidth = 0.8; // costuras
+      c.beginPath();
+      c.moveTo(0, -15.2); c.lineTo(0, -9.5);
+      c.moveTo(-3.6, -14); c.lineTo(-3, -9.5);
+      c.moveTo(3.6, -14); c.lineTo(3, -9.5);
+      c.stroke();
+      c.fillStyle = oscuro; // visera hacia el objetivo
       c.beginPath();
       c.ellipse(Math.cos(ang)*4.5, -7.5 + Math.sin(ang)*2, 3.6, 1.6, ang, 0, Math.PI*2);
       c.fill();
+      c.fillStyle = 'rgba(255,255,255,.35)'; // botón
+      c.beginPath(); c.arc(0, -14.6, 0.9, 0, Math.PI*2); c.fill();
       break;
     case 'casco':
       c.fillStyle = oscuro;
       c.beginPath(); c.arc(0, -8.5, 7, Math.PI*0.95, Math.PI*0.05); c.fill();
       c.fillRect(-7, -9.2, 14, 3);
-      c.strokeStyle = 'rgba(255,255,255,.25)'; c.lineWidth = 1;
-      c.beginPath(); c.arc(0, -8.5, 5.4, Math.PI*1.1, Math.PI*1.9); c.stroke();
+      c.strokeStyle = 'rgba(255,255,255,.3)'; c.lineWidth = 1.2; // brillo del metal
+      c.beginPath(); c.arc(0, -8.5, 5.4, Math.PI*1.15, Math.PI*1.7); c.stroke();
+      c.strokeStyle = 'rgba(0,0,0,.4)'; c.lineWidth = 1; // correa del barboquejo
+      c.beginPath();
+      c.moveTo(-6.6, -6.4); c.lineTo(-5.6, -3.2);
+      c.moveTo(6.6, -6.4); c.lineTo(5.6, -3.2);
+      c.stroke();
+      c.fillStyle = 'rgba(255,255,255,.14)'; // banda
+      c.fillRect(-7, -8.4, 14, 1.3);
       break;
     case 'visor':
       c.fillStyle = '#2c333b';
       c.beginPath(); c.arc(0, -8.5, 7.2, Math.PI*0.95, Math.PI*0.05); c.fill();
       c.fillRect(-7.2, -9.2, 14.4, 3.2);
-      c.fillStyle = '#66d9ff';
+      c.fillStyle = '#66d9ff'; // pantalla del visor
       c.fillRect(-4.5, -8.6, 9, 2.6);
+      c.fillStyle = 'rgba(255,255,255,.55)';
+      c.fillRect(-4.5, -8.6, 9, 0.8);
+      c.strokeStyle = '#8a949e'; c.lineWidth = 1; // antena
+      c.beginPath(); c.moveTo(6.6, -10); c.lineTo(8.4, -15); c.stroke();
+      c.fillStyle = '#ff5252';
+      c.beginPath(); c.arc(8.4, -15.4, 0.9, 0, Math.PI*2); c.fill();
       break;
     case 'corona':
       c.fillStyle = '#ffd25e';
@@ -2351,15 +2500,45 @@ function dibujarEnemigo(e){
   ctx.ellipse(-r*0.62, r*0.72 + balanceo, r*0.22, r*0.5, 0.25, 0, Math.PI*2);
   ctx.ellipse( r*0.62, r*0.72 - balanceo, r*0.22, r*0.5, -0.25, 0, Math.PI*2);
   ctx.fill();
+  // codos marcados
+  ctx.fillStyle = sombrear(e.piel, -22);
+  ctx.beginPath();
+  ctx.arc(-r*0.6, r*0.5 + balanceo, r*0.13, 0, Math.PI*2);
+  ctx.arc( r*0.6, r*0.5 - balanceo, r*0.13, 0, Math.PI*2);
+  ctx.fill();
   // manos
+  ctx.fillStyle = e.piel;
   ctx.beginPath();
   ctx.arc(-r*0.66, r*1.12 + balanceo, r*0.2, 0, Math.PI*2);
   ctx.arc( r*0.66, r*1.12 - balanceo, r*0.2, 0, Math.PI*2);
   ctx.fill();
-  // torso
+  // garras
+  ctx.fillStyle = '#e9e2d2';
+  for (const lado of [-1, 1]){
+    const hx = lado*r*0.66, hy = r*1.12 + balanceo*(-lado);
+    for (let g=-1; g<=1; g++){
+      ctx.beginPath();
+      ctx.moveTo(hx + g*r*0.11 - r*0.05, hy + r*0.12);
+      ctx.lineTo(hx + g*r*0.11, hy + r*0.34);
+      ctx.lineTo(hx + g*r*0.11 + r*0.05, hy + r*0.12);
+      ctx.closePath(); ctx.fill();
+    }
+  }
+  // torso con volumen
   ctx.fillStyle = e.color;
   ctx.beginPath(); ctx.ellipse(0, 0, r*0.78, r*0.95, 0, 0, Math.PI*2); ctx.fill();
   ctx.strokeStyle = 'rgba(0,0,0,.4)'; ctx.lineWidth = 1.6*esc; ctx.stroke();
+  ctx.fillStyle = 'rgba(0,0,0,.20)'; // sombra ventral
+  ctx.beginPath(); ctx.ellipse(0, -r*0.4, r*0.6, r*0.34, 0, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,.10)'; // brillo dorsal
+  ctx.beginPath(); ctx.ellipse(-r*0.2, r*0.25, r*0.4, r*0.24, 0.3, 0, Math.PI*2); ctx.fill();
+  // pectorales
+  ctx.strokeStyle = 'rgba(0,0,0,.28)'; ctx.lineWidth = 1.2*esc;
+  ctx.beginPath();
+  ctx.arc(-r*0.28, r*0.12, r*0.24, 0.4, Math.PI-0.4);
+  ctx.moveTo(r*0.52, r*0.12);
+  ctx.arc( r*0.28, r*0.12, r*0.24, 0.4, Math.PI-0.4);
+  ctx.stroke();
   // harapos / detalle del torso
   ctx.fillStyle = 'rgba(0,0,0,.22)';
   ctx.beginPath();
@@ -2375,24 +2554,43 @@ function dibujarEnemigo(e){
       ctx.beginPath(); ctx.arc(rx, ry, 1.6*esc, 0, Math.PI*2); ctx.fill();
     }
   }
-  // cabeza
+  // cabeza con cráneo sombreado
   ctx.fillStyle = e.piel;
   ctx.beginPath(); ctx.arc(0, r*0.55, r*0.52, 0, Math.PI*2); ctx.fill();
   ctx.strokeStyle = 'rgba(0,0,0,.35)'; ctx.lineWidth = 1.2*esc; ctx.stroke();
-  // ojos brillantes
-  ctx.fillStyle = e.jefe ? '#ffdd55' : (e.oculto ? '#d7b8ff' : '#ffffff');
+  ctx.fillStyle = 'rgba(0,0,0,.18)'; // cuenca del ceño
+  ctx.beginPath(); ctx.ellipse(0, r*0.48, r*0.42, r*0.16, 0, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,.14)'; // brillo del cráneo
+  ctx.beginPath(); ctx.ellipse(-r*0.14, r*0.36, r*0.2, r*0.1, -0.3, 0, Math.PI*2); ctx.fill();
+  // ojos brillantes con halo
+  const colorOjo = e.jefe ? '#ffdd55' : (e.oculto ? '#d7b8ff' : '#ffffff');
+  ctx.fillStyle = colorOjo;
   ctx.beginPath();
   ctx.arc(-r*0.2, r*0.62, r*0.13, 0, Math.PI*2);
   ctx.arc( r*0.2, r*0.62, r*0.13, 0, Math.PI*2);
   ctx.fill();
+  ctx.globalAlpha *= 0.35;
+  ctx.beginPath();
+  ctx.arc(-r*0.2, r*0.62, r*0.2, 0, Math.PI*2);
+  ctx.arc( r*0.2, r*0.62, r*0.2, 0, Math.PI*2);
+  ctx.fill();
+  ctx.globalAlpha /= 0.35;
   ctx.fillStyle = '#a02020';
   ctx.beginPath();
   ctx.arc(-r*0.2, r*0.64, r*0.06, 0, Math.PI*2);
   ctx.arc( r*0.2, r*0.64, r*0.06, 0, Math.PI*2);
   ctx.fill();
-  // boca
-  ctx.strokeStyle = 'rgba(60,10,10,.7)'; ctx.lineWidth = 1.4*esc;
-  ctx.beginPath(); ctx.arc(0, r*0.78, r*0.18, 0.2, Math.PI-0.2); ctx.stroke();
+  // boca abierta con dientes
+  ctx.fillStyle = 'rgba(40,8,8,.85)';
+  ctx.beginPath(); ctx.arc(0, r*0.78, r*0.18, 0.15, Math.PI-0.15); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#e9e2d2';
+  for (let dnt=-1; dnt<=1; dnt++){
+    ctx.beginPath();
+    ctx.moveTo(dnt*r*0.09 - r*0.035, r*0.8);
+    ctx.lineTo(dnt*r*0.09, r*0.9);
+    ctx.lineTo(dnt*r*0.09 + r*0.035, r*0.8);
+    ctx.closePath(); ctx.fill();
+  }
   // extras por tipo
   if (e.tipo === 'curandero'){
     ctx.fillStyle = '#fff';
@@ -2964,10 +3162,11 @@ $('btnSonido').addEventListener('click', () => {
 });
 $('btnMusica').addEventListener('click', () => {
   Sonido.activar();
-  Musica.activa = !Musica.activa;
-  if (Musica.activa) Musica.arrancar(); else Musica.parar();
-  $('btnMusica').textContent = Musica.activa ? '🎵' : '🎵̸';
-  $('btnMusica').style.opacity = Musica.activa ? '1' : '.5';
+  Musica.cambiar();
+  $('btnMusica').textContent = {epica:'🎵', urbana:'🎧', off:'🎵̸'}[Musica.pista];
+  $('btnMusica').style.opacity = Musica.pista === 'off' ? '.5' : '1';
+  $('btnMusica').title = {epica:'Música: épica', urbana:'Música: ritmo urbano', off:'Música: apagada'}[Musica.pista];
+  if (G) aviso({epica:'🎵 Música épica', urbana:'🎧 Ritmo urbano', off:'Música apagada'}[Musica.pista]);
 });
 $('btnMenu').addEventListener('click', () => {
   if (G && !G.terminado && G.ola > 0){

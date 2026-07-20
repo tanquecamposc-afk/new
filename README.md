@@ -102,4 +102,6 @@ Cada torre puede **mejorarse** (⬆, con descuento si hay un DJ cerca), **vender
 
 ## 🔊 Sonido
 
-Todos los efectos de sonido se generan en tiempo real con WebAudio (sin archivos de audio). Botón 🔊 para silenciar.
+Todos los efectos de sonido se generan en tiempo real con WebAudio (sin archivos de audio). Botón 🔊 para silenciar los efectos.
+
+El botón de música alterna entre **dos pistas originales** compuestas por código: 🎵 **Épica** (arpegios en La menor) y 🎧 **Ritmo urbano** (groove estilo dembow con bajo sincopado y gancho pentatónico), además del modo silencio.
