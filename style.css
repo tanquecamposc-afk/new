@@ -8,7 +8,7 @@
 * { margin: 0; padding: 0; box-sizing: border-box; touch-action: none; user-select: none; }
 
 body {
-    background-color: #222;
+    background: radial-gradient(900px 600px at 50% 18%, #12263f 0%, #0a1522 55%, #060d16 100%);
     display: flex;
     justify-content: center;
     align-items: center;
@@ -25,6 +25,10 @@ body {
     max-height: 850px;
     background: linear-gradient(180deg, #87CEEB 0%, #1E90FF 20%, #000080 80%, #000033 100%);
     box-shadow: 0 0 30px rgba(0,0,0,0.8);
+}
+
+@media (min-width: 480px) and (min-height: 600px) {
+    #game-container { border-radius: 16px; overflow: hidden; }
 }
 
 canvas { display: block; width: 100%; height: 100%; }
@@ -50,15 +54,15 @@ canvas { display: block; width: 100%; height: 100%; }
     border-top-left-radius: 20px; border-top-right-radius: 20px;
 }
 
-.upgrade-cards { display: flex; gap: 10px; margin-bottom: 15px; }
+.upgrade-cards { display: flex; gap: 8px; margin-bottom: 15px; }
 
 .card {
-    flex: 1; background: white; padding: 10px; border-radius: 12px;
+    flex: 1; background: white; padding: 8px 5px; border-radius: 12px;
     text-align: center; box-shadow: 0 4px 0 rgba(0,0,0,0.15);
 }
 
-.card h4 { font-size: 12px; color: #555; }
-.card p { font-size: 14px; font-weight: bold; margin: 5px 0; }
+.card h4 { font-size: 11px; color: #555; }
+.card p { font-size: 13px; font-weight: bold; margin: 4px 0; }
 
 button {
     border: none; border-radius: 8px; font-weight: bold; cursor: pointer;
@@ -66,7 +70,8 @@ button {
 }
 button:active { transform: translateY(4px); box-shadow: 0 0 0 rgba(0,0,0,0); }
 
-.btn-buy { background: var(--accent); color: var(--text); padding: 8px; width: 100%; font-size: 14px; }
+.btn-buy { background: var(--accent); color: var(--text); padding: 7px 2px; width: 100%; font-size: 12px; }
+.btn-buy:disabled { cursor: default; }
 .btn-massive {
     background: var(--buy); color: white; width: 100%; padding: 20px;
     font-size: 24px; border-radius: 15px; text-transform: uppercase;
