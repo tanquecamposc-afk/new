@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Perfect Tiny Fishing</title>
+    <title>Tiny Fishing</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -13,9 +13,7 @@
         <!-- Interfaz de Usuario -->
         <div id="ui-layer">
             <div class="top-bar">
-                <div class="money-container">
-                    <span class="icon">💰</span> $<span id="cash">0</span>
-                </div>
+                <div class="money-container">$<span id="cash">0</span></div>
             </div>
 
             <!-- Notificaciones flotantes -->
@@ -23,9 +21,16 @@
 
             <!-- Menú Inferior -->
             <div id="upgrade-menu" class="menu-panel">
+                <button id="btn-play" class="btn-play" aria-label="Lanzar anzuelo">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <path d="M15 3v10a5 5 0 0 1-10 0v-2" stroke="#fff" stroke-width="2.8" stroke-linecap="round"/>
+                        <circle cx="15" cy="3" r="1.7" fill="#fff"/>
+                    </svg>
+                    <span>PLAY</span>
+                </button>
                 <div class="upgrade-cards">
                     <div class="card" id="card-fish">
-                        <h4>Peces Max</h4>
+                        <h4>Capacidad</h4>
                         <p>Nvl <span id="lvl-fish">1</span></p>
                         <button id="btn-upg-fish" class="btn-buy">$10</button>
                     </div>
@@ -45,7 +50,6 @@
                         <button id="btn-upg-speed" class="btn-buy">$10</button>
                     </div>
                 </div>
-                <button id="btn-play" class="btn-massive">¡LANZAR ANZUELO!</button>
             </div>
         </div>
     </div>

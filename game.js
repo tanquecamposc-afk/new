@@ -25,18 +25,45 @@ function lerpColor(hex1, hex2, t) {
         Math.round(MathUtils.lerp(a[1], b[1], t)) + ',' +
         Math.round(MathUtils.lerp(a[2], b[2], t)) + ')';
 }
+// Pseudo-aleatorio determinista para decorar la escena sin parpadeos
+function seeded(i) {
+    const s = Math.sin(i * 127.1 + 311.7) * 43758.5453;
+    return s - Math.floor(s);
+}
+function roundRectPath(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+}
+// Relleno + trazo del mismo color con lineJoin redondeado = esquinas suaves estilo flat
+function flatPath(ctx, color, lw, pathFn) {
+    ctx.fillStyle = color;
+    ctx.strokeStyle = color;
+    ctx.lineWidth = lw;
+    ctx.lineJoin = 'round';
+    ctx.beginPath();
+    pathFn();
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+}
 
-const SURFACE_Y = 80;
-const HOOK_REST_Y = 115;
+const SURFACE_Y = 150;
+const HOOK_REST_Y = 198;
 
-// Color del agua según la profundidad (mundo)
+// El agua pasa de azul a violeta profundo, como en el juego original
 const WATER_STOPS = [
-    { d: 0, c: '#2196f3' },
-    { d: 600, c: '#0d47a1' },
-    { d: 1200, c: '#0a2472' },
-    { d: 1900, c: '#071638' },
-    { d: 2800, c: '#03060f' },
-    { d: 4200, c: '#010208' }
+    { d: 0, c: '#4a90d9' },
+    { d: 500, c: '#6a62d8' },
+    { d: 1000, c: '#7b4fc8' },
+    { d: 1600, c: '#5b2e9e' },
+    { d: 2400, c: '#3b1b6e' },
+    { d: 3400, c: '#200d45' },
+    { d: 5000, c: '#0f0524' }
 ];
 function waterColorAt(depth) {
     if (depth <= WATER_STOPS[0].d) return WATER_STOPS[0].c;
@@ -49,15 +76,16 @@ function waterColorAt(depth) {
     return WATER_STOPS[WATER_STOPS.length - 1].c;
 }
 
-// Especies ordenadas por profundidad mínima (px de mundo). value es el multiplicador base.
+// Especies ordenadas por profundidad mínima. body/belly = colores planos.
 const SPECIES = [
-    { key: 'sardina', name: 'Sardina',   minDepth: 0,    w: 32, h: 18, value: 1,  shape: 'fish',   colors: ['#cfe9f7', '#7fb3d3'], stripe: null },
-    { key: 'payaso',  name: 'Payaso',    minDepth: 300,  w: 38, h: 24, value: 3,  shape: 'fish',   colors: ['#ff8a5c', '#f4511e'], stripe: '#ffffff' },
-    { key: 'angel',   name: 'Ángel',     minDepth: 650,  w: 44, h: 30, value: 6,  shape: 'fish',   colors: ['#ffe082', '#ffa000'], stripe: '#5d4037' },
-    { key: 'globo',   name: 'Pez Globo', minDepth: 1000, w: 40, h: 38, value: 11, shape: 'globo',  colors: ['#c5e1a5', '#7cb342'], stripe: null },
-    { key: 'medusa',  name: 'Medusa',    minDepth: 1400, w: 42, h: 46, value: 18, shape: 'medusa', colors: ['#e1bee7', '#ab47bc'], stripe: null },
-    { key: 'espada',  name: 'Pez Espada', minDepth: 1850, w: 64, h: 24, value: 30, shape: 'fish',  colors: ['#b0bec5', '#546e7a'], stripe: null, nose: true },
-    { key: 'abisal',  name: 'Abisal',    minDepth: 2350, w: 50, h: 36, value: 55, shape: 'angler', colors: ['#455a64', '#1c262b'], stripe: null }
+    { key: 'pececillo', name: 'Pececillo', minDepth: 0,    w: 28, h: 18, value: 1,  shape: 'fish',   body: '#ffd93c', belly: '#fff3b0' },
+    { key: 'azulita',   name: 'Azulita',   minDepth: 0,    w: 42, h: 27, value: 2,  shape: 'fish',   body: '#4ecdc4', belly: '#b8f0ea' },
+    { key: 'rosada',    name: 'Rosada',    minDepth: 350,  w: 46, h: 31, value: 5,  shape: 'fish',   body: '#ff6b8a', belly: '#ffc1ce' },
+    { key: 'rayada',    name: 'Rayada',    minDepth: 750,  w: 50, h: 33, value: 9,  shape: 'fish',   body: '#ff8a5c', belly: '#ffd9c4', stripe: '#ffffff' },
+    { key: 'globo',     name: 'Pez Globo', minDepth: 1150, w: 44, h: 42, value: 15, shape: 'globo',  body: '#b084f5', belly: '#dcc8ff' },
+    { key: 'medusa',    name: 'Medusa',    minDepth: 1600, w: 46, h: 50, value: 24, shape: 'medusa', body: '#ff9ecf', belly: '#ffd3e8' },
+    { key: 'espada',    name: 'Pez Espada', minDepth: 2100, w: 68, h: 27, value: 38, shape: 'fish',  body: '#6fa8dc', belly: '#cfe2f3', nose: true },
+    { key: 'abisal',    name: 'Abisal',    minDepth: 2700, w: 54, h: 40, value: 60, shape: 'angler', body: '#3d3a5c', belly: '#57527e' }
 ];
 
 class Fish {
@@ -69,9 +97,9 @@ class Fish {
         this.x = MathUtils.randomRange(0, worldW - this.width);
         this.baseY = depth;
         this.y = depth;
-        const speed = MathUtils.randomRange(35, 100) * (species.shape === 'medusa' ? 0.5 : 1);
+        const speed = MathUtils.randomRange(35, 95) * (species.shape === 'medusa' ? 0.5 : 1);
         this.speed = Math.random() < 0.5 ? -speed : speed;
-        this.value = Math.ceil(species.value * (1 + depth / 400)) * (golden ? 5 : 1);
+        this.value = Math.ceil(species.value * (1 + depth / 350)) * (golden ? 5 : 1);
         this.wobblePhase = MathUtils.randomRange(0, Math.PI * 2);
         this.caught = false;
     }
@@ -81,7 +109,7 @@ class Fish {
         this.x += this.speed * deltaSec;
         if (this.speed > 0 && this.x > worldW) this.x = -this.width;
         else if (this.speed < 0 && this.x + this.width < 0) this.x = worldW;
-        const amp = this.species.shape === 'medusa' ? 16 : 8;
+        const amp = this.species.shape === 'medusa' ? 16 : 7;
         this.y = this.baseY + Math.sin(time * 1.1 + this.wobblePhase) * amp;
     }
 }
@@ -95,14 +123,15 @@ class Game {
             money: 0, lastPlayed: Date.now(),
             stats: { fish: 1, depth: 1, offline: 1, speed: 1 }
         };
-        // Migración de partidas guardadas sin el stat de carrete
         this.saveData.stats = Object.assign({ fish: 1, depth: 1, offline: 1, speed: 1 }, this.saveData.stats);
 
         this.state = 'MENU';
         this.hook = { x: 0, targetX: 0, y: HOOK_REST_Y, width: 26, height: 36, fishes: [] };
         this.fishes = [];
+        this.chest = null;
         this.bubbles = [];
         this.particles = [];
+        this.coins = [];
         this.worldTexts = [];
         this.maxDepth = this.computeMaxDepth();
         this.cameraY = 0;
@@ -112,14 +141,16 @@ class Game {
         this.init();
     }
 
-    computeMaxDepth() { return 400 + this.saveData.stats.depth * 220; }
-    hookSpeed() { return 300 * (1 + 0.12 * (this.saveData.stats.speed - 1)); }
+    computeMaxDepth() { return 400 + this.saveData.stats.depth * 200; }
+    capacity() { return this.saveData.stats.fish + 1; }
+    hookSpeed() { return 300 * (1 + 0.15 * (this.saveData.stats.speed - 1)); }
+    restX() { return this.w / 2 - 36 - this.hook.width / 2; }
 
     init() {
         this.resize();
         window.addEventListener('resize', () => this.resize());
         this.bindInput();
-        this.hook.x = this.w / 2 - this.hook.width / 2;
+        this.hook.x = this.restX();
         this.hook.targetX = this.hook.x;
         this.collectOfflineEarnings();
         this.updateUI();
@@ -133,6 +164,32 @@ class Game {
         this.h = this.canvas.parentElement.clientHeight;
         this.canvas.width = this.w * dpr;
         this.canvas.height = this.h * dpr;
+
+        // Decoración determinista de la orilla
+        this.trees = [];
+        let i = 0;
+        for (let x = -14; x < this.w + 20; x += 34 + seeded(i) * 30, i++) {
+            this.trees.push({
+                x, kind: seeded(i * 3 + 1) < 0.42 ? 'pine' : 'bush',
+                size: 0.75 + seeded(i * 7 + 2) * 0.5,
+                tint: Math.floor(seeded(i * 13 + 3) * 3)
+            });
+        }
+        this.clouds = [];
+        for (let c = 0; c < 3; c++) {
+            this.clouds.push({
+                x: seeded(c * 31 + 5) * this.w, y: 22 + seeded(c * 17 + 8) * 46,
+                s: 0.7 + seeded(c * 11 + 4) * 0.6, v: 6 + seeded(c * 23 + 9) * 6
+            });
+        }
+        this.leaves = [];
+        for (let l = 0; l < 8; l++) {
+            this.leaves.push({
+                x: seeded(l * 19 + 6) * this.w, y: seeded(l * 29 + 7) * SURFACE_Y,
+                vy: 14 + seeded(l * 37 + 2) * 18, phase: seeded(l * 41 + 1) * Math.PI * 2,
+                tint: Math.floor(seeded(l * 43 + 5) * 3)
+            });
+        }
     }
 
     bindInput() {
@@ -157,7 +214,7 @@ class Game {
         const elapsedMin = (Date.now() - this.saveData.lastPlayed) / 60000;
         if (elapsedMin < 1) return;
         const cappedMin = Math.min(elapsedMin, 720); // máximo 12 horas acumulables
-        const earned = Math.floor(cappedMin * this.saveData.stats.offline * 0.5);
+        const earned = Math.floor(cappedMin * this.saveData.stats.offline * 0.6);
         if (earned > 0) {
             this.saveData.money += earned;
             this.showFloatingText('Offline +$' + earned);
@@ -183,13 +240,12 @@ class Game {
 
         for (const upg of upgrades) {
             const level = this.saveData.stats[upg.stat];
-            const cost = Math.floor(10 * Math.pow(1.5, level));
+            const cost = Math.floor(8 * Math.pow(1.4, level));
             document.getElementById(upg.lvl).innerText = level;
 
             const btn = document.getElementById(upg.btn);
             btn.innerText = '$' + cost;
             btn.disabled = this.saveData.money < cost;
-            btn.style.opacity = btn.disabled ? '0.5' : '1';
             // onclick (y no addEventListener) para no acumular listeners en cada refresco
             btn.onclick = () => {
                 if (this.saveData.money < cost) return;
@@ -198,7 +254,7 @@ class Game {
                 if (upg.stat === 'depth') {
                     const before = this.maxDepth;
                     this.maxDepth = this.computeMaxDepth();
-                    const unlocked = SPECIES.find(s => s.minDepth > before - 120 && s.minDepth <= this.maxDepth - 120);
+                    const unlocked = SPECIES.find(s => s.minDepth > before - 40 && s.minDepth <= this.maxDepth - 40);
                     if (unlocked) this.showFloatingText('¡Nuevo pez: ' + unlocked.name + '!');
                 }
                 this.save();
@@ -213,14 +269,25 @@ class Game {
         this.maxDepth = this.computeMaxDepth();
 
         this.fishes = [];
-        const count = Math.min(12 + this.saveData.stats.depth * 4, 90);
+        const count = Math.min(14 + this.saveData.stats.depth * 5, 110);
         for (let i = 0; i < count; i++) {
-            const depth = MathUtils.randomRange(180, this.maxDepth - 30);
+            const depth = MathUtils.randomRange(240, this.maxDepth - 40);
             const eligible = SPECIES.filter(s => depth >= s.minDepth);
             // Sesgo hacia las especies más profundas de la zona
-            const species = eligible[Math.floor(Math.pow(Math.random(), 0.55) * eligible.length)];
+            const species = eligible[Math.floor(Math.pow(Math.random(), 0.5) * eligible.length)];
             const golden = Math.random() < 0.08;
             this.fishes.push(new Fish(this.w, depth, species, golden));
+        }
+
+        // Cofre del tesoro cerca del fondo (bonus, no ocupa capacidad)
+        this.chest = null;
+        if (Math.random() < 0.65) {
+            this.chest = {
+                x: MathUtils.randomRange(20, this.w - 56),
+                y: MathUtils.randomRange(this.maxDepth * 0.6, this.maxDepth - 70),
+                width: 36, height: 28, caught: false,
+                value: Math.floor(12 + this.saveData.stats.depth * 9)
+            };
         }
     }
 
@@ -229,14 +296,14 @@ class Game {
         this.hook.fishes.push(fish);
         this.worldTexts.push({
             x: fish.x + fish.width / 2, y: fish.y, life: 1,
-            text: '+$' + fish.value, color: fish.golden ? '#ffd700' : '#ffffff'
+            text: '+$' + fish.value, color: fish.golden ? '#ffd93c' : '#ffffff'
         });
         for (let i = 0; i < 8; i++) {
             this.particles.push({
                 x: fish.x + fish.width / 2, y: fish.y + fish.height / 2,
                 vx: MathUtils.randomRange(-70, 70), vy: MathUtils.randomRange(-90, 20),
                 r: MathUtils.randomRange(1.5, 3.5), life: 1,
-                color: fish.golden ? '255,215,0' : '255,255,255'
+                color: fish.golden ? '255,217,60' : '255,255,255'
             });
         }
     }
@@ -247,18 +314,18 @@ class Game {
         const speed = this.hookSpeed();
 
         if (this.state === 'SINKING') {
-            this.hook.y += speed * 1.15 * deltaSec;
-            this.hook.x = MathUtils.lerp(this.hook.x, this.hook.targetX, 10 * deltaSec);
+            this.hook.y += speed * 1.25 * deltaSec;
+            this.hook.x = MathUtils.lerp(this.hook.x, this.hook.targetX, 12 * deltaSec);
             if (this.hook.y >= this.maxDepth) this.state = 'REELING';
 
         } else if (this.state === 'REELING') {
             this.hook.y -= speed * deltaSec;
-            this.hook.x = MathUtils.lerp(this.hook.x, this.hook.targetX, 10 * deltaSec);
+            this.hook.x = MathUtils.lerp(this.hook.x, this.hook.targetX, 12 * deltaSec);
 
             // Colisión AABB anzuelo vs peces libres, respetando la capacidad máxima
             for (const fish of this.fishes) {
                 if (fish.caught) continue;
-                if (this.hook.fishes.length >= this.saveData.stats.fish) break;
+                if (this.hook.fishes.length >= this.capacity()) break;
                 const hit = this.hook.x < fish.x + fish.width &&
                             this.hook.x + this.hook.width > fish.x &&
                             this.hook.y < fish.y + fish.height &&
@@ -266,7 +333,31 @@ class Game {
                 if (hit) this.catchFish(fish);
             }
 
+            // El cofre no ocupa capacidad
+            if (this.chest && !this.chest.caught) {
+                const c = this.chest;
+                const hit = this.hook.x < c.x + c.width &&
+                            this.hook.x + this.hook.width > c.x &&
+                            this.hook.y < c.y + c.height &&
+                            this.hook.y + this.hook.height > c.y;
+                if (hit) {
+                    c.caught = true;
+                    this.worldTexts.push({ x: c.x + c.width / 2, y: c.y, life: 1, text: '+$' + c.value, color: '#ffd93c' });
+                    for (let i = 0; i < 10; i++) {
+                        this.particles.push({
+                            x: c.x + c.width / 2, y: c.y + c.height / 2,
+                            vx: MathUtils.randomRange(-80, 80), vy: MathUtils.randomRange(-100, 10),
+                            r: MathUtils.randomRange(2, 4), life: 1, color: '255,217,60'
+                        });
+                    }
+                }
+            }
+
             if (this.hook.y <= HOOK_REST_Y) this.endFishing();
+
+        } else { // MENU: el anzuelo cuelga y se mece bajo la caña
+            this.hook.x = MathUtils.lerp(this.hook.x, this.restX(), 5 * deltaSec);
+            this.hook.y = MathUtils.lerp(this.hook.y, HOOK_REST_Y + Math.sin(this.time * 1.8) * 3, 5 * deltaSec);
         }
 
         for (const fish of this.fishes) fish.update(deltaSec, this.w, this.time);
@@ -276,8 +367,23 @@ class Game {
             fish.x = this.hook.x + this.hook.width / 2 - fish.width / 2;
             fish.y = this.hook.y + this.hook.height / 2 - fish.height / 2 + i * 7;
         });
+        if (this.chest && this.chest.caught) {
+            this.chest.x = this.hook.x + this.hook.width / 2 - this.chest.width / 2;
+            this.chest.y = this.hook.y + this.hook.height * 0.6 + this.hook.fishes.length * 7;
+        }
 
-        // Burbujas ambientales cerca del anzuelo mientras se pesca
+        // Hojas cayendo en la escena de la orilla
+        for (const leaf of this.leaves) {
+            leaf.y += leaf.vy * deltaSec;
+            leaf.x += Math.sin(this.time * 2 + leaf.phase) * 18 * deltaSec;
+            if (leaf.y > SURFACE_Y - 2) { leaf.y = -6; leaf.x = Math.random() * this.w; }
+        }
+        for (const c of this.clouds) {
+            c.x += c.v * deltaSec;
+            if (c.x - 70 * c.s > this.w) c.x = -70 * c.s;
+        }
+
+        // Burbujas cerca del anzuelo mientras se pesca
         if (this.state !== 'MENU' && Math.random() < deltaSec * 4) {
             this.bubbles.push({
                 x: this.hook.x + MathUtils.randomRange(-25, 25),
@@ -290,7 +396,7 @@ class Game {
         this.bubbles = this.bubbles.filter(b => {
             b.y -= b.vy * deltaSec;
             b.x += Math.sin(this.time * 3 + b.phase) * 12 * deltaSec;
-            return b.y > SURFACE_Y + 4;
+            return b.y > SURFACE_Y + 6;
         });
 
         this.particles = this.particles.filter(p => {
@@ -298,6 +404,15 @@ class Game {
             p.y += p.vy * deltaSec;
             p.life -= deltaSec * 1.6;
             return p.life > 0;
+        });
+
+        // Monedas que saltan del bote al cobrar
+        this.coins = this.coins.filter(c => {
+            c.vy += 420 * deltaSec;
+            c.x += c.vx * deltaSec;
+            c.y += c.vy * deltaSec;
+            c.life -= deltaSec;
+            return c.life > 0;
         });
 
         this.worldTexts = this.worldTexts.filter(t => {
@@ -313,12 +428,26 @@ class Game {
 
         let earned = 0;
         for (const fish of this.hook.fishes) earned += fish.value;
+        if (this.chest && this.chest.caught) earned += this.chest.value;
+
         if (earned > 0) {
             this.saveData.money += earned;
-            this.showFloatingText('+$' + earned + ' · ' + this.hook.fishes.length + ' 🐟');
+            this.showFloatingText('+$' + earned);
+            const n = Math.min(16, 5 + this.hook.fishes.length * 3);
+            for (let i = 0; i < n; i++) {
+                this.coins.push({
+                    x: this.w / 2 + MathUtils.randomRange(-30, 30),
+                    y: SURFACE_Y - 22,
+                    vx: MathUtils.randomRange(-90, 90),
+                    vy: MathUtils.randomRange(-270, -130),
+                    life: MathUtils.randomRange(0.7, 1.1)
+                });
+            }
         }
         this.hook.fishes = [];
         this.fishes = [];
+        this.chest = null;
+        this.hook.targetX = this.restX();
 
         this.save();
     }
@@ -328,9 +457,9 @@ class Game {
         const el = document.createElement('div');
         el.innerText = text;
         el.style.cssText =
-            'position:absolute; left:50%; top:35%; transform:translate(-50%,0);' +
-            'font-size:26px; font-weight:bold; color:#fbc531; white-space:nowrap;' +
-            'text-shadow:0 2px 4px rgba(0,0,0,0.6); pointer-events:none;' +
+            'position:absolute; left:50%; top:30%; transform:translate(-50%,0);' +
+            'font-size:28px; font-weight:800; color:#ffd93c; white-space:nowrap;' +
+            'text-shadow:0 3px 0 rgba(0,0,0,0.35); pointer-events:none;' +
             'transition:transform 1.2s ease-out, opacity 1.2s ease-out; opacity:1;';
         container.appendChild(el);
         requestAnimationFrame(() => {
@@ -346,136 +475,178 @@ class Game {
         const visTop = -this.cameraY;
         const visBottom = visTop + this.h;
 
-        // Agua: gradiente según profundidad visible
+        // Agua: azul → violeta según profundidad visible
         const grad = ctx.createLinearGradient(0, visTop, 0, visBottom);
         grad.addColorStop(0, waterColorAt(Math.max(0, visTop)));
         grad.addColorStop(1, waterColorAt(visBottom));
         ctx.fillStyle = grad;
         ctx.fillRect(0, visTop, this.w, this.h);
 
-        // Cielo, sol y nubes
-        if (visTop < SURFACE_Y) {
-            const sky = ctx.createLinearGradient(0, 0, 0, SURFACE_Y);
-            sky.addColorStop(0, '#aee7ff');
-            sky.addColorStop(1, '#7ec8f0');
-            ctx.fillStyle = sky;
-            ctx.fillRect(0, Math.min(0, visTop), this.w, SURFACE_Y - Math.min(0, visTop));
-
-            ctx.fillStyle = '#ffee99';
-            ctx.beginPath();
-            ctx.arc(this.w * 0.82, 26, 16, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.fillStyle = 'rgba(255,238,153,0.35)';
-            ctx.beginPath();
-            ctx.arc(this.w * 0.82, 26, 24, 0, Math.PI * 2);
-            ctx.fill();
-
-            ctx.fillStyle = 'rgba(255,255,255,0.85)';
-            const cx = ((this.time * 7) % (this.w + 140)) - 70;
-            ctx.beginPath();
-            ctx.ellipse(cx, 30, 26, 10, 0, 0, Math.PI * 2);
-            ctx.ellipse(cx + 18, 26, 18, 8, 0, 0, Math.PI * 2);
-            ctx.fill();
-
-            // Olas en la superficie
-            for (let pass = 0; pass < 2; pass++) {
-                ctx.beginPath();
-                ctx.strokeStyle = pass === 0 ? 'rgba(255,255,255,0.65)' : 'rgba(255,255,255,0.25)';
-                ctx.lineWidth = pass === 0 ? 2 : 1.5;
-                const yOff = pass * 4;
-                for (let x = 0; x <= this.w; x += 6) {
-                    const y = SURFACE_Y + yOff + Math.sin(x / 26 + this.time * (2 - pass * 0.6)) * 2.5;
-                    x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
-                }
-                ctx.stroke();
-            }
+        // Marcadores de profundidad al lado derecho (cada 25 m)
+        ctx.font = 'bold 13px "Arial Rounded MT Bold", "Trebuchet MS", sans-serif';
+        ctx.textAlign = 'right';
+        for (let d = 250; d <= this.maxDepth - SURFACE_Y + 250; d += 250) {
+            const wy = SURFACE_Y + d;
+            if (wy < visTop - 20 || wy > visBottom + 20) continue;
+            ctx.fillStyle = 'rgba(255,255,255,0.4)';
+            ctx.fillRect(this.w - 34, wy - 1.5, 22, 3);
+            ctx.fillStyle = 'rgba(255,255,255,0.55)';
+            ctx.fillText((d / 10) + 'm', this.w - 40, wy + 4);
         }
+        ctx.textAlign = 'left';
 
-        // Rayos de sol bajo el agua
-        if (visTop < 480) {
-            ctx.fillStyle = 'rgba(255,255,255,0.05)';
-            for (let i = 0; i < 4; i++) {
-                const rx = this.w * (0.18 + i * 0.22) + Math.sin(this.time * 0.4 + i) * 14;
-                ctx.beginPath();
-                ctx.moveTo(rx - 12, SURFACE_Y);
-                ctx.lineTo(rx + 12, SURFACE_Y);
-                ctx.lineTo(rx + 55, 500);
-                ctx.lineTo(rx - 55, 500);
-                ctx.closePath();
-                ctx.fill();
-            }
-        }
-
-        // Fondo marino con arena, rocas y algas
-        const floorY = this.maxDepth + 55;
+        // Fondo del lago
+        const floorY = this.maxDepth + 60;
         if (visBottom > floorY - 20) {
-            ctx.fillStyle = lerpColor('#c9a96a', '#3d3323', Math.min(1, floorY / 3000));
-            ctx.beginPath();
-            ctx.moveTo(0, floorY + 12);
-            for (let x = 0; x <= this.w; x += 24) {
-                ctx.lineTo(x, floorY + Math.sin(x / 40) * 6);
-            }
-            ctx.lineTo(this.w, floorY + 220);
-            ctx.lineTo(0, floorY + 220);
-            ctx.closePath();
-            ctx.fill();
-
-            ctx.fillStyle = 'rgba(40,36,30,0.75)';
-            for (let i = 0; i < 4; i++) {
-                const rx = this.w * (0.12 + i * 0.26);
-                ctx.beginPath();
-                ctx.ellipse(rx, floorY + 6, 16 + i * 4, 10, 0, Math.PI, 0);
-                ctx.fill();
-            }
-
-            ctx.strokeStyle = '#2e7d5b';
-            ctx.lineWidth = 3;
+            const sand = lerpColor('#4b3a7d', '#1a1136', Math.min(1, floorY / 3600));
+            flatPath(ctx, sand, 8, () => {
+                ctx.moveTo(-10, floorY + 14);
+                for (let x = 0; x <= this.w + 20; x += 30) {
+                    ctx.lineTo(x, floorY + Math.sin(x / 46) * 7);
+                }
+                ctx.lineTo(this.w + 10, floorY + 240);
+                ctx.lineTo(-10, floorY + 240);
+            });
+            // Algas violetas y coral
             ctx.lineCap = 'round';
             for (let i = 0; i < 6; i++) {
                 const ax = this.w * (0.08 + i * 0.17);
                 const sway = Math.sin(this.time * 1.4 + i * 1.7) * 9;
+                ctx.strokeStyle = i % 2 ? '#9d6fe0' : '#ff9ecf';
+                ctx.lineWidth = 4;
                 ctx.beginPath();
-                ctx.moveTo(ax, floorY + 6);
-                ctx.quadraticCurveTo(ax + sway * 0.4, floorY - 22, ax + sway, floorY - 46 - (i % 3) * 10);
+                ctx.moveTo(ax, floorY + 8);
+                ctx.quadraticCurveTo(ax + sway * 0.4, floorY - 24, ax + sway, floorY - 48 - (i % 3) * 12);
                 ctx.stroke();
             }
             ctx.lineCap = 'butt';
         }
     }
 
+    drawScene(ctx) {
+        const visTop = -this.cameraY;
+        if (visTop > SURFACE_Y + 30) return;
+
+        // Cielo plano turquesa
+        ctx.fillStyle = '#4ec9c4';
+        ctx.fillRect(0, 0, this.w, SURFACE_Y);
+
+        // Nubes planas
+        ctx.fillStyle = '#ffffff';
+        for (const c of this.clouds) {
+            ctx.beginPath();
+            ctx.arc(c.x, c.y, 14 * c.s, 0, Math.PI * 2);
+            ctx.arc(c.x + 16 * c.s, c.y - 6 * c.s, 11 * c.s, 0, Math.PI * 2);
+            ctx.arc(c.x + 32 * c.s, c.y, 12 * c.s, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // Orilla con pinos y árboles de otoño
+        const bushTints = ['#f2884b', '#e8633c', '#f5a25c'];
+        for (const t of this.trees) {
+            const s = t.size;
+            if (t.kind === 'pine') {
+                ctx.fillStyle = '#2a7f7c';
+                ctx.beginPath();
+                ctx.moveTo(t.x, SURFACE_Y - 52 * s);
+                ctx.lineTo(t.x - 13 * s, SURFACE_Y - 24 * s);
+                ctx.lineTo(t.x + 13 * s, SURFACE_Y - 24 * s);
+                ctx.closePath();
+                ctx.fill();
+                ctx.beginPath();
+                ctx.moveTo(t.x, SURFACE_Y - 38 * s);
+                ctx.lineTo(t.x - 17 * s, SURFACE_Y - 4);
+                ctx.lineTo(t.x + 17 * s, SURFACE_Y - 4);
+                ctx.closePath();
+                ctx.fill();
+            } else {
+                ctx.fillStyle = '#6e4229';
+                ctx.fillRect(t.x - 2.5 * s, SURFACE_Y - 16 * s, 5 * s, 16 * s);
+                ctx.fillStyle = bushTints[t.tint];
+                ctx.beginPath();
+                ctx.arc(t.x, SURFACE_Y - 28 * s, 13 * s, 0, Math.PI * 2);
+                ctx.arc(t.x - 10 * s, SURFACE_Y - 20 * s, 10 * s, 0, Math.PI * 2);
+                ctx.arc(t.x + 10 * s, SURFACE_Y - 20 * s, 10 * s, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        // Hojas cayendo
+        for (const leaf of this.leaves) {
+            ctx.save();
+            ctx.translate(leaf.x, leaf.y);
+            ctx.rotate(Math.sin(this.time * 2 + leaf.phase) * 0.8);
+            ctx.fillStyle = bushTints[leaf.tint];
+            ctx.beginPath();
+            ctx.ellipse(0, 0, 4.5, 2.5, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+        }
+
+        // Línea de agua y destellos planos
+        ctx.fillStyle = 'rgba(255,255,255,0.35)';
+        ctx.fillRect(0, SURFACE_Y, this.w, 4);
+        for (let i = 0; i < 4; i++) {
+            const dx = ((this.time * (10 + i * 4) + i * 137) % (this.w + 70)) - 35;
+            roundRectPath(ctx, dx, SURFACE_Y + 12 + (i % 2) * 12, 26 + i * 5, 4, 2);
+            ctx.fillStyle = 'rgba(255,255,255,0.22)';
+            ctx.fill();
+        }
+    }
+
     drawBoat(ctx) {
-        const bx = this.w / 2, by = SURFACE_Y;
-        const bob = Math.sin(this.time * 1.8) * 1.5;
+        const bx = this.w / 2, by = SURFACE_Y - 4;
+        const bob = Math.sin(this.time * 1.8) * 1.6;
 
         ctx.save();
         ctx.translate(0, bob);
-        // Casco
-        ctx.fillStyle = '#c0392b';
-        ctx.beginPath();
-        ctx.moveTo(bx - 40, by - 8);
-        ctx.lineTo(bx + 40, by - 8);
-        ctx.lineTo(bx + 27, by + 10);
-        ctx.lineTo(bx - 27, by + 10);
-        ctx.closePath();
+
+        // Casco de madera
+        roundRectPath(ctx, bx - 46, by - 8, 92, 20, 9);
+        ctx.fillStyle = '#8c5a3c';
         ctx.fill();
-        ctx.fillStyle = '#ecf0f1';
-        ctx.fillRect(bx - 38, by - 8, 76, 4);
-        // Pescador
-        ctx.fillStyle = '#2c3e50';
-        ctx.fillRect(bx + 1, by - 24, 10, 16);
-        ctx.fillStyle = '#f1c27d';
-        ctx.beginPath();
-        ctx.arc(bx + 6, by - 29, 5, 0, Math.PI * 2);
+        roundRectPath(ctx, bx - 46, by - 8, 92, 7, 3.5);
+        ctx.fillStyle = '#6e4229';
         ctx.fill();
-        ctx.fillStyle = '#8d6e63';
-        ctx.fillRect(bx + 0, by - 36, 12, 4);
-        // Caña
-        ctx.strokeStyle = '#6d4c41';
-        ctx.lineWidth = 2.5;
+
+        // Pescador (mirando a la izquierda)
+        flatPath(ctx, '#e8633c', 5, () => { // chaqueta
+            ctx.moveTo(bx + 4, by - 32);
+            ctx.lineTo(bx + 22, by - 32);
+            ctx.lineTo(bx + 24, by - 10);
+            ctx.lineTo(bx + 2, by - 10);
+        });
+        ctx.fillStyle = '#f5c99b'; // cabeza
         ctx.beginPath();
-        ctx.moveTo(bx + 8, by - 20);
-        ctx.lineTo(bx + 34, by - 42);
+        ctx.arc(bx + 12, by - 42, 8, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#d94f4f'; // gorro
+        ctx.beginPath();
+        ctx.arc(bx + 12, by - 45, 8.5, Math.PI, 0);
+        ctx.fill();
+        roundRectPath(ctx, bx + 3.5, by - 47, 17, 4.5, 2);
+        ctx.fill();
+        ctx.fillStyle = '#ffffff'; // pompón
+        ctx.beginPath();
+        ctx.arc(bx + 12, by - 53, 3.2, 0, Math.PI * 2);
+        ctx.fill();
+        // Brazo hacia la caña
+        ctx.strokeStyle = '#e8633c';
+        ctx.lineWidth = 5;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(bx + 6, by - 27);
+        ctx.lineTo(bx - 8, by - 31);
         ctx.stroke();
+        // Caña
+        ctx.strokeStyle = '#4a3728';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(bx - 6, by - 30);
+        ctx.lineTo(bx - 36, by - 58);
+        ctx.stroke();
+        ctx.lineCap = 'butt';
+
         ctx.restore();
     }
 
@@ -483,35 +654,31 @@ class Game {
         const hx = this.hook.x + this.hook.width / 2;
         const hy = this.hook.y;
         const h = this.hook.height;
+        const bob = Math.sin(this.time * 1.8) * 1.6;
 
-        // Hilo desde la punta de la caña
+        // Sedal desde la punta de la caña
         ctx.beginPath();
-        ctx.moveTo(this.w / 2 + 34, SURFACE_Y - 42 + Math.sin(this.time * 1.8) * 1.5);
+        ctx.moveTo(this.w / 2 - 36, SURFACE_Y - 62 + bob);
         ctx.lineTo(hx, hy + 4);
-        ctx.strokeStyle = 'rgba(255,255,255,0.55)';
-        ctx.lineWidth = 1.2;
+        ctx.strokeStyle = 'rgba(255,255,255,0.6)';
+        ctx.lineWidth = 1.5;
         ctx.stroke();
 
         // Plomada
-        ctx.fillStyle = '#78909c';
+        ctx.fillStyle = '#eceff4';
         ctx.beginPath();
         ctx.arc(hx, hy + 6, 4.5, 0, Math.PI * 2);
         ctx.fill();
-        ctx.fillStyle = 'rgba(255,255,255,0.45)';
-        ctx.beginPath();
-        ctx.arc(hx - 1.5, hy + 4.5, 1.5, 0, Math.PI * 2);
-        ctx.fill();
 
-        // Gancho metálico
-        ctx.strokeStyle = '#cfd8dc';
-        ctx.lineWidth = 3;
+        // Gancho
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 3.5;
         ctx.lineCap = 'round';
         ctx.beginPath();
         ctx.moveTo(hx, hy + 10);
         ctx.lineTo(hx, hy + h - 12);
         ctx.arc(hx - 7, hy + h - 12, 7, 0, Math.PI * 0.9, false);
         ctx.stroke();
-        // Punta
         ctx.beginPath();
         ctx.moveTo(hx - 13.4, hy + h - 10);
         ctx.lineTo(hx - 15, hy + h - 18);
@@ -519,10 +686,32 @@ class Game {
         ctx.lineCap = 'butt';
     }
 
+    drawChest(ctx) {
+        const c = this.chest;
+        if (!c) return;
+        const { x, y, width: w, height: h } = c;
+
+        roundRectPath(ctx, x, y + h * 0.32, w, h * 0.68, 4);
+        ctx.fillStyle = '#8c5a3c';
+        ctx.fill();
+        roundRectPath(ctx, x, y, w, h * 0.46, 6);
+        ctx.fillStyle = '#6e4229';
+        ctx.fill();
+        ctx.fillStyle = '#ffc93c';
+        ctx.fillRect(x + w / 2 - 3, y, 6, h);
+        roundRectPath(ctx, x + w / 2 - 5.5, y + h * 0.36, 11, 10, 2.5);
+        ctx.fill();
+        ctx.fillStyle = '#6e4229';
+        ctx.beginPath();
+        ctx.arc(x + w / 2, y + h * 0.36 + 5, 2, 0, Math.PI * 2);
+        ctx.fill();
+    }
+
     drawFish(ctx, fish) {
         const { x, y, width: w, height: h } = fish;
         const cx = x + w / 2, cy = y + h / 2;
-        const colors = fish.golden ? ['#ffe082', '#f9a825'] : fish.species.colors;
+        const body = fish.golden ? '#ffd93c' : fish.species.body;
+        const belly = fish.golden ? '#fff3b0' : fish.species.belly;
         const shape = fish.species.shape;
 
         ctx.save();
@@ -533,171 +722,175 @@ class Game {
             ctx.translate(-cx, 0);
         }
         if (fish.golden) {
-            ctx.shadowColor = '#ffd700';
-            ctx.shadowBlur = 12;
+            ctx.shadowColor = '#ffd93c';
+            ctx.shadowBlur = 14;
         }
 
-        const wag = Math.sin(this.time * 8 + fish.wobblePhase) * h * 0.14;
+        const wag = Math.sin(this.time * 8 + fish.wobblePhase) * h * 0.13;
 
         if (shape === 'medusa') {
-            ctx.globalAlpha = 0.85;
-            // Campana
-            const grad = ctx.createLinearGradient(x, y, x, y + h);
-            grad.addColorStop(0, colors[0]);
-            grad.addColorStop(1, colors[1]);
-            ctx.fillStyle = grad;
-            ctx.beginPath();
-            ctx.arc(cx, y + h * 0.34, w / 2, Math.PI, 0);
-            ctx.quadraticCurveTo(cx + w * 0.4, y + h * 0.5, cx + w * 0.3, y + h * 0.52);
-            ctx.lineTo(cx - w * 0.3, y + h * 0.52);
-            ctx.quadraticCurveTo(cx - w * 0.4, y + h * 0.5, cx - w / 2, y + h * 0.34);
-            ctx.closePath();
-            ctx.fill();
-            // Tentáculos
-            ctx.strokeStyle = colors[1];
-            ctx.lineWidth = 2;
+            ctx.globalAlpha = 0.88;
+            flatPath(ctx, body, 4, () => { // campana
+                ctx.arc(cx, y + h * 0.32, w / 2, Math.PI, 0);
+                ctx.quadraticCurveTo(cx + w * 0.42, y + h * 0.5, cx + w * 0.3, y + h * 0.5);
+                ctx.lineTo(cx - w * 0.3, y + h * 0.5);
+                ctx.quadraticCurveTo(cx - w * 0.42, y + h * 0.5, cx - w / 2, y + h * 0.32);
+            });
+            ctx.strokeStyle = belly;
+            ctx.lineWidth = 3;
+            ctx.lineCap = 'round';
             for (let i = 0; i < 4; i++) {
                 const tx = cx - w * 0.3 + i * w * 0.2;
-                const sw = Math.sin(this.time * 4 + fish.wobblePhase + i) * 5;
+                const sw = Math.sin(this.time * 4 + fish.wobblePhase + i) * 6;
                 ctx.beginPath();
                 ctx.moveTo(tx, y + h * 0.5);
-                ctx.quadraticCurveTo(tx + sw, y + h * 0.75, tx - sw, y + h);
+                ctx.quadraticCurveTo(tx + sw, y + h * 0.74, tx - sw, y + h);
                 ctx.stroke();
             }
+            ctx.lineCap = 'butt';
+            // Ojitos
+            ctx.fillStyle = '#5d3a6e';
+            ctx.beginPath();
+            ctx.arc(cx - w * 0.14, y + h * 0.26, 2.2, 0, Math.PI * 2);
+            ctx.arc(cx + w * 0.14, y + h * 0.26, 2.2, 0, Math.PI * 2);
+            ctx.fill();
             ctx.globalAlpha = 1;
 
         } else if (shape === 'globo') {
-            // Púas
-            ctx.strokeStyle = colors[1];
-            ctx.lineWidth = 2;
             const r = Math.min(w, h) / 2;
+            // Púas
+            ctx.strokeStyle = body;
+            ctx.lineWidth = 3;
+            ctx.lineCap = 'round';
             for (let i = 0; i < 10; i++) {
                 const ang = (i / 10) * Math.PI * 2;
                 ctx.beginPath();
                 ctx.moveTo(cx + Math.cos(ang) * r * 0.85, cy + Math.sin(ang) * r * 0.85);
-                ctx.lineTo(cx + Math.cos(ang) * (r + 4), cy + Math.sin(ang) * (r + 4));
+                ctx.lineTo(cx + Math.cos(ang) * (r + 5), cy + Math.sin(ang) * (r + 5));
                 ctx.stroke();
             }
-            // Cuerpo
-            const grad = ctx.createRadialGradient(cx - r * 0.3, cy - r * 0.3, r * 0.2, cx, cy, r);
-            grad.addColorStop(0, colors[0]);
-            grad.addColorStop(1, colors[1]);
-            ctx.fillStyle = grad;
+            ctx.lineCap = 'butt';
+            // Cuerpo y panza
+            ctx.fillStyle = body;
             ctx.beginPath();
             ctx.arc(cx, cy, r, 0, Math.PI * 2);
             ctx.fill();
-            // Cola pequeña
-            ctx.fillStyle = colors[1];
+            ctx.save();
             ctx.beginPath();
-            ctx.moveTo(x + 2, cy);
-            ctx.lineTo(x - 6, cy - 6 + wag);
-            ctx.lineTo(x - 6, cy + 6 + wag);
-            ctx.closePath();
+            ctx.arc(cx, cy, r, 0, Math.PI * 2);
+            ctx.clip();
+            ctx.fillStyle = belly;
+            ctx.beginPath();
+            ctx.ellipse(cx, cy + r * 0.75, r * 0.95, r * 0.7, 0, 0, Math.PI * 2);
             ctx.fill();
-            this.drawEye(ctx, x + w * 0.68, cy - h * 0.14, h * 0.13);
+            ctx.restore();
+            // Cola pequeña
+            flatPath(ctx, body, 4, () => {
+                ctx.moveTo(x + 3, cy);
+                ctx.lineTo(x - 6, cy - 7 + wag);
+                ctx.lineTo(x - 6, cy + 7 + wag);
+            });
+            this.drawEye(ctx, x + w * 0.66, cy - h * 0.14, h * 0.15);
 
         } else if (shape === 'angler') {
             // Antena con señuelo luminoso
-            ctx.strokeStyle = colors[0];
-            ctx.lineWidth = 2;
+            ctx.strokeStyle = belly;
+            ctx.lineWidth = 2.5;
             ctx.beginPath();
-            ctx.moveTo(cx + w * 0.15, y + 3);
-            ctx.quadraticCurveTo(cx + w * 0.45, y - h * 0.4, x + w + 4, y - 2);
+            ctx.moveTo(cx + w * 0.15, y + 4);
+            ctx.quadraticCurveTo(cx + w * 0.45, y - h * 0.4, x + w + 5, y - 2);
             ctx.stroke();
-            const bulb = ctx.createRadialGradient(x + w + 4, y - 2, 1, x + w + 4, y - 2, 10);
-            bulb.addColorStop(0, 'rgba(255,253,200,0.95)');
-            bulb.addColorStop(1, 'rgba(255,253,200,0)');
+            const bulb = ctx.createRadialGradient(x + w + 5, y - 2, 1, x + w + 5, y - 2, 11);
+            bulb.addColorStop(0, 'rgba(255,247,196,0.95)');
+            bulb.addColorStop(1, 'rgba(255,247,196,0)');
             ctx.fillStyle = bulb;
             ctx.beginPath();
-            ctx.arc(x + w + 4, y - 2, 10, 0, Math.PI * 2);
+            ctx.arc(x + w + 5, y - 2, 11, 0, Math.PI * 2);
             ctx.fill();
-            ctx.fillStyle = '#fffde7';
+            ctx.fillStyle = '#fff7c4';
             ctx.beginPath();
-            ctx.arc(x + w + 4, y - 2, 3, 0, Math.PI * 2);
+            ctx.arc(x + w + 5, y - 2, 3.2, 0, Math.PI * 2);
             ctx.fill();
-            // Cola
-            ctx.fillStyle = colors[1];
-            ctx.beginPath();
-            ctx.moveTo(x + w * 0.15, cy);
-            ctx.lineTo(x - w * 0.16, cy - h * 0.34 + wag);
-            ctx.lineTo(x - w * 0.16, cy + h * 0.34 + wag);
-            ctx.closePath();
-            ctx.fill();
-            // Cuerpo
-            const grad = ctx.createLinearGradient(x, y, x, y + h);
-            grad.addColorStop(0, colors[0]);
-            grad.addColorStop(1, colors[1]);
-            ctx.fillStyle = grad;
+            // Cola y cuerpo
+            flatPath(ctx, body, 5, () => {
+                ctx.moveTo(x + w * 0.16, cy);
+                ctx.lineTo(x - w * 0.14, cy - h * 0.32 + wag);
+                ctx.lineTo(x - w * 0.14, cy + h * 0.32 + wag);
+            });
+            ctx.fillStyle = body;
             ctx.beginPath();
             ctx.ellipse(cx, cy, w / 2, h / 2, 0, 0, Math.PI * 2);
             ctx.fill();
+            ctx.save();
+            ctx.beginPath();
+            ctx.ellipse(cx, cy, w / 2, h / 2, 0, 0, Math.PI * 2);
+            ctx.clip();
+            ctx.fillStyle = belly;
+            ctx.beginPath();
+            ctx.ellipse(cx, cy + h * 0.38, w * 0.46, h * 0.34, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
             // Dientes
-            ctx.fillStyle = '#eceff1';
+            ctx.fillStyle = '#ffffff';
             for (let i = 0; i < 4; i++) {
-                const tx = x + w * 0.55 + i * w * 0.09;
+                const tx = x + w * 0.54 + i * w * 0.1;
                 ctx.beginPath();
-                ctx.moveTo(tx, cy + h * 0.18);
-                ctx.lineTo(tx + 3, cy + h * 0.34);
-                ctx.lineTo(tx + 6, cy + h * 0.18);
+                ctx.moveTo(tx, cy + h * 0.16);
+                ctx.lineTo(tx + 3.5, cy + h * 0.34);
+                ctx.lineTo(tx + 7, cy + h * 0.16);
                 ctx.closePath();
                 ctx.fill();
             }
-            this.drawEye(ctx, x + w * 0.68, cy - h * 0.16, h * 0.14, '#ffeb3b');
+            this.drawEye(ctx, x + w * 0.66, cy - h * 0.16, h * 0.15, '#ffd93c');
 
-        } else { // 'fish' clásico
-            // Cola
-            ctx.fillStyle = colors[1];
-            ctx.beginPath();
-            ctx.moveTo(x + w * 0.15, cy);
-            ctx.lineTo(x - w * 0.18, cy - h * 0.36 + wag);
-            ctx.lineTo(x - w * 0.18, cy + h * 0.36 + wag);
-            ctx.closePath();
-            ctx.fill();
-            // Cuerpo
-            const grad = ctx.createLinearGradient(x, y, x, y + h);
-            grad.addColorStop(0, colors[0]);
-            grad.addColorStop(1, colors[1]);
-            ctx.fillStyle = grad;
-            ctx.beginPath();
-            ctx.ellipse(cx, cy, w / 2, h / 2, 0, 0, Math.PI * 2);
-            ctx.fill();
+        } else { // pez clásico gordito
+            // Cola redondeada
+            flatPath(ctx, body, 5, () => {
+                ctx.moveTo(x + w * 0.18, cy);
+                ctx.lineTo(x - w * 0.16, cy - h * 0.34 + wag);
+                ctx.quadraticCurveTo(x - w * 0.22, cy + wag, x - w * 0.16, cy + h * 0.34 + wag);
+            });
             // Espada (pez espada)
             if (fish.species.nose) {
-                ctx.fillStyle = colors[1];
-                ctx.beginPath();
-                ctx.moveTo(x + w * 0.92, cy - 2.5);
-                ctx.lineTo(x + w + w * 0.3, cy);
-                ctx.lineTo(x + w * 0.92, cy + 2.5);
-                ctx.closePath();
-                ctx.fill();
+                flatPath(ctx, body, 3, () => {
+                    ctx.moveTo(x + w * 0.9, cy - 3);
+                    ctx.lineTo(x + w + w * 0.3, cy);
+                    ctx.lineTo(x + w * 0.9, cy + 3);
+                });
             }
             // Aleta dorsal
-            ctx.fillStyle = colors[1];
+            flatPath(ctx, body, 4, () => {
+                ctx.moveTo(cx - w * 0.2, y + h * 0.14);
+                ctx.quadraticCurveTo(cx, y - h * 0.28, cx + w * 0.16, y + h * 0.14);
+            });
+            // Cuerpo
+            ctx.fillStyle = body;
             ctx.beginPath();
-            ctx.moveTo(cx - w * 0.18, y + h * 0.12);
-            ctx.quadraticCurveTo(cx, y - h * 0.25, cx + w * 0.18, y + h * 0.12);
-            ctx.closePath();
+            ctx.ellipse(cx, cy, w / 2, h / 2, 0, 0, Math.PI * 2);
             ctx.fill();
-            // Franjas dentro del cuerpo
+            // Panza clara
+            ctx.save();
+            ctx.beginPath();
+            ctx.ellipse(cx, cy, w / 2, h / 2, 0, 0, Math.PI * 2);
+            ctx.clip();
+            ctx.fillStyle = belly;
+            ctx.beginPath();
+            ctx.ellipse(cx - w * 0.05, cy + h * 0.36, w * 0.48, h * 0.36, 0, 0, Math.PI * 2);
+            ctx.fill();
+            // Franja blanca
             if (fish.species.stripe) {
-                ctx.save();
-                ctx.beginPath();
-                ctx.ellipse(cx, cy, w / 2, h / 2, 0, 0, Math.PI * 2);
-                ctx.clip();
                 ctx.fillStyle = fish.species.stripe;
-                ctx.fillRect(cx - w * 0.08, y, w * 0.13, h);
-                ctx.fillRect(cx + w * 0.22, y, w * 0.11, h);
-                ctx.restore();
+                roundRectPath(ctx, cx - w * 0.1, y - 2, w * 0.16, h + 4, 5);
+                ctx.fill();
             }
+            ctx.restore();
             // Aleta lateral
-            ctx.fillStyle = 'rgba(0,0,0,0.15)';
-            ctx.beginPath();
-            ctx.moveTo(cx, cy + h * 0.05);
-            ctx.lineTo(cx - w * 0.14, cy + h * 0.3);
-            ctx.lineTo(cx + w * 0.1, cy + h * 0.22);
-            ctx.closePath();
-            ctx.fill();
-            this.drawEye(ctx, x + w * 0.72, cy - h * 0.14, h * 0.14);
+            flatPath(ctx, belly, 3, () => {
+                ctx.moveTo(cx + w * 0.02, cy + h * 0.02);
+                ctx.lineTo(cx - w * 0.16, cy + h * 0.26);
+                ctx.lineTo(cx + w * 0.12, cy + h * 0.2);
+            });
+            this.drawEye(ctx, x + w * 0.72, cy - h * 0.12, h * 0.17);
         }
 
         ctx.restore();
@@ -709,9 +902,13 @@ class Game {
         ctx.beginPath();
         ctx.arc(ex, ey, r, 0, Math.PI * 2);
         ctx.fill();
-        ctx.fillStyle = '#1a1a1a';
+        ctx.fillStyle = '#26203a';
         ctx.beginPath();
-        ctx.arc(ex + r * 0.3, ey, r * 0.5, 0, Math.PI * 2);
+        ctx.arc(ex + r * 0.28, ey, r * 0.52, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(ex + r * 0.1, ey - r * 0.22, r * 0.16, 0, Math.PI * 2);
         ctx.fill();
     }
 
@@ -724,27 +921,25 @@ class Game {
         let targetCameraY = 0;
         if (this.state === 'SINKING' || this.state === 'REELING') {
             targetCameraY = -(this.hook.y - this.h / 3);
-            targetCameraY = MathUtils.clamp(targetCameraY, Math.min(0, -(this.maxDepth + 180 - this.h)), 0);
+            targetCameraY = MathUtils.clamp(targetCameraY, Math.min(0, -(this.maxDepth + 200 - this.h)), 0);
         }
         this.cameraY = MathUtils.lerp(this.cameraY, targetCameraY, 0.1);
         ctx.translate(0, this.cameraY);
 
         this.drawBackground(ctx);
+        this.drawScene(ctx);
         this.drawBoat(ctx);
+        this.drawChest(ctx);
 
         for (const fish of this.fishes) this.drawFish(ctx, fish);
 
         // Burbujas
         for (const b of this.bubbles) {
             ctx.strokeStyle = 'rgba(255,255,255,0.5)';
-            ctx.lineWidth = 1;
+            ctx.lineWidth = 1.2;
             ctx.beginPath();
             ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
             ctx.stroke();
-            ctx.fillStyle = 'rgba(255,255,255,0.35)';
-            ctx.beginPath();
-            ctx.arc(b.x - b.r * 0.35, b.y - b.r * 0.35, b.r * 0.3, 0, Math.PI * 2);
-            ctx.fill();
         }
 
         this.drawHook(ctx);
@@ -757,12 +952,23 @@ class Game {
             ctx.fill();
         }
 
+        // Monedas
+        for (const c of this.coins) {
+            ctx.fillStyle = '#ffd93c';
+            ctx.strokeStyle = '#d9a51e';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(c.x, c.y, 5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+        }
+
         // Textos flotantes en el mundo (+$)
-        ctx.font = 'bold 15px "Arial Rounded MT Bold", "Segoe UI", sans-serif';
+        ctx.font = 'bold 15px "Arial Rounded MT Bold", "Trebuchet MS", sans-serif';
         ctx.textAlign = 'center';
         for (const t of this.worldTexts) {
             ctx.globalAlpha = Math.max(0, t.life);
-            ctx.fillStyle = '#000000';
+            ctx.fillStyle = 'rgba(0,0,0,0.5)';
             ctx.fillText(t.text, t.x + 1, t.y + 1);
             ctx.fillStyle = t.color;
             ctx.fillText(t.text, t.x, t.y);
@@ -771,16 +977,23 @@ class Game {
 
         ctx.restore();
 
-        // HUD durante la pesca: profundidad y capacidad
+        // HUD durante la pesca: contador de capturas estilo "×13"
         if (this.state !== 'MENU') {
-            const meters = Math.max(0, Math.floor((this.hook.y - SURFACE_Y) / 10));
-            const label = meters + ' m  ·  🐟 ' + this.hook.fishes.length + '/' + this.saveData.stats.fish;
-            ctx.font = 'bold 16px "Arial Rounded MT Bold", "Segoe UI", sans-serif';
-            ctx.textAlign = 'center';
-            ctx.fillStyle = 'rgba(0,0,0,0.45)';
-            ctx.fillText(label, this.w / 2 + 1, 71);
+            ctx.font = 'bold 22px "Arial Rounded MT Bold", "Trebuchet MS", sans-serif';
+            ctx.textAlign = 'right';
+            const label = '×' + this.hook.fishes.length + '/' + this.capacity();
+            ctx.fillStyle = 'rgba(0,0,0,0.4)';
+            ctx.fillText(label, this.w - 13, 37);
             ctx.fillStyle = '#ffffff';
-            ctx.fillText(label, this.w / 2, 70);
+            ctx.fillText(label, this.w - 14, 36);
+
+            const meters = Math.max(0, Math.floor((this.hook.y - SURFACE_Y) / 10));
+            ctx.font = 'bold 15px "Arial Rounded MT Bold", "Trebuchet MS", sans-serif';
+            ctx.textAlign = 'left';
+            ctx.fillStyle = 'rgba(0,0,0,0.4)';
+            ctx.fillText(meters + ' m', 15, 37);
+            ctx.fillStyle = '#ffffff';
+            ctx.fillText(meters + ' m', 14, 36);
         }
         ctx.textAlign = 'left';
     }
