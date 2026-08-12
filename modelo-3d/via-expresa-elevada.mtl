@@ -1,0 +1,188 @@
+# Vía Expresa Elevada — materiales
+
+newmtl base
+Kd 0.38 0.29 0.2
+Ka 0 0 0
+Ks 0.05 0.05 0.05
+Ns 10
+
+newmtl terreno
+Kd 0.44 0.62 0.33
+Ka 0 0 0
+Ks 0.05 0.05 0.05
+Ns 10
+
+newmtl agua
+Kd 0.15 0.45 0.42
+Ka 0 0 0
+Ks 0.05 0.05 0.05
+Ns 10
+
+newmtl aguaOrilla
+Kd 0.55 0.68 0.45
+Ka 0 0 0
+Ks 0.05 0.05 0.05
+Ns 10
+
+newmtl asfalto
+Kd 0.26 0.28 0.31
+Ka 0 0 0
+Ks 0.05 0.05 0.05
+Ns 10
+
+newmtl asfaltoBus
+Kd 0.2 0.22 0.25
+Ka 0 0 0
+Ks 0.05 0.05 0.05
+Ns 10
+
+newmtl asfaltoDeck
+Kd 0.29 0.31 0.35
+Ka 0 0 0
+Ks 0.05 0.05 0.05
+Ns 10
+
+newmtl lineaBlanca
+Kd 0.93 0.94 0.95
+Ka 0 0 0
+Ks 0.05 0.05 0.05
+Ns 10
+
+newmtl lineaAmarilla
+Kd 0.9 0.76 0.12
+Ka 0 0 0
+Ks 0.05 0.05 0.05
+Ns 10
+
+newmtl concreto
+Kd 0.76 0.78 0.8
+Ka 0 0 0
+Ks 0.05 0.05 0.05
+Ns 10
+
+newmtl concretoCol
+Kd 0.7 0.72 0.74
+Ka 0 0 0
+Ks 0.05 0.05 0.05
+Ns 10
+
+newmtl barrera
+Kd 0.82 0.84 0.86
+Ka 0 0 0
+Ks 0.05 0.05 0.05
+Ns 10
+
+newmtl vereda
+Kd 0.8 0.78 0.71
+Ka 0 0 0
+Ks 0.05 0.05 0.05
+Ns 10
+
+newmtl ciclovia
+Kd 0.22 0.51 0.4
+Ka 0 0 0
+Ks 0.05 0.05 0.05
+Ns 10
+
+newmtl anden
+Kd 0.85 0.86 0.87
+Ka 0 0 0
+Ks 0.05 0.05 0.05
+Ns 10
+
+newmtl techo
+Kd 0.92 0.93 0.95
+Ka 0 0 0
+Ks 0.05 0.05 0.05
+Ns 10
+
+newmtl metal
+Kd 0.36 0.39 0.42
+Ka 0 0 0
+Ks 0.05 0.05 0.05
+Ns 10
+
+newmtl tronco
+Kd 0.44 0.34 0.23
+Ka 0 0 0
+Ks 0.05 0.05 0.05
+Ns 10
+
+newmtl copa
+Kd 0.28 0.48 0.24
+Ka 0 0 0
+Ks 0.05 0.05 0.05
+Ns 10
+
+newmtl copaClara
+Kd 0.36 0.56 0.28
+Ka 0 0 0
+Ks 0.05 0.05 0.05
+Ns 10
+
+newmtl palma
+Kd 0.25 0.52 0.28
+Ka 0 0 0
+Ks 0.05 0.05 0.05
+Ns 10
+
+newmtl edificio
+Kd 0.68 0.7 0.72
+Ka 0 0 0
+Ks 0.05 0.05 0.05
+Ns 10
+
+newmtl edificio2
+Kd 0.61 0.63 0.66
+Ka 0 0 0
+Ks 0.05 0.05 0.05
+Ns 10
+
+newmtl edificioTecho
+Kd 0.55 0.56 0.58
+Ka 0 0 0
+Ks 0.05 0.05 0.05
+Ns 10
+
+newmtl busPlata
+Kd 0.79 0.8 0.82
+Ka 0 0 0
+Ks 0.05 0.05 0.05
+Ns 10
+
+newmtl busFranja
+Kd 0.66 0.28 0.24
+Ka 0 0 0
+Ks 0.05 0.05 0.05
+Ns 10
+
+newmtl autoBlanco
+Kd 0.88 0.89 0.9
+Ka 0 0 0
+Ks 0.05 0.05 0.05
+Ns 10
+
+newmtl autoRojo
+Kd 0.69 0.26 0.23
+Ka 0 0 0
+Ks 0.05 0.05 0.05
+Ns 10
+
+newmtl autoAzul
+Kd 0.33 0.47 0.62
+Ka 0 0 0
+Ks 0.05 0.05 0.05
+Ns 10
+
+newmtl autoAmarillo
+Kd 0.9 0.75 0.13
+Ka 0 0 0
+Ks 0.05 0.05 0.05
+Ns 10
+
+newmtl autoGris
+Kd 0.52 0.56 0.6
+Ka 0 0 0
+Ks 0.05 0.05 0.05
+Ns 10
+

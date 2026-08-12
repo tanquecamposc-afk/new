@@ -3,6 +3,7 @@
 | Proyecto | Archivo | Curso |
 |---|---|---|
 | 🛣️ **Vía Expresa Elevada** — maqueta virtual interactiva de una carretera elevada adaptada al Perú | `maqueta-via-expresa.html` | EPT · 2026 |
+| 🌉 **Intercambio vial en 3D** — visor 3D giratorio + modelo descargable en formato OBJ | `modelo-3d.html` | EPT · 2026 |
 | 🏰 **NEXO: Tower Defense** — juego en HTML5 Canvas | `index.html` | — |
 
 Cada proyecto es un solo archivo HTML sin dependencias: descárgalo y ábrelo en cualquier navegador.
@@ -15,6 +16,14 @@ Maqueta virtual de un **viaducto elevado sobre la Vía Expresa de Lima**, hecha 
 - **Corte transversal técnico** estilo plano, con cotas y leyenda.
 - **Adaptaciones al Perú**: aisladores sísmicos (E.030), cimentación en la grava del Rímac, drenaje para El Niño, gálibo para el Metropolitano y ciclovía.
 - **Guía de la maqueta física**: escala 1:100, medidas, materiales con presupuesto en soles (≈ S/ 90), paso a paso y cronograma de 4 semanas.
+
+### 🌉 Intercambio vial en 3D (`modelo-3d.html`)
+
+Versión **intercambio a desnivel** inspirada en los grandes cruces de autopista: viaducto principal, avenida transversal en puente, **dos rampas curvas**, lagunas y áreas verdes.
+
+- **Visor 3D integrado** (sin dependencias ni internet): arrastra para girar, rueda para acercar, vistas aérea / rasante / superior y rotación automática.
+- **Modelo 3D real** en `modelo-3d/via-expresa-elevada.obj` + `.mtl` (1 unidad = 1 metro), descargable desde la misma página. Ábrelo en Blender, el Visor 3D de Windows, SketchUp o imprímelo en 3D (a escala 1:1000 mide 26 × 17 cm).
+- El modelo se genera con `node tools/genera-modelo-3d.mjs`: cambia una medida en el script, ejecútalo y el OBJ y el visor se actualizan.
 
 ---
 
