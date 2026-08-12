@@ -1,0 +1,962 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<meta name="description" content="Arcade 2026: cuatro minijuegos neón para jugar en el navegador — Serpiente, Cohete, Rompebloques y Pájaro Turbo. Sin instalación.">
+<title>Arcade 2026</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🕹️</text></svg>">
+<style>
+:root{
+  --fondo:#0a0d1f; --plano:#0e1226; --superficie:#151a33; --superficie-2:#1b2140;
+  --borde:rgba(255,255,255,.09);
+  --tinta:#eef1ff; --tinta-2:#aab2d6; --tinta-3:#7a83ad;
+  --cian:#22d3ee; --violeta:#8b5cf6; --magenta:#e457c4; --oro:#ffc94d;
+  --verde:#34d399; --rojo:#f87171; --azul:#4f8df9;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  background:
+    radial-gradient(900px 500px at 20% -10%, rgba(139,92,246,.22), transparent 60%),
+    radial-gradient(800px 500px at 85% 0%, rgba(34,211,238,.14), transparent 60%),
+    var(--fondo);
+  color:var(--tinta);
+  font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  display:flex;flex-direction:column;align-items:center;
+  min-height:100%;overflow-x:hidden;
+  -webkit-tap-highlight-color:transparent;
+}
+button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
+button:focus-visible{outline:2px solid var(--cian);outline-offset:2px;border-radius:8px}
+
+/* ===== Cabecera ===== */
+.cabecera{
+  width:min(1060px,100%);display:flex;align-items:center;justify-content:space-between;
+  padding:22px 20px 6px;gap:12px;
+}
+.logo{font-size:clamp(1.5rem,4.5vw,2.2rem);font-weight:900;letter-spacing:.04em}
+.logo .neon{
+  background:linear-gradient(92deg,var(--cian),var(--azul) 40%,var(--violeta) 75%,var(--magenta));
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+}
+.logo .parpadeo{animation:parpadeo 2.6s infinite}
+@keyframes parpadeo{0%,92%,96%,100%{opacity:1}94%,98%{opacity:.35}}
+.btn-sonido{
+  width:46px;height:46px;border-radius:12px;font-size:1.25rem;
+  background:var(--superficie);border:1px solid var(--borde);
+  transition:transform .15s ease;flex:none;
+}
+.btn-sonido:hover{transform:scale(1.08)}
+.lema{width:min(1060px,100%);padding:0 20px;color:var(--tinta-2);font-size:.95rem}
+
+/* ===== Menú de juegos ===== */
+#menu{
+  width:min(1060px,100%);
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));
+  gap:18px;padding:26px 20px 40px;
+}
+.carta-juego{
+  background:linear-gradient(180deg,var(--superficie-2),var(--superficie));
+  border:1px solid var(--borde);border-radius:20px;
+  padding:26px 22px 22px;text-align:left;
+  display:flex;flex-direction:column;gap:10px;
+  transition:transform .2s ease, border-color .2s ease, box-shadow .2s ease;
+  position:relative;overflow:hidden;
+}
+.carta-juego::after{
+  content:"";position:absolute;inset:0;pointer-events:none;opacity:0;
+  background:radial-gradient(260px 160px at 50% 0%, rgba(34,211,238,.16), transparent 70%);
+  transition:opacity .2s ease;
+}
+.carta-juego:hover{transform:translateY(-6px);border-color:rgba(34,211,238,.5);box-shadow:0 18px 40px rgba(0,0,0,.45)}
+.carta-juego:hover::after{opacity:1}
+.carta-juego .icono{
+  font-size:2.6rem;line-height:1;
+  filter:drop-shadow(0 4px 14px rgba(34,211,238,.35));
+}
+.carta-juego h2{font-size:1.2rem;font-weight:900;letter-spacing:.01em}
+.carta-juego p{font-size:.85rem;color:var(--tinta-2);flex:1}
+.carta-juego .record{
+  font-size:.78rem;font-weight:800;color:var(--oro);
+  display:flex;align-items:center;gap:6px;
+}
+.carta-juego .jugar{
+  margin-top:4px;align-self:flex-start;
+  padding:9px 22px;border-radius:11px;font-weight:800;font-size:.9rem;color:#fff;
+  background:linear-gradient(93deg,var(--azul),var(--violeta));
+  box-shadow:0 6px 18px rgba(79,141,249,.35);
+}
+
+/* ===== Sala de juego ===== */
+#sala{width:100%;display:flex;flex-direction:column;align-items:center;padding:6px 12px 30px}
+.hud{
+  width:min(560px,100%);display:flex;align-items:center;gap:10px;
+  padding:8px 2px 10px;
+}
+.hud .btn-hud{
+  width:44px;height:44px;border-radius:12px;font-size:1.15rem;font-weight:900;
+  background:var(--superficie);border:1px solid var(--borde);flex:none;
+  display:flex;align-items:center;justify-content:center;
+}
+.hud .titulo-juego{font-weight:900;font-size:1.05rem;flex:1;text-align:left;padding-left:4px}
+.hud .marcadores{display:flex;gap:14px;font-variant-numeric:tabular-nums}
+.hud .marcadores b{font-size:1.05rem}
+.hud .marcadores .et{display:block;font-size:.62rem;color:var(--tinta-3);font-weight:700;letter-spacing:.1em;text-transform:uppercase}
+.marco{
+  position:relative;width:min(560px,100%);
+  border-radius:20px;overflow:hidden;
+  border:1px solid var(--borde);
+  box-shadow:0 24px 60px rgba(0,0,0,.55), 0 0 0 1px rgba(34,211,238,.08);
+  background:#0b0f22;
+}
+canvas{display:block;width:100%;height:auto;touch-action:none}
+.velo{
+  position:absolute;inset:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:14px;text-align:center;
+  background:rgba(8,10,24,.82);backdrop-filter:blur(3px);padding:24px;
+}
+.velo[hidden]{display:none}
+.velo .emoji-grande{font-size:3.4rem;line-height:1;filter:drop-shadow(0 6px 20px rgba(34,211,238,.4))}
+.velo h3{font-size:1.6rem;font-weight:900}
+.velo .puntaje-final{font-size:2.6rem;font-weight:900;color:var(--oro)}
+.velo .nuevo-record{color:var(--verde);font-weight:900;letter-spacing:.06em;animation:latido 1s infinite}
+@keyframes latido{50%{transform:scale(1.12)}}
+.velo p{color:var(--tinta-2);font-size:.92rem;max-width:34ch}
+.velo .fila-botones{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
+.boton{
+  padding:13px 28px;border-radius:13px;font-weight:800;font-size:1rem;color:#fff;
+  background:linear-gradient(93deg,var(--azul),var(--violeta));
+  box-shadow:0 8px 24px rgba(79,141,249,.4);
+  transition:transform .15s ease;
+}
+.boton:hover{transform:translateY(-2px) scale(1.03)}
+.boton.secundario{background:var(--superficie);border:1px solid var(--borde);box-shadow:none}
+.ayuda{margin-top:12px;font-size:.82rem;color:var(--tinta-3);text-align:center;max-width:46ch}
+.pie{padding:10px 20px 30px;color:var(--tinta-3);font-size:.8rem;text-align:center}
+[hidden]{display:none !important}
+@media (prefers-reduced-motion:reduce){
+  *{animation-duration:.01ms !important;transition-duration:.01ms !important}
+}
+</style>
+</head>
+<body>
+
+<header class="cabecera">
+  <div class="logo">🕹️ <span class="neon">ARCADE</span> <span class="parpadeo">2026</span></div>
+  <button class="btn-sonido" id="btn-sonido" aria-label="Activar o silenciar sonido">🔊</button>
+</header>
+<p class="lema" id="lema">Cuatro juegos hechos para ti. Elige uno y a romper récords 🔥</p>
+
+<main id="menu" aria-label="Elegir juego"></main>
+
+<div id="sala" hidden>
+  <div class="hud">
+    <button class="btn-hud" id="btn-volver" aria-label="Volver al menú">←</button>
+    <div class="titulo-juego" id="hud-nombre"></div>
+    <div class="marcadores">
+      <div><span class="et">Puntos</span><b id="hud-puntos">0</b></div>
+      <div><span class="et">Récord</span><b id="hud-record">0</b></div>
+    </div>
+    <button class="btn-hud" id="btn-pausa" aria-label="Pausar">⏸</button>
+  </div>
+  <div class="marco">
+    <canvas id="lienzo" tabindex="0"></canvas>
+    <div class="velo" id="velo"></div>
+  </div>
+  <p class="ayuda" id="ayuda"></p>
+</div>
+
+<p class="pie">Hecho con 💜 para jugar donde sea · Los récords se guardan en tu navegador</p>
+
+<script>
+"use strict";
+/* ================================================================
+   ARCADE 2026 — cuatro minijuegos en un solo archivo
+   ================================================================ */
+
+/* ---------- Utilidades ---------- */
+const $ = s => document.querySelector(s);
+const clamp = (v,a,b) => v < a ? a : v > b ? b : v;
+const azar = (a,b) => a + Math.random() * (b - a);
+const reduceMovimiento = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/* ---------- Récords ---------- */
+const CLAVE = "arcade2026";
+let records = {};
+try { records = JSON.parse(localStorage.getItem(CLAVE)) || {}; } catch(e) {}
+function guardarRecord(id, pts){
+  if ((records[id] || 0) >= pts) return false;
+  records[id] = pts;
+  try { localStorage.setItem(CLAVE, JSON.stringify(records)); } catch(e) {}
+  return true;
+}
+
+/* ---------- Sonido (WebAudio, sin archivos) ---------- */
+let actx = null, sonidoOn = true;
+try { sonidoOn = localStorage.getItem(CLAVE + "-sonido") !== "no"; } catch(e) {}
+function audio(){
+  if (!actx) { try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {} }
+  if (actx && actx.state === "suspended") actx.resume();
+  return actx;
+}
+function bip(freq, dur, tipo, vol, deslice){
+  if (!sonidoOn || !audio()) return;
+  const t = actx.currentTime;
+  const o = actx.createOscillator(), g = actx.createGain();
+  o.type = tipo || "square"; o.frequency.setValueAtTime(freq, t);
+  if (deslice) o.frequency.exponentialRampToValueAtTime(Math.max(30, deslice), t + dur);
+  g.gain.setValueAtTime(vol || .12, t);
+  g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+  o.connect(g).connect(actx.destination);
+  o.start(t); o.stop(t + dur + .02);
+}
+function ruido(dur, vol){
+  if (!sonidoOn || !audio()) return;
+  const t = actx.currentTime, n = actx.sampleRate * dur;
+  const buf = actx.createBuffer(1, n, actx.sampleRate);
+  const d = buf.getChannelData(0);
+  for (let i = 0; i < n; i++) d[i] = (Math.random()*2-1) * (1 - i/n);
+  const src = actx.createBufferSource(); src.buffer = buf;
+  const g = actx.createGain(); g.gain.value = vol || .18;
+  src.connect(g).connect(actx.destination); src.start(t);
+}
+const S = {
+  comer:   () => bip(660, .09, "square", .1, 990),
+  punto:   () => { bip(880,.07,"square",.09); setTimeout(()=>bip(1320,.09,"square",.09), 60); },
+  saltar:  () => bip(500, .08, "triangle", .12, 750),
+  rebote:  () => bip(330, .05, "square", .08),
+  ladrillo:() => bip(520, .06, "square", .09, 700),
+  gema:    () => { bip(1050,.06,"sine",.1); setTimeout(()=>bip(1400,.08,"sine",.1), 50); },
+  choque:  () => { ruido(.32,.2); bip(140,.3,"sawtooth",.14,60); },
+  vida:    () => bip(220, .2, "sawtooth", .1, 110),
+  nivel:   () => { bip(523,.08,"square",.1); setTimeout(()=>bip(659,.08,"square",.1),80); setTimeout(()=>bip(784,.12,"square",.1),160); },
+};
+
+/* ---------- Partículas y sacudida ---------- */
+let particulas = [], sacudida = 0;
+function explotar(x, y, color, n, fuerza){
+  if (reduceMovimiento) n = Math.min(n, 6);
+  for (let i = 0; i < n; i++){
+    const a = Math.random() * Math.PI * 2, v = azar(40, fuerza || 220);
+    particulas.push({x, y, vx:Math.cos(a)*v, vy:Math.sin(a)*v, vida:azar(.3,.7), t:0, color, tam:azar(2,5)});
+  }
+}
+function actualizarParticulas(dt){
+  for (let i = particulas.length - 1; i >= 0; i--){
+    const p = particulas[i];
+    p.t += dt; p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 300 * dt;
+    if (p.t >= p.vida) particulas.splice(i, 1);
+  }
+  sacudida = Math.max(0, sacudida - dt * 30);
+}
+function dibujarParticulas(ctx){
+  for (const p of particulas){
+    ctx.globalAlpha = 1 - p.t / p.vida;
+    ctx.fillStyle = p.color;
+    ctx.fillRect(p.x - p.tam/2, p.y - p.tam/2, p.tam, p.tam);
+  }
+  ctx.globalAlpha = 1;
+}
+
+/* ---------- Elementos ---------- */
+const lienzo = $("#lienzo"), ctx = lienzo.getContext("2d");
+const velo = $("#velo"), menu = $("#menu"), sala = $("#sala");
+const hudPuntos = $("#hud-puntos"), hudRecord = $("#hud-record"), hudNombre = $("#hud-nombre");
+const dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+let juego = null;        // objeto del juego actual
+let info = null;         // metadatos del juego actual
+let estado = "menu";     // menu | listo | jugando | pausa | fin
+let puntos = 0;
+let ultimoT = 0;
+
+function fijarLienzo(w, h){
+  lienzo.width = w * dpr; lienzo.height = h * dpr;
+  lienzo.style.aspectRatio = w + "/" + h;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+function sumar(n){
+  puntos += n;
+  hudPuntos.textContent = puntos;
+}
+
+/* ================================================================
+   JUEGO 1 · SERPIENTE NEÓN
+   ================================================================ */
+const serpiente = {
+  W:484, H:484, CELDA:22, N:22,
+  iniciar(){
+    fijarLienzo(this.W, this.H);
+    this.cuerpo = [{x:11,y:11},{x:10,y:11},{x:9,y:11}];
+    this.dir = {x:1,y:0}; this.cola = [];
+    this.intervalo = .14; this.acum = 0;
+    this.comida = this.nuevaComida();
+    this.pulso = 0;
+  },
+  nuevaComida(){
+    let p;
+    do { p = {x:(Math.random()*this.N)|0, y:(Math.random()*this.N)|0}; }
+    while (this.cuerpo.some(s => s.x === p.x && s.y === p.y));
+    return p;
+  },
+  girar(x, y){
+    // no permitir reversa ni acumular giros de más
+    if (x === -this.dir.x && y === -this.dir.y) return;
+    if (this.cola.length >= 3) return;
+    this.cola.push({x,y});
+  },
+  teclaAbajo(k){
+    if (k === "ArrowUp"    || k === "w") this.girar(0,-1);
+    if (k === "ArrowDown"  || k === "s") this.girar(0, 1);
+    if (k === "ArrowLeft"  || k === "a") this.girar(-1,0);
+    if (k === "ArrowRight" || k === "d") this.girar(1, 0);
+  },
+  _tx:0, _ty:0,
+  punteroInicio(x, y){ this._tx = x; this._ty = y; },
+  punteroMover(x, y){
+    const dx = x - this._tx, dy = y - this._ty;
+    if (Math.abs(dx) < 26 && Math.abs(dy) < 26) return;
+    if (Math.abs(dx) > Math.abs(dy)) this.girar(Math.sign(dx), 0);
+    else this.girar(0, Math.sign(dy));
+    this._tx = x; this._ty = y;
+  },
+  actualizar(dt){
+    this.pulso += dt * 5;
+    this.acum += dt;
+    while (this.acum >= this.intervalo){
+      this.acum -= this.intervalo;
+      if (this.cola.length){
+        const g = this.cola.shift();
+        if (!(g.x === -this.dir.x && g.y === -this.dir.y)) this.dir = g;
+      }
+      const cab = {x:this.cuerpo[0].x + this.dir.x, y:this.cuerpo[0].y + this.dir.y};
+      if (cab.x < 0 || cab.y < 0 || cab.x >= this.N || cab.y >= this.N ||
+          this.cuerpo.some(s => s.x === cab.x && s.y === cab.y)){
+        const c = this.cuerpo[0];
+        explotar(c.x*this.CELDA+11, c.y*this.CELDA+11, "#34d399", 26, 260);
+        sacudida = 8; S.choque();
+        return morir();
+      }
+      this.cuerpo.unshift(cab);
+      if (cab.x === this.comida.x && cab.y === this.comida.y){
+        sumar(10);
+        explotar(cab.x*this.CELDA+11, cab.y*this.CELDA+11, "#e457c4", 14, 180);
+        S.comer();
+        this.comida = this.nuevaComida();
+        this.intervalo = Math.max(.07, this.intervalo - .0022);
+      } else this.cuerpo.pop();
+    }
+  },
+  dibujar(ctx){
+    const C = this.CELDA;
+    ctx.fillStyle = "#0b0f22"; ctx.fillRect(0,0,this.W,this.H);
+    ctx.strokeStyle = "rgba(255,255,255,.045)"; ctx.lineWidth = 1;
+    ctx.beginPath();
+    for (let i = 1; i < this.N; i++){
+      ctx.moveTo(i*C, 0); ctx.lineTo(i*C, this.H);
+      ctx.moveTo(0, i*C); ctx.lineTo(this.W, i*C);
+    }
+    ctx.stroke();
+    // comida pulsante
+    const r = 7 + Math.sin(this.pulso) * 2;
+    ctx.shadowColor = "#e457c4"; ctx.shadowBlur = 16;
+    ctx.fillStyle = "#e457c4";
+    ctx.beginPath(); ctx.arc(this.comida.x*C+C/2, this.comida.y*C+C/2, r, 0, 7); ctx.fill();
+    // serpiente con degradado de brillo
+    for (let i = this.cuerpo.length - 1; i >= 0; i--){
+      const s = this.cuerpo[i], f = 1 - i / this.cuerpo.length;
+      ctx.shadowColor = "#34d399"; ctx.shadowBlur = i === 0 ? 18 : 8;
+      ctx.fillStyle = i === 0 ? "#6ee7b7" : `rgba(52,211,153,${.45 + f*.55})`;
+      const m = i === 0 ? 1 : 2;
+      ctx.beginPath();
+      ctx.roundRect(s.x*C+m, s.y*C+m, C-2*m, C-2*m, 6);
+      ctx.fill();
+    }
+    ctx.shadowBlur = 0;
+    // ojos
+    const cab = this.cuerpo[0];
+    ctx.fillStyle = "#0b0f22";
+    const ox = this.dir.x, oy = this.dir.y;
+    ctx.beginPath();
+    ctx.arc(cab.x*C+C/2 + ox*4 - oy*4, cab.y*C+C/2 + oy*4 - ox*4, 2.4, 0, 7);
+    ctx.arc(cab.x*C+C/2 + ox*4 + oy*4, cab.y*C+C/2 + oy*4 + ox*4, 2.4, 0, 7);
+    ctx.fill();
+  }
+};
+
+/* ================================================================
+   JUEGO 2 · COHETE CÓSMICO (esquiva asteroides, junta gemas)
+   ================================================================ */
+const cohete = {
+  W:480, H:640,
+  iniciar(){
+    fijarLienzo(this.W, this.H);
+    this.x = this.W/2; this.destinoX = this.x;
+    this.t = 0; this.spawn = 0; this.spawnGema = 0; this.tick = 0;
+    this.rocas = []; this.gemas = [];
+    this.izq = false; this.der = false;
+    this.estrellas = [];
+    for (let i = 0; i < 60; i++)
+      this.estrellas.push({x:Math.random()*this.W, y:Math.random()*this.H, v:azar(20,90), t:azar(1,2.6)});
+  },
+  teclaAbajo(k){
+    if (k === "ArrowLeft"  || k === "a") this.izq = true;
+    if (k === "ArrowRight" || k === "d") this.der = true;
+  },
+  teclaArriba(k){
+    if (k === "ArrowLeft"  || k === "a") this.izq = false;
+    if (k === "ArrowRight" || k === "d") this.der = false;
+  },
+  punteroInicio(x){ this.destinoX = x; },
+  punteroMover(x){ this.destinoX = x; },
+  actualizar(dt){
+    this.t += dt;
+    // dificultad progresiva
+    const vel = 150 + this.t * 9;
+    const cadaSpawn = Math.max(.32, .95 - this.t * .012);
+    // movimiento
+    if (this.izq) this.destinoX -= 420 * dt;
+    if (this.der) this.destinoX += 420 * dt;
+    this.destinoX = clamp(this.destinoX, 22, this.W - 22);
+    this.x += (this.destinoX - this.x) * Math.min(1, dt * 14);
+    // puntos por sobrevivir
+    this.tick += dt;
+    while (this.tick >= .1){ this.tick -= .1; sumar(1); }
+    // estrellas
+    for (const e of this.estrellas){
+      e.y += e.v * dt;
+      if (e.y > this.H){ e.y = -2; e.x = Math.random()*this.W; }
+    }
+    // asteroides
+    this.spawn += dt;
+    if (this.spawn >= cadaSpawn){
+      this.spawn = 0;
+      const r = azar(14, 34);
+      this.rocas.push({x:azar(r, this.W - r), y:-r*2, r, v:vel * azar(.8, 1.25), rot:azar(0,7), vr:azar(-2,2),
+                       lados:(azar(6,9)|0), forma:Array.from({length:9}, () => azar(.72,1))});
+    }
+    // gemas
+    this.spawnGema += dt;
+    if (this.spawnGema >= 2.4){
+      this.spawnGema = 0;
+      this.gemas.push({x:azar(20, this.W-20), y:-20, v:vel*.75, p:0});
+    }
+    const nx = this.x, ny = this.H - 90;
+    for (let i = this.rocas.length - 1; i >= 0; i--){
+      const a = this.rocas[i];
+      a.y += a.v * dt; a.rot += a.vr * dt;
+      if (a.y - a.r > this.H){ this.rocas.splice(i,1); continue; }
+      const dx = a.x - nx, dy = a.y - ny;
+      if (dx*dx + dy*dy < (a.r + 13) * (a.r + 13)){
+        explotar(nx, ny, "#ffc94d", 34, 300);
+        explotar(nx, ny, "#f87171", 22, 240);
+        sacudida = 12; S.choque();
+        return morir();
+      }
+    }
+    for (let i = this.gemas.length - 1; i >= 0; i--){
+      const g = this.gemas[i];
+      g.y += g.v * dt; g.p += dt * 6;
+      if (g.y > this.H + 20){ this.gemas.splice(i,1); continue; }
+      const dx = g.x - nx, dy = g.y - ny;
+      if (dx*dx + dy*dy < 30*30){
+        sumar(25); S.gema();
+        explotar(g.x, g.y, "#22d3ee", 16, 200);
+        this.gemas.splice(i,1);
+      }
+    }
+    // llama del cohete
+    if (!reduceMovimiento && Math.random() < .8)
+      particulas.push({x:nx + azar(-4,4), y:ny + 20, vx:azar(-20,20), vy:azar(120,220), vida:.3, t:0,
+                       color:Math.random()<.5 ? "#ffc94d" : "#f97316", tam:azar(2,5)});
+  },
+  dibujar(ctx){
+    ctx.fillStyle = "#0b0f22"; ctx.fillRect(0,0,this.W,this.H);
+    for (const e of this.estrellas){
+      ctx.globalAlpha = .3 + (e.v - 20) / 100;
+      ctx.fillStyle = "#eef1ff";
+      ctx.fillRect(e.x, e.y, e.t, e.t);
+    }
+    ctx.globalAlpha = 1;
+    // gemas
+    for (const g of this.gemas){
+      ctx.save(); ctx.translate(g.x, g.y); ctx.rotate(Math.sin(g.p)*.4);
+      ctx.shadowColor = "#22d3ee"; ctx.shadowBlur = 14;
+      ctx.fillStyle = "#22d3ee";
+      ctx.beginPath();
+      ctx.moveTo(0,-11); ctx.lineTo(9,0); ctx.lineTo(0,11); ctx.lineTo(-9,0);
+      ctx.closePath(); ctx.fill();
+      ctx.fillStyle = "rgba(255,255,255,.7)";
+      ctx.beginPath(); ctx.moveTo(0,-5); ctx.lineTo(4,0); ctx.lineTo(0,5); ctx.lineTo(-4,0); ctx.closePath(); ctx.fill();
+      ctx.restore();
+    }
+    ctx.shadowBlur = 0;
+    // asteroides
+    for (const a of this.rocas){
+      ctx.save(); ctx.translate(a.x, a.y); ctx.rotate(a.rot);
+      ctx.fillStyle = "#3b4468"; ctx.strokeStyle = "#5b6693"; ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      for (let i = 0; i < a.lados; i++){
+        const an = i / a.lados * Math.PI * 2, rr = a.r * a.forma[i];
+        i ? ctx.lineTo(Math.cos(an)*rr, Math.sin(an)*rr) : ctx.moveTo(Math.cos(an)*rr, Math.sin(an)*rr);
+      }
+      ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = "rgba(0,0,0,.25)";
+      ctx.beginPath(); ctx.arc(a.r*.3, -a.r*.2, a.r*.24, 0, 7); ctx.fill();
+      ctx.restore();
+    }
+    // cohete
+    const nx = this.x, ny = this.H - 90;
+    ctx.save(); ctx.translate(nx, ny);
+    ctx.rotate(clamp((this.destinoX - this.x) * .004, -.3, .3));
+    ctx.shadowColor = "#4f8df9"; ctx.shadowBlur = 16;
+    ctx.fillStyle = "#e8ecff";
+    ctx.beginPath();
+    ctx.moveTo(0,-24); ctx.quadraticCurveTo(13,-6, 11,14); ctx.lineTo(-11,14); ctx.quadraticCurveTo(-13,-6, 0,-24);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = "#f87171";
+    ctx.beginPath(); ctx.moveTo(11,14); ctx.lineTo(17,22); ctx.lineTo(8,16); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(-11,14); ctx.lineTo(-17,22); ctx.lineTo(-8,16); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = "#22d3ee";
+    ctx.beginPath(); ctx.arc(0,-6,5,0,7); ctx.fill();
+    ctx.restore();
+  }
+};
+
+/* ================================================================
+   JUEGO 3 · ROMPEBLOQUES NEÓN
+   ================================================================ */
+const bloques = {
+  W:480, H:640,
+  COLORES:["#e457c4","#8b5cf6","#4f8df9","#22d3ee","#34d399","#ffc94d"],
+  iniciar(){
+    fijarLienzo(this.W, this.H);
+    this.vidas = 3; this.nivel = 1;
+    this.palaW = 92; this.palaX = this.W/2;
+    this.armarNivel();
+  },
+  armarNivel(){
+    this.filas = 6; this.cols = 8;
+    this.ladrillos = [];
+    const bw = 54, bh = 20, sep = 4, ox = (this.W - this.cols*(bw+sep) + sep)/2, oy = 76;
+    for (let f = 0; f < this.filas; f++)
+      for (let c = 0; c < this.cols; c++)
+        this.ladrillos.push({x:ox + c*(bw+sep), y:oy + f*(bh+sep), w:bw, h:bh,
+                             color:this.COLORES[f], golpes:f < 2 ? 2 : 1, max:f < 2 ? 2 : 1});
+    this.velBase = 330 + (this.nivel-1) * 45;
+    this.pegada = true;
+    this.bx = this.palaX; this.by = this.H - 74; this.vx = 0; this.vy = 0;
+  },
+  soltar(){
+    if (!this.pegada) return;
+    this.pegada = false;
+    const a = azar(-.6, .6);
+    this.vx = Math.sin(a) * this.velBase; this.vy = -Math.cos(a) * this.velBase;
+    S.saltar();
+  },
+  teclaAbajo(k){
+    if (k === " " || k === "ArrowUp" || k === "w") this.soltar();
+    if (k === "ArrowLeft"  || k === "a") this._dir = -1;
+    if (k === "ArrowRight" || k === "d") this._dir = 1;
+  },
+  teclaArriba(k){
+    if (k === "ArrowLeft" || k === "a" || k === "ArrowRight" || k === "d") this._dir = 0;
+  },
+  punteroInicio(x){ this.punteroMover(x); this.soltar(); },
+  punteroMover(x){ this.palaX = clamp(x, this.palaW/2 + 6, this.W - this.palaW/2 - 6); },
+  _dir:0,
+  actualizar(dt){
+    if (this._dir) this.punteroMover(this.palaX + this._dir * 520 * dt);
+    const py = this.H - 46;
+    if (this.pegada){ this.bx = this.palaX; this.by = py - 16; return; }
+    // sub-pasos para no atravesar ladrillos
+    const pasos = Math.ceil(Math.max(Math.abs(this.vx), Math.abs(this.vy)) * dt / 8) || 1;
+    for (let s = 0; s < pasos; s++){
+      this.bx += this.vx * dt / pasos;
+      this.by += this.vy * dt / pasos;
+      // paredes
+      if (this.bx < 8){ this.bx = 8; this.vx = Math.abs(this.vx); S.rebote(); }
+      if (this.bx > this.W - 8){ this.bx = this.W - 8; this.vx = -Math.abs(this.vx); S.rebote(); }
+      if (this.by < 8){ this.by = 8; this.vy = Math.abs(this.vy); S.rebote(); }
+      // pala
+      if (this.vy > 0 && this.by > py - 8 && this.by < py + 14 &&
+          Math.abs(this.bx - this.palaX) < this.palaW/2 + 7){
+        const rel = clamp((this.bx - this.palaX) / (this.palaW/2), -1, 1);
+        const vel = Math.min(Math.hypot(this.vx, this.vy) * 1.02, 620);
+        const ang = rel * 1.05;
+        this.vx = Math.sin(ang) * vel; this.vy = -Math.cos(ang) * vel;
+        this.by = py - 9;
+        S.rebote();
+      }
+      // ladrillos
+      for (let i = this.ladrillos.length - 1; i >= 0; i--){
+        const L = this.ladrillos[i];
+        const cx = clamp(this.bx, L.x, L.x + L.w), cy = clamp(this.by, L.y, L.y + L.h);
+        const dx = this.bx - cx, dy = this.by - cy;
+        if (dx*dx + dy*dy > 49) continue;
+        // rebote según lado de impacto
+        const solX = dx !== 0 && Math.abs(dx) >= Math.abs(dy);
+        if (solX) this.vx = Math.sign(dx || this.vx) * Math.abs(this.vx);
+        else      this.vy = Math.sign(dy || -this.vy) * Math.abs(this.vy);
+        L.golpes--;
+        if (L.golpes <= 0){
+          this.ladrillos.splice(i, 1);
+          sumar(15);
+          explotar(L.x + L.w/2, L.y + L.h/2, L.color, 12, 180);
+        } else { sumar(5); }
+        S.ladrillo();
+        break;
+      }
+      // perder bola
+      if (this.by > this.H + 12){
+        this.vidas--;
+        if (this.vidas <= 0){ sacudida = 10; S.choque(); return morir(); }
+        S.vida();
+        this.pegada = true;
+        return;
+      }
+    }
+    if (!this.ladrillos.length){
+      this.nivel++; sumar(100); S.nivel();
+      explotar(this.W/2, this.H/2, "#ffc94d", 40, 320);
+      this.armarNivel();
+    }
+  },
+  dibujar(ctx){
+    ctx.fillStyle = "#0b0f22"; ctx.fillRect(0,0,this.W,this.H);
+    // ladrillos
+    for (const L of this.ladrillos){
+      ctx.globalAlpha = L.golpes < L.max ? .55 : 1;
+      ctx.shadowColor = L.color; ctx.shadowBlur = 8;
+      ctx.fillStyle = L.color;
+      ctx.beginPath(); ctx.roundRect(L.x, L.y, L.w, L.h, 5); ctx.fill();
+    }
+    ctx.globalAlpha = 1; ctx.shadowBlur = 0;
+    // vidas y nivel
+    ctx.fillStyle = "rgba(238,241,255,.75)";
+    ctx.font = "700 15px system-ui";
+    ctx.textAlign = "left";  ctx.fillText("❤".repeat(Math.max(0,this.vidas)), 14, 30);
+    ctx.textAlign = "right"; ctx.fillText("Nivel " + this.nivel, this.W - 14, 30);
+    // pala
+    const py = this.H - 46;
+    ctx.shadowColor = "#4f8df9"; ctx.shadowBlur = 14;
+    const gr = ctx.createLinearGradient(this.palaX - this.palaW/2, 0, this.palaX + this.palaW/2, 0);
+    gr.addColorStop(0, "#22d3ee"); gr.addColorStop(1, "#8b5cf6");
+    ctx.fillStyle = gr;
+    ctx.beginPath(); ctx.roundRect(this.palaX - this.palaW/2, py, this.palaW, 13, 7); ctx.fill();
+    // bola
+    ctx.shadowColor = "#eef1ff"; ctx.shadowBlur = 12;
+    ctx.fillStyle = "#eef1ff";
+    ctx.beginPath(); ctx.arc(this.bx, this.by, 7, 0, 7); ctx.fill();
+    ctx.shadowBlur = 0;
+    if (this.pegada){
+      ctx.fillStyle = "rgba(238,241,255,.5)";
+      ctx.font = "600 14px system-ui"; ctx.textAlign = "center";
+      ctx.fillText("Toca o pulsa ESPACIO para lanzar", this.W/2, this.H - 110);
+    }
+  }
+};
+
+/* ================================================================
+   JUEGO 4 · PÁJARO TURBO (un botón)
+   ================================================================ */
+const pajaro = {
+  W:480, H:640,
+  iniciar(){
+    fijarLienzo(this.W, this.H);
+    this.y = this.H/2; this.vy = 0; this.rot = 0;
+    this.tubos = []; this.spawn = 1.2; this.t = 0;
+    this.suelo = 0; this.ala = 0;
+    this.edificios = Array.from({length:9}, (_,i) => ({x:i*64, h:azar(60,150), w:azar(34,58)}));
+  },
+  aletear(){
+    this.vy = -400; this.ala = .25; S.saltar();
+    if (!reduceMovimiento) explotar(150 - 16, this.y + 12, "#22d3ee", 4, 90);
+  },
+  teclaAbajo(k){ if (k === " " || k === "ArrowUp" || k === "w") this.aletear(); },
+  punteroInicio(){ this.aletear(); },
+  actualizar(dt){
+    this.t += dt;
+    const vel = 165 + Math.min(this.t * 2.2, 80);
+    const hueco = Math.max(148, 182 - this.t * .8);
+    this.vy += 1350 * dt;
+    this.y += this.vy * dt;
+    this.rot = clamp(this.vy / 500, -.5, 1.2);
+    this.ala = Math.max(0, this.ala - dt);
+    this.suelo = (this.suelo + vel * dt) % 24;
+    for (const e of this.edificios){
+      e.x -= vel * .25 * dt;
+      if (e.x + e.w < 0){ e.x = this.W + azar(0,30); e.h = azar(60,150); }
+    }
+    this.spawn += dt;
+    if (this.spawn >= 1.55){
+      this.spawn = 0;
+      this.tubos.push({x:this.W + 40, gy:azar(120, this.H - 190 - hueco), hueco, pasado:false});
+    }
+    const bx = 150, br = 15;
+    for (let i = this.tubos.length - 1; i >= 0; i--){
+      const t = this.tubos[i];
+      t.x -= vel * dt;
+      if (t.x < -80){ this.tubos.splice(i,1); continue; }
+      if (!t.pasado && t.x + 35 < bx){ t.pasado = true; sumar(1); S.punto(); }
+      // colisión con el par de tubos
+      if (bx + br > t.x && bx - br < t.x + 70){
+        if (this.y - br < t.gy || this.y + br > t.gy + t.hueco){
+          explotar(bx, this.y, "#ffc94d", 26, 260); sacudida = 10; S.choque();
+          return morir();
+        }
+      }
+    }
+    if (this.y + br > this.H - 56 || this.y < -40){
+      explotar(150, Math.min(this.y, this.H - 60), "#ffc94d", 26, 260);
+      sacudida = 10; S.choque();
+      return morir();
+    }
+  },
+  dibujar(ctx){
+    // cielo nocturno
+    const g = ctx.createLinearGradient(0,0,0,this.H);
+    g.addColorStop(0,"#141a3d"); g.addColorStop(1,"#232a56");
+    ctx.fillStyle = g; ctx.fillRect(0,0,this.W,this.H);
+    // luna
+    ctx.fillStyle = "#eef1ff"; ctx.globalAlpha = .9;
+    ctx.beginPath(); ctx.arc(400, 90, 26, 0, 7); ctx.fill();
+    ctx.globalAlpha = 1;
+    // edificios lejanos
+    ctx.fillStyle = "#1b2140";
+    for (const e of this.edificios) ctx.fillRect(e.x, this.H - 56 - e.h, e.w, e.h);
+    // tubos
+    for (const t of this.tubos){
+      const gr = ctx.createLinearGradient(t.x, 0, t.x + 70, 0);
+      gr.addColorStop(0,"#34d399"); gr.addColorStop(.5,"#6ee7b7"); gr.addColorStop(1,"#10b981");
+      ctx.fillStyle = gr;
+      ctx.fillRect(t.x, -4, 70, t.gy + 4);
+      ctx.fillRect(t.x, t.gy + t.hueco, 70, this.H - t.gy - t.hueco - 52);
+      ctx.fillStyle = "#0f9d6c";
+      ctx.fillRect(t.x - 5, t.gy - 22, 80, 22);
+      ctx.fillRect(t.x - 5, t.gy + t.hueco, 80, 22);
+    }
+    // suelo
+    ctx.fillStyle = "#2b2352"; ctx.fillRect(0, this.H - 56, this.W, 56);
+    ctx.fillStyle = "#3d3170";
+    for (let x = -this.suelo; x < this.W; x += 24) ctx.fillRect(x, this.H - 56, 12, 6);
+    // pájaro
+    ctx.save(); ctx.translate(150, this.y); ctx.rotate(this.rot);
+    ctx.shadowColor = "#ffc94d"; ctx.shadowBlur = 14;
+    ctx.fillStyle = "#ffc94d";
+    ctx.beginPath(); ctx.ellipse(0, 0, 17, 13, 0, 0, 7); ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = "#f9a826";                       // ala
+    ctx.beginPath();
+    ctx.ellipse(-4, 2, 9, this.ala > 0 ? 8 : 5, this.ala > 0 ? -.7 : .3, 0, 7); ctx.fill();
+    ctx.fillStyle = "#fff";                          // ojo
+    ctx.beginPath(); ctx.arc(7, -4, 4.5, 0, 7); ctx.fill();
+    ctx.fillStyle = "#101425";
+    ctx.beginPath(); ctx.arc(8.5, -4, 2.2, 0, 7); ctx.fill();
+    ctx.fillStyle = "#f97316";                       // pico
+    ctx.beginPath(); ctx.moveTo(14,0); ctx.lineTo(24,3); ctx.lineTo(14,7); ctx.closePath(); ctx.fill();
+    ctx.restore();
+  }
+};
+
+/* ================================================================
+   Catálogo
+   ================================================================ */
+const CATALOGO = [
+  {id:"serpiente", obj:serpiente, emoji:"🐍", nombre:"Serpiente Neón",
+   desc:"Come, crece y no te muerdas la cola. Cada bocado va más rápido.",
+   ayuda:"⌨ Flechas o WASD · 📱 desliza el dedo hacia donde quieras girar"},
+  {id:"cohete", obj:cohete, emoji:"🚀", nombre:"Cohete Cósmico",
+   desc:"Esquiva la lluvia de asteroides y atrapa gemas. ¿Cuánto aguantas?",
+   ayuda:"⌨ Flechas ← → · 📱 arrastra el dedo para mover el cohete"},
+  {id:"bloques", obj:bloques, emoji:"🧱", nombre:"Rompebloques Neón",
+   desc:"Destruye todos los ladrillos sin dejar caer la bola. Niveles infinitos.",
+   ayuda:"⌨ Flechas o mueve el ratón, ESPACIO lanza · 📱 arrastra y toca"},
+  {id:"pajaro", obj:pajaro, emoji:"🐤", nombre:"Pájaro Turbo",
+   desc:"Un botón, cero piedad. Aletea entre las tuberías el mayor tiempo posible.",
+   ayuda:"⌨ ESPACIO para aletear · 📱 toca la pantalla"},
+];
+
+/* ================================================================
+   Flujo de pantallas
+   ================================================================ */
+function pintarMenu(){
+  menu.innerHTML = "";
+  for (const j of CATALOGO){
+    const b = document.createElement("button");
+    b.className = "carta-juego";
+    b.innerHTML = `
+      <span class="icono">${j.emoji}</span>
+      <h2>${j.nombre}</h2>
+      <p>${j.desc}</p>
+      <span class="record">🏆 Récord: ${records[j.id] || 0}</span>
+      <span class="jugar">JUGAR ▸</span>`;
+    b.addEventListener("click", () => abrirJuego(j));
+    menu.appendChild(b);
+  }
+}
+function abrirJuego(j){
+  audio();
+  info = j; juego = j.obj;
+  menu.hidden = true; $("#lema").hidden = true; sala.hidden = false;
+  hudNombre.textContent = j.emoji + " " + j.nombre;
+  hudRecord.textContent = records[j.id] || 0;
+  $("#ayuda").textContent = j.ayuda;
+  prepararPartida();
+}
+function prepararPartida(){
+  puntos = 0; hudPuntos.textContent = "0";
+  particulas = []; sacudida = 0;
+  juego.iniciar();
+  estado = "listo";
+  velo.hidden = false;
+  velo.innerHTML = `
+    <span class="emoji-grande">${info.emoji}</span>
+    <h3>${info.nombre}</h3>
+    <p>${info.ayuda}</p>
+    <div class="fila-botones"><button class="boton" id="btn-empezar">¡A JUGAR!</button></div>`;
+  $("#btn-empezar").addEventListener("click", empezar);
+  dibujarTodo();
+}
+function empezar(){
+  if (estado !== "listo") return;
+  audio();
+  estado = "jugando";
+  velo.hidden = true;
+  lienzo.focus({preventScroll:true});
+}
+function morir(){
+  estado = "fin";
+  const esRecord = guardarRecord(info.id, puntos);
+  hudRecord.textContent = records[info.id] || 0;
+  setTimeout(() => {
+    velo.hidden = false;
+    velo.innerHTML = `
+      <span class="emoji-grande">${esRecord ? "🏆" : "💀"}</span>
+      <h3>${esRecord ? "¡NUEVO RÉCORD!" : "Fin de la partida"}</h3>
+      <div class="puntaje-final">${puntos}</div>
+      ${esRecord ? '<div class="nuevo-record">★ RÉCORD SUPERADO ★</div>'
+                 : `<p>Tu récord: <b>${records[info.id] || 0}</b></p>`}
+      <div class="fila-botones">
+        <button class="boton" id="btn-otra">Otra vez 🔁</button>
+        <button class="boton secundario" id="btn-menu">Menú</button>
+      </div>`;
+    $("#btn-otra").addEventListener("click", prepararPartida);
+    $("#btn-menu").addEventListener("click", volverMenu);
+  }, 550);
+}
+function volverMenu(){
+  estado = "menu";
+  sala.hidden = true; menu.hidden = false; $("#lema").hidden = false;
+  pintarMenu();
+}
+function alternarPausa(){
+  if (estado === "jugando"){
+    estado = "pausa";
+    velo.hidden = false;
+    velo.innerHTML = `
+      <span class="emoji-grande">⏸️</span><h3>Pausa</h3>
+      <div class="fila-botones">
+        <button class="boton" id="btn-seguir">Seguir ▶</button>
+        <button class="boton secundario" id="btn-menu2">Menú</button>
+      </div>`;
+    $("#btn-seguir").addEventListener("click", alternarPausa);
+    $("#btn-menu2").addEventListener("click", volverMenu);
+  } else if (estado === "pausa"){
+    estado = "jugando";
+    velo.hidden = true;
+    lienzo.focus({preventScroll:true});
+  }
+}
+
+/* ================================================================
+   Bucle y entrada
+   ================================================================ */
+function dibujarTodo(){
+  ctx.save();
+  if (sacudida > 0 && !reduceMovimiento)
+    ctx.translate(azar(-sacudida, sacudida), azar(-sacudida, sacudida));
+  juego.dibujar(ctx);
+  dibujarParticulas(ctx);
+  ctx.restore();
+}
+function bucle(t){
+  requestAnimationFrame(bucle);
+  const dt = Math.min((t - ultimoT) / 1000, .05);
+  ultimoT = t;
+  if (!juego || sala.hidden) return;
+  if (estado === "jugando"){
+    juego.actualizar(dt);
+    actualizarParticulas(dt);
+  } else if (estado === "fin"){
+    actualizarParticulas(dt);
+  }
+  dibujarTodo();
+}
+requestAnimationFrame(bucle);
+
+/* Teclado */
+window.addEventListener("keydown", e => {
+  if (sala.hidden) return;
+  const teclasJuego = [" ","ArrowUp","ArrowDown","ArrowLeft","ArrowRight"];
+  if (teclasJuego.includes(e.key)) e.preventDefault();
+  if (e.key === "Escape"){ if (estado === "jugando" || estado === "pausa") alternarPausa(); return; }
+  if (estado === "listo" && (e.key === " " || e.key === "Enter")) return empezar();
+  if (estado === "jugando" && juego.teclaAbajo) juego.teclaAbajo(e.key);
+});
+window.addEventListener("keyup", e => {
+  if (sala.hidden || estado !== "jugando") return;
+  if (juego.teclaArriba) juego.teclaArriba(e.key);
+});
+
+/* Puntero (táctil + ratón) */
+function coordenadas(e){
+  const r = lienzo.getBoundingClientRect();
+  return [ (e.clientX - r.left) / r.width  * (juego.W),
+           (e.clientY - r.top)  / r.height * (juego.H) ];
+}
+lienzo.addEventListener("pointerdown", e => {
+  e.preventDefault();
+  if (estado === "listo") return empezar();
+  if (estado !== "jugando") return;
+  lienzo.setPointerCapture(e.pointerId);
+  const [x, y] = coordenadas(e);
+  if (juego.punteroInicio) juego.punteroInicio(x, y);
+});
+lienzo.addEventListener("pointermove", e => {
+  if (estado !== "jugando") return;
+  const [x, y] = coordenadas(e);
+  if (juego.punteroMover) juego.punteroMover(x, y);
+});
+
+/* Tocar cualquier parte del velo también empieza la partida
+   (salvo que el clic venga de un botón, para no saltarse la pantalla de inicio) */
+velo.addEventListener("click", e => {
+  if (estado === "listo" && !e.target.closest("button")) empezar();
+});
+
+/* Pausar si la pestaña se oculta */
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden && estado === "jugando") alternarPausa();
+});
+
+/* Botones fijos */
+$("#btn-volver").addEventListener("click", volverMenu);
+$("#btn-pausa").addEventListener("click", () => {
+  if (estado === "jugando" || estado === "pausa") alternarPausa();
+});
+const btnSonido = $("#btn-sonido");
+function pintarSonido(){ btnSonido.textContent = sonidoOn ? "🔊" : "🔇"; }
+btnSonido.addEventListener("click", () => {
+  sonidoOn = !sonidoOn;
+  try { localStorage.setItem(CLAVE + "-sonido", sonidoOn ? "si" : "no"); } catch(e) {}
+  pintarSonido();
+  if (sonidoOn) { audio(); S.punto(); }
+});
+pintarSonido();
+pintarMenu();
+</script>
+</body>
+</html>
