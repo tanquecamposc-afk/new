@@ -2,6 +2,8 @@
 
 Juego de defensa de torres hecho en **HTML5 + Canvas + JavaScript puro** — un solo archivo, sin dependencias ni assets externos. Interfaz completamente en español.
 
+> 🎮 **Extra:** este repositorio también incluye [`juegos-2026.html`](juegos-2026.html), una página web con el ranking de los juegos más jugados por adolescentes en 2026 — Top 10 con arte SVG original, estadísticas animadas y un gráfico interactivo de jugadores mensuales. Ábrela directamente en el navegador, sin instalación.
+
 ## ▶ Cómo jugar
 
 Abre `index.html` en cualquier navegador moderno. No necesita servidor ni instalación.
