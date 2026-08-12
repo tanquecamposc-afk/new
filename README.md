@@ -1,3 +1,23 @@
+# Proyectos escolares
+
+| Proyecto | Archivo | Curso |
+|---|---|---|
+| 🛣️ **Vía Expresa Elevada** — maqueta virtual interactiva de una carretera elevada adaptada al Perú | `maqueta-via-expresa.html` | EPT · 2026 |
+| 🏰 **NEXO: Tower Defense** — juego en HTML5 Canvas | `index.html` | — |
+
+Cada proyecto es un solo archivo HTML sin dependencias: descárgalo y ábrelo en cualquier navegador.
+
+## 🛣️ Vía Expresa Elevada (EPT 2026)
+
+Maqueta virtual de un **viaducto elevado sobre la Vía Expresa de Lima**, hecha para el curso de Educación para el Trabajo. Incluye:
+
+- **Maqueta isométrica interactiva**: modo día/noche, despiece por capas, tráfico animado (Metropolitano con parada en estación, congestión abajo, flujo rápido arriba) y 8 puntos clicables que explican cada parte.
+- **Corte transversal técnico** estilo plano, con cotas y leyenda.
+- **Adaptaciones al Perú**: aisladores sísmicos (E.030), cimentación en la grava del Rímac, drenaje para El Niño, gálibo para el Metropolitano y ciclovía.
+- **Guía de la maqueta física**: escala 1:100, medidas, materiales con presupuesto en soles (≈ S/ 90), paso a paso y cronograma de 4 semanas.
+
+---
+
 # NEXO: Tower Defense 🏰
 
 Juego de defensa de torres hecho en **HTML5 + Canvas + JavaScript puro** — un solo archivo, sin dependencias ni assets externos. Interfaz completamente en español.

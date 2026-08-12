@@ -1,0 +1,1003 @@
+<title>Vía Expresa Elevada</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+/* ============ TOKENS ============ */
+:root{
+  --paper:#EDEFF1; --panel:#F8F9FA; --panel2:#E3E7EA;
+  --ink:#1C2429; --muted:#5C6A73; --line:#C9D0D6;
+  --accent:#C7530F; --accent-soft:#F4E2D4; --accent-ink:#FFFFFF;
+  --sign:#0B6C3F; --sign-border:#FFFFFF;
+  --draft-bg:#FAFCFE; --draft-grid:#DCE7F0; --draft-ink:#1F4E79;
+  --draft-dim:#C7530F; --draft-fill:#E7EEF5; --draft-soft:#8FA9C2;
+  --ok:#1F7A4D; --warn:#A85B00;
+  --f-display:"Arial Narrow","Helvetica Neue Condensed","Liberation Sans Narrow","Roboto Condensed",system-ui,sans-serif;
+  --f-body:system-ui,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --f-mono:ui-monospace,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#12161A; --panel:#1A2026; --panel2:#232B32;
+    --ink:#E6EAED; --muted:#94A2AB; --line:#2C353D;
+    --accent:#F07A2E; --accent-soft:#3A2A1D; --accent-ink:#14181C;
+    --draft-bg:#0E2338; --draft-grid:#1C3A55; --draft-ink:#CFE3F5;
+    --draft-dim:#F0904E; --draft-fill:#173248; --draft-soft:#5D80A0;
+    --ok:#4CC08A; --warn:#E8A94E;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#12161A; --panel:#1A2026; --panel2:#232B32;
+  --ink:#E6EAED; --muted:#94A2AB; --line:#2C353D;
+  --accent:#F07A2E; --accent-soft:#3A2A1D; --accent-ink:#14181C;
+  --draft-bg:#0E2338; --draft-grid:#1C3A55; --draft-ink:#CFE3F5;
+  --draft-dim:#F0904E; --draft-fill:#173248; --draft-soft:#5D80A0;
+  --ok:#4CC08A; --warn:#E8A94E;
+}
+
+/* ============ BASE ============ */
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--paper); color:var(--ink);
+  font-family:var(--f-body); font-size:16px; line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+}
+main{display:block}
+h1,h2,h3{font-family:var(--f-display); text-transform:uppercase; letter-spacing:.02em; line-height:1.1; text-wrap:balance; margin:0}
+p{margin:.4em 0 .9em}
+a{color:var(--accent)}
+.wrap{max-width:1120px; margin:0 auto; padding:0 20px}
+.narrow{max-width:780px}
+section{padding:56px 0}
+section+section{border-top:1px solid var(--line)}
+.eyebrow{
+  font-family:var(--f-mono); font-size:12px; letter-spacing:.18em; text-transform:uppercase;
+  color:var(--accent); margin:0 0 10px; font-weight:700;
+}
+h2{font-size:clamp(26px,4vw,38px); margin-bottom:14px}
+h3{font-size:19px; letter-spacing:.03em; margin-bottom:8px}
+.lead{font-size:17.5px; color:var(--muted); max-width:68ch}
+table{border-collapse:collapse; width:100%; font-variant-numeric:tabular-nums}
+th,td{padding:9px 12px; text-align:left; border-bottom:1px solid var(--line); vertical-align:top}
+th{font-family:var(--f-mono); font-size:11.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); font-weight:700}
+td.num,th.num{text-align:right}
+tfoot td{font-weight:700; border-top:2px solid var(--ink); border-bottom:none}
+.tbl-scroll{overflow-x:auto}
+.card{background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:20px 22px}
+.grid{display:grid; gap:16px}
+@media(min-width:760px){ .grid.c2{grid-template-columns:1fr 1fr} .grid.c3{grid-template-columns:1fr 1fr 1fr} .grid.c4{grid-template-columns:repeat(4,1fr)} }
+.kicker{font-family:var(--f-mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted)}
+
+/* ============ HERO ============ */
+header.hero{padding:52px 0 40px}
+.sign{
+  background:var(--sign); color:#fff; border-radius:14px;
+  border:4px solid var(--sign); outline:3px solid var(--sign-border); outline-offset:-9px;
+  padding:30px 34px 26px; box-shadow:0 10px 30px rgba(10,40,25,.25);
+  position:relative;
+}
+.sign .route{
+  display:inline-flex; align-items:center; gap:10px; margin-bottom:12px;
+  font-family:var(--f-mono); font-size:12px; letter-spacing:.2em;
+}
+.sign .shield{
+  background:#fff; color:var(--sign); font-family:var(--f-display); font-weight:700;
+  padding:3px 10px; border-radius:6px; font-size:14px; letter-spacing:.06em;
+}
+.sign h1{font-size:clamp(34px,6.5vw,64px); font-weight:700; color:#fff; letter-spacing:.015em}
+.sign .sub{margin-top:8px; font-size:clamp(14px,2.2vw,18px); opacity:.92; font-family:var(--f-display); text-transform:uppercase; letter-spacing:.08em}
+.sign .arrow{position:absolute; right:30px; bottom:22px; font-size:28px; opacity:.9}
+.hero .meta{display:flex; flex-wrap:wrap; gap:10px; margin-top:18px}
+.chip{
+  font-family:var(--f-mono); font-size:12px; letter-spacing:.06em;
+  border:1px solid var(--line); background:var(--panel); color:var(--muted);
+  padding:5px 12px; border-radius:999px;
+}
+.hero p.lead{margin-top:18px}
+
+/* ============ MAQUETA ============ */
+.controls{display:flex; flex-wrap:wrap; gap:10px 18px; align-items:center; margin:18px 0 12px}
+.controls .ctl{display:flex; align-items:center; gap:8px; font-family:var(--f-mono); font-size:12.5px; letter-spacing:.05em; text-transform:uppercase; color:var(--muted)}
+button.tog{
+  font-family:var(--f-mono); font-size:12.5px; letter-spacing:.06em; text-transform:uppercase;
+  background:var(--panel); color:var(--ink); border:1px solid var(--line); border-radius:999px;
+  padding:7px 16px; cursor:pointer;
+}
+button.tog[aria-pressed="true"]{background:var(--accent); color:var(--accent-ink); border-color:var(--accent)}
+button.tog:focus-visible,input:focus-visible,.hot:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+input[type=range]{accent-color:var(--accent); width:150px}
+.stage{
+  background:var(--panel); border:1px solid var(--line); border-radius:10px; overflow:hidden;
+}
+#scene{display:block; width:100%; height:auto}
+.scene-note{font-family:var(--f-mono); font-size:11.5px; color:var(--muted); padding:8px 14px; border-top:1px dashed var(--line)}
+.maq-grid{display:grid; gap:16px}
+@media(min-width:960px){ .maq-grid{grid-template-columns:minmax(0,2.1fr) minmax(260px,1fr); align-items:start} }
+.panel-info{position:sticky; top:16px}
+.panel-info .num{
+  display:inline-grid; place-items:center; width:30px; height:30px; border-radius:50%;
+  background:var(--accent); color:var(--accent-ink); font-family:var(--f-mono); font-weight:700; margin-bottom:8px;
+}
+.panel-info h3{font-size:21px}
+.panel-info .dato{
+  margin-top:12px; padding:10px 12px; background:var(--accent-soft); border-radius:6px;
+  font-size:14px;
+}
+.panel-info .dato b{font-family:var(--f-mono); font-size:10.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--accent); display:block; margin-bottom:3px}
+.chips-parts{display:flex; flex-wrap:wrap; gap:8px; margin-top:14px}
+.chips-parts button{
+  font-family:var(--f-mono); font-size:12px; border:1px solid var(--line); background:var(--panel);
+  color:var(--ink); border-radius:999px; padding:5px 12px; cursor:pointer;
+}
+.chips-parts button[aria-pressed="true"]{background:var(--ink); color:var(--paper); border-color:var(--ink)}
+
+/* hotspots dentro del SVG */
+.hot{cursor:pointer}
+.hot circle{fill:#fff; stroke:#C7530F; stroke-width:2}
+.hot text{font-family:var(--f-mono); font-size:12px; font-weight:700; fill:#C7530F; text-anchor:middle; dominant-baseline:central}
+.hot[aria-pressed="true"] circle{fill:#C7530F}
+.hot[aria-pressed="true"] text{fill:#fff}
+.hl{stroke:#C7530F !important; stroke-width:2px; stroke-linejoin:round}
+
+/* día / noche dentro del SVG */
+#skyN,#g-stars{opacity:0; transition:opacity .9s}
+.glow{opacity:0; transition:opacity .9s}
+.win-on{opacity:0; transition:opacity .9s}
+.night #skyN,.night #g-stars{opacity:1}
+.night #skyD{opacity:0}
+#skyD{transition:opacity .9s}
+.night .glow{opacity:1}
+.night .win-on{opacity:1}
+.xg{transition:transform .5s ease}
+
+/* ============ CORTE (plano) ============ */
+.plano{background:var(--draft-bg); border:1px solid var(--draft-grid); border-radius:10px; overflow:hidden}
+#corte{display:block; width:100%; height:auto}
+.corte-grid{display:grid; gap:18px}
+@media(min-width:960px){ .corte-grid{grid-template-columns:minmax(0,2fr) minmax(260px,1fr); align-items:start} }
+.leyenda td:first-child{width:38px}
+.letra{
+  display:inline-grid; place-items:center; width:24px; height:24px; border-radius:50%;
+  border:1.5px solid var(--draft-ink); color:var(--draft-ink); font-family:var(--f-mono); font-size:12px; font-weight:700;
+  background:var(--draft-bg);
+}
+
+/* ============ LISTAS / PASOS ============ */
+ol.pasos{counter-reset:p; list-style:none; margin:0; padding:0; display:grid; gap:12px}
+@media(min-width:760px){ ol.pasos{grid-template-columns:1fr 1fr} }
+ol.pasos li{
+  counter-increment:p; background:var(--panel); border:1px solid var(--line); border-radius:8px;
+  padding:14px 16px 14px 54px; position:relative; font-size:15px;
+}
+ol.pasos li::before{
+  content:counter(p); position:absolute; left:14px; top:13px;
+  width:28px; height:28px; border-radius:6px; display:grid; place-items:center;
+  background:var(--ink); color:var(--paper); font-family:var(--f-mono); font-weight:700; font-size:14px;
+}
+ol.pasos li b{display:block; font-family:var(--f-display); text-transform:uppercase; letter-spacing:.04em; font-size:14.5px; margin-bottom:2px}
+ul.plain{margin:.3em 0; padding-left:1.2em}
+ul.plain li{margin:.35em 0}
+.reto{border-left:3px solid var(--warn); padding-left:12px; margin:10px 0}
+.reto b{font-family:var(--f-display); text-transform:uppercase; letter-spacing:.03em; font-size:14.5px}
+.tip{background:var(--panel2); border-radius:8px; padding:16px 18px; margin-top:18px}
+.tip .kicker{color:var(--accent)}
+
+/* ============ FICHA / FOOTER ============ */
+dl.ficha{display:grid; grid-template-columns:max-content 1fr; gap:6px 22px; margin:0}
+dl.ficha dt{font-family:var(--f-mono); font-size:12px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); padding-top:2px}
+dl.ficha dd{margin:0}
+footer{border-top:1px solid var(--line); padding:26px 0 40px; color:var(--muted); font-size:14px}
+footer .kicker{margin-bottom:4px}
+
+@media (prefers-reduced-motion: reduce){
+  #skyN,#skyD,#g-stars,.glow,.win-on,.xg{transition:none}
+}
+</style>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="sign" role="img" aria-label="Cartel vial verde con el título Vía Expresa Elevada">
+      <div class="route"><span class="shield">EPT · 2026</span><span>PROYECTO ESCOLAR — EDUCACIÓN PARA EL TRABAJO</span></div>
+      <h1>Vía Expresa Elevada</h1>
+      <div class="sub">Carretera elevada adaptada al Perú · Lima</div>
+      <div class="arrow" aria-hidden="true">⤴</div>
+    </div>
+    <div class="meta">
+      <span class="chip">CORREDOR: VÍA EXPRESA L. F. BEDOYA REYES</span>
+      <span class="chip">MAQUETA VIRTUAL INTERACTIVA</span>
+      <span class="chip">ESCALA FÍSICA SUGERIDA 1:100</span>
+    </div>
+    <p class="lead">La Vía Expresa de Lima —el famoso «Zanjón»— se satura todos los días y ya no hay
+    espacio para ensancharla. Esta maqueta propone un <strong>viaducto elevado</strong> que corre
+    sobre el mismo corredor: cuatro carriles rápidos arriba, y abajo se conservan el
+    <strong>Metropolitano</strong>, la calzada existente y una <strong>ciclovía</strong>. Todo el diseño está
+    adaptado a la realidad peruana: sismos, suelo limeño, garúa y transporte público.</p>
+  </div>
+</header>
+
+<main>
+<!-- ============ MAQUETA INTERACTIVA ============ -->
+<section id="maqueta">
+  <div class="wrap">
+    <p class="eyebrow">01 · Maqueta virtual</p>
+    <h2>Explora el viaducto</h2>
+    <p class="lead">Haz clic en los números para conocer cada parte. Usa <em>Despiece</em> para separar
+    la estructura por capas —como si desarmaras la maqueta— y el modo <em>Noche</em> para encender la iluminación.</p>
+
+    <div class="controls">
+      <button class="tog" id="btnNight" aria-pressed="false">☾ Noche</button>
+      <button class="tog" id="btnTraffic" aria-pressed="true">Tráfico</button>
+      <label class="ctl" for="explode">Despiece
+        <input type="range" id="explode" min="0" max="100" value="0" aria-label="Separar capas de la estructura">
+      </label>
+    </div>
+
+    <div class="maq-grid">
+      <figure class="stage" style="margin:0">
+        <svg id="scene" role="img" aria-label="Maqueta isométrica del viaducto elevado sobre la Vía Expresa, con el Metropolitano, una estación central, calzada, ciclovía y vereda"></svg>
+        <figcaption class="scene-note">ABAJO: TRÁFICO LENTO EN LA VÍA ACTUAL · ARRIBA: FLUJO RÁPIDO POR EL VIADUCTO — ESA ES LA PROPUESTA</figcaption>
+      </figure>
+
+      <aside class="card panel-info" id="panelInfo" aria-live="polite">
+        <span class="num" id="pNum">1</span>
+        <h3 id="pTitle">Tablero del viaducto</h3>
+        <p id="pDesc" style="font-size:15px; margin-bottom:0">Losa de concreto armado con carpeta asfáltica: cuatro carriles, dos por sentido, sobre vigas longitudinales.</p>
+        <div class="dato"><b>Dato Perú</b><span id="pDato">Su diseño se rige por el Manual de Puentes del MTC; la superficie drena hacia sumideros pensados para la garúa limeña.</span></div>
+        <div class="chips-parts" id="chips"></div>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<!-- ============ POR QUÉ ============ -->
+<section id="porque">
+  <div class="wrap">
+    <p class="eyebrow">02 · El problema y la propuesta</p>
+    <h2>¿Por qué una vía elevada?</h2>
+    <div class="grid c3" style="margin-top:18px">
+      <div class="card">
+        <span class="kicker">Problema</span>
+        <h3>El corredor está saturado</h3>
+        <p style="font-size:15px; margin-bottom:0">En hora punta, la Vía Expresa opera al límite. Los viajes que deberían tomar minutos toman más de una hora, con más ruido y contaminación.</p>
+      </div>
+      <div class="card">
+        <span class="kicker">Restricción</span>
+        <h3>No hay dónde ensanchar</h3>
+        <p style="font-size:15px; margin-bottom:0">A ambos lados hay viviendas, comercios y parques consolidados. Expropiar para ampliar en superficie es carísimo y destruye barrios.</p>
+      </div>
+      <div class="card">
+        <span class="kicker">Propuesta</span>
+        <h3>Crecer hacia arriba</h3>
+        <p style="font-size:15px; margin-bottom:0">Un viaducto sobre el mismo eje casi duplica la capacidad sin quitar ni un carril abajo: el Metropolitano, la calzada y la nueva ciclovía se mantienen.</p>
+      </div>
+    </div>
+
+    <h3 style="margin-top:30px">Retos que el proyecto reconoce</h3>
+    <div class="reto"><b>Costo alto</b> — un viaducto urbano cuesta decenas de millones de soles por kilómetro. Se plantea ejecutarlo por etapas y con peaje electrónico.</div>
+    <div class="reto"><b>Ruido e impacto visual</b> — se mitiga con pantallas acústicas en las barreras y arborización a lo largo del corredor.</div>
+    <div class="reto"><b>Sombra bajo el viaducto</b> — el espacio inferior se recupera con iluminación LED, jardineras y zonas de espera seguras, en lugar de dejarlo abandonado.</div>
+  </div>
+</section>
+
+<!-- ============ CORTE TRANSVERSAL ============ -->
+<section id="corte-sec">
+  <div class="wrap">
+    <p class="eyebrow">03 · Plano técnico</p>
+    <h2>Corte transversal A–A</h2>
+    <p class="lead">Así se vería un corte del corredor completo. Las cotas están en metros; la letra de cada
+    círculo se explica en la leyenda.</p>
+    <div class="corte-grid" style="margin-top:16px">
+      <figure class="plano" style="margin:0">
+        <svg id="corte" role="img" aria-label="Corte transversal técnico del viaducto: columna central, viga cabezal, aisladores, vigas, losa y, a nivel de piso, Metropolitano, calzada, jardín, ciclovía y vereda"></svg>
+      </figure>
+      <div class="tbl-scroll">
+        <table class="leyenda">
+          <thead><tr><th></th><th>Elemento</th></tr></thead>
+          <tbody id="leyendaBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ ADAPTACIONES ============ -->
+<section id="peru">
+  <div class="wrap">
+    <p class="eyebrow">04 · Ingeniería con sello peruano</p>
+    <h2>Adaptado al Perú</h2>
+    <div class="grid c2" style="margin-top:18px">
+      <div class="card">
+        <span class="kicker">Sismos · Norma E.030</span>
+        <h3>Diseño sismorresistente</h3>
+        <p style="font-size:15px; margin-bottom:0">Lima está en la zona de mayor peligro sísmico del país. Entre la viga cabezal y el
+        tablero van <strong>aisladores sísmicos</strong> que dejan que la estructura se mueva sin romperse, y las columnas llevan
+        refuerzo en espiral para ser dúctiles. Muévele al «Despiece» en la maqueta para verlos.</p>
+      </div>
+      <div class="card">
+        <span class="kicker">Suelo de Lima</span>
+        <h3>Cimentación en grava del Rímac</h3>
+        <p style="font-size:15px; margin-bottom:0">Gran parte de Lima se asienta sobre el conglomerado aluvial del río Rímac, un suelo
+        firme ideal para <strong>zapatas</strong> compactas. En tramos de suelo blando o arenoso se cambiaría a pilotes profundos.</p>
+      </div>
+      <div class="card">
+        <span class="kicker">Clima costero</span>
+        <h3>Garúa, humedad y El Niño</h3>
+        <p style="font-size:15px; margin-bottom:0">La humedad y la brisa marina corroen el acero: se usa mayor recubrimiento de
+        concreto y pintura anticorrosiva. El drenaje del tablero se sobredimensiona pensando en lluvias intensas
+        como las del fenómeno de El Niño.</p>
+      </div>
+      <div class="card">
+        <span class="kicker">Movilidad integrada</span>
+        <h3>El Metropolitano sigue abajo</h3>
+        <p style="font-size:15px; margin-bottom:0">El viaducto respeta un <strong>gálibo de 8 m</strong> (la norma del MTC exige mínimo 5.50 m),
+        así los buses articulados y sus estaciones centrales siguen operando. Se suma una ciclovía de 2.5 m y veredas arboladas.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ MAQUETA FÍSICA ============ -->
+<section id="fisica">
+  <div class="wrap">
+    <p class="eyebrow">05 · Del computador al cartón</p>
+    <h2>Construye la maqueta física</h2>
+    <p class="lead">Guía completa para presentar el proyecto en clase: escala <strong>1:100</strong>
+    (1 metro real = 1 centímetro en la maqueta), sobre una base de <strong>60 × 40 cm</strong> que representa
+    un tramo de dos vanos del viaducto con su estación.</p>
+
+    <div class="grid c2" style="margin-top:22px">
+      <div>
+        <h3>Medidas clave (escala 1:100)</h3>
+        <div class="tbl-scroll"><table>
+          <thead><tr><th>Elemento</th><th class="num">Real</th><th class="num">Maqueta</th></tr></thead>
+          <tbody>
+            <tr><td>Altura de columna</td><td class="num">8.00 m</td><td class="num">8.0 cm</td></tr>
+            <tr><td>Distancia entre columnas (vano)</td><td class="num">30.00 m</td><td class="num">30.0 cm</td></tr>
+            <tr><td>Ancho del tablero</td><td class="num">20.00 m</td><td class="num">20.0 cm</td></tr>
+            <tr><td>Espesor del tablero (vigas + losa)</td><td class="num">2.00 m</td><td class="num">2.0 cm</td></tr>
+            <tr><td>Carril</td><td class="num">3.50 m</td><td class="num">3.5 cm</td></tr>
+            <tr><td>Barrera New Jersey</td><td class="num">0.90 m</td><td class="num">0.9 cm</td></tr>
+            <tr><td>Ciclovía</td><td class="num">2.50 m</td><td class="num">2.5 cm</td></tr>
+            <tr><td>Andén de estación</td><td class="num">2.50 m</td><td class="num">2.5 cm</td></tr>
+          </tbody>
+        </table></div>
+      </div>
+      <div>
+        <h3>Materiales y presupuesto</h3>
+        <div class="tbl-scroll"><table>
+          <thead><tr><th>Material</th><th class="num">Precio ref.</th></tr></thead>
+          <tbody>
+            <tr><td>Base de MDF o triplay 60 × 40 cm</td><td class="num">S/ 15.00</td></tr>
+            <tr><td>Tecnopor (2 planchas delgadas)</td><td class="num">S/ 8.00</td></tr>
+            <tr><td>Cartón dúplex y corrugado</td><td class="num">S/ 6.00</td></tr>
+            <tr><td>Baja lenguas × 50 (vigas)</td><td class="num">S/ 6.50</td></tr>
+            <tr><td>Tubo PVC ½″ o conos de cartón (columnas)</td><td class="num">S/ 5.00</td></tr>
+            <tr><td>Silicona en barra + pistola</td><td class="num">S/ 12.00</td></tr>
+            <tr><td>Témperas: gris, negro, verde, blanco, amarillo</td><td class="num">S/ 12.00</td></tr>
+            <tr><td>Autitos en miniatura × 6</td><td class="num">S/ 10.00</td></tr>
+            <tr><td>Césped sintético o aserrín teñido</td><td class="num">S/ 8.00</td></tr>
+            <tr><td>Lija, cúter y regla metálica</td><td class="num">S/ 7.00</td></tr>
+          </tbody>
+          <tfoot><tr><td>Total estimado</td><td class="num">S/ 89.50</td></tr></tfoot>
+        </table></div>
+        <p style="font-size:13px; color:var(--muted); margin-top:8px">Precios referenciales en Lima, 2026. Si ya tienes pistola de silicona y témperas, el gasto baja a ≈ S/ 65.</p>
+      </div>
+    </div>
+
+    <h3 style="margin-top:34px">Paso a paso</h3>
+    <ol class="pasos" style="margin-top:12px">
+      <li><b>Traza la planta</b>Dibuja sobre la base las franjas del corredor con lápiz y regla: Metropolitano (9 cm), calzada (9 cm), jardín (2.5 cm), ciclovía (2.5 cm) y vereda (3 cm).</li>
+      <li><b>Pinta el piso</b>Calzadas en gris oscuro, jardines en verde, ciclovía en verde azulado y veredas en gris claro. Deja secar bien antes de pegar nada.</li>
+      <li><b>Corta las columnas</b>Seis columnas de 8 cm (tubo PVC o cartón enrollado) con zapatas de tecnopor de 6 × 6 cm en la base. Van en dos filas de tres, cada 30 cm.</li>
+      <li><b>Arma el tablero</b>Dos capas de cartón dúplex de 60 × 20 cm con baja lenguas pegadas debajo como vigas longitudinales. Eso le da rigidez real, igual que en un puente.</li>
+      <li><b>Estructura completa</b>Pega columnas → vigas cabezal (dos baja lenguas juntas en cruz) → tablero. Un cuadrito de esponja entre cabezal y tablero representa el aislador sísmico: ¡explícalo en tu exposición!</li>
+      <li><b>Estación del Metropolitano</b>Andén de tecnopor de 30 × 2.5 × 1 cm entre los carriles de bus, techo de cartón sobre palitos de anticucho y un letrero pequeño con su nombre.</li>
+      <li><b>Barreras y señalización</b>Barreras con tiras de cartón dobladas en L, líneas de carril con corrector o plumón blanco, y farolas con alambre o mondadientes pintados.</li>
+      <li><b>Detalles finales</b>Autitos arriba y abajo, árboles de esponja pintada, y una tarjeta rotulada con el nombre del proyecto, tu nombre, grado y la escala.</li>
+    </ol>
+
+    <div class="grid c2" style="margin-top:26px">
+      <div>
+        <h3>Cronograma sugerido</h3>
+        <div class="tbl-scroll"><table>
+          <thead><tr><th>Semana</th><th>Actividad</th></tr></thead>
+          <tbody>
+            <tr><td class="num">1</td><td>Diseño, compra de materiales y trazado de la base</td></tr>
+            <tr><td class="num">2</td><td>Estructura: columnas, zapatas, vigas y tablero</td></tr>
+            <tr><td class="num">3</td><td>Nivel de piso: Metropolitano, estación, calzada, ciclovía y jardines</td></tr>
+            <tr><td class="num">4</td><td>Pintura, señalización, detalles y ensayo de la exposición</td></tr>
+          </tbody>
+        </table></div>
+      </div>
+      <div class="tip">
+        <span class="kicker">Para tu exposición</span>
+        <ul class="plain" style="font-size:15px">
+          <li><strong>Empieza por el problema</strong>: el tráfico de la Vía Expresa, no por la maqueta.</li>
+          <li><strong>Señala las adaptaciones peruanas</strong>: aislador sísmico, gálibo para el Metropolitano, drenaje para El Niño. Es lo que diferencia tu proyecto de «un puente cualquiera».</li>
+          <li><strong>Reconoce un reto</strong> (costo o ruido) y di cómo lo mitigas: demuestra pensamiento crítico y suma puntos.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FICHA ============ -->
+<section id="ficha">
+  <div class="wrap narrow">
+    <p class="eyebrow">06 · Ficha técnica</p>
+    <h2>Datos del proyecto</h2>
+    <div class="card" style="margin-top:16px">
+      <dl class="ficha">
+        <dt>Proyecto</dt><dd>Vía Expresa Elevada — carretera elevada adaptada al Perú</dd>
+        <dt>Curso</dt><dd>Educación para el Trabajo (EPT)</dd>
+        <dt>Autor(a)</dt><dd>____________________________________ &nbsp; Grado: ________</dd>
+        <dt>Año</dt><dd>2026</dd>
+        <dt>Ubicación de referencia</dt><dd>Vía Expresa Luis Fernán Bedoya Reyes («el Zanjón»), Lima</dd>
+        <dt>Maqueta física</dt><dd>Escala 1:100 · base 60 × 40 cm · tramo de 2 vanos con estación</dd>
+        <dt>Normas consultadas</dt><dd>E.030 Diseño Sismorresistente · Manual de Puentes (MTC) · Manual de Carreteras DG (MTC)</dd>
+      </dl>
+    </div>
+    <p style="font-size:13.5px; color:var(--muted); margin-top:12px">Las dimensiones y datos técnicos de esta maqueta son valores referenciales con fines educativos; un proyecto real requiere estudios de ingeniería de detalle.</p>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <p class="kicker">Maqueta virtual · abre este archivo en cualquier navegador, no necesita internet</p>
+    Proyecto escolar del curso de Educación para el Trabajo — Lima, Perú, 2026.
+  </div>
+</footer>
+
+<script>
+/* =====================================================================
+   MAQUETA ISOMÉTRICA — se genera por código para mantener las
+   proporciones reales (1 unidad = 1 metro).
+===================================================================== */
+(function(){
+"use strict";
+const NS='http://www.w3.org/2000/svg';
+const svg=document.getElementById('scene');
+const reduceMotion=matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ---------- helpers ---------- */
+function el(n,at,parent){const e=document.createElementNS(NS,n);for(const k in at)e.setAttribute(k,at[k]);if(parent)parent.appendChild(e);return e;}
+function shade(hex,f){
+  const n=parseInt(hex.slice(1),16);
+  const c=[(n>>16)&255,(n>>8)&255,n&255].map(v=>Math.max(0,Math.min(255,Math.round(v*f))));
+  return '#'+c.map(v=>v.toString(16).padStart(2,'0')).join('');
+}
+const S=6.4, AX=S*Math.cos(Math.PI/6), AY=S/2;
+const P=(x,y,z=0)=>[(x-y)*AX,(x+y)*AY-z*S];
+const pts=a=>a.map(p=>p[0].toFixed(1)+','+p[1].toFixed(1)).join(' ');
+function poly(parent,pp,fill,at={}){return el('polygon',Object.assign({points:pts(pp),fill},at),parent);}
+function quad(parent,x0,x1,y0,y1,fill,z=0,at={}){return poly(parent,[P(x0,y0,z),P(x1,y0,z),P(x1,y1,z),P(x0,y1,z)],fill,at);}
+function box(parent,x0,x1,y0,y1,z0,z1,c,at={}){
+  const g=el('g',{},parent);
+  poly(g,[P(x0,y0,z1),P(x1,y0,z1),P(x1,y1,z1),P(x0,y1,z1)],shade(c,1.06),at); // techo
+  poly(g,[P(x0,y1,z1),P(x1,y1,z1),P(x1,y1,z0),P(x0,y1,z0)],shade(c,0.84),at); // cara frontal (y+)
+  poly(g,[P(x1,y0,z1),P(x1,y1,z1),P(x1,y1,z0),P(x1,y0,z0)],shade(c,0.62),at); // cara derecha (x+)
+  return g;
+}
+function iline(parent,x0,y0,x1,y1,z,stroke,w,dash){
+  const a=P(x0,y0,z),b=P(x1,y1,z);
+  const at={x1:a[0],y1:a[1],x2:b[0],y2:b[1],stroke,'stroke-width':w};
+  if(dash)at['stroke-dasharray']=dash;
+  return el('line',at,parent);
+}
+
+/* ---------- capas (orden de pintado) ---------- */
+const gRoot   =el('g',{},svg);
+const gBg     =el('g',{},gRoot);           // horizonte / edificios
+const gBoard  =el('g',{},gRoot);           // tabla de madera
+const gGround =el('g',{},gRoot);           // superficies planas
+const gCol    =el('g',{class:'xg'},gRoot); // columnas + zapatas
+const gLow    =el('g',{},gRoot);           // buses, estación, autos, jardín
+const gCab    =el('g',{class:'xg'},gRoot); // vigas cabezal + aisladores
+const gDeckW  =el('g',{class:'xg'},gRoot); // tablero completo (explosionable)
+const gUI     =el('g',{},gRoot);           // hotspots de piso
+
+/* ---------- fondo: edificios ---------- */
+(function(){
+  const bl=[[-14,-9,10],[2,-8,16],[16,-10,7],[30,-7,12],[46,-9,20],[60,-8,9],[74,-10,14],[90,-7,8],[104,-9,17],[118,-8,11]];
+  bl.forEach(([bx,by,h],i)=>{
+    const w=9+((i*7)%5), d=5;
+    const g=box(gBg,bx,bx+w,by,by+d,0,h,i%2?'#AEB6BD':'#9AA3AB');
+    // ventanas (encendidas de noche)
+    for(let r=1;r<h-1;r+=2.4){
+      for(let c=1;c<w-1;c+=2.6){
+        poly(g,[P(bx+c,by+d,r+1.2),P(bx+c+1.3,by+d,r+1.2),P(bx+c+1.3,by+d,r),P(bx+c,by+d,r)],'#FFE9A8',{class:'win-on'});
+      }
+    }
+  });
+})();
+
+/* ---------- tabla de madera (la maqueta se apoya en ella) ---------- */
+(function(){
+  const x0=-6,x1=126,y0=-2,y1=38,t=1.6;
+  poly(gBoard,[P(x0,y1,0),P(x1,y1,0),P(x1,y1,-t),P(x0,y1,-t)],'#8A6B4A');
+  poly(gBoard,[P(x1,y0,0),P(x1,y1,0),P(x1,y1,-t),P(x1,y0,-t)],'#6E5439');
+  // placa de la maqueta
+  const px=44,pw=22;
+  poly(gBoard,[P(px,y1,-0.25),P(px+pw,y1,-0.25),P(px+pw,y1,-1.35),P(px,y1,-1.35)],'#F2EBDC');
+  const tp=P(px+pw/2,y1,-0.62);
+  el('text',{x:tp[0],y:tp[1],'text-anchor':'middle','font-size':'6.2','font-family':'monospace',fill:'#5C4A33'},gBoard).textContent='VÍA EXPRESA ELEVADA';
+  const tp2=P(px+pw/2,y1,-1.12);
+  el('text',{x:tp2[0],y:tp2[1],'text-anchor':'middle','font-size':'4.6','font-family':'monospace',fill:'#8A7454'},gBoard).textContent='EPT 2026 · ESC 1:100';
+})();
+
+/* ---------- suelo ---------- */
+const C={
+  asf:'#41464D', asfBus:'#3A4046', conc:'#C7CBCF', concW:'#D6DADD',
+  grass:'#7FA05C', grassD:'#6C8F4E', cicl:'#3E8467', vereda:'#CFCBC2',
+  white:'#F2F4F5', yellow:'#E8C21A'
+};
+(function(){
+  quad(gGround,-6,126,-2,0,'#4E5947');            // talud lejano (en sombra)
+  quad(gGround,-6,126,0,8,'#A2A8AD');             // espacio recuperado bajo el viaducto
+  quad(gGround,-6,126,8,12,'#5B7943');            // jardín central (columnas)
+  quad(gGround,-6,126,12,15,'#32373D');           // carril Metropolitano →
+  quad(gGround,-6,126,15,17.5,'#AFB4B8');         // isla central / estación
+  quad(gGround,-6,126,17.5,20.5,'#32373D');       // carril Metropolitano ←
+  quad(gGround,-6,126,21.2,30.2,C.asf);           // calzada existente (3 carriles)
+  quad(gGround,-6,126,30.2,32.7,C.grass);         // jardín
+  quad(gGround,-6,126,32.7,35.2,C.cicl);          // ciclovía
+  quad(gGround,-6,126,35.2,38,C.vereda);          // vereda
+  // sombra que proyecta el viaducto (da sensación de altura)
+  quad(gGround,-2,122,20.5,23.2,'#000000',0.03,{'fill-opacity':0.13});
+  quad(gGround,-2,122,23.2,24.6,'#000000',0.03,{'fill-opacity':0.05});
+
+  // marcas viales
+  iline(gGround,-6,12.35,126,12.35,0.04,'#B9BDC1',1);        // bordes carril bus
+  iline(gGround,-6,20.15,126,20.15,0.04,'#B9BDC1',1);
+  iline(gGround,-6,21.7,126,21.7,0.02,C.white,1.2);
+  iline(gGround,-6,24.2,126,24.2,0.02,C.white,1.1,'9 8');
+  iline(gGround,-6,27.2,126,27.2,0.02,C.white,1.1,'9 8');
+  iline(gGround,-6,29.8,126,29.8,0.02,C.white,1.2);
+  iline(gGround,-6,33.95,126,33.95,0.02,C.white,1,'6 9');    // ciclovía
+  // juntas de vereda
+  for(let x=-4;x<126;x+=8) iline(gGround,x,35.2,x,38,0.02,'#BDB8AE',0.8);
+  // jardineras bajo el viaducto
+  for(let x=2;x<120;x+=16){
+    box(gGround,x,x+3,5.8,7.6,0,0.7,'#8C9297');
+    quad(gGround,x+0.3,x+2.7,6,7.4,'#6C8F4E',0.72);
+  }
+})();
+
+/* ---------- columnas, zapatas, cabezales ---------- */
+const PIER_X=[12,44,76,108];
+const parts={};              // registro para resaltar
+function reg(id,elm){ (parts[id]=parts[id]||[]).push(elm); }
+
+PIER_X.forEach(x=>{
+  const zap=box(gCol,x-2.6,x+2.6,7.4,12.6,0,0.5,'#9FA6AC'); reg('zapata',zap);
+  const col=box(gCol,x-1.4,x+1.4,8.6,11.4,0.5,6.2,'#BFC4C9'); reg('columna',col);
+  const cab=box(gCab,x-1.3,x+1.3,1,19,6.2,7.7,'#B4BAC0'); reg('cabezal',cab);
+  [3,9.5,15.5].forEach(y=>{ const a=box(gCab,x-1,x+1,y,y+1.6,7.7,8,'#2E3338'); reg('aislador',a); });
+});
+
+/* ---------- sub-capas del nivel de piso (orden de pintado correcto)
+   y recortes: los vehículos desaparecen en el borde de la tabla ---------- */
+const defsV=el('defs',{},svg);
+function prismClip(id,a,b,c,d,z0,H){
+  const cp=el('clipPath',{id},defsV);
+  poly(cp,[P(a,c,H),P(b,c,H),P(b,c,z0),P(b,d,z0),P(a,d,z0),P(a,d,H)],'#fff');
+  return 'url(#'+id+')';
+}
+const clipGnd=prismClip('clip-gnd',-6,126,-2,38,0,6.5);
+const clipDeck=prismClip('clip-deck',-2,122,0,20,9.4,13.5);
+const gVF=el('g',{'clip-path':clipGnd},gLow);  // buses sentido → (detrás de la estación)
+const gST=el('g',{},gLow);                     // estación
+const gVM=el('g',{'clip-path':clipGnd},gLow);  // buses sentido ←
+const gBar=el('g',{},gLow);                    // barrera Metropolitano/calzada
+const gVN=el('g',{'clip-path':clipGnd},gLow);  // autos de la calzada
+
+/* ---------- estación Metropolitano ---------- */
+(function(){
+  const st=gST;
+  const and=box(st,42,78,15,17.5,0,0.95,'#D8DCDF'); reg('estacion',and);
+  iline(st,42.4,15.35,77.6,15.35,0.98,C.yellow,1);
+  iline(st,42.4,17.15,77.6,17.15,0.98,C.yellow,1);
+  for(const cx of [46,55.5,65,74.5]) box(st,cx-0.22,cx+0.22,16,16.45,0.95,3.35,'#7A8288');
+  const roof=box(st,44,76,14.7,17.8,3.35,3.72,'#E8EBED'); reg('estacion',roof);
+  // luz bajo el techo (noche)
+  const lp=P(60,17.6,3.3);
+  el('ellipse',{cx:lp[0],cy:lp[1],rx:70,ry:12,fill:'#FFE9A8',opacity:0,class:'glow'},st).setAttribute('opacity','');
+  const g1=el('ellipse',{cx:lp[0],cy:lp[1]+8,rx:78,ry:13,fill:'#FFE9A8',class:'glow'},st);
+  g1.setAttribute('fill-opacity','0.35');
+  // tótem
+  box(st,41,41.7,16,16.6,0,2.3,'#88552F');
+})();
+
+/* ---------- jardín: palmeras y farolas ---------- */
+function palmera(parent,x,y,h){
+  const g=el('g',{},parent);
+  box(g,x-0.22,x+0.22,y-0.22,y+0.22,0,h,'#8A6B4A');
+  const top=P(x,y,h);
+  for(let i=0;i<6;i++){
+    const a=i*Math.PI/3+0.4;
+    const dx=Math.cos(a)*2.1, dy=Math.sin(a)*1.2;
+    el('path',{d:`M${top[0]},${top[1]} q ${dx*2.4},-2 ${dx*4.4},${3-dy}`,stroke:'#4E7D3A','stroke-width':1.6,fill:'none','stroke-linecap':'round'},g);
+  }
+  el('circle',{cx:top[0],cy:top[1],r:1.6,fill:'#3E6B2E'},g);
+  return g;
+}
+function farola(parent,x,y,h,armDY){
+  const g=el('g',{},parent);
+  box(g,x-0.14,x+0.14,y-0.14,y+0.14,0,h,'#5A6167');
+  const a=P(x,y,h), b=P(x,y+armDY,h+0.55);
+  el('line',{x1:a[0],y1:a[1],x2:b[0],y2:b[1],stroke:'#5A6167','stroke-width':1.6},g);
+  el('circle',{cx:b[0],cy:b[1],r:1.5,fill:'#EDEFF0'},g);
+  el('circle',{cx:b[0],cy:b[1],r:5,fill:'#FFE9A8','fill-opacity':.55,class:'glow'},g);
+  el('ellipse',{cx:b[0],cy:b[1]+ (h+0.5)*S*0.92,rx:26,ry:9,fill:'#FFE9A8','fill-opacity':.22,class:'glow'},g);
+  return g;
+}
+
+/* ---------- vehículos ---------- */
+const movers=[];
+function makeCar(color,dir,y,x0,vmin,vmax){
+  const g=el('g',{},gVN);
+  const L=4.4,W=1.9;
+  box(g,-L/2,L/2,-W/2,W/2,0.25,1.05,color);
+  box(g,-L/2+ (dir>0?0.6:1.6), L/2-(dir>0?1.6:0.6), -W/2+0.25, W/2-0.25, 1.05,1.62, shade(color,0.72));
+  const hx=dir>0?L/2:-L/2;
+  const hp=P(hx,W/2-0.4,0.7);
+  el('circle',{cx:hp[0],cy:hp[1],r:1.1,fill:'#FFF6C9'},g);
+  el('circle',{cx:hp[0],cy:hp[1],r:3.4,fill:'#FFF3B0','fill-opacity':.5,class:'glow'},g);
+  movers.push({g,x:x0,y,dir,base:vmin+Math.random()*(vmax-vmin),ph:Math.random()*6.28,kind:'car'});
+}
+function makeBus(dir,y,x0){
+  const g=el('g',{},dir>0?gVF:gVM);
+  const mk=(a,b)=>{
+    box(g,a,b,-1.25,1.25,0.3,3.05,'#C9CDD2');
+    poly(g,[P(a+0.4,1.25,2.6),P(b-0.4,1.25,2.6),P(b-0.4,1.25,1.7),P(a+0.4,1.25,1.7)],'#3A444C'); // ventanas
+    iline(g,a+0.3,1.27,b-0.3,1.27,0.9,'#B0483F',1.4); // franja
+  };
+  if(dir>0){ mk(-9,0.6); mk(1.2,9); } else { mk(-9,-1.2); mk(-0.6,9); }
+  poly(g,[P(dir>0?9:-9,1.25,2.9),P(dir>0?9:-9,-1.25,2.9),P(dir>0?9:-9,-1.25,0.4),P(dir>0?9:-9,1.25,0.4)],'#22282D',{'fill-opacity':dir>0?1:0});
+  const hp=P(dir>0?9:-9,0.8,1);
+  el('circle',{cx:hp[0],cy:hp[1],r:1.2,fill:'#FFF6C9'},g);
+  movers.push({g,x:x0,y,dir,base:9,ph:0,kind:'bus',state:'run',wait:0});
+}
+// buses del Metropolitano (paran en la estación)
+makeBus(+1,13.5,-20); makeBus(+1,13.5,60);
+makeBus(-1,19,140);   makeBus(-1,19,40);
+// calzada congestionada (lenta)
+const carCols=['#D9DBDD','#8C9BA6','#B0483F','#E8C21A','#5B7E9E','#3C4248','#D9DBDD','#B0483F','#E8C21A'];
+[22.7,25.7,28.7].forEach((y,li)=>{
+  for(let i=0;i<3;i++) makeCar(carCols[(li*3+i)%carCols.length],-1,y,15+i*40+li*12,2.2,4);
+});
+
+/* ---------- jardín delantero (después de los autos: está más cerca) ---------- */
+(function(){
+  for(let x=0;x<115;x+=20) palmera(gLow,x+6,31.4,5.5+((x/20)%2)*0.8);
+  for(let x=0;x<100;x+=24) farola(gLow,x+16,30.8,6.5,-1.4);
+  for(let x=0;x<124;x+=22) { // árboles de vereda
+    const g=el('g',{},gLow);
+    box(g,x+2.9,x+3.3,36.3,36.7,0,2.2,'#7A5C3E');
+    const t=P(x+3.1,36.5,3.1);
+    el('circle',{cx:t[0],cy:t[1],r:6.5,fill:'#5F8747'},g);
+    el('circle',{cx:t[0]-2,cy:t[1]-2,r:4,fill:'#6F9955'},g);
+  }
+})();
+
+/* ---------- barrera entre Metropolitano y calzada ---------- */
+box(gBar,-6,126,20.5,21.2,0,0.85,'#AEB4B9');
+
+/* ---------- TABLERO (grupo explosionable) ---------- */
+const deckCars=[];
+(function(){
+  const g=gDeckW;
+  // vigas longitudinales
+  [[1.6,3.6],[6.4,8.4],[11.6,13.6],[16.4,18.4]].forEach(([a,b])=>{
+    const v=box(g,-2,122,a,b,8,9.3,'#A9AFB5'); reg('vigas',v);
+  });
+  // losa + asfalto
+  const losa=box(g,-2,122,0,20,9.3,9.9,'#C2C7CB'); reg('tablero',losa);
+  const asf=quad(g,-2,122,0.9,19.1,'#474D55',9.9); reg('tablero',asf);
+  // marcas
+  iline(g,-2,1.5,122,1.5,9.91,C.white,1.2);
+  iline(g,-2,5.2,122,5.2,9.91,C.white,1.1,'9 8');
+  iline(g,-2,9.35,122,9.35,9.91,C.yellow,1.1);
+  iline(g,-2,10.65,122,10.65,9.91,C.yellow,1.1);
+  iline(g,-2,14.8,122,14.8,9.91,C.white,1.1,'9 8');
+  iline(g,-2,18.5,122,18.5,9.91,C.white,1.2);
+  // juntas de dilatación
+  PIER_X.forEach(x=>{ const j=quad(g,x-0.22,x+0.22,0.9,19.1,'#2B2F34',9.92); reg('junta',j); });
+  // barrera lejana + central
+  const b1=box(g,-2,122,0,0.9,9.9,11,'#C9CED2'); reg('barrera',b1);
+  const bc=box(g,-2,122,9.55,10.45,9.9,10.9,'#C9CED2'); reg('barrera',bc);
+  // autos del viaducto (rápidos) — su geometría se dibuja a la cota del tablero (z≈9.9)
+  const mk=(color,dir,y,x0)=>{
+    const cg=el('g',{},g), L=4.4,W=1.9, Z=9.9;
+    box(cg,-L/2,L/2,-W/2,W/2,Z+0.25,Z+1.05,color);
+    box(cg,-L/2+(dir>0?0.6:1.6),L/2-(dir>0?1.6:0.6),-W/2+0.25,W/2-0.25,Z+1.05,Z+1.62,shade(color,0.72));
+    const hp=P(dir>0?L/2:-L/2,W/2-0.4,Z+0.7);
+    el('circle',{cx:hp[0],cy:hp[1],r:1.1,fill:'#FFF6C9'},cg);
+    el('circle',{cx:hp[0],cy:hp[1],r:3.4,fill:'#FFF3B0','fill-opacity':.5,class:'glow'},cg);
+    deckCars.push({g:cg,x:x0,y,dir,base:20+Math.random()*6});
+  };
+  mk('#D9DBDD',+1,3.1,10); mk('#B0483F',+1,7.4,55); mk('#5B7E9E',+1,3.1,95); mk('#3C4248',+1,7.4,118);
+  mk('#E8C21A',-1,12.6,20); mk('#D9DBDD',-1,16.9,70); mk('#8C9BA6',-1,12.6,110); mk('#B0483F',-1,16.9,2);
+  // barrera cercana
+  const b2=box(g,-2,122,19.1,20,9.9,11,'#C9CED2'); reg('barrera',b2);
+  // mástiles de iluminación central
+  [18,50,82,114].forEach(x=>{
+    const m=el('g',{},g);
+    box(m,x-0.18,x+0.18,9.8,10.2,10.9,15.6,'#4E555B'); reg('luz',m);
+    const a=P(x,7.9,15.4), b=P(x,12.1,15.4), c=P(x,10,15.6);
+    el('line',{x1:a[0],y1:a[1],x2:b[0],y2:b[1],stroke:'#4E555B','stroke-width':1.8},m);
+    [a,b].forEach(p=>{
+      el('circle',{cx:p[0],cy:p[1],r:1.6,fill:'#EDEFF0'},m);
+      el('circle',{cx:p[0],cy:p[1],r:6,fill:'#FFE9A8','fill-opacity':.55,class:'glow'},m);
+      el('ellipse',{cx:p[0],cy:p[1]+34,rx:30,ry:10,fill:'#FFE9A8','fill-opacity':.20,class:'glow'},m);
+    });
+  });
+})();
+
+/* ---------- hotspots ---------- */
+const INFO={
+  tablero:{n:1,t:'Tablero del viaducto',d:'Losa de concreto armado con carpeta asfáltica: cuatro carriles, dos por sentido, sobre vigas longitudinales.',p:'Su diseño se rige por el Manual de Puentes del MTC; la superficie drena hacia sumideros pensados para la garúa limeña.',at:[95,6,10],g:'deck'},
+  barrera:{n:2,t:'Barrera New Jersey',d:'Perfil de concreto que redirige a un vehículo que la roza en vez de dejarlo caer. Va en ambos bordes y al centro.',p:'En la maqueta física se hace con tiras de cartón dobladas en L. En la real puede llevar pantallas acústicas encima.',at:[87,19.6,11],g:'deck'},
+  cabezal:{n:3,t:'Viga cabezal',d:'Viga transversal en forma de martillo sobre cada columna: recibe las vigas longitudinales y reparte su peso.',p:'Sobre ella se apoyan los aisladores sísmicos. Mueve el control «Despiece» para separarla y verlos.',at:[44,19.9,5.5],g:'cab'},
+  columna:{n:4,t:'Columna central',d:'Pilar de concreto armado de 8 m. Se usa una sola fila central para no quitar espacio a las vías de abajo.',p:'Lleva refuerzo en espiral para ser dúctil ante sismos, como exige la norma E.030 (Lima es zona sísmica 4).',at:[108,11.8,1.6],g:'col'},
+  zapata:{n:5,t:'Zapata',d:'Cimentación que reparte el peso de la columna en el terreno.',p:'La grava aluvial del Rímac, típica de Lima, es un suelo firme ideal para zapatas; en suelo blando se usarían pilotes.',at:[12,12.8,0.4],g:'col'},
+  estacion:{n:6,t:'Estación del Metropolitano',d:'El andén central y su techo siguen operando bajo el viaducto, con iluminación reforzada.',p:'El gálibo libre es de 8 m; la norma del MTC exige mínimo 5.50 m para que pasen los buses articulados.',at:[60,17.9,3.9],g:'low'},
+  ciclovia:{n:7,t:'Ciclovía',d:'Carril bidireccional de 2.5 m junto al jardín, separado del tráfico motorizado.',p:'Se conecta con la red de ciclovías de Lima, que creció con fuerza después de la pandemia.',at:[100,33.9,0.1],g:'ground'},
+  luz:{n:8,t:'Iluminación central',d:'Mástiles dobles LED sobre la barrera central alumbran los cuatro carriles a la vez. Actívala con el modo Noche.',p:'Recuerda la clásica iluminación central de la Vía Expresa; el LED reduce el consumo a la mitad.',at:[50,10.6,15.2],g:'deck'},
+  aislador:{n:9,t:'Aislador sísmico',d:'Bloque flexible entre la viga cabezal y las vigas: en un terremoto se deforma él, no la estructura.',p:'Se usa en puentes y hospitales peruanos modernos. En la maqueta física: un cuadrito de esponja. Aquí está separado con el «Despiece».',g:'cab'},
+  vigas:{n:10,t:'Vigas longitudinales',d:'Cuatro vigas de concreto pretensado salvan los 30 m entre columnas y cargan la losa.',p:'En la maqueta física se representan con baja lenguas pegadas bajo el tablero: cumplen la misma función.',g:'deck'},
+  junta:{n:11,t:'Junta de dilatación',d:'Corte transversal sobre cada columna que deja al tablero estirarse y encogerse con el calor sin agrietarse.',p:'Con el calor del verano limeño un tramo de 30 m puede variar ~1 cm de largo. Se ve como franja oscura sobre cada pilar.',g:'deck'}
+};
+const groupOf={deck:gDeckW,cab:gCab,col:gCol,low:gLow,ground:gUI};
+for(const id in INFO){
+  const o=INFO[id];
+  if(!o.at) continue;
+  const [x,y,z]=o.at, p=P(x,y,z);
+  const h=el('g',{class:'hot',tabindex:0,role:'button','aria-pressed':'false','aria-label':o.n+'. '+o.t},groupOf[o.g]);
+  el('circle',{cx:p[0],cy:p[1],r:10.5},h);
+  el('text',{x:p[0],y:p[1]+0.5},h).textContent=o.n;
+  h.addEventListener('click',()=>select(id));
+  h.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();select(id);}});
+  o.hot=h;
+}
+
+/* ---------- encuadre + cielo ---------- */
+const bb=gRoot.getBBox();
+const VB=[bb.x-14,bb.y-46,bb.width+28,bb.height+60];
+svg.setAttribute('viewBox',VB.join(' '));
+(function(){
+  const defs=el('defs',{},svg);
+  const gd=el('linearGradient',{id:'skyd',x1:0,y1:0,x2:0,y2:1},defs);
+  el('stop',{offset:'0','stop-color':'#C4D2DC'},gd); el('stop',{offset:'1','stop-color':'#E4E9ED'},gd);
+  const gn=el('linearGradient',{id:'skyn',x1:0,y1:0,x2:0,y2:1},defs);
+  el('stop',{offset:'0','stop-color':'#0A1526'},gn); el('stop',{offset:'1','stop-color':'#1D3050'},gn);
+  const d=el('rect',{id:'skyD',x:VB[0],y:VB[1],width:VB[2],height:VB[3],fill:'url(#skyd)'});
+  const n=el('rect',{id:'skyN',x:VB[0],y:VB[1],width:VB[2],height:VB[3],fill:'url(#skyn)'});
+  const stars=el('g',{id:'g-stars'});
+  for(let i=0;i<70;i++){
+    el('circle',{cx:VB[0]+Math.random()*VB[2],cy:VB[1]+Math.random()*VB[3]*0.42,r:Math.random()*1.1+0.3,fill:'#DCE6F5','fill-opacity':(0.4+Math.random()*0.6).toFixed(2)},stars);
+  }
+  el('circle',{cx:VB[0]+VB[2]*0.86,cy:VB[1]+VB[3]*0.12,r:16,fill:'#E8EDF5'},stars);
+  el('circle',{cx:VB[0]+VB[2]*0.845,cy:VB[1]+VB[3]*0.105,r:14,fill:'#1D3050'},stars);
+  svg.insertBefore(stars,gRoot); svg.insertBefore(n,stars); svg.insertBefore(d,n);
+})();
+
+/* ---------- interacción: selección ---------- */
+const chipsBox=document.getElementById('chips');
+const order=['tablero','barrera','cabezal','columna','zapata','estacion','ciclovia','luz','aislador','vigas','junta'];
+order.forEach(id=>{
+  const b=document.createElement('button');
+  b.type='button'; b.textContent=INFO[id].n+' · '+INFO[id].t; b.setAttribute('aria-pressed','false');
+  b.addEventListener('click',()=>select(id));
+  INFO[id].chip=b; chipsBox.appendChild(b);
+});
+let selected=null;
+function select(id){
+  selected=id;
+  const o=INFO[id];
+  document.getElementById('pNum').textContent=o.n;
+  document.getElementById('pTitle').textContent=o.t;
+  document.getElementById('pDesc').textContent=o.d;
+  document.getElementById('pDato').textContent=o.p;
+  for(const k in INFO){
+    if(INFO[k].hot)INFO[k].hot.setAttribute('aria-pressed',String(k===id));
+    if(INFO[k].chip)INFO[k].chip.setAttribute('aria-pressed',String(k===id));
+  }
+  document.querySelectorAll('#scene .hl').forEach(e=>e.classList.remove('hl'));
+  (parts[id]||[]).forEach(g=>{ (g.tagName==='g'?[...g.children]:[g]).forEach(c=>c.classList.add('hl')); });
+  if((id==='aislador'||id==='vigas') && +explode.value<55){ explode.value=80; applyExplode(); }
+}
+
+/* ---------- controles ---------- */
+const explode=document.getElementById('explode');
+function applyExplode(){
+  const t=+explode.value/100;
+  gDeckW.style.transform=`translateY(${-92*t}px)`;
+  gCab.style.transform=`translateY(${-44*t}px)`;
+  gCol.style.transform=`translateY(${-10*t}px)`;
+}
+explode.addEventListener('input',applyExplode);
+
+const btnNight=document.getElementById('btnNight');
+btnNight.addEventListener('click',()=>{
+  const on=btnNight.getAttribute('aria-pressed')!=='true';
+  btnNight.setAttribute('aria-pressed',String(on));
+  document.querySelector('.stage').classList.toggle('night',on);
+  btnNight.textContent=on?'☀ Día':'☾ Noche';
+});
+
+let running=!reduceMotion;
+const btnTraffic=document.getElementById('btnTraffic');
+btnTraffic.setAttribute('aria-pressed',String(running));
+btnTraffic.addEventListener('click',()=>{
+  running=!running;
+  btnTraffic.setAttribute('aria-pressed',String(running));
+});
+
+/* ---------- animación ---------- */
+const STOP1=52, STOP2=68; // puntos de parada en la estación
+function step(m,dt,t){
+  let v=m.base;
+  if(m.kind==='car') v=m.base*(0.55+0.45*Math.sin(t*0.9+m.ph));      // olas de congestión
+  if(m.kind==='bus'){
+    const stop=m.dir>0?STOP1:STOP2;
+    const d=(stop-m.x)*m.dir;
+    if(m.state==='run' && d>0 && d<26) v=Math.max(1.2,m.base*d/26);
+    if(m.state==='run' && d<=0.6 && d>-2){ m.state='dwell'; m.wait=2.6; }
+    if(m.state==='dwell'){ v=0; m.wait-=dt; if(m.wait<=0) m.state='go'; }
+    if(m.state==='go'){ v=m.base; if((m.dir>0&&m.x>126)||(m.dir<0&&m.x<-6)) m.state='run'; }
+  }
+  m.x+=v*dt*m.dir;
+  if(m.dir>0&&m.x>140){m.x=-22; if(m.kind==='bus')m.state='run';}
+  if(m.dir<0&&m.x<-22){m.x=140; if(m.kind==='bus')m.state='run';}
+  const q=P(m.x,m.y,0);
+  m.g.setAttribute('transform',`translate(${q[0].toFixed(1)} ${q[1].toFixed(1)})`);
+}
+let last=performance.now();
+function tick(now){
+  const dt=Math.min(0.05,(now-last)/1000); last=now;
+  if(running){
+    const t=now/1000;
+    movers.forEach(m=>step(m,dt,t));
+    deckCars.forEach(m=>{
+      m.x+=m.base*dt*m.dir;
+      if(m.dir>0&&m.x>123)m.x=-3;
+      if(m.dir<0&&m.x<-3)m.x=123;
+      const q=P(m.x,m.y,0);
+      m.g.setAttribute('transform',`translate(${q[0].toFixed(1)} ${q[1].toFixed(1)})`);
+    });
+  }
+  requestAnimationFrame(tick);
+}
+movers.forEach(m=>step(m,0.001,0)); deckCars.forEach(m=>{const q=P(m.x,m.y,0);m.g.setAttribute('transform',`translate(${q[0].toFixed(1)} ${q[1].toFixed(1)})`);});
+requestAnimationFrame(tick);
+select('tablero');
+
+/* =====================================================================
+   CORTE TRANSVERSAL — plano técnico 2D
+===================================================================== */
+(function(){
+  const svg2=document.getElementById('corte');
+  const u=21, ox=64, zy=352;                    // escala px/metro y origen
+  const fx=y=>ox+y*u, fz=z=>zy-z*u;
+  svg2.setAttribute('viewBox','0 0 980 486');
+  const root=el('g',{},svg2);
+  const ink='var(--draft-ink)', dim='var(--draft-dim)', fillc='var(--draft-fill)', soft='var(--draft-soft)';
+
+  // fondo y cuadrícula
+  el('rect',{x:0,y:0,width:980,height:486,fill:'var(--draft-bg)'},root);
+  const defs=el('defs',{},svg2);
+  const pat=el('pattern',{id:'gridp',width:21,height:21,patternUnits:'userSpaceOnUse'},defs);
+  el('path',{d:'M21 0H0V21',fill:'none',stroke:'var(--draft-grid)','stroke-width':0.7},pat);
+  el('rect',{x:0,y:0,width:980,height:486,fill:'url(#gridp)'},root);
+
+  function rect(y0,y1,z0,z1,at={}){
+    return el('rect',Object.assign({x:fx(y0),y:fz(z1),width:(y1-y0)*u,height:(z1-z0)*u,fill:fillc,stroke:ink,'stroke-width':1.2},at),root);
+  }
+  function txt(x,y,s,at={}){
+    const t=el('text',Object.assign({x,y,fill:ink,'font-size':11,'font-family':'var(--f-mono)'},at),root);
+    t.textContent=s; return t;
+  }
+  function letra(y,z,ch){
+    const cx=fx(y),cy=fz(z);
+    el('circle',{cx,cy,r:9,fill:'var(--draft-bg)',stroke:ink,'stroke-width':1.3},root);
+    txt(cx,cy+3.6,ch,{'text-anchor':'middle','font-weight':'700','font-size':10.5});
+  }
+  // cota horizontal
+  function dimH(y0,y1,z,label){
+    const x0=fx(y0),x1=fx(y1),y=fz(z);
+    el('line',{x1:x0,y1:y,x2:x1,y2:y,stroke:dim,'stroke-width':1},root);
+    [[x0,1],[x1,-1]].forEach(([x,s])=>{
+      el('path',{d:`M${x},${y} l${7*s},-3.2 v6.4 z`,fill:dim},root);
+      el('line',{x1:x,y1:y-6,x2:x,y2:y+6,stroke:dim,'stroke-width':1},root);
+    });
+    txt((x0+x1)/2,y-6,label,{'text-anchor':'middle',fill:dim,'font-weight':'700'});
+  }
+  function dimV(y,z0,z1,label){
+    const x=fx(y),ya=fz(z0),yb=fz(z1);
+    el('line',{x1:x,y1:ya,x2:x,y2:yb,stroke:dim,'stroke-width':1},root);
+    [[ya,-1],[yb,1]].forEach(([yy,s])=>{
+      el('path',{d:`M${x},${yy} l-3.2,${7*s} h6.4 z`,fill:dim},root);
+      el('line',{x1:x-6,y1:yy,x2:x+6,y2:yy,stroke:dim,'stroke-width':1},root);
+    });
+    const t=txt(x+6,(ya+yb)/2,label,{fill:dim,'font-weight':'700'});
+    t.setAttribute('transform',`rotate(-90 ${x+6} ${(ya+yb)/2})`);
+    t.setAttribute('text-anchor','middle');
+  }
+
+  // terreno
+  el('line',{x1:fx(-2),y1:fz(0),x2:fx(40),y2:fz(0),stroke:ink,'stroke-width':2},root);
+  for(let y=-1.5;y<40;y+=1.6)
+    el('line',{x1:fx(y),y1:fz(0),x2:fx(y-0.9),y2:fz(-0.75),stroke:soft,'stroke-width':0.9},root);
+
+  // zapata (enterrada) y columna
+  rect(7,13,-1.8,-0.2,{'stroke-dasharray':'5 4'});
+  rect(8.5,11.5,-0.2,6.2);
+  // cabezal + aisladores + vigas + losa + asfalto
+  rect(0.8,19.2,6.2,7.7);
+  [2.2,9.2,16.2].forEach(y=>rect(y,y+1.6,7.7,8.05,{fill:ink}));
+  [[1.4,3.4],[6.2,8.2],[11.8,13.8],[16.6,18.6]].forEach(([a,b])=>rect(a,b,8.05,9.35));
+  rect(-0.2,20.2,9.35,9.95);
+  rect(0.7,19.3,9.95,10.18,{fill:ink});
+  // barreras
+  [[0,0.95],[19.05,20]].forEach(([a,b])=>{
+    el('path',{d:`M${fx(a)},${fz(9.95)} L${fx(a)},${fz(10.4)} L${fx((a+b)/2-0.12)},${fz(11.05)} L${fx((a+b)/2+0.12)},${fz(11.05)} L${fx(b)},${fz(10.4)} L${fx(b)},${fz(9.95)} Z`,fill:fillc,stroke:ink,'stroke-width':1.2},root);
+  });
+  // barrera central + mástil
+  el('path',{d:`M${fx(9.5)},${fz(9.95)} L${fx(9.5)},${fz(10.35)} L${fx(9.9)},${fz(10.9)} L${fx(10.1)},${fz(10.9)} L${fx(10.5)},${fz(10.35)} L${fx(10.5)},${fz(9.95)} Z`,fill:fillc,stroke:ink,'stroke-width':1.2},root);
+  el('line',{x1:fx(10),y1:fz(10.9),x2:fx(10),y2:fz(15.6),stroke:ink,'stroke-width':2},root);
+  el('line',{x1:fx(7.8),y1:fz(15.4),x2:fx(12.2),y2:fz(15.4),stroke:ink,'stroke-width':1.6},root);
+  [7.8,12.2].forEach(y=>el('circle',{cx:fx(y),cy:fz(15.4),r:3.4,fill:ink},root));
+
+  // nivel de piso: Metropolitano + estación
+  el('rect',{x:fx(12),y:fz(0)-1,width:8.5*u,height:2,fill:soft},root);
+  rect(15,17.5,0,0.95);
+  el('line',{x1:fx(14.9),y1:fz(3.35),x2:fx(17.6),y2:fz(3.35),stroke:ink,'stroke-width':2},root);
+  [15.4,17.1].forEach(y=>el('line',{x1:fx(y),y1:fz(0.95),x2:fx(y),y2:fz(3.3),stroke:ink,'stroke-width':1.2},root));
+  // bus (silueta)
+  rect(12.3,14.8,0.15,3.2,{rx:3,fill:'none','stroke-width':1.4});
+  [13,14.1].forEach(y=>el('circle',{cx:fx(y),cy:fz(0.15),r:4,fill:'none',stroke:ink,'stroke-width':1.3},root));
+  // auto en calzada
+  rect(24,28.2,0.15,1.15,{rx:2,fill:'none','stroke-width':1.3});
+  rect(25,27.2,1.15,1.75,{rx:2,fill:'none','stroke-width':1.3});
+  [24.9,27.4].forEach(y=>el('circle',{cx:fx(y),cy:fz(0.15),r:3.4,fill:'none',stroke:ink,'stroke-width':1.2},root));
+  // ciclovía + vereda marcas
+  el('rect',{x:fx(32.7),y:fz(0)-1,width:2.5*u,height:3,fill:soft},root);
+  // árbol
+  el('line',{x1:fx(31.4),y1:fz(0),x2:fx(31.4),y2:fz(2.6),stroke:ink,'stroke-width':1.6},root);
+  el('circle',{cx:fx(31.4),cy:fz(3.6),r:14,fill:'none',stroke:ink,'stroke-width':1.3},root);
+
+  // cotas
+  dimH(-0.2,20.2,12.6,'20.00');
+  dimH(8.5,11.5,4.4,'3.00');
+  dimV(21.4,0,9.35,'GÁLIBO 8.00 (MÍN. NORMA 5.50)');
+  dimH(21.2,30.2,-2.6,'CALZADA 9.00');
+  dimH(32.7,35.2,-2.6,'CICLOVÍA 2.50');
+  dimH(12,20.5,-2.6,'METROPOLITANO 8.50');
+
+  // letras
+  letra(17,10.6,'A'); letra(-1.6,9.65,'B'); letra(5,8.7,'C'); letra(9.9,7.87,'D');
+  letra(-1.2,6.95,'E'); letra(7,3.1,'F'); letra(6.2,-1,'G'); letra(19.5,11.6,'H');
+  letra(16.2,4.1,'I'); letra(26,2.6,'J'); letra(34,1.4,'K');
+
+  // rótulo (cajetín)
+  const bx=676,by=420;
+  el('rect',{x:bx,y:by,width:290,height:60,fill:'var(--draft-bg)',stroke:ink,'stroke-width':1.4},root);
+  el('line',{x1:bx,y1:by+20,x2:bx+290,y2:by+20,stroke:ink,'stroke-width':1},root);
+  el('line',{x1:bx,y1:by+40,x2:bx+290,y2:by+40,stroke:ink,'stroke-width':1},root);
+  txt(bx+10,by+14,'PROYECTO EPT — VÍA EXPRESA ELEVADA',{'font-weight':'700'});
+  txt(bx+10,by+34,'CORTE TRANSVERSAL A–A · COTAS EN METROS');
+  txt(bx+10,by+54,'ESC. 1:200 · LIMA, PERÚ · 2026');
+
+  // leyenda HTML
+  const ley=[['A','Carpeta asfáltica de rodadura'],['B','Losa de concreto armado'],['C','Vigas longitudinales pretensadas'],
+    ['D','Aislador sísmico'],['E','Viga cabezal'],['F','Columna de concreto armado'],['G','Zapata de cimentación'],
+    ['H','Barrera New Jersey'],['I','Estación central del Metropolitano'],['J','Calzada existente (3 carriles)'],['K','Ciclovía y arborización']];
+  const tb=document.getElementById('leyendaBody');
+  ley.forEach(([l,d])=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML='<td><span class="letra">'+l+'</span></td><td>'+d+'</td>';
+    tb.appendChild(tr);
+  });
+})();
+})();
+</script>
