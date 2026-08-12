@@ -370,6 +370,34 @@ mkdirSync(join(ROOT, 'modelo-3d'), { recursive: true });
 writeFileSync(join(ROOT, 'modelo-3d/via-expresa-elevada.obj'), objText);
 writeFileSync(join(ROOT, 'modelo-3d/via-expresa-elevada.mtl'), mtlText);
 
+/* ---- versión para Tinkercad: OBJ de pura geometría (sin mtllib/usemtl) ---- */
+const objTk = objText.split('\n').filter(l => !l.startsWith('mtllib') && !l.startsWith('usemtl')).join('\n');
+writeFileSync(join(ROOT, 'modelo-3d/via-expresa-elevada-tinkercad.obj'), objTk);
+
+/* ---- STL binario (Tinkercad / impresión 3D) ---- */
+{
+  const tris = [];
+  for (const f of F) for (let i = 2; i < f.ids.length; i++) tris.push([f.ids[0] - 1, f.ids[i - 1] - 1, f.ids[i] - 1]);
+  const buf = Buffer.alloc(84 + 50 * tris.length);
+  buf.write('Via Expresa Elevada - proyecto EPT 2026 (1 unidad = 1 m)', 0, 'ascii');
+  buf.writeUInt32LE(tris.length, 80);
+  let off = 84;
+  for (const [a, b, c] of tris) {
+    const A = V[a], B = V[b], C = V[c];
+    const ux = B[0] - A[0], uy = B[1] - A[1], uz = B[2] - A[2];
+    const vx = C[0] - A[0], vy = C[1] - A[1], vz = C[2] - A[2];
+    let nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx;
+    const nl = Math.hypot(nx, ny, nz) || 1;
+    buf.writeFloatLE(nx / nl, off); buf.writeFloatLE(ny / nl, off + 4); buf.writeFloatLE(nz / nl, off + 8);
+    let o2 = off + 12;
+    for (const P of [A, B, C]) { buf.writeFloatLE(P[0], o2); buf.writeFloatLE(P[1], o2 + 4); buf.writeFloatLE(P[2], o2 + 8); o2 += 12; }
+    buf.writeUInt16LE(0, off + 48);
+    off += 50;
+  }
+  writeFileSync(join(ROOT, 'modelo-3d/via-expresa-elevada.stl'), buf);
+  console.log(`STL: ${tris.length} triángulos (${(buf.length / 1024).toFixed(0)} KB)`);
+}
+
 /* ================= inyectar en el visor HTML ================= */
 const htmlPath = join(ROOT, 'modelo-3d.html');
 let html = readFileSync(htmlPath, 'utf8');
