@@ -1257,11 +1257,15 @@ function seleccionarTorre(t){
 }
 
 // ---------- Fin de partida ----------
+// El almacenamiento puede estar bloqueado (modo privado, sandbox...)
+function leerRecord(clave){
+  try { return parseInt(localStorage.getItem(clave) || '0', 10) || 0; } catch(e){ return 0; }
+}
 function guardarRecord(){
   const clave = 'nexo_record_' + G.mapa.id;
-  const previo = parseInt(localStorage.getItem(clave) || '0', 10);
+  const previo = leerRecord(clave);
   const olas = G.olaActiva ? G.ola-1 : G.ola;
-  if (olas > previo) localStorage.setItem(clave, String(olas));
+  if (olas > previo){ try { localStorage.setItem(clave, String(olas)); } catch(e){} }
 }
 function derrota(){
   if (G.terminado) return;
@@ -2415,7 +2419,7 @@ function pintarMenu(){
     for (let i=1;i<mapa.puntos.length;i++) c.lineTo(mapa.puntos[i][0]*ex, mapa.puntos[i][1]*ey);
     c.stroke();
     c.strokeStyle = mapa.camino; c.lineWidth = 8; c.stroke();
-    const record = parseInt(localStorage.getItem('nexo_record_' + mapa.id) || '0', 10);
+    const record = leerRecord('nexo_record_' + mapa.id);
     const info = document.createElement('div');
     info.className = 'info';
     info.innerHTML = '<b>' + mapa.nombre + '</b>' +

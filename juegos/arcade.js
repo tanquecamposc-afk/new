@@ -92,17 +92,29 @@ const Sonido = {
 };
 
 // ---------- Records en el navegador ----------
+// El almacenamiento puede estar bloqueado (modo privado, sandbox...), así que
+// siempre se accede con red de seguridad y se cae a una copia en memoria.
+const memoria = {};
+function guardado(clave){
+  try { const v = localStorage.getItem(clave); return v === null ? (clave in memoria ? memoria[clave] : null) : v; }
+  catch(e){ return clave in memoria ? memoria[clave] : null; }
+}
+function guardar(clave, valor){
+  memoria[clave] = String(valor);
+  try { localStorage.setItem(clave, String(valor)); } catch(e){}
+}
+
 const Arcade = {
-  record(clave){ return parseFloat(localStorage.getItem('arcade_' + clave) || '0') || 0; },
+  record(clave){ return parseFloat(guardado('arcade_' + clave) || '0') || 0; },
   guardarRecord(clave, valor){
-    if (valor > this.record(clave)){ localStorage.setItem('arcade_' + clave, String(valor)); return true; }
+    if (valor > this.record(clave)){ guardar('arcade_' + clave, valor); return true; }
     return false;
   },
   leer(clave, porDefecto){
-    const v = localStorage.getItem('arcade_' + clave);
+    const v = guardado('arcade_' + clave);
     return v === null ? porDefecto : parseFloat(v);
   },
-  escribir(clave, valor){ localStorage.setItem('arcade_' + clave, String(valor)); },
+  escribir(clave, valor){ guardar('arcade_' + clave, valor); },
 
   // Bucle de animación con dt acotado (en segundos)
   bucle(fn){

@@ -8,11 +8,23 @@ Abre `index.html` en cualquier navegador moderno y elige un juego. No necesita s
 
 Cada juego tiene su botón **🕹 Arcade** arriba a la izquierda para volver a la portada.
 
+### 📦 Versión de un solo archivo
+
+`arcade.html` es el arcade **entero** (portada y los seis juegos) empaquetado en un único archivo, sin CSS ni JS externos. Sirve para cuando solo puedes usar una página suelta: mandarlo por correo, subirlo a cualquier sitio o abrirlo desde una memoria USB.
+
+Se genera a partir de los archivos de `juegos/`, que siguen siendo la fuente de verdad:
+
+```bash
+node construir-arcade.js
+```
+
+Cada juego queda aislado en su propia pantalla: su CSS se prefija con el selector de su contenedor y su JS se envuelve en una función donde `document`, `addEventListener` y `Arcade.bucle` están acotados a esa pantalla, así que ni los IDs ni las teclas se pisan entre juegos. **Si tocas un juego, vuelve a lanzar el script** para regenerar `arcade.html`.
+
 ## 🎮 Los juegos
 
 | Juego | Género | De qué va |
 |---|---|---|
-| 🏰 [NEXO Tower Defense](juegos/nexo-tower-defense.html) | Estrategia | 9 torres mejorables, 3 mapas y 40 oleadas hasta el Coloso del Vacío |
+| 🏰 [NEXO Tower Defense](juegos/nexo-tower-defense.html) | Estrategia | 12 torres mejorables, 3 mapas y 40 oleadas hasta el Coloso del Vacío |
 | 👻 [Comecocos](juegos/comecocos.html) | Arcade | El laberinto clásico de 244 cocos, con 4 fantasmas de IA propia |
 | 🌻 [Plantas vs Zombis](juegos/plantas-vs-zombies.html) | Defensa | 8 plantas, 5 tipos de zombi y 20 oleadas sobre el césped |
 | 💣 [Minas](juegos/minas.html) | Casino | Destapa gemas, esquiva minas y retírate a tiempo (fichas ficticias) |
@@ -87,6 +99,8 @@ Cada juego guarda su récord en el `localStorage` de tu navegador, así que son 
 
 ```
 index.html                      portada del arcade
+arcade.html                     todo el arcade en un solo archivo (generado)
+construir-arcade.js             genera arcade.html a partir de juegos/
 juegos/
   arcade.css                    estilos compartidos
   arcade.js                     audio WebAudio, récords y utilidades

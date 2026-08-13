@@ -89,10 +89,11 @@ const JUEGOS = [
   {
     id:'td', archivo:'juegos/nexo-tower-defense.html', nuevo:false,
     nombre:'🏰 NEXO Tower Defense', genero:'Estrategia',
-    desc:'Coloca 9 tipos de torre, mejóralas y detén 40 oleadas hasta el Coloso del Vacío.',
+    desc:'Coloca 12 tipos de torre, mejóralas y detén 40 oleadas hasta el Coloso del Vacío.',
     record(){
       const mapas = ['pradera','desierto','glaciar'];
-      const m = Math.max(...mapas.map(x => parseInt(localStorage.getItem('nexo_record_' + x) || '0', 10)));
+      const leer = c => { try { return parseInt(localStorage.getItem(c) || '0', 10) || 0; } catch(e){ return 0; } };
+      const m = Math.max(...mapas.map(x => leer('nexo_record_' + x)));
       return m > 0 ? 'Récord: ola ' + m : 'Sin jugar todavía';
     },
     portada: portadaTD
@@ -266,10 +267,8 @@ function portadaBlock(c){
   const t = 26, hu = 4, x0 = 24, y0 = 12;
   const cols = [['#ff6b8a','#c22b52'],['#5cc8ff','#1f6fa8'],['#6fe08b','#238a4a'],
                 ['#ffd25e','#b98a1f'],['#b18cff','#6b3fc4']];
-  const mapa = [
-    '11..2233', '11..2233', '..444...', '55..66..', '55776688'
-  ];
-  for (let j = 0; j < 5; j++){
+  const mapa = ['11..2233', '11..2233', '..444...', '55776688'];
+  for (let j = 0; j < mapa.length; j++){
     for (let i = 0; i < 8; i++){
       const x = x0 + i * (t + hu), y = y0 + j * (t + hu);
       c.fillStyle = '#1d2740';
@@ -286,7 +285,7 @@ function portadaBlock(c){
     }
   }
   c.fillStyle = 'rgba(255,210,94,.16)';
-  c.beginPath(); c.roundRect(x0 - 2, y0 + 4 * (t + hu) - 2, 8 * (t + hu), t + 4, 8); c.fill();
+  c.beginPath(); c.roundRect(x0 - 2, y0 + 3 * (t + hu) - 2, 8 * (t + hu), t + 4, 8); c.fill();
   c.fillStyle = '#b18cff'; c.font = '900 17px "Segoe UI", sans-serif';
   c.textAlign = 'right'; c.textBaseline = 'middle';
   c.fillText('COMBO x3', A - 16, AL - 18);
@@ -341,9 +340,11 @@ JUEGOS.forEach(j => {
 
 document.getElementById('btnBorrar').onclick = () => {
   if (!confirm('¿Seguro que quieres borrar todos tus récords y el saldo de Minas?')) return;
-  Object.keys(localStorage)
-    .filter(k => k.startsWith('arcade_') || k.startsWith('nexo_record_'))
-    .forEach(k => localStorage.removeItem(k));
+  try {
+    Object.keys(localStorage)
+      .filter(k => k.startsWith('arcade_') || k.startsWith('nexo_record_'))
+      .forEach(k => localStorage.removeItem(k));
+  } catch(e){}
   location.reload();
 };
 </script>
