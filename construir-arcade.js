@@ -5,6 +5,11 @@
  * cualquier sitio donde solo se admita una página suelta.
  *
  *   node construir-arcade.js
+ *   node construir-arcade.js --fragmento salida.html
+ *
+ * Con `--fragmento` se emite la misma página pero sin las etiquetas
+ * <!DOCTYPE>/<html>/<head>/<body>, para incrustarla donde el contenedor ya
+ * las pone (por ejemplo, un Artifact de Claude).
  *
  * Los archivos de `juegos/` siguen siendo la fuente de verdad: este script
  * solo los empaqueta. Cada juego queda aislado en su propia pantalla:
@@ -104,13 +109,7 @@ const pantallas = JUEGOS.map(j => {
   return { ...j, css, cuerpo, js: p.guiones.join('\n') };
 });
 
-const salida = `<!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>ARCADE NEXO</title>
-<style>
+const estilos = `<style>
 /* ====== Estilos comunes ====== */
 ${cssComun}
 
@@ -125,17 +124,15 @@ ${acotarCss(portada.estilos.join('\n'), '#pantalla-portada')}
 
 /* ====== Estilos de cada juego ====== */
 ${pantallas.map(p => `/* --- ${p.id} --- */\n${p.css}`).join('\n\n')}
-</style>
-</head>
-<body>
+</style>`;
 
-<div class="pantalla activa" id="pantalla-portada">
+const marcado = `<div class="pantalla activa" id="pantalla-portada">
 ${portada.cuerpo}
 </div>
 
-${pantallas.map(p => `<div class="pantalla" id="pantalla-${p.id}">\n${p.cuerpo}\n</div>`).join('\n\n')}
+${pantallas.map(p => `<div class="pantalla" id="pantalla-${p.id}">\n${p.cuerpo}\n</div>`).join('\n\n')}`;
 
-<script>
+const guion = `<script>
 /* ====== Utilidades comunes ====== */
 ${jsComun}
 
@@ -212,11 +209,41 @@ document.addEventListener('click', ev => {
 ${pantallas.map(p => `registrarJuego(${JSON.stringify(p.id)}, function(document, addEventListener, Arcade){
 ${p.js}
 });`).join('\n\n')}
-</script>
+</script>`;
+
+const TITULO = '<title>ARCADE NEXO</title>';
+
+const iFragmento = process.argv.indexOf('--fragmento');
+const salida = iFragmento === -1
+  ? `<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+${TITULO}
+${estilos}
+</head>
+<body>
+
+${marcado}
+
+${guion}
 </body>
 </html>
+`
+  // Sin envoltorio: el contenedor ya pone <!DOCTYPE>, <html>, <head> y <body>
+  : `${TITULO}
+${estilos}
+
+${marcado}
+
+${guion}
 `;
 
-fs.writeFileSync(path.join(RAIZ, 'arcade.html'), salida);
+const destino = iFragmento === -1
+  ? path.join(RAIZ, 'arcade.html')
+  : path.resolve(process.argv[iFragmento + 1] || 'arcade-fragmento.html');
+
+fs.writeFileSync(destino, salida);
 const kb = (Buffer.byteLength(salida) / 1024).toFixed(0);
-console.log(`arcade.html generado: ${kb} KB, ${salida.split('\n').length} líneas, ${JUEGOS.length} juegos.`);
+console.log(`${path.basename(destino)} generado: ${kb} KB, ${salida.split('\n').length} líneas, ${JUEGOS.length} juegos.`);
