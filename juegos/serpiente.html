@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Serpiente Neón — Arcade NEXO</title>
+<link rel="stylesheet" href="arcade.css">
+<style>
+  #juego{width:min(820px,100vw);}
+  .barra .titulo{color:var(--verde);}
+</style>
+</head>
+<body>
+
+<div id="juego">
+  <div class="barra">
+    <a class="boton" href="../index.html">🕹 Arcade</a>
+    <div class="titulo">🐍 SERPIENTE NEÓN</div>
+    <div class="sep"></div>
+    <div class="stat">⭐ <span id="puntosTxt" class="oro">0</span></div>
+    <div class="stat">🏆 <span id="recordTxt" class="tenue">0</span></div>
+    <div class="stat">📏 <span id="largoTxt">3</span></div>
+    <button id="btnPausa" title="Pausa (Espacio)">⏸</button>
+    <button id="btnSonido" title="Sonido">🔊</button>
+  </div>
+
+  <div class="escena">
+    <canvas id="lienzo" width="768" height="576"></canvas>
+    <div class="avisos" id="avisos"></div>
+
+    <div class="modal visible" id="modalInicio">
+      <div class="tarjetaModal">
+        <h1>🐍 SERPIENTE NEÓN</h1>
+        <div class="sub">La de toda la vida, pero con luces y sorpresas.</div>
+        <div class="instrucciones">
+          <b>Mover:</b> flechas o <b>W A S D</b> (en móvil, desliza el dedo).<br>
+          <b>🍎 Manzana</b> = creces y sumas puntos. Cuanto más larga, más rápido vas.<br>
+          <b>🍋 Fruta dorada:</b> aparece unos segundos y vale un montón.<br>
+          <b>👻 Fantasma:</b> durante 7 segundos atraviesas paredes y tu propio cuerpo.<br>
+          <b>🪨 Rocas:</b> cada 5 manzanas aparece una nueva. ¡Esquívalas!
+        </div>
+        <div class="filaBotones"><button class="primario" id="btnJugar">▶ Jugar</button></div>
+      </div>
+    </div>
+
+    <div class="modal" id="modalFin">
+      <div class="tarjetaModal">
+        <h1 id="tituloFin" class="derrota">¡CHOCASTE!</h1>
+        <div class="sub" id="subFin"></div>
+        <div class="statsFin">
+          <div class="caja"><div class="num" id="finPuntos">0</div><div class="eti">puntos</div></div>
+          <div class="caja"><div class="num" id="finLargo">0</div><div class="eti">longitud</div></div>
+          <div class="caja"><div class="num" id="finRecord">0</div><div class="eti">récord</div></div>
+        </div>
+        <div class="filaBotones">
+          <button class="primario" id="btnOtra">↻ Jugar de nuevo</button>
+          <a class="boton" href="../index.html">🕹 Arcade</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="arcade.js"></script>
+<script>
+// ============================================================
+//  SERPIENTE NEÓN
+// ============================================================
+const lienzo = document.getElementById('lienzo');
+const ctx = lienzo.getContext('2d');
+const avisos = document.getElementById('avisos');
+
+const CEL = 32, COLS = 24, FILAS = 18;
+const px = i => i * CEL + CEL / 2;
+
+let cuerpo, dir, pendientes, comida, dorada, fantasma, rocas;
+let puntos, manzanas, acumulado, intervalo, estado, pausado, tiempo;
+let particulas = [], fantasmaT = 0;
+let record = Arcade.record('serpiente');
+
+function nuevaPartida(){
+  cuerpo = [{x:6, y:9}, {x:5, y:9}, {x:4, y:9}];
+  dir = {x:1, y:0}; pendientes = [];
+  rocas = []; comida = null; dorada = null; fantasma = null;
+  puntos = 0; manzanas = 0; acumulado = 0; intervalo = 0.145;
+  particulas = []; fantasmaT = 0; tiempo = 0;
+  pausado = false; estado = 'jugando';
+  ponerComida();
+  refrescarHud();
+}
+
+function libreCasilla(x, y){
+  if (cuerpo.some(c => c.x === x && c.y === y)) return false;
+  if (rocas.some(r => r.x === x && r.y === y)) return false;
+  if (comida && comida.x === x && comida.y === y) return false;
+  if (dorada && dorada.x === x && dorada.y === y) return false;
+  if (fantasma && fantasma.x === x && fantasma.y === y) return false;
+  return true;
+}
+function casillaLibreAlAzar(){
+  for (let intento = 0; intento < 400; intento++){
+    const x = azarEntero(0, COLS - 1), y = azarEntero(0, FILAS - 1);
+    if (libreCasilla(x, y)) return {x, y};
+  }
+  return null;
+}
+function ponerComida(){ comida = casillaLibreAlAzar(); }
+
+function refrescarHud(){
+  document.getElementById('puntosTxt').textContent = puntos;
+  document.getElementById('recordTxt').textContent = record;
+  document.getElementById('largoTxt').textContent = cuerpo.length;
+}
+
+// ---------- Paso de la serpiente ----------
+function paso(){
+  const nd = pendientes.shift();
+  if (nd && !(nd.x === -dir.x && nd.y === -dir.y)) dir = nd;
+
+  let nx = cuerpo[0].x + dir.x, ny = cuerpo[0].y + dir.y;
+  const espectral = fantasmaT > 0;
+
+  if (nx < 0 || nx >= COLS || ny < 0 || ny >= FILAS){
+    if (!espectral) return morir('Te has estrellado contra la pared.');
+    nx = (nx + COLS) % COLS; ny = (ny + FILAS) % FILAS;
+  }
+  if (!espectral){
+    if (cuerpo.some((c, i) => i < cuerpo.length - 1 && c.x === nx && c.y === ny))
+      return morir('Te has mordido a ti misma.');
+    if (rocas.some(r => r.x === nx && r.y === ny))
+      return morir('Has chocado contra una roca.');
+  }
+
+  cuerpo.unshift({x:nx, y:ny});
+
+  let crecer = 0;
+  if (comida && comida.x === nx && comida.y === ny){
+    crecer = 1; manzanas++;
+    puntos += 10 + Math.floor(cuerpo.length / 4);
+    chispas(nx, ny, '#ff5a72', 12);
+    Sonido.fx('come');
+    ponerComida();
+    intervalo = Math.max(0.058, 0.145 - manzanas * 0.0035);
+    if (manzanas % 5 === 0) añadirRoca();
+    if (manzanas % 7 === 0 && !dorada) dorada = aparecer(7);
+    if (manzanas % 11 === 0 && !fantasma) fantasma = aparecer(9);
+  }
+  if (dorada && dorada.x === nx && dorada.y === ny){
+    crecer = 2; puntos += 75;
+    chispas(nx, ny, '#ffd25e', 22);
+    flotante(nx, ny, '+75');
+    Sonido.fx('fruta');
+    dorada = null;
+  }
+  if (fantasma && fantasma.x === nx && fantasma.y === ny){
+    fantasmaT = 7;
+    chispas(nx, ny, '#b18cff', 22);
+    Arcade.aviso(avisos, '👻 ¡Modo fantasma! Atraviesas todo', true, 1800);
+    Sonido.fx('poder');
+    fantasma = null;
+  }
+
+  // crecer = 0 → la cola avanza; 1 → se queda; 2 → además se alarga otra casilla
+  if (crecer === 0) cuerpo.pop();
+  else if (crecer === 2) cuerpo.push({...cuerpo[cuerpo.length - 1]});
+
+  refrescarHud();
+}
+
+// Devuelve una casilla libre con temporizador, o null si el tablero está lleno
+function aparecer(t){
+  const c = casillaLibreAlAzar();
+  return c ? {x:c.x, y:c.y, t} : null;
+}
+
+function añadirRoca(){
+  const r = casillaLibreAlAzar();
+  if (!r) return;
+  // no colocarla justo delante del morro
+  const d = Math.abs(r.x - cuerpo[0].x) + Math.abs(r.y - cuerpo[0].y);
+  if (d < 4) return;
+  rocas.push(r);
+  Arcade.aviso(avisos, '🪨 ¡Nueva roca en el campo!', false, 1400);
+}
+
+function morir(motivo){
+  estado = 'fin';
+  if (Arcade.guardarRecord('serpiente', puntos)) record = puntos;
+  chispas(cuerpo[0].x, cuerpo[0].y, '#ff6b6b', 34);
+  document.getElementById('subFin').textContent = motivo;
+  document.getElementById('finPuntos').textContent = puntos;
+  document.getElementById('finLargo').textContent = cuerpo.length;
+  document.getElementById('finRecord').textContent = record;
+  document.getElementById('modalFin').classList.add('visible');
+  Sonido.fx('derrota');
+  refrescarHud();
+}
+
+function chispas(x, y, color, n){
+  for (let k = 0; k < n; k++)
+    particulas.push({ x:px(x), y:px(y), vx:azar(-190, 190), vy:azar(-190, 190),
+                      vida:azar(0.3, 0.8), color, r:azar(2, 5) });
+}
+let flotantes = [];
+function flotante(x, y, txt){ flotantes.push({x:px(x), y:px(y), txt, vida:1.2}); }
+
+// ---------- Bucle ----------
+function actualizar(dt){
+  tiempo += dt;
+  for (let i = particulas.length - 1; i >= 0; i--){
+    const q = particulas[i];
+    q.vida -= dt;
+    if (q.vida <= 0){ particulas.splice(i, 1); continue; }
+    q.x += q.vx * dt; q.y += q.vy * dt; q.vx *= 0.96; q.vy *= 0.96;
+  }
+  for (let i = flotantes.length - 1; i >= 0; i--){
+    flotantes[i].vida -= dt; flotantes[i].y -= 36 * dt;
+    if (flotantes[i].vida <= 0) flotantes.splice(i, 1);
+  }
+  if (estado !== 'jugando' || pausado) return;
+
+  if (fantasmaT > 0) fantasmaT = Math.max(0, fantasmaT - dt);
+  if (dorada){ dorada.t -= dt; if (dorada.t <= 0) dorada = null; }
+  if (fantasma){ fantasma.t -= dt; if (fantasma.t <= 0) fantasma = null; }
+
+  acumulado += dt;
+  while (acumulado >= intervalo && estado === 'jugando'){
+    acumulado -= intervalo;
+    paso();
+  }
+}
+
+// ---------- Dibujo ----------
+function dibujar(){
+  // fondo con cuadrícula
+  ctx.fillStyle = '#080d18';
+  ctx.fillRect(0, 0, lienzo.width, lienzo.height);
+  ctx.strokeStyle = 'rgba(90,120,190,.10)'; ctx.lineWidth = 1;
+  ctx.beginPath();
+  for (let i = 1; i < COLS; i++){ ctx.moveTo(i * CEL, 0); ctx.lineTo(i * CEL, lienzo.height); }
+  for (let j = 1; j < FILAS; j++){ ctx.moveTo(0, j * CEL); ctx.lineTo(lienzo.width, j * CEL); }
+  ctx.stroke();
+
+  // borde (parpadea en modo fantasma)
+  ctx.strokeStyle = fantasmaT > 0
+    ? 'rgba(177,140,255,' + (0.35 + Math.sin(tiempo * 9) * 0.25) + ')'
+    : 'rgba(92,200,255,.55)';
+  ctx.lineWidth = 4;
+  ctx.strokeRect(2, 2, lienzo.width - 4, lienzo.height - 4);
+
+  // rocas
+  rocas.forEach(r => {
+    ctx.fillStyle = '#55637d';
+    ctx.beginPath(); ctx.roundRect(px(r.x) - 13, px(r.y) - 13, 26, 26, 7); ctx.fill();
+    ctx.fillStyle = '#6f7d99';
+    ctx.beginPath(); ctx.roundRect(px(r.x) - 9, px(r.y) - 10, 12, 9, 4); ctx.fill();
+  });
+
+  dibujarFruta(comida, '#ff5a72', '#ff9db0', 1);
+  if (dorada) dibujarFruta(dorada, '#ffc93a', '#fff3b0', dorada.t < 2.5 ? (Math.sin(tiempo * 14) > 0 ? 1 : 0.25) : 1);
+  if (fantasma){
+    ctx.globalAlpha = fantasma.t < 2.5 && Math.sin(tiempo * 14) < 0 ? 0.3 : 1;
+    ctx.font = '26px serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('👻', px(fantasma.x), px(fantasma.y));
+    ctx.globalAlpha = 1;
+  }
+
+  dibujarSerpiente();
+
+  particulas.forEach(q => {
+    ctx.globalAlpha = limitar(q.vida * 1.6, 0, 1);
+    ctx.fillStyle = q.color;
+    ctx.beginPath(); ctx.arc(q.x, q.y, q.r, 0, 6.3); ctx.fill();
+    ctx.globalAlpha = 1;
+  });
+
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  flotantes.forEach(f => {
+    ctx.globalAlpha = limitar(f.vida, 0, 1);
+    ctx.font = '900 26px "Segoe UI", sans-serif';
+    ctx.lineWidth = 5; ctx.strokeStyle = 'rgba(0,0,0,.6)';
+    ctx.strokeText(f.txt, f.x, f.y);
+    ctx.fillStyle = '#ffd25e'; ctx.fillText(f.txt, f.x, f.y);
+    ctx.globalAlpha = 1;
+  });
+
+  if (fantasmaT > 0){
+    ctx.fillStyle = '#b18cff'; ctx.font = 'bold 15px "Segoe UI", sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText('👻 ' + fantasmaT.toFixed(1) + 's', 14, 20);
+  }
+  if (pausado){
+    ctx.fillStyle = 'rgba(5,8,16,.6)'; ctx.fillRect(0, 0, lienzo.width, lienzo.height);
+    ctx.fillStyle = '#e8eefc'; ctx.font = 'bold 34px "Segoe UI", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('PAUSA', lienzo.width / 2, lienzo.height / 2);
+  }
+}
+
+function dibujarFruta(f, c1, c2, alfa){
+  if (!f) return;
+  ctx.globalAlpha = alfa;
+  const r = 11 + Math.sin(tiempo * 5) * 1.6;
+  ctx.shadowColor = c1; ctx.shadowBlur = 18;
+  const g = ctx.createRadialGradient(px(f.x) - 4, px(f.y) - 5, 2, px(f.x), px(f.y), r);
+  g.addColorStop(0, c2); g.addColorStop(1, c1);
+  ctx.fillStyle = g;
+  ctx.beginPath(); ctx.arc(px(f.x), px(f.y), r, 0, 6.3); ctx.fill();
+  ctx.shadowBlur = 0;
+  ctx.strokeStyle = '#6fe08b'; ctx.lineWidth = 2.5;
+  ctx.beginPath(); ctx.moveTo(px(f.x), px(f.y) - r); ctx.quadraticCurveTo(px(f.x) + 5, px(f.y) - r - 8, px(f.x) + 11, px(f.y) - r - 5); ctx.stroke();
+  ctx.globalAlpha = 1;
+}
+
+function dibujarSerpiente(){
+  const t = estado === 'jugando' && !pausado ? limitar(acumulado / intervalo, 0, 1) : 0;
+  const pts = cuerpo.map(c => ({x:px(c.x), y:px(c.y)}));
+
+  // la cabeza se adelanta y la cola se retrae para que el movimiento sea fluido
+  const cab = {x: pts[0].x + dir.x * CEL * t, y: pts[0].y + dir.y * CEL * t};
+  const salto = Math.hypot(pts[0].x - (pts[1] ? pts[1].x : pts[0].x), pts[0].y - (pts[1] ? pts[1].y : pts[0].y));
+  const suave = salto <= CEL * 1.2;   // evita estirones al cruzar por el borde
+  const lista = suave ? [cab, ...pts] : pts;
+
+  ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+  const espectral = fantasmaT > 0;
+  const color = espectral ? '#b18cff' : '#6fe08b';
+
+  ctx.globalAlpha = espectral ? 0.72 : 1;
+  ctx.shadowColor = color; ctx.shadowBlur = 22;
+  ctx.strokeStyle = color; ctx.lineWidth = CEL * 0.7;
+  trazar(lista);
+  ctx.shadowBlur = 0;
+  ctx.strokeStyle = espectral ? '#e2d6ff' : '#c8ffd8';
+  ctx.lineWidth = CEL * 0.32;
+  trazar(lista);
+  ctx.globalAlpha = 1;
+
+  // ojos
+  const px2 = suave ? cab.x : pts[0].x, py2 = suave ? cab.y : pts[0].y;
+  const nx = -dir.y, ny = dir.x;
+  ctx.fillStyle = '#0b1220';
+  [-1, 1].forEach(s => {
+    ctx.beginPath();
+    ctx.arc(px2 + dir.x * 5 + nx * s * 5, py2 + dir.y * 5 + ny * s * 5, 3.2, 0, 6.3);
+    ctx.fill();
+  });
+}
+function trazar(lista){
+  ctx.beginPath();
+  ctx.moveTo(lista[0].x, lista[0].y);
+  for (let i = 1; i < lista.length; i++){
+    const a = lista[i - 1], b = lista[i];
+    if (Math.hypot(b.x - a.x, b.y - a.y) > CEL * 1.5){   // corte por el borde
+      ctx.stroke(); ctx.beginPath(); ctx.moveTo(b.x, b.y);
+    } else ctx.lineTo(b.x, b.y);
+  }
+  ctx.stroke();
+}
+
+// ---------- Entrada ----------
+const TECLAS = {
+  ArrowUp:{x:0,y:-1}, ArrowDown:{x:0,y:1}, ArrowLeft:{x:-1,y:0}, ArrowRight:{x:1,y:0},
+  w:{x:0,y:-1}, s:{x:0,y:1}, a:{x:-1,y:0}, d:{x:1,y:0},
+  W:{x:0,y:-1}, S:{x:0,y:1}, A:{x:-1,y:0}, D:{x:1,y:0}
+};
+addEventListener('keydown', e => {
+  const d = TECLAS[e.key];
+  if (d){
+    e.preventDefault();
+    if (pendientes.length < 3) pendientes.push({...d});
+  }
+  if (e.key === ' '){ e.preventDefault(); alternarPausa(); }
+});
+let toqueIni = null;
+lienzo.addEventListener('touchstart', e => { toqueIni = Arcade.puntero(lienzo, e); }, {passive:true});
+lienzo.addEventListener('touchend', e => {
+  if (!toqueIni) return;
+  const f = Arcade.puntero(lienzo, e);
+  const dx = f.x - toqueIni.x, dy = f.y - toqueIni.y;
+  if (Math.hypot(dx, dy) > 20){
+    const d = Math.abs(dx) > Math.abs(dy) ? {x:Math.sign(dx), y:0} : {x:0, y:Math.sign(dy)};
+    if (pendientes.length < 3) pendientes.push(d);
+  }
+  toqueIni = null;
+}, {passive:true});
+
+function alternarPausa(){
+  if (estado !== 'jugando') return;
+  pausado = !pausado;
+  document.getElementById('btnPausa').textContent = pausado ? '▶' : '⏸';
+}
+document.getElementById('btnPausa').onclick = alternarPausa;
+Arcade.conectarSonido(document.getElementById('btnSonido'));
+document.getElementById('btnJugar').onclick = () => {
+  Sonido.activar();
+  document.getElementById('modalInicio').classList.remove('visible');
+  nuevaPartida();
+};
+document.getElementById('btnOtra').onclick = () => {
+  document.getElementById('modalFin').classList.remove('visible');
+  nuevaPartida();
+};
+
+nuevaPartida();
+estado = 'menu';
+Arcade.bucle(dt => { actualizar(dt); dibujar(); });
+</script>
+</body>
+</html>

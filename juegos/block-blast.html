@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Block Blast — Arcade NEXO</title>
+<link rel="stylesheet" href="arcade.css">
+<style>
+  #juego{width:min(560px,100vw);}
+  .barra{gap:7px; padding:8px 10px;}
+  .barra .stat{font-size:14px; padding:4px 8px;}
+  .barra .titulo{color:var(--morado); font-size:15px;}
+</style>
+</head>
+<body>
+
+<div id="juego">
+  <div class="barra">
+    <a class="boton" href="../index.html">🕹 Arcade</a>
+    <div class="titulo">🧩 BLOCK BLAST</div>
+    <div class="sep"></div>
+    <div class="stat">⭐ <span id="puntosTxt" class="oro">0</span></div>
+    <div class="stat">🏆 <span id="recordTxt" class="tenue">0</span></div>
+    <button id="btnReiniciar" title="Empezar de nuevo">↻</button>
+    <button id="btnSonido" title="Sonido">🔊</button>
+  </div>
+
+  <div class="escena">
+    <canvas id="lienzo" width="600" height="790"></canvas>
+    <div class="avisos" id="avisos"></div>
+
+    <div class="modal visible" id="modalInicio">
+      <div class="tarjetaModal">
+        <h1>🧩 BLOCK BLAST</h1>
+        <div class="sub">Encaja las piezas y revienta filas y columnas.</div>
+        <div class="instrucciones">
+          <b>Arrastra</b> una de las tres piezas de abajo hasta el tablero de 8x8.<br>
+          Cuando completas una <b>fila</b> o una <b>columna</b> entera, ¡estalla y te da puntos!<br>
+          Reventar <b>varias líneas a la vez</b> multiplica la puntuación,
+          y encadenar jugadas seguidas sube el <b>combo</b>.<br>
+          Las piezas <b>no rotan</b>: piensa bien dónde las pones.<br>
+          La partida acaba cuando ninguna de las tres piezas cabe en el tablero.
+        </div>
+        <div class="filaBotones"><button class="primario" id="btnJugar">▶ Jugar</button></div>
+      </div>
+    </div>
+
+    <div class="modal" id="modalFin">
+      <div class="tarjetaModal">
+        <h1 id="tituloFin" class="derrota">SIN HUECO</h1>
+        <div class="sub">Ninguna pieza cabe ya en el tablero.</div>
+        <div class="statsFin">
+          <div class="caja"><div class="num" id="finPuntos">0</div><div class="eti">puntos</div></div>
+          <div class="caja"><div class="num" id="finLineas">0</div><div class="eti">líneas</div></div>
+          <div class="caja"><div class="num" id="finRecord">0</div><div class="eti">récord</div></div>
+        </div>
+        <div class="filaBotones">
+          <button class="primario" id="btnOtra">↻ Jugar de nuevo</button>
+          <a class="boton" href="../index.html">🕹 Arcade</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="arcade.js"></script>
+<script>
+// ============================================================
+//  BLOCK BLAST — tablero 8x8 y tres piezas
+// ============================================================
+const lienzo = document.getElementById('lienzo');
+const ctx = lienzo.getContext('2d');
+const avisos = document.getElementById('avisos');
+
+const N = 8, CEL = 64, BX = 44, BY = 44;
+const BANDEJA_Y = 660, RANURAS = [BX + 85, BX + 256, BX + 427];
+const CEL_MINI = 30;
+
+// ---------- Piezas ----------
+const FORMAS = [
+  {c:[[0,0]], p:1},
+  {c:[[0,0],[1,0]], p:1.4}, {c:[[0,0],[0,1]], p:1.4},
+  {c:[[0,0],[1,0],[2,0]], p:1.3}, {c:[[0,0],[0,1],[0,2]], p:1.3},
+  {c:[[0,0],[1,0],[2,0],[3,0]], p:0.9}, {c:[[0,0],[0,1],[0,2],[0,3]], p:0.9},
+  {c:[[0,0],[1,0],[2,0],[3,0],[4,0]], p:0.5}, {c:[[0,0],[0,1],[0,2],[0,3],[0,4]], p:0.5},
+  {c:[[0,0],[1,0],[0,1],[1,1]], p:1.2},
+  {c:[[0,0],[1,0],[2,0],[0,1],[1,1],[2,1]], p:0.5},
+  {c:[[0,0],[1,0],[0,1],[1,1],[0,2],[1,2]], p:0.5},
+  {c:[[0,0],[1,0],[2,0],[0,1],[1,1],[2,1],[0,2],[1,2],[2,2]], p:0.28},
+  {c:[[0,0],[0,1],[1,1]], p:1}, {c:[[1,0],[0,1],[1,1]], p:1},
+  {c:[[0,0],[1,0],[0,1]], p:1}, {c:[[0,0],[1,0],[1,1]], p:1},
+  {c:[[0,0],[0,1],[0,2],[1,2]], p:0.7}, {c:[[1,0],[1,1],[1,2],[0,2]], p:0.7},
+  {c:[[0,0],[1,0],[2,0],[2,1]], p:0.7}, {c:[[0,0],[1,0],[2,0],[0,1]], p:0.7},
+  {c:[[0,0],[1,0],[1,1],[2,1]], p:0.6}, {c:[[1,0],[2,0],[0,1],[1,1]], p:0.6},
+  {c:[[0,0],[1,0],[2,0],[1,1]], p:0.7}, {c:[[1,0],[0,1],[1,1],[1,2]], p:0.7}
+];
+const COLORES = [
+  ['#ff6b8a','#c22b52'], ['#5cc8ff','#1f6fa8'], ['#6fe08b','#238a4a'],
+  ['#ffd25e','#b98a1f'], ['#b18cff','#6b3fc4'], ['#ff9f5e','#c25a17'],
+  ['#5ee0d0','#1d8b80']
+];
+
+let tablero, piezas, puntos, lineas, combo, estado, record = Arcade.record('blockblast');
+let particulas = [], flotantes = [], tiempo = 0;
+let arrastre = null;
+
+function nuevaPartida(){
+  tablero = Array.from({length:N}, () => Array(N).fill(null));
+  piezas = [null, null, null];
+  puntos = 0; lineas = 0; combo = 0;
+  particulas = []; flotantes = [];
+  rellenarBandeja();
+  estado = 'jugando';
+  refrescarHud();
+}
+
+function nuevaPieza(){
+  const total = FORMAS.reduce((s, f) => s + f.p, 0);
+  let r = Math.random() * total;
+  let forma = FORMAS[0];
+  for (const f of FORMAS){ r -= f.p; if (r <= 0){ forma = f; break; } }
+  const col = COLORES[azarEntero(0, COLORES.length - 1)];
+  const ancho = Math.max(...forma.c.map(v => v[0])) + 1;
+  const alto = Math.max(...forma.c.map(v => v[1])) + 1;
+  return { celdas: forma.c, color: col, ancho, alto, escala: 0 };
+}
+function rellenarBandeja(){
+  for (let i = 0; i < 3; i++) if (!piezas[i]) piezas[i] = nuevaPieza();
+}
+
+function refrescarHud(){
+  document.getElementById('puntosTxt').textContent = puntos;
+  document.getElementById('recordTxt').textContent = record;
+}
+
+// ---------- Colocación ----------
+function cabe(pieza, ci, cj){
+  for (const [dx, dy] of pieza.celdas){
+    const i = ci + dx, j = cj + dy;
+    if (i < 0 || i >= N || j < 0 || j >= N) return false;
+    if (tablero[j][i]) return false;
+  }
+  return true;
+}
+function algunaCabe(){
+  for (const p of piezas){
+    if (!p) continue;
+    for (let j = 0; j <= N - p.alto; j++)
+      for (let i = 0; i <= N - p.ancho; i++)
+        if (cabe(p, i, j)) return true;
+  }
+  return false;
+}
+
+function colocar(indice, ci, cj){
+  const p = piezas[indice];
+  for (const [dx, dy] of p.celdas)
+    tablero[cj + dy][ci + dx] = { color: p.color, brillo: 1 };
+  puntos += p.celdas.length;
+  piezas[indice] = null;
+  Sonido.fx('colocar');
+
+  // ¿líneas completas?
+  const filas = [], columnas = [];
+  for (let j = 0; j < N; j++) if (tablero[j].every(c => c)) filas.push(j);
+  for (let i = 0; i < N; i++) if (tablero.every(f => f[i])) columnas.push(i);
+  const total = filas.length + columnas.length;
+
+  if (total > 0){
+    combo++;
+    const base = [0, 100, 300, 600, 1000, 1500, 2100, 2800, 3600][Math.min(total, 8)];
+    const ganado = Math.round(base * (1 + (combo - 1) * 0.5));
+    puntos += ganado;
+    lineas += total;
+    const marcadas = new Set();
+    filas.forEach(j => { for (let i = 0; i < N; i++) marcadas.add(i + ',' + j); });
+    columnas.forEach(i => { for (let j = 0; j < N; j++) marcadas.add(i + ',' + j); });
+    let sx = 0, sy = 0;
+    marcadas.forEach(k => {
+      const [i, j] = k.split(',').map(Number);
+      const cel = tablero[j][i];
+      sx += celX(i) + CEL / 2; sy += celY(j) + CEL / 2;
+      for (let n = 0; n < 7; n++)
+        particulas.push({
+          x: celX(i) + CEL / 2, y: celY(j) + CEL / 2,
+          vx: azar(-260, 260), vy: azar(-320, 60), vida: azar(0.4, 0.9),
+          color: cel ? cel.color[0] : '#fff', r: azar(3, 7)
+        });
+      tablero[j][i] = null;
+    });
+    const n = marcadas.size;
+    flotantes.push({ x: sx / n, y: sy / n, txt: '+' + ganado, vida: 1.1, color: '#ffd25e', tam: 34 });
+    if (total > 1 || combo > 1)
+      flotantes.push({
+        x: sx / n, y: sy / n - 42, vida: 1.3, tam: 24, color: '#b18cff',
+        txt: total > 1 ? '¡' + total + ' LÍNEAS!' : 'COMBO x' + combo
+      });
+    Sonido.fx(total > 1 || combo > 1 ? 'combo' : 'linea');
+  } else {
+    combo = 0;
+  }
+
+  // la bandeja solo se repone cuando se han usado las tres piezas
+  if (piezas.every(p => !p)) rellenarBandeja();
+  refrescarHud();
+
+  if (!algunaCabe()){
+    estado = 'fin';
+    if (Arcade.guardarRecord('blockblast', puntos)) record = puntos;
+    document.getElementById('finPuntos').textContent = puntos;
+    document.getElementById('finLineas').textContent = lineas;
+    document.getElementById('finRecord').textContent = record;
+    document.getElementById('modalFin').classList.add('visible');
+    Sonido.fx('derrota');
+    refrescarHud();
+  }
+}
+
+const celX = i => BX + i * CEL;
+const celY = j => BY + j * CEL;
+
+// ---------- Entrada (ratón y táctil con eventos de puntero) ----------
+function piezaEnPunto(p){
+  for (let i = 0; i < 3; i++){
+    const pz = piezas[i];
+    if (!pz) continue;
+    const w = pz.ancho * CEL_MINI, h = pz.alto * CEL_MINI;
+    const x0 = RANURAS[i] - w / 2, y0 = BANDEJA_Y - h / 2;
+    if (p.x > x0 - 26 && p.x < x0 + w + 26 && p.y > y0 - 26 && p.y < y0 + h + 26) return i;
+  }
+  return -1;
+}
+lienzo.addEventListener('pointerdown', ev => {
+  Sonido.activar();
+  if (estado !== 'jugando') return;
+  const p = Arcade.puntero(lienzo, ev);
+  const i = piezaEnPunto(p);
+  if (i < 0) return;
+  lienzo.setPointerCapture(ev.pointerId);
+  arrastre = {
+    indice: i, x: p.x, y: p.y,
+    // el dedo sujeta la pieza por su centro, un poco por encima
+    offX: piezas[i].ancho * CEL / 2, offY: piezas[i].alto * CEL / 2 + 40
+  };
+  Sonido.fx('giro');
+});
+lienzo.addEventListener('pointermove', ev => {
+  if (!arrastre) return;
+  const p = Arcade.puntero(lienzo, ev);
+  arrastre.x = p.x; arrastre.y = p.y;
+});
+function soltar(){
+  if (!arrastre) return;
+  const destino = celdaDestino();
+  if (destino) colocar(arrastre.indice, destino.i, destino.j);
+  else Sonido.fx('error');
+  arrastre = null;
+}
+lienzo.addEventListener('pointerup', soltar);
+lienzo.addEventListener('pointercancel', () => { arrastre = null; });
+
+function celdaDestino(){
+  if (!arrastre) return null;
+  const p = piezas[arrastre.indice];
+  if (!p) return null;
+  const px = arrastre.x - arrastre.offX, py = arrastre.y - arrastre.offY;
+  const i = Math.round((px - BX) / CEL), j = Math.round((py - BY) / CEL);
+  return cabe(p, i, j) ? {i, j} : null;
+}
+
+// ---------- Dibujo ----------
+function bloque(x, y, tam, color, alfa){
+  const r = tam * 0.18, m = tam * 0.06;
+  ctx.globalAlpha = alfa === undefined ? 1 : alfa;
+  const g = ctx.createLinearGradient(x, y, x, y + tam);
+  g.addColorStop(0, color[0]); g.addColorStop(1, color[1]);
+  ctx.fillStyle = g;
+  ctx.beginPath(); ctx.roundRect(x + m, y + m, tam - m * 2, tam - m * 2, r); ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,.28)';
+  ctx.beginPath(); ctx.roundRect(x + m * 2, y + m * 2, tam - m * 4, (tam - m * 4) * 0.32, r * 0.7); ctx.fill();
+  ctx.globalAlpha = 1;
+}
+
+function dibujar(){
+  ctx.fillStyle = '#0d1322';
+  ctx.fillRect(0, 0, lienzo.width, lienzo.height);
+
+  // marco del tablero
+  ctx.fillStyle = '#161f34';
+  ctx.beginPath(); ctx.roundRect(BX - 12, BY - 12, N * CEL + 24, N * CEL + 24, 18); ctx.fill();
+  for (let j = 0; j < N; j++){
+    for (let i = 0; i < N; i++){
+      ctx.fillStyle = '#1d2740';
+      ctx.beginPath(); ctx.roundRect(celX(i) + 4, celY(j) + 4, CEL - 8, CEL - 8, 10); ctx.fill();
+    }
+  }
+
+  // vista previa del hueco
+  const destino = celdaDestino();
+  if (destino){
+    const p = piezas[arrastre.indice];
+    for (const [dx, dy] of p.celdas)
+      bloque(celX(destino.i + dx), celY(destino.j + dy), CEL, p.color, 0.35);
+    // filas y columnas que se completarían
+    const simulado = tablero.map(f => f.slice());
+    for (const [dx, dy] of p.celdas) simulado[destino.j + dy][destino.i + dx] = 1;
+    for (let j = 0; j < N; j++) if (simulado[j].every(c => c)) resaltarLinea(0, j, N, 1);
+    for (let i = 0; i < N; i++) if (simulado.every(f => f[i])) resaltarLinea(i, 0, 1, N);
+  }
+
+  // bloques colocados
+  for (let j = 0; j < N; j++)
+    for (let i = 0; i < N; i++)
+      if (tablero[j][i]) bloque(celX(i), celY(j), CEL, tablero[j][i].color);
+
+  // bandeja
+  ctx.fillStyle = '#141c2e';
+  ctx.beginPath(); ctx.roundRect(BX - 12, BANDEJA_Y - 92, N * CEL + 24, 184, 18); ctx.fill();
+  for (let i = 0; i < 3; i++){
+    const p = piezas[i];
+    if (!p) continue;
+    if (arrastre && arrastre.indice === i) continue;
+    p.escala = Math.min(1, p.escala + 0.09);
+    const tam = CEL_MINI * p.escala;
+    const x0 = RANURAS[i] - p.ancho * tam / 2, y0 = BANDEJA_Y - p.alto * tam / 2;
+    const puedeIr = (() => {
+      for (let j = 0; j <= N - p.alto; j++)
+        for (let k = 0; k <= N - p.ancho; k++) if (cabe(p, k, j)) return true;
+      return false;
+    })();
+    for (const [dx, dy] of p.celdas)
+      bloque(x0 + dx * tam, y0 + dy * tam, tam, p.color, puedeIr ? 1 : 0.3);
+  }
+
+  // pieza arrastrada
+  if (arrastre){
+    const p = piezas[arrastre.indice];
+    const x0 = arrastre.x - arrastre.offX, y0 = arrastre.y - arrastre.offY;
+    for (const [dx, dy] of p.celdas) bloque(x0 + dx * CEL, y0 + dy * CEL, CEL, p.color);
+  }
+
+  // partículas
+  particulas.forEach(q => {
+    ctx.globalAlpha = limitar(q.vida * 1.6, 0, 1);
+    ctx.fillStyle = q.color;
+    ctx.beginPath(); ctx.arc(q.x, q.y, q.r, 0, 6.3); ctx.fill();
+    ctx.globalAlpha = 1;
+  });
+
+  // textos flotantes
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  flotantes.forEach(f => {
+    ctx.globalAlpha = limitar(f.vida, 0, 1);
+    ctx.font = '900 ' + f.tam + 'px "Segoe UI", sans-serif';
+    ctx.lineWidth = 5; ctx.strokeStyle = 'rgba(0,0,0,.6)';
+    ctx.strokeText(f.txt, f.x, f.y);
+    ctx.fillStyle = f.color;
+    ctx.fillText(f.txt, f.x, f.y);
+    ctx.globalAlpha = 1;
+  });
+
+  // combo activo
+  if (combo > 1 && estado === 'jugando'){
+    ctx.font = '900 20px "Segoe UI", sans-serif';
+    ctx.fillStyle = '#b18cff';
+    ctx.fillText('COMBO x' + combo, lienzo.width / 2, BY + N * CEL + 30);
+  }
+}
+
+function resaltarLinea(i, j, ancho, alto){
+  ctx.fillStyle = 'rgba(255,210,94,.16)';
+  ctx.beginPath();
+  ctx.roundRect(celX(i) + 2, celY(j) + 2, ancho * CEL - 4, alto * CEL - 4, 12);
+  ctx.fill();
+}
+
+function actualizar(dt){
+  tiempo += dt;
+  for (let i = particulas.length - 1; i >= 0; i--){
+    const q = particulas[i];
+    q.vida -= dt;
+    if (q.vida <= 0){ particulas.splice(i, 1); continue; }
+    q.x += q.vx * dt; q.y += q.vy * dt; q.vy += 900 * dt;
+  }
+  for (let i = flotantes.length - 1; i >= 0; i--){
+    const f = flotantes[i];
+    f.vida -= dt; f.y -= 34 * dt;
+    if (f.vida <= 0) flotantes.splice(i, 1);
+  }
+}
+
+// ---------- Botones ----------
+document.getElementById('btnJugar').onclick = () => {
+  Sonido.activar();
+  document.getElementById('modalInicio').classList.remove('visible');
+  nuevaPartida();
+};
+document.getElementById('btnOtra').onclick = () => {
+  document.getElementById('modalFin').classList.remove('visible');
+  nuevaPartida();
+};
+document.getElementById('btnReiniciar').onclick = () => {
+  document.getElementById('modalFin').classList.remove('visible');
+  nuevaPartida();
+};
+Arcade.conectarSonido(document.getElementById('btnSonido'));
+
+nuevaPartida();
+estado = 'menu';
+Arcade.bucle(dt => { actualizar(dt); dibujar(); });
+</script>
+</body>
+</html>

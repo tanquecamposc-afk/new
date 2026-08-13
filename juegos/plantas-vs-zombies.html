@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Plantas vs Zombis — Arcade NEXO</title>
+<link rel="stylesheet" href="arcade.css">
+<style>
+  #juego{width:min(1000px,100vw);}
+  .barra .titulo{color:var(--verde);}
+  #barraSemillas{
+    display:flex; gap:7px; flex-wrap:wrap; justify-content:center;
+    background:linear-gradient(180deg, var(--panel2), var(--panel));
+    border:1px solid var(--borde); border-radius:12px; padding:9px;
+  }
+  .semilla{
+    width:88px; padding:6px 4px 5px; border-radius:11px; text-align:center; cursor:pointer;
+    background:linear-gradient(180deg,#2a3652,#20293e); border:2px solid var(--borde);
+    transition:transform .08s, border-color .12s, filter .12s; position:relative; overflow:hidden;
+  }
+  .semilla:hover{transform:translateY(-3px); filter:brightness(1.12);}
+  .semilla.activa{border-color:var(--verde); box-shadow:0 0 12px rgba(111,224,139,.4);}
+  .semilla.pobre{opacity:.5; filter:grayscale(.6);}
+  .semilla canvas{display:block; margin:0 auto 2px; border-radius:8px;
+    background:radial-gradient(circle at 50% 35%, #3a4a70, #232d48);}
+  .semilla .nom{font-weight:800; font-size:11px; line-height:1.15;}
+  .semilla .costo{color:var(--oro); font-weight:700; font-size:11.5px;}
+  .semilla .recarga{
+    position:absolute; left:0; right:0; bottom:0; background:rgba(6,10,18,.78);
+    pointer-events:none; transition:height .1s linear;
+  }
+  .semilla .tecla{position:absolute; top:3px; left:5px; font-size:10px; color:var(--tenue);
+    background:rgba(0,0,0,.4); border-radius:4px; padding:0 4px;}
+  button.activa{background:linear-gradient(180deg,#b98a1f,#8e6a13); border-color:var(--oro);}
+</style>
+</head>
+<body>
+
+<div id="juego">
+  <div class="barra">
+    <a class="boton" href="../index.html">🕹 Arcade</a>
+    <div class="titulo">🌻 PLANTAS vs ZOMBIS</div>
+    <div class="stat">☀️ <span id="solesTxt" class="oro">175</span></div>
+    <div class="stat">🌊 <span id="oleadaTxt" class="azul">0/20</span></div>
+    <div class="stat">💀 <span id="bajasTxt">0</span></div>
+    <div class="sep"></div>
+    <button id="btnPala" title="Quitar una planta">🔨 Pala</button>
+    <button id="btnPausa" title="Pausa (Espacio)">⏸</button>
+    <button id="btnSonido" title="Sonido">🔊</button>
+  </div>
+
+  <div class="escena">
+    <canvas id="lienzo" width="960" height="540"></canvas>
+    <div class="avisos" id="avisos"></div>
+
+    <div class="modal visible" id="modalInicio">
+      <div class="tarjetaModal">
+        <h1>🌻 PLANTAS <span class="tenue">vs</span> 🧟 ZOMBIS</h1>
+        <div class="sub">Defiende tu jardín durante 20 oleadas.</div>
+        <div class="instrucciones">
+          <b>☀️ Soles:</b> caen del cielo y los producen los girasoles. <b>Haz clic para recogerlos.</b><br>
+          <b>Plantar:</b> elige una semilla abajo (teclas <b>1-8</b>) y haz clic en una casilla del césped.<br>
+          <b>🔨 Pala:</b> quita una planta (te devuelve la mitad del coste).<br>
+          <b>Cortacésped:</b> cada fila tiene uno. Arrasa la fila entera… pero solo funciona una vez.<br>
+          Si un zombi cruza una fila sin cortacésped, <b>pierdes</b>.
+        </div>
+        <div class="filaBotones"><button class="primario" id="btnJugar">▶ Empezar</button></div>
+      </div>
+    </div>
+
+    <div class="modal" id="modalFin">
+      <div class="tarjetaModal">
+        <h1 id="tituloFin">FIN</h1>
+        <div class="sub" id="subFin"></div>
+        <div class="statsFin">
+          <div class="caja"><div class="num" id="finOleadas">0</div><div class="eti">oleadas</div></div>
+          <div class="caja"><div class="num" id="finBajas">0</div><div class="eti">zombis eliminados</div></div>
+          <div class="caja"><div class="num" id="finRecord">0</div><div class="eti">récord de oleadas</div></div>
+        </div>
+        <div class="filaBotones">
+          <button class="primario" id="btnOtra">↻ Jugar de nuevo</button>
+          <a class="boton" href="../index.html">🕹 Arcade</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="barraSemillas"></div>
+</div>
+
+<script src="arcade.js"></script>
+<script>
+// ============================================================
+//  PLANTAS vs ZOMBIS
+// ============================================================
+const lienzo = document.getElementById('lienzo');
+let ctx = lienzo.getContext('2d');   // se intercambia un instante para pintar los retratos
+const lienzoCtx = ctx;
+const avisos = document.getElementById('avisos');
+
+const FILAS = 5, COLUMNAS = 9;
+const ANCHO_C = 92, ALTO_C = 96, X0 = 74, Y0 = 40;
+const OLEADAS_TOTALES = 20;
+
+const cx = (c) => X0 + c * ANCHO_C + ANCHO_C / 2;
+const cy = (f) => Y0 + f * ALTO_C + ALTO_C / 2;
+const colDe = (x) => Math.floor((x - X0) / ANCHO_C);
+const filaDe = (y) => Math.floor((y - Y0) / ALTO_C);
+
+// ---------- Dibujo de plantas ----------
+function cara(x, y, r, mirada){
+  ctx.fillStyle = '#20301f';
+  ctx.beginPath(); ctx.arc(x - r * 0.28, y - r * 0.12, r * 0.13, 0, 6.3); ctx.fill();
+  ctx.beginPath(); ctx.arc(x + r * 0.28, y - r * 0.12, r * 0.13, 0, 6.3); ctx.fill();
+  if (mirada !== false){
+    ctx.strokeStyle = '#20301f'; ctx.lineWidth = Math.max(1, r * 0.09);
+    ctx.beginPath(); ctx.arc(x, y + r * 0.16, r * 0.3, 0.25, Math.PI - 0.25); ctx.stroke();
+  }
+}
+function tallo(x, y, alto, ancho){
+  ctx.strokeStyle = '#3f9142'; ctx.lineWidth = ancho;
+  ctx.beginPath(); ctx.moveTo(x, y + alto); ctx.lineTo(x, y); ctx.stroke();
+  ctx.fillStyle = '#4bab4e';
+  ctx.beginPath(); ctx.ellipse(x - ancho * 1.6, y + alto * 0.55, ancho * 1.7, ancho * 0.8, -0.4, 0, 6.3); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(x + ancho * 1.6, y + alto * 0.75, ancho * 1.7, ancho * 0.8, 0.4, 0, 6.3); ctx.fill();
+}
+function cabezaTirador(x, y, r, color, brillo, bocas){
+  ctx.fillStyle = color;
+  for (let b = 0; b < bocas; b++){
+    ctx.beginPath();
+    ctx.ellipse(x + r * 0.75 + b * r * 0.5, y - b * r * 0.35, r * 0.42, r * 0.3, 0, 0, 6.3);
+    ctx.fill();
+  }
+  const g = ctx.createRadialGradient(x - r * 0.3, y - r * 0.35, r * 0.15, x, y, r);
+  g.addColorStop(0, brillo); g.addColorStop(1, color);
+  ctx.fillStyle = g;
+  ctx.beginPath(); ctx.arc(x, y, r, 0, 6.3); ctx.fill();
+  cara(x, y, r);
+}
+
+const DIBUJOS = {
+  girasol(x, y, e, t){
+    tallo(x, y + 10 * e, 26 * e, 5 * e);
+    const r = 20 * e;
+    ctx.fillStyle = '#ffd94a';
+    for (let k = 0; k < 12; k++){
+      const a = k * Math.PI / 6 + Math.sin(t * 1.6) * 0.06;
+      ctx.beginPath();
+      ctx.ellipse(x + Math.cos(a) * r * 0.95, y + Math.sin(a) * r * 0.95, r * 0.42, r * 0.24, a, 0, 6.3);
+      ctx.fill();
+    }
+    ctx.fillStyle = '#8a5a1f';
+    ctx.beginPath(); ctx.arc(x, y, r * 0.66, 0, 6.3); ctx.fill();
+    ctx.fillStyle = '#a86f28';
+    ctx.beginPath(); ctx.arc(x, y, r * 0.5, 0, 6.3); ctx.fill();
+    cara(x, y, r * 0.62);
+  },
+  lanzaguisantes(x, y, e, t){
+    tallo(x, y + 12 * e, 24 * e, 5 * e);
+    cabezaTirador(x, y, 18 * e, '#4cb257', '#a6f59a', 1);
+  },
+  repetidora(x, y, e, t){
+    tallo(x, y + 12 * e, 24 * e, 5 * e);
+    cabezaTirador(x, y, 18 * e, '#37944a', '#88e585', 2);
+  },
+  hieloguisante(x, y, e, t){
+    tallo(x, y + 12 * e, 24 * e, 5 * e);
+    cabezaTirador(x, y, 18 * e, '#4aa8c8', '#b8f0ff', 1);
+    ctx.fillStyle = 'rgba(200,245,255,.5)';
+    for (let k = 0; k < 3; k++){
+      ctx.beginPath();
+      ctx.arc(x + Math.sin(t * 2 + k) * 8 * e, y - 22 * e - k * 6 * e, 2.5 * e, 0, 6.3); ctx.fill();
+    }
+  },
+  nuez(x, y, e, t){
+    const r = 24 * e;
+    const g = ctx.createRadialGradient(x - r * 0.3, y - r * 0.4, r * 0.2, x, y, r);
+    g.addColorStop(0, '#e6c68d'); g.addColorStop(1, '#b0834a');
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.ellipse(x, y, r * 0.86, r, 0, 0, 6.3); ctx.fill();
+    ctx.strokeStyle = '#8a6432'; ctx.lineWidth = 2 * e;
+    ctx.beginPath(); ctx.ellipse(x, y, r * 0.86, r, 0, 0, 6.3); ctx.stroke();
+    cara(x, y, r * 0.8);
+  },
+  patata(x, y, e, t, armada){
+    const r = 18 * e;
+    ctx.fillStyle = '#6b4a2a';
+    ctx.beginPath(); ctx.ellipse(x, y + r * 0.5, r, r * 0.62, 0, 0, 6.3); ctx.fill();
+    ctx.fillStyle = '#8a6238';
+    ctx.beginPath(); ctx.ellipse(x, y + r * 0.35, r * 0.85, r * 0.5, 0, 0, 6.3); ctx.fill();
+    cara(x, y + r * 0.3, r * 0.6, false);
+    ctx.fillStyle = armada === false ? '#666' : (Math.sin(t * 8) > 0 ? '#ff4b4b' : '#7a1414');
+    ctx.beginPath(); ctx.arc(x + r * 0.6, y - r * 0.1, 3 * e, 0, 6.3); ctx.fill();
+  },
+  cerezabomba(x, y, e, t){
+    const r = 14 * e, s = 1 + Math.sin(t * 9) * 0.06;
+    ctx.strokeStyle = '#4a7a2a'; ctx.lineWidth = 3 * e;
+    ctx.beginPath(); ctx.moveTo(x - 6 * e, y - r); ctx.quadraticCurveTo(x, y - r * 2.2, x + 6 * e, y - r); ctx.stroke();
+    [-1, 1].forEach(s2 => {
+      const px = x + s2 * 11 * e;
+      const g = ctx.createRadialGradient(px - r * 0.3, y - r * 0.3, r * 0.2, px, y, r * s);
+      g.addColorStop(0, '#ff8f8f'); g.addColorStop(1, '#c81f2a');
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.arc(px, y, r * s, 0, 6.3); ctx.fill();
+      ctx.fillStyle = '#fff';
+      ctx.beginPath(); ctx.arc(px - 3 * e, y - 2 * e, 2.6 * e, 0, 6.3); ctx.arc(px + 3 * e, y - 2 * e, 2.6 * e, 0, 6.3); ctx.fill();
+      ctx.fillStyle = '#222';
+      ctx.beginPath(); ctx.arc(px - 3 * e, y - 2 * e, 1.3 * e, 0, 6.3); ctx.arc(px + 3 * e, y - 2 * e, 1.3 * e, 0, 6.3); ctx.fill();
+    });
+  },
+  jalapeno(x, y, e, t){
+    ctx.save(); ctx.translate(x, y); ctx.rotate(-0.35 + Math.sin(t * 6) * 0.05);
+    const g = ctx.createLinearGradient(-16 * e, 0, 16 * e, 0);
+    g.addColorStop(0, '#ff6a3d'); g.addColorStop(1, '#c4102a');
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.ellipse(0, 0, 20 * e, 10 * e, 0, 0, 6.3); ctx.fill();
+    ctx.strokeStyle = '#3f9142'; ctx.lineWidth = 3 * e;
+    ctx.beginPath(); ctx.moveTo(-18 * e, -3 * e); ctx.lineTo(-26 * e, -10 * e); ctx.stroke();
+    ctx.fillStyle = '#fff';
+    ctx.beginPath(); ctx.arc(-2 * e, -2 * e, 2.6 * e, 0, 6.3); ctx.arc(6 * e, -2 * e, 2.6 * e, 0, 6.3); ctx.fill();
+    ctx.fillStyle = '#222';
+    ctx.beginPath(); ctx.arc(-2 * e, -2 * e, 1.3 * e, 0, 6.3); ctx.arc(6 * e, -2 * e, 1.3 * e, 0, 6.3); ctx.fill();
+    ctx.restore();
+  }
+};
+
+// ---------- Catálogo de plantas ----------
+const PLANTAS = {
+  girasol:       { nombre:'Girasol',        costo:50,  recarga:5,  vida:300,  desc:'Produce 25 soles cada 12 s' },
+  lanzaguisantes:{ nombre:'Lanza guisantes',costo:100, recarga:5,  vida:300,  desc:'Dispara guisantes sin parar' },
+  nuez:          { nombre:'Nuez',           costo:50,  recarga:16, vida:1800, desc:'Muro que aguanta muchísimo' },
+  patata:        { nombre:'Patamina',       costo:25,  recarga:22, vida:300,  desc:'Tarda 12 s en armarse y explota al contacto' },
+  hieloguisante: { nombre:'Hielo guisante', costo:175, recarga:7,  vida:300,  desc:'Dispara y congela a los zombis' },
+  repetidora:    { nombre:'Repetidora',     costo:200, recarga:7,  vida:300,  desc:'Dispara dos guisantes a la vez' },
+  cerezabomba:   { nombre:'Cereza bomba',   costo:150, recarga:32, vida:300,  desc:'Explosión enorme en 3x3' },
+  jalapeno:      { nombre:'Jalapeño',       costo:125, recarga:32, vida:300,  desc:'Quema la fila entera' }
+};
+const CLAVES = Object.keys(PLANTAS);
+
+// ---------- Catálogo de zombis ----------
+const ZOMBIS = {
+  normal:  { vida:200,  vel:13, dps:70,  color:'#7aa06a', acc:null,     nombre:'Zombi' },
+  cono:    { vida:420,  vel:13, dps:70,  color:'#7aa06a', acc:'cono',   nombre:'Zombi cono' },
+  cubo:    { vida:820,  vel:12, dps:70,  color:'#7aa06a', acc:'cubo',   nombre:'Zombi cubo' },
+  veloz:   { vida:180,  vel:30, dps:80,  color:'#6f9c86', acc:'cinta',  nombre:'Corredor' },
+  gigante: { vida:3200, vel:8,  dps:400, color:'#5d7d55', acc:'gigante',nombre:'GARGANTÚA' }
+};
+
+// ---------- Estado ----------
+let parcelas, zombis, balas, soles, particulas, cortacespedes;
+let soles_n, bajas, oleada, cronoOleada, porSalir, estado, seleccion, palaActiva;
+let cronoSolCielo, tiempo, pausado, recordOleadas = Arcade.record('pvz');
+
+function nuevaPartida(){
+  parcelas = Array.from({length:FILAS}, () => Array(COLUMNAS).fill(null));
+  zombis = []; balas = []; soles = []; particulas = [];
+  cortacespedes = Array.from({length:FILAS}, () => ({usado:false, activo:false, x:40}));
+  soles_n = 175; bajas = 0; oleada = 0; cronoOleada = 14; porSalir = [];
+  cronoSolCielo = 6; tiempo = 0; estado = 'jugando'; seleccion = null; palaActiva = false;
+  recargas = {}; CLAVES.forEach(c => recargas[c] = 0);
+  pausado = false;
+  refrescarHud();
+}
+let recargas = {};
+
+function refrescarHud(){
+  document.getElementById('solesTxt').textContent = soles_n;
+  document.getElementById('oleadaTxt').textContent = oleada + '/' + OLEADAS_TOTALES;
+  document.getElementById('bajasTxt').textContent = bajas;
+  document.querySelectorAll('.semilla').forEach(el => {
+    const c = el.dataset.clave;
+    el.classList.toggle('pobre', soles_n < PLANTAS[c].costo || recargas[c] > 0);
+    el.classList.toggle('activa', seleccion === c);
+    el.querySelector('.recarga').style.height = (100 * recargas[c] / PLANTAS[c].recarga) + '%';
+  });
+}
+
+// ---------- Oleadas ----------
+function componerOleada(n){
+  const lista = [];
+  const cantidad = 2 + Math.floor(n * 1.15);
+  for (let k = 0; k < cantidad; k++){
+    const r = Math.random();
+    let tipo = 'normal';
+    if (n >= 5 && r < 0.14) tipo = 'veloz';
+    else if (n >= 6 && r < 0.32) tipo = 'cubo';
+    else if (n >= 3 && r < 0.58) tipo = 'cono';
+    lista.push(tipo);
+  }
+  if (n === 10 || n === OLEADAS_TOTALES) lista.push('gigante');
+  if (n === OLEADAS_TOTALES) lista.push('gigante', 'cubo', 'cubo');
+  return lista;
+}
+function lanzarOleada(){
+  oleada++;
+  const grande = oleada % 10 === 0;
+  const lista = componerOleada(oleada);
+  let retraso = 0;
+  lista.forEach(tipo => {
+    porSalir.push({ tipo, t: retraso, fila: azarEntero(0, FILAS - 1) });
+    retraso += grande ? azar(0.25, 0.8) : azar(0.7, 1.9);
+  });
+  cronoOleada = Math.max(13, 26 - oleada * 0.5) + retraso;
+  Arcade.aviso(avisos, grande ? '🌊 ¡UNA GRAN OLEADA SE ACERCA!' : 'Oleada ' + oleada, grande);
+  Sonido.fx(grande ? 'explosion' : 'golpe');
+  refrescarHud();
+}
+
+function crearZombi(tipo, fila){
+  const z = ZOMBIS[tipo];
+  zombis.push({
+    tipo, fila, x: lienzo.width + azar(10, 70), vida: z.vida, vidaMax: z.vida,
+    vel: z.vel, dps: z.dps, comiendo: null, frio: 0, quemado: 0, fase: Math.random() * 6.3,
+    escala: tipo === 'gigante' ? 1.7 : 1, flash: 0
+  });
+}
+
+// ---------- Plantar ----------
+function plantar(fila, col){
+  if (!seleccion) return;
+  const p = PLANTAS[seleccion];
+  if (parcelas[fila][col]){ Sonido.fx('error'); return; }
+  if (soles_n < p.costo){ Arcade.aviso(avisos, 'No tienes soles suficientes'); Sonido.fx('error'); return; }
+  if (recargas[seleccion] > 0){ Sonido.fx('error'); return; }
+  soles_n -= p.costo;
+  recargas[seleccion] = p.recarga;
+  parcelas[fila][col] = {
+    clave: seleccion, fila, col, vida: p.vida, vidaMax: p.vida,
+    crono: seleccion === 'girasol' ? 6 : 1.6, armada: seleccion !== 'patata', tArmar: 12, t: 0
+  };
+  Sonido.fx('plantar');
+  seleccion = null;
+  refrescarHud();
+}
+function quitarPlanta(fila, col){
+  const p = parcelas[fila][col];
+  if (!p) return;
+  soles_n += Math.floor(PLANTAS[p.clave].costo / 2);
+  parcelas[fila][col] = null;
+  Sonido.fx('colocar');
+  refrescarHud();
+}
+
+// ---------- Explosiones ----------
+function explotar(fx, fy, radio, dano, color){
+  for (const z of zombis){
+    if (Math.hypot(z.x - fx, cy(z.fila) - fy) < radio){ z.vida -= dano; z.flash = 0.2; }
+  }
+  for (let k = 0; k < 26; k++){
+    particulas.push({ x:fx, y:fy, vx:azar(-160,160), vy:azar(-160,60), vida:azar(0.3,0.8), color });
+  }
+  Sonido.fx('explosion');
+}
+
+// ---------- Actualización ----------
+function actualizar(dt){
+  if (estado !== 'jugando' || pausado) return;
+  tiempo += dt;
+
+  CLAVES.forEach(c => { if (recargas[c] > 0) recargas[c] = Math.max(0, recargas[c] - dt); });
+
+  // soles del cielo
+  cronoSolCielo -= dt;
+  if (cronoSolCielo <= 0){
+    cronoSolCielo = azar(7, 11);
+    soles.push({ x: azar(X0 + 40, lienzo.width - 60), y: -20, meta: azar(Y0 + 60, Y0 + FILAS * ALTO_C - 30), vida: 12, valor: 25 });
+  }
+  for (let i = soles.length - 1; i >= 0; i--){
+    const s = soles[i];
+    if (s.y < s.meta) s.y = Math.min(s.meta, s.y + 55 * dt);
+    else s.vida -= dt;
+    if (s.vida <= 0) soles.splice(i, 1);
+  }
+
+  // oleadas
+  cronoOleada -= dt;
+  if (cronoOleada <= 0 && oleada < OLEADAS_TOTALES) lanzarOleada();
+  for (let i = porSalir.length - 1; i >= 0; i--){
+    porSalir[i].t -= dt;
+    if (porSalir[i].t <= 0){ crearZombi(porSalir[i].tipo, porSalir[i].fila); porSalir.splice(i, 1); }
+  }
+  if (oleada >= OLEADAS_TOTALES && !zombis.length && !porSalir.length){ terminar(true); return; }
+
+  // plantas
+  for (let f = 0; f < FILAS; f++){
+    for (let c = 0; c < COLUMNAS; c++){
+      const p = parcelas[f][c];
+      if (!p) continue;
+      p.t += dt;
+      if (p.vida <= 0){ parcelas[f][c] = null; continue; }
+      switch (p.clave){
+        case 'girasol':
+          p.crono -= dt;
+          if (p.crono <= 0){
+            p.crono = 12;
+            soles.push({ x: cx(c) + azar(-14, 14), y: cy(f), meta: cy(f) + 14, vida: 11, valor: 25 });
+            Sonido.fx('sol');
+          }
+          break;
+        case 'lanzaguisantes': case 'repetidora': case 'hieloguisante': {
+          const cadencia = p.clave === 'repetidora' ? 1.5 : 1.4;
+          p.crono -= dt;
+          if (p.crono <= 0 && hayZombiEnFila(f, cx(c))){
+            p.crono = cadencia;
+            const dano = p.clave === 'hieloguisante' ? 20 : 22;
+            const color = p.clave === 'hieloguisante' ? '#9fe8ff' : '#8de06a';
+            balas.push({ x:cx(c) + 22, y:cy(f) - 6, fila:f, vel:340, dano, color, hielo:p.clave === 'hieloguisante' });
+            if (p.clave === 'repetidora')
+              balas.push({ x:cx(c) - 4, y:cy(f) - 6, fila:f, vel:340, dano, color, hielo:false });
+            Sonido.fx('guisante');
+          }
+          break;
+        }
+        case 'patata':
+          if (!p.armada){
+            p.tArmar -= dt;
+            if (p.tArmar <= 0) p.armada = true;
+          } else {
+            const z = zombis.find(z => z.fila === f && Math.abs(z.x - cx(c)) < 44);
+            if (z){ explotar(cx(c), cy(f), 62, 1800, '#c98a4b'); parcelas[f][c] = null; }
+          }
+          break;
+        case 'cerezabomba':
+          if (p.t > 0.9){ explotar(cx(c), cy(f), 150, 2200, '#ff6b6b'); parcelas[f][c] = null; }
+          break;
+        case 'jalapeno':
+          if (p.t > 0.9){
+            for (const z of zombis) if (z.fila === f){ z.vida -= 2400; z.flash = 0.3; }
+            for (let k = 0; k < 40; k++)
+              particulas.push({ x:azar(0, lienzo.width), y:cy(f) + azar(-24, 24), vx:azar(-40, 40), vy:azar(-90, -10), vida:azar(0.3, 0.9), color:'#ff8a3d' });
+            Sonido.fx('explosion');
+            parcelas[f][c] = null;
+          }
+          break;
+      }
+    }
+  }
+
+  // balas
+  for (let i = balas.length - 1; i >= 0; i--){
+    const b = balas[i];
+    b.x += b.vel * dt;
+    if (b.x > lienzo.width + 20){ balas.splice(i, 1); continue; }
+    const z = zombis.find(z => z.fila === b.fila && b.x > z.x - 20 * (z.escala || 1) && b.x < z.x + 26 * (z.escala || 1));
+    if (z){
+      z.vida -= b.dano; z.flash = 0.12;
+      if (b.hielo) z.frio = 4;
+      for (let k = 0; k < 4; k++)
+        particulas.push({ x:b.x, y:b.y, vx:azar(-60, 20), vy:azar(-60, 60), vida:0.25, color:b.color });
+      balas.splice(i, 1);
+      Sonido.fx('golpe');
+    }
+  }
+
+  // zombis
+  for (let i = zombis.length - 1; i >= 0; i--){
+    const z = zombis[i];
+    if (z.flash > 0) z.flash -= dt;
+    if (z.frio > 0) z.frio -= dt;
+    if (z.vida <= 0){
+      zombis.splice(i, 1); bajas++;
+      for (let k = 0; k < 12; k++)
+        particulas.push({ x:z.x, y:cy(z.fila), vx:azar(-90, 90), vy:azar(-120, 20), vida:azar(0.3, 0.7), color:'#7aa06a' });
+      Sonido.fx('mordisco');
+      refrescarHud();
+      continue;
+    }
+    // ¿tiene una planta delante?
+    const col = colDe(z.x - 18);
+    const objetivo = (col >= 0 && col < COLUMNAS) ? parcelas[z.fila][col] : null;
+    if (objetivo){
+      z.comiendo = objetivo;
+      objetivo.vida -= z.dps * dt;
+      z.fase += dt * 8;
+      if (Math.random() < dt * 3) Sonido.fx('mordisco');
+      continue;
+    }
+    z.comiendo = null;
+    z.x -= z.vel * (z.frio > 0 ? 0.45 : 1) * dt;
+    z.fase += dt * (z.frio > 0 ? 1.6 : 3.5);
+
+    // cortacésped
+    const seg = cortacespedes[z.fila];
+    if (z.x < 62 && !seg.usado && !seg.activo){
+      seg.activo = true; seg.usado = true;
+      Sonido.fx('cortacesped');
+      Arcade.aviso(avisos, '✂️ ¡Cortacésped en marcha!');
+    }
+    if (z.x < 20 && seg.usado && !seg.activo){ terminar(false); return; }
+  }
+
+  // cortacéspedes en marcha
+  cortacespedes.forEach((s, f) => {
+    if (!s.activo) return;
+    s.x += 420 * dt;
+    for (let i = zombis.length - 1; i >= 0; i--){
+      if (zombis[i].fila === f && Math.abs(zombis[i].x - s.x) < 40){
+        zombis.splice(i, 1); bajas++; refrescarHud();
+      }
+    }
+    if (s.x > lienzo.width + 40) s.activo = false;
+  });
+
+  // partículas
+  for (let i = particulas.length - 1; i >= 0; i--){
+    const p = particulas[i];
+    p.vida -= dt;
+    if (p.vida <= 0){ particulas.splice(i, 1); continue; }
+    p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 320 * dt;
+  }
+
+  refrescarHud();
+}
+
+function hayZombiEnFila(f, x){
+  return zombis.some(z => z.fila === f && z.x > x - 30);
+}
+
+function terminar(gano){
+  estado = 'fin';
+  Arcade.guardarRecord('pvz', oleada);
+  recordOleadas = Arcade.record('pvz');
+  document.getElementById('tituloFin').textContent = gano ? '¡JARDÍN A SALVO!' : 'LOS ZOMBIS ENTRARON';
+  document.getElementById('tituloFin').className = gano ? 'victoria' : 'derrota';
+  document.getElementById('subFin').textContent = gano
+    ? 'Has resistido las 20 oleadas. Eres el mejor jardinero.'
+    : 'Un zombi cruzó tu jardín… prueba a plantar más girasoles al principio.';
+  document.getElementById('finOleadas').textContent = oleada;
+  document.getElementById('finBajas').textContent = bajas;
+  document.getElementById('finRecord').textContent = recordOleadas;
+  document.getElementById('modalFin').classList.add('visible');
+  Sonido.fx(gano ? 'victoria' : 'derrota');
+}
+
+// ---------- Dibujo ----------
+function dibujarZombi(z){
+  const x = z.x, y = cy(z.fila), e = z.escala;
+  const cfg = ZOMBIS[z.tipo];
+  const bal = Math.sin(z.fase) * (z.comiendo ? 1.5 : 3);
+  ctx.save();
+  ctx.translate(x, y + 10 * e);
+  ctx.scale(e, e);
+  // sombra
+  ctx.fillStyle = 'rgba(0,0,0,.28)';
+  ctx.beginPath(); ctx.ellipse(0, 22, 18, 6, 0, 0, 6.3); ctx.fill();
+  const tinte = z.flash > 0 ? '#ffffff' : (z.frio > 0 ? '#8fd0e8' : cfg.color);
+  // piernas
+  ctx.strokeStyle = '#4c6b45'; ctx.lineWidth = 6; ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(-4, 8); ctx.lineTo(-6 + Math.sin(z.fase) * 5, 22);
+  ctx.moveTo(4, 8); ctx.lineTo(6 - Math.sin(z.fase) * 5, 22);
+  ctx.stroke();
+  // cuerpo
+  ctx.fillStyle = '#4a5f7a';
+  ctx.beginPath(); ctx.roundRect(-11, -8 + bal * 0.3, 22, 20, 5); ctx.fill();
+  // brazos estirados
+  ctx.strokeStyle = tinte; ctx.lineWidth = 5;
+  ctx.beginPath();
+  ctx.moveTo(-6, -4 + bal * 0.3); ctx.lineTo(-20, -2 + Math.sin(z.fase + 1) * 3);
+  ctx.moveTo(-6, 0 + bal * 0.3); ctx.lineTo(-19, 4 + Math.sin(z.fase + 2) * 3);
+  ctx.stroke();
+  // cabeza
+  ctx.fillStyle = tinte;
+  ctx.beginPath(); ctx.arc(-1, -18 + bal, 10, 0, 6.3); ctx.fill();
+  ctx.fillStyle = '#1d2a1a';
+  ctx.beginPath(); ctx.arc(-5, -20 + bal, 1.8, 0, 6.3); ctx.arc(1, -20 + bal, 1.8, 0, 6.3); ctx.fill();
+  ctx.strokeStyle = '#1d2a1a'; ctx.lineWidth = 1.4;
+  ctx.beginPath(); ctx.moveTo(-6, -13 + bal); ctx.lineTo(3, -13 + bal); ctx.stroke();
+  // accesorios
+  if (cfg.acc === 'cono'){
+    ctx.fillStyle = '#e2712c';
+    ctx.beginPath(); ctx.moveTo(-1, -44 + bal); ctx.lineTo(-11, -25 + bal); ctx.lineTo(9, -25 + bal); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#fff'; ctx.fillRect(-9, -32 + bal, 16, 3);
+  } else if (cfg.acc === 'cubo'){
+    ctx.fillStyle = '#9aa4ad';
+    ctx.beginPath(); ctx.roundRect(-12, -40 + bal, 22, 20, 3); ctx.fill();
+    ctx.fillStyle = '#7c858d'; ctx.fillRect(-12, -40 + bal, 22, 4);
+  } else if (cfg.acc === 'cinta'){
+    ctx.fillStyle = '#e04b4b'; ctx.fillRect(-11, -24 + bal, 20, 4);
+  } else if (cfg.acc === 'gigante'){
+    ctx.fillStyle = '#3d5238';
+    ctx.beginPath(); ctx.roundRect(-14, -33 + bal, 28, 8, 3); ctx.fill();
+  }
+  ctx.restore();
+
+  // barra de vida
+  if (z.vida < z.vidaMax){
+    const w = 34 * e;
+    ctx.fillStyle = 'rgba(0,0,0,.55)';
+    ctx.fillRect(x - w / 2, y - 42 * e, w, 5);
+    ctx.fillStyle = z.vida / z.vidaMax > 0.4 ? '#6fe08b' : '#ff6b6b';
+    ctx.fillRect(x - w / 2, y - 42 * e, w * (z.vida / z.vidaMax), 5);
+  }
+}
+
+function dibujar(){
+  // fondo (hay que repintarlo entero cada cuadro)
+  ctx.fillStyle = '#2a3a52';
+  ctx.fillRect(0, 0, lienzo.width, lienzo.height);
+
+  // césped a cuadros
+  for (let f = 0; f < FILAS; f++){
+    for (let c = 0; c < COLUMNAS; c++){
+      const claro = (f + c) % 2 === 0;
+      ctx.fillStyle = claro ? '#4e9c4a' : '#458c43';
+      ctx.fillRect(X0 + c * ANCHO_C, Y0 + f * ALTO_C, ANCHO_C, ALTO_C);
+    }
+  }
+  // borde de césped por donde entran los zombis
+  ctx.fillStyle = '#3b7539';
+  ctx.fillRect(X0 + COLUMNAS * ANCHO_C, Y0, lienzo.width - X0 - COLUMNAS * ANCHO_C, FILAS * ALTO_C);
+  // camino de tierra delante de la casa
+  const gz = ctx.createLinearGradient(0, 0, X0, 0);
+  gz.addColorStop(0, '#6b4f33'); gz.addColorStop(1, '#8a6a45');
+  ctx.fillStyle = gz; ctx.fillRect(0, Y0, X0, FILAS * ALTO_C);
+
+  // casilla resaltada
+  if (seleccion || palaActiva){
+    const f = filaDe(raton.y), c = colDe(raton.x);
+    if (f >= 0 && f < FILAS && c >= 0 && c < COLUMNAS){
+      ctx.fillStyle = palaActiva ? 'rgba(255,107,107,.28)' : 'rgba(255,255,255,.25)';
+      ctx.fillRect(X0 + c * ANCHO_C, Y0 + f * ALTO_C, ANCHO_C, ALTO_C);
+    }
+  }
+
+  // cortacéspedes
+  cortacespedes.forEach((s, f) => {
+    if (s.usado && !s.activo) return;
+    const y = cy(f) + 16;
+    ctx.fillStyle = '#c4423d';
+    ctx.beginPath(); ctx.roundRect(s.x - 18, y - 20, 34, 20, 5); ctx.fill();
+    ctx.fillStyle = '#8f2f2b'; ctx.fillRect(s.x - 18, y - 8, 34, 6);
+    ctx.fillStyle = '#333';
+    ctx.beginPath(); ctx.arc(s.x - 10, y, 6, 0, 6.3); ctx.arc(s.x + 8, y, 6, 0, 6.3); ctx.fill();
+    if (s.activo){
+      ctx.fillStyle = 'rgba(255,255,255,.4)';
+      for (let k = 0; k < 4; k++) ctx.fillRect(s.x - 28 - k * 9, y - 16 + k * 3, 7, 2);
+    }
+  });
+
+  // plantas
+  for (let f = 0; f < FILAS; f++){
+    for (let c = 0; c < COLUMNAS; c++){
+      const p = parcelas[f][c];
+      if (!p) continue;
+      ctx.fillStyle = 'rgba(0,0,0,.2)';
+      ctx.beginPath(); ctx.ellipse(cx(c), cy(f) + 30, 22, 7, 0, 0, 6.3); ctx.fill();
+      DIBUJOS[p.clave](cx(c), cy(f), 1, tiempo, p.armada);
+      if (p.vida < p.vidaMax){
+        ctx.fillStyle = 'rgba(0,0,0,.5)'; ctx.fillRect(cx(c) - 20, cy(f) + 34, 40, 4);
+        ctx.fillStyle = '#6fe08b'; ctx.fillRect(cx(c) - 20, cy(f) + 34, 40 * (p.vida / p.vidaMax), 4);
+      }
+    }
+  }
+
+  zombis.forEach(dibujarZombi);
+
+  // balas
+  balas.forEach(b => {
+    ctx.fillStyle = b.color;
+    ctx.beginPath(); ctx.arc(b.x, b.y, 6, 0, 6.3); ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,.5)';
+    ctx.beginPath(); ctx.arc(b.x - 2, b.y - 2, 2, 0, 6.3); ctx.fill();
+  });
+
+  // partículas
+  particulas.forEach(p => {
+    ctx.globalAlpha = limitar(p.vida * 2, 0, 1);
+    ctx.fillStyle = p.color;
+    ctx.fillRect(p.x - 2, p.y - 2, 4, 4);
+    ctx.globalAlpha = 1;
+  });
+
+  // soles
+  soles.forEach(s => {
+    const parpadeo = s.vida < 3 && Math.floor(s.vida * 6) % 2 === 0;
+    ctx.save();
+    ctx.translate(s.x, s.y); ctx.rotate(tiempo * 0.8);
+    ctx.fillStyle = parpadeo ? 'rgba(255,235,150,.45)' : '#ffdf5e';
+    for (let k = 0; k < 8; k++){
+      ctx.rotate(Math.PI / 4);
+      ctx.beginPath(); ctx.ellipse(0, -17, 4, 9, 0, 0, 6.3); ctx.fill();
+    }
+    const g = ctx.createRadialGradient(-4, -4, 2, 0, 0, 14);
+    g.addColorStop(0, '#fff6c0'); g.addColorStop(1, '#ffc93a');
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.arc(0, 0, 14, 0, 6.3); ctx.fill();
+    ctx.restore();
+  });
+
+  // siguiente oleada
+  ctx.fillStyle = 'rgba(0,0,0,.35)';
+  ctx.fillRect(lienzo.width - 190, 8, 182, 22);
+  ctx.fillStyle = '#93a3c4'; ctx.font = 'bold 12px "Segoe UI", sans-serif';
+  ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  ctx.fillText('Próxima oleada', lienzo.width - 182, 19);
+  const prog = oleada >= OLEADAS_TOTALES ? 0 : limitar(1 - cronoOleada / 26, 0, 1);
+  ctx.fillStyle = '#33415e'; ctx.fillRect(lienzo.width - 92, 13, 76, 12);
+  ctx.fillStyle = '#ff6b6b'; ctx.fillRect(lienzo.width - 92, 13, 76 * prog, 12);
+
+  if (pausado){
+    ctx.fillStyle = 'rgba(5,8,16,.6)'; ctx.fillRect(0, 0, lienzo.width, lienzo.height);
+    ctx.fillStyle = '#e8eefc'; ctx.font = 'bold 34px "Segoe UI", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('PAUSA', lienzo.width / 2, lienzo.height / 2);
+  }
+}
+
+// ---------- Entrada ----------
+let raton = {x:-100, y:-100};
+lienzo.addEventListener('mousemove', e => { raton = Arcade.puntero(lienzo, e); });
+lienzo.addEventListener('mouseleave', () => { raton = {x:-100, y:-100}; });
+lienzo.addEventListener('contextmenu', e => { e.preventDefault(); seleccion = null; palaActiva = false; refrescarHud(); });
+
+function clic(ev){
+  ev.preventDefault();
+  Sonido.activar();
+  if (estado !== 'jugando' || pausado) return;
+  const p = Arcade.puntero(lienzo, ev);
+  raton = p;
+  // recoger soles
+  for (let i = soles.length - 1; i >= 0; i--){
+    if (Math.hypot(soles[i].x - p.x, soles[i].y - p.y) < 26){
+      soles_n += soles[i].valor;
+      soles.splice(i, 1);
+      Sonido.fx('moneda');
+      refrescarHud();
+      return;
+    }
+  }
+  const f = filaDe(p.y), c = colDe(p.x);
+  if (f < 0 || f >= FILAS || c < 0 || c >= COLUMNAS) return;
+  if (palaActiva){ quitarPlanta(f, c); palaActiva = false; document.getElementById('btnPala').classList.remove('activa'); return; }
+  plantar(f, c);
+}
+lienzo.addEventListener('mousedown', clic);
+lienzo.addEventListener('touchstart', clic, {passive:false});
+
+addEventListener('keydown', e => {
+  if (e.key >= '1' && e.key <= '8'){
+    seleccion = CLAVES[parseInt(e.key, 10) - 1];
+    palaActiva = false;
+    refrescarHud();
+  }
+  if (e.key === 'Escape'){ seleccion = null; palaActiva = false; refrescarHud(); }
+  if (e.key === ' '){ e.preventDefault(); alternarPausa(); }
+});
+
+function alternarPausa(){
+  if (estado !== 'jugando') return;
+  pausado = !pausado;
+  document.getElementById('btnPausa').textContent = pausado ? '▶' : '⏸';
+}
+document.getElementById('btnPausa').onclick = alternarPausa;
+document.getElementById('btnPala').onclick = function(){
+  palaActiva = !palaActiva; seleccion = null;
+  this.classList.toggle('activa', palaActiva);
+  refrescarHud();
+};
+Arcade.conectarSonido(document.getElementById('btnSonido'));
+
+// ---------- Barra de semillas ----------
+const barra = document.getElementById('barraSemillas');
+CLAVES.forEach((clave, i) => {
+  const p = PLANTAS[clave];
+  const el = document.createElement('div');
+  el.className = 'semilla';
+  el.dataset.clave = clave;
+  el.title = p.desc;
+  el.innerHTML = '<span class="tecla">' + (i + 1) + '</span>' +
+    '<canvas width="52" height="52"></canvas>' +
+    '<div class="nom">' + p.nombre + '</div>' +
+    '<div class="costo">☀ ' + p.costo + '</div>' +
+    '<div class="recarga" style="height:0"></div>';
+  el.onclick = () => {
+    Sonido.activar();
+    seleccion = seleccion === clave ? null : clave;
+    palaActiva = false;
+    document.getElementById('btnPala').classList.remove('activa');
+    refrescarHud();
+  };
+  barra.appendChild(el);
+  dibujarRetrato(el.querySelector('canvas').getContext('2d'), clave);
+});
+// Los dibujos pintan sobre la variable global `ctx`: la apuntamos un instante
+// al lienzo pequeño de la carta y la devolvemos a su sitio.
+function dibujarRetrato(mctx, clave){
+  ctx = mctx;
+  DIBUJOS[clave](26, 30, 0.62, 0, true);
+  ctx = lienzoCtx;
+}
+
+// ---------- Arranque ----------
+document.getElementById('btnJugar').onclick = () => {
+  Sonido.activar();
+  document.getElementById('modalInicio').classList.remove('visible');
+  nuevaPartida();
+};
+document.getElementById('btnOtra').onclick = () => {
+  document.getElementById('modalFin').classList.remove('visible');
+  nuevaPartida();
+};
+
+nuevaPartida();
+estado = 'menu';
+Arcade.bucle(dt => { actualizar(dt); dibujar(); });
+</script>
+</body>
+</html>

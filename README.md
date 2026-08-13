@@ -1,59 +1,99 @@
-# NEXO: Tower Defense 🏰
+# 🕹 ARCADE NEXO
 
-Juego de defensa de torres hecho en **HTML5 + Canvas + JavaScript puro** — un solo archivo, sin dependencias ni assets externos. Interfaz completamente en español.
+Seis juegos hechos a mano en **HTML5 + Canvas + JavaScript puro**. Sin dependencias, sin librerías, sin assets externos y sin conexión a internet: todos los gráficos se dibujan por código y todo el sonido se genera en tiempo real con WebAudio.
 
 ## ▶ Cómo jugar
 
-Abre `index.html` en cualquier navegador moderno. No necesita servidor ni instalación.
+Abre `index.html` en cualquier navegador moderno y elige un juego. No necesita servidor ni instalación.
 
-**Objetivo:** sobrevive a las **40 olas** de enemigos y derrota al **Coloso del Vacío**. Si lo logras, se desbloquea el **modo infinito ∞**.
+Cada juego tiene su botón **🕹 Arcade** arriba a la izquierda para volver a la portada.
 
-## 🗺 Mapas
+## 🎮 Los juegos
 
-| Mapa | Dificultad |
-|---|---|
-| Pradera Verde | Fácil |
-| Desierto Carmesí | Medio (+15% vida enemiga) |
-| Glaciar Nocturno | Difícil (+30% vida enemiga) |
-
-El récord de olas de cada mapa se guarda en tu navegador.
-
-## 🗼 Torres (9 tipos, 5 niveles cada una)
-
-| Torre | Costo | Rol |
+| Juego | Género | De qué va |
 |---|---|---|
-| 🔫 Recluta | $200 | Básica y barata; gana detección al nivel 4 |
-| 🌀 Artillero | $550 | Cadencia altísima |
-| 🎯 Francotirador | $400 | Enorme alcance y daño; ve ocultos desde nivel 1 |
-| ❄️ Congelador | $450 | Pulsos de área que ralentizan |
-| 💣 Demoledor | $700 | Daño explosivo en área |
-| 🔥 Piromante | $500 | Chorro de fuego que incendia (daño con el tiempo) |
-| ⚡ Tesla | $900 | Rayos en cadena; ve ocultos |
-| 🌾 Granja | $300 | Genera dinero al final de cada ola |
-| 📣 Comandante | $850 | Aura que acelera la cadencia de torres cercanas |
+| 🏰 [NEXO Tower Defense](juegos/nexo-tower-defense.html) | Estrategia | 9 torres mejorables, 3 mapas y 40 oleadas hasta el Coloso del Vacío |
+| 👻 [Comecocos](juegos/comecocos.html) | Arcade | El laberinto clásico de 244 cocos, con 4 fantasmas de IA propia |
+| 🌻 [Plantas vs Zombis](juegos/plantas-vs-zombies.html) | Defensa | 8 plantas, 5 tipos de zombi y 20 oleadas sobre el césped |
+| 💣 [Minas](juegos/minas.html) | Casino | Destapa gemas, esquiva minas y retírate a tiempo (fichas ficticias) |
+| 🧩 [Block Blast](juegos/block-blast.html) | Puzle | Encaja piezas en un 8x8 y revienta filas y columnas con combos |
+| 🐍 [Serpiente Neón](juegos/serpiente.html) | Arcade | Snake con fruta dorada, rocas y modo fantasma |
 
-Cada torre puede **mejorarse** (⬆), **venderse** (70% de reembolso) y cambiar su **modo de objetivo**: primero, último, más fuerte o más cercano.
+---
 
-## 👾 Enemigos
+### 👻 Comecocos
 
-- **Normal / Veloz / Blindado** — la carne del enjambre.
-- **👻 Sombra** — invisible para torres sin detección 👁.
-- **✚ Curandero** — sana a los enemigos cercanos: elimínalo primero.
-- **Tanque** — lento pero enorme.
-- **☠ DEVORADOR** — jefe cada 10 olas, con barra de vida propia.
-- **💀 EL COLOSO DEL VACÍO** — jefe final de la ola 40.
+Laberinto de 28x31 con los **244 cocos** del original y túneles laterales que teletransportan.
 
-## ⌨ Controles
+- **⚪ Coco** 10 pts · **🔵 Coco de poder** 50 pts y los fantasmas huyen.
+- Comerte fantasmas asustados encadena **200 → 400 → 800 → 1600** puntos.
+- **🍒 Fruta** bajo la casa de los fantasmas a los 70 y 170 cocos; su valor sube cada nivel.
+- **Vida extra** a los 10 000 puntos.
+- Cada fantasma persigue distinto: 🔴 va directo a ti, 🩷 apunta 4 casillas por delante,
+  🩵 te rodea usando la posición del rojo y 🟠 se acobarda cuando te acercas.
+  Alternan fases de **dispersión** y **persecución**.
+- **Controles:** flechas / `WASD`, deslizar el dedo en móvil, `Espacio` para pausar.
 
-| Tecla / acción | Efecto |
-|---|---|
-| `1`–`9` | Seleccionar torre para colocar |
-| Clic izquierdo | Colocar / seleccionar torre |
-| `Shift` + clic | Colocar varias torres seguidas |
-| Clic derecho / `ESC` | Cancelar |
-| `Espacio` | Pausa |
-| `F` | Velocidad x1 / x2 / x3 |
+### 🌻 Plantas vs Zombis
 
-## 🔊 Sonido
+Cinco calles, nueve casillas y 20 oleadas. Los **☀️ soles** caen del cielo o los producen los girasoles: haz clic para recogerlos.
 
-Todos los efectos de sonido se generan en tiempo real con WebAudio (sin archivos de audio). Botón 🔊 para silenciar.
+| Planta | Coste | Qué hace |
+|---|---|---|
+| 🌻 Girasol | 50 | Produce 25 soles cada 12 s |
+| 🌱 Lanza guisantes | 100 | Dispara sin parar |
+| 🧱 Nuez | 50 | Muro con muchísima vida |
+| 🥔 Patamina | 25 | Se arma en 12 s y explota al contacto |
+| ❄️ Hielo guisante | 175 | Dispara y congela |
+| 🌿 Repetidora | 200 | Dos guisantes por disparo |
+| 🍒 Cereza bomba | 150 | Explosión enorme en 3x3 |
+| 🌶️ Jalapeño | 125 | Quema la fila entera |
+
+Zombis: **normal**, **con cono**, **con cubo**, **corredor** y el **GARGANTÚA** de las oleadas 10 y 20.
+Cada fila tiene un **cortacésped** que la arrasa entera… pero solo una vez. Teclas `1`-`8` para elegir planta, **🔨 Pala** para quitarlas.
+
+### 💣 Minas
+
+Versión arcade de las minas de los casinos, **con fichas ficticias**: no hay dinero real ni forma de depositar o retirar nada.
+
+- Eliges apuesta y número de minas (1 a 24) en una cuadrícula de 25 casillas.
+- Cada 💎 sube el multiplicador; una 💣 y pierdes la apuesta.
+- El multiplicador se calcula con la probabilidad real de la jugada: `0,99 × C(25,k) / C(25−minas,k)`, es decir, un 1 % de ventaja de la casa.
+- Puedes **retirarte** cuando quieras. El panel te enseña siempre cuánto pagaría la siguiente casilla y con qué probabilidad.
+- Si te quedas sin fichas, el botón **🎁 Fichas gratis** te da 500 más.
+
+### 🧩 Block Blast
+
+Tablero de 8x8 y tres piezas que **no rotan**. Arrastra cada una a su sitio; al completar una fila o una columna, estalla.
+
+- Varias líneas a la vez multiplican los puntos (1 → 100, 2 → 300, 3 → 600, 4 → 1000…).
+- Jugadas seguidas que revientan líneas suben el **combo**, que suma un 50 % extra por nivel.
+- Las tres piezas se reponen solo cuando has usado las tres.
+- La partida acaba cuando ninguna pieza cabe ya en el tablero.
+
+### 🐍 Serpiente Neón
+
+- **🍎 Manzana:** creces y aceleras un poco.
+- **🍋 Fruta dorada:** aparece unos segundos cada 7 manzanas y vale 75 puntos.
+- **👻 Fantasma:** 7 segundos atravesando paredes y tu propio cuerpo.
+- **🪨 Rocas:** aparece una nueva cada 5 manzanas.
+- **Controles:** flechas / `WASD`, deslizar el dedo en móvil, `Espacio` para pausar.
+
+## 💾 Récords
+
+Cada juego guarda su récord en el `localStorage` de tu navegador, así que son tuyos y no salen de tu equipo. Desde la portada puedes borrarlos todos con **🗑 Borrar todos mis récords**.
+
+## 🗂 Estructura
+
+```
+index.html                      portada del arcade
+juegos/
+  arcade.css                    estilos compartidos
+  arcade.js                     audio WebAudio, récords y utilidades
+  nexo-tower-defense.html       (autocontenido)
+  comecocos.html
+  plantas-vs-zombies.html
+  minas.html
+  block-blast.html
+  serpiente.html
+```

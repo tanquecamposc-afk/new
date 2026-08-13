@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Comecocos — Arcade NEXO</title>
+<link rel="stylesheet" href="arcade.css">
+<style>
+  #juego{width:min(620px,100vw);}
+  .barra{gap:7px; padding:8px 10px;}
+  .barra .stat{font-size:14px; padding:4px 8px;}
+  .barra .titulo{color:var(--oro); font-size:15px;}
+  #vidasTxt{letter-spacing:1px;}
+</style>
+</head>
+<body>
+
+<div id="juego">
+  <div class="barra">
+    <a class="boton" href="../index.html">🕹 Arcade</a>
+    <div class="titulo">👻 COMECOCOS</div>
+    <div class="sep"></div>
+    <div class="stat">⭐ <span id="puntosTxt" class="oro">0</span></div>
+    <div class="stat">🏆 <span id="recordTxt" class="tenue">0</span></div>
+    <div class="stat">🍒 <span id="nivelTxt">1</span> <span id="vidasTxt">🟡🟡</span></div>
+    <button id="btnPausa" title="Pausa (Espacio)">⏸</button>
+    <button id="btnSonido" title="Sonido">🔊</button>
+  </div>
+
+  <div class="escena">
+    <canvas id="lienzo" width="672" height="744"></canvas>
+    <div class="avisos" id="avisos"></div>
+
+    <div class="modal visible" id="modalInicio">
+      <div class="tarjetaModal">
+        <h1>👻 COMECOCOS</h1>
+        <div class="sub">Cómete todos los cocos sin que te atrapen los fantasmas.</div>
+        <div class="instrucciones">
+          <b>Mover:</b> flechas o <b>W A S D</b> (en móvil, desliza el dedo).<br>
+          <b>⚪ Coco</b> = 10 pts · <b>🔵 Coco de poder</b> = 50 pts y los fantasmas huyen.<br>
+          Cómetelos mientras huyen: <b>200 → 400 → 800 → 1600</b> puntos seguidos.<br>
+          <b>🍒 Fruta:</b> aparece bajo la casa de los fantasmas y vale un montón.<br>
+          Los <b>túneles laterales</b> te teletransportan al otro lado.<br>
+          Cada fantasma te persigue de forma distinta: 🔴 va directo, 🩷 te corta el paso,
+          🩵 te rodea y 🟠 es cobarde.
+        </div>
+        <div class="filaBotones"><button class="primario" id="btnJugar">▶ Jugar</button></div>
+      </div>
+    </div>
+
+    <div class="modal" id="modalFin">
+      <div class="tarjetaModal">
+        <h1 id="tituloFin">FIN</h1>
+        <div class="sub" id="subFin"></div>
+        <div class="statsFin">
+          <div class="caja"><div class="num" id="finPuntos">0</div><div class="eti">puntos</div></div>
+          <div class="caja"><div class="num" id="finNivel">1</div><div class="eti">nivel</div></div>
+          <div class="caja"><div class="num" id="finRecord">0</div><div class="eti">récord</div></div>
+        </div>
+        <div class="filaBotones">
+          <button class="primario" id="btnOtra">↻ Jugar de nuevo</button>
+          <a class="boton" href="../index.html">🕹 Arcade</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="arcade.js"></script>
+<script>
+// ============================================================
+//  COMECOCOS — laberinto clásico 28x31
+// ============================================================
+const MAPA = [
+  '############################',
+  '#............##............#',
+  '#.####.#####.##.#####.####.#',
+  '#o####.#####.##.#####.####o#',
+  '#.####.#####.##.#####.####.#',
+  '#..........................#',
+  '#.####.##.########.##.####.#',
+  '#.####.##.########.##.####.#',
+  '#......##....##....##......#',
+  '######.##### ## #####.######',
+  '######.##### ## #####.######',
+  '######.##          ##.######',
+  '######.## ###--### ##.######',
+  '######.## #      # ##.######',
+  '      .   #      #   .      ',
+  '######.## #      # ##.######',
+  '######.## ######## ##.######',
+  '######.##          ##.######',
+  '######.## ######## ##.######',
+  '######.## ######## ##.######',
+  '#............##............#',
+  '#.####.#####.##.#####.####.#',
+  '#.####.#####.##.#####.####.#',
+  '#o..##.......  .......##..o#',
+  '###.##.##.########.##.##.###',
+  '###.##.##.########.##.##.###',
+  '#......##....##....##......#',
+  '#.##########.##.##########.#',
+  '#.##########.##.##########.#',
+  '#..........................#',
+  '############################'
+];
+const COLS = 28, FILAS = 31, TAM = 24;
+
+const lienzo = document.getElementById('lienzo');
+const ctx = lienzo.getContext('2d');
+const avisos = document.getElementById('avisos');
+
+let rejilla, cocos, puntos, vidas, nivel, estado, cronoEstado;
+let pac, fantasmas, fase, cronoFase, cronoMiedo, comidosSeguidos, fruta, cocosComidos;
+let parpadeoMuro = 0, pausado = false, record = Arcade.record('comecocos');
+
+// ---------- Laberinto ----------
+function esMuro(i, j){
+  if (j < 0 || j >= FILAS) return true;
+  i = ((i % COLS) + COLS) % COLS;
+  return rejilla[j][i] === '#';
+}
+function esPuerta(i, j){
+  if (j < 0 || j >= FILAS) return false;
+  i = ((i % COLS) + COLS) % COLS;
+  return rejilla[j][i] === '-';
+}
+function libre(i, j, atraviesaPuerta){
+  if (esMuro(i, j)) return false;
+  if (esPuerta(i, j) && !atraviesaPuerta) return false;
+  return true;
+}
+function envolver(i){ return ((i % COLS) + COLS) % COLS; }
+
+// Muros pre-dibujados (se regeneran solo al cambiar de color)
+const muroCanvas = document.createElement('canvas');
+muroCanvas.width = lienzo.width; muroCanvas.height = lienzo.height;
+function pintarMuros(color, relleno){
+  const c = muroCanvas.getContext('2d');
+  c.clearRect(0, 0, muroCanvas.width, muroCanvas.height);
+  c.lineWidth = 3; c.lineCap = 'round'; c.lineJoin = 'round';
+  for (let j = 0; j < FILAS; j++){
+    for (let i = 0; i < COLS; i++){
+      const x = i * TAM, y = j * TAM;
+      if (rejilla[j][i] === '-'){
+        c.strokeStyle = '#ff9ad5'; c.lineWidth = 4;
+        c.beginPath(); c.moveTo(x, y + TAM / 2); c.lineTo(x + TAM, y + TAM / 2); c.stroke();
+        c.lineWidth = 3;
+        continue;
+      }
+      if (rejilla[j][i] !== '#') continue;
+      c.fillStyle = relleno; c.fillRect(x, y, TAM, TAM);
+      c.strokeStyle = color;
+      c.beginPath();
+      if (!esMuro(i, j - 1)){ c.moveTo(x + 2, y + 2); c.lineTo(x + TAM - 2, y + 2); }
+      if (!esMuro(i, j + 1)){ c.moveTo(x + 2, y + TAM - 2); c.lineTo(x + TAM - 2, y + TAM - 2); }
+      if (!esMuro(i - 1, j)){ c.moveTo(x + 2, y + 2); c.lineTo(x + 2, y + TAM - 2); }
+      if (!esMuro(i + 1, j)){ c.moveTo(x + TAM - 2, y + 2); c.lineTo(x + TAM - 2, y + TAM - 2); }
+      c.stroke();
+    }
+  }
+}
+
+// ---------- Movimiento sobre la rejilla ----------
+const DIRS = {
+  arriba: {x:0, y:-1}, abajo: {x:0, y:1}, izq: {x:-1, y:0}, der: {x:1, y:0}
+};
+function opuesta(d){ return {x:-d.x, y:-d.y}; }
+function igualDir(a, b){ return a.x === b.x && a.y === b.y; }
+
+function distanciaAlSiguienteCentro(e){
+  if (e.dir.x > 0) return Math.floor(e.x + 1e-9) + 1 - e.x;
+  if (e.dir.x < 0) return e.x - (Math.ceil(e.x - 1e-9) - 1);
+  if (e.dir.y > 0) return Math.floor(e.y + 1e-9) + 1 - e.y;
+  if (e.dir.y < 0) return e.y - (Math.ceil(e.y - 1e-9) - 1);
+  return Infinity;
+}
+function enCentro(e){
+  return Math.abs(e.x - Math.round(e.x)) < 1e-6 && Math.abs(e.y - Math.round(e.y)) < 1e-6;
+}
+
+function mover(e, dt, alLlegarACentro){
+  let queda = e.vel * dt;
+  let vueltas = 0;
+  while (queda > 1e-9 && vueltas++ < 40){
+    if (enCentro(e)){
+      e.x = Math.round(e.x); e.y = Math.round(e.y);
+      alLlegarACentro(e);
+      if (!e.dir || (e.dir.x === 0 && e.dir.y === 0)) return;
+      if (!libre(e.x + e.dir.x, e.y + e.dir.y, e.puerta)) return;
+    }
+    const d = Math.min(queda, distanciaAlSiguienteCentro(e));
+    e.x += e.dir.x * d; e.y += e.dir.y * d;
+    queda -= d;
+    if (Math.abs(e.x - Math.round(e.x)) < 1e-6) e.x = Math.round(e.x);
+    if (Math.abs(e.y - Math.round(e.y)) < 1e-6) e.y = Math.round(e.y);
+    // túnel lateral
+    if (e.x < -0.6) e.x += COLS;
+    if (e.x > COLS - 0.4) e.x -= COLS;
+  }
+}
+
+// ---------- Partida ----------
+function nuevaPartida(){
+  puntos = 0; vidas = 3; nivel = 1;
+  iniciarNivel();
+}
+function iniciarNivel(){
+  rejilla = MAPA.map(f => f.split(''));
+  cocos = 0;
+  for (let j = 0; j < FILAS; j++) for (let i = 0; i < COLS; i++)
+    if (rejilla[j][i] === '.' || rejilla[j][i] === 'o') cocos++;
+  cocosComidos = 0;
+  pintarMuros('#4f7bff', '#101a3a');
+  colocarPersonajes();
+  fruta = null;
+  fase = 0; cronoFase = 7; cronoMiedo = 0; comidosSeguidos = 0;
+  estado = 'listo'; cronoEstado = 2.2;
+  refrescarHud();
+}
+function colocarPersonajes(){
+  pac = { x:13, y:23, dir:{...DIRS.izq}, deseada:{...DIRS.izq}, vel:7.6, boca:0, puerta:false };
+  const base = 6.7 + Math.min(1.6, (nivel - 1) * 0.2);
+  fantasmas = [
+    crearFantasma('blinky', '#ff5a52', 13, 11, {i:25, j:0},  0.0, 'fuera'),
+    crearFantasma('pinky',  '#ffb0e0', 13, 14, {i:2,  j:0},  2.0, 'casa'),
+    crearFantasma('inky',   '#64e5ff', 11, 14, {i:27, j:30}, 6.0, 'casa'),
+    crearFantasma('clyde',  '#ffb851', 16, 14, {i:0,  j:30}, 11.0,'casa')
+  ];
+  fantasmas.forEach(f => { f.velBase = base; f.vel = base; });
+}
+function crearFantasma(nombre, color, x, y, esquina, espera, sitio){
+  return {
+    nombre, color, x, y, casaX:x, casaY:y, esquina, espera,
+    dir:{...DIRS.arriba}, vel:6.7, velBase:6.7, estado:sitio, miedo:false,
+    bob:Math.random()*6.28, puerta:false, paso:0
+  };
+}
+
+function refrescarHud(){
+  document.getElementById('puntosTxt').textContent = puntos;
+  document.getElementById('recordTxt').textContent = record;
+  document.getElementById('nivelTxt').textContent = nivel;
+  document.getElementById('vidasTxt').textContent = '🟡'.repeat(Math.max(0, vidas - 1)) || '—';
+}
+
+// ---------- Lógica de fantasmas ----------
+function objetivoDe(f){
+  if (f.estado === 'ojos') return {i:13, j:11};
+  if (f.miedo) return null;
+  const modo = faseActual();
+  if (modo === 'dispersar') return f.esquina;
+  const pi = Math.round(pac.x), pj = Math.round(pac.y);
+  switch (f.nombre){
+    case 'blinky': return {i:pi, j:pj};
+    case 'pinky':  return {i:pi + pac.dir.x * 4, j:pj + pac.dir.y * 4};
+    case 'inky': {
+      const b = fantasmas[0];
+      const ax = pi + pac.dir.x * 2, ay = pj + pac.dir.y * 2;
+      return {i: ax * 2 - Math.round(b.x), j: ay * 2 - Math.round(b.y)};
+    }
+    case 'clyde': {
+      const d = Math.hypot(pi - f.x, pj - f.y);
+      return d > 8 ? {i:pi, j:pj} : f.esquina;
+    }
+  }
+}
+function faseActual(){
+  const ciclo = ['dispersar','perseguir','dispersar','perseguir','dispersar','perseguir','dispersar','perseguir'];
+  return ciclo[Math.min(fase, ciclo.length - 1)];
+}
+const DURACIONES = [7, 20, 7, 20, 5, 20, 5, 1e9];
+
+function decidirFantasma(f){
+  const opciones = [];
+  const atras = opuesta(f.dir);
+  for (const k in DIRS){
+    const d = DIRS[k];
+    if (igualDir(d, atras)) continue;
+    if (!libre(Math.round(f.x) + d.x, Math.round(f.y) + d.y, f.estado === 'ojos')) continue;
+    opciones.push(d);
+  }
+  if (!opciones.length){ f.dir = atras; return; }
+  if (f.miedo && f.estado !== 'ojos'){ f.dir = elegir(opciones); return; }
+  const obj = objetivoDe(f);
+  let mejor = opciones[0], mejorD = Infinity;
+  for (const d of opciones){
+    const nx = Math.round(f.x) + d.x, ny = Math.round(f.y) + d.y;
+    const dd = (nx - obj.i) * (nx - obj.i) + (ny - obj.j) * (ny - obj.j);
+    if (dd < mejorD){ mejorD = dd; mejor = d; }
+  }
+  f.dir = mejor;
+}
+
+function actualizarFantasma(f, dt){
+  // --- dentro de la casa: flota y espera turno ---
+  if (f.estado === 'casa'){
+    f.bob += dt * 3;
+    f.espera -= dt;
+    if (f.espera <= 0){ f.estado = 'saliendo'; f.paso = 0; }
+    return;
+  }
+  if (f.estado === 'saliendo'){
+    // sube al centro de la puerta y luego al pasillo de arriba
+    const meta = f.paso === 0 ? {x:13, y:14} : (f.paso === 1 ? {x:13, y:12} : {x:13, y:11});
+    const v = 5 * dt;
+    f.x += limitar(meta.x - f.x, -v, v);
+    f.y += limitar(meta.y - f.y, -v, v);
+    if (Math.abs(f.x - meta.x) < 0.02 && Math.abs(f.y - meta.y) < 0.02){
+      f.x = meta.x; f.y = meta.y; f.paso++;
+      if (f.paso > 2){ f.estado = 'fuera'; f.dir = {...DIRS.izq}; }
+    }
+    return;
+  }
+  if (f.estado === 'entrando'){
+    const meta = f.paso === 0 ? {x:13, y:12} : {x:f.casaX, y:f.casaY};
+    const v = 7 * dt;
+    f.x += limitar(meta.x - f.x, -v, v);
+    f.y += limitar(meta.y - f.y, -v, v);
+    if (Math.abs(f.x - meta.x) < 0.02 && Math.abs(f.y - meta.y) < 0.02){
+      f.x = meta.x; f.y = meta.y; f.paso++;
+      if (f.paso > 1){ f.estado = 'casa'; f.miedo = false; f.espera = 1.2; }
+    }
+    return;
+  }
+  // --- recorriendo el laberinto ---
+  f.puerta = (f.estado === 'ojos');
+  f.vel = f.estado === 'ojos' ? 15 : (f.miedo ? 4.2 : f.velBase);
+  mover(f, dt, (e) => decidirFantasma(e));
+  if (f.estado === 'ojos' && Math.abs(f.x - 13) < 0.05 && Math.abs(f.y - 11) < 0.05){
+    f.estado = 'entrando'; f.paso = 0;
+  }
+}
+
+// ---------- Bucle principal ----------
+function actualizar(dt){
+  if (pausado) return;
+
+  if (estado === 'listo'){
+    cronoEstado -= dt;
+    if (cronoEstado <= 0) estado = 'jugando';
+    return;
+  }
+  if (estado === 'muerte'){
+    cronoEstado -= dt;
+    if (cronoEstado <= 0){
+      if (vidas <= 0){ terminar(false); }
+      else { colocarPersonajes(); estado = 'listo'; cronoEstado = 1.6; }
+    }
+    return;
+  }
+  if (estado === 'nivel'){
+    cronoEstado -= dt;
+    parpadeoMuro = cronoEstado;
+    if (cronoEstado <= 0){
+      nivel++;
+      Sonido.fx('nivel');
+      iniciarNivel();
+    }
+    return;
+  }
+  if (estado !== 'jugando') return;
+
+  // fases de los fantasmas
+  if (cronoMiedo > 0){
+    cronoMiedo -= dt;
+    if (cronoMiedo <= 0){
+      fantasmas.forEach(f => { if (f.estado !== 'ojos') f.miedo = false; });
+      comidosSeguidos = 0;
+    }
+  } else {
+    cronoFase -= dt;
+    if (cronoFase <= 0){
+      fase = Math.min(fase + 1, DURACIONES.length - 1);
+      cronoFase = DURACIONES[fase];
+      fantasmas.forEach(f => { if (f.estado === 'fuera') f.dir = opuesta(f.dir); });
+    }
+  }
+
+  // Pac-Man
+  pac.boca += dt * 12;
+  mover(pac, dt, (e) => {
+    if (libre(e.x + e.deseada.x, e.y + e.deseada.y, false)) e.dir = {...e.deseada};
+  });
+  comerCasilla();
+
+  // fruta
+  if (fruta){
+    fruta.t -= dt;
+    if (fruta.t <= 0) fruta = null;
+    else if (Math.round(pac.x) === fruta.i && Math.round(pac.y) === fruta.j){
+      sumar(fruta.valor);
+      Arcade.aviso(avisos, '🍒 ¡+' + fruta.valor + '!', true, 1400);
+      Sonido.fx('fruta');
+      fruta = null;
+    }
+  }
+
+  fantasmas.forEach(f => actualizarFantasma(f, dt));
+  colisiones();
+}
+
+function comerCasilla(){
+  const i = Math.round(pac.x), j = Math.round(pac.y);
+  if (Math.abs(pac.x - i) > 0.35 || Math.abs(pac.y - j) > 0.35) return;
+  const ii = envolver(i);
+  const c = rejilla[j] && rejilla[j][ii];
+  if (c === '.'){
+    rejilla[j][ii] = ' '; cocos--; cocosComidos++;
+    sumar(10);
+    Sonido.fx(cocosComidos % 2 ? 'come' : 'come2');
+  } else if (c === 'o'){
+    rejilla[j][ii] = ' '; cocos--; cocosComidos++;
+    sumar(50);
+    cronoMiedo = Math.max(2.5, 8 - (nivel - 1) * 0.6);
+    comidosSeguidos = 0;
+    fantasmas.forEach(f => {
+      if (f.estado === 'fuera'){ f.miedo = true; f.dir = opuesta(f.dir); }
+      else if (f.estado === 'casa' || f.estado === 'saliendo') f.miedo = true;
+    });
+    Sonido.fx('poder');
+  } else return;
+
+  if ((cocosComidos === 70 || cocosComidos === 170) && !fruta){
+    const valores = [100, 300, 500, 700, 1000, 2000, 3000, 5000];
+    fruta = { i:13, j:17, t:9.5, valor: valores[Math.min(nivel - 1, valores.length - 1)],
+              icono: ['🍒','🍓','🍊','🍎','🍈','🍇','🔔','🗝'][Math.min(nivel - 1, 7)] };
+    Arcade.aviso(avisos, '¡Ha aparecido ' + fruta.icono + '!', false, 1800);
+  }
+  if (cocos <= 0){
+    estado = 'nivel'; cronoEstado = 2.4;
+    Sonido.fx('victoria');
+  }
+}
+
+function sumar(n){
+  const antes = puntos;
+  puntos += n;
+  if (antes < 10000 && puntos >= 10000){
+    vidas++;
+    Arcade.aviso(avisos, '🟡 ¡Vida extra!', true);
+    Sonido.fx('ficha');
+  }
+  refrescarHud();
+}
+
+function colisiones(){
+  for (const f of fantasmas){
+    if (f.estado === 'ojos' || f.estado === 'entrando') continue;
+    if (Math.hypot(f.x - pac.x, f.y - pac.y) > 0.75) continue;
+    if (f.miedo){
+      comidosSeguidos = Math.min(comidosSeguidos + 1, 4);
+      const valor = 200 * Math.pow(2, comidosSeguidos - 1);
+      sumar(valor);
+      Arcade.aviso(avisos, '👻 +' + valor, false, 1100);
+      f.miedo = false; f.estado = 'ojos'; f.puerta = true;
+      Sonido.fx('fantasma');
+    } else if (f.estado === 'fuera'){
+      vidas--;
+      estado = 'muerte'; cronoEstado = 1.8;
+      Sonido.fx('derrota');
+      refrescarHud();
+      return;
+    }
+  }
+}
+
+function terminar(gano){
+  estado = 'fin';
+  if (Arcade.guardarRecord('comecocos', puntos)) record = puntos;
+  document.getElementById('tituloFin').textContent = gano ? '¡GENIAL!' : 'FIN DE LA PARTIDA';
+  document.getElementById('tituloFin').className = gano ? 'victoria' : 'derrota';
+  document.getElementById('subFin').textContent = gano
+    ? 'Has limpiado el laberinto.'
+    : 'Los fantasmas te han pillado. ¡Otra ronda!';
+  document.getElementById('finPuntos').textContent = puntos;
+  document.getElementById('finNivel').textContent = nivel;
+  document.getElementById('finRecord').textContent = record;
+  document.getElementById('modalFin').classList.add('visible');
+  refrescarHud();
+}
+
+// ---------- Dibujo ----------
+function dibujar(){
+  ctx.fillStyle = '#05070f';
+  ctx.fillRect(0, 0, lienzo.width, lienzo.height);
+
+  if (estado === 'nivel' && Math.floor(parpadeoMuro * 6) % 2 === 0) pintarMuros('#ffffff', '#3a4a8a');
+  else if (estado === 'nivel') pintarMuros('#4f7bff', '#101a3a');
+  ctx.drawImage(muroCanvas, 0, 0);
+
+  // cocos
+  for (let j = 0; j < FILAS; j++){
+    for (let i = 0; i < COLS; i++){
+      const c = rejilla[j][i];
+      if (c === '.'){
+        ctx.fillStyle = '#ffe9b0';
+        ctx.fillRect(i * TAM + TAM / 2 - 2, j * TAM + TAM / 2 - 2, 4, 4);
+      } else if (c === 'o'){
+        const r = 5 + Math.sin(performance.now() / 160) * 1.6;
+        ctx.fillStyle = '#8fd8ff';
+        ctx.beginPath(); ctx.arc(i * TAM + TAM / 2, j * TAM + TAM / 2, r, 0, 6.3); ctx.fill();
+      }
+    }
+  }
+
+  // fruta
+  if (fruta){
+    ctx.font = '20px serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(fruta.icono, fruta.i * TAM + TAM / 2, fruta.j * TAM + TAM / 2);
+  }
+
+  if (estado !== 'nivel' && estado !== 'muerte') fantasmas.forEach(dibujarFantasma);
+  dibujarPac();
+
+  // rótulos de estado
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  if (estado === 'listo'){
+    ctx.fillStyle = '#ffd25e'; ctx.font = 'bold 26px "Segoe UI", sans-serif';
+    ctx.fillText('¡PREPARADO!', lienzo.width / 2, 20 * TAM + 6);
+  }
+  if (pausado){
+    ctx.fillStyle = 'rgba(5,8,16,.6)'; ctx.fillRect(0, 0, lienzo.width, lienzo.height);
+    ctx.fillStyle = '#e8eefc'; ctx.font = 'bold 34px "Segoe UI", sans-serif';
+    ctx.fillText('PAUSA', lienzo.width / 2, lienzo.height / 2);
+  }
+}
+
+function dibujarPac(){
+  const x = pac.x * TAM + TAM / 2, y = pac.y * TAM + TAM / 2, r = TAM * 0.46;
+  let apertura;
+  if (estado === 'muerte'){
+    const t = 1 - limitar(cronoEstado / 1.8, 0, 1);
+    apertura = t * Math.PI;
+    if (t > 0.92) return;
+  } else {
+    apertura = estado === 'jugando' ? (Math.abs(Math.sin(pac.boca)) * 0.32 + 0.03) * Math.PI : 0.18 * Math.PI;
+  }
+  const ang = Math.atan2(pac.dir.y, pac.dir.x);
+  const g = ctx.createRadialGradient(x - 3, y - 4, 2, x, y, r);
+  g.addColorStop(0, '#fff6b0'); g.addColorStop(1, '#ffd21e');
+  ctx.fillStyle = g;
+  ctx.beginPath();
+  ctx.moveTo(x, y);
+  ctx.arc(x, y, r, ang + apertura, ang - apertura);
+  ctx.closePath(); ctx.fill();
+}
+
+function dibujarFantasma(f){
+  const bob = f.estado === 'casa' ? Math.sin(f.bob) * 3 : 0;
+  const x = f.x * TAM + TAM / 2, y = f.y * TAM + TAM / 2 + bob, r = TAM * 0.45;
+  const ojos = f.estado === 'ojos';
+  const parpadea = f.miedo && cronoMiedo < 2 && Math.floor(cronoMiedo * 6) % 2 === 0;
+
+  if (!ojos){
+    ctx.fillStyle = f.miedo ? (parpadea ? '#ffffff' : '#3a55ff') : f.color;
+    ctx.beginPath();
+    ctx.arc(x, y - 1, r, Math.PI, 0);
+    ctx.lineTo(x + r, y + r * 0.85);
+    // faldón ondulado
+    const n = 3, w = (r * 2) / n;
+    for (let k = 0; k < n; k++){
+      const bx = x + r - k * w;
+      ctx.quadraticCurveTo(bx - w * 0.25, y + r * 0.4, bx - w * 0.5, y + r * 0.85);
+      ctx.quadraticCurveTo(bx - w * 0.75, y + r * 1.25, bx - w, y + r * 0.85);
+    }
+    ctx.closePath(); ctx.fill();
+  }
+
+  if (f.miedo && !ojos){
+    ctx.fillStyle = parpadea ? '#ff5a52' : '#fff';
+    ctx.beginPath(); ctx.arc(x - 4, y - 3, 2.4, 0, 6.3); ctx.arc(x + 4, y - 3, 2.4, 0, 6.3); ctx.fill();
+    ctx.strokeStyle = parpadea ? '#ff5a52' : '#fff'; ctx.lineWidth = 1.6;
+    ctx.beginPath();
+    for (let k = 0; k < 5; k++) ctx.lineTo(x - 7 + k * 3.5, y + 4 + (k % 2 ? -2 : 2));
+    ctx.stroke();
+    return;
+  }
+
+  // ojos
+  const dx = f.dir.x * 2.4, dy = f.dir.y * 2.4;
+  ctx.fillStyle = '#fff';
+  ctx.beginPath(); ctx.ellipse(x - 4, y - 3, 3.4, 4.2, 0, 0, 6.3); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(x + 4, y - 3, 3.4, 4.2, 0, 0, 6.3); ctx.fill();
+  ctx.fillStyle = '#1b2ea8';
+  ctx.beginPath(); ctx.arc(x - 4 + dx, y - 3 + dy, 1.8, 0, 6.3); ctx.fill();
+  ctx.beginPath(); ctx.arc(x + 4 + dx, y - 3 + dy, 1.8, 0, 6.3); ctx.fill();
+}
+
+// ---------- Entrada ----------
+const TECLAS = {
+  ArrowUp:'arriba', ArrowDown:'abajo', ArrowLeft:'izq', ArrowRight:'der',
+  w:'arriba', s:'abajo', a:'izq', d:'der', W:'arriba', S:'abajo', A:'izq', D:'der'
+};
+addEventListener('keydown', e => {
+  const k = TECLAS[e.key];
+  if (k){
+    e.preventDefault();
+    pac.deseada = {...DIRS[k]};
+    // el giro de 180° es inmediato
+    if (igualDir(pac.deseada, opuesta(pac.dir))) pac.dir = {...pac.deseada};
+  }
+  if (e.key === ' '){ e.preventDefault(); alternarPausa(); }
+});
+let toqueIni = null;
+lienzo.addEventListener('touchstart', e => { toqueIni = Arcade.puntero(lienzo, e); }, {passive:true});
+lienzo.addEventListener('touchend', e => {
+  if (!toqueIni) return;
+  const f = Arcade.puntero(lienzo, e);
+  const dx = f.x - toqueIni.x, dy = f.y - toqueIni.y;
+  if (Math.hypot(dx, dy) < 18) return;
+  const k = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'der' : 'izq') : (dy > 0 ? 'abajo' : 'arriba');
+  pac.deseada = {...DIRS[k]};
+  if (igualDir(pac.deseada, opuesta(pac.dir))) pac.dir = {...pac.deseada};
+  toqueIni = null;
+}, {passive:true});
+
+function alternarPausa(){
+  if (estado === 'fin') return;
+  pausado = !pausado;
+  document.getElementById('btnPausa').textContent = pausado ? '▶' : '⏸';
+}
+document.getElementById('btnPausa').onclick = alternarPausa;
+Arcade.conectarSonido(document.getElementById('btnSonido'));
+document.getElementById('btnJugar').onclick = () => {
+  Sonido.activar();
+  document.getElementById('modalInicio').classList.remove('visible');
+  nuevaPartida();
+};
+document.getElementById('btnOtra').onclick = () => {
+  document.getElementById('modalFin').classList.remove('visible');
+  nuevaPartida();
+};
+
+// arranque
+iniciarNivel();
+estado = 'listo'; cronoEstado = 1e9; // esperando al botón de jugar
+refrescarHud();
+Arcade.bucle(dt => { actualizar(dt); dibujar(); });
+</script>
+</body>
+</html>

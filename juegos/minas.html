@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Minas — Arcade NEXO</title>
+<link rel="stylesheet" href="arcade.css">
+<style>
+  #juego{width:min(940px,100vw);}
+  .barra .titulo{color:var(--oro);}
+  #mesa{display:flex; gap:14px; align-items:flex-start; flex-wrap:wrap;}
+
+  /* ----- Panel de apuesta ----- */
+  #panel{
+    flex:1 1 260px; min-width:250px;
+    background:linear-gradient(180deg, var(--panel2), var(--panel));
+    border:1px solid var(--borde); border-radius:14px; padding:16px;
+    box-shadow:0 8px 22px rgba(0,0,0,.4); display:flex; flex-direction:column; gap:12px;
+  }
+  #panel h3{font-size:13px; color:var(--tenue); text-transform:uppercase; letter-spacing:1px;}
+  .campo{display:flex; gap:6px; align-items:center;}
+  .campo input{
+    flex:1; width:100%; background:#101725; border:1px solid var(--borde); border-radius:9px;
+    color:var(--texto); font-family:inherit; font-weight:800; font-size:17px; padding:9px 11px;
+  }
+  .campo input:focus{outline:none; border-color:var(--azul);}
+  .chips{display:flex; gap:5px; flex-wrap:wrap;}
+  .chips button{padding:5px 9px; font-size:12.5px;}
+  .minasFila{display:grid; grid-template-columns:repeat(4,1fr); gap:5px;}
+  .minasFila button{padding:6px 0; font-size:13px;}
+  .minasFila button.sel{background:linear-gradient(180deg,#b98a1f,#8e6a13); border-color:var(--oro);}
+  #btnAccion{font-size:17px; padding:13px; width:100%;}
+  .infoCaja{
+    background:rgba(0,0,0,.28); border-radius:10px; padding:10px 12px; font-size:13px;
+    display:flex; flex-direction:column; gap:5px;
+  }
+  .infoCaja div{display:flex; justify-content:space-between;}
+  .infoCaja b{font-weight:800;}
+  #historial{display:flex; gap:5px; flex-wrap:wrap; min-height:24px;}
+  .marca{font-size:11px; font-weight:800; padding:3px 7px; border-radius:6px;}
+  .marca.gana{background:#1d5c35; color:#8ff0ae;}
+  .marca.pierde{background:#6e1f1f; color:#ff9c9c;}
+  .aviso-legal{font-size:11px; color:#66748f; line-height:1.5; text-align:center;}
+
+  /* ----- Tablero ----- */
+  #tableroCaja{
+    flex:1 1 420px;
+    background:linear-gradient(180deg,#1d2740,#151d2f);
+    border:1px solid var(--borde); border-radius:14px; padding:14px;
+    box-shadow:0 8px 22px rgba(0,0,0,.4); position:relative;
+  }
+  #tablero{display:grid; grid-template-columns:repeat(5,1fr); gap:9px;}
+  .casilla{
+    aspect-ratio:1/1; border-radius:12px; cursor:pointer; position:relative;
+    background:linear-gradient(180deg,#39496e,#2a3652);
+    border:2px solid #46577d; box-shadow:0 4px 0 #1d2540, inset 0 1px 0 rgba(255,255,255,.15);
+    display:flex; align-items:center; justify-content:center; font-size:min(7vw,34px);
+    transition:transform .12s, filter .12s, background .25s, border-color .25s;
+  }
+  .casilla:not(.abierta):hover{transform:translateY(-3px); filter:brightness(1.25);}
+  .casilla:active{transform:translateY(1px);}
+  .casilla.bloqueada{cursor:default; pointer-events:none;}
+  .casilla.abierta{box-shadow:none; animation:voltear .32s ease-out;}
+  .casilla.gema{background:radial-gradient(circle at 50% 35%,#2f9e6f,#186044); border-color:#4fdca0;}
+  .casilla.mina{background:radial-gradient(circle at 50% 35%,#b83b3b,#6e1f1f); border-color:#ff8080;}
+  .casilla.fantasma{opacity:.42;}
+  @keyframes voltear{
+    0%{transform:rotateY(90deg) scale(.8);} 60%{transform:rotateY(-12deg) scale(1.06);} 100%{transform:none;}
+  }
+  .casilla.estalla{animation:estallar .5s ease-out;}
+  @keyframes estallar{
+    0%{transform:scale(.6);} 40%{transform:scale(1.25);} 100%{transform:scale(1);}
+  }
+  #cartelMult{
+    position:absolute; inset:0; display:none; align-items:center; justify-content:center;
+    pointer-events:none; z-index:5;
+  }
+  #cartelMult.visible{display:flex; animation:aparecer .3s ease-out;}
+  #cartelMult .caja{
+    background:rgba(8,14,24,.92); border:2px solid var(--verde); border-radius:16px;
+    padding:18px 34px; text-align:center; box-shadow:0 10px 40px rgba(0,0,0,.6);
+  }
+  #cartelMult .caja.malo{border-color:var(--rojo);}
+  #cartelMult .x{font-size:40px; font-weight:900; color:var(--verde);}
+  #cartelMult .caja.malo .x{color:var(--rojo);}
+  #cartelMult .g{font-size:16px; font-weight:700; color:var(--oro);}
+</style>
+</head>
+<body>
+
+<div id="juego">
+  <div class="barra">
+    <a class="boton" href="../index.html">🕹 Arcade</a>
+    <div class="titulo">💣 MINAS</div>
+    <div class="sep"></div>
+    <div class="stat">🪙 <span id="saldoTxt" class="oro">1000</span></div>
+    <div class="stat">🏆 <span id="mayorTxt" class="tenue">0</span></div>
+    <button id="btnSonido" title="Sonido">🔊</button>
+  </div>
+
+  <div id="mesa">
+    <div id="panel">
+      <div>
+        <h3>Apuesta</h3>
+        <div class="campo"><input id="apuesta" type="number" min="1" step="1" value="50"></div>
+        <div class="chips" style="margin-top:6px">
+          <button data-op="mitad">½</button>
+          <button data-op="doble">x2</button>
+          <button data-op="10">10</button>
+          <button data-op="50">50</button>
+          <button data-op="100">100</button>
+          <button data-op="max">MÁX</button>
+        </div>
+      </div>
+
+      <div>
+        <h3>Minas: <span id="minasTxt" class="oro">3</span> de 25</h3>
+        <div class="minasFila" id="minasFila"></div>
+      </div>
+
+      <button id="btnAccion" class="primario">🎲 Apostar</button>
+
+      <div class="infoCaja">
+        <div><span class="tenue">Multiplicador</span><b id="multTxt" class="verde">1.00x</b></div>
+        <div><span class="tenue">Beneficio</span><b id="benefTxt" class="oro">0</b></div>
+        <div><span class="tenue">Siguiente casilla</span><b id="sigTxt" class="azul">—</b></div>
+        <div><span class="tenue">💎 Encontradas</span><b id="gemasTxt">0</b></div>
+      </div>
+
+      <div>
+        <h3>Últimas rondas</h3>
+        <div id="historial"></div>
+      </div>
+
+      <button id="btnRegalo" style="display:none">🎁 Fichas gratis</button>
+      <div class="aviso-legal">
+        Juego de fantasía con <b>fichas ficticias</b>.<br>No hay dinero real ni forma de depositar o retirar.
+      </div>
+    </div>
+
+    <div id="tableroCaja">
+      <div id="tablero"></div>
+      <div id="cartelMult"><div class="caja"><div class="x">1.00x</div><div class="g">+0</div></div></div>
+    </div>
+  </div>
+</div>
+
+<script src="arcade.js"></script>
+<script>
+// ============================================================
+//  MINAS — 25 casillas, multiplicadores de probabilidad real
+// ============================================================
+const CASILLAS = 25;
+let saldo = Arcade.leer('minas_saldo', 1000);
+let mayor = Arcade.record('minas_mayor');
+let minas = 3, apuesta = 50;
+let estado = 'apostando';      // apostando | jugando | revelado
+let bombas = new Set(), abiertas = new Set(), gemas = 0;
+const historial = [];
+
+const $ = id => document.getElementById(id);
+const tablero = $('tablero');
+
+// ---------- Multiplicador justo (1% de ventaja de la casa) ----------
+function multiplicador(m, k){
+  if (k <= 0) return 1;
+  let r = 1;
+  for (let i = 0; i < k; i++) r *= (CASILLAS - i) / (CASILLAS - m - i);
+  return 0.99 * r;
+}
+const fmt = n => n.toLocaleString('es-ES', {maximumFractionDigits:0});
+const fmtx = n => n.toFixed(2) + 'x';
+
+// ---------- Construcción del tablero ----------
+for (let i = 0; i < CASILLAS; i++){
+  const c = document.createElement('div');
+  c.className = 'casilla bloqueada';
+  c.dataset.i = i;
+  c.onclick = () => descubrir(i);
+  tablero.appendChild(c);
+}
+const celdas = [...tablero.children];
+
+// ---------- Selector de minas ----------
+[1, 2, 3, 5, 8, 12, 18, 24].forEach(n => {
+  const b = document.createElement('button');
+  b.textContent = n;
+  b.onclick = () => { if (estado !== 'jugando'){ minas = n; refrescar(); } };
+  b.dataset.n = n;
+  $('minasFila').appendChild(b);
+});
+
+// ---------- Atajos de apuesta ----------
+document.querySelectorAll('.chips button').forEach(b => {
+  b.onclick = () => {
+    if (estado === 'jugando') return;
+    const op = b.dataset.op;
+    let v = parseFloat($('apuesta').value) || 0;
+    if (op === 'mitad') v = Math.max(1, Math.floor(v / 2));
+    else if (op === 'doble') v = v * 2;
+    else if (op === 'max') v = saldo;
+    else v = parseFloat(op);
+    $('apuesta').value = Math.max(1, Math.min(Math.floor(v), Math.floor(saldo)));
+    refrescar();
+  };
+});
+$('apuesta').oninput = refrescar;
+
+// ---------- Ronda ----------
+function empezarRonda(){
+  apuesta = Math.floor(parseFloat($('apuesta').value) || 0);
+  if (apuesta < 1){ Sonido.fx('error'); return; }
+  if (apuesta > saldo){
+    $('apuesta').value = Math.floor(saldo);
+    Sonido.fx('error');
+    return;
+  }
+  saldo -= apuesta;
+  Arcade.escribir('minas_saldo', saldo);
+  bombas = new Set();
+  while (bombas.size < minas) bombas.add(azarEntero(0, CASILLAS - 1));
+  abiertas = new Set(); gemas = 0;
+  estado = 'jugando';
+  celdas.forEach(c => {
+    c.className = 'casilla';
+    c.textContent = '';
+  });
+  $('cartelMult').classList.remove('visible');
+  Sonido.fx('ficha');
+  refrescar();
+}
+
+function descubrir(i){
+  if (estado !== 'jugando' || abiertas.has(i)) return;
+  abiertas.add(i);
+  const c = celdas[i];
+  if (bombas.has(i)){
+    c.classList.add('abierta', 'mina', 'estalla');
+    c.textContent = '💣';
+    Sonido.fx('mina');
+    perder();
+    return;
+  }
+  gemas++;
+  c.classList.add('abierta', 'gema');
+  c.textContent = '💎';
+  Sonido.fx('gema');
+  if (gemas === CASILLAS - minas){ cobrar(true); return; }
+  refrescar();
+}
+
+function perder(){
+  estado = 'revelado';
+  // mostrar el resto del tablero
+  celdas.forEach((c, i) => {
+    c.classList.add('bloqueada');
+    if (abiertas.has(i)) return;
+    c.classList.add('abierta', 'fantasma', bombas.has(i) ? 'mina' : 'gema');
+    c.textContent = bombas.has(i) ? '💣' : '💎';
+  });
+  mostrarCartel(0, -apuesta, true);
+  añadirHistorial(false, gemas);
+  refrescar();
+  setTimeout(() => { if (estado === 'revelado') listoParaOtra(); }, 1500);
+}
+
+function cobrar(automatico){
+  if (estado !== 'jugando' || gemas === 0) return;
+  const mult = multiplicador(minas, gemas);
+  const pago = Math.floor(apuesta * mult);
+  const beneficio = pago - apuesta;
+  saldo += pago;
+  Arcade.escribir('minas_saldo', saldo);
+  if (Arcade.guardarRecord('minas_mayor', beneficio)) mayor = beneficio;
+  estado = 'revelado';
+  celdas.forEach((c, i) => {
+    c.classList.add('bloqueada');
+    if (abiertas.has(i)) return;
+    c.classList.add('abierta', 'fantasma', bombas.has(i) ? 'mina' : 'gema');
+    c.textContent = bombas.has(i) ? '💣' : '💎';
+  });
+  mostrarCartel(mult, beneficio, false);
+  añadirHistorial(true, gemas, mult);
+  Sonido.fx(automatico ? 'victoria' : 'moneda');
+  refrescar();
+  setTimeout(() => { if (estado === 'revelado') listoParaOtra(); }, 1800);
+}
+
+function listoParaOtra(){
+  estado = 'apostando';
+  $('cartelMult').classList.remove('visible');
+  celdas.forEach(c => { c.className = 'casilla bloqueada'; c.textContent = ''; });
+  refrescar();
+}
+
+function mostrarCartel(mult, beneficio, malo){
+  const cartel = $('cartelMult');
+  const caja = cartel.querySelector('.caja');
+  caja.classList.toggle('malo', malo);
+  caja.querySelector('.x').textContent = malo ? '💥' : fmtx(mult);
+  caja.querySelector('.g').textContent = (beneficio >= 0 ? '+' : '') + fmt(beneficio) + ' 🪙';
+  cartel.classList.add('visible');
+}
+
+function añadirHistorial(gano, g, mult){
+  historial.unshift({gano, g, mult});
+  if (historial.length > 8) historial.pop();
+  $('historial').innerHTML = historial.map(h =>
+    '<span class="marca ' + (h.gano ? 'gana' : 'pierde') + '">' +
+    (h.gano ? fmtx(h.mult) : '💣 ' + h.g + '💎') + '</span>'
+  ).join('');
+}
+
+// ---------- Interfaz ----------
+function refrescar(){
+  $('saldoTxt').textContent = fmt(saldo);
+  $('mayorTxt').textContent = fmt(mayor);
+  $('minasTxt').textContent = minas;
+  $('gemasTxt').textContent = gemas;
+  document.querySelectorAll('#minasFila button').forEach(b =>
+    b.classList.toggle('sel', parseInt(b.dataset.n, 10) === minas));
+
+  const mult = multiplicador(minas, gemas);
+  $('multTxt').textContent = fmtx(mult);
+  const apostado = estado === 'jugando' ? apuesta : (Math.floor(parseFloat($('apuesta').value) || 0));
+  $('benefTxt').textContent = gemas > 0 ? '+' + fmt(Math.floor(apostado * mult) - apostado) : '0';
+
+  const quedan = CASILLAS - abiertas.size;
+  if (estado === 'jugando' && gemas < CASILLAS - minas){
+    const sig = multiplicador(minas, gemas + 1);
+    const prob = 100 * (quedan - minas) / quedan;
+    $('sigTxt').textContent = fmtx(sig) + '  (' + prob.toFixed(0) + '%)';
+  } else {
+    $('sigTxt').textContent = '—';
+  }
+
+  const btn = $('btnAccion');
+  if (estado === 'jugando'){
+    if (gemas > 0){
+      btn.textContent = '💰 Retirar ' + fmt(Math.floor(apuesta * mult));
+      btn.className = 'oro';
+      btn.disabled = false;
+    } else {
+      btn.textContent = '👆 Descubre una casilla';
+      btn.className = '';
+      btn.disabled = true;
+    }
+  } else if (estado === 'revelado'){
+    btn.textContent = '…';
+    btn.className = '';
+    btn.disabled = true;
+  } else {
+    btn.textContent = '🎲 Apostar';
+    btn.className = 'primario';
+    btn.disabled = saldo < 1;
+  }
+  $('minasFila').style.opacity = estado === 'jugando' ? '.45' : '1';
+  $('apuesta').disabled = estado !== 'apostando';
+  $('btnRegalo').style.display = (saldo < 10 && estado === 'apostando') ? 'block' : 'none';
+}
+
+$('btnAccion').onclick = () => {
+  Sonido.activar();
+  if (estado === 'jugando') cobrar(false);
+  else if (estado === 'apostando') empezarRonda();
+};
+$('btnRegalo').onclick = () => {
+  saldo += 500;
+  Arcade.escribir('minas_saldo', saldo);
+  Sonido.fx('ficha');
+  refrescar();
+};
+addEventListener('keydown', e => {
+  if (e.key === 'Enter'){ e.preventDefault(); $('btnAccion').click(); }
+});
+Arcade.conectarSonido($('btnSonido'));
+
+refrescar();
+</script>
+</body>
+</html>
