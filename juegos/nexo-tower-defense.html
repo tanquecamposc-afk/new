@@ -6,30 +6,45 @@
 <title>NEXO: Tower Defense</title>
 <style>
 :root{
-  --bg:#0f1420; --panel:#1a2233; --panel2:#232e46; --borde:#33415e;
-  --texto:#e8eefc; --tenue:#93a3c4; --oro:#ffd25e; --verde:#6fe08b;
-  --rojo:#ff6b6b; --azul:#5cc8ff; --morado:#b18cff;
+  /* Misma paleta neón que el resto del arcade (este juego es autocontenido) */
+  --bg:#05070f; --panel:#0d1322; --panel2:#151b2e; --borde:#242d47;
+  --texto:#f0f4f8; --tenue:#8b9bb4;
+  --oro:#f3e600; --verde:#00ff66; --rojo:#ff3d68; --azul:#00f0ff;
+  --morado:#a855f7; --rosa:#ff007f;
+  --fuente-arcade:"Courier New", Courier, monospace;
 }
 *{box-sizing:border-box; margin:0; padding:0; user-select:none; -webkit-user-select:none;}
 html,body{height:100%;}
 body{
-  background:radial-gradient(1200px 700px at 50% -10%, #1b2438 0%, var(--bg) 60%);
+  background-color:var(--bg);
+  background-image:
+    radial-gradient(circle at 15% 15%, rgba(0,240,255,.06) 0%, transparent 50%),
+    radial-gradient(circle at 85% 85%, rgba(255,0,127,.06) 0%, transparent 50%);
+  background-attachment:fixed;
   color:var(--texto);
   font-family:"Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif;
   display:flex; flex-direction:column; align-items:center; min-height:100%;
   overflow-x:hidden;
 }
-#juego{width:min(1280px,100vw); display:flex; flex-direction:column; gap:8px; padding:8px;}
+#juego{
+  width:min(1280px,100vw); display:flex; flex-direction:column; gap:10px;
+  margin:14px auto; padding:18px;
+  background:rgba(13,19,34,.85); border-radius:20px;
+  border:1px solid rgba(0,240,255,.2);
+  box-shadow:inset 0 0 60px rgba(0,0,0,.8), 0 10px 40px rgba(0,0,0,.5);
+}
 /* ---------- Barra superior ---------- */
 #barraSuperior{
   display:flex; align-items:center; gap:9px; flex-wrap:wrap;
-  background:linear-gradient(180deg, var(--panel2), var(--panel));
-  border:1px solid var(--borde); border-radius:12px; padding:8px 14px;
-  box-shadow:0 4px 14px rgba(0,0,0,.35);
+  background:rgba(0,0,0,.6);
+  border:1px solid rgba(0,240,255,.3); border-radius:10px; padding:10px 16px;
+  box-shadow:inset 0 0 15px rgba(0,240,255,.1);
 }
 #barraSuperior .stat{
-  display:flex; align-items:center; gap:7px; font-weight:700; font-size:16px;
-  padding:4px 10px; border-radius:9px; background:rgba(0,0,0,.22);
+  display:flex; align-items:center; gap:7px; white-space:nowrap;
+  font-family:var(--fuente-arcade); font-weight:700; font-size:15px;
+  font-variant-numeric:tabular-nums;
+  padding:4px 10px; border-radius:9px; background:rgba(0,0,0,.3);
 }
 #vidasTxt{color:var(--rojo);} #dineroTxt{color:var(--oro);} #olaTxt{color:var(--azul);}
 #proximaTxt{color:var(--tenue); font-size:13px; font-weight:600;}
@@ -52,9 +67,10 @@ button.oro{background:linear-gradient(180deg,#b98a1f,#8e6a13); border-color:#e0b
 }
 #volverArcade:hover{filter:brightness(1.18);}
 /* ---------- Zona de juego ---------- */
-#zona{position:relative; border-radius:14px; overflow:hidden; border:1px solid var(--borde);
-  box-shadow:0 10px 30px rgba(0,0,0,.45);}
-canvas#lienzo{display:block; width:100%; height:auto; background:#0a0f18; touch-action:none;}
+#zona{position:relative; border-radius:14px; overflow:hidden;
+  border:2px solid rgba(0,240,255,.3);
+  box-shadow:0 15px 40px rgba(0,0,0,.9), 0 0 25px rgba(0,240,255,.2);}
+canvas#lienzo{display:block; width:100%; height:auto; background:#020408; touch-action:none;}
 /* Habilidades */
 #habilidades{position:absolute; left:10px; top:10px; display:flex; flex-direction:column; gap:8px; z-index:6;}
 .hab{

@@ -14,15 +14,15 @@
     display:flex; justify-content:space-between; align-items:center; gap:16px;
     flex-wrap:wrap; padding:16px 26px;
     background:linear-gradient(180deg, rgba(16,20,38,.95), rgba(7,9,19,.95));
-    border-bottom:2px solid rgba(0,240,255,.2);
-    backdrop-filter:blur(10px);
-    box-shadow:0 4px 30px rgba(0,0,0,.5);
+    border-bottom:2px solid rgba(0,240,255,.3);
+    backdrop-filter:blur(12px);
+    box-shadow:0 4px 30px rgba(0,0,0,.7);
   }
   #cabecera .marca{display:flex; align-items:center; gap:15px;}
-  #cabecera .icono{font-size:2rem; animation:latido 2s infinite alternate;}
+  #cabecera .icono{font-size:2.2rem; animation:latido 2s infinite alternate;}
   @keyframes latido{
-    0%{filter:drop-shadow(0 0 6px var(--azul));}
-    100%{filter:drop-shadow(0 0 18px var(--azul)) drop-shadow(0 0 4px #fff);}
+    0%{transform:scale(1); filter:drop-shadow(0 0 10px var(--azul));}
+    100%{transform:scale(1.08); filter:drop-shadow(0 0 20px var(--rosa));}
   }
   #cabecera h1{
     font-size:1.8rem; font-weight:900; letter-spacing:2px; line-height:1.1;
@@ -61,10 +61,10 @@
   }
   .carta:hover, .carta:focus-visible{
     transform:translateY(-8px); border-color:var(--azul); outline:none;
-    box-shadow:0 10px 30px rgba(0,240,255,.2), 0 0 15px rgba(255,0,127,.1);
+    box-shadow:0 15px 35px rgba(0,240,255,.2), 0 0 20px rgba(255,0,127,.15);
   }
   .carta canvas{
-    display:block; width:100%; height:auto; background:#05070c;
+    display:block; width:100%; height:auto; background:#03050a;
     transition:transform .3s cubic-bezier(.4,0,.2,1);
   }
   .carta:hover canvas{transform:scale(1.04);}
@@ -92,7 +92,7 @@
     text-transform:uppercase; letter-spacing:1px; white-space:nowrap;
     transition:filter .2s, box-shadow .2s;
   }
-  .carta:hover .jugar{filter:brightness(1.2); box-shadow:0 0 15px rgba(0,240,255,.5);}
+  .carta:hover .jugar{filter:brightness(1.2); box-shadow:0 0 20px rgba(0,240,255,.6);}
   .carta .cinta{
     position:absolute; top:14px; right:-32px; z-index:2; transform:rotate(38deg);
     background:var(--rosa); color:#fff; font-weight:900; font-size:11px;
@@ -115,7 +115,7 @@
     <div class="icono">🕹️</div>
     <div>
       <h1>ARCADE NEXO</h1>
-      <div class="lema">Ultimate Gamer Edition</div>
+      <div class="lema">Ultimate Gamer Edition v4.0</div>
     </div>
   </div>
   <div id="cartera" title="Fichas ficticias de Minas y Aviator">
@@ -125,8 +125,8 @@
 
 <div id="contenido">
   <div id="titulo">
-    <h2>SELECCIONA TU DESAFÍO</h2>
-    <p>Nueve juegos hechos a mano en HTML5 + Canvas, con motor HiDPI y físicas propias.
+    <h2>SELECCIONA TU JUEGO SUPREMO</h2>
+    <p>Nueve motores hechos a mano en HTML5 + Canvas, con renderizado HiDPI y físicas propias.
        Sin instalar nada, sin anuncios y sin conexión.</p>
   </div>
 
