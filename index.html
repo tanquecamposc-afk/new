@@ -118,8 +118,8 @@
       <div class="lema">Ultimate Gamer Edition v4.0</div>
     </div>
   </div>
-  <div id="cartera" title="Fichas ficticias de Minas y Aviator">
-    💎 <span id="fichasTxt">1000</span> NEXO-COINS
+  <div id="cartera" title="Fichas ficticias de Minas y Aviator — doble clic para volver a 1.500">
+    💎 <span id="fichasTxt">1500</span> NEXO-COINS
   </div>
 </header>
 
@@ -840,6 +840,14 @@ function refrescarPortada(){
 }
 window.refrescarPortada = refrescarPortada;
 refrescarPortada();
+
+// Doble clic en la cartera: devuelve el saldo al inicial, por si te quedas seco
+document.getElementById('cartera').addEventListener('dblclick', () => {
+  if (!confirm('¿Devolver la cartera a ' + Arcade.fichas.INICIAL.toLocaleString('es-ES') + ' NEXO-COINS?')) return;
+  Arcade.fichas.reiniciar();
+  Sonido.activar(); Sonido.fx('moneda');
+  refrescarPortada();
+});
 addEventListener('pageshow', refrescarPortada);
 addEventListener('focus', refrescarPortada);
 

@@ -255,15 +255,17 @@ const Arcade = {
 
   // Cartera de fichas ficticias compartida por los juegos de casino
   fichas: {
+    INICIAL: 1500,               // saldo con el que arranca una partida nueva
     saldo(){
       const v = Almacen.leer('arcade_fichas');
       if (v !== null) return parseFloat(v) || 0;
       // Compatibilidad con el saldo que Minas guardaba por su cuenta
       const viejo = Almacen.leer('arcade_minas_saldo');
-      return viejo !== null ? (parseFloat(viejo) || 0) : 1000;
+      return viejo !== null ? (parseFloat(viejo) || 0) : this.INICIAL;
     },
     fijar(n){ Almacen.escribir('arcade_fichas', Math.max(0, Math.round(n))); },
-    ajustar(n){ const s = this.saldo() + n; this.fijar(s); return this.saldo(); }
+    ajustar(n){ const s = this.saldo() + n; this.fijar(s); return this.saldo(); },
+    reiniciar(){ this.fijar(this.INICIAL); return this.saldo(); }
   },
 
   // Coordenadas de ratón/tacto relativas al canvas, en píxeles del canvas

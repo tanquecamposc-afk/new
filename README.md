@@ -72,7 +72,7 @@ Cada fila tiene un **cortacésped** que la arrasa entera… pero solo una vez. T
 
 ### 💣 Minas
 
-Versión arcade de las minas de los casinos, **con fichas ficticias**: no hay dinero real ni forma de depositar o retirar nada. Comparte cartera con el Aviator.
+Versión arcade de las minas de los casinos, **con fichas ficticias**: no hay dinero real ni forma de depositar o retirar nada. Comparte cartera con el Aviator, que empieza en 1.500 NEXO-COINS.
 
 - Eliges apuesta y número de minas (1 a 24) en una cuadrícula de 25 casillas.
 - Cada 💎 sube el multiplicador; una 💣 y pierdes la apuesta.
@@ -232,6 +232,8 @@ juegos/
 ## 🎨 Estética
 
 Toda la interfaz comparte una identidad **neón cyberpunk**: fondos muy profundos con dos halos de color, acentos en cian, rosa, verde y amarillo, y brillos en los bordes al pasar por encima. Los tokens de color viven en `juegos/arcade.css`, así que cambiar la paleta ahí retoca los nueve juegos de golpe. La portada lleva cabecera fija con la cartera de **NEXO-COINS** (las fichas ficticias que comparten Minas y Aviator), que se actualiza al volver de cualquier partida.
+
+Una partida nueva arranca con **1.500 NEXO-COINS**. El saldo inicial es la constante `Arcade.fichas.INICIAL` en `juegos/arcade.js`; con un **doble clic en la cartera** de la portada vuelve a ese valor.
 
 ## 🖥 Rendimiento y nitidez
 
