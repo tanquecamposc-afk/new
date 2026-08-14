@@ -154,6 +154,8 @@ const Enrutador = {
     destino.classList.add('activa');
     this.actual = id;
     scrollTo(0, 0);
+    // al volver, la portada repinta cartera y récords
+    if (id === 'portada' && window.refrescarPortada) window.refrescarPortada();
     if (!this.arrancados[id] && JUEGOS_INICIO[id]){
       this.arrancados[id] = true;
       JUEGOS_INICIO[id]();          // el juego se carga la primera vez que entras

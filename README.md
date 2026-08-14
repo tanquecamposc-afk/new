@@ -152,6 +152,10 @@ juegos/
   rumble-stars.html
 ```
 
+## 🎨 Estética
+
+Toda la interfaz comparte una identidad **neón cyberpunk**: fondos muy profundos con dos halos de color, acentos en cian, rosa, verde y amarillo, y brillos en los bordes al pasar por encima. Los tokens de color viven en `juegos/arcade.css`, así que cambiar la paleta ahí retoca los nueve juegos de golpe. La portada lleva cabecera fija con la cartera de **NEXO-COINS** (las fichas ficticias que comparten Minas y Aviator), que se actualiza al volver de cualquier partida.
+
 ## 🖥 Rendimiento y nitidez
 
 Todos los juegos ajustan el búfer del canvas a la densidad de píxeles de la pantalla (`Arcade.nitido`), así que en pantallas Retina o 4K se ven nítidos en vez de escalados. Los fondos que no cambian —el laberinto del comecocos, el paño del billar, el campo de Rumble Stars y el mapa del tower defense— se dibujan una sola vez en un lienzo aparte y se reutilizan en cada cuadro.

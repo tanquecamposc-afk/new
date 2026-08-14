@@ -2,14 +2,21 @@
    Estilos compartidos del ARCADE NEXO
    ========================================================== */
 :root{
-  --bg:#0f1420; --panel:#1a2233; --panel2:#232e46; --borde:#33415e;
-  --texto:#e8eefc; --tenue:#93a3c4; --oro:#ffd25e; --verde:#6fe08b;
-  --rojo:#ff6b6b; --azul:#5cc8ff; --morado:#b18cff; --rosa:#ff7ad9;
+  /* Paleta neón: fondos muy profundos y acentos saturados */
+  --bg:#070913; --panel:#101426; --panel2:#171d33; --borde:#262f4a;
+  --texto:#f0f4f8; --tenue:#8b9bb4;
+  --oro:#f3e600; --verde:#00ff66; --rojo:#ff3d68; --azul:#00f0ff;
+  --morado:#a855f7; --rosa:#ff007f;
+  --fuente-arcade:"Courier New", Courier, monospace;
 }
 *{box-sizing:border-box; margin:0; padding:0; user-select:none; -webkit-user-select:none;}
 html,body{height:100%;}
 body{
-  background:radial-gradient(1200px 700px at 50% -10%, #1b2438 0%, var(--bg) 60%);
+  background-color:var(--bg);
+  background-image:
+    radial-gradient(circle at 10% 20%, rgba(0,240,255,.08) 0%, transparent 40%),
+    radial-gradient(circle at 90% 80%, rgba(255,0,127,.08) 0%, transparent 40%);
+  background-attachment:fixed;
   color:var(--texto);
   font-family:"Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif;
   display:flex; flex-direction:column; align-items:center; min-height:100%;
@@ -30,27 +37,39 @@ body{
 }
 .barra .sep{flex:1;}
 .barra .titulo{font-weight:800; letter-spacing:1px; font-size:17px;}
+.barra .stat{font-variant-numeric:tabular-nums;}
 
 button, .boton{
   font-family:inherit; font-weight:700; color:var(--texto); cursor:pointer; text-decoration:none;
-  background:linear-gradient(180deg,#31405f,#26334e); border:1px solid var(--borde);
+  background:linear-gradient(180deg,#212a44,#171f36); border:1px solid var(--borde);
   border-radius:9px; padding:7px 13px; font-size:14px; display:inline-block;
-  transition:filter .12s, transform .06s;
+  transition:filter .12s, transform .06s, box-shadow .15s, border-color .15s;
 }
-button:hover, .boton:hover{filter:brightness(1.18);}
+button:hover, .boton:hover{
+  filter:brightness(1.2); border-color:rgba(0,240,255,.55);
+  box-shadow:0 0 14px rgba(0,240,255,.22);
+}
 button:active, .boton:active{transform:translateY(1px);}
-button:disabled{opacity:.45; cursor:not-allowed; filter:none;}
-button.primario{background:linear-gradient(180deg,#2f9e5f,#1f7a46); border-color:#3fbf78;}
-button.peligro{background:linear-gradient(180deg,#a03b3b,#7c2b2b); border-color:#c25555;}
-button.oro{background:linear-gradient(180deg,#b98a1f,#8e6a13); border-color:#e0b34a;}
-button.azul{background:linear-gradient(180deg,#2a72a8,#1d537c); border-color:#4aa3dd;}
+button:disabled{opacity:.4; cursor:not-allowed; filter:none; box-shadow:none;}
+button:focus-visible, .boton:focus-visible{outline:2px solid var(--azul); outline-offset:2px;}
+button.primario{
+  background:linear-gradient(135deg,#00c24e,#00913a); border-color:#00ff66; color:#04160a;
+}
+button.primario:hover{box-shadow:0 0 16px rgba(0,255,102,.4);}
+button.peligro{background:linear-gradient(135deg,#c8244c,#8c1230); border-color:#ff3d68;}
+button.peligro:hover{box-shadow:0 0 16px rgba(255,61,104,.35);}
+button.oro{background:linear-gradient(135deg,#d4c900,#9a9000); border-color:#f3e600; color:#161400;}
+button.oro:hover{box-shadow:0 0 16px rgba(243,230,0,.35);}
+button.azul{background:linear-gradient(135deg,#00b8cc,#007a8c); border-color:#00f0ff; color:#02171a;}
+button.azul:hover{box-shadow:0 0 16px rgba(0,240,255,.4);}
 
 /* ---------- Zona de juego ---------- */
 .escena{
-  position:relative; border-radius:14px; overflow:hidden; border:1px solid var(--borde);
-  box-shadow:0 10px 30px rgba(0,0,0,.45);
+  position:relative; border-radius:14px; overflow:hidden;
+  border:2px solid rgba(255,255,255,.08);
+  box-shadow:0 10px 30px rgba(0,0,0,.8), 0 0 22px rgba(0,240,255,.14);
 }
-.escena canvas{display:block; width:100%; height:auto; background:#0a0f18; touch-action:none;}
+.escena canvas{display:block; width:100%; height:auto; background:#030408; touch-action:none;}
 
 /* ---------- Avisos flotantes ---------- */
 .avisos{
@@ -72,11 +91,15 @@ button.azul{background:linear-gradient(180deg,#2a72a8,#1d537c); border-color:#4a
 }
 .modal.visible{display:flex;}
 .tarjetaModal{
-  background:linear-gradient(180deg,#212c45,#161e31); border:1px solid var(--borde);
+  background:linear-gradient(180deg,#161d33,#0c1120); border:1px solid rgba(0,240,255,.22);
   border-radius:16px; padding:24px 28px; max-width:700px; width:92%; text-align:center;
-  box-shadow:0 20px 60px rgba(0,0,0,.6); max-height:92%; overflow-y:auto;
+  box-shadow:0 20px 60px rgba(0,0,0,.75), 0 0 30px rgba(0,240,255,.1);
+  max-height:92%; overflow-y:auto;
 }
-.tarjetaModal h1{font-size:32px; letter-spacing:2px; margin-bottom:4px;}
+.tarjetaModal h1{
+  font-size:32px; letter-spacing:2px; margin-bottom:4px; text-wrap:balance;
+  text-shadow:0 0 22px rgba(0,240,255,.3);
+}
 .tarjetaModal .sub{color:var(--tenue); margin-bottom:18px;}
 .tarjetaModal h1.derrota{color:var(--rojo);}
 .tarjetaModal h1.victoria{color:var(--verde);}
