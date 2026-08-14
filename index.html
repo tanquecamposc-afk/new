@@ -68,7 +68,7 @@
 <div id="cabecera">
   <h1>ARCADE NEXO</h1>
   <div class="lema">
-    Seis juegos hechos a mano en HTML5 + Canvas. Sin instalar nada, sin anuncios, sin internet.<br>
+    Nueve juegos hechos a mano en HTML5 + Canvas. Sin instalar nada, sin anuncios, sin internet.<br>
     <span class="parpadeo">▸ ELIGE TU JUEGO ◂</span>
   </div>
 </div>
@@ -117,8 +117,8 @@ const JUEGOS = [
     nombre:'💣 Minas', genero:'Casino',
     desc:'Destapa gemas sin tocar una mina y retírate a tiempo. Fichas ficticias, cero dinero real.',
     record(){
-      const s = Arcade.leer('minas_saldo', 1000), m = Arcade.record('minas_mayor');
-      return 'Saldo: ' + s.toLocaleString('es-ES') + ' 🪙' + (m ? ' · mejor +' + m.toLocaleString('es-ES') : '');
+      const s = Arcade.fichas.saldo(), m = Arcade.record('minas_mayor');
+      return s.toLocaleString('es-ES') + ' 🪙' + (m ? ' · mejor +' + m.toLocaleString('es-ES') : '');
     },
     portada: portadaMinas
   },
@@ -128,6 +128,31 @@ const JUEGOS = [
     desc:'Encaja las piezas en el tablero de 8x8 y revienta filas y columnas encadenando combos.',
     record(){ const r = Arcade.record('blockblast'); return r ? 'Récord: ' + r + ' pts' : 'Sin jugar todavía'; },
     portada: portadaBlock
+  },
+  {
+    id:'aviator', archivo:'juegos/aviator.html', nuevo:true,
+    nombre:'✈ Aviator', genero:'Casino',
+    desc:'El avión despega y el multiplicador sube. Retírate antes de que se vaya volando.',
+    record(){
+      const r = Arcade.record('aviator_mayor');
+      const s = Arcade.fichas.saldo();
+      return (r ? 'Mejor: ' + r.toFixed(2) + 'x · ' : '') + s.toLocaleString('es-ES') + ' 🪙';
+    },
+    portada: portadaAviator
+  },
+  {
+    id:'pool', archivo:'juegos/8-ball-pool.html', nuevo:true,
+    nombre:'🎱 8 Ball Pool', genero:'Deportes',
+    desc:'Billar con física real: efecto, bandas, bola fantasma y un rival que no perdona.',
+    record(){ const r = Arcade.record('pool_victorias'); return r ? r + ' victorias' : 'Sin jugar todavía'; },
+    portada: portadaPool
+  },
+  {
+    id:'rumble', archivo:'juegos/rumble-stars.html', nuevo:true,
+    nombre:'⚽ Rumble Stars', genero:'Arena',
+    desc:'Fútbol de arena: lanza bichos al campo, empuja el balón y revienta la portería rival.',
+    record(){ const r = Arcade.record('rumble_victorias'); return r ? r + ' victorias' : 'Sin jugar todavía'; },
+    portada: portadaRumble
   },
   {
     id:'serpiente', archivo:'juegos/serpiente.html', nuevo:true,
@@ -318,6 +343,167 @@ function portadaSerpiente(c){
   // fantasma
   c.font = '22px serif'; c.textAlign = 'center'; c.textBaseline = 'middle';
   c.fillText('👻', 120, 130);
+}
+
+function portadaAviator(c){
+  fondo(c, '#131b2e', '#0a0f1a');
+  const halo = c.createRadialGradient(250, 60, 8, 250, 60, 190);
+  halo.addColorStop(0, 'rgba(255,77,94,.22)'); halo.addColorStop(1, 'rgba(255,77,94,0)');
+  c.fillStyle = halo; c.fillRect(0, 0, A, AL);
+  c.fillStyle = '#cfe0ff';
+  for (let i = 0; i < 40; i++) c.fillRect(azar(0, A), azar(0, AL), azar(0.8, 1.8), azar(0.8, 1.8));
+
+  c.strokeStyle = 'rgba(180,200,240,.28)'; c.lineWidth = 1.5;
+  c.beginPath(); c.moveTo(26, 12); c.lineTo(26, 146); c.lineTo(A-10, 146); c.stroke();
+
+  // curva de vuelo
+  const pts = [];
+  for (let i = 0; i <= 40; i++){
+    const u = 1 - Math.exp(-i/40 * 2.6), v = Math.pow(u, 2.1);
+    pts.push([26 + (250-26)*u, 146 - (146-30)*v]);
+  }
+  c.beginPath(); c.moveTo(26, 146);
+  pts.forEach(p => c.lineTo(p[0], p[1]));
+  c.lineTo(pts[pts.length-1][0], 146); c.closePath();
+  const rel = c.createLinearGradient(0, 20, 0, 146);
+  rel.addColorStop(0, 'rgba(255,77,94,.35)'); rel.addColorStop(1, 'rgba(255,77,94,0)');
+  c.fillStyle = rel; c.fill();
+  c.beginPath(); pts.forEach((p, i) => i ? c.lineTo(p[0], p[1]) : c.moveTo(p[0], p[1]));
+  c.strokeStyle = '#ff4d5e'; c.lineWidth = 3.5; c.lineJoin = 'round';
+  c.shadowColor = '#ff4d5e'; c.shadowBlur = 14; c.stroke(); c.shadowBlur = 0;
+
+  // avión
+  const p = pts[pts.length-1];
+  c.save(); c.translate(p[0], p[1]); c.rotate(-0.62);
+  c.fillStyle = '#e4283c';
+  c.beginPath(); c.moveTo(17, 0); c.quadraticCurveTo(6, -6, -12, -5);
+  c.quadraticCurveTo(-18, -3, -18, 0); c.quadraticCurveTo(-18, 3, -12, 5);
+  c.quadraticCurveTo(6, 6, 17, 0); c.closePath(); c.fill();
+  c.fillStyle = '#a3162a';
+  c.beginPath(); c.moveTo(2, 0); c.lineTo(-8, -12); c.lineTo(-13, -11); c.lineTo(-5, 0); c.closePath(); c.fill();
+  c.fillStyle = 'rgba(200,230,255,.9)';
+  c.beginPath(); c.ellipse(5, -2, 5, 2.6, 0, 0, 6.283); c.fill();
+  c.restore();
+
+  c.font = '900 42px "Segoe UI", system-ui, sans-serif';
+  c.textAlign = 'right'; c.textBaseline = 'middle';
+  c.fillStyle = '#c08bff'; c.shadowColor = '#c08bff'; c.shadowBlur = 16;
+  c.fillText('2.47x', A - 18, 58);
+  c.shadowBlur = 0;
+}
+
+function portadaPool(c){
+  // marco de madera
+  const m = c.createLinearGradient(0, 0, 0, AL);
+  m.addColorStop(0, '#7a4c2a'); m.addColorStop(1, '#4f2d15');
+  c.fillStyle = m; c.fillRect(0, 0, A, AL);
+  const pano = c.createRadialGradient(A/2, AL/2, 20, A/2, AL/2, 230);
+  pano.addColorStop(0, '#228554'); pano.addColorStop(1, '#0f4d30');
+  c.fillStyle = pano; c.fillRect(20, 18, A-40, AL-36);
+
+  // troneras
+  [[20,18],[A/2,18],[A-20,18],[20,AL-18],[A/2,AL-18],[A-20,AL-18]].forEach(([x,y]) => {
+    c.fillStyle = '#05070c';
+    c.beginPath(); c.arc(x, y, 13, 0, 6.283); c.fill();
+  });
+
+  const bola = (x, y, col, num, rayada) => {
+    c.fillStyle = 'rgba(0,0,0,.35)';
+    c.beginPath(); c.ellipse(x+2, y+3, 11, 9, 0, 0, 6.283); c.fill();
+    const g = c.createRadialGradient(x-4, y-5, 1.5, x, y, 12);
+    g.addColorStop(0, '#ffffff'); g.addColorStop(0.45, col); g.addColorStop(1, '#00000066');
+    c.fillStyle = g;
+    c.beginPath(); c.arc(x, y, 11, 0, 6.283); c.fill();
+    if (rayada){
+      c.save(); c.beginPath(); c.arc(x, y, 11, 0, 6.283); c.clip();
+      c.fillStyle = '#f7f7f2';
+      c.beginPath(); c.ellipse(x, y, 12, 4.6, 0, 0, 6.283); c.fill();
+      c.restore();
+    }
+    if (num){
+      c.fillStyle = '#f7f7f2';
+      c.beginPath(); c.arc(x, y, 5, 0, 6.283); c.fill();
+      c.fillStyle = '#15171d'; c.font = '700 8px "Segoe UI", sans-serif';
+      c.textAlign = 'center'; c.textBaseline = 'middle';
+      c.fillText(num, x, y + 0.5);
+    }
+    c.fillStyle = 'rgba(255,255,255,.6)';
+    c.beginPath(); c.ellipse(x-4, y-5, 3, 2, -0.6, 0, 6.283); c.fill();
+  };
+
+  bola(232, 66, '#15171d', '8');
+  bola(258, 88, '#f2c010', '9', true);
+  bola(212, 100, '#cf2020', '3');
+  bola(276, 52, '#1f4fc4', '2');
+  // blanca y taco
+  bola(96, 86, '#f7f7f2');
+  c.strokeStyle = 'rgba(255,255,255,.6)'; c.lineWidth = 1.6;
+  c.setLineDash([5, 5]);
+  c.beginPath(); c.moveTo(96, 86); c.lineTo(214, 74); c.stroke();
+  c.setLineDash([]);
+  const t = c.createLinearGradient(70, 88, -40, 92);
+  t.addColorStop(0, '#e8d3a8'); t.addColorStop(0.4, '#a9773f'); t.addColorStop(1, '#3d2210');
+  c.strokeStyle = t; c.lineWidth = 6; c.lineCap = 'round';
+  c.beginPath(); c.moveTo(72, 88); c.lineTo(-30, 96); c.stroke();
+}
+
+function portadaRumble(c){
+  const g = c.createLinearGradient(0, 0, 0, AL);
+  g.addColorStop(0, '#2b2447'); g.addColorStop(1, '#1a1630');
+  c.fillStyle = g; c.fillRect(0, 0, A, AL);
+  for (let i = 0; i < 9; i++){
+    c.fillStyle = i % 2 ? '#2f8f45' : '#288040';
+    c.fillRect(14 + i*(A-28)/9, 14, (A-28)/9, AL-28);
+  }
+  c.strokeStyle = 'rgba(255,255,255,.5)'; c.lineWidth = 2;
+  c.strokeRect(14, 14, A-28, AL-28);
+  c.beginPath(); c.moveTo(A/2, 14); c.lineTo(A/2, AL-14); c.stroke();
+  c.beginPath(); c.arc(A/2, AL/2, 34, 0, 6.283); c.stroke();
+  // porterías
+  c.strokeStyle = '#2f7fd8'; c.lineWidth = 5; c.lineCap = 'round';
+  c.beginPath(); c.moveTo(14, AL/2-34); c.lineTo(14, AL/2+34); c.stroke();
+  c.strokeStyle = '#d8452f';
+  c.beginPath(); c.moveTo(A-14, AL/2-34); c.lineTo(A-14, AL/2+34); c.stroke();
+
+  const bicho = (x, y, icono, col, aro) => {
+    c.fillStyle = 'rgba(0,0,0,.3)';
+    c.beginPath(); c.ellipse(x, y+16, 16, 6, 0, 0, 6.283); c.fill();
+    c.fillStyle = aro;
+    c.beginPath(); c.arc(x, y, 21, 0, 6.283); c.fill();
+    const gg = c.createRadialGradient(x-6, y-7, 3, x, y, 17);
+    gg.addColorStop(0, '#ffffff'); gg.addColorStop(0.35, col); gg.addColorStop(1, '#00000055');
+    c.fillStyle = gg;
+    c.beginPath(); c.arc(x, y, 17, 0, 6.283); c.fill();
+    c.font = '23px serif'; c.textAlign = 'center'; c.textBaseline = 'middle';
+    c.fillText(icono, x, y+1);
+  };
+  bicho(112, 96, '🦏', '#8fa0b5', '#2f7fd8');
+  bicho(186, 62, '🐘', '#9aa7c4', '#2f7fd8');
+  bicho(238, 108, '🐺', '#b58f7a', '#d8452f');
+
+  // balón con destello
+  c.fillStyle = '#ffd25e';
+  for (let k = 0; k < 8; k++){
+    const a = k * 0.785;
+    c.globalAlpha = 0.5;
+    c.beginPath();
+    c.moveTo(150 + Math.cos(a)*16, 118 + Math.sin(a)*16);
+    c.lineTo(150 + Math.cos(a+0.3)*26, 118 + Math.sin(a+0.3)*26);
+    c.lineTo(150 + Math.cos(a-0.3)*26, 118 + Math.sin(a-0.3)*26);
+    c.closePath(); c.fill();
+  }
+  c.globalAlpha = 1;
+  const b = c.createRadialGradient(146, 114, 2, 150, 118, 13);
+  b.addColorStop(0, '#fff'); b.addColorStop(1, '#9aa2b4');
+  c.fillStyle = b;
+  c.beginPath(); c.arc(150, 118, 13, 0, 6.283); c.fill();
+  c.fillStyle = '#20242e';
+  c.beginPath();
+  for (let k = 0; k < 5; k++){
+    const a = k * 1.2566 - Math.PI/2;
+    c.lineTo(150 + Math.cos(a)*5.5, 118 + Math.sin(a)*5.5);
+  }
+  c.closePath(); c.fill();
 }
 
 // ---------- Montaje de las cartas ----------

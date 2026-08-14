@@ -151,7 +151,7 @@
 //  MINAS — 25 casillas, multiplicadores de probabilidad real
 // ============================================================
 const CASILLAS = 25;
-let saldo = Arcade.leer('minas_saldo', 1000);
+let saldo = Arcade.fichas.saldo();   // cartera compartida con Aviator
 let mayor = Arcade.record('minas_mayor');
 let minas = 3, apuesta = 50;
 let estado = 'apostando';      // apostando | jugando | revelado
@@ -215,8 +215,7 @@ function empezarRonda(){
     Sonido.fx('error');
     return;
   }
-  saldo -= apuesta;
-  Arcade.escribir('minas_saldo', saldo);
+  saldo = Arcade.fichas.ajustar(-apuesta);
   bombas = new Set();
   while (bombas.size < minas) bombas.add(azarEntero(0, CASILLAS - 1));
   abiertas = new Set(); gemas = 0;
@@ -269,8 +268,7 @@ function cobrar(automatico){
   const mult = multiplicador(minas, gemas);
   const pago = Math.floor(apuesta * mult);
   const beneficio = pago - apuesta;
-  saldo += pago;
-  Arcade.escribir('minas_saldo', saldo);
+  saldo = Arcade.fichas.ajustar(pago);
   if (Arcade.guardarRecord('minas_mayor', beneficio)) mayor = beneficio;
   estado = 'revelado';
   celdas.forEach((c, i) => {
@@ -365,8 +363,7 @@ $('btnAccion').onclick = () => {
   else if (estado === 'apostando') empezarRonda();
 };
 $('btnRegalo').onclick = () => {
-  saldo += 500;
-  Arcade.escribir('minas_saldo', saldo);
+  saldo = Arcade.fichas.ajustar(500);
   Sonido.fx('ficha');
   refrescar();
 };

@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aviator — Arcade NEXO</title>
+<link rel="stylesheet" href="arcade.css">
+<style>
+  #juego{width:min(1000px,100vw);}
+  .barra{gap:7px;}
+  .barra .titulo{color:#ff4d5e; letter-spacing:2px;}
+
+  /* ---- Historial de rondas ---- */
+  #historial{
+    display:flex; gap:6px; overflow-x:auto; padding:8px 10px; scrollbar-width:thin;
+    background:linear-gradient(180deg,#141a26,#0e131d);
+    border:1px solid #232b3d; border-radius:12px;
+  }
+  #historial::-webkit-scrollbar{height:5px;}
+  #historial::-webkit-scrollbar-thumb{background:#2c3550; border-radius:3px;}
+  .pastilla{
+    flex:none; font-size:12.5px; font-weight:800; padding:3px 10px; border-radius:999px;
+    background:rgba(255,255,255,.06); font-variant-numeric:tabular-nums;
+  }
+  .pastilla.bajo{color:#7aa2ff;} .pastilla.medio{color:#c08bff;} .pastilla.alto{color:#ffb43d;}
+
+  /* ---- Zona de vuelo ---- */
+  .escena{border-color:#232b3d;}
+
+  /* ---- Panel de apuesta ---- */
+  #apuestas{
+    display:grid; grid-template-columns:1fr 1fr; gap:12px;
+  }
+  @media (max-width:620px){ #apuestas{grid-template-columns:1fr;} }
+  .tarjetaApuesta{
+    background:linear-gradient(180deg,#1a2233,#141a28);
+    border:1px solid #2a3348; border-radius:14px; padding:12px;
+    display:flex; flex-direction:column; gap:9px;
+  }
+  .tarjetaApuesta .fila{display:flex; gap:8px; align-items:center;}
+  .tarjetaApuesta input[type=number]{
+    flex:1; min-width:0; background:#0e131d; border:1px solid #2a3348; border-radius:9px;
+    color:var(--texto); font-family:inherit; font-weight:800; font-size:17px; padding:9px 11px;
+    font-variant-numeric:tabular-nums;
+  }
+  .tarjetaApuesta input:focus{outline:none; border-color:#ff4d5e;}
+  .fichasRapidas{display:grid; grid-template-columns:repeat(4,1fr); gap:5px;}
+  .fichasRapidas button{padding:6px 0; font-size:12.5px;}
+  #btnApostar{
+    font-size:18px; padding:16px; width:100%; letter-spacing:.5px;
+    background:linear-gradient(180deg,#2fbe62,#1d8a45); border-color:#4ee089;
+  }
+  #btnApostar.retirar{background:linear-gradient(180deg,#f5a524,#c47a08); border-color:#ffd27a; color:#1a1204;}
+  #btnApostar.peligro{background:linear-gradient(180deg,#a03b3b,#7c2b2b); border-color:#c25555;}
+  #btnApostar small{display:block; font-size:12px; font-weight:700; opacity:.85; letter-spacing:0;}
+  .interruptor{display:flex; align-items:center; justify-content:space-between; font-size:13px; font-weight:700;}
+  .interruptor label{cursor:pointer;}
+  .interruptor input{
+    appearance:none; -webkit-appearance:none; margin:0; cursor:pointer;
+    width:46px; height:25px; border-radius:999px; flex:none;
+    background:#0e131d; border:1px solid #2a3348; position:relative;
+    transition:background .18s, border-color .18s;
+  }
+  .interruptor input::after{
+    content:''; position:absolute; top:3px; left:3px; width:17px; height:17px;
+    border-radius:50%; background:#5d6a85; transition:transform .18s, background .18s;
+  }
+  .interruptor input:checked{background:#12331f; border-color:#2fbe62;}
+  .interruptor input:checked::after{transform:translateX(21px); background:#4ee089;}
+  .interruptor input:focus-visible{outline:2px solid #4ee089; outline-offset:2px;}
+  .autoFila{display:flex; gap:8px; align-items:center; font-size:13px;}
+  .autoFila input[type=number]{
+    width:80px; background:#0e131d; border:1px solid #2a3348; border-radius:8px;
+    color:var(--texto); font-family:inherit; font-weight:800; padding:6px 8px; font-size:14px;
+  }
+  .aviso-legal{font-size:11px; color:#5d6a85; text-align:center; line-height:1.5;}
+</style>
+</head>
+<body>
+
+<div id="juego">
+  <div class="barra">
+    <a class="boton" href="../index.html">🕹 Arcade</a>
+    <div class="titulo">✈ AVIATOR</div>
+    <div class="sep"></div>
+    <div class="stat">🪙 <span id="saldoTxt" class="oro">1000</span></div>
+    <div class="stat">🏆 <span id="recordTxt" class="tenue">—</span></div>
+    <button id="btnSonido" title="Sonido">🔊</button>
+  </div>
+
+  <div id="historial"></div>
+
+  <div class="escena">
+    <canvas id="lienzo" width="960" height="440"></canvas>
+    <div class="avisos" id="avisos"></div>
+  </div>
+
+  <div id="apuestas">
+    <div class="tarjetaApuesta">
+      <div class="fila">
+        <input id="monto" type="number" min="1" step="1" value="50">
+      </div>
+      <div class="fichasRapidas">
+        <button data-op="mitad">½</button>
+        <button data-op="doble">x2</button>
+        <button data-op="100">100</button>
+        <button data-op="max">MÁX</button>
+      </div>
+      <button id="btnApostar" class="primario">APOSTAR<small>ronda siguiente</small></button>
+    </div>
+
+    <div class="tarjetaApuesta">
+      <div class="interruptor">
+        <label for="autoApuesta">🔁 Apuesta automática</label>
+        <input type="checkbox" id="autoApuesta">
+      </div>
+      <div class="interruptor">
+        <label for="autoRetiro">🎯 Retiro automático</label>
+        <input type="checkbox" id="autoRetiro">
+      </div>
+      <div class="autoFila">
+        <span class="tenue">Retirar en</span>
+        <input id="objetivo" type="number" min="1.01" step="0.1" value="2.00">
+        <span class="tenue">x</span>
+      </div>
+      <div class="infoAuto tenue" style="font-size:12.5px; line-height:1.5">
+        Con el retiro automático el cobro se hace solo en cuanto el avión
+        alcanza tu multiplicador, aunque no estés mirando.
+      </div>
+      <div class="aviso-legal">
+        Juego de fantasía con <b>fichas ficticias</b>.<br>No hay dinero real ni forma de depositar o retirar.
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="arcade.js"></script>
+<script>
+// ============================================================
+//  AVIATOR — juego de tipo "crash"
+// ============================================================
+const lienzo = document.getElementById('lienzo');
+const ctx = Arcade.nitido(lienzo);
+const avisos = document.getElementById('avisos');
+const $ = id => document.getElementById(id);
+
+const AN = lienzo.width, AL = lienzo.height;
+const SUELO = AL - 46, IZQ = 66, TECHO = 58, DERECHA = AN - 120;
+
+// ---------- Estado ----------
+let fase = 'espera';           // espera | vuelo | caida
+let crono = 5, t = 0, mult = 1, puntoCaida = 2;
+let saldo = Arcade.fichas.saldo();
+let record = Arcade.record('aviator_mayor');
+const historia = [];
+
+let apuesta = { monto: 0, viva: false, pendiente: false, cobradaEn: 0 };
+
+const chispas = new Particulas(260);
+const estrellas = Array.from({length: 70}, () => ({
+  x: Math.random() * AN, y: Math.random() * AL,
+  z: azar(0.25, 1), r: azar(0.6, 1.9)
+}));
+let desplazamiento = 0, destelloCaida = 0, brilloCobro = 0;
+
+// ---------- Matemáticas del juego ----------
+// Distribución clásica de los juegos crash con un 1 % de ventaja de la casa:
+// P(caída > x) = 0,99 / x  →  mediana en torno a 2x y cola larga.
+function sortearCaida(){
+  if (Math.random() < 0.01) return 1.00;              // 1 % se estrella al instante
+  const r = Math.random();
+  return Math.min(500, Math.max(1.01, Math.floor(99 / (1 - r)) / 100));
+}
+const multEn = seg => Math.exp(0.12 * seg);
+const segundosDe = m => Math.log(m) / 0.12;
+
+// Curva de vuelo: el avión avanza en horizontal y la altura va por detrás,
+// así que despega casi rasante y luego se empina hacia la esquina superior.
+function puntoVuelo(seg){
+  const u = 1 - Math.exp(-seg / 2.6);      // avance horizontal
+  const v = Math.pow(u, 2.1);              // altura, retrasada respecto al avance
+  return {
+    x: IZQ + (DERECHA - IZQ) * u,
+    y: SUELO - (SUELO - TECHO) * v,
+    u
+  };
+}
+
+// ---------- Ronda ----------
+function nuevaRonda(){
+  fase = 'espera'; crono = 5; t = 0; mult = 1;
+  puntoCaida = sortearCaida();
+  apuesta.viva = false; apuesta.cobradaEn = 0;
+  chispas.lista.length = 0;
+  refrescar();
+}
+function despegar(){
+  fase = 'vuelo'; t = 0; mult = 1;
+  if (apuesta.pendiente && saldo >= apuesta.monto){
+    saldo = Arcade.fichas.ajustar(-apuesta.monto);
+    apuesta.viva = true; apuesta.pendiente = false;
+  } else {
+    apuesta.pendiente = false;
+  }
+  Sonido.fx('despegue');
+  refrescar();
+}
+function estrellar(){
+  fase = 'caida'; crono = 2.6;
+  Sonido.pararMotor();
+  Sonido.fx('choque');
+  destelloCaida = 1;
+  const p = puntoVuelo(t);
+  chispas.emitir(48, {
+    x: p.x, y: p.y, color: ['#ff4d5e', '#ff9d3d', '#ffd25e', '#8a8f9c'],
+    velMin: 90, velMax: 420, vidaMin: 0.4, vidaMax: 1.2, rMin: 2, rMax: 6,
+    gravedad: 320, brillo: true
+  });
+  if (apuesta.viva){
+    apuesta.viva = false;
+    Arcade.aviso(avisos, '💥 Perdiste ' + apuesta.monto + ' fichas', false, 2200);
+  }
+  historia.unshift(mult);
+  if (historia.length > 24) historia.pop();
+  pintarHistorial();
+  if (autoActiva()) apuesta.pendiente = true;
+  refrescar();
+}
+
+function cobrar(automatico){
+  if (fase !== 'vuelo' || !apuesta.viva) return;
+  const pago = Math.floor(apuesta.monto * mult);
+  const ganancia = pago - apuesta.monto;
+  saldo = Arcade.fichas.ajustar(pago);
+  apuesta.viva = false;
+  apuesta.cobradaEn = mult;
+  brilloCobro = 1;
+  if (Arcade.guardarRecord('aviator_mayor', Math.round(mult * 100) / 100)) record = mult;
+  Arcade.aviso(avisos, (automatico ? '🎯 Retiro automático · ' : '💰 ') +
+    mult.toFixed(2) + 'x · +' + ganancia + ' fichas', true, 2400);
+  Sonido.fx('ficha');
+  const p = puntoVuelo(t);
+  chispas.emitir(26, {
+    x: p.x, y: p.y, color: ['#4ee089', '#ffd25e', '#ffffff'],
+    velMin: 60, velMax: 260, vidaMin: 0.4, vidaMax: 1, gravedad: 260, brillo: true
+  });
+  refrescar();
+}
+
+const autoActiva = () => $('autoApuesta').checked;
+
+// ---------- Bucle ----------
+function actualizar(dt){
+  desplazamiento += dt * (fase === 'vuelo' ? 60 + mult * 14 : 18);
+  chispas.actualizar(dt);
+  if (destelloCaida > 0) destelloCaida = Math.max(0, destelloCaida - dt * 1.6);
+  if (brilloCobro > 0) brilloCobro = Math.max(0, brilloCobro - dt * 1.2);
+
+  for (const e of estrellas){
+    e.x -= dt * (fase === 'vuelo' ? 40 + mult * 10 : 12) * e.z;
+    if (e.x < -4){ e.x = AN + 4; e.y = Math.random() * AL; }
+  }
+
+  if (fase === 'espera'){
+    const antes = Math.ceil(crono);
+    crono -= dt;
+    if (Math.ceil(crono) !== antes && crono > 0) Sonido.fx('cuenta');
+    if (crono <= 0) despegar();
+    return;
+  }
+
+  if (fase === 'vuelo'){
+    t += dt;
+    mult = multEn(t);
+    Sonido.motor(limitar((mult - 1) / 8, 0, 1));
+    // estela del motor
+    if (chispas.largo < 200){
+      const p = puntoVuelo(t);
+      chispas.emitir(1, {
+        x: p.x - 22, y: p.y + 6, color: ['#ff9d3d', '#ffd25e', '#ff4d5e'],
+        velMin: 20, velMax: 70, ang: Math.PI, abanico: 0.5,
+        vidaMin: 0.25, vidaMax: 0.6, rMin: 1.5, rMax: 3.5, gravedad: 20, brillo: true
+      });
+    }
+    if (apuesta.viva && $('autoRetiro').checked){
+      const objetivo = parseFloat($('objetivo').value) || 0;
+      if (objetivo >= 1.01 && mult >= objetivo) cobrar(true);
+    }
+    if (mult >= puntoCaida){ mult = puntoCaida; estrellar(); }
+    refrescarBoton();
+    return;
+  }
+
+  // caída
+  t += dt * 0.35;                       // el avión sigue alejándose
+  crono -= dt;
+  if (crono <= 0) nuevaRonda();
+}
+
+// ---------- Dibujo ----------
+function dibujar(){
+  // --- cielo ---
+  const cielo = ctx.createLinearGradient(0, 0, 0, AL);
+  cielo.addColorStop(0, '#131b2e');
+  cielo.addColorStop(0.55, '#0e1524');
+  cielo.addColorStop(1, '#0a0f1a');
+  ctx.fillStyle = cielo;
+  ctx.fillRect(0, 0, AN, AL);
+
+  // resplandor rojizo detrás del avión
+  const p = puntoVuelo(fase === 'espera' ? 0 : t);
+  const halo = ctx.createRadialGradient(p.x, p.y, 10, p.x, p.y, 320);
+  halo.addColorStop(0, 'rgba(255,77,94,' + (fase === 'vuelo' ? 0.16 : 0.06) + ')');
+  halo.addColorStop(1, 'rgba(255,77,94,0)');
+  ctx.fillStyle = halo;
+  ctx.fillRect(0, 0, AN, AL);
+
+  // estrellas
+  estrellas.forEach(e => {
+    ctx.globalAlpha = 0.25 + e.z * 0.5;
+    ctx.fillStyle = '#cfe0ff';
+    ctx.fillRect(e.x, e.y, e.r, e.r);
+  });
+  ctx.globalAlpha = 1;
+
+  dibujarEjes();
+
+  if (fase !== 'espera') dibujarEstela(p);
+  dibujarHelice();
+
+  // el multiplicador va detrás del avión, para que nunca lo tape
+  dibujarMultiplicador();
+  chispas.dibujar(ctx);
+  if (fase !== 'espera') dibujarAvion(p);
+
+  if (fase === 'espera') dibujarEspera();
+
+  // destello del choque
+  if (destelloCaida > 0){
+    ctx.fillStyle = 'rgba(255,77,94,' + (destelloCaida * 0.28) + ')';
+    ctx.fillRect(0, 0, AN, AL);
+  }
+  if (brilloCobro > 0){
+    ctx.fillStyle = 'rgba(78,224,137,' + (brilloCobro * 0.16) + ')';
+    ctx.fillRect(0, 0, AN, AL);
+  }
+}
+
+function dibujarEjes(){
+  ctx.strokeStyle = 'rgba(140,160,200,.13)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  for (let k = 0; k < 14; k++){
+    const x = ((k * 90 - desplazamiento * 0.5) % (AN + 90) + AN + 90) % (AN + 90) - 45;
+    ctx.moveTo(x, TECHO - 20); ctx.lineTo(x, SUELO);
+  }
+  for (let y = SUELO; y > TECHO - 20; y -= 70){ ctx.moveTo(IZQ - 14, y); ctx.lineTo(AN, y); }
+  ctx.stroke();
+
+  ctx.strokeStyle = 'rgba(180,200,240,.32)';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(IZQ - 14, TECHO - 24); ctx.lineTo(IZQ - 14, SUELO); ctx.lineTo(AN, SUELO);
+  ctx.stroke();
+}
+
+// Arcos girando en el origen, como el rotor de la pista de despegue
+function dibujarHelice(){
+  const cx = IZQ - 14, cy = SUELO, giro = desplazamiento * 0.02;
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.strokeStyle = 'rgba(255,77,94,.5)';
+  ctx.lineWidth = 3; ctx.lineCap = 'round';
+  for (let k = 0; k < 3; k++){
+    const r = 20 + k * 13;
+    const a = giro * (k % 2 ? -1 : 1) + k;
+    ctx.beginPath(); ctx.arc(0, 0, r, a, a + 1.1); ctx.stroke();
+    ctx.beginPath(); ctx.arc(0, 0, r, a + Math.PI, a + Math.PI + 1.1); ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function dibujarEstela(p){
+  const pasos = 46;
+  const puntos = [];
+  for (let i = 0; i <= pasos; i++) puntos.push(puntoVuelo(t * i / pasos));
+
+  // relleno bajo la curva
+  ctx.beginPath();
+  ctx.moveTo(puntos[0].x, SUELO);
+  puntos.forEach(q => ctx.lineTo(q.x, q.y));
+  ctx.lineTo(puntos[puntos.length - 1].x, SUELO);
+  ctx.closePath();
+  const relleno = ctx.createLinearGradient(0, TECHO, 0, SUELO);
+  relleno.addColorStop(0, 'rgba(255,77,94,.34)');
+  relleno.addColorStop(1, 'rgba(255,77,94,.02)');
+  ctx.fillStyle = relleno;
+  ctx.fill();
+
+  // curva brillante
+  ctx.beginPath();
+  puntos.forEach((q, i) => i ? ctx.lineTo(q.x, q.y) : ctx.moveTo(q.x, q.y));
+  ctx.strokeStyle = '#ff4d5e';
+  ctx.lineWidth = 4; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+  ctx.shadowColor = '#ff4d5e'; ctx.shadowBlur = 18;
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+  ctx.strokeStyle = 'rgba(255,210,180,.85)';
+  ctx.lineWidth = 1.6;
+  ctx.stroke();
+}
+
+function dibujarAvion(p){
+  const dt = 0.06;
+  const sig = puntoVuelo(t + dt);
+  let ang = Math.atan2(sig.y - p.y, sig.x - p.x);
+  let x = p.x, y = p.y;
+  if (fase === 'caida'){ x += (t * 60); y -= t * 22; ang = -0.5; }
+  else if (p.u > 0.86){ y += Math.sin(desplazamiento * 0.06) * 5; ang += Math.sin(desplazamiento * 0.06) * 0.06; }
+
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(ang);
+  ctx.scale(1.15, 1.15);
+
+  ctx.shadowColor = 'rgba(255,77,94,.6)'; ctx.shadowBlur = 16;
+
+  // fuselaje
+  const cuerpo = ctx.createLinearGradient(0, -9, 0, 9);
+  cuerpo.addColorStop(0, '#ff8a94'); cuerpo.addColorStop(0.5, '#e4283c'); cuerpo.addColorStop(1, '#9d1424');
+  ctx.fillStyle = cuerpo;
+  ctx.beginPath();
+  ctx.moveTo(24, 0);
+  ctx.quadraticCurveTo(12, -9, -14, -7);
+  ctx.quadraticCurveTo(-24, -5, -24, 0);
+  ctx.quadraticCurveTo(-24, 5, -14, 7);
+  ctx.quadraticCurveTo(12, 9, 24, 0);
+  ctx.closePath(); ctx.fill();
+  ctx.shadowBlur = 0;
+
+  // ala
+  ctx.fillStyle = '#c01f31';
+  ctx.beginPath();
+  ctx.moveTo(4, -1); ctx.lineTo(-10, -16); ctx.lineTo(-16, -15); ctx.lineTo(-6, 1);
+  ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#8f1424';
+  ctx.beginPath();
+  ctx.moveTo(4, 1); ctx.lineTo(-10, 15); ctx.lineTo(-16, 14); ctx.lineTo(-6, 0);
+  ctx.closePath(); ctx.fill();
+
+  // cola
+  ctx.fillStyle = '#e4283c';
+  ctx.beginPath();
+  ctx.moveTo(-19, -2); ctx.lineTo(-27, -12); ctx.lineTo(-30, -11); ctx.lineTo(-25, -1);
+  ctx.closePath(); ctx.fill();
+
+  // cabina
+  ctx.fillStyle = 'rgba(190,225,255,.92)';
+  ctx.beginPath(); ctx.ellipse(7, -3.5, 7, 3.6, -0.12, 0, 6.283); ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,.55)';
+  ctx.beginPath(); ctx.ellipse(9, -4.6, 3, 1.4, -0.12, 0, 6.283); ctx.fill();
+
+  // hélice borrosa
+  ctx.globalAlpha = 0.35;
+  ctx.strokeStyle = '#dfe7f5'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.ellipse(25, 0, 2.5, 12 + Math.sin(desplazamiento) * 2, 0, 0, 6.283); ctx.stroke();
+  ctx.globalAlpha = 1;
+
+  ctx.restore();
+}
+
+function dibujarMultiplicador(){
+  const texto = mult.toFixed(2) + 'x';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  const cx = AN / 2, cy = AL / 2 - 20;
+
+  if (fase === 'caida'){
+    ctx.font = '800 26px "Segoe UI", system-ui, sans-serif';
+    ctx.fillStyle = '#ff4d5e';
+    ctx.fillText('SE FUE VOLANDO', cx, cy - 62);
+  }
+  const color = fase === 'caida' ? '#ff4d5e'
+    : mult >= 10 ? '#ffb43d' : mult >= 2 ? '#c08bff' : '#ffffff';
+  ctx.font = '900 ' + (fase === 'espera' ? 54 : 82) + 'px "Segoe UI", system-ui, sans-serif';
+  ctx.shadowColor = color; ctx.shadowBlur = fase === 'vuelo' ? 26 : 12;
+  ctx.fillStyle = color;
+  if (fase !== 'espera') ctx.fillText(texto, cx, cy);
+  ctx.shadowBlur = 0;
+
+  if (apuesta.cobradaEn && fase !== 'espera'){
+    ctx.font = '800 18px "Segoe UI", system-ui, sans-serif';
+    ctx.fillStyle = '#4ee089';
+    ctx.fillText('Cobrado en ' + apuesta.cobradaEn.toFixed(2) + 'x  ·  +' +
+      (Math.floor(apuesta.monto * apuesta.cobradaEn) - apuesta.monto) + ' 🪙', cx, cy + 62);
+  } else if (apuesta.viva && fase === 'vuelo'){
+    ctx.font = '800 18px "Segoe UI", system-ui, sans-serif';
+    ctx.fillStyle = '#ffd25e';
+    ctx.fillText('Tu apuesta vale ' + Math.floor(apuesta.monto * mult) + ' 🪙', cx, cy + 62);
+  }
+}
+
+function dibujarEspera(){
+  const cx = AN / 2, cy = AL / 2 - 10;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.font = '800 22px "Segoe UI", system-ui, sans-serif';
+  ctx.fillStyle = '#93a3c4';
+  ctx.fillText('Esperando la próxima ronda', cx, cy - 34);
+  ctx.font = '900 46px "Segoe UI", system-ui, sans-serif';
+  ctx.fillStyle = '#ff4d5e';
+  ctx.fillText(Math.max(0, crono).toFixed(1) + 's', cx, cy + 12);
+
+  const ancho = 320, alto = 8, x = cx - ancho / 2, y = cy + 52;
+  ctx.fillStyle = 'rgba(255,255,255,.1)';
+  ctx.beginPath(); ctx.roundRect(x, y, ancho, alto, 4); ctx.fill();
+  ctx.fillStyle = '#ff4d5e';
+  ctx.beginPath(); ctx.roundRect(x, y, ancho * limitar(1 - crono / 5, 0, 1), alto, 4); ctx.fill();
+
+  if (apuesta.pendiente){
+    ctx.font = '800 15px "Segoe UI", system-ui, sans-serif';
+    ctx.fillStyle = '#4ee089';
+    ctx.fillText('✓ Apuesta de ' + apuesta.monto + ' fichas lista para esta ronda', cx, y + 34);
+  }
+}
+
+// ---------- Interfaz ----------
+function pintarHistorial(){
+  $('historial').innerHTML = historia.map(m => {
+    const clase = m >= 10 ? 'alto' : m >= 2 ? 'medio' : 'bajo';
+    return '<span class="pastilla ' + clase + '">' + m.toFixed(2) + 'x</span>';
+  }).join('');
+}
+
+function refrescarBoton(){
+  const b = $('btnApostar');
+  if (fase === 'vuelo' && apuesta.viva){
+    b.className = 'retirar';
+    b.innerHTML = 'RETIRAR ' + Math.floor(apuesta.monto * mult) +
+      ' 🪙<small>' + mult.toFixed(2) + 'x</small>';
+  } else if (apuesta.pendiente){
+    b.className = 'peligro';
+    b.innerHTML = 'CANCELAR<small>apuesta de ' + apuesta.monto + ' fichas</small>';
+  } else if (fase === 'espera'){
+    b.className = 'primario';
+    b.innerHTML = 'APOSTAR<small>despega en ' + Math.max(0, crono).toFixed(1) + 's</small>';
+  } else {
+    b.className = 'primario';
+    b.innerHTML = 'APOSTAR<small>ronda siguiente</small>';
+  }
+  b.disabled = false;
+}
+
+function refrescar(){
+  $('saldoTxt').textContent = saldo.toLocaleString('es-ES');
+  $('recordTxt').textContent = record ? record.toFixed(2) + 'x' : '—';
+  refrescarBoton();
+}
+
+$('btnApostar').onclick = () => {
+  Sonido.activar();
+  if (fase === 'vuelo' && apuesta.viva){ cobrar(false); return; }
+  if (apuesta.pendiente){ apuesta.pendiente = false; refrescar(); return; }
+  const monto = Math.floor(parseFloat($('monto').value) || 0);
+  if (monto < 1){ Sonido.fx('error'); return; }
+  if (monto > saldo){ Arcade.aviso(avisos, 'No tienes fichas suficientes'); Sonido.fx('error'); return; }
+  apuesta.monto = monto;
+  apuesta.pendiente = true;
+  Sonido.fx('colocar');
+  refrescar();
+};
+
+document.querySelectorAll('.fichasRapidas button').forEach(b => {
+  b.onclick = () => {
+    const op = b.dataset.op;
+    let v = parseFloat($('monto').value) || 0;
+    if (op === 'mitad') v = Math.max(1, Math.floor(v / 2));
+    else if (op === 'doble') v *= 2;
+    else if (op === 'max') v = saldo;
+    else v = parseFloat(op);
+    $('monto').value = Math.max(1, Math.min(Math.floor(v), Math.floor(saldo)));
+  };
+});
+
+addEventListener('keydown', e => {
+  if (e.key === ' '){ e.preventDefault(); $('btnApostar').click(); }
+});
+Arcade.conectarSonido($('btnSonido'));
+
+// Si el saldo se agota, se reponen fichas para poder seguir jugando
+setInterval(() => {
+  if (saldo < 1 && fase === 'espera' && !apuesta.pendiente){
+    saldo = Arcade.fichas.ajustar(500);
+    Arcade.aviso(avisos, '🎁 Te hemos repuesto 500 fichas', true);
+    refrescar();
+  }
+}, 3000);
+
+// La franja de rondas arranca con resultados previos, como en las salas reales
+for (let i = 0; i < 10; i++) historia.push(sortearCaida());
+
+nuevaRonda();
+pintarHistorial();
+Arcade.bucle(dt => { actualizar(dt); dibujar(); });
+</script>
+</body>
+</html>

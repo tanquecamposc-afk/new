@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rumble Stars — Arcade NEXO</title>
+<link rel="stylesheet" href="arcade.css">
+<style>
+  #juego{width:min(1000px,100vw);}
+  .barra .titulo{color:#ffb43d; letter-spacing:1px;}
+
+  /* Marcador */
+  #marcador{
+    display:flex; align-items:center; justify-content:center; gap:18px;
+    background:linear-gradient(180deg,#25203a,#181428);
+    border:1px solid #3a3157; border-radius:14px; padding:9px 16px;
+    box-shadow:0 6px 20px rgba(0,0,0,.45);
+  }
+  #marcador .equipo{display:flex; align-items:center; gap:9px; font-weight:900; font-size:16px;}
+  #marcador .escudo{
+    width:30px; height:30px; border-radius:9px; display:flex; align-items:center;
+    justify-content:center; font-size:17px;
+  }
+  #marcador .tanteo{
+    font-size:34px; font-weight:900; font-variant-numeric:tabular-nums; letter-spacing:2px;
+    min-width:104px; text-align:center; transition:transform .18s;
+  }
+  #marcador .tanteo.late{transform:scale(1.25);}
+  #reloj{
+    font-size:15px; font-weight:800; font-variant-numeric:tabular-nums;
+    background:rgba(0,0,0,.3); border-radius:9px; padding:5px 12px;
+  }
+  #reloj.ultimos{color:#ff6b6b; animation:latir 1s infinite;}
+  @keyframes latir{50%{opacity:.45;}}
+
+  /* Banquillo */
+  #banquillo{
+    display:flex; gap:8px; align-items:stretch; flex-wrap:wrap;
+    background:linear-gradient(180deg, var(--panel2), var(--panel));
+    border:1px solid var(--borde); border-radius:12px; padding:10px;
+  }
+  #energiaCaja{flex:none; width:74px; display:flex; flex-direction:column; gap:4px; align-items:center;}
+  #energiaTubo{
+    width:100%; height:78px; border-radius:9px; background:#0e131d;
+    border:1px solid #2a3348; position:relative; overflow:hidden;
+  }
+  #energiaRelleno{
+    position:absolute; left:0; right:0; bottom:0;
+    background:linear-gradient(0deg,#8a3bd9,#c88bff); transition:height .1s linear;
+  }
+  #energiaTxt{font-size:19px; font-weight:900; color:#c88bff; font-variant-numeric:tabular-nums;}
+
+  .carta{
+    width:92px; padding:7px 4px 6px; border-radius:12px; text-align:center; cursor:pointer;
+    background:linear-gradient(180deg,#2f2748,#221d36); border:2px solid #3a3157;
+    transition:transform .09s, border-color .14s, filter .14s; position:relative;
+  }
+  .carta:hover{transform:translateY(-4px); filter:brightness(1.15);}
+  .carta.activa{border-color:#ffb43d; box-shadow:0 0 14px rgba(255,180,61,.45);}
+  .carta.cara{opacity:.42; filter:grayscale(.6);}
+  .carta .bicho{font-size:30px; line-height:1.1;}
+  .carta .nom{font-weight:800; font-size:11px;}
+  .carta .coste{color:#c88bff; font-weight:900; font-size:12.5px;}
+  .carta .tecla{
+    position:absolute; top:3px; left:5px; font-size:10px; color:var(--tenue);
+    background:rgba(0,0,0,.4); border-radius:4px; padding:0 4px;
+  }
+  .carta .dato{font-size:9.5px; color:var(--tenue); line-height:1.35;}
+</style>
+</head>
+<body>
+
+<div id="juego">
+  <div class="barra">
+    <a class="boton" href="../index.html">🕹 Arcade</a>
+    <div class="titulo">⚽ RUMBLE STARS</div>
+    <div class="sep"></div>
+    <div class="stat">🏆 <span id="recordTxt" class="tenue">0</span></div>
+    <button id="btnPausa" title="Pausa (Espacio)">⏸</button>
+    <button id="btnSonido" title="Sonido">🔊</button>
+  </div>
+
+  <div id="marcador">
+    <div class="equipo">
+      <div class="escudo" style="background:#2f7fd8">🦁</div><span>TÚ</span>
+    </div>
+    <div class="tanteo" id="tanteo">0 <span class="tenue">-</span> 0</div>
+    <div class="equipo">
+      <span>RIVAL</span><div class="escudo" style="background:#d8452f">🐺</div>
+    </div>
+    <div id="reloj">1:30</div>
+  </div>
+
+  <div class="escena">
+    <canvas id="lienzo" width="960" height="560"></canvas>
+    <div class="avisos" id="avisos"></div>
+
+    <div class="modal visible" id="modalInicio">
+      <div class="tarjetaModal">
+        <h1>⚽ RUMBLE STARS</h1>
+        <div class="sub">Fútbol de arena con bichos que embisten.</div>
+        <div class="instrucciones">
+          <b>Objetivo:</b> mete más goles que el rival en <b>90 segundos</b>. Tú atacas hacia la derecha.<br>
+          <b>Desplegar:</b> elige un bicho del banquillo (teclas <b>1-6</b>), después
+          <b>pulsa en tu mitad y arrastra</b> hacia donde quieres lanzarlo. Cuanto más largo el
+          arrastre, más fuerte entra al campo.<br>
+          <b>Energía:</b> se rellena sola. Cada bicho cuesta lo que pone en su carta.<br>
+          Cada uno pesa y corre distinto: el <b>elefante</b> aparta a todos, el <b>guepardo</b>
+          llega el primero, el <b>rinoceronte</b> embiste en línea recta y la <b>tortuga</b>
+          se queda defendiendo tu portería.<br>
+          Los bichos se cansan y abandonan el campo al cabo de unos segundos.
+        </div>
+        <div class="filaBotones"><button class="primario" id="btnJugar">▶ ¡A jugar!</button></div>
+      </div>
+    </div>
+
+    <div class="modal" id="modalFin">
+      <div class="tarjetaModal">
+        <h1 id="tituloFin">FINAL</h1>
+        <div class="sub" id="subFin"></div>
+        <div class="statsFin">
+          <div class="caja"><div class="num" id="finTanteo">0 - 0</div><div class="eti">resultado</div></div>
+          <div class="caja"><div class="num" id="finRecord">0</div><div class="eti">victorias</div></div>
+        </div>
+        <div class="filaBotones">
+          <button class="primario" id="btnOtra">↻ Revancha</button>
+          <a class="boton" href="../index.html">🕹 Arcade</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="banquillo">
+    <div id="energiaCaja">
+      <div id="energiaTxt">10</div>
+      <div id="energiaTubo"><div id="energiaRelleno" style="height:100%"></div></div>
+    </div>
+    <div id="cartas" style="display:flex; gap:8px; flex-wrap:wrap; flex:1"></div>
+  </div>
+</div>
+
+<script src="arcade.js"></script>
+<script>
+// ============================================================
+//  RUMBLE STARS — fútbol de arena
+// ============================================================
+const lienzo = document.getElementById('lienzo');
+const ctx = Arcade.nitido(lienzo);
+const avisos = document.getElementById('avisos');
+const $ = id => document.getElementById(id);
+
+const AN = lienzo.width, AL = lienzo.height;
+const MURO = 26;
+const CAMPO = { x1: MURO, y1: MURO, x2: AN - MURO, y2: AL - MURO };
+const CY = (CAMPO.y1 + CAMPO.y2) / 2;
+const PORTERIA = 108;                       // media altura de la portería
+const DURACION = 90;
+
+// ---------- Plantilla ----------
+const BICHOS = {
+  guepardo:  { nombre:'Guepardo', icono:'🐆', coste:3, masa:1.0, radio:17, vel:238, potencia:1.0, color:'#f0a93a', papel:'ataque',  dato:'El más rápido' },
+  leon:      { nombre:'León',     icono:'🦁', coste:4, masa:1.5, radio:20, vel:176, potencia:1.9, color:'#e8b04b', papel:'ataque',  dato:'Chuta durísimo' },
+  rino:      { nombre:'Rinocer.', icono:'🦏', coste:4, masa:2.6, radio:22, vel:210, potencia:1.5, color:'#8fa0b5', papel:'embiste', dato:'Embiste recto' },
+  elefante:  { nombre:'Elefante', icono:'🐘', coste:5, masa:4.2, radio:26, vel:120, potencia:1.6, color:'#9aa7c4', papel:'ataque',  dato:'Aparta a todos' },
+  pinguino:  { nombre:'Pingüino', icono:'🐧', coste:2, masa:0.9, radio:16, vel:190, potencia:0.8, color:'#e8eefc', papel:'resbala', dato:'Resbala sin parar' },
+  tortuga:   { nombre:'Tortuga',  icono:'🐢', coste:3, masa:3.0, radio:21, vel:100, potencia:1.1, color:'#5fbf6a', papel:'defensa', dato:'Defiende tu área' }
+};
+const CLAVES = Object.keys(BICHOS);
+
+// ---------- Estado ----------
+let unidades = [], balon, energia, energiaIA, tanteo, reloj;
+let estado = 'menu', pausado = false, seleccion = null;
+let arrastre = null, cronoIA = 3, celebracion = 0, ralenti = 1;
+let record = Arcade.record('rumble_victorias');
+const chispas = new Particulas(420);
+const sacudida = new Sacudida();
+let confeti = [];
+
+function nuevaPartida(){
+  unidades = [];
+  balon = { x:(CAMPO.x1+CAMPO.x2)/2, y:CY, vx:0, vy:0, r:13, rot:0 };
+  energia = 6; energiaIA = 6;
+  tanteo = { tu:0, ia:0 };
+  reloj = DURACION;
+  estado = 'jugando'; pausado = false; seleccion = null;
+  cronoIA = 2.5; celebracion = 0; ralenti = 1;
+  confeti = []; chispas.lista.length = 0;
+  refrescarHud();
+}
+
+// ---------- Despliegue ----------
+function desplegar(clave, x, y, equipo, impulso){
+  const b = BICHOS[clave];
+  unidades.push({
+    clave, equipo, x, y, r:b.radio, masa:b.masa,
+    vx: impulso ? impulso.x : 0, vy: impulso ? impulso.y : 0,
+    vida: 13, fase: Math.random()*6.283, embiste: b.papel === 'embiste' ? 1.4 : 0,
+    aparecio: 0
+  });
+  chispas.emitir(18, {
+    x, y, color:[b.color, '#ffffff'], velMin:40, velMax:180,
+    vidaMin:0.25, vidaMax:0.6, rMin:2, rMax:5, gravedad:0, brillo:true
+  });
+  sacudida.golpe(2);
+  Sonido.fx('desplegar');
+}
+
+// ---------- Física ----------
+function actualizar(dt){
+  chispas.actualizar(dt);
+  sacudida.actualizar(dt);
+  confeti.forEach(c => { c.y += c.vy*dt; c.x += c.vx*dt; c.rot += c.vr*dt; c.vida -= dt; });
+  confeti = confeti.filter(c => c.vida > 0);
+
+  if (estado !== 'jugando' || pausado) return;
+
+  if (celebracion > 0){
+    celebracion -= dt;
+    ralenti = suavizar(ralenti, 0.25, dt*4);
+    if (celebracion <= 0){ sacar(); ralenti = 1; }
+  } else {
+    ralenti = suavizar(ralenti, 1, dt*3);
+    reloj -= dt;
+    if (reloj <= 0){ reloj = 0; return acabar(); }
+  }
+
+  const h = dt * ralenti;
+
+  // energía
+  energia = Math.min(10, energia + h * 0.72);
+  energiaIA = Math.min(10, energiaIA + h * 0.66);
+
+  // la máquina despliega
+  cronoIA -= h;
+  if (cronoIA <= 0 && celebracion <= 0){
+    cronoIA = azar(1.6, 3.4);
+    pensarIA();
+  }
+
+  moverUnidades(h);
+  moverBalon(h);
+  colisiones(h);
+  if (celebracion <= 0) comprobarGol();
+
+  refrescarHud();
+}
+
+function moverUnidades(h){
+  for (let i = unidades.length - 1; i >= 0; i--){
+    const u = unidades[i];
+    const b = BICHOS[u.clave];
+    u.vida -= h; u.aparecio += h; u.fase += h * 8;
+    if (u.vida <= 0){
+      chispas.emitir(12, { x:u.x, y:u.y, color:b.color, velMin:20, velMax:90,
+        vidaMin:0.3, vidaMax:0.7, rMin:2, rMax:4, gravedad:-40 });
+      unidades.splice(i, 1);
+      continue;
+    }
+
+    // hacia dónde va cada uno según su papel
+    let ox = balon.x, oy = balon.y;
+    if (b.papel === 'defensa'){
+      const porteria = u.equipo === 'tu' ? CAMPO.x1 + 70 : CAMPO.x2 - 70;
+      if (Math.abs(balon.x - porteria) > 260){ ox = porteria; oy = suavizar(CY, balon.y, 0.5); }
+    }
+    if (u.embiste > 0){
+      u.embiste -= h;                       // durante la embestida no corrige el rumbo
+    } else {
+      const d = Math.hypot(ox - u.x, oy - u.y) || 1;
+      const acel = b.vel * 3.4;
+      u.vx += (ox - u.x)/d * acel * h;
+      u.vy += (oy - u.y)/d * acel * h;
+    }
+
+    // rozamiento y tope de velocidad
+    const roce = b.papel === 'resbala' ? 0.6 : 2.6;
+    u.vx -= u.vx * roce * h; u.vy -= u.vy * roce * h;
+    const v = Math.hypot(u.vx, u.vy), tope = b.vel * (u.embiste > 0 ? 1.9 : 1);
+    if (v > tope){ u.vx = u.vx/v*tope; u.vy = u.vy/v*tope; }
+
+    u.x += u.vx * h; u.y += u.vy * h;
+
+    // paredes
+    if (u.x < CAMPO.x1 + u.r){ u.x = CAMPO.x1 + u.r; u.vx = Math.abs(u.vx)*0.5; }
+    if (u.x > CAMPO.x2 - u.r){ u.x = CAMPO.x2 - u.r; u.vx = -Math.abs(u.vx)*0.5; }
+    if (u.y < CAMPO.y1 + u.r){ u.y = CAMPO.y1 + u.r; u.vy = Math.abs(u.vy)*0.5; }
+    if (u.y > CAMPO.y2 - u.r){ u.y = CAMPO.y2 - u.r; u.vy = -Math.abs(u.vy)*0.5; }
+  }
+}
+
+function moverBalon(h){
+  balon.x += balon.vx * h; balon.y += balon.vy * h;
+  balon.vx -= balon.vx * 1.05 * h; balon.vy -= balon.vy * 1.05 * h;
+  balon.rot += Math.hypot(balon.vx, balon.vy) * h / balon.r;
+
+  // paredes: arriba y abajo siempre; a los lados salvo en la boca de la portería
+  if (balon.y < CAMPO.y1 + balon.r){ balon.y = CAMPO.y1 + balon.r; balon.vy = Math.abs(balon.vy)*0.82; rebote(); }
+  if (balon.y > CAMPO.y2 - balon.r){ balon.y = CAMPO.y2 - balon.r; balon.vy = -Math.abs(balon.vy)*0.82; rebote(); }
+  const enBoca = Math.abs(balon.y - CY) < PORTERIA;
+  if (!enBoca){
+    if (balon.x < CAMPO.x1 + balon.r){ balon.x = CAMPO.x1 + balon.r; balon.vx = Math.abs(balon.vx)*0.82; rebote(); }
+    if (balon.x > CAMPO.x2 - balon.r){ balon.x = CAMPO.x2 - balon.r; balon.vx = -Math.abs(balon.vx)*0.82; rebote(); }
+  }
+}
+function rebote(){
+  if (Math.hypot(balon.vx, balon.vy) > 120){ Sonido.fx('banda'); sacudida.golpe(1.5); }
+}
+
+function colisiones(h){
+  // bicho contra balón
+  for (const u of unidades){
+    const dx = balon.x - u.x, dy = balon.y - u.y;
+    const d = Math.hypot(dx, dy);
+    const min = u.r + balon.r;
+    if (d >= min || d === 0) continue;
+    const nx = dx/d, ny = dy/d;
+    balon.x = u.x + nx*min; balon.y = u.y + ny*min;
+    const b = BICHOS[u.clave];
+    const impacto = Math.hypot(u.vx, u.vy);
+    const fuerza = 150 + impacto * 1.5 * b.potencia + b.masa * 30;
+    balon.vx = nx * fuerza + u.vx * 0.4;
+    balon.vy = ny * fuerza + u.vy * 0.4;
+    u.vx -= nx * fuerza * 0.1 / b.masa;
+    u.vy -= ny * fuerza * 0.1 / b.masa;
+    Sonido.fx('patada');
+    sacudida.golpe(Math.min(5, fuerza/90));
+    chispas.emitir(12, {
+      x: balon.x, y: balon.y, color:['#ffffff', b.color, '#ffd25e'],
+      ang: Math.atan2(ny, nx), abanico: 1.1, velMin:60, velMax:260,
+      vidaMin:0.2, vidaMax:0.5, rMin:1.5, rMax:4, gravedad:0, brillo:true
+    });
+  }
+
+  // bicho contra bicho
+  for (let i = 0; i < unidades.length; i++){
+    for (let j = i+1; j < unidades.length; j++){
+      const a = unidades[i], c = unidades[j];
+      const dx = c.x-a.x, dy = c.y-a.y;
+      const d = Math.hypot(dx, dy), min = a.r + c.r;
+      if (d >= min || d === 0) continue;
+      const nx = dx/d, ny = dy/d, solape = min - d;
+      const ma = a.masa, mc = c.masa, total = ma + mc;
+      a.x -= nx * solape * (mc/total); a.y -= ny * solape * (mc/total);
+      c.x += nx * solape * (ma/total); c.y += ny * solape * (ma/total);
+      const vrel = (c.vx-a.vx)*nx + (c.vy-a.vy)*ny;
+      if (vrel > 0) continue;
+      const imp = -(1.4) * vrel / total;
+      a.vx -= imp * nx * mc; a.vy -= imp * ny * mc;
+      c.vx += imp * nx * ma; c.vy += imp * ny * ma;
+      if (Math.abs(vrel) > 110){
+        Sonido.fx('choquePj');
+        sacudida.golpe(Math.min(3, Math.abs(vrel)/120));
+        chispas.emitir(5, { x:(a.x+c.x)/2, y:(a.y+c.y)/2, color:'#ffffff',
+          velMin:30, velMax:120, vidaMin:0.15, vidaMax:0.35, rMin:1.5, rMax:3, gravedad:0 });
+      }
+    }
+  }
+}
+
+function comprobarGol(){
+  if (Math.abs(balon.y - CY) > PORTERIA) return;
+  if (balon.x - balon.r < CAMPO.x1 - 6) return gol('ia');
+  if (balon.x + balon.r > CAMPO.x2 + 6) return gol('tu');
+}
+
+function gol(quien){
+  tanteo[quien]++;
+  celebracion = 2.6;
+  sacudida.golpe(14);
+  Sonido.fx('gol');
+  const x = quien === 'tu' ? CAMPO.x2 : CAMPO.x1;
+  chispas.emitir(70, {
+    x, y: balon.y, color:['#ffd25e','#ff6b6b','#5cc8ff','#6fe08b','#ffffff'],
+    velMin:80, velMax:520, vidaMin:0.5, vidaMax:1.3, rMin:2, rMax:6,
+    gravedad:200, brillo:true
+  });
+  for (let i = 0; i < 90; i++){
+    confeti.push({
+      x: azar(0, AN), y: azar(-260, -10), vx: azar(-40, 40), vy: azar(90, 260),
+      rot: azar(0, 6.283), vr: azar(-7, 7), vida: azar(2.2, 3.6),
+      color: elegir(['#ffd25e','#ff6b6b','#5cc8ff','#6fe08b','#c88bff','#ffffff']),
+      an: azar(5, 11), al: azar(7, 15)
+    });
+  }
+  $('tanteo').classList.add('late');
+  setTimeout(() => $('tanteo').classList.remove('late'), 260);
+  Arcade.aviso(avisos, quien === 'tu' ? '⚽ ¡GOOOL TUYO!' : '😖 Gol del rival', quien === 'tu', 2400);
+  refrescarHud();
+}
+
+function sacar(){
+  balon.x = (CAMPO.x1+CAMPO.x2)/2; balon.y = CY;
+  balon.vx = azar(-30, 30); balon.vy = azar(-30, 30);
+  unidades = [];
+  Sonido.fx('silbato');
+}
+
+function acabar(){
+  estado = 'fin';
+  const gano = tanteo.tu > tanteo.ia, empate = tanteo.tu === tanteo.ia;
+  if (gano){ Arcade.guardarRecord('rumble_victorias', record + 1); record = Arcade.record('rumble_victorias'); }
+  $('tituloFin').textContent = gano ? '¡VICTORIA!' : empate ? 'EMPATE' : 'DERROTA';
+  $('tituloFin').className = gano ? 'victoria' : empate ? '' : 'derrota';
+  $('subFin').textContent = gano ? 'Los tuyos han arrasado en la arena.'
+    : empate ? 'Nadie ha podido con nadie.' : 'El rival se lleva el partido. ¡Revancha!';
+  $('finTanteo').textContent = tanteo.tu + ' - ' + tanteo.ia;
+  $('finRecord').textContent = record;
+  $('modalFin').classList.add('visible');
+  Sonido.fx(gano ? 'victoria' : 'derrota');
+  refrescarHud();
+}
+
+// ---------- Rival ----------
+function pensarIA(){
+  const posibles = CLAVES.filter(c => BICHOS[c].coste <= energiaIA);
+  if (!posibles.length) return;
+  // si el balón está en su campo, defiende; si no, ataca
+  const defendiendo = balon.x > (CAMPO.x1+CAMPO.x2)/2;
+  const preferidos = defendiendo
+    ? posibles.filter(c => BICHOS[c].masa >= 2.5)
+    : posibles.filter(c => BICHOS[c].papel !== 'defensa');
+  const clave = elegir(preferidos.length ? preferidos : posibles);
+  energiaIA -= BICHOS[clave].coste;
+  const x = azar((CAMPO.x1+CAMPO.x2)/2 + 40, CAMPO.x2 - 60);
+  const y = limitar(balon.y + azar(-110, 110), CAMPO.y1 + 40, CAMPO.y2 - 40);
+  const d = Math.hypot(balon.x - x, balon.y - y) || 1;
+  desplegar(clave, x, y, 'ia', {
+    x: (balon.x - x)/d * azar(120, 260),
+    y: (balon.y - y)/d * azar(120, 260)
+  });
+}
+
+// ---------- Dibujo ----------
+const fondo = Arcade.lienzoOculto(AN, AL);
+pintarCampo(fondo.ctx);
+
+function pintarCampo(c){
+  // grada
+  const g = c.createLinearGradient(0, 0, 0, AL);
+  g.addColorStop(0, '#2b2447'); g.addColorStop(1, '#1a1630');
+  c.fillStyle = g; c.fillRect(0, 0, AN, AL);
+  for (let i = 0; i < 900; i++){
+    c.fillStyle = elegir(['#4a3f73','#5b4f8a','#3a3160','#6d5fa3']);
+    const x = azar(0, AN), y = azar(0, AL);
+    if (x > CAMPO.x1-8 && x < CAMPO.x2+8 && y > CAMPO.y1-8 && y < CAMPO.y2+8) continue;
+    c.globalAlpha = azar(0.3, 0.9);
+    c.beginPath(); c.arc(x, y, azar(1.4, 3), 0, 6.283); c.fill();
+  }
+  c.globalAlpha = 1;
+
+  // césped a franjas
+  for (let i = 0; i < 10; i++){
+    c.fillStyle = i % 2 ? '#2f8f45' : '#288040';
+    const w = (CAMPO.x2-CAMPO.x1)/10;
+    c.fillRect(CAMPO.x1 + i*w, CAMPO.y1, w, CAMPO.y2-CAMPO.y1);
+  }
+  // viñeta
+  const v = c.createRadialGradient((CAMPO.x1+CAMPO.x2)/2, CY, 120, (CAMPO.x1+CAMPO.x2)/2, CY, 620);
+  v.addColorStop(0, 'rgba(255,255,255,.07)'); v.addColorStop(1, 'rgba(0,0,0,.35)');
+  c.fillStyle = v; c.fillRect(CAMPO.x1, CAMPO.y1, CAMPO.x2-CAMPO.x1, CAMPO.y2-CAMPO.y1);
+
+  // líneas
+  c.strokeStyle = 'rgba(255,255,255,.55)'; c.lineWidth = 3;
+  c.strokeRect(CAMPO.x1, CAMPO.y1, CAMPO.x2-CAMPO.x1, CAMPO.y2-CAMPO.y1);
+  c.beginPath(); c.moveTo((CAMPO.x1+CAMPO.x2)/2, CAMPO.y1); c.lineTo((CAMPO.x1+CAMPO.x2)/2, CAMPO.y2); c.stroke();
+  c.beginPath(); c.arc((CAMPO.x1+CAMPO.x2)/2, CY, 74, 0, 6.283); c.stroke();
+  c.beginPath(); c.arc((CAMPO.x1+CAMPO.x2)/2, CY, 5, 0, 6.283); c.fillStyle = 'rgba(255,255,255,.6)'; c.fill();
+  // áreas
+  [[CAMPO.x1, 1], [CAMPO.x2, -1]].forEach(([x, s]) => {
+    c.strokeRect(x, CY - PORTERIA - 32, s * 96, (PORTERIA + 32) * 2);
+  });
+
+  // muros de la arena
+  c.fillStyle = '#1b1730';
+  c.fillRect(0, 0, AN, MURO); c.fillRect(0, AL-MURO, AN, MURO);
+  c.fillStyle = '#ffb43d';
+  for (let x = 0; x < AN; x += 34){
+    c.globalAlpha = 0.28;
+    c.fillRect(x, MURO-4, 17, 4); c.fillRect(x+17, AL-MURO, 17, 4);
+  }
+  c.globalAlpha = 1;
+}
+
+function dibujar(){
+  ctx.save();
+  sacudida.aplicar(ctx);
+  ctx.drawImage(fondo.lienzo, 0, 0, AN, AL);
+
+  dibujarPorterias();
+
+  // zona donde puedes desplegar
+  if (seleccion && estado === 'jugando'){
+    ctx.fillStyle = 'rgba(92,200,255,.10)';
+    ctx.fillRect(CAMPO.x1, CAMPO.y1, (CAMPO.x2-CAMPO.x1)/2, CAMPO.y2-CAMPO.y1);
+    ctx.strokeStyle = 'rgba(92,200,255,.45)'; ctx.lineWidth = 2;
+    ctx.setLineDash([9, 7]);
+    ctx.strokeRect(CAMPO.x1+2, CAMPO.y1+2, (CAMPO.x2-CAMPO.x1)/2-4, CAMPO.y2-CAMPO.y1-4);
+    ctx.setLineDash([]);
+  }
+
+  // flecha de lanzamiento
+  if (arrastre){
+    const b = BICHOS[seleccion];
+    const dx = arrastre.x - arrastre.x0, dy = arrastre.y - arrastre.y0;
+    const d = Math.hypot(dx, dy);
+    ctx.strokeStyle = 'rgba(255,180,61,.9)'; ctx.lineWidth = 5; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(arrastre.x0, arrastre.y0); ctx.lineTo(arrastre.x, arrastre.y); ctx.stroke();
+    if (d > 14){
+      const a = Math.atan2(dy, dx);
+      ctx.fillStyle = 'rgba(255,180,61,.9)';
+      ctx.beginPath();
+      ctx.moveTo(arrastre.x + Math.cos(a)*14, arrastre.y + Math.sin(a)*14);
+      ctx.lineTo(arrastre.x + Math.cos(a+2.5)*13, arrastre.y + Math.sin(a+2.5)*13);
+      ctx.lineTo(arrastre.x + Math.cos(a-2.5)*13, arrastre.y + Math.sin(a-2.5)*13);
+      ctx.closePath(); ctx.fill();
+    }
+    ctx.globalAlpha = 0.55;
+    dibujarBicho({ clave:seleccion, x:arrastre.x0, y:arrastre.y0, r:b.radio, equipo:'tu',
+                   fase:0, vida:99, aparecio:1, vx:0, vy:0 });
+    ctx.globalAlpha = 1;
+  }
+
+  unidades.forEach(dibujarBicho);
+  dibujarBalon();
+  chispas.dibujar(ctx);
+
+  // confeti
+  confeti.forEach(c => {
+    ctx.save();
+    ctx.translate(c.x, c.y); ctx.rotate(c.rot);
+    ctx.globalAlpha = limitar(c.vida, 0, 1);
+    ctx.fillStyle = c.color;
+    ctx.fillRect(-c.an/2, -c.al/2, c.an, c.al);
+    ctx.restore();
+  });
+  ctx.globalAlpha = 1;
+
+  if (celebracion > 0){
+    const t = 1 - celebracion/2.6;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.font = '900 ' + (54 + Math.sin(t*9)*5) + 'px "Segoe UI", system-ui, sans-serif';
+    ctx.lineWidth = 8; ctx.strokeStyle = 'rgba(0,0,0,.6)';
+    ctx.strokeText('¡GOL!', AN/2, CY);
+    const g = ctx.createLinearGradient(0, CY-40, 0, CY+40);
+    g.addColorStop(0, '#fff3b0'); g.addColorStop(1, '#ffb43d');
+    ctx.fillStyle = g;
+    ctx.fillText('¡GOL!', AN/2, CY);
+  }
+  if (pausado){
+    ctx.fillStyle = 'rgba(5,8,16,.6)'; ctx.fillRect(0, 0, AN, AL);
+    ctx.fillStyle = '#e8eefc'; ctx.font = 'bold 34px "Segoe UI", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('PAUSA', AN/2, AL/2);
+  }
+  ctx.restore();
+}
+
+function dibujarPorterias(){
+  [[CAMPO.x1, -1, '#2f7fd8'], [CAMPO.x2, 1, '#d8452f']].forEach(([x, s, col]) => {
+    // red
+    ctx.fillStyle = 'rgba(255,255,255,.10)';
+    ctx.fillRect(x, CY - PORTERIA, s * 22, PORTERIA*2);
+    ctx.strokeStyle = 'rgba(255,255,255,.35)'; ctx.lineWidth = 1;
+    ctx.beginPath();
+    for (let k = 0; k <= 22; k += 5.5){ ctx.moveTo(x + s*k, CY-PORTERIA); ctx.lineTo(x + s*k, CY+PORTERIA); }
+    for (let k = -PORTERIA; k <= PORTERIA; k += 12){ ctx.moveTo(x, CY+k); ctx.lineTo(x + s*22, CY+k); }
+    ctx.stroke();
+    // postes
+    ctx.strokeStyle = col; ctx.lineWidth = 6; ctx.lineCap = 'round';
+    ctx.shadowColor = col; ctx.shadowBlur = 12;
+    ctx.beginPath(); ctx.moveTo(x, CY-PORTERIA); ctx.lineTo(x, CY+PORTERIA); ctx.stroke();
+    ctx.shadowBlur = 0;
+  });
+}
+
+function dibujarBicho(u){
+  const b = BICHOS[u.clave];
+  const salto = Math.abs(Math.sin(u.fase)) * (Math.hypot(u.vx, u.vy) > 40 ? 4 : 1.5);
+  const escala = limitar(u.aparecio * 5, 0.3, 1);
+  const x = u.x, y = u.y - salto;
+  const casi = u.vida < 3 && Math.floor(u.vida*6) % 2 === 0;
+
+  ctx.save();
+  ctx.globalAlpha *= casi ? 0.5 : 1;
+
+  // sombra
+  ctx.fillStyle = 'rgba(0,0,0,.3)';
+  ctx.beginPath(); ctx.ellipse(u.x, u.y + u.r*0.7, u.r*0.85, u.r*0.35, 0, 0, 6.283); ctx.fill();
+
+  ctx.translate(x, y);
+  ctx.scale(escala, escala);
+
+  // aro del equipo
+  ctx.fillStyle = u.equipo === 'tu' ? '#2f7fd8' : '#d8452f';
+  ctx.beginPath(); ctx.arc(0, 0, u.r + 4, 0, 6.283); ctx.fill();
+
+  // cuerpo
+  const g = ctx.createRadialGradient(-u.r*0.3, -u.r*0.4, u.r*0.15, 0, 0, u.r);
+  g.addColorStop(0, '#ffffff'); g.addColorStop(0.35, b.color); g.addColorStop(1, '#00000055');
+  ctx.fillStyle = g;
+  ctx.beginPath(); ctx.arc(0, 0, u.r, 0, 6.283); ctx.fill();
+
+  // estela de embestida
+  if (u.embiste > 0){
+    ctx.strokeStyle = 'rgba(255,180,61,.8)'; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.arc(0, 0, u.r + 7, 0, 6.283); ctx.stroke();
+  }
+
+  ctx.font = Math.round(u.r * 1.35) + 'px serif';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(b.icono, 0, u.r*0.08);
+
+  ctx.restore();
+  ctx.globalAlpha = 1;
+
+  // barra de aguante
+  if (u.vida < 13){
+    const w = u.r*1.7;
+    ctx.fillStyle = 'rgba(0,0,0,.45)';
+    ctx.fillRect(u.x - w/2, u.y - u.r - 12, w, 3.5);
+    ctx.fillStyle = u.equipo === 'tu' ? '#5cc8ff' : '#ff8a7a';
+    ctx.fillRect(u.x - w/2, u.y - u.r - 12, w * limitar(u.vida/13, 0, 1), 3.5);
+  }
+}
+
+function dibujarBalon(){
+  const { x, y, r } = balon;
+  ctx.fillStyle = 'rgba(0,0,0,.35)';
+  ctx.beginPath(); ctx.ellipse(x, y + r*0.8, r*0.9, r*0.4, 0, 0, 6.283); ctx.fill();
+
+  const g = ctx.createRadialGradient(x - r*0.35, y - r*0.4, r*0.1, x, y, r);
+  g.addColorStop(0, '#ffffff'); g.addColorStop(0.7, '#e6e9f0'); g.addColorStop(1, '#9aa2b4');
+  ctx.fillStyle = g;
+  ctx.beginPath(); ctx.arc(x, y, r, 0, 6.283); ctx.fill();
+
+  // pentágonos girando
+  ctx.save();
+  ctx.beginPath(); ctx.arc(x, y, r, 0, 6.283); ctx.clip();
+  ctx.translate(x, y); ctx.rotate(balon.rot * 0.35);
+  ctx.fillStyle = '#20242e';
+  ctx.beginPath();
+  for (let k = 0; k < 5; k++){
+    const a = k * 1.2566 - Math.PI/2;
+    ctx.lineTo(Math.cos(a)*r*0.42, Math.sin(a)*r*0.42);
+  }
+  ctx.closePath(); ctx.fill();
+  for (let k = 0; k < 5; k++){
+    const a = k * 1.2566 - Math.PI/2 + 0.628;
+    ctx.beginPath(); ctx.arc(Math.cos(a)*r*0.92, Math.sin(a)*r*0.92, r*0.3, 0, 6.283); ctx.fill();
+  }
+  ctx.restore();
+
+  ctx.fillStyle = 'rgba(255,255,255,.6)';
+  ctx.beginPath(); ctx.ellipse(x - r*0.35, y - r*0.4, r*0.24, r*0.16, -0.6, 0, 6.283); ctx.fill();
+}
+
+// ---------- Interfaz ----------
+function refrescarHud(){
+  $('tanteo').innerHTML = tanteo.tu + ' <span class="tenue">-</span> ' + tanteo.ia;
+  const m = Math.floor(reloj/60), s = Math.floor(reloj%60);
+  $('reloj').textContent = m + ':' + String(s).padStart(2, '0');
+  $('reloj').classList.toggle('ultimos', reloj <= 15);
+  $('energiaTxt').textContent = Math.floor(energia);
+  $('energiaRelleno').style.height = (energia*10) + '%';
+  $('recordTxt').textContent = record;
+  document.querySelectorAll('.carta').forEach(el => {
+    el.classList.toggle('cara', energia < BICHOS[el.dataset.clave].coste);
+    el.classList.toggle('activa', seleccion === el.dataset.clave);
+  });
+}
+
+const cartas = $('cartas');
+CLAVES.forEach((clave, i) => {
+  const b = BICHOS[clave];
+  const el = document.createElement('div');
+  el.className = 'carta'; el.dataset.clave = clave; el.title = b.dato;
+  el.innerHTML = '<span class="tecla">' + (i+1) + '</span>' +
+    '<div class="bicho">' + b.icono + '</div>' +
+    '<div class="nom">' + b.nombre + '</div>' +
+    '<div class="coste">⚡ ' + b.coste + '</div>' +
+    '<div class="dato">' + b.dato + '</div>';
+  el.onclick = () => {
+    Sonido.activar();
+    seleccion = seleccion === clave ? null : clave;
+    refrescarHud();
+  };
+  cartas.appendChild(el);
+});
+
+lienzo.addEventListener('pointerdown', e => {
+  Sonido.activar();
+  if (estado !== 'jugando' || pausado || !seleccion) return;
+  const p = Arcade.puntero(lienzo, e);
+  const mitad = (CAMPO.x1 + CAMPO.x2)/2;
+  if (p.x < CAMPO.x1 || p.x > mitad || p.y < CAMPO.y1 || p.y > CAMPO.y2){
+    Arcade.aviso(avisos, 'Solo puedes desplegar en tu mitad', false, 1400);
+    Sonido.fx('error');
+    return;
+  }
+  if (energia < BICHOS[seleccion].coste){ Sonido.fx('error'); return; }
+  arrastre = { x0:p.x, y0:p.y, x:p.x, y:p.y };
+  lienzo.setPointerCapture(e.pointerId);
+});
+lienzo.addEventListener('pointermove', e => {
+  if (!arrastre) return;
+  const p = Arcade.puntero(lienzo, e);
+  arrastre.x = p.x; arrastre.y = p.y;
+});
+lienzo.addEventListener('pointerup', () => {
+  if (!arrastre || !seleccion) { arrastre = null; return; }
+  const dx = arrastre.x - arrastre.x0, dy = arrastre.y - arrastre.y0;
+  const d = Math.hypot(dx, dy);
+  const fuerza = limitar(d / 130, 0, 1) * 420;
+  energia -= BICHOS[seleccion].coste;
+  desplegar(seleccion, arrastre.x0, arrastre.y0, 'tu',
+    d > 6 ? { x: dx/d*fuerza, y: dy/d*fuerza } : null);
+  arrastre = null;
+  seleccion = null;
+  refrescarHud();
+});
+lienzo.addEventListener('pointercancel', () => { arrastre = null; });
+
+addEventListener('keydown', e => {
+  if (e.key >= '1' && e.key <= '6'){
+    seleccion = CLAVES[parseInt(e.key,10)-1];
+    refrescarHud();
+  }
+  if (e.key === 'Escape'){ seleccion = null; arrastre = null; refrescarHud(); }
+  if (e.key === ' '){ e.preventDefault(); alternarPausa(); }
+});
+function alternarPausa(){
+  if (estado !== 'jugando') return;
+  pausado = !pausado;
+  $('btnPausa').textContent = pausado ? '▶' : '⏸';
+}
+$('btnPausa').onclick = alternarPausa;
+Arcade.conectarSonido($('btnSonido'));
+$('btnJugar').onclick = () => {
+  Sonido.activar();
+  $('modalInicio').classList.remove('visible');
+  nuevaPartida();
+  Sonido.fx('silbato');
+};
+$('btnOtra').onclick = () => { $('modalFin').classList.remove('visible'); nuevaPartida(); Sonido.fx('silbato'); };
+
+nuevaPartida();
+estado = 'menu';
+refrescarHud();
+Arcade.bucle(dt => { actualizar(dt); dibujar(); });
+</script>
+</body>
+</html>

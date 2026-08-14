@@ -28,7 +28,10 @@ const JUEGOS = [
   { id:'pvz',        archivo:'juegos/plantas-vs-zombies.html' },
   { id:'minas',      archivo:'juegos/minas.html' },
   { id:'blockblast', archivo:'juegos/block-blast.html' },
-  { id:'serpiente',  archivo:'juegos/serpiente.html' }
+  { id:'serpiente',  archivo:'juegos/serpiente.html' },
+  { id:'aviator',    archivo:'juegos/aviator.html' },
+  { id:'pool',       archivo:'juegos/8-ball-pool.html' },
+  { id:'rumble',     archivo:'juegos/rumble-stars.html' }
 ];
 
 const leer = f => fs.readFileSync(path.join(RAIZ, f), 'utf8');
@@ -113,9 +116,12 @@ const estilos = `<style>
 /* ====== Estilos comunes ====== */
 ${cssComun}
 
-/* ====== Cambio de pantalla ====== */
-.pantalla{display:none; width:100%; flex-direction:column; align-items:center;}
-.pantalla.activa{display:flex;}
+/* ====== Cambio de pantalla ======
+   Lleva !important a propósito: el CSS de cada juego se acota con el selector
+   de su contenedor (#pantalla-xxx), y una regla suya heredada de "body" tiene
+   más especificidad que .pantalla. Sin esto, esa pantalla no se ocultaría. */
+.pantalla{display:none !important; width:100%; flex-direction:column; align-items:center;}
+.pantalla.activa{display:flex !important;}
 body{display:block; padding:0; margin:0;}
 #pantalla-portada{align-items:center;}
 
@@ -141,6 +147,7 @@ const Enrutador = {
   actual: 'portada',
   arrancados: {},
   ir(id){
+    Sonido.pararMotor();          // ningún sonido continuo sobrevive al cambio de pantalla
     document.querySelectorAll('.pantalla').forEach(p => p.classList.remove('activa'));
     const destino = document.getElementById('pantalla-' + id);
     if (!destino) return;

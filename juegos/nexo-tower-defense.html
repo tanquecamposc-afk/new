@@ -564,9 +564,35 @@ const CASCOS_NIVEL = ['gorra','gorra','casco','visor','corona'];
 const MODOS_OBJETIVO = ['primero','último','fuerte','cercano'];
 const OLA_FINAL = 40;
 
+// ---------- Nitidez en pantallas de alta densidad ----------
+// (este juego es autocontenido y no carga arcade.js, así que lleva su copia)
+const Pantalla = {
+  nitido(canvas){
+    const w = canvas.width, h = canvas.height;
+    const dpr = Math.min(3, window.devicePixelRatio || 1);
+    const c = canvas.getContext('2d');
+    if (dpr !== 1){
+      canvas.width = Math.round(w * dpr);
+      canvas.height = Math.round(h * dpr);
+      c.setTransform(dpr, 0, 0, dpr, 0, 0);
+      Object.defineProperty(canvas, 'width',  { get: () => w, configurable: true });
+      Object.defineProperty(canvas, 'height', { get: () => h, configurable: true });
+    }
+    return c;
+  },
+  lienzoOculto(w, h){
+    const c = document.createElement('canvas');
+    const dpr = Math.min(3, window.devicePixelRatio || 1);
+    c.width = Math.round(w * dpr); c.height = Math.round(h * dpr);
+    const c2 = c.getContext('2d');
+    c2.setTransform(dpr, 0, 0, dpr, 0, 0);
+    return { lienzo: c, ctx: c2 };
+  }
+};
+
 // ---------- Estado global ----------
 const lienzo = $('lienzo');
-const ctx = lienzo.getContext('2d');
+const ctx = Pantalla.nitido(lienzo);
 const ANCHO = lienzo.width, ALTO = lienzo.height;
 const MITAD_CAMINO = 27;
 let fondo = null;
@@ -1380,9 +1406,9 @@ function actualizarPanelTorre(){
 
 // ---------- Prerender del fondo ----------
 function prerenderizarFondo(){
-  fondo = document.createElement('canvas');
-  fondo.width = ANCHO; fondo.height = ALTO;
-  const c = fondo.getContext('2d');
+  const oculto = Pantalla.lienzoOculto(ANCHO, ALTO);
+  fondo = oculto.lienzo;
+  const c = oculto.ctx;
   const m = G.mapa;
   const azar = rngSemilla(m.semilla);
   // terreno
@@ -1909,7 +1935,7 @@ function dibujar(){
   if (G.sacudida > 0){
     ctx.translate(rnd(-1,1)*G.sacudida*9, rnd(-1,1)*G.sacudida*9);
   }
-  ctx.drawImage(fondo, 0, 0);
+  ctx.drawImage(fondo, 0, 0, ANCHO, ALTO);
 
   // portal animado de entrada
   const ini = G.mapa.puntos[0];

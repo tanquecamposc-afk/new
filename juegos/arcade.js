@@ -56,7 +56,10 @@ const Sonido = {
   fx(nombre){
     if (this.silencio || !this.ctx) return;
     const ahora = performance.now();
-    const min = {come:55, paso:60, disparo:60, golpe:50, giro:70}[nombre] || 0;
+    const min = {
+      come:55, paso:60, disparo:60, golpe:50, giro:70,
+      bola:26, banda:45, choquePj:45, guisante:70, mordisco:90
+    }[nombre] || 0;
     if (min && this.ultimo[nombre] && ahora - this.ultimo[nombre] < min) return;
     this.ultimo[nombre] = ahora;
     switch (nombre){
@@ -87,7 +90,56 @@ const Sonido = {
       case 'victoria':  [523, 659, 784, 1047, 1319].forEach((f, i) => this.tono(f, f, 0.22, 'triangle', 0.09, i * 0.15)); break;
       case 'error':     this.tono(200, 120, 0.16, 'sawtooth', 0.05); break;
       case 'paso':      this.tono(120, 90, 0.05, 'square', 0.02); break;
+      // --- Aviator ---
+      case 'despegue':  this.ruido(0.6, 900, 0.07); this.tono(90, 300, 0.7, 'sawtooth', 0.05); break;
+      case 'estrella':  this.melodia([784, 1046, 1318, 1568], 0.06, 'sine', 0.05); break;
+      case 'choque':    this.ruido(0.7, 600, 0.2); this.tono(200, 35, 0.6, 'sawtooth', 0.13); break;
+      case 'cuenta':    this.tono(660, 660, 0.06, 'square', 0.03); break;
+      // --- Billar ---
+      case 'taco':      this.ruido(0.05, 5000, 0.09); this.tono(1400, 700, 0.05, 'triangle', 0.06); break;
+      case 'bola':      this.ruido(0.035, 6000, 0.05); this.tono(1800, 1100, 0.035, 'triangle', 0.04); break;
+      case 'banda':     this.ruido(0.06, 1400, 0.05); this.tono(320, 190, 0.07, 'sine', 0.05); break;
+      case 'tronera':   this.tono(420, 130, 0.22, 'sine', 0.08); this.ruido(0.18, 700, 0.06); break;
+      // --- Rumble ---
+      case 'patada':    this.ruido(0.07, 2200, 0.09); this.tono(240, 110, 0.1, 'square', 0.07); break;
+      case 'choquePj':  this.ruido(0.08, 1200, 0.06); this.tono(160, 90, 0.09, 'sine', 0.05); break;
+      case 'silbato':   this.tono(2100, 2400, 0.16, 'square', 0.05); this.tono(2400, 2100, 0.16, 'square', 0.05, 0.16); break;
+      case 'gol':       [523, 659, 784, 1047, 1319, 1568].forEach((f, i) => this.tono(f, f, 0.18, 'square', 0.07, i * 0.09));
+                        this.ruido(0.9, 1200, 0.05); break;
+      case 'desplegar': this.tono(300, 620, 0.11, 'triangle', 0.06); break;
     }
+  },
+
+  /**
+   * Motor continuo (Aviator): un oscilador que sube de tono mientras vuela.
+   * `agudeza` va de 0 a 1; con `null` se apaga.
+   */
+  motor(agudeza){
+    if (!this.ctx || this.silencio){ this.pararMotor(); return; }
+    if (agudeza === null){ this.pararMotor(); return; }
+    if (!this._motor){
+      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+      const f = this.ctx.createBiquadFilter();
+      f.type = 'lowpass'; f.frequency.value = 900;
+      o.type = 'sawtooth'; o.frequency.value = 70;
+      g.gain.value = 0.0001;
+      o.connect(f); f.connect(g); g.connect(this.ctx.destination);
+      o.start();
+      this._motor = { o, g, f };
+    }
+    const t = this.ctx.currentTime;
+    this._motor.o.frequency.setTargetAtTime(70 + agudeza * 150, t, 0.15);
+    this._motor.f.frequency.setTargetAtTime(700 + agudeza * 1400, t, 0.15);
+    this._motor.g.gain.setTargetAtTime(0.022, t, 0.1);
+  },
+  pararMotor(){
+    if (!this._motor) return;
+    const { o, g } = this._motor;
+    try {
+      g.gain.setTargetAtTime(0.0001, this.ctx.currentTime, 0.05);
+      o.stop(this.ctx.currentTime + 0.3);
+    } catch(e){}
+    this._motor = null;
   }
 };
 
@@ -152,6 +204,50 @@ const Arcade = {
     };
   },
 
+  /**
+   * Nitidez en pantallas HiDPI: agranda el búfer real del canvas según la
+   * densidad de píxeles y escala el contexto, de modo que el juego sigue
+   * dibujando en sus coordenadas de siempre pero sin verse borroso.
+   * `canvas.width/height` siguen devolviendo el tamaño lógico.
+   */
+  nitido(canvas){
+    const w = canvas.width, h = canvas.height;
+    const dpr = Math.min(3, window.devicePixelRatio || 1);
+    const ctx = canvas.getContext('2d');
+    if (dpr !== 1){
+      canvas.width = Math.round(w * dpr);
+      canvas.height = Math.round(h * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      Object.defineProperty(canvas, 'width',  { get: () => w, configurable: true });
+      Object.defineProperty(canvas, 'height', { get: () => h, configurable: true });
+    }
+    return ctx;
+  },
+
+  // Igual, pero para lienzos fuera de pantalla creados a mano
+  lienzoOculto(w, h){
+    const c = document.createElement('canvas');
+    const dpr = Math.min(3, window.devicePixelRatio || 1);
+    c.width = Math.round(w * dpr); c.height = Math.round(h * dpr);
+    const ctx = c.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    c.anchoLogico = w; c.altoLogico = h;
+    return { lienzo: c, ctx };
+  },
+
+  // Cartera de fichas ficticias compartida por los juegos de casino
+  fichas: {
+    saldo(){
+      const v = guardado('arcade_fichas');
+      if (v !== null) return parseFloat(v) || 0;
+      // Compatibilidad con el saldo que Minas guardaba por su cuenta
+      const viejo = guardado('arcade_minas_saldo');
+      return viejo !== null ? (parseFloat(viejo) || 0) : 1000;
+    },
+    fijar(n){ guardar('arcade_fichas', Math.max(0, Math.round(n))); },
+    ajustar(n){ const s = this.saldo() + n; this.fijar(s); return this.saldo(); }
+  },
+
   // Coordenadas de ratón/tacto relativas al canvas, en píxeles del canvas
   puntero(canvas, ev){
     const r = canvas.getBoundingClientRect();
@@ -162,6 +258,68 @@ const Arcade = {
     };
   }
 };
+
+// ---------- Ayudas de dibujo ----------
+const suavizar = (a, b, t) => a + (b - a) * t;
+const facilSalida = t => 1 - Math.pow(1 - t, 3);
+const facilEntrada = t => t * t * t;
+
+// Sistema de partículas reutilizable
+class Particulas {
+  constructor(maximo = 400){ this.lista = []; this.maximo = maximo; }
+  emitir(n, cfg){
+    for (let i = 0; i < n && this.lista.length < this.maximo; i++){
+      const ang = cfg.ang !== undefined ? cfg.ang + azar(-1, 1) * (cfg.abanico || Math.PI) : azar(0, 6.283);
+      const v = azar(cfg.velMin || 40, cfg.velMax || 200);
+      this.lista.push({
+        x: cfg.x + azar(-(cfg.disp || 0), cfg.disp || 0),
+        y: cfg.y + azar(-(cfg.disp || 0), cfg.disp || 0),
+        vx: Math.cos(ang) * v, vy: Math.sin(ang) * v,
+        vida: azar(cfg.vidaMin || 0.3, cfg.vidaMax || 0.8), inicial: 1,
+        r: azar(cfg.rMin || 2, cfg.rMax || 5),
+        color: Array.isArray(cfg.color) ? elegir(cfg.color) : cfg.color,
+        gravedad: cfg.gravedad === undefined ? 400 : cfg.gravedad,
+        roce: cfg.roce === undefined ? 0.99 : cfg.roce,
+        brillo: !!cfg.brillo, estela: !!cfg.estela
+      });
+      const p = this.lista[this.lista.length - 1];
+      p.inicial = p.vida;
+    }
+  }
+  actualizar(dt){
+    for (let i = this.lista.length - 1; i >= 0; i--){
+      const p = this.lista[i];
+      p.vida -= dt;
+      if (p.vida <= 0){ this.lista.splice(i, 1); continue; }
+      p.x += p.vx * dt; p.y += p.vy * dt;
+      p.vy += p.gravedad * dt;
+      p.vx *= p.roce; p.vy *= p.roce;
+    }
+  }
+  dibujar(ctx){
+    for (const p of this.lista){
+      const a = limitar(p.vida / p.inicial, 0, 1);
+      ctx.globalAlpha = a;
+      if (p.brillo){ ctx.shadowColor = p.color; ctx.shadowBlur = 12; }
+      ctx.fillStyle = p.color;
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.r * (0.35 + a * 0.65), 0, 6.283); ctx.fill();
+      ctx.shadowBlur = 0;
+    }
+    ctx.globalAlpha = 1;
+  }
+  get largo(){ return this.lista.length; }
+}
+
+// Sacudida de cámara
+class Sacudida {
+  constructor(){ this.fuerza = 0; }
+  golpe(f){ this.fuerza = Math.max(this.fuerza, f); }
+  actualizar(dt){ this.fuerza = Math.max(0, this.fuerza - dt * this.fuerza * 6 - dt * 2); }
+  aplicar(ctx){
+    if (this.fuerza <= 0) return;
+    ctx.translate(azar(-1, 1) * this.fuerza, azar(-1, 1) * this.fuerza);
+  }
+}
 
 // Respaldo para navegadores sin roundRect
 if (!CanvasRenderingContext2D.prototype.roundRect){

@@ -107,9 +107,12 @@ button.azul{background:linear-gradient(180deg,#2a72a8,#1d537c); border-color:#4a
 .azul{color:var(--azul);}
 
 
-/* ====== Cambio de pantalla ====== */
-.pantalla{display:none; width:100%; flex-direction:column; align-items:center;}
-.pantalla.activa{display:flex;}
+/* ====== Cambio de pantalla ======
+   Lleva !important a propósito: el CSS de cada juego se acota con el selector
+   de su contenedor (#pantalla-xxx), y una regla suya heredada de "body" tiene
+   más especificidad que .pantalla. Sin esto, esa pantalla no se ocultaría. */
+.pantalla{display:none !important; width:100%; flex-direction:column; align-items:center;}
+.pantalla.activa{display:flex !important;}
 body{display:block; padding:0; margin:0;}
 #pantalla-portada{align-items:center;}
 
@@ -469,6 +472,186 @@ body{display:block; padding:0; margin:0;}
 #pantalla-serpiente .barra .titulo{color:var(--verde);}
 
 
+
+/* --- aviator --- */
+#pantalla-aviator #juego{width:min(1000px,100vw);}
+#pantalla-aviator .barra{gap:7px;}
+#pantalla-aviator .barra .titulo{color:#ff4d5e; letter-spacing:2px;}
+#pantalla-aviator /* ---- Historial de rondas ---- */
+  #historial{
+    display:flex; gap:6px; overflow-x:auto; padding:8px 10px; scrollbar-width:thin;
+    background:linear-gradient(180deg,#141a26,#0e131d);
+    border:1px solid #232b3d; border-radius:12px;
+  }
+#pantalla-aviator #historial::-webkit-scrollbar{height:5px;}
+#pantalla-aviator #historial::-webkit-scrollbar-thumb{background:#2c3550; border-radius:3px;}
+#pantalla-aviator .pastilla{
+    flex:none; font-size:12.5px; font-weight:800; padding:3px 10px; border-radius:999px;
+    background:rgba(255,255,255,.06); font-variant-numeric:tabular-nums;
+  }
+#pantalla-aviator .pastilla.bajo{color:#7aa2ff;}
+#pantalla-aviator .pastilla.medio{color:#c08bff;}
+#pantalla-aviator .pastilla.alto{color:#ffb43d;}
+#pantalla-aviator /* ---- Zona de vuelo ---- */
+  .escena{border-color:#232b3d;}
+#pantalla-aviator /* ---- Panel de apuesta ---- */
+  #apuestas{
+    display:grid; grid-template-columns:1fr 1fr; gap:12px;
+  }
+@media (max-width:620px){#pantalla-aviator #apuestas{grid-template-columns:1fr;}
+ }
+#pantalla-aviator .tarjetaApuesta{
+    background:linear-gradient(180deg,#1a2233,#141a28);
+    border:1px solid #2a3348; border-radius:14px; padding:12px;
+    display:flex; flex-direction:column; gap:9px;
+  }
+#pantalla-aviator .tarjetaApuesta .fila{display:flex; gap:8px; align-items:center;}
+#pantalla-aviator .tarjetaApuesta input[type=number]{
+    flex:1; min-width:0; background:#0e131d; border:1px solid #2a3348; border-radius:9px;
+    color:var(--texto); font-family:inherit; font-weight:800; font-size:17px; padding:9px 11px;
+    font-variant-numeric:tabular-nums;
+  }
+#pantalla-aviator .tarjetaApuesta input:focus{outline:none; border-color:#ff4d5e;}
+#pantalla-aviator .fichasRapidas{display:grid; grid-template-columns:repeat(4,1fr); gap:5px;}
+#pantalla-aviator .fichasRapidas button{padding:6px 0; font-size:12.5px;}
+#pantalla-aviator #btnApostar{
+    font-size:18px; padding:16px; width:100%; letter-spacing:.5px;
+    background:linear-gradient(180deg,#2fbe62,#1d8a45); border-color:#4ee089;
+  }
+#pantalla-aviator #btnApostar.retirar{background:linear-gradient(180deg,#f5a524,#c47a08); border-color:#ffd27a; color:#1a1204;}
+#pantalla-aviator #btnApostar.peligro{background:linear-gradient(180deg,#a03b3b,#7c2b2b); border-color:#c25555;}
+#pantalla-aviator #btnApostar small{display:block; font-size:12px; font-weight:700; opacity:.85; letter-spacing:0;}
+#pantalla-aviator .interruptor{display:flex; align-items:center; justify-content:space-between; font-size:13px; font-weight:700;}
+#pantalla-aviator .interruptor label{cursor:pointer;}
+#pantalla-aviator .interruptor input{
+    appearance:none; -webkit-appearance:none; margin:0; cursor:pointer;
+    width:46px; height:25px; border-radius:999px; flex:none;
+    background:#0e131d; border:1px solid #2a3348; position:relative;
+    transition:background .18s, border-color .18s;
+  }
+#pantalla-aviator .interruptor input::after{
+    content:''; position:absolute; top:3px; left:3px; width:17px; height:17px;
+    border-radius:50%; background:#5d6a85; transition:transform .18s, background .18s;
+  }
+#pantalla-aviator .interruptor input:checked{background:#12331f; border-color:#2fbe62;}
+#pantalla-aviator .interruptor input:checked::after{transform:translateX(21px); background:#4ee089;}
+#pantalla-aviator .interruptor input:focus-visible{outline:2px solid #4ee089; outline-offset:2px;}
+#pantalla-aviator .autoFila{display:flex; gap:8px; align-items:center; font-size:13px;}
+#pantalla-aviator .autoFila input[type=number]{
+    width:80px; background:#0e131d; border:1px solid #2a3348; border-radius:8px;
+    color:var(--texto); font-family:inherit; font-weight:800; padding:6px 8px; font-size:14px;
+  }
+#pantalla-aviator .aviso-legal{font-size:11px; color:#5d6a85; text-align:center; line-height:1.5;}
+
+
+
+/* --- pool --- */
+#pantalla-pool #juego{width:min(1000px,100vw);}
+#pantalla-pool .barra .titulo{color:#5fd8a4; letter-spacing:1px;}
+#pantalla-pool .barra .stat.turno{background:rgba(95,216,164,.14); border:1px solid rgba(95,216,164,.35);}
+#pantalla-pool #controles{
+    display:flex; gap:14px; align-items:center; flex-wrap:wrap;
+    background:linear-gradient(180deg, var(--panel2), var(--panel));
+    border:1px solid var(--borde); border-radius:12px; padding:10px 14px;
+  }
+#pantalla-pool #controles .grupo{display:flex; flex-direction:column; gap:5px;}
+#pantalla-pool #controles .eti{font-size:11px; font-weight:800; letter-spacing:.8px; color:var(--tenue); text-transform:uppercase;}
+#pantalla-pool /* Medidor de fuerza */
+  #fuerzaCaja{flex:1; min-width:180px;}
+#pantalla-pool #fuerzaTubo{
+    height:22px; border-radius:11px; background:#0e131d; border:1px solid #2a3348;
+    overflow:hidden; position:relative;
+  }
+#pantalla-pool #fuerzaRelleno{
+    height:100%; width:0%;
+    background:linear-gradient(90deg,#3fbf78 0%,#ffd25e 55%,#ff5a52 100%);
+    transition:width .05s linear;
+  }
+#pantalla-pool #fuerzaTubo span{
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    font-size:12px; font-weight:800; text-shadow:0 1px 3px rgba(0,0,0,.8);
+  }
+#pantalla-pool /* Rueda de efecto */
+  #efecto{
+    width:64px; height:64px; border-radius:50%; cursor:pointer; flex:none;
+    background:radial-gradient(circle at 36% 30%, #ffffff, #c8cede 70%, #8f97ab);
+    border:2px solid #46577d; position:relative; box-shadow:inset 0 -6px 12px rgba(0,0,0,.25);
+  }
+#pantalla-pool #efectoPunto{
+    position:absolute; width:13px; height:13px; border-radius:50%;
+    background:#e03b3b; border:2px solid #fff; transform:translate(-50%,-50%);
+    left:50%; top:50%; pointer-events:none; box-shadow:0 1px 4px rgba(0,0,0,.5);
+  }
+#pantalla-pool /* Bolas embocadas */
+  .rejillaBolas{display:flex; gap:3px; flex-wrap:wrap; max-width:190px;}
+#pantalla-pool .miniBola{width:19px; height:19px; border-radius:50%; border:1px solid rgba(0,0,0,.5);}
+@media (max-width:640px){#pantalla-pool #controles{gap:10px; padding:8px 10px;}
+#pantalla-pool #efecto{width:54px; height:54px;}
+
+  }
+
+
+
+/* --- rumble --- */
+#pantalla-rumble #juego{width:min(1000px,100vw);}
+#pantalla-rumble .barra .titulo{color:#ffb43d; letter-spacing:1px;}
+#pantalla-rumble /* Marcador */
+  #marcador{
+    display:flex; align-items:center; justify-content:center; gap:18px;
+    background:linear-gradient(180deg,#25203a,#181428);
+    border:1px solid #3a3157; border-radius:14px; padding:9px 16px;
+    box-shadow:0 6px 20px rgba(0,0,0,.45);
+  }
+#pantalla-rumble #marcador .equipo{display:flex; align-items:center; gap:9px; font-weight:900; font-size:16px;}
+#pantalla-rumble #marcador .escudo{
+    width:30px; height:30px; border-radius:9px; display:flex; align-items:center;
+    justify-content:center; font-size:17px;
+  }
+#pantalla-rumble #marcador .tanteo{
+    font-size:34px; font-weight:900; font-variant-numeric:tabular-nums; letter-spacing:2px;
+    min-width:104px; text-align:center; transition:transform .18s;
+  }
+#pantalla-rumble #marcador .tanteo.late{transform:scale(1.25);}
+#pantalla-rumble #reloj{
+    font-size:15px; font-weight:800; font-variant-numeric:tabular-nums;
+    background:rgba(0,0,0,.3); border-radius:9px; padding:5px 12px;
+  }
+#pantalla-rumble #reloj.ultimos{color:#ff6b6b; animation:latir 1s infinite;}
+@keyframes latir{50%{opacity:.45;}}
+#pantalla-rumble /* Banquillo */
+  #banquillo{
+    display:flex; gap:8px; align-items:stretch; flex-wrap:wrap;
+    background:linear-gradient(180deg, var(--panel2), var(--panel));
+    border:1px solid var(--borde); border-radius:12px; padding:10px;
+  }
+#pantalla-rumble #energiaCaja{flex:none; width:74px; display:flex; flex-direction:column; gap:4px; align-items:center;}
+#pantalla-rumble #energiaTubo{
+    width:100%; height:78px; border-radius:9px; background:#0e131d;
+    border:1px solid #2a3348; position:relative; overflow:hidden;
+  }
+#pantalla-rumble #energiaRelleno{
+    position:absolute; left:0; right:0; bottom:0;
+    background:linear-gradient(0deg,#8a3bd9,#c88bff); transition:height .1s linear;
+  }
+#pantalla-rumble #energiaTxt{font-size:19px; font-weight:900; color:#c88bff; font-variant-numeric:tabular-nums;}
+#pantalla-rumble .carta{
+    width:92px; padding:7px 4px 6px; border-radius:12px; text-align:center; cursor:pointer;
+    background:linear-gradient(180deg,#2f2748,#221d36); border:2px solid #3a3157;
+    transition:transform .09s, border-color .14s, filter .14s; position:relative;
+  }
+#pantalla-rumble .carta:hover{transform:translateY(-4px); filter:brightness(1.15);}
+#pantalla-rumble .carta.activa{border-color:#ffb43d; box-shadow:0 0 14px rgba(255,180,61,.45);}
+#pantalla-rumble .carta.cara{opacity:.42; filter:grayscale(.6);}
+#pantalla-rumble .carta .bicho{font-size:30px; line-height:1.1;}
+#pantalla-rumble .carta .nom{font-weight:800; font-size:11px;}
+#pantalla-rumble .carta .coste{color:#c88bff; font-weight:900; font-size:12.5px;}
+#pantalla-rumble .carta .tecla{
+    position:absolute; top:3px; left:5px; font-size:10px; color:var(--tenue);
+    background:rgba(0,0,0,.4); border-radius:4px; padding:0 4px;
+  }
+#pantalla-rumble .carta .dato{font-size:9.5px; color:var(--tenue); line-height:1.35;}
+
+
 </style>
 </head>
 <body>
@@ -477,7 +660,7 @@ body{display:block; padding:0; margin:0;}
 <div id="cabecera">
   <h1>ARCADE NEXO</h1>
   <div class="lema">
-    Seis juegos hechos a mano en HTML5 + Canvas. Sin instalar nada, sin anuncios, sin internet.<br>
+    Nueve juegos hechos a mano en HTML5 + Canvas. Sin instalar nada, sin anuncios, sin internet.<br>
     <span class="parpadeo">▸ ELIGE TU JUEGO ◂</span>
   </div>
 </div>
@@ -845,6 +1028,202 @@ body{display:block; padding:0; margin:0;}
 </div>
 </div>
 
+<div class="pantalla" id="pantalla-aviator">
+<div id="juego">
+  <div class="barra">
+    <a class="boton" href="javascript:void 0" data-volver="1">🕹 Arcade</a>
+    <div class="titulo">✈ AVIATOR</div>
+    <div class="sep"></div>
+    <div class="stat">🪙 <span id="saldoTxt" class="oro">1000</span></div>
+    <div class="stat">🏆 <span id="recordTxt" class="tenue">—</span></div>
+    <button id="btnSonido" title="Sonido">🔊</button>
+  </div>
+
+  <div id="historial"></div>
+
+  <div class="escena">
+    <canvas id="lienzo" width="960" height="440"></canvas>
+    <div class="avisos" id="avisos"></div>
+  </div>
+
+  <div id="apuestas">
+    <div class="tarjetaApuesta">
+      <div class="fila">
+        <input id="monto" type="number" min="1" step="1" value="50">
+      </div>
+      <div class="fichasRapidas">
+        <button data-op="mitad">½</button>
+        <button data-op="doble">x2</button>
+        <button data-op="100">100</button>
+        <button data-op="max">MÁX</button>
+      </div>
+      <button id="btnApostar" class="primario">APOSTAR<small>ronda siguiente</small></button>
+    </div>
+
+    <div class="tarjetaApuesta">
+      <div class="interruptor">
+        <label for="autoApuesta">🔁 Apuesta automática</label>
+        <input type="checkbox" id="autoApuesta">
+      </div>
+      <div class="interruptor">
+        <label for="autoRetiro">🎯 Retiro automático</label>
+        <input type="checkbox" id="autoRetiro">
+      </div>
+      <div class="autoFila">
+        <span class="tenue">Retirar en</span>
+        <input id="objetivo" type="number" min="1.01" step="0.1" value="2.00">
+        <span class="tenue">x</span>
+      </div>
+      <div class="infoAuto tenue" style="font-size:12.5px; line-height:1.5">
+        Con el retiro automático el cobro se hace solo en cuanto el avión
+        alcanza tu multiplicador, aunque no estés mirando.
+      </div>
+      <div class="aviso-legal">
+        Juego de fantasía con <b>fichas ficticias</b>.<br>No hay dinero real ni forma de depositar o retirar.
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<div class="pantalla" id="pantalla-pool">
+<div id="juego">
+  <div class="barra">
+    <a class="boton" href="javascript:void 0" data-volver="1">🕹 Arcade</a>
+    <div class="titulo">🎱 8 BALL POOL</div>
+    <div class="sep"></div>
+    <div class="stat turno" id="turnoTxt">Tu turno</div>
+    <div class="stat">🏆 <span id="recordTxt" class="tenue">0</span></div>
+    <button id="btnNueva" title="Nueva partida">↻</button>
+    <button id="btnSonido" title="Sonido">🔊</button>
+  </div>
+
+  <div class="escena">
+    <canvas id="lienzo" width="960" height="520"></canvas>
+    <div class="avisos" id="avisos"></div>
+
+    <div class="modal visible" id="modalInicio">
+      <div class="tarjetaModal">
+        <h1>🎱 8 BALL POOL</h1>
+        <div class="sub">Física real de billar contra la máquina.</div>
+        <div class="instrucciones">
+          <b>Apuntar:</b> mueve el ratón (o el dedo) por la mesa; verás la línea de tiro
+          punteada, la <b>bola fantasma</b> en el punto de contacto y hacia dónde saldrá cada bola.<br>
+          <b>Tirar:</b> mantén pulsado y <b>arrastra hacia atrás</b> para cargar fuerza; suelta para golpear.<br>
+          <b>Efecto:</b> arrastra el punto rojo sobre la bola blanca de abajo.
+          Arriba = corrido, abajo = retroceso, a los lados = efecto lateral.<br>
+          <b>Reglas:</b> el primero que meta una bola se queda con ese grupo (lisas o rayadas).
+          Al meter todas las tuyas, va la <b>8</b>. Meterla antes de tiempo o junto con la blanca es perder.<br>
+          Las faltas dan <b>bola en mano</b> al rival.
+        </div>
+        <div class="filaBotones"><button class="primario" id="btnJugar">▶ Romper</button></div>
+      </div>
+    </div>
+
+    <div class="modal" id="modalFin">
+      <div class="tarjetaModal">
+        <h1 id="tituloFin">FIN</h1>
+        <div class="sub" id="subFin"></div>
+        <div class="filaBotones">
+          <button class="primario" id="btnOtra">↻ Otra partida</button>
+          <a class="boton" href="javascript:void 0" data-volver="1">🕹 Arcade</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="controles">
+    <div class="grupo">
+      <div class="eti">Efecto</div>
+      <div id="efecto"><div id="efectoPunto"></div></div>
+    </div>
+    <div class="grupo" id="fuerzaCaja">
+      <div class="eti">Fuerza</div>
+      <div id="fuerzaTubo"><div id="fuerzaRelleno"></div><span id="fuerzaTxt">Mantén pulsado y arrastra</span></div>
+    </div>
+    <div class="grupo">
+      <div class="eti">Tú <span id="grupoTu" class="tenue"></span></div>
+      <div class="rejillaBolas" id="bolasTu"></div>
+    </div>
+    <div class="grupo">
+      <div class="eti">Rival <span id="grupoIA" class="tenue"></span></div>
+      <div class="rejillaBolas" id="bolasIA"></div>
+    </div>
+  </div>
+</div>
+</div>
+
+<div class="pantalla" id="pantalla-rumble">
+<div id="juego">
+  <div class="barra">
+    <a class="boton" href="javascript:void 0" data-volver="1">🕹 Arcade</a>
+    <div class="titulo">⚽ RUMBLE STARS</div>
+    <div class="sep"></div>
+    <div class="stat">🏆 <span id="recordTxt" class="tenue">0</span></div>
+    <button id="btnPausa" title="Pausa (Espacio)">⏸</button>
+    <button id="btnSonido" title="Sonido">🔊</button>
+  </div>
+
+  <div id="marcador">
+    <div class="equipo">
+      <div class="escudo" style="background:#2f7fd8">🦁</div><span>TÚ</span>
+    </div>
+    <div class="tanteo" id="tanteo">0 <span class="tenue">-</span> 0</div>
+    <div class="equipo">
+      <span>RIVAL</span><div class="escudo" style="background:#d8452f">🐺</div>
+    </div>
+    <div id="reloj">1:30</div>
+  </div>
+
+  <div class="escena">
+    <canvas id="lienzo" width="960" height="560"></canvas>
+    <div class="avisos" id="avisos"></div>
+
+    <div class="modal visible" id="modalInicio">
+      <div class="tarjetaModal">
+        <h1>⚽ RUMBLE STARS</h1>
+        <div class="sub">Fútbol de arena con bichos que embisten.</div>
+        <div class="instrucciones">
+          <b>Objetivo:</b> mete más goles que el rival en <b>90 segundos</b>. Tú atacas hacia la derecha.<br>
+          <b>Desplegar:</b> elige un bicho del banquillo (teclas <b>1-6</b>), después
+          <b>pulsa en tu mitad y arrastra</b> hacia donde quieres lanzarlo. Cuanto más largo el
+          arrastre, más fuerte entra al campo.<br>
+          <b>Energía:</b> se rellena sola. Cada bicho cuesta lo que pone en su carta.<br>
+          Cada uno pesa y corre distinto: el <b>elefante</b> aparta a todos, el <b>guepardo</b>
+          llega el primero, el <b>rinoceronte</b> embiste en línea recta y la <b>tortuga</b>
+          se queda defendiendo tu portería.<br>
+          Los bichos se cansan y abandonan el campo al cabo de unos segundos.
+        </div>
+        <div class="filaBotones"><button class="primario" id="btnJugar">▶ ¡A jugar!</button></div>
+      </div>
+    </div>
+
+    <div class="modal" id="modalFin">
+      <div class="tarjetaModal">
+        <h1 id="tituloFin">FINAL</h1>
+        <div class="sub" id="subFin"></div>
+        <div class="statsFin">
+          <div class="caja"><div class="num" id="finTanteo">0 - 0</div><div class="eti">resultado</div></div>
+          <div class="caja"><div class="num" id="finRecord">0</div><div class="eti">victorias</div></div>
+        </div>
+        <div class="filaBotones">
+          <button class="primario" id="btnOtra">↻ Revancha</button>
+          <a class="boton" href="javascript:void 0" data-volver="1">🕹 Arcade</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="banquillo">
+    <div id="energiaCaja">
+      <div id="energiaTxt">10</div>
+      <div id="energiaTubo"><div id="energiaRelleno" style="height:100%"></div></div>
+    </div>
+    <div id="cartas" style="display:flex; gap:8px; flex-wrap:wrap; flex:1"></div>
+  </div>
+</div>
+</div>
+
 <script>
 /* ====== Utilidades comunes ====== */
 /* ==========================================================
@@ -905,7 +1284,10 @@ const Sonido = {
   fx(nombre){
     if (this.silencio || !this.ctx) return;
     const ahora = performance.now();
-    const min = {come:55, paso:60, disparo:60, golpe:50, giro:70}[nombre] || 0;
+    const min = {
+      come:55, paso:60, disparo:60, golpe:50, giro:70,
+      bola:26, banda:45, choquePj:45, guisante:70, mordisco:90
+    }[nombre] || 0;
     if (min && this.ultimo[nombre] && ahora - this.ultimo[nombre] < min) return;
     this.ultimo[nombre] = ahora;
     switch (nombre){
@@ -936,7 +1318,56 @@ const Sonido = {
       case 'victoria':  [523, 659, 784, 1047, 1319].forEach((f, i) => this.tono(f, f, 0.22, 'triangle', 0.09, i * 0.15)); break;
       case 'error':     this.tono(200, 120, 0.16, 'sawtooth', 0.05); break;
       case 'paso':      this.tono(120, 90, 0.05, 'square', 0.02); break;
+      // --- Aviator ---
+      case 'despegue':  this.ruido(0.6, 900, 0.07); this.tono(90, 300, 0.7, 'sawtooth', 0.05); break;
+      case 'estrella':  this.melodia([784, 1046, 1318, 1568], 0.06, 'sine', 0.05); break;
+      case 'choque':    this.ruido(0.7, 600, 0.2); this.tono(200, 35, 0.6, 'sawtooth', 0.13); break;
+      case 'cuenta':    this.tono(660, 660, 0.06, 'square', 0.03); break;
+      // --- Billar ---
+      case 'taco':      this.ruido(0.05, 5000, 0.09); this.tono(1400, 700, 0.05, 'triangle', 0.06); break;
+      case 'bola':      this.ruido(0.035, 6000, 0.05); this.tono(1800, 1100, 0.035, 'triangle', 0.04); break;
+      case 'banda':     this.ruido(0.06, 1400, 0.05); this.tono(320, 190, 0.07, 'sine', 0.05); break;
+      case 'tronera':   this.tono(420, 130, 0.22, 'sine', 0.08); this.ruido(0.18, 700, 0.06); break;
+      // --- Rumble ---
+      case 'patada':    this.ruido(0.07, 2200, 0.09); this.tono(240, 110, 0.1, 'square', 0.07); break;
+      case 'choquePj':  this.ruido(0.08, 1200, 0.06); this.tono(160, 90, 0.09, 'sine', 0.05); break;
+      case 'silbato':   this.tono(2100, 2400, 0.16, 'square', 0.05); this.tono(2400, 2100, 0.16, 'square', 0.05, 0.16); break;
+      case 'gol':       [523, 659, 784, 1047, 1319, 1568].forEach((f, i) => this.tono(f, f, 0.18, 'square', 0.07, i * 0.09));
+                        this.ruido(0.9, 1200, 0.05); break;
+      case 'desplegar': this.tono(300, 620, 0.11, 'triangle', 0.06); break;
     }
+  },
+
+  /**
+   * Motor continuo (Aviator): un oscilador que sube de tono mientras vuela.
+   * `agudeza` va de 0 a 1; con `null` se apaga.
+   */
+  motor(agudeza){
+    if (!this.ctx || this.silencio){ this.pararMotor(); return; }
+    if (agudeza === null){ this.pararMotor(); return; }
+    if (!this._motor){
+      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+      const f = this.ctx.createBiquadFilter();
+      f.type = 'lowpass'; f.frequency.value = 900;
+      o.type = 'sawtooth'; o.frequency.value = 70;
+      g.gain.value = 0.0001;
+      o.connect(f); f.connect(g); g.connect(this.ctx.destination);
+      o.start();
+      this._motor = { o, g, f };
+    }
+    const t = this.ctx.currentTime;
+    this._motor.o.frequency.setTargetAtTime(70 + agudeza * 150, t, 0.15);
+    this._motor.f.frequency.setTargetAtTime(700 + agudeza * 1400, t, 0.15);
+    this._motor.g.gain.setTargetAtTime(0.022, t, 0.1);
+  },
+  pararMotor(){
+    if (!this._motor) return;
+    const { o, g } = this._motor;
+    try {
+      g.gain.setTargetAtTime(0.0001, this.ctx.currentTime, 0.05);
+      o.stop(this.ctx.currentTime + 0.3);
+    } catch(e){}
+    this._motor = null;
   }
 };
 
@@ -1001,6 +1432,50 @@ const Arcade = {
     };
   },
 
+  /**
+   * Nitidez en pantallas HiDPI: agranda el búfer real del canvas según la
+   * densidad de píxeles y escala el contexto, de modo que el juego sigue
+   * dibujando en sus coordenadas de siempre pero sin verse borroso.
+   * `canvas.width/height` siguen devolviendo el tamaño lógico.
+   */
+  nitido(canvas){
+    const w = canvas.width, h = canvas.height;
+    const dpr = Math.min(3, window.devicePixelRatio || 1);
+    const ctx = canvas.getContext('2d');
+    if (dpr !== 1){
+      canvas.width = Math.round(w * dpr);
+      canvas.height = Math.round(h * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      Object.defineProperty(canvas, 'width',  { get: () => w, configurable: true });
+      Object.defineProperty(canvas, 'height', { get: () => h, configurable: true });
+    }
+    return ctx;
+  },
+
+  // Igual, pero para lienzos fuera de pantalla creados a mano
+  lienzoOculto(w, h){
+    const c = document.createElement('canvas');
+    const dpr = Math.min(3, window.devicePixelRatio || 1);
+    c.width = Math.round(w * dpr); c.height = Math.round(h * dpr);
+    const ctx = c.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    c.anchoLogico = w; c.altoLogico = h;
+    return { lienzo: c, ctx };
+  },
+
+  // Cartera de fichas ficticias compartida por los juegos de casino
+  fichas: {
+    saldo(){
+      const v = guardado('arcade_fichas');
+      if (v !== null) return parseFloat(v) || 0;
+      // Compatibilidad con el saldo que Minas guardaba por su cuenta
+      const viejo = guardado('arcade_minas_saldo');
+      return viejo !== null ? (parseFloat(viejo) || 0) : 1000;
+    },
+    fijar(n){ guardar('arcade_fichas', Math.max(0, Math.round(n))); },
+    ajustar(n){ const s = this.saldo() + n; this.fijar(s); return this.saldo(); }
+  },
+
   // Coordenadas de ratón/tacto relativas al canvas, en píxeles del canvas
   puntero(canvas, ev){
     const r = canvas.getBoundingClientRect();
@@ -1011,6 +1486,68 @@ const Arcade = {
     };
   }
 };
+
+// ---------- Ayudas de dibujo ----------
+const suavizar = (a, b, t) => a + (b - a) * t;
+const facilSalida = t => 1 - Math.pow(1 - t, 3);
+const facilEntrada = t => t * t * t;
+
+// Sistema de partículas reutilizable
+class Particulas {
+  constructor(maximo = 400){ this.lista = []; this.maximo = maximo; }
+  emitir(n, cfg){
+    for (let i = 0; i < n && this.lista.length < this.maximo; i++){
+      const ang = cfg.ang !== undefined ? cfg.ang + azar(-1, 1) * (cfg.abanico || Math.PI) : azar(0, 6.283);
+      const v = azar(cfg.velMin || 40, cfg.velMax || 200);
+      this.lista.push({
+        x: cfg.x + azar(-(cfg.disp || 0), cfg.disp || 0),
+        y: cfg.y + azar(-(cfg.disp || 0), cfg.disp || 0),
+        vx: Math.cos(ang) * v, vy: Math.sin(ang) * v,
+        vida: azar(cfg.vidaMin || 0.3, cfg.vidaMax || 0.8), inicial: 1,
+        r: azar(cfg.rMin || 2, cfg.rMax || 5),
+        color: Array.isArray(cfg.color) ? elegir(cfg.color) : cfg.color,
+        gravedad: cfg.gravedad === undefined ? 400 : cfg.gravedad,
+        roce: cfg.roce === undefined ? 0.99 : cfg.roce,
+        brillo: !!cfg.brillo, estela: !!cfg.estela
+      });
+      const p = this.lista[this.lista.length - 1];
+      p.inicial = p.vida;
+    }
+  }
+  actualizar(dt){
+    for (let i = this.lista.length - 1; i >= 0; i--){
+      const p = this.lista[i];
+      p.vida -= dt;
+      if (p.vida <= 0){ this.lista.splice(i, 1); continue; }
+      p.x += p.vx * dt; p.y += p.vy * dt;
+      p.vy += p.gravedad * dt;
+      p.vx *= p.roce; p.vy *= p.roce;
+    }
+  }
+  dibujar(ctx){
+    for (const p of this.lista){
+      const a = limitar(p.vida / p.inicial, 0, 1);
+      ctx.globalAlpha = a;
+      if (p.brillo){ ctx.shadowColor = p.color; ctx.shadowBlur = 12; }
+      ctx.fillStyle = p.color;
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.r * (0.35 + a * 0.65), 0, 6.283); ctx.fill();
+      ctx.shadowBlur = 0;
+    }
+    ctx.globalAlpha = 1;
+  }
+  get largo(){ return this.lista.length; }
+}
+
+// Sacudida de cámara
+class Sacudida {
+  constructor(){ this.fuerza = 0; }
+  golpe(f){ this.fuerza = Math.max(this.fuerza, f); }
+  actualizar(dt){ this.fuerza = Math.max(0, this.fuerza - dt * this.fuerza * 6 - dt * 2); }
+  aplicar(ctx){
+    if (this.fuerza <= 0) return;
+    ctx.translate(azar(-1, 1) * this.fuerza, azar(-1, 1) * this.fuerza);
+  }
+}
 
 // Respaldo para navegadores sin roundRect
 if (!CanvasRenderingContext2D.prototype.roundRect){
@@ -1037,6 +1574,7 @@ const Enrutador = {
   actual: 'portada',
   arrancados: {},
   ir(id){
+    Sonido.pararMotor();          // ningún sonido continuo sobrevive al cambio de pantalla
     document.querySelectorAll('.pantalla').forEach(p => p.classList.remove('activa'));
     const destino = document.getElementById('pantalla-' + id);
     if (!destino) return;
@@ -1118,8 +1656,8 @@ const JUEGOS = [
     nombre:'💣 Minas', genero:'Casino',
     desc:'Destapa gemas sin tocar una mina y retírate a tiempo. Fichas ficticias, cero dinero real.',
     record(){
-      const s = Arcade.leer('minas_saldo', 1000), m = Arcade.record('minas_mayor');
-      return 'Saldo: ' + s.toLocaleString('es-ES') + ' 🪙' + (m ? ' · mejor +' + m.toLocaleString('es-ES') : '');
+      const s = Arcade.fichas.saldo(), m = Arcade.record('minas_mayor');
+      return s.toLocaleString('es-ES') + ' 🪙' + (m ? ' · mejor +' + m.toLocaleString('es-ES') : '');
     },
     portada: portadaMinas
   },
@@ -1129,6 +1667,31 @@ const JUEGOS = [
     desc:'Encaja las piezas en el tablero de 8x8 y revienta filas y columnas encadenando combos.',
     record(){ const r = Arcade.record('blockblast'); return r ? 'Récord: ' + r + ' pts' : 'Sin jugar todavía'; },
     portada: portadaBlock
+  },
+  {
+    id:'aviator', archivo:'juegos/aviator.html', nuevo:true,
+    nombre:'✈ Aviator', genero:'Casino',
+    desc:'El avión despega y el multiplicador sube. Retírate antes de que se vaya volando.',
+    record(){
+      const r = Arcade.record('aviator_mayor');
+      const s = Arcade.fichas.saldo();
+      return (r ? 'Mejor: ' + r.toFixed(2) + 'x · ' : '') + s.toLocaleString('es-ES') + ' 🪙';
+    },
+    portada: portadaAviator
+  },
+  {
+    id:'pool', archivo:'juegos/8-ball-pool.html', nuevo:true,
+    nombre:'🎱 8 Ball Pool', genero:'Deportes',
+    desc:'Billar con física real: efecto, bandas, bola fantasma y un rival que no perdona.',
+    record(){ const r = Arcade.record('pool_victorias'); return r ? r + ' victorias' : 'Sin jugar todavía'; },
+    portada: portadaPool
+  },
+  {
+    id:'rumble', archivo:'juegos/rumble-stars.html', nuevo:true,
+    nombre:'⚽ Rumble Stars', genero:'Arena',
+    desc:'Fútbol de arena: lanza bichos al campo, empuja el balón y revienta la portería rival.',
+    record(){ const r = Arcade.record('rumble_victorias'); return r ? r + ' victorias' : 'Sin jugar todavía'; },
+    portada: portadaRumble
   },
   {
     id:'serpiente', archivo:'juegos/serpiente.html', nuevo:true,
@@ -1319,6 +1882,167 @@ function portadaSerpiente(c){
   // fantasma
   c.font = '22px serif'; c.textAlign = 'center'; c.textBaseline = 'middle';
   c.fillText('👻', 120, 130);
+}
+
+function portadaAviator(c){
+  fondo(c, '#131b2e', '#0a0f1a');
+  const halo = c.createRadialGradient(250, 60, 8, 250, 60, 190);
+  halo.addColorStop(0, 'rgba(255,77,94,.22)'); halo.addColorStop(1, 'rgba(255,77,94,0)');
+  c.fillStyle = halo; c.fillRect(0, 0, A, AL);
+  c.fillStyle = '#cfe0ff';
+  for (let i = 0; i < 40; i++) c.fillRect(azar(0, A), azar(0, AL), azar(0.8, 1.8), azar(0.8, 1.8));
+
+  c.strokeStyle = 'rgba(180,200,240,.28)'; c.lineWidth = 1.5;
+  c.beginPath(); c.moveTo(26, 12); c.lineTo(26, 146); c.lineTo(A-10, 146); c.stroke();
+
+  // curva de vuelo
+  const pts = [];
+  for (let i = 0; i <= 40; i++){
+    const u = 1 - Math.exp(-i/40 * 2.6), v = Math.pow(u, 2.1);
+    pts.push([26 + (250-26)*u, 146 - (146-30)*v]);
+  }
+  c.beginPath(); c.moveTo(26, 146);
+  pts.forEach(p => c.lineTo(p[0], p[1]));
+  c.lineTo(pts[pts.length-1][0], 146); c.closePath();
+  const rel = c.createLinearGradient(0, 20, 0, 146);
+  rel.addColorStop(0, 'rgba(255,77,94,.35)'); rel.addColorStop(1, 'rgba(255,77,94,0)');
+  c.fillStyle = rel; c.fill();
+  c.beginPath(); pts.forEach((p, i) => i ? c.lineTo(p[0], p[1]) : c.moveTo(p[0], p[1]));
+  c.strokeStyle = '#ff4d5e'; c.lineWidth = 3.5; c.lineJoin = 'round';
+  c.shadowColor = '#ff4d5e'; c.shadowBlur = 14; c.stroke(); c.shadowBlur = 0;
+
+  // avión
+  const p = pts[pts.length-1];
+  c.save(); c.translate(p[0], p[1]); c.rotate(-0.62);
+  c.fillStyle = '#e4283c';
+  c.beginPath(); c.moveTo(17, 0); c.quadraticCurveTo(6, -6, -12, -5);
+  c.quadraticCurveTo(-18, -3, -18, 0); c.quadraticCurveTo(-18, 3, -12, 5);
+  c.quadraticCurveTo(6, 6, 17, 0); c.closePath(); c.fill();
+  c.fillStyle = '#a3162a';
+  c.beginPath(); c.moveTo(2, 0); c.lineTo(-8, -12); c.lineTo(-13, -11); c.lineTo(-5, 0); c.closePath(); c.fill();
+  c.fillStyle = 'rgba(200,230,255,.9)';
+  c.beginPath(); c.ellipse(5, -2, 5, 2.6, 0, 0, 6.283); c.fill();
+  c.restore();
+
+  c.font = '900 42px "Segoe UI", system-ui, sans-serif';
+  c.textAlign = 'right'; c.textBaseline = 'middle';
+  c.fillStyle = '#c08bff'; c.shadowColor = '#c08bff'; c.shadowBlur = 16;
+  c.fillText('2.47x', A - 18, 58);
+  c.shadowBlur = 0;
+}
+
+function portadaPool(c){
+  // marco de madera
+  const m = c.createLinearGradient(0, 0, 0, AL);
+  m.addColorStop(0, '#7a4c2a'); m.addColorStop(1, '#4f2d15');
+  c.fillStyle = m; c.fillRect(0, 0, A, AL);
+  const pano = c.createRadialGradient(A/2, AL/2, 20, A/2, AL/2, 230);
+  pano.addColorStop(0, '#228554'); pano.addColorStop(1, '#0f4d30');
+  c.fillStyle = pano; c.fillRect(20, 18, A-40, AL-36);
+
+  // troneras
+  [[20,18],[A/2,18],[A-20,18],[20,AL-18],[A/2,AL-18],[A-20,AL-18]].forEach(([x,y]) => {
+    c.fillStyle = '#05070c';
+    c.beginPath(); c.arc(x, y, 13, 0, 6.283); c.fill();
+  });
+
+  const bola = (x, y, col, num, rayada) => {
+    c.fillStyle = 'rgba(0,0,0,.35)';
+    c.beginPath(); c.ellipse(x+2, y+3, 11, 9, 0, 0, 6.283); c.fill();
+    const g = c.createRadialGradient(x-4, y-5, 1.5, x, y, 12);
+    g.addColorStop(0, '#ffffff'); g.addColorStop(0.45, col); g.addColorStop(1, '#00000066');
+    c.fillStyle = g;
+    c.beginPath(); c.arc(x, y, 11, 0, 6.283); c.fill();
+    if (rayada){
+      c.save(); c.beginPath(); c.arc(x, y, 11, 0, 6.283); c.clip();
+      c.fillStyle = '#f7f7f2';
+      c.beginPath(); c.ellipse(x, y, 12, 4.6, 0, 0, 6.283); c.fill();
+      c.restore();
+    }
+    if (num){
+      c.fillStyle = '#f7f7f2';
+      c.beginPath(); c.arc(x, y, 5, 0, 6.283); c.fill();
+      c.fillStyle = '#15171d'; c.font = '700 8px "Segoe UI", sans-serif';
+      c.textAlign = 'center'; c.textBaseline = 'middle';
+      c.fillText(num, x, y + 0.5);
+    }
+    c.fillStyle = 'rgba(255,255,255,.6)';
+    c.beginPath(); c.ellipse(x-4, y-5, 3, 2, -0.6, 0, 6.283); c.fill();
+  };
+
+  bola(232, 66, '#15171d', '8');
+  bola(258, 88, '#f2c010', '9', true);
+  bola(212, 100, '#cf2020', '3');
+  bola(276, 52, '#1f4fc4', '2');
+  // blanca y taco
+  bola(96, 86, '#f7f7f2');
+  c.strokeStyle = 'rgba(255,255,255,.6)'; c.lineWidth = 1.6;
+  c.setLineDash([5, 5]);
+  c.beginPath(); c.moveTo(96, 86); c.lineTo(214, 74); c.stroke();
+  c.setLineDash([]);
+  const t = c.createLinearGradient(70, 88, -40, 92);
+  t.addColorStop(0, '#e8d3a8'); t.addColorStop(0.4, '#a9773f'); t.addColorStop(1, '#3d2210');
+  c.strokeStyle = t; c.lineWidth = 6; c.lineCap = 'round';
+  c.beginPath(); c.moveTo(72, 88); c.lineTo(-30, 96); c.stroke();
+}
+
+function portadaRumble(c){
+  const g = c.createLinearGradient(0, 0, 0, AL);
+  g.addColorStop(0, '#2b2447'); g.addColorStop(1, '#1a1630');
+  c.fillStyle = g; c.fillRect(0, 0, A, AL);
+  for (let i = 0; i < 9; i++){
+    c.fillStyle = i % 2 ? '#2f8f45' : '#288040';
+    c.fillRect(14 + i*(A-28)/9, 14, (A-28)/9, AL-28);
+  }
+  c.strokeStyle = 'rgba(255,255,255,.5)'; c.lineWidth = 2;
+  c.strokeRect(14, 14, A-28, AL-28);
+  c.beginPath(); c.moveTo(A/2, 14); c.lineTo(A/2, AL-14); c.stroke();
+  c.beginPath(); c.arc(A/2, AL/2, 34, 0, 6.283); c.stroke();
+  // porterías
+  c.strokeStyle = '#2f7fd8'; c.lineWidth = 5; c.lineCap = 'round';
+  c.beginPath(); c.moveTo(14, AL/2-34); c.lineTo(14, AL/2+34); c.stroke();
+  c.strokeStyle = '#d8452f';
+  c.beginPath(); c.moveTo(A-14, AL/2-34); c.lineTo(A-14, AL/2+34); c.stroke();
+
+  const bicho = (x, y, icono, col, aro) => {
+    c.fillStyle = 'rgba(0,0,0,.3)';
+    c.beginPath(); c.ellipse(x, y+16, 16, 6, 0, 0, 6.283); c.fill();
+    c.fillStyle = aro;
+    c.beginPath(); c.arc(x, y, 21, 0, 6.283); c.fill();
+    const gg = c.createRadialGradient(x-6, y-7, 3, x, y, 17);
+    gg.addColorStop(0, '#ffffff'); gg.addColorStop(0.35, col); gg.addColorStop(1, '#00000055');
+    c.fillStyle = gg;
+    c.beginPath(); c.arc(x, y, 17, 0, 6.283); c.fill();
+    c.font = '23px serif'; c.textAlign = 'center'; c.textBaseline = 'middle';
+    c.fillText(icono, x, y+1);
+  };
+  bicho(112, 96, '🦏', '#8fa0b5', '#2f7fd8');
+  bicho(186, 62, '🐘', '#9aa7c4', '#2f7fd8');
+  bicho(238, 108, '🐺', '#b58f7a', '#d8452f');
+
+  // balón con destello
+  c.fillStyle = '#ffd25e';
+  for (let k = 0; k < 8; k++){
+    const a = k * 0.785;
+    c.globalAlpha = 0.5;
+    c.beginPath();
+    c.moveTo(150 + Math.cos(a)*16, 118 + Math.sin(a)*16);
+    c.lineTo(150 + Math.cos(a+0.3)*26, 118 + Math.sin(a+0.3)*26);
+    c.lineTo(150 + Math.cos(a-0.3)*26, 118 + Math.sin(a-0.3)*26);
+    c.closePath(); c.fill();
+  }
+  c.globalAlpha = 1;
+  const b = c.createRadialGradient(146, 114, 2, 150, 118, 13);
+  b.addColorStop(0, '#fff'); b.addColorStop(1, '#9aa2b4');
+  c.fillStyle = b;
+  c.beginPath(); c.arc(150, 118, 13, 0, 6.283); c.fill();
+  c.fillStyle = '#20242e';
+  c.beginPath();
+  for (let k = 0; k < 5; k++){
+    const a = k * 1.2566 - Math.PI/2;
+    c.lineTo(150 + Math.cos(a)*5.5, 118 + Math.sin(a)*5.5);
+  }
+  c.closePath(); c.fill();
 }
 
 // ---------- Montaje de las cartas ----------
@@ -1682,9 +2406,35 @@ const CASCOS_NIVEL = ['gorra','gorra','casco','visor','corona'];
 const MODOS_OBJETIVO = ['primero','último','fuerte','cercano'];
 const OLA_FINAL = 40;
 
+// ---------- Nitidez en pantallas de alta densidad ----------
+// (este juego es autocontenido y no carga arcade.js, así que lleva su copia)
+const Pantalla = {
+  nitido(canvas){
+    const w = canvas.width, h = canvas.height;
+    const dpr = Math.min(3, window.devicePixelRatio || 1);
+    const c = canvas.getContext('2d');
+    if (dpr !== 1){
+      canvas.width = Math.round(w * dpr);
+      canvas.height = Math.round(h * dpr);
+      c.setTransform(dpr, 0, 0, dpr, 0, 0);
+      Object.defineProperty(canvas, 'width',  { get: () => w, configurable: true });
+      Object.defineProperty(canvas, 'height', { get: () => h, configurable: true });
+    }
+    return c;
+  },
+  lienzoOculto(w, h){
+    const c = document.createElement('canvas');
+    const dpr = Math.min(3, window.devicePixelRatio || 1);
+    c.width = Math.round(w * dpr); c.height = Math.round(h * dpr);
+    const c2 = c.getContext('2d');
+    c2.setTransform(dpr, 0, 0, dpr, 0, 0);
+    return { lienzo: c, ctx: c2 };
+  }
+};
+
 // ---------- Estado global ----------
 const lienzo = $('lienzo');
-const ctx = lienzo.getContext('2d');
+const ctx = Pantalla.nitido(lienzo);
 const ANCHO = lienzo.width, ALTO = lienzo.height;
 const MITAD_CAMINO = 27;
 let fondo = null;
@@ -2498,9 +3248,9 @@ function actualizarPanelTorre(){
 
 // ---------- Prerender del fondo ----------
 function prerenderizarFondo(){
-  fondo = document.createElement('canvas');
-  fondo.width = ANCHO; fondo.height = ALTO;
-  const c = fondo.getContext('2d');
+  const oculto = Pantalla.lienzoOculto(ANCHO, ALTO);
+  fondo = oculto.lienzo;
+  const c = oculto.ctx;
   const m = G.mapa;
   const azar = rngSemilla(m.semilla);
   // terreno
@@ -3027,7 +3777,7 @@ function dibujar(){
   if (G.sacudida > 0){
     ctx.translate(rnd(-1,1)*G.sacudida*9, rnd(-1,1)*G.sacudida*9);
   }
-  ctx.drawImage(fondo, 0, 0);
+  ctx.drawImage(fondo, 0, 0, ANCHO, ALTO);
 
   // portal animado de entrada
   const ini = G.mapa.puntos[0];
@@ -3602,7 +4352,7 @@ const MAPA = [
 const COLS = 28, FILAS = 31, TAM = 24;
 
 const lienzo = document.getElementById('lienzo');
-const ctx = lienzo.getContext('2d');
+const ctx = Arcade.nitido(lienzo);
 const avisos = document.getElementById('avisos');
 
 let rejilla, cocos, puntos, vidas, nivel, estado, cronoEstado;
@@ -3628,11 +4378,11 @@ function libre(i, j, atraviesaPuerta){
 function envolver(i){ return ((i % COLS) + COLS) % COLS; }
 
 // Muros pre-dibujados (se regeneran solo al cambiar de color)
-const muroCanvas = document.createElement('canvas');
-muroCanvas.width = lienzo.width; muroCanvas.height = lienzo.height;
+const muro = Arcade.lienzoOculto(lienzo.width, lienzo.height);
+const muroCanvas = muro.lienzo;
 function pintarMuros(color, relleno){
-  const c = muroCanvas.getContext('2d');
-  c.clearRect(0, 0, muroCanvas.width, muroCanvas.height);
+  const c = muro.ctx;
+  c.clearRect(0, 0, lienzo.width, lienzo.height);
   c.lineWidth = 3; c.lineCap = 'round'; c.lineJoin = 'round';
   for (let j = 0; j < FILAS; j++){
     for (let i = 0; i < COLS; i++){
@@ -3982,7 +4732,7 @@ function dibujar(){
 
   if (estado === 'nivel' && Math.floor(parpadeoMuro * 6) % 2 === 0) pintarMuros('#ffffff', '#3a4a8a');
   else if (estado === 'nivel') pintarMuros('#4f7bff', '#101a3a');
-  ctx.drawImage(muroCanvas, 0, 0);
+  ctx.drawImage(muroCanvas, 0, 0, lienzo.width, lienzo.height);
 
   // cocos
   for (let j = 0; j < FILAS; j++){
@@ -4141,7 +4891,7 @@ registrarJuego("pvz", function(document, addEventListener, Arcade){
 //  PLANTAS vs ZOMBIS
 // ============================================================
 const lienzo = document.getElementById('lienzo');
-let ctx = lienzo.getContext('2d');   // se intercambia un instante para pintar los retratos
+let ctx = Arcade.nitido(lienzo);   // se intercambia un instante para pintar los retratos
 const lienzoCtx = ctx;
 const avisos = document.getElementById('avisos');
 
@@ -4860,7 +5610,7 @@ registrarJuego("minas", function(document, addEventListener, Arcade){
 //  MINAS — 25 casillas, multiplicadores de probabilidad real
 // ============================================================
 const CASILLAS = 25;
-let saldo = Arcade.leer('minas_saldo', 1000);
+let saldo = Arcade.fichas.saldo();   // cartera compartida con Aviator
 let mayor = Arcade.record('minas_mayor');
 let minas = 3, apuesta = 50;
 let estado = 'apostando';      // apostando | jugando | revelado
@@ -4924,8 +5674,7 @@ function empezarRonda(){
     Sonido.fx('error');
     return;
   }
-  saldo -= apuesta;
-  Arcade.escribir('minas_saldo', saldo);
+  saldo = Arcade.fichas.ajustar(-apuesta);
   bombas = new Set();
   while (bombas.size < minas) bombas.add(azarEntero(0, CASILLAS - 1));
   abiertas = new Set(); gemas = 0;
@@ -4978,8 +5727,7 @@ function cobrar(automatico){
   const mult = multiplicador(minas, gemas);
   const pago = Math.floor(apuesta * mult);
   const beneficio = pago - apuesta;
-  saldo += pago;
-  Arcade.escribir('minas_saldo', saldo);
+  saldo = Arcade.fichas.ajustar(pago);
   if (Arcade.guardarRecord('minas_mayor', beneficio)) mayor = beneficio;
   estado = 'revelado';
   celdas.forEach((c, i) => {
@@ -5074,8 +5822,7 @@ $('btnAccion').onclick = () => {
   else if (estado === 'apostando') empezarRonda();
 };
 $('btnRegalo').onclick = () => {
-  saldo += 500;
-  Arcade.escribir('minas_saldo', saldo);
+  saldo = Arcade.fichas.ajustar(500);
   Sonido.fx('ficha');
   refrescar();
 };
@@ -5094,7 +5841,7 @@ registrarJuego("blockblast", function(document, addEventListener, Arcade){
 //  BLOCK BLAST — tablero 8x8 y tres piezas
 // ============================================================
 const lienzo = document.getElementById('lienzo');
-const ctx = lienzo.getContext('2d');
+const ctx = Arcade.nitido(lienzo);
 const avisos = document.getElementById('avisos');
 
 const N = 8, CEL = 64, BX = 44, BY = 44;
@@ -5442,7 +6189,7 @@ registrarJuego("serpiente", function(document, addEventListener, Arcade){
 //  SERPIENTE NEÓN
 // ============================================================
 const lienzo = document.getElementById('lienzo');
-const ctx = lienzo.getContext('2d');
+const ctx = Arcade.nitido(lienzo);
 const avisos = document.getElementById('avisos');
 
 const CEL = 32, COLS = 24, FILAS = 18;
@@ -5779,6 +6526,1890 @@ document.getElementById('btnOtra').onclick = () => {
 
 nuevaPartida();
 estado = 'menu';
+Arcade.bucle(dt => { actualizar(dt); dibujar(); });
+
+});
+
+registrarJuego("aviator", function(document, addEventListener, Arcade){
+
+// ============================================================
+//  AVIATOR — juego de tipo "crash"
+// ============================================================
+const lienzo = document.getElementById('lienzo');
+const ctx = Arcade.nitido(lienzo);
+const avisos = document.getElementById('avisos');
+const $ = id => document.getElementById(id);
+
+const AN = lienzo.width, AL = lienzo.height;
+const SUELO = AL - 46, IZQ = 66, TECHO = 58, DERECHA = AN - 120;
+
+// ---------- Estado ----------
+let fase = 'espera';           // espera | vuelo | caida
+let crono = 5, t = 0, mult = 1, puntoCaida = 2;
+let saldo = Arcade.fichas.saldo();
+let record = Arcade.record('aviator_mayor');
+const historia = [];
+
+let apuesta = { monto: 0, viva: false, pendiente: false, cobradaEn: 0 };
+
+const chispas = new Particulas(260);
+const estrellas = Array.from({length: 70}, () => ({
+  x: Math.random() * AN, y: Math.random() * AL,
+  z: azar(0.25, 1), r: azar(0.6, 1.9)
+}));
+let desplazamiento = 0, destelloCaida = 0, brilloCobro = 0;
+
+// ---------- Matemáticas del juego ----------
+// Distribución clásica de los juegos crash con un 1 % de ventaja de la casa:
+// P(caída > x) = 0,99 / x  →  mediana en torno a 2x y cola larga.
+function sortearCaida(){
+  if (Math.random() < 0.01) return 1.00;              // 1 % se estrella al instante
+  const r = Math.random();
+  return Math.min(500, Math.max(1.01, Math.floor(99 / (1 - r)) / 100));
+}
+const multEn = seg => Math.exp(0.12 * seg);
+const segundosDe = m => Math.log(m) / 0.12;
+
+// Curva de vuelo: el avión avanza en horizontal y la altura va por detrás,
+// así que despega casi rasante y luego se empina hacia la esquina superior.
+function puntoVuelo(seg){
+  const u = 1 - Math.exp(-seg / 2.6);      // avance horizontal
+  const v = Math.pow(u, 2.1);              // altura, retrasada respecto al avance
+  return {
+    x: IZQ + (DERECHA - IZQ) * u,
+    y: SUELO - (SUELO - TECHO) * v,
+    u
+  };
+}
+
+// ---------- Ronda ----------
+function nuevaRonda(){
+  fase = 'espera'; crono = 5; t = 0; mult = 1;
+  puntoCaida = sortearCaida();
+  apuesta.viva = false; apuesta.cobradaEn = 0;
+  chispas.lista.length = 0;
+  refrescar();
+}
+function despegar(){
+  fase = 'vuelo'; t = 0; mult = 1;
+  if (apuesta.pendiente && saldo >= apuesta.monto){
+    saldo = Arcade.fichas.ajustar(-apuesta.monto);
+    apuesta.viva = true; apuesta.pendiente = false;
+  } else {
+    apuesta.pendiente = false;
+  }
+  Sonido.fx('despegue');
+  refrescar();
+}
+function estrellar(){
+  fase = 'caida'; crono = 2.6;
+  Sonido.pararMotor();
+  Sonido.fx('choque');
+  destelloCaida = 1;
+  const p = puntoVuelo(t);
+  chispas.emitir(48, {
+    x: p.x, y: p.y, color: ['#ff4d5e', '#ff9d3d', '#ffd25e', '#8a8f9c'],
+    velMin: 90, velMax: 420, vidaMin: 0.4, vidaMax: 1.2, rMin: 2, rMax: 6,
+    gravedad: 320, brillo: true
+  });
+  if (apuesta.viva){
+    apuesta.viva = false;
+    Arcade.aviso(avisos, '💥 Perdiste ' + apuesta.monto + ' fichas', false, 2200);
+  }
+  historia.unshift(mult);
+  if (historia.length > 24) historia.pop();
+  pintarHistorial();
+  if (autoActiva()) apuesta.pendiente = true;
+  refrescar();
+}
+
+function cobrar(automatico){
+  if (fase !== 'vuelo' || !apuesta.viva) return;
+  const pago = Math.floor(apuesta.monto * mult);
+  const ganancia = pago - apuesta.monto;
+  saldo = Arcade.fichas.ajustar(pago);
+  apuesta.viva = false;
+  apuesta.cobradaEn = mult;
+  brilloCobro = 1;
+  if (Arcade.guardarRecord('aviator_mayor', Math.round(mult * 100) / 100)) record = mult;
+  Arcade.aviso(avisos, (automatico ? '🎯 Retiro automático · ' : '💰 ') +
+    mult.toFixed(2) + 'x · +' + ganancia + ' fichas', true, 2400);
+  Sonido.fx('ficha');
+  const p = puntoVuelo(t);
+  chispas.emitir(26, {
+    x: p.x, y: p.y, color: ['#4ee089', '#ffd25e', '#ffffff'],
+    velMin: 60, velMax: 260, vidaMin: 0.4, vidaMax: 1, gravedad: 260, brillo: true
+  });
+  refrescar();
+}
+
+const autoActiva = () => $('autoApuesta').checked;
+
+// ---------- Bucle ----------
+function actualizar(dt){
+  desplazamiento += dt * (fase === 'vuelo' ? 60 + mult * 14 : 18);
+  chispas.actualizar(dt);
+  if (destelloCaida > 0) destelloCaida = Math.max(0, destelloCaida - dt * 1.6);
+  if (brilloCobro > 0) brilloCobro = Math.max(0, brilloCobro - dt * 1.2);
+
+  for (const e of estrellas){
+    e.x -= dt * (fase === 'vuelo' ? 40 + mult * 10 : 12) * e.z;
+    if (e.x < -4){ e.x = AN + 4; e.y = Math.random() * AL; }
+  }
+
+  if (fase === 'espera'){
+    const antes = Math.ceil(crono);
+    crono -= dt;
+    if (Math.ceil(crono) !== antes && crono > 0) Sonido.fx('cuenta');
+    if (crono <= 0) despegar();
+    return;
+  }
+
+  if (fase === 'vuelo'){
+    t += dt;
+    mult = multEn(t);
+    Sonido.motor(limitar((mult - 1) / 8, 0, 1));
+    // estela del motor
+    if (chispas.largo < 200){
+      const p = puntoVuelo(t);
+      chispas.emitir(1, {
+        x: p.x - 22, y: p.y + 6, color: ['#ff9d3d', '#ffd25e', '#ff4d5e'],
+        velMin: 20, velMax: 70, ang: Math.PI, abanico: 0.5,
+        vidaMin: 0.25, vidaMax: 0.6, rMin: 1.5, rMax: 3.5, gravedad: 20, brillo: true
+      });
+    }
+    if (apuesta.viva && $('autoRetiro').checked){
+      const objetivo = parseFloat($('objetivo').value) || 0;
+      if (objetivo >= 1.01 && mult >= objetivo) cobrar(true);
+    }
+    if (mult >= puntoCaida){ mult = puntoCaida; estrellar(); }
+    refrescarBoton();
+    return;
+  }
+
+  // caída
+  t += dt * 0.35;                       // el avión sigue alejándose
+  crono -= dt;
+  if (crono <= 0) nuevaRonda();
+}
+
+// ---------- Dibujo ----------
+function dibujar(){
+  // --- cielo ---
+  const cielo = ctx.createLinearGradient(0, 0, 0, AL);
+  cielo.addColorStop(0, '#131b2e');
+  cielo.addColorStop(0.55, '#0e1524');
+  cielo.addColorStop(1, '#0a0f1a');
+  ctx.fillStyle = cielo;
+  ctx.fillRect(0, 0, AN, AL);
+
+  // resplandor rojizo detrás del avión
+  const p = puntoVuelo(fase === 'espera' ? 0 : t);
+  const halo = ctx.createRadialGradient(p.x, p.y, 10, p.x, p.y, 320);
+  halo.addColorStop(0, 'rgba(255,77,94,' + (fase === 'vuelo' ? 0.16 : 0.06) + ')');
+  halo.addColorStop(1, 'rgba(255,77,94,0)');
+  ctx.fillStyle = halo;
+  ctx.fillRect(0, 0, AN, AL);
+
+  // estrellas
+  estrellas.forEach(e => {
+    ctx.globalAlpha = 0.25 + e.z * 0.5;
+    ctx.fillStyle = '#cfe0ff';
+    ctx.fillRect(e.x, e.y, e.r, e.r);
+  });
+  ctx.globalAlpha = 1;
+
+  dibujarEjes();
+
+  if (fase !== 'espera') dibujarEstela(p);
+  dibujarHelice();
+
+  // el multiplicador va detrás del avión, para que nunca lo tape
+  dibujarMultiplicador();
+  chispas.dibujar(ctx);
+  if (fase !== 'espera') dibujarAvion(p);
+
+  if (fase === 'espera') dibujarEspera();
+
+  // destello del choque
+  if (destelloCaida > 0){
+    ctx.fillStyle = 'rgba(255,77,94,' + (destelloCaida * 0.28) + ')';
+    ctx.fillRect(0, 0, AN, AL);
+  }
+  if (brilloCobro > 0){
+    ctx.fillStyle = 'rgba(78,224,137,' + (brilloCobro * 0.16) + ')';
+    ctx.fillRect(0, 0, AN, AL);
+  }
+}
+
+function dibujarEjes(){
+  ctx.strokeStyle = 'rgba(140,160,200,.13)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  for (let k = 0; k < 14; k++){
+    const x = ((k * 90 - desplazamiento * 0.5) % (AN + 90) + AN + 90) % (AN + 90) - 45;
+    ctx.moveTo(x, TECHO - 20); ctx.lineTo(x, SUELO);
+  }
+  for (let y = SUELO; y > TECHO - 20; y -= 70){ ctx.moveTo(IZQ - 14, y); ctx.lineTo(AN, y); }
+  ctx.stroke();
+
+  ctx.strokeStyle = 'rgba(180,200,240,.32)';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(IZQ - 14, TECHO - 24); ctx.lineTo(IZQ - 14, SUELO); ctx.lineTo(AN, SUELO);
+  ctx.stroke();
+}
+
+// Arcos girando en el origen, como el rotor de la pista de despegue
+function dibujarHelice(){
+  const cx = IZQ - 14, cy = SUELO, giro = desplazamiento * 0.02;
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.strokeStyle = 'rgba(255,77,94,.5)';
+  ctx.lineWidth = 3; ctx.lineCap = 'round';
+  for (let k = 0; k < 3; k++){
+    const r = 20 + k * 13;
+    const a = giro * (k % 2 ? -1 : 1) + k;
+    ctx.beginPath(); ctx.arc(0, 0, r, a, a + 1.1); ctx.stroke();
+    ctx.beginPath(); ctx.arc(0, 0, r, a + Math.PI, a + Math.PI + 1.1); ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function dibujarEstela(p){
+  const pasos = 46;
+  const puntos = [];
+  for (let i = 0; i <= pasos; i++) puntos.push(puntoVuelo(t * i / pasos));
+
+  // relleno bajo la curva
+  ctx.beginPath();
+  ctx.moveTo(puntos[0].x, SUELO);
+  puntos.forEach(q => ctx.lineTo(q.x, q.y));
+  ctx.lineTo(puntos[puntos.length - 1].x, SUELO);
+  ctx.closePath();
+  const relleno = ctx.createLinearGradient(0, TECHO, 0, SUELO);
+  relleno.addColorStop(0, 'rgba(255,77,94,.34)');
+  relleno.addColorStop(1, 'rgba(255,77,94,.02)');
+  ctx.fillStyle = relleno;
+  ctx.fill();
+
+  // curva brillante
+  ctx.beginPath();
+  puntos.forEach((q, i) => i ? ctx.lineTo(q.x, q.y) : ctx.moveTo(q.x, q.y));
+  ctx.strokeStyle = '#ff4d5e';
+  ctx.lineWidth = 4; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+  ctx.shadowColor = '#ff4d5e'; ctx.shadowBlur = 18;
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+  ctx.strokeStyle = 'rgba(255,210,180,.85)';
+  ctx.lineWidth = 1.6;
+  ctx.stroke();
+}
+
+function dibujarAvion(p){
+  const dt = 0.06;
+  const sig = puntoVuelo(t + dt);
+  let ang = Math.atan2(sig.y - p.y, sig.x - p.x);
+  let x = p.x, y = p.y;
+  if (fase === 'caida'){ x += (t * 60); y -= t * 22; ang = -0.5; }
+  else if (p.u > 0.86){ y += Math.sin(desplazamiento * 0.06) * 5; ang += Math.sin(desplazamiento * 0.06) * 0.06; }
+
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(ang);
+  ctx.scale(1.15, 1.15);
+
+  ctx.shadowColor = 'rgba(255,77,94,.6)'; ctx.shadowBlur = 16;
+
+  // fuselaje
+  const cuerpo = ctx.createLinearGradient(0, -9, 0, 9);
+  cuerpo.addColorStop(0, '#ff8a94'); cuerpo.addColorStop(0.5, '#e4283c'); cuerpo.addColorStop(1, '#9d1424');
+  ctx.fillStyle = cuerpo;
+  ctx.beginPath();
+  ctx.moveTo(24, 0);
+  ctx.quadraticCurveTo(12, -9, -14, -7);
+  ctx.quadraticCurveTo(-24, -5, -24, 0);
+  ctx.quadraticCurveTo(-24, 5, -14, 7);
+  ctx.quadraticCurveTo(12, 9, 24, 0);
+  ctx.closePath(); ctx.fill();
+  ctx.shadowBlur = 0;
+
+  // ala
+  ctx.fillStyle = '#c01f31';
+  ctx.beginPath();
+  ctx.moveTo(4, -1); ctx.lineTo(-10, -16); ctx.lineTo(-16, -15); ctx.lineTo(-6, 1);
+  ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#8f1424';
+  ctx.beginPath();
+  ctx.moveTo(4, 1); ctx.lineTo(-10, 15); ctx.lineTo(-16, 14); ctx.lineTo(-6, 0);
+  ctx.closePath(); ctx.fill();
+
+  // cola
+  ctx.fillStyle = '#e4283c';
+  ctx.beginPath();
+  ctx.moveTo(-19, -2); ctx.lineTo(-27, -12); ctx.lineTo(-30, -11); ctx.lineTo(-25, -1);
+  ctx.closePath(); ctx.fill();
+
+  // cabina
+  ctx.fillStyle = 'rgba(190,225,255,.92)';
+  ctx.beginPath(); ctx.ellipse(7, -3.5, 7, 3.6, -0.12, 0, 6.283); ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,.55)';
+  ctx.beginPath(); ctx.ellipse(9, -4.6, 3, 1.4, -0.12, 0, 6.283); ctx.fill();
+
+  // hélice borrosa
+  ctx.globalAlpha = 0.35;
+  ctx.strokeStyle = '#dfe7f5'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.ellipse(25, 0, 2.5, 12 + Math.sin(desplazamiento) * 2, 0, 0, 6.283); ctx.stroke();
+  ctx.globalAlpha = 1;
+
+  ctx.restore();
+}
+
+function dibujarMultiplicador(){
+  const texto = mult.toFixed(2) + 'x';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  const cx = AN / 2, cy = AL / 2 - 20;
+
+  if (fase === 'caida'){
+    ctx.font = '800 26px "Segoe UI", system-ui, sans-serif';
+    ctx.fillStyle = '#ff4d5e';
+    ctx.fillText('SE FUE VOLANDO', cx, cy - 62);
+  }
+  const color = fase === 'caida' ? '#ff4d5e'
+    : mult >= 10 ? '#ffb43d' : mult >= 2 ? '#c08bff' : '#ffffff';
+  ctx.font = '900 ' + (fase === 'espera' ? 54 : 82) + 'px "Segoe UI", system-ui, sans-serif';
+  ctx.shadowColor = color; ctx.shadowBlur = fase === 'vuelo' ? 26 : 12;
+  ctx.fillStyle = color;
+  if (fase !== 'espera') ctx.fillText(texto, cx, cy);
+  ctx.shadowBlur = 0;
+
+  if (apuesta.cobradaEn && fase !== 'espera'){
+    ctx.font = '800 18px "Segoe UI", system-ui, sans-serif';
+    ctx.fillStyle = '#4ee089';
+    ctx.fillText('Cobrado en ' + apuesta.cobradaEn.toFixed(2) + 'x  ·  +' +
+      (Math.floor(apuesta.monto * apuesta.cobradaEn) - apuesta.monto) + ' 🪙', cx, cy + 62);
+  } else if (apuesta.viva && fase === 'vuelo'){
+    ctx.font = '800 18px "Segoe UI", system-ui, sans-serif';
+    ctx.fillStyle = '#ffd25e';
+    ctx.fillText('Tu apuesta vale ' + Math.floor(apuesta.monto * mult) + ' 🪙', cx, cy + 62);
+  }
+}
+
+function dibujarEspera(){
+  const cx = AN / 2, cy = AL / 2 - 10;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.font = '800 22px "Segoe UI", system-ui, sans-serif';
+  ctx.fillStyle = '#93a3c4';
+  ctx.fillText('Esperando la próxima ronda', cx, cy - 34);
+  ctx.font = '900 46px "Segoe UI", system-ui, sans-serif';
+  ctx.fillStyle = '#ff4d5e';
+  ctx.fillText(Math.max(0, crono).toFixed(1) + 's', cx, cy + 12);
+
+  const ancho = 320, alto = 8, x = cx - ancho / 2, y = cy + 52;
+  ctx.fillStyle = 'rgba(255,255,255,.1)';
+  ctx.beginPath(); ctx.roundRect(x, y, ancho, alto, 4); ctx.fill();
+  ctx.fillStyle = '#ff4d5e';
+  ctx.beginPath(); ctx.roundRect(x, y, ancho * limitar(1 - crono / 5, 0, 1), alto, 4); ctx.fill();
+
+  if (apuesta.pendiente){
+    ctx.font = '800 15px "Segoe UI", system-ui, sans-serif';
+    ctx.fillStyle = '#4ee089';
+    ctx.fillText('✓ Apuesta de ' + apuesta.monto + ' fichas lista para esta ronda', cx, y + 34);
+  }
+}
+
+// ---------- Interfaz ----------
+function pintarHistorial(){
+  $('historial').innerHTML = historia.map(m => {
+    const clase = m >= 10 ? 'alto' : m >= 2 ? 'medio' : 'bajo';
+    return '<span class="pastilla ' + clase + '">' + m.toFixed(2) + 'x</span>';
+  }).join('');
+}
+
+function refrescarBoton(){
+  const b = $('btnApostar');
+  if (fase === 'vuelo' && apuesta.viva){
+    b.className = 'retirar';
+    b.innerHTML = 'RETIRAR ' + Math.floor(apuesta.monto * mult) +
+      ' 🪙<small>' + mult.toFixed(2) + 'x</small>';
+  } else if (apuesta.pendiente){
+    b.className = 'peligro';
+    b.innerHTML = 'CANCELAR<small>apuesta de ' + apuesta.monto + ' fichas</small>';
+  } else if (fase === 'espera'){
+    b.className = 'primario';
+    b.innerHTML = 'APOSTAR<small>despega en ' + Math.max(0, crono).toFixed(1) + 's</small>';
+  } else {
+    b.className = 'primario';
+    b.innerHTML = 'APOSTAR<small>ronda siguiente</small>';
+  }
+  b.disabled = false;
+}
+
+function refrescar(){
+  $('saldoTxt').textContent = saldo.toLocaleString('es-ES');
+  $('recordTxt').textContent = record ? record.toFixed(2) + 'x' : '—';
+  refrescarBoton();
+}
+
+$('btnApostar').onclick = () => {
+  Sonido.activar();
+  if (fase === 'vuelo' && apuesta.viva){ cobrar(false); return; }
+  if (apuesta.pendiente){ apuesta.pendiente = false; refrescar(); return; }
+  const monto = Math.floor(parseFloat($('monto').value) || 0);
+  if (monto < 1){ Sonido.fx('error'); return; }
+  if (monto > saldo){ Arcade.aviso(avisos, 'No tienes fichas suficientes'); Sonido.fx('error'); return; }
+  apuesta.monto = monto;
+  apuesta.pendiente = true;
+  Sonido.fx('colocar');
+  refrescar();
+};
+
+document.querySelectorAll('.fichasRapidas button').forEach(b => {
+  b.onclick = () => {
+    const op = b.dataset.op;
+    let v = parseFloat($('monto').value) || 0;
+    if (op === 'mitad') v = Math.max(1, Math.floor(v / 2));
+    else if (op === 'doble') v *= 2;
+    else if (op === 'max') v = saldo;
+    else v = parseFloat(op);
+    $('monto').value = Math.max(1, Math.min(Math.floor(v), Math.floor(saldo)));
+  };
+});
+
+addEventListener('keydown', e => {
+  if (e.key === ' '){ e.preventDefault(); $('btnApostar').click(); }
+});
+Arcade.conectarSonido($('btnSonido'));
+
+// Si el saldo se agota, se reponen fichas para poder seguir jugando
+setInterval(() => {
+  if (saldo < 1 && fase === 'espera' && !apuesta.pendiente){
+    saldo = Arcade.fichas.ajustar(500);
+    Arcade.aviso(avisos, '🎁 Te hemos repuesto 500 fichas', true);
+    refrescar();
+  }
+}, 3000);
+
+// La franja de rondas arranca con resultados previos, como en las salas reales
+for (let i = 0; i < 10; i++) historia.push(sortearCaida());
+
+nuevaRonda();
+pintarHistorial();
+Arcade.bucle(dt => { actualizar(dt); dibujar(); });
+
+});
+
+registrarJuego("pool", function(document, addEventListener, Arcade){
+
+// ============================================================
+//  8 BALL POOL — motor de física con subpasos fijos
+// ============================================================
+const lienzo = document.getElementById('lienzo');
+const ctx = Arcade.nitido(lienzo);
+const avisos = document.getElementById('avisos');
+const $ = id => document.getElementById(id);
+
+// ---------- Geometría de la mesa ----------
+const BANDA = 40;
+const IZQ = BANDA, ARR = BANDA, DER = lienzo.width - BANDA, ABA = lienzo.height - BANDA;
+const R = 11;                                  // radio de bola
+const R_TRONERA = 21;
+const TRONERAS = [
+  {x:IZQ, y:ARR}, {x:(IZQ+DER)/2, y:ARR}, {x:DER, y:ARR},
+  {x:IZQ, y:ABA}, {x:(IZQ+DER)/2, y:ABA}, {x:DER, y:ABA}
+];
+
+// ---------- Física ----------
+const PASO = 1/300;                            // subpaso fijo
+const ROCE = 240;                              // desaceleración (px/s²)
+const REST_BANDA = 0.72;                       // rebote en banda
+const ROCE_BANDA = 0.82;                       // pérdida tangencial en banda
+const REST_BOLA = 0.96;
+const PARADA = 5;                              // por debajo de esta velocidad, se para
+const V_MAX = 1750;
+
+const COLORES = {
+  1:'#f2c010', 2:'#1f4fc4', 3:'#cf2020', 4:'#69299c', 5:'#e8681a',
+  6:'#12793c', 7:'#8a3418', 8:'#15171d',
+  9:'#f2c010', 10:'#1f4fc4', 11:'#cf2020', 12:'#69299c', 13:'#e8681a',
+  14:'#12793c', 15:'#8a3418'
+};
+
+let bolas = [], blanca;
+let estado = 'menu';        // menu | apuntando | rodando | manoLibre | iaPensando | fin
+let turno = 'tu';           // tu | ia
+let grupos = { tu:null, ia:null };   // 'lisas' | 'rayadas'
+let apunte = 0, fuerza = 0, cargando = false, origenCarga = null;
+let efecto = { x:0, y:0 };
+let raton = { x: lienzo.width/2, y: lienzo.height/2 };
+let golpeadaPrimero = null, metidasEnTirada = [], huboContacto = false, blancaMetida = false;
+let cronoIA = 0, tiroIA = null, animCue = 0;
+let record = Arcade.record('pool_victorias');
+const chispas = new Particulas(220);
+const sacudida = new Sacudida();
+
+// ---------- Preparación ----------
+function nuevaPartida(){
+  bolas = [];
+  blanca = crear(0, IZQ + (DER-IZQ)*0.22, (ARR+ABA)/2);
+  const apex = IZQ + (DER-IZQ)*0.72, cy = (ARR+ABA)/2;
+  const dx = 2*R*Math.cos(Math.PI/6) + 0.6, dy = 2*R + 0.6;
+  // Triángulo reglamentario: la 8 en el centro y las esquinas de la última
+  // fila con una lisa y una rayada.
+  const resto = mezclar([1,2,3,4,5,6,7,9,10,11,12,13,14,15].filter(n => n !== 8));
+  const lisas = resto.filter(n => n < 8), rayadas = resto.filter(n => n > 8);
+  const orden = new Array(15);
+  orden[4] = 8;                                    // centro de la fila 3
+  orden[10] = lisas.pop(); orden[14] = rayadas.pop();  // esquinas traseras
+  const sobrante = mezclar([...lisas, ...rayadas]);
+  for (let i = 0; i < 15; i++) if (!orden[i]) orden[i] = sobrante.pop();
+
+  let k = 0;
+  for (let fila = 0; fila < 5; fila++){
+    for (let j = 0; j <= fila; j++){
+      crear(orden[k++], apex + fila*dx, cy + (j - fila/2)*dy);
+    }
+  }
+  estado = 'apuntando'; turno = 'tu';
+  grupos = { tu:null, ia:null };
+  fuerza = 0; cargando = false; efecto = {x:0, y:0};
+  moverPunto();
+  refrescarHud();
+}
+function crear(num, x, y){
+  const b = {
+    num, x, y, vx:0, vy:0, viva:true, rot:0,
+    color: num === 0 ? '#f7f7f2' : COLORES[num],
+    rayada: num > 8
+  };
+  bolas.push(b);
+  return b;
+}
+
+const enJuego = () => bolas.filter(b => b.viva);
+const quietas = () => bolas.every(b => !b.viva || (b.vx === 0 && b.vy === 0));
+const grupoDe = n => n === 0 ? null : n === 8 ? 'ocho' : n < 8 ? 'lisas' : 'rayadas';
+const misBolas = quien => enJuego().filter(b => b.num !== 0 && b.num !== 8 && grupoDe(b.num) === grupos[quien]);
+
+// ---------- Motor físico ----------
+function simular(dt){
+  let restante = dt;
+  while (restante > 1e-6){
+    const h = Math.min(PASO, restante);
+    restante -= h;
+    paso(h);
+  }
+}
+
+function paso(h){
+  for (const b of bolas){
+    if (!b.viva) continue;
+    const v = Math.hypot(b.vx, b.vy);
+    if (v === 0) continue;
+
+    // rozamiento con el paño
+    const nuevaV = Math.max(0, v - ROCE * h);
+    if (nuevaV < PARADA){ b.vx = 0; b.vy = 0; }
+    else { b.vx = b.vx / v * nuevaV; b.vy = b.vy / v * nuevaV; }
+
+    b.x += b.vx * h; b.y += b.vy * h;
+
+    // ángulo rodado = distancia recorrida / radio
+    b.rot += nuevaV * h / R;
+
+    // efecto lateral: hace que la bola describa una curva suave
+    if (b === blanca && b.efectoLateral){
+      const f = b.efectoLateral * 26 * h;
+      const nx = -b.vy / (nuevaV || 1), ny = b.vx / (nuevaV || 1);
+      b.vx += nx * f; b.vy += ny * f;
+      b.efectoLateral *= (1 - 1.6 * h);
+    }
+  }
+
+  colisionesBanda();
+  colisionesBolas();
+  comprobarTroneras();
+}
+
+function colisionesBanda(){
+  for (const b of bolas){
+    if (!b.viva || (b.vx === 0 && b.vy === 0)) continue;
+    // Cerca de la boca de una tronera no hay banda que valga
+    if (TRONERAS.some(t => Math.hypot(b.x - t.x, b.y - t.y) < R_TRONERA + R * 1.1)) continue;
+
+    let choque = false;
+    if (b.x - R < IZQ){ b.x = IZQ + R; b.vx = -b.vx * REST_BANDA; b.vy *= ROCE_BANDA; choque = true; }
+    else if (b.x + R > DER){ b.x = DER - R; b.vx = -b.vx * REST_BANDA; b.vy *= ROCE_BANDA; choque = true; }
+    if (b.y - R < ARR){ b.y = ARR + R; b.vy = -b.vy * REST_BANDA; b.vx *= ROCE_BANDA; choque = true; }
+    else if (b.y + R > ABA){ b.y = ABA - R; b.vy = -b.vy * REST_BANDA; b.vx *= ROCE_BANDA; choque = true; }
+
+    if (choque){
+      const v = Math.hypot(b.vx, b.vy);
+      if (v > 90){ Sonido.fx('banda'); sacudida.golpe(Math.min(2.5, v / 500)); }
+      if (b === blanca) b.efectoLateral = (b.efectoLateral || 0) * 0.5;
+    }
+  }
+}
+
+function colisionesBolas(){
+  for (let i = 0; i < bolas.length; i++){
+    const a = bolas[i];
+    if (!a.viva) continue;
+    for (let j = i + 1; j < bolas.length; j++){
+      const b = bolas[j];
+      if (!b.viva) continue;
+      let dx = b.x - a.x, dy = b.y - a.y;
+      const d2 = dx*dx + dy*dy;
+      if (d2 > (2*R)*(2*R) || d2 === 0) continue;
+
+      const d = Math.sqrt(d2);
+      const nx = dx / d, ny = dy / d;
+
+      // separar el solape
+      const solape = 2*R - d;
+      a.x -= nx * solape/2; a.y -= ny * solape/2;
+      b.x += nx * solape/2; b.y += ny * solape/2;
+
+      // impulso a lo largo de la normal (masas iguales)
+      const vrel = (b.vx - a.vx) * nx + (b.vy - a.vy) * ny;
+      if (vrel > 0) continue;                    // ya se están separando
+      const imp = -(1 + REST_BOLA) * vrel / 2;
+      a.vx -= imp * nx; a.vy -= imp * ny;
+      b.vx += imp * nx; b.vy += imp * ny;
+
+      // primera bola tocada por la blanca en la tirada
+      if (a === blanca || b === blanca){
+        const otra = a === blanca ? b : a;
+        huboContacto = true;
+        if (golpeadaPrimero === null) golpeadaPrimero = otra.num;
+        // corrido / retroceso: se transfiere tras el impacto
+        if (blanca.efectoVertical){
+          const v = Math.hypot(blanca.vx, blanca.vy) || 1;
+          const dirx = nx * (a === blanca ? 1 : -1), diry = ny * (a === blanca ? 1 : -1);
+          blanca.vx += dirx * blanca.efectoVertical * 170;
+          blanca.vy += diry * blanca.efectoVertical * 170;
+          blanca.efectoVertical = 0;
+        }
+      }
+      const v = Math.abs(vrel);
+      if (v > 40){
+        Sonido.fx('bola');
+        sacudida.golpe(Math.min(3, v / 400));
+        chispas.emitir(2, {
+          x: (a.x+b.x)/2, y: (a.y+b.y)/2, color:'rgba(255,255,255,.55)',
+          velMin:10, velMax:60, vidaMin:0.12, vidaMax:0.3, rMin:1, rMax:2.2, gravedad:0
+        });
+      }
+    }
+  }
+}
+
+function comprobarTroneras(){
+  for (const b of bolas){
+    if (!b.viva) continue;
+    for (const t of TRONERAS){
+      if (Math.hypot(b.x - t.x, b.y - t.y) < R_TRONERA - R*0.25){
+        b.viva = false; b.vx = b.vy = 0;
+        metidasEnTirada.push(b.num);
+        if (b.num === 0) blancaMetida = true;
+        Sonido.fx('tronera');
+        sacudida.golpe(4);
+        chispas.emitir(14, {
+          x:t.x, y:t.y, color:[b.color, '#ffffff'], velMin:30, velMax:150,
+          vidaMin:0.25, vidaMax:0.6, rMin:1.5, rMax:3.5, gravedad:120
+        });
+        break;
+      }
+    }
+  }
+}
+
+// ---------- Tirada ----------
+function golpear(potencia){
+  golpeadaPrimero = null; metidasEnTirada = []; huboContacto = false; blancaMetida = false;
+  const v = V_MAX * limitar(potencia, 0.06, 1);
+  blanca.vx = Math.cos(apunte) * v;
+  blanca.vy = Math.sin(apunte) * v;
+  blanca.efectoVertical = -efecto.y;             // arriba = corrido, abajo = retroceso
+  blanca.efectoLateral = efecto.x;
+  estado = 'rodando';
+  Sonido.fx('taco');
+  sacudida.golpe(potencia * 3);
+  chispas.emitir(8, {
+    x: blanca.x - Math.cos(apunte)*R, y: blanca.y - Math.sin(apunte)*R,
+    color:'rgba(255,255,255,.5)', ang: apunte + Math.PI, abanico:0.6,
+    velMin:30, velMax:120, vidaMin:0.15, vidaMax:0.35, rMin:1, rMax:2.4, gravedad:0
+  });
+  fuerza = 0;
+  refrescarFuerza();
+}
+
+function terminarTirada(){
+  const quien = turno, rival = quien === 'tu' ? 'ia' : 'tu';
+  let falta = false, motivo = '';
+
+  const metioOcho = metidasEnTirada.includes(8);
+  const misMetidas = metidasEnTirada.filter(n => n !== 0 && n !== 8 &&
+    (grupos[quien] === null || grupoDe(n) === grupos[quien]));
+
+  // asignar grupos con la primera bola legal embocada
+  if (grupos[quien] === null && !metioOcho){
+    const legales = metidasEnTirada.filter(n => n !== 0 && n !== 8);
+    if (legales.length){
+      const g = grupoDe(legales[0]);
+      grupos[quien] = g;
+      grupos[rival] = g === 'lisas' ? 'rayadas' : 'lisas';
+      Arcade.aviso(avisos, (quien === 'tu' ? 'Te quedas con las ' : 'El rival se queda con las ') +
+        (g === 'lisas' ? 'LISAS' : 'RAYADAS'), true);
+    }
+  }
+
+  // faltas
+  if (blancaMetida){ falta = true; motivo = 'Has metido la blanca'; }
+  else if (!huboContacto){ falta = true; motivo = 'No has tocado ninguna bola'; }
+  else if (golpeadaPrimero !== null){
+    const g = grupoDe(golpeadaPrimero);
+    const objetivo = objetivoDe(quien);
+    if (objetivo === 'ocho' && g !== 'ocho'){ falta = true; motivo = 'Tenías que golpear la 8'; }
+    else if (objetivo !== null && objetivo !== 'ocho' && g !== objetivo && g !== null){
+      if (g === 'ocho'){ falta = true; motivo = 'No puedes golpear la 8 todavía'; }
+      else { falta = true; motivo = 'Has golpeado el grupo del rival'; }
+    }
+  }
+
+  // la 8
+  if (metioOcho){
+    // Solo vale si ya tenías grupo asignado y lo habías limpiado entero
+    const limpio = grupos[quien] !== null && misBolas(quien).length === 0;
+    if (limpio && !blancaMetida && !falta) return acabar(quien);
+    return acabar(rival);
+  }
+
+  if (falta){
+    Arcade.aviso(avisos, '⚠ Falta: ' + motivo + '. Bola en mano para ' +
+      (rival === 'tu' ? 'ti' : 'el rival'), true, 2800);
+    revivirBlanca();
+    turno = rival;
+    estado = rival === 'tu' ? 'manoLibre' : 'iaPensando';
+    if (rival === 'ia') colocarBlancaIA();
+  } else if (misMetidas.length > 0){
+    Arcade.aviso(avisos, (quien === 'tu' ? '¡Sigues tú!' : 'El rival repite'), false, 1400);
+    estado = quien === 'tu' ? 'apuntando' : 'iaPensando';
+  } else {
+    turno = rival;
+    estado = rival === 'tu' ? 'apuntando' : 'iaPensando';
+  }
+  if (estado === 'iaPensando'){ cronoIA = 0.9; tiroIA = null; }
+  refrescarHud();
+}
+
+function objetivoDe(quien){
+  if (grupos[quien] === null) return null;              // mesa abierta
+  return misBolas(quien).length === 0 ? 'ocho' : grupos[quien];
+}
+
+function revivirBlanca(){
+  blanca.viva = true; blanca.vx = blanca.vy = 0;
+  blanca.x = IZQ + (DER-IZQ)*0.22; blanca.y = (ARR+ABA)/2;
+  if (solapa(blanca.x, blanca.y)) blanca.x -= 40;
+}
+function solapa(x, y, ignorar){
+  return enJuego().some(b => b !== blanca && b !== ignorar && Math.hypot(b.x-x, b.y-y) < 2*R + 1);
+}
+
+function acabar(ganador){
+  estado = 'fin';
+  const gano = ganador === 'tu';
+  if (gano){ Arcade.guardarRecord('pool_victorias', record + 1); record = Arcade.record('pool_victorias'); }
+  $('tituloFin').textContent = gano ? '¡GANASTE!' : 'HAS PERDIDO';
+  $('tituloFin').className = gano ? 'victoria' : 'derrota';
+  $('subFin').textContent = gano
+    ? 'Has metido la 8 en su momento. Buen taco.'
+    : 'La 8 cayó cuando no tocaba.';
+  $('modalFin').classList.add('visible');
+  Sonido.fx(gano ? 'victoria' : 'derrota');
+  refrescarHud();
+}
+
+// ---------- Puntería y predicción ----------
+/** Primer obstáculo que encuentra la blanca en la dirección dada. */
+function predecir(desdeX, desdeY, ang){
+  const dx = Math.cos(ang), dy = Math.sin(ang);
+  let mejor = { t: Infinity, tipo:'banda', bola:null };
+
+  for (const b of enJuego()){
+    if (b === blanca) continue;
+    const ex = b.x - desdeX, ey = b.y - desdeY;
+    const proy = ex*dx + ey*dy;
+    if (proy <= 0) continue;
+    const perp2 = ex*ex + ey*ey - proy*proy;
+    const rr = (2*R)*(2*R);
+    if (perp2 > rr) continue;
+    const t = proy - Math.sqrt(rr - perp2);
+    if (t > 0 && t < mejor.t) mejor = { t, tipo:'bola', bola:b };
+  }
+
+  // bandas
+  const cand = [];
+  if (dx > 0) cand.push((DER - R - desdeX) / dx);
+  if (dx < 0) cand.push((IZQ + R - desdeX) / dx);
+  if (dy > 0) cand.push((ABA - R - desdeY) / dy);
+  if (dy < 0) cand.push((ARR + R - desdeY) / dy);
+  const tb = Math.min(...cand.filter(t => t > 0));
+  if (tb < mejor.t) mejor = { t: tb, tipo:'banda', bola:null };
+
+  return { ...mejor, x: desdeX + dx*mejor.t, y: desdeY + dy*mejor.t };
+}
+
+/** ¿Hay camino libre entre dos puntos para una bola? */
+function caminoLibre(x1, y1, x2, y2, ignorar){
+  const dx = x2-x1, dy = y2-y1, largo = Math.hypot(dx, dy);
+  if (largo < 1) return true;
+  const ux = dx/largo, uy = dy/largo;
+  for (const b of enJuego()){
+    if (b === ignorar || (b === blanca && ignorar !== 'nada')) continue;
+    const ex = b.x-x1, ey = b.y-y1;
+    const proy = ex*ux + ey*uy;
+    if (proy <= 0 || proy >= largo) continue;
+    const perp = Math.abs(ex*uy - ey*ux);
+    if (perp < 2*R - 1) return false;
+  }
+  return true;
+}
+
+// ---------- Rival controlado por la máquina ----------
+function pensarIA(){
+  const objetivo = objetivoDe('ia');
+  let candidatas = objetivo === 'ocho'
+    ? enJuego().filter(b => b.num === 8)
+    : objetivo === null
+      ? enJuego().filter(b => b.num !== 0 && b.num !== 8)
+      : misBolas('ia');
+  if (!candidatas.length) candidatas = enJuego().filter(b => b.num !== 0);
+
+  let mejor = null;
+  for (const b of candidatas){
+    for (const t of TRONERAS){
+      const aTronera = Math.atan2(t.y - b.y, t.x - b.x);
+      // punto fantasma: donde debe estar la blanca al golpear
+      const gx = b.x - Math.cos(aTronera) * 2*R;
+      const gy = b.y - Math.sin(aTronera) * 2*R;
+      const aBlanca = Math.atan2(gy - blanca.y, gx - blanca.x);
+      // ángulo de corte: si es muy abierto, el tiro no entra
+      const corte = Math.abs(anguloEntre(aBlanca, aTronera));
+      if (corte > 1.15) continue;
+      if (!caminoLibre(blanca.x, blanca.y, gx, gy, b)) continue;
+      if (!caminoLibre(b.x, b.y, t.x, t.y, b)) continue;
+      const dist = Math.hypot(gx-blanca.x, gy-blanca.y) + Math.hypot(t.x-b.x, t.y-b.y);
+      const nota = Math.cos(corte) * 900 / dist;
+      if (!mejor || nota > mejor.nota) mejor = { nota, ang: aBlanca, dist, bola:b };
+    }
+  }
+
+  if (mejor){
+    const ruido = azar(-0.028, 0.028);           // el rival también falla
+    return { ang: mejor.ang + ruido, fuerza: limitar(0.28 + mejor.dist/1500, 0.3, 0.92) };
+  }
+  // sin tiro claro: empuja hacia la bola legal más cercana
+  const obj = candidatas[0];
+  return {
+    ang: Math.atan2(obj.y - blanca.y, obj.x - blanca.x) + azar(-0.05, 0.05),
+    fuerza: azar(0.3, 0.5)
+  };
+}
+function anguloEntre(a, b){
+  let d = a - b;
+  while (d > Math.PI) d -= 2*Math.PI;
+  while (d < -Math.PI) d += 2*Math.PI;
+  return d;
+}
+function colocarBlancaIA(){
+  // La máquina coloca la blanca en un sitio despejado de su mitad
+  for (let i = 0; i < 60; i++){
+    const x = azar(IZQ + 40, DER - 40), y = azar(ARR + 30, ABA - 30);
+    if (!solapa(x, y) && !TRONERAS.some(t => Math.hypot(t.x-x, t.y-y) < 50)){
+      blanca.x = x; blanca.y = y; break;
+    }
+  }
+}
+
+// ---------- Bucle ----------
+function actualizar(dt){
+  chispas.actualizar(dt);
+  sacudida.actualizar(dt);
+  animCue += dt;
+
+  if (estado === 'rodando'){
+    simular(dt);
+    if (quietas()) terminarTirada();
+    return;
+  }
+  if (estado === 'iaPensando'){
+    cronoIA -= dt;
+    if (!tiroIA && cronoIA < 0.55) { tiroIA = pensarIA(); apunte = tiroIA.ang; }
+    if (tiroIA) fuerza = limitar(1 - cronoIA / 0.55, 0, 1) * tiroIA.fuerza;
+    refrescarFuerza();
+    if (cronoIA <= 0 && tiroIA){ golpear(tiroIA.fuerza); tiroIA = null; }
+    return;
+  }
+  if (estado === 'apuntando' || estado === 'manoLibre'){
+    if (!cargando) apunte = Math.atan2(raton.y - blanca.y, raton.x - blanca.x);
+  }
+}
+
+// ---------- Dibujo ----------
+// El paño y las bandas no cambian: se pintan una vez y se reutilizan
+const fondo = Arcade.lienzoOculto(lienzo.width, lienzo.height);
+pintarMesa(fondo.ctx);
+
+function pintarMesa(c){
+  // marco de madera
+  const madera = c.createLinearGradient(0, 0, 0, lienzo.height);
+  madera.addColorStop(0, '#6b4326'); madera.addColorStop(0.5, '#8a5730'); madera.addColorStop(1, '#563219');
+  c.fillStyle = madera;
+  c.beginPath(); c.roundRect(0, 0, lienzo.width, lienzo.height, 22); c.fill();
+  c.strokeStyle = 'rgba(0,0,0,.45)'; c.lineWidth = 2;
+  c.beginPath(); c.roundRect(1, 1, lienzo.width-2, lienzo.height-2, 22); c.stroke();
+
+  // bisel interior
+  c.fillStyle = 'rgba(0,0,0,.35)';
+  c.beginPath(); c.roundRect(IZQ-9, ARR-9, DER-IZQ+18, ABA-ARR+18, 8); c.fill();
+
+  // paño
+  const pano = c.createRadialGradient((IZQ+DER)/2, (ARR+ABA)/2, 40, (IZQ+DER)/2, (ARR+ABA)/2, 560);
+  pano.addColorStop(0, '#1f7a4d'); pano.addColorStop(1, '#0f4d30');
+  c.fillStyle = pano;
+  c.fillRect(IZQ, ARR, DER-IZQ, ABA-ARR);
+
+  // grano del paño
+  c.globalAlpha = 0.05;
+  for (let i = 0; i < 2600; i++){
+    c.fillStyle = Math.random() > 0.5 ? '#ffffff' : '#000000';
+    c.fillRect(azar(IZQ, DER), azar(ARR, ABA), 1.4, 1.4);
+  }
+  c.globalAlpha = 1;
+
+  // sombra de las bandas sobre el paño
+  const sombra = c.createLinearGradient(0, ARR, 0, ARR + 26);
+  sombra.addColorStop(0, 'rgba(0,0,0,.3)'); sombra.addColorStop(1, 'rgba(0,0,0,0)');
+  c.fillStyle = sombra; c.fillRect(IZQ, ARR, DER-IZQ, 26);
+  const sombra2 = c.createLinearGradient(IZQ, 0, IZQ + 26, 0);
+  sombra2.addColorStop(0, 'rgba(0,0,0,.26)'); sombra2.addColorStop(1, 'rgba(0,0,0,0)');
+  c.fillStyle = sombra2; c.fillRect(IZQ, ARR, 26, ABA-ARR);
+
+  // línea de cabecera y punto
+  c.strokeStyle = 'rgba(255,255,255,.14)'; c.lineWidth = 1.5;
+  const xc = IZQ + (DER-IZQ)*0.25;
+  c.beginPath(); c.moveTo(xc, ARR); c.lineTo(xc, ABA); c.stroke();
+  c.fillStyle = 'rgba(255,255,255,.2)';
+  c.beginPath(); c.arc(IZQ + (DER-IZQ)*0.75, (ARR+ABA)/2, 2.5, 0, 6.283); c.fill();
+
+  // diamantes de las bandas
+  c.fillStyle = '#f0e2c0';
+  for (let i = 1; i < 8; i++){
+    if (i === 4) continue;
+    const x = IZQ + (DER-IZQ)*i/8;
+    rombo(c, x, ARR/2); rombo(c, x, ABA + (lienzo.height-ABA)/2);
+  }
+  for (let i = 1; i < 4; i++){
+    const y = ARR + (ABA-ARR)*i/4;
+    rombo(c, IZQ/2, y); rombo(c, DER + (lienzo.width-DER)/2, y);
+  }
+
+  // troneras
+  for (const t of TRONERAS){
+    const g = c.createRadialGradient(t.x, t.y, 2, t.x, t.y, R_TRONERA);
+    g.addColorStop(0, '#000'); g.addColorStop(0.72, '#05070c'); g.addColorStop(1, '#1a1208');
+    c.fillStyle = g;
+    c.beginPath(); c.arc(t.x, t.y, R_TRONERA, 0, 6.283); c.fill();
+    c.strokeStyle = 'rgba(255,220,150,.22)'; c.lineWidth = 2.5;
+    c.beginPath(); c.arc(t.x, t.y, R_TRONERA - 1, 0, 6.283); c.stroke();
+  }
+}
+function rombo(c, x, y){
+  c.beginPath();
+  c.moveTo(x, y-4); c.lineTo(x+3, y); c.lineTo(x, y+4); c.lineTo(x-3, y);
+  c.closePath(); c.fill();
+}
+
+function dibujar(){
+  ctx.save();
+  sacudida.aplicar(ctx);
+  ctx.drawImage(fondo.lienzo, 0, 0, lienzo.width, lienzo.height);
+
+  if ((estado === 'apuntando' || estado === 'manoLibre') && blanca.viva) dibujarGuia();
+
+  for (const b of enJuego()) dibujarBola(b);
+
+  if ((estado === 'apuntando' || estado === 'iaPensando') && blanca.viva) dibujarTaco();
+  if (estado === 'manoLibre') dibujarManoLibre();
+
+  chispas.dibujar(ctx);
+  ctx.restore();
+}
+
+function dibujarBola(b){
+  const { x, y } = b;
+  // sombra
+  ctx.fillStyle = 'rgba(0,0,0,.32)';
+  ctx.beginPath(); ctx.ellipse(x + 3, y + 4, R * 0.95, R * 0.8, 0, 0, 6.283); ctx.fill();
+
+  // esfera
+  const g = ctx.createRadialGradient(x - R*0.35, y - R*0.42, R*0.12, x, y, R*1.05);
+  g.addColorStop(0, aclarar(b.color, 0.55));
+  g.addColorStop(0.55, b.color);
+  g.addColorStop(1, oscurecer(b.color, 0.45));
+  ctx.fillStyle = g;
+  ctx.beginPath(); ctx.arc(x, y, R, 0, 6.283); ctx.fill();
+
+  // franja de las rayadas, deformada según cómo va rodando
+  if (b.rayada){
+    const fase = Math.sin(b.rot);
+    ctx.save();
+    ctx.beginPath(); ctx.arc(x, y, R, 0, 6.283); ctx.clip();
+    ctx.fillStyle = '#f7f7f2';
+    ctx.beginPath();
+    ctx.ellipse(x, y - fase * R * 0.75, R * 1.1, R * 0.42 * (0.5 + Math.abs(Math.cos(b.rot)) * 0.5),
+      Math.atan2(b.vy, b.vx), 0, 6.283);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  // círculo con el número, que se esconde al rodar
+  if (b.num !== 0){
+    const fase = Math.cos(b.rot);
+    if (fase > -0.15){
+      const rr = R * 0.45 * limitar(fase + 0.15, 0, 1);
+      const ox = Math.sin(b.rot) * R * 0.35;
+      ctx.fillStyle = '#f7f7f2';
+      ctx.beginPath(); ctx.ellipse(x + ox, y, rr, R * 0.45, 0, 0, 6.283); ctx.fill();
+      if (rr > R * 0.3){
+        ctx.fillStyle = '#15171d';
+        ctx.font = '700 ' + Math.round(R * 0.72) + 'px "Segoe UI", system-ui, sans-serif';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText(b.num, x + ox, y + 0.5);
+      }
+    }
+  }
+
+  // brillo especular
+  ctx.fillStyle = 'rgba(255,255,255,.55)';
+  ctx.beginPath(); ctx.ellipse(x - R*0.34, y - R*0.4, R*0.26, R*0.18, -0.6, 0, 6.283); ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,.9)';
+  ctx.beginPath(); ctx.arc(x - R*0.38, y - R*0.44, R*0.1, 0, 6.283); ctx.fill();
+}
+
+function dibujarGuia(){
+  const pred = predecir(blanca.x, blanca.y, apunte);
+
+  // línea punteada hasta el punto de contacto
+  ctx.save();
+  ctx.setLineDash([7, 7]);
+  ctx.strokeStyle = 'rgba(255,255,255,.72)';
+  ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(blanca.x, blanca.y); ctx.lineTo(pred.x, pred.y); ctx.stroke();
+  ctx.restore();
+
+  if (pred.tipo === 'bola'){
+    // bola fantasma
+    ctx.strokeStyle = 'rgba(255,255,255,.8)'; ctx.lineWidth = 1.6;
+    ctx.beginPath(); ctx.arc(pred.x, pred.y, R, 0, 6.283); ctx.stroke();
+    ctx.fillStyle = 'rgba(255,255,255,.12)'; ctx.fill();
+
+    // hacia dónde saldrá la bola objeto
+    const b = pred.bola;
+    const ang = Math.atan2(b.y - pred.y, b.x - pred.x);
+    ctx.strokeStyle = 'rgba(255,210,94,.9)'; ctx.lineWidth = 2.4;
+    ctx.beginPath();
+    ctx.moveTo(b.x, b.y);
+    ctx.lineTo(b.x + Math.cos(ang)*54, b.y + Math.sin(ang)*54);
+    ctx.stroke();
+    // y hacia dónde se irá la blanca (tangente)
+    const tang = ang + Math.PI/2 * (anguloEntre(apunte, ang) > 0 ? 1 : -1);
+    ctx.strokeStyle = 'rgba(140,200,255,.6)'; ctx.lineWidth = 1.8;
+    ctx.setLineDash([4, 5]);
+    ctx.beginPath();
+    ctx.moveTo(pred.x, pred.y);
+    ctx.lineTo(pred.x + Math.cos(tang)*38, pred.y + Math.sin(tang)*38);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  } else {
+    // rebote en banda
+    let nx = 0, ny = 0;
+    if (Math.abs(pred.x - (IZQ+R)) < 1.5) nx = 1;
+    else if (Math.abs(pred.x - (DER-R)) < 1.5) nx = -1;
+    if (Math.abs(pred.y - (ARR+R)) < 1.5) ny = 1;
+    else if (Math.abs(pred.y - (ABA-R)) < 1.5) ny = -1;
+    const dx = Math.cos(apunte), dy = Math.sin(apunte);
+    const rx = nx ? -dx : dx, ry = ny ? -dy : dy;
+    ctx.save();
+    ctx.setLineDash([5, 6]);
+    ctx.strokeStyle = 'rgba(140,200,255,.45)'; ctx.lineWidth = 1.6;
+    ctx.beginPath();
+    ctx.moveTo(pred.x, pred.y);
+    ctx.lineTo(pred.x + rx*70, pred.y + ry*70);
+    ctx.stroke();
+    ctx.restore();
+  }
+}
+
+function dibujarTaco(){
+  const retroceso = 22 + fuerza * 74 + (estado === 'apuntando' && !cargando ? Math.sin(animCue*2)*1.5 : 0);
+  const ax = Math.cos(apunte), ay = Math.sin(apunte);
+  const x0 = blanca.x - ax * (R + retroceso), y0 = blanca.y - ay * (R + retroceso);
+  const x1 = x0 - ax * 300, y1 = y0 - ay * 300;
+
+  ctx.save();
+  ctx.lineCap = 'round';
+  // sombra
+  ctx.strokeStyle = 'rgba(0,0,0,.3)'; ctx.lineWidth = 8;
+  ctx.beginPath(); ctx.moveTo(x0+3, y0+5); ctx.lineTo(x1+3, y1+5); ctx.stroke();
+  // cuerpo
+  const g = ctx.createLinearGradient(x0, y0, x1, y1);
+  g.addColorStop(0, '#e8d3a8'); g.addColorStop(0.18, '#c69a5c');
+  g.addColorStop(0.6, '#6d3f1c'); g.addColorStop(1, '#3d2210');
+  ctx.strokeStyle = g; ctx.lineWidth = 7;
+  ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke();
+  // virola y suela
+  ctx.strokeStyle = '#f4f1e6'; ctx.lineWidth = 7;
+  ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x0 - ax*9, y0 - ay*9); ctx.stroke();
+  ctx.strokeStyle = '#2f6fb5'; ctx.lineWidth = 7;
+  ctx.beginPath(); ctx.moveTo(x0 - ax*9, y0 - ay*9); ctx.lineTo(x0 - ax*13, y0 - ay*13); ctx.stroke();
+  ctx.restore();
+}
+
+function dibujarManoLibre(){
+  ctx.save();
+  ctx.setLineDash([4, 4]);
+  ctx.strokeStyle = 'rgba(255,255,255,.7)'; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.arc(raton.x, raton.y, R, 0, 6.283); ctx.stroke();
+  ctx.fillStyle = solapa(raton.x, raton.y) ? 'rgba(255,90,82,.35)' : 'rgba(255,255,255,.28)';
+  ctx.fill();
+  ctx.restore();
+  ctx.fillStyle = '#e8eefc';
+  ctx.font = '800 15px "Segoe UI", system-ui, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('Bola en mano: haz clic para colocar la blanca', lienzo.width/2, ABA + 26);
+}
+
+const aclarar = (hex, k) => mezclarColor(hex, '#ffffff', k);
+const oscurecer = (hex, k) => mezclarColor(hex, '#000000', k);
+function mezclarColor(a, b, k){
+  const pa = [1,3,5].map(i => parseInt(a.substr(i,2),16));
+  const pb = [1,3,5].map(i => parseInt(b.substr(i,2),16));
+  return '#' + pa.map((v,i) => Math.round(v + (pb[i]-v)*k).toString(16).padStart(2,'0')).join('');
+}
+
+// ---------- Interfaz ----------
+function refrescarHud(){
+  const g = grupos.tu;
+  $('turnoTxt').textContent = estado === 'fin' ? 'Partida terminada'
+    : turno === 'tu' ? (estado === 'manoLibre' ? 'Bola en mano' : 'Tu turno') : 'Turno del rival';
+  $('turnoTxt').style.opacity = turno === 'tu' ? '1' : '.55';
+  $('grupoTu').textContent = g ? '· ' + (g === 'lisas' ? 'lisas' : 'rayadas') : '';
+  $('grupoIA').textContent = grupos.ia ? '· ' + (grupos.ia === 'lisas' ? 'lisas' : 'rayadas') : '';
+  $('recordTxt').textContent = record;
+  pintarMetidas();
+}
+function pintarMetidas(){
+  const hechas = n => !bolas.find(b => b.num === n && b.viva);
+  const pinta = (cont, grupo) => {
+    const nums = grupo === 'lisas' ? [1,2,3,4,5,6,7] : grupo === 'rayadas' ? [9,10,11,12,13,14,15] : [];
+    cont.innerHTML = nums.filter(hechas).map(n =>
+      '<div class="miniBola" title="Bola ' + n + '" style="background:' +
+      (n > 8 ? 'linear-gradient(180deg,#f7f7f2 22%,' + COLORES[n] + ' 22%,' + COLORES[n] + ' 78%,#f7f7f2 78%)'
+             : COLORES[n]) + '"></div>').join('');
+  };
+  pinta($('bolasTu'), grupos.tu);
+  pinta($('bolasIA'), grupos.ia);
+}
+function refrescarFuerza(){
+  $('fuerzaRelleno').style.width = (fuerza * 100) + '%';
+  $('fuerzaTxt').textContent = cargando || estado === 'iaPensando'
+    ? Math.round(fuerza * 100) + '%'
+    : 'Mantén pulsado y arrastra';
+}
+
+// rueda de efecto
+function moverPunto(){
+  $('efectoPunto').style.left = (50 + efecto.x * 34) + '%';
+  $('efectoPunto').style.top  = (50 + efecto.y * 34) + '%';
+}
+let ajustandoEfecto = false;
+function fijarEfecto(ev){
+  const r = $('efecto').getBoundingClientRect();
+  const p = (ev.touches && ev.touches[0]) || ev;
+  let dx = (p.clientX - r.left) / r.width * 2 - 1;
+  let dy = (p.clientY - r.top) / r.height * 2 - 1;
+  const d = Math.hypot(dx, dy);
+  if (d > 1){ dx /= d; dy /= d; }
+  efecto = { x: dx * 0.85, y: dy * 0.85 };
+  moverPunto();
+}
+$('efecto').addEventListener('pointerdown', e => {
+  ajustandoEfecto = true; $('efecto').setPointerCapture(e.pointerId); fijarEfecto(e);
+});
+$('efecto').addEventListener('pointermove', e => { if (ajustandoEfecto) fijarEfecto(e); });
+$('efecto').addEventListener('pointerup', () => { ajustandoEfecto = false; });
+
+// puntería y tiro
+lienzo.addEventListener('pointermove', e => {
+  const p = Arcade.puntero(lienzo, e);
+  raton = p;
+  if (cargando && origenCarga){
+    fuerza = limitar(Math.hypot(p.x - origenCarga.x, p.y - origenCarga.y) / 190, 0, 1);
+    refrescarFuerza();
+  }
+});
+lienzo.addEventListener('pointerdown', e => {
+  Sonido.activar();
+  const p = Arcade.puntero(lienzo, e);
+  raton = p;
+  if (estado === 'manoLibre'){
+    if (p.x > IZQ + R && p.x < DER - R && p.y > ARR + R && p.y < ABA - R && !solapa(p.x, p.y)){
+      blanca.x = p.x; blanca.y = p.y;
+      estado = 'apuntando';
+      Sonido.fx('colocar');
+      refrescarHud();
+    } else Sonido.fx('error');
+    return;
+  }
+  if (estado !== 'apuntando') return;
+  cargando = true; origenCarga = p; fuerza = 0;
+  lienzo.setPointerCapture(e.pointerId);
+  refrescarFuerza();
+});
+lienzo.addEventListener('pointerup', () => {
+  if (!cargando) return;
+  cargando = false;
+  if (fuerza > 0.05) golpear(fuerza);
+  else { fuerza = 0; refrescarFuerza(); }
+});
+lienzo.addEventListener('pointercancel', () => { cargando = false; fuerza = 0; refrescarFuerza(); });
+
+$('btnJugar').onclick = () => {
+  Sonido.activar();
+  $('modalInicio').classList.remove('visible');
+  nuevaPartida();
+};
+$('btnOtra').onclick = () => { $('modalFin').classList.remove('visible'); nuevaPartida(); };
+$('btnNueva').onclick = () => { $('modalFin').classList.remove('visible'); nuevaPartida(); };
+Arcade.conectarSonido($('btnSonido'));
+
+nuevaPartida();
+estado = 'menu';
+refrescarHud();
+Arcade.bucle(dt => { actualizar(dt); dibujar(); });
+
+});
+
+registrarJuego("rumble", function(document, addEventListener, Arcade){
+
+// ============================================================
+//  RUMBLE STARS — fútbol de arena
+// ============================================================
+const lienzo = document.getElementById('lienzo');
+const ctx = Arcade.nitido(lienzo);
+const avisos = document.getElementById('avisos');
+const $ = id => document.getElementById(id);
+
+const AN = lienzo.width, AL = lienzo.height;
+const MURO = 26;
+const CAMPO = { x1: MURO, y1: MURO, x2: AN - MURO, y2: AL - MURO };
+const CY = (CAMPO.y1 + CAMPO.y2) / 2;
+const PORTERIA = 108;                       // media altura de la portería
+const DURACION = 90;
+
+// ---------- Plantilla ----------
+const BICHOS = {
+  guepardo:  { nombre:'Guepardo', icono:'🐆', coste:3, masa:1.0, radio:17, vel:238, potencia:1.0, color:'#f0a93a', papel:'ataque',  dato:'El más rápido' },
+  leon:      { nombre:'León',     icono:'🦁', coste:4, masa:1.5, radio:20, vel:176, potencia:1.9, color:'#e8b04b', papel:'ataque',  dato:'Chuta durísimo' },
+  rino:      { nombre:'Rinocer.', icono:'🦏', coste:4, masa:2.6, radio:22, vel:210, potencia:1.5, color:'#8fa0b5', papel:'embiste', dato:'Embiste recto' },
+  elefante:  { nombre:'Elefante', icono:'🐘', coste:5, masa:4.2, radio:26, vel:120, potencia:1.6, color:'#9aa7c4', papel:'ataque',  dato:'Aparta a todos' },
+  pinguino:  { nombre:'Pingüino', icono:'🐧', coste:2, masa:0.9, radio:16, vel:190, potencia:0.8, color:'#e8eefc', papel:'resbala', dato:'Resbala sin parar' },
+  tortuga:   { nombre:'Tortuga',  icono:'🐢', coste:3, masa:3.0, radio:21, vel:100, potencia:1.1, color:'#5fbf6a', papel:'defensa', dato:'Defiende tu área' }
+};
+const CLAVES = Object.keys(BICHOS);
+
+// ---------- Estado ----------
+let unidades = [], balon, energia, energiaIA, tanteo, reloj;
+let estado = 'menu', pausado = false, seleccion = null;
+let arrastre = null, cronoIA = 3, celebracion = 0, ralenti = 1;
+let record = Arcade.record('rumble_victorias');
+const chispas = new Particulas(420);
+const sacudida = new Sacudida();
+let confeti = [];
+
+function nuevaPartida(){
+  unidades = [];
+  balon = { x:(CAMPO.x1+CAMPO.x2)/2, y:CY, vx:0, vy:0, r:13, rot:0 };
+  energia = 6; energiaIA = 6;
+  tanteo = { tu:0, ia:0 };
+  reloj = DURACION;
+  estado = 'jugando'; pausado = false; seleccion = null;
+  cronoIA = 2.5; celebracion = 0; ralenti = 1;
+  confeti = []; chispas.lista.length = 0;
+  refrescarHud();
+}
+
+// ---------- Despliegue ----------
+function desplegar(clave, x, y, equipo, impulso){
+  const b = BICHOS[clave];
+  unidades.push({
+    clave, equipo, x, y, r:b.radio, masa:b.masa,
+    vx: impulso ? impulso.x : 0, vy: impulso ? impulso.y : 0,
+    vida: 13, fase: Math.random()*6.283, embiste: b.papel === 'embiste' ? 1.4 : 0,
+    aparecio: 0
+  });
+  chispas.emitir(18, {
+    x, y, color:[b.color, '#ffffff'], velMin:40, velMax:180,
+    vidaMin:0.25, vidaMax:0.6, rMin:2, rMax:5, gravedad:0, brillo:true
+  });
+  sacudida.golpe(2);
+  Sonido.fx('desplegar');
+}
+
+// ---------- Física ----------
+function actualizar(dt){
+  chispas.actualizar(dt);
+  sacudida.actualizar(dt);
+  confeti.forEach(c => { c.y += c.vy*dt; c.x += c.vx*dt; c.rot += c.vr*dt; c.vida -= dt; });
+  confeti = confeti.filter(c => c.vida > 0);
+
+  if (estado !== 'jugando' || pausado) return;
+
+  if (celebracion > 0){
+    celebracion -= dt;
+    ralenti = suavizar(ralenti, 0.25, dt*4);
+    if (celebracion <= 0){ sacar(); ralenti = 1; }
+  } else {
+    ralenti = suavizar(ralenti, 1, dt*3);
+    reloj -= dt;
+    if (reloj <= 0){ reloj = 0; return acabar(); }
+  }
+
+  const h = dt * ralenti;
+
+  // energía
+  energia = Math.min(10, energia + h * 0.72);
+  energiaIA = Math.min(10, energiaIA + h * 0.66);
+
+  // la máquina despliega
+  cronoIA -= h;
+  if (cronoIA <= 0 && celebracion <= 0){
+    cronoIA = azar(1.6, 3.4);
+    pensarIA();
+  }
+
+  moverUnidades(h);
+  moverBalon(h);
+  colisiones(h);
+  if (celebracion <= 0) comprobarGol();
+
+  refrescarHud();
+}
+
+function moverUnidades(h){
+  for (let i = unidades.length - 1; i >= 0; i--){
+    const u = unidades[i];
+    const b = BICHOS[u.clave];
+    u.vida -= h; u.aparecio += h; u.fase += h * 8;
+    if (u.vida <= 0){
+      chispas.emitir(12, { x:u.x, y:u.y, color:b.color, velMin:20, velMax:90,
+        vidaMin:0.3, vidaMax:0.7, rMin:2, rMax:4, gravedad:-40 });
+      unidades.splice(i, 1);
+      continue;
+    }
+
+    // hacia dónde va cada uno según su papel
+    let ox = balon.x, oy = balon.y;
+    if (b.papel === 'defensa'){
+      const porteria = u.equipo === 'tu' ? CAMPO.x1 + 70 : CAMPO.x2 - 70;
+      if (Math.abs(balon.x - porteria) > 260){ ox = porteria; oy = suavizar(CY, balon.y, 0.5); }
+    }
+    if (u.embiste > 0){
+      u.embiste -= h;                       // durante la embestida no corrige el rumbo
+    } else {
+      const d = Math.hypot(ox - u.x, oy - u.y) || 1;
+      const acel = b.vel * 3.4;
+      u.vx += (ox - u.x)/d * acel * h;
+      u.vy += (oy - u.y)/d * acel * h;
+    }
+
+    // rozamiento y tope de velocidad
+    const roce = b.papel === 'resbala' ? 0.6 : 2.6;
+    u.vx -= u.vx * roce * h; u.vy -= u.vy * roce * h;
+    const v = Math.hypot(u.vx, u.vy), tope = b.vel * (u.embiste > 0 ? 1.9 : 1);
+    if (v > tope){ u.vx = u.vx/v*tope; u.vy = u.vy/v*tope; }
+
+    u.x += u.vx * h; u.y += u.vy * h;
+
+    // paredes
+    if (u.x < CAMPO.x1 + u.r){ u.x = CAMPO.x1 + u.r; u.vx = Math.abs(u.vx)*0.5; }
+    if (u.x > CAMPO.x2 - u.r){ u.x = CAMPO.x2 - u.r; u.vx = -Math.abs(u.vx)*0.5; }
+    if (u.y < CAMPO.y1 + u.r){ u.y = CAMPO.y1 + u.r; u.vy = Math.abs(u.vy)*0.5; }
+    if (u.y > CAMPO.y2 - u.r){ u.y = CAMPO.y2 - u.r; u.vy = -Math.abs(u.vy)*0.5; }
+  }
+}
+
+function moverBalon(h){
+  balon.x += balon.vx * h; balon.y += balon.vy * h;
+  balon.vx -= balon.vx * 1.05 * h; balon.vy -= balon.vy * 1.05 * h;
+  balon.rot += Math.hypot(balon.vx, balon.vy) * h / balon.r;
+
+  // paredes: arriba y abajo siempre; a los lados salvo en la boca de la portería
+  if (balon.y < CAMPO.y1 + balon.r){ balon.y = CAMPO.y1 + balon.r; balon.vy = Math.abs(balon.vy)*0.82; rebote(); }
+  if (balon.y > CAMPO.y2 - balon.r){ balon.y = CAMPO.y2 - balon.r; balon.vy = -Math.abs(balon.vy)*0.82; rebote(); }
+  const enBoca = Math.abs(balon.y - CY) < PORTERIA;
+  if (!enBoca){
+    if (balon.x < CAMPO.x1 + balon.r){ balon.x = CAMPO.x1 + balon.r; balon.vx = Math.abs(balon.vx)*0.82; rebote(); }
+    if (balon.x > CAMPO.x2 - balon.r){ balon.x = CAMPO.x2 - balon.r; balon.vx = -Math.abs(balon.vx)*0.82; rebote(); }
+  }
+}
+function rebote(){
+  if (Math.hypot(balon.vx, balon.vy) > 120){ Sonido.fx('banda'); sacudida.golpe(1.5); }
+}
+
+function colisiones(h){
+  // bicho contra balón
+  for (const u of unidades){
+    const dx = balon.x - u.x, dy = balon.y - u.y;
+    const d = Math.hypot(dx, dy);
+    const min = u.r + balon.r;
+    if (d >= min || d === 0) continue;
+    const nx = dx/d, ny = dy/d;
+    balon.x = u.x + nx*min; balon.y = u.y + ny*min;
+    const b = BICHOS[u.clave];
+    const impacto = Math.hypot(u.vx, u.vy);
+    const fuerza = 150 + impacto * 1.5 * b.potencia + b.masa * 30;
+    balon.vx = nx * fuerza + u.vx * 0.4;
+    balon.vy = ny * fuerza + u.vy * 0.4;
+    u.vx -= nx * fuerza * 0.1 / b.masa;
+    u.vy -= ny * fuerza * 0.1 / b.masa;
+    Sonido.fx('patada');
+    sacudida.golpe(Math.min(5, fuerza/90));
+    chispas.emitir(12, {
+      x: balon.x, y: balon.y, color:['#ffffff', b.color, '#ffd25e'],
+      ang: Math.atan2(ny, nx), abanico: 1.1, velMin:60, velMax:260,
+      vidaMin:0.2, vidaMax:0.5, rMin:1.5, rMax:4, gravedad:0, brillo:true
+    });
+  }
+
+  // bicho contra bicho
+  for (let i = 0; i < unidades.length; i++){
+    for (let j = i+1; j < unidades.length; j++){
+      const a = unidades[i], c = unidades[j];
+      const dx = c.x-a.x, dy = c.y-a.y;
+      const d = Math.hypot(dx, dy), min = a.r + c.r;
+      if (d >= min || d === 0) continue;
+      const nx = dx/d, ny = dy/d, solape = min - d;
+      const ma = a.masa, mc = c.masa, total = ma + mc;
+      a.x -= nx * solape * (mc/total); a.y -= ny * solape * (mc/total);
+      c.x += nx * solape * (ma/total); c.y += ny * solape * (ma/total);
+      const vrel = (c.vx-a.vx)*nx + (c.vy-a.vy)*ny;
+      if (vrel > 0) continue;
+      const imp = -(1.4) * vrel / total;
+      a.vx -= imp * nx * mc; a.vy -= imp * ny * mc;
+      c.vx += imp * nx * ma; c.vy += imp * ny * ma;
+      if (Math.abs(vrel) > 110){
+        Sonido.fx('choquePj');
+        sacudida.golpe(Math.min(3, Math.abs(vrel)/120));
+        chispas.emitir(5, { x:(a.x+c.x)/2, y:(a.y+c.y)/2, color:'#ffffff',
+          velMin:30, velMax:120, vidaMin:0.15, vidaMax:0.35, rMin:1.5, rMax:3, gravedad:0 });
+      }
+    }
+  }
+}
+
+function comprobarGol(){
+  if (Math.abs(balon.y - CY) > PORTERIA) return;
+  if (balon.x - balon.r < CAMPO.x1 - 6) return gol('ia');
+  if (balon.x + balon.r > CAMPO.x2 + 6) return gol('tu');
+}
+
+function gol(quien){
+  tanteo[quien]++;
+  celebracion = 2.6;
+  sacudida.golpe(14);
+  Sonido.fx('gol');
+  const x = quien === 'tu' ? CAMPO.x2 : CAMPO.x1;
+  chispas.emitir(70, {
+    x, y: balon.y, color:['#ffd25e','#ff6b6b','#5cc8ff','#6fe08b','#ffffff'],
+    velMin:80, velMax:520, vidaMin:0.5, vidaMax:1.3, rMin:2, rMax:6,
+    gravedad:200, brillo:true
+  });
+  for (let i = 0; i < 90; i++){
+    confeti.push({
+      x: azar(0, AN), y: azar(-260, -10), vx: azar(-40, 40), vy: azar(90, 260),
+      rot: azar(0, 6.283), vr: azar(-7, 7), vida: azar(2.2, 3.6),
+      color: elegir(['#ffd25e','#ff6b6b','#5cc8ff','#6fe08b','#c88bff','#ffffff']),
+      an: azar(5, 11), al: azar(7, 15)
+    });
+  }
+  $('tanteo').classList.add('late');
+  setTimeout(() => $('tanteo').classList.remove('late'), 260);
+  Arcade.aviso(avisos, quien === 'tu' ? '⚽ ¡GOOOL TUYO!' : '😖 Gol del rival', quien === 'tu', 2400);
+  refrescarHud();
+}
+
+function sacar(){
+  balon.x = (CAMPO.x1+CAMPO.x2)/2; balon.y = CY;
+  balon.vx = azar(-30, 30); balon.vy = azar(-30, 30);
+  unidades = [];
+  Sonido.fx('silbato');
+}
+
+function acabar(){
+  estado = 'fin';
+  const gano = tanteo.tu > tanteo.ia, empate = tanteo.tu === tanteo.ia;
+  if (gano){ Arcade.guardarRecord('rumble_victorias', record + 1); record = Arcade.record('rumble_victorias'); }
+  $('tituloFin').textContent = gano ? '¡VICTORIA!' : empate ? 'EMPATE' : 'DERROTA';
+  $('tituloFin').className = gano ? 'victoria' : empate ? '' : 'derrota';
+  $('subFin').textContent = gano ? 'Los tuyos han arrasado en la arena.'
+    : empate ? 'Nadie ha podido con nadie.' : 'El rival se lleva el partido. ¡Revancha!';
+  $('finTanteo').textContent = tanteo.tu + ' - ' + tanteo.ia;
+  $('finRecord').textContent = record;
+  $('modalFin').classList.add('visible');
+  Sonido.fx(gano ? 'victoria' : 'derrota');
+  refrescarHud();
+}
+
+// ---------- Rival ----------
+function pensarIA(){
+  const posibles = CLAVES.filter(c => BICHOS[c].coste <= energiaIA);
+  if (!posibles.length) return;
+  // si el balón está en su campo, defiende; si no, ataca
+  const defendiendo = balon.x > (CAMPO.x1+CAMPO.x2)/2;
+  const preferidos = defendiendo
+    ? posibles.filter(c => BICHOS[c].masa >= 2.5)
+    : posibles.filter(c => BICHOS[c].papel !== 'defensa');
+  const clave = elegir(preferidos.length ? preferidos : posibles);
+  energiaIA -= BICHOS[clave].coste;
+  const x = azar((CAMPO.x1+CAMPO.x2)/2 + 40, CAMPO.x2 - 60);
+  const y = limitar(balon.y + azar(-110, 110), CAMPO.y1 + 40, CAMPO.y2 - 40);
+  const d = Math.hypot(balon.x - x, balon.y - y) || 1;
+  desplegar(clave, x, y, 'ia', {
+    x: (balon.x - x)/d * azar(120, 260),
+    y: (balon.y - y)/d * azar(120, 260)
+  });
+}
+
+// ---------- Dibujo ----------
+const fondo = Arcade.lienzoOculto(AN, AL);
+pintarCampo(fondo.ctx);
+
+function pintarCampo(c){
+  // grada
+  const g = c.createLinearGradient(0, 0, 0, AL);
+  g.addColorStop(0, '#2b2447'); g.addColorStop(1, '#1a1630');
+  c.fillStyle = g; c.fillRect(0, 0, AN, AL);
+  for (let i = 0; i < 900; i++){
+    c.fillStyle = elegir(['#4a3f73','#5b4f8a','#3a3160','#6d5fa3']);
+    const x = azar(0, AN), y = azar(0, AL);
+    if (x > CAMPO.x1-8 && x < CAMPO.x2+8 && y > CAMPO.y1-8 && y < CAMPO.y2+8) continue;
+    c.globalAlpha = azar(0.3, 0.9);
+    c.beginPath(); c.arc(x, y, azar(1.4, 3), 0, 6.283); c.fill();
+  }
+  c.globalAlpha = 1;
+
+  // césped a franjas
+  for (let i = 0; i < 10; i++){
+    c.fillStyle = i % 2 ? '#2f8f45' : '#288040';
+    const w = (CAMPO.x2-CAMPO.x1)/10;
+    c.fillRect(CAMPO.x1 + i*w, CAMPO.y1, w, CAMPO.y2-CAMPO.y1);
+  }
+  // viñeta
+  const v = c.createRadialGradient((CAMPO.x1+CAMPO.x2)/2, CY, 120, (CAMPO.x1+CAMPO.x2)/2, CY, 620);
+  v.addColorStop(0, 'rgba(255,255,255,.07)'); v.addColorStop(1, 'rgba(0,0,0,.35)');
+  c.fillStyle = v; c.fillRect(CAMPO.x1, CAMPO.y1, CAMPO.x2-CAMPO.x1, CAMPO.y2-CAMPO.y1);
+
+  // líneas
+  c.strokeStyle = 'rgba(255,255,255,.55)'; c.lineWidth = 3;
+  c.strokeRect(CAMPO.x1, CAMPO.y1, CAMPO.x2-CAMPO.x1, CAMPO.y2-CAMPO.y1);
+  c.beginPath(); c.moveTo((CAMPO.x1+CAMPO.x2)/2, CAMPO.y1); c.lineTo((CAMPO.x1+CAMPO.x2)/2, CAMPO.y2); c.stroke();
+  c.beginPath(); c.arc((CAMPO.x1+CAMPO.x2)/2, CY, 74, 0, 6.283); c.stroke();
+  c.beginPath(); c.arc((CAMPO.x1+CAMPO.x2)/2, CY, 5, 0, 6.283); c.fillStyle = 'rgba(255,255,255,.6)'; c.fill();
+  // áreas
+  [[CAMPO.x1, 1], [CAMPO.x2, -1]].forEach(([x, s]) => {
+    c.strokeRect(x, CY - PORTERIA - 32, s * 96, (PORTERIA + 32) * 2);
+  });
+
+  // muros de la arena
+  c.fillStyle = '#1b1730';
+  c.fillRect(0, 0, AN, MURO); c.fillRect(0, AL-MURO, AN, MURO);
+  c.fillStyle = '#ffb43d';
+  for (let x = 0; x < AN; x += 34){
+    c.globalAlpha = 0.28;
+    c.fillRect(x, MURO-4, 17, 4); c.fillRect(x+17, AL-MURO, 17, 4);
+  }
+  c.globalAlpha = 1;
+}
+
+function dibujar(){
+  ctx.save();
+  sacudida.aplicar(ctx);
+  ctx.drawImage(fondo.lienzo, 0, 0, AN, AL);
+
+  dibujarPorterias();
+
+  // zona donde puedes desplegar
+  if (seleccion && estado === 'jugando'){
+    ctx.fillStyle = 'rgba(92,200,255,.10)';
+    ctx.fillRect(CAMPO.x1, CAMPO.y1, (CAMPO.x2-CAMPO.x1)/2, CAMPO.y2-CAMPO.y1);
+    ctx.strokeStyle = 'rgba(92,200,255,.45)'; ctx.lineWidth = 2;
+    ctx.setLineDash([9, 7]);
+    ctx.strokeRect(CAMPO.x1+2, CAMPO.y1+2, (CAMPO.x2-CAMPO.x1)/2-4, CAMPO.y2-CAMPO.y1-4);
+    ctx.setLineDash([]);
+  }
+
+  // flecha de lanzamiento
+  if (arrastre){
+    const b = BICHOS[seleccion];
+    const dx = arrastre.x - arrastre.x0, dy = arrastre.y - arrastre.y0;
+    const d = Math.hypot(dx, dy);
+    ctx.strokeStyle = 'rgba(255,180,61,.9)'; ctx.lineWidth = 5; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(arrastre.x0, arrastre.y0); ctx.lineTo(arrastre.x, arrastre.y); ctx.stroke();
+    if (d > 14){
+      const a = Math.atan2(dy, dx);
+      ctx.fillStyle = 'rgba(255,180,61,.9)';
+      ctx.beginPath();
+      ctx.moveTo(arrastre.x + Math.cos(a)*14, arrastre.y + Math.sin(a)*14);
+      ctx.lineTo(arrastre.x + Math.cos(a+2.5)*13, arrastre.y + Math.sin(a+2.5)*13);
+      ctx.lineTo(arrastre.x + Math.cos(a-2.5)*13, arrastre.y + Math.sin(a-2.5)*13);
+      ctx.closePath(); ctx.fill();
+    }
+    ctx.globalAlpha = 0.55;
+    dibujarBicho({ clave:seleccion, x:arrastre.x0, y:arrastre.y0, r:b.radio, equipo:'tu',
+                   fase:0, vida:99, aparecio:1, vx:0, vy:0 });
+    ctx.globalAlpha = 1;
+  }
+
+  unidades.forEach(dibujarBicho);
+  dibujarBalon();
+  chispas.dibujar(ctx);
+
+  // confeti
+  confeti.forEach(c => {
+    ctx.save();
+    ctx.translate(c.x, c.y); ctx.rotate(c.rot);
+    ctx.globalAlpha = limitar(c.vida, 0, 1);
+    ctx.fillStyle = c.color;
+    ctx.fillRect(-c.an/2, -c.al/2, c.an, c.al);
+    ctx.restore();
+  });
+  ctx.globalAlpha = 1;
+
+  if (celebracion > 0){
+    const t = 1 - celebracion/2.6;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.font = '900 ' + (54 + Math.sin(t*9)*5) + 'px "Segoe UI", system-ui, sans-serif';
+    ctx.lineWidth = 8; ctx.strokeStyle = 'rgba(0,0,0,.6)';
+    ctx.strokeText('¡GOL!', AN/2, CY);
+    const g = ctx.createLinearGradient(0, CY-40, 0, CY+40);
+    g.addColorStop(0, '#fff3b0'); g.addColorStop(1, '#ffb43d');
+    ctx.fillStyle = g;
+    ctx.fillText('¡GOL!', AN/2, CY);
+  }
+  if (pausado){
+    ctx.fillStyle = 'rgba(5,8,16,.6)'; ctx.fillRect(0, 0, AN, AL);
+    ctx.fillStyle = '#e8eefc'; ctx.font = 'bold 34px "Segoe UI", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('PAUSA', AN/2, AL/2);
+  }
+  ctx.restore();
+}
+
+function dibujarPorterias(){
+  [[CAMPO.x1, -1, '#2f7fd8'], [CAMPO.x2, 1, '#d8452f']].forEach(([x, s, col]) => {
+    // red
+    ctx.fillStyle = 'rgba(255,255,255,.10)';
+    ctx.fillRect(x, CY - PORTERIA, s * 22, PORTERIA*2);
+    ctx.strokeStyle = 'rgba(255,255,255,.35)'; ctx.lineWidth = 1;
+    ctx.beginPath();
+    for (let k = 0; k <= 22; k += 5.5){ ctx.moveTo(x + s*k, CY-PORTERIA); ctx.lineTo(x + s*k, CY+PORTERIA); }
+    for (let k = -PORTERIA; k <= PORTERIA; k += 12){ ctx.moveTo(x, CY+k); ctx.lineTo(x + s*22, CY+k); }
+    ctx.stroke();
+    // postes
+    ctx.strokeStyle = col; ctx.lineWidth = 6; ctx.lineCap = 'round';
+    ctx.shadowColor = col; ctx.shadowBlur = 12;
+    ctx.beginPath(); ctx.moveTo(x, CY-PORTERIA); ctx.lineTo(x, CY+PORTERIA); ctx.stroke();
+    ctx.shadowBlur = 0;
+  });
+}
+
+function dibujarBicho(u){
+  const b = BICHOS[u.clave];
+  const salto = Math.abs(Math.sin(u.fase)) * (Math.hypot(u.vx, u.vy) > 40 ? 4 : 1.5);
+  const escala = limitar(u.aparecio * 5, 0.3, 1);
+  const x = u.x, y = u.y - salto;
+  const casi = u.vida < 3 && Math.floor(u.vida*6) % 2 === 0;
+
+  ctx.save();
+  ctx.globalAlpha *= casi ? 0.5 : 1;
+
+  // sombra
+  ctx.fillStyle = 'rgba(0,0,0,.3)';
+  ctx.beginPath(); ctx.ellipse(u.x, u.y + u.r*0.7, u.r*0.85, u.r*0.35, 0, 0, 6.283); ctx.fill();
+
+  ctx.translate(x, y);
+  ctx.scale(escala, escala);
+
+  // aro del equipo
+  ctx.fillStyle = u.equipo === 'tu' ? '#2f7fd8' : '#d8452f';
+  ctx.beginPath(); ctx.arc(0, 0, u.r + 4, 0, 6.283); ctx.fill();
+
+  // cuerpo
+  const g = ctx.createRadialGradient(-u.r*0.3, -u.r*0.4, u.r*0.15, 0, 0, u.r);
+  g.addColorStop(0, '#ffffff'); g.addColorStop(0.35, b.color); g.addColorStop(1, '#00000055');
+  ctx.fillStyle = g;
+  ctx.beginPath(); ctx.arc(0, 0, u.r, 0, 6.283); ctx.fill();
+
+  // estela de embestida
+  if (u.embiste > 0){
+    ctx.strokeStyle = 'rgba(255,180,61,.8)'; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.arc(0, 0, u.r + 7, 0, 6.283); ctx.stroke();
+  }
+
+  ctx.font = Math.round(u.r * 1.35) + 'px serif';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(b.icono, 0, u.r*0.08);
+
+  ctx.restore();
+  ctx.globalAlpha = 1;
+
+  // barra de aguante
+  if (u.vida < 13){
+    const w = u.r*1.7;
+    ctx.fillStyle = 'rgba(0,0,0,.45)';
+    ctx.fillRect(u.x - w/2, u.y - u.r - 12, w, 3.5);
+    ctx.fillStyle = u.equipo === 'tu' ? '#5cc8ff' : '#ff8a7a';
+    ctx.fillRect(u.x - w/2, u.y - u.r - 12, w * limitar(u.vida/13, 0, 1), 3.5);
+  }
+}
+
+function dibujarBalon(){
+  const { x, y, r } = balon;
+  ctx.fillStyle = 'rgba(0,0,0,.35)';
+  ctx.beginPath(); ctx.ellipse(x, y + r*0.8, r*0.9, r*0.4, 0, 0, 6.283); ctx.fill();
+
+  const g = ctx.createRadialGradient(x - r*0.35, y - r*0.4, r*0.1, x, y, r);
+  g.addColorStop(0, '#ffffff'); g.addColorStop(0.7, '#e6e9f0'); g.addColorStop(1, '#9aa2b4');
+  ctx.fillStyle = g;
+  ctx.beginPath(); ctx.arc(x, y, r, 0, 6.283); ctx.fill();
+
+  // pentágonos girando
+  ctx.save();
+  ctx.beginPath(); ctx.arc(x, y, r, 0, 6.283); ctx.clip();
+  ctx.translate(x, y); ctx.rotate(balon.rot * 0.35);
+  ctx.fillStyle = '#20242e';
+  ctx.beginPath();
+  for (let k = 0; k < 5; k++){
+    const a = k * 1.2566 - Math.PI/2;
+    ctx.lineTo(Math.cos(a)*r*0.42, Math.sin(a)*r*0.42);
+  }
+  ctx.closePath(); ctx.fill();
+  for (let k = 0; k < 5; k++){
+    const a = k * 1.2566 - Math.PI/2 + 0.628;
+    ctx.beginPath(); ctx.arc(Math.cos(a)*r*0.92, Math.sin(a)*r*0.92, r*0.3, 0, 6.283); ctx.fill();
+  }
+  ctx.restore();
+
+  ctx.fillStyle = 'rgba(255,255,255,.6)';
+  ctx.beginPath(); ctx.ellipse(x - r*0.35, y - r*0.4, r*0.24, r*0.16, -0.6, 0, 6.283); ctx.fill();
+}
+
+// ---------- Interfaz ----------
+function refrescarHud(){
+  $('tanteo').innerHTML = tanteo.tu + ' <span class="tenue">-</span> ' + tanteo.ia;
+  const m = Math.floor(reloj/60), s = Math.floor(reloj%60);
+  $('reloj').textContent = m + ':' + String(s).padStart(2, '0');
+  $('reloj').classList.toggle('ultimos', reloj <= 15);
+  $('energiaTxt').textContent = Math.floor(energia);
+  $('energiaRelleno').style.height = (energia*10) + '%';
+  $('recordTxt').textContent = record;
+  document.querySelectorAll('.carta').forEach(el => {
+    el.classList.toggle('cara', energia < BICHOS[el.dataset.clave].coste);
+    el.classList.toggle('activa', seleccion === el.dataset.clave);
+  });
+}
+
+const cartas = $('cartas');
+CLAVES.forEach((clave, i) => {
+  const b = BICHOS[clave];
+  const el = document.createElement('div');
+  el.className = 'carta'; el.dataset.clave = clave; el.title = b.dato;
+  el.innerHTML = '<span class="tecla">' + (i+1) + '</span>' +
+    '<div class="bicho">' + b.icono + '</div>' +
+    '<div class="nom">' + b.nombre + '</div>' +
+    '<div class="coste">⚡ ' + b.coste + '</div>' +
+    '<div class="dato">' + b.dato + '</div>';
+  el.onclick = () => {
+    Sonido.activar();
+    seleccion = seleccion === clave ? null : clave;
+    refrescarHud();
+  };
+  cartas.appendChild(el);
+});
+
+lienzo.addEventListener('pointerdown', e => {
+  Sonido.activar();
+  if (estado !== 'jugando' || pausado || !seleccion) return;
+  const p = Arcade.puntero(lienzo, e);
+  const mitad = (CAMPO.x1 + CAMPO.x2)/2;
+  if (p.x < CAMPO.x1 || p.x > mitad || p.y < CAMPO.y1 || p.y > CAMPO.y2){
+    Arcade.aviso(avisos, 'Solo puedes desplegar en tu mitad', false, 1400);
+    Sonido.fx('error');
+    return;
+  }
+  if (energia < BICHOS[seleccion].coste){ Sonido.fx('error'); return; }
+  arrastre = { x0:p.x, y0:p.y, x:p.x, y:p.y };
+  lienzo.setPointerCapture(e.pointerId);
+});
+lienzo.addEventListener('pointermove', e => {
+  if (!arrastre) return;
+  const p = Arcade.puntero(lienzo, e);
+  arrastre.x = p.x; arrastre.y = p.y;
+});
+lienzo.addEventListener('pointerup', () => {
+  if (!arrastre || !seleccion) { arrastre = null; return; }
+  const dx = arrastre.x - arrastre.x0, dy = arrastre.y - arrastre.y0;
+  const d = Math.hypot(dx, dy);
+  const fuerza = limitar(d / 130, 0, 1) * 420;
+  energia -= BICHOS[seleccion].coste;
+  desplegar(seleccion, arrastre.x0, arrastre.y0, 'tu',
+    d > 6 ? { x: dx/d*fuerza, y: dy/d*fuerza } : null);
+  arrastre = null;
+  seleccion = null;
+  refrescarHud();
+});
+lienzo.addEventListener('pointercancel', () => { arrastre = null; });
+
+addEventListener('keydown', e => {
+  if (e.key >= '1' && e.key <= '6'){
+    seleccion = CLAVES[parseInt(e.key,10)-1];
+    refrescarHud();
+  }
+  if (e.key === 'Escape'){ seleccion = null; arrastre = null; refrescarHud(); }
+  if (e.key === ' '){ e.preventDefault(); alternarPausa(); }
+});
+function alternarPausa(){
+  if (estado !== 'jugando') return;
+  pausado = !pausado;
+  $('btnPausa').textContent = pausado ? '▶' : '⏸';
+}
+$('btnPausa').onclick = alternarPausa;
+Arcade.conectarSonido($('btnSonido'));
+$('btnJugar').onclick = () => {
+  Sonido.activar();
+  $('modalInicio').classList.remove('visible');
+  nuevaPartida();
+  Sonido.fx('silbato');
+};
+$('btnOtra').onclick = () => { $('modalFin').classList.remove('visible'); nuevaPartida(); Sonido.fx('silbato'); };
+
+nuevaPartida();
+estado = 'menu';
+refrescarHud();
 Arcade.bucle(dt => { actualizar(dt); dibujar(); });
 
 });

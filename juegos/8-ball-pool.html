@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>8 Ball Pool — Arcade NEXO</title>
+<link rel="stylesheet" href="arcade.css">
+<style>
+  #juego{width:min(1000px,100vw);}
+  .barra .titulo{color:#5fd8a4; letter-spacing:1px;}
+  .barra .stat.turno{background:rgba(95,216,164,.14); border:1px solid rgba(95,216,164,.35);}
+
+  #controles{
+    display:flex; gap:14px; align-items:center; flex-wrap:wrap;
+    background:linear-gradient(180deg, var(--panel2), var(--panel));
+    border:1px solid var(--borde); border-radius:12px; padding:10px 14px;
+  }
+  #controles .grupo{display:flex; flex-direction:column; gap:5px;}
+  #controles .eti{font-size:11px; font-weight:800; letter-spacing:.8px; color:var(--tenue); text-transform:uppercase;}
+
+  /* Medidor de fuerza */
+  #fuerzaCaja{flex:1; min-width:180px;}
+  #fuerzaTubo{
+    height:22px; border-radius:11px; background:#0e131d; border:1px solid #2a3348;
+    overflow:hidden; position:relative;
+  }
+  #fuerzaRelleno{
+    height:100%; width:0%;
+    background:linear-gradient(90deg,#3fbf78 0%,#ffd25e 55%,#ff5a52 100%);
+    transition:width .05s linear;
+  }
+  #fuerzaTubo span{
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    font-size:12px; font-weight:800; text-shadow:0 1px 3px rgba(0,0,0,.8);
+  }
+
+  /* Rueda de efecto */
+  #efecto{
+    width:64px; height:64px; border-radius:50%; cursor:pointer; flex:none;
+    background:radial-gradient(circle at 36% 30%, #ffffff, #c8cede 70%, #8f97ab);
+    border:2px solid #46577d; position:relative; box-shadow:inset 0 -6px 12px rgba(0,0,0,.25);
+  }
+  #efectoPunto{
+    position:absolute; width:13px; height:13px; border-radius:50%;
+    background:#e03b3b; border:2px solid #fff; transform:translate(-50%,-50%);
+    left:50%; top:50%; pointer-events:none; box-shadow:0 1px 4px rgba(0,0,0,.5);
+  }
+
+  /* Bolas embocadas */
+  .rejillaBolas{display:flex; gap:3px; flex-wrap:wrap; max-width:190px;}
+  .miniBola{width:19px; height:19px; border-radius:50%; border:1px solid rgba(0,0,0,.5);}
+
+  @media (max-width:640px){
+    #controles{gap:10px; padding:8px 10px;}
+    #efecto{width:54px; height:54px;}
+  }
+</style>
+</head>
+<body>
+
+<div id="juego">
+  <div class="barra">
+    <a class="boton" href="../index.html">🕹 Arcade</a>
+    <div class="titulo">🎱 8 BALL POOL</div>
+    <div class="sep"></div>
+    <div class="stat turno" id="turnoTxt">Tu turno</div>
+    <div class="stat">🏆 <span id="recordTxt" class="tenue">0</span></div>
+    <button id="btnNueva" title="Nueva partida">↻</button>
+    <button id="btnSonido" title="Sonido">🔊</button>
+  </div>
+
+  <div class="escena">
+    <canvas id="lienzo" width="960" height="520"></canvas>
+    <div class="avisos" id="avisos"></div>
+
+    <div class="modal visible" id="modalInicio">
+      <div class="tarjetaModal">
+        <h1>🎱 8 BALL POOL</h1>
+        <div class="sub">Física real de billar contra la máquina.</div>
+        <div class="instrucciones">
+          <b>Apuntar:</b> mueve el ratón (o el dedo) por la mesa; verás la línea de tiro
+          punteada, la <b>bola fantasma</b> en el punto de contacto y hacia dónde saldrá cada bola.<br>
+          <b>Tirar:</b> mantén pulsado y <b>arrastra hacia atrás</b> para cargar fuerza; suelta para golpear.<br>
+          <b>Efecto:</b> arrastra el punto rojo sobre la bola blanca de abajo.
+          Arriba = corrido, abajo = retroceso, a los lados = efecto lateral.<br>
+          <b>Reglas:</b> el primero que meta una bola se queda con ese grupo (lisas o rayadas).
+          Al meter todas las tuyas, va la <b>8</b>. Meterla antes de tiempo o junto con la blanca es perder.<br>
+          Las faltas dan <b>bola en mano</b> al rival.
+        </div>
+        <div class="filaBotones"><button class="primario" id="btnJugar">▶ Romper</button></div>
+      </div>
+    </div>
+
+    <div class="modal" id="modalFin">
+      <div class="tarjetaModal">
+        <h1 id="tituloFin">FIN</h1>
+        <div class="sub" id="subFin"></div>
+        <div class="filaBotones">
+          <button class="primario" id="btnOtra">↻ Otra partida</button>
+          <a class="boton" href="../index.html">🕹 Arcade</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="controles">
+    <div class="grupo">
+      <div class="eti">Efecto</div>
+      <div id="efecto"><div id="efectoPunto"></div></div>
+    </div>
+    <div class="grupo" id="fuerzaCaja">
+      <div class="eti">Fuerza</div>
+      <div id="fuerzaTubo"><div id="fuerzaRelleno"></div><span id="fuerzaTxt">Mantén pulsado y arrastra</span></div>
+    </div>
+    <div class="grupo">
+      <div class="eti">Tú <span id="grupoTu" class="tenue"></span></div>
+      <div class="rejillaBolas" id="bolasTu"></div>
+    </div>
+    <div class="grupo">
+      <div class="eti">Rival <span id="grupoIA" class="tenue"></span></div>
+      <div class="rejillaBolas" id="bolasIA"></div>
+    </div>
+  </div>
+</div>
+
+<script src="arcade.js"></script>
+<script>
+// ============================================================
+//  8 BALL POOL — motor de física con subpasos fijos
+// ============================================================
+const lienzo = document.getElementById('lienzo');
+const ctx = Arcade.nitido(lienzo);
+const avisos = document.getElementById('avisos');
+const $ = id => document.getElementById(id);
+
+// ---------- Geometría de la mesa ----------
+const BANDA = 40;
+const IZQ = BANDA, ARR = BANDA, DER = lienzo.width - BANDA, ABA = lienzo.height - BANDA;
+const R = 11;                                  // radio de bola
+const R_TRONERA = 21;
+const TRONERAS = [
+  {x:IZQ, y:ARR}, {x:(IZQ+DER)/2, y:ARR}, {x:DER, y:ARR},
+  {x:IZQ, y:ABA}, {x:(IZQ+DER)/2, y:ABA}, {x:DER, y:ABA}
+];
+
+// ---------- Física ----------
+const PASO = 1/300;                            // subpaso fijo
+const ROCE = 240;                              // desaceleración (px/s²)
+const REST_BANDA = 0.72;                       // rebote en banda
+const ROCE_BANDA = 0.82;                       // pérdida tangencial en banda
+const REST_BOLA = 0.96;
+const PARADA = 5;                              // por debajo de esta velocidad, se para
+const V_MAX = 1750;
+
+const COLORES = {
+  1:'#f2c010', 2:'#1f4fc4', 3:'#cf2020', 4:'#69299c', 5:'#e8681a',
+  6:'#12793c', 7:'#8a3418', 8:'#15171d',
+  9:'#f2c010', 10:'#1f4fc4', 11:'#cf2020', 12:'#69299c', 13:'#e8681a',
+  14:'#12793c', 15:'#8a3418'
+};
+
+let bolas = [], blanca;
+let estado = 'menu';        // menu | apuntando | rodando | manoLibre | iaPensando | fin
+let turno = 'tu';           // tu | ia
+let grupos = { tu:null, ia:null };   // 'lisas' | 'rayadas'
+let apunte = 0, fuerza = 0, cargando = false, origenCarga = null;
+let efecto = { x:0, y:0 };
+let raton = { x: lienzo.width/2, y: lienzo.height/2 };
+let golpeadaPrimero = null, metidasEnTirada = [], huboContacto = false, blancaMetida = false;
+let cronoIA = 0, tiroIA = null, animCue = 0;
+let record = Arcade.record('pool_victorias');
+const chispas = new Particulas(220);
+const sacudida = new Sacudida();
+
+// ---------- Preparación ----------
+function nuevaPartida(){
+  bolas = [];
+  blanca = crear(0, IZQ + (DER-IZQ)*0.22, (ARR+ABA)/2);
+  const apex = IZQ + (DER-IZQ)*0.72, cy = (ARR+ABA)/2;
+  const dx = 2*R*Math.cos(Math.PI/6) + 0.6, dy = 2*R + 0.6;
+  // Triángulo reglamentario: la 8 en el centro y las esquinas de la última
+  // fila con una lisa y una rayada.
+  const resto = mezclar([1,2,3,4,5,6,7,9,10,11,12,13,14,15].filter(n => n !== 8));
+  const lisas = resto.filter(n => n < 8), rayadas = resto.filter(n => n > 8);
+  const orden = new Array(15);
+  orden[4] = 8;                                    // centro de la fila 3
+  orden[10] = lisas.pop(); orden[14] = rayadas.pop();  // esquinas traseras
+  const sobrante = mezclar([...lisas, ...rayadas]);
+  for (let i = 0; i < 15; i++) if (!orden[i]) orden[i] = sobrante.pop();
+
+  let k = 0;
+  for (let fila = 0; fila < 5; fila++){
+    for (let j = 0; j <= fila; j++){
+      crear(orden[k++], apex + fila*dx, cy + (j - fila/2)*dy);
+    }
+  }
+  estado = 'apuntando'; turno = 'tu';
+  grupos = { tu:null, ia:null };
+  fuerza = 0; cargando = false; efecto = {x:0, y:0};
+  moverPunto();
+  refrescarHud();
+}
+function crear(num, x, y){
+  const b = {
+    num, x, y, vx:0, vy:0, viva:true, rot:0,
+    color: num === 0 ? '#f7f7f2' : COLORES[num],
+    rayada: num > 8
+  };
+  bolas.push(b);
+  return b;
+}
+
+const enJuego = () => bolas.filter(b => b.viva);
+const quietas = () => bolas.every(b => !b.viva || (b.vx === 0 && b.vy === 0));
+const grupoDe = n => n === 0 ? null : n === 8 ? 'ocho' : n < 8 ? 'lisas' : 'rayadas';
+const misBolas = quien => enJuego().filter(b => b.num !== 0 && b.num !== 8 && grupoDe(b.num) === grupos[quien]);
+
+// ---------- Motor físico ----------
+function simular(dt){
+  let restante = dt;
+  while (restante > 1e-6){
+    const h = Math.min(PASO, restante);
+    restante -= h;
+    paso(h);
+  }
+}
+
+function paso(h){
+  for (const b of bolas){
+    if (!b.viva) continue;
+    const v = Math.hypot(b.vx, b.vy);
+    if (v === 0) continue;
+
+    // rozamiento con el paño
+    const nuevaV = Math.max(0, v - ROCE * h);
+    if (nuevaV < PARADA){ b.vx = 0; b.vy = 0; }
+    else { b.vx = b.vx / v * nuevaV; b.vy = b.vy / v * nuevaV; }
+
+    b.x += b.vx * h; b.y += b.vy * h;
+
+    // ángulo rodado = distancia recorrida / radio
+    b.rot += nuevaV * h / R;
+
+    // efecto lateral: hace que la bola describa una curva suave
+    if (b === blanca && b.efectoLateral){
+      const f = b.efectoLateral * 26 * h;
+      const nx = -b.vy / (nuevaV || 1), ny = b.vx / (nuevaV || 1);
+      b.vx += nx * f; b.vy += ny * f;
+      b.efectoLateral *= (1 - 1.6 * h);
+    }
+  }
+
+  colisionesBanda();
+  colisionesBolas();
+  comprobarTroneras();
+}
+
+function colisionesBanda(){
+  for (const b of bolas){
+    if (!b.viva || (b.vx === 0 && b.vy === 0)) continue;
+    // Cerca de la boca de una tronera no hay banda que valga
+    if (TRONERAS.some(t => Math.hypot(b.x - t.x, b.y - t.y) < R_TRONERA + R * 1.1)) continue;
+
+    let choque = false;
+    if (b.x - R < IZQ){ b.x = IZQ + R; b.vx = -b.vx * REST_BANDA; b.vy *= ROCE_BANDA; choque = true; }
+    else if (b.x + R > DER){ b.x = DER - R; b.vx = -b.vx * REST_BANDA; b.vy *= ROCE_BANDA; choque = true; }
+    if (b.y - R < ARR){ b.y = ARR + R; b.vy = -b.vy * REST_BANDA; b.vx *= ROCE_BANDA; choque = true; }
+    else if (b.y + R > ABA){ b.y = ABA - R; b.vy = -b.vy * REST_BANDA; b.vx *= ROCE_BANDA; choque = true; }
+
+    if (choque){
+      const v = Math.hypot(b.vx, b.vy);
+      if (v > 90){ Sonido.fx('banda'); sacudida.golpe(Math.min(2.5, v / 500)); }
+      if (b === blanca) b.efectoLateral = (b.efectoLateral || 0) * 0.5;
+    }
+  }
+}
+
+function colisionesBolas(){
+  for (let i = 0; i < bolas.length; i++){
+    const a = bolas[i];
+    if (!a.viva) continue;
+    for (let j = i + 1; j < bolas.length; j++){
+      const b = bolas[j];
+      if (!b.viva) continue;
+      let dx = b.x - a.x, dy = b.y - a.y;
+      const d2 = dx*dx + dy*dy;
+      if (d2 > (2*R)*(2*R) || d2 === 0) continue;
+
+      const d = Math.sqrt(d2);
+      const nx = dx / d, ny = dy / d;
+
+      // separar el solape
+      const solape = 2*R - d;
+      a.x -= nx * solape/2; a.y -= ny * solape/2;
+      b.x += nx * solape/2; b.y += ny * solape/2;
+
+      // impulso a lo largo de la normal (masas iguales)
+      const vrel = (b.vx - a.vx) * nx + (b.vy - a.vy) * ny;
+      if (vrel > 0) continue;                    // ya se están separando
+      const imp = -(1 + REST_BOLA) * vrel / 2;
+      a.vx -= imp * nx; a.vy -= imp * ny;
+      b.vx += imp * nx; b.vy += imp * ny;
+
+      // primera bola tocada por la blanca en la tirada
+      if (a === blanca || b === blanca){
+        const otra = a === blanca ? b : a;
+        huboContacto = true;
+        if (golpeadaPrimero === null) golpeadaPrimero = otra.num;
+        // corrido / retroceso: se transfiere tras el impacto
+        if (blanca.efectoVertical){
+          const v = Math.hypot(blanca.vx, blanca.vy) || 1;
+          const dirx = nx * (a === blanca ? 1 : -1), diry = ny * (a === blanca ? 1 : -1);
+          blanca.vx += dirx * blanca.efectoVertical * 170;
+          blanca.vy += diry * blanca.efectoVertical * 170;
+          blanca.efectoVertical = 0;
+        }
+      }
+      const v = Math.abs(vrel);
+      if (v > 40){
+        Sonido.fx('bola');
+        sacudida.golpe(Math.min(3, v / 400));
+        chispas.emitir(2, {
+          x: (a.x+b.x)/2, y: (a.y+b.y)/2, color:'rgba(255,255,255,.55)',
+          velMin:10, velMax:60, vidaMin:0.12, vidaMax:0.3, rMin:1, rMax:2.2, gravedad:0
+        });
+      }
+    }
+  }
+}
+
+function comprobarTroneras(){
+  for (const b of bolas){
+    if (!b.viva) continue;
+    for (const t of TRONERAS){
+      if (Math.hypot(b.x - t.x, b.y - t.y) < R_TRONERA - R*0.25){
+        b.viva = false; b.vx = b.vy = 0;
+        metidasEnTirada.push(b.num);
+        if (b.num === 0) blancaMetida = true;
+        Sonido.fx('tronera');
+        sacudida.golpe(4);
+        chispas.emitir(14, {
+          x:t.x, y:t.y, color:[b.color, '#ffffff'], velMin:30, velMax:150,
+          vidaMin:0.25, vidaMax:0.6, rMin:1.5, rMax:3.5, gravedad:120
+        });
+        break;
+      }
+    }
+  }
+}
+
+// ---------- Tirada ----------
+function golpear(potencia){
+  golpeadaPrimero = null; metidasEnTirada = []; huboContacto = false; blancaMetida = false;
+  const v = V_MAX * limitar(potencia, 0.06, 1);
+  blanca.vx = Math.cos(apunte) * v;
+  blanca.vy = Math.sin(apunte) * v;
+  blanca.efectoVertical = -efecto.y;             // arriba = corrido, abajo = retroceso
+  blanca.efectoLateral = efecto.x;
+  estado = 'rodando';
+  Sonido.fx('taco');
+  sacudida.golpe(potencia * 3);
+  chispas.emitir(8, {
+    x: blanca.x - Math.cos(apunte)*R, y: blanca.y - Math.sin(apunte)*R,
+    color:'rgba(255,255,255,.5)', ang: apunte + Math.PI, abanico:0.6,
+    velMin:30, velMax:120, vidaMin:0.15, vidaMax:0.35, rMin:1, rMax:2.4, gravedad:0
+  });
+  fuerza = 0;
+  refrescarFuerza();
+}
+
+function terminarTirada(){
+  const quien = turno, rival = quien === 'tu' ? 'ia' : 'tu';
+  let falta = false, motivo = '';
+
+  const metioOcho = metidasEnTirada.includes(8);
+  const misMetidas = metidasEnTirada.filter(n => n !== 0 && n !== 8 &&
+    (grupos[quien] === null || grupoDe(n) === grupos[quien]));
+
+  // asignar grupos con la primera bola legal embocada
+  if (grupos[quien] === null && !metioOcho){
+    const legales = metidasEnTirada.filter(n => n !== 0 && n !== 8);
+    if (legales.length){
+      const g = grupoDe(legales[0]);
+      grupos[quien] = g;
+      grupos[rival] = g === 'lisas' ? 'rayadas' : 'lisas';
+      Arcade.aviso(avisos, (quien === 'tu' ? 'Te quedas con las ' : 'El rival se queda con las ') +
+        (g === 'lisas' ? 'LISAS' : 'RAYADAS'), true);
+    }
+  }
+
+  // faltas
+  if (blancaMetida){ falta = true; motivo = 'Has metido la blanca'; }
+  else if (!huboContacto){ falta = true; motivo = 'No has tocado ninguna bola'; }
+  else if (golpeadaPrimero !== null){
+    const g = grupoDe(golpeadaPrimero);
+    const objetivo = objetivoDe(quien);
+    if (objetivo === 'ocho' && g !== 'ocho'){ falta = true; motivo = 'Tenías que golpear la 8'; }
+    else if (objetivo !== null && objetivo !== 'ocho' && g !== objetivo && g !== null){
+      if (g === 'ocho'){ falta = true; motivo = 'No puedes golpear la 8 todavía'; }
+      else { falta = true; motivo = 'Has golpeado el grupo del rival'; }
+    }
+  }
+
+  // la 8
+  if (metioOcho){
+    // Solo vale si ya tenías grupo asignado y lo habías limpiado entero
+    const limpio = grupos[quien] !== null && misBolas(quien).length === 0;
+    if (limpio && !blancaMetida && !falta) return acabar(quien);
+    return acabar(rival);
+  }
+
+  if (falta){
+    Arcade.aviso(avisos, '⚠ Falta: ' + motivo + '. Bola en mano para ' +
+      (rival === 'tu' ? 'ti' : 'el rival'), true, 2800);
+    revivirBlanca();
+    turno = rival;
+    estado = rival === 'tu' ? 'manoLibre' : 'iaPensando';
+    if (rival === 'ia') colocarBlancaIA();
+  } else if (misMetidas.length > 0){
+    Arcade.aviso(avisos, (quien === 'tu' ? '¡Sigues tú!' : 'El rival repite'), false, 1400);
+    estado = quien === 'tu' ? 'apuntando' : 'iaPensando';
+  } else {
+    turno = rival;
+    estado = rival === 'tu' ? 'apuntando' : 'iaPensando';
+  }
+  if (estado === 'iaPensando'){ cronoIA = 0.9; tiroIA = null; }
+  refrescarHud();
+}
+
+function objetivoDe(quien){
+  if (grupos[quien] === null) return null;              // mesa abierta
+  return misBolas(quien).length === 0 ? 'ocho' : grupos[quien];
+}
+
+function revivirBlanca(){
+  blanca.viva = true; blanca.vx = blanca.vy = 0;
+  blanca.x = IZQ + (DER-IZQ)*0.22; blanca.y = (ARR+ABA)/2;
+  if (solapa(blanca.x, blanca.y)) blanca.x -= 40;
+}
+function solapa(x, y, ignorar){
+  return enJuego().some(b => b !== blanca && b !== ignorar && Math.hypot(b.x-x, b.y-y) < 2*R + 1);
+}
+
+function acabar(ganador){
+  estado = 'fin';
+  const gano = ganador === 'tu';
+  if (gano){ Arcade.guardarRecord('pool_victorias', record + 1); record = Arcade.record('pool_victorias'); }
+  $('tituloFin').textContent = gano ? '¡GANASTE!' : 'HAS PERDIDO';
+  $('tituloFin').className = gano ? 'victoria' : 'derrota';
+  $('subFin').textContent = gano
+    ? 'Has metido la 8 en su momento. Buen taco.'
+    : 'La 8 cayó cuando no tocaba.';
+  $('modalFin').classList.add('visible');
+  Sonido.fx(gano ? 'victoria' : 'derrota');
+  refrescarHud();
+}
+
+// ---------- Puntería y predicción ----------
+/** Primer obstáculo que encuentra la blanca en la dirección dada. */
+function predecir(desdeX, desdeY, ang){
+  const dx = Math.cos(ang), dy = Math.sin(ang);
+  let mejor = { t: Infinity, tipo:'banda', bola:null };
+
+  for (const b of enJuego()){
+    if (b === blanca) continue;
+    const ex = b.x - desdeX, ey = b.y - desdeY;
+    const proy = ex*dx + ey*dy;
+    if (proy <= 0) continue;
+    const perp2 = ex*ex + ey*ey - proy*proy;
+    const rr = (2*R)*(2*R);
+    if (perp2 > rr) continue;
+    const t = proy - Math.sqrt(rr - perp2);
+    if (t > 0 && t < mejor.t) mejor = { t, tipo:'bola', bola:b };
+  }
+
+  // bandas
+  const cand = [];
+  if (dx > 0) cand.push((DER - R - desdeX) / dx);
+  if (dx < 0) cand.push((IZQ + R - desdeX) / dx);
+  if (dy > 0) cand.push((ABA - R - desdeY) / dy);
+  if (dy < 0) cand.push((ARR + R - desdeY) / dy);
+  const tb = Math.min(...cand.filter(t => t > 0));
+  if (tb < mejor.t) mejor = { t: tb, tipo:'banda', bola:null };
+
+  return { ...mejor, x: desdeX + dx*mejor.t, y: desdeY + dy*mejor.t };
+}
+
+/** ¿Hay camino libre entre dos puntos para una bola? */
+function caminoLibre(x1, y1, x2, y2, ignorar){
+  const dx = x2-x1, dy = y2-y1, largo = Math.hypot(dx, dy);
+  if (largo < 1) return true;
+  const ux = dx/largo, uy = dy/largo;
+  for (const b of enJuego()){
+    if (b === ignorar || (b === blanca && ignorar !== 'nada')) continue;
+    const ex = b.x-x1, ey = b.y-y1;
+    const proy = ex*ux + ey*uy;
+    if (proy <= 0 || proy >= largo) continue;
+    const perp = Math.abs(ex*uy - ey*ux);
+    if (perp < 2*R - 1) return false;
+  }
+  return true;
+}
+
+// ---------- Rival controlado por la máquina ----------
+function pensarIA(){
+  const objetivo = objetivoDe('ia');
+  let candidatas = objetivo === 'ocho'
+    ? enJuego().filter(b => b.num === 8)
+    : objetivo === null
+      ? enJuego().filter(b => b.num !== 0 && b.num !== 8)
+      : misBolas('ia');
+  if (!candidatas.length) candidatas = enJuego().filter(b => b.num !== 0);
+
+  let mejor = null;
+  for (const b of candidatas){
+    for (const t of TRONERAS){
+      const aTronera = Math.atan2(t.y - b.y, t.x - b.x);
+      // punto fantasma: donde debe estar la blanca al golpear
+      const gx = b.x - Math.cos(aTronera) * 2*R;
+      const gy = b.y - Math.sin(aTronera) * 2*R;
+      const aBlanca = Math.atan2(gy - blanca.y, gx - blanca.x);
+      // ángulo de corte: si es muy abierto, el tiro no entra
+      const corte = Math.abs(anguloEntre(aBlanca, aTronera));
+      if (corte > 1.15) continue;
+      if (!caminoLibre(blanca.x, blanca.y, gx, gy, b)) continue;
+      if (!caminoLibre(b.x, b.y, t.x, t.y, b)) continue;
+      const dist = Math.hypot(gx-blanca.x, gy-blanca.y) + Math.hypot(t.x-b.x, t.y-b.y);
+      const nota = Math.cos(corte) * 900 / dist;
+      if (!mejor || nota > mejor.nota) mejor = { nota, ang: aBlanca, dist, bola:b };
+    }
+  }
+
+  if (mejor){
+    const ruido = azar(-0.028, 0.028);           // el rival también falla
+    return { ang: mejor.ang + ruido, fuerza: limitar(0.28 + mejor.dist/1500, 0.3, 0.92) };
+  }
+  // sin tiro claro: empuja hacia la bola legal más cercana
+  const obj = candidatas[0];
+  return {
+    ang: Math.atan2(obj.y - blanca.y, obj.x - blanca.x) + azar(-0.05, 0.05),
+    fuerza: azar(0.3, 0.5)
+  };
+}
+function anguloEntre(a, b){
+  let d = a - b;
+  while (d > Math.PI) d -= 2*Math.PI;
+  while (d < -Math.PI) d += 2*Math.PI;
+  return d;
+}
+function colocarBlancaIA(){
+  // La máquina coloca la blanca en un sitio despejado de su mitad
+  for (let i = 0; i < 60; i++){
+    const x = azar(IZQ + 40, DER - 40), y = azar(ARR + 30, ABA - 30);
+    if (!solapa(x, y) && !TRONERAS.some(t => Math.hypot(t.x-x, t.y-y) < 50)){
+      blanca.x = x; blanca.y = y; break;
+    }
+  }
+}
+
+// ---------- Bucle ----------
+function actualizar(dt){
+  chispas.actualizar(dt);
+  sacudida.actualizar(dt);
+  animCue += dt;
+
+  if (estado === 'rodando'){
+    simular(dt);
+    if (quietas()) terminarTirada();
+    return;
+  }
+  if (estado === 'iaPensando'){
+    cronoIA -= dt;
+    if (!tiroIA && cronoIA < 0.55) { tiroIA = pensarIA(); apunte = tiroIA.ang; }
+    if (tiroIA) fuerza = limitar(1 - cronoIA / 0.55, 0, 1) * tiroIA.fuerza;
+    refrescarFuerza();
+    if (cronoIA <= 0 && tiroIA){ golpear(tiroIA.fuerza); tiroIA = null; }
+    return;
+  }
+  if (estado === 'apuntando' || estado === 'manoLibre'){
+    if (!cargando) apunte = Math.atan2(raton.y - blanca.y, raton.x - blanca.x);
+  }
+}
+
+// ---------- Dibujo ----------
+// El paño y las bandas no cambian: se pintan una vez y se reutilizan
+const fondo = Arcade.lienzoOculto(lienzo.width, lienzo.height);
+pintarMesa(fondo.ctx);
+
+function pintarMesa(c){
+  // marco de madera
+  const madera = c.createLinearGradient(0, 0, 0, lienzo.height);
+  madera.addColorStop(0, '#6b4326'); madera.addColorStop(0.5, '#8a5730'); madera.addColorStop(1, '#563219');
+  c.fillStyle = madera;
+  c.beginPath(); c.roundRect(0, 0, lienzo.width, lienzo.height, 22); c.fill();
+  c.strokeStyle = 'rgba(0,0,0,.45)'; c.lineWidth = 2;
+  c.beginPath(); c.roundRect(1, 1, lienzo.width-2, lienzo.height-2, 22); c.stroke();
+
+  // bisel interior
+  c.fillStyle = 'rgba(0,0,0,.35)';
+  c.beginPath(); c.roundRect(IZQ-9, ARR-9, DER-IZQ+18, ABA-ARR+18, 8); c.fill();
+
+  // paño
+  const pano = c.createRadialGradient((IZQ+DER)/2, (ARR+ABA)/2, 40, (IZQ+DER)/2, (ARR+ABA)/2, 560);
+  pano.addColorStop(0, '#1f7a4d'); pano.addColorStop(1, '#0f4d30');
+  c.fillStyle = pano;
+  c.fillRect(IZQ, ARR, DER-IZQ, ABA-ARR);
+
+  // grano del paño
+  c.globalAlpha = 0.05;
+  for (let i = 0; i < 2600; i++){
+    c.fillStyle = Math.random() > 0.5 ? '#ffffff' : '#000000';
+    c.fillRect(azar(IZQ, DER), azar(ARR, ABA), 1.4, 1.4);
+  }
+  c.globalAlpha = 1;
+
+  // sombra de las bandas sobre el paño
+  const sombra = c.createLinearGradient(0, ARR, 0, ARR + 26);
+  sombra.addColorStop(0, 'rgba(0,0,0,.3)'); sombra.addColorStop(1, 'rgba(0,0,0,0)');
+  c.fillStyle = sombra; c.fillRect(IZQ, ARR, DER-IZQ, 26);
+  const sombra2 = c.createLinearGradient(IZQ, 0, IZQ + 26, 0);
+  sombra2.addColorStop(0, 'rgba(0,0,0,.26)'); sombra2.addColorStop(1, 'rgba(0,0,0,0)');
+  c.fillStyle = sombra2; c.fillRect(IZQ, ARR, 26, ABA-ARR);
+
+  // línea de cabecera y punto
+  c.strokeStyle = 'rgba(255,255,255,.14)'; c.lineWidth = 1.5;
+  const xc = IZQ + (DER-IZQ)*0.25;
+  c.beginPath(); c.moveTo(xc, ARR); c.lineTo(xc, ABA); c.stroke();
+  c.fillStyle = 'rgba(255,255,255,.2)';
+  c.beginPath(); c.arc(IZQ + (DER-IZQ)*0.75, (ARR+ABA)/2, 2.5, 0, 6.283); c.fill();
+
+  // diamantes de las bandas
+  c.fillStyle = '#f0e2c0';
+  for (let i = 1; i < 8; i++){
+    if (i === 4) continue;
+    const x = IZQ + (DER-IZQ)*i/8;
+    rombo(c, x, ARR/2); rombo(c, x, ABA + (lienzo.height-ABA)/2);
+  }
+  for (let i = 1; i < 4; i++){
+    const y = ARR + (ABA-ARR)*i/4;
+    rombo(c, IZQ/2, y); rombo(c, DER + (lienzo.width-DER)/2, y);
+  }
+
+  // troneras
+  for (const t of TRONERAS){
+    const g = c.createRadialGradient(t.x, t.y, 2, t.x, t.y, R_TRONERA);
+    g.addColorStop(0, '#000'); g.addColorStop(0.72, '#05070c'); g.addColorStop(1, '#1a1208');
+    c.fillStyle = g;
+    c.beginPath(); c.arc(t.x, t.y, R_TRONERA, 0, 6.283); c.fill();
+    c.strokeStyle = 'rgba(255,220,150,.22)'; c.lineWidth = 2.5;
+    c.beginPath(); c.arc(t.x, t.y, R_TRONERA - 1, 0, 6.283); c.stroke();
+  }
+}
+function rombo(c, x, y){
+  c.beginPath();
+  c.moveTo(x, y-4); c.lineTo(x+3, y); c.lineTo(x, y+4); c.lineTo(x-3, y);
+  c.closePath(); c.fill();
+}
+
+function dibujar(){
+  ctx.save();
+  sacudida.aplicar(ctx);
+  ctx.drawImage(fondo.lienzo, 0, 0, lienzo.width, lienzo.height);
+
+  if ((estado === 'apuntando' || estado === 'manoLibre') && blanca.viva) dibujarGuia();
+
+  for (const b of enJuego()) dibujarBola(b);
+
+  if ((estado === 'apuntando' || estado === 'iaPensando') && blanca.viva) dibujarTaco();
+  if (estado === 'manoLibre') dibujarManoLibre();
+
+  chispas.dibujar(ctx);
+  ctx.restore();
+}
+
+function dibujarBola(b){
+  const { x, y } = b;
+  // sombra
+  ctx.fillStyle = 'rgba(0,0,0,.32)';
+  ctx.beginPath(); ctx.ellipse(x + 3, y + 4, R * 0.95, R * 0.8, 0, 0, 6.283); ctx.fill();
+
+  // esfera
+  const g = ctx.createRadialGradient(x - R*0.35, y - R*0.42, R*0.12, x, y, R*1.05);
+  g.addColorStop(0, aclarar(b.color, 0.55));
+  g.addColorStop(0.55, b.color);
+  g.addColorStop(1, oscurecer(b.color, 0.45));
+  ctx.fillStyle = g;
+  ctx.beginPath(); ctx.arc(x, y, R, 0, 6.283); ctx.fill();
+
+  // franja de las rayadas, deformada según cómo va rodando
+  if (b.rayada){
+    const fase = Math.sin(b.rot);
+    ctx.save();
+    ctx.beginPath(); ctx.arc(x, y, R, 0, 6.283); ctx.clip();
+    ctx.fillStyle = '#f7f7f2';
+    ctx.beginPath();
+    ctx.ellipse(x, y - fase * R * 0.75, R * 1.1, R * 0.42 * (0.5 + Math.abs(Math.cos(b.rot)) * 0.5),
+      Math.atan2(b.vy, b.vx), 0, 6.283);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  // círculo con el número, que se esconde al rodar
+  if (b.num !== 0){
+    const fase = Math.cos(b.rot);
+    if (fase > -0.15){
+      const rr = R * 0.45 * limitar(fase + 0.15, 0, 1);
+      const ox = Math.sin(b.rot) * R * 0.35;
+      ctx.fillStyle = '#f7f7f2';
+      ctx.beginPath(); ctx.ellipse(x + ox, y, rr, R * 0.45, 0, 0, 6.283); ctx.fill();
+      if (rr > R * 0.3){
+        ctx.fillStyle = '#15171d';
+        ctx.font = '700 ' + Math.round(R * 0.72) + 'px "Segoe UI", system-ui, sans-serif';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText(b.num, x + ox, y + 0.5);
+      }
+    }
+  }
+
+  // brillo especular
+  ctx.fillStyle = 'rgba(255,255,255,.55)';
+  ctx.beginPath(); ctx.ellipse(x - R*0.34, y - R*0.4, R*0.26, R*0.18, -0.6, 0, 6.283); ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,.9)';
+  ctx.beginPath(); ctx.arc(x - R*0.38, y - R*0.44, R*0.1, 0, 6.283); ctx.fill();
+}
+
+function dibujarGuia(){
+  const pred = predecir(blanca.x, blanca.y, apunte);
+
+  // línea punteada hasta el punto de contacto
+  ctx.save();
+  ctx.setLineDash([7, 7]);
+  ctx.strokeStyle = 'rgba(255,255,255,.72)';
+  ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(blanca.x, blanca.y); ctx.lineTo(pred.x, pred.y); ctx.stroke();
+  ctx.restore();
+
+  if (pred.tipo === 'bola'){
+    // bola fantasma
+    ctx.strokeStyle = 'rgba(255,255,255,.8)'; ctx.lineWidth = 1.6;
+    ctx.beginPath(); ctx.arc(pred.x, pred.y, R, 0, 6.283); ctx.stroke();
+    ctx.fillStyle = 'rgba(255,255,255,.12)'; ctx.fill();
+
+    // hacia dónde saldrá la bola objeto
+    const b = pred.bola;
+    const ang = Math.atan2(b.y - pred.y, b.x - pred.x);
+    ctx.strokeStyle = 'rgba(255,210,94,.9)'; ctx.lineWidth = 2.4;
+    ctx.beginPath();
+    ctx.moveTo(b.x, b.y);
+    ctx.lineTo(b.x + Math.cos(ang)*54, b.y + Math.sin(ang)*54);
+    ctx.stroke();
+    // y hacia dónde se irá la blanca (tangente)
+    const tang = ang + Math.PI/2 * (anguloEntre(apunte, ang) > 0 ? 1 : -1);
+    ctx.strokeStyle = 'rgba(140,200,255,.6)'; ctx.lineWidth = 1.8;
+    ctx.setLineDash([4, 5]);
+    ctx.beginPath();
+    ctx.moveTo(pred.x, pred.y);
+    ctx.lineTo(pred.x + Math.cos(tang)*38, pred.y + Math.sin(tang)*38);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  } else {
+    // rebote en banda
+    let nx = 0, ny = 0;
+    if (Math.abs(pred.x - (IZQ+R)) < 1.5) nx = 1;
+    else if (Math.abs(pred.x - (DER-R)) < 1.5) nx = -1;
+    if (Math.abs(pred.y - (ARR+R)) < 1.5) ny = 1;
+    else if (Math.abs(pred.y - (ABA-R)) < 1.5) ny = -1;
+    const dx = Math.cos(apunte), dy = Math.sin(apunte);
+    const rx = nx ? -dx : dx, ry = ny ? -dy : dy;
+    ctx.save();
+    ctx.setLineDash([5, 6]);
+    ctx.strokeStyle = 'rgba(140,200,255,.45)'; ctx.lineWidth = 1.6;
+    ctx.beginPath();
+    ctx.moveTo(pred.x, pred.y);
+    ctx.lineTo(pred.x + rx*70, pred.y + ry*70);
+    ctx.stroke();
+    ctx.restore();
+  }
+}
+
+function dibujarTaco(){
+  const retroceso = 22 + fuerza * 74 + (estado === 'apuntando' && !cargando ? Math.sin(animCue*2)*1.5 : 0);
+  const ax = Math.cos(apunte), ay = Math.sin(apunte);
+  const x0 = blanca.x - ax * (R + retroceso), y0 = blanca.y - ay * (R + retroceso);
+  const x1 = x0 - ax * 300, y1 = y0 - ay * 300;
+
+  ctx.save();
+  ctx.lineCap = 'round';
+  // sombra
+  ctx.strokeStyle = 'rgba(0,0,0,.3)'; ctx.lineWidth = 8;
+  ctx.beginPath(); ctx.moveTo(x0+3, y0+5); ctx.lineTo(x1+3, y1+5); ctx.stroke();
+  // cuerpo
+  const g = ctx.createLinearGradient(x0, y0, x1, y1);
+  g.addColorStop(0, '#e8d3a8'); g.addColorStop(0.18, '#c69a5c');
+  g.addColorStop(0.6, '#6d3f1c'); g.addColorStop(1, '#3d2210');
+  ctx.strokeStyle = g; ctx.lineWidth = 7;
+  ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke();
+  // virola y suela
+  ctx.strokeStyle = '#f4f1e6'; ctx.lineWidth = 7;
+  ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x0 - ax*9, y0 - ay*9); ctx.stroke();
+  ctx.strokeStyle = '#2f6fb5'; ctx.lineWidth = 7;
+  ctx.beginPath(); ctx.moveTo(x0 - ax*9, y0 - ay*9); ctx.lineTo(x0 - ax*13, y0 - ay*13); ctx.stroke();
+  ctx.restore();
+}
+
+function dibujarManoLibre(){
+  ctx.save();
+  ctx.setLineDash([4, 4]);
+  ctx.strokeStyle = 'rgba(255,255,255,.7)'; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.arc(raton.x, raton.y, R, 0, 6.283); ctx.stroke();
+  ctx.fillStyle = solapa(raton.x, raton.y) ? 'rgba(255,90,82,.35)' : 'rgba(255,255,255,.28)';
+  ctx.fill();
+  ctx.restore();
+  ctx.fillStyle = '#e8eefc';
+  ctx.font = '800 15px "Segoe UI", system-ui, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('Bola en mano: haz clic para colocar la blanca', lienzo.width/2, ABA + 26);
+}
+
+const aclarar = (hex, k) => mezclarColor(hex, '#ffffff', k);
+const oscurecer = (hex, k) => mezclarColor(hex, '#000000', k);
+function mezclarColor(a, b, k){
+  const pa = [1,3,5].map(i => parseInt(a.substr(i,2),16));
+  const pb = [1,3,5].map(i => parseInt(b.substr(i,2),16));
+  return '#' + pa.map((v,i) => Math.round(v + (pb[i]-v)*k).toString(16).padStart(2,'0')).join('');
+}
+
+// ---------- Interfaz ----------
+function refrescarHud(){
+  const g = grupos.tu;
+  $('turnoTxt').textContent = estado === 'fin' ? 'Partida terminada'
+    : turno === 'tu' ? (estado === 'manoLibre' ? 'Bola en mano' : 'Tu turno') : 'Turno del rival';
+  $('turnoTxt').style.opacity = turno === 'tu' ? '1' : '.55';
+  $('grupoTu').textContent = g ? '· ' + (g === 'lisas' ? 'lisas' : 'rayadas') : '';
+  $('grupoIA').textContent = grupos.ia ? '· ' + (grupos.ia === 'lisas' ? 'lisas' : 'rayadas') : '';
+  $('recordTxt').textContent = record;
+  pintarMetidas();
+}
+function pintarMetidas(){
+  const hechas = n => !bolas.find(b => b.num === n && b.viva);
+  const pinta = (cont, grupo) => {
+    const nums = grupo === 'lisas' ? [1,2,3,4,5,6,7] : grupo === 'rayadas' ? [9,10,11,12,13,14,15] : [];
+    cont.innerHTML = nums.filter(hechas).map(n =>
+      '<div class="miniBola" title="Bola ' + n + '" style="background:' +
+      (n > 8 ? 'linear-gradient(180deg,#f7f7f2 22%,' + COLORES[n] + ' 22%,' + COLORES[n] + ' 78%,#f7f7f2 78%)'
+             : COLORES[n]) + '"></div>').join('');
+  };
+  pinta($('bolasTu'), grupos.tu);
+  pinta($('bolasIA'), grupos.ia);
+}
+function refrescarFuerza(){
+  $('fuerzaRelleno').style.width = (fuerza * 100) + '%';
+  $('fuerzaTxt').textContent = cargando || estado === 'iaPensando'
+    ? Math.round(fuerza * 100) + '%'
+    : 'Mantén pulsado y arrastra';
+}
+
+// rueda de efecto
+function moverPunto(){
+  $('efectoPunto').style.left = (50 + efecto.x * 34) + '%';
+  $('efectoPunto').style.top  = (50 + efecto.y * 34) + '%';
+}
+let ajustandoEfecto = false;
+function fijarEfecto(ev){
+  const r = $('efecto').getBoundingClientRect();
+  const p = (ev.touches && ev.touches[0]) || ev;
+  let dx = (p.clientX - r.left) / r.width * 2 - 1;
+  let dy = (p.clientY - r.top) / r.height * 2 - 1;
+  const d = Math.hypot(dx, dy);
+  if (d > 1){ dx /= d; dy /= d; }
+  efecto = { x: dx * 0.85, y: dy * 0.85 };
+  moverPunto();
+}
+$('efecto').addEventListener('pointerdown', e => {
+  ajustandoEfecto = true; $('efecto').setPointerCapture(e.pointerId); fijarEfecto(e);
+});
+$('efecto').addEventListener('pointermove', e => { if (ajustandoEfecto) fijarEfecto(e); });
+$('efecto').addEventListener('pointerup', () => { ajustandoEfecto = false; });
+
+// puntería y tiro
+lienzo.addEventListener('pointermove', e => {
+  const p = Arcade.puntero(lienzo, e);
+  raton = p;
+  if (cargando && origenCarga){
+    fuerza = limitar(Math.hypot(p.x - origenCarga.x, p.y - origenCarga.y) / 190, 0, 1);
+    refrescarFuerza();
+  }
+});
+lienzo.addEventListener('pointerdown', e => {
+  Sonido.activar();
+  const p = Arcade.puntero(lienzo, e);
+  raton = p;
+  if (estado === 'manoLibre'){
+    if (p.x > IZQ + R && p.x < DER - R && p.y > ARR + R && p.y < ABA - R && !solapa(p.x, p.y)){
+      blanca.x = p.x; blanca.y = p.y;
+      estado = 'apuntando';
+      Sonido.fx('colocar');
+      refrescarHud();
+    } else Sonido.fx('error');
+    return;
+  }
+  if (estado !== 'apuntando') return;
+  cargando = true; origenCarga = p; fuerza = 0;
+  lienzo.setPointerCapture(e.pointerId);
+  refrescarFuerza();
+});
+lienzo.addEventListener('pointerup', () => {
+  if (!cargando) return;
+  cargando = false;
+  if (fuerza > 0.05) golpear(fuerza);
+  else { fuerza = 0; refrescarFuerza(); }
+});
+lienzo.addEventListener('pointercancel', () => { cargando = false; fuerza = 0; refrescarFuerza(); });
+
+$('btnJugar').onclick = () => {
+  Sonido.activar();
+  $('modalInicio').classList.remove('visible');
+  nuevaPartida();
+};
+$('btnOtra').onclick = () => { $('modalFin').classList.remove('visible'); nuevaPartida(); };
+$('btnNueva').onclick = () => { $('modalFin').classList.remove('visible'); nuevaPartida(); };
+Arcade.conectarSonido($('btnSonido'));
+
+nuevaPartida();
+estado = 'menu';
+refrescarHud();
+Arcade.bucle(dt => { actualizar(dt); dibujar(); });
+</script>
+</body>
+</html>

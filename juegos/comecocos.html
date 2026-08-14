@@ -107,7 +107,7 @@ const MAPA = [
 const COLS = 28, FILAS = 31, TAM = 24;
 
 const lienzo = document.getElementById('lienzo');
-const ctx = lienzo.getContext('2d');
+const ctx = Arcade.nitido(lienzo);
 const avisos = document.getElementById('avisos');
 
 let rejilla, cocos, puntos, vidas, nivel, estado, cronoEstado;
@@ -133,11 +133,11 @@ function libre(i, j, atraviesaPuerta){
 function envolver(i){ return ((i % COLS) + COLS) % COLS; }
 
 // Muros pre-dibujados (se regeneran solo al cambiar de color)
-const muroCanvas = document.createElement('canvas');
-muroCanvas.width = lienzo.width; muroCanvas.height = lienzo.height;
+const muro = Arcade.lienzoOculto(lienzo.width, lienzo.height);
+const muroCanvas = muro.lienzo;
 function pintarMuros(color, relleno){
-  const c = muroCanvas.getContext('2d');
-  c.clearRect(0, 0, muroCanvas.width, muroCanvas.height);
+  const c = muro.ctx;
+  c.clearRect(0, 0, lienzo.width, lienzo.height);
   c.lineWidth = 3; c.lineCap = 'round'; c.lineJoin = 'round';
   for (let j = 0; j < FILAS; j++){
     for (let i = 0; i < COLS; i++){
@@ -487,7 +487,7 @@ function dibujar(){
 
   if (estado === 'nivel' && Math.floor(parpadeoMuro * 6) % 2 === 0) pintarMuros('#ffffff', '#3a4a8a');
   else if (estado === 'nivel') pintarMuros('#4f7bff', '#101a3a');
-  ctx.drawImage(muroCanvas, 0, 0);
+  ctx.drawImage(muroCanvas, 0, 0, lienzo.width, lienzo.height);
 
   // cocos
   for (let j = 0; j < FILAS; j++){
