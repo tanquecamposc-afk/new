@@ -809,6 +809,146 @@ body{display:block; padding:0; margin:0;}
 #pantalla-mina #btnReiniciar{width:100%; font-size:.7rem;}
 
 
+
+/* --- cofres --- */
+#pantalla-cofres /* Estética de bloques: biseles duros, #pantalla-cofres texto con sombra y nada de suavizado.
+     La tipografía es monoespaciada del sistema; el arcade no carga fuentes
+     externas para poder funcionar sin conexión. */
+  #juego{width:min(1050px,100vw);}
+#pantalla-cofres #cofres{
+    font-family:"Courier New", Courier, monospace;
+    image-rendering:pixelated;
+    display:flex; flex-direction:column; gap:12px;
+  }
+#pantalla-cofres #cofres .mcbtn{
+    background:#727272; border:4px solid;
+    border-color:#a8a8a8 #373737 #373737 #a8a8a8;
+    color:#fff; padding:9px 14px; font-size:12px; font-weight:700; cursor:pointer;
+    font-family:inherit; text-shadow:2px 2px #000; border-radius:0;
+    box-shadow:inset -2px -2px 0 0 #212121; transition:background .06s;
+  }
+#pantalla-cofres #cofres .mcbtn:hover{background:#8b8b8b; box-shadow:inset -2px -2px 0 0 #212121;}
+#pantalla-cofres #cofres .mcbtn:active{border-color:#373737 #a8a8a8 #a8a8a8 #373737; box-shadow:inset 2px 2px 0 0 #212121;}
+#pantalla-cofres #cofres .mcbtn:disabled{background:#444; border-color:#555 #222 #222 #555; color:#888;}
+#pantalla-cofres #cofres .mcbtn.bien{background:#2e7d32; border-color:#4caf50 #1b5e20 #1b5e20 #4caf50;}
+#pantalla-cofres #cofres .mcbtn.mal{background:#c62828; border-color:#ef5350 #b71c1c #b71c1c #ef5350;}
+#pantalla-cofres #cofres .mcbtn.sel{background:#4a4ad8; border-color:#9999ff #0000aa #0000aa #9999ff;}
+#pantalla-cofres /* Cabecera de esmeraldas */
+  #tapa{
+    background:#c6c6c6; border:4px solid; border-color:#fff #555 #555 #fff;
+    color:#373737; padding:12px 16px; display:flex; justify-content:space-between;
+    align-items:center; gap:12px; flex-wrap:wrap;
+  }
+#pantalla-cofres #tapa .marca{font-size:13px; font-weight:700; line-height:1.5;}
+#pantalla-cofres #tapa .marca small{display:block; font-size:10px; color:#555;}
+#pantalla-cofres #tapa .saldos{display:flex; gap:8px; flex-wrap:wrap;}
+#pantalla-cofres #tapa .caja{
+    background:#8b8b8b; padding:8px 12px; border:3px solid;
+    border-color:#373737 #fff #fff #373737; font-size:13px; font-weight:700;
+    text-shadow:1px 1px #000; color:#3ee63e; white-space:nowrap;
+  }
+#pantalla-cofres #tapa .caja.coins{color:#ffe14d;}
+#pantalla-cofres #pestanas{display:flex; gap:8px; flex-wrap:wrap;}
+#pantalla-cofres #pestanas .mcbtn{flex:1; min-width:130px;}
+#pantalla-cofres .hoja{display:none;}
+#pantalla-cofres .hoja.activa{display:block;}
+#pantalla-cofres /* Ruleta */
+  #ruleta{
+    position:relative; height:172px; background:#111; overflow:hidden;
+    border:6px solid; border-color:#373737 #a8a8a8 #a8a8a8 #373737;
+  }
+#pantalla-cofres #aguja{
+    position:absolute; top:0; left:50%; transform:translateX(-50%);
+    width:6px; height:100%; background:#ff5555; box-shadow:0 0 12px #ff0000; z-index:20;
+  }
+#pantalla-cofres #ruleta::before, #pantalla-cofres #ruleta::after{
+    content:''; position:absolute; top:0; bottom:0; width:70px; z-index:10; pointer-events:none;
+  }
+#pantalla-cofres #ruleta::before{left:0; background:linear-gradient(90deg,#111,transparent);}
+#pantalla-cofres #ruleta::after{right:0; background:linear-gradient(270deg,#111,transparent);}
+#pantalla-cofres #cinta{display:flex; position:absolute; left:0; top:16px; height:140px; will-change:transform;}
+#pantalla-cofres .ficha{
+    min-width:130px; width:130px; height:130px; background:#2b2b2b; margin:0 5px;
+    border:4px solid #555; display:flex; flex-direction:column; align-items:center;
+    justify-content:center; padding:5px; text-align:center;
+  }
+#pantalla-cofres .ficha .ic{font-size:40px; margin-bottom:6px; filter:drop-shadow(3px 3px 0 #000);}
+#pantalla-cofres .ficha .nm{font-size:9.5px; line-height:1.3; height:26px; overflow:hidden; text-shadow:1px 1px #000;}
+#pantalla-cofres .ficha .en{font-size:8px; color:#ffff55; margin-top:3px;}
+#pantalla-cofres .r-comun{border-color:#aaaaaa;}
+#pantalla-cofres .r-raro{border-color:#5555ff;}
+#pantalla-cofres .r-epico{border-color:#aa00aa;}
+#pantalla-cofres .r-legendario{border-color:#ffaa00;}
+#pantalla-cofres .r-mitico{border-color:#ff5555; animation:mitico 1s infinite alternate;}
+@keyframes mitico{
+    from{box-shadow:inset 0 0 5px #ff5555, 0 0 5px #ff5555;}
+    to{box-shadow:inset 0 0 15px #ffaaaa, 0 0 20px #ff0000;}
+  }
+#pantalla-cofres /* Cofres */
+  #rejillaCofres{display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:12px;}
+#pantalla-cofres .cofre{
+    background:#3c3f41; border:4px solid; border-color:#555 #1e1e1e #1e1e1e #555;
+    padding:14px; text-align:center; display:flex; flex-direction:column; align-items:center; gap:8px;
+  }
+#pantalla-cofres .cofre .ic{font-size:50px; filter:drop-shadow(3px 3px 0 #000);}
+#pantalla-cofres .cofre h3{font-size:12px; color:#ffff55; text-shadow:1px 1px #000; line-height:1.4;}
+#pantalla-cofres .cofre .precio{font-size:11px; color:#3ee63e;}
+#pantalla-cofres .cofre .odds{font-size:9px; color:#9aa0a6; line-height:1.6;}
+#pantalla-cofres .cofre .mcbtn{width:100%;}
+#pantalla-cofres /* Inventario */
+  #mandoInv{
+    display:flex; gap:8px; justify-content:space-between; align-items:center; flex-wrap:wrap;
+    background:#3c3f41; padding:10px; border:4px solid #1e1e1e;
+  }
+#pantalla-cofres #rejillaInv{
+    display:grid; grid-template-columns:repeat(auto-fill,minmax(132px,1fr)); gap:8px;
+    max-height:400px; overflow-y:auto; background:#151515; padding:10px;
+    border:4px solid #373737; margin-top:8px;
+  }
+#pantalla-cofres .objeto{
+    background:#282828; border:3px solid #555; padding:8px; text-align:center;
+    display:flex; flex-direction:column; align-items:center; gap:4px; cursor:pointer;
+  }
+#pantalla-cofres .objeto.elegido{border-color:#ffff55 !important; background:#444411;}
+#pantalla-cofres .objeto .ic{font-size:28px; filter:drop-shadow(2px 2px 0 #000);}
+#pantalla-cofres .objeto .nm{font-size:9px; line-height:1.3; min-height:24px;}
+#pantalla-cofres .objeto .en{font-size:8px; color:#ffff55;}
+#pantalla-cofres .objeto .val{font-size:10px; color:#3ee63e;}
+#pantalla-cofres .objeto .mcbtn{padding:3px 6px; font-size:9px;}
+#pantalla-cofres #vacio{grid-column:1/-1; text-align:center; color:#777; font-size:11px; padding:30px 0;}
+#pantalla-cofres /* Contrato */
+  #contrato{background:#3c3f41; border:4px solid #1e1e1e; padding:16px; text-align:center;}
+#pantalla-cofres #contrato p{font-size:11px; line-height:1.8; color:#c6c6c6;}
+#pantalla-cofres #contrato .cuenta{margin-top:12px; font-size:13px; color:#ffff55;}
+#pantalla-cofres #ranuras{display:flex; gap:8px; justify-content:center; margin:14px 0; flex-wrap:wrap;}
+#pantalla-cofres .ranura{
+    width:56px; height:56px; background:#151515; border:3px solid #555;
+    display:flex; align-items:center; justify-content:center; font-size:24px;
+  }
+#pantalla-cofres /* Modal del premio */
+  #premio{
+    position:fixed; inset:0; background:rgba(0,0,0,.85); display:none;
+    align-items:center; justify-content:center; z-index:1000;
+  }
+#pantalla-cofres #premio.visible{display:flex;}
+#pantalla-cofres #premio .caja{
+    background:#c6c6c6; border:6px solid; border-color:#fff #555 #555 #fff;
+    padding:24px; text-align:center; max-width:400px; width:90%; color:#000;
+    font-family:"Courier New", Courier, monospace;
+  }
+#pantalla-cofres #premio .eti{font-size:12px; color:#333;}
+#pantalla-cofres #premio .ic{font-size:76px; margin:14px 0; filter:drop-shadow(4px 4px 0 rgba(0,0,0,.35));}
+#pantalla-cofres #premio .nm{font-size:15px; font-weight:700; margin-bottom:6px;}
+#pantalla-cofres #premio .rar{font-size:11px; font-weight:700; margin-bottom:6px;}
+#pantalla-cofres #premio .en{font-size:11px; color:#6a6a00; margin-bottom:10px; min-height:14px;}
+#pantalla-cofres #premio .val{font-size:12px; color:#0a6b0a; margin-bottom:14px;}
+#pantalla-cofres #premio .botones{display:flex; gap:10px; justify-content:center;}
+@media (max-width:620px){#pantalla-cofres #cofres .mcbtn{font-size:11px; padding:8px 10px;}
+#pantalla-cofres .ficha{min-width:110px; width:110px;}
+
+  }
+
+
 </style>
 </head>
 <body>
@@ -830,7 +970,7 @@ body{display:block; padding:0; margin:0;}
 <div id="contenido">
   <div id="titulo">
     <h2>SELECCIONA TU JUEGO SUPREMO</h2>
-    <p>Diez motores hechos a mano en HTML5 + Canvas, con renderizado HiDPI y físicas propias.
+    <p>Once motores hechos a mano en HTML5 + Canvas, con renderizado HiDPI y físicas propias.
        Sin instalar nada, sin anuncios y sin conexión.</p>
   </div>
 
@@ -1487,6 +1627,84 @@ body{display:block; padding:0; margin:0;}
 </div>
 </div>
 
+<div class="pantalla" id="pantalla-cofres">
+<div id="juego">
+  <div class="barra">
+    <a class="boton" href="javascript:void 0" data-volver="1">🕹 Arcade</a>
+    <div class="titulo" style="color:#3ee63e">⛏ COFRES MINECRAFT</div>
+    <div class="sep"></div>
+    <div class="stat">💎 <span id="esmeTxt" class="verde">1000</span></div>
+    <div class="stat">🪙 <span id="coinsTxt" class="tenue">0</span></div>
+    <button id="btnSonido" title="Sonido">🔊</button>
+  </div>
+
+  <div id="cofres">
+    <div id="tapa">
+      <div class="marca">MINECRAFT<small>SIMULADOR DE COFRES</small></div>
+      <div class="saldos">
+        <div class="caja">💎 <span id="esme2">1000</span> esmeraldas</div>
+        <div class="caja coins">🪙 <span id="coins2">0</span> nexo-coins</div>
+      </div>
+    </div>
+
+    <div id="pestanas">
+      <button class="mcbtn sel" data-hoja="cofres">📦 COFRES</button>
+      <button class="mcbtn" data-hoja="inventario">🎒 INVENTARIO (<span id="numInv">0</span>)</button>
+      <button class="mcbtn" data-hoja="contrato">⚒️ CONTRATO</button>
+    </div>
+
+    <!-- ---------- Cofres ---------- -->
+    <div class="hoja activa" id="hoja-cofres">
+      <div id="ruleta">
+        <div id="aguja"></div>
+        <div id="cinta"></div>
+      </div>
+      <div id="rejillaCofres" style="margin-top:12px"></div>
+    </div>
+
+    <!-- ---------- Inventario ---------- -->
+    <div class="hoja" id="hoja-inventario">
+      <div id="mandoInv">
+        <button class="mcbtn mal" id="btnVenderComunes">VENDER TODO LO COMÚN</button>
+        <button class="mcbtn" id="btnCambiar">🪙 100 COINS → 💎 1.000</button>
+        <button class="mcbtn bien" id="btnRegalo" style="display:none">🎁 200 ESMERALDAS GRATIS</button>
+      </div>
+      <div id="rejillaInv"></div>
+    </div>
+
+    <!-- ---------- Contrato de fusión ---------- -->
+    <div class="hoja" id="hoja-contrato">
+      <div id="contrato">
+        <p>Elige <b>5 objetos de la misma rareza</b> en tu inventario<br>
+           y fórjalos en <b>1 objeto de la rareza superior</b>.</p>
+        <div id="ranuras"></div>
+        <div class="cuenta">Seleccionados: <span id="cuentaSel">0</span> / 5</div>
+        <button class="mcbtn bien" id="btnForjar" style="margin-top:14px" disabled>FORJAR OBJETO</button>
+        <p style="margin-top:14px; font-size:10px; color:#9aa0a6">
+          Los objetos entran al contrato desde la pestaña de inventario.
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ---------- Premio ---------- -->
+<div id="premio">
+  <div class="caja">
+    <div class="eti">¡OBJETO OBTENIDO!</div>
+    <div class="ic" id="pIcono">🗡️</div>
+    <div class="nm" id="pNombre">Espada</div>
+    <div class="rar" id="pRareza">COMÚN</div>
+    <div class="en" id="pEncanto"></div>
+    <div class="val" id="pValor">+0 💎</div>
+    <div class="botones">
+      <button class="mcbtn bien" id="btnGuardar">GUARDAR</button>
+      <button class="mcbtn mal" id="btnVenderYa">VENDER</button>
+    </div>
+  </div>
+</div>
+</div>
+
 <script>
 /* ====== Utilidades comunes ====== */
 /* ==========================================================
@@ -1992,6 +2210,21 @@ const JUEGOS = [
     portada: portadaMina
   },
   {
+    id:'cofres', archivo:'juegos/cofres-minecraft.html', nuevo:true,
+    nombre:'⛏ Cofres Minecraft', genero:'Cajas',
+    desc:'Abre cofres, mira girar la ruleta y funde cinco objetos iguales para subirlos de rareza.',
+    record(){
+      const g = Arcade.leerTexto('cofres', null);
+      if (!g) return 'Sin jugar todavía';
+      try {
+        const e = JSON.parse(g);
+        return (e.esmeraldas || 0).toLocaleString('es-ES') + ' 💎 · ' +
+               ((e.inventario || []).length) + ' objetos';
+      } catch(err){ return 'Sin jugar todavía'; }
+    },
+    portada: portadaCofres
+  },
+  {
     id:'serpiente', archivo:'juegos/serpiente.html', nuevo:true,
     nombre:'🐍 Serpiente Neón', genero:'Arcade',
     desc:'Come, crece y acelera. Con fruta dorada, rocas por el camino y modo fantasma.',
@@ -2437,6 +2670,53 @@ function portadaMina(c){
   c.fillStyle = '#f3e600'; c.shadowColor = '#f3e600'; c.shadowBlur = 14;
   c.fillText('$ 12.480', A - 14, AL - 20);
   c.shadowBlur = 0;
+}
+
+function portadaCofres(c){
+  fondo(c, '#1a1a1a', '#0b0b0b');
+  // puntitos de la textura de bloques
+  c.fillStyle = 'rgba(255,255,255,.03)';
+  for (let y = 0; y < AL; y += 16) for (let x = 0; x < A; x += 16) c.fillRect(x, y, 8, 8);
+
+  // ruleta con la aguja
+  c.fillStyle = '#111'; c.fillRect(0, 34, A, 96);
+  c.strokeStyle = '#a8a8a8'; c.lineWidth = 4;
+  c.strokeRect(2, 36, A - 4, 92);
+
+  const rarezas = [
+    ['#aaaaaa', '\u{1F7EB}'], ['#5555ff', '\u{1F3F9}'], ['#aa00aa', '\u{1F48E}'],
+    ['#ffaa00', '\u{2B50}'], ['#ff5555', '\u{2B1B}'], ['#5555ff', '\u{1F5E1}\u{FE0F}']
+  ];
+  rarezas.forEach(([col, icono], i) => {
+    const x = 8 + i * 58;
+    c.fillStyle = '#2b2b2b'; c.fillRect(x, 44, 52, 76);
+    c.strokeStyle = col; c.lineWidth = 4; c.strokeRect(x, 44, 52, 76);
+    c.font = '26px serif'; c.textAlign = 'center'; c.textBaseline = 'middle';
+    c.fillText(icono, x + 26, 76);
+    c.fillStyle = col; c.fillRect(x + 8, 100, 36, 4);
+  });
+  // degradados a los lados
+  const iz = c.createLinearGradient(0, 0, 60, 0);
+  iz.addColorStop(0, '#111'); iz.addColorStop(1, 'rgba(17,17,17,0)');
+  c.fillStyle = iz; c.fillRect(2, 38, 60, 88);
+  const de = c.createLinearGradient(A, 0, A - 60, 0);
+  de.addColorStop(0, '#111'); de.addColorStop(1, 'rgba(17,17,17,0)');
+  c.fillStyle = de; c.fillRect(A - 62, 38, 60, 88);
+  // aguja
+  c.fillStyle = '#ff5555'; c.fillRect(A / 2 - 3, 34, 6, 96);
+  c.shadowColor = '#ff0000'; c.shadowBlur = 12;
+  c.fillRect(A / 2 - 3, 34, 6, 96);
+  c.shadowBlur = 0;
+
+  // cofre abierto abajo
+  c.font = '40px serif'; c.textAlign = 'left'; c.textBaseline = 'middle';
+  c.fillText('\u{1F4E6}', 16, AL - 24);
+  c.fillStyle = '#c6c6c6';
+  c.font = '700 13px "Courier New", monospace';
+  c.fillText('SIMULADOR DE COFRES', 66, AL - 32);
+  c.fillStyle = '#3ee63e';
+  c.font = '700 15px "Courier New", monospace';
+  c.fillText('\u{1F48E} 1.000 esmeraldas', 66, AL - 14);
 }
 
 // ---------- Montaje de las cartas ----------
@@ -9532,6 +9812,414 @@ setInterval(guardarPartida, 10000);
 addEventListener('beforeunload', guardarPartida);
 
 Arcade.bucle(dt => { actualizar(dt); dibujar(); });
+
+});
+
+registrarJuego("cofres", function(document, addEventListener, Arcade){
+
+// ============================================================
+//  COFRES MINECRAFT — simulador de cajas con contratos de fusión
+// ============================================================
+const $ = id => document.getElementById(id);
+
+const OBJETOS = [
+  // Común
+  { id:'dirt',    nombre:'Bloque de Tierra',  icono:'🟫', rareza:'comun', precio:10,  clase:'bloque' },
+  { id:'cobble',  nombre:'Adoquín',           icono:'🪨', rareza:'comun', precio:15,  clase:'bloque' },
+  { id:'wood',    nombre:'Madera de Roble',   icono:'🪵', rareza:'comun', precio:20,  clase:'bloque' },
+  { id:'apple',   nombre:'Manzana',           icono:'🍎', rareza:'comun', precio:25,  clase:'comida' },
+  { id:'coal',    nombre:'Carbón',            icono:'🖤', rareza:'comun', precio:35,  clase:'material' },
+  // Raro
+  { id:'iron',    nombre:'Lingote de Hierro', icono:'⬜', rareza:'raro', precio:70,  clase:'material' },
+  { id:'gold',    nombre:'Lingote de Oro',    icono:'🟨', rareza:'raro', precio:110, clase:'material' },
+  { id:'bow',     nombre:'Arco',              icono:'🏹', rareza:'raro', precio:130, clase:'arma' },
+  { id:'isword',  nombre:'Espada de Hierro',  icono:'🗡️', rareza:'raro', precio:150, clase:'arma' },
+  // Épico
+  { id:'diamond', nombre:'Diamante',          icono:'💎', rareza:'epico', precio:350, clase:'material' },
+  { id:'dpick',   nombre:'Pico de Diamante',  icono:'⛏️', rareza:'epico', precio:550, clase:'herramienta' },
+  { id:'dsword',  nombre:'Espada de Diamante',icono:'⚔️', rareza:'epico', precio:600, clase:'arma' },
+  // Legendario
+  { id:'dchest',  nombre:'Pechera de Diamante', icono:'🎽', rareza:'legendario', precio:1500, clase:'armadura' },
+  { id:'elytra',  nombre:'Élitros',             icono:'🪽', rareza:'legendario', precio:2500, clase:'armadura' },
+  { id:'nstar',   nombre:'Estrella del Nether', icono:'⭐', rareza:'legendario', precio:3500, clase:'material' },
+  // Mítico
+  { id:'egap',    nombre:'Manzana Dorada Encantada', icono:'✨', rareza:'mitico', precio:7000,  clase:'comida' },
+  { id:'netherite',nombre:'Lingote de Netherita',    icono:'⬛', rareza:'mitico', precio:9000,  clase:'material' },
+  { id:'dragon',  nombre:'Huevo de Dragón',          icono:'🥚', rareza:'mitico', precio:12000, clase:'bloque' }
+];
+
+const ENCANTOS = [
+  'Afilado V', 'Eficiencia V', 'Protección IV', 'Fortuna III',
+  'Saqueo III', 'Reparación I', 'Aspecto Ígneo II', 'Irrompibilidad III'
+];
+const ENCANTABLES = ['arma', 'herramienta', 'armadura'];
+
+const ORDEN = ['comun', 'raro', 'epico', 'legendario', 'mitico'];
+const NOMBRE_RAREZA = { comun:'COMÚN', raro:'RARO', epico:'ÉPICO', legendario:'LEGENDARIO', mitico:'MÍTICO' };
+const COLOR_RAREZA = { comun:'#7a7a7a', raro:'#3a3ac4', epico:'#8a008a', legendario:'#b37500', mitico:'#c40000' };
+
+/* Cada cofre lleva sus probabilidades explícitas, que suman 100.
+   Calculadas para devolver en torno al 85 % de lo que cuestan: se pierde
+   poco a poco, como en cualquier simulador de cajas. */
+const COFRES = [
+  { id:'madera',   nombre:'COFRE DE MADERA',   precio:45,   icono:'📦',
+    tabla:{ comun:80, raro:20 } },
+  { id:'hierro',   nombre:'COFRE DE HIERRO',   precio:180,  icono:'⚙️',
+    tabla:{ comun:42, raro:38, epico:20 } },
+  { id:'diamante', nombre:'COFRE DE DIAMANTE', precio:650,  icono:'🔷',
+    tabla:{ raro:54, epico:34, legendario:12 } },
+  { id:'nether',   nombre:'COFRE DEL NETHER',  precio:2200, icono:'🔥',
+    tabla:{ epico:57, legendario:35, mitico:8 } }
+];
+
+// ---------- Estado ----------
+const S = { esmeraldas: 1000, inventario: [], girando: false, elegidos: [] };
+
+function guardarCofres(){
+  Arcade.escribir('cofres', JSON.stringify({
+    esmeraldas: S.esmeraldas,
+    inventario: S.inventario.slice(0, 200)      // el inventario no crece sin límite
+  }));
+}
+function cargarCofres(){
+  const crudo = Arcade.leerTexto('cofres', null);
+  if (!crudo) return;
+  try {
+    const g = JSON.parse(crudo);
+    S.esmeraldas = typeof g.esmeraldas === 'number' ? g.esmeraldas : 1000;
+    S.inventario = Array.isArray(g.inventario) ? g.inventario : [];
+  } catch(e){}
+}
+
+// ---------- Generación de objetos ----------
+function sortearRareza(tabla){
+  const total = Object.values(tabla).reduce((s, v) => s + v, 0);
+  let r = Math.random() * total;
+  for (const rareza of ORDEN){
+    if (!tabla[rareza]) continue;
+    r -= tabla[rareza];
+    if (r <= 0) return rareza;
+  }
+  return Object.keys(tabla)[0];
+}
+
+function generarObjeto(tabla){
+  const rareza = sortearRareza(tabla);
+  const posibles = OBJETOS.filter(o => o.rareza === rareza);
+  const base = posibles[Math.floor(Math.random() * posibles.length)];
+  const obj = { ...base, ficha: Date.now().toString(36) + Math.random().toString(36).slice(2, 8) };
+  if (ENCANTABLES.includes(obj.clase) && Math.random() < 0.4){
+    obj.encanto = elegir(ENCANTOS);
+    obj.precio = Math.floor(obj.precio * 1.6);
+  }
+  return obj;
+}
+
+// ---------- Ruleta ----------
+function tarjeta(obj){
+  const d = document.createElement('div');
+  d.className = 'ficha r-' + obj.rareza;
+  d.innerHTML = '<div class="ic">' + obj.icono + '</div>' +
+                '<div class="nm">' + obj.nombre + '</div>' +
+                '<div class="en">' + (obj.encanto || '') + '</div>';
+  return d;
+}
+
+function cintaEnReposo(){
+  const cinta = $('cinta');
+  cinta.style.transition = 'none';
+  cinta.style.transform = 'translateX(0px)';
+  cinta.innerHTML = '';
+  for (let i = 0; i < 10; i++) cinta.appendChild(tarjeta(elegir(OBJETOS)));
+}
+
+const ANCHO_FICHA = 140;          // 130 de ancho + 5 de margen a cada lado
+const GANADORA = 36, TOTAL_FICHAS = 45;
+
+function abrirCofre(id){
+  if (S.girando) return;
+  const cofre = COFRES.find(c => c.id === id);
+  if (S.esmeraldas < cofre.precio){
+    avisar('No te llegan las esmeraldas para ese cofre');
+    Sonido.fx('error');
+    return;
+  }
+
+  S.esmeraldas -= cofre.precio;
+  S.girando = true;
+  refrescar();
+
+  const cinta = $('cinta');
+  cinta.style.transition = 'none';
+  cinta.style.transform = 'translateX(0px)';
+  cinta.innerHTML = '';
+
+  const secuencia = [];
+  for (let i = 0; i < TOTAL_FICHAS; i++){
+    const o = generarObjeto(cofre.tabla);
+    secuencia.push(o);
+    cinta.appendChild(tarjeta(o));
+  }
+  const premio = secuencia[GANADORA];
+
+  const ancho = $('ruleta').offsetWidth || 900;
+  const desvio = Math.floor(Math.random() * 70) - 35;     // no siempre para en el centro exacto
+  const destino = GANADORA * ANCHO_FICHA - ancho / 2 + ANCHO_FICHA / 2 + desvio;
+
+  // la cinta arranca en el fotograma siguiente, para que la transición se aplique
+  requestAnimationFrame(() => {
+    cinta.style.transition = 'transform 4.8s cubic-bezier(.08,.9,.1,1)';
+    cinta.style.transform = 'translateX(-' + destino + 'px)';
+  });
+
+  // los chasquidos se van espaciando conforme frena
+  let t = 0;
+  const chasquido = () => {
+    if (!S.girando) return;
+    Sonido.fx('giro');
+    t += 0.06;
+    if (t < 4.6) setTimeout(chasquido, 70 + t * t * 26);
+  };
+  setTimeout(chasquido, 120);
+
+  setTimeout(() => {
+    S.girando = false;
+    S.inventario.unshift(premio);
+    if (S.inventario.length > 200) S.inventario.pop();
+    sonarPremio(premio.rareza);
+    refrescar();
+    guardarCofres();
+    mostrarPremio(premio, true);
+  }, 5000);
+}
+
+function sonarPremio(rareza){
+  const notas = {
+    comun: [440, 554], raro: [523, 659, 784],
+    epico: [587, 740, 880, 1047], legendario: [659, 880, 1047, 1319, 1568],
+    mitico: [784, 1047, 1319, 1568, 2093, 2637]
+  }[rareza];
+  Sonido.melodia(notas, 0.09, 'square', 0.06);
+}
+
+// ---------- Premio ----------
+let premioActual = null;
+function mostrarPremio(obj, reciente){
+  premioActual = { obj, reciente };
+  $('pIcono').textContent = obj.icono;
+  $('pNombre').textContent = obj.nombre;
+  $('pRareza').textContent = NOMBRE_RAREZA[obj.rareza];
+  $('pRareza').style.color = COLOR_RAREZA[obj.rareza];
+  $('pEncanto').textContent = obj.encanto ? '✨ ' + obj.encanto : '';
+  $('pValor').textContent = 'Vale ' + obj.precio.toLocaleString('es-ES') + ' 💎';
+  $('premio').classList.add('visible');
+}
+function cerrarPremio(){
+  $('premio').classList.remove('visible');
+  premioActual = null;
+}
+
+// ---------- Inventario ----------
+function venderObjeto(ficha){
+  const i = S.inventario.findIndex(o => o.ficha === ficha);
+  if (i === -1) return;
+  S.esmeraldas += S.inventario[i].precio;
+  S.inventario.splice(i, 1);
+  S.elegidos = S.elegidos.filter(f => f !== ficha);
+  Sonido.fx('moneda');
+  refrescar();
+  guardarCofres();
+}
+
+function venderComunes(){
+  const comunes = S.inventario.filter(o => o.rareza === 'comun');
+  if (!comunes.length){ avisar('No tienes objetos comunes'); return; }
+  const total = comunes.reduce((s, o) => s + o.precio, 0);
+  S.esmeraldas += total;
+  S.inventario = S.inventario.filter(o => o.rareza !== 'comun');
+  S.elegidos = S.elegidos.filter(f => S.inventario.some(o => o.ficha === f));
+  avisar('Vendidos ' + comunes.length + ' objetos por ' + total.toLocaleString('es-ES') + ' 💎');
+  Sonido.fx('ficha');
+  refrescar();
+  guardarCofres();
+}
+
+function alternarElegido(ficha){
+  const obj = S.inventario.find(o => o.ficha === ficha);
+  if (!obj) return;
+  const i = S.elegidos.indexOf(ficha);
+  if (i > -1){ S.elegidos.splice(i, 1); }
+  else {
+    if (S.elegidos.length >= 5) return;
+    if (S.elegidos.length){
+      const primero = S.inventario.find(o => o.ficha === S.elegidos[0]);
+      if (primero.rareza !== obj.rareza){
+        avisar('Los 5 objetos del contrato tienen que ser de la misma rareza');
+        Sonido.fx('error');
+        return;
+      }
+    }
+    if (obj.rareza === 'mitico'){
+      avisar('Los míticos ya no suben más: no entran en contratos');
+      Sonido.fx('error');
+      return;
+    }
+    S.elegidos.push(ficha);
+  }
+  Sonido.fx('colocar');
+  refrescar();
+}
+
+function forjar(){
+  if (S.elegidos.length !== 5) return;
+  const primero = S.inventario.find(o => o.ficha === S.elegidos[0]);
+  const siguiente = ORDEN[ORDEN.indexOf(primero.rareza) + 1];
+  if (!siguiente) return;
+
+  S.inventario = S.inventario.filter(o => !S.elegidos.includes(o.ficha));
+  S.elegidos = [];
+  const nuevo = generarObjeto({ [siguiente]: 100 });
+  S.inventario.unshift(nuevo);
+  sonarPremio(nuevo.rareza);
+  refrescar();
+  guardarCofres();
+  mostrarPremio(nuevo, false);
+}
+
+// ---------- Interfaz ----------
+function avisar(texto){
+  const t = $('tapa');
+  let banda = $('avisoCofres');
+  if (!banda){
+    banda = document.createElement('div');
+    banda.id = 'avisoCofres';
+    banda.style.cssText = 'font-size:11px; color:#c62828; width:100%; text-align:center;';
+    t.appendChild(banda);
+  }
+  banda.textContent = texto;
+  clearTimeout(banda._t);
+  banda._t = setTimeout(() => { banda.textContent = ''; }, 3000);
+}
+
+function pintarCofres(){
+  $('rejillaCofres').innerHTML = COFRES.map(c => {
+    const odds = ORDEN.filter(r => c.tabla[r])
+      .map(r => '<span style="color:' + COLOR_RAREZA[r] + '; filter:brightness(1.7)">' +
+                NOMBRE_RAREZA[r] + ' ' + c.tabla[r] + '%</span>').join(' · ');
+    return '<div class="cofre">' +
+      '<div class="ic">' + c.icono + '</div>' +
+      '<h3>' + c.nombre + '</h3>' +
+      '<div class="precio">💎 ' + c.precio.toLocaleString('es-ES') + '</div>' +
+      '<div class="odds">' + odds + '</div>' +
+      '<button class="mcbtn bien" data-cofre="' + c.id + '">ABRIR</button>' +
+    '</div>';
+  }).join('');
+}
+
+function pintarInventario(){
+  const cont = $('rejillaInv');
+  if (!S.inventario.length){
+    cont.innerHTML = '<div id="vacio">Inventario vacío. Abre un cofre.</div>';
+    return;
+  }
+  cont.innerHTML = S.inventario.map(o =>
+    '<div class="objeto r-' + o.rareza + (S.elegidos.includes(o.ficha) ? ' elegido' : '') +
+        '" data-ficha="' + o.ficha + '">' +
+      '<div class="ic">' + o.icono + '</div>' +
+      '<div class="nm">' + o.nombre + '</div>' +
+      (o.encanto ? '<div class="en">✨ ' + o.encanto + '</div>' : '') +
+      '<div class="val">+' + o.precio.toLocaleString('es-ES') + ' 💎</div>' +
+      '<button class="mcbtn mal" data-vender="' + o.ficha + '">VENDER</button>' +
+    '</div>').join('');
+}
+
+function pintarContrato(){
+  $('ranuras').innerHTML = Array.from({length:5}, (_, i) => {
+    const f = S.elegidos[i];
+    const o = f && S.inventario.find(x => x.ficha === f);
+    return '<div class="ranura' + (o ? ' r-' + o.rareza : '') + '">' + (o ? o.icono : '') + '</div>';
+  }).join('');
+  $('cuentaSel').textContent = S.elegidos.length;
+  $('btnForjar').disabled = S.elegidos.length !== 5;
+}
+
+function refrescar(){
+  const esme = Math.floor(S.esmeraldas);
+  $('esmeTxt').textContent = esme.toLocaleString('es-ES');
+  $('esme2').textContent = esme.toLocaleString('es-ES');
+  const coins = Arcade.fichas.saldo();
+  $('coinsTxt').textContent = coins.toLocaleString('es-ES');
+  $('coins2').textContent = coins.toLocaleString('es-ES');
+  $('numInv').textContent = S.inventario.length;
+
+  document.querySelectorAll('[data-cofre]').forEach(b => {
+    const c = COFRES.find(x => x.id === b.dataset.cofre);
+    b.disabled = S.girando || S.esmeraldas < c.precio;
+  });
+  $('btnCambiar').disabled = coins < 100;
+  $('btnRegalo').style.display = (esme < 45 && !S.inventario.length) ? 'inline-block' : 'none';
+  pintarInventario();
+  pintarContrato();
+}
+
+// ---------- Eventos (delegados: nada de onclick en el HTML) ----------
+$('pestanas').addEventListener('click', ev => {
+  const b = ev.target.closest('[data-hoja]');
+  if (!b || S.girando) return;
+  Sonido.activar();
+  document.querySelectorAll('#pestanas .mcbtn').forEach(x => x.classList.remove('sel'));
+  document.querySelectorAll('.hoja').forEach(h => h.classList.remove('activa'));
+  b.classList.add('sel');
+  $('hoja-' + b.dataset.hoja).classList.add('activa');
+});
+
+$('rejillaCofres').addEventListener('click', ev => {
+  const b = ev.target.closest('[data-cofre]');
+  if (!b) return;
+  Sonido.activar();
+  abrirCofre(b.dataset.cofre);
+});
+
+$('rejillaInv').addEventListener('click', ev => {
+  Sonido.activar();
+  const vender = ev.target.closest('[data-vender]');
+  if (vender){ ev.stopPropagation(); venderObjeto(vender.dataset.vender); return; }
+  const obj = ev.target.closest('[data-ficha]');
+  if (obj) alternarElegido(obj.dataset.ficha);
+});
+
+$('btnVenderComunes').onclick = () => { Sonido.activar(); venderComunes(); };
+$('btnForjar').onclick = () => { Sonido.activar(); forjar(); };
+$('btnGuardar').onclick = () => { Sonido.fx('colocar'); cerrarPremio(); };
+$('btnVenderYa').onclick = () => {
+  if (!premioActual) return;
+  venderObjeto(premioActual.obj.ficha);
+  cerrarPremio();
+};
+$('btnCambiar').onclick = () => {
+  Sonido.activar();
+  if (Arcade.fichas.saldo() < 100){ avisar('Necesitas 100 NEXO-COINS'); Sonido.fx('error'); return; }
+  Arcade.fichas.ajustar(-100);
+  S.esmeraldas += 1000;
+  avisar('Cambiados 100 NEXO-COINS por 1.000 esmeraldas');
+  Sonido.fx('ficha');
+  refrescar();
+  guardarCofres();
+};
+$('btnRegalo').onclick = () => {
+  S.esmeraldas += 200;
+  Sonido.fx('ficha');
+  refrescar();
+  guardarCofres();
+};
+$('premio').addEventListener('click', ev => { if (ev.target === $('premio')) cerrarPremio(); });
+Arcade.conectarSonido($('btnSonido'));
+
+// ---------- Arranque ----------
+cargarCofres();
+pintarCofres();
+cintaEnReposo();
+refrescar();
 
 });
 </script>

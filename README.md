@@ -1,6 +1,6 @@
 # 🕹 ARCADE NEXO
 
-Diez juegos hechos a mano en **HTML5 + Canvas + JavaScript puro**. Sin dependencias, sin librerías, sin assets externos y sin conexión a internet: todos los gráficos se dibujan por código y todo el sonido se genera en tiempo real con WebAudio.
+Once juegos hechos a mano en **HTML5 + Canvas + JavaScript puro**. Sin dependencias, sin librerías, sin assets externos y sin conexión a internet: todos los gráficos se dibujan por código y todo el sonido se genera en tiempo real con WebAudio.
 
 ## ▶ Cómo jugar
 
@@ -10,7 +10,7 @@ Cada juego tiene su botón **🕹 Arcade** arriba a la izquierda para volver a l
 
 ### 📦 Versión de un solo archivo
 
-`arcade.html` es el arcade **entero** (portada y los diez juegos) empaquetado en un único archivo, sin CSS ni JS externos. Sirve para cuando solo puedes usar una página suelta: mandarlo por correo, subirlo a cualquier sitio o abrirlo desde una memoria USB.
+`arcade.html` es el arcade **entero** (portada y los once juegos) empaquetado en un único archivo, sin CSS ni JS externos. Sirve para cuando solo puedes usar una página suelta: mandarlo por correo, subirlo a cualquier sitio o abrirlo desde una memoria USB.
 
 Se genera a partir de los archivos de `juegos/`, que siguen siendo la fuente de verdad:
 
@@ -34,6 +34,7 @@ Cada juego queda aislado en su propia pantalla: su CSS se prefija con el selecto
 | 🎱 [8 Ball Pool](juegos/8-ball-pool.html) | Deportes | Billar con física real, efecto y rival controlado por la máquina |
 | ⚽ [Rumble Stars](juegos/rumble-stars.html) | Arena | Fútbol de arena: lanza bichos al campo y empuja el balón |
 | ⛏ [Mining Tycoon](juegos/mining-tycoon.html) | Tycoon | Monta un imperio minero: plantilla, ascensor, camiones y progreso sin conexión |
+| 📦 [Cofres Minecraft](juegos/cofres-minecraft.html) | Cajas | Abre cofres con ruleta, colecciona objetos y fúndelos para subir de rareza |
 
 ---
 
@@ -152,6 +153,25 @@ Cada mejora arregla un cuello de botella distinto, y el que va apretado se nota 
 - El **Mercado Nexo** cambia $5.000 por 50 NEXO-COINS, las fichas ficticias que se usan en Minas y Aviator.
 - El **registro** de la parte de abajo va contando lo que pasa: contrataciones, mejoras y camiones vendidos.
 
+### 📦 Cofres Minecraft
+
+Simulador de cajas con estética de bloques: cuatro cofres, dieciocho objetos repartidos en cinco rarezas y encantamientos que suben el valor.
+
+| Cofre | Precio | Probabilidades |
+|---|---|---|
+| 📦 Madera | 45 💎 | común 80 % · raro 20 % |
+| ⚙️ Hierro | 180 💎 | común 42 % · raro 38 % · épico 20 % |
+| 🔷 Diamante | 650 💎 | raro 54 % · épico 34 % · legendario 12 % |
+| 🔥 Nether | 2.200 💎 | épico 57 % · legendario 35 % · **mítico 8 %** |
+
+Las probabilidades están **escritas en cada cofre** y son las que se usan de verdad: cada cofre devuelve de media en torno al 90 % de lo que cuesta, así que se pierde poco a poco, como en cualquier simulador de cajas.
+
+- **Ruleta** con aguja central que frena poco a poco, y el chasquido se va espaciando conforme se para.
+- **Encantamientos:** las armas, herramientas y armaduras salen encantadas un 40 % de las veces y valen un 60 % más.
+- **Contrato de fusión:** cinco objetos de la misma rareza se forjan en uno de la rareza superior. Los míticos ya no suben.
+- **Inventario** con venta individual, venta rápida de todo lo común y guardado automático.
+- Cambia **100 NEXO-COINS por 1.000 esmeraldas** para conectarlo con el resto del arcade.
+
 ## 💾 Récords
 
 Cada juego guarda su récord en el `localStorage` de tu navegador, así que son tuyos y no salen de tu equipo. Desde la portada puedes borrarlos todos con **🗑 Borrar todos mis récords**.
@@ -175,6 +195,7 @@ juegos/
   8-ball-pool.html
   rumble-stars.html
   mining-tycoon.html
+  cofres-minecraft.html
 ```
 
 ## 🎨 Estética

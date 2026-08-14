@@ -126,7 +126,7 @@
 <div id="contenido">
   <div id="titulo">
     <h2>SELECCIONA TU JUEGO SUPREMO</h2>
-    <p>Diez motores hechos a mano en HTML5 + Canvas, con renderizado HiDPI y físicas propias.
+    <p>Once motores hechos a mano en HTML5 + Canvas, con renderizado HiDPI y físicas propias.
        Sin instalar nada, sin anuncios y sin conexión.</p>
   </div>
 
@@ -226,6 +226,21 @@ const JUEGOS = [
       } catch(err){ return 'Sin jugar todavía'; }
     },
     portada: portadaMina
+  },
+  {
+    id:'cofres', archivo:'juegos/cofres-minecraft.html', nuevo:true,
+    nombre:'⛏ Cofres Minecraft', genero:'Cajas',
+    desc:'Abre cofres, mira girar la ruleta y funde cinco objetos iguales para subirlos de rareza.',
+    record(){
+      const g = Arcade.leerTexto('cofres', null);
+      if (!g) return 'Sin jugar todavía';
+      try {
+        const e = JSON.parse(g);
+        return (e.esmeraldas || 0).toLocaleString('es-ES') + ' 💎 · ' +
+               ((e.inventario || []).length) + ' objetos';
+      } catch(err){ return 'Sin jugar todavía'; }
+    },
+    portada: portadaCofres
   },
   {
     id:'serpiente', archivo:'juegos/serpiente.html', nuevo:true,
@@ -673,6 +688,53 @@ function portadaMina(c){
   c.fillStyle = '#f3e600'; c.shadowColor = '#f3e600'; c.shadowBlur = 14;
   c.fillText('$ 12.480', A - 14, AL - 20);
   c.shadowBlur = 0;
+}
+
+function portadaCofres(c){
+  fondo(c, '#1a1a1a', '#0b0b0b');
+  // puntitos de la textura de bloques
+  c.fillStyle = 'rgba(255,255,255,.03)';
+  for (let y = 0; y < AL; y += 16) for (let x = 0; x < A; x += 16) c.fillRect(x, y, 8, 8);
+
+  // ruleta con la aguja
+  c.fillStyle = '#111'; c.fillRect(0, 34, A, 96);
+  c.strokeStyle = '#a8a8a8'; c.lineWidth = 4;
+  c.strokeRect(2, 36, A - 4, 92);
+
+  const rarezas = [
+    ['#aaaaaa', '\u{1F7EB}'], ['#5555ff', '\u{1F3F9}'], ['#aa00aa', '\u{1F48E}'],
+    ['#ffaa00', '\u{2B50}'], ['#ff5555', '\u{2B1B}'], ['#5555ff', '\u{1F5E1}\u{FE0F}']
+  ];
+  rarezas.forEach(([col, icono], i) => {
+    const x = 8 + i * 58;
+    c.fillStyle = '#2b2b2b'; c.fillRect(x, 44, 52, 76);
+    c.strokeStyle = col; c.lineWidth = 4; c.strokeRect(x, 44, 52, 76);
+    c.font = '26px serif'; c.textAlign = 'center'; c.textBaseline = 'middle';
+    c.fillText(icono, x + 26, 76);
+    c.fillStyle = col; c.fillRect(x + 8, 100, 36, 4);
+  });
+  // degradados a los lados
+  const iz = c.createLinearGradient(0, 0, 60, 0);
+  iz.addColorStop(0, '#111'); iz.addColorStop(1, 'rgba(17,17,17,0)');
+  c.fillStyle = iz; c.fillRect(2, 38, 60, 88);
+  const de = c.createLinearGradient(A, 0, A - 60, 0);
+  de.addColorStop(0, '#111'); de.addColorStop(1, 'rgba(17,17,17,0)');
+  c.fillStyle = de; c.fillRect(A - 62, 38, 60, 88);
+  // aguja
+  c.fillStyle = '#ff5555'; c.fillRect(A / 2 - 3, 34, 6, 96);
+  c.shadowColor = '#ff0000'; c.shadowBlur = 12;
+  c.fillRect(A / 2 - 3, 34, 6, 96);
+  c.shadowBlur = 0;
+
+  // cofre abierto abajo
+  c.font = '40px serif'; c.textAlign = 'left'; c.textBaseline = 'middle';
+  c.fillText('\u{1F4E6}', 16, AL - 24);
+  c.fillStyle = '#c6c6c6';
+  c.font = '700 13px "Courier New", monospace';
+  c.fillText('SIMULADOR DE COFRES', 66, AL - 32);
+  c.fillStyle = '#3ee63e';
+  c.font = '700 15px "Courier New", monospace';
+  c.fillText('\u{1F48E} 1.000 esmeraldas', 66, AL - 14);
 }
 
 // ---------- Montaje de las cartas ----------

@@ -32,7 +32,8 @@ const JUEGOS = [
   { id:'aviator',    archivo:'juegos/aviator.html' },
   { id:'pool',       archivo:'juegos/8-ball-pool.html' },
   { id:'rumble',     archivo:'juegos/rumble-stars.html' },
-  { id:'mina',       archivo:'juegos/mining-tycoon.html' }
+  { id:'mina',       archivo:'juegos/mining-tycoon.html' },
+  { id:'cofres',     archivo:'juegos/cofres-minecraft.html' }
 ];
 
 const leer = f => fs.readFileSync(path.join(RAIZ, f), 'utf8');
