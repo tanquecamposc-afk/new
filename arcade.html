@@ -237,6 +237,58 @@ body{display:block; padding:0; margin:0;}
     background:var(--rosa); color:#fff; font-weight:900; font-size:11px;
     padding:4px 36px; letter-spacing:1px; box-shadow:0 3px 12px rgba(0,0,0,.6);
   }
+#pantalla-portada /* ---------- Canje de códigos ---------- */
+  #canjeCodigos{
+    margin:0 auto 2rem; max-width:760px; padding:1.3rem 1.5rem;
+    background:var(--panel); border-radius:16px;
+    border:1px solid rgba(243,230,0,.25);
+    box-shadow:0 0 26px rgba(243,230,0,.07);
+  }
+#pantalla-portada #canjeCodigos h3{
+    font-size:1rem; font-weight:900; letter-spacing:1px; text-transform:uppercase;
+    color:var(--oro); display:flex; align-items:center; gap:9px; flex-wrap:wrap;
+  }
+#pantalla-portada #canjeCodigos h3 .cuenta{
+    margin-left:auto; font-family:var(--fuente-arcade); font-size:.75rem;
+    color:var(--tenue); letter-spacing:1px; font-variant-numeric:tabular-nums;
+  }
+#pantalla-portada #canjeCodigos .ayuda{color:var(--tenue); font-size:.82rem; line-height:1.5; margin:.55rem 0 .9rem;}
+#pantalla-portada #canjeCodigos .fila{display:flex; gap:10px; flex-wrap:wrap;}
+#pantalla-portada #codigoTxt{
+    flex:1; min-width:170px;
+    font-family:var(--fuente-arcade); font-size:1rem; letter-spacing:2px; text-align:center;
+    color:var(--oro); background:rgba(0,0,0,.45); caret-color:var(--oro);
+    border:1px solid rgba(243,230,0,.3); border-radius:10px; padding:.7rem 1rem;
+  }
+#pantalla-portada #codigoTxt:focus{
+    outline:none; border-color:var(--oro); box-shadow:0 0 16px rgba(243,230,0,.3);
+  }
+#pantalla-portada #codigoTxt::placeholder{color:rgba(255,255,255,.25); letter-spacing:1px;}
+#pantalla-portada #btnCanjearCodigo{
+    background:linear-gradient(135deg, var(--oro), #ff9d00); color:#1a1400;
+    border:none; border-radius:10px; padding:.7rem 1.5rem; cursor:pointer;
+    font-weight:900; font-size:.8rem; text-transform:uppercase; letter-spacing:1.2px;
+    transition:filter .2s, box-shadow .2s;
+  }
+#pantalla-portada #btnCanjearCodigo:hover{filter:brightness(1.12); box-shadow:0 0 22px rgba(243,230,0,.5);}
+#pantalla-portada #canjeAviso{
+    margin-top:.8rem; font-size:.85rem; font-weight:700; min-height:1.2em;
+  }
+#pantalla-portada #canjeAviso.bien{color:var(--verde);}
+#pantalla-portada #canjeAviso.mal{color:var(--rosa);}
+#pantalla-portada #listaCodigos{
+    display:flex; flex-wrap:wrap; gap:7px; margin-top:1rem;
+  }
+#pantalla-portada #listaCodigos span{
+    font-family:var(--fuente-arcade); font-size:.72rem; min-width:32px; text-align:center;
+    padding:5px 7px; border-radius:7px;
+    background:rgba(243,230,0,.09); color:var(--oro);
+    border:1px solid rgba(243,230,0,.28);
+  }
+#pantalla-portada #listaCodigos span.gastado{
+    background:rgba(255,255,255,.03); color:rgba(255,255,255,.22);
+    border-color:rgba(255,255,255,.07); text-decoration:line-through;
+  }
 #pantalla-portada #pie{
     margin-top:2.5rem; text-align:center; color:var(--tenue); font-size:.8rem; line-height:1.8;
   }
@@ -1058,8 +1110,8 @@ body{display:block; padding:0; margin:0;}
       <div class="lema">Ultimate Gamer Edition v4.0</div>
     </div>
   </div>
-  <div id="cartera" title="Fichas ficticias de Minas y Aviator — doble clic para volver a 1.500">
-    💎 <span id="fichasTxt">1500</span> NEXO-COINS
+  <div id="cartera" title="Fichas ficticias de Minas y Aviator — doble clic para volver a 5.000">
+    💎 <span id="fichasTxt">5000</span> NEXO-COINS
   </div>
 </header>
 
@@ -1068,6 +1120,22 @@ body{display:block; padding:0; margin:0;}
     <h2>SELECCIONA TU JUEGO SUPREMO</h2>
     <p>Doce motores hechos a mano en HTML5 + Canvas, con renderizado HiDPI y físicas propias.
        Sin instalar nada, sin anuncios y sin conexión.</p>
+  </div>
+
+  <div id="canjeCodigos">
+    <h3>🎁 Canjea tu código <span class="cuenta" id="canjeCuenta">0 / 20</span></h3>
+    <p class="ayuda">
+      Hay <strong>20 códigos</strong>, del <strong>1</strong> al <strong>20</strong>, y cada uno
+      regala <strong>1.000 NEXO-COINS</strong> una sola vez. Escribe el número suelto
+      (<code>7</code>) o con la marca (<code>NEXO-7</code>).
+    </p>
+    <div class="fila">
+      <input id="codigoTxt" maxlength="8" autocomplete="off" spellcheck="false"
+             placeholder="NEXO-1" aria-label="Código a canjear">
+      <button id="btnCanjearCodigo">Canjear</button>
+    </div>
+    <div id="canjeAviso" role="status" aria-live="polite"></div>
+    <div id="listaCodigos" aria-label="Códigos canjeados"></div>
   </div>
 
   <div id="rejilla"></div>
@@ -1279,7 +1347,7 @@ body{display:block; padding:0; margin:0;}
     <a class="boton" href="javascript:void 0" data-volver="1">🕹 Arcade</a>
     <div class="titulo">💣 MINAS</div>
     <div class="sep"></div>
-    <div class="stat">🪙 <span id="saldoTxt" class="oro">1500</span></div>
+    <div class="stat">🪙 <span id="saldoTxt" class="oro">5000</span></div>
     <div class="stat">🏆 <span id="mayorTxt" class="tenue">0</span></div>
     <button id="btnSonido" title="Sonido">🔊</button>
   </div>
@@ -1440,7 +1508,7 @@ body{display:block; padding:0; margin:0;}
     <a class="boton" href="javascript:void 0" data-volver="1">🕹 Arcade</a>
     <div class="titulo">✈ AVIATOR</div>
     <div class="sep"></div>
-    <div class="stat">🪙 <span id="saldoTxt" class="oro">1500</span></div>
+    <div class="stat">🪙 <span id="saldoTxt" class="oro">5000</span></div>
     <div class="stat">🏆 <span id="recordTxt" class="tenue">—</span></div>
     <button id="btnSonido" title="Sonido">🔊</button>
   </div>
@@ -2124,7 +2192,7 @@ const Arcade = {
 
   // Cartera de fichas ficticias compartida por los juegos de casino
   fichas: {
-    INICIAL: 1500,               // saldo con el que arranca una partida nueva
+    INICIAL: 5000,               // saldo con el que arranca una partida nueva
     saldo(){
       const v = Almacen.leer('arcade_fichas');
       if (v !== null) return parseFloat(v) || 0;
@@ -2135,6 +2203,40 @@ const Arcade = {
     fijar(n){ Almacen.escribir('arcade_fichas', Math.max(0, Math.round(n))); },
     ajustar(n){ const s = this.saldo() + n; this.fijar(s); return this.saldo(); },
     reiniciar(){ this.fijar(this.INICIAL); return this.saldo(); }
+  },
+
+  /**
+   * Códigos promocionales: del 1 al 20, cada uno regala fichas una sola vez.
+   * Se admite el número suelto ("7") o con el prefijo de la marca ("NEXO-7"),
+   * porque es como aparecen impresos en la portada.
+   */
+  codigos: {
+    TOTAL: 20,
+    PREMIO: 1000,
+    normalizar(txt){
+      const limpio = String(txt || '').trim().toUpperCase().replace(/[\s_]/g, '');
+      const m = limpio.match(/^(?:NEXO-?)?0*(\d{1,2})$/);   // "007" vale tanto como "7"
+      if (!m) return null;
+      const n = parseInt(m[1], 10);
+      return (n >= 1 && n <= this.TOTAL) ? n : null;
+    },
+    usados(){
+      const v = Almacen.leer('arcade_codigos');
+      if (!v) return [];
+      return v.split(',').map(Number).filter(n => n >= 1 && n <= this.TOTAL);
+    },
+    // -> { ok, motivo: 'canjeado' | 'invalido' | 'repetido', numero, premio, saldo }
+    canjear(txt){
+      const n = this.normalizar(txt);
+      if (n === null) return { ok:false, motivo:'invalido', saldo:Arcade.fichas.saldo() };
+      const ya = this.usados();
+      if (ya.includes(n)) return { ok:false, motivo:'repetido', numero:n, saldo:Arcade.fichas.saldo() };
+      ya.push(n);
+      Almacen.escribir('arcade_codigos', ya.sort((a, b) => a - b).join(','));
+      return { ok:true, motivo:'canjeado', numero:n, premio:this.PREMIO,
+               saldo:Arcade.fichas.ajustar(this.PREMIO) };
+    },
+    olvidar(){ Almacen.borrar('arcade_codigos'); }
   },
 
   // Coordenadas de ratón/tacto relativas al canvas, en píxeles del canvas
@@ -2974,10 +3076,60 @@ JUEGOS.forEach(j => {
   j.portada(a.querySelector('canvas').getContext('2d'));
 });
 
-// Al volver de un juego se repintan la cartera y los récords de las tarjetas
+// ---------- Canje de códigos (del 1 al 20, 1.000 NEXO-COINS cada uno) ----------
+const listaCodigos = document.getElementById('listaCodigos');
+const codigoTxt = document.getElementById('codigoTxt');
+const canjeAviso = document.getElementById('canjeAviso');
+
+function pintarCodigos(){
+  const usados = Arcade.codigos.usados();
+  document.getElementById('canjeCuenta').textContent =
+    usados.length + ' / ' + Arcade.codigos.TOTAL;
+  listaCodigos.innerHTML = '';
+  for (let n = 1; n <= Arcade.codigos.TOTAL; n++){
+    const ficha = document.createElement('span');
+    ficha.textContent = n;
+    if (usados.includes(n)){
+      ficha.className = 'gastado';
+      ficha.title = 'NEXO-' + n + ' — ya canjeado';
+    } else {
+      ficha.title = 'NEXO-' + n + ' — sin canjear';
+    }
+    listaCodigos.appendChild(ficha);
+  }
+}
+
+function avisar(texto, bien){
+  canjeAviso.textContent = texto;
+  canjeAviso.className = bien ? 'bien' : 'mal';
+}
+
+function canjear(){
+  Sonido.activar();
+  const r = Arcade.codigos.canjear(codigoTxt.value);
+  if (r.ok){
+    avisar('✅ NEXO-' + r.numero + ' canjeado: +' + r.premio.toLocaleString('es-ES') +
+           ' NEXO-COINS. Saldo: ' + r.saldo.toLocaleString('es-ES') + '.', true);
+    Sonido.melodia([660, 880, 1180], 0.09, 'triangle', 0.06);
+    codigoTxt.value = '';
+    refrescarPortada();
+  } else if (r.motivo === 'repetido'){
+    avisar('⚠️ El código NEXO-' + r.numero + ' ya lo habías canjeado.', false);
+    Sonido.fx('error');
+  } else {
+    avisar('❌ Código no válido. Son los números del 1 al ' + Arcade.codigos.TOTAL + '.', false);
+    Sonido.fx('error');
+  }
+}
+
+document.getElementById('btnCanjearCodigo').addEventListener('click', canjear);
+codigoTxt.addEventListener('keydown', ev => { if (ev.key === 'Enter') canjear(); });
+
+// Al volver de un juego se repintan la cartera, los códigos y los récords
 function refrescarPortada(){
   document.getElementById('fichasTxt').textContent =
     Arcade.fichas.saldo().toLocaleString('es-ES');
+  pintarCodigos();
   JUEGOS.forEach((j, i) => {
     const marca = rejilla.children[i] && rejilla.children[i].querySelector('.record');
     if (marca) marca.textContent = j.record();
@@ -2997,7 +3149,7 @@ addEventListener('pageshow', refrescarPortada);
 addEventListener('focus', refrescarPortada);
 
 document.getElementById('btnBorrar').onclick = () => {
-  if (!confirm('¿Seguro que quieres borrar todos tus récords y el saldo de Minas?')) return;
+  if (!confirm('¿Seguro que quieres borrar todos tus récords, el saldo y los códigos canjeados?')) return;
   try {
     Object.keys(localStorage)
       .filter(k => k.startsWith('arcade_') || k.startsWith('nexo_record_'))

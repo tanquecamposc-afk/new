@@ -72,7 +72,7 @@ Cada fila tiene un **cortacésped** que la arrasa entera… pero solo una vez. T
 
 ### 💣 Minas
 
-Versión arcade de las minas de los casinos, **con fichas ficticias**: no hay dinero real ni forma de depositar o retirar nada. Comparte cartera con el Aviator, que empieza en 1.500 NEXO-COINS.
+Versión arcade de las minas de los casinos, **con fichas ficticias**: no hay dinero real ni forma de depositar o retirar nada. Comparte cartera con el Aviator, que empieza en 5.000 NEXO-COINS.
 
 - Eliges apuesta y número de minas (1 a 24) en una cuadrícula de 25 casillas.
 - Cada 💎 sube el multiplicador; una 💣 y pierdes la apuesta.
@@ -233,7 +233,17 @@ juegos/
 
 Toda la interfaz comparte una identidad **neón cyberpunk**: fondos muy profundos con dos halos de color, acentos en cian, rosa, verde y amarillo, y brillos en los bordes al pasar por encima. Los tokens de color viven en `juegos/arcade.css`, así que cambiar la paleta ahí retoca los nueve juegos de golpe. La portada lleva cabecera fija con la cartera de **NEXO-COINS** (las fichas ficticias que comparten Minas y Aviator), que se actualiza al volver de cualquier partida.
 
-Una partida nueva arranca con **1.500 NEXO-COINS**. El saldo inicial es la constante `Arcade.fichas.INICIAL` en `juegos/arcade.js`; con un **doble clic en la cartera** de la portada vuelve a ese valor.
+Una partida nueva arranca con **5.000 NEXO-COINS**. El saldo inicial es la constante `Arcade.fichas.INICIAL` en `juegos/arcade.js`; con un **doble clic en la cartera** de la portada vuelve a ese valor.
+
+### 🎁 Códigos promocionales
+
+La portada lleva un panel de canje con **20 códigos, del 1 al 20**, que dan **1.000 NEXO-COINS cada uno**:
+
+- Se escribe el número suelto (`7`), con ceros delante (`007`) o con la marca (`NEXO-7`, `nexo 7`) — da igual mayúsculas, espacios y guion.
+- **Cada código se canjea una sola vez.** Los canjeados quedan tachados en la lista y el contador enseña cuántos llevas.
+- Canjearlos todos son **20.000 NEXO-COINS**, así que con el saldo inicial se llega a 25.000.
+- Vive en `Arcade.codigos` (`juegos/arcade.js`): `TOTAL`, `PREMIO`, `usados()`, `canjear(texto)` y `olvidar()`. Para cambiar el premio o cuántos hay basta con tocar esas dos constantes.
+- El registro se guarda en `localStorage` bajo `arcade_codigos`, y el botón **🗑 Borrar todos mis récords** también lo limpia.
 
 ## 🖥 Rendimiento y nitidez
 

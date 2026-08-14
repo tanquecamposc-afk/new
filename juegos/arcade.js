@@ -255,7 +255,7 @@ const Arcade = {
 
   // Cartera de fichas ficticias compartida por los juegos de casino
   fichas: {
-    INICIAL: 1500,               // saldo con el que arranca una partida nueva
+    INICIAL: 5000,               // saldo con el que arranca una partida nueva
     saldo(){
       const v = Almacen.leer('arcade_fichas');
       if (v !== null) return parseFloat(v) || 0;
@@ -266,6 +266,40 @@ const Arcade = {
     fijar(n){ Almacen.escribir('arcade_fichas', Math.max(0, Math.round(n))); },
     ajustar(n){ const s = this.saldo() + n; this.fijar(s); return this.saldo(); },
     reiniciar(){ this.fijar(this.INICIAL); return this.saldo(); }
+  },
+
+  /**
+   * Códigos promocionales: del 1 al 20, cada uno regala fichas una sola vez.
+   * Se admite el número suelto ("7") o con el prefijo de la marca ("NEXO-7"),
+   * porque es como aparecen impresos en la portada.
+   */
+  codigos: {
+    TOTAL: 20,
+    PREMIO: 1000,
+    normalizar(txt){
+      const limpio = String(txt || '').trim().toUpperCase().replace(/[\s_]/g, '');
+      const m = limpio.match(/^(?:NEXO-?)?0*(\d{1,2})$/);   // "007" vale tanto como "7"
+      if (!m) return null;
+      const n = parseInt(m[1], 10);
+      return (n >= 1 && n <= this.TOTAL) ? n : null;
+    },
+    usados(){
+      const v = Almacen.leer('arcade_codigos');
+      if (!v) return [];
+      return v.split(',').map(Number).filter(n => n >= 1 && n <= this.TOTAL);
+    },
+    // -> { ok, motivo: 'canjeado' | 'invalido' | 'repetido', numero, premio, saldo }
+    canjear(txt){
+      const n = this.normalizar(txt);
+      if (n === null) return { ok:false, motivo:'invalido', saldo:Arcade.fichas.saldo() };
+      const ya = this.usados();
+      if (ya.includes(n)) return { ok:false, motivo:'repetido', numero:n, saldo:Arcade.fichas.saldo() };
+      ya.push(n);
+      Almacen.escribir('arcade_codigos', ya.sort((a, b) => a - b).join(','));
+      return { ok:true, motivo:'canjeado', numero:n, premio:this.PREMIO,
+               saldo:Arcade.fichas.ajustar(this.PREMIO) };
+    },
+    olvidar(){ Almacen.borrar('arcade_codigos'); }
   },
 
   // Coordenadas de ratón/tacto relativas al canvas, en píxeles del canvas
