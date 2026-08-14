@@ -971,6 +971,80 @@ body{display:block; padding:0; margin:0;}
   }
 
 
+
+/* --- galletas --- */
+#pantalla-galletas #juego{width:min(1060px,100vw);}
+#pantalla-galletas .barra .titulo{color:#f1c40f;}
+#pantalla-galletas #mesa{display:grid; grid-template-columns:minmax(0,1fr) 340px; gap:14px; align-items:start;}
+@media (max-width:820px){#pantalla-galletas #mesa{grid-template-columns:1fr;}
+ }
+#pantalla-galletas /* ---------- Zona de la galleta ---------- */
+  #zonaGalleta{
+    background:linear-gradient(180deg,#2c1a0e,#140b06);
+    border:1px solid rgba(241,196,15,.25); border-radius:14px;
+    padding:18px; display:flex; flex-direction:column; align-items:center; gap:14px;
+    box-shadow:inset 0 0 60px rgba(0,0,0,.7);
+  }
+#pantalla-galletas #contador{
+    text-align:center; background:rgba(0,0,0,.45); padding:12px 26px; border-radius:10px;
+    border:1px solid rgba(241,196,15,.25);
+  }
+#pantalla-galletas #galletasTxt{
+    font-size:clamp(1.6rem,4vw,2.2rem); font-weight:900; color:#f1c40f;
+    font-variant-numeric:tabular-nums; text-shadow:0 0 14px rgba(241,196,15,.35);
+  }
+#pantalla-galletas #contador .porSeg{font-size:.9rem; color:#c9bda8; margin-top:4px; font-variant-numeric:tabular-nums;}
+#pantalla-galletas #contador .clic{font-size:.78rem; color:#8d8271; margin-top:2px;}
+#pantalla-galletas #lienzo{
+    display:block; cursor:pointer; touch-action:manipulation; background:transparent;
+    width:min(300px,72vw); height:auto; aspect-ratio:1/1;
+  }
+#pantalla-galletas #zonaGalleta .pista{font-size:.75rem; color:#8d8271; text-align:center; line-height:1.6;}
+#pantalla-galletas #bonos{display:flex; gap:8px; flex-wrap:wrap; justify-content:center; min-height:26px;}
+#pantalla-galletas .bono{
+    font-size:.72rem; font-weight:800; padding:4px 12px; border-radius:999px;
+    background:rgba(241,196,15,.16); border:1px solid rgba(241,196,15,.5); color:#f1c40f;
+    font-variant-numeric:tabular-nums;
+  }
+#pantalla-galletas .bono.frenesi{background:rgba(255,61,104,.16); border-color:rgba(255,61,104,.6); color:#ff8aa5;}
+#pantalla-galletas /* ---------- Tienda ---------- */
+  #tienda{
+    background:rgba(0,0,0,.35); border:1px solid var(--borde); border-radius:14px;
+    display:flex; flex-direction:column; overflow:hidden; max-height:74vh;
+  }
+#pantalla-galletas #pestanas{display:flex; border-bottom:1px solid var(--borde);}
+#pantalla-galletas #pestanas button{
+    flex:1; border:none; border-radius:0; background:rgba(0,0,0,.3);
+    padding:12px; font-size:.8rem; letter-spacing:1px; text-transform:uppercase;
+  }
+#pantalla-galletas #pestanas button.sel{background:rgba(241,196,15,.14); color:#f1c40f; box-shadow:inset 0 -2px 0 #f1c40f;}
+#pantalla-galletas #lotes{display:flex; gap:6px; padding:8px 10px; border-bottom:1px solid var(--borde);}
+#pantalla-galletas #lotes button{flex:1; padding:5px; font-size:.72rem;}
+#pantalla-galletas #lotes button.sel{background:linear-gradient(135deg,#d4a800,#9a7a00); border-color:#f1c40f; color:#1a1400;}
+#pantalla-galletas .lista{flex:1; overflow-y:auto; padding:9px; display:flex; flex-direction:column; gap:8px;}
+#pantalla-galletas .lista::-webkit-scrollbar{width:6px;}
+#pantalla-galletas .lista::-webkit-scrollbar-thumb{background:#4a3c22; border-radius:3px;}
+#pantalla-galletas .ficha{
+    display:flex; align-items:center; gap:11px; text-align:left;
+    background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.1);
+    border-radius:9px; padding:9px 11px; cursor:pointer; width:100%;
+    transition:background .18s, border-color .18s, transform .1s;
+    font-family:inherit; color:inherit;
+  }
+#pantalla-galletas .ficha:hover:not(:disabled){background:rgba(255,255,255,.12); border-color:#f1c40f; transform:translateX(-2px);}
+#pantalla-galletas .ficha:disabled{opacity:.4; cursor:not-allowed; filter:grayscale(1); transform:none;}
+#pantalla-galletas .ficha .ic{font-size:1.7rem; width:38px; text-align:center; flex:none;}
+#pantalla-galletas .ficha .info{flex:1; min-width:0;}
+#pantalla-galletas .ficha .nom{font-weight:800; font-size:.9rem;}
+#pantalla-galletas .ficha .precio{font-size:.76rem; color:#f1c40f; font-variant-numeric:tabular-nums;}
+#pantalla-galletas .ficha .extra{font-size:.7rem; color:var(--tenue); line-height:1.4;}
+#pantalla-galletas .ficha .cuenta{font-size:1.4rem; font-weight:900; color:rgba(255,255,255,.28); font-variant-numeric:tabular-nums;}
+#pantalla-galletas .ficha.mejora .ic{font-size:1.5rem;}
+#pantalla-galletas .vacia{color:var(--tenue); font-size:.8rem; text-align:center; padding:26px 10px; line-height:1.7;}
+#pantalla-galletas #pieTienda{display:flex; gap:8px; padding:9px; border-top:1px solid var(--borde);}
+#pantalla-galletas #pieTienda button{flex:1; font-size:.72rem;}
+
+
 </style>
 </head>
 <body>
@@ -992,7 +1066,7 @@ body{display:block; padding:0; margin:0;}
 <div id="contenido">
   <div id="titulo">
     <h2>SELECCIONA TU JUEGO SUPREMO</h2>
-    <p>Once motores hechos a mano en HTML5 + Canvas, con renderizado HiDPI y físicas propias.
+    <p>Doce motores hechos a mano en HTML5 + Canvas, con renderizado HiDPI y físicas propias.
        Sin instalar nada, sin anuncios y sin conexión.</p>
   </div>
 
@@ -1737,6 +1811,60 @@ body{display:block; padding:0; margin:0;}
 </div>
 </div>
 
+<div class="pantalla" id="pantalla-galletas">
+<div id="juego">
+  <div class="barra">
+    <a class="boton" href="javascript:void 0" data-volver="1">🕹 Arcade</a>
+    <div class="titulo">🍪 GALLETAS</div>
+    <div class="sep"></div>
+    <div class="stat">🍪 <span id="totalTxt" class="oro">0</span></div>
+    <div class="stat">🪙 <span id="coinsTxt" class="tenue">0</span></div>
+    <button id="btnSonido" title="Sonido">🔊</button>
+  </div>
+
+  <div id="mesa">
+    <!-- ---------- Galleta ---------- -->
+    <div id="zonaGalleta">
+      <div id="contador">
+        <div id="galletasTxt">0</div>
+        <div class="porSeg">por segundo: <span id="cpsTxt">0</span></div>
+        <div class="clic">por clic: <span id="clicTxt">1</span></div>
+      </div>
+
+      <canvas id="lienzo" width="300" height="300"></canvas>
+
+      <div id="bonos"></div>
+      <div class="pista">
+        Haz clic en la galleta. Las <b style="color:#f1c40f">galletas doradas</b> aparecen
+        de vez en cuando y dan premios enormes: pícalas antes de que se vayan.
+      </div>
+    </div>
+
+    <!-- ---------- Tienda ---------- -->
+    <div id="tienda">
+      <div id="pestanas">
+        <button class="sel" data-hoja="edificios">🏭 Tienda</button>
+        <button data-hoja="mejoras">⭐ Mejoras (<span id="numMejoras">0</span>)</button>
+      </div>
+
+      <div id="lotes">
+        <button class="sel" data-lote="1">x1</button>
+        <button data-lote="10">x10</button>
+        <button data-lote="100">x100</button>
+      </div>
+
+      <div class="lista" id="listaEdificios"></div>
+      <div class="lista" id="listaMejoras" style="display:none"></div>
+
+      <div id="pieTienda">
+        <button id="btnCanjear">🪙 1 M 🍪 → 100 coins</button>
+        <button class="peligro" id="btnReiniciar">Reiniciar</button>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
 <script>
 /* ====== Utilidades comunes ====== */
 /* ==========================================================
@@ -2257,6 +2385,24 @@ const JUEGOS = [
     portada: portadaCofres
   },
   {
+    id:'galletas', archivo:'juegos/cookie-clicker.html', nuevo:true,
+    nombre:'🍪 Galletas', genero:'Incremental',
+    desc:'Pica la galleta, monta un imperio de abuelas y fábricas, y caza las galletas doradas.',
+    record(){
+      const g = Arcade.leerTexto('galletas', null);
+      if (!g) return 'Sin jugar todavía';
+      try {
+        const e = JSON.parse(g);
+        const n = e.total || 0;
+        const s = ['', ' k', ' M', ' B', ' T'];
+        let i = 0, v = n;
+        while (v >= 1000 && i < 4){ v /= 1000; i++; }
+        return (i ? v.toFixed(1) : Math.floor(v)) + s[i] + ' galletas';
+      } catch(err){ return 'Sin jugar todavía'; }
+    },
+    portada: portadaGalletas
+  },
+  {
     id:'serpiente', archivo:'juegos/serpiente.html', nuevo:true,
     nombre:'🐍 Serpiente Neón', genero:'Arcade',
     desc:'Come, crece y acelera. Con fruta dorada, rocas por el camino y modo fantasma.',
@@ -2749,6 +2895,62 @@ function portadaCofres(c){
   c.fillStyle = '#3ee63e';
   c.font = '700 15px "Courier New", monospace';
   c.fillText('\u{1F48E} 1.000 esmeraldas', 66, AL - 14);
+}
+
+function portadaGalletas(c){
+  const g = c.createLinearGradient(0, 0, 0, AL);
+  g.addColorStop(0, '#2c1a0e'); g.addColorStop(1, '#100904');
+  c.fillStyle = g; c.fillRect(0, 0, A, AL);
+
+  // galleta grande
+  const cx = 104, cy = AL / 2, r = 58;
+  c.fillStyle = 'rgba(0,0,0,.5)';
+  c.beginPath(); c.ellipse(cx + 4, cy + 7, r * .95, r * .92, 0, 0, 6.283); c.fill();
+  c.beginPath();
+  for (let a = 0; a <= 52; a++){
+    const ang = a / 52 * 6.283;
+    const rr = r + Math.sin(ang * 9) * 2 + Math.cos(ang * 5.3) * 1.5;
+    a ? c.lineTo(cx + Math.cos(ang) * rr, cy + Math.sin(ang) * rr)
+      : c.moveTo(cx + Math.cos(ang) * rr, cy + Math.sin(ang) * rr);
+  }
+  c.closePath();
+  const masa = c.createRadialGradient(cx - r * .35, cy - r * .4, r * .15, cx, cy, r * 1.15);
+  masa.addColorStop(0, '#e8a55e'); masa.addColorStop(.6, '#c97c33'); masa.addColorStop(1, '#8d5119');
+  c.fillStyle = masa; c.fill();
+  c.strokeStyle = '#6d3d12'; c.lineWidth = 2.5; c.stroke();
+  [[-22,-25,9],[13,-31,10],[-4,3,9],[28,12,8],[-31,14,10],[5,33,8]].forEach(([dx, dy, rr]) => {
+    c.fillStyle = '#3a1f0a';
+    c.beginPath(); c.arc(cx + dx, cy + dy, rr / 2, 0, 6.283); c.fill();
+    c.fillStyle = '#5a3313';
+    c.beginPath(); c.arc(cx + dx - 1, cy + dy - 1, rr / 2.6, 0, 6.283); c.fill();
+  });
+  const luz = c.createRadialGradient(cx - r * .4, cy - r * .45, 2, cx - r * .4, cy - r * .45, r);
+  luz.addColorStop(0, 'rgba(255,255,255,.24)'); luz.addColorStop(1, 'rgba(255,255,255,0)');
+  c.fillStyle = luz; c.beginPath(); c.arc(cx, cy, r, 0, 6.283); c.fill();
+
+  // galleta dorada
+  c.save();
+  c.shadowColor = '#ffd700'; c.shadowBlur = 20;
+  const dg = c.createRadialGradient(232, 36, 2, 236, 40, 17);
+  dg.addColorStop(0, '#fff6b8'); dg.addColorStop(.55, '#ffd23c'); dg.addColorStop(1, '#c78f06');
+  c.fillStyle = dg;
+  c.beginPath(); c.arc(236, 40, 17, 0, 6.283); c.fill();
+  c.restore();
+  c.fillStyle = '#9a6b04';
+  [[-6,-5],[5,-2],[-1,6]].forEach(([dx, dy]) => {
+    c.beginPath(); c.arc(236 + dx, 40 + dy, 2.6, 0, 6.283); c.fill();
+  });
+
+  // contador y edificios
+  c.font = '900 24px "Segoe UI", system-ui, sans-serif';
+  c.textAlign = 'left'; c.textBaseline = 'middle';
+  c.fillStyle = '#f1c40f'; c.shadowColor = '#f1c40f'; c.shadowBlur = 14;
+  c.fillText('4,82 M', 188, 88);
+  c.shadowBlur = 0;
+  c.fillStyle = '#c9bda8'; c.font = '600 11px "Segoe UI", system-ui, sans-serif';
+  c.fillText('galletas', 188, 106);
+  c.font = '22px serif';
+  ['👵','🌾','⛏️','🏭'].forEach((e, i) => c.fillText(e, 188 + i * 34, 138));
 }
 
 // ---------- Montaje de las cartas ----------
@@ -10519,6 +10721,519 @@ refrescar();
 $('icoEsme').innerHTML = '<img src="' + ICONO_ESME + '" style="width:22px;height:22px" alt="">';
 ajustarLienzo();
 Arcade.bucle(dt => pintarMotas(dt));
+
+});
+
+registrarJuego("galletas", function(document, addEventListener, Arcade){
+
+// ============================================================
+//  GALLETAS — incremental de clics con mejoras y galleta dorada
+// ============================================================
+const $ = id => document.getElementById(id);
+const lienzo = $('lienzo');
+const ctx = Arcade.nitido(lienzo);
+const AN = lienzo.width, AL = lienzo.height;
+const CX = AN / 2, CY = AL / 2, RADIO = 108;
+
+// ---------- Catálogo ----------
+const EDIFICIOS = [
+  { id:'cursor',   nombre:'Cursor',        base:15,          cps:0.1,     icono:'👆' },
+  { id:'abuela',   nombre:'Abuela',        base:100,         cps:1,       icono:'👵' },
+  { id:'granja',   nombre:'Granja',        base:1100,        cps:8,       icono:'🌾' },
+  { id:'mina',     nombre:'Mina',          base:12000,       cps:47,      icono:'⛏️' },
+  { id:'fabrica',  nombre:'Fábrica',       base:130000,      cps:260,     icono:'🏭' },
+  { id:'banco',    nombre:'Banco',         base:1400000,     cps:1400,    icono:'🏦' },
+  { id:'templo',   nombre:'Templo',        base:20000000,    cps:7800,    icono:'🏛️' },
+  { id:'torre',    nombre:'Torre mágica',  base:330000000,   cps:44000,   icono:'🗼' },
+  { id:'nave',     nombre:'Nave espacial', base:5100000000,  cps:260000,  icono:'🚀' },
+  { id:'portal',   nombre:'Portal',        base:75000000000, cps:1600000, icono:'🌀' }
+];
+
+/* Mejoras: las de clic multiplican lo que da cada toque, las de edificio
+   duplican lo que produce ese edificio, y "mil dedos" añade producción por
+   clic según cuántos edificios tengas. Cada una aparece al cumplir su
+   requisito, como en el original. */
+const MEJORAS = [
+  { id:'m1', nombre:'Dedo reforzado',   icono:'🖐', precio:100,        tipo:'clic', factor:2,
+    desc:'El doble de galletas por clic', req:e => e.cursor >= 1 },
+  { id:'m2', nombre:'Guante de horno',  icono:'🧤', precio:500,        tipo:'clic', factor:2,
+    desc:'Otra vez el doble por clic',    req:e => e.cursor >= 5 },
+  { id:'m3', nombre:'Mil dedos',        icono:'✋', precio:5000,       tipo:'dedos', valor:0.1,
+    desc:'+0,1 por clic por cada edificio que tengas', req:e => e.cursor >= 10 },
+  { id:'m4', nombre:'Dedos de acero',   icono:'🦾', precio:50000,      tipo:'clic', factor:2,
+    desc:'El doble por clic',             req:e => e.cursor >= 25 },
+  { id:'m5', nombre:'Millón de dedos',  icono:'🙌', precio:2000000,    tipo:'dedos', valor:0.5,
+    desc:'+0,5 más por clic por cada edificio', req:e => e.cursor >= 50 },
+  { id:'m6', nombre:'Dedos de titanio', icono:'💪', precio:100000000,  tipo:'clic', factor:3,
+    desc:'El triple por clic',            req:e => e.cursor >= 100 },
+
+  { id:'a1', nombre:'Abuelas con gafas',  icono:'👓', precio:1000,      tipo:'edificio', objetivo:'abuela',
+    desc:'Las abuelas producen el doble',  req:e => e.abuela >= 1 },
+  { id:'a2', nombre:'Sillón mecedor',     icono:'🪑', precio:15000,     tipo:'edificio', objetivo:'abuela',
+    desc:'Las abuelas producen el doble',  req:e => e.abuela >= 10 },
+  { id:'g1', nombre:'Riego automático',   icono:'💧', precio:11000,     tipo:'edificio', objetivo:'granja',
+    desc:'Las granjas producen el doble',  req:e => e.granja >= 1 },
+  { id:'g2', nombre:'Semillas mejoradas', icono:'🌱', precio:150000,    tipo:'edificio', objetivo:'granja',
+    desc:'Las granjas producen el doble',  req:e => e.granja >= 10 },
+  { id:'i1', nombre:'Picos de titanio',   icono:'⚒️', precio:120000,    tipo:'edificio', objetivo:'mina',
+    desc:'Las minas producen el doble',    req:e => e.mina >= 1 },
+  { id:'i2', nombre:'Perforadora láser',  icono:'🔦', precio:1600000,   tipo:'edificio', objetivo:'mina',
+    desc:'Las minas producen el doble',    req:e => e.mina >= 10 },
+  { id:'f1', nombre:'Cintas más rápidas', icono:'⚙️', precio:1300000,   tipo:'edificio', objetivo:'fabrica',
+    desc:'Las fábricas producen el doble', req:e => e.fabrica >= 1 },
+  { id:'f2', nombre:'Robots de horno',    icono:'🤖', precio:18000000,  tipo:'edificio', objetivo:'fabrica',
+    desc:'Las fábricas producen el doble', req:e => e.fabrica >= 10 },
+  { id:'b1', nombre:'Interés compuesto',  icono:'📈', precio:14000000,  tipo:'edificio', objetivo:'banco',
+    desc:'Los bancos producen el doble',   req:e => e.banco >= 1 },
+  { id:'t1', nombre:'Rezos madrugadores', icono:'🕯', precio:200000000, tipo:'edificio', objetivo:'templo',
+    desc:'Los templos producen el doble',  req:e => e.templo >= 1 },
+
+  { id:'d1', nombre:'Masa milagrosa',   icono:'✨', precio:9000000,    tipo:'global', factor:1.5,
+    desc:'Toda la producción sube un 50 %', req:(e, S) => S.total >= 5000000 },
+  { id:'d2', nombre:'Receta ancestral', icono:'📜', precio:900000000,  tipo:'global', factor:2,
+    desc:'Toda la producción se duplica',   req:(e, S) => S.total >= 500000000 }
+];
+
+// ---------- Estado ----------
+const S = {
+  galletas: 0, total: 0, clics: 0,
+  edificios: Object.fromEntries(EDIFICIOS.map(e => [e.id, 0])),
+  compradas: [], visto: Date.now(),
+  frenesi: 0, clicLoco: 0
+};
+let lote = 1, hoja = 'edificios';
+
+// ---------- Cálculos ----------
+function multiplicadorEdificio(id){
+  let m = 1;
+  for (const mej of MEJORAS){
+    if (!S.compradas.includes(mej.id)) continue;
+    if (mej.tipo === 'edificio' && mej.objetivo === id) m *= 2;
+  }
+  return m;
+}
+function multiplicadorGlobal(){
+  let m = 1;
+  for (const mej of MEJORAS)
+    if (S.compradas.includes(mej.id) && mej.tipo === 'global') m *= mej.factor;
+  return m;
+}
+function cps(){
+  let t = 0;
+  for (const e of EDIFICIOS) t += S.edificios[e.id] * e.cps * multiplicadorEdificio(e.id);
+  return t * multiplicadorGlobal() * (S.frenesi > 0 ? 7 : 1);
+}
+function totalEdificios(){ return EDIFICIOS.reduce((s, e) => s + S.edificios[e.id], 0); }
+function porClic(){
+  let base = 1, dedos = 0;
+  for (const mej of MEJORAS){
+    if (!S.compradas.includes(mej.id)) continue;
+    if (mej.tipo === 'clic') base *= mej.factor;
+    if (mej.tipo === 'dedos') dedos += mej.valor;
+  }
+  const v = (base + dedos * totalEdificios()) * multiplicadorGlobal();
+  return S.clicLoco > 0 ? v * 777 : v;
+}
+function precio(e, n = 1){
+  // suma de la progresión geométrica de razón 1,15
+  const tiene = S.edificios[e.id];
+  return Math.ceil(e.base * Math.pow(1.15, tiene) * (Math.pow(1.15, n) - 1) / 0.15);
+}
+function mejorasDisponibles(){
+  return MEJORAS.filter(m => !S.compradas.includes(m.id) && m.req(S.edificios, S));
+}
+
+// ---------- Formato ----------
+const SUFIJOS = ['', ' k', ' M', ' B', ' T', ' Qa', ' Qi', ' Sx'];
+function fmt(n){
+  if (!isFinite(n)) return '∞';
+  if (n < 1000) return (n < 10 && n % 1 !== 0 ? n.toFixed(1) : Math.floor(n).toString());
+  let i = 0;
+  while (n >= 1000 && i < SUFIJOS.length - 1){ n /= 1000; i++; }
+  return n.toFixed(n < 10 ? 2 : n < 100 ? 1 : 0) + SUFIJOS[i];
+}
+
+// ---------- Guardado ----------
+function guardarPartida(){
+  S.visto = Date.now();
+  Arcade.escribir('galletas', JSON.stringify({
+    galletas:S.galletas, total:S.total, clics:S.clics,
+    edificios:S.edificios, compradas:S.compradas, visto:S.visto
+  }));
+}
+function cargarPartida(){
+  const crudo = Arcade.leerTexto('galletas', null);
+  if (!crudo) return false;
+  try {
+    const g = JSON.parse(crudo);
+    S.galletas = g.galletas || 0;
+    S.total = g.total || 0;
+    S.clics = g.clics || 0;
+    S.compradas = Array.isArray(g.compradas) ? g.compradas : [];
+    for (const e of EDIFICIOS) S.edificios[e.id] = (g.edificios && g.edificios[e.id]) || 0;
+    S.visto = g.visto || Date.now();
+    return true;
+  } catch(e){ return false; }
+}
+/** Producción mientras la pestaña estuvo cerrada: 60 %, con tope de 12 horas. */
+function progresoAusente(){
+  const seg = Math.min((Date.now() - S.visto) / 1000, 12 * 3600);
+  if (seg < 60) return;
+  const ganado = cps() * seg * 0.6;
+  if (ganado < 1) return;
+  S.galletas += ganado; S.total += ganado;
+  flotante(CX, 60, '+' + fmt(ganado), '#f1c40f', 3);
+  Arcade.aviso($('bonos'), '🌙 Mientras no estabas: +' + fmt(ganado) + ' galletas', true, 4000);
+}
+
+// ---------- Compras ----------
+function comprar(id){
+  const e = EDIFICIOS.find(x => x.id === id);
+  // con lote > 1 compra todo lo que pueda pagar, hasta el lote elegido
+  let n = lote;
+  while (n > 1 && precio(e, n) > S.galletas) n--;
+  const coste = precio(e, n);
+  if (S.galletas < coste){ Sonido.fx('error'); return; }
+  S.galletas -= coste;
+  S.edificios[e.id] += n;
+  Sonido.fx('colocar');
+  refrescar();
+  guardarPartida();
+}
+function comprarMejora(id){
+  const m = MEJORAS.find(x => x.id === id);
+  if (!m || S.compradas.includes(id) || S.galletas < m.precio){ Sonido.fx('error'); return; }
+  S.galletas -= m.precio;
+  S.compradas.push(id);
+  Sonido.melodia([784, 988, 1319], 0.09, 'triangle', 0.06);
+  chispas.emitir(24, { x:CX, y:CY, color:['#f1c40f','#fff3b0','#ffffff'],
+    velMin:60, velMax:280, vidaMin:0.4, vidaMax:0.9, rMin:2, rMax:5, gravedad:280, brillo:true });
+  refrescar();
+  guardarPartida();
+}
+
+// ---------- Clic sobre la galleta ----------
+const chispas = new Particulas(260);
+let flotantes = [], apachurre = 0, tiempo = 0;
+
+function flotante(x, y, txt, color, escala){
+  flotantes.push({ x, y, txt, color: color || '#fff', vida: 1.1, escala: escala || 1 });
+}
+
+function picar(px, py){
+  const gana = porClic();
+  S.galletas += gana; S.total += gana; S.clics++;
+  apachurre = 1;
+  flotante(px, py, '+' + fmt(gana), '#fff');
+  chispas.emitir(7, {
+    x:px, y:py, color:['#8a5a2a','#b5793a','#e6a860'],
+    velMin:40, velMax:190, vidaMin:0.3, vidaMax:0.7, rMin:2, rMax:4.5, gravedad:520
+  });
+  Sonido.fx('come');
+  refrescar();
+}
+
+// ---------- Galleta dorada ----------
+let dorada = null, cronoDorada = azar(45, 90);
+const PREMIOS = [
+  { id:'frenesi', peso:35, aplicar(){
+      S.frenesi = 15;
+      Arcade.aviso($('bonos'), '🔥 ¡FRENESÍ! Producción x7 durante 15 s', true, 3500);
+    } },
+  { id:'suerte', peso:45, aplicar(){
+      const ganado = Math.max(13 * cps(), S.galletas * 0.15) + 13;
+      S.galletas += ganado; S.total += ganado;
+      flotante(CX, CY - 40, '+' + fmt(ganado), '#f1c40f', 1.6);
+      Arcade.aviso($('bonos'), '🍀 ¡Suerte! +' + fmt(ganado) + ' galletas', true, 3500);
+    } },
+  { id:'clicLoco', peso:20, aplicar(){
+      S.clicLoco = 10;
+      Arcade.aviso($('bonos'), '⚡ ¡Clic frenético! x777 por clic durante 10 s', true, 3500);
+    } }
+];
+
+function soltarDorada(){
+  dorada = {
+    x: azar(46, AN - 46), y: azar(46, AL - 46),
+    vida: 11, r: 26, fase: 0
+  };
+}
+function pillarDorada(){
+  const total = PREMIOS.reduce((s, p) => s + p.peso, 0);
+  let r = Math.random() * total;
+  let premio = PREMIOS[0];
+  for (const p of PREMIOS){ r -= p.peso; if (r <= 0){ premio = p; break; } }
+  premio.aplicar();
+  chispas.emitir(46, {
+    x: dorada.x, y: dorada.y, color:['#ffd700','#fff3b0','#ffffff'],
+    velMin:80, velMax:420, vidaMin:0.5, vidaMax:1.1, rMin:2, rMax:6, gravedad:300, brillo:true
+  });
+  Sonido.melodia([784, 1047, 1319, 1568, 2093], 0.08, 'square', 0.07);
+  dorada = null;
+  cronoDorada = azar(60, 140);
+  refrescar();
+  guardarPartida();
+}
+
+// ---------- Bucle ----------
+function actualizar(dt){
+  tiempo += dt;
+  chispas.actualizar(dt);
+  if (apachurre > 0) apachurre = Math.max(0, apachurre - dt * 5);
+
+  for (let i = flotantes.length - 1; i >= 0; i--){
+    const f = flotantes[i];
+    f.vida -= dt; f.y -= 52 * dt;
+    if (f.vida <= 0) flotantes.splice(i, 1);
+  }
+
+  if (S.frenesi > 0) S.frenesi = Math.max(0, S.frenesi - dt);
+  if (S.clicLoco > 0) S.clicLoco = Math.max(0, S.clicLoco - dt);
+
+  const producido = cps() * dt;
+  S.galletas += producido; S.total += producido;
+
+  cronoDorada -= dt;
+  if (cronoDorada <= 0 && !dorada) soltarDorada();
+  if (dorada){
+    dorada.fase += dt * 3;
+    dorada.vida -= dt;
+    if (dorada.vida <= 0){ dorada = null; cronoDorada = azar(60, 140); }
+  }
+}
+
+// ---------- Dibujo ----------
+function dibujar(){
+  ctx.clearRect(0, 0, AN, AL);
+
+  const escala = 1 - apachurre * 0.06 + Math.sin(tiempo * 1.4) * 0.008;
+  ctx.save();
+  ctx.translate(CX, CY);
+  ctx.scale(escala, escala);
+
+  // halo cuando hay frenesí
+  if (S.frenesi > 0 || S.clicLoco > 0){
+    const halo = ctx.createRadialGradient(0, 0, RADIO * 0.6, 0, 0, RADIO * 1.7);
+    halo.addColorStop(0, S.clicLoco > 0 ? 'rgba(255,61,104,.35)' : 'rgba(241,196,15,.32)');
+    halo.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = halo;
+    ctx.beginPath(); ctx.arc(0, 0, RADIO * 1.7, 0, 6.283); ctx.fill();
+  }
+
+  // sombra
+  ctx.fillStyle = 'rgba(0,0,0,.45)';
+  ctx.beginPath(); ctx.ellipse(6, 12, RADIO * 0.95, RADIO * 0.92, 0, 0, 6.283); ctx.fill();
+
+  // borde irregular de la galleta
+  ctx.beginPath();
+  for (let a = 0; a <= 64; a++){
+    const ang = a / 64 * 6.283;
+    const r = RADIO + Math.sin(ang * 9) * 3.2 + Math.cos(ang * 5.3) * 2.4;
+    a ? ctx.lineTo(Math.cos(ang) * r, Math.sin(ang) * r)
+      : ctx.moveTo(Math.cos(ang) * r, Math.sin(ang) * r);
+  }
+  ctx.closePath();
+  const masa = ctx.createRadialGradient(-RADIO * 0.35, -RADIO * 0.4, RADIO * 0.15, 0, 0, RADIO * 1.15);
+  masa.addColorStop(0, '#e8a55e');
+  masa.addColorStop(0.6, '#c97c33');
+  masa.addColorStop(1, '#8d5119');
+  ctx.fillStyle = masa;
+  ctx.fill();
+  ctx.strokeStyle = '#6d3d12'; ctx.lineWidth = 3;
+  ctx.stroke();
+
+  // grumos de la masa
+  for (let i = 0; i < 26; i++){
+    const ang = i * 2.4, rr = (i % 5 + 1) / 6 * RADIO * 0.86;
+    ctx.fillStyle = i % 2 ? 'rgba(255,220,170,.16)' : 'rgba(90,50,15,.16)';
+    ctx.beginPath();
+    ctx.arc(Math.cos(ang) * rr, Math.sin(ang) * rr, 3 + (i % 4), 0, 6.283);
+    ctx.fill();
+  }
+
+  // chispas de chocolate
+  const CHIPS = [[-42,-46,15],[24,-58,17],[-8,6,16],[52,22,14],[-58,26,17],[10,62,15],[62,-16,12],[-30,66,13]];
+  for (const [x, y, r] of CHIPS){
+    ctx.fillStyle = '#3a1f0a';
+    ctx.beginPath(); ctx.arc(x, y, r / 2, 0, 6.283); ctx.fill();
+    ctx.fillStyle = '#5a3313';
+    ctx.beginPath(); ctx.arc(x - r * 0.12, y - r * 0.14, r / 2.6, 0, 6.283); ctx.fill();
+    ctx.fillStyle = 'rgba(255,200,140,.35)';
+    ctx.beginPath(); ctx.arc(x - r * 0.2, y - r * 0.24, r / 7, 0, 6.283); ctx.fill();
+  }
+
+  // brillo superior
+  const luz = ctx.createRadialGradient(-RADIO * 0.4, -RADIO * 0.45, 2, -RADIO * 0.4, -RADIO * 0.45, RADIO);
+  luz.addColorStop(0, 'rgba(255,255,255,.22)');
+  luz.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = luz;
+  ctx.beginPath(); ctx.arc(0, 0, RADIO, 0, 6.283); ctx.fill();
+  ctx.restore();
+
+  chispas.dibujar(ctx);
+
+  // galleta dorada
+  if (dorada){
+    const pulso = 1 + Math.sin(dorada.fase) * 0.09;
+    const alfa = dorada.vida < 2.5 ? (Math.sin(dorada.vida * 12) > 0 ? 1 : 0.35) : 1;
+    ctx.save();
+    ctx.globalAlpha = alfa;
+    ctx.translate(dorada.x, dorada.y);
+    ctx.scale(pulso, pulso);
+    ctx.shadowColor = '#ffd700'; ctx.shadowBlur = 26;
+    const g = ctx.createRadialGradient(-8, -9, 3, 0, 0, dorada.r);
+    g.addColorStop(0, '#fff6b8'); g.addColorStop(0.55, '#ffd23c'); g.addColorStop(1, '#c78f06');
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.arc(0, 0, dorada.r, 0, 6.283); ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = '#9a6b04';
+    [[-9,-8],[8,-4],[-2,9]].forEach(([x, y]) => {
+      ctx.beginPath(); ctx.arc(x, y, 4, 0, 6.283); ctx.fill();
+    });
+    ctx.restore();
+  }
+
+  // textos flotantes
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  for (const f of flotantes){
+    ctx.globalAlpha = limitar(f.vida, 0, 1);
+    ctx.font = '900 ' + Math.round(19 * f.escala) + 'px "Segoe UI", system-ui, sans-serif';
+    ctx.lineWidth = 3; ctx.lineJoin = 'round'; ctx.miterLimit = 2;
+    ctx.strokeStyle = 'rgba(0,0,0,.65)';
+    ctx.strokeText(f.txt, f.x, f.y);
+    ctx.fillStyle = f.color;
+    ctx.fillText(f.txt, f.x, f.y);
+    ctx.globalAlpha = 1;
+  }
+}
+
+// ---------- Interfaz ----------
+function pintarEdificios(){
+  $('listaEdificios').innerHTML = EDIFICIOS.map(e => {
+    let n = lote;
+    while (n > 1 && precio(e, n) > S.galletas) n--;
+    const coste = precio(e, n);
+    const tiene = S.edificios[e.id];
+    const produce = e.cps * multiplicadorEdificio(e.id) * multiplicadorGlobal();
+    const oculto = tiene === 0 && S.total < e.base * 0.35;
+    if (oculto) return '';
+    return '<button class="ficha" data-edificio="' + e.id + '"' +
+      (S.galletas < coste ? ' disabled' : '') + '>' +
+      '<span class="ic">' + e.icono + '</span>' +
+      '<span class="info">' +
+        '<span class="nom">' + e.nombre + (n > 1 ? ' <span class="tenue">x' + n + '</span>' : '') + '</span><br>' +
+        '<span class="precio">🍪 ' + fmt(coste) + '</span>' +
+        '<span class="extra"> · ' + fmt(produce) + '/s cada uno</span>' +
+      '</span>' +
+      '<span class="cuenta">' + tiene + '</span>' +
+    '</button>';
+  }).join('') || '<div class="vacia">Sigue picando para desbloquear la tienda.</div>';
+}
+
+function pintarMejoras(){
+  const lista = mejorasDisponibles();
+  $('numMejoras').textContent = lista.length;
+  $('listaMejoras').innerHTML = lista.length ? lista.map(m =>
+    '<button class="ficha mejora" data-mejora="' + m.id + '"' +
+      (S.galletas < m.precio ? ' disabled' : '') + '>' +
+      '<span class="ic">' + m.icono + '</span>' +
+      '<span class="info">' +
+        '<span class="nom">' + m.nombre + '</span><br>' +
+        '<span class="precio">🍪 ' + fmt(m.precio) + '</span>' +
+        '<span class="extra"><br>' + m.desc + '</span>' +
+      '</span>' +
+    '</button>').join('')
+    : '<div class="vacia">Todavía no hay mejoras disponibles.<br>Compra edificios para desbloquearlas.</div>';
+}
+
+let ultimoPintado = 0;
+function refrescar(forzar){
+  $('galletasTxt').textContent = fmt(S.galletas);
+  $('cpsTxt').textContent = fmt(cps());
+  $('clicTxt').textContent = fmt(porClic());
+  $('totalTxt').textContent = fmt(S.total);
+  $('coinsTxt').textContent = Arcade.fichas.saldo().toLocaleString('es-ES');
+
+  $('bonos').querySelectorAll('.bono').forEach(b => b.remove());
+  if (S.frenesi > 0) añadirBono('🔥 Frenesí x7 · ' + S.frenesi.toFixed(1) + 's', 'frenesi');
+  if (S.clicLoco > 0) añadirBono('⚡ Clic x777 · ' + S.clicLoco.toFixed(1) + 's', 'frenesi');
+
+  // las listas se repintan como mucho cinco veces por segundo
+  const ahora = performance.now();
+  if (forzar || ahora - ultimoPintado > 200){
+    ultimoPintado = ahora;
+    pintarEdificios();
+    pintarMejoras();
+  }
+  $('btnCanjear').disabled = S.galletas < 1e6;
+}
+function añadirBono(txt, clase){
+  const d = document.createElement('div');
+  d.className = 'bono ' + (clase || '');
+  d.textContent = txt;
+  $('bonos').appendChild(d);
+}
+
+// ---------- Eventos ----------
+lienzo.addEventListener('pointerdown', ev => {
+  Sonido.activar();
+  const p = Arcade.puntero(lienzo, ev);
+  if (dorada && Math.hypot(p.x - dorada.x, p.y - dorada.y) < dorada.r + 8){ pillarDorada(); return; }
+  if (Math.hypot(p.x - CX, p.y - CY) > RADIO + 6) return;
+  picar(p.x, p.y);
+});
+
+$('listaEdificios').addEventListener('click', ev => {
+  const b = ev.target.closest('[data-edificio]');
+  if (b) { Sonido.activar(); comprar(b.dataset.edificio); }
+});
+$('listaMejoras').addEventListener('click', ev => {
+  const b = ev.target.closest('[data-mejora]');
+  if (b) { Sonido.activar(); comprarMejora(b.dataset.mejora); }
+});
+$('pestanas').addEventListener('click', ev => {
+  const b = ev.target.closest('[data-hoja]');
+  if (!b) return;
+  hoja = b.dataset.hoja;
+  $('pestanas').querySelectorAll('button').forEach(x => x.classList.toggle('sel', x === b));
+  $('listaEdificios').style.display = hoja === 'edificios' ? 'flex' : 'none';
+  $('listaMejoras').style.display = hoja === 'mejoras' ? 'flex' : 'none';
+  $('lotes').style.display = hoja === 'edificios' ? 'flex' : 'none';
+});
+$('lotes').addEventListener('click', ev => {
+  const b = ev.target.closest('[data-lote]');
+  if (!b) return;
+  lote = parseInt(b.dataset.lote, 10);
+  $('lotes').querySelectorAll('button').forEach(x => x.classList.toggle('sel', x === b));
+  refrescar(true);
+});
+$('btnCanjear').onclick = () => {
+  if (S.galletas < 1e6){ Sonido.fx('error'); return; }
+  S.galletas -= 1e6;
+  Arcade.fichas.ajustar(100);
+  Arcade.aviso($('bonos'), '🪙 +100 NEXO-COINS', true);
+  Sonido.fx('ficha');
+  refrescar(true);
+  guardarPartida();
+};
+$('btnReiniciar').onclick = () => {
+  if (!confirm('¿Seguro? Se pierden todas las galletas, los edificios y las mejoras.')) return;
+  Arcade.borrar('galletas');
+  S.galletas = 0; S.total = 0; S.clics = 0; S.compradas = [];
+  for (const e of EDIFICIOS) S.edificios[e.id] = 0;
+  S.frenesi = 0; S.clicLoco = 0;
+  dorada = null; cronoDorada = azar(45, 90);
+  refrescar(true);
+  guardarPartida();
+};
+Arcade.conectarSonido($('btnSonido'));
+
+// ---------- Arranque ----------
+if (cargarPartida()) progresoAusente();
+refrescar(true);
+setInterval(guardarPartida, 10000);
+addEventListener('beforeunload', guardarPartida);
+Arcade.bucle(dt => { actualizar(dt); dibujar(); refrescar(); });
 
 });
 </script>

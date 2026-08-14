@@ -126,7 +126,7 @@
 <div id="contenido">
   <div id="titulo">
     <h2>SELECCIONA TU JUEGO SUPREMO</h2>
-    <p>Once motores hechos a mano en HTML5 + Canvas, con renderizado HiDPI y físicas propias.
+    <p>Doce motores hechos a mano en HTML5 + Canvas, con renderizado HiDPI y físicas propias.
        Sin instalar nada, sin anuncios y sin conexión.</p>
   </div>
 
@@ -241,6 +241,24 @@ const JUEGOS = [
       } catch(err){ return 'Sin jugar todavía'; }
     },
     portada: portadaCofres
+  },
+  {
+    id:'galletas', archivo:'juegos/cookie-clicker.html', nuevo:true,
+    nombre:'🍪 Galletas', genero:'Incremental',
+    desc:'Pica la galleta, monta un imperio de abuelas y fábricas, y caza las galletas doradas.',
+    record(){
+      const g = Arcade.leerTexto('galletas', null);
+      if (!g) return 'Sin jugar todavía';
+      try {
+        const e = JSON.parse(g);
+        const n = e.total || 0;
+        const s = ['', ' k', ' M', ' B', ' T'];
+        let i = 0, v = n;
+        while (v >= 1000 && i < 4){ v /= 1000; i++; }
+        return (i ? v.toFixed(1) : Math.floor(v)) + s[i] + ' galletas';
+      } catch(err){ return 'Sin jugar todavía'; }
+    },
+    portada: portadaGalletas
   },
   {
     id:'serpiente', archivo:'juegos/serpiente.html', nuevo:true,
@@ -735,6 +753,62 @@ function portadaCofres(c){
   c.fillStyle = '#3ee63e';
   c.font = '700 15px "Courier New", monospace';
   c.fillText('\u{1F48E} 1.000 esmeraldas', 66, AL - 14);
+}
+
+function portadaGalletas(c){
+  const g = c.createLinearGradient(0, 0, 0, AL);
+  g.addColorStop(0, '#2c1a0e'); g.addColorStop(1, '#100904');
+  c.fillStyle = g; c.fillRect(0, 0, A, AL);
+
+  // galleta grande
+  const cx = 104, cy = AL / 2, r = 58;
+  c.fillStyle = 'rgba(0,0,0,.5)';
+  c.beginPath(); c.ellipse(cx + 4, cy + 7, r * .95, r * .92, 0, 0, 6.283); c.fill();
+  c.beginPath();
+  for (let a = 0; a <= 52; a++){
+    const ang = a / 52 * 6.283;
+    const rr = r + Math.sin(ang * 9) * 2 + Math.cos(ang * 5.3) * 1.5;
+    a ? c.lineTo(cx + Math.cos(ang) * rr, cy + Math.sin(ang) * rr)
+      : c.moveTo(cx + Math.cos(ang) * rr, cy + Math.sin(ang) * rr);
+  }
+  c.closePath();
+  const masa = c.createRadialGradient(cx - r * .35, cy - r * .4, r * .15, cx, cy, r * 1.15);
+  masa.addColorStop(0, '#e8a55e'); masa.addColorStop(.6, '#c97c33'); masa.addColorStop(1, '#8d5119');
+  c.fillStyle = masa; c.fill();
+  c.strokeStyle = '#6d3d12'; c.lineWidth = 2.5; c.stroke();
+  [[-22,-25,9],[13,-31,10],[-4,3,9],[28,12,8],[-31,14,10],[5,33,8]].forEach(([dx, dy, rr]) => {
+    c.fillStyle = '#3a1f0a';
+    c.beginPath(); c.arc(cx + dx, cy + dy, rr / 2, 0, 6.283); c.fill();
+    c.fillStyle = '#5a3313';
+    c.beginPath(); c.arc(cx + dx - 1, cy + dy - 1, rr / 2.6, 0, 6.283); c.fill();
+  });
+  const luz = c.createRadialGradient(cx - r * .4, cy - r * .45, 2, cx - r * .4, cy - r * .45, r);
+  luz.addColorStop(0, 'rgba(255,255,255,.24)'); luz.addColorStop(1, 'rgba(255,255,255,0)');
+  c.fillStyle = luz; c.beginPath(); c.arc(cx, cy, r, 0, 6.283); c.fill();
+
+  // galleta dorada
+  c.save();
+  c.shadowColor = '#ffd700'; c.shadowBlur = 20;
+  const dg = c.createRadialGradient(232, 36, 2, 236, 40, 17);
+  dg.addColorStop(0, '#fff6b8'); dg.addColorStop(.55, '#ffd23c'); dg.addColorStop(1, '#c78f06');
+  c.fillStyle = dg;
+  c.beginPath(); c.arc(236, 40, 17, 0, 6.283); c.fill();
+  c.restore();
+  c.fillStyle = '#9a6b04';
+  [[-6,-5],[5,-2],[-1,6]].forEach(([dx, dy]) => {
+    c.beginPath(); c.arc(236 + dx, 40 + dy, 2.6, 0, 6.283); c.fill();
+  });
+
+  // contador y edificios
+  c.font = '900 24px "Segoe UI", system-ui, sans-serif';
+  c.textAlign = 'left'; c.textBaseline = 'middle';
+  c.fillStyle = '#f1c40f'; c.shadowColor = '#f1c40f'; c.shadowBlur = 14;
+  c.fillText('4,82 M', 188, 88);
+  c.shadowBlur = 0;
+  c.fillStyle = '#c9bda8'; c.font = '600 11px "Segoe UI", system-ui, sans-serif';
+  c.fillText('galletas', 188, 106);
+  c.font = '22px serif';
+  ['👵','🌾','⛏️','🏭'].forEach((e, i) => c.fillText(e, 188 + i * 34, 138));
 }
 
 // ---------- Montaje de las cartas ----------

@@ -1,6 +1,6 @@
 # 🕹 ARCADE NEXO
 
-Once juegos hechos a mano en **HTML5 + Canvas + JavaScript puro**. Sin dependencias, sin librerías, sin assets externos y sin conexión a internet: todos los gráficos se dibujan por código y todo el sonido se genera en tiempo real con WebAudio.
+Doce juegos hechos a mano en **HTML5 + Canvas + JavaScript puro**. Sin dependencias, sin librerías, sin assets externos y sin conexión a internet: todos los gráficos se dibujan por código y todo el sonido se genera en tiempo real con WebAudio.
 
 ## ▶ Cómo jugar
 
@@ -10,7 +10,7 @@ Cada juego tiene su botón **🕹 Arcade** arriba a la izquierda para volver a l
 
 ### 📦 Versión de un solo archivo
 
-`arcade.html` es el arcade **entero** (portada y los once juegos) empaquetado en un único archivo, sin CSS ni JS externos. Sirve para cuando solo puedes usar una página suelta: mandarlo por correo, subirlo a cualquier sitio o abrirlo desde una memoria USB.
+`arcade.html` es el arcade **entero** (portada y los doce juegos) empaquetado en un único archivo, sin CSS ni JS externos. Sirve para cuando solo puedes usar una página suelta: mandarlo por correo, subirlo a cualquier sitio o abrirlo desde una memoria USB.
 
 Se genera a partir de los archivos de `juegos/`, que siguen siendo la fuente de verdad:
 
@@ -35,6 +35,7 @@ Cada juego queda aislado en su propia pantalla: su CSS se prefija con el selecto
 | ⚽ [Rumble Stars](juegos/rumble-stars.html) | Arena | Fútbol de arena: lanza bichos al campo y empuja el balón |
 | ⛏ [Mining Tycoon](juegos/mining-tycoon.html) | Tycoon | Monta un imperio minero: plantilla, ascensor, camiones y progreso sin conexión |
 | 📦 [Cofres Minecraft](juegos/cofres-minecraft.html) | Cajas | Abre cofres con ruleta, colecciona objetos y fúndelos para subir de rareza |
+| 🍪 [Galletas](juegos/cookie-clicker.html) | Incremental | Pica la galleta, monta un imperio y caza las galletas doradas |
 
 ---
 
@@ -176,6 +177,31 @@ Las probabilidades están **escritas en cada cofre** y son las que se usan de ve
 - Clic para meter en el contrato, **botón derecho para vender**, y venta rápida de todo lo común.
 - Cambia **100 NEXO-COINS por 1.000 esmeraldas** para conectarlo con el resto del arcade.
 
+### 🍪 Galletas
+
+Incremental de clics con los diez edificios clásicos y sus precios de siempre, que suben un 15 % con cada compra.
+
+| Edificio | Precio base | Produce |
+|---|---|---|
+| 👆 Cursor | 15 | 0,1/s |
+| 👵 Abuela | 100 | 1/s |
+| 🌾 Granja | 1.100 | 8/s |
+| ⛏️ Mina | 12.000 | 47/s |
+| 🏭 Fábrica | 130.000 | 260/s |
+| 🏦 Banco | 1,4 M | 1.400/s |
+| 🏛️ Templo | 20 M | 7.800/s |
+| 🗼 Torre mágica | 330 M | 44.000/s |
+| 🚀 Nave espacial | 5,1 B | 260.000/s |
+| 🌀 Portal | 75 B | 1,6 M/s |
+
+- **18 mejoras** que se desbloquean solas al cumplir su requisito: multiplican lo que da cada clic, duplican lo que produce un edificio concreto, o suben toda la producción de golpe. «Mil dedos» añade producción por clic según cuántos edificios tengas.
+- **🌟 Galleta dorada:** aparece cada minuto o dos en un sitio al azar y dura unos segundos. Puede dar **Frenesí** (producción ×7 durante 15 s), **Suerte** (un pellizco enorme de golpe) o **Clic frenético** (×777 por clic durante 10 s).
+- **Comprar de 10 en 10 o de 100 en 100**, con el precio calculado con la suma de la progresión geométrica, no multiplicando por diez.
+- La producción va **por tiempo real**, no por fotograma: comprobado, 0 % de desviación en tres segundos, así que da igual a cuántos hercios vaya tu pantalla.
+- **Se guarda solo** y al volver te abona lo producido mientras no estabas (al 60 %, con tope de 12 horas).
+- Cambia **1 millón de galletas por 100 NEXO-COINS**.
+- La galleta está dibujada por código: borde irregular, grumos en la masa, chispas con volumen y migas que saltan en cada clic.
+
 ## 💾 Récords
 
 Cada juego guarda su récord en el `localStorage` de tu navegador, así que son tuyos y no salen de tu equipo. Desde la portada puedes borrarlos todos con **🗑 Borrar todos mis récords**.
@@ -200,6 +226,7 @@ juegos/
   rumble-stars.html
   mining-tycoon.html
   cofres-minecraft.html
+  cookie-clicker.html
 ```
 
 ## 🎨 Estética
