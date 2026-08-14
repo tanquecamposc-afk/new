@@ -649,6 +649,7 @@ if (cargarPartida()) progresoAusente();
 refrescar(true);
 setInterval(guardarPartida, 10000);
 addEventListener('beforeunload', guardarPartida);
+Guardado.registrar(guardarPartida);   // también al cambiar de pantalla o irse a otra pestaña
 Arcade.bucle(dt => { actualizar(dt); dibujar(); refrescar(); });
 </script>
 </body>

@@ -468,11 +468,16 @@ function colisiones(){
 function terminar(gano){
   estado = 'fin';
   if (Arcade.guardarRecord('comecocos', puntos)) record = puntos;
+  Arcade.estado.olvidar('comecocos');
+  // 1 NEXO-COIN por cada 100 puntos, y el perfil se queda con la partida
+  const premio = Arcade.perfil.partida('comecocos',
+    { puntos, victoria:gano, premio: Math.floor(puntos / 100) });
   document.getElementById('tituloFin').textContent = gano ? '¡GENIAL!' : 'FIN DE LA PARTIDA';
   document.getElementById('tituloFin').className = gano ? 'victoria' : 'derrota';
-  document.getElementById('subFin').textContent = gano
+  document.getElementById('subFin').textContent = (gano
     ? 'Has limpiado el laberinto.'
-    : 'Los fantasmas te han pillado. ¡Otra ronda!';
+    : 'Los fantasmas te han pillado. ¡Otra ronda!')
+    + (premio ? '  💎 +' + premio.toLocaleString('es-ES') + ' NEXO-COINS' : '');
   document.getElementById('finPuntos').textContent = puntos;
   document.getElementById('finNivel').textContent = nivel;
   document.getElementById('finRecord').textContent = record;

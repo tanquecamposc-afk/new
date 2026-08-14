@@ -445,11 +445,14 @@ function acabar(ganador){
   estado = 'fin';
   const gano = ganador === 'tu';
   if (gano){ Arcade.guardarRecord('pool_victorias', record + 1); record = Arcade.record('pool_victorias'); }
+  const premio = Arcade.perfil.partida('pool',
+    { puntos: gano ? 1 : 0, victoria: gano, premio: gano ? 400 : 75 });
   $('tituloFin').textContent = gano ? '¡GANASTE!' : 'HAS PERDIDO';
   $('tituloFin').className = gano ? 'victoria' : 'derrota';
-  $('subFin').textContent = gano
+  $('subFin').textContent = (gano
     ? 'Has metido la 8 en su momento. Buen taco.'
-    : 'La 8 cayó cuando no tocaba.';
+    : 'La 8 cayó cuando no tocaba.')
+    + (premio ? '  💎 +' + premio.toLocaleString('es-ES') + ' NEXO-COINS' : '');
   $('modalFin').classList.add('visible');
   Sonido.fx(gano ? 'victoria' : 'derrota');
   refrescarHud();

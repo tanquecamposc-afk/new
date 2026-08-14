@@ -399,10 +399,14 @@ function acabar(){
   estado = 'fin';
   const gano = tanteo.tu > tanteo.ia, empate = tanteo.tu === tanteo.ia;
   if (gano){ Arcade.guardarRecord('rumble_victorias', record + 1); record = Arcade.record('rumble_victorias'); }
+  // 400 por ganar, 150 por empatar y 75 por jugarlo, más 50 por cada gol
+  const premio = (gano ? 400 : empate ? 150 : 75) + tanteo.tu * 50;
+  Arcade.perfil.partida('rumble', { puntos: tanteo.tu, victoria: gano, premio });
   $('tituloFin').textContent = gano ? '¡VICTORIA!' : empate ? 'EMPATE' : 'DERROTA';
   $('tituloFin').className = gano ? 'victoria' : empate ? '' : 'derrota';
-  $('subFin').textContent = gano ? 'Los tuyos han arrasado en la arena.'
-    : empate ? 'Nadie ha podido con nadie.' : 'El rival se lleva el partido. ¡Revancha!';
+  $('subFin').textContent = (gano ? 'Los tuyos han arrasado en la arena.'
+    : empate ? 'Nadie ha podido con nadie.' : 'El rival se lleva el partido. ¡Revancha!')
+    + '  💎 +' + premio.toLocaleString('es-ES') + ' NEXO-COINS';
   $('finTanteo').textContent = tanteo.tu + ' - ' + tanteo.ia;
   $('finRecord').textContent = record;
   $('modalFin').classList.add('visible');

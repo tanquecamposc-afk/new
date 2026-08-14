@@ -235,6 +235,40 @@ Toda la interfaz comparte una identidad **neón cyberpunk**: fondos muy profundo
 
 Una partida nueva arranca con **5.000 NEXO-COINS**. El saldo inicial es la constante `Arcade.fichas.INICIAL` en `juegos/arcade.js`; con un **doble clic en la cartera** de la portada vuelve a ese valor.
 
+### 💾 Guardado
+
+Todo se guarda solo en el navegador, sin cuentas ni servidor. La portada tiene un panel **💾 Tu progreso** con las partidas jugadas, las fichas ganadas, el saldo y los códigos, más una tabla por juego.
+
+**Qué se guarda**
+
+| Qué | Dónde | Cuándo |
+|---|---|---|
+| Cartera de NEXO-COINS | `arcade_fichas` | en cada movimiento |
+| Perfil: partidas, victorias, mejor marca y fichas ganadas por juego | `arcade_perfil` | al acabar cada partida |
+| Récords | `arcade_<juego>`, `nexo_record_<mapa>` en Tower Defense | al acabar cada partida |
+| Códigos canjeados | `arcade_codigos` | al canjear |
+| Partidas de Mining Tycoon, Cofres y Galletas | `arcade_mina`, `arcade_cofres`, `arcade_galletas` | cada 10 s y al salir |
+| Partida a medias de Block Blast y Serpiente | `arcade_estado_<juego>` | en cada jugada y al salir |
+
+**Cómo se dispara.** `Guardado.registrar(fn)` apunta la función de guardar de cada juego y el arcade la ejecuta al cerrar la pestaña (`beforeunload`, `pagehide`), al pasar a segundo plano (`visibilitychange`) y al cambiar de pantalla en la versión de un solo archivo. Así no hace falta acordarse de guardar en cada rincón del código.
+
+**Partidas a medias.** Block Blast y Serpiente guardan la partida entera; si cierras a mitad, el menú te ofrece **▶ Seguir la partida** además de empezar de cero. Lo guardado se lee una sola vez al arrancar, antes de que `nuevaPartida()` pise las variables.
+
+**Fichas por jugar.** Al acabar una partida, cada juego abona NEXO-COINS a través de `Arcade.perfil.partida(id, resultado)`:
+
+| Juego | Premio |
+|---|---|
+| 🏰 Tower Defense | 30 por ola + 1.000 al ganar |
+| 🌻 Plantas vs Zombis | 25 por oleada + 500 al ganar |
+| ⚽ Rumble Stars | 400 ganar / 150 empatar / 75 jugar, + 50 por gol |
+| 🎱 8 Ball Pool | 400 al ganar, 75 al perder |
+| 👻 Comecocos | 1 por cada 100 puntos |
+| 🐍 Serpiente | 1 por cada 50 puntos |
+| 🧩 Block Blast | 1 por cada 200 puntos |
+| 💣 Minas · ✈ Aviator | ninguno: ya mueven fichas con las apuestas |
+
+**Si el navegador no deja guardar** (modo privado, ventana restringida), `Almacen` cae a una copia en memoria para que la sesión funcione igual, y la portada avisa de que el progreso se perderá al recargar.
+
 ### 🎁 Códigos promocionales
 
 La portada lleva un panel de canje con **20 códigos, del 1 al 20**, que dan **1.000 NEXO-COINS cada uno**:

@@ -41,7 +41,10 @@
           Las piezas <b>no rotan</b>: piensa bien dónde las pones.<br>
           La partida acaba cuando ninguna de las tres piezas cabe en el tablero.
         </div>
-        <div class="filaBotones"><button class="primario" id="btnJugar">▶ Jugar</button></div>
+        <div class="filaBotones">
+          <button class="primario" id="btnSeguir" hidden>▶ Seguir la partida</button>
+          <button class="primario" id="btnJugar">▶ Jugar</button>
+        </div>
       </div>
     </div>
 
@@ -54,6 +57,7 @@
           <div class="caja"><div class="num" id="finLineas">0</div><div class="eti">líneas</div></div>
           <div class="caja"><div class="num" id="finRecord">0</div><div class="eti">récord</div></div>
         </div>
+        <div class="premio" id="finPremio"></div>
         <div class="filaBotones">
           <button class="primario" id="btnOtra">↻ Jugar de nuevo</button>
           <a class="boton" href="../index.html">🕹 Arcade</a>
@@ -113,6 +117,32 @@ function nuevaPartida(){
   estado = 'jugando';
   refrescarHud();
 }
+
+// ---------- Partida a medias ----------
+// El tablero y la bandeja son datos sencillos, así que la partida se guarda
+// entera y al volver se sigue justo donde se dejó. Lo guardado se lee una vez
+// al arrancar, antes de que nuevaPartida() lo borre.
+const recuperable = Arcade.estado.cargar('blockblast');
+
+function guardarPartida(){
+  if (estado !== 'jugando') return;
+  Arcade.estado.guardar('blockblast', { tablero, piezas, puntos, lineas, combo });
+}
+function recuperarPartida(){
+  const g = recuperable;
+  if (!g || !Array.isArray(g.tablero) || g.tablero.length !== N) return false;
+  if (!Array.isArray(g.piezas) || g.piezas.length !== 3) return false;
+  tablero = g.tablero.map(fila => Array.isArray(fila) && fila.length === N ? fila.slice() : Array(N).fill(null));
+  piezas = g.piezas.map(p => p && Array.isArray(p.celdas) ? { ...p, escala:1 } : null);
+  puntos = g.puntos || 0; lineas = g.lineas || 0; combo = g.combo || 0;
+  particulas = []; flotantes = [];
+  rellenarBandeja();
+  estado = 'jugando';
+  refrescarHud();
+  guardarPartida();
+  return true;
+}
+Guardado.registrar(guardarPartida);
 
 function nuevaPieza(){
   const total = FORMAS.reduce((s, f) => s + f.p, 0);
@@ -204,9 +234,17 @@ function colocar(indice, ci, cj){
   if (piezas.every(p => !p)) rellenarBandeja();
   refrescarHud();
 
+  guardarPartida();
+
   if (!algunaCabe()){
     estado = 'fin';
     if (Arcade.guardarRecord('blockblast', puntos)) record = puntos;
+    Arcade.estado.olvidar('blockblast');
+    // 1 ficha por cada 200 puntos
+    const premio = Arcade.perfil.partida('blockblast',
+      { puntos, premio: Math.floor(puntos / 200) });
+    document.getElementById('finPremio').textContent =
+      premio ? '💎 +' + premio.toLocaleString('es-ES') + ' NEXO-COINS' : '';
     document.getElementById('finPuntos').textContent = puntos;
     document.getElementById('finLineas').textContent = lineas;
     document.getElementById('finRecord').textContent = record;
@@ -394,19 +432,35 @@ document.getElementById('btnJugar').onclick = () => {
   Sonido.activar();
   document.getElementById('modalInicio').classList.remove('visible');
   nuevaPartida();
+  guardarPartida();
+};
+document.getElementById('btnSeguir').onclick = () => {
+  Sonido.activar();
+  document.getElementById('modalInicio').classList.remove('visible');
+  if (!recuperarPartida()) nuevaPartida();
 };
 document.getElementById('btnOtra').onclick = () => {
   document.getElementById('modalFin').classList.remove('visible');
   nuevaPartida();
+  guardarPartida();
 };
 document.getElementById('btnReiniciar').onclick = () => {
   document.getElementById('modalFin').classList.remove('visible');
   nuevaPartida();
+  guardarPartida();
 };
 Arcade.conectarSonido(document.getElementById('btnSonido'));
 
 nuevaPartida();
 estado = 'menu';
+
+// Si quedó una partida a medias, el menú ofrece seguirla
+if (recuperable){
+  document.getElementById('btnSeguir').hidden = false;
+  document.getElementById('btnJugar').textContent = '↻ Empezar de cero';
+  document.getElementById('btnJugar').classList.remove('primario');
+}
+
 Arcade.bucle(dt => { actualizar(dt); dibujar(); });
 </script>
 </body>

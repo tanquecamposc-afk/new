@@ -520,11 +520,15 @@ function terminar(gano){
   estado = 'fin';
   Arcade.guardarRecord('pvz', oleada);
   recordOleadas = Arcade.record('pvz');
+  // 25 fichas por oleada aguantada, más un extra por ganar
+  const premio = Arcade.perfil.partida('pvz',
+    { puntos: oleada, victoria: gano, premio: oleada * 25 + (gano ? 500 : 0) });
   document.getElementById('tituloFin').textContent = gano ? '¡JARDÍN A SALVO!' : 'LOS ZOMBIS ENTRARON';
   document.getElementById('tituloFin').className = gano ? 'victoria' : 'derrota';
-  document.getElementById('subFin').textContent = gano
+  document.getElementById('subFin').textContent = (gano
     ? 'Has resistido las 20 oleadas. Eres el mejor jardinero.'
-    : 'Un zombi cruzó tu jardín… prueba a plantar más girasoles al principio.';
+    : 'Un zombi cruzó tu jardín… prueba a plantar más girasoles al principio.')
+    + (premio ? '  💎 +' + premio.toLocaleString('es-ES') + ' NEXO-COINS' : '');
   document.getElementById('finOleadas').textContent = oleada;
   document.getElementById('finBajas').textContent = bajas;
   document.getElementById('finRecord').textContent = recordOleadas;

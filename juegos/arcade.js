@@ -150,7 +150,19 @@ const Sonido = {
 // un juego que declarase su propio `guardar` pisaría este y lo rompería.
 const Almacen = (() => {
   const memoria = {};
+  let permitido = null;
   return {
+    // ¿Sobrevive lo guardado a recargar la página? (falso en modo privado o sandbox)
+    disponible(){
+      if (permitido === null){
+        try {
+          localStorage.setItem('arcade_prueba', '1');
+          localStorage.removeItem('arcade_prueba');
+          permitido = true;
+        } catch(e){ permitido = false; }
+      }
+      return permitido;
+    },
     leer(clave){
       try {
         const v = localStorage.getItem(clave);
@@ -167,6 +179,21 @@ const Almacen = (() => {
     }
   };
 })();
+
+/**
+ * Guardado automático. Cada juego apunta aquí su función de guardar y el
+ * arcade la dispara cuando se cierra la pestaña, cuando pasa a segundo plano
+ * y cuando se cambia de pantalla: así no hace falta acordarse de guardar en
+ * cada rincón del código y no se pierde nada por salir de golpe.
+ */
+const Guardado = {
+  tareas: [],
+  registrar(fn){ if (typeof fn === 'function') this.tareas.push(fn); },
+  ahora(){ this.tareas.forEach(f => { try { f(); } catch(e){} }); }
+};
+addEventListener('beforeunload', () => Guardado.ahora());
+addEventListener('pagehide', () => Guardado.ahora());
+document.addEventListener('visibilitychange', () => { if (document.hidden) Guardado.ahora(); });
 
 const Arcade = {
   record(clave){ return parseFloat(Almacen.leer('arcade_' + clave) || '0') || 0; },
@@ -300,6 +327,79 @@ const Arcade = {
                saldo:Arcade.fichas.ajustar(this.PREMIO) };
     },
     olvidar(){ Almacen.borrar('arcade_codigos'); }
+  },
+
+  /**
+   * Perfil del jugador: todo lo jugado y todo lo ganado, en un solo sitio.
+   * Cada juego cierra sus partidas con Arcade.perfil.partida(id, resultado) y
+   * de ahí salen el récord, las estadísticas de la portada y el abono de fichas.
+   */
+  perfil: {
+    CLAVE: 'perfil',
+    cache: null,
+    datos(){
+      if (!this.cache){
+        let d = null;
+        try { d = JSON.parse(Arcade.leerTexto(this.CLAVE, 'null')); } catch(e){}
+        if (!d || typeof d !== 'object') d = {};
+        if (!d.juegos || typeof d.juegos !== 'object') d.juegos = {};
+        if (typeof d.partidas !== 'number') d.partidas = 0;
+        if (typeof d.ganado !== 'number') d.ganado = 0;
+        this.cache = d;
+      }
+      return this.cache;
+    },
+    juego(id){
+      const j = this.datos().juegos;
+      if (!j[id]) j[id] = { partidas:0, victorias:0, mejor:0, puntos:0, ganado:0, segundos:0 };
+      return j[id];
+    },
+    guardar(){ Arcade.escribir(this.CLAVE, JSON.stringify(this.datos())); },
+
+    /**
+     * Cierra una partida y devuelve las fichas abonadas.
+     * res = { puntos, victoria, premio, segundos }
+     *   puntos  -> se acumulan y actualizan el mejor resultado del juego
+     *   premio  -> NEXO-COINS que se suman a la cartera (0 en Minas y Aviator,
+     *              que ya mueven las fichas por su cuenta con las apuestas)
+     */
+    partida(id, res = {}){
+      const d = this.datos(), j = this.juego(id);
+      const puntos = Math.max(0, Math.round(res.puntos || 0));
+      const premio = Math.max(0, Math.round(res.premio || 0));
+      d.partidas++;
+      j.partidas++;
+      j.puntos += puntos;
+      if (puntos > j.mejor) j.mejor = puntos;
+      if (res.victoria) j.victorias++;
+      if (res.segundos > 0) j.segundos += Math.round(res.segundos);
+      if (premio > 0){
+        j.ganado += premio;
+        d.ganado += premio;
+        Arcade.fichas.ajustar(premio);
+      }
+      d.visto = Date.now();
+      this.guardar();
+      return premio;
+    },
+    olvidar(){ this.cache = null; Arcade.borrar(this.CLAVE); }
+  },
+
+  /**
+   * Partida a medias: se guarda al salir y se recupera al volver, para que
+   * cerrar la pestaña en mitad de un juego no cueste el progreso.
+   */
+  estado: {
+    guardar(id, obj){
+      if (obj === null || obj === undefined) return this.olvidar(id);
+      try { Arcade.escribir('estado_' + id, JSON.stringify(obj)); } catch(e){}
+    },
+    cargar(id){
+      const v = Arcade.leerTexto('estado_' + id, null);
+      if (v === null) return null;
+      try { return JSON.parse(v); } catch(e){ return null; }
+    },
+    olvidar(id){ Arcade.borrar('estado_' + id); }
   },
 
   // Coordenadas de ratón/tacto relativas al canvas, en píxeles del canvas

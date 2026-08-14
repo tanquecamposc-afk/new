@@ -39,7 +39,10 @@
           <b>👻 Fantasma:</b> durante 7 segundos atraviesas paredes y tu propio cuerpo.<br>
           <b>🪨 Rocas:</b> cada 5 manzanas aparece una nueva. ¡Esquívalas!
         </div>
-        <div class="filaBotones"><button class="primario" id="btnJugar">▶ Jugar</button></div>
+        <div class="filaBotones">
+          <button class="primario" id="btnSeguir" hidden>▶ Seguir la partida</button>
+          <button class="primario" id="btnJugar">▶ Jugar</button>
+        </div>
       </div>
     </div>
 
@@ -88,6 +91,34 @@ function nuevaPartida(){
   ponerComida();
   refrescarHud();
 }
+
+// ---------- Partida a medias ----------
+// Lo guardado se lee una sola vez al arrancar, antes de que nuevaPartida()
+// pise las variables.
+const recuperable = Arcade.estado.cargar('serpiente');
+
+function guardarPartida(){
+  if (estado !== 'jugando') return;
+  Arcade.estado.guardar('serpiente',
+    { cuerpo, dir, comida, dorada, fantasma, rocas, puntos, manzanas, intervalo, fantasmaT });
+}
+function recuperarPartida(){
+  const g = recuperable;
+  if (!g || !Array.isArray(g.cuerpo) || !g.cuerpo.length || !g.dir) return false;
+  nuevaPartida();
+  cuerpo = g.cuerpo.map(c => ({ x:c.x, y:c.y }));
+  dir = { x:g.dir.x, y:g.dir.y };
+  pendientes = [];
+  rocas = Array.isArray(g.rocas) ? g.rocas.map(r => ({ x:r.x, y:r.y })) : [];
+  comida = g.comida || null; dorada = g.dorada || null; fantasma = g.fantasma || null;
+  puntos = g.puntos || 0; manzanas = g.manzanas || 0;
+  intervalo = g.intervalo || 0.145; fantasmaT = g.fantasmaT || 0;
+  if (!comida) ponerComida();
+  refrescarHud();
+  guardarPartida();
+  return true;
+}
+Guardado.registrar(guardarPartida);
 
 function libreCasilla(x, y){
   if (cuerpo.some(c => c.x === x && c.y === y)) return false;
@@ -186,8 +217,13 @@ function añadirRoca(){
 function morir(motivo){
   estado = 'fin';
   if (Arcade.guardarRecord('serpiente', puntos)) record = puntos;
+  Arcade.estado.olvidar('serpiente');
+  // 1 ficha por cada 50 puntos
+  const premio = Arcade.perfil.partida('serpiente',
+    { puntos, premio: Math.floor(puntos / 50) });
   chispas(cuerpo[0].x, cuerpo[0].y, '#ff6b6b', 34);
-  document.getElementById('subFin').textContent = motivo;
+  document.getElementById('subFin').textContent = motivo
+    + (premio ? '  💎 +' + premio.toLocaleString('es-ES') + ' NEXO-COINS' : '');
   document.getElementById('finPuntos').textContent = puntos;
   document.getElementById('finLargo').textContent = cuerpo.length;
   document.getElementById('finRecord').textContent = record;
@@ -396,14 +432,28 @@ document.getElementById('btnJugar').onclick = () => {
   Sonido.activar();
   document.getElementById('modalInicio').classList.remove('visible');
   nuevaPartida();
+  guardarPartida();
 };
 document.getElementById('btnOtra').onclick = () => {
   document.getElementById('modalFin').classList.remove('visible');
   nuevaPartida();
+  guardarPartida();
+};
+document.getElementById('btnSeguir').onclick = () => {
+  Sonido.activar();
+  document.getElementById('modalInicio').classList.remove('visible');
+  if (!recuperarPartida()) nuevaPartida();
 };
 
 nuevaPartida();
 estado = 'menu';
+
+// Si quedó una partida a medias, el menú ofrece seguirla
+if (recuperable){
+  document.getElementById('btnSeguir').hidden = false;
+  document.getElementById('btnJugar').textContent = '↻ Empezar de cero';
+  document.getElementById('btnJugar').classList.remove('primario');
+}
 Arcade.bucle(dt => { actualizar(dt); dibujar(); });
 </script>
 </body>

@@ -150,6 +150,7 @@ const Enrutador = {
   actual: 'portada',
   arrancados: {},
   ir(id){
+    Guardado.ahora();             // lo jugado se guarda antes de soltar la pantalla
     Sonido.pararMotor();          // ningún sonido continuo sobrevive al cambio de pantalla
     document.querySelectorAll('.pantalla').forEach(p => p.classList.remove('activa'));
     const destino = document.getElementById('pantalla-' + id);

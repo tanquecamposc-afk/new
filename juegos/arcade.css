@@ -121,6 +121,12 @@ button.azul:hover{box-shadow:0 0 16px rgba(0,240,255,.4);}
 .statsFin .caja{background:rgba(0,0,0,.3); border-radius:10px; padding:10px 20px;}
 .statsFin .caja .num{font-size:26px; font-weight:800; color:var(--oro);}
 .statsFin .caja .eti{font-size:12px; color:var(--tenue);}
+/* Fichas ganadas en la partida, bajo el resumen del final */
+.premio{
+  color:var(--oro); font-weight:800; font-size:.95rem; letter-spacing:.5px;
+  margin:-6px 0 16px;
+}
+.premio:empty{display:none;}
 
 /* ---------- Utilidades ---------- */
 .tenue{color:var(--tenue);}

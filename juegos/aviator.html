@@ -218,6 +218,7 @@ function estrellar(){
   });
   if (apuesta.viva){
     apuesta.viva = false;
+    Arcade.perfil.partida('aviator', { puntos: 0 });
     Arcade.aviso(avisos, '💥 Perdiste ' + apuesta.monto + ' fichas', false, 2200);
   }
   historia.unshift(mult);
@@ -236,6 +237,8 @@ function cobrar(automatico){
   apuesta.cobradaEn = mult;
   brilloCobro = 1;
   if (Arcade.guardarRecord('aviator_mayor', Math.round(mult * 100) / 100)) record = mult;
+  // el perfil se queda con la ronda; las fichas ya se movieron con la apuesta
+  Arcade.perfil.partida('aviator', { puntos: Math.round(mult * 100), victoria: true });
   Arcade.aviso(avisos, (automatico ? '🎯 Retiro automático · ' : '💰 ') +
     mult.toFixed(2) + 'x · +' + ganancia + ' fichas', true, 2400);
   Sonido.fx('ficha');

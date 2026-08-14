@@ -878,6 +878,7 @@ refrescar();
 setInterval(() => { refrescar(); }, 500);
 setInterval(guardarPartida, 10000);
 addEventListener('beforeunload', guardarPartida);
+Guardado.registrar(guardarPartida);   // también al cambiar de pantalla o irse a otra pestaña
 
 Arcade.bucle(dt => { actualizar(dt); dibujar(); });
 </script>

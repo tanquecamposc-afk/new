@@ -538,6 +538,9 @@ function guardarCofres(){
     inventario: S.inventario.slice(0, 240).map(o => ({ id:o.id, ficha:o.ficha, precio:o.precio, encanto:o.encanto }))
   }));
 }
+Guardado.registrar(guardarCofres);   // al cerrar, al ocultar la pestaña y al cambiar de pantalla
+addEventListener('beforeunload', guardarCofres);
+
 function cargarCofres(){
   const crudo = Arcade.leerTexto('cofres', null);
   if (!crudo) return;

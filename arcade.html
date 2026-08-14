@@ -129,6 +129,12 @@ button.azul:hover{box-shadow:0 0 16px rgba(0,240,255,.4);}
 .statsFin .caja{background:rgba(0,0,0,.3); border-radius:10px; padding:10px 20px;}
 .statsFin .caja .num{font-size:26px; font-weight:800; color:var(--oro);}
 .statsFin .caja .eti{font-size:12px; color:var(--tenue);}
+/* Fichas ganadas en la partida, bajo el resumen del final */
+.premio{
+  color:var(--oro); font-weight:800; font-size:.95rem; letter-spacing:.5px;
+  margin:-6px 0 16px;
+}
+.premio:empty{display:none;}
 
 /* ---------- Utilidades ---------- */
 .tenue{color:var(--tenue);}
@@ -289,6 +295,44 @@ body{display:block; padding:0; margin:0;}
     background:rgba(255,255,255,.03); color:rgba(255,255,255,.22);
     border-color:rgba(255,255,255,.07); text-decoration:line-through;
   }
+#pantalla-portada /* ---------- Progreso guardado ---------- */
+  #avisoGuardado{
+    max-width:760px; margin:0 auto 1.4rem; padding:.85rem 1.1rem; border-radius:12px;
+    background:rgba(255,0,127,.09); border:1px solid rgba(255,0,127,.35);
+    color:#ffb3d4; font-size:.83rem; line-height:1.5;
+  }
+#pantalla-portada #progreso{
+    margin:0 auto 2rem; max-width:760px; padding:1.2rem 1.5rem;
+    background:var(--panel); border-radius:16px;
+    border:1px solid rgba(0,240,255,.18);
+  }
+#pantalla-portada #progreso h3{
+    font-size:1rem; font-weight:900; letter-spacing:1px; text-transform:uppercase;
+    color:var(--azul); display:flex; align-items:center; gap:9px; flex-wrap:wrap;
+  }
+#pantalla-portada #progreso .resumen{
+    display:flex; flex-wrap:wrap; gap:10px; margin:.9rem 0 .2rem;
+  }
+#pantalla-portada #progreso .resumen div{
+    flex:1; min-width:130px; background:rgba(0,0,0,.3); border-radius:10px;
+    padding:.7rem .9rem; text-align:center;
+  }
+#pantalla-portada #progreso .resumen .num{
+    font-size:1.35rem; font-weight:800; color:var(--oro); font-variant-numeric:tabular-nums;
+  }
+#pantalla-portada #progreso .resumen .eti{font-size:.7rem; color:var(--tenue); text-transform:uppercase; letter-spacing:.6px;}
+#pantalla-portada #tablaProgreso{
+    width:100%; border-collapse:collapse; margin-top:1rem; font-size:.82rem;
+  }
+#pantalla-portada #tablaProgreso th{
+    text-align:left; color:var(--tenue); font-weight:700; font-size:.7rem;
+    text-transform:uppercase; letter-spacing:.7px; padding:.4rem .5rem;
+    border-bottom:1px solid rgba(255,255,255,.08);
+  }
+#pantalla-portada #tablaProgreso td{padding:.42rem .5rem; border-bottom:1px solid rgba(255,255,255,.04);}
+#pantalla-portada #tablaProgreso td.n{text-align:right; font-variant-numeric:tabular-nums;}
+#pantalla-portada #tablaProgreso td.oro{color:var(--oro); font-weight:700;}
+#pantalla-portada #progreso .vacio{color:var(--tenue); font-size:.85rem; margin-top:.9rem;}
 #pantalla-portada #pie{
     margin-top:2.5rem; text-align:center; color:var(--tenue); font-size:.8rem; line-height:1.8;
   }
@@ -1122,6 +1166,31 @@ body{display:block; padding:0; margin:0;}
        Sin instalar nada, sin anuncios y sin conexión.</p>
   </div>
 
+  <div id="avisoGuardado" hidden>
+    ⚠️ Este navegador no deja guardar nada en esta página (modo privado o ventana restringida).
+    Puedes jugar igual, pero <strong>el progreso se perderá al recargar</strong>.
+  </div>
+
+  <div id="progreso">
+    <h3>💾 Tu progreso</h3>
+    <div class="resumen">
+      <div><div class="num" id="pgPartidas">0</div><div class="eti">partidas</div></div>
+      <div><div class="num" id="pgGanado">0</div><div class="eti">fichas ganadas</div></div>
+      <div><div class="num" id="pgSaldo">0</div><div class="eti">en cartera</div></div>
+      <div><div class="num" id="pgCodigos">0 / 20</div><div class="eti">códigos</div></div>
+    </div>
+    <div class="vacio" id="pgVacio">
+      Todavía no has jugado ninguna partida. Todo lo que juegues y ganes se guarda solo.
+    </div>
+    <table id="tablaProgreso" hidden>
+      <thead>
+        <tr><th>Juego</th><th style="text-align:right">Partidas</th>
+            <th style="text-align:right">Mejor</th><th style="text-align:right">Ganado</th></tr>
+      </thead>
+      <tbody id="cuerpoProgreso"></tbody>
+    </table>
+  </div>
+
   <div id="canjeCodigos">
     <h3>🎁 Canjea tu código <span class="cuenta" id="canjeCuenta">0 / 20</span></h3>
     <p class="ayuda">
@@ -1141,7 +1210,7 @@ body{display:block; padding:0; margin:0;}
   <div id="rejilla"></div>
 
   <div id="pie">
-    Tus récords se guardan en este navegador (nadie más los ve).<br>
+    Todo tu progreso —partidas, récords, fichas y códigos— se guarda solo en este navegador (nadie más lo ve).<br>
     <button id="btnBorrar">🗑 Borrar todos mis récords</button>
   </div>
 </div>
@@ -1428,7 +1497,10 @@ body{display:block; padding:0; margin:0;}
           Las piezas <b>no rotan</b>: piensa bien dónde las pones.<br>
           La partida acaba cuando ninguna de las tres piezas cabe en el tablero.
         </div>
-        <div class="filaBotones"><button class="primario" id="btnJugar">▶ Jugar</button></div>
+        <div class="filaBotones">
+          <button class="primario" id="btnSeguir" hidden>▶ Seguir la partida</button>
+          <button class="primario" id="btnJugar">▶ Jugar</button>
+        </div>
       </div>
     </div>
 
@@ -1441,6 +1513,7 @@ body{display:block; padding:0; margin:0;}
           <div class="caja"><div class="num" id="finLineas">0</div><div class="eti">líneas</div></div>
           <div class="caja"><div class="num" id="finRecord">0</div><div class="eti">récord</div></div>
         </div>
+        <div class="premio" id="finPremio"></div>
         <div class="filaBotones">
           <button class="primario" id="btnOtra">↻ Jugar de nuevo</button>
           <a class="boton" href="javascript:void 0" data-volver="1">🕹 Arcade</a>
@@ -1479,7 +1552,10 @@ body{display:block; padding:0; margin:0;}
           <b>👻 Fantasma:</b> durante 7 segundos atraviesas paredes y tu propio cuerpo.<br>
           <b>🪨 Rocas:</b> cada 5 manzanas aparece una nueva. ¡Esquívalas!
         </div>
-        <div class="filaBotones"><button class="primario" id="btnJugar">▶ Jugar</button></div>
+        <div class="filaBotones">
+          <button class="primario" id="btnSeguir" hidden>▶ Seguir la partida</button>
+          <button class="primario" id="btnJugar">▶ Jugar</button>
+        </div>
       </div>
     </div>
 
@@ -2087,7 +2163,19 @@ const Sonido = {
 // un juego que declarase su propio `guardar` pisaría este y lo rompería.
 const Almacen = (() => {
   const memoria = {};
+  let permitido = null;
   return {
+    // ¿Sobrevive lo guardado a recargar la página? (falso en modo privado o sandbox)
+    disponible(){
+      if (permitido === null){
+        try {
+          localStorage.setItem('arcade_prueba', '1');
+          localStorage.removeItem('arcade_prueba');
+          permitido = true;
+        } catch(e){ permitido = false; }
+      }
+      return permitido;
+    },
     leer(clave){
       try {
         const v = localStorage.getItem(clave);
@@ -2104,6 +2192,21 @@ const Almacen = (() => {
     }
   };
 })();
+
+/**
+ * Guardado automático. Cada juego apunta aquí su función de guardar y el
+ * arcade la dispara cuando se cierra la pestaña, cuando pasa a segundo plano
+ * y cuando se cambia de pantalla: así no hace falta acordarse de guardar en
+ * cada rincón del código y no se pierde nada por salir de golpe.
+ */
+const Guardado = {
+  tareas: [],
+  registrar(fn){ if (typeof fn === 'function') this.tareas.push(fn); },
+  ahora(){ this.tareas.forEach(f => { try { f(); } catch(e){} }); }
+};
+addEventListener('beforeunload', () => Guardado.ahora());
+addEventListener('pagehide', () => Guardado.ahora());
+document.addEventListener('visibilitychange', () => { if (document.hidden) Guardado.ahora(); });
 
 const Arcade = {
   record(clave){ return parseFloat(Almacen.leer('arcade_' + clave) || '0') || 0; },
@@ -2239,6 +2342,79 @@ const Arcade = {
     olvidar(){ Almacen.borrar('arcade_codigos'); }
   },
 
+  /**
+   * Perfil del jugador: todo lo jugado y todo lo ganado, en un solo sitio.
+   * Cada juego cierra sus partidas con Arcade.perfil.partida(id, resultado) y
+   * de ahí salen el récord, las estadísticas de la portada y el abono de fichas.
+   */
+  perfil: {
+    CLAVE: 'perfil',
+    cache: null,
+    datos(){
+      if (!this.cache){
+        let d = null;
+        try { d = JSON.parse(Arcade.leerTexto(this.CLAVE, 'null')); } catch(e){}
+        if (!d || typeof d !== 'object') d = {};
+        if (!d.juegos || typeof d.juegos !== 'object') d.juegos = {};
+        if (typeof d.partidas !== 'number') d.partidas = 0;
+        if (typeof d.ganado !== 'number') d.ganado = 0;
+        this.cache = d;
+      }
+      return this.cache;
+    },
+    juego(id){
+      const j = this.datos().juegos;
+      if (!j[id]) j[id] = { partidas:0, victorias:0, mejor:0, puntos:0, ganado:0, segundos:0 };
+      return j[id];
+    },
+    guardar(){ Arcade.escribir(this.CLAVE, JSON.stringify(this.datos())); },
+
+    /**
+     * Cierra una partida y devuelve las fichas abonadas.
+     * res = { puntos, victoria, premio, segundos }
+     *   puntos  -> se acumulan y actualizan el mejor resultado del juego
+     *   premio  -> NEXO-COINS que se suman a la cartera (0 en Minas y Aviator,
+     *              que ya mueven las fichas por su cuenta con las apuestas)
+     */
+    partida(id, res = {}){
+      const d = this.datos(), j = this.juego(id);
+      const puntos = Math.max(0, Math.round(res.puntos || 0));
+      const premio = Math.max(0, Math.round(res.premio || 0));
+      d.partidas++;
+      j.partidas++;
+      j.puntos += puntos;
+      if (puntos > j.mejor) j.mejor = puntos;
+      if (res.victoria) j.victorias++;
+      if (res.segundos > 0) j.segundos += Math.round(res.segundos);
+      if (premio > 0){
+        j.ganado += premio;
+        d.ganado += premio;
+        Arcade.fichas.ajustar(premio);
+      }
+      d.visto = Date.now();
+      this.guardar();
+      return premio;
+    },
+    olvidar(){ this.cache = null; Arcade.borrar(this.CLAVE); }
+  },
+
+  /**
+   * Partida a medias: se guarda al salir y se recupera al volver, para que
+   * cerrar la pestaña en mitad de un juego no cueste el progreso.
+   */
+  estado: {
+    guardar(id, obj){
+      if (obj === null || obj === undefined) return this.olvidar(id);
+      try { Arcade.escribir('estado_' + id, JSON.stringify(obj)); } catch(e){}
+    },
+    cargar(id){
+      const v = Arcade.leerTexto('estado_' + id, null);
+      if (v === null) return null;
+      try { return JSON.parse(v); } catch(e){ return null; }
+    },
+    olvidar(id){ Arcade.borrar('estado_' + id); }
+  },
+
   // Coordenadas de ratón/tacto relativas al canvas, en píxeles del canvas
   puntero(canvas, ev){
     const r = canvas.getBoundingClientRect();
@@ -2337,6 +2513,7 @@ const Enrutador = {
   actual: 'portada',
   arrancados: {},
   ir(id){
+    Guardado.ahora();             // lo jugado se guarda antes de soltar la pantalla
     Sonido.pararMotor();          // ningún sonido continuo sobrevive al cambio de pantalla
     document.querySelectorAll('.pantalla').forEach(p => p.classList.remove('activa'));
     const destino = document.getElementById('pantalla-' + id);
@@ -3076,6 +3253,51 @@ JUEGOS.forEach(j => {
   j.portada(a.querySelector('canvas').getContext('2d'));
 });
 
+// ---------- Progreso guardado ----------
+// Qué significa el "mejor resultado" de cada juego, que no todos puntúan igual
+const UNIDAD = {
+  td:'olas', pvz:'olas', comecocos:'pts', blockblast:'pts', serpiente:'pts',
+  pool:'ganadas', rumble:'goles', minas:'gemas', aviator:'x100'
+};
+const nombreDe = id => {
+  const j = JUEGOS.find(x => x.id === id);
+  return j ? j.nombre : id;
+};
+
+function pintarProgreso(){
+  const d = Arcade.perfil.datos();
+  document.getElementById('pgPartidas').textContent = d.partidas.toLocaleString('es-ES');
+  document.getElementById('pgGanado').textContent = d.ganado.toLocaleString('es-ES');
+  document.getElementById('pgSaldo').textContent = Arcade.fichas.saldo().toLocaleString('es-ES');
+  document.getElementById('pgCodigos').textContent =
+    Arcade.codigos.usados().length + ' / ' + Arcade.codigos.TOTAL;
+
+  const filas = Object.entries(d.juegos)
+    .filter(([, j]) => j.partidas > 0)
+    .sort((a, b) => b[1].partidas - a[1].partidas);
+
+  const tabla = document.getElementById('tablaProgreso');
+  const vacio = document.getElementById('pgVacio');
+  tabla.hidden = filas.length === 0;
+  vacio.hidden = filas.length > 0;
+
+  const cuerpo = document.getElementById('cuerpoProgreso');
+  cuerpo.innerHTML = '';
+  for (const [id, j] of filas){
+    const tr = document.createElement('tr');
+    const mejor = id === 'aviator'
+      ? (j.mejor / 100).toFixed(2) + 'x'
+      : j.mejor.toLocaleString('es-ES') + ' ' + (UNIDAD[id] || '');
+    tr.innerHTML =
+      '<td></td>' +
+      '<td class="n">' + j.partidas.toLocaleString('es-ES') + '</td>' +
+      '<td class="n">' + mejor + '</td>' +
+      '<td class="n oro">' + (j.ganado ? '+' + j.ganado.toLocaleString('es-ES') : '—') + '</td>';
+    tr.firstChild.textContent = nombreDe(id);   // textContent: el nombre no se interpreta como HTML
+    cuerpo.appendChild(tr);
+  }
+}
+
 // ---------- Canje de códigos (del 1 al 20, 1.000 NEXO-COINS cada uno) ----------
 const listaCodigos = document.getElementById('listaCodigos');
 const codigoTxt = document.getElementById('codigoTxt');
@@ -3130,6 +3352,7 @@ function refrescarPortada(){
   document.getElementById('fichasTxt').textContent =
     Arcade.fichas.saldo().toLocaleString('es-ES');
   pintarCodigos();
+  pintarProgreso();
   JUEGOS.forEach((j, i) => {
     const marca = rejilla.children[i] && rejilla.children[i].querySelector('.record');
     if (marca) marca.textContent = j.record();
@@ -3137,6 +3360,9 @@ function refrescarPortada(){
 }
 window.refrescarPortada = refrescarPortada;
 refrescarPortada();
+
+// Si el navegador no deja guardar, mejor decirlo que dejar que se pierda en silencio
+if (!Almacen.disponible()) document.getElementById('avisoGuardado').hidden = false;
 
 // Doble clic en la cartera: devuelve el saldo al inicial, por si te quedas seco
 document.getElementById('cartera').addEventListener('dblclick', () => {
@@ -4219,16 +4445,31 @@ function guardarRecord(){
   const olas = G.olaActiva ? G.ola-1 : G.ola;
   if (olas > previo){ try { localStorage.setItem(clave, String(olas)); } catch(e){} }
 }
+/**
+ * Anota la partida en el perfil del arcade y abona las fichas: 30 por ola
+ * aguantada y 1000 extra por ganar. Este juego es autocontenido y no carga
+ * arcade.js, así que fuera del arcade `Arcade` no existe y no se hace nada.
+ */
+let premioFin = 0;
+function anotarEnPerfil(gano){
+  premioFin = 0;
+  if (typeof Arcade === 'undefined' || !Arcade.perfil) return;
+  const olas = G.olaActiva ? G.ola - 1 : G.ola;
+  premioFin = Arcade.perfil.partida('td',
+    { puntos: olas, victoria: gano, premio: olas * 30 + (gano ? 1000 : 0) });
+}
 function derrota(){
   if (G.terminado) return;
   G.terminado = true;
   guardarRecord();
+  anotarEnPerfil(false);
   Sonido.fx('derrota');
   mostrarFin(false);
 }
 function victoria(){
   G.terminado = true;
   guardarRecord();
+  anotarEnPerfil(true);
   Sonido.fx('victoria');
   mostrarFin(true);
 }
@@ -4236,9 +4477,10 @@ function mostrarFin(gano){
   const ti = $('tituloFin');
   ti.textContent = gano ? '🏆 ¡VICTORIA!' : '💀 DERROTA';
   ti.className = gano ? 'victoria' : 'derrota';
-  $('subFin').textContent = gano
+  $('subFin').textContent = (gano
     ? 'Has repelido las 40 olas y destruido al Coloso del Vacío en ' + G.mapa.nombre + '.'
-    : 'La base ha caído en la ola ' + G.ola + ' de ' + G.mapa.nombre + '.';
+    : 'La base ha caído en la ola ' + G.ola + ' de ' + G.mapa.nombre + '.')
+    + (premioFin ? '  💎 +' + premioFin.toLocaleString('es-ES') + ' NEXO-COINS' : '');
   $('finOlas').textContent = G.olaActiva ? G.ola-1 : G.ola;
   $('finBajas').textContent = G.bajas.toLocaleString('es-PE');
   $('finDinero').textContent = fmt$(G.dineroGanado);
@@ -5797,11 +6039,16 @@ function colisiones(){
 function terminar(gano){
   estado = 'fin';
   if (Arcade.guardarRecord('comecocos', puntos)) record = puntos;
+  Arcade.estado.olvidar('comecocos');
+  // 1 NEXO-COIN por cada 100 puntos, y el perfil se queda con la partida
+  const premio = Arcade.perfil.partida('comecocos',
+    { puntos, victoria:gano, premio: Math.floor(puntos / 100) });
   document.getElementById('tituloFin').textContent = gano ? '¡GENIAL!' : 'FIN DE LA PARTIDA';
   document.getElementById('tituloFin').className = gano ? 'victoria' : 'derrota';
-  document.getElementById('subFin').textContent = gano
+  document.getElementById('subFin').textContent = (gano
     ? 'Has limpiado el laberinto.'
-    : 'Los fantasmas te han pillado. ¡Otra ronda!';
+    : 'Los fantasmas te han pillado. ¡Otra ronda!')
+    + (premio ? '  💎 +' + premio.toLocaleString('es-ES') + ' NEXO-COINS' : '');
   document.getElementById('finPuntos').textContent = puntos;
   document.getElementById('finNivel').textContent = nivel;
   document.getElementById('finRecord').textContent = record;
@@ -6401,11 +6648,15 @@ function terminar(gano){
   estado = 'fin';
   Arcade.guardarRecord('pvz', oleada);
   recordOleadas = Arcade.record('pvz');
+  // 25 fichas por oleada aguantada, más un extra por ganar
+  const premio = Arcade.perfil.partida('pvz',
+    { puntos: oleada, victoria: gano, premio: oleada * 25 + (gano ? 500 : 0) });
   document.getElementById('tituloFin').textContent = gano ? '¡JARDÍN A SALVO!' : 'LOS ZOMBIS ENTRARON';
   document.getElementById('tituloFin').className = gano ? 'victoria' : 'derrota';
-  document.getElementById('subFin').textContent = gano
+  document.getElementById('subFin').textContent = (gano
     ? 'Has resistido las 20 oleadas. Eres el mejor jardinero.'
-    : 'Un zombi cruzó tu jardín… prueba a plantar más girasoles al principio.';
+    : 'Un zombi cruzó tu jardín… prueba a plantar más girasoles al principio.')
+    + (premio ? '  💎 +' + premio.toLocaleString('es-ES') + ' NEXO-COINS' : '');
   document.getElementById('finOleadas').textContent = oleada;
   document.getElementById('finBajas').textContent = bajas;
   document.getElementById('finRecord').textContent = recordOleadas;
@@ -6800,6 +7051,8 @@ function perder(){
     c.classList.add('abierta', 'fantasma', bombas.has(i) ? 'mina' : 'gema');
     c.textContent = bombas.has(i) ? '💣' : '💎';
   });
+  // el perfil se queda con la ronda; las fichas ya se movieron con la apuesta
+  Arcade.perfil.partida('minas', { puntos: gemas });
   mostrarCartel(0, -apuesta, true);
   añadirHistorial(false, gemas);
   refrescar();
@@ -6820,6 +7073,7 @@ function cobrar(automatico){
     c.classList.add('abierta', 'fantasma', bombas.has(i) ? 'mina' : 'gema');
     c.textContent = bombas.has(i) ? '💣' : '💎';
   });
+  Arcade.perfil.partida('minas', { puntos: gemas, victoria: true });
   mostrarCartel(mult, beneficio, false);
   añadirHistorial(true, gemas, mult);
   Sonido.fx(automatico ? 'victoria' : 'moneda');
@@ -6970,6 +7224,32 @@ function nuevaPartida(){
   refrescarHud();
 }
 
+// ---------- Partida a medias ----------
+// El tablero y la bandeja son datos sencillos, así que la partida se guarda
+// entera y al volver se sigue justo donde se dejó. Lo guardado se lee una vez
+// al arrancar, antes de que nuevaPartida() lo borre.
+const recuperable = Arcade.estado.cargar('blockblast');
+
+function guardarPartida(){
+  if (estado !== 'jugando') return;
+  Arcade.estado.guardar('blockblast', { tablero, piezas, puntos, lineas, combo });
+}
+function recuperarPartida(){
+  const g = recuperable;
+  if (!g || !Array.isArray(g.tablero) || g.tablero.length !== N) return false;
+  if (!Array.isArray(g.piezas) || g.piezas.length !== 3) return false;
+  tablero = g.tablero.map(fila => Array.isArray(fila) && fila.length === N ? fila.slice() : Array(N).fill(null));
+  piezas = g.piezas.map(p => p && Array.isArray(p.celdas) ? { ...p, escala:1 } : null);
+  puntos = g.puntos || 0; lineas = g.lineas || 0; combo = g.combo || 0;
+  particulas = []; flotantes = [];
+  rellenarBandeja();
+  estado = 'jugando';
+  refrescarHud();
+  guardarPartida();
+  return true;
+}
+Guardado.registrar(guardarPartida);
+
 function nuevaPieza(){
   const total = FORMAS.reduce((s, f) => s + f.p, 0);
   let r = Math.random() * total;
@@ -7060,9 +7340,17 @@ function colocar(indice, ci, cj){
   if (piezas.every(p => !p)) rellenarBandeja();
   refrescarHud();
 
+  guardarPartida();
+
   if (!algunaCabe()){
     estado = 'fin';
     if (Arcade.guardarRecord('blockblast', puntos)) record = puntos;
+    Arcade.estado.olvidar('blockblast');
+    // 1 ficha por cada 200 puntos
+    const premio = Arcade.perfil.partida('blockblast',
+      { puntos, premio: Math.floor(puntos / 200) });
+    document.getElementById('finPremio').textContent =
+      premio ? '💎 +' + premio.toLocaleString('es-ES') + ' NEXO-COINS' : '';
     document.getElementById('finPuntos').textContent = puntos;
     document.getElementById('finLineas').textContent = lineas;
     document.getElementById('finRecord').textContent = record;
@@ -7250,19 +7538,35 @@ document.getElementById('btnJugar').onclick = () => {
   Sonido.activar();
   document.getElementById('modalInicio').classList.remove('visible');
   nuevaPartida();
+  guardarPartida();
+};
+document.getElementById('btnSeguir').onclick = () => {
+  Sonido.activar();
+  document.getElementById('modalInicio').classList.remove('visible');
+  if (!recuperarPartida()) nuevaPartida();
 };
 document.getElementById('btnOtra').onclick = () => {
   document.getElementById('modalFin').classList.remove('visible');
   nuevaPartida();
+  guardarPartida();
 };
 document.getElementById('btnReiniciar').onclick = () => {
   document.getElementById('modalFin').classList.remove('visible');
   nuevaPartida();
+  guardarPartida();
 };
 Arcade.conectarSonido(document.getElementById('btnSonido'));
 
 nuevaPartida();
 estado = 'menu';
+
+// Si quedó una partida a medias, el menú ofrece seguirla
+if (recuperable){
+  document.getElementById('btnSeguir').hidden = false;
+  document.getElementById('btnJugar').textContent = '↻ Empezar de cero';
+  document.getElementById('btnJugar').classList.remove('primario');
+}
+
 Arcade.bucle(dt => { actualizar(dt); dibujar(); });
 
 });
@@ -7294,6 +7598,34 @@ function nuevaPartida(){
   ponerComida();
   refrescarHud();
 }
+
+// ---------- Partida a medias ----------
+// Lo guardado se lee una sola vez al arrancar, antes de que nuevaPartida()
+// pise las variables.
+const recuperable = Arcade.estado.cargar('serpiente');
+
+function guardarPartida(){
+  if (estado !== 'jugando') return;
+  Arcade.estado.guardar('serpiente',
+    { cuerpo, dir, comida, dorada, fantasma, rocas, puntos, manzanas, intervalo, fantasmaT });
+}
+function recuperarPartida(){
+  const g = recuperable;
+  if (!g || !Array.isArray(g.cuerpo) || !g.cuerpo.length || !g.dir) return false;
+  nuevaPartida();
+  cuerpo = g.cuerpo.map(c => ({ x:c.x, y:c.y }));
+  dir = { x:g.dir.x, y:g.dir.y };
+  pendientes = [];
+  rocas = Array.isArray(g.rocas) ? g.rocas.map(r => ({ x:r.x, y:r.y })) : [];
+  comida = g.comida || null; dorada = g.dorada || null; fantasma = g.fantasma || null;
+  puntos = g.puntos || 0; manzanas = g.manzanas || 0;
+  intervalo = g.intervalo || 0.145; fantasmaT = g.fantasmaT || 0;
+  if (!comida) ponerComida();
+  refrescarHud();
+  guardarPartida();
+  return true;
+}
+Guardado.registrar(guardarPartida);
 
 function libreCasilla(x, y){
   if (cuerpo.some(c => c.x === x && c.y === y)) return false;
@@ -7392,8 +7724,13 @@ function añadirRoca(){
 function morir(motivo){
   estado = 'fin';
   if (Arcade.guardarRecord('serpiente', puntos)) record = puntos;
+  Arcade.estado.olvidar('serpiente');
+  // 1 ficha por cada 50 puntos
+  const premio = Arcade.perfil.partida('serpiente',
+    { puntos, premio: Math.floor(puntos / 50) });
   chispas(cuerpo[0].x, cuerpo[0].y, '#ff6b6b', 34);
-  document.getElementById('subFin').textContent = motivo;
+  document.getElementById('subFin').textContent = motivo
+    + (premio ? '  💎 +' + premio.toLocaleString('es-ES') + ' NEXO-COINS' : '');
   document.getElementById('finPuntos').textContent = puntos;
   document.getElementById('finLargo').textContent = cuerpo.length;
   document.getElementById('finRecord').textContent = record;
@@ -7602,14 +7939,28 @@ document.getElementById('btnJugar').onclick = () => {
   Sonido.activar();
   document.getElementById('modalInicio').classList.remove('visible');
   nuevaPartida();
+  guardarPartida();
 };
 document.getElementById('btnOtra').onclick = () => {
   document.getElementById('modalFin').classList.remove('visible');
   nuevaPartida();
+  guardarPartida();
+};
+document.getElementById('btnSeguir').onclick = () => {
+  Sonido.activar();
+  document.getElementById('modalInicio').classList.remove('visible');
+  if (!recuperarPartida()) nuevaPartida();
 };
 
 nuevaPartida();
 estado = 'menu';
+
+// Si quedó una partida a medias, el menú ofrece seguirla
+if (recuperable){
+  document.getElementById('btnSeguir').hidden = false;
+  document.getElementById('btnJugar').textContent = '↻ Empezar de cero';
+  document.getElementById('btnJugar').classList.remove('primario');
+}
 Arcade.bucle(dt => { actualizar(dt); dibujar(); });
 
 });
@@ -7698,6 +8049,7 @@ function estrellar(){
   });
   if (apuesta.viva){
     apuesta.viva = false;
+    Arcade.perfil.partida('aviator', { puntos: 0 });
     Arcade.aviso(avisos, '💥 Perdiste ' + apuesta.monto + ' fichas', false, 2200);
   }
   historia.unshift(mult);
@@ -7716,6 +8068,8 @@ function cobrar(automatico){
   apuesta.cobradaEn = mult;
   brilloCobro = 1;
   if (Arcade.guardarRecord('aviator_mayor', Math.round(mult * 100) / 100)) record = mult;
+  // el perfil se queda con la ronda; las fichas ya se movieron con la apuesta
+  Arcade.perfil.partida('aviator', { puntos: Math.round(mult * 100), victoria: true });
   Arcade.aviso(avisos, (automatico ? '🎯 Retiro automático · ' : '💰 ') +
     mult.toFixed(2) + 'x · +' + ganancia + ' fichas', true, 2400);
   Sonido.fx('ficha');
@@ -8405,11 +8759,14 @@ function acabar(ganador){
   estado = 'fin';
   const gano = ganador === 'tu';
   if (gano){ Arcade.guardarRecord('pool_victorias', record + 1); record = Arcade.record('pool_victorias'); }
+  const premio = Arcade.perfil.partida('pool',
+    { puntos: gano ? 1 : 0, victoria: gano, premio: gano ? 400 : 75 });
   $('tituloFin').textContent = gano ? '¡GANASTE!' : 'HAS PERDIDO';
   $('tituloFin').className = gano ? 'victoria' : 'derrota';
-  $('subFin').textContent = gano
+  $('subFin').textContent = (gano
     ? 'Has metido la 8 en su momento. Buen taco.'
-    : 'La 8 cayó cuando no tocaba.';
+    : 'La 8 cayó cuando no tocaba.')
+    + (premio ? '  💎 +' + premio.toLocaleString('es-ES') + ' NEXO-COINS' : '');
   $('modalFin').classList.add('visible');
   Sonido.fx(gano ? 'victoria' : 'derrota');
   refrescarHud();
@@ -9147,10 +9504,14 @@ function acabar(){
   estado = 'fin';
   const gano = tanteo.tu > tanteo.ia, empate = tanteo.tu === tanteo.ia;
   if (gano){ Arcade.guardarRecord('rumble_victorias', record + 1); record = Arcade.record('rumble_victorias'); }
+  // 400 por ganar, 150 por empatar y 75 por jugarlo, más 50 por cada gol
+  const premio = (gano ? 400 : empate ? 150 : 75) + tanteo.tu * 50;
+  Arcade.perfil.partida('rumble', { puntos: tanteo.tu, victoria: gano, premio });
   $('tituloFin').textContent = gano ? '¡VICTORIA!' : empate ? 'EMPATE' : 'DERROTA';
   $('tituloFin').className = gano ? 'victoria' : empate ? '' : 'derrota';
-  $('subFin').textContent = gano ? 'Los tuyos han arrasado en la arena.'
-    : empate ? 'Nadie ha podido con nadie.' : 'El rival se lleva el partido. ¡Revancha!';
+  $('subFin').textContent = (gano ? 'Los tuyos han arrasado en la arena.'
+    : empate ? 'Nadie ha podido con nadie.' : 'El rival se lleva el partido. ¡Revancha!')
+    + '  💎 +' + premio.toLocaleString('es-ES') + ' NEXO-COINS';
   $('finTanteo').textContent = tanteo.tu + ' - ' + tanteo.ia;
   $('finRecord').textContent = record;
   $('modalFin').classList.add('visible');
@@ -10206,6 +10567,7 @@ refrescar();
 setInterval(() => { refrescar(); }, 500);
 setInterval(guardarPartida, 10000);
 addEventListener('beforeunload', guardarPartida);
+Guardado.registrar(guardarPartida);   // también al cambiar de pantalla o irse a otra pestaña
 
 Arcade.bucle(dt => { actualizar(dt); dibujar(); });
 
@@ -10482,6 +10844,9 @@ function guardarCofres(){
     inventario: S.inventario.slice(0, 240).map(o => ({ id:o.id, ficha:o.ficha, precio:o.precio, encanto:o.encanto }))
   }));
 }
+Guardado.registrar(guardarCofres);   // al cerrar, al ocultar la pestaña y al cambiar de pantalla
+addEventListener('beforeunload', guardarCofres);
+
 function cargarCofres(){
   const crudo = Arcade.leerTexto('cofres', null);
   if (!crudo) return;
@@ -11395,6 +11760,7 @@ if (cargarPartida()) progresoAusente();
 refrescar(true);
 setInterval(guardarPartida, 10000);
 addEventListener('beforeunload', guardarPartida);
+Guardado.registrar(guardarPartida);   // también al cambiar de pantalla o irse a otra pestaña
 Arcade.bucle(dt => { actualizar(dt); dibujar(); refrescar(); });
 
 });

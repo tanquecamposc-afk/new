@@ -257,6 +257,8 @@ function perder(){
     c.classList.add('abierta', 'fantasma', bombas.has(i) ? 'mina' : 'gema');
     c.textContent = bombas.has(i) ? '💣' : '💎';
   });
+  // el perfil se queda con la ronda; las fichas ya se movieron con la apuesta
+  Arcade.perfil.partida('minas', { puntos: gemas });
   mostrarCartel(0, -apuesta, true);
   añadirHistorial(false, gemas);
   refrescar();
@@ -277,6 +279,7 @@ function cobrar(automatico){
     c.classList.add('abierta', 'fantasma', bombas.has(i) ? 'mina' : 'gema');
     c.textContent = bombas.has(i) ? '💣' : '💎';
   });
+  Arcade.perfil.partida('minas', { puntos: gemas, victoria: true });
   mostrarCartel(mult, beneficio, false);
   añadirHistorial(true, gemas, mult);
   Sonido.fx(automatico ? 'victoria' : 'moneda');
