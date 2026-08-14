@@ -155,21 +155,25 @@ Cada mejora arregla un cuello de botella distinto, y el que va apretado se nota 
 
 ### 📦 Cofres Minecraft
 
-Simulador de cajas con estética de bloques: cuatro cofres, dieciocho objetos repartidos en cinco rarezas y encantamientos que suben el valor.
+Simulador de cajas con interfaz de bloques: cuatro cofres, veinte objetos repartidos en cinco rarezas y encantamientos con el brillo morado animado.
+
+**Todos los iconos son pixel art de 16x16 dibujado por código** (bloques con ruido, espadas en diagonal, picos, lingotes, gemas talladas, élitros, tótem, faro…) y se amplían sin suavizado. Nada de imágenes descargadas: el arcade sigue funcionando sin conexión.
 
 | Cofre | Precio | Probabilidades |
 |---|---|---|
-| 📦 Madera | 45 💎 | común 80 % · raro 20 % |
-| ⚙️ Hierro | 180 💎 | común 42 % · raro 38 % · épico 20 % |
-| 🔷 Diamante | 650 💎 | raro 54 % · épico 34 % · legendario 12 % |
-| 🔥 Nether | 2.200 💎 | épico 57 % · legendario 35 % · **mítico 8 %** |
+| Madera | 50 💎 | común 80 % · raro 20 % |
+| Hierro | 220 💎 | común 40 % · raro 40 % · épico 20 % |
+| Diamante | 780 💎 | raro 52 % · épico 36 % · legendario 12 % |
+| Ender | 2.850 💎 | épico 55 % · legendario 37 % · **mítico 8 %** |
 
-Las probabilidades están **escritas en cada cofre** y son las que se usan de verdad: cada cofre devuelve de media en torno al 90 % de lo que cuesta, así que se pierde poco a poco, como en cualquier simulador de cajas.
+Las probabilidades están **escritas en cada cofre** y son las que se usan de verdad. Comprobado con 60.000 aperturas por cofre: las frecuencias salen clavadas y el retorno medio es del **89-91 %** del precio, así que se pierde poco a poco, como en cualquier simulador de cajas.
 
-- **Ruleta** con aguja central que frena poco a poco, y el chasquido se va espaciando conforme se para.
-- **Encantamientos:** las armas, herramientas y armaduras salen encantadas un 40 % de las veces y valen un 60 % más.
+- **Ruleta** con aguja central que frena poco a poco; el chasquido se va espaciando conforme se para.
+- **Barra de experiencia y niveles:** cada apertura da 25 XP y cada fusión 40. Al subir de nivel estallan partículas de píxeles.
+- **Encantamientos:** las armas, herramientas y armaduras salen encantadas un 45 % de las veces, valen un 50 % más y llevan el **glint** morado animado.
+- **Tooltip** al pasar el ratón, con el nombre en color de rareza, el encantamiento y el valor.
 - **Contrato de fusión:** cinco objetos de la misma rareza se forjan en uno de la rareza superior. Los míticos ya no suben.
-- **Inventario** con venta individual, venta rápida de todo lo común y guardado automático.
+- Clic para meter en el contrato, **botón derecho para vender**, y venta rápida de todo lo común.
 - Cambia **100 NEXO-COINS por 1.000 esmeraldas** para conectarlo con el resto del arcade.
 
 ## 💾 Récords

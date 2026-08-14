@@ -811,140 +811,162 @@ body{display:block; padding:0; margin:0;}
 
 
 /* --- cofres --- */
-#pantalla-cofres /* Estética de bloques: biseles duros, #pantalla-cofres texto con sombra y nada de suavizado.
-     La tipografía es monoespaciada del sistema; el arcade no carga fuentes
-     externas para poder funcionar sin conexión. */
-  #juego{width:min(1050px,100vw);}
-#pantalla-cofres #cofres{
-    font-family:"Courier New", Courier, monospace;
-    image-rendering:pixelated;
+#pantalla-cofres /* Interfaz de bloques: biseles duros, #pantalla-cofres texto con sombra y píxeles nítidos.
+     Los iconos se dibujan a 16x16 por código y se amplían sin suavizar, #pantalla-cofres así
+     que el arcade sigue sin depender de fuentes ni imágenes externas. */
+  #juego{width:min(1060px,100vw);}
+#pantalla-cofres #mc{font-family:"Courier New", Courier, monospace; display:flex; flex-direction:column; gap:14px;}
+#pantalla-cofres #mc *{image-rendering:pixelated;}
+#pantalla-cofres /* --- Ventana de interfaz --- */
+  .ventana{
+    background:#c6c6c6; border:4px solid; border-color:#fff #555 #555 #fff;
+    box-shadow:0 8px 0 #000; padding:14px; color:#373737;
     display:flex; flex-direction:column; gap:12px;
   }
-#pantalla-cofres #cofres .mcbtn{
-    background:#727272; border:4px solid;
-    border-color:#a8a8a8 #373737 #373737 #a8a8a8;
-    color:#fff; padding:9px 14px; font-size:12px; font-weight:700; cursor:pointer;
+#pantalla-cofres .rotulo{font-size:12px; font-weight:700; color:#fff; text-shadow:2px 2px #000;}
+#pantalla-cofres .mcbtn{
+    background:#727272; border:3px solid; border-color:#a8a8a8 #373737 #373737 #a8a8a8;
+    color:#fff; padding:9px 13px; font-size:11px; font-weight:700; cursor:pointer;
     font-family:inherit; text-shadow:2px 2px #000; border-radius:0;
     box-shadow:inset -2px -2px 0 0 #212121; transition:background .06s;
   }
-#pantalla-cofres #cofres .mcbtn:hover{background:#8b8b8b; box-shadow:inset -2px -2px 0 0 #212121;}
-#pantalla-cofres #cofres .mcbtn:active{border-color:#373737 #a8a8a8 #a8a8a8 #373737; box-shadow:inset 2px 2px 0 0 #212121;}
-#pantalla-cofres #cofres .mcbtn:disabled{background:#444; border-color:#555 #222 #222 #555; color:#888;}
-#pantalla-cofres #cofres .mcbtn.bien{background:#2e7d32; border-color:#4caf50 #1b5e20 #1b5e20 #4caf50;}
-#pantalla-cofres #cofres .mcbtn.mal{background:#c62828; border-color:#ef5350 #b71c1c #b71c1c #ef5350;}
-#pantalla-cofres #cofres .mcbtn.sel{background:#4a4ad8; border-color:#9999ff #0000aa #0000aa #9999ff;}
-#pantalla-cofres /* Cabecera de esmeraldas */
-  #tapa{
-    background:#c6c6c6; border:4px solid; border-color:#fff #555 #555 #fff;
-    color:#373737; padding:12px 16px; display:flex; justify-content:space-between;
-    align-items:center; gap:12px; flex-wrap:wrap;
+#pantalla-cofres .mcbtn:hover{background:#8b8b8b;}
+#pantalla-cofres .mcbtn:active{border-color:#373737 #a8a8a8 #a8a8a8 #373737; box-shadow:inset 2px 2px 0 0 #212121;}
+#pantalla-cofres .mcbtn:disabled{background:#4a4a4a; border-color:#666 #222 #222 #666; color:#888; cursor:not-allowed;}
+#pantalla-cofres .mcbtn.rojo{background:#a02020; border-color:#d05050 #601010 #601010 #d05050;}
+#pantalla-cofres .mcbtn.verde{background:#2e7d32; border-color:#4caf50 #1b5e20 #1b5e20 #4caf50;}
+#pantalla-cofres .mcbtn.sel{background:#3f3fbf; border-color:#8080ff #1a1a80 #1a1a80 #8080ff;}
+#pantalla-cofres /* --- Cabecera: esmeraldas y experiencia --- */
+  #cabeza{
+    display:flex; justify-content:space-between; align-items:center; gap:14px; flex-wrap:wrap;
+    background:#8b8b8b; border:3px solid; border-color:#373737 #fff #fff #373737; padding:11px;
   }
-#pantalla-cofres #tapa .marca{font-size:13px; font-weight:700; line-height:1.5;}
-#pantalla-cofres #tapa .marca small{display:block; font-size:10px; color:#555;}
-#pantalla-cofres #tapa .saldos{display:flex; gap:8px; flex-wrap:wrap;}
-#pantalla-cofres #tapa .caja{
-    background:#8b8b8b; padding:8px 12px; border:3px solid;
-    border-color:#373737 #fff #fff #373737; font-size:13px; font-weight:700;
-    text-shadow:1px 1px #000; color:#3ee63e; white-space:nowrap;
+#pantalla-cofres #cabeza .saldo{
+    display:flex; align-items:center; gap:9px; font-size:13px; font-weight:700;
+    color:#00c400; text-shadow:2px 2px #000;
   }
-#pantalla-cofres #tapa .caja.coins{color:#ffe14d;}
-#pantalla-cofres #pestanas{display:flex; gap:8px; flex-wrap:wrap;}
-#pantalla-cofres #pestanas .mcbtn{flex:1; min-width:130px;}
-#pantalla-cofres .hoja{display:none;}
-#pantalla-cofres .hoja.activa{display:block;}
-#pantalla-cofres /* Ruleta */
+#pantalla-cofres #cabeza .saldo.coins{color:#ffd24d;}
+#pantalla-cofres #xp{display:flex; flex-direction:column; align-items:center; width:230px; max-width:45vw;}
+#pantalla-cofres #xpTubo{width:100%; height:12px; background:#000; border:2px solid #373737; position:relative;}
+#pantalla-cofres #xpRelleno{height:100%; width:0%; background:#55ff55; box-shadow:inset 0 -2px 0 #00aa00; transition:width .3s;}
+#pantalla-cofres #xpTexto{font-size:11px; font-weight:700; color:#55ff55; text-shadow:2px 2px #000; margin-top:4px;}
+#pantalla-cofres /* --- Ruleta --- */
   #ruleta{
-    position:relative; height:172px; background:#111; overflow:hidden;
-    border:6px solid; border-color:#373737 #a8a8a8 #a8a8a8 #373737;
+    position:relative; height:158px; background:#090909; overflow:hidden;
+    border:4px solid; border-color:#373737 #fff #fff #373737;
   }
 #pantalla-cofres #aguja{
     position:absolute; top:0; left:50%; transform:translateX(-50%);
-    width:6px; height:100%; background:#ff5555; box-shadow:0 0 12px #ff0000; z-index:20;
+    width:4px; height:100%; background:#ff5555; box-shadow:0 0 10px #ff0000; z-index:20;
   }
 #pantalla-cofres #ruleta::before, #pantalla-cofres #ruleta::after{
-    content:''; position:absolute; top:0; bottom:0; width:70px; z-index:10; pointer-events:none;
+    content:''; position:absolute; top:0; bottom:0; width:60px; z-index:10; pointer-events:none;
   }
-#pantalla-cofres #ruleta::before{left:0; background:linear-gradient(90deg,#111,transparent);}
-#pantalla-cofres #ruleta::after{right:0; background:linear-gradient(270deg,#111,transparent);}
-#pantalla-cofres #cinta{display:flex; position:absolute; left:0; top:16px; height:140px; will-change:transform;}
-#pantalla-cofres .ficha{
-    min-width:130px; width:130px; height:130px; background:#2b2b2b; margin:0 5px;
-    border:4px solid #555; display:flex; flex-direction:column; align-items:center;
-    justify-content:center; padding:5px; text-align:center;
+#pantalla-cofres #ruleta::before{left:0; background:linear-gradient(90deg,#090909,transparent);}
+#pantalla-cofres #ruleta::after{right:0; background:linear-gradient(270deg,#090909,transparent);}
+#pantalla-cofres #cinta{display:flex; position:absolute; left:0; top:11px; height:136px; will-change:transform;}
+#pantalla-cofres .casilla{
+    min-width:120px; width:120px; height:136px; background:#8b8b8b; margin:0 4px;
+    border:3px solid; border-color:#373737 #fff #fff #373737;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    padding:6px; position:relative;
   }
-#pantalla-cofres .ficha .ic{font-size:40px; margin-bottom:6px; filter:drop-shadow(3px 3px 0 #000);}
-#pantalla-cofres .ficha .nm{font-size:9.5px; line-height:1.3; height:26px; overflow:hidden; text-shadow:1px 1px #000;}
-#pantalla-cofres .ficha .en{font-size:8px; color:#ffff55; margin-top:3px;}
-#pantalla-cofres .r-comun{border-color:#aaaaaa;}
-#pantalla-cofres .r-raro{border-color:#5555ff;}
-#pantalla-cofres .r-epico{border-color:#aa00aa;}
-#pantalla-cofres .r-legendario{border-color:#ffaa00;}
-#pantalla-cofres .r-mitico{border-color:#ff5555; animation:mitico 1s infinite alternate;}
-@keyframes mitico{
-    from{box-shadow:inset 0 0 5px #ff5555, 0 0 5px #ff5555;}
-    to{box-shadow:inset 0 0 15px #ffaaaa, 0 0 20px #ff0000;}
+#pantalla-cofres .casilla .nom{
+    font-size:8.5px; font-weight:700; margin-top:6px; text-align:center;
+    height:22px; overflow:hidden; line-height:1.3; text-shadow:1px 1px #000;
   }
-#pantalla-cofres /* Cofres */
-  #rejillaCofres{display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:12px;}
+#pantalla-cofres /* Icono con brillo de encantamiento */
+  .icono{position:relative; width:56px; height:56px; display:flex; align-items:center; justify-content:center;}
+#pantalla-cofres .icono img{width:52px; height:52px; filter:drop-shadow(3px 3px 0 rgba(0,0,0,.6));}
+#pantalla-cofres .icono.encantado::after{
+    content:''; position:absolute; inset:0; pointer-events:none; border-radius:3px;
+    background:linear-gradient(135deg, transparent 20%, rgba(180,70,255,.7) 48%,
+      rgba(255,150,255,.9) 50%, rgba(180,70,255,.7) 52%, transparent 80%);
+    background-size:200% 200%; mix-blend-mode:color-dodge;
+    animation:glint 2s linear infinite;
+  }
+@keyframes glint{from{background-position:-100% -100%;} to{background-position:100% 100%;}}
+#pantalla-cofres /* --- Cofres --- */
+  #rejillaCofres{display:grid; grid-template-columns:repeat(auto-fit,minmax(206px,1fr)); gap:12px;}
 #pantalla-cofres .cofre{
-    background:#3c3f41; border:4px solid; border-color:#555 #1e1e1e #1e1e1e #555;
-    padding:14px; text-align:center; display:flex; flex-direction:column; align-items:center; gap:8px;
+    background:#8b8b8b; border:3px solid; border-color:#fff #373737 #373737 #fff;
+    padding:13px; text-align:center; display:flex; flex-direction:column; align-items:center; gap:7px;
   }
-#pantalla-cofres .cofre .ic{font-size:50px; filter:drop-shadow(3px 3px 0 #000);}
-#pantalla-cofres .cofre h3{font-size:12px; color:#ffff55; text-shadow:1px 1px #000; line-height:1.4;}
-#pantalla-cofres .cofre .precio{font-size:11px; color:#3ee63e;}
-#pantalla-cofres .cofre .odds{font-size:9px; color:#9aa0a6; line-height:1.6;}
+#pantalla-cofres .cofre img{width:64px; height:64px; filter:drop-shadow(4px 4px 0 #222);}
+#pantalla-cofres .cofre .tit{font-size:11px; font-weight:700; color:#fff; text-shadow:2px 2px #000;}
+#pantalla-cofres .cofre .precio{
+    font-size:11px; font-weight:700; color:#55ff55; text-shadow:1px 1px #000;
+    display:flex; align-items:center; gap:5px; justify-content:center;
+  }
+#pantalla-cofres .cofre .precio img{width:14px; height:14px; filter:none;}
+#pantalla-cofres .cofre .odds{font-size:8.5px; line-height:1.7; text-shadow:1px 1px #000;}
 #pantalla-cofres .cofre .mcbtn{width:100%;}
-#pantalla-cofres /* Inventario */
-  #mandoInv{
-    display:flex; gap:8px; justify-content:space-between; align-items:center; flex-wrap:wrap;
-    background:#3c3f41; padding:10px; border:4px solid #1e1e1e;
-  }
+#pantalla-cofres /* --- Pestañas e inventario --- */
+  #pestanas{display:flex; gap:8px; flex-wrap:wrap;}
+#pantalla-cofres #pestanas .mcbtn{flex:1; min-width:128px;}
+#pantalla-cofres .hoja{display:none;}
+#pantalla-cofres .hoja.activa{display:block;}
+#pantalla-cofres #mandoInv{display:flex; gap:8px; justify-content:space-between; align-items:center; flex-wrap:wrap; margin-bottom:10px;}
 #pantalla-cofres #rejillaInv{
-    display:grid; grid-template-columns:repeat(auto-fill,minmax(132px,1fr)); gap:8px;
-    max-height:400px; overflow-y:auto; background:#151515; padding:10px;
-    border:4px solid #373737; margin-top:8px;
+    display:grid; grid-template-columns:repeat(auto-fill,minmax(74px,1fr)); gap:6px;
+    background:#373737; padding:9px; border:3px solid #111;
+    max-height:330px; overflow-y:auto;
   }
-#pantalla-cofres .objeto{
-    background:#282828; border:3px solid #555; padding:8px; text-align:center;
-    display:flex; flex-direction:column; align-items:center; gap:4px; cursor:pointer;
+#pantalla-cofres .ranuraInv{
+    width:100%; aspect-ratio:1/1; background:#8b8b8b; border:3px solid;
+    border-color:#373737 #fff #fff #373737;
+    display:flex; align-items:center; justify-content:center; cursor:pointer; position:relative;
   }
-#pantalla-cofres .objeto.elegido{border-color:#ffff55 !important; background:#444411;}
-#pantalla-cofres .objeto .ic{font-size:28px; filter:drop-shadow(2px 2px 0 #000);}
-#pantalla-cofres .objeto .nm{font-size:9px; line-height:1.3; min-height:24px;}
-#pantalla-cofres .objeto .en{font-size:8px; color:#ffff55;}
-#pantalla-cofres .objeto .val{font-size:10px; color:#3ee63e;}
-#pantalla-cofres .objeto .mcbtn{padding:3px 6px; font-size:9px;}
-#pantalla-cofres #vacio{grid-column:1/-1; text-align:center; color:#777; font-size:11px; padding:30px 0;}
-#pantalla-cofres /* Contrato */
-  #contrato{background:#3c3f41; border:4px solid #1e1e1e; padding:16px; text-align:center;}
-#pantalla-cofres #contrato p{font-size:11px; line-height:1.8; color:#c6c6c6;}
-#pantalla-cofres #contrato .cuenta{margin-top:12px; font-size:13px; color:#ffff55;}
+#pantalla-cofres .ranuraInv:hover{background:#9d9d9d;}
+#pantalla-cofres .ranuraInv.elegida{background:#5a5a2a; border-color:#ffff55 #776b12 #776b12 #ffff55;}
+#pantalla-cofres .ranuraInv .icono{width:46px; height:46px;}
+#pantalla-cofres .ranuraInv .icono img{width:42px; height:42px;}
+#pantalla-cofres .ranuraInv .marcaRareza{position:absolute; bottom:2px; left:2px; right:2px; height:3px;}
+#pantalla-cofres #vacio{grid-column:1/-1; text-align:center; color:#999; font-size:11px; padding:26px 0; text-shadow:1px 1px #000;}
+#pantalla-cofres /* --- Contrato --- */
+  #contrato{text-align:center; color:#fff;}
+#pantalla-cofres #contrato p{font-size:11px; line-height:1.9; text-shadow:1px 1px #000;}
 #pantalla-cofres #ranuras{display:flex; gap:8px; justify-content:center; margin:14px 0; flex-wrap:wrap;}
-#pantalla-cofres .ranura{
-    width:56px; height:56px; background:#151515; border:3px solid #555;
-    display:flex; align-items:center; justify-content:center; font-size:24px;
+#pantalla-cofres .ranuraC{
+    width:58px; height:58px; background:#8b8b8b; border:3px solid;
+    border-color:#373737 #fff #fff #373737; display:flex; align-items:center; justify-content:center;
   }
-#pantalla-cofres /* Modal del premio */
-  #premio{
+#pantalla-cofres .ranuraC .icono{width:44px; height:44px;}
+#pantalla-cofres .ranuraC .icono img{width:40px; height:40px;}
+#pantalla-cofres #cuentaSel{color:#ffff55;}
+#pantalla-cofres /* --- Tooltip --- */
+  #tooltip{
+    position:fixed; display:none; pointer-events:none; z-index:10000; max-width:250px;
+    background:rgba(16,0,16,.94); border:3px solid #2e0062; border-radius:3px;
+    box-shadow:0 0 0 2px #100010, inset 0 0 10px rgba(80,0,160,.5);
+    padding:7px 11px; font-family:"Courier New", Courier, monospace;
+  }
+#pantalla-cofres #tooltip .t{font-size:12px; font-weight:700; text-shadow:2px 2px #000;}
+#pantalla-cofres #tooltip .r{font-size:9.5px; margin-top:3px; text-shadow:1px 1px #000;}
+#pantalla-cofres #tooltip .e{font-size:9.5px; color:#aaaaaa; margin-top:3px; text-shadow:1px 1px #000;}
+#pantalla-cofres #tooltip .v{font-size:9.5px; color:#55ff55; margin-top:5px; text-shadow:1px 1px #000;}
+#pantalla-cofres /* --- Partículas y premio --- */
+  #particulas{position:absolute; inset:0; pointer-events:none; z-index:900;}
+#pantalla-cofres #premio{
     position:fixed; inset:0; background:rgba(0,0,0,.85); display:none;
-    align-items:center; justify-content:center; z-index:1000;
+    align-items:center; justify-content:center; z-index:9000;
   }
 #pantalla-cofres #premio.visible{display:flex;}
-#pantalla-cofres #premio .caja{
-    background:#c6c6c6; border:6px solid; border-color:#fff #555 #555 #fff;
-    padding:24px; text-align:center; max-width:400px; width:90%; color:#000;
-    font-family:"Courier New", Courier, monospace;
+#pantalla-cofres #premio .tarjeta{
+    background:#c6c6c6; border:6px solid; border-color:#fff #373737 #373737 #fff;
+    padding:24px; text-align:center; max-width:420px; width:90%;
+    box-shadow:0 0 30px #000; font-family:"Courier New", Courier, monospace;
   }
-#pantalla-cofres #premio .eti{font-size:12px; color:#333;}
-#pantalla-cofres #premio .ic{font-size:76px; margin:14px 0; filter:drop-shadow(4px 4px 0 rgba(0,0,0,.35));}
-#pantalla-cofres #premio .nm{font-size:15px; font-weight:700; margin-bottom:6px;}
-#pantalla-cofres #premio .rar{font-size:11px; font-weight:700; margin-bottom:6px;}
-#pantalla-cofres #premio .en{font-size:11px; color:#6a6a00; margin-bottom:10px; min-height:14px;}
-#pantalla-cofres #premio .val{font-size:12px; color:#0a6b0a; margin-bottom:14px;}
+#pantalla-cofres #premio .eti{font-size:13px; font-weight:700; color:#ffff55; text-shadow:2px 2px #000; margin-bottom:14px;}
+#pantalla-cofres #premio .icono{width:96px; height:96px; margin:0 auto 14px;}
+#pantalla-cofres #premio .icono img{width:88px; height:88px;}
+#pantalla-cofres #premio .nom{font-size:15px; font-weight:700; text-shadow:2px 2px #000; margin-bottom:6px;}
+#pantalla-cofres #premio .rar{font-size:11px; font-weight:700; text-shadow:1px 1px #000; margin-bottom:6px;}
+#pantalla-cofres #premio .enc{font-size:11px; color:#8a4fdd; min-height:14px; margin-bottom:8px;}
+#pantalla-cofres #premio .val{font-size:12px; color:#0a6b0a; margin-bottom:16px;}
 #pantalla-cofres #premio .botones{display:flex; gap:10px; justify-content:center;}
-@media (max-width:620px){#pantalla-cofres #cofres .mcbtn{font-size:11px; padding:8px 10px;}
-#pantalla-cofres .ficha{min-width:110px; width:110px;}
+@media (max-width:620px){#pantalla-cofres .casilla{min-width:104px; width:104px;}
+#pantalla-cofres #xp{width:100%;}
 
   }
 
@@ -1631,75 +1653,85 @@ body{display:block; padding:0; margin:0;}
 <div id="juego">
   <div class="barra">
     <a class="boton" href="javascript:void 0" data-volver="1">🕹 Arcade</a>
-    <div class="titulo" style="color:#3ee63e">⛏ COFRES MINECRAFT</div>
+    <div class="titulo" style="color:#55ff55">⛏ COFRES MINECRAFT</div>
     <div class="sep"></div>
     <div class="stat">💎 <span id="esmeTxt" class="verde">1000</span></div>
     <div class="stat">🪙 <span id="coinsTxt" class="tenue">0</span></div>
     <button id="btnSonido" title="Sonido">🔊</button>
   </div>
 
-  <div id="cofres">
-    <div id="tapa">
-      <div class="marca">MINECRAFT<small>SIMULADOR DE COFRES</small></div>
-      <div class="saldos">
-        <div class="caja">💎 <span id="esme2">1000</span> esmeraldas</div>
-        <div class="caja coins">🪙 <span id="coins2">0</span> nexo-coins</div>
+  <div id="mc" style="position:relative">
+    <canvas id="particulas"></canvas>
+
+    <!-- ---------- Ventana de apertura ---------- -->
+    <div class="ventana">
+      <div id="cabeza">
+        <div class="saldo"><span id="icoEsme"></span><span id="esme2">1.000</span></div>
+        <div id="xp">
+          <div id="xpTubo"><div id="xpRelleno"></div></div>
+          <div id="xpTexto">Nivel <span id="nivelTxt">1</span></div>
+        </div>
+        <div class="saldo coins">🪙 <span id="coins2">0</span></div>
       </div>
-    </div>
 
-    <div id="pestanas">
-      <button class="mcbtn sel" data-hoja="cofres">📦 COFRES</button>
-      <button class="mcbtn" data-hoja="inventario">🎒 INVENTARIO (<span id="numInv">0</span>)</button>
-      <button class="mcbtn" data-hoja="contrato">⚒️ CONTRATO</button>
-    </div>
-
-    <!-- ---------- Cofres ---------- -->
-    <div class="hoja activa" id="hoja-cofres">
       <div id="ruleta">
         <div id="aguja"></div>
         <div id="cinta"></div>
       </div>
-      <div id="rejillaCofres" style="margin-top:12px"></div>
+
+      <div class="rotulo">SELECCIONA UN COFRE</div>
+      <div id="rejillaCofres"></div>
     </div>
 
-    <!-- ---------- Inventario ---------- -->
-    <div class="hoja" id="hoja-inventario">
-      <div id="mandoInv">
-        <button class="mcbtn mal" id="btnVenderComunes">VENDER TODO LO COMÚN</button>
-        <button class="mcbtn" id="btnCambiar">🪙 100 COINS → 💎 1.000</button>
-        <button class="mcbtn bien" id="btnRegalo" style="display:none">🎁 200 ESMERALDAS GRATIS</button>
+    <!-- ---------- Ventana de inventario ---------- -->
+    <div class="ventana">
+      <div id="pestanas">
+        <button class="mcbtn sel" data-hoja="inventario">🎒 INVENTARIO (<span id="numInv">0</span>)</button>
+        <button class="mcbtn" data-hoja="contrato">⚒️ CONTRATO DE FUSIÓN</button>
       </div>
-      <div id="rejillaInv"></div>
-    </div>
 
-    <!-- ---------- Contrato de fusión ---------- -->
-    <div class="hoja" id="hoja-contrato">
-      <div id="contrato">
-        <p>Elige <b>5 objetos de la misma rareza</b> en tu inventario<br>
-           y fórjalos en <b>1 objeto de la rareza superior</b>.</p>
-        <div id="ranuras"></div>
-        <div class="cuenta">Seleccionados: <span id="cuentaSel">0</span> / 5</div>
-        <button class="mcbtn bien" id="btnForjar" style="margin-top:14px" disabled>FORJAR OBJETO</button>
-        <p style="margin-top:14px; font-size:10px; color:#9aa0a6">
-          Los objetos entran al contrato desde la pestaña de inventario.
-        </p>
+      <div class="hoja activa" id="hoja-inventario">
+        <div id="mandoInv">
+          <button class="mcbtn rojo" id="btnVenderComunes">VENDER COMUNES</button>
+          <button class="mcbtn" id="btnCambiar">🪙 100 → 💎 1.000</button>
+          <button class="mcbtn verde" id="btnRegalo" style="display:none">🎁 200 ESMERALDAS</button>
+        </div>
+        <div id="rejillaInv"></div>
+        <div class="rotulo" style="margin-top:9px; font-size:9.5px; color:#373737; text-shadow:none">
+          Pasa el ratón para ver el objeto · clic para meterlo en el contrato · botón derecho para venderlo
+        </div>
+      </div>
+
+      <div class="hoja" id="hoja-contrato">
+        <div id="contrato">
+          <p>Mete <b>5 objetos de la misma rareza</b> y fórjalos en <b>1 de la rareza superior</b>.</p>
+          <div id="ranuras"></div>
+          <p>Seleccionados: <span id="cuentaSel">0</span> / 5</p>
+          <button class="mcbtn verde" id="btnForjar" style="margin-top:12px" disabled>FORJAR OBJETO</button>
+        </div>
       </div>
     </div>
   </div>
 </div>
 
-<!-- ---------- Premio ---------- -->
+<div id="tooltip">
+  <div class="t" id="ttNombre"></div>
+  <div class="r" id="ttRareza"></div>
+  <div class="e" id="ttEncanto"></div>
+  <div class="v" id="ttValor"></div>
+</div>
+
 <div id="premio">
-  <div class="caja">
+  <div class="tarjeta">
     <div class="eti">¡OBJETO OBTENIDO!</div>
-    <div class="ic" id="pIcono">🗡️</div>
-    <div class="nm" id="pNombre">Espada</div>
-    <div class="rar" id="pRareza">COMÚN</div>
-    <div class="en" id="pEncanto"></div>
-    <div class="val" id="pValor">+0 💎</div>
+    <div class="icono" id="pIcono"></div>
+    <div class="nom" id="pNombre"></div>
+    <div class="rar" id="pRareza"></div>
+    <div class="enc" id="pEncanto"></div>
+    <div class="val" id="pValor"></div>
     <div class="botones">
-      <button class="mcbtn bien" id="btnGuardar">GUARDAR</button>
-      <button class="mcbtn mal" id="btnVenderYa">VENDER</button>
+      <button class="mcbtn verde" id="btnGuardar">GUARDAR</button>
+      <button class="mcbtn rojo" id="btnVenderYa">VENDER</button>
     </div>
   </div>
 </div>
@@ -9818,67 +9850,272 @@ Arcade.bucle(dt => { actualizar(dt); dibujar(); });
 registrarJuego("cofres", function(document, addEventListener, Arcade){
 
 // ============================================================
-//  COFRES MINECRAFT — simulador de cajas con contratos de fusión
+//  COFRES MINECRAFT — simulador de cajas con fusión de objetos
+//  Todos los iconos son pixel art de 16x16 dibujado por código.
 // ============================================================
 const $ = id => document.getElementById(id);
 
+// ---------- Dibujo de sprites 16x16 ----------
+const LADO = 16;
+function lienzoSprite(){
+  const c = document.createElement('canvas');
+  c.width = LADO; c.height = LADO;
+  const x = c.getContext('2d');
+  x.imageSmoothingEnabled = false;
+  return { c, x };
+}
+const px = (x, cx, cy, col, an = 1, al = 1) => { x.fillStyle = col; x.fillRect(cx, cy, an, al); };
+
+/** Textura de bloque: ruido estable a partir de una semilla. */
+function bloque(colores, semilla){
+  const { c, x } = lienzoSprite();
+  let s = semilla;
+  const azarFijo = () => { s = (s * 1103515245 + 12345) & 0x7fffffff; return s / 0x7fffffff; };
+  for (let j = 0; j < LADO; j++)
+    for (let i = 0; i < LADO; i++)
+      px(x, i, j, colores[Math.floor(azarFijo() * colores.length)]);
+  return c.toDataURL();
+}
+
+/** Tronco: vetas verticales con corteza a los lados. */
+function tronco(){
+  const { c, x } = lienzoSprite();
+  let s = 7;
+  const az = () => { s = (s * 1103515245 + 12345) & 0x7fffffff; return s / 0x7fffffff; };
+  for (let j = 0; j < LADO; j++)
+    for (let i = 0; i < LADO; i++){
+      const corteza = ['#6b4f2a', '#5a4122', '#7a5c33'];
+      px(x, i, j, corteza[Math.floor(az() * 3)]);
+      if (az() > 0.82) px(x, i, j, '#4a3419');
+    }
+  return c.toDataURL();
+}
+
+/** Espada en diagonal, como las de Minecraft. */
+function espada(hoja, brillo, sombra, guarda){
+  const { c, x } = lienzoSprite();
+  for (let k = 0; k < 9; k++){
+    const i = 13 - k, j = 2 + k;
+    px(x, i, j, brillo);
+    px(x, i - 1, j, hoja);
+    px(x, i - 1, j + 1, sombra);
+  }
+  px(x, 14, 1, brillo); px(x, 13, 1, hoja);
+  // guarda
+  for (let k = 0; k < 3; k++){ px(x, 3 + k, 11 - k, guarda); px(x, 5 + k, 13 - k, guarda); }
+  px(x, 4, 12, guarda); px(x, 5, 11, guarda); px(x, 6, 12, guarda);
+  // mango
+  px(x, 1, 14, '#4a3419'); px(x, 2, 13, '#6b4f2a'); px(x, 3, 13, '#5a4122'); px(x, 2, 14, '#5a4122');
+  return c.toDataURL();
+}
+
+/** Pico: cabeza curva arriba y mango en diagonal. */
+function pico(cabeza, brillo){
+  const { c, x } = lienzoSprite();
+  const puntos = [[3,4],[4,3],[5,2],[6,2],[7,2],[8,2],[9,2],[10,3],[11,4],[12,5]];
+  puntos.forEach(([i, j]) => { px(x, i, j, cabeza); px(x, i, j + 1, brillo); });
+  px(x, 2, 5, cabeza); px(x, 13, 6, cabeza);
+  for (let k = 0; k < 8; k++) px(x, 8 - k, 5 + k, k % 2 ? '#6b4f2a' : '#5a4122');
+  return c.toDataURL();
+}
+
+/** Arco tensado. */
+function arco(){
+  const { c, x } = lienzoSprite();
+  for (let j = 2; j < 14; j++){
+    const i = 11 - Math.round(Math.sin((j - 2) / 11 * Math.PI) * 4);
+    px(x, i, j, '#6b4f2a'); px(x, i + 1, j, '#8a6a3a');
+  }
+  for (let j = 3; j < 13; j++) px(x, 11, j, '#dcdcdc');
+  for (let i = 2; i < 11; i++) px(x, i, 8, '#c8c8c8');
+  px(x, 1, 8, '#dcdcdc'); px(x, 2, 7, '#a8a8a8'); px(x, 2, 9, '#a8a8a8');
+  return c.toDataURL();
+}
+
+/** Lingote. */
+function lingote(cara, alto, bajo){
+  const { c, x } = lienzoSprite();
+  px(x, 4, 6, alto, 8, 1);
+  px(x, 3, 7, cara, 10, 3);
+  px(x, 2, 10, bajo, 12, 1);
+  px(x, 4, 7, alto, 3, 1);
+  px(x, 3, 9, bajo, 10, 1);
+  return c.toDataURL();
+}
+
+/** Gema tallada (diamante, esmeralda, perla). */
+function gema(cara, brillo, borde){
+  const { c, x } = lienzoSprite();
+  const filas = [[6,4,4],[5,5,6],[4,6,8],[4,7,8],[4,8,8],[5,9,6],[6,10,4],[7,11,2]];
+  filas.forEach(([i, j, an]) => px(x, i, j, cara, an, 1));
+  px(x, 6, 3, borde, 4, 1);
+  px(x, 6, 5, brillo, 2, 1);
+  px(x, 5, 6, brillo, 1, 2);
+  px(x, 9, 8, borde, 2, 2);
+  return c.toDataURL();
+}
+
+/** Manzana (normal o dorada). */
+function manzana(piel, brillo, hoja){
+  const { c, x } = lienzoSprite();
+  const cuerpo = [[5,5,6],[4,6,8],[3,7,10],[3,8,10],[3,9,10],[4,10,8],[5,11,6],[6,12,4]];
+  cuerpo.forEach(([i, j, an]) => px(x, i, j, piel, an, 1));
+  px(x, 5, 6, brillo, 2, 1); px(x, 4, 7, brillo, 1, 2);
+  px(x, 8, 3, '#5a4122'); px(x, 8, 4, '#5a4122');
+  px(x, 9, 3, hoja, 3, 1); px(x, 10, 2, hoja, 2, 1);
+  return c.toDataURL();
+}
+
+/** Trozo de carbón. */
+function carbon(){
+  const { c, x } = lienzoSprite();
+  const cuerpo = [[6,4,4],[5,5,6],[4,6,8],[4,7,8],[4,8,8],[5,9,6],[6,10,4]];
+  cuerpo.forEach(([i, j, an]) => px(x, i, j, '#191919', an, 1));
+  px(x, 6, 5, '#333'); px(x, 7, 6, '#3d3d3d'); px(x, 5, 8, '#0d0d0d'); px(x, 9, 8, '#0d0d0d');
+  return c.toDataURL();
+}
+
+/** Pechera. */
+function pechera(cara, alto, bajo){
+  const { c, x } = lienzoSprite();
+  px(x, 2, 3, cara, 4, 2); px(x, 10, 3, cara, 4, 2);
+  px(x, 2, 5, cara, 12, 2);
+  px(x, 3, 7, cara, 10, 5);
+  px(x, 4, 12, cara, 3, 1); px(x, 9, 12, cara, 3, 1);
+  px(x, 3, 5, alto, 10, 1);
+  px(x, 3, 11, bajo, 10, 1);
+  px(x, 7, 7, bajo, 2, 4);
+  return c.toDataURL();
+}
+
+/** Élitros: dos alas grises. */
+function elitros(){
+  const { c, x } = lienzoSprite();
+  for (let j = 2; j < 13; j++){
+    const an = Math.max(1, 6 - Math.floor((j - 2) / 2));
+    px(x, 7 - an, j, '#c8c2d2', an, 1);
+    px(x, 9, j, '#c8c2d2', an, 1);
+  }
+  px(x, 7, 2, '#8a8496', 2, 11);
+  for (let j = 3; j < 12; j += 3){ px(x, 3, j, '#9a94a8', 3, 1); px(x, 10, j, '#9a94a8', 3, 1); }
+  return c.toDataURL();
+}
+
+/** Tótem de la inmortalidad. */
+function totem(){
+  const { c, x } = lienzoSprite();
+  px(x, 5, 2, '#d9a441', 6, 3);
+  px(x, 4, 5, '#e8c46a', 8, 5);
+  px(x, 6, 6, '#2b6b3f', 1, 2); px(x, 9, 6, '#2b6b3f', 1, 2);
+  px(x, 7, 9, '#8a5a1f', 2, 1);
+  px(x, 5, 10, '#d9a441', 6, 2);
+  px(x, 3, 11, '#c08a2a', 2, 3); px(x, 11, 11, '#c08a2a', 2, 3);
+  px(x, 6, 12, '#e8c46a', 4, 3);
+  return c.toDataURL();
+}
+
+/** Estrella del Nether. */
+function estrella(){
+  const { c, x } = lienzoSprite();
+  px(x, 7, 1, '#e8e8f0', 2, 14);
+  px(x, 1, 7, '#e8e8f0', 14, 2);
+  for (let k = 0; k < 6; k++){
+    px(x, 3 + k, 3 + k, '#dcdce8'); px(x, 12 - k, 3 + k, '#dcdce8');
+  }
+  px(x, 6, 6, '#ffffff', 4, 4);
+  px(x, 7, 7, '#bcbcd8', 2, 2);
+  return c.toDataURL();
+}
+
+/** Faro. */
+function faro(){
+  const { c, x } = lienzoSprite();
+  px(x, 2, 3, '#3a3f4a', 12, 11);
+  px(x, 3, 4, '#5aa9c4', 10, 9);
+  px(x, 5, 6, '#7fe8ff', 6, 6);
+  px(x, 6, 7, '#ffffff', 4, 4);
+  px(x, 2, 3, '#232833', 12, 1);
+  px(x, 2, 13, '#232833', 12, 1);
+  px(x, 7, 0, '#cfefff', 2, 3);
+  return c.toDataURL();
+}
+
+/** Cofre visto de frente. */
+function cofre(madera, oscuro, herraje){
+  const { c, x } = lienzoSprite();
+  px(x, 1, 3, madera, 14, 4);
+  px(x, 1, 8, madera, 14, 6);
+  px(x, 1, 3, oscuro, 14, 1);
+  px(x, 1, 7, oscuro, 14, 1);
+  px(x, 1, 13, oscuro, 14, 1);
+  px(x, 1, 3, oscuro, 1, 11); px(x, 14, 3, oscuro, 1, 11);
+  px(x, 7, 6, herraje, 2, 4);
+  px(x, 7, 7, '#1a1a1a', 2, 1);
+  return c.toDataURL();
+}
+
+// ---------- Catálogo ----------
+const RAREZAS = {
+  comun:      { nombre:'COMÚN',      color:'#ffffff' },
+  raro:       { nombre:'RARO',       color:'#55ffff' },
+  epico:      { nombre:'ÉPICO',      color:'#aa00aa' },
+  legendario: { nombre:'LEGENDARIO', color:'#ffaa00' },
+  mitico:     { nombre:'MÍTICO',     color:'#ff5555' }
+};
+const ORDEN = ['comun', 'raro', 'epico', 'legendario', 'mitico'];
+
+const ICONO_ESME = gema('#17dd62', '#7dffb0', '#0a9c42');
+
 const OBJETOS = [
   // Común
-  { id:'dirt',    nombre:'Bloque de Tierra',  icono:'🟫', rareza:'comun', precio:10,  clase:'bloque' },
-  { id:'cobble',  nombre:'Adoquín',           icono:'🪨', rareza:'comun', precio:15,  clase:'bloque' },
-  { id:'wood',    nombre:'Madera de Roble',   icono:'🪵', rareza:'comun', precio:20,  clase:'bloque' },
-  { id:'apple',   nombre:'Manzana',           icono:'🍎', rareza:'comun', precio:25,  clase:'comida' },
-  { id:'coal',    nombre:'Carbón',            icono:'🖤', rareza:'comun', precio:35,  clase:'material' },
+  { id:'dirt',   nombre:'Bloque de Tierra', rareza:'comun', precio:10, img: bloque(['#79553a','#8a6142','#6b4a32','#5f4229'], 3) },
+  { id:'cobble', nombre:'Adoquín',          rareza:'comun', precio:15, img: bloque(['#7a7a7a','#8f8f8f','#6a6a6a','#a0a0a0'], 11) },
+  { id:'log',    nombre:'Tronco de Roble',  rareza:'comun', precio:20, img: tronco() },
+  { id:'apple',  nombre:'Manzana',          rareza:'comun', precio:25, img: manzana('#c62f26', '#f2685e', '#3f8f2f') },
+  { id:'coal',   nombre:'Carbón',           rareza:'comun', precio:35, img: carbon() },
   // Raro
-  { id:'iron',    nombre:'Lingote de Hierro', icono:'⬜', rareza:'raro', precio:70,  clase:'material' },
-  { id:'gold',    nombre:'Lingote de Oro',    icono:'🟨', rareza:'raro', precio:110, clase:'material' },
-  { id:'bow',     nombre:'Arco',              icono:'🏹', rareza:'raro', precio:130, clase:'arma' },
-  { id:'isword',  nombre:'Espada de Hierro',  icono:'🗡️', rareza:'raro', precio:150, clase:'arma' },
+  { id:'iron',   nombre:'Lingote de Hierro', rareza:'raro', precio:80,  img: lingote('#d8d8d8', '#f2f2f2', '#a8a8a8') },
+  { id:'gold',   nombre:'Lingote de Oro',    rareza:'raro', precio:120, img: lingote('#f0c020', '#ffe680', '#b88a10') },
+  { id:'bow',    nombre:'Arco',              rareza:'raro', precio:140, img: arco(), encantable:true },
+  { id:'isword', nombre:'Espada de Hierro',  rareza:'raro', precio:160, img: espada('#c4c4c4', '#f0f0f0', '#8a8a8a', '#8a6a3a'), encantable:true },
   // Épico
-  { id:'diamond', nombre:'Diamante',          icono:'💎', rareza:'epico', precio:350, clase:'material' },
-  { id:'dpick',   nombre:'Pico de Diamante',  icono:'⛏️', rareza:'epico', precio:550, clase:'herramienta' },
-  { id:'dsword',  nombre:'Espada de Diamante',icono:'⚔️', rareza:'epico', precio:600, clase:'arma' },
+  { id:'diamond',nombre:'Diamante',          rareza:'epico', precio:400, img: gema('#3fe0e0', '#c6fbfb', '#1f9c9c') },
+  { id:'pearl',  nombre:'Perla de Ender',    rareza:'epico', precio:500, img: gema('#1d6b64', '#7fd8c8', '#0d3d38') },
+  { id:'dpick',  nombre:'Pico de Diamante',  rareza:'epico', precio:650, img: pico('#3fe0e0', '#c6fbfb'), encantable:true },
+  { id:'dsword', nombre:'Espada de Diamante',rareza:'epico', precio:750, img: espada('#3fe0e0', '#c6fbfb', '#1f9c9c', '#8a6a3a'), encantable:true },
   // Legendario
-  { id:'dchest',  nombre:'Pechera de Diamante', icono:'🎽', rareza:'legendario', precio:1500, clase:'armadura' },
-  { id:'elytra',  nombre:'Élitros',             icono:'🪽', rareza:'legendario', precio:2500, clase:'armadura' },
-  { id:'nstar',   nombre:'Estrella del Nether', icono:'⭐', rareza:'legendario', precio:3500, clase:'material' },
+  { id:'dchest', nombre:'Pechera de Diamante', rareza:'legendario', precio:1800, img: pechera('#3fe0e0', '#c6fbfb', '#1f9c9c'), encantable:true },
+  { id:'elytra', nombre:'Élitros',             rareza:'legendario', precio:3000, img: elitros() },
+  { id:'totem',  nombre:'Tótem de la Inmortalidad', rareza:'legendario', precio:3500, img: totem() },
+  { id:'nstar',  nombre:'Estrella del Nether', rareza:'legendario', precio:4500, img: estrella() },
   // Mítico
-  { id:'egap',    nombre:'Manzana Dorada Encantada', icono:'✨', rareza:'mitico', precio:7000,  clase:'comida' },
-  { id:'netherite',nombre:'Lingote de Netherita',    icono:'⬛', rareza:'mitico', precio:9000,  clase:'material' },
-  { id:'dragon',  nombre:'Huevo de Dragón',          icono:'🥚', rareza:'mitico', precio:12000, clase:'bloque' }
+  { id:'egap',   nombre:'Manzana Dorada Encantada', rareza:'mitico', precio:8500,  img: manzana('#e8c020', '#fff0a0', '#3f8f2f'), encantado:true },
+  { id:'nsword', nombre:'Espada de Netherita',      rareza:'mitico', precio:11000, img: espada('#4a4348', '#8a8088', '#2b2529', '#c9a227'), encantable:true },
+  { id:'beacon', nombre:'Faro',                     rareza:'mitico', precio:15000, img: faro() }
 ];
 
-const ENCANTOS = [
-  'Afilado V', 'Eficiencia V', 'Protección IV', 'Fortuna III',
-  'Saqueo III', 'Reparación I', 'Aspecto Ígneo II', 'Irrompibilidad III'
-];
-const ENCANTABLES = ['arma', 'herramienta', 'armadura'];
+const ENCANTOS = ['Afilado V', 'Eficiencia V', 'Protección IV', 'Fortuna III', 'Reparación I', 'Aspecto Ígneo II'];
 
-const ORDEN = ['comun', 'raro', 'epico', 'legendario', 'mitico'];
-const NOMBRE_RAREZA = { comun:'COMÚN', raro:'RARO', epico:'ÉPICO', legendario:'LEGENDARIO', mitico:'MÍTICO' };
-const COLOR_RAREZA = { comun:'#7a7a7a', raro:'#3a3ac4', epico:'#8a008a', legendario:'#b37500', mitico:'#c40000' };
-
-/* Cada cofre lleva sus probabilidades explícitas, que suman 100.
-   Calculadas para devolver en torno al 85 % de lo que cuestan: se pierde
-   poco a poco, como en cualquier simulador de cajas. */
+/* Cada cofre lleva su tabla explícita, que suma 100 y se enseña en la carta.
+   Están calculadas para devolver alrededor del 90 % de lo que cuestan. */
 const COFRES = [
-  { id:'madera',   nombre:'COFRE DE MADERA',   precio:45,   icono:'📦',
+  { id:'madera',   nombre:'Cofre de Madera',   precio:50,   img: cofre('#9c7042', '#6b4a28', '#c8c8c8'),
     tabla:{ comun:80, raro:20 } },
-  { id:'hierro',   nombre:'COFRE DE HIERRO',   precio:180,  icono:'⚙️',
-    tabla:{ comun:42, raro:38, epico:20 } },
-  { id:'diamante', nombre:'COFRE DE DIAMANTE', precio:650,  icono:'🔷',
-    tabla:{ raro:54, epico:34, legendario:12 } },
-  { id:'nether',   nombre:'COFRE DEL NETHER',  precio:2200, icono:'🔥',
-    tabla:{ epico:57, legendario:35, mitico:8 } }
+  { id:'hierro',   nombre:'Cofre de Hierro',   precio:220,  img: cofre('#b8b8b8', '#7a7a7a', '#f0f0f0'),
+    tabla:{ comun:40, raro:40, epico:20 } },
+  { id:'diamante', nombre:'Cofre de Diamante', precio:780,  img: cofre('#4fd8d8', '#2b9c9c', '#e8ffff'),
+    tabla:{ raro:52, epico:36, legendario:12 } },
+  { id:'ender',    nombre:'Cofre del Ender',   precio:2850, img: cofre('#1d3b3a', '#0d2423', '#7fd8c8'),
+    tabla:{ epico:55, legendario:37, mitico:8 } }
 ];
 
 // ---------- Estado ----------
-const S = { esmeraldas: 1000, inventario: [], girando: false, elegidos: [] };
+const S = { esmeraldas:1000, xp:0, nivel:1, inventario:[], girando:false, elegidos:[] };
 
 function guardarCofres(){
   Arcade.escribir('cofres', JSON.stringify({
-    esmeraldas: S.esmeraldas,
-    inventario: S.inventario.slice(0, 200)      // el inventario no crece sin límite
+    esmeraldas:S.esmeraldas, xp:S.xp, nivel:S.nivel,
+    inventario: S.inventario.slice(0, 240).map(o => ({ id:o.id, ficha:o.ficha, precio:o.precio, encanto:o.encanto }))
   }));
 }
 function cargarCofres(){
@@ -9887,14 +10124,20 @@ function cargarCofres(){
   try {
     const g = JSON.parse(crudo);
     S.esmeraldas = typeof g.esmeraldas === 'number' ? g.esmeraldas : 1000;
-    S.inventario = Array.isArray(g.inventario) ? g.inventario : [];
+    S.xp = g.xp || 0; S.nivel = g.nivel || 1;
+    // El inventario se guarda por id y se rehidrata con el catálogo actual
+    S.inventario = (g.inventario || []).map(o => {
+      const base = OBJETOS.find(b => b.id === o.id);
+      if (!base) return null;
+      return { ...base, ficha:o.ficha, precio:o.precio ?? base.precio, encanto:o.encanto,
+               encantado: base.encantado || !!o.encanto };
+    }).filter(Boolean);
   } catch(e){}
 }
 
-// ---------- Generación de objetos ----------
+// ---------- Generación ----------
 function sortearRareza(tabla){
-  const total = Object.values(tabla).reduce((s, v) => s + v, 0);
-  let r = Math.random() * total;
+  let r = Math.random() * Object.values(tabla).reduce((s, v) => s + v, 0);
   for (const rareza of ORDEN){
     if (!tabla[rareza]) continue;
     r -= tabla[rareza];
@@ -9902,26 +10145,31 @@ function sortearRareza(tabla){
   }
   return Object.keys(tabla)[0];
 }
-
 function generarObjeto(tabla){
   const rareza = sortearRareza(tabla);
   const posibles = OBJETOS.filter(o => o.rareza === rareza);
-  const base = posibles[Math.floor(Math.random() * posibles.length)];
+  const base = elegir(posibles);
   const obj = { ...base, ficha: Date.now().toString(36) + Math.random().toString(36).slice(2, 8) };
-  if (ENCANTABLES.includes(obj.clase) && Math.random() < 0.4){
+  if (base.encantable && Math.random() < 0.45){
     obj.encanto = elegir(ENCANTOS);
-    obj.precio = Math.floor(obj.precio * 1.6);
+    obj.encantado = true;
+    obj.precio = Math.floor(obj.precio * 1.5);
   }
   return obj;
 }
 
-// ---------- Ruleta ----------
-function tarjeta(obj){
+// ---------- Piezas de interfaz ----------
+function htmlIcono(obj, clase){
+  return '<div class="icono' + (obj.encantado ? ' encantado' : '') + (clase ? ' ' + clase : '') + '">' +
+         '<img src="' + obj.img + '" alt="' + obj.nombre + '"></div>';
+}
+
+function casilla(obj){
   const d = document.createElement('div');
-  d.className = 'ficha r-' + obj.rareza;
-  d.innerHTML = '<div class="ic">' + obj.icono + '</div>' +
-                '<div class="nm">' + obj.nombre + '</div>' +
-                '<div class="en">' + (obj.encanto || '') + '</div>';
+  d.className = 'casilla';
+  d.style.borderColor = RAREZAS[obj.rareza].color;
+  d.innerHTML = htmlIcono(obj) +
+    '<div class="nom" style="color:' + RAREZAS[obj.rareza].color + '">' + obj.nombre + '</div>';
   return d;
 }
 
@@ -9930,22 +10178,53 @@ function cintaEnReposo(){
   cinta.style.transition = 'none';
   cinta.style.transform = 'translateX(0px)';
   cinta.innerHTML = '';
-  for (let i = 0; i < 10; i++) cinta.appendChild(tarjeta(elegir(OBJETOS)));
+  for (let i = 0; i < 10; i++) cinta.appendChild(casilla(elegir(OBJETOS)));
 }
 
-const ANCHO_FICHA = 140;          // 130 de ancho + 5 de margen a cada lado
-const GANADORA = 36, TOTAL_FICHAS = 45;
+// ---------- Partículas de experiencia ----------
+const lienzoP = $('particulas');
+const ctxP = lienzoP.getContext('2d');
+let motas = [];
+function ajustarLienzo(){
+  const r = lienzoP.parentElement.getBoundingClientRect();
+  lienzoP.width = Math.max(1, Math.floor(r.width));
+  lienzoP.height = Math.max(1, Math.floor(r.height));
+}
+addEventListener('resize', ajustarLienzo);
+
+function estallido(x, y, color, n){
+  for (let i = 0; i < n; i++){
+    motas.push({
+      x, y, vx: azar(-260, 260), vy: azar(-320, 60),
+      lado: azarEntero(3, 7), color, vida: azar(0.5, 1.1), inicial: 1
+    });
+    motas[motas.length - 1].inicial = motas[motas.length - 1].vida;
+  }
+}
+function pintarMotas(dt){
+  ctxP.clearRect(0, 0, lienzoP.width, lienzoP.height);
+  for (let i = motas.length - 1; i >= 0; i--){
+    const m = motas[i];
+    m.vida -= dt;
+    if (m.vida <= 0){ motas.splice(i, 1); continue; }
+    m.x += m.vx * dt; m.y += m.vy * dt; m.vy += 620 * dt;
+    ctxP.globalAlpha = limitar(m.vida / m.inicial, 0, 1);
+    ctxP.fillStyle = m.color;
+    ctxP.fillRect(Math.round(m.x), Math.round(m.y), m.lado, m.lado);   // píxeles cuadrados
+  }
+  ctxP.globalAlpha = 1;
+}
+
+// ---------- Ruleta ----------
+const ANCHO_CASILLA = 128;      // 120 de ancho + 4 de margen a cada lado
+const GANADORA = 36, TOTAL = 45;
 
 function abrirCofre(id){
   if (S.girando) return;
-  const cofre = COFRES.find(c => c.id === id);
-  if (S.esmeraldas < cofre.precio){
-    avisar('No te llegan las esmeraldas para ese cofre');
-    Sonido.fx('error');
-    return;
-  }
+  const c = COFRES.find(x => x.id === id);
+  if (S.esmeraldas < c.precio){ Sonido.fx('error'); return; }
 
-  S.esmeraldas -= cofre.precio;
+  S.esmeraldas -= c.precio;
   S.girando = true;
   refrescar();
 
@@ -9953,165 +10232,176 @@ function abrirCofre(id){
   cinta.style.transition = 'none';
   cinta.style.transform = 'translateX(0px)';
   cinta.innerHTML = '';
-
-  const secuencia = [];
-  for (let i = 0; i < TOTAL_FICHAS; i++){
-    const o = generarObjeto(cofre.tabla);
-    secuencia.push(o);
-    cinta.appendChild(tarjeta(o));
+  const seq = [];
+  for (let i = 0; i < TOTAL; i++){
+    const o = generarObjeto(c.tabla);
+    seq.push(o);
+    cinta.appendChild(casilla(o));
   }
-  const premio = secuencia[GANADORA];
+  const ganado = seq[GANADORA];
 
   const ancho = $('ruleta').offsetWidth || 900;
-  const desvio = Math.floor(Math.random() * 70) - 35;     // no siempre para en el centro exacto
-  const destino = GANADORA * ANCHO_FICHA - ancho / 2 + ANCHO_FICHA / 2 + desvio;
+  const desvio = Math.floor(Math.random() * 60) - 30;
+  const destino = GANADORA * ANCHO_CASILLA - ancho / 2 + ANCHO_CASILLA / 2 + desvio;
 
-  // la cinta arranca en el fotograma siguiente, para que la transición se aplique
   requestAnimationFrame(() => {
     cinta.style.transition = 'transform 4.8s cubic-bezier(.08,.9,.1,1)';
     cinta.style.transform = 'translateX(-' + destino + 'px)';
   });
 
-  // los chasquidos se van espaciando conforme frena
+  // el chasquido se va espaciando conforme frena
   let t = 0;
-  const chasquido = () => {
+  const tic = () => {
     if (!S.girando) return;
     Sonido.fx('giro');
     t += 0.06;
-    if (t < 4.6) setTimeout(chasquido, 70 + t * t * 26);
+    if (t < 4.6) setTimeout(tic, 70 + t * t * 26);
   };
-  setTimeout(chasquido, 120);
+  setTimeout(tic, 120);
 
   setTimeout(() => {
     S.girando = false;
-    S.inventario.unshift(premio);
-    if (S.inventario.length > 200) S.inventario.pop();
-    sonarPremio(premio.rareza);
+    S.inventario.unshift(ganado);
+    if (S.inventario.length > 240) S.inventario.pop();
+    sumarXP(25);
+    sonarPremio(ganado.rareza);
+    if (['epico', 'legendario', 'mitico'].includes(ganado.rareza)){
+      ajustarLienzo();
+      estallido(lienzoP.width / 2, 150, RAREZAS[ganado.rareza].color, 46);
+    }
     refrescar();
     guardarCofres();
-    mostrarPremio(premio, true);
+    mostrarPremio(ganado);
   }, 5000);
 }
 
 function sonarPremio(rareza){
-  const notas = {
-    comun: [440, 554], raro: [523, 659, 784],
-    epico: [587, 740, 880, 1047], legendario: [659, 880, 1047, 1319, 1568],
-    mitico: [784, 1047, 1319, 1568, 2093, 2637]
-  }[rareza];
-  Sonido.melodia(notas, 0.09, 'square', 0.06);
+  Sonido.melodia({
+    comun:[440, 554], raro:[523, 659, 784],
+    epico:[587, 740, 880, 1047], legendario:[659, 880, 1047, 1319, 1568],
+    mitico:[784, 1047, 1319, 1568, 2093, 2637]
+  }[rareza], 0.09, 'square', 0.06);
+}
+
+function sumarXP(n){
+  S.xp += n;
+  let subio = false;
+  while (S.xp >= S.nivel * 100){
+    S.xp -= S.nivel * 100;
+    S.nivel++;
+    subio = true;
+  }
+  if (subio){
+    Sonido.melodia([440, 880], 0.16, 'triangle', 0.08);
+    ajustarLienzo();
+    estallido(lienzoP.width / 2, 60, '#55ff55', 34);
+  }
 }
 
 // ---------- Premio ----------
 let premioActual = null;
-function mostrarPremio(obj, reciente){
-  premioActual = { obj, reciente };
-  $('pIcono').textContent = obj.icono;
+function mostrarPremio(obj){
+  premioActual = obj;
+  $('pIcono').className = 'icono' + (obj.encantado ? ' encantado' : '');
+  $('pIcono').innerHTML = '<img src="' + obj.img + '" alt="">';
   $('pNombre').textContent = obj.nombre;
-  $('pRareza').textContent = NOMBRE_RAREZA[obj.rareza];
-  $('pRareza').style.color = COLOR_RAREZA[obj.rareza];
+  $('pNombre').style.color = RAREZAS[obj.rareza].color === '#ffffff' ? '#333' : RAREZAS[obj.rareza].color;
+  $('pRareza').textContent = RAREZAS[obj.rareza].nombre;
+  $('pRareza').style.color = RAREZAS[obj.rareza].color === '#ffffff' ? '#555' : RAREZAS[obj.rareza].color;
   $('pEncanto').textContent = obj.encanto ? '✨ ' + obj.encanto : '';
-  $('pValor').textContent = 'Vale ' + obj.precio.toLocaleString('es-ES') + ' 💎';
+  $('pValor').textContent = 'Vale ' + obj.precio.toLocaleString('es-ES') + ' esmeraldas';
   $('premio').classList.add('visible');
 }
-function cerrarPremio(){
-  $('premio').classList.remove('visible');
-  premioActual = null;
-}
+function cerrarPremio(){ $('premio').classList.remove('visible'); premioActual = null; }
 
 // ---------- Inventario ----------
-function venderObjeto(ficha){
+function vender(ficha){
   const i = S.inventario.findIndex(o => o.ficha === ficha);
   if (i === -1) return;
   S.esmeraldas += S.inventario[i].precio;
   S.inventario.splice(i, 1);
   S.elegidos = S.elegidos.filter(f => f !== ficha);
+  ocultarTooltip();
   Sonido.fx('moneda');
   refrescar();
   guardarCofres();
 }
-
 function venderComunes(){
   const comunes = S.inventario.filter(o => o.rareza === 'comun');
-  if (!comunes.length){ avisar('No tienes objetos comunes'); return; }
-  const total = comunes.reduce((s, o) => s + o.precio, 0);
-  S.esmeraldas += total;
+  if (!comunes.length) return;
+  S.esmeraldas += comunes.reduce((s, o) => s + o.precio, 0);
   S.inventario = S.inventario.filter(o => o.rareza !== 'comun');
   S.elegidos = S.elegidos.filter(f => S.inventario.some(o => o.ficha === f));
-  avisar('Vendidos ' + comunes.length + ' objetos por ' + total.toLocaleString('es-ES') + ' 💎');
   Sonido.fx('ficha');
   refrescar();
   guardarCofres();
 }
-
 function alternarElegido(ficha){
   const obj = S.inventario.find(o => o.ficha === ficha);
   if (!obj) return;
   const i = S.elegidos.indexOf(ficha);
   if (i > -1){ S.elegidos.splice(i, 1); }
   else {
-    if (S.elegidos.length >= 5) return;
+    if (S.elegidos.length >= 5 || obj.rareza === 'mitico'){ Sonido.fx('error'); return; }
     if (S.elegidos.length){
       const primero = S.inventario.find(o => o.ficha === S.elegidos[0]);
-      if (primero.rareza !== obj.rareza){
-        avisar('Los 5 objetos del contrato tienen que ser de la misma rareza');
-        Sonido.fx('error');
-        return;
-      }
-    }
-    if (obj.rareza === 'mitico'){
-      avisar('Los míticos ya no suben más: no entran en contratos');
-      Sonido.fx('error');
-      return;
+      if (primero.rareza !== obj.rareza){ Sonido.fx('error'); return; }
     }
     S.elegidos.push(ficha);
   }
   Sonido.fx('colocar');
   refrescar();
 }
-
 function forjar(){
   if (S.elegidos.length !== 5) return;
   const primero = S.inventario.find(o => o.ficha === S.elegidos[0]);
   const siguiente = ORDEN[ORDEN.indexOf(primero.rareza) + 1];
   if (!siguiente) return;
-
   S.inventario = S.inventario.filter(o => !S.elegidos.includes(o.ficha));
   S.elegidos = [];
   const nuevo = generarObjeto({ [siguiente]: 100 });
   S.inventario.unshift(nuevo);
+  sumarXP(40);
   sonarPremio(nuevo.rareza);
+  ajustarLienzo();
+  estallido(lienzoP.width / 2, lienzoP.height - 200, RAREZAS[siguiente].color, 40);
   refrescar();
   guardarCofres();
-  mostrarPremio(nuevo, false);
+  mostrarPremio(nuevo);
 }
 
-// ---------- Interfaz ----------
-function avisar(texto){
-  const t = $('tapa');
-  let banda = $('avisoCofres');
-  if (!banda){
-    banda = document.createElement('div');
-    banda.id = 'avisoCofres';
-    banda.style.cssText = 'font-size:11px; color:#c62828; width:100%; text-align:center;';
-    t.appendChild(banda);
-  }
-  banda.textContent = texto;
-  clearTimeout(banda._t);
-  banda._t = setTimeout(() => { banda.textContent = ''; }, 3000);
+// ---------- Tooltip ----------
+function mostrarTooltip(obj, ev){
+  $('ttNombre').textContent = obj.nombre;
+  $('ttNombre').style.color = RAREZAS[obj.rareza].color;
+  $('ttRareza').textContent = RAREZAS[obj.rareza].nombre;
+  $('ttRareza').style.color = RAREZAS[obj.rareza].color;
+  $('ttEncanto').textContent = obj.encanto ? obj.encanto : '';
+  $('ttValor').textContent = 'Valor: ' + obj.precio.toLocaleString('es-ES') + ' esmeraldas';
+  $('tooltip').style.display = 'block';
+  moverTooltip(ev);
 }
+function moverTooltip(ev){
+  const t = $('tooltip');
+  const x = Math.min(ev.clientX + 15, innerWidth - t.offsetWidth - 8);
+  const y = Math.min(ev.clientY + 15, innerHeight - t.offsetHeight - 8);
+  t.style.left = x + 'px';
+  t.style.top = y + 'px';
+}
+function ocultarTooltip(){ $('tooltip').style.display = 'none'; }
 
+// ---------- Pintado ----------
 function pintarCofres(){
   $('rejillaCofres').innerHTML = COFRES.map(c => {
-    const odds = ORDEN.filter(r => c.tabla[r])
-      .map(r => '<span style="color:' + COLOR_RAREZA[r] + '; filter:brightness(1.7)">' +
-                NOMBRE_RAREZA[r] + ' ' + c.tabla[r] + '%</span>').join(' · ');
+    const odds = ORDEN.filter(r => c.tabla[r]).map(r =>
+      '<span style="color:' + RAREZAS[r].color + '">' + RAREZAS[r].nombre + ' ' + c.tabla[r] + '%</span>'
+    ).join(' · ');
     return '<div class="cofre">' +
-      '<div class="ic">' + c.icono + '</div>' +
-      '<h3>' + c.nombre + '</h3>' +
-      '<div class="precio">💎 ' + c.precio.toLocaleString('es-ES') + '</div>' +
+      '<img src="' + c.img + '" alt="' + c.nombre + '">' +
+      '<div class="tit">' + c.nombre + '</div>' +
+      '<div class="precio"><img src="' + ICONO_ESME + '" alt="">' + c.precio.toLocaleString('es-ES') + '</div>' +
       '<div class="odds">' + odds + '</div>' +
-      '<button class="mcbtn bien" data-cofre="' + c.id + '">ABRIR</button>' +
+      '<button class="mcbtn verde" data-cofre="' + c.id + '">ABRIR</button>' +
     '</div>';
   }).join('');
 }
@@ -10123,21 +10413,16 @@ function pintarInventario(){
     return;
   }
   cont.innerHTML = S.inventario.map(o =>
-    '<div class="objeto r-' + o.rareza + (S.elegidos.includes(o.ficha) ? ' elegido' : '') +
-        '" data-ficha="' + o.ficha + '">' +
-      '<div class="ic">' + o.icono + '</div>' +
-      '<div class="nm">' + o.nombre + '</div>' +
-      (o.encanto ? '<div class="en">✨ ' + o.encanto + '</div>' : '') +
-      '<div class="val">+' + o.precio.toLocaleString('es-ES') + ' 💎</div>' +
-      '<button class="mcbtn mal" data-vender="' + o.ficha + '">VENDER</button>' +
+    '<div class="ranuraInv' + (S.elegidos.includes(o.ficha) ? ' elegida' : '') + '" data-ficha="' + o.ficha + '">' +
+      htmlIcono(o) +
+      '<div class="marcaRareza" style="background:' + RAREZAS[o.rareza].color + '"></div>' +
     '</div>').join('');
 }
 
 function pintarContrato(){
   $('ranuras').innerHTML = Array.from({length:5}, (_, i) => {
-    const f = S.elegidos[i];
-    const o = f && S.inventario.find(x => x.ficha === f);
-    return '<div class="ranura' + (o ? ' r-' + o.rareza : '') + '">' + (o ? o.icono : '') + '</div>';
+    const o = S.elegidos[i] && S.inventario.find(x => x.ficha === S.elegidos[i]);
+    return '<div class="ranuraC">' + (o ? htmlIcono(o) : '') + '</div>';
   }).join('');
   $('cuentaSel').textContent = S.elegidos.length;
   $('btnForjar').disabled = S.elegidos.length !== 5;
@@ -10151,28 +10436,20 @@ function refrescar(){
   $('coinsTxt').textContent = coins.toLocaleString('es-ES');
   $('coins2').textContent = coins.toLocaleString('es-ES');
   $('numInv').textContent = S.inventario.length;
+  $('nivelTxt').textContent = S.nivel;
+  $('xpRelleno').style.width = limitar(100 * S.xp / (S.nivel * 100), 0, 100) + '%';
 
   document.querySelectorAll('[data-cofre]').forEach(b => {
     const c = COFRES.find(x => x.id === b.dataset.cofre);
     b.disabled = S.girando || S.esmeraldas < c.precio;
   });
   $('btnCambiar').disabled = coins < 100;
-  $('btnRegalo').style.display = (esme < 45 && !S.inventario.length) ? 'inline-block' : 'none';
+  $('btnRegalo').style.display = (esme < 50 && !S.inventario.length) ? 'inline-block' : 'none';
   pintarInventario();
   pintarContrato();
 }
 
-// ---------- Eventos (delegados: nada de onclick en el HTML) ----------
-$('pestanas').addEventListener('click', ev => {
-  const b = ev.target.closest('[data-hoja]');
-  if (!b || S.girando) return;
-  Sonido.activar();
-  document.querySelectorAll('#pestanas .mcbtn').forEach(x => x.classList.remove('sel'));
-  document.querySelectorAll('.hoja').forEach(h => h.classList.remove('activa'));
-  b.classList.add('sel');
-  $('hoja-' + b.dataset.hoja).classList.add('activa');
-});
-
+// ---------- Eventos ----------
 $('rejillaCofres').addEventListener('click', ev => {
   const b = ev.target.closest('[data-cofre]');
   if (!b) return;
@@ -10180,28 +10457,47 @@ $('rejillaCofres').addEventListener('click', ev => {
   abrirCofre(b.dataset.cofre);
 });
 
-$('rejillaInv').addEventListener('click', ev => {
+$('pestanas').addEventListener('click', ev => {
+  const b = ev.target.closest('[data-hoja]');
+  if (!b) return;
   Sonido.activar();
-  const vender = ev.target.closest('[data-vender]');
-  if (vender){ ev.stopPropagation(); venderObjeto(vender.dataset.vender); return; }
-  const obj = ev.target.closest('[data-ficha]');
-  if (obj) alternarElegido(obj.dataset.ficha);
+  document.querySelectorAll('#pestanas .mcbtn').forEach(x => x.classList.remove('sel'));
+  document.querySelectorAll('.hoja').forEach(h => h.classList.remove('activa'));
+  b.classList.add('sel');
+  $('hoja-' + b.dataset.hoja).classList.add('activa');
 });
+
+const rejInv = $('rejillaInv');
+rejInv.addEventListener('click', ev => {
+  const r = ev.target.closest('[data-ficha]');
+  if (!r) return;
+  Sonido.activar();
+  alternarElegido(r.dataset.ficha);
+});
+rejInv.addEventListener('contextmenu', ev => {
+  const r = ev.target.closest('[data-ficha]');
+  if (!r) return;
+  ev.preventDefault();
+  vender(r.dataset.ficha);
+});
+rejInv.addEventListener('mouseover', ev => {
+  const r = ev.target.closest('[data-ficha]');
+  if (!r) return;
+  const o = S.inventario.find(x => x.ficha === r.dataset.ficha);
+  if (o) mostrarTooltip(o, ev);
+});
+rejInv.addEventListener('mousemove', ev => { if ($('tooltip').style.display === 'block') moverTooltip(ev); });
+rejInv.addEventListener('mouseleave', ocultarTooltip);
 
 $('btnVenderComunes').onclick = () => { Sonido.activar(); venderComunes(); };
 $('btnForjar').onclick = () => { Sonido.activar(); forjar(); };
 $('btnGuardar').onclick = () => { Sonido.fx('colocar'); cerrarPremio(); };
-$('btnVenderYa').onclick = () => {
-  if (!premioActual) return;
-  venderObjeto(premioActual.obj.ficha);
-  cerrarPremio();
-};
+$('btnVenderYa').onclick = () => { if (premioActual){ vender(premioActual.ficha); cerrarPremio(); } };
 $('btnCambiar').onclick = () => {
   Sonido.activar();
-  if (Arcade.fichas.saldo() < 100){ avisar('Necesitas 100 NEXO-COINS'); Sonido.fx('error'); return; }
+  if (Arcade.fichas.saldo() < 100){ Sonido.fx('error'); return; }
   Arcade.fichas.ajustar(-100);
   S.esmeraldas += 1000;
-  avisar('Cambiados 100 NEXO-COINS por 1.000 esmeraldas');
   Sonido.fx('ficha');
   refrescar();
   guardarCofres();
@@ -10220,6 +10516,9 @@ cargarCofres();
 pintarCofres();
 cintaEnReposo();
 refrescar();
+$('icoEsme').innerHTML = '<img src="' + ICONO_ESME + '" style="width:22px;height:22px" alt="">';
+ajustarLienzo();
+Arcade.bucle(dt => pintarMotas(dt));
 
 });
 </script>
