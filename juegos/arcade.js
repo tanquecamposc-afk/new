@@ -146,27 +146,45 @@ const Sonido = {
 // ---------- Records en el navegador ----------
 // El almacenamiento puede estar bloqueado (modo privado, sandbox...), así que
 // siempre se accede con red de seguridad y se cae a una copia en memoria.
-const memoria = {};
-function guardado(clave){
-  try { const v = localStorage.getItem(clave); return v === null ? (clave in memoria ? memoria[clave] : null) : v; }
-  catch(e){ return clave in memoria ? memoria[clave] : null; }
-}
-function guardar(clave, valor){
-  memoria[clave] = String(valor);
-  try { localStorage.setItem(clave, String(valor)); } catch(e){}
-}
+// Va dentro de una función para no dejar nombres sueltos en el ámbito global:
+// un juego que declarase su propio `guardar` pisaría este y lo rompería.
+const Almacen = (() => {
+  const memoria = {};
+  return {
+    leer(clave){
+      try {
+        const v = localStorage.getItem(clave);
+        return v === null ? (clave in memoria ? memoria[clave] : null) : v;
+      } catch(e){ return clave in memoria ? memoria[clave] : null; }
+    },
+    escribir(clave, valor){
+      memoria[clave] = String(valor);
+      try { localStorage.setItem(clave, String(valor)); } catch(e){}
+    },
+    borrar(clave){
+      delete memoria[clave];
+      try { localStorage.removeItem(clave); } catch(e){}
+    }
+  };
+})();
 
 const Arcade = {
-  record(clave){ return parseFloat(guardado('arcade_' + clave) || '0') || 0; },
+  record(clave){ return parseFloat(Almacen.leer('arcade_' + clave) || '0') || 0; },
   guardarRecord(clave, valor){
-    if (valor > this.record(clave)){ guardar('arcade_' + clave, valor); return true; }
+    if (valor > this.record(clave)){ Almacen.escribir('arcade_' + clave, valor); return true; }
     return false;
   },
   leer(clave, porDefecto){
-    const v = guardado('arcade_' + clave);
+    const v = Almacen.leer('arcade_' + clave);
     return v === null ? porDefecto : parseFloat(v);
   },
-  escribir(clave, valor){ guardar('arcade_' + clave, valor); },
+  escribir(clave, valor){ Almacen.escribir('arcade_' + clave, valor); },
+  // Igual que leer, pero sin convertir a número (para partidas guardadas en JSON)
+  leerTexto(clave, porDefecto){
+    const v = Almacen.leer('arcade_' + clave);
+    return v === null ? porDefecto : v;
+  },
+  borrar(clave){ Almacen.borrar('arcade_' + clave); },
 
   // Bucle de animación con dt acotado (en segundos)
   bucle(fn){
@@ -238,13 +256,13 @@ const Arcade = {
   // Cartera de fichas ficticias compartida por los juegos de casino
   fichas: {
     saldo(){
-      const v = guardado('arcade_fichas');
+      const v = Almacen.leer('arcade_fichas');
       if (v !== null) return parseFloat(v) || 0;
       // Compatibilidad con el saldo que Minas guardaba por su cuenta
-      const viejo = guardado('arcade_minas_saldo');
+      const viejo = Almacen.leer('arcade_minas_saldo');
       return viejo !== null ? (parseFloat(viejo) || 0) : 1000;
     },
-    fijar(n){ guardar('arcade_fichas', Math.max(0, Math.round(n))); },
+    fijar(n){ Almacen.escribir('arcade_fichas', Math.max(0, Math.round(n))); },
     ajustar(n){ const s = this.saldo() + n; this.fijar(s); return this.saldo(); }
   },
 
