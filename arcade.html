@@ -136,6 +136,21 @@ button.azul:hover{box-shadow:0 0 16px rgba(0,240,255,.4);}
 }
 .premio:empty{display:none;}
 
+/* ---------- Accesibilidad ---------- */
+/* Los campos de texto sí necesitan poder seleccionarse, pese al reset de arriba */
+input, select, textarea{user-select:text; -webkit-user-select:text;}
+input:focus-visible, select:focus-visible, a:focus-visible, [tabindex]:focus-visible{
+  outline:2px solid var(--azul); outline-offset:2px;
+}
+/* Quien pide menos movimiento no debería sufrir animaciones ni transiciones.
+   Los juegos siguen funcionando: solo se apagan los adornos en CSS. */
+@media (prefers-reduced-motion: reduce){
+  *, *::before, *::after{
+    animation-duration:.01ms !important; animation-iteration-count:1 !important;
+    transition-duration:.01ms !important; scroll-behavior:auto !important;
+  }
+}
+
 /* ---------- Utilidades ---------- */
 .tenue{color:var(--tenue);}
 .oro{color:var(--oro);}
@@ -1430,11 +1445,11 @@ body{display:block; padding:0; margin:0;}
     <div class="stat" id="proximaStat" style="display:none">⏭ <span id="proximaTxt"></span></div>
     <div class="sep"></div>
     <button id="btnOla" class="primario">▶ Iniciar ola</button>
-    <button id="btnVelocidad" title="Cambiar velocidad (F)">⏩ x1</button>
-    <button id="btnPausa" title="Pausa (Espacio)">⏸</button>
-    <button id="btnSonido" title="Efectos de sonido">🔊</button>
-    <button id="btnMusica" title="Música">🎵</button>
-    <button id="btnMenu" title="Volver al menú">⌂</button>
+    <button id="btnVelocidad" title="Cambiar velocidad (F)" aria-label="Cambiar velocidad (F)">⏩ x1</button>
+    <button id="btnPausa" title="Pausa (Espacio)" aria-label="Pausa (Espacio)">⏸</button>
+    <button id="btnSonido" title="Efectos de sonido" aria-label="Efectos de sonido">🔊</button>
+    <button id="btnMusica" title="Música" aria-label="Música">🎵</button>
+    <button id="btnMenu" title="Volver al menú" aria-label="Volver al menú">⌂</button>
     <a href="javascript:void 0" data-volver="1" id="volverArcade" title="Volver al arcade">🕹 Arcade</a>
   </div>
 
@@ -1442,9 +1457,9 @@ body{display:block; padding:0; margin:0;}
     <canvas id="lienzo" width="1280" height="720"></canvas>
 
     <div id="habilidades" style="display:none">
-      <button class="hab" id="habBomba" title="Bombardeo aéreo: haz clic en el mapa para lanzar un ataque devastador">💥
+      <button class="hab" id="habBomba" title="Bombardeo aéreo: haz clic en el mapa para lanzar un ataque devastador" aria-label="Bombardeo aéreo: haz clic en el mapa para lanzar un ataque devastador">💥
         <span class="cd" id="cdBomba" style="display:none">45</span><span class="tecla">A</span></button>
-      <button class="hab" id="habDinero" title="Suministros de emergencia: dinero instantáneo">📦
+      <button class="hab" id="habDinero" title="Suministros de emergencia: dinero instantáneo" aria-label="Suministros de emergencia: dinero instantáneo">📦
         <span class="cd" id="cdDinero" style="display:none">60</span><span class="tecla">S</span></button>
     </div>
 
@@ -1517,8 +1532,8 @@ body{display:block; padding:0; margin:0;}
     <div class="stat">⭐ <span id="puntosTxt" class="oro">0</span></div>
     <div class="stat">🏆 <span id="recordTxt" class="tenue">0</span></div>
     <div class="stat">🍒 <span id="nivelTxt">1</span> <span id="vidasTxt">🟡🟡</span></div>
-    <button id="btnPausa" title="Pausa (Espacio)">⏸</button>
-    <button id="btnSonido" title="Sonido">🔊</button>
+    <button id="btnPausa" title="Pausa (Espacio)" aria-label="Pausa (Espacio)">⏸</button>
+    <button id="btnSonido" title="Sonido" aria-label="Sonido">🔊</button>
   </div>
 
   <div class="escena">
@@ -1570,9 +1585,9 @@ body{display:block; padding:0; margin:0;}
     <div class="stat">🌊 <span id="oleadaTxt" class="azul">0/20</span></div>
     <div class="stat">💀 <span id="bajasTxt">0</span></div>
     <div class="sep"></div>
-    <button id="btnPala" title="Quitar una planta">🔨 Pala</button>
-    <button id="btnPausa" title="Pausa (Espacio)">⏸</button>
-    <button id="btnSonido" title="Sonido">🔊</button>
+    <button id="btnPala" title="Quitar una planta" aria-label="Quitar una planta">🔨 Pala</button>
+    <button id="btnPausa" title="Pausa (Espacio)" aria-label="Pausa (Espacio)">⏸</button>
+    <button id="btnSonido" title="Sonido" aria-label="Sonido">🔊</button>
   </div>
 
   <div class="escena">
@@ -1623,7 +1638,7 @@ body{display:block; padding:0; margin:0;}
     <div class="sep"></div>
     <div class="stat">🪙 <span id="saldoTxt" class="oro">5000</span></div>
     <div class="stat">🏆 <span id="mayorTxt" class="tenue">0</span></div>
-    <button id="btnSonido" title="Sonido">🔊</button>
+    <button id="btnSonido" title="Sonido" aria-label="Sonido">🔊</button>
   </div>
 
   <div id="mesa">
@@ -1632,10 +1647,10 @@ body{display:block; padding:0; margin:0;}
         <h3>Apuesta</h3>
         <div class="campo"><input id="apuesta" type="number" min="1" step="1" value="50"></div>
         <div class="chips" style="margin-top:6px">
-          <button data-op="mitad">½</button>
-          <button data-op="doble">x2</button>
-          <button data-op="10">10</button>
-          <button data-op="50">50</button>
+          <button data-op="mitad" aria-label="Apostar la mitad">½</button>
+          <button data-op="doble" aria-label="Doblar la apuesta">x2</button>
+          <button data-op="10" aria-label="Apostar 10 fichas">10</button>
+          <button data-op="50" aria-label="Apostar 50 fichas">50</button>
           <button data-op="100">100</button>
           <button data-op="max">MÁX</button>
         </div>
@@ -1682,8 +1697,8 @@ body{display:block; padding:0; margin:0;}
     <div class="sep"></div>
     <div class="stat">⭐ <span id="puntosTxt" class="oro">0</span></div>
     <div class="stat">🏆 <span id="recordTxt" class="tenue">0</span></div>
-    <button id="btnReiniciar" title="Empezar de nuevo">↻</button>
-    <button id="btnSonido" title="Sonido">🔊</button>
+    <button id="btnReiniciar" title="Empezar de nuevo" aria-label="Empezar de nuevo">↻</button>
+    <button id="btnSonido" title="Sonido" aria-label="Sonido">🔊</button>
   </div>
 
   <div class="escena">
@@ -1738,8 +1753,8 @@ body{display:block; padding:0; margin:0;}
     <div class="stat">⭐ <span id="puntosTxt" class="oro">0</span></div>
     <div class="stat">🏆 <span id="recordTxt" class="tenue">0</span></div>
     <div class="stat">📏 <span id="largoTxt">3</span></div>
-    <button id="btnPausa" title="Pausa (Espacio)">⏸</button>
-    <button id="btnSonido" title="Sonido">🔊</button>
+    <button id="btnPausa" title="Pausa (Espacio)" aria-label="Pausa (Espacio)">⏸</button>
+    <button id="btnSonido" title="Sonido" aria-label="Sonido">🔊</button>
   </div>
 
   <div class="escena">
@@ -1791,7 +1806,7 @@ body{display:block; padding:0; margin:0;}
     <div class="sep"></div>
     <div class="stat">🪙 <span id="saldoTxt" class="oro">5000</span></div>
     <div class="stat">🏆 <span id="recordTxt" class="tenue">—</span></div>
-    <button id="btnSonido" title="Sonido">🔊</button>
+    <button id="btnSonido" title="Sonido" aria-label="Sonido">🔊</button>
   </div>
 
   <div id="historial"></div>
@@ -1807,10 +1822,10 @@ body{display:block; padding:0; margin:0;}
         <input id="monto" type="number" min="1" step="1" value="50">
       </div>
       <div class="fichasRapidas">
-        <button data-op="mitad">½</button>
-        <button data-op="doble">x2</button>
-        <button data-op="100">100</button>
-        <button data-op="max">MÁX</button>
+        <button data-op="mitad" aria-label="Apostar la mitad">½</button>
+        <button data-op="doble" aria-label="Doblar la apuesta">x2</button>
+        <button data-op="100" aria-label="Apostar 100 fichas">100</button>
+        <button data-op="max" aria-label="Apostar todo">MÁX</button>
       </div>
       <button id="btnApostar" class="primario">APOSTAR<small>ronda siguiente</small></button>
     </div>
@@ -1849,8 +1864,8 @@ body{display:block; padding:0; margin:0;}
     <div class="sep"></div>
     <div class="stat turno" id="turnoTxt">Tu turno</div>
     <div class="stat">🏆 <span id="recordTxt" class="tenue">0</span></div>
-    <button id="btnNueva" title="Nueva partida">↻</button>
-    <button id="btnSonido" title="Sonido">🔊</button>
+    <button id="btnNueva" title="Nueva partida" aria-label="Nueva partida">↻</button>
+    <button id="btnSonido" title="Sonido" aria-label="Sonido">🔊</button>
   </div>
 
   <div class="escena">
@@ -1915,8 +1930,8 @@ body{display:block; padding:0; margin:0;}
     <div class="titulo">⚽ RUMBLE STARS</div>
     <div class="sep"></div>
     <div class="stat">🏆 <span id="recordTxt" class="tenue">0</span></div>
-    <button id="btnPausa" title="Pausa (Espacio)">⏸</button>
-    <button id="btnSonido" title="Sonido">🔊</button>
+    <button id="btnPausa" title="Pausa (Espacio)" aria-label="Pausa (Espacio)">⏸</button>
+    <button id="btnSonido" title="Sonido" aria-label="Sonido">🔊</button>
   </div>
 
   <div id="marcador">
@@ -1987,7 +2002,7 @@ body{display:block; padding:0; margin:0;}
     <div class="sep"></div>
     <div class="stat">💵 <span id="dineroTxt" class="oro">250</span></div>
     <div class="stat">💎 <span id="fichasTxt" class="tenue">0</span></div>
-    <button id="btnSonido" title="Sonido">🔊</button>
+    <button id="btnSonido" title="Sonido" aria-label="Sonido">🔊</button>
   </div>
 
   <div id="mina">
@@ -2080,7 +2095,7 @@ body{display:block; padding:0; margin:0;}
     <div class="sep"></div>
     <div class="stat">💎 <span id="esmeTxt" class="verde">1000</span></div>
     <div class="stat">🪙 <span id="coinsTxt" class="tenue">0</span></div>
-    <button id="btnSonido" title="Sonido">🔊</button>
+    <button id="btnSonido" title="Sonido" aria-label="Sonido">🔊</button>
   </div>
 
   <div id="mc" style="position:relative">
@@ -2168,7 +2183,7 @@ body{display:block; padding:0; margin:0;}
     <div class="sep"></div>
     <div class="stat">🍪 <span id="totalTxt" class="oro">0</span></div>
     <div class="stat">🪙 <span id="coinsTxt" class="tenue">0</span></div>
-    <button id="btnSonido" title="Sonido">🔊</button>
+    <button id="btnSonido" title="Sonido" aria-label="Sonido">🔊</button>
   </div>
 
   <div id="mesa">
@@ -2197,9 +2212,9 @@ body{display:block; padding:0; margin:0;}
       </div>
 
       <div id="lotes">
-        <button class="sel" data-lote="1">x1</button>
-        <button data-lote="10">x10</button>
-        <button data-lote="100">x100</button>
+        <button class="sel" data-lote="1" aria-label="Comprar de uno en uno">x1</button>
+        <button data-lote="10" aria-label="Comprar de diez en diez">x10</button>
+        <button data-lote="100" aria-label="Comprar de cien en cien">x100</button>
       </div>
 
       <div class="lista" id="listaEdificios"></div>
@@ -2223,7 +2238,7 @@ body{display:block; padding:0; margin:0;}
     <div class="stat">🔥 <span id="rachaTxt" class="oro">0</span></div>
     <div class="stat">🎯 <span id="retencionTxt" class="verde">100%</span></div>
     <div class="stat">📚 <span id="pendientesTxt">0</span></div>
-    <button id="btnSonido" title="Sonido">🔊</button>
+    <button id="btnSonido" title="Sonido" aria-label="Sonido">🔊</button>
   </div>
 
   <div id="progreso"><div id="progresoRelleno"></div></div>
@@ -2301,8 +2316,8 @@ body{display:block; padding:0; margin:0;}
     <div class="sep"></div>
     <div class="stat">📊 <span id="velaTxt">0</span>/120</div>
     <div class="stat">🏆 <span id="recordTxt" class="oro">0</span></div>
-    <button id="btnPausa" title="Pausa (Espacio)">⏸</button>
-    <button id="btnSonido" title="Sonido">🔊</button>
+    <button id="btnPausa" title="Pausa (Espacio)" aria-label="Pausa (Espacio)">⏸</button>
+    <button id="btnSonido" title="Sonido" aria-label="Sonido">🔊</button>
   </div>
 
   <div id="tablero">
@@ -2360,6 +2375,7 @@ body{display:block; padding:0; margin:0;}
           Al acabar la sesión, <b>lo que ganes por encima de los 10.000 $ se cambia a NEXO-COINS</b>.
         </div>
         <div class="filaBotones">
+          <button class="primario" id="btnSeguir" hidden>▶ Seguir la sesión</button>
           <button class="primario" id="btnAbrir">▶ Abrir mercado</button>
         </div>
       </div>
@@ -2397,7 +2413,7 @@ body{display:block; padding:0; margin:0;}
     <div class="stat">⏱ <span id="tiempoTxt">0.0</span>s</div>
     <div class="stat">💥 <span id="caidasTxt" class="rojo">0</span>/5</div>
     <div class="stat">⚡ <div id="barraNitro"><div id="nitroRelleno"></div></div></div>
-    <button id="btnSonido" title="Sonido">🔊</button>
+    <button id="btnSonido" title="Sonido" aria-label="Sonido">🔊</button>
   </div>
 
   <div class="escena">
@@ -2660,6 +2676,18 @@ const Guardado = {
   registrar(fn){ if (typeof fn === 'function') this.tareas.push(fn); },
   ahora(){ this.tareas.forEach(f => { try { f(); } catch(e){} }); }
 };
+
+/**
+ * Cosas que hay que apagar al dejar una pantalla: música propia de un juego,
+ * temporizadores, bucles de audio… El enrutador lo dispara antes de cambiar,
+ * y también al ocultar la pestaña, para no dejar nada sonando de fondo.
+ */
+const AlSalir = {
+  tareas: [],
+  registrar(fn){ if (typeof fn === 'function') this.tareas.push(fn); },
+  ahora(){ this.tareas.forEach(f => { try { f(); } catch(e){} }); }
+};
+document.addEventListener('visibilitychange', () => { if (document.hidden) AlSalir.ahora(); });
 addEventListener('beforeunload', () => Guardado.ahora());
 addEventListener('pagehide', () => Guardado.ahora());
 document.addEventListener('visibilitychange', () => { if (document.hidden) Guardado.ahora(); });
@@ -2970,6 +2998,7 @@ const Enrutador = {
   arrancados: {},
   ir(id){
     Guardado.ahora();             // lo jugado se guarda antes de soltar la pantalla
+    AlSalir.ahora();              // música y temporizadores propios de cada juego
     Sonido.pararMotor();          // ningún sonido continuo sobrevive al cambio de pantalla
     document.querySelectorAll('.pantalla').forEach(p => p.classList.remove('activa'));
     const destino = document.getElementById('pantalla-' + id);
@@ -2997,18 +3026,26 @@ function registrarJuego(id, codigo){
     const raiz = document.getElementById('pantalla-' + id);
     const activa = () => Enrutador.actual === id;
 
+    const escucha = (tipo, fn, op) =>
+      window.addEventListener(tipo, e => { if (activa()) fn(e); }, op);
+
     const doc = new Proxy(document, {
       get(d, k){
         if (k === 'getElementById') return x => raiz.querySelector('#' + CSS.escape(x));
         if (k === 'querySelector') return s => raiz.querySelector(s);
         if (k === 'querySelectorAll') return s => raiz.querySelectorAll(s);
+        // document.addEventListener también se acota: si no, un juego que
+        // escuche el teclado en el documento seguiría respondiendo desde
+        // cualquier otra pantalla.
+        if (k === 'addEventListener'){
+          return (tipo, fn, op) =>
+            d.addEventListener(tipo, e => { if (activa()) fn(e); }, op);
+        }
         const v = d[k];
         return typeof v === 'function' ? v.bind(d) : v;
       },
       set(d, k, v){ d[k] = v; return true; }
     });
-    const escucha = (tipo, fn, op) =>
-      window.addEventListener(tipo, e => { if (activa()) fn(e); }, op);
     const arcadeLocal = Object.create(Arcade);
     arcadeLocal.bucle = fn => Arcade.bucle(dt => { if (activa()) fn(dt); });
 
@@ -4167,6 +4204,8 @@ const Musica = {
     this.sonando = false;
     if (this.intervalo){ clearInterval(this.intervalo); this.intervalo = null; }
   },
+  // Se vuelve a arrancar sola al entrar de nuevo en la pantalla
+  reanudar(){ if (this.activa && !this.sonando) this.arrancar(); },
   programar(){
     if (!Sonido.ctx || Sonido.silencio && false) return;
     const c = Sonido.ctx;
@@ -6159,6 +6198,10 @@ $('btnSonido').addEventListener('click', () => {
   Sonido.silencio = !Sonido.silencio;
   $('btnSonido').textContent = Sonido.silencio ? '🔇' : '🔊';
 });
+// Este juego lleva su propia música con setInterval: al salir de la pantalla
+// hay que apagarla, o se queda sonando encima de otro juego.
+if (typeof AlSalir !== 'undefined') AlSalir.registrar(() => Musica.parar());
+
 $('btnMusica').addEventListener('click', () => {
   Sonido.activar();
   Musica.activa = !Musica.activa;
@@ -9064,14 +9107,20 @@ addEventListener('keydown', e => {
 });
 Arcade.conectarSonido($('btnSonido'));
 
-// Si el saldo se agota, se reponen fichas para poder seguir jugando
-setInterval(() => {
+// Si el saldo se agota, se reponen fichas para poder seguir jugando.
+// Va dentro del bucle del juego, que está acotado a esta pantalla: con un
+// setInterval suelto seguiría repartiendo fichas desde cualquier otro juego.
+let esperaRecarga = 0;
+Arcade.bucle(dt => {
+  esperaRecarga += dt;
+  if (esperaRecarga < 3) return;
+  esperaRecarga = 0;
   if (saldo < 1 && fase === 'espera' && !apuesta.pendiente){
     saldo = Arcade.fichas.ajustar(500);
     Arcade.aviso(avisos, '🎁 Te hemos repuesto 500 fichas', true);
     refrescar();
   }
-}, 3000);
+});
 
 // La franja de rondas arranca con resultados previos, como en las salas reales
 for (let i = 0; i < 10; i++) historia.push(sortearCaida());
@@ -11209,7 +11258,13 @@ if (habiaPartida){
 }
 refrescar();
 
-setInterval(() => { refrescar(); }, 500);
+// Refresco del panel dentro del bucle acotado a la pantalla: con un
+// setInterval suelto seguiría repintando desde otros juegos.
+let esperaRefresco = 0;
+Arcade.bucle(dt => {
+  esperaRefresco += dt;
+  if (esperaRefresco >= 0.5){ esperaRefresco = 0; refrescar(); }
+});
 setInterval(guardarPartida, 10000);
 addEventListener('beforeunload', guardarPartida);
 Guardado.registrar(guardarPartida);   // también al cambiar de pantalla o irse a otra pestaña
@@ -12737,7 +12792,7 @@ const M = {
   liquidez: CAPITAL,
   pos: null,                      // { lado:'largo'|'corto', unidades, entrada, margen, palanca }
   operaciones: 0, ganadoras: 0,
-  jugando: false, pausado: false,
+  jugando: false, pausado: false, repintar: true,
   noticia: '', noticiaT: 0, sesgo: 0, sesgoT: 0,
   record: Arcade.record('mercado')
 };
@@ -12773,10 +12828,24 @@ function nuevaVela(previa){
   };
 }
 
+/**
+ * Añade una vela y le calcula ahí mismo sus indicadores. Antes se recalculaban
+ * SMA y RSI para cada vela visible en CADA fotograma; ahora se hace una vez por
+ * vela, que es cuando cambian.
+ */
+function empujarVela(){
+  const v = nuevaVela(M.velas[M.velas.length - 1]);
+  M.velas.push(v);
+  const n = M.velas.length;
+  v.sma10 = mediaMovil(10, n);
+  v.sma30 = mediaMovil(30, n);
+  v.rsi = fuerzaRelativa(14, n);
+  return v;
+}
+
 function nuevaSesion(){
   M.velas = [];
-  let previa = null;
-  for (let i = 0; i < 40; i++){ previa = nuevaVela(previa); M.velas.push(previa); }
+  for (let i = 0; i < 40; i++) empujarVela();
   M.t = 0; M.vela = 0;
   M.liquidez = CAPITAL; M.pos = null;
   M.operaciones = 0; M.ganadoras = 0;
@@ -12790,8 +12859,39 @@ function nuevaSesion(){
 
 const precio = () => M.velas[M.velas.length - 1].c;
 
+// ---------- Sesión a medias ----------
+// Una sesión son casi dos minutos: si cierras a mitad, al volver sigues con tu
+// mercado, tu posición abierta y tu liquidez. Se lee una vez al arrancar.
+const recuperable = Arcade.estado.cargar('mercado');
+
+function guardarSesion(){
+  if (!M.jugando) return;
+  Arcade.estado.guardar('mercado', {
+    velas: M.velas, vela: M.vela, liquidez: M.liquidez, pos: M.pos,
+    operaciones: M.operaciones, ganadoras: M.ganadoras,
+    sesgo: M.sesgo, sesgoT: M.sesgoT, titular: $('titulares').innerHTML
+  });
+}
+function recuperarSesion(){
+  const g = recuperable;
+  if (!g || !Array.isArray(g.velas) || g.velas.length < 40) return false;
+  M.velas = g.velas;
+  M.vela = g.vela || 0;
+  M.liquidez = typeof g.liquidez === 'number' ? g.liquidez : CAPITAL;
+  M.pos = g.pos || null;
+  M.operaciones = g.operaciones || 0;
+  M.ganadoras = g.ganadoras || 0;
+  M.sesgo = g.sesgo || 0; M.sesgoT = g.sesgoT || 0;
+  M.t = 0; M.pausado = false; M.jugando = true;
+  if (g.titular) $('titulares').innerHTML = g.titular;
+  refrescar();
+  guardarSesion();
+  return true;
+}
+Guardado.registrar(guardarSesion);
+
 // ---------- Indicadores ----------
-function sma(n, hasta = M.velas.length){
+function mediaMovil(n, hasta = M.velas.length){
   if (hasta < n) return null;
   let s = 0;
   for (let i = hasta - n; i < hasta; i++) s += M.velas[i].c;
@@ -12801,7 +12901,7 @@ function sma(n, hasta = M.velas.length){
  * RSI de Wilder sobre `n` periodos. Devuelve 0-100, o null si aún no hay datos.
  * Se recalcula entero cada vez: con 160 velas como mucho, sale gratis.
  */
-function rsi(n = 14, hasta = M.velas.length){
+function fuerzaRelativa(n = 14, hasta = M.velas.length){
   if (hasta < n + 1) return null;
   let subida = 0, bajada = 0;
   for (let i = hasta - n; i < hasta; i++){
@@ -12868,8 +12968,7 @@ function cerrar(motivo){
 
 // ---------- Bucle ----------
 function avanzar(){
-  M.velas.push(nuevaVela(M.velas[M.velas.length - 1]));
-  if (M.velas.length > 200) M.velas.shift();
+  empujarVela();
   M.vela++;
 
   // rachas de sesgo con su titular
@@ -12886,12 +12985,14 @@ function avanzar(){
   if (M.pos && M.pos.margen + valorPos() <= 0) cerrar('liquidacion');
 
   if (M.vela >= VELAS_SESION) terminar();
+  else guardarSesion();
   refrescar();
 }
 
 function terminar(){
   if (M.pos) cerrar('fin');
   M.jugando = false;
+  Arcade.estado.olvidar('mercado');
   const total = patrimonio();
   const rend = (total / CAPITAL - 1) * 100;
   const acierto = M.operaciones ? Math.round(M.ganadoras / M.operaciones * 100) : 0;
@@ -12923,6 +13024,7 @@ const fmt = n => '$' + n.toLocaleString('es-ES', { minimumFractionDigits:2, maxi
 const fmtSigno = n => (n >= 0 ? '+' : '−') + fmt(Math.abs(n)).replace('$', '') + ' $';
 
 function refrescar(){
+  M.repintar = true;
   const p = precio();
   $('mPrecio').textContent = fmt(p);
   $('mLiquidez').textContent = fmt(M.liquidez);
@@ -12990,19 +13092,19 @@ function dibujar(){
   texto('VOLUMEN', 12, V_ARRIBA + 9, '#3e4a63', 10);
 
   // --- medias móviles ---
-  const linea = (n, color) => {
+  const linea = (campo, color) => {
     ctx.beginPath();
     let empezada = false;
     for (let i = 0; i < vista.length; i++){
-      const m = sma(n, desde + i + 1);
-      if (m === null) continue;
+      const m = vista[i][campo];
+      if (m === null || m === undefined) continue;
       const x = aX(i), y = aY(m);
       if (!empezada){ ctx.moveTo(x, y); empezada = true; } else ctx.lineTo(x, y);
     }
     ctx.strokeStyle = color; ctx.lineWidth = 1.6; ctx.stroke();
   };
-  linea(10, 'rgba(0,240,255,.75)');
-  linea(30, 'rgba(168,85,247,.75)');
+  linea('sma10', 'rgba(0,240,255,.75)');
+  linea('sma30', 'rgba(168,85,247,.75)');
 
   // --- velas ---
   vista.forEach((v, i) => {
@@ -13061,14 +13163,14 @@ function dibujar(){
   ctx.beginPath();
   let empezada = false;
   for (let i = 0; i < vista.length; i++){
-    const r = rsi(14, desde + i + 1);
-    if (r === null) continue;
+    const r = vista[i].rsi;
+    if (r === null || r === undefined) continue;
     const x = aX(i), y = rY(r);
     if (!empezada){ ctx.moveTo(x, y); empezada = true; } else ctx.lineTo(x, y);
   }
   ctx.strokeStyle = '#f3e600'; ctx.lineWidth = 1.6; ctx.stroke();
 
-  const rAhora = rsi(14);
+  const rAhora = M.velas[M.velas.length - 1].rsi;
   texto('RSI 14' + (rAhora === null ? '' : '  ' + rAhora.toFixed(0)),
         12, R_ARRIBA + 9, rAhora === null ? '#3e4a63'
         : rAhora > 70 ? '#ff3d68' : rAhora < 30 ? '#00ff66' : '#8b9bb4', 10);
@@ -13091,6 +13193,7 @@ $('btnCerrar').onclick = () => { Sonido.activar(); cerrar('manual'); };
 $('btnPausa').onclick = () => {
   if (!M.jugando) return;
   M.pausado = !M.pausado;
+  M.repintar = true;
   $('btnPausa').textContent = M.pausado ? '▶' : '⏸';
 };
 addEventListener('keydown', ev => {
@@ -13100,10 +13203,17 @@ $('btnAbrir').onclick = () => {
   Sonido.activar();
   $('modalInicio').classList.remove('visible');
   nuevaSesion();
+  guardarSesion();
+};
+$('btnSeguir').onclick = () => {
+  Sonido.activar();
+  $('modalInicio').classList.remove('visible');
+  if (!recuperarSesion()) nuevaSesion();
 };
 $('btnOtra').onclick = () => {
   $('modalFin').classList.remove('visible');
   nuevaSesion();
+  guardarSesion();
 };
 Arcade.conectarSonido($('btnSonido'));
 
@@ -13112,12 +13222,28 @@ nuevaSesion();
 M.jugando = false;
 refrescar();
 
+// Si quedó una sesión a medias, el menú ofrece continuarla
+if (recuperable && (recuperable.vela || 0) < VELAS_SESION){
+  $('btnSeguir').hidden = false;
+  $('btnAbrir').textContent = '↻ Empezar de cero';
+  $('btnAbrir').classList.remove('primario');
+}
+
+// El gráfico solo cambia cuando llega una vela nueva o tocas una posición, así
+// que no hace falta repintarlo 60 veces por segundo. Se repinta cuando algo ha
+// cambiado y, por si acaso, cuatro veces por segundo como mucho.
+let desdeRepintado = 0;
 Arcade.bucle(dt => {
   if (M.jugando && !M.pausado){
     M.t += dt;
     while (M.t >= SEG_POR_VELA){ M.t -= SEG_POR_VELA; if (M.jugando) avanzar(); }
   }
-  dibujar();
+  desdeRepintado += dt;
+  if (M.repintar || desdeRepintado >= 0.25){
+    M.repintar = false;
+    desdeRepintado = 0;
+    dibujar();
+  }
 });
 
 });
@@ -13153,19 +13279,42 @@ let semilla = 1;
 function alturaTerreno(x){
   if (x < 260) return 380;                                    // recta de salida
   const s = semilla * 0.37;
+  // Amplitudes elegidas para que el terreno quepa entero sin recortes: sin esto
+  // casi todas las semillas chocaban con el tope de abajo y salía un suelo
+  // plano artificial con una esquina en pico.
   let y = 372
-    + Math.sin(x * 0.0042 + s) * 54
-    + Math.sin(x * 0.0113 + s * 2.1) * 22
-    + Math.sin(x * 0.0261 + s * 3.7) * 8;
-  // Rampas: suben durante 165 px y el terreno cae de golpe en el borde.
-  // Ese corte es el que lanza la moto por los aires.
+    + Math.sin(x * 0.0042 + s) * 40
+    + Math.sin(x * 0.0113 + s * 2.1) * 18
+    + Math.sin(x * 0.0261 + s * 3.7) * 7;
+  // Rampas cada 1.150 px. La curva es 1 − cos, que arranca plana y llega a su
+  // punto más inclinado justo en el borde: así se sube sin frenazo y se sale
+  // despedido al final. Con un seno la rampa era casi un muro al empezar.
   const fase = ((x - 300) % 1150 + 1150) % 1150;
-  if (fase < 165){
-    const u = fase / 165;
-    y -= Math.sin(u * Math.PI / 2) * (108 + ((Math.floor(x / 1150) * 53) % 70));
+  const n = Math.floor((x - 300) / 1150);
+  if (fase < 260){
+    const u = fase / 260;
+    // La altura varía mucho de una rampa a otra: unas se pasan sin enterarte y
+    // otras te mandan arriba del todo y hay que enderezar en el aire.
+    y -= (1 - Math.cos(u * Math.PI / 2)) * (58 + ((n * 53) % 47) + ((n * 29) % 61));
+  } else if (fase < 260 + anchoFoso(n)){
+    // Justo detrás de cada rampa hay un foso: para eso está la rampa. Caer
+    // dentro es caída, así que hay que llegar con velocidad.
+    return ALTO + 260;
   }
-  return Math.min(y, ALTO - 26);
+  return y;
 }
+// Ancho del foso que sigue a la rampa n. Determinista, entre 130 y 210 px:
+// a plena velocidad se cruza de sobra; parado desde un control, no.
+function anchoFoso(n){
+  if (n < 1) return 0;                       // el primer salto va sin foso
+  return 130 + ((n * 67) % 81);
+}
+function enFoso(x){
+  const fase = ((x - 300) % 1150 + 1150) % 1150;
+  const n = Math.floor((x - 300) / 1150);
+  return fase >= 260 && fase < 260 + anchoFoso(n);
+}
+
 function pendiente(x){
   return Math.atan2(alturaTerreno(x + 4) - alturaTerreno(x - 4), 8);
 }
@@ -13187,7 +13336,8 @@ const particulas = [];
 let camaraX = 0, camaraY = 0, sacudida = 0;
 
 function reiniciar(desdeControl){
-  const inicio = desdeControl ? CONTROLES[M.control - 1] || 120 : 120;
+  let inicio = desdeControl ? CONTROLES[M.control - 1] || 120 : 120;
+  while (enFoso(inicio)) inicio -= 20;        // nunca se reaparece sobre un foso
   M.x = inicio; M.y = alturaTerreno(inicio) - EJE;
   M.vx = 0; M.vy = 0; M.ang = pendiente(inicio); M.vAng = 0;
   M.susp = [0, 0]; M.contacto = [false, false];
@@ -13250,8 +13400,11 @@ function rueda(indice, signo, dt){
     if (M.vy > 0) M.vy = 0;
   }
 
-  // El par depende de qué rueda empuja: la trasera levanta el morro y al revés
-  return -signo * fuerza * 0.00035;
+  // El par depende de qué rueda empuja: la trasera levanta el morro y al revés.
+  // Va multiplicado por dt como cualquier aceleración: sin eso dependía del
+  // número de subpasos y la moto salía de las rampas girando a 12 rad/s, con
+  // lo que era imposible enderezarla antes de tocar suelo.
+  return -signo * fuerza * 0.0005 * dt;
 }
 
 function actualizar(dt){
@@ -13275,7 +13428,7 @@ function actualizar(dt){
     M.vAng *= Math.pow(0.02, dt);
     if (gas){
       M.vx += 620 * dt * Math.cos(M.ang);
-      M.vAng -= 1.5 * dt;                     // acelerar levanta el morro
+      M.vAng -= 1.0 * dt;                     // acelerar levanta el morro
       if (Math.random() < 0.5) chispa(M.x - EJE * Math.cos(M.ang), M.y - EJE * Math.sin(M.ang) + 10,
                                       '#5a4632', 1, 60);
     }
@@ -13296,7 +13449,13 @@ function actualizar(dt){
     if (teclas.atras)  M.vAng -= PAR_AIRE * dt;
     if (teclas.alante) M.vAng += PAR_AIRE * dt;
     M.vAng = limitar(M.vAng, -GIRO_MAX, GIRO_MAX);
-    if (!teclas.atras && !teclas.alante) M.vAng *= Math.pow(0.72, dt);
+    if (!teclas.atras && !teclas.alante){
+      M.vAng *= Math.pow(0.72, dt);
+      // Sin tocar nada, la moto tiende sola a ponerse plana: perdona los saltos
+      // sin quitarle el control a quien sí corrige.
+      const plano = Math.atan2(Math.sin(M.ang), Math.cos(M.ang));
+      M.vAng -= plano * 1.6 * dt;
+    }
     M.aire += dt;
     if (M.aire > 0.28 && M.aire - dt <= 0.28) Sonido.fx('salto');
   }
@@ -13314,9 +13473,16 @@ function actualizar(dt){
   }
 
   M.vx = limitar(M.vx, -160, VEL_MAX);
+  // El tope de giro vale SIEMPRE, no solo al pulsar una tecla: el empuje de la
+  // suspensión en una rampa llegaba a poner la moto a 16 rad/s y era imposible
+  // enderezarla antes de tocar suelo.
+  M.vAng = limitar(M.vAng, -GIRO_MAX, GIRO_MAX);
   M.x += M.vx * dt;
   M.y += M.vy * dt;
   M.ang += M.vAng * dt;
+  // El ángulo se mantiene en (−π, π] para que no crezca sin fin
+  if (M.ang > Math.PI) M.ang -= Math.PI * 2;
+  else if (M.ang < -Math.PI) M.ang += Math.PI * 2;
 
   // vueltas completas
   M.rotacion += M.vAng * dt;
@@ -13350,9 +13516,8 @@ function actualizar(dt){
   if (M.x >= META){ acabar(true); return; }
 
   // caer de cabeza: el ángulo normalizado se sale de lo tolerable tocando suelo
-  const normal = Math.atan2(Math.sin(M.ang), Math.cos(M.ang));
-  if (enSuelo && Math.abs(normal) > 1.85){ acabar(false); return; }
-  if (M.y > ALTO + 400){ acabar(false); return; }
+  if (enSuelo && Math.abs(M.ang) > 2.1){ acabar(false); return; }
+  if (M.y > ALTO + 120){ acabar(false); return; }   // se ha ido al fondo de un foso
 
   // partículas: bucle hacia atrás para poder borrar sin saltarse ninguna
   for (let i = particulas.length - 1; i >= 0; i--){

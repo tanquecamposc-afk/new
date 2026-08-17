@@ -85,7 +85,7 @@
     <div class="sep"></div>
     <div class="stat">🪙 <span id="saldoTxt" class="oro">5000</span></div>
     <div class="stat">🏆 <span id="recordTxt" class="tenue">—</span></div>
-    <button id="btnSonido" title="Sonido">🔊</button>
+    <button id="btnSonido" title="Sonido" aria-label="Sonido">🔊</button>
   </div>
 
   <div id="historial"></div>
@@ -101,10 +101,10 @@
         <input id="monto" type="number" min="1" step="1" value="50">
       </div>
       <div class="fichasRapidas">
-        <button data-op="mitad">½</button>
-        <button data-op="doble">x2</button>
-        <button data-op="100">100</button>
-        <button data-op="max">MÁX</button>
+        <button data-op="mitad" aria-label="Apostar la mitad">½</button>
+        <button data-op="doble" aria-label="Doblar la apuesta">x2</button>
+        <button data-op="100" aria-label="Apostar 100 fichas">100</button>
+        <button data-op="max" aria-label="Apostar todo">MÁX</button>
       </div>
       <button id="btnApostar" class="primario">APOSTAR<small>ronda siguiente</small></button>
     </div>
@@ -588,14 +588,20 @@ addEventListener('keydown', e => {
 });
 Arcade.conectarSonido($('btnSonido'));
 
-// Si el saldo se agota, se reponen fichas para poder seguir jugando
-setInterval(() => {
+// Si el saldo se agota, se reponen fichas para poder seguir jugando.
+// Va dentro del bucle del juego, que está acotado a esta pantalla: con un
+// setInterval suelto seguiría repartiendo fichas desde cualquier otro juego.
+let esperaRecarga = 0;
+Arcade.bucle(dt => {
+  esperaRecarga += dt;
+  if (esperaRecarga < 3) return;
+  esperaRecarga = 0;
   if (saldo < 1 && fase === 'espera' && !apuesta.pendiente){
     saldo = Arcade.fichas.ajustar(500);
     Arcade.aviso(avisos, '🎁 Te hemos repuesto 500 fichas', true);
     refrescar();
   }
-}, 3000);
+});
 
 // La franja de rondas arranca con resultados previos, como en las salas reales
 for (let i = 0; i < 10; i++) historia.push(sortearCaida());

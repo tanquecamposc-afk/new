@@ -55,7 +55,7 @@
     <div class="stat">⏱ <span id="tiempoTxt">0.0</span>s</div>
     <div class="stat">💥 <span id="caidasTxt" class="rojo">0</span>/5</div>
     <div class="stat">⚡ <div id="barraNitro"><div id="nitroRelleno"></div></div></div>
-    <button id="btnSonido" title="Sonido">🔊</button>
+    <button id="btnSonido" title="Sonido" aria-label="Sonido">🔊</button>
   </div>
 
   <div class="escena">
@@ -140,19 +140,42 @@ let semilla = 1;
 function alturaTerreno(x){
   if (x < 260) return 380;                                    // recta de salida
   const s = semilla * 0.37;
+  // Amplitudes elegidas para que el terreno quepa entero sin recortes: sin esto
+  // casi todas las semillas chocaban con el tope de abajo y salía un suelo
+  // plano artificial con una esquina en pico.
   let y = 372
-    + Math.sin(x * 0.0042 + s) * 54
-    + Math.sin(x * 0.0113 + s * 2.1) * 22
-    + Math.sin(x * 0.0261 + s * 3.7) * 8;
-  // Rampas: suben durante 165 px y el terreno cae de golpe en el borde.
-  // Ese corte es el que lanza la moto por los aires.
+    + Math.sin(x * 0.0042 + s) * 40
+    + Math.sin(x * 0.0113 + s * 2.1) * 18
+    + Math.sin(x * 0.0261 + s * 3.7) * 7;
+  // Rampas cada 1.150 px. La curva es 1 − cos, que arranca plana y llega a su
+  // punto más inclinado justo en el borde: así se sube sin frenazo y se sale
+  // despedido al final. Con un seno la rampa era casi un muro al empezar.
   const fase = ((x - 300) % 1150 + 1150) % 1150;
-  if (fase < 165){
-    const u = fase / 165;
-    y -= Math.sin(u * Math.PI / 2) * (108 + ((Math.floor(x / 1150) * 53) % 70));
+  const n = Math.floor((x - 300) / 1150);
+  if (fase < 260){
+    const u = fase / 260;
+    // La altura varía mucho de una rampa a otra: unas se pasan sin enterarte y
+    // otras te mandan arriba del todo y hay que enderezar en el aire.
+    y -= (1 - Math.cos(u * Math.PI / 2)) * (58 + ((n * 53) % 47) + ((n * 29) % 61));
+  } else if (fase < 260 + anchoFoso(n)){
+    // Justo detrás de cada rampa hay un foso: para eso está la rampa. Caer
+    // dentro es caída, así que hay que llegar con velocidad.
+    return ALTO + 260;
   }
-  return Math.min(y, ALTO - 26);
+  return y;
 }
+// Ancho del foso que sigue a la rampa n. Determinista, entre 130 y 210 px:
+// a plena velocidad se cruza de sobra; parado desde un control, no.
+function anchoFoso(n){
+  if (n < 1) return 0;                       // el primer salto va sin foso
+  return 130 + ((n * 67) % 81);
+}
+function enFoso(x){
+  const fase = ((x - 300) % 1150 + 1150) % 1150;
+  const n = Math.floor((x - 300) / 1150);
+  return fase >= 260 && fase < 260 + anchoFoso(n);
+}
+
 function pendiente(x){
   return Math.atan2(alturaTerreno(x + 4) - alturaTerreno(x - 4), 8);
 }
@@ -174,7 +197,8 @@ const particulas = [];
 let camaraX = 0, camaraY = 0, sacudida = 0;
 
 function reiniciar(desdeControl){
-  const inicio = desdeControl ? CONTROLES[M.control - 1] || 120 : 120;
+  let inicio = desdeControl ? CONTROLES[M.control - 1] || 120 : 120;
+  while (enFoso(inicio)) inicio -= 20;        // nunca se reaparece sobre un foso
   M.x = inicio; M.y = alturaTerreno(inicio) - EJE;
   M.vx = 0; M.vy = 0; M.ang = pendiente(inicio); M.vAng = 0;
   M.susp = [0, 0]; M.contacto = [false, false];
@@ -237,8 +261,11 @@ function rueda(indice, signo, dt){
     if (M.vy > 0) M.vy = 0;
   }
 
-  // El par depende de qué rueda empuja: la trasera levanta el morro y al revés
-  return -signo * fuerza * 0.00035;
+  // El par depende de qué rueda empuja: la trasera levanta el morro y al revés.
+  // Va multiplicado por dt como cualquier aceleración: sin eso dependía del
+  // número de subpasos y la moto salía de las rampas girando a 12 rad/s, con
+  // lo que era imposible enderezarla antes de tocar suelo.
+  return -signo * fuerza * 0.0005 * dt;
 }
 
 function actualizar(dt){
@@ -262,7 +289,7 @@ function actualizar(dt){
     M.vAng *= Math.pow(0.02, dt);
     if (gas){
       M.vx += 620 * dt * Math.cos(M.ang);
-      M.vAng -= 1.5 * dt;                     // acelerar levanta el morro
+      M.vAng -= 1.0 * dt;                     // acelerar levanta el morro
       if (Math.random() < 0.5) chispa(M.x - EJE * Math.cos(M.ang), M.y - EJE * Math.sin(M.ang) + 10,
                                       '#5a4632', 1, 60);
     }
@@ -283,7 +310,13 @@ function actualizar(dt){
     if (teclas.atras)  M.vAng -= PAR_AIRE * dt;
     if (teclas.alante) M.vAng += PAR_AIRE * dt;
     M.vAng = limitar(M.vAng, -GIRO_MAX, GIRO_MAX);
-    if (!teclas.atras && !teclas.alante) M.vAng *= Math.pow(0.72, dt);
+    if (!teclas.atras && !teclas.alante){
+      M.vAng *= Math.pow(0.72, dt);
+      // Sin tocar nada, la moto tiende sola a ponerse plana: perdona los saltos
+      // sin quitarle el control a quien sí corrige.
+      const plano = Math.atan2(Math.sin(M.ang), Math.cos(M.ang));
+      M.vAng -= plano * 1.6 * dt;
+    }
     M.aire += dt;
     if (M.aire > 0.28 && M.aire - dt <= 0.28) Sonido.fx('salto');
   }
@@ -301,9 +334,16 @@ function actualizar(dt){
   }
 
   M.vx = limitar(M.vx, -160, VEL_MAX);
+  // El tope de giro vale SIEMPRE, no solo al pulsar una tecla: el empuje de la
+  // suspensión en una rampa llegaba a poner la moto a 16 rad/s y era imposible
+  // enderezarla antes de tocar suelo.
+  M.vAng = limitar(M.vAng, -GIRO_MAX, GIRO_MAX);
   M.x += M.vx * dt;
   M.y += M.vy * dt;
   M.ang += M.vAng * dt;
+  // El ángulo se mantiene en (−π, π] para que no crezca sin fin
+  if (M.ang > Math.PI) M.ang -= Math.PI * 2;
+  else if (M.ang < -Math.PI) M.ang += Math.PI * 2;
 
   // vueltas completas
   M.rotacion += M.vAng * dt;
@@ -337,9 +377,8 @@ function actualizar(dt){
   if (M.x >= META){ acabar(true); return; }
 
   // caer de cabeza: el ángulo normalizado se sale de lo tolerable tocando suelo
-  const normal = Math.atan2(Math.sin(M.ang), Math.cos(M.ang));
-  if (enSuelo && Math.abs(normal) > 1.85){ acabar(false); return; }
-  if (M.y > ALTO + 400){ acabar(false); return; }
+  if (enSuelo && Math.abs(M.ang) > 2.1){ acabar(false); return; }
+  if (M.y > ALTO + 120){ acabar(false); return; }   // se ha ido al fondo de un foso
 
   // partículas: bucle hacia atrás para poder borrar sin saltarse ninguna
   for (let i = particulas.length - 1; i >= 0; i--){

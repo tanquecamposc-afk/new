@@ -210,12 +210,13 @@ Incremental de clics con los diez edificios clásicos y sus precios de siempre, 
 Carrera de 2.400 m sobre terreno generado, con un motor de física propio de **cuerpo rígido con dos ruedas**.
 
 - Cada rueda es un **muelle amortiguado** contra el terreno, y el par que generan entre las dos es lo que endereza la moto. Por eso se posa sobre las lomas en vez de pegarse al suelo, y las rampas la lanzan de verdad.
-- El terreno es **determinista por semilla**: la misma pista se puede repetir, y al reaparecer en una bandera sigue siendo la de antes. Cada 1.150 px hay una rampa que sube 165 px y **corta en seco** en el borde: ese corte es el que te manda por los aires.
+- El terreno es **determinista por semilla**: la misma pista se puede repetir, y al reaparecer en una bandera sigue siendo la de antes. Cada 1.150 px hay una rampa con perfil `1 − cos`, que **arranca plana y llega a su punto más inclinado justo en el borde**, donde el terreno cae en seco: ese corte es el que te manda por los aires. Ninguna pendiente pasa de 49°, y las amplitudes están elegidas para que el terreno quepa entero en el lienzo sin recortes.
+- **Detrás de cada rampa hay un foso** de 130 a 210 px: para eso está la rampa. A plena velocidad se cruzan de sobra, pero si vienes frenado o reapareces en un control, hay que coger carrerilla. Caer dentro cuenta como caída.
 - **Nitro** con `Shift` o `Espacio`: empuja fuerte, se gasta y se recupera solo. Cada vuelta completa te devuelve un cuarto del depósito.
-- En el aire mandas tú con ← →; la velocidad de giro está topada a 12 rad/s, que es justo lo que cabe en un salto largo. Una **vuelta completa** son 500 puntos.
+- En el aire mandas tú con ← →; la velocidad de giro está topada a 12 rad/s, que es justo lo que cabe en un salto largo. Una **vuelta completa** son 500 puntos. Si no tocas nada, la moto **se pone plana sola**: perdona los saltos pequeños sin quitarte el control cuando sí corriges.
 - **Siete banderas de control.** Si te estrellas, reapareces en la última. Tienes **cinco caídas**; a la quinta se acaba la carrera.
 - Caer de cabeza (más de 106° de inclinación tocando suelo) es caída.
-- Física a **pasos fijos de 240 Hz** dentro del bucle: con la suspensión así de rígida, un `dt` grande la haría explotar.
+- Física a **pasos fijos de 240 Hz** dentro del bucle: con la suspensión así de rígida, un `dt` grande la haría explotar. El par de las ruedas va escalado por `dt` como cualquier aceleración, y la velocidad de giro está topada siempre, no solo al pulsar una tecla.
 - **Mandos táctiles** en pantallas pequeñas, con captura de puntero para que no se queden pegados si sacas el dedo del botón.
 
 ### 📈 Money Market
@@ -311,6 +312,8 @@ Todo se guarda solo en el navegador, sin cuentas ni servidor. La portada tiene u
 | 🧠 Spartahoppers | 12 por acierto, escalado por la retención de la sesión |
 | 📈 Money Market | 1 por cada 5 $ ganados por encima del capital inicial |
 | 💣 Minas · ✈ Aviator | ninguno: ya mueven fichas con las apuestas |
+
+**Sesiones a medias.** Además de Block Blast y Serpiente, **Money Market** guarda la sesión entera —mercado, posición abierta y liquidez— y ofrece **▶ Seguir la sesión** al volver.
 
 **Si el navegador no deja guardar** (modo privado, ventana restringida), `Almacen` cae a una copia en memoria para que la sesión funcione igual, y la portada avisa de que el progreso se perderá al recargar.
 

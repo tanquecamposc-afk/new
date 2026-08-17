@@ -99,8 +99,8 @@
     <div class="sep"></div>
     <div class="stat">📊 <span id="velaTxt">0</span>/120</div>
     <div class="stat">🏆 <span id="recordTxt" class="oro">0</span></div>
-    <button id="btnPausa" title="Pausa (Espacio)">⏸</button>
-    <button id="btnSonido" title="Sonido">🔊</button>
+    <button id="btnPausa" title="Pausa (Espacio)" aria-label="Pausa (Espacio)">⏸</button>
+    <button id="btnSonido" title="Sonido" aria-label="Sonido">🔊</button>
   </div>
 
   <div id="tablero">
@@ -158,6 +158,7 @@
           Al acabar la sesión, <b>lo que ganes por encima de los 10.000 $ se cambia a NEXO-COINS</b>.
         </div>
         <div class="filaBotones">
+          <button class="primario" id="btnSeguir" hidden>▶ Seguir la sesión</button>
           <button class="primario" id="btnAbrir">▶ Abrir mercado</button>
         </div>
       </div>
@@ -213,7 +214,7 @@ const M = {
   liquidez: CAPITAL,
   pos: null,                      // { lado:'largo'|'corto', unidades, entrada, margen, palanca }
   operaciones: 0, ganadoras: 0,
-  jugando: false, pausado: false,
+  jugando: false, pausado: false, repintar: true,
   noticia: '', noticiaT: 0, sesgo: 0, sesgoT: 0,
   record: Arcade.record('mercado')
 };
@@ -249,10 +250,24 @@ function nuevaVela(previa){
   };
 }
 
+/**
+ * Añade una vela y le calcula ahí mismo sus indicadores. Antes se recalculaban
+ * SMA y RSI para cada vela visible en CADA fotograma; ahora se hace una vez por
+ * vela, que es cuando cambian.
+ */
+function empujarVela(){
+  const v = nuevaVela(M.velas[M.velas.length - 1]);
+  M.velas.push(v);
+  const n = M.velas.length;
+  v.sma10 = mediaMovil(10, n);
+  v.sma30 = mediaMovil(30, n);
+  v.rsi = fuerzaRelativa(14, n);
+  return v;
+}
+
 function nuevaSesion(){
   M.velas = [];
-  let previa = null;
-  for (let i = 0; i < 40; i++){ previa = nuevaVela(previa); M.velas.push(previa); }
+  for (let i = 0; i < 40; i++) empujarVela();
   M.t = 0; M.vela = 0;
   M.liquidez = CAPITAL; M.pos = null;
   M.operaciones = 0; M.ganadoras = 0;
@@ -266,8 +281,39 @@ function nuevaSesion(){
 
 const precio = () => M.velas[M.velas.length - 1].c;
 
+// ---------- Sesión a medias ----------
+// Una sesión son casi dos minutos: si cierras a mitad, al volver sigues con tu
+// mercado, tu posición abierta y tu liquidez. Se lee una vez al arrancar.
+const recuperable = Arcade.estado.cargar('mercado');
+
+function guardarSesion(){
+  if (!M.jugando) return;
+  Arcade.estado.guardar('mercado', {
+    velas: M.velas, vela: M.vela, liquidez: M.liquidez, pos: M.pos,
+    operaciones: M.operaciones, ganadoras: M.ganadoras,
+    sesgo: M.sesgo, sesgoT: M.sesgoT, titular: $('titulares').innerHTML
+  });
+}
+function recuperarSesion(){
+  const g = recuperable;
+  if (!g || !Array.isArray(g.velas) || g.velas.length < 40) return false;
+  M.velas = g.velas;
+  M.vela = g.vela || 0;
+  M.liquidez = typeof g.liquidez === 'number' ? g.liquidez : CAPITAL;
+  M.pos = g.pos || null;
+  M.operaciones = g.operaciones || 0;
+  M.ganadoras = g.ganadoras || 0;
+  M.sesgo = g.sesgo || 0; M.sesgoT = g.sesgoT || 0;
+  M.t = 0; M.pausado = false; M.jugando = true;
+  if (g.titular) $('titulares').innerHTML = g.titular;
+  refrescar();
+  guardarSesion();
+  return true;
+}
+Guardado.registrar(guardarSesion);
+
 // ---------- Indicadores ----------
-function sma(n, hasta = M.velas.length){
+function mediaMovil(n, hasta = M.velas.length){
   if (hasta < n) return null;
   let s = 0;
   for (let i = hasta - n; i < hasta; i++) s += M.velas[i].c;
@@ -277,7 +323,7 @@ function sma(n, hasta = M.velas.length){
  * RSI de Wilder sobre `n` periodos. Devuelve 0-100, o null si aún no hay datos.
  * Se recalcula entero cada vez: con 160 velas como mucho, sale gratis.
  */
-function rsi(n = 14, hasta = M.velas.length){
+function fuerzaRelativa(n = 14, hasta = M.velas.length){
   if (hasta < n + 1) return null;
   let subida = 0, bajada = 0;
   for (let i = hasta - n; i < hasta; i++){
@@ -344,8 +390,7 @@ function cerrar(motivo){
 
 // ---------- Bucle ----------
 function avanzar(){
-  M.velas.push(nuevaVela(M.velas[M.velas.length - 1]));
-  if (M.velas.length > 200) M.velas.shift();
+  empujarVela();
   M.vela++;
 
   // rachas de sesgo con su titular
@@ -362,12 +407,14 @@ function avanzar(){
   if (M.pos && M.pos.margen + valorPos() <= 0) cerrar('liquidacion');
 
   if (M.vela >= VELAS_SESION) terminar();
+  else guardarSesion();
   refrescar();
 }
 
 function terminar(){
   if (M.pos) cerrar('fin');
   M.jugando = false;
+  Arcade.estado.olvidar('mercado');
   const total = patrimonio();
   const rend = (total / CAPITAL - 1) * 100;
   const acierto = M.operaciones ? Math.round(M.ganadoras / M.operaciones * 100) : 0;
@@ -399,6 +446,7 @@ const fmt = n => '$' + n.toLocaleString('es-ES', { minimumFractionDigits:2, maxi
 const fmtSigno = n => (n >= 0 ? '+' : '−') + fmt(Math.abs(n)).replace('$', '') + ' $';
 
 function refrescar(){
+  M.repintar = true;
   const p = precio();
   $('mPrecio').textContent = fmt(p);
   $('mLiquidez').textContent = fmt(M.liquidez);
@@ -466,19 +514,19 @@ function dibujar(){
   texto('VOLUMEN', 12, V_ARRIBA + 9, '#3e4a63', 10);
 
   // --- medias móviles ---
-  const linea = (n, color) => {
+  const linea = (campo, color) => {
     ctx.beginPath();
     let empezada = false;
     for (let i = 0; i < vista.length; i++){
-      const m = sma(n, desde + i + 1);
-      if (m === null) continue;
+      const m = vista[i][campo];
+      if (m === null || m === undefined) continue;
       const x = aX(i), y = aY(m);
       if (!empezada){ ctx.moveTo(x, y); empezada = true; } else ctx.lineTo(x, y);
     }
     ctx.strokeStyle = color; ctx.lineWidth = 1.6; ctx.stroke();
   };
-  linea(10, 'rgba(0,240,255,.75)');
-  linea(30, 'rgba(168,85,247,.75)');
+  linea('sma10', 'rgba(0,240,255,.75)');
+  linea('sma30', 'rgba(168,85,247,.75)');
 
   // --- velas ---
   vista.forEach((v, i) => {
@@ -537,14 +585,14 @@ function dibujar(){
   ctx.beginPath();
   let empezada = false;
   for (let i = 0; i < vista.length; i++){
-    const r = rsi(14, desde + i + 1);
-    if (r === null) continue;
+    const r = vista[i].rsi;
+    if (r === null || r === undefined) continue;
     const x = aX(i), y = rY(r);
     if (!empezada){ ctx.moveTo(x, y); empezada = true; } else ctx.lineTo(x, y);
   }
   ctx.strokeStyle = '#f3e600'; ctx.lineWidth = 1.6; ctx.stroke();
 
-  const rAhora = rsi(14);
+  const rAhora = M.velas[M.velas.length - 1].rsi;
   texto('RSI 14' + (rAhora === null ? '' : '  ' + rAhora.toFixed(0)),
         12, R_ARRIBA + 9, rAhora === null ? '#3e4a63'
         : rAhora > 70 ? '#ff3d68' : rAhora < 30 ? '#00ff66' : '#8b9bb4', 10);
@@ -567,6 +615,7 @@ $('btnCerrar').onclick = () => { Sonido.activar(); cerrar('manual'); };
 $('btnPausa').onclick = () => {
   if (!M.jugando) return;
   M.pausado = !M.pausado;
+  M.repintar = true;
   $('btnPausa').textContent = M.pausado ? '▶' : '⏸';
 };
 addEventListener('keydown', ev => {
@@ -576,10 +625,17 @@ $('btnAbrir').onclick = () => {
   Sonido.activar();
   $('modalInicio').classList.remove('visible');
   nuevaSesion();
+  guardarSesion();
+};
+$('btnSeguir').onclick = () => {
+  Sonido.activar();
+  $('modalInicio').classList.remove('visible');
+  if (!recuperarSesion()) nuevaSesion();
 };
 $('btnOtra').onclick = () => {
   $('modalFin').classList.remove('visible');
   nuevaSesion();
+  guardarSesion();
 };
 Arcade.conectarSonido($('btnSonido'));
 
@@ -588,12 +644,28 @@ nuevaSesion();
 M.jugando = false;
 refrescar();
 
+// Si quedó una sesión a medias, el menú ofrece continuarla
+if (recuperable && (recuperable.vela || 0) < VELAS_SESION){
+  $('btnSeguir').hidden = false;
+  $('btnAbrir').textContent = '↻ Empezar de cero';
+  $('btnAbrir').classList.remove('primario');
+}
+
+// El gráfico solo cambia cuando llega una vela nueva o tocas una posición, así
+// que no hace falta repintarlo 60 veces por segundo. Se repinta cuando algo ha
+// cambiado y, por si acaso, cuatro veces por segundo como mucho.
+let desdeRepintado = 0;
 Arcade.bucle(dt => {
   if (M.jugando && !M.pausado){
     M.t += dt;
     while (M.t >= SEG_POR_VELA){ M.t -= SEG_POR_VELA; if (M.jugando) avanzar(); }
   }
-  dibujar();
+  desdeRepintado += dt;
+  if (M.repintar || desdeRepintado >= 0.25){
+    M.repintar = false;
+    desdeRepintado = 0;
+    dibujar();
+  }
 });
 </script>
 </body>

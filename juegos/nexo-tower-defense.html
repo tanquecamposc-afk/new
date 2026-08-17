@@ -191,11 +191,11 @@ canvas#lienzo{display:block; width:100%; height:auto; background:#020408; touch-
     <div class="stat" id="proximaStat" style="display:none">⏭ <span id="proximaTxt"></span></div>
     <div class="sep"></div>
     <button id="btnOla" class="primario">▶ Iniciar ola</button>
-    <button id="btnVelocidad" title="Cambiar velocidad (F)">⏩ x1</button>
-    <button id="btnPausa" title="Pausa (Espacio)">⏸</button>
-    <button id="btnSonido" title="Efectos de sonido">🔊</button>
-    <button id="btnMusica" title="Música">🎵</button>
-    <button id="btnMenu" title="Volver al menú">⌂</button>
+    <button id="btnVelocidad" title="Cambiar velocidad (F)" aria-label="Cambiar velocidad (F)">⏩ x1</button>
+    <button id="btnPausa" title="Pausa (Espacio)" aria-label="Pausa (Espacio)">⏸</button>
+    <button id="btnSonido" title="Efectos de sonido" aria-label="Efectos de sonido">🔊</button>
+    <button id="btnMusica" title="Música" aria-label="Música">🎵</button>
+    <button id="btnMenu" title="Volver al menú" aria-label="Volver al menú">⌂</button>
     <a href="../index.html" id="volverArcade" title="Volver al arcade">🕹 Arcade</a>
   </div>
 
@@ -203,9 +203,9 @@ canvas#lienzo{display:block; width:100%; height:auto; background:#020408; touch-
     <canvas id="lienzo" width="1280" height="720"></canvas>
 
     <div id="habilidades" style="display:none">
-      <button class="hab" id="habBomba" title="Bombardeo aéreo: haz clic en el mapa para lanzar un ataque devastador">💥
+      <button class="hab" id="habBomba" title="Bombardeo aéreo: haz clic en el mapa para lanzar un ataque devastador" aria-label="Bombardeo aéreo: haz clic en el mapa para lanzar un ataque devastador">💥
         <span class="cd" id="cdBomba" style="display:none">45</span><span class="tecla">A</span></button>
-      <button class="hab" id="habDinero" title="Suministros de emergencia: dinero instantáneo">📦
+      <button class="hab" id="habDinero" title="Suministros de emergencia: dinero instantáneo" aria-label="Suministros de emergencia: dinero instantáneo">📦
         <span class="cd" id="cdDinero" style="display:none">60</span><span class="tecla">S</span></button>
     </div>
 
@@ -386,6 +386,8 @@ const Musica = {
     this.sonando = false;
     if (this.intervalo){ clearInterval(this.intervalo); this.intervalo = null; }
   },
+  // Se vuelve a arrancar sola al entrar de nuevo en la pantalla
+  reanudar(){ if (this.activa && !this.sonando) this.arrancar(); },
   programar(){
     if (!Sonido.ctx || Sonido.silencio && false) return;
     const c = Sonido.ctx;
@@ -2378,6 +2380,10 @@ $('btnSonido').addEventListener('click', () => {
   Sonido.silencio = !Sonido.silencio;
   $('btnSonido').textContent = Sonido.silencio ? '🔇' : '🔊';
 });
+// Este juego lleva su propia música con setInterval: al salir de la pantalla
+// hay que apagarla, o se queda sonando encima de otro juego.
+if (typeof AlSalir !== 'undefined') AlSalir.registrar(() => Musica.parar());
+
 $('btnMusica').addEventListener('click', () => {
   Sonido.activar();
   Musica.activa = !Musica.activa;

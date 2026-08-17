@@ -86,7 +86,7 @@
     <div class="sep"></div>
     <div class="stat">💵 <span id="dineroTxt" class="oro">250</span></div>
     <div class="stat">💎 <span id="fichasTxt" class="tenue">0</span></div>
-    <button id="btnSonido" title="Sonido">🔊</button>
+    <button id="btnSonido" title="Sonido" aria-label="Sonido">🔊</button>
   </div>
 
   <div id="mina">
@@ -875,7 +875,13 @@ if (habiaPartida){
 }
 refrescar();
 
-setInterval(() => { refrescar(); }, 500);
+// Refresco del panel dentro del bucle acotado a la pantalla: con un
+// setInterval suelto seguiría repintando desde otros juegos.
+let esperaRefresco = 0;
+Arcade.bucle(dt => {
+  esperaRefresco += dt;
+  if (esperaRefresco >= 0.5){ esperaRefresco = 0; refrescar(); }
+});
 setInterval(guardarPartida, 10000);
 addEventListener('beforeunload', guardarPartida);
 Guardado.registrar(guardarPartida);   // también al cambiar de pantalla o irse a otra pestaña

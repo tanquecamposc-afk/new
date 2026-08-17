@@ -128,6 +128,21 @@ button.azul:hover{box-shadow:0 0 16px rgba(0,240,255,.4);}
 }
 .premio:empty{display:none;}
 
+/* ---------- Accesibilidad ---------- */
+/* Los campos de texto sí necesitan poder seleccionarse, pese al reset de arriba */
+input, select, textarea{user-select:text; -webkit-user-select:text;}
+input:focus-visible, select:focus-visible, a:focus-visible, [tabindex]:focus-visible{
+  outline:2px solid var(--azul); outline-offset:2px;
+}
+/* Quien pide menos movimiento no debería sufrir animaciones ni transiciones.
+   Los juegos siguen funcionando: solo se apagan los adornos en CSS. */
+@media (prefers-reduced-motion: reduce){
+  *, *::before, *::after{
+    animation-duration:.01ms !important; animation-iteration-count:1 !important;
+    transition-duration:.01ms !important; scroll-behavior:auto !important;
+  }
+}
+
 /* ---------- Utilidades ---------- */
 .tenue{color:var(--tenue);}
 .oro{color:var(--oro);}

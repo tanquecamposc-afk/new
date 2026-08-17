@@ -204,6 +204,18 @@ const Guardado = {
   registrar(fn){ if (typeof fn === 'function') this.tareas.push(fn); },
   ahora(){ this.tareas.forEach(f => { try { f(); } catch(e){} }); }
 };
+
+/**
+ * Cosas que hay que apagar al dejar una pantalla: música propia de un juego,
+ * temporizadores, bucles de audio… El enrutador lo dispara antes de cambiar,
+ * y también al ocultar la pestaña, para no dejar nada sonando de fondo.
+ */
+const AlSalir = {
+  tareas: [],
+  registrar(fn){ if (typeof fn === 'function') this.tareas.push(fn); },
+  ahora(){ this.tareas.forEach(f => { try { f(); } catch(e){} }); }
+};
+document.addEventListener('visibilitychange', () => { if (document.hidden) AlSalir.ahora(); });
 addEventListener('beforeunload', () => Guardado.ahora());
 addEventListener('pagehide', () => Guardado.ahora());
 document.addEventListener('visibilitychange', () => { if (document.hidden) Guardado.ahora(); });

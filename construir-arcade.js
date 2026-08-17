@@ -154,6 +154,7 @@ const Enrutador = {
   arrancados: {},
   ir(id){
     Guardado.ahora();             // lo jugado se guarda antes de soltar la pantalla
+    AlSalir.ahora();              // música y temporizadores propios de cada juego
     Sonido.pararMotor();          // ningún sonido continuo sobrevive al cambio de pantalla
     document.querySelectorAll('.pantalla').forEach(p => p.classList.remove('activa'));
     const destino = document.getElementById('pantalla-' + id);
@@ -181,18 +182,26 @@ function registrarJuego(id, codigo){
     const raiz = document.getElementById('pantalla-' + id);
     const activa = () => Enrutador.actual === id;
 
+    const escucha = (tipo, fn, op) =>
+      window.addEventListener(tipo, e => { if (activa()) fn(e); }, op);
+
     const doc = new Proxy(document, {
       get(d, k){
         if (k === 'getElementById') return x => raiz.querySelector('#' + CSS.escape(x));
         if (k === 'querySelector') return s => raiz.querySelector(s);
         if (k === 'querySelectorAll') return s => raiz.querySelectorAll(s);
+        // document.addEventListener también se acota: si no, un juego que
+        // escuche el teclado en el documento seguiría respondiendo desde
+        // cualquier otra pantalla.
+        if (k === 'addEventListener'){
+          return (tipo, fn, op) =>
+            d.addEventListener(tipo, e => { if (activa()) fn(e); }, op);
+        }
         const v = d[k];
         return typeof v === 'function' ? v.bind(d) : v;
       },
       set(d, k, v){ d[k] = v; return true; }
     });
-    const escucha = (tipo, fn, op) =>
-      window.addEventListener(tipo, e => { if (activa()) fn(e); }, op);
     const arcadeLocal = Object.create(Arcade);
     arcadeLocal.bucle = fn => Arcade.bucle(dt => { if (activa()) fn(dt); });
 
