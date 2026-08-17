@@ -1141,6 +1141,211 @@ body{display:block; padding:0; margin:0;}
 #pantalla-galletas #pieTienda button{flex:1; font-size:.72rem;}
 
 
+
+/* --- sparta --- */
+#pantalla-sparta #juego{width:min(760px,100vw);}
+#pantalla-sparta .barra .titulo{color:var(--azul);}
+#pantalla-sparta /* ---------- Barra de sesión ---------- */
+  #progreso{
+    width:100%; height:8px; border-radius:999px; overflow:hidden;
+    background:rgba(0,0,0,.5); border:1px solid rgba(0,240,255,.18);
+  }
+#pantalla-sparta #progresoRelleno{
+    height:100%; width:0;
+    background:linear-gradient(90deg, var(--azul), var(--morado));
+    transition:width .3s ease;
+  }
+#pantalla-sparta /* ---------- Carta 3D ---------- */
+  #tapete{perspective:1400px; padding:6px 0; position:relative; z-index:1;}
+#pantalla-sparta #carta{
+    position:relative; width:100%; height:270px; cursor:pointer;
+    transform-style:preserve-3d;
+    transition:transform .55s cubic-bezier(.34,1.4,.5,1);
+  }
+#pantalla-sparta #carta.girada{transform:rotateY(180deg);}
+#pantalla-sparta #carta > div{
+    position:absolute; inset:0; backface-visibility:hidden;
+    border-radius:16px; padding:24px;
+    display:flex; flex-direction:column; align-items:center; justify-content:space-between;
+    text-align:center;
+  }
+#pantalla-sparta .cara{
+    background:linear-gradient(150deg, var(--panel2), var(--panel));
+    border:1px solid rgba(0,240,255,.3);
+    box-shadow:inset 0 0 40px rgba(0,240,255,.05), 0 12px 30px rgba(0,0,0,.5);
+  }
+#pantalla-sparta .dorso{
+    transform:rotateY(180deg);
+    background:linear-gradient(150deg, #1a1030, var(--panel));
+    border:1px solid rgba(168,85,247,.45);
+    box-shadow:inset 0 0 40px rgba(168,85,247,.08), 0 12px 30px rgba(0,0,0,.5);
+  }
+#pantalla-sparta .etiqueta{
+    font-family:var(--fuente-arcade); font-size:11px; font-weight:700;
+    letter-spacing:2.5px; text-transform:uppercase;
+  }
+#pantalla-sparta .cara .etiqueta{color:var(--azul);}
+#pantalla-sparta .dorso .etiqueta{color:var(--verde);}
+#pantalla-sparta #textoPregunta, #pantalla-sparta #textoRespuesta{
+    font-size:clamp(1rem,2.6vw,1.28rem); line-height:1.5; font-weight:600;
+    display:flex; align-items:center; flex:1; padding:14px 0;
+  }
+#pantalla-sparta #textoRespuesta{color:#bdf5d3; font-weight:500;}
+#pantalla-sparta .pista{font-size:11px; color:var(--tenue); font-family:var(--fuente-arcade);}
+#pantalla-sparta #tema{
+    font-size:10px; font-family:var(--fuente-arcade); letter-spacing:1.5px;
+    color:var(--morado); text-transform:uppercase;
+  }
+#pantalla-sparta /* ---------- Botonera de evaluación ---------- */
+  #evaluar{display:grid; grid-template-columns:repeat(3,1fr); gap:10px; position:relative; z-index:3;}
+#pantalla-sparta #evaluar button{
+    padding:13px 8px; border-radius:12px; cursor:pointer;
+    font-weight:800; font-size:12px; letter-spacing:1px; text-transform:uppercase;
+    background:rgba(0,0,0,.35); transition:filter .15s, transform .1s;
+    display:flex; flex-direction:column; gap:4px; align-items:center;
+  }
+#pantalla-sparta #evaluar button:hover{filter:brightness(1.35);}
+#pantalla-sparta #evaluar button:active{transform:translateY(1px);}
+#pantalla-sparta #evaluar button small{font-size:10px; opacity:.75; font-weight:600; letter-spacing:.5px;}
+#pantalla-sparta #btnDificil{color:var(--rojo);  border:1px solid rgba(255,61,104,.45);}
+#pantalla-sparta #btnBien{   color:var(--oro);   border:1px solid rgba(243,230,0,.45);}
+#pantalla-sparta #btnFacil{  color:var(--verde); border:1px solid rgba(0,255,102,.45);}
+#pantalla-sparta #evaluar.bloqueado{opacity:.35; pointer-events:none;}
+#pantalla-sparta #combo{
+    position:relative; z-index:3; text-align:center; font-family:var(--fuente-arcade); font-weight:800;
+    letter-spacing:2px; min-height:1.4em; font-size:14px; color:var(--oro);
+    text-shadow:0 0 14px rgba(243,230,0,.5);
+  }
+#pantalla-sparta /* ---------- Resumen ---------- */
+  .rejillaResumen{
+    display:grid; grid-template-columns:repeat(auto-fit,minmax(110px,1fr)); gap:10px;
+    margin:14px 0 18px;
+  }
+#pantalla-sparta .rejillaResumen div{background:rgba(0,0,0,.35); border-radius:10px; padding:11px;}
+#pantalla-sparta .rejillaResumen .n{font-size:24px; font-weight:800; color:var(--oro);}
+#pantalla-sparta .rejillaResumen .e{font-size:11px; color:var(--tenue);}
+
+
+
+/* --- mercado --- */
+#pantalla-mercado #juego{width:min(1000px,100vw);}
+#pantalla-mercado /* Los modales cubren el tablero, #pantalla-mercado no la barra: desde el menú siempre se puede volver */
+  #tablero{position:relative; display:flex; flex-direction:column; gap:10px;}
+#pantalla-mercado .barra .titulo{color:var(--verde);}
+#pantalla-mercado #envoltorio{
+    position:relative; background:#03060c; border-radius:14px;
+    border:1px solid rgba(0,255,102,.2); padding:8px; overflow:hidden;
+  }
+#pantalla-mercado #lienzo{display:block; width:100%; height:auto;}
+#pantalla-mercado #envivo{
+    position:absolute; top:14px; left:16px; z-index:2;
+    display:flex; align-items:center; gap:7px;
+    font-family:var(--fuente-arcade); font-size:11px; font-weight:700;
+    letter-spacing:1.5px; color:var(--verde);
+  }
+#pantalla-mercado #envivo i{
+    width:8px; height:8px; border-radius:50%; background:var(--verde);
+    box-shadow:0 0 10px var(--verde); animation:latir 1.4s infinite;
+  }
+@keyframes latir{50%{opacity:.25;}}
+#pantalla-mercado /* ---------- Métricas ---------- */
+  #metricas{
+    display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); gap:9px;
+  }
+#pantalla-mercado #metricas div{
+    background:rgba(0,0,0,.4); border:1px solid var(--borde);
+    border-radius:11px; padding:9px 11px; text-align:center;
+  }
+#pantalla-mercado #metricas .e{
+    font-size:10px; color:var(--tenue); text-transform:uppercase;
+    letter-spacing:.8px; display:block; margin-bottom:3px;
+  }
+#pantalla-mercado #metricas .v{
+    font-family:var(--fuente-arcade); font-weight:800; font-size:15px;
+    font-variant-numeric:tabular-nums;
+  }
+#pantalla-mercado /* ---------- Operar ---------- */
+  #operar{display:flex; gap:9px; flex-wrap:wrap; align-items:center;}
+#pantalla-mercado #operar .grupo{
+    display:flex; align-items:center; gap:7px; background:rgba(0,0,0,.35);
+    border:1px solid var(--borde); border-radius:11px; padding:6px 11px;
+  }
+#pantalla-mercado #operar label{font-size:11px; color:var(--tenue); text-transform:uppercase; letter-spacing:.7px;}
+#pantalla-mercado #operar select, #pantalla-mercado #operar input{
+    background:rgba(0,0,0,.5); color:var(--texto); border:1px solid var(--borde);
+    border-radius:7px; padding:5px 8px; font-family:var(--fuente-arcade);
+    font-weight:700; font-size:13px;
+  }
+#pantalla-mercado #operar input{width:88px; text-align:right;}
+#pantalla-mercado #botonera{display:flex; gap:9px; flex-wrap:wrap; flex:1;}
+#pantalla-mercado #botonera button{
+    flex:1; min-width:118px; padding:11px 12px; border-radius:11px; cursor:pointer;
+    font-weight:900; font-size:12px; letter-spacing:1px; text-transform:uppercase;
+    border:none; color:#04120a; transition:filter .15s, transform .1s;
+  }
+#pantalla-mercado #botonera button:active{transform:translateY(1px);}
+#pantalla-mercado #botonera button:hover{filter:brightness(1.15);}
+#pantalla-mercado #btnLargo{background:linear-gradient(135deg, var(--verde), #00a844);}
+#pantalla-mercado #btnCorto{background:linear-gradient(135deg, var(--rojo), #b3183f); color:#fff;}
+#pantalla-mercado #btnCerrar{
+    background:rgba(0,0,0,.4); color:var(--oro);
+    border:1px solid rgba(243,230,0,.4) !important;
+  }
+#pantalla-mercado #titulares{
+    font-family:var(--fuente-arcade); font-size:12px; color:var(--tenue);
+    background:rgba(0,0,0,.35); border:1px solid var(--borde);
+    border-radius:10px; padding:8px 12px; min-height:2.4em; line-height:1.5;
+  }
+#pantalla-mercado #titulares b.sube{color:var(--verde);}
+#pantalla-mercado #titulares b.baja{color:var(--rojo);}
+#pantalla-mercado .rejillaResumen{
+    display:grid; grid-template-columns:repeat(auto-fit,minmax(110px,1fr)); gap:10px;
+    margin:14px 0 18px;
+  }
+#pantalla-mercado .rejillaResumen div{background:rgba(0,0,0,.35); border-radius:10px; padding:11px;}
+#pantalla-mercado .rejillaResumen .n{font-size:22px; font-weight:800; color:var(--oro);}
+#pantalla-mercado .rejillaResumen .e{font-size:11px; color:var(--tenue);}
+
+
+
+/* --- moto --- */
+#pantalla-moto #juego{width:min(1000px,100vw);}
+#pantalla-moto .barra .titulo{color:#ff8a3d;}
+#pantalla-moto #barraNitro{
+    width:104px; height:9px; border-radius:999px; overflow:hidden;
+    background:rgba(0,0,0,.55); border:1px solid rgba(0,240,255,.3);
+  }
+#pantalla-moto #nitroRelleno{
+    height:100%; width:100%;
+    background:linear-gradient(90deg, var(--azul), #7de9ff);
+    box-shadow:0 0 10px rgba(0,240,255,.6);
+    transition:width .1s linear;
+  }
+#pantalla-moto #mandos{
+    display:grid; grid-template-columns:repeat(4,1fr); gap:9px;
+  }
+#pantalla-moto #mandos button{
+    padding:16px 8px; border-radius:12px; cursor:pointer;
+    background:rgba(0,0,0,.4); color:var(--texto);
+    border:1px solid var(--borde);
+    font-weight:800; font-size:12px; letter-spacing:.6px;
+    touch-action:none; user-select:none;
+  }
+#pantalla-moto #mandos button.pulsado{
+    border-color:#ff8a3d; color:#ff8a3d; box-shadow:0 0 16px rgba(255,138,61,.35);
+  }
+#pantalla-moto #mandos button small{display:block; font-size:16px; margin-bottom:2px;}
+@media (min-width:760px){#pantalla-moto #mandos{display:none;}
+ }
+#pantalla-moto .rejillaResumen{
+    display:grid; grid-template-columns:repeat(auto-fit,minmax(110px,1fr)); gap:10px;
+    margin:14px 0 18px;
+  }
+#pantalla-moto .rejillaResumen div{background:rgba(0,0,0,.35); border-radius:10px; padding:11px;}
+#pantalla-moto .rejillaResumen .n{font-size:22px; font-weight:800; color:var(--oro);}
+#pantalla-moto .rejillaResumen .e{font-size:11px; color:var(--tenue);}
+
+
 </style>
 </head>
 <body>
@@ -1162,7 +1367,7 @@ body{display:block; padding:0; margin:0;}
 <div id="contenido">
   <div id="titulo">
     <h2>SELECCIONA TU JUEGO SUPREMO</h2>
-    <p>Doce motores hechos a mano en HTML5 + Canvas, con renderizado HiDPI y físicas propias.
+    <p>Quince motores hechos a mano en HTML5 + Canvas, con renderizado HiDPI y físicas propias.
        Sin instalar nada, sin anuncios y sin conexión.</p>
   </div>
 
@@ -2009,6 +2214,244 @@ body{display:block; padding:0; margin:0;}
 </div>
 </div>
 
+<div class="pantalla" id="pantalla-sparta">
+<div id="juego">
+  <div class="barra">
+    <a class="boton" href="javascript:void 0" data-volver="1">🕹 Arcade</a>
+    <div class="titulo">🧠 SPARTAHOPPERS</div>
+    <div class="sep"></div>
+    <div class="stat">🔥 <span id="rachaTxt" class="oro">0</span></div>
+    <div class="stat">🎯 <span id="retencionTxt" class="verde">100%</span></div>
+    <div class="stat">📚 <span id="pendientesTxt">0</span></div>
+    <button id="btnSonido" title="Sonido">🔊</button>
+  </div>
+
+  <div id="progreso"><div id="progresoRelleno"></div></div>
+
+  <div class="escena" style="background:none; border:none; box-shadow:none; padding:0;">
+    <div id="tapete">
+      <div id="carta">
+        <div class="cara">
+          <span class="etiqueta">Pregunta</span>
+          <p id="textoPregunta">Cargando…</p>
+          <span class="pista">Pulsa la carta o la barra espaciadora para ver la respuesta</span>
+        </div>
+        <div class="dorso">
+          <span class="etiqueta">Respuesta</span>
+          <p id="textoRespuesta">Cargando…</p>
+          <span id="tema">—</span>
+        </div>
+      </div>
+    </div>
+
+    <div id="combo"></div>
+
+    <div id="evaluar" class="bloqueado">
+      <button id="btnDificil" data-nota="1">Difícil<small id="plazoDificil">otra vez</small></button>
+      <button id="btnBien"    data-nota="2">Bien<small id="plazoBien">—</small></button>
+      <button id="btnFacil"   data-nota="3">Fácil<small id="plazoFacil">—</small></button>
+    </div>
+
+    <div class="avisos" id="avisos"></div>
+
+    <div class="modal visible" id="modalInicio">
+      <div class="tarjetaModal">
+        <h1>🧠 SPARTAHOPPERS</h1>
+        <div class="sub">Memoriza Esparta con repetición espaciada.</div>
+        <div class="instrucciones">
+          Mira la pregunta, intenta responder de memoria y <b>gira la carta</b> para comprobarlo.<br>
+          Después dices qué tal te ha ido: <b>Difícil</b>, <b>Bien</b> o <b>Fácil</b>.<br>
+          El algoritmo <b>SM-2</b> decide cuándo te vuelve a preguntar cada carta: lo que fallas
+          vuelve enseguida y lo que dominas se va espaciando en días.<br>
+          Acertar seguido sube el <b>combo</b>, que multiplica los puntos y las fichas.<br>
+          <b>Atajos:</b> <b>espacio</b> gira la carta, <b>1 · 2 · 3</b> evalúan.
+        </div>
+        <div class="filaBotones">
+          <button class="primario" id="btnEmpezar">▶ Empezar sesión</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal" id="modalFin">
+      <div class="tarjetaModal">
+        <h1 id="tituloFin" class="victoria">SESIÓN COMPLETA</h1>
+        <div class="sub" id="subFin"></div>
+        <div class="rejillaResumen">
+          <div><div class="n" id="finRepasos">0</div><div class="e">repasos</div></div>
+          <div><div class="n" id="finAciertos">0</div><div class="e">retención</div></div>
+          <div><div class="n" id="finRacha">0</div><div class="e">mejor racha</div></div>
+          <div><div class="n" id="finDominadas">0</div><div class="e">dominadas</div></div>
+        </div>
+        <div class="premio" id="finPremio"></div>
+        <div class="filaBotones">
+          <button class="primario" id="btnOtra">↻ Otra sesión</button>
+          <a class="boton" href="javascript:void 0" data-volver="1">🕹 Arcade</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<div class="pantalla" id="pantalla-mercado">
+<div id="juego">
+  <div class="barra">
+    <a class="boton" href="javascript:void 0" data-volver="1">🕹 Arcade</a>
+    <div class="titulo">📈 MONEY MARKET</div>
+    <div class="sep"></div>
+    <div class="stat">📊 <span id="velaTxt">0</span>/120</div>
+    <div class="stat">🏆 <span id="recordTxt" class="oro">0</span></div>
+    <button id="btnPausa" title="Pausa (Espacio)">⏸</button>
+    <button id="btnSonido" title="Sonido">🔊</button>
+  </div>
+
+  <div id="tablero">
+  <div id="envoltorio">
+    <div id="envivo"><i></i> MERCADO EN VIVO · $SPARTA/USD</div>
+    <canvas id="lienzo" width="960" height="470"></canvas>
+  </div>
+
+  <div id="titulares">Sesión sin abrir.</div>
+
+  <div id="metricas">
+    <div><span class="e">Liquidez</span><span class="v verde" id="mLiquidez">$10.000</span></div>
+    <div><span class="e">Patrimonio</span><span class="v oro" id="mPatrimonio">$10.000</span></div>
+    <div><span class="e">Posición</span><span class="v" id="mPosicion">—</span></div>
+    <div><span class="e">Precio</span><span class="v" id="mPrecio">$100,00</span></div>
+    <div><span class="e">P&amp;L abierto</span><span class="v tenue" id="mPnl">$0</span></div>
+    <div><span class="e">Liquidación</span><span class="v tenue" id="mLiquidacion">—</span></div>
+  </div>
+
+  <div id="operar">
+    <div class="grupo">
+      <label for="tamano">Importe</label>
+      <input id="tamano" type="number" min="100" step="100" value="2000">
+    </div>
+    <div class="grupo">
+      <label for="palanca">Apalanc.</label>
+      <select id="palanca">
+        <option value="1">1x</option>
+        <option value="2">2x</option>
+        <option value="5" selected>5x</option>
+        <option value="10">10x</option>
+        <option value="20">20x</option>
+      </select>
+    </div>
+    <div id="botonera">
+      <button id="btnLargo">▲ Largo</button>
+      <button id="btnCorto">▼ Corto</button>
+      <button id="btnCerrar">✕ Cerrar</button>
+    </div>
+  </div>
+
+  <div class="avisos" id="avisos"></div>
+
+  <div class="modal visible" id="modalInicio">
+      <div class="tarjetaModal">
+        <h1>📈 MONEY MARKET</h1>
+        <div class="sub">Simulador de trading con dinero de mentira.</div>
+        <div class="instrucciones">
+          Empiezas con <b>10.000 $</b> ficticios y una sesión de <b>120 velas</b>.<br>
+          <b>▲ Largo</b> gana si el precio sube; <b>▼ Corto</b> gana si baja.<br>
+          El <b>apalancamiento</b> multiplica ganancias <i>y</i> pérdidas: solo bloqueas el margen,
+          pero si el precio va en tu contra lo suficiente te <b>liquidan</b> y pierdes ese margen.<br>
+          Debajo del precio tienes <b>volumen</b>, medias móviles <b>SMA 10</b> y <b>SMA 30</b>, y el <b>RSI 14</b>:
+          por encima de 70 se considera sobrecomprado y por debajo de 30 sobrevendido.<br>
+          Al acabar la sesión, <b>lo que ganes por encima de los 10.000 $ se cambia a NEXO-COINS</b>.
+        </div>
+        <div class="filaBotones">
+          <button class="primario" id="btnAbrir">▶ Abrir mercado</button>
+        </div>
+      </div>
+    </div>
+
+  <div class="modal" id="modalFin">
+      <div class="tarjetaModal">
+        <h1 id="tituloFin">CIERRE DE SESIÓN</h1>
+        <div class="sub" id="subFin"></div>
+        <div class="rejillaResumen">
+          <div><div class="n" id="finPatrimonio">$0</div><div class="e">patrimonio</div></div>
+          <div><div class="n" id="finRend">0%</div><div class="e">rendimiento</div></div>
+          <div><div class="n" id="finOperaciones">0</div><div class="e">operaciones</div></div>
+          <div><div class="n" id="finAcierto">0%</div><div class="e">acierto</div></div>
+        </div>
+        <div class="premio" id="finPremio"></div>
+        <div class="filaBotones">
+          <button class="primario" id="btnOtra">↻ Nueva sesión</button>
+          <a class="boton" href="javascript:void 0" data-volver="1">🕹 Arcade</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<div class="pantalla" id="pantalla-moto">
+<div id="juego">
+  <div class="barra">
+    <a class="boton" href="javascript:void 0" data-volver="1">🕹 Arcade</a>
+    <div class="titulo">🏍 MOTO X3M</div>
+    <div class="sep"></div>
+    <div class="stat">🏁 <span id="distanciaTxt">0</span> m</div>
+    <div class="stat">🤸 <span id="giroTxt" class="oro">0</span></div>
+    <div class="stat">⏱ <span id="tiempoTxt">0.0</span>s</div>
+    <div class="stat">💥 <span id="caidasTxt" class="rojo">0</span>/5</div>
+    <div class="stat">⚡ <div id="barraNitro"><div id="nitroRelleno"></div></div></div>
+    <button id="btnSonido" title="Sonido">🔊</button>
+  </div>
+
+  <div class="escena">
+    <canvas id="lienzo" width="960" height="480"></canvas>
+    <div class="avisos" id="avisos"></div>
+
+    <div class="modal visible" id="modalInicio">
+      <div class="tarjetaModal">
+        <h1>🏍 MOTO X3M</h1>
+        <div class="sub">Llega a la meta sin partirte el casco.</div>
+        <div class="instrucciones">
+          <b>Acelerar:</b> ↑ o <b>W</b> · <b>Frenar / marcha atrás:</b> ↓ o <b>S</b><br>
+          <b>Inclinar en el aire:</b> ← → o <b>A D</b> · <b>Nitro:</b> <b>Shift</b> o <b>Espacio</b><br>
+          Las dos ruedas tienen <b>suspensión</b> propia, así que la moto se posa sobre el terreno
+          y las rampas te lanzan de verdad.<br>
+          Cae de <b>cabeza</b> y se acabó. Cada <b>vuelta completa</b> en el aire son 500 puntos
+          y recarga nitro.<br>
+          Vas pasando por <b>banderas de control</b>: si te estrellas, reapareces en la última.
+        </div>
+        <div class="filaBotones">
+          <button class="primario" id="btnArrancar">▶ Arrancar motor</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal" id="modalFin">
+      <div class="tarjetaModal">
+        <h1 id="tituloFin" class="derrota">TE HAS ESTRELLADO</h1>
+        <div class="sub" id="subFin"></div>
+        <div class="rejillaResumen">
+          <div><div class="n" id="finDistancia">0</div><div class="e">metros</div></div>
+          <div><div class="n" id="finGiros">0</div><div class="e">vueltas</div></div>
+          <div><div class="n" id="finTiempo">0.0</div><div class="e">segundos</div></div>
+          <div><div class="n" id="finCaidas">0</div><div class="e">caídas</div></div>
+          <div><div class="n" id="finPuntos">0</div><div class="e">puntos</div></div>
+        </div>
+        <div class="premio" id="finPremio"></div>
+        <div class="filaBotones">
+          <button class="primario" id="btnOtra">↻ Otra vuelta</button>
+          <a class="boton" href="javascript:void 0" data-volver="1">🕹 Arcade</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="mandos">
+    <button data-tecla="freno"><small>▼</small>Freno</button>
+    <button data-tecla="atras"><small>◄</small>Atrás</button>
+    <button data-tecla="alante"><small>►</small>Alante</button>
+    <button data-tecla="gas"><small>▲</small>Gas</button>
+  </div>
+</div>
+</div>
+
 <script>
 /* ====== Utilidades comunes ====== */
 /* ==========================================================
@@ -2120,6 +2563,19 @@ const Sonido = {
       case 'gol':       [523, 659, 784, 1047, 1319, 1568].forEach((f, i) => this.tono(f, f, 0.18, 'square', 0.07, i * 0.09));
                         this.ruido(0.9, 1200, 0.05); break;
       case 'desplegar': this.tono(300, 620, 0.11, 'triangle', 0.06); break;
+      // --- Spartahoppers ---
+      case 'acierto':   this.melodia([660, 880], 0.07, 'triangle', 0.05); break;
+      case 'clic':      this.tono(520, 520, 0.03, 'sine', 0.03); break;
+      // --- Money Market ---
+      case 'orden':     this.tono(880, 1240, 0.07, 'square', 0.045); break;
+      case 'caja':      this.melodia([1046, 1318, 1568, 2093], 0.06, 'sine', 0.05); break;
+      case 'alarma':    this.tono(880, 440, 0.18, 'sawtooth', 0.06);
+                        this.tono(880, 440, 0.18, 'sawtooth', 0.06, 0.2); break;
+      // --- Moto X3M ---
+      case 'salto':     this.tono(300, 700, 0.14, 'triangle', 0.05); break;
+      case 'aterrizar': this.ruido(0.14, 900, 0.09); this.tono(150, 90, 0.12, 'sine', 0.05); break;
+      case 'nitro':     this.ruido(0.3, 3000, 0.06); break;
+      case 'meta':      [784, 988, 1319, 1568, 2093].forEach((f, i) => this.tono(f, f, 0.2, 'square', 0.07, i * 0.11)); break;
     }
   },
 
@@ -2684,6 +3140,30 @@ const JUEGOS = [
     portada: portadaGalletas
   },
   {
+    id:'moto', archivo:'juegos/moto-x3m.html', nuevo:true,
+    nombre:'🏍 Moto X3M', genero:'Carreras',
+    desc:'Suspensión en las dos ruedas, rampas que te lanzan de verdad y vueltas en el aire.',
+    record(){ const r = Arcade.record('moto'); return r ? 'Récord: ' + r.toLocaleString('es-ES') + ' pts' : 'Sin jugar todavía'; },
+    portada: portadaMoto
+  },
+  {
+    id:'mercado', archivo:'juegos/money-market.html', nuevo:true,
+    nombre:'📈 Money Market', genero:'Simulación',
+    desc:'Velas, volumen, SMA y RSI. Largos, cortos y apalancamiento hasta 20x… con liquidación.',
+    record(){
+      const r = Arcade.record('mercado');
+      return r ? 'Mejor cierre: $' + r.toLocaleString('es-ES') : 'Sin jugar todavía';
+    },
+    portada: portadaMercado
+  },
+  {
+    id:'sparta', archivo:'juegos/spartahoppers.html', nuevo:true,
+    nombre:'🧠 Spartahoppers', genero:'Memoria',
+    desc:'Fichas de Esparta con repetición espaciada SM-2, combos y seguimiento de retención.',
+    record(){ const r = Arcade.record('sparta'); return r ? 'Mejor racha: ' + r : 'Sin jugar todavía'; },
+    portada: portadaSparta
+  },
+  {
     id:'serpiente', archivo:'juegos/serpiente.html', nuevo:true,
     nombre:'🐍 Serpiente Neón', genero:'Arcade',
     desc:'Come, crece y acelera. Con fruta dorada, rocas por el camino y modo fantasma.',
@@ -3234,6 +3714,170 @@ function portadaGalletas(c){
   ['👵','🌾','⛏️','🏭'].forEach((e, i) => c.fillText(e, 188 + i * 34, 138));
 }
 
+function portadaSparta(c){
+  const g = c.createLinearGradient(0, 0, A, AL);
+  g.addColorStop(0, '#0a1226'); g.addColorStop(1, '#050810');
+  c.fillStyle = g; c.fillRect(0, 0, A, AL);
+
+  // carta de atrás, girándose
+  c.save();
+  c.translate(112, 88); c.rotate(-0.16);
+  c.fillStyle = 'rgba(0,0,0,.45)';
+  c.beginPath(); c.roundRect(-63, -55, 126, 110, 12); c.fill();
+  c.restore();
+
+  // carta principal
+  c.save();
+  c.translate(104, 82);
+  const cg = c.createLinearGradient(-60, -52, 60, 52);
+  cg.addColorStop(0, '#1c2440'); cg.addColorStop(1, '#0e1424');
+  c.fillStyle = cg;
+  c.beginPath(); c.roundRect(-62, -54, 124, 108, 12); c.fill();
+  c.strokeStyle = 'rgba(0,240,255,.55)'; c.lineWidth = 2; c.stroke();
+  c.fillStyle = '#00f0ff'; c.font = '700 9px "Courier New", monospace';
+  c.fillText('PREGUNTA', -46, -34);
+  c.fillStyle = 'rgba(255,255,255,.55)';
+  [[-46, -14, 92], [-46, -2, 82], [-46, 10, 66]].forEach(([x, y, w]) => c.fillRect(x, y, w, 4));
+  c.fillStyle = 'rgba(0,240,255,.35)'; c.fillRect(-46, 30, 40, 4);
+  c.restore();
+
+  // escudo espartano con lambda
+  c.save();
+  c.translate(248, 76);
+  c.fillStyle = 'rgba(0,0,0,.5)';
+  c.beginPath(); c.arc(3, 4, 44, 0, 6.283); c.fill();
+  const bg = c.createRadialGradient(-14, -16, 4, 0, 0, 46);
+  bg.addColorStop(0, '#b8471f'); bg.addColorStop(1, '#6b2410');
+  c.fillStyle = bg;
+  c.beginPath(); c.arc(0, 0, 42, 0, 6.283); c.fill();
+  c.strokeStyle = '#e8a05a'; c.lineWidth = 3;
+  c.beginPath(); c.arc(0, 0, 42, 0, 6.283); c.stroke();
+  c.strokeStyle = '#f2d9b8'; c.lineWidth = 8; c.lineCap = 'round';
+  c.beginPath(); c.moveTo(-16, 20); c.lineTo(0, -20); c.lineTo(16, 20); c.stroke();
+  c.lineCap = 'butt';
+  c.restore();
+
+  // racha
+  c.fillStyle = '#f3e600'; c.font = '700 12px "Courier New", monospace';
+  c.fillText('🔥 SRS · COMBO', 194, 146);
+}
+
+function portadaMercado(c){
+  const g = c.createLinearGradient(0, 0, 0, AL);
+  g.addColorStop(0, '#03140c'); g.addColorStop(1, '#020806');
+  c.fillStyle = g; c.fillRect(0, 0, A, AL);
+
+  c.strokeStyle = 'rgba(0,255,102,.08)'; c.lineWidth = 1;
+  for (let y = 20; y < AL; y += 26){
+    c.beginPath(); c.moveTo(0, y); c.lineTo(A, y); c.stroke();
+  }
+
+  // velas japonesas
+  let precio = 96;
+  const velas = [];
+  for (let i = 0; i < 26; i++){
+    const a = precio;
+    precio += Math.sin(i * 0.9) * 5 + (i > 14 ? 3.4 : -0.8) + Math.cos(i * 2.3) * 2.6;
+    velas.push({ a, c: precio, max: Math.max(a, precio) + 3, min: Math.min(a, precio) - 3 });
+  }
+  const todos = velas.flatMap(v => [v.max, v.min]);
+  const min = Math.min(...todos) - 3, max = Math.max(...todos) + 3;
+  const aY = p => 128 - (p - min) / (max - min) * 96;
+
+  velas.forEach((v, i) => {
+    const x = 16 + i * 11.6;
+    const sube = v.c >= v.a;
+    c.strokeStyle = sube ? '#00ff66' : '#ff3d68';
+    c.fillStyle = sube ? 'rgba(0,255,102,.6)' : 'rgba(255,61,104,.6)';
+    c.lineWidth = 1;
+    c.beginPath(); c.moveTo(x, aY(v.max)); c.lineTo(x, aY(v.min)); c.stroke();
+    const y1 = aY(Math.max(v.a, v.c)), y2 = aY(Math.min(v.a, v.c));
+    c.fillRect(x - 3.4, y1, 6.8, Math.max(1.5, y2 - y1));
+    c.strokeRect(x - 3.4, y1, 6.8, Math.max(1.5, y2 - y1));
+  });
+
+  // volumen
+  velas.forEach((v, i) => {
+    const x = 16 + i * 11.6;
+    const h = 6 + Math.abs(v.c - v.a) * 1.7;
+    c.fillStyle = v.c >= v.a ? 'rgba(0,255,102,.3)' : 'rgba(255,61,104,.3)';
+    c.fillRect(x - 3.4, 152 - h, 6.8, h);
+  });
+
+  // media móvil
+  c.beginPath();
+  velas.forEach((v, i) => {
+    const n = Math.max(0, i - 3);
+    let s = 0, k = 0;
+    for (let j = n; j <= i; j++){ s += velas[j].c; k++; }
+    const x = 16 + i * 11.6, y = aY(s / k);
+    i ? c.lineTo(x, y) : c.moveTo(x, y);
+  });
+  c.strokeStyle = 'rgba(0,240,255,.8)'; c.lineWidth = 2; c.stroke();
+
+  c.fillStyle = '#00ff66'; c.font = '700 13px "Courier New", monospace';
+  c.fillText('$SPARTA  ▲ +18,4%', 14, 22);
+  c.fillStyle = '#8b9bb4'; c.font = '700 10px "Courier New", monospace';
+  c.fillText('RSI · SMA · 20x', 14, 166);
+}
+
+function portadaMoto(c){
+  const g = c.createLinearGradient(0, 0, 0, AL);
+  g.addColorStop(0, '#0a1428'); g.addColorStop(.6, '#152238'); g.addColorStop(1, '#241a12');
+  c.fillStyle = g; c.fillRect(0, 0, A, AL);
+
+  // montañas
+  c.fillStyle = 'rgba(28,42,72,.9)';
+  c.beginPath(); c.moveTo(0, AL);
+  for (let x = 0; x <= A; x += 10) c.lineTo(x, 92 + Math.sin(x * 0.021) * 20 + Math.sin(x * 0.052) * 9);
+  c.lineTo(A, AL); c.closePath(); c.fill();
+
+  // terreno con rampa
+  const suelo = x => 128 + Math.sin(x * 0.019) * 16 - (x > 120 && x < 210 ? Math.sin((x - 120) / 90 * Math.PI) * 40 : 0);
+  c.beginPath(); c.moveTo(0, AL);
+  for (let x = 0; x <= A; x += 4) c.lineTo(x, suelo(x));
+  c.lineTo(A, AL); c.closePath();
+  const t = c.createLinearGradient(0, 80, 0, AL);
+  t.addColorStop(0, '#3a2a1c'); t.addColorStop(1, '#150e08');
+  c.fillStyle = t; c.fill();
+
+  c.beginPath();
+  for (let x = 0; x <= A; x += 4){ const y = suelo(x); x ? c.lineTo(x, y) : c.moveTo(x, y); }
+  c.strokeStyle = '#ff8a3d'; c.lineWidth = 3;
+  c.shadowColor = 'rgba(255,138,61,.8)'; c.shadowBlur = 12;
+  c.stroke(); c.shadowBlur = 0;
+
+  // estela de nitro
+  for (let i = 0; i < 16; i++){
+    c.globalAlpha = 0.5 - i * 0.03;
+    c.fillStyle = i % 2 ? '#00f0ff' : '#ffffff';
+    c.beginPath(); c.arc(214 - i * 7, 62 + Math.sin(i) * 5, 5 - i * 0.22, 0, 6.283); c.fill();
+  }
+  c.globalAlpha = 1;
+
+  // moto en el aire, inclinada
+  c.save();
+  c.translate(238, 52); c.rotate(-0.5);
+  c.fillStyle = '#111820';
+  [[-26, 8], [26, 8]].forEach(([x, y]) => {
+    c.beginPath(); c.arc(x, y, 12, 0, 6.283); c.fill();
+    c.strokeStyle = '#2e3a52'; c.lineWidth = 3; c.stroke();
+  });
+  c.fillStyle = '#ff8a3d';
+  c.beginPath();
+  c.moveTo(-24, 4); c.lineTo(-6, -9); c.lineTo(13, -8); c.lineTo(26, 5); c.lineTo(-3, 8);
+  c.closePath(); c.fill();
+  c.strokeStyle = '#e8eef7'; c.lineWidth = 4; c.lineCap = 'round';
+  c.beginPath(); c.moveTo(-5, -11); c.lineTo(-1, -23); c.lineTo(12, -14); c.stroke();
+  c.lineCap = 'butt';
+  c.fillStyle = '#00f0ff';
+  c.beginPath(); c.arc(0, -27, 5.5, 0, 6.283); c.fill();
+  c.restore();
+
+  c.fillStyle = '#f3e600'; c.font = '700 12px "Courier New", monospace';
+  c.fillText('🤸 x3 FLIP', 16, 26);
+}
+
 // ---------- Montaje de las cartas ----------
 const rejilla = document.getElementById('rejilla');
 JUEGOS.forEach(j => {
@@ -3257,7 +3901,8 @@ JUEGOS.forEach(j => {
 // Qué significa el "mejor resultado" de cada juego, que no todos puntúan igual
 const UNIDAD = {
   td:'olas', pvz:'olas', comecocos:'pts', blockblast:'pts', serpiente:'pts',
-  pool:'ganadas', rumble:'goles', minas:'gemas', aviator:'x100'
+  pool:'ganadas', rumble:'goles', minas:'gemas', aviator:'x100',
+  sparta:'racha', mercado:'$', moto:'pts'
 };
 const nombreDe = id => {
   const j = JUEGOS.find(x => x.id === id);
@@ -11762,6 +12407,1226 @@ setInterval(guardarPartida, 10000);
 addEventListener('beforeunload', guardarPartida);
 Guardado.registrar(guardarPartida);   // también al cambiar de pantalla o irse a otra pestaña
 Arcade.bucle(dt => { actualizar(dt); dibujar(); refrescar(); });
+
+});
+
+registrarJuego("sparta", function(document, addEventListener, Arcade){
+
+// ============================================================
+//  SPARTAHOPPERS — repaso con repetición espaciada (SM-2)
+// ============================================================
+const $ = id => document.getElementById(id);
+const avisos = $('avisos');
+
+const DIA = 24 * 3600 * 1000;
+const POR_SESION = 12;          // cartas que entran en una sesión
+
+// ---------- Mazo ----------
+const MAZO = [
+  ['Gobierno', '¿Cómo era la diarquía espartana?',
+   'Dos reyes a la vez, de las dos casas dinásticas: los Agíadas y los Euripóntidas.'],
+  ['Gobierno', '¿Qué era la Gerusía?',
+   'El consejo de ancianos: 28 gerontes mayores de 60 años más los dos reyes. Preparaba las leyes y juzgaba los delitos graves.'],
+  ['Gobierno', '¿Qué poder tenían los éforos?',
+   'Cinco magistrados elegidos cada año que vigilaban a los reyes, podían procesarlos y dirigían la política del día a día.'],
+  ['Gobierno', '¿Qué era la Apella?',
+   'La asamblea de todos los espartiatas mayores de 30 años. Votaba a gritos, aceptando o rechazando lo que le proponían.'],
+  ['Gobierno', '¿A quién se atribuye la constitución espartana?',
+   'A Licurgo, legislador probablemente legendario. Su conjunto de normas se llamaba la Gran Retra.'],
+
+  ['Sociedad', '¿Quiénes eran los ilotas?',
+   'La población sometida, sobre todo mesenia, atada a la tierra. Trabajaban los lotes de los espartiatas y eran mucho más numerosos que ellos.'],
+  ['Sociedad', '¿Qué era la Krypteia?',
+   'Un rito de paso: jóvenes espartanos salían de noche, en secreto, a vigilar y matar ilotas que destacaran, para mantener el miedo.'],
+  ['Sociedad', '¿Quiénes eran los periecos?',
+   'Hombres libres de las aldeas de alrededor: no eran ciudadanos, pero comerciaban, fabricaban y luchaban en el ejército.'],
+  ['Sociedad', '¿Qué eran los sisitios?',
+   'Las comidas comunes obligatorias. Cada espartiata aportaba su parte; quedarse sin poder pagarla costaba la ciudadanía.'],
+  ['Sociedad', '¿Qué derechos tenían las mujeres espartanas?',
+   'Podían heredar y poseer tierras, hacían ejercicio en público y llevaban las propiedades mientras los hombres estaban en campaña.'],
+  ['Sociedad', '¿Qué era la agogé?',
+   'La educación estatal desde los siete años: disciplina, hambre, pelea y coro, para convertir a los niños en soldados.'],
+
+  ['Guerra', '¿Qué era la falange hoplítica?',
+   'Formación cerrada donde cada escudo (aspis) protegía también al de la izquierda. Valía tanto la cohesión como la fuerza.'],
+  ['Guerra', '¿Qué armas llevaba un hoplita espartano?',
+   'Lanza (dory) de unos 2,5 m, espada corta (xiphos) o la curva kopis, casco, coraza, grebas y el escudo con la lambda.'],
+  ['Guerra', '¿Por qué la lambda en los escudos?',
+   'Es la Λ de Lakedaimon, el nombre del estado espartano. La ciudad era Esparta; la región, Laconia.'],
+  ['Guerra', '¿Qué pasó en las Termópilas (480 a.C.)?',
+   'Leónidas y unos 300 espartanos con aliados taponaron el paso ante Jerjes durante tres días, hasta que un sendero los dejó rodeados.'],
+  ['Guerra', '¿Qué decidió la batalla de Platea (479 a.C.)?',
+   'La victoria griega, con Pausanias al mando, expulsó definitivamente al ejército persa de Grecia.'],
+  ['Guerra', '¿Qué fue la Guerra del Peloponeso?',
+   'El enfrentamiento entre Esparta y Atenas de 431 a 404 a.C. Ganó Esparta tras derrotar a la flota ateniense en Egospótamos.'],
+  ['Guerra', '¿Qué ocurrió en Leuctra (371 a.C.)?',
+   'Epaminondas de Tebas rompió la falange espartana con su ala izquierda reforzada. Fue el final de la hegemonía de Esparta.'],
+  ['Guerra', '¿Qué era el Batallón Sagrado de Tebas?',
+   'Un cuerpo de élite de 150 parejas de guerreros que fue clave en Leuctra contra los espartanos.'],
+
+  ['Cultura', '¿Qué significa hablar de forma "lacónica"?',
+   'Decir mucho con muy pocas palabras, como se atribuía a los laconios. De ahí viene el adjetivo.'],
+  ['Cultura', '¿Qué respondió Esparta al "Si entro en Laconia…" de Filipo II?',
+   'Una sola palabra: "Si". Filipo no invadió.'],
+  ['Cultura', '¿Qué era el ostracismo… y por qué NO era espartano?',
+   'Era ateniense: destierro por votación con trozos de cerámica. Esparta no lo usaba; expulsaba por otras vías.'],
+  ['Cultura', '¿Qué decían las madres espartanas al despedir a un hijo?',
+   '"Vuelve con el escudo o sobre él": vencer o morir, pero nunca tirar el escudo para huir.'],
+  ['Cultura', '¿Qué eran las Carneas?',
+   'La fiesta en honor a Apolo Carneo. Su celebración retrasó la salida del ejército espartano hacia Maratón.']
+];
+
+// ---------- Estado ----------
+const S = {
+  cartas: [],        // { id, tema, p, r, ef, intervalo, repeticion, vence }
+  cola: [],          // ids pendientes en esta sesión
+  actual: null,
+  girada: false,
+  racha: 0, mejorRacha: 0,
+  repasos: 0, aciertos: 0,
+  sesion: 0, totalSesion: 0,
+  jugando: false
+};
+
+function nuevasCartas(){
+  return MAZO.map((m, i) => ({
+    id: i, tema: m[0], p: m[1], r: m[2],
+    ef: 2.5, intervalo: 0, repeticion: 0, vence: 0
+  }));
+}
+
+// ---------- Guardado ----------
+function guardarPartida(){
+  Arcade.escribir('sparta', JSON.stringify({
+    cartas: S.cartas.map(c => ({ id:c.id, ef:c.ef, intervalo:c.intervalo,
+                                 repeticion:c.repeticion, vence:c.vence })),
+    mejorRacha: S.mejorRacha
+  }));
+}
+function cargarPartida(){
+  S.cartas = nuevasCartas();
+  const crudo = Arcade.leerTexto('sparta', null);
+  if (!crudo) return;
+  try {
+    const g = JSON.parse(crudo);
+    S.mejorRacha = g.mejorRacha || 0;
+    // se rehidrata por id: si el mazo cambia, lo que ya no existe se descarta
+    for (const guardada of (g.cartas || [])){
+      const c = S.cartas.find(x => x.id === guardada.id);
+      if (!c) continue;
+      c.ef = guardada.ef || 2.5;
+      c.intervalo = guardada.intervalo || 0;
+      c.repeticion = guardada.repeticion || 0;
+      c.vence = guardada.vence || 0;
+    }
+  } catch(e){}
+}
+Guardado.registrar(guardarPartida);
+
+// ---------- Algoritmo SM-2 ----------
+/**
+ * Nota 1 = difícil (fallo), 2 = bien, 3 = fácil.
+ * SM-2 original puntúa de 0 a 5; aquí se reescala con q = nota + 2, así que
+ * 1 -> 3 (repaso costoso pero recordado), 2 -> 4 y 3 -> 5.
+ * Con nota 1 el contador de repeticiones se reinicia y la carta vuelve a
+ * salir en la misma sesión; con 2 y 3 el intervalo crece en días.
+ */
+function programar(carta, nota){
+  const q = nota + 2;
+  if (nota === 1){
+    carta.repeticion = 0;
+    carta.intervalo = 0;                       // vuelve dentro de esta sesión
+  } else {
+    if (carta.repeticion === 0) carta.intervalo = nota === 3 ? 3 : 1;
+    else if (carta.repeticion === 1) carta.intervalo = nota === 3 ? 10 : 6;
+    else carta.intervalo = Math.round(carta.intervalo * carta.ef * (nota === 3 ? 1.3 : 1));
+    carta.repeticion++;
+  }
+  carta.ef = Math.max(1.3, carta.ef + (0.1 - (5 - q) * (0.08 + (5 - q) * 0.02)));
+  carta.vence = Date.now() + carta.intervalo * DIA;
+  return carta.intervalo;
+}
+// Texto del plazo que promete cada botón, calculado sobre la carta en pantalla
+function plazoDe(carta, nota){
+  if (nota === 1) return 'otra vez';
+  const copia = { ...carta };
+  const dias = programar(copia, nota);
+  return dias === 1 ? 'mañana' : dias < 30 ? dias + ' días'
+       : dias < 365 ? Math.round(dias / 30) + ' meses' : Math.round(dias / 365) + ' años';
+}
+
+// ---------- Sesión ----------
+function pendientes(){
+  const ahora = Date.now();
+  return S.cartas.filter(c => c.vence <= ahora);
+}
+
+function empezarSesion(){
+  const listas = pendientes();
+  // primero lo que lleva más tiempo vencido; si no hay nada, se repasa igualmente
+  const fuente = listas.length ? listas : S.cartas.slice();
+  fuente.sort((a, b) => a.vence - b.vence);
+  S.cola = mezclar(fuente.slice(0, POR_SESION)).map(c => c.id);
+  S.totalSesion = S.cola.length;
+  S.sesion = 0;
+  S.racha = 0; S.repasos = 0; S.aciertos = 0;
+  S.jugando = true;
+  siguiente();
+}
+
+function siguiente(){
+  if (!S.cola.length){ terminarSesion(); return; }
+  S.actual = S.cartas.find(c => c.id === S.cola[0]);
+  S.girada = false;
+  $('carta').classList.remove('girada');
+  $('evaluar').classList.add('bloqueado');
+  pintarCarta();
+}
+
+function pintarCarta(){
+  const c = S.actual;
+  if (!c) return;
+  $('textoPregunta').textContent = c.p;
+  $('textoRespuesta').textContent = c.r;
+  $('tema').textContent = c.tema;
+  $('plazoBien').textContent = plazoDe(c, 2);
+  $('plazoFacil').textContent = plazoDe(c, 3);
+  refrescarHud();
+}
+
+function refrescarHud(){
+  $('rachaTxt').textContent = S.racha;
+  $('pendientesTxt').textContent = S.cola.length;
+  const ret = S.repasos ? Math.round(S.aciertos / S.repasos * 100) : 100;
+  $('retencionTxt').textContent = ret + '%';
+  const hechas = S.totalSesion ? (S.totalSesion - S.cola.length) : 0;
+  $('progresoRelleno').style.width =
+    (S.totalSesion ? hechas / S.totalSesion * 100 : 0) + '%';
+}
+
+function girar(){
+  if (!S.jugando || !S.actual) return;
+  S.girada = !S.girada;
+  $('carta').classList.toggle('girada', S.girada);
+  $('evaluar').classList.toggle('bloqueado', !S.girada);
+  Sonido.fx(S.girada ? 'giro' : 'clic');
+}
+
+// El combo multiplica: 1x hasta 2 aciertos, y a partir de ahí sube de medio en medio
+function multiplicador(){ return 1 + Math.max(0, Math.floor((S.racha - 1) / 3)) * 0.5; }
+
+function evaluar(nota){
+  if (!S.jugando || !S.girada || !S.actual) return;
+  const c = S.actual;
+  const acierto = nota >= 2;
+
+  S.repasos++;
+  if (acierto){
+    S.aciertos++;
+    S.racha++;
+    if (S.racha > S.mejorRacha) S.mejorRacha = S.racha;
+    const mult = multiplicador();
+    Sonido.fx('acierto');
+    if (S.racha >= 3){
+      $('combo').textContent = '🔥 COMBO x' + mult.toFixed(1) + ' · ' + S.racha + ' seguidas';
+      Sonido.melodia([520 + S.racha * 30, 700 + S.racha * 30], 0.06, 'triangle', 0.05);
+    } else {
+      $('combo').textContent = '';
+    }
+  } else {
+    S.racha = 0;
+    $('combo').textContent = '';
+    Sonido.fx('error');
+    Arcade.aviso(avisos, '📌 Vuelve a salir antes de acabar la sesión', false, 1600);
+  }
+
+  programar(c, nota);
+  S.cola.shift();
+  // lo fallado se reengancha unas cartas más adelante, no al final del todo
+  if (!acierto) S.cola.splice(Math.min(3, S.cola.length), 0, c.id);
+
+  guardarPartida();
+  setTimeout(siguiente, 220);
+}
+
+function terminarSesion(){
+  S.jugando = false;
+  const retencion = S.repasos ? Math.round(S.aciertos / S.repasos * 100) : 100;
+  const dominadas = S.cartas.filter(c => c.repeticion >= 3).length;
+
+  // 12 fichas por acierto, escaladas por la retención de la sesión
+  const premio = Math.round(S.aciertos * 12 * (0.5 + retencion / 200));
+  Arcade.guardarRecord('sparta', S.mejorRacha);
+  Arcade.perfil.partida('sparta',
+    { puntos: S.mejorRacha, victoria: retencion >= 80, premio });
+  guardarPartida();
+
+  $('tituloFin').textContent = retencion >= 80 ? '¡SESIÓN SUPERADA!' : 'SESIÓN COMPLETA';
+  $('tituloFin').className = retencion >= 80 ? 'victoria' : '';
+  $('subFin').textContent = retencion >= 80
+    ? 'Buena memoria. Las cartas que dominas tardarán más en volver.'
+    : 'Lo que has fallado vuelve pronto: es justo así como se fija.';
+  $('finRepasos').textContent = S.repasos;
+  $('finAciertos').textContent = retencion + '%';
+  $('finRacha').textContent = S.mejorRacha;
+  $('finDominadas').textContent = dominadas + '/' + S.cartas.length;
+  $('finPremio').textContent = premio ? '💎 +' + premio.toLocaleString('es-ES') + ' NEXO-COINS' : '';
+  $('modalFin').classList.add('visible');
+  Sonido.fx(retencion >= 80 ? 'victoria' : 'derrota');
+  refrescarHud();
+}
+
+// ---------- Entrada ----------
+$('carta').addEventListener('click', girar);
+$('evaluar').addEventListener('click', ev => {
+  const b = ev.target.closest('[data-nota]');
+  if (b) evaluar(parseInt(b.dataset.nota, 10));
+});
+addEventListener('keydown', ev => {
+  if (!S.jugando) return;
+  if (ev.code === 'Space'){ ev.preventDefault(); girar(); }
+  else if (ev.key === '1') evaluar(1);
+  else if (ev.key === '2') evaluar(2);
+  else if (ev.key === '3') evaluar(3);
+});
+
+$('btnEmpezar').onclick = () => {
+  Sonido.activar();
+  $('modalInicio').classList.remove('visible');
+  empezarSesion();
+};
+$('btnOtra').onclick = () => {
+  $('modalFin').classList.remove('visible');
+  empezarSesion();
+};
+Arcade.conectarSonido($('btnSonido'));
+
+cargarPartida();
+refrescarHud();
+$('pendientesTxt').textContent = pendientes().length || S.cartas.length;
+
+});
+
+registrarJuego("mercado", function(document, addEventListener, Arcade){
+
+// ============================================================
+//  MONEY MARKET — terminal de trading simulado
+// ============================================================
+const $ = id => document.getElementById(id);
+const lienzo = $('lienzo');
+const ctx = Arcade.nitido(lienzo);
+const avisos = $('avisos');
+
+const ANCHO = lienzo.width, ALTO = lienzo.height;
+// Reparto vertical: precio arriba, volumen en medio, RSI abajo
+const P_ARRIBA = 34, P_ALTO = 268;
+const V_ARRIBA = P_ARRIBA + P_ALTO + 12, V_ALTO = 62;
+const R_ARRIBA = V_ARRIBA + V_ALTO + 22, R_ALTO = 62;
+const MARGEN_DER = 74;
+const ANCHO_UTIL = ANCHO - MARGEN_DER - 10;
+
+const CAPITAL = 10000;
+const VELAS_SESION = 120;
+const SEG_POR_VELA = 0.85;
+const VISIBLES = 60;
+const COMISION = 0.0008;          // 0,08 % por operación, ida y vuelta
+
+// ---------- Estado ----------
+const M = {
+  velas: [], t: 0, vela: 0,
+  liquidez: CAPITAL,
+  pos: null,                      // { lado:'largo'|'corto', unidades, entrada, margen, palanca }
+  operaciones: 0, ganadoras: 0,
+  jugando: false, pausado: false,
+  noticia: '', noticiaT: 0, sesgo: 0, sesgoT: 0,
+  record: Arcade.record('mercado')
+};
+
+// ---------- Generación de precio ----------
+// Paseo aleatorio con volatilidad variable y rachas de sesgo (las "noticias")
+const TITULARES_SUBIDA = [
+  'Los éforos aprueban el presupuesto: confianza al alza',
+  'Nueva ruta comercial con Corinto: entra capital',
+  'Cosecha récord en Mesenia: el mercado respira',
+  'Tratado de paz firmado: vuelven los compradores'
+];
+const TITULARES_BAJADA = [
+  'Revuelta de ilotas en el sur: pánico vendedor',
+  'Terremoto en Laconia: el mercado se desploma',
+  'Atenas bloquea el puerto: se corta el comercio',
+  'Leva militar urgente: se retira liquidez'
+];
+
+function nuevaVela(previa){
+  const base = previa ? previa.c : 100;
+  const vol = 0.006 + Math.random() * 0.012;
+  const deriva = M.sesgo * 0.004;
+  const cambio = (Math.random() - 0.5) * 2 * vol + deriva;
+  const cierre = Math.max(5, base * (1 + cambio));
+  const mecha = base * vol * (0.4 + Math.random());
+  return {
+    a: base,
+    c: cierre,
+    max: Math.max(base, cierre) + Math.random() * mecha,
+    min: Math.min(base, cierre) - Math.random() * mecha,
+    v: 0.35 + Math.random() * 0.65 + Math.abs(cambio) * 22
+  };
+}
+
+function nuevaSesion(){
+  M.velas = [];
+  let previa = null;
+  for (let i = 0; i < 40; i++){ previa = nuevaVela(previa); M.velas.push(previa); }
+  M.t = 0; M.vela = 0;
+  M.liquidez = CAPITAL; M.pos = null;
+  M.operaciones = 0; M.ganadoras = 0;
+  M.sesgo = 0; M.sesgoT = 0;
+  M.noticia = ''; M.noticiaT = 0;
+  M.pausado = false;
+  M.jugando = true;
+  $('titulares').textContent = 'Mercado abierto. 120 velas por delante.';
+  refrescar();
+}
+
+const precio = () => M.velas[M.velas.length - 1].c;
+
+// ---------- Indicadores ----------
+function sma(n, hasta = M.velas.length){
+  if (hasta < n) return null;
+  let s = 0;
+  for (let i = hasta - n; i < hasta; i++) s += M.velas[i].c;
+  return s / n;
+}
+/**
+ * RSI de Wilder sobre `n` periodos. Devuelve 0-100, o null si aún no hay datos.
+ * Se recalcula entero cada vez: con 160 velas como mucho, sale gratis.
+ */
+function rsi(n = 14, hasta = M.velas.length){
+  if (hasta < n + 1) return null;
+  let subida = 0, bajada = 0;
+  for (let i = hasta - n; i < hasta; i++){
+    const d = M.velas[i].c - M.velas[i - 1].c;
+    if (d >= 0) subida += d; else bajada -= d;
+  }
+  subida /= n; bajada /= n;
+  if (bajada === 0) return 100;
+  return 100 - 100 / (1 + subida / bajada);
+}
+
+// ---------- Operaciones ----------
+function valorPos(){
+  if (!M.pos) return 0;
+  const p = precio();
+  return M.pos.lado === 'largo'
+    ? (p - M.pos.entrada) * M.pos.unidades
+    : (M.pos.entrada - p) * M.pos.unidades;
+}
+function patrimonio(){ return M.liquidez + (M.pos ? M.pos.margen + valorPos() : 0); }
+
+// Precio al que la pérdida se come el margen entero
+function precioLiquidacion(){
+  if (!M.pos) return null;
+  const mov = M.pos.margen / M.pos.unidades;
+  return M.pos.lado === 'largo' ? M.pos.entrada - mov : M.pos.entrada + mov;
+}
+
+function abrir(lado){
+  if (!M.jugando) return;
+  if (M.pos){ Arcade.aviso(avisos, 'Cierra la posición antes de abrir otra', false, 1600); return; }
+  const margen = Math.max(100, Math.floor(parseFloat($('tamano').value) || 0));
+  const palanca = parseInt($('palanca').value, 10);
+  if (margen > M.liquidez){ Arcade.aviso(avisos, 'No tienes liquidez suficiente', false, 1800); return; }
+
+  const p = precio();
+  const nominal = margen * palanca;
+  const comision = nominal * COMISION;
+  M.liquidez -= margen + comision;
+  M.pos = { lado, unidades: nominal / p, entrada: p, margen, palanca };
+  M.operaciones++;
+  Sonido.fx('orden');
+  Arcade.aviso(avisos,
+    (lado === 'largo' ? '▲ Largo' : '▼ Corto') + ' ' + palanca + 'x a ' + fmt(p), true, 1700);
+  refrescar();
+}
+
+function cerrar(motivo){
+  if (!M.pos) return;
+  const pnl = valorPos();
+  const comision = M.pos.unidades * precio() * COMISION;
+  const devuelto = Math.max(0, M.pos.margen + pnl - comision);
+  M.liquidez += devuelto;
+  if (pnl > 0) M.ganadoras++;
+  const liquidada = motivo === 'liquidacion';
+  Sonido.fx(liquidada ? 'alarma' : pnl >= 0 ? 'caja' : 'error');
+  Arcade.aviso(avisos,
+    liquidada ? '💥 LIQUIDADO: el margen se ha consumido'
+              : (pnl >= 0 ? '✅ Cerrado ' : '❌ Cerrado ') + fmtSigno(pnl),
+    !liquidada && pnl >= 0, 2200);
+  M.pos = null;
+  refrescar();
+}
+
+// ---------- Bucle ----------
+function avanzar(){
+  M.velas.push(nuevaVela(M.velas[M.velas.length - 1]));
+  if (M.velas.length > 200) M.velas.shift();
+  M.vela++;
+
+  // rachas de sesgo con su titular
+  if (M.sesgoT > 0){ M.sesgoT--; if (M.sesgoT === 0) M.sesgo = 0; }
+  else if (Math.random() < 0.045){
+    M.sesgo = Math.random() < 0.5 ? -1 : 1;
+    M.sesgoT = 6 + Math.floor(Math.random() * 10);
+    const lista = M.sesgo > 0 ? TITULARES_SUBIDA : TITULARES_BAJADA;
+    $('titulares').innerHTML = '📰 ' + elegir(lista) +
+      ' <b class="' + (M.sesgo > 0 ? 'sube">▲ presión compradora' : 'baja">▼ presión vendedora') + '</b>';
+  }
+
+  // ¿nos han liquidado?
+  if (M.pos && M.pos.margen + valorPos() <= 0) cerrar('liquidacion');
+
+  if (M.vela >= VELAS_SESION) terminar();
+  refrescar();
+}
+
+function terminar(){
+  if (M.pos) cerrar('fin');
+  M.jugando = false;
+  const total = patrimonio();
+  const rend = (total / CAPITAL - 1) * 100;
+  const acierto = M.operaciones ? Math.round(M.ganadoras / M.operaciones * 100) : 0;
+
+  // solo lo ganado por encima del capital se cambia; 1 NEXO-COIN por cada 5 $
+  const premio = Math.max(0, Math.floor((total - CAPITAL) / 5));
+  Arcade.guardarRecord('mercado', Math.round(total));
+  M.record = Arcade.record('mercado');
+  Arcade.perfil.partida('mercado',
+    { puntos: Math.round(total), victoria: total > CAPITAL, premio });
+
+  $('tituloFin').textContent = total > CAPITAL ? 'SESIÓN EN VERDE' : 'SESIÓN EN ROJO';
+  $('tituloFin').className = total > CAPITAL ? 'victoria' : 'derrota';
+  $('subFin').textContent = total > CAPITAL
+    ? 'Cierras por encima del capital inicial. El beneficio se cambia a fichas.'
+    : 'Cierras por debajo de los 10.000 $. Sin beneficio no hay cambio a fichas.';
+  $('finPatrimonio').textContent = fmt(total);
+  $('finRend').textContent = (rend >= 0 ? '+' : '') + rend.toFixed(1) + '%';
+  $('finOperaciones').textContent = M.operaciones;
+  $('finAcierto').textContent = acierto + '%';
+  $('finPremio').textContent = premio ? '💎 +' + premio.toLocaleString('es-ES') + ' NEXO-COINS' : '';
+  $('modalFin').classList.add('visible');
+  Sonido.fx(total > CAPITAL ? 'victoria' : 'derrota');
+  refrescar();
+}
+
+// ---------- Formato ----------
+const fmt = n => '$' + n.toLocaleString('es-ES', { minimumFractionDigits:2, maximumFractionDigits:2 });
+const fmtSigno = n => (n >= 0 ? '+' : '−') + fmt(Math.abs(n)).replace('$', '') + ' $';
+
+function refrescar(){
+  const p = precio();
+  $('mPrecio').textContent = fmt(p);
+  $('mLiquidez').textContent = fmt(M.liquidez);
+  $('mPatrimonio').textContent = fmt(patrimonio());
+  $('velaTxt').textContent = Math.min(M.vela, VELAS_SESION);
+  $('recordTxt').textContent = M.record ? fmt(M.record) : '—';
+
+  const posEl = $('mPosicion'), pnlEl = $('mPnl'), liqEl = $('mLiquidacion');
+  if (M.pos){
+    posEl.textContent = (M.pos.lado === 'largo' ? '▲ ' : '▼ ') + M.pos.palanca + 'x';
+    posEl.className = 'v ' + (M.pos.lado === 'largo' ? 'verde' : 'rojo');
+    const pnl = valorPos();
+    pnlEl.textContent = fmtSigno(pnl);
+    pnlEl.className = 'v ' + (pnl >= 0 ? 'verde' : 'rojo');
+    liqEl.textContent = fmt(precioLiquidacion());
+    liqEl.className = 'v rojo';
+  } else {
+    posEl.textContent = '—'; posEl.className = 'v tenue';
+    pnlEl.textContent = '$0'; pnlEl.className = 'v tenue';
+    liqEl.textContent = '—'; liqEl.className = 'v tenue';
+  }
+}
+
+// ---------- Dibujo ----------
+function texto(t, x, y, color, tam, alin){
+  ctx.fillStyle = color;
+  ctx.font = '700 ' + tam + 'px "Courier New", monospace';
+  ctx.textAlign = alin || 'left';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(t, x, y);
+}
+
+function dibujar(){
+  ctx.fillStyle = '#03060c';
+  ctx.fillRect(0, 0, ANCHO, ALTO);
+
+  const desde = Math.max(0, M.velas.length - VISIBLES);
+  const vista = M.velas.slice(desde);
+  const paso = ANCHO_UTIL / VISIBLES;
+  const cuerpo = Math.max(2, paso * 0.62);
+
+  let min = Infinity, max = -Infinity;
+  for (const v of vista){ if (v.min < min) min = v.min; if (v.max > max) max = v.max; }
+  const holgura = (max - min) * 0.08 || 1;
+  min -= holgura; max += holgura;
+  const aY = pr => P_ARRIBA + P_ALTO - (pr - min) / (max - min) * P_ALTO;
+  const aX = i => 8 + i * paso + paso / 2;
+
+  // --- rejilla y escala de precios ---
+  ctx.strokeStyle = 'rgba(255,255,255,.05)';
+  ctx.lineWidth = 1;
+  for (let k = 0; k <= 4; k++){
+    const y = P_ARRIBA + P_ALTO * k / 4;
+    ctx.beginPath(); ctx.moveTo(8, y); ctx.lineTo(ANCHO - MARGEN_DER, y); ctx.stroke();
+    texto(fmt(max - (max - min) * k / 4).replace('$',''), ANCHO - MARGEN_DER + 8, y, '#5c6b85', 11);
+  }
+
+  // --- volumen ---
+  const volMax = Math.max(...vista.map(v => v.v));
+  vista.forEach((v, i) => {
+    const h = v.v / volMax * V_ALTO;
+    ctx.fillStyle = v.c >= v.a ? 'rgba(0,255,102,.35)' : 'rgba(255,61,104,.35)';
+    ctx.fillRect(aX(i) - cuerpo / 2, V_ARRIBA + V_ALTO - h, cuerpo, h);
+  });
+  texto('VOLUMEN', 12, V_ARRIBA + 9, '#3e4a63', 10);
+
+  // --- medias móviles ---
+  const linea = (n, color) => {
+    ctx.beginPath();
+    let empezada = false;
+    for (let i = 0; i < vista.length; i++){
+      const m = sma(n, desde + i + 1);
+      if (m === null) continue;
+      const x = aX(i), y = aY(m);
+      if (!empezada){ ctx.moveTo(x, y); empezada = true; } else ctx.lineTo(x, y);
+    }
+    ctx.strokeStyle = color; ctx.lineWidth = 1.6; ctx.stroke();
+  };
+  linea(10, 'rgba(0,240,255,.75)');
+  linea(30, 'rgba(168,85,247,.75)');
+
+  // --- velas ---
+  vista.forEach((v, i) => {
+    const x = aX(i);
+    const sube = v.c >= v.a;
+    ctx.strokeStyle = sube ? '#00ff66' : '#ff3d68';
+    ctx.fillStyle = sube ? 'rgba(0,255,102,.55)' : 'rgba(255,61,104,.55)';
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(x, aY(v.max)); ctx.lineTo(x, aY(v.min)); ctx.stroke();
+    const y1 = aY(Math.max(v.a, v.c)), y2 = aY(Math.min(v.a, v.c));
+    ctx.fillRect(x - cuerpo / 2, y1, cuerpo, Math.max(1, y2 - y1));
+    ctx.strokeRect(x - cuerpo / 2, y1, cuerpo, Math.max(1, y2 - y1));
+  });
+
+  // --- línea del precio actual ---
+  const p = precio(), yP = aY(p);
+  ctx.setLineDash([5, 4]);
+  ctx.strokeStyle = 'rgba(243,230,0,.6)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(8, yP); ctx.lineTo(ANCHO - MARGEN_DER, yP); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = '#f3e600';
+  ctx.fillRect(ANCHO - MARGEN_DER + 2, yP - 9, MARGEN_DER - 6, 18);
+  texto(p.toFixed(2), ANCHO - MARGEN_DER + 6, yP, '#111', 11);
+
+  // --- entrada y liquidación de la posición abierta ---
+  if (M.pos){
+    const yE = aY(M.pos.entrada);
+    ctx.strokeStyle = M.pos.lado === 'largo' ? 'rgba(0,255,102,.8)' : 'rgba(255,61,104,.8)';
+    ctx.lineWidth = 1.4;
+    ctx.beginPath(); ctx.moveTo(8, yE); ctx.lineTo(ANCHO - MARGEN_DER, yE); ctx.stroke();
+    texto((M.pos.lado === 'largo' ? '▲' : '▼') + ' entrada ' + M.pos.entrada.toFixed(2),
+          12, yE - 11, ctx.strokeStyle, 11);
+
+    const liq = precioLiquidacion();
+    if (liq > min && liq < max){
+      const yL = aY(liq);
+      ctx.setLineDash([3, 5]);
+      ctx.strokeStyle = 'rgba(255,61,104,.75)';
+      ctx.beginPath(); ctx.moveTo(8, yL); ctx.lineTo(ANCHO - MARGEN_DER, yL); ctx.stroke();
+      ctx.setLineDash([]);
+      texto('liquidación ' + liq.toFixed(2), 12, yL + 11, 'rgba(255,61,104,.9)', 11);
+    }
+  }
+
+  // --- RSI ---
+  ctx.fillStyle = 'rgba(255,255,255,.03)';
+  ctx.fillRect(8, R_ARRIBA, ANCHO_UTIL, R_ALTO);
+  const rY = v => R_ARRIBA + R_ALTO - v / 100 * R_ALTO;
+  [30, 70].forEach(nivel => {
+    ctx.setLineDash([4, 4]);
+    ctx.strokeStyle = nivel === 70 ? 'rgba(255,61,104,.4)' : 'rgba(0,255,102,.4)';
+    ctx.beginPath(); ctx.moveTo(8, rY(nivel)); ctx.lineTo(ANCHO - MARGEN_DER, rY(nivel)); ctx.stroke();
+    ctx.setLineDash([]);
+    texto(String(nivel), ANCHO - MARGEN_DER + 8, rY(nivel), '#5c6b85', 10);
+  });
+  ctx.beginPath();
+  let empezada = false;
+  for (let i = 0; i < vista.length; i++){
+    const r = rsi(14, desde + i + 1);
+    if (r === null) continue;
+    const x = aX(i), y = rY(r);
+    if (!empezada){ ctx.moveTo(x, y); empezada = true; } else ctx.lineTo(x, y);
+  }
+  ctx.strokeStyle = '#f3e600'; ctx.lineWidth = 1.6; ctx.stroke();
+
+  const rAhora = rsi(14);
+  texto('RSI 14' + (rAhora === null ? '' : '  ' + rAhora.toFixed(0)),
+        12, R_ARRIBA + 9, rAhora === null ? '#3e4a63'
+        : rAhora > 70 ? '#ff3d68' : rAhora < 30 ? '#00ff66' : '#8b9bb4', 10);
+
+  // --- leyenda ---
+  texto('SMA 10', ANCHO - MARGEN_DER - 132, P_ARRIBA + 10, 'rgba(0,240,255,.8)', 10);
+  texto('SMA 30', ANCHO - MARGEN_DER - 72, P_ARRIBA + 10, 'rgba(168,85,247,.85)', 10);
+
+  if (M.pausado){
+    ctx.fillStyle = 'rgba(0,0,0,.55)';
+    ctx.fillRect(0, 0, ANCHO, ALTO);
+    texto('⏸ PAUSA', ANCHO / 2, ALTO / 2, '#f3e600', 26, 'center');
+  }
+}
+
+// ---------- Entrada ----------
+$('btnLargo').onclick = () => { Sonido.activar(); abrir('largo'); };
+$('btnCorto').onclick = () => { Sonido.activar(); abrir('corto'); };
+$('btnCerrar').onclick = () => { Sonido.activar(); cerrar('manual'); };
+$('btnPausa').onclick = () => {
+  if (!M.jugando) return;
+  M.pausado = !M.pausado;
+  $('btnPausa').textContent = M.pausado ? '▶' : '⏸';
+};
+addEventListener('keydown', ev => {
+  if (ev.code === 'Space'){ ev.preventDefault(); $('btnPausa').click(); }
+});
+$('btnAbrir').onclick = () => {
+  Sonido.activar();
+  $('modalInicio').classList.remove('visible');
+  nuevaSesion();
+};
+$('btnOtra').onclick = () => {
+  $('modalFin').classList.remove('visible');
+  nuevaSesion();
+};
+Arcade.conectarSonido($('btnSonido'));
+
+// Arranque: se pinta un mercado de muestra detrás del modal
+nuevaSesion();
+M.jugando = false;
+refrescar();
+
+Arcade.bucle(dt => {
+  if (M.jugando && !M.pausado){
+    M.t += dt;
+    while (M.t >= SEG_POR_VELA){ M.t -= SEG_POR_VELA; if (M.jugando) avanzar(); }
+  }
+  dibujar();
+});
+
+});
+
+registrarJuego("moto", function(document, addEventListener, Arcade){
+
+// ============================================================
+//  MOTO X3M — dos ruedas con suspensión sobre terreno generado
+// ============================================================
+const $ = id => document.getElementById(id);
+const lienzo = $('lienzo');
+const ctx = Arcade.nitido(lienzo);
+const avisos = $('avisos');
+const ANCHO = lienzo.width, ALTO = lienzo.height;
+
+// ---------- Constantes de física ----------
+const GRAV = 1500;            // px/s²
+const RUEDA = 15;             // radio de rueda
+const EJE = 34;               // media distancia entre ejes
+const MUELLE = 340;           // rigidez de la suspensión (hundimiento en reposo ~2 px)
+const AMORT = 38;             // amortiguación, cerca del crítico
+const RECORRIDO = 16;         // cuánto puede comprimirse
+const AGARRE = 0.86;          // rozamiento lateral con el suelo
+const PAR_AIRE = 15;          // par al inclinar en el aire
+const GIRO_MAX = 12;          // rad/s: una vuelta entera cabe en un salto largo
+const VEL_MAX = 620;
+const META = 24000;           // largo de la pista en px (2.400 m en pantalla)
+const MAX_CAIDAS = 5;         // caídas antes de dar la carrera por acabada
+
+// ---------- Terreno ----------
+// Determinista por semilla: la misma pista se puede repetir y reaparecer en ella
+let semilla = 1;
+function alturaTerreno(x){
+  if (x < 260) return 380;                                    // recta de salida
+  const s = semilla * 0.37;
+  let y = 372
+    + Math.sin(x * 0.0042 + s) * 54
+    + Math.sin(x * 0.0113 + s * 2.1) * 22
+    + Math.sin(x * 0.0261 + s * 3.7) * 8;
+  // Rampas: suben durante 165 px y el terreno cae de golpe en el borde.
+  // Ese corte es el que lanza la moto por los aires.
+  const fase = ((x - 300) % 1150 + 1150) % 1150;
+  if (fase < 165){
+    const u = fase / 165;
+    y -= Math.sin(u * Math.PI / 2) * (108 + ((Math.floor(x / 1150) * 53) % 70));
+  }
+  return Math.min(y, ALTO - 26);
+}
+function pendiente(x){
+  return Math.atan2(alturaTerreno(x + 4) - alturaTerreno(x - 4), 8);
+}
+
+const CONTROLES = [2600, 6000, 9600, 13200, 16800, 20400, META];
+
+// ---------- Estado ----------
+const M = {
+  x:0, y:0, vx:0, vy:0, ang:0, vAng:0,
+  susp:[0, 0], contacto:[false, false],
+  nitro:100, giros:0, puntos:0, tiempo:0, caidas:0,
+  rotacion:0, aire:0, mejorX:0,
+  control:0,                          // índice de la última bandera pasada
+  estado:'menu',                      // menu | corriendo | fin
+  record: Arcade.record('moto')
+};
+const teclas = {};
+const particulas = [];
+let camaraX = 0, camaraY = 0, sacudida = 0;
+
+function reiniciar(desdeControl){
+  const inicio = desdeControl ? CONTROLES[M.control - 1] || 120 : 120;
+  M.x = inicio; M.y = alturaTerreno(inicio) - EJE;
+  M.vx = 0; M.vy = 0; M.ang = pendiente(inicio); M.vAng = 0;
+  M.susp = [0, 0]; M.contacto = [false, false];
+  M.rotacion = 0; M.aire = 0;
+  particulas.length = 0;
+  camaraX = M.x - 240; camaraY = M.y - ALTO / 2;
+  if (!desdeControl){
+    semilla = 1 + Math.floor(Math.random() * 1000);
+    M.nitro = 100; M.giros = 0; M.puntos = 0; M.tiempo = 0; M.caidas = 0;
+    M.mejorX = inicio; M.control = 0;
+  }
+  M.estado = 'corriendo';
+}
+
+// ---------- Partículas ----------
+function chispa(x, y, color, n, fuerza){
+  for (let i = 0; i < n; i++){
+    particulas.push({
+      x, y,
+      vx: azar(-fuerza, fuerza) - M.vx * 0.12,
+      vy: azar(-fuerza, fuerza * 0.4),
+      vida: azar(0.3, 0.8), max: 0.8,
+      r: azar(1.6, 4.4), color
+    });
+  }
+}
+
+// ---------- Física ----------
+/**
+ * Cada rueda es un muelle amortiguado contra el terreno. El par que generan
+ * las dos ruedas es lo que endereza la moto, así que se posa sola en las
+ * rampas en vez de pegarse al suelo de golpe.
+ */
+function rueda(indice, signo, dt){
+  const cos = Math.cos(M.ang), sin = Math.sin(M.ang);
+  const rx = M.x + signo * EJE * cos;
+  const ry = M.y + signo * EJE * sin;
+  const suelo = alturaTerreno(rx);
+  const hundido = (ry + RUEDA) - suelo;
+
+  M.contacto[indice] = hundido > 0;
+  if (hundido <= 0){
+    M.susp[indice] = Math.max(0, M.susp[indice] - dt * 90);
+    return 0;
+  }
+  M.susp[indice] = Math.min(RECORRIDO, hundido);
+
+  // Muelle + amortiguador sobre la velocidad vertical DEL PUNTO DE CONTACTO,
+  // que incluye lo que aporta el giro del chasis. El amortiguador solo frena
+  // el hundimiento; nunca tira de la moto hacia el suelo.
+  const vPunto = M.vy + M.vAng * signo * EJE * cos;
+  const fuerza = Math.max(0, M.susp[indice] * MUELLE + Math.max(0, vPunto) * AMORT);
+  M.vy -= fuerza * dt;
+
+  // Tope de la suspensión: la rueda no atraviesa el terreno y ahí se para en
+  // seco. Sin esto la velocidad vertical crecía sin freno y la moto quedaba
+  // pegada al suelo aunque el terreno cayera.
+  if (hundido > RECORRIDO){
+    M.y -= hundido - RECORRIDO;
+    if (M.vy > 0) M.vy = 0;
+  }
+
+  // El par depende de qué rueda empuja: la trasera levanta el morro y al revés
+  return -signo * fuerza * 0.00035;
+}
+
+function actualizar(dt){
+  if (M.estado !== 'corriendo') return;
+  M.tiempo += dt;
+
+  const gas = teclas.gas, freno = teclas.freno;
+  const antesEnSuelo = M.contacto[0] || M.contacto[1];
+
+  M.vy += GRAV * dt;
+
+  let par = 0;
+  par += rueda(0, -1, dt);       // trasera
+  par += rueda(1,  1, dt);       // delantera
+  const enSuelo = M.contacto[0] || M.contacto[1];
+
+  if (enSuelo){
+    const inclinacion = pendiente(M.x);
+    // la moto tiende a alinearse con el terreno, con el par de las ruedas encima
+    M.vAng += (inclinacion - M.ang) * 14 * dt + par;
+    M.vAng *= Math.pow(0.02, dt);
+    if (gas){
+      M.vx += 620 * dt * Math.cos(M.ang);
+      M.vAng -= 1.5 * dt;                     // acelerar levanta el morro
+      if (Math.random() < 0.5) chispa(M.x - EJE * Math.cos(M.ang), M.y - EJE * Math.sin(M.ang) + 10,
+                                      '#5a4632', 1, 60);
+    }
+    if (freno){
+      M.vx -= 520 * dt * (M.vx > 0 ? 1 : 0.35);
+      if (M.vx < -140) M.vx = -140;
+    }
+    if (!gas && !freno) M.vx *= Math.pow(0.55, dt);
+    M.vx *= Math.pow(AGARRE, dt);
+    if (!antesEnSuelo){
+      Sonido.fx('aterrizar');
+      sacudida = Math.min(9, Math.abs(M.vy) * 0.02 + 2);
+      chispa(M.x, M.y + EJE * 0.5, '#8b7355', 8, 110);
+    }
+    M.aire = 0;
+  } else {
+    // en el aire mandan las flechas
+    if (teclas.atras)  M.vAng -= PAR_AIRE * dt;
+    if (teclas.alante) M.vAng += PAR_AIRE * dt;
+    M.vAng = limitar(M.vAng, -GIRO_MAX, GIRO_MAX);
+    if (!teclas.atras && !teclas.alante) M.vAng *= Math.pow(0.72, dt);
+    M.aire += dt;
+    if (M.aire > 0.28 && M.aire - dt <= 0.28) Sonido.fx('salto');
+  }
+
+  // nitro
+  if (teclas.nitro && M.nitro > 0){
+    M.vx += 900 * dt * Math.cos(M.ang);
+    M.vy += 900 * dt * Math.sin(M.ang) * 0.35;
+    M.nitro = Math.max(0, M.nitro - 42 * dt);
+    chispa(M.x - EJE * Math.cos(M.ang), M.y - EJE * Math.sin(M.ang),
+           Math.random() < 0.5 ? '#00f0ff' : '#ffffff', 2, 130);
+    if (Math.random() < 0.25) Sonido.fx('nitro');
+  } else if (M.nitro < 100){
+    M.nitro = Math.min(100, M.nitro + 6 * dt);
+  }
+
+  M.vx = limitar(M.vx, -160, VEL_MAX);
+  M.x += M.vx * dt;
+  M.y += M.vy * dt;
+  M.ang += M.vAng * dt;
+
+  // vueltas completas
+  M.rotacion += M.vAng * dt;
+  if (!enSuelo && Math.abs(M.rotacion) >= Math.PI * 2){
+    M.giros++;
+    M.puntos += 500;
+    M.nitro = Math.min(100, M.nitro + 25);
+    M.rotacion = 0;
+    Arcade.aviso(avisos, '🤸 ¡VUELTA COMPLETA! +500', true, 1200);
+    Sonido.fx('combo');
+  }
+  if (enSuelo) M.rotacion = 0;
+
+  // avance
+  if (M.x > M.mejorX){
+    M.puntos += Math.floor(M.x - M.mejorX);
+    M.mejorX = M.x;
+  }
+
+  // banderas de control
+  while (M.control < CONTROLES.length && M.x >= CONTROLES[M.control]){
+    M.control++;
+    if (M.control < CONTROLES.length){
+      M.puntos += 250;
+      M.nitro = 100;
+      Arcade.aviso(avisos, '🚩 Control ' + M.control + ' superado', true, 1200);
+      Sonido.fx('nivel');
+    }
+  }
+
+  if (M.x >= META){ acabar(true); return; }
+
+  // caer de cabeza: el ángulo normalizado se sale de lo tolerable tocando suelo
+  const normal = Math.atan2(Math.sin(M.ang), Math.cos(M.ang));
+  if (enSuelo && Math.abs(normal) > 1.85){ acabar(false); return; }
+  if (M.y > ALTO + 400){ acabar(false); return; }
+
+  // partículas: bucle hacia atrás para poder borrar sin saltarse ninguna
+  for (let i = particulas.length - 1; i >= 0; i--){
+    const p = particulas[i];
+    p.x += p.vx * dt; p.y += p.vy * dt;
+    p.vy += 320 * dt;
+    p.vida -= dt;
+    if (p.vida <= 0) particulas.splice(i, 1);
+  }
+
+  // cámara con retardo
+  const objX = M.x - 260, objY = M.y - ALTO * 0.55;
+  camaraX += (objX - camaraX) * Math.min(1, 7 * dt);
+  camaraY += (objY - camaraY) * Math.min(1, 4 * dt);
+  sacudida = Math.max(0, sacudida - 24 * dt);
+
+  refrescarHud();
+}
+
+function acabar(llego){
+  if (M.estado !== 'corriendo') return;
+  M.estado = 'fin';
+  const metros = Math.floor(M.mejorX / 10);
+
+  if (!llego){
+    chispa(M.x, M.y, '#ff3d68', 26, 220);
+    M.caidas++;
+    refrescarHud();
+    // mientras queden caídas, se reaparece en la última bandera (o en la salida)
+    if (M.caidas < MAX_CAIDAS){
+      Arcade.aviso(avisos, '💥 Caída ' + M.caidas + '/' + MAX_CAIDAS +
+        (M.control ? ' · vuelves al control ' + M.control : ' · vuelves a la salida'), false, 1900);
+      Sonido.fx('choque');
+      setTimeout(() => { if (M.estado === 'fin') reiniciar(true); }, 900);
+      return;
+    }
+  }
+
+  M.puntos += llego ? 3000 : 0;
+  const premio = Math.floor(M.puntos / 25) + (llego ? 800 : 0);
+  Arcade.guardarRecord('moto', M.puntos);
+  M.record = Arcade.record('moto');
+  Arcade.perfil.partida('moto', { puntos: M.puntos, victoria: llego, premio });
+
+  $('tituloFin').textContent = llego ? '🏁 ¡META!' : 'TE HAS ESTRELLADO';
+  $('tituloFin').className = llego ? 'victoria' : 'derrota';
+  $('subFin').textContent = llego
+    ? 'Pista completada en ' + M.tiempo.toFixed(1) + ' segundos con ' + M.caidas + ' caídas.'
+    : 'Cinco caídas y se acabó. La próxima, endereza antes de tocar suelo.';
+  $('finDistancia').textContent = metros;
+  $('finGiros').textContent = M.giros;
+  $('finTiempo').textContent = M.tiempo.toFixed(1);
+  $('finCaidas').textContent = M.caidas + '/' + MAX_CAIDAS;
+  $('finPuntos').textContent = M.puntos.toLocaleString('es-ES');
+  $('finPremio').textContent = premio ? '💎 +' + premio.toLocaleString('es-ES') + ' NEXO-COINS' : '';
+  $('modalFin').classList.add('visible');
+  Sonido.fx(llego ? 'meta' : 'derrota');
+}
+
+function refrescarHud(){
+  $('distanciaTxt').textContent = Math.floor(M.mejorX / 10);
+  $('giroTxt').textContent = M.giros;
+  $('tiempoTxt').textContent = M.tiempo.toFixed(1);
+  $('caidasTxt').textContent = M.caidas;
+  $('nitroRelleno').style.width = M.nitro + '%';
+}
+
+// ---------- Dibujo ----------
+function dibujar(){
+  const cx = camaraX + (sacudida ? azar(-sacudida, sacudida) : 0);
+  const cy = camaraY + (sacudida ? azar(-sacudida, sacudida) : 0);
+
+  // cielo
+  const cielo = ctx.createLinearGradient(0, 0, 0, ALTO);
+  cielo.addColorStop(0, '#0a1428');
+  cielo.addColorStop(0.55, '#132038');
+  cielo.addColorStop(1, '#1d2a44');
+  ctx.fillStyle = cielo;
+  ctx.fillRect(0, 0, ANCHO, ALTO);
+
+  // montañas de fondo, a media velocidad de la cámara
+  for (let capa = 0; capa < 2; capa++){
+    const par = 0.25 + capa * 0.22;
+    ctx.fillStyle = capa ? 'rgba(30,45,78,.85)' : 'rgba(20,32,58,.9)';
+    ctx.beginPath();
+    ctx.moveTo(0, ALTO);
+    for (let x = 0; x <= ANCHO; x += 16){
+      const m = (x + cx * par) * 0.004;
+      const y = 250 - capa * 40 + Math.sin(m) * 46 + Math.sin(m * 2.7) * 20 - cy * par * 0.3;
+      ctx.lineTo(x, y);
+    }
+    ctx.lineTo(ANCHO, ALTO);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  // terreno
+  ctx.beginPath();
+  ctx.moveTo(0, ALTO);
+  for (let x = 0; x <= ANCHO; x += 5) ctx.lineTo(x, alturaTerreno(x + cx) - cy);
+  ctx.lineTo(ANCHO, ALTO);
+  ctx.closePath();
+  const tierra = ctx.createLinearGradient(0, 200, 0, ALTO);
+  tierra.addColorStop(0, '#3a2a1c');
+  tierra.addColorStop(1, '#170f0a');
+  ctx.fillStyle = tierra;
+  ctx.fill();
+
+  // línea de asfalto
+  ctx.beginPath();
+  for (let x = 0; x <= ANCHO; x += 5){
+    const y = alturaTerreno(x + cx) - cy;
+    x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  }
+  ctx.strokeStyle = '#ff8a3d';
+  ctx.lineWidth = 3;
+  ctx.shadowColor = 'rgba(255,138,61,.7)';
+  ctx.shadowBlur = 12;
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+
+  // banderas de control
+  CONTROLES.forEach((cxx, i) => {
+    const x = cxx - cx;
+    if (x < -40 || x > ANCHO + 40) return;
+    const y = alturaTerreno(cxx) - cy;
+    const pasada = i < M.control;
+    ctx.strokeStyle = pasada ? '#00ff66' : '#f3e600';
+    ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x, y - 52); ctx.stroke();
+    ctx.fillStyle = pasada ? '#00ff66' : '#f3e600';
+    ctx.beginPath();
+    ctx.moveTo(x, y - 52); ctx.lineTo(x + 26, y - 44); ctx.lineTo(x, y - 34);
+    ctx.closePath(); ctx.fill();
+    if (i === CONTROLES.length - 1){
+      ctx.fillStyle = '#f3e600';
+      ctx.font = '700 12px "Courier New", monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText('META', x + 12, y - 60);
+    }
+  });
+
+  // partículas
+  for (const p of particulas){
+    ctx.globalAlpha = Math.max(0, p.vida / p.max);
+    ctx.fillStyle = p.color;
+    ctx.beginPath();
+    ctx.arc(p.x - cx, p.y - cy, p.r, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+
+  // moto
+  ctx.save();
+  ctx.translate(M.x - cx, M.y - cy);
+  ctx.rotate(M.ang);
+
+  const dib = (indice, signo) => {
+    const hy = M.susp[indice];
+    ctx.strokeStyle = '#5c6b85'; ctx.lineWidth = 4;
+    ctx.beginPath(); ctx.moveTo(signo * EJE * 0.62, -4); ctx.lineTo(signo * EJE, RUEDA - hy - 4); ctx.stroke();
+    ctx.fillStyle = '#111820';
+    ctx.beginPath(); ctx.arc(signo * EJE, RUEDA - hy - 4, RUEDA, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#2e3a52'; ctx.lineWidth = 3; ctx.stroke();
+    ctx.strokeStyle = '#7a8aa5'; ctx.lineWidth = 1.4;
+    for (let r = 0; r < 4; r++){
+      const a = M.x * 0.06 + r * Math.PI / 2;
+      ctx.beginPath();
+      ctx.moveTo(signo * EJE, RUEDA - hy - 4);
+      ctx.lineTo(signo * EJE + Math.cos(a) * RUEDA * 0.75, RUEDA - hy - 4 + Math.sin(a) * RUEDA * 0.75);
+      ctx.stroke();
+    }
+  };
+  dib(0, -1); dib(1, 1);
+
+  // chasis
+  ctx.fillStyle = '#ff8a3d';
+  ctx.beginPath();
+  ctx.moveTo(-EJE * 0.8, 2); ctx.lineTo(-8, -12); ctx.lineTo(16, -10);
+  ctx.lineTo(EJE * 0.85, 4); ctx.lineTo(-4, 8);
+  ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#ffb877';
+  ctx.fillRect(-14, -16, 18, 6);
+
+  // piloto
+  ctx.strokeStyle = '#e8eef7'; ctx.lineWidth = 4; ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(-6, -14); ctx.lineTo(-2, -28); ctx.lineTo(14, -18);
+  ctx.stroke();
+  ctx.fillStyle = '#00f0ff';
+  ctx.beginPath(); ctx.arc(-1, -33, 6.5, 0, Math.PI * 2); ctx.fill();
+  ctx.lineCap = 'butt';
+  ctx.restore();
+
+  // barra de progreso de la pista
+  const u = limitar(M.mejorX / META, 0, 1);
+  ctx.fillStyle = 'rgba(0,0,0,.5)';
+  ctx.fillRect(ANCHO / 2 - 130, 16, 260, 8);
+  ctx.fillStyle = '#ff8a3d';
+  ctx.fillRect(ANCHO / 2 - 130, 16, 260 * u, 8);
+  ctx.fillStyle = '#8b9bb4';
+  ctx.font = '700 11px "Courier New", monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText('PISTA  ' + Math.round(u * 100) + '%', ANCHO / 2, 38);
+  if (M.record){
+    ctx.textAlign = 'right';
+    ctx.fillText('RÉCORD ' + M.record.toLocaleString('es-ES'), ANCHO - 16, 26);
+  }
+  ctx.textAlign = 'left';
+}
+
+// ---------- Entrada ----------
+const MAPA = {
+  ArrowUp:'gas', KeyW:'gas',
+  ArrowDown:'freno', KeyS:'freno',
+  ArrowLeft:'atras', KeyA:'atras',
+  ArrowRight:'alante', KeyD:'alante',
+  ShiftLeft:'nitro', ShiftRight:'nitro', Space:'nitro'
+};
+addEventListener('keydown', ev => {
+  const t = MAPA[ev.code];
+  if (!t) return;
+  ev.preventDefault();
+  teclas[t] = true;
+});
+addEventListener('keyup', ev => {
+  const t = MAPA[ev.code];
+  if (t) teclas[t] = false;
+});
+
+// Mandos táctiles: se sueltan también si el dedo sale del botón
+$('mandos').addEventListener('pointerdown', ev => {
+  const b = ev.target.closest('[data-tecla]');
+  if (!b) return;
+  ev.preventDefault();
+  Sonido.activar();
+  teclas[b.dataset.tecla] = true;
+  b.classList.add('pulsado');
+  b.setPointerCapture(ev.pointerId);
+});
+const soltar = ev => {
+  const b = ev.target.closest('[data-tecla]');
+  if (!b) return;
+  teclas[b.dataset.tecla] = false;
+  b.classList.remove('pulsado');
+};
+$('mandos').addEventListener('pointerup', soltar);
+$('mandos').addEventListener('pointercancel', soltar);
+
+$('btnArrancar').onclick = () => {
+  Sonido.activar();
+  $('modalInicio').classList.remove('visible');
+  reiniciar(false);
+};
+$('btnOtra').onclick = () => {
+  $('modalFin').classList.remove('visible');
+  reiniciar(false);
+};
+Arcade.conectarSonido($('btnSonido'));
+
+reiniciar(false);
+M.estado = 'menu';
+refrescarHud();
+
+Arcade.bucle(dt => {
+  // pasos fijos: la suspensión es rígida y con dt grande se dispara
+  let resto = Math.min(dt, 0.05);
+  while (resto > 0){
+    const paso = Math.min(resto, 1 / 240);
+    actualizar(paso);
+    resto -= paso;
+  }
+  dibujar();
+});
 
 });
 </script>

@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Money Market — Arcade NEXO</title>
+<link rel="stylesheet" href="arcade.css">
+<style>
+  #juego{width:min(1000px,100vw);}
+  /* Los modales cubren el tablero, no la barra: desde el menú siempre se puede volver */
+  #tablero{position:relative; display:flex; flex-direction:column; gap:10px;}
+  .barra .titulo{color:var(--verde);}
+
+  #envoltorio{
+    position:relative; background:#03060c; border-radius:14px;
+    border:1px solid rgba(0,255,102,.2); padding:8px; overflow:hidden;
+  }
+  #lienzo{display:block; width:100%; height:auto;}
+  #envivo{
+    position:absolute; top:14px; left:16px; z-index:2;
+    display:flex; align-items:center; gap:7px;
+    font-family:var(--fuente-arcade); font-size:11px; font-weight:700;
+    letter-spacing:1.5px; color:var(--verde);
+  }
+  #envivo i{
+    width:8px; height:8px; border-radius:50%; background:var(--verde);
+    box-shadow:0 0 10px var(--verde); animation:latir 1.4s infinite;
+  }
+  @keyframes latir{50%{opacity:.25;}}
+
+  /* ---------- Métricas ---------- */
+  #metricas{
+    display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); gap:9px;
+  }
+  #metricas div{
+    background:rgba(0,0,0,.4); border:1px solid var(--borde);
+    border-radius:11px; padding:9px 11px; text-align:center;
+  }
+  #metricas .e{
+    font-size:10px; color:var(--tenue); text-transform:uppercase;
+    letter-spacing:.8px; display:block; margin-bottom:3px;
+  }
+  #metricas .v{
+    font-family:var(--fuente-arcade); font-weight:800; font-size:15px;
+    font-variant-numeric:tabular-nums;
+  }
+
+  /* ---------- Operar ---------- */
+  #operar{display:flex; gap:9px; flex-wrap:wrap; align-items:center;}
+  #operar .grupo{
+    display:flex; align-items:center; gap:7px; background:rgba(0,0,0,.35);
+    border:1px solid var(--borde); border-radius:11px; padding:6px 11px;
+  }
+  #operar label{font-size:11px; color:var(--tenue); text-transform:uppercase; letter-spacing:.7px;}
+  #operar select, #operar input{
+    background:rgba(0,0,0,.5); color:var(--texto); border:1px solid var(--borde);
+    border-radius:7px; padding:5px 8px; font-family:var(--fuente-arcade);
+    font-weight:700; font-size:13px;
+  }
+  #operar input{width:88px; text-align:right;}
+  #botonera{display:flex; gap:9px; flex-wrap:wrap; flex:1;}
+  #botonera button{
+    flex:1; min-width:118px; padding:11px 12px; border-radius:11px; cursor:pointer;
+    font-weight:900; font-size:12px; letter-spacing:1px; text-transform:uppercase;
+    border:none; color:#04120a; transition:filter .15s, transform .1s;
+  }
+  #botonera button:active{transform:translateY(1px);}
+  #botonera button:hover{filter:brightness(1.15);}
+  #btnLargo{background:linear-gradient(135deg, var(--verde), #00a844);}
+  #btnCorto{background:linear-gradient(135deg, var(--rojo), #b3183f); color:#fff;}
+  #btnCerrar{
+    background:rgba(0,0,0,.4); color:var(--oro);
+    border:1px solid rgba(243,230,0,.4) !important;
+  }
+
+  #titulares{
+    font-family:var(--fuente-arcade); font-size:12px; color:var(--tenue);
+    background:rgba(0,0,0,.35); border:1px solid var(--borde);
+    border-radius:10px; padding:8px 12px; min-height:2.4em; line-height:1.5;
+  }
+  #titulares b.sube{color:var(--verde);}
+  #titulares b.baja{color:var(--rojo);}
+
+  .rejillaResumen{
+    display:grid; grid-template-columns:repeat(auto-fit,minmax(110px,1fr)); gap:10px;
+    margin:14px 0 18px;
+  }
+  .rejillaResumen div{background:rgba(0,0,0,.35); border-radius:10px; padding:11px;}
+  .rejillaResumen .n{font-size:22px; font-weight:800; color:var(--oro);}
+  .rejillaResumen .e{font-size:11px; color:var(--tenue);}
+</style>
+</head>
+<body>
+
+<div id="juego">
+  <div class="barra">
+    <a class="boton" href="../index.html">🕹 Arcade</a>
+    <div class="titulo">📈 MONEY MARKET</div>
+    <div class="sep"></div>
+    <div class="stat">📊 <span id="velaTxt">0</span>/120</div>
+    <div class="stat">🏆 <span id="recordTxt" class="oro">0</span></div>
+    <button id="btnPausa" title="Pausa (Espacio)">⏸</button>
+    <button id="btnSonido" title="Sonido">🔊</button>
+  </div>
+
+  <div id="tablero">
+  <div id="envoltorio">
+    <div id="envivo"><i></i> MERCADO EN VIVO · $SPARTA/USD</div>
+    <canvas id="lienzo" width="960" height="470"></canvas>
+  </div>
+
+  <div id="titulares">Sesión sin abrir.</div>
+
+  <div id="metricas">
+    <div><span class="e">Liquidez</span><span class="v verde" id="mLiquidez">$10.000</span></div>
+    <div><span class="e">Patrimonio</span><span class="v oro" id="mPatrimonio">$10.000</span></div>
+    <div><span class="e">Posición</span><span class="v" id="mPosicion">—</span></div>
+    <div><span class="e">Precio</span><span class="v" id="mPrecio">$100,00</span></div>
+    <div><span class="e">P&amp;L abierto</span><span class="v tenue" id="mPnl">$0</span></div>
+    <div><span class="e">Liquidación</span><span class="v tenue" id="mLiquidacion">—</span></div>
+  </div>
+
+  <div id="operar">
+    <div class="grupo">
+      <label for="tamano">Importe</label>
+      <input id="tamano" type="number" min="100" step="100" value="2000">
+    </div>
+    <div class="grupo">
+      <label for="palanca">Apalanc.</label>
+      <select id="palanca">
+        <option value="1">1x</option>
+        <option value="2">2x</option>
+        <option value="5" selected>5x</option>
+        <option value="10">10x</option>
+        <option value="20">20x</option>
+      </select>
+    </div>
+    <div id="botonera">
+      <button id="btnLargo">▲ Largo</button>
+      <button id="btnCorto">▼ Corto</button>
+      <button id="btnCerrar">✕ Cerrar</button>
+    </div>
+  </div>
+
+  <div class="avisos" id="avisos"></div>
+
+  <div class="modal visible" id="modalInicio">
+      <div class="tarjetaModal">
+        <h1>📈 MONEY MARKET</h1>
+        <div class="sub">Simulador de trading con dinero de mentira.</div>
+        <div class="instrucciones">
+          Empiezas con <b>10.000 $</b> ficticios y una sesión de <b>120 velas</b>.<br>
+          <b>▲ Largo</b> gana si el precio sube; <b>▼ Corto</b> gana si baja.<br>
+          El <b>apalancamiento</b> multiplica ganancias <i>y</i> pérdidas: solo bloqueas el margen,
+          pero si el precio va en tu contra lo suficiente te <b>liquidan</b> y pierdes ese margen.<br>
+          Debajo del precio tienes <b>volumen</b>, medias móviles <b>SMA 10</b> y <b>SMA 30</b>, y el <b>RSI 14</b>:
+          por encima de 70 se considera sobrecomprado y por debajo de 30 sobrevendido.<br>
+          Al acabar la sesión, <b>lo que ganes por encima de los 10.000 $ se cambia a NEXO-COINS</b>.
+        </div>
+        <div class="filaBotones">
+          <button class="primario" id="btnAbrir">▶ Abrir mercado</button>
+        </div>
+      </div>
+    </div>
+
+  <div class="modal" id="modalFin">
+      <div class="tarjetaModal">
+        <h1 id="tituloFin">CIERRE DE SESIÓN</h1>
+        <div class="sub" id="subFin"></div>
+        <div class="rejillaResumen">
+          <div><div class="n" id="finPatrimonio">$0</div><div class="e">patrimonio</div></div>
+          <div><div class="n" id="finRend">0%</div><div class="e">rendimiento</div></div>
+          <div><div class="n" id="finOperaciones">0</div><div class="e">operaciones</div></div>
+          <div><div class="n" id="finAcierto">0%</div><div class="e">acierto</div></div>
+        </div>
+        <div class="premio" id="finPremio"></div>
+        <div class="filaBotones">
+          <button class="primario" id="btnOtra">↻ Nueva sesión</button>
+          <a class="boton" href="../index.html">🕹 Arcade</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="arcade.js"></script>
+<script>
+// ============================================================
+//  MONEY MARKET — terminal de trading simulado
+// ============================================================
+const $ = id => document.getElementById(id);
+const lienzo = $('lienzo');
+const ctx = Arcade.nitido(lienzo);
+const avisos = $('avisos');
+
+const ANCHO = lienzo.width, ALTO = lienzo.height;
+// Reparto vertical: precio arriba, volumen en medio, RSI abajo
+const P_ARRIBA = 34, P_ALTO = 268;
+const V_ARRIBA = P_ARRIBA + P_ALTO + 12, V_ALTO = 62;
+const R_ARRIBA = V_ARRIBA + V_ALTO + 22, R_ALTO = 62;
+const MARGEN_DER = 74;
+const ANCHO_UTIL = ANCHO - MARGEN_DER - 10;
+
+const CAPITAL = 10000;
+const VELAS_SESION = 120;
+const SEG_POR_VELA = 0.85;
+const VISIBLES = 60;
+const COMISION = 0.0008;          // 0,08 % por operación, ida y vuelta
+
+// ---------- Estado ----------
+const M = {
+  velas: [], t: 0, vela: 0,
+  liquidez: CAPITAL,
+  pos: null,                      // { lado:'largo'|'corto', unidades, entrada, margen, palanca }
+  operaciones: 0, ganadoras: 0,
+  jugando: false, pausado: false,
+  noticia: '', noticiaT: 0, sesgo: 0, sesgoT: 0,
+  record: Arcade.record('mercado')
+};
+
+// ---------- Generación de precio ----------
+// Paseo aleatorio con volatilidad variable y rachas de sesgo (las "noticias")
+const TITULARES_SUBIDA = [
+  'Los éforos aprueban el presupuesto: confianza al alza',
+  'Nueva ruta comercial con Corinto: entra capital',
+  'Cosecha récord en Mesenia: el mercado respira',
+  'Tratado de paz firmado: vuelven los compradores'
+];
+const TITULARES_BAJADA = [
+  'Revuelta de ilotas en el sur: pánico vendedor',
+  'Terremoto en Laconia: el mercado se desploma',
+  'Atenas bloquea el puerto: se corta el comercio',
+  'Leva militar urgente: se retira liquidez'
+];
+
+function nuevaVela(previa){
+  const base = previa ? previa.c : 100;
+  const vol = 0.006 + Math.random() * 0.012;
+  const deriva = M.sesgo * 0.004;
+  const cambio = (Math.random() - 0.5) * 2 * vol + deriva;
+  const cierre = Math.max(5, base * (1 + cambio));
+  const mecha = base * vol * (0.4 + Math.random());
+  return {
+    a: base,
+    c: cierre,
+    max: Math.max(base, cierre) + Math.random() * mecha,
+    min: Math.min(base, cierre) - Math.random() * mecha,
+    v: 0.35 + Math.random() * 0.65 + Math.abs(cambio) * 22
+  };
+}
+
+function nuevaSesion(){
+  M.velas = [];
+  let previa = null;
+  for (let i = 0; i < 40; i++){ previa = nuevaVela(previa); M.velas.push(previa); }
+  M.t = 0; M.vela = 0;
+  M.liquidez = CAPITAL; M.pos = null;
+  M.operaciones = 0; M.ganadoras = 0;
+  M.sesgo = 0; M.sesgoT = 0;
+  M.noticia = ''; M.noticiaT = 0;
+  M.pausado = false;
+  M.jugando = true;
+  $('titulares').textContent = 'Mercado abierto. 120 velas por delante.';
+  refrescar();
+}
+
+const precio = () => M.velas[M.velas.length - 1].c;
+
+// ---------- Indicadores ----------
+function sma(n, hasta = M.velas.length){
+  if (hasta < n) return null;
+  let s = 0;
+  for (let i = hasta - n; i < hasta; i++) s += M.velas[i].c;
+  return s / n;
+}
+/**
+ * RSI de Wilder sobre `n` periodos. Devuelve 0-100, o null si aún no hay datos.
+ * Se recalcula entero cada vez: con 160 velas como mucho, sale gratis.
+ */
+function rsi(n = 14, hasta = M.velas.length){
+  if (hasta < n + 1) return null;
+  let subida = 0, bajada = 0;
+  for (let i = hasta - n; i < hasta; i++){
+    const d = M.velas[i].c - M.velas[i - 1].c;
+    if (d >= 0) subida += d; else bajada -= d;
+  }
+  subida /= n; bajada /= n;
+  if (bajada === 0) return 100;
+  return 100 - 100 / (1 + subida / bajada);
+}
+
+// ---------- Operaciones ----------
+function valorPos(){
+  if (!M.pos) return 0;
+  const p = precio();
+  return M.pos.lado === 'largo'
+    ? (p - M.pos.entrada) * M.pos.unidades
+    : (M.pos.entrada - p) * M.pos.unidades;
+}
+function patrimonio(){ return M.liquidez + (M.pos ? M.pos.margen + valorPos() : 0); }
+
+// Precio al que la pérdida se come el margen entero
+function precioLiquidacion(){
+  if (!M.pos) return null;
+  const mov = M.pos.margen / M.pos.unidades;
+  return M.pos.lado === 'largo' ? M.pos.entrada - mov : M.pos.entrada + mov;
+}
+
+function abrir(lado){
+  if (!M.jugando) return;
+  if (M.pos){ Arcade.aviso(avisos, 'Cierra la posición antes de abrir otra', false, 1600); return; }
+  const margen = Math.max(100, Math.floor(parseFloat($('tamano').value) || 0));
+  const palanca = parseInt($('palanca').value, 10);
+  if (margen > M.liquidez){ Arcade.aviso(avisos, 'No tienes liquidez suficiente', false, 1800); return; }
+
+  const p = precio();
+  const nominal = margen * palanca;
+  const comision = nominal * COMISION;
+  M.liquidez -= margen + comision;
+  M.pos = { lado, unidades: nominal / p, entrada: p, margen, palanca };
+  M.operaciones++;
+  Sonido.fx('orden');
+  Arcade.aviso(avisos,
+    (lado === 'largo' ? '▲ Largo' : '▼ Corto') + ' ' + palanca + 'x a ' + fmt(p), true, 1700);
+  refrescar();
+}
+
+function cerrar(motivo){
+  if (!M.pos) return;
+  const pnl = valorPos();
+  const comision = M.pos.unidades * precio() * COMISION;
+  const devuelto = Math.max(0, M.pos.margen + pnl - comision);
+  M.liquidez += devuelto;
+  if (pnl > 0) M.ganadoras++;
+  const liquidada = motivo === 'liquidacion';
+  Sonido.fx(liquidada ? 'alarma' : pnl >= 0 ? 'caja' : 'error');
+  Arcade.aviso(avisos,
+    liquidada ? '💥 LIQUIDADO: el margen se ha consumido'
+              : (pnl >= 0 ? '✅ Cerrado ' : '❌ Cerrado ') + fmtSigno(pnl),
+    !liquidada && pnl >= 0, 2200);
+  M.pos = null;
+  refrescar();
+}
+
+// ---------- Bucle ----------
+function avanzar(){
+  M.velas.push(nuevaVela(M.velas[M.velas.length - 1]));
+  if (M.velas.length > 200) M.velas.shift();
+  M.vela++;
+
+  // rachas de sesgo con su titular
+  if (M.sesgoT > 0){ M.sesgoT--; if (M.sesgoT === 0) M.sesgo = 0; }
+  else if (Math.random() < 0.045){
+    M.sesgo = Math.random() < 0.5 ? -1 : 1;
+    M.sesgoT = 6 + Math.floor(Math.random() * 10);
+    const lista = M.sesgo > 0 ? TITULARES_SUBIDA : TITULARES_BAJADA;
+    $('titulares').innerHTML = '📰 ' + elegir(lista) +
+      ' <b class="' + (M.sesgo > 0 ? 'sube">▲ presión compradora' : 'baja">▼ presión vendedora') + '</b>';
+  }
+
+  // ¿nos han liquidado?
+  if (M.pos && M.pos.margen + valorPos() <= 0) cerrar('liquidacion');
+
+  if (M.vela >= VELAS_SESION) terminar();
+  refrescar();
+}
+
+function terminar(){
+  if (M.pos) cerrar('fin');
+  M.jugando = false;
+  const total = patrimonio();
+  const rend = (total / CAPITAL - 1) * 100;
+  const acierto = M.operaciones ? Math.round(M.ganadoras / M.operaciones * 100) : 0;
+
+  // solo lo ganado por encima del capital se cambia; 1 NEXO-COIN por cada 5 $
+  const premio = Math.max(0, Math.floor((total - CAPITAL) / 5));
+  Arcade.guardarRecord('mercado', Math.round(total));
+  M.record = Arcade.record('mercado');
+  Arcade.perfil.partida('mercado',
+    { puntos: Math.round(total), victoria: total > CAPITAL, premio });
+
+  $('tituloFin').textContent = total > CAPITAL ? 'SESIÓN EN VERDE' : 'SESIÓN EN ROJO';
+  $('tituloFin').className = total > CAPITAL ? 'victoria' : 'derrota';
+  $('subFin').textContent = total > CAPITAL
+    ? 'Cierras por encima del capital inicial. El beneficio se cambia a fichas.'
+    : 'Cierras por debajo de los 10.000 $. Sin beneficio no hay cambio a fichas.';
+  $('finPatrimonio').textContent = fmt(total);
+  $('finRend').textContent = (rend >= 0 ? '+' : '') + rend.toFixed(1) + '%';
+  $('finOperaciones').textContent = M.operaciones;
+  $('finAcierto').textContent = acierto + '%';
+  $('finPremio').textContent = premio ? '💎 +' + premio.toLocaleString('es-ES') + ' NEXO-COINS' : '';
+  $('modalFin').classList.add('visible');
+  Sonido.fx(total > CAPITAL ? 'victoria' : 'derrota');
+  refrescar();
+}
+
+// ---------- Formato ----------
+const fmt = n => '$' + n.toLocaleString('es-ES', { minimumFractionDigits:2, maximumFractionDigits:2 });
+const fmtSigno = n => (n >= 0 ? '+' : '−') + fmt(Math.abs(n)).replace('$', '') + ' $';
+
+function refrescar(){
+  const p = precio();
+  $('mPrecio').textContent = fmt(p);
+  $('mLiquidez').textContent = fmt(M.liquidez);
+  $('mPatrimonio').textContent = fmt(patrimonio());
+  $('velaTxt').textContent = Math.min(M.vela, VELAS_SESION);
+  $('recordTxt').textContent = M.record ? fmt(M.record) : '—';
+
+  const posEl = $('mPosicion'), pnlEl = $('mPnl'), liqEl = $('mLiquidacion');
+  if (M.pos){
+    posEl.textContent = (M.pos.lado === 'largo' ? '▲ ' : '▼ ') + M.pos.palanca + 'x';
+    posEl.className = 'v ' + (M.pos.lado === 'largo' ? 'verde' : 'rojo');
+    const pnl = valorPos();
+    pnlEl.textContent = fmtSigno(pnl);
+    pnlEl.className = 'v ' + (pnl >= 0 ? 'verde' : 'rojo');
+    liqEl.textContent = fmt(precioLiquidacion());
+    liqEl.className = 'v rojo';
+  } else {
+    posEl.textContent = '—'; posEl.className = 'v tenue';
+    pnlEl.textContent = '$0'; pnlEl.className = 'v tenue';
+    liqEl.textContent = '—'; liqEl.className = 'v tenue';
+  }
+}
+
+// ---------- Dibujo ----------
+function texto(t, x, y, color, tam, alin){
+  ctx.fillStyle = color;
+  ctx.font = '700 ' + tam + 'px "Courier New", monospace';
+  ctx.textAlign = alin || 'left';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(t, x, y);
+}
+
+function dibujar(){
+  ctx.fillStyle = '#03060c';
+  ctx.fillRect(0, 0, ANCHO, ALTO);
+
+  const desde = Math.max(0, M.velas.length - VISIBLES);
+  const vista = M.velas.slice(desde);
+  const paso = ANCHO_UTIL / VISIBLES;
+  const cuerpo = Math.max(2, paso * 0.62);
+
+  let min = Infinity, max = -Infinity;
+  for (const v of vista){ if (v.min < min) min = v.min; if (v.max > max) max = v.max; }
+  const holgura = (max - min) * 0.08 || 1;
+  min -= holgura; max += holgura;
+  const aY = pr => P_ARRIBA + P_ALTO - (pr - min) / (max - min) * P_ALTO;
+  const aX = i => 8 + i * paso + paso / 2;
+
+  // --- rejilla y escala de precios ---
+  ctx.strokeStyle = 'rgba(255,255,255,.05)';
+  ctx.lineWidth = 1;
+  for (let k = 0; k <= 4; k++){
+    const y = P_ARRIBA + P_ALTO * k / 4;
+    ctx.beginPath(); ctx.moveTo(8, y); ctx.lineTo(ANCHO - MARGEN_DER, y); ctx.stroke();
+    texto(fmt(max - (max - min) * k / 4).replace('$',''), ANCHO - MARGEN_DER + 8, y, '#5c6b85', 11);
+  }
+
+  // --- volumen ---
+  const volMax = Math.max(...vista.map(v => v.v));
+  vista.forEach((v, i) => {
+    const h = v.v / volMax * V_ALTO;
+    ctx.fillStyle = v.c >= v.a ? 'rgba(0,255,102,.35)' : 'rgba(255,61,104,.35)';
+    ctx.fillRect(aX(i) - cuerpo / 2, V_ARRIBA + V_ALTO - h, cuerpo, h);
+  });
+  texto('VOLUMEN', 12, V_ARRIBA + 9, '#3e4a63', 10);
+
+  // --- medias móviles ---
+  const linea = (n, color) => {
+    ctx.beginPath();
+    let empezada = false;
+    for (let i = 0; i < vista.length; i++){
+      const m = sma(n, desde + i + 1);
+      if (m === null) continue;
+      const x = aX(i), y = aY(m);
+      if (!empezada){ ctx.moveTo(x, y); empezada = true; } else ctx.lineTo(x, y);
+    }
+    ctx.strokeStyle = color; ctx.lineWidth = 1.6; ctx.stroke();
+  };
+  linea(10, 'rgba(0,240,255,.75)');
+  linea(30, 'rgba(168,85,247,.75)');
+
+  // --- velas ---
+  vista.forEach((v, i) => {
+    const x = aX(i);
+    const sube = v.c >= v.a;
+    ctx.strokeStyle = sube ? '#00ff66' : '#ff3d68';
+    ctx.fillStyle = sube ? 'rgba(0,255,102,.55)' : 'rgba(255,61,104,.55)';
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(x, aY(v.max)); ctx.lineTo(x, aY(v.min)); ctx.stroke();
+    const y1 = aY(Math.max(v.a, v.c)), y2 = aY(Math.min(v.a, v.c));
+    ctx.fillRect(x - cuerpo / 2, y1, cuerpo, Math.max(1, y2 - y1));
+    ctx.strokeRect(x - cuerpo / 2, y1, cuerpo, Math.max(1, y2 - y1));
+  });
+
+  // --- línea del precio actual ---
+  const p = precio(), yP = aY(p);
+  ctx.setLineDash([5, 4]);
+  ctx.strokeStyle = 'rgba(243,230,0,.6)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(8, yP); ctx.lineTo(ANCHO - MARGEN_DER, yP); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = '#f3e600';
+  ctx.fillRect(ANCHO - MARGEN_DER + 2, yP - 9, MARGEN_DER - 6, 18);
+  texto(p.toFixed(2), ANCHO - MARGEN_DER + 6, yP, '#111', 11);
+
+  // --- entrada y liquidación de la posición abierta ---
+  if (M.pos){
+    const yE = aY(M.pos.entrada);
+    ctx.strokeStyle = M.pos.lado === 'largo' ? 'rgba(0,255,102,.8)' : 'rgba(255,61,104,.8)';
+    ctx.lineWidth = 1.4;
+    ctx.beginPath(); ctx.moveTo(8, yE); ctx.lineTo(ANCHO - MARGEN_DER, yE); ctx.stroke();
+    texto((M.pos.lado === 'largo' ? '▲' : '▼') + ' entrada ' + M.pos.entrada.toFixed(2),
+          12, yE - 11, ctx.strokeStyle, 11);
+
+    const liq = precioLiquidacion();
+    if (liq > min && liq < max){
+      const yL = aY(liq);
+      ctx.setLineDash([3, 5]);
+      ctx.strokeStyle = 'rgba(255,61,104,.75)';
+      ctx.beginPath(); ctx.moveTo(8, yL); ctx.lineTo(ANCHO - MARGEN_DER, yL); ctx.stroke();
+      ctx.setLineDash([]);
+      texto('liquidación ' + liq.toFixed(2), 12, yL + 11, 'rgba(255,61,104,.9)', 11);
+    }
+  }
+
+  // --- RSI ---
+  ctx.fillStyle = 'rgba(255,255,255,.03)';
+  ctx.fillRect(8, R_ARRIBA, ANCHO_UTIL, R_ALTO);
+  const rY = v => R_ARRIBA + R_ALTO - v / 100 * R_ALTO;
+  [30, 70].forEach(nivel => {
+    ctx.setLineDash([4, 4]);
+    ctx.strokeStyle = nivel === 70 ? 'rgba(255,61,104,.4)' : 'rgba(0,255,102,.4)';
+    ctx.beginPath(); ctx.moveTo(8, rY(nivel)); ctx.lineTo(ANCHO - MARGEN_DER, rY(nivel)); ctx.stroke();
+    ctx.setLineDash([]);
+    texto(String(nivel), ANCHO - MARGEN_DER + 8, rY(nivel), '#5c6b85', 10);
+  });
+  ctx.beginPath();
+  let empezada = false;
+  for (let i = 0; i < vista.length; i++){
+    const r = rsi(14, desde + i + 1);
+    if (r === null) continue;
+    const x = aX(i), y = rY(r);
+    if (!empezada){ ctx.moveTo(x, y); empezada = true; } else ctx.lineTo(x, y);
+  }
+  ctx.strokeStyle = '#f3e600'; ctx.lineWidth = 1.6; ctx.stroke();
+
+  const rAhora = rsi(14);
+  texto('RSI 14' + (rAhora === null ? '' : '  ' + rAhora.toFixed(0)),
+        12, R_ARRIBA + 9, rAhora === null ? '#3e4a63'
+        : rAhora > 70 ? '#ff3d68' : rAhora < 30 ? '#00ff66' : '#8b9bb4', 10);
+
+  // --- leyenda ---
+  texto('SMA 10', ANCHO - MARGEN_DER - 132, P_ARRIBA + 10, 'rgba(0,240,255,.8)', 10);
+  texto('SMA 30', ANCHO - MARGEN_DER - 72, P_ARRIBA + 10, 'rgba(168,85,247,.85)', 10);
+
+  if (M.pausado){
+    ctx.fillStyle = 'rgba(0,0,0,.55)';
+    ctx.fillRect(0, 0, ANCHO, ALTO);
+    texto('⏸ PAUSA', ANCHO / 2, ALTO / 2, '#f3e600', 26, 'center');
+  }
+}
+
+// ---------- Entrada ----------
+$('btnLargo').onclick = () => { Sonido.activar(); abrir('largo'); };
+$('btnCorto').onclick = () => { Sonido.activar(); abrir('corto'); };
+$('btnCerrar').onclick = () => { Sonido.activar(); cerrar('manual'); };
+$('btnPausa').onclick = () => {
+  if (!M.jugando) return;
+  M.pausado = !M.pausado;
+  $('btnPausa').textContent = M.pausado ? '▶' : '⏸';
+};
+addEventListener('keydown', ev => {
+  if (ev.code === 'Space'){ ev.preventDefault(); $('btnPausa').click(); }
+});
+$('btnAbrir').onclick = () => {
+  Sonido.activar();
+  $('modalInicio').classList.remove('visible');
+  nuevaSesion();
+};
+$('btnOtra').onclick = () => {
+  $('modalFin').classList.remove('visible');
+  nuevaSesion();
+};
+Arcade.conectarSonido($('btnSonido'));
+
+// Arranque: se pinta un mercado de muestra detrás del modal
+nuevaSesion();
+M.jugando = false;
+refrescar();
+
+Arcade.bucle(dt => {
+  if (M.jugando && !M.pausado){
+    M.t += dt;
+    while (M.t >= SEG_POR_VELA){ M.t -= SEG_POR_VELA; if (M.jugando) avanzar(); }
+  }
+  dibujar();
+});
+</script>
+</body>
+</html>

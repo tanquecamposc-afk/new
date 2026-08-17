@@ -107,6 +107,19 @@ const Sonido = {
       case 'gol':       [523, 659, 784, 1047, 1319, 1568].forEach((f, i) => this.tono(f, f, 0.18, 'square', 0.07, i * 0.09));
                         this.ruido(0.9, 1200, 0.05); break;
       case 'desplegar': this.tono(300, 620, 0.11, 'triangle', 0.06); break;
+      // --- Spartahoppers ---
+      case 'acierto':   this.melodia([660, 880], 0.07, 'triangle', 0.05); break;
+      case 'clic':      this.tono(520, 520, 0.03, 'sine', 0.03); break;
+      // --- Money Market ---
+      case 'orden':     this.tono(880, 1240, 0.07, 'square', 0.045); break;
+      case 'caja':      this.melodia([1046, 1318, 1568, 2093], 0.06, 'sine', 0.05); break;
+      case 'alarma':    this.tono(880, 440, 0.18, 'sawtooth', 0.06);
+                        this.tono(880, 440, 0.18, 'sawtooth', 0.06, 0.2); break;
+      // --- Moto X3M ---
+      case 'salto':     this.tono(300, 700, 0.14, 'triangle', 0.05); break;
+      case 'aterrizar': this.ruido(0.14, 900, 0.09); this.tono(150, 90, 0.12, 'sine', 0.05); break;
+      case 'nitro':     this.ruido(0.3, 3000, 0.06); break;
+      case 'meta':      [784, 988, 1319, 1568, 2093].forEach((f, i) => this.tono(f, f, 0.2, 'square', 0.07, i * 0.11)); break;
     }
   },
 

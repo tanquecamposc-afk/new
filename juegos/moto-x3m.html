@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Moto X3M — Arcade NEXO</title>
+<link rel="stylesheet" href="arcade.css">
+<style>
+  #juego{width:min(1000px,100vw);}
+  .barra .titulo{color:#ff8a3d;}
+  #barraNitro{
+    width:104px; height:9px; border-radius:999px; overflow:hidden;
+    background:rgba(0,0,0,.55); border:1px solid rgba(0,240,255,.3);
+  }
+  #nitroRelleno{
+    height:100%; width:100%;
+    background:linear-gradient(90deg, var(--azul), #7de9ff);
+    box-shadow:0 0 10px rgba(0,240,255,.6);
+    transition:width .1s linear;
+  }
+  #mandos{
+    display:grid; grid-template-columns:repeat(4,1fr); gap:9px;
+  }
+  #mandos button{
+    padding:16px 8px; border-radius:12px; cursor:pointer;
+    background:rgba(0,0,0,.4); color:var(--texto);
+    border:1px solid var(--borde);
+    font-weight:800; font-size:12px; letter-spacing:.6px;
+    touch-action:none; user-select:none;
+  }
+  #mandos button.pulsado{
+    border-color:#ff8a3d; color:#ff8a3d; box-shadow:0 0 16px rgba(255,138,61,.35);
+  }
+  #mandos button small{display:block; font-size:16px; margin-bottom:2px;}
+  @media (min-width:760px){ #mandos{display:none;} }
+
+  .rejillaResumen{
+    display:grid; grid-template-columns:repeat(auto-fit,minmax(110px,1fr)); gap:10px;
+    margin:14px 0 18px;
+  }
+  .rejillaResumen div{background:rgba(0,0,0,.35); border-radius:10px; padding:11px;}
+  .rejillaResumen .n{font-size:22px; font-weight:800; color:var(--oro);}
+  .rejillaResumen .e{font-size:11px; color:var(--tenue);}
+</style>
+</head>
+<body>
+
+<div id="juego">
+  <div class="barra">
+    <a class="boton" href="../index.html">🕹 Arcade</a>
+    <div class="titulo">🏍 MOTO X3M</div>
+    <div class="sep"></div>
+    <div class="stat">🏁 <span id="distanciaTxt">0</span> m</div>
+    <div class="stat">🤸 <span id="giroTxt" class="oro">0</span></div>
+    <div class="stat">⏱ <span id="tiempoTxt">0.0</span>s</div>
+    <div class="stat">💥 <span id="caidasTxt" class="rojo">0</span>/5</div>
+    <div class="stat">⚡ <div id="barraNitro"><div id="nitroRelleno"></div></div></div>
+    <button id="btnSonido" title="Sonido">🔊</button>
+  </div>
+
+  <div class="escena">
+    <canvas id="lienzo" width="960" height="480"></canvas>
+    <div class="avisos" id="avisos"></div>
+
+    <div class="modal visible" id="modalInicio">
+      <div class="tarjetaModal">
+        <h1>🏍 MOTO X3M</h1>
+        <div class="sub">Llega a la meta sin partirte el casco.</div>
+        <div class="instrucciones">
+          <b>Acelerar:</b> ↑ o <b>W</b> · <b>Frenar / marcha atrás:</b> ↓ o <b>S</b><br>
+          <b>Inclinar en el aire:</b> ← → o <b>A D</b> · <b>Nitro:</b> <b>Shift</b> o <b>Espacio</b><br>
+          Las dos ruedas tienen <b>suspensión</b> propia, así que la moto se posa sobre el terreno
+          y las rampas te lanzan de verdad.<br>
+          Cae de <b>cabeza</b> y se acabó. Cada <b>vuelta completa</b> en el aire son 500 puntos
+          y recarga nitro.<br>
+          Vas pasando por <b>banderas de control</b>: si te estrellas, reapareces en la última.
+        </div>
+        <div class="filaBotones">
+          <button class="primario" id="btnArrancar">▶ Arrancar motor</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal" id="modalFin">
+      <div class="tarjetaModal">
+        <h1 id="tituloFin" class="derrota">TE HAS ESTRELLADO</h1>
+        <div class="sub" id="subFin"></div>
+        <div class="rejillaResumen">
+          <div><div class="n" id="finDistancia">0</div><div class="e">metros</div></div>
+          <div><div class="n" id="finGiros">0</div><div class="e">vueltas</div></div>
+          <div><div class="n" id="finTiempo">0.0</div><div class="e">segundos</div></div>
+          <div><div class="n" id="finCaidas">0</div><div class="e">caídas</div></div>
+          <div><div class="n" id="finPuntos">0</div><div class="e">puntos</div></div>
+        </div>
+        <div class="premio" id="finPremio"></div>
+        <div class="filaBotones">
+          <button class="primario" id="btnOtra">↻ Otra vuelta</button>
+          <a class="boton" href="../index.html">🕹 Arcade</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="mandos">
+    <button data-tecla="freno"><small>▼</small>Freno</button>
+    <button data-tecla="atras"><small>◄</small>Atrás</button>
+    <button data-tecla="alante"><small>►</small>Alante</button>
+    <button data-tecla="gas"><small>▲</small>Gas</button>
+  </div>
+</div>
+
+<script src="arcade.js"></script>
+<script>
+// ============================================================
+//  MOTO X3M — dos ruedas con suspensión sobre terreno generado
+// ============================================================
+const $ = id => document.getElementById(id);
+const lienzo = $('lienzo');
+const ctx = Arcade.nitido(lienzo);
+const avisos = $('avisos');
+const ANCHO = lienzo.width, ALTO = lienzo.height;
+
+// ---------- Constantes de física ----------
+const GRAV = 1500;            // px/s²
+const RUEDA = 15;             // radio de rueda
+const EJE = 34;               // media distancia entre ejes
+const MUELLE = 340;           // rigidez de la suspensión (hundimiento en reposo ~2 px)
+const AMORT = 38;             // amortiguación, cerca del crítico
+const RECORRIDO = 16;         // cuánto puede comprimirse
+const AGARRE = 0.86;          // rozamiento lateral con el suelo
+const PAR_AIRE = 15;          // par al inclinar en el aire
+const GIRO_MAX = 12;          // rad/s: una vuelta entera cabe en un salto largo
+const VEL_MAX = 620;
+const META = 24000;           // largo de la pista en px (2.400 m en pantalla)
+const MAX_CAIDAS = 5;         // caídas antes de dar la carrera por acabada
+
+// ---------- Terreno ----------
+// Determinista por semilla: la misma pista se puede repetir y reaparecer en ella
+let semilla = 1;
+function alturaTerreno(x){
+  if (x < 260) return 380;                                    // recta de salida
+  const s = semilla * 0.37;
+  let y = 372
+    + Math.sin(x * 0.0042 + s) * 54
+    + Math.sin(x * 0.0113 + s * 2.1) * 22
+    + Math.sin(x * 0.0261 + s * 3.7) * 8;
+  // Rampas: suben durante 165 px y el terreno cae de golpe en el borde.
+  // Ese corte es el que lanza la moto por los aires.
+  const fase = ((x - 300) % 1150 + 1150) % 1150;
+  if (fase < 165){
+    const u = fase / 165;
+    y -= Math.sin(u * Math.PI / 2) * (108 + ((Math.floor(x / 1150) * 53) % 70));
+  }
+  return Math.min(y, ALTO - 26);
+}
+function pendiente(x){
+  return Math.atan2(alturaTerreno(x + 4) - alturaTerreno(x - 4), 8);
+}
+
+const CONTROLES = [2600, 6000, 9600, 13200, 16800, 20400, META];
+
+// ---------- Estado ----------
+const M = {
+  x:0, y:0, vx:0, vy:0, ang:0, vAng:0,
+  susp:[0, 0], contacto:[false, false],
+  nitro:100, giros:0, puntos:0, tiempo:0, caidas:0,
+  rotacion:0, aire:0, mejorX:0,
+  control:0,                          // índice de la última bandera pasada
+  estado:'menu',                      // menu | corriendo | fin
+  record: Arcade.record('moto')
+};
+const teclas = {};
+const particulas = [];
+let camaraX = 0, camaraY = 0, sacudida = 0;
+
+function reiniciar(desdeControl){
+  const inicio = desdeControl ? CONTROLES[M.control - 1] || 120 : 120;
+  M.x = inicio; M.y = alturaTerreno(inicio) - EJE;
+  M.vx = 0; M.vy = 0; M.ang = pendiente(inicio); M.vAng = 0;
+  M.susp = [0, 0]; M.contacto = [false, false];
+  M.rotacion = 0; M.aire = 0;
+  particulas.length = 0;
+  camaraX = M.x - 240; camaraY = M.y - ALTO / 2;
+  if (!desdeControl){
+    semilla = 1 + Math.floor(Math.random() * 1000);
+    M.nitro = 100; M.giros = 0; M.puntos = 0; M.tiempo = 0; M.caidas = 0;
+    M.mejorX = inicio; M.control = 0;
+  }
+  M.estado = 'corriendo';
+}
+
+// ---------- Partículas ----------
+function chispa(x, y, color, n, fuerza){
+  for (let i = 0; i < n; i++){
+    particulas.push({
+      x, y,
+      vx: azar(-fuerza, fuerza) - M.vx * 0.12,
+      vy: azar(-fuerza, fuerza * 0.4),
+      vida: azar(0.3, 0.8), max: 0.8,
+      r: azar(1.6, 4.4), color
+    });
+  }
+}
+
+// ---------- Física ----------
+/**
+ * Cada rueda es un muelle amortiguado contra el terreno. El par que generan
+ * las dos ruedas es lo que endereza la moto, así que se posa sola en las
+ * rampas en vez de pegarse al suelo de golpe.
+ */
+function rueda(indice, signo, dt){
+  const cos = Math.cos(M.ang), sin = Math.sin(M.ang);
+  const rx = M.x + signo * EJE * cos;
+  const ry = M.y + signo * EJE * sin;
+  const suelo = alturaTerreno(rx);
+  const hundido = (ry + RUEDA) - suelo;
+
+  M.contacto[indice] = hundido > 0;
+  if (hundido <= 0){
+    M.susp[indice] = Math.max(0, M.susp[indice] - dt * 90);
+    return 0;
+  }
+  M.susp[indice] = Math.min(RECORRIDO, hundido);
+
+  // Muelle + amortiguador sobre la velocidad vertical DEL PUNTO DE CONTACTO,
+  // que incluye lo que aporta el giro del chasis. El amortiguador solo frena
+  // el hundimiento; nunca tira de la moto hacia el suelo.
+  const vPunto = M.vy + M.vAng * signo * EJE * cos;
+  const fuerza = Math.max(0, M.susp[indice] * MUELLE + Math.max(0, vPunto) * AMORT);
+  M.vy -= fuerza * dt;
+
+  // Tope de la suspensión: la rueda no atraviesa el terreno y ahí se para en
+  // seco. Sin esto la velocidad vertical crecía sin freno y la moto quedaba
+  // pegada al suelo aunque el terreno cayera.
+  if (hundido > RECORRIDO){
+    M.y -= hundido - RECORRIDO;
+    if (M.vy > 0) M.vy = 0;
+  }
+
+  // El par depende de qué rueda empuja: la trasera levanta el morro y al revés
+  return -signo * fuerza * 0.00035;
+}
+
+function actualizar(dt){
+  if (M.estado !== 'corriendo') return;
+  M.tiempo += dt;
+
+  const gas = teclas.gas, freno = teclas.freno;
+  const antesEnSuelo = M.contacto[0] || M.contacto[1];
+
+  M.vy += GRAV * dt;
+
+  let par = 0;
+  par += rueda(0, -1, dt);       // trasera
+  par += rueda(1,  1, dt);       // delantera
+  const enSuelo = M.contacto[0] || M.contacto[1];
+
+  if (enSuelo){
+    const inclinacion = pendiente(M.x);
+    // la moto tiende a alinearse con el terreno, con el par de las ruedas encima
+    M.vAng += (inclinacion - M.ang) * 14 * dt + par;
+    M.vAng *= Math.pow(0.02, dt);
+    if (gas){
+      M.vx += 620 * dt * Math.cos(M.ang);
+      M.vAng -= 1.5 * dt;                     // acelerar levanta el morro
+      if (Math.random() < 0.5) chispa(M.x - EJE * Math.cos(M.ang), M.y - EJE * Math.sin(M.ang) + 10,
+                                      '#5a4632', 1, 60);
+    }
+    if (freno){
+      M.vx -= 520 * dt * (M.vx > 0 ? 1 : 0.35);
+      if (M.vx < -140) M.vx = -140;
+    }
+    if (!gas && !freno) M.vx *= Math.pow(0.55, dt);
+    M.vx *= Math.pow(AGARRE, dt);
+    if (!antesEnSuelo){
+      Sonido.fx('aterrizar');
+      sacudida = Math.min(9, Math.abs(M.vy) * 0.02 + 2);
+      chispa(M.x, M.y + EJE * 0.5, '#8b7355', 8, 110);
+    }
+    M.aire = 0;
+  } else {
+    // en el aire mandan las flechas
+    if (teclas.atras)  M.vAng -= PAR_AIRE * dt;
+    if (teclas.alante) M.vAng += PAR_AIRE * dt;
+    M.vAng = limitar(M.vAng, -GIRO_MAX, GIRO_MAX);
+    if (!teclas.atras && !teclas.alante) M.vAng *= Math.pow(0.72, dt);
+    M.aire += dt;
+    if (M.aire > 0.28 && M.aire - dt <= 0.28) Sonido.fx('salto');
+  }
+
+  // nitro
+  if (teclas.nitro && M.nitro > 0){
+    M.vx += 900 * dt * Math.cos(M.ang);
+    M.vy += 900 * dt * Math.sin(M.ang) * 0.35;
+    M.nitro = Math.max(0, M.nitro - 42 * dt);
+    chispa(M.x - EJE * Math.cos(M.ang), M.y - EJE * Math.sin(M.ang),
+           Math.random() < 0.5 ? '#00f0ff' : '#ffffff', 2, 130);
+    if (Math.random() < 0.25) Sonido.fx('nitro');
+  } else if (M.nitro < 100){
+    M.nitro = Math.min(100, M.nitro + 6 * dt);
+  }
+
+  M.vx = limitar(M.vx, -160, VEL_MAX);
+  M.x += M.vx * dt;
+  M.y += M.vy * dt;
+  M.ang += M.vAng * dt;
+
+  // vueltas completas
+  M.rotacion += M.vAng * dt;
+  if (!enSuelo && Math.abs(M.rotacion) >= Math.PI * 2){
+    M.giros++;
+    M.puntos += 500;
+    M.nitro = Math.min(100, M.nitro + 25);
+    M.rotacion = 0;
+    Arcade.aviso(avisos, '🤸 ¡VUELTA COMPLETA! +500', true, 1200);
+    Sonido.fx('combo');
+  }
+  if (enSuelo) M.rotacion = 0;
+
+  // avance
+  if (M.x > M.mejorX){
+    M.puntos += Math.floor(M.x - M.mejorX);
+    M.mejorX = M.x;
+  }
+
+  // banderas de control
+  while (M.control < CONTROLES.length && M.x >= CONTROLES[M.control]){
+    M.control++;
+    if (M.control < CONTROLES.length){
+      M.puntos += 250;
+      M.nitro = 100;
+      Arcade.aviso(avisos, '🚩 Control ' + M.control + ' superado', true, 1200);
+      Sonido.fx('nivel');
+    }
+  }
+
+  if (M.x >= META){ acabar(true); return; }
+
+  // caer de cabeza: el ángulo normalizado se sale de lo tolerable tocando suelo
+  const normal = Math.atan2(Math.sin(M.ang), Math.cos(M.ang));
+  if (enSuelo && Math.abs(normal) > 1.85){ acabar(false); return; }
+  if (M.y > ALTO + 400){ acabar(false); return; }
+
+  // partículas: bucle hacia atrás para poder borrar sin saltarse ninguna
+  for (let i = particulas.length - 1; i >= 0; i--){
+    const p = particulas[i];
+    p.x += p.vx * dt; p.y += p.vy * dt;
+    p.vy += 320 * dt;
+    p.vida -= dt;
+    if (p.vida <= 0) particulas.splice(i, 1);
+  }
+
+  // cámara con retardo
+  const objX = M.x - 260, objY = M.y - ALTO * 0.55;
+  camaraX += (objX - camaraX) * Math.min(1, 7 * dt);
+  camaraY += (objY - camaraY) * Math.min(1, 4 * dt);
+  sacudida = Math.max(0, sacudida - 24 * dt);
+
+  refrescarHud();
+}
+
+function acabar(llego){
+  if (M.estado !== 'corriendo') return;
+  M.estado = 'fin';
+  const metros = Math.floor(M.mejorX / 10);
+
+  if (!llego){
+    chispa(M.x, M.y, '#ff3d68', 26, 220);
+    M.caidas++;
+    refrescarHud();
+    // mientras queden caídas, se reaparece en la última bandera (o en la salida)
+    if (M.caidas < MAX_CAIDAS){
+      Arcade.aviso(avisos, '💥 Caída ' + M.caidas + '/' + MAX_CAIDAS +
+        (M.control ? ' · vuelves al control ' + M.control : ' · vuelves a la salida'), false, 1900);
+      Sonido.fx('choque');
+      setTimeout(() => { if (M.estado === 'fin') reiniciar(true); }, 900);
+      return;
+    }
+  }
+
+  M.puntos += llego ? 3000 : 0;
+  const premio = Math.floor(M.puntos / 25) + (llego ? 800 : 0);
+  Arcade.guardarRecord('moto', M.puntos);
+  M.record = Arcade.record('moto');
+  Arcade.perfil.partida('moto', { puntos: M.puntos, victoria: llego, premio });
+
+  $('tituloFin').textContent = llego ? '🏁 ¡META!' : 'TE HAS ESTRELLADO';
+  $('tituloFin').className = llego ? 'victoria' : 'derrota';
+  $('subFin').textContent = llego
+    ? 'Pista completada en ' + M.tiempo.toFixed(1) + ' segundos con ' + M.caidas + ' caídas.'
+    : 'Cinco caídas y se acabó. La próxima, endereza antes de tocar suelo.';
+  $('finDistancia').textContent = metros;
+  $('finGiros').textContent = M.giros;
+  $('finTiempo').textContent = M.tiempo.toFixed(1);
+  $('finCaidas').textContent = M.caidas + '/' + MAX_CAIDAS;
+  $('finPuntos').textContent = M.puntos.toLocaleString('es-ES');
+  $('finPremio').textContent = premio ? '💎 +' + premio.toLocaleString('es-ES') + ' NEXO-COINS' : '';
+  $('modalFin').classList.add('visible');
+  Sonido.fx(llego ? 'meta' : 'derrota');
+}
+
+function refrescarHud(){
+  $('distanciaTxt').textContent = Math.floor(M.mejorX / 10);
+  $('giroTxt').textContent = M.giros;
+  $('tiempoTxt').textContent = M.tiempo.toFixed(1);
+  $('caidasTxt').textContent = M.caidas;
+  $('nitroRelleno').style.width = M.nitro + '%';
+}
+
+// ---------- Dibujo ----------
+function dibujar(){
+  const cx = camaraX + (sacudida ? azar(-sacudida, sacudida) : 0);
+  const cy = camaraY + (sacudida ? azar(-sacudida, sacudida) : 0);
+
+  // cielo
+  const cielo = ctx.createLinearGradient(0, 0, 0, ALTO);
+  cielo.addColorStop(0, '#0a1428');
+  cielo.addColorStop(0.55, '#132038');
+  cielo.addColorStop(1, '#1d2a44');
+  ctx.fillStyle = cielo;
+  ctx.fillRect(0, 0, ANCHO, ALTO);
+
+  // montañas de fondo, a media velocidad de la cámara
+  for (let capa = 0; capa < 2; capa++){
+    const par = 0.25 + capa * 0.22;
+    ctx.fillStyle = capa ? 'rgba(30,45,78,.85)' : 'rgba(20,32,58,.9)';
+    ctx.beginPath();
+    ctx.moveTo(0, ALTO);
+    for (let x = 0; x <= ANCHO; x += 16){
+      const m = (x + cx * par) * 0.004;
+      const y = 250 - capa * 40 + Math.sin(m) * 46 + Math.sin(m * 2.7) * 20 - cy * par * 0.3;
+      ctx.lineTo(x, y);
+    }
+    ctx.lineTo(ANCHO, ALTO);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  // terreno
+  ctx.beginPath();
+  ctx.moveTo(0, ALTO);
+  for (let x = 0; x <= ANCHO; x += 5) ctx.lineTo(x, alturaTerreno(x + cx) - cy);
+  ctx.lineTo(ANCHO, ALTO);
+  ctx.closePath();
+  const tierra = ctx.createLinearGradient(0, 200, 0, ALTO);
+  tierra.addColorStop(0, '#3a2a1c');
+  tierra.addColorStop(1, '#170f0a');
+  ctx.fillStyle = tierra;
+  ctx.fill();
+
+  // línea de asfalto
+  ctx.beginPath();
+  for (let x = 0; x <= ANCHO; x += 5){
+    const y = alturaTerreno(x + cx) - cy;
+    x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  }
+  ctx.strokeStyle = '#ff8a3d';
+  ctx.lineWidth = 3;
+  ctx.shadowColor = 'rgba(255,138,61,.7)';
+  ctx.shadowBlur = 12;
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+
+  // banderas de control
+  CONTROLES.forEach((cxx, i) => {
+    const x = cxx - cx;
+    if (x < -40 || x > ANCHO + 40) return;
+    const y = alturaTerreno(cxx) - cy;
+    const pasada = i < M.control;
+    ctx.strokeStyle = pasada ? '#00ff66' : '#f3e600';
+    ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x, y - 52); ctx.stroke();
+    ctx.fillStyle = pasada ? '#00ff66' : '#f3e600';
+    ctx.beginPath();
+    ctx.moveTo(x, y - 52); ctx.lineTo(x + 26, y - 44); ctx.lineTo(x, y - 34);
+    ctx.closePath(); ctx.fill();
+    if (i === CONTROLES.length - 1){
+      ctx.fillStyle = '#f3e600';
+      ctx.font = '700 12px "Courier New", monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText('META', x + 12, y - 60);
+    }
+  });
+
+  // partículas
+  for (const p of particulas){
+    ctx.globalAlpha = Math.max(0, p.vida / p.max);
+    ctx.fillStyle = p.color;
+    ctx.beginPath();
+    ctx.arc(p.x - cx, p.y - cy, p.r, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+
+  // moto
+  ctx.save();
+  ctx.translate(M.x - cx, M.y - cy);
+  ctx.rotate(M.ang);
+
+  const dib = (indice, signo) => {
+    const hy = M.susp[indice];
+    ctx.strokeStyle = '#5c6b85'; ctx.lineWidth = 4;
+    ctx.beginPath(); ctx.moveTo(signo * EJE * 0.62, -4); ctx.lineTo(signo * EJE, RUEDA - hy - 4); ctx.stroke();
+    ctx.fillStyle = '#111820';
+    ctx.beginPath(); ctx.arc(signo * EJE, RUEDA - hy - 4, RUEDA, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#2e3a52'; ctx.lineWidth = 3; ctx.stroke();
+    ctx.strokeStyle = '#7a8aa5'; ctx.lineWidth = 1.4;
+    for (let r = 0; r < 4; r++){
+      const a = M.x * 0.06 + r * Math.PI / 2;
+      ctx.beginPath();
+      ctx.moveTo(signo * EJE, RUEDA - hy - 4);
+      ctx.lineTo(signo * EJE + Math.cos(a) * RUEDA * 0.75, RUEDA - hy - 4 + Math.sin(a) * RUEDA * 0.75);
+      ctx.stroke();
+    }
+  };
+  dib(0, -1); dib(1, 1);
+
+  // chasis
+  ctx.fillStyle = '#ff8a3d';
+  ctx.beginPath();
+  ctx.moveTo(-EJE * 0.8, 2); ctx.lineTo(-8, -12); ctx.lineTo(16, -10);
+  ctx.lineTo(EJE * 0.85, 4); ctx.lineTo(-4, 8);
+  ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#ffb877';
+  ctx.fillRect(-14, -16, 18, 6);
+
+  // piloto
+  ctx.strokeStyle = '#e8eef7'; ctx.lineWidth = 4; ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(-6, -14); ctx.lineTo(-2, -28); ctx.lineTo(14, -18);
+  ctx.stroke();
+  ctx.fillStyle = '#00f0ff';
+  ctx.beginPath(); ctx.arc(-1, -33, 6.5, 0, Math.PI * 2); ctx.fill();
+  ctx.lineCap = 'butt';
+  ctx.restore();
+
+  // barra de progreso de la pista
+  const u = limitar(M.mejorX / META, 0, 1);
+  ctx.fillStyle = 'rgba(0,0,0,.5)';
+  ctx.fillRect(ANCHO / 2 - 130, 16, 260, 8);
+  ctx.fillStyle = '#ff8a3d';
+  ctx.fillRect(ANCHO / 2 - 130, 16, 260 * u, 8);
+  ctx.fillStyle = '#8b9bb4';
+  ctx.font = '700 11px "Courier New", monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText('PISTA  ' + Math.round(u * 100) + '%', ANCHO / 2, 38);
+  if (M.record){
+    ctx.textAlign = 'right';
+    ctx.fillText('RÉCORD ' + M.record.toLocaleString('es-ES'), ANCHO - 16, 26);
+  }
+  ctx.textAlign = 'left';
+}
+
+// ---------- Entrada ----------
+const MAPA = {
+  ArrowUp:'gas', KeyW:'gas',
+  ArrowDown:'freno', KeyS:'freno',
+  ArrowLeft:'atras', KeyA:'atras',
+  ArrowRight:'alante', KeyD:'alante',
+  ShiftLeft:'nitro', ShiftRight:'nitro', Space:'nitro'
+};
+addEventListener('keydown', ev => {
+  const t = MAPA[ev.code];
+  if (!t) return;
+  ev.preventDefault();
+  teclas[t] = true;
+});
+addEventListener('keyup', ev => {
+  const t = MAPA[ev.code];
+  if (t) teclas[t] = false;
+});
+
+// Mandos táctiles: se sueltan también si el dedo sale del botón
+$('mandos').addEventListener('pointerdown', ev => {
+  const b = ev.target.closest('[data-tecla]');
+  if (!b) return;
+  ev.preventDefault();
+  Sonido.activar();
+  teclas[b.dataset.tecla] = true;
+  b.classList.add('pulsado');
+  b.setPointerCapture(ev.pointerId);
+});
+const soltar = ev => {
+  const b = ev.target.closest('[data-tecla]');
+  if (!b) return;
+  teclas[b.dataset.tecla] = false;
+  b.classList.remove('pulsado');
+};
+$('mandos').addEventListener('pointerup', soltar);
+$('mandos').addEventListener('pointercancel', soltar);
+
+$('btnArrancar').onclick = () => {
+  Sonido.activar();
+  $('modalInicio').classList.remove('visible');
+  reiniciar(false);
+};
+$('btnOtra').onclick = () => {
+  $('modalFin').classList.remove('visible');
+  reiniciar(false);
+};
+Arcade.conectarSonido($('btnSonido'));
+
+reiniciar(false);
+M.estado = 'menu';
+refrescarHud();
+
+Arcade.bucle(dt => {
+  // pasos fijos: la suspensión es rígida y con dt grande se dispara
+  let resto = Math.min(dt, 0.05);
+  while (resto > 0){
+    const paso = Math.min(resto, 1 / 240);
+    actualizar(paso);
+    resto -= paso;
+  }
+  dibujar();
+});
+</script>
+</body>
+</html>

@@ -1,6 +1,6 @@
 # 🕹 ARCADE NEXO
 
-Doce juegos hechos a mano en **HTML5 + Canvas + JavaScript puro**. Sin dependencias, sin librerías, sin assets externos y sin conexión a internet: todos los gráficos se dibujan por código y todo el sonido se genera en tiempo real con WebAudio.
+Quince juegos hechos a mano en **HTML5 + Canvas + JavaScript puro**. Sin dependencias, sin librerías, sin assets externos y sin conexión a internet: todos los gráficos se dibujan por código y todo el sonido se genera en tiempo real con WebAudio.
 
 ## ▶ Cómo jugar
 
@@ -10,7 +10,7 @@ Cada juego tiene su botón **🕹 Arcade** arriba a la izquierda para volver a l
 
 ### 📦 Versión de un solo archivo
 
-`arcade.html` es el arcade **entero** (portada y los doce juegos) empaquetado en un único archivo, sin CSS ni JS externos. Sirve para cuando solo puedes usar una página suelta: mandarlo por correo, subirlo a cualquier sitio o abrirlo desde una memoria USB.
+`arcade.html` es el arcade **entero** (portada y los quince juegos) empaquetado en un único archivo, sin CSS ni JS externos. Sirve para cuando solo puedes usar una página suelta: mandarlo por correo, subirlo a cualquier sitio o abrirlo desde una memoria USB.
 
 Se genera a partir de los archivos de `juegos/`, que siguen siendo la fuente de verdad:
 
@@ -36,6 +36,9 @@ Cada juego queda aislado en su propia pantalla: su CSS se prefija con el selecto
 | ⛏ [Mining Tycoon](juegos/mining-tycoon.html) | Tycoon | Monta un imperio minero: plantilla, ascensor, camiones y progreso sin conexión |
 | 📦 [Cofres Minecraft](juegos/cofres-minecraft.html) | Cajas | Abre cofres con ruleta, colecciona objetos y fúndelos para subir de rareza |
 | 🍪 [Galletas](juegos/cookie-clicker.html) | Incremental | Pica la galleta, monta un imperio y caza las galletas doradas |
+| 🏍 [Moto X3M](juegos/moto-x3m.html) | Carreras | Suspensión en las dos ruedas, rampas que lanzan y vueltas en el aire |
+| 📈 [Money Market](juegos/money-market.html) | Simulación | Velas, volumen, SMA y RSI; largos, cortos y apalancamiento con liquidación |
+| 🧠 [Spartahoppers](juegos/spartahoppers.html) | Memoria | Fichas de Esparta con repetición espaciada SM-2 y combos |
 
 ---
 
@@ -202,6 +205,42 @@ Incremental de clics con los diez edificios clásicos y sus precios de siempre, 
 - Cambia **1 millón de galletas por 100 NEXO-COINS**.
 - La galleta está dibujada por código: borde irregular, grumos en la masa, chispas con volumen y migas que saltan en cada clic.
 
+### 🏍 Moto X3M
+
+Carrera de 2.400 m sobre terreno generado, con un motor de física propio de **cuerpo rígido con dos ruedas**.
+
+- Cada rueda es un **muelle amortiguado** contra el terreno, y el par que generan entre las dos es lo que endereza la moto. Por eso se posa sobre las lomas en vez de pegarse al suelo, y las rampas la lanzan de verdad.
+- El terreno es **determinista por semilla**: la misma pista se puede repetir, y al reaparecer en una bandera sigue siendo la de antes. Cada 1.150 px hay una rampa que sube 165 px y **corta en seco** en el borde: ese corte es el que te manda por los aires.
+- **Nitro** con `Shift` o `Espacio`: empuja fuerte, se gasta y se recupera solo. Cada vuelta completa te devuelve un cuarto del depósito.
+- En el aire mandas tú con ← →; la velocidad de giro está topada a 12 rad/s, que es justo lo que cabe en un salto largo. Una **vuelta completa** son 500 puntos.
+- **Siete banderas de control.** Si te estrellas, reapareces en la última. Tienes **cinco caídas**; a la quinta se acaba la carrera.
+- Caer de cabeza (más de 106° de inclinación tocando suelo) es caída.
+- Física a **pasos fijos de 240 Hz** dentro del bucle: con la suspensión así de rígida, un `dt` grande la haría explotar.
+- **Mandos táctiles** en pantallas pequeñas, con captura de puntero para que no se queden pegados si sacas el dedo del botón.
+
+### 📈 Money Market
+
+Terminal de trading simulado, **con dinero de mentira**: no hay dinero real, ni cuentas, ni nada que depositar. Sesión de **120 velas** empezando con 10.000 $.
+
+- **Gráfico de velas** con volumen debajo, medias móviles **SMA 10** y **SMA 30**, y un panel de **RSI 14** calculado como Wilder, con las bandas de 30 y 70 marcadas.
+- **Largo** y **corto**, con apalancamiento de **1x a 20x**. Solo se bloquea el margen; el nominal es margen × apalancamiento.
+- **Liquidación real:** el gráfico te dibuja tu precio de entrada y el precio al que el margen se agota. Si el mercado lo toca, la posición se cierra sola y pierdes ese margen.
+- **Comisión del 0,08 %** al abrir y al cerrar.
+- El precio es un paseo aleatorio con volatilidad variable y **rachas de sesgo**, que salen anunciadas como titulares: terremoto en Laconia, revuelta de ilotas, nueva ruta comercial…
+- Al cerrar la sesión, **lo que hayas ganado por encima de los 10.000 $ se cambia a NEXO-COINS**, a 1 ficha por cada 5 $.
+
+### 🧠 Spartahoppers
+
+Fichas de historia de Esparta con **repetición espaciada de verdad**: 24 cartas en cuatro bloques (gobierno, sociedad, guerra y cultura).
+
+- Miras la pregunta, giras la carta y dices qué tal: **Difícil**, **Bien** o **Fácil**. Cada botón te enseña **cuándo volverás a verla** antes de pulsarlo.
+- El planificador es **SM-2**: mantiene por carta un factor de facilidad (mínimo 1,3), el número de repeticiones seguidas y la fecha de vencimiento. Con «bien» el intervalo va 1 → 6 → intervalo × facilidad; con «fácil» arranca en 3 días y crece un 30 % más rápido.
+- Lo que fallas **reinicia su contador y vuelve dentro de la misma sesión**, tres cartas más adelante, no al final del todo.
+- Doce cartas por sesión, escogiendo primero las que llevan más tiempo vencidas.
+- El **combo** sube cada tres aciertos seguidos y multiplica lo que ganas; el fallo lo reinicia.
+- **Se guarda la programación entera**, así que la próxima vez el mazo te pregunta lo que te toca. Rehidrata por id: si el mazo cambia, lo que ya no existe se descarta sin romper nada.
+- **Atajos:** espacio para girar, `1` `2` `3` para evaluar.
+
 ## 💾 Récords
 
 Cada juego guarda su récord en el `localStorage` de tu navegador, así que son tuyos y no salen de tu equipo. Desde la portada puedes borrarlos todos con **🗑 Borrar todos mis récords**.
@@ -227,11 +266,14 @@ juegos/
   mining-tycoon.html
   cofres-minecraft.html
   cookie-clicker.html
+  moto-x3m.html
+  money-market.html
+  spartahoppers.html
 ```
 
 ## 🎨 Estética
 
-Toda la interfaz comparte una identidad **neón cyberpunk**: fondos muy profundos con dos halos de color, acentos en cian, rosa, verde y amarillo, y brillos en los bordes al pasar por encima. Los tokens de color viven en `juegos/arcade.css`, así que cambiar la paleta ahí retoca los nueve juegos de golpe. La portada lleva cabecera fija con la cartera de **NEXO-COINS** (las fichas ficticias que comparten Minas y Aviator), que se actualiza al volver de cualquier partida.
+Toda la interfaz comparte una identidad **neón cyberpunk**: fondos muy profundos con dos halos de color, acentos en cian, rosa, verde y amarillo, y brillos en los bordes al pasar por encima. Los tokens de color viven en `juegos/arcade.css`, así que cambiar la paleta ahí retoca los quince juegos de golpe. La portada lleva cabecera fija con la cartera de **NEXO-COINS** (las fichas ficticias que comparten Minas y Aviator), que se actualiza al volver de cualquier partida.
 
 Una partida nueva arranca con **5.000 NEXO-COINS**. El saldo inicial es la constante `Arcade.fichas.INICIAL` en `juegos/arcade.js`; con un **doble clic en la cartera** de la portada vuelve a ese valor.
 
@@ -265,6 +307,9 @@ Todo se guarda solo en el navegador, sin cuentas ni servidor. La portada tiene u
 | 👻 Comecocos | 1 por cada 100 puntos |
 | 🐍 Serpiente | 1 por cada 50 puntos |
 | 🧩 Block Blast | 1 por cada 200 puntos |
+| 🏍 Moto X3M | 1 por cada 25 puntos + 800 al llegar a meta |
+| 🧠 Spartahoppers | 12 por acierto, escalado por la retención de la sesión |
+| 📈 Money Market | 1 por cada 5 $ ganados por encima del capital inicial |
 | 💣 Minas · ✈ Aviator | ninguno: ya mueven fichas con las apuestas |
 
 **Si el navegador no deja guardar** (modo privado, ventana restringida), `Almacen` cae a una copia en memoria para que la sesión funcione igual, y la portada avisa de que el progreso se perderá al recargar.

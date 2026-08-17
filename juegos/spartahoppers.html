@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spartahoppers — Arcade NEXO</title>
+<link rel="stylesheet" href="arcade.css">
+<style>
+  #juego{width:min(760px,100vw);}
+  .barra .titulo{color:var(--azul);}
+
+  /* ---------- Barra de sesión ---------- */
+  #progreso{
+    width:100%; height:8px; border-radius:999px; overflow:hidden;
+    background:rgba(0,0,0,.5); border:1px solid rgba(0,240,255,.18);
+  }
+  #progresoRelleno{
+    height:100%; width:0;
+    background:linear-gradient(90deg, var(--azul), var(--morado));
+    transition:width .3s ease;
+  }
+
+  /* ---------- Carta 3D ---------- */
+  #tapete{perspective:1400px; padding:6px 0; position:relative; z-index:1;}
+  #carta{
+    position:relative; width:100%; height:270px; cursor:pointer;
+    transform-style:preserve-3d;
+    transition:transform .55s cubic-bezier(.34,1.4,.5,1);
+  }
+  #carta.girada{transform:rotateY(180deg);}
+  #carta > div{
+    position:absolute; inset:0; backface-visibility:hidden;
+    border-radius:16px; padding:24px;
+    display:flex; flex-direction:column; align-items:center; justify-content:space-between;
+    text-align:center;
+  }
+  .cara{
+    background:linear-gradient(150deg, var(--panel2), var(--panel));
+    border:1px solid rgba(0,240,255,.3);
+    box-shadow:inset 0 0 40px rgba(0,240,255,.05), 0 12px 30px rgba(0,0,0,.5);
+  }
+  .dorso{
+    transform:rotateY(180deg);
+    background:linear-gradient(150deg, #1a1030, var(--panel));
+    border:1px solid rgba(168,85,247,.45);
+    box-shadow:inset 0 0 40px rgba(168,85,247,.08), 0 12px 30px rgba(0,0,0,.5);
+  }
+  .etiqueta{
+    font-family:var(--fuente-arcade); font-size:11px; font-weight:700;
+    letter-spacing:2.5px; text-transform:uppercase;
+  }
+  .cara .etiqueta{color:var(--azul);}
+  .dorso .etiqueta{color:var(--verde);}
+  #textoPregunta, #textoRespuesta{
+    font-size:clamp(1rem,2.6vw,1.28rem); line-height:1.5; font-weight:600;
+    display:flex; align-items:center; flex:1; padding:14px 0;
+  }
+  #textoRespuesta{color:#bdf5d3; font-weight:500;}
+  .pista{font-size:11px; color:var(--tenue); font-family:var(--fuente-arcade);}
+  #tema{
+    font-size:10px; font-family:var(--fuente-arcade); letter-spacing:1.5px;
+    color:var(--morado); text-transform:uppercase;
+  }
+
+  /* ---------- Botonera de evaluación ---------- */
+  #evaluar{display:grid; grid-template-columns:repeat(3,1fr); gap:10px; position:relative; z-index:3;}
+  #evaluar button{
+    padding:13px 8px; border-radius:12px; cursor:pointer;
+    font-weight:800; font-size:12px; letter-spacing:1px; text-transform:uppercase;
+    background:rgba(0,0,0,.35); transition:filter .15s, transform .1s;
+    display:flex; flex-direction:column; gap:4px; align-items:center;
+  }
+  #evaluar button:hover{filter:brightness(1.35);}
+  #evaluar button:active{transform:translateY(1px);}
+  #evaluar button small{font-size:10px; opacity:.75; font-weight:600; letter-spacing:.5px;}
+  #btnDificil{color:var(--rojo);  border:1px solid rgba(255,61,104,.45);}
+  #btnBien{   color:var(--oro);   border:1px solid rgba(243,230,0,.45);}
+  #btnFacil{  color:var(--verde); border:1px solid rgba(0,255,102,.45);}
+  #evaluar.bloqueado{opacity:.35; pointer-events:none;}
+
+  #combo{
+    position:relative; z-index:3; text-align:center; font-family:var(--fuente-arcade); font-weight:800;
+    letter-spacing:2px; min-height:1.4em; font-size:14px; color:var(--oro);
+    text-shadow:0 0 14px rgba(243,230,0,.5);
+  }
+
+  /* ---------- Resumen ---------- */
+  .rejillaResumen{
+    display:grid; grid-template-columns:repeat(auto-fit,minmax(110px,1fr)); gap:10px;
+    margin:14px 0 18px;
+  }
+  .rejillaResumen div{background:rgba(0,0,0,.35); border-radius:10px; padding:11px;}
+  .rejillaResumen .n{font-size:24px; font-weight:800; color:var(--oro);}
+  .rejillaResumen .e{font-size:11px; color:var(--tenue);}
+</style>
+</head>
+<body>
+
+<div id="juego">
+  <div class="barra">
+    <a class="boton" href="../index.html">🕹 Arcade</a>
+    <div class="titulo">🧠 SPARTAHOPPERS</div>
+    <div class="sep"></div>
+    <div class="stat">🔥 <span id="rachaTxt" class="oro">0</span></div>
+    <div class="stat">🎯 <span id="retencionTxt" class="verde">100%</span></div>
+    <div class="stat">📚 <span id="pendientesTxt">0</span></div>
+    <button id="btnSonido" title="Sonido">🔊</button>
+  </div>
+
+  <div id="progreso"><div id="progresoRelleno"></div></div>
+
+  <div class="escena" style="background:none; border:none; box-shadow:none; padding:0;">
+    <div id="tapete">
+      <div id="carta">
+        <div class="cara">
+          <span class="etiqueta">Pregunta</span>
+          <p id="textoPregunta">Cargando…</p>
+          <span class="pista">Pulsa la carta o la barra espaciadora para ver la respuesta</span>
+        </div>
+        <div class="dorso">
+          <span class="etiqueta">Respuesta</span>
+          <p id="textoRespuesta">Cargando…</p>
+          <span id="tema">—</span>
+        </div>
+      </div>
+    </div>
+
+    <div id="combo"></div>
+
+    <div id="evaluar" class="bloqueado">
+      <button id="btnDificil" data-nota="1">Difícil<small id="plazoDificil">otra vez</small></button>
+      <button id="btnBien"    data-nota="2">Bien<small id="plazoBien">—</small></button>
+      <button id="btnFacil"   data-nota="3">Fácil<small id="plazoFacil">—</small></button>
+    </div>
+
+    <div class="avisos" id="avisos"></div>
+
+    <div class="modal visible" id="modalInicio">
+      <div class="tarjetaModal">
+        <h1>🧠 SPARTAHOPPERS</h1>
+        <div class="sub">Memoriza Esparta con repetición espaciada.</div>
+        <div class="instrucciones">
+          Mira la pregunta, intenta responder de memoria y <b>gira la carta</b> para comprobarlo.<br>
+          Después dices qué tal te ha ido: <b>Difícil</b>, <b>Bien</b> o <b>Fácil</b>.<br>
+          El algoritmo <b>SM-2</b> decide cuándo te vuelve a preguntar cada carta: lo que fallas
+          vuelve enseguida y lo que dominas se va espaciando en días.<br>
+          Acertar seguido sube el <b>combo</b>, que multiplica los puntos y las fichas.<br>
+          <b>Atajos:</b> <b>espacio</b> gira la carta, <b>1 · 2 · 3</b> evalúan.
+        </div>
+        <div class="filaBotones">
+          <button class="primario" id="btnEmpezar">▶ Empezar sesión</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal" id="modalFin">
+      <div class="tarjetaModal">
+        <h1 id="tituloFin" class="victoria">SESIÓN COMPLETA</h1>
+        <div class="sub" id="subFin"></div>
+        <div class="rejillaResumen">
+          <div><div class="n" id="finRepasos">0</div><div class="e">repasos</div></div>
+          <div><div class="n" id="finAciertos">0</div><div class="e">retención</div></div>
+          <div><div class="n" id="finRacha">0</div><div class="e">mejor racha</div></div>
+          <div><div class="n" id="finDominadas">0</div><div class="e">dominadas</div></div>
+        </div>
+        <div class="premio" id="finPremio"></div>
+        <div class="filaBotones">
+          <button class="primario" id="btnOtra">↻ Otra sesión</button>
+          <a class="boton" href="../index.html">🕹 Arcade</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="arcade.js"></script>
+<script>
+// ============================================================
+//  SPARTAHOPPERS — repaso con repetición espaciada (SM-2)
+// ============================================================
+const $ = id => document.getElementById(id);
+const avisos = $('avisos');
+
+const DIA = 24 * 3600 * 1000;
+const POR_SESION = 12;          // cartas que entran en una sesión
+
+// ---------- Mazo ----------
+const MAZO = [
+  ['Gobierno', '¿Cómo era la diarquía espartana?',
+   'Dos reyes a la vez, de las dos casas dinásticas: los Agíadas y los Euripóntidas.'],
+  ['Gobierno', '¿Qué era la Gerusía?',
+   'El consejo de ancianos: 28 gerontes mayores de 60 años más los dos reyes. Preparaba las leyes y juzgaba los delitos graves.'],
+  ['Gobierno', '¿Qué poder tenían los éforos?',
+   'Cinco magistrados elegidos cada año que vigilaban a los reyes, podían procesarlos y dirigían la política del día a día.'],
+  ['Gobierno', '¿Qué era la Apella?',
+   'La asamblea de todos los espartiatas mayores de 30 años. Votaba a gritos, aceptando o rechazando lo que le proponían.'],
+  ['Gobierno', '¿A quién se atribuye la constitución espartana?',
+   'A Licurgo, legislador probablemente legendario. Su conjunto de normas se llamaba la Gran Retra.'],
+
+  ['Sociedad', '¿Quiénes eran los ilotas?',
+   'La población sometida, sobre todo mesenia, atada a la tierra. Trabajaban los lotes de los espartiatas y eran mucho más numerosos que ellos.'],
+  ['Sociedad', '¿Qué era la Krypteia?',
+   'Un rito de paso: jóvenes espartanos salían de noche, en secreto, a vigilar y matar ilotas que destacaran, para mantener el miedo.'],
+  ['Sociedad', '¿Quiénes eran los periecos?',
+   'Hombres libres de las aldeas de alrededor: no eran ciudadanos, pero comerciaban, fabricaban y luchaban en el ejército.'],
+  ['Sociedad', '¿Qué eran los sisitios?',
+   'Las comidas comunes obligatorias. Cada espartiata aportaba su parte; quedarse sin poder pagarla costaba la ciudadanía.'],
+  ['Sociedad', '¿Qué derechos tenían las mujeres espartanas?',
+   'Podían heredar y poseer tierras, hacían ejercicio en público y llevaban las propiedades mientras los hombres estaban en campaña.'],
+  ['Sociedad', '¿Qué era la agogé?',
+   'La educación estatal desde los siete años: disciplina, hambre, pelea y coro, para convertir a los niños en soldados.'],
+
+  ['Guerra', '¿Qué era la falange hoplítica?',
+   'Formación cerrada donde cada escudo (aspis) protegía también al de la izquierda. Valía tanto la cohesión como la fuerza.'],
+  ['Guerra', '¿Qué armas llevaba un hoplita espartano?',
+   'Lanza (dory) de unos 2,5 m, espada corta (xiphos) o la curva kopis, casco, coraza, grebas y el escudo con la lambda.'],
+  ['Guerra', '¿Por qué la lambda en los escudos?',
+   'Es la Λ de Lakedaimon, el nombre del estado espartano. La ciudad era Esparta; la región, Laconia.'],
+  ['Guerra', '¿Qué pasó en las Termópilas (480 a.C.)?',
+   'Leónidas y unos 300 espartanos con aliados taponaron el paso ante Jerjes durante tres días, hasta que un sendero los dejó rodeados.'],
+  ['Guerra', '¿Qué decidió la batalla de Platea (479 a.C.)?',
+   'La victoria griega, con Pausanias al mando, expulsó definitivamente al ejército persa de Grecia.'],
+  ['Guerra', '¿Qué fue la Guerra del Peloponeso?',
+   'El enfrentamiento entre Esparta y Atenas de 431 a 404 a.C. Ganó Esparta tras derrotar a la flota ateniense en Egospótamos.'],
+  ['Guerra', '¿Qué ocurrió en Leuctra (371 a.C.)?',
+   'Epaminondas de Tebas rompió la falange espartana con su ala izquierda reforzada. Fue el final de la hegemonía de Esparta.'],
+  ['Guerra', '¿Qué era el Batallón Sagrado de Tebas?',
+   'Un cuerpo de élite de 150 parejas de guerreros que fue clave en Leuctra contra los espartanos.'],
+
+  ['Cultura', '¿Qué significa hablar de forma "lacónica"?',
+   'Decir mucho con muy pocas palabras, como se atribuía a los laconios. De ahí viene el adjetivo.'],
+  ['Cultura', '¿Qué respondió Esparta al "Si entro en Laconia…" de Filipo II?',
+   'Una sola palabra: "Si". Filipo no invadió.'],
+  ['Cultura', '¿Qué era el ostracismo… y por qué NO era espartano?',
+   'Era ateniense: destierro por votación con trozos de cerámica. Esparta no lo usaba; expulsaba por otras vías.'],
+  ['Cultura', '¿Qué decían las madres espartanas al despedir a un hijo?',
+   '"Vuelve con el escudo o sobre él": vencer o morir, pero nunca tirar el escudo para huir.'],
+  ['Cultura', '¿Qué eran las Carneas?',
+   'La fiesta en honor a Apolo Carneo. Su celebración retrasó la salida del ejército espartano hacia Maratón.']
+];
+
+// ---------- Estado ----------
+const S = {
+  cartas: [],        // { id, tema, p, r, ef, intervalo, repeticion, vence }
+  cola: [],          // ids pendientes en esta sesión
+  actual: null,
+  girada: false,
+  racha: 0, mejorRacha: 0,
+  repasos: 0, aciertos: 0,
+  sesion: 0, totalSesion: 0,
+  jugando: false
+};
+
+function nuevasCartas(){
+  return MAZO.map((m, i) => ({
+    id: i, tema: m[0], p: m[1], r: m[2],
+    ef: 2.5, intervalo: 0, repeticion: 0, vence: 0
+  }));
+}
+
+// ---------- Guardado ----------
+function guardarPartida(){
+  Arcade.escribir('sparta', JSON.stringify({
+    cartas: S.cartas.map(c => ({ id:c.id, ef:c.ef, intervalo:c.intervalo,
+                                 repeticion:c.repeticion, vence:c.vence })),
+    mejorRacha: S.mejorRacha
+  }));
+}
+function cargarPartida(){
+  S.cartas = nuevasCartas();
+  const crudo = Arcade.leerTexto('sparta', null);
+  if (!crudo) return;
+  try {
+    const g = JSON.parse(crudo);
+    S.mejorRacha = g.mejorRacha || 0;
+    // se rehidrata por id: si el mazo cambia, lo que ya no existe se descarta
+    for (const guardada of (g.cartas || [])){
+      const c = S.cartas.find(x => x.id === guardada.id);
+      if (!c) continue;
+      c.ef = guardada.ef || 2.5;
+      c.intervalo = guardada.intervalo || 0;
+      c.repeticion = guardada.repeticion || 0;
+      c.vence = guardada.vence || 0;
+    }
+  } catch(e){}
+}
+Guardado.registrar(guardarPartida);
+
+// ---------- Algoritmo SM-2 ----------
+/**
+ * Nota 1 = difícil (fallo), 2 = bien, 3 = fácil.
+ * SM-2 original puntúa de 0 a 5; aquí se reescala con q = nota + 2, así que
+ * 1 -> 3 (repaso costoso pero recordado), 2 -> 4 y 3 -> 5.
+ * Con nota 1 el contador de repeticiones se reinicia y la carta vuelve a
+ * salir en la misma sesión; con 2 y 3 el intervalo crece en días.
+ */
+function programar(carta, nota){
+  const q = nota + 2;
+  if (nota === 1){
+    carta.repeticion = 0;
+    carta.intervalo = 0;                       // vuelve dentro de esta sesión
+  } else {
+    if (carta.repeticion === 0) carta.intervalo = nota === 3 ? 3 : 1;
+    else if (carta.repeticion === 1) carta.intervalo = nota === 3 ? 10 : 6;
+    else carta.intervalo = Math.round(carta.intervalo * carta.ef * (nota === 3 ? 1.3 : 1));
+    carta.repeticion++;
+  }
+  carta.ef = Math.max(1.3, carta.ef + (0.1 - (5 - q) * (0.08 + (5 - q) * 0.02)));
+  carta.vence = Date.now() + carta.intervalo * DIA;
+  return carta.intervalo;
+}
+// Texto del plazo que promete cada botón, calculado sobre la carta en pantalla
+function plazoDe(carta, nota){
+  if (nota === 1) return 'otra vez';
+  const copia = { ...carta };
+  const dias = programar(copia, nota);
+  return dias === 1 ? 'mañana' : dias < 30 ? dias + ' días'
+       : dias < 365 ? Math.round(dias / 30) + ' meses' : Math.round(dias / 365) + ' años';
+}
+
+// ---------- Sesión ----------
+function pendientes(){
+  const ahora = Date.now();
+  return S.cartas.filter(c => c.vence <= ahora);
+}
+
+function empezarSesion(){
+  const listas = pendientes();
+  // primero lo que lleva más tiempo vencido; si no hay nada, se repasa igualmente
+  const fuente = listas.length ? listas : S.cartas.slice();
+  fuente.sort((a, b) => a.vence - b.vence);
+  S.cola = mezclar(fuente.slice(0, POR_SESION)).map(c => c.id);
+  S.totalSesion = S.cola.length;
+  S.sesion = 0;
+  S.racha = 0; S.repasos = 0; S.aciertos = 0;
+  S.jugando = true;
+  siguiente();
+}
+
+function siguiente(){
+  if (!S.cola.length){ terminarSesion(); return; }
+  S.actual = S.cartas.find(c => c.id === S.cola[0]);
+  S.girada = false;
+  $('carta').classList.remove('girada');
+  $('evaluar').classList.add('bloqueado');
+  pintarCarta();
+}
+
+function pintarCarta(){
+  const c = S.actual;
+  if (!c) return;
+  $('textoPregunta').textContent = c.p;
+  $('textoRespuesta').textContent = c.r;
+  $('tema').textContent = c.tema;
+  $('plazoBien').textContent = plazoDe(c, 2);
+  $('plazoFacil').textContent = plazoDe(c, 3);
+  refrescarHud();
+}
+
+function refrescarHud(){
+  $('rachaTxt').textContent = S.racha;
+  $('pendientesTxt').textContent = S.cola.length;
+  const ret = S.repasos ? Math.round(S.aciertos / S.repasos * 100) : 100;
+  $('retencionTxt').textContent = ret + '%';
+  const hechas = S.totalSesion ? (S.totalSesion - S.cola.length) : 0;
+  $('progresoRelleno').style.width =
+    (S.totalSesion ? hechas / S.totalSesion * 100 : 0) + '%';
+}
+
+function girar(){
+  if (!S.jugando || !S.actual) return;
+  S.girada = !S.girada;
+  $('carta').classList.toggle('girada', S.girada);
+  $('evaluar').classList.toggle('bloqueado', !S.girada);
+  Sonido.fx(S.girada ? 'giro' : 'clic');
+}
+
+// El combo multiplica: 1x hasta 2 aciertos, y a partir de ahí sube de medio en medio
+function multiplicador(){ return 1 + Math.max(0, Math.floor((S.racha - 1) / 3)) * 0.5; }
+
+function evaluar(nota){
+  if (!S.jugando || !S.girada || !S.actual) return;
+  const c = S.actual;
+  const acierto = nota >= 2;
+
+  S.repasos++;
+  if (acierto){
+    S.aciertos++;
+    S.racha++;
+    if (S.racha > S.mejorRacha) S.mejorRacha = S.racha;
+    const mult = multiplicador();
+    Sonido.fx('acierto');
+    if (S.racha >= 3){
+      $('combo').textContent = '🔥 COMBO x' + mult.toFixed(1) + ' · ' + S.racha + ' seguidas';
+      Sonido.melodia([520 + S.racha * 30, 700 + S.racha * 30], 0.06, 'triangle', 0.05);
+    } else {
+      $('combo').textContent = '';
+    }
+  } else {
+    S.racha = 0;
+    $('combo').textContent = '';
+    Sonido.fx('error');
+    Arcade.aviso(avisos, '📌 Vuelve a salir antes de acabar la sesión', false, 1600);
+  }
+
+  programar(c, nota);
+  S.cola.shift();
+  // lo fallado se reengancha unas cartas más adelante, no al final del todo
+  if (!acierto) S.cola.splice(Math.min(3, S.cola.length), 0, c.id);
+
+  guardarPartida();
+  setTimeout(siguiente, 220);
+}
+
+function terminarSesion(){
+  S.jugando = false;
+  const retencion = S.repasos ? Math.round(S.aciertos / S.repasos * 100) : 100;
+  const dominadas = S.cartas.filter(c => c.repeticion >= 3).length;
+
+  // 12 fichas por acierto, escaladas por la retención de la sesión
+  const premio = Math.round(S.aciertos * 12 * (0.5 + retencion / 200));
+  Arcade.guardarRecord('sparta', S.mejorRacha);
+  Arcade.perfil.partida('sparta',
+    { puntos: S.mejorRacha, victoria: retencion >= 80, premio });
+  guardarPartida();
+
+  $('tituloFin').textContent = retencion >= 80 ? '¡SESIÓN SUPERADA!' : 'SESIÓN COMPLETA';
+  $('tituloFin').className = retencion >= 80 ? 'victoria' : '';
+  $('subFin').textContent = retencion >= 80
+    ? 'Buena memoria. Las cartas que dominas tardarán más en volver.'
+    : 'Lo que has fallado vuelve pronto: es justo así como se fija.';
+  $('finRepasos').textContent = S.repasos;
+  $('finAciertos').textContent = retencion + '%';
+  $('finRacha').textContent = S.mejorRacha;
+  $('finDominadas').textContent = dominadas + '/' + S.cartas.length;
+  $('finPremio').textContent = premio ? '💎 +' + premio.toLocaleString('es-ES') + ' NEXO-COINS' : '';
+  $('modalFin').classList.add('visible');
+  Sonido.fx(retencion >= 80 ? 'victoria' : 'derrota');
+  refrescarHud();
+}
+
+// ---------- Entrada ----------
+$('carta').addEventListener('click', girar);
+$('evaluar').addEventListener('click', ev => {
+  const b = ev.target.closest('[data-nota]');
+  if (b) evaluar(parseInt(b.dataset.nota, 10));
+});
+addEventListener('keydown', ev => {
+  if (!S.jugando) return;
+  if (ev.code === 'Space'){ ev.preventDefault(); girar(); }
+  else if (ev.key === '1') evaluar(1);
+  else if (ev.key === '2') evaluar(2);
+  else if (ev.key === '3') evaluar(3);
+});
+
+$('btnEmpezar').onclick = () => {
+  Sonido.activar();
+  $('modalInicio').classList.remove('visible');
+  empezarSesion();
+};
+$('btnOtra').onclick = () => {
+  $('modalFin').classList.remove('visible');
+  empezarSesion();
+};
+Arcade.conectarSonido($('btnSonido'));
+
+cargarPartida();
+refrescarHud();
+$('pendientesTxt').textContent = pendientes().length || S.cartas.length;
+</script>
+</body>
+</html>

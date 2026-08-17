@@ -218,7 +218,7 @@
 <div id="contenido">
   <div id="titulo">
     <h2>SELECCIONA TU JUEGO SUPREMO</h2>
-    <p>Doce motores hechos a mano en HTML5 + Canvas, con renderizado HiDPI y físicas propias.
+    <p>Quince motores hechos a mano en HTML5 + Canvas, con renderizado HiDPI y físicas propias.
        Sin instalar nada, sin anuncios y sin conexión.</p>
   </div>
 
@@ -392,6 +392,30 @@ const JUEGOS = [
       } catch(err){ return 'Sin jugar todavía'; }
     },
     portada: portadaGalletas
+  },
+  {
+    id:'moto', archivo:'juegos/moto-x3m.html', nuevo:true,
+    nombre:'🏍 Moto X3M', genero:'Carreras',
+    desc:'Suspensión en las dos ruedas, rampas que te lanzan de verdad y vueltas en el aire.',
+    record(){ const r = Arcade.record('moto'); return r ? 'Récord: ' + r.toLocaleString('es-ES') + ' pts' : 'Sin jugar todavía'; },
+    portada: portadaMoto
+  },
+  {
+    id:'mercado', archivo:'juegos/money-market.html', nuevo:true,
+    nombre:'📈 Money Market', genero:'Simulación',
+    desc:'Velas, volumen, SMA y RSI. Largos, cortos y apalancamiento hasta 20x… con liquidación.',
+    record(){
+      const r = Arcade.record('mercado');
+      return r ? 'Mejor cierre: $' + r.toLocaleString('es-ES') : 'Sin jugar todavía';
+    },
+    portada: portadaMercado
+  },
+  {
+    id:'sparta', archivo:'juegos/spartahoppers.html', nuevo:true,
+    nombre:'🧠 Spartahoppers', genero:'Memoria',
+    desc:'Fichas de Esparta con repetición espaciada SM-2, combos y seguimiento de retención.',
+    record(){ const r = Arcade.record('sparta'); return r ? 'Mejor racha: ' + r : 'Sin jugar todavía'; },
+    portada: portadaSparta
   },
   {
     id:'serpiente', archivo:'juegos/serpiente.html', nuevo:true,
@@ -944,6 +968,170 @@ function portadaGalletas(c){
   ['👵','🌾','⛏️','🏭'].forEach((e, i) => c.fillText(e, 188 + i * 34, 138));
 }
 
+function portadaSparta(c){
+  const g = c.createLinearGradient(0, 0, A, AL);
+  g.addColorStop(0, '#0a1226'); g.addColorStop(1, '#050810');
+  c.fillStyle = g; c.fillRect(0, 0, A, AL);
+
+  // carta de atrás, girándose
+  c.save();
+  c.translate(112, 88); c.rotate(-0.16);
+  c.fillStyle = 'rgba(0,0,0,.45)';
+  c.beginPath(); c.roundRect(-63, -55, 126, 110, 12); c.fill();
+  c.restore();
+
+  // carta principal
+  c.save();
+  c.translate(104, 82);
+  const cg = c.createLinearGradient(-60, -52, 60, 52);
+  cg.addColorStop(0, '#1c2440'); cg.addColorStop(1, '#0e1424');
+  c.fillStyle = cg;
+  c.beginPath(); c.roundRect(-62, -54, 124, 108, 12); c.fill();
+  c.strokeStyle = 'rgba(0,240,255,.55)'; c.lineWidth = 2; c.stroke();
+  c.fillStyle = '#00f0ff'; c.font = '700 9px "Courier New", monospace';
+  c.fillText('PREGUNTA', -46, -34);
+  c.fillStyle = 'rgba(255,255,255,.55)';
+  [[-46, -14, 92], [-46, -2, 82], [-46, 10, 66]].forEach(([x, y, w]) => c.fillRect(x, y, w, 4));
+  c.fillStyle = 'rgba(0,240,255,.35)'; c.fillRect(-46, 30, 40, 4);
+  c.restore();
+
+  // escudo espartano con lambda
+  c.save();
+  c.translate(248, 76);
+  c.fillStyle = 'rgba(0,0,0,.5)';
+  c.beginPath(); c.arc(3, 4, 44, 0, 6.283); c.fill();
+  const bg = c.createRadialGradient(-14, -16, 4, 0, 0, 46);
+  bg.addColorStop(0, '#b8471f'); bg.addColorStop(1, '#6b2410');
+  c.fillStyle = bg;
+  c.beginPath(); c.arc(0, 0, 42, 0, 6.283); c.fill();
+  c.strokeStyle = '#e8a05a'; c.lineWidth = 3;
+  c.beginPath(); c.arc(0, 0, 42, 0, 6.283); c.stroke();
+  c.strokeStyle = '#f2d9b8'; c.lineWidth = 8; c.lineCap = 'round';
+  c.beginPath(); c.moveTo(-16, 20); c.lineTo(0, -20); c.lineTo(16, 20); c.stroke();
+  c.lineCap = 'butt';
+  c.restore();
+
+  // racha
+  c.fillStyle = '#f3e600'; c.font = '700 12px "Courier New", monospace';
+  c.fillText('🔥 SRS · COMBO', 194, 146);
+}
+
+function portadaMercado(c){
+  const g = c.createLinearGradient(0, 0, 0, AL);
+  g.addColorStop(0, '#03140c'); g.addColorStop(1, '#020806');
+  c.fillStyle = g; c.fillRect(0, 0, A, AL);
+
+  c.strokeStyle = 'rgba(0,255,102,.08)'; c.lineWidth = 1;
+  for (let y = 20; y < AL; y += 26){
+    c.beginPath(); c.moveTo(0, y); c.lineTo(A, y); c.stroke();
+  }
+
+  // velas japonesas
+  let precio = 96;
+  const velas = [];
+  for (let i = 0; i < 26; i++){
+    const a = precio;
+    precio += Math.sin(i * 0.9) * 5 + (i > 14 ? 3.4 : -0.8) + Math.cos(i * 2.3) * 2.6;
+    velas.push({ a, c: precio, max: Math.max(a, precio) + 3, min: Math.min(a, precio) - 3 });
+  }
+  const todos = velas.flatMap(v => [v.max, v.min]);
+  const min = Math.min(...todos) - 3, max = Math.max(...todos) + 3;
+  const aY = p => 128 - (p - min) / (max - min) * 96;
+
+  velas.forEach((v, i) => {
+    const x = 16 + i * 11.6;
+    const sube = v.c >= v.a;
+    c.strokeStyle = sube ? '#00ff66' : '#ff3d68';
+    c.fillStyle = sube ? 'rgba(0,255,102,.6)' : 'rgba(255,61,104,.6)';
+    c.lineWidth = 1;
+    c.beginPath(); c.moveTo(x, aY(v.max)); c.lineTo(x, aY(v.min)); c.stroke();
+    const y1 = aY(Math.max(v.a, v.c)), y2 = aY(Math.min(v.a, v.c));
+    c.fillRect(x - 3.4, y1, 6.8, Math.max(1.5, y2 - y1));
+    c.strokeRect(x - 3.4, y1, 6.8, Math.max(1.5, y2 - y1));
+  });
+
+  // volumen
+  velas.forEach((v, i) => {
+    const x = 16 + i * 11.6;
+    const h = 6 + Math.abs(v.c - v.a) * 1.7;
+    c.fillStyle = v.c >= v.a ? 'rgba(0,255,102,.3)' : 'rgba(255,61,104,.3)';
+    c.fillRect(x - 3.4, 152 - h, 6.8, h);
+  });
+
+  // media móvil
+  c.beginPath();
+  velas.forEach((v, i) => {
+    const n = Math.max(0, i - 3);
+    let s = 0, k = 0;
+    for (let j = n; j <= i; j++){ s += velas[j].c; k++; }
+    const x = 16 + i * 11.6, y = aY(s / k);
+    i ? c.lineTo(x, y) : c.moveTo(x, y);
+  });
+  c.strokeStyle = 'rgba(0,240,255,.8)'; c.lineWidth = 2; c.stroke();
+
+  c.fillStyle = '#00ff66'; c.font = '700 13px "Courier New", monospace';
+  c.fillText('$SPARTA  ▲ +18,4%', 14, 22);
+  c.fillStyle = '#8b9bb4'; c.font = '700 10px "Courier New", monospace';
+  c.fillText('RSI · SMA · 20x', 14, 166);
+}
+
+function portadaMoto(c){
+  const g = c.createLinearGradient(0, 0, 0, AL);
+  g.addColorStop(0, '#0a1428'); g.addColorStop(.6, '#152238'); g.addColorStop(1, '#241a12');
+  c.fillStyle = g; c.fillRect(0, 0, A, AL);
+
+  // montañas
+  c.fillStyle = 'rgba(28,42,72,.9)';
+  c.beginPath(); c.moveTo(0, AL);
+  for (let x = 0; x <= A; x += 10) c.lineTo(x, 92 + Math.sin(x * 0.021) * 20 + Math.sin(x * 0.052) * 9);
+  c.lineTo(A, AL); c.closePath(); c.fill();
+
+  // terreno con rampa
+  const suelo = x => 128 + Math.sin(x * 0.019) * 16 - (x > 120 && x < 210 ? Math.sin((x - 120) / 90 * Math.PI) * 40 : 0);
+  c.beginPath(); c.moveTo(0, AL);
+  for (let x = 0; x <= A; x += 4) c.lineTo(x, suelo(x));
+  c.lineTo(A, AL); c.closePath();
+  const t = c.createLinearGradient(0, 80, 0, AL);
+  t.addColorStop(0, '#3a2a1c'); t.addColorStop(1, '#150e08');
+  c.fillStyle = t; c.fill();
+
+  c.beginPath();
+  for (let x = 0; x <= A; x += 4){ const y = suelo(x); x ? c.lineTo(x, y) : c.moveTo(x, y); }
+  c.strokeStyle = '#ff8a3d'; c.lineWidth = 3;
+  c.shadowColor = 'rgba(255,138,61,.8)'; c.shadowBlur = 12;
+  c.stroke(); c.shadowBlur = 0;
+
+  // estela de nitro
+  for (let i = 0; i < 16; i++){
+    c.globalAlpha = 0.5 - i * 0.03;
+    c.fillStyle = i % 2 ? '#00f0ff' : '#ffffff';
+    c.beginPath(); c.arc(214 - i * 7, 62 + Math.sin(i) * 5, 5 - i * 0.22, 0, 6.283); c.fill();
+  }
+  c.globalAlpha = 1;
+
+  // moto en el aire, inclinada
+  c.save();
+  c.translate(238, 52); c.rotate(-0.5);
+  c.fillStyle = '#111820';
+  [[-26, 8], [26, 8]].forEach(([x, y]) => {
+    c.beginPath(); c.arc(x, y, 12, 0, 6.283); c.fill();
+    c.strokeStyle = '#2e3a52'; c.lineWidth = 3; c.stroke();
+  });
+  c.fillStyle = '#ff8a3d';
+  c.beginPath();
+  c.moveTo(-24, 4); c.lineTo(-6, -9); c.lineTo(13, -8); c.lineTo(26, 5); c.lineTo(-3, 8);
+  c.closePath(); c.fill();
+  c.strokeStyle = '#e8eef7'; c.lineWidth = 4; c.lineCap = 'round';
+  c.beginPath(); c.moveTo(-5, -11); c.lineTo(-1, -23); c.lineTo(12, -14); c.stroke();
+  c.lineCap = 'butt';
+  c.fillStyle = '#00f0ff';
+  c.beginPath(); c.arc(0, -27, 5.5, 0, 6.283); c.fill();
+  c.restore();
+
+  c.fillStyle = '#f3e600'; c.font = '700 12px "Courier New", monospace';
+  c.fillText('🤸 x3 FLIP', 16, 26);
+}
+
 // ---------- Montaje de las cartas ----------
 const rejilla = document.getElementById('rejilla');
 JUEGOS.forEach(j => {
@@ -966,7 +1154,8 @@ JUEGOS.forEach(j => {
 // Qué significa el "mejor resultado" de cada juego, que no todos puntúan igual
 const UNIDAD = {
   td:'olas', pvz:'olas', comecocos:'pts', blockblast:'pts', serpiente:'pts',
-  pool:'ganadas', rumble:'goles', minas:'gemas', aviator:'x100'
+  pool:'ganadas', rumble:'goles', minas:'gemas', aviator:'x100',
+  sparta:'racha', mercado:'$', moto:'pts'
 };
 const nombreDe = id => {
   const j = JUEGOS.find(x => x.id === id);
