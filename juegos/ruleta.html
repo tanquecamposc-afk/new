@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ruleta — Arcade NEXO</title>
+<link rel="stylesheet" href="arcade.css">
+<style>
+  /* Los modales cubren el tablero, no la barra: desde el menú siempre se puede volver */
+  #tablero{position:relative; display:flex; flex-direction:column; gap:10px;}
+  #juego{width:min(1040px,100vw);}
+  .barra .titulo{color:var(--rojo);}
+
+  #arriba{display:grid; grid-template-columns:340px 1fr; gap:12px; align-items:start;}
+  @media (max-width:820px){ #arriba{grid-template-columns:1fr;} }
+
+  #ruedaCaja{
+    position:relative; border-radius:16px; overflow:hidden; background:#06090f;
+    border:2px solid rgba(255,61,104,.25);
+    box-shadow:0 12px 34px rgba(0,0,0,.8);
+  }
+  #lienzo{display:block; width:100%; height:auto;}
+
+  #panel{display:flex; flex-direction:column; gap:10px;}
+  #historial{
+    display:flex; gap:5px; overflow-x:auto; padding:7px 9px; scrollbar-width:thin;
+    background:rgba(0,0,0,.4); border:1px solid var(--borde); border-radius:10px;
+    min-height:38px;
+  }
+  #historial span{
+    flex:none; width:26px; height:24px; border-radius:6px; display:grid; place-items:center;
+    font-family:var(--fuente-arcade); font-weight:800; font-size:12px; color:#fff;
+  }
+  #historial span.rojo{background:#c8102e;} #historial span.negro{background:#15181f;}
+  #historial span.verde{background:#0f8a3c;}
+
+  /* ---------- Tapete ---------- */
+  #tapete{
+    display:grid; gap:3px;
+    grid-template-columns:34px repeat(12, 1fr) 34px;
+    background:#0a3a22; border:2px solid rgba(243,230,0,.3);
+    border-radius:12px; padding:6px;
+  }
+  #tapete button{
+    padding:0; min-height:34px; border-radius:5px; border:1px solid rgba(255,255,255,.18);
+    font-family:var(--fuente-arcade); font-weight:800; font-size:13px; color:#fff;
+    background:#15181f; cursor:pointer; position:relative;
+    display:grid; place-items:center; letter-spacing:0;
+  }
+  #tapete button.rojo{background:#a8112a;}
+  #tapete button.cero{background:#0f8a3c; grid-row:span 3;}
+  #tapete button.fuera{background:rgba(0,0,0,.35); font-size:11px; letter-spacing:.5px;}
+  #tapete button.col{font-size:11px;}
+  #tapete button:hover{filter:brightness(1.4); border-color:var(--oro);}
+  #tapete button .ficha{
+    position:absolute; top:-6px; right:-6px; min-width:19px; height:19px; padding:0 3px;
+    border-radius:999px; background:var(--oro); color:#1a1400;
+    font-size:10px; font-weight:900; display:grid; place-items:center;
+    box-shadow:0 0 8px rgba(243,230,0,.7);
+  }
+  #tapete button.acierta{
+    outline:3px solid var(--oro); outline-offset:1px;
+    animation:destella .6s ease-in-out 3;
+  }
+  @keyframes destella{50%{filter:brightness(2.1);}}
+  #filaFuera{
+    display:grid; grid-template-columns:repeat(6,1fr); gap:3px; margin-top:3px;
+  }
+
+  #acciones{display:flex; gap:9px; flex-wrap:wrap; align-items:center;}
+  #acciones .grupo{
+    display:flex; align-items:center; gap:8px; background:rgba(0,0,0,.35);
+    border:1px solid var(--borde); border-radius:11px; padding:6px 12px;
+  }
+  #acciones label{font-size:11px; color:var(--tenue); text-transform:uppercase; letter-spacing:.7px;}
+  #ficha{
+    width:88px; text-align:right; background:rgba(0,0,0,.5); color:var(--oro);
+    border:1px solid var(--borde); border-radius:7px; padding:6px 9px;
+    font-family:var(--fuente-arcade); font-weight:800; font-size:14px;
+  }
+  #btnGirar{
+    flex:1; min-width:150px; padding:12px; border-radius:11px;
+    font-weight:900; font-size:13px; letter-spacing:1.2px; text-transform:uppercase;
+  }
+  #mensaje{
+    font-family:var(--fuente-arcade); font-size:13px; min-height:2.4em; line-height:1.5;
+    background:rgba(0,0,0,.35); border:1px solid var(--borde);
+    border-radius:10px; padding:8px 12px;
+  }
+  #mensaje b.gana{color:var(--verde);} #mensaje b.pierde{color:var(--rojo);}
+</style>
+</head>
+<body>
+
+<div id="juego">
+  <div class="barra">
+    <a class="boton" href="../index.html">🕹 Arcade</a>
+    <div class="titulo">🎡 RULETA</div>
+    <div class="sep"></div>
+    <div class="stat">🪙 <span id="saldoTxt" class="oro">5000</span></div>
+    <div class="stat">🎯 <span id="enJuegoTxt" class="azul">0</span></div>
+    <button id="btnSonido" title="Sonido" aria-label="Sonido">🔊</button>
+  </div>
+
+  <div id="tablero">
+
+  <div id="arriba">
+    <div id="ruedaCaja">
+      <canvas id="lienzo" width="340" height="340"></canvas>
+      <div class="avisos" id="avisos"></div>
+    </div>
+
+    <div id="panel">
+      <div id="historial"></div>
+      <div id="tapete"></div>
+      <div id="filaFuera"></div>
+      <div id="mensaje">Pon fichas en el tapete y haz girar la rueda.</div>
+      <div id="acciones">
+        <div class="grupo">
+          <label for="ficha">Ficha</label>
+          <input id="ficha" type="number" min="5" step="5" value="25">
+        </div>
+        <button id="btnDeshacer">↶ Deshacer</button>
+        <button id="btnLimpiar">🗑 Quitar</button>
+        <button id="btnRepetir">↻ Repetir</button>
+        <button class="primario" id="btnGirar">🎡 Girar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal visible" id="modalInicio">
+    <div class="tarjetaModal">
+      <h1>🎡 RULETA</h1>
+      <div class="sub">Ruleta europea de un solo cero, con fichas ficticias.</div>
+      <div class="instrucciones">
+        <b>37 casillas</b> (0 al 36) y <b>un solo cero</b>: la ventaja de la casa es del <b>2,70 %</b>,
+        la mitad que en la americana de doble cero.<br>
+        Haz clic en el tapete para poner fichas. Puedes repartirlas por varias apuestas a la vez.<br>
+        <b>Pagos:</b> pleno 35:1 · caballo 17:1 · calle 11:1 · cuadro 8:1 · línea 5:1 ·
+        columna y docena 2:1 · rojo/negro, par/impar y falta/pasa 1:1.<br>
+        <b>Deshacer</b> quita la última ficha y <b>Repetir</b> vuelve a poner la misma jugada.
+      </div>
+      <div class="filaBotones"><button class="primario" id="btnEmpezar">▶ A la mesa</button></div>
+    </div>
+  </div>
+</div>
+</div>
+
+<script src="arcade.js"></script>
+<script>
+// ============================================================
+//  RULETA EUROPEA — un solo cero, ventaja de la casa 2,70 %
+// ============================================================
+const $ = id => document.getElementById(id);
+const lienzo = $('lienzo');
+const ctx = Arcade.nitido(lienzo);
+const avisos = $('avisos');
+const TAM = lienzo.width;
+const CENTRO = TAM / 2;
+
+// Orden real de la rueda europea
+const RUEDA = [0,32,15,19,4,21,2,25,17,34,6,27,13,36,11,30,8,23,10,
+               5,24,16,33,1,20,14,31,9,22,18,29,7,28,12,35,3,26];
+const ROJOS = new Set([1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36]);
+const color = n => n === 0 ? 'verde' : ROJOS.has(n) ? 'rojo' : 'negro';
+
+// ---------- Apuestas ----------
+// Cada apuesta es { clave, etiqueta, numeros:[], pago }
+function apuestasPosibles(){
+  const a = {};
+  const poner = (clave, etiqueta, numeros, pago) => { a[clave] = { clave, etiqueta, numeros, pago }; };
+
+  for (let n = 0; n <= 36; n++) poner('p' + n, 'Pleno ' + n, [n], 35);
+
+  // caballos (dos números contiguos en el tapete de 3 filas x 12 columnas)
+  for (let c = 0; c < 12; c++)
+    for (let f = 0; f < 3; f++){
+      const n = c * 3 + (3 - f);                        // fila 0 = 3,6,9…
+      if (f < 2) poner('c' + n + '-' + (n - 1), 'Caballo ' + (n - 1) + '/' + n, [n - 1, n], 17);
+      if (c < 11) poner('c' + n + '-' + (n + 3), 'Caballo ' + n + '/' + (n + 3), [n, n + 3], 17);
+    }
+  // calles, cuadros y líneas
+  for (let c = 0; c < 12; c++){
+    const base = c * 3 + 1;
+    poner('t' + base, 'Calle ' + base + '-' + (base + 2), [base, base + 1, base + 2], 11);
+    if (c < 11){
+      poner('l' + base, 'Línea ' + base + '-' + (base + 5),
+            [base, base+1, base+2, base+3, base+4, base+5], 5);
+      for (let f = 0; f < 2; f++){
+        const n = base + f;
+        poner('q' + n, 'Cuadro ' + n, [n, n + 1, n + 3, n + 4], 8);
+      }
+    }
+  }
+  // apuestas de fuera
+  for (let col = 0; col < 3; col++){
+    const nums = [];
+    for (let k = 0; k < 12; k++) nums.push(k * 3 + (3 - col));
+    poner('col' + col, (col + 1) + '.ª columna', nums, 2);
+  }
+  for (let d = 0; d < 3; d++){
+    const nums = [];
+    for (let k = 1; k <= 12; k++) nums.push(d * 12 + k);
+    poner('doc' + d, ['1.ª docena','2.ª docena','3.ª docena'][d], nums, 2);
+  }
+  const todos = [];
+  for (let n = 1; n <= 36; n++) todos.push(n);
+  poner('rojo',   'Rojo',   todos.filter(n => ROJOS.has(n)), 1);
+  poner('negro',  'Negro',  todos.filter(n => !ROJOS.has(n)), 1);
+  poner('par',    'Par',    todos.filter(n => n % 2 === 0), 1);
+  poner('impar',  'Impar',  todos.filter(n => n % 2 === 1), 1);
+  poner('falta',  'Falta 1-18', todos.filter(n => n <= 18), 1);
+  poner('pasa',   'Pasa 19-36', todos.filter(n => n >= 19), 1);
+  return a;
+}
+const APUESTAS = apuestasPosibles();
+
+// ---------- Estado ----------
+const R = {
+  fichas: {},              // clave -> importe
+  orden: [],               // para deshacer
+  ultima: null,            // última jugada, para repetir
+  saldo: Arcade.fichas.saldo(),
+  historia: [],
+  girando: false,
+  angulo: 0, velocidad: 0, destino: 0, bola: 0, velBola: 0, faseGiro: 0,
+  resultado: null,
+  giros: 0, aciertos: 0
+};
+
+const enJuego = () => Object.values(R.fichas).reduce((s, v) => s + v, 0);
+
+function apostar(clave){
+  if (R.girando) return;
+  const f = Math.max(5, Math.floor(parseFloat($('ficha').value) || 0));
+  $('ficha').value = f;
+  if (f > R.saldo - enJuego()){
+    Arcade.aviso(avisos, 'No te quedan fichas libres', false, 1600);
+    return;
+  }
+  R.fichas[clave] = (R.fichas[clave] || 0) + f;
+  R.orden.push({ clave, importe: f });
+  Sonido.fx('ficha');
+  pintarTapete();
+}
+function deshacer(){
+  if (R.girando || !R.orden.length) return;
+  const u = R.orden.pop();
+  R.fichas[u.clave] -= u.importe;
+  if (R.fichas[u.clave] <= 0) delete R.fichas[u.clave];
+  Sonido.fx('clic');
+  pintarTapete();
+}
+function limpiar(){
+  if (R.girando) return;
+  R.fichas = {}; R.orden = [];
+  pintarTapete();
+}
+function repetir(){
+  if (R.girando || !R.ultima) return;
+  const total = Object.values(R.ultima).reduce((s, v) => s + v, 0);
+  if (total > R.saldo){ Arcade.aviso(avisos, 'No te llega para repetir', false, 1700); return; }
+  R.fichas = { ...R.ultima };
+  R.orden = Object.entries(R.ultima).map(([clave, importe]) => ({ clave, importe }));
+  Sonido.fx('ficha');
+  pintarTapete();
+}
+
+// ---------- Giro ----------
+function girar(){
+  const total = enJuego();
+  if (R.girando) return;
+  if (!total){ Arcade.aviso(avisos, 'Pon alguna ficha primero', false, 1700); return; }
+
+  R.ultima = { ...R.fichas };
+  R.saldo = Arcade.fichas.ajustar(-total);
+  R.girando = true;
+  R.resultado = null;
+  document.querySelectorAll('#tapete .acierta, #filaFuera .acierta')
+    .forEach(b => b.classList.remove('acierta'));
+
+  // se sortea el número y se calcula dónde tiene que parar la bola
+  const idx = azarEntero(0, 36);
+  R.destino = idx;
+  const paso = Math.PI * 2 / 37;
+  R.angulo = azar(0, Math.PI * 2);
+  R.velocidad = azar(7, 9);
+  R.bola = azar(0, Math.PI * 2);
+  R.velBola = -azar(12, 15);
+  R.faseGiro = 0;
+  // ángulo final de la rueda para que la casilla `idx` quede arriba
+  R.anguloFinal = -idx * paso;
+  mensaje('La bola está en el aire…');
+  Sonido.fx('giro');
+  refrescar();
+}
+
+function resolver(){
+  const n = RUEDA[R.destino];
+  R.resultado = n;
+  R.historia.unshift(n);
+  if (R.historia.length > 30) R.historia.pop();
+  R.giros++;
+
+  let cobro = 0;
+  const ganadoras = [];
+  for (const [clave, importe] of Object.entries(R.fichas)){
+    const a = APUESTAS[clave];
+    if (a && a.numeros.includes(n)){
+      cobro += importe * (a.pago + 1);
+      ganadoras.push(a.etiqueta + ' ' + a.pago + ':1');
+      const b = document.querySelector('[data-clave="' + clave + '"]');
+      if (b) b.classList.add('acierta');
+    }
+  }
+  const apostado = enJuego();
+  if (cobro) { R.saldo = Arcade.fichas.ajustar(cobro); R.aciertos++; }
+  const neto = cobro - apostado;
+
+  Arcade.perfil.partida('ruleta', { puntos: Math.max(0, neto), victoria: neto > 0 });
+  if (neto > 0) Arcade.guardarRecord('ruleta', neto);
+
+  const col = color(n);
+  mensaje('Sale el <b style="color:' +
+    (col === 'rojo' ? '#ff5a72' : col === 'verde' ? '#4ee089' : '#c9d3e6') + '">' + n + ' ' +
+    (col === 'verde' ? 'cero' : col) + '</b>. ' +
+    (ganadoras.length ? 'Aciertas: ' + ganadoras.join(', ') + '. ' : 'Ninguna apuesta acierta. ') +
+    'Resultado: <b class="' + (neto >= 0 ? 'gana">+' : 'pierde">') + neto + '</b> fichas.');
+  Sonido.fx(neto > 0 ? 'caja' : 'error');
+
+  R.fichas = {}; R.orden = [];
+  R.girando = false;
+  guardarPartida();
+  pintarTapete();
+  pintarHistorial();
+  refrescar();
+}
+
+// ---------- Guardado ----------
+function guardarPartida(){
+  Arcade.escribir('ruleta', JSON.stringify({
+    historia: R.historia.slice(0, 30), ultima: R.ultima,
+    giros: R.giros, aciertos: R.aciertos
+  }));
+}
+function cargarPartida(){
+  const crudo = Arcade.leerTexto('ruleta', null);
+  if (!crudo) return;
+  try {
+    const g = JSON.parse(crudo);
+    R.historia = Array.isArray(g.historia) ? g.historia : [];
+    R.ultima = g.ultima || null;
+    R.giros = g.giros || 0; R.aciertos = g.aciertos || 0;
+  } catch(e){}
+}
+Guardado.registrar(guardarPartida);
+
+// ---------- Tapete ----------
+function boton(clave, texto, clases, estilo){
+  const b = document.createElement('button');
+  b.dataset.clave = clave;
+  b.textContent = texto;
+  if (clases) b.className = clases;
+  if (estilo) b.setAttribute('style', estilo);
+  b.setAttribute('aria-label', (APUESTAS[clave] || {}).etiqueta || texto);
+  return b;
+}
+
+function montarTapete(){
+  const t = $('tapete');
+  t.innerHTML = '';
+  // el cero ocupa las tres filas de la primera columna
+  t.appendChild(boton('p0', '0', 'cero', 'grid-row:1 / span 3;'));
+  for (let f = 0; f < 3; f++){
+    for (let c = 0; c < 12; c++){
+      const n = c * 3 + (3 - f);
+      t.appendChild(boton('p' + n, String(n), ROJOS.has(n) ? 'rojo' : ''));
+    }
+    t.appendChild(boton('col' + f, '2:1', 'col'));
+  }
+
+  const fuera = $('filaFuera');
+  fuera.innerHTML = '';
+  [['doc0','1.ª 12'],['doc1','2.ª 12'],['doc2','3.ª 12'],
+   ['falta','1-18'],['par','PAR'],['rojo','ROJO'],
+   ['negro','NEGRO'],['impar','IMPAR'],['pasa','19-36']]
+    .forEach(([clave, txt]) => fuera.appendChild(boton(clave, txt, 'fuera')));
+}
+
+function pintarTapete(){
+  document.querySelectorAll('[data-clave]').forEach(b => {
+    const v = R.fichas[b.dataset.clave];
+    let f = b.querySelector('.ficha');
+    if (v){
+      if (!f){ f = document.createElement('span'); f.className = 'ficha'; b.appendChild(f); }
+      f.textContent = v;
+    } else if (f) f.remove();
+  });
+  refrescar();
+}
+
+function pintarHistorial(){
+  const h = $('historial');
+  h.innerHTML = '';
+  R.historia.forEach(n => {
+    const s = document.createElement('span');
+    s.className = color(n);
+    s.textContent = n;
+    h.appendChild(s);
+  });
+}
+
+function mensaje(html){ $('mensaje').innerHTML = html; }
+function refrescar(){
+  $('saldoTxt').textContent = R.saldo.toLocaleString('es-ES');
+  $('enJuegoTxt').textContent = enJuego().toLocaleString('es-ES');
+  $('btnGirar').disabled = R.girando;
+  $('btnDeshacer').disabled = R.girando || !R.orden.length;
+  $('btnLimpiar').disabled = R.girando || !R.orden.length;
+  $('btnRepetir').disabled = R.girando || !R.ultima;
+}
+
+// ---------- Dibujo de la rueda ----------
+function dibujar(dt){
+  if (R.girando){
+    R.faseGiro += dt;
+    R.velocidad = Math.max(0.55, R.velocidad * Math.pow(0.55, dt));
+    R.velBola *= Math.pow(0.42, dt);
+    R.angulo += R.velocidad * dt;
+    R.bola += R.velBola * dt;
+    // a partir de los 4 s la rueda se acomoda a su ángulo final
+    if (R.faseGiro > 4){
+      const u = Math.min(1, (R.faseGiro - 4) / 2.2);
+      const objetivo = R.anguloFinal + Math.PI * 2 * Math.ceil((R.angulo - R.anguloFinal) / (Math.PI * 2));
+      R.angulo += (objetivo - R.angulo) * u * u * 6 * dt;
+      R.bola += (-R.angulo - R.bola) * u * u * 6 * dt;
+      if (R.faseGiro > 6.4) resolver();
+    }
+  }
+
+  ctx.clearRect(0, 0, TAM, TAM);
+  const rExt = CENTRO - 6, rInt = rExt * 0.6;
+  const paso = Math.PI * 2 / 37;
+
+  // borde de madera
+  ctx.fillStyle = '#3a2415';
+  ctx.beginPath(); ctx.arc(CENTRO, CENTRO, rExt, 0, 6.2832); ctx.fill();
+  ctx.strokeStyle = '#8a6034'; ctx.lineWidth = 3; ctx.stroke();
+
+  // casillas
+  ctx.save();
+  ctx.translate(CENTRO, CENTRO);
+  ctx.rotate(R.angulo - Math.PI / 2 - paso / 2);
+  RUEDA.forEach((n, i) => {
+    const a0 = i * paso, a1 = a0 + paso;
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.arc(0, 0, rExt * 0.92, a0, a1);
+    ctx.closePath();
+    const c = color(n);
+    ctx.fillStyle = c === 'rojo' ? '#c8102e' : c === 'verde' ? '#0f8a3c' : '#15181f';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(226,196,140,.45)'; ctx.lineWidth = 1; ctx.stroke();
+
+    ctx.save();
+    ctx.rotate(a0 + paso / 2);
+    ctx.fillStyle = '#fff';
+    ctx.font = '800 12px "Courier New", monospace';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(String(n), rExt * 0.79, 0);
+    ctx.restore();
+  });
+  ctx.restore();
+
+  // cubo central
+  const g = ctx.createRadialGradient(CENTRO - 10, CENTRO - 14, 4, CENTRO, CENTRO, rInt);
+  g.addColorStop(0, '#d8b57a'); g.addColorStop(1, '#5d3f22');
+  ctx.fillStyle = g;
+  ctx.beginPath(); ctx.arc(CENTRO, CENTRO, rInt * 0.62, 0, 6.2832); ctx.fill();
+  ctx.strokeStyle = '#e2c48c'; ctx.lineWidth = 2; ctx.stroke();
+  // brazos
+  ctx.strokeStyle = 'rgba(226,196,140,.75)'; ctx.lineWidth = 4;
+  for (let k = 0; k < 4; k++){
+    const a = R.angulo * 0.6 + k * Math.PI / 2;
+    ctx.beginPath();
+    ctx.moveTo(CENTRO + Math.cos(a) * rInt * 0.2, CENTRO + Math.sin(a) * rInt * 0.2);
+    ctx.lineTo(CENTRO + Math.cos(a) * rExt * 0.55, CENTRO + Math.sin(a) * rExt * 0.55);
+    ctx.stroke();
+  }
+
+  // bola
+  const rBola = R.girando && R.faseGiro < 4.6 ? rExt * 0.95 : rExt * 0.8;
+  const bx = CENTRO + Math.cos(R.bola - Math.PI / 2) * rBola;
+  const by = CENTRO + Math.sin(R.bola - Math.PI / 2) * rBola;
+  ctx.fillStyle = '#fff';
+  ctx.shadowColor = 'rgba(255,255,255,.9)'; ctx.shadowBlur = 10;
+  ctx.beginPath(); ctx.arc(bx, by, 6, 0, 6.2832); ctx.fill();
+  ctx.shadowBlur = 0;
+
+  // marca superior
+  ctx.fillStyle = '#f3e600';
+  ctx.beginPath();
+  ctx.moveTo(CENTRO, 2); ctx.lineTo(CENTRO - 8, 16); ctx.lineTo(CENTRO + 8, 16);
+  ctx.closePath(); ctx.fill();
+
+  // número que ha salido
+  if (!R.girando && R.resultado !== null){
+    const c = color(R.resultado);
+    ctx.fillStyle = 'rgba(0,0,0,.72)';
+    ctx.beginPath(); ctx.arc(CENTRO, CENTRO, 38, 0, 6.2832); ctx.fill();
+    ctx.strokeStyle = c === 'rojo' ? '#ff5a72' : c === 'verde' ? '#4ee089' : '#c9d3e6';
+    ctx.lineWidth = 2.5; ctx.stroke();
+    ctx.fillStyle = '#fff';
+    ctx.font = '800 30px "Courier New", monospace';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(String(R.resultado), CENTRO, CENTRO);
+  }
+}
+
+// ---------- Entrada ----------
+document.addEventListener('click', ev => {
+  const b = ev.target.closest('[data-clave]');
+  if (b){ Sonido.activar(); apostar(b.dataset.clave); }
+});
+$('btnGirar').onclick = () => { Sonido.activar(); girar(); };
+$('btnDeshacer').onclick = deshacer;
+$('btnLimpiar').onclick = limpiar;
+$('btnRepetir').onclick = repetir;
+$('btnEmpezar').onclick = () => {
+  Sonido.activar();
+  $('modalInicio').classList.remove('visible');
+};
+addEventListener('keydown', ev => {
+  if (ev.code === 'Space'){ ev.preventDefault(); girar(); }
+  else if (ev.key === 'z') deshacer();
+  else if (ev.key === 'r') repetir();
+});
+Arcade.conectarSonido($('btnSonido'));
+
+cargarPartida();
+montarTapete();
+pintarTapete();
+pintarHistorial();
+refrescar();
+Arcade.bucle(dt => dibujar(dt));
+</script>
+</body>
+</html>

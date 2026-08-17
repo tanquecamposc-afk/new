@@ -218,7 +218,7 @@
 <div id="contenido">
   <div id="titulo">
     <h2>SELECCIONA TU JUEGO SUPREMO</h2>
-    <p>Quince motores hechos a mano en HTML5 + Canvas, con renderizado HiDPI y físicas propias.
+    <p>Veinte motores hechos a mano en HTML5 + Canvas, con renderizado HiDPI y físicas propias.
        Sin instalar nada, sin anuncios y sin conexión.</p>
   </div>
 
@@ -392,6 +392,41 @@ const JUEGOS = [
       } catch(err){ return 'Sin jugar todavía'; }
     },
     portada: portadaGalletas
+  },
+  {
+    id:'blackjack', archivo:'juegos/blackjack.html', nuevo:true,
+    nombre:'🃏 Blackjack', genero:'Casino',
+    desc:'21 contra la banca con zapato de 6 barajas: doblar, dividir y seguro.',
+    record(){ const r = Arcade.record('blackjack'); return r ? 'Mejor mano: +' + r.toLocaleString('es-ES') : 'Sin jugar todavía'; },
+    portada: portadaBlackjack
+  },
+  {
+    id:'ruleta', archivo:'juegos/ruleta.html', nuevo:true,
+    nombre:'🎡 Ruleta', genero:'Casino',
+    desc:'Ruleta europea de un solo cero, con tapete completo y 151 apuestas.',
+    record(){ const r = Arcade.record('ruleta'); return r ? 'Mejor giro: +' + r.toLocaleString('es-ES') : 'Sin jugar todavía'; },
+    portada: portadaRuleta
+  },
+  {
+    id:'poker', archivo:'juegos/poker-texas.html', nuevo:true,
+    nombre:'♠ Texas Hold\u0027em', genero:'Casino',
+    desc:'Póker contra tres rivales con ciegas, faroles y evaluador de siete cartas.',
+    record(){ const r = Arcade.record('poker'); return r ? 'Mejor bote: +' + r.toLocaleString('es-ES') : 'Sin jugar todavía'; },
+    portada: portadaPoker
+  },
+  {
+    id:'bacara', archivo:'juegos/bacara.html', nuevo:true,
+    nombre:'🀄 Bacarrá', genero:'Casino',
+    desc:'Punto y Banca con la tabla oficial de tercera carta y camino de resultados.',
+    record(){ const r = Arcade.record('bacara'); return r ? 'Mejor mano: +' + r.toLocaleString('es-ES') : 'Sin jugar todavía'; },
+    portada: portadaBacara
+  },
+  {
+    id:'dados', archivo:'juegos/dados-craps.html', nuevo:true,
+    nombre:'🎲 Dados', genero:'Casino',
+    desc:'Craps con línea de pase, no pase, odds sin ventaja de casa, campo y colocadas.',
+    record(){ const r = Arcade.record('dados'); return r ? 'Mejor tirada: +' + r.toLocaleString('es-ES') : 'Sin jugar todavía'; },
+    portada: portadaDados
   },
   {
     id:'moto', archivo:'juegos/moto-x3m.html', nuevo:true,
@@ -1132,6 +1167,184 @@ function portadaMoto(c){
   c.fillText('🤸 x3 FLIP', 16, 26);
 }
 
+
+function portadaBlackjack(c){
+  const g = c.createRadialGradient(A/2, AL*.4, 20, A/2, AL/2, A*.7);
+  g.addColorStop(0, '#12603a'); g.addColorStop(1, '#052015');
+  c.fillStyle = g; c.fillRect(0, 0, A, AL);
+  c.strokeStyle = 'rgba(243,230,0,.3)'; c.lineWidth = 2;
+  c.beginPath(); c.arc(A/2, -60, 150, .5, Math.PI - .5); c.stroke();
+  c.fillStyle = 'rgba(243,230,0,.6)'; c.font = '800 11px "Segoe UI", system-ui, sans-serif';
+  c.textAlign = 'center'; c.fillText('EL BLACKJACK PAGA 3 A 2', A/2, 26);
+  // mano de as + rey abanicada
+  [[-1,'A','♠',-.22],[1,'K','♥',.22]].forEach(([lado, n, pal, rot], k) => {
+    c.save();
+    c.translate(A/2 + lado*30, AL/2 + 22); c.rotate(rot);
+    c.fillStyle = 'rgba(0,0,0,.5)';
+    c.beginPath(); c.roundRect(-31, -44, 62, 88, 7); c.fill();
+    c.fillStyle = '#f6f7fb';
+    c.beginPath(); c.roundRect(-33, -46, 62, 88, 7); c.fill();
+    c.fillStyle = (pal === '♥') ? '#d81f3d' : '#15181f';
+    c.textAlign = 'left';
+    c.font = '800 17px "Segoe UI", system-ui, sans-serif'; c.fillText(n, -27, -28);
+    c.font = '13px serif'; c.fillText(pal, -27, -12);
+    c.textAlign = 'center';
+    c.font = '31px serif'; c.fillText(pal, -2, 8);
+    c.restore();
+  });
+  c.fillStyle = '#f3e600'; c.font = '900 26px "Courier New", monospace';
+  c.textAlign = 'center'; c.fillText('21', A/2, AL - 22);
+}
+
+function portadaRuleta(c){
+  const g = c.createLinearGradient(0, 0, A, AL);
+  g.addColorStop(0, '#1a0d12'); g.addColorStop(1, '#070406');
+  c.fillStyle = g; c.fillRect(0, 0, A, AL);
+  const cx = 92, cy = AL/2, r = 62;
+  c.fillStyle = '#3a2415';
+  c.beginPath(); c.arc(cx, cy, r + 5, 0, 6.283); c.fill();
+  c.strokeStyle = '#8a6034'; c.lineWidth = 3; c.stroke();
+  const nums = [0,32,15,19,4,21,2,25,17,34,6,27,13,36,11,30,8,23,10,5,24,16,33,1,20,14,31,9,22,18,29,7,28,12,35,3,26];
+  const rojos = new Set([1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36]);
+  const paso = 6.283 / 37;
+  nums.forEach((n, i) => {
+    c.beginPath(); c.moveTo(cx, cy);
+    c.arc(cx, cy, r, i*paso - 1.57, (i+1)*paso - 1.57); c.closePath();
+    c.fillStyle = n === 0 ? '#0f8a3c' : rojos.has(n) ? '#c8102e' : '#15181f';
+    c.fill();
+    c.strokeStyle = 'rgba(226,196,140,.35)'; c.lineWidth = .7; c.stroke();
+  });
+  const cubo = c.createRadialGradient(cx-8, cy-10, 3, cx, cy, r*.42);
+  cubo.addColorStop(0, '#d8b57a'); cubo.addColorStop(1, '#5d3f22');
+  c.fillStyle = cubo; c.beginPath(); c.arc(cx, cy, r*.4, 0, 6.283); c.fill();
+  c.fillStyle = '#fff';
+  c.shadowColor = '#fff'; c.shadowBlur = 8;
+  c.beginPath(); c.arc(cx + Math.cos(-.9)*r*.85, cy + Math.sin(-.9)*r*.85, 5, 0, 6.283); c.fill();
+  c.shadowBlur = 0;
+  // tapete a la derecha
+  const bx = 178;
+  for (let f = 0; f < 3; f++) for (let k = 0; k < 6; k++){
+    const n = k*3 + (3-f);
+    c.fillStyle = rojos.has(n) ? '#a8112a' : '#15181f';
+    c.beginPath(); c.roundRect(bx + k*24, 40 + f*26, 21, 23, 3); c.fill();
+    c.strokeStyle = 'rgba(255,255,255,.15)'; c.lineWidth = 1; c.stroke();
+    c.fillStyle = '#fff'; c.font = '700 10px "Courier New", monospace';
+    c.textAlign = 'center'; c.fillText(String(n), bx + k*24 + 10, 55 + f*26);
+  }
+  c.fillStyle = '#f3e600'; c.font = '900 13px "Courier New", monospace';
+  c.textAlign = 'left'; c.fillText('PLENO 35:1', bx, 138);
+  c.fillStyle = 'rgba(255,255,255,.4)'; c.font = '700 11px "Segoe UI", system-ui, sans-serif';
+  c.fillText('un solo cero · 2,70 %', bx, 154);
+}
+
+function portadaPoker(c){
+  const g = c.createRadialGradient(A/2, AL/2, 20, A/2, AL/2, A*.65);
+  g.addColorStop(0, '#20204d'); g.addColorStop(1, '#08081a');
+  c.fillStyle = g; c.fillRect(0, 0, A, AL);
+  c.beginPath(); c.ellipse(A/2, AL/2 + 6, 128, 58, 0, 0, 6.283);
+  c.fillStyle = '#123a2c'; c.fill();
+  c.strokeStyle = 'rgba(168,85,247,.5)'; c.lineWidth = 2.5; c.stroke();
+  // cinco comunitarias
+  const cartas = [['10','♠'],['J','♠'],['Q','♠'],['K','♠'],['A','♠']];
+  cartas.forEach(([n, pal], i) => {
+    const x = A/2 - 5*20 + i*40;
+    c.fillStyle = 'rgba(0,0,0,.5)';
+    c.beginPath(); c.roundRect(x + 2, AL/2 - 22, 34, 48, 5); c.fill();
+    c.fillStyle = '#f6f7fb';
+    c.beginPath(); c.roundRect(x, AL/2 - 24, 34, 48, 5); c.fill();
+    c.fillStyle = '#15181f';
+    c.textAlign = 'left'; c.font = '800 11px "Segoe UI", system-ui, sans-serif';
+    c.fillText(n, x + 3, AL/2 - 12);
+    c.textAlign = 'center'; c.font = '17px serif';
+    c.fillText(pal, x + 17, AL/2 + 8);
+  });
+  // fichas
+  [['#c8102e', 60], ['#1f6fa8', 74], ['#f3e600', 88]].forEach(([col, x], i) => {
+    for (let k = 0; k < 3; k++){
+      c.fillStyle = col;
+      c.beginPath(); c.ellipse(x, AL - 34 - k*5, 13, 5.5, 0, 0, 6.283); c.fill();
+      c.strokeStyle = 'rgba(255,255,255,.35)'; c.lineWidth = 1; c.stroke();
+    }
+  });
+  c.fillStyle = '#a855f7'; c.font = '900 14px "Courier New", monospace';
+  c.textAlign = 'center'; c.fillText('ESCALERA DE COLOR', A/2, 30);
+  c.fillStyle = 'rgba(255,255,255,.4)'; c.font = '700 11px "Segoe UI", system-ui, sans-serif';
+  c.fillText('flop · turn · river', A/2, AL - 16);
+}
+
+function portadaBacara(c){
+  const g = c.createRadialGradient(A/2, AL/2, 20, A/2, AL/2, A*.62);
+  g.addColorStop(0, '#123a4d'); g.addColorStop(1, '#040d16');
+  c.fillStyle = g; c.fillRect(0, 0, A, AL);
+  const zona = (x, col, eti, cartas) => {
+    c.strokeStyle = col; c.lineWidth = 2; c.setLineDash([6,5]);
+    c.beginPath(); c.roundRect(x - 8, 40, 116, 88, 10); c.stroke();
+    c.setLineDash([]);
+    c.fillStyle = col; c.font = '900 12px "Segoe UI", system-ui, sans-serif';
+    c.textAlign = 'center'; c.fillText(eti, x + 50, 32);
+    cartas.forEach(([n, pal, rojo], i) => {
+      const cx2 = x + i*38;
+      c.fillStyle = '#f6f7fb';
+      c.beginPath(); c.roundRect(cx2, 50, 33, 47, 5); c.fill();
+      c.fillStyle = rojo ? '#d81f3d' : '#15181f';
+      c.textAlign = 'left'; c.font = '800 11px "Segoe UI", system-ui, sans-serif';
+      c.fillText(n, cx2 + 3, 62);
+      c.textAlign = 'center'; c.font = '16px serif'; c.fillText(pal, cx2 + 16, 82);
+    });
+  };
+  zona(24, '#5cc8ff', 'PUNTO', [['4','♣',0],['5','♦',1]]);
+  zona(198, '#ff6b8a', 'BANCA', [['9','♥',1],['K','♠',0]]);
+  c.fillStyle = '#5cc8ff'; c.font = '900 21px "Courier New", monospace';
+  c.textAlign = 'center'; c.fillText('9', 74, 116);
+  c.fillStyle = '#ff6b8a'; c.fillText('9', 248, 116);
+  // camino
+  ['P','B','B','P','E','B','P','B'].forEach((r, k) => {
+    const x = 118 + (k % 4) * 22, y = 128 + Math.floor(k / 4) * 22;
+    c.beginPath(); c.arc(x, y, 7, 0, 6.283);
+    c.strokeStyle = r === 'P' ? '#5cc8ff' : r === 'B' ? '#ff6b8a' : '#00ff66';
+    c.lineWidth = 2; c.stroke();
+  });
+  c.fillStyle = 'rgba(255,255,255,.4)'; c.font = '700 11px "Segoe UI", system-ui, sans-serif';
+  c.textAlign = 'center'; c.fillText('banca 0,95:1 · empate 8:1', A/2, 20);
+}
+
+function portadaDados(c){
+  const g = c.createRadialGradient(A/2, AL/2, 20, A/2, AL/2, A*.62);
+  g.addColorStop(0, '#0f4a2c'); g.addColorStop(1, '#03130b');
+  c.fillStyle = g; c.fillRect(0, 0, A, AL);
+  c.strokeStyle = 'rgba(0,255,102,.2)'; c.lineWidth = 2;
+  c.beginPath(); c.roundRect(9, 9, A - 18, AL - 18, 12); c.stroke();
+  const puntos = {1:[[0,0]],2:[[-1,-1],[1,1]],3:[[-1,-1],[0,0],[1,1]],
+    4:[[-1,-1],[1,-1],[-1,1],[1,1]],5:[[-1,-1],[1,-1],[0,0],[-1,1],[1,1]],
+    6:[[-1,-1],[1,-1],[-1,0],[1,0],[-1,1],[1,1]]};
+  const dado = (v, x, y, t, rot) => {
+    c.save(); c.translate(x, y); c.rotate(rot);
+    c.fillStyle = 'rgba(0,0,0,.5)';
+    c.beginPath(); c.roundRect(-t/2 + 3, -t/2 + 4, t, t, t*.18); c.fill();
+    c.fillStyle = '#f6f7fb';
+    c.beginPath(); c.roundRect(-t/2, -t/2, t, t, t*.18); c.fill();
+    c.fillStyle = '#15181f';
+    puntos[v].forEach(([dx, dy]) => {
+      c.beginPath(); c.arc(dx*t*.26, dy*t*.26, t*.085, 0, 6.283); c.fill();
+    });
+    c.restore();
+  };
+  dado(3, 118, AL/2 + 4, 60, -.16);
+  dado(4, 196, AL/2 - 6, 60, .22);
+  c.fillStyle = '#f3e600'; c.font = '900 30px "Courier New", monospace';
+  c.textAlign = 'center'; c.fillText('7', 274, AL/2);
+  // marcador ON
+  c.beginPath(); c.arc(52, AL/2, 30, 0, 6.283);
+  c.fillStyle = 'rgba(0,255,102,.12)'; c.fill();
+  c.strokeStyle = '#00ff66'; c.lineWidth = 2; c.stroke();
+  c.fillStyle = '#00ff66'; c.font = '900 10px "Courier New", monospace';
+  c.fillText('ON', 52, AL/2 - 9);
+  c.fillStyle = '#fff'; c.font = '900 20px "Courier New", monospace';
+  c.fillText('8', 52, AL/2 + 10);
+  c.fillStyle = 'rgba(255,255,255,.4)'; c.font = '700 11px "Segoe UI", system-ui, sans-serif';
+  c.fillText('pase · no pase · odds · campo', A/2, AL - 16);
+}
+
 // ---------- Montaje de las cartas ----------
 const rejilla = document.getElementById('rejilla');
 JUEGOS.forEach(j => {
@@ -1155,7 +1368,8 @@ JUEGOS.forEach(j => {
 const UNIDAD = {
   td:'olas', pvz:'olas', comecocos:'pts', blockblast:'pts', serpiente:'pts',
   pool:'ganadas', rumble:'goles', minas:'gemas', aviator:'x100',
-  sparta:'racha', mercado:'$', moto:'pts'
+  sparta:'racha', mercado:'$', moto:'pts',
+  blackjack:'fichas', ruleta:'fichas', poker:'fichas', bacara:'fichas', dados:'fichas'
 };
 const nombreDe = id => {
   const j = JUEGOS.find(x => x.id === id);

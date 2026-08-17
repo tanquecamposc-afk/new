@@ -1,6 +1,6 @@
 # 🕹 ARCADE NEXO
 
-Quince juegos hechos a mano en **HTML5 + Canvas + JavaScript puro**. Sin dependencias, sin librerías, sin assets externos y sin conexión a internet: todos los gráficos se dibujan por código y todo el sonido se genera en tiempo real con WebAudio.
+Veinte juegos hechos a mano en **HTML5 + Canvas + JavaScript puro**. Sin dependencias, sin librerías, sin assets externos y sin conexión a internet: todos los gráficos se dibujan por código y todo el sonido se genera en tiempo real con WebAudio.
 
 ## ▶ Cómo jugar
 
@@ -10,7 +10,7 @@ Cada juego tiene su botón **🕹 Arcade** arriba a la izquierda para volver a l
 
 ### 📦 Versión de un solo archivo
 
-`arcade.html` es el arcade **entero** (portada y los quince juegos) empaquetado en un único archivo, sin CSS ni JS externos. Sirve para cuando solo puedes usar una página suelta: mandarlo por correo, subirlo a cualquier sitio o abrirlo desde una memoria USB.
+`arcade.html` es el arcade **entero** (portada y los veinte juegos) empaquetado en un único archivo, sin CSS ni JS externos. Sirve para cuando solo puedes usar una página suelta: mandarlo por correo, subirlo a cualquier sitio o abrirlo desde una memoria USB.
 
 Se genera a partir de los archivos de `juegos/`, que siguen siendo la fuente de verdad:
 
@@ -39,6 +39,11 @@ Cada juego queda aislado en su propia pantalla: su CSS se prefija con el selecto
 | 🏍 [Moto X3M](juegos/moto-x3m.html) | Carreras | Suspensión en las dos ruedas, rampas que lanzan y vueltas en el aire |
 | 📈 [Money Market](juegos/money-market.html) | Simulación | Velas, volumen, SMA y RSI; largos, cortos y apalancamiento con liquidación |
 | 🧠 [Spartahoppers](juegos/spartahoppers.html) | Memoria | Fichas de Esparta con repetición espaciada SM-2 y combos |
+| 🃏 [Blackjack](juegos/blackjack.html) | Casino | 21 con zapato de 6 barajas: doblar, dividir y seguro |
+| 🎡 [Ruleta](juegos/ruleta.html) | Casino | Ruleta europea de un solo cero con tapete completo |
+| ♠ [Texas Hold'em](juegos/poker-texas.html) | Casino | Póker contra tres rivales con evaluador de siete cartas |
+| 🀄 [Bacarrá](juegos/bacara.html) | Casino | Punto y Banca con la tabla oficial de tercera carta |
+| 🎲 [Dados](juegos/dados-craps.html) | Casino | Craps con línea de pase, odds sin ventaja de casa y campo |
 
 ---
 
@@ -242,6 +247,44 @@ Fichas de historia de Esparta con **repetición espaciada de verdad**: 24 cartas
 - **Se guarda la programación entera**, así que la próxima vez el mazo te pregunta lo que te toca. Rehidrata por id: si el mazo cambia, lo que ya no existe se descarta sin romper nada.
 - **Atajos:** espacio para girar, `1` `2` `3` para evaluar.
 
+## 🎰 Los cinco clásicos del casino
+
+Todos con **fichas ficticias**: no hay dinero real ni forma de depositar o retirar nada. Comparten la cartera de NEXO-COINS con Minas y Aviator, y las tres mesas de cartas usan la baraja común de `arcade.js` (`Cartas`), que dibuja cada naipe por código.
+
+### 🃏 Blackjack
+
+- **Zapato de 6 barajas** que se rebaraja al gastar tres cuartas partes.
+- **Blackjack paga 3:2**, la banca se planta en todo 17 (también el blando).
+- **Doblar** (una carta y se acabó), **dividir** hasta cuatro manos —los ases divididos reciben una sola carta— y **seguro** 2:1 cuando la banca enseña un as.
+- Comprobado: 4.000 manos con la estrategia de "pedir hasta 17" dan un −7,6 %, que es justo lo que tiene esa estrategia; los blackjacks salieron el 4,3 % de las manos, frente al 4,75 % teórico.
+
+### 🎡 Ruleta
+
+- **Europea de un solo cero**, con el orden real de la rueda (0, 32, 15, 19, 4, 21…).
+- **151 apuestas**: plenos, caballos, calles, cuadros, líneas, columnas, docenas y las de fuera.
+- Comprobado por construcción: **todas** devuelven exactamente `números × (pago+1) / 37 = 36/37`, es decir, la ventaja de la casa del **2,70 %** en cualquier apuesta. Con 200.000 giros, χ² = 30,7 sobre 36 grados de libertad.
+- **Deshacer** ficha a ficha y **Repetir** la última jugada entera.
+
+### ♠ Texas Hold'em
+
+- Mesa de cuatro con ciegas de **25/50** y botón rotatorio; preflop, flop, turn y river.
+- **Evaluador de siete cartas** que empaqueta categoría y desempates en un entero comparable. Verificado con las diez categorías, la escalera A-2-3-4-5, los desempates por pareja y por color, y la mejor mano de siete.
+- Los rivales deciden con la fuerza de su mano y las **probabilidades del bote**, con una tabla de manos iniciales antes del flop, y **farolean** un 12 % de las veces.
+
+### 🀄 Bacarrá
+
+- Punto y Banca con la **tabla oficial de tercera carta**: el punto roba con 0-5; la banca, según su total y qué carta le salió al punto.
+- **Pagos:** punto 1:1 · banca 0,95:1 (5 % de comisión) · empate 8:1, y en empate se devuelven punto y banca.
+- Comprobado con 300.000 manos: punto 44,74 %, banca 45,82 %, empate 9,44 % (teóricos 44,62 / 45,86 / 9,52).
+- **Camino de resultados** al estilo de las mesas de verdad.
+
+### 🎲 Dados (Craps)
+
+- **Línea de pase** y **no pase**, con el 12 en tablas en la salida.
+- **Odds** verificadas: pagan exactamente `formas del 7 / formas del punto`, o sea 2:1, 3:2 y 6:5 — **sin ventaja de casa**, la única apuesta justa de todo el casino.
+- **Campo** (el 2 paga 2:1 y el 12, 3:1) y **colocadas de 6 y 8** a 7:6.
+- Comprobado con 300.000 series: la línea de pase gana el 49,15 % (teórico 49,29 %) y el campo devuelve −2,79 % (teórico −2,78 %).
+
 ## 💾 Récords
 
 Cada juego guarda su récord en el `localStorage` de tu navegador, así que son tuyos y no salen de tu equipo. Desde la portada puedes borrarlos todos con **🗑 Borrar todos mis récords**.
@@ -270,11 +313,16 @@ juegos/
   moto-x3m.html
   money-market.html
   spartahoppers.html
+  blackjack.html
+  ruleta.html
+  poker-texas.html
+  bacara.html
+  dados-craps.html
 ```
 
 ## 🎨 Estética
 
-Toda la interfaz comparte una identidad **neón cyberpunk**: fondos muy profundos con dos halos de color, acentos en cian, rosa, verde y amarillo, y brillos en los bordes al pasar por encima. Los tokens de color viven en `juegos/arcade.css`, así que cambiar la paleta ahí retoca los quince juegos de golpe. La portada lleva cabecera fija con la cartera de **NEXO-COINS** (las fichas ficticias que comparten Minas y Aviator), que se actualiza al volver de cualquier partida.
+Toda la interfaz comparte una identidad **neón cyberpunk**: fondos muy profundos con dos halos de color, acentos en cian, rosa, verde y amarillo, y brillos en los bordes al pasar por encima. Los tokens de color viven en `juegos/arcade.css`, así que cambiar la paleta ahí retoca los veinte juegos de golpe. La portada lleva cabecera fija con la cartera de **NEXO-COINS** (las fichas ficticias que comparten Minas y Aviator), que se actualiza al volver de cualquier partida.
 
 Una partida nueva arranca con **5.000 NEXO-COINS**. El saldo inicial es la constante `Arcade.fichas.INICIAL` en `juegos/arcade.js`; con un **doble clic en la cartera** de la portada vuelve a ese valor.
 

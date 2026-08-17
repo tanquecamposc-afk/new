@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bacarrá — Arcade NEXO</title>
+<link rel="stylesheet" href="arcade.css">
+<style>
+  /* Los modales cubren el tablero, no la barra: desde el menú siempre se puede volver */
+  #tablero{position:relative; display:flex; flex-direction:column; gap:10px;}
+  #juego{width:min(960px,100vw);}
+  .barra .titulo{color:var(--azul);}
+  #mesa{
+    position:relative; border-radius:16px; overflow:hidden;
+    border:2px solid rgba(0,240,255,.25);
+    box-shadow:0 15px 40px rgba(0,0,0,.9);
+  }
+  #lienzo{display:block; width:100%; height:auto;}
+
+  #apuestas{display:grid; grid-template-columns:repeat(3,1fr); gap:10px;}
+  #apuestas button{
+    padding:16px 10px; border-radius:13px; border:2px solid;
+    font-weight:900; font-size:13px; letter-spacing:1px; text-transform:uppercase;
+    display:flex; flex-direction:column; gap:4px; align-items:center; position:relative;
+  }
+  #apuestas button small{font-size:11px; opacity:.8; letter-spacing:.4px; font-weight:700;}
+  #btnPunto{color:#5cc8ff; border-color:rgba(92,200,255,.5); background:rgba(92,200,255,.08);}
+  #btnBanca{color:#ff6b8a; border-color:rgba(255,107,138,.5); background:rgba(255,107,138,.08);}
+  #btnEmpate{color:var(--verde); border-color:rgba(0,255,102,.5); background:rgba(0,255,102,.08);}
+  #apuestas button .ficha{
+    position:absolute; top:-8px; right:-8px; min-width:24px; height:24px; padding:0 5px;
+    border-radius:999px; background:var(--oro); color:#1a1400;
+    font-size:11px; font-weight:900; display:grid; place-items:center;
+    box-shadow:0 0 10px rgba(243,230,0,.7);
+  }
+  #acciones{display:flex; gap:9px; flex-wrap:wrap; align-items:center;}
+  #acciones .grupo{
+    display:flex; align-items:center; gap:8px; background:rgba(0,0,0,.35);
+    border:1px solid var(--borde); border-radius:11px; padding:6px 12px;
+  }
+  #acciones label{font-size:11px; color:var(--tenue); text-transform:uppercase; letter-spacing:.7px;}
+  #ficha{
+    width:90px; text-align:right; background:rgba(0,0,0,.5); color:var(--oro);
+    border:1px solid var(--borde); border-radius:7px; padding:6px 9px;
+    font-family:var(--fuente-arcade); font-weight:800; font-size:14px;
+  }
+  #btnRepartir{flex:1; min-width:150px; padding:12px; border-radius:11px;
+    font-weight:900; font-size:13px; letter-spacing:1.2px; text-transform:uppercase;}
+  #mensaje{
+    font-family:var(--fuente-arcade); font-size:13px; min-height:2.4em; line-height:1.5;
+    background:rgba(0,0,0,.35); border:1px solid var(--borde);
+    border-radius:10px; padding:8px 12px;
+  }
+  #mensaje b.gana{color:var(--verde);} #mensaje b.pierde{color:var(--rojo);}
+</style>
+</head>
+<body>
+
+<div id="juego">
+  <div class="barra">
+    <a class="boton" href="../index.html">🕹 Arcade</a>
+    <div class="titulo">🀄 BACARRÁ</div>
+    <div class="sep"></div>
+    <div class="stat">🪙 <span id="saldoTxt" class="oro">5000</span></div>
+    <div class="stat">🃏 <span id="zapatoTxt" class="tenue">416</span></div>
+    <button id="btnSonido" title="Sonido" aria-label="Sonido">🔊</button>
+  </div>
+
+  <div id="tablero">
+
+  <div id="mesa">
+    <canvas id="lienzo" width="940" height="440"></canvas>
+    <div class="avisos" id="avisos"></div>
+  </div>
+
+  <div id="mensaje">Punto y Banca. Elige dónde pones las fichas.</div>
+
+  <div id="apuestas">
+    <button id="btnPunto"  data-lado="punto">👤 Punto<small>paga 1:1</small></button>
+    <button id="btnBanca"  data-lado="banca">🏛 Banca<small>paga 0,95:1</small></button>
+    <button id="btnEmpate" data-lado="empate">🤝 Empate<small>paga 8:1</small></button>
+  </div>
+
+  <div id="acciones">
+    <div class="grupo">
+      <label for="ficha">Ficha</label>
+      <input id="ficha" type="number" min="10" step="10" value="100">
+    </div>
+    <button id="btnQuitar">🗑 Quitar</button>
+    <button id="btnRepetir">↻ Repetir</button>
+    <button class="primario" id="btnRepartir">🂠 Repartir</button>
+  </div>
+
+  <div class="modal visible" id="modalInicio">
+    <div class="tarjetaModal">
+      <h1>🀄 BACARRÁ</h1>
+      <div class="sub">Punto y Banca, con fichas ficticias.</div>
+      <div class="instrucciones">
+        No decides jugadas: solo eliges <b>a quién apuestas</b>. Gana la mano más cercana a <b>9</b>.<br>
+        Las figuras y el diez valen <b>0</b>, el as vale <b>1</b>, y del total <b>solo cuenta la última cifra</b>
+        (7+8=15 → 5).<br>
+        Con 8 o 9 de salida es <b>mano natural</b> y no se roba más. Si no, la tercera carta la decide
+        la <b>tabla oficial</b>, sin margen para elegir.<br>
+        <b>Pagos:</b> Punto 1:1 · Banca 0,95:1 (la casa se queda un 5 % de comisión) · Empate 8:1.<br>
+        Con esas reglas, la ventaja de la casa es del <b>1,24 %</b> al punto, <b>1,06 %</b> a la banca
+        y <b>14,4 %</b> al empate: la banca es la mejor apuesta de todo el casino.
+      </div>
+      <div class="filaBotones"><button class="primario" id="btnEmpezar">▶ A la mesa</button></div>
+    </div>
+  </div>
+</div>
+</div>
+
+<script src="arcade.js"></script>
+<script>
+// ============================================================
+//  BACARRÁ (Punto y Banca) — tabla oficial de tercera carta
+// ============================================================
+const $ = id => document.getElementById(id);
+const lienzo = $('lienzo');
+const ctx = Arcade.nitido(lienzo);
+const avisos = $('avisos');
+const ANCHO = lienzo.width, ALTO = lienzo.height;
+
+const MAZOS = 8;
+const CORTE = 40;
+const CARTA_AN = 74, CARTA_AL = 106;
+
+// Valor de bacarrá: figuras y diez a 0, as a 1, el resto su número
+const puntos = c => { const i = Cartas.indice(c); return i >= 8 ? (i === 12 ? 1 : 0) : i + 2; };
+const total = mano => mano.reduce((s, c) => s + puntos(c), 0) % 10;
+
+const B = {
+  zapato: [], punto: [], banca: [],
+  apuestas: { punto:0, banca:0, empate:0 },
+  ultima: null,
+  saldo: Arcade.fichas.saldo(),
+  camino: [],           // historial: 'P' | 'B' | 'E'
+  fase: 'apuesta',      // apuesta | reparto | fin
+  paso: 0, reloj: 0,
+  manos: 0, ganadas: 0
+};
+
+function nuevoZapato(){
+  B.zapato = Cartas.baraja(MAZOS);
+  Arcade.aviso(avisos, '🔄 Zapato nuevo: 8 barajas', true, 1700);
+}
+function sacar(){
+  if (B.zapato.length <= CORTE) nuevoZapato();
+  return B.zapato.pop();
+}
+
+const enJuego = () => B.apuestas.punto + B.apuestas.banca + B.apuestas.empate;
+
+function apostar(lado){
+  if (B.fase !== 'apuesta') return;
+  const f = Math.max(10, Math.floor(parseFloat($('ficha').value) || 0));
+  $('ficha').value = f;
+  if (f > B.saldo - enJuego()){ Arcade.aviso(avisos, 'No te quedan fichas libres', false, 1600); return; }
+  B.apuestas[lado] += f;
+  Sonido.fx('ficha');
+  refrescar();
+}
+function quitar(){
+  if (B.fase !== 'apuesta') return;
+  B.apuestas = { punto:0, banca:0, empate:0 };
+  refrescar();
+}
+function repetirApuesta(){
+  if (B.fase !== 'apuesta' || !B.ultima) return;
+  const t = Object.values(B.ultima).reduce((s, v) => s + v, 0);
+  if (t > B.saldo){ Arcade.aviso(avisos, 'No te llega para repetir', false, 1600); return; }
+  B.apuestas = { ...B.ultima };
+  Sonido.fx('ficha');
+  refrescar();
+}
+
+/**
+ * Reparte la mano entera de golpe siguiendo la tabla oficial y luego la va
+ * enseñando carta a carta. Las reglas no admiten decisión: con dos cartas
+ * de 8 o 9 hay natural; si no, el punto roba con 0-5, y la banca roba
+ * según su total y, cuando el punto ha robado, según qué carta le salió.
+ */
+function repartir(){
+  const t = enJuego();
+  if (B.fase !== 'apuesta') return;
+  if (!t){ Arcade.aviso(avisos, 'Pon alguna ficha primero', false, 1600); return; }
+
+  B.ultima = { ...B.apuestas };
+  B.saldo = Arcade.fichas.ajustar(-t);
+  B.punto = [sacar(), sacar()];
+  B.banca = [sacar(), sacar()];
+
+  const tp = total(B.punto), tb = total(B.banca);
+  if (tp < 8 && tb < 8){
+    let tercera = null;
+    if (tp <= 5){ tercera = sacar(); B.punto.push(tercera); }
+
+    if (tercera === null){
+      // el punto se planta: la banca roba con 0-5
+      if (tb <= 5) B.banca.push(sacar());
+    } else {
+      const v = puntos(tercera);
+      const roba =
+        tb <= 2 ? true :
+        tb === 3 ? v !== 8 :
+        tb === 4 ? v >= 2 && v <= 7 :
+        tb === 5 ? v >= 4 && v <= 7 :
+        tb === 6 ? v === 6 || v === 7 : false;
+      if (roba) B.banca.push(sacar());
+    }
+  }
+
+  B.fase = 'reparto';
+  B.paso = 0; B.reloj = 0;
+  mensaje('Repartiendo…');
+  Sonido.fx('colocar');
+  refrescar();
+}
+
+function resolver(){
+  B.fase = 'fin';
+  const tp = total(B.punto), tb = total(B.banca);
+  const ganador = tp > tb ? 'punto' : tb > tp ? 'banca' : 'empate';
+  B.camino.unshift(ganador === 'punto' ? 'P' : ganador === 'banca' ? 'B' : 'E');
+  if (B.camino.length > 40) B.camino.pop();
+  B.manos++;
+
+  let cobro = 0;
+  const partes = [];
+  if (ganador === 'empate'){
+    // en empate, punto y banca se devuelven
+    cobro += B.apuestas.punto + B.apuestas.banca;
+    if (B.apuestas.empate) { cobro += B.apuestas.empate * 9; partes.push('empate 8:1'); }
+    if (B.apuestas.punto || B.apuestas.banca) partes.push('punto y banca se devuelven');
+  } else if (ganador === 'punto'){
+    if (B.apuestas.punto){ cobro += B.apuestas.punto * 2; partes.push('punto 1:1'); }
+  } else {
+    // la banca paga 0,95:1 (5 % de comisión para la casa)
+    if (B.apuestas.banca){ cobro += B.apuestas.banca + Math.floor(B.apuestas.banca * 0.95); partes.push('banca 0,95:1'); }
+  }
+
+  const apostado = enJuego();
+  if (cobro) { B.saldo = Arcade.fichas.ajustar(cobro); B.ganadas++; }
+  const neto = cobro - apostado;
+
+  const natural = B.punto.length === 2 && B.banca.length === 2 && (tp >= 8 || tb >= 8);
+  Arcade.perfil.partida('bacara', { puntos: Math.max(0, neto), victoria: neto > 0 });
+  if (neto > 0) Arcade.guardarRecord('bacara', neto);
+
+  mensaje('Punto <b>' + tp + '</b> · Banca <b>' + tb + '</b> → gana <b>' +
+    (ganador === 'empate' ? 'el EMPATE' : ganador.toUpperCase()) + '</b>' +
+    (natural ? ' (natural)' : '') + '. ' +
+    (partes.length ? 'Cobras: ' + partes.join(', ') + '. ' : '') +
+    'Resultado: <b class="' + (neto >= 0 ? 'gana">+' : 'pierde">') + neto + '</b> fichas.');
+  Sonido.fx(neto > 0 ? 'caja' : neto < 0 ? 'error' : 'clic');
+
+  B.apuestas = { punto:0, banca:0, empate:0 };
+  guardarPartida();
+  refrescar();
+}
+
+// ---------- Guardado ----------
+function guardarPartida(){
+  Arcade.escribir('bacara', JSON.stringify({
+    zapato: B.zapato, camino: B.camino.slice(0, 40),
+    ultima: B.ultima, manos: B.manos, ganadas: B.ganadas
+  }));
+}
+function cargarPartida(){
+  const crudo = Arcade.leerTexto('bacara', null);
+  if (crudo){
+    try {
+      const g = JSON.parse(crudo);
+      if (Array.isArray(g.zapato) && g.zapato.length > CORTE) B.zapato = g.zapato;
+      B.camino = Array.isArray(g.camino) ? g.camino : [];
+      B.ultima = g.ultima || null;
+      B.manos = g.manos || 0; B.ganadas = g.ganadas || 0;
+    } catch(e){}
+  }
+  if (!B.zapato.length) B.zapato = Cartas.baraja(MAZOS);
+}
+Guardado.registrar(guardarPartida);
+
+// ---------- Interfaz ----------
+function mensaje(html){ $('mensaje').innerHTML = html; }
+function refrescar(){
+  $('saldoTxt').textContent = B.saldo.toLocaleString('es-ES');
+  $('zapatoTxt').textContent = B.zapato.length;
+  document.querySelectorAll('#apuestas button').forEach(b => {
+    const v = B.apuestas[b.dataset.lado];
+    let f = b.querySelector('.ficha');
+    if (v){
+      if (!f){ f = document.createElement('span'); f.className = 'ficha'; b.appendChild(f); }
+      f.textContent = v;
+    } else if (f) f.remove();
+    b.disabled = B.fase !== 'apuesta';
+  });
+  $('btnRepartir').disabled = B.fase !== 'apuesta';
+  $('btnQuitar').disabled = B.fase !== 'apuesta' || !enJuego();
+  $('btnRepetir').disabled = B.fase !== 'apuesta' || !B.ultima;
+}
+
+// ---------- Dibujo ----------
+function texto(t, x, y, color, tam, alin, peso){
+  ctx.fillStyle = color;
+  ctx.font = (peso || 700) + ' ' + tam + 'px "Segoe UI", system-ui, sans-serif';
+  ctx.textAlign = alin || 'left'; ctx.textBaseline = 'middle';
+  ctx.fillText(t, x, y);
+}
+
+function dibujar(dt){
+  // el reparto se enseña carta a carta
+  if (B.fase === 'reparto'){
+    B.reloj += dt;
+    const totalCartas = B.punto.length + B.banca.length;
+    if (B.reloj > 0.42){
+      B.reloj = 0;
+      B.paso++;
+      Sonido.fx('clic');
+      if (B.paso >= totalCartas) resolver();
+    }
+  }
+  const visibles = B.fase === 'reparto' ? B.paso : 99;
+
+  const g = ctx.createRadialGradient(ANCHO / 2, ALTO / 2, 40, ANCHO / 2, ALTO / 2, ANCHO * 0.6);
+  g.addColorStop(0, '#123a4d'); g.addColorStop(1, '#050f18');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, ANCHO, ALTO);
+
+  // el orden real de reparto alterna: punto, banca, punto, banca, terceras
+  const orden = [];
+  orden.push({ lado:'punto', i:0 }, { lado:'banca', i:0 },
+             { lado:'punto', i:1 }, { lado:'banca', i:1 });
+  if (B.punto[2]) orden.push({ lado:'punto', i:2 });
+  if (B.banca[2]) orden.push({ lado:'banca', i:2 });
+
+  const zona = (lado, x0, color, etiqueta) => {
+    const mano = B[lado];
+    ctx.strokeStyle = color; ctx.lineWidth = 2;
+    ctx.setLineDash([7, 6]);
+    ctx.beginPath(); ctx.roundRect(x0 - 16, 78, 3 * (CARTA_AN + 10) + 22, CARTA_AL + 40, 14);
+    ctx.stroke(); ctx.setLineDash([]);
+    texto(etiqueta, x0 + (3 * (CARTA_AN + 10)) / 2 - 5, 60, color, 17, 'center', 900);
+
+    let x = x0, mostradas = 0;
+    mano.forEach((c, i) => {
+      const pos = orden.findIndex(o => o.lado === lado && o.i === i);
+      if (pos < visibles){ Cartas.dibujar(ctx, c, x, 96, CARTA_AN, CARTA_AL); mostradas++; }
+      x += CARTA_AN + 10;
+    });
+    if (mostradas){
+      const vistas = mano.slice(0, mostradas);
+      texto(String(total(vistas)), x0 + 3 * (CARTA_AN + 10) / 2 - 5, 96 + CARTA_AL + 24,
+            color, 26, 'center', 900);
+    }
+  };
+
+  zona('punto', 96, '#5cc8ff', 'PUNTO');
+  zona('banca', ANCHO - 96 - 3 * (CARTA_AN + 10) + 10, '#ff6b8a', 'BANCA');
+
+  // camino de resultados
+  texto('CAMINO', ANCHO / 2, 250, 'rgba(255,255,255,.32)', 11, 'center', 800);
+  const cols = 20, tam = 20;
+  const x0 = ANCHO / 2 - (cols * tam) / 2;
+  B.camino.slice(0, cols * 3).forEach((r, k) => {
+    const cx = x0 + (k % cols) * tam + tam / 2;
+    const cy = 274 + Math.floor(k / cols) * tam + tam / 2;
+    ctx.beginPath(); ctx.arc(cx, cy, tam * 0.36, 0, 6.2832);
+    ctx.strokeStyle = r === 'P' ? '#5cc8ff' : r === 'B' ? '#ff6b8a' : '#00ff66';
+    ctx.lineWidth = 2.4; ctx.stroke();
+    texto(r, cx, cy, ctx.strokeStyle, 10, 'center', 900);
+  });
+
+  const pct = B.manos ? Math.round(B.ganadas / B.manos * 100) : 0;
+  texto('manos ' + B.manos + '  ·  cobradas ' + pct + '%', 14, ALTO - 16,
+        'rgba(255,255,255,.32)', 12, 'left', 700);
+  texto('las figuras y el 10 valen 0  ·  solo cuenta la última cifra',
+        ANCHO - 14, ALTO - 16, 'rgba(255,255,255,.25)', 12, 'right', 700);
+}
+
+// ---------- Entrada ----------
+$('apuestas').addEventListener('click', ev => {
+  const b = ev.target.closest('[data-lado]');
+  if (b){ Sonido.activar(); apostar(b.dataset.lado); }
+});
+$('btnRepartir').onclick = () => { Sonido.activar(); repartir(); };
+$('btnQuitar').onclick = quitar;
+$('btnRepetir').onclick = repetirApuesta;
+addEventListener('keydown', ev => { if (ev.code === 'Space'){ ev.preventDefault(); repartir(); } });
+$('btnEmpezar').onclick = () => { Sonido.activar(); $('modalInicio').classList.remove('visible'); };
+Arcade.conectarSonido($('btnSonido'));
+
+cargarPartida();
+refrescar();
+Arcade.bucle(dt => dibujar(dt));
+</script>
+</body>
+</html>

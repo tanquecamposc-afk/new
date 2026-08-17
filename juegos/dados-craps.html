@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dados (Craps) — Arcade NEXO</title>
+<link rel="stylesheet" href="arcade.css">
+<style>
+  /* Los modales cubren el tablero, no la barra: desde el menú siempre se puede volver */
+  #tablero{position:relative; display:flex; flex-direction:column; gap:10px;}
+  #juego{width:min(960px,100vw);}
+  .barra .titulo{color:var(--verde);}
+  #mesa{
+    position:relative; border-radius:16px; overflow:hidden;
+    border:2px solid rgba(0,255,102,.25);
+    box-shadow:0 15px 40px rgba(0,0,0,.9);
+  }
+  #lienzo{display:block; width:100%; height:auto;}
+
+  #tapete{display:grid; grid-template-columns:repeat(auto-fit,minmax(128px,1fr)); gap:8px;}
+  #tapete button{
+    padding:11px 8px; border-radius:11px; border:1px solid var(--borde);
+    background:rgba(0,0,0,.4); position:relative; text-align:center;
+    display:flex; flex-direction:column; gap:3px; align-items:center;
+    font-weight:800; font-size:12px; letter-spacing:.4px;
+  }
+  #tapete button small{font-size:10px; color:var(--tenue); font-weight:700; letter-spacing:.3px;}
+  #tapete button.buena{border-color:rgba(0,255,102,.45); color:var(--verde);}
+  #tapete button.contra{border-color:rgba(255,61,104,.45); color:var(--rojo);}
+  #tapete button.campo{border-color:rgba(0,240,255,.45); color:var(--azul);}
+  #tapete button.numero{border-color:rgba(243,230,0,.4); color:var(--oro);}
+  #tapete button .ficha{
+    position:absolute; top:-7px; right:-7px; min-width:22px; height:22px; padding:0 4px;
+    border-radius:999px; background:var(--oro); color:#1a1400;
+    font-size:10px; font-weight:900; display:grid; place-items:center;
+    box-shadow:0 0 9px rgba(243,230,0,.7);
+  }
+  #acciones{display:flex; gap:9px; flex-wrap:wrap; align-items:center;}
+  #acciones .grupo{
+    display:flex; align-items:center; gap:8px; background:rgba(0,0,0,.35);
+    border:1px solid var(--borde); border-radius:11px; padding:6px 12px;
+  }
+  #acciones label{font-size:11px; color:var(--tenue); text-transform:uppercase; letter-spacing:.7px;}
+  #ficha{
+    width:90px; text-align:right; background:rgba(0,0,0,.5); color:var(--oro);
+    border:1px solid var(--borde); border-radius:7px; padding:6px 9px;
+    font-family:var(--fuente-arcade); font-weight:800; font-size:14px;
+  }
+  #btnTirar{flex:1; min-width:160px; padding:12px; border-radius:11px;
+    font-weight:900; font-size:13px; letter-spacing:1.2px; text-transform:uppercase;}
+  #mensaje{
+    font-family:var(--fuente-arcade); font-size:13px; min-height:2.4em; line-height:1.5;
+    background:rgba(0,0,0,.35); border:1px solid var(--borde);
+    border-radius:10px; padding:8px 12px;
+  }
+  #mensaje b.gana{color:var(--verde);} #mensaje b.pierde{color:var(--rojo);}
+</style>
+</head>
+<body>
+
+<div id="juego">
+  <div class="barra">
+    <a class="boton" href="../index.html">🕹 Arcade</a>
+    <div class="titulo">🎲 DADOS · CRAPS</div>
+    <div class="sep"></div>
+    <div class="stat">🪙 <span id="saldoTxt" class="oro">5000</span></div>
+    <div class="stat">🎯 <span id="puntoTxt" class="verde">—</span></div>
+    <button id="btnSonido" title="Sonido" aria-label="Sonido">🔊</button>
+  </div>
+
+  <div id="tablero">
+
+  <div id="mesa">
+    <canvas id="lienzo" width="940" height="330"></canvas>
+    <div class="avisos" id="avisos"></div>
+  </div>
+
+  <div id="mensaje">Tirada de salida. Apuesta a Línea de pase y lanza.</div>
+
+  <div id="tapete"></div>
+
+  <div id="acciones">
+    <div class="grupo">
+      <label for="ficha">Ficha</label>
+      <input id="ficha" type="number" min="10" step="10" value="100">
+    </div>
+    <button id="btnQuitar">🗑 Quitar</button>
+    <button class="primario" id="btnTirar">🎲 Lanzar</button>
+  </div>
+
+  <div class="modal visible" id="modalInicio">
+    <div class="tarjetaModal">
+      <h1>🎲 DADOS · CRAPS</h1>
+      <div class="sub">Los dados del casino, con fichas ficticias.</div>
+      <div class="instrucciones">
+        <b>Tirada de salida:</b> con <b>7 u 11</b> gana la línea de pase; con <b>2, 3 o 12</b> pierde
+        (el 12 deja la de no pase en tablas). Cualquier otro número se convierte en el <b>punto</b>.<br>
+        <b>Con punto establecido:</b> gana la línea de pase si el punto vuelve a salir antes que el 7.
+        La de <b>no pase</b> es justo lo contrario.<br>
+        <b>Odds:</b> la apuesta sin ventaja de la casa. Solo se puede poner con punto, y paga la
+        probabilidad exacta: 2:1 con 4 o 10, 3:2 con 5 o 9 y 6:5 con 6 u 8.<br>
+        <b>Campo:</b> una sola tirada. Gana con 2, 3, 4, 9, 10, 11 o 12; el <b>2 paga 2:1</b> y el <b>12, 3:1</b>.<br>
+        <b>Colocar 6 u 8:</b> paga 7:6 si sale antes que el 7.
+      </div>
+      <div class="filaBotones"><button class="primario" id="btnEmpezar">▶ A la mesa</button></div>
+    </div>
+  </div>
+</div>
+</div>
+
+<script src="arcade.js"></script>
+<script>
+// ============================================================
+//  CRAPS — línea de pase, no pase, odds, campo y colocadas
+// ============================================================
+const $ = id => document.getElementById(id);
+const lienzo = $('lienzo');
+const ctx = Arcade.nitido(lienzo);
+const avisos = $('avisos');
+const ANCHO = lienzo.width, ALTO = lienzo.height;
+
+// Pagos de odds por punto: numerador/denominador de la probabilidad real
+const ODDS = { 4:[2,1], 5:[3,2], 6:[6,5], 8:[6,5], 9:[3,2], 10:[2,1] };
+
+const APUESTAS = [
+  { id:'pase',    nombre:'Línea de pase',  nota:'1:1 · salida 7/11',    clase:'buena' },
+  { id:'nopase',  nombre:'No pase',        nota:'1:1 · el 12 en tablas',clase:'contra' },
+  { id:'odds',    nombre:'Odds del pase',  nota:'sin ventaja de casa',  clase:'buena' },
+  { id:'oddsno',  nombre:'Odds del no pase',nota:'sin ventaja de casa', clase:'contra' },
+  { id:'campo',   nombre:'Campo',          nota:'2,3,4,9,10,11,12',     clase:'campo' },
+  { id:'seis',    nombre:'Colocar el 6',   nota:'paga 7:6',             clase:'numero' },
+  { id:'ocho',    nombre:'Colocar el 8',   nota:'paga 7:6',             clase:'numero' }
+];
+
+const D = {
+  fichas: {},
+  punto: 0,
+  saldo: Arcade.fichas.saldo(),
+  dados: [1, 1], historia: [],
+  fase: 'apuesta',        // apuesta | rodando
+  reloj: 0, giro: 0,
+  tiradas: 0, ganadas: 0
+};
+
+const enJuego = () => Object.values(D.fichas).reduce((s, v) => s + v, 0);
+
+function apostar(id){
+  if (D.fase !== 'apuesta') return;
+  if ((id === 'odds' || id === 'oddsno') && !D.punto){
+    Arcade.aviso(avisos, 'Las odds solo se ponen con punto establecido', false, 2000); return;
+  }
+  if ((id === 'pase' || id === 'nopase') && D.punto){
+    Arcade.aviso(avisos, 'La línea se apuesta en la tirada de salida', false, 2000); return;
+  }
+  const f = Math.max(10, Math.floor(parseFloat($('ficha').value) || 0));
+  $('ficha').value = f;
+  if (f > D.saldo - enJuego()){ Arcade.aviso(avisos, 'No te quedan fichas libres', false, 1600); return; }
+  D.fichas[id] = (D.fichas[id] || 0) + f;
+  Sonido.fx('ficha');
+  refrescar();
+}
+function quitar(){
+  if (D.fase !== 'apuesta') return;
+  // con punto establecido, la línea ya no se puede retirar; el resto sí
+  const fijas = D.punto ? ['pase','nopase'] : [];
+  Object.keys(D.fichas).forEach(k => { if (!fijas.includes(k)) delete D.fichas[k]; });
+  refrescar();
+}
+
+function tirar(){
+  if (D.fase !== 'apuesta') return;
+  if (!enJuego()){ Arcade.aviso(avisos, 'Pon alguna ficha primero', false, 1600); return; }
+  // lo apostado se retira del saldo la primera vez que entra en juego
+  const nuevo = enJuego() - (D.comprometido || 0);
+  if (nuevo > 0) D.saldo = Arcade.fichas.ajustar(-nuevo);
+  D.comprometido = enJuego();
+
+  D.fase = 'rodando';
+  D.reloj = 0;
+  D.destino = [azarEntero(1, 6), azarEntero(1, 6)];
+  Sonido.fx('giro');
+  refrescar();
+}
+
+function resolver(){
+  D.fase = 'apuesta';
+  D.dados = D.destino;
+  const [a, b] = D.dados;
+  const suma = a + b;
+  D.historia.unshift(suma);
+  if (D.historia.length > 24) D.historia.pop();
+  D.tiradas++;
+
+  let cobro = 0;
+  const partes = [];
+  const gana = (id, importe, etiqueta) => {
+    cobro += importe;
+    partes.push(etiqueta);
+    delete D.fichas[id];
+  };
+  const pierde = (id, etiqueta) => { partes.push(etiqueta); delete D.fichas[id]; };
+
+  // --- campo: se resuelve en cada tirada ---
+  if (D.fichas.campo){
+    const c = D.fichas.campo;
+    if (suma === 2) gana('campo', c * 3, '🎯 campo con el 2 (2:1)');
+    else if (suma === 12) gana('campo', c * 4, '🎯 campo con el 12 (3:1)');
+    else if ([3,4,9,10,11].includes(suma)) gana('campo', c * 2, '🎯 campo 1:1');
+    else pierde('campo', '✗ campo');
+  }
+
+  if (!D.punto){
+    // ---------- tirada de salida ----------
+    if (suma === 7 || suma === 11){
+      if (D.fichas.pase) gana('pase', D.fichas.pase * 2, '✅ pase con ' + suma);
+      if (D.fichas.nopase) pierde('nopase', '✗ no pase');
+    } else if (suma === 2 || suma === 3){
+      if (D.fichas.pase) pierde('pase', '✗ pase (craps ' + suma + ')');
+      if (D.fichas.nopase) gana('nopase', D.fichas.nopase * 2, '✅ no pase con ' + suma);
+    } else if (suma === 12){
+      if (D.fichas.pase) pierde('pase', '✗ pase (craps 12)');
+      if (D.fichas.nopase) partes.push('⊝ no pase en tablas');   // se queda como está
+    } else {
+      D.punto = suma;
+      partes.push('🎯 el punto es el ' + suma);
+    }
+  } else {
+    // ---------- con punto establecido ----------
+    if (suma === D.punto){
+      if (D.fichas.pase) gana('pase', D.fichas.pase * 2, '✅ pase: el punto vuelve');
+      if (D.fichas.nopase) pierde('nopase', '✗ no pase');
+      if (D.fichas.odds){
+        const [n, d] = ODDS[D.punto];
+        gana('odds', D.fichas.odds + Math.floor(D.fichas.odds * n / d), '✅ odds ' + n + ':' + d);
+      }
+      if (D.fichas.oddsno) pierde('oddsno', '✗ odds del no pase');
+      D.punto = 0;
+    } else if (suma === 7){
+      if (D.fichas.pase) pierde('pase', '✗ pase (sale el 7)');
+      if (D.fichas.nopase) gana('nopase', D.fichas.nopase * 2, '✅ no pase con el 7');
+      if (D.fichas.odds) pierde('odds', '✗ odds');
+      if (D.fichas.oddsno){
+        const [n, d] = ODDS[D.punto];
+        gana('oddsno', D.fichas.oddsno + Math.floor(D.fichas.oddsno * d / n), '✅ odds del no pase ' + d + ':' + n);
+      }
+      // las colocadas también caen con el 7
+      if (D.fichas.seis) pierde('seis', '✗ el 6 colocado');
+      if (D.fichas.ocho) pierde('ocho', '✗ el 8 colocado');
+      D.punto = 0;
+    }
+  }
+
+  // --- colocadas de 6 y 8: pagan 7:6 si salen antes que el 7 ---
+  if (suma === 6 && D.fichas.seis){
+    cobro += Math.floor(D.fichas.seis * 7 / 6);
+    partes.push('✅ el 6 colocado (7:6)');      // la ficha se queda en la mesa
+  }
+  if (suma === 8 && D.fichas.ocho){
+    cobro += Math.floor(D.fichas.ocho * 7 / 6);
+    partes.push('✅ el 8 colocado (7:6)');
+  }
+
+  if (cobro > 0){ D.saldo = Arcade.fichas.ajustar(cobro); D.ganadas++; }
+  D.comprometido = enJuego();
+
+  Arcade.perfil.partida('dados', { puntos: Math.max(0, cobro), victoria: cobro > 0 });
+  if (cobro > 0) Arcade.guardarRecord('dados', cobro);
+
+  mensaje('🎲 <b>' + a + ' + ' + b + ' = ' + suma + '</b>. ' +
+          (partes.length ? partes.join(' · ') : 'Nada se resuelve.') +
+          (cobro ? ' Cobras <b class="gana">+' + cobro + '</b>.' : ''));
+  Sonido.fx(cobro > 0 ? 'caja' : suma === 7 && D.punto === 0 ? 'error' : 'clic');
+  guardarPartida();
+  refrescar();
+}
+
+// ---------- Guardado ----------
+function guardarPartida(){
+  Arcade.escribir('dados', JSON.stringify({
+    punto: D.punto, fichas: D.fichas, comprometido: D.comprometido,
+    historia: D.historia.slice(0, 24), tiradas: D.tiradas, ganadas: D.ganadas
+  }));
+}
+function cargarPartida(){
+  const crudo = Arcade.leerTexto('dados', null);
+  if (!crudo) return;
+  try {
+    const g = JSON.parse(crudo);
+    D.punto = g.punto || 0;
+    D.fichas = g.fichas || {};
+    D.comprometido = g.comprometido || 0;
+    D.historia = Array.isArray(g.historia) ? g.historia : [];
+    D.tiradas = g.tiradas || 0; D.ganadas = g.ganadas || 0;
+  } catch(e){}
+}
+Guardado.registrar(guardarPartida);
+
+// ---------- Interfaz ----------
+function mensaje(html){ $('mensaje').innerHTML = html; }
+
+function montarTapete(){
+  const t = $('tapete');
+  t.innerHTML = '';
+  APUESTAS.forEach(a => {
+    const b = document.createElement('button');
+    b.dataset.apuesta = a.id;
+    b.className = a.clase;
+    b.innerHTML = a.nombre + '<small>' + a.nota + '</small>';
+    b.setAttribute('aria-label', a.nombre + ', ' + a.nota);
+    t.appendChild(b);
+  });
+}
+
+function refrescar(){
+  $('saldoTxt').textContent = D.saldo.toLocaleString('es-ES');
+  $('puntoTxt').textContent = D.punto || '—';
+  document.querySelectorAll('[data-apuesta]').forEach(b => {
+    const v = D.fichas[b.dataset.apuesta];
+    let f = b.querySelector('.ficha');
+    if (v){
+      if (!f){ f = document.createElement('span'); f.className = 'ficha'; b.appendChild(f); }
+      f.textContent = v;
+    } else if (f) f.remove();
+    const id = b.dataset.apuesta;
+    b.disabled = D.fase !== 'apuesta' ||
+      ((id === 'odds' || id === 'oddsno') && !D.punto) ||
+      ((id === 'pase' || id === 'nopase') && !!D.punto);
+  });
+  $('btnTirar').disabled = D.fase !== 'apuesta';
+  $('btnQuitar').disabled = D.fase !== 'apuesta' || !enJuego();
+}
+
+// ---------- Dibujo ----------
+function texto(t, x, y, color, tam, alin, peso){
+  ctx.fillStyle = color;
+  ctx.font = (peso || 700) + ' ' + tam + 'px "Segoe UI", system-ui, sans-serif';
+  ctx.textAlign = alin || 'left'; ctx.textBaseline = 'middle';
+  ctx.fillText(t, x, y);
+}
+
+const PUNTOS_DADO = {
+  1:[[0,0]], 2:[[-1,-1],[1,1]], 3:[[-1,-1],[0,0],[1,1]],
+  4:[[-1,-1],[1,-1],[-1,1],[1,1]], 5:[[-1,-1],[1,-1],[0,0],[-1,1],[1,1]],
+  6:[[-1,-1],[1,-1],[-1,0],[1,0],[-1,1],[1,1]]
+};
+
+function dado(v, x, y, tam, giro){
+  ctx.save();
+  ctx.translate(x, y); ctx.rotate(giro);
+  ctx.fillStyle = '#f6f7fb';
+  ctx.shadowColor = 'rgba(0,0,0,.6)'; ctx.shadowBlur = tam * 0.25; ctx.shadowOffsetY = tam * 0.08;
+  ctx.beginPath(); ctx.roundRect(-tam / 2, -tam / 2, tam, tam, tam * 0.18); ctx.fill();
+  ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
+  ctx.strokeStyle = 'rgba(0,0,0,.18)'; ctx.lineWidth = 1.5; ctx.stroke();
+  ctx.fillStyle = '#15181f';
+  (PUNTOS_DADO[v] || []).forEach(([dx, dy]) => {
+    ctx.beginPath();
+    ctx.arc(dx * tam * 0.26, dy * tam * 0.26, tam * 0.085, 0, 6.2832);
+    ctx.fill();
+  });
+  ctx.restore();
+}
+
+function dibujar(dt){
+  if (D.fase === 'rodando'){
+    D.reloj += dt;
+    D.giro += dt * 14;
+    D.dados = [azarEntero(1, 6), azarEntero(1, 6)];
+    if (D.reloj > 1.05) resolver();
+  }
+
+  const g = ctx.createRadialGradient(ANCHO / 2, ALTO / 2, 30, ANCHO / 2, ALTO / 2, ANCHO * 0.6);
+  g.addColorStop(0, '#0f4a2c'); g.addColorStop(1, '#04180f');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, ANCHO, ALTO);
+  ctx.strokeStyle = 'rgba(0,255,102,.18)'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.roundRect(14, 14, ANCHO - 28, ALTO - 28, 14); ctx.stroke();
+
+  // dados
+  const tam = 74, sep = 26;
+  const rodando = D.fase === 'rodando';
+  dado(D.dados[0], ANCHO / 2 - tam / 2 - sep / 2, 96, tam, rodando ? D.giro : -0.12);
+  dado(D.dados[1], ANCHO / 2 + tam / 2 + sep / 2, 96, tam, rodando ? -D.giro * 1.2 : 0.16);
+  texto(rodando ? '…' : String(D.dados[0] + D.dados[1]), ANCHO / 2, 172,
+        rodando ? 'rgba(255,255,255,.35)' : '#f3e600', 30, 'center', 900);
+
+  // marcador del punto
+  const px = 100, py = 96;
+  ctx.beginPath(); ctx.arc(px, py, 44, 0, 6.2832);
+  ctx.fillStyle = D.punto ? 'rgba(0,255,102,.12)' : 'rgba(255,255,255,.04)';
+  ctx.fill();
+  ctx.strokeStyle = D.punto ? '#00ff66' : 'rgba(255,255,255,.2)'; ctx.lineWidth = 2.5; ctx.stroke();
+  texto(D.punto ? 'ON' : 'OFF', px, py - 16, D.punto ? '#00ff66' : 'rgba(255,255,255,.35)', 12, 'center', 900);
+  texto(D.punto || '—', px, py + 10, D.punto ? '#fff' : 'rgba(255,255,255,.3)', 28, 'center', 900);
+  texto('PUNTO', px, py + 60, 'rgba(255,255,255,.3)', 11, 'center', 800);
+
+  // ayuda de pagos
+  const ay = ANCHO - 100;
+  texto('ODDS', ay, 52, 'rgba(255,255,255,.3)', 11, 'center', 800);
+  [[4,'2:1'],[5,'3:2'],[6,'6:5'],[8,'6:5'],[9,'3:2'],[10,'2:1']].forEach(([n, p], k) => {
+    const y = 74 + k * 20;
+    const activo = D.punto === n;
+    texto(n + '  ' + p, ay, y, activo ? '#f3e600' : 'rgba(255,255,255,.32)', 12, 'center', activo ? 900 : 700);
+  });
+
+  // historial de tiradas
+  texto('ÚLTIMAS TIRADAS', ANCHO / 2, 216, 'rgba(255,255,255,.3)', 11, 'center', 800);
+  const cols = Math.min(D.historia.length, 18);
+  const x0 = ANCHO / 2 - cols * 24 / 2;
+  D.historia.slice(0, 18).forEach((s, k) => {
+    const x = x0 + k * 24 + 12;
+    ctx.beginPath(); ctx.roundRect(x - 10, 234, 20, 20, 5);
+    ctx.fillStyle = s === 7 ? 'rgba(255,61,104,.28)' : s === 11 || s === 2 || s === 3 || s === 12
+      ? 'rgba(0,240,255,.2)' : 'rgba(255,255,255,.08)';
+    ctx.fill();
+    texto(String(s), x, 244, s === 7 ? '#ff8fa5' : 'rgba(255,255,255,.75)', 11, 'center', 800);
+  });
+
+  const pct = D.tiradas ? Math.round(D.ganadas / D.tiradas * 100) : 0;
+  texto('tiradas ' + D.tiradas + '  ·  con cobro ' + pct + '%', 26, ALTO - 26,
+        'rgba(255,255,255,.3)', 12, 'left', 700);
+  texto('en juego 🪙 ' + enJuego().toLocaleString('es-ES'), ANCHO - 26, ALTO - 26,
+        '#f3e600', 12, 'right', 800);
+}
+
+// ---------- Entrada ----------
+$('tapete').addEventListener('click', ev => {
+  const b = ev.target.closest('[data-apuesta]');
+  if (b){ Sonido.activar(); apostar(b.dataset.apuesta); }
+});
+$('btnTirar').onclick = () => { Sonido.activar(); tirar(); };
+$('btnQuitar').onclick = quitar;
+addEventListener('keydown', ev => { if (ev.code === 'Space'){ ev.preventDefault(); tirar(); } });
+$('btnEmpezar').onclick = () => { Sonido.activar(); $('modalInicio').classList.remove('visible'); };
+Arcade.conectarSonido($('btnSonido'));
+
+cargarPartida();
+montarTapete();
+refrescar();
+Arcade.bucle(dt => dibujar(dt));
+</script>
+</body>
+</html>

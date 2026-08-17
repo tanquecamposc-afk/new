@@ -37,7 +37,12 @@ const JUEGOS = [
   { id:'galletas',   archivo:'juegos/cookie-clicker.html' },
   { id:'sparta',     archivo:'juegos/spartahoppers.html' },
   { id:'mercado',    archivo:'juegos/money-market.html' },
-  { id:'moto',       archivo:'juegos/moto-x3m.html' }
+  { id:'moto',       archivo:'juegos/moto-x3m.html' },
+  { id:'blackjack',  archivo:'juegos/blackjack.html' },
+  { id:'ruleta',     archivo:'juegos/ruleta.html' },
+  { id:'poker',      archivo:'juegos/poker-texas.html' },
+  { id:'bacara',     archivo:'juegos/bacara.html' },
+  { id:'dados',      archivo:'juegos/dados-craps.html' }
 ];
 
 const leer = f => fs.readFileSync(path.join(RAIZ, f), 'utf8');

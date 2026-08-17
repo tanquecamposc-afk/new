@@ -1361,6 +1361,274 @@ body{display:block; padding:0; margin:0;}
 #pantalla-moto .rejillaResumen .e{font-size:11px; color:var(--tenue);}
 
 
+
+/* --- blackjack --- */
+#pantalla-blackjack /* Los modales cubren el tablero, #pantalla-blackjack no la barra: desde el menú siempre se puede volver */
+  #tablero{position:relative; display:flex; flex-direction:column; gap:10px;}
+#pantalla-blackjack #juego{width:min(940px,100vw);}
+#pantalla-blackjack .barra .titulo{color:var(--oro);}
+#pantalla-blackjack #tapete{
+    position:relative; border-radius:16px; overflow:hidden;
+    border:2px solid rgba(243,230,0,.25);
+    box-shadow:0 15px 40px rgba(0,0,0,.9), inset 0 0 90px rgba(0,0,0,.6);
+  }
+#pantalla-blackjack #lienzo{display:block; width:100%; height:auto;}
+#pantalla-blackjack #controles{display:flex; gap:9px; flex-wrap:wrap;}
+#pantalla-blackjack #controles button{
+    flex:1; min-width:104px; padding:12px 10px; border-radius:11px;
+    font-weight:900; font-size:12px; letter-spacing:1px; text-transform:uppercase;
+  }
+#pantalla-blackjack #apostar{display:flex; gap:9px; flex-wrap:wrap; align-items:center;}
+#pantalla-blackjack #apostar .grupo{
+    display:flex; align-items:center; gap:8px; background:rgba(0,0,0,.35);
+    border:1px solid var(--borde); border-radius:11px; padding:6px 12px;
+  }
+#pantalla-blackjack #apostar label{font-size:11px; color:var(--tenue); text-transform:uppercase; letter-spacing:.7px;}
+#pantalla-blackjack #montoApuesta{
+    width:96px; text-align:right; background:rgba(0,0,0,.5); color:var(--oro);
+    border:1px solid var(--borde); border-radius:7px; padding:6px 9px;
+    font-family:var(--fuente-arcade); font-weight:800; font-size:14px;
+  }
+#pantalla-blackjack .fichasRapidas{display:flex; gap:6px;}
+#pantalla-blackjack .fichasRapidas button{padding:6px 11px; font-size:12px; min-width:0;}
+#pantalla-blackjack #mensaje{
+    font-family:var(--fuente-arcade); font-size:13px; letter-spacing:.5px;
+    background:rgba(0,0,0,.35); border:1px solid var(--borde);
+    border-radius:10px; padding:9px 13px; min-height:2.6em; line-height:1.5;
+  }
+#pantalla-blackjack #mensaje b.gana{color:var(--verde);}
+#pantalla-blackjack #mensaje b.pierde{color:var(--rojo);}
+#pantalla-blackjack #mensaje b.empata{color:var(--oro);}
+#pantalla-blackjack .rejillaResumen{
+    display:grid; grid-template-columns:repeat(auto-fit,minmax(110px,1fr)); gap:10px;
+    margin:14px 0 18px;
+  }
+#pantalla-blackjack .rejillaResumen div{background:rgba(0,0,0,.35); border-radius:10px; padding:11px;}
+#pantalla-blackjack .rejillaResumen .n{font-size:22px; font-weight:800; color:var(--oro);}
+#pantalla-blackjack .rejillaResumen .e{font-size:11px; color:var(--tenue);}
+
+
+
+/* --- ruleta --- */
+#pantalla-ruleta /* Los modales cubren el tablero, #pantalla-ruleta no la barra: desde el menú siempre se puede volver */
+  #tablero{position:relative; display:flex; flex-direction:column; gap:10px;}
+#pantalla-ruleta #juego{width:min(1040px,100vw);}
+#pantalla-ruleta .barra .titulo{color:var(--rojo);}
+#pantalla-ruleta #arriba{display:grid; grid-template-columns:340px 1fr; gap:12px; align-items:start;}
+@media (max-width:820px){#pantalla-ruleta #arriba{grid-template-columns:1fr;}
+ }
+#pantalla-ruleta #ruedaCaja{
+    position:relative; border-radius:16px; overflow:hidden; background:#06090f;
+    border:2px solid rgba(255,61,104,.25);
+    box-shadow:0 12px 34px rgba(0,0,0,.8);
+  }
+#pantalla-ruleta #lienzo{display:block; width:100%; height:auto;}
+#pantalla-ruleta #panel{display:flex; flex-direction:column; gap:10px;}
+#pantalla-ruleta #historial{
+    display:flex; gap:5px; overflow-x:auto; padding:7px 9px; scrollbar-width:thin;
+    background:rgba(0,0,0,.4); border:1px solid var(--borde); border-radius:10px;
+    min-height:38px;
+  }
+#pantalla-ruleta #historial span{
+    flex:none; width:26px; height:24px; border-radius:6px; display:grid; place-items:center;
+    font-family:var(--fuente-arcade); font-weight:800; font-size:12px; color:#fff;
+  }
+#pantalla-ruleta #historial span.rojo{background:#c8102e;}
+#pantalla-ruleta #historial span.negro{background:#15181f;}
+#pantalla-ruleta #historial span.verde{background:#0f8a3c;}
+#pantalla-ruleta /* ---------- Tapete ---------- */
+  #tapete{
+    display:grid; gap:3px;
+    grid-template-columns:34px repeat(12, 1fr) 34px;
+    background:#0a3a22; border:2px solid rgba(243,230,0,.3);
+    border-radius:12px; padding:6px;
+  }
+#pantalla-ruleta #tapete button{
+    padding:0; min-height:34px; border-radius:5px; border:1px solid rgba(255,255,255,.18);
+    font-family:var(--fuente-arcade); font-weight:800; font-size:13px; color:#fff;
+    background:#15181f; cursor:pointer; position:relative;
+    display:grid; place-items:center; letter-spacing:0;
+  }
+#pantalla-ruleta #tapete button.rojo{background:#a8112a;}
+#pantalla-ruleta #tapete button.cero{background:#0f8a3c; grid-row:span 3;}
+#pantalla-ruleta #tapete button.fuera{background:rgba(0,0,0,.35); font-size:11px; letter-spacing:.5px;}
+#pantalla-ruleta #tapete button.col{font-size:11px;}
+#pantalla-ruleta #tapete button:hover{filter:brightness(1.4); border-color:var(--oro);}
+#pantalla-ruleta #tapete button .ficha{
+    position:absolute; top:-6px; right:-6px; min-width:19px; height:19px; padding:0 3px;
+    border-radius:999px; background:var(--oro); color:#1a1400;
+    font-size:10px; font-weight:900; display:grid; place-items:center;
+    box-shadow:0 0 8px rgba(243,230,0,.7);
+  }
+#pantalla-ruleta #tapete button.acierta{
+    outline:3px solid var(--oro); outline-offset:1px;
+    animation:destella .6s ease-in-out 3;
+  }
+@keyframes destella{50%{filter:brightness(2.1);}}
+#pantalla-ruleta #filaFuera{
+    display:grid; grid-template-columns:repeat(6,1fr); gap:3px; margin-top:3px;
+  }
+#pantalla-ruleta #acciones{display:flex; gap:9px; flex-wrap:wrap; align-items:center;}
+#pantalla-ruleta #acciones .grupo{
+    display:flex; align-items:center; gap:8px; background:rgba(0,0,0,.35);
+    border:1px solid var(--borde); border-radius:11px; padding:6px 12px;
+  }
+#pantalla-ruleta #acciones label{font-size:11px; color:var(--tenue); text-transform:uppercase; letter-spacing:.7px;}
+#pantalla-ruleta #ficha{
+    width:88px; text-align:right; background:rgba(0,0,0,.5); color:var(--oro);
+    border:1px solid var(--borde); border-radius:7px; padding:6px 9px;
+    font-family:var(--fuente-arcade); font-weight:800; font-size:14px;
+  }
+#pantalla-ruleta #btnGirar{
+    flex:1; min-width:150px; padding:12px; border-radius:11px;
+    font-weight:900; font-size:13px; letter-spacing:1.2px; text-transform:uppercase;
+  }
+#pantalla-ruleta #mensaje{
+    font-family:var(--fuente-arcade); font-size:13px; min-height:2.4em; line-height:1.5;
+    background:rgba(0,0,0,.35); border:1px solid var(--borde);
+    border-radius:10px; padding:8px 12px;
+  }
+#pantalla-ruleta #mensaje b.gana{color:var(--verde);}
+#pantalla-ruleta #mensaje b.pierde{color:var(--rojo);}
+
+
+
+/* --- poker --- */
+#pantalla-poker /* Los modales cubren el tablero, #pantalla-poker no la barra: desde el menú siempre se puede volver */
+  #tablero{position:relative; display:flex; flex-direction:column; gap:10px;}
+#pantalla-poker #juego{width:min(980px,100vw);}
+#pantalla-poker .barra .titulo{color:var(--morado);}
+#pantalla-poker #mesa{
+    position:relative; border-radius:16px; overflow:hidden;
+    border:2px solid rgba(168,85,247,.28);
+    box-shadow:0 15px 40px rgba(0,0,0,.9);
+  }
+#pantalla-poker #lienzo{display:block; width:100%; height:auto;}
+#pantalla-poker #mensaje{
+    font-family:var(--fuente-arcade); font-size:13px; min-height:2.4em; line-height:1.5;
+    background:rgba(0,0,0,.35); border:1px solid var(--borde);
+    border-radius:10px; padding:8px 12px;
+  }
+#pantalla-poker #mensaje b.gana{color:var(--verde);}
+#pantalla-poker #mensaje b.pierde{color:var(--rojo);}
+#pantalla-poker #controles{display:flex; gap:9px; flex-wrap:wrap; align-items:center;}
+#pantalla-poker #controles button{
+    flex:1; min-width:112px; padding:12px 10px; border-radius:11px;
+    font-weight:900; font-size:12px; letter-spacing:1px; text-transform:uppercase;
+  }
+#pantalla-poker #subir{
+    display:flex; align-items:center; gap:9px; background:rgba(0,0,0,.35);
+    border:1px solid var(--borde); border-radius:11px; padding:6px 12px; flex:1.4; min-width:220px;
+  }
+#pantalla-poker #subir input[type=range]{flex:1; accent-color:var(--morado);}
+#pantalla-poker #subirTxt{
+    font-family:var(--fuente-arcade); font-weight:800; color:var(--oro);
+    min-width:64px; text-align:right; font-size:14px;
+  }
+
+
+
+/* --- bacara --- */
+#pantalla-bacara /* Los modales cubren el tablero, #pantalla-bacara no la barra: desde el menú siempre se puede volver */
+  #tablero{position:relative; display:flex; flex-direction:column; gap:10px;}
+#pantalla-bacara #juego{width:min(960px,100vw);}
+#pantalla-bacara .barra .titulo{color:var(--azul);}
+#pantalla-bacara #mesa{
+    position:relative; border-radius:16px; overflow:hidden;
+    border:2px solid rgba(0,240,255,.25);
+    box-shadow:0 15px 40px rgba(0,0,0,.9);
+  }
+#pantalla-bacara #lienzo{display:block; width:100%; height:auto;}
+#pantalla-bacara #apuestas{display:grid; grid-template-columns:repeat(3,1fr); gap:10px;}
+#pantalla-bacara #apuestas button{
+    padding:16px 10px; border-radius:13px; border:2px solid;
+    font-weight:900; font-size:13px; letter-spacing:1px; text-transform:uppercase;
+    display:flex; flex-direction:column; gap:4px; align-items:center; position:relative;
+  }
+#pantalla-bacara #apuestas button small{font-size:11px; opacity:.8; letter-spacing:.4px; font-weight:700;}
+#pantalla-bacara #btnPunto{color:#5cc8ff; border-color:rgba(92,200,255,.5); background:rgba(92,200,255,.08);}
+#pantalla-bacara #btnBanca{color:#ff6b8a; border-color:rgba(255,107,138,.5); background:rgba(255,107,138,.08);}
+#pantalla-bacara #btnEmpate{color:var(--verde); border-color:rgba(0,255,102,.5); background:rgba(0,255,102,.08);}
+#pantalla-bacara #apuestas button .ficha{
+    position:absolute; top:-8px; right:-8px; min-width:24px; height:24px; padding:0 5px;
+    border-radius:999px; background:var(--oro); color:#1a1400;
+    font-size:11px; font-weight:900; display:grid; place-items:center;
+    box-shadow:0 0 10px rgba(243,230,0,.7);
+  }
+#pantalla-bacara #acciones{display:flex; gap:9px; flex-wrap:wrap; align-items:center;}
+#pantalla-bacara #acciones .grupo{
+    display:flex; align-items:center; gap:8px; background:rgba(0,0,0,.35);
+    border:1px solid var(--borde); border-radius:11px; padding:6px 12px;
+  }
+#pantalla-bacara #acciones label{font-size:11px; color:var(--tenue); text-transform:uppercase; letter-spacing:.7px;}
+#pantalla-bacara #ficha{
+    width:90px; text-align:right; background:rgba(0,0,0,.5); color:var(--oro);
+    border:1px solid var(--borde); border-radius:7px; padding:6px 9px;
+    font-family:var(--fuente-arcade); font-weight:800; font-size:14px;
+  }
+#pantalla-bacara #btnRepartir{flex:1; min-width:150px; padding:12px; border-radius:11px;
+    font-weight:900; font-size:13px; letter-spacing:1.2px; text-transform:uppercase;}
+#pantalla-bacara #mensaje{
+    font-family:var(--fuente-arcade); font-size:13px; min-height:2.4em; line-height:1.5;
+    background:rgba(0,0,0,.35); border:1px solid var(--borde);
+    border-radius:10px; padding:8px 12px;
+  }
+#pantalla-bacara #mensaje b.gana{color:var(--verde);}
+#pantalla-bacara #mensaje b.pierde{color:var(--rojo);}
+
+
+
+/* --- dados --- */
+#pantalla-dados /* Los modales cubren el tablero, #pantalla-dados no la barra: desde el menú siempre se puede volver */
+  #tablero{position:relative; display:flex; flex-direction:column; gap:10px;}
+#pantalla-dados #juego{width:min(960px,100vw);}
+#pantalla-dados .barra .titulo{color:var(--verde);}
+#pantalla-dados #mesa{
+    position:relative; border-radius:16px; overflow:hidden;
+    border:2px solid rgba(0,255,102,.25);
+    box-shadow:0 15px 40px rgba(0,0,0,.9);
+  }
+#pantalla-dados #lienzo{display:block; width:100%; height:auto;}
+#pantalla-dados #tapete{display:grid; grid-template-columns:repeat(auto-fit,minmax(128px,1fr)); gap:8px;}
+#pantalla-dados #tapete button{
+    padding:11px 8px; border-radius:11px; border:1px solid var(--borde);
+    background:rgba(0,0,0,.4); position:relative; text-align:center;
+    display:flex; flex-direction:column; gap:3px; align-items:center;
+    font-weight:800; font-size:12px; letter-spacing:.4px;
+  }
+#pantalla-dados #tapete button small{font-size:10px; color:var(--tenue); font-weight:700; letter-spacing:.3px;}
+#pantalla-dados #tapete button.buena{border-color:rgba(0,255,102,.45); color:var(--verde);}
+#pantalla-dados #tapete button.contra{border-color:rgba(255,61,104,.45); color:var(--rojo);}
+#pantalla-dados #tapete button.campo{border-color:rgba(0,240,255,.45); color:var(--azul);}
+#pantalla-dados #tapete button.numero{border-color:rgba(243,230,0,.4); color:var(--oro);}
+#pantalla-dados #tapete button .ficha{
+    position:absolute; top:-7px; right:-7px; min-width:22px; height:22px; padding:0 4px;
+    border-radius:999px; background:var(--oro); color:#1a1400;
+    font-size:10px; font-weight:900; display:grid; place-items:center;
+    box-shadow:0 0 9px rgba(243,230,0,.7);
+  }
+#pantalla-dados #acciones{display:flex; gap:9px; flex-wrap:wrap; align-items:center;}
+#pantalla-dados #acciones .grupo{
+    display:flex; align-items:center; gap:8px; background:rgba(0,0,0,.35);
+    border:1px solid var(--borde); border-radius:11px; padding:6px 12px;
+  }
+#pantalla-dados #acciones label{font-size:11px; color:var(--tenue); text-transform:uppercase; letter-spacing:.7px;}
+#pantalla-dados #ficha{
+    width:90px; text-align:right; background:rgba(0,0,0,.5); color:var(--oro);
+    border:1px solid var(--borde); border-radius:7px; padding:6px 9px;
+    font-family:var(--fuente-arcade); font-weight:800; font-size:14px;
+  }
+#pantalla-dados #btnTirar{flex:1; min-width:160px; padding:12px; border-radius:11px;
+    font-weight:900; font-size:13px; letter-spacing:1.2px; text-transform:uppercase;}
+#pantalla-dados #mensaje{
+    font-family:var(--fuente-arcade); font-size:13px; min-height:2.4em; line-height:1.5;
+    background:rgba(0,0,0,.35); border:1px solid var(--borde);
+    border-radius:10px; padding:8px 12px;
+  }
+#pantalla-dados #mensaje b.gana{color:var(--verde);}
+#pantalla-dados #mensaje b.pierde{color:var(--rojo);}
+
+
 </style>
 </head>
 <body>
@@ -1382,7 +1650,7 @@ body{display:block; padding:0; margin:0;}
 <div id="contenido">
   <div id="titulo">
     <h2>SELECCIONA TU JUEGO SUPREMO</h2>
-    <p>Quince motores hechos a mano en HTML5 + Canvas, con renderizado HiDPI y físicas propias.
+    <p>Veinte motores hechos a mano en HTML5 + Canvas, con renderizado HiDPI y físicas propias.
        Sin instalar nada, sin anuncios y sin conexión.</p>
   </div>
 
@@ -2468,6 +2736,286 @@ body{display:block; padding:0; margin:0;}
 </div>
 </div>
 
+<div class="pantalla" id="pantalla-blackjack">
+<div id="juego">
+  <div class="barra">
+    <a class="boton" href="javascript:void 0" data-volver="1">🕹 Arcade</a>
+    <div class="titulo">🃏 BLACKJACK</div>
+    <div class="sep"></div>
+    <div class="stat">🪙 <span id="saldoTxt" class="oro">5000</span></div>
+    <div class="stat">🃏 <span id="zapatoTxt" class="tenue">312</span></div>
+    <button id="btnSonido" title="Sonido" aria-label="Sonido">🔊</button>
+  </div>
+
+  <div id="tablero">
+
+  <div id="tapete">
+    <canvas id="lienzo" width="920" height="470"></canvas>
+    <div class="avisos" id="avisos"></div>
+  </div>
+
+  <div id="mensaje">Elige tu apuesta y reparte.</div>
+
+  <div id="apostar">
+    <div class="grupo">
+      <label for="montoApuesta">Apuesta</label>
+      <input id="montoApuesta" type="number" min="10" step="10" value="100">
+    </div>
+    <div class="grupo fichasRapidas">
+      <button data-op="mitad" aria-label="Apostar la mitad">½</button>
+      <button data-op="doble" aria-label="Doblar la apuesta">x2</button>
+      <button data-op="100" aria-label="Apostar 100 fichas">100</button>
+      <button data-op="500" aria-label="Apostar 500 fichas">500</button>
+    </div>
+  </div>
+
+  <div id="controles">
+    <button class="primario" id="btnRepartir">🂠 Repartir</button>
+    <button id="btnPedir">＋ Pedir</button>
+    <button id="btnPlantarse">✋ Plantarse</button>
+    <button id="btnDoblar">×2 Doblar</button>
+    <button id="btnDividir">⑂ Dividir</button>
+    <button id="btnSeguro">🛡 Seguro</button>
+  </div>
+
+  <div class="modal visible" id="modalInicio">
+    <div class="tarjetaModal">
+      <h1>🃏 BLACKJACK</h1>
+      <div class="sub">21 contra la banca, con fichas ficticias.</div>
+      <div class="instrucciones">
+        Se juega con un <b>zapato de 6 barajas</b>. Acércate a 21 sin pasarte y gánale a la banca.<br>
+        Las figuras valen <b>10</b> y el as vale <b>11</b> o <b>1</b>, lo que más te convenga.<br>
+        <b>Blackjack</b> (as + figura de salida) paga <b>3:2</b>; el resto paga <b>1:1</b>; el empate se devuelve.<br>
+        <b>Doblar:</b> duplicas la apuesta y recibes exactamente una carta más.<br>
+        <b>Dividir:</b> con pareja, separas en dos manos (hasta cuatro). Los ases divididos reciben una sola carta.<br>
+        <b>Seguro:</b> si la banca enseña un as, puedes cubrir la mitad de tu apuesta y cobrar <b>2:1</b> si tiene blackjack.<br>
+        <b>La banca se planta en 17</b>, incluido el 17 blando.
+      </div>
+      <div class="filaBotones"><button class="primario" id="btnSentarse">▶ Sentarse a la mesa</button></div>
+    </div>
+  </div>
+</div>
+</div>
+</div>
+
+<div class="pantalla" id="pantalla-ruleta">
+<div id="juego">
+  <div class="barra">
+    <a class="boton" href="javascript:void 0" data-volver="1">🕹 Arcade</a>
+    <div class="titulo">🎡 RULETA</div>
+    <div class="sep"></div>
+    <div class="stat">🪙 <span id="saldoTxt" class="oro">5000</span></div>
+    <div class="stat">🎯 <span id="enJuegoTxt" class="azul">0</span></div>
+    <button id="btnSonido" title="Sonido" aria-label="Sonido">🔊</button>
+  </div>
+
+  <div id="tablero">
+
+  <div id="arriba">
+    <div id="ruedaCaja">
+      <canvas id="lienzo" width="340" height="340"></canvas>
+      <div class="avisos" id="avisos"></div>
+    </div>
+
+    <div id="panel">
+      <div id="historial"></div>
+      <div id="tapete"></div>
+      <div id="filaFuera"></div>
+      <div id="mensaje">Pon fichas en el tapete y haz girar la rueda.</div>
+      <div id="acciones">
+        <div class="grupo">
+          <label for="ficha">Ficha</label>
+          <input id="ficha" type="number" min="5" step="5" value="25">
+        </div>
+        <button id="btnDeshacer">↶ Deshacer</button>
+        <button id="btnLimpiar">🗑 Quitar</button>
+        <button id="btnRepetir">↻ Repetir</button>
+        <button class="primario" id="btnGirar">🎡 Girar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal visible" id="modalInicio">
+    <div class="tarjetaModal">
+      <h1>🎡 RULETA</h1>
+      <div class="sub">Ruleta europea de un solo cero, con fichas ficticias.</div>
+      <div class="instrucciones">
+        <b>37 casillas</b> (0 al 36) y <b>un solo cero</b>: la ventaja de la casa es del <b>2,70 %</b>,
+        la mitad que en la americana de doble cero.<br>
+        Haz clic en el tapete para poner fichas. Puedes repartirlas por varias apuestas a la vez.<br>
+        <b>Pagos:</b> pleno 35:1 · caballo 17:1 · calle 11:1 · cuadro 8:1 · línea 5:1 ·
+        columna y docena 2:1 · rojo/negro, par/impar y falta/pasa 1:1.<br>
+        <b>Deshacer</b> quita la última ficha y <b>Repetir</b> vuelve a poner la misma jugada.
+      </div>
+      <div class="filaBotones"><button class="primario" id="btnEmpezar">▶ A la mesa</button></div>
+    </div>
+  </div>
+</div>
+</div>
+</div>
+
+<div class="pantalla" id="pantalla-poker">
+<div id="juego">
+  <div class="barra">
+    <a class="boton" href="javascript:void 0" data-volver="1">🕹 Arcade</a>
+    <div class="titulo">♠ TEXAS HOLD'EM</div>
+    <div class="sep"></div>
+    <div class="stat">🪙 <span id="saldoTxt" class="oro">5000</span></div>
+    <div class="stat">🏆 <span id="manosTxt" class="tenue">0</span></div>
+    <button id="btnSonido" title="Sonido" aria-label="Sonido">🔊</button>
+  </div>
+
+  <div id="tablero">
+
+  <div id="mesa">
+    <canvas id="lienzo" width="960" height="520"></canvas>
+    <div class="avisos" id="avisos"></div>
+  </div>
+
+  <div id="mensaje">Reparte para empezar la mano.</div>
+
+  <div id="controles">
+    <button class="primario" id="btnRepartir">🂠 Repartir</button>
+    <button id="btnPasar">✓ Pasar</button>
+    <button id="btnIgualar">= Igualar</button>
+    <button id="btnSubir">↑ Subir</button>
+    <button class="peligro" id="btnRetirarse">✕ Retirarse</button>
+    <div id="subir">
+      <input id="rangoSubida" type="range" min="0" max="100" value="40" aria-label="Cuánto subir">
+      <span id="subirTxt">0</span>
+    </div>
+  </div>
+
+  <div class="modal visible" id="modalInicio">
+    <div class="tarjetaModal">
+      <h1>♠ TEXAS HOLD'EM</h1>
+      <div class="sub">Póker contra tres rivales, con fichas ficticias.</div>
+      <div class="instrucciones">
+        Cada uno recibe <b>dos cartas tapadas</b> y se reparten <b>cinco comunitarias</b>:
+        flop (3), turn (1) y river (1). Gana la mejor mano de cinco entre las siete.<br>
+        Rondas de apuesta antes del flop y después de cada carta comunitaria.
+        Ciegas de <b>25 / 50</b>, y el botón va rotando.<br>
+        <b>Pasar</b> si nadie ha apostado, <b>Igualar</b> para poner lo mismo,
+        <b>Subir</b> para aumentar y <b>Retirarse</b> para dejar la mano.<br>
+        Orden de manos: escalera de color &gt; póker &gt; full &gt; color &gt; escalera &gt;
+        trío &gt; dobles parejas &gt; pareja &gt; carta alta.
+      </div>
+      <div class="filaBotones"><button class="primario" id="btnSentarse">▶ Sentarse</button></div>
+    </div>
+  </div>
+</div>
+</div>
+</div>
+
+<div class="pantalla" id="pantalla-bacara">
+<div id="juego">
+  <div class="barra">
+    <a class="boton" href="javascript:void 0" data-volver="1">🕹 Arcade</a>
+    <div class="titulo">🀄 BACARRÁ</div>
+    <div class="sep"></div>
+    <div class="stat">🪙 <span id="saldoTxt" class="oro">5000</span></div>
+    <div class="stat">🃏 <span id="zapatoTxt" class="tenue">416</span></div>
+    <button id="btnSonido" title="Sonido" aria-label="Sonido">🔊</button>
+  </div>
+
+  <div id="tablero">
+
+  <div id="mesa">
+    <canvas id="lienzo" width="940" height="440"></canvas>
+    <div class="avisos" id="avisos"></div>
+  </div>
+
+  <div id="mensaje">Punto y Banca. Elige dónde pones las fichas.</div>
+
+  <div id="apuestas">
+    <button id="btnPunto"  data-lado="punto">👤 Punto<small>paga 1:1</small></button>
+    <button id="btnBanca"  data-lado="banca">🏛 Banca<small>paga 0,95:1</small></button>
+    <button id="btnEmpate" data-lado="empate">🤝 Empate<small>paga 8:1</small></button>
+  </div>
+
+  <div id="acciones">
+    <div class="grupo">
+      <label for="ficha">Ficha</label>
+      <input id="ficha" type="number" min="10" step="10" value="100">
+    </div>
+    <button id="btnQuitar">🗑 Quitar</button>
+    <button id="btnRepetir">↻ Repetir</button>
+    <button class="primario" id="btnRepartir">🂠 Repartir</button>
+  </div>
+
+  <div class="modal visible" id="modalInicio">
+    <div class="tarjetaModal">
+      <h1>🀄 BACARRÁ</h1>
+      <div class="sub">Punto y Banca, con fichas ficticias.</div>
+      <div class="instrucciones">
+        No decides jugadas: solo eliges <b>a quién apuestas</b>. Gana la mano más cercana a <b>9</b>.<br>
+        Las figuras y el diez valen <b>0</b>, el as vale <b>1</b>, y del total <b>solo cuenta la última cifra</b>
+        (7+8=15 → 5).<br>
+        Con 8 o 9 de salida es <b>mano natural</b> y no se roba más. Si no, la tercera carta la decide
+        la <b>tabla oficial</b>, sin margen para elegir.<br>
+        <b>Pagos:</b> Punto 1:1 · Banca 0,95:1 (la casa se queda un 5 % de comisión) · Empate 8:1.<br>
+        Con esas reglas, la ventaja de la casa es del <b>1,24 %</b> al punto, <b>1,06 %</b> a la banca
+        y <b>14,4 %</b> al empate: la banca es la mejor apuesta de todo el casino.
+      </div>
+      <div class="filaBotones"><button class="primario" id="btnEmpezar">▶ A la mesa</button></div>
+    </div>
+  </div>
+</div>
+</div>
+</div>
+
+<div class="pantalla" id="pantalla-dados">
+<div id="juego">
+  <div class="barra">
+    <a class="boton" href="javascript:void 0" data-volver="1">🕹 Arcade</a>
+    <div class="titulo">🎲 DADOS · CRAPS</div>
+    <div class="sep"></div>
+    <div class="stat">🪙 <span id="saldoTxt" class="oro">5000</span></div>
+    <div class="stat">🎯 <span id="puntoTxt" class="verde">—</span></div>
+    <button id="btnSonido" title="Sonido" aria-label="Sonido">🔊</button>
+  </div>
+
+  <div id="tablero">
+
+  <div id="mesa">
+    <canvas id="lienzo" width="940" height="330"></canvas>
+    <div class="avisos" id="avisos"></div>
+  </div>
+
+  <div id="mensaje">Tirada de salida. Apuesta a Línea de pase y lanza.</div>
+
+  <div id="tapete"></div>
+
+  <div id="acciones">
+    <div class="grupo">
+      <label for="ficha">Ficha</label>
+      <input id="ficha" type="number" min="10" step="10" value="100">
+    </div>
+    <button id="btnQuitar">🗑 Quitar</button>
+    <button class="primario" id="btnTirar">🎲 Lanzar</button>
+  </div>
+
+  <div class="modal visible" id="modalInicio">
+    <div class="tarjetaModal">
+      <h1>🎲 DADOS · CRAPS</h1>
+      <div class="sub">Los dados del casino, con fichas ficticias.</div>
+      <div class="instrucciones">
+        <b>Tirada de salida:</b> con <b>7 u 11</b> gana la línea de pase; con <b>2, 3 o 12</b> pierde
+        (el 12 deja la de no pase en tablas). Cualquier otro número se convierte en el <b>punto</b>.<br>
+        <b>Con punto establecido:</b> gana la línea de pase si el punto vuelve a salir antes que el 7.
+        La de <b>no pase</b> es justo lo contrario.<br>
+        <b>Odds:</b> la apuesta sin ventaja de la casa. Solo se puede poner con punto, y paga la
+        probabilidad exacta: 2:1 con 4 o 10, 3:2 con 5 o 9 y 6:5 con 6 u 8.<br>
+        <b>Campo:</b> una sola tirada. Gana con 2, 3, 4, 9, 10, 11 o 12; el <b>2 paga 2:1</b> y el <b>12, 3:1</b>.<br>
+        <b>Colocar 6 u 8:</b> paga 7:6 si sale antes que el 7.
+      </div>
+      <div class="filaBotones"><button class="primario" id="btnEmpezar">▶ A la mesa</button></div>
+    </div>
+  </div>
+</div>
+</div>
+</div>
+
 <script>
 /* ====== Utilidades comunes ====== */
 /* ==========================================================
@@ -2972,6 +3520,104 @@ class Sacudida {
   }
 }
 
+/* ==========================================================
+   Baraja francesa compartida por Blackjack, Bacarrá y Póker
+   Una carta es un número de 0 a 51: palo = n >> 4, valor = n & 15.
+   ========================================================== */
+const Cartas = {
+  PALOS: ['♠', '♥', '♦', '♣'],
+  NOMBRES: ['2','3','4','5','6','7','8','9','10','J','Q','K','A'],
+
+  crear(palo, indice){ return palo * 16 + indice; },
+  palo(c){ return c >> 4; },
+  indice(c){ return c & 15; },                       // 0 = dos … 12 = as
+  roja(c){ const p = this.palo(c); return p === 1 || p === 2; },
+  nombre(c){ return this.NOMBRES[this.indice(c)]; },
+  texto(c){ return this.nombre(c) + this.PALOS[this.palo(c)]; },
+
+  // Baraja de `mazos` barajas, ya mezclada
+  baraja(mazos = 1){
+    const b = [];
+    for (let m = 0; m < mazos; m++)
+      for (let p = 0; p < 4; p++)
+        for (let i = 0; i < 13; i++) b.push(this.crear(p, i));
+    return mezclar(b);
+  },
+
+  /**
+   * Dibuja una carta. `carta` a null pinta el dorso.
+   * Las medidas van en píxeles del lienzo; el radio se ajusta al ancho.
+   */
+  dibujar(ctx, carta, x, y, an, al, opciones = {}){
+    const r = Math.max(4, an * 0.09);
+    ctx.save();
+    ctx.shadowColor = 'rgba(0,0,0,.6)';
+    ctx.shadowBlur = an * 0.16;
+    ctx.shadowOffsetY = an * 0.05;
+
+    if (carta === null || carta === undefined){
+      ctx.fillStyle = '#0f1a35';
+      ctx.beginPath(); ctx.roundRect(x, y, an, al, r); ctx.fill();
+      ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
+      ctx.strokeStyle = '#2f4b8f'; ctx.lineWidth = Math.max(1, an * 0.03);
+      ctx.stroke();
+      // rombos del dorso
+      ctx.fillStyle = 'rgba(0,240,255,.18)';
+      const paso = an * 0.22;
+      for (let i = x + paso * 0.7; i < x + an - paso * 0.3; i += paso)
+        for (let j = y + paso * 0.7; j < y + al - paso * 0.3; j += paso){
+          ctx.beginPath();
+          ctx.moveTo(i, j - paso * 0.28); ctx.lineTo(i + paso * 0.24, j);
+          ctx.lineTo(i, j + paso * 0.28); ctx.lineTo(i - paso * 0.24, j);
+          ctx.closePath(); ctx.fill();
+        }
+      ctx.restore();
+      return;
+    }
+
+    ctx.fillStyle = opciones.apagada ? '#b9c0cc' : '#f6f7fb';
+    ctx.beginPath(); ctx.roundRect(x, y, an, al, r); ctx.fill();
+    ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
+    ctx.strokeStyle = 'rgba(0,0,0,.25)'; ctx.lineWidth = 1;
+    ctx.stroke();
+
+    const rojo = this.roja(carta);
+    ctx.fillStyle = rojo ? '#d81f3d' : '#15181f';
+    ctx.textBaseline = 'top';
+    ctx.textAlign = 'left';
+
+    const nom = this.nombre(carta), pal = this.PALOS[this.palo(carta)];
+    ctx.font = '800 ' + (an * 0.28).toFixed(1) + 'px "Segoe UI", system-ui, sans-serif';
+    ctx.fillText(nom, x + an * 0.09, y + al * 0.05);
+    ctx.font = (an * 0.22).toFixed(1) + 'px serif';
+    ctx.fillText(pal, x + an * 0.09, y + al * 0.26);
+
+    // palo grande centrado
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.font = (an * 0.52).toFixed(1) + 'px serif';
+    ctx.globalAlpha = 0.9;
+    ctx.fillText(pal, x + an / 2, y + al * 0.55);
+    ctx.globalAlpha = 1;
+
+    // esquina inferior, del revés
+    ctx.save();
+    ctx.translate(x + an - an * 0.09, y + al - al * 0.05);
+    ctx.rotate(Math.PI);
+    ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+    ctx.font = '800 ' + (an * 0.28).toFixed(1) + 'px "Segoe UI", system-ui, sans-serif';
+    ctx.fillText(nom, 0, 0);
+    ctx.font = (an * 0.22).toFixed(1) + 'px serif';
+    ctx.fillText(pal, 0, al * 0.21);
+    ctx.restore();
+
+    if (opciones.marcada){
+      ctx.strokeStyle = '#f3e600'; ctx.lineWidth = Math.max(2, an * 0.05);
+      ctx.beginPath(); ctx.roundRect(x - 2, y - 2, an + 4, al + 4, r + 2); ctx.stroke();
+    }
+    ctx.restore();
+  }
+};
+
 // Respaldo para navegadores sin roundRect
 if (!CanvasRenderingContext2D.prototype.roundRect){
   CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r){
@@ -3175,6 +3821,41 @@ const JUEGOS = [
       } catch(err){ return 'Sin jugar todavía'; }
     },
     portada: portadaGalletas
+  },
+  {
+    id:'blackjack', archivo:'juegos/blackjack.html', nuevo:true,
+    nombre:'🃏 Blackjack', genero:'Casino',
+    desc:'21 contra la banca con zapato de 6 barajas: doblar, dividir y seguro.',
+    record(){ const r = Arcade.record('blackjack'); return r ? 'Mejor mano: +' + r.toLocaleString('es-ES') : 'Sin jugar todavía'; },
+    portada: portadaBlackjack
+  },
+  {
+    id:'ruleta', archivo:'juegos/ruleta.html', nuevo:true,
+    nombre:'🎡 Ruleta', genero:'Casino',
+    desc:'Ruleta europea de un solo cero, con tapete completo y 151 apuestas.',
+    record(){ const r = Arcade.record('ruleta'); return r ? 'Mejor giro: +' + r.toLocaleString('es-ES') : 'Sin jugar todavía'; },
+    portada: portadaRuleta
+  },
+  {
+    id:'poker', archivo:'juegos/poker-texas.html', nuevo:true,
+    nombre:'♠ Texas Hold\u0027em', genero:'Casino',
+    desc:'Póker contra tres rivales con ciegas, faroles y evaluador de siete cartas.',
+    record(){ const r = Arcade.record('poker'); return r ? 'Mejor bote: +' + r.toLocaleString('es-ES') : 'Sin jugar todavía'; },
+    portada: portadaPoker
+  },
+  {
+    id:'bacara', archivo:'juegos/bacara.html', nuevo:true,
+    nombre:'🀄 Bacarrá', genero:'Casino',
+    desc:'Punto y Banca con la tabla oficial de tercera carta y camino de resultados.',
+    record(){ const r = Arcade.record('bacara'); return r ? 'Mejor mano: +' + r.toLocaleString('es-ES') : 'Sin jugar todavía'; },
+    portada: portadaBacara
+  },
+  {
+    id:'dados', archivo:'juegos/dados-craps.html', nuevo:true,
+    nombre:'🎲 Dados', genero:'Casino',
+    desc:'Craps con línea de pase, no pase, odds sin ventaja de casa, campo y colocadas.',
+    record(){ const r = Arcade.record('dados'); return r ? 'Mejor tirada: +' + r.toLocaleString('es-ES') : 'Sin jugar todavía'; },
+    portada: portadaDados
   },
   {
     id:'moto', archivo:'juegos/moto-x3m.html', nuevo:true,
@@ -3915,6 +4596,184 @@ function portadaMoto(c){
   c.fillText('🤸 x3 FLIP', 16, 26);
 }
 
+
+function portadaBlackjack(c){
+  const g = c.createRadialGradient(A/2, AL*.4, 20, A/2, AL/2, A*.7);
+  g.addColorStop(0, '#12603a'); g.addColorStop(1, '#052015');
+  c.fillStyle = g; c.fillRect(0, 0, A, AL);
+  c.strokeStyle = 'rgba(243,230,0,.3)'; c.lineWidth = 2;
+  c.beginPath(); c.arc(A/2, -60, 150, .5, Math.PI - .5); c.stroke();
+  c.fillStyle = 'rgba(243,230,0,.6)'; c.font = '800 11px "Segoe UI", system-ui, sans-serif';
+  c.textAlign = 'center'; c.fillText('EL BLACKJACK PAGA 3 A 2', A/2, 26);
+  // mano de as + rey abanicada
+  [[-1,'A','♠',-.22],[1,'K','♥',.22]].forEach(([lado, n, pal, rot], k) => {
+    c.save();
+    c.translate(A/2 + lado*30, AL/2 + 22); c.rotate(rot);
+    c.fillStyle = 'rgba(0,0,0,.5)';
+    c.beginPath(); c.roundRect(-31, -44, 62, 88, 7); c.fill();
+    c.fillStyle = '#f6f7fb';
+    c.beginPath(); c.roundRect(-33, -46, 62, 88, 7); c.fill();
+    c.fillStyle = (pal === '♥') ? '#d81f3d' : '#15181f';
+    c.textAlign = 'left';
+    c.font = '800 17px "Segoe UI", system-ui, sans-serif'; c.fillText(n, -27, -28);
+    c.font = '13px serif'; c.fillText(pal, -27, -12);
+    c.textAlign = 'center';
+    c.font = '31px serif'; c.fillText(pal, -2, 8);
+    c.restore();
+  });
+  c.fillStyle = '#f3e600'; c.font = '900 26px "Courier New", monospace';
+  c.textAlign = 'center'; c.fillText('21', A/2, AL - 22);
+}
+
+function portadaRuleta(c){
+  const g = c.createLinearGradient(0, 0, A, AL);
+  g.addColorStop(0, '#1a0d12'); g.addColorStop(1, '#070406');
+  c.fillStyle = g; c.fillRect(0, 0, A, AL);
+  const cx = 92, cy = AL/2, r = 62;
+  c.fillStyle = '#3a2415';
+  c.beginPath(); c.arc(cx, cy, r + 5, 0, 6.283); c.fill();
+  c.strokeStyle = '#8a6034'; c.lineWidth = 3; c.stroke();
+  const nums = [0,32,15,19,4,21,2,25,17,34,6,27,13,36,11,30,8,23,10,5,24,16,33,1,20,14,31,9,22,18,29,7,28,12,35,3,26];
+  const rojos = new Set([1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36]);
+  const paso = 6.283 / 37;
+  nums.forEach((n, i) => {
+    c.beginPath(); c.moveTo(cx, cy);
+    c.arc(cx, cy, r, i*paso - 1.57, (i+1)*paso - 1.57); c.closePath();
+    c.fillStyle = n === 0 ? '#0f8a3c' : rojos.has(n) ? '#c8102e' : '#15181f';
+    c.fill();
+    c.strokeStyle = 'rgba(226,196,140,.35)'; c.lineWidth = .7; c.stroke();
+  });
+  const cubo = c.createRadialGradient(cx-8, cy-10, 3, cx, cy, r*.42);
+  cubo.addColorStop(0, '#d8b57a'); cubo.addColorStop(1, '#5d3f22');
+  c.fillStyle = cubo; c.beginPath(); c.arc(cx, cy, r*.4, 0, 6.283); c.fill();
+  c.fillStyle = '#fff';
+  c.shadowColor = '#fff'; c.shadowBlur = 8;
+  c.beginPath(); c.arc(cx + Math.cos(-.9)*r*.85, cy + Math.sin(-.9)*r*.85, 5, 0, 6.283); c.fill();
+  c.shadowBlur = 0;
+  // tapete a la derecha
+  const bx = 178;
+  for (let f = 0; f < 3; f++) for (let k = 0; k < 6; k++){
+    const n = k*3 + (3-f);
+    c.fillStyle = rojos.has(n) ? '#a8112a' : '#15181f';
+    c.beginPath(); c.roundRect(bx + k*24, 40 + f*26, 21, 23, 3); c.fill();
+    c.strokeStyle = 'rgba(255,255,255,.15)'; c.lineWidth = 1; c.stroke();
+    c.fillStyle = '#fff'; c.font = '700 10px "Courier New", monospace';
+    c.textAlign = 'center'; c.fillText(String(n), bx + k*24 + 10, 55 + f*26);
+  }
+  c.fillStyle = '#f3e600'; c.font = '900 13px "Courier New", monospace';
+  c.textAlign = 'left'; c.fillText('PLENO 35:1', bx, 138);
+  c.fillStyle = 'rgba(255,255,255,.4)'; c.font = '700 11px "Segoe UI", system-ui, sans-serif';
+  c.fillText('un solo cero · 2,70 %', bx, 154);
+}
+
+function portadaPoker(c){
+  const g = c.createRadialGradient(A/2, AL/2, 20, A/2, AL/2, A*.65);
+  g.addColorStop(0, '#20204d'); g.addColorStop(1, '#08081a');
+  c.fillStyle = g; c.fillRect(0, 0, A, AL);
+  c.beginPath(); c.ellipse(A/2, AL/2 + 6, 128, 58, 0, 0, 6.283);
+  c.fillStyle = '#123a2c'; c.fill();
+  c.strokeStyle = 'rgba(168,85,247,.5)'; c.lineWidth = 2.5; c.stroke();
+  // cinco comunitarias
+  const cartas = [['10','♠'],['J','♠'],['Q','♠'],['K','♠'],['A','♠']];
+  cartas.forEach(([n, pal], i) => {
+    const x = A/2 - 5*20 + i*40;
+    c.fillStyle = 'rgba(0,0,0,.5)';
+    c.beginPath(); c.roundRect(x + 2, AL/2 - 22, 34, 48, 5); c.fill();
+    c.fillStyle = '#f6f7fb';
+    c.beginPath(); c.roundRect(x, AL/2 - 24, 34, 48, 5); c.fill();
+    c.fillStyle = '#15181f';
+    c.textAlign = 'left'; c.font = '800 11px "Segoe UI", system-ui, sans-serif';
+    c.fillText(n, x + 3, AL/2 - 12);
+    c.textAlign = 'center'; c.font = '17px serif';
+    c.fillText(pal, x + 17, AL/2 + 8);
+  });
+  // fichas
+  [['#c8102e', 60], ['#1f6fa8', 74], ['#f3e600', 88]].forEach(([col, x], i) => {
+    for (let k = 0; k < 3; k++){
+      c.fillStyle = col;
+      c.beginPath(); c.ellipse(x, AL - 34 - k*5, 13, 5.5, 0, 0, 6.283); c.fill();
+      c.strokeStyle = 'rgba(255,255,255,.35)'; c.lineWidth = 1; c.stroke();
+    }
+  });
+  c.fillStyle = '#a855f7'; c.font = '900 14px "Courier New", monospace';
+  c.textAlign = 'center'; c.fillText('ESCALERA DE COLOR', A/2, 30);
+  c.fillStyle = 'rgba(255,255,255,.4)'; c.font = '700 11px "Segoe UI", system-ui, sans-serif';
+  c.fillText('flop · turn · river', A/2, AL - 16);
+}
+
+function portadaBacara(c){
+  const g = c.createRadialGradient(A/2, AL/2, 20, A/2, AL/2, A*.62);
+  g.addColorStop(0, '#123a4d'); g.addColorStop(1, '#040d16');
+  c.fillStyle = g; c.fillRect(0, 0, A, AL);
+  const zona = (x, col, eti, cartas) => {
+    c.strokeStyle = col; c.lineWidth = 2; c.setLineDash([6,5]);
+    c.beginPath(); c.roundRect(x - 8, 40, 116, 88, 10); c.stroke();
+    c.setLineDash([]);
+    c.fillStyle = col; c.font = '900 12px "Segoe UI", system-ui, sans-serif';
+    c.textAlign = 'center'; c.fillText(eti, x + 50, 32);
+    cartas.forEach(([n, pal, rojo], i) => {
+      const cx2 = x + i*38;
+      c.fillStyle = '#f6f7fb';
+      c.beginPath(); c.roundRect(cx2, 50, 33, 47, 5); c.fill();
+      c.fillStyle = rojo ? '#d81f3d' : '#15181f';
+      c.textAlign = 'left'; c.font = '800 11px "Segoe UI", system-ui, sans-serif';
+      c.fillText(n, cx2 + 3, 62);
+      c.textAlign = 'center'; c.font = '16px serif'; c.fillText(pal, cx2 + 16, 82);
+    });
+  };
+  zona(24, '#5cc8ff', 'PUNTO', [['4','♣',0],['5','♦',1]]);
+  zona(198, '#ff6b8a', 'BANCA', [['9','♥',1],['K','♠',0]]);
+  c.fillStyle = '#5cc8ff'; c.font = '900 21px "Courier New", monospace';
+  c.textAlign = 'center'; c.fillText('9', 74, 116);
+  c.fillStyle = '#ff6b8a'; c.fillText('9', 248, 116);
+  // camino
+  ['P','B','B','P','E','B','P','B'].forEach((r, k) => {
+    const x = 118 + (k % 4) * 22, y = 128 + Math.floor(k / 4) * 22;
+    c.beginPath(); c.arc(x, y, 7, 0, 6.283);
+    c.strokeStyle = r === 'P' ? '#5cc8ff' : r === 'B' ? '#ff6b8a' : '#00ff66';
+    c.lineWidth = 2; c.stroke();
+  });
+  c.fillStyle = 'rgba(255,255,255,.4)'; c.font = '700 11px "Segoe UI", system-ui, sans-serif';
+  c.textAlign = 'center'; c.fillText('banca 0,95:1 · empate 8:1', A/2, 20);
+}
+
+function portadaDados(c){
+  const g = c.createRadialGradient(A/2, AL/2, 20, A/2, AL/2, A*.62);
+  g.addColorStop(0, '#0f4a2c'); g.addColorStop(1, '#03130b');
+  c.fillStyle = g; c.fillRect(0, 0, A, AL);
+  c.strokeStyle = 'rgba(0,255,102,.2)'; c.lineWidth = 2;
+  c.beginPath(); c.roundRect(9, 9, A - 18, AL - 18, 12); c.stroke();
+  const puntos = {1:[[0,0]],2:[[-1,-1],[1,1]],3:[[-1,-1],[0,0],[1,1]],
+    4:[[-1,-1],[1,-1],[-1,1],[1,1]],5:[[-1,-1],[1,-1],[0,0],[-1,1],[1,1]],
+    6:[[-1,-1],[1,-1],[-1,0],[1,0],[-1,1],[1,1]]};
+  const dado = (v, x, y, t, rot) => {
+    c.save(); c.translate(x, y); c.rotate(rot);
+    c.fillStyle = 'rgba(0,0,0,.5)';
+    c.beginPath(); c.roundRect(-t/2 + 3, -t/2 + 4, t, t, t*.18); c.fill();
+    c.fillStyle = '#f6f7fb';
+    c.beginPath(); c.roundRect(-t/2, -t/2, t, t, t*.18); c.fill();
+    c.fillStyle = '#15181f';
+    puntos[v].forEach(([dx, dy]) => {
+      c.beginPath(); c.arc(dx*t*.26, dy*t*.26, t*.085, 0, 6.283); c.fill();
+    });
+    c.restore();
+  };
+  dado(3, 118, AL/2 + 4, 60, -.16);
+  dado(4, 196, AL/2 - 6, 60, .22);
+  c.fillStyle = '#f3e600'; c.font = '900 30px "Courier New", monospace';
+  c.textAlign = 'center'; c.fillText('7', 274, AL/2);
+  // marcador ON
+  c.beginPath(); c.arc(52, AL/2, 30, 0, 6.283);
+  c.fillStyle = 'rgba(0,255,102,.12)'; c.fill();
+  c.strokeStyle = '#00ff66'; c.lineWidth = 2; c.stroke();
+  c.fillStyle = '#00ff66'; c.font = '900 10px "Courier New", monospace';
+  c.fillText('ON', 52, AL/2 - 9);
+  c.fillStyle = '#fff'; c.font = '900 20px "Courier New", monospace';
+  c.fillText('8', 52, AL/2 + 10);
+  c.fillStyle = 'rgba(255,255,255,.4)'; c.font = '700 11px "Segoe UI", system-ui, sans-serif';
+  c.fillText('pase · no pase · odds · campo', A/2, AL - 16);
+}
+
 // ---------- Montaje de las cartas ----------
 const rejilla = document.getElementById('rejilla');
 JUEGOS.forEach(j => {
@@ -3939,7 +4798,8 @@ JUEGOS.forEach(j => {
 const UNIDAD = {
   td:'olas', pvz:'olas', comecocos:'pts', blockblast:'pts', serpiente:'pts',
   pool:'ganadas', rumble:'goles', minas:'gemas', aviator:'x100',
-  sparta:'racha', mercado:'$', moto:'pts'
+  sparta:'racha', mercado:'$', moto:'pts',
+  blackjack:'fichas', ruleta:'fichas', poker:'fichas', bacara:'fichas', dados:'fichas'
 };
 const nombreDe = id => {
   const j = JUEGOS.find(x => x.id === id);
@@ -13792,6 +14652,1896 @@ Arcade.bucle(dt => {
   }
   dibujar();
 });
+
+});
+
+registrarJuego("blackjack", function(document, addEventListener, Arcade){
+
+// ============================================================
+//  BLACKJACK — zapato de 6 barajas, banca se planta en 17
+// ============================================================
+const $ = id => document.getElementById(id);
+const lienzo = $('lienzo');
+const ctx = Arcade.nitido(lienzo);
+const avisos = $('avisos');
+const ANCHO = lienzo.width, ALTO = lienzo.height;
+
+const MAZOS = 6;
+const TOTAL_ZAPATO = MAZOS * 52;
+const CORTE = Math.floor(TOTAL_ZAPATO * 0.25);      // se rebaraja al llegar aquí
+const CARTA_AN = 78, CARTA_AL = 112;
+
+// ---------- Estado ----------
+const B = {
+  zapato: [],
+  manos: [],            // { cartas, apuesta, doblada, dividida, deAses, resuelta, resultado }
+  activa: 0,
+  banca: [],
+  bancaTapada: true,
+  fase: 'apuesta',      // apuesta | jugando | banca | fin
+  seguro: 0,
+  saldo: Arcade.fichas.saldo(),
+  manosJugadas: 0, ganadas: 0, blackjacks: 0,
+  animacion: 0
+};
+
+// ---------- Cartas ----------
+function nuevoZapato(){
+  B.zapato = Cartas.baraja(MAZOS);
+  Arcade.aviso(avisos, '🔄 Zapato nuevo: 6 barajas mezcladas', true, 1800);
+}
+function sacar(){
+  if (B.zapato.length <= CORTE) nuevoZapato();
+  return B.zapato.pop();
+}
+// Valor de blackjack: figuras 10, as 11 con corrección a 1 si te pasas
+function valor(cartas){
+  let total = 0, ases = 0;
+  for (const c of cartas){
+    const i = Cartas.indice(c);
+    if (i === 12){ total += 11; ases++; }
+    else total += Math.min(10, i + 2);
+  }
+  while (total > 21 && ases > 0){ total -= 10; ases--; }
+  return total;
+}
+const blando = cartas => {
+  let total = 0, ases = 0;
+  for (const c of cartas){
+    const i = Cartas.indice(c);
+    if (i === 12){ total += 11; ases++; } else total += Math.min(10, i + 2);
+  }
+  return ases > 0 && total <= 21;
+};
+const esBlackjack = m => m.cartas.length === 2 && !m.dividida && valor(m.cartas) === 21;
+const valorCarta = c => { const i = Cartas.indice(c); return i === 12 ? 11 : Math.min(10, i + 2); };
+
+// ---------- Ronda ----------
+function apuestaValida(){
+  const n = Math.max(10, Math.floor(parseFloat($('montoApuesta').value) || 0));
+  $('montoApuesta').value = n;
+  return n;
+}
+
+function repartir(){
+  const apuesta = apuestaValida();
+  if (apuesta > B.saldo){ Arcade.aviso(avisos, 'No tienes fichas suficientes', false, 1800); return; }
+
+  B.saldo = Arcade.fichas.ajustar(-apuesta);
+  B.manos = [{ cartas: [sacar(), sacar()], apuesta, doblada:false, dividida:false,
+               deAses:false, resuelta:false, resultado:'' }];
+  B.activa = 0;
+  B.banca = [sacar(), sacar()];
+  B.bancaTapada = true;
+  B.seguro = 0;
+  B.fase = 'jugando';
+  Sonido.fx('colocar');
+  mensaje('Tu mano: <b>' + valor(B.manos[0].cartas) + '</b>. ¿Qué haces?');
+
+  // blackjack de salida
+  if (esBlackjack(B.manos[0])){
+    if (valorCarta(B.banca[0]) === 11 || valorCarta(B.banca[0]) === 10) resolverBanca();
+    else { B.bancaTapada = false; terminarRonda(); }
+  }
+  refrescar();
+}
+
+function pedir(){
+  const m = B.manos[B.activa];
+  if (B.fase !== 'jugando' || m.resuelta) return;
+  m.cartas.push(sacar());
+  Sonido.fx('colocar');
+  if (valor(m.cartas) >= 21) siguienteMano();
+  else mensaje('Llevas <b>' + valor(m.cartas) + '</b>.');
+  refrescar();
+}
+
+function plantarse(){
+  if (B.fase !== 'jugando') return;
+  siguienteMano();
+  refrescar();
+}
+
+function doblar(){
+  const m = B.manos[B.activa];
+  if (B.fase !== 'jugando' || m.cartas.length !== 2 || m.deAses) return;
+  if (m.apuesta > B.saldo){ Arcade.aviso(avisos, 'No tienes fichas para doblar', false, 1800); return; }
+  B.saldo = Arcade.fichas.ajustar(-m.apuesta);
+  m.apuesta *= 2;
+  m.doblada = true;
+  m.cartas.push(sacar());
+  Sonido.fx('ficha');
+  siguienteMano();
+  refrescar();
+}
+
+function dividir(){
+  const m = B.manos[B.activa];
+  if (B.fase !== 'jugando' || m.cartas.length !== 2 || B.manos.length >= 4) return;
+  if (valorCarta(m.cartas[0]) !== valorCarta(m.cartas[1])) return;
+  if (m.apuesta > B.saldo){ Arcade.aviso(avisos, 'No tienes fichas para dividir', false, 1800); return; }
+
+  const deAses = Cartas.indice(m.cartas[0]) === 12;
+  B.saldo = Arcade.fichas.ajustar(-m.apuesta);
+  const segunda = m.cartas.pop();
+  m.dividida = true; m.deAses = deAses;
+  m.cartas.push(sacar());
+  B.manos.splice(B.activa + 1, 0, {
+    cartas: [segunda, sacar()], apuesta: m.apuesta, doblada:false,
+    dividida:true, deAses, resuelta:false, resultado:''
+  });
+  Sonido.fx('giro');
+  // los ases divididos reciben una sola carta y se plantan
+  if (deAses){ siguienteMano(); }
+  refrescar();
+}
+
+function tomarSeguro(){
+  if (B.fase !== 'jugando' || B.seguro || valorCarta(B.banca[0]) !== 11) return;
+  const coste = Math.floor(B.manos[0].apuesta / 2);
+  if (coste > B.saldo){ Arcade.aviso(avisos, 'No tienes fichas para el seguro', false, 1800); return; }
+  B.saldo = Arcade.fichas.ajustar(-coste);
+  B.seguro = coste;
+  Sonido.fx('ficha');
+  Arcade.aviso(avisos, '🛡 Seguro tomado por ' + coste, true, 1600);
+  refrescar();
+}
+
+// Pasa a la siguiente mano pendiente; si no queda ninguna, juega la banca
+function siguienteMano(){
+  B.manos[B.activa].resuelta = true;
+  const siguiente = B.manos.findIndex(m => !m.resuelta);
+  if (siguiente === -1){ resolverBanca(); return; }
+  B.activa = siguiente;
+  // una mano de ases divididos ya viene servida
+  if (B.manos[B.activa].deAses){ siguienteMano(); return; }
+  mensaje('Mano ' + (B.activa + 1) + ': llevas <b>' + valor(B.manos[B.activa].cartas) + '</b>.');
+}
+
+function resolverBanca(){
+  B.fase = 'banca';
+  B.bancaTapada = false;
+  // si todas las manos se pasaron, la banca no roba
+  const alguienVivo = B.manos.some(m => valor(m.cartas) <= 21);
+  const bjBanca = valor(B.banca) === 21;
+  if (alguienVivo && !bjBanca){
+    while (valor(B.banca) < 17) B.banca.push(sacar());
+  }
+  terminarRonda();
+}
+
+function terminarRonda(){
+  B.fase = 'fin';
+  const vBanca = valor(B.banca);
+  const bancaSePasa = vBanca > 21;
+  const bjBanca = B.banca.length === 2 && vBanca === 21;
+  let cobro = 0;
+  const partes = [];
+
+  // seguro: paga 2:1 si la banca tiene blackjack
+  if (B.seguro){
+    if (bjBanca){ cobro += B.seguro * 3; partes.push('🛡 seguro <b class="gana">+' + (B.seguro * 2) + '</b>'); }
+    else partes.push('🛡 seguro <b class="pierde">−' + B.seguro + '</b>');
+  }
+
+  B.manos.forEach((m, i) => {
+    const v = valor(m.cartas);
+    const bj = esBlackjack(m);
+    let texto, pago = 0;
+    if (v > 21){ m.resultado = 'pierde'; texto = 'te pasas'; }
+    else if (bj && !bjBanca){ m.resultado = 'blackjack'; pago = m.apuesta + Math.floor(m.apuesta * 1.5); texto = 'BLACKJACK 3:2'; B.blackjacks++; }
+    else if (bjBanca && !bj){ m.resultado = 'pierde'; texto = 'blackjack de la banca'; }
+    else if (bjBanca && bj){ m.resultado = 'empata'; pago = m.apuesta; texto = 'empate'; }
+    else if (bancaSePasa){ m.resultado = 'gana'; pago = m.apuesta * 2; texto = 'la banca se pasa'; }
+    else if (v > vBanca){ m.resultado = 'gana'; pago = m.apuesta * 2; texto = v + ' contra ' + vBanca; }
+    else if (v < vBanca){ m.resultado = 'pierde'; texto = v + ' contra ' + vBanca; }
+    else { m.resultado = 'empata'; pago = m.apuesta; texto = 'empate a ' + v; }
+
+    cobro += pago;
+    B.manosJugadas++;
+    if (m.resultado === 'gana' || m.resultado === 'blackjack') B.ganadas++;
+    const clase = m.resultado === 'pierde' ? 'pierde' : m.resultado === 'empata' ? 'empata' : 'gana';
+    partes.push((B.manos.length > 1 ? 'Mano ' + (i + 1) + ': ' : '') +
+                '<b class="' + clase + '">' + texto + '</b>');
+  });
+
+  if (cobro > 0) B.saldo = Arcade.fichas.ajustar(cobro);
+  const apostado = B.manos.reduce((s, m) => s + m.apuesta, 0) + B.seguro;
+  const neto = cobro - apostado;
+
+  Arcade.perfil.partida('blackjack', {
+    puntos: Math.max(0, neto), victoria: neto > 0,
+    premio: 0                                  // las fichas ya se mueven con la apuesta
+  });
+  if (neto > 0) Arcade.guardarRecord('blackjack', neto);
+
+  mensaje(partes.join(' · ') + ' · Resultado: <b class="' +
+          (neto > 0 ? 'gana">+' : neto < 0 ? 'pierde">' : 'empata">') + neto + '</b> fichas');
+  Sonido.fx(neto > 0 ? 'caja' : neto < 0 ? 'error' : 'clic');
+  guardarPartida();
+  refrescar();
+}
+
+// ---------- Guardado ----------
+function guardarPartida(){
+  Arcade.escribir('blackjack', JSON.stringify({
+    zapato: B.zapato, manosJugadas: B.manosJugadas,
+    ganadas: B.ganadas, blackjacks: B.blackjacks
+  }));
+}
+function cargarPartida(){
+  const crudo = Arcade.leerTexto('blackjack', null);
+  if (crudo){
+    try {
+      const g = JSON.parse(crudo);
+      if (Array.isArray(g.zapato) && g.zapato.length > CORTE) B.zapato = g.zapato;
+      B.manosJugadas = g.manosJugadas || 0;
+      B.ganadas = g.ganadas || 0;
+      B.blackjacks = g.blackjacks || 0;
+    } catch(e){}
+  }
+  if (!B.zapato.length) B.zapato = Cartas.baraja(MAZOS);
+}
+Guardado.registrar(guardarPartida);
+
+// ---------- Interfaz ----------
+function mensaje(html){ $('mensaje').innerHTML = html; }
+
+function refrescar(){
+  $('saldoTxt').textContent = B.saldo.toLocaleString('es-ES');
+  $('zapatoTxt').textContent = B.zapato.length;
+
+  const jugando = B.fase === 'jugando';
+  const m = B.manos[B.activa];
+  $('btnRepartir').disabled = jugando || B.fase === 'banca';
+  $('btnPedir').disabled = !jugando;
+  $('btnPlantarse').disabled = !jugando;
+  $('btnDoblar').disabled = !jugando || !m || m.cartas.length !== 2 || m.deAses || m.apuesta > B.saldo;
+  $('btnDividir').disabled = !jugando || !m || m.cartas.length !== 2 || B.manos.length >= 4 ||
+                             valorCarta(m.cartas[0]) !== valorCarta(m.cartas[1]) || m.apuesta > B.saldo;
+  $('btnSeguro').disabled = !jugando || !!B.seguro || !B.banca.length ||
+                             valorCarta(B.banca[0]) !== 11 || B.manos[0].cartas.length !== 2;
+  $('montoApuesta').disabled = jugando || B.fase === 'banca';
+}
+
+// ---------- Dibujo ----------
+function texto(t, x, y, color, tam, alin, peso){
+  ctx.fillStyle = color;
+  ctx.font = (peso || 700) + ' ' + tam + 'px "Segoe UI", system-ui, sans-serif';
+  ctx.textAlign = alin || 'left';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(t, x, y);
+}
+
+function etiqueta(t, x, y, color){
+  ctx.font = '800 15px "Courier New", monospace';
+  const an = ctx.measureText(t).width + 20;
+  ctx.fillStyle = 'rgba(0,0,0,.55)';
+  ctx.beginPath(); ctx.roundRect(x - an / 2, y - 14, an, 28, 14); ctx.fill();
+  ctx.strokeStyle = color; ctx.lineWidth = 1.5; ctx.stroke();
+  texto(t, x, y, color, 15, 'center', 800);
+}
+
+function dibujar(){
+  // paño
+  const g = ctx.createRadialGradient(ANCHO / 2, ALTO * 0.42, 40, ANCHO / 2, ALTO * 0.5, ANCHO * 0.72);
+  g.addColorStop(0, '#12603a');
+  g.addColorStop(1, '#06251a');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, ANCHO, ALTO);
+
+  // arco de la mesa y lema
+  ctx.strokeStyle = 'rgba(243,230,0,.25)'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.arc(ANCHO / 2, -140, 400, 0.45, Math.PI - 0.45); ctx.stroke();
+  texto('EL BLACKJACK PAGA 3 A 2', ANCHO / 2, 34, 'rgba(243,230,0,.55)', 17, 'center', 800);
+  texto('LA BANCA SE PLANTA EN TODO 17', ANCHO / 2, 57, 'rgba(255,255,255,.28)', 12, 'center', 700);
+
+  // ---- banca ----
+  const yB = 96;
+  if (B.banca.length){
+    const anchoTotal = (B.banca.length - 1) * 34 + CARTA_AN;
+    let x = ANCHO / 2 - anchoTotal / 2;
+    B.banca.forEach((c, i) => {
+      Cartas.dibujar(ctx, (i === 1 && B.bancaTapada) ? null : c, x, yB, CARTA_AN, CARTA_AL);
+      x += 34;
+    });
+    const v = B.bancaTapada ? valorCarta(B.banca[0]) : valor(B.banca);
+    etiqueta('BANCA ' + v + (B.bancaTapada ? '+' : valor(B.banca) > 21 ? ' ✗' : ''),
+             ANCHO / 2, yB + CARTA_AL + 20,
+             !B.bancaTapada && valor(B.banca) > 21 ? '#ff3d68' : '#f3e600');
+  } else {
+    texto('BANCA', ANCHO / 2, yB + 40, 'rgba(255,255,255,.2)', 20, 'center', 800);
+  }
+
+  // ---- manos del jugador ----
+  const yJ = ALTO - CARTA_AL - 58;
+  if (B.manos.length){
+    const anchoMano = m => (m.cartas.length - 1) * 30 + CARTA_AN;
+    const total = B.manos.reduce((s, m) => s + anchoMano(m), 0) + (B.manos.length - 1) * 34;
+    let x = ANCHO / 2 - total / 2;
+    B.manos.forEach((m, i) => {
+      const activa = i === B.activa && B.fase === 'jugando';
+      let cx = x;
+      m.cartas.forEach(c => {
+        Cartas.dibujar(ctx, c, cx, yJ, CARTA_AN, CARTA_AL,
+                       { apagada: m.resultado === 'pierde' });
+        cx += 30;
+      });
+      const v = valor(m.cartas);
+      const centro = x + anchoMano(m) / 2;
+      const color = v > 21 ? '#ff3d68'
+        : m.resultado === 'gana' || m.resultado === 'blackjack' ? '#00ff66'
+        : activa ? '#00f0ff' : 'rgba(255,255,255,.7)';
+      etiqueta(v + (v > 21 ? ' ✗' : blando(m.cartas) ? ' blando' : '') , centro, yJ - 20, color);
+      texto('🪙 ' + m.apuesta + (m.doblada ? ' ×2' : ''), centro, yJ + CARTA_AL + 22,
+            '#f3e600', 14, 'center', 800);
+      if (activa){
+        ctx.strokeStyle = 'rgba(0,240,255,.7)'; ctx.lineWidth = 2;
+        ctx.setLineDash([6, 5]);
+        ctx.beginPath();
+        ctx.roundRect(x - 10, yJ - 40, anchoMano(m) + 20, CARTA_AL + 74, 14);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+      x += anchoMano(m) + 34;
+    });
+  } else {
+    texto('TU MANO', ANCHO / 2, yJ + 40, 'rgba(255,255,255,.2)', 20, 'center', 800);
+  }
+
+  // marcador de sesión
+  const pct = B.manosJugadas ? Math.round(B.ganadas / B.manosJugadas * 100) : 0;
+  texto('manos ' + B.manosJugadas + '  ·  ganadas ' + pct + '%  ·  blackjacks ' + B.blackjacks,
+        14, ALTO - 16, 'rgba(255,255,255,.35)', 12, 'left', 700);
+}
+
+// ---------- Entrada ----------
+$('btnRepartir').onclick = () => { Sonido.activar(); repartir(); };
+$('btnPedir').onclick = pedir;
+$('btnPlantarse').onclick = plantarse;
+$('btnDoblar').onclick = doblar;
+$('btnDividir').onclick = dividir;
+$('btnSeguro').onclick = tomarSeguro;
+
+document.querySelector('.fichasRapidas').addEventListener('click', ev => {
+  const b = ev.target.closest('[data-op]');
+  if (!b || B.fase === 'jugando') return;
+  const campo = $('montoApuesta');
+  const actual = apuestaValida();
+  const op = b.dataset.op;
+  campo.value = op === 'mitad' ? Math.max(10, Math.floor(actual / 2))
+              : op === 'doble' ? Math.min(B.saldo || actual * 2, actual * 2)
+              : parseInt(op, 10);
+  apuestaValida();
+});
+
+addEventListener('keydown', ev => {
+  if (B.fase === 'jugando'){
+    if (ev.key === 'p' || ev.code === 'ArrowRight') pedir();
+    else if (ev.key === 'l' || ev.code === 'ArrowDown') plantarse();
+    else if (ev.key === 'd') doblar();
+  } else if (ev.code === 'Space'){ ev.preventDefault(); repartir(); }
+});
+
+$('btnSentarse').onclick = () => {
+  Sonido.activar();
+  $('modalInicio').classList.remove('visible');
+};
+Arcade.conectarSonido($('btnSonido'));
+
+cargarPartida();
+refrescar();
+Arcade.bucle(() => dibujar());
+
+});
+
+registrarJuego("ruleta", function(document, addEventListener, Arcade){
+
+// ============================================================
+//  RULETA EUROPEA — un solo cero, ventaja de la casa 2,70 %
+// ============================================================
+const $ = id => document.getElementById(id);
+const lienzo = $('lienzo');
+const ctx = Arcade.nitido(lienzo);
+const avisos = $('avisos');
+const TAM = lienzo.width;
+const CENTRO = TAM / 2;
+
+// Orden real de la rueda europea
+const RUEDA = [0,32,15,19,4,21,2,25,17,34,6,27,13,36,11,30,8,23,10,
+               5,24,16,33,1,20,14,31,9,22,18,29,7,28,12,35,3,26];
+const ROJOS = new Set([1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36]);
+const color = n => n === 0 ? 'verde' : ROJOS.has(n) ? 'rojo' : 'negro';
+
+// ---------- Apuestas ----------
+// Cada apuesta es { clave, etiqueta, numeros:[], pago }
+function apuestasPosibles(){
+  const a = {};
+  const poner = (clave, etiqueta, numeros, pago) => { a[clave] = { clave, etiqueta, numeros, pago }; };
+
+  for (let n = 0; n <= 36; n++) poner('p' + n, 'Pleno ' + n, [n], 35);
+
+  // caballos (dos números contiguos en el tapete de 3 filas x 12 columnas)
+  for (let c = 0; c < 12; c++)
+    for (let f = 0; f < 3; f++){
+      const n = c * 3 + (3 - f);                        // fila 0 = 3,6,9…
+      if (f < 2) poner('c' + n + '-' + (n - 1), 'Caballo ' + (n - 1) + '/' + n, [n - 1, n], 17);
+      if (c < 11) poner('c' + n + '-' + (n + 3), 'Caballo ' + n + '/' + (n + 3), [n, n + 3], 17);
+    }
+  // calles, cuadros y líneas
+  for (let c = 0; c < 12; c++){
+    const base = c * 3 + 1;
+    poner('t' + base, 'Calle ' + base + '-' + (base + 2), [base, base + 1, base + 2], 11);
+    if (c < 11){
+      poner('l' + base, 'Línea ' + base + '-' + (base + 5),
+            [base, base+1, base+2, base+3, base+4, base+5], 5);
+      for (let f = 0; f < 2; f++){
+        const n = base + f;
+        poner('q' + n, 'Cuadro ' + n, [n, n + 1, n + 3, n + 4], 8);
+      }
+    }
+  }
+  // apuestas de fuera
+  for (let col = 0; col < 3; col++){
+    const nums = [];
+    for (let k = 0; k < 12; k++) nums.push(k * 3 + (3 - col));
+    poner('col' + col, (col + 1) + '.ª columna', nums, 2);
+  }
+  for (let d = 0; d < 3; d++){
+    const nums = [];
+    for (let k = 1; k <= 12; k++) nums.push(d * 12 + k);
+    poner('doc' + d, ['1.ª docena','2.ª docena','3.ª docena'][d], nums, 2);
+  }
+  const todos = [];
+  for (let n = 1; n <= 36; n++) todos.push(n);
+  poner('rojo',   'Rojo',   todos.filter(n => ROJOS.has(n)), 1);
+  poner('negro',  'Negro',  todos.filter(n => !ROJOS.has(n)), 1);
+  poner('par',    'Par',    todos.filter(n => n % 2 === 0), 1);
+  poner('impar',  'Impar',  todos.filter(n => n % 2 === 1), 1);
+  poner('falta',  'Falta 1-18', todos.filter(n => n <= 18), 1);
+  poner('pasa',   'Pasa 19-36', todos.filter(n => n >= 19), 1);
+  return a;
+}
+const APUESTAS = apuestasPosibles();
+
+// ---------- Estado ----------
+const R = {
+  fichas: {},              // clave -> importe
+  orden: [],               // para deshacer
+  ultima: null,            // última jugada, para repetir
+  saldo: Arcade.fichas.saldo(),
+  historia: [],
+  girando: false,
+  angulo: 0, velocidad: 0, destino: 0, bola: 0, velBola: 0, faseGiro: 0,
+  resultado: null,
+  giros: 0, aciertos: 0
+};
+
+const enJuego = () => Object.values(R.fichas).reduce((s, v) => s + v, 0);
+
+function apostar(clave){
+  if (R.girando) return;
+  const f = Math.max(5, Math.floor(parseFloat($('ficha').value) || 0));
+  $('ficha').value = f;
+  if (f > R.saldo - enJuego()){
+    Arcade.aviso(avisos, 'No te quedan fichas libres', false, 1600);
+    return;
+  }
+  R.fichas[clave] = (R.fichas[clave] || 0) + f;
+  R.orden.push({ clave, importe: f });
+  Sonido.fx('ficha');
+  pintarTapete();
+}
+function deshacer(){
+  if (R.girando || !R.orden.length) return;
+  const u = R.orden.pop();
+  R.fichas[u.clave] -= u.importe;
+  if (R.fichas[u.clave] <= 0) delete R.fichas[u.clave];
+  Sonido.fx('clic');
+  pintarTapete();
+}
+function limpiar(){
+  if (R.girando) return;
+  R.fichas = {}; R.orden = [];
+  pintarTapete();
+}
+function repetir(){
+  if (R.girando || !R.ultima) return;
+  const total = Object.values(R.ultima).reduce((s, v) => s + v, 0);
+  if (total > R.saldo){ Arcade.aviso(avisos, 'No te llega para repetir', false, 1700); return; }
+  R.fichas = { ...R.ultima };
+  R.orden = Object.entries(R.ultima).map(([clave, importe]) => ({ clave, importe }));
+  Sonido.fx('ficha');
+  pintarTapete();
+}
+
+// ---------- Giro ----------
+function girar(){
+  const total = enJuego();
+  if (R.girando) return;
+  if (!total){ Arcade.aviso(avisos, 'Pon alguna ficha primero', false, 1700); return; }
+
+  R.ultima = { ...R.fichas };
+  R.saldo = Arcade.fichas.ajustar(-total);
+  R.girando = true;
+  R.resultado = null;
+  document.querySelectorAll('#tapete .acierta, #filaFuera .acierta')
+    .forEach(b => b.classList.remove('acierta'));
+
+  // se sortea el número y se calcula dónde tiene que parar la bola
+  const idx = azarEntero(0, 36);
+  R.destino = idx;
+  const paso = Math.PI * 2 / 37;
+  R.angulo = azar(0, Math.PI * 2);
+  R.velocidad = azar(7, 9);
+  R.bola = azar(0, Math.PI * 2);
+  R.velBola = -azar(12, 15);
+  R.faseGiro = 0;
+  // ángulo final de la rueda para que la casilla `idx` quede arriba
+  R.anguloFinal = -idx * paso;
+  mensaje('La bola está en el aire…');
+  Sonido.fx('giro');
+  refrescar();
+}
+
+function resolver(){
+  const n = RUEDA[R.destino];
+  R.resultado = n;
+  R.historia.unshift(n);
+  if (R.historia.length > 30) R.historia.pop();
+  R.giros++;
+
+  let cobro = 0;
+  const ganadoras = [];
+  for (const [clave, importe] of Object.entries(R.fichas)){
+    const a = APUESTAS[clave];
+    if (a && a.numeros.includes(n)){
+      cobro += importe * (a.pago + 1);
+      ganadoras.push(a.etiqueta + ' ' + a.pago + ':1');
+      const b = document.querySelector('[data-clave="' + clave + '"]');
+      if (b) b.classList.add('acierta');
+    }
+  }
+  const apostado = enJuego();
+  if (cobro) { R.saldo = Arcade.fichas.ajustar(cobro); R.aciertos++; }
+  const neto = cobro - apostado;
+
+  Arcade.perfil.partida('ruleta', { puntos: Math.max(0, neto), victoria: neto > 0 });
+  if (neto > 0) Arcade.guardarRecord('ruleta', neto);
+
+  const col = color(n);
+  mensaje('Sale el <b style="color:' +
+    (col === 'rojo' ? '#ff5a72' : col === 'verde' ? '#4ee089' : '#c9d3e6') + '">' + n + ' ' +
+    (col === 'verde' ? 'cero' : col) + '</b>. ' +
+    (ganadoras.length ? 'Aciertas: ' + ganadoras.join(', ') + '. ' : 'Ninguna apuesta acierta. ') +
+    'Resultado: <b class="' + (neto >= 0 ? 'gana">+' : 'pierde">') + neto + '</b> fichas.');
+  Sonido.fx(neto > 0 ? 'caja' : 'error');
+
+  R.fichas = {}; R.orden = [];
+  R.girando = false;
+  guardarPartida();
+  pintarTapete();
+  pintarHistorial();
+  refrescar();
+}
+
+// ---------- Guardado ----------
+function guardarPartida(){
+  Arcade.escribir('ruleta', JSON.stringify({
+    historia: R.historia.slice(0, 30), ultima: R.ultima,
+    giros: R.giros, aciertos: R.aciertos
+  }));
+}
+function cargarPartida(){
+  const crudo = Arcade.leerTexto('ruleta', null);
+  if (!crudo) return;
+  try {
+    const g = JSON.parse(crudo);
+    R.historia = Array.isArray(g.historia) ? g.historia : [];
+    R.ultima = g.ultima || null;
+    R.giros = g.giros || 0; R.aciertos = g.aciertos || 0;
+  } catch(e){}
+}
+Guardado.registrar(guardarPartida);
+
+// ---------- Tapete ----------
+function boton(clave, texto, clases, estilo){
+  const b = document.createElement('button');
+  b.dataset.clave = clave;
+  b.textContent = texto;
+  if (clases) b.className = clases;
+  if (estilo) b.setAttribute('style', estilo);
+  b.setAttribute('aria-label', (APUESTAS[clave] || {}).etiqueta || texto);
+  return b;
+}
+
+function montarTapete(){
+  const t = $('tapete');
+  t.innerHTML = '';
+  // el cero ocupa las tres filas de la primera columna
+  t.appendChild(boton('p0', '0', 'cero', 'grid-row:1 / span 3;'));
+  for (let f = 0; f < 3; f++){
+    for (let c = 0; c < 12; c++){
+      const n = c * 3 + (3 - f);
+      t.appendChild(boton('p' + n, String(n), ROJOS.has(n) ? 'rojo' : ''));
+    }
+    t.appendChild(boton('col' + f, '2:1', 'col'));
+  }
+
+  const fuera = $('filaFuera');
+  fuera.innerHTML = '';
+  [['doc0','1.ª 12'],['doc1','2.ª 12'],['doc2','3.ª 12'],
+   ['falta','1-18'],['par','PAR'],['rojo','ROJO'],
+   ['negro','NEGRO'],['impar','IMPAR'],['pasa','19-36']]
+    .forEach(([clave, txt]) => fuera.appendChild(boton(clave, txt, 'fuera')));
+}
+
+function pintarTapete(){
+  document.querySelectorAll('[data-clave]').forEach(b => {
+    const v = R.fichas[b.dataset.clave];
+    let f = b.querySelector('.ficha');
+    if (v){
+      if (!f){ f = document.createElement('span'); f.className = 'ficha'; b.appendChild(f); }
+      f.textContent = v;
+    } else if (f) f.remove();
+  });
+  refrescar();
+}
+
+function pintarHistorial(){
+  const h = $('historial');
+  h.innerHTML = '';
+  R.historia.forEach(n => {
+    const s = document.createElement('span');
+    s.className = color(n);
+    s.textContent = n;
+    h.appendChild(s);
+  });
+}
+
+function mensaje(html){ $('mensaje').innerHTML = html; }
+function refrescar(){
+  $('saldoTxt').textContent = R.saldo.toLocaleString('es-ES');
+  $('enJuegoTxt').textContent = enJuego().toLocaleString('es-ES');
+  $('btnGirar').disabled = R.girando;
+  $('btnDeshacer').disabled = R.girando || !R.orden.length;
+  $('btnLimpiar').disabled = R.girando || !R.orden.length;
+  $('btnRepetir').disabled = R.girando || !R.ultima;
+}
+
+// ---------- Dibujo de la rueda ----------
+function dibujar(dt){
+  if (R.girando){
+    R.faseGiro += dt;
+    R.velocidad = Math.max(0.55, R.velocidad * Math.pow(0.55, dt));
+    R.velBola *= Math.pow(0.42, dt);
+    R.angulo += R.velocidad * dt;
+    R.bola += R.velBola * dt;
+    // a partir de los 4 s la rueda se acomoda a su ángulo final
+    if (R.faseGiro > 4){
+      const u = Math.min(1, (R.faseGiro - 4) / 2.2);
+      const objetivo = R.anguloFinal + Math.PI * 2 * Math.ceil((R.angulo - R.anguloFinal) / (Math.PI * 2));
+      R.angulo += (objetivo - R.angulo) * u * u * 6 * dt;
+      R.bola += (-R.angulo - R.bola) * u * u * 6 * dt;
+      if (R.faseGiro > 6.4) resolver();
+    }
+  }
+
+  ctx.clearRect(0, 0, TAM, TAM);
+  const rExt = CENTRO - 6, rInt = rExt * 0.6;
+  const paso = Math.PI * 2 / 37;
+
+  // borde de madera
+  ctx.fillStyle = '#3a2415';
+  ctx.beginPath(); ctx.arc(CENTRO, CENTRO, rExt, 0, 6.2832); ctx.fill();
+  ctx.strokeStyle = '#8a6034'; ctx.lineWidth = 3; ctx.stroke();
+
+  // casillas
+  ctx.save();
+  ctx.translate(CENTRO, CENTRO);
+  ctx.rotate(R.angulo - Math.PI / 2 - paso / 2);
+  RUEDA.forEach((n, i) => {
+    const a0 = i * paso, a1 = a0 + paso;
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.arc(0, 0, rExt * 0.92, a0, a1);
+    ctx.closePath();
+    const c = color(n);
+    ctx.fillStyle = c === 'rojo' ? '#c8102e' : c === 'verde' ? '#0f8a3c' : '#15181f';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(226,196,140,.45)'; ctx.lineWidth = 1; ctx.stroke();
+
+    ctx.save();
+    ctx.rotate(a0 + paso / 2);
+    ctx.fillStyle = '#fff';
+    ctx.font = '800 12px "Courier New", monospace';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(String(n), rExt * 0.79, 0);
+    ctx.restore();
+  });
+  ctx.restore();
+
+  // cubo central
+  const g = ctx.createRadialGradient(CENTRO - 10, CENTRO - 14, 4, CENTRO, CENTRO, rInt);
+  g.addColorStop(0, '#d8b57a'); g.addColorStop(1, '#5d3f22');
+  ctx.fillStyle = g;
+  ctx.beginPath(); ctx.arc(CENTRO, CENTRO, rInt * 0.62, 0, 6.2832); ctx.fill();
+  ctx.strokeStyle = '#e2c48c'; ctx.lineWidth = 2; ctx.stroke();
+  // brazos
+  ctx.strokeStyle = 'rgba(226,196,140,.75)'; ctx.lineWidth = 4;
+  for (let k = 0; k < 4; k++){
+    const a = R.angulo * 0.6 + k * Math.PI / 2;
+    ctx.beginPath();
+    ctx.moveTo(CENTRO + Math.cos(a) * rInt * 0.2, CENTRO + Math.sin(a) * rInt * 0.2);
+    ctx.lineTo(CENTRO + Math.cos(a) * rExt * 0.55, CENTRO + Math.sin(a) * rExt * 0.55);
+    ctx.stroke();
+  }
+
+  // bola
+  const rBola = R.girando && R.faseGiro < 4.6 ? rExt * 0.95 : rExt * 0.8;
+  const bx = CENTRO + Math.cos(R.bola - Math.PI / 2) * rBola;
+  const by = CENTRO + Math.sin(R.bola - Math.PI / 2) * rBola;
+  ctx.fillStyle = '#fff';
+  ctx.shadowColor = 'rgba(255,255,255,.9)'; ctx.shadowBlur = 10;
+  ctx.beginPath(); ctx.arc(bx, by, 6, 0, 6.2832); ctx.fill();
+  ctx.shadowBlur = 0;
+
+  // marca superior
+  ctx.fillStyle = '#f3e600';
+  ctx.beginPath();
+  ctx.moveTo(CENTRO, 2); ctx.lineTo(CENTRO - 8, 16); ctx.lineTo(CENTRO + 8, 16);
+  ctx.closePath(); ctx.fill();
+
+  // número que ha salido
+  if (!R.girando && R.resultado !== null){
+    const c = color(R.resultado);
+    ctx.fillStyle = 'rgba(0,0,0,.72)';
+    ctx.beginPath(); ctx.arc(CENTRO, CENTRO, 38, 0, 6.2832); ctx.fill();
+    ctx.strokeStyle = c === 'rojo' ? '#ff5a72' : c === 'verde' ? '#4ee089' : '#c9d3e6';
+    ctx.lineWidth = 2.5; ctx.stroke();
+    ctx.fillStyle = '#fff';
+    ctx.font = '800 30px "Courier New", monospace';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(String(R.resultado), CENTRO, CENTRO);
+  }
+}
+
+// ---------- Entrada ----------
+document.addEventListener('click', ev => {
+  const b = ev.target.closest('[data-clave]');
+  if (b){ Sonido.activar(); apostar(b.dataset.clave); }
+});
+$('btnGirar').onclick = () => { Sonido.activar(); girar(); };
+$('btnDeshacer').onclick = deshacer;
+$('btnLimpiar').onclick = limpiar;
+$('btnRepetir').onclick = repetir;
+$('btnEmpezar').onclick = () => {
+  Sonido.activar();
+  $('modalInicio').classList.remove('visible');
+};
+addEventListener('keydown', ev => {
+  if (ev.code === 'Space'){ ev.preventDefault(); girar(); }
+  else if (ev.key === 'z') deshacer();
+  else if (ev.key === 'r') repetir();
+});
+Arcade.conectarSonido($('btnSonido'));
+
+cargarPartida();
+montarTapete();
+pintarTapete();
+pintarHistorial();
+refrescar();
+Arcade.bucle(dt => dibujar(dt));
+
+});
+
+registrarJuego("poker", function(document, addEventListener, Arcade){
+
+// ============================================================
+//  TEXAS HOLD'EM — mesa de 4 con evaluador de 7 cartas
+// ============================================================
+const $ = id => document.getElementById(id);
+const lienzo = $('lienzo');
+const ctx = Arcade.nitido(lienzo);
+const avisos = $('avisos');
+const ANCHO = lienzo.width, ALTO = lienzo.height;
+
+const CIEGA = 50;                     // ciega grande; la pequeña es la mitad
+const FICHAS_IA = 4000;
+const CARTA_AN = 62, CARTA_AL = 88;
+
+const NOMBRES_MANO = ['Carta alta','Pareja','Dobles parejas','Trío','Escalera',
+                      'Color','Full','Póker','Escalera de color'];
+
+// ---------- Evaluador ----------
+/**
+ * Puntúa las mejores 5 cartas de entre las que se le pasen.
+ * Devuelve un entero comparable: categoría (0-8) y hasta cinco desempates,
+ * empaquetados en base 16 para poder comparar con < y >.
+ */
+function evaluar(cartas){
+  const cuentas = new Array(13).fill(0);
+  const porPalo = [[], [], [], []];
+  for (const c of cartas){
+    cuentas[Cartas.indice(c)]++;
+    porPalo[Cartas.palo(c)].push(Cartas.indice(c));
+  }
+  const empaquetar = (cat, ...restos) => {
+    let v = cat;
+    for (let i = 0; i < 5; i++) v = v * 16 + (restos[i] || 0);
+    return v;
+  };
+  // escalera: devuelve el índice de la carta alta, o -1
+  const escaleraDe = indices => {
+    const hay = new Array(13).fill(false);
+    indices.forEach(i => hay[i] = true);
+    for (let alto = 12; alto >= 3; alto--){
+      let ok = true;
+      for (let k = 0; k < 5; k++) if (!hay[alto - k]){ ok = false; break; }
+      if (ok) return alto;
+    }
+    // escalera al as por abajo: A,2,3,4,5 -> índices 12,0,1,2,3
+    if (hay[12] && hay[0] && hay[1] && hay[2] && hay[3]) return 3;
+    return -1;
+  };
+
+  const paloColor = porPalo.findIndex(p => p.length >= 5);
+  if (paloColor >= 0){
+    const ec = escaleraDe(porPalo[paloColor]);
+    if (ec >= 0) return empaquetar(8, ec);
+  }
+
+  const grupos = [];
+  for (let i = 12; i >= 0; i--) if (cuentas[i]) grupos.push({ i, n: cuentas[i] });
+  grupos.sort((a, b) => b.n - a.n || b.i - a.i);
+
+  if (grupos[0].n === 4){
+    const patada = grupos.find(g => g.i !== grupos[0].i).i;
+    return empaquetar(7, grupos[0].i, patada);
+  }
+  if (grupos[0].n === 3 && grupos[1] && grupos[1].n >= 2)
+    return empaquetar(6, grupos[0].i, grupos[1].i);
+
+  if (paloColor >= 0){
+    const altas = porPalo[paloColor].slice().sort((a, b) => b - a).slice(0, 5);
+    return empaquetar(5, ...altas);
+  }
+
+  const todas = [];
+  for (let i = 0; i < 13; i++) if (cuentas[i]) todas.push(i);
+  const e = escaleraDe(todas);
+  if (e >= 0) return empaquetar(4, e);
+
+  if (grupos[0].n === 3){
+    const p = grupos.filter(g => g.i !== grupos[0].i).map(g => g.i).slice(0, 2);
+    return empaquetar(3, grupos[0].i, p[0], p[1]);
+  }
+  if (grupos[0].n === 2 && grupos[1] && grupos[1].n === 2){
+    const par = [grupos[0].i, grupos[1].i].sort((a, b) => b - a);
+    const patada = grupos.filter(g => g.i !== par[0] && g.i !== par[1])
+                         .map(g => g.i).sort((a, b) => b - a)[0];
+    return empaquetar(2, par[0], par[1], patada);
+  }
+  if (grupos[0].n === 2){
+    const p = grupos.filter(g => g.i !== grupos[0].i).map(g => g.i).sort((a, b) => b - a).slice(0, 3);
+    return empaquetar(1, grupos[0].i, p[0], p[1], p[2]);
+  }
+  const altas = todas.slice().sort((a, b) => b - a).slice(0, 5);
+  return empaquetar(0, ...altas);
+}
+const categoria = v => Math.floor(v / (16 ** 5));
+
+// ---------- Estado ----------
+const P = {
+  baraja: [], mesa: [], bote: 0,
+  jugadores: [],        // { nombre, cartas, fichas, puesto, activo, allin, humano }
+  turno: 0, boton: 0, ronda: 0,      // 0 preflop, 1 flop, 2 turn, 3 river
+  apuestaRonda: 0, subidaMin: CIEGA,
+  fase: 'espera',       // espera | apostando | reparto | fin
+  ultimoAgresor: -1, actuados: 0,
+  manos: 0, ganadas: 0,
+  reloj: 0
+};
+
+function nuevaMesa(){
+  P.jugadores = [
+    { nombre:'TÚ',    fichas: Arcade.fichas.saldo(), humano:true },
+    { nombre:'ATENEA',fichas: FICHAS_IA },
+    { nombre:'ARES',  fichas: FICHAS_IA },
+    { nombre:'HERA',  fichas: FICHAS_IA }
+  ].map(j => ({ ...j, cartas: [], puesto: 0, activo: false, allin: false }));
+  P.boton = 0;
+}
+
+function repartir(){
+  const yo = P.jugadores[0];
+  yo.fichas = Arcade.fichas.saldo();
+  if (yo.fichas < CIEGA){ Arcade.aviso(avisos, 'No te quedan fichas para la ciega', false, 2200); return; }
+  // los rivales sin fichas se recargan, para que la mesa siga viva
+  P.jugadores.slice(1).forEach(j => { if (j.fichas < CIEGA) j.fichas = FICHAS_IA; });
+
+  P.baraja = Cartas.baraja(1);
+  P.mesa = []; P.bote = 0; P.ronda = 0;
+  P.jugadores.forEach(j => {
+    j.cartas = [P.baraja.pop(), P.baraja.pop()];
+    j.puesto = 0; j.activo = true; j.allin = false; j.accion = '';
+  });
+  P.boton = (P.boton + 1) % 4;
+
+  const pequeña = (P.boton + 1) % 4, grande = (P.boton + 2) % 4;
+  poner(pequeña, Math.floor(CIEGA / 2));
+  poner(grande, CIEGA);
+  P.apuestaRonda = CIEGA;
+  P.subidaMin = CIEGA;
+  P.ultimoAgresor = grande;
+  P.actuados = 0;
+  P.turno = (grande + 1) % 4;
+  P.fase = 'apostando';
+  P.manos++;
+  Sonido.fx('colocar');
+  mensaje('Ciegas ' + Math.floor(CIEGA / 2) + '/' + CIEGA + '. Te toca decidir.');
+  seguir();
+}
+
+function poner(i, cantidad){
+  const j = P.jugadores[i];
+  const real = Math.min(cantidad, j.fichas);
+  j.fichas -= real;
+  j.puesto += real;
+  P.bote += real;
+  if (j.fichas === 0) j.allin = true;
+  if (j.humano) Arcade.fichas.fijar(j.fichas);
+  return real;
+}
+
+const vivos = () => P.jugadores.filter(j => j.activo);
+const puedenActuar = () => P.jugadores.filter(j => j.activo && !j.allin);
+
+// ---------- Acciones ----------
+function actuar(i, accion, cantidad){
+  const j = P.jugadores[i];
+  if (!j.activo || j.allin) return;
+  const falta = P.apuestaRonda - j.puesto;
+
+  if (accion === 'retirarse'){ j.activo = false; j.accion = 'se retira'; }
+  else if (accion === 'pasar' && falta <= 0){ j.accion = 'pasa'; }
+  else if (accion === 'igualar' || (accion === 'pasar' && falta > 0)){
+    poner(i, falta);
+    j.accion = falta > 0 ? 'iguala ' + falta : 'pasa';
+  } else if (accion === 'subir'){
+    const total = Math.max(P.apuestaRonda + P.subidaMin, cantidad);
+    const aPoner = Math.min(total - j.puesto, j.fichas);
+    poner(i, aPoner);
+    if (j.puesto > P.apuestaRonda){
+      P.subidaMin = Math.max(P.subidaMin, j.puesto - P.apuestaRonda);
+      P.apuestaRonda = j.puesto;
+      P.ultimoAgresor = i;
+      P.actuados = 0;
+      j.accion = 'sube a ' + j.puesto;
+    } else j.accion = 'all-in ' + j.puesto;
+  }
+  P.actuados++;
+  Sonido.fx(accion === 'retirarse' ? 'clic' : 'ficha');
+
+  if (vivos().length === 1){ terminarMano(); return; }
+  P.turno = siguienteActivo(i);
+  seguir();
+}
+
+function siguienteActivo(desde){
+  for (let k = 1; k <= 4; k++){
+    const i = (desde + k) % 4;
+    if (P.jugadores[i].activo && !P.jugadores[i].allin) return i;
+  }
+  return -1;
+}
+
+// ¿ha terminado la ronda de apuestas?
+function rondaCerrada(){
+  const activos = puedenActuar();
+  if (activos.length <= 1) return P.actuados >= 1 || activos.length === 0;
+  return activos.every(j => j.puesto === P.apuestaRonda) && P.actuados >= activos.length;
+}
+
+function seguir(){
+  if (P.fase !== 'apostando') return;
+  if (rondaCerrada()){ siguienteCalle(); return; }
+  const j = P.jugadores[P.turno];
+  if (!j || !j.activo || j.allin){ P.turno = siguienteActivo(P.turno); if (P.turno === -1){ siguienteCalle(); return; } }
+  refrescar();
+  if (!P.jugadores[P.turno].humano) P.reloj = 0.9;   // la IA piensa un momento
+}
+
+function siguienteCalle(){
+  P.jugadores.forEach(j => { j.puesto = 0; j.accion = ''; });
+  P.apuestaRonda = 0;
+  P.subidaMin = CIEGA;
+  P.actuados = 0;
+  P.ronda++;
+  if (P.ronda === 1){ P.mesa.push(P.baraja.pop(), P.baraja.pop(), P.baraja.pop()); }
+  else if (P.ronda === 2 || P.ronda === 3){ P.mesa.push(P.baraja.pop()); }
+  else { terminarMano(); return; }
+  Sonido.fx('colocar');
+  P.turno = siguienteActivo(P.boton);
+  if (P.turno === -1 || puedenActuar().length <= 1){
+    // todos all-in: se destapan las cartas que faltan
+    while (P.mesa.length < 5) P.mesa.push(P.baraja.pop());
+    terminarMano();
+    return;
+  }
+  mensaje(['','FLOP','TURN','RIVER'][P.ronda] + ': ' +
+          P.mesa.map(c => Cartas.texto(c)).join(' '));
+  seguir();
+}
+
+function terminarMano(){
+  P.fase = 'fin';
+  while (P.mesa.length < 5 && vivos().length > 1) P.mesa.push(P.baraja.pop());
+
+  const enJuego = vivos();
+  let texto;
+  if (enJuego.length === 1){
+    enJuego[0].fichas += P.bote;
+    texto = enJuego[0].nombre + ' se lleva ' + P.bote + ' (los demás se retiran)';
+  } else {
+    const puntuadas = enJuego.map(j => ({ j, v: evaluar(j.cartas.concat(P.mesa)) }));
+    const mejor = Math.max(...puntuadas.map(x => x.v));
+    const ganadores = puntuadas.filter(x => x.v === mejor);
+    const parte = Math.floor(P.bote / ganadores.length);
+    ganadores.forEach(x => x.j.fichas += parte);
+    texto = ganadores.map(x => x.j.nombre).join(' y ') + ' gana' +
+            (ganadores.length > 1 ? 'n' : '') + ' ' + P.bote +
+            ' con <b>' + NOMBRES_MANO[categoria(mejor)] + '</b>';
+    P.ganadores = ganadores.map(x => x.j.nombre);
+  }
+
+  const yo = P.jugadores[0];
+  const antes = Arcade.fichas.saldo();
+  Arcade.fichas.fijar(yo.fichas);
+  const neto = yo.fichas - antes;
+  if (neto > 0){ P.ganadas++; Arcade.guardarRecord('poker', neto); }
+  Arcade.perfil.partida('poker', { puntos: Math.max(0, neto), victoria: neto > 0 });
+
+  mensaje(texto + '. Tu resultado: <b class="' +
+          (neto > 0 ? 'gana">+' : neto < 0 ? 'pierde">' : '">') + neto + '</b> fichas.');
+  Sonido.fx(neto > 0 ? 'caja' : neto < 0 ? 'error' : 'clic');
+  P.bote = 0;
+  guardarPartida();
+  refrescar();
+}
+
+// ---------- Rival ----------
+/**
+ * Decide con la fuerza de la mano y las probabilidades del bote.
+ * Antes del flop usa una tabla sencilla de manos iniciales; después,
+ * la categoría real de sus siete cartas. Farolea de vez en cuando.
+ */
+function decidirIA(i){
+  const j = P.jugadores[i];
+  const falta = P.apuestaRonda - j.puesto;
+  let fuerza;
+
+  if (P.ronda === 0){
+    const [a, b] = j.cartas.map(Cartas.indice);
+    const pareja = a === b;
+    const mismoPalo = Cartas.palo(j.cartas[0]) === Cartas.palo(j.cartas[1]);
+    const alto = Math.max(a, b), bajo = Math.min(a, b);
+    fuerza = (pareja ? 0.5 + alto * 0.035 : 0)
+           + alto * 0.028 + bajo * 0.012
+           + (mismoPalo ? 0.09 : 0)
+           + (alto - bajo <= 2 && !pareja ? 0.05 : 0);
+  } else {
+    const cat = categoria(evaluar(j.cartas.concat(P.mesa)));
+    fuerza = [0.12, 0.32, 0.52, 0.68, 0.78, 0.85, 0.93, 0.97, 1][cat];
+    // una pareja hecha con la mesa vale menos que una con carta propia
+    if (cat === 1 && !j.cartas.some(c => P.mesa.some(m => Cartas.indice(m) === Cartas.indice(c))))
+      fuerza -= 0.12;
+  }
+  const farol = Math.random() < 0.12 ? 0.28 : 0;
+  fuerza = limitar(fuerza + farol + azar(-0.06, 0.06), 0, 1);
+
+  const odds = falta > 0 ? falta / (P.bote + falta) : 0;
+  if (falta <= 0){
+    if (fuerza > 0.62 && Math.random() < 0.55)
+      return actuar(i, 'subir', P.apuestaRonda + Math.max(CIEGA, Math.floor(P.bote * azar(0.4, 0.8))));
+    return actuar(i, 'pasar');
+  }
+  if (fuerza < odds * 1.15 && fuerza < 0.55) return actuar(i, 'retirarse');
+  if (fuerza > 0.75 && Math.random() < 0.5)
+    return actuar(i, 'subir', P.apuestaRonda + Math.max(CIEGA, Math.floor(P.bote * azar(0.5, 1))));
+  return actuar(i, 'igualar');
+}
+
+// ---------- Guardado ----------
+function guardarPartida(){
+  Arcade.escribir('poker', JSON.stringify({
+    manos: P.manos, ganadas: P.ganadas, boton: P.boton,
+    ia: P.jugadores.slice(1).map(j => j.fichas)
+  }));
+}
+function cargarPartida(){
+  nuevaMesa();
+  const crudo = Arcade.leerTexto('poker', null);
+  if (!crudo) return;
+  try {
+    const g = JSON.parse(crudo);
+    P.manos = g.manos || 0; P.ganadas = g.ganadas || 0; P.boton = g.boton || 0;
+    if (Array.isArray(g.ia)) g.ia.forEach((f, k) => {
+      if (P.jugadores[k + 1] && f > 0) P.jugadores[k + 1].fichas = f;
+    });
+  } catch(e){}
+}
+Guardado.registrar(guardarPartida);
+
+// ---------- Interfaz ----------
+function mensaje(html){ $('mensaje').innerHTML = html; }
+
+function refrescar(){
+  const yo = P.jugadores[0];
+  $('saldoTxt').textContent = (yo ? yo.fichas : 0).toLocaleString('es-ES');
+  $('manosTxt').textContent = P.manos ? P.ganadas + '/' + P.manos : '0';
+
+  const miTurno = P.fase === 'apostando' && P.turno === 0 && yo.activo && !yo.allin;
+  const falta = miTurno ? P.apuestaRonda - yo.puesto : 0;
+  $('btnRepartir').disabled = P.fase === 'apostando';
+  $('btnPasar').disabled = !miTurno || falta > 0;
+  $('btnIgualar').disabled = !miTurno || falta <= 0;
+  $('btnIgualar').textContent = falta > 0 ? '= Igualar ' + Math.min(falta, yo.fichas) : '= Igualar';
+  $('btnSubir').disabled = !miTurno || yo.fichas <= falta;
+  $('btnRetirarse').disabled = !miTurno;
+  $('rangoSubida').disabled = !miTurno;
+
+  const minimo = P.apuestaRonda + P.subidaMin;
+  const maximo = yo ? yo.puesto + yo.fichas : minimo;
+  const u = parseInt($('rangoSubida').value, 10) / 100;
+  const subida = Math.min(maximo, Math.round(minimo + (maximo - minimo) * u));
+  $('subirTxt').textContent = miTurno ? subida : '—';
+  $('btnSubir').dataset.total = subida;
+}
+
+// ---------- Dibujo ----------
+function texto(t, x, y, color, tam, alin, peso){
+  ctx.fillStyle = color;
+  ctx.font = (peso || 700) + ' ' + tam + 'px "Segoe UI", system-ui, sans-serif';
+  ctx.textAlign = alin || 'left'; ctx.textBaseline = 'middle';
+  ctx.fillText(t, x, y);
+}
+
+const SITIOS = [
+  { x: ANCHO / 2,        y: ALTO - 92,  eti: 'abajo' },
+  { x: 128,              y: ALTO / 2 - 40, eti: 'izq' },
+  { x: ANCHO / 2,        y: 74,         eti: 'arriba' },
+  { x: ANCHO - 128,      y: ALTO / 2 - 40, eti: 'der' }
+];
+
+function dibujar(){
+  const g = ctx.createRadialGradient(ANCHO / 2, ALTO / 2, 40, ANCHO / 2, ALTO / 2, ANCHO * 0.62);
+  g.addColorStop(0, '#20204d');
+  g.addColorStop(1, '#0a0a1c');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, ANCHO, ALTO);
+
+  // óvalo de la mesa
+  ctx.beginPath();
+  ctx.ellipse(ANCHO / 2, ALTO / 2 - 10, ANCHO * 0.38, ALTO * 0.33, 0, 0, 6.2832);
+  ctx.fillStyle = '#123a2c'; ctx.fill();
+  ctx.strokeStyle = 'rgba(168,85,247,.45)'; ctx.lineWidth = 3; ctx.stroke();
+
+  // bote
+  texto('BOTE', ANCHO / 2, ALTO / 2 - 96, 'rgba(255,255,255,.4)', 12, 'center', 800);
+  texto('🪙 ' + P.bote.toLocaleString('es-ES'), ANCHO / 2, ALTO / 2 - 74, '#f3e600', 22, 'center', 900);
+
+  // cartas comunitarias
+  const anchoMesa = 5 * CARTA_AN + 4 * 10;
+  let x = ANCHO / 2 - anchoMesa / 2;
+  for (let i = 0; i < 5; i++){
+    if (i < P.mesa.length) Cartas.dibujar(ctx, P.mesa[i], x, ALTO / 2 - 44, CARTA_AN, CARTA_AL);
+    else {
+      ctx.fillStyle = 'rgba(255,255,255,.05)';
+      ctx.beginPath(); ctx.roundRect(x, ALTO / 2 - 44, CARTA_AN, CARTA_AL, 6); ctx.fill();
+    }
+    x += CARTA_AN + 10;
+  }
+
+  // jugadores
+  P.jugadores.forEach((j, i) => {
+    const s = SITIOS[i];
+    const suTurno = P.fase === 'apostando' && P.turno === i;
+    const gano = P.fase === 'fin' && P.ganadores && P.ganadores.includes(j.nombre);
+
+    // cartas
+    const mostrar = j.humano || P.fase === 'fin';
+    const an = j.humano ? CARTA_AN : CARTA_AN * 0.72;
+    const al = j.humano ? CARTA_AL : CARTA_AL * 0.72;
+    let cx = s.x - (an + 6);
+    j.cartas.forEach(c => {
+      Cartas.dibujar(ctx, mostrar && j.activo ? c : null, cx, s.y - al / 2 - 16, an, al,
+                     { apagada: !j.activo });
+      cx += an + 6;
+    });
+
+    // placa
+    const anP = 150, alP = 40;
+    const px = s.x - anP / 2, py = s.y + al / 2 - 6;
+    ctx.fillStyle = j.activo ? 'rgba(0,0,0,.62)' : 'rgba(0,0,0,.35)';
+    ctx.beginPath(); ctx.roundRect(px, py, anP, alP, 10); ctx.fill();
+    ctx.strokeStyle = gano ? '#00ff66' : suTurno ? '#f3e600' : 'rgba(255,255,255,.14)';
+    ctx.lineWidth = gano || suTurno ? 2.4 : 1;
+    ctx.stroke();
+    texto(j.nombre + (i === P.boton ? '  🔘' : ''), s.x, py + 13,
+          j.activo ? '#e8eef7' : 'rgba(255,255,255,.35)', 13, 'center', 800);
+    texto('🪙 ' + j.fichas.toLocaleString('es-ES'), s.x, py + 29, '#f3e600', 12, 'center', 700);
+
+    if (j.puesto > 0)
+      texto('▲ ' + j.puesto, s.x, py - al / 2 - 26, '#00f0ff', 13, 'center', 800);
+    if (j.accion)
+      texto(j.accion, s.x, py + alP + 13, j.activo ? 'rgba(255,255,255,.55)' : '#ff3d68', 11, 'center', 700);
+  });
+
+  // mi mano hecha
+  const yo = P.jugadores[0];
+  if (yo && yo.cartas.length && P.mesa.length >= 3){
+    const cat = categoria(evaluar(yo.cartas.concat(P.mesa)));
+    texto('Tienes: ' + NOMBRES_MANO[cat], ANCHO / 2, ALTO - 16, '#a855f7', 14, 'center', 800);
+  }
+}
+
+// ---------- Entrada ----------
+$('btnRepartir').onclick = () => { Sonido.activar(); repartir(); };
+$('btnPasar').onclick = () => actuar(0, 'pasar');
+$('btnIgualar').onclick = () => actuar(0, 'igualar');
+$('btnSubir').onclick = () => actuar(0, 'subir', parseInt($('btnSubir').dataset.total, 10));
+$('btnRetirarse').onclick = () => actuar(0, 'retirarse');
+$('rangoSubida').addEventListener('input', refrescar);
+$('btnSentarse').onclick = () => { Sonido.activar(); $('modalInicio').classList.remove('visible'); };
+Arcade.conectarSonido($('btnSonido'));
+
+cargarPartida();
+refrescar();
+
+Arcade.bucle(dt => {
+  if (P.fase === 'apostando' && P.turno >= 0 && !P.jugadores[P.turno].humano){
+    P.reloj -= dt;
+    if (P.reloj <= 0){ P.reloj = 0.9; decidirIA(P.turno); }
+  }
+  dibujar();
+});
+
+});
+
+registrarJuego("bacara", function(document, addEventListener, Arcade){
+
+// ============================================================
+//  BACARRÁ (Punto y Banca) — tabla oficial de tercera carta
+// ============================================================
+const $ = id => document.getElementById(id);
+const lienzo = $('lienzo');
+const ctx = Arcade.nitido(lienzo);
+const avisos = $('avisos');
+const ANCHO = lienzo.width, ALTO = lienzo.height;
+
+const MAZOS = 8;
+const CORTE = 40;
+const CARTA_AN = 74, CARTA_AL = 106;
+
+// Valor de bacarrá: figuras y diez a 0, as a 1, el resto su número
+const puntos = c => { const i = Cartas.indice(c); return i >= 8 ? (i === 12 ? 1 : 0) : i + 2; };
+const total = mano => mano.reduce((s, c) => s + puntos(c), 0) % 10;
+
+const B = {
+  zapato: [], punto: [], banca: [],
+  apuestas: { punto:0, banca:0, empate:0 },
+  ultima: null,
+  saldo: Arcade.fichas.saldo(),
+  camino: [],           // historial: 'P' | 'B' | 'E'
+  fase: 'apuesta',      // apuesta | reparto | fin
+  paso: 0, reloj: 0,
+  manos: 0, ganadas: 0
+};
+
+function nuevoZapato(){
+  B.zapato = Cartas.baraja(MAZOS);
+  Arcade.aviso(avisos, '🔄 Zapato nuevo: 8 barajas', true, 1700);
+}
+function sacar(){
+  if (B.zapato.length <= CORTE) nuevoZapato();
+  return B.zapato.pop();
+}
+
+const enJuego = () => B.apuestas.punto + B.apuestas.banca + B.apuestas.empate;
+
+function apostar(lado){
+  if (B.fase !== 'apuesta') return;
+  const f = Math.max(10, Math.floor(parseFloat($('ficha').value) || 0));
+  $('ficha').value = f;
+  if (f > B.saldo - enJuego()){ Arcade.aviso(avisos, 'No te quedan fichas libres', false, 1600); return; }
+  B.apuestas[lado] += f;
+  Sonido.fx('ficha');
+  refrescar();
+}
+function quitar(){
+  if (B.fase !== 'apuesta') return;
+  B.apuestas = { punto:0, banca:0, empate:0 };
+  refrescar();
+}
+function repetirApuesta(){
+  if (B.fase !== 'apuesta' || !B.ultima) return;
+  const t = Object.values(B.ultima).reduce((s, v) => s + v, 0);
+  if (t > B.saldo){ Arcade.aviso(avisos, 'No te llega para repetir', false, 1600); return; }
+  B.apuestas = { ...B.ultima };
+  Sonido.fx('ficha');
+  refrescar();
+}
+
+/**
+ * Reparte la mano entera de golpe siguiendo la tabla oficial y luego la va
+ * enseñando carta a carta. Las reglas no admiten decisión: con dos cartas
+ * de 8 o 9 hay natural; si no, el punto roba con 0-5, y la banca roba
+ * según su total y, cuando el punto ha robado, según qué carta le salió.
+ */
+function repartir(){
+  const t = enJuego();
+  if (B.fase !== 'apuesta') return;
+  if (!t){ Arcade.aviso(avisos, 'Pon alguna ficha primero', false, 1600); return; }
+
+  B.ultima = { ...B.apuestas };
+  B.saldo = Arcade.fichas.ajustar(-t);
+  B.punto = [sacar(), sacar()];
+  B.banca = [sacar(), sacar()];
+
+  const tp = total(B.punto), tb = total(B.banca);
+  if (tp < 8 && tb < 8){
+    let tercera = null;
+    if (tp <= 5){ tercera = sacar(); B.punto.push(tercera); }
+
+    if (tercera === null){
+      // el punto se planta: la banca roba con 0-5
+      if (tb <= 5) B.banca.push(sacar());
+    } else {
+      const v = puntos(tercera);
+      const roba =
+        tb <= 2 ? true :
+        tb === 3 ? v !== 8 :
+        tb === 4 ? v >= 2 && v <= 7 :
+        tb === 5 ? v >= 4 && v <= 7 :
+        tb === 6 ? v === 6 || v === 7 : false;
+      if (roba) B.banca.push(sacar());
+    }
+  }
+
+  B.fase = 'reparto';
+  B.paso = 0; B.reloj = 0;
+  mensaje('Repartiendo…');
+  Sonido.fx('colocar');
+  refrescar();
+}
+
+function resolver(){
+  B.fase = 'fin';
+  const tp = total(B.punto), tb = total(B.banca);
+  const ganador = tp > tb ? 'punto' : tb > tp ? 'banca' : 'empate';
+  B.camino.unshift(ganador === 'punto' ? 'P' : ganador === 'banca' ? 'B' : 'E');
+  if (B.camino.length > 40) B.camino.pop();
+  B.manos++;
+
+  let cobro = 0;
+  const partes = [];
+  if (ganador === 'empate'){
+    // en empate, punto y banca se devuelven
+    cobro += B.apuestas.punto + B.apuestas.banca;
+    if (B.apuestas.empate) { cobro += B.apuestas.empate * 9; partes.push('empate 8:1'); }
+    if (B.apuestas.punto || B.apuestas.banca) partes.push('punto y banca se devuelven');
+  } else if (ganador === 'punto'){
+    if (B.apuestas.punto){ cobro += B.apuestas.punto * 2; partes.push('punto 1:1'); }
+  } else {
+    // la banca paga 0,95:1 (5 % de comisión para la casa)
+    if (B.apuestas.banca){ cobro += B.apuestas.banca + Math.floor(B.apuestas.banca * 0.95); partes.push('banca 0,95:1'); }
+  }
+
+  const apostado = enJuego();
+  if (cobro) { B.saldo = Arcade.fichas.ajustar(cobro); B.ganadas++; }
+  const neto = cobro - apostado;
+
+  const natural = B.punto.length === 2 && B.banca.length === 2 && (tp >= 8 || tb >= 8);
+  Arcade.perfil.partida('bacara', { puntos: Math.max(0, neto), victoria: neto > 0 });
+  if (neto > 0) Arcade.guardarRecord('bacara', neto);
+
+  mensaje('Punto <b>' + tp + '</b> · Banca <b>' + tb + '</b> → gana <b>' +
+    (ganador === 'empate' ? 'el EMPATE' : ganador.toUpperCase()) + '</b>' +
+    (natural ? ' (natural)' : '') + '. ' +
+    (partes.length ? 'Cobras: ' + partes.join(', ') + '. ' : '') +
+    'Resultado: <b class="' + (neto >= 0 ? 'gana">+' : 'pierde">') + neto + '</b> fichas.');
+  Sonido.fx(neto > 0 ? 'caja' : neto < 0 ? 'error' : 'clic');
+
+  B.apuestas = { punto:0, banca:0, empate:0 };
+  guardarPartida();
+  refrescar();
+}
+
+// ---------- Guardado ----------
+function guardarPartida(){
+  Arcade.escribir('bacara', JSON.stringify({
+    zapato: B.zapato, camino: B.camino.slice(0, 40),
+    ultima: B.ultima, manos: B.manos, ganadas: B.ganadas
+  }));
+}
+function cargarPartida(){
+  const crudo = Arcade.leerTexto('bacara', null);
+  if (crudo){
+    try {
+      const g = JSON.parse(crudo);
+      if (Array.isArray(g.zapato) && g.zapato.length > CORTE) B.zapato = g.zapato;
+      B.camino = Array.isArray(g.camino) ? g.camino : [];
+      B.ultima = g.ultima || null;
+      B.manos = g.manos || 0; B.ganadas = g.ganadas || 0;
+    } catch(e){}
+  }
+  if (!B.zapato.length) B.zapato = Cartas.baraja(MAZOS);
+}
+Guardado.registrar(guardarPartida);
+
+// ---------- Interfaz ----------
+function mensaje(html){ $('mensaje').innerHTML = html; }
+function refrescar(){
+  $('saldoTxt').textContent = B.saldo.toLocaleString('es-ES');
+  $('zapatoTxt').textContent = B.zapato.length;
+  document.querySelectorAll('#apuestas button').forEach(b => {
+    const v = B.apuestas[b.dataset.lado];
+    let f = b.querySelector('.ficha');
+    if (v){
+      if (!f){ f = document.createElement('span'); f.className = 'ficha'; b.appendChild(f); }
+      f.textContent = v;
+    } else if (f) f.remove();
+    b.disabled = B.fase !== 'apuesta';
+  });
+  $('btnRepartir').disabled = B.fase !== 'apuesta';
+  $('btnQuitar').disabled = B.fase !== 'apuesta' || !enJuego();
+  $('btnRepetir').disabled = B.fase !== 'apuesta' || !B.ultima;
+}
+
+// ---------- Dibujo ----------
+function texto(t, x, y, color, tam, alin, peso){
+  ctx.fillStyle = color;
+  ctx.font = (peso || 700) + ' ' + tam + 'px "Segoe UI", system-ui, sans-serif';
+  ctx.textAlign = alin || 'left'; ctx.textBaseline = 'middle';
+  ctx.fillText(t, x, y);
+}
+
+function dibujar(dt){
+  // el reparto se enseña carta a carta
+  if (B.fase === 'reparto'){
+    B.reloj += dt;
+    const totalCartas = B.punto.length + B.banca.length;
+    if (B.reloj > 0.42){
+      B.reloj = 0;
+      B.paso++;
+      Sonido.fx('clic');
+      if (B.paso >= totalCartas) resolver();
+    }
+  }
+  const visibles = B.fase === 'reparto' ? B.paso : 99;
+
+  const g = ctx.createRadialGradient(ANCHO / 2, ALTO / 2, 40, ANCHO / 2, ALTO / 2, ANCHO * 0.6);
+  g.addColorStop(0, '#123a4d'); g.addColorStop(1, '#050f18');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, ANCHO, ALTO);
+
+  // el orden real de reparto alterna: punto, banca, punto, banca, terceras
+  const orden = [];
+  orden.push({ lado:'punto', i:0 }, { lado:'banca', i:0 },
+             { lado:'punto', i:1 }, { lado:'banca', i:1 });
+  if (B.punto[2]) orden.push({ lado:'punto', i:2 });
+  if (B.banca[2]) orden.push({ lado:'banca', i:2 });
+
+  const zona = (lado, x0, color, etiqueta) => {
+    const mano = B[lado];
+    ctx.strokeStyle = color; ctx.lineWidth = 2;
+    ctx.setLineDash([7, 6]);
+    ctx.beginPath(); ctx.roundRect(x0 - 16, 78, 3 * (CARTA_AN + 10) + 22, CARTA_AL + 40, 14);
+    ctx.stroke(); ctx.setLineDash([]);
+    texto(etiqueta, x0 + (3 * (CARTA_AN + 10)) / 2 - 5, 60, color, 17, 'center', 900);
+
+    let x = x0, mostradas = 0;
+    mano.forEach((c, i) => {
+      const pos = orden.findIndex(o => o.lado === lado && o.i === i);
+      if (pos < visibles){ Cartas.dibujar(ctx, c, x, 96, CARTA_AN, CARTA_AL); mostradas++; }
+      x += CARTA_AN + 10;
+    });
+    if (mostradas){
+      const vistas = mano.slice(0, mostradas);
+      texto(String(total(vistas)), x0 + 3 * (CARTA_AN + 10) / 2 - 5, 96 + CARTA_AL + 24,
+            color, 26, 'center', 900);
+    }
+  };
+
+  zona('punto', 96, '#5cc8ff', 'PUNTO');
+  zona('banca', ANCHO - 96 - 3 * (CARTA_AN + 10) + 10, '#ff6b8a', 'BANCA');
+
+  // camino de resultados
+  texto('CAMINO', ANCHO / 2, 250, 'rgba(255,255,255,.32)', 11, 'center', 800);
+  const cols = 20, tam = 20;
+  const x0 = ANCHO / 2 - (cols * tam) / 2;
+  B.camino.slice(0, cols * 3).forEach((r, k) => {
+    const cx = x0 + (k % cols) * tam + tam / 2;
+    const cy = 274 + Math.floor(k / cols) * tam + tam / 2;
+    ctx.beginPath(); ctx.arc(cx, cy, tam * 0.36, 0, 6.2832);
+    ctx.strokeStyle = r === 'P' ? '#5cc8ff' : r === 'B' ? '#ff6b8a' : '#00ff66';
+    ctx.lineWidth = 2.4; ctx.stroke();
+    texto(r, cx, cy, ctx.strokeStyle, 10, 'center', 900);
+  });
+
+  const pct = B.manos ? Math.round(B.ganadas / B.manos * 100) : 0;
+  texto('manos ' + B.manos + '  ·  cobradas ' + pct + '%', 14, ALTO - 16,
+        'rgba(255,255,255,.32)', 12, 'left', 700);
+  texto('las figuras y el 10 valen 0  ·  solo cuenta la última cifra',
+        ANCHO - 14, ALTO - 16, 'rgba(255,255,255,.25)', 12, 'right', 700);
+}
+
+// ---------- Entrada ----------
+$('apuestas').addEventListener('click', ev => {
+  const b = ev.target.closest('[data-lado]');
+  if (b){ Sonido.activar(); apostar(b.dataset.lado); }
+});
+$('btnRepartir').onclick = () => { Sonido.activar(); repartir(); };
+$('btnQuitar').onclick = quitar;
+$('btnRepetir').onclick = repetirApuesta;
+addEventListener('keydown', ev => { if (ev.code === 'Space'){ ev.preventDefault(); repartir(); } });
+$('btnEmpezar').onclick = () => { Sonido.activar(); $('modalInicio').classList.remove('visible'); };
+Arcade.conectarSonido($('btnSonido'));
+
+cargarPartida();
+refrescar();
+Arcade.bucle(dt => dibujar(dt));
+
+});
+
+registrarJuego("dados", function(document, addEventListener, Arcade){
+
+// ============================================================
+//  CRAPS — línea de pase, no pase, odds, campo y colocadas
+// ============================================================
+const $ = id => document.getElementById(id);
+const lienzo = $('lienzo');
+const ctx = Arcade.nitido(lienzo);
+const avisos = $('avisos');
+const ANCHO = lienzo.width, ALTO = lienzo.height;
+
+// Pagos de odds por punto: numerador/denominador de la probabilidad real
+const ODDS = { 4:[2,1], 5:[3,2], 6:[6,5], 8:[6,5], 9:[3,2], 10:[2,1] };
+
+const APUESTAS = [
+  { id:'pase',    nombre:'Línea de pase',  nota:'1:1 · salida 7/11',    clase:'buena' },
+  { id:'nopase',  nombre:'No pase',        nota:'1:1 · el 12 en tablas',clase:'contra' },
+  { id:'odds',    nombre:'Odds del pase',  nota:'sin ventaja de casa',  clase:'buena' },
+  { id:'oddsno',  nombre:'Odds del no pase',nota:'sin ventaja de casa', clase:'contra' },
+  { id:'campo',   nombre:'Campo',          nota:'2,3,4,9,10,11,12',     clase:'campo' },
+  { id:'seis',    nombre:'Colocar el 6',   nota:'paga 7:6',             clase:'numero' },
+  { id:'ocho',    nombre:'Colocar el 8',   nota:'paga 7:6',             clase:'numero' }
+];
+
+const D = {
+  fichas: {},
+  punto: 0,
+  saldo: Arcade.fichas.saldo(),
+  dados: [1, 1], historia: [],
+  fase: 'apuesta',        // apuesta | rodando
+  reloj: 0, giro: 0,
+  tiradas: 0, ganadas: 0
+};
+
+const enJuego = () => Object.values(D.fichas).reduce((s, v) => s + v, 0);
+
+function apostar(id){
+  if (D.fase !== 'apuesta') return;
+  if ((id === 'odds' || id === 'oddsno') && !D.punto){
+    Arcade.aviso(avisos, 'Las odds solo se ponen con punto establecido', false, 2000); return;
+  }
+  if ((id === 'pase' || id === 'nopase') && D.punto){
+    Arcade.aviso(avisos, 'La línea se apuesta en la tirada de salida', false, 2000); return;
+  }
+  const f = Math.max(10, Math.floor(parseFloat($('ficha').value) || 0));
+  $('ficha').value = f;
+  if (f > D.saldo - enJuego()){ Arcade.aviso(avisos, 'No te quedan fichas libres', false, 1600); return; }
+  D.fichas[id] = (D.fichas[id] || 0) + f;
+  Sonido.fx('ficha');
+  refrescar();
+}
+function quitar(){
+  if (D.fase !== 'apuesta') return;
+  // con punto establecido, la línea ya no se puede retirar; el resto sí
+  const fijas = D.punto ? ['pase','nopase'] : [];
+  Object.keys(D.fichas).forEach(k => { if (!fijas.includes(k)) delete D.fichas[k]; });
+  refrescar();
+}
+
+function tirar(){
+  if (D.fase !== 'apuesta') return;
+  if (!enJuego()){ Arcade.aviso(avisos, 'Pon alguna ficha primero', false, 1600); return; }
+  // lo apostado se retira del saldo la primera vez que entra en juego
+  const nuevo = enJuego() - (D.comprometido || 0);
+  if (nuevo > 0) D.saldo = Arcade.fichas.ajustar(-nuevo);
+  D.comprometido = enJuego();
+
+  D.fase = 'rodando';
+  D.reloj = 0;
+  D.destino = [azarEntero(1, 6), azarEntero(1, 6)];
+  Sonido.fx('giro');
+  refrescar();
+}
+
+function resolver(){
+  D.fase = 'apuesta';
+  D.dados = D.destino;
+  const [a, b] = D.dados;
+  const suma = a + b;
+  D.historia.unshift(suma);
+  if (D.historia.length > 24) D.historia.pop();
+  D.tiradas++;
+
+  let cobro = 0;
+  const partes = [];
+  const gana = (id, importe, etiqueta) => {
+    cobro += importe;
+    partes.push(etiqueta);
+    delete D.fichas[id];
+  };
+  const pierde = (id, etiqueta) => { partes.push(etiqueta); delete D.fichas[id]; };
+
+  // --- campo: se resuelve en cada tirada ---
+  if (D.fichas.campo){
+    const c = D.fichas.campo;
+    if (suma === 2) gana('campo', c * 3, '🎯 campo con el 2 (2:1)');
+    else if (suma === 12) gana('campo', c * 4, '🎯 campo con el 12 (3:1)');
+    else if ([3,4,9,10,11].includes(suma)) gana('campo', c * 2, '🎯 campo 1:1');
+    else pierde('campo', '✗ campo');
+  }
+
+  if (!D.punto){
+    // ---------- tirada de salida ----------
+    if (suma === 7 || suma === 11){
+      if (D.fichas.pase) gana('pase', D.fichas.pase * 2, '✅ pase con ' + suma);
+      if (D.fichas.nopase) pierde('nopase', '✗ no pase');
+    } else if (suma === 2 || suma === 3){
+      if (D.fichas.pase) pierde('pase', '✗ pase (craps ' + suma + ')');
+      if (D.fichas.nopase) gana('nopase', D.fichas.nopase * 2, '✅ no pase con ' + suma);
+    } else if (suma === 12){
+      if (D.fichas.pase) pierde('pase', '✗ pase (craps 12)');
+      if (D.fichas.nopase) partes.push('⊝ no pase en tablas');   // se queda como está
+    } else {
+      D.punto = suma;
+      partes.push('🎯 el punto es el ' + suma);
+    }
+  } else {
+    // ---------- con punto establecido ----------
+    if (suma === D.punto){
+      if (D.fichas.pase) gana('pase', D.fichas.pase * 2, '✅ pase: el punto vuelve');
+      if (D.fichas.nopase) pierde('nopase', '✗ no pase');
+      if (D.fichas.odds){
+        const [n, d] = ODDS[D.punto];
+        gana('odds', D.fichas.odds + Math.floor(D.fichas.odds * n / d), '✅ odds ' + n + ':' + d);
+      }
+      if (D.fichas.oddsno) pierde('oddsno', '✗ odds del no pase');
+      D.punto = 0;
+    } else if (suma === 7){
+      if (D.fichas.pase) pierde('pase', '✗ pase (sale el 7)');
+      if (D.fichas.nopase) gana('nopase', D.fichas.nopase * 2, '✅ no pase con el 7');
+      if (D.fichas.odds) pierde('odds', '✗ odds');
+      if (D.fichas.oddsno){
+        const [n, d] = ODDS[D.punto];
+        gana('oddsno', D.fichas.oddsno + Math.floor(D.fichas.oddsno * d / n), '✅ odds del no pase ' + d + ':' + n);
+      }
+      // las colocadas también caen con el 7
+      if (D.fichas.seis) pierde('seis', '✗ el 6 colocado');
+      if (D.fichas.ocho) pierde('ocho', '✗ el 8 colocado');
+      D.punto = 0;
+    }
+  }
+
+  // --- colocadas de 6 y 8: pagan 7:6 si salen antes que el 7 ---
+  if (suma === 6 && D.fichas.seis){
+    cobro += Math.floor(D.fichas.seis * 7 / 6);
+    partes.push('✅ el 6 colocado (7:6)');      // la ficha se queda en la mesa
+  }
+  if (suma === 8 && D.fichas.ocho){
+    cobro += Math.floor(D.fichas.ocho * 7 / 6);
+    partes.push('✅ el 8 colocado (7:6)');
+  }
+
+  if (cobro > 0){ D.saldo = Arcade.fichas.ajustar(cobro); D.ganadas++; }
+  D.comprometido = enJuego();
+
+  Arcade.perfil.partida('dados', { puntos: Math.max(0, cobro), victoria: cobro > 0 });
+  if (cobro > 0) Arcade.guardarRecord('dados', cobro);
+
+  mensaje('🎲 <b>' + a + ' + ' + b + ' = ' + suma + '</b>. ' +
+          (partes.length ? partes.join(' · ') : 'Nada se resuelve.') +
+          (cobro ? ' Cobras <b class="gana">+' + cobro + '</b>.' : ''));
+  Sonido.fx(cobro > 0 ? 'caja' : suma === 7 && D.punto === 0 ? 'error' : 'clic');
+  guardarPartida();
+  refrescar();
+}
+
+// ---------- Guardado ----------
+function guardarPartida(){
+  Arcade.escribir('dados', JSON.stringify({
+    punto: D.punto, fichas: D.fichas, comprometido: D.comprometido,
+    historia: D.historia.slice(0, 24), tiradas: D.tiradas, ganadas: D.ganadas
+  }));
+}
+function cargarPartida(){
+  const crudo = Arcade.leerTexto('dados', null);
+  if (!crudo) return;
+  try {
+    const g = JSON.parse(crudo);
+    D.punto = g.punto || 0;
+    D.fichas = g.fichas || {};
+    D.comprometido = g.comprometido || 0;
+    D.historia = Array.isArray(g.historia) ? g.historia : [];
+    D.tiradas = g.tiradas || 0; D.ganadas = g.ganadas || 0;
+  } catch(e){}
+}
+Guardado.registrar(guardarPartida);
+
+// ---------- Interfaz ----------
+function mensaje(html){ $('mensaje').innerHTML = html; }
+
+function montarTapete(){
+  const t = $('tapete');
+  t.innerHTML = '';
+  APUESTAS.forEach(a => {
+    const b = document.createElement('button');
+    b.dataset.apuesta = a.id;
+    b.className = a.clase;
+    b.innerHTML = a.nombre + '<small>' + a.nota + '</small>';
+    b.setAttribute('aria-label', a.nombre + ', ' + a.nota);
+    t.appendChild(b);
+  });
+}
+
+function refrescar(){
+  $('saldoTxt').textContent = D.saldo.toLocaleString('es-ES');
+  $('puntoTxt').textContent = D.punto || '—';
+  document.querySelectorAll('[data-apuesta]').forEach(b => {
+    const v = D.fichas[b.dataset.apuesta];
+    let f = b.querySelector('.ficha');
+    if (v){
+      if (!f){ f = document.createElement('span'); f.className = 'ficha'; b.appendChild(f); }
+      f.textContent = v;
+    } else if (f) f.remove();
+    const id = b.dataset.apuesta;
+    b.disabled = D.fase !== 'apuesta' ||
+      ((id === 'odds' || id === 'oddsno') && !D.punto) ||
+      ((id === 'pase' || id === 'nopase') && !!D.punto);
+  });
+  $('btnTirar').disabled = D.fase !== 'apuesta';
+  $('btnQuitar').disabled = D.fase !== 'apuesta' || !enJuego();
+}
+
+// ---------- Dibujo ----------
+function texto(t, x, y, color, tam, alin, peso){
+  ctx.fillStyle = color;
+  ctx.font = (peso || 700) + ' ' + tam + 'px "Segoe UI", system-ui, sans-serif';
+  ctx.textAlign = alin || 'left'; ctx.textBaseline = 'middle';
+  ctx.fillText(t, x, y);
+}
+
+const PUNTOS_DADO = {
+  1:[[0,0]], 2:[[-1,-1],[1,1]], 3:[[-1,-1],[0,0],[1,1]],
+  4:[[-1,-1],[1,-1],[-1,1],[1,1]], 5:[[-1,-1],[1,-1],[0,0],[-1,1],[1,1]],
+  6:[[-1,-1],[1,-1],[-1,0],[1,0],[-1,1],[1,1]]
+};
+
+function dado(v, x, y, tam, giro){
+  ctx.save();
+  ctx.translate(x, y); ctx.rotate(giro);
+  ctx.fillStyle = '#f6f7fb';
+  ctx.shadowColor = 'rgba(0,0,0,.6)'; ctx.shadowBlur = tam * 0.25; ctx.shadowOffsetY = tam * 0.08;
+  ctx.beginPath(); ctx.roundRect(-tam / 2, -tam / 2, tam, tam, tam * 0.18); ctx.fill();
+  ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
+  ctx.strokeStyle = 'rgba(0,0,0,.18)'; ctx.lineWidth = 1.5; ctx.stroke();
+  ctx.fillStyle = '#15181f';
+  (PUNTOS_DADO[v] || []).forEach(([dx, dy]) => {
+    ctx.beginPath();
+    ctx.arc(dx * tam * 0.26, dy * tam * 0.26, tam * 0.085, 0, 6.2832);
+    ctx.fill();
+  });
+  ctx.restore();
+}
+
+function dibujar(dt){
+  if (D.fase === 'rodando'){
+    D.reloj += dt;
+    D.giro += dt * 14;
+    D.dados = [azarEntero(1, 6), azarEntero(1, 6)];
+    if (D.reloj > 1.05) resolver();
+  }
+
+  const g = ctx.createRadialGradient(ANCHO / 2, ALTO / 2, 30, ANCHO / 2, ALTO / 2, ANCHO * 0.6);
+  g.addColorStop(0, '#0f4a2c'); g.addColorStop(1, '#04180f');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, ANCHO, ALTO);
+  ctx.strokeStyle = 'rgba(0,255,102,.18)'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.roundRect(14, 14, ANCHO - 28, ALTO - 28, 14); ctx.stroke();
+
+  // dados
+  const tam = 74, sep = 26;
+  const rodando = D.fase === 'rodando';
+  dado(D.dados[0], ANCHO / 2 - tam / 2 - sep / 2, 96, tam, rodando ? D.giro : -0.12);
+  dado(D.dados[1], ANCHO / 2 + tam / 2 + sep / 2, 96, tam, rodando ? -D.giro * 1.2 : 0.16);
+  texto(rodando ? '…' : String(D.dados[0] + D.dados[1]), ANCHO / 2, 172,
+        rodando ? 'rgba(255,255,255,.35)' : '#f3e600', 30, 'center', 900);
+
+  // marcador del punto
+  const px = 100, py = 96;
+  ctx.beginPath(); ctx.arc(px, py, 44, 0, 6.2832);
+  ctx.fillStyle = D.punto ? 'rgba(0,255,102,.12)' : 'rgba(255,255,255,.04)';
+  ctx.fill();
+  ctx.strokeStyle = D.punto ? '#00ff66' : 'rgba(255,255,255,.2)'; ctx.lineWidth = 2.5; ctx.stroke();
+  texto(D.punto ? 'ON' : 'OFF', px, py - 16, D.punto ? '#00ff66' : 'rgba(255,255,255,.35)', 12, 'center', 900);
+  texto(D.punto || '—', px, py + 10, D.punto ? '#fff' : 'rgba(255,255,255,.3)', 28, 'center', 900);
+  texto('PUNTO', px, py + 60, 'rgba(255,255,255,.3)', 11, 'center', 800);
+
+  // ayuda de pagos
+  const ay = ANCHO - 100;
+  texto('ODDS', ay, 52, 'rgba(255,255,255,.3)', 11, 'center', 800);
+  [[4,'2:1'],[5,'3:2'],[6,'6:5'],[8,'6:5'],[9,'3:2'],[10,'2:1']].forEach(([n, p], k) => {
+    const y = 74 + k * 20;
+    const activo = D.punto === n;
+    texto(n + '  ' + p, ay, y, activo ? '#f3e600' : 'rgba(255,255,255,.32)', 12, 'center', activo ? 900 : 700);
+  });
+
+  // historial de tiradas
+  texto('ÚLTIMAS TIRADAS', ANCHO / 2, 216, 'rgba(255,255,255,.3)', 11, 'center', 800);
+  const cols = Math.min(D.historia.length, 18);
+  const x0 = ANCHO / 2 - cols * 24 / 2;
+  D.historia.slice(0, 18).forEach((s, k) => {
+    const x = x0 + k * 24 + 12;
+    ctx.beginPath(); ctx.roundRect(x - 10, 234, 20, 20, 5);
+    ctx.fillStyle = s === 7 ? 'rgba(255,61,104,.28)' : s === 11 || s === 2 || s === 3 || s === 12
+      ? 'rgba(0,240,255,.2)' : 'rgba(255,255,255,.08)';
+    ctx.fill();
+    texto(String(s), x, 244, s === 7 ? '#ff8fa5' : 'rgba(255,255,255,.75)', 11, 'center', 800);
+  });
+
+  const pct = D.tiradas ? Math.round(D.ganadas / D.tiradas * 100) : 0;
+  texto('tiradas ' + D.tiradas + '  ·  con cobro ' + pct + '%', 26, ALTO - 26,
+        'rgba(255,255,255,.3)', 12, 'left', 700);
+  texto('en juego 🪙 ' + enJuego().toLocaleString('es-ES'), ANCHO - 26, ALTO - 26,
+        '#f3e600', 12, 'right', 800);
+}
+
+// ---------- Entrada ----------
+$('tapete').addEventListener('click', ev => {
+  const b = ev.target.closest('[data-apuesta]');
+  if (b){ Sonido.activar(); apostar(b.dataset.apuesta); }
+});
+$('btnTirar').onclick = () => { Sonido.activar(); tirar(); };
+$('btnQuitar').onclick = quitar;
+addEventListener('keydown', ev => { if (ev.code === 'Space'){ ev.preventDefault(); tirar(); } });
+$('btnEmpezar').onclick = () => { Sonido.activar(); $('modalInicio').classList.remove('visible'); };
+Arcade.conectarSonido($('btnSonido'));
+
+cargarPartida();
+montarTapete();
+refrescar();
+Arcade.bucle(dt => dibujar(dt));
 
 });
 </script>

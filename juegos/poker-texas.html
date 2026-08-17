@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Póker Texas Hold'em — Arcade NEXO</title>
+<link rel="stylesheet" href="arcade.css">
+<style>
+  /* Los modales cubren el tablero, no la barra: desde el menú siempre se puede volver */
+  #tablero{position:relative; display:flex; flex-direction:column; gap:10px;}
+  #juego{width:min(980px,100vw);}
+  .barra .titulo{color:var(--morado);}
+  #mesa{
+    position:relative; border-radius:16px; overflow:hidden;
+    border:2px solid rgba(168,85,247,.28);
+    box-shadow:0 15px 40px rgba(0,0,0,.9);
+  }
+  #lienzo{display:block; width:100%; height:auto;}
+  #mensaje{
+    font-family:var(--fuente-arcade); font-size:13px; min-height:2.4em; line-height:1.5;
+    background:rgba(0,0,0,.35); border:1px solid var(--borde);
+    border-radius:10px; padding:8px 12px;
+  }
+  #mensaje b.gana{color:var(--verde);} #mensaje b.pierde{color:var(--rojo);}
+  #controles{display:flex; gap:9px; flex-wrap:wrap; align-items:center;}
+  #controles button{
+    flex:1; min-width:112px; padding:12px 10px; border-radius:11px;
+    font-weight:900; font-size:12px; letter-spacing:1px; text-transform:uppercase;
+  }
+  #subir{
+    display:flex; align-items:center; gap:9px; background:rgba(0,0,0,.35);
+    border:1px solid var(--borde); border-radius:11px; padding:6px 12px; flex:1.4; min-width:220px;
+  }
+  #subir input[type=range]{flex:1; accent-color:var(--morado);}
+  #subirTxt{
+    font-family:var(--fuente-arcade); font-weight:800; color:var(--oro);
+    min-width:64px; text-align:right; font-size:14px;
+  }
+</style>
+</head>
+<body>
+
+<div id="juego">
+  <div class="barra">
+    <a class="boton" href="../index.html">🕹 Arcade</a>
+    <div class="titulo">♠ TEXAS HOLD'EM</div>
+    <div class="sep"></div>
+    <div class="stat">🪙 <span id="saldoTxt" class="oro">5000</span></div>
+    <div class="stat">🏆 <span id="manosTxt" class="tenue">0</span></div>
+    <button id="btnSonido" title="Sonido" aria-label="Sonido">🔊</button>
+  </div>
+
+  <div id="tablero">
+
+  <div id="mesa">
+    <canvas id="lienzo" width="960" height="520"></canvas>
+    <div class="avisos" id="avisos"></div>
+  </div>
+
+  <div id="mensaje">Reparte para empezar la mano.</div>
+
+  <div id="controles">
+    <button class="primario" id="btnRepartir">🂠 Repartir</button>
+    <button id="btnPasar">✓ Pasar</button>
+    <button id="btnIgualar">= Igualar</button>
+    <button id="btnSubir">↑ Subir</button>
+    <button class="peligro" id="btnRetirarse">✕ Retirarse</button>
+    <div id="subir">
+      <input id="rangoSubida" type="range" min="0" max="100" value="40" aria-label="Cuánto subir">
+      <span id="subirTxt">0</span>
+    </div>
+  </div>
+
+  <div class="modal visible" id="modalInicio">
+    <div class="tarjetaModal">
+      <h1>♠ TEXAS HOLD'EM</h1>
+      <div class="sub">Póker contra tres rivales, con fichas ficticias.</div>
+      <div class="instrucciones">
+        Cada uno recibe <b>dos cartas tapadas</b> y se reparten <b>cinco comunitarias</b>:
+        flop (3), turn (1) y river (1). Gana la mejor mano de cinco entre las siete.<br>
+        Rondas de apuesta antes del flop y después de cada carta comunitaria.
+        Ciegas de <b>25 / 50</b>, y el botón va rotando.<br>
+        <b>Pasar</b> si nadie ha apostado, <b>Igualar</b> para poner lo mismo,
+        <b>Subir</b> para aumentar y <b>Retirarse</b> para dejar la mano.<br>
+        Orden de manos: escalera de color &gt; póker &gt; full &gt; color &gt; escalera &gt;
+        trío &gt; dobles parejas &gt; pareja &gt; carta alta.
+      </div>
+      <div class="filaBotones"><button class="primario" id="btnSentarse">▶ Sentarse</button></div>
+    </div>
+  </div>
+</div>
+</div>
+
+<script src="arcade.js"></script>
+<script>
+// ============================================================
+//  TEXAS HOLD'EM — mesa de 4 con evaluador de 7 cartas
+// ============================================================
+const $ = id => document.getElementById(id);
+const lienzo = $('lienzo');
+const ctx = Arcade.nitido(lienzo);
+const avisos = $('avisos');
+const ANCHO = lienzo.width, ALTO = lienzo.height;
+
+const CIEGA = 50;                     // ciega grande; la pequeña es la mitad
+const FICHAS_IA = 4000;
+const CARTA_AN = 62, CARTA_AL = 88;
+
+const NOMBRES_MANO = ['Carta alta','Pareja','Dobles parejas','Trío','Escalera',
+                      'Color','Full','Póker','Escalera de color'];
+
+// ---------- Evaluador ----------
+/**
+ * Puntúa las mejores 5 cartas de entre las que se le pasen.
+ * Devuelve un entero comparable: categoría (0-8) y hasta cinco desempates,
+ * empaquetados en base 16 para poder comparar con < y >.
+ */
+function evaluar(cartas){
+  const cuentas = new Array(13).fill(0);
+  const porPalo = [[], [], [], []];
+  for (const c of cartas){
+    cuentas[Cartas.indice(c)]++;
+    porPalo[Cartas.palo(c)].push(Cartas.indice(c));
+  }
+  const empaquetar = (cat, ...restos) => {
+    let v = cat;
+    for (let i = 0; i < 5; i++) v = v * 16 + (restos[i] || 0);
+    return v;
+  };
+  // escalera: devuelve el índice de la carta alta, o -1
+  const escaleraDe = indices => {
+    const hay = new Array(13).fill(false);
+    indices.forEach(i => hay[i] = true);
+    for (let alto = 12; alto >= 3; alto--){
+      let ok = true;
+      for (let k = 0; k < 5; k++) if (!hay[alto - k]){ ok = false; break; }
+      if (ok) return alto;
+    }
+    // escalera al as por abajo: A,2,3,4,5 -> índices 12,0,1,2,3
+    if (hay[12] && hay[0] && hay[1] && hay[2] && hay[3]) return 3;
+    return -1;
+  };
+
+  const paloColor = porPalo.findIndex(p => p.length >= 5);
+  if (paloColor >= 0){
+    const ec = escaleraDe(porPalo[paloColor]);
+    if (ec >= 0) return empaquetar(8, ec);
+  }
+
+  const grupos = [];
+  for (let i = 12; i >= 0; i--) if (cuentas[i]) grupos.push({ i, n: cuentas[i] });
+  grupos.sort((a, b) => b.n - a.n || b.i - a.i);
+
+  if (grupos[0].n === 4){
+    const patada = grupos.find(g => g.i !== grupos[0].i).i;
+    return empaquetar(7, grupos[0].i, patada);
+  }
+  if (grupos[0].n === 3 && grupos[1] && grupos[1].n >= 2)
+    return empaquetar(6, grupos[0].i, grupos[1].i);
+
+  if (paloColor >= 0){
+    const altas = porPalo[paloColor].slice().sort((a, b) => b - a).slice(0, 5);
+    return empaquetar(5, ...altas);
+  }
+
+  const todas = [];
+  for (let i = 0; i < 13; i++) if (cuentas[i]) todas.push(i);
+  const e = escaleraDe(todas);
+  if (e >= 0) return empaquetar(4, e);
+
+  if (grupos[0].n === 3){
+    const p = grupos.filter(g => g.i !== grupos[0].i).map(g => g.i).slice(0, 2);
+    return empaquetar(3, grupos[0].i, p[0], p[1]);
+  }
+  if (grupos[0].n === 2 && grupos[1] && grupos[1].n === 2){
+    const par = [grupos[0].i, grupos[1].i].sort((a, b) => b - a);
+    const patada = grupos.filter(g => g.i !== par[0] && g.i !== par[1])
+                         .map(g => g.i).sort((a, b) => b - a)[0];
+    return empaquetar(2, par[0], par[1], patada);
+  }
+  if (grupos[0].n === 2){
+    const p = grupos.filter(g => g.i !== grupos[0].i).map(g => g.i).sort((a, b) => b - a).slice(0, 3);
+    return empaquetar(1, grupos[0].i, p[0], p[1], p[2]);
+  }
+  const altas = todas.slice().sort((a, b) => b - a).slice(0, 5);
+  return empaquetar(0, ...altas);
+}
+const categoria = v => Math.floor(v / (16 ** 5));
+
+// ---------- Estado ----------
+const P = {
+  baraja: [], mesa: [], bote: 0,
+  jugadores: [],        // { nombre, cartas, fichas, puesto, activo, allin, humano }
+  turno: 0, boton: 0, ronda: 0,      // 0 preflop, 1 flop, 2 turn, 3 river
+  apuestaRonda: 0, subidaMin: CIEGA,
+  fase: 'espera',       // espera | apostando | reparto | fin
+  ultimoAgresor: -1, actuados: 0,
+  manos: 0, ganadas: 0,
+  reloj: 0
+};
+
+function nuevaMesa(){
+  P.jugadores = [
+    { nombre:'TÚ',    fichas: Arcade.fichas.saldo(), humano:true },
+    { nombre:'ATENEA',fichas: FICHAS_IA },
+    { nombre:'ARES',  fichas: FICHAS_IA },
+    { nombre:'HERA',  fichas: FICHAS_IA }
+  ].map(j => ({ ...j, cartas: [], puesto: 0, activo: false, allin: false }));
+  P.boton = 0;
+}
+
+function repartir(){
+  const yo = P.jugadores[0];
+  yo.fichas = Arcade.fichas.saldo();
+  if (yo.fichas < CIEGA){ Arcade.aviso(avisos, 'No te quedan fichas para la ciega', false, 2200); return; }
+  // los rivales sin fichas se recargan, para que la mesa siga viva
+  P.jugadores.slice(1).forEach(j => { if (j.fichas < CIEGA) j.fichas = FICHAS_IA; });
+
+  P.baraja = Cartas.baraja(1);
+  P.mesa = []; P.bote = 0; P.ronda = 0;
+  P.jugadores.forEach(j => {
+    j.cartas = [P.baraja.pop(), P.baraja.pop()];
+    j.puesto = 0; j.activo = true; j.allin = false; j.accion = '';
+  });
+  P.boton = (P.boton + 1) % 4;
+
+  const pequeña = (P.boton + 1) % 4, grande = (P.boton + 2) % 4;
+  poner(pequeña, Math.floor(CIEGA / 2));
+  poner(grande, CIEGA);
+  P.apuestaRonda = CIEGA;
+  P.subidaMin = CIEGA;
+  P.ultimoAgresor = grande;
+  P.actuados = 0;
+  P.turno = (grande + 1) % 4;
+  P.fase = 'apostando';
+  P.manos++;
+  Sonido.fx('colocar');
+  mensaje('Ciegas ' + Math.floor(CIEGA / 2) + '/' + CIEGA + '. Te toca decidir.');
+  seguir();
+}
+
+function poner(i, cantidad){
+  const j = P.jugadores[i];
+  const real = Math.min(cantidad, j.fichas);
+  j.fichas -= real;
+  j.puesto += real;
+  P.bote += real;
+  if (j.fichas === 0) j.allin = true;
+  if (j.humano) Arcade.fichas.fijar(j.fichas);
+  return real;
+}
+
+const vivos = () => P.jugadores.filter(j => j.activo);
+const puedenActuar = () => P.jugadores.filter(j => j.activo && !j.allin);
+
+// ---------- Acciones ----------
+function actuar(i, accion, cantidad){
+  const j = P.jugadores[i];
+  if (!j.activo || j.allin) return;
+  const falta = P.apuestaRonda - j.puesto;
+
+  if (accion === 'retirarse'){ j.activo = false; j.accion = 'se retira'; }
+  else if (accion === 'pasar' && falta <= 0){ j.accion = 'pasa'; }
+  else if (accion === 'igualar' || (accion === 'pasar' && falta > 0)){
+    poner(i, falta);
+    j.accion = falta > 0 ? 'iguala ' + falta : 'pasa';
+  } else if (accion === 'subir'){
+    const total = Math.max(P.apuestaRonda + P.subidaMin, cantidad);
+    const aPoner = Math.min(total - j.puesto, j.fichas);
+    poner(i, aPoner);
+    if (j.puesto > P.apuestaRonda){
+      P.subidaMin = Math.max(P.subidaMin, j.puesto - P.apuestaRonda);
+      P.apuestaRonda = j.puesto;
+      P.ultimoAgresor = i;
+      P.actuados = 0;
+      j.accion = 'sube a ' + j.puesto;
+    } else j.accion = 'all-in ' + j.puesto;
+  }
+  P.actuados++;
+  Sonido.fx(accion === 'retirarse' ? 'clic' : 'ficha');
+
+  if (vivos().length === 1){ terminarMano(); return; }
+  P.turno = siguienteActivo(i);
+  seguir();
+}
+
+function siguienteActivo(desde){
+  for (let k = 1; k <= 4; k++){
+    const i = (desde + k) % 4;
+    if (P.jugadores[i].activo && !P.jugadores[i].allin) return i;
+  }
+  return -1;
+}
+
+// ¿ha terminado la ronda de apuestas?
+function rondaCerrada(){
+  const activos = puedenActuar();
+  if (activos.length <= 1) return P.actuados >= 1 || activos.length === 0;
+  return activos.every(j => j.puesto === P.apuestaRonda) && P.actuados >= activos.length;
+}
+
+function seguir(){
+  if (P.fase !== 'apostando') return;
+  if (rondaCerrada()){ siguienteCalle(); return; }
+  const j = P.jugadores[P.turno];
+  if (!j || !j.activo || j.allin){ P.turno = siguienteActivo(P.turno); if (P.turno === -1){ siguienteCalle(); return; } }
+  refrescar();
+  if (!P.jugadores[P.turno].humano) P.reloj = 0.9;   // la IA piensa un momento
+}
+
+function siguienteCalle(){
+  P.jugadores.forEach(j => { j.puesto = 0; j.accion = ''; });
+  P.apuestaRonda = 0;
+  P.subidaMin = CIEGA;
+  P.actuados = 0;
+  P.ronda++;
+  if (P.ronda === 1){ P.mesa.push(P.baraja.pop(), P.baraja.pop(), P.baraja.pop()); }
+  else if (P.ronda === 2 || P.ronda === 3){ P.mesa.push(P.baraja.pop()); }
+  else { terminarMano(); return; }
+  Sonido.fx('colocar');
+  P.turno = siguienteActivo(P.boton);
+  if (P.turno === -1 || puedenActuar().length <= 1){
+    // todos all-in: se destapan las cartas que faltan
+    while (P.mesa.length < 5) P.mesa.push(P.baraja.pop());
+    terminarMano();
+    return;
+  }
+  mensaje(['','FLOP','TURN','RIVER'][P.ronda] + ': ' +
+          P.mesa.map(c => Cartas.texto(c)).join(' '));
+  seguir();
+}
+
+function terminarMano(){
+  P.fase = 'fin';
+  while (P.mesa.length < 5 && vivos().length > 1) P.mesa.push(P.baraja.pop());
+
+  const enJuego = vivos();
+  let texto;
+  if (enJuego.length === 1){
+    enJuego[0].fichas += P.bote;
+    texto = enJuego[0].nombre + ' se lleva ' + P.bote + ' (los demás se retiran)';
+  } else {
+    const puntuadas = enJuego.map(j => ({ j, v: evaluar(j.cartas.concat(P.mesa)) }));
+    const mejor = Math.max(...puntuadas.map(x => x.v));
+    const ganadores = puntuadas.filter(x => x.v === mejor);
+    const parte = Math.floor(P.bote / ganadores.length);
+    ganadores.forEach(x => x.j.fichas += parte);
+    texto = ganadores.map(x => x.j.nombre).join(' y ') + ' gana' +
+            (ganadores.length > 1 ? 'n' : '') + ' ' + P.bote +
+            ' con <b>' + NOMBRES_MANO[categoria(mejor)] + '</b>';
+    P.ganadores = ganadores.map(x => x.j.nombre);
+  }
+
+  const yo = P.jugadores[0];
+  const antes = Arcade.fichas.saldo();
+  Arcade.fichas.fijar(yo.fichas);
+  const neto = yo.fichas - antes;
+  if (neto > 0){ P.ganadas++; Arcade.guardarRecord('poker', neto); }
+  Arcade.perfil.partida('poker', { puntos: Math.max(0, neto), victoria: neto > 0 });
+
+  mensaje(texto + '. Tu resultado: <b class="' +
+          (neto > 0 ? 'gana">+' : neto < 0 ? 'pierde">' : '">') + neto + '</b> fichas.');
+  Sonido.fx(neto > 0 ? 'caja' : neto < 0 ? 'error' : 'clic');
+  P.bote = 0;
+  guardarPartida();
+  refrescar();
+}
+
+// ---------- Rival ----------
+/**
+ * Decide con la fuerza de la mano y las probabilidades del bote.
+ * Antes del flop usa una tabla sencilla de manos iniciales; después,
+ * la categoría real de sus siete cartas. Farolea de vez en cuando.
+ */
+function decidirIA(i){
+  const j = P.jugadores[i];
+  const falta = P.apuestaRonda - j.puesto;
+  let fuerza;
+
+  if (P.ronda === 0){
+    const [a, b] = j.cartas.map(Cartas.indice);
+    const pareja = a === b;
+    const mismoPalo = Cartas.palo(j.cartas[0]) === Cartas.palo(j.cartas[1]);
+    const alto = Math.max(a, b), bajo = Math.min(a, b);
+    fuerza = (pareja ? 0.5 + alto * 0.035 : 0)
+           + alto * 0.028 + bajo * 0.012
+           + (mismoPalo ? 0.09 : 0)
+           + (alto - bajo <= 2 && !pareja ? 0.05 : 0);
+  } else {
+    const cat = categoria(evaluar(j.cartas.concat(P.mesa)));
+    fuerza = [0.12, 0.32, 0.52, 0.68, 0.78, 0.85, 0.93, 0.97, 1][cat];
+    // una pareja hecha con la mesa vale menos que una con carta propia
+    if (cat === 1 && !j.cartas.some(c => P.mesa.some(m => Cartas.indice(m) === Cartas.indice(c))))
+      fuerza -= 0.12;
+  }
+  const farol = Math.random() < 0.12 ? 0.28 : 0;
+  fuerza = limitar(fuerza + farol + azar(-0.06, 0.06), 0, 1);
+
+  const odds = falta > 0 ? falta / (P.bote + falta) : 0;
+  if (falta <= 0){
+    if (fuerza > 0.62 && Math.random() < 0.55)
+      return actuar(i, 'subir', P.apuestaRonda + Math.max(CIEGA, Math.floor(P.bote * azar(0.4, 0.8))));
+    return actuar(i, 'pasar');
+  }
+  if (fuerza < odds * 1.15 && fuerza < 0.55) return actuar(i, 'retirarse');
+  if (fuerza > 0.75 && Math.random() < 0.5)
+    return actuar(i, 'subir', P.apuestaRonda + Math.max(CIEGA, Math.floor(P.bote * azar(0.5, 1))));
+  return actuar(i, 'igualar');
+}
+
+// ---------- Guardado ----------
+function guardarPartida(){
+  Arcade.escribir('poker', JSON.stringify({
+    manos: P.manos, ganadas: P.ganadas, boton: P.boton,
+    ia: P.jugadores.slice(1).map(j => j.fichas)
+  }));
+}
+function cargarPartida(){
+  nuevaMesa();
+  const crudo = Arcade.leerTexto('poker', null);
+  if (!crudo) return;
+  try {
+    const g = JSON.parse(crudo);
+    P.manos = g.manos || 0; P.ganadas = g.ganadas || 0; P.boton = g.boton || 0;
+    if (Array.isArray(g.ia)) g.ia.forEach((f, k) => {
+      if (P.jugadores[k + 1] && f > 0) P.jugadores[k + 1].fichas = f;
+    });
+  } catch(e){}
+}
+Guardado.registrar(guardarPartida);
+
+// ---------- Interfaz ----------
+function mensaje(html){ $('mensaje').innerHTML = html; }
+
+function refrescar(){
+  const yo = P.jugadores[0];
+  $('saldoTxt').textContent = (yo ? yo.fichas : 0).toLocaleString('es-ES');
+  $('manosTxt').textContent = P.manos ? P.ganadas + '/' + P.manos : '0';
+
+  const miTurno = P.fase === 'apostando' && P.turno === 0 && yo.activo && !yo.allin;
+  const falta = miTurno ? P.apuestaRonda - yo.puesto : 0;
+  $('btnRepartir').disabled = P.fase === 'apostando';
+  $('btnPasar').disabled = !miTurno || falta > 0;
+  $('btnIgualar').disabled = !miTurno || falta <= 0;
+  $('btnIgualar').textContent = falta > 0 ? '= Igualar ' + Math.min(falta, yo.fichas) : '= Igualar';
+  $('btnSubir').disabled = !miTurno || yo.fichas <= falta;
+  $('btnRetirarse').disabled = !miTurno;
+  $('rangoSubida').disabled = !miTurno;
+
+  const minimo = P.apuestaRonda + P.subidaMin;
+  const maximo = yo ? yo.puesto + yo.fichas : minimo;
+  const u = parseInt($('rangoSubida').value, 10) / 100;
+  const subida = Math.min(maximo, Math.round(minimo + (maximo - minimo) * u));
+  $('subirTxt').textContent = miTurno ? subida : '—';
+  $('btnSubir').dataset.total = subida;
+}
+
+// ---------- Dibujo ----------
+function texto(t, x, y, color, tam, alin, peso){
+  ctx.fillStyle = color;
+  ctx.font = (peso || 700) + ' ' + tam + 'px "Segoe UI", system-ui, sans-serif';
+  ctx.textAlign = alin || 'left'; ctx.textBaseline = 'middle';
+  ctx.fillText(t, x, y);
+}
+
+const SITIOS = [
+  { x: ANCHO / 2,        y: ALTO - 92,  eti: 'abajo' },
+  { x: 128,              y: ALTO / 2 - 40, eti: 'izq' },
+  { x: ANCHO / 2,        y: 74,         eti: 'arriba' },
+  { x: ANCHO - 128,      y: ALTO / 2 - 40, eti: 'der' }
+];
+
+function dibujar(){
+  const g = ctx.createRadialGradient(ANCHO / 2, ALTO / 2, 40, ANCHO / 2, ALTO / 2, ANCHO * 0.62);
+  g.addColorStop(0, '#20204d');
+  g.addColorStop(1, '#0a0a1c');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, ANCHO, ALTO);
+
+  // óvalo de la mesa
+  ctx.beginPath();
+  ctx.ellipse(ANCHO / 2, ALTO / 2 - 10, ANCHO * 0.38, ALTO * 0.33, 0, 0, 6.2832);
+  ctx.fillStyle = '#123a2c'; ctx.fill();
+  ctx.strokeStyle = 'rgba(168,85,247,.45)'; ctx.lineWidth = 3; ctx.stroke();
+
+  // bote
+  texto('BOTE', ANCHO / 2, ALTO / 2 - 96, 'rgba(255,255,255,.4)', 12, 'center', 800);
+  texto('🪙 ' + P.bote.toLocaleString('es-ES'), ANCHO / 2, ALTO / 2 - 74, '#f3e600', 22, 'center', 900);
+
+  // cartas comunitarias
+  const anchoMesa = 5 * CARTA_AN + 4 * 10;
+  let x = ANCHO / 2 - anchoMesa / 2;
+  for (let i = 0; i < 5; i++){
+    if (i < P.mesa.length) Cartas.dibujar(ctx, P.mesa[i], x, ALTO / 2 - 44, CARTA_AN, CARTA_AL);
+    else {
+      ctx.fillStyle = 'rgba(255,255,255,.05)';
+      ctx.beginPath(); ctx.roundRect(x, ALTO / 2 - 44, CARTA_AN, CARTA_AL, 6); ctx.fill();
+    }
+    x += CARTA_AN + 10;
+  }
+
+  // jugadores
+  P.jugadores.forEach((j, i) => {
+    const s = SITIOS[i];
+    const suTurno = P.fase === 'apostando' && P.turno === i;
+    const gano = P.fase === 'fin' && P.ganadores && P.ganadores.includes(j.nombre);
+
+    // cartas
+    const mostrar = j.humano || P.fase === 'fin';
+    const an = j.humano ? CARTA_AN : CARTA_AN * 0.72;
+    const al = j.humano ? CARTA_AL : CARTA_AL * 0.72;
+    let cx = s.x - (an + 6);
+    j.cartas.forEach(c => {
+      Cartas.dibujar(ctx, mostrar && j.activo ? c : null, cx, s.y - al / 2 - 16, an, al,
+                     { apagada: !j.activo });
+      cx += an + 6;
+    });
+
+    // placa
+    const anP = 150, alP = 40;
+    const px = s.x - anP / 2, py = s.y + al / 2 - 6;
+    ctx.fillStyle = j.activo ? 'rgba(0,0,0,.62)' : 'rgba(0,0,0,.35)';
+    ctx.beginPath(); ctx.roundRect(px, py, anP, alP, 10); ctx.fill();
+    ctx.strokeStyle = gano ? '#00ff66' : suTurno ? '#f3e600' : 'rgba(255,255,255,.14)';
+    ctx.lineWidth = gano || suTurno ? 2.4 : 1;
+    ctx.stroke();
+    texto(j.nombre + (i === P.boton ? '  🔘' : ''), s.x, py + 13,
+          j.activo ? '#e8eef7' : 'rgba(255,255,255,.35)', 13, 'center', 800);
+    texto('🪙 ' + j.fichas.toLocaleString('es-ES'), s.x, py + 29, '#f3e600', 12, 'center', 700);
+
+    if (j.puesto > 0)
+      texto('▲ ' + j.puesto, s.x, py - al / 2 - 26, '#00f0ff', 13, 'center', 800);
+    if (j.accion)
+      texto(j.accion, s.x, py + alP + 13, j.activo ? 'rgba(255,255,255,.55)' : '#ff3d68', 11, 'center', 700);
+  });
+
+  // mi mano hecha
+  const yo = P.jugadores[0];
+  if (yo && yo.cartas.length && P.mesa.length >= 3){
+    const cat = categoria(evaluar(yo.cartas.concat(P.mesa)));
+    texto('Tienes: ' + NOMBRES_MANO[cat], ANCHO / 2, ALTO - 16, '#a855f7', 14, 'center', 800);
+  }
+}
+
+// ---------- Entrada ----------
+$('btnRepartir').onclick = () => { Sonido.activar(); repartir(); };
+$('btnPasar').onclick = () => actuar(0, 'pasar');
+$('btnIgualar').onclick = () => actuar(0, 'igualar');
+$('btnSubir').onclick = () => actuar(0, 'subir', parseInt($('btnSubir').dataset.total, 10));
+$('btnRetirarse').onclick = () => actuar(0, 'retirarse');
+$('rangoSubida').addEventListener('input', refrescar);
+$('btnSentarse').onclick = () => { Sonido.activar(); $('modalInicio').classList.remove('visible'); };
+Arcade.conectarSonido($('btnSonido'));
+
+cargarPartida();
+refrescar();
+
+Arcade.bucle(dt => {
+  if (P.fase === 'apostando' && P.turno >= 0 && !P.jugadores[P.turno].humano){
+    P.reloj -= dt;
+    if (P.reloj <= 0){ P.reloj = 0.9; decidirIA(P.turno); }
+  }
+  dibujar();
+});
+</script>
+</body>
+</html>

@@ -500,6 +500,104 @@ class Sacudida {
   }
 }
 
+/* ==========================================================
+   Baraja francesa compartida por Blackjack, Bacarrá y Póker
+   Una carta es un número de 0 a 51: palo = n >> 4, valor = n & 15.
+   ========================================================== */
+const Cartas = {
+  PALOS: ['♠', '♥', '♦', '♣'],
+  NOMBRES: ['2','3','4','5','6','7','8','9','10','J','Q','K','A'],
+
+  crear(palo, indice){ return palo * 16 + indice; },
+  palo(c){ return c >> 4; },
+  indice(c){ return c & 15; },                       // 0 = dos … 12 = as
+  roja(c){ const p = this.palo(c); return p === 1 || p === 2; },
+  nombre(c){ return this.NOMBRES[this.indice(c)]; },
+  texto(c){ return this.nombre(c) + this.PALOS[this.palo(c)]; },
+
+  // Baraja de `mazos` barajas, ya mezclada
+  baraja(mazos = 1){
+    const b = [];
+    for (let m = 0; m < mazos; m++)
+      for (let p = 0; p < 4; p++)
+        for (let i = 0; i < 13; i++) b.push(this.crear(p, i));
+    return mezclar(b);
+  },
+
+  /**
+   * Dibuja una carta. `carta` a null pinta el dorso.
+   * Las medidas van en píxeles del lienzo; el radio se ajusta al ancho.
+   */
+  dibujar(ctx, carta, x, y, an, al, opciones = {}){
+    const r = Math.max(4, an * 0.09);
+    ctx.save();
+    ctx.shadowColor = 'rgba(0,0,0,.6)';
+    ctx.shadowBlur = an * 0.16;
+    ctx.shadowOffsetY = an * 0.05;
+
+    if (carta === null || carta === undefined){
+      ctx.fillStyle = '#0f1a35';
+      ctx.beginPath(); ctx.roundRect(x, y, an, al, r); ctx.fill();
+      ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
+      ctx.strokeStyle = '#2f4b8f'; ctx.lineWidth = Math.max(1, an * 0.03);
+      ctx.stroke();
+      // rombos del dorso
+      ctx.fillStyle = 'rgba(0,240,255,.18)';
+      const paso = an * 0.22;
+      for (let i = x + paso * 0.7; i < x + an - paso * 0.3; i += paso)
+        for (let j = y + paso * 0.7; j < y + al - paso * 0.3; j += paso){
+          ctx.beginPath();
+          ctx.moveTo(i, j - paso * 0.28); ctx.lineTo(i + paso * 0.24, j);
+          ctx.lineTo(i, j + paso * 0.28); ctx.lineTo(i - paso * 0.24, j);
+          ctx.closePath(); ctx.fill();
+        }
+      ctx.restore();
+      return;
+    }
+
+    ctx.fillStyle = opciones.apagada ? '#b9c0cc' : '#f6f7fb';
+    ctx.beginPath(); ctx.roundRect(x, y, an, al, r); ctx.fill();
+    ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
+    ctx.strokeStyle = 'rgba(0,0,0,.25)'; ctx.lineWidth = 1;
+    ctx.stroke();
+
+    const rojo = this.roja(carta);
+    ctx.fillStyle = rojo ? '#d81f3d' : '#15181f';
+    ctx.textBaseline = 'top';
+    ctx.textAlign = 'left';
+
+    const nom = this.nombre(carta), pal = this.PALOS[this.palo(carta)];
+    ctx.font = '800 ' + (an * 0.28).toFixed(1) + 'px "Segoe UI", system-ui, sans-serif';
+    ctx.fillText(nom, x + an * 0.09, y + al * 0.05);
+    ctx.font = (an * 0.22).toFixed(1) + 'px serif';
+    ctx.fillText(pal, x + an * 0.09, y + al * 0.26);
+
+    // palo grande centrado
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.font = (an * 0.52).toFixed(1) + 'px serif';
+    ctx.globalAlpha = 0.9;
+    ctx.fillText(pal, x + an / 2, y + al * 0.55);
+    ctx.globalAlpha = 1;
+
+    // esquina inferior, del revés
+    ctx.save();
+    ctx.translate(x + an - an * 0.09, y + al - al * 0.05);
+    ctx.rotate(Math.PI);
+    ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+    ctx.font = '800 ' + (an * 0.28).toFixed(1) + 'px "Segoe UI", system-ui, sans-serif';
+    ctx.fillText(nom, 0, 0);
+    ctx.font = (an * 0.22).toFixed(1) + 'px serif';
+    ctx.fillText(pal, 0, al * 0.21);
+    ctx.restore();
+
+    if (opciones.marcada){
+      ctx.strokeStyle = '#f3e600'; ctx.lineWidth = Math.max(2, an * 0.05);
+      ctx.beginPath(); ctx.roundRect(x - 2, y - 2, an + 4, al + 4, r + 2); ctx.stroke();
+    }
+    ctx.restore();
+  }
+};
+
 // Respaldo para navegadores sin roundRect
 if (!CanvasRenderingContext2D.prototype.roundRect){
   CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r){

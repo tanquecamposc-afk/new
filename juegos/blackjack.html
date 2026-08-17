@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Blackjack — Arcade NEXO</title>
+<link rel="stylesheet" href="arcade.css">
+<style>
+  /* Los modales cubren el tablero, no la barra: desde el menú siempre se puede volver */
+  #tablero{position:relative; display:flex; flex-direction:column; gap:10px;}
+  #juego{width:min(940px,100vw);}
+  .barra .titulo{color:var(--oro);}
+
+  #tapete{
+    position:relative; border-radius:16px; overflow:hidden;
+    border:2px solid rgba(243,230,0,.25);
+    box-shadow:0 15px 40px rgba(0,0,0,.9), inset 0 0 90px rgba(0,0,0,.6);
+  }
+  #lienzo{display:block; width:100%; height:auto;}
+
+  #controles{display:flex; gap:9px; flex-wrap:wrap;}
+  #controles button{
+    flex:1; min-width:104px; padding:12px 10px; border-radius:11px;
+    font-weight:900; font-size:12px; letter-spacing:1px; text-transform:uppercase;
+  }
+  #apostar{display:flex; gap:9px; flex-wrap:wrap; align-items:center;}
+  #apostar .grupo{
+    display:flex; align-items:center; gap:8px; background:rgba(0,0,0,.35);
+    border:1px solid var(--borde); border-radius:11px; padding:6px 12px;
+  }
+  #apostar label{font-size:11px; color:var(--tenue); text-transform:uppercase; letter-spacing:.7px;}
+  #montoApuesta{
+    width:96px; text-align:right; background:rgba(0,0,0,.5); color:var(--oro);
+    border:1px solid var(--borde); border-radius:7px; padding:6px 9px;
+    font-family:var(--fuente-arcade); font-weight:800; font-size:14px;
+  }
+  .fichasRapidas{display:flex; gap:6px;}
+  .fichasRapidas button{padding:6px 11px; font-size:12px; min-width:0;}
+
+  #mensaje{
+    font-family:var(--fuente-arcade); font-size:13px; letter-spacing:.5px;
+    background:rgba(0,0,0,.35); border:1px solid var(--borde);
+    border-radius:10px; padding:9px 13px; min-height:2.6em; line-height:1.5;
+  }
+  #mensaje b.gana{color:var(--verde);} #mensaje b.pierde{color:var(--rojo);}
+  #mensaje b.empata{color:var(--oro);}
+
+  .rejillaResumen{
+    display:grid; grid-template-columns:repeat(auto-fit,minmax(110px,1fr)); gap:10px;
+    margin:14px 0 18px;
+  }
+  .rejillaResumen div{background:rgba(0,0,0,.35); border-radius:10px; padding:11px;}
+  .rejillaResumen .n{font-size:22px; font-weight:800; color:var(--oro);}
+  .rejillaResumen .e{font-size:11px; color:var(--tenue);}
+</style>
+</head>
+<body>
+
+<div id="juego">
+  <div class="barra">
+    <a class="boton" href="../index.html">🕹 Arcade</a>
+    <div class="titulo">🃏 BLACKJACK</div>
+    <div class="sep"></div>
+    <div class="stat">🪙 <span id="saldoTxt" class="oro">5000</span></div>
+    <div class="stat">🃏 <span id="zapatoTxt" class="tenue">312</span></div>
+    <button id="btnSonido" title="Sonido" aria-label="Sonido">🔊</button>
+  </div>
+
+  <div id="tablero">
+
+  <div id="tapete">
+    <canvas id="lienzo" width="920" height="470"></canvas>
+    <div class="avisos" id="avisos"></div>
+  </div>
+
+  <div id="mensaje">Elige tu apuesta y reparte.</div>
+
+  <div id="apostar">
+    <div class="grupo">
+      <label for="montoApuesta">Apuesta</label>
+      <input id="montoApuesta" type="number" min="10" step="10" value="100">
+    </div>
+    <div class="grupo fichasRapidas">
+      <button data-op="mitad" aria-label="Apostar la mitad">½</button>
+      <button data-op="doble" aria-label="Doblar la apuesta">x2</button>
+      <button data-op="100" aria-label="Apostar 100 fichas">100</button>
+      <button data-op="500" aria-label="Apostar 500 fichas">500</button>
+    </div>
+  </div>
+
+  <div id="controles">
+    <button class="primario" id="btnRepartir">🂠 Repartir</button>
+    <button id="btnPedir">＋ Pedir</button>
+    <button id="btnPlantarse">✋ Plantarse</button>
+    <button id="btnDoblar">×2 Doblar</button>
+    <button id="btnDividir">⑂ Dividir</button>
+    <button id="btnSeguro">🛡 Seguro</button>
+  </div>
+
+  <div class="modal visible" id="modalInicio">
+    <div class="tarjetaModal">
+      <h1>🃏 BLACKJACK</h1>
+      <div class="sub">21 contra la banca, con fichas ficticias.</div>
+      <div class="instrucciones">
+        Se juega con un <b>zapato de 6 barajas</b>. Acércate a 21 sin pasarte y gánale a la banca.<br>
+        Las figuras valen <b>10</b> y el as vale <b>11</b> o <b>1</b>, lo que más te convenga.<br>
+        <b>Blackjack</b> (as + figura de salida) paga <b>3:2</b>; el resto paga <b>1:1</b>; el empate se devuelve.<br>
+        <b>Doblar:</b> duplicas la apuesta y recibes exactamente una carta más.<br>
+        <b>Dividir:</b> con pareja, separas en dos manos (hasta cuatro). Los ases divididos reciben una sola carta.<br>
+        <b>Seguro:</b> si la banca enseña un as, puedes cubrir la mitad de tu apuesta y cobrar <b>2:1</b> si tiene blackjack.<br>
+        <b>La banca se planta en 17</b>, incluido el 17 blando.
+      </div>
+      <div class="filaBotones"><button class="primario" id="btnSentarse">▶ Sentarse a la mesa</button></div>
+    </div>
+  </div>
+</div>
+</div>
+
+<script src="arcade.js"></script>
+<script>
+// ============================================================
+//  BLACKJACK — zapato de 6 barajas, banca se planta en 17
+// ============================================================
+const $ = id => document.getElementById(id);
+const lienzo = $('lienzo');
+const ctx = Arcade.nitido(lienzo);
+const avisos = $('avisos');
+const ANCHO = lienzo.width, ALTO = lienzo.height;
+
+const MAZOS = 6;
+const TOTAL_ZAPATO = MAZOS * 52;
+const CORTE = Math.floor(TOTAL_ZAPATO * 0.25);      // se rebaraja al llegar aquí
+const CARTA_AN = 78, CARTA_AL = 112;
+
+// ---------- Estado ----------
+const B = {
+  zapato: [],
+  manos: [],            // { cartas, apuesta, doblada, dividida, deAses, resuelta, resultado }
+  activa: 0,
+  banca: [],
+  bancaTapada: true,
+  fase: 'apuesta',      // apuesta | jugando | banca | fin
+  seguro: 0,
+  saldo: Arcade.fichas.saldo(),
+  manosJugadas: 0, ganadas: 0, blackjacks: 0,
+  animacion: 0
+};
+
+// ---------- Cartas ----------
+function nuevoZapato(){
+  B.zapato = Cartas.baraja(MAZOS);
+  Arcade.aviso(avisos, '🔄 Zapato nuevo: 6 barajas mezcladas', true, 1800);
+}
+function sacar(){
+  if (B.zapato.length <= CORTE) nuevoZapato();
+  return B.zapato.pop();
+}
+// Valor de blackjack: figuras 10, as 11 con corrección a 1 si te pasas
+function valor(cartas){
+  let total = 0, ases = 0;
+  for (const c of cartas){
+    const i = Cartas.indice(c);
+    if (i === 12){ total += 11; ases++; }
+    else total += Math.min(10, i + 2);
+  }
+  while (total > 21 && ases > 0){ total -= 10; ases--; }
+  return total;
+}
+const blando = cartas => {
+  let total = 0, ases = 0;
+  for (const c of cartas){
+    const i = Cartas.indice(c);
+    if (i === 12){ total += 11; ases++; } else total += Math.min(10, i + 2);
+  }
+  return ases > 0 && total <= 21;
+};
+const esBlackjack = m => m.cartas.length === 2 && !m.dividida && valor(m.cartas) === 21;
+const valorCarta = c => { const i = Cartas.indice(c); return i === 12 ? 11 : Math.min(10, i + 2); };
+
+// ---------- Ronda ----------
+function apuestaValida(){
+  const n = Math.max(10, Math.floor(parseFloat($('montoApuesta').value) || 0));
+  $('montoApuesta').value = n;
+  return n;
+}
+
+function repartir(){
+  const apuesta = apuestaValida();
+  if (apuesta > B.saldo){ Arcade.aviso(avisos, 'No tienes fichas suficientes', false, 1800); return; }
+
+  B.saldo = Arcade.fichas.ajustar(-apuesta);
+  B.manos = [{ cartas: [sacar(), sacar()], apuesta, doblada:false, dividida:false,
+               deAses:false, resuelta:false, resultado:'' }];
+  B.activa = 0;
+  B.banca = [sacar(), sacar()];
+  B.bancaTapada = true;
+  B.seguro = 0;
+  B.fase = 'jugando';
+  Sonido.fx('colocar');
+  mensaje('Tu mano: <b>' + valor(B.manos[0].cartas) + '</b>. ¿Qué haces?');
+
+  // blackjack de salida
+  if (esBlackjack(B.manos[0])){
+    if (valorCarta(B.banca[0]) === 11 || valorCarta(B.banca[0]) === 10) resolverBanca();
+    else { B.bancaTapada = false; terminarRonda(); }
+  }
+  refrescar();
+}
+
+function pedir(){
+  const m = B.manos[B.activa];
+  if (B.fase !== 'jugando' || m.resuelta) return;
+  m.cartas.push(sacar());
+  Sonido.fx('colocar');
+  if (valor(m.cartas) >= 21) siguienteMano();
+  else mensaje('Llevas <b>' + valor(m.cartas) + '</b>.');
+  refrescar();
+}
+
+function plantarse(){
+  if (B.fase !== 'jugando') return;
+  siguienteMano();
+  refrescar();
+}
+
+function doblar(){
+  const m = B.manos[B.activa];
+  if (B.fase !== 'jugando' || m.cartas.length !== 2 || m.deAses) return;
+  if (m.apuesta > B.saldo){ Arcade.aviso(avisos, 'No tienes fichas para doblar', false, 1800); return; }
+  B.saldo = Arcade.fichas.ajustar(-m.apuesta);
+  m.apuesta *= 2;
+  m.doblada = true;
+  m.cartas.push(sacar());
+  Sonido.fx('ficha');
+  siguienteMano();
+  refrescar();
+}
+
+function dividir(){
+  const m = B.manos[B.activa];
+  if (B.fase !== 'jugando' || m.cartas.length !== 2 || B.manos.length >= 4) return;
+  if (valorCarta(m.cartas[0]) !== valorCarta(m.cartas[1])) return;
+  if (m.apuesta > B.saldo){ Arcade.aviso(avisos, 'No tienes fichas para dividir', false, 1800); return; }
+
+  const deAses = Cartas.indice(m.cartas[0]) === 12;
+  B.saldo = Arcade.fichas.ajustar(-m.apuesta);
+  const segunda = m.cartas.pop();
+  m.dividida = true; m.deAses = deAses;
+  m.cartas.push(sacar());
+  B.manos.splice(B.activa + 1, 0, {
+    cartas: [segunda, sacar()], apuesta: m.apuesta, doblada:false,
+    dividida:true, deAses, resuelta:false, resultado:''
+  });
+  Sonido.fx('giro');
+  // los ases divididos reciben una sola carta y se plantan
+  if (deAses){ siguienteMano(); }
+  refrescar();
+}
+
+function tomarSeguro(){
+  if (B.fase !== 'jugando' || B.seguro || valorCarta(B.banca[0]) !== 11) return;
+  const coste = Math.floor(B.manos[0].apuesta / 2);
+  if (coste > B.saldo){ Arcade.aviso(avisos, 'No tienes fichas para el seguro', false, 1800); return; }
+  B.saldo = Arcade.fichas.ajustar(-coste);
+  B.seguro = coste;
+  Sonido.fx('ficha');
+  Arcade.aviso(avisos, '🛡 Seguro tomado por ' + coste, true, 1600);
+  refrescar();
+}
+
+// Pasa a la siguiente mano pendiente; si no queda ninguna, juega la banca
+function siguienteMano(){
+  B.manos[B.activa].resuelta = true;
+  const siguiente = B.manos.findIndex(m => !m.resuelta);
+  if (siguiente === -1){ resolverBanca(); return; }
+  B.activa = siguiente;
+  // una mano de ases divididos ya viene servida
+  if (B.manos[B.activa].deAses){ siguienteMano(); return; }
+  mensaje('Mano ' + (B.activa + 1) + ': llevas <b>' + valor(B.manos[B.activa].cartas) + '</b>.');
+}
+
+function resolverBanca(){
+  B.fase = 'banca';
+  B.bancaTapada = false;
+  // si todas las manos se pasaron, la banca no roba
+  const alguienVivo = B.manos.some(m => valor(m.cartas) <= 21);
+  const bjBanca = valor(B.banca) === 21;
+  if (alguienVivo && !bjBanca){
+    while (valor(B.banca) < 17) B.banca.push(sacar());
+  }
+  terminarRonda();
+}
+
+function terminarRonda(){
+  B.fase = 'fin';
+  const vBanca = valor(B.banca);
+  const bancaSePasa = vBanca > 21;
+  const bjBanca = B.banca.length === 2 && vBanca === 21;
+  let cobro = 0;
+  const partes = [];
+
+  // seguro: paga 2:1 si la banca tiene blackjack
+  if (B.seguro){
+    if (bjBanca){ cobro += B.seguro * 3; partes.push('🛡 seguro <b class="gana">+' + (B.seguro * 2) + '</b>'); }
+    else partes.push('🛡 seguro <b class="pierde">−' + B.seguro + '</b>');
+  }
+
+  B.manos.forEach((m, i) => {
+    const v = valor(m.cartas);
+    const bj = esBlackjack(m);
+    let texto, pago = 0;
+    if (v > 21){ m.resultado = 'pierde'; texto = 'te pasas'; }
+    else if (bj && !bjBanca){ m.resultado = 'blackjack'; pago = m.apuesta + Math.floor(m.apuesta * 1.5); texto = 'BLACKJACK 3:2'; B.blackjacks++; }
+    else if (bjBanca && !bj){ m.resultado = 'pierde'; texto = 'blackjack de la banca'; }
+    else if (bjBanca && bj){ m.resultado = 'empata'; pago = m.apuesta; texto = 'empate'; }
+    else if (bancaSePasa){ m.resultado = 'gana'; pago = m.apuesta * 2; texto = 'la banca se pasa'; }
+    else if (v > vBanca){ m.resultado = 'gana'; pago = m.apuesta * 2; texto = v + ' contra ' + vBanca; }
+    else if (v < vBanca){ m.resultado = 'pierde'; texto = v + ' contra ' + vBanca; }
+    else { m.resultado = 'empata'; pago = m.apuesta; texto = 'empate a ' + v; }
+
+    cobro += pago;
+    B.manosJugadas++;
+    if (m.resultado === 'gana' || m.resultado === 'blackjack') B.ganadas++;
+    const clase = m.resultado === 'pierde' ? 'pierde' : m.resultado === 'empata' ? 'empata' : 'gana';
+    partes.push((B.manos.length > 1 ? 'Mano ' + (i + 1) + ': ' : '') +
+                '<b class="' + clase + '">' + texto + '</b>');
+  });
+
+  if (cobro > 0) B.saldo = Arcade.fichas.ajustar(cobro);
+  const apostado = B.manos.reduce((s, m) => s + m.apuesta, 0) + B.seguro;
+  const neto = cobro - apostado;
+
+  Arcade.perfil.partida('blackjack', {
+    puntos: Math.max(0, neto), victoria: neto > 0,
+    premio: 0                                  // las fichas ya se mueven con la apuesta
+  });
+  if (neto > 0) Arcade.guardarRecord('blackjack', neto);
+
+  mensaje(partes.join(' · ') + ' · Resultado: <b class="' +
+          (neto > 0 ? 'gana">+' : neto < 0 ? 'pierde">' : 'empata">') + neto + '</b> fichas');
+  Sonido.fx(neto > 0 ? 'caja' : neto < 0 ? 'error' : 'clic');
+  guardarPartida();
+  refrescar();
+}
+
+// ---------- Guardado ----------
+function guardarPartida(){
+  Arcade.escribir('blackjack', JSON.stringify({
+    zapato: B.zapato, manosJugadas: B.manosJugadas,
+    ganadas: B.ganadas, blackjacks: B.blackjacks
+  }));
+}
+function cargarPartida(){
+  const crudo = Arcade.leerTexto('blackjack', null);
+  if (crudo){
+    try {
+      const g = JSON.parse(crudo);
+      if (Array.isArray(g.zapato) && g.zapato.length > CORTE) B.zapato = g.zapato;
+      B.manosJugadas = g.manosJugadas || 0;
+      B.ganadas = g.ganadas || 0;
+      B.blackjacks = g.blackjacks || 0;
+    } catch(e){}
+  }
+  if (!B.zapato.length) B.zapato = Cartas.baraja(MAZOS);
+}
+Guardado.registrar(guardarPartida);
+
+// ---------- Interfaz ----------
+function mensaje(html){ $('mensaje').innerHTML = html; }
+
+function refrescar(){
+  $('saldoTxt').textContent = B.saldo.toLocaleString('es-ES');
+  $('zapatoTxt').textContent = B.zapato.length;
+
+  const jugando = B.fase === 'jugando';
+  const m = B.manos[B.activa];
+  $('btnRepartir').disabled = jugando || B.fase === 'banca';
+  $('btnPedir').disabled = !jugando;
+  $('btnPlantarse').disabled = !jugando;
+  $('btnDoblar').disabled = !jugando || !m || m.cartas.length !== 2 || m.deAses || m.apuesta > B.saldo;
+  $('btnDividir').disabled = !jugando || !m || m.cartas.length !== 2 || B.manos.length >= 4 ||
+                             valorCarta(m.cartas[0]) !== valorCarta(m.cartas[1]) || m.apuesta > B.saldo;
+  $('btnSeguro').disabled = !jugando || !!B.seguro || !B.banca.length ||
+                             valorCarta(B.banca[0]) !== 11 || B.manos[0].cartas.length !== 2;
+  $('montoApuesta').disabled = jugando || B.fase === 'banca';
+}
+
+// ---------- Dibujo ----------
+function texto(t, x, y, color, tam, alin, peso){
+  ctx.fillStyle = color;
+  ctx.font = (peso || 700) + ' ' + tam + 'px "Segoe UI", system-ui, sans-serif';
+  ctx.textAlign = alin || 'left';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(t, x, y);
+}
+
+function etiqueta(t, x, y, color){
+  ctx.font = '800 15px "Courier New", monospace';
+  const an = ctx.measureText(t).width + 20;
+  ctx.fillStyle = 'rgba(0,0,0,.55)';
+  ctx.beginPath(); ctx.roundRect(x - an / 2, y - 14, an, 28, 14); ctx.fill();
+  ctx.strokeStyle = color; ctx.lineWidth = 1.5; ctx.stroke();
+  texto(t, x, y, color, 15, 'center', 800);
+}
+
+function dibujar(){
+  // paño
+  const g = ctx.createRadialGradient(ANCHO / 2, ALTO * 0.42, 40, ANCHO / 2, ALTO * 0.5, ANCHO * 0.72);
+  g.addColorStop(0, '#12603a');
+  g.addColorStop(1, '#06251a');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, ANCHO, ALTO);
+
+  // arco de la mesa y lema
+  ctx.strokeStyle = 'rgba(243,230,0,.25)'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.arc(ANCHO / 2, -140, 400, 0.45, Math.PI - 0.45); ctx.stroke();
+  texto('EL BLACKJACK PAGA 3 A 2', ANCHO / 2, 34, 'rgba(243,230,0,.55)', 17, 'center', 800);
+  texto('LA BANCA SE PLANTA EN TODO 17', ANCHO / 2, 57, 'rgba(255,255,255,.28)', 12, 'center', 700);
+
+  // ---- banca ----
+  const yB = 96;
+  if (B.banca.length){
+    const anchoTotal = (B.banca.length - 1) * 34 + CARTA_AN;
+    let x = ANCHO / 2 - anchoTotal / 2;
+    B.banca.forEach((c, i) => {
+      Cartas.dibujar(ctx, (i === 1 && B.bancaTapada) ? null : c, x, yB, CARTA_AN, CARTA_AL);
+      x += 34;
+    });
+    const v = B.bancaTapada ? valorCarta(B.banca[0]) : valor(B.banca);
+    etiqueta('BANCA ' + v + (B.bancaTapada ? '+' : valor(B.banca) > 21 ? ' ✗' : ''),
+             ANCHO / 2, yB + CARTA_AL + 20,
+             !B.bancaTapada && valor(B.banca) > 21 ? '#ff3d68' : '#f3e600');
+  } else {
+    texto('BANCA', ANCHO / 2, yB + 40, 'rgba(255,255,255,.2)', 20, 'center', 800);
+  }
+
+  // ---- manos del jugador ----
+  const yJ = ALTO - CARTA_AL - 58;
+  if (B.manos.length){
+    const anchoMano = m => (m.cartas.length - 1) * 30 + CARTA_AN;
+    const total = B.manos.reduce((s, m) => s + anchoMano(m), 0) + (B.manos.length - 1) * 34;
+    let x = ANCHO / 2 - total / 2;
+    B.manos.forEach((m, i) => {
+      const activa = i === B.activa && B.fase === 'jugando';
+      let cx = x;
+      m.cartas.forEach(c => {
+        Cartas.dibujar(ctx, c, cx, yJ, CARTA_AN, CARTA_AL,
+                       { apagada: m.resultado === 'pierde' });
+        cx += 30;
+      });
+      const v = valor(m.cartas);
+      const centro = x + anchoMano(m) / 2;
+      const color = v > 21 ? '#ff3d68'
+        : m.resultado === 'gana' || m.resultado === 'blackjack' ? '#00ff66'
+        : activa ? '#00f0ff' : 'rgba(255,255,255,.7)';
+      etiqueta(v + (v > 21 ? ' ✗' : blando(m.cartas) ? ' blando' : '') , centro, yJ - 20, color);
+      texto('🪙 ' + m.apuesta + (m.doblada ? ' ×2' : ''), centro, yJ + CARTA_AL + 22,
+            '#f3e600', 14, 'center', 800);
+      if (activa){
+        ctx.strokeStyle = 'rgba(0,240,255,.7)'; ctx.lineWidth = 2;
+        ctx.setLineDash([6, 5]);
+        ctx.beginPath();
+        ctx.roundRect(x - 10, yJ - 40, anchoMano(m) + 20, CARTA_AL + 74, 14);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+      x += anchoMano(m) + 34;
+    });
+  } else {
+    texto('TU MANO', ANCHO / 2, yJ + 40, 'rgba(255,255,255,.2)', 20, 'center', 800);
+  }
+
+  // marcador de sesión
+  const pct = B.manosJugadas ? Math.round(B.ganadas / B.manosJugadas * 100) : 0;
+  texto('manos ' + B.manosJugadas + '  ·  ganadas ' + pct + '%  ·  blackjacks ' + B.blackjacks,
+        14, ALTO - 16, 'rgba(255,255,255,.35)', 12, 'left', 700);
+}
+
+// ---------- Entrada ----------
+$('btnRepartir').onclick = () => { Sonido.activar(); repartir(); };
+$('btnPedir').onclick = pedir;
+$('btnPlantarse').onclick = plantarse;
+$('btnDoblar').onclick = doblar;
+$('btnDividir').onclick = dividir;
+$('btnSeguro').onclick = tomarSeguro;
+
+document.querySelector('.fichasRapidas').addEventListener('click', ev => {
+  const b = ev.target.closest('[data-op]');
+  if (!b || B.fase === 'jugando') return;
+  const campo = $('montoApuesta');
+  const actual = apuestaValida();
+  const op = b.dataset.op;
+  campo.value = op === 'mitad' ? Math.max(10, Math.floor(actual / 2))
+              : op === 'doble' ? Math.min(B.saldo || actual * 2, actual * 2)
+              : parseInt(op, 10);
+  apuestaValida();
+});
+
+addEventListener('keydown', ev => {
+  if (B.fase === 'jugando'){
+    if (ev.key === 'p' || ev.code === 'ArrowRight') pedir();
+    else if (ev.key === 'l' || ev.code === 'ArrowDown') plantarse();
+    else if (ev.key === 'd') doblar();
+  } else if (ev.code === 'Space'){ ev.preventDefault(); repartir(); }
+});
+
+$('btnSentarse').onclick = () => {
+  Sonido.activar();
+  $('modalInicio').classList.remove('visible');
+};
+Arcade.conectarSonido($('btnSonido'));
+
+cargarPartida();
+refrescar();
+Arcade.bucle(() => dibujar());
+</script>
+</body>
+</html>
