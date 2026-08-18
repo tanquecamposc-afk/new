@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Plinko — Arcade NEXO</title>
+<link rel="stylesheet" href="arcade.css">
+<style>
+  /* Los modales cubren el tablero, no la barra: desde el menú siempre se puede volver */
+  #tablero{position:relative; display:flex; flex-direction:column; gap:10px;}
+  #juego{width:min(900px,100vw);}
+  .barra .titulo{color:var(--rosa);}
+
+  #caja{
+    position:relative; border-radius:16px; overflow:hidden;
+    border:2px solid rgba(255,0,127,.26);
+    box-shadow:0 15px 45px rgba(0,0,0,.9), inset 0 0 90px rgba(0,0,0,.65);
+  }
+  #lienzo{display:block; width:100%; height:auto;}
+
+  #panel{display:flex; gap:10px; flex-wrap:wrap; align-items:stretch;}
+  .campo{
+    display:flex; flex-direction:column; gap:5px;
+    background:rgba(0,0,0,.35); border:1px solid var(--borde);
+    border-radius:11px; padding:8px 12px; min-width:130px;
+  }
+  .campo label{font-size:10px; color:var(--tenue); text-transform:uppercase; letter-spacing:.8px;}
+  .campo input, .campo select{
+    background:transparent; color:var(--oro); border:none; outline:none;
+    font-family:var(--fuente-arcade); font-weight:800; font-size:17px; width:100%;
+  }
+  .campo select option{background:#0d1322; color:var(--texto);}
+  #botones{display:flex; gap:9px; flex:1; min-width:250px;}
+  #botones button{
+    flex:1; border-radius:12px; font-weight:900; font-size:13px;
+    letter-spacing:1.1px; text-transform:uppercase; padding:12px;
+  }
+  #historial{
+    display:flex; gap:5px; overflow-x:auto; padding:7px 9px; scrollbar-width:thin;
+    background:rgba(0,0,0,.4); border:1px solid var(--borde); border-radius:10px; min-height:36px;
+  }
+  #historial span{
+    flex:none; padding:3px 10px; border-radius:999px;
+    font-family:var(--fuente-arcade); font-weight:800; font-size:12px;
+    font-variant-numeric:tabular-nums;
+  }
+</style>
+</head>
+<body>
+
+<div id="juego">
+  <div class="barra">
+    <a class="boton" href="../index.html">🕹 Arcade</a>
+    <div class="titulo">🔻 PLINKO</div>
+    <div class="sep"></div>
+    <div class="stat">🪙 <span id="saldoTxt" class="oro">5000</span></div>
+    <div class="stat">🎱 <span id="bolasTxt" class="azul">0</span></div>
+    <div class="stat">🏆 <span id="recordTxt" class="tenue">—</span></div>
+    <button id="btnSonido" title="Sonido" aria-label="Sonido">🔊</button>
+  </div>
+
+  <div id="tablero">
+    <div id="caja">
+      <canvas id="lienzo" width="880" height="620"></canvas>
+      <div class="avisos" id="avisos"></div>
+    </div>
+
+    <div id="historial"></div>
+
+    <div id="panel">
+      <div class="campo">
+        <label for="apuesta">Apuesta por bola</label>
+        <input id="apuesta" type="number" min="10" step="10" value="100">
+      </div>
+      <div class="campo">
+        <label for="riesgo">Riesgo</label>
+        <select id="riesgo">
+          <option value="bajo">Bajo</option>
+          <option value="medio" selected>Medio</option>
+          <option value="alto">Alto</option>
+        </select>
+      </div>
+      <div class="campo">
+        <label for="filas">Filas</label>
+        <select id="filas">
+          <option value="8">8</option>
+          <option value="12">12</option>
+          <option value="16" selected>16</option>
+        </select>
+      </div>
+      <div id="botones">
+        <button class="primario" id="btnSoltar">🔻 Soltar bola</button>
+        <button id="btnLluvia">💧 Soltar 10</button>
+      </div>
+    </div>
+
+    <div class="modal visible" id="modalInicio">
+      <div class="tarjetaModal">
+        <h1>🔻 PLINKO</h1>
+        <div class="sub">Deja caer la bola y mira dónde acaba. Fichas ficticias.</div>
+        <div class="instrucciones">
+          La bola cae rebotando entre clavos. En cada clavo se va a un lado o al otro,
+          así que acaba en una casilla u otra siguiendo la <b>campana de Galton</b>:
+          el centro es lo más probable y paga poco, y los extremos son rarísimos y pagan muchísimo.<br>
+          El <b>riesgo</b> cambia lo plana o lo extrema que es la tabla de pagos, y las <b>filas</b>
+          cuántos rebotes hay: con 16 filas los bordes pagan mucho más porque son mucho menos probables.<br>
+          Todas las tablas están normalizadas al mismo <b>99 % de retorno</b>: cambiar el riesgo cambia
+          la varianza, nunca la ventaja de la casa.<br>
+          Puedes soltar <b>varias bolas a la vez</b>: cada una es independiente.
+        </div>
+        <div class="filaBotones"><button class="primario" id="btnEntrar">▶ A jugar</button></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="arcade.js"></script>
+<script>
+// ============================================================
+//  PLINKO — campana de Galton con tablas normalizadas al 99 %
+// ============================================================
+const $ = id => document.getElementById(id);
+const lienzo = $('lienzo');
+const ctx = Arcade.nitido(lienzo);
+const avisos = $('avisos');
+const ANCHO = lienzo.width, ALTO = lienzo.height;
+
+const RTP = 0.99;
+const MINIMO = 0.2;      // ninguna casilla baja de 0,2x: siempre devuelve algo
+
+/**
+ * Pesos relativos de cada casilla, del borde al centro y simétricos.
+ * Después se escalan para que el retorno esperado sea exactamente el 99 %,
+ * así que cambiar el riesgo cambia la varianza pero nunca la ventaja de casa.
+ */
+const PERFILES = {
+  bajo:  n => Array.from({length:n + 1}, (_, i) => Math.pow(Math.abs(i - n / 2) / (n / 2), 1.35) * 4 + 0.5),
+  medio: n => Array.from({length:n + 1}, (_, i) => Math.pow(Math.abs(i - n / 2) / (n / 2), 3.2) * 60 + 0.22),
+  alto:  n => Array.from({length:n + 1}, (_, i) => Math.pow(Math.abs(i - n / 2) / (n / 2), 6) * 800 + 0.12)
+};
+
+// Probabilidad binomial de acabar en la casilla i con n filas
+function probabilidades(n){
+  const p = [];
+  let c = 1;
+  for (let i = 0; i <= n; i++){
+    p.push(c / Math.pow(2, n));
+    c = c * (n - i) / (i + 1);
+  }
+  return p;
+}
+
+/**
+ * Tabla de pagos: se parte del perfil de forma y se escala con un factor
+ * único para que sum(prob[i] * pago[i]) === 0,99.
+ */
+function tablaPagos(n, riesgo){
+  const prob = probabilidades(n);
+  const forma = PERFILES[riesgo](n);
+  let k = RTP / forma.reduce((s, v, i) => s + v * prob[i], 0);
+
+  // El suelo de 0,2x sube el retorno por encima del 99 %, así que lo que sobra
+  // se le quita a las casillas que quedan por encima del suelo, en proporción
+  // a lo que valen. Se itera porque bajar esas casillas puede meter alguna más
+  // por debajo del suelo.
+  for (let vuelta = 0; vuelta < 40; vuelta++){
+    const escalados = forma.map(x => x * k);
+    const enSuelo = escalados.map(x => x < MINIMO);
+    const fijo = prob.reduce((s, pr, i) => s + (enSuelo[i] ? MINIMO * pr : 0), 0);
+    const libre = prob.reduce((s, pr, i) => s + (enSuelo[i] ? 0 : forma[i] * pr), 0);
+    const nuevoK = (RTP - fijo) / libre;
+    if (!isFinite(nuevoK) || Math.abs(nuevoK - k) < 1e-12) break;
+    k = nuevoK;
+  }
+
+  const pagos = forma.map(x => Math.max(MINIMO, Math.round(x * k * 100) / 100));
+
+  // El redondeo a dos decimales deja un residuo: se corrige en el par simétrico
+  // de mayor probabilidad que no esté pegado al suelo, para no romper la simetría.
+  let iAjuste = -1;
+  for (let i = Math.floor(n / 2); i >= 0; i--){
+    if (pagos[i] > MINIMO + 1e-9){ iAjuste = i; break; }
+  }
+  if (iAjuste >= 0){
+    const pareja = [...new Set([iAjuste, n - iAjuste])];
+    const peso = pareja.reduce((s, i) => s + prob[i], 0);
+    for (let vuelta = 0; vuelta < 8; vuelta++){
+      const actual = pagos.reduce((s, x, i) => s + x * prob[i], 0);
+      const desvio = RTP - actual;
+      if (Math.abs(desvio) < 5e-5) break;
+      const ajuste = Math.round(desvio / peso * 100) / 100;
+      if (!ajuste) break;
+      pareja.forEach(i => { pagos[i] = Math.max(MINIMO, Math.round((pagos[i] + ajuste) * 100) / 100); });
+    }
+  }
+  return pagos;
+}
+
+const P = {
+  saldo: Arcade.fichas.saldo(),
+  apuesta: 100, riesgo: 'medio', filas: 16,
+  pagos: [], prob: [],
+  bolas: [], destellos: [],
+  historia: [], lanzadas: 0,
+  record: Arcade.record('plinko'),
+  t: 0
+};
+
+// ---------- Geometría ----------
+const ARRIBA = 66;
+const ABAJO_CASILLAS = 78;
+function paso(){ return Math.min(38, (ALTO - ARRIBA - ABAJO_CASILLAS - 20) / P.filas); }
+function anchoUtil(){ return Math.min(ANCHO - 80, paso() * (P.filas + 1)); }
+function clavo(fila, i){
+  const s = paso();
+  const ancho = (fila + 1) * s;
+  return { x: ANCHO / 2 - ancho / 2 + i * s + s / 2, y: ARRIBA + fila * s };
+}
+function casilla(i){
+  const s = paso();
+  const ancho = (P.filas + 1) * s;
+  return { x: ANCHO / 2 - ancho / 2 + i * s, an: s, y: ALTO - ABAJO_CASILLAS + 10 };
+}
+
+function reconfigurar(){
+  P.filas = parseInt($('filas').value, 10);
+  P.riesgo = $('riesgo').value;
+  P.pagos = tablaPagos(P.filas, P.riesgo);
+  P.prob = probabilidades(P.filas);
+  refrescar();
+}
+
+// ---------- Soltar bolas ----------
+function soltar(){
+  P.apuesta = Math.max(10, Math.floor(parseFloat($('apuesta').value) || 0));
+  $('apuesta').value = P.apuesta;
+  if (P.apuesta > P.saldo){ Arcade.aviso(avisos, 'No tienes fichas suficientes', false, 1700); return false; }
+
+  P.saldo = Arcade.fichas.ajustar(-P.apuesta);
+  // El destino se sortea con la binomial y la bola se guía hacia él: la
+  // física es el espectáculo, pero el resultado es el de la distribución.
+  let destino = 0;
+  for (let k = 0; k < P.filas; k++) if (Math.random() < 0.5) destino++;
+
+  P.bolas.push({
+    x: ANCHO / 2 + azar(-2, 2), y: ARRIBA - 26,
+    vx: 0, vy: 0, fila: 0, destino,
+    izquierdas: P.filas - destino, derechas: destino,
+    apuesta: P.apuesta, estela: [], r: Math.max(5, paso() * 0.26)
+  });
+  P.lanzadas++;
+  Sonido.fx('clic');
+  refrescar();
+  return true;
+}
+
+function aterrizar(bola){
+  const i = limitar(bola.destino, 0, P.filas);
+  const pago = P.pagos[i];
+  const cobro = Math.floor(bola.apuesta * pago);
+  if (cobro > 0) P.saldo = Arcade.fichas.ajustar(cobro);
+  const beneficio = cobro - bola.apuesta;
+  if (beneficio > 0) Arcade.guardarRecord('plinko', beneficio);
+  P.record = Arcade.record('plinko');
+
+  P.historia.unshift({ pago, gano: pago >= 1 });
+  if (P.historia.length > 24) P.historia.pop();
+
+  const c = casilla(i);
+  P.destellos.push({ i, vida: 0.75, max: 0.75 });
+  for (let k = 0; k < (pago >= 5 ? 34 : 12); k++) P.destellos.push({
+    x: c.x + c.an / 2, y: c.y, vx: azar(-180, 180), vy: azar(-320, -60),
+    vida: azar(0.4, 1), max: 1, r: azar(1.5, 3.6),
+    color: pago >= 5 ? '#f3e600' : pago >= 1 ? '#4ee089' : '#8b9bb4'
+  });
+
+  Arcade.perfil.partida('plinko', { puntos: Math.max(0, beneficio), victoria: beneficio > 0 });
+  Sonido.fx(pago >= 5 ? 'caja' : pago >= 1 ? 'gema' : 'clic');
+  guardarPartida();
+  pintarHistorial();
+  refrescar();
+}
+
+// ---------- Guardado ----------
+function guardarPartida(){
+  Arcade.escribir('plinko', JSON.stringify({
+    historia: P.historia.slice(0, 24), lanzadas: P.lanzadas,
+    apuesta: P.apuesta, riesgo: P.riesgo, filas: P.filas
+  }));
+}
+function cargarPartida(){
+  const crudo = Arcade.leerTexto('plinko', null);
+  if (!crudo) return;
+  try {
+    const g = JSON.parse(crudo);
+    P.historia = Array.isArray(g.historia) ? g.historia : [];
+    P.lanzadas = g.lanzadas || 0;
+    if (g.apuesta) $('apuesta').value = g.apuesta;
+    if (g.riesgo) $('riesgo').value = g.riesgo;
+    if (g.filas) $('filas').value = g.filas;
+  } catch(e){}
+}
+Guardado.registrar(guardarPartida);
+
+// ---------- Interfaz ----------
+function colorPago(pago){
+  if (pago >= 10) return '#ff2d6f';
+  if (pago >= 3)  return '#ff8a3d';
+  if (pago >= 1.2) return '#f3e600';
+  if (pago >= 0.8) return '#7bd88f';
+  return '#4b90d8';
+}
+function pintarHistorial(){
+  const h = $('historial');
+  h.innerHTML = '';
+  P.historia.forEach(r => {
+    const s = document.createElement('span');
+    s.textContent = r.pago.toFixed(1) + 'x';
+    s.style.color = '#08101c';
+    s.style.background = colorPago(r.pago);
+    h.appendChild(s);
+  });
+}
+function refrescar(){
+  $('saldoTxt').textContent = P.saldo.toLocaleString('es-ES');
+  $('bolasTxt').textContent = P.bolas.length;
+  $('recordTxt').textContent = P.record ? '+' + P.record.toLocaleString('es-ES') : '—';
+}
+
+// ---------- Dibujo ----------
+function texto(t, x, y, color, tam, alin, peso, fuente){
+  ctx.fillStyle = color;
+  ctx.font = (peso || 700) + ' ' + tam + 'px ' + (fuente || '"Segoe UI", system-ui, sans-serif');
+  ctx.textAlign = alin || 'left'; ctx.textBaseline = 'middle';
+  ctx.fillText(t, x, y);
+}
+
+function moverBolas(dt){
+  const s = paso();
+  for (let b = P.bolas.length - 1; b >= 0; b--){
+    const bola = P.bolas[b];
+    bola.estela.push({ x: bola.x, y: bola.y });
+    if (bola.estela.length > 14) bola.estela.shift();
+
+    bola.vy += 1500 * dt;
+    bola.y += bola.vy * dt;
+    bola.x += bola.vx * dt;
+    bola.vx *= Math.pow(0.35, dt);
+
+    // ¿ha llegado a la altura de la siguiente fila de clavos?
+    if (bola.fila < P.filas){
+      const yFila = ARRIBA + bola.fila * s;
+      if (bola.y >= yFila){
+        // se decide el lado respetando cuántos giros quedan a cada lado
+        const quedan = P.filas - bola.fila;
+        const irDerecha = Math.random() < bola.derechas / quedan;
+        if (irDerecha) bola.derechas--; else bola.izquierdas--;
+
+        bola.x = clavo(bola.fila, 0).x - s / 2 +
+                 (bola.destino - bola.derechas) * s + s / 2 +
+                 (irDerecha ? 0 : 0);
+        // desplazamiento lateral físico: medio paso al lado elegido
+        bola.vx = (irDerecha ? 1 : -1) * s * azar(2.4, 3.4);
+        bola.vy = Math.abs(bola.vy) * -0.24 + 40;
+        bola.fila++;
+        Sonido.fx('paso');
+        P.destellos.push({ clavoF: bola.fila - 1, vida: 0.3, max: 0.3, x: bola.x, y: yFila });
+      }
+    }
+
+    // corrección suave hacia el centro de su casilla al final del recorrido
+    if (bola.fila >= P.filas){
+      const c = casilla(bola.destino);
+      const objetivo = c.x + c.an / 2;
+      bola.x += (objetivo - bola.x) * Math.min(1, 8 * dt);
+      if (bola.y >= c.y - bola.r){
+        aterrizar(bola);
+        P.bolas.splice(b, 1);
+      }
+    }
+  }
+}
+
+function dibujar(dt){
+  P.t += dt;
+  moverBolas(dt);
+  for (let i = P.destellos.length - 1; i >= 0; i--){
+    const d = P.destellos[i];
+    if (d.vx !== undefined){ d.x += d.vx * dt; d.y += d.vy * dt; d.vy += 420 * dt; }
+    d.vida -= dt;
+    if (d.vida <= 0) P.destellos.splice(i, 1);
+  }
+
+  // fondo
+  const g = ctx.createRadialGradient(ANCHO / 2, ARRIBA, 30, ANCHO / 2, ALTO * 0.6, ANCHO * 0.8);
+  g.addColorStop(0, '#1c0a2a'); g.addColorStop(0.6, '#0d0518'); g.addColorStop(1, '#04020a');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, ANCHO, ALTO);
+
+  const s = paso();
+
+  // clavos
+  for (let f = 0; f < P.filas; f++){
+    for (let i = 0; i <= f; i++){
+      const q = clavo(f, i);
+      const golpe = P.destellos.find(d => d.clavoF === f && Math.abs(d.x - q.x) < s * 0.8);
+      const r = 3.4 + (golpe ? golpe.vida / golpe.max * 3 : 0);
+      if (golpe){
+        ctx.save();
+        ctx.shadowColor = '#ff2d6f'; ctx.shadowBlur = 16;
+      }
+      ctx.fillStyle = golpe ? '#ffd6e6' : 'rgba(255,255,255,.55)';
+      ctx.beginPath(); ctx.arc(q.x, q.y, r, 0, 6.2832); ctx.fill();
+      if (golpe) ctx.restore();
+    }
+  }
+
+  // casillas de pago
+  const alturaC = 34;
+  for (let i = 0; i <= P.filas; i++){
+    const c = casilla(i);
+    const pago = P.pagos[i];
+    const col = colorPago(pago);
+    const brillo = P.destellos.find(d => d.i === i);
+    const salto = brillo ? Math.sin((1 - brillo.vida / brillo.max) * Math.PI) * 7 : 0;
+
+    ctx.save();
+    if (brillo){ ctx.shadowColor = col; ctx.shadowBlur = 20; }
+    ctx.fillStyle = col;
+    ctx.beginPath();
+    ctx.roundRect(c.x + 1.5, c.y + salto, c.an - 3, alturaC, 6);
+    ctx.fill();
+    ctx.restore();
+
+    // sombreado inferior para dar volumen
+    ctx.fillStyle = 'rgba(0,0,0,.28)';
+    ctx.beginPath();
+    ctx.roundRect(c.x + 1.5, c.y + salto + alturaC * 0.55, c.an - 3, alturaC * 0.45, 6);
+    ctx.fill();
+
+    const etiqueta = pago >= 100 ? Math.round(pago) + 'x'
+      : pago >= 10 ? pago.toFixed(0) + 'x' : pago.toFixed(1) + 'x';
+    texto(etiqueta, c.x + c.an / 2, c.y + salto + alturaC / 2, '#08101c',
+          Math.min(13, c.an * 0.34), 'center', 900, '"Courier New", monospace');
+  }
+
+  // estelas y bolas
+  for (const bola of P.bolas){
+    bola.estela.forEach((e, k) => {
+      ctx.globalAlpha = (k / bola.estela.length) * 0.4;
+      ctx.fillStyle = '#ff8ac0';
+      ctx.beginPath(); ctx.arc(e.x, e.y, bola.r * (0.3 + k / bola.estela.length * 0.6), 0, 6.2832);
+      ctx.fill();
+    });
+    ctx.globalAlpha = 1;
+    const gb = ctx.createRadialGradient(bola.x - bola.r * 0.35, bola.y - bola.r * 0.4, 1,
+                                        bola.x, bola.y, bola.r);
+    gb.addColorStop(0, '#fff'); gb.addColorStop(0.5, '#ff5fa2'); gb.addColorStop(1, '#c00a55');
+    ctx.save();
+    ctx.shadowColor = '#ff2d6f'; ctx.shadowBlur = 14;
+    ctx.fillStyle = gb;
+    ctx.beginPath(); ctx.arc(bola.x, bola.y, bola.r, 0, 6.2832); ctx.fill();
+    ctx.restore();
+  }
+
+  // partículas
+  for (const d of P.destellos){
+    if (d.vx === undefined) continue;
+    ctx.globalAlpha = Math.max(0, d.vida / d.max);
+    ctx.fillStyle = d.color;
+    ctx.beginPath(); ctx.arc(d.x, d.y, d.r, 0, 6.2832); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+
+  // cabecera
+  ctx.fillStyle = 'rgba(4,2,10,.85)';
+  ctx.fillRect(0, 0, ANCHO, 46);
+  texto('PLINKO · ' + P.filas + ' filas · riesgo ' + P.riesgo, 16, 23,
+        'rgba(255,255,255,.55)', 13, 'left', 800);
+  const maxPago = Math.max(...P.pagos);
+  texto('máximo ' + (maxPago >= 10 ? maxPago.toFixed(0) : maxPago.toFixed(1)) + 'x  ·  retorno 99 %',
+        ANCHO - 16, 23, '#ff8ac0', 13, 'right', 800);
+
+  texto('bolas lanzadas ' + P.lanzadas, 16, ALTO - 14, 'rgba(255,255,255,.3)', 12, 'left', 700);
+}
+
+// ---------- Entrada ----------
+$('btnSoltar').onclick = () => { Sonido.activar(); soltar(); };
+$('btnLluvia').onclick = () => {
+  Sonido.activar();
+  let n = 0;
+  const echar = () => {
+    if (n++ >= 10) return;
+    if (soltar()) setTimeout(echar, 130);
+  };
+  echar();
+};
+$('riesgo').addEventListener('change', reconfigurar);
+$('filas').addEventListener('change', reconfigurar);
+$('apuesta').addEventListener('input', refrescar);
+addEventListener('keydown', ev => {
+  if (ev.code === 'Space'){ ev.preventDefault(); soltar(); }
+});
+$('btnEntrar').onclick = () => { Sonido.activar(); $('modalInicio').classList.remove('visible'); };
+Arcade.conectarSonido($('btnSonido'));
+
+cargarPartida();
+reconfigurar();
+pintarHistorial();
+Arcade.bucle(dt => dibujar(dt));
+</script>
+</body>
+</html>

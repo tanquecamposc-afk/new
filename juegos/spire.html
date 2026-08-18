@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spire+ — Arcade NEXO</title>
+<link rel="stylesheet" href="arcade.css">
+<style>
+  /* Los modales cubren el tablero, no la barra: desde el menú siempre se puede volver */
+  #tablero{position:relative; display:flex; flex-direction:column; gap:10px;}
+  #juego{width:min(900px,100vw);}
+  .barra .titulo{color:var(--azul);}
+
+  #torre{
+    position:relative; border-radius:16px; overflow:hidden;
+    border:2px solid rgba(0,240,255,.28);
+    box-shadow:0 15px 45px rgba(0,0,0,.9), inset 0 0 90px rgba(0,0,0,.6);
+  }
+  #lienzo{display:block; width:100%; height:auto; cursor:pointer;}
+
+  #panel{display:flex; gap:10px; flex-wrap:wrap; align-items:stretch;}
+  .campo{
+    display:flex; flex-direction:column; gap:5px;
+    background:rgba(0,0,0,.35); border:1px solid var(--borde);
+    border-radius:11px; padding:8px 12px; min-width:140px;
+  }
+  .campo label{font-size:10px; color:var(--tenue); text-transform:uppercase; letter-spacing:.8px;}
+  .campo input, .campo select{
+    background:transparent; color:var(--oro); border:none; outline:none;
+    font-family:var(--fuente-arcade); font-weight:800; font-size:17px; width:100%;
+  }
+  .campo select option{background:#0d1322; color:var(--texto);}
+  #botones{display:flex; gap:9px; flex:1; min-width:260px;}
+  #botones button{
+    flex:1; border-radius:12px; font-weight:900; font-size:13px;
+    letter-spacing:1.1px; text-transform:uppercase; padding:12px;
+  }
+  #btnCobrar{background:linear-gradient(135deg,var(--verde),#00a844); border-color:#4ee089; color:#04120a;}
+</style>
+</head>
+<body>
+
+<div id="juego">
+  <div class="barra">
+    <a class="boton" href="../index.html">🕹 Arcade</a>
+    <div class="titulo">🗼 SPIRE+</div>
+    <div class="sep"></div>
+    <div class="stat">🪙 <span id="saldoTxt" class="oro">5000</span></div>
+    <div class="stat">✖ <span id="multTxt" class="verde">1.00x</span></div>
+    <div class="stat">🏆 <span id="recordTxt" class="tenue">—</span></div>
+    <button id="btnSonido" title="Sonido" aria-label="Sonido">🔊</button>
+  </div>
+
+  <div id="tablero">
+    <div id="torre">
+      <canvas id="lienzo" width="880" height="560"></canvas>
+      <div class="avisos" id="avisos"></div>
+    </div>
+
+    <div id="panel">
+      <div class="campo">
+        <label for="apuesta">Apuesta</label>
+        <input id="apuesta" type="number" min="10" step="10" value="100">
+      </div>
+      <div class="campo">
+        <label for="dificultad">Dificultad</label>
+        <select id="dificultad">
+          <option value="facil">Fácil · 3 de 4 seguras</option>
+          <option value="media" selected>Media · 2 de 3 seguras</option>
+          <option value="dificil">Difícil · 1 de 2 seguras</option>
+          <option value="experto">Experto · 1 de 3 seguras</option>
+          <option value="pesadilla">Pesadilla · 1 de 4 seguras</option>
+        </select>
+      </div>
+      <div id="botones">
+        <button class="primario" id="btnEmpezarRonda">🗼 Escalar</button>
+        <button id="btnCobrar" disabled>💰 Cobrar</button>
+      </div>
+    </div>
+
+    <div class="modal visible" id="modalInicio">
+      <div class="tarjetaModal">
+        <h1>🗼 SPIRE+</h1>
+        <div class="sub">Sube la torre eligiendo bien. Fichas ficticias.</div>
+        <div class="instrucciones">
+          Cada <b>piso</b> tiene varias losetas y solo algunas aguantan. Haz clic en una:
+          si es segura, subes y el multiplicador crece; si no, la torre se viene abajo.<br>
+          <b>Cobra cuando quieras</b> y te llevas la apuesta por el multiplicador del piso alcanzado.<br>
+          La dificultad cambia cuántas losetas son seguras por piso, y con ella lo que paga cada
+          escalón: <code>0,99 / (seguras/total)^pisos</code>, o sea un <b>1 % de ventaja de la casa</b>.<br>
+          Si llegas <b>arriba del todo</b> (9 pisos), se cobra solo.
+        </div>
+        <div class="filaBotones"><button class="primario" id="btnEntrar">▶ A la torre</button></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="arcade.js"></script>
+<script>
+// ============================================================
+//  SPIRE+ — multiplicador 0,99 / (seguras/total)^pisos
+// ============================================================
+const $ = id => document.getElementById(id);
+const lienzo = $('lienzo');
+const ctx = Arcade.nitido(lienzo);
+const avisos = $('avisos');
+const ANCHO = lienzo.width, ALTO = lienzo.height;
+
+const VENTAJA = 0.99;
+const PISOS = 9;
+const DIFICULTADES = {
+  facil:     { total:4, seguras:3, nombre:'Fácil'     },
+  media:     { total:3, seguras:2, nombre:'Media'     },
+  dificil:   { total:2, seguras:1, nombre:'Difícil'   },
+  experto:   { total:3, seguras:1, nombre:'Experto'   },
+  pesadilla: { total:4, seguras:1, nombre:'Pesadilla' }
+};
+
+const ALTO_PISO = 52;
+const MARGEN_X = 90;
+
+const S = {
+  saldo: Arcade.fichas.saldo(),
+  apuesta: 100, dificultad: 'media',
+  piso: 0, activa: false,
+  fase: 'espera',          // espera | subiendo | caida | cobrada
+  filas: [],               // por piso: { seguras:Set, elegida:null, revelada:false }
+  camara: 0, camaraObj: 0,
+  particulas: [], sacudida: 0, brillo: 0,
+  rondas: 0, cobradas: 0, mejorPiso: 0,
+  record: Arcade.record('spire'),
+  t: 0
+};
+
+const cfg = () => DIFICULTADES[S.dificultad];
+const p = () => cfg().seguras / cfg().total;
+const multiplicadorDe = pisos => pisos === 0 ? 1 : VENTAJA / Math.pow(p(), pisos);
+const multiplicador = () => multiplicadorDe(S.piso);
+
+// ---------- Ronda ----------
+function empezarRonda(){
+  if (S.fase === 'subiendo') return;
+  S.apuesta = Math.max(10, Math.floor(parseFloat($('apuesta').value) || 0));
+  $('apuesta').value = S.apuesta;
+  if (S.apuesta > S.saldo){ Arcade.aviso(avisos, 'No tienes fichas suficientes', false, 1800); return; }
+
+  S.saldo = Arcade.fichas.ajustar(-S.apuesta);
+  S.dificultad = $('dificultad').value;
+  const c = cfg();
+
+  // se sortea la torre entera de golpe, antes de tocar nada
+  S.filas = [];
+  for (let k = 0; k < PISOS; k++){
+    const orden = mezclar([...Array(c.total).keys()]);
+    S.filas.push({ seguras: new Set(orden.slice(0, c.seguras)), elegida: null, revelada: false });
+  }
+  S.piso = 0; S.activa = true; S.fase = 'subiendo';
+  S.particulas.length = 0; S.sacudida = 0; S.brillo = 0;
+  S.camara = 0; S.camaraObj = 0;
+  S.rondas++;
+  Sonido.fx('desplegar');
+  refrescar();
+}
+
+function elegir_loseta(indice){
+  if (S.fase !== 'subiendo' || !S.activa) return;
+  const fila = S.filas[S.piso];
+  if (!fila || fila.revelada) return;
+
+  fila.elegida = indice;
+  fila.revelada = true;
+  const salva = fila.seguras.has(indice);
+
+  const { x, y } = posicionLoseta(S.piso, indice);
+  for (let i = 0; i < (salva ? 22 : 34); i++) S.particulas.push({
+    x: x + azar(-26, 26), y: y + azar(-12, 12),
+    vx: azar(-150, 150), vy: azar(-260, -30),
+    vida: azar(0.4, 1), max: 1, r: azar(1.6, 4),
+    color: salva ? (Math.random() < 0.5 ? '#4ee089' : '#00f0ff') : '#ff3d68'
+  });
+
+  if (salva){
+    S.piso++;
+    if (S.piso > S.mejorPiso) S.mejorPiso = S.piso;
+    S.camaraObj = S.piso * ALTO_PISO;
+    Sonido.fx('gema');
+    if (S.piso >= PISOS){
+      Arcade.aviso(avisos, '🏔 ¡Cima alcanzada! Cobro automático', true, 2400);
+      setTimeout(cobrar, 600);
+    }
+  } else {
+    S.fase = 'caida';
+    S.activa = false;
+    S.sacudida = 12;
+    // se destapa la torre entera para que se vea qué había
+    S.filas.forEach(f => f.revelada = true);
+    Sonido.fx('choque');
+    Arcade.perfil.partida('spire', { puntos: 0, victoria: false });
+    guardarPartida();
+  }
+  refrescar();
+}
+
+function cobrar(){
+  if (S.fase !== 'subiendo' || !S.activa || S.piso === 0){
+    if (S.piso === 0 && S.fase === 'subiendo')
+      Arcade.aviso(avisos, 'Sube al menos un piso antes de cobrar', false, 1700);
+    return;
+  }
+  const mult = multiplicador();
+  const pago = Math.floor(S.apuesta * mult);
+  S.saldo = Arcade.fichas.ajustar(pago);
+  S.activa = false;
+  S.fase = 'cobrada';
+  S.brillo = 1;
+  S.cobradas++;
+  S.filas.forEach(f => f.revelada = true);
+  const beneficio = pago - S.apuesta;
+  if (beneficio > 0) Arcade.guardarRecord('spire', beneficio);
+  S.record = Arcade.record('spire');
+  Arcade.perfil.partida('spire', { puntos: Math.max(0, beneficio), victoria: beneficio > 0 });
+  Arcade.aviso(avisos, '💰 Cobras ' + pago.toLocaleString('es-ES') +
+               ' fichas (' + mult.toFixed(2) + 'x)', true, 2400);
+  Sonido.fx('caja');
+  guardarPartida();
+  refrescar();
+}
+
+// ---------- Guardado ----------
+function guardarPartida(){
+  Arcade.escribir('spire', JSON.stringify({
+    rondas: S.rondas, cobradas: S.cobradas, mejorPiso: S.mejorPiso,
+    apuesta: S.apuesta, dificultad: S.dificultad
+  }));
+}
+function cargarPartida(){
+  const crudo = Arcade.leerTexto('spire', null);
+  if (!crudo) return;
+  try {
+    const g = JSON.parse(crudo);
+    S.rondas = g.rondas || 0; S.cobradas = g.cobradas || 0; S.mejorPiso = g.mejorPiso || 0;
+    if (g.apuesta) $('apuesta').value = g.apuesta;
+    if (g.dificultad && DIFICULTADES[g.dificultad]) $('dificultad').value = g.dificultad;
+  } catch(e){}
+}
+Guardado.registrar(guardarPartida);
+
+// ---------- Geometría ----------
+// El piso 0 va abajo del todo; la cámara sube conforme escalas
+function posicionLoseta(piso, indice){
+  const c = cfg();
+  const util = ANCHO - MARGEN_X * 2;
+  const an = util / c.total;
+  const x = MARGEN_X + an * indice + an / 2;
+  const y = ALTO - 96 - piso * ALTO_PISO + S.camara;
+  return { x, y, an: an - 10, al: ALTO_PISO - 12 };
+}
+
+function losetaEn(mx, my){
+  if (S.fase !== 'subiendo' || !S.activa) return -1;
+  const c = cfg();
+  for (let i = 0; i < c.total; i++){
+    const q = posicionLoseta(S.piso, i);
+    if (Math.abs(mx - q.x) <= q.an / 2 && Math.abs(my - q.y) <= q.al / 2) return i;
+  }
+  return -1;
+}
+
+// ---------- Interfaz ----------
+function refrescar(){
+  $('saldoTxt').textContent = S.saldo.toLocaleString('es-ES');
+  $('multTxt').textContent = multiplicador().toFixed(2) + 'x';
+  $('recordTxt').textContent = S.record ? '+' + S.record.toLocaleString('es-ES') : '—';
+  const enJuego = S.fase === 'subiendo' && S.activa;
+  $('btnEmpezarRonda').disabled = enJuego;
+  $('btnCobrar').disabled = !enJuego || S.piso === 0;
+  $('apuesta').disabled = enJuego;
+  $('dificultad').disabled = enJuego;
+  $('btnCobrar').textContent = S.piso
+    ? '💰 Cobrar ' + Math.floor(S.apuesta * multiplicador()).toLocaleString('es-ES')
+    : '💰 Cobrar';
+}
+
+// ---------- Dibujo ----------
+function texto(t, x, y, color, tam, alin, peso, fuente){
+  ctx.fillStyle = color;
+  ctx.font = (peso || 700) + ' ' + tam + 'px ' + (fuente || '"Segoe UI", system-ui, sans-serif');
+  ctx.textAlign = alin || 'left'; ctx.textBaseline = 'middle';
+  ctx.fillText(t, x, y);
+}
+
+function dibujar(dt){
+  S.t += dt;
+  S.camara += (S.camaraObj - S.camara) * Math.min(1, 7 * dt);
+  S.sacudida = Math.max(0, S.sacudida - dt * 26);
+  S.brillo = Math.max(0, S.brillo - dt * 1.1);
+  for (let i = S.particulas.length - 1; i >= 0; i--){
+    const q = S.particulas[i];
+    q.x += q.vx * dt; q.y += q.vy * dt; q.vy += 380 * dt; q.vida -= dt;
+    if (q.vida <= 0) S.particulas.splice(i, 1);
+  }
+
+  const sx = S.sacudida ? azar(-S.sacudida, S.sacudida) : 0;
+  const sy = S.sacudida ? azar(-S.sacudida, S.sacudida) : 0;
+  ctx.save();
+  ctx.translate(sx, sy);
+
+  // ---- fondo: cielo de altura ----
+  const g = ctx.createLinearGradient(0, 0, 0, ALTO);
+  g.addColorStop(0, '#04122b'); g.addColorStop(0.5, '#08203f'); g.addColorStop(1, '#02060f');
+  ctx.fillStyle = g; ctx.fillRect(-20, -20, ANCHO + 40, ALTO + 40);
+
+  // estrellas con paralaje según la altura escalada
+  for (let k = 0; k < 70; k++){
+    const ex = (k * 137) % ANCHO;
+    const ey = ((k * 89) % ALTO + S.camara * 0.25) % ALTO;
+    const r = (k % 3) * 0.5 + 0.6;
+    ctx.fillStyle = 'rgba(200,230,255,' + (0.15 + (k % 5) * 0.12).toFixed(2) + ')';
+    ctx.beginPath(); ctx.arc(ex, ey, r, 0, 6.2832); ctx.fill();
+  }
+  // nubes lejanas
+  ctx.fillStyle = 'rgba(120,170,255,.055)';
+  for (let k = 0; k < 5; k++){
+    const cy = ((k * 131) % ALTO + S.camara * 0.5) % (ALTO + 120) - 60;
+    ctx.beginPath(); ctx.ellipse(((k * 197) % ANCHO), cy, 150, 26, 0, 0, 6.2832); ctx.fill();
+  }
+
+  // ---- columnas de la torre ----
+  const c = cfg();
+  const util = ANCHO - MARGEN_X * 2;
+  ctx.fillStyle = 'rgba(0,240,255,.05)';
+  ctx.fillRect(MARGEN_X - 16, 0, util + 32, ALTO);
+  ctx.strokeStyle = 'rgba(0,240,255,.18)'; ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(MARGEN_X - 16, 0); ctx.lineTo(MARGEN_X - 16, ALTO);
+  ctx.moveTo(MARGEN_X + util + 16, 0); ctx.lineTo(MARGEN_X + util + 16, ALTO);
+  ctx.stroke();
+
+  // ---- pisos ----
+  for (let piso = 0; piso < PISOS; piso++){
+    const fila = S.filas[piso];
+    const q0 = posicionLoseta(piso, 0);
+    if (q0.y < -60 || q0.y > ALTO + 60) continue;
+
+    const esActual = S.fase === 'subiendo' && S.activa && piso === S.piso;
+    const superado = piso < S.piso;
+
+    // etiqueta del multiplicador a la izquierda
+    const m = multiplicadorDe(piso + 1);
+    texto(m.toFixed(2) + 'x', MARGEN_X - 28, q0.y,
+          superado ? '#4ee089' : esActual ? '#ffd27a' : 'rgba(255,255,255,.32)',
+          13, 'right', 800, '"Courier New", monospace');
+    texto('P' + (piso + 1), MARGEN_X + util + 28, q0.y,
+          'rgba(255,255,255,.22)', 12, 'left', 700);
+
+    for (let i = 0; i < c.total; i++){
+      const q = posicionLoseta(piso, i);
+      const x0 = q.x - q.an / 2, y0 = q.y - q.al / 2;
+      const revelada = fila && fila.revelada;
+      const segura = fila && fila.seguras.has(i);
+      const elegida = fila && fila.elegida === i;
+
+      let relleno, borde;
+      if (!revelada){
+        relleno = esActual ? 'rgba(0,240,255,.14)' : 'rgba(255,255,255,.05)';
+        borde = esActual ? 'rgba(0,240,255,.75)' : 'rgba(255,255,255,.12)';
+      } else if (segura){
+        relleno = elegida ? 'rgba(0,255,102,.28)' : 'rgba(0,255,102,.10)';
+        borde = elegida ? '#4ee089' : 'rgba(78,224,137,.35)';
+      } else {
+        relleno = elegida ? 'rgba(255,61,104,.32)' : 'rgba(255,61,104,.08)';
+        borde = elegida ? '#ff3d68' : 'rgba(255,61,104,.3)';
+      }
+
+      // brillo del piso activo
+      if (esActual){
+        ctx.save();
+        ctx.shadowColor = 'rgba(0,240,255,.6)';
+        ctx.shadowBlur = 14 + Math.sin(S.t * 3 + i) * 6;
+      }
+      ctx.fillStyle = relleno;
+      ctx.beginPath(); ctx.roundRect(x0, y0, q.an, q.al, 10); ctx.fill();
+      ctx.strokeStyle = borde; ctx.lineWidth = esActual ? 2.4 : 1.6;
+      ctx.stroke();
+      if (esActual) ctx.restore();
+
+      // símbolo
+      if (revelada){
+        texto(segura ? '💎' : '💀', q.x, q.y, '#fff', 22, 'center', 700);
+      } else if (esActual){
+        texto('?', q.x, q.y, 'rgba(0,240,255,.85)', 22, 'center', 900, '"Courier New", monospace');
+      } else {
+        ctx.fillStyle = 'rgba(255,255,255,.10)';
+        ctx.beginPath(); ctx.arc(q.x, q.y, 5, 0, 6.2832); ctx.fill();
+      }
+    }
+  }
+
+  // ---- cima ----
+  const yCima = ALTO - 96 - PISOS * ALTO_PISO + S.camara;
+  if (yCima > -40 && yCima < ALTO + 40){
+    texto('🏔 CIMA · ' + multiplicadorDe(PISOS).toFixed(2) + 'x', ANCHO / 2, yCima - 4,
+          '#f3e600', 17, 'center', 900);
+  }
+
+  // ---- suelo ----
+  const ySuelo = ALTO - 96 + ALTO_PISO / 2 + S.camara;
+  if (ySuelo < ALTO + 40){
+    ctx.fillStyle = 'rgba(0,240,255,.10)';
+    ctx.fillRect(MARGEN_X - 16, ySuelo, util + 32, ALTO);
+    texto('BASE', ANCHO / 2, ySuelo + 18, 'rgba(255,255,255,.3)', 13, 'center', 800);
+  }
+
+  // partículas
+  for (const q of S.particulas){
+    ctx.globalAlpha = Math.max(0, q.vida / q.max);
+    ctx.fillStyle = q.color;
+    ctx.beginPath(); ctx.arc(q.x, q.y, q.r, 0, 6.2832); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+  ctx.restore();
+
+  // ---- cartel superior ----
+  const mult = multiplicador();
+  const activo = S.fase === 'subiendo' && S.activa;
+  ctx.fillStyle = 'rgba(3,8,18,.82)';
+  ctx.fillRect(0, 0, ANCHO, 62);
+  ctx.strokeStyle = activo ? 'rgba(0,240,255,.5)'
+    : S.fase === 'caida' ? 'rgba(255,61,104,.6)'
+    : S.fase === 'cobrada' ? 'rgba(78,224,137,.7)' : 'rgba(255,255,255,.12)';
+  ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(0, 62); ctx.lineTo(ANCHO, 62); ctx.stroke();
+
+  texto(S.fase === 'caida' ? '💀 LA TORRE SE VINO ABAJO' : mult.toFixed(2) + 'x',
+        ANCHO / 2, 24,
+        S.fase === 'caida' ? '#ff6b8a' : S.fase === 'cobrada' ? '#4ee089' : '#00f0ff',
+        S.fase === 'caida' ? 20 : 26, 'center', 900, '"Courier New", monospace');
+  texto(activo
+      ? 'piso ' + S.piso + ' de ' + PISOS + '  ·  toca una loseta  ·  siguiente ' +
+        multiplicadorDe(S.piso + 1).toFixed(2) + 'x'
+      : S.fase === 'espera' ? 'pulsa ESCALAR' : 'ronda terminada',
+    ANCHO / 2, 46, 'rgba(255,255,255,.5)', 12, 'center', 700);
+
+  if (S.brillo > 0){
+    ctx.fillStyle = 'rgba(78,224,137,' + (S.brillo * 0.18).toFixed(3) + ')';
+    ctx.fillRect(0, 0, ANCHO, ALTO);
+  }
+
+  texto(cfg().nombre + ' · ' + cfg().seguras + ' de ' + cfg().total + ' seguras',
+        16, ALTO - 16, 'rgba(255,255,255,.35)', 12, 'left', 700);
+  texto('mejor piso ' + S.mejorPiso + '  ·  rondas ' + S.rondas,
+        ANCHO - 16, ALTO - 16, 'rgba(255,255,255,.3)', 12, 'right', 700);
+}
+
+// ---------- Entrada ----------
+lienzo.addEventListener('pointerdown', ev => {
+  Sonido.activar();
+  const q = Arcade.puntero(lienzo, ev);
+  const i = losetaEn(q.x, q.y);
+  if (i >= 0) elegir_loseta(i);
+});
+$('btnEmpezarRonda').onclick = () => { Sonido.activar(); empezarRonda(); };
+$('btnCobrar').onclick = () => { Sonido.activar(); cobrar(); };
+$('dificultad').addEventListener('change', () => { S.dificultad = $('dificultad').value; refrescar(); });
+$('apuesta').addEventListener('input', refrescar);
+addEventListener('keydown', ev => {
+  if (ev.code === 'Space'){ ev.preventDefault(); if (S.fase !== 'subiendo') empezarRonda(); }
+  else if (ev.key === 'c' || ev.key === 'C') cobrar();
+  else if (/^[1-4]$/.test(ev.key)) elegir_loseta(parseInt(ev.key, 10) - 1);
+});
+$('btnEntrar').onclick = () => { Sonido.activar(); $('modalInicio').classList.remove('visible'); };
+Arcade.conectarSonido($('btnSonido'));
+
+cargarPartida();
+S.dificultad = $('dificultad').value;
+refrescar();
+Arcade.bucle(dt => dibujar(dt));
+</script>
+</body>
+</html>

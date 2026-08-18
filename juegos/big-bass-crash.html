@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Big Bass Crash — Arcade NEXO</title>
+<link rel="stylesheet" href="arcade.css">
+<style>
+  /* Los modales cubren el tablero, no la barra: desde el menú siempre se puede volver */
+  #tablero{position:relative; display:flex; flex-direction:column; gap:10px;}
+  #juego{width:min(1020px,100vw);}
+  .barra .titulo{color:#3fd6b0;}
+
+  #lago{
+    position:relative; border-radius:16px; overflow:hidden;
+    border:2px solid rgba(63,214,176,.28);
+    box-shadow:0 15px 45px rgba(0,0,0,.9);
+  }
+  #lienzo{display:block; width:100%; height:auto;}
+
+  #historial{
+    display:flex; gap:5px; overflow-x:auto; padding:7px 9px; scrollbar-width:thin;
+    background:rgba(0,0,0,.4); border:1px solid var(--borde); border-radius:10px; min-height:36px;
+  }
+  #historial span{
+    flex:none; padding:3px 10px; border-radius:999px;
+    font-family:var(--fuente-arcade); font-weight:800; font-size:12px;
+    background:rgba(255,255,255,.06); font-variant-numeric:tabular-nums;
+  }
+  #historial span.bajo{color:#7aa2ff;}
+  #historial span.medio{color:#3fd6b0;}
+  #historial span.alto{color:#ffb43d;}
+
+  #canas{display:grid; grid-template-columns:repeat(3,1fr); gap:10px;}
+  @media (max-width:760px){ #canas{grid-template-columns:1fr;} }
+  .cana{
+    background:linear-gradient(180deg,#0d2b2a,#08201f);
+    border:1px solid rgba(63,214,176,.28); border-radius:13px; padding:10px;
+    display:flex; flex-direction:column; gap:8px;
+  }
+  .cana .cabecera{
+    display:flex; justify-content:space-between; align-items:center;
+    font-family:var(--fuente-arcade); font-weight:800; font-size:12px;
+    color:#3fd6b0; letter-spacing:1px;
+  }
+  .cana .cabecera .estado{font-size:11px; color:var(--tenue); letter-spacing:.4px;}
+  .cana .fila{display:flex; gap:7px; align-items:center;}
+  .cana input{
+    flex:1; min-width:0; background:rgba(0,0,0,.5); border:1px solid var(--borde);
+    border-radius:8px; color:var(--oro); padding:7px 9px;
+    font-family:var(--fuente-arcade); font-weight:800; font-size:15px;
+    font-variant-numeric:tabular-nums;
+  }
+  .cana .auto{font-size:11px; color:var(--tenue); white-space:nowrap;}
+  .cana button.accion{
+    width:100%; padding:12px; border-radius:11px;
+    font-weight:900; font-size:12.5px; letter-spacing:1px; text-transform:uppercase;
+  }
+  .cana button.accion.lanzar{background:linear-gradient(180deg,#2fbe62,#1d8a45); border-color:#4ee089; color:#04120a;}
+  .cana button.accion.recoger{background:linear-gradient(180deg,#f5a524,#c47a08); border-color:#ffd27a; color:#1a1204;}
+  .cana button.accion.cancelar{background:linear-gradient(180deg,#a03b3b,#7c2b2b); border-color:#c25555;}
+  .cana.viva{border-color:#ffd27a; box-shadow:0 0 18px rgba(245,165,36,.22);}
+  .cana.cobrada{border-color:#4ee089; box-shadow:0 0 18px rgba(78,224,137,.22);}
+</style>
+</head>
+<body>
+
+<div id="juego">
+  <div class="barra">
+    <a class="boton" href="../index.html">🕹 Arcade</a>
+    <div class="titulo">🎣 BIG BASS CRASH</div>
+    <div class="sep"></div>
+    <div class="stat">🪙 <span id="saldoTxt" class="oro">5000</span></div>
+    <div class="stat">🏆 <span id="recordTxt" class="tenue">—</span></div>
+    <button id="btnSonido" title="Sonido" aria-label="Sonido">🔊</button>
+  </div>
+
+  <div id="tablero">
+    <div id="lago">
+      <canvas id="lienzo" width="1000" height="470"></canvas>
+      <div class="avisos" id="avisos"></div>
+    </div>
+
+    <div id="historial"></div>
+    <div id="canas"></div>
+
+    <div class="modal visible" id="modalInicio">
+      <div class="tarjetaModal">
+        <h1>🎣 BIG BASS CRASH</h1>
+        <div class="sub">El pez sube y tú decides cuándo recoger. Fichas ficticias.</div>
+        <div class="instrucciones">
+          Cada ronda un <b>pez</b> tira del sedal y el multiplicador sube sin parar…
+          hasta que <b>rompe el hilo</b> y se escapa. Si has recogido antes, cobras;
+          si no, pierdes lo apostado.<br>
+          Tienes <b>tres cañas independientes</b>: puedes apostar distinto en cada una y
+          recoger cada una por separado.<br>
+          Con <b>recogida automática</b> pones un multiplicador y esa caña cobra sola al llegar.<br>
+          El punto de rotura sale de la distribución de siempre, <b>P(rotura &gt; x) = 0,99 / x</b>:
+          la mitad de las rondas no pasan de 2x, una de cada diez pasa de 10x y un 1 % se rompe
+          nada más empezar. Un <b>1 % de ventaja de la casa</b>.
+        </div>
+        <div class="filaBotones"><button class="primario" id="btnEntrar">▶ Al lago</button></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="arcade.js"></script>
+<script>
+// ============================================================
+//  BIG BASS CRASH — P(rotura > x) = 0,99 / x, con tres cañas
+// ============================================================
+const $ = id => document.getElementById(id);
+const lienzo = $('lienzo');
+const ctx = Arcade.nitido(lienzo);
+const avisos = $('avisos');
+const ANCHO = lienzo.width, ALTO = lienzo.height;
+
+const SUPERFICIE = 92;
+const N_CANAS = 3;
+const NOMBRES = ['CAÑA 1', 'CAÑA 2', 'CAÑA 3'];
+
+const G = {
+  fase: 'espera',        // espera | pescando | roto
+  crono: 5, t: 0, mult: 1, rotura: 2,
+  saldo: Arcade.fichas.saldo(),
+  record: Arcade.record('bigbass'),
+  historia: [],
+  canas: [],             // { monto, viva, pendiente, cobradaEn, auto, objetivo }
+  burbujas: [], salpicaduras: [],
+  destelloRotura: 0, brilloCobro: 0,
+  rondas: 0, cobradas: 0
+};
+
+// ---------- Matemáticas ----------
+// P(rotura > x) = 0,99 / x  →  mediana en torno a 2x y cola larga
+function sortearRotura(){
+  // La propia fórmula ya deja ~1 % de resultados en 1.00: un descarte extra
+  // aparte multiplicaba las dos ventajas y dejaba la casa en el 2 %.
+  const r = Math.random();
+  return Math.min(500, Math.max(1.00, Math.floor(99 / (1 - r)) / 100));
+}
+const multEn = seg => Math.exp(0.115 * seg);
+
+function nuevasCanas(){
+  G.canas = Array.from({length:N_CANAS}, (_, i) => ({
+    monto: i === 0 ? 100 : 0, viva:false, pendiente:false,
+    cobradaEn:0, auto:false, objetivo:2
+  }));
+}
+
+// ---------- Ronda ----------
+function empezarRonda(){
+  G.fase = 'pescando';
+  G.t = 0; G.mult = 1;
+  G.rotura = sortearRotura();
+  G.rondas++;
+  G.destelloRotura = 0;
+  G.canas.forEach(c => {
+    if (c.pendiente && c.monto > 0 && c.monto <= G.saldo){
+      G.saldo = Arcade.fichas.ajustar(-c.monto);
+      c.viva = true;
+      c.pendiente = false;
+      c.cobradaEn = 0;
+    } else {
+      c.pendiente = false;
+      c.viva = false;
+    }
+  });
+  Sonido.fx('despegue');
+  Sonido.motor(0);
+  pintarCanas();
+  refrescar();
+}
+
+function recoger(i, automatica){
+  const c = G.canas[i];
+  if (G.fase !== 'pescando' || !c.viva) return;
+  const pago = Math.floor(c.monto * G.mult);
+  G.saldo = Arcade.fichas.ajustar(pago);
+  c.viva = false;
+  c.cobradaEn = G.mult;
+  G.cobradas++;
+  G.brilloCobro = 1;
+  for (let k = 0; k < 26; k++) G.salpicaduras.push({
+    x: ANCHO * 0.42 + azar(-40, 40), y: SUPERFICIE + azar(-10, 10),
+    vx: azar(-220, 220), vy: azar(-340, -80),
+    vida: azar(0.4, 1), max: 1, r: azar(1.5, 4)
+  });
+  const beneficio = pago - c.monto;
+  if (beneficio > 0) Arcade.guardarRecord('bigbass', beneficio);
+  G.record = Arcade.record('bigbass');
+  Arcade.perfil.partida('bigbass', { puntos: Math.max(0, beneficio), victoria: beneficio > 0 });
+  Arcade.aviso(avisos, (automatica ? '🎯 Automática · ' : '🎣 ') + NOMBRES[i] + ': ' +
+               G.mult.toFixed(2) + 'x · +' + beneficio.toLocaleString('es-ES'), true, 2200);
+  Sonido.fx('caja');
+  pintarCanas();
+  refrescar();
+}
+
+function romper(){
+  G.fase = 'roto';
+  G.crono = 3.2;
+  G.destelloRotura = 1;
+  Sonido.pararMotor();
+  Sonido.fx('choque');
+  G.canas.forEach((c, i) => {
+    if (c.viva){
+      c.viva = false;
+      Arcade.perfil.partida('bigbass', { puntos: 0, victoria: false });
+    }
+  });
+  G.historia.unshift(G.mult);
+  if (G.historia.length > 26) G.historia.pop();
+  guardarPartida();
+  pintarHistorial();
+  pintarCanas();
+  refrescar();
+}
+
+// ---------- Guardado ----------
+function guardarPartida(){
+  Arcade.escribir('bigbass', JSON.stringify({
+    historia: G.historia.slice(0, 26), rondas: G.rondas, cobradas: G.cobradas,
+    canas: G.canas.map(c => ({ monto:c.monto, auto:c.auto, objetivo:c.objetivo }))
+  }));
+}
+function cargarPartida(){
+  nuevasCanas();
+  const crudo = Arcade.leerTexto('bigbass', null);
+  if (!crudo) return;
+  try {
+    const g = JSON.parse(crudo);
+    G.historia = Array.isArray(g.historia) ? g.historia : [];
+    G.rondas = g.rondas || 0; G.cobradas = g.cobradas || 0;
+    if (Array.isArray(g.canas)) g.canas.forEach((c, i) => {
+      if (!G.canas[i]) return;
+      G.canas[i].monto = c.monto || 0;
+      G.canas[i].auto = !!c.auto;
+      G.canas[i].objetivo = c.objetivo || 2;
+    });
+  } catch(e){}
+}
+Guardado.registrar(guardarPartida);
+
+// ---------- Panel de cañas ----------
+function pintarCanas(){
+  const cont = $('canas');
+  if (cont.children.length !== N_CANAS){
+    cont.innerHTML = '';
+    G.canas.forEach((c, i) => {
+      const d = document.createElement('div');
+      d.className = 'cana';
+      d.innerHTML =
+        '<div class="cabecera"><span>' + NOMBRES[i] + '</span>' +
+        '<span class="estado" data-estado="' + i + '">libre</span></div>' +
+        '<div class="fila">' +
+          '<input type="number" min="0" step="10" data-monto="' + i + '" aria-label="Apuesta de la ' + NOMBRES[i] + '">' +
+          '<button data-mitad="' + i + '" aria-label="Mitad">½</button>' +
+          '<button data-doble="' + i + '" aria-label="Doble">x2</button>' +
+        '</div>' +
+        '<div class="fila">' +
+          '<label class="auto"><input type="checkbox" data-auto="' + i + '"> auto en</label>' +
+          '<input type="number" min="1.01" step="0.1" data-objetivo="' + i + '" aria-label="Multiplicador de recogida automática">' +
+        '</div>' +
+        '<button class="accion" data-accion="' + i + '"></button>';
+      cont.appendChild(d);
+    });
+  }
+
+  G.canas.forEach((c, i) => {
+    const d = cont.children[i];
+    d.classList.toggle('viva', c.viva);
+    d.classList.toggle('cobrada', c.cobradaEn > 0);
+    d.querySelector('[data-monto="' + i + '"]').value = c.monto;
+    d.querySelector('[data-objetivo="' + i + '"]').value = (+c.objetivo).toFixed(2);
+    d.querySelector('[data-auto="' + i + '"]').checked = c.auto;
+    d.querySelector('[data-estado="' + i + '"]').textContent =
+      c.viva ? 'en el agua' : c.pendiente ? 'lista' : c.cobradaEn ? 'cobró ' + c.cobradaEn.toFixed(2) + 'x' : 'libre';
+
+    const b = d.querySelector('[data-accion="' + i + '"]');
+    if (c.viva){
+      b.className = 'accion recoger';
+      b.textContent = '🎣 Recoger ' + Math.floor(c.monto * G.mult).toLocaleString('es-ES');
+      b.disabled = false;
+    } else if (c.pendiente){
+      b.className = 'accion cancelar';
+      b.textContent = '✕ Cancelar';
+      b.disabled = false;
+    } else {
+      b.className = 'accion lanzar';
+      b.textContent = G.fase === 'pescando' ? '⏳ Lanzar la próxima' : '🎣 Lanzar';
+      b.disabled = c.monto <= 0;
+    }
+    d.querySelector('[data-monto="' + i + '"]').disabled = c.viva;
+  });
+}
+
+function pintarHistorial(){
+  const h = $('historial');
+  h.innerHTML = '';
+  G.historia.forEach(v => {
+    const s = document.createElement('span');
+    s.className = v < 2 ? 'bajo' : v < 10 ? 'medio' : 'alto';
+    s.textContent = v.toFixed(2) + 'x';
+    h.appendChild(s);
+  });
+}
+
+function refrescar(){
+  $('saldoTxt').textContent = G.saldo.toLocaleString('es-ES');
+  $('recordTxt').textContent = G.record ? '+' + G.record.toLocaleString('es-ES') : '—';
+}
+
+// ---------- Dibujo ----------
+function texto(t, x, y, color, tam, alin, peso, fuente){
+  ctx.fillStyle = color;
+  ctx.font = (peso || 700) + ' ' + tam + 'px ' + (fuente || '"Segoe UI", system-ui, sans-serif');
+  ctx.textAlign = alin || 'left'; ctx.textBaseline = 'middle';
+  ctx.fillText(t, x, y);
+}
+
+// Trayectoria del pez: sube conforme crece el multiplicador, en escala log
+function puntoPez(){
+  const u = Math.min(1, Math.log(Math.max(1, G.mult)) / Math.log(60));
+  const x = ANCHO * 0.20 + u * ANCHO * 0.56;
+  const y = ALTO - 70 - u * (ALTO - 70 - SUPERFICIE - 40);
+  return { x, y };
+}
+
+function pez(x, y, tam, cola, escapando){
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(escapando ? -0.9 : -0.32 + Math.sin(cola * 3) * 0.08);
+  ctx.scale(tam, tam);
+
+  // cola
+  ctx.fillStyle = '#1f7d63';
+  ctx.beginPath();
+  const ag = Math.sin(cola * 12) * 0.5;
+  ctx.moveTo(-26, 0);
+  ctx.lineTo(-46, -14 + ag * 6);
+  ctx.lineTo(-40, 0);
+  ctx.lineTo(-46, 14 + ag * 6);
+  ctx.closePath(); ctx.fill();
+
+  // aletas
+  ctx.fillStyle = '#256e5c';
+  ctx.beginPath(); ctx.ellipse(-4, -16, 13, 6, -0.5, 0, 6.2832); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(-2, 14, 11, 5, 0.4, 0, 6.2832); ctx.fill();
+
+  // cuerpo
+  const g = ctx.createLinearGradient(0, -20, 0, 20);
+  g.addColorStop(0, '#4fd6a8');
+  g.addColorStop(0.5, '#2fae86');
+  g.addColorStop(1, '#e8f4ea');
+  ctx.fillStyle = g;
+  ctx.beginPath(); ctx.ellipse(0, 0, 28, 17, 0, 0, 6.2832); ctx.fill();
+
+  // manchas
+  ctx.fillStyle = 'rgba(20,70,60,.5)';
+  [[-8,-5,4],[4,-8,3],[10,2,3.4],[-2,5,3]].forEach(([dx, dy, r]) => {
+    ctx.beginPath(); ctx.arc(dx, dy, r, 0, 6.2832); ctx.fill();
+  });
+
+  // branquia
+  ctx.strokeStyle = 'rgba(20,70,60,.55)'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.arc(13, 0, 9, -1.1, 1.1); ctx.stroke();
+
+  // ojo
+  ctx.fillStyle = '#fff';
+  ctx.beginPath(); ctx.arc(20, -5, 4.6, 0, 6.2832); ctx.fill();
+  ctx.fillStyle = '#0d1a18';
+  ctx.beginPath(); ctx.arc(21.4, -5, 2.4, 0, 6.2832); ctx.fill();
+
+  // boca
+  ctx.strokeStyle = '#1a5c4c'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.arc(27, 2, 5, -0.6, 0.9); ctx.stroke();
+  ctx.restore();
+}
+
+function dibujar(dt){
+  // ---- estado ----
+  if (G.fase === 'espera'){
+    G.crono -= dt;
+    if (G.crono <= 0) empezarRonda();
+  } else if (G.fase === 'pescando'){
+    G.t += dt;
+    G.mult = multEn(G.t);
+    Sonido.motor(Math.min(1, Math.log(G.mult) / Math.log(30)));
+    // recogidas automáticas
+    G.canas.forEach((c, i) => {
+      if (c.viva && c.auto && G.mult >= c.objetivo) recoger(i, true);
+    });
+    if (G.mult >= G.rotura){ G.mult = G.rotura; romper(); }
+    else if (Math.floor(G.t * 6) % 6 === 0) pintarCanas();
+  } else if (G.fase === 'roto'){
+    G.crono -= dt;
+    if (G.crono <= 0){ G.fase = 'espera'; G.crono = 5; G.mult = 1; pintarCanas(); }
+  }
+
+  G.destelloRotura = Math.max(0, G.destelloRotura - dt * 1.3);
+  G.brilloCobro = Math.max(0, G.brilloCobro - dt * 1.4);
+
+  // burbujas
+  if (Math.random() < dt * 26) G.burbujas.push({
+    x: azar(0, ANCHO), y: ALTO + 10, v: azar(30, 90), r: azar(1.5, 5), fase: azar(0, 6.28)
+  });
+  for (let i = G.burbujas.length - 1; i >= 0; i--){
+    const b = G.burbujas[i];
+    b.y -= b.v * dt;
+    b.x += Math.sin(b.y * 0.03 + b.fase) * 12 * dt;
+    if (b.y < SUPERFICIE - 10) G.burbujas.splice(i, 1);
+  }
+  for (let i = G.salpicaduras.length - 1; i >= 0; i--){
+    const s = G.salpicaduras[i];
+    s.x += s.vx * dt; s.y += s.vy * dt; s.vy += 620 * dt; s.vida -= dt;
+    if (s.vida <= 0) G.salpicaduras.splice(i, 1);
+  }
+
+  // ---- cielo y agua ----
+  const cielo = ctx.createLinearGradient(0, 0, 0, SUPERFICIE);
+  cielo.addColorStop(0, '#0b2a3f'); cielo.addColorStop(1, '#1d5570');
+  ctx.fillStyle = cielo; ctx.fillRect(0, 0, ANCHO, SUPERFICIE);
+
+  const agua = ctx.createLinearGradient(0, SUPERFICIE, 0, ALTO);
+  agua.addColorStop(0, '#126d84'); agua.addColorStop(0.45, '#0a4256'); agua.addColorStop(1, '#04202e');
+  ctx.fillStyle = agua; ctx.fillRect(0, SUPERFICIE, ANCHO, ALTO - SUPERFICIE);
+
+  // rayos de luz
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  for (let k = 0; k < 5; k++){
+    const x = (k * 233 + Math.sin(G.t * 0.3 + k) * 40) % ANCHO;
+    const gr = ctx.createLinearGradient(x, SUPERFICIE, x + 70, ALTO);
+    gr.addColorStop(0, 'rgba(150,235,255,.10)');
+    gr.addColorStop(1, 'rgba(150,235,255,0)');
+    ctx.fillStyle = gr;
+    ctx.beginPath();
+    ctx.moveTo(x - 22, SUPERFICIE); ctx.lineTo(x + 22, SUPERFICIE);
+    ctx.lineTo(x + 110, ALTO); ctx.lineTo(x + 26, ALTO);
+    ctx.closePath(); ctx.fill();
+  }
+  ctx.restore();
+
+  // superficie ondulada
+  ctx.beginPath();
+  ctx.moveTo(0, SUPERFICIE);
+  for (let x = 0; x <= ANCHO; x += 8)
+    ctx.lineTo(x, SUPERFICIE + Math.sin(x * 0.03 + G.t * 2) * 3 + Math.sin(x * 0.07 - G.t * 1.4) * 1.6);
+  ctx.strokeStyle = 'rgba(190,245,255,.5)'; ctx.lineWidth = 2.5; ctx.stroke();
+
+  // vegetación del fondo
+  for (let k = 0; k < 14; k++){
+    const x = (k * 79 + 30) % ANCHO;
+    const alto = 40 + ((k * 53) % 70);
+    ctx.strokeStyle = 'rgba(30,120,90,.5)'; ctx.lineWidth = 4; ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(x, ALTO);
+    ctx.quadraticCurveTo(x + Math.sin(G.t * 1.1 + k) * 16, ALTO - alto / 2, x + Math.sin(G.t * 1.1 + k) * 26, ALTO - alto);
+    ctx.stroke();
+  }
+  ctx.lineCap = 'butt';
+
+  // burbujas
+  for (const b of G.burbujas){
+    ctx.strokeStyle = 'rgba(200,245,255,.28)'; ctx.lineWidth = 1.2;
+    ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, 6.2832); ctx.stroke();
+  }
+
+  // barca en la superficie
+  const bx = ANCHO * 0.12, by = SUPERFICIE - 6 + Math.sin(G.t * 1.6) * 3;
+  ctx.fillStyle = '#7a4a22';
+  ctx.beginPath();
+  ctx.moveTo(bx - 52, by); ctx.lineTo(bx + 52, by);
+  ctx.lineTo(bx + 36, by + 20); ctx.lineTo(bx - 36, by + 20);
+  ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#9c6330';
+  ctx.fillRect(bx - 52, by - 5, 104, 6);
+  // pescador
+  ctx.fillStyle = '#274b6b';
+  ctx.beginPath(); ctx.roundRect(bx - 10, by - 34, 18, 30, 6); ctx.fill();
+  ctx.fillStyle = '#f0c9a0';
+  ctx.beginPath(); ctx.arc(bx - 1, by - 41, 8, 0, 6.2832); ctx.fill();
+  ctx.fillStyle = '#c8402f';
+  ctx.beginPath(); ctx.ellipse(bx - 1, by - 47, 12, 5, 0, 0, 6.2832); ctx.fill();
+  // caña
+  ctx.strokeStyle = '#e8d3a8'; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.moveTo(bx + 6, by - 26); ctx.lineTo(bx + 62, by - 66); ctx.stroke();
+
+  // ---- sedal y pez ----
+  const q = puntoPez();
+  const activo = G.fase === 'pescando';
+  const roto = G.fase === 'roto';
+
+  ctx.strokeStyle = roto ? 'rgba(255,90,120,.7)' : 'rgba(230,250,255,.75)';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(bx + 62, by - 66);
+  if (roto){
+    // el hilo cuelga suelto
+    ctx.quadraticCurveTo((bx + q.x) / 2, by + 60, bx + 130, ALTO - 120);
+  } else {
+    ctx.quadraticCurveTo((bx + 62 + q.x) / 2, (by - 66 + q.y) / 2 + 40, q.x - 22, q.y);
+  }
+  ctx.stroke();
+
+  if (activo || roto) pez(q.x, q.y, activo ? 1 + Math.min(0.5, Math.log(G.mult) * 0.12) : 1.1, G.t, roto);
+
+  // salpicaduras
+  for (const s of G.salpicaduras){
+    ctx.globalAlpha = Math.max(0, s.vida / s.max);
+    ctx.fillStyle = '#cdeeff';
+    ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, 6.2832); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+
+  // ---- multiplicador ----
+  const color = roto ? '#ff5a72' : activo ? '#3fd6b0' : 'rgba(255,255,255,.4)';
+  ctx.save();
+  ctx.shadowColor = color; ctx.shadowBlur = roto ? 30 : activo ? 24 : 8;
+  texto(G.mult.toFixed(2) + 'x', ANCHO / 2, ALTO * 0.30, color, 74, 'center', 900,
+        '"Courier New", monospace');
+  ctx.restore();
+
+  if (roto){
+    texto('💥 ¡SE ROMPIÓ EL SEDAL!', ANCHO / 2, ALTO * 0.30 + 56, '#ff8fa5', 19, 'center', 900);
+  } else if (G.fase === 'espera'){
+    texto('siguiente lance en ' + Math.max(0, G.crono).toFixed(1) + ' s',
+          ANCHO / 2, ALTO * 0.30 + 52, 'rgba(255,255,255,.5)', 15, 'center', 700);
+    const vivas = G.canas.filter(c => c.pendiente).length;
+    texto(vivas ? vivas + ' caña' + (vivas > 1 ? 's' : '') + ' preparada' + (vivas > 1 ? 's' : '')
+                : 'prepara alguna caña', ANCHO / 2, ALTO * 0.30 + 76,
+          vivas ? '#4ee089' : 'rgba(255,255,255,.3)', 13, 'center', 700);
+  }
+
+  // marcas de recogida de cada caña
+  G.canas.forEach((c, i) => {
+    if (!c.cobradaEn) return;
+    texto(NOMBRES[i] + ' ✅ ' + c.cobradaEn.toFixed(2) + 'x', ANCHO - 16, 92 + i * 20,
+          '#4ee089', 12, 'right', 800);
+  });
+
+  if (G.destelloRotura > 0){
+    ctx.fillStyle = 'rgba(255,61,104,' + (G.destelloRotura * 0.3).toFixed(3) + ')';
+    ctx.fillRect(0, 0, ANCHO, ALTO);
+  }
+  if (G.brilloCobro > 0){
+    ctx.fillStyle = 'rgba(78,224,137,' + (G.brilloCobro * 0.16).toFixed(3) + ')';
+    ctx.fillRect(0, 0, ANCHO, ALTO);
+  }
+
+  const pct = G.rondas ? Math.round(G.cobradas / Math.max(1, G.rondas) * 100) : 0;
+  texto('lances ' + G.rondas + '  ·  recogidas ' + G.cobradas, 16, ALTO - 16,
+        'rgba(255,255,255,.32)', 12, 'left', 700);
+  texto('ventaja de la casa 1 %', ANCHO - 16, ALTO - 16, 'rgba(255,255,255,.25)', 12, 'right', 700);
+}
+
+// ---------- Entrada ----------
+$('canas').addEventListener('click', ev => {
+  const b = ev.target.closest('button');
+  if (!b) return;
+  Sonido.activar();
+  if (b.dataset.accion !== undefined){
+    const i = +b.dataset.accion;
+    const c = G.canas[i];
+    if (c.viva) recoger(i, false);
+    else if (c.pendiente) c.pendiente = false;
+    else {
+      if (c.monto <= 0){ Arcade.aviso(avisos, 'Pon una apuesta en esa caña', false, 1600); return; }
+      if (c.monto > G.saldo){ Arcade.aviso(avisos, 'No tienes fichas suficientes', false, 1700); return; }
+      c.pendiente = true;
+    }
+    pintarCanas();
+  } else if (b.dataset.mitad !== undefined){
+    const i = +b.dataset.mitad;
+    G.canas[i].monto = Math.max(0, Math.floor(G.canas[i].monto / 2));
+    pintarCanas();
+  } else if (b.dataset.doble !== undefined){
+    const i = +b.dataset.doble;
+    G.canas[i].monto = Math.min(G.saldo, Math.max(10, G.canas[i].monto * 2));
+    pintarCanas();
+  }
+});
+$('canas').addEventListener('input', ev => {
+  const t = ev.target;
+  if (t.dataset.monto !== undefined)
+    G.canas[+t.dataset.monto].monto = Math.max(0, Math.floor(parseFloat(t.value) || 0));
+  else if (t.dataset.objetivo !== undefined)
+    G.canas[+t.dataset.objetivo].objetivo = Math.max(1.01, parseFloat(t.value) || 1.01);
+  else if (t.dataset.auto !== undefined)
+    G.canas[+t.dataset.auto].auto = t.checked;
+});
+addEventListener('keydown', ev => {
+  if (ev.code === 'Space'){
+    ev.preventDefault();
+    const i = G.canas.findIndex(c => c.viva);
+    if (i >= 0) recoger(i, false);
+    else { const j = G.canas.findIndex(c => c.monto > 0); if (j >= 0){ G.canas[j].pendiente = true; pintarCanas(); } }
+  }
+});
+$('btnEntrar').onclick = () => { Sonido.activar(); $('modalInicio').classList.remove('visible'); };
+Arcade.conectarSonido($('btnSonido'));
+if (typeof AlSalir !== 'undefined') AlSalir.registrar(() => Sonido.pararMotor());
+
+cargarPartida();
+pintarCanas();
+pintarHistorial();
+refrescar();
+Arcade.bucle(dt => dibujar(dt));
+</script>
+</body>
+</html>

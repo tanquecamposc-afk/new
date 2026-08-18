@@ -42,7 +42,12 @@ const JUEGOS = [
   { id:'ruleta',     archivo:'juegos/ruleta.html' },
   { id:'poker',      archivo:'juegos/poker-texas.html' },
   { id:'bacara',     archivo:'juegos/bacara.html' },
-  { id:'dados',      archivo:'juegos/dados-craps.html' }
+  { id:'dados',      archivo:'juegos/dados-craps.html' },
+  { id:'chicken',    archivo:'juegos/chicken.html' },
+  { id:'spire',      archivo:'juegos/spire.html' },
+  { id:'limbo',      archivo:'juegos/limbo.html' },
+  { id:'bigbass',    archivo:'juegos/big-bass-crash.html' },
+  { id:'plinko',     archivo:'juegos/plinko.html' }
 ];
 
 const leer = f => fs.readFileSync(path.join(RAIZ, f), 'utf8');

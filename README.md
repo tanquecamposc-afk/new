@@ -1,6 +1,6 @@
 # 🕹 ARCADE NEXO
 
-Veinte juegos hechos a mano en **HTML5 + Canvas + JavaScript puro**. Sin dependencias, sin librerías, sin assets externos y sin conexión a internet: todos los gráficos se dibujan por código y todo el sonido se genera en tiempo real con WebAudio.
+Veinticinco juegos hechos a mano en **HTML5 + Canvas + JavaScript puro**. Sin dependencias, sin librerías, sin assets externos y sin conexión a internet: todos los gráficos se dibujan por código y todo el sonido se genera en tiempo real con WebAudio.
 
 ## ▶ Cómo jugar
 
@@ -10,7 +10,7 @@ Cada juego tiene su botón **🕹 Arcade** arriba a la izquierda para volver a l
 
 ### 📦 Versión de un solo archivo
 
-`arcade.html` es el arcade **entero** (portada y los veinte juegos) empaquetado en un único archivo, sin CSS ni JS externos. Sirve para cuando solo puedes usar una página suelta: mandarlo por correo, subirlo a cualquier sitio o abrirlo desde una memoria USB.
+`arcade.html` es el arcade **entero** (portada y los veinticinco juegos) empaquetado en un único archivo, sin CSS ni JS externos. Sirve para cuando solo puedes usar una página suelta: mandarlo por correo, subirlo a cualquier sitio o abrirlo desde una memoria USB.
 
 Se genera a partir de los archivos de `juegos/`, que siguen siendo la fuente de verdad:
 
@@ -44,6 +44,11 @@ Cada juego queda aislado en su propia pantalla: su CSS se prefija con el selecto
 | ♠ [Texas Hold'em](juegos/poker-texas.html) | Casino | Póker contra tres rivales con evaluador de siete cartas |
 | 🀄 [Bacarrá](juegos/bacara.html) | Casino | Punto y Banca con la tabla oficial de tercera carta |
 | 🎲 [Dados](juegos/dados-craps.html) | Casino | Craps con línea de pase, odds sin ventaja de casa y campo |
+| 🐔 [Chicken+](juegos/chicken.html) | Riesgo | Cruza la carretera paso a paso y retírate antes del coche |
+| 🗼 [Spire+](juegos/spire.html) | Riesgo | Nueve pisos de losetas: acierta la segura y sube el multiplicador |
+| 🛗 [Limbo+](juegos/limbo.html) | Riesgo | Fija un objetivo y mira si el ascensor lo alcanza |
+| 🎣 [Big Bass Crash](juegos/big-bass-crash.html) | Riesgo | Crash de pesca con tres cañas independientes |
+| 🔻 [Plinko](juegos/plinko.html) | Riesgo | Bolas por un bosque de clavos, tres riesgos y hasta 16 filas |
 
 ---
 
@@ -111,7 +116,7 @@ Juego de tipo *crash*, también con **fichas ficticias**.
 
 - El avión despega y el multiplicador sube sin parar; en cualquier momento se va volando.
 - Puedes **retirarte** cuando quieras: el cobro es inmediato al multiplicador que se vea en pantalla.
-- El punto de caída sale de la distribución habitual de estos juegos, `P(caída > x) = 0,99 / x`: la mitad de las rondas se quedan por debajo de 2x, una de cada diez pasa de 10x y un 1 % se estrella nada más despegar.
+- El punto de caída sale de la distribución habitual de estos juegos, `P(caída > x) = 0,99 / x`, con un **1 % de ventaja de la casa**: la mitad de las rondas se quedan por debajo de 2x, una de cada diez pasa de 10x y un 1 % se estrella nada más despegar.
 - **Apuesta automática** para repetir la jugada cada ronda y **retiro automático** para cobrar solo al llegar a tu multiplicador.
 - La franja de arriba guarda el historial de las últimas rondas.
 
@@ -285,6 +290,53 @@ Todos con **fichas ficticias**: no hay dinero real ni forma de depositar o retir
 - **Campo** (el 2 paga 2:1 y el 12, 3:1) y **colocadas de 6 y 8** a 7:6.
 - Comprobado con 300.000 series: la línea de pase gana el 49,15 % (teórico 49,29 %) y el campo devuelve −2,79 % (teórico −2,78 %).
 
+## 🎯 Los cinco de riesgo
+
+Juegos de multiplicador, todos con **fichas ficticias** y todos con el **1 % de ventaja de la casa** del arcade. Son originales míos: la mecánica es la del género, pero el código, el arte y los nombres son propios.
+
+### 🐔 Chicken+
+
+Cruzas una carretera de 24 carriles. Cada paso multiplica; en cada uno puede pasar un coche.
+
+- Cuatro dificultades, de **1 muerte de cada 25 pasos** (Fácil) a **10 de cada 25** (Locura).
+- El multiplicador sale de la probabilidad real: <code>0,99 / p^pasos</code>. Comprobado: cobrar en el paso 1, 3, 8, 16 o 24 devuelve **exactamente 0,9900** en las cuatro dificultades.
+- En Locura el paso 24 paga **208.932x**… con una probabilidad de 1 entre 211.000.
+- Escena nocturna con skyline en dos capas de paralaje, coches con haz de faros, plumas al vuelo y la gallina animada por código.
+
+### 🗼 Spire+
+
+Torre de **9 pisos**. Cada piso tiene varias losetas y solo algunas aguantan.
+
+- Cinco dificultades, de **3 seguras de 4** a **1 segura de 4**.
+- <code>0,99 / (seguras/total)^pisos</code>. Verificado a **0,9900** exacto en los pisos 1, 3, 6 y 9 de las cinco dificultades.
+- La cima paga de **13,2x** en Fácil a **259.522x** en Pesadilla.
+- La torre entera se sortea **antes** de que toques nada, y al caer se destapa completa.
+
+### 🛗 Limbo+
+
+El más directo: eliges un objetivo y el ascensor sube hasta un número al azar.
+
+- <code>P(resultado ≥ x) = 0,99 / x</code>. Medido sobre 400.000 tiradas: a 2x sale el **49,53 %** (teórico 49,50), a 10x el **9,88 %** (teórico 9,90) y a 100x el **1,000 %** (teórico 0,990).
+- El panel enseña la probabilidad exacta antes de jugar, con cinco decimales cuando hace falta.
+- **Modo automático** que repite la jugada hasta que lo pares.
+
+### 🎣 Big Bass Crash
+
+Crash con tema de pesca y una diferencia real frente al Aviator: **tres cañas independientes**.
+
+- Cada caña tiene su apuesta y su botón de recoger, y puede llevar **recogida automática** a un multiplicador propio.
+- Escena submarina con rayos de luz, burbujas, vegetación que se mece, barca en la superficie y el pez dibujado por código.
+- Distribución de siempre. Medido sobre 300.000 rondas: **50,4 %** por debajo de 2x, **9,99 %** por encima de 10x, y retornos de −0,81 %, −0,98 % y −0,01 % apuntando a 2x, 1,5x y 10x.
+
+### 🔻 Plinko
+
+Bolas que caen por un bosque de clavos y acaban en una casilla siguiendo la **campana de Galton**.
+
+- **8, 12 o 16 filas** y **tres riesgos**, nueve tablas en total.
+- Las tablas se calculan solas: se parte de un perfil de forma, se escala para que <code>Σ prob·pago = 0,99</code> y se corrige el residuo del redondeo en el par simétrico de mayor probabilidad. Ninguna casilla baja de **0,2x**, y el suelo se compensa quitándoselo a las casillas de arriba.
+- Resultado: las nueve tablas quedan entre el **98,94 %** y el **99,09 %** de retorno, todas simétricas. Cambiar el riesgo cambia la varianza (de 4,4x a 260x de máximo), nunca la ventaja de la casa.
+- Puedes soltar **diez bolas seguidas**, cada una con su estela.
+
 ## 💾 Récords
 
 Cada juego guarda su récord en el `localStorage` de tu navegador, así que son tuyos y no salen de tu equipo. Desde la portada puedes borrarlos todos con **🗑 Borrar todos mis récords**.
@@ -318,11 +370,16 @@ juegos/
   poker-texas.html
   bacara.html
   dados-craps.html
+  chicken.html
+  spire.html
+  limbo.html
+  big-bass-crash.html
+  plinko.html
 ```
 
 ## 🎨 Estética
 
-Toda la interfaz comparte una identidad **neón cyberpunk**: fondos muy profundos con dos halos de color, acentos en cian, rosa, verde y amarillo, y brillos en los bordes al pasar por encima. Los tokens de color viven en `juegos/arcade.css`, así que cambiar la paleta ahí retoca los veinte juegos de golpe. La portada lleva cabecera fija con la cartera de **NEXO-COINS** (las fichas ficticias que comparten Minas y Aviator), que se actualiza al volver de cualquier partida.
+Toda la interfaz comparte una identidad **neón cyberpunk**: fondos muy profundos con dos halos de color, acentos en cian, rosa, verde y amarillo, y brillos en los bordes al pasar por encima. Los tokens de color viven en `juegos/arcade.css`, así que cambiar la paleta ahí retoca los veinticinco juegos de golpe. La portada lleva cabecera fija con la cartera de **NEXO-COINS** (las fichas ficticias que comparten Minas y Aviator), que se actualiza al volver de cualquier partida.
 
 Una partida nueva arranca con **5.000 NEXO-COINS**. El saldo inicial es la constante `Arcade.fichas.INICIAL` en `juegos/arcade.js`; con un **doble clic en la cartera** de la portada vuelve a ese valor.
 

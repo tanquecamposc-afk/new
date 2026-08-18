@@ -1629,6 +1629,224 @@ body{display:block; padding:0; margin:0;}
 #pantalla-dados #mensaje b.pierde{color:var(--rojo);}
 
 
+
+/* --- chicken --- */
+#pantalla-chicken /* Los modales cubren el tablero, #pantalla-chicken no la barra: desde el menú siempre se puede volver */
+  #tablero{position:relative; display:flex; flex-direction:column; gap:10px;}
+#pantalla-chicken #juego{width:min(1020px,100vw);}
+#pantalla-chicken .barra .titulo{color:#ffb43d;}
+#pantalla-chicken #carretera{
+    position:relative; border-radius:16px; overflow:hidden;
+    border:2px solid rgba(255,180,61,.28);
+    box-shadow:0 15px 45px rgba(0,0,0,.9);
+  }
+#pantalla-chicken #lienzo{display:block; width:100%; height:auto;}
+#pantalla-chicken #panel{display:flex; gap:10px; flex-wrap:wrap; align-items:stretch;}
+#pantalla-chicken .campo{
+    display:flex; flex-direction:column; gap:5px;
+    background:rgba(0,0,0,.35); border:1px solid var(--borde);
+    border-radius:11px; padding:8px 12px; min-width:130px;
+  }
+#pantalla-chicken .campo label{font-size:10px; color:var(--tenue); text-transform:uppercase; letter-spacing:.8px;}
+#pantalla-chicken .campo input, #pantalla-chicken .campo select{
+    background:transparent; color:var(--oro); border:none; outline:none;
+    font-family:var(--fuente-arcade); font-weight:800; font-size:17px; width:100%;
+  }
+#pantalla-chicken .campo select option{background:#0d1322; color:var(--texto);}
+#pantalla-chicken #botones{display:flex; gap:9px; flex:1; min-width:280px;}
+#pantalla-chicken #botones button{
+    flex:1; border-radius:12px; font-weight:900; font-size:13px;
+    letter-spacing:1.1px; text-transform:uppercase; padding:12px;
+  }
+#pantalla-chicken #btnAvanzar{background:linear-gradient(135deg,#ffb43d,#c47a08); border-color:#ffd27a; color:#1a1204;}
+#pantalla-chicken #btnCobrar{background:linear-gradient(135deg,var(--verde),#00a844); border-color:#4ee089; color:#04120a;}
+#pantalla-chicken #tablaPasos{
+    display:flex; gap:5px; overflow-x:auto; padding:7px 9px; scrollbar-width:thin;
+    background:rgba(0,0,0,.4); border:1px solid var(--borde); border-radius:10px;
+  }
+#pantalla-chicken #tablaPasos span{
+    flex:none; padding:4px 10px; border-radius:8px;
+    font-family:var(--fuente-arcade); font-weight:800; font-size:12px;
+    background:rgba(255,255,255,.05); color:var(--tenue); font-variant-numeric:tabular-nums;
+  }
+#pantalla-chicken #tablaPasos span.hecho{background:rgba(0,255,102,.16); color:#4ee089;}
+#pantalla-chicken #tablaPasos span.actual{background:rgba(255,180,61,.22); color:#ffd27a; outline:1px solid #ffb43d;}
+
+
+
+/* --- spire --- */
+#pantalla-spire /* Los modales cubren el tablero, #pantalla-spire no la barra: desde el menú siempre se puede volver */
+  #tablero{position:relative; display:flex; flex-direction:column; gap:10px;}
+#pantalla-spire #juego{width:min(900px,100vw);}
+#pantalla-spire .barra .titulo{color:var(--azul);}
+#pantalla-spire #torre{
+    position:relative; border-radius:16px; overflow:hidden;
+    border:2px solid rgba(0,240,255,.28);
+    box-shadow:0 15px 45px rgba(0,0,0,.9), inset 0 0 90px rgba(0,0,0,.6);
+  }
+#pantalla-spire #lienzo{display:block; width:100%; height:auto; cursor:pointer;}
+#pantalla-spire #panel{display:flex; gap:10px; flex-wrap:wrap; align-items:stretch;}
+#pantalla-spire .campo{
+    display:flex; flex-direction:column; gap:5px;
+    background:rgba(0,0,0,.35); border:1px solid var(--borde);
+    border-radius:11px; padding:8px 12px; min-width:140px;
+  }
+#pantalla-spire .campo label{font-size:10px; color:var(--tenue); text-transform:uppercase; letter-spacing:.8px;}
+#pantalla-spire .campo input, #pantalla-spire .campo select{
+    background:transparent; color:var(--oro); border:none; outline:none;
+    font-family:var(--fuente-arcade); font-weight:800; font-size:17px; width:100%;
+  }
+#pantalla-spire .campo select option{background:#0d1322; color:var(--texto);}
+#pantalla-spire #botones{display:flex; gap:9px; flex:1; min-width:260px;}
+#pantalla-spire #botones button{
+    flex:1; border-radius:12px; font-weight:900; font-size:13px;
+    letter-spacing:1.1px; text-transform:uppercase; padding:12px;
+  }
+#pantalla-spire #btnCobrar{background:linear-gradient(135deg,var(--verde),#00a844); border-color:#4ee089; color:#04120a;}
+
+
+
+/* --- limbo --- */
+#pantalla-limbo /* Los modales cubren el tablero, #pantalla-limbo no la barra: desde el menú siempre se puede volver */
+  #tablero{position:relative; display:flex; flex-direction:column; gap:10px;}
+#pantalla-limbo #juego{width:min(980px,100vw);}
+#pantalla-limbo .barra .titulo{color:var(--morado);}
+#pantalla-limbo #pozo{
+    position:relative; border-radius:16px; overflow:hidden;
+    border:2px solid rgba(168,85,247,.3);
+    box-shadow:0 15px 45px rgba(0,0,0,.9), inset 0 0 80px rgba(0,0,0,.7);
+  }
+#pantalla-limbo #lienzo{display:block; width:100%; height:auto;}
+#pantalla-limbo #panel{display:grid; grid-template-columns:1fr 1fr auto; gap:10px; align-items:end;}
+@media (max-width:700px){#pantalla-limbo #panel{grid-template-columns:1fr 1fr;}
+ }
+#pantalla-limbo .campo{
+    display:flex; flex-direction:column; gap:5px;
+    background:rgba(0,0,0,.35); border:1px solid var(--borde);
+    border-radius:11px; padding:8px 12px;
+  }
+#pantalla-limbo .campo label{font-size:10px; color:var(--tenue); text-transform:uppercase; letter-spacing:.8px;}
+#pantalla-limbo .campo input{
+    background:transparent; color:var(--oro); border:none; outline:none;
+    font-family:var(--fuente-arcade); font-weight:800; font-size:19px; width:100%;
+  }
+#pantalla-limbo .campo .pista{font-size:11px; color:var(--tenue); font-variant-numeric:tabular-nums;}
+#pantalla-limbo #btnJugar{
+    padding:16px 26px; border-radius:12px; font-weight:900; font-size:14px;
+    letter-spacing:1.4px; text-transform:uppercase; min-width:170px;
+  }
+#pantalla-limbo #rapidas{display:flex; gap:6px; flex-wrap:wrap;}
+#pantalla-limbo #rapidas button{padding:6px 12px; font-size:12px; font-weight:800;}
+#pantalla-limbo #historial{
+    display:flex; gap:5px; overflow-x:auto; padding:7px 9px; scrollbar-width:thin;
+    background:rgba(0,0,0,.4); border:1px solid var(--borde); border-radius:10px; min-height:36px;
+  }
+#pantalla-limbo #historial span{
+    flex:none; padding:3px 9px; border-radius:999px;
+    font-family:var(--fuente-arcade); font-weight:800; font-size:12px;
+    background:rgba(255,255,255,.06); font-variant-numeric:tabular-nums;
+  }
+#pantalla-limbo #historial span.gana{color:#4ee089; background:rgba(0,255,102,.14);}
+#pantalla-limbo #historial span.pierde{color:#8b9bb4;}
+
+
+
+/* --- bigbass --- */
+#pantalla-bigbass /* Los modales cubren el tablero, #pantalla-bigbass no la barra: desde el menú siempre se puede volver */
+  #tablero{position:relative; display:flex; flex-direction:column; gap:10px;}
+#pantalla-bigbass #juego{width:min(1020px,100vw);}
+#pantalla-bigbass .barra .titulo{color:#3fd6b0;}
+#pantalla-bigbass #lago{
+    position:relative; border-radius:16px; overflow:hidden;
+    border:2px solid rgba(63,214,176,.28);
+    box-shadow:0 15px 45px rgba(0,0,0,.9);
+  }
+#pantalla-bigbass #lienzo{display:block; width:100%; height:auto;}
+#pantalla-bigbass #historial{
+    display:flex; gap:5px; overflow-x:auto; padding:7px 9px; scrollbar-width:thin;
+    background:rgba(0,0,0,.4); border:1px solid var(--borde); border-radius:10px; min-height:36px;
+  }
+#pantalla-bigbass #historial span{
+    flex:none; padding:3px 10px; border-radius:999px;
+    font-family:var(--fuente-arcade); font-weight:800; font-size:12px;
+    background:rgba(255,255,255,.06); font-variant-numeric:tabular-nums;
+  }
+#pantalla-bigbass #historial span.bajo{color:#7aa2ff;}
+#pantalla-bigbass #historial span.medio{color:#3fd6b0;}
+#pantalla-bigbass #historial span.alto{color:#ffb43d;}
+#pantalla-bigbass #canas{display:grid; grid-template-columns:repeat(3,1fr); gap:10px;}
+@media (max-width:760px){#pantalla-bigbass #canas{grid-template-columns:1fr;}
+ }
+#pantalla-bigbass .cana{
+    background:linear-gradient(180deg,#0d2b2a,#08201f);
+    border:1px solid rgba(63,214,176,.28); border-radius:13px; padding:10px;
+    display:flex; flex-direction:column; gap:8px;
+  }
+#pantalla-bigbass .cana .cabecera{
+    display:flex; justify-content:space-between; align-items:center;
+    font-family:var(--fuente-arcade); font-weight:800; font-size:12px;
+    color:#3fd6b0; letter-spacing:1px;
+  }
+#pantalla-bigbass .cana .cabecera .estado{font-size:11px; color:var(--tenue); letter-spacing:.4px;}
+#pantalla-bigbass .cana .fila{display:flex; gap:7px; align-items:center;}
+#pantalla-bigbass .cana input{
+    flex:1; min-width:0; background:rgba(0,0,0,.5); border:1px solid var(--borde);
+    border-radius:8px; color:var(--oro); padding:7px 9px;
+    font-family:var(--fuente-arcade); font-weight:800; font-size:15px;
+    font-variant-numeric:tabular-nums;
+  }
+#pantalla-bigbass .cana .auto{font-size:11px; color:var(--tenue); white-space:nowrap;}
+#pantalla-bigbass .cana button.accion{
+    width:100%; padding:12px; border-radius:11px;
+    font-weight:900; font-size:12.5px; letter-spacing:1px; text-transform:uppercase;
+  }
+#pantalla-bigbass .cana button.accion.lanzar{background:linear-gradient(180deg,#2fbe62,#1d8a45); border-color:#4ee089; color:#04120a;}
+#pantalla-bigbass .cana button.accion.recoger{background:linear-gradient(180deg,#f5a524,#c47a08); border-color:#ffd27a; color:#1a1204;}
+#pantalla-bigbass .cana button.accion.cancelar{background:linear-gradient(180deg,#a03b3b,#7c2b2b); border-color:#c25555;}
+#pantalla-bigbass .cana.viva{border-color:#ffd27a; box-shadow:0 0 18px rgba(245,165,36,.22);}
+#pantalla-bigbass .cana.cobrada{border-color:#4ee089; box-shadow:0 0 18px rgba(78,224,137,.22);}
+
+
+
+/* --- plinko --- */
+#pantalla-plinko /* Los modales cubren el tablero, #pantalla-plinko no la barra: desde el menú siempre se puede volver */
+  #tablero{position:relative; display:flex; flex-direction:column; gap:10px;}
+#pantalla-plinko #juego{width:min(900px,100vw);}
+#pantalla-plinko .barra .titulo{color:var(--rosa);}
+#pantalla-plinko #caja{
+    position:relative; border-radius:16px; overflow:hidden;
+    border:2px solid rgba(255,0,127,.26);
+    box-shadow:0 15px 45px rgba(0,0,0,.9), inset 0 0 90px rgba(0,0,0,.65);
+  }
+#pantalla-plinko #lienzo{display:block; width:100%; height:auto;}
+#pantalla-plinko #panel{display:flex; gap:10px; flex-wrap:wrap; align-items:stretch;}
+#pantalla-plinko .campo{
+    display:flex; flex-direction:column; gap:5px;
+    background:rgba(0,0,0,.35); border:1px solid var(--borde);
+    border-radius:11px; padding:8px 12px; min-width:130px;
+  }
+#pantalla-plinko .campo label{font-size:10px; color:var(--tenue); text-transform:uppercase; letter-spacing:.8px;}
+#pantalla-plinko .campo input, #pantalla-plinko .campo select{
+    background:transparent; color:var(--oro); border:none; outline:none;
+    font-family:var(--fuente-arcade); font-weight:800; font-size:17px; width:100%;
+  }
+#pantalla-plinko .campo select option{background:#0d1322; color:var(--texto);}
+#pantalla-plinko #botones{display:flex; gap:9px; flex:1; min-width:250px;}
+#pantalla-plinko #botones button{
+    flex:1; border-radius:12px; font-weight:900; font-size:13px;
+    letter-spacing:1.1px; text-transform:uppercase; padding:12px;
+  }
+#pantalla-plinko #historial{
+    display:flex; gap:5px; overflow-x:auto; padding:7px 9px; scrollbar-width:thin;
+    background:rgba(0,0,0,.4); border:1px solid var(--borde); border-radius:10px; min-height:36px;
+  }
+#pantalla-plinko #historial span{
+    flex:none; padding:3px 10px; border-radius:999px;
+    font-family:var(--fuente-arcade); font-weight:800; font-size:12px;
+    font-variant-numeric:tabular-nums;
+  }
+
+
 </style>
 </head>
 <body>
@@ -1650,7 +1868,7 @@ body{display:block; padding:0; margin:0;}
 <div id="contenido">
   <div id="titulo">
     <h2>SELECCIONA TU JUEGO SUPREMO</h2>
-    <p>Veinte motores hechos a mano en HTML5 + Canvas, con renderizado HiDPI y físicas propias.
+    <p>Veinticinco motores hechos a mano en HTML5 + Canvas, con renderizado HiDPI y físicas propias.
        Sin instalar nada, sin anuncios y sin conexión.</p>
   </div>
 
@@ -3016,6 +3234,299 @@ body{display:block; padding:0; margin:0;}
 </div>
 </div>
 
+<div class="pantalla" id="pantalla-chicken">
+<div id="juego">
+  <div class="barra">
+    <a class="boton" href="javascript:void 0" data-volver="1">🕹 Arcade</a>
+    <div class="titulo">🐔 CHICKEN+</div>
+    <div class="sep"></div>
+    <div class="stat">🪙 <span id="saldoTxt" class="oro">5000</span></div>
+    <div class="stat">✖ <span id="multTxt" class="verde">1.00x</span></div>
+    <div class="stat">🏆 <span id="recordTxt" class="tenue">—</span></div>
+    <button id="btnSonido" title="Sonido" aria-label="Sonido">🔊</button>
+  </div>
+
+  <div id="tablero">
+    <div id="carretera">
+      <canvas id="lienzo" width="1000" height="440"></canvas>
+      <div class="avisos" id="avisos"></div>
+    </div>
+
+    <div id="tablaPasos"></div>
+
+    <div id="panel">
+      <div class="campo">
+        <label for="apuesta">Apuesta</label>
+        <input id="apuesta" type="number" min="10" step="10" value="100">
+      </div>
+      <div class="campo">
+        <label for="dificultad">Dificultad</label>
+        <select id="dificultad">
+          <option value="facil">Fácil · 1 de 25</option>
+          <option value="media" selected>Media · 3 de 25</option>
+          <option value="dificil">Difícil · 5 de 25</option>
+          <option value="locura">Locura · 10 de 25</option>
+        </select>
+      </div>
+      <div id="botones">
+        <button class="primario" id="btnEmpezarRonda">🐔 Empezar</button>
+        <button id="btnAvanzar" disabled>👣 Avanzar</button>
+        <button id="btnCobrar" disabled>💰 Cobrar</button>
+      </div>
+    </div>
+
+    <div class="modal visible" id="modalInicio">
+      <div class="tarjetaModal">
+        <h1>🐔 CHICKEN+</h1>
+        <div class="sub">Cruza la carretera y retírate a tiempo. Fichas ficticias.</div>
+        <div class="instrucciones">
+          Cada <b>paso</b> que da la gallina sube el multiplicador. Pero en cada carril hay
+          una probabilidad de que pase un coche… y ahí se acaba la ronda.<br>
+          <b>Cobra cuando quieras:</b> te llevas la apuesta por el multiplicador alcanzado.<br>
+          La <b>dificultad</b> cambia el riesgo por paso y, con él, lo que paga: en Fácil muere
+          1 de cada 25 pasos y en Locura, 10 de cada 25.<br>
+          Los multiplicadores salen de la probabilidad real de sobrevivir, con un
+          <b>1 % de ventaja de la casa</b>: <code>0,99 / p^pasos</code>.<br>
+          Atajos: <b>espacio</b> avanza, <b>C</b> cobra.
+        </div>
+        <div class="filaBotones"><button class="primario" id="btnEntrar">▶ A la carretera</button></div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<div class="pantalla" id="pantalla-spire">
+<div id="juego">
+  <div class="barra">
+    <a class="boton" href="javascript:void 0" data-volver="1">🕹 Arcade</a>
+    <div class="titulo">🗼 SPIRE+</div>
+    <div class="sep"></div>
+    <div class="stat">🪙 <span id="saldoTxt" class="oro">5000</span></div>
+    <div class="stat">✖ <span id="multTxt" class="verde">1.00x</span></div>
+    <div class="stat">🏆 <span id="recordTxt" class="tenue">—</span></div>
+    <button id="btnSonido" title="Sonido" aria-label="Sonido">🔊</button>
+  </div>
+
+  <div id="tablero">
+    <div id="torre">
+      <canvas id="lienzo" width="880" height="560"></canvas>
+      <div class="avisos" id="avisos"></div>
+    </div>
+
+    <div id="panel">
+      <div class="campo">
+        <label for="apuesta">Apuesta</label>
+        <input id="apuesta" type="number" min="10" step="10" value="100">
+      </div>
+      <div class="campo">
+        <label for="dificultad">Dificultad</label>
+        <select id="dificultad">
+          <option value="facil">Fácil · 3 de 4 seguras</option>
+          <option value="media" selected>Media · 2 de 3 seguras</option>
+          <option value="dificil">Difícil · 1 de 2 seguras</option>
+          <option value="experto">Experto · 1 de 3 seguras</option>
+          <option value="pesadilla">Pesadilla · 1 de 4 seguras</option>
+        </select>
+      </div>
+      <div id="botones">
+        <button class="primario" id="btnEmpezarRonda">🗼 Escalar</button>
+        <button id="btnCobrar" disabled>💰 Cobrar</button>
+      </div>
+    </div>
+
+    <div class="modal visible" id="modalInicio">
+      <div class="tarjetaModal">
+        <h1>🗼 SPIRE+</h1>
+        <div class="sub">Sube la torre eligiendo bien. Fichas ficticias.</div>
+        <div class="instrucciones">
+          Cada <b>piso</b> tiene varias losetas y solo algunas aguantan. Haz clic en una:
+          si es segura, subes y el multiplicador crece; si no, la torre se viene abajo.<br>
+          <b>Cobra cuando quieras</b> y te llevas la apuesta por el multiplicador del piso alcanzado.<br>
+          La dificultad cambia cuántas losetas son seguras por piso, y con ella lo que paga cada
+          escalón: <code>0,99 / (seguras/total)^pisos</code>, o sea un <b>1 % de ventaja de la casa</b>.<br>
+          Si llegas <b>arriba del todo</b> (9 pisos), se cobra solo.
+        </div>
+        <div class="filaBotones"><button class="primario" id="btnEntrar">▶ A la torre</button></div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<div class="pantalla" id="pantalla-limbo">
+<div id="juego">
+  <div class="barra">
+    <a class="boton" href="javascript:void 0" data-volver="1">🕹 Arcade</a>
+    <div class="titulo">🛗 LIMBO+</div>
+    <div class="sep"></div>
+    <div class="stat">🪙 <span id="saldoTxt" class="oro">5000</span></div>
+    <div class="stat">🏆 <span id="recordTxt" class="tenue">—</span></div>
+    <button id="btnSonido" title="Sonido" aria-label="Sonido">🔊</button>
+  </div>
+
+  <div id="tablero">
+    <div id="pozo">
+      <canvas id="lienzo" width="960" height="420"></canvas>
+      <div class="avisos" id="avisos"></div>
+    </div>
+
+    <div id="historial"></div>
+
+    <div id="panel">
+      <div class="campo">
+        <label for="apuesta">Apuesta</label>
+        <input id="apuesta" type="number" min="10" step="10" value="100">
+        <div class="pista" id="pistaApuesta">ganarías 200</div>
+      </div>
+      <div class="campo">
+        <label for="objetivo">Multiplicador objetivo</label>
+        <input id="objetivo" type="number" min="1.01" max="1000000" step="0.01" value="2.00">
+        <div class="pista" id="pistaProb">probabilidad 49,50 %</div>
+      </div>
+      <button class="primario" id="btnJugar">🛗 Subir</button>
+    </div>
+
+    <div id="rapidas">
+      <button data-obj="1.5">1,5x</button>
+      <button data-obj="2">2x</button>
+      <button data-obj="5">5x</button>
+      <button data-obj="10">10x</button>
+      <button data-obj="50">50x</button>
+      <button data-obj="1000">1000x</button>
+      <button id="btnAuto">🔁 Auto: apagado</button>
+    </div>
+
+    <div class="modal visible" id="modalInicio">
+      <div class="tarjetaModal">
+        <h1>🛗 LIMBO+</h1>
+        <div class="sub">El juego más directo del casino, con fichas ficticias.</div>
+        <div class="instrucciones">
+          Eliges un <b>multiplicador objetivo</b> y el ascensor sube hasta un número al azar.
+          Si ese número <b>llega o supera</b> tu objetivo, cobras la apuesta multiplicada por él.<br>
+          Cuanto más alto apuntas, menos probable es… y más paga. El panel te enseña siempre
+          la <b>probabilidad exacta</b> antes de jugar.<br>
+          La fórmula es la de estos juegos: <b>P(resultado ≥ x) = 0,99 / x</b>, es decir,
+          un <b>1 % de ventaja de la casa</b> apuntes a donde apuntes.<br>
+          Con <b>🔁 Auto</b> repite la jugada sola hasta que lo pares o te quedes sin fichas.
+        </div>
+        <div class="filaBotones"><button class="primario" id="btnEmpezar">▶ Entrar</button></div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<div class="pantalla" id="pantalla-bigbass">
+<div id="juego">
+  <div class="barra">
+    <a class="boton" href="javascript:void 0" data-volver="1">🕹 Arcade</a>
+    <div class="titulo">🎣 BIG BASS CRASH</div>
+    <div class="sep"></div>
+    <div class="stat">🪙 <span id="saldoTxt" class="oro">5000</span></div>
+    <div class="stat">🏆 <span id="recordTxt" class="tenue">—</span></div>
+    <button id="btnSonido" title="Sonido" aria-label="Sonido">🔊</button>
+  </div>
+
+  <div id="tablero">
+    <div id="lago">
+      <canvas id="lienzo" width="1000" height="470"></canvas>
+      <div class="avisos" id="avisos"></div>
+    </div>
+
+    <div id="historial"></div>
+    <div id="canas"></div>
+
+    <div class="modal visible" id="modalInicio">
+      <div class="tarjetaModal">
+        <h1>🎣 BIG BASS CRASH</h1>
+        <div class="sub">El pez sube y tú decides cuándo recoger. Fichas ficticias.</div>
+        <div class="instrucciones">
+          Cada ronda un <b>pez</b> tira del sedal y el multiplicador sube sin parar…
+          hasta que <b>rompe el hilo</b> y se escapa. Si has recogido antes, cobras;
+          si no, pierdes lo apostado.<br>
+          Tienes <b>tres cañas independientes</b>: puedes apostar distinto en cada una y
+          recoger cada una por separado.<br>
+          Con <b>recogida automática</b> pones un multiplicador y esa caña cobra sola al llegar.<br>
+          El punto de rotura sale de la distribución de siempre, <b>P(rotura &gt; x) = 0,99 / x</b>:
+          la mitad de las rondas no pasan de 2x, una de cada diez pasa de 10x y un 1 % se rompe
+          nada más empezar. Un <b>1 % de ventaja de la casa</b>.
+        </div>
+        <div class="filaBotones"><button class="primario" id="btnEntrar">▶ Al lago</button></div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<div class="pantalla" id="pantalla-plinko">
+<div id="juego">
+  <div class="barra">
+    <a class="boton" href="javascript:void 0" data-volver="1">🕹 Arcade</a>
+    <div class="titulo">🔻 PLINKO</div>
+    <div class="sep"></div>
+    <div class="stat">🪙 <span id="saldoTxt" class="oro">5000</span></div>
+    <div class="stat">🎱 <span id="bolasTxt" class="azul">0</span></div>
+    <div class="stat">🏆 <span id="recordTxt" class="tenue">—</span></div>
+    <button id="btnSonido" title="Sonido" aria-label="Sonido">🔊</button>
+  </div>
+
+  <div id="tablero">
+    <div id="caja">
+      <canvas id="lienzo" width="880" height="620"></canvas>
+      <div class="avisos" id="avisos"></div>
+    </div>
+
+    <div id="historial"></div>
+
+    <div id="panel">
+      <div class="campo">
+        <label for="apuesta">Apuesta por bola</label>
+        <input id="apuesta" type="number" min="10" step="10" value="100">
+      </div>
+      <div class="campo">
+        <label for="riesgo">Riesgo</label>
+        <select id="riesgo">
+          <option value="bajo">Bajo</option>
+          <option value="medio" selected>Medio</option>
+          <option value="alto">Alto</option>
+        </select>
+      </div>
+      <div class="campo">
+        <label for="filas">Filas</label>
+        <select id="filas">
+          <option value="8">8</option>
+          <option value="12">12</option>
+          <option value="16" selected>16</option>
+        </select>
+      </div>
+      <div id="botones">
+        <button class="primario" id="btnSoltar">🔻 Soltar bola</button>
+        <button id="btnLluvia">💧 Soltar 10</button>
+      </div>
+    </div>
+
+    <div class="modal visible" id="modalInicio">
+      <div class="tarjetaModal">
+        <h1>🔻 PLINKO</h1>
+        <div class="sub">Deja caer la bola y mira dónde acaba. Fichas ficticias.</div>
+        <div class="instrucciones">
+          La bola cae rebotando entre clavos. En cada clavo se va a un lado o al otro,
+          así que acaba en una casilla u otra siguiendo la <b>campana de Galton</b>:
+          el centro es lo más probable y paga poco, y los extremos son rarísimos y pagan muchísimo.<br>
+          El <b>riesgo</b> cambia lo plana o lo extrema que es la tabla de pagos, y las <b>filas</b>
+          cuántos rebotes hay: con 16 filas los bordes pagan mucho más porque son mucho menos probables.<br>
+          Todas las tablas están normalizadas al mismo <b>99 % de retorno</b>: cambiar el riesgo cambia
+          la varianza, nunca la ventaja de la casa.<br>
+          Puedes soltar <b>varias bolas a la vez</b>: cada una es independiente.
+        </div>
+        <div class="filaBotones"><button class="primario" id="btnEntrar">▶ A jugar</button></div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
 <script>
 /* ====== Utilidades comunes ====== */
 /* ==========================================================
@@ -3856,6 +4367,41 @@ const JUEGOS = [
     desc:'Craps con línea de pase, no pase, odds sin ventaja de casa, campo y colocadas.',
     record(){ const r = Arcade.record('dados'); return r ? 'Mejor tirada: +' + r.toLocaleString('es-ES') : 'Sin jugar todavía'; },
     portada: portadaDados
+  },
+  {
+    id:'chicken', archivo:'juegos/chicken.html', nuevo:true,
+    nombre:'🐔 Chicken+', genero:'Riesgo',
+    desc:'Cruza la carretera paso a paso: cada carril paga más y cualquiera puede ser el último.',
+    record(){ const r = Arcade.record('chicken'); return r ? 'Mejor cobro: +' + r.toLocaleString('es-ES') : 'Sin jugar todavía'; },
+    portada: portadaChicken
+  },
+  {
+    id:'spire', archivo:'juegos/spire.html', nuevo:true,
+    nombre:'🗼 Spire+', genero:'Riesgo',
+    desc:'Nueve pisos de losetas. Acierta la segura, sube el multiplicador y cobra antes de caer.',
+    record(){ const r = Arcade.record('spire'); return r ? 'Mejor cobro: +' + r.toLocaleString('es-ES') : 'Sin jugar todavía'; },
+    portada: portadaSpire
+  },
+  {
+    id:'limbo', archivo:'juegos/limbo.html', nuevo:true,
+    nombre:'🛗 Limbo+', genero:'Riesgo',
+    desc:'Fija un multiplicador objetivo y mira si el ascensor lo alcanza. Con modo automático.',
+    record(){ const r = Arcade.record('limbo'); return r ? 'Mejor objetivo: ' + (r / 100).toFixed(2) + 'x' : 'Sin jugar todavía'; },
+    portada: portadaLimbo
+  },
+  {
+    id:'bigbass', archivo:'juegos/big-bass-crash.html', nuevo:true,
+    nombre:'🎣 Big Bass Crash', genero:'Riesgo',
+    desc:'El pez tira y el multiplicador sube. Tres cañas independientes y recogida automática.',
+    record(){ const r = Arcade.record('bigbass'); return r ? 'Mejor recogida: +' + r.toLocaleString('es-ES') : 'Sin jugar todavía'; },
+    portada: portadaBigBass
+  },
+  {
+    id:'plinko', archivo:'juegos/plinko.html', nuevo:true,
+    nombre:'🔻 Plinko', genero:'Riesgo',
+    desc:'Suelta bolas por el bosque de clavos. Tres riesgos y hasta 16 filas, siempre al 99 %.',
+    record(){ const r = Arcade.record('plinko'); return r ? 'Mejor bola: +' + r.toLocaleString('es-ES') : 'Sin jugar todavía'; },
+    portada: portadaPlinko
   },
   {
     id:'moto', archivo:'juegos/moto-x3m.html', nuevo:true,
@@ -4774,6 +5320,259 @@ function portadaDados(c){
   c.fillText('pase · no pase · odds · campo', A/2, AL - 16);
 }
 
+
+function portadaChicken(c){
+  const g = c.createLinearGradient(0, 0, 0, AL);
+  g.addColorStop(0, '#121a33'); g.addColorStop(.5, '#1d2647'); g.addColorStop(1, '#2a2f3f');
+  c.fillStyle = g; c.fillRect(0, 0, A, AL);
+  c.fillStyle = 'rgba(255,248,220,.85)';
+  c.beginPath(); c.arc(A - 46, 34, 15, 0, 6.283); c.fill();
+  c.fillStyle = 'rgba(14,18,36,.95)';
+  for (let k = 0; k < 8; k++){
+    const x = k * 46, h = 40 + ((k * 37) % 60);
+    c.fillRect(x, 96 - h, 38, h + 20);
+    c.fillStyle = 'rgba(255,214,120,.25)';
+    for (let f = 0; f < Math.floor(h / 20); f++) c.fillRect(x + 7, 106 - h + f * 20, 7, 8);
+    c.fillStyle = 'rgba(14,18,36,.95)';
+  }
+  c.fillStyle = '#23262f'; c.fillRect(0, 96, A, 50);
+  c.fillStyle = '#1b1e26'; c.fillRect(0, 146, A, AL - 146);
+  c.strokeStyle = 'rgba(255,255,255,.28)'; c.lineWidth = 3;
+  c.beginPath(); c.moveTo(0, 96); c.lineTo(A, 96); c.moveTo(0, 146); c.lineTo(A, 146); c.stroke();
+  c.setLineDash([12, 10]); c.lineWidth = 2.5; c.strokeStyle = 'rgba(255,255,255,.22)';
+  [70, 160, 250].forEach(x => { c.beginPath(); c.moveTo(x, 98); c.lineTo(x, 144); c.stroke(); });
+  c.setLineDash([]);
+  // multiplicadores
+  ['1.24x','1.53x','1.90x'].forEach((m, i) => {
+    c.fillStyle = i === 0 ? 'rgba(0,255,102,.18)' : 'rgba(0,0,0,.4)';
+    c.beginPath(); c.roundRect(24 + i * 90, 60, 56, 22, 7); c.fill();
+    c.strokeStyle = i === 0 ? 'rgba(78,224,137,.8)' : 'rgba(255,255,255,.15)';
+    c.lineWidth = 1.3; c.stroke();
+    c.fillStyle = i === 0 ? '#4ee089' : 'rgba(255,255,255,.55)';
+    c.font = '800 11px "Courier New", monospace'; c.textAlign = 'center';
+    c.fillText(m, 52 + i * 90, 75);
+  });
+  // coche
+  c.save(); c.translate(258, 122);
+  c.fillStyle = '#5cc8ff';
+  c.beginPath(); c.roundRect(-34, -12, 68, 22, 6); c.fill();
+  c.beginPath(); c.roundRect(-20, -25, 38, 16, 5); c.fill();
+  c.fillStyle = 'rgba(180,225,255,.55)';
+  c.beginPath(); c.roundRect(-16, -22, 15, 11, 3); c.fill();
+  c.fillStyle = '#12151c';
+  [-20, 20].forEach(dx => { c.beginPath(); c.arc(dx, 10, 7, 0, 6.283); c.fill(); });
+  c.fillStyle = 'rgba(255,240,180,.9)';
+  c.beginPath(); c.roundRect(-37, -6, 5, 6, 2); c.fill();
+  c.restore();
+  // gallina
+  c.save(); c.translate(78, 124); c.scale(1.05, 1.05);
+  c.fillStyle = 'rgba(0,0,0,.45)';
+  c.beginPath(); c.ellipse(2, 24, 17, 5, 0, 0, 6.283); c.fill();
+  c.strokeStyle = '#f0a020'; c.lineWidth = 3; c.lineCap = 'round';
+  [[-5, 0], [6, 0]].forEach(([dx]) => {
+    c.beginPath(); c.moveTo(dx, 13); c.lineTo(dx + 3, 23); c.stroke();
+  });
+  c.lineCap = 'butt';
+  c.fillStyle = '#fff';
+  c.beginPath(); c.ellipse(0, 2, 17, 14, 0, 0, 6.283); c.fill();
+  c.fillStyle = '#cfd6e2';
+  c.beginPath(); c.ellipse(2, 3, 10, 7, 0, 0, 6.283); c.fill();
+  c.fillStyle = '#fff';
+  c.beginPath(); c.arc(10, -13, 9, 0, 6.283); c.fill();
+  c.fillStyle = '#e2384f';
+  [0, 1, 2].forEach(k => { c.beginPath(); c.arc(6 + k * 4, -21 + (k === 1 ? -2 : 0), 3.2, 0, 6.283); c.fill(); });
+  c.fillStyle = '#f0a020';
+  c.beginPath(); c.moveTo(18, -13); c.lineTo(26, -10); c.lineTo(18, -7); c.closePath(); c.fill();
+  c.fillStyle = '#15181f';
+  c.beginPath(); c.arc(13, -14.5, 2.2, 0, 6.283); c.fill();
+  c.restore();
+  c.fillStyle = '#ffd27a'; c.font = '900 15px "Courier New", monospace';
+  c.textAlign = 'center'; c.fillText('¿COBRAS O SIGUES?', A / 2, AL - 14);
+}
+
+function portadaSpire(c){
+  const g = c.createLinearGradient(0, 0, 0, AL);
+  g.addColorStop(0, '#04122b'); g.addColorStop(.55, '#08203f'); g.addColorStop(1, '#02060f');
+  c.fillStyle = g; c.fillRect(0, 0, A, AL);
+  for (let k = 0; k < 50; k++){
+    c.fillStyle = 'rgba(200,230,255,' + (0.12 + (k % 5) * 0.1).toFixed(2) + ')';
+    c.beginPath(); c.arc((k * 137) % A, (k * 89) % AL, (k % 3) * 0.5 + 0.6, 0, 6.283); c.fill();
+  }
+  const mx = 96, util = A - mx * 2;
+  c.fillStyle = 'rgba(0,240,255,.05)'; c.fillRect(mx - 14, 0, util + 28, AL);
+  c.strokeStyle = 'rgba(0,240,255,.2)'; c.lineWidth = 2;
+  c.beginPath();
+  c.moveTo(mx - 14, 0); c.lineTo(mx - 14, AL);
+  c.moveTo(mx + util + 14, 0); c.lineTo(mx + util + 14, AL);
+  c.stroke();
+  const estados = [
+    ['💎', null, null], [null, '💎', null], [null, null, '?'], [null, null, null]
+  ];
+  estados.forEach((fila, f) => {
+    const y = AL - 30 - f * 38;
+    for (let i = 0; i < 3; i++){
+      const an = util / 3 - 8;
+      const x = mx + (util / 3) * i + 4;
+      const activa = f === 2;
+      const hecha = fila[i] === '💎';
+      c.fillStyle = hecha ? 'rgba(0,255,102,.26)' : activa ? 'rgba(0,240,255,.14)' : 'rgba(255,255,255,.05)';
+      c.beginPath(); c.roundRect(x, y - 14, an, 28, 8); c.fill();
+      c.strokeStyle = hecha ? '#4ee089' : activa ? 'rgba(0,240,255,.75)' : 'rgba(255,255,255,.12)';
+      c.lineWidth = activa || hecha ? 2 : 1.3; c.stroke();
+      if (hecha){ c.font = '15px serif'; c.textAlign = 'center'; c.fillText('💎', x + an / 2, y + 5); }
+      else if (activa && i === 2){
+        c.fillStyle = 'rgba(0,240,255,.85)'; c.font = '900 15px "Courier New", monospace';
+        c.textAlign = 'center'; c.fillText('?', x + an / 2, y + 5);
+      }
+    }
+    c.fillStyle = f < 2 ? '#4ee089' : 'rgba(255,255,255,.32)';
+    c.font = '800 11px "Courier New", monospace'; c.textAlign = 'right';
+    c.fillText([ '1.49x','2.23x','3.34x','5.01x' ][f], mx - 22, y + 4);
+  });
+  c.fillStyle = '#f3e600'; c.font = '900 14px "Courier New", monospace';
+  c.textAlign = 'center'; c.fillText('🏔 CIMA · 38.05x', A / 2, 24);
+}
+
+function portadaLimbo(c){
+  const g = c.createLinearGradient(0, 0, 0, AL);
+  g.addColorStop(0, '#150a2e'); g.addColorStop(.5, '#0b0620'); g.addColorStop(1, '#05030f');
+  c.fillStyle = g; c.fillRect(0, 0, A, AL);
+  c.strokeStyle = 'rgba(168,85,247,.1)'; c.lineWidth = 1;
+  for (let y = 0; y < AL; y += 26){ c.beginPath(); c.moveTo(0, y); c.lineTo(A, y); c.stroke(); }
+  for (let x = 0; x < A; x += 26){ c.beginPath(); c.moveTo(x, 0); c.lineTo(x, AL); c.stroke(); }
+  [A / 2 - 92, A / 2 + 92].forEach(x => {
+    const gr = c.createLinearGradient(x - 5, 0, x + 5, 0);
+    gr.addColorStop(0, 'rgba(168,85,247,0)');
+    gr.addColorStop(.5, 'rgba(168,85,247,.55)');
+    gr.addColorStop(1, 'rgba(168,85,247,0)');
+    c.fillStyle = gr; c.fillRect(x - 5, 0, 10, AL);
+  });
+  c.setLineDash([8, 6]); c.strokeStyle = 'rgba(243,230,0,.65)'; c.lineWidth = 2;
+  c.beginPath(); c.moveTo(20, 44); c.lineTo(A - 20, 44); c.stroke();
+  c.setLineDash([]);
+  c.fillStyle = '#f3e600'; c.font = '800 11px "Segoe UI", system-ui, sans-serif';
+  c.textAlign = 'left'; c.fillText('OBJETIVO 10.00x', 24, 34);
+  c.save();
+  c.shadowColor = '#4ee089'; c.shadowBlur = 22;
+  c.fillStyle = '#4ee089'; c.font = '900 46px "Courier New", monospace';
+  c.textAlign = 'center'; c.textBaseline = 'middle';
+  c.fillText('27.44x', A / 2, AL / 2 + 4);
+  c.restore();
+  c.fillStyle = '#4ee089'; c.font = '800 12px "Segoe UI", system-ui, sans-serif';
+  c.fillText('✅ POR ENCIMA DEL OBJETIVO', A / 2, AL / 2 + 40);
+  const xb = 50, ab = A - 100;
+  c.fillStyle = 'rgba(0,0,0,.5)';
+  c.beginPath(); c.roundRect(xb, AL - 30, ab, 9, 5); c.fill();
+  const gb = c.createLinearGradient(xb, 0, xb + ab, 0);
+  gb.addColorStop(0, '#a855f7'); gb.addColorStop(1, '#f3e600');
+  c.fillStyle = gb;
+  c.beginPath(); c.roundRect(xb, AL - 30, ab * .72, 9, 5); c.fill();
+}
+
+function portadaBigBass(c){
+  const cielo = c.createLinearGradient(0, 0, 0, 44);
+  cielo.addColorStop(0, '#0b2a3f'); cielo.addColorStop(1, '#1d5570');
+  c.fillStyle = cielo; c.fillRect(0, 0, A, 44);
+  const agua = c.createLinearGradient(0, 44, 0, AL);
+  agua.addColorStop(0, '#126d84'); agua.addColorStop(.45, '#0a4256'); agua.addColorStop(1, '#04202e');
+  c.fillStyle = agua; c.fillRect(0, 44, A, AL - 44);
+  c.save(); c.globalCompositeOperation = 'lighter';
+  for (let k = 0; k < 4; k++){
+    const x = k * 92 + 26;
+    const gr = c.createLinearGradient(x, 44, x + 40, AL);
+    gr.addColorStop(0, 'rgba(150,235,255,.12)'); gr.addColorStop(1, 'rgba(150,235,255,0)');
+    c.fillStyle = gr;
+    c.beginPath(); c.moveTo(x - 14, 44); c.lineTo(x + 14, 44);
+    c.lineTo(x + 60, AL); c.lineTo(x + 16, AL); c.closePath(); c.fill();
+  }
+  c.restore();
+  c.beginPath(); c.moveTo(0, 44);
+  for (let x = 0; x <= A; x += 6) c.lineTo(x, 44 + Math.sin(x * .05) * 2.5);
+  c.strokeStyle = 'rgba(190,245,255,.5)'; c.lineWidth = 2; c.stroke();
+  // barca
+  c.fillStyle = '#7a4a22';
+  c.beginPath(); c.moveTo(14, 40); c.lineTo(74, 40); c.lineTo(64, 54); c.lineTo(24, 54);
+  c.closePath(); c.fill();
+  c.fillStyle = '#274b6b';
+  c.beginPath(); c.roundRect(34, 18, 12, 21, 4); c.fill();
+  c.fillStyle = '#f0c9a0';
+  c.beginPath(); c.arc(40, 13, 6, 0, 6.283); c.fill();
+  c.strokeStyle = '#e8d3a8'; c.lineWidth = 2.4;
+  c.beginPath(); c.moveTo(46, 22); c.lineTo(86, -2); c.stroke();
+  c.strokeStyle = 'rgba(230,250,255,.75)'; c.lineWidth = 1.6;
+  c.beginPath(); c.moveTo(86, -2); c.quadraticCurveTo(150, 60, 214, 92); c.stroke();
+  // pez
+  c.save(); c.translate(232, 96); c.rotate(-0.3); c.scale(.9, .9);
+  c.fillStyle = '#1f7d63';
+  c.beginPath(); c.moveTo(-24, 0); c.lineTo(-42, -12); c.lineTo(-36, 0); c.lineTo(-42, 12);
+  c.closePath(); c.fill();
+  c.fillStyle = '#256e5c';
+  c.beginPath(); c.ellipse(-4, -14, 12, 5, -0.5, 0, 6.283); c.fill();
+  const gp = c.createLinearGradient(0, -18, 0, 18);
+  gp.addColorStop(0, '#4fd6a8'); gp.addColorStop(.5, '#2fae86'); gp.addColorStop(1, '#e8f4ea');
+  c.fillStyle = gp;
+  c.beginPath(); c.ellipse(0, 0, 26, 15, 0, 0, 6.283); c.fill();
+  c.fillStyle = 'rgba(20,70,60,.5)';
+  [[-7,-4,3.4],[4,-7,2.6],[9,2,3]].forEach(([dx, dy, r]) => {
+    c.beginPath(); c.arc(dx, dy, r, 0, 6.283); c.fill();
+  });
+  c.fillStyle = '#fff';
+  c.beginPath(); c.arc(18, -4, 4, 0, 6.283); c.fill();
+  c.fillStyle = '#0d1a18';
+  c.beginPath(); c.arc(19.2, -4, 2, 0, 6.283); c.fill();
+  c.restore();
+  c.save();
+  c.shadowColor = '#3fd6b0'; c.shadowBlur = 18;
+  c.fillStyle = '#3fd6b0'; c.font = '900 32px "Courier New", monospace';
+  c.textAlign = 'center'; c.fillText('8.42x', A / 2, 132);
+  c.restore();
+  c.fillStyle = 'rgba(255,255,255,.45)'; c.font = '700 11px "Segoe UI", system-ui, sans-serif';
+  c.fillText('3 cañas · recoge antes de que rompa', A / 2, AL - 12);
+}
+
+function portadaPlinko(c){
+  const g = c.createRadialGradient(A / 2, 20, 20, A / 2, AL * .7, A * .8);
+  g.addColorStop(0, '#1c0a2a'); g.addColorStop(.6, '#0d0518'); g.addColorStop(1, '#04020a');
+  c.fillStyle = g; c.fillRect(0, 0, A, AL);
+  const s = 20, arriba = 22;
+  for (let f = 0; f < 5; f++){
+    for (let i = 0; i <= f; i++){
+      const ancho = (f + 1) * s;
+      const x = A / 2 - ancho / 2 + i * s + s / 2;
+      const y = arriba + f * s;
+      c.fillStyle = 'rgba(255,255,255,.55)';
+      c.beginPath(); c.arc(x, y, 3.2, 0, 6.283); c.fill();
+    }
+  }
+  const pagos = [11, 3, 1.3, 0.6, 0.4, 0.6, 1.3, 3, 11];
+  const col = p => p >= 10 ? '#ff2d6f' : p >= 3 ? '#ff8a3d' : p >= 1.2 ? '#f3e600' : p >= 0.5 ? '#7bd88f' : '#4b90d8';
+  const anc = A / (pagos.length + 1.6);
+  pagos.forEach((p, i) => {
+    const x = A / 2 - (pagos.length * anc) / 2 + i * anc;
+    c.fillStyle = col(p);
+    c.beginPath(); c.roundRect(x + 1.5, AL - 46, anc - 3, 24, 5); c.fill();
+    c.fillStyle = 'rgba(0,0,0,.28)';
+    c.beginPath(); c.roundRect(x + 1.5, AL - 46 + 13, anc - 3, 11, 5); c.fill();
+    c.fillStyle = '#08101c'; c.font = '900 10px "Courier New", monospace';
+    c.textAlign = 'center'; c.fillText(p >= 10 ? p + 'x' : p.toFixed(1) + 'x', x + anc / 2, AL - 32);
+  });
+  // bola con estela
+  for (let k = 0; k < 9; k++){
+    c.globalAlpha = k / 9 * .4;
+    c.fillStyle = '#ff8ac0';
+    c.beginPath(); c.arc(A / 2 - 18 + k * 3, 30 + k * 8, 2 + k * .5, 0, 6.283); c.fill();
+  }
+  c.globalAlpha = 1;
+  const gb = c.createRadialGradient(A / 2 + 8, 100, 1, A / 2 + 10, 102, 8);
+  gb.addColorStop(0, '#fff'); gb.addColorStop(.5, '#ff5fa2'); gb.addColorStop(1, '#c00a55');
+  c.save(); c.shadowColor = '#ff2d6f'; c.shadowBlur = 14;
+  c.fillStyle = gb;
+  c.beginPath(); c.arc(A / 2 + 10, 102, 8, 0, 6.283); c.fill();
+  c.restore();
+  c.fillStyle = '#ff8ac0'; c.font = '900 12px "Courier New", monospace';
+  c.textAlign = 'right'; c.fillText('máximo 11x · retorno 99 %', A - 12, 18);
+}
+
 // ---------- Montaje de las cartas ----------
 const rejilla = document.getElementById('rejilla');
 JUEGOS.forEach(j => {
@@ -4799,7 +5598,8 @@ const UNIDAD = {
   td:'olas', pvz:'olas', comecocos:'pts', blockblast:'pts', serpiente:'pts',
   pool:'ganadas', rumble:'goles', minas:'gemas', aviator:'x100',
   sparta:'racha', mercado:'$', moto:'pts',
-  blackjack:'fichas', ruleta:'fichas', poker:'fichas', bacara:'fichas', dados:'fichas'
+  blackjack:'fichas', ruleta:'fichas', poker:'fichas', bacara:'fichas', dados:'fichas',
+  chicken:'fichas', spire:'fichas', limbo:'x100', bigbass:'fichas', plinko:'fichas'
 };
 const nombreDe = id => {
   const j = JUEGOS.find(x => x.id === id);
@@ -9546,9 +10346,10 @@ let desplazamiento = 0, destelloCaida = 0, brilloCobro = 0;
 // Distribución clásica de los juegos crash con un 1 % de ventaja de la casa:
 // P(caída > x) = 0,99 / x  →  mediana en torno a 2x y cola larga.
 function sortearCaida(){
-  if (Math.random() < 0.01) return 1.00;              // 1 % se estrella al instante
+  // La propia fórmula ya deja ~1 % de resultados en 1.00: un descarte extra
+  // aparte multiplicaba las dos ventajas y dejaba la casa en el 2 %.
   const r = Math.random();
-  return Math.min(500, Math.max(1.01, Math.floor(99 / (1 - r)) / 100));
+  return Math.min(500, Math.max(1.00, Math.floor(99 / (1 - r)) / 100));
 }
 const multEn = seg => Math.exp(0.12 * seg);
 const segundosDe = m => Math.log(m) / 0.12;
@@ -16541,6 +17342,2085 @@ Arcade.conectarSonido($('btnSonido'));
 cargarPartida();
 montarTapete();
 refrescar();
+Arcade.bucle(dt => dibujar(dt));
+
+});
+
+registrarJuego("chicken", function(document, addEventListener, Arcade){
+
+// ============================================================
+//  CHICKEN+ — multiplicador 0,99 / p^pasos
+// ============================================================
+const $ = id => document.getElementById(id);
+const lienzo = $('lienzo');
+const ctx = Arcade.nitido(lienzo);
+const avisos = $('avisos');
+const ANCHO = lienzo.width, ALTO = lienzo.height;
+
+const VENTAJA = 0.99;
+const CARRILES = 24;                   // pasos posibles antes de la acera final
+const DIFICULTADES = {
+  facil:   { muertes:1,  nombre:'Fácil'   },
+  media:   { muertes:3,  nombre:'Media'   },
+  dificil: { muertes:5,  nombre:'Difícil' },
+  locura:  { muertes:10, nombre:'Locura'  }
+};
+const ANCHO_CARRIL = 118;
+const SUELO = 320;
+
+const C = {
+  saldo: Arcade.fichas.saldo(),
+  apuesta: 100, dificultad: 'media',
+  paso: 0, activa: false,
+  fase: 'espera',              // espera | andando | muerta | cobrada
+  x: 0, xObjetivo: 0, camara: 0,
+  coches: [], plumas: [], polvo: [],
+  atropello: 0, brilloCobro: 0,
+  rondas: 0, cobradas: 0, mejorPaso: 0,
+  record: Arcade.record('chicken'),
+  t: 0
+};
+
+const p = () => 1 - DIFICULTADES[C.dificultad].muertes / 25;
+const multiplicadorDe = pasos => pasos === 0 ? 1 : VENTAJA / Math.pow(p(), pasos);
+const multiplicador = () => multiplicadorDe(C.paso);
+
+// ---------- Ronda ----------
+function empezarRonda(){
+  if (C.fase === 'andando') return;
+  C.apuesta = Math.max(10, Math.floor(parseFloat($('apuesta').value) || 0));
+  $('apuesta').value = C.apuesta;
+  if (C.apuesta > C.saldo){ Arcade.aviso(avisos, 'No tienes fichas suficientes', false, 1800); return; }
+
+  C.saldo = Arcade.fichas.ajustar(-C.apuesta);
+  C.dificultad = $('dificultad').value;
+  C.paso = 0; C.activa = true;
+  C.x = 0; C.xObjetivo = 0; C.camara = 0;
+  C.fase = 'andando';
+  C.atropello = 0; C.brilloCobro = 0;
+  C.plumas.length = 0; C.polvo.length = 0;
+  sembrarCoches();
+  C.rondas++;
+  Sonido.fx('desplegar');
+  refrescar();
+}
+
+function avanzar(){
+  if (C.fase !== 'andando' || !C.activa) return;
+  if (C.paso >= CARRILES){ cobrar(); return; }
+
+  const sobrevive = Math.random() < p();
+  C.paso++;
+  C.xObjetivo = C.paso * ANCHO_CARRIL;
+
+  if (sobrevive){
+    Sonido.fx('paso');
+    for (let i = 0; i < 6; i++) C.polvo.push({
+      x: C.x, y: SUELO + azar(-4, 6), vx: azar(-40, 10), vy: azar(-30, -5),
+      vida: azar(0.25, 0.6), max: 0.6, r: azar(1.5, 3.5)
+    });
+    if (C.paso >= CARRILES){
+      Arcade.aviso(avisos, '🏁 ¡Has cruzado entera! Cobro automático', true, 2200);
+      setTimeout(cobrar, 500);
+    }
+    if (C.paso > C.mejorPaso) C.mejorPaso = C.paso;
+  } else {
+    atropellar();
+  }
+  refrescar();
+}
+
+function atropellar(){
+  C.fase = 'muerta';
+  C.activa = false;
+  C.atropello = 1;
+  // el coche que la pilla entra por la derecha del carril
+  C.coches.push({ carril: C.paso, x: C.paso * ANCHO_CARRIL + 460, v: -900, letal: true, color: '#ff3d68' });
+  for (let i = 0; i < 34; i++) C.plumas.push({
+    x: C.x, y: SUELO - 26 + azar(-14, 14),
+    vx: azar(-260, 120), vy: azar(-320, -60),
+    giro: azar(0, 6.28), vGiro: azar(-9, 9),
+    vida: azar(0.8, 1.6), max: 1.6, r: azar(4, 9)
+  });
+  Sonido.fx('choque');
+  Arcade.perfil.partida('chicken', { puntos: 0, victoria: false });
+  guardarPartida();
+  refrescar();
+}
+
+function cobrar(){
+  if (C.fase !== 'andando' || !C.activa || C.paso === 0){
+    if (C.paso === 0 && C.fase === 'andando')
+      Arcade.aviso(avisos, 'Da al menos un paso antes de cobrar', false, 1700);
+    return;
+  }
+  const mult = multiplicador();
+  const pago = Math.floor(C.apuesta * mult);
+  C.saldo = Arcade.fichas.ajustar(pago);
+  C.activa = false;
+  C.fase = 'cobrada';
+  C.brilloCobro = 1;
+  C.cobradas++;
+  const beneficio = pago - C.apuesta;
+  if (beneficio > 0) Arcade.guardarRecord('chicken', beneficio);
+  C.record = Arcade.record('chicken');
+  Arcade.perfil.partida('chicken', { puntos: Math.max(0, beneficio), victoria: beneficio > 0 });
+  Arcade.aviso(avisos, '💰 Cobras ' + pago.toLocaleString('es-ES') +
+               ' fichas (' + mult.toFixed(2) + 'x)', true, 2400);
+  Sonido.fx('caja');
+  guardarPartida();
+  refrescar();
+}
+
+// ---------- Tráfico de ambiente ----------
+function sembrarCoches(){
+  C.coches.length = 0;
+  for (let k = 0; k < 10; k++){
+    const carril = azarEntero(1, CARRILES);
+    C.coches.push({
+      carril, x: carril * ANCHO_CARRIL + azar(-700, 700),
+      v: azar(-540, -260), letal: false,
+      color: elegir(['#5cc8ff', '#b18cff', '#6fe08b', '#ffd25e', '#ff9f5e'])
+    });
+  }
+}
+
+// ---------- Guardado ----------
+function guardarPartida(){
+  Arcade.escribir('chicken', JSON.stringify({
+    rondas: C.rondas, cobradas: C.cobradas, mejorPaso: C.mejorPaso,
+    apuesta: C.apuesta, dificultad: C.dificultad
+  }));
+}
+function cargarPartida(){
+  const crudo = Arcade.leerTexto('chicken', null);
+  if (!crudo) return;
+  try {
+    const g = JSON.parse(crudo);
+    C.rondas = g.rondas || 0; C.cobradas = g.cobradas || 0; C.mejorPaso = g.mejorPaso || 0;
+    if (g.apuesta) $('apuesta').value = g.apuesta;
+    if (g.dificultad && DIFICULTADES[g.dificultad]) $('dificultad').value = g.dificultad;
+  } catch(e){}
+}
+Guardado.registrar(guardarPartida);
+
+// ---------- Interfaz ----------
+function pintarPasos(){
+  const t = $('tablaPasos');
+  t.innerHTML = '';
+  for (let k = 1; k <= CARRILES; k++){
+    const s = document.createElement('span');
+    s.textContent = multiplicadorDe(k).toFixed(2) + 'x';
+    if (k < C.paso) s.className = 'hecho';
+    else if (k === C.paso) s.className = 'actual';
+    t.appendChild(s);
+  }
+  const activo = t.querySelector('.actual');
+  if (activo) activo.scrollIntoView({ block:'nearest', inline:'center' });
+}
+
+function refrescar(){
+  $('saldoTxt').textContent = C.saldo.toLocaleString('es-ES');
+  $('multTxt').textContent = multiplicador().toFixed(2) + 'x';
+  $('recordTxt').textContent = C.record ? '+' + C.record.toLocaleString('es-ES') : '—';
+  const enJuego = C.fase === 'andando' && C.activa;
+  $('btnEmpezarRonda').disabled = enJuego;
+  $('btnAvanzar').disabled = !enJuego;
+  $('btnCobrar').disabled = !enJuego || C.paso === 0;
+  $('apuesta').disabled = enJuego;
+  $('dificultad').disabled = enJuego;
+  $('btnCobrar').textContent = C.paso ? '💰 Cobrar ' + Math.floor(C.apuesta * multiplicador()).toLocaleString('es-ES') : '💰 Cobrar';
+  pintarPasos();
+}
+
+// ---------- Dibujo ----------
+function texto(t, x, y, color, tam, alin, peso, fuente){
+  ctx.fillStyle = color;
+  ctx.font = (peso || 700) + ' ' + tam + 'px ' + (fuente || '"Segoe UI", system-ui, sans-serif');
+  ctx.textAlign = alin || 'left'; ctx.textBaseline = 'middle';
+  ctx.fillText(t, x, y);
+}
+
+function gallina(x, y, escala, paso, muerta){
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.scale(escala, escala);
+  if (muerta){ ctx.rotate(1.5); ctx.translate(0, -10); }
+
+  const bote = muerta ? 0 : Math.abs(Math.sin(paso * 9)) * 4;
+  ctx.translate(0, -bote);
+
+  // sombra
+  ctx.fillStyle = 'rgba(0,0,0,.45)';
+  ctx.beginPath(); ctx.ellipse(2, 26 + bote, 20, 6, 0, 0, 6.2832); ctx.fill();
+
+  // patas
+  ctx.strokeStyle = '#f0a020'; ctx.lineWidth = 3.4; ctx.lineCap = 'round';
+  const ang = muerta ? 0.5 : Math.sin(paso * 9) * 0.5;
+  [[-6, ang], [6, -ang]].forEach(([dx, a]) => {
+    ctx.beginPath();
+    ctx.moveTo(dx, 14);
+    ctx.lineTo(dx + Math.sin(a) * 9, 25);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(dx + Math.sin(a) * 9, 25);
+    ctx.lineTo(dx + Math.sin(a) * 9 + 6, 25);
+    ctx.stroke();
+  });
+  ctx.lineCap = 'butt';
+
+  // cuerpo
+  const g = ctx.createRadialGradient(-6, -8, 3, 0, 2, 24);
+  g.addColorStop(0, '#ffffff'); g.addColorStop(1, '#e2e6ee');
+  ctx.fillStyle = g;
+  ctx.beginPath(); ctx.ellipse(0, 2, 19, 16, 0, 0, 6.2832); ctx.fill();
+  // ala
+  ctx.fillStyle = '#cfd6e2';
+  ctx.beginPath();
+  ctx.ellipse(2, 3, 11, 8, muerta ? 0.9 : Math.sin(paso * 9) * 0.25, 0, 6.2832);
+  ctx.fill();
+
+  // cabeza
+  ctx.fillStyle = '#ffffff';
+  ctx.beginPath(); ctx.arc(11, -14, 10, 0, 6.2832); ctx.fill();
+  // cresta
+  ctx.fillStyle = '#e2384f';
+  [0, 1, 2].forEach(k => {
+    ctx.beginPath(); ctx.arc(7 + k * 4.4, -23 + (k === 1 ? -2 : 0), 3.6, 0, 6.2832); ctx.fill();
+  });
+  // pico
+  ctx.fillStyle = '#f0a020';
+  ctx.beginPath();
+  ctx.moveTo(20, -14); ctx.lineTo(29, -11); ctx.lineTo(20, -8);
+  ctx.closePath(); ctx.fill();
+  // barbilla
+  ctx.fillStyle = '#e2384f';
+  ctx.beginPath(); ctx.ellipse(19, -6, 3, 4.5, 0, 0, 6.2832); ctx.fill();
+  // ojo
+  ctx.fillStyle = '#15181f';
+  if (muerta){
+    ctx.strokeStyle = '#15181f'; ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(11, -18); ctx.lineTo(17, -12);
+    ctx.moveTo(17, -18); ctx.lineTo(11, -12);
+    ctx.stroke();
+  } else {
+    ctx.beginPath(); ctx.arc(14.5, -15.5, 2.4, 0, 6.2832); ctx.fill();
+    ctx.fillStyle = '#fff';
+    ctx.beginPath(); ctx.arc(15.3, -16.3, 0.9, 0, 6.2832); ctx.fill();
+  }
+  ctx.restore();
+}
+
+function coche(c, camara){
+  const x = c.x - camara, y = SUELO - 6;
+  if (x < -180 || x > ANCHO + 180) return;
+  ctx.save();
+  ctx.translate(x, y);
+
+  // sombra
+  ctx.fillStyle = 'rgba(0,0,0,.5)';
+  ctx.beginPath(); ctx.ellipse(0, 20, 52, 8, 0, 0, 6.2832); ctx.fill();
+
+  // carrocería
+  const g = ctx.createLinearGradient(0, -38, 0, 16);
+  g.addColorStop(0, c.color);
+  g.addColorStop(1, 'rgba(0,0,0,.55)');
+  ctx.fillStyle = g;
+  ctx.beginPath(); ctx.roundRect(-52, -18, 104, 34, 9); ctx.fill();
+  ctx.beginPath(); ctx.roundRect(-30, -38, 58, 24, 8); ctx.fill();
+  // cristales
+  ctx.fillStyle = 'rgba(180,225,255,.5)';
+  ctx.beginPath(); ctx.roundRect(-25, -34, 24, 17, 4); ctx.fill();
+  ctx.beginPath(); ctx.roundRect(2, -34, 22, 17, 4); ctx.fill();
+  // ruedas
+  ctx.fillStyle = '#12151c';
+  [-30, 30].forEach(dx => {
+    ctx.beginPath(); ctx.arc(dx, 16, 11, 0, 6.2832); ctx.fill();
+    ctx.fillStyle = '#3a4356';
+    ctx.beginPath(); ctx.arc(dx, 16, 4.5, 0, 6.2832); ctx.fill();
+    ctx.fillStyle = '#12151c';
+  });
+  // faros hacia la izquierda (van en esa dirección)
+  ctx.fillStyle = 'rgba(255,240,180,.95)';
+  ctx.beginPath(); ctx.roundRect(-55, -10, 7, 8, 3); ctx.fill();
+  const haz = ctx.createLinearGradient(-55, 0, -190, 0);
+  haz.addColorStop(0, 'rgba(255,240,180,.35)');
+  haz.addColorStop(1, 'rgba(255,240,180,0)');
+  ctx.fillStyle = haz;
+  ctx.beginPath();
+  ctx.moveTo(-55, -12); ctx.lineTo(-190, -38); ctx.lineTo(-190, 26); ctx.lineTo(-55, 2);
+  ctx.closePath(); ctx.fill();
+  // pilotos traseros
+  ctx.fillStyle = 'rgba(255,80,80,.9)';
+  ctx.beginPath(); ctx.roundRect(49, -10, 6, 8, 3); ctx.fill();
+  ctx.restore();
+}
+
+function dibujar(dt){
+  C.t += dt;
+
+  // ---- avance suave de la gallina y de la cámara ----
+  C.x += (C.xObjetivo - C.x) * Math.min(1, 9 * dt);
+  const objCam = Math.max(0, C.x - 300);
+  C.camara += (objCam - C.camara) * Math.min(1, 6 * dt);
+
+  for (const c of C.coches){
+    c.x += c.v * dt;
+    if (!c.letal && c.x - C.camara < -300) c.x += 2200 + Math.random() * 600;
+  }
+  for (let i = C.plumas.length - 1; i >= 0; i--){
+    const q = C.plumas[i];
+    q.x += q.vx * dt; q.y += q.vy * dt; q.vy += 520 * dt;
+    q.giro += q.vGiro * dt; q.vida -= dt;
+    if (q.vida <= 0) C.plumas.splice(i, 1);
+  }
+  for (let i = C.polvo.length - 1; i >= 0; i--){
+    const q = C.polvo[i];
+    q.x += q.vx * dt; q.y += q.vy * dt; q.vida -= dt;
+    if (q.vida <= 0) C.polvo.splice(i, 1);
+  }
+  C.atropello = Math.max(0, C.atropello - dt * 1.6);
+  C.brilloCobro = Math.max(0, C.brilloCobro - dt * 1.2);
+
+  // ---- cielo nocturno ----
+  const g = ctx.createLinearGradient(0, 0, 0, ALTO);
+  g.addColorStop(0, '#121a33'); g.addColorStop(0.45, '#1d2647'); g.addColorStop(1, '#2a2f3f');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, ANCHO, ALTO);
+
+  // luna
+  ctx.fillStyle = 'rgba(255,248,220,.9)';
+  ctx.shadowColor = 'rgba(255,248,220,.6)'; ctx.shadowBlur = 40;
+  ctx.beginPath(); ctx.arc(ANCHO - 110, 66, 26, 0, 6.2832); ctx.fill();
+  ctx.shadowBlur = 0;
+
+  // skyline en dos capas con paralaje
+  for (let capa = 0; capa < 2; capa++){
+    const par = 0.12 + capa * 0.14;
+    const base = 210 - capa * 18;
+    ctx.fillStyle = capa ? 'rgba(20,26,48,.95)' : 'rgba(14,18,36,.95)';
+    const desp = -C.camara * par;
+    for (let k = -2; k < 26; k++){
+      const x = k * 92 + (desp % 92) + (k % 3) * 12;
+      const h = 60 + ((k * 37 + capa * 53) % 90);
+      ctx.fillRect(x, base - h, 72, h + 40);
+      // ventanas encendidas
+      ctx.fillStyle = 'rgba(255,214,120,.22)';
+      for (let f = 0; f < Math.floor(h / 22); f++)
+        for (let c2 = 0; c2 < 3; c2++)
+          if ((k + f + c2) % 3 === 0) ctx.fillRect(x + 10 + c2 * 20, base - h + 12 + f * 22, 9, 11);
+      ctx.fillStyle = capa ? 'rgba(20,26,48,.95)' : 'rgba(14,18,36,.95)';
+    }
+  }
+
+  // ---- asfalto ----
+  ctx.fillStyle = '#23262f';
+  ctx.fillRect(0, SUELO - 62, ANCHO, ALTO - (SUELO - 62));
+  ctx.fillStyle = '#1b1e26';
+  ctx.fillRect(0, SUELO + 22, ANCHO, ALTO - SUELO - 22);
+  // arcén
+  ctx.fillStyle = 'rgba(255,255,255,.28)';
+  ctx.fillRect(0, SUELO - 63, ANCHO, 3);
+  ctx.fillRect(0, SUELO + 21, ANCHO, 3);
+
+  // separaciones de carril y multiplicadores en el suelo
+  for (let k = 0; k <= CARRILES + 1; k++){
+    const x = k * ANCHO_CARRIL - C.camara;
+    if (x < -160 || x > ANCHO + 160) continue;
+    // línea discontinua
+    ctx.strokeStyle = 'rgba(255,255,255,.22)';
+    ctx.lineWidth = 3;
+    ctx.setLineDash([14, 12]);
+    ctx.beginPath(); ctx.moveTo(x, SUELO - 58); ctx.lineTo(x, SUELO + 18); ctx.stroke();
+    ctx.setLineDash([]);
+
+    if (k >= 1 && k <= CARRILES){
+      const m = multiplicadorDe(k);
+      const alcanzado = k <= C.paso;
+      const xm = x - ANCHO_CARRIL / 2;
+      ctx.fillStyle = alcanzado ? 'rgba(0,255,102,.16)' : 'rgba(0,0,0,.4)';
+      ctx.beginPath(); ctx.roundRect(xm - 34, SUELO - 128, 68, 26, 8); ctx.fill();
+      ctx.strokeStyle = alcanzado ? 'rgba(78,224,137,.8)' : 'rgba(255,255,255,.15)';
+      ctx.lineWidth = 1.4; ctx.stroke();
+      texto(m.toFixed(2) + 'x', xm, SUELO - 115,
+            alcanzado ? '#4ee089' : 'rgba(255,255,255,.55)', 13, 'center', 800,
+            '"Courier New", monospace');
+    }
+  }
+
+  // acera de salida y de meta
+  const meta = (CARRILES + 1) * ANCHO_CARRIL - C.camara;
+  ctx.fillStyle = '#3b4152';
+  ctx.fillRect(-C.camara - 400, SUELO - 62, 400, 84);
+  ctx.fillRect(meta, SUELO - 62, 500, 84);
+  // damero de meta
+  for (let f = 0; f < 4; f++) for (let c2 = 0; c2 < 4; c2++){
+    ctx.fillStyle = (f + c2) % 2 ? '#f6f7fb' : '#15181f';
+    ctx.fillRect(meta + c2 * 16, SUELO - 62 + f * 21, 16, 21);
+  }
+
+  // coches
+  C.coches.forEach(c => coche(c, C.camara));
+
+  // polvo
+  for (const q of C.polvo){
+    ctx.globalAlpha = Math.max(0, q.vida / q.max) * 0.5;
+    ctx.fillStyle = '#c9c3b4';
+    ctx.beginPath(); ctx.arc(q.x - C.camara, q.y, q.r, 0, 6.2832); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+
+  // gallina
+  const gx = C.x - C.camara;
+  if (C.brilloCobro > 0){
+    ctx.save();
+    ctx.globalAlpha = C.brilloCobro * 0.6;
+    ctx.fillStyle = '#4ee089';
+    ctx.beginPath(); ctx.arc(gx, SUELO - 14, 70 * (1.4 - C.brilloCobro), 0, 6.2832); ctx.fill();
+    ctx.restore();
+  }
+  gallina(gx, SUELO - 12, 1.15, C.t, C.fase === 'muerta');
+
+  // plumas
+  for (const q of C.plumas){
+    ctx.save();
+    ctx.globalAlpha = Math.max(0, q.vida / q.max);
+    ctx.translate(q.x - C.camara, q.y);
+    ctx.rotate(q.giro);
+    ctx.fillStyle = '#f2f4f8';
+    ctx.beginPath(); ctx.ellipse(0, 0, q.r, q.r * 0.45, 0, 0, 6.2832); ctx.fill();
+    ctx.restore();
+  }
+  ctx.globalAlpha = 1;
+
+  // destello del atropello
+  if (C.atropello > 0){
+    ctx.fillStyle = 'rgba(255,61,104,' + (C.atropello * 0.35).toFixed(3) + ')';
+    ctx.fillRect(0, 0, ANCHO, ALTO);
+  }
+
+  // ---- cartel del multiplicador ----
+  const mult = multiplicador();
+  const activo = C.fase === 'andando' && C.activa;
+  ctx.fillStyle = 'rgba(0,0,0,.55)';
+  ctx.beginPath(); ctx.roundRect(ANCHO / 2 - 130, 20, 260, 62, 14); ctx.fill();
+  ctx.strokeStyle = activo ? 'rgba(255,180,61,.75)'
+    : C.fase === 'muerta' ? 'rgba(255,61,104,.75)'
+    : C.fase === 'cobrada' ? 'rgba(78,224,137,.8)' : 'rgba(255,255,255,.16)';
+  ctx.lineWidth = 2; ctx.stroke();
+  texto(C.fase === 'muerta' ? '💥 ATROPELLADA' : mult.toFixed(2) + 'x',
+        ANCHO / 2, 44,
+        C.fase === 'muerta' ? '#ff6b8a' : C.fase === 'cobrada' ? '#4ee089' : '#ffd27a',
+        C.fase === 'muerta' ? 22 : 30, 'center', 900, '"Courier New", monospace');
+  texto(activo ? 'paso ' + C.paso + ' de ' + CARRILES + '  ·  siguiente ' +
+        multiplicadorDe(C.paso + 1).toFixed(2) + 'x'
+        : C.fase === 'espera' ? 'pulsa EMPEZAR' : 'ronda terminada',
+        ANCHO / 2, 68, 'rgba(255,255,255,.5)', 12, 'center', 700);
+
+  // riesgo por paso
+  const riesgo = (1 - p()) * 100;
+  texto(DIFICULTADES[C.dificultad].nombre + ' · riesgo por paso ' + riesgo.toFixed(0) + ' %',
+        16, ALTO - 16, 'rgba(255,255,255,.35)', 12, 'left', 700);
+  texto('mejor paso ' + C.mejorPaso + '  ·  rondas ' + C.rondas,
+        ANCHO - 16, ALTO - 16, 'rgba(255,255,255,.3)', 12, 'right', 700);
+}
+
+// ---------- Entrada ----------
+$('btnEmpezarRonda').onclick = () => { Sonido.activar(); empezarRonda(); };
+$('btnAvanzar').onclick = () => { Sonido.activar(); avanzar(); };
+$('btnCobrar').onclick = () => { Sonido.activar(); cobrar(); };
+$('dificultad').addEventListener('change', () => {
+  C.dificultad = $('dificultad').value;
+  refrescar();
+});
+$('apuesta').addEventListener('input', refrescar);
+addEventListener('keydown', ev => {
+  if (ev.code === 'Space'){
+    ev.preventDefault();
+    if (C.fase === 'andando' && C.activa) avanzar(); else empezarRonda();
+  } else if (ev.key === 'c' || ev.key === 'C') cobrar();
+});
+$('btnEntrar').onclick = () => { Sonido.activar(); $('modalInicio').classList.remove('visible'); };
+Arcade.conectarSonido($('btnSonido'));
+
+cargarPartida();
+C.dificultad = $('dificultad').value;
+sembrarCoches();
+refrescar();
+Arcade.bucle(dt => dibujar(dt));
+
+});
+
+registrarJuego("spire", function(document, addEventListener, Arcade){
+
+// ============================================================
+//  SPIRE+ — multiplicador 0,99 / (seguras/total)^pisos
+// ============================================================
+const $ = id => document.getElementById(id);
+const lienzo = $('lienzo');
+const ctx = Arcade.nitido(lienzo);
+const avisos = $('avisos');
+const ANCHO = lienzo.width, ALTO = lienzo.height;
+
+const VENTAJA = 0.99;
+const PISOS = 9;
+const DIFICULTADES = {
+  facil:     { total:4, seguras:3, nombre:'Fácil'     },
+  media:     { total:3, seguras:2, nombre:'Media'     },
+  dificil:   { total:2, seguras:1, nombre:'Difícil'   },
+  experto:   { total:3, seguras:1, nombre:'Experto'   },
+  pesadilla: { total:4, seguras:1, nombre:'Pesadilla' }
+};
+
+const ALTO_PISO = 52;
+const MARGEN_X = 90;
+
+const S = {
+  saldo: Arcade.fichas.saldo(),
+  apuesta: 100, dificultad: 'media',
+  piso: 0, activa: false,
+  fase: 'espera',          // espera | subiendo | caida | cobrada
+  filas: [],               // por piso: { seguras:Set, elegida:null, revelada:false }
+  camara: 0, camaraObj: 0,
+  particulas: [], sacudida: 0, brillo: 0,
+  rondas: 0, cobradas: 0, mejorPiso: 0,
+  record: Arcade.record('spire'),
+  t: 0
+};
+
+const cfg = () => DIFICULTADES[S.dificultad];
+const p = () => cfg().seguras / cfg().total;
+const multiplicadorDe = pisos => pisos === 0 ? 1 : VENTAJA / Math.pow(p(), pisos);
+const multiplicador = () => multiplicadorDe(S.piso);
+
+// ---------- Ronda ----------
+function empezarRonda(){
+  if (S.fase === 'subiendo') return;
+  S.apuesta = Math.max(10, Math.floor(parseFloat($('apuesta').value) || 0));
+  $('apuesta').value = S.apuesta;
+  if (S.apuesta > S.saldo){ Arcade.aviso(avisos, 'No tienes fichas suficientes', false, 1800); return; }
+
+  S.saldo = Arcade.fichas.ajustar(-S.apuesta);
+  S.dificultad = $('dificultad').value;
+  const c = cfg();
+
+  // se sortea la torre entera de golpe, antes de tocar nada
+  S.filas = [];
+  for (let k = 0; k < PISOS; k++){
+    const orden = mezclar([...Array(c.total).keys()]);
+    S.filas.push({ seguras: new Set(orden.slice(0, c.seguras)), elegida: null, revelada: false });
+  }
+  S.piso = 0; S.activa = true; S.fase = 'subiendo';
+  S.particulas.length = 0; S.sacudida = 0; S.brillo = 0;
+  S.camara = 0; S.camaraObj = 0;
+  S.rondas++;
+  Sonido.fx('desplegar');
+  refrescar();
+}
+
+function elegir_loseta(indice){
+  if (S.fase !== 'subiendo' || !S.activa) return;
+  const fila = S.filas[S.piso];
+  if (!fila || fila.revelada) return;
+
+  fila.elegida = indice;
+  fila.revelada = true;
+  const salva = fila.seguras.has(indice);
+
+  const { x, y } = posicionLoseta(S.piso, indice);
+  for (let i = 0; i < (salva ? 22 : 34); i++) S.particulas.push({
+    x: x + azar(-26, 26), y: y + azar(-12, 12),
+    vx: azar(-150, 150), vy: azar(-260, -30),
+    vida: azar(0.4, 1), max: 1, r: azar(1.6, 4),
+    color: salva ? (Math.random() < 0.5 ? '#4ee089' : '#00f0ff') : '#ff3d68'
+  });
+
+  if (salva){
+    S.piso++;
+    if (S.piso > S.mejorPiso) S.mejorPiso = S.piso;
+    S.camaraObj = S.piso * ALTO_PISO;
+    Sonido.fx('gema');
+    if (S.piso >= PISOS){
+      Arcade.aviso(avisos, '🏔 ¡Cima alcanzada! Cobro automático', true, 2400);
+      setTimeout(cobrar, 600);
+    }
+  } else {
+    S.fase = 'caida';
+    S.activa = false;
+    S.sacudida = 12;
+    // se destapa la torre entera para que se vea qué había
+    S.filas.forEach(f => f.revelada = true);
+    Sonido.fx('choque');
+    Arcade.perfil.partida('spire', { puntos: 0, victoria: false });
+    guardarPartida();
+  }
+  refrescar();
+}
+
+function cobrar(){
+  if (S.fase !== 'subiendo' || !S.activa || S.piso === 0){
+    if (S.piso === 0 && S.fase === 'subiendo')
+      Arcade.aviso(avisos, 'Sube al menos un piso antes de cobrar', false, 1700);
+    return;
+  }
+  const mult = multiplicador();
+  const pago = Math.floor(S.apuesta * mult);
+  S.saldo = Arcade.fichas.ajustar(pago);
+  S.activa = false;
+  S.fase = 'cobrada';
+  S.brillo = 1;
+  S.cobradas++;
+  S.filas.forEach(f => f.revelada = true);
+  const beneficio = pago - S.apuesta;
+  if (beneficio > 0) Arcade.guardarRecord('spire', beneficio);
+  S.record = Arcade.record('spire');
+  Arcade.perfil.partida('spire', { puntos: Math.max(0, beneficio), victoria: beneficio > 0 });
+  Arcade.aviso(avisos, '💰 Cobras ' + pago.toLocaleString('es-ES') +
+               ' fichas (' + mult.toFixed(2) + 'x)', true, 2400);
+  Sonido.fx('caja');
+  guardarPartida();
+  refrescar();
+}
+
+// ---------- Guardado ----------
+function guardarPartida(){
+  Arcade.escribir('spire', JSON.stringify({
+    rondas: S.rondas, cobradas: S.cobradas, mejorPiso: S.mejorPiso,
+    apuesta: S.apuesta, dificultad: S.dificultad
+  }));
+}
+function cargarPartida(){
+  const crudo = Arcade.leerTexto('spire', null);
+  if (!crudo) return;
+  try {
+    const g = JSON.parse(crudo);
+    S.rondas = g.rondas || 0; S.cobradas = g.cobradas || 0; S.mejorPiso = g.mejorPiso || 0;
+    if (g.apuesta) $('apuesta').value = g.apuesta;
+    if (g.dificultad && DIFICULTADES[g.dificultad]) $('dificultad').value = g.dificultad;
+  } catch(e){}
+}
+Guardado.registrar(guardarPartida);
+
+// ---------- Geometría ----------
+// El piso 0 va abajo del todo; la cámara sube conforme escalas
+function posicionLoseta(piso, indice){
+  const c = cfg();
+  const util = ANCHO - MARGEN_X * 2;
+  const an = util / c.total;
+  const x = MARGEN_X + an * indice + an / 2;
+  const y = ALTO - 96 - piso * ALTO_PISO + S.camara;
+  return { x, y, an: an - 10, al: ALTO_PISO - 12 };
+}
+
+function losetaEn(mx, my){
+  if (S.fase !== 'subiendo' || !S.activa) return -1;
+  const c = cfg();
+  for (let i = 0; i < c.total; i++){
+    const q = posicionLoseta(S.piso, i);
+    if (Math.abs(mx - q.x) <= q.an / 2 && Math.abs(my - q.y) <= q.al / 2) return i;
+  }
+  return -1;
+}
+
+// ---------- Interfaz ----------
+function refrescar(){
+  $('saldoTxt').textContent = S.saldo.toLocaleString('es-ES');
+  $('multTxt').textContent = multiplicador().toFixed(2) + 'x';
+  $('recordTxt').textContent = S.record ? '+' + S.record.toLocaleString('es-ES') : '—';
+  const enJuego = S.fase === 'subiendo' && S.activa;
+  $('btnEmpezarRonda').disabled = enJuego;
+  $('btnCobrar').disabled = !enJuego || S.piso === 0;
+  $('apuesta').disabled = enJuego;
+  $('dificultad').disabled = enJuego;
+  $('btnCobrar').textContent = S.piso
+    ? '💰 Cobrar ' + Math.floor(S.apuesta * multiplicador()).toLocaleString('es-ES')
+    : '💰 Cobrar';
+}
+
+// ---------- Dibujo ----------
+function texto(t, x, y, color, tam, alin, peso, fuente){
+  ctx.fillStyle = color;
+  ctx.font = (peso || 700) + ' ' + tam + 'px ' + (fuente || '"Segoe UI", system-ui, sans-serif');
+  ctx.textAlign = alin || 'left'; ctx.textBaseline = 'middle';
+  ctx.fillText(t, x, y);
+}
+
+function dibujar(dt){
+  S.t += dt;
+  S.camara += (S.camaraObj - S.camara) * Math.min(1, 7 * dt);
+  S.sacudida = Math.max(0, S.sacudida - dt * 26);
+  S.brillo = Math.max(0, S.brillo - dt * 1.1);
+  for (let i = S.particulas.length - 1; i >= 0; i--){
+    const q = S.particulas[i];
+    q.x += q.vx * dt; q.y += q.vy * dt; q.vy += 380 * dt; q.vida -= dt;
+    if (q.vida <= 0) S.particulas.splice(i, 1);
+  }
+
+  const sx = S.sacudida ? azar(-S.sacudida, S.sacudida) : 0;
+  const sy = S.sacudida ? azar(-S.sacudida, S.sacudida) : 0;
+  ctx.save();
+  ctx.translate(sx, sy);
+
+  // ---- fondo: cielo de altura ----
+  const g = ctx.createLinearGradient(0, 0, 0, ALTO);
+  g.addColorStop(0, '#04122b'); g.addColorStop(0.5, '#08203f'); g.addColorStop(1, '#02060f');
+  ctx.fillStyle = g; ctx.fillRect(-20, -20, ANCHO + 40, ALTO + 40);
+
+  // estrellas con paralaje según la altura escalada
+  for (let k = 0; k < 70; k++){
+    const ex = (k * 137) % ANCHO;
+    const ey = ((k * 89) % ALTO + S.camara * 0.25) % ALTO;
+    const r = (k % 3) * 0.5 + 0.6;
+    ctx.fillStyle = 'rgba(200,230,255,' + (0.15 + (k % 5) * 0.12).toFixed(2) + ')';
+    ctx.beginPath(); ctx.arc(ex, ey, r, 0, 6.2832); ctx.fill();
+  }
+  // nubes lejanas
+  ctx.fillStyle = 'rgba(120,170,255,.055)';
+  for (let k = 0; k < 5; k++){
+    const cy = ((k * 131) % ALTO + S.camara * 0.5) % (ALTO + 120) - 60;
+    ctx.beginPath(); ctx.ellipse(((k * 197) % ANCHO), cy, 150, 26, 0, 0, 6.2832); ctx.fill();
+  }
+
+  // ---- columnas de la torre ----
+  const c = cfg();
+  const util = ANCHO - MARGEN_X * 2;
+  ctx.fillStyle = 'rgba(0,240,255,.05)';
+  ctx.fillRect(MARGEN_X - 16, 0, util + 32, ALTO);
+  ctx.strokeStyle = 'rgba(0,240,255,.18)'; ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(MARGEN_X - 16, 0); ctx.lineTo(MARGEN_X - 16, ALTO);
+  ctx.moveTo(MARGEN_X + util + 16, 0); ctx.lineTo(MARGEN_X + util + 16, ALTO);
+  ctx.stroke();
+
+  // ---- pisos ----
+  for (let piso = 0; piso < PISOS; piso++){
+    const fila = S.filas[piso];
+    const q0 = posicionLoseta(piso, 0);
+    if (q0.y < -60 || q0.y > ALTO + 60) continue;
+
+    const esActual = S.fase === 'subiendo' && S.activa && piso === S.piso;
+    const superado = piso < S.piso;
+
+    // etiqueta del multiplicador a la izquierda
+    const m = multiplicadorDe(piso + 1);
+    texto(m.toFixed(2) + 'x', MARGEN_X - 28, q0.y,
+          superado ? '#4ee089' : esActual ? '#ffd27a' : 'rgba(255,255,255,.32)',
+          13, 'right', 800, '"Courier New", monospace');
+    texto('P' + (piso + 1), MARGEN_X + util + 28, q0.y,
+          'rgba(255,255,255,.22)', 12, 'left', 700);
+
+    for (let i = 0; i < c.total; i++){
+      const q = posicionLoseta(piso, i);
+      const x0 = q.x - q.an / 2, y0 = q.y - q.al / 2;
+      const revelada = fila && fila.revelada;
+      const segura = fila && fila.seguras.has(i);
+      const elegida = fila && fila.elegida === i;
+
+      let relleno, borde;
+      if (!revelada){
+        relleno = esActual ? 'rgba(0,240,255,.14)' : 'rgba(255,255,255,.05)';
+        borde = esActual ? 'rgba(0,240,255,.75)' : 'rgba(255,255,255,.12)';
+      } else if (segura){
+        relleno = elegida ? 'rgba(0,255,102,.28)' : 'rgba(0,255,102,.10)';
+        borde = elegida ? '#4ee089' : 'rgba(78,224,137,.35)';
+      } else {
+        relleno = elegida ? 'rgba(255,61,104,.32)' : 'rgba(255,61,104,.08)';
+        borde = elegida ? '#ff3d68' : 'rgba(255,61,104,.3)';
+      }
+
+      // brillo del piso activo
+      if (esActual){
+        ctx.save();
+        ctx.shadowColor = 'rgba(0,240,255,.6)';
+        ctx.shadowBlur = 14 + Math.sin(S.t * 3 + i) * 6;
+      }
+      ctx.fillStyle = relleno;
+      ctx.beginPath(); ctx.roundRect(x0, y0, q.an, q.al, 10); ctx.fill();
+      ctx.strokeStyle = borde; ctx.lineWidth = esActual ? 2.4 : 1.6;
+      ctx.stroke();
+      if (esActual) ctx.restore();
+
+      // símbolo
+      if (revelada){
+        texto(segura ? '💎' : '💀', q.x, q.y, '#fff', 22, 'center', 700);
+      } else if (esActual){
+        texto('?', q.x, q.y, 'rgba(0,240,255,.85)', 22, 'center', 900, '"Courier New", monospace');
+      } else {
+        ctx.fillStyle = 'rgba(255,255,255,.10)';
+        ctx.beginPath(); ctx.arc(q.x, q.y, 5, 0, 6.2832); ctx.fill();
+      }
+    }
+  }
+
+  // ---- cima ----
+  const yCima = ALTO - 96 - PISOS * ALTO_PISO + S.camara;
+  if (yCima > -40 && yCima < ALTO + 40){
+    texto('🏔 CIMA · ' + multiplicadorDe(PISOS).toFixed(2) + 'x', ANCHO / 2, yCima - 4,
+          '#f3e600', 17, 'center', 900);
+  }
+
+  // ---- suelo ----
+  const ySuelo = ALTO - 96 + ALTO_PISO / 2 + S.camara;
+  if (ySuelo < ALTO + 40){
+    ctx.fillStyle = 'rgba(0,240,255,.10)';
+    ctx.fillRect(MARGEN_X - 16, ySuelo, util + 32, ALTO);
+    texto('BASE', ANCHO / 2, ySuelo + 18, 'rgba(255,255,255,.3)', 13, 'center', 800);
+  }
+
+  // partículas
+  for (const q of S.particulas){
+    ctx.globalAlpha = Math.max(0, q.vida / q.max);
+    ctx.fillStyle = q.color;
+    ctx.beginPath(); ctx.arc(q.x, q.y, q.r, 0, 6.2832); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+  ctx.restore();
+
+  // ---- cartel superior ----
+  const mult = multiplicador();
+  const activo = S.fase === 'subiendo' && S.activa;
+  ctx.fillStyle = 'rgba(3,8,18,.82)';
+  ctx.fillRect(0, 0, ANCHO, 62);
+  ctx.strokeStyle = activo ? 'rgba(0,240,255,.5)'
+    : S.fase === 'caida' ? 'rgba(255,61,104,.6)'
+    : S.fase === 'cobrada' ? 'rgba(78,224,137,.7)' : 'rgba(255,255,255,.12)';
+  ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(0, 62); ctx.lineTo(ANCHO, 62); ctx.stroke();
+
+  texto(S.fase === 'caida' ? '💀 LA TORRE SE VINO ABAJO' : mult.toFixed(2) + 'x',
+        ANCHO / 2, 24,
+        S.fase === 'caida' ? '#ff6b8a' : S.fase === 'cobrada' ? '#4ee089' : '#00f0ff',
+        S.fase === 'caida' ? 20 : 26, 'center', 900, '"Courier New", monospace');
+  texto(activo
+      ? 'piso ' + S.piso + ' de ' + PISOS + '  ·  toca una loseta  ·  siguiente ' +
+        multiplicadorDe(S.piso + 1).toFixed(2) + 'x'
+      : S.fase === 'espera' ? 'pulsa ESCALAR' : 'ronda terminada',
+    ANCHO / 2, 46, 'rgba(255,255,255,.5)', 12, 'center', 700);
+
+  if (S.brillo > 0){
+    ctx.fillStyle = 'rgba(78,224,137,' + (S.brillo * 0.18).toFixed(3) + ')';
+    ctx.fillRect(0, 0, ANCHO, ALTO);
+  }
+
+  texto(cfg().nombre + ' · ' + cfg().seguras + ' de ' + cfg().total + ' seguras',
+        16, ALTO - 16, 'rgba(255,255,255,.35)', 12, 'left', 700);
+  texto('mejor piso ' + S.mejorPiso + '  ·  rondas ' + S.rondas,
+        ANCHO - 16, ALTO - 16, 'rgba(255,255,255,.3)', 12, 'right', 700);
+}
+
+// ---------- Entrada ----------
+lienzo.addEventListener('pointerdown', ev => {
+  Sonido.activar();
+  const q = Arcade.puntero(lienzo, ev);
+  const i = losetaEn(q.x, q.y);
+  if (i >= 0) elegir_loseta(i);
+});
+$('btnEmpezarRonda').onclick = () => { Sonido.activar(); empezarRonda(); };
+$('btnCobrar').onclick = () => { Sonido.activar(); cobrar(); };
+$('dificultad').addEventListener('change', () => { S.dificultad = $('dificultad').value; refrescar(); });
+$('apuesta').addEventListener('input', refrescar);
+addEventListener('keydown', ev => {
+  if (ev.code === 'Space'){ ev.preventDefault(); if (S.fase !== 'subiendo') empezarRonda(); }
+  else if (ev.key === 'c' || ev.key === 'C') cobrar();
+  else if (/^[1-4]$/.test(ev.key)) elegir_loseta(parseInt(ev.key, 10) - 1);
+});
+$('btnEntrar').onclick = () => { Sonido.activar(); $('modalInicio').classList.remove('visible'); };
+Arcade.conectarSonido($('btnSonido'));
+
+cargarPartida();
+S.dificultad = $('dificultad').value;
+refrescar();
+Arcade.bucle(dt => dibujar(dt));
+
+});
+
+registrarJuego("limbo", function(document, addEventListener, Arcade){
+
+// ============================================================
+//  LIMBO+ — P(resultado ≥ x) = 0,99 / x
+// ============================================================
+const $ = id => document.getElementById(id);
+const lienzo = $('lienzo');
+const ctx = Arcade.nitido(lienzo);
+const avisos = $('avisos');
+const ANCHO = lienzo.width, ALTO = lienzo.height;
+
+const VENTAJA = 0.99;
+const MAX = 1000000;
+
+const L = {
+  saldo: Arcade.fichas.saldo(),
+  objetivo: 2, apuesta: 100,
+  resultado: 0, mostrado: 0,
+  fase: 'espera',        // espera | subiendo | fin
+  gano: false, reloj: 0,
+  historia: [], auto: false,
+  jugadas: 0, ganadas: 0,
+  record: Arcade.record('limbo'),
+  particulas: []
+};
+
+// El resultado sale de un uniforme: r en (0,1] -> 0,99/r, redondeado a 2 decimales
+function sortear(){
+  const r = Math.random();
+  return Math.min(MAX, Math.max(1, Math.floor(VENTAJA / (1 - r) * 100) / 100));
+}
+const probabilidad = obj => Math.min(1, VENTAJA / obj);
+
+function leerCampos(){
+  L.apuesta = Math.max(10, Math.floor(parseFloat($('apuesta').value) || 0));
+  L.objetivo = limitar(parseFloat($('objetivo').value) || 1.01, 1.01, MAX);
+  L.objetivo = Math.floor(L.objetivo * 100) / 100;
+  $('apuesta').value = L.apuesta;
+  $('objetivo').value = L.objetivo.toFixed(2);
+  const p = probabilidad(L.objetivo) * 100;
+  $('pistaApuesta').textContent = 'ganarías ' + Math.floor(L.apuesta * L.objetivo).toLocaleString('es-ES');
+  $('pistaProb').textContent = 'probabilidad ' + (p < 0.01 ? p.toFixed(5) : p.toFixed(2)) + ' %';
+}
+
+function jugar(){
+  if (L.fase === 'subiendo') return;
+  leerCampos();
+  if (L.apuesta > L.saldo){
+    Arcade.aviso(avisos, 'No tienes fichas suficientes', false, 1800);
+    L.auto = false; pintarAuto();
+    return;
+  }
+  L.saldo = Arcade.fichas.ajustar(-L.apuesta);
+  L.resultado = sortear();
+  L.gano = L.resultado >= L.objetivo;
+  L.mostrado = 1;
+  L.reloj = 0;
+  L.fase = 'subiendo';
+  L.particulas.length = 0;
+  Sonido.fx('despegue');
+  refrescar();
+}
+
+function resolver(){
+  L.fase = 'fin';
+  L.mostrado = L.resultado;
+  L.jugadas++;
+  let cobro = 0;
+  if (L.gano){
+    cobro = Math.floor(L.apuesta * L.objetivo);
+    L.saldo = Arcade.fichas.ajustar(cobro);
+    L.ganadas++;
+    Arcade.guardarRecord('limbo', Math.round(L.objetivo * 100));
+    L.record = Arcade.record('limbo');
+    for (let i = 0; i < 40; i++) L.particulas.push({
+      x: ANCHO / 2 + azar(-90, 90), y: ALTO / 2 + azar(-30, 30),
+      vx: azar(-160, 160), vy: azar(-260, -40),
+      vida: azar(0.5, 1.2), max: 1.2, r: azar(1.6, 4),
+      color: Math.random() < 0.5 ? '#a855f7' : '#f3e600'
+    });
+    Sonido.fx('caja');
+  } else {
+    Sonido.fx('error');
+  }
+  L.historia.unshift({ v: L.resultado, gano: L.gano });
+  if (L.historia.length > 26) L.historia.pop();
+
+  Arcade.perfil.partida('limbo', {
+    puntos: L.gano ? Math.round(L.objetivo * 100) : 0, victoria: L.gano
+  });
+  guardarPartida();
+  pintarHistorial();
+  refrescar();
+
+  if (L.auto) setTimeout(() => { if (L.auto && L.fase === 'fin') jugar(); }, 900);
+}
+
+// ---------- Guardado ----------
+function guardarPartida(){
+  Arcade.escribir('limbo', JSON.stringify({
+    historia: L.historia.slice(0, 26), jugadas: L.jugadas, ganadas: L.ganadas,
+    objetivo: L.objetivo, apuesta: L.apuesta
+  }));
+}
+function cargarPartida(){
+  const crudo = Arcade.leerTexto('limbo', null);
+  if (!crudo) return;
+  try {
+    const g = JSON.parse(crudo);
+    L.historia = Array.isArray(g.historia) ? g.historia : [];
+    L.jugadas = g.jugadas || 0; L.ganadas = g.ganadas || 0;
+    if (g.objetivo) $('objetivo').value = (+g.objetivo).toFixed(2);
+    if (g.apuesta) $('apuesta').value = g.apuesta;
+  } catch(e){}
+}
+Guardado.registrar(guardarPartida);
+
+// ---------- Interfaz ----------
+function pintarHistorial(){
+  const h = $('historial');
+  h.innerHTML = '';
+  L.historia.forEach(r => {
+    const s = document.createElement('span');
+    s.className = r.gano ? 'gana' : 'pierde';
+    s.textContent = r.v >= 1000 ? Math.round(r.v).toLocaleString('es-ES') + 'x' : r.v.toFixed(2) + 'x';
+    h.appendChild(s);
+  });
+}
+function pintarAuto(){
+  $('btnAuto').textContent = L.auto ? '🔁 Auto: encendido' : '🔁 Auto: apagado';
+  $('btnAuto').classList.toggle('primario', L.auto);
+}
+function refrescar(){
+  $('saldoTxt').textContent = L.saldo.toLocaleString('es-ES');
+  $('recordTxt').textContent = L.record ? (L.record / 100).toFixed(2) + 'x' : '—';
+  $('btnJugar').disabled = L.fase === 'subiendo';
+}
+
+// ---------- Dibujo ----------
+function texto(t, x, y, color, tam, alin, peso, fuente){
+  ctx.fillStyle = color;
+  ctx.font = (peso || 700) + ' ' + tam + 'px ' + (fuente || '"Segoe UI", system-ui, sans-serif');
+  ctx.textAlign = alin || 'left'; ctx.textBaseline = 'middle';
+  ctx.fillText(t, x, y);
+}
+
+function dibujar(dt){
+  // ---- avance de la animación ----
+  if (L.fase === 'subiendo'){
+    L.reloj += dt;
+    // sube deprisa y frena al acercarse: curva de desaceleración
+    const dur = 1.5;
+    const u = Math.min(1, L.reloj / dur);
+    const suave = 1 - Math.pow(1 - u, 3);
+    // se recorre en escala logarítmica para que los números grandes no vuelen
+    const l0 = 0, l1 = Math.log(L.resultado);
+    L.mostrado = Math.exp(l0 + (l1 - l0) * suave);
+    if (u >= 1) resolver();
+  }
+  for (let i = L.particulas.length - 1; i >= 0; i--){
+    const p = L.particulas[i];
+    p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 420 * dt; p.vida -= dt;
+    if (p.vida <= 0) L.particulas.splice(i, 1);
+  }
+
+  // ---- fondo: pozo vertical con nieblas ----
+  const g = ctx.createLinearGradient(0, 0, 0, ALTO);
+  g.addColorStop(0, '#150a2e');
+  g.addColorStop(0.5, '#0b0620');
+  g.addColorStop(1, '#05030f');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, ANCHO, ALTO);
+
+  // rejilla que se desplaza según el multiplicador: da sensación de subir
+  const desliz = (Math.log(Math.max(1, L.mostrado)) * 90) % 60;
+  ctx.strokeStyle = 'rgba(168,85,247,.10)'; ctx.lineWidth = 1;
+  for (let y = -60 + desliz; y < ALTO; y += 60){
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(ANCHO, y); ctx.stroke();
+  }
+  for (let x = 0; x < ANCHO; x += 60){
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, ALTO); ctx.stroke();
+  }
+
+  // guías del hueco del ascensor
+  const izq = ANCHO / 2 - 180, der = ANCHO / 2 + 180;
+  const brillo = L.fase === 'subiendo' ? 0.55 : 0.28;
+  [izq, der].forEach(x => {
+    const gr = ctx.createLinearGradient(x - 6, 0, x + 6, 0);
+    gr.addColorStop(0, 'rgba(168,85,247,0)');
+    gr.addColorStop(0.5, 'rgba(168,85,247,' + brillo + ')');
+    gr.addColorStop(1, 'rgba(168,85,247,0)');
+    ctx.fillStyle = gr; ctx.fillRect(x - 6, 0, 12, ALTO);
+  });
+
+  // ---- línea del objetivo ----
+  const yObj = 118;
+  ctx.setLineDash([9, 7]);
+  ctx.strokeStyle = 'rgba(243,230,0,.65)'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(40, yObj); ctx.lineTo(ANCHO - 40, yObj); ctx.stroke();
+  ctx.setLineDash([]);
+  texto('OBJETIVO ' + L.objetivo.toFixed(2) + 'x', 48, yObj - 15, '#f3e600', 13, 'left', 800);
+  const p = probabilidad(L.objetivo) * 100;
+  texto((p < 0.01 ? p.toFixed(5) : p.toFixed(2)) + ' % de probabilidad',
+        ANCHO - 48, yObj - 15, 'rgba(243,230,0,.55)', 12, 'right', 700);
+
+  // ---- número grande ----
+  const enFin = L.fase === 'fin';
+  const color = L.fase === 'espera' ? '#6b7a94'
+    : enFin ? (L.gano ? '#4ee089' : '#ff4d6a') : '#c9a6ff';
+  const valor = L.mostrado >= 1000
+    ? Math.round(L.mostrado).toLocaleString('es-ES')
+    : L.mostrado.toFixed(2);
+
+  ctx.save();
+  ctx.shadowColor = color;
+  ctx.shadowBlur = L.fase === 'subiendo' ? 34 : enFin ? 26 : 12;
+  const tam = valor.length > 8 ? 66 : valor.length > 5 ? 82 : 104;
+  texto(valor + 'x', ANCHO / 2, ALTO / 2, color, tam, 'center', 900, '"Courier New", monospace');
+  ctx.restore();
+
+  if (enFin){
+    texto(L.gano ? '✅ POR ENCIMA DEL OBJETIVO' : '✗ SE QUEDÓ CORTO',
+          ANCHO / 2, ALTO / 2 + 76, color, 16, 'center', 800);
+    if (L.gano)
+      texto('+' + Math.floor(L.apuesta * L.objetivo).toLocaleString('es-ES') + ' fichas',
+            ANCHO / 2, ALTO / 2 + 100, '#f3e600', 15, 'center', 800);
+  } else if (L.fase === 'espera'){
+    texto('elige objetivo y sube', ANCHO / 2, ALTO / 2 + 76, 'rgba(255,255,255,.3)', 14, 'center', 700);
+  }
+
+  // barra que compara lo alcanzado con el objetivo
+  const anchoBarra = 420, xB = ANCHO / 2 - anchoBarra / 2, yB = ALTO - 62;
+  ctx.fillStyle = 'rgba(0,0,0,.5)';
+  ctx.beginPath(); ctx.roundRect(xB, yB, anchoBarra, 12, 6); ctx.fill();
+  // escala logarítmica hasta 100x
+  const u = Math.min(1, Math.log(Math.max(1, L.mostrado)) / Math.log(100));
+  const uo = Math.min(1, Math.log(Math.max(1, L.objetivo)) / Math.log(100));
+  const gb = ctx.createLinearGradient(xB, 0, xB + anchoBarra, 0);
+  gb.addColorStop(0, '#a855f7'); gb.addColorStop(1, '#f3e600');
+  ctx.fillStyle = gb;
+  ctx.beginPath(); ctx.roundRect(xB, yB, anchoBarra * u, 12, 6); ctx.fill();
+  ctx.fillStyle = '#f3e600';
+  ctx.fillRect(xB + anchoBarra * uo - 1.5, yB - 5, 3, 22);
+  texto('1x', xB - 8, yB + 6, 'rgba(255,255,255,.3)', 11, 'right', 700);
+  texto('100x', xB + anchoBarra + 8, yB + 6, 'rgba(255,255,255,.3)', 11, 'left', 700);
+
+  // partículas de premio
+  for (const q of L.particulas){
+    ctx.globalAlpha = Math.max(0, q.vida / q.max);
+    ctx.fillStyle = q.color;
+    ctx.beginPath(); ctx.arc(q.x, q.y, q.r, 0, 6.2832); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+
+  const pct = L.jugadas ? Math.round(L.ganadas / L.jugadas * 100) : 0;
+  texto('jugadas ' + L.jugadas + '  ·  acertadas ' + pct + '%', 16, ALTO - 16,
+        'rgba(255,255,255,.3)', 12, 'left', 700);
+  texto('ventaja de la casa 1 %', ANCHO - 16, ALTO - 16, 'rgba(255,255,255,.25)', 12, 'right', 700);
+}
+
+// ---------- Entrada ----------
+$('btnJugar').onclick = () => { Sonido.activar(); jugar(); };
+$('apuesta').addEventListener('input', leerCampos);
+$('objetivo').addEventListener('input', leerCampos);
+$('rapidas').addEventListener('click', ev => {
+  const b = ev.target.closest('[data-obj]');
+  if (!b) return;
+  $('objetivo').value = (+b.dataset.obj).toFixed(2);
+  leerCampos();
+});
+$('btnAuto').onclick = () => {
+  L.auto = !L.auto;
+  pintarAuto();
+  if (L.auto && L.fase !== 'subiendo') jugar();
+};
+addEventListener('keydown', ev => {
+  if (ev.code === 'Space'){ ev.preventDefault(); jugar(); }
+});
+$('btnEmpezar').onclick = () => { Sonido.activar(); $('modalInicio').classList.remove('visible'); };
+Arcade.conectarSonido($('btnSonido'));
+
+cargarPartida();
+leerCampos();
+pintarHistorial();
+pintarAuto();
+refrescar();
+Arcade.bucle(dt => dibujar(dt));
+
+});
+
+registrarJuego("bigbass", function(document, addEventListener, Arcade){
+
+// ============================================================
+//  BIG BASS CRASH — P(rotura > x) = 0,99 / x, con tres cañas
+// ============================================================
+const $ = id => document.getElementById(id);
+const lienzo = $('lienzo');
+const ctx = Arcade.nitido(lienzo);
+const avisos = $('avisos');
+const ANCHO = lienzo.width, ALTO = lienzo.height;
+
+const SUPERFICIE = 92;
+const N_CANAS = 3;
+const NOMBRES = ['CAÑA 1', 'CAÑA 2', 'CAÑA 3'];
+
+const G = {
+  fase: 'espera',        // espera | pescando | roto
+  crono: 5, t: 0, mult: 1, rotura: 2,
+  saldo: Arcade.fichas.saldo(),
+  record: Arcade.record('bigbass'),
+  historia: [],
+  canas: [],             // { monto, viva, pendiente, cobradaEn, auto, objetivo }
+  burbujas: [], salpicaduras: [],
+  destelloRotura: 0, brilloCobro: 0,
+  rondas: 0, cobradas: 0
+};
+
+// ---------- Matemáticas ----------
+// P(rotura > x) = 0,99 / x  →  mediana en torno a 2x y cola larga
+function sortearRotura(){
+  // La propia fórmula ya deja ~1 % de resultados en 1.00: un descarte extra
+  // aparte multiplicaba las dos ventajas y dejaba la casa en el 2 %.
+  const r = Math.random();
+  return Math.min(500, Math.max(1.00, Math.floor(99 / (1 - r)) / 100));
+}
+const multEn = seg => Math.exp(0.115 * seg);
+
+function nuevasCanas(){
+  G.canas = Array.from({length:N_CANAS}, (_, i) => ({
+    monto: i === 0 ? 100 : 0, viva:false, pendiente:false,
+    cobradaEn:0, auto:false, objetivo:2
+  }));
+}
+
+// ---------- Ronda ----------
+function empezarRonda(){
+  G.fase = 'pescando';
+  G.t = 0; G.mult = 1;
+  G.rotura = sortearRotura();
+  G.rondas++;
+  G.destelloRotura = 0;
+  G.canas.forEach(c => {
+    if (c.pendiente && c.monto > 0 && c.monto <= G.saldo){
+      G.saldo = Arcade.fichas.ajustar(-c.monto);
+      c.viva = true;
+      c.pendiente = false;
+      c.cobradaEn = 0;
+    } else {
+      c.pendiente = false;
+      c.viva = false;
+    }
+  });
+  Sonido.fx('despegue');
+  Sonido.motor(0);
+  pintarCanas();
+  refrescar();
+}
+
+function recoger(i, automatica){
+  const c = G.canas[i];
+  if (G.fase !== 'pescando' || !c.viva) return;
+  const pago = Math.floor(c.monto * G.mult);
+  G.saldo = Arcade.fichas.ajustar(pago);
+  c.viva = false;
+  c.cobradaEn = G.mult;
+  G.cobradas++;
+  G.brilloCobro = 1;
+  for (let k = 0; k < 26; k++) G.salpicaduras.push({
+    x: ANCHO * 0.42 + azar(-40, 40), y: SUPERFICIE + azar(-10, 10),
+    vx: azar(-220, 220), vy: azar(-340, -80),
+    vida: azar(0.4, 1), max: 1, r: azar(1.5, 4)
+  });
+  const beneficio = pago - c.monto;
+  if (beneficio > 0) Arcade.guardarRecord('bigbass', beneficio);
+  G.record = Arcade.record('bigbass');
+  Arcade.perfil.partida('bigbass', { puntos: Math.max(0, beneficio), victoria: beneficio > 0 });
+  Arcade.aviso(avisos, (automatica ? '🎯 Automática · ' : '🎣 ') + NOMBRES[i] + ': ' +
+               G.mult.toFixed(2) + 'x · +' + beneficio.toLocaleString('es-ES'), true, 2200);
+  Sonido.fx('caja');
+  pintarCanas();
+  refrescar();
+}
+
+function romper(){
+  G.fase = 'roto';
+  G.crono = 3.2;
+  G.destelloRotura = 1;
+  Sonido.pararMotor();
+  Sonido.fx('choque');
+  G.canas.forEach((c, i) => {
+    if (c.viva){
+      c.viva = false;
+      Arcade.perfil.partida('bigbass', { puntos: 0, victoria: false });
+    }
+  });
+  G.historia.unshift(G.mult);
+  if (G.historia.length > 26) G.historia.pop();
+  guardarPartida();
+  pintarHistorial();
+  pintarCanas();
+  refrescar();
+}
+
+// ---------- Guardado ----------
+function guardarPartida(){
+  Arcade.escribir('bigbass', JSON.stringify({
+    historia: G.historia.slice(0, 26), rondas: G.rondas, cobradas: G.cobradas,
+    canas: G.canas.map(c => ({ monto:c.monto, auto:c.auto, objetivo:c.objetivo }))
+  }));
+}
+function cargarPartida(){
+  nuevasCanas();
+  const crudo = Arcade.leerTexto('bigbass', null);
+  if (!crudo) return;
+  try {
+    const g = JSON.parse(crudo);
+    G.historia = Array.isArray(g.historia) ? g.historia : [];
+    G.rondas = g.rondas || 0; G.cobradas = g.cobradas || 0;
+    if (Array.isArray(g.canas)) g.canas.forEach((c, i) => {
+      if (!G.canas[i]) return;
+      G.canas[i].monto = c.monto || 0;
+      G.canas[i].auto = !!c.auto;
+      G.canas[i].objetivo = c.objetivo || 2;
+    });
+  } catch(e){}
+}
+Guardado.registrar(guardarPartida);
+
+// ---------- Panel de cañas ----------
+function pintarCanas(){
+  const cont = $('canas');
+  if (cont.children.length !== N_CANAS){
+    cont.innerHTML = '';
+    G.canas.forEach((c, i) => {
+      const d = document.createElement('div');
+      d.className = 'cana';
+      d.innerHTML =
+        '<div class="cabecera"><span>' + NOMBRES[i] + '</span>' +
+        '<span class="estado" data-estado="' + i + '">libre</span></div>' +
+        '<div class="fila">' +
+          '<input type="number" min="0" step="10" data-monto="' + i + '" aria-label="Apuesta de la ' + NOMBRES[i] + '">' +
+          '<button data-mitad="' + i + '" aria-label="Mitad">½</button>' +
+          '<button data-doble="' + i + '" aria-label="Doble">x2</button>' +
+        '</div>' +
+        '<div class="fila">' +
+          '<label class="auto"><input type="checkbox" data-auto="' + i + '"> auto en</label>' +
+          '<input type="number" min="1.01" step="0.1" data-objetivo="' + i + '" aria-label="Multiplicador de recogida automática">' +
+        '</div>' +
+        '<button class="accion" data-accion="' + i + '"></button>';
+      cont.appendChild(d);
+    });
+  }
+
+  G.canas.forEach((c, i) => {
+    const d = cont.children[i];
+    d.classList.toggle('viva', c.viva);
+    d.classList.toggle('cobrada', c.cobradaEn > 0);
+    d.querySelector('[data-monto="' + i + '"]').value = c.monto;
+    d.querySelector('[data-objetivo="' + i + '"]').value = (+c.objetivo).toFixed(2);
+    d.querySelector('[data-auto="' + i + '"]').checked = c.auto;
+    d.querySelector('[data-estado="' + i + '"]').textContent =
+      c.viva ? 'en el agua' : c.pendiente ? 'lista' : c.cobradaEn ? 'cobró ' + c.cobradaEn.toFixed(2) + 'x' : 'libre';
+
+    const b = d.querySelector('[data-accion="' + i + '"]');
+    if (c.viva){
+      b.className = 'accion recoger';
+      b.textContent = '🎣 Recoger ' + Math.floor(c.monto * G.mult).toLocaleString('es-ES');
+      b.disabled = false;
+    } else if (c.pendiente){
+      b.className = 'accion cancelar';
+      b.textContent = '✕ Cancelar';
+      b.disabled = false;
+    } else {
+      b.className = 'accion lanzar';
+      b.textContent = G.fase === 'pescando' ? '⏳ Lanzar la próxima' : '🎣 Lanzar';
+      b.disabled = c.monto <= 0;
+    }
+    d.querySelector('[data-monto="' + i + '"]').disabled = c.viva;
+  });
+}
+
+function pintarHistorial(){
+  const h = $('historial');
+  h.innerHTML = '';
+  G.historia.forEach(v => {
+    const s = document.createElement('span');
+    s.className = v < 2 ? 'bajo' : v < 10 ? 'medio' : 'alto';
+    s.textContent = v.toFixed(2) + 'x';
+    h.appendChild(s);
+  });
+}
+
+function refrescar(){
+  $('saldoTxt').textContent = G.saldo.toLocaleString('es-ES');
+  $('recordTxt').textContent = G.record ? '+' + G.record.toLocaleString('es-ES') : '—';
+}
+
+// ---------- Dibujo ----------
+function texto(t, x, y, color, tam, alin, peso, fuente){
+  ctx.fillStyle = color;
+  ctx.font = (peso || 700) + ' ' + tam + 'px ' + (fuente || '"Segoe UI", system-ui, sans-serif');
+  ctx.textAlign = alin || 'left'; ctx.textBaseline = 'middle';
+  ctx.fillText(t, x, y);
+}
+
+// Trayectoria del pez: sube conforme crece el multiplicador, en escala log
+function puntoPez(){
+  const u = Math.min(1, Math.log(Math.max(1, G.mult)) / Math.log(60));
+  const x = ANCHO * 0.20 + u * ANCHO * 0.56;
+  const y = ALTO - 70 - u * (ALTO - 70 - SUPERFICIE - 40);
+  return { x, y };
+}
+
+function pez(x, y, tam, cola, escapando){
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(escapando ? -0.9 : -0.32 + Math.sin(cola * 3) * 0.08);
+  ctx.scale(tam, tam);
+
+  // cola
+  ctx.fillStyle = '#1f7d63';
+  ctx.beginPath();
+  const ag = Math.sin(cola * 12) * 0.5;
+  ctx.moveTo(-26, 0);
+  ctx.lineTo(-46, -14 + ag * 6);
+  ctx.lineTo(-40, 0);
+  ctx.lineTo(-46, 14 + ag * 6);
+  ctx.closePath(); ctx.fill();
+
+  // aletas
+  ctx.fillStyle = '#256e5c';
+  ctx.beginPath(); ctx.ellipse(-4, -16, 13, 6, -0.5, 0, 6.2832); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(-2, 14, 11, 5, 0.4, 0, 6.2832); ctx.fill();
+
+  // cuerpo
+  const g = ctx.createLinearGradient(0, -20, 0, 20);
+  g.addColorStop(0, '#4fd6a8');
+  g.addColorStop(0.5, '#2fae86');
+  g.addColorStop(1, '#e8f4ea');
+  ctx.fillStyle = g;
+  ctx.beginPath(); ctx.ellipse(0, 0, 28, 17, 0, 0, 6.2832); ctx.fill();
+
+  // manchas
+  ctx.fillStyle = 'rgba(20,70,60,.5)';
+  [[-8,-5,4],[4,-8,3],[10,2,3.4],[-2,5,3]].forEach(([dx, dy, r]) => {
+    ctx.beginPath(); ctx.arc(dx, dy, r, 0, 6.2832); ctx.fill();
+  });
+
+  // branquia
+  ctx.strokeStyle = 'rgba(20,70,60,.55)'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.arc(13, 0, 9, -1.1, 1.1); ctx.stroke();
+
+  // ojo
+  ctx.fillStyle = '#fff';
+  ctx.beginPath(); ctx.arc(20, -5, 4.6, 0, 6.2832); ctx.fill();
+  ctx.fillStyle = '#0d1a18';
+  ctx.beginPath(); ctx.arc(21.4, -5, 2.4, 0, 6.2832); ctx.fill();
+
+  // boca
+  ctx.strokeStyle = '#1a5c4c'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.arc(27, 2, 5, -0.6, 0.9); ctx.stroke();
+  ctx.restore();
+}
+
+function dibujar(dt){
+  // ---- estado ----
+  if (G.fase === 'espera'){
+    G.crono -= dt;
+    if (G.crono <= 0) empezarRonda();
+  } else if (G.fase === 'pescando'){
+    G.t += dt;
+    G.mult = multEn(G.t);
+    Sonido.motor(Math.min(1, Math.log(G.mult) / Math.log(30)));
+    // recogidas automáticas
+    G.canas.forEach((c, i) => {
+      if (c.viva && c.auto && G.mult >= c.objetivo) recoger(i, true);
+    });
+    if (G.mult >= G.rotura){ G.mult = G.rotura; romper(); }
+    else if (Math.floor(G.t * 6) % 6 === 0) pintarCanas();
+  } else if (G.fase === 'roto'){
+    G.crono -= dt;
+    if (G.crono <= 0){ G.fase = 'espera'; G.crono = 5; G.mult = 1; pintarCanas(); }
+  }
+
+  G.destelloRotura = Math.max(0, G.destelloRotura - dt * 1.3);
+  G.brilloCobro = Math.max(0, G.brilloCobro - dt * 1.4);
+
+  // burbujas
+  if (Math.random() < dt * 26) G.burbujas.push({
+    x: azar(0, ANCHO), y: ALTO + 10, v: azar(30, 90), r: azar(1.5, 5), fase: azar(0, 6.28)
+  });
+  for (let i = G.burbujas.length - 1; i >= 0; i--){
+    const b = G.burbujas[i];
+    b.y -= b.v * dt;
+    b.x += Math.sin(b.y * 0.03 + b.fase) * 12 * dt;
+    if (b.y < SUPERFICIE - 10) G.burbujas.splice(i, 1);
+  }
+  for (let i = G.salpicaduras.length - 1; i >= 0; i--){
+    const s = G.salpicaduras[i];
+    s.x += s.vx * dt; s.y += s.vy * dt; s.vy += 620 * dt; s.vida -= dt;
+    if (s.vida <= 0) G.salpicaduras.splice(i, 1);
+  }
+
+  // ---- cielo y agua ----
+  const cielo = ctx.createLinearGradient(0, 0, 0, SUPERFICIE);
+  cielo.addColorStop(0, '#0b2a3f'); cielo.addColorStop(1, '#1d5570');
+  ctx.fillStyle = cielo; ctx.fillRect(0, 0, ANCHO, SUPERFICIE);
+
+  const agua = ctx.createLinearGradient(0, SUPERFICIE, 0, ALTO);
+  agua.addColorStop(0, '#126d84'); agua.addColorStop(0.45, '#0a4256'); agua.addColorStop(1, '#04202e');
+  ctx.fillStyle = agua; ctx.fillRect(0, SUPERFICIE, ANCHO, ALTO - SUPERFICIE);
+
+  // rayos de luz
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  for (let k = 0; k < 5; k++){
+    const x = (k * 233 + Math.sin(G.t * 0.3 + k) * 40) % ANCHO;
+    const gr = ctx.createLinearGradient(x, SUPERFICIE, x + 70, ALTO);
+    gr.addColorStop(0, 'rgba(150,235,255,.10)');
+    gr.addColorStop(1, 'rgba(150,235,255,0)');
+    ctx.fillStyle = gr;
+    ctx.beginPath();
+    ctx.moveTo(x - 22, SUPERFICIE); ctx.lineTo(x + 22, SUPERFICIE);
+    ctx.lineTo(x + 110, ALTO); ctx.lineTo(x + 26, ALTO);
+    ctx.closePath(); ctx.fill();
+  }
+  ctx.restore();
+
+  // superficie ondulada
+  ctx.beginPath();
+  ctx.moveTo(0, SUPERFICIE);
+  for (let x = 0; x <= ANCHO; x += 8)
+    ctx.lineTo(x, SUPERFICIE + Math.sin(x * 0.03 + G.t * 2) * 3 + Math.sin(x * 0.07 - G.t * 1.4) * 1.6);
+  ctx.strokeStyle = 'rgba(190,245,255,.5)'; ctx.lineWidth = 2.5; ctx.stroke();
+
+  // vegetación del fondo
+  for (let k = 0; k < 14; k++){
+    const x = (k * 79 + 30) % ANCHO;
+    const alto = 40 + ((k * 53) % 70);
+    ctx.strokeStyle = 'rgba(30,120,90,.5)'; ctx.lineWidth = 4; ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(x, ALTO);
+    ctx.quadraticCurveTo(x + Math.sin(G.t * 1.1 + k) * 16, ALTO - alto / 2, x + Math.sin(G.t * 1.1 + k) * 26, ALTO - alto);
+    ctx.stroke();
+  }
+  ctx.lineCap = 'butt';
+
+  // burbujas
+  for (const b of G.burbujas){
+    ctx.strokeStyle = 'rgba(200,245,255,.28)'; ctx.lineWidth = 1.2;
+    ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, 6.2832); ctx.stroke();
+  }
+
+  // barca en la superficie
+  const bx = ANCHO * 0.12, by = SUPERFICIE - 6 + Math.sin(G.t * 1.6) * 3;
+  ctx.fillStyle = '#7a4a22';
+  ctx.beginPath();
+  ctx.moveTo(bx - 52, by); ctx.lineTo(bx + 52, by);
+  ctx.lineTo(bx + 36, by + 20); ctx.lineTo(bx - 36, by + 20);
+  ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#9c6330';
+  ctx.fillRect(bx - 52, by - 5, 104, 6);
+  // pescador
+  ctx.fillStyle = '#274b6b';
+  ctx.beginPath(); ctx.roundRect(bx - 10, by - 34, 18, 30, 6); ctx.fill();
+  ctx.fillStyle = '#f0c9a0';
+  ctx.beginPath(); ctx.arc(bx - 1, by - 41, 8, 0, 6.2832); ctx.fill();
+  ctx.fillStyle = '#c8402f';
+  ctx.beginPath(); ctx.ellipse(bx - 1, by - 47, 12, 5, 0, 0, 6.2832); ctx.fill();
+  // caña
+  ctx.strokeStyle = '#e8d3a8'; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.moveTo(bx + 6, by - 26); ctx.lineTo(bx + 62, by - 66); ctx.stroke();
+
+  // ---- sedal y pez ----
+  const q = puntoPez();
+  const activo = G.fase === 'pescando';
+  const roto = G.fase === 'roto';
+
+  ctx.strokeStyle = roto ? 'rgba(255,90,120,.7)' : 'rgba(230,250,255,.75)';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(bx + 62, by - 66);
+  if (roto){
+    // el hilo cuelga suelto
+    ctx.quadraticCurveTo((bx + q.x) / 2, by + 60, bx + 130, ALTO - 120);
+  } else {
+    ctx.quadraticCurveTo((bx + 62 + q.x) / 2, (by - 66 + q.y) / 2 + 40, q.x - 22, q.y);
+  }
+  ctx.stroke();
+
+  if (activo || roto) pez(q.x, q.y, activo ? 1 + Math.min(0.5, Math.log(G.mult) * 0.12) : 1.1, G.t, roto);
+
+  // salpicaduras
+  for (const s of G.salpicaduras){
+    ctx.globalAlpha = Math.max(0, s.vida / s.max);
+    ctx.fillStyle = '#cdeeff';
+    ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, 6.2832); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+
+  // ---- multiplicador ----
+  const color = roto ? '#ff5a72' : activo ? '#3fd6b0' : 'rgba(255,255,255,.4)';
+  ctx.save();
+  ctx.shadowColor = color; ctx.shadowBlur = roto ? 30 : activo ? 24 : 8;
+  texto(G.mult.toFixed(2) + 'x', ANCHO / 2, ALTO * 0.30, color, 74, 'center', 900,
+        '"Courier New", monospace');
+  ctx.restore();
+
+  if (roto){
+    texto('💥 ¡SE ROMPIÓ EL SEDAL!', ANCHO / 2, ALTO * 0.30 + 56, '#ff8fa5', 19, 'center', 900);
+  } else if (G.fase === 'espera'){
+    texto('siguiente lance en ' + Math.max(0, G.crono).toFixed(1) + ' s',
+          ANCHO / 2, ALTO * 0.30 + 52, 'rgba(255,255,255,.5)', 15, 'center', 700);
+    const vivas = G.canas.filter(c => c.pendiente).length;
+    texto(vivas ? vivas + ' caña' + (vivas > 1 ? 's' : '') + ' preparada' + (vivas > 1 ? 's' : '')
+                : 'prepara alguna caña', ANCHO / 2, ALTO * 0.30 + 76,
+          vivas ? '#4ee089' : 'rgba(255,255,255,.3)', 13, 'center', 700);
+  }
+
+  // marcas de recogida de cada caña
+  G.canas.forEach((c, i) => {
+    if (!c.cobradaEn) return;
+    texto(NOMBRES[i] + ' ✅ ' + c.cobradaEn.toFixed(2) + 'x', ANCHO - 16, 92 + i * 20,
+          '#4ee089', 12, 'right', 800);
+  });
+
+  if (G.destelloRotura > 0){
+    ctx.fillStyle = 'rgba(255,61,104,' + (G.destelloRotura * 0.3).toFixed(3) + ')';
+    ctx.fillRect(0, 0, ANCHO, ALTO);
+  }
+  if (G.brilloCobro > 0){
+    ctx.fillStyle = 'rgba(78,224,137,' + (G.brilloCobro * 0.16).toFixed(3) + ')';
+    ctx.fillRect(0, 0, ANCHO, ALTO);
+  }
+
+  const pct = G.rondas ? Math.round(G.cobradas / Math.max(1, G.rondas) * 100) : 0;
+  texto('lances ' + G.rondas + '  ·  recogidas ' + G.cobradas, 16, ALTO - 16,
+        'rgba(255,255,255,.32)', 12, 'left', 700);
+  texto('ventaja de la casa 1 %', ANCHO - 16, ALTO - 16, 'rgba(255,255,255,.25)', 12, 'right', 700);
+}
+
+// ---------- Entrada ----------
+$('canas').addEventListener('click', ev => {
+  const b = ev.target.closest('button');
+  if (!b) return;
+  Sonido.activar();
+  if (b.dataset.accion !== undefined){
+    const i = +b.dataset.accion;
+    const c = G.canas[i];
+    if (c.viva) recoger(i, false);
+    else if (c.pendiente) c.pendiente = false;
+    else {
+      if (c.monto <= 0){ Arcade.aviso(avisos, 'Pon una apuesta en esa caña', false, 1600); return; }
+      if (c.monto > G.saldo){ Arcade.aviso(avisos, 'No tienes fichas suficientes', false, 1700); return; }
+      c.pendiente = true;
+    }
+    pintarCanas();
+  } else if (b.dataset.mitad !== undefined){
+    const i = +b.dataset.mitad;
+    G.canas[i].monto = Math.max(0, Math.floor(G.canas[i].monto / 2));
+    pintarCanas();
+  } else if (b.dataset.doble !== undefined){
+    const i = +b.dataset.doble;
+    G.canas[i].monto = Math.min(G.saldo, Math.max(10, G.canas[i].monto * 2));
+    pintarCanas();
+  }
+});
+$('canas').addEventListener('input', ev => {
+  const t = ev.target;
+  if (t.dataset.monto !== undefined)
+    G.canas[+t.dataset.monto].monto = Math.max(0, Math.floor(parseFloat(t.value) || 0));
+  else if (t.dataset.objetivo !== undefined)
+    G.canas[+t.dataset.objetivo].objetivo = Math.max(1.01, parseFloat(t.value) || 1.01);
+  else if (t.dataset.auto !== undefined)
+    G.canas[+t.dataset.auto].auto = t.checked;
+});
+addEventListener('keydown', ev => {
+  if (ev.code === 'Space'){
+    ev.preventDefault();
+    const i = G.canas.findIndex(c => c.viva);
+    if (i >= 0) recoger(i, false);
+    else { const j = G.canas.findIndex(c => c.monto > 0); if (j >= 0){ G.canas[j].pendiente = true; pintarCanas(); } }
+  }
+});
+$('btnEntrar').onclick = () => { Sonido.activar(); $('modalInicio').classList.remove('visible'); };
+Arcade.conectarSonido($('btnSonido'));
+if (typeof AlSalir !== 'undefined') AlSalir.registrar(() => Sonido.pararMotor());
+
+cargarPartida();
+pintarCanas();
+pintarHistorial();
+refrescar();
+Arcade.bucle(dt => dibujar(dt));
+
+});
+
+registrarJuego("plinko", function(document, addEventListener, Arcade){
+
+// ============================================================
+//  PLINKO — campana de Galton con tablas normalizadas al 99 %
+// ============================================================
+const $ = id => document.getElementById(id);
+const lienzo = $('lienzo');
+const ctx = Arcade.nitido(lienzo);
+const avisos = $('avisos');
+const ANCHO = lienzo.width, ALTO = lienzo.height;
+
+const RTP = 0.99;
+const MINIMO = 0.2;      // ninguna casilla baja de 0,2x: siempre devuelve algo
+
+/**
+ * Pesos relativos de cada casilla, del borde al centro y simétricos.
+ * Después se escalan para que el retorno esperado sea exactamente el 99 %,
+ * así que cambiar el riesgo cambia la varianza pero nunca la ventaja de casa.
+ */
+const PERFILES = {
+  bajo:  n => Array.from({length:n + 1}, (_, i) => Math.pow(Math.abs(i - n / 2) / (n / 2), 1.35) * 4 + 0.5),
+  medio: n => Array.from({length:n + 1}, (_, i) => Math.pow(Math.abs(i - n / 2) / (n / 2), 3.2) * 60 + 0.22),
+  alto:  n => Array.from({length:n + 1}, (_, i) => Math.pow(Math.abs(i - n / 2) / (n / 2), 6) * 800 + 0.12)
+};
+
+// Probabilidad binomial de acabar en la casilla i con n filas
+function probabilidades(n){
+  const p = [];
+  let c = 1;
+  for (let i = 0; i <= n; i++){
+    p.push(c / Math.pow(2, n));
+    c = c * (n - i) / (i + 1);
+  }
+  return p;
+}
+
+/**
+ * Tabla de pagos: se parte del perfil de forma y se escala con un factor
+ * único para que sum(prob[i] * pago[i]) === 0,99.
+ */
+function tablaPagos(n, riesgo){
+  const prob = probabilidades(n);
+  const forma = PERFILES[riesgo](n);
+  let k = RTP / forma.reduce((s, v, i) => s + v * prob[i], 0);
+
+  // El suelo de 0,2x sube el retorno por encima del 99 %, así que lo que sobra
+  // se le quita a las casillas que quedan por encima del suelo, en proporción
+  // a lo que valen. Se itera porque bajar esas casillas puede meter alguna más
+  // por debajo del suelo.
+  for (let vuelta = 0; vuelta < 40; vuelta++){
+    const escalados = forma.map(x => x * k);
+    const enSuelo = escalados.map(x => x < MINIMO);
+    const fijo = prob.reduce((s, pr, i) => s + (enSuelo[i] ? MINIMO * pr : 0), 0);
+    const libre = prob.reduce((s, pr, i) => s + (enSuelo[i] ? 0 : forma[i] * pr), 0);
+    const nuevoK = (RTP - fijo) / libre;
+    if (!isFinite(nuevoK) || Math.abs(nuevoK - k) < 1e-12) break;
+    k = nuevoK;
+  }
+
+  const pagos = forma.map(x => Math.max(MINIMO, Math.round(x * k * 100) / 100));
+
+  // El redondeo a dos decimales deja un residuo: se corrige en el par simétrico
+  // de mayor probabilidad que no esté pegado al suelo, para no romper la simetría.
+  let iAjuste = -1;
+  for (let i = Math.floor(n / 2); i >= 0; i--){
+    if (pagos[i] > MINIMO + 1e-9){ iAjuste = i; break; }
+  }
+  if (iAjuste >= 0){
+    const pareja = [...new Set([iAjuste, n - iAjuste])];
+    const peso = pareja.reduce((s, i) => s + prob[i], 0);
+    for (let vuelta = 0; vuelta < 8; vuelta++){
+      const actual = pagos.reduce((s, x, i) => s + x * prob[i], 0);
+      const desvio = RTP - actual;
+      if (Math.abs(desvio) < 5e-5) break;
+      const ajuste = Math.round(desvio / peso * 100) / 100;
+      if (!ajuste) break;
+      pareja.forEach(i => { pagos[i] = Math.max(MINIMO, Math.round((pagos[i] + ajuste) * 100) / 100); });
+    }
+  }
+  return pagos;
+}
+
+const P = {
+  saldo: Arcade.fichas.saldo(),
+  apuesta: 100, riesgo: 'medio', filas: 16,
+  pagos: [], prob: [],
+  bolas: [], destellos: [],
+  historia: [], lanzadas: 0,
+  record: Arcade.record('plinko'),
+  t: 0
+};
+
+// ---------- Geometría ----------
+const ARRIBA = 66;
+const ABAJO_CASILLAS = 78;
+function paso(){ return Math.min(38, (ALTO - ARRIBA - ABAJO_CASILLAS - 20) / P.filas); }
+function anchoUtil(){ return Math.min(ANCHO - 80, paso() * (P.filas + 1)); }
+function clavo(fila, i){
+  const s = paso();
+  const ancho = (fila + 1) * s;
+  return { x: ANCHO / 2 - ancho / 2 + i * s + s / 2, y: ARRIBA + fila * s };
+}
+function casilla(i){
+  const s = paso();
+  const ancho = (P.filas + 1) * s;
+  return { x: ANCHO / 2 - ancho / 2 + i * s, an: s, y: ALTO - ABAJO_CASILLAS + 10 };
+}
+
+function reconfigurar(){
+  P.filas = parseInt($('filas').value, 10);
+  P.riesgo = $('riesgo').value;
+  P.pagos = tablaPagos(P.filas, P.riesgo);
+  P.prob = probabilidades(P.filas);
+  refrescar();
+}
+
+// ---------- Soltar bolas ----------
+function soltar(){
+  P.apuesta = Math.max(10, Math.floor(parseFloat($('apuesta').value) || 0));
+  $('apuesta').value = P.apuesta;
+  if (P.apuesta > P.saldo){ Arcade.aviso(avisos, 'No tienes fichas suficientes', false, 1700); return false; }
+
+  P.saldo = Arcade.fichas.ajustar(-P.apuesta);
+  // El destino se sortea con la binomial y la bola se guía hacia él: la
+  // física es el espectáculo, pero el resultado es el de la distribución.
+  let destino = 0;
+  for (let k = 0; k < P.filas; k++) if (Math.random() < 0.5) destino++;
+
+  P.bolas.push({
+    x: ANCHO / 2 + azar(-2, 2), y: ARRIBA - 26,
+    vx: 0, vy: 0, fila: 0, destino,
+    izquierdas: P.filas - destino, derechas: destino,
+    apuesta: P.apuesta, estela: [], r: Math.max(5, paso() * 0.26)
+  });
+  P.lanzadas++;
+  Sonido.fx('clic');
+  refrescar();
+  return true;
+}
+
+function aterrizar(bola){
+  const i = limitar(bola.destino, 0, P.filas);
+  const pago = P.pagos[i];
+  const cobro = Math.floor(bola.apuesta * pago);
+  if (cobro > 0) P.saldo = Arcade.fichas.ajustar(cobro);
+  const beneficio = cobro - bola.apuesta;
+  if (beneficio > 0) Arcade.guardarRecord('plinko', beneficio);
+  P.record = Arcade.record('plinko');
+
+  P.historia.unshift({ pago, gano: pago >= 1 });
+  if (P.historia.length > 24) P.historia.pop();
+
+  const c = casilla(i);
+  P.destellos.push({ i, vida: 0.75, max: 0.75 });
+  for (let k = 0; k < (pago >= 5 ? 34 : 12); k++) P.destellos.push({
+    x: c.x + c.an / 2, y: c.y, vx: azar(-180, 180), vy: azar(-320, -60),
+    vida: azar(0.4, 1), max: 1, r: azar(1.5, 3.6),
+    color: pago >= 5 ? '#f3e600' : pago >= 1 ? '#4ee089' : '#8b9bb4'
+  });
+
+  Arcade.perfil.partida('plinko', { puntos: Math.max(0, beneficio), victoria: beneficio > 0 });
+  Sonido.fx(pago >= 5 ? 'caja' : pago >= 1 ? 'gema' : 'clic');
+  guardarPartida();
+  pintarHistorial();
+  refrescar();
+}
+
+// ---------- Guardado ----------
+function guardarPartida(){
+  Arcade.escribir('plinko', JSON.stringify({
+    historia: P.historia.slice(0, 24), lanzadas: P.lanzadas,
+    apuesta: P.apuesta, riesgo: P.riesgo, filas: P.filas
+  }));
+}
+function cargarPartida(){
+  const crudo = Arcade.leerTexto('plinko', null);
+  if (!crudo) return;
+  try {
+    const g = JSON.parse(crudo);
+    P.historia = Array.isArray(g.historia) ? g.historia : [];
+    P.lanzadas = g.lanzadas || 0;
+    if (g.apuesta) $('apuesta').value = g.apuesta;
+    if (g.riesgo) $('riesgo').value = g.riesgo;
+    if (g.filas) $('filas').value = g.filas;
+  } catch(e){}
+}
+Guardado.registrar(guardarPartida);
+
+// ---------- Interfaz ----------
+function colorPago(pago){
+  if (pago >= 10) return '#ff2d6f';
+  if (pago >= 3)  return '#ff8a3d';
+  if (pago >= 1.2) return '#f3e600';
+  if (pago >= 0.8) return '#7bd88f';
+  return '#4b90d8';
+}
+function pintarHistorial(){
+  const h = $('historial');
+  h.innerHTML = '';
+  P.historia.forEach(r => {
+    const s = document.createElement('span');
+    s.textContent = r.pago.toFixed(1) + 'x';
+    s.style.color = '#08101c';
+    s.style.background = colorPago(r.pago);
+    h.appendChild(s);
+  });
+}
+function refrescar(){
+  $('saldoTxt').textContent = P.saldo.toLocaleString('es-ES');
+  $('bolasTxt').textContent = P.bolas.length;
+  $('recordTxt').textContent = P.record ? '+' + P.record.toLocaleString('es-ES') : '—';
+}
+
+// ---------- Dibujo ----------
+function texto(t, x, y, color, tam, alin, peso, fuente){
+  ctx.fillStyle = color;
+  ctx.font = (peso || 700) + ' ' + tam + 'px ' + (fuente || '"Segoe UI", system-ui, sans-serif');
+  ctx.textAlign = alin || 'left'; ctx.textBaseline = 'middle';
+  ctx.fillText(t, x, y);
+}
+
+function moverBolas(dt){
+  const s = paso();
+  for (let b = P.bolas.length - 1; b >= 0; b--){
+    const bola = P.bolas[b];
+    bola.estela.push({ x: bola.x, y: bola.y });
+    if (bola.estela.length > 14) bola.estela.shift();
+
+    bola.vy += 1500 * dt;
+    bola.y += bola.vy * dt;
+    bola.x += bola.vx * dt;
+    bola.vx *= Math.pow(0.35, dt);
+
+    // ¿ha llegado a la altura de la siguiente fila de clavos?
+    if (bola.fila < P.filas){
+      const yFila = ARRIBA + bola.fila * s;
+      if (bola.y >= yFila){
+        // se decide el lado respetando cuántos giros quedan a cada lado
+        const quedan = P.filas - bola.fila;
+        const irDerecha = Math.random() < bola.derechas / quedan;
+        if (irDerecha) bola.derechas--; else bola.izquierdas--;
+
+        bola.x = clavo(bola.fila, 0).x - s / 2 +
+                 (bola.destino - bola.derechas) * s + s / 2 +
+                 (irDerecha ? 0 : 0);
+        // desplazamiento lateral físico: medio paso al lado elegido
+        bola.vx = (irDerecha ? 1 : -1) * s * azar(2.4, 3.4);
+        bola.vy = Math.abs(bola.vy) * -0.24 + 40;
+        bola.fila++;
+        Sonido.fx('paso');
+        P.destellos.push({ clavoF: bola.fila - 1, vida: 0.3, max: 0.3, x: bola.x, y: yFila });
+      }
+    }
+
+    // corrección suave hacia el centro de su casilla al final del recorrido
+    if (bola.fila >= P.filas){
+      const c = casilla(bola.destino);
+      const objetivo = c.x + c.an / 2;
+      bola.x += (objetivo - bola.x) * Math.min(1, 8 * dt);
+      if (bola.y >= c.y - bola.r){
+        aterrizar(bola);
+        P.bolas.splice(b, 1);
+      }
+    }
+  }
+}
+
+function dibujar(dt){
+  P.t += dt;
+  moverBolas(dt);
+  for (let i = P.destellos.length - 1; i >= 0; i--){
+    const d = P.destellos[i];
+    if (d.vx !== undefined){ d.x += d.vx * dt; d.y += d.vy * dt; d.vy += 420 * dt; }
+    d.vida -= dt;
+    if (d.vida <= 0) P.destellos.splice(i, 1);
+  }
+
+  // fondo
+  const g = ctx.createRadialGradient(ANCHO / 2, ARRIBA, 30, ANCHO / 2, ALTO * 0.6, ANCHO * 0.8);
+  g.addColorStop(0, '#1c0a2a'); g.addColorStop(0.6, '#0d0518'); g.addColorStop(1, '#04020a');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, ANCHO, ALTO);
+
+  const s = paso();
+
+  // clavos
+  for (let f = 0; f < P.filas; f++){
+    for (let i = 0; i <= f; i++){
+      const q = clavo(f, i);
+      const golpe = P.destellos.find(d => d.clavoF === f && Math.abs(d.x - q.x) < s * 0.8);
+      const r = 3.4 + (golpe ? golpe.vida / golpe.max * 3 : 0);
+      if (golpe){
+        ctx.save();
+        ctx.shadowColor = '#ff2d6f'; ctx.shadowBlur = 16;
+      }
+      ctx.fillStyle = golpe ? '#ffd6e6' : 'rgba(255,255,255,.55)';
+      ctx.beginPath(); ctx.arc(q.x, q.y, r, 0, 6.2832); ctx.fill();
+      if (golpe) ctx.restore();
+    }
+  }
+
+  // casillas de pago
+  const alturaC = 34;
+  for (let i = 0; i <= P.filas; i++){
+    const c = casilla(i);
+    const pago = P.pagos[i];
+    const col = colorPago(pago);
+    const brillo = P.destellos.find(d => d.i === i);
+    const salto = brillo ? Math.sin((1 - brillo.vida / brillo.max) * Math.PI) * 7 : 0;
+
+    ctx.save();
+    if (brillo){ ctx.shadowColor = col; ctx.shadowBlur = 20; }
+    ctx.fillStyle = col;
+    ctx.beginPath();
+    ctx.roundRect(c.x + 1.5, c.y + salto, c.an - 3, alturaC, 6);
+    ctx.fill();
+    ctx.restore();
+
+    // sombreado inferior para dar volumen
+    ctx.fillStyle = 'rgba(0,0,0,.28)';
+    ctx.beginPath();
+    ctx.roundRect(c.x + 1.5, c.y + salto + alturaC * 0.55, c.an - 3, alturaC * 0.45, 6);
+    ctx.fill();
+
+    const etiqueta = pago >= 100 ? Math.round(pago) + 'x'
+      : pago >= 10 ? pago.toFixed(0) + 'x' : pago.toFixed(1) + 'x';
+    texto(etiqueta, c.x + c.an / 2, c.y + salto + alturaC / 2, '#08101c',
+          Math.min(13, c.an * 0.34), 'center', 900, '"Courier New", monospace');
+  }
+
+  // estelas y bolas
+  for (const bola of P.bolas){
+    bola.estela.forEach((e, k) => {
+      ctx.globalAlpha = (k / bola.estela.length) * 0.4;
+      ctx.fillStyle = '#ff8ac0';
+      ctx.beginPath(); ctx.arc(e.x, e.y, bola.r * (0.3 + k / bola.estela.length * 0.6), 0, 6.2832);
+      ctx.fill();
+    });
+    ctx.globalAlpha = 1;
+    const gb = ctx.createRadialGradient(bola.x - bola.r * 0.35, bola.y - bola.r * 0.4, 1,
+                                        bola.x, bola.y, bola.r);
+    gb.addColorStop(0, '#fff'); gb.addColorStop(0.5, '#ff5fa2'); gb.addColorStop(1, '#c00a55');
+    ctx.save();
+    ctx.shadowColor = '#ff2d6f'; ctx.shadowBlur = 14;
+    ctx.fillStyle = gb;
+    ctx.beginPath(); ctx.arc(bola.x, bola.y, bola.r, 0, 6.2832); ctx.fill();
+    ctx.restore();
+  }
+
+  // partículas
+  for (const d of P.destellos){
+    if (d.vx === undefined) continue;
+    ctx.globalAlpha = Math.max(0, d.vida / d.max);
+    ctx.fillStyle = d.color;
+    ctx.beginPath(); ctx.arc(d.x, d.y, d.r, 0, 6.2832); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+
+  // cabecera
+  ctx.fillStyle = 'rgba(4,2,10,.85)';
+  ctx.fillRect(0, 0, ANCHO, 46);
+  texto('PLINKO · ' + P.filas + ' filas · riesgo ' + P.riesgo, 16, 23,
+        'rgba(255,255,255,.55)', 13, 'left', 800);
+  const maxPago = Math.max(...P.pagos);
+  texto('máximo ' + (maxPago >= 10 ? maxPago.toFixed(0) : maxPago.toFixed(1)) + 'x  ·  retorno 99 %',
+        ANCHO - 16, 23, '#ff8ac0', 13, 'right', 800);
+
+  texto('bolas lanzadas ' + P.lanzadas, 16, ALTO - 14, 'rgba(255,255,255,.3)', 12, 'left', 700);
+}
+
+// ---------- Entrada ----------
+$('btnSoltar').onclick = () => { Sonido.activar(); soltar(); };
+$('btnLluvia').onclick = () => {
+  Sonido.activar();
+  let n = 0;
+  const echar = () => {
+    if (n++ >= 10) return;
+    if (soltar()) setTimeout(echar, 130);
+  };
+  echar();
+};
+$('riesgo').addEventListener('change', reconfigurar);
+$('filas').addEventListener('change', reconfigurar);
+$('apuesta').addEventListener('input', refrescar);
+addEventListener('keydown', ev => {
+  if (ev.code === 'Space'){ ev.preventDefault(); soltar(); }
+});
+$('btnEntrar').onclick = () => { Sonido.activar(); $('modalInicio').classList.remove('visible'); };
+Arcade.conectarSonido($('btnSonido'));
+
+cargarPartida();
+reconfigurar();
+pintarHistorial();
 Arcade.bucle(dt => dibujar(dt));
 
 });

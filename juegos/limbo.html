@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Limbo+ — Arcade NEXO</title>
+<link rel="stylesheet" href="arcade.css">
+<style>
+  /* Los modales cubren el tablero, no la barra: desde el menú siempre se puede volver */
+  #tablero{position:relative; display:flex; flex-direction:column; gap:10px;}
+  #juego{width:min(980px,100vw);}
+  .barra .titulo{color:var(--morado);}
+
+  #pozo{
+    position:relative; border-radius:16px; overflow:hidden;
+    border:2px solid rgba(168,85,247,.3);
+    box-shadow:0 15px 45px rgba(0,0,0,.9), inset 0 0 80px rgba(0,0,0,.7);
+  }
+  #lienzo{display:block; width:100%; height:auto;}
+
+  #panel{display:grid; grid-template-columns:1fr 1fr auto; gap:10px; align-items:end;}
+  @media (max-width:700px){ #panel{grid-template-columns:1fr 1fr;} }
+  .campo{
+    display:flex; flex-direction:column; gap:5px;
+    background:rgba(0,0,0,.35); border:1px solid var(--borde);
+    border-radius:11px; padding:8px 12px;
+  }
+  .campo label{font-size:10px; color:var(--tenue); text-transform:uppercase; letter-spacing:.8px;}
+  .campo input{
+    background:transparent; color:var(--oro); border:none; outline:none;
+    font-family:var(--fuente-arcade); font-weight:800; font-size:19px; width:100%;
+  }
+  .campo .pista{font-size:11px; color:var(--tenue); font-variant-numeric:tabular-nums;}
+  #btnJugar{
+    padding:16px 26px; border-radius:12px; font-weight:900; font-size:14px;
+    letter-spacing:1.4px; text-transform:uppercase; min-width:170px;
+  }
+  #rapidas{display:flex; gap:6px; flex-wrap:wrap;}
+  #rapidas button{padding:6px 12px; font-size:12px; font-weight:800;}
+
+  #historial{
+    display:flex; gap:5px; overflow-x:auto; padding:7px 9px; scrollbar-width:thin;
+    background:rgba(0,0,0,.4); border:1px solid var(--borde); border-radius:10px; min-height:36px;
+  }
+  #historial span{
+    flex:none; padding:3px 9px; border-radius:999px;
+    font-family:var(--fuente-arcade); font-weight:800; font-size:12px;
+    background:rgba(255,255,255,.06); font-variant-numeric:tabular-nums;
+  }
+  #historial span.gana{color:#4ee089; background:rgba(0,255,102,.14);}
+  #historial span.pierde{color:#8b9bb4;}
+</style>
+</head>
+<body>
+
+<div id="juego">
+  <div class="barra">
+    <a class="boton" href="../index.html">🕹 Arcade</a>
+    <div class="titulo">🛗 LIMBO+</div>
+    <div class="sep"></div>
+    <div class="stat">🪙 <span id="saldoTxt" class="oro">5000</span></div>
+    <div class="stat">🏆 <span id="recordTxt" class="tenue">—</span></div>
+    <button id="btnSonido" title="Sonido" aria-label="Sonido">🔊</button>
+  </div>
+
+  <div id="tablero">
+    <div id="pozo">
+      <canvas id="lienzo" width="960" height="420"></canvas>
+      <div class="avisos" id="avisos"></div>
+    </div>
+
+    <div id="historial"></div>
+
+    <div id="panel">
+      <div class="campo">
+        <label for="apuesta">Apuesta</label>
+        <input id="apuesta" type="number" min="10" step="10" value="100">
+        <div class="pista" id="pistaApuesta">ganarías 200</div>
+      </div>
+      <div class="campo">
+        <label for="objetivo">Multiplicador objetivo</label>
+        <input id="objetivo" type="number" min="1.01" max="1000000" step="0.01" value="2.00">
+        <div class="pista" id="pistaProb">probabilidad 49,50 %</div>
+      </div>
+      <button class="primario" id="btnJugar">🛗 Subir</button>
+    </div>
+
+    <div id="rapidas">
+      <button data-obj="1.5">1,5x</button>
+      <button data-obj="2">2x</button>
+      <button data-obj="5">5x</button>
+      <button data-obj="10">10x</button>
+      <button data-obj="50">50x</button>
+      <button data-obj="1000">1000x</button>
+      <button id="btnAuto">🔁 Auto: apagado</button>
+    </div>
+
+    <div class="modal visible" id="modalInicio">
+      <div class="tarjetaModal">
+        <h1>🛗 LIMBO+</h1>
+        <div class="sub">El juego más directo del casino, con fichas ficticias.</div>
+        <div class="instrucciones">
+          Eliges un <b>multiplicador objetivo</b> y el ascensor sube hasta un número al azar.
+          Si ese número <b>llega o supera</b> tu objetivo, cobras la apuesta multiplicada por él.<br>
+          Cuanto más alto apuntas, menos probable es… y más paga. El panel te enseña siempre
+          la <b>probabilidad exacta</b> antes de jugar.<br>
+          La fórmula es la de estos juegos: <b>P(resultado ≥ x) = 0,99 / x</b>, es decir,
+          un <b>1 % de ventaja de la casa</b> apuntes a donde apuntes.<br>
+          Con <b>🔁 Auto</b> repite la jugada sola hasta que lo pares o te quedes sin fichas.
+        </div>
+        <div class="filaBotones"><button class="primario" id="btnEmpezar">▶ Entrar</button></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="arcade.js"></script>
+<script>
+// ============================================================
+//  LIMBO+ — P(resultado ≥ x) = 0,99 / x
+// ============================================================
+const $ = id => document.getElementById(id);
+const lienzo = $('lienzo');
+const ctx = Arcade.nitido(lienzo);
+const avisos = $('avisos');
+const ANCHO = lienzo.width, ALTO = lienzo.height;
+
+const VENTAJA = 0.99;
+const MAX = 1000000;
+
+const L = {
+  saldo: Arcade.fichas.saldo(),
+  objetivo: 2, apuesta: 100,
+  resultado: 0, mostrado: 0,
+  fase: 'espera',        // espera | subiendo | fin
+  gano: false, reloj: 0,
+  historia: [], auto: false,
+  jugadas: 0, ganadas: 0,
+  record: Arcade.record('limbo'),
+  particulas: []
+};
+
+// El resultado sale de un uniforme: r en (0,1] -> 0,99/r, redondeado a 2 decimales
+function sortear(){
+  const r = Math.random();
+  return Math.min(MAX, Math.max(1, Math.floor(VENTAJA / (1 - r) * 100) / 100));
+}
+const probabilidad = obj => Math.min(1, VENTAJA / obj);
+
+function leerCampos(){
+  L.apuesta = Math.max(10, Math.floor(parseFloat($('apuesta').value) || 0));
+  L.objetivo = limitar(parseFloat($('objetivo').value) || 1.01, 1.01, MAX);
+  L.objetivo = Math.floor(L.objetivo * 100) / 100;
+  $('apuesta').value = L.apuesta;
+  $('objetivo').value = L.objetivo.toFixed(2);
+  const p = probabilidad(L.objetivo) * 100;
+  $('pistaApuesta').textContent = 'ganarías ' + Math.floor(L.apuesta * L.objetivo).toLocaleString('es-ES');
+  $('pistaProb').textContent = 'probabilidad ' + (p < 0.01 ? p.toFixed(5) : p.toFixed(2)) + ' %';
+}
+
+function jugar(){
+  if (L.fase === 'subiendo') return;
+  leerCampos();
+  if (L.apuesta > L.saldo){
+    Arcade.aviso(avisos, 'No tienes fichas suficientes', false, 1800);
+    L.auto = false; pintarAuto();
+    return;
+  }
+  L.saldo = Arcade.fichas.ajustar(-L.apuesta);
+  L.resultado = sortear();
+  L.gano = L.resultado >= L.objetivo;
+  L.mostrado = 1;
+  L.reloj = 0;
+  L.fase = 'subiendo';
+  L.particulas.length = 0;
+  Sonido.fx('despegue');
+  refrescar();
+}
+
+function resolver(){
+  L.fase = 'fin';
+  L.mostrado = L.resultado;
+  L.jugadas++;
+  let cobro = 0;
+  if (L.gano){
+    cobro = Math.floor(L.apuesta * L.objetivo);
+    L.saldo = Arcade.fichas.ajustar(cobro);
+    L.ganadas++;
+    Arcade.guardarRecord('limbo', Math.round(L.objetivo * 100));
+    L.record = Arcade.record('limbo');
+    for (let i = 0; i < 40; i++) L.particulas.push({
+      x: ANCHO / 2 + azar(-90, 90), y: ALTO / 2 + azar(-30, 30),
+      vx: azar(-160, 160), vy: azar(-260, -40),
+      vida: azar(0.5, 1.2), max: 1.2, r: azar(1.6, 4),
+      color: Math.random() < 0.5 ? '#a855f7' : '#f3e600'
+    });
+    Sonido.fx('caja');
+  } else {
+    Sonido.fx('error');
+  }
+  L.historia.unshift({ v: L.resultado, gano: L.gano });
+  if (L.historia.length > 26) L.historia.pop();
+
+  Arcade.perfil.partida('limbo', {
+    puntos: L.gano ? Math.round(L.objetivo * 100) : 0, victoria: L.gano
+  });
+  guardarPartida();
+  pintarHistorial();
+  refrescar();
+
+  if (L.auto) setTimeout(() => { if (L.auto && L.fase === 'fin') jugar(); }, 900);
+}
+
+// ---------- Guardado ----------
+function guardarPartida(){
+  Arcade.escribir('limbo', JSON.stringify({
+    historia: L.historia.slice(0, 26), jugadas: L.jugadas, ganadas: L.ganadas,
+    objetivo: L.objetivo, apuesta: L.apuesta
+  }));
+}
+function cargarPartida(){
+  const crudo = Arcade.leerTexto('limbo', null);
+  if (!crudo) return;
+  try {
+    const g = JSON.parse(crudo);
+    L.historia = Array.isArray(g.historia) ? g.historia : [];
+    L.jugadas = g.jugadas || 0; L.ganadas = g.ganadas || 0;
+    if (g.objetivo) $('objetivo').value = (+g.objetivo).toFixed(2);
+    if (g.apuesta) $('apuesta').value = g.apuesta;
+  } catch(e){}
+}
+Guardado.registrar(guardarPartida);
+
+// ---------- Interfaz ----------
+function pintarHistorial(){
+  const h = $('historial');
+  h.innerHTML = '';
+  L.historia.forEach(r => {
+    const s = document.createElement('span');
+    s.className = r.gano ? 'gana' : 'pierde';
+    s.textContent = r.v >= 1000 ? Math.round(r.v).toLocaleString('es-ES') + 'x' : r.v.toFixed(2) + 'x';
+    h.appendChild(s);
+  });
+}
+function pintarAuto(){
+  $('btnAuto').textContent = L.auto ? '🔁 Auto: encendido' : '🔁 Auto: apagado';
+  $('btnAuto').classList.toggle('primario', L.auto);
+}
+function refrescar(){
+  $('saldoTxt').textContent = L.saldo.toLocaleString('es-ES');
+  $('recordTxt').textContent = L.record ? (L.record / 100).toFixed(2) + 'x' : '—';
+  $('btnJugar').disabled = L.fase === 'subiendo';
+}
+
+// ---------- Dibujo ----------
+function texto(t, x, y, color, tam, alin, peso, fuente){
+  ctx.fillStyle = color;
+  ctx.font = (peso || 700) + ' ' + tam + 'px ' + (fuente || '"Segoe UI", system-ui, sans-serif');
+  ctx.textAlign = alin || 'left'; ctx.textBaseline = 'middle';
+  ctx.fillText(t, x, y);
+}
+
+function dibujar(dt){
+  // ---- avance de la animación ----
+  if (L.fase === 'subiendo'){
+    L.reloj += dt;
+    // sube deprisa y frena al acercarse: curva de desaceleración
+    const dur = 1.5;
+    const u = Math.min(1, L.reloj / dur);
+    const suave = 1 - Math.pow(1 - u, 3);
+    // se recorre en escala logarítmica para que los números grandes no vuelen
+    const l0 = 0, l1 = Math.log(L.resultado);
+    L.mostrado = Math.exp(l0 + (l1 - l0) * suave);
+    if (u >= 1) resolver();
+  }
+  for (let i = L.particulas.length - 1; i >= 0; i--){
+    const p = L.particulas[i];
+    p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 420 * dt; p.vida -= dt;
+    if (p.vida <= 0) L.particulas.splice(i, 1);
+  }
+
+  // ---- fondo: pozo vertical con nieblas ----
+  const g = ctx.createLinearGradient(0, 0, 0, ALTO);
+  g.addColorStop(0, '#150a2e');
+  g.addColorStop(0.5, '#0b0620');
+  g.addColorStop(1, '#05030f');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, ANCHO, ALTO);
+
+  // rejilla que se desplaza según el multiplicador: da sensación de subir
+  const desliz = (Math.log(Math.max(1, L.mostrado)) * 90) % 60;
+  ctx.strokeStyle = 'rgba(168,85,247,.10)'; ctx.lineWidth = 1;
+  for (let y = -60 + desliz; y < ALTO; y += 60){
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(ANCHO, y); ctx.stroke();
+  }
+  for (let x = 0; x < ANCHO; x += 60){
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, ALTO); ctx.stroke();
+  }
+
+  // guías del hueco del ascensor
+  const izq = ANCHO / 2 - 180, der = ANCHO / 2 + 180;
+  const brillo = L.fase === 'subiendo' ? 0.55 : 0.28;
+  [izq, der].forEach(x => {
+    const gr = ctx.createLinearGradient(x - 6, 0, x + 6, 0);
+    gr.addColorStop(0, 'rgba(168,85,247,0)');
+    gr.addColorStop(0.5, 'rgba(168,85,247,' + brillo + ')');
+    gr.addColorStop(1, 'rgba(168,85,247,0)');
+    ctx.fillStyle = gr; ctx.fillRect(x - 6, 0, 12, ALTO);
+  });
+
+  // ---- línea del objetivo ----
+  const yObj = 118;
+  ctx.setLineDash([9, 7]);
+  ctx.strokeStyle = 'rgba(243,230,0,.65)'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(40, yObj); ctx.lineTo(ANCHO - 40, yObj); ctx.stroke();
+  ctx.setLineDash([]);
+  texto('OBJETIVO ' + L.objetivo.toFixed(2) + 'x', 48, yObj - 15, '#f3e600', 13, 'left', 800);
+  const p = probabilidad(L.objetivo) * 100;
+  texto((p < 0.01 ? p.toFixed(5) : p.toFixed(2)) + ' % de probabilidad',
+        ANCHO - 48, yObj - 15, 'rgba(243,230,0,.55)', 12, 'right', 700);
+
+  // ---- número grande ----
+  const enFin = L.fase === 'fin';
+  const color = L.fase === 'espera' ? '#6b7a94'
+    : enFin ? (L.gano ? '#4ee089' : '#ff4d6a') : '#c9a6ff';
+  const valor = L.mostrado >= 1000
+    ? Math.round(L.mostrado).toLocaleString('es-ES')
+    : L.mostrado.toFixed(2);
+
+  ctx.save();
+  ctx.shadowColor = color;
+  ctx.shadowBlur = L.fase === 'subiendo' ? 34 : enFin ? 26 : 12;
+  const tam = valor.length > 8 ? 66 : valor.length > 5 ? 82 : 104;
+  texto(valor + 'x', ANCHO / 2, ALTO / 2, color, tam, 'center', 900, '"Courier New", monospace');
+  ctx.restore();
+
+  if (enFin){
+    texto(L.gano ? '✅ POR ENCIMA DEL OBJETIVO' : '✗ SE QUEDÓ CORTO',
+          ANCHO / 2, ALTO / 2 + 76, color, 16, 'center', 800);
+    if (L.gano)
+      texto('+' + Math.floor(L.apuesta * L.objetivo).toLocaleString('es-ES') + ' fichas',
+            ANCHO / 2, ALTO / 2 + 100, '#f3e600', 15, 'center', 800);
+  } else if (L.fase === 'espera'){
+    texto('elige objetivo y sube', ANCHO / 2, ALTO / 2 + 76, 'rgba(255,255,255,.3)', 14, 'center', 700);
+  }
+
+  // barra que compara lo alcanzado con el objetivo
+  const anchoBarra = 420, xB = ANCHO / 2 - anchoBarra / 2, yB = ALTO - 62;
+  ctx.fillStyle = 'rgba(0,0,0,.5)';
+  ctx.beginPath(); ctx.roundRect(xB, yB, anchoBarra, 12, 6); ctx.fill();
+  // escala logarítmica hasta 100x
+  const u = Math.min(1, Math.log(Math.max(1, L.mostrado)) / Math.log(100));
+  const uo = Math.min(1, Math.log(Math.max(1, L.objetivo)) / Math.log(100));
+  const gb = ctx.createLinearGradient(xB, 0, xB + anchoBarra, 0);
+  gb.addColorStop(0, '#a855f7'); gb.addColorStop(1, '#f3e600');
+  ctx.fillStyle = gb;
+  ctx.beginPath(); ctx.roundRect(xB, yB, anchoBarra * u, 12, 6); ctx.fill();
+  ctx.fillStyle = '#f3e600';
+  ctx.fillRect(xB + anchoBarra * uo - 1.5, yB - 5, 3, 22);
+  texto('1x', xB - 8, yB + 6, 'rgba(255,255,255,.3)', 11, 'right', 700);
+  texto('100x', xB + anchoBarra + 8, yB + 6, 'rgba(255,255,255,.3)', 11, 'left', 700);
+
+  // partículas de premio
+  for (const q of L.particulas){
+    ctx.globalAlpha = Math.max(0, q.vida / q.max);
+    ctx.fillStyle = q.color;
+    ctx.beginPath(); ctx.arc(q.x, q.y, q.r, 0, 6.2832); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+
+  const pct = L.jugadas ? Math.round(L.ganadas / L.jugadas * 100) : 0;
+  texto('jugadas ' + L.jugadas + '  ·  acertadas ' + pct + '%', 16, ALTO - 16,
+        'rgba(255,255,255,.3)', 12, 'left', 700);
+  texto('ventaja de la casa 1 %', ANCHO - 16, ALTO - 16, 'rgba(255,255,255,.25)', 12, 'right', 700);
+}
+
+// ---------- Entrada ----------
+$('btnJugar').onclick = () => { Sonido.activar(); jugar(); };
+$('apuesta').addEventListener('input', leerCampos);
+$('objetivo').addEventListener('input', leerCampos);
+$('rapidas').addEventListener('click', ev => {
+  const b = ev.target.closest('[data-obj]');
+  if (!b) return;
+  $('objetivo').value = (+b.dataset.obj).toFixed(2);
+  leerCampos();
+});
+$('btnAuto').onclick = () => {
+  L.auto = !L.auto;
+  pintarAuto();
+  if (L.auto && L.fase !== 'subiendo') jugar();
+};
+addEventListener('keydown', ev => {
+  if (ev.code === 'Space'){ ev.preventDefault(); jugar(); }
+});
+$('btnEmpezar').onclick = () => { Sonido.activar(); $('modalInicio').classList.remove('visible'); };
+Arcade.conectarSonido($('btnSonido'));
+
+cargarPartida();
+leerCampos();
+pintarHistorial();
+pintarAuto();
+refrescar();
+Arcade.bucle(dt => dibujar(dt));
+</script>
+</body>
+</html>

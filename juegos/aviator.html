@@ -167,9 +167,10 @@ let desplazamiento = 0, destelloCaida = 0, brilloCobro = 0;
 // Distribución clásica de los juegos crash con un 1 % de ventaja de la casa:
 // P(caída > x) = 0,99 / x  →  mediana en torno a 2x y cola larga.
 function sortearCaida(){
-  if (Math.random() < 0.01) return 1.00;              // 1 % se estrella al instante
+  // La propia fórmula ya deja ~1 % de resultados en 1.00: un descarte extra
+  // aparte multiplicaba las dos ventajas y dejaba la casa en el 2 %.
   const r = Math.random();
-  return Math.min(500, Math.max(1.01, Math.floor(99 / (1 - r)) / 100));
+  return Math.min(500, Math.max(1.00, Math.floor(99 / (1 - r)) / 100));
 }
 const multEn = seg => Math.exp(0.12 * seg);
 const segundosDe = m => Math.log(m) / 0.12;

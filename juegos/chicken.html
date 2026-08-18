@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chicken+ — Arcade NEXO</title>
+<link rel="stylesheet" href="arcade.css">
+<style>
+  /* Los modales cubren el tablero, no la barra: desde el menú siempre se puede volver */
+  #tablero{position:relative; display:flex; flex-direction:column; gap:10px;}
+  #juego{width:min(1020px,100vw);}
+  .barra .titulo{color:#ffb43d;}
+
+  #carretera{
+    position:relative; border-radius:16px; overflow:hidden;
+    border:2px solid rgba(255,180,61,.28);
+    box-shadow:0 15px 45px rgba(0,0,0,.9);
+  }
+  #lienzo{display:block; width:100%; height:auto;}
+
+  #panel{display:flex; gap:10px; flex-wrap:wrap; align-items:stretch;}
+  .campo{
+    display:flex; flex-direction:column; gap:5px;
+    background:rgba(0,0,0,.35); border:1px solid var(--borde);
+    border-radius:11px; padding:8px 12px; min-width:130px;
+  }
+  .campo label{font-size:10px; color:var(--tenue); text-transform:uppercase; letter-spacing:.8px;}
+  .campo input, .campo select{
+    background:transparent; color:var(--oro); border:none; outline:none;
+    font-family:var(--fuente-arcade); font-weight:800; font-size:17px; width:100%;
+  }
+  .campo select option{background:#0d1322; color:var(--texto);}
+  #botones{display:flex; gap:9px; flex:1; min-width:280px;}
+  #botones button{
+    flex:1; border-radius:12px; font-weight:900; font-size:13px;
+    letter-spacing:1.1px; text-transform:uppercase; padding:12px;
+  }
+  #btnAvanzar{background:linear-gradient(135deg,#ffb43d,#c47a08); border-color:#ffd27a; color:#1a1204;}
+  #btnCobrar{background:linear-gradient(135deg,var(--verde),#00a844); border-color:#4ee089; color:#04120a;}
+
+  #tablaPasos{
+    display:flex; gap:5px; overflow-x:auto; padding:7px 9px; scrollbar-width:thin;
+    background:rgba(0,0,0,.4); border:1px solid var(--borde); border-radius:10px;
+  }
+  #tablaPasos span{
+    flex:none; padding:4px 10px; border-radius:8px;
+    font-family:var(--fuente-arcade); font-weight:800; font-size:12px;
+    background:rgba(255,255,255,.05); color:var(--tenue); font-variant-numeric:tabular-nums;
+  }
+  #tablaPasos span.hecho{background:rgba(0,255,102,.16); color:#4ee089;}
+  #tablaPasos span.actual{background:rgba(255,180,61,.22); color:#ffd27a; outline:1px solid #ffb43d;}
+</style>
+</head>
+<body>
+
+<div id="juego">
+  <div class="barra">
+    <a class="boton" href="../index.html">🕹 Arcade</a>
+    <div class="titulo">🐔 CHICKEN+</div>
+    <div class="sep"></div>
+    <div class="stat">🪙 <span id="saldoTxt" class="oro">5000</span></div>
+    <div class="stat">✖ <span id="multTxt" class="verde">1.00x</span></div>
+    <div class="stat">🏆 <span id="recordTxt" class="tenue">—</span></div>
+    <button id="btnSonido" title="Sonido" aria-label="Sonido">🔊</button>
+  </div>
+
+  <div id="tablero">
+    <div id="carretera">
+      <canvas id="lienzo" width="1000" height="440"></canvas>
+      <div class="avisos" id="avisos"></div>
+    </div>
+
+    <div id="tablaPasos"></div>
+
+    <div id="panel">
+      <div class="campo">
+        <label for="apuesta">Apuesta</label>
+        <input id="apuesta" type="number" min="10" step="10" value="100">
+      </div>
+      <div class="campo">
+        <label for="dificultad">Dificultad</label>
+        <select id="dificultad">
+          <option value="facil">Fácil · 1 de 25</option>
+          <option value="media" selected>Media · 3 de 25</option>
+          <option value="dificil">Difícil · 5 de 25</option>
+          <option value="locura">Locura · 10 de 25</option>
+        </select>
+      </div>
+      <div id="botones">
+        <button class="primario" id="btnEmpezarRonda">🐔 Empezar</button>
+        <button id="btnAvanzar" disabled>👣 Avanzar</button>
+        <button id="btnCobrar" disabled>💰 Cobrar</button>
+      </div>
+    </div>
+
+    <div class="modal visible" id="modalInicio">
+      <div class="tarjetaModal">
+        <h1>🐔 CHICKEN+</h1>
+        <div class="sub">Cruza la carretera y retírate a tiempo. Fichas ficticias.</div>
+        <div class="instrucciones">
+          Cada <b>paso</b> que da la gallina sube el multiplicador. Pero en cada carril hay
+          una probabilidad de que pase un coche… y ahí se acaba la ronda.<br>
+          <b>Cobra cuando quieras:</b> te llevas la apuesta por el multiplicador alcanzado.<br>
+          La <b>dificultad</b> cambia el riesgo por paso y, con él, lo que paga: en Fácil muere
+          1 de cada 25 pasos y en Locura, 10 de cada 25.<br>
+          Los multiplicadores salen de la probabilidad real de sobrevivir, con un
+          <b>1 % de ventaja de la casa</b>: <code>0,99 / p^pasos</code>.<br>
+          Atajos: <b>espacio</b> avanza, <b>C</b> cobra.
+        </div>
+        <div class="filaBotones"><button class="primario" id="btnEntrar">▶ A la carretera</button></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="arcade.js"></script>
+<script>
+// ============================================================
+//  CHICKEN+ — multiplicador 0,99 / p^pasos
+// ============================================================
+const $ = id => document.getElementById(id);
+const lienzo = $('lienzo');
+const ctx = Arcade.nitido(lienzo);
+const avisos = $('avisos');
+const ANCHO = lienzo.width, ALTO = lienzo.height;
+
+const VENTAJA = 0.99;
+const CARRILES = 24;                   // pasos posibles antes de la acera final
+const DIFICULTADES = {
+  facil:   { muertes:1,  nombre:'Fácil'   },
+  media:   { muertes:3,  nombre:'Media'   },
+  dificil: { muertes:5,  nombre:'Difícil' },
+  locura:  { muertes:10, nombre:'Locura'  }
+};
+const ANCHO_CARRIL = 118;
+const SUELO = 320;
+
+const C = {
+  saldo: Arcade.fichas.saldo(),
+  apuesta: 100, dificultad: 'media',
+  paso: 0, activa: false,
+  fase: 'espera',              // espera | andando | muerta | cobrada
+  x: 0, xObjetivo: 0, camara: 0,
+  coches: [], plumas: [], polvo: [],
+  atropello: 0, brilloCobro: 0,
+  rondas: 0, cobradas: 0, mejorPaso: 0,
+  record: Arcade.record('chicken'),
+  t: 0
+};
+
+const p = () => 1 - DIFICULTADES[C.dificultad].muertes / 25;
+const multiplicadorDe = pasos => pasos === 0 ? 1 : VENTAJA / Math.pow(p(), pasos);
+const multiplicador = () => multiplicadorDe(C.paso);
+
+// ---------- Ronda ----------
+function empezarRonda(){
+  if (C.fase === 'andando') return;
+  C.apuesta = Math.max(10, Math.floor(parseFloat($('apuesta').value) || 0));
+  $('apuesta').value = C.apuesta;
+  if (C.apuesta > C.saldo){ Arcade.aviso(avisos, 'No tienes fichas suficientes', false, 1800); return; }
+
+  C.saldo = Arcade.fichas.ajustar(-C.apuesta);
+  C.dificultad = $('dificultad').value;
+  C.paso = 0; C.activa = true;
+  C.x = 0; C.xObjetivo = 0; C.camara = 0;
+  C.fase = 'andando';
+  C.atropello = 0; C.brilloCobro = 0;
+  C.plumas.length = 0; C.polvo.length = 0;
+  sembrarCoches();
+  C.rondas++;
+  Sonido.fx('desplegar');
+  refrescar();
+}
+
+function avanzar(){
+  if (C.fase !== 'andando' || !C.activa) return;
+  if (C.paso >= CARRILES){ cobrar(); return; }
+
+  const sobrevive = Math.random() < p();
+  C.paso++;
+  C.xObjetivo = C.paso * ANCHO_CARRIL;
+
+  if (sobrevive){
+    Sonido.fx('paso');
+    for (let i = 0; i < 6; i++) C.polvo.push({
+      x: C.x, y: SUELO + azar(-4, 6), vx: azar(-40, 10), vy: azar(-30, -5),
+      vida: azar(0.25, 0.6), max: 0.6, r: azar(1.5, 3.5)
+    });
+    if (C.paso >= CARRILES){
+      Arcade.aviso(avisos, '🏁 ¡Has cruzado entera! Cobro automático', true, 2200);
+      setTimeout(cobrar, 500);
+    }
+    if (C.paso > C.mejorPaso) C.mejorPaso = C.paso;
+  } else {
+    atropellar();
+  }
+  refrescar();
+}
+
+function atropellar(){
+  C.fase = 'muerta';
+  C.activa = false;
+  C.atropello = 1;
+  // el coche que la pilla entra por la derecha del carril
+  C.coches.push({ carril: C.paso, x: C.paso * ANCHO_CARRIL + 460, v: -900, letal: true, color: '#ff3d68' });
+  for (let i = 0; i < 34; i++) C.plumas.push({
+    x: C.x, y: SUELO - 26 + azar(-14, 14),
+    vx: azar(-260, 120), vy: azar(-320, -60),
+    giro: azar(0, 6.28), vGiro: azar(-9, 9),
+    vida: azar(0.8, 1.6), max: 1.6, r: azar(4, 9)
+  });
+  Sonido.fx('choque');
+  Arcade.perfil.partida('chicken', { puntos: 0, victoria: false });
+  guardarPartida();
+  refrescar();
+}
+
+function cobrar(){
+  if (C.fase !== 'andando' || !C.activa || C.paso === 0){
+    if (C.paso === 0 && C.fase === 'andando')
+      Arcade.aviso(avisos, 'Da al menos un paso antes de cobrar', false, 1700);
+    return;
+  }
+  const mult = multiplicador();
+  const pago = Math.floor(C.apuesta * mult);
+  C.saldo = Arcade.fichas.ajustar(pago);
+  C.activa = false;
+  C.fase = 'cobrada';
+  C.brilloCobro = 1;
+  C.cobradas++;
+  const beneficio = pago - C.apuesta;
+  if (beneficio > 0) Arcade.guardarRecord('chicken', beneficio);
+  C.record = Arcade.record('chicken');
+  Arcade.perfil.partida('chicken', { puntos: Math.max(0, beneficio), victoria: beneficio > 0 });
+  Arcade.aviso(avisos, '💰 Cobras ' + pago.toLocaleString('es-ES') +
+               ' fichas (' + mult.toFixed(2) + 'x)', true, 2400);
+  Sonido.fx('caja');
+  guardarPartida();
+  refrescar();
+}
+
+// ---------- Tráfico de ambiente ----------
+function sembrarCoches(){
+  C.coches.length = 0;
+  for (let k = 0; k < 10; k++){
+    const carril = azarEntero(1, CARRILES);
+    C.coches.push({
+      carril, x: carril * ANCHO_CARRIL + azar(-700, 700),
+      v: azar(-540, -260), letal: false,
+      color: elegir(['#5cc8ff', '#b18cff', '#6fe08b', '#ffd25e', '#ff9f5e'])
+    });
+  }
+}
+
+// ---------- Guardado ----------
+function guardarPartida(){
+  Arcade.escribir('chicken', JSON.stringify({
+    rondas: C.rondas, cobradas: C.cobradas, mejorPaso: C.mejorPaso,
+    apuesta: C.apuesta, dificultad: C.dificultad
+  }));
+}
+function cargarPartida(){
+  const crudo = Arcade.leerTexto('chicken', null);
+  if (!crudo) return;
+  try {
+    const g = JSON.parse(crudo);
+    C.rondas = g.rondas || 0; C.cobradas = g.cobradas || 0; C.mejorPaso = g.mejorPaso || 0;
+    if (g.apuesta) $('apuesta').value = g.apuesta;
+    if (g.dificultad && DIFICULTADES[g.dificultad]) $('dificultad').value = g.dificultad;
+  } catch(e){}
+}
+Guardado.registrar(guardarPartida);
+
+// ---------- Interfaz ----------
+function pintarPasos(){
+  const t = $('tablaPasos');
+  t.innerHTML = '';
+  for (let k = 1; k <= CARRILES; k++){
+    const s = document.createElement('span');
+    s.textContent = multiplicadorDe(k).toFixed(2) + 'x';
+    if (k < C.paso) s.className = 'hecho';
+    else if (k === C.paso) s.className = 'actual';
+    t.appendChild(s);
+  }
+  const activo = t.querySelector('.actual');
+  if (activo) activo.scrollIntoView({ block:'nearest', inline:'center' });
+}
+
+function refrescar(){
+  $('saldoTxt').textContent = C.saldo.toLocaleString('es-ES');
+  $('multTxt').textContent = multiplicador().toFixed(2) + 'x';
+  $('recordTxt').textContent = C.record ? '+' + C.record.toLocaleString('es-ES') : '—';
+  const enJuego = C.fase === 'andando' && C.activa;
+  $('btnEmpezarRonda').disabled = enJuego;
+  $('btnAvanzar').disabled = !enJuego;
+  $('btnCobrar').disabled = !enJuego || C.paso === 0;
+  $('apuesta').disabled = enJuego;
+  $('dificultad').disabled = enJuego;
+  $('btnCobrar').textContent = C.paso ? '💰 Cobrar ' + Math.floor(C.apuesta * multiplicador()).toLocaleString('es-ES') : '💰 Cobrar';
+  pintarPasos();
+}
+
+// ---------- Dibujo ----------
+function texto(t, x, y, color, tam, alin, peso, fuente){
+  ctx.fillStyle = color;
+  ctx.font = (peso || 700) + ' ' + tam + 'px ' + (fuente || '"Segoe UI", system-ui, sans-serif');
+  ctx.textAlign = alin || 'left'; ctx.textBaseline = 'middle';
+  ctx.fillText(t, x, y);
+}
+
+function gallina(x, y, escala, paso, muerta){
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.scale(escala, escala);
+  if (muerta){ ctx.rotate(1.5); ctx.translate(0, -10); }
+
+  const bote = muerta ? 0 : Math.abs(Math.sin(paso * 9)) * 4;
+  ctx.translate(0, -bote);
+
+  // sombra
+  ctx.fillStyle = 'rgba(0,0,0,.45)';
+  ctx.beginPath(); ctx.ellipse(2, 26 + bote, 20, 6, 0, 0, 6.2832); ctx.fill();
+
+  // patas
+  ctx.strokeStyle = '#f0a020'; ctx.lineWidth = 3.4; ctx.lineCap = 'round';
+  const ang = muerta ? 0.5 : Math.sin(paso * 9) * 0.5;
+  [[-6, ang], [6, -ang]].forEach(([dx, a]) => {
+    ctx.beginPath();
+    ctx.moveTo(dx, 14);
+    ctx.lineTo(dx + Math.sin(a) * 9, 25);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(dx + Math.sin(a) * 9, 25);
+    ctx.lineTo(dx + Math.sin(a) * 9 + 6, 25);
+    ctx.stroke();
+  });
+  ctx.lineCap = 'butt';
+
+  // cuerpo
+  const g = ctx.createRadialGradient(-6, -8, 3, 0, 2, 24);
+  g.addColorStop(0, '#ffffff'); g.addColorStop(1, '#e2e6ee');
+  ctx.fillStyle = g;
+  ctx.beginPath(); ctx.ellipse(0, 2, 19, 16, 0, 0, 6.2832); ctx.fill();
+  // ala
+  ctx.fillStyle = '#cfd6e2';
+  ctx.beginPath();
+  ctx.ellipse(2, 3, 11, 8, muerta ? 0.9 : Math.sin(paso * 9) * 0.25, 0, 6.2832);
+  ctx.fill();
+
+  // cabeza
+  ctx.fillStyle = '#ffffff';
+  ctx.beginPath(); ctx.arc(11, -14, 10, 0, 6.2832); ctx.fill();
+  // cresta
+  ctx.fillStyle = '#e2384f';
+  [0, 1, 2].forEach(k => {
+    ctx.beginPath(); ctx.arc(7 + k * 4.4, -23 + (k === 1 ? -2 : 0), 3.6, 0, 6.2832); ctx.fill();
+  });
+  // pico
+  ctx.fillStyle = '#f0a020';
+  ctx.beginPath();
+  ctx.moveTo(20, -14); ctx.lineTo(29, -11); ctx.lineTo(20, -8);
+  ctx.closePath(); ctx.fill();
+  // barbilla
+  ctx.fillStyle = '#e2384f';
+  ctx.beginPath(); ctx.ellipse(19, -6, 3, 4.5, 0, 0, 6.2832); ctx.fill();
+  // ojo
+  ctx.fillStyle = '#15181f';
+  if (muerta){
+    ctx.strokeStyle = '#15181f'; ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(11, -18); ctx.lineTo(17, -12);
+    ctx.moveTo(17, -18); ctx.lineTo(11, -12);
+    ctx.stroke();
+  } else {
+    ctx.beginPath(); ctx.arc(14.5, -15.5, 2.4, 0, 6.2832); ctx.fill();
+    ctx.fillStyle = '#fff';
+    ctx.beginPath(); ctx.arc(15.3, -16.3, 0.9, 0, 6.2832); ctx.fill();
+  }
+  ctx.restore();
+}
+
+function coche(c, camara){
+  const x = c.x - camara, y = SUELO - 6;
+  if (x < -180 || x > ANCHO + 180) return;
+  ctx.save();
+  ctx.translate(x, y);
+
+  // sombra
+  ctx.fillStyle = 'rgba(0,0,0,.5)';
+  ctx.beginPath(); ctx.ellipse(0, 20, 52, 8, 0, 0, 6.2832); ctx.fill();
+
+  // carrocería
+  const g = ctx.createLinearGradient(0, -38, 0, 16);
+  g.addColorStop(0, c.color);
+  g.addColorStop(1, 'rgba(0,0,0,.55)');
+  ctx.fillStyle = g;
+  ctx.beginPath(); ctx.roundRect(-52, -18, 104, 34, 9); ctx.fill();
+  ctx.beginPath(); ctx.roundRect(-30, -38, 58, 24, 8); ctx.fill();
+  // cristales
+  ctx.fillStyle = 'rgba(180,225,255,.5)';
+  ctx.beginPath(); ctx.roundRect(-25, -34, 24, 17, 4); ctx.fill();
+  ctx.beginPath(); ctx.roundRect(2, -34, 22, 17, 4); ctx.fill();
+  // ruedas
+  ctx.fillStyle = '#12151c';
+  [-30, 30].forEach(dx => {
+    ctx.beginPath(); ctx.arc(dx, 16, 11, 0, 6.2832); ctx.fill();
+    ctx.fillStyle = '#3a4356';
+    ctx.beginPath(); ctx.arc(dx, 16, 4.5, 0, 6.2832); ctx.fill();
+    ctx.fillStyle = '#12151c';
+  });
+  // faros hacia la izquierda (van en esa dirección)
+  ctx.fillStyle = 'rgba(255,240,180,.95)';
+  ctx.beginPath(); ctx.roundRect(-55, -10, 7, 8, 3); ctx.fill();
+  const haz = ctx.createLinearGradient(-55, 0, -190, 0);
+  haz.addColorStop(0, 'rgba(255,240,180,.35)');
+  haz.addColorStop(1, 'rgba(255,240,180,0)');
+  ctx.fillStyle = haz;
+  ctx.beginPath();
+  ctx.moveTo(-55, -12); ctx.lineTo(-190, -38); ctx.lineTo(-190, 26); ctx.lineTo(-55, 2);
+  ctx.closePath(); ctx.fill();
+  // pilotos traseros
+  ctx.fillStyle = 'rgba(255,80,80,.9)';
+  ctx.beginPath(); ctx.roundRect(49, -10, 6, 8, 3); ctx.fill();
+  ctx.restore();
+}
+
+function dibujar(dt){
+  C.t += dt;
+
+  // ---- avance suave de la gallina y de la cámara ----
+  C.x += (C.xObjetivo - C.x) * Math.min(1, 9 * dt);
+  const objCam = Math.max(0, C.x - 300);
+  C.camara += (objCam - C.camara) * Math.min(1, 6 * dt);
+
+  for (const c of C.coches){
+    c.x += c.v * dt;
+    if (!c.letal && c.x - C.camara < -300) c.x += 2200 + Math.random() * 600;
+  }
+  for (let i = C.plumas.length - 1; i >= 0; i--){
+    const q = C.plumas[i];
+    q.x += q.vx * dt; q.y += q.vy * dt; q.vy += 520 * dt;
+    q.giro += q.vGiro * dt; q.vida -= dt;
+    if (q.vida <= 0) C.plumas.splice(i, 1);
+  }
+  for (let i = C.polvo.length - 1; i >= 0; i--){
+    const q = C.polvo[i];
+    q.x += q.vx * dt; q.y += q.vy * dt; q.vida -= dt;
+    if (q.vida <= 0) C.polvo.splice(i, 1);
+  }
+  C.atropello = Math.max(0, C.atropello - dt * 1.6);
+  C.brilloCobro = Math.max(0, C.brilloCobro - dt * 1.2);
+
+  // ---- cielo nocturno ----
+  const g = ctx.createLinearGradient(0, 0, 0, ALTO);
+  g.addColorStop(0, '#121a33'); g.addColorStop(0.45, '#1d2647'); g.addColorStop(1, '#2a2f3f');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, ANCHO, ALTO);
+
+  // luna
+  ctx.fillStyle = 'rgba(255,248,220,.9)';
+  ctx.shadowColor = 'rgba(255,248,220,.6)'; ctx.shadowBlur = 40;
+  ctx.beginPath(); ctx.arc(ANCHO - 110, 66, 26, 0, 6.2832); ctx.fill();
+  ctx.shadowBlur = 0;
+
+  // skyline en dos capas con paralaje
+  for (let capa = 0; capa < 2; capa++){
+    const par = 0.12 + capa * 0.14;
+    const base = 210 - capa * 18;
+    ctx.fillStyle = capa ? 'rgba(20,26,48,.95)' : 'rgba(14,18,36,.95)';
+    const desp = -C.camara * par;
+    for (let k = -2; k < 26; k++){
+      const x = k * 92 + (desp % 92) + (k % 3) * 12;
+      const h = 60 + ((k * 37 + capa * 53) % 90);
+      ctx.fillRect(x, base - h, 72, h + 40);
+      // ventanas encendidas
+      ctx.fillStyle = 'rgba(255,214,120,.22)';
+      for (let f = 0; f < Math.floor(h / 22); f++)
+        for (let c2 = 0; c2 < 3; c2++)
+          if ((k + f + c2) % 3 === 0) ctx.fillRect(x + 10 + c2 * 20, base - h + 12 + f * 22, 9, 11);
+      ctx.fillStyle = capa ? 'rgba(20,26,48,.95)' : 'rgba(14,18,36,.95)';
+    }
+  }
+
+  // ---- asfalto ----
+  ctx.fillStyle = '#23262f';
+  ctx.fillRect(0, SUELO - 62, ANCHO, ALTO - (SUELO - 62));
+  ctx.fillStyle = '#1b1e26';
+  ctx.fillRect(0, SUELO + 22, ANCHO, ALTO - SUELO - 22);
+  // arcén
+  ctx.fillStyle = 'rgba(255,255,255,.28)';
+  ctx.fillRect(0, SUELO - 63, ANCHO, 3);
+  ctx.fillRect(0, SUELO + 21, ANCHO, 3);
+
+  // separaciones de carril y multiplicadores en el suelo
+  for (let k = 0; k <= CARRILES + 1; k++){
+    const x = k * ANCHO_CARRIL - C.camara;
+    if (x < -160 || x > ANCHO + 160) continue;
+    // línea discontinua
+    ctx.strokeStyle = 'rgba(255,255,255,.22)';
+    ctx.lineWidth = 3;
+    ctx.setLineDash([14, 12]);
+    ctx.beginPath(); ctx.moveTo(x, SUELO - 58); ctx.lineTo(x, SUELO + 18); ctx.stroke();
+    ctx.setLineDash([]);
+
+    if (k >= 1 && k <= CARRILES){
+      const m = multiplicadorDe(k);
+      const alcanzado = k <= C.paso;
+      const xm = x - ANCHO_CARRIL / 2;
+      ctx.fillStyle = alcanzado ? 'rgba(0,255,102,.16)' : 'rgba(0,0,0,.4)';
+      ctx.beginPath(); ctx.roundRect(xm - 34, SUELO - 128, 68, 26, 8); ctx.fill();
+      ctx.strokeStyle = alcanzado ? 'rgba(78,224,137,.8)' : 'rgba(255,255,255,.15)';
+      ctx.lineWidth = 1.4; ctx.stroke();
+      texto(m.toFixed(2) + 'x', xm, SUELO - 115,
+            alcanzado ? '#4ee089' : 'rgba(255,255,255,.55)', 13, 'center', 800,
+            '"Courier New", monospace');
+    }
+  }
+
+  // acera de salida y de meta
+  const meta = (CARRILES + 1) * ANCHO_CARRIL - C.camara;
+  ctx.fillStyle = '#3b4152';
+  ctx.fillRect(-C.camara - 400, SUELO - 62, 400, 84);
+  ctx.fillRect(meta, SUELO - 62, 500, 84);
+  // damero de meta
+  for (let f = 0; f < 4; f++) for (let c2 = 0; c2 < 4; c2++){
+    ctx.fillStyle = (f + c2) % 2 ? '#f6f7fb' : '#15181f';
+    ctx.fillRect(meta + c2 * 16, SUELO - 62 + f * 21, 16, 21);
+  }
+
+  // coches
+  C.coches.forEach(c => coche(c, C.camara));
+
+  // polvo
+  for (const q of C.polvo){
+    ctx.globalAlpha = Math.max(0, q.vida / q.max) * 0.5;
+    ctx.fillStyle = '#c9c3b4';
+    ctx.beginPath(); ctx.arc(q.x - C.camara, q.y, q.r, 0, 6.2832); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+
+  // gallina
+  const gx = C.x - C.camara;
+  if (C.brilloCobro > 0){
+    ctx.save();
+    ctx.globalAlpha = C.brilloCobro * 0.6;
+    ctx.fillStyle = '#4ee089';
+    ctx.beginPath(); ctx.arc(gx, SUELO - 14, 70 * (1.4 - C.brilloCobro), 0, 6.2832); ctx.fill();
+    ctx.restore();
+  }
+  gallina(gx, SUELO - 12, 1.15, C.t, C.fase === 'muerta');
+
+  // plumas
+  for (const q of C.plumas){
+    ctx.save();
+    ctx.globalAlpha = Math.max(0, q.vida / q.max);
+    ctx.translate(q.x - C.camara, q.y);
+    ctx.rotate(q.giro);
+    ctx.fillStyle = '#f2f4f8';
+    ctx.beginPath(); ctx.ellipse(0, 0, q.r, q.r * 0.45, 0, 0, 6.2832); ctx.fill();
+    ctx.restore();
+  }
+  ctx.globalAlpha = 1;
+
+  // destello del atropello
+  if (C.atropello > 0){
+    ctx.fillStyle = 'rgba(255,61,104,' + (C.atropello * 0.35).toFixed(3) + ')';
+    ctx.fillRect(0, 0, ANCHO, ALTO);
+  }
+
+  // ---- cartel del multiplicador ----
+  const mult = multiplicador();
+  const activo = C.fase === 'andando' && C.activa;
+  ctx.fillStyle = 'rgba(0,0,0,.55)';
+  ctx.beginPath(); ctx.roundRect(ANCHO / 2 - 130, 20, 260, 62, 14); ctx.fill();
+  ctx.strokeStyle = activo ? 'rgba(255,180,61,.75)'
+    : C.fase === 'muerta' ? 'rgba(255,61,104,.75)'
+    : C.fase === 'cobrada' ? 'rgba(78,224,137,.8)' : 'rgba(255,255,255,.16)';
+  ctx.lineWidth = 2; ctx.stroke();
+  texto(C.fase === 'muerta' ? '💥 ATROPELLADA' : mult.toFixed(2) + 'x',
+        ANCHO / 2, 44,
+        C.fase === 'muerta' ? '#ff6b8a' : C.fase === 'cobrada' ? '#4ee089' : '#ffd27a',
+        C.fase === 'muerta' ? 22 : 30, 'center', 900, '"Courier New", monospace');
+  texto(activo ? 'paso ' + C.paso + ' de ' + CARRILES + '  ·  siguiente ' +
+        multiplicadorDe(C.paso + 1).toFixed(2) + 'x'
+        : C.fase === 'espera' ? 'pulsa EMPEZAR' : 'ronda terminada',
+        ANCHO / 2, 68, 'rgba(255,255,255,.5)', 12, 'center', 700);
+
+  // riesgo por paso
+  const riesgo = (1 - p()) * 100;
+  texto(DIFICULTADES[C.dificultad].nombre + ' · riesgo por paso ' + riesgo.toFixed(0) + ' %',
+        16, ALTO - 16, 'rgba(255,255,255,.35)', 12, 'left', 700);
+  texto('mejor paso ' + C.mejorPaso + '  ·  rondas ' + C.rondas,
+        ANCHO - 16, ALTO - 16, 'rgba(255,255,255,.3)', 12, 'right', 700);
+}
+
+// ---------- Entrada ----------
+$('btnEmpezarRonda').onclick = () => { Sonido.activar(); empezarRonda(); };
+$('btnAvanzar').onclick = () => { Sonido.activar(); avanzar(); };
+$('btnCobrar').onclick = () => { Sonido.activar(); cobrar(); };
+$('dificultad').addEventListener('change', () => {
+  C.dificultad = $('dificultad').value;
+  refrescar();
+});
+$('apuesta').addEventListener('input', refrescar);
+addEventListener('keydown', ev => {
+  if (ev.code === 'Space'){
+    ev.preventDefault();
+    if (C.fase === 'andando' && C.activa) avanzar(); else empezarRonda();
+  } else if (ev.key === 'c' || ev.key === 'C') cobrar();
+});
+$('btnEntrar').onclick = () => { Sonido.activar(); $('modalInicio').classList.remove('visible'); };
+Arcade.conectarSonido($('btnSonido'));
+
+cargarPartida();
+C.dificultad = $('dificultad').value;
+sembrarCoches();
+refrescar();
+Arcade.bucle(dt => dibujar(dt));
+</script>
+</body>
+</html>
