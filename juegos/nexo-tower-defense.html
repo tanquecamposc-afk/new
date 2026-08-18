@@ -163,6 +163,15 @@ canvas#lienzo{display:block; width:100%; height:auto; background:#020408; touch-
 .dif.medio{background:#6b5313; color:#ffd25e;}
 .dif.dificil{background:#6e1f1f; color:#ff9c9c;}
 .cartaMapa .info .record{display:block; clear:both; color:var(--tenue); font-size:12px; margin-top:4px;}
+#ajustesTD{
+  display:flex; align-items:center; gap:10px; margin:14px 0;
+  background:rgba(0,0,0,.3); border:1px solid var(--borde);
+  border-radius:10px; padding:10px 12px;
+}
+#ajustesTD label{font-size:.78rem; color:var(--tenue); white-space:nowrap;}
+#ajustesTD input[type=range]{flex:1; accent-color:var(--azul); min-width:0;}
+#ajustesTD b{font-family:var(--fuente-arcade); font-size:.76rem; color:var(--oro);
+  min-width:66px; text-align:right;}
 .instrucciones{
   text-align:left; font-size:13.5px; color:var(--tenue); background:rgba(0,0,0,.25);
   border-radius:10px; padding:12px 16px; line-height:1.55;
@@ -193,6 +202,7 @@ canvas#lienzo{display:block; width:100%; height:auto; background:#020408; touch-
     <button id="btnOla" class="primario">▶ Iniciar ola</button>
     <button id="btnVelocidad" title="Cambiar velocidad (F)" aria-label="Cambiar velocidad (F)">⏩ x1</button>
     <button id="btnPausa" title="Pausa (Espacio)" aria-label="Pausa (Espacio)">⏸</button>
+    <button id="btnAyudaTD" class="btnAyuda" title="Ayuda y ajustes" aria-label="Ayuda y ajustes">❓</button>
     <button id="btnSonido" title="Efectos de sonido" aria-label="Efectos de sonido">🔊</button>
     <button id="btnMusica" title="Música" aria-label="Música">🎵</button>
     <button id="btnMenu" title="Volver al menú" aria-label="Volver al menú">⌂</button>
@@ -247,6 +257,19 @@ canvas#lienzo{display:block; width:100%; height:auto; background:#020408; touch-
     </div>
 
     <!-- Fin de partida -->
+    <div class="modal" id="modalAyuda">
+      <div class="tarjetaModal">
+        <h1>❓ AYUDA Y AJUSTES</h1>
+        <div class="instrucciones" id="ayudaTexto"></div>
+        <div id="ajustesTD">
+          <label for="volTD">🔊 Volumen</label>
+          <input type="range" id="volTD" min="0" max="100" step="5">
+          <b id="volTDTxt">100 %</b>
+        </div>
+        <div class="filaBotones"><button class="primario" id="btnCerrarAyuda">Volver al juego</button></div>
+      </div>
+    </div>
+
     <div class="modal" id="modalFin">
       <div class="tarjetaModal">
         <h1 id="tituloFin">FIN</h1>
@@ -303,7 +326,25 @@ function rngSemilla(s){
 
 // ---------- Audio: efectos ----------
 const Sonido = {
-  ctx: null, silencio: false, ultimo: {},
+  // Este juego es autocontenido y no carga arcade.js, así que lleva su propio
+  // volumen; se lee y se escribe en la misma clave que el resto del arcade
+  // para que el ajuste valga aquí y allí.
+  ctx: null, silencio: false, volumen: 1, ultimo: {},
+  cargarPreferencia(){
+    try {
+      const g = JSON.parse(localStorage.getItem('arcade_sonido') || 'null');
+      if (g){
+        this.silencio = !!g.silencio;
+        this.volumen = Math.max(0, Math.min(1, typeof g.volumen === 'number' ? g.volumen : 1));
+      }
+    } catch(e){}
+  },
+  guardarPreferencia(){
+    try {
+      localStorage.setItem('arcade_sonido',
+        JSON.stringify({ silencio: this.silencio, volumen: this.volumen }));
+    } catch(e){}
+  },
   activar(){
     if (!this.ctx){
       try { this.ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e){}
@@ -313,6 +354,8 @@ const Sonido = {
   },
   tono(f1, f2, dur, tipo, vol, retraso=0){
     if (this.silencio || !this.ctx) return;
+    vol *= this.volumen;
+    if (vol <= 0) return;
     const c = this.ctx, t = c.currentTime + retraso;
     const o = c.createOscillator(), g = c.createGain();
     o.type = tipo || 'square';
@@ -325,6 +368,8 @@ const Sonido = {
   },
   ruido(dur, filtro, vol){
     if (this.silencio || !this.ctx) return;
+    vol *= this.volumen;
+    if (vol <= 0) return;
     const c = this.ctx, t = c.currentTime;
     const n = Math.floor(c.sampleRate * dur);
     const buf = c.createBuffer(1, n, c.sampleRate);
@@ -389,7 +434,7 @@ const Musica = {
   // Se vuelve a arrancar sola al entrar de nuevo en la pantalla
   reanudar(){ if (this.activa && !this.sonando) this.arrancar(); },
   programar(){
-    if (!Sonido.ctx || Sonido.silencio && false) return;
+    if (!Sonido.ctx) return;   // la música tiene su propio botón 🎵
     const c = Sonido.ctx;
     const dur = 0.22; // corchea a ~136 bpm
     while (this.proximaNota < c.currentTime + 0.35){
@@ -403,6 +448,10 @@ const Musica = {
   },
   nota(f, t, dur, tipo, vol){
     const c = Sonido.ctx;
+    // La música también obedece al volumen general del arcade: antes se
+    // quedaba a tope aunque bajaras todo lo demás.
+    vol *= Sonido.volumen;
+    if (vol <= 0) return;
     const o = c.createOscillator(), g = c.createGain();
     o.type = tipo; o.frequency.value = f;
     g.gain.setValueAtTime(0.0001, t);
@@ -2379,7 +2428,41 @@ $('btnSonido').addEventListener('click', () => {
   Sonido.activar();
   Sonido.silencio = !Sonido.silencio;
   $('btnSonido').textContent = Sonido.silencio ? '🔇' : '🔊';
+  Sonido.guardarPreferencia();
 });
+
+// ---------- Ayuda y ajustes ----------
+// Las instrucciones se podían leer solo en el menú de inicio: una vez dentro
+// de la partida no había forma de volver a mirarlas sin abandonar.
+Sonido.cargarPreferencia();
+$('btnSonido').textContent = Sonido.silencio ? '🔇' : '🔊';
+(function montarAyuda(){
+  const texto = document.querySelector('#modalMenu .instrucciones');
+  if (texto) $('ayudaTexto').innerHTML = texto.innerHTML;
+  const rango = $('volTD'), txt = $('volTDTxt');
+  const pinta = () => {
+    rango.value = Math.round(Sonido.volumen * 100);
+    txt.textContent = Sonido.silencio ? 'silencio' : Math.round(Sonido.volumen * 100) + ' %';
+  };
+  rango.addEventListener('input', () => {
+    Sonido.volumen = rango.value / 100;
+    if (Sonido.volumen > 0) Sonido.silencio = false;
+    $('btnSonido').textContent = Sonido.silencio ? '🔇' : '🔊';
+    pinta();
+    Sonido.guardarPreferencia();
+  });
+  const abrir = () => { Sonido.activar(); pinta(); $('modalAyuda').classList.add('visible'); };
+  const cerrar = () => $('modalAyuda').classList.remove('visible');
+  $('btnAyudaTD').addEventListener('click', abrir);
+  $('btnCerrarAyuda').addEventListener('click', cerrar);
+  addEventListener('keydown', ev => {
+    if (/^(INPUT|TEXTAREA|SELECT)$/.test(ev.target.tagName || '')) return;
+    if (ev.key === '?' || ev.key === 'h'){ ev.preventDefault();
+      $('modalAyuda').classList.contains('visible') ? cerrar() : abrir(); }
+    else if (ev.key === 'Escape' && $('modalAyuda').classList.contains('visible')) cerrar();
+  });
+  pinta();
+})();
 // Este juego lleva su propia música con setInterval: al salir de la pantalla
 // hay que apagarla, o se queda sonando encima de otro juego.
 if (typeof AlSalir !== 'undefined') AlSalir.registrar(() => Musica.parar());

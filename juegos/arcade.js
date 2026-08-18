@@ -18,7 +18,8 @@ function mezclar(lista){
 
 // ---------- Audio: efectos generados en tiempo real ----------
 const Sonido = {
-  ctx: null, silencio: false, ultimo: {},
+  // `volumen` multiplica todo lo que suena: 0 es mudo, 1 el nivel de siempre.
+  ctx: null, silencio: false, volumen: 1, ultimo: {},
   activar(){
     if (!this.ctx){
       try { this.ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e){}
@@ -27,6 +28,8 @@ const Sonido = {
   },
   tono(f1, f2, dur, tipo, vol, retraso = 0){
     if (this.silencio || !this.ctx) return;
+    vol *= this.volumen;
+    if (vol <= 0) return;
     const c = this.ctx, t = c.currentTime + retraso;
     const o = c.createOscillator(), g = c.createGain();
     o.type = tipo || 'square';
@@ -39,6 +42,8 @@ const Sonido = {
   },
   ruido(dur, filtro, vol, retraso = 0){
     if (this.silencio || !this.ctx) return;
+    vol *= this.volumen;
+    if (vol <= 0) return;
     const c = this.ctx, t = c.currentTime + retraso;
     const n = Math.floor(c.sampleRate * dur);
     const buf = c.createBuffer(1, n, c.sampleRate);
@@ -143,7 +148,7 @@ const Sonido = {
     const t = this.ctx.currentTime;
     this._motor.o.frequency.setTargetAtTime(70 + agudeza * 150, t, 0.15);
     this._motor.f.frequency.setTargetAtTime(700 + agudeza * 1400, t, 0.15);
-    this._motor.g.gain.setTargetAtTime(0.022, t, 0.1);
+    this._motor.g.gain.setTargetAtTime(0.022 * this.volumen, t, 0.1);
   },
   pararMotor(){
     if (!this._motor) return;
@@ -244,7 +249,9 @@ const Arcade = {
     const paso = (t) => {
       const dt = Math.min(0.05, (t - previo) / 1000);
       previo = t;
-      fn(dt);
+      // En pausa se sigue pidiendo cuadros pero no se avanza nada: al reanudar
+      // no hay un salto de golpe con todo el tiempo que estuvo parado.
+      if (!Arcade.experiencia.parado) fn(dt);
       requestAnimationFrame(paso);
     };
     requestAnimationFrame(paso);
@@ -489,6 +496,181 @@ const Arcade = {
 // Se aplica al cargar cualquier página: da igual si entras por la portada o
 // directamente a un juego, la mano nueva ya está repartida cuando empiezas.
 Arcade.temporada.aplicar();
+
+/* ==========================================================
+   Experiencia común a los 25 juegos
+   Tres cosas que antes faltaban en todos: poder volver a leer
+   las instrucciones sin reiniciar, bajar el volumen sin quedarte
+   mudo del todo, y poder pausar sin perder la partida.
+   ========================================================== */
+Arcade.experiencia = {
+  MARCA: 'arcade_sonido',
+
+  /** El silencio y el volumen se recuerdan entre juegos y entre visitas. */
+  cargarSonido(){
+    const g = Arcade.leerTexto(this.MARCA.replace('arcade_', ''), null);
+    if (!g) return;
+    try {
+      const o = JSON.parse(g);
+      Sonido.silencio = !!o.silencio;
+      Sonido.volumen = limitar(typeof o.volumen === 'number' ? o.volumen : 1, 0, 1);
+    } catch(e){}
+  },
+  guardarSonido(){
+    Arcade.escribir('sonido', JSON.stringify({
+      silencio: Sonido.silencio, volumen: Sonido.volumen
+    }));
+  },
+
+  // ---- Pausa ----
+  parado: false,
+  /** El juego visible en este momento, o null si no hay ninguno. */
+  activa(){
+    const pantallas = document.querySelectorAll('.pantalla');
+    if (!pantallas.length) return document.body;
+    for (const p of pantallas)
+      if (p.classList.contains('activa') && p.id !== 'pantalla-portada') return p;
+    return null;
+  },
+  /** ¿Es un juego de acción, de los que no perdonan que mires a otro lado? */
+  esDeAccion(raiz){
+    return !!(raiz && raiz.querySelector('[data-ritmo="accion"]'));
+  },
+  pausar(motivo){
+    const raiz = this.activa();
+    // Solo se pausan los juegos de acción. En los de apuesta sería una trampa:
+    // congelar el Aviator a 40x y cobrar con calma no es pausar, es hacer caja.
+    if (!raiz || this.parado || !this.esDeAccion(raiz)) return;
+    this.parado = true;
+    Sonido.pararMotor();
+    let capa = raiz.querySelector('.capaPausa');
+    if (!capa){
+      capa = document.createElement('div');
+      capa.className = 'capaPausa';
+      capa.innerHTML = '<div class="cajaPausa"><div class="icono">⏸</div>' +
+        '<div class="tit">En pausa</div><div class="pie"></div>' +
+        '<button class="primario">▶ Seguir jugando</button></div>';
+      capa.addEventListener('click', () => this.reanudar());
+      raiz.appendChild(capa);
+    }
+    capa.querySelector('.pie').textContent = motivo || 'Pulsa en cualquier sitio o Esc para seguir.';
+    capa.classList.add('visible');
+  },
+  reanudar(){
+    if (!this.parado) return;
+    this.parado = false;
+    document.querySelectorAll('.capaPausa.visible').forEach(c => c.classList.remove('visible'));
+  },
+  alternarPausa(){ this.parado ? this.reanudar() : this.pausar(); },
+
+  // ---- Panel de ayuda y ajustes ----
+  /** Monta el botón ❓ y el panel en todas las barras que encuentre. */
+  montar(){
+    this.cargarSonido();
+    document.querySelectorAll('.barra, #barraSuperior, [id^="barraSuperior"]').forEach(barra => {
+      if (barra.dataset.montada) return;
+      barra.dataset.montada = '1';
+      const raiz = barra.closest('.pantalla') || document.body;
+
+      const b = document.createElement('button');
+      b.className = 'btnAyuda';
+      b.type = 'button';
+      b.title = 'Ayuda y ajustes';
+      b.setAttribute('aria-label', 'Ayuda y ajustes');
+      b.textContent = '❓';
+      b.onclick = () => this.abrirPanel(raiz);
+      const son = barra.querySelector('button[id^="btnSonido"], button[title="Sonido"]');
+      son ? barra.insertBefore(b, son) : barra.appendChild(b);
+    });
+    // El botón de sonido de cada juego también guarda la preferencia
+    document.addEventListener('click', ev => {
+      if (ev.target.closest('button[title="Sonido"]')) setTimeout(() => this.guardarSonido(), 0);
+    });
+  },
+
+  abrirPanel(raiz){
+    Sonido.activar();
+    let capa = raiz.querySelector('.capaAyuda');
+    if (!capa){
+      capa = document.createElement('div');
+      capa.className = 'capaAyuda';
+      const inst = raiz.querySelector('.instrucciones');
+      capa.innerHTML =
+        '<div class="cajaAyuda" role="dialog" aria-label="Ayuda y ajustes">' +
+          '<h2>❓ Ayuda y ajustes</h2>' +
+          '<div class="cuerpoAyuda"></div>' +
+          '<div class="ajustes">' +
+            '<label for="volArcade">🔊 Volumen</label>' +
+            '<input type="range" id="volArcade" min="0" max="100" step="5">' +
+            '<b class="volTxt"></b>' +
+          '</div>' +
+          '<div class="atajos">Atajos: <kbd>Esc</kbd> o <kbd>P</kbd> pausan · ' +
+          '<kbd>?</kbd> abre esta ayuda</div>' +
+          '<button class="primario cerrarAyuda">Volver al juego</button>' +
+        '</div>';
+      const cuerpo = capa.querySelector('.cuerpoAyuda');
+      if (inst) cuerpo.appendChild(inst.cloneNode(true));
+      else cuerpo.innerHTML = '<p class="sinInstrucciones">Este juego se explica solo: ' +
+                              'mira los rótulos de la pantalla y prueba.</p>';
+
+      const rango = capa.querySelector('#volArcade');
+      const txt = capa.querySelector('.volTxt');
+      const pinta = () => {
+        rango.value = Math.round(Sonido.volumen * 100);
+        txt.textContent = Sonido.silencio ? 'silencio' : Math.round(Sonido.volumen * 100) + ' %';
+      };
+      rango.addEventListener('input', () => {
+        Sonido.volumen = rango.value / 100;
+        if (Sonido.volumen > 0) Sonido.silencio = false;
+        pinta();
+        this.guardarSonido();
+      });
+      rango.addEventListener('change', () => Sonido.fx('clic'));
+      capa._pinta = pinta;
+      capa.addEventListener('click', ev => {
+        if (ev.target === capa || ev.target.closest('.cerrarAyuda')) this.cerrarPanel(raiz);
+      });
+      raiz.appendChild(capa);
+    }
+    capa._pinta();
+    capa.classList.add('visible');
+  },
+  cerrarPanel(raiz){
+    const capa = raiz.querySelector('.capaAyuda');
+    if (capa) capa.classList.remove('visible');
+  }
+};
+
+// Teclas y foco: valen igual en una página suelta que dentro de arcade.html
+addEventListener('keydown', ev => {
+  const escribiendo = /^(INPUT|TEXTAREA|SELECT)$/.test((ev.target.tagName || ''));
+  if (escribiendo) return;
+  const raiz = Arcade.experiencia.activa();
+  const ayudaAbierta = raiz && raiz.querySelector('.capaAyuda.visible');
+  if (ev.key === '?' || (ev.key === 'h' && !ev.ctrlKey && !ev.metaKey)){
+    ev.preventDefault();
+    ayudaAbierta ? Arcade.experiencia.cerrarPanel(raiz) : raiz && Arcade.experiencia.abrirPanel(raiz);
+    return;
+  }
+  if (ev.key === 'Escape' || ev.key === 'p' || ev.key === 'P'){
+    if (ayudaAbierta){ Arcade.experiencia.cerrarPanel(raiz); return; }
+    ev.preventDefault();
+    Arcade.experiencia.alternarPausa();
+  }
+});
+
+// Solo los juegos de acción se pausan solos al mirar a otro lado: un idle
+// tiene que seguir produciendo, para eso está.
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) return;
+  const raiz = Arcade.experiencia.activa();
+  if (Arcade.experiencia.esDeAccion(raiz))
+    Arcade.experiencia.pausar('Saliste de la pestaña. Pulsa para seguir donde lo dejaste.');
+});
+
+if (document.readyState === 'loading')
+  document.addEventListener('DOMContentLoaded', () => Arcade.experiencia.montar());
+else Arcade.experiencia.montar();
 
 // ---------- Ayudas de dibujo ----------
 const suavizar = (a, b, t) => a + (b - a) * t;

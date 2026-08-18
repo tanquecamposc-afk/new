@@ -458,6 +458,18 @@ La portada lleva un panel de canje con **20 códigos, del 1 al 20**, que dan **1
 - Vive en `Arcade.codigos` (`juegos/arcade.js`): `TOTAL`, `PREMIO`, `usados()`, `canjear(texto)` y `olvidar()`. Para cambiar el premio o cuántos hay basta con tocar esas dos constantes.
 - El registro se guarda en `localStorage` bajo `arcade_codigos`, y el botón **🗑 Borrar todos mis récords** también lo limpia.
 
+## 🎛 Ayuda, volumen y pausa
+
+Tres cosas que faltaban en los veinticinco juegos a la vez, resueltas una sola vez en `arcade.js` y `arcade.css`:
+
+- **❓ Ayuda en cualquier momento.** Antes las instrucciones solo se veían en la pantalla de inicio: una vez dentro, para volver a leerlas había que abandonar la partida. Ahora cada juego tiene un botón **❓** en su barra que abre las mismas instrucciones sobre el juego, sin tocar nada de lo que llevas. También con la tecla <kbd>?</kbd> o <kbd>H</kbd>.
+- **🔊 Volumen de verdad, no solo mudo.** El botón de sonido apagaba del todo o nada. Ahora hay un **control de volumen** en ese mismo panel, que multiplica todo lo que suena —efectos, motor del Aviator y música del tower defense—. El ajuste **se guarda** y viaja de un juego a otro y entre visitas, en `arcade_sonido`.
+- **⏸ Pausa que no te cuesta la partida.** <kbd>Esc</kbd> o <kbd>P</kbd> pausan, y al volver a la pestaña el juego **te espera** con un aviso en vez de seguir corriendo mientras mirabas a otro lado. En pausa el bucle sigue pidiendo cuadros pero no avanza el reloj, así que al reanudar no hay un salto de golpe.
+
+**La pausa solo vale en los juegos de acción** —Comecocos, Serpiente, Moto X3M, Plantas vs Zombis y Rumble Stars, marcados con `data-ritmo="accion"`—. En los de apuesta está deshabilitada a propósito: poder congelar el Aviator a 40x y cobrar con calma no sería pausar, sería hacer caja. Los *idle* como Mining Tycoon o Galletas tampoco se pausan solos, porque su gracia es seguir produciendo.
+
+El tower defense es autocontenido y no carga `arcade.js`, así que lleva su propia copia de todo esto y **comparte la preferencia de sonido por la misma clave de almacenamiento**. De paso se corrigió que su música se quedaba a todo volumen aunque bajaras el resto.
+
 ## 🖥 Rendimiento y nitidez
 
 Todos los juegos ajustan el búfer del canvas a la densidad de píxeles de la pantalla (`Arcade.nitido`), así que en pantallas Retina o 4K se ven nítidos en vez de escalados. Los fondos que no cambian —el laberinto del comecocos, el paño del billar, el campo de Rumble Stars y el mapa del tower defense— se dibujan una sola vez en un lienzo aparte y se reutilizan en cada cuadro.
