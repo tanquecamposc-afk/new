@@ -69,7 +69,7 @@
   <div id="tablero">
 
   <div id="tapete">
-    <canvas id="lienzo" width="920" height="470"></canvas>
+    <canvas id="lienzo" width="920" height="540"></canvas>
     <div class="avisos" id="avisos"></div>
   </div>
 
@@ -404,18 +404,29 @@ function etiqueta(t, x, y, color){
 }
 
 function dibujar(){
-  // paño
-  const g = ctx.createRadialGradient(ANCHO / 2, ALTO * 0.42, 40, ANCHO / 2, ALTO * 0.5, ANCHO * 0.72);
-  g.addColorStop(0, '#12603a');
-  g.addColorStop(1, '#06251a');
-  ctx.fillStyle = g;
-  ctx.fillRect(0, 0, ANCHO, ALTO);
+  // paño: mesa de blackjack, semicírculo con el crupier arriba
+  Mesa.pintar(ctx, ANCHO, ALTO, {
+    cy: ALTO * 0.54, rx: ANCHO * 0.455, ry: ALTO * 0.47,
+    tono: ['#14713f', '#06301d'], acento: 'rgba(243,230,0,.45)'
+  });
 
-  // arco de la mesa y lema
-  ctx.strokeStyle = 'rgba(243,230,0,.25)'; ctx.lineWidth = 2;
-  ctx.beginPath(); ctx.arc(ANCHO / 2, -140, 400, 0.45, Math.PI - 0.45); ctx.stroke();
-  texto('EL BLACKJACK PAGA 3 A 2', ANCHO / 2, 34, 'rgba(243,230,0,.55)', 17, 'center', 800);
-  texto('LA BANCA SE PLANTA EN TODO 17', ANCHO / 2, 57, 'rgba(255,255,255,.28)', 12, 'center', 700);
+  // arco de apuestas y lema serigrafiado en el paño
+  ctx.strokeStyle = 'rgba(243,230,0,.28)'; ctx.lineWidth = 2;
+  // El arco se queda dentro del paño: antes se salía por las esquinas de arriba
+  // y parecía una raya suelta sobre el borde de cuero.
+  ctx.beginPath(); ctx.arc(ANCHO / 2, -60, 330, 0.85, Math.PI - 0.85); ctx.stroke();
+  ctx.save();
+  ctx.shadowColor = 'rgba(243,230,0,.35)'; ctx.shadowBlur = 10;
+  texto('EL BLACKJACK PAGA 3 A 2', ANCHO / 2, 62, 'rgba(255,240,140,.7)', 17, 'center', 800);
+  ctx.restore();
+  texto('LA BANCA SE PLANTA EN TODO 17', ANCHO / 2, 81, 'rgba(255,255,255,.3)', 12, 'center', 700);
+  // caja de zapato a la derecha
+  texto('ZAPATO', ANCHO - 62, 86, 'rgba(255,255,255,.32)', 10, 'center', 800);
+  ctx.fillStyle = 'rgba(0,0,0,.42)';
+  ctx.beginPath(); ctx.roundRect(ANCHO - 95, 96, 66, 96, 8); ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,.16)'; ctx.lineWidth = 1.5; ctx.stroke();
+  for (let k = 0; k < Math.min(8, Math.ceil(B.zapato.length / 40)); k++)
+    Cartas.dibujar(ctx, null, ANCHO - 89, 102 + k * 3, 54, 78);
 
   // ---- banca ----
   const yB = 96;
@@ -435,7 +446,7 @@ function dibujar(){
   }
 
   // ---- manos del jugador ----
-  const yJ = ALTO - CARTA_AL - 58;
+  const yJ = ALTO - CARTA_AL - 108;
   if (B.manos.length){
     const anchoMano = m => (m.cartas.length - 1) * 30 + CARTA_AN;
     const total = B.manos.reduce((s, m) => s + anchoMano(m), 0) + (B.manos.length - 1) * 34;
@@ -454,8 +465,9 @@ function dibujar(){
         : m.resultado === 'gana' || m.resultado === 'blackjack' ? '#00ff66'
         : activa ? '#00f0ff' : 'rgba(255,255,255,.7)';
       etiqueta(v + (v > 21 ? ' ✗' : blando(m.cartas) ? ' blando' : '') , centro, yJ - 20, color);
-      texto('🪙 ' + m.apuesta + (m.doblada ? ' ×2' : ''), centro, yJ + CARTA_AL + 22,
-            '#f3e600', 14, 'center', 800);
+      Mesa.fichas(ctx, m.apuesta, centro, yJ + CARTA_AL + 40, 1);
+      texto('🪙 ' + m.apuesta + (m.doblada ? ' ×2' : ''), centro, yJ + CARTA_AL + 52,
+            '#f3e600', 13, 'center', 800);
       if (activa){
         ctx.strokeStyle = 'rgba(0,240,255,.7)'; ctx.lineWidth = 2;
         ctx.setLineDash([6, 5]);

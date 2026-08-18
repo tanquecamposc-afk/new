@@ -53,7 +53,7 @@
   <div id="tablero">
 
   <div id="mesa">
-    <canvas id="lienzo" width="960" height="520"></canvas>
+    <canvas id="lienzo" width="960" height="560"></canvas>
     <div class="avisos" id="avisos"></div>
   </div>
 
@@ -464,36 +464,41 @@ function texto(t, x, y, color, tam, alin, peso){
 }
 
 const SITIOS = [
-  { x: ANCHO / 2,        y: ALTO - 92,  eti: 'abajo' },
+  { x: ANCHO / 2,        y: ALTO - 116, eti: 'abajo' },
   { x: 128,              y: ALTO / 2 - 40, eti: 'izq' },
-  { x: ANCHO / 2,        y: 74,         eti: 'arriba' },
+  { x: ANCHO / 2,        y: 104,        eti: 'arriba' },
   { x: ANCHO - 128,      y: ALTO / 2 - 40, eti: 'der' }
 ];
 
 function dibujar(){
-  const g = ctx.createRadialGradient(ANCHO / 2, ALTO / 2, 40, ANCHO / 2, ALTO / 2, ANCHO * 0.62);
-  g.addColorStop(0, '#20204d');
-  g.addColorStop(1, '#0a0a1c');
-  ctx.fillStyle = g; ctx.fillRect(0, 0, ANCHO, ALTO);
+  Mesa.pintar(ctx, ANCHO, ALTO, {
+    cy: ALTO / 2 - 10, rx: ANCHO * 0.38, ry: ALTO * 0.33,
+    tono: ['#1d5a72', '#0a2436'], acento: 'rgba(168,85,247,.55)'
+  });
 
-  // óvalo de la mesa
-  ctx.beginPath();
-  ctx.ellipse(ANCHO / 2, ALTO / 2 - 10, ANCHO * 0.38, ALTO * 0.33, 0, 0, 6.2832);
-  ctx.fillStyle = '#123a2c'; ctx.fill();
-  ctx.strokeStyle = 'rgba(168,85,247,.45)'; ctx.lineWidth = 3; ctx.stroke();
-
-  // bote
-  texto('BOTE', ANCHO / 2, ALTO / 2 - 96, 'rgba(255,255,255,.4)', 12, 'center', 800);
-  texto('🪙 ' + P.bote.toLocaleString('es-ES'), ANCHO / 2, ALTO / 2 - 74, '#f3e600', 22, 'center', 900);
+  // bote: montón de fichas de verdad y la cifra encima
+  if (P.bote > 0){
+    Mesa.fichas(ctx, P.bote, ANCHO / 2 - 36, ALTO / 2 - 50, 0.8);
+    Mesa.fichas(ctx, Math.floor(P.bote / 2), ANCHO / 2, ALTO / 2 - 44, 0.75);
+    Mesa.fichas(ctx, Math.floor(P.bote / 4), ANCHO / 2 + 34, ALTO / 2 - 50, 0.7);
+  }
+  // El bote baja lo justo para no meterse debajo de la placa del sitio de arriba
+  texto('BOTE', ANCHO / 2, ALTO / 2 - 104, 'rgba(255,255,255,.45)', 11, 'center', 800);
+  ctx.save();
+  ctx.shadowColor = 'rgba(243,230,0,.6)'; ctx.shadowBlur = 14;
+  texto('🪙 ' + P.bote.toLocaleString('es-ES'), ANCHO / 2, ALTO / 2 - 84, '#f3e600', 21, 'center', 900);
+  ctx.restore();
 
   // cartas comunitarias
   const anchoMesa = 5 * CARTA_AN + 4 * 10;
   let x = ANCHO / 2 - anchoMesa / 2;
   for (let i = 0; i < 5; i++){
-    if (i < P.mesa.length) Cartas.dibujar(ctx, P.mesa[i], x, ALTO / 2 - 44, CARTA_AN, CARTA_AL);
+    if (i < P.mesa.length) Cartas.dibujar(ctx, P.mesa[i], x, ALTO / 2 - 22, CARTA_AN, CARTA_AL);
     else {
-      ctx.fillStyle = 'rgba(255,255,255,.05)';
-      ctx.beginPath(); ctx.roundRect(x, ALTO / 2 - 44, CARTA_AN, CARTA_AL, 6); ctx.fill();
+      ctx.fillStyle = 'rgba(0,0,0,.22)';
+      ctx.beginPath(); ctx.roundRect(x, ALTO / 2 - 22, CARTA_AN, CARTA_AL, 6); ctx.fill();
+      ctx.strokeStyle = 'rgba(255,255,255,.10)'; ctx.lineWidth = 1;
+      ctx.setLineDash([4, 4]); ctx.stroke(); ctx.setLineDash([]);
     }
     x += CARTA_AN + 10;
   }
@@ -527,10 +532,21 @@ function dibujar(){
           j.activo ? '#e8eef7' : 'rgba(255,255,255,.35)', 13, 'center', 800);
     texto('🪙 ' + j.fichas.toLocaleString('es-ES'), s.x, py + 29, '#f3e600', 12, 'center', 700);
 
-    if (j.puesto > 0)
-      texto('▲ ' + j.puesto, s.x, py - al / 2 - 26, '#00f0ff', 13, 'center', 800);
-    if (j.accion)
-      texto(j.accion, s.x, py + alP + 13, j.activo ? 'rgba(255,255,255,.55)' : '#ff3d68', 11, 'center', 700);
+    // Lo apostado se deja en el tapete, a un lado de la placa: encima se comía
+    // el nombre y las fichas del jugador.
+    if (j.puesto > 0){
+      const DESP = [[122, -30], [88, 16], [122, 40], [-88, 16]][i];
+      const fx = s.x + DESP[0], fy = s.y + DESP[1];
+      Mesa.fichas(ctx, j.puesto, fx, fy, 0.6);
+      texto(String(j.puesto), fx, fy + 16, '#00f0ff', 12, 'center', 800);
+    }
+    // La acción va al lado de la placa, nunca encima de las cartas
+    if (j.accion){
+      const alin = i === 1 ? 'left' : i === 3 ? 'right' : 'center';
+      const ax = i === 1 ? s.x + anP / 2 + 10 : i === 3 ? s.x - anP / 2 - 10 : s.x;
+      const ay = i === 0 ? py + alP + 14 : i === 2 ? py + alP + 14 : py + alP / 2;
+      texto(j.accion, ax, ay, j.activo ? 'rgba(255,255,255,.6)' : '#ff8fa5', 11, alin, 700);
+    }
   });
 
   // mi mano hecha

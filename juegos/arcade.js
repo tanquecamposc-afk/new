@@ -524,79 +524,350 @@ const Cartas = {
     return mezclar(b);
   },
 
-  /**
-   * Dibuja una carta. `carta` a null pinta el dorso.
-   * Las medidas van en píxeles del lienzo; el radio se ajusta al ancho.
-   */
-  dibujar(ctx, carta, x, y, an, al, opciones = {}){
-    const r = Math.max(4, an * 0.09);
+  // ---------- Dibujo ----------
+  // Colocación de los símbolos en las cartas numéricas, en coordenadas
+  // relativas (0..1). Es la disposición clásica de la baraja francesa.
+  PIPS: {
+    0:  [[.5,.28],[.5,.72]],
+    1:  [[.5,.22],[.5,.5],[.5,.78]],
+    2:  [[.3,.25],[.7,.25],[.3,.75],[.7,.75]],
+    3:  [[.3,.25],[.7,.25],[.5,.5],[.3,.75],[.7,.75]],
+    4:  [[.3,.22],[.7,.22],[.3,.5],[.7,.5],[.3,.78],[.7,.78]],
+    5:  [[.3,.22],[.7,.22],[.3,.5],[.7,.5],[.3,.78],[.7,.78],[.5,.36]],
+    6:  [[.3,.2],[.7,.2],[.3,.42],[.7,.42],[.3,.64],[.7,.64],[.3,.86],[.7,.86]],
+    7:  [[.3,.2],[.7,.2],[.3,.42],[.7,.42],[.3,.64],[.7,.64],[.3,.86],[.7,.86],[.5,.31]],
+    8:  [[.3,.18],[.7,.18],[.3,.37],[.7,.37],[.5,.5],[.3,.63],[.7,.63],[.3,.82],[.7,.82]]
+  },
+
+  // Retrato esquemático para J, Q y K: sencillo pero reconocible
+  _figura(ctx, indice, x, y, an, al, color){
+    const cx = x + an / 2, cy = y + al / 2;
+    const u = an * 0.01;
     ctx.save();
-    ctx.shadowColor = 'rgba(0,0,0,.6)';
-    ctx.shadowBlur = an * 0.16;
-    ctx.shadowOffsetY = an * 0.05;
+    ctx.translate(cx, cy);
 
-    if (carta === null || carta === undefined){
-      ctx.fillStyle = '#0f1a35';
-      ctx.beginPath(); ctx.roundRect(x, y, an, al, r); ctx.fill();
-      ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
-      ctx.strokeStyle = '#2f4b8f'; ctx.lineWidth = Math.max(1, an * 0.03);
-      ctx.stroke();
-      // rombos del dorso
-      ctx.fillStyle = 'rgba(0,240,255,.18)';
-      const paso = an * 0.22;
-      for (let i = x + paso * 0.7; i < x + an - paso * 0.3; i += paso)
-        for (let j = y + paso * 0.7; j < y + al - paso * 0.3; j += paso){
-          ctx.beginPath();
-          ctx.moveTo(i, j - paso * 0.28); ctx.lineTo(i + paso * 0.24, j);
-          ctx.lineTo(i, j + paso * 0.28); ctx.lineTo(i - paso * 0.24, j);
-          ctx.closePath(); ctx.fill();
-        }
-      ctx.restore();
-      return;
-    }
-
-    ctx.fillStyle = opciones.apagada ? '#b9c0cc' : '#f6f7fb';
-    ctx.beginPath(); ctx.roundRect(x, y, an, al, r); ctx.fill();
-    ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
-    ctx.strokeStyle = 'rgba(0,0,0,.25)'; ctx.lineWidth = 1;
+    // marco interior
+    ctx.strokeStyle = color;
+    ctx.globalAlpha = 0.35;
+    ctx.lineWidth = Math.max(1, u * 1.2);
+    ctx.beginPath();
+    ctx.roundRect(-an * 0.29, -al * 0.30, an * 0.58, al * 0.60, an * 0.05);
     ctx.stroke();
-
-    const rojo = this.roja(carta);
-    ctx.fillStyle = rojo ? '#d81f3d' : '#15181f';
-    ctx.textBaseline = 'top';
-    ctx.textAlign = 'left';
-
-    const nom = this.nombre(carta), pal = this.PALOS[this.palo(carta)];
-    ctx.font = '800 ' + (an * 0.28).toFixed(1) + 'px "Segoe UI", system-ui, sans-serif';
-    ctx.fillText(nom, x + an * 0.09, y + al * 0.05);
-    ctx.font = (an * 0.22).toFixed(1) + 'px serif';
-    ctx.fillText(pal, x + an * 0.09, y + al * 0.26);
-
-    // palo grande centrado
-    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.font = (an * 0.52).toFixed(1) + 'px serif';
-    ctx.globalAlpha = 0.9;
-    ctx.fillText(pal, x + an / 2, y + al * 0.55);
     ctx.globalAlpha = 1;
 
-    // esquina inferior, del revés
-    ctx.save();
-    ctx.translate(x + an - an * 0.09, y + al - al * 0.05);
-    ctx.rotate(Math.PI);
-    ctx.textAlign = 'left'; ctx.textBaseline = 'top';
-    ctx.font = '800 ' + (an * 0.28).toFixed(1) + 'px "Segoe UI", system-ui, sans-serif';
-    ctx.fillText(nom, 0, 0);
-    ctx.font = (an * 0.22).toFixed(1) + 'px serif';
-    ctx.fillText(pal, 0, al * 0.21);
-    ctx.restore();
+    // cabeza y hombros
+    ctx.fillStyle = color;
+    ctx.beginPath(); ctx.arc(0, -al * 0.07, an * 0.115, 0, 6.2832); ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(-an * 0.21, al * 0.26);
+    ctx.quadraticCurveTo(0, al * 0.02, an * 0.21, al * 0.26);
+    ctx.closePath(); ctx.fill();
 
+    // tocado propio de cada figura
+    if (indice === 11){               // K: corona de tres puntas
+      ctx.beginPath();
+      ctx.moveTo(-an * 0.16, -al * 0.16);
+      ctx.lineTo(-an * 0.11, -al * 0.28);
+      ctx.lineTo(-an * 0.05, -al * 0.19);
+      ctx.lineTo(0, -al * 0.31);
+      ctx.lineTo(an * 0.05, -al * 0.19);
+      ctx.lineTo(an * 0.11, -al * 0.28);
+      ctx.lineTo(an * 0.16, -al * 0.16);
+      ctx.closePath(); ctx.fill();
+    } else if (indice === 10){        // Q: diadema redondeada
+      ctx.beginPath();
+      ctx.ellipse(0, -al * 0.19, an * 0.16, an * 0.055, 0, Math.PI, 0);
+      ctx.fill();
+      ctx.beginPath(); ctx.arc(0, -al * 0.235, an * 0.035, 0, 6.2832); ctx.fill();
+    } else {                          // J: gorro ladeado
+      ctx.beginPath();
+      ctx.moveTo(-an * 0.17, -al * 0.15);
+      ctx.quadraticCurveTo(-an * 0.02, -al * 0.30, an * 0.19, -al * 0.20);
+      ctx.lineTo(an * 0.13, -al * 0.13);
+      ctx.closePath(); ctx.fill();
+    }
+    ctx.restore();
+  },
+
+  /**
+   * Dibuja una carta. `carta` a null pinta el dorso.
+   * Las medidas van en píxeles del lienzo; los detalles escalan con el ancho,
+   * así que la misma función sirve para una carta grande o para una miniatura.
+   */
+  dibujar(ctx, carta, x, y, an, al, opciones = {}){
+    const r = Math.max(3, an * 0.085);
+    const tapada = carta === null || carta === undefined;
+
+    ctx.save();
+    // sombra proyectada
+    ctx.shadowColor = 'rgba(0,0,0,.55)';
+    ctx.shadowBlur = an * 0.18;
+    ctx.shadowOffsetY = an * 0.06;
+    ctx.beginPath(); ctx.roundRect(x, y, an, al, r);
+    ctx.fillStyle = tapada ? '#12224a' : '#fbfcfe';
+    ctx.fill();
+    ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
+
+    // recorte a la forma de la carta para todo lo que viene
+    ctx.save();
+    ctx.beginPath(); ctx.roundRect(x, y, an, al, r);
+    ctx.clip();
+
+    if (tapada){
+      // dorso: trama de rombos y filete
+      const g = ctx.createLinearGradient(x, y, x + an, y + al);
+      g.addColorStop(0, '#1b3570'); g.addColorStop(0.5, '#122349'); g.addColorStop(1, '#0c1832');
+      ctx.fillStyle = g; ctx.fillRect(x, y, an, al);
+
+      const paso = an * 0.2;
+      ctx.strokeStyle = 'rgba(0,240,255,.22)';
+      ctx.lineWidth = Math.max(0.6, an * 0.012);
+      for (let k = -al; k < an + al; k += paso){
+        ctx.beginPath(); ctx.moveTo(x + k, y); ctx.lineTo(x + k + al, y + al); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(x + k, y + al); ctx.lineTo(x + k + al, y); ctx.stroke();
+      }
+      ctx.strokeStyle = 'rgba(0,240,255,.5)';
+      ctx.lineWidth = Math.max(1, an * 0.028);
+      ctx.beginPath();
+      ctx.roundRect(x + an * 0.07, y + an * 0.07, an * 0.86, al - an * 0.14, r * 0.7);
+      ctx.stroke();
+      // rombo central
+      ctx.fillStyle = 'rgba(0,240,255,.30)';
+      ctx.beginPath();
+      ctx.moveTo(x + an / 2, y + al / 2 - an * 0.22);
+      ctx.lineTo(x + an / 2 + an * 0.17, y + al / 2);
+      ctx.lineTo(x + an / 2, y + al / 2 + an * 0.22);
+      ctx.lineTo(x + an / 2 - an * 0.17, y + al / 2);
+      ctx.closePath(); ctx.fill();
+    } else {
+      // cara: papel con un leve degradado y brillo diagonal
+      const g = ctx.createLinearGradient(x, y, x, y + al);
+      g.addColorStop(0, '#ffffff'); g.addColorStop(1, '#e9edf5');
+      ctx.fillStyle = g; ctx.fillRect(x, y, an, al);
+
+      const rojo = this.roja(carta);
+      const color = opciones.apagada ? '#9aa3b2' : (rojo ? '#d31f3c' : '#14181f');
+      const indice = this.indice(carta);
+      const nom = this.NOMBRES[indice];
+      const pal = this.PALOS[this.palo(carta)];
+
+      // esquinas
+      const esquina = (ex, ey, giro) => {
+        ctx.save();
+        ctx.translate(ex, ey);
+        if (giro) ctx.rotate(Math.PI);
+        ctx.fillStyle = color;
+        ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+        ctx.font = '800 ' + (an * 0.235).toFixed(1) + 'px "Segoe UI", system-ui, sans-serif';
+        ctx.fillText(nom, 0, 0);
+        ctx.font = (an * 0.19).toFixed(1) + 'px serif';
+        ctx.fillText(pal, 0, an * 0.21);
+        ctx.restore();
+      };
+      esquina(x + an * 0.145, y + al * 0.155, false);
+      esquina(x + an - an * 0.145, y + al - al * 0.155, true);
+
+      if (indice >= 9 && indice <= 11){
+        this._figura(ctx, indice, x, y, an, al, color);
+      } else if (indice === 12){
+        // as: palo grande con una orla
+        ctx.strokeStyle = color; ctx.globalAlpha = 0.25;
+        ctx.lineWidth = Math.max(1, an * 0.015);
+        ctx.beginPath(); ctx.arc(x + an / 2, y + al / 2, an * 0.33, 0, 6.2832); ctx.stroke();
+        ctx.globalAlpha = 1;
+        ctx.fillStyle = color;
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.font = (an * 0.56).toFixed(1) + 'px serif';
+        ctx.fillText(pal, x + an / 2, y + al / 2 + an * 0.02);
+      } else {
+        // numéricas: los símbolos en su disposición de siempre,
+        // con los de la mitad de abajo del revés, como en la baraja real
+        const pips = this.PIPS[indice] || [];
+        ctx.fillStyle = color;
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.font = (an * 0.24).toFixed(1) + 'px serif';
+        const zonaY = y + al * 0.12, zonaAl = al * 0.76;
+        pips.forEach(([px, py]) => {
+          const sx = x + an * 0.5 + (px - 0.5) * an * 0.62;
+          const sy = zonaY + py * zonaAl;
+          if (py > 0.53){
+            ctx.save();
+            ctx.translate(sx, sy); ctx.rotate(Math.PI);
+            ctx.fillText(pal, 0, 0);
+            ctx.restore();
+          } else ctx.fillText(pal, sx, sy);
+        });
+      }
+    }
+
+    // brillo diagonal del plástico
+    const brillo = ctx.createLinearGradient(x, y, x + an * 0.8, y + al);
+    brillo.addColorStop(0, 'rgba(255,255,255,.16)');
+    brillo.addColorStop(0.42, 'rgba(255,255,255,.03)');
+    brillo.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = brillo;
+    ctx.fillRect(x, y, an, al);
+    ctx.restore();      // fin del recorte
+
+    // filo
+    ctx.strokeStyle = tapada ? 'rgba(0,240,255,.35)' : 'rgba(0,0,0,.22)';
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.roundRect(x + .5, y + .5, an - 1, al - 1, r);
+    ctx.stroke();
+
+    if (opciones.apagada){
+      ctx.fillStyle = 'rgba(10,14,24,.42)';
+      ctx.beginPath(); ctx.roundRect(x, y, an, al, r); ctx.fill();
+    }
     if (opciones.marcada){
-      ctx.strokeStyle = '#f3e600'; ctx.lineWidth = Math.max(2, an * 0.05);
+      ctx.strokeStyle = '#f3e600'; ctx.lineWidth = Math.max(2, an * 0.045);
+      ctx.shadowColor = 'rgba(243,230,0,.8)'; ctx.shadowBlur = an * 0.2;
       ctx.beginPath(); ctx.roundRect(x - 2, y - 2, an + 4, al + 4, r + 2); ctx.stroke();
     }
     ctx.restore();
   }
 };
+
+/* ==========================================================
+   Mesa de casino: paño con textura, barandilla y foco.
+   La usan Póker y Blackjack para no repetir el fondo.
+   ========================================================== */
+const Mesa = {
+  _ruido: null,
+  // Textura de paño: se genera una vez y se repite como patrón
+  textura(ctx){
+    if (this._ruido) return this._ruido;
+    const t = document.createElement('canvas');
+    t.width = t.height = 64;
+    const c = t.getContext('2d');
+    const img = c.createImageData(64, 64);
+    for (let i = 0; i < img.data.length; i += 4){
+      const v = 128 + (Math.random() - 0.5) * 26;
+      img.data[i] = img.data[i + 1] = img.data[i + 2] = v;
+      img.data[i + 3] = 26;
+    }
+    c.putImageData(img, 0, 0);
+    this._ruido = ctx.createPattern(t, 'repeat');
+    return this._ruido;
+  },
+
+  /**
+   * Pinta el fondo completo: penumbra, foco cenital y el óvalo de la mesa
+   * con barandilla de cuero y filete. `tono` es el color del paño.
+   */
+  pintar(ctx, an, al, opciones = {}){
+    const cx = opciones.cx !== undefined ? opciones.cx : an / 2;
+    const cy = opciones.cy !== undefined ? opciones.cy : al / 2;
+    const rx = opciones.rx || an * 0.42;
+    const ry = opciones.ry || al * 0.36;
+    const tono = opciones.tono || ['#1c6b45', '#0c3a26'];
+    const acento = opciones.acento || 'rgba(243,230,0,.5)';
+
+    // penumbra de la sala
+    const fondo = ctx.createRadialGradient(cx, cy - al * 0.1, 20, cx, cy, an * 0.85);
+    fondo.addColorStop(0, '#1a2036');
+    fondo.addColorStop(0.55, '#0b0f1c');
+    fondo.addColorStop(1, '#04060d');
+    ctx.fillStyle = fondo;
+    ctx.fillRect(0, 0, an, al);
+
+    // haz del foco cenital
+    const haz = ctx.createRadialGradient(cx, cy - al * 0.18, 10, cx, cy, Math.max(rx, ry) * 1.5);
+    haz.addColorStop(0, 'rgba(255,246,214,.13)');
+    haz.addColorStop(1, 'rgba(255,246,214,0)');
+    ctx.fillStyle = haz;
+    ctx.fillRect(0, 0, an, al);
+
+    // barandilla de cuero
+    const cuero = ctx.createLinearGradient(cx, cy - ry - 26, cx, cy + ry + 26);
+    cuero.addColorStop(0, '#4a2f22');
+    cuero.addColorStop(0.5, '#2f1d14');
+    cuero.addColorStop(1, '#1a100b');
+    ctx.fillStyle = cuero;
+    ctx.beginPath(); ctx.ellipse(cx, cy, rx + 26, ry + 22, 0, 0, 6.2832); ctx.fill();
+    // costura
+    ctx.strokeStyle = 'rgba(255,220,160,.18)';
+    ctx.lineWidth = 1.4;
+    ctx.setLineDash([6, 7]);
+    ctx.beginPath(); ctx.ellipse(cx, cy, rx + 13, ry + 11, 0, 0, 6.2832); ctx.stroke();
+    ctx.setLineDash([]);
+
+    // paño
+    const pano = ctx.createRadialGradient(cx, cy - ry * 0.4, 10, cx, cy, Math.max(rx, ry) * 1.15);
+    pano.addColorStop(0, tono[0]);
+    pano.addColorStop(1, tono[1]);
+    ctx.fillStyle = pano;
+    ctx.beginPath(); ctx.ellipse(cx, cy, rx, ry, 0, 0, 6.2832); ctx.fill();
+
+    // grano del paño
+    ctx.save();
+    ctx.beginPath(); ctx.ellipse(cx, cy, rx, ry, 0, 0, 6.2832); ctx.clip();
+    ctx.fillStyle = this.textura(ctx);
+    ctx.fillRect(cx - rx, cy - ry, rx * 2, ry * 2);
+    ctx.restore();
+
+    // filete interior
+    ctx.strokeStyle = acento;
+    ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.ellipse(cx, cy, rx - 10, ry - 9, 0, 0, 6.2832); ctx.stroke();
+
+    // viñeta de los bordes de la pantalla
+    const vin = ctx.createRadialGradient(cx, cy, Math.max(rx, ry) * 0.7, cx, cy, an * 0.78);
+    vin.addColorStop(0, 'rgba(0,0,0,0)');
+    vin.addColorStop(1, 'rgba(0,0,0,.55)');
+    ctx.fillStyle = vin;
+    ctx.fillRect(0, 0, an, al);
+  },
+
+  /**
+   * Montón de fichas de casino. `valor` decide el color y cuántas se apilan.
+   */
+  fichas(ctx, valor, x, y, escala = 1){
+    if (valor <= 0) return;
+    // Colores de casino, pero con el canto claro para que se lean sobre el paño
+    const COLORES = [
+      [1000, '#e0a416', '#fff0b8'], [500, '#7b3fb0', '#d6a8ff'],
+      [100, '#2c3140', '#c3ccdd'], [25,  '#1f8f47', '#89f0b0'],
+      [5,   '#c8283a', '#ffa8b4'], [1,   '#d8dce4', '#ffffff']
+    ];
+    let resto = valor, capas = [];
+    for (const [v, base, borde] of COLORES){
+      const n = Math.min(6, Math.floor(resto / v));
+      for (let k = 0; k < n; k++) capas.push([base, borde]);
+      resto -= n * v;
+      if (capas.length >= 9) break;
+    }
+    if (!capas.length) capas.push([COLORES[5][1], COLORES[5][2]]);
+    capas = capas.slice(0, 9).reverse();
+
+    const rx = 17 * escala, ry = 6.6 * escala, gr = 4.8 * escala;
+    capas.forEach(([base, borde], k) => {
+      const cy = y - k * gr;
+      // canto
+      ctx.fillStyle = base;
+      ctx.beginPath(); ctx.ellipse(x, cy + gr * 0.5, rx, ry, 0, 0, 6.2832); ctx.fill();
+      // cara
+      const g = ctx.createLinearGradient(x - rx, cy - ry, x + rx, cy + ry);
+      g.addColorStop(0, borde); g.addColorStop(0.45, base); g.addColorStop(1, borde);
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.ellipse(x, cy, rx, ry, 0, 0, 6.2832); ctx.fill();
+      ctx.strokeStyle = 'rgba(255,255,255,.5)';
+      ctx.lineWidth = Math.max(0.9, escala * 1.1);
+      ctx.beginPath(); ctx.ellipse(x, cy, rx * 0.62, ry * 0.62, 0, 0, 6.2832); ctx.stroke();
+      // muescas del canto, que es lo que hace que una ficha parezca una ficha
+      ctx.strokeStyle = 'rgba(255,255,255,.4)';
+      ctx.lineWidth = Math.max(1.4, escala * 2);
+      for (let a = 0; a < 6; a++){
+        const ang = a * Math.PI / 3 + k * 0.2;
+        ctx.beginPath();
+        ctx.moveTo(x + Math.cos(ang) * rx * 0.74, cy + Math.sin(ang) * ry * 0.74);
+        ctx.lineTo(x + Math.cos(ang) * rx * 0.98, cy + Math.sin(ang) * ry * 0.98);
+        ctx.stroke();
+      }
+    });
+  }
+};
+
 
 // Respaldo para navegadores sin roundRect
 if (!CanvasRenderingContext2D.prototype.roundRect){

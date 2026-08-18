@@ -167,6 +167,8 @@ Cada mejora arregla un cuello de botella distinto, y el que va apretado se nota 
 - El **Mercado Nexo** cambia $5.000 por 50 NEXO-COINS, las fichas ficticias que se usan en Minas y Aviator.
 - El **registro** de la parte de abajo va contando lo que pasa: contrataciones, mejoras y camiones vendidos.
 
+**La mina está dibujada entera por código**, en dos capas: una fija que se pinta una sola vez (cielo estrellado con luna y halo, sierra al fondo en dos planos, seis estratos de roca con su grano y sus líneas de contacto, guijarros incrustados, grietas ramificadas y el entibado de madera con vetas y pernos) y otra viva encima. El mineral no está esparcido al azar: sale en **bolsadas inclinadas** de cristales facetados que sueltan un destello al pasar. Los mineros están articulados —piernas con ciclo de paso, brazo que gira con el pico, casco con visera y frontal encendido, saco que crece al llenarse— y cada uno lleva su **cono de luz** hacia donde mira. El pozo tiene marco entibado, guías, faroles con parpadeo y raíl de vagoneta; el ascensor es una jaula con barrotes, franja de peligro y baliza; y arriba están el silo sobre zapata de hormigón, el castillete de celosía con su polea girando y el camión con ruedas de tacos y faro encendido.
+
 ### 📦 Cofres Minecraft
 
 Simulador de cajas con interfaz de bloques: cuatro cofres, veinte objetos repartidos en cinco rarezas y encantamientos con el brillo morado animado.
@@ -228,6 +230,7 @@ Carrera de 2.400 m sobre terreno generado, con un motor de física propio de **c
 - Caer de cabeza (más de 106° de inclinación tocando suelo) es caída.
 - Física a **pasos fijos de 240 Hz** dentro del bucle: con la suspensión así de rígida, un `dt` grande la haría explotar. El par de las ruedas va escalado por `dt` como cualquier aceleración, y la velocidad de giro está topada siempre, no solo al pulsar una tecla.
 - **Mandos táctiles** en pantallas pequeñas, con captura de puntero para que no se queden pegados si sacas el dedo del botón.
+- **Cámara con zoom 1,7×** que deja la moto fija en pantalla y mueve el mundo por debajo: se ve el detalle de la máquina sin perder el terreno de vista. Detrás hay tres capas de montañas en paralaje con nieve en las cumbres, sol con halo y nubes; delante, el terreno con estratos, gravilla, borde de hierba y línea naranja encendida, más rocas, matojos y postes sembrados de forma determinista. La moto lleva neumáticos con tacos que giran, llantas de radios, disco de freno, escape, faro y un piloto articulado con casco y visera.
 
 ### 📈 Money Market
 
@@ -256,12 +259,18 @@ Fichas de historia de Esparta con **repetición espaciada de verdad**: 24 cartas
 
 Todos con **fichas ficticias**: no hay dinero real ni forma de depositar o retirar nada. Comparten la cartera de NEXO-COINS con Minas y Aviator, y las tres mesas de cartas usan la baraja común de `arcade.js` (`Cartas`), que dibuja cada naipe por código.
 
+Las mesas comparten dos módulos de `arcade.js`, los dos dibujados a mano con Canvas y sin una sola imagen descargada:
+
+- **`Cartas`** — baraja francesa completa: los pips van en la disposición clásica (y girados en la mitad de abajo, como en un naipe de verdad), las figuras llevan su retrato con corona, tiara o gorro, los índices de la esquina inferior van del revés, y el dorso tiene celosía de rombos con brillo.
+- **`Mesa`** — el paño: penumbra y foco cenital, elipse de fieltro con grano y filete interior, borde de cuero con pespunte, viñeta, y `Mesa.fichas()` para apilar fichas de casino de 1 a 1.000 con su color, canto, aro interior y muescas.
+
 ### 🃏 Blackjack
 
 - **Zapato de 6 barajas** que se rebaraja al gastar tres cuartas partes.
 - **Blackjack paga 3:2**, la banca se planta en todo 17 (también el blando).
 - **Doblar** (una carta y se acabó), **dividir** hasta cuatro manos —los ases divididos reciben una sola carta— y **seguro** 2:1 cuando la banca enseña un as.
 - Comprobado: 4.000 manos con la estrategia de "pedir hasta 17" dan un −7,6 %, que es justo lo que tiene esa estrategia; los blackjacks salieron el 4,3 % de las manos, frente al 4,75 % teórico.
+- **Mesa dibujada por código**: paño con grano y filete, borde de cuero con pespunte, foco cenital y viñeta; el arco de apuestas y el lema serigrafiados dentro del paño; caja de zapato a un lado y **montones de fichas de casino** —con canto, aros y muescas— por cada mano apostada.
 
 ### 🎡 Ruleta
 
@@ -275,6 +284,7 @@ Todos con **fichas ficticias**: no hay dinero real ni forma de depositar o retir
 - Mesa de cuatro con ciegas de **25/50** y botón rotatorio; preflop, flop, turn y river.
 - **Evaluador de siete cartas** que empaqueta categoría y desempates en un entero comparable. Verificado con las diez categorías, la escalera A-2-3-4-5, los desempates por pareja y por color, y la mejor mano de siete.
 - Los rivales deciden con la fuerza de su mano y las **probabilidades del bote**, con una tabla de manos iniciales antes del flop, y **farolean** un 12 % de las veces.
+- Paño ovalado con foco y borde de cuero, **bote representado en tres montones de fichas** y lo apostado por cada jugador dejado en el tapete a un lado de su placa, nunca encima del nombre ni de las cartas.
 
 ### 🀄 Bacarrá
 

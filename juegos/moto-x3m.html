@@ -447,142 +447,417 @@ function refrescarHud(){
 }
 
 // ---------- Dibujo ----------
-function dibujar(){
-  const cx = camaraX + (sacudida ? azar(-sacudida, sacudida) : 0);
-  const cy = camaraY + (sacudida ? azar(-sacudida, sacudida) : 0);
+// La cámara acerca bastante: antes la moto era un garabato de 60 px en un
+// lienzo de 960 y no se veía nada de lo que hace.
+const ZOOM = 1.7;
 
-  // cielo
-  const cielo = ctx.createLinearGradient(0, 0, 0, ALTO);
-  cielo.addColorStop(0, '#0a1428');
-  cielo.addColorStop(0.55, '#132038');
-  cielo.addColorStop(1, '#1d2a44');
-  ctx.fillStyle = cielo;
-  ctx.fillRect(0, 0, ANCHO, ALTO);
-
-  // montañas de fondo, a media velocidad de la cámara
-  for (let capa = 0; capa < 2; capa++){
-    const par = 0.25 + capa * 0.22;
-    ctx.fillStyle = capa ? 'rgba(30,45,78,.85)' : 'rgba(20,32,58,.9)';
+function montanas(cx, cy){
+  for (let capa = 0; capa < 3; capa++){
+    const par = 0.06 + capa * 0.10;
+    const base = 300 + capa * 34;
+    const alt = 150 - capa * 34;
+    const col = ['rgba(26,36,66,.95)', 'rgba(34,47,82,.95)', 'rgba(46,62,102,.9)'][capa];
+    ctx.fillStyle = col;
     ctx.beginPath();
     ctx.moveTo(0, ALTO);
-    for (let x = 0; x <= ANCHO; x += 16){
-      const m = (x + cx * par) * 0.004;
-      const y = 250 - capa * 40 + Math.sin(m) * 46 + Math.sin(m * 2.7) * 20 - cy * par * 0.3;
+    const desp = -cx * par;
+    for (let x = 0; x <= ANCHO; x += 12){
+      const m = (x - desp) * 0.0034 + capa * 7;
+      const y = base - cy * par * 0.25
+        - (Math.abs(Math.sin(m)) * alt + Math.abs(Math.sin(m * 2.3 + 1)) * alt * 0.4);
       ctx.lineTo(x, y);
     }
     ctx.lineTo(ANCHO, ALTO);
     ctx.closePath();
     ctx.fill();
+
+    // nieve en las cumbres de la capa más lejana
+    if (capa === 0){
+      ctx.fillStyle = 'rgba(190,215,255,.13)';
+      ctx.beginPath();
+      ctx.moveTo(0, ALTO);
+      for (let x = 0; x <= ANCHO; x += 12){
+        const m = (x + cx * par) * 0.0034;
+        const y = base - cy * par * 0.25
+          - (Math.abs(Math.sin(m)) * alt + Math.abs(Math.sin(m * 2.3 + 1)) * alt * 0.4);
+        ctx.lineTo(x, y + 16);
+      }
+      ctx.lineTo(ANCHO, ALTO); ctx.closePath(); ctx.fill();
+    }
+  }
+}
+
+// Vegetación y piedras pegadas al terreno, sembradas de forma determinista
+function adornos(cx, cy){
+  const paso = 64;
+  const desde = Math.floor((cx - 80) / paso) * paso;
+  for (let x = desde; x < cx + ANCHO + 80; x += paso){
+    const semillaX = Math.abs(Math.sin(x * 12.9898 + semilla) * 43758.5453) % 1;
+    const px = x + semillaX * 40;
+    const py = alturaTerreno(px);
+    if (enFoso(px)) continue;
+    const sx = px - cx, sy = py - cy;
+    if (sx < -60 || sx > ANCHO + 60) continue;
+    const tipo = Math.floor(semillaX * 100) % 5;
+
+    if (tipo === 0){                       // roca
+      const r = 5 + semillaX * 9;
+      ctx.fillStyle = '#4a4038';
+      ctx.beginPath();
+      ctx.moveTo(sx - r, sy + 2);
+      ctx.lineTo(sx - r * 0.5, sy - r * 0.9);
+      ctx.lineTo(sx + r * 0.4, sy - r);
+      ctx.lineTo(sx + r, sy + 2);
+      ctx.closePath(); ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,.10)';
+      ctx.beginPath();
+      ctx.moveTo(sx - r * 0.5, sy - r * 0.9);
+      ctx.lineTo(sx + r * 0.4, sy - r);
+      ctx.lineTo(sx, sy - r * 0.3);
+      ctx.closePath(); ctx.fill();
+    } else if (tipo === 1 || tipo === 2){  // matojo
+      ctx.strokeStyle = '#3e6b3a'; ctx.lineWidth = 2; ctx.lineCap = 'round';
+      for (let k = -2; k <= 2; k++){
+        ctx.beginPath();
+        ctx.moveTo(sx + k * 2.4, sy + 2);
+        ctx.lineTo(sx + k * 4.6, sy - 9 - Math.abs(k) * -2);
+        ctx.stroke();
+      }
+      ctx.lineCap = 'butt';
+    } else if (tipo === 3){                // poste con banderín
+      ctx.strokeStyle = '#6b5b4a'; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.moveTo(sx, sy + 2); ctx.lineTo(sx, sy - 26); ctx.stroke();
+      ctx.fillStyle = 'rgba(255,138,61,.65)';
+      ctx.beginPath();
+      ctx.moveTo(sx, sy - 26); ctx.lineTo(sx + 14, sy - 21); ctx.lineTo(sx, sy - 16);
+      ctx.closePath(); ctx.fill();
+    }
+  }
+}
+
+function moto(){
+  const hy0 = M.susp[0], hy1 = M.susp[1];
+  ctx.save();
+  ctx.rotate(M.ang);
+
+  // ---- ruedas ----
+  const rueda = (signo, hy) => {
+    const cx = signo * EJE, cy = RUEDA - hy - 4;
+    // horquilla / basculante
+    ctx.strokeStyle = '#8a94a8'; ctx.lineWidth = 5; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(signo * EJE * 0.55, -8); ctx.lineTo(cx, cy); ctx.stroke();
+    ctx.strokeStyle = '#586277'; ctx.lineWidth = 2.4;
+    ctx.beginPath(); ctx.moveTo(signo * EJE * 0.55, -8); ctx.lineTo(cx, cy); ctx.stroke();
+    ctx.lineCap = 'butt';
+
+    // neumático con taco
+    ctx.fillStyle = '#0d1117';
+    ctx.beginPath(); ctx.arc(cx, cy, RUEDA + 3, 0, 6.2832); ctx.fill();
+    ctx.strokeStyle = '#252c39'; ctx.lineWidth = 2.4;
+    ctx.beginPath(); ctx.arc(cx, cy, RUEDA + 2, 0, 6.2832); ctx.stroke();
+    // dibujo del taco
+    ctx.strokeStyle = '#39424f'; ctx.lineWidth = 2.6;
+    for (let k = 0; k < 10; k++){
+      const a = M.x * 0.055 * signo + k * Math.PI / 5;
+      ctx.beginPath();
+      ctx.moveTo(cx + Math.cos(a) * (RUEDA - 1), cy + Math.sin(a) * (RUEDA - 1));
+      ctx.lineTo(cx + Math.cos(a) * (RUEDA + 3.5), cy + Math.sin(a) * (RUEDA + 3.5));
+      ctx.stroke();
+    }
+    // llanta y radios
+    ctx.fillStyle = '#cfd6e2';
+    ctx.beginPath(); ctx.arc(cx, cy, RUEDA * 0.55, 0, 6.2832); ctx.fill();
+    ctx.strokeStyle = '#9aa5ba'; ctx.lineWidth = 1.6;
+    for (let k = 0; k < 6; k++){
+      const a = M.x * 0.055 * signo + k * Math.PI / 3;
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.lineTo(cx + Math.cos(a) * RUEDA * 0.52, cy + Math.sin(a) * RUEDA * 0.52);
+      ctx.stroke();
+    }
+    ctx.fillStyle = '#ff8a3d';
+    ctx.beginPath(); ctx.arc(cx, cy, 3.6, 0, 6.2832); ctx.fill();
+    // disco de freno delantero
+    if (signo > 0){
+      ctx.strokeStyle = 'rgba(200,212,230,.55)'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(cx, cy, RUEDA * 0.34, 0, 6.2832); ctx.stroke();
+    }
+  };
+  rueda(-1, hy0); rueda(1, hy1);
+
+  // ---- chasis ----
+  const g = ctx.createLinearGradient(0, -20, 0, 12);
+  g.addColorStop(0, '#ffb066'); g.addColorStop(0.5, '#ff8a3d'); g.addColorStop(1, '#c4551a');
+  ctx.fillStyle = g;
+  ctx.beginPath();
+  ctx.moveTo(-EJE * 0.92, 2);
+  ctx.quadraticCurveTo(-EJE * 0.6, -14, -10, -14);
+  ctx.lineTo(14, -12);
+  ctx.quadraticCurveTo(EJE * 0.7, -8, EJE * 0.9, 4);
+  ctx.quadraticCurveTo(EJE * 0.2, 12, -EJE * 0.5, 10);
+  ctx.closePath(); ctx.fill();
+  ctx.strokeStyle = 'rgba(0,0,0,.35)'; ctx.lineWidth = 1.4; ctx.stroke();
+
+  // depósito y asiento
+  ctx.fillStyle = '#ffd0a0';
+  ctx.beginPath();
+  ctx.moveTo(-16, -16); ctx.quadraticCurveTo(0, -24, 14, -15);
+  ctx.lineTo(10, -10); ctx.lineTo(-14, -11);
+  ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#22262f';
+  ctx.beginPath();
+  ctx.moveTo(-EJE * 0.86, -1); ctx.quadraticCurveTo(-EJE * 0.5, -12, -18, -12);
+  ctx.lineTo(-16, -6); ctx.lineTo(-EJE * 0.8, 4);
+  ctx.closePath(); ctx.fill();
+
+  // escape con humo caliente
+  ctx.strokeStyle = '#b9c2d2'; ctx.lineWidth = 4; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(-6, 6); ctx.lineTo(-EJE * 0.95, 9); ctx.stroke();
+  ctx.lineCap = 'butt';
+
+  // manillar y horquilla delantera
+  ctx.strokeStyle = '#c8d2e2'; ctx.lineWidth = 3.4;
+  ctx.beginPath(); ctx.moveTo(16, -12); ctx.lineTo(26, -26); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(26, -26); ctx.lineTo(34, -24); ctx.stroke();
+  // faro
+  ctx.fillStyle = '#fff3c4';
+  ctx.beginPath(); ctx.ellipse(30, -20, 5, 4, -0.3, 0, 6.2832); ctx.fill();
+
+  // ---- piloto ----
+  const enSuelo = M.contacto[0] || M.contacto[1];
+  const flex = enSuelo ? 0 : 4;
+  ctx.strokeStyle = '#1f6f8b'; ctx.lineWidth = 7; ctx.lineCap = 'round';
+  // pierna
+  ctx.beginPath();
+  ctx.moveTo(-6, -12); ctx.lineTo(0, -2 + flex); ctx.lineTo(10, 2);
+  ctx.stroke();
+  // torso
+  ctx.strokeStyle = '#2a8fb0'; ctx.lineWidth = 10;
+  ctx.beginPath();
+  ctx.moveTo(-7, -14); ctx.lineTo(2, -30 - flex);
+  ctx.stroke();
+  // brazo
+  ctx.strokeStyle = '#1f6f8b'; ctx.lineWidth = 6;
+  ctx.beginPath();
+  ctx.moveTo(2, -28 - flex); ctx.lineTo(16, -22); ctx.lineTo(26, -25);
+  ctx.stroke();
+  ctx.lineCap = 'butt';
+  // casco
+  ctx.fillStyle = '#00f0ff';
+  ctx.beginPath(); ctx.arc(4, -36 - flex, 8.5, 0, 6.2832); ctx.fill();
+  ctx.fillStyle = '#0a2c36';
+  ctx.beginPath();
+  ctx.moveTo(8, -40 - flex); ctx.lineTo(14, -36 - flex); ctx.lineTo(8, -32 - flex);
+  ctx.closePath(); ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,.5)';
+  ctx.beginPath(); ctx.arc(1, -39 - flex, 3, 0, 6.2832); ctx.fill();
+
+  ctx.restore();
+}
+
+function dibujar(){
+  const cx = camaraX + (sacudida ? azar(-sacudida, sacudida) : 0);
+  const cy = camaraY + (sacudida ? azar(-sacudida, sacudida) : 0);
+
+  // ---- cielo con degradado y sol ----
+  const g = ctx.createLinearGradient(0, 0, 0, ALTO);
+  g.addColorStop(0, '#081226');
+  g.addColorStop(0.42, '#16294d');
+  g.addColorStop(0.75, '#3a3b63');
+  g.addColorStop(1, '#6b4a58');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, ANCHO, ALTO);
+
+  // sol bajo con halo
+  const solX = ANCHO * 0.74, solY = 168;
+  const halo = ctx.createRadialGradient(solX, solY, 8, solX, solY, 190);
+  halo.addColorStop(0, 'rgba(255,190,120,.35)');
+  halo.addColorStop(1, 'rgba(255,190,120,0)');
+  ctx.fillStyle = halo;
+  ctx.fillRect(0, 0, ANCHO, ALTO);
+  ctx.fillStyle = 'rgba(255,214,150,.9)';
+  ctx.beginPath(); ctx.arc(solX, solY, 26, 0, 6.2832); ctx.fill();
+
+  // nubes finas
+  ctx.fillStyle = 'rgba(255,255,255,.05)';
+  for (let k = 0; k < 6; k++){
+    const nx = ((k * 337 - cx * 0.04) % (ANCHO + 300)) - 150;
+    const ny = 70 + (k % 3) * 42;
+    ctx.beginPath();
+    ctx.ellipse(nx, ny, 90 + k * 12, 13, 0, 0, 6.2832); ctx.fill();
+    ctx.beginPath();
+    ctx.ellipse(nx + 40, ny - 8, 54, 10, 0, 0, 6.2832); ctx.fill();
   }
 
-  // terreno
+  montanas(cx, cy);
+
+  // El mundo se dibuja con la moto fija en pantalla y el terreno moviéndose
+  // bajo ella: así se puede acercar el zoom sin pelearse con la cámara.
+  const vx = M.x, vy = M.y;
+  ctx.save();
+  ctx.translate(ANCHO * 0.34, ALTO * 0.62);
+  ctx.scale(ZOOM, ZOOM);
+  if (sacudida) ctx.translate(azar(-sacudida, sacudida), azar(-sacudida, sacudida));
+  ctx.translate(-vx, -vy);
+
+  const izq = vx - ANCHO * 0.34 / ZOOM - 40;
+  const der = vx + ANCHO * 0.66 / ZOOM + 40;
+  const arriba = vy - ALTO * 0.62 / ZOOM - 40;
+  const abajo = vy + ALTO * 0.38 / ZOOM + 40;
+
+  // ---- terreno ----
   ctx.beginPath();
-  ctx.moveTo(0, ALTO);
-  for (let x = 0; x <= ANCHO; x += 5) ctx.lineTo(x, alturaTerreno(x + cx) - cy);
-  ctx.lineTo(ANCHO, ALTO);
+  ctx.moveTo(izq, abajo + 400);
+  for (let x = izq; x <= der; x += 4) ctx.lineTo(x, alturaTerreno(x));
+  ctx.lineTo(der, abajo + 400);
   ctx.closePath();
-  const tierra = ctx.createLinearGradient(0, 200, 0, ALTO);
-  tierra.addColorStop(0, '#3a2a1c');
-  tierra.addColorStop(1, '#170f0a');
+  const tierra = ctx.createLinearGradient(0, arriba, 0, abajo + 200);
+  tierra.addColorStop(0, '#6b4a2a');
+  tierra.addColorStop(0.12, '#4a3320');
+  tierra.addColorStop(1, '#150d07');
   ctx.fillStyle = tierra;
   ctx.fill();
 
-  // línea de asfalto
-  ctx.beginPath();
-  for (let x = 0; x <= ANCHO; x += 5){
-    const y = alturaTerreno(x + cx) - cy;
-    x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  // estratos del subsuelo
+  ctx.save();
+  ctx.clip();
+  for (let k = 1; k <= 5; k++){
+    ctx.strokeStyle = 'rgba(0,0,0,.16)';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    for (let x = izq; x <= der; x += 8)
+      ctx.lineTo(x, alturaTerreno(x) + k * 26 + Math.sin(x * 0.02 + k) * 5);
+    ctx.stroke();
   }
+  // motas de grava
+  ctx.fillStyle = 'rgba(255,255,255,.05)';
+  for (let k = 0; k < 90; k++){
+    const px = izq + ((k * 173) % (der - izq));
+    const py = alturaTerreno(px) + 12 + ((k * 91) % 120);
+    ctx.beginPath(); ctx.arc(px, py, 1 + (k % 3), 0, 6.2832); ctx.fill();
+  }
+  ctx.restore();
+
+  // capa de hierba sobre el asfalto
+  ctx.beginPath();
+  for (let x = izq; x <= der; x += 4){
+    const y = alturaTerreno(x);
+    x === izq ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  }
+  ctx.strokeStyle = '#7dbb4a';
+  ctx.lineWidth = 7;
+  ctx.stroke();
   ctx.strokeStyle = '#ff8a3d';
   ctx.lineWidth = 3;
-  ctx.shadowColor = 'rgba(255,138,61,.7)';
-  ctx.shadowBlur = 12;
+  ctx.shadowColor = 'rgba(255,138,61,.8)';
+  ctx.shadowBlur = 14;
   ctx.stroke();
   ctx.shadowBlur = 0;
 
-  // banderas de control
+  adornos(0, 0);
+
+  // ---- banderas de control ----
   CONTROLES.forEach((cxx, i) => {
-    const x = cxx - cx;
-    if (x < -40 || x > ANCHO + 40) return;
-    const y = alturaTerreno(cxx) - cy;
+    if (cxx < izq - 60 || cxx > der + 60) return;
+    const y = alturaTerreno(cxx);
     const pasada = i < M.control;
-    ctx.strokeStyle = pasada ? '#00ff66' : '#f3e600';
-    ctx.lineWidth = 2.5;
-    ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x, y - 52); ctx.stroke();
+    ctx.strokeStyle = '#c9d3e6'; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(cxx, y); ctx.lineTo(cxx, y - 62); ctx.stroke();
     ctx.fillStyle = pasada ? '#00ff66' : '#f3e600';
+    ctx.save();
+    ctx.shadowColor = ctx.fillStyle; ctx.shadowBlur = 12;
     ctx.beginPath();
-    ctx.moveTo(x, y - 52); ctx.lineTo(x + 26, y - 44); ctx.lineTo(x, y - 34);
+    const on = Math.sin(M.tiempo * 5 + i) * 4;
+    ctx.moveTo(cxx, y - 62);
+    ctx.quadraticCurveTo(cxx + 16, y - 58 + on, cxx + 30, y - 52);
+    ctx.quadraticCurveTo(cxx + 16, y - 48 - on, cxx, y - 40);
     ctx.closePath(); ctx.fill();
+    ctx.restore();
     if (i === CONTROLES.length - 1){
       ctx.fillStyle = '#f3e600';
-      ctx.font = '700 12px "Courier New", monospace';
+      ctx.font = '900 15px "Courier New", monospace';
       ctx.textAlign = 'center';
-      ctx.fillText('META', x + 12, y - 60);
+      ctx.fillText('META', cxx + 14, y - 74);
     }
   });
 
-  // partículas
+  // ---- partículas ----
   for (const p of particulas){
     ctx.globalAlpha = Math.max(0, p.vida / p.max);
     ctx.fillStyle = p.color;
-    ctx.beginPath();
-    ctx.arc(p.x - cx, p.y - cy, p.r, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, 6.2832); ctx.fill();
   }
   ctx.globalAlpha = 1;
 
-  // moto
+  // ---- moto ----
   ctx.save();
-  ctx.translate(M.x - cx, M.y - cy);
-  ctx.rotate(M.ang);
-
-  const dib = (indice, signo) => {
-    const hy = M.susp[indice];
-    ctx.strokeStyle = '#5c6b85'; ctx.lineWidth = 4;
-    ctx.beginPath(); ctx.moveTo(signo * EJE * 0.62, -4); ctx.lineTo(signo * EJE, RUEDA - hy - 4); ctx.stroke();
-    ctx.fillStyle = '#111820';
-    ctx.beginPath(); ctx.arc(signo * EJE, RUEDA - hy - 4, RUEDA, 0, Math.PI * 2); ctx.fill();
-    ctx.strokeStyle = '#2e3a52'; ctx.lineWidth = 3; ctx.stroke();
-    ctx.strokeStyle = '#7a8aa5'; ctx.lineWidth = 1.4;
-    for (let r = 0; r < 4; r++){
-      const a = M.x * 0.06 + r * Math.PI / 2;
-      ctx.beginPath();
-      ctx.moveTo(signo * EJE, RUEDA - hy - 4);
-      ctx.lineTo(signo * EJE + Math.cos(a) * RUEDA * 0.75, RUEDA - hy - 4 + Math.sin(a) * RUEDA * 0.75);
-      ctx.stroke();
-    }
-  };
-  dib(0, -1); dib(1, 1);
-
-  // chasis
-  ctx.fillStyle = '#ff8a3d';
-  ctx.beginPath();
-  ctx.moveTo(-EJE * 0.8, 2); ctx.lineTo(-8, -12); ctx.lineTo(16, -10);
-  ctx.lineTo(EJE * 0.85, 4); ctx.lineTo(-4, 8);
-  ctx.closePath(); ctx.fill();
-  ctx.fillStyle = '#ffb877';
-  ctx.fillRect(-14, -16, 18, 6);
-
-  // piloto
-  ctx.strokeStyle = '#e8eef7'; ctx.lineWidth = 4; ctx.lineCap = 'round';
-  ctx.beginPath();
-  ctx.moveTo(-6, -14); ctx.lineTo(-2, -28); ctx.lineTo(14, -18);
-  ctx.stroke();
-  ctx.fillStyle = '#00f0ff';
-  ctx.beginPath(); ctx.arc(-1, -33, 6.5, 0, Math.PI * 2); ctx.fill();
-  ctx.lineCap = 'butt';
+  ctx.translate(M.x, M.y);
+  // sombra en el suelo
+  const ySuelo = alturaTerreno(M.x);
+  const separa = limitar((ySuelo - M.y - EJE) / 120, 0, 1);
+  ctx.save();
+  ctx.translate(0, ySuelo - M.y);
+  ctx.globalAlpha = 0.45 * (1 - separa);
+  ctx.fillStyle = '#000';
+  ctx.beginPath(); ctx.ellipse(0, 4, EJE * 1.2 * (1 - separa * 0.4), 7, 0, 0, 6.2832); ctx.fill();
+  ctx.restore();
+  ctx.globalAlpha = 1;
+  moto();
   ctx.restore();
 
-  // barra de progreso de la pista
+  ctx.restore();   // fin de la cámara
+
+  // ---- barrido de velocidad ----
+  // Franjas cortas que cruzan solo la mitad de abajo, a la altura de la moto:
+  // en el cielo quedaban como rayas sueltas y parecían un fallo de dibujo.
+  const rapidez = Math.abs(M.vx) / VEL_MAX;
+  if (rapidez > 0.6){
+    const fuerza = (rapidez - 0.6) / 0.4;
+    ctx.save();
+    ctx.globalAlpha = fuerza * 0.22;
+    for (let k = 0; k < 12; k++){
+      const y = ALTO * 0.42 + ((k * 53) % Math.floor(ALTO * 0.5));
+      const largo = 60 + (k % 5) * 55;
+      const x = ANCHO - ((M.x * 5 + k * 173) % (ANCHO + 260));
+      const g = ctx.createLinearGradient(x, y, x - largo, y);
+      g.addColorStop(0, 'rgba(255,255,255,.55)');
+      g.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.strokeStyle = g;
+      ctx.lineWidth = 1.6;
+      ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x - largo, y); ctx.stroke();
+    }
+    ctx.restore();
+    // desenfoque en los bordes al ir lanzado
+    const borde = ctx.createLinearGradient(0, 0, ANCHO * 0.18, 0);
+    borde.addColorStop(0, 'rgba(0,0,0,' + (fuerza * 0.35).toFixed(3) + ')');
+    borde.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = borde;
+    ctx.fillRect(0, 0, ANCHO * 0.18, ALTO);
+  }
+
+  // ---- viñeta y HUD ----
+  const vin = ctx.createRadialGradient(ANCHO / 2, ALTO / 2, ALTO * 0.45, ANCHO / 2, ALTO / 2, ANCHO * 0.75);
+  vin.addColorStop(0, 'rgba(0,0,0,0)');
+  vin.addColorStop(1, 'rgba(0,0,0,.5)');
+  ctx.fillStyle = vin;
+  ctx.fillRect(0, 0, ANCHO, ALTO);
+
   const u = limitar(M.mejorX / META, 0, 1);
-  ctx.fillStyle = 'rgba(0,0,0,.5)';
-  ctx.fillRect(ANCHO / 2 - 130, 16, 260, 8);
-  ctx.fillStyle = '#ff8a3d';
-  ctx.fillRect(ANCHO / 2 - 130, 16, 260 * u, 8);
-  ctx.fillStyle = '#8b9bb4';
+  ctx.fillStyle = 'rgba(0,0,0,.55)';
+  ctx.beginPath(); ctx.roundRect(ANCHO / 2 - 150, 14, 300, 26, 13); ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,.12)';
+  ctx.beginPath(); ctx.roundRect(ANCHO / 2 - 138, 22, 276, 10, 5); ctx.fill();
+  const gp = ctx.createLinearGradient(ANCHO / 2 - 138, 0, ANCHO / 2 + 138, 0);
+  gp.addColorStop(0, '#ff8a3d'); gp.addColorStop(1, '#ffd27a');
+  ctx.fillStyle = gp;
+  ctx.beginPath(); ctx.roundRect(ANCHO / 2 - 138, 22, 276 * u, 10, 5); ctx.fill();
+  // moto en miniatura marcando la posición
+  ctx.fillStyle = '#fff';
+  ctx.beginPath(); ctx.arc(ANCHO / 2 - 138 + 276 * u, 27, 5, 0, 6.2832); ctx.fill();
+  ctx.fillStyle = '#c9d3e6';
   ctx.font = '700 11px "Courier New", monospace';
-  ctx.textAlign = 'center';
-  ctx.fillText('PISTA  ' + Math.round(u * 100) + '%', ANCHO / 2, 38);
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText('PISTA ' + Math.round(u * 100) + '%', ANCHO / 2, 52);
   if (M.record){
     ctx.textAlign = 'right';
     ctx.fillText('RÉCORD ' + M.record.toLocaleString('es-ES'), ANCHO - 16, 26);
