@@ -340,8 +340,26 @@ const Arcade = {
       if (!v) return [];
       return v.split(',').map(Number).filter(n => n >= 1 && n <= this.TOTAL);
     },
+    // Código aparte, fuera de la serie: no sale en la lista de la portada, no
+    // cuenta en el marcador y lleva su propio registro. Se canjea una sola vez.
+    SECRETO: 99,
+    PREMIO_SECRETO: 1000000,
+    secretoUsado(){ return Almacen.leer('arcade_codigo_secreto') === '1'; },
+
     // -> { ok, motivo: 'canjeado' | 'invalido' | 'repetido', numero, premio, saldo }
     canjear(txt){
+      // Se mira antes que la serie: 99 se sale del rango y normalizar() lo
+      // rechazaría como si fuera un número inventado.
+      const bruto = String(txt || '').trim().toUpperCase().replace(/[\s_]/g, '');
+      if (new RegExp('^(?:NEXO-?)?0*' + this.SECRETO + '$').test(bruto)){
+        if (this.secretoUsado())
+          return { ok:false, motivo:'repetido', numero:this.SECRETO, secreto:true,
+                   saldo:Arcade.fichas.saldo() };
+        Almacen.escribir('arcade_codigo_secreto', '1');
+        return { ok:true, motivo:'canjeado', numero:this.SECRETO, secreto:true,
+                 premio:this.PREMIO_SECRETO,
+                 saldo:Arcade.fichas.ajustar(this.PREMIO_SECRETO) };
+      }
       const n = this.normalizar(txt);
       if (n === null) return { ok:false, motivo:'invalido', saldo:Arcade.fichas.saldo() };
       const ya = this.usados();
@@ -351,7 +369,10 @@ const Arcade = {
       return { ok:true, motivo:'canjeado', numero:n, premio:this.PREMIO,
                saldo:Arcade.fichas.ajustar(this.PREMIO) };
     },
-    olvidar(){ Almacen.borrar('arcade_codigos'); }
+    // Deja los 20 de la serie sin canjear. El de fuera de serie no se toca:
+    // si entrara aquí, cada reparto de temporada regalaría otro millón.
+    olvidar(){ Almacen.borrar('arcade_codigos'); },
+    olvidarSecreto(){ Almacen.borrar('arcade_codigo_secreto'); }
   },
 
   /**

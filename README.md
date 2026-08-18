@@ -278,6 +278,7 @@ Las mesas comparten dos módulos de `arcade.js`, los dos dibujados a mano con Ca
 - **151 apuestas**: plenos, caballos, calles, cuadros, líneas, columnas, docenas y las de fuera.
 - Comprobado por construcción: **todas** devuelven exactamente `números × (pago+1) / 37 = 36/37`, es decir, la ventaja de la casa del **2,70 %** en cualquier apuesta. Con 200.000 giros, χ² = 30,7 sobre 36 grados de libertad.
 - **Deshacer** ficha a ficha y **Repetir** la última jugada entera.
+- La bola **para en la casilla que paga**. El ángulo de frenada se fija una sola vez y se encaja exacto al detenerse: recalcularlo cada cuadro dejaba la bola desviada tantas casillas como el número sorteado, así que en 36 de cada 37 giros enseñaba un número distinto del que cobraba. La casilla ganadora se resalta en amarillo. Comprobado leyendo el píxel bajo la bola en 40 giros seguidos: 0 desajustes entre el color que se ve y el que paga.
 
 ### ♠ Texas Hold'em
 

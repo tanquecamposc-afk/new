@@ -224,6 +224,7 @@ const R = {
   historia: [],
   girando: false,
   angulo: 0, velocidad: 0, destino: 0, bola: 0, velBola: 0, faseGiro: 0,
+  finRueda: null, finBola: null,        // dónde paran rueda y bola al frenar
   resultado: null,
   giros: 0, aciertos: 0
 };
@@ -288,6 +289,7 @@ function girar(){
   R.bola = azar(0, Math.PI * 2);
   R.velBola = -azar(12, 15);
   R.faseGiro = 0;
+  R.finRueda = null; R.finBola = null;
   // ángulo final de la rueda para que la casilla `idx` quede arriba
   R.anguloFinal = -idx * paso;
   mensaje('La bola está en el aire…');
@@ -296,6 +298,9 @@ function girar(){
 }
 
 function resolver(){
+  // El frenado es exponencial y nunca llega del todo: al parar se encaja el
+  // ángulo exacto, porque un resto de 0,1 rad ya es casi una casilla entera.
+  if (R.finRueda !== null){ R.angulo = R.finRueda; R.bola = R.finBola; }
   const n = RUEDA[R.destino];
   R.resultado = n;
   R.historia.unshift(n);
@@ -430,10 +435,20 @@ function dibujar(dt){
     R.bola += R.velBola * dt;
     // a partir de los 4 s la rueda se acomoda a su ángulo final
     if (R.faseGiro > 4){
+      // Se fija una sola vez a dónde van rueda y bola: recalcularlo cada cuadro
+      // hacía que se persiguieran y la bola acababa en otra casilla.
+      if (R.finRueda === null){
+        const vuelta = Math.PI * 2;
+        R.finRueda = R.anguloFinal + vuelta * Math.ceil((R.angulo - R.anguloFinal) / vuelta);
+        // La casilla premiada para bajo la marca de arriba, cuyo ángulo en
+        // pantalla es -PI/2. El de la bola es R.bola - PI/2, así que la bola
+        // tiene que acabar en un múltiplo entero de vuelta, no en -R.angulo:
+        // eso la dejaba desviada `idx` casillas y enseñaba un número que no era.
+        R.finBola = vuelta * (Math.floor(R.bola / vuelta) - 1);
+      }
       const u = Math.min(1, (R.faseGiro - 4) / 2.2);
-      const objetivo = R.anguloFinal + Math.PI * 2 * Math.ceil((R.angulo - R.anguloFinal) / (Math.PI * 2));
-      R.angulo += (objetivo - R.angulo) * u * u * 6 * dt;
-      R.bola += (-R.angulo - R.bola) * u * u * 6 * dt;
+      R.angulo += (R.finRueda - R.angulo) * u * u * 6 * dt;
+      R.bola   += (R.finBola  - R.bola)   * u * u * 6 * dt;
       if (R.faseGiro > 6.4) resolver();
     }
   }
@@ -460,7 +475,12 @@ function dibujar(dt){
     const c = color(n);
     ctx.fillStyle = c === 'rojo' ? '#c8102e' : c === 'verde' ? '#0f8a3c' : '#15181f';
     ctx.fill();
-    ctx.strokeStyle = 'rgba(226,196,140,.45)'; ctx.lineWidth = 1; ctx.stroke();
+    // La casilla que ha salido se resalta: así se ve de un vistazo que la bola,
+    // la marca de arriba y lo que paga el tapete son lo mismo.
+    const premiada = !R.girando && R.resultado !== null && i === R.destino;
+    ctx.strokeStyle = premiada ? '#f3e600' : 'rgba(226,196,140,.45)';
+    ctx.lineWidth = premiada ? 3 : 1;
+    ctx.stroke();
 
     ctx.save();
     ctx.rotate(a0 + paso / 2);
