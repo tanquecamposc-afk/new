@@ -307,7 +307,7 @@ const Arcade = {
 
   // Cartera de fichas ficticias compartida por los juegos de casino
   fichas: {
-    INICIAL: 5000,               // saldo con el que arranca una partida nueva
+    INICIAL: 50000,              // saldo con el que arranca una partida nueva
     saldo(){
       const v = Almacen.leer('arcade_fichas');
       if (v !== null) return parseFloat(v) || 0;
@@ -352,6 +352,33 @@ const Arcade = {
                saldo:Arcade.fichas.ajustar(this.PREMIO) };
     },
     olvidar(){ Almacen.borrar('arcade_codigos'); }
+  },
+
+  /**
+   * Temporada: el repartidor de mano nueva. Al abrir el arcade, si la temporada
+   * guardada no es la de ahora, los códigos vuelven a estar sin canjear y la
+   * cartera sube al saldo inicial. Sube nunca baja: si ya llevabas más de lo
+   * inicial, ese saldo se respeta, porque te lo ganaste jugando. Lo demás
+   * —récords, partidas guardadas y estadísticas— no se toca.
+   *
+   * Para repartir otra vez basta con subir ACTUAL en una unidad.
+   */
+  temporada: {
+    ACTUAL: 2,
+    resultado: null,             // lo rellena aplicar() al cargar la página
+    aplicar(){
+      const guardada = parseInt(Almacen.leer('arcade_temporada'), 10);
+      if (guardada === this.ACTUAL) return null;
+      const codigosAntes = Arcade.codigos.usados().length;
+      const saldoAntes = Arcade.fichas.saldo();
+      Arcade.codigos.olvidar();
+      if (saldoAntes < Arcade.fichas.INICIAL) Arcade.fichas.fijar(Arcade.fichas.INICIAL);
+      Almacen.escribir('arcade_temporada', this.ACTUAL);
+      return (this.resultado = {
+        estrena: !Number.isFinite(guardada),      // no había nada guardado: jugador nuevo
+        codigosAntes, saldoAntes, saldo: Arcade.fichas.saldo()
+      });
+    }
   },
 
   /**
@@ -437,6 +464,10 @@ const Arcade = {
     };
   }
 };
+
+// Se aplica al cargar cualquier página: da igual si entras por la portada o
+// directamente a un juego, la mano nueva ya está repartida cuando empiezas.
+Arcade.temporada.aplicar();
 
 // ---------- Ayudas de dibujo ----------
 const suavizar = (a, b, t) => a + (b - a) * t;

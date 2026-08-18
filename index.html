@@ -1775,6 +1775,19 @@ refrescarPortada();
 // Si el navegador no deja guardar, mejor decirlo que dejar que se pierda en silencio
 if (!Almacen.disponible()) document.getElementById('avisoGuardado').hidden = false;
 
+// Mano nueva de temporada: arcade.js ya la ha repartido al cargar, aquí solo se
+// cuenta lo que ha pasado. A un jugador que estrena arcade no hay nada que
+// contarle: para él esto es simplemente cómo empieza.
+const reparto = Arcade.temporada.resultado;
+if (reparto && !reparto.estrena){
+  const partes = [];
+  if (reparto.codigosAntes > 0)
+    partes.push('los ' + Arcade.codigos.TOTAL + ' códigos vuelven a estar sin canjear');
+  if (reparto.saldo > reparto.saldoAntes)
+    partes.push('cartera a ' + reparto.saldo.toLocaleString('es-ES') + ' NEXO-COINS');
+  if (partes.length) avisar('🎉 Mano nueva: ' + partes.join(' y ') + '.', true);
+}
+
 // Doble clic en la cartera: devuelve el saldo al inicial, por si te quedas seco
 document.getElementById('cartera').addEventListener('dblclick', () => {
   if (!confirm('¿Devolver la cartera a ' + Arcade.fichas.INICIAL.toLocaleString('es-ES') + ' NEXO-COINS?')) return;
