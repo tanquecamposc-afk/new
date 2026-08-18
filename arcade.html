@@ -918,6 +918,35 @@ body{display:block; padding:0; margin:0;}
     padding:8px; font-size:.75rem; text-transform:uppercase;
   }
 #pantalla-mina #btnReiniciar{width:100%; font-size:.7rem;}
+#pantalla-mina /* ---- Selector de mundos ---- */
+  #selectorMundos{display:grid; grid-template-columns:repeat(3,1fr); gap:8px;}
+@media (max-width:620px){#pantalla-mina #selectorMundos{grid-template-columns:1fr;}
+ }
+#pantalla-mina .mundo{
+    position:relative; text-align:left; padding:9px 11px; border-radius:10px;
+    background:var(--panel); border:1px solid rgba(255,255,255,.09);
+    font-family:var(--fuente-arcade); cursor:pointer; overflow:hidden;
+    transition:border-color .2s, transform .12s, background .2s;
+  }
+#pantalla-mina .mundo:hover:not(.bloqueado){transform:translateY(-2px);}
+#pantalla-mina .mundo .nom{font-size:.78rem; font-weight:800; letter-spacing:.5px;}
+#pantalla-mina .mundo .pie{font-size:.64rem; color:var(--tenue); margin-top:3px; letter-spacing:.3px;}
+#pantalla-mina .mundo.activo{border-color:currentColor; background:rgba(255,255,255,.05);}
+#pantalla-mina .mundo.activo::before{
+    content:''; position:absolute; inset:0; background:currentColor; opacity:.09; pointer-events:none;
+  }
+#pantalla-mina .mundo.bloqueado{cursor:not-allowed; opacity:.72;}
+#pantalla-mina .mundo.bloqueado .nom{color:var(--tenue);}
+#pantalla-mina .mundo .barraProg{
+    margin-top:6px; height:4px; border-radius:2px; background:rgba(255,255,255,.09); overflow:hidden;
+  }
+#pantalla-mina .mundo .barraProg i{display:block; height:100%; background:currentColor; border-radius:2px;}
+#pantalla-mina .mundo .abrir{
+    margin-top:7px; width:100%; padding:5px; font-size:.64rem; letter-spacing:.4px;
+    text-transform:uppercase; border:none; font-family:var(--fuente-arcade); font-weight:800;
+    background:linear-gradient(135deg,#f3e600,#ff6600); color:#1a1200;
+  }
+#pantalla-mina .mundo .abrir:disabled{background:#1a2235; color:#5d6a85; border:1px solid var(--borde);}
 
 
 
@@ -2485,6 +2514,7 @@ body{display:block; padding:0; margin:0;}
   <div class="barra">
     <a class="boton" href="javascript:void 0" data-volver="1">🕹 Arcade</a>
     <div class="titulo">⛏ MINING TYCOON</div>
+    <div class="stat" id="tituloMundo">VALLE NEXO</div>
     <div class="sep"></div>
     <div class="stat">💵 <span id="dineroTxt" class="oro">250</span></div>
     <div class="stat">💎 <span id="fichasTxt" class="tenue">0</span></div>
@@ -2497,16 +2527,16 @@ body{display:block; padding:0; margin:0;}
       <h3>👷 Personal minero</h3>
 
       <div class="mejora" data-mejora="novato">
-        <div class="tit">Minero novato</div>
-        <div class="desc">Pica carbón en la veta izquierda. Barato y constante.</div>
-        <button data-comprar="novato">Contratar · $<span data-costo="novato">50</span></button>
+        <div class="tit" id="nomNovato">Minero novato</div>
+        <div class="desc" id="descNovato">Pica carbón en la veta izquierda. Barato y constante.</div>
+        <button data-comprar="novato">Contratar · <span data-moneda>$</span><span data-costo="novato">50</span></button>
         <div class="estado"><span>En plantilla</span><b data-valor="novato">2</b></div>
       </div>
 
       <div class="mejora" data-mejora="experto">
-        <div class="tit">Minero experto</div>
-        <div class="desc">Baja a la veta de oro. Cada saco vale cuatro veces más.</div>
-        <button data-comprar="experto">Contratar · $<span data-costo="experto">300</span></button>
+        <div class="tit" id="nomExperto">Minero experto</div>
+        <div class="desc" id="descExperto">Baja a la veta de oro. Cada saco vale cuatro veces más.</div>
+        <button data-comprar="experto">Contratar · <span data-moneda>$</span><span data-costo="experto">300</span></button>
         <div class="estado"><span>En plantilla</span><b data-valor="experto">0</b></div>
       </div>
 
@@ -2514,7 +2544,7 @@ body{display:block; padding:0; margin:0;}
       <div class="mejora" data-mejora="taladro">
         <div class="tit">Taladro de plasma</div>
         <div class="desc">Todos pican más rápido y llenan el saco antes.</div>
-        <button data-comprar="taladro">Mejorar · $<span data-costo="taladro">150</span></button>
+        <button data-comprar="taladro">Mejorar · <span data-moneda>$</span><span data-costo="taladro">150</span></button>
         <div class="estado"><span>Nivel</span><b data-valor="taladro">1</b></div>
       </div>
 
@@ -2523,6 +2553,8 @@ body{display:block; padding:0; margin:0;}
 
     <!-- ---------- Mina ---------- -->
     <div id="centro">
+      <div id="selectorMundos"></div>
+
       <div id="panelMina">
         <div>En el pozo<b id="pozoTxt">0</b></div>
         <div>En el silo<b id="siloTxt">0</b></div>
@@ -2544,22 +2576,23 @@ body{display:block; padding:0; margin:0;}
       <div class="mejora" data-mejora="ascensor">
         <div class="tit">Ascensor de carga</div>
         <div class="desc">Sube más mineral por viaje y va más rápido. Si el pozo se llena, es tu cuello de botella.</div>
-        <button data-comprar="ascensor">Mejorar · $<span data-costo="ascensor">200</span></button>
+        <button data-comprar="ascensor">Mejorar · <span data-moneda>$</span><span data-costo="ascensor">200</span></button>
         <div class="estado"><span>Nivel · carga</span><b data-valor="ascensor">1</b></div>
       </div>
 
       <div class="mejora" data-mejora="camion">
         <div class="tit">Camión blindado</div>
         <div class="desc">Paga mejor cada mineral y se lleva más por viaje.</div>
-        <button data-comprar="camion">Mejorar · $<span data-costo="camion">500</span></button>
+        <button data-comprar="camion">Mejorar · <span data-moneda>$</span><span data-costo="camion">500</span></button>
         <div class="estado"><span>Nivel · precio</span><b data-valor="camion">1</b></div>
       </div>
 
       <h3>🌟 Mercado Nexo</h3>
       <div id="canje">
         <div class="desc" style="font-size:.72rem; color:var(--tenue); margin-bottom:8px">
-          Cambia <b style="color:var(--oro)">$5.000</b> por <b style="color:var(--oro)">50 NEXO-COINS</b>
-          para jugar en Minas y Aviator.
+          Cambia <b style="color:var(--oro)" id="canjeCoste">$5.000</b> por
+          <b style="color:var(--oro)" id="canjePremio">250 NEXO-COINS</b>
+          para jugar en el resto del arcade.
         </div>
         <button id="btnCanjear">Canjear</button>
       </div>
@@ -3916,7 +3949,7 @@ const Arcade = {
    * Para repartir otra vez basta con subir ACTUAL en una unidad.
    */
   temporada: {
-    ACTUAL: 2,
+    ACTUAL: 3,
     resultado: null,             // lo rellena aplicar() al cargar la página
     aplicar(){
       const guardada = parseInt(Almacen.leer('arcade_temporada'), 10);
@@ -12580,15 +12613,140 @@ const VETA_IZQ = { x1: 18, x2: POZO_X1 - 4, tipo: 'carbon' };
 const VETA_DER = { x1: POZO_X2 + 4, x2: AN - 18, tipo: 'oro' };
 const SUELO_MINA = FONDO - 14;
 
-// ---------- Economía ----------
-const MINERALES = {
-  carbon: { nombre:'carbón', color:'#6b7a90', brillo:'#9fb0c6', base:10 },
-  oro:    { nombre:'oro',    color:'#e8b400', brillo:'#ffe680', base:40 }
-};
-const COSTES = { novato:50, experto:300, taladro:150, ascensor:200, camion:500 };
-const FACTOR = { novato:1.35, experto:1.4, taladro:1.5, ascensor:1.45, camion:1.6 };
+// ---------- Los tres mundos ----------
+// Cada mundo es una mina entera con su moneda, sus dos minerales, sus precios
+// y su paleta. Las claves `carbon` y `oro` son los dos huecos de mineral —el
+// común y el raro— y no el nombre de lo que se pica: en las Cavernas son
+// amatista y esmeralda, y en el Núcleo obsidiana y nexonita.
+const MUNDOS = [
+  {
+    id: 'valle',
+    nombre: 'Valle Nexo',
+    lema: 'Carbón y oro a cielo abierto. Aquí se aprende el oficio.',
+    moneda: { simbolo: '$', nombre: 'dólares' },
+    minerales: {
+      carbon: { nombre:'carbón', color:'#6b7a90', brillo:'#9fb0c6', base:10 },
+      oro:    { nombre:'oro',    color:'#e8b400', brillo:'#ffe680', base:40 }
+    },
+    vetas: { carbon: '⛏ VETA DE CARBÓN', oro: '💎 VETA DE ORO' },
+    obreros: { novato:'Minero novato', experto:'Minero experto' },
+    costes: { novato:50, experto:300, taladro:150, ascensor:200, camion:500 },
+    factor: { novato:1.35, experto:1.4, taladro:1.5, ascensor:1.45, camion:1.6 },
+    ritmo:  { novato:0.95, experto:0.7 },     // minerales por segundo picando
+    inicio: 250,
+    // $5.000 por 250 NEXO-COINS
+    nexo: { coste: 5000, premio: 250 },
+    // Para abrir el mundo siguiente
+    salida: { ganado: 450000, precio: 320000 },
+    tono: {
+      acento: '#f3e600',
+      cielo: ['#050a1a', '#0d1630', '#1b2445'],
+      techo: 'estrellas',
+      bandas: [
+        { h:26, a:'#4a3826', b:'#3a2b1b' }, { h:62, a:'#3b2d1e', b:'#2e2317' },
+        { h:74, a:'#2f2c2a', b:'#26221f' }, { h:68, a:'#39281a', b:'#2a1d12' },
+        { h:82, a:'#262728', b:'#1b1c1d' }, { h:999, a:'#1d160f', b:'#0b0806' }
+      ],
+      grano: ['#8f7757', '#000000'],
+      soporte: ['#2e1f12', '#5b3f24', '#432d19', '#231609'],   // madera
+      suelo: ['#5b4a30', '#2c2317'],
+      lampara: ['rgba(255,238,180,', 'rgba(255,200,90,0)'],
+      casco: { novato:'#e07b1f', experto:'#f3e600' },
+      mono:  { novato:'#6b5334', experto:'#2a4a8e' },
+      maquina: ['#3a4664', '#22293c', '#141926'],
+      polvo: '#5a4632'
+    }
+  },
+  {
+    id: 'cavernas',
+    nombre: 'Cavernas de Gea',
+    lema: 'Bajo el valle no hay cielo: hay cristal, hongo y agua fría.',
+    moneda: { simbolo: '₡', nombre: 'cristales' },
+    minerales: {
+      carbon: { nombre:'amatista',  color:'#9b5de5', brillo:'#e0c3ff', base:90 },
+      oro:    { nombre:'esmeralda', color:'#00c98d', brillo:'#8affd8', base:340 }
+    },
+    vetas: { carbon: '🔮 FILÓN DE AMATISTA', oro: '💚 FILÓN DE ESMERALDA' },
+    obreros: { novato:'Espeleólogo', experto:'Gemólogo' },
+    costes: { novato:2600, experto:14000, taladro:8000, ascensor:11000, camion:26000 },
+    factor: { novato:1.42, experto:1.48, taladro:1.55, ascensor:1.5, camion:1.65 },
+    ritmo:  { novato:0.8, experto:0.58 },
+    inicio: 4000,
+    // ₡5.000 por 900 NEXO-COINS
+    nexo: { coste: 5000, premio: 900 },
+    salida: { ganado: 4000000, precio: 2800000 },
+    tono: {
+      acento: '#00f0ff',
+      cielo: ['#07131c', '#0b2233', '#123044'],
+      techo: 'estalactitas',
+      bandas: [
+        { h:26, a:'#1e3446', b:'#17293a' }, { h:62, a:'#22283f', b:'#1a2033' },
+        { h:74, a:'#2a2247', b:'#1e1936' }, { h:68, a:'#1b2c3d', b:'#14202e' },
+        { h:82, a:'#241d3b', b:'#17122a' }, { h:999, a:'#120e22', b:'#06040d' }
+      ],
+      grano: ['#7fa8c9', '#000000'],
+      soporte: ['#123040', '#2c6f86', '#1d4d60', '#0a1f2b'],   // acero húmedo
+      suelo: ['#2b4a5c', '#132530'],
+      lampara: ['rgba(150,240,255,', 'rgba(90,200,255,0)'],
+      casco: { novato:'#00d9ff', experto:'#b388ff' },
+      mono:  { novato:'#1f5f6e', experto:'#4a2f8a' },
+      maquina: ['#2a4a64', '#17303f', '#0d1c26'],
+      polvo: '#4a6a80'
+    }
+  },
+  {
+    id: 'nucleo',
+    nombre: 'Núcleo Omega',
+    lema: 'Basalto, magma y nexonita. Todo cuesta el triple y rinde despacio.',
+    moneda: { simbolo: 'Ω', nombre: 'núcleos' },
+    minerales: {
+      carbon: { nombre:'obsidiana', color:'#4a3f55', brillo:'#c8b6e2', base:1400 },
+      oro:    { nombre:'nexonita',  color:'#ff5a1f', brillo:'#ffd08a', base:6000 }
+    },
+    vetas: { carbon: '🌑 COLADA DE OBSIDIANA', oro: '🔥 VENA DE NEXONITA' },
+    obreros: { novato:'Escafandra térmica', experto:'Ingeniero de núcleo' },
+    // Muy caro y muy lento: cada mejora cuesta casi el doble que la anterior
+    costes: { novato:260000, experto:1500000, taladro:900000, ascensor:1200000, camion:2800000 },
+    factor: { novato:1.72, experto:1.8, taladro:1.9, ascensor:1.85, camion:2.0 },
+    ritmo:  { novato:0.34, experto:0.22 },
+    inicio: 180000,
+    // Ω5.000 por 4.500 NEXO-COINS
+    nexo: { coste: 5000, premio: 4500 },
+    salida: null,                              // no hay mundo después
+    // El final del juego: sacar cien millones de aquí abajo cuesta horas
+    meta: { ganado: 100000000, titulo: 'Extraer el Núcleo' },
+    tono: {
+      acento: '#ff6a00',
+      cielo: ['#1a0703', '#39100a', '#5c1a08'],
+      techo: 'magma',
+      bandas: [
+        { h:26, a:'#3a2018', b:'#2a1410' }, { h:62, a:'#2b1a18', b:'#1f1212' },
+        { h:74, a:'#241d1f', b:'#1a1416' }, { h:68, a:'#32190f', b:'#22110a' },
+        { h:82, a:'#1d1616', b:'#120d0d' }, { h:999, a:'#140a08', b:'#050202' }
+      ],
+      grano: ['#c96a2a', '#000000'],
+      soporte: ['#1a0f0c', '#5a2a14', '#3a1a0d', '#150806'],   // acero al rojo
+      suelo: ['#4a2214', '#1d0d08'],
+      lampara: ['rgba(255,190,110,', 'rgba(255,110,40,0)'],
+      casco: { novato:'#ff6a00', experto:'#ff2e63' },
+      mono:  { novato:'#5c2410', experto:'#7a1030' },
+      maquina: ['#4a2a20', '#2c1712', '#170b08'],
+      polvo: '#8a3a12'
+    }
+  }
+];
 
-const E = {                                        // estado guardado
+// El mundo en curso y sus atajos. Se reasignan al cambiar de mina.
+let mundoActual = 0;
+let MUNDO = MUNDOS[0];
+let MINERALES = MUNDO.minerales;
+let COSTES = MUNDO.costes;
+let FACTOR = MUNDO.factor;
+let TONO = MUNDO.tono;
+const moneda = n => MUNDO.moneda.simbolo + Math.floor(n).toLocaleString('es-ES');
+
+// Estado del mundo que se está jugando. Los otros esperan en PARTIDA.mundos.
+const E = {
   dinero: 250, novatos: 2, expertos: 0,
   taladro: 1, ascensor: 1, camion: 1,
   costos: { ...COSTES },
@@ -12596,6 +12754,22 @@ const E = {                                        // estado guardado
   silo: { carbon:0, oro:0 },
   totalExtraido: 0, totalGanado: 0, visto: Date.now()
 };
+
+// Lo que se guarda en disco: las tres minas y cuáles están abiertas.
+const PARTIDA = { mundo: 0, abiertos: 1, completado: false, mundos: [null, null, null] };
+
+/** Estado limpio para el mundo `i`, con su dinero de arranque y sus costes. */
+function estadoNuevo(i){
+  const m = MUNDOS[i];
+  return {
+    dinero: m.inicio, novatos: 2, expertos: 0,
+    taladro: 1, ascensor: 1, camion: 1,
+    costos: { ...m.costes },
+    pozo: { carbon:0, oro:0 },
+    silo: { carbon:0, oro:0 },
+    totalExtraido: 0, totalGanado: 0, visto: Date.now()
+  };
+}
 
 // Fórmulas de las mejoras
 const velPicado    = () => 1 + (E.taladro - 1) * 0.28;      // multiplicador de velocidad
@@ -12678,42 +12852,216 @@ function registrar(texto, clase){
 // ---------- Guardado ----------
 function guardarPartida(){
   E.visto = Date.now();
-  Arcade.escribir('mina', JSON.stringify(E));
+  PARTIDA.mundo = mundoActual;
+  PARTIDA.mundos[mundoActual] = JSON.parse(JSON.stringify(E));
+  Arcade.escribir('mina', JSON.stringify(PARTIDA));
 }
 function cargar(){
   const crudo = Arcade.leerTexto('mina', null);
   if (!crudo) return false;
   try {
     const g = JSON.parse(crudo);
-    Object.assign(E, g);
-    E.costos = { ...COSTES, ...(g.costos || {}) };
-    E.pozo = { carbon:0, oro:0, ...(g.pozo || {}) };
-    E.silo = { carbon:0, oro:0, ...(g.silo || {}) };
+    // Partidas de antes de los tres mundos: eran el estado del Valle a pelo.
+    const viejo = !g.mundos && typeof g.dinero === 'number';
+    PARTIDA.mundos = viejo ? [g, null, null] : (g.mundos || [null, null, null]);
+    PARTIDA.abiertos = Math.min(MUNDOS.length, Math.max(1, viejo ? 1 : (g.abiertos || 1)));
+    PARTIDA.mundo = Math.min(PARTIDA.abiertos - 1, Math.max(0, viejo ? 0 : (g.mundo || 0)));
+    PARTIDA.completado = !!g.completado;
+    entrarEnMundo(PARTIDA.mundo, false);
     return true;
   } catch(e){ return false; }
+}
+
+/** Carga el mundo `i` en E y reajusta atajos, escenario y paneles. */
+function entrarEnMundo(i, guardarAntes = true){
+  if (guardarAntes) guardarPartida();
+  mundoActual = i;
+  MUNDO = MUNDOS[i];
+  MINERALES = MUNDO.minerales;
+  COSTES = MUNDO.costes;
+  FACTOR = MUNDO.factor;
+  TONO = MUNDO.tono;
+
+  const g = PARTIDA.mundos[i] || estadoNuevo(i);
+  Object.assign(E, estadoNuevo(i), g);
+  E.costos = { ...MUNDO.costes, ...(g.costos || {}) };
+  E.pozo = { carbon:0, oro:0, ...(g.pozo || {}) };
+  E.silo = { carbon:0, oro:0, ...(g.silo || {}) };
+  PARTIDA.mundo = i;
+
+  // el escenario entero se vuelve a pintar con la paleta del mundo
+  mineros = [];
+  sincronizarMineros();
+  sembrarFilones();
+  chispas.lista.length = 0;
+  flotantes = [];
+  ascensor.carga = { carbon:0, oro:0 };
+  camion.carga = { carbon:0, oro:0 };
+  camion.x = AN + 90; camion.estado = 'fuera'; camion.espera = 2.5;
+  pintarRoca(roca.ctx);
+  pintarTextosDelMundo();
+  pintarSelector();
+}
+
+// ---------- Mundos: apertura y selector ----------
+/** Progreso hacia la salida del mundo `i` —o hacia su meta final—, de 0 a 1. */
+function progresoSalida(i){
+  const m = MUNDOS[i];
+  const objetivo = m.salida ? m.salida.ganado : (m.meta && m.meta.ganado);
+  if (!objetivo) return 1;
+  const est = i === mundoActual ? E : PARTIDA.mundos[i];
+  return est ? limitar(est.totalGanado / objetivo, 0, 1) : 0;
+}
+
+/**
+ * El final: cuando el Núcleo suelta sus cien millones se acabó la partida
+ * larga. Se comprueba al vender, que es lo único que sube totalGanado.
+ */
+function comprobarMeta(){
+  const meta = MUNDO.meta;
+  if (!meta || PARTIDA.completado || E.totalGanado < meta.ganado) return;
+  PARTIDA.completado = true;
+  const premio = 250000;
+  Arcade.fichas.ajustar(premio);
+  Arcade.guardarRecord('mina', Math.floor(E.totalGanado));
+  Arcade.perfil.partida('mina', { puntos: Math.floor(E.totalGanado), victoria: true, premio: 0 });
+  registrar('🏆 <span class="oro">' + meta.titulo.toUpperCase() + '</span>: has sacado ' +
+            moneda(meta.ganado) + ' del Núcleo Omega. +' +
+            premio.toLocaleString('es-ES') + ' NEXO-COINS.', 'oro');
+  Arcade.aviso(avisos, '🏆 ¡Núcleo extraído! +' + premio.toLocaleString('es-ES') +
+               ' NEXO-COINS', true, 6000);
+  Sonido.fx('victoria');
+  guardarPartida();
+}
+
+/** Lo que le falta al mundo `i` para poder abrir el siguiente. */
+function puedeAbrir(i){
+  const anterior = MUNDOS[i - 1];
+  const est = i - 1 === mundoActual ? E : PARTIDA.mundos[i - 1];
+  if (!est) return { ok:false, motivo:'Termina antes la mina anterior' };
+  if (est.totalGanado < anterior.salida.ganado)
+    return { ok:false, motivo:'Gana ' + anterior.moneda.simbolo +
+             Math.ceil(anterior.salida.ganado - est.totalGanado).toLocaleString('es-ES') + ' más' };
+  if (est.dinero < anterior.salida.precio)
+    return { ok:false, motivo:'Reúne ' + anterior.moneda.simbolo +
+             Math.ceil(anterior.salida.precio - est.dinero).toLocaleString('es-ES') + ' más' };
+  return { ok:true };
+}
+
+function abrirMundo(i){
+  const p = puedeAbrir(i);
+  if (!p.ok){ Arcade.aviso(avisos, p.motivo); Sonido.fx('error'); return; }
+  const anterior = MUNDOS[i - 1];
+  // el peaje se paga con el dinero del mundo anterior, esté donde esté
+  if (i - 1 === mundoActual) E.dinero -= anterior.salida.precio;
+  else PARTIDA.mundos[i - 1].dinero -= anterior.salida.precio;
+
+  PARTIDA.abiertos = Math.max(PARTIDA.abiertos, i + 1);
+  PARTIDA.mundos[i] = PARTIDA.mundos[i] || estadoNuevo(i);
+  registrar('🚪 Abierta la <span class="oro">' + MUNDOS[i].nombre + '</span> por ' +
+            anterior.moneda.simbolo + anterior.salida.precio.toLocaleString('es-ES') + '.', 'oro');
+  Sonido.fx('caja');
+  entrarEnMundo(i);
+  Arcade.aviso(avisos, '🚪 ' + MUNDOS[i].nombre + ': ' + MUNDOS[i].lema, true, 4200);
+  registrar(MUNDOS[i].lema);
+  refrescar();
+  guardarPartida();
+}
+
+function pintarSelector(){
+  const cont = $('selectorMundos');
+  cont.innerHTML = '';
+  MUNDOS.forEach((m, i) => {
+    const abierto = i < PARTIDA.abiertos;
+    const t = document.createElement('div');
+    t.className = 'mundo' + (i === mundoActual ? ' activo' : '') + (abierto ? '' : ' bloqueado');
+    t.style.color = m.tono.acento;
+
+    const est = i === mundoActual ? E : PARTIDA.mundos[i];
+    const nom = document.createElement('div');
+    nom.className = 'nom';
+    nom.textContent = (abierto ? ['⛏', '🔮', '🔥'][i] : '🔒') + ' ' + m.nombre;
+    t.appendChild(nom);
+
+    const pie = document.createElement('div');
+    pie.className = 'pie';
+    pie.textContent = !abierto
+      ? m.minerales.carbon.nombre + ' y ' + m.minerales.oro.nombre
+      : (m.meta && PARTIDA.completado) ? '🏆 ' + m.meta.titulo
+      : est ? m.moneda.simbolo + Math.floor(est.dinero).toLocaleString('es-ES') : 'sin abrir';
+    t.appendChild(pie);
+
+    if (abierto && (m.salida || m.meta)){
+      const b = document.createElement('div');
+      b.className = 'barraProg';
+      const relleno = document.createElement('i');
+      relleno.style.width = Math.round(progresoSalida(i) * 100) + '%';
+      b.appendChild(relleno);
+      t.appendChild(b);
+    }
+
+    if (abierto){
+      t.onclick = () => {
+        if (i === mundoActual) return;
+        Sonido.activar(); Sonido.fx('clic');
+        entrarEnMundo(i);
+        registrar('Bajas a la <span class="oro">' + m.nombre + '</span>. ' + m.lema);
+        refrescar();
+      };
+    } else {
+      const p = puedeAbrir(i);
+      const b = document.createElement('button');
+      b.className = 'abrir';
+      b.disabled = !p.ok;
+      b.textContent = p.ok
+        ? 'Abrir · ' + MUNDOS[i - 1].moneda.simbolo +
+          MUNDOS[i - 1].salida.precio.toLocaleString('es-ES')
+        : p.motivo;
+      b.onclick = ev => { ev.stopPropagation(); Sonido.activar(); abrirMundo(i); };
+      t.appendChild(b);
+    }
+    cont.appendChild(t);
+  });
+}
+
+/** Rótulos de los paneles: cambian con el mundo (nombres, moneda, precios). */
+function pintarTextosDelMundo(){
+  const m = MUNDO, s = m.moneda.simbolo;
+  $('tituloMundo').textContent = m.nombre.toUpperCase();
+  $('tituloMundo').style.color = m.tono.acento;
+  $('nomNovato').textContent = m.obreros.novato;
+  $('nomExperto').textContent = m.obreros.experto;
+  $('descNovato').textContent = 'Pica ' + m.minerales.carbon.nombre +
+    ' en la veta izquierda. Barato y constante.';
+  $('descExperto').textContent = 'Baja a la veta de ' + m.minerales.oro.nombre +
+    '. Cada saco vale cuatro veces más.';
+  document.querySelectorAll('[data-moneda]').forEach(el => { el.textContent = s; });
+  $('canjeCoste').textContent = s + m.nexo.coste.toLocaleString('es-ES');
+  $('canjePremio').textContent = m.nexo.premio.toLocaleString('es-ES') + ' NEXO-COINS';
 }
 
 /** Producción estimada mientras la pestaña estaba cerrada (máximo 8 horas). */
 function progresoAusente(){
   const seg = Math.min((Date.now() - (E.visto || Date.now())) / 1000, 8 * 3600);
   if (seg < 60) return;
-  const porSegundo = E.novatos * 0.28 * velPicado() * precio('carbon') +
-                     E.expertos * 0.2 * velPicado() * precio('oro');
+  // Se estima con el ritmo del mundo, descontando el ir y venir hasta el pozo.
+  const porSegundo = E.novatos * MUNDO.ritmo.novato * 0.3 * velPicado() * precio('carbon') +
+                     E.expertos * MUNDO.ritmo.experto * 0.29 * velPicado() * precio('oro');
   const ganado = Math.floor(porSegundo * seg * 0.45);   // a medio rendimiento sin supervisión
   if (ganado <= 0) return;
   E.dinero += ganado;
   E.totalGanado += ganado;
   const horas = Math.floor(seg / 3600), min = Math.floor((seg % 3600) / 60);
   registrar('🌙 El turno de noche trabajó ' + (horas ? horas + ' h ' : '') + min +
-            ' min: <span class="oro">+$' + ganado.toLocaleString('es-ES') + '</span>', 'oro');
-  Arcade.aviso(avisos, '🌙 Mientras no estabas: +$' + ganado.toLocaleString('es-ES'), true, 4000);
+            ' min: <span class="oro">+' + moneda(ganado) + '</span>', 'oro');
+  Arcade.aviso(avisos, '🌙 Mientras no estabas: +' + moneda(ganado), true, 4000);
 }
 
 // ---------- Mejoras ----------
 function comprar(clave){
   const costo = E.costos[clave];
   if (E.dinero < costo){
-    Arcade.aviso(avisos, 'Te faltan $' + (costo - Math.floor(E.dinero)).toLocaleString('es-ES'));
+    Arcade.aviso(avisos, 'Te faltan ' + moneda(costo - Math.floor(E.dinero)));
     Sonido.fx('error');
     return;
   }
@@ -12741,8 +13089,10 @@ function comprar(clave){
       break;
     case 'camion':
       E.camion++;
-      registrar('Camión al nivel ' + E.camion + ': el carbón se paga a <span class="oro">$' +
-                precio('carbon') + '</span> y el oro a <span class="oro">$' + precio('oro') + '</span>.');
+      registrar('Camión al nivel ' + E.camion + ': ' + MINERALES.carbon.nombre +
+                ' se paga a <span class="oro">' + moneda(precio('carbon')) +
+                '</span> y ' + MINERALES.oro.nombre + ' a <span class="oro">' +
+                moneda(precio('oro')) + '</span>.');
       break;
   }
   refrescar();
@@ -12750,15 +13100,18 @@ function comprar(clave){
 }
 
 function canjear(){
-  if (E.dinero < 5000){
-    Arcade.aviso(avisos, 'Necesitas $5.000 para canjear');
+  // Cada mundo tiene su cambio: cuanto más abajo se pica, mejor paga el Nexo.
+  const { coste, premio } = MUNDO.nexo;
+  if (E.dinero < coste){
+    Arcade.aviso(avisos, 'Necesitas ' + moneda(coste) + ' para canjear');
     Sonido.fx('error');
     return;
   }
-  E.dinero -= 5000;
-  Arcade.fichas.ajustar(50);
-  registrar('💎 Canjeados $5.000 por <span class="oro">50 NEXO-COINS</span>.', 'oro');
-  Arcade.aviso(avisos, '💎 +50 NEXO-COINS', true);
+  E.dinero -= coste;
+  Arcade.fichas.ajustar(premio);
+  registrar('💎 Canjeados ' + moneda(coste) + ' por <span class="oro">' +
+            premio.toLocaleString('es-ES') + ' NEXO-COINS</span>.', 'oro');
+  Arcade.aviso(avisos, '💎 +' + premio.toLocaleString('es-ES') + ' NEXO-COINS', true);
   Sonido.fx('ficha');
   refrescar();
   guardarPartida();
@@ -12793,7 +13146,7 @@ function moverMineros(dt){
       if (avanzar(m, m.destino, 46 * dt)){ m.estado = 'picar'; m.golpe = 0; }
     }
     else if (m.estado === 'picar'){
-      const porSegundo = (m.tipo === 'experto' ? 0.7 : 0.95) * velPicado();
+      const porSegundo = MUNDO.ritmo[m.tipo] * velPicado();
       m.golpe += dt * porSegundo;
       if (m.golpe >= 1){
         m.golpe -= 1;
@@ -12886,11 +13239,12 @@ function moverCamion(dt){
         E.dinero += ganado;
         E.totalGanado += ganado;
         ritmoVentana.push({ t: tiempo, v: ganado });
-        flotantes.push({ x: AN - 90, y: SUP / 2, txt: '+$' + ganado.toLocaleString('es-ES'), vida: 1.6 });
+        comprobarMeta();
+        flotantes.push({ x: AN - 90, y: SUP / 2, txt: '+' + moneda(ganado), vida: 1.6 });
         Sonido.fx('moneda');
         if (unidades >= cargaCamion())
-          registrar('🚚 Camión lleno vendido: ' + unidades + ' minerales por <span class="oro">$' +
-                    ganado.toLocaleString('es-ES') + '</span>.');
+          registrar('🚚 Camión lleno vendido: ' + unidades + ' minerales por <span class="oro">' +
+                    moneda(ganado) + '</span>.');
       }
       camion.carga = { carbon:0, oro:0 };
       camion.x = AN + 90;
@@ -12904,7 +13258,7 @@ function moverCamion(dt){
 
 function polvo(x, y, tipo){
   chispas.emitir(5, {
-    x, y, color:[MINERALES[tipo].color, MINERALES[tipo].brillo, '#5a4632'],
+    x, y, color:[MINERALES[tipo].color, MINERALES[tipo].brillo, TONO.polvo],
     velMin:20, velMax:110, vidaMin:0.25, vidaMax:0.6, rMin:1, rMax:3, gravedad:190
   });
   const f = filones.find(f => f.vida > 0 && f.tipo === tipo && Math.hypot(f.x - x, f.y - y) < 40);
@@ -12936,6 +13290,17 @@ pintarRoca(roca.ctx);
 
 const reloj = () => performance.now() / 1000;
 
+/** Mismo color, más vivo. Para los reflejos del silo y de la caja del camión. */
+function aclarar(hex, f){ return oscurecer(hex, f); }
+
+/** Mismo color, más apagado. Sirve para las sombras de la ropa y los cascos. */
+function oscurecer(hex, f){
+  const n = parseInt(hex.slice(1), 16);
+  const lim = v => Math.max(0, Math.min(255, Math.round(v * f)));
+  const r = lim((n >> 16) & 255), g = lim((n >> 8) & 255), b = lim(n & 255);
+  return '#' + ((1 << 24) | (r << 16) | (g << 8) | b).toString(16).slice(1);
+}
+
 // Ruido determinista: mismo número para la misma semilla, así los detalles
 // de cada piedra o cristal no bailan entre fotogramas.
 function ruido1(s){
@@ -12943,14 +13308,9 @@ function ruido1(s){
   return x - Math.floor(x);
 }
 
-function pintarRoca(c){
-  // ---- cielo nocturno ----
-  const cielo = c.createLinearGradient(0, 0, 0, SUP);
-  cielo.addColorStop(0, '#050a1a');
-  cielo.addColorStop(0.55, '#0d1630');
-  cielo.addColorStop(1, '#1b2445');
-  c.fillStyle = cielo; c.fillRect(0, 0, AN, SUP);
-
+// ---- Los tres cielos ----
+// Valle Nexo: se pica a cielo abierto, de noche.
+function techoEstrellado(c){
   for (let i = 0; i < 90; i++){
     const x = azar(0, AN), y = azar(0, SUP - 26), r = azar(0.4, 1.3);
     c.globalAlpha = azar(0.25, 0.95);
@@ -12959,7 +13319,6 @@ function pintarRoca(c){
   }
   c.globalAlpha = 1;
 
-  // luna con halo
   const lx = AN - 96, ly = 34;
   const halo = c.createRadialGradient(lx, ly, 4, lx, ly, 54);
   halo.addColorStop(0, 'rgba(200,222,255,.30)');
@@ -12971,7 +13330,6 @@ function pintarRoca(c){
   c.arc(lx + 4, ly + 4, 2.2, 0, 6.283);
   c.arc(lx + 2, ly - 6, 1.6, 0, 6.283); c.fill();
 
-  // ---- sierra al fondo, en dos capas ----
   for (const capa of [{ base: SUP - 22, alto: 46, col: '#101a33', paso: 78 },
                       { base: SUP - 16, alto: 30, col: '#0b1226', paso: 52 }]){
     c.fillStyle = capa.col;
@@ -12983,16 +13341,128 @@ function pintarRoca(c){
     c.lineTo(AN + 20, capa.base + 20); c.lineTo(-10, capa.base + 20);
     c.closePath(); c.fill();
   }
+}
+
+// Cavernas de Gea: no hay cielo. Hay bóveda, estalactitas, hongos y goteras.
+function techoDeCaverna(c){
+  // bóveda de roca colgando
+  c.fillStyle = '#0a1a26';
+  c.beginPath(); c.moveTo(0, 0); c.lineTo(AN, 0);
+  c.lineTo(AN, 34);
+  for (let x = AN; x >= 0; x -= 18)
+    c.lineTo(x, 26 + Math.sin(x / 37) * 8 + ruido1(x) * 9);
+  c.closePath(); c.fill();
+
+  // estalactitas de largos distintos
+  for (let i = 0; i < 26; i++){
+    const x = azar(6, AN - 6), largo = azar(12, 54), an = azar(4, 11);
+    const g = c.createLinearGradient(0, 24, 0, 24 + largo);
+    g.addColorStop(0, '#16303f'); g.addColorStop(1, '#0a1620');
+    c.fillStyle = g;
+    c.beginPath();
+    c.moveTo(x - an / 2, 24); c.lineTo(x + an / 2, 24); c.lineTo(x, 24 + largo);
+    c.closePath(); c.fill();
+    // la punta moja y brilla
+    c.fillStyle = 'rgba(150,240,255,.5)';
+    c.beginPath(); c.arc(x, 24 + largo, 1.4, 0, 6.283); c.fill();
+  }
+
+  // hongos bioluminiscentes colgando de la bóveda
+  for (let i = 0; i < 16; i++){
+    const x = azar(10, AN - 10), y = azar(38, SUP - 40), r = azar(3, 7);
+    const g = c.createRadialGradient(x, y, 0.5, x, y, r * 3.4);
+    g.addColorStop(0, 'rgba(120,255,220,.5)');
+    g.addColorStop(1, 'rgba(60,200,255,0)');
+    c.fillStyle = g; c.beginPath(); c.arc(x, y, r * 3.4, 0, 6.283); c.fill();
+    c.fillStyle = '#7fffd4';
+    c.beginPath(); c.arc(x, y, r, Math.PI, 0); c.fill();
+    c.strokeStyle = 'rgba(180,255,240,.7)'; c.lineWidth = 1.4;
+    c.beginPath(); c.moveTo(x, y); c.lineTo(x, y + r * 1.3); c.stroke();
+  }
+
+  // lago subterráneo al fondo, con reflejo
+  const agua = c.createLinearGradient(0, SUP - 34, 0, SUP - 20);
+  agua.addColorStop(0, 'rgba(0,180,200,.30)');
+  agua.addColorStop(1, 'rgba(0,60,90,.55)');
+  c.fillStyle = agua; c.fillRect(0, SUP - 34, AN, 14);
+  c.strokeStyle = 'rgba(160,255,255,.28)'; c.lineWidth = 1;
+  for (let i = 0; i < 9; i++){
+    const y = SUP - 32 + i * 1.4;
+    c.beginPath(); c.moveTo(azar(0, AN * 0.5), y); c.lineTo(azar(AN * 0.5, AN), y); c.stroke();
+  }
+}
+
+// Núcleo Omega: bóveda de basalto al rojo, coladas y ceniza en el aire.
+function techoDeMagma(c){
+  c.fillStyle = '#150604';
+  c.beginPath(); c.moveTo(0, 0); c.lineTo(AN, 0); c.lineTo(AN, 30);
+  for (let x = AN; x >= 0; x -= 16)
+    c.lineTo(x, 22 + Math.sin(x / 29) * 7 + ruido1(x * 3) * 10);
+  c.closePath(); c.fill();
+
+  // grietas incandescentes en la bóveda
+  for (let i = 0; i < 14; i++){
+    let x = azar(0, AN), y = azar(6, 30);
+    c.strokeStyle = 'rgba(255,120,30,' + azar(0.3, 0.75).toFixed(2) + ')';
+    c.lineWidth = azar(1, 2.6); c.lineCap = 'round';
+    c.beginPath(); c.moveTo(x, y);
+    for (let k = 0; k < 5; k++){
+      x += azar(-16, 16); y += azar(2, 9);
+      c.lineTo(x, y);
+    }
+    c.stroke();
+  }
+
+  // coladas colgando y goteando
+  for (let i = 0; i < 12; i++){
+    const x = azar(8, AN - 8), largo = azar(14, 48);
+    const g = c.createLinearGradient(0, 20, 0, 20 + largo);
+    g.addColorStop(0, '#2a100a'); g.addColorStop(0.6, '#7a2a0a'); g.addColorStop(1, '#ff7a1a');
+    c.fillStyle = g;
+    c.beginPath();
+    c.moveTo(x - 5, 20); c.lineTo(x + 5, 20); c.lineTo(x, 20 + largo);
+    c.closePath(); c.fill();
+    const halo = c.createRadialGradient(x, 20 + largo, 0.5, x, 20 + largo, 16);
+    halo.addColorStop(0, 'rgba(255,150,40,.55)');
+    halo.addColorStop(1, 'rgba(255,90,20,0)');
+    c.fillStyle = halo;
+    c.beginPath(); c.arc(x, 20 + largo, 16, 0, 6.283); c.fill();
+  }
+
+  // río de lava al pie de la bóveda
+  const rio = c.createLinearGradient(0, SUP - 36, 0, SUP - 18);
+  rio.addColorStop(0, 'rgba(255,90,10,.20)');
+  rio.addColorStop(0.5, 'rgba(255,160,40,.60)');
+  rio.addColorStop(1, 'rgba(120,20,0,.75)');
+  c.fillStyle = rio; c.fillRect(0, SUP - 36, AN, 18);
+  c.fillStyle = 'rgba(255,230,150,.55)';
+  for (let i = 0; i < 40; i++)
+    c.fillRect(azar(0, AN), azar(SUP - 34, SUP - 20), azar(2, 9), 1.2);
+  // resplandor que sube desde la colada
+  const brillo = c.createLinearGradient(0, SUP - 60, 0, SUP - 20);
+  brillo.addColorStop(0, 'rgba(255,110,20,0)');
+  brillo.addColorStop(1, 'rgba(255,120,30,.28)');
+  c.fillStyle = brillo; c.fillRect(0, SUP - 60, AN, 40);
+}
+
+function pintarRoca(c){
+  // Se limpia respetando la transformación de nitidez que trae el lienzo: si se
+  // reinicia, todo se pinta a 1:1 sobre un búfer más grande y sale descuadrado.
+  c.clearRect(0, 0, AN, AL);
+
+  // ---- lo que hay sobre la mina: cielo, techo de caverna o bóveda al rojo ----
+  const cielo = c.createLinearGradient(0, 0, 0, SUP);
+  cielo.addColorStop(0, TONO.cielo[0]);
+  cielo.addColorStop(0.55, TONO.cielo[1]);
+  cielo.addColorStop(1, TONO.cielo[2]);
+  c.fillStyle = cielo; c.fillRect(0, 0, AN, SUP);
+
+  if (TONO.techo === 'estrellas') techoEstrellado(c);
+  else if (TONO.techo === 'estalactitas') techoDeCaverna(c);
+  else techoDeMagma(c);
 
   // ---- estratos de roca ----
-  const BANDAS = [
-    { h: 26, a: '#4a3826', b: '#3a2b1b' },   // tierra vegetal
-    { h: 62, a: '#3b2d1e', b: '#2e2317' },   // arcilla
-    { h: 74, a: '#2f2c2a', b: '#26221f' },   // pizarra
-    { h: 68, a: '#39281a', b: '#2a1d12' },   // arenisca
-    { h: 82, a: '#262728', b: '#1b1c1d' },   // esquisto
-    { h: 999, a: '#1d160f', b: '#0b0806' }   // roca madre
-  ];
+  const BANDAS = TONO.bandas;
   let y0 = SUP - 20;
   for (const banda of BANDAS){
     const y1 = Math.min(AL, y0 + banda.h);
@@ -13011,7 +13481,7 @@ function pintarRoca(c){
     const motas = Math.floor((y1 - y0) * AN / 260);
     for (let i = 0; i < motas; i++){
       c.globalAlpha = azar(0.05, 0.20);
-      c.fillStyle = Math.random() > 0.45 ? '#8f7757' : '#000000';
+      c.fillStyle = Math.random() > 0.45 ? TONO.grano[0] : TONO.grano[1];
       c.fillRect(azar(0, AN), azar(y0, y1), azar(1, 4), azar(1, 2.6));
     }
     c.globalAlpha = 1;
@@ -13083,15 +13553,15 @@ function pintarRoca(c){
 
   // ---- suelo de la superficie: grava sobre tierra compacta ----
   const tierra = c.createLinearGradient(0, SUP - 20, 0, SUP + 4);
-  tierra.addColorStop(0, '#5b4a30'); tierra.addColorStop(1, '#2c2317');
+  tierra.addColorStop(0, TONO.suelo[0]); tierra.addColorStop(1, TONO.suelo[1]);
   c.fillStyle = tierra; c.fillRect(0, SUP - 20, AN, 24);
   for (let i = 0; i < 320; i++){
     c.globalAlpha = azar(0.15, 0.6);
-    c.fillStyle = Math.random() > 0.5 ? '#8d7a58' : '#1a140c';
+    c.fillStyle = Math.random() > 0.5 ? TONO.grano[0] : '#000000';
     c.fillRect(azar(0, AN), azar(SUP - 20, SUP - 2), azar(1, 3), azar(1, 2));
   }
   c.globalAlpha = 1;
-  c.fillStyle = '#6d5c3c'; c.fillRect(0, SUP - 20, AN, 2);
+  c.fillStyle = TONO.suelo[0]; c.fillRect(0, SUP - 20, AN, 2);
 
   // ---- oscurecimiento con la profundidad ----
   const fondo = c.createLinearGradient(0, SUP, 0, AL);
@@ -13103,9 +13573,10 @@ function pintarRoca(c){
 
 // Madera con veta: la usan el entibado y la torre.
 function vigaVertical(c, x, y1, y2){
+  const [s0, s1, s2, s3] = TONO.soporte;
   const g = c.createLinearGradient(x - 7, 0, x + 7, 0);
-  g.addColorStop(0, '#2e1f12'); g.addColorStop(0.4, '#5b3f24');
-  g.addColorStop(0.75, '#432d19'); g.addColorStop(1, '#231609');
+  g.addColorStop(0, s0); g.addColorStop(0.4, s1);
+  g.addColorStop(0.75, s2); g.addColorStop(1, s3);
   c.fillStyle = g; c.fillRect(x - 7, y1, 14, y2 - y1);
   c.strokeStyle = 'rgba(0,0,0,.45)'; c.lineWidth = 1;
   for (let k = 0; k < 3; k++){
@@ -13118,7 +13589,7 @@ function vigaVertical(c, x, y1, y2){
 }
 function vigaHorizontal(c, x, y, an){
   const g = c.createLinearGradient(0, y - 6, 0, y + 6);
-  g.addColorStop(0, '#5b3f24'); g.addColorStop(1, '#231609');
+  g.addColorStop(0, TONO.soporte[1]); g.addColorStop(1, TONO.soporte[3]);
   c.fillStyle = g; c.fillRect(x, y - 6, an, 12);
   c.strokeStyle = 'rgba(0,0,0,.4)'; c.lineWidth = 1;
   c.strokeRect(x + 0.5, y - 5.5, an - 1, 11);
@@ -13174,8 +13645,8 @@ function dibujarRotulos(){
     ctx.fillStyle = col; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
     ctx.fillText(txt, x + 10, y + 10.5);
   };
-  placa(VETA_IZQ.x1 + 8, SUP + 10, '⛏ VETA DE CARBÓN', '#b9c6d8');
-  placa(VETA_DER.x1 + 8, SUP + 10, '💎 VETA DE ORO', '#ffd650');
+  placa(VETA_IZQ.x1 + 8, SUP + 10, MUNDO.vetas.carbon, MINERALES.carbon.brillo);
+  placa(VETA_DER.x1 + 8, SUP + 10, MUNDO.vetas.oro, MINERALES.oro.brillo);
 }
 
 // Iluminación: todo lo cálido se suma encima de la escena ya pintada.
@@ -13187,9 +13658,9 @@ function dibujarLuces(){
     const cx = m.x + 6, cy = m.y - 8;
     // charco de luz alrededor del minero
     const g = ctx.createRadialGradient(cx, cy, 3, cx, cy, 86);
-    g.addColorStop(0, 'rgba(255,216,150,.26)');
-    g.addColorStop(0.45, 'rgba(255,180,90,.10)');
-    g.addColorStop(1, 'rgba(255,170,70,0)');
+    g.addColorStop(0, TONO.lampara[0] + '.26)');
+    g.addColorStop(0.45, TONO.lampara[0] + '.10)');
+    g.addColorStop(1, TONO.lampara[1]);
     ctx.fillStyle = g;
     ctx.beginPath(); ctx.arc(cx, cy, 86, 0, 6.283); ctx.fill();
 
@@ -13199,8 +13670,8 @@ function dibujarLuces(){
     ctx.translate(cx + d * 5, cy - 4);
     ctx.scale(d, 1);
     const cono = ctx.createLinearGradient(0, 0, 96, 0);
-    cono.addColorStop(0, 'rgba(255,232,170,.22)');
-    cono.addColorStop(1, 'rgba(255,200,110,0)');
+    cono.addColorStop(0, TONO.lampara[0] + '.22)');
+    cono.addColorStop(1, TONO.lampara[1]);
     ctx.fillStyle = cono;
     ctx.beginPath(); ctx.moveTo(0, 0);
     ctx.lineTo(96, -34); ctx.lineTo(96, 34); ctx.closePath(); ctx.fill();
@@ -13212,8 +13683,8 @@ function dibujarLuces(){
   for (let y = SUP + 44; y < FONDO; y += 92){
     for (const fx of [POZO_X1 - 3, POZO_X2 + 3]){
       const g = ctx.createRadialGradient(fx, y, 1, fx, y, 46);
-      g.addColorStop(0, 'rgba(255,238,180,' + (0.30 * parpadeo).toFixed(3) + ')');
-      g.addColorStop(1, 'rgba(255,200,90,0)');
+      g.addColorStop(0, TONO.lampara[0] + (0.30 * parpadeo).toFixed(3) + ')');
+      g.addColorStop(1, TONO.lampara[1]);
       ctx.fillStyle = g;
       ctx.beginPath(); ctx.arc(fx, y, 46, 0, 6.283); ctx.fill();
     }
@@ -13242,7 +13713,7 @@ function dibujarPozo(){
 
   // paredes del hueco: sombra a un lado, luz rasante al otro
   const pared = ctx.createLinearGradient(POZO_X1, 0, POZO_X2, 0);
-  pared.addColorStop(0, 'rgba(255,220,160,.10)');
+  pared.addColorStop(0, TONO.lampara[0] + '.10)');
   pared.addColorStop(0.25, 'rgba(0,0,0,0)');
   pared.addColorStop(1, 'rgba(0,0,0,.5)');
   ctx.fillStyle = pared;
@@ -13268,9 +13739,9 @@ function dibujarPozo(){
 
   // suelo del fondo
   const suelo = ctx.createLinearGradient(0, FONDO - 6, 0, AL);
-  suelo.addColorStop(0, '#231a0f'); suelo.addColorStop(1, '#0a0705');
+  suelo.addColorStop(0, TONO.suelo[1]); suelo.addColorStop(1, oscurecer(TONO.suelo[1], 0.4));
   ctx.fillStyle = suelo; ctx.fillRect(0, FONDO - 6, AN, AL - FONDO + 6);
-  ctx.strokeStyle = 'rgba(255,220,160,.10)'; ctx.lineWidth = 2;
+  ctx.strokeStyle = TONO.lampara[0] + '.10)'; ctx.lineWidth = 2;
   ctx.beginPath(); ctx.moveTo(0, FONDO - 5); ctx.lineTo(AN, FONDO - 5); ctx.stroke();
   // raíl de la vagoneta
   ctx.strokeStyle = 'rgba(150,160,175,.30)'; ctx.lineWidth = 2;
@@ -13278,7 +13749,7 @@ function dibujarPozo(){
   ctx.moveTo(0, FONDO + 6); ctx.lineTo(AN, FONDO + 6);
   ctx.moveTo(0, FONDO + 13); ctx.lineTo(AN, FONDO + 13);
   ctx.stroke();
-  ctx.strokeStyle = 'rgba(70,55,35,.55)'; ctx.lineWidth = 3;
+  ctx.strokeStyle = TONO.soporte[2]; ctx.lineWidth = 3;
   for (let x = 6; x < AN; x += 26){
     ctx.beginPath(); ctx.moveTo(x, FONDO + 4); ctx.lineTo(x, FONDO + 15); ctx.stroke();
   }
@@ -13289,7 +13760,7 @@ function dibujarPozo(){
     const alto = Math.min(48, 8 + monton * 1.6);
     const ancho = Math.min(anP - 6, 24 + monton * 1.3);
     const g = ctx.createLinearGradient(0, FONDO - alto, 0, FONDO);
-    g.addColorStop(0, E.pozo.oro > E.pozo.carbon ? '#c69211' : '#5c6879');
+    g.addColorStop(0, E.pozo.oro > E.pozo.carbon ? MINERALES.oro.color : MINERALES.carbon.color);
     g.addColorStop(1, '#14100a');
     ctx.fillStyle = g;
     ctx.beginPath();
@@ -13300,9 +13771,9 @@ function dibujarPozo(){
       const oro = i < Math.min(20, E.pozo.oro);
       const px = cx + Math.sin(i * 2.31) * ancho * 0.34;
       const py = FONDO - 5 - (i % 6) * (alto / 7);
-      ctx.fillStyle = oro ? '#e8b400' : '#697687';
+      ctx.fillStyle = oro ? MINERALES.oro.color : MINERALES.carbon.color;
       ctx.beginPath(); ctx.arc(px, py, 3.2, 0, 6.283); ctx.fill();
-      ctx.fillStyle = oro ? 'rgba(255,240,180,.8)' : 'rgba(200,215,235,.55)';
+      ctx.fillStyle = oro ? MINERALES.oro.brillo : MINERALES.carbon.brillo;
       ctx.beginPath(); ctx.arc(px - 1, py - 1, 1.1, 0, 6.283); ctx.fill();
     }
   }
@@ -13407,10 +13878,11 @@ function dibujarMineros(){
     ctx.translate(x, y);
     ctx.scale(m.dir, 1);
 
-    const mono   = experto ? '#2a4a8e' : '#6b5334';
-    const monoOs = experto ? '#1a2f5c' : '#463621';
-    const casco  = experto ? '#f3e600' : '#e07b1f';
-    const cascoOs= experto ? '#a89e00' : '#9a5312';
+    const tipo   = experto ? 'experto' : 'novato';
+    const mono   = TONO.mono[tipo];
+    const monoOs = oscurecer(mono, 0.62);
+    const casco  = TONO.casco[tipo];
+    const cascoOs= oscurecer(casco, 0.66);
 
     // ---- piernas ----
     ctx.strokeStyle = monoOs; ctx.lineWidth = 5; ctx.lineCap = 'round';
@@ -13434,8 +13906,8 @@ function dibujarMineros(){
       const cap = experto ? 4 : 3;
       const r = 4 + (m.saco / cap) * 4.5;
       const g = ctx.createRadialGradient(-8, 2 - r * 0.3, 1, -8, 2, r);
-      g.addColorStop(0, experto ? '#d9a51c' : '#7d8a9c');
-      g.addColorStop(1, experto ? '#6a4c02' : '#333c49');
+      g.addColorStop(0, experto ? MINERALES.oro.color : MINERALES.carbon.color);
+      g.addColorStop(1, oscurecer(experto ? MINERALES.oro.color : MINERALES.carbon.color, 0.45));
       ctx.fillStyle = g;
       ctx.beginPath();
       ctx.moveTo(-8 - r, 4);
@@ -13538,7 +14010,8 @@ function dibujarAscensor(){
 
   // caja
   const g = ctx.createLinearGradient(x1, 0, x1 + w, 0);
-  g.addColorStop(0, '#3a4664'); g.addColorStop(0.45, '#22293c'); g.addColorStop(1, '#141926');
+  g.addColorStop(0, TONO.maquina[0]); g.addColorStop(0.45, TONO.maquina[1]);
+  g.addColorStop(1, TONO.maquina[2]);
   ctx.fillStyle = g;
   ctx.beginPath(); ctx.roundRect(x1, y, w, h, 3); ctx.fill();
 
@@ -13548,9 +14021,9 @@ function dibujarAscensor(){
     for (let i = 0; i < Math.min(12, total); i++){
       const oro = i < ascensor.carga.oro;
       const px = x1 + 7 + (i % 5) * 9.5, py = y + h - 6 - Math.floor(i / 5) * 8;
-      ctx.fillStyle = oro ? '#e8b400' : '#697687';
+      ctx.fillStyle = oro ? MINERALES.oro.color : MINERALES.carbon.color;
       ctx.beginPath(); ctx.arc(px, py, 3.4, 0, 6.283); ctx.fill();
-      ctx.fillStyle = oro ? 'rgba(255,244,190,.85)' : 'rgba(200,215,235,.5)';
+      ctx.fillStyle = oro ? MINERALES.oro.brillo : MINERALES.carbon.brillo;
       ctx.beginPath(); ctx.arc(px - 1.1, py - 1.1, 1.2, 0, 6.283); ctx.fill();
     }
   }
@@ -13560,7 +14033,7 @@ function dibujarAscensor(){
   for (let i = 1; i < 5; i++){
     ctx.beginPath(); ctx.moveTo(x1 + i * (w / 5), y + 2); ctx.lineTo(x1 + i * (w / 5), y + h - 2); ctx.stroke();
   }
-  ctx.strokeStyle = '#00f0ff'; ctx.lineWidth = 1.8;
+  ctx.strokeStyle = TONO.acento; ctx.lineWidth = 1.8;
   ctx.beginPath(); ctx.roundRect(x1, y, w, h, 3); ctx.stroke();
   // franja de peligro en el suelo de la jaula
   ctx.save();
@@ -13620,8 +14093,8 @@ function dibujarSuperficie(){
     c.closePath();
   };
   const gs = ctx.createLinearGradient(sx, 0, sx + sw, 0);
-  gs.addColorStop(0, '#3d4763'); gs.addColorStop(0.35, '#5a6480');
-  gs.addColorStop(1, '#1d2434');
+  gs.addColorStop(0, TONO.maquina[0]); gs.addColorStop(0.35, aclarar(TONO.maquina[0], 1.35));
+  gs.addColorStop(1, TONO.maquina[2]);
   ctx.fillStyle = gs; cuerpo(ctx); ctx.fill();
 
   // relleno
@@ -13631,7 +14104,7 @@ function dibujarSuperficie(){
     cuerpo(ctx); ctx.clip();
     const alto = (sh - 10) * llenado;
     const g = ctx.createLinearGradient(0, sy + sh - alto, 0, sy + sh);
-    g.addColorStop(0, E.silo.oro > E.silo.carbon ? '#f0c020' : '#7c8a9d');
+    g.addColorStop(0, E.silo.oro > E.silo.carbon ? MINERALES.oro.color : MINERALES.carbon.color);
     g.addColorStop(1, '#2b3140');
     ctx.fillStyle = g;
     ctx.fillRect(sx, sy + sh - alto, sw, alto);
@@ -13697,7 +14170,7 @@ function dibujarSuperficie(){
   ctx.translate(cx, cimaY);
   ctx.fillStyle = '#2b3346';
   ctx.beginPath(); ctx.arc(0, 0, 11, 0, 6.283); ctx.fill();
-  ctx.strokeStyle = '#f3e600'; ctx.lineWidth = 2.6;
+  ctx.strokeStyle = TONO.acento; ctx.lineWidth = 2.6;
   ctx.beginPath(); ctx.arc(0, 0, 11, 0, 6.283); ctx.stroke();
   ctx.strokeStyle = 'rgba(243,230,0,.6)'; ctx.lineWidth = 1.6;
   for (let k = 0; k < 4; k++){
@@ -13755,7 +14228,7 @@ function dibujarSuperficie(){
 
     // caja volquete
     const gv = ctx.createLinearGradient(0, by - 12, 0, by + 18);
-    gv.addColorStop(0, '#4d5f80'); gv.addColorStop(1, '#232c3e');
+    gv.addColorStop(0, aclarar(TONO.maquina[0], 1.25)); gv.addColorStop(1, TONO.maquina[2]);
     ctx.fillStyle = gv;
     ctx.beginPath(); ctx.roundRect(bx - 50, by - 6, 58, 24, 3); ctx.fill();
     ctx.strokeStyle = '#6f7fa3'; ctx.lineWidth = 1.6;
@@ -13769,14 +14242,14 @@ function dibujarSuperficie(){
     const carga = camion.carga.carbon + camion.carga.oro;
     if (carga > 0){
       const oro = camion.carga.oro > camion.carga.carbon;
-      ctx.fillStyle = oro ? '#e8b400' : '#6b7a90';
+      ctx.fillStyle = oro ? MINERALES.oro.color : MINERALES.carbon.color;
       ctx.beginPath();
       ctx.moveTo(bx - 48, by - 5);
       for (let i = 0; i <= 6; i++)
         ctx.lineTo(bx - 48 + i * 9, by - 6 - Math.abs(Math.sin(i * 1.4)) * 6);
       ctx.lineTo(bx + 6, by - 5);
       ctx.closePath(); ctx.fill();
-      ctx.fillStyle = oro ? 'rgba(255,240,170,.55)' : 'rgba(190,205,225,.4)';
+      ctx.fillStyle = oro ? MINERALES.oro.brillo : MINERALES.carbon.brillo;
       for (let i = 0; i < 6; i++){
         ctx.beginPath();
         ctx.arc(bx - 44 + i * 9, by - 8 - Math.abs(Math.sin(i * 1.4)) * 4, 1.8, 0, 6.283);
@@ -13822,11 +14295,11 @@ function refrescar(){
 
   const ganado = ritmoVentana.reduce((s, r) => s + r.v, 0);
   ritmo = ganado / 12;
-  $('ritmoTxt').textContent = '$' + Math.round(ritmo).toLocaleString('es-ES') + '/s';
+  $('ritmoTxt').textContent = moneda(Math.round(ritmo)) + '/s';
 
   const valores = {
     novato: E.novatos, experto: E.expertos, taladro: E.taladro,
-    ascensor: E.ascensor + ' · ' + cargaAscensor(), camion: E.camion + ' · $' + precio('carbon')
+    ascensor: E.ascensor + ' · ' + cargaAscensor(), camion: E.camion + ' · ' + moneda(precio('carbon'))
   };
   document.querySelectorAll('[data-valor]').forEach(el => {
     el.textContent = valores[el.dataset.valor];
@@ -13837,7 +14310,8 @@ function refrescar(){
   document.querySelectorAll('[data-comprar]').forEach(b => {
     b.disabled = E.dinero < E.costos[b.dataset.comprar];
   });
-  $('btnCanjear').disabled = E.dinero < 5000;
+  $('btnCanjear').disabled = E.dinero < MUNDO.nexo.coste;
+  pintarSelector();
 }
 
 document.querySelectorAll('[data-comprar]').forEach(b => {
@@ -13845,18 +14319,14 @@ document.querySelectorAll('[data-comprar]').forEach(b => {
 });
 $('btnCanjear').onclick = () => { Sonido.activar(); canjear(); };
 $('btnReiniciar').onclick = () => {
-  if (!confirm('¿Seguro? Se pierden el dinero, la plantilla y todas las mejoras de la mina.')) return;
-  Arcade.borrar('mina');
-  Object.assign(E, {
-    dinero: 250, novatos: 2, expertos: 0, taladro: 1, ascensor: 1, camion: 1,
-    costos: { ...COSTES }, pozo: { carbon:0, oro:0 }, silo: { carbon:0, oro:0 },
-    totalExtraido: 0, totalGanado: 0, visto: Date.now()
-  });
-  mineros = [];
-  sincronizarMineros();
-  sembrarFilones();
+  // Solo se reinicia la mina en la que estás. Los otros mundos y lo que hayas
+  // abierto siguen ahí: perderlos por tocar un botón sería una faena.
+  if (!confirm('¿Seguro? Se pierden el dinero, la plantilla y las mejoras de ' +
+               MUNDO.nombre + '. Los otros mundos no se tocan.')) return;
+  PARTIDA.mundos[mundoActual] = estadoNuevo(mundoActual);
+  entrarEnMundo(mundoActual, false);
   $('registro').innerHTML = '';
-  registrar('Mina nueva abierta. Dos novatos listos para picar.');
+  registrar(MUNDO.nombre + ': mina nueva. Dos obreros listos para picar.');
   refrescar();
   guardarPartida();
 };
@@ -13864,15 +14334,15 @@ Arcade.conectarSonido($('btnSonido'));
 
 // ---------- Arranque ----------
 const habiaPartida = cargar();
-sembrarFilones();
-sincronizarMineros();
+if (!habiaPartida) entrarEnMundo(0, false);      // deja E, escenario y paneles listos
 registrar('Sistema de extracción iniciado.');
 if (habiaPartida){
-  registrar('Partida recuperada: $' + Math.floor(E.dinero).toLocaleString('es-ES') +
-            ' y ' + (E.novatos + E.expertos) + ' mineros en plantilla.');
+  registrar(MUNDO.nombre + ': partida recuperada con ' + moneda(E.dinero) +
+            ' y ' + (E.novatos + E.expertos) + ' obreros en plantilla.');
   progresoAusente();
 } else {
-  registrar('Mina nueva. Pica a mano en las vetas mientras contratas gente.');
+  registrar('Mina nueva en el <span class="oro">' + MUNDO.nombre + '</span>. ' + MUNDO.lema);
+  registrar('Pica a mano en las vetas mientras contratas gente.');
 }
 refrescar();
 

@@ -33,7 +33,7 @@ Cada juego queda aislado en su propia pantalla: su CSS se prefija con el selecto
 | ✈ [Aviator](juegos/aviator.html) | Casino | Juego de tipo *crash*: cobra antes de que el avión se vaya volando |
 | 🎱 [8 Ball Pool](juegos/8-ball-pool.html) | Deportes | Billar con física real, efecto y rival controlado por la máquina |
 | ⚽ [Rumble Stars](juegos/rumble-stars.html) | Arena | Fútbol de arena: lanza bichos al campo y empuja el balón |
-| ⛏ [Mining Tycoon](juegos/mining-tycoon.html) | Tycoon | Monta un imperio minero: plantilla, ascensor, camiones y progreso sin conexión |
+| ⛏ [Mining Tycoon](juegos/mining-tycoon.html) | Tycoon | Tres minas con moneda propia: del carbón del valle a la nexonita del Núcleo |
 | 📦 [Cofres Minecraft](juegos/cofres-minecraft.html) | Cajas | Abre cofres con ruleta, colecciona objetos y fúndelos para subir de rareza |
 | 🍪 [Galletas](juegos/cookie-clicker.html) | Incremental | Pica la galleta, monta un imperio y caza las galletas doradas |
 | 🏍 [Moto X3M](juegos/moto-x3m.html) | Carreras | Suspensión en las dos ruedas, rampas que lanzan y vueltas en el aire |
@@ -164,8 +164,22 @@ Cada mejora arregla un cuello de botella distinto, y el que va apretado se nota 
 
 - **Picar a mano:** haz clic en cualquier veta y arrancas mineral tú mismo. Útil al empezar.
 - **Se guarda solo** en el navegador, y al volver te abona lo que produjo el turno de noche mientras no estabas (a medio rendimiento, con tope de 8 horas).
-- El **Mercado Nexo** cambia $5.000 por 50 NEXO-COINS, las fichas ficticias que se usan en Minas y Aviator.
+- El **Mercado Nexo** cambia moneda del juego por NEXO-COINS, y cuanto más abajo se pica mejor paga: 250 en el Valle, 900 en las Cavernas y 4.500 en el Núcleo por cada 5.000 de moneda local.
 - El **registro** de la parte de abajo va contando lo que pasa: contrataciones, mejoras y camiones vendidos.
+
+**Tres mundos, tres monedas.** La mina no es una sola: son tres, cada una con su moneda, sus minerales, su paleta y su dificultad. Se juegan por separado —cada una guarda su dinero, su plantilla y sus mejoras— y se cambia de una a otra con el selector de arriba.
+
+| Mundo | Moneda | Minerales | Se abre con | Cambio Nexo |
+|---|---|---|---|---|
+| ⛏ **Valle Nexo** | `$` dólares | carbón · oro | abierto desde el principio | $5.000 → **250** |
+| 🔮 **Cavernas de Gea** | `₡` cristales | amatista · esmeralda | ganar $450.000 y pagar $320.000 | ₡5.000 → **900** |
+| 🔥 **Núcleo Omega** | `Ω` núcleos | obsidiana · nexonita | ganar ₡4.000.000 y pagar ₡2.800.000 | Ω5.000 → **4.500** |
+
+- El peaje **se paga con la moneda del mundo anterior**: para bajar a las Cavernas hay que haber exprimido el Valle.
+- El **Núcleo Omega** es el final: todo cuesta casi el doble de un nivel al siguiente (factor 1,72–2,0 frente a 1,35–1,6 del Valle) y los obreros pican a un tercio del ritmo. Su meta, **extraer Ω100.000.000**, paga **250.000 NEXO-COINS** una sola vez. Simulando la economía con compra codiciosa —siempre la mejora con más ingreso por moneda— el Valle se pasa en unos 22 min, las Cavernas en 1 h 19, y el Núcleo pide más de **7 horas**.
+- **Empezar una mina nueva** reinicia solo la mina en la que estás; los otros mundos y lo que hayas abierto no se tocan.
+
+Cada mundo tiene su propio cielo: el Valle se pica de noche a cielo abierto con luna y sierra al fondo; las Cavernas no tienen cielo, sino bóveda con estalactitas que gotean, hongos bioluminiscentes y un lago subterráneo; y el Núcleo, una bóveda de basalto con grietas incandescentes, coladas colgando y un río de lava que tiñe de naranja toda la escena. Cambian también los estratos, el entibado (madera, acero húmedo, acero al rojo), el color de las lámparas, la ropa y el casco de los obreros, y la maquinaria.
 
 **La mina está dibujada entera por código**, en dos capas: una fija que se pinta una sola vez (cielo estrellado con luna y halo, sierra al fondo en dos planos, seis estratos de roca con su grano y sus líneas de contacto, guijarros incrustados, grietas ramificadas y el entibado de madera con vetas y pernos) y otra viva encima. El mineral no está esparcido al azar: sale en **bolsadas inclinadas** de cristales facetados que sueltan un destello al pasar. Los mineros están articulados —piernas con ciclo de paso, brazo que gira con el pico, casco con visera y frontal encendido, saco que crece al llenarse— y cada uno lleva su **cono de luz** hacia donde mira. El pozo tiene marco entibado, guías, faroles con parpadeo y raíl de vagoneta; el ascensor es una jaula con barrotes, franja de peligro y baliza; y arriba están el silo sobre zapata de hormigón, el castillete de celosía con su polea girando y el camión con ruedas de tacos y faro encendido.
 

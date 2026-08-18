@@ -385,7 +385,7 @@ const Arcade = {
    * Para repartir otra vez basta con subir ACTUAL en una unidad.
    */
   temporada: {
-    ACTUAL: 2,
+    ACTUAL: 3,
     resultado: null,             // lo rellena aplicar() al cargar la página
     aplicar(){
       const guardada = parseInt(Almacen.leer('arcade_temporada'), 10);
