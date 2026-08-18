@@ -248,7 +248,7 @@
   </div>
 
   <div id="canjeCodigos">
-    <h3>🎁 Canjea tu código <span class="cuenta" id="canjeCuenta">0 / 20</span></h3>
+    <h3>🎁 Canjea tu código <span class="cuenta" id="canjeCuenta" title="Doble clic para volver a dejar los 20 códigos sin usar">0 / 20</span></h3>
     <p class="ayuda">
       Hay <strong>20 códigos</strong>, del <strong>1</strong> al <strong>20</strong>, y cada uno
       regala <strong>1.000 NEXO-COINS</strong> una sola vez. Escribe el número suelto
@@ -1747,6 +1747,16 @@ function canjear(){
 
 document.getElementById('btnCanjearCodigo').addEventListener('click', canjear);
 codigoTxt.addEventListener('keydown', ev => { if (ev.key === 'Enter') canjear(); });
+
+// Doble clic en el contador: los 20 códigos vuelven a estar sin usar. Mismo
+// gesto que el de la cartera, y no toca el saldo que ya te llevaste.
+document.getElementById('canjeCuenta').addEventListener('dblclick', () => {
+  Sonido.activar();
+  Arcade.codigos.olvidar();
+  pintarCodigos();
+  avisar('🔄 Los ' + Arcade.codigos.TOTAL + ' códigos vuelven a estar sin canjear.', true);
+  Sonido.melodia([520, 700, 940], 0.08, 'triangle', 0.05);
+});
 
 // Al volver de un juego se repintan la cartera, los códigos y los récords
 function refrescarPortada(){

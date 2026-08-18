@@ -438,6 +438,7 @@ La portada lleva un panel de canje con **20 códigos, del 1 al 20**, que dan **1
 
 - Se escribe el número suelto (`7`), con ceros delante (`007`) o con la marca (`NEXO-7`, `nexo 7`) — da igual mayúsculas, espacios y guion.
 - **Cada código se canjea una sola vez.** Los canjeados quedan tachados en la lista y el contador enseña cuántos llevas.
+- Con un **doble clic en el contador** (`0 / 20`) los veinte vuelven a estar sin usar y se pueden canjear otra vez. El saldo que ya te llevaste no se toca.
 - Canjearlos todos son **20.000 NEXO-COINS**, así que con el saldo inicial se llega a 25.000.
 - Vive en `Arcade.codigos` (`juegos/arcade.js`): `TOTAL`, `PREMIO`, `usados()`, `canjear(texto)` y `olvidar()`. Para cambiar el premio o cuántos hay basta con tocar esas dos constantes.
 - El registro se guarda en `localStorage` bajo `arcade_codigos`, y el botón **🗑 Borrar todos mis récords** también lo limpia.
