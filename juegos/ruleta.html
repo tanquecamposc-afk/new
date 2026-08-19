@@ -304,7 +304,7 @@ function resolver(){
   const n = RUEDA[R.destino];
   R.resultado = n;
   R.historia.unshift(n);
-  if (R.historia.length > 30) R.historia.pop();
+  if (R.historia.length > memoriaComprada()) R.historia.pop();
   R.giros++;
 
   let cobro = 0;
@@ -563,6 +563,16 @@ pintarTapete();
 pintarHistorial();
 refrescar();
 Arcade.bucle(dt => dibujar(dt));
+
+// ---------- Tienda del juego ----------
+// Se paga con NEXO-COINS, la moneda común del arcade.
+function memoriaComprada(){ return ((typeof Arcade !== 'undefined' && Arcade.tienda) ? Arcade.tienda.nivel('ruleta', 'memoria') : 0) > 0 ? 120 : 30; }
+if (typeof Arcade !== "undefined" && Arcade.tienda) Arcade.tienda.registrar('ruleta', 'Sala de ruleta', [
+  ...Arcade.tienda.MESA,
+  { id:'memoria', icono:'📊', nombre:'Panel de estadística', precio:2500, max:1,
+    desc:'El historial guarda 120 números en vez de 30. La ruleta no tiene memoria, ' +
+         'pero tú sí: sirve para ver de verdad cómo se reparten.' }
+], () => { pintarHistorial(); refrescar(); });
 
 // ---------- Trucos de administración ----------
 // Solo hacen algo con el modo creador encendido (código 2808, tecla F9).

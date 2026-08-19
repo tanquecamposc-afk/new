@@ -434,7 +434,9 @@ function dibujar(){
     const anchoTotal = (B.banca.length - 1) * 34 + CARTA_AN;
     let x = ANCHO / 2 - anchoTotal / 2;
     B.banca.forEach((c, i) => {
-      Cartas.dibujar(ctx, (i === 1 && B.bancaTapada) ? null : c, x, yB, CARTA_AN, CARTA_AL);
+      // Con el ojo del crupier comprado, la carta tapada se ve igualmente.
+      const tapada = i === 1 && B.bancaTapada && !ojoComprado();
+      Cartas.dibujar(ctx, tapada ? null : c, x, yB, CARTA_AN, CARTA_AL);
       x += 34;
     });
     const v = B.bancaTapada ? valorCarta(B.banca[0]) : valor(B.banca);
@@ -525,6 +527,16 @@ Arcade.conectarSonido($('btnSonido'));
 cargarPartida();
 refrescar();
 Arcade.bucle(() => dibujar());
+
+// ---------- Tienda del juego ----------
+// Se paga con NEXO-COINS, la moneda común del arcade.
+function ojoComprado(){ return ((typeof Arcade !== 'undefined' && Arcade.tienda) ? Arcade.tienda.nivel('blackjack', 'ojo') : 0) > 0; }
+if (typeof Arcade !== "undefined" && Arcade.tienda) Arcade.tienda.registrar('blackjack', 'Sala de blackjack', [
+  ...Arcade.tienda.MESA,
+  { id:'ojo', icono:'👁', nombre:'Ojo del crupier', precio:9000, max:1,
+    desc:'Ves la carta tapada de la banca desde que se reparte. No cambia las ' +
+         'probabilidades: cambia lo que sabes antes de pedir o plantarte.' }
+], () => refrescar());
 
 // ---------- Trucos de administración ----------
 // Solo hacen algo con el modo creador encendido (código 2808, tecla F9).

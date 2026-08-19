@@ -204,12 +204,18 @@ function romper(){
   G.destelloRotura = 1;
   Sonido.pararMotor();
   Sonido.fx('choque');
+  let perdido = 0;
   G.canas.forEach((c, i) => {
     if (c.viva){
       c.viva = false;
+      perdido += c.monto || 0;
       Arcade.perfil.partida('bigbass', { puntos: 0, victoria: false });
     }
   });
+  // Seguro comprado en la tienda: devuelve parte de lo perdido.
+  const devuelto = Arcade.tienda ? Arcade.tienda.cobrarSeguro('bigbass', perdido) : 0;
+  if (devuelto){ G.saldo = Arcade.fichas.saldo();
+    Arcade.aviso(avisos, '🛟 El seguro te devuelve ' + devuelto.toLocaleString('es-ES'), true, 2200); }
   G.historia.unshift(G.mult);
   if (G.historia.length > 26) G.historia.pop();
   guardarPartida();
@@ -608,6 +614,10 @@ pintarCanas();
 pintarHistorial();
 refrescar();
 Arcade.bucle(dt => dibujar(dt));
+
+// ---------- Tienda del juego ----------
+// Se paga con NEXO-COINS, la moneda común del arcade.
+if (typeof Arcade !== "undefined" && Arcade.tienda) Arcade.tienda.registrar('bigbass', 'Tienda de pesca', [ ...[Arcade.tienda.ARTICULO_SEGURO], ], () => refrescar());
 
 // ---------- Trucos de administración ----------
 // Solo hacen algo con el modo creador encendido (código 2808, tecla F9).

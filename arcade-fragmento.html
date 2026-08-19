@@ -211,6 +211,85 @@ input:focus-visible, select:focus-visible, a:focus-visible, [tabindex]:focus-vis
   font-family:var(--fuente); max-width:320px;
 }
 
+/* ==========================================================
+   Tienda del juego: gastar NEXO-COINS en mejoras y adornos
+   ========================================================== */
+.btnTienda{
+  padding:6px 10px; font-size:.95rem; line-height:1;
+  background:rgba(255,209,102,.08); border:1px solid rgba(255,209,102,.35);
+  border-radius:8px; cursor:pointer; color:inherit;
+}
+.btnTienda:hover{border-color:var(--oro); background:rgba(255,209,102,.16);}
+
+.capaTienda{
+  position:fixed; inset:0; z-index:70;
+  display:none; align-items:center; justify-content:center;
+  background:rgba(3,6,12,.86); backdrop-filter:blur(3px); padding:18px;
+}
+.capaTienda.visible{display:flex;}
+.cajaTienda{
+  width:min(720px,100%); max-height:88%; overflow-y:auto;
+  background:var(--panel); border:1px solid rgba(255,209,102,.3);
+  border-radius:14px; padding:20px;
+  box-shadow:0 20px 60px rgba(0,0,0,.75);
+}
+.cajaTienda h2{
+  font-family:var(--fuente-arcade); font-size:1rem; color:var(--oro);
+  letter-spacing:1px; margin-bottom:10px;
+}
+.carteraTienda{
+  font-size:.82rem; color:var(--tenue); margin-bottom:12px;
+}
+.carteraTienda b{color:var(--oro); font-family:var(--fuente-arcade); font-size:.82rem;}
+
+.avisoTienda{
+  display:none; margin-bottom:12px; padding:8px 12px; border-radius:9px;
+  font-size:.8rem; border:1px solid var(--borde);
+}
+.avisoTienda.visible{display:block;}
+.avisoTienda.bien{color:var(--verde); border-color:rgba(78,224,137,.4); background:rgba(78,224,137,.08);}
+.avisoTienda.mal{color:var(--rojo); border-color:rgba(255,61,104,.4); background:rgba(255,61,104,.08);}
+
+.rejillaTienda{display:flex; flex-direction:column; gap:10px; margin-bottom:16px;}
+.articulo{
+  display:flex; align-items:center; gap:12px;
+  background:rgba(0,0,0,.32); border:1px solid var(--borde);
+  border-radius:11px; padding:11px 13px;
+}
+.articulo.completo{border-color:rgba(78,224,137,.35); background:rgba(78,224,137,.06);}
+.icoArt{font-size:1.7rem; line-height:1; width:38px; text-align:center; flex:none;}
+.datosArt{flex:1; min-width:0;}
+.datosArt b{display:block; font-size:.92rem;}
+.datosArt p{font-size:.76rem; color:var(--tenue); margin-top:2px;}
+.nivelArt{
+  display:inline-block; font-family:var(--fuente-arcade); font-size:.62rem;
+  color:var(--azul); background:rgba(0,240,255,.1);
+  border:1px solid rgba(0,240,255,.25); border-radius:5px;
+  padding:1px 6px; margin-top:3px;
+}
+.accionArt{flex:none;}
+.accionArt .comprar{
+  font-family:var(--fuente-arcade); font-size:.7rem; white-space:nowrap;
+  padding:9px 12px; border-radius:9px; cursor:pointer;
+  color:#1a1206; background:linear-gradient(180deg,#ffd166,#e8a92e);
+  border:1px solid rgba(255,209,102,.6);
+}
+.accionArt .comprar:hover{filter:brightness(1.1);}
+.accionArt .comprar.sinFondos{
+  background:rgba(255,255,255,.06); color:var(--tenue);
+  border-color:var(--borde); cursor:not-allowed;
+}
+.accionArt .hacer{
+  font-family:var(--fuente-arcade); font-size:.7rem; white-space:nowrap;
+  padding:9px 12px; border-radius:9px; cursor:pointer; color:inherit;
+  background:rgba(0,240,255,.1); border:1px solid rgba(0,240,255,.35);
+}
+.accionArt .hacer:hover{background:rgba(0,240,255,.2); border-color:var(--azul);}
+.articulo.accion{border-style:dashed;}
+.accionArt .tenido{font-family:var(--fuente-arcade); font-size:.66rem; color:var(--verde);}
+.accionArt .bloqueado{font-size:.72rem; color:var(--tenue); max-width:150px; display:block;}
+.cajaTienda .primario{width:100%;}
+
 /* ---- Consola del creador (modo administrador) ---- */
 .capaAdmin{
   position:fixed; inset:0; z-index:80; display:none;
@@ -5444,6 +5523,257 @@ Arcade.experiencia = {
   }
 };
 
+/* ==========================================================
+   TIENDA — gastar NEXO-COINS dentro de cada juego
+   Cada juego declara sus artículos desde su propio script, igual que los
+   trucos de administración: es el único sitio donde su estado está a mano.
+   Lo comprado se guarda por juego y se lee con Arcade.tienda.nivel().
+   ========================================================== */
+Arcade.tienda = {
+  juegos: {},
+
+  /**
+   * @param id        el mismo id que usa la tarjeta de la portada
+   * @param nombre    cómo se llama la tienda ("Bazar de la mina")
+   * @param articulos lista de { id, icono, nombre, desc, precio, max, factor,
+   *                             etiqueta(nivel), bloqueado() }
+   * @param alCambiar se llama tras cada compra, para repintar el juego
+   */
+  registrar(id, nombre, articulos, alCambiar){
+    this.juegos[id] = { id, nombre, articulos, alCambiar };
+    this.montarBoton(id);
+  },
+
+  clave(id){ return 'tienda_' + id; },
+  compras(id){
+    try { return JSON.parse(Arcade.leerTexto(this.clave(id), '{}')) || {}; }
+    catch(e){ return {}; }
+  },
+  /**
+   * Cuántas veces se ha comprado un artículo. 0 = ninguna.
+   * Un artículo puede declarar `bolsa` para guardarse en un cajón compartido:
+   * el paño de la mesa lo compras una vez y lo ves en las seis mesas.
+   */
+  nivel(idJuego, idArt){ return this.compras(idJuego)[idArt] || 0; },
+  nivelDe(idJuego, art){ return this.nivel(art.bolsa || idJuego, art.id); },
+  /** ¿Está comprado? Para los artículos de una sola vez. */
+  tiene(idJuego, idArt){ return this.nivel(idJuego, idArt) > 0; },
+
+  /**
+   * Precio del siguiente nivel. Cada compra encarece la siguiente por su
+   * factor: sin eso, el primer millón de NEXO-COINS compraría la partida
+   * entera y el juego se acabaría ahí.
+   */
+  precio(art, nivel){
+    return Math.ceil(art.precio * Math.pow(art.factor || 1, nivel || 0));
+  },
+  agotado(idJuego, art){
+    return this.nivelDe(idJuego, art) >= (art.max || 1);
+  },
+
+  comprar(idJuego, idArt){
+    const j = this.juegos[idJuego];
+    if (!j) return { ok:false, motivo:'Esa tienda no existe.' };
+    const art = j.articulos.find(a => a.id === idArt);
+    if (!art) return { ok:false, motivo:'Ese artículo no existe.' };
+    const bolsa = art.bolsa || idJuego;
+    const n = this.nivel(bolsa, idArt);
+    if (n >= (art.max || 1)) return { ok:false, motivo:'Ya lo tienes al máximo.' };
+    if (art.bloqueado){
+      const razon = art.bloqueado(n);
+      if (razon) return { ok:false, motivo: razon };
+    }
+    const coste = this.precio(art, n);
+    if (Arcade.fichas.saldo() < coste)
+      return { ok:false, motivo:'Te faltan ' +
+        (coste - Arcade.fichas.saldo()).toLocaleString('es-ES') + ' NEXO-COINS.' };
+
+    Arcade.fichas.ajustar(-coste);
+    const compras = this.compras(bolsa);
+    compras[idArt] = n + 1;
+    Arcade.escribir(this.clave(bolsa), JSON.stringify(compras));
+    if (j.alCambiar) { try { j.alCambiar(idArt, n + 1); } catch(e){} }
+    return { ok:true, coste, nivel: n + 1, art };
+  },
+
+  /**
+   * Seguro de apuesta: devuelve parte de lo perdido en una ronda. No toca el
+   * sorteo ni la ventaja de la casa —la matemática del juego sigue siendo la
+   * misma—, solo amortigua la caída de quien se lo ha pagado.
+   */
+  cobrarSeguro(idJuego, apostado){
+    const p = this.nivel(idJuego, 'seguro') * 0.12;
+    if (!(p > 0) || !(apostado > 0)) return 0;
+    const devuelto = Math.floor(apostado * p);
+    if (devuelto > 0) Arcade.fichas.ajustar(devuelto);
+    return devuelto;
+  },
+  /** Artículo de seguro listo para meter en la lista de cualquier juego de apuesta. */
+  ARTICULO_SEGURO: {
+    id:'seguro', icono:'🛟', nombre:'Seguro de apuesta', precio:4000, max:5, factor:2.2,
+    etiqueta: n => n ? 'Te devuelven el ' + (n * 12) + ' % de lo que pierdas' : 'Sin comprar',
+    desc:'Cuando pierdas una ronda recuperas parte de la apuesta. No cambia las ' +
+         'probabilidades del juego: solo hace la caída más blanda.'
+  },
+
+  /**
+   * Artículos que comparten las mesas de casino. Se compran una vez y se ven
+   * en las seis: el paño es de la sala, no de un juego. Es un getter porque
+   * Mesa se define más abajo en este mismo archivo.
+   */
+  get MESA(){
+    return [
+      { id:'pano', bolsa:'casino', icono:'🎴', nombre:'Paño de la sala',
+        precio:3000, max:4, factor:2,
+        etiqueta: n => 'Desbloqueados: ' +
+          Mesa.PIELES.slice(0, n + 1).map(p => p.nombre).join(', '),
+        desc:'Otro color para el tapete. Vale para todas las mesas del casino: ' +
+             'blackjack, póker, bacarrá, ruleta, dados y billar.' },
+      { id:'panoCambiar', tipo:'accion', icono:'🔁', nombre:'Cambiar de paño',
+        boton:'Siguiente',
+        etiqueta: () => 'Ahora: ' + Mesa.PIELES[Mesa.panoElegido()].nombre,
+        bloqueado: () => Mesa.panosDesbloqueados() > 1 ? '' : 'Compra un paño primero',
+        desc:'Va pasando por los paños que tengas desbloqueados.',
+        accion(){
+          Mesa.elegirPano(Mesa.panoElegido() + 1);
+          return '🎴 Paño: ' + Mesa.PIELES[Mesa.panoElegido()].nombre;
+        } }
+    ];
+  },
+
+  // ---------- Botón y panel ----------
+  /** La barra del juego, tanto en página suelta como dentro de arcade.html. */
+  barraDe(id){
+    return document.querySelector('#pantalla-' + id + ' .barra') ||
+           document.querySelector('#pantalla-' + id + ' [id^="barraSuperior"]') ||
+           document.querySelector('.barra') ||
+           document.querySelector('[id^="barraSuperior"]');
+  },
+  montarBoton(id){
+    const barra = this.barraDe(id);
+    if (!barra || barra.querySelector('.btnTienda')) return;
+    const b = document.createElement('button');
+    b.className = 'btnTienda';
+    b.type = 'button';
+    b.title = 'Tienda';
+    b.setAttribute('aria-label', 'Tienda del juego');
+    b.textContent = '🛒';
+    b.onclick = () => this.abrir(id);
+    const ayuda = barra.querySelector('.btnAyuda');
+    ayuda ? barra.insertBefore(b, ayuda) : barra.appendChild(b);
+  },
+
+  abrir(id){
+    const j = this.juegos[id];
+    if (!j) return;
+    Sonido.activar();
+    const raiz = document.getElementById('pantalla-' + id) ||
+                 Arcade.experiencia.activa() || document.body;
+    let capa = raiz.querySelector('.capaTienda');
+    if (!capa){
+      capa = document.createElement('div');
+      capa.className = 'capaTienda';
+      capa.innerHTML =
+        '<div class="cajaTienda" role="dialog" aria-label="Tienda">' +
+          '<h2>🛒 <span class="tituloTienda"></span></h2>' +
+          '<div class="carteraTienda">Tienes <b>0</b> NEXO-COINS</div>' +
+          '<div class="avisoTienda" role="status"></div>' +
+          '<div class="rejillaTienda"></div>' +
+          '<button class="primario cerrarTienda">Volver al juego</button>' +
+        '</div>';
+      capa.addEventListener('click', ev => {
+        if (ev.target === capa || ev.target.closest('.cerrarTienda')) this.cerrar(raiz);
+      });
+      raiz.appendChild(capa);
+    }
+    capa.querySelector('.tituloTienda').textContent = j.nombre;
+    capa.dataset.juego = id;
+    this.pintar(capa, id);
+    capa.classList.add('visible');
+  },
+  cerrar(raiz){
+    const capa = raiz.querySelector('.capaTienda');
+    if (capa) capa.classList.remove('visible');
+  },
+
+  avisar(capa, txt, bien){
+    const a = capa.querySelector('.avisoTienda');
+    a.textContent = txt;
+    a.className = 'avisoTienda ' + (bien ? 'bien' : 'mal') + ' visible';
+    clearTimeout(a._t);
+    a._t = setTimeout(() => a.classList.remove('visible'), 2600);
+  },
+
+  pintar(capa, id){
+    const j = this.juegos[id];
+    const saldo = Arcade.fichas.saldo();
+    capa.querySelector('.carteraTienda b').textContent = saldo.toLocaleString('es-ES');
+    const rejilla = capa.querySelector('.rejillaTienda');
+    rejilla.innerHTML = j.articulos.map(art => {
+      // Los artículos de acción no se venden: son un botón que hace algo con
+      // lo que ya tienes, como cambiar entre los paños desbloqueados.
+      if (art.tipo === 'accion'){
+        const razon = art.bloqueado ? art.bloqueado(0) : '';
+        return '<article class="articulo accion">' +
+          '<div class="icoArt">' + (art.icono || '🔁') + '</div>' +
+          '<div class="datosArt"><b>' + art.nombre + '</b>' +
+            (art.etiqueta ? '<span class="nivelArt">' + art.etiqueta(0) + '</span>' : '') +
+            '<p>' + art.desc + '</p></div>' +
+          '<div class="accionArt">' + (razon
+            ? '<span class="bloqueado">' + razon + '</span>'
+            : '<button class="hacer" data-art="' + art.id + '">' + (art.boton || 'Cambiar') + '</button>') +
+          '</div></article>';
+      }
+      const n = this.nivelDe(id, art);
+      const max = art.max || 1;
+      const lleno = n >= max;
+      const coste = this.precio(art, n);
+      const razon = !lleno && art.bloqueado ? art.bloqueado(n) : '';
+      const puedo = !lleno && !razon && saldo >= coste;
+      const estado = lleno
+        ? '<span class="tenido">' + (max > 1 ? 'Al máximo · ' + n + '/' + max : 'Comprado') + '</span>'
+        : razon
+          ? '<span class="bloqueado">' + razon + '</span>'
+          : '<button class="comprar' + (puedo ? '' : ' sinFondos') + '" data-art="' + art.id + '">' +
+            '💎 ' + coste.toLocaleString('es-ES') + '</button>';
+      return '<article class="articulo' + (lleno ? ' completo' : '') + '">' +
+        '<div class="icoArt">' + (art.icono || '🎁') + '</div>' +
+        '<div class="datosArt">' +
+          '<b>' + art.nombre + '</b>' +
+          (max > 1 ? '<span class="nivelArt">' +
+            (art.etiqueta ? art.etiqueta(n) : n + ' / ' + max) + '</span>' : '') +
+          '<p>' + art.desc + '</p>' +
+        '</div>' +
+        '<div class="accionArt">' + estado + '</div>' +
+      '</article>';
+    }).join('');
+
+    rejilla.querySelectorAll('.hacer').forEach(b => {
+      b.onclick = () => {
+        const art = j.articulos.find(a => a.id === b.dataset.art);
+        let txt = '';
+        try { txt = art.accion(); } catch(e){ txt = 'Ha fallado: ' + e.message; }
+        Sonido.fx('clic');
+        if (txt) this.avisar(capa, txt, true);
+        this.pintar(capa, id);
+      };
+    });
+    rejilla.querySelectorAll('.comprar').forEach(b => {
+      b.onclick = () => {
+        const r = this.comprar(id, b.dataset.art);
+        if (!r.ok){ Sonido.fx('error'); this.avisar(capa, r.motivo, false); return; }
+        Sonido.fx('moneda');
+        this.avisar(capa, '✅ ' + r.art.nombre + ' · -' +
+                    r.coste.toLocaleString('es-ES') + ' NEXO-COINS', true);
+        this.pintar(capa, id);
+        if (typeof window.refrescarPortada === 'function'){
+          try { window.refrescarPortada(); } catch(e){}
+        }
+      };
+    });
+  }
+};
+
 // Teclas y foco: valen igual en una página suelta que dentro de arcade.html
 addEventListener('keydown', ev => {
   const escribiendo = /^(INPUT|TEXTAREA|SELECT)$/.test((ev.target.tagName || ''));
@@ -5772,6 +6102,36 @@ const Cartas = {
    ========================================================== */
 const Mesa = {
   _ruido: null,
+
+  /**
+   * Paños que se compran en la tienda de cualquier mesa. Se guardan en una
+   * clave común: el paño es de la sala, no de un juego, así que comprarlo en
+   * el Blackjack también se ve en el Póker y en la Ruleta.
+   */
+  PIELES: [
+    { id:0, nombre:'Verde clásico', tono:['#1c6b45', '#0c3a26'], acento:'rgba(243,230,0,.5)' },
+    { id:1, nombre:'Granate real',  tono:['#7a1f33', '#390d18'], acento:'rgba(255,209,102,.55)' },
+    { id:2, nombre:'Azul medianoche', tono:['#1b3a72', '#0a1936'], acento:'rgba(0,240,255,.5)' },
+    { id:3, nombre:'Púrpura neón',  tono:['#4a1d70', '#200a35'], acento:'rgba(255,110,230,.55)' },
+    { id:4, nombre:'Obsidiana',     tono:['#26292f', '#0d0e11'], acento:'rgba(200,210,225,.45)' }
+  ],
+  /** Cuántos paños hay desbloqueados, contando el de casa. */
+  panosDesbloqueados(){
+    return 1 + ((typeof Arcade !== 'undefined' && Arcade.tienda)
+      ? Arcade.tienda.nivel('casino', 'pano') : 0);
+  },
+  panoElegido(){
+    const n = parseInt(Almacen.leer('arcade_pano') || '0', 10) || 0;
+    return Math.min(Math.max(0, n), this.panosDesbloqueados() - 1);
+  },
+  elegirPano(n){
+    Almacen.escribir('arcade_pano', String(Math.max(0, n) % this.panosDesbloqueados()));
+  },
+  /** El paño activo, o null si es el de siempre (para no pisar el de cada juego). */
+  pielComprada(){
+    const i = this.panoElegido();
+    return i > 0 ? this.PIELES[i] : null;
+  },
   // Textura de paño: se genera una vez y se repite como patrón
   textura(ctx){
     if (this._ruido) return this._ruido;
@@ -5798,8 +6158,11 @@ const Mesa = {
     const cy = opciones.cy !== undefined ? opciones.cy : al / 2;
     const rx = opciones.rx || an * 0.42;
     const ry = opciones.ry || al * 0.36;
-    const tono = opciones.tono || ['#1c6b45', '#0c3a26'];
-    const acento = opciones.acento || 'rgba(243,230,0,.5)';
+    // El paño lo puede cambiar la tienda: es un adorno compartido por todas
+    // las mesas, así que se compra una vez y se ve en Póker, Blackjack y compañía.
+    const piel = Mesa.pielComprada();
+    const tono = piel ? piel.tono : (opciones.tono || ['#1c6b45', '#0c3a26']);
+    const acento = piel ? piel.acento : (opciones.acento || 'rgba(243,230,0,.5)');
 
     // penumbra de la sala
     const fondo = ctx.createRadialGradient(cx, cy - al * 0.1, 20, cx, cy, an * 0.85);
@@ -8395,7 +8758,10 @@ function nuevaPartida(mapa){
   }
   G = {
     mapa, segs, largoCamino: total,
-    vidas: 150, dinero: 550, ola: 0,
+    // El núcleo reforzado y la caja de arranque salen de la tienda del arcade.
+    vidas: 150 + (typeof Arcade !== 'undefined' && Arcade.tienda ? Arcade.tienda.nivel('td','nucleo') * 50 : 0),
+    dinero: 550 + (typeof Arcade !== 'undefined' && Arcade.tienda ? Arcade.tienda.nivel('td','caja') * 250 : 0),
+    ola: 0,
     enemigos: [], torres: [], unidades: [], balas: [], particulas: [], textos: [], rayos: [],
     colaSpawn: [], tOla: 0, olaActiva: false, entreOlas: true, cuentaAtras: 0,
     velocidad: 1, pausa: false, terminado: false, infinito: false,
@@ -10301,6 +10667,17 @@ construirBarraTorres();
 pintarMenu();
 requestAnimationFrame(ts => { ultimaT = ts; requestAnimationFrame(paso); });
 
+// ---------- Tienda del juego ----------
+// Se paga con NEXO-COINS, la moneda común del arcade.
+if (typeof Arcade !== "undefined" && Arcade.tienda) Arcade.tienda.registrar('td', 'Almacén del núcleo', [
+  { id:'nucleo', icono:'💠', nombre:'Núcleo reforzado', precio:4000, max:4, factor:2.3,
+    etiqueta: n => 'El núcleo empieza con ' + (150 + n * 50) + ' vidas',
+    desc:'Cincuenta vidas más al empezar. No se recuperan durante la partida: son colchón.' },
+  { id:'caja', icono:'💰', nombre:'Caja de arranque', precio:3500, max:4, factor:2.3,
+    etiqueta: n => 'Empiezas con ' + (550 + n * 250),
+    desc:'Empiezas con más dinero para plantar una torre buena antes de la primera ola.' }
+], () => { if (typeof actualizarUI === 'function') actualizarUI(); });
+
 // ---------- Trucos de administración ----------
 // Solo hacen algo con el modo creador encendido (código 2808, tecla F9).
 // Este juego también se abre suelto, sin arcade.js, así que se comprueba antes.
@@ -10475,7 +10852,8 @@ function mover(e, dt, alLlegarACentro){
 
 // ---------- Partida ----------
 function nuevaPartida(){
-  puntos = 0; vidas = 3; nivel = 1;
+  // Las vidas de más se compran en la tienda con NEXO-COINS.
+  puntos = 0; vidas = 3 + ((typeof Arcade !== 'undefined' && Arcade.tienda) ? Arcade.tienda.nivel('comecocos', 'vida') : 0); nivel = 1;
   iniciarNivel();
 }
 function iniciarNivel(){
@@ -10916,6 +11294,14 @@ estado = 'listo'; cronoEstado = 1e9; // esperando al botón de jugar
 refrescarHud();
 Arcade.bucle(dt => { actualizar(dt); dibujar(); });
 
+// ---------- Tienda del juego ----------
+// Se paga con NEXO-COINS, la moneda común del arcade.
+if (typeof Arcade !== "undefined" && Arcade.tienda) Arcade.tienda.registrar('comecocos', 'Tienda del laberinto', [
+  { id:'vida', icono:'💛', nombre:'Vida de más', precio:3000, max:3, factor:2.5,
+    etiqueta: n => 'Empiezas con ' + (3 + n) + ' vidas',
+    desc:'Empiezas cada partida con una vida más. Se nota sobre todo a partir del nivel 4.' }
+], () => refrescarHud());
+
 // ---------- Trucos de administración ----------
 // Solo hacen algo con el modo creador encendido (código 2808, tecla F9).
 if (typeof Arcade !== "undefined" && Arcade.admin) Arcade.admin.registrar('comecocos', 'Comecocos', {
@@ -11113,7 +11499,8 @@ function nuevaPartida(){
   parcelas = Array.from({length:FILAS}, () => Array(COLUMNAS).fill(null));
   zombis = []; balas = []; soles = []; particulas = [];
   cortacespedes = Array.from({length:FILAS}, () => ({usado:false, activo:false, x:40}));
-  soles_n = 175; bajas = 0; oleada = 0; cronoOleada = 14; porSalir = [];
+  soles_n = 175 + ((typeof Arcade !== 'undefined' && Arcade.tienda) ? Arcade.tienda.nivel('pvz', 'soles') : 0) * 150;   // el fondo de siembra se compra en la tienda
+  bajas = 0; oleada = 0; cronoOleada = 14; porSalir = [];
   cronoSolCielo = 6; tiempo = 0; estado = 'jugando'; seleccion = null; palaActiva = false;
   recargas = {}; CLAVES.forEach(c => recargas[c] = 0);
   pausado = false;
@@ -11667,6 +12054,14 @@ nuevaPartida();
 estado = 'menu';
 Arcade.bucle(dt => { actualizar(dt); dibujar(); });
 
+// ---------- Tienda del juego ----------
+// Se paga con NEXO-COINS, la moneda común del arcade.
+if (typeof Arcade !== "undefined" && Arcade.tienda) Arcade.tienda.registrar('pvz', 'Vivero', [
+  { id:'soles', icono:'☀️', nombre:'Fondo de siembra', precio:2500, max:4, factor:2.2,
+    etiqueta: n => 'Empiezas con ' + (175 + n * 150) + ' soles',
+    desc:'Empiezas cada jardín con 150 soles más, para plantar antes de la primera oleada.' }
+], () => refrescarHud());
+
 // ---------- Trucos de administración ----------
 // Solo hacen algo con el modo creador encendido (código 2808, tecla F9).
 if (typeof Arcade !== "undefined" && Arcade.admin) Arcade.admin.registrar('pvz', 'Plantas vs Zombis', {
@@ -11810,8 +12205,12 @@ function perder(){
     c.textContent = bombas.has(i) ? '💣' : '💎';
   });
   // el perfil se queda con la ronda; las fichas ya se movieron con la apuesta
+  // Seguro comprado en la tienda: devuelve parte de lo perdido.
+  const devuelto = Arcade.tienda ? Arcade.tienda.cobrarSeguro('minas', apuesta) : 0;
+  if (devuelto){ saldo = Arcade.fichas.saldo();
+    Arcade.aviso(avisos, '🛟 El seguro te devuelve ' + devuelto.toLocaleString('es-ES'), true, 2200); }
   Arcade.perfil.partida('minas', { puntos: gemas });
-  mostrarCartel(0, -apuesta, true);
+  mostrarCartel(0, -apuesta + devuelto, true);
   añadirHistorial(false, gemas);
   refrescar();
   setTimeout(() => { if (estado === 'revelado') listoParaOtra(); }, 1500);
@@ -11929,6 +12328,10 @@ Arcade.conectarSonido($('btnSonido'));
 
 refrescar();
 
+// ---------- Tienda del juego ----------
+// Se paga con NEXO-COINS, la moneda común del arcade.
+if (typeof Arcade !== "undefined" && Arcade.tienda) Arcade.tienda.registrar('minas', 'Economato de la mina', [ ...[Arcade.tienda.ARTICULO_SEGURO], ], () => refrescar());
+
 // ---------- Trucos de administración ----------
 // Solo hacen algo con el modo creador encendido (código 2808, tecla F9).
 if (typeof Arcade !== "undefined" && Arcade.admin) Arcade.admin.registrar('minas', 'Minas', {
@@ -11999,7 +12402,12 @@ let tablero, piezas, puntos, lineas, combo, estado, record = Arcade.record('bloc
 let particulas = [], flotantes = [], tiempo = 0;
 let arrastre = null;
 
+// Los rescates se recargan al empezar cada partida.
+let rescatesRestantes = 0;
+const rescatesComprados = () => (typeof Arcade !== 'undefined' && Arcade.tienda) ? Arcade.tienda.nivel('blockblast', 'rescate') : 0;
+
 function nuevaPartida(){
+  rescatesRestantes = rescatesComprados();
   tablero = Array.from({length:N}, () => Array(N).fill(null));
   piezas = [null, null, null];
   puntos = 0; lineas = 0; combo = 0;
@@ -12127,6 +12535,16 @@ function colocar(indice, ci, cj){
 
   guardarPartida();
 
+  if (!algunaCabe() && rescatesRestantes > 0){
+    // Rescate comprado en la tienda: en vez de acabar, se limpia el tablero.
+    rescatesRestantes--;
+    tablero = Array.from({length:N}, () => Array(N).fill(null));
+    Arcade.aviso(avisos, '🧹 ¡Rescate! Te quedan ' + rescatesRestantes, true, 2000);
+    Sonido.fx('combo');
+    refrescarHud();
+    guardarPartida();
+    return;
+  }
   if (!algunaCabe()){
     estado = 'fin';
     if (Arcade.guardarRecord('blockblast', puntos)) record = puntos;
@@ -12354,6 +12772,15 @@ if (recuperable){
 
 Arcade.bucle(dt => { actualizar(dt); dibujar(); });
 
+// ---------- Tienda del juego ----------
+// Se paga con NEXO-COINS, la moneda común del arcade.
+if (typeof Arcade !== "undefined" && Arcade.tienda) Arcade.tienda.registrar('blockblast', 'Tienda de Block Blast', [
+  { id:'rescate', icono:'🧹', nombre:'Rescate de tablero', precio:3000, max:3, factor:2.5,
+    etiqueta: n => n ? 'Te salva ' + n + (n === 1 ? ' vez' : ' veces') + ' por partida' : 'Sin comprar',
+    desc:'Cuando ya no cabe ninguna pieza, en vez de acabar se limpia el tablero y sigues. ' +
+         'Se recarga en cada partida.' }
+], () => {});
+
 // ---------- Trucos de administración ----------
 // Solo hacen algo con el modo creador encendido (código 2808, tecla F9).
 if (typeof Arcade !== "undefined" && Arcade.admin) Arcade.admin.registrar('blockblast', 'Block Blast', {
@@ -12405,6 +12832,7 @@ function nuevaPartida(){
   puntos = 0; manzanas = 0; acumulado = 0; intervalo = 0.145;
   particulas = []; fantasmaT = 0; tiempo = 0;
   pausado = false; estado = 'jugando';
+  escudosRestantes = escudosComprados();
   ponerComida();
   refrescarHud();
 }
@@ -12531,7 +12959,18 @@ function añadirRoca(){
   Arcade.aviso(avisos, '🪨 ¡Nueva roca en el campo!', false, 1400);
 }
 
+// Escudo comprado en la tienda: perdona un choque por partida y nivel.
+let escudosRestantes = 0;
+const escudosComprados = () => (typeof Arcade !== 'undefined' && Arcade.tienda) ? Arcade.tienda.nivel('serpiente', 'escudo') : 0;
+
 function morir(motivo){
+  if (escudosRestantes > 0){
+    escudosRestantes--;
+    fantasmaT = Math.max(fantasmaT, 2.5);   // dos segundos para salir del apuro
+    chispas(cuerpo[0].x, cuerpo[0].y, '#7dd3fc', 20);
+    Arcade.aviso(avisos, '🛡 ¡Escudo! Te quedan ' + escudosRestantes, true, 1700);
+    return;
+  }
   estado = 'fin';
   if (Arcade.guardarRecord('serpiente', puntos)) record = puntos;
   Arcade.estado.olvidar('serpiente');
@@ -12773,6 +13212,14 @@ if (recuperable){
 }
 Arcade.bucle(dt => { actualizar(dt); dibujar(); });
 
+// ---------- Tienda del juego ----------
+// Se paga con NEXO-COINS, la moneda común del arcade.
+if (typeof Arcade !== "undefined" && Arcade.tienda) Arcade.tienda.registrar('serpiente', 'Tienda de la serpiente', [
+  { id:'escudo', icono:'🛡', nombre:'Escudo', precio:2000, max:3, factor:2.4,
+    etiqueta: n => n ? 'Aguantas ' + n + (n === 1 ? ' choque' : ' choques') + ' por partida' : 'Sin comprar',
+    desc:"Cuando te estrelles, en vez de morir te vuelves espectral dos segundos y sigues. Se recarga en cada partida." }
+], () => {});
+
 // ---------- Trucos de administración ----------
 // Solo hacen algo con el modo creador encendido (código 2808, tecla F9).
 if (typeof Arcade !== "undefined" && Arcade.admin) Arcade.admin.registrar('serpiente', 'Serpiente', {
@@ -12888,7 +13335,12 @@ function estrellar(){
   if (apuesta.viva){
     apuesta.viva = false;
     Arcade.perfil.partida('aviator', { puntos: 0 });
-    Arcade.aviso(avisos, '💥 Perdiste ' + apuesta.monto + ' fichas', false, 2200);
+  // Seguro comprado en la tienda: devuelve parte de lo perdido.
+    const devuelto = Arcade.tienda ? Arcade.tienda.cobrarSeguro('aviator', apuesta.monto) : 0;
+    if (devuelto) saldo = Arcade.fichas.saldo();
+    Arcade.aviso(avisos, '💥 Perdiste ' + apuesta.monto + ' fichas' +
+      (devuelto ? ' · 🛟 el seguro te devuelve ' + devuelto.toLocaleString('es-ES') : ''),
+      false, 2200);
   }
   historia.unshift(mult);
   if (historia.length > 24) historia.pop();
@@ -13279,6 +13731,10 @@ nuevaRonda();
 pintarHistorial();
 Arcade.bucle(dt => { actualizar(dt); dibujar(); });
 
+// ---------- Tienda del juego ----------
+// Se paga con NEXO-COINS, la moneda común del arcade.
+if (typeof Arcade !== "undefined" && Arcade.tienda) Arcade.tienda.registrar('aviator', 'Hangar', [ ...[Arcade.tienda.ARTICULO_SEGURO], ], () => refrescar());
+
 // ---------- Trucos de administración ----------
 // Solo hacen algo con el modo creador encendido (código 2808, tecla F9).
 if (typeof Arcade !== "undefined" && Arcade.admin) Arcade.admin.registrar('aviator', 'Aviator', {
@@ -13531,7 +13987,7 @@ function comprobarTroneras(){
 // ---------- Tirada ----------
 function golpear(potencia){
   golpeadaPrimero = null; metidasEnTirada = []; huboContacto = false; blancaMetida = false;
-  const v = V_MAX * limitar(potencia, 0.06, 1);
+  const v = V_MAX * tacoComprado() * limitar(potencia, 0.06, 1);
   blanca.vx = Math.cos(apunte) * v;
   blanca.vy = Math.sin(apunte) * v;
   blanca.efectoVertical = -efecto.y;             // arriba = corrido, abajo = retroceso
@@ -14108,6 +14564,18 @@ estado = 'menu';
 refrescarHud();
 Arcade.bucle(dt => { actualizar(dt); dibujar(); });
 
+// ---------- Tienda del juego ----------
+// Se paga con NEXO-COINS, la moneda común del arcade.
+// El taco de competición sube la velocidad máxima del golpe un 12 % por nivel.
+function tacoComprado(){ return 1 + ((typeof Arcade !== 'undefined' && Arcade.tienda) ? Arcade.tienda.nivel('pool', 'taco') : 0) * 0.12; }
+if (typeof Arcade !== "undefined" && Arcade.tienda) Arcade.tienda.registrar('pool', 'Sala de billar', [
+  ...Arcade.tienda.MESA,
+  { id:'taco', icono:'🎱', nombre:'Taco de competición', precio:6500, max:3, factor:2.2,
+    etiqueta: n => n ? '+' + (n * 12) + ' % de fuerza' : 'Sin comprar',
+    desc:'Pegas más fuerte con la barra al máximo: rompes mejor y llegas a bandas ' +
+         'que antes se quedaban cortas.' }
+], () => refrescarHud());
+
 // ---------- Trucos de administración ----------
 // Solo hacen algo con el modo creador encendido (código 2808, tecla F9).
 if (typeof Arcade !== "undefined" && Arcade.admin) Arcade.admin.registrar('pool', '8 Ball Pool', {
@@ -14182,7 +14650,8 @@ let confeti = [];
 function nuevaPartida(){
   unidades = [];
   balon = { x:(CAMPO.x1+CAMPO.x2)/2, y:CY, vx:0, vy:0, r:13, rot:0 };
-  energia = 6; energiaIA = 6;
+  energia = 6 + ((typeof Arcade !== 'undefined' && Arcade.tienda) ? Arcade.tienda.nivel('rumble', 'energia') : 0) * 2;   // la reserva se compra en la tienda
+  energiaIA = 6;
   tanteo = { tu:0, ia:0 };
   reloj = DURACION;
   estado = 'jugando'; pausado = false; seleccion = null;
@@ -14755,6 +15224,14 @@ estado = 'menu';
 refrescarHud();
 Arcade.bucle(dt => { actualizar(dt); dibujar(); });
 
+// ---------- Tienda del juego ----------
+// Se paga con NEXO-COINS, la moneda común del arcade.
+if (typeof Arcade !== "undefined" && Arcade.tienda) Arcade.tienda.registrar('rumble', 'Vestuario', [
+  { id:'energia', icono:'⚡', nombre:'Reserva de energía', precio:3000, max:3, factor:2.4,
+    etiqueta: n => 'Sales con ' + (6 + n * 2) + ' de energía',
+    desc:'Empiezas el partido con más energía: puedes soltar un bicho caro de salida.' }
+], () => refrescarHud());
+
 // ---------- Trucos de administración ----------
 // Solo hacen algo con el modo creador encendido (código 2808, tecla F9).
 if (typeof Arcade !== "undefined" && Arcade.admin) Arcade.admin.registrar('rumble', 'Rumble Stars', {
@@ -14976,6 +15453,89 @@ let MINERALES = MUNDO.minerales;
 let COSTES = MUNDO.costes;
 let FACTOR = MUNDO.factor;
 let TONO = MUNDO.tono;
+
+/**
+ * Las pieles no repintan el mundo entero: solo cambian los colores del cielo,
+ * los estratos y las lámparas por encima de la paleta que ya trae cada mundo,
+ * así que el Valle con piel de neón sigue teniendo su techo de estrellas.
+ */
+const PIELES = [
+  { nombre:'Original',    tono:null },
+  { nombre:'Esmeralda',   tono:{
+      paleta:[['#1e4a34','#153524'],['#1a4230','#122d20'],['#20302a','#18241f'],['#1c4130','#132b21'],['#1b2723','#121916'],['#0e1c15','#06100b']],
+      acento:'#4ee089',
+      cielo:['#04140d','#0a2a1c','#114230'],
+      suelo:['#123724','#082114'],
+      grano:['#1c4a32','#000000'],
+      lampara:['rgba(120,255,190,','rgba(120,255,190,0)'],
+      soporte:['#2b5a41','#1d4531','#153426','#0d2419'],
+      polvo:'#8fffcf'
+  }},
+  { nombre:'Atardecer',   tono:{
+      paleta:[['#6b3b22','#522c19'],['#5c3520','#452716'],['#4a3630','#382823'],['#5e3524','#46271a'],['#3a2d28','#2a201c'],['#2a1a12','#150c08']],
+      acento:'#ffb35c',
+      cielo:['#2a0e14','#5c2418','#95461d'],
+      suelo:['#3d1f14','#1d0d08'],
+      grano:['#5a3020','#000000'],
+      lampara:['rgba(255,180,110,','rgba(255,180,110,0)'],
+      soporte:['#6b3f26','#52301d','#3d2415','#29180e'],
+      polvo:'#ffcf9a'
+  }},
+  { nombre:'Neón',        tono:{
+      paleta:[['#4a2170','#361856'],['#3f1d63','#2c1447'],['#33203f','#251730'],['#452073','#301553'],['#2c1f38','#1e1527'],['#1e1030','#100619']],
+      acento:'#ff4ecd',
+      cielo:['#0d0320','#1e0940','#33115e'],
+      suelo:['#2a1140','#140823'],
+      grano:['#4a1f6e','#000000'],
+      lampara:['rgba(255,110,230,','rgba(255,110,230,0)'],
+      soporte:['#5c2a80','#452063','#331847','#22102f'],
+      polvo:'#ff9ae8'
+  }},
+  { nombre:'Ventisca',    tono:{
+      paleta:[['#3f5f76','#2e4759'],['#39566b','#293f4f'],['#3a4b57','#2b3841'],['#365468','#263d4c'],['#2c3a44','#1f2a31'],['#1c2830','#0f171c']],
+      acento:'#dff2ff',
+      cielo:['#0a1622','#16324a','#27506e'],
+      suelo:['#2d4457','#152430'],
+      grano:['#3f5f76','#000000'],
+      lampara:['rgba(200,235,255,','rgba(200,235,255,0)'],
+      soporte:['#48657d','#374f62','#283a49','#1a2731'],
+      polvo:'#e8f6ff'
+  }}
+];
+
+let pielActual = 0;
+function pielesCompradas(){ return 1 + compradoEnTienda('piel'); }   // la Original siempre está
+function cargarPiel(){
+  const g = parseInt(Arcade.leerTexto('mina_piel', '0'), 10) || 0;
+  pielActual = Math.min(Math.max(0, g), pielesCompradas() - 1);
+}
+/** Reconstruye TONO: paleta del mundo + los colores que pisa la piel. */
+function aplicarPiel(){
+  const p = PIELES[pielActual];
+  if (!p || !p.tono){ TONO = MUNDO.tono; }
+  else {
+    TONO = { ...MUNDO.tono, ...p.tono };
+    // Los estratos se recolorean conservando las alturas del mundo: así el
+    // Vacío Cuántico con piel de ventisca sigue teniendo sus capas finas.
+    if (p.tono.paleta) TONO.bandas = MUNDO.tono.bandas.map((b, i) => ({
+      h: b.h, a: p.tono.paleta[i % p.tono.paleta.length][0],
+      b: p.tono.paleta[i % p.tono.paleta.length][1]
+    }));
+  }
+  pintarRoca(roca.ctx);
+  const b = document.getElementById('btnPiel');
+  if (b) b.title = 'Piel: ' + PIELES[pielActual].nombre;
+}
+function siguientePiel(){
+  const n = pielesCompradas();
+  if (n <= 1) return false;
+  pielActual = (pielActual + 1) % n;
+  Arcade.escribir('mina_piel', String(pielActual));
+  aplicarPiel();
+  Arcade.aviso(avisos, '🎨 Piel: ' + PIELES[pielActual].nombre, true, 1500);
+  return true;
+}
+
 const moneda = n => MUNDO.moneda.simbolo + Math.floor(n).toLocaleString('es-ES');
 
 // Estado del mundo que se está jugando. Los otros esperan en PARTIDA.mundos.
@@ -15005,11 +15565,19 @@ function estadoNuevo(i){
 }
 
 // Fórmulas de las mejoras
-const velPicado    = () => 1 + (E.taladro - 1) * 0.28;      // multiplicador de velocidad
+// ---------- Lo comprado en la tienda con NEXO-COINS ----------
+// Se lee con funciones y no con constantes porque el jugador puede comprar
+// en mitad de la partida: si se cacheara, la mejora no se notaría hasta salir.
+const compradoEnTienda = id => (typeof Arcade !== 'undefined' && Arcade.tienda)
+  ? Arcade.tienda.nivel('mina', id) : 0;
+const bonoTaladro = () => 1 + compradoEnTienda('turbo') * 0.2;   // +20 % por nivel
+const bonoPrecio  = () => 1 + compradoEnTienda('contrato') * 0.12;
+
+const velPicado    = () => (1 + (E.taladro - 1) * 0.28) * bonoTaladro();  // multiplicador de velocidad
 const cargaAscensor= () => 6 + (E.ascensor - 1) * 5;
 const velAscensor  = () => 82 + (E.ascensor - 1) * 26;
 const cargaCamion  = () => 24 + (E.camion - 1) * 16;
-const precio       = tipo => Math.round(MINERALES[tipo].base * (1 + (E.camion - 1) * 0.35));
+const precio       = tipo => Math.round(MINERALES[tipo].base * (1 + (E.camion - 1) * 0.35) * bonoPrecio());
 const capacidadSilo= () => 90 + (E.camion - 1) * 45;
 
 const totalPozo = () => E.pozo.carbon + E.pozo.oro;
@@ -15131,7 +15699,9 @@ function entrarEnMundo(i, guardarAntes = true){
   ascensor.carga = { carbon:0, oro:0 };
   camion.carga = { carbon:0, oro:0 };
   camion.x = AN + 90; camion.estado = 'fuera'; camion.espera = 2.5;
-  pintarRoca(roca.ctx);
+  // aplicarPiel() vuelve a componer TONO con la piel comprada y repinta la
+  // roca: sin esto, cambiar de mundo devolvía la paleta original.
+  aplicarPiel();
   pintarTextosDelMundo();
   pintarSelector();
 }
@@ -16741,6 +17311,49 @@ Guardado.registrar(guardarPartida);   // también al cambiar de pantalla o irse 
 
 Arcade.bucle(dt => { actualizar(dt); dibujar(); });
 
+// ---------- Tienda: pieles del campo y mejoras permanentes ----------
+if (typeof Arcade !== 'undefined' && Arcade.tienda){
+  Arcade.tienda.registrar('mina', 'Bazar de la mina', [
+    { id:'piel', icono:'🎨', nombre:'Pintura del yacimiento', precio:1500, max:4, factor:2.4,
+      etiqueta: n => 'Desbloqueadas: ' + PIELES.slice(0, n + 1).map(p => p.nombre).join(', '),
+      desc:'Desbloquea otra paleta para el campo de juego. El botón 🎨 de la barra ' +
+           'va cambiando entre las que tengas.' },
+    { id:'turbo', icono:'⚡', nombre:'Taladro de plasma', precio:4000, max:5, factor:2.2,
+      etiqueta: n => '+' + (n * 20) + ' % de velocidad al picar',
+      desc:'Tus mineros pican un 20 % más rápido por nivel, en todos los mundos.' },
+    { id:'contrato', icono:'📜', nombre:'Contrato con la fundición', precio:6000, max:5, factor:2.4,
+      etiqueta: n => '+' + (n * 12) + ' % en la venta',
+      desc:'Te pagan un 12 % más por cada mineral que sube el camión.' }
+  ], id => {
+    // Al comprar una piel se estrena sola: comprarla y no verla sería raro.
+    if (id === 'piel'){
+      pielActual = pielesCompradas() - 1;
+      Arcade.escribir('mina_piel', String(pielActual));
+    }
+    if (pielesCompradas() > 1) mostrarBotonPiel();
+    aplicarPiel();
+    refrescar();
+  });
+}
+
+/** El botón de pieles solo aparece cuando hay más de una que enseñar. */
+function mostrarBotonPiel(){
+  const barra = document.querySelector('.barra');
+  if (!barra || document.getElementById('btnPiel')) return;
+  const b = document.createElement('button');
+  b.id = 'btnPiel';
+  b.type = 'button';
+  b.textContent = '🎨';
+  b.title = 'Piel: ' + PIELES[pielActual].nombre;
+  b.setAttribute('aria-label', 'Cambiar la piel del campo');
+  b.onclick = () => { siguientePiel(); Sonido.fx('clic'); };
+  barra.insertBefore(b, document.getElementById('btnSonido'));
+}
+
+cargarPiel();
+if (pielesCompradas() > 1) mostrarBotonPiel();
+aplicarPiel();
+
 // ---------- Trucos de administración ----------
 // Solo hacen algo con el modo creador encendido (código 2808, tecla F9).
 if (typeof Arcade !== "undefined" && Arcade.admin) Arcade.admin.registrar('mina', 'Mining Tycoon', {
@@ -17148,12 +17761,19 @@ function pintarMotas(dt){
 const ANCHO_CASILLA = 128;      // 120 de ancho + 4 de margen a cada lado
 const GANADORA = 36, TOTAL = 45;
 
+// El descuento del contrato comprado en la tienda: 10 % menos por nivel.
+function precioCofre(c){
+  const n = (typeof Arcade !== 'undefined' && Arcade.tienda) ? Arcade.tienda.nivel('cofres', 'descuento') : 0;
+  return Math.ceil(c.precio * Math.max(0.5, 1 - n * 0.1));
+}
+
 function abrirCofre(id){
   if (S.girando) return;
   const c = COFRES.find(x => x.id === id);
-  if (S.esmeraldas < c.precio){ Sonido.fx('error'); return; }
+  const coste = precioCofre(c);
+  if (S.esmeraldas < coste){ Sonido.fx('error'); return; }
 
-  S.esmeraldas -= c.precio;
+  S.esmeraldas -= coste;
   S.girando = true;
   refrescar();
 
@@ -17449,6 +18069,15 @@ $('icoEsme').innerHTML = '<img src="' + ICONO_ESME + '" style="width:22px;height
 ajustarLienzo();
 Arcade.bucle(dt => pintarMotas(dt));
 
+// ---------- Tienda del juego ----------
+// Se paga con NEXO-COINS, la moneda común del arcade.
+if (typeof Arcade !== "undefined" && Arcade.tienda) Arcade.tienda.registrar('cofres', 'Contratos del comerciante', [
+  { id:'descuento', icono:'📉', nombre:'Contrato de compra', precio:3500, max:5, factor:2.2,
+    etiqueta: n => n ? 'Los cofres cuestan un ' + Math.min(50, n * 10) + ' % menos' : 'Sin comprar',
+    desc:'Abrir cofres te sale más barato en esmeraldas. El descuento se queda en el 50 % ' +
+         'como mucho: el comerciante también come.' }
+], () => { pintarCofres(); refrescar(); });
+
 // ---------- Trucos de administración ----------
 // Solo hacen algo con el modo creador encendido (código 2808, tecla F9).
 if (typeof Arcade !== "undefined" && Arcade.admin) Arcade.admin.registrar('cofres', 'Cofres Minecraft', {
@@ -17560,11 +18189,15 @@ function multiplicadorEdificio(id){
   }
   return m;
 }
+// ---------- Lo comprado con NEXO-COINS en la tienda ----------
+const enTienda = id => (typeof Arcade !== 'undefined' && Arcade.tienda)
+  ? Arcade.tienda.nivel('galletas', id) : 0;
+
 function multiplicadorGlobal(){
   let m = 1;
   for (const mej of MEJORAS)
     if (S.compradas.includes(mej.id) && mej.tipo === 'global') m *= mej.factor;
-  return m;
+  return m * Math.pow(2, enTienda('horno'));      // cada horno duplica la producción
 }
 function cps(){
   let t = 0;
@@ -17682,7 +18315,10 @@ function picar(px, py){
 }
 
 // ---------- Galleta dorada ----------
-let dorada = null, cronoDorada = azar(45, 90);
+// El cebo comprado en la tienda acorta la espera entre galletas doradas.
+const cebo = () => [1, 1.43, 2, 3][(typeof Arcade !== 'undefined' && Arcade.tienda)
+  ? Math.min(3, Arcade.tienda.nivel('galletas', 'dorada')) : 0];
+let dorada = null, cronoDorada = azar(45, 90) / cebo();
 const PREMIOS = [
   { id:'frenesi', peso:35, aplicar(){
       S.frenesi = 15;
@@ -17718,7 +18354,7 @@ function pillarDorada(){
   });
   Sonido.melodia([784, 1047, 1319, 1568, 2093], 0.08, 'square', 0.07);
   dorada = null;
-  cronoDorada = azar(60, 140);
+  cronoDorada = azar(60, 140) / cebo();
   refrescar();
   guardarPartida();
 }
@@ -17746,7 +18382,7 @@ function actualizar(dt){
   if (dorada){
     dorada.fase += dt * 3;
     dorada.vida -= dt;
-    if (dorada.vida <= 0){ dorada = null; cronoDorada = azar(60, 140); }
+    if (dorada.vida <= 0){ dorada = null; cronoDorada = azar(60, 140) / cebo(); }
   }
 }
 
@@ -17914,6 +18550,7 @@ function refrescar(forzar){
     pintarMejoras();
   }
   $('btnCanjear').disabled = S.galletas < 1e6;
+  $('btnCanjear').textContent = '🪙 1 M 🍪 → ' + pagoCanje().toLocaleString('es-ES') + ' coins';
 }
 function añadirBono(txt, clase){
   const d = document.createElement('div');
@@ -17958,8 +18595,9 @@ $('lotes').addEventListener('click', ev => {
 $('btnCanjear').onclick = () => {
   if (S.galletas < 1e6){ Sonido.fx('error'); return; }
   S.galletas -= 1e6;
-  Arcade.fichas.ajustar(100);
-  Arcade.aviso($('bonos'), '🪙 +100 NEXO-COINS', true);
+  const pago = pagoCanje();
+  Arcade.fichas.ajustar(pago);
+  Arcade.aviso($('bonos'), '🪙 +' + pago.toLocaleString('es-ES') + ' NEXO-COINS', true);
   Sonido.fx('ficha');
   refrescar(true);
   guardarPartida();
@@ -17970,7 +18608,7 @@ $('btnReiniciar').onclick = () => {
   S.galletas = 0; S.total = 0; S.clics = 0; S.compradas = [];
   for (const e of EDIFICIOS) S.edificios[e.id] = 0;
   S.frenesi = 0; S.clicLoco = 0;
-  dorada = null; cronoDorada = azar(45, 90);
+  dorada = null; cronoDorada = azar(45, 90) / cebo();
   refrescar(true);
   guardarPartida();
 };
@@ -17983,6 +18621,31 @@ setInterval(guardarPartida, 10000);
 addEventListener('beforeunload', guardarPartida);
 Guardado.registrar(guardarPartida);   // también al cambiar de pantalla o irse a otra pestaña
 Arcade.bucle(dt => { actualizar(dt); dibujar(); refrescar(); });
+
+// ---------- Tienda: gastar NEXO-COINS para ganar más NEXO-COINS ----------
+/**
+ * Lo que paga el canje de un millón de galletas. Cada troquel comprado lo
+ * duplica, pero el precio del siguiente se multiplica por cuatro: el negocio
+ * sigue saliendo a cuenta, solo que cada vez cuesta mucho más entrar.
+ */
+function pagoCanje(){ return 100 * Math.pow(2, enTienda('plata')); }
+
+if (typeof Arcade !== 'undefined' && Arcade.tienda){
+  Arcade.tienda.registrar('galletas', 'Obrador de plata', [
+    { id:'plata', icono:'🪙', nombre:'Troquel de galletas de plata', precio:2000, max:6, factor:4,
+      etiqueta: n => 'El canje paga ' + (100 * Math.pow(2, n)).toLocaleString('es-ES') + ' coins',
+      desc:'Duplica lo que te dan por canjear un millón de galletas. Empieza barato ' +
+           'y se pone por las nubes: el sexto cuesta más de dos millones.' },
+    { id:'horno', icono:'🔥', nombre:'Horno industrial', precio:5000, max:5, factor:5,
+      etiqueta: n => 'Producción x' + Math.pow(2, n),
+      desc:'Duplica todas las galletas por segundo y por clic. Se acumula con las ' +
+           'mejoras normales del juego.' },
+    { id:'dorada', icono:'✨', nombre:'Cebo de galleta dorada', precio:8000, max:3, factor:3.5,
+      etiqueta: n => 'Aparecen ' + ['igual', 'un 30 % antes', 'el doble de seguido', 'el triple de seguido'][n],
+      desc:'Las galletas doradas salen mucho más a menudo. Son las que disparan ' +
+           'el frenesí y el clic loco.' }
+  ], () => { refrescar(true); guardarPartida(); });
+}
 
 // ---------- Trucos de administración ----------
 // Solo hacen algo con el modo creador encendido (código 2808, tecla F9).
@@ -18217,7 +18880,11 @@ function girar(){
 }
 
 // El combo multiplica: 1x hasta 2 aciertos, y a partir de ahí sube de medio en medio
-function multiplicador(){ return 1 + Math.max(0, Math.floor((S.racha - 1) / 3)) * 0.5; }
+// La beca comprada en la tienda hace que la racha suba más deprisa.
+function multiplicador(){
+  const beca = (typeof Arcade !== 'undefined' && Arcade.tienda) ? Arcade.tienda.nivel('sparta', 'beca') : 0;
+  return 1 + Math.max(0, Math.floor((S.racha - 1) / 3)) * (0.5 + beca * 0.25);
+}
 
 function evaluar(nota){
   if (!S.jugando || !S.girada || !S.actual) return;
@@ -18308,6 +18975,15 @@ Arcade.conectarSonido($('btnSonido'));
 cargarPartida();
 refrescarHud();
 $('pendientesTxt').textContent = pendientes().length || S.cartas.length;
+
+// ---------- Tienda del juego ----------
+// Se paga con NEXO-COINS, la moneda común del arcade.
+if (typeof Arcade !== "undefined" && Arcade.tienda) Arcade.tienda.registrar('sparta', 'Beca de estudios', [
+  { id:'beca', icono:'🎓', nombre:'Beca de estudios', precio:2500, max:4, factor:2.3,
+    etiqueta: n => 'Cada tramo de racha vale x' + (0.5 + n * 0.25).toFixed(2),
+    desc:'La racha de aciertos sube el multiplicador más deprisa, así que las mismas ' +
+         'cartas te dan más NEXO-COINS.' }
+], () => refrescarHud());
 
 // ---------- Trucos de administración ----------
 // Solo hacen algo con el modo creador encendido (código 2808, tecla F9).
@@ -18422,7 +19098,8 @@ function nuevaSesion(){
   M.velas = [];
   for (let i = 0; i < 40; i++) empujarVela();
   M.t = 0; M.vela = 0;
-  M.liquidez = CAPITAL; M.pos = null;
+  // El capital extra se compra en la tienda con NEXO-COINS.
+  M.liquidez = CAPITAL * (1 + ((typeof Arcade !== 'undefined' && Arcade.tienda) ? Arcade.tienda.nivel('mercado', 'capital') : 0) * 0.5); M.pos = null;
   M.operaciones = 0; M.ganadoras = 0;
   M.sesgo = 0; M.sesgoT = 0;
   M.noticia = ''; M.noticiaT = 0;
@@ -18821,6 +19498,16 @@ Arcade.bucle(dt => {
   }
 });
 
+// ---------- Tienda del juego ----------
+// Se paga con NEXO-COINS, la moneda común del arcade.
+if (typeof Arcade !== "undefined" && Arcade.tienda) Arcade.tienda.registrar('mercado', 'Mesa de tesorería', [
+  { id:'capital', icono:'🏦', nombre:'Línea de crédito', precio:5000, max:4, factor:2.4,
+    etiqueta: n => 'Abres la sesión con ' + (10000 * (1 + n * 0.5)).toLocaleString('es-ES'),
+    desc:'Empiezas cada sesión con un 50 % más de capital por nivel. Más margen para ' +
+         'aguantar una posición que va en contra. Se nota en la siguiente sesión: ' +
+         'la que tengas abierta no se toca.' }
+], () => refrescar());
+
 // ---------- Trucos de administración ----------
 // Solo hacen algo con el modo creador encendido (código 2808, tecla F9).
 if (typeof Arcade !== "undefined" && Arcade.admin) Arcade.admin.registrar('mercado', 'Money Market', {
@@ -18920,6 +19607,9 @@ function pendiente(x){
   return Math.atan2(alturaTerreno(x + 4) - alturaTerreno(x - 4), 8);
 }
 
+// El depósito de nitro crece un 40 % por nivel comprado en la tienda.
+const nitroMaximo = () => 100 * (1 + ((typeof Arcade !== 'undefined' && Arcade.tienda) ? Arcade.tienda.nivel('moto', 'deposito') : 0) * 0.4);
+
 const CONTROLES = [2600, 6000, 9600, 13200, 16800, 20400, META];
 
 // ---------- Estado ----------
@@ -18947,7 +19637,7 @@ function reiniciar(desdeControl){
   camaraX = M.x - 240; camaraY = M.y - ALTO / 2;
   if (!desdeControl){
     semilla = 1 + Math.floor(Math.random() * 1000);
-    M.nitro = 100; M.giros = 0; M.puntos = 0; M.tiempo = 0; M.caidas = 0;
+    M.nitro = nitroMaximo(); M.giros = 0; M.puntos = 0; M.tiempo = 0; M.caidas = 0;
     M.mejorX = inicio; M.control = 0;
   }
   M.estado = 'corriendo';
@@ -19069,8 +19759,8 @@ function actualizar(dt){
     chispa(M.x - EJE * Math.cos(M.ang), M.y - EJE * Math.sin(M.ang),
            Math.random() < 0.5 ? '#00f0ff' : '#ffffff', 2, 130);
     if (Math.random() < 0.25) Sonido.fx('nitro');
-  } else if (M.nitro < 100){
-    M.nitro = Math.min(100, M.nitro + 6 * dt);
+  } else if (M.nitro < nitroMaximo()){
+    M.nitro = Math.min(nitroMaximo(), M.nitro + 6 * dt);
   }
 
   M.vx = limitar(M.vx, -160, VEL_MAX);
@@ -19090,7 +19780,7 @@ function actualizar(dt){
   if (!enSuelo && Math.abs(M.rotacion) >= Math.PI * 2){
     M.giros++;
     M.puntos += 500;
-    M.nitro = Math.min(100, M.nitro + 25);
+    M.nitro = Math.min(nitroMaximo(), M.nitro + 25);
     M.rotacion = 0;
     Arcade.aviso(avisos, '🤸 ¡VUELTA COMPLETA! +500', true, 1200);
     Sonido.fx('combo');
@@ -19183,7 +19873,7 @@ function refrescarHud(){
   $('giroTxt').textContent = M.giros;
   $('tiempoTxt').textContent = M.tiempo.toFixed(1);
   $('caidasTxt').textContent = M.caidas;
-  $('nitroRelleno').style.width = M.nitro + '%';
+  $('nitroRelleno').style.width = (M.nitro / nitroMaximo() * 100) + '%';
 }
 
 // ---------- Dibujo ----------
@@ -19669,6 +20359,14 @@ Arcade.bucle(dt => {
   dibujar();
 });
 
+// ---------- Tienda del juego ----------
+// Se paga con NEXO-COINS, la moneda común del arcade.
+if (typeof Arcade !== "undefined" && Arcade.tienda) Arcade.tienda.registrar('moto', 'Taller', [
+  { id:'deposito', icono:'⛽', nombre:'Depósito de nitro', precio:3000, max:4, factor:2.3,
+    etiqueta: n => 'Depósito al ' + Math.round(100 * (1 + n * 0.4)) + ' %',
+    desc:'Un 40 % más de nitro por nivel. Aguantas los tramos largos sin quedarte a pie.' }
+], () => refrescar());
+
 // ---------- Trucos de administración ----------
 // Solo hacen algo con el modo creador encendido (código 2808, tecla F9).
 if (typeof Arcade !== "undefined" && Arcade.admin) Arcade.admin.registrar('moto', 'Moto X3M', {
@@ -20022,7 +20720,9 @@ function dibujar(){
     const anchoTotal = (B.banca.length - 1) * 34 + CARTA_AN;
     let x = ANCHO / 2 - anchoTotal / 2;
     B.banca.forEach((c, i) => {
-      Cartas.dibujar(ctx, (i === 1 && B.bancaTapada) ? null : c, x, yB, CARTA_AN, CARTA_AL);
+      // Con el ojo del crupier comprado, la carta tapada se ve igualmente.
+      const tapada = i === 1 && B.bancaTapada && !ojoComprado();
+      Cartas.dibujar(ctx, tapada ? null : c, x, yB, CARTA_AN, CARTA_AL);
       x += 34;
     });
     const v = B.bancaTapada ? valorCarta(B.banca[0]) : valor(B.banca);
@@ -20113,6 +20813,16 @@ Arcade.conectarSonido($('btnSonido'));
 cargarPartida();
 refrescar();
 Arcade.bucle(() => dibujar());
+
+// ---------- Tienda del juego ----------
+// Se paga con NEXO-COINS, la moneda común del arcade.
+function ojoComprado(){ return ((typeof Arcade !== 'undefined' && Arcade.tienda) ? Arcade.tienda.nivel('blackjack', 'ojo') : 0) > 0; }
+if (typeof Arcade !== "undefined" && Arcade.tienda) Arcade.tienda.registrar('blackjack', 'Sala de blackjack', [
+  ...Arcade.tienda.MESA,
+  { id:'ojo', icono:'👁', nombre:'Ojo del crupier', precio:9000, max:1,
+    desc:'Ves la carta tapada de la banca desde que se reparte. No cambia las ' +
+         'probabilidades: cambia lo que sabes antes de pedir o plantarte.' }
+], () => refrescar());
 
 // ---------- Trucos de administración ----------
 // Solo hacen algo con el modo creador encendido (código 2808, tecla F9).
@@ -20306,7 +21016,7 @@ function resolver(){
   const n = RUEDA[R.destino];
   R.resultado = n;
   R.historia.unshift(n);
-  if (R.historia.length > 30) R.historia.pop();
+  if (R.historia.length > memoriaComprada()) R.historia.pop();
   R.giros++;
 
   let cobro = 0;
@@ -20565,6 +21275,16 @@ pintarTapete();
 pintarHistorial();
 refrescar();
 Arcade.bucle(dt => dibujar(dt));
+
+// ---------- Tienda del juego ----------
+// Se paga con NEXO-COINS, la moneda común del arcade.
+function memoriaComprada(){ return ((typeof Arcade !== 'undefined' && Arcade.tienda) ? Arcade.tienda.nivel('ruleta', 'memoria') : 0) > 0 ? 120 : 30; }
+if (typeof Arcade !== "undefined" && Arcade.tienda) Arcade.tienda.registrar('ruleta', 'Sala de ruleta', [
+  ...Arcade.tienda.MESA,
+  { id:'memoria', icono:'📊', nombre:'Panel de estadística', precio:2500, max:1,
+    desc:'El historial guarda 120 números en vez de 30. La ruleta no tiene memoria, ' +
+         'pero tú sí: sirve para ver de verdad cómo se reparten.' }
+], () => { pintarHistorial(); refrescar(); });
 
 // ---------- Trucos de administración ----------
 // Solo hacen algo con el modo creador encendido (código 2808, tecla F9).
@@ -21024,7 +21744,8 @@ function dibujar(){
     const gano = P.fase === 'fin' && P.ganadores && P.ganadores.includes(j.nombre);
 
     // cartas
-    const mostrar = j.humano || P.fase === 'fin';
+    // La lectura comprada destapa a los rivales por orden: ATENEA, ARES, HERA.
+    const mostrar = j.humano || P.fase === 'fin' || i <= lecturaComprada();
     const an = j.humano ? CARTA_AN : CARTA_AN * 0.72;
     const al = j.humano ? CARTA_AL : CARTA_AL * 0.72;
     let cx = s.x - (an + 6);
@@ -21091,6 +21812,16 @@ Arcade.bucle(dt => {
   }
   dibujar();
 });
+
+// ---------- Tienda del juego ----------
+// Se paga con NEXO-COINS, la moneda común del arcade.
+function lecturaComprada(){ return (typeof Arcade !== 'undefined' && Arcade.tienda) ? Arcade.tienda.nivel('poker', 'lectura') : 0; }
+if (typeof Arcade !== "undefined" && Arcade.tienda) Arcade.tienda.registrar('poker', 'Sala de póker', [
+  ...Arcade.tienda.MESA,
+  { id:'lectura', icono:'🔍', nombre:'Lectura de rivales', precio:7000, max:3, factor:2.4,
+    etiqueta: n => ['Sin comprar','Ves las cartas de ATENEA','… y las de ARES','… y las de HERA'][n],
+    desc:'Destapa la mano de un rival más. Se ve durante toda la mano, no solo al final.' }
+], () => refrescar());
 
 // ---------- Trucos de administración ----------
 // Solo hacen algo con el modo creador encendido (código 2808, tecla F9).
@@ -21234,7 +21965,7 @@ function resolver(){
   const tp = total(B.punto), tb = total(B.banca);
   const ganador = tp > tb ? 'punto' : tb > tp ? 'banca' : 'empate';
   B.camino.unshift(ganador === 'punto' ? 'P' : ganador === 'banca' ? 'B' : 'E');
-  if (B.camino.length > 40) B.camino.pop();
+  if (B.camino.length > caminoComprado()) B.camino.pop();
   B.manos++;
 
   let cobro = 0;
@@ -21373,7 +22104,7 @@ function dibujar(dt){
   texto('CAMINO', ANCHO / 2, 250, 'rgba(255,255,255,.32)', 11, 'center', 800);
   const cols = 20, tam = 20;
   const x0 = ANCHO / 2 - (cols * tam) / 2;
-  B.camino.slice(0, cols * 3).forEach((r, k) => {
+  B.camino.slice(0, cols * (caminoComprado() > 40 ? 6 : 3)).forEach((r, k) => {
     const cx = x0 + (k % cols) * tam + tam / 2;
     const cy = 274 + Math.floor(k / cols) * tam + tam / 2;
     ctx.beginPath(); ctx.arc(cx, cy, tam * 0.36, 0, 6.2832);
@@ -21404,6 +22135,15 @@ Arcade.conectarSonido($('btnSonido'));
 cargarPartida();
 refrescar();
 Arcade.bucle(dt => dibujar(dt));
+
+// ---------- Tienda del juego ----------
+// Se paga con NEXO-COINS, la moneda común del arcade.
+function caminoComprado(){ return ((typeof Arcade !== 'undefined' && Arcade.tienda) ? Arcade.tienda.nivel('bacara', 'camino') : 0) > 0 ? 120 : 40; }
+if (typeof Arcade !== "undefined" && Arcade.tienda) Arcade.tienda.registrar('bacara', 'Sala de bacarrá', [
+  ...Arcade.tienda.MESA,
+  { id:'camino', icono:'🗺', nombre:'Camino grande', precio:2500, max:1,
+    desc:'El camino guarda 120 manos en vez de 40 y pinta el doble de columnas.' }
+], () => refrescar());
 
 // ---------- Trucos de administración ----------
 // Solo hacen algo con el modo creador encendido (código 2808, tecla F9).
@@ -21678,12 +22418,13 @@ const PUNTOS_DADO = {
 function dado(v, x, y, tam, giro){
   ctx.save();
   ctx.translate(x, y); ctx.rotate(giro);
-  ctx.fillStyle = '#f6f7fb';
+  const obsidiana = dadosComprados();
+  ctx.fillStyle = obsidiana ? '#1b1d24' : '#f6f7fb';
   ctx.shadowColor = 'rgba(0,0,0,.6)'; ctx.shadowBlur = tam * 0.25; ctx.shadowOffsetY = tam * 0.08;
   ctx.beginPath(); ctx.roundRect(-tam / 2, -tam / 2, tam, tam, tam * 0.18); ctx.fill();
   ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
   ctx.strokeStyle = 'rgba(0,0,0,.18)'; ctx.lineWidth = 1.5; ctx.stroke();
-  ctx.fillStyle = '#15181f';
+  ctx.fillStyle = obsidiana ? '#ffd166' : '#15181f';
   (PUNTOS_DADO[v] || []).forEach(([dx, dy]) => {
     ctx.beginPath();
     ctx.arc(dx * tam * 0.26, dy * tam * 0.26, tam * 0.085, 0, 6.2832);
@@ -21768,6 +22509,15 @@ cargarPartida();
 montarTapete();
 refrescar();
 Arcade.bucle(dt => dibujar(dt));
+
+// ---------- Tienda del juego ----------
+// Se paga con NEXO-COINS, la moneda común del arcade.
+function dadosComprados(){ return ((typeof Arcade !== 'undefined' && Arcade.tienda) ? Arcade.tienda.nivel('dados', 'dado') : 0) > 0; }
+if (typeof Arcade !== "undefined" && Arcade.tienda) Arcade.tienda.registrar('dados', 'Mesa de dados', [
+  ...Arcade.tienda.MESA,
+  { id:'dado', icono:'🎲', nombre:'Dados de obsidiana', precio:3500, max:1,
+    desc:'Cambia los dados blancos por unos negros con los puntos en oro.' }
+], () => refrescar());
 
 // ---------- Trucos de administración ----------
 // Solo hacen algo con el modo creador encendido (código 2808, tecla F9).
@@ -21899,6 +22649,10 @@ function atropellar(){
     vida: azar(0.8, 1.6), max: 1.6, r: azar(4, 9)
   });
   Sonido.fx('choque');
+  // Seguro comprado en la tienda: devuelve parte de lo perdido.
+  const devuelto = Arcade.tienda ? Arcade.tienda.cobrarSeguro('chicken', C.apuesta) : 0;
+  if (devuelto){ C.saldo = Arcade.fichas.saldo();
+    Arcade.aviso(avisos, '🛟 El seguro te devuelve ' + devuelto.toLocaleString('es-ES'), true, 2200); }
   Arcade.perfil.partida('chicken', { puntos: 0, victoria: false });
   guardarPartida();
   refrescar();
@@ -22305,6 +23059,10 @@ sembrarCoches();
 refrescar();
 Arcade.bucle(dt => dibujar(dt));
 
+// ---------- Tienda del juego ----------
+// Se paga con NEXO-COINS, la moneda común del arcade.
+if (typeof Arcade !== "undefined" && Arcade.tienda) Arcade.tienda.registrar('chicken', 'Corral', [ ...[Arcade.tienda.ARTICULO_SEGURO], ], () => refrescar());
+
 // ---------- Trucos de administración ----------
 // Solo hacen algo con el modo creador encendido (código 2808, tecla F9).
 if (typeof Arcade !== "undefined" && Arcade.admin) Arcade.admin.registrar('chicken', 'Chicken', {
@@ -22433,6 +23191,10 @@ function elegir_loseta(indice){
     // se destapa la torre entera para que se vea qué había
     S.filas.forEach(f => f.revelada = true);
     Sonido.fx('choque');
+  // Seguro comprado en la tienda: devuelve parte de lo perdido.
+    const devuelto = Arcade.tienda ? Arcade.tienda.cobrarSeguro('spire', S.apuesta) : 0;
+    if (devuelto){ S.saldo = Arcade.fichas.saldo();
+      Arcade.aviso(avisos, '🛟 El seguro te devuelve ' + devuelto.toLocaleString('es-ES'), true, 2200); }
     Arcade.perfil.partida('spire', { puntos: 0, victoria: false });
     guardarPartida();
   }
@@ -22714,6 +23476,10 @@ S.dificultad = $('dificultad').value;
 refrescar();
 Arcade.bucle(dt => dibujar(dt));
 
+// ---------- Tienda del juego ----------
+// Se paga con NEXO-COINS, la moneda común del arcade.
+if (typeof Arcade !== "undefined" && Arcade.tienda) Arcade.tienda.registrar('spire', 'Campamento base', [ ...[Arcade.tienda.ARTICULO_SEGURO], ], () => refrescar());
+
 // ---------- Trucos de administración ----------
 // Solo hacen algo con el modo creador encendido (código 2808, tecla F9).
 if (typeof Arcade !== "undefined" && Arcade.admin) Arcade.admin.registrar('spire', 'Spire', {
@@ -22823,6 +23589,9 @@ function resolver(){
     Sonido.fx('caja');
   } else {
     Sonido.fx('error');
+  // Seguro comprado en la tienda: devuelve parte de lo perdido.
+    const devuelto = Arcade.tienda ? Arcade.tienda.cobrarSeguro('limbo', L.apuesta) : 0;
+    if (devuelto) L.saldo = Arcade.fichas.saldo();
   }
   L.historia.unshift({ v: L.resultado, gano: L.gano });
   if (L.historia.length > 26) L.historia.pop();
@@ -23027,6 +23796,10 @@ pintarAuto();
 refrescar();
 Arcade.bucle(dt => dibujar(dt));
 
+// ---------- Tienda del juego ----------
+// Se paga con NEXO-COINS, la moneda común del arcade.
+if (typeof Arcade !== "undefined" && Arcade.tienda) Arcade.tienda.registrar('limbo', 'Tienda de Limbo', [ ...[Arcade.tienda.ARTICULO_SEGURO], ], () => refrescar());
+
 // ---------- Trucos de administración ----------
 // Solo hacen algo con el modo creador encendido (código 2808, tecla F9).
 if (typeof Arcade !== "undefined" && Arcade.admin) Arcade.admin.registrar('limbo', 'Limbo', {
@@ -23148,12 +23921,18 @@ function romper(){
   G.destelloRotura = 1;
   Sonido.pararMotor();
   Sonido.fx('choque');
+  let perdido = 0;
   G.canas.forEach((c, i) => {
     if (c.viva){
       c.viva = false;
+      perdido += c.monto || 0;
       Arcade.perfil.partida('bigbass', { puntos: 0, victoria: false });
     }
   });
+  // Seguro comprado en la tienda: devuelve parte de lo perdido.
+  const devuelto = Arcade.tienda ? Arcade.tienda.cobrarSeguro('bigbass', perdido) : 0;
+  if (devuelto){ G.saldo = Arcade.fichas.saldo();
+    Arcade.aviso(avisos, '🛟 El seguro te devuelve ' + devuelto.toLocaleString('es-ES'), true, 2200); }
   G.historia.unshift(G.mult);
   if (G.historia.length > 26) G.historia.pop();
   guardarPartida();
@@ -23552,6 +24331,10 @@ pintarCanas();
 pintarHistorial();
 refrescar();
 Arcade.bucle(dt => dibujar(dt));
+
+// ---------- Tienda del juego ----------
+// Se paga con NEXO-COINS, la moneda común del arcade.
+if (typeof Arcade !== "undefined" && Arcade.tienda) Arcade.tienda.registrar('bigbass', 'Tienda de pesca', [ ...[Arcade.tienda.ARTICULO_SEGURO], ], () => refrescar());
 
 // ---------- Trucos de administración ----------
 // Solo hacen algo con el modo creador encendido (código 2808, tecla F9).
@@ -23972,6 +24755,28 @@ reconfigurar();
 pintarHistorial();
 Arcade.bucle(dt => dibujar(dt));
 
+// ---------- Tienda del juego ----------
+// Se paga con NEXO-COINS, la moneda común del arcade.
+if (typeof Arcade !== "undefined" && Arcade.tienda) Arcade.tienda.registrar('plinko', 'Tienda de Plinko', [
+  { id:'filas', icono:'📐', nombre:'Tablero alto', precio:4000, max:2, factor:2.5,
+    etiqueta: n => 'Filas disponibles: ' + [8, 12, 16].concat([20, 24].slice(0, n)).join(', '),
+    desc:'Desbloquea tableros de 20 y 24 filas. Más filas es más varianza: las casillas ' +
+         'de los extremos pagan muchísimo más, y caen muchísimo menos.' },
+], () => { montarFilas(); refrescar(); });
+
+/** Añade al selector las filas que se hayan comprado. */
+function montarFilas(){
+  const sel = $('filas');
+  const n = (typeof Arcade !== "undefined" && Arcade.tienda) ? Arcade.tienda.nivel('plinko', 'filas') : 0;
+  [20, 24].slice(0, n).forEach(f => {
+    if (sel.querySelector('option[value="' + f + '"]')) return;
+    const o = document.createElement('option');
+    o.value = String(f); o.textContent = String(f);
+    sel.appendChild(o);
+  });
+}
+montarFilas();
+
 // ---------- Trucos de administración ----------
 // Solo hacen algo con el modo creador encendido (código 2808, tecla F9).
 // El sorteo del destino vive dentro de soltar(), así que para amañarlo se
@@ -24159,7 +24964,13 @@ pulsar('mSalto', saltar);
 pulsar('mRodar', rodar);
 
 // ---------- Ronda ----------
+// Los escudos se recargan al empezar cada carrera, no se acumulan entre partidas.
+let escudosRestantes = 0;
+const escudosComprados = () => (typeof Arcade !== 'undefined' && Arcade.tienda)
+  ? Arcade.tienda.nivel('subway', 'escudo') : 0;
+
 function empezar(){
+  escudosRestantes = escudosComprados();
   Object.assign(J, {
     jugando:true, muerto:false, carril:0, x:0, xObjetivo:0, y:0, vy:0,
     sobreTren:null, rodando:0, fase:0, vel:VEL_BASE, dist:0, monedas:0,
@@ -24184,6 +24995,15 @@ function chocar(que){
     Sonido.fx('choque');
     particulas.emitir(26, { x: pantallaX(J.x, 0), y: sueloY(0) - 60, color:['#22d3ee','#a5f3fc','#fff'],
                             velMin:80, velMax:320, vidaMin:0.3, vidaMax:0.7, rMin:2, rMax:5 });
+    return;
+  }
+  // Escudo comprado en la tienda: aguanta un golpe y se gasta.
+  if (escudosRestantes > 0){
+    escudosRestantes--;
+    J.invulnerable = 2;
+    J.sacudida = 16;
+    Sonido.fx('choque');
+    Arcade.aviso(avisos, '🛡 ¡Escudo! Te quedan ' + escudosRestantes, true, 1700);
     return;
   }
   J.muerto = true;
@@ -24810,6 +25630,14 @@ Arcade.conectarSonido($('btnSonido'));
 refrescar();
 Arcade.bucle(dt => { actualizar(dt); dibujar(); });
 
+// ---------- Tienda del juego ----------
+// Se paga con NEXO-COINS, la moneda común del arcade.
+if (typeof Arcade !== "undefined" && Arcade.tienda) Arcade.tienda.registrar('subway', 'Tienda del metro', [
+  { id:'escudo', icono:'🛡', nombre:'Escudo', precio:2500, max:3, factor:2.4,
+    etiqueta: n => n ? 'Aguantas ' + n + (n === 1 ? ' choque' : ' choques') + ' por partida' : 'Sin comprar',
+    desc:"Aguantas un golpe contra un tren o una valla y sigues corriendo. Se recarga en cada carrera." }
+], () => {});
+
 // ---------- Trucos de administración ----------
 // Solo hacen algo con el modo creador encendido (código 2808, tecla F9).
 if (typeof Arcade !== "undefined" && Arcade.admin) Arcade.admin.registrar('subway', 'Subway Surfers', {
@@ -24944,6 +25772,7 @@ mando('mDer', v => der = v);
 
 // ---------- Ronda ----------
 function empezar(){
+  escudosRestantes = escudosComprados();
   semilla = Math.floor(azar(1, 9999));
   Object.assign(B, { jugando:true, x:centroPista(0), vx:0, d:0, vel:VEL_BASE,
                      velMax:VEL_BASE, giro:0, salto:0, vy:0, sacudida:0, muerteEn:null });
@@ -24956,8 +25785,20 @@ function empezar(){
   refrescar();
 }
 
+// Escudo comprado en la tienda: perdona un choque por carrera y nivel.
+let escudosRestantes = 0;
+const escudosComprados = () => (typeof Arcade !== 'undefined' && Arcade.tienda)
+  ? Arcade.tienda.nivel('slope', 'escudo') : 0;
+
 function morir(motivo){
   if (!B.jugando) return;
+  if (escudosRestantes > 0){
+    escudosRestantes--;
+    B.x = centroPista(B.d); B.vx = 0; B.sacudida = 14;
+    Sonido.fx('choque');
+    Arcade.aviso(avisos, '🛡 ¡Escudo! Te quedan ' + escudosRestantes, true, 1700);
+    return;
+  }
   B.jugando = false;
   B.muerteEn = motivo;
   B.sacudida = 20;
@@ -25313,6 +26154,14 @@ Arcade.bucle(dt => {
   if (espera > 0.25){ espera = 0; refrescar(); }
 });
 
+// ---------- Tienda del juego ----------
+// Se paga con NEXO-COINS, la moneda común del arcade.
+if (typeof Arcade !== "undefined" && Arcade.tienda) Arcade.tienda.registrar('slope', 'Tienda de Slope', [
+  { id:'escudo', icono:'🛡', nombre:'Escudo', precio:2500, max:3, factor:2.4,
+    etiqueta: n => n ? 'Aguantas ' + n + (n === 1 ? ' choque' : ' choques') + ' por partida' : 'Sin comprar',
+    desc:"Si te sales de la pista o chocas, vuelves al centro y sigues. Se recarga en cada carrera." }
+], () => {});
+
 // ---------- Trucos de administración ----------
 // Solo hacen algo con el modo creador encendido (código 2808, tecla F9).
 // Se guarda el ancho original para poder devolver la pista a su sitio.
@@ -25407,6 +26256,9 @@ function empezar(nivel){
 }
 
 // ---------- Enganche ----------
+// La cuerda comprada en la tienda llega 60 unidades más lejos por nivel.
+const alcanceReal = () => ALCANCE + ((typeof Arcade !== 'undefined' && Arcade.tienda) ? Arcade.tienda.nivel('hook', 'cuerda') : 0) * 60;
+
 function buscarAncla(){
   // La mejor es la más cercana que esté por delante y dentro del alcance:
   // enganchar hacia atrás frenaría en seco y se sentiría injusto.
@@ -25415,7 +26267,7 @@ function buscarAncla(){
     if (a === S.ultima && a.x - S.x > -120) continue;   // no repetir el recién soltado
     const dx = a.x - S.x, dy = a.y - S.y;
     const d = Math.hypot(dx, dy);
-    if (d > ALCANCE) continue;
+    if (d > alcanceReal()) continue;
     if (dx < -40) continue;
     if (d < mejorD){ mejorD = d; mejor = a; }
   }
@@ -25775,6 +26627,15 @@ Arcade.conectarSonido($('btnSonido'));
 refrescar();
 Arcade.bucle(dt => { actualizar(dt); dibujar(); });
 
+// ---------- Tienda del juego ----------
+// Se paga con NEXO-COINS, la moneda común del arcade.
+if (typeof Arcade !== "undefined" && Arcade.tienda) Arcade.tienda.registrar('hook', 'Tienda del gancho', [
+  { id:'cuerda', icono:'🪢', nombre:'Cuerda larga', precio:3000, max:4, factor:2.3,
+    etiqueta: n => 'Alcance ' + (380 + n * 60) + ' (de serie 380)',
+    desc:'Enganchas anclas que antes quedaban lejísimos. Cambia mucho los niveles ' +
+         'con huecos grandes.' }
+], () => refrescar());
+
 // ---------- Trucos de administración ----------
 // Solo hacen algo con el modo creador encendido (código 2808, tecla F9).
 if (typeof Arcade !== "undefined" && Arcade.admin) Arcade.admin.registrar('hook', 'Stickman Hook', {
@@ -26072,6 +26933,8 @@ $('arena').addEventListener('pointerdown', ev => {
 
 // ---------- Bucle ----------
 const VEL = 13.5;                 // celdas por segundo
+// Los patines comprados en la tienda te hacen un 12 % más rápido por nivel.
+const velocidadComprada = () => 1 + ((typeof Arcade !== 'undefined' && Arcade.tienda) ? Arcade.tienda.nivel('paperio', 'patines') : 0) * 0.12;
 function actualizar(dt){
   tiempo += dt;
   particulas.actualizar(dt);
@@ -26081,7 +26944,7 @@ function actualizar(dt){
   for (const j of jugadores){
     if (!j.vivo) continue;
     if (!j.humano) pensarBot(j, dt);
-    j.avance += dt * VEL;
+    j.avance += dt * (j.humano ? VEL * velocidadComprada() : VEL);
     while (j.avance >= 1){
       j.avance -= 1;
       if (j.humano) j.dir = j.dirPed;
@@ -26288,6 +27151,15 @@ Arcade.bucle(dt => {
   if (espera > 0.3){ espera = 0; refrescar(); }
 });
 
+// ---------- Tienda del juego ----------
+// Se paga con NEXO-COINS, la moneda común del arcade.
+if (typeof Arcade !== "undefined" && Arcade.tienda) Arcade.tienda.registrar('paperio', 'Tienda de Paper.io', [
+  { id:'patines', icono:'🛼', nombre:'Patines', precio:3500, max:4, factor:2.3,
+    etiqueta: n => n ? 'Vas un ' + (n * 12) + ' % más rápido que los bots' : 'Sin comprar',
+    desc:'Te mueves más rápido que los cuatro rivales: cierras territorios más grandes ' +
+         'y les cortas la cola antes.' }
+], () => refrescar());
+
 // ---------- Trucos de administración ----------
 // Solo hacen algo con el modo creador encendido (código 2808, tecla F9).
 // Igual que en Slope: se guarda el cerebro original de los bots.
@@ -26394,6 +27266,8 @@ let mapa = [], filas = 0, cols = 0, sierras = [], particulas = new Particulas(24
 let izq = false, der = false, saltoPulsado = false;
 
 const GRAV = 2000, VEL = 250, SALTO = 640, SALTO_PARED = 560;
+// Las zapatillas compradas en la tienda dan un 8 % más de salto por nivel.
+const saltoReal = () => SALTO * (1 + ((typeof Arcade !== 'undefined' && Arcade.tienda) ? Arcade.tienda.nivel('vex', 'zapatillas') : 0) * 0.08);
 
 // ---------- Carga del acto ----------
 function cargarActo(n){
@@ -26512,7 +27386,7 @@ function actualizar(dt){
 
   // salto normal, con margen de tolerancia arriba y abajo
   if (V.buffer > 0 && (V.suelo || V.coyote > 0)){
-    V.vy = -SALTO; V.buffer = 0; V.coyote = 0; V.suelo = false;
+    V.vy = -saltoReal(); V.buffer = 0; V.coyote = 0; V.suelo = false;
     Sonido.fx('salto');
   } else if (V.buffer > 0 && V.pared !== 0 && !V.suelo){
     // salto en pared: sale hacia el lado contrario del muro
@@ -26847,6 +27721,15 @@ cargarActo(0);
 refrescar();
 Arcade.bucle(dt => { actualizar(dt); dibujar(); });
 
+// ---------- Tienda del juego ----------
+// Se paga con NEXO-COINS, la moneda común del arcade.
+if (typeof Arcade !== "undefined" && Arcade.tienda) Arcade.tienda.registrar('vex', 'Tienda de Vex', [
+  { id:'zapatillas', icono:'👟', nombre:'Zapatillas de resorte', precio:3000, max:4, factor:2.3,
+    etiqueta: n => n ? 'Saltas un ' + (n * 8) + ' % más alto' : 'Sin comprar',
+    desc:'Más altura en cada salto. Ojo: también llegas más arriba de lo que crees, ' +
+         'y ahí también hay sierras.' }
+], () => refrescar());
+
 // ---------- Trucos de administración ----------
 // Solo hacen algo con el modo creador encendido (código 2808, tecla F9).
 if (typeof Arcade !== "undefined" && Arcade.admin) Arcade.admin.registrar('vex', 'Vex', {
@@ -26943,6 +27826,7 @@ mando('mDer', v => der = v);
 
 // ---------- Ronda ----------
 function empezar(){
+  escudosRestantes = escudosComprados();
   Object.assign(N, { jugando:true, ang:0, vAng:0, d:0, vel:VEL_BASE, puertas:0,
                      giroTunel:0, velGiro:0.35, sentido:1, cambio:0, sacudida:0, destello:0 });
   anillos = []; particulas.lista.length = 0; proximoZ = 900;
@@ -26952,7 +27836,22 @@ function empezar(){
   refrescar();
 }
 
+// Escudo comprado en la tienda: aguanta un anillo por partida y nivel.
+let escudosRestantes = 0;
+const escudosComprados = () => (typeof Arcade !== 'undefined' && Arcade.tienda)
+  ? Arcade.tienda.nivel('tunnel', 'escudo') : 0;
+
 function chocar(){
+  if (escudosRestantes > 0){
+    escudosRestantes--;
+    N.sacudida = 16; N.destello = 1;
+    // El anillo que te ha pillado se da por pasado: si no, vuelve a chocar
+    // en el mismo cuadro y se come todos los escudos de golpe.
+    anillos.forEach(a => { if (a.z <= 40) a.pasado = true; });
+    Sonido.fx('choque');
+    Arcade.aviso(avisos, '🛡 ¡Escudo! Te quedan ' + escudosRestantes, true, 1700);
+    return;
+  }
   N.jugando = false;
   N.sacudida = 24;
   Sonido.fx('choque');
@@ -27194,6 +28093,14 @@ Arcade.bucle(dt => {
   if (espera > 0.25){ espera = 0; refrescar(); }
 });
 
+// ---------- Tienda del juego ----------
+// Se paga con NEXO-COINS, la moneda común del arcade.
+if (typeof Arcade !== "undefined" && Arcade.tienda) Arcade.tienda.registrar('tunnel', 'Tienda del túnel', [
+  { id:'escudo', icono:'🛡', nombre:'Escudo', precio:2500, max:3, factor:2.4,
+    etiqueta: n => n ? 'Aguantas ' + n + (n === 1 ? ' choque' : ' choques') + ' por partida' : 'Sin comprar',
+    desc:"Atraviesas un anillo cerrado sin reventar. Se recarga en cada partida." }
+], () => {});
+
 // ---------- Trucos de administración ----------
 // Solo hacen algo con el modo creador encendido (código 2808, tecla F9).
 if (typeof Arcade !== "undefined" && Arcade.admin) Arcade.admin.registrar('tunnel', 'Tunnel Rush', {
@@ -27372,6 +28279,9 @@ addEventListener('keydown', ev => {
 });
 
 // ---------- Simulación ----------
+// El imán comprado en la tienda amplía el radio para coger estrellas.
+const radioEstrella = () => 30 + ((typeof Arcade !== 'undefined' && Arcade.tienda) ? Arcade.tienda.nivel('cuerda', 'iman') : 0) * 26;
+
 function actualizar(dt){
   tiempo += dt;
   C.fase += dt;
@@ -27429,7 +28339,7 @@ function actualizar(dt){
   // ---- estrellas ----
   for (const e of estrellas){
     if (e.cogida) continue;
-    if (Math.hypot(C.x - e.x, C.y - e.y) < 30){
+    if (Math.hypot(C.x - e.x, C.y - e.y) < radioEstrella()){
       e.cogida = true;
       C.estrellas++; C.totalEstrellas++;
       Sonido.fx('estrella');
@@ -27719,6 +28629,15 @@ cargar(0);
 refrescar();
 Arcade.bucle(dt => { actualizar(dt); dibujar(); });
 
+// ---------- Tienda del juego ----------
+// Se paga con NEXO-COINS, la moneda común del arcade.
+if (typeof Arcade !== "undefined" && Arcade.tienda) Arcade.tienda.registrar('cuerda', 'Tienda de Nom', [
+  { id:'iman', icono:'🧲', nombre:'Imán de estrellas', precio:2500, max:3, factor:2.4,
+    etiqueta: n => 'Radio de recogida ' + (30 + n * 26) + ' (de serie 30)',
+    desc:'El caramelo atrae las estrellas desde más lejos: ya no hace falta pasar ' +
+         'justo por encima.' }
+], () => refrescar());
+
 // ---------- Trucos de administración ----------
 // Solo hacen algo con el modo creador encendido (código 2808, tecla F9).
 if (typeof Arcade !== "undefined" && Arcade.admin) Arcade.admin.registrar('cuerda', 'Cut the Rope', {
@@ -27810,7 +28729,9 @@ function nuevoPunto(quienSaca){
 }
 
 function empezar(){
-  marcador = { tu:0, cpu:0 };
+  // La ventaja de salida se compra en la tienda con NEXO-COINS.
+  marcador = { tu: (typeof Arcade !== 'undefined' && Arcade.tienda)
+                     ? Arcade.tienda.nivel('basket', 'ventaja') : 0, cpu:0 };
   jugando = true;
   particulas.lista.length = 0;
   nuevoPunto(-1);
@@ -28195,6 +29116,14 @@ nuevoPunto(-1);
 refrescar();
 Arcade.bucle(dt => { actualizar(dt); dibujar(); });
 
+// ---------- Tienda del juego ----------
+// Se paga con NEXO-COINS, la moneda común del arcade.
+if (typeof Arcade !== "undefined" && Arcade.tienda) Arcade.tienda.registrar('basket', 'Tienda del pabellón', [
+  { id:'ventaja', icono:'🏀', nombre:'Ventaja de salida', precio:2500, max:3, factor:2.6,
+    etiqueta: n => n ? 'Empiezas ganando ' + n + ' - 0' : 'Sin comprar',
+    desc:'Sales con canastas de ventaja. El partido sigue siendo a cinco.' }
+], () => refrescar());
+
 // ---------- Trucos de administración ----------
 // Solo hacen algo con el modo creador encendido (código 2808, tecla F9).
 if (typeof Arcade !== "undefined" && Arcade.admin) Arcade.admin.registrar('basket', 'Basket Random', {
@@ -28281,7 +29210,7 @@ function libre(){
 function nuevoKart(i){
   const p = libre();
   return { i, humano: i === 0, x:p.x, y:p.y, ang: azar(0, 6.283), vel:0,
-           vidas:3, arma:null, recarga:0, turbo:0, invul:2, vivo:true,
+           vidas:3 + (i === 0 ? ((typeof Arcade !== 'undefined' && Arcade.tienda) ? Arcade.tienda.nivel('karts', 'vidas') : 0) : 0), arma:null, recarga:0, turbo:0, invul:2, vivo:true,
            bajas:0, pensar:0, objetivo:null, sacudidaKart:0 };
 }
 
@@ -28786,6 +29715,14 @@ karts = [0,1,2,3].map(nuevoKart);
 for (let i = 0; i < 4; i++) soltarCaja();
 refrescar();
 Arcade.bucle(dt => { actualizar(dt); dibujar(); });
+
+// ---------- Tienda del juego ----------
+// Se paga con NEXO-COINS, la moneda común del arcade.
+if (typeof Arcade !== "undefined" && Arcade.tienda) Arcade.tienda.registrar('karts', 'Boxes', [
+  { id:'vidas', icono:'❤️', nombre:'Chasis reforzado', precio:3500, max:3, factor:2.4,
+    etiqueta: n => 'Empiezas con ' + (3 + n) + ' vidas',
+    desc:'Una vida más que los tres rivales en cada partida.' }
+], () => refrescar());
 
 // ---------- Trucos de administración ----------
 // Solo hacen algo con el modo creador encendido (código 2808, tecla F9).

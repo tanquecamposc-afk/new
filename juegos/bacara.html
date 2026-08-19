@@ -223,7 +223,7 @@ function resolver(){
   const tp = total(B.punto), tb = total(B.banca);
   const ganador = tp > tb ? 'punto' : tb > tp ? 'banca' : 'empate';
   B.camino.unshift(ganador === 'punto' ? 'P' : ganador === 'banca' ? 'B' : 'E');
-  if (B.camino.length > 40) B.camino.pop();
+  if (B.camino.length > caminoComprado()) B.camino.pop();
   B.manos++;
 
   let cobro = 0;
@@ -362,7 +362,7 @@ function dibujar(dt){
   texto('CAMINO', ANCHO / 2, 250, 'rgba(255,255,255,.32)', 11, 'center', 800);
   const cols = 20, tam = 20;
   const x0 = ANCHO / 2 - (cols * tam) / 2;
-  B.camino.slice(0, cols * 3).forEach((r, k) => {
+  B.camino.slice(0, cols * (caminoComprado() > 40 ? 6 : 3)).forEach((r, k) => {
     const cx = x0 + (k % cols) * tam + tam / 2;
     const cy = 274 + Math.floor(k / cols) * tam + tam / 2;
     ctx.beginPath(); ctx.arc(cx, cy, tam * 0.36, 0, 6.2832);
@@ -393,6 +393,15 @@ Arcade.conectarSonido($('btnSonido'));
 cargarPartida();
 refrescar();
 Arcade.bucle(dt => dibujar(dt));
+
+// ---------- Tienda del juego ----------
+// Se paga con NEXO-COINS, la moneda común del arcade.
+function caminoComprado(){ return ((typeof Arcade !== 'undefined' && Arcade.tienda) ? Arcade.tienda.nivel('bacara', 'camino') : 0) > 0 ? 120 : 40; }
+if (typeof Arcade !== "undefined" && Arcade.tienda) Arcade.tienda.registrar('bacara', 'Sala de bacarrá', [
+  ...Arcade.tienda.MESA,
+  { id:'camino', icono:'🗺', nombre:'Camino grande', precio:2500, max:1,
+    desc:'El camino guarda 120 manos en vez de 40 y pinta el doble de columnas.' }
+], () => refrescar());
 
 // ---------- Trucos de administración ----------
 // Solo hacen algo con el modo creador encendido (código 2808, tecla F9).

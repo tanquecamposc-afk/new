@@ -351,7 +351,7 @@ function comprobarTroneras(){
 // ---------- Tirada ----------
 function golpear(potencia){
   golpeadaPrimero = null; metidasEnTirada = []; huboContacto = false; blancaMetida = false;
-  const v = V_MAX * limitar(potencia, 0.06, 1);
+  const v = V_MAX * tacoComprado() * limitar(potencia, 0.06, 1);
   blanca.vx = Math.cos(apunte) * v;
   blanca.vy = Math.sin(apunte) * v;
   blanca.efectoVertical = -efecto.y;             // arriba = corrido, abajo = retroceso
@@ -927,6 +927,18 @@ nuevaPartida();
 estado = 'menu';
 refrescarHud();
 Arcade.bucle(dt => { actualizar(dt); dibujar(); });
+
+// ---------- Tienda del juego ----------
+// Se paga con NEXO-COINS, la moneda común del arcade.
+// El taco de competición sube la velocidad máxima del golpe un 12 % por nivel.
+function tacoComprado(){ return 1 + ((typeof Arcade !== 'undefined' && Arcade.tienda) ? Arcade.tienda.nivel('pool', 'taco') : 0) * 0.12; }
+if (typeof Arcade !== "undefined" && Arcade.tienda) Arcade.tienda.registrar('pool', 'Sala de billar', [
+  ...Arcade.tienda.MESA,
+  { id:'taco', icono:'🎱', nombre:'Taco de competición', precio:6500, max:3, factor:2.2,
+    etiqueta: n => n ? '+' + (n * 12) + ' % de fuerza' : 'Sin comprar',
+    desc:'Pegas más fuerte con la barra al máximo: rompes mejor y llegas a bandas ' +
+         'que antes se quedaban cortas.' }
+], () => refrescarHud());
 
 // ---------- Trucos de administración ----------
 // Solo hacen algo con el modo creador encendido (código 2808, tecla F9).

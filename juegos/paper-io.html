@@ -367,6 +367,8 @@ $('arena').addEventListener('pointerdown', ev => {
 
 // ---------- Bucle ----------
 const VEL = 13.5;                 // celdas por segundo
+// Los patines comprados en la tienda te hacen un 12 % más rápido por nivel.
+const velocidadComprada = () => 1 + ((typeof Arcade !== 'undefined' && Arcade.tienda) ? Arcade.tienda.nivel('paperio', 'patines') : 0) * 0.12;
 function actualizar(dt){
   tiempo += dt;
   particulas.actualizar(dt);
@@ -376,7 +378,7 @@ function actualizar(dt){
   for (const j of jugadores){
     if (!j.vivo) continue;
     if (!j.humano) pensarBot(j, dt);
-    j.avance += dt * VEL;
+    j.avance += dt * (j.humano ? VEL * velocidadComprada() : VEL);
     while (j.avance >= 1){
       j.avance -= 1;
       if (j.humano) j.dir = j.dirPed;
@@ -582,6 +584,15 @@ Arcade.bucle(dt => {
   espera += dt;
   if (espera > 0.3){ espera = 0; refrescar(); }
 });
+
+// ---------- Tienda del juego ----------
+// Se paga con NEXO-COINS, la moneda común del arcade.
+if (typeof Arcade !== "undefined" && Arcade.tienda) Arcade.tienda.registrar('paperio', 'Tienda de Paper.io', [
+  { id:'patines', icono:'🛼', nombre:'Patines', precio:3500, max:4, factor:2.3,
+    etiqueta: n => n ? 'Vas un ' + (n * 12) + ' % más rápido que los bots' : 'Sin comprar',
+    desc:'Te mueves más rápido que los cuatro rivales: cierras territorios más grandes ' +
+         'y les cortas la cola antes.' }
+], () => refrescar());
 
 // ---------- Trucos de administración ----------
 // Solo hacen algo con el modo creador encendido (código 2808, tecla F9).

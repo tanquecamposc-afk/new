@@ -197,6 +197,9 @@ function resolver(){
     Sonido.fx('caja');
   } else {
     Sonido.fx('error');
+  // Seguro comprado en la tienda: devuelve parte de lo perdido.
+    const devuelto = Arcade.tienda ? Arcade.tienda.cobrarSeguro('limbo', L.apuesta) : 0;
+    if (devuelto) L.saldo = Arcade.fichas.saldo();
   }
   L.historia.unshift({ v: L.resultado, gano: L.gano });
   if (L.historia.length > 26) L.historia.pop();
@@ -400,6 +403,10 @@ pintarHistorial();
 pintarAuto();
 refrescar();
 Arcade.bucle(dt => dibujar(dt));
+
+// ---------- Tienda del juego ----------
+// Se paga con NEXO-COINS, la moneda común del arcade.
+if (typeof Arcade !== "undefined" && Arcade.tienda) Arcade.tienda.registrar('limbo', 'Tienda de Limbo', [ ...[Arcade.tienda.ARTICULO_SEGURO], ], () => refrescar());
 
 // ---------- Trucos de administración ----------
 // Solo hacen algo con el modo creador encendido (código 2808, tecla F9).

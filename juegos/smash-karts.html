@@ -154,7 +154,7 @@ function libre(){
 function nuevoKart(i){
   const p = libre();
   return { i, humano: i === 0, x:p.x, y:p.y, ang: azar(0, 6.283), vel:0,
-           vidas:3, arma:null, recarga:0, turbo:0, invul:2, vivo:true,
+           vidas:3 + (i === 0 ? ((typeof Arcade !== 'undefined' && Arcade.tienda) ? Arcade.tienda.nivel('karts', 'vidas') : 0) : 0), arma:null, recarga:0, turbo:0, invul:2, vivo:true,
            bajas:0, pensar:0, objetivo:null, sacudidaKart:0 };
 }
 
@@ -659,6 +659,14 @@ karts = [0,1,2,3].map(nuevoKart);
 for (let i = 0; i < 4; i++) soltarCaja();
 refrescar();
 Arcade.bucle(dt => { actualizar(dt); dibujar(); });
+
+// ---------- Tienda del juego ----------
+// Se paga con NEXO-COINS, la moneda común del arcade.
+if (typeof Arcade !== "undefined" && Arcade.tienda) Arcade.tienda.registrar('karts', 'Boxes', [
+  { id:'vidas', icono:'❤️', nombre:'Chasis reforzado', precio:3500, max:3, factor:2.4,
+    etiqueta: n => 'Empiezas con ' + (3 + n) + ' vidas',
+    desc:'Una vida más que los tres rivales en cada partida.' }
+], () => refrescar());
 
 // ---------- Trucos de administración ----------
 // Solo hacen algo con el modo creador encendido (código 2808, tecla F9).

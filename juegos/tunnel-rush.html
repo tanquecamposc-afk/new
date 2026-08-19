@@ -161,6 +161,7 @@ mando('mDer', v => der = v);
 
 // ---------- Ronda ----------
 function empezar(){
+  escudosRestantes = escudosComprados();
   Object.assign(N, { jugando:true, ang:0, vAng:0, d:0, vel:VEL_BASE, puertas:0,
                      giroTunel:0, velGiro:0.35, sentido:1, cambio:0, sacudida:0, destello:0 });
   anillos = []; particulas.lista.length = 0; proximoZ = 900;
@@ -170,7 +171,22 @@ function empezar(){
   refrescar();
 }
 
+// Escudo comprado en la tienda: aguanta un anillo por partida y nivel.
+let escudosRestantes = 0;
+const escudosComprados = () => (typeof Arcade !== 'undefined' && Arcade.tienda)
+  ? Arcade.tienda.nivel('tunnel', 'escudo') : 0;
+
 function chocar(){
+  if (escudosRestantes > 0){
+    escudosRestantes--;
+    N.sacudida = 16; N.destello = 1;
+    // El anillo que te ha pillado se da por pasado: si no, vuelve a chocar
+    // en el mismo cuadro y se come todos los escudos de golpe.
+    anillos.forEach(a => { if (a.z <= 40) a.pasado = true; });
+    Sonido.fx('choque');
+    Arcade.aviso(avisos, '🛡 ¡Escudo! Te quedan ' + escudosRestantes, true, 1700);
+    return;
+  }
   N.jugando = false;
   N.sacudida = 24;
   Sonido.fx('choque');
@@ -411,6 +427,14 @@ Arcade.bucle(dt => {
   espera += dt;
   if (espera > 0.25){ espera = 0; refrescar(); }
 });
+
+// ---------- Tienda del juego ----------
+// Se paga con NEXO-COINS, la moneda común del arcade.
+if (typeof Arcade !== "undefined" && Arcade.tienda) Arcade.tienda.registrar('tunnel', 'Tienda del túnel', [
+  { id:'escudo', icono:'🛡', nombre:'Escudo', precio:2500, max:3, factor:2.4,
+    etiqueta: n => n ? 'Aguantas ' + n + (n === 1 ? ' choque' : ' choques') + ' por partida' : 'Sin comprar',
+    desc:"Atraviesas un anillo cerrado sin reventar. Se recarga en cada partida." }
+], () => {});
 
 // ---------- Trucos de administración ----------
 // Solo hacen algo con el modo creador encendido (código 2808, tecla F9).

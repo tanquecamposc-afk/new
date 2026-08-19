@@ -963,6 +963,257 @@ Arcade.experiencia = {
   }
 };
 
+/* ==========================================================
+   TIENDA — gastar NEXO-COINS dentro de cada juego
+   Cada juego declara sus artículos desde su propio script, igual que los
+   trucos de administración: es el único sitio donde su estado está a mano.
+   Lo comprado se guarda por juego y se lee con Arcade.tienda.nivel().
+   ========================================================== */
+Arcade.tienda = {
+  juegos: {},
+
+  /**
+   * @param id        el mismo id que usa la tarjeta de la portada
+   * @param nombre    cómo se llama la tienda ("Bazar de la mina")
+   * @param articulos lista de { id, icono, nombre, desc, precio, max, factor,
+   *                             etiqueta(nivel), bloqueado() }
+   * @param alCambiar se llama tras cada compra, para repintar el juego
+   */
+  registrar(id, nombre, articulos, alCambiar){
+    this.juegos[id] = { id, nombre, articulos, alCambiar };
+    this.montarBoton(id);
+  },
+
+  clave(id){ return 'tienda_' + id; },
+  compras(id){
+    try { return JSON.parse(Arcade.leerTexto(this.clave(id), '{}')) || {}; }
+    catch(e){ return {}; }
+  },
+  /**
+   * Cuántas veces se ha comprado un artículo. 0 = ninguna.
+   * Un artículo puede declarar `bolsa` para guardarse en un cajón compartido:
+   * el paño de la mesa lo compras una vez y lo ves en las seis mesas.
+   */
+  nivel(idJuego, idArt){ return this.compras(idJuego)[idArt] || 0; },
+  nivelDe(idJuego, art){ return this.nivel(art.bolsa || idJuego, art.id); },
+  /** ¿Está comprado? Para los artículos de una sola vez. */
+  tiene(idJuego, idArt){ return this.nivel(idJuego, idArt) > 0; },
+
+  /**
+   * Precio del siguiente nivel. Cada compra encarece la siguiente por su
+   * factor: sin eso, el primer millón de NEXO-COINS compraría la partida
+   * entera y el juego se acabaría ahí.
+   */
+  precio(art, nivel){
+    return Math.ceil(art.precio * Math.pow(art.factor || 1, nivel || 0));
+  },
+  agotado(idJuego, art){
+    return this.nivelDe(idJuego, art) >= (art.max || 1);
+  },
+
+  comprar(idJuego, idArt){
+    const j = this.juegos[idJuego];
+    if (!j) return { ok:false, motivo:'Esa tienda no existe.' };
+    const art = j.articulos.find(a => a.id === idArt);
+    if (!art) return { ok:false, motivo:'Ese artículo no existe.' };
+    const bolsa = art.bolsa || idJuego;
+    const n = this.nivel(bolsa, idArt);
+    if (n >= (art.max || 1)) return { ok:false, motivo:'Ya lo tienes al máximo.' };
+    if (art.bloqueado){
+      const razon = art.bloqueado(n);
+      if (razon) return { ok:false, motivo: razon };
+    }
+    const coste = this.precio(art, n);
+    if (Arcade.fichas.saldo() < coste)
+      return { ok:false, motivo:'Te faltan ' +
+        (coste - Arcade.fichas.saldo()).toLocaleString('es-ES') + ' NEXO-COINS.' };
+
+    Arcade.fichas.ajustar(-coste);
+    const compras = this.compras(bolsa);
+    compras[idArt] = n + 1;
+    Arcade.escribir(this.clave(bolsa), JSON.stringify(compras));
+    if (j.alCambiar) { try { j.alCambiar(idArt, n + 1); } catch(e){} }
+    return { ok:true, coste, nivel: n + 1, art };
+  },
+
+  /**
+   * Seguro de apuesta: devuelve parte de lo perdido en una ronda. No toca el
+   * sorteo ni la ventaja de la casa —la matemática del juego sigue siendo la
+   * misma—, solo amortigua la caída de quien se lo ha pagado.
+   */
+  cobrarSeguro(idJuego, apostado){
+    const p = this.nivel(idJuego, 'seguro') * 0.12;
+    if (!(p > 0) || !(apostado > 0)) return 0;
+    const devuelto = Math.floor(apostado * p);
+    if (devuelto > 0) Arcade.fichas.ajustar(devuelto);
+    return devuelto;
+  },
+  /** Artículo de seguro listo para meter en la lista de cualquier juego de apuesta. */
+  ARTICULO_SEGURO: {
+    id:'seguro', icono:'🛟', nombre:'Seguro de apuesta', precio:4000, max:5, factor:2.2,
+    etiqueta: n => n ? 'Te devuelven el ' + (n * 12) + ' % de lo que pierdas' : 'Sin comprar',
+    desc:'Cuando pierdas una ronda recuperas parte de la apuesta. No cambia las ' +
+         'probabilidades del juego: solo hace la caída más blanda.'
+  },
+
+  /**
+   * Artículos que comparten las mesas de casino. Se compran una vez y se ven
+   * en las seis: el paño es de la sala, no de un juego. Es un getter porque
+   * Mesa se define más abajo en este mismo archivo.
+   */
+  get MESA(){
+    return [
+      { id:'pano', bolsa:'casino', icono:'🎴', nombre:'Paño de la sala',
+        precio:3000, max:4, factor:2,
+        etiqueta: n => 'Desbloqueados: ' +
+          Mesa.PIELES.slice(0, n + 1).map(p => p.nombre).join(', '),
+        desc:'Otro color para el tapete. Vale para todas las mesas del casino: ' +
+             'blackjack, póker, bacarrá, ruleta, dados y billar.' },
+      { id:'panoCambiar', tipo:'accion', icono:'🔁', nombre:'Cambiar de paño',
+        boton:'Siguiente',
+        etiqueta: () => 'Ahora: ' + Mesa.PIELES[Mesa.panoElegido()].nombre,
+        bloqueado: () => Mesa.panosDesbloqueados() > 1 ? '' : 'Compra un paño primero',
+        desc:'Va pasando por los paños que tengas desbloqueados.',
+        accion(){
+          Mesa.elegirPano(Mesa.panoElegido() + 1);
+          return '🎴 Paño: ' + Mesa.PIELES[Mesa.panoElegido()].nombre;
+        } }
+    ];
+  },
+
+  // ---------- Botón y panel ----------
+  /** La barra del juego, tanto en página suelta como dentro de arcade.html. */
+  barraDe(id){
+    return document.querySelector('#pantalla-' + id + ' .barra') ||
+           document.querySelector('#pantalla-' + id + ' [id^="barraSuperior"]') ||
+           document.querySelector('.barra') ||
+           document.querySelector('[id^="barraSuperior"]');
+  },
+  montarBoton(id){
+    const barra = this.barraDe(id);
+    if (!barra || barra.querySelector('.btnTienda')) return;
+    const b = document.createElement('button');
+    b.className = 'btnTienda';
+    b.type = 'button';
+    b.title = 'Tienda';
+    b.setAttribute('aria-label', 'Tienda del juego');
+    b.textContent = '🛒';
+    b.onclick = () => this.abrir(id);
+    const ayuda = barra.querySelector('.btnAyuda');
+    ayuda ? barra.insertBefore(b, ayuda) : barra.appendChild(b);
+  },
+
+  abrir(id){
+    const j = this.juegos[id];
+    if (!j) return;
+    Sonido.activar();
+    const raiz = document.getElementById('pantalla-' + id) ||
+                 Arcade.experiencia.activa() || document.body;
+    let capa = raiz.querySelector('.capaTienda');
+    if (!capa){
+      capa = document.createElement('div');
+      capa.className = 'capaTienda';
+      capa.innerHTML =
+        '<div class="cajaTienda" role="dialog" aria-label="Tienda">' +
+          '<h2>🛒 <span class="tituloTienda"></span></h2>' +
+          '<div class="carteraTienda">Tienes <b>0</b> NEXO-COINS</div>' +
+          '<div class="avisoTienda" role="status"></div>' +
+          '<div class="rejillaTienda"></div>' +
+          '<button class="primario cerrarTienda">Volver al juego</button>' +
+        '</div>';
+      capa.addEventListener('click', ev => {
+        if (ev.target === capa || ev.target.closest('.cerrarTienda')) this.cerrar(raiz);
+      });
+      raiz.appendChild(capa);
+    }
+    capa.querySelector('.tituloTienda').textContent = j.nombre;
+    capa.dataset.juego = id;
+    this.pintar(capa, id);
+    capa.classList.add('visible');
+  },
+  cerrar(raiz){
+    const capa = raiz.querySelector('.capaTienda');
+    if (capa) capa.classList.remove('visible');
+  },
+
+  avisar(capa, txt, bien){
+    const a = capa.querySelector('.avisoTienda');
+    a.textContent = txt;
+    a.className = 'avisoTienda ' + (bien ? 'bien' : 'mal') + ' visible';
+    clearTimeout(a._t);
+    a._t = setTimeout(() => a.classList.remove('visible'), 2600);
+  },
+
+  pintar(capa, id){
+    const j = this.juegos[id];
+    const saldo = Arcade.fichas.saldo();
+    capa.querySelector('.carteraTienda b').textContent = saldo.toLocaleString('es-ES');
+    const rejilla = capa.querySelector('.rejillaTienda');
+    rejilla.innerHTML = j.articulos.map(art => {
+      // Los artículos de acción no se venden: son un botón que hace algo con
+      // lo que ya tienes, como cambiar entre los paños desbloqueados.
+      if (art.tipo === 'accion'){
+        const razon = art.bloqueado ? art.bloqueado(0) : '';
+        return '<article class="articulo accion">' +
+          '<div class="icoArt">' + (art.icono || '🔁') + '</div>' +
+          '<div class="datosArt"><b>' + art.nombre + '</b>' +
+            (art.etiqueta ? '<span class="nivelArt">' + art.etiqueta(0) + '</span>' : '') +
+            '<p>' + art.desc + '</p></div>' +
+          '<div class="accionArt">' + (razon
+            ? '<span class="bloqueado">' + razon + '</span>'
+            : '<button class="hacer" data-art="' + art.id + '">' + (art.boton || 'Cambiar') + '</button>') +
+          '</div></article>';
+      }
+      const n = this.nivelDe(id, art);
+      const max = art.max || 1;
+      const lleno = n >= max;
+      const coste = this.precio(art, n);
+      const razon = !lleno && art.bloqueado ? art.bloqueado(n) : '';
+      const puedo = !lleno && !razon && saldo >= coste;
+      const estado = lleno
+        ? '<span class="tenido">' + (max > 1 ? 'Al máximo · ' + n + '/' + max : 'Comprado') + '</span>'
+        : razon
+          ? '<span class="bloqueado">' + razon + '</span>'
+          : '<button class="comprar' + (puedo ? '' : ' sinFondos') + '" data-art="' + art.id + '">' +
+            '💎 ' + coste.toLocaleString('es-ES') + '</button>';
+      return '<article class="articulo' + (lleno ? ' completo' : '') + '">' +
+        '<div class="icoArt">' + (art.icono || '🎁') + '</div>' +
+        '<div class="datosArt">' +
+          '<b>' + art.nombre + '</b>' +
+          (max > 1 ? '<span class="nivelArt">' +
+            (art.etiqueta ? art.etiqueta(n) : n + ' / ' + max) + '</span>' : '') +
+          '<p>' + art.desc + '</p>' +
+        '</div>' +
+        '<div class="accionArt">' + estado + '</div>' +
+      '</article>';
+    }).join('');
+
+    rejilla.querySelectorAll('.hacer').forEach(b => {
+      b.onclick = () => {
+        const art = j.articulos.find(a => a.id === b.dataset.art);
+        let txt = '';
+        try { txt = art.accion(); } catch(e){ txt = 'Ha fallado: ' + e.message; }
+        Sonido.fx('clic');
+        if (txt) this.avisar(capa, txt, true);
+        this.pintar(capa, id);
+      };
+    });
+    rejilla.querySelectorAll('.comprar').forEach(b => {
+      b.onclick = () => {
+        const r = this.comprar(id, b.dataset.art);
+        if (!r.ok){ Sonido.fx('error'); this.avisar(capa, r.motivo, false); return; }
+        Sonido.fx('moneda');
+        this.avisar(capa, '✅ ' + r.art.nombre + ' · -' +
+                    r.coste.toLocaleString('es-ES') + ' NEXO-COINS', true);
+        this.pintar(capa, id);
+        if (typeof window.refrescarPortada === 'function'){
+          try { window.refrescarPortada(); } catch(e){}
+        }
+      };
+    });
+  }
+};
+
 // Teclas y foco: valen igual en una página suelta que dentro de arcade.html
 addEventListener('keydown', ev => {
   const escribiendo = /^(INPUT|TEXTAREA|SELECT)$/.test((ev.target.tagName || ''));
@@ -1291,6 +1542,36 @@ const Cartas = {
    ========================================================== */
 const Mesa = {
   _ruido: null,
+
+  /**
+   * Paños que se compran en la tienda de cualquier mesa. Se guardan en una
+   * clave común: el paño es de la sala, no de un juego, así que comprarlo en
+   * el Blackjack también se ve en el Póker y en la Ruleta.
+   */
+  PIELES: [
+    { id:0, nombre:'Verde clásico', tono:['#1c6b45', '#0c3a26'], acento:'rgba(243,230,0,.5)' },
+    { id:1, nombre:'Granate real',  tono:['#7a1f33', '#390d18'], acento:'rgba(255,209,102,.55)' },
+    { id:2, nombre:'Azul medianoche', tono:['#1b3a72', '#0a1936'], acento:'rgba(0,240,255,.5)' },
+    { id:3, nombre:'Púrpura neón',  tono:['#4a1d70', '#200a35'], acento:'rgba(255,110,230,.55)' },
+    { id:4, nombre:'Obsidiana',     tono:['#26292f', '#0d0e11'], acento:'rgba(200,210,225,.45)' }
+  ],
+  /** Cuántos paños hay desbloqueados, contando el de casa. */
+  panosDesbloqueados(){
+    return 1 + ((typeof Arcade !== 'undefined' && Arcade.tienda)
+      ? Arcade.tienda.nivel('casino', 'pano') : 0);
+  },
+  panoElegido(){
+    const n = parseInt(Almacen.leer('arcade_pano') || '0', 10) || 0;
+    return Math.min(Math.max(0, n), this.panosDesbloqueados() - 1);
+  },
+  elegirPano(n){
+    Almacen.escribir('arcade_pano', String(Math.max(0, n) % this.panosDesbloqueados()));
+  },
+  /** El paño activo, o null si es el de siempre (para no pisar el de cada juego). */
+  pielComprada(){
+    const i = this.panoElegido();
+    return i > 0 ? this.PIELES[i] : null;
+  },
   // Textura de paño: se genera una vez y se repite como patrón
   textura(ctx){
     if (this._ruido) return this._ruido;
@@ -1317,8 +1598,11 @@ const Mesa = {
     const cy = opciones.cy !== undefined ? opciones.cy : al / 2;
     const rx = opciones.rx || an * 0.42;
     const ry = opciones.ry || al * 0.36;
-    const tono = opciones.tono || ['#1c6b45', '#0c3a26'];
-    const acento = opciones.acento || 'rgba(243,230,0,.5)';
+    // El paño lo puede cambiar la tienda: es un adorno compartido por todas
+    // las mesas, así que se compra una vez y se ve en Póker, Blackjack y compañía.
+    const piel = Mesa.pielComprada();
+    const tono = piel ? piel.tono : (opciones.tono || ['#1c6b45', '#0c3a26']);
+    const acento = piel ? piel.acento : (opciones.acento || 'rgba(243,230,0,.5)');
 
     // penumbra de la sala
     const fondo = ctx.createRadialGradient(cx, cy - al * 0.1, 20, cx, cy, an * 0.85);

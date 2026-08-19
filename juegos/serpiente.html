@@ -88,6 +88,7 @@ function nuevaPartida(){
   puntos = 0; manzanas = 0; acumulado = 0; intervalo = 0.145;
   particulas = []; fantasmaT = 0; tiempo = 0;
   pausado = false; estado = 'jugando';
+  escudosRestantes = escudosComprados();
   ponerComida();
   refrescarHud();
 }
@@ -214,7 +215,18 @@ function añadirRoca(){
   Arcade.aviso(avisos, '🪨 ¡Nueva roca en el campo!', false, 1400);
 }
 
+// Escudo comprado en la tienda: perdona un choque por partida y nivel.
+let escudosRestantes = 0;
+const escudosComprados = () => (typeof Arcade !== 'undefined' && Arcade.tienda) ? Arcade.tienda.nivel('serpiente', 'escudo') : 0;
+
 function morir(motivo){
+  if (escudosRestantes > 0){
+    escudosRestantes--;
+    fantasmaT = Math.max(fantasmaT, 2.5);   // dos segundos para salir del apuro
+    chispas(cuerpo[0].x, cuerpo[0].y, '#7dd3fc', 20);
+    Arcade.aviso(avisos, '🛡 ¡Escudo! Te quedan ' + escudosRestantes, true, 1700);
+    return;
+  }
   estado = 'fin';
   if (Arcade.guardarRecord('serpiente', puntos)) record = puntos;
   Arcade.estado.olvidar('serpiente');
@@ -455,6 +467,14 @@ if (recuperable){
   document.getElementById('btnJugar').classList.remove('primario');
 }
 Arcade.bucle(dt => { actualizar(dt); dibujar(); });
+
+// ---------- Tienda del juego ----------
+// Se paga con NEXO-COINS, la moneda común del arcade.
+if (typeof Arcade !== "undefined" && Arcade.tienda) Arcade.tienda.registrar('serpiente', 'Tienda de la serpiente', [
+  { id:'escudo', icono:'🛡', nombre:'Escudo', precio:2000, max:3, factor:2.4,
+    etiqueta: n => n ? 'Aguantas ' + n + (n === 1 ? ' choque' : ' choques') + ' por partida' : 'Sin comprar',
+    desc:"Cuando te estrelles, en vez de morir te vuelves espectral dos segundos y sigues. Se recarga en cada partida." }
+], () => {});
 
 // ---------- Trucos de administración ----------
 // Solo hacen algo con el modo creador encendido (código 2808, tecla F9).

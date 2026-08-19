@@ -255,7 +255,8 @@ function nuevaPartida(){
   parcelas = Array.from({length:FILAS}, () => Array(COLUMNAS).fill(null));
   zombis = []; balas = []; soles = []; particulas = [];
   cortacespedes = Array.from({length:FILAS}, () => ({usado:false, activo:false, x:40}));
-  soles_n = 175; bajas = 0; oleada = 0; cronoOleada = 14; porSalir = [];
+  soles_n = 175 + ((typeof Arcade !== 'undefined' && Arcade.tienda) ? Arcade.tienda.nivel('pvz', 'soles') : 0) * 150;   // el fondo de siembra se compra en la tienda
+  bajas = 0; oleada = 0; cronoOleada = 14; porSalir = [];
   cronoSolCielo = 6; tiempo = 0; estado = 'jugando'; seleccion = null; palaActiva = false;
   recargas = {}; CLAVES.forEach(c => recargas[c] = 0);
   pausado = false;
@@ -808,6 +809,14 @@ document.getElementById('btnOtra').onclick = () => {
 nuevaPartida();
 estado = 'menu';
 Arcade.bucle(dt => { actualizar(dt); dibujar(); });
+
+// ---------- Tienda del juego ----------
+// Se paga con NEXO-COINS, la moneda común del arcade.
+if (typeof Arcade !== "undefined" && Arcade.tienda) Arcade.tienda.registrar('pvz', 'Vivero', [
+  { id:'soles', icono:'☀️', nombre:'Fondo de siembra', precio:2500, max:4, factor:2.2,
+    etiqueta: n => 'Empiezas con ' + (175 + n * 150) + ' soles',
+    desc:'Empiezas cada jardín con 150 soles más, para plantar antes de la primera oleada.' }
+], () => refrescarHud());
 
 // ---------- Trucos de administración ----------
 // Solo hacen algo con el modo creador encendido (código 2808, tecla F9).

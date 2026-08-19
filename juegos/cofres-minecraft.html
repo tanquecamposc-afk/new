@@ -642,12 +642,19 @@ function pintarMotas(dt){
 const ANCHO_CASILLA = 128;      // 120 de ancho + 4 de margen a cada lado
 const GANADORA = 36, TOTAL = 45;
 
+// El descuento del contrato comprado en la tienda: 10 % menos por nivel.
+function precioCofre(c){
+  const n = (typeof Arcade !== 'undefined' && Arcade.tienda) ? Arcade.tienda.nivel('cofres', 'descuento') : 0;
+  return Math.ceil(c.precio * Math.max(0.5, 1 - n * 0.1));
+}
+
 function abrirCofre(id){
   if (S.girando) return;
   const c = COFRES.find(x => x.id === id);
-  if (S.esmeraldas < c.precio){ Sonido.fx('error'); return; }
+  const coste = precioCofre(c);
+  if (S.esmeraldas < coste){ Sonido.fx('error'); return; }
 
-  S.esmeraldas -= c.precio;
+  S.esmeraldas -= coste;
   S.girando = true;
   refrescar();
 
@@ -942,6 +949,15 @@ refrescar();
 $('icoEsme').innerHTML = '<img src="' + ICONO_ESME + '" style="width:22px;height:22px" alt="">';
 ajustarLienzo();
 Arcade.bucle(dt => pintarMotas(dt));
+
+// ---------- Tienda del juego ----------
+// Se paga con NEXO-COINS, la moneda común del arcade.
+if (typeof Arcade !== "undefined" && Arcade.tienda) Arcade.tienda.registrar('cofres', 'Contratos del comerciante', [
+  { id:'descuento', icono:'📉', nombre:'Contrato de compra', precio:3500, max:5, factor:2.2,
+    etiqueta: n => n ? 'Los cofres cuestan un ' + Math.min(50, n * 10) + ' % menos' : 'Sin comprar',
+    desc:'Abrir cofres te sale más barato en esmeraldas. El descuento se queda en el 50 % ' +
+         'como mucho: el comerciante también come.' }
+], () => { pintarCofres(); refrescar(); });
 
 // ---------- Trucos de administración ----------
 // Solo hacen algo con el modo creador encendido (código 2808, tecla F9).

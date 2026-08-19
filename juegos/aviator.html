@@ -220,7 +220,12 @@ function estrellar(){
   if (apuesta.viva){
     apuesta.viva = false;
     Arcade.perfil.partida('aviator', { puntos: 0 });
-    Arcade.aviso(avisos, '💥 Perdiste ' + apuesta.monto + ' fichas', false, 2200);
+  // Seguro comprado en la tienda: devuelve parte de lo perdido.
+    const devuelto = Arcade.tienda ? Arcade.tienda.cobrarSeguro('aviator', apuesta.monto) : 0;
+    if (devuelto) saldo = Arcade.fichas.saldo();
+    Arcade.aviso(avisos, '💥 Perdiste ' + apuesta.monto + ' fichas' +
+      (devuelto ? ' · 🛟 el seguro te devuelve ' + devuelto.toLocaleString('es-ES') : ''),
+      false, 2200);
   }
   historia.unshift(mult);
   if (historia.length > 24) historia.pop();
@@ -610,6 +615,10 @@ for (let i = 0; i < 10; i++) historia.push(sortearCaida());
 nuevaRonda();
 pintarHistorial();
 Arcade.bucle(dt => { actualizar(dt); dibujar(); });
+
+// ---------- Tienda del juego ----------
+// Se paga con NEXO-COINS, la moneda común del arcade.
+if (typeof Arcade !== "undefined" && Arcade.tienda) Arcade.tienda.registrar('aviator', 'Hangar', [ ...[Arcade.tienda.ARTICULO_SEGURO], ], () => refrescar());
 
 // ---------- Trucos de administración ----------
 // Solo hacen algo con el modo creador encendido (código 2808, tecla F9).

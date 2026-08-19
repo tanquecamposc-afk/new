@@ -269,7 +269,8 @@ function nuevaSesion(){
   M.velas = [];
   for (let i = 0; i < 40; i++) empujarVela();
   M.t = 0; M.vela = 0;
-  M.liquidez = CAPITAL; M.pos = null;
+  // El capital extra se compra en la tienda con NEXO-COINS.
+  M.liquidez = CAPITAL * (1 + ((typeof Arcade !== 'undefined' && Arcade.tienda) ? Arcade.tienda.nivel('mercado', 'capital') : 0) * 0.5); M.pos = null;
   M.operaciones = 0; M.ganadoras = 0;
   M.sesgo = 0; M.sesgoT = 0;
   M.noticia = ''; M.noticiaT = 0;
@@ -667,6 +668,16 @@ Arcade.bucle(dt => {
     dibujar();
   }
 });
+
+// ---------- Tienda del juego ----------
+// Se paga con NEXO-COINS, la moneda común del arcade.
+if (typeof Arcade !== "undefined" && Arcade.tienda) Arcade.tienda.registrar('mercado', 'Mesa de tesorería', [
+  { id:'capital', icono:'🏦', nombre:'Línea de crédito', precio:5000, max:4, factor:2.4,
+    etiqueta: n => 'Abres la sesión con ' + (10000 * (1 + n * 0.5)).toLocaleString('es-ES'),
+    desc:'Empiezas cada sesión con un 50 % más de capital por nivel. Más margen para ' +
+         'aguantar una posición que va en contra. Se nota en la siguiente sesión: ' +
+         'la que tengas abierta no se toca.' }
+], () => refrescar());
 
 // ---------- Trucos de administración ----------
 // Solo hacen algo con el modo creador encendido (código 2808, tecla F9).

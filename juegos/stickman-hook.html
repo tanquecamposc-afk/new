@@ -155,6 +155,9 @@ function empezar(nivel){
 }
 
 // ---------- Enganche ----------
+// La cuerda comprada en la tienda llega 60 unidades más lejos por nivel.
+const alcanceReal = () => ALCANCE + ((typeof Arcade !== 'undefined' && Arcade.tienda) ? Arcade.tienda.nivel('hook', 'cuerda') : 0) * 60;
+
 function buscarAncla(){
   // La mejor es la más cercana que esté por delante y dentro del alcance:
   // enganchar hacia atrás frenaría en seco y se sentiría injusto.
@@ -163,7 +166,7 @@ function buscarAncla(){
     if (a === S.ultima && a.x - S.x > -120) continue;   // no repetir el recién soltado
     const dx = a.x - S.x, dy = a.y - S.y;
     const d = Math.hypot(dx, dy);
-    if (d > ALCANCE) continue;
+    if (d > alcanceReal()) continue;
     if (dx < -40) continue;
     if (d < mejorD){ mejorD = d; mejor = a; }
   }
@@ -522,6 +525,15 @@ Arcade.conectarSonido($('btnSonido'));
 
 refrescar();
 Arcade.bucle(dt => { actualizar(dt); dibujar(); });
+
+// ---------- Tienda del juego ----------
+// Se paga con NEXO-COINS, la moneda común del arcade.
+if (typeof Arcade !== "undefined" && Arcade.tienda) Arcade.tienda.registrar('hook', 'Tienda del gancho', [
+  { id:'cuerda', icono:'🪢', nombre:'Cuerda larga', precio:3000, max:4, factor:2.3,
+    etiqueta: n => 'Alcance ' + (380 + n * 60) + ' (de serie 380)',
+    desc:'Enganchas anclas que antes quedaban lejísimos. Cambia mucho los niveles ' +
+         'con huecos grandes.' }
+], () => refrescar());
 
 // ---------- Trucos de administración ----------
 // Solo hacen algo con el modo creador encendido (código 2808, tecla F9).

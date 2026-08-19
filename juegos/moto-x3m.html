@@ -180,6 +180,9 @@ function pendiente(x){
   return Math.atan2(alturaTerreno(x + 4) - alturaTerreno(x - 4), 8);
 }
 
+// El depósito de nitro crece un 40 % por nivel comprado en la tienda.
+const nitroMaximo = () => 100 * (1 + ((typeof Arcade !== 'undefined' && Arcade.tienda) ? Arcade.tienda.nivel('moto', 'deposito') : 0) * 0.4);
+
 const CONTROLES = [2600, 6000, 9600, 13200, 16800, 20400, META];
 
 // ---------- Estado ----------
@@ -207,7 +210,7 @@ function reiniciar(desdeControl){
   camaraX = M.x - 240; camaraY = M.y - ALTO / 2;
   if (!desdeControl){
     semilla = 1 + Math.floor(Math.random() * 1000);
-    M.nitro = 100; M.giros = 0; M.puntos = 0; M.tiempo = 0; M.caidas = 0;
+    M.nitro = nitroMaximo(); M.giros = 0; M.puntos = 0; M.tiempo = 0; M.caidas = 0;
     M.mejorX = inicio; M.control = 0;
   }
   M.estado = 'corriendo';
@@ -329,8 +332,8 @@ function actualizar(dt){
     chispa(M.x - EJE * Math.cos(M.ang), M.y - EJE * Math.sin(M.ang),
            Math.random() < 0.5 ? '#00f0ff' : '#ffffff', 2, 130);
     if (Math.random() < 0.25) Sonido.fx('nitro');
-  } else if (M.nitro < 100){
-    M.nitro = Math.min(100, M.nitro + 6 * dt);
+  } else if (M.nitro < nitroMaximo()){
+    M.nitro = Math.min(nitroMaximo(), M.nitro + 6 * dt);
   }
 
   M.vx = limitar(M.vx, -160, VEL_MAX);
@@ -350,7 +353,7 @@ function actualizar(dt){
   if (!enSuelo && Math.abs(M.rotacion) >= Math.PI * 2){
     M.giros++;
     M.puntos += 500;
-    M.nitro = Math.min(100, M.nitro + 25);
+    M.nitro = Math.min(nitroMaximo(), M.nitro + 25);
     M.rotacion = 0;
     Arcade.aviso(avisos, '🤸 ¡VUELTA COMPLETA! +500', true, 1200);
     Sonido.fx('combo');
@@ -443,7 +446,7 @@ function refrescarHud(){
   $('giroTxt').textContent = M.giros;
   $('tiempoTxt').textContent = M.tiempo.toFixed(1);
   $('caidasTxt').textContent = M.caidas;
-  $('nitroRelleno').style.width = M.nitro + '%';
+  $('nitroRelleno').style.width = (M.nitro / nitroMaximo() * 100) + '%';
 }
 
 // ---------- Dibujo ----------
@@ -928,6 +931,14 @@ Arcade.bucle(dt => {
   }
   dibujar();
 });
+
+// ---------- Tienda del juego ----------
+// Se paga con NEXO-COINS, la moneda común del arcade.
+if (typeof Arcade !== "undefined" && Arcade.tienda) Arcade.tienda.registrar('moto', 'Taller', [
+  { id:'deposito', icono:'⛽', nombre:'Depósito de nitro', precio:3000, max:4, factor:2.3,
+    etiqueta: n => 'Depósito al ' + Math.round(100 * (1 + n * 0.4)) + ' %',
+    desc:'Un 40 % más de nitro por nivel. Aguantas los tramos largos sin quedarte a pie.' }
+], () => refrescar());
 
 // ---------- Trucos de administración ----------
 // Solo hacen algo con el modo creador encendido (código 2808, tecla F9).

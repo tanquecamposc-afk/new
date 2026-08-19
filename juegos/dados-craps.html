@@ -347,12 +347,13 @@ const PUNTOS_DADO = {
 function dado(v, x, y, tam, giro){
   ctx.save();
   ctx.translate(x, y); ctx.rotate(giro);
-  ctx.fillStyle = '#f6f7fb';
+  const obsidiana = dadosComprados();
+  ctx.fillStyle = obsidiana ? '#1b1d24' : '#f6f7fb';
   ctx.shadowColor = 'rgba(0,0,0,.6)'; ctx.shadowBlur = tam * 0.25; ctx.shadowOffsetY = tam * 0.08;
   ctx.beginPath(); ctx.roundRect(-tam / 2, -tam / 2, tam, tam, tam * 0.18); ctx.fill();
   ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
   ctx.strokeStyle = 'rgba(0,0,0,.18)'; ctx.lineWidth = 1.5; ctx.stroke();
-  ctx.fillStyle = '#15181f';
+  ctx.fillStyle = obsidiana ? '#ffd166' : '#15181f';
   (PUNTOS_DADO[v] || []).forEach(([dx, dy]) => {
     ctx.beginPath();
     ctx.arc(dx * tam * 0.26, dy * tam * 0.26, tam * 0.085, 0, 6.2832);
@@ -437,6 +438,15 @@ cargarPartida();
 montarTapete();
 refrescar();
 Arcade.bucle(dt => dibujar(dt));
+
+// ---------- Tienda del juego ----------
+// Se paga con NEXO-COINS, la moneda común del arcade.
+function dadosComprados(){ return ((typeof Arcade !== 'undefined' && Arcade.tienda) ? Arcade.tienda.nivel('dados', 'dado') : 0) > 0; }
+if (typeof Arcade !== "undefined" && Arcade.tienda) Arcade.tienda.registrar('dados', 'Mesa de dados', [
+  ...Arcade.tienda.MESA,
+  { id:'dado', icono:'🎲', nombre:'Dados de obsidiana', precio:3500, max:1,
+    desc:'Cambia los dados blancos por unos negros con los puntos en oro.' }
+], () => refrescar());
 
 // ---------- Trucos de administración ----------
 // Solo hacen algo con el modo creador encendido (código 2808, tecla F9).

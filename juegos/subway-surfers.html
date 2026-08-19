@@ -244,7 +244,13 @@ pulsar('mSalto', saltar);
 pulsar('mRodar', rodar);
 
 // ---------- Ronda ----------
+// Los escudos se recargan al empezar cada carrera, no se acumulan entre partidas.
+let escudosRestantes = 0;
+const escudosComprados = () => (typeof Arcade !== 'undefined' && Arcade.tienda)
+  ? Arcade.tienda.nivel('subway', 'escudo') : 0;
+
 function empezar(){
+  escudosRestantes = escudosComprados();
   Object.assign(J, {
     jugando:true, muerto:false, carril:0, x:0, xObjetivo:0, y:0, vy:0,
     sobreTren:null, rodando:0, fase:0, vel:VEL_BASE, dist:0, monedas:0,
@@ -269,6 +275,15 @@ function chocar(que){
     Sonido.fx('choque');
     particulas.emitir(26, { x: pantallaX(J.x, 0), y: sueloY(0) - 60, color:['#22d3ee','#a5f3fc','#fff'],
                             velMin:80, velMax:320, vidaMin:0.3, vidaMax:0.7, rMin:2, rMax:5 });
+    return;
+  }
+  // Escudo comprado en la tienda: aguanta un golpe y se gasta.
+  if (escudosRestantes > 0){
+    escudosRestantes--;
+    J.invulnerable = 2;
+    J.sacudida = 16;
+    Sonido.fx('choque');
+    Arcade.aviso(avisos, '🛡 ¡Escudo! Te quedan ' + escudosRestantes, true, 1700);
     return;
   }
   J.muerto = true;
@@ -894,6 +909,14 @@ Arcade.conectarSonido($('btnSonido'));
 
 refrescar();
 Arcade.bucle(dt => { actualizar(dt); dibujar(); });
+
+// ---------- Tienda del juego ----------
+// Se paga con NEXO-COINS, la moneda común del arcade.
+if (typeof Arcade !== "undefined" && Arcade.tienda) Arcade.tienda.registrar('subway', 'Tienda del metro', [
+  { id:'escudo', icono:'🛡', nombre:'Escudo', precio:2500, max:3, factor:2.4,
+    etiqueta: n => n ? 'Aguantas ' + n + (n === 1 ? ' choque' : ' choques') + ' por partida' : 'Sin comprar',
+    desc:"Aguantas un golpe contra un tren o una valla y sigues corriendo. Se recarga en cada carrera." }
+], () => {});
 
 // ---------- Trucos de administración ----------
 // Solo hacen algo con el modo creador encendido (código 2808, tecla F9).

@@ -179,7 +179,8 @@ let confeti = [];
 function nuevaPartida(){
   unidades = [];
   balon = { x:(CAMPO.x1+CAMPO.x2)/2, y:CY, vx:0, vy:0, r:13, rot:0 };
-  energia = 6; energiaIA = 6;
+  energia = 6 + ((typeof Arcade !== 'undefined' && Arcade.tienda) ? Arcade.tienda.nivel('rumble', 'energia') : 0) * 2;   // la reserva se compra en la tienda
+  energiaIA = 6;
   tanteo = { tu:0, ia:0 };
   reloj = DURACION;
   estado = 'jugando'; pausado = false; seleccion = null;
@@ -751,6 +752,14 @@ nuevaPartida();
 estado = 'menu';
 refrescarHud();
 Arcade.bucle(dt => { actualizar(dt); dibujar(); });
+
+// ---------- Tienda del juego ----------
+// Se paga con NEXO-COINS, la moneda común del arcade.
+if (typeof Arcade !== "undefined" && Arcade.tienda) Arcade.tienda.registrar('rumble', 'Vestuario', [
+  { id:'energia', icono:'⚡', nombre:'Reserva de energía', precio:3000, max:3, factor:2.4,
+    etiqueta: n => 'Sales con ' + (6 + n * 2) + ' de energía',
+    desc:'Empiezas el partido con más energía: puedes soltar un bicho caro de salida.' }
+], () => refrescarHud());
 
 // ---------- Trucos de administración ----------
 // Solo hacen algo con el modo creador encendido (código 2808, tecla F9).

@@ -196,6 +196,10 @@ function elegir_loseta(indice){
     // se destapa la torre entera para que se vea qué había
     S.filas.forEach(f => f.revelada = true);
     Sonido.fx('choque');
+  // Seguro comprado en la tienda: devuelve parte de lo perdido.
+    const devuelto = Arcade.tienda ? Arcade.tienda.cobrarSeguro('spire', S.apuesta) : 0;
+    if (devuelto){ S.saldo = Arcade.fichas.saldo();
+      Arcade.aviso(avisos, '🛟 El seguro te devuelve ' + devuelto.toLocaleString('es-ES'), true, 2200); }
     Arcade.perfil.partida('spire', { puntos: 0, victoria: false });
     guardarPartida();
   }
@@ -476,6 +480,10 @@ cargarPartida();
 S.dificultad = $('dificultad').value;
 refrescar();
 Arcade.bucle(dt => dibujar(dt));
+
+// ---------- Tienda del juego ----------
+// Se paga con NEXO-COINS, la moneda común del arcade.
+if (typeof Arcade !== "undefined" && Arcade.tienda) Arcade.tienda.registrar('spire', 'Campamento base', [ ...[Arcade.tienda.ARTICULO_SEGURO], ], () => refrescar());
 
 // ---------- Trucos de administración ----------
 // Solo hacen algo con el modo creador encendido (código 2808, tecla F9).

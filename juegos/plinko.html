@@ -508,6 +508,28 @@ reconfigurar();
 pintarHistorial();
 Arcade.bucle(dt => dibujar(dt));
 
+// ---------- Tienda del juego ----------
+// Se paga con NEXO-COINS, la moneda común del arcade.
+if (typeof Arcade !== "undefined" && Arcade.tienda) Arcade.tienda.registrar('plinko', 'Tienda de Plinko', [
+  { id:'filas', icono:'📐', nombre:'Tablero alto', precio:4000, max:2, factor:2.5,
+    etiqueta: n => 'Filas disponibles: ' + [8, 12, 16].concat([20, 24].slice(0, n)).join(', '),
+    desc:'Desbloquea tableros de 20 y 24 filas. Más filas es más varianza: las casillas ' +
+         'de los extremos pagan muchísimo más, y caen muchísimo menos.' },
+], () => { montarFilas(); refrescar(); });
+
+/** Añade al selector las filas que se hayan comprado. */
+function montarFilas(){
+  const sel = $('filas');
+  const n = (typeof Arcade !== "undefined" && Arcade.tienda) ? Arcade.tienda.nivel('plinko', 'filas') : 0;
+  [20, 24].slice(0, n).forEach(f => {
+    if (sel.querySelector('option[value="' + f + '"]')) return;
+    const o = document.createElement('option');
+    o.value = String(f); o.textContent = String(f);
+    sel.appendChild(o);
+  });
+}
+montarFilas();
+
 // ---------- Trucos de administración ----------
 // Solo hacen algo con el modo creador encendido (código 2808, tecla F9).
 // El sorteo del destino vive dentro de soltar(), así que para amañarlo se

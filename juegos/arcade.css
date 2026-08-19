@@ -208,6 +208,85 @@ input:focus-visible, select:focus-visible, a:focus-visible, [tabindex]:focus-vis
   font-family:var(--fuente); max-width:320px;
 }
 
+/* ==========================================================
+   Tienda del juego: gastar NEXO-COINS en mejoras y adornos
+   ========================================================== */
+.btnTienda{
+  padding:6px 10px; font-size:.95rem; line-height:1;
+  background:rgba(255,209,102,.08); border:1px solid rgba(255,209,102,.35);
+  border-radius:8px; cursor:pointer; color:inherit;
+}
+.btnTienda:hover{border-color:var(--oro); background:rgba(255,209,102,.16);}
+
+.capaTienda{
+  position:fixed; inset:0; z-index:70;
+  display:none; align-items:center; justify-content:center;
+  background:rgba(3,6,12,.86); backdrop-filter:blur(3px); padding:18px;
+}
+.capaTienda.visible{display:flex;}
+.cajaTienda{
+  width:min(720px,100%); max-height:88%; overflow-y:auto;
+  background:var(--panel); border:1px solid rgba(255,209,102,.3);
+  border-radius:14px; padding:20px;
+  box-shadow:0 20px 60px rgba(0,0,0,.75);
+}
+.cajaTienda h2{
+  font-family:var(--fuente-arcade); font-size:1rem; color:var(--oro);
+  letter-spacing:1px; margin-bottom:10px;
+}
+.carteraTienda{
+  font-size:.82rem; color:var(--tenue); margin-bottom:12px;
+}
+.carteraTienda b{color:var(--oro); font-family:var(--fuente-arcade); font-size:.82rem;}
+
+.avisoTienda{
+  display:none; margin-bottom:12px; padding:8px 12px; border-radius:9px;
+  font-size:.8rem; border:1px solid var(--borde);
+}
+.avisoTienda.visible{display:block;}
+.avisoTienda.bien{color:var(--verde); border-color:rgba(78,224,137,.4); background:rgba(78,224,137,.08);}
+.avisoTienda.mal{color:var(--rojo); border-color:rgba(255,61,104,.4); background:rgba(255,61,104,.08);}
+
+.rejillaTienda{display:flex; flex-direction:column; gap:10px; margin-bottom:16px;}
+.articulo{
+  display:flex; align-items:center; gap:12px;
+  background:rgba(0,0,0,.32); border:1px solid var(--borde);
+  border-radius:11px; padding:11px 13px;
+}
+.articulo.completo{border-color:rgba(78,224,137,.35); background:rgba(78,224,137,.06);}
+.icoArt{font-size:1.7rem; line-height:1; width:38px; text-align:center; flex:none;}
+.datosArt{flex:1; min-width:0;}
+.datosArt b{display:block; font-size:.92rem;}
+.datosArt p{font-size:.76rem; color:var(--tenue); margin-top:2px;}
+.nivelArt{
+  display:inline-block; font-family:var(--fuente-arcade); font-size:.62rem;
+  color:var(--azul); background:rgba(0,240,255,.1);
+  border:1px solid rgba(0,240,255,.25); border-radius:5px;
+  padding:1px 6px; margin-top:3px;
+}
+.accionArt{flex:none;}
+.accionArt .comprar{
+  font-family:var(--fuente-arcade); font-size:.7rem; white-space:nowrap;
+  padding:9px 12px; border-radius:9px; cursor:pointer;
+  color:#1a1206; background:linear-gradient(180deg,#ffd166,#e8a92e);
+  border:1px solid rgba(255,209,102,.6);
+}
+.accionArt .comprar:hover{filter:brightness(1.1);}
+.accionArt .comprar.sinFondos{
+  background:rgba(255,255,255,.06); color:var(--tenue);
+  border-color:var(--borde); cursor:not-allowed;
+}
+.accionArt .hacer{
+  font-family:var(--fuente-arcade); font-size:.7rem; white-space:nowrap;
+  padding:9px 12px; border-radius:9px; cursor:pointer; color:inherit;
+  background:rgba(0,240,255,.1); border:1px solid rgba(0,240,255,.35);
+}
+.accionArt .hacer:hover{background:rgba(0,240,255,.2); border-color:var(--azul);}
+.articulo.accion{border-style:dashed;}
+.accionArt .tenido{font-family:var(--fuente-arcade); font-size:.66rem; color:var(--verde);}
+.accionArt .bloqueado{font-size:.72rem; color:var(--tenue); max-width:150px; display:block;}
+.cajaTienda .primario{width:100%;}
+
 /* ---- Consola del creador (modo administrador) ---- */
 .capaAdmin{
   position:fixed; inset:0; z-index:80; display:none;

@@ -682,7 +682,10 @@ function nuevaPartida(mapa){
   }
   G = {
     mapa, segs, largoCamino: total,
-    vidas: 150, dinero: 550, ola: 0,
+    // El núcleo reforzado y la caja de arranque salen de la tienda del arcade.
+    vidas: 150 + (typeof Arcade !== 'undefined' && Arcade.tienda ? Arcade.tienda.nivel('td','nucleo') * 50 : 0),
+    dinero: 550 + (typeof Arcade !== 'undefined' && Arcade.tienda ? Arcade.tienda.nivel('td','caja') * 250 : 0),
+    ola: 0,
     enemigos: [], torres: [], unidades: [], balas: [], particulas: [], textos: [], rayos: [],
     colaSpawn: [], tOla: 0, olaActiva: false, entreOlas: true, cuentaAtras: 0,
     velocidad: 1, pausa: false, terminado: false, infinito: false,
@@ -2587,6 +2590,17 @@ function pintarMenu(){
 construirBarraTorres();
 pintarMenu();
 requestAnimationFrame(ts => { ultimaT = ts; requestAnimationFrame(paso); });
+
+// ---------- Tienda del juego ----------
+// Se paga con NEXO-COINS, la moneda común del arcade.
+if (typeof Arcade !== "undefined" && Arcade.tienda) Arcade.tienda.registrar('td', 'Almacén del núcleo', [
+  { id:'nucleo', icono:'💠', nombre:'Núcleo reforzado', precio:4000, max:4, factor:2.3,
+    etiqueta: n => 'El núcleo empieza con ' + (150 + n * 50) + ' vidas',
+    desc:'Cincuenta vidas más al empezar. No se recuperan durante la partida: son colchón.' },
+  { id:'caja', icono:'💰', nombre:'Caja de arranque', precio:3500, max:4, factor:2.3,
+    etiqueta: n => 'Empiezas con ' + (550 + n * 250),
+    desc:'Empiezas con más dinero para plantar una torre buena antes de la primera ola.' }
+], () => { if (typeof actualizarUI === 'function') actualizarUI(); });
 
 // ---------- Trucos de administración ----------
 // Solo hacen algo con el modo creador encendido (código 2808, tecla F9).

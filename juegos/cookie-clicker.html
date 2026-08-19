@@ -228,11 +228,15 @@ function multiplicadorEdificio(id){
   }
   return m;
 }
+// ---------- Lo comprado con NEXO-COINS en la tienda ----------
+const enTienda = id => (typeof Arcade !== 'undefined' && Arcade.tienda)
+  ? Arcade.tienda.nivel('galletas', id) : 0;
+
 function multiplicadorGlobal(){
   let m = 1;
   for (const mej of MEJORAS)
     if (S.compradas.includes(mej.id) && mej.tipo === 'global') m *= mej.factor;
-  return m;
+  return m * Math.pow(2, enTienda('horno'));      // cada horno duplica la producción
 }
 function cps(){
   let t = 0;
@@ -350,7 +354,10 @@ function picar(px, py){
 }
 
 // ---------- Galleta dorada ----------
-let dorada = null, cronoDorada = azar(45, 90);
+// El cebo comprado en la tienda acorta la espera entre galletas doradas.
+const cebo = () => [1, 1.43, 2, 3][(typeof Arcade !== 'undefined' && Arcade.tienda)
+  ? Math.min(3, Arcade.tienda.nivel('galletas', 'dorada')) : 0];
+let dorada = null, cronoDorada = azar(45, 90) / cebo();
 const PREMIOS = [
   { id:'frenesi', peso:35, aplicar(){
       S.frenesi = 15;
@@ -386,7 +393,7 @@ function pillarDorada(){
   });
   Sonido.melodia([784, 1047, 1319, 1568, 2093], 0.08, 'square', 0.07);
   dorada = null;
-  cronoDorada = azar(60, 140);
+  cronoDorada = azar(60, 140) / cebo();
   refrescar();
   guardarPartida();
 }
@@ -414,7 +421,7 @@ function actualizar(dt){
   if (dorada){
     dorada.fase += dt * 3;
     dorada.vida -= dt;
-    if (dorada.vida <= 0){ dorada = null; cronoDorada = azar(60, 140); }
+    if (dorada.vida <= 0){ dorada = null; cronoDorada = azar(60, 140) / cebo(); }
   }
 }
 
@@ -582,6 +589,7 @@ function refrescar(forzar){
     pintarMejoras();
   }
   $('btnCanjear').disabled = S.galletas < 1e6;
+  $('btnCanjear').textContent = '🪙 1 M 🍪 → ' + pagoCanje().toLocaleString('es-ES') + ' coins';
 }
 function añadirBono(txt, clase){
   const d = document.createElement('div');
@@ -626,8 +634,9 @@ $('lotes').addEventListener('click', ev => {
 $('btnCanjear').onclick = () => {
   if (S.galletas < 1e6){ Sonido.fx('error'); return; }
   S.galletas -= 1e6;
-  Arcade.fichas.ajustar(100);
-  Arcade.aviso($('bonos'), '🪙 +100 NEXO-COINS', true);
+  const pago = pagoCanje();
+  Arcade.fichas.ajustar(pago);
+  Arcade.aviso($('bonos'), '🪙 +' + pago.toLocaleString('es-ES') + ' NEXO-COINS', true);
   Sonido.fx('ficha');
   refrescar(true);
   guardarPartida();
@@ -638,7 +647,7 @@ $('btnReiniciar').onclick = () => {
   S.galletas = 0; S.total = 0; S.clics = 0; S.compradas = [];
   for (const e of EDIFICIOS) S.edificios[e.id] = 0;
   S.frenesi = 0; S.clicLoco = 0;
-  dorada = null; cronoDorada = azar(45, 90);
+  dorada = null; cronoDorada = azar(45, 90) / cebo();
   refrescar(true);
   guardarPartida();
 };
@@ -651,6 +660,31 @@ setInterval(guardarPartida, 10000);
 addEventListener('beforeunload', guardarPartida);
 Guardado.registrar(guardarPartida);   // también al cambiar de pantalla o irse a otra pestaña
 Arcade.bucle(dt => { actualizar(dt); dibujar(); refrescar(); });
+
+// ---------- Tienda: gastar NEXO-COINS para ganar más NEXO-COINS ----------
+/**
+ * Lo que paga el canje de un millón de galletas. Cada troquel comprado lo
+ * duplica, pero el precio del siguiente se multiplica por cuatro: el negocio
+ * sigue saliendo a cuenta, solo que cada vez cuesta mucho más entrar.
+ */
+function pagoCanje(){ return 100 * Math.pow(2, enTienda('plata')); }
+
+if (typeof Arcade !== 'undefined' && Arcade.tienda){
+  Arcade.tienda.registrar('galletas', 'Obrador de plata', [
+    { id:'plata', icono:'🪙', nombre:'Troquel de galletas de plata', precio:2000, max:6, factor:4,
+      etiqueta: n => 'El canje paga ' + (100 * Math.pow(2, n)).toLocaleString('es-ES') + ' coins',
+      desc:'Duplica lo que te dan por canjear un millón de galletas. Empieza barato ' +
+           'y se pone por las nubes: el sexto cuesta más de dos millones.' },
+    { id:'horno', icono:'🔥', nombre:'Horno industrial', precio:5000, max:5, factor:5,
+      etiqueta: n => 'Producción x' + Math.pow(2, n),
+      desc:'Duplica todas las galletas por segundo y por clic. Se acumula con las ' +
+           'mejoras normales del juego.' },
+    { id:'dorada', icono:'✨', nombre:'Cebo de galleta dorada', precio:8000, max:3, factor:3.5,
+      etiqueta: n => 'Aparecen ' + ['igual', 'un 30 % antes', 'el doble de seguido', 'el triple de seguido'][n],
+      desc:'Las galletas doradas salen mucho más a menudo. Son las que disparan ' +
+           'el frenesí y el clic loco.' }
+  ], () => { refrescar(true); guardarPartida(); });
+}
 
 // ---------- Trucos de administración ----------
 // Solo hacen algo con el modo creador encendido (código 2808, tecla F9).

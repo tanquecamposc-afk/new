@@ -246,6 +246,9 @@ addEventListener('keydown', ev => {
 });
 
 // ---------- Simulación ----------
+// El imán comprado en la tienda amplía el radio para coger estrellas.
+const radioEstrella = () => 30 + ((typeof Arcade !== 'undefined' && Arcade.tienda) ? Arcade.tienda.nivel('cuerda', 'iman') : 0) * 26;
+
 function actualizar(dt){
   tiempo += dt;
   C.fase += dt;
@@ -303,7 +306,7 @@ function actualizar(dt){
   // ---- estrellas ----
   for (const e of estrellas){
     if (e.cogida) continue;
-    if (Math.hypot(C.x - e.x, C.y - e.y) < 30){
+    if (Math.hypot(C.x - e.x, C.y - e.y) < radioEstrella()){
       e.cogida = true;
       C.estrellas++; C.totalEstrellas++;
       Sonido.fx('estrella');
@@ -592,6 +595,15 @@ Arcade.conectarSonido($('btnSonido'));
 cargar(0);
 refrescar();
 Arcade.bucle(dt => { actualizar(dt); dibujar(); });
+
+// ---------- Tienda del juego ----------
+// Se paga con NEXO-COINS, la moneda común del arcade.
+if (typeof Arcade !== "undefined" && Arcade.tienda) Arcade.tienda.registrar('cuerda', 'Tienda de Nom', [
+  { id:'iman', icono:'🧲', nombre:'Imán de estrellas', precio:2500, max:3, factor:2.4,
+    etiqueta: n => 'Radio de recogida ' + (30 + n * 26) + ' (de serie 30)',
+    desc:'El caramelo atrae las estrellas desde más lejos: ya no hace falta pasar ' +
+         'justo por encima.' }
+], () => refrescar());
 
 // ---------- Trucos de administración ----------
 // Solo hacen algo con el modo creador encendido (código 2808, tecla F9).

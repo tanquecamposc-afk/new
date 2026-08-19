@@ -108,7 +108,12 @@ let tablero, piezas, puntos, lineas, combo, estado, record = Arcade.record('bloc
 let particulas = [], flotantes = [], tiempo = 0;
 let arrastre = null;
 
+// Los rescates se recargan al empezar cada partida.
+let rescatesRestantes = 0;
+const rescatesComprados = () => (typeof Arcade !== 'undefined' && Arcade.tienda) ? Arcade.tienda.nivel('blockblast', 'rescate') : 0;
+
 function nuevaPartida(){
+  rescatesRestantes = rescatesComprados();
   tablero = Array.from({length:N}, () => Array(N).fill(null));
   piezas = [null, null, null];
   puntos = 0; lineas = 0; combo = 0;
@@ -236,6 +241,16 @@ function colocar(indice, ci, cj){
 
   guardarPartida();
 
+  if (!algunaCabe() && rescatesRestantes > 0){
+    // Rescate comprado en la tienda: en vez de acabar, se limpia el tablero.
+    rescatesRestantes--;
+    tablero = Array.from({length:N}, () => Array(N).fill(null));
+    Arcade.aviso(avisos, '🧹 ¡Rescate! Te quedan ' + rescatesRestantes, true, 2000);
+    Sonido.fx('combo');
+    refrescarHud();
+    guardarPartida();
+    return;
+  }
   if (!algunaCabe()){
     estado = 'fin';
     if (Arcade.guardarRecord('blockblast', puntos)) record = puntos;
@@ -462,6 +477,15 @@ if (recuperable){
 }
 
 Arcade.bucle(dt => { actualizar(dt); dibujar(); });
+
+// ---------- Tienda del juego ----------
+// Se paga con NEXO-COINS, la moneda común del arcade.
+if (typeof Arcade !== "undefined" && Arcade.tienda) Arcade.tienda.registrar('blockblast', 'Tienda de Block Blast', [
+  { id:'rescate', icono:'🧹', nombre:'Rescate de tablero', precio:3000, max:3, factor:2.5,
+    etiqueta: n => n ? 'Te salva ' + n + (n === 1 ? ' vez' : ' veces') + ' por partida' : 'Sin comprar',
+    desc:'Cuando ya no cabe ninguna pieza, en vez de acabar se limpia el tablero y sigues. ' +
+         'Se recarga en cada partida.' }
+], () => {});
 
 // ---------- Trucos de administración ----------
 // Solo hacen algo con el modo creador encendido (código 2808, tecla F9).

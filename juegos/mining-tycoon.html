@@ -408,6 +408,89 @@ let MINERALES = MUNDO.minerales;
 let COSTES = MUNDO.costes;
 let FACTOR = MUNDO.factor;
 let TONO = MUNDO.tono;
+
+/**
+ * Las pieles no repintan el mundo entero: solo cambian los colores del cielo,
+ * los estratos y las lámparas por encima de la paleta que ya trae cada mundo,
+ * así que el Valle con piel de neón sigue teniendo su techo de estrellas.
+ */
+const PIELES = [
+  { nombre:'Original',    tono:null },
+  { nombre:'Esmeralda',   tono:{
+      paleta:[['#1e4a34','#153524'],['#1a4230','#122d20'],['#20302a','#18241f'],['#1c4130','#132b21'],['#1b2723','#121916'],['#0e1c15','#06100b']],
+      acento:'#4ee089',
+      cielo:['#04140d','#0a2a1c','#114230'],
+      suelo:['#123724','#082114'],
+      grano:['#1c4a32','#000000'],
+      lampara:['rgba(120,255,190,','rgba(120,255,190,0)'],
+      soporte:['#2b5a41','#1d4531','#153426','#0d2419'],
+      polvo:'#8fffcf'
+  }},
+  { nombre:'Atardecer',   tono:{
+      paleta:[['#6b3b22','#522c19'],['#5c3520','#452716'],['#4a3630','#382823'],['#5e3524','#46271a'],['#3a2d28','#2a201c'],['#2a1a12','#150c08']],
+      acento:'#ffb35c',
+      cielo:['#2a0e14','#5c2418','#95461d'],
+      suelo:['#3d1f14','#1d0d08'],
+      grano:['#5a3020','#000000'],
+      lampara:['rgba(255,180,110,','rgba(255,180,110,0)'],
+      soporte:['#6b3f26','#52301d','#3d2415','#29180e'],
+      polvo:'#ffcf9a'
+  }},
+  { nombre:'Neón',        tono:{
+      paleta:[['#4a2170','#361856'],['#3f1d63','#2c1447'],['#33203f','#251730'],['#452073','#301553'],['#2c1f38','#1e1527'],['#1e1030','#100619']],
+      acento:'#ff4ecd',
+      cielo:['#0d0320','#1e0940','#33115e'],
+      suelo:['#2a1140','#140823'],
+      grano:['#4a1f6e','#000000'],
+      lampara:['rgba(255,110,230,','rgba(255,110,230,0)'],
+      soporte:['#5c2a80','#452063','#331847','#22102f'],
+      polvo:'#ff9ae8'
+  }},
+  { nombre:'Ventisca',    tono:{
+      paleta:[['#3f5f76','#2e4759'],['#39566b','#293f4f'],['#3a4b57','#2b3841'],['#365468','#263d4c'],['#2c3a44','#1f2a31'],['#1c2830','#0f171c']],
+      acento:'#dff2ff',
+      cielo:['#0a1622','#16324a','#27506e'],
+      suelo:['#2d4457','#152430'],
+      grano:['#3f5f76','#000000'],
+      lampara:['rgba(200,235,255,','rgba(200,235,255,0)'],
+      soporte:['#48657d','#374f62','#283a49','#1a2731'],
+      polvo:'#e8f6ff'
+  }}
+];
+
+let pielActual = 0;
+function pielesCompradas(){ return 1 + compradoEnTienda('piel'); }   // la Original siempre está
+function cargarPiel(){
+  const g = parseInt(Arcade.leerTexto('mina_piel', '0'), 10) || 0;
+  pielActual = Math.min(Math.max(0, g), pielesCompradas() - 1);
+}
+/** Reconstruye TONO: paleta del mundo + los colores que pisa la piel. */
+function aplicarPiel(){
+  const p = PIELES[pielActual];
+  if (!p || !p.tono){ TONO = MUNDO.tono; }
+  else {
+    TONO = { ...MUNDO.tono, ...p.tono };
+    // Los estratos se recolorean conservando las alturas del mundo: así el
+    // Vacío Cuántico con piel de ventisca sigue teniendo sus capas finas.
+    if (p.tono.paleta) TONO.bandas = MUNDO.tono.bandas.map((b, i) => ({
+      h: b.h, a: p.tono.paleta[i % p.tono.paleta.length][0],
+      b: p.tono.paleta[i % p.tono.paleta.length][1]
+    }));
+  }
+  pintarRoca(roca.ctx);
+  const b = document.getElementById('btnPiel');
+  if (b) b.title = 'Piel: ' + PIELES[pielActual].nombre;
+}
+function siguientePiel(){
+  const n = pielesCompradas();
+  if (n <= 1) return false;
+  pielActual = (pielActual + 1) % n;
+  Arcade.escribir('mina_piel', String(pielActual));
+  aplicarPiel();
+  Arcade.aviso(avisos, '🎨 Piel: ' + PIELES[pielActual].nombre, true, 1500);
+  return true;
+}
+
 const moneda = n => MUNDO.moneda.simbolo + Math.floor(n).toLocaleString('es-ES');
 
 // Estado del mundo que se está jugando. Los otros esperan en PARTIDA.mundos.
@@ -437,11 +520,19 @@ function estadoNuevo(i){
 }
 
 // Fórmulas de las mejoras
-const velPicado    = () => 1 + (E.taladro - 1) * 0.28;      // multiplicador de velocidad
+// ---------- Lo comprado en la tienda con NEXO-COINS ----------
+// Se lee con funciones y no con constantes porque el jugador puede comprar
+// en mitad de la partida: si se cacheara, la mejora no se notaría hasta salir.
+const compradoEnTienda = id => (typeof Arcade !== 'undefined' && Arcade.tienda)
+  ? Arcade.tienda.nivel('mina', id) : 0;
+const bonoTaladro = () => 1 + compradoEnTienda('turbo') * 0.2;   // +20 % por nivel
+const bonoPrecio  = () => 1 + compradoEnTienda('contrato') * 0.12;
+
+const velPicado    = () => (1 + (E.taladro - 1) * 0.28) * bonoTaladro();  // multiplicador de velocidad
 const cargaAscensor= () => 6 + (E.ascensor - 1) * 5;
 const velAscensor  = () => 82 + (E.ascensor - 1) * 26;
 const cargaCamion  = () => 24 + (E.camion - 1) * 16;
-const precio       = tipo => Math.round(MINERALES[tipo].base * (1 + (E.camion - 1) * 0.35));
+const precio       = tipo => Math.round(MINERALES[tipo].base * (1 + (E.camion - 1) * 0.35) * bonoPrecio());
 const capacidadSilo= () => 90 + (E.camion - 1) * 45;
 
 const totalPozo = () => E.pozo.carbon + E.pozo.oro;
@@ -563,7 +654,9 @@ function entrarEnMundo(i, guardarAntes = true){
   ascensor.carga = { carbon:0, oro:0 };
   camion.carga = { carbon:0, oro:0 };
   camion.x = AN + 90; camion.estado = 'fuera'; camion.espera = 2.5;
-  pintarRoca(roca.ctx);
+  // aplicarPiel() vuelve a componer TONO con la piel comprada y repinta la
+  // roca: sin esto, cambiar de mundo devolvía la paleta original.
+  aplicarPiel();
   pintarTextosDelMundo();
   pintarSelector();
 }
@@ -2172,6 +2265,49 @@ addEventListener('beforeunload', guardarPartida);
 Guardado.registrar(guardarPartida);   // también al cambiar de pantalla o irse a otra pestaña
 
 Arcade.bucle(dt => { actualizar(dt); dibujar(); });
+
+// ---------- Tienda: pieles del campo y mejoras permanentes ----------
+if (typeof Arcade !== 'undefined' && Arcade.tienda){
+  Arcade.tienda.registrar('mina', 'Bazar de la mina', [
+    { id:'piel', icono:'🎨', nombre:'Pintura del yacimiento', precio:1500, max:4, factor:2.4,
+      etiqueta: n => 'Desbloqueadas: ' + PIELES.slice(0, n + 1).map(p => p.nombre).join(', '),
+      desc:'Desbloquea otra paleta para el campo de juego. El botón 🎨 de la barra ' +
+           'va cambiando entre las que tengas.' },
+    { id:'turbo', icono:'⚡', nombre:'Taladro de plasma', precio:4000, max:5, factor:2.2,
+      etiqueta: n => '+' + (n * 20) + ' % de velocidad al picar',
+      desc:'Tus mineros pican un 20 % más rápido por nivel, en todos los mundos.' },
+    { id:'contrato', icono:'📜', nombre:'Contrato con la fundición', precio:6000, max:5, factor:2.4,
+      etiqueta: n => '+' + (n * 12) + ' % en la venta',
+      desc:'Te pagan un 12 % más por cada mineral que sube el camión.' }
+  ], id => {
+    // Al comprar una piel se estrena sola: comprarla y no verla sería raro.
+    if (id === 'piel'){
+      pielActual = pielesCompradas() - 1;
+      Arcade.escribir('mina_piel', String(pielActual));
+    }
+    if (pielesCompradas() > 1) mostrarBotonPiel();
+    aplicarPiel();
+    refrescar();
+  });
+}
+
+/** El botón de pieles solo aparece cuando hay más de una que enseñar. */
+function mostrarBotonPiel(){
+  const barra = document.querySelector('.barra');
+  if (!barra || document.getElementById('btnPiel')) return;
+  const b = document.createElement('button');
+  b.id = 'btnPiel';
+  b.type = 'button';
+  b.textContent = '🎨';
+  b.title = 'Piel: ' + PIELES[pielActual].nombre;
+  b.setAttribute('aria-label', 'Cambiar la piel del campo');
+  b.onclick = () => { siguientePiel(); Sonido.fx('clic'); };
+  barra.insertBefore(b, document.getElementById('btnSonido'));
+}
+
+cargarPiel();
+if (pielesCompradas() > 1) mostrarBotonPiel();
+aplicarPiel();
 
 // ---------- Trucos de administración ----------
 // Solo hacen algo con el modo creador encendido (código 2808, tecla F9).

@@ -197,6 +197,7 @@ mando('mDer', v => der = v);
 
 // ---------- Ronda ----------
 function empezar(){
+  escudosRestantes = escudosComprados();
   semilla = Math.floor(azar(1, 9999));
   Object.assign(B, { jugando:true, x:centroPista(0), vx:0, d:0, vel:VEL_BASE,
                      velMax:VEL_BASE, giro:0, salto:0, vy:0, sacudida:0, muerteEn:null });
@@ -209,8 +210,20 @@ function empezar(){
   refrescar();
 }
 
+// Escudo comprado en la tienda: perdona un choque por carrera y nivel.
+let escudosRestantes = 0;
+const escudosComprados = () => (typeof Arcade !== 'undefined' && Arcade.tienda)
+  ? Arcade.tienda.nivel('slope', 'escudo') : 0;
+
 function morir(motivo){
   if (!B.jugando) return;
+  if (escudosRestantes > 0){
+    escudosRestantes--;
+    B.x = centroPista(B.d); B.vx = 0; B.sacudida = 14;
+    Sonido.fx('choque');
+    Arcade.aviso(avisos, '🛡 ¡Escudo! Te quedan ' + escudosRestantes, true, 1700);
+    return;
+  }
   B.jugando = false;
   B.muerteEn = motivo;
   B.sacudida = 20;
@@ -565,6 +578,14 @@ Arcade.bucle(dt => {
   espera += dt;
   if (espera > 0.25){ espera = 0; refrescar(); }
 });
+
+// ---------- Tienda del juego ----------
+// Se paga con NEXO-COINS, la moneda común del arcade.
+if (typeof Arcade !== "undefined" && Arcade.tienda) Arcade.tienda.registrar('slope', 'Tienda de Slope', [
+  { id:'escudo', icono:'🛡', nombre:'Escudo', precio:2500, max:3, factor:2.4,
+    etiqueta: n => n ? 'Aguantas ' + n + (n === 1 ? ' choque' : ' choques') + ' por partida' : 'Sin comprar',
+    desc:"Si te sales de la pista o chocas, vuelves al centro y sigues. Se recarga en cada carrera." }
+], () => {});
 
 // ---------- Trucos de administración ----------
 // Solo hacen algo con el modo creador encendido (código 2808, tecla F9).

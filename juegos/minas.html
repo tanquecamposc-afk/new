@@ -258,8 +258,12 @@ function perder(){
     c.textContent = bombas.has(i) ? '💣' : '💎';
   });
   // el perfil se queda con la ronda; las fichas ya se movieron con la apuesta
+  // Seguro comprado en la tienda: devuelve parte de lo perdido.
+  const devuelto = Arcade.tienda ? Arcade.tienda.cobrarSeguro('minas', apuesta) : 0;
+  if (devuelto){ saldo = Arcade.fichas.saldo();
+    Arcade.aviso(avisos, '🛟 El seguro te devuelve ' + devuelto.toLocaleString('es-ES'), true, 2200); }
   Arcade.perfil.partida('minas', { puntos: gemas });
-  mostrarCartel(0, -apuesta, true);
+  mostrarCartel(0, -apuesta + devuelto, true);
   añadirHistorial(false, gemas);
   refrescar();
   setTimeout(() => { if (estado === 'revelado') listoParaOtra(); }, 1500);
@@ -376,6 +380,10 @@ addEventListener('keydown', e => {
 Arcade.conectarSonido($('btnSonido'));
 
 refrescar();
+
+// ---------- Tienda del juego ----------
+// Se paga con NEXO-COINS, la moneda común del arcade.
+if (typeof Arcade !== "undefined" && Arcade.tienda) Arcade.tienda.registrar('minas', 'Economato de la mina', [ ...[Arcade.tienda.ARTICULO_SEGURO], ], () => refrescar());
 
 // ---------- Trucos de administración ----------
 // Solo hacen algo con el modo creador encendido (código 2808, tecla F9).

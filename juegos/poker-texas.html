@@ -510,7 +510,8 @@ function dibujar(){
     const gano = P.fase === 'fin' && P.ganadores && P.ganadores.includes(j.nombre);
 
     // cartas
-    const mostrar = j.humano || P.fase === 'fin';
+    // La lectura comprada destapa a los rivales por orden: ATENEA, ARES, HERA.
+    const mostrar = j.humano || P.fase === 'fin' || i <= lecturaComprada();
     const an = j.humano ? CARTA_AN : CARTA_AN * 0.72;
     const al = j.humano ? CARTA_AL : CARTA_AL * 0.72;
     let cx = s.x - (an + 6);
@@ -577,6 +578,16 @@ Arcade.bucle(dt => {
   }
   dibujar();
 });
+
+// ---------- Tienda del juego ----------
+// Se paga con NEXO-COINS, la moneda común del arcade.
+function lecturaComprada(){ return (typeof Arcade !== 'undefined' && Arcade.tienda) ? Arcade.tienda.nivel('poker', 'lectura') : 0; }
+if (typeof Arcade !== "undefined" && Arcade.tienda) Arcade.tienda.registrar('poker', 'Sala de póker', [
+  ...Arcade.tienda.MESA,
+  { id:'lectura', icono:'🔍', nombre:'Lectura de rivales', precio:7000, max:3, factor:2.4,
+    etiqueta: n => ['Sin comprar','Ves las cartas de ATENEA','… y las de ARES','… y las de HERA'][n],
+    desc:'Destapa la mano de un rival más. Se ve durante toda la mano, no solo al final.' }
+], () => refrescar());
 
 // ---------- Trucos de administración ----------
 // Solo hacen algo con el modo creador encendido (código 2808, tecla F9).
