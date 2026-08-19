@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vex — Arcade NEXO</title>
+<link rel="stylesheet" href="arcade.css">
+<style>
+  #tablero{position:relative; display:flex; flex-direction:column; gap:10px;}
+  #juego{width:min(1060px,100vw);}
+  .barra .titulo{color:#e2e8f0;}
+
+  #escena{
+    position:relative; border-radius:16px; overflow:hidden;
+    border:2px solid rgba(226,232,240,.22);
+    box-shadow:0 15px 45px rgba(0,0,0,.9), inset 0 0 90px rgba(0,0,0,.5);
+    touch-action:none;
+  }
+  #lienzo{display:block; width:100%; height:auto;}
+
+  #mandos{display:grid; grid-template-columns:repeat(3,1fr); gap:9px;}
+  #mandos button{
+    padding:15px 8px; font-size:1.4rem; line-height:1;
+    background:rgba(226,232,240,.08); border:1px solid rgba(226,232,240,.24);
+    border-radius:12px; color:#eef2f7;
+  }
+  #mandos button:active{background:rgba(226,232,240,.24);}
+  @media (min-width:820px){ #mandos{display:none;} }
+
+  .rejillaResumen{
+    display:grid; grid-template-columns:repeat(auto-fit,minmax(110px,1fr)); gap:10px;
+    margin:14px 0 18px;
+  }
+  .rejillaResumen div{background:rgba(0,0,0,.35); border-radius:10px; padding:11px;}
+  .rejillaResumen .n{font-size:22px; font-weight:800; color:var(--oro);}
+  .rejillaResumen .e{font-size:11px; color:var(--tenue);}
+</style>
+</head>
+<body>
+
+<div id="juego" data-ritmo="accion">
+  <div class="barra">
+    <a class="boton" href="../index.html">🕹 Arcade</a>
+    <div class="titulo">🏃 VEX</div>
+    <div class="sep"></div>
+    <div class="stat">🎬 Acto <span id="actoTxt" class="oro">1</span>/3</div>
+    <div class="stat">💀 <span id="muertesTxt" class="rojo">0</span></div>
+    <div class="stat">🏆 <span id="recordTxt" class="tenue">—</span></div>
+    <button id="btnSonido" title="Sonido" aria-label="Sonido">🔊</button>
+  </div>
+
+  <div id="tablero">
+    <div id="escena">
+      <canvas id="lienzo" width="1000" height="560"></canvas>
+      <div class="avisos" id="avisos"></div>
+    </div>
+
+    <div id="mandos">
+      <button id="mIzq" aria-label="Izquierda">◀</button>
+      <button id="mSalto" aria-label="Saltar">▲</button>
+      <button id="mDer" aria-label="Derecha">▶</button>
+    </div>
+
+    <div class="modal visible" id="modalInicio">
+      <div class="tarjetaModal">
+        <h1>🏃 VEX</h1>
+        <div class="sub">Un muñeco de palo, tres actos y muchas sierras.</div>
+        <div class="instrucciones">
+          <b>← →</b> o <b>A D</b> para correr · <b>↑</b>, <b>W</b> o <b>espacio</b> para saltar.<br>
+          <b>Salto en pared:</b> pegado a un muro, salta otra vez para impulsarte al otro lado.
+          Es la clave de casi todo el juego.<br>
+          <b>🔺 Pinchos</b> y <b>⚙️ sierras</b> matan al tocarlos. <b>🟦 Agua</b> se nada despacio.<br>
+          <b>🚩 Banderas:</b> al pasarlas se guarda el punto. Morir solo te devuelve a la última.<br>
+          Termina los tres actos. Cuantas menos muertes, más puntos.
+        </div>
+        <div class="filaBotones"><button class="primario" id="btnEmpezar">▶ Empezar el acto 1</button></div>
+      </div>
+    </div>
+
+    <div class="modal" id="modalFin">
+      <div class="tarjetaModal">
+        <h1 id="finTitulo">🏁 Acto superado</h1>
+        <div class="sub" id="finSub"></div>
+        <div class="rejillaResumen">
+          <div><div class="n" id="finActo">0</div><div class="e">actos</div></div>
+          <div><div class="n" id="finMuertes">0</div><div class="e">muertes</div></div>
+          <div><div class="n" id="finPuntos">0</div><div class="e">puntos</div></div>
+          <div><div class="n" id="finPremio">0</div><div class="e">NEXO-COINS</div></div>
+        </div>
+        <div class="filaBotones">
+          <button class="primario" id="btnSeguir">▶ Siguiente acto</button>
+          <button id="btnReiniciar">↺ Desde el acto 1</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="arcade.js"></script>
+<script>
+// ============================================================
+//  VEX — plataformas de precisión con salto en pared
+//  Los actos son mapas de texto: cada carácter es una casilla de 34 px.
+//  Colisiones por ejes separados (primero X, luego Y), que es lo que hace que
+//  no te quedes enganchado en las esquinas al correr por el suelo.
+// ============================================================
+const $ = id => document.getElementById(id);
+const lienzo = $('lienzo');
+const ctx = Arcade.nitido(lienzo);
+const avisos = $('avisos');
+const ANCHO = lienzo.width, ALTO = lienzo.height;
+const T = 34;                                   // lado de la casilla
+
+// # muro · ^ pinchos arriba · v pinchos abajo · o sierra · ~ agua
+// S salida · G meta · ! bandera de control · = plataforma fina
+const ACTOS = [
+[
+'..............................................................',
+'..............................................................',
+'..............................................................',
+'.....................................###......................',
+'..............................###....#...#....................',
+'.........####.......!................#...#.....!......G.......',
+'........#....#.....###......^^^......#...#....###....###......',
+'..S.....#....#..............###......#####....................',
+'#####...######..####...............................######.....',
+'#####..........####...####..####...............####...........',
+'#####...............#####..######...####.......................',
+'##############################################################'
+],
+[
+'..............................................................',
+'..............................................................',
+'...........o..................o...............................',
+'..............................................................',
+'.....####........####.....####........####.......!....G.......',
+'.....#..#........#..#.....#..#........#..#......###..###......',
+'..S..#..#..^^^...#..#..^^^#..#..^^^...#..#.....................',
+'#####...#######..#..#####..####..#####...####..###############',
+'#####...#######..#..#####..####..#####...####..###############',
+'.....!..........................................!.............',
+'.....~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~',
+'##############################################################'
+],
+[
+'..............................................................',
+'.....#...................#..........#.................#.......',
+'.....#......o............#....o.....#.......o.........#.......',
+'.....#...................#..........#.................#..G....',
+'.....#..!................#..........#.....!...........#.###...',
+'.....#.###...............#..........#....###..........#.......',
+'..S..#............^^^....#..........#.................#.......',
+'######......^^^..#####...#...^^^....#....^^^..........#.......',
+'#####..#####################...####################...###.....',
+'#####..#####################...####################...........',
+'#####..............................................^^^^^......',
+'##############################################################'
+]
+];
+
+const V = {
+  jugando:false, acto:0, muertes:0,
+  x:0, y:0, vx:0, vy:0, an:20, al:30,
+  suelo:false, pared:0, mirada:1, fase:0, coyote:0, buffer:0,
+  agua:false, control:null, meta:false, camX:0, camY:0, sacudida:0
+};
+let mapa = [], filas = 0, cols = 0, sierras = [], particulas = new Particulas(240), tiempo = 0;
+let izq = false, der = false, saltoPulsado = false;
+
+const GRAV = 2000, VEL = 250, SALTO = 640, SALTO_PARED = 560;
+
+// ---------- Carga del acto ----------
+function cargarActo(n){
+  const txt = ACTOS[n];
+  filas = txt.length; cols = txt[0].length;
+  mapa = txt.map(l => l.split(''));
+  sierras = [];
+  let inicio = { c:2, f:filas - 3 };
+  for (let f = 0; f < filas; f++){
+    for (let c = 0; c < cols; c++){
+      const ch = mapa[f][c];
+      if (ch === 'S'){ inicio = { c, f }; mapa[f][c] = '.'; }
+      else if (ch === 'o'){
+        // la sierra recorre a lo ancho el hueco libre que tenga
+        let i = c, d = c;
+        while (i > 0 && mapa[f][i - 1] === '.') i--;
+        while (d < cols - 1 && mapa[f][d + 1] === '.') d++;
+        sierras.push({ f, min:i, max:d, t: Math.random() * 6.283, vel: azar(0.7, 1.2) });
+        mapa[f][c] = '.';
+      }
+    }
+  }
+  V.control = { x: inicio.c * T + T / 2, y: inicio.f * T + T - V.al / 2 };
+  reaparecer();
+  V.meta = false;
+}
+
+function reaparecer(){
+  V.x = V.control.x; V.y = V.control.y;
+  V.vx = 0; V.vy = 0;
+  V.camX = V.x - ANCHO / 2; V.camY = V.y - ALTO / 2;
+}
+
+const solido = (c, f) => {
+  if (c < 0 || f < 0 || c >= cols || f >= filas) return true;
+  const ch = mapa[f][c];
+  return ch === '#' || ch === '=';
+};
+const casillaEn = (x, y) => {
+  const c = Math.floor(x / T), f = Math.floor(y / T);
+  if (c < 0 || f < 0 || c >= cols || f >= filas) return '.';
+  return mapa[f][c];
+};
+
+function empezar(n){
+  V.acto = n;
+  V.jugando = true;
+  V.sacudida = 0;
+  particulas.lista.length = 0;
+  cargarActo(n);
+  $('modalInicio').classList.remove('visible');
+  $('modalFin').classList.remove('visible');
+  refrescar();
+}
+
+function morir(){
+  if (!V.jugando) return;
+  V.muertes++;
+  V.sacudida = 16;
+  Sonido.fx('choque');
+  particulas.emitir(30, { x: V.x - V.camX, y: V.y - V.camY,
+                          color:['#e2e8f0','#f87171','#fff'], velMin:70, velMax:300,
+                          vidaMin:0.3, vidaMax:0.7, rMin:1.5, rMax:4 });
+  reaparecer();
+  refrescar();
+}
+
+// ---------- Control ----------
+addEventListener('keydown', ev => {
+  if (/^(INPUT|TEXTAREA|SELECT)$/.test(ev.target.tagName || '')) return;
+  const k = ev.key.toLowerCase();
+  if (['arrowleft','arrowright','arrowup',' ','a','d','w'].includes(k)) ev.preventDefault();
+  if (k === 'arrowleft' || k === 'a') izq = true;
+  if (k === 'arrowright' || k === 'd') der = true;
+  if (k === 'arrowup' || k === 'w' || k === ' '){ if (!saltoPulsado) V.buffer = 0.12; saltoPulsado = true; }
+});
+addEventListener('keyup', ev => {
+  const k = ev.key.toLowerCase();
+  if (k === 'arrowleft' || k === 'a') izq = false;
+  if (k === 'arrowright' || k === 'd') der = false;
+  if (k === 'arrowup' || k === 'w' || k === ' ') saltoPulsado = false;
+});
+const mando = (id, set) => {
+  const b = $(id);
+  b.addEventListener('pointerdown', e => { e.preventDefault(); Sonido.activar(); set(true); });
+  b.addEventListener('pointerup', e => { e.preventDefault(); set(false); });
+  b.addEventListener('pointerleave', () => set(false));
+  b.addEventListener('pointercancel', () => set(false));
+};
+mando('mIzq', v => izq = v);
+mando('mDer', v => der = v);
+mando('mSalto', v => { if (v && !saltoPulsado) V.buffer = 0.12; saltoPulsado = v; });
+
+// ---------- Simulación ----------
+function actualizar(dt){
+  tiempo += dt;
+  particulas.actualizar(dt);
+  if (V.sacudida > 0) V.sacudida = Math.max(0, V.sacudida - dt * 32);
+  for (const s of sierras) s.t += dt * s.vel;
+  if (!V.jugando || V.meta) return;
+
+  V.fase += dt * Math.abs(V.vx) / 40;
+  if (V.coyote > 0) V.coyote -= dt;
+  if (V.buffer > 0) V.buffer -= dt;
+
+  // ¿está en agua? se hunde despacio y se puede nadar hacia arriba
+  V.agua = casillaEn(V.x, V.y) === '~' || casillaEn(V.x, V.y + V.al / 2) === '~';
+
+  const empuje = (der ? 1 : 0) - (izq ? 1 : 0);
+  if (empuje) V.mirada = empuje;
+  const velMax = V.agua ? VEL * 0.55 : VEL;
+  V.vx += (empuje * velMax - V.vx) * Math.min(1, dt * (V.suelo ? 22 : 10));
+
+  V.vy += (V.agua ? GRAV * 0.28 : GRAV) * dt;
+  if (V.agua) V.vy = Math.min(V.vy, 150);
+
+  // salto normal, con margen de tolerancia arriba y abajo
+  if (V.buffer > 0 && (V.suelo || V.coyote > 0)){
+    V.vy = -SALTO; V.buffer = 0; V.coyote = 0; V.suelo = false;
+    Sonido.fx('salto');
+  } else if (V.buffer > 0 && V.pared !== 0 && !V.suelo){
+    // salto en pared: sale hacia el lado contrario del muro
+    V.vy = -SALTO_PARED;
+    V.vx = -V.pared * VEL * 1.25;
+    V.mirada = -V.pared;
+    V.buffer = 0;
+    Sonido.fx('salto');
+    particulas.emitir(8, { x: V.x - V.camX, y: V.y - V.camY, color:['#94a3b8','#e2e8f0'],
+                           velMin:40, velMax:140, vidaMin:0.2, vidaMax:0.45, rMin:1, rMax:3 });
+  } else if (V.buffer > 0 && V.agua){
+    V.vy = -320; V.buffer = 0;
+  }
+  // saltos cortos: al soltar pronto, se corta el impulso
+  if (!saltoPulsado && V.vy < -200) V.vy += 1500 * dt;
+
+  mover(dt);
+  comprobarCasillas();
+
+  // cámara con margen muerto
+  const objX = limitar(V.x - ANCHO / 2, 0, Math.max(0, cols * T - ANCHO));
+  const objY = limitar(V.y - ALTO / 2, 0, Math.max(0, filas * T - ALTO));
+  V.camX += (objX - V.camX) * Math.min(1, dt * 7);
+  V.camY += (objY - V.camY) * Math.min(1, dt * 7);
+}
+
+/** Movimiento con colisión por ejes separados. */
+function mover(dt){
+  const mitadAn = V.an / 2, mitadAl = V.al / 2;
+
+  // --- eje X ---
+  V.x += V.vx * dt;
+  V.pared = 0;
+  let c0 = Math.floor((V.x - mitadAn) / T), c1 = Math.floor((V.x + mitadAn) / T);
+  let f0 = Math.floor((V.y - mitadAl + 2) / T), f1 = Math.floor((V.y + mitadAl - 2) / T);
+  for (let f = f0; f <= f1; f++){
+    if (solido(c0, f)){ V.x = (c0 + 1) * T + mitadAn; V.vx = 0; V.pared = -1; }
+    if (solido(c1, f)){ V.x = c1 * T - mitadAn; V.vx = 0; V.pared = 1; }
+  }
+
+  // --- eje Y ---
+  V.y += V.vy * dt;
+  V.suelo = false;
+  c0 = Math.floor((V.x - mitadAn + 2) / T); c1 = Math.floor((V.x + mitadAn - 2) / T);
+  f0 = Math.floor((V.y - mitadAl) / T); f1 = Math.floor((V.y + mitadAl) / T);
+  for (let c = c0; c <= c1; c++){
+    if (V.vy < 0 && solido(c, f0)){ V.y = (f0 + 1) * T + mitadAl; V.vy = 0; }
+    if (V.vy >= 0 && solido(c, f1)){
+      V.y = f1 * T - mitadAl; V.vy = 0;
+      if (!V.suelo && !V.agua) V.coyote = 0.1;
+      V.suelo = true;
+    }
+  }
+  // al despegarse del suelo queda un instante de gracia para saltar
+  if (!V.suelo && V.coyote <= 0 && V.vy > 0) V.coyote = Math.max(V.coyote, 0);
+
+  // deslizarse por la pared frena la caída
+  if (!V.suelo && V.pared !== 0 && V.vy > 90) V.vy = 90;
+}
+
+function comprobarCasillas(){
+  const puntos = [
+    [V.x, V.y], [V.x, V.y - V.al / 2 + 3], [V.x, V.y + V.al / 2 - 3],
+    [V.x - V.an / 2 + 3, V.y], [V.x + V.an / 2 - 3, V.y]
+  ];
+  for (const [px, py] of puntos){
+    const ch = casillaEn(px, py);
+    if (ch === '^' || ch === 'v'){ morir(); return; }
+    if (ch === '!'){
+      const c = Math.floor(px / T), f = Math.floor(py / T);
+      mapa[f][c] = '.';
+      V.control = { x: c * T + T / 2, y: f * T + T - V.al / 2 };
+      Sonido.fx('acierto');
+      Arcade.aviso(avisos, '🚩 Control guardado', true, 1100);
+    }
+    if (ch === 'G' && !V.meta){
+      V.meta = true;
+      Sonido.fx('victoria');
+      particulas.emitir(46, { x: px - V.camX, y: py - V.camY,
+                              color:['#f3e600','#e2e8f0','#fff'], velMin:80, velMax:340,
+                              vidaMin:0.4, vidaMax:1, rMin:2, rMax:5 });
+      setTimeout(terminar, 800);
+      return;
+    }
+  }
+  // caerse del mapa
+  if (V.y > filas * T + 60) morir();
+  // sierras
+  for (const s of sierras){
+    const sx = (s.min + (s.max - s.min) * (0.5 + Math.sin(s.t) * 0.5)) * T + T / 2;
+    const sy = s.f * T + T / 2;
+    if (Math.hypot(sx - V.x, sy - V.y) < T * 0.62){ morir(); return; }
+  }
+}
+
+function terminar(){
+  V.jugando = false;
+  const ultimo = V.acto === ACTOS.length - 1;
+  const puntos = Math.max(0, (V.acto + 1) * 800 - V.muertes * 40);
+  const premio = Math.floor(puntos / 20);
+  Arcade.guardarRecord('vex', puntos);
+  Arcade.perfil.partida('vex', { puntos, victoria: ultimo, premio });
+  $('finTitulo').textContent = ultimo ? '🏆 ¡Los tres actos!' : '🏁 Acto ' + (V.acto + 1) + ' superado';
+  $('finSub').textContent = V.muertes === 0
+    ? 'Sin morir ni una vez. Eso no lo hace cualquiera.'
+    : 'Otra vez, pero con menos sierras de por medio.';
+  $('finActo').textContent = V.acto + 1;
+  $('finMuertes').textContent = V.muertes;
+  $('finPuntos').textContent = puntos.toLocaleString('es-ES');
+  $('finPremio').textContent = premio.toLocaleString('es-ES');
+  $('btnSeguir').style.display = ultimo ? 'none' : '';
+  $('modalFin').classList.add('visible');
+  refrescar();
+}
+
+// ---------- Dibujo ----------
+function dibujar(){
+  ctx.save();
+  if (V.sacudida > 0) ctx.translate(azar(-V.sacudida, V.sacudida) * 0.5, azar(-V.sacudida, V.sacudida) * 0.5);
+
+  const g = ctx.createLinearGradient(0, 0, 0, ALTO);
+  g.addColorStop(0, '#0b1220'); g.addColorStop(1, '#050810');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, ANCHO, ALTO);
+
+  // rejilla de fondo, a media velocidad
+  ctx.strokeStyle = 'rgba(226,232,240,.035)'; ctx.lineWidth = 1;
+  ctx.beginPath();
+  for (let x = -((V.camX * 0.5) % 68); x < ANCHO; x += 68){ ctx.moveTo(x, 0); ctx.lineTo(x, ALTO); }
+  for (let y = -((V.camY * 0.5) % 68); y < ALTO; y += 68){ ctx.moveTo(0, y); ctx.lineTo(ANCHO, y); }
+  ctx.stroke();
+
+  const c0 = Math.max(0, Math.floor(V.camX / T) - 1);
+  const c1 = Math.min(cols - 1, Math.ceil((V.camX + ANCHO) / T));
+  const f0 = Math.max(0, Math.floor(V.camY / T) - 1);
+  const f1 = Math.min(filas - 1, Math.ceil((V.camY + ALTO) / T));
+
+  for (let f = f0; f <= f1; f++){
+    for (let c = c0; c <= c1; c++){
+      const ch = mapa[f][c];
+      const x = c * T - V.camX, y = f * T - V.camY;
+      if (ch === '#' || ch === '='){
+        const arriba = !solido(c, f - 1);
+        const gg = ctx.createLinearGradient(0, y, 0, y + T);
+        gg.addColorStop(0, arriba ? '#2f3d55' : '#1c2537');
+        gg.addColorStop(1, '#131a28');
+        ctx.fillStyle = gg;
+        ctx.fillRect(x, y, T, T);
+        if (arriba){
+          ctx.fillStyle = 'rgba(226,232,240,.55)';
+          ctx.fillRect(x, y, T, 3);
+        }
+        ctx.strokeStyle = 'rgba(0,0,0,.35)'; ctx.lineWidth = 1;
+        ctx.strokeRect(x + 0.5, y + 0.5, T - 1, T - 1);
+      }
+      else if (ch === '^' || ch === 'v'){
+        const arriba = ch === '^';
+        ctx.fillStyle = '#f87171';
+        for (let i = 0; i < 3; i++){
+          const px = x + i * (T / 3);
+          ctx.beginPath();
+          if (arriba){
+            ctx.moveTo(px, y + T); ctx.lineTo(px + T / 6, y + T * 0.24); ctx.lineTo(px + T / 3, y + T);
+          } else {
+            ctx.moveTo(px, y); ctx.lineTo(px + T / 6, y + T * 0.76); ctx.lineTo(px + T / 3, y);
+          }
+          ctx.closePath(); ctx.fill();
+        }
+        ctx.fillStyle = 'rgba(255,255,255,.35)';
+        ctx.fillRect(x, arriba ? y + T - 3 : y, T, 3);
+      }
+      else if (ch === '~'){
+        const on = Math.sin(tiempo * 2 + c * 0.4) * 3;
+        ctx.fillStyle = 'rgba(56,189,248,.28)';
+        ctx.fillRect(x, y + on, T, T - on);
+        ctx.fillStyle = 'rgba(125,211,252,.5)';
+        ctx.fillRect(x, y + on, T, 2.5);
+      }
+      else if (ch === '!'){
+        ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.moveTo(x + 8, y + T); ctx.lineTo(x + 8, y + 4); ctx.stroke();
+        const on = Math.sin(tiempo * 5) * 3;
+        ctx.fillStyle = '#f3e600';
+        ctx.beginPath();
+        ctx.moveTo(x + 10, y + 5); ctx.lineTo(x + 28 + on, y + 12); ctx.lineTo(x + 10, y + 19);
+        ctx.closePath(); ctx.fill();
+      }
+      else if (ch === 'G'){
+        const on = Math.sin(tiempo * 4) * 4;
+        ctx.strokeStyle = '#e2e8f0'; ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.moveTo(x + 6, y + T); ctx.lineTo(x + 6, y - T + 6); ctx.stroke();
+        for (let a = 0; a < 3; a++)
+          for (let bq = 0; bq < 2; bq++){
+            ctx.fillStyle = (a + bq) % 2 ? '#f3e600' : '#1b1b1b';
+            ctx.fillRect(x + 8 + bq * 12 + on * (bq / 2), y - T + 8 + a * 10, 12, 10);
+          }
+        ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
+        const halo = ctx.createRadialGradient(x + 16, y, 3, x + 16, y, 90);
+        halo.addColorStop(0, 'rgba(243,230,0,.22)');
+        halo.addColorStop(1, 'rgba(243,230,0,0)');
+        ctx.fillStyle = halo;
+        ctx.beginPath(); ctx.arc(x + 16, y, 90, 0, 6.283); ctx.fill();
+        ctx.restore();
+      }
+    }
+  }
+
+  dibujarSierras();
+  dibujarMuñeco();
+  particulas.dibujar(ctx);
+  ctx.restore();
+  dibujarHUD();
+}
+
+function dibujarSierras(){
+  for (const s of sierras){
+    const sx = (s.min + (s.max - s.min) * (0.5 + Math.sin(s.t) * 0.5)) * T + T / 2 - V.camX;
+    const sy = s.f * T + T / 2 - V.camY;
+    if (sx < -60 || sx > ANCHO + 60) continue;
+    const r = T * 0.56;
+    ctx.save();
+    ctx.translate(sx, sy);
+    ctx.rotate(tiempo * 9);
+    // dientes
+    ctx.fillStyle = '#cbd5e1';
+    ctx.beginPath();
+    for (let i = 0; i < 12; i++){
+      const a0 = i / 12 * 6.283, a1 = (i + 0.5) / 12 * 6.283;
+      i ? ctx.lineTo(Math.cos(a0) * r, Math.sin(a0) * r)
+        : ctx.moveTo(Math.cos(a0) * r, Math.sin(a0) * r);
+      ctx.lineTo(Math.cos(a1) * r * 0.74, Math.sin(a1) * r * 0.74);
+    }
+    ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#64748b';
+    ctx.beginPath(); ctx.arc(0, 0, r * 0.42, 0, 6.283); ctx.fill();
+    ctx.fillStyle = '#0f172a';
+    ctx.beginPath(); ctx.arc(0, 0, r * 0.16, 0, 6.283); ctx.fill();
+    ctx.restore();
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    const gg = ctx.createRadialGradient(sx, sy, 2, sx, sy, r * 2.2);
+    gg.addColorStop(0, 'rgba(248,113,113,.22)');
+    gg.addColorStop(1, 'rgba(248,113,113,0)');
+    ctx.fillStyle = gg;
+    ctx.beginPath(); ctx.arc(sx, sy, r * 2.2, 0, 6.283); ctx.fill();
+    ctx.restore();
+  }
+}
+
+function dibujarMuñeco(){
+  const x = V.x - V.camX, y = V.y - V.camY;
+  const corre = V.suelo && Math.abs(V.vx) > 30;
+  const paso = Math.sin(V.fase);
+
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.scale(V.mirada, 1);
+  ctx.strokeStyle = '#f1f5f9';
+  ctx.lineWidth = 3.6; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  ctx.shadowColor = 'rgba(226,232,240,.55)'; ctx.shadowBlur = 8;
+
+  // tronco
+  ctx.beginPath(); ctx.moveTo(0, -6); ctx.lineTo(0, 6); ctx.stroke();
+  // piernas
+  ctx.beginPath();
+  if (!V.suelo){
+    ctx.moveTo(0, 6); ctx.lineTo(-6, 14);
+    ctx.moveTo(0, 6); ctx.lineTo(7, 12);
+  } else if (corre){
+    ctx.moveTo(0, 6); ctx.lineTo(paso * 9, 15);
+    ctx.moveTo(0, 6); ctx.lineTo(-paso * 9, 15);
+  } else {
+    ctx.moveTo(0, 6); ctx.lineTo(-4, 15);
+    ctx.moveTo(0, 6); ctx.lineTo(4, 15);
+  }
+  ctx.stroke();
+  // brazos
+  ctx.beginPath();
+  if (V.pared !== 0 && !V.suelo){
+    ctx.moveTo(0, -3); ctx.lineTo(9, -8);
+    ctx.moveTo(0, -3); ctx.lineTo(6, 3);
+  } else if (!V.suelo){
+    ctx.moveTo(0, -3); ctx.lineTo(-8, -10);
+    ctx.moveTo(0, -3); ctx.lineTo(8, -9);
+  } else {
+    ctx.moveTo(0, -3); ctx.lineTo(-paso * 8, 3);
+    ctx.moveTo(0, -3); ctx.lineTo(paso * 8, 3);
+  }
+  ctx.stroke();
+  // cabeza
+  ctx.fillStyle = '#f1f5f9';
+  ctx.beginPath(); ctx.arc(0, -12, 6, 0, 6.283); ctx.fill();
+  ctx.restore();
+  ctx.shadowBlur = 0;
+
+  // polvo al correr
+  if (corre && Math.random() < 0.3)
+    particulas.emitir(1, { x, y: y + 15, color:['rgba(148,163,184,.5)'],
+                           velMin:10, velMax:50, vidaMin:0.15, vidaMax:0.35,
+                           rMin:1, rMax:2.5, gravedad:60 });
+}
+
+function dibujarHUD(){
+  const u = limitar(V.x / (cols * T), 0, 1);
+  const an = ANCHO - 210, x = 105, y = 20;
+  ctx.fillStyle = 'rgba(0,0,0,.42)';
+  ctx.beginPath(); ctx.roundRect(x, y, an, 8, 4); ctx.fill();
+  ctx.fillStyle = '#e2e8f0';
+  ctx.beginPath(); ctx.roundRect(x, y, Math.max(4, an * u), 8, 4); ctx.fill();
+  ctx.font = '800 11px "Segoe UI", system-ui, sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,.6)';
+  ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  ctx.fillText('ACTO ' + (V.acto + 1), 20, y + 4);
+  ctx.textAlign = 'right';
+  ctx.fillText('💀 ' + V.muertes, ANCHO - 20, y + 4);
+}
+
+// ---------- Interfaz ----------
+function refrescar(){
+  $('actoTxt').textContent = V.acto + 1;
+  $('muertesTxt').textContent = V.muertes;
+  const r = Arcade.record('vex');
+  $('recordTxt').textContent = r ? r.toLocaleString('es-ES') + ' pts' : '—';
+}
+
+$('btnEmpezar').onclick = () => { Sonido.activar(); V.muertes = 0; empezar(0); };
+$('btnSeguir').onclick = () => { Sonido.activar(); empezar(Math.min(ACTOS.length - 1, V.acto + 1)); };
+$('btnReiniciar').onclick = () => { Sonido.activar(); V.muertes = 0; empezar(0); };
+Arcade.conectarSonido($('btnSonido'));
+
+cargarActo(0);
+refrescar();
+Arcade.bucle(dt => { actualizar(dt); dibujar(); });
+</script>
+</body>
+</html>

@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cut the Rope — Arcade NEXO</title>
+<link rel="stylesheet" href="arcade.css">
+<style>
+  #tablero{position:relative; display:flex; flex-direction:column; gap:10px;}
+  #juego{width:min(1000px,100vw);}
+  .barra .titulo{color:#8ee06a;}
+
+  #escena{
+    position:relative; border-radius:16px; overflow:hidden;
+    border:2px solid rgba(142,224,106,.3);
+    box-shadow:0 15px 45px rgba(0,0,0,.9);
+    cursor:crosshair; touch-action:none;
+  }
+  #lienzo{display:block; width:100%; height:auto;}
+
+  #pieAyuda{
+    text-align:center; font-family:var(--fuente-arcade); font-size:.72rem;
+    color:var(--tenue); letter-spacing:.5px;
+  }
+  #pieAyuda b{color:#8ee06a;}
+
+  .rejillaResumen{
+    display:grid; grid-template-columns:repeat(auto-fit,minmax(110px,1fr)); gap:10px;
+    margin:14px 0 18px;
+  }
+  .rejillaResumen div{background:rgba(0,0,0,.35); border-radius:10px; padding:11px;}
+  .rejillaResumen .n{font-size:22px; font-weight:800; color:var(--oro);}
+  .rejillaResumen .e{font-size:11px; color:var(--tenue);}
+</style>
+</head>
+<body>
+
+<div id="juego">
+  <div class="barra">
+    <a class="boton" href="../index.html">🕹 Arcade</a>
+    <div class="titulo">🍬 CUT THE ROPE</div>
+    <div class="sep"></div>
+    <div class="stat">📦 Nivel <span id="nivelTxt" class="oro">1</span>/6</div>
+    <div class="stat">⭐ <span id="estrellasTxt" class="verde">0</span>/18</div>
+    <div class="stat">🏆 <span id="recordTxt" class="tenue">—</span></div>
+    <button id="btnSonido" title="Sonido" aria-label="Sonido">🔊</button>
+  </div>
+
+  <div id="tablero">
+    <div id="escena">
+      <canvas id="lienzo" width="960" height="560"></canvas>
+      <div class="avisos" id="avisos"></div>
+    </div>
+
+    <div id="pieAyuda">
+      Arrastra el <b>ratón</b> (o el dedo) <b>cruzando una cuerda</b> para cortarla · <b>R</b> reinicia el nivel
+    </div>
+
+    <div class="modal visible" id="modalInicio">
+      <div class="tarjetaModal">
+        <h1>🍬 CUT THE ROPE</h1>
+        <div class="sub">Corta en el momento justo y el caramelo cae donde tiene que caer.</div>
+        <div class="instrucciones">
+          <b>Arrastra</b> el ratón cruzando una cuerda y la cortas. El caramelo obedece a la gravedad
+          y a las cuerdas que le queden.<br>
+          <b>🐸 Objetivo:</b> que el caramelo llegue a la boca de Ñam.<br>
+          <b>⭐ Estrellas:</b> hay tres en cada nivel. Se cogen de paso, y valen puntos.<br>
+          <b>🫧 Burbujas:</b> el caramelo entra y flota hacia arriba. Pínchala con un clic para soltarlo.<br>
+          <b>🔺 Pinchos:</b> si el caramelo los toca, se acabó el nivel.<br>
+          Seis niveles. Cuantas más estrellas, más puntos.
+        </div>
+        <div class="filaBotones"><button class="primario" id="btnEmpezar">▶ Empezar</button></div>
+      </div>
+    </div>
+
+    <div class="modal" id="modalFin">
+      <div class="tarjetaModal">
+        <h1 id="finTitulo">🐸 ¡Ñam!</h1>
+        <div class="sub" id="finSub"></div>
+        <div class="rejillaResumen">
+          <div><div class="n" id="finNivel">0</div><div class="e">niveles</div></div>
+          <div><div class="n" id="finEstrellas">0</div><div class="e">estrellas</div></div>
+          <div><div class="n" id="finPuntos">0</div><div class="e">puntos</div></div>
+          <div><div class="n" id="finPremio">0</div><div class="e">NEXO-COINS</div></div>
+        </div>
+        <div class="filaBotones">
+          <button class="primario" id="btnSeguir">▶ Siguiente nivel</button>
+          <button id="btnReiniciar">↺ Desde el nivel 1</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="arcade.js"></script>
+<script>
+// ============================================================
+//  CUT THE ROPE — cuerdas, gravedad y puntería
+//  El caramelo es una masa puntual. Cada cuerda es una restricción de
+//  distancia máxima con su anclaje: solo tira cuando está estirada, igual que
+//  una cuerda de verdad, y por eso el caramelo puede caer y luego frenar.
+// ============================================================
+const $ = id => document.getElementById(id);
+const lienzo = $('lienzo');
+const ctx = Arcade.nitido(lienzo);
+const avisos = $('avisos');
+const ANCHO = lienzo.width, ALTO = lienzo.height;
+const GRAV = 900;
+
+// ---------- Niveles ----------
+const NIVELES = [
+  { caramelo:{ x:480, y:150 },
+    cuerdas:[{ x:480, y:70, largo:110 }],
+    estrellas:[{ x:480, y:290 }, { x:480, y:380 }, { x:480, y:450 }],
+    pinchos:[], burbujas:[],
+    nom:{ x:480, y:505 } },
+
+  { caramelo:{ x:250, y:150 },
+    cuerdas:[{ x:250, y:70, largo:110 }, { x:430, y:90, largo:210 }],
+    estrellas:[{ x:360, y:250 }, { x:560, y:300 }, { x:700, y:400 }],
+    pinchos:[{ x:480, y:470, an:120 }], burbujas:[],
+    nom:{ x:760, y:505 } },
+
+  { caramelo:{ x:200, y:130 },
+    cuerdas:[{ x:200, y:60, largo:100 }, { x:380, y:70, largo:200 }, { x:560, y:70, largo:210 }],
+    estrellas:[{ x:300, y:230 }, { x:480, y:200 }, { x:660, y:260 }],
+    pinchos:[{ x:300, y:500, an:150 }, { x:640, y:500, an:150 }],
+    burbujas:[],
+    nom:{ x:470, y:505 } },
+
+  { caramelo:{ x:170, y:170 },
+    cuerdas:[{ x:170, y:80, largo:120 }],
+    estrellas:[{ x:330, y:330 }, { x:520, y:300 }, { x:700, y:220 }],
+    pinchos:[{ x:420, y:505, an:200 }],
+    burbujas:[{ x:400, y:360, r:44 }],
+    nom:{ x:790, y:150 } },
+
+  { caramelo:{ x:480, y:120 },
+    cuerdas:[{ x:360, y:60, largo:150 }, { x:600, y:60, largo:150 }],
+    estrellas:[{ x:230, y:300 }, { x:480, y:400 }, { x:730, y:300 }],
+    pinchos:[{ x:480, y:230, an:110 }],
+    burbujas:[],
+    nom:{ x:480, y:505 } },
+
+  { caramelo:{ x:150, y:150 },
+    cuerdas:[{ x:150, y:70, largo:100 }, { x:340, y:60, largo:190 }, { x:640, y:80, largo:200 }],
+    estrellas:[{ x:260, y:300 }, { x:490, y:180 }, { x:760, y:330 }],
+    pinchos:[{ x:250, y:505, an:170 }, { x:620, y:505, an:170 }],
+    burbujas:[{ x:490, y:330, r:42 }],
+    nom:{ x:850, y:460 } }
+];
+
+const C = {
+  jugando:false, nivel:0, estrellas:0, totalEstrellas:0,
+  x:0, y:0, vx:0, vy:0, enBurbuja:null, ganado:false, perdido:false, fase:0
+};
+let cuerdas = [], estrellas = [], pinchos = [], burbujas = [], nom = { x:0, y:0 };
+let particulas = new Particulas(240), tiempo = 0;
+let trazo = null;      // el corte que estás dibujando
+
+// ---------- Carga ----------
+function cargar(n){
+  const L = NIVELES[n];
+  C.nivel = n;
+  C.x = L.caramelo.x; C.y = L.caramelo.y;
+  C.vx = 0; C.vy = 0;
+  C.enBurbuja = null; C.ganado = false; C.perdido = false;
+  cuerdas = L.cuerdas.map(c => ({ ...c, cortada:false, corte:0 }));
+  estrellas = L.estrellas.map(e => ({ ...e, cogida:false, giro: Math.random() * 6.283 }));
+  pinchos = L.pinchos.map(p => ({ ...p }));
+  burbujas = L.burbujas.map(b => ({ ...b, usada:false }));
+  nom = { ...L.nom, boca:0 };
+  particulas.lista.length = 0;
+}
+
+function empezar(n, reiniciarEstrellas){
+  if (reiniciarEstrellas){ C.estrellas = 0; C.totalEstrellas = 0; }
+  cargar(n);
+  C.jugando = true;
+  $('modalInicio').classList.remove('visible');
+  $('modalFin').classList.remove('visible');
+  refrescar();
+}
+
+// ---------- Cortar ----------
+/** ¿Se cruzan los segmentos AB y CD? */
+function cruzan(a, b, c, d){
+  const s = (p, q, r) => Math.sign((q.x - p.x) * (r.y - p.y) - (q.y - p.y) * (r.x - p.x));
+  return s(a, b, c) !== s(a, b, d) && s(c, d, a) !== s(c, d, b);
+}
+
+function cortarCon(p0, p1){
+  let alguna = false;
+  for (const c of cuerdas){
+    if (c.cortada) continue;
+    if (cruzan(p0, p1, { x:c.x, y:c.y }, { x:C.x, y:C.y })){
+      c.cortada = true;
+      c.corte = 1;
+      alguna = true;
+      Sonido.fx('clic');
+      particulas.emitir(10, { x:(c.x + C.x) / 2, y:(c.y + C.y) / 2,
+                              color:['#d9c08a','#fff2cc'], velMin:40, velMax:160,
+                              vidaMin:0.2, vidaMax:0.5, rMin:1, rMax:2.5 });
+    }
+  }
+  // pinchar burbuja
+  for (const b of burbujas){
+    if (b.usada || C.enBurbuja !== b) continue;
+    if (Math.hypot(p1.x - b.x, p1.y - b.y) < b.r + 14){
+      soltarBurbuja();
+      alguna = true;
+    }
+  }
+  return alguna;
+}
+
+function soltarBurbuja(){
+  if (!C.enBurbuja) return;
+  C.enBurbuja.usada = true;
+  C.enBurbuja = null;
+  C.vy = 40;
+  Sonido.fx('bola');
+  particulas.emitir(14, { x:C.x, y:C.y, color:['#a5f3fc','#fff'], velMin:40, velMax:180,
+                          vidaMin:0.2, vidaMax:0.5, rMin:1.5, rMax:3.5 });
+}
+
+const escena = $('escena');
+escena.addEventListener('pointerdown', ev => {
+  ev.preventDefault(); Sonido.activar();
+  const p = Arcade.puntero(lienzo, ev);
+  trazo = { puntos:[p], ultimo:p };
+  cortarCon(p, p);
+});
+escena.addEventListener('pointermove', ev => {
+  if (!trazo) return;
+  const p = Arcade.puntero(lienzo, ev);
+  cortarCon(trazo.ultimo, p);
+  trazo.puntos.push(p);
+  if (trazo.puntos.length > 18) trazo.puntos.shift();
+  trazo.ultimo = p;
+});
+addEventListener('pointerup', () => { trazo = null; });
+addEventListener('keydown', ev => {
+  if (/^(INPUT|TEXTAREA|SELECT)$/.test(ev.target.tagName || '')) return;
+  if (ev.key === 'r' || ev.key === 'R'){ ev.preventDefault(); cargar(C.nivel); }
+});
+
+// ---------- Simulación ----------
+function actualizar(dt){
+  tiempo += dt;
+  C.fase += dt;
+  particulas.actualizar(dt);
+  for (const c of cuerdas) if (c.corte > 0) c.corte = Math.max(0, c.corte - dt * 2);
+  for (const e of estrellas) e.giro += dt * 2;
+  if (!C.jugando || C.ganado || C.perdido) return;
+
+  // pasos fijos: las cuerdas son rígidas y con un dt grande vibran
+  const pasos = 5, h = dt / pasos;
+  for (let k = 0; k < pasos; k++){
+    if (C.enBurbuja){
+      C.vy += -260 * h;                 // la burbuja sube
+      C.vx *= Math.pow(0.4, h);
+      C.vy = Math.max(C.vy, -170);
+    } else {
+      C.vy += GRAV * h;
+    }
+    C.x += C.vx * h;
+    C.y += C.vy * h;
+
+    // restricción de cada cuerda entera: solo tira si está estirada
+    for (let it = 0; it < 3; it++){
+      for (const c of cuerdas){
+        if (c.cortada) continue;
+        const dx = C.x - c.x, dy = C.y - c.y;
+        const d = Math.hypot(dx, dy) || 1;
+        if (d > c.largo){
+          const nx = dx / d, ny = dy / d;
+          C.x = c.x + nx * c.largo;
+          C.y = c.y + ny * c.largo;
+          const radial = C.vx * nx + C.vy * ny;
+          if (radial > 0){ C.vx -= radial * nx * 1.0; C.vy -= radial * ny * 1.0; }
+        }
+      }
+    }
+    C.vx *= Math.pow(0.999, h * 60);
+    C.vy *= Math.pow(0.999, h * 60);
+  }
+
+  // ---- burbujas ----
+  if (!C.enBurbuja){
+    for (const b of burbujas){
+      if (b.usada) continue;
+      if (Math.hypot(C.x - b.x, C.y - b.y) < b.r){
+        C.enBurbuja = b;
+        C.vx *= 0.3; C.vy = 0;
+        Sonido.fx('ficha');
+      }
+    }
+  } else {
+    C.enBurbuja.x = C.x; C.enBurbuja.y = C.y;
+  }
+
+  // ---- estrellas ----
+  for (const e of estrellas){
+    if (e.cogida) continue;
+    if (Math.hypot(C.x - e.x, C.y - e.y) < 30){
+      e.cogida = true;
+      C.estrellas++; C.totalEstrellas++;
+      Sonido.fx('estrella');
+      particulas.emitir(16, { x:e.x, y:e.y, color:['#f3e600','#fff6b0','#fff'],
+                              velMin:50, velMax:220, vidaMin:0.3, vidaMax:0.7, rMin:1.5, rMax:4 });
+      refrescar();
+    }
+  }
+
+  // ---- pinchos ----
+  for (const p of pinchos){
+    if (Math.abs(C.x - p.x) < p.an / 2 + 12 && Math.abs(C.y - p.y) < 26){ fallar('pinchos'); return; }
+  }
+
+  // ---- Ñam ----
+  const dN = Math.hypot(C.x - nom.x, C.y - nom.y);
+  nom.boca = dN < 150 ? limitar(1 - (dN - 40) / 110, 0, 1) : 0;
+  if (dN < 36){
+    C.ganado = true;
+    Sonido.fx('victoria');
+    particulas.emitir(34, { x:nom.x, y:nom.y, color:['#8ee06a','#f3e600','#fff'],
+                            velMin:70, velMax:280, vidaMin:0.4, vidaMax:0.9, rMin:2, rMax:5 });
+    setTimeout(terminar, 800);
+    return;
+  }
+
+  // ---- fuera de pantalla ----
+  if (C.y > ALTO + 60 || C.x < -60 || C.x > ANCHO + 60) fallar('vacio');
+}
+
+function fallar(motivo){
+  if (C.perdido) return;
+  C.perdido = true;
+  Sonido.fx('derrota');
+  Arcade.aviso(avisos, motivo === 'pinchos' ? '🔺 Los pinchos. Otra vez.' : '🕳 El caramelo se ha perdido.',
+               false, 1600);
+  setTimeout(() => { if (C.jugando) cargar(C.nivel); }, 900);
+}
+
+function terminar(){
+  C.jugando = false;
+  const ultimo = C.nivel === NIVELES.length - 1;
+  const puntos = (C.nivel + 1) * 400 + C.totalEstrellas * 150;
+  const premio = Math.floor(puntos / 20);
+  Arcade.guardarRecord('cuerda', puntos);
+  Arcade.perfil.partida('cuerda', { puntos, victoria: ultimo, premio });
+  $('finTitulo').textContent = ultimo ? '🏆 ¡Los seis niveles!' : '🐸 ¡Ñam!';
+  $('finSub').textContent = C.estrellas === 3
+    ? 'Las tres estrellas del nivel. Perfecto.'
+    : 'Se puede volver a intentar para pillarlas todas.';
+  $('finNivel').textContent = C.nivel + 1;
+  $('finEstrellas').textContent = C.totalEstrellas;
+  $('finPuntos').textContent = puntos.toLocaleString('es-ES');
+  $('finPremio').textContent = premio.toLocaleString('es-ES');
+  $('btnSeguir').style.display = ultimo ? 'none' : '';
+  $('modalFin').classList.add('visible');
+  refrescar();
+}
+
+// ---------- Dibujo ----------
+function dibujar(){
+  // fondo de cartón, como la caja del juego original
+  const g = ctx.createLinearGradient(0, 0, 0, ALTO);
+  g.addColorStop(0, '#3a2a18'); g.addColorStop(1, '#241a0f');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, ANCHO, ALTO);
+  ctx.strokeStyle = 'rgba(255,220,160,.05)'; ctx.lineWidth = 1;
+  ctx.beginPath();
+  for (let x = 0; x < ANCHO; x += 26){ ctx.moveTo(x, 0); ctx.lineTo(x, ALTO); }
+  ctx.stroke();
+  ctx.fillStyle = 'rgba(0,0,0,.25)';
+  ctx.fillRect(0, 0, ANCHO, 14); ctx.fillRect(0, ALTO - 14, ANCHO, 14);
+
+  dibujarPinchos();
+  dibujarCuerdas();
+  dibujarEstrellas();
+  dibujarBurbujas();
+  dibujarNom();
+  dibujarCaramelo();
+  particulas.dibujar(ctx);
+  dibujarTrazo();
+  dibujarHUD();
+}
+
+function dibujarCuerdas(){
+  for (const c of cuerdas){
+    // clavo del anclaje
+    ctx.fillStyle = '#7c5a2e';
+    ctx.beginPath(); ctx.arc(c.x, c.y, 10, 0, 6.283); ctx.fill();
+    ctx.fillStyle = '#c89b52';
+    ctx.beginPath(); ctx.arc(c.x, c.y, 6.5, 0, 6.283); ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,.35)';
+    ctx.beginPath(); ctx.arc(c.x - 2, c.y - 2, 2.4, 0, 6.283); ctx.fill();
+    if (c.cortada) continue;
+
+    // la cuerda cuelga: si no está tensa se dibuja con caída
+    const dx = C.x - c.x, dy = C.y - c.y;
+    const d = Math.hypot(dx, dy);
+    const flojo = Math.max(0, c.largo - d);
+    ctx.strokeStyle = '#d9c08a'; ctx.lineWidth = 3.5; ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(c.x, c.y);
+    const n = 10;
+    for (let i = 1; i <= n; i++){
+      const t = i / n;
+      const cx = c.x + dx * t;
+      const cy = c.y + dy * t + Math.sin(t * Math.PI) * flojo * 0.7;
+      ctx.lineTo(cx, cy);
+    }
+    ctx.stroke();
+    ctx.strokeStyle = 'rgba(255,255,255,.22)'; ctx.lineWidth = 1.2;
+    ctx.stroke();
+  }
+}
+
+function dibujarCaramelo(){
+  const x = C.x, y = C.y;
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(Math.sin(C.fase * 3) * 0.12 + C.vx * 0.0006);
+  // envoltorio
+  ctx.fillStyle = '#e0483d';
+  ctx.beginPath();
+  ctx.moveTo(-24, -8); ctx.lineTo(-13, 0); ctx.lineTo(-24, 8); ctx.closePath(); ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(24, -8); ctx.lineTo(13, 0); ctx.lineTo(24, 8); ctx.closePath(); ctx.fill();
+  // cuerpo
+  const g = ctx.createRadialGradient(-4, -4, 2, 0, 0, 15);
+  g.addColorStop(0, '#ff8a80'); g.addColorStop(0.6, '#e0483d'); g.addColorStop(1, '#a11a12');
+  ctx.fillStyle = g;
+  ctx.beginPath(); ctx.roundRect(-14, -12, 28, 24, 8); ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,.4)'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(-6, -8); ctx.lineTo(-2, 8); ctx.stroke();
+  ctx.restore();
+
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  const halo = ctx.createRadialGradient(x, y, 3, x, y, 46);
+  halo.addColorStop(0, 'rgba(255,120,100,.3)');
+  halo.addColorStop(1, 'rgba(255,120,100,0)');
+  ctx.fillStyle = halo;
+  ctx.beginPath(); ctx.arc(x, y, 46, 0, 6.283); ctx.fill();
+  ctx.restore();
+}
+
+function dibujarEstrellas(){
+  for (const e of estrellas){
+    if (e.cogida) continue;
+    ctx.save();
+    ctx.translate(e.x, e.y);
+    ctx.rotate(Math.sin(e.giro) * 0.3);
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    const g = ctx.createRadialGradient(0, 0, 2, 0, 0, 34);
+    g.addColorStop(0, 'rgba(243,230,0,.45)');
+    g.addColorStop(1, 'rgba(243,230,0,0)');
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, 34, 0, 6.283); ctx.fill();
+    ctx.restore();
+    ctx.fillStyle = '#f3e600';
+    ctx.beginPath();
+    for (let i = 0; i < 10; i++){
+      const a = i / 10 * 6.283 - Math.PI / 2;
+      const r = i % 2 ? 7 : 16;
+      i ? ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r)
+        : ctx.moveTo(Math.cos(a) * r, Math.sin(a) * r);
+    }
+    ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = 'rgba(180,150,0,.7)'; ctx.lineWidth = 1.5; ctx.stroke();
+    ctx.restore();
+  }
+}
+
+function dibujarBurbujas(){
+  for (const b of burbujas){
+    if (b.usada) continue;
+    const x = C.enBurbuja === b ? C.x : b.x;
+    const y = C.enBurbuja === b ? C.y : b.y;
+    const on = Math.sin(tiempo * 3 + b.x) * 2;
+    ctx.save();
+    const g = ctx.createRadialGradient(x - b.r * 0.3, y - b.r * 0.3, 2, x, y, b.r + on);
+    g.addColorStop(0, 'rgba(255,255,255,.34)');
+    g.addColorStop(0.7, 'rgba(165,243,252,.14)');
+    g.addColorStop(1, 'rgba(165,243,252,.30)');
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.arc(x, y, b.r + on, 0, 6.283); ctx.fill();
+    ctx.strokeStyle = 'rgba(200,250,255,.6)'; ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.fillStyle = 'rgba(255,255,255,.7)';
+    ctx.beginPath(); ctx.ellipse(x - b.r * 0.35, y - b.r * 0.4, 6, 3.5, -0.6, 0, 6.283); ctx.fill();
+    ctx.restore();
+  }
+}
+
+function dibujarPinchos(){
+  for (const p of pinchos){
+    const n = Math.max(3, Math.round(p.an / 20));
+    const paso = p.an / n;
+    ctx.fillStyle = '#94a3b8';
+    for (let i = 0; i < n; i++){
+      const x = p.x - p.an / 2 + i * paso;
+      ctx.beginPath();
+      ctx.moveTo(x, p.y + 14); ctx.lineTo(x + paso / 2, p.y - 16); ctx.lineTo(x + paso, p.y + 14);
+      ctx.closePath(); ctx.fill();
+    }
+    ctx.fillStyle = '#475569';
+    ctx.beginPath(); ctx.roundRect(p.x - p.an / 2 - 4, p.y + 12, p.an + 8, 9, 3); ctx.fill();
+  }
+}
+
+function dibujarNom(){
+  const x = nom.x, y = nom.y;
+  const b = nom.boca;
+  ctx.save();
+  ctx.translate(x, y);
+  // cuerpo
+  const g = ctx.createRadialGradient(-8, -10, 4, 0, 0, 40);
+  g.addColorStop(0, '#b9f28f'); g.addColorStop(1, '#4d9c2e');
+  ctx.fillStyle = g;
+  ctx.beginPath(); ctx.arc(0, 0, 34, 0, 6.283); ctx.fill();
+  ctx.strokeStyle = '#2f6b1a'; ctx.lineWidth = 2.5; ctx.stroke();
+  // patas
+  ctx.fillStyle = '#4d9c2e';
+  ctx.beginPath(); ctx.ellipse(-22, 28, 12, 7, -0.4, 0, 6.283);
+  ctx.ellipse(22, 28, 12, 7, 0.4, 0, 6.283); ctx.fill();
+  // ojos
+  for (const s of [-1, 1]){
+    ctx.fillStyle = '#fff';
+    ctx.beginPath(); ctx.arc(s * 13, -18, 11, 0, 6.283); ctx.fill();
+    ctx.strokeStyle = '#2f6b1a'; ctx.lineWidth = 2; ctx.stroke();
+    // la pupila sigue al caramelo
+    const dx = limitar((C.x - x) / 90, -1, 1), dy = limitar((C.y - y) / 90, -1, 1);
+    ctx.fillStyle = '#14210c';
+    ctx.beginPath(); ctx.arc(s * 13 + dx * 4, -18 + dy * 4, 4.6, 0, 6.283); ctx.fill();
+  }
+  // boca, que se abre al acercarse el caramelo
+  ctx.fillStyle = '#7a1420';
+  ctx.beginPath();
+  ctx.ellipse(0, 8, 15 + b * 9, 5 + b * 16, 0, 0, 6.283);
+  ctx.fill();
+  if (b > 0.3){
+    ctx.fillStyle = '#fff';
+    ctx.beginPath();
+    ctx.roundRect(-9, 8 - (5 + b * 16) + 1, 6, 5, 1.5);
+    ctx.roundRect(3, 8 - (5 + b * 16) + 1, 6, 5, 1.5);
+    ctx.fill();
+  }
+  ctx.restore();
+}
+
+function dibujarTrazo(){
+  if (!trazo || trazo.puntos.length < 2) return;
+  ctx.save();
+  ctx.strokeStyle = 'rgba(255,255,255,.75)';
+  ctx.lineWidth = 3; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  ctx.shadowColor = 'rgba(255,255,255,.8)'; ctx.shadowBlur = 10;
+  ctx.beginPath();
+  trazo.puntos.forEach((p, i) => i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y));
+  ctx.stroke();
+  ctx.restore();
+}
+
+function dibujarHUD(){
+  ctx.font = '800 13px "Segoe UI", system-ui, sans-serif';
+  ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+  ctx.fillStyle = 'rgba(255,255,255,.55)';
+  ctx.fillText('NIVEL ' + (C.nivel + 1) + ' / ' + NIVELES.length, 18, 22);
+  // estrellas del nivel
+  const cogidas = estrellas.filter(e => e.cogida).length;
+  ctx.textAlign = 'right';
+  ctx.fillStyle = '#f3e600';
+  ctx.fillText('⭐ '.repeat(cogidas) + '☆ '.repeat(3 - cogidas), ANCHO - 18, 22);
+}
+
+// ---------- Interfaz ----------
+function refrescar(){
+  $('nivelTxt').textContent = C.nivel + 1;
+  $('estrellasTxt').textContent = C.totalEstrellas;
+  const r = Arcade.record('cuerda');
+  $('recordTxt').textContent = r ? r.toLocaleString('es-ES') + ' pts' : '—';
+}
+
+$('btnEmpezar').onclick = () => { Sonido.activar(); empezar(0, true); };
+$('btnSeguir').onclick = () => { Sonido.activar(); C.estrellas = 0; empezar(Math.min(NIVELES.length - 1, C.nivel + 1), false); };
+$('btnReiniciar').onclick = () => { Sonido.activar(); empezar(0, true); };
+Arcade.conectarSonido($('btnSonido'));
+
+cargar(0);
+refrescar();
+Arcade.bucle(dt => { actualizar(dt); dibujar(); });
+</script>
+</body>
+</html>

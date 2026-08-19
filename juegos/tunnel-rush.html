@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tunnel Rush — Arcade NEXO</title>
+<link rel="stylesheet" href="arcade.css">
+<style>
+  #tablero{position:relative; display:flex; flex-direction:column; gap:10px;}
+  #juego{width:min(1000px,100vw);}
+  .barra .titulo{color:#a855f7;}
+
+  #tunel{
+    position:relative; border-radius:16px; overflow:hidden;
+    border:2px solid rgba(168,85,247,.32);
+    box-shadow:0 15px 45px rgba(0,0,0,.9);
+    background:#03010a; touch-action:none;
+  }
+  #lienzo{display:block; width:100%; height:auto;}
+
+  #mandos{display:grid; grid-template-columns:1fr 1fr; gap:9px;}
+  #mandos button{
+    padding:16px 8px; font-size:1.5rem; line-height:1;
+    background:rgba(168,85,247,.12); border:1px solid rgba(168,85,247,.35);
+    border-radius:12px; color:#f0e4ff;
+  }
+  #mandos button:active{background:rgba(168,85,247,.32);}
+  @media (min-width:820px){ #mandos{display:none;} }
+
+  .rejillaResumen{
+    display:grid; grid-template-columns:repeat(auto-fit,minmax(110px,1fr)); gap:10px;
+    margin:14px 0 18px;
+  }
+  .rejillaResumen div{background:rgba(0,0,0,.35); border-radius:10px; padding:11px;}
+  .rejillaResumen .n{font-size:22px; font-weight:800; color:var(--oro);}
+  .rejillaResumen .e{font-size:11px; color:var(--tenue);}
+</style>
+</head>
+<body>
+
+<div id="juego" data-ritmo="accion">
+  <div class="barra">
+    <a class="boton" href="../index.html">🕹 Arcade</a>
+    <div class="titulo">🌀 TUNNEL RUSH</div>
+    <div class="sep"></div>
+    <div class="stat">📏 <span id="distTxt" class="oro">0</span> m</div>
+    <div class="stat">🚪 <span id="puertasTxt" class="verde">0</span></div>
+    <div class="stat">🏆 <span id="recordTxt" class="tenue">—</span></div>
+    <button id="btnSonido" title="Sonido" aria-label="Sonido">🔊</button>
+  </div>
+
+  <div id="tablero">
+    <div id="tunel">
+      <canvas id="lienzo" width="960" height="560"></canvas>
+      <div class="avisos" id="avisos"></div>
+    </div>
+
+    <div id="mandos">
+      <button id="mIzq" aria-label="Girar a la izquierda">↺</button>
+      <button id="mDer" aria-label="Girar a la derecha">↻</button>
+    </div>
+
+    <div class="modal visible" id="modalInicio">
+      <div class="tarjetaModal">
+        <h1>🌀 TUNNEL RUSH</h1>
+        <div class="sub">Un túnel que gira y unos huecos que no esperan.</div>
+        <div class="instrucciones">
+          <b>← →</b> o <b>A D</b> giran tu nave alrededor del túnel. No hay freno.<br>
+          Cada anillo tiene <b>bloques morados</b> y uno o dos <b>huecos</b>: hay que estar en el hueco
+          justo cuando llegas.<br>
+          <b>El túnel entero gira</b>, y cada vez más rápido: el hueco que veías se mueve mientras te acercas.<br>
+          Pasar un anillo suma. Tocar un bloque, se acabó.<br>
+          A partir de los 600 m el túnel cambia de sentido de vez en cuando. Avisa con un destello.
+        </div>
+        <div class="filaBotones"><button class="primario" id="btnEmpezar">▶ Entrar al túnel</button></div>
+      </div>
+    </div>
+
+    <div class="modal" id="modalFin">
+      <div class="tarjetaModal">
+        <h1>💥 Contra el muro</h1>
+        <div class="sub" id="finSub"></div>
+        <div class="rejillaResumen">
+          <div><div class="n" id="finDist">0</div><div class="e">metros</div></div>
+          <div><div class="n" id="finPuertas">0</div><div class="e">anillos</div></div>
+          <div><div class="n" id="finPuntos">0</div><div class="e">puntos</div></div>
+          <div><div class="n" id="finPremio">0</div><div class="e">NEXO-COINS</div></div>
+        </div>
+        <div class="filaBotones"><button class="primario" id="btnOtra">▶ Otra vez</button></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="arcade.js"></script>
+<script>
+// ============================================================
+//  TUNNEL RUSH — el túnel gira, tú buscas el hueco
+//  El túnel se divide en 16 sectores. Cada anillo guarda qué sectores están
+//  tapados; para pasar, el sector de la nave tiene que estar libre.
+// ============================================================
+const $ = id => document.getElementById(id);
+const lienzo = $('lienzo');
+const ctx = Arcade.nitido(lienzo);
+const avisos = $('avisos');
+const ANCHO = lienzo.width, ALTO = lienzo.height;
+const CX = ANCHO / 2, CY = ALTO / 2;
+
+const SECTORES = 16;
+const PASO = Math.PI * 2 / SECTORES;
+const FOCO = 340, LEJOS = 2200, CERCA = -40;
+const R_TUNEL = 250;                       // radio del túnel a distancia 0
+const escala = z => FOCO / (FOCO + Math.max(CERCA, z));
+
+const N = {
+  jugando:false, ang:0, vAng:0, d:0, vel:520, puertas:0,
+  giroTunel:0, velGiro:0.35, sentido:1, cambio:0, sacudida:0, destello:0
+};
+let anillos = [], particulas = new Particulas(260), tiempo = 0, proximoZ = 900;
+let izq = false, der = false;
+const VEL_BASE = 520, VEL_TOPE = 1500;
+
+// ---------- Generación ----------
+function generarAnillo(){
+  const dificultad = limitar((N.vel - VEL_BASE) / (VEL_TOPE - VEL_BASE), 0, 1);
+  // Siempre queda al menos un hueco de dos sectores seguidos: uno solo, con el
+  // túnel girando, sería cuestión de suerte y no de reflejos.
+  const huecos = Math.random() < 0.35 ? 2 : 1;
+  const tapados = new Array(SECTORES).fill(true);
+  for (let h = 0; h < huecos; h++){
+    const inicio = Math.floor(Math.random() * SECTORES);
+    const ancho = 2 + (dificultad < 0.5 ? 1 : 0);
+    for (let k = 0; k < ancho; k++) tapados[(inicio + k) % SECTORES] = false;
+  }
+  anillos.push({ z: proximoZ, tapados, pasado:false, tono: Math.random() });
+  proximoZ += Math.max(360, azar(500, 680) - dificultad * 160);
+}
+
+// ---------- Control ----------
+addEventListener('keydown', ev => {
+  if (/^(INPUT|TEXTAREA|SELECT)$/.test(ev.target.tagName || '')) return;
+  const k = ev.key.toLowerCase();
+  if (['arrowleft','arrowright','a','d'].includes(k)) ev.preventDefault();
+  if (k === 'arrowleft' || k === 'a') izq = true;
+  if (k === 'arrowright' || k === 'd') der = true;
+});
+addEventListener('keyup', ev => {
+  const k = ev.key.toLowerCase();
+  if (k === 'arrowleft' || k === 'a') izq = false;
+  if (k === 'arrowright' || k === 'd') der = false;
+});
+const mando = (id, set) => {
+  const b = $(id);
+  b.addEventListener('pointerdown', e => { e.preventDefault(); Sonido.activar(); set(true); });
+  b.addEventListener('pointerup', e => { e.preventDefault(); set(false); });
+  b.addEventListener('pointerleave', () => set(false));
+  b.addEventListener('pointercancel', () => set(false));
+};
+mando('mIzq', v => izq = v);
+mando('mDer', v => der = v);
+
+// ---------- Ronda ----------
+function empezar(){
+  Object.assign(N, { jugando:true, ang:0, vAng:0, d:0, vel:VEL_BASE, puertas:0,
+                     giroTunel:0, velGiro:0.35, sentido:1, cambio:0, sacudida:0, destello:0 });
+  anillos = []; particulas.lista.length = 0; proximoZ = 900;
+  for (let i = 0; i < 5; i++) generarAnillo();
+  $('modalInicio').classList.remove('visible');
+  $('modalFin').classList.remove('visible');
+  refrescar();
+}
+
+function chocar(){
+  N.jugando = false;
+  N.sacudida = 24;
+  Sonido.fx('choque');
+  const p = posNave();
+  particulas.emitir(48, { x:p.x, y:p.y, color:['#a855f7','#f0abfc','#fff'],
+                          velMin:100, velMax:420, vidaMin:0.4, vidaMax:0.9, rMin:2, rMax:6 });
+  setTimeout(terminar, 850);
+}
+
+function terminar(){
+  const dist = Math.floor(N.d);
+  const puntos = dist * 3 + N.puertas * 25;
+  const premio = Math.floor(puntos / 24);
+  Arcade.guardarRecord('tunnel', puntos);
+  Arcade.perfil.partida('tunnel', { puntos, victoria: puntos > 4000, premio });
+  $('finSub').textContent = dist > 800
+    ? 'Ese túnel ya iba muy rápido. Buen aguante.'
+    : 'Gira antes: el hueco se mueve mientras te acercas.';
+  $('finDist').textContent = dist.toLocaleString('es-ES');
+  $('finPuertas').textContent = N.puertas;
+  $('finPuntos').textContent = puntos.toLocaleString('es-ES');
+  $('finPremio').textContent = premio.toLocaleString('es-ES');
+  $('modalFin').classList.add('visible');
+  refrescar();
+}
+
+// ---------- Simulación ----------
+function actualizar(dt){
+  tiempo += dt;
+  particulas.actualizar(dt);
+  if (N.sacudida > 0) N.sacudida = Math.max(0, N.sacudida - dt * 40);
+  if (N.destello > 0) N.destello = Math.max(0, N.destello - dt * 2);
+  if (!N.jugando) return;
+
+  N.vel = Math.min(VEL_TOPE, VEL_BASE + N.d * 0.55);
+  N.d += N.vel * dt / 12;
+
+  // giro del túnel, con cambios de sentido a partir de cierta distancia
+  N.velGiro = 0.35 + (N.vel - VEL_BASE) / (VEL_TOPE - VEL_BASE) * 0.9;
+  if (N.d > 600){
+    N.cambio -= dt;
+    if (N.cambio <= 0){
+      N.cambio = azar(6, 12);
+      N.sentido *= -1;
+      N.destello = 1;
+      Sonido.fx('alarma');
+    }
+  }
+  N.giroTunel += N.velGiro * N.sentido * dt;
+
+  // la nave gira con inercia
+  // La nave tiene que poder cruzar medio túnel entre anillo y anillo: con la
+  // aceleración anterior tardaba un segundo en dar media vuelta y los anillos
+  // llegaban cada 0,8 s, así que había huecos imposibles de alcanzar.
+  const empuje = (der ? 1 : 0) - (izq ? 1 : 0);
+  N.vAng += empuje * 26 * dt;
+  N.vAng *= Math.pow(0.06, dt);
+  N.vAng = limitar(N.vAng, -6.8, 6.8);
+  N.ang += N.vAng * dt;
+
+  const avance = N.vel * dt;
+  for (const a of anillos) a.z -= avance;
+  anillos = anillos.filter(a => a.z > CERCA - 60);
+  proximoZ -= avance;
+  while (proximoZ < LEJOS) generarAnillo();
+
+  // colisión al cruzar el plano de la nave
+  for (const a of anillos){
+    if (a.pasado || a.z > 26) continue;
+    a.pasado = true;
+    // el sector de la nave se mide en el sistema del túnel, que está girando
+    const rel = N.ang - N.giroTunel;
+    const s = ((Math.floor(rel / PASO) % SECTORES) + SECTORES) % SECTORES;
+    if (a.tapados[s]){ chocar(); return; }
+    N.puertas++;
+    N.destello = Math.max(N.destello, 0.35);
+    Sonido.fx('come');
+    refrescar();
+  }
+}
+
+const posNave = () => {
+  const r = R_TUNEL * 0.82;
+  return { x: CX + Math.cos(N.ang) * r, y: CY + Math.sin(N.ang) * r };
+};
+
+// ---------- Dibujo ----------
+function dibujar(){
+  ctx.save();
+  if (N.sacudida > 0) ctx.translate(azar(-N.sacudida, N.sacudida) * 0.5, azar(-N.sacudida, N.sacudida) * 0.5);
+
+  // fondo del túnel: degradado radial hacia el fondo
+  const g = ctx.createRadialGradient(CX, CY, 10, CX, CY, R_TUNEL * 1.6);
+  g.addColorStop(0, '#150033');
+  g.addColorStop(0.6, '#0a0118');
+  g.addColorStop(1, '#03010a');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, ANCHO, ALTO);
+
+  dibujarParedes();
+  // de lejos a cerca, para que lo cercano tape
+  const orden = anillos.slice().sort((a, b) => b.z - a.z);
+  for (const a of orden) dibujarAnillo(a);
+  dibujarNave();
+  particulas.dibujar(ctx);
+  ctx.restore();
+
+  if (N.destello > 0){
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.globalAlpha = N.destello * 0.16;
+    ctx.fillStyle = '#a855f7';
+    ctx.fillRect(0, 0, ANCHO, ALTO);
+    ctx.restore();
+  }
+  dibujarHUD();
+}
+
+/** Nervios longitudinales del túnel, que dan la sensación de avanzar. */
+function dibujarParedes(){
+  ctx.save();
+  ctx.lineWidth = 1.2;
+  for (let s = 0; s < SECTORES; s++){
+    const a = s * PASO + N.giroTunel;
+    ctx.strokeStyle = 'rgba(168,85,247,.18)';
+    ctx.beginPath();
+    ctx.moveTo(CX + Math.cos(a) * R_TUNEL * escala(CERCA),
+               CY + Math.sin(a) * R_TUNEL * escala(CERCA));
+    ctx.lineTo(CX + Math.cos(a) * R_TUNEL * escala(LEJOS),
+               CY + Math.sin(a) * R_TUNEL * escala(LEJOS));
+    ctx.stroke();
+  }
+  // anillos de referencia corriendo hacia ti
+  const paso = 200;
+  const desf = ((N.d * 12) % paso + paso) % paso;
+  for (let z = LEJOS; z > CERCA; z -= paso){
+    const zz = z - desf;
+    if (zz < CERCA) continue;
+    const r = R_TUNEL * escala(zz);
+    ctx.strokeStyle = 'rgba(168,85,247,' + (0.05 + escala(zz) * 0.13).toFixed(3) + ')';
+    ctx.beginPath(); ctx.arc(CX, CY, r, 0, 6.283); ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function dibujarAnillo(a){
+  const s0 = escala(a.z), s1 = escala(a.z + 90);
+  if (s0 < 0.03) return;
+  const rExt = R_TUNEL * s0, rInt = R_TUNEL * s1;
+  const col = a.tono < 0.5 ? [168, 85, 247] : [236, 72, 153];
+  const alfa = Math.min(1, s0 * 1.5);
+
+  for (let s = 0; s < SECTORES; s++){
+    if (!a.tapados[s]) continue;
+    const a0 = s * PASO + N.giroTunel, a1 = a0 + PASO;
+    ctx.beginPath();
+    ctx.arc(CX, CY, rExt, a0, a1);
+    ctx.arc(CX, CY, rInt, a1, a0, true);
+    ctx.closePath();
+    const g = ctx.createRadialGradient(CX, CY, rInt, CX, CY, rExt);
+    g.addColorStop(0, 'rgba(' + col.join(',') + ',' + (alfa * 0.35).toFixed(3) + ')');
+    g.addColorStop(1, 'rgba(' + col.join(',') + ',' + (alfa * 0.92).toFixed(3) + ')');
+    ctx.fillStyle = g;
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,' + (alfa * 0.5).toFixed(3) + ')';
+    ctx.lineWidth = Math.max(0.6, 2 * s0);
+    ctx.stroke();
+  }
+}
+
+function dibujarNave(){
+  const p = posNave();
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  const g = ctx.createRadialGradient(p.x, p.y, 2, p.x, p.y, 52);
+  g.addColorStop(0, 'rgba(240,171,252,.55)');
+  g.addColorStop(1, 'rgba(168,85,247,0)');
+  ctx.fillStyle = g;
+  ctx.beginPath(); ctx.arc(p.x, p.y, 52, 0, 6.283); ctx.fill();
+  ctx.restore();
+
+  ctx.save();
+  ctx.translate(p.x, p.y);
+  ctx.rotate(N.ang + Math.PI / 2 + limitar(N.vAng * 0.06, -0.5, 0.5));
+  // triángulo con estela
+  ctx.fillStyle = '#f5d0fe';
+  ctx.beginPath();
+  ctx.moveTo(0, -16); ctx.lineTo(12, 12); ctx.lineTo(0, 6); ctx.lineTo(-12, 12);
+  ctx.closePath(); ctx.fill();
+  ctx.strokeStyle = '#a855f7'; ctx.lineWidth = 2; ctx.stroke();
+  ctx.fillStyle = 'rgba(255,255,255,.85)';
+  ctx.beginPath(); ctx.arc(0, -4, 3.5, 0, 6.283); ctx.fill();
+  ctx.restore();
+}
+
+function dibujarHUD(){
+  ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+  ctx.font = '900 30px "Segoe UI", system-ui, sans-serif';
+  ctx.lineWidth = 5; ctx.strokeStyle = 'rgba(0,0,0,.7)';
+  const t = Math.floor(N.d).toLocaleString('es-ES') + ' m';
+  ctx.strokeText(t, 20, 16); ctx.fillStyle = '#f0e4ff'; ctx.fillText(t, 20, 16);
+
+  ctx.font = '800 15px "Segoe UI", system-ui, sans-serif';
+  const p = '🚪 ' + N.puertas;
+  ctx.strokeText(p, 20, 52); ctx.fillStyle = '#e9d5ff'; ctx.fillText(p, 20, 52);
+
+  const u = (N.vel - VEL_BASE) / (VEL_TOPE - VEL_BASE);
+  const an = 170, x = ANCHO - an - 20, y = 22;
+  ctx.fillStyle = 'rgba(0,0,0,.45)';
+  ctx.beginPath(); ctx.roundRect(x, y, an, 10, 5); ctx.fill();
+  const g = ctx.createLinearGradient(x, 0, x + an, 0);
+  g.addColorStop(0, '#a855f7'); g.addColorStop(1, '#ec4899');
+  ctx.fillStyle = g;
+  ctx.beginPath(); ctx.roundRect(x, y, Math.max(5, an * u), 10, 5); ctx.fill();
+  if (N.sentido < 0){
+    ctx.fillStyle = '#f0abfc';
+    ctx.font = '800 11px "Segoe UI", system-ui, sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillText('↺ SENTIDO INVERTIDO', ANCHO - 20, y + 16);
+  }
+}
+
+// ---------- Interfaz ----------
+function refrescar(){
+  $('distTxt').textContent = Math.floor(N.d).toLocaleString('es-ES');
+  $('puertasTxt').textContent = N.puertas;
+  const r = Arcade.record('tunnel');
+  $('recordTxt').textContent = r ? r.toLocaleString('es-ES') + ' pts' : '—';
+}
+
+$('btnEmpezar').onclick = () => { Sonido.activar(); empezar(); };
+$('btnOtra').onclick = () => { Sonido.activar(); empezar(); };
+Arcade.conectarSonido($('btnSonido'));
+
+let espera = 0;
+refrescar();
+Arcade.bucle(dt => {
+  actualizar(dt); dibujar();
+  espera += dt;
+  if (espera > 0.25){ espera = 0; refrescar(); }
+});
+</script>
+</body>
+</html>

@@ -47,7 +47,16 @@ const JUEGOS = [
   { id:'spire',      archivo:'juegos/spire.html' },
   { id:'limbo',      archivo:'juegos/limbo.html' },
   { id:'bigbass',    archivo:'juegos/big-bass-crash.html' },
-  { id:'plinko',     archivo:'juegos/plinko.html' }
+  { id:'plinko',     archivo:'juegos/plinko.html' },
+  { id:'subway',     archivo:'juegos/subway-surfers.html' },
+  { id:'slope',      archivo:'juegos/slope.html' },
+  { id:'hook',       archivo:'juegos/stickman-hook.html' },
+  { id:'paperio',    archivo:'juegos/paper-io.html' },
+  { id:'vex',        archivo:'juegos/vex.html' },
+  { id:'tunnel',     archivo:'juegos/tunnel-rush.html' },
+  { id:'cuerda',     archivo:'juegos/cut-the-rope.html' },
+  { id:'basket',     archivo:'juegos/basket-random.html' },
+  { id:'karts',      archivo:'juegos/smash-karts.html' }
 ];
 
 const leer = f => fs.readFileSync(path.join(RAIZ, f), 'utf8');

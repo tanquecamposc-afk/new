@@ -1,6 +1,6 @@
 # 🕹 ARCADE NEXO
 
-Veinticinco juegos hechos a mano en **HTML5 + Canvas + JavaScript puro**. Sin dependencias, sin librerías, sin assets externos y sin conexión a internet: todos los gráficos se dibujan por código y todo el sonido se genera en tiempo real con WebAudio.
+Treinta y cuatro juegos hechos a mano en **HTML5 + Canvas + JavaScript puro**. Sin dependencias, sin librerías, sin assets externos y sin conexión a internet: todos los gráficos se dibujan por código y todo el sonido se genera en tiempo real con WebAudio.
 
 ## ▶ Cómo jugar
 
@@ -10,7 +10,7 @@ Cada juego tiene su botón **🕹 Arcade** arriba a la izquierda para volver a l
 
 ### 📦 Versión de un solo archivo
 
-`arcade.html` es el arcade **entero** (portada y los veinticinco juegos) empaquetado en un único archivo, sin CSS ni JS externos. Sirve para cuando solo puedes usar una página suelta: mandarlo por correo, subirlo a cualquier sitio o abrirlo desde una memoria USB.
+`arcade.html` es el arcade **entero** (portada y los treinta y cuatro juegos) empaquetado en un único archivo, sin CSS ni JS externos. Sirve para cuando solo puedes usar una página suelta: mandarlo por correo, subirlo a cualquier sitio o abrirlo desde una memoria USB.
 
 Se genera a partir de los archivos de `juegos/`, que siguen siendo la fuente de verdad:
 
@@ -49,6 +49,15 @@ Cada juego queda aislado en su propia pantalla: su CSS se prefija con el selecto
 | 🛗 [Limbo+](juegos/limbo.html) | Riesgo | Fija un objetivo y mira si el ascensor lo alcanza |
 | 🎣 [Big Bass Crash](juegos/big-bass-crash.html) | Riesgo | Crash de pesca con tres cañas independientes |
 | 🔻 [Plinko](juegos/plinko.html) | Riesgo | Bolas por un bosque de clavos, tres riesgos y hasta 16 filas |
+| 🛹 [Subway Surfers](juegos/subway-surfers.html) | Corredor | Tres vías en falso 3D: trenes, vallas, monedas e imán |
+| 🟢 [Slope](juegos/slope.html) | Corredor | Una bola que no frena por un tobogán de neón infinito |
+| 🕸 [Stickman Hook](juegos/stickman-hook.html) | Física | Péndulos de cuerda: cuanto más abajo sueltas, más lejos llegas |
+| 🟩 [Paper.io 2](juegos/paper-io.html) | Arena | Conquista territorio rodeándolo, y no dejes que te corten el rastro |
+| 🏃 [Vex](juegos/vex.html) | Plataformas | Tres actos de precisión con salto en pared, pinchos y sierras |
+| 🌀 [Tunnel Rush](juegos/tunnel-rush.html) | Corredor | Un túnel de 16 sectores que gira y cambia de sentido |
+| 🍬 [Cut the Rope](juegos/cut-the-rope.html) | Puzle | Corta cuerdas, coge las tres estrellas y dale de comer a Ñam |
+| 🏀 [Basket Random](juegos/basket-random.html) | Deportes | Un botón, dos muñecos y unas reglas que cambian cada punto |
+| 🏎 [Smash Karts](juegos/smash-karts.html) | Arena | Cuatro karts, misiles, minas y turbo. Solo queda uno |
 
 ---
 
@@ -458,9 +467,27 @@ La portada lleva un panel de canje con **20 códigos, del 1 al 20**, que dan **1
 - Vive en `Arcade.codigos` (`juegos/arcade.js`): `TOTAL`, `PREMIO`, `usados()`, `canjear(texto)` y `olvidar()`. Para cambiar el premio o cuántos hay basta con tocar esas dos constantes.
 - El registro se guarda en `localStorage` bajo `arcade_codigos`, y el botón **🗑 Borrar todos mis récords** también lo limpia.
 
+## 🕹 Los nueve de Poki
+
+Nueve de los juegos más jugados del mundo en Poki, rehechos desde cero con la misma receta del resto del arcade: Canvas, código y nada más.
+
+| Juego | Lo que tiene por dentro |
+|---|---|
+| 🛹 **Subway Surfers** | Falso 3D de un punto de fuga: cada objeto guarda su distancia y se escala por `1/(1+z/FOCO)`. El generador **mira los trenes de tramos anteriores** antes de tapar un carril, así que nunca cierra las tres vías a la vez. |
+| 🟢 **Slope** | La pista es una función del avance: centro y ancho salen de tres senos cuya suma de *amplitud × frecuencia* queda en **0,21 unidades por unidad de avance**, justo por debajo de lo que la bola puede corregir a velocidad máxima. |
+| 🕸 **Stickman Hook** | Péndulo de verdad: la cuerda proyecta la posición sobre el círculo y **elimina solo la componente radial** de la velocidad, así que la energía se conserva y soltar abajo te lanza. Un enganche por pulsación. |
+| 🟩 **Paper.io 2** | La captura es un **relleno por inundación**: se marca el rastro como tuyo y se inunda el mapa desde los bordes; lo que la inundación no alcanza estaba encerrado, y pasa a ser tuyo. |
+| 🏃 **Vex** | Mapas de texto de 34 px por casilla, **colisión por ejes separados** y las tres cortesías del género: *coyote time*, cola de salto y salto en pared. |
+| 🌀 **Tunnel Rush** | 16 sectores; la nave y los anillos se miden en el sistema del túnel, que gira. La nave acelera a 26 rad/s² para poder **cruzar medio túnel entre anillo y anillo**. |
+| 🍬 **Cut the Rope** | Cada cuerda es una restricción de distancia **máxima**: solo tira cuando está estirada, y por eso el caramelo cae y luego frena. El corte es una intersección de segmentos. |
+| 🏀 **Basket Random** | Dos muñecos con pierna de muelle y choque elástico con el balón. **Nueve reglas** que cambian cada punto: gravedad, tamaño del balón, altura de los aros y rebote. |
+| 🏎 **Smash Karts** | Los karts **solo giran si se mueven**, como un coche. Misiles, minas con retardo y turbo que arrolla, tres vidas cada uno y bots que van a por la caja si están desarmados. |
+
+Todos se comprobaron con **pilotos automáticos** además de a ojo, que es como salieron los ajustes de dificultad: el corredor moría siempre a la misma distancia (era el tope de tiempo de la prueba, no un muro), el túnel parecía imposible hasta que el piloto compensó el giro, y el generador de Subway Surfers cerraba los tres carriles hasta que se le enseñó a mirar hacia atrás.
+
 ## 🎛 Ayuda, volumen y pausa
 
-Tres cosas que faltaban en los veinticinco juegos a la vez, resueltas una sola vez en `arcade.js` y `arcade.css`:
+Tres cosas que faltaban en todos los juegos a la vez, resueltas una sola vez en `arcade.js` y `arcade.css`:
 
 - **❓ Ayuda en cualquier momento.** Antes las instrucciones solo se veían en la pantalla de inicio: una vez dentro, para volver a leerlas había que abandonar la partida. Ahora cada juego tiene un botón **❓** en su barra que abre las mismas instrucciones sobre el juego, sin tocar nada de lo que llevas. También con la tecla <kbd>?</kbd> o <kbd>H</kbd>.
 - **🔊 Volumen de verdad, no solo mudo.** El botón de sonido apagaba del todo o nada. Ahora hay un **control de volumen** en ese mismo panel, que multiplica todo lo que suena —efectos, motor del Aviator y música del tower defense—. El ajuste **se guarda** y viaja de un juego a otro y entre visitas, en `arcade_sonido`.

@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Basket Random — Arcade NEXO</title>
+<link rel="stylesheet" href="arcade.css">
+<style>
+  #tablero{position:relative; display:flex; flex-direction:column; gap:10px;}
+  #juego{width:min(1020px,100vw);}
+  .barra .titulo{color:#fb923c;}
+
+  #cancha{
+    position:relative; border-radius:16px; overflow:hidden;
+    border:2px solid rgba(251,146,60,.32);
+    box-shadow:0 15px 45px rgba(0,0,0,.9);
+    touch-action:none;
+  }
+  #lienzo{display:block; width:100%; height:auto;}
+
+  #mando{
+    padding:18px; font-size:1rem; font-family:var(--fuente-arcade); font-weight:800;
+    letter-spacing:1px; text-transform:uppercase; width:100%;
+    background:linear-gradient(135deg,#fb923c,#f97316); color:#1a0d02; border:none;
+    border-radius:12px;
+  }
+  #mando:active{filter:brightness(1.2);}
+
+  .rejillaResumen{
+    display:grid; grid-template-columns:repeat(auto-fit,minmax(110px,1fr)); gap:10px;
+    margin:14px 0 18px;
+  }
+  .rejillaResumen div{background:rgba(0,0,0,.35); border-radius:10px; padding:11px;}
+  .rejillaResumen .n{font-size:22px; font-weight:800; color:var(--oro);}
+  .rejillaResumen .e{font-size:11px; color:var(--tenue);}
+</style>
+</head>
+<body>
+
+<div id="juego">
+  <div class="barra">
+    <a class="boton" href="../index.html">🕹 Arcade</a>
+    <div class="titulo">🏀 BASKET RANDOM</div>
+    <div class="sep"></div>
+    <div class="stat">🟠 <span id="tuTxt" class="oro">0</span></div>
+    <div class="stat">🔵 <span id="cpuTxt" class="tenue">0</span></div>
+    <div class="stat">🏆 <span id="recordTxt" class="tenue">—</span></div>
+    <button id="btnSonido" title="Sonido" aria-label="Sonido">🔊</button>
+  </div>
+
+  <div id="tablero">
+    <div id="cancha">
+      <canvas id="lienzo" width="980" height="520"></canvas>
+      <div class="avisos" id="avisos"></div>
+    </div>
+
+    <button id="mando">Saltar y tirar · espacio o ↑</button>
+
+    <div class="modal visible" id="modalInicio">
+      <div class="tarjetaModal">
+        <h1>🏀 BASKET RANDOM</h1>
+        <div class="sub">Un botón, dos muñecos y unas reglas que no paran de cambiar.</div>
+        <div class="instrucciones">
+          <b>Un solo control:</b> <b>espacio</b>, <b>↑</b> o el botón de abajo. Tu muñeco salta y da una
+          patada con la pierna: así se golpea el balón.<br>
+          Marcas metiendo el balón por el <b>aro azul</b> de la derecha. La máquina va a por el tuyo.<br>
+          <b>Cada punto cambia algo</b>: la gravedad, el tamaño del balón, la altura de los aros o
+          cómo botan las cosas. Por eso se llama <i>random</i>.<br>
+          Gana el primero que llegue a <b>5 puntos</b>.
+        </div>
+        <div class="filaBotones"><button class="primario" id="btnEmpezar">▶ Saltar a la cancha</button></div>
+      </div>
+    </div>
+
+    <div class="modal" id="modalFin">
+      <div class="tarjetaModal">
+        <h1 id="finTitulo">🏆 Victoria</h1>
+        <div class="sub" id="finSub"></div>
+        <div class="rejillaResumen">
+          <div><div class="n" id="finTu">0</div><div class="e">tus puntos</div></div>
+          <div><div class="n" id="finCpu">0</div><div class="e">la máquina</div></div>
+          <div><div class="n" id="finPuntos">0</div><div class="e">puntos</div></div>
+          <div><div class="n" id="finPremio">0</div><div class="e">NEXO-COINS</div></div>
+        </div>
+        <div class="filaBotones"><button class="primario" id="btnOtra">▶ Otro partido</button></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="arcade.js"></script>
+<script>
+// ============================================================
+//  BASKET RANDOM — dos muñecos, un botón y reglas cambiantes
+//  Cada muñeco es un cuerpo circular con una pierna que gira. El balón choca
+//  contra el cuerpo y contra la pierna con rebote elástico; como la pierna
+//  lleva velocidad angular, patearla en el momento justo manda el balón lejos.
+// ============================================================
+const $ = id => document.getElementById(id);
+const lienzo = $('lienzo');
+const ctx = Arcade.nitido(lienzo);
+const avisos = $('avisos');
+const ANCHO = lienzo.width, ALTO = lienzo.height;
+const SUELO = ALTO - 46;
+const META = 5;
+
+// ---------- Reglas que cambian ----------
+const REGLAS = [
+  { txt:'🌙 Gravedad baja',        g:620,  rBalon:22, aro:200, rebote:0.72 },
+  { txt:'🪨 Gravedad alta',        g:2100, rBalon:22, aro:190, rebote:0.55 },
+  { txt:'🎈 Balón enorme',         g:1250, rBalon:38, aro:200, rebote:0.7 },
+  { txt:'🫧 Balón diminuto',       g:1250, rBalon:13, aro:190, rebote:0.78 },
+  { txt:'🏗 Aros por las nubes',   g:1250, rBalon:22, aro:130, rebote:0.68 },
+  { txt:'🪑 Aros bajitos',         g:1250, rBalon:22, aro:265, rebote:0.68 },
+  { txt:'🦘 Todo rebota',          g:1400, rBalon:22, aro:200, rebote:0.92 },
+  { txt:'🍯 Nada rebota',          g:1400, rBalon:22, aro:200, rebote:0.28 },
+  { txt:'⚖️ Partido normal',       g:1250, rBalon:22, aro:200, rebote:0.68 }
+];
+let R = REGLAS[8];
+
+// ---------- Estado ----------
+const balon = { x:0, y:0, vx:0, vy:0, giro:0 };
+function nuevoMuñeco(lado){
+  return { lado, x:0, y:0, vx:0, vy:0, r:26, suelo:false,
+           pierna:0, vPierna:0, saltando:false, col: lado < 0 ? '#fb923c' : '#38bdf8' };
+}
+const tu = nuevoMuñeco(-1), cpu = nuevoMuñeco(1);
+let marcador = { tu:0, cpu:0 };
+let jugando = false, puntoEn = 0, aviso = '', avisoT = 0, tiempo = 0;
+let particulas = new Particulas(220), sacudida = 0;
+let ultimoToque = null;
+
+const aroX = lado => lado < 0 ? 92 : ANCHO - 92;
+
+// ---------- Ronda ----------
+function nuevoPunto(quienSaca){
+  R = elegir(REGLAS);
+  aviso = R.txt; avisoT = 2.4;
+  balon.x = ANCHO / 2 + quienSaca * 60;
+  balon.y = 150;
+  balon.vx = 0; balon.vy = 0; balon.giro = 0;
+  tu.x = ANCHO * 0.28; tu.y = SUELO - tu.r; tu.vx = 0; tu.vy = 0; tu.pierna = 0; tu.vPierna = 0;
+  cpu.x = ANCHO * 0.72; cpu.y = SUELO - cpu.r; cpu.vx = 0; cpu.vy = 0; cpu.pierna = 0; cpu.vPierna = 0;
+  puntoEn = 0;
+  ultimoToque = null;
+  Sonido.fx('silbato');
+}
+
+function empezar(){
+  marcador = { tu:0, cpu:0 };
+  jugando = true;
+  particulas.lista.length = 0;
+  nuevoPunto(-1);
+  $('modalInicio').classList.remove('visible');
+  $('modalFin').classList.remove('visible');
+  refrescar();
+}
+
+function anotar(quien){
+  if (puntoEn) return;
+  puntoEn = 1;
+  if (quien === 'tu'){ marcador.tu++; Sonido.fx('gol'); }
+  else { marcador.cpu++; Sonido.fx('derrota'); }
+  sacudida = 12;
+  particulas.emitir(34, { x:balon.x, y:balon.y, color:['#fb923c','#f3e600','#fff'],
+                          velMin:80, velMax:300, vidaMin:0.4, vidaMax:0.9, rMin:2, rMax:5 });
+  refrescar();
+  setTimeout(() => {
+    if (marcador.tu >= META || marcador.cpu >= META) terminar();
+    else nuevoPunto(quien === 'tu' ? 1 : -1);
+  }, 1100);
+}
+
+function terminar(){
+  jugando = false;
+  const gano = marcador.tu >= META;
+  const puntos = marcador.tu * 320 + (gano ? 900 : 0);
+  const premio = Math.floor(puntos / 18);
+  Arcade.guardarRecord('basket', puntos);
+  Arcade.perfil.partida('basket', { puntos, victoria: gano, premio });
+  $('finTitulo').textContent = gano ? '🏆 ¡Partido ganado!' : '😤 Te han ganado';
+  $('finSub').textContent = gano
+    ? 'Con esas reglas locas, tiene mérito.'
+    : 'La máquina también sufre con la gravedad. Otra vez.';
+  $('finTu').textContent = marcador.tu;
+  $('finCpu').textContent = marcador.cpu;
+  $('finPuntos').textContent = puntos.toLocaleString('es-ES');
+  $('finPremio').textContent = premio.toLocaleString('es-ES');
+  $('modalFin').classList.add('visible');
+  refrescar();
+}
+
+// ---------- Control ----------
+function saltar(m){
+  if (!jugando || puntoEn) return;
+  if (m.suelo){
+    m.vy = -640;
+    m.suelo = false;
+    Sonido.fx('salto');
+  }
+  // la patada se lanza siempre: en el aire sirve para machacar
+  m.vPierna = 15 * -m.lado;
+}
+addEventListener('keydown', ev => {
+  if (/^(INPUT|TEXTAREA|SELECT)$/.test(ev.target.tagName || '')) return;
+  if (ev.key === ' ' || ev.key === 'ArrowUp' || ev.key === 'w'){
+    ev.preventDefault(); Sonido.activar(); saltar(tu);
+  }
+});
+$('mando').addEventListener('pointerdown', ev => { ev.preventDefault(); Sonido.activar(); saltar(tu); });
+$('cancha').addEventListener('pointerdown', ev => { ev.preventDefault(); Sonido.activar(); saltar(tu); });
+
+// ---------- Física ----------
+function moverMuñeco(m, dt){
+  m.vy += R.g * dt;
+  m.x += m.vx * dt;
+  m.y += m.vy * dt;
+  m.vx *= Math.pow(0.2, dt);
+
+  if (m.y >= SUELO - m.r){
+    m.y = SUELO - m.r;
+    if (m.vy > 0) m.vy = 0;
+    m.suelo = true;
+  } else m.suelo = false;
+
+  // cada uno se queda en su media cancha, para que no se peguen
+  const min = m.lado < 0 ? 60 : ANCHO / 2 + 20;
+  const max = m.lado < 0 ? ANCHO / 2 - 20 : ANCHO - 60;
+  m.x = limitar(m.x, min, max);
+
+  // la pierna vuelve a su sitio con un muelle
+  m.vPierna += (-m.pierna * 34 - m.vPierna * 4.5) * dt;
+  m.pierna += m.vPierna * dt;
+  m.pierna = limitar(m.pierna, -1.5, 1.5);
+}
+
+/** Punta de la pierna, que es lo que golpea el balón. */
+function puntaPierna(m){
+  const ang = Math.PI / 2 + m.pierna;
+  return { x: m.x + Math.cos(ang) * 40 * -m.lado * -1, y: m.y + Math.sin(ang) * 40 };
+}
+
+function chocarCirculo(cx, cy, r, vxObj, vyObj, elasticidad){
+  const dx = balon.x - cx, dy = balon.y - cy;
+  const d = Math.hypot(dx, dy);
+  const min = r + R.rBalon;
+  if (d >= min || d === 0) return false;
+  const nx = dx / d, ny = dy / d;
+  balon.x = cx + nx * min;
+  balon.y = cy + ny * min;
+  const rel = (balon.vx - vxObj) * nx + (balon.vy - vyObj) * ny;
+  if (rel < 0){
+    balon.vx -= (1 + elasticidad) * rel * nx;
+    balon.vy -= (1 + elasticidad) * rel * ny;
+  }
+  balon.vx += vxObj * 0.25;
+  balon.vy += vyObj * 0.25;
+  return true;
+}
+
+function moverBalon(dt){
+  balon.vy += R.g * dt;
+  balon.x += balon.vx * dt;
+  balon.y += balon.vy * dt;
+  balon.giro += balon.vx * dt / 26;
+  balon.vx *= Math.pow(0.55, dt);
+
+  if (balon.y > SUELO - R.rBalon){
+    balon.y = SUELO - R.rBalon;
+    balon.vy = -balon.vy * R.rebote;
+    balon.vx *= 0.9;
+    if (Math.abs(balon.vy) > 60) Sonido.fx('bola');
+  }
+  if (balon.x < R.rBalon){ balon.x = R.rBalon; balon.vx = -balon.vx * R.rebote; }
+  if (balon.x > ANCHO - R.rBalon){ balon.x = ANCHO - R.rBalon; balon.vx = -balon.vx * R.rebote; }
+  if (balon.y < R.rBalon){ balon.y = R.rBalon; balon.vy = -balon.vy * R.rebote; }
+
+  for (const m of [tu, cpu]){
+    if (chocarCirculo(m.x, m.y, m.r, m.vx, m.vy, 0.55)) ultimoToque = m;
+    const p = puntaPierna(m);
+    const vp = m.vPierna * 40;
+    if (chocarCirculo(p.x, p.y, 13, m.vx + Math.cos(m.pierna) * vp, m.vy - Math.sin(m.pierna) * vp, 0.85)){
+      ultimoToque = m;
+      Sonido.fx('patada');
+    }
+  }
+
+  // aros: dos postes que rebotan, y el hueco entre ellos es canasta
+  for (const lado of [-1, 1]){
+    const ax = aroX(lado), ay = R.aro;
+    const anilloAn = 62;
+    for (const px of [ax - anilloAn / 2, ax + anilloAn / 2]){
+      const dx = balon.x - px, dy = balon.y - ay;
+      const d = Math.hypot(dx, dy);
+      if (d < R.rBalon + 5 && d > 0){
+        const nx = dx / d, ny = dy / d;
+        balon.x = px + nx * (R.rBalon + 5);
+        balon.y = ay + ny * (R.rBalon + 5);
+        const rel = balon.vx * nx + balon.vy * ny;
+        if (rel < 0){ balon.vx -= 1.6 * rel * nx; balon.vy -= 1.6 * rel * ny; }
+        Sonido.fx('banda');
+      }
+    }
+    // canasta: pasa hacia abajo por el hueco
+    if (!puntoEn && balon.vy > 0 &&
+        Math.abs(balon.x - ax) < anilloAn / 2 - R.rBalon * 0.35 &&
+        Math.abs(balon.y - ay) < 16){
+      anotar(lado > 0 ? 'tu' : 'cpu');
+    }
+    // tablero
+    const tx = lado < 0 ? ax - 46 : ax + 46;
+    if (Math.abs(balon.x - tx) < R.rBalon + 5 && balon.y > ay - 92 && balon.y < ay + 14){
+      balon.x = tx + Math.sign(balon.x - tx) * (R.rBalon + 5);
+      balon.vx = -balon.vx * 0.7;
+      Sonido.fx('banda');
+    }
+  }
+}
+
+// ---------- Máquina ----------
+// Salta cuando el balón está a tiro y mirando hacia su lado. Falla a propósito
+// de vez en cuando: un rival perfecto en un juego de físicas locas no es rival,
+// es un muro.
+let pensarCPU = 0;
+function moverCPU(dt){
+  pensarCPU -= dt;
+  const objetivo = limitar(balon.x + balon.vx * 0.25, ANCHO / 2 + 30, ANCHO - 70);
+  cpu.vx += Math.sign(objetivo - cpu.x) * 900 * dt;
+  cpu.vx = limitar(cpu.vx, -320, 320);
+  if (pensarCPU <= 0){
+    pensarCPU = azar(0.09, 0.2);
+    const cerca = Math.hypot(balon.x - cpu.x, balon.y - cpu.y) < 105;
+    if (cerca && Math.random() < 0.72) saltar(cpu);
+  }
+}
+
+// ---------- Bucle ----------
+function actualizar(dt){
+  tiempo += dt;
+  particulas.actualizar(dt);
+  if (sacudida > 0) sacudida = Math.max(0, sacudida - dt * 28);
+  if (avisoT > 0) avisoT -= dt;
+  if (!jugando) return;
+  moverMuñeco(tu, dt);
+  moverCPU(dt);
+  moverMuñeco(cpu, dt);
+  if (!puntoEn) moverBalon(dt);
+}
+
+// ---------- Dibujo ----------
+function dibujar(){
+  ctx.save();
+  if (sacudida > 0) ctx.translate(azar(-sacudida, sacudida) * 0.5, azar(-sacudida, sacudida) * 0.5);
+
+  // pabellón
+  const g = ctx.createLinearGradient(0, 0, 0, ALTO);
+  g.addColorStop(0, '#12203a'); g.addColorStop(0.7, '#0a1426'); g.addColorStop(1, '#070d18');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, ANCHO, ALTO);
+
+  // grada con público a puntitos
+  for (let i = 0; i < 130; i++){
+    const x = (i * 79) % ANCHO, y = 30 + ((i * 37) % 80);
+    ctx.fillStyle = ['#1e3a5f','#2a4a72','#33405e','#4a3a5e'][i % 4];
+    ctx.beginPath();
+    ctx.arc(x, y + Math.sin(tiempo * 2 + i) * 2, 5, 0, 6.283);
+    ctx.fill();
+  }
+  ctx.fillStyle = 'rgba(0,0,0,.35)';
+  ctx.fillRect(0, 0, ANCHO, 120);
+
+  // parquet
+  const suelo = ctx.createLinearGradient(0, SUELO, 0, ALTO);
+  suelo.addColorStop(0, '#b5762f'); suelo.addColorStop(1, '#7a4a18');
+  ctx.fillStyle = suelo; ctx.fillRect(0, SUELO, ANCHO, ALTO - SUELO);
+  ctx.strokeStyle = 'rgba(255,235,200,.18)'; ctx.lineWidth = 1;
+  for (let x = 0; x < ANCHO; x += 34){
+    ctx.beginPath(); ctx.moveTo(x, SUELO); ctx.lineTo(x, ALTO); ctx.stroke();
+  }
+  ctx.strokeStyle = 'rgba(255,255,255,.5)'; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.moveTo(ANCHO / 2, SUELO); ctx.lineTo(ANCHO / 2, SUELO + 30); ctx.stroke();
+
+  dibujarCanasta(-1); dibujarCanasta(1);
+  dibujarMuñeco(tu); dibujarMuñeco(cpu);
+  dibujarBalon();
+  particulas.dibujar(ctx);
+  ctx.restore();
+  dibujarHUD();
+}
+
+function dibujarCanasta(lado){
+  const ax = aroX(lado), ay = R.aro;
+  const tx = lado < 0 ? ax - 46 : ax + 46;
+  // poste
+  ctx.fillStyle = '#334155';
+  ctx.fillRect(tx - (lado < 0 ? 10 : 0), ay - 92, 10, SUELO - ay + 92);
+  // tablero
+  ctx.fillStyle = 'rgba(230,240,255,.9)';
+  ctx.beginPath(); ctx.roundRect(tx - 5, ay - 92, 10, 106, 3); ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,.14)';
+  ctx.beginPath(); ctx.roundRect(tx + (lado < 0 ? 5 : -13), ay - 74, 8, 62, 3); ctx.fill();
+  ctx.strokeStyle = lado < 0 ? '#fb923c' : '#38bdf8'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.roundRect(tx - 5, ay - 92, 10, 106, 3); ctx.stroke();
+
+  // aro
+  ctx.strokeStyle = lado < 0 ? '#fb923c' : '#38bdf8';
+  ctx.lineWidth = 6; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(ax - 31, ay); ctx.lineTo(ax + 31, ay); ctx.stroke();
+  // red
+  ctx.strokeStyle = 'rgba(255,255,255,.45)'; ctx.lineWidth = 1.4;
+  for (let i = 0; i <= 6; i++){
+    const t = i / 6;
+    const x0 = ax - 31 + 62 * t;
+    const x1 = ax - 16 + 32 * t;
+    ctx.beginPath(); ctx.moveTo(x0, ay); ctx.lineTo(x1, ay + 34); ctx.stroke();
+  }
+  for (let k = 1; k <= 2; k++){
+    const y = ay + k * 12;
+    const w = 31 - k * 7.5;
+    ctx.beginPath(); ctx.moveTo(ax - w, y); ctx.lineTo(ax + w, y); ctx.stroke();
+  }
+}
+
+function dibujarMuñeco(m){
+  const p = puntaPierna(m);
+  ctx.save();
+  // sombra
+  ctx.fillStyle = 'rgba(0,0,0,.35)';
+  ctx.beginPath();
+  ctx.ellipse(m.x, SUELO + 4, m.r * 0.9, 6, 0, 0, 6.283); ctx.fill();
+
+  // pierna
+  ctx.strokeStyle = m.col; ctx.lineWidth = 11; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(m.x, m.y + 6); ctx.lineTo(p.x, p.y); ctx.stroke();
+  // bota
+  ctx.fillStyle = '#1f2937';
+  ctx.beginPath(); ctx.arc(p.x, p.y, 10, 0, 6.283); ctx.fill();
+  ctx.fillStyle = '#f8fafc';
+  ctx.beginPath(); ctx.arc(p.x, p.y, 5, 0, 6.283); ctx.fill();
+
+  // cuerpo
+  const g = ctx.createRadialGradient(m.x - 8, m.y - 10, 4, m.x, m.y, m.r);
+  g.addColorStop(0, '#ffffff'); g.addColorStop(0.35, m.col); g.addColorStop(1, oscuro(m.col, 0.6));
+  ctx.fillStyle = g;
+  ctx.beginPath(); ctx.arc(m.x, m.y, m.r, 0, 6.283); ctx.fill();
+  ctx.strokeStyle = oscuro(m.col, 0.5); ctx.lineWidth = 2.5; ctx.stroke();
+
+  // dorsal
+  ctx.fillStyle = 'rgba(255,255,255,.85)';
+  ctx.font = '900 15px "Segoe UI", system-ui, sans-serif';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(m.lado < 0 ? '1' : '2', m.x, m.y + 3);
+
+  // ojos mirando al balón
+  const dx = limitar((balon.x - m.x) / 120, -1, 1), dy = limitar((balon.y - m.y) / 120, -1, 1);
+  for (const s of [-1, 1]){
+    ctx.fillStyle = '#fff';
+    ctx.beginPath(); ctx.arc(m.x + s * 9, m.y - 12, 6, 0, 6.283); ctx.fill();
+    ctx.fillStyle = '#111827';
+    ctx.beginPath(); ctx.arc(m.x + s * 9 + dx * 2.4, m.y - 12 + dy * 2.4, 2.7, 0, 6.283); ctx.fill();
+  }
+  ctx.restore();
+}
+
+function dibujarBalon(){
+  const r = R.rBalon;
+  ctx.save();
+  ctx.translate(balon.x, balon.y);
+  ctx.rotate(balon.giro);
+  const g = ctx.createRadialGradient(-r * 0.35, -r * 0.4, r * 0.15, 0, 0, r);
+  g.addColorStop(0, '#ffb066'); g.addColorStop(0.6, '#e8721f'); g.addColorStop(1, '#8a3c05');
+  ctx.fillStyle = g;
+  ctx.beginPath(); ctx.arc(0, 0, r, 0, 6.283); ctx.fill();
+  // costuras
+  ctx.strokeStyle = '#3b1d05'; ctx.lineWidth = Math.max(1, r * 0.09);
+  ctx.beginPath(); ctx.moveTo(-r, 0); ctx.lineTo(r, 0); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(0, -r); ctx.lineTo(0, r); ctx.stroke();
+  ctx.beginPath(); ctx.ellipse(0, 0, r * 0.55, r, 0, 0, 6.283); ctx.stroke();
+  ctx.restore();
+}
+
+function dibujarHUD(){
+  // marcador
+  const an = 190, x = ANCHO / 2 - an / 2, y = 14;
+  ctx.fillStyle = 'rgba(4,8,16,.8)';
+  ctx.beginPath(); ctx.roundRect(x, y, an, 44, 12); ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,.14)'; ctx.lineWidth = 1; ctx.stroke();
+  ctx.font = '900 26px "Courier New", monospace';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillStyle = '#fb923c'; ctx.fillText(marcador.tu, x + 46, y + 24);
+  ctx.fillStyle = 'rgba(255,255,255,.4)'; ctx.fillText('—', x + an / 2, y + 24);
+  ctx.fillStyle = '#38bdf8'; ctx.fillText(marcador.cpu, x + an - 46, y + 24);
+  ctx.font = '800 9px "Segoe UI", system-ui, sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,.4)';
+  ctx.fillText('PRIMERO A ' + META, x + an / 2, y + 38);
+
+  // regla del punto
+  if (avisoT > 0){
+    ctx.globalAlpha = Math.min(1, avisoT);
+    ctx.font = '900 22px "Segoe UI", system-ui, sans-serif';
+    ctx.lineWidth = 6; ctx.strokeStyle = 'rgba(0,0,0,.7)';
+    ctx.strokeText(aviso, ANCHO / 2, 96);
+    ctx.fillStyle = '#f3e600';
+    ctx.fillText(aviso, ANCHO / 2, 96);
+    ctx.globalAlpha = 1;
+  }
+}
+
+const oscuro = (hex, f) => {
+  const n = parseInt(hex.slice(1), 16);
+  const v = c => Math.max(0, Math.min(255, Math.round(c * f)));
+  return '#' + ((1 << 24) | (v((n >> 16) & 255) << 16) | (v((n >> 8) & 255) << 8) | v(n & 255))
+    .toString(16).slice(1);
+};
+
+// ---------- Interfaz ----------
+function refrescar(){
+  $('tuTxt').textContent = marcador.tu;
+  $('cpuTxt').textContent = marcador.cpu;
+  const r = Arcade.record('basket');
+  $('recordTxt').textContent = r ? r.toLocaleString('es-ES') + ' pts' : '—';
+}
+
+$('btnEmpezar').onclick = () => { Sonido.activar(); empezar(); };
+$('btnOtra').onclick = () => { Sonido.activar(); empezar(); };
+Arcade.conectarSonido($('btnSonido'));
+
+nuevoPunto(-1);
+refrescar();
+Arcade.bucle(dt => { actualizar(dt); dibujar(); });
+</script>
+</body>
+</html>

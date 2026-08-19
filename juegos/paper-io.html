@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Paper.io 2 — Arcade NEXO</title>
+<link rel="stylesheet" href="arcade.css">
+<style>
+  #tablero{position:relative; display:flex; flex-direction:column; gap:10px;}
+  #juego{width:min(1040px,100vw);}
+  .barra .titulo{color:#4ade80;}
+
+  #arena{
+    position:relative; border-radius:16px; overflow:hidden;
+    border:2px solid rgba(74,222,128,.3);
+    box-shadow:0 15px 45px rgba(0,0,0,.9);
+    touch-action:none;
+  }
+  #lienzo{display:block; width:100%; height:auto;}
+
+  #mandos{display:grid; grid-template-columns:repeat(4,1fr); gap:9px;}
+  #mandos button{
+    padding:14px 8px; font-size:1.4rem; line-height:1;
+    background:rgba(74,222,128,.12); border:1px solid rgba(74,222,128,.32);
+    border-radius:12px; color:#e6ffee;
+  }
+  #mandos button:active{background:rgba(74,222,128,.3);}
+  @media (min-width:820px){ #mandos{display:none;} }
+
+  .rejillaResumen{
+    display:grid; grid-template-columns:repeat(auto-fit,minmax(110px,1fr)); gap:10px;
+    margin:14px 0 18px;
+  }
+  .rejillaResumen div{background:rgba(0,0,0,.35); border-radius:10px; padding:11px;}
+  .rejillaResumen .n{font-size:22px; font-weight:800; color:var(--oro);}
+  .rejillaResumen .e{font-size:11px; color:var(--tenue);}
+</style>
+</head>
+<body>
+
+<div id="juego" data-ritmo="accion">
+  <div class="barra">
+    <a class="boton" href="../index.html">🕹 Arcade</a>
+    <div class="titulo">🟩 PAPER.IO 2</div>
+    <div class="sep"></div>
+    <div class="stat">🗺 <span id="areaTxt" class="oro">0,0</span> %</div>
+    <div class="stat">💀 <span id="bajasTxt" class="verde">0</span></div>
+    <div class="stat">🏆 <span id="recordTxt" class="tenue">—</span></div>
+    <button id="btnSonido" title="Sonido" aria-label="Sonido">🔊</button>
+  </div>
+
+  <div id="tablero">
+    <div id="arena">
+      <canvas id="lienzo" width="1000" height="580"></canvas>
+      <div class="avisos" id="avisos"></div>
+    </div>
+
+    <div id="mandos">
+      <button id="mIzq" aria-label="Izquierda">◀</button>
+      <button id="mArr" aria-label="Arriba">▲</button>
+      <button id="mAba" aria-label="Abajo">▼</button>
+      <button id="mDer" aria-label="Derecha">▶</button>
+    </div>
+
+    <div class="modal visible" id="modalInicio">
+      <div class="tarjetaModal">
+        <h1>🟩 PAPER.IO 2</h1>
+        <div class="sub">Sal, da una vuelta y vuelve a casa. Todo lo que rodees es tuyo.</div>
+        <div class="instrucciones">
+          <b>Flechas</b> o <b>WASD</b> para girar. No se puede parar: siempre avanzas.<br>
+          Al <b>salir de tu territorio</b> vas dejando un rastro. Cuando <b>vuelves a pisar lo tuyo</b>,
+          todo lo que hayas rodeado pasa a ser tuyo.<br>
+          <b>💀 Te matan</b> si alguien pisa tu rastro… y también si te pisas tú mismo.<br>
+          <b>⚔️ Tú puedes matar igual:</b> corta el rastro de un rival y te quedas su territorio libre.<br>
+          <b>Cuanto más lejos te alejas, más ganas… y más fácil es que te corten.</b><br>
+          Ganas al llegar al <b>50 %</b> del mapa. La puntuación es el área conseguida más las bajas.
+        </div>
+        <div class="filaBotones"><button class="primario" id="btnEmpezar">▶ Salir al mapa</button></div>
+      </div>
+    </div>
+
+    <div class="modal" id="modalFin">
+      <div class="tarjetaModal">
+        <h1 id="finTitulo">💀 Te cortaron</h1>
+        <div class="sub" id="finSub"></div>
+        <div class="rejillaResumen">
+          <div><div class="n" id="finArea">0</div><div class="e">% del mapa</div></div>
+          <div><div class="n" id="finBajas">0</div><div class="e">bajas</div></div>
+          <div><div class="n" id="finPuntos">0</div><div class="e">puntos</div></div>
+          <div><div class="n" id="finPremio">0</div><div class="e">NEXO-COINS</div></div>
+        </div>
+        <div class="filaBotones"><button class="primario" id="btnOtra">▶ Otra partida</button></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="arcade.js"></script>
+<script>
+// ============================================================
+//  PAPER.IO 2 — conquista de territorio en rejilla
+//  El truco del relleno: al cerrar el circuito se marca el rastro como tuyo y
+//  luego se inunda el mapa desde los bordes por lo que NO es tuyo. Lo que la
+//  inundación no alcanza queda encerrado, y por tanto es tuyo.
+// ============================================================
+const $ = id => document.getElementById(id);
+const lienzo = $('lienzo');
+const ctx = Arcade.nitido(lienzo);
+const avisos = $('avisos');
+const ANCHO = lienzo.width, ALTO = lienzo.height;
+
+const COLS = 100, FILAS = 58;
+const CELDA = Math.floor(Math.min(ANCHO / COLS, ALTO / FILAS));
+const MAPA_AN = COLS * CELDA, MAPA_AL = FILAS * CELDA;
+const OFX = Math.floor((ANCHO - MAPA_AN) / 2), OFY = Math.floor((ALTO - MAPA_AL) / 2);
+
+// dueño de cada celda: 0 = nadie, 1 = jugador, 2..n = bots
+const duenio = new Uint8Array(COLS * FILAS);
+// rastro de cada celda: 0 = nada, id del que lo dejó
+const rastro = new Uint8Array(COLS * FILAS);
+const idx = (c, f) => f * COLS + c;
+const dentro = (c, f) => c >= 0 && f >= 0 && c < COLS && f < FILAS;
+
+const COLORES = [
+  null,
+  { base:'#4ade80', claro:'#bbf7d0', oscuro:'#15803d', nombre:'Tú' },
+  { base:'#f87171', claro:'#fecaca', oscuro:'#b91c1c', nombre:'Rojo' },
+  { base:'#60a5fa', claro:'#bfdbfe', oscuro:'#1d4ed8', nombre:'Azul' },
+  { base:'#fbbf24', claro:'#fde68a', oscuro:'#b45309', nombre:'Ámbar' },
+  { base:'#c084fc', claro:'#e9d5ff', oscuro:'#7e22ce', nombre:'Morado' }
+];
+
+const DIRS = [[1,0],[0,1],[-1,0],[0,-1]];
+
+let jugadores = [];
+let P = null;                    // el humano
+let tiempo = 0, jugando = false, bajas = 0, particulas = new Particulas(300);
+let sacudida = 0, ganado = false;
+
+// ---------- Arranque ----------
+function nuevoJugador(id, humano){
+  return { id, humano, c:0, f:0, dir:0, dirPed:0, avance:0, vivo:true,
+           fuera:false, cola:[], objetivo:null, giroBot:0 };
+}
+
+function plantar(j, c, f){
+  j.c = c; j.f = f;
+  for (let dc = -2; dc <= 2; dc++)
+    for (let df = -2; df <= 2; df++)
+      if (dentro(c + dc, f + df)) duenio[idx(c + dc, f + df)] = j.id;
+}
+
+function empezar(){
+  duenio.fill(0); rastro.fill(0);
+  jugadores = [];
+  bajas = 0; ganado = false; sacudida = 0;
+  particulas.lista.length = 0;
+
+  P = nuevoJugador(1, true);
+  jugadores.push(P);
+  for (let i = 2; i <= 5; i++) jugadores.push(nuevoJugador(i, false));
+
+  // repartidos sin pisarse
+  const sitios = [];
+  for (const j of jugadores){
+    let c, f, intentos = 0;
+    do {
+      c = Math.floor(azar(6, COLS - 6));
+      f = Math.floor(azar(6, FILAS - 6));
+      intentos++;
+    } while (intentos < 60 && sitios.some(s => Math.hypot(s.c - c, s.f - f) < 16));
+    sitios.push({ c, f });
+    plantar(j, c, f);
+    j.dir = Math.floor(Math.random() * 4);
+    j.dirPed = j.dir;
+  }
+  jugando = true;
+  $('modalInicio').classList.remove('visible');
+  $('modalFin').classList.remove('visible');
+  refrescar();
+}
+
+// ---------- Territorio ----------
+/** Cierra el circuito de `j`: su rastro pasa a ser suyo y se rellena el hueco. */
+function cerrar(j){
+  let ganadas = 0;
+  for (const p of j.cola){
+    const i = idx(p.c, p.f);
+    if (rastro[i] === j.id) rastro[i] = 0;
+    if (duenio[i] !== j.id){ duenio[i] = j.id; ganadas++; }
+  }
+  j.cola = [];
+
+  // inundación desde el borde por todo lo que no sea suyo
+  const visto = new Uint8Array(COLS * FILAS);
+  const pila = [];
+  for (let c = 0; c < COLS; c++){
+    for (const f of [0, FILAS - 1]){
+      const i = idx(c, f);
+      if (duenio[i] !== j.id && !visto[i]){ visto[i] = 1; pila.push(i); }
+    }
+  }
+  for (let f = 0; f < FILAS; f++){
+    for (const c of [0, COLS - 1]){
+      const i = idx(c, f);
+      if (duenio[i] !== j.id && !visto[i]){ visto[i] = 1; pila.push(i); }
+    }
+  }
+  while (pila.length){
+    const i = pila.pop();
+    const c = i % COLS, f = (i - c) / COLS;
+    for (const [dc, df] of DIRS){
+      const nc = c + dc, nf = f + df;
+      if (!dentro(nc, nf)) continue;
+      const ni = idx(nc, nf);
+      if (visto[ni] || duenio[ni] === j.id) continue;
+      visto[ni] = 1; pila.push(ni);
+    }
+  }
+  // lo que la inundación no alcanzó está encerrado: es suyo
+  for (let i = 0; i < duenio.length; i++){
+    if (!visto[i] && duenio[i] !== j.id){
+      duenio[i] = j.id;
+      ganadas++;
+    }
+  }
+
+  if (j.humano && ganadas > 0){
+    Sonido.fx('linea');
+    const p = celdaPantalla(j.c, j.f);
+    particulas.emitir(Math.min(28, 6 + ganadas / 12),
+      { x:p.x, y:p.y, color:[COLORES[j.id].base, COLORES[j.id].claro],
+        velMin:40, velMax:200, vidaMin:0.3, vidaMax:0.7, rMin:1.5, rMax:4 });
+  }
+  return ganadas;
+}
+
+/** Mata a `j`: pierde su rastro y su territorio se libera. */
+function matar(j, porQuien){
+  if (!j.vivo) return;
+  j.vivo = false;
+  for (const p of j.cola) rastro[idx(p.c, p.f)] = 0;
+  j.cola = [];
+  for (let i = 0; i < duenio.length; i++) if (duenio[i] === j.id) duenio[i] = 0;
+
+  const p = celdaPantalla(j.c, j.f);
+  particulas.emitir(34, { x:p.x, y:p.y, color:[COLORES[j.id].base, COLORES[j.id].claro, '#fff'],
+                          velMin:60, velMax:280, vidaMin:0.35, vidaMax:0.8, rMin:2, rMax:5 });
+  if (j.humano){
+    sacudida = 18;
+    Sonido.fx('choque');
+    setTimeout(() => terminar(false), 800);
+  } else {
+    Sonido.fx('explosion');
+    if (porQuien && porQuien.humano){
+      bajas++;
+      Arcade.aviso(avisos, '⚔️ ' + COLORES[j.id].nombre + ' eliminado', true, 1500);
+      refrescar();
+    }
+    // vuelve a entrar más tarde, para que el mapa no se quede vacío
+    setTimeout(() => {
+      if (!jugando) return;
+      j.vivo = true; j.cola = []; j.fuera = false;
+      plantar(j, Math.floor(azar(6, COLS - 6)), Math.floor(azar(6, FILAS - 6)));
+    }, 3500);
+  }
+}
+
+// ---------- Movimiento ----------
+function paso(j){
+  const [dc, df] = DIRS[j.dir];
+  const nc = j.c + dc, nf = j.f + df;
+  if (!dentro(nc, nf)){
+    // el borde del mapa mata igual que un rastro
+    if (j.fuera) { matar(j, null); return; }
+    j.dir = (j.dir + 2) % 4;
+    return;
+  }
+  j.c = nc; j.f = nf;
+  const i = idx(nc, nf);
+
+  // ¿ha pisado el rastro de alguien?
+  const r = rastro[i];
+  if (r){
+    const victima = jugadores.find(x => x.id === r);
+    if (r === j.id){ matar(j, null); return; }          // se pisó a sí mismo
+    if (victima){ matar(victima, j); }
+  }
+
+  const mio = duenio[i] === j.id;
+  if (mio){
+    if (j.fuera){ cerrar(j); j.fuera = false; }
+  } else {
+    j.fuera = true;
+    if (rastro[i] === 0){
+      rastro[i] = j.id;
+      j.cola.push({ c:nc, f:nf });
+    }
+  }
+}
+
+// ---------- Bots ----------
+// Salen a por un trozo, dan la vuelta y regresan. No son perfectos a propósito:
+// un bot infalible convierte el juego en un castigo.
+function pensarBot(j, dt){
+  j.giroBot -= dt;
+  if (j.giroBot > 0) return;
+  j.giroBot = azar(0.12, 0.3);
+
+  const largo = j.cola.length;
+  // si lleva mucho rastro fuera, vuelve a casa por el camino más corto
+  if (j.fuera && largo > azar(14, 40)){
+    let mejor = null, mejorD = 1e9;
+    for (let k = 0; k < 220; k++){
+      const c = Math.floor(azar(0, COLS)), f = Math.floor(azar(0, FILAS));
+      if (duenio[idx(c, f)] !== j.id) continue;
+      const d = Math.abs(c - j.c) + Math.abs(f - j.f);
+      if (d < mejorD){ mejorD = d; mejor = { c, f }; }
+    }
+    if (mejor){
+      const dx = mejor.c - j.c, dy = mejor.f - j.f;
+      const quiere = Math.abs(dx) > Math.abs(dy)
+        ? (dx > 0 ? 0 : 2) : (dy > 0 ? 1 : 3);
+      if ((quiere + 2) % 4 !== j.dir) j.dir = quiere;
+      return;
+    }
+  }
+  // esquivar rastros propios y bordes
+  const [dc, df] = DIRS[j.dir];
+  const pc = j.c + dc * 2, pf = j.f + df * 2;
+  const peligro = !dentro(pc, pf) || rastro[idx(limitar(pc,0,COLS-1), limitar(pf,0,FILAS-1))] === j.id;
+  if (peligro || Math.random() < 0.16){
+    const opciones = [0,1,2,3].filter(d => {
+      if ((d + 2) % 4 === j.dir) return false;
+      const nc = j.c + DIRS[d][0] * 2, nf = j.f + DIRS[d][1] * 2;
+      if (!dentro(nc, nf)) return false;
+      return rastro[idx(nc, nf)] !== j.id;
+    });
+    if (opciones.length) j.dir = elegir(opciones);
+  }
+}
+
+// ---------- Control ----------
+function girar(d){
+  if (!jugando || !P.vivo) return;
+  if ((d + 2) % 4 === P.dir) return;      // no se puede dar media vuelta
+  P.dirPed = d;
+}
+addEventListener('keydown', ev => {
+  if (/^(INPUT|TEXTAREA|SELECT)$/.test(ev.target.tagName || '')) return;
+  const k = ev.key.toLowerCase();
+  const m = { arrowright:0, d:0, arrowdown:1, s:1, arrowleft:2, a:2, arrowup:3, w:3 };
+  if (k in m){ ev.preventDefault(); girar(m[k]); }
+});
+const pulsar = (id, d) => $(id).addEventListener('pointerdown', ev => {
+  ev.preventDefault(); Sonido.activar(); girar(d);
+});
+pulsar('mDer', 0); pulsar('mAba', 1); pulsar('mIzq', 2); pulsar('mArr', 3);
+$('arena').addEventListener('pointerdown', ev => {
+  // en móvil: se gira hacia donde tocas respecto a tu cabeza
+  Sonido.activar();
+  const p = Arcade.puntero(lienzo, ev);
+  const cab = celdaPantalla(P.c, P.f);
+  const dx = p.x - cab.x, dy = p.y - cab.y;
+  girar(Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 0 : 2) : (dy > 0 ? 1 : 3));
+});
+
+// ---------- Bucle ----------
+const VEL = 13.5;                 // celdas por segundo
+function actualizar(dt){
+  tiempo += dt;
+  particulas.actualizar(dt);
+  if (sacudida > 0) sacudida = Math.max(0, sacudida - dt * 34);
+  if (!jugando) return;
+
+  for (const j of jugadores){
+    if (!j.vivo) continue;
+    if (!j.humano) pensarBot(j, dt);
+    j.avance += dt * VEL;
+    while (j.avance >= 1){
+      j.avance -= 1;
+      if (j.humano) j.dir = j.dirPed;
+      paso(j);
+      if (!j.vivo) break;
+    }
+  }
+
+  if (P.vivo && !ganado && porcentaje(1) >= 50){
+    ganado = true;
+    jugando = false;
+    Sonido.fx('victoria');
+    setTimeout(() => terminar(true), 600);
+  }
+}
+
+const porcentaje = id => {
+  let n = 0;
+  for (let i = 0; i < duenio.length; i++) if (duenio[i] === id) n++;
+  return n * 100 / duenio.length;
+};
+
+function terminar(gano){
+  jugando = false;
+  const area = porcentaje(1);
+  const puntos = Math.round(area * 120) + bajas * 400;
+  const premio = Math.floor(puntos / 22);
+  Arcade.guardarRecord('paperio', puntos);
+  Arcade.perfil.partida('paperio', { puntos, victoria: gano, premio });
+  $('finTitulo').textContent = gano ? '🏆 ¡Medio mapa es tuyo!' : '💀 Te cortaron el rastro';
+  $('finSub').textContent = gano
+    ? 'Has llegado al 50 % del mapa. Eso es dominar.'
+    : 'Cuanto más te alejas, más ganas… y más fácil es que te pillen.';
+  $('finArea').textContent = area.toFixed(1);
+  $('finBajas').textContent = bajas;
+  $('finPuntos').textContent = puntos.toLocaleString('es-ES');
+  $('finPremio').textContent = premio.toLocaleString('es-ES');
+  $('modalFin').classList.add('visible');
+  refrescar();
+}
+
+// ---------- Dibujo ----------
+const celdaPantalla = (c, f) => ({ x: OFX + c * CELDA + CELDA / 2, y: OFY + f * CELDA + CELDA / 2 });
+
+function dibujar(){
+  ctx.save();
+  if (sacudida > 0) ctx.translate(azar(-sacudida, sacudida) * 0.5, azar(-sacudida, sacudida) * 0.5);
+
+  ctx.fillStyle = '#070b12';
+  ctx.fillRect(0, 0, ANCHO, ALTO);
+
+  // papel cuadriculado
+  ctx.fillStyle = '#0e1524';
+  ctx.fillRect(OFX, OFY, MAPA_AN, MAPA_AL);
+  ctx.strokeStyle = 'rgba(255,255,255,.045)'; ctx.lineWidth = 1;
+  ctx.beginPath();
+  for (let c = 0; c <= COLS; c += 2){ ctx.moveTo(OFX + c * CELDA, OFY); ctx.lineTo(OFX + c * CELDA, OFY + MAPA_AL); }
+  for (let f = 0; f <= FILAS; f += 2){ ctx.moveTo(OFX, OFY + f * CELDA); ctx.lineTo(OFX + MAPA_AN, OFY + f * CELDA); }
+  ctx.stroke();
+
+  // territorios
+  for (let f = 0; f < FILAS; f++){
+    for (let c = 0; c < COLS; c++){
+      const d = duenio[idx(c, f)];
+      if (!d) continue;
+      ctx.fillStyle = COLORES[d].base;
+      ctx.fillRect(OFX + c * CELDA, OFY + f * CELDA, CELDA, CELDA);
+    }
+  }
+  // borde brillante de cada territorio: se marca la celda que toca con otro dueño
+  for (let f = 0; f < FILAS; f++){
+    for (let c = 0; c < COLS; c++){
+      const d = duenio[idx(c, f)];
+      if (!d) continue;
+      let borde = false;
+      for (const [dc, df] of DIRS){
+        const nc = c + dc, nf = f + df;
+        if (!dentro(nc, nf) || duenio[idx(nc, nf)] !== d){ borde = true; break; }
+      }
+      if (borde){
+        ctx.fillStyle = COLORES[d].claro;
+        ctx.fillRect(OFX + c * CELDA, OFY + f * CELDA, CELDA, CELDA);
+      }
+    }
+  }
+
+  // rastros
+  for (const j of jugadores){
+    if (!j.vivo || !j.cola.length) continue;
+    const col = COLORES[j.id];
+    ctx.save();
+    ctx.globalAlpha = 0.85;
+    ctx.fillStyle = col.oscuro;
+    for (const p of j.cola)
+      ctx.fillRect(OFX + p.c * CELDA, OFY + p.f * CELDA, CELDA, CELDA);
+    ctx.restore();
+    // línea encendida por encima
+    ctx.strokeStyle = col.claro;
+    ctx.lineWidth = Math.max(1.5, CELDA * 0.4);
+    ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+    ctx.beginPath();
+    j.cola.forEach((p, i) => {
+      const s = celdaPantalla(p.c, p.f);
+      i ? ctx.lineTo(s.x, s.y) : ctx.moveTo(s.x, s.y);
+    });
+    ctx.stroke();
+  }
+
+  // cabezas
+  for (const j of jugadores){
+    if (!j.vivo) continue;
+    const s = celdaPantalla(j.c, j.f);
+    const col = COLORES[j.id];
+    const r = CELDA * (j.humano ? 1.15 : 0.95);
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    const g = ctx.createRadialGradient(s.x, s.y, 1, s.x, s.y, r * 3);
+    g.addColorStop(0, col.base + 'aa');
+    g.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.arc(s.x, s.y, r * 3, 0, 6.283); ctx.fill();
+    ctx.restore();
+
+    ctx.fillStyle = col.claro;
+    ctx.beginPath(); ctx.arc(s.x, s.y, r, 0, 6.283); ctx.fill();
+    ctx.strokeStyle = col.oscuro; ctx.lineWidth = 2;
+    ctx.stroke();
+    // ojos mirando hacia donde va
+    const [dc, df] = DIRS[j.dir];
+    ctx.fillStyle = '#0b1020';
+    ctx.beginPath();
+    ctx.arc(s.x + dc * r * 0.35 - df * r * 0.3, s.y + df * r * 0.35 - dc * r * 0.3, r * 0.22, 0, 6.283);
+    ctx.arc(s.x + dc * r * 0.35 + df * r * 0.3, s.y + df * r * 0.35 + dc * r * 0.3, r * 0.22, 0, 6.283);
+    ctx.fill();
+
+    if (j.humano){
+      ctx.strokeStyle = 'rgba(255,255,255,' + (0.35 + Math.sin(tiempo * 6) * 0.25).toFixed(2) + ')';
+      ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(s.x, s.y, r + 5, 0, 6.283); ctx.stroke();
+    }
+  }
+
+  particulas.dibujar(ctx);
+  ctx.restore();
+  dibujarMarcador();
+}
+
+function dibujarMarcador(){
+  const filas = jugadores.map(j => ({ j, p: porcentaje(j.id) }))
+                         .sort((a, b) => b.p - a.p);
+  const an = 168, x = ANCHO - an - 14, y = 14;
+  ctx.fillStyle = 'rgba(4,8,16,.78)';
+  ctx.beginPath(); ctx.roundRect(x, y, an, 20 + filas.length * 19, 10); ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,.1)'; ctx.lineWidth = 1; ctx.stroke();
+  ctx.font = '800 10px "Segoe UI", system-ui, sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,.45)';
+  ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  ctx.fillText('TERRITORIO', x + 10, y + 11);
+
+  filas.forEach((r, i) => {
+    const fy = y + 26 + i * 19;
+    const col = COLORES[r.j.id];
+    ctx.fillStyle = r.j.vivo ? col.base : 'rgba(120,130,150,.4)';
+    ctx.beginPath(); ctx.roundRect(x + 10, fy - 5, 10, 10, 3); ctx.fill();
+    ctx.fillStyle = r.j.humano ? '#fff' : 'rgba(255,255,255,.68)';
+    ctx.font = (r.j.humano ? '800 ' : '600 ') + '11px "Segoe UI", system-ui, sans-serif';
+    ctx.fillText(col.nombre, x + 26, fy);
+    ctx.textAlign = 'right';
+    ctx.fillStyle = col.claro;
+    ctx.fillText(r.p.toFixed(1) + ' %', x + an - 10, fy);
+    ctx.textAlign = 'left';
+  });
+
+  // barra de objetivo del jugador
+  const u = limitar(porcentaje(1) / 50, 0, 1);
+  const bx = 14, by = ALTO - 26, ban = 240;
+  ctx.fillStyle = 'rgba(4,8,16,.7)';
+  ctx.beginPath(); ctx.roundRect(bx, by, ban, 14, 7); ctx.fill();
+  ctx.fillStyle = '#4ade80';
+  ctx.beginPath(); ctx.roundRect(bx, by, Math.max(6, ban * u), 14, 7); ctx.fill();
+  ctx.fillStyle = '#04120a';
+  ctx.font = '800 10px "Segoe UI", system-ui, sans-serif';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText('OBJETIVO 50 %', bx + ban / 2, by + 7);
+}
+
+// ---------- Interfaz ----------
+function refrescar(){
+  $('areaTxt').textContent = porcentaje(1).toFixed(1).replace('.', ',');
+  $('bajasTxt').textContent = bajas;
+  const r = Arcade.record('paperio');
+  $('recordTxt').textContent = r ? r.toLocaleString('es-ES') + ' pts' : '—';
+}
+
+$('btnEmpezar').onclick = () => { Sonido.activar(); empezar(); };
+$('btnOtra').onclick = () => { Sonido.activar(); empezar(); };
+Arcade.conectarSonido($('btnSonido'));
+
+let espera = 0;
+refrescar();
+Arcade.bucle(dt => {
+  actualizar(dt); dibujar();
+  espera += dt;
+  if (espera > 0.3){ espera = 0; refrescar(); }
+});
+</script>
+</body>
+</html>

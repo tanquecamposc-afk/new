@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Smash Karts — Arcade NEXO</title>
+<link rel="stylesheet" href="arcade.css">
+<style>
+  #tablero{position:relative; display:flex; flex-direction:column; gap:10px;}
+  #juego{width:min(1040px,100vw);}
+  .barra .titulo{color:#facc15;}
+
+  #pista{
+    position:relative; border-radius:16px; overflow:hidden;
+    border:2px solid rgba(250,204,21,.3);
+    box-shadow:0 15px 45px rgba(0,0,0,.9);
+    touch-action:none;
+  }
+  #lienzo{display:block; width:100%; height:auto;}
+
+  #mandos{display:grid; grid-template-columns:repeat(4,1fr); gap:9px;}
+  #mandos button{
+    padding:14px 8px; font-size:1.3rem; line-height:1;
+    background:rgba(250,204,21,.12); border:1px solid rgba(250,204,21,.32);
+    border-radius:12px; color:#fff8dc;
+  }
+  #mandos button:active{background:rgba(250,204,21,.3);}
+  @media (min-width:820px){ #mandos{display:none;} }
+
+  .rejillaResumen{
+    display:grid; grid-template-columns:repeat(auto-fit,minmax(110px,1fr)); gap:10px;
+    margin:14px 0 18px;
+  }
+  .rejillaResumen div{background:rgba(0,0,0,.35); border-radius:10px; padding:11px;}
+  .rejillaResumen .n{font-size:22px; font-weight:800; color:var(--oro);}
+  .rejillaResumen .e{font-size:11px; color:var(--tenue);}
+</style>
+</head>
+<body>
+
+<div id="juego" data-ritmo="accion">
+  <div class="barra">
+    <a class="boton" href="../index.html">🕹 Arcade</a>
+    <div class="titulo">🏎 SMASH KARTS</div>
+    <div class="sep"></div>
+    <div class="stat">💥 <span id="bajasTxt" class="oro">0</span></div>
+    <div class="stat">❤️ <span id="vidasTxt" class="verde">3</span></div>
+    <div class="stat">🏆 <span id="recordTxt" class="tenue">—</span></div>
+    <button id="btnSonido" title="Sonido" aria-label="Sonido">🔊</button>
+  </div>
+
+  <div id="tablero">
+    <div id="pista">
+      <canvas id="lienzo" width="1000" height="560"></canvas>
+      <div class="avisos" id="avisos"></div>
+    </div>
+
+    <div id="mandos">
+      <button id="mIzq" aria-label="Girar a la izquierda">◀</button>
+      <button id="mGas" aria-label="Acelerar">▲</button>
+      <button id="mDer" aria-label="Girar a la derecha">▶</button>
+      <button id="mFuego" aria-label="Disparar">💥</button>
+    </div>
+
+    <div class="modal visible" id="modalInicio">
+      <div class="tarjetaModal">
+        <h1>🏎 SMASH KARTS</h1>
+        <div class="sub">Cuatro karts en una arena. Solo queda uno.</div>
+        <div class="instrucciones">
+          <b>↑ ↓</b> o <b>W S</b> aceleran y dan marcha atrás · <b>← →</b> o <b>A D</b> giran ·
+          <b>espacio</b> dispara.<br>
+          <b>📦 Cajas:</b> pasa por encima y te toca un arma al azar.<br>
+          <b>🚀 Misil:</b> sale disparado de frente. <b>💣 Mina:</b> la sueltas detrás y espera.
+          <b>⚡ Turbo:</b> un empujón que también arrolla.<br>
+          Cada kart tiene <b>3 vidas</b>. Al perderlas todas, fuera.<br>
+          Gana el último que quede en pie. Cada baja suma puntos.
+        </div>
+        <div class="filaBotones"><button class="primario" id="btnEmpezar">▶ A la arena</button></div>
+      </div>
+    </div>
+
+    <div class="modal" id="modalFin">
+      <div class="tarjetaModal">
+        <h1 id="finTitulo">🏆 ¡El último en pie!</h1>
+        <div class="sub" id="finSub"></div>
+        <div class="rejillaResumen">
+          <div><div class="n" id="finBajas">0</div><div class="e">bajas</div></div>
+          <div><div class="n" id="finVidas">0</div><div class="e">vidas restantes</div></div>
+          <div><div class="n" id="finPuntos">0</div><div class="e">puntos</div></div>
+          <div><div class="n" id="finPremio">0</div><div class="e">NEXO-COINS</div></div>
+        </div>
+        <div class="filaBotones"><button class="primario" id="btnOtra">▶ Otra ronda</button></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="arcade.js"></script>
+<script>
+// ============================================================
+//  SMASH KARTS — arena de karts con armas
+//  Los karts giran solo cuando avanzan, como un coche de verdad, y el muro se
+//  resuelve por ejes separados para no quedarse clavado en las esquinas.
+// ============================================================
+const $ = id => document.getElementById(id);
+const lienzo = $('lienzo');
+const ctx = Arcade.nitido(lienzo);
+const avisos = $('avisos');
+const ANCHO = lienzo.width, ALTO = lienzo.height;
+const T = 40;
+
+// # muro · . pista
+const PLANO = [
+  '#########################',
+  '#.......................#',
+  '#..##...###...###...##..#',
+  '#..##....#.....#....##..#',
+  '#........................',
+  '#..###..##.....##..###..#',
+  '#.......................#',
+  '#..###..##.....##..###..#',
+  '#........................',
+  '#..##....#.....#....##..#',
+  '#..##...###...###...##..#',
+  '#.......................#',
+  '#########################'
+];
+const COLS = PLANO[0].length, FILAS = PLANO.length;
+const muro = (c, f) => c < 0 || f < 0 || c >= COLS || f >= FILAS || PLANO[f][c] === '#';
+const muroEn = (x, y) => muro(Math.floor(x / T), Math.floor(y / T));
+
+const COLORES = [
+  { base:'#facc15', oscuro:'#a16207', nombre:'Tú' },
+  { base:'#f87171', oscuro:'#991b1b', nombre:'Rojo' },
+  { base:'#4ade80', oscuro:'#166534', nombre:'Verde' },
+  { base:'#a78bfa', oscuro:'#5b21b6', nombre:'Lila' }
+];
+const ARMAS = ['misil', 'mina', 'turbo'];
+
+let karts = [], balas = [], minas = [], cajas = [], particulas = new Particulas(320);
+let jugando = false, tiempo = 0, sacudida = 0, camX = 0, camY = 0;
+let izq = false, der = false, gas = false, marcha = false, fuego = false;
+
+// ---------- Arranque ----------
+function libre(){
+  for (let i = 0; i < 400; i++){
+    const x = azar(T, COLS * T - T), y = azar(T, FILAS * T - T);
+    if (!muroEn(x, y) && !muroEn(x - 16, y) && !muroEn(x + 16, y) &&
+        !muroEn(x, y - 16) && !muroEn(x, y + 16)) return { x, y };
+  }
+  return { x: T * 1.5, y: T * 1.5 };
+}
+
+function nuevoKart(i){
+  const p = libre();
+  return { i, humano: i === 0, x:p.x, y:p.y, ang: azar(0, 6.283), vel:0,
+           vidas:3, arma:null, recarga:0, turbo:0, invul:2, vivo:true,
+           bajas:0, pensar:0, objetivo:null, sacudidaKart:0 };
+}
+
+function empezar(){
+  karts = [0,1,2,3].map(nuevoKart);
+  balas = []; minas = []; cajas = [];
+  particulas.lista.length = 0;
+  for (let i = 0; i < 4; i++) soltarCaja();
+  jugando = true;
+  $('modalInicio').classList.remove('visible');
+  $('modalFin').classList.remove('visible');
+  refrescar();
+}
+
+function soltarCaja(){
+  const p = libre();
+  cajas.push({ x:p.x, y:p.y, giro: Math.random() * 6.283, nace: 0.6 });
+}
+
+// ---------- Control ----------
+addEventListener('keydown', ev => {
+  if (/^(INPUT|TEXTAREA|SELECT)$/.test(ev.target.tagName || '')) return;
+  const k = ev.key.toLowerCase();
+  if (['arrowleft','arrowright','arrowup','arrowdown',' ','a','d','w','s'].includes(k)) ev.preventDefault();
+  if (k === 'arrowleft' || k === 'a') izq = true;
+  if (k === 'arrowright' || k === 'd') der = true;
+  if (k === 'arrowup' || k === 'w') gas = true;
+  if (k === 'arrowdown' || k === 's') marcha = true;
+  if (k === ' '){ if (!fuego) disparar(karts[0]); fuego = true; }
+});
+addEventListener('keyup', ev => {
+  const k = ev.key.toLowerCase();
+  if (k === 'arrowleft' || k === 'a') izq = false;
+  if (k === 'arrowright' || k === 'd') der = false;
+  if (k === 'arrowup' || k === 'w') gas = false;
+  if (k === 'arrowdown' || k === 's') marcha = false;
+  if (k === ' ') fuego = false;
+});
+const mando = (id, set) => {
+  const b = $(id);
+  b.addEventListener('pointerdown', e => { e.preventDefault(); Sonido.activar(); set(true); });
+  b.addEventListener('pointerup', e => { e.preventDefault(); set(false); });
+  b.addEventListener('pointerleave', () => set(false));
+  b.addEventListener('pointercancel', () => set(false));
+};
+mando('mIzq', v => izq = v);
+mando('mDer', v => der = v);
+mando('mGas', v => gas = v);
+$('mFuego').addEventListener('pointerdown', e => { e.preventDefault(); Sonido.activar(); disparar(karts[0]); });
+
+// ---------- Armas ----------
+function disparar(k){
+  if (!jugando || !k || !k.vivo || !k.arma || k.recarga > 0) return;
+  if (k.arma === 'misil'){
+    balas.push({ x: k.x + Math.cos(k.ang) * 26, y: k.y + Math.sin(k.ang) * 26,
+                 vx: Math.cos(k.ang) * 520 + Math.cos(k.ang) * k.vel * 0.4,
+                 vy: Math.sin(k.ang) * 520 + Math.sin(k.ang) * k.vel * 0.4,
+                 de: k.i, vida: 2.4 });
+    Sonido.fx('disparo');
+  } else if (k.arma === 'mina'){
+    minas.push({ x: k.x - Math.cos(k.ang) * 28, y: k.y - Math.sin(k.ang) * 28,
+                 de: k.i, armada: 0.7, vida: 12 });
+    Sonido.fx('colocar');
+  } else if (k.arma === 'turbo'){
+    k.turbo = 1.4;
+    k.vel = Math.max(k.vel, 260);
+    Sonido.fx('nitro');
+  }
+  k.arma = null;
+  k.recarga = 0.25;
+  if (k.humano) refrescar();
+}
+
+function reventar(k, deQuien){
+  if (!k.vivo || k.invul > 0) return;
+  k.vidas--;
+  k.sacudidaKart = 1;
+  particulas.emitir(30, { x:k.x - camX, y:k.y - camY,
+                          color:[COLORES[k.i].base, '#ffd166', '#fff'],
+                          velMin:80, velMax:320, vidaMin:0.3, vidaMax:0.8, rMin:2, rMax:5 });
+  Sonido.fx('explosion');
+  if (k.humano) sacudida = 16;
+  if (deQuien != null && deQuien !== k.i){
+    const m = karts[deQuien];
+    if (m){ m.bajas++; if (m.humano){ Arcade.aviso(avisos, '💥 ¡Le has dado a ' + COLORES[k.i].nombre + '!', true, 1400); refrescar(); } }
+  }
+  if (k.vidas <= 0){
+    k.vivo = false;
+    if (k.humano){ setTimeout(() => terminar(false), 900); return; }
+    if (karts.filter(x => x.vivo).length === 1) setTimeout(() => terminar(true), 900);
+  } else {
+    const p = libre();
+    k.x = p.x; k.y = p.y; k.vel = 0; k.invul = 2.2; k.arma = null;
+  }
+  refrescar();
+}
+
+// ---------- Máquina ----------
+function pensarBot(k, dt){
+  k.pensar -= dt;
+  if (k.pensar <= 0){
+    k.pensar = azar(0.25, 0.6);
+    // objetivo: la caja más cercana si no tiene arma, si no el kart más cercano
+    let mejor = null, mejorD = 1e9;
+    const lista = k.arma ? karts.filter(x => x.vivo && x !== k) : cajas;
+    for (const o of lista){
+      const d = Math.hypot(o.x - k.x, o.y - k.y);
+      if (d < mejorD){ mejorD = d; mejor = o; }
+    }
+    k.objetivo = mejor;
+  }
+  if (!k.objetivo) return;
+  const dx = k.objetivo.x - k.x, dy = k.objetivo.y - k.y;
+  let dif = Math.atan2(dy, dx) - k.ang;
+  while (dif > Math.PI) dif -= Math.PI * 2;
+  while (dif < -Math.PI) dif += Math.PI * 2;
+  k.girar = limitar(dif * 2.2, -1, 1);
+  k.acelera = 1;
+  // esquiva paredes mirando un poco por delante
+  const fx = k.x + Math.cos(k.ang) * 52, fy = k.y + Math.sin(k.ang) * 52;
+  if (muroEn(fx, fy)){ k.girar = Math.sin(tiempo * 3 + k.i) > 0 ? 1 : -1; k.acelera = 0.5; }
+  // dispara si apunta a alguien
+  if (k.arma && Math.abs(dif) < 0.42 && Math.hypot(dx, dy) < 480 && !cajas.includes(k.objetivo))
+    disparar(k);
+  else if (k.arma === 'mina' && Math.random() < 0.02) disparar(k);
+}
+
+// ---------- Física ----------
+function moverKart(k, dt){
+  if (!k.vivo) return;
+  if (k.invul > 0) k.invul -= dt;
+  if (k.recarga > 0) k.recarga -= dt;
+  if (k.turbo > 0) k.turbo -= dt;
+  if (k.sacudidaKart > 0) k.sacudidaKart = Math.max(0, k.sacudidaKart - dt * 3);
+
+  let girar = 0, acelera = 0;
+  if (k.humano){
+    girar = (der ? 1 : 0) - (izq ? 1 : 0);
+    acelera = (gas ? 1 : 0) - (marcha ? 1 : 0);
+  } else {
+    pensarBot(k, dt);
+    girar = k.girar || 0;
+    acelera = k.acelera || 0;
+  }
+
+  const velMax = k.turbo > 0 ? 420 : 260;
+  k.vel += acelera * (acelera > 0 ? 520 : 380) * dt;
+  k.vel *= Math.pow(0.35, dt);
+  k.vel = limitar(k.vel, -140, velMax);
+
+  // como un coche: solo gira si se mueve
+  k.ang += girar * 2.9 * dt * limitar(Math.abs(k.vel) / 120, 0, 1) * Math.sign(k.vel || 1);
+
+  const nx = k.x + Math.cos(k.ang) * k.vel * dt;
+  const ny = k.y + Math.sin(k.ang) * k.vel * dt;
+  // colisión con el muro, eje a eje
+  if (!muroEn(nx, k.y)) k.x = nx; else { k.vel *= -0.28; }
+  if (!muroEn(k.x, ny)) k.y = ny; else { k.vel *= -0.28; }
+
+  // empujones entre karts
+  for (const o of karts){
+    if (o === k || !o.vivo) continue;
+    const dx = o.x - k.x, dy = o.y - k.y;
+    const d = Math.hypot(dx, dy);
+    if (d < 34 && d > 0){
+      const e = (34 - d) / 2;
+      k.x -= dx / d * e; k.y -= dy / d * e;
+      o.x += dx / d * e; o.y += dy / d * e;
+      // el que va con turbo arrolla
+      if (k.turbo > 0 && Math.abs(k.vel) > 200) reventar(o, k.i);
+    }
+  }
+
+  // humo del turbo
+  if (k.turbo > 0 && Math.random() < 0.6)
+    particulas.emitir(1, { x:k.x - camX - Math.cos(k.ang) * 20, y:k.y - camY - Math.sin(k.ang) * 20,
+                           color:['#fde68a','#fb923c'], velMin:10, velMax:60,
+                           vidaMin:0.15, vidaMax:0.4, rMin:2, rMax:5, gravedad:0 });
+
+  // cajas
+  for (let i = cajas.length - 1; i >= 0; i--){
+    const c = cajas[i];
+    if (c.nace > 0) continue;
+    if (Math.hypot(c.x - k.x, c.y - k.y) < 26){
+      cajas.splice(i, 1);
+      k.arma = elegir(ARMAS);
+      if (k.humano){
+        Sonido.fx('ficha');
+        Arcade.aviso(avisos, { misil:'🚀 Misil', mina:'💣 Mina', turbo:'⚡ Turbo' }[k.arma], true, 1200);
+        refrescar();
+      }
+      setTimeout(() => { if (jugando) soltarCaja(); }, 2200);
+    }
+  }
+}
+
+function moverBalas(dt){
+  for (let i = balas.length - 1; i >= 0; i--){
+    const b = balas[i];
+    b.vida -= dt;
+    b.x += b.vx * dt; b.y += b.vy * dt;
+    let fuera = b.vida <= 0 || muroEn(b.x, b.y);
+    if (!fuera){
+      for (const k of karts){
+        if (!k.vivo || k.i === b.de) continue;
+        if (Math.hypot(k.x - b.x, k.y - b.y) < 22){ reventar(k, b.de); fuera = true; break; }
+      }
+    }
+    if (fuera){
+      particulas.emitir(12, { x:b.x - camX, y:b.y - camY, color:['#fbbf24','#f87171','#fff'],
+                              velMin:40, velMax:200, vidaMin:0.2, vidaMax:0.5, rMin:1.5, rMax:4 });
+      balas.splice(i, 1);
+    }
+  }
+  for (let i = minas.length - 1; i >= 0; i--){
+    const m = minas[i];
+    m.armada -= dt; m.vida -= dt;
+    let estalla = m.vida <= 0;
+    if (m.armada <= 0){
+      for (const k of karts){
+        if (!k.vivo) continue;
+        if (Math.hypot(k.x - m.x, k.y - m.y) < 28){ reventar(k, m.de); estalla = true; }
+      }
+    }
+    if (estalla){
+      particulas.emitir(20, { x:m.x - camX, y:m.y - camY, color:['#f87171','#fbbf24','#fff'],
+                              velMin:60, velMax:260, vidaMin:0.25, vidaMax:0.6, rMin:2, rMax:5 });
+      minas.splice(i, 1);
+    }
+  }
+}
+
+function terminar(gano){
+  jugando = false;
+  const yo = karts[0];
+  const puntos = yo.bajas * 500 + (gano ? 1200 : 0) + yo.vidas * 150;
+  const premio = Math.floor(puntos / 20);
+  Arcade.guardarRecord('karts', puntos);
+  Arcade.perfil.partida('karts', { puntos, victoria: gano, premio });
+  $('finTitulo').textContent = gano ? '🏆 ¡El último en pie!' : '💥 Fuera de combate';
+  $('finSub').textContent = gano
+    ? 'Tres rivales menos. Eso es dominar la arena.'
+    : 'Coge más cajas: sin arma no hay nada que hacer.';
+  $('finBajas').textContent = yo.bajas;
+  $('finVidas').textContent = Math.max(0, yo.vidas);
+  $('finPuntos').textContent = puntos.toLocaleString('es-ES');
+  $('finPremio').textContent = premio.toLocaleString('es-ES');
+  $('modalFin').classList.add('visible');
+  refrescar();
+}
+
+// ---------- Bucle ----------
+function actualizar(dt){
+  tiempo += dt;
+  particulas.actualizar(dt);
+  if (sacudida > 0) sacudida = Math.max(0, sacudida - dt * 30);
+  for (const c of cajas){ c.giro += dt * 2; if (c.nace > 0) c.nace -= dt; }
+  if (!jugando) return;
+  for (const k of karts) moverKart(k, dt);
+  moverBalas(dt);
+
+  // cámara centrada en ti, sin salirse del plano
+  const yo = karts[0];
+  const objX = limitar(yo.x - ANCHO / 2, 0, Math.max(0, COLS * T - ANCHO));
+  const objY = limitar(yo.y - ALTO / 2, 0, Math.max(0, FILAS * T - ALTO));
+  camX += (objX - camX) * Math.min(1, dt * 6);
+  camY += (objY - camY) * Math.min(1, dt * 6);
+}
+
+// ---------- Dibujo ----------
+function dibujar(){
+  ctx.save();
+  if (sacudida > 0) ctx.translate(azar(-sacudida, sacudida) * 0.5, azar(-sacudida, sacudida) * 0.5);
+  ctx.fillStyle = '#0a0d16';
+  ctx.fillRect(0, 0, ANCHO, ALTO);
+  ctx.translate(-camX, -camY);
+
+  // suelo de la arena
+  for (let f = 0; f < FILAS; f++){
+    for (let c = 0; c < COLS; c++){
+      const x = c * T, y = f * T;
+      if (muro(c, f)) continue;
+      // El suelo va bien oscuro para que el muro se lea de un vistazo: antes
+      // los dos tonos eran casi el mismo y el laberinto no se distinguía.
+      ctx.fillStyle = (c + f) % 2 ? '#0f141d' : '#0b0f17';
+      ctx.fillRect(x, y, T, T);
+    }
+  }
+  // muros con relieve
+  for (let f = 0; f < FILAS; f++){
+    for (let c = 0; c < COLS; c++){
+      if (!muro(c, f)) continue;
+      const x = c * T, y = f * T;
+      const g = ctx.createLinearGradient(0, y, 0, y + T);
+      g.addColorStop(0, '#6b7ba3'); g.addColorStop(1, '#394561');
+      ctx.fillStyle = g; ctx.fillRect(x, y, T, T);
+      if (!muro(c, f + 1)){
+        ctx.fillStyle = 'rgba(0,0,0,.55)';
+        ctx.fillRect(x, y + T, T, 9);
+      }
+      ctx.fillStyle = 'rgba(250,204,21,.45)';
+      ctx.fillRect(x, y, T, 3.5);
+      ctx.strokeStyle = 'rgba(0,0,0,.3)'; ctx.lineWidth = 1;
+      ctx.strokeRect(x + 0.5, y + 0.5, T - 1, T - 1);
+    }
+  }
+
+  for (const m of minas) dibujarMina(m);
+  for (const c of cajas) dibujarCaja(c);
+  for (const k of karts) if (k.vivo) dibujarKart(k);
+  for (const b of balas) dibujarMisil(b);
+
+  ctx.restore();
+  particulas.dibujar(ctx);
+  dibujarHUD();
+}
+
+function dibujarCaja(c){
+  if (c.nace > 0) return;
+  ctx.save();
+  ctx.translate(c.x, c.y);
+  ctx.rotate(Math.sin(c.giro) * 0.4);
+  const s = 1 + Math.sin(c.giro * 2) * 0.06;
+  ctx.scale(s, s);
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  const g = ctx.createRadialGradient(0, 0, 2, 0, 0, 34);
+  g.addColorStop(0, 'rgba(250,204,21,.4)');
+  g.addColorStop(1, 'rgba(250,204,21,0)');
+  ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, 34, 0, 6.283); ctx.fill();
+  ctx.restore();
+  ctx.fillStyle = '#facc15';
+  ctx.beginPath(); ctx.roundRect(-14, -14, 28, 28, 6); ctx.fill();
+  ctx.strokeStyle = '#a16207'; ctx.lineWidth = 2.5; ctx.stroke();
+  ctx.fillStyle = '#7c4a02';
+  ctx.font = '900 17px "Segoe UI", system-ui, sans-serif';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText('?', 0, 1);
+  ctx.restore();
+}
+
+function dibujarMina(m){
+  ctx.save();
+  ctx.translate(m.x, m.y);
+  const p = m.armada > 0 ? 0.4 : 0.6 + Math.sin(tiempo * 9) * 0.4;
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  const g = ctx.createRadialGradient(0, 0, 1, 0, 0, 26);
+  g.addColorStop(0, 'rgba(248,113,113,' + p.toFixed(2) + ')');
+  g.addColorStop(1, 'rgba(248,113,113,0)');
+  ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, 26, 0, 6.283); ctx.fill();
+  ctx.restore();
+  ctx.fillStyle = '#374151';
+  ctx.beginPath(); ctx.arc(0, 0, 11, 0, 6.283); ctx.fill();
+  ctx.strokeStyle = '#f87171'; ctx.lineWidth = 2; ctx.stroke();
+  for (let i = 0; i < 6; i++){
+    const a = i / 6 * 6.283;
+    ctx.strokeStyle = '#4b5563'; ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(Math.cos(a) * 10, Math.sin(a) * 10);
+    ctx.lineTo(Math.cos(a) * 15, Math.sin(a) * 15);
+    ctx.stroke();
+  }
+  ctx.fillStyle = '#f87171';
+  ctx.beginPath(); ctx.arc(0, 0, 3.4, 0, 6.283); ctx.fill();
+  ctx.restore();
+}
+
+function dibujarMisil(b){
+  const ang = Math.atan2(b.vy, b.vx);
+  ctx.save();
+  ctx.translate(b.x, b.y);
+  ctx.rotate(ang);
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  const g = ctx.createRadialGradient(-10, 0, 1, -10, 0, 24);
+  g.addColorStop(0, 'rgba(251,146,60,.7)');
+  g.addColorStop(1, 'rgba(251,146,60,0)');
+  ctx.fillStyle = g; ctx.beginPath(); ctx.arc(-10, 0, 24, 0, 6.283); ctx.fill();
+  ctx.restore();
+  ctx.fillStyle = '#e5e7eb';
+  ctx.beginPath();
+  ctx.moveTo(13, 0); ctx.lineTo(2, -5); ctx.lineTo(-10, -4);
+  ctx.lineTo(-10, 4); ctx.lineTo(2, 5);
+  ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#ef4444';
+  ctx.beginPath(); ctx.moveTo(13, 0); ctx.lineTo(5, -4); ctx.lineTo(5, 4); ctx.closePath(); ctx.fill();
+  ctx.restore();
+}
+
+function dibujarKart(k){
+  const col = COLORES[k.i];
+  const sac = k.sacudidaKart * 3;
+  ctx.save();
+  ctx.translate(k.x + azar(-sac, sac), k.y + azar(-sac, sac));
+
+  // sombra
+  ctx.fillStyle = 'rgba(0,0,0,.4)';
+  ctx.beginPath(); ctx.ellipse(2, 4, 20, 14, 0, 0, 6.283); ctx.fill();
+
+  ctx.rotate(k.ang);
+  if (k.invul > 0 && Math.floor(tiempo * 12) % 2 === 0) ctx.globalAlpha = 0.4;
+
+  // ruedas
+  ctx.fillStyle = '#111827';
+  ctx.beginPath();
+  ctx.roundRect(-14, -16, 11, 9, 3); ctx.roundRect(6, -16, 11, 9, 3);
+  ctx.roundRect(-14, 7, 11, 9, 3);  ctx.roundRect(6, 7, 11, 9, 3);
+  ctx.fill();
+
+  // chasis
+  const g = ctx.createLinearGradient(-18, 0, 20, 0);
+  g.addColorStop(0, col.oscuro); g.addColorStop(0.45, col.base); g.addColorStop(1, col.oscuro);
+  ctx.fillStyle = g;
+  ctx.beginPath();
+  ctx.moveTo(20, 0); ctx.lineTo(10, -12); ctx.lineTo(-15, -11);
+  ctx.lineTo(-19, 0); ctx.lineTo(-15, 11); ctx.lineTo(10, 12);
+  ctx.closePath(); ctx.fill();
+  ctx.strokeStyle = 'rgba(0,0,0,.45)'; ctx.lineWidth = 1.5; ctx.stroke();
+
+  // cabina y piloto
+  ctx.fillStyle = 'rgba(10,15,25,.75)';
+  ctx.beginPath(); ctx.roundRect(-8, -8, 15, 16, 5); ctx.fill();
+  ctx.fillStyle = '#f5d0a9';
+  ctx.beginPath(); ctx.arc(-1, 0, 5.5, 0, 6.283); ctx.fill();
+  ctx.fillStyle = col.base;
+  ctx.beginPath(); ctx.arc(-1, 0, 5.5, Math.PI * 1.1, Math.PI * 1.9); ctx.fill();
+  // alerón
+  ctx.fillStyle = col.oscuro;
+  ctx.beginPath(); ctx.roundRect(-21, -12, 5, 24, 2); ctx.fill();
+
+  ctx.globalAlpha = 1;
+  ctx.restore();
+
+  // marca del jugador y vidas
+  if (k.humano){
+    ctx.save();
+    ctx.strokeStyle = 'rgba(250,204,21,' + (0.4 + Math.sin(tiempo * 5) * 0.25).toFixed(2) + ')';
+    ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.arc(k.x, k.y, 28, 0, 6.283); ctx.stroke();
+    ctx.restore();
+  }
+  for (let i = 0; i < k.vidas; i++){
+    ctx.fillStyle = col.base;
+    ctx.beginPath(); ctx.arc(k.x - 9 + i * 9, k.y - 30, 3.2, 0, 6.283); ctx.fill();
+  }
+}
+
+function dibujarHUD(){
+  // arma actual
+  const yo = karts[0];
+  const an = 128, x = 16, y = ALTO - 62;
+  ctx.fillStyle = 'rgba(4,8,16,.78)';
+  ctx.beginPath(); ctx.roundRect(x, y, an, 46, 10); ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,.12)'; ctx.lineWidth = 1; ctx.stroke();
+  ctx.font = '800 9px "Segoe UI", system-ui, sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,.4)';
+  ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+  ctx.fillText('ARMA', x + 10, y + 7);
+  ctx.font = '900 17px "Segoe UI", system-ui, sans-serif';
+  ctx.fillStyle = yo && yo.arma ? '#facc15' : 'rgba(255,255,255,.28)';
+  ctx.fillText(yo && yo.arma
+    ? { misil:'🚀 Misil', mina:'💣 Mina', turbo:'⚡ Turbo' }[yo.arma]
+    : '— vacío —', x + 10, y + 21);
+
+  // rivales
+  const vivos = karts.filter(k => k.vivo);
+  const bx = ANCHO - 150, by = 14;
+  ctx.fillStyle = 'rgba(4,8,16,.78)';
+  ctx.beginPath(); ctx.roundRect(bx, by, 136, 18 + karts.length * 18, 10); ctx.fill();
+  ctx.font = '800 9px "Segoe UI", system-ui, sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,.4)';
+  ctx.fillText('EN PISTA · ' + vivos.length, bx + 10, by + 6);
+  karts.forEach((k, i) => {
+    const fy = by + 22 + i * 18;
+    ctx.fillStyle = k.vivo ? COLORES[k.i].base : 'rgba(120,130,150,.35)';
+    ctx.beginPath(); ctx.roundRect(bx + 10, fy + 2, 9, 9, 2); ctx.fill();
+    ctx.font = (k.humano ? '800 ' : '600 ') + '11px "Segoe UI", system-ui, sans-serif';
+    ctx.fillStyle = k.vivo ? '#fff' : 'rgba(255,255,255,.35)';
+    ctx.fillText(COLORES[k.i].nombre, bx + 25, fy + 1);
+    ctx.textAlign = 'right';
+    ctx.fillStyle = 'rgba(255,255,255,.5)';
+    ctx.fillText(k.vivo ? '❤️'.repeat(Math.max(0, k.vidas)) : '✖', bx + 128, fy + 1);
+    ctx.textAlign = 'left';
+  });
+}
+
+// ---------- Interfaz ----------
+function refrescar(){
+  const yo = karts[0];
+  $('bajasTxt').textContent = yo ? yo.bajas : 0;
+  $('vidasTxt').textContent = yo ? Math.max(0, yo.vidas) : 3;
+  const r = Arcade.record('karts');
+  $('recordTxt').textContent = r ? r.toLocaleString('es-ES') + ' pts' : '—';
+}
+
+$('btnEmpezar').onclick = () => { Sonido.activar(); empezar(); };
+$('btnOtra').onclick = () => { Sonido.activar(); empezar(); };
+Arcade.conectarSonido($('btnSonido'));
+
+karts = [0,1,2,3].map(nuevoKart);
+for (let i = 0; i < 4; i++) soltarCaja();
+refrescar();
+Arcade.bucle(dt => { actualizar(dt); dibujar(); });
+</script>
+</body>
+</html>

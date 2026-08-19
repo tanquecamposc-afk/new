@@ -464,6 +464,69 @@ const JUEGOS = [
     portada: portadaPlinko
   },
   {
+    id:'subway', archivo:'juegos/subway-surfers.html', nuevo:true,
+    nombre:'🛹 Subway Surfers', genero:'Corredor',
+    desc:'Tres vías, trenes que no frenan y monedas en hilera. Salta, rueda y cambia de carril.',
+    record(){ const r = Arcade.record('subway'); return r ? 'Récord: ' + r.toLocaleString('es-ES') + ' pts' : 'Sin jugar todavía'; },
+    portada: portadaSubway
+  },
+  {
+    id:'slope', archivo:'juegos/slope.html', nuevo:true,
+    nombre:'🟢 Slope', genero:'Corredor',
+    desc:'Una bola que no frena por un tobogán de neón. Solo decides por dónde.',
+    record(){ const r = Arcade.record('slope'); return r ? 'Récord: ' + r.toLocaleString('es-ES') + ' pts' : 'Sin jugar todavía'; },
+    portada: portadaSlope
+  },
+  {
+    id:'hook', archivo:'juegos/stickman-hook.html', nuevo:true,
+    nombre:'🕸 Stickman Hook', genero:'Física',
+    desc:'Columpiarse de anclaje en anclaje. Cuanto más abajo sueltas, más lejos llegas.',
+    record(){ const r = Arcade.record('hook'); return r ? 'Récord: ' + r.toLocaleString('es-ES') + ' pts' : 'Sin jugar todavía'; },
+    portada: portadaHook
+  },
+  {
+    id:'paperio', archivo:'juegos/paper-io.html', nuevo:true,
+    nombre:'🟩 Paper.io 2', genero:'Arena',
+    desc:'Sal, da una vuelta y vuelve a casa. Todo lo que rodees pasa a ser tuyo.',
+    record(){ const r = Arcade.record('paperio'); return r ? 'Récord: ' + r.toLocaleString('es-ES') + ' pts' : 'Sin jugar todavía'; },
+    portada: portadaPaper
+  },
+  {
+    id:'vex', archivo:'juegos/vex.html', nuevo:true,
+    nombre:'🏃 Vex', genero:'Plataformas',
+    desc:'Tres actos de precisión: salto en pared, pinchos, sierras y banderas de control.',
+    record(){ const r = Arcade.record('vex'); return r ? 'Récord: ' + r.toLocaleString('es-ES') + ' pts' : 'Sin jugar todavía'; },
+    portada: portadaVex
+  },
+  {
+    id:'tunnel', archivo:'juegos/tunnel-rush.html', nuevo:true,
+    nombre:'🌀 Tunnel Rush', genero:'Corredor',
+    desc:'El túnel gira y los huecos se mueven mientras te acercas. Sin freno.',
+    record(){ const r = Arcade.record('tunnel'); return r ? 'Récord: ' + r.toLocaleString('es-ES') + ' pts' : 'Sin jugar todavía'; },
+    portada: portadaTunnel
+  },
+  {
+    id:'cuerda', archivo:'juegos/cut-the-rope.html', nuevo:true,
+    nombre:'🍬 Cut the Rope', genero:'Puzle',
+    desc:'Corta la cuerda en el momento justo, pilla las tres estrellas y dale de comer a Ñam.',
+    record(){ const r = Arcade.record('cuerda'); return r ? 'Récord: ' + r.toLocaleString('es-ES') + ' pts' : 'Sin jugar todavía'; },
+    portada: portadaCuerda
+  },
+  {
+    id:'basket', archivo:'juegos/basket-random.html', nuevo:true,
+    nombre:'🏀 Basket Random', genero:'Deportes',
+    desc:'Un botón, dos muñecos y unas reglas que cambian en cada punto. Primero a cinco.',
+    record(){ const r = Arcade.record('basket'); return r ? 'Récord: ' + r.toLocaleString('es-ES') + ' pts' : 'Sin jugar todavía'; },
+    portada: portadaBasket
+  },
+  {
+    id:'karts', archivo:'juegos/smash-karts.html', nuevo:true,
+    nombre:'🏎 Smash Karts', genero:'Arena',
+    desc:'Cuatro karts, misiles, minas y turbo. Tres vidas cada uno y solo queda uno.',
+    record(){ const r = Arcade.record('karts'); return r ? 'Récord: ' + r.toLocaleString('es-ES') + ' pts' : 'Sin jugar todavía'; },
+    portada: portadaKarts
+  },
+  {
     id:'moto', archivo:'juegos/moto-x3m.html', nuevo:true,
     nombre:'🏍 Moto X3M', genero:'Carreras',
     desc:'Suspensión en las dos ruedas, rampas que te lanzan de verdad y vueltas en el aire.',
@@ -1588,6 +1651,365 @@ function portadaBigBass(c){
   c.restore();
   c.fillStyle = 'rgba(255,255,255,.45)'; c.font = '700 11px "Segoe UI", system-ui, sans-serif';
   c.fillText('3 cañas · recoge antes de que rompa', A / 2, AL - 12);
+}
+
+function portadaSubway(c){
+  const g = c.createLinearGradient(0, 0, 0, AL);
+  g.addColorStop(0, '#0a1330'); g.addColorStop(.5, '#16305c'); g.addColorStop(1, '#141822');
+  c.fillStyle = g; c.fillRect(0, 0, A, AL);
+  for (let i = 0; i < 26; i++){ c.fillStyle = 'rgba(255,255,255,.5)';
+    c.fillRect((i * 41) % A, (i * 17) % 40, 1.4, 1.4); }
+  // rascacielos
+  for (let x = 0; x < A; x += 17){
+    const h = 16 + ((x * 7) % 26);
+    c.fillStyle = '#101c38'; c.fillRect(x, 62 - h, 14, h);
+    c.fillStyle = 'rgba(255,210,120,.4)';
+    for (let y = 62 - h + 3; y < 60; y += 6) c.fillRect(x + 3, y, 3, 3);
+  }
+  // vias en fuga
+  c.fillStyle = '#2e3238'; c.beginPath();
+  c.moveTo(A * .18, AL); c.lineTo(A * .42, 62); c.lineTo(A * .58, 62); c.lineTo(A * .82, AL);
+  c.closePath(); c.fill();
+  c.strokeStyle = 'rgba(215,232,255,.8)'; c.lineWidth = 2;
+  for (const f of [.3, .45, .55, .7]){
+    c.beginPath(); c.moveTo(A * (.5 + (f - .5) * 2.6), AL); c.lineTo(A * f, 64); c.stroke();
+  }
+  // tren
+  c.fillStyle = '#3aa7e0'; c.beginPath(); c.roundRect(A * .58, 74, 26, 44, 4); c.fill();
+  c.fillStyle = 'rgba(190,238,255,.85)'; c.fillRect(A * .58 + 4, 80, 18, 12);
+  // corredor
+  c.fillStyle = '#f97316'; c.beginPath(); c.roundRect(A * .38, AL - 44, 13, 19, 5); c.fill();
+  c.fillStyle = '#f5c396'; c.beginPath(); c.arc(A * .38 + 6.5, AL - 50, 7, 0, 6.283); c.fill();
+  c.fillStyle = '#22d3ee'; c.beginPath(); c.arc(A * .38 + 6.5, AL - 52, 7.5, Math.PI, 0); c.fill();
+  // monedas
+  for (let k = 0; k < 4; k++){
+    c.fillStyle = '#f3c000';
+    c.beginPath(); c.ellipse(A * .5, AL - 26 - k * 17, 4, 6, 0, 0, 6.283); c.fill();
+  }
+}
+
+function portadaSlope(c){
+  c.fillStyle = '#02040e'; c.fillRect(0, 0, A, AL);
+  for (let i = 0; i < 30; i++){ c.fillStyle = 'rgba(200,230,255,.6)';
+    c.fillRect((i * 53) % A, (i * 29) % 60, 1.3, 1.3); }
+  // pista
+  c.beginPath();
+  c.moveTo(A * .3, 44); c.lineTo(A * .7, 44); c.lineTo(A * 1.05, AL); c.lineTo(A * -.05, AL);
+  c.closePath();
+  const g = c.createLinearGradient(0, 44, 0, AL);
+  g.addColorStop(0, '#0a2f22'); g.addColorStop(1, '#16543a');
+  c.fillStyle = g; c.fill();
+  c.strokeStyle = '#39ff88'; c.lineWidth = 2.5;
+  c.beginPath(); c.moveTo(A * .3, 44); c.lineTo(A * -.05, AL); c.stroke();
+  c.beginPath(); c.moveTo(A * .7, 44); c.lineTo(A * 1.05, AL); c.stroke();
+  c.strokeStyle = 'rgba(57,255,136,.3)'; c.lineWidth = 1.2;
+  for (let k = 1; k < 7; k++){
+    const t = k / 7, y = 44 + (AL - 44) * t * t;
+    const w = (A * .4 + (A * .7) * t * t) / 2;
+    c.beginPath(); c.moveTo(A / 2 - w, y); c.lineTo(A / 2 + w, y); c.stroke();
+  }
+  // cubos rojos
+  for (const [bx, by, bs] of [[A * .38, 92, 12], [A * .62, 118, 16]]){
+    c.fillStyle = '#ff4d5e'; c.fillRect(bx - bs / 2, by - bs, bs, bs);
+    c.fillStyle = '#7f1020'; c.fillRect(bx - bs / 2, by - bs - 4, bs, 4);
+  }
+  // bola
+  const b = c.createRadialGradient(A / 2 - 5, AL - 42, 2, A / 2, AL - 36, 17);
+  b.addColorStop(0, '#eaffef'); b.addColorStop(.5, '#4dffa0'); b.addColorStop(1, '#0d7a45');
+  c.fillStyle = b; c.beginPath(); c.arc(A / 2, AL - 36, 17, 0, 6.283); c.fill();
+}
+
+function portadaHook(c){
+  const g = c.createLinearGradient(0, 0, 0, AL);
+  g.addColorStop(0, '#1a0b2e'); g.addColorStop(.5, '#2d1155'); g.addColorStop(1, '#0d0620');
+  c.fillStyle = g; c.fillRect(0, 0, A, AL);
+  // montañas
+  for (const [base, alto, col, paso] of [[AL * .8, 42, '#3c1a6b', 44], [AL * .92, 28, '#4b2183', 30]]){
+    c.fillStyle = col; c.beginPath(); c.moveTo(0, AL);
+    for (let x = 0; x <= A + paso; x += paso){
+      c.lineTo(x + paso / 2, base - alto * (.5 + ((x * 13) % 17) / 34));
+      c.lineTo(x + paso, base);
+    }
+    c.lineTo(A, AL); c.closePath(); c.fill();
+  }
+  // anclajes
+  const anclas = [[A * .22, 34], [A * .55, 26], [A * .84, 40]];
+  for (const [ax, ay] of anclas){
+    c.strokeStyle = 'rgba(255,255,255,.12)'; c.lineWidth = 1.5;
+    c.beginPath(); c.moveTo(ax, 0); c.lineTo(ax, ay); c.stroke();
+    const h = c.createRadialGradient(ax, ay, 1, ax, ay, 16);
+    h.addColorStop(0, 'rgba(255,79,216,.6)'); h.addColorStop(1, 'rgba(255,79,216,0)');
+    c.fillStyle = h; c.beginPath(); c.arc(ax, ay, 16, 0, 6.283); c.fill();
+    c.strokeStyle = '#ff4fd8'; c.lineWidth = 2.5;
+    c.beginPath(); c.arc(ax, ay, 6, 0, 6.283); c.stroke();
+  }
+  // cuerda y muñeco
+  c.strokeStyle = 'rgba(255,240,140,.9)'; c.lineWidth = 2;
+  c.beginPath(); c.moveTo(A * .55, 26); c.lineTo(A * .46, AL - 46); c.stroke();
+  c.strokeStyle = '#fff'; c.lineWidth = 3; c.lineCap = 'round';
+  const mx = A * .46, my = AL - 46;
+  c.beginPath();
+  c.moveTo(mx, my); c.lineTo(mx, my + 14);
+  c.moveTo(mx, my + 3); c.lineTo(mx - 8, my - 5);
+  c.moveTo(mx, my + 3); c.lineTo(mx + 8, my - 5);
+  c.moveTo(mx, my + 14); c.lineTo(mx - 7, my + 26);
+  c.moveTo(mx, my + 14); c.lineTo(mx + 7, my + 26);
+  c.stroke();
+  c.fillStyle = '#fff'; c.beginPath(); c.arc(mx, my - 8, 6, 0, 6.283); c.fill();
+}
+
+function portadaPaper(c){
+  c.fillStyle = '#0e1524'; c.fillRect(0, 0, A, AL);
+  c.strokeStyle = 'rgba(255,255,255,.05)'; c.lineWidth = 1;
+  c.beginPath();
+  for (let x = 0; x < A; x += 10){ c.moveTo(x, 0); c.lineTo(x, AL); }
+  for (let y = 0; y < AL; y += 10){ c.moveTo(0, y); c.lineTo(A, y); }
+  c.stroke();
+  const zonas = [
+    { x:14, y:20, w:52, h:44, col:'#4ade80', claro:'#bbf7d0' },
+    { x:A - 74, y:16, w:46, h:36, col:'#f87171', claro:'#fecaca' },
+    { x:A - 58, y:AL - 58, w:40, h:34, col:'#60a5fa', claro:'#bfdbfe' }
+  ];
+  for (const z of zonas){
+    c.fillStyle = z.col; c.fillRect(z.x, z.y, z.w, z.h);
+    c.fillStyle = z.claro; c.lineWidth = 3;
+    c.fillRect(z.x, z.y, z.w, 4); c.fillRect(z.x, z.y + z.h - 4, z.w, 4);
+    c.fillRect(z.x, z.y, 4, z.h); c.fillRect(z.x + z.w - 4, z.y, 4, z.h);
+  }
+  // rastro del verde saliendo y volviendo
+  c.strokeStyle = '#15803d'; c.lineWidth = 7; c.lineJoin = 'round'; c.lineCap = 'round';
+  c.beginPath(); c.moveTo(66, 60); c.lineTo(104, 60); c.lineTo(104, 96); c.lineTo(48, 96); c.stroke();
+  c.strokeStyle = '#bbf7d0'; c.lineWidth = 3; c.stroke();
+  c.fillStyle = '#bbf7d0'; c.beginPath(); c.arc(48, 96, 8, 0, 6.283); c.fill();
+  c.fillStyle = '#0b1020';
+  c.beginPath(); c.arc(45, 93, 2, 0, 6.283); c.arc(45, 99, 2, 0, 6.283); c.fill();
+}
+
+function portadaVex(c){
+  const g = c.createLinearGradient(0, 0, 0, AL);
+  g.addColorStop(0, '#0b1220'); g.addColorStop(1, '#050810');
+  c.fillStyle = g; c.fillRect(0, 0, A, AL);
+  const T = 18;
+  const poner = (cx, cy, n) => {
+    for (let i = 0; i < n; i++){
+      const x = cx + i * T, y = cy;
+      const gg = c.createLinearGradient(0, y, 0, y + T);
+      gg.addColorStop(0, '#2f3d55'); gg.addColorStop(1, '#131a28');
+      c.fillStyle = gg; c.fillRect(x, y, T, T);
+      c.fillStyle = 'rgba(226,232,240,.55)'; c.fillRect(x, y, T, 2.5);
+    }
+  };
+  poner(0, AL - T, 4); poner(A - T * 5, AL - T, 5);
+  poner(T * 2, AL - T * 3, 3); poner(A - T * 7, AL - T * 4, 3);
+  // pinchos
+  c.fillStyle = '#f87171';
+  for (let i = 0; i < 4; i++){
+    const x = T * 5 + i * 9;
+    c.beginPath(); c.moveTo(x, AL - T); c.lineTo(x + 4.5, AL - T - 13); c.lineTo(x + 9, AL - T); c.closePath(); c.fill();
+  }
+  // sierra
+  c.save(); c.translate(A * .5, 44);
+  c.fillStyle = '#cbd5e1'; c.beginPath();
+  for (let i = 0; i < 12; i++){
+    const a0 = i / 12 * 6.283, a1 = (i + .5) / 12 * 6.283;
+    i ? c.lineTo(Math.cos(a0) * 15, Math.sin(a0) * 15) : c.moveTo(Math.cos(a0) * 15, Math.sin(a0) * 15);
+    c.lineTo(Math.cos(a1) * 11, Math.sin(a1) * 11);
+  }
+  c.closePath(); c.fill();
+  c.fillStyle = '#64748b'; c.beginPath(); c.arc(0, 0, 6, 0, 6.283); c.fill();
+  c.restore();
+  // muñeco
+  const mx = T * 3.2, my = AL - T * 3 - 6;
+  c.strokeStyle = '#f1f5f9'; c.lineWidth = 3; c.lineCap = 'round';
+  c.beginPath();
+  c.moveTo(mx, my - 6); c.lineTo(mx, my + 6);
+  c.moveTo(mx, my + 6); c.lineTo(mx - 6, my + 15);
+  c.moveTo(mx, my + 6); c.lineTo(mx + 7, my + 13);
+  c.moveTo(mx, my - 3); c.lineTo(mx - 8, my - 10);
+  c.moveTo(mx, my - 3); c.lineTo(mx + 8, my - 9);
+  c.stroke();
+  c.fillStyle = '#f1f5f9'; c.beginPath(); c.arc(mx, my - 12, 5.5, 0, 6.283); c.fill();
+}
+
+function portadaTunnel(c){
+  const g = c.createRadialGradient(A / 2, AL / 2, 6, A / 2, AL / 2, A * .7);
+  g.addColorStop(0, '#150033'); g.addColorStop(.6, '#0a0118'); g.addColorStop(1, '#03010a');
+  c.fillStyle = g; c.fillRect(0, 0, A, AL);
+  const CXX = A / 2, CYY = AL / 2, SEC = 16, P = Math.PI * 2 / SEC;
+  for (let s = 0; s < SEC; s++){
+    const a = s * P;
+    c.strokeStyle = 'rgba(168,85,247,.15)'; c.lineWidth = 1;
+    c.beginPath(); c.moveTo(CXX + Math.cos(a) * 12, CYY + Math.sin(a) * 12);
+    c.lineTo(CXX + Math.cos(a) * A * .6, CYY + Math.sin(a) * A * .6); c.stroke();
+  }
+  const anillos = [{ r:34, ri:24, hueco:[2,3,4] }, { r:66, ri:50, hueco:[9,10,11] }];
+  for (const an of anillos){
+    for (let s = 0; s < SEC; s++){
+      if (an.hueco.includes(s)) continue;
+      const a0 = s * P, a1 = a0 + P;
+      c.beginPath(); c.arc(CXX, CYY, an.r, a0, a1); c.arc(CXX, CYY, an.ri, a1, a0, true);
+      c.closePath();
+      c.fillStyle = an.r > 50 ? 'rgba(236,72,153,.85)' : 'rgba(168,85,247,.85)';
+      c.fill();
+      c.strokeStyle = 'rgba(255,255,255,.45)'; c.lineWidth = 1; c.stroke();
+    }
+  }
+  // nave
+  const na = -0.6, nr = 78;
+  const nx = CXX + Math.cos(na) * nr, ny = CYY + Math.sin(na) * nr;
+  const h = c.createRadialGradient(nx, ny, 1, nx, ny, 22);
+  h.addColorStop(0, 'rgba(240,171,252,.6)'); h.addColorStop(1, 'rgba(168,85,247,0)');
+  c.fillStyle = h; c.beginPath(); c.arc(nx, ny, 22, 0, 6.283); c.fill();
+  c.save(); c.translate(nx, ny); c.rotate(na + Math.PI / 2);
+  c.fillStyle = '#f5d0fe'; c.beginPath();
+  c.moveTo(0, -11); c.lineTo(8, 8); c.lineTo(0, 4); c.lineTo(-8, 8); c.closePath(); c.fill();
+  c.restore();
+}
+
+function portadaCuerda(c){
+  const g = c.createLinearGradient(0, 0, 0, AL);
+  g.addColorStop(0, '#3a2a18'); g.addColorStop(1, '#241a0f');
+  c.fillStyle = g; c.fillRect(0, 0, A, AL);
+  c.strokeStyle = 'rgba(255,220,160,.06)'; c.lineWidth = 1;
+  c.beginPath();
+  for (let x = 0; x < A; x += 12){ c.moveTo(x, 0); c.lineTo(x, AL); }
+  c.stroke();
+  // clavo y cuerda
+  c.fillStyle = '#c89b52'; c.beginPath(); c.arc(A / 2, 18, 6, 0, 6.283); c.fill();
+  c.strokeStyle = '#d9c08a'; c.lineWidth = 3;
+  c.beginPath(); c.moveTo(A / 2, 18); c.lineTo(A / 2 - 6, 56); c.stroke();
+  // caramelo
+  c.save(); c.translate(A / 2 - 6, 62); c.rotate(.2);
+  c.fillStyle = '#e0483d';
+  c.beginPath(); c.moveTo(-18, -6); c.lineTo(-10, 0); c.lineTo(-18, 6); c.closePath(); c.fill();
+  c.beginPath(); c.moveTo(18, -6); c.lineTo(10, 0); c.lineTo(18, 6); c.closePath(); c.fill();
+  const cg = c.createRadialGradient(-3, -3, 1, 0, 0, 11);
+  cg.addColorStop(0, '#ff8a80'); cg.addColorStop(1, '#a11a12');
+  c.fillStyle = cg; c.beginPath(); c.roundRect(-11, -9, 22, 18, 6); c.fill();
+  c.restore();
+  // estrellas
+  for (const [sx, sy] of [[A * .3, 96], [A * .7, 104]]){
+    c.fillStyle = '#f3e600'; c.beginPath();
+    for (let i = 0; i < 10; i++){
+      const a = i / 10 * 6.283 - Math.PI / 2, r = i % 2 ? 4 : 9;
+      i ? c.lineTo(sx + Math.cos(a) * r, sy + Math.sin(a) * r)
+        : c.moveTo(sx + Math.cos(a) * r, sy + Math.sin(a) * r);
+    }
+    c.closePath(); c.fill();
+  }
+  // Ñam
+  const nx = A / 2, ny = AL - 30;
+  const ng = c.createRadialGradient(nx - 6, ny - 8, 3, nx, ny, 24);
+  ng.addColorStop(0, '#b9f28f'); ng.addColorStop(1, '#4d9c2e');
+  c.fillStyle = ng; c.beginPath(); c.arc(nx, ny, 24, 0, 6.283); c.fill();
+  for (const s of [-1, 1]){
+    c.fillStyle = '#fff'; c.beginPath(); c.arc(nx + s * 9, ny - 12, 8, 0, 6.283); c.fill();
+    c.fillStyle = '#14210c'; c.beginPath(); c.arc(nx + s * 9, ny - 13, 3.4, 0, 6.283); c.fill();
+  }
+  c.fillStyle = '#7a1420'; c.beginPath(); c.ellipse(nx, ny + 7, 11, 8, 0, 0, 6.283); c.fill();
+}
+
+function portadaBasket(c){
+  const g = c.createLinearGradient(0, 0, 0, AL);
+  g.addColorStop(0, '#12203a'); g.addColorStop(1, '#070d18');
+  c.fillStyle = g; c.fillRect(0, 0, A, AL);
+  for (let i = 0; i < 40; i++){
+    c.fillStyle = ['#1e3a5f','#2a4a72','#33405e'][i % 3];
+    c.beginPath(); c.arc((i * 29) % A, 12 + ((i * 19) % 22), 3.4, 0, 6.283); c.fill();
+  }
+  const suelo = AL - 22;
+  const sg = c.createLinearGradient(0, suelo, 0, AL);
+  sg.addColorStop(0, '#b5762f'); sg.addColorStop(1, '#7a4a18');
+  c.fillStyle = sg; c.fillRect(0, suelo, A, AL - suelo);
+  // canastas
+  for (const lado of [-1, 1]){
+    const ax = lado < 0 ? 26 : A - 26, ay = 58;
+    c.fillStyle = 'rgba(230,240,255,.9)';
+    c.fillRect(ax + lado * 16 - 3, ay - 26, 6, 34);
+    c.strokeStyle = lado < 0 ? '#fb923c' : '#38bdf8'; c.lineWidth = 4; c.lineCap = 'round';
+    c.beginPath(); c.moveTo(ax - 13, ay); c.lineTo(ax + 13, ay); c.stroke();
+    c.strokeStyle = 'rgba(255,255,255,.4)'; c.lineWidth = 1;
+    for (let i = 0; i <= 4; i++){
+      const t = i / 4;
+      c.beginPath(); c.moveTo(ax - 13 + 26 * t, ay); c.lineTo(ax - 7 + 14 * t, ay + 14); c.stroke();
+    }
+  }
+  // muñecos
+  for (const [mx, col] of [[A * .3, '#fb923c'], [A * .7, '#38bdf8']]){
+    c.strokeStyle = col; c.lineWidth = 7; c.lineCap = 'round';
+    c.beginPath(); c.moveTo(mx, suelo - 14); c.lineTo(mx + 12, suelo - 2); c.stroke();
+    const mg = c.createRadialGradient(mx - 5, suelo - 26, 2, mx, suelo - 20, 16);
+    mg.addColorStop(0, '#fff'); mg.addColorStop(.4, col); mg.addColorStop(1, 'rgba(0,0,0,.6)');
+    c.fillStyle = mg; c.beginPath(); c.arc(mx, suelo - 20, 16, 0, 6.283); c.fill();
+    c.fillStyle = '#fff';
+    c.beginPath(); c.arc(mx - 5, suelo - 26, 4, 0, 6.283); c.arc(mx + 5, suelo - 26, 4, 0, 6.283); c.fill();
+    c.fillStyle = '#111827';
+    c.beginPath(); c.arc(mx - 5, suelo - 26, 1.8, 0, 6.283); c.arc(mx + 5, suelo - 26, 1.8, 0, 6.283); c.fill();
+  }
+  // balón
+  const bx = A / 2, by = 78;
+  const bg = c.createRadialGradient(bx - 5, by - 6, 2, bx, by, 14);
+  bg.addColorStop(0, '#ffb066'); bg.addColorStop(.6, '#e8721f'); bg.addColorStop(1, '#8a3c05');
+  c.fillStyle = bg; c.beginPath(); c.arc(bx, by, 14, 0, 6.283); c.fill();
+  c.strokeStyle = '#3b1d05'; c.lineWidth = 1.4;
+  c.beginPath(); c.moveTo(bx - 14, by); c.lineTo(bx + 14, by); c.stroke();
+  c.beginPath(); c.moveTo(bx, by - 14); c.lineTo(bx, by + 14); c.stroke();
+}
+
+function portadaKarts(c){
+  c.fillStyle = '#0b0f17'; c.fillRect(0, 0, A, AL);
+  const T = 20;
+  for (let f = 0; f * T < AL; f++)
+    for (let i = 0; i * T < A; i++){
+      c.fillStyle = (i + f) % 2 ? '#0f141d' : '#0b0f17';
+      c.fillRect(i * T, f * T, T, T);
+    }
+  const muros = [[0,0,A,T],[0,AL-T,A,T],[0,0,T,AL],[A-T,0,T,AL],
+                 [T*3,T*2,T*2,T],[A-T*5,T*2,T*2,T],[T*3,AL-T*3,T*2,T],[A-T*5,AL-T*3,T*2,T]];
+  for (const [x,y,w,h] of muros){
+    const g = c.createLinearGradient(0, y, 0, y + h);
+    g.addColorStop(0, '#6b7ba3'); g.addColorStop(1, '#394561');
+    c.fillStyle = g; c.fillRect(x, y, w, h);
+    c.fillStyle = 'rgba(250,204,21,.45)'; c.fillRect(x, y, w, 2.5);
+  }
+  // caja de armas
+  c.save(); c.translate(A * .74, AL * .35); c.rotate(.25);
+  const h = c.createRadialGradient(0, 0, 1, 0, 0, 20);
+  h.addColorStop(0, 'rgba(250,204,21,.45)'); h.addColorStop(1, 'rgba(250,204,21,0)');
+  c.fillStyle = h; c.beginPath(); c.arc(0, 0, 20, 0, 6.283); c.fill();
+  c.fillStyle = '#facc15'; c.beginPath(); c.roundRect(-9, -9, 18, 18, 4); c.fill();
+  c.fillStyle = '#7c4a02'; c.font = '900 12px "Segoe UI", system-ui, sans-serif';
+  c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('?', 0, 1);
+  c.restore();
+  // karts
+  const dibujarKart = (kx, ky, ang, base, osc) => {
+    c.save(); c.translate(kx, ky); c.rotate(ang);
+    c.fillStyle = '#111827';
+    c.beginPath();
+    c.roundRect(-10, -12, 8, 7, 2); c.roundRect(4, -12, 8, 7, 2);
+    c.roundRect(-10, 5, 8, 7, 2);  c.roundRect(4, 5, 8, 7, 2);
+    c.fill();
+    const g = c.createLinearGradient(-13, 0, 15, 0);
+    g.addColorStop(0, osc); g.addColorStop(.45, base); g.addColorStop(1, osc);
+    c.fillStyle = g; c.beginPath();
+    c.moveTo(15, 0); c.lineTo(7, -9); c.lineTo(-11, -8);
+    c.lineTo(-14, 0); c.lineTo(-11, 8); c.lineTo(7, 9);
+    c.closePath(); c.fill();
+    c.fillStyle = 'rgba(10,15,25,.75)'; c.beginPath(); c.roundRect(-6, -6, 11, 12, 4); c.fill();
+    c.fillStyle = '#f5d0a9'; c.beginPath(); c.arc(-1, 0, 4, 0, 6.283); c.fill();
+    c.restore();
+  };
+  dibujarKart(A * .32, AL * .58, -0.3, '#facc15', '#a16207');
+  dibujarKart(A * .62, AL * .72, 2.4, '#f87171', '#991b1b');
+  // misil
+  c.save(); c.translate(A * .46, AL * .62); c.rotate(-0.3);
+  const mg = c.createRadialGradient(-8, 0, 1, -8, 0, 16);
+  mg.addColorStop(0, 'rgba(251,146,60,.7)'); mg.addColorStop(1, 'rgba(251,146,60,0)');
+  c.fillStyle = mg; c.beginPath(); c.arc(-8, 0, 16, 0, 6.283); c.fill();
+  c.fillStyle = '#e5e7eb'; c.beginPath();
+  c.moveTo(9, 0); c.lineTo(1, -3.5); c.lineTo(-7, -3); c.lineTo(-7, 3); c.lineTo(1, 3.5);
+  c.closePath(); c.fill();
+  c.restore();
 }
 
 function portadaPlinko(c){

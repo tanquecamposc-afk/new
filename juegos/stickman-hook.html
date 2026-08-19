@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stickman Hook — Arcade NEXO</title>
+<link rel="stylesheet" href="arcade.css">
+<style>
+  #tablero{position:relative; display:flex; flex-direction:column; gap:10px;}
+  #juego{width:min(1060px,100vw);}
+  .barra .titulo{color:#ff4fd8;}
+
+  #escena{
+    position:relative; border-radius:16px; overflow:hidden;
+    border:2px solid rgba(255,79,216,.3);
+    box-shadow:0 15px 45px rgba(0,0,0,.9), inset 0 0 90px rgba(0,0,0,.55);
+    cursor:pointer; touch-action:none;
+  }
+  #lienzo{display:block; width:100%; height:auto;}
+
+  #pieAyuda{
+    text-align:center; font-family:var(--fuente-arcade); font-size:.72rem;
+    color:var(--tenue); letter-spacing:.5px;
+  }
+  #pieAyuda b{color:#ff4fd8;}
+
+  .rejillaResumen{
+    display:grid; grid-template-columns:repeat(auto-fit,minmax(110px,1fr)); gap:10px;
+    margin:14px 0 18px;
+  }
+  .rejillaResumen div{background:rgba(0,0,0,.35); border-radius:10px; padding:11px;}
+  .rejillaResumen .n{font-size:22px; font-weight:800; color:var(--oro);}
+  .rejillaResumen .e{font-size:11px; color:var(--tenue);}
+</style>
+</head>
+<body>
+
+<div id="juego" data-ritmo="accion">
+  <div class="barra">
+    <a class="boton" href="../index.html">🕹 Arcade</a>
+    <div class="titulo">🕸 STICKMAN HOOK</div>
+    <div class="sep"></div>
+    <div class="stat">🎯 Nivel <span id="nivelTxt" class="oro">1</span></div>
+    <div class="stat">💥 <span id="caidasTxt" class="rojo">0</span></div>
+    <div class="stat">🏆 <span id="recordTxt" class="tenue">—</span></div>
+    <button id="btnSonido" title="Sonido" aria-label="Sonido">🔊</button>
+  </div>
+
+  <div id="tablero">
+    <div id="escena">
+      <canvas id="lienzo" width="1000" height="560"></canvas>
+      <div class="avisos" id="avisos"></div>
+    </div>
+
+    <div id="pieAyuda">
+      Mantén pulsado <b>ratón</b> o <b>espacio</b> para engancharte · suelta para salir volando
+    </div>
+
+    <div class="modal visible" id="modalInicio">
+      <div class="tarjetaModal">
+        <h1>🕸 STICKMAN HOOK</h1>
+        <div class="sub">Columpiarse es fácil. Soltarse a tiempo, no.</div>
+        <div class="instrucciones">
+          <b>Mantén pulsado</b> el ratón (o la <b>barra espaciadora</b>) y el muñeco lanza una cuerda
+          al <b>anclaje rosa</b> más cercano que tenga por delante.<br>
+          Mientras la cuerda está tensa giras a su alrededor como un péndulo: la velocidad se conserva,
+          así que <b>cuanto más abajo sueltes, más lejos llegas</b>.<br>
+          <b>Suelta</b> para salir despedido en la dirección en la que ibas.<br>
+          <b>🟨 Meta:</b> llega a la bandera del final. Si te caes al vacío, vuelves a empezar el nivel.<br>
+          Cada nivel es más largo y con los anclajes más separados. Menos caídas, más puntos.
+        </div>
+        <div class="filaBotones"><button class="primario" id="btnEmpezar">▶ A columpiarse</button></div>
+      </div>
+    </div>
+
+    <div class="modal" id="modalFin">
+      <div class="tarjetaModal">
+        <h1 id="finTitulo">🏁 Nivel superado</h1>
+        <div class="sub" id="finSub"></div>
+        <div class="rejillaResumen">
+          <div><div class="n" id="finNivel">0</div><div class="e">niveles</div></div>
+          <div><div class="n" id="finCaidas">0</div><div class="e">caídas</div></div>
+          <div><div class="n" id="finPuntos">0</div><div class="e">puntos</div></div>
+          <div><div class="n" id="finPremio">0</div><div class="e">NEXO-COINS</div></div>
+        </div>
+        <div class="filaBotones">
+          <button class="primario" id="btnSeguir">▶ Siguiente nivel</button>
+          <button id="btnReiniciar">↺ Empezar de cero</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="arcade.js"></script>
+<script>
+// ============================================================
+//  STICKMAN HOOK — columpiarse de anclaje en anclaje
+//  El muñeco es una masa puntual con gravedad. Al engancharse, la cuerda
+//  impone una distancia fija: se proyecta la posición sobre el círculo y se
+//  elimina la componente radial de la velocidad. Eso deja un péndulo que
+//  conserva la energía, que es justo lo que hace divertido el juego.
+// ============================================================
+const $ = id => document.getElementById(id);
+const lienzo = $('lienzo');
+const ctx = Arcade.nitido(lienzo);
+const avisos = $('avisos');
+const ANCHO = lienzo.width, ALTO = lienzo.height;
+
+const GRAVEDAD = 1150;
+const ALCANCE = 380;            // hasta dónde llega la cuerda
+const SUELO = 720;              // altura del vacío, en coordenadas de mundo
+
+const S = {
+  jugando:false, nivel:1, caidas:0, puntos:0,
+  x:0, y:0, vx:0, vy:0,
+  ancla:null, cuerda:0, usado:false, ultima:null,
+  fase:0, camX:0, camY:0, meta:0, ganado:false, estela:[]
+};
+let anclas = [], particulas = new Particulas(220), tiempo = 0;
+let pulsando = false;
+
+// ---------- Nivel ----------
+// Los anclajes se colocan en zigzag, con una separación que crece con el
+// nivel pero nunca pasa del alcance de la cuerda: si no, el nivel sería
+// imposible por construcción y no difícil.
+function construirNivel(n){
+  anclas = [];
+  const largo = 5 + Math.min(9, n);
+  const sep = Math.min(ALCANCE * 0.82, 210 + n * 12);
+  let x = 260;
+  for (let i = 0; i < largo; i++){
+    anclas.push({ x, y: azar(120, 270) + Math.sin(i * 1.3 + n) * 30 });
+    x += sep + azar(-24, 34);
+  }
+  S.meta = x + 120;
+  S.x = 120; S.y = 300;
+  S.vx = 240; S.vy = -120;
+  S.ancla = null;
+  S.usado = false;
+  S.ultima = null;
+  S.ganado = false;
+  S.estela = [];
+  S.camX = 0; S.camY = 0;
+}
+
+function empezar(nivel){
+  S.nivel = nivel;
+  construirNivel(nivel);
+  S.jugando = true;
+  particulas.lista.length = 0;
+  $('modalInicio').classList.remove('visible');
+  $('modalFin').classList.remove('visible');
+  refrescar();
+}
+
+// ---------- Enganche ----------
+function buscarAncla(){
+  // La mejor es la más cercana que esté por delante y dentro del alcance:
+  // enganchar hacia atrás frenaría en seco y se sentiría injusto.
+  let mejor = null, mejorD = 1e9;
+  for (const a of anclas){
+    if (a === S.ultima && a.x - S.x > -120) continue;   // no repetir el recién soltado
+    const dx = a.x - S.x, dy = a.y - S.y;
+    const d = Math.hypot(dx, dy);
+    if (d > ALCANCE) continue;
+    if (dx < -40) continue;
+    if (d < mejorD){ mejorD = d; mejor = a; }
+  }
+  return mejor;
+}
+
+function enganchar(silencioso){
+  if (!S.jugando || S.ganado) return;
+  const a = buscarAncla();
+  if (!a){ if (!silencioso) Sonido.fx('error'); return; }
+  S.ancla = a;
+  S.usado = true;
+  S.cuerda = Math.max(60, Math.hypot(a.x - S.x, a.y - S.y));
+  Sonido.fx('desplegar');
+}
+function soltar(){
+  if (S.ancla){
+    S.ultima = S.ancla;
+    S.ancla = null;
+    Sonido.fx('salto');
+  }
+}
+
+const escena = $('escena');
+escena.addEventListener('pointerdown', ev => {
+  ev.preventDefault(); Sonido.activar();
+  pulsando = true; enganchar();
+});
+addEventListener('pointerup', () => { pulsando = false; S.usado = false; soltar(); });
+addEventListener('keydown', ev => {
+  if (/^(INPUT|TEXTAREA|SELECT)$/.test(ev.target.tagName || '')) return;
+  if (ev.key === ' ' || ev.key === 'ArrowUp'){
+    ev.preventDefault();
+    if (!pulsando){ pulsando = true; Sonido.activar(); enganchar(); }
+  }
+});
+addEventListener('keyup', ev => {
+  if (ev.key === ' ' || ev.key === 'ArrowUp'){ pulsando = false; S.usado = false; soltar(); }
+});
+
+// ---------- Simulación ----------
+function actualizar(dt){
+  tiempo += dt;
+  particulas.actualizar(dt);
+  if (!S.jugando) return;
+  S.fase += dt * 8;
+
+  // Mientras se mantiene pulsado se sigue intentando enganchar: en el juego
+  // real basta con dejar el dedo puesto y la cuerda sale sola en cuanto hay
+  // un anclaje a tiro. Tener que acertar el instante exacto era una tortura.
+  // Un enganche por pulsación: mientras el dedo sigue puesto se busca anclaje
+  // hasta que agarra uno, y ya no vuelve a agarrar hasta que se suelta y se
+  // pulsa otra vez. Sin esto, al soltar se re-agarraba al mismo anclaje en el
+  // cuadro siguiente y el muñeco se quedaba dando vueltas sin avanzar.
+  if (pulsando && !S.ancla && !S.usado && !S.ganado) enganchar(true);
+
+  // pasos fijos: con la cuerda tan rígida, un dt grande la haría vibrar
+  const pasos = 4, h = dt / pasos;
+  for (let k = 0; k < pasos; k++){
+    S.vy += GRAVEDAD * h;
+    S.x += S.vx * h;
+    S.y += S.vy * h;
+
+    if (S.ancla){
+      const dx = S.x - S.ancla.x, dy = S.y - S.ancla.y;
+      const d = Math.hypot(dx, dy) || 1;
+      if (d > S.cuerda){
+        // se devuelve al círculo y se quita la velocidad que se aleja
+        const nx = dx / d, ny = dy / d;
+        S.x = S.ancla.x + nx * S.cuerda;
+        S.y = S.ancla.y + ny * S.cuerda;
+        const radial = S.vx * nx + S.vy * ny;
+        if (radial > 0){ S.vx -= radial * nx; S.vy -= radial * ny; }
+      }
+      // la cuerda se acorta un poco: da el impulso característico del juego
+      S.cuerda = Math.max(70, S.cuerda - 26 * h);
+    }
+    // rozamiento del aire, muy suave
+    S.vx *= Math.pow(0.995, h * 60);
+    S.vy *= Math.pow(0.995, h * 60);
+  }
+
+  S.estela.push({ x:S.x, y:S.y });
+  if (S.estela.length > 26) S.estela.shift();
+
+  // cámara suave, adelantada en el sentido de la marcha
+  const objX = S.x - ANCHO * 0.38 + limitar(S.vx * 0.28, -160, 220);
+  const objY = S.y - ALTO * 0.52;
+  S.camX += (objX - S.camX) * Math.min(1, dt * 5);
+  S.camY += (objY - S.camY) * Math.min(1, dt * 4);
+
+  // meta
+  if (!S.ganado && S.x >= S.meta){
+    S.ganado = true;
+    S.ancla = null;
+    Sonido.fx('victoria');
+    particulas.emitir(50, { x: pantX(S.meta), y: pantY(SUELO - 90),
+                            color:['#f3e600','#ff4fd8','#fff'], velMin:120, velMax:420,
+                            vidaMin:0.5, vidaMax:1.1, rMin:2, rMax:6 });
+    setTimeout(() => terminar(true), 900);
+  }
+  // caída al vacío
+  if (S.y > SUELO + 200){
+    S.caidas++;
+    Sonido.fx('derrota');
+    Arcade.aviso(avisos, '💥 Al vacío. Otra vez desde el principio del nivel.', false, 1800);
+    construirNivel(S.nivel);
+    refrescar();
+  }
+}
+
+function terminar(gano){
+  S.jugando = false;
+  S.puntos = S.nivel * 500 - S.caidas * 60;
+  const puntos = Math.max(0, S.puntos);
+  const premio = Math.floor(puntos / 20);
+  Arcade.guardarRecord('hook', puntos);
+  Arcade.perfil.partida('hook', { puntos, victoria: gano, premio });
+  $('finTitulo').textContent = '🏁 Nivel ' + S.nivel + ' superado';
+  $('finSub').textContent = S.caidas === 0
+    ? 'Sin caerte ni una vez. Impecable.'
+    : 'A la siguiente, menos caídas.';
+  $('finNivel').textContent = S.nivel;
+  $('finCaidas').textContent = S.caidas;
+  $('finPuntos').textContent = puntos.toLocaleString('es-ES');
+  $('finPremio').textContent = premio.toLocaleString('es-ES');
+  $('modalFin').classList.add('visible');
+  refrescar();
+}
+
+// ---------- Dibujo ----------
+const pantX = x => x - S.camX;
+const pantY = y => y - S.camY;
+
+function dibujar(){
+  // cielo
+  const g = ctx.createLinearGradient(0, 0, 0, ALTO);
+  g.addColorStop(0, '#1a0b2e');
+  g.addColorStop(0.5, '#2d1155');
+  g.addColorStop(1, '#0d0620');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, ANCHO, ALTO);
+
+  fondoParalaje();
+  dibujarSuelo();
+  dibujarMeta();
+  dibujarAnclas();
+  dibujarCuerda();
+  dibujarMuñeco();
+  particulas.dibujar(ctx);
+  dibujarHUD();
+}
+
+function fondoParalaje(){
+  // tres capas de montañas moradas, cada una a su ritmo
+  const capas = [
+    { f:0.12, base:ALTO * 0.78, alto:170, col:'#2a1350', paso:230 },
+    { f:0.26, base:ALTO * 0.86, alto:130, col:'#3c1a6b', paso:170 },
+    { f:0.45, base:ALTO * 0.94, alto:90,  col:'#4b2183', paso:120 }
+  ];
+  for (const c of capas){
+    const off = -S.camX * c.f;
+    ctx.fillStyle = c.col;
+    ctx.beginPath();
+    ctx.moveTo(-20, ALTO);
+    for (let x = -20; x <= ANCHO + c.paso; x += c.paso){
+      const wx = x + ((off % c.paso) + c.paso) % c.paso - c.paso;
+      const semilla = Math.floor((x - off) / c.paso);
+      const alt = c.alto * (0.5 + ((semilla * 73) % 47) / 47 * 0.5);
+      ctx.lineTo(wx + c.paso / 2, c.base - alt);
+      ctx.lineTo(wx + c.paso, c.base);
+    }
+    ctx.lineTo(ANCHO + 40, ALTO);
+    ctx.closePath(); ctx.fill();
+  }
+  // luna
+  const lx = ANCHO - 120 - S.camX * 0.03, ly = 80 - S.camY * 0.02;
+  const halo = ctx.createRadialGradient(lx, ly, 6, lx, ly, 70);
+  halo.addColorStop(0, 'rgba(255,180,240,.35)');
+  halo.addColorStop(1, 'rgba(255,180,240,0)');
+  ctx.fillStyle = halo; ctx.beginPath(); ctx.arc(lx, ly, 70, 0, 6.283); ctx.fill();
+  ctx.fillStyle = '#ffe6fa'; ctx.beginPath(); ctx.arc(lx, ly, 22, 0, 6.283); ctx.fill();
+}
+
+function dibujarSuelo(){
+  const y = pantY(SUELO);
+  if (y > ALTO) return;
+  const g = ctx.createLinearGradient(0, y, 0, ALTO);
+  g.addColorStop(0, 'rgba(255,79,216,.22)');
+  g.addColorStop(1, 'rgba(20,4,30,0)');
+  ctx.fillStyle = g; ctx.fillRect(0, y, ANCHO, ALTO - y);
+  ctx.strokeStyle = 'rgba(255,79,216,.5)'; ctx.lineWidth = 2;
+  ctx.setLineDash([12, 10]);
+  ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(ANCHO, y); ctx.stroke();
+  ctx.setLineDash([]);
+}
+
+function dibujarMeta(){
+  const x = pantX(S.meta), y = pantY(SUELO - 30);
+  if (x < -80 || x > ANCHO + 80) return;
+  ctx.strokeStyle = '#c9d3e6'; ctx.lineWidth = 4;
+  ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x, y - 190); ctx.stroke();
+  // bandera a cuadros ondeando
+  const on = Math.sin(tiempo * 4) * 6;
+  for (let f = 0; f < 4; f++)
+    for (let c = 0; c < 3; c++){
+      ctx.fillStyle = (f + c) % 2 ? '#f3e600' : '#1b1b1b';
+      ctx.fillRect(x + 4 + c * 17 + on * (c / 3), y - 188 + f * 15, 17, 15);
+    }
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  const g = ctx.createRadialGradient(x, y - 100, 4, x, y - 100, 130);
+  g.addColorStop(0, 'rgba(243,230,0,.25)');
+  g.addColorStop(1, 'rgba(243,230,0,0)');
+  ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y - 100, 130, 0, 6.283); ctx.fill();
+  ctx.restore();
+}
+
+function dibujarAnclas(){
+  const alcanzable = buscarAncla();
+  for (const a of anclas){
+    const x = pantX(a.x), y = pantY(a.y);
+    if (x < -70 || x > ANCHO + 70) continue;
+    const activo = a === S.ancla;
+    const cerca = a === alcanzable;
+    const pulso = 1 + Math.sin(tiempo * 3 + a.x * 0.01) * 0.12;
+
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    const g = ctx.createRadialGradient(x, y, 2, x, y, 46 * pulso);
+    const col = activo ? '255,240,120' : cerca ? '255,79,216' : '160,90,200';
+    g.addColorStop(0, 'rgba(' + col + ',.5)');
+    g.addColorStop(1, 'rgba(' + col + ',0)');
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.arc(x, y, 46 * pulso, 0, 6.283); ctx.fill();
+    ctx.restore();
+
+    // aro
+    ctx.strokeStyle = activo ? '#fff08c' : cerca ? '#ff4fd8' : 'rgba(190,140,220,.7)';
+    ctx.lineWidth = cerca || activo ? 4 : 2.5;
+    ctx.beginPath(); ctx.arc(x, y, 15 * pulso, 0, 6.283); ctx.stroke();
+    ctx.fillStyle = activo ? '#fff08c' : '#ff4fd8';
+    ctx.beginPath(); ctx.arc(x, y, 5, 0, 6.283); ctx.fill();
+    // soporte al techo
+    ctx.strokeStyle = 'rgba(255,255,255,.12)'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(x, y - 15); ctx.lineTo(x, pantY(-400)); ctx.stroke();
+  }
+}
+
+function dibujarCuerda(){
+  if (!S.ancla) return;
+  const ax = pantX(S.ancla.x), ay = pantY(S.ancla.y);
+  const bx = pantX(S.x), by = pantY(S.y);
+  ctx.save();
+  ctx.strokeStyle = 'rgba(255,240,140,.9)';
+  ctx.lineWidth = 3; ctx.lineCap = 'round';
+  ctx.shadowColor = 'rgba(255,220,90,.8)'; ctx.shadowBlur = 12;
+  ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(bx, by); ctx.stroke();
+  ctx.restore();
+}
+
+function dibujarMuñeco(){
+  // estela de velocidad
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  for (let i = 0; i < S.estela.length; i++){
+    const p = S.estela[i], u = i / S.estela.length;
+    ctx.globalAlpha = u * 0.28;
+    ctx.fillStyle = '#ff4fd8';
+    ctx.beginPath(); ctx.arc(pantX(p.x), pantY(p.y), 3 + u * 7, 0, 6.283); ctx.fill();
+  }
+  ctx.restore();
+  ctx.globalAlpha = 1;
+
+  const x = pantX(S.x), y = pantY(S.y);
+  // el muñeco se orienta hacia donde va; colgado, hacia la cuerda
+  let ang;
+  if (S.ancla) ang = Math.atan2(S.y - S.ancla.y, S.x - S.ancla.x) - Math.PI / 2;
+  else ang = Math.atan2(S.vy, S.vx) - Math.PI / 2 + Math.PI;
+
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(ang);
+
+  const bal = Math.sin(S.fase) * (S.ancla ? 0.25 : 0.6);
+  ctx.strokeStyle = '#ffffff';
+  ctx.lineWidth = 5; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  ctx.shadowColor = 'rgba(255,79,216,.9)'; ctx.shadowBlur = 10;
+
+  // tronco
+  ctx.beginPath(); ctx.moveTo(0, -6); ctx.lineTo(0, 22); ctx.stroke();
+  // brazos: si está colgado, los dos hacia la cuerda
+  ctx.beginPath();
+  if (S.ancla){
+    ctx.moveTo(0, 0); ctx.lineTo(-9, -16);
+    ctx.moveTo(0, 0); ctx.lineTo(9, -16);
+  } else {
+    ctx.moveTo(0, 2); ctx.lineTo(-16, 12 + bal * 8);
+    ctx.moveTo(0, 2); ctx.lineTo(16, 10 - bal * 8);
+  }
+  ctx.stroke();
+  // piernas
+  ctx.beginPath();
+  ctx.moveTo(0, 22); ctx.lineTo(-12 + bal * 6, 40);
+  ctx.moveTo(0, 22); ctx.lineTo(12 + bal * 6, 40);
+  ctx.stroke();
+  // cabeza
+  ctx.fillStyle = '#ffffff';
+  ctx.beginPath(); ctx.arc(0, -15, 10, 0, 6.283); ctx.fill();
+  ctx.shadowBlur = 0;
+  // banda rosa
+  ctx.fillStyle = '#ff4fd8';
+  ctx.beginPath(); ctx.roundRect(-10, -20, 20, 5, 2.5); ctx.fill();
+  ctx.restore();
+}
+
+function dibujarHUD(){
+  // barra de avance del nivel
+  const u = limitar(S.x / S.meta, 0, 1);
+  const an = ANCHO - 200, x = 100, y = 22;
+  ctx.fillStyle = 'rgba(0,0,0,.4)';
+  ctx.beginPath(); ctx.roundRect(x, y, an, 8, 4); ctx.fill();
+  const g = ctx.createLinearGradient(x, 0, x + an, 0);
+  g.addColorStop(0, '#ff4fd8'); g.addColorStop(1, '#f3e600');
+  ctx.fillStyle = g;
+  ctx.beginPath(); ctx.roundRect(x, y, Math.max(4, an * u), 8, 4); ctx.fill();
+  ctx.fillStyle = '#fff';
+  ctx.beginPath(); ctx.arc(x + an * u, y + 4, 6, 0, 6.283); ctx.fill();
+
+  ctx.font = '800 12px "Segoe UI", system-ui, sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,.65)';
+  ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  ctx.fillText('NIVEL ' + S.nivel, 22, y + 4);
+  ctx.textAlign = 'right';
+  ctx.fillText(Math.round(u * 100) + ' %', ANCHO - 22, y + 4);
+
+  // velocidad, para que se note lo que aporta soltar abajo
+  const v = Math.hypot(S.vx, S.vy);
+  ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+  ctx.font = '900 15px "Segoe UI", system-ui, sans-serif';
+  ctx.fillStyle = v > 700 ? '#f3e600' : 'rgba(255,255,255,.5)';
+  ctx.fillText('⚡ ' + Math.round(v), 22, 44);
+}
+
+// ---------- Interfaz ----------
+function refrescar(){
+  $('nivelTxt').textContent = S.nivel;
+  $('caidasTxt').textContent = S.caidas;
+  const r = Arcade.record('hook');
+  $('recordTxt').textContent = r ? r.toLocaleString('es-ES') + ' pts' : '—';
+}
+
+$('btnEmpezar').onclick = () => { Sonido.activar(); S.caidas = 0; empezar(1); };
+$('btnSeguir').onclick = () => { Sonido.activar(); empezar(S.nivel + 1); };
+$('btnReiniciar').onclick = () => { Sonido.activar(); S.caidas = 0; empezar(1); };
+Arcade.conectarSonido($('btnSonido'));
+
+refrescar();
+Arcade.bucle(dt => { actualizar(dt); dibujar(); });
+</script>
+</body>
+</html>

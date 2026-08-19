@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Subway Surfers — Arcade NEXO</title>
+<link rel="stylesheet" href="arcade.css">
+<style>
+  #tablero{position:relative; display:flex; flex-direction:column; gap:10px;}
+  #juego{width:min(1040px,100vw);}
+  .barra .titulo{color:#22d3ee;}
+
+  #via{
+    position:relative; border-radius:16px; overflow:hidden;
+    border:2px solid rgba(34,211,238,.3);
+    box-shadow:0 15px 45px rgba(0,0,0,.9), inset 0 0 80px rgba(0,0,0,.5);
+  }
+  #lienzo{display:block; width:100%; height:auto;}
+
+  #mandos{display:grid; grid-template-columns:repeat(4,1fr); gap:9px;}
+  #mandos button{
+    padding:14px 8px; font-size:1.4rem; line-height:1;
+    background:rgba(34,211,238,.12); border:1px solid rgba(34,211,238,.35);
+    border-radius:12px; color:#e8f7ff;
+  }
+  #mandos button:active{background:rgba(34,211,238,.3);}
+  @media (min-width:820px){ #mandos{display:none;} }
+
+  .rejillaResumen{
+    display:grid; grid-template-columns:repeat(auto-fit,minmax(110px,1fr)); gap:10px;
+    margin:14px 0 18px;
+  }
+  .rejillaResumen div{background:rgba(0,0,0,.35); border-radius:10px; padding:11px;}
+  .rejillaResumen .n{font-size:22px; font-weight:800; color:var(--oro);}
+  .rejillaResumen .e{font-size:11px; color:var(--tenue);}
+</style>
+</head>
+<body>
+
+<div id="juego" data-ritmo="accion">
+  <div class="barra">
+    <a class="boton" href="../index.html">🕹 Arcade</a>
+    <div class="titulo">🛹 SUBWAY SURFERS</div>
+    <div class="sep"></div>
+    <div class="stat">📏 <span id="distTxt" class="oro">0</span> m</div>
+    <div class="stat">🪙 <span id="monedasTxt" class="verde">0</span></div>
+    <div class="stat">🏆 <span id="recordTxt" class="tenue">—</span></div>
+    <button id="btnSonido" title="Sonido" aria-label="Sonido">🔊</button>
+  </div>
+
+  <div id="tablero">
+    <div id="via">
+      <canvas id="lienzo" width="1000" height="560"></canvas>
+      <div class="avisos" id="avisos"></div>
+    </div>
+
+    <div id="mandos">
+      <button id="mIzq" aria-label="Izquierda">◀</button>
+      <button id="mSalto" aria-label="Saltar">▲</button>
+      <button id="mRodar" aria-label="Rodar">▼</button>
+      <button id="mDer" aria-label="Derecha">▶</button>
+    </div>
+
+    <div class="modal visible" id="modalInicio">
+      <div class="tarjetaModal">
+        <h1>🛹 SUBWAY SURFERS</h1>
+        <div class="sub">Corre por las vías, esquiva los trenes y no mires atrás.</div>
+        <div class="instrucciones">
+          <b>← →</b> o <b>A D</b> cambian de carril · <b>↑</b> o <b>W</b> salta · <b>↓</b> o <b>S</b> rueda por debajo.<br>
+          <b>🚃 Trenes:</b> los bajos se saltan y encima se puede correr; los altos hay que esquivarlos por otro carril.<br>
+          <b>🚧 Vallas:</b> las bajas se saltan; las de <b>barrera alta</b> solo se pasan <b>rodando</b>.<br>
+          <b>🪙 Monedas:</b> vienen en hilera. Cada 30 monedas te dan un <b>imán</b> que las atrae solas.<br>
+          <b>🛹 Tabla:</b> aparece de vez en cuando y te salva de <b>un</b> choque.<br>
+          Cuanto más lejos llegas, más rápido va todo. La distancia y las monedas suman puntos.
+        </div>
+        <div class="filaBotones"><button class="primario" id="btnEmpezar">▶ A correr</button></div>
+      </div>
+    </div>
+
+    <div class="modal" id="modalFin">
+      <div class="tarjetaModal">
+        <h1 id="finTitulo">🚃 Te pillaron</h1>
+        <div class="sub" id="finSub"></div>
+        <div class="rejillaResumen">
+          <div><div class="n" id="finDist">0</div><div class="e">metros</div></div>
+          <div><div class="n" id="finMonedas">0</div><div class="e">monedas</div></div>
+          <div><div class="n" id="finPuntos">0</div><div class="e">puntos</div></div>
+          <div><div class="n" id="finPremio">0</div><div class="e">NEXO-COINS</div></div>
+        </div>
+        <div class="filaBotones"><button class="primario" id="btnOtra">▶ Otra carrera</button></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="arcade.js"></script>
+<script>
+// ============================================================
+//  SUBWAY SURFERS — corredor infinito en falso 3D sobre tres vías
+//  El mundo se proyecta con una perspectiva de un solo punto: cada
+//  objeto guarda su distancia `z` y se dibuja escalado por 1/(1+z/FOCO).
+// ============================================================
+const $ = id => document.getElementById(id);
+const lienzo = $('lienzo');
+const ctx = Arcade.nitido(lienzo);
+const avisos = $('avisos');
+const ANCHO = lienzo.width, ALTO = lienzo.height;
+
+// ---------- Perspectiva ----------
+const HORIZONTE = ALTO * 0.30;
+const SUELO = ALTO * 0.92;
+const FOCO = 300;                       // a mayor foco, menos exagerada la fuga
+const CARRIL = 132;                     // separación entre vías, en unidades de mundo
+const LEJOS = 2600;                     // hasta dónde se ve
+
+// El plano cercano corta en -120: sin ese tope, lo que ya has pasado crece
+// hacia infinito y un vagón se convierte en una plancha que tapa la pantalla.
+const CERCA = -120;
+const escala = z => FOCO / (FOCO + Math.max(CERCA, z));
+const sueloY = z => HORIZONTE + (SUELO - HORIZONTE) * escala(z);
+const pantallaX = (x, z) => ANCHO / 2 + x * escala(z);
+
+// ---------- Estado ----------
+const J = {
+  jugando: false, muerto: false,
+  carril: 0, x: 0, xObjetivo: 0,
+  y: 0, vy: 0,                          // altura sobre la vía (positiva hacia arriba)
+  sobreTren: null,                      // tren sobre el que corre, o null
+  rodando: 0, fase: 0,
+  vel: 320, dist: 0, monedas: 0,
+  iman: 0, tabla: 0, invulnerable: 0,
+  sacudida: 0, destello: 0
+};
+let objetos = [];       // trenes, vallas, monedas y tablas
+let particulas = new Particulas(220);
+let proximoZ = 700, tiempo = 0;
+const GRAVEDAD = 2600, IMPULSO = 830;
+
+const VEL_BASE = 320, VEL_MAX = 900;
+
+// ---------- Generación de la vía ----------
+// El generador nunca cierra los tres carriles a la vez: siempre deja una
+// salida, aunque sea saltando o rodando. Un corredor infinito injusto no es
+// difícil, es roto.
+function generarTramo(){
+  const z = proximoZ;
+  const dificultad = limitar((J.vel - VEL_BASE) / (VEL_MAX - VEL_BASE), 0, 1);
+
+  // Un tramo no puede mirar solo lo suyo: un tren largo del tramo anterior
+  // sigue tapando su carril aquí. Sin esta cuenta, dos tramos seguidos podían
+  // cerrar los tres carriles y no había forma humana de pasar.
+  const tapado = [false, false, false];
+  for (const o of objetos){
+    if (o.tipo === 'moneda' || o.tipo === 'tabla') continue;
+    if (o.z + (o.largo || 40) > z - 60 && o.z < z + 760) tapado[o.carril] = true;
+  }
+  let libres = [0, 1, 2].filter(c => !tapado[c]);
+  if (libres.length <= 1){                 // ya hay poco sitio: se deja respirar
+    proximoZ += azar(460, 640);
+    return;
+  }
+
+  const ocupar = Math.min(libres.length - 1,
+                          Math.random() < 0.32 + dificultad * 0.34 ? 2 : 1);
+  const usados = [];
+  for (let k = 0; k < ocupar; k++){
+    const i = Math.floor(Math.random() * libres.length);
+    const carril = libres.splice(i, 1)[0];
+    usados.push(carril);
+    const r = Math.random();
+    if (r < 0.34){
+      // tren largo: se puede esquivar o correr por encima si saltas al inicio
+      objetos.push({ tipo:'tren', carril, z, largo: azar(320, 520), alto: 118,
+                     color: elegir(['#e0483d','#f0a020','#3aa7e0','#8b5cf6']) });
+    } else if (r < 0.56){
+      // vagón alto: no se salta, hay que cambiar de vía
+      objetos.push({ tipo:'trenAlto', carril, z, largo: azar(260, 400), alto: 210, color:'#4b5563' });
+    } else if (r < 0.78){
+      objetos.push({ tipo:'valla', carril, z, largo: 26, alto: 62 });
+    } else {
+      objetos.push({ tipo:'barrera', carril, z, largo: 26, alto: 210, hueco: 92 });
+    }
+  }
+
+  // hilera de monedas por un carril que se quede libre
+  if (libres.length && Math.random() < 0.75){
+    const carril = elegir(libres);
+    const n = Math.floor(azar(5, 11));
+    const arco = Math.random() < 0.35;          // en arco: hay que saltar para pillarlas
+    for (let i = 0; i < n; i++)
+      objetos.push({ tipo:'moneda', carril, z: z + i * 62,
+                     y: arco ? Math.sin(i / (n - 1) * Math.PI) * 120 : 26, viva:true });
+  }
+  if (Math.random() < 0.06 && libres.length)
+    objetos.push({ tipo:'tabla', carril: elegir(libres), z: z + 120, y: 34, viva:true });
+
+  // La separación nunca baja del largo del tren más largo: si no, el tramo
+  // siguiente nacería dentro del anterior.
+  proximoZ += Math.max(560, azar(600, 860) - dificultad * 140);
+}
+
+// ---------- Control ----------
+function moverA(carril){
+  if (!J.jugando || J.muerto) return;
+  const nuevo = limitar(carril, -1, 1);
+  if (nuevo === J.carril) return;
+  J.carril = nuevo;
+  J.xObjetivo = nuevo * CARRIL;
+  Sonido.fx('paso');
+}
+function saltar(){
+  if (!J.jugando || J.muerto) return;
+  const suelo = J.sobreTren ? J.sobreTren.alto : 0;
+  if (J.y <= suelo + 1){
+    J.vy = IMPULSO;
+    J.rodando = 0;
+    Sonido.fx('salto');
+  }
+}
+function rodar(){
+  if (!J.jugando || J.muerto) return;
+  const suelo = J.sobreTren ? J.sobreTren.alto : 0;
+  if (J.y > suelo + 1){ J.vy = -IMPULSO * 1.1; }   // caída rápida al rodar en el aire
+  J.rodando = 0.55;
+  Sonido.fx('paso');
+}
+
+addEventListener('keydown', ev => {
+  if (/^(INPUT|TEXTAREA|SELECT)$/.test(ev.target.tagName || '')) return;
+  const k = ev.key.toLowerCase();
+  if (['arrowleft','arrowright','arrowup','arrowdown',' ','a','d','w','s'].includes(k)) ev.preventDefault();
+  if (k === 'arrowleft' || k === 'a') moverA(J.carril - 1);
+  else if (k === 'arrowright' || k === 'd') moverA(J.carril + 1);
+  else if (k === 'arrowup' || k === 'w' || k === ' ') saltar();
+  else if (k === 'arrowdown' || k === 's') rodar();
+});
+const pulsar = (id, fn) => {
+  const b = $(id);
+  b.addEventListener('pointerdown', ev => { ev.preventDefault(); Sonido.activar(); fn(); });
+};
+pulsar('mIzq', () => moverA(J.carril - 1));
+pulsar('mDer', () => moverA(J.carril + 1));
+pulsar('mSalto', saltar);
+pulsar('mRodar', rodar);
+
+// ---------- Ronda ----------
+function empezar(){
+  Object.assign(J, {
+    jugando:true, muerto:false, carril:0, x:0, xObjetivo:0, y:0, vy:0,
+    sobreTren:null, rodando:0, fase:0, vel:VEL_BASE, dist:0, monedas:0,
+    iman:0, tabla:0, invulnerable:0, sacudida:0, destello:0
+  });
+  objetos = [];
+  particulas.lista.length = 0;
+  proximoZ = 700;
+  for (let i = 0; i < 6; i++) generarTramo();
+  $('modalInicio').classList.remove('visible');
+  $('modalFin').classList.remove('visible');
+  refrescar();
+}
+
+function chocar(que){
+  if (J.invulnerable > 0) return;
+  if (J.tabla > 0){
+    J.tabla = 0;
+    J.invulnerable = 1.4;
+    J.sacudida = 14;
+    Arcade.aviso(avisos, '🛹 ¡La tabla te ha salvado!', true, 1600);
+    Sonido.fx('choque');
+    particulas.emitir(26, { x: pantallaX(J.x, 0), y: sueloY(0) - 60, color:['#22d3ee','#a5f3fc','#fff'],
+                            velMin:80, velMax:320, vidaMin:0.3, vidaMax:0.7, rMin:2, rMax:5 });
+    return;
+  }
+  J.muerto = true;
+  J.jugando = false;
+  J.sacudida = 22;
+  Sonido.fx('choque');
+  particulas.emitir(40, { x: pantallaX(J.x, 0), y: sueloY(0) - 60, color:['#ff5a72','#ffb43d','#fff'],
+                          velMin:100, velMax:420, vidaMin:0.4, vidaMax:0.9, rMin:2, rMax:6 });
+  setTimeout(terminar, 900);
+}
+
+function terminar(){
+  const dist = Math.floor(J.dist);
+  const puntos = dist + J.monedas * 12;
+  const premio = Math.floor(puntos / 18);
+  Arcade.guardarRecord('subway', puntos);
+  Arcade.perfil.partida('subway', { puntos, victoria: puntos > 1500, premio });
+  $('finTitulo').textContent = puntos > 4000 ? '🏅 ¡Menuda carrera!' : '🚃 Te pillaron';
+  $('finSub').textContent = puntos > 4000
+    ? 'Has aguantado de sobra. A ver si lo repites.'
+    : 'Los trenes no perdonan. Otra vuelta.';
+  $('finDist').textContent = dist.toLocaleString('es-ES');
+  $('finMonedas').textContent = J.monedas.toLocaleString('es-ES');
+  $('finPuntos').textContent = puntos.toLocaleString('es-ES');
+  $('finPremio').textContent = premio.toLocaleString('es-ES');
+  $('modalFin').classList.add('visible');
+  refrescar();
+}
+
+// ---------- Simulación ----------
+function actualizar(dt){
+  tiempo += dt;
+  particulas.actualizar(dt);
+  if (J.sacudida > 0) J.sacudida = Math.max(0, J.sacudida - dt * 40);
+  if (J.destello > 0) J.destello = Math.max(0, J.destello - dt * 3);
+  if (!J.jugando){ return; }
+
+  // la velocidad sube con la distancia, con techo
+  J.vel = Math.min(VEL_MAX, VEL_BASE + J.dist * 0.075);
+  J.dist += J.vel * dt / 12;             // 12 unidades de mundo ≈ 1 metro
+  if (J.invulnerable > 0) J.invulnerable -= dt;
+  if (J.iman > 0) J.iman -= dt;
+  if (J.rodando > 0) J.rodando -= dt;
+  J.fase += dt * (6 + J.vel / 120);
+
+  // deslizamiento lateral entre carriles
+  J.x += (J.xObjetivo - J.x) * Math.min(1, dt * 13);
+
+  // el mundo se acerca
+  const avance = J.vel * dt;
+  for (const o of objetos) o.z -= avance;
+  objetos = objetos.filter(o => o.z + (o.largo || 60) > CERCA);
+  proximoZ -= avance;
+  while (proximoZ < LEJOS && objetos.length < 320) generarTramo();
+
+  // ---- suelo bajo los pies: ¿va por encima de un tren? ----
+  const trenDebajo = objetos.find(o =>
+    (o.tipo === 'tren') && o.carril - 1 === J.carril &&
+    J.y >= o.alto - 6 && o.z <= 40 && o.z + o.largo >= -20);
+  J.sobreTren = trenDebajo || null;
+  const sueloPies = J.sobreTren ? J.sobreTren.alto : 0;
+
+  J.vy -= GRAVEDAD * dt;
+  J.y += J.vy * dt;
+  if (J.y <= sueloPies){
+    if (J.vy < -200 && !J.sobreTren) Sonido.fx('aterrizar');
+    J.y = sueloPies;
+    J.vy = 0;
+  }
+
+  // ---- colisiones ----
+  const enElAire = J.y > 6;
+  const alturaCabeza = J.y + (J.rodando > 0 ? 46 : 104);
+  for (const o of objetos){
+    const carrilObj = o.carril - 1;
+    const dentro = o.z <= 34 && o.z + (o.largo || 40) >= -14;
+    if (!dentro) continue;
+
+    if (o.tipo === 'moneda' || o.tipo === 'tabla'){
+      if (!o.viva) continue;
+      const cerca = Math.abs(pantallaX(carrilObj * CARRIL, 0) - pantallaX(J.x, 0)) < 66 || J.iman > 0;
+      const alturaOk = Math.abs((o.y || 26) - (J.y + 50)) < 92 || J.iman > 0;
+      if (cerca && alturaOk){
+        o.viva = false;
+        if (o.tipo === 'moneda'){
+          J.monedas++;
+          J.destello = 0.4;
+          Sonido.fx('moneda');
+          if (J.monedas % 30 === 0){
+            J.iman = 8;
+            Arcade.aviso(avisos, '🧲 ¡Imán! Las monedas vienen solas', true, 1700);
+          }
+        } else {
+          J.tabla = 1;
+          Arcade.aviso(avisos, '🛹 Tabla lista: te salva de un choque', true, 1800);
+          Sonido.fx('ficha');
+        }
+        refrescar();
+      }
+      continue;
+    }
+
+    if (carrilObj !== J.carril) continue;
+    if (o.tipo === 'tren'){
+      // se puede pasar por encima; si no, es choque frontal
+      if (J.y < o.alto - 14) chocar('tren');
+    } else if (o.tipo === 'trenAlto'){
+      chocar('trenAlto');
+    } else if (o.tipo === 'valla'){
+      if (J.y < o.alto - 8) chocar('valla');
+    } else if (o.tipo === 'barrera'){
+      // solo se pasa rodando: el hueco está abajo
+      if (!(J.rodando > 0 && !enElAire)) chocar('barrera');
+    }
+  }
+}
+
+// ---------- Dibujo ----------
+const fondo = Arcade.lienzoOculto(ANCHO, ALTO);
+pintarFondo(fondo.ctx);
+
+function pintarFondo(c){
+  const cielo = c.createLinearGradient(0, 0, 0, HORIZONTE + 40);
+  cielo.addColorStop(0, '#0a1330');
+  cielo.addColorStop(0.6, '#16305c');
+  cielo.addColorStop(1, '#3c5c8f');
+  c.fillStyle = cielo; c.fillRect(0, 0, ANCHO, HORIZONTE + 40);
+
+  // estrellas y luna baja
+  for (let i = 0; i < 60; i++){
+    c.globalAlpha = azar(0.2, 0.8);
+    c.fillStyle = '#fff';
+    c.beginPath(); c.arc(azar(0, ANCHO), azar(0, HORIZONTE - 40), azar(0.4, 1.2), 0, 6.283); c.fill();
+  }
+  c.globalAlpha = 1;
+
+  // horizonte de la ciudad, en dos capas
+  for (const capa of [{ base:HORIZONTE + 8, alto:120, col:'#101c38', luz:'rgba(255,210,120,.35)', paso:64 },
+                      { base:HORIZONTE + 14, alto:76, col:'#0a1226', luz:'rgba(160,220,255,.28)', paso:42 }]){
+    let x = -20;
+    while (x < ANCHO + 40){
+      const an = azar(26, capa.paso);
+      const al = azar(capa.alto * 0.35, capa.alto);
+      c.fillStyle = capa.col;
+      c.fillRect(x, capa.base - al, an, al + 10);
+      // ventanas encendidas
+      c.fillStyle = capa.luz;
+      for (let vy = capa.base - al + 8; vy < capa.base - 8; vy += 11)
+        for (let vx = x + 4; vx < x + an - 5; vx += 9)
+          if (Math.random() < 0.4) c.fillRect(vx, vy, 3.5, 5);
+      x += an + azar(3, 12);
+    }
+  }
+}
+
+function dibujar(){
+  const sac = J.sacudida;
+  ctx.save();
+  if (sac > 0) ctx.translate(azar(-sac, sac) * 0.5, azar(-sac, sac) * 0.5);
+
+  ctx.drawImage(fondo.lienzo, 0, 0, ANCHO, ALTO);
+  dibujarVias();
+
+  // Todo lo que hay en la vía se pinta de lejos a cerca, para que lo cercano
+  // tape a lo lejano sin necesidad de z-buffer.
+  const enOrden = objetos.filter(o => o.z < LEJOS && o.z + (o.largo || 60) > CERCA + 6 &&
+                                      o.viva !== false)
+                         .sort((a, b) => b.z - a.z);
+  let pintadoJugador = false;
+  for (const o of enOrden){
+    if (!pintadoJugador && o.z < 0){ dibujarCorredor(); pintadoJugador = true; }
+    if (o.tipo === 'tren' || o.tipo === 'trenAlto') dibujarTren(o);
+    else if (o.tipo === 'valla') dibujarValla(o);
+    else if (o.tipo === 'barrera') dibujarBarrera(o);
+    else if (o.tipo === 'moneda') dibujarMoneda(o);
+    else if (o.tipo === 'tabla') dibujarTabla(o);
+  }
+  if (!pintadoJugador) dibujarCorredor();
+
+  particulas.dibujar(ctx);
+  ctx.restore();
+
+  dibujarHUD();
+}
+
+function dibujarVias(){
+  // terraplén
+  const tierra = ctx.createLinearGradient(0, HORIZONTE, 0, ALTO);
+  tierra.addColorStop(0, '#2a3550');
+  tierra.addColorStop(0.35, '#3a3b3f');
+  tierra.addColorStop(1, '#1a1c22');
+  ctx.fillStyle = tierra;
+  ctx.beginPath();
+  ctx.moveTo(pantallaX(-CARRIL * 2.6, LEJOS), sueloY(LEJOS));
+  ctx.lineTo(pantallaX(CARRIL * 2.6, LEJOS), sueloY(LEJOS));
+  ctx.lineTo(pantallaX(CARRIL * 2.6, CERCA), ALTO);
+  ctx.lineTo(pantallaX(-CARRIL * 2.6, CERCA), ALTO);
+  ctx.closePath(); ctx.fill();
+
+  // traviesas: se dibujan en las posiciones del mundo para que corran de verdad
+  const paso = 90;
+  const desfase = ((J.dist * 12) % paso + paso) % paso;
+  for (let z = LEJOS; z > CERCA; z -= paso){
+    const zz = z - desfase;
+    if (zz < CERCA) continue;
+    const s = escala(zz);
+    if (s < 0.03) continue;
+    const y = sueloY(zz);
+    ctx.fillStyle = 'rgba(70,55,40,' + Math.min(0.85, s * 1.6).toFixed(3) + ')';
+    const an = (CARRIL * 5.0) * s, alt = Math.max(1, 15 * s);
+    ctx.fillRect(ANCHO / 2 - an / 2, y - alt / 2, an, alt);
+  }
+
+  // los cuatro raíles brillantes
+  for (const x of [-CARRIL * 1.5, -CARRIL * 0.5, CARRIL * 0.5, CARRIL * 1.5]){
+    const g = ctx.createLinearGradient(0, HORIZONTE, 0, ALTO);
+    g.addColorStop(0, 'rgba(150,170,200,.25)');
+    g.addColorStop(1, 'rgba(215,232,255,.85)');
+    ctx.strokeStyle = g;
+    ctx.beginPath();
+    for (let z = LEJOS; z > CERCA; z -= 60){
+      const s = escala(z);
+      ctx.lineWidth = Math.max(0.6, 8 * s);
+      const px = pantallaX(x, z), py = sueloY(z);
+      z === LEJOS ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+    }
+    ctx.stroke();
+  }
+
+  // muros laterales del túnel, con farolas
+  for (const lado of [-1, 1]){
+    ctx.fillStyle = 'rgba(12,16,28,.85)';
+    ctx.beginPath();
+    ctx.moveTo(pantallaX(lado * CARRIL * 2.6, LEJOS), sueloY(LEJOS));
+    ctx.lineTo(pantallaX(lado * CARRIL * 2.6, LEJOS), sueloY(LEJOS) - 200 * escala(LEJOS));
+    ctx.lineTo(pantallaX(lado * CARRIL * 2.6, CERCA), -80);
+    ctx.lineTo(pantallaX(lado * CARRIL * 2.6, CERCA), ALTO);
+    ctx.closePath(); ctx.fill();
+  }
+  const pasoFarola = 460;
+  const desF = ((J.dist * 12) % pasoFarola + pasoFarola) % pasoFarola;
+  for (let z = LEJOS; z > 0; z -= pasoFarola){
+    const zz = z - desF;
+    if (zz < 20) continue;
+    const s = escala(zz);
+    for (const lado of [-1, 1]){
+      const px = pantallaX(lado * CARRIL * 2.45, zz), py = sueloY(zz);
+      ctx.strokeStyle = 'rgba(120,140,175,.7)';
+      ctx.lineWidth = Math.max(0.8, 5 * s);
+      ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(px, py - 180 * s); ctx.stroke();
+      const lg = ctx.createRadialGradient(px, py - 180 * s, 1, px, py - 180 * s, 90 * s);
+      lg.addColorStop(0, 'rgba(255,226,150,.75)');
+      lg.addColorStop(1, 'rgba(255,200,90,0)');
+      ctx.fillStyle = lg;
+      ctx.beginPath(); ctx.arc(px, py - 180 * s, 90 * s, 0, 6.283); ctx.fill();
+    }
+  }
+}
+
+/** Caja en perspectiva: cara frontal, cara superior y un lateral. */
+function caja(carril, z, largo, alto, ancho, colFrente, colLado, colTecho){
+  const x = (carril - 1) * CARRIL;
+  const zA = z, zB = z + largo;
+  const sA = escala(zA), sB = escala(zB);
+  if (sA <= 0.02 && sB <= 0.02) return null;
+
+  const izqA = pantallaX(x - ancho / 2, zA), derA = pantallaX(x + ancho / 2, zA);
+  const izqB = pantallaX(x - ancho / 2, zB), derB = pantallaX(x + ancho / 2, zB);
+  const baseA = sueloY(zA), baseB = sueloY(zB);
+  const topA = baseA - alto * sA, topB = baseB - alto * sB;
+
+  // lateral visible: el que da al centro de la pantalla
+  const haciaDentro = pantallaX(x, zA) > ANCHO / 2 ? -1 : 1;
+  ctx.fillStyle = colLado;
+  ctx.beginPath();
+  if (haciaDentro > 0){
+    ctx.moveTo(derA, baseA); ctx.lineTo(derB, baseB); ctx.lineTo(derB, topB); ctx.lineTo(derA, topA);
+  } else {
+    ctx.moveTo(izqA, baseA); ctx.lineTo(izqB, baseB); ctx.lineTo(izqB, topB); ctx.lineTo(izqA, topA);
+  }
+  ctx.closePath(); ctx.fill();
+
+  // techo
+  ctx.fillStyle = colTecho;
+  ctx.beginPath();
+  ctx.moveTo(izqA, topA); ctx.lineTo(derA, topA); ctx.lineTo(derB, topB); ctx.lineTo(izqB, topB);
+  ctx.closePath(); ctx.fill();
+
+  // frontal
+  ctx.fillStyle = colFrente;
+  ctx.fillRect(izqA, topA, derA - izqA, baseA - topA);
+  ctx.strokeStyle = 'rgba(0,0,0,.45)'; ctx.lineWidth = 1.5;
+  ctx.strokeRect(izqA, topA, derA - izqA, baseA - topA);
+
+  return { izqA, derA, topA, baseA, izqB, derB, topB, baseB, sA, sB };
+}
+
+function dibujarTren(o){
+  const alto = o.alto;
+  const c = o.color;
+  const g = caja(o.carril, o.z, o.largo, alto, CARRIL * 0.86,
+                 oscuro(c, 0.75), oscuro(c, 0.55), c);
+  if (!g) return;
+  const { izqA, derA, topA, baseA, izqB, derB, topB, sA, sB } = g;
+
+  // franja de ventanillas a lo largo del lateral
+  const haciaDentro = (izqA + derA) / 2 > ANCHO / 2 ? -1 : 1;
+  ctx.save();
+  ctx.beginPath();
+  if (haciaDentro > 0) ctx.moveTo(derA, baseA), ctx.lineTo(derB, g.baseB), ctx.lineTo(derB, topB), ctx.lineTo(derA, topA);
+  else ctx.moveTo(izqA, baseA), ctx.lineTo(izqB, g.baseB), ctx.lineTo(izqB, topB), ctx.lineTo(izqA, topA);
+  ctx.closePath(); ctx.clip();
+  const n = 6;
+  for (let i = 0; i < n; i++){
+    const t0 = i / n + 0.04, t1 = (i + 1) / n - 0.04;
+    const xa = haciaDentro > 0 ? derA + (derB - derA) * t0 : izqA + (izqB - izqA) * t0;
+    const xb = haciaDentro > 0 ? derA + (derB - derA) * t1 : izqA + (izqB - izqA) * t1;
+    const ya = baseA + (g.baseB - baseA) * t0, yb = baseA + (g.baseB - baseA) * t1;
+    const ta = topA + (topB - topA) * t0, tb = topA + (topB - topA) * t1;
+    ctx.fillStyle = 'rgba(180,232,255,.75)';
+    ctx.beginPath();
+    ctx.moveTo(xa, ta + (ya - ta) * 0.18); ctx.lineTo(xb, tb + (yb - tb) * 0.18);
+    ctx.lineTo(xb, tb + (yb - tb) * 0.55); ctx.lineTo(xa, ta + (ya - ta) * 0.55);
+    ctx.closePath(); ctx.fill();
+  }
+  ctx.restore();
+
+  // frontal: parabrisas y faros
+  const anF = derA - izqA, alF = baseA - topA;
+  if (anF > 8){
+    ctx.fillStyle = 'rgba(190,238,255,.85)';
+    ctx.fillRect(izqA + anF * 0.14, topA + alF * 0.14, anF * 0.72, alF * 0.34);
+    ctx.fillStyle = '#fff6c8';
+    const r = Math.max(1.2, 7 * sA);
+    ctx.beginPath();
+    ctx.arc(izqA + anF * 0.2, baseA - alF * 0.2, r, 0, 6.283);
+    ctx.arc(derA - anF * 0.2, baseA - alF * 0.2, r, 0, 6.283);
+    ctx.fill();
+    // franja de color
+    ctx.fillStyle = 'rgba(255,255,255,.28)';
+    ctx.fillRect(izqA, topA + alF * 0.62, anF, alF * 0.08);
+  }
+  if (o.tipo === 'trenAlto' && anF > 10){
+    ctx.fillStyle = 'rgba(255,90,90,.9)';
+    ctx.font = '900 ' + Math.max(7, 16 * sA) + 'px "Segoe UI", system-ui, sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('⚠', (izqA + derA) / 2, topA + alF * 0.82);
+  }
+}
+
+function dibujarValla(o){
+  const g = caja(o.carril, o.z, o.largo, o.alto, CARRIL * 0.8, '#f0a020', '#a86c0a', '#ffc44d');
+  if (!g) return;
+  const { izqA, derA, topA, baseA, sA } = g;
+  // rayas de aviso
+  ctx.save();
+  ctx.beginPath(); ctx.rect(izqA, topA, derA - izqA, baseA - topA); ctx.clip();
+  ctx.strokeStyle = 'rgba(20,20,20,.85)';
+  ctx.lineWidth = Math.max(1.5, 9 * sA);
+  for (let i = -2; i < 8; i++){
+    ctx.beginPath();
+    ctx.moveTo(izqA + i * 16 * sA * 2, baseA);
+    ctx.lineTo(izqA + i * 16 * sA * 2 + (baseA - topA), topA);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function dibujarBarrera(o){
+  // pórtico: sólido arriba, hueco abajo para pasar rodando
+  const x = (o.carril - 1) * CARRIL;
+  const s = escala(o.z);
+  if (s < 0.02) return;
+  const izq = pantallaX(x - CARRIL * 0.44, o.z), der = pantallaX(x + CARRIL * 0.44, o.z);
+  const base = sueloY(o.z);
+  const top = base - o.alto * s, huecoY = base - o.hueco * s;
+
+  ctx.fillStyle = '#2b3550';
+  ctx.fillRect(izq, top, der - izq, huecoY - top);
+  ctx.strokeStyle = '#7dd3fc'; ctx.lineWidth = Math.max(1, 2.5 * s);
+  ctx.strokeRect(izq, top, der - izq, huecoY - top);
+  // patas
+  ctx.fillStyle = '#2b3550';
+  const pata = Math.max(2, 12 * s);
+  ctx.fillRect(izq, huecoY, pata, base - huecoY);
+  ctx.fillRect(der - pata, huecoY, pata, base - huecoY);
+  // flecha de "agáchate"
+  if (s > 0.12){
+    ctx.fillStyle = '#f3e600';
+    ctx.font = '900 ' + Math.max(9, 26 * s) + 'px "Segoe UI", system-ui, sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('▼', (izq + der) / 2, (top + huecoY) / 2);
+  }
+}
+
+function dibujarMoneda(o){
+  const s = escala(o.z);
+  if (s < 0.02) return;
+  const px = pantallaX((o.carril - 1) * CARRIL, o.z);
+  const py = sueloY(o.z) - (o.y || 26) * s;
+  const r = Math.max(1.5, 20 * s);
+  // giro: la moneda se estrecha y se ensancha
+  const gir = Math.abs(Math.cos(tiempo * 4 + o.z * 0.01));
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  const halo = ctx.createRadialGradient(px, py, 0.5, px, py, r * 2.4);
+  halo.addColorStop(0, 'rgba(255,214,80,.5)');
+  halo.addColorStop(1, 'rgba(255,180,40,0)');
+  ctx.fillStyle = halo;
+  ctx.beginPath(); ctx.arc(px, py, r * 2.4, 0, 6.283); ctx.fill();
+  ctx.restore();
+
+  const g = ctx.createLinearGradient(px - r, py - r, px + r, py + r);
+  g.addColorStop(0, '#fff3b0'); g.addColorStop(0.5, '#f3c000'); g.addColorStop(1, '#a87500');
+  ctx.fillStyle = g;
+  ctx.beginPath(); ctx.ellipse(px, py, Math.max(0.6, r * gir), r, 0, 0, 6.283); ctx.fill();
+  ctx.strokeStyle = 'rgba(120,80,0,.6)'; ctx.lineWidth = Math.max(0.5, r * 0.12); ctx.stroke();
+  if (r > 6 && gir > 0.45){
+    ctx.fillStyle = 'rgba(255,255,255,.75)';
+    ctx.font = '900 ' + (r * 1.1) + 'px "Segoe UI", system-ui, sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('¢', px, py + r * 0.05);
+  }
+}
+
+function dibujarTabla(o){
+  const s = escala(o.z);
+  if (s < 0.02) return;
+  const px = pantallaX((o.carril - 1) * CARRIL, o.z);
+  const py = sueloY(o.z) - (o.y || 34) * s - Math.sin(tiempo * 3) * 8 * s;
+  const an = Math.max(4, 74 * s), al = Math.max(2, 18 * s);
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  const halo = ctx.createRadialGradient(px, py, 1, px, py, an);
+  halo.addColorStop(0, 'rgba(34,211,238,.55)');
+  halo.addColorStop(1, 'rgba(34,211,238,0)');
+  ctx.fillStyle = halo; ctx.beginPath(); ctx.arc(px, py, an, 0, 6.283); ctx.fill();
+  ctx.restore();
+  const g = ctx.createLinearGradient(px - an / 2, py, px + an / 2, py);
+  g.addColorStop(0, '#22d3ee'); g.addColorStop(0.5, '#a5f3fc'); g.addColorStop(1, '#0891b2');
+  ctx.fillStyle = g;
+  ctx.beginPath(); ctx.roundRect(px - an / 2, py - al / 2, an, al, al / 2); ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,.5)';
+  ctx.beginPath(); ctx.roundRect(px - an / 2 + an * 0.15, py - al * 0.15, an * 0.7, al * 0.2, 2); ctx.fill();
+}
+
+/** El corredor: cuerpo articulado con ciclo de carrera, salto y rodada. */
+function dibujarCorredor(){
+  const z = 0;
+  const s = escala(z) * 1.05;
+  const px = pantallaX(J.x, z);
+  const base = sueloY(z) - J.y * s;
+  const rodando = J.rodando > 0;
+  const enAire = J.y > 6;
+  const alto = (rodando ? 62 : 116) * s;
+
+  // sombra en el suelo, más pequeña cuanto más alto estés
+  const sombraY = sueloY(z) - (J.sobreTren ? J.sobreTren.alto * s : 0);
+  const encoge = limitar(1 - J.y / 420, 0.35, 1);
+  ctx.fillStyle = 'rgba(0,0,0,' + (0.45 * encoge).toFixed(2) + ')';
+  ctx.beginPath();
+  ctx.ellipse(px, sombraY, 34 * s * encoge, 10 * s * encoge, 0, 0, 6.283);
+  ctx.fill();
+
+  // estela de la tabla activa
+  if (J.tabla > 0){
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    const g = ctx.createRadialGradient(px, base - 6, 2, px, base - 6, 70 * s);
+    g.addColorStop(0, 'rgba(34,211,238,.4)');
+    g.addColorStop(1, 'rgba(34,211,238,0)');
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.arc(px, base - 6, 70 * s, 0, 6.283); ctx.fill();
+    ctx.restore();
+    const an = 78 * s;
+    ctx.fillStyle = '#0891b2';
+    ctx.beginPath(); ctx.roundRect(px - an / 2, base - 8 * s, an, 12 * s, 6 * s); ctx.fill();
+    ctx.fillStyle = '#22d3ee';
+    ctx.beginPath(); ctx.roundRect(px - an / 2, base - 12 * s, an, 8 * s, 4 * s); ctx.fill();
+  }
+
+  if (J.invulnerable > 0 && Math.floor(tiempo * 14) % 2 === 0) return;
+
+  ctx.save();
+  ctx.translate(px, base);
+  ctx.scale(s, s);
+  if (rodando) ctx.rotate(-0.5);
+
+  const paso = Math.sin(J.fase), paso2 = Math.cos(J.fase);
+  const cuerpoAl = rodando ? 46 : 74;
+
+  // piernas
+  ctx.strokeStyle = '#1f3a8a'; ctx.lineWidth = 9; ctx.lineCap = 'round';
+  ctx.beginPath();
+  if (enAire && !rodando){
+    ctx.moveTo(-4, -cuerpoAl * 0.34); ctx.lineTo(-16, -6);
+    ctx.moveTo(4, -cuerpoAl * 0.34); ctx.lineTo(12, -14);
+  } else {
+    ctx.moveTo(-3, -cuerpoAl * 0.34); ctx.lineTo(-3 + paso * 17, -2);
+    ctx.moveTo(3, -cuerpoAl * 0.34); ctx.lineTo(3 - paso * 17, -2);
+  }
+  ctx.stroke();
+  // zapatillas
+  ctx.fillStyle = '#f3e600';
+  ctx.beginPath();
+  ctx.roundRect(-9 + (enAire ? -8 : paso * 17), -6, 14, 6, 3);
+  ctx.roundRect(-3 - (enAire ? -6 : paso * 17), -6, 14, 6, 3);
+  ctx.fill();
+
+  // brazo trasero
+  ctx.strokeStyle = '#c2410c'; ctx.lineWidth = 7;
+  ctx.beginPath();
+  ctx.moveTo(0, -cuerpoAl * 0.78);
+  ctx.lineTo(-14 - paso2 * 10, -cuerpoAl * 0.45 + Math.abs(paso2) * 6);
+  ctx.stroke();
+
+  // mochila
+  ctx.fillStyle = '#dc2626';
+  ctx.beginPath(); ctx.roundRect(-16, -cuerpoAl * 0.82, 12, 26, 4); ctx.fill();
+  ctx.fillStyle = 'rgba(0,0,0,.25)';
+  ctx.beginPath(); ctx.roundRect(-16, -cuerpoAl * 0.62, 12, 5, 2); ctx.fill();
+
+  // torso con sudadera
+  const gt = ctx.createLinearGradient(-11, -cuerpoAl, 11, -10);
+  gt.addColorStop(0, '#f97316'); gt.addColorStop(1, '#c2410c');
+  ctx.fillStyle = gt;
+  ctx.beginPath(); ctx.roundRect(-11, -cuerpoAl * 0.86, 22, cuerpoAl * 0.56, 8); ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,.35)'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(-6, -cuerpoAl * 0.8); ctx.lineTo(-6, -cuerpoAl * 0.4); ctx.stroke();
+
+  // cabeza con gorra
+  const cy = -cuerpoAl - 6;
+  ctx.fillStyle = '#f5c396';
+  ctx.beginPath(); ctx.arc(2, cy, 12, 0, 6.283); ctx.fill();
+  ctx.fillStyle = 'rgba(0,0,0,.18)';
+  ctx.beginPath(); ctx.arc(-1, cy, 12, Math.PI * 0.5, Math.PI * 1.5); ctx.fill();
+  ctx.fillStyle = '#22d3ee';
+  ctx.beginPath(); ctx.arc(2, cy - 2, 12.5, Math.PI, 0); ctx.fill();
+  ctx.beginPath(); ctx.roundRect(2, cy - 5, 18, 5, 2.5); ctx.fill();   // visera hacia atrás
+  ctx.fillStyle = '#1b1410';
+  ctx.beginPath(); ctx.arc(9, cy + 1, 1.8, 0, 6.283); ctx.fill();
+
+  // brazo delantero
+  ctx.strokeStyle = '#f97316'; ctx.lineWidth = 7;
+  ctx.beginPath();
+  ctx.moveTo(4, -cuerpoAl * 0.78);
+  ctx.lineTo(16 + paso2 * 10, -cuerpoAl * 0.45 - Math.abs(paso2) * 4);
+  ctx.stroke();
+  ctx.fillStyle = '#f5c396';
+  ctx.beginPath(); ctx.arc(17 + paso2 * 10, -cuerpoAl * 0.45 - Math.abs(paso2) * 4, 4.5, 0, 6.283); ctx.fill();
+
+  ctx.restore();
+
+  // imán activo: aro girando alrededor
+  if (J.iman > 0){
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.strokeStyle = 'rgba(120,240,255,' + (0.35 + Math.sin(tiempo * 8) * 0.2).toFixed(2) + ')';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.ellipse(px, base - alto * 0.45, 52 * s, 20 * s, 0, 0, 6.283);
+    ctx.stroke();
+    ctx.restore();
+  }
+}
+
+function dibujarHUD(){
+  // barra de velocidad
+  const u = (J.vel - VEL_BASE) / (VEL_MAX - VEL_BASE);
+  const an = 200, x = ANCHO - an - 22, y = 22;
+  ctx.fillStyle = 'rgba(0,0,0,.45)';
+  ctx.beginPath(); ctx.roundRect(x, y, an, 12, 6); ctx.fill();
+  const g = ctx.createLinearGradient(x, 0, x + an, 0);
+  g.addColorStop(0, '#22d3ee'); g.addColorStop(1, '#f43f5e');
+  ctx.fillStyle = g;
+  ctx.beginPath(); ctx.roundRect(x, y, Math.max(6, an * u), 12, 6); ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,.55)';
+  ctx.font = '800 10px "Segoe UI", system-ui, sans-serif';
+  ctx.textAlign = 'right'; ctx.textBaseline = 'top';
+  ctx.fillText('VELOCIDAD', x + an, y + 16);
+
+  // metros grandes
+  ctx.textAlign = 'left';
+  ctx.font = '900 34px "Segoe UI", system-ui, sans-serif';
+  ctx.lineWidth = 5; ctx.strokeStyle = 'rgba(0,0,0,.65)';
+  const txt = Math.floor(J.dist).toLocaleString('es-ES') + ' m';
+  ctx.strokeText(txt, 22, 20);
+  ctx.fillStyle = '#e8f7ff';
+  ctx.fillText(txt, 22, 20);
+
+  // monedas
+  ctx.font = '900 20px "Segoe UI", system-ui, sans-serif';
+  const m = '🪙 ' + J.monedas;
+  ctx.strokeText(m, 22, 60);
+  ctx.fillStyle = J.destello > 0 ? '#fff6c8' : '#f3c000';
+  ctx.fillText(m, 22, 60);
+
+  if (J.iman > 0){
+    ctx.font = '800 14px "Segoe UI", system-ui, sans-serif';
+    ctx.fillStyle = '#7dd3fc';
+    ctx.fillText('🧲 ' + J.iman.toFixed(1) + ' s', 22, 90);
+  }
+}
+
+const oscuro = (hex, f) => {
+  const n = parseInt(hex.slice(1), 16);
+  const v = c => Math.max(0, Math.min(255, Math.round(c * f)));
+  return '#' + ((1 << 24) | (v((n >> 16) & 255) << 16) | (v((n >> 8) & 255) << 8) | v(n & 255))
+    .toString(16).slice(1);
+};
+
+// ---------- Interfaz ----------
+function refrescar(){
+  $('distTxt').textContent = Math.floor(J.dist).toLocaleString('es-ES');
+  $('monedasTxt').textContent = J.monedas.toLocaleString('es-ES');
+  const r = Arcade.record('subway');
+  $('recordTxt').textContent = r ? r.toLocaleString('es-ES') + ' pts' : '—';
+}
+
+$('btnEmpezar').onclick = () => { Sonido.activar(); empezar(); };
+$('btnOtra').onclick = () => { Sonido.activar(); empezar(); };
+Arcade.conectarSonido($('btnSonido'));
+
+refrescar();
+Arcade.bucle(dt => { actualizar(dt); dibujar(); });
+</script>
+</body>
+</html>

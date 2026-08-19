@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Slope — Arcade NEXO</title>
+<link rel="stylesheet" href="arcade.css">
+<style>
+  #tablero{position:relative; display:flex; flex-direction:column; gap:10px;}
+  #juego{width:min(1040px,100vw);}
+  .barra .titulo{color:#39ff88;}
+
+  #pista{
+    position:relative; border-radius:16px; overflow:hidden;
+    border:2px solid rgba(57,255,136,.3);
+    box-shadow:0 15px 45px rgba(0,0,0,.9), inset 0 0 90px rgba(0,0,0,.6);
+    background:#01030a;
+  }
+  #lienzo{display:block; width:100%; height:auto;}
+
+  #mandos{display:grid; grid-template-columns:1fr 1fr; gap:9px;}
+  #mandos button{
+    padding:16px 8px; font-size:1.5rem; line-height:1;
+    background:rgba(57,255,136,.1); border:1px solid rgba(57,255,136,.3);
+    border-radius:12px; color:#d8ffe8;
+  }
+  #mandos button:active{background:rgba(57,255,136,.28);}
+  @media (min-width:820px){ #mandos{display:none;} }
+
+  .rejillaResumen{
+    display:grid; grid-template-columns:repeat(auto-fit,minmax(110px,1fr)); gap:10px;
+    margin:14px 0 18px;
+  }
+  .rejillaResumen div{background:rgba(0,0,0,.35); border-radius:10px; padding:11px;}
+  .rejillaResumen .n{font-size:22px; font-weight:800; color:var(--oro);}
+  .rejillaResumen .e{font-size:11px; color:var(--tenue);}
+</style>
+</head>
+<body>
+
+<div id="juego" data-ritmo="accion">
+  <div class="barra">
+    <a class="boton" href="../index.html">🕹 Arcade</a>
+    <div class="titulo">🟢 SLOPE</div>
+    <div class="sep"></div>
+    <div class="stat">📏 <span id="distTxt" class="oro">0</span> m</div>
+    <div class="stat">⚡ <span id="velTxt" class="verde">0</span></div>
+    <div class="stat">🏆 <span id="recordTxt" class="tenue">—</span></div>
+    <button id="btnSonido" title="Sonido" aria-label="Sonido">🔊</button>
+  </div>
+
+  <div id="tablero">
+    <div id="pista">
+      <canvas id="lienzo" width="1000" height="560"></canvas>
+      <div class="avisos" id="avisos"></div>
+    </div>
+
+    <div id="mandos">
+      <button id="mIzq" aria-label="Izquierda">◀</button>
+      <button id="mDer" aria-label="Derecha">▶</button>
+    </div>
+
+    <div class="modal visible" id="modalInicio">
+      <div class="tarjetaModal">
+        <h1>🟢 SLOPE</h1>
+        <div class="sub">La bola no frena nunca. Tú solo decides por dónde.</div>
+        <div class="instrucciones">
+          <b>← →</b> o <b>A D</b> mueven la bola. No hay freno ni salto: la única herramienta es girar a tiempo.<br>
+          <b>🟥 Bloques rojos:</b> uno solo y se acabó.<br>
+          <b>⬛ Huecos:</b> la pista se parte. Hay que rodearlos por el borde bueno.<br>
+          <b>🟩 Placas verdes:</b> te dan un empujón, pero también más velocidad.<br>
+          <b>El borde mata:</b> si te sales de la pista, caes al vacío.<br>
+          La pista se estrecha y serpentea cada vez más. La distancia es la puntuación.
+        </div>
+        <div class="filaBotones"><button class="primario" id="btnEmpezar">▶ Soltar la bola</button></div>
+      </div>
+    </div>
+
+    <div class="modal" id="modalFin">
+      <div class="tarjetaModal">
+        <h1 id="finTitulo">💥 Se acabó</h1>
+        <div class="sub" id="finSub"></div>
+        <div class="rejillaResumen">
+          <div><div class="n" id="finDist">0</div><div class="e">metros</div></div>
+          <div><div class="n" id="finVel">0</div><div class="e">velocidad máx.</div></div>
+          <div><div class="n" id="finPuntos">0</div><div class="e">puntos</div></div>
+          <div><div class="n" id="finPremio">0</div><div class="e">NEXO-COINS</div></div>
+        </div>
+        <div class="filaBotones"><button class="primario" id="btnOtra">▶ Otra bola</button></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="arcade.js"></script>
+<script>
+// ============================================================
+//  SLOPE — bola rodando por un tobogán infinito, en falso 3D
+//  La pista es una tira que serpentea: para cada distancia `z` hay un
+//  centro y un ancho, y la bola tiene que quedarse dentro.
+// ============================================================
+const $ = id => document.getElementById(id);
+const lienzo = $('lienzo');
+const ctx = Arcade.nitido(lienzo);
+const avisos = $('avisos');
+const ANCHO = lienzo.width, ALTO = lienzo.height;
+
+const HORIZONTE = ALTO * 0.26;
+const SUELO = ALTO * 0.9;
+const FOCO = 330;
+const LEJOS = 2400;
+const CERCA = -90;
+const escala = z => FOCO / (FOCO + Math.max(CERCA, z));
+const sueloY = z => HORIZONTE + (SUELO - HORIZONTE) * escala(z);
+const pantallaX = (x, z) => ANCHO / 2 + x * escala(z);
+
+// ---------- Forma de la pista ----------
+// El trazado es determinista a partir de la distancia recorrida: así se puede
+// mirar hacia delante sin guardar una lista de tramos.
+let semilla = 1;
+function centroPista(d){
+  // Las amplitudes y frecuencias están elegidas para que la pista nunca se
+  // desplace de lado más deprisa de lo que la bola puede corregir: la suma de
+  // amplitud x frecuencia queda en 0,21 unidades por unidad de avance, y la
+  // bola llega a 560 frente a los 312 del peor caso a velocidad máxima.
+  const s = semilla * 0.7;
+  return Math.sin(d * 0.00062 + s) * 150 +
+         Math.sin(d * 0.00027 + s * 2.3) * 210 +
+         Math.sin(d * 0.0014 + s * 3.1) * 40;
+}
+function anchoPista(d){
+  // empieza ancha y se va cerrando, con un mínimo que la deja jugable
+  return Math.max(210, 430 - d * 0.012) + Math.sin(d * 0.0017 + semilla) * 45;
+}
+
+const B = {
+  jugando:false, x:0, vx:0, d:0, vel:420, velMax:420,
+  giro:0, salto:0, vy:0, sacudida:0, muerteEn:null
+};
+let obstaculos = [], particulas = new Particulas(260);
+let proximoZ = 900, tiempo = 0;
+const VEL_BASE = 420, VEL_TOPE = 1250;
+let izq = false, der = false;
+
+function generar(){
+  const z = proximoZ;
+  const d = B.d * 12 + z;
+  const c = centroPista(d), an = anchoPista(d);
+  const dificultad = limitar((B.vel - VEL_BASE) / (VEL_TOPE - VEL_BASE), 0, 1);
+  const r = Math.random();
+
+  if (r < 0.5 + dificultad * 0.2){
+    // muro de bloques con un hueco por donde pasar
+    const n = 2 + Math.floor(dificultad * 2);
+    const paso = an / (n + 1);
+    const hueco = Math.floor(Math.random() * (n + 1));
+    for (let i = 0; i <= n; i++){
+      if (i === hueco) continue;
+      obstaculos.push({ tipo:'bloque', x: c - an / 2 + paso * i + paso / 2, z,
+                        an: Math.min(paso * 0.62, 78), alto: 62 });
+    }
+  } else if (r < 0.78){
+    // bloques sueltos repartidos
+    const n = 1 + Math.floor(Math.random() * 2);
+    for (let i = 0; i < n; i++)
+      obstaculos.push({ tipo:'bloque', x: c + azar(-an * 0.38, an * 0.38), z: z + azar(0, 160),
+                        an: azar(56, 96), alto: 62 });
+  } else {
+    // placa de aceleración: tienta, pero te deja más rápido
+    obstaculos.push({ tipo:'turbo', x: c + azar(-an * 0.3, an * 0.3), z, an: 96, alto: 8, viva:true });
+  }
+  proximoZ += Math.max(400, azar(540, 760) - dificultad * 170);
+}
+
+// ---------- Control ----------
+addEventListener('keydown', ev => {
+  if (/^(INPUT|TEXTAREA|SELECT)$/.test(ev.target.tagName || '')) return;
+  const k = ev.key.toLowerCase();
+  if (['arrowleft','arrowright','a','d'].includes(k)) ev.preventDefault();
+  if (k === 'arrowleft' || k === 'a') izq = true;
+  if (k === 'arrowright' || k === 'd') der = true;
+});
+addEventListener('keyup', ev => {
+  const k = ev.key.toLowerCase();
+  if (k === 'arrowleft' || k === 'a') izq = false;
+  if (k === 'arrowright' || k === 'd') der = false;
+});
+const mando = (id, set) => {
+  const b = $(id);
+  b.addEventListener('pointerdown', e => { e.preventDefault(); Sonido.activar(); set(true); });
+  b.addEventListener('pointerup',   e => { e.preventDefault(); set(false); });
+  b.addEventListener('pointerleave',() => set(false));
+  b.addEventListener('pointercancel',() => set(false));
+};
+mando('mIzq', v => izq = v);
+mando('mDer', v => der = v);
+
+// ---------- Ronda ----------
+function empezar(){
+  semilla = Math.floor(azar(1, 9999));
+  Object.assign(B, { jugando:true, x:centroPista(0), vx:0, d:0, vel:VEL_BASE,
+                     velMax:VEL_BASE, giro:0, salto:0, vy:0, sacudida:0, muerteEn:null });
+  obstaculos = [];
+  particulas.lista.length = 0;
+  proximoZ = 900;
+  for (let i = 0; i < 5; i++) generar();
+  $('modalInicio').classList.remove('visible');
+  $('modalFin').classList.remove('visible');
+  refrescar();
+}
+
+function morir(motivo){
+  if (!B.jugando) return;
+  B.jugando = false;
+  B.muerteEn = motivo;
+  B.sacudida = 20;
+  Sonido.fx('choque');
+  particulas.emitir(46, { x: pantallaX(B.x - centroPista(B.d * 12), 0), y: sueloY(0) - 30,
+                          color:['#39ff88','#ff5a72','#fff'], velMin:90, velMax:420,
+                          vidaMin:0.4, vidaMax:0.95, rMin:2, rMax:6 });
+  setTimeout(terminar, 850);
+}
+
+function terminar(){
+  const dist = Math.floor(B.d);
+  const puntos = dist * 2;
+  const premio = Math.floor(puntos / 22);
+  Arcade.guardarRecord('slope', puntos);
+  Arcade.perfil.partida('slope', { puntos, victoria: puntos > 3000, premio });
+  $('finTitulo').textContent = B.muerteEn === 'vacio' ? '🕳 Al vacío' : '💥 Contra un bloque';
+  $('finSub').textContent = B.muerteEn === 'vacio'
+    ? 'Te saliste de la pista. Hay que girar antes.'
+    : 'A esa velocidad no da tiempo a pensar. Otra vez.';
+  $('finDist').textContent = dist.toLocaleString('es-ES');
+  $('finVel').textContent = Math.round(B.velMax);
+  $('finPuntos').textContent = puntos.toLocaleString('es-ES');
+  $('finPremio').textContent = premio.toLocaleString('es-ES');
+  $('modalFin').classList.add('visible');
+  refrescar();
+}
+
+// ---------- Simulación ----------
+function actualizar(dt){
+  tiempo += dt;
+  particulas.actualizar(dt);
+  if (B.sacudida > 0) B.sacudida = Math.max(0, B.sacudida - dt * 36);
+  if (!B.jugando) return;
+
+  B.vel = Math.min(VEL_TOPE, B.vel + 9 * dt);
+  B.velMax = Math.max(B.velMax, B.vel);
+  B.d += B.vel * dt / 12;
+  B.giro += B.vel * dt / 90;
+
+  // El control es por aceleración, no por posición: la bola tiene inercia y
+  // por eso hay que anticipar las curvas en vez de corregir en el último metro.
+  const empuje = (der ? 1 : 0) - (izq ? 1 : 0);
+  B.vx += empuje * 1750 * dt;
+  B.vx *= Math.pow(0.12, dt);
+  B.vx = limitar(B.vx, -560, 560);
+  B.x += B.vx * dt;
+
+  if (B.salto > 0){
+    B.vy -= 2400 * dt;
+    B.salto += B.vy * dt;
+    if (B.salto <= 0){ B.salto = 0; B.vy = 0; Sonido.fx('aterrizar'); }
+  }
+
+  const dMundo = B.d * 12;
+  const c = centroPista(dMundo), an = anchoPista(dMundo);
+  if (Math.abs(B.x - c) > an / 2 + 16){ morir('vacio'); return; }
+
+  // avance del mundo
+  const avance = B.vel * dt;
+  for (const o of obstaculos) o.z -= avance;
+  obstaculos = obstaculos.filter(o => o.z > CERCA && o.viva !== false);
+  proximoZ -= avance;
+  while (proximoZ < LEJOS && obstaculos.length < 220) generar();
+
+  // colisiones: la bola vive en z = 0
+  for (const o of obstaculos){
+    if (o.z > 40 || o.z < -30) continue;
+    if (Math.abs(o.x - B.x) > (o.an + 34) / 2) continue;
+    if (o.tipo === 'bloque'){
+      if (B.salto < 40) { morir('bloque'); return; }
+    } else if (o.tipo === 'turbo' && o.viva){
+      o.viva = false;
+      B.vel = Math.min(VEL_TOPE, B.vel + 90);
+      B.salto = 1; B.vy = 520;
+      Sonido.fx('nitro');
+      Arcade.aviso(avisos, '⚡ Turbo', true, 900);
+    }
+  }
+
+  // polvo de la bola
+  if (Math.random() < 0.5){
+    particulas.emitir(1, { x: pantallaX(0, 0) + azar(-14, 14), y: sueloY(0) - 4,
+                           color:['rgba(57,255,136,.55)','rgba(120,255,190,.4)'],
+                           velMin:10, velMax:60, vidaMin:0.2, vidaMax:0.5,
+                           rMin:1, rMax:3, gravedad:-30 });
+  }
+}
+
+// ---------- Dibujo ----------
+function dibujar(){
+  const sac = B.sacudida;
+  ctx.save();
+  if (sac > 0) ctx.translate(azar(-sac, sac) * 0.6, azar(-sac, sac) * 0.6);
+
+  // cielo del vacío
+  const g = ctx.createLinearGradient(0, 0, 0, ALTO);
+  g.addColorStop(0, '#02040e');
+  g.addColorStop(0.45, '#04122a');
+  g.addColorStop(1, '#010208');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, ANCHO, ALTO);
+  estrellas();
+
+  dibujarPista();
+  dibujarObstaculos();
+  dibujarBola();
+  particulas.dibujar(ctx);
+  ctx.restore();
+
+  lineasVelocidad();
+  dibujarHUD();
+}
+
+let campoEstrellas = null;
+function estrellas(){
+  if (!campoEstrellas){
+    campoEstrellas = [];
+    for (let i = 0; i < 90; i++)
+      campoEstrellas.push({ x: azar(0, ANCHO), y: azar(0, HORIZONTE + 40), r: azar(0.4, 1.5),
+                            a: azar(0.2, 0.9) });
+  }
+  for (const e of campoEstrellas){
+    ctx.globalAlpha = e.a * (0.6 + Math.sin(tiempo * 2 + e.x) * 0.4);
+    ctx.fillStyle = '#cfe8ff';
+    ctx.beginPath(); ctx.arc(e.x, e.y, e.r, 0, 6.283); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+}
+
+/** La pista se dibuja como una banda con rejilla de neón. */
+function dibujarPista(){
+  const dMundo = B.d * 12;
+  const pasos = 46;
+  const puntos = [];
+  for (let i = 0; i <= pasos; i++){
+    const z = CERCA + (LEJOS - CERCA) * Math.pow(i / pasos, 1.6);
+    const d = dMundo + z;
+    const c = centroPista(d) - centroPista(dMundo);   // relativo a la bola
+    const an = anchoPista(d);
+    puntos.push({ z, c, an, s: escala(z), y: sueloY(z) });
+  }
+
+  // cuerpo de la pista
+  ctx.beginPath();
+  for (let i = puntos.length - 1; i >= 0; i--){
+    const p = puntos[i];
+    const x = pantallaX(p.c - p.an / 2 - B.x + centroPista(dMundo), p.z);
+    i === puntos.length - 1 ? ctx.moveTo(x, p.y) : ctx.lineTo(x, p.y);
+  }
+  for (let i = 0; i < puntos.length; i++){
+    const p = puntos[i];
+    ctx.lineTo(pantallaX(p.c + p.an / 2 - B.x + centroPista(dMundo), p.z), p.y);
+  }
+  ctx.closePath();
+  const gp = ctx.createLinearGradient(0, HORIZONTE, 0, ALTO);
+  gp.addColorStop(0, '#0a2f22');
+  gp.addColorStop(0.5, '#10402e');
+  gp.addColorStop(1, '#16543a');
+  ctx.fillStyle = gp; ctx.fill();
+
+  // bordes encendidos
+  for (const lado of [-1, 1]){
+    ctx.beginPath();
+    for (let i = puntos.length - 1; i >= 0; i--){
+      const p = puntos[i];
+      const x = pantallaX(p.c + lado * p.an / 2 - B.x + centroPista(dMundo), p.z);
+      i === puntos.length - 1 ? ctx.moveTo(x, p.y) : ctx.lineTo(x, p.y);
+    }
+    ctx.strokeStyle = '#39ff88';
+    ctx.lineWidth = 3;
+    ctx.shadowColor = 'rgba(57,255,136,.9)'; ctx.shadowBlur = 14;
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+  }
+
+  // rejilla transversal, anclada al mundo para que se vea correr
+  const paso = 120;
+  const desf = ((dMundo % paso) + paso) % paso;
+  ctx.strokeStyle = 'rgba(57,255,136,.22)'; ctx.lineWidth = 1.4;
+  for (let z = LEJOS; z > CERCA; z -= paso){
+    const zz = z - desf;
+    if (zz < CERCA) continue;
+    const d = dMundo + zz;
+    const c = centroPista(d) - B.x;
+    const an = anchoPista(d);
+    ctx.beginPath();
+    ctx.moveTo(pantallaX(c - an / 2, zz), sueloY(zz));
+    ctx.lineTo(pantallaX(c + an / 2, zz), sueloY(zz));
+    ctx.stroke();
+  }
+  // dos guías longitudinales
+  for (const f of [-0.22, 0.22]){
+    ctx.beginPath();
+    for (let i = puntos.length - 1; i >= 0; i--){
+      const p = puntos[i];
+      const x = pantallaX(p.c + f * p.an - B.x + centroPista(dMundo), p.z);
+      i === puntos.length - 1 ? ctx.moveTo(x, p.y) : ctx.lineTo(x, p.y);
+    }
+    ctx.strokeStyle = 'rgba(57,255,136,.16)'; ctx.lineWidth = 1.2; ctx.stroke();
+  }
+}
+
+function dibujarObstaculos(){
+  const orden = obstaculos.filter(o => o.z < LEJOS).sort((a, b) => b.z - a.z);
+  for (const o of orden){
+    const s = escala(o.z);
+    if (s < 0.03) continue;
+    const px = pantallaX(o.x - B.x, o.z);
+    const py = sueloY(o.z);
+    const an = o.an * s, al = o.alto * s;
+
+    if (o.tipo === 'turbo'){
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      const g = ctx.createRadialGradient(px, py, 1, px, py, an);
+      g.addColorStop(0, 'rgba(57,255,136,.5)');
+      g.addColorStop(1, 'rgba(57,255,136,0)');
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(px, py, an, 0, 6.283); ctx.fill();
+      ctx.restore();
+      ctx.fillStyle = '#39ff88';
+      ctx.beginPath(); ctx.ellipse(px, py, an / 2, Math.max(1.5, an / 7), 0, 0, 6.283); ctx.fill();
+      if (an > 20){
+        ctx.fillStyle = '#02150c';
+        ctx.font = '900 ' + Math.max(8, an * 0.3) + 'px "Segoe UI", system-ui, sans-serif';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText('⚡', px, py);
+      }
+      continue;
+    }
+
+    // cubo rojo con cara superior y frontal
+    const prof = 46 * s;
+    ctx.fillStyle = '#7f1020';
+    ctx.beginPath();
+    ctx.moveTo(px - an / 2, py - al);
+    ctx.lineTo(px - an / 2 + prof * 0.5, py - al - prof * 0.42);
+    ctx.lineTo(px + an / 2 + prof * 0.5, py - al - prof * 0.42);
+    ctx.lineTo(px + an / 2, py - al);
+    ctx.closePath(); ctx.fill();
+
+    const gf = ctx.createLinearGradient(px, py - al, px, py);
+    gf.addColorStop(0, '#ff4d5e'); gf.addColorStop(1, '#a8102a');
+    ctx.fillStyle = gf;
+    ctx.fillRect(px - an / 2, py - al, an, al);
+    ctx.strokeStyle = 'rgba(255,140,150,.85)'; ctx.lineWidth = Math.max(1, 2 * s);
+    ctx.strokeRect(px - an / 2, py - al, an, al);
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    const halo = ctx.createRadialGradient(px, py - al / 2, 1, px, py - al / 2, an);
+    halo.addColorStop(0, 'rgba(255,60,80,.3)');
+    halo.addColorStop(1, 'rgba(255,60,80,0)');
+    ctx.fillStyle = halo;
+    ctx.beginPath(); ctx.arc(px, py - al / 2, an, 0, 6.283); ctx.fill();
+    ctx.restore();
+  }
+}
+
+function dibujarBola(){
+  const px = ANCHO / 2;
+  const base = sueloY(0);
+  const py = base - 26 - B.salto * 0.6;
+  const r = 26;
+
+  // sombra que se encoge al saltar
+  const f = limitar(1 - B.salto / 260, 0.4, 1);
+  ctx.fillStyle = 'rgba(0,0,0,.5)';
+  ctx.beginPath(); ctx.ellipse(px, base, r * f, r * 0.34 * f, 0, 0, 6.283); ctx.fill();
+
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  const halo = ctx.createRadialGradient(px, py, 2, px, py, r * 3);
+  halo.addColorStop(0, 'rgba(57,255,136,.45)');
+  halo.addColorStop(1, 'rgba(57,255,136,0)');
+  ctx.fillStyle = halo;
+  ctx.beginPath(); ctx.arc(px, py, r * 3, 0, 6.283); ctx.fill();
+  ctx.restore();
+
+  const g = ctx.createRadialGradient(px - r * 0.35, py - r * 0.4, r * 0.15, px, py, r);
+  g.addColorStop(0, '#eaffef'); g.addColorStop(0.45, '#4dffa0'); g.addColorStop(1, '#0d7a45');
+  ctx.fillStyle = g;
+  ctx.beginPath(); ctx.arc(px, py, r, 0, 6.283); ctx.fill();
+
+  // meridianos girando, para que se note que rueda
+  ctx.save();
+  ctx.beginPath(); ctx.arc(px, py, r, 0, 6.283); ctx.clip();
+  ctx.strokeStyle = 'rgba(2,40,22,.55)'; ctx.lineWidth = 3;
+  for (let i = 0; i < 4; i++){
+    const off = ((B.giro + i * r * 0.5) % (r * 2)) - r;
+    ctx.beginPath();
+    ctx.ellipse(px, py + off, r, Math.max(1, r * 0.28), 0, 0, 6.283);
+    ctx.stroke();
+  }
+  ctx.restore();
+  ctx.strokeStyle = 'rgba(255,255,255,.35)'; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.arc(px, py, r - 1, 0, 6.283); ctx.stroke();
+}
+
+function lineasVelocidad(){
+  const u = (B.vel - VEL_BASE) / (VEL_TOPE - VEL_BASE);
+  if (u < 0.15) return;
+  ctx.save();
+  ctx.globalAlpha = Math.min(0.3, u * 0.32);
+  ctx.strokeStyle = '#9dffcd'; ctx.lineWidth = 2; ctx.lineCap = 'round';
+  for (let i = 0; i < 16; i++){
+    const a = (i / 16) * 6.283 + tiempo * 2;
+    const r0 = 180 + (i % 3) * 40;
+    ctx.beginPath();
+    ctx.moveTo(ANCHO / 2 + Math.cos(a) * r0, ALTO * 0.62 + Math.sin(a) * r0 * 0.6);
+    ctx.lineTo(ANCHO / 2 + Math.cos(a) * (r0 + 70), ALTO * 0.62 + Math.sin(a) * (r0 + 70) * 0.6);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function dibujarHUD(){
+  ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+  ctx.font = '900 34px "Segoe UI", system-ui, sans-serif';
+  ctx.lineWidth = 5; ctx.strokeStyle = 'rgba(0,0,0,.7)';
+  const txt = Math.floor(B.d).toLocaleString('es-ES') + ' m';
+  ctx.strokeText(txt, 22, 18);
+  ctx.fillStyle = '#d8ffe8'; ctx.fillText(txt, 22, 18);
+
+  const u = (B.vel - VEL_BASE) / (VEL_TOPE - VEL_BASE);
+  const an = 190, x = ANCHO - an - 22, y = 24;
+  ctx.fillStyle = 'rgba(0,0,0,.45)';
+  ctx.beginPath(); ctx.roundRect(x, y, an, 11, 6); ctx.fill();
+  const g = ctx.createLinearGradient(x, 0, x + an, 0);
+  g.addColorStop(0, '#39ff88'); g.addColorStop(1, '#ff4d5e');
+  ctx.fillStyle = g;
+  ctx.beginPath(); ctx.roundRect(x, y, Math.max(5, an * u), 11, 6); ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,.5)';
+  ctx.font = '800 10px "Segoe UI", system-ui, sans-serif';
+  ctx.textAlign = 'right'; ctx.fillText('VELOCIDAD', x + an, y + 15);
+}
+
+// ---------- Interfaz ----------
+function refrescar(){
+  $('distTxt').textContent = Math.floor(B.d).toLocaleString('es-ES');
+  $('velTxt').textContent = Math.round(B.vel);
+  const r = Arcade.record('slope');
+  $('recordTxt').textContent = r ? r.toLocaleString('es-ES') + ' pts' : '—';
+}
+
+$('btnEmpezar').onclick = () => { Sonido.activar(); empezar(); };
+$('btnOtra').onclick = () => { Sonido.activar(); empezar(); };
+Arcade.conectarSonido($('btnSonido'));
+
+let espera = 0;
+refrescar();
+Arcade.bucle(dt => {
+  actualizar(dt); dibujar();
+  espera += dt;
+  if (espera > 0.25){ espera = 0; refrescar(); }
+});
+</script>
+</body>
+</html>
