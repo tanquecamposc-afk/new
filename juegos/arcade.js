@@ -540,6 +540,11 @@ const Arcade = {
   }
 };
 
+// Serie 110-120: once códigos de 100 millones cada uno. Se generan aquí en vez
+// de escribirlos uno a uno para que ampliar el tramo sea cambiar dos números.
+// No chocan con la serie del 1 al 20: normalizar() solo acepta dos cifras.
+for (let n = 110; n <= 120; n++) Arcade.codigos.EXTRA[n] = 100000000;
+
 // Se aplica al cargar cualquier página: da igual si entras por la portada o
 // directamente a un juego, la mano nueva ya está repartida cuando empiezas.
 Arcade.temporada.aplicar();
