@@ -389,16 +389,21 @@ body{display:block; padding:0; margin:0;}
   }
 #pantalla-portada #canjeAviso.bien{color:var(--verde);}
 #pantalla-portada #canjeAviso.mal{color:var(--rosa);}
-#pantalla-portada #listaCodigos{
+#pantalla-portada #listaCodigos, #pantalla-portada #listaGrandes{
     display:flex; flex-wrap:wrap; gap:7px; margin-top:1rem;
   }
-#pantalla-portada #listaCodigos span{
+#pantalla-portada #listaCodigos span, #pantalla-portada #listaGrandes span{
     font-family:var(--fuente-arcade); font-size:.72rem; min-width:32px; text-align:center;
     padding:5px 7px; border-radius:7px;
     background:rgba(243,230,0,.09); color:var(--oro);
     border:1px solid rgba(243,230,0,.28);
   }
-#pantalla-portada #listaCodigos span.gastado{
+#pantalla-portada /* La serie grande se distingue de la normal de un vistazo */
+  #listaGrandes span{
+    background:rgba(0,240,255,.09); color:var(--azul);
+    border-color:rgba(0,240,255,.32); min-width:40px;
+  }
+#pantalla-portada #listaCodigos span.gastado, #pantalla-portada #listaGrandes span.gastado{
     background:rgba(255,255,255,.03); color:rgba(255,255,255,.22);
     border-color:rgba(255,255,255,.07); text-decoration:line-through;
   }
@@ -2310,6 +2315,16 @@ body{display:block; padding:0; margin:0;}
     </div>
     <div id="canjeAviso" role="status" aria-live="polite"></div>
     <div id="listaCodigos" aria-label="Códigos canjeados"></div>
+
+    <h3 style="margin-top:18px">💎 Serie grande
+      <span class="cuenta" id="grandeCuenta">0 / 11</span></h3>
+    <p class="ayuda">
+      Y otros <strong id="grandeTotal">11</strong> códigos, del
+      <strong id="grandeDesde">110</strong> al <strong id="grandeHasta">120</strong>,
+      que dan <strong id="grandePremio">100.000.000</strong> NEXO-COINS
+      <strong>cada uno</strong>. También una sola vez, y se canjean en la misma casilla de arriba.
+    </p>
+    <div id="listaGrandes" aria-label="Códigos de la serie grande"></div>
   </div>
 
   <div id="rejilla"></div>
@@ -5016,7 +5031,18 @@ const Arcade = {
 // Serie 110-120: once códigos de 100 millones cada uno. Se generan aquí en vez
 // de escribirlos uno a uno para que ampliar el tramo sea cambiar dos números.
 // No chocan con la serie del 1 al 20: normalizar() solo acepta dos cifras.
-for (let n = 110; n <= 120; n++) Arcade.codigos.EXTRA[n] = 100000000;
+//
+// Van en PUBLICOS, así que la portada los enseña como una segunda serie a la
+// vista de cualquiera. Los que no están en esta lista siguen siendo secretos:
+// se canjean igual, pero no se anuncian en ningún sitio.
+Arcade.codigos.PUBLICO_DESDE = 110;
+Arcade.codigos.PUBLICO_HASTA = 120;
+Arcade.codigos.PREMIO_PUBLICO = 100000000;
+Arcade.codigos.PUBLICOS = [];
+for (let n = Arcade.codigos.PUBLICO_DESDE; n <= Arcade.codigos.PUBLICO_HASTA; n++){
+  Arcade.codigos.EXTRA[n] = Arcade.codigos.PREMIO_PUBLICO;
+  Arcade.codigos.PUBLICOS.push(n);
+}
 
 // Se aplica al cargar cualquier página: da igual si entras por la portada o
 // directamente a un juego, la mano nueva ya está repartida cuando empiezas.
@@ -7792,6 +7818,33 @@ function pintarCodigos(){
     }
     listaCodigos.appendChild(ficha);
   }
+
+  // Segunda serie, la de los grandes. Está a la vista de cualquiera; los
+  // códigos que no salen aquí son los que siguen siendo secretos.
+  const C = Arcade.codigos;
+  const publicos = C.PUBLICOS || [];
+  const gastados = publicos.filter(n => C.extraUsado(n));
+  document.getElementById('grandeCuenta').textContent =
+    gastados.length + ' / ' + publicos.length;
+  document.getElementById('grandeTotal').textContent = publicos.length;
+  document.getElementById('grandeDesde').textContent = C.PUBLICO_DESDE;
+  document.getElementById('grandeHasta').textContent = C.PUBLICO_HASTA;
+  document.getElementById('grandePremio').textContent =
+    (C.PREMIO_PUBLICO || 0).toLocaleString('es-ES');
+  const lista = document.getElementById('listaGrandes');
+  lista.innerHTML = '';
+  for (const n of publicos){
+    const ficha = document.createElement('span');
+    ficha.textContent = n;
+    if (C.extraUsado(n)){
+      ficha.className = 'gastado';
+      ficha.title = 'NEXO-' + n + ' — ya canjeado';
+    } else {
+      ficha.title = 'NEXO-' + n + ' — sin canjear · ' +
+                    C.PREMIO_PUBLICO.toLocaleString('es-ES') + ' NEXO-COINS';
+    }
+    lista.appendChild(ficha);
+  }
 }
 
 function avisar(texto, bien){
@@ -7831,8 +7884,10 @@ codigoTxt.addEventListener('keydown', ev => { if (ev.key === 'Enter') canjear();
 document.getElementById('canjeCuenta').addEventListener('dblclick', () => {
   Sonido.activar();
   Arcade.codigos.olvidar();
+  (Arcade.codigos.PUBLICOS || []).forEach(n =>
+    Arcade.borrar('codigo_x' + n));       // la serie grande también se libera
   pintarCodigos();
-  avisar('🔄 Los ' + Arcade.codigos.TOTAL + ' códigos vuelven a estar sin canjear.', true);
+  avisar('🔄 Los códigos vuelven a estar sin canjear.', true);
   Sonido.melodia([520, 700, 940], 0.08, 'triangle', 0.05);
 });
 

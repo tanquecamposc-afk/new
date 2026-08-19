@@ -543,7 +543,18 @@ const Arcade = {
 // Serie 110-120: once códigos de 100 millones cada uno. Se generan aquí en vez
 // de escribirlos uno a uno para que ampliar el tramo sea cambiar dos números.
 // No chocan con la serie del 1 al 20: normalizar() solo acepta dos cifras.
-for (let n = 110; n <= 120; n++) Arcade.codigos.EXTRA[n] = 100000000;
+//
+// Van en PUBLICOS, así que la portada los enseña como una segunda serie a la
+// vista de cualquiera. Los que no están en esta lista siguen siendo secretos:
+// se canjean igual, pero no se anuncian en ningún sitio.
+Arcade.codigos.PUBLICO_DESDE = 110;
+Arcade.codigos.PUBLICO_HASTA = 120;
+Arcade.codigos.PREMIO_PUBLICO = 100000000;
+Arcade.codigos.PUBLICOS = [];
+for (let n = Arcade.codigos.PUBLICO_DESDE; n <= Arcade.codigos.PUBLICO_HASTA; n++){
+  Arcade.codigos.EXTRA[n] = Arcade.codigos.PREMIO_PUBLICO;
+  Arcade.codigos.PUBLICOS.push(n);
+}
 
 // Se aplica al cargar cualquier página: da igual si entras por la portada o
 // directamente a un juego, la mano nueva ya está repartida cuando empiezas.

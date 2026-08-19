@@ -467,7 +467,9 @@ La portada lleva un panel de canje con **20 códigos, del 1 al 20**, que dan **1
 - Se escribe el número suelto (`7`), con ceros delante (`007`) o con la marca (`NEXO-7`, `nexo 7`) — da igual mayúsculas, espacios y guion.
 - **Cada código se canjea una sola vez.** Los canjeados quedan tachados en la lista y el contador enseña cuántos llevas.
 - Con un **doble clic en el contador** (`0 / 20`) los veinte vuelven a estar sin usar y se pueden canjear otra vez. El saldo que ya te llevaste no se toca.
-- Aparte de la serie hay **códigos fuera de serie**, que no salen en la lista ni cuentan en el marcador y llevan su propio registro: la **serie 110–120** (once códigos de 100 millones cada uno) y unos cuantos sueltos. Viven en `Arcade.codigos.EXTRA` y admiten tanto números como palabras: `normalizarExtra()` quita espacios, guiones, tildes y el prefijo de la marca antes de buscar, así que `nexo suerte` y `SUERTE` son el mismo código.
+- Debajo hay una **segunda serie pública, la grande**: los códigos **110–120**, once en total, de **100.000.000 NEXO-COINS cada uno**. Se ven en la portada con su propia lista y su propio contador, se canjean en la misma casilla y también valen una sola vez. El doble clic del contador libera las dos series.
+- Y quedan **códigos que no se anuncian en ningún sitio**. Todo lo que no esté en `Arcade.codigos.PUBLICOS` es secreto: se canjea igual, pero no aparece ni suma a ningún marcador.
+- Unos y otros viven en `Arcade.codigos.EXTRA` y admiten tanto números como palabras: `normalizarExtra()` quita espacios, guiones, tildes y el prefijo de la marca antes de buscar, así que `nexo suerte` y `SUERTE` son el mismo código.
 - Canjearlos todos son **20.000 NEXO-COINS**, así que con el saldo inicial se llega a 70.000.
 - Vive en `Arcade.codigos` (`juegos/arcade.js`): `TOTAL`, `PREMIO`, `usados()`, `canjear(texto)` y `olvidar()`. Para cambiar el premio o cuántos hay basta con tocar esas dos constantes.
 - El registro se guarda en `localStorage` bajo `arcade_codigos`, y el botón **🗑 Borrar todos mis récords** también lo limpia.
