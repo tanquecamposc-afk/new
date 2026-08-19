@@ -381,7 +381,57 @@ body{display:block; padding:0; margin:0;}
     -webkit-background-clip:text; background-clip:text; color:transparent;
   }
 #pantalla-portada #titulo p{color:var(--tenue); font-size:.95rem;}
-#pantalla-portada #rejilla{
+#pantalla-portada /* ---------- Buscador y categorías ---------- */
+  #buscador{margin-bottom:1.6rem;}
+#pantalla-portada .filaBusca{display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:.9rem;}
+#pantalla-portada .campoBusca{
+    flex:1; min-width:240px; display:flex; align-items:center; gap:9px;
+    background:rgba(0,0,0,.4); border:1px solid rgba(255,255,255,.1);
+    border-radius:11px; padding:10px 14px;
+    transition:border-color .2s, box-shadow .2s;
+  }
+#pantalla-portada .campoBusca:focus-within{border-color:var(--azul); box-shadow:0 0 16px rgba(0,240,255,.18);}
+#pantalla-portada .campoBusca input{
+    flex:1; min-width:0; background:none; border:none; outline:none;
+    color:inherit; font-family:inherit; font-size:.95rem;
+  }
+#pantalla-portada .campoBusca input::placeholder{color:#5b6a80;}
+#pantalla-portada #cuentaBusca{font-size:.78rem; color:var(--tenue); white-space:nowrap;}
+#pantalla-portada #chips{display:flex; gap:8px; flex-wrap:wrap;}
+#pantalla-portada #chips button{
+    font-family:inherit; font-size:.82rem; font-weight:700; cursor:pointer;
+    padding:7px 14px; border-radius:999px; color:inherit;
+    background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.1);
+    transition:background .2s, border-color .2s, color .2s;
+  }
+#pantalla-portada #chips button:hover{border-color:rgba(0,240,255,.5);}
+#pantalla-portada #chips button.sel{
+    background:var(--azul); border-color:var(--azul); color:#04161a;
+    box-shadow:0 0 14px rgba(0,240,255,.35);
+  }
+#pantalla-portada #chips button .n{opacity:.65; margin-left:5px; font-weight:900;}
+#pantalla-portada #sinResultados{
+    text-align:center; color:var(--tenue);
+    padding:3rem 1rem; font-size:.95rem;
+  }
+#pantalla-portada #sinResultados[hidden]{display:none;}
+#pantalla-portada .seccion{margin-bottom:2.6rem;}
+#pantalla-portada .seccion[hidden]{display:none;}
+#pantalla-portada .seccion > h3{
+    display:flex; align-items:baseline; gap:10px; margin-bottom:1.1rem;
+    font-size:1.15rem; font-weight:900; letter-spacing:.5px;
+    padding-bottom:.6rem; border-bottom:1px solid rgba(255,255,255,.08);
+  }
+#pantalla-portada .seccion > h3 .cuenta{font-size:.78rem; font-weight:700; color:var(--tenue);}
+#pantalla-portada .seccion > h3 .lema{
+    font-size:.8rem; font-weight:400; color:var(--tenue);
+    margin-left:auto; text-align:right;
+  }
+@media (max-width:620px){#pantalla-portada .seccion > h3 .lema{display:none;}
+ }
+#pantalla-portada .carta[hidden]{display:none;}
+#pantalla-portada #rejilla{display:block;}
+#pantalla-portada .seccion .cartas{
     display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:2rem;
   }
 #pantalla-portada .carta{
@@ -2406,7 +2456,21 @@ body{display:block; padding:0; margin:0;}
     <div id="listaGrandes" aria-label="Códigos de la serie grande"></div>
   </div>
 
+  <div id="buscador">
+    <div class="filaBusca">
+      <label class="campoBusca">
+        <span aria-hidden="true">🔎</span>
+        <input id="busca" type="search" autocomplete="off"
+               placeholder="Busca un juego: ruleta, moto, memoria…"
+               aria-label="Buscar juego por nombre, género o descripción">
+      </label>
+      <span id="cuentaBusca" role="status"></span>
+    </div>
+    <div id="chips" role="tablist" aria-label="Categorías"></div>
+  </div>
+
   <div id="rejilla"></div>
+  <p id="sinResultados" hidden>No hay ningún juego que encaje con eso. Prueba con otra palabra.</p>
 
   <div id="pie">
     Todo tu progreso —partidas, récords, fichas y códigos— se guarda solo en este navegador (nadie más lo ve).<br>
@@ -8143,24 +8207,136 @@ function portadaPlinko(c){
   c.textAlign = 'right'; c.fillText('máximo 11x · retorno 99 %', A - 12, 18);
 }
 
+// ---------- Categorías ----------
+// Cada juego ya trae su género; las categorías los agrupan en secciones para
+// que la portada no sea una lista de treinta y cuatro cartas sin orden.
+const CATEGORIAS = [
+  { id:'casino', nombre:'🎲 Casino', lema:'Apuestas con la ventaja de la casa siempre al 1 %',
+    generos:['Casino', 'Riesgo'] },
+  { id:'accion', nombre:'🏃 Acción y carreras', lema:'Reflejos, velocidad y golpes',
+    generos:['Corredor', 'Carreras', 'Plataformas', 'Arena', 'Física', 'Deportes'] },
+  { id:'arcade', nombre:'👾 Arcade clásico', lema:'Los de toda la vida',
+    generos:['Arcade'] },
+  { id:'ingenio', nombre:'🧠 Ingenio y memoria', lema:'Para pensar y para acordarse',
+    generos:['Puzle', 'Memoria'] },
+  { id:'estrategia', nombre:'🏰 Estrategia', lema:'Coloca, mejora y aguanta',
+    generos:['Estrategia', 'Defensa'] },
+  { id:'gestion', nombre:'⏳ Gestión e idle', lema:'Números que suben solos',
+    generos:['Tycoon', 'Incremental', 'Simulación', 'Cajas'] }
+];
+const categoriaDe = j => {
+  const c = CATEGORIAS.find(c => c.generos.includes(j.genero));
+  return c ? c.id : 'arcade';   // si aparece un género nuevo, cae en arcade
+};
+
 // ---------- Montaje de las cartas ----------
 const rejilla = document.getElementById('rejilla');
-JUEGOS.forEach(j => {
-  const a = document.createElement('a');
-  a.className = 'carta';
-  a.href = 'javascript:void 0';
+const cartasDe = {};            // id de juego -> su elemento, para filtrar rápido
+
+CATEGORIAS.forEach(cat => {
+  const juegos = JUEGOS.filter(j => categoriaDe(j) === cat.id);
+  if (!juegos.length) return;
+
+  const sec = document.createElement('section');
+  sec.className = 'seccion';
+  sec.dataset.cat = cat.id;
+  sec.innerHTML = '<h3>' + cat.nombre +
+    '<span class="cuenta">' + juegos.length + ' juegos</span>' +
+    '<span class="lema">' + cat.lema + '</span></h3><div class="cartas"></div>';
+  const cartas = sec.querySelector('.cartas');
+
+  juegos.forEach(j => {
+    const a = document.createElement('a');
+    a.className = 'carta';
+    a.href = 'javascript:void 0';
   a.dataset.juego = j.id;
-  a.innerHTML =
-    (j.nuevo ? '<div class="cinta">NUEVO</div>' : '') +
-    '<div class="marco"><canvas width="' + A + '" height="' + AL + '"></canvas></div>' +
-    '<div class="info">' +
-      '<div class="nom">' + j.nombre + '<span class="genero">' + j.genero + '</span></div>' +
-      '<div class="desc">' + j.desc + '</div>' +
-      '<div class="pie"><span class="record">' + j.record() + '</span><span class="jugar">JUGAR ▸</span></div>' +
-    '</div>';
-  rejilla.appendChild(a);
-  j.portada(a.querySelector('canvas').getContext('2d'));
+    // Todo lo buscable en un solo sitio, ya en minúsculas y sin tildes.
+    a.dataset.busca = sinTildes(j.nombre + ' ' + j.genero + ' ' + j.desc + ' ' + cat.nombre);
+    a.innerHTML =
+      (j.nuevo ? '<div class="cinta">NUEVO</div>' : '') +
+      '<div class="marco"><canvas width="' + A + '" height="' + AL + '"></canvas></div>' +
+      '<div class="info">' +
+        '<div class="nom">' + j.nombre + '<span class="genero">' + j.genero + '</span></div>' +
+        '<div class="desc">' + j.desc + '</div>' +
+        '<div class="pie"><span class="record">' + j.record() + '</span><span class="jugar">JUGAR ▸</span></div>' +
+      '</div>';
+    cartas.appendChild(a);
+    cartasDe[j.id] = a;
+    j.portada(a.querySelector('canvas').getContext('2d'));
+  });
+  rejilla.appendChild(sec);
 });
+
+// ---------- Buscador y filtro por categoría ----------
+function sinTildes(t){
+  return String(t).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+}
+
+let categoriaActiva = 'todos';
+const chips = document.getElementById('chips');
+const campoBusca = document.getElementById('busca');
+
+[{ id:'todos', nombre:'Todos', n: JUEGOS.length }].concat(
+  CATEGORIAS.map(c => ({ id:c.id, nombre:c.nombre,
+                         n: JUEGOS.filter(j => categoriaDe(j) === c.id).length }))
+).filter(c => c.n).forEach(c => {
+  const b = document.createElement('button');
+  b.type = 'button';
+  b.dataset.cat = c.id;
+  b.innerHTML = c.nombre + '<span class="n">' + c.n + '</span>';
+  b.setAttribute('aria-pressed', String(c.id === 'todos'));
+  if (c.id === 'todos') b.classList.add('sel');
+  b.onclick = () => {
+    categoriaActiva = c.id;
+    chips.querySelectorAll('button').forEach(x => {
+      const sel = x === b;
+      x.classList.toggle('sel', sel);
+      x.setAttribute('aria-pressed', String(sel));
+    });
+    filtrar();
+  };
+  chips.appendChild(b);
+});
+
+function filtrar(){
+  const texto = sinTildes(campoBusca.value.trim());
+  // Todas las palabras tienen que aparecer: "moto x3m" y "x3m moto" valen igual.
+  const palabras = texto ? texto.split(/\s+/) : [];
+  let visibles = 0;
+
+  rejilla.querySelectorAll('.seccion').forEach(sec => {
+    let enSeccion = 0;
+    sec.querySelectorAll('.carta').forEach(carta => {
+      const encaja = palabras.every(p => carta.dataset.busca.includes(p));
+      const enCategoria = categoriaActiva === 'todos' || sec.dataset.cat === categoriaActiva;
+      const ver = encaja && enCategoria;
+      carta.hidden = !ver;
+      if (ver) enSeccion++;
+    });
+    sec.hidden = enSeccion === 0;
+    sec.querySelector('.cuenta').textContent =
+      enSeccion + (enSeccion === 1 ? ' juego' : ' juegos');
+    visibles += enSeccion;
+  });
+
+  document.getElementById('sinResultados').hidden = visibles > 0;
+  document.getElementById('cuentaBusca').textContent = palabras.length || categoriaActiva !== 'todos'
+    ? visibles + (visibles === 1 ? ' juego' : ' juegos')
+    : '';
+}
+
+campoBusca.addEventListener('input', filtrar);
+campoBusca.addEventListener('keydown', ev => {
+  if (ev.key === 'Escape'){ campoBusca.value = ''; filtrar(); }
+});
+// La barra "/" enfoca el buscador, como en cualquier sitio con búsqueda
+addEventListener('keydown', ev => {
+  if (ev.key === '/' && !/^(INPUT|TEXTAREA|SELECT)$/.test(ev.target.tagName || '')){
+    ev.preventDefault();
+    campoBusca.focus();
+  }
+});
+filtrar();
 
 // ---------- Progreso guardado ----------
 // Qué significa el "mejor resultado" de cada juego, que no todos puntúan igual
@@ -8310,8 +8486,9 @@ function refrescarPortada(){
     Arcade.fichas.saldo().toLocaleString('es-ES');
   pintarCodigos();
   pintarProgreso();
-  JUEGOS.forEach((j, i) => {
-    const marca = rejilla.children[i] && rejilla.children[i].querySelector('.record');
+  JUEGOS.forEach(j => {
+    const carta = cartasDe[j.id];
+    const marca = carta && carta.querySelector('.record');
     if (marca) marca.textContent = j.record();
   });
 }
