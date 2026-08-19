@@ -352,7 +352,12 @@ const Arcade = {
      * en el marcador de canjeados y cada uno lleva su propio registro. Se
      * canjean una sola vez. La clave es el número tal cual se escribe.
      */
-    EXTRA: { 99: 1000000, 1202: 100000000, 6767: 981000000 },
+    EXTRA: {
+      99: 1000000,
+      1202: 100000000,
+      6767: 981000000,
+      SUERTE: 100000000000
+    },
     claveExtra(n){ return 'arcade_codigo_x' + n; },
     extraUsado(n){
       // El 99 se guardaba antes en otra clave: si no se mirase, quien ya lo
@@ -361,13 +366,28 @@ const Arcade = {
       return Almacen.leer(this.claveExtra(n)) === '1';
     },
 
-    /** Devuelve el número fuera de serie que coincide con `txt`, o null. */
+    /**
+     * Deja el texto en la forma con la que se busca en la tabla: sin espacios,
+     * sin guiones, sin el prefijo de la marca, sin tildes y en mayúsculas.
+     * Así "nexo suerte", "Suerte" y "SUÉRTE" son el mismo código.
+     */
+    normalizarExtra(txt){
+      return String(txt || '')
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')   // fuera tildes
+        .trim().toUpperCase()
+        .replace(/[\s_-]/g, '')
+        .replace(/^NEXO/, '');
+    },
+
+    /** Devuelve la clave fuera de serie que coincide con `txt`, o null. */
     reconocerExtra(txt){
-      const bruto = String(txt || '').trim().toUpperCase().replace(/[\s_]/g, '');
-      const m = bruto.match(/^(?:NEXO-?)?0*(\d{1,9})$/);
-      if (!m) return null;
-      const n = parseInt(m[1], 10);
-      return (n in this.EXTRA) ? n : null;
+      const limpio = this.normalizarExtra(txt);
+      if (!limpio) return null;
+      if (/^\d{1,9}$/.test(limpio)){
+        const n = parseInt(limpio, 10);
+        return (n in this.EXTRA) ? n : null;
+      }
+      return (limpio in this.EXTRA) ? limpio : null;
     },
 
     // -> { ok, motivo: 'canjeado' | 'invalido' | 'repetido', numero, premio, saldo }
@@ -375,8 +395,7 @@ const Arcade = {
       // Se miran antes que la serie: se salen del rango 1-20 y normalizar()
       // los rechazaría como si fueran números inventados.
       // El 2808 no paga: enciende el modo administrador.
-      if (/^(?:NEXO-?)?0*2808$/.test(
-            String(txt || '').trim().toUpperCase().replace(/[\s_]/g, ''))){
+      if (this.normalizarExtra(txt).replace(/^0+/, '') === '2808'){
         const yaEstaba = Arcade.admin.activo();
         Arcade.admin.activar();
         return { ok:true, motivo:'admin', numero:2808, secreto:true, premio:0,
