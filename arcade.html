@@ -985,6 +985,14 @@ body{display:block; padding:0; margin:0;}
     padding:8px; font-size:.75rem; text-transform:uppercase;
   }
 #pantalla-mina #btnReiniciar{width:100%; font-size:.7rem;}
+#pantalla-mina #canje .canjeExtra{
+    margin-top:6px; background:rgba(0,0,0,.35); color:var(--oro);
+    border:1px solid rgba(243,230,0,.4); font-size:.68rem; padding:7px;
+  }
+#pantalla-mina #canje .canjeExtra:disabled{
+    background:#1a2235; color:#5d6a85; border-color:var(--borde);
+  }
+#pantalla-mina #canje .canjeExtra b{color:#7dffb0;}
 #pantalla-mina /* ---- Selector de mundos ---- */
   #selectorMundos{display:grid; grid-template-columns:repeat(3,1fr); gap:8px;}
 @media (max-width:620px){#pantalla-mina #selectorMundos{grid-template-columns:1fr;}
@@ -2935,6 +2943,12 @@ body{display:block; padding:0; margin:0;}
           para jugar en el resto del arcade.
         </div>
         <button id="btnCanjear">Canjear</button>
+        <button id="btnCanjearTodo" class="canjeExtra">
+          Canjear todo · <b id="todoEquiv">0</b>
+        </button>
+        <button id="btnCanjearMundos" class="canjeExtra">
+          <span id="mundosEtiq">Vaciar los mundos abiertos</span> · <b id="mundosEquiv">0</b>
+        </button>
       </div>
 
       <div class="mejora" style="border-color:rgba(0,255,102,.25)">
@@ -14642,6 +14656,68 @@ function comprar(clave){
   guardarPartida();
 }
 
+/**
+ * Lo que dan `dinero` unidades de la moneda de `m` al cambio de ese mundo.
+ * Es el mismo cambio del canje suelto, prorrateado: 5.000 dan `premio`, así
+ * que una unidad da premio/coste. Se redondea hacia abajo, nunca a favor.
+ */
+function equivalente(dinero, m){
+  return Math.floor(Math.max(0, dinero) * m.nexo.premio / m.nexo.coste);
+}
+
+/** Convierte TODO el dinero del mundo en curso, no solo un paquete de 5.000. */
+function canjearTodo(){
+  const premio = equivalente(E.dinero, MUNDO);
+  if (premio <= 0){
+    Arcade.aviso(avisos, 'No tienes suficiente para sacar ni una NEXO-COIN');
+    Sonido.fx('error');
+    return;
+  }
+  const gastado = E.dinero;
+  E.dinero = 0;
+  Arcade.fichas.ajustar(premio);
+  registrar('💎 Vaciada la caja de <span class="oro">' + MUNDO.nombre + '</span>: ' +
+            moneda(gastado) + ' por <span class="oro">' +
+            premio.toLocaleString('es-ES') + ' NEXO-COINS</span>.', 'oro');
+  Arcade.aviso(avisos, '💎 +' + premio.toLocaleString('es-ES') + ' NEXO-COINS', true, 3000);
+  Sonido.fx('caja');
+  refrescar();
+  guardarPartida();
+}
+
+/**
+ * Vacía la caja de todos los mundos abiertos, cada uno a su propio cambio.
+ * El mundo en curso se toca en E; los demás, en su copia guardada.
+ */
+function canjearTodosLosMundos(){
+  let premio = 0;
+  const lineas = [];
+  for (let i = 0; i < PARTIDA.abiertos; i++){
+    const est = i === mundoActual ? E : PARTIDA.mundos[i];
+    if (!est || est.dinero <= 0) continue;
+    const p = equivalente(est.dinero, MUNDOS[i]);
+    if (p <= 0) continue;
+    lineas.push(MUNDOS[i].nombre + ': ' + MUNDOS[i].moneda.simbolo +
+                Math.floor(est.dinero).toLocaleString('es-ES') + ' → ' +
+                p.toLocaleString('es-ES'));
+    est.dinero = 0;
+    premio += p;
+  }
+  if (premio <= 0){
+    Arcade.aviso(avisos, 'No hay nada que canjear en ningún mundo');
+    Sonido.fx('error');
+    return;
+  }
+  Arcade.fichas.ajustar(premio);
+  registrar('💎 Vaciados los mundos abiertos por <span class="oro">' +
+            premio.toLocaleString('es-ES') + ' NEXO-COINS</span>.', 'oro');
+  lineas.forEach(l => registrar('   · ' + l));
+  Arcade.aviso(avisos, '💎 +' + premio.toLocaleString('es-ES') + ' NEXO-COINS', true, 3600);
+  Sonido.fx('caja');
+  refrescar();
+  guardarPartida();
+}
+
 function canjear(){
   // Cada mundo tiene su cambio: cuanto más abajo se pica, mejor paga el Nexo.
   const { coste, premio } = MUNDO.nexo;
@@ -15854,6 +15930,23 @@ function refrescar(){
     b.disabled = E.dinero < E.costos[b.dataset.comprar];
   });
   $('btnCanjear').disabled = E.dinero < MUNDO.nexo.coste;
+
+  const todo = equivalente(E.dinero, MUNDO);
+  $('todoEquiv').textContent = todo.toLocaleString('es-ES');
+  $('btnCanjearTodo').disabled = todo <= 0;
+
+  let total = 0;
+  for (let i = 0; i < PARTIDA.abiertos; i++){
+    const est = i === mundoActual ? E : PARTIDA.mundos[i];
+    if (est) total += equivalente(est.dinero, MUNDOS[i]);
+  }
+  $('mundosEquiv').textContent = total.toLocaleString('es-ES');
+  // El rótulo cuenta los mundos que hay de verdad: decir "los tres" con dos
+  // abiertos es mentira, y encima invita a buscar un tercero que no está.
+  $('mundosEtiq').textContent = 'Vaciar ' +
+    ['', 'todos los', 'los dos', 'los tres'][PARTIDA.abiertos] + ' mundos';
+  $('btnCanjearMundos').disabled = total <= 0 || PARTIDA.abiertos < 2;
+
   pintarSelector();
 }
 
@@ -15861,6 +15954,8 @@ document.querySelectorAll('[data-comprar]').forEach(b => {
   b.onclick = () => { Sonido.activar(); comprar(b.dataset.comprar); };
 });
 $('btnCanjear').onclick = () => { Sonido.activar(); canjear(); };
+$('btnCanjearTodo').onclick = () => { Sonido.activar(); canjearTodo(); };
+$('btnCanjearMundos').onclick = () => { Sonido.activar(); canjearTodosLosMundos(); };
 $('btnReiniciar').onclick = () => {
   // Solo se reinicia la mina en la que estás. Los otros mundos y lo que hayas
   // abierto siguen ahí: perderlos por tocar un botón sería una faena.

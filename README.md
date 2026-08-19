@@ -173,7 +173,9 @@ Cada mejora arregla un cuello de botella distinto, y el que va apretado se nota 
 
 - **Picar a mano:** haz clic en cualquier veta y arrancas mineral tú mismo. Útil al empezar.
 - **Se guarda solo** en el navegador, y al volver te abona lo que produjo el turno de noche mientras no estabas (a medio rendimiento, con tope de 8 horas).
-- El **Mercado Nexo** cambia moneda del juego por NEXO-COINS, y cuanto más abajo se pica mejor paga: 250 en el Valle, 900 en las Cavernas y 4.500 en el Núcleo por cada 5.000 de moneda local.
+- El **Mercado Nexo** cambia moneda del juego por NEXO-COINS, y cuanto más abajo se pica mejor paga: 250 en el Valle, 900 en las Cavernas y 4.500 en el Núcleo por cada 5.000 de moneda local. Además del canje suelto hay dos botones de vaciado:
+  - **Canjear todo** convierte la caja entera del mundo en curso, prorrateando el mismo cambio (una unidad da `premio / coste`, redondeando hacia abajo).
+  - **Vaciar los N mundos** recorre todos los que tengas abiertos y cambia cada caja **al cambio de su propio mundo**, no al del que estés mirando. El botón enseña el total antes de pulsarlo y el registro desglosa mundo por mundo.
 - El **registro** de la parte de abajo va contando lo que pasa: contrataciones, mejoras y camiones vendidos.
 
 **Tres mundos, tres monedas.** La mina no es una sola: son tres, cada una con su moneda, sus minerales, su paleta y su dificultad. Se juegan por separado —cada una guarda su dinero, su plantilla y sus mejoras— y se cambia de una a otra con el selector de arriba.
