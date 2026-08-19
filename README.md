@@ -33,7 +33,7 @@ Cada juego queda aislado en su propia pantalla: su CSS se prefija con el selecto
 | ✈ [Aviator](juegos/aviator.html) | Casino | Juego de tipo *crash*: cobra antes de que el avión se vaya volando |
 | 🎱 [8 Ball Pool](juegos/8-ball-pool.html) | Deportes | Billar con física real, efecto y rival controlado por la máquina |
 | ⚽ [Rumble Stars](juegos/rumble-stars.html) | Arena | Fútbol de arena: lanza bichos al campo y empuja el balón |
-| ⛏ [Mining Tycoon](juegos/mining-tycoon.html) | Tycoon | Tres minas con moneda propia: del carbón del valle a la nexonita del Núcleo |
+| ⛏ [Mining Tycoon](juegos/mining-tycoon.html) | Tycoon | Cuatro minas con moneda propia: del carbón del valle a la singularita del Vacío |
 | 📦 [Cofres Minecraft](juegos/cofres-minecraft.html) | Cajas | Abre cofres con ruleta, colecciona objetos y fúndelos para subir de rareza |
 | 🍪 [Galletas](juegos/cookie-clicker.html) | Incremental | Pica la galleta, monta un imperio y caza las galletas doradas |
 | 🏍 [Moto X3M](juegos/moto-x3m.html) | Carreras | Suspensión en las dos ruedas, rampas que lanzan y vueltas en el aire |
@@ -178,19 +178,21 @@ Cada mejora arregla un cuello de botella distinto, y el que va apretado se nota 
   - **Vaciar los N mundos** recorre todos los que tengas abiertos y cambia cada caja **al cambio de su propio mundo**, no al del que estés mirando. El botón enseña el total antes de pulsarlo y el registro desglosa mundo por mundo.
 - El **registro** de la parte de abajo va contando lo que pasa: contrataciones, mejoras y camiones vendidos.
 
-**Tres mundos, tres monedas.** La mina no es una sola: son tres, cada una con su moneda, sus minerales, su paleta y su dificultad. Se juegan por separado —cada una guarda su dinero, su plantilla y sus mejoras— y se cambia de una a otra con el selector de arriba.
+**Cuatro mundos, cuatro monedas.** La mina no es una sola: son cuatro, cada una con su moneda, sus minerales, su paleta y su dificultad. Se juegan por separado —cada una guarda su dinero, su plantilla y sus mejoras— y se cambia de una a otra con el selector de arriba.
 
 | Mundo | Moneda | Minerales | Se abre con | Cambio Nexo |
 |---|---|---|---|---|
 | ⛏ **Valle Nexo** | `$` dólares | carbón · oro | abierto desde el principio | $5.000 → **250** |
 | 🔮 **Cavernas de Gea** | `₡` cristales | amatista · esmeralda | ganar $450.000 y pagar $320.000 | ₡5.000 → **900** |
 | 🔥 **Núcleo Omega** | `Ω` núcleos | obsidiana · nexonita | ganar ₡4.000.000 y pagar ₡2.800.000 | Ω5.000 → **4.500** |
+| 🕳 **Vacío Cuántico** | `Ψ` psiones | cuarzo temporal · singularita | ganar Ω100.000.000 y pagar Ω70.000.000 | Ψ5.000 → **22.000** |
 
 - El peaje **se paga con la moneda del mundo anterior**: para bajar a las Cavernas hay que haber exprimido el Valle.
-- El **Núcleo Omega** es el final: todo cuesta casi el doble de un nivel al siguiente (factor 1,72–2,0 frente a 1,35–1,6 del Valle) y los obreros pican a un tercio del ritmo. Su meta, **extraer Ω100.000.000**, paga **250.000 NEXO-COINS** una sola vez. Simulando la economía con compra codiciosa —siempre la mejora con más ingreso por moneda— el Valle se pasa en unos 22 min, las Cavernas en 1 h 19, y el Núcleo pide más de **7 horas**.
+- El **Núcleo Omega** ya no es el final: sacar sus Ω100.000.000 es a la vez su hito y la llave del Vacío. Todo cuesta casi el doble de un nivel al siguiente todo cuesta casi el doble de un nivel al siguiente (factor 1,72–2,0 frente a 1,35–1,6 del Valle) y los obreros pican a un tercio del ritmo. Esa meta paga **250.000 NEXO-COINS** una sola vez.
+- El **Vacío Cuántico** es el escalón final: factores de 1,9 a 2,25, sondas que pican a un cuarto del ritmo del Valle y un arranque de Ψ6.000.000 que se evapora en dos mejoras. Su meta son **Ψ5.000.000.000**. No hay techo, hay islas flotando, auroras y una grieta de singularidad al fondo. Simulando la economía con compra codiciosa —siempre la mejora con más ingreso por moneda— el Valle se pasa en unos 22 min, las Cavernas en 1 h 19, y el Núcleo pide más de **7 horas**.
 - **Empezar una mina nueva** reinicia solo la mina en la que estás; los otros mundos y lo que hayas abierto no se tocan.
 
-Cada mundo tiene su propio cielo: el Valle se pica de noche a cielo abierto con luna y sierra al fondo; las Cavernas no tienen cielo, sino bóveda con estalactitas que gotean, hongos bioluminiscentes y un lago subterráneo; y el Núcleo, una bóveda de basalto con grietas incandescentes, coladas colgando y un río de lava que tiñe de naranja toda la escena. Cambian también los estratos, el entibado (madera, acero húmedo, acero al rojo), el color de las lámparas, la ropa y el casco de los obreros, y la maquinaria.
+Cada mundo tiene su propio cielo: el Valle se pica de noche a cielo abierto con luna y sierra al fondo; las Cavernas no tienen cielo, sino bóveda con estalactitas que gotean, hongos bioluminiscentes y un lago subterráneo; el Núcleo, una bóveda de basalto con grietas incandescentes, coladas colgando y un río de lava; y el Vacío, ni techo ni suelo firme: islas de roca flotando sobre su propio brillo, bandas de aurora y una singularidad abierta al fondo. Cambian también los estratos, el entibado (madera, acero húmedo, acero al rojo), el color de las lámparas, la ropa y el casco de los obreros, y la maquinaria.
 
 **La mina está dibujada entera por código**, en dos capas: una fija que se pinta una sola vez (cielo estrellado con luna y halo, sierra al fondo en dos planos, seis estratos de roca con su grano y sus líneas de contacto, guijarros incrustados, grietas ramificadas y el entibado de madera con vetas y pernos) y otra viva encima. El mineral no está esparcido al azar: sale en **bolsadas inclinadas** de cristales facetados que sueltan un destello al pasar. Los mineros están articulados —piernas con ciclo de paso, brazo que gira con el pico, casco con visera y frontal encendido, saco que crece al llenarse— y cada uno lleva su **cono de luz** hacia donde mira. El pozo tiene marco entibado, guías, faroles con parpadeo y raíl de vagoneta; el ascensor es una jaula con barrotes, franja de peligro y baliza; y arriba están el silo sobre zapata de hormigón, el castillete de celosía con su polea girando y el camión con ruedas de tacos y faro encendido.
 
@@ -498,6 +500,25 @@ Tres cosas que faltaban en todos los juegos a la vez, resueltas una sola vez en 
 **La pausa solo vale en los juegos de acción** —Comecocos, Serpiente, Moto X3M, Plantas vs Zombis y Rumble Stars, marcados con `data-ritmo="accion"`—. En los de apuesta está deshabilitada a propósito: poder congelar el Aviator a 40x y cobrar con calma no sería pausar, sería hacer caja. Los *idle* como Mining Tycoon o Galletas tampoco se pausan solos, porque su gracia es seguir produciendo.
 
 El tower defense es autocontenido y no carga `arcade.js`, así que lleva su propia copia de todo esto y **comparte la preferencia de sonido por la misma clave de almacenamiento**. De paso se corrigió que su música se quedaba a todo volumen aunque bajaras el resto.
+
+## 👑 Modo administrador
+
+Hay un código que no paga monedas: **enciende la consola del creador**. Una vez activo se queda encendido entre visitas y funciona desde cualquier pantalla del arcade — **F9** la abre y la cierra, <kbd>Esc</kbd> la cierra, y las flechas <kbd>↑</kbd> <kbd>↓</kbd> recorren el historial.
+
+| Comando | Qué hace |
+|---|---|
+| `ayuda` | Lista todos los comandos |
+| `monedas <n>` | Fija la cartera en esa cantidad |
+| `dar <n>` | Suma (o resta, con negativos) a la cartera |
+| `codigos` · `codigos reset` | Ve qué códigos van gastados, o los libera todos |
+| `record <juego> [valor]` | Consulta o fija el récord de cualquier juego |
+| `mina` · `mina abrir` · `mina dinero <n>` · `mina borrar` | Estado de Mining Tycoon, abrir los cuatro mundos, llenar las cajas o borrar la partida |
+| `perfil` · `perfil reset` | Estadísticas acumuladas, o borrarlas |
+| `ir <juego>` | Salta a un juego por su id (solo en `arcade.html`) |
+| `todo` | Modo dios de golpe: cartera a tope, códigos libres y mina abierta |
+| `salir` | Apaga el modo administrador |
+
+La consola vive en `Arcade.admin` (`juegos/arcade.js`). Añadir un comando es añadir una función a `Arcade.admin.COMANDOS`: el nombre de la función es el comando y sus argumentos llegan como cadenas.
 
 ## 🖥 Rendimiento y nitidez
 

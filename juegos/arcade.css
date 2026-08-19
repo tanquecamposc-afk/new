@@ -207,3 +207,37 @@ input:focus-visible, select:focus-visible, a:focus-visible, [tabindex]:focus-vis
   font-size:.76rem; color:var(--tenue); margin:8px 0 14px;
   font-family:var(--fuente); max-width:320px;
 }
+
+/* ---- Consola del creador (modo administrador) ---- */
+.capaAdmin{
+  position:fixed; inset:0; z-index:80; display:none;
+  align-items:center; justify-content:center;
+  background:rgba(2,4,10,.86); backdrop-filter:blur(4px); padding:18px;
+}
+.capaAdmin.visible{display:flex;}
+.cajaAdmin{
+  width:min(720px,100%); max-height:84%;
+  display:flex; flex-direction:column; gap:10px;
+  background:#050a12; border:1px solid rgba(243,230,0,.4);
+  border-radius:14px; padding:18px;
+  box-shadow:0 20px 60px rgba(0,0,0,.85), inset 0 0 60px rgba(243,230,0,.04);
+}
+.cajaAdmin h2{
+  font-family:var(--fuente-arcade); font-size:.95rem; color:var(--oro);
+  letter-spacing:2px;
+}
+.salidaAdmin{
+  flex:1; min-height:200px; max-height:46vh; overflow-y:auto; margin:0;
+  background:#01030699; border:1px solid rgba(0,255,102,.25); border-radius:9px;
+  padding:11px; font-family:var(--fuente-arcade); font-size:.74rem;
+  line-height:1.6; color:#7dffb0; white-space:pre-wrap; word-break:break-word;
+}
+.filaAdmin{display:flex; align-items:center; gap:8px;}
+.promptAdmin{font-family:var(--fuente-arcade); color:var(--oro); font-weight:800;}
+.entradaAdmin{
+  flex:1; min-width:0; background:rgba(0,0,0,.55); color:#e8eefc;
+  border:1px solid var(--borde); border-radius:8px; padding:9px 11px;
+  font-family:var(--fuente-arcade); font-size:.8rem;
+}
+.entradaAdmin:focus{outline:none; border-color:var(--oro);}
+.pieAdmin{font-size:.68rem; color:var(--tenue); font-family:var(--fuente-arcade);}

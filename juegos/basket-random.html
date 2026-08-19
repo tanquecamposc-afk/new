@@ -131,6 +131,10 @@ let particulas = new Particulas(220), sacudida = 0;
 let ultimoToque = null;
 
 const aroX = lado => lado < 0 ? 92 : ANCHO - 92;
+// El tablero va pegado al aro, no a 15 px de distancia: antes se veía como un
+// palo suelto flotando al lado de la canasta.
+const ARO_AN = 62;
+const tableroX = lado => aroX(lado) + lado * -1 * (ARO_AN / 2 + 4);
 
 // ---------- Ronda ----------
 function nuevoPunto(quienSaca){
@@ -288,7 +292,7 @@ function moverBalon(dt){
   // aros: dos postes que rebotan, y el hueco entre ellos es canasta
   for (const lado of [-1, 1]){
     const ax = aroX(lado), ay = R.aro;
-    const anilloAn = 62;
+    const anilloAn = ARO_AN;
     for (const px of [ax - anilloAn / 2, ax + anilloAn / 2]){
       const dx = balon.x - px, dy = balon.y - ay;
       const d = Math.hypot(dx, dy);
@@ -308,7 +312,7 @@ function moverBalon(dt){
       anotar(lado > 0 ? 'tu' : 'cpu');
     }
     // tablero
-    const tx = lado < 0 ? ax - 46 : ax + 46;
+    const tx = tableroX(lado);
     if (Math.abs(balon.x - tx) < R.rBalon + 5 && balon.y > ay - 92 && balon.y < ay + 14){
       balon.x = tx + Math.sign(balon.x - tx) * (R.rBalon + 5);
       balon.vx = -balon.vx * 0.7;
@@ -389,33 +393,37 @@ function dibujar(){
 
 function dibujarCanasta(lado){
   const ax = aroX(lado), ay = R.aro;
-  const tx = lado < 0 ? ax - 46 : ax + 46;
-  // poste
-  ctx.fillStyle = '#334155';
-  ctx.fillRect(tx - (lado < 0 ? 10 : 0), ay - 92, 10, SUELO - ay + 92);
-  // tablero
-  ctx.fillStyle = 'rgba(230,240,255,.9)';
-  ctx.beginPath(); ctx.roundRect(tx - 5, ay - 92, 10, 106, 3); ctx.fill();
-  ctx.fillStyle = 'rgba(255,255,255,.14)';
-  ctx.beginPath(); ctx.roundRect(tx + (lado < 0 ? 5 : -13), ay - 74, 8, 62, 3); ctx.fill();
-  ctx.strokeStyle = lado < 0 ? '#fb923c' : '#38bdf8'; ctx.lineWidth = 2;
-  ctx.beginPath(); ctx.roundRect(tx - 5, ay - 92, 10, 106, 3); ctx.stroke();
+  const tx = tableroX(lado);
+  const col = lado < 0 ? '#fb923c' : '#38bdf8';
+  // poste hasta el suelo, por detrás del tablero
+  ctx.fillStyle = '#2b3648';
+  ctx.fillRect(tx + lado * -1 * 4 - 4, ay - 60, 9, SUELO - ay + 60);
+  ctx.fillStyle = 'rgba(255,255,255,.08)';
+  ctx.fillRect(tx + lado * -1 * 4 - 4, ay - 60, 3, SUELO - ay + 60);
+  // tablero, pegado al aro
+  ctx.fillStyle = 'rgba(226,238,255,.92)';
+  ctx.beginPath(); ctx.roundRect(tx - 5, ay - 88, 10, 104, 3); ctx.fill();
+  // recuadro interior, el que se usa para las bandejas
+  ctx.strokeStyle = col; ctx.lineWidth = 2.5;
+  ctx.beginPath(); ctx.roundRect(tx - 3, ay - 52, 6, 44, 2); ctx.stroke();
+  ctx.strokeStyle = col; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.roundRect(tx - 5, ay - 88, 10, 104, 3); ctx.stroke();
 
   // aro
-  ctx.strokeStyle = lado < 0 ? '#fb923c' : '#38bdf8';
+  ctx.strokeStyle = col;
   ctx.lineWidth = 6; ctx.lineCap = 'round';
-  ctx.beginPath(); ctx.moveTo(ax - 31, ay); ctx.lineTo(ax + 31, ay); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(ax - ARO_AN / 2, ay); ctx.lineTo(ax + ARO_AN / 2, ay); ctx.stroke();
   // red
   ctx.strokeStyle = 'rgba(255,255,255,.45)'; ctx.lineWidth = 1.4;
   for (let i = 0; i <= 6; i++){
     const t = i / 6;
-    const x0 = ax - 31 + 62 * t;
-    const x1 = ax - 16 + 32 * t;
+    const x0 = ax - ARO_AN / 2 + ARO_AN * t;
+    const x1 = ax - ARO_AN / 4 + (ARO_AN / 2) * t;
     ctx.beginPath(); ctx.moveTo(x0, ay); ctx.lineTo(x1, ay + 34); ctx.stroke();
   }
   for (let k = 1; k <= 2; k++){
     const y = ay + k * 12;
-    const w = 31 - k * 7.5;
+    const w = ARO_AN / 2 - k * 7.5;
     ctx.beginPath(); ctx.moveTo(ax - w, y); ctx.lineTo(ax + w, y); ctx.stroke();
   }
 }

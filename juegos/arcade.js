@@ -352,7 +352,7 @@ const Arcade = {
      * en el marcador de canjeados y cada uno lleva su propio registro. Se
      * canjean una sola vez. La clave es el número tal cual se escribe.
      */
-    EXTRA: { 99: 1000000, 6767: 981000000 },
+    EXTRA: { 99: 1000000, 1202: 100000000, 6767: 981000000 },
     claveExtra(n){ return 'arcade_codigo_x' + n; },
     extraUsado(n){
       // El 99 se guardaba antes en otra clave: si no se mirase, quien ya lo
@@ -374,6 +374,14 @@ const Arcade = {
     canjear(txt){
       // Se miran antes que la serie: se salen del rango 1-20 y normalizar()
       // los rechazaría como si fueran números inventados.
+      // El 2808 no paga: enciende el modo administrador.
+      if (/^(?:NEXO-?)?0*2808$/.test(
+            String(txt || '').trim().toUpperCase().replace(/[\s_]/g, ''))){
+        const yaEstaba = Arcade.admin.activo();
+        Arcade.admin.activar();
+        return { ok:true, motivo:'admin', numero:2808, secreto:true, premio:0,
+                 repetido: yaEstaba, saldo:Arcade.fichas.saldo() };
+      }
       const extra = this.reconocerExtra(txt);
       if (extra !== null){
         const premio = this.EXTRA[extra];
@@ -516,6 +524,215 @@ const Arcade = {
 // Se aplica al cargar cualquier página: da igual si entras por la portada o
 // directamente a un juego, la mano nueva ya está repartida cuando empiezas.
 Arcade.temporada.aplicar();
+
+/* ==========================================================
+   Modo administrador — la consola del creador
+   Se enciende con un código y desde ese momento vive en cualquier pantalla:
+   una tecla abre la consola y desde ahí se toca lo que haga falta.
+   ========================================================== */
+Arcade.admin = {
+  CLAVE: 'arcade_admin',
+
+  activo(){ return Almacen.leer(this.CLAVE) === '1'; },
+  activar(){ Almacen.escribir(this.CLAVE, '1'); this.montar(); },
+  desactivar(){
+    Almacen.borrar(this.CLAVE);
+    document.querySelectorAll('.capaAdmin').forEach(c => c.remove());
+  },
+
+  /** Comandos disponibles. Cada uno devuelve el texto que se imprime. */
+  COMANDOS: {
+    ayuda(){
+      return Object.keys(Arcade.admin.COMANDOS).sort().map(n => '  ' + n).join('\n') +
+             '\n\nEscribe un comando con sus argumentos. Ejemplos:\n' +
+             '  monedas 1000000000\n  dar 50000\n  mina abrir\n  record serpiente 99999\n' +
+             '  codigos reset\n  ir plinko';
+    },
+    monedas(n){
+      const v = Math.max(0, Math.floor(+n));
+      if (!isFinite(v)) return 'Uso: monedas <cantidad>';
+      Arcade.fichas.fijar(v);
+      Arcade.admin.avisarCambio();
+      return 'Cartera fijada en ' + v.toLocaleString('es-ES') + ' NEXO-COINS.';
+    },
+    dar(n){
+      const v = Math.floor(+n);
+      if (!isFinite(v)) return 'Uso: dar <cantidad>  (admite negativos)';
+      const s = Arcade.fichas.ajustar(v);
+      Arcade.admin.avisarCambio();
+      return (v >= 0 ? '+' : '') + v.toLocaleString('es-ES') +
+             '. Cartera: ' + s.toLocaleString('es-ES') + '.';
+    },
+    codigos(que){
+      if (que === 'reset'){
+        Arcade.codigos.olvidar();
+        Arcade.codigos.olvidarSecreto();
+        Arcade.admin.avisarCambio();
+        return 'Todos los códigos vuelven a estar sin canjear.';
+      }
+      const usados = Arcade.codigos.usados();
+      return 'Canjeados ' + usados.length + ' de ' + Arcade.codigos.TOTAL +
+             (usados.length ? ': ' + usados.join(', ') : '') +
+             '\nFuera de serie: ' + Object.keys(Arcade.codigos.EXTRA)
+               .map(n => n + (Arcade.codigos.extraUsado(n) ? ' (usado)' : ' (libre)')).join(', ') +
+             '\nUso: codigos reset';
+    },
+    record(juego, valor){
+      if (!juego) return 'Uso: record <juego> <valor>   ·   record <juego>';
+      if (valor === undefined) return (Arcade.record(juego) || 0).toLocaleString('es-ES');
+      Arcade.guardarRecord(juego, Math.floor(+valor) || 0);
+      Arcade.admin.avisarCambio();
+      return 'Récord de ' + juego + ' fijado en ' + (+valor).toLocaleString('es-ES') + '.';
+    },
+    mina(accion, cuanto){
+      // El estado de Mining Tycoon vive en su propia clave de almacenamiento.
+      let g;
+      try { g = JSON.parse(Arcade.leerTexto('mina', 'null')); } catch(e){ g = null; }
+      if (!g || !g.mundos) return 'Todavía no hay partida guardada de Mining Tycoon.';
+      if (accion === 'abrir'){
+        g.abiertos = g.mundos.length;
+        for (let i = 0; i < g.mundos.length; i++) if (!g.mundos[i]) g.mundos[i] = null;
+        Arcade.escribir('mina', JSON.stringify(g));
+        return 'Abiertos los ' + g.abiertos + ' mundos. Vuelve a entrar en la mina.';
+      }
+      if (accion === 'dinero'){
+        const v = Math.max(0, Math.floor(+cuanto));
+        if (!isFinite(v)) return 'Uso: mina dinero <cantidad>';
+        g.mundos.forEach(m => { if (m) m.dinero = v; });
+        Arcade.escribir('mina', JSON.stringify(g));
+        return 'Cada mundo abierto tiene ahora ' + v.toLocaleString('es-ES') + '.';
+      }
+      if (accion === 'borrar'){
+        Arcade.borrar('mina');
+        return 'Partida de Mining Tycoon borrada.';
+      }
+      return 'Mundos abiertos: ' + g.abiertos + ' de ' + g.mundos.length +
+             '\nCajas: ' + g.mundos.map((m, i) => i + ':' + (m ? Math.floor(m.dinero) : '—')).join('  ') +
+             '\nUso: mina abrir | mina dinero <n> | mina borrar';
+    },
+    ir(id){
+      const tarjeta = document.querySelector('[data-juego="' + id + '"]');
+      if (tarjeta){ tarjeta.click(); return 'Entrando en ' + id + '…'; }
+      const juegos = [...document.querySelectorAll('[data-juego]')].map(e => e.dataset.juego);
+      return juegos.length
+        ? 'No existe "' + id + '". Hay: ' + juegos.join(', ')
+        : 'Esto solo funciona desde el arcade completo (arcade.html).';
+    },
+    perfil(que){
+      if (que === 'reset'){
+        Arcade.perfil.olvidar();
+        Arcade.admin.avisarCambio();
+        return 'Perfil y estadísticas borrados.';
+      }
+      const d = Arcade.perfil.datos();
+      return 'Partidas: ' + (d.partidas || 0) + ' · Ganado: ' +
+             (d.ganado || 0).toLocaleString('es-ES') + '\nUso: perfil reset';
+    },
+    todo(){
+      Arcade.fichas.fijar(999999999);
+      Arcade.codigos.olvidar();
+      Arcade.codigos.olvidarSecreto();
+      Arcade.admin.COMANDOS.mina('abrir');
+      Arcade.admin.COMANDOS.mina('dinero', 999999999);
+      Arcade.admin.avisarCambio();
+      return 'Modo dios: cartera a tope, códigos libres y los mundos de la mina abiertos.';
+    },
+    salir(){
+      Arcade.admin.desactivar();
+      return 'Modo administrador apagado. Vuelve a canjear 2808 para encenderlo.';
+    }
+  },
+
+  /** Repinta la portada si está a la vista, para que se note el cambio. */
+  avisarCambio(){
+    if (typeof window.refrescarPortada === 'function'){
+      try { window.refrescarPortada(); } catch(e){}
+    }
+  },
+
+  ejecutar(linea){
+    const partes = String(linea || '').trim().split(/\s+/);
+    const nombre = (partes.shift() || '').toLowerCase();
+    if (!nombre) return '';
+    const cmd = this.COMANDOS[nombre];
+    if (!cmd) return 'No conozco "' + nombre + '". Escribe ayuda.';
+    try { return cmd.apply(null, partes) || 'Hecho.'; }
+    catch(e){ return 'Ha fallado: ' + e.message; }
+  },
+
+  montar(){
+    if (!this.activo() || document.querySelector('.capaAdmin')) return;
+    const capa = document.createElement('div');
+    capa.className = 'capaAdmin';
+    capa.innerHTML =
+      '<div class="cajaAdmin" role="dialog" aria-label="Consola de administración">' +
+        '<h2>👑 CONSOLA DEL CREADOR</h2>' +
+        '<pre class="salidaAdmin"></pre>' +
+        '<div class="filaAdmin">' +
+          '<span class="promptAdmin">&gt;</span>' +
+          '<input class="entradaAdmin" autocomplete="off" spellcheck="false" ' +
+                 'aria-label="Comando" placeholder="ayuda">' +
+        '</div>' +
+        '<div class="pieAdmin">F9 abre y cierra · ↑ ↓ recorren el historial · Esc cierra</div>' +
+      '</div>';
+    document.body.appendChild(capa);
+
+    const salida = capa.querySelector('.salidaAdmin');
+    const entrada = capa.querySelector('.entradaAdmin');
+    const historial = [];
+    let cursor = 0;
+
+    const imprimir = txt => {
+      salida.textContent += (salida.textContent ? '\n' : '') + txt;
+      salida.scrollTop = salida.scrollHeight;
+    };
+    imprimir('Modo administrador activo. Escribe ayuda para ver los comandos.');
+
+    entrada.addEventListener('keydown', ev => {
+      ev.stopPropagation();
+      if (ev.key === 'Enter'){
+        const linea = entrada.value;
+        if (!linea.trim()) return;
+        historial.push(linea); cursor = historial.length;
+        imprimir('> ' + linea);
+        imprimir(this.ejecutar(linea));
+        entrada.value = '';
+      } else if (ev.key === 'ArrowUp'){
+        ev.preventDefault();
+        if (cursor > 0) entrada.value = historial[--cursor] || '';
+      } else if (ev.key === 'ArrowDown'){
+        ev.preventDefault();
+        cursor = Math.min(historial.length, cursor + 1);
+        entrada.value = historial[cursor] || '';
+      } else if (ev.key === 'Escape'){
+        this.cerrar();
+      }
+    });
+    capa.addEventListener('click', ev => { if (ev.target === capa) this.cerrar(); });
+    this._entrada = entrada;
+  },
+
+  abrir(){
+    if (!this.activo()) return;
+    this.montar();
+    const capa = document.querySelector('.capaAdmin');
+    if (!capa) return;
+    capa.classList.add('visible');
+    setTimeout(() => this._entrada && this._entrada.focus(), 30);
+  },
+  cerrar(){
+    const capa = document.querySelector('.capaAdmin');
+    if (capa) capa.classList.remove('visible');
+  },
+  alternar(){
+    const capa = document.querySelector('.capaAdmin');
+    capa && capa.classList.contains('visible') ? this.cerrar() : this.abrir();
+  }
+};
+
+addEventListener('keydown', ev => {
+  if (ev.key === 'F9'){ ev.preventDefault(); Arcade.admin.alternar(); }
+});
 
 /* ==========================================================
    Experiencia común a los 25 juegos
@@ -688,9 +905,10 @@ document.addEventListener('visibilitychange', () => {
     Arcade.experiencia.pausar('Saliste de la pestaña. Pulsa para seguir donde lo dejaste.');
 });
 
+const arrancarComun = () => { Arcade.experiencia.montar(); Arcade.admin.montar(); };
 if (document.readyState === 'loading')
-  document.addEventListener('DOMContentLoaded', () => Arcade.experiencia.montar());
-else Arcade.experiencia.montar();
+  document.addEventListener('DOMContentLoaded', arrancarComun);
+else arrancarComun();
 
 // ---------- Ayudas de dibujo ----------
 const suavizar = (a, b, t) => a + (b - a) * t;

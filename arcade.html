@@ -216,6 +216,40 @@ input:focus-visible, select:focus-visible, a:focus-visible, [tabindex]:focus-vis
   font-family:var(--fuente); max-width:320px;
 }
 
+/* ---- Consola del creador (modo administrador) ---- */
+.capaAdmin{
+  position:fixed; inset:0; z-index:80; display:none;
+  align-items:center; justify-content:center;
+  background:rgba(2,4,10,.86); backdrop-filter:blur(4px); padding:18px;
+}
+.capaAdmin.visible{display:flex;}
+.cajaAdmin{
+  width:min(720px,100%); max-height:84%;
+  display:flex; flex-direction:column; gap:10px;
+  background:#050a12; border:1px solid rgba(243,230,0,.4);
+  border-radius:14px; padding:18px;
+  box-shadow:0 20px 60px rgba(0,0,0,.85), inset 0 0 60px rgba(243,230,0,.04);
+}
+.cajaAdmin h2{
+  font-family:var(--fuente-arcade); font-size:.95rem; color:var(--oro);
+  letter-spacing:2px;
+}
+.salidaAdmin{
+  flex:1; min-height:200px; max-height:46vh; overflow-y:auto; margin:0;
+  background:#01030699; border:1px solid rgba(0,255,102,.25); border-radius:9px;
+  padding:11px; font-family:var(--fuente-arcade); font-size:.74rem;
+  line-height:1.6; color:#7dffb0; white-space:pre-wrap; word-break:break-word;
+}
+.filaAdmin{display:flex; align-items:center; gap:8px;}
+.promptAdmin{font-family:var(--fuente-arcade); color:var(--oro); font-weight:800;}
+.entradaAdmin{
+  flex:1; min-width:0; background:rgba(0,0,0,.55); color:#e8eefc;
+  border:1px solid var(--borde); border-radius:8px; padding:9px 11px;
+  font-family:var(--fuente-arcade); font-size:.8rem;
+}
+.entradaAdmin:focus{outline:none; border-color:var(--oro);}
+.pieAdmin{font-size:.68rem; color:var(--tenue); font-family:var(--fuente-arcade);}
+
 
 /* ====== Cambio de pantalla ======
    Lleva !important a propósito: el CSS de cada juego se acota con el selector
@@ -994,8 +1028,10 @@ body{display:block; padding:0; margin:0;}
   }
 #pantalla-mina #canje .canjeExtra b{color:#7dffb0;}
 #pantalla-mina /* ---- Selector de mundos ---- */
-  #selectorMundos{display:grid; grid-template-columns:repeat(3,1fr); gap:8px;}
-@media (max-width:620px){#pantalla-mina #selectorMundos{grid-template-columns:1fr;}
+  #selectorMundos{display:grid; grid-template-columns:repeat(4,1fr); gap:8px;}
+@media (max-width:900px){#pantalla-mina #selectorMundos{grid-template-columns:repeat(2,1fr);}
+ }
+@media (max-width:520px){#pantalla-mina #selectorMundos{grid-template-columns:1fr;}
  }
 #pantalla-mina .mundo{
     position:relative; text-align:left; padding:9px 11px; border-radius:10px;
@@ -4789,7 +4825,7 @@ const Arcade = {
      * en el marcador de canjeados y cada uno lleva su propio registro. Se
      * canjean una sola vez. La clave es el número tal cual se escribe.
      */
-    EXTRA: { 99: 1000000, 6767: 981000000 },
+    EXTRA: { 99: 1000000, 1202: 100000000, 6767: 981000000 },
     claveExtra(n){ return 'arcade_codigo_x' + n; },
     extraUsado(n){
       // El 99 se guardaba antes en otra clave: si no se mirase, quien ya lo
@@ -4811,6 +4847,14 @@ const Arcade = {
     canjear(txt){
       // Se miran antes que la serie: se salen del rango 1-20 y normalizar()
       // los rechazaría como si fueran números inventados.
+      // El 2808 no paga: enciende el modo administrador.
+      if (/^(?:NEXO-?)?0*2808$/.test(
+            String(txt || '').trim().toUpperCase().replace(/[\s_]/g, ''))){
+        const yaEstaba = Arcade.admin.activo();
+        Arcade.admin.activar();
+        return { ok:true, motivo:'admin', numero:2808, secreto:true, premio:0,
+                 repetido: yaEstaba, saldo:Arcade.fichas.saldo() };
+      }
       const extra = this.reconocerExtra(txt);
       if (extra !== null){
         const premio = this.EXTRA[extra];
@@ -4953,6 +4997,215 @@ const Arcade = {
 // Se aplica al cargar cualquier página: da igual si entras por la portada o
 // directamente a un juego, la mano nueva ya está repartida cuando empiezas.
 Arcade.temporada.aplicar();
+
+/* ==========================================================
+   Modo administrador — la consola del creador
+   Se enciende con un código y desde ese momento vive en cualquier pantalla:
+   una tecla abre la consola y desde ahí se toca lo que haga falta.
+   ========================================================== */
+Arcade.admin = {
+  CLAVE: 'arcade_admin',
+
+  activo(){ return Almacen.leer(this.CLAVE) === '1'; },
+  activar(){ Almacen.escribir(this.CLAVE, '1'); this.montar(); },
+  desactivar(){
+    Almacen.borrar(this.CLAVE);
+    document.querySelectorAll('.capaAdmin').forEach(c => c.remove());
+  },
+
+  /** Comandos disponibles. Cada uno devuelve el texto que se imprime. */
+  COMANDOS: {
+    ayuda(){
+      return Object.keys(Arcade.admin.COMANDOS).sort().map(n => '  ' + n).join('\n') +
+             '\n\nEscribe un comando con sus argumentos. Ejemplos:\n' +
+             '  monedas 1000000000\n  dar 50000\n  mina abrir\n  record serpiente 99999\n' +
+             '  codigos reset\n  ir plinko';
+    },
+    monedas(n){
+      const v = Math.max(0, Math.floor(+n));
+      if (!isFinite(v)) return 'Uso: monedas <cantidad>';
+      Arcade.fichas.fijar(v);
+      Arcade.admin.avisarCambio();
+      return 'Cartera fijada en ' + v.toLocaleString('es-ES') + ' NEXO-COINS.';
+    },
+    dar(n){
+      const v = Math.floor(+n);
+      if (!isFinite(v)) return 'Uso: dar <cantidad>  (admite negativos)';
+      const s = Arcade.fichas.ajustar(v);
+      Arcade.admin.avisarCambio();
+      return (v >= 0 ? '+' : '') + v.toLocaleString('es-ES') +
+             '. Cartera: ' + s.toLocaleString('es-ES') + '.';
+    },
+    codigos(que){
+      if (que === 'reset'){
+        Arcade.codigos.olvidar();
+        Arcade.codigos.olvidarSecreto();
+        Arcade.admin.avisarCambio();
+        return 'Todos los códigos vuelven a estar sin canjear.';
+      }
+      const usados = Arcade.codigos.usados();
+      return 'Canjeados ' + usados.length + ' de ' + Arcade.codigos.TOTAL +
+             (usados.length ? ': ' + usados.join(', ') : '') +
+             '\nFuera de serie: ' + Object.keys(Arcade.codigos.EXTRA)
+               .map(n => n + (Arcade.codigos.extraUsado(n) ? ' (usado)' : ' (libre)')).join(', ') +
+             '\nUso: codigos reset';
+    },
+    record(juego, valor){
+      if (!juego) return 'Uso: record <juego> <valor>   ·   record <juego>';
+      if (valor === undefined) return (Arcade.record(juego) || 0).toLocaleString('es-ES');
+      Arcade.guardarRecord(juego, Math.floor(+valor) || 0);
+      Arcade.admin.avisarCambio();
+      return 'Récord de ' + juego + ' fijado en ' + (+valor).toLocaleString('es-ES') + '.';
+    },
+    mina(accion, cuanto){
+      // El estado de Mining Tycoon vive en su propia clave de almacenamiento.
+      let g;
+      try { g = JSON.parse(Arcade.leerTexto('mina', 'null')); } catch(e){ g = null; }
+      if (!g || !g.mundos) return 'Todavía no hay partida guardada de Mining Tycoon.';
+      if (accion === 'abrir'){
+        g.abiertos = g.mundos.length;
+        for (let i = 0; i < g.mundos.length; i++) if (!g.mundos[i]) g.mundos[i] = null;
+        Arcade.escribir('mina', JSON.stringify(g));
+        return 'Abiertos los ' + g.abiertos + ' mundos. Vuelve a entrar en la mina.';
+      }
+      if (accion === 'dinero'){
+        const v = Math.max(0, Math.floor(+cuanto));
+        if (!isFinite(v)) return 'Uso: mina dinero <cantidad>';
+        g.mundos.forEach(m => { if (m) m.dinero = v; });
+        Arcade.escribir('mina', JSON.stringify(g));
+        return 'Cada mundo abierto tiene ahora ' + v.toLocaleString('es-ES') + '.';
+      }
+      if (accion === 'borrar'){
+        Arcade.borrar('mina');
+        return 'Partida de Mining Tycoon borrada.';
+      }
+      return 'Mundos abiertos: ' + g.abiertos + ' de ' + g.mundos.length +
+             '\nCajas: ' + g.mundos.map((m, i) => i + ':' + (m ? Math.floor(m.dinero) : '—')).join('  ') +
+             '\nUso: mina abrir | mina dinero <n> | mina borrar';
+    },
+    ir(id){
+      const tarjeta = document.querySelector('[data-juego="' + id + '"]');
+      if (tarjeta){ tarjeta.click(); return 'Entrando en ' + id + '…'; }
+      const juegos = [...document.querySelectorAll('[data-juego]')].map(e => e.dataset.juego);
+      return juegos.length
+        ? 'No existe "' + id + '". Hay: ' + juegos.join(', ')
+        : 'Esto solo funciona desde el arcade completo (arcade.html).';
+    },
+    perfil(que){
+      if (que === 'reset'){
+        Arcade.perfil.olvidar();
+        Arcade.admin.avisarCambio();
+        return 'Perfil y estadísticas borrados.';
+      }
+      const d = Arcade.perfil.datos();
+      return 'Partidas: ' + (d.partidas || 0) + ' · Ganado: ' +
+             (d.ganado || 0).toLocaleString('es-ES') + '\nUso: perfil reset';
+    },
+    todo(){
+      Arcade.fichas.fijar(999999999);
+      Arcade.codigos.olvidar();
+      Arcade.codigos.olvidarSecreto();
+      Arcade.admin.COMANDOS.mina('abrir');
+      Arcade.admin.COMANDOS.mina('dinero', 999999999);
+      Arcade.admin.avisarCambio();
+      return 'Modo dios: cartera a tope, códigos libres y los mundos de la mina abiertos.';
+    },
+    salir(){
+      Arcade.admin.desactivar();
+      return 'Modo administrador apagado. Vuelve a canjear 2808 para encenderlo.';
+    }
+  },
+
+  /** Repinta la portada si está a la vista, para que se note el cambio. */
+  avisarCambio(){
+    if (typeof window.refrescarPortada === 'function'){
+      try { window.refrescarPortada(); } catch(e){}
+    }
+  },
+
+  ejecutar(linea){
+    const partes = String(linea || '').trim().split(/\s+/);
+    const nombre = (partes.shift() || '').toLowerCase();
+    if (!nombre) return '';
+    const cmd = this.COMANDOS[nombre];
+    if (!cmd) return 'No conozco "' + nombre + '". Escribe ayuda.';
+    try { return cmd.apply(null, partes) || 'Hecho.'; }
+    catch(e){ return 'Ha fallado: ' + e.message; }
+  },
+
+  montar(){
+    if (!this.activo() || document.querySelector('.capaAdmin')) return;
+    const capa = document.createElement('div');
+    capa.className = 'capaAdmin';
+    capa.innerHTML =
+      '<div class="cajaAdmin" role="dialog" aria-label="Consola de administración">' +
+        '<h2>👑 CONSOLA DEL CREADOR</h2>' +
+        '<pre class="salidaAdmin"></pre>' +
+        '<div class="filaAdmin">' +
+          '<span class="promptAdmin">&gt;</span>' +
+          '<input class="entradaAdmin" autocomplete="off" spellcheck="false" ' +
+                 'aria-label="Comando" placeholder="ayuda">' +
+        '</div>' +
+        '<div class="pieAdmin">F9 abre y cierra · ↑ ↓ recorren el historial · Esc cierra</div>' +
+      '</div>';
+    document.body.appendChild(capa);
+
+    const salida = capa.querySelector('.salidaAdmin');
+    const entrada = capa.querySelector('.entradaAdmin');
+    const historial = [];
+    let cursor = 0;
+
+    const imprimir = txt => {
+      salida.textContent += (salida.textContent ? '\n' : '') + txt;
+      salida.scrollTop = salida.scrollHeight;
+    };
+    imprimir('Modo administrador activo. Escribe ayuda para ver los comandos.');
+
+    entrada.addEventListener('keydown', ev => {
+      ev.stopPropagation();
+      if (ev.key === 'Enter'){
+        const linea = entrada.value;
+        if (!linea.trim()) return;
+        historial.push(linea); cursor = historial.length;
+        imprimir('> ' + linea);
+        imprimir(this.ejecutar(linea));
+        entrada.value = '';
+      } else if (ev.key === 'ArrowUp'){
+        ev.preventDefault();
+        if (cursor > 0) entrada.value = historial[--cursor] || '';
+      } else if (ev.key === 'ArrowDown'){
+        ev.preventDefault();
+        cursor = Math.min(historial.length, cursor + 1);
+        entrada.value = historial[cursor] || '';
+      } else if (ev.key === 'Escape'){
+        this.cerrar();
+      }
+    });
+    capa.addEventListener('click', ev => { if (ev.target === capa) this.cerrar(); });
+    this._entrada = entrada;
+  },
+
+  abrir(){
+    if (!this.activo()) return;
+    this.montar();
+    const capa = document.querySelector('.capaAdmin');
+    if (!capa) return;
+    capa.classList.add('visible');
+    setTimeout(() => this._entrada && this._entrada.focus(), 30);
+  },
+  cerrar(){
+    const capa = document.querySelector('.capaAdmin');
+    if (capa) capa.classList.remove('visible');
+  },
+  alternar(){
+    const capa = document.querySelector('.capaAdmin');
+    capa && capa.classList.contains('visible') ? this.cerrar() : this.abrir();
+  }
+};
+
+addEventListener('keydown', ev => {
+  if (ev.key === 'F9'){ ev.preventDefault(); Arcade.admin.alternar(); }
+});
 
 /* ==========================================================
    Experiencia común a los 25 juegos
@@ -5125,9 +5378,10 @@ document.addEventListener('visibilitychange', () => {
     Arcade.experiencia.pausar('Saliste de la pestaña. Pulsa para seguir donde lo dejaste.');
 });
 
+const arrancarComun = () => { Arcade.experiencia.montar(); Arcade.admin.montar(); };
 if (document.readyState === 'loading')
-  document.addEventListener('DOMContentLoaded', () => Arcade.experiencia.montar());
-else Arcade.experiencia.montar();
+  document.addEventListener('DOMContentLoaded', arrancarComun);
+else arrancarComun();
 
 // ---------- Ayudas de dibujo ----------
 const suavizar = (a, b, t) => a + (b - a) * t;
@@ -7524,7 +7778,13 @@ function avisar(texto, bien){
 function canjear(){
   Sonido.activar();
   const r = Arcade.codigos.canjear(codigoTxt.value);
-  if (r.ok){
+  if (r.motivo === 'admin'){
+    avisar('👑 Modo administrador ' + (r.repetido ? 'ya estaba activo' : 'activado') +
+           '. Pulsa F9 para abrir la consola.', true);
+    Sonido.melodia([440, 660, 880, 1320], 0.09, 'square', 0.06);
+    codigoTxt.value = '';
+    Arcade.admin.abrir();
+  } else if (r.ok){
     avisar('✅ NEXO-' + r.numero + ' canjeado: +' + r.premio.toLocaleString('es-ES') +
            ' NEXO-COINS. Saldo: ' + r.saldo.toLocaleString('es-ES') + '.', true);
     Sonido.melodia([660, 880, 1180], 0.09, 'triangle', 0.06);
@@ -14269,8 +14529,8 @@ const MUNDOS = [
     inicio: 180000,
     // Ω5.000 por 4.500 NEXO-COINS
     nexo: { coste: 5000, premio: 4500 },
-    salida: null,                              // no hay mundo después
-    // El final del juego: sacar cien millones de aquí abajo cuesta horas
+    // Sacar cien millones del Núcleo es a la vez su hito y la llave del Vacío
+    salida: { ganado: 100000000, precio: 70000000 },
     meta: { ganado: 100000000, titulo: 'Extraer el Núcleo' },
     tono: {
       acento: '#ff6a00',
@@ -14289,6 +14549,46 @@ const MUNDOS = [
       mono:  { novato:'#5c2410', experto:'#7a1030' },
       maquina: ['#4a2a20', '#2c1712', '#170b08'],
       polvo: '#8a3a12'
+    }
+  },
+  {
+    id: 'vacio',
+    nombre: 'Vacío Cuántico',
+    lema: 'Debajo del Núcleo no hay roca: hay islas flotando y física prestada.',
+    moneda: { simbolo: 'Ψ', nombre: 'psiones' },
+    minerales: {
+      carbon: { nombre:'cuarzo temporal', color:'#7dd3fc', brillo:'#e0f7ff', base:40000 },
+      oro:    { nombre:'singularita',     color:'#f0abfc', brillo:'#ffffff', base:180000 }
+    },
+    vetas: { carbon: '⏳ NÓDULO DE CUARZO TEMPORAL', oro: '🕳 SEMILLA DE SINGULARITA' },
+    obreros: { novato:'Sonda autónoma', experto:'Arquitecto cuántico' },
+    // El escalón más caro del juego: cada nivel duplica largo con creces
+    costes: { novato:9000000, experto:52000000, taladro:31000000,
+              ascensor:42000000, camion:96000000 },
+    factor: { novato:1.9, experto:2.0, taladro:2.1, ascensor:2.05, camion:2.25 },
+    ritmo:  { novato:0.24, experto:0.15 },
+    inicio: 6000000,
+    // Ψ5.000 por 22.000 NEXO-COINS: aquí un puñado de moneda vale una fortuna
+    nexo: { coste: 5000, premio: 22000 },
+    salida: null,                              // no hay mundo después
+    meta: { ganado: 5000000000, titulo: 'Estabilizar el Vacío' },
+    tono: {
+      acento: '#e0f7ff',
+      cielo: ['#05010f', '#120633', '#25105c'],
+      techo: 'vacio',
+      bandas: [
+        { h:26, a:'#241a44', b:'#1a1233' }, { h:62, a:'#1c1740', b:'#140f2c' },
+        { h:74, a:'#241436', b:'#180c26' }, { h:68, a:'#141a3c', b:'#0d112a' },
+        { h:82, a:'#1d1030', b:'#120820' }, { h:999, a:'#0a0418', b:'#020008' }
+      ],
+      grano: ['#a9c6ff', '#000000'],
+      soporte: ['#0d1030', '#4a5cc8', '#2b3480', '#070820'],   // haces de luz sólida
+      suelo: ['#3b3170', '#170f33'],
+      lampara: ['rgba(190,235,255,', 'rgba(140,120,255,0)'],
+      casco: { novato:'#7dd3fc', experto:'#f0abfc' },
+      mono:  { novato:'#1e3a6b', experto:'#5b2a7a' },
+      maquina: ['#2b3a6e', '#182243', '#0b1026'],
+      polvo: '#8aa0e0'
     }
   }
 ];
@@ -14313,7 +14613,7 @@ const E = {
 };
 
 // Lo que se guarda en disco: las tres minas y cuáles están abiertas.
-const PARTIDA = { mundo: 0, abiertos: 1, completado: false, mundos: [null, null, null] };
+const PARTIDA = { mundo: 0, abiertos: 1, completado: false, mundos: [null, null, null, null] };
 
 /** Estado limpio para el mundo `i`, con su dinero de arranque y sus costes. */
 function estadoNuevo(i){
@@ -14420,7 +14720,7 @@ function cargar(){
     const g = JSON.parse(crudo);
     // Partidas de antes de los tres mundos: eran el estado del Valle a pelo.
     const viejo = !g.mundos && typeof g.dinero === 'number';
-    PARTIDA.mundos = viejo ? [g, null, null] : (g.mundos || [null, null, null]);
+    PARTIDA.mundos = viejo ? [g, null, null, null] : (g.mundos || [null, null, null, null]);
     PARTIDA.abiertos = Math.min(MUNDOS.length, Math.max(1, viejo ? 1 : (g.abiertos || 1)));
     PARTIDA.mundo = Math.min(PARTIDA.abiertos - 1, Math.max(0, viejo ? 0 : (g.mundo || 0)));
     PARTIDA.completado = !!g.completado;
@@ -14537,7 +14837,7 @@ function pintarSelector(){
     const est = i === mundoActual ? E : PARTIDA.mundos[i];
     const nom = document.createElement('div');
     nom.className = 'nom';
-    nom.textContent = (abierto ? ['⛏', '🔮', '🔥'][i] : '🔒') + ' ' + m.nombre;
+    nom.textContent = (abierto ? ['⛏', '🔮', '🔥', '🕳'][i] : '🔒') + ' ' + m.nombre;
     t.appendChild(nom);
 
     const pie = document.createElement('div');
@@ -15064,6 +15364,73 @@ function techoDeMagma(c){
   c.fillStyle = brillo; c.fillRect(0, SUP - 60, AN, 40);
 }
 
+// Vacío Cuántico: no hay techo, hay islas colgando de nada y una aurora.
+function techoDelVacio(c){
+  // aurora en bandas
+  for (let i = 0; i < 5; i++){
+    const y = 10 + i * 14;
+    const g = c.createLinearGradient(0, y - 12, 0, y + 14);
+    g.addColorStop(0, 'rgba(125,211,252,0)');
+    g.addColorStop(0.5, 'rgba(' + [125, 211, 252, 240, 171, 252][i % 3 ? 0 : 3] + ',' +
+                   [211, 171][i % 2] + ',252,' + (0.10 + i * 0.02).toFixed(2) + ')');
+    g.addColorStop(1, 'rgba(240,171,252,0)');
+    c.fillStyle = g;
+    c.beginPath();
+    c.moveTo(0, y);
+    for (let x = 0; x <= AN; x += 22)
+      c.lineTo(x, y + Math.sin(x / 47 + i * 1.7) * 9 + Math.sin(x / 19 + i) * 3);
+    c.lineTo(AN, y + 22);
+    for (let x = AN; x >= 0; x -= 22)
+      c.lineTo(x, y + 22 + Math.sin(x / 47 + i * 1.7) * 9);
+    c.closePath(); c.fill();
+  }
+
+  // polvo de estrellas
+  for (let i = 0; i < 110; i++){
+    const x = azar(0, AN), y = azar(0, SUP - 22);
+    c.globalAlpha = azar(0.2, 0.95);
+    c.fillStyle = i % 5 === 0 ? '#f0abfc' : '#e0f7ff';
+    c.beginPath(); c.arc(x, y, azar(0.4, 1.5), 0, 6.283); c.fill();
+  }
+  c.globalAlpha = 1;
+
+  // islas de roca flotando, con su sombra propia
+  for (let i = 0; i < 9; i++){
+    const x = azar(24, AN - 24), y = azar(34, SUP - 34);
+    const an = azar(26, 66), al = azar(10, 22);
+    c.fillStyle = '#1a1236';
+    c.beginPath();
+    c.moveTo(x - an / 2, y);
+    c.lineTo(x + an / 2, y);
+    c.lineTo(x + an * 0.22, y + al);
+    c.lineTo(x - an * 0.1, y + al * 1.6);
+    c.closePath(); c.fill();
+    c.fillStyle = '#3b3170';
+    c.beginPath(); c.ellipse(x, y, an / 2, 4.5, 0, 0, 6.283); c.fill();
+    c.fillStyle = 'rgba(224,247,255,.35)';
+    c.beginPath(); c.ellipse(x - an * 0.14, y - 1, an * 0.2, 2, 0, 0, 6.283); c.fill();
+    // brillo por debajo, como si la isla se sostuviera sola
+    const g = c.createRadialGradient(x, y + al, 1, x, y + al, an);
+    g.addColorStop(0, 'rgba(140,120,255,.30)');
+    g.addColorStop(1, 'rgba(140,120,255,0)');
+    c.fillStyle = g;
+    c.beginPath(); c.arc(x, y + al, an, 0, 6.283); c.fill();
+  }
+
+  // grieta de singularidad al fondo
+  const cx = AN * 0.68, cy = SUP - 46;
+  const gs = c.createRadialGradient(cx, cy, 2, cx, cy, 54);
+  gs.addColorStop(0, 'rgba(255,255,255,.55)');
+  gs.addColorStop(0.35, 'rgba(240,171,252,.32)');
+  gs.addColorStop(1, 'rgba(125,211,252,0)');
+  c.fillStyle = gs;
+  c.beginPath(); c.arc(cx, cy, 54, 0, 6.283); c.fill();
+  c.fillStyle = '#05010f';
+  c.beginPath(); c.ellipse(cx, cy, 8, 20, 0.4, 0, 6.283); c.fill();
+  c.strokeStyle = 'rgba(255,255,255,.75)'; c.lineWidth = 1.4;
+  c.beginPath(); c.ellipse(cx, cy, 8, 20, 0.4, 0, 6.283); c.stroke();
+}
+
 function pintarRoca(c){
   // Se limpia respetando la transformación de nitidez que trae el lienzo: si se
   // reinicia, todo se pinta a 1:1 sobre un búfer más grande y sale descuadrado.
@@ -15078,7 +15445,8 @@ function pintarRoca(c){
 
   if (TONO.techo === 'estrellas') techoEstrellado(c);
   else if (TONO.techo === 'estalactitas') techoDeCaverna(c);
-  else techoDeMagma(c);
+  else if (TONO.techo === 'magma') techoDeMagma(c);
+  else techoDelVacio(c);
 
   // ---- estratos de roca ----
   const BANDAS = TONO.bandas;
@@ -15944,7 +16312,7 @@ function refrescar(){
   // El rótulo cuenta los mundos que hay de verdad: decir "los tres" con dos
   // abiertos es mentira, y encima invita a buscar un tercero que no está.
   $('mundosEtiq').textContent = 'Vaciar ' +
-    ['', 'todos los', 'los dos', 'los tres'][PARTIDA.abiertos] + ' mundos';
+    ['', 'todos los', 'los dos', 'los tres', 'los cuatro'][PARTIDA.abiertos] + ' mundos';
   $('btnCanjearMundos').disabled = total <= 0 || PARTIDA.abiertos < 2;
 
   pintarSelector();
@@ -26411,6 +26779,10 @@ let particulas = new Particulas(220), sacudida = 0;
 let ultimoToque = null;
 
 const aroX = lado => lado < 0 ? 92 : ANCHO - 92;
+// El tablero va pegado al aro, no a 15 px de distancia: antes se veía como un
+// palo suelto flotando al lado de la canasta.
+const ARO_AN = 62;
+const tableroX = lado => aroX(lado) + lado * -1 * (ARO_AN / 2 + 4);
 
 // ---------- Ronda ----------
 function nuevoPunto(quienSaca){
@@ -26568,7 +26940,7 @@ function moverBalon(dt){
   // aros: dos postes que rebotan, y el hueco entre ellos es canasta
   for (const lado of [-1, 1]){
     const ax = aroX(lado), ay = R.aro;
-    const anilloAn = 62;
+    const anilloAn = ARO_AN;
     for (const px of [ax - anilloAn / 2, ax + anilloAn / 2]){
       const dx = balon.x - px, dy = balon.y - ay;
       const d = Math.hypot(dx, dy);
@@ -26588,7 +26960,7 @@ function moverBalon(dt){
       anotar(lado > 0 ? 'tu' : 'cpu');
     }
     // tablero
-    const tx = lado < 0 ? ax - 46 : ax + 46;
+    const tx = tableroX(lado);
     if (Math.abs(balon.x - tx) < R.rBalon + 5 && balon.y > ay - 92 && balon.y < ay + 14){
       balon.x = tx + Math.sign(balon.x - tx) * (R.rBalon + 5);
       balon.vx = -balon.vx * 0.7;
@@ -26669,33 +27041,37 @@ function dibujar(){
 
 function dibujarCanasta(lado){
   const ax = aroX(lado), ay = R.aro;
-  const tx = lado < 0 ? ax - 46 : ax + 46;
-  // poste
-  ctx.fillStyle = '#334155';
-  ctx.fillRect(tx - (lado < 0 ? 10 : 0), ay - 92, 10, SUELO - ay + 92);
-  // tablero
-  ctx.fillStyle = 'rgba(230,240,255,.9)';
-  ctx.beginPath(); ctx.roundRect(tx - 5, ay - 92, 10, 106, 3); ctx.fill();
-  ctx.fillStyle = 'rgba(255,255,255,.14)';
-  ctx.beginPath(); ctx.roundRect(tx + (lado < 0 ? 5 : -13), ay - 74, 8, 62, 3); ctx.fill();
-  ctx.strokeStyle = lado < 0 ? '#fb923c' : '#38bdf8'; ctx.lineWidth = 2;
-  ctx.beginPath(); ctx.roundRect(tx - 5, ay - 92, 10, 106, 3); ctx.stroke();
+  const tx = tableroX(lado);
+  const col = lado < 0 ? '#fb923c' : '#38bdf8';
+  // poste hasta el suelo, por detrás del tablero
+  ctx.fillStyle = '#2b3648';
+  ctx.fillRect(tx + lado * -1 * 4 - 4, ay - 60, 9, SUELO - ay + 60);
+  ctx.fillStyle = 'rgba(255,255,255,.08)';
+  ctx.fillRect(tx + lado * -1 * 4 - 4, ay - 60, 3, SUELO - ay + 60);
+  // tablero, pegado al aro
+  ctx.fillStyle = 'rgba(226,238,255,.92)';
+  ctx.beginPath(); ctx.roundRect(tx - 5, ay - 88, 10, 104, 3); ctx.fill();
+  // recuadro interior, el que se usa para las bandejas
+  ctx.strokeStyle = col; ctx.lineWidth = 2.5;
+  ctx.beginPath(); ctx.roundRect(tx - 3, ay - 52, 6, 44, 2); ctx.stroke();
+  ctx.strokeStyle = col; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.roundRect(tx - 5, ay - 88, 10, 104, 3); ctx.stroke();
 
   // aro
-  ctx.strokeStyle = lado < 0 ? '#fb923c' : '#38bdf8';
+  ctx.strokeStyle = col;
   ctx.lineWidth = 6; ctx.lineCap = 'round';
-  ctx.beginPath(); ctx.moveTo(ax - 31, ay); ctx.lineTo(ax + 31, ay); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(ax - ARO_AN / 2, ay); ctx.lineTo(ax + ARO_AN / 2, ay); ctx.stroke();
   // red
   ctx.strokeStyle = 'rgba(255,255,255,.45)'; ctx.lineWidth = 1.4;
   for (let i = 0; i <= 6; i++){
     const t = i / 6;
-    const x0 = ax - 31 + 62 * t;
-    const x1 = ax - 16 + 32 * t;
+    const x0 = ax - ARO_AN / 2 + ARO_AN * t;
+    const x1 = ax - ARO_AN / 4 + (ARO_AN / 2) * t;
     ctx.beginPath(); ctx.moveTo(x0, ay); ctx.lineTo(x1, ay + 34); ctx.stroke();
   }
   for (let k = 1; k <= 2; k++){
     const y = ay + k * 12;
-    const w = 31 - k * 7.5;
+    const w = ARO_AN / 2 - k * 7.5;
     ctx.beginPath(); ctx.moveTo(ax - w, y); ctx.lineTo(ax + w, y); ctx.stroke();
   }
 }

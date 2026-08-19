@@ -2152,7 +2152,13 @@ function avisar(texto, bien){
 function canjear(){
   Sonido.activar();
   const r = Arcade.codigos.canjear(codigoTxt.value);
-  if (r.ok){
+  if (r.motivo === 'admin'){
+    avisar('👑 Modo administrador ' + (r.repetido ? 'ya estaba activo' : 'activado') +
+           '. Pulsa F9 para abrir la consola.', true);
+    Sonido.melodia([440, 660, 880, 1320], 0.09, 'square', 0.06);
+    codigoTxt.value = '';
+    Arcade.admin.abrir();
+  } else if (r.ok){
     avisar('✅ NEXO-' + r.numero + ' canjeado: +' + r.premio.toLocaleString('es-ES') +
            ' NEXO-COINS. Saldo: ' + r.saldo.toLocaleString('es-ES') + '.', true);
     Sonido.melodia([660, 880, 1180], 0.09, 'triangle', 0.06);
