@@ -927,6 +927,38 @@ nuevaPartida();
 estado = 'menu';
 refrescarHud();
 Arcade.bucle(dt => { actualizar(dt); dibujar(); });
+
+// ---------- Trucos de administración ----------
+// Solo hacen algo con el modo creador encendido (código 2808, tecla F9).
+if (typeof Arcade !== "undefined" && Arcade.admin) Arcade.admin.registrar('pool', '8 Ball Pool', {
+  manolibre: { que:'manolibre — te deja colocar la blanca donde quieras', fn(){
+    if (estado === 'rodando') return 'Espera a que se paren las bolas.';
+    estado = 'manoLibre'; turno = 'tu'; refrescarHud();
+    return 'Coloca la blanca con el ratón.';
+  }},
+  turno: { que:'turno — te devuelve el turno', fn(){
+    if (estado === 'rodando') return 'Espera a que se paren las bolas.';
+    turno = 'tu';
+    if (estado === 'iaPensando') estado = 'apuntando';
+    refrescarHud();
+    return 'Te toca a ti.';
+  }},
+  grupo: { que:'grupo <lisas|rayadas> — te asigna ese grupo', fn(g){
+    const q = String(g || '').toLowerCase();
+    if (q !== 'lisas' && q !== 'rayadas') return 'Uso: juego grupo lisas | rayadas';
+    grupos.tu = q; grupos.ia = q === 'lisas' ? 'rayadas' : 'lisas';
+    refrescarHud();
+    return 'Llevas las ' + q + '.';
+  }},
+  limpiar: { que:'limpiar — mete todas tus bolas menos la 8', fn(){
+    if (!grupos.tu) return 'Primero mete una bola para elegir grupo (o usa "juego grupo").';
+    let n = 0;
+    misBolas('tu').forEach(b => { b.viva = false; b.vx = 0; b.vy = 0; n++; });
+    refrescarHud();
+    return n ? 'Metidas ' + n + ' bolas. Ya solo te queda la 8.' : 'Ya no te quedaba ninguna.';
+  }}
+});
+
 </script>
 </body>
 </html>

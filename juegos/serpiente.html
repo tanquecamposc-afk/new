@@ -455,6 +455,33 @@ if (recuperable){
   document.getElementById('btnJugar').classList.remove('primario');
 }
 Arcade.bucle(dt => { actualizar(dt); dibujar(); });
+
+// ---------- Trucos de administración ----------
+// Solo hacen algo con el modo creador encendido (código 2808, tecla F9).
+if (typeof Arcade !== "undefined" && Arcade.admin) Arcade.admin.registrar('serpiente', 'Serpiente', {
+  puntos: { que:'puntos <n> — fija el marcador', fn(n){
+    puntos = Math.max(0, Math.floor(+n) || 0); refrescarHud();
+    return 'Marcador en ' + puntos + '.';
+  }},
+  crecer: { que:'crecer <n> — alarga la serpiente n casillas', fn(n){
+    const k = Math.max(1, Math.floor(+n) || 1);
+    for (let i = 0; i < k; i++) cuerpo.push({ ...cuerpo[cuerpo.length - 1] });
+    return 'Largo: ' + cuerpo.length + ' casillas.';
+  }},
+  fantasma: { que:'fantasma <s> — atraviesas todo (999 s por defecto)', fn(s){
+    fantasmaT = +s > 0 ? +s : 999;
+    return 'Modo fantasma durante ' + Math.round(fantasmaT) + ' s.';
+  }},
+  velocidad: { que:'velocidad <ms> — milisegundos por casilla', fn(ms){
+    intervalo = Math.min(1, Math.max(0.02, (+ms || 145) / 1000));
+    return 'Un paso cada ' + Math.round(intervalo * 1000) + ' ms.';
+  }},
+  rocas: { que:'rocas — barre las rocas del campo', fn(){
+    const n = rocas.length; rocas = [];
+    return n ? 'Fuera ' + n + ' rocas.' : 'No había ninguna roca.';
+  }}
+});
+
 </script>
 </body>
 </html>

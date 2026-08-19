@@ -575,13 +575,35 @@ Arcade.admin = {
     document.querySelectorAll('.capaAdmin').forEach(c => c.remove());
   },
 
+  /**
+   * Registro de trucos por juego. Cada juego se apunta desde su propio script,
+   * que es el único sitio donde su estado está a mano: en el arcade empaquetado
+   * las variables de cada juego viven dentro de su función y no se ven desde
+   * aquí. La consola solo necesita saber qué pantalla está activa.
+   */
+  juegos: {},
+  registrar(id, nombre, trucos){
+    this.juegos[id] = { id, nombre, trucos };
+  },
+  /** El juego de la pantalla que se está viendo, o null si estás en la portada. */
+  juegoActivo(){
+    const raiz = Arcade.experiencia.activa();
+    if (raiz && raiz.id && raiz.id.indexOf('pantalla-') === 0)
+      return this.juegos[raiz.id.slice(9)] || null;
+    // Página suelta: solo hay un juego cargado, así que es ese.
+    const ids = Object.keys(this.juegos);
+    return ids.length === 1 ? this.juegos[ids[0]] : null;
+  },
+
   /** Comandos disponibles. Cada uno devuelve el texto que se imprime. */
   COMANDOS: {
     ayuda(){
       return Object.keys(Arcade.admin.COMANDOS).sort().map(n => '  ' + n).join('\n') +
              '\n\nEscribe un comando con sus argumentos. Ejemplos:\n' +
              '  monedas 1000000000\n  dar 50000\n  mina abrir\n  record serpiente 99999\n' +
-             '  codigos reset\n  ir plinko';
+             '  codigos reset\n  ir plinko\n\n' +
+             'Dentro de un juego, "juego" lista sus trucos propios y "juego <truco>"\n' +
+             'lo ejecuta. "trucos" enseña qué juegos tienen y cuáles.';
     },
     monedas(n){
       const v = Math.max(0, Math.floor(+n));
@@ -672,6 +694,34 @@ Arcade.admin = {
       Arcade.admin.avisarCambio();
       return 'Modo dios: cartera a tope, códigos libres y los mundos de la mina abiertos.';
     },
+    /** Trucos del juego que tengas delante. Sin argumentos, los lista. */
+    juego(truco, ...args){
+      const j = Arcade.admin.juegoActivo();
+      if (!j){
+        const n = Object.keys(Arcade.admin.juegos).length;
+        return 'Esto se usa dentro de un juego. Entra en uno y vuelve a probar.' +
+               (n ? '\nJuegos con trucos registrados: ' + n + '.' : '');
+      }
+      const nombres = Object.keys(j.trucos);
+      if (!truco){
+        return j.nombre + ' — trucos disponibles:\n' +
+               nombres.map(n => '  juego ' + n + '   ' + (j.trucos[n].que || '')).join('\n');
+      }
+      const t = j.trucos[truco.toLowerCase()];
+      if (!t) return 'En ' + j.nombre + ' no existe "' + truco + '". Hay: ' + nombres.join(', ');
+      try { return t.fn.apply(null, args) || 'Hecho.'; }
+      catch(e){ return 'Ha fallado: ' + e.message; }
+    },
+
+    /** Atajo: lista los juegos que tienen trucos registrados. */
+    trucos(){
+      const j = Arcade.admin.juegos;
+      const ids = Object.keys(j).sort();
+      if (!ids.length) return 'Ningún juego ha registrado trucos todavía.';
+      return ids.map(id => '  ' + id.padEnd(12) + j[id].nombre + '  (' +
+                           Object.keys(j[id].trucos).join(', ') + ')').join('\n');
+    },
+
     salir(){
       Arcade.admin.desactivar();
       return 'Modo administrador apagado. Vuelve a canjear 2808 para encenderlo.';

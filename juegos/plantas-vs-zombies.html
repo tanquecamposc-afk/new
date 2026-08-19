@@ -808,6 +808,34 @@ document.getElementById('btnOtra').onclick = () => {
 nuevaPartida();
 estado = 'menu';
 Arcade.bucle(dt => { actualizar(dt); dibujar(); });
+
+// ---------- Trucos de administración ----------
+// Solo hacen algo con el modo creador encendido (código 2808, tecla F9).
+if (typeof Arcade !== "undefined" && Arcade.admin) Arcade.admin.registrar('pvz', 'Plantas vs Zombis', {
+  soles: { que:'soles <n> — fija los soles', fn(n){
+    soles_n = Math.max(0, Math.floor(+n) || 0); refrescarHud();
+    return 'Tienes ' + soles_n + ' soles.';
+  }},
+  recargas: { que:'recargas — deja todas las plantas listas para plantar', fn(){
+    CLAVES.forEach(c => { recargas[c] = 0; }); refrescarHud();
+    return 'Las ocho plantas están listas.';
+  }},
+  barrer: { que:'barrer — fulmina a los zombis que hay en el jardín', fn(){
+    const n = zombis.length; zombis = [];
+    bajas += n; refrescarHud();
+    return n ? 'Fulminados ' + n + ' zombis.' : 'No había ninguno.';
+  }},
+  oleada: { que:'oleada <n> — salta a la oleada n', fn(n){
+    oleada = Math.max(0, Math.min(OLEADAS_TOTALES, Math.floor(+n) || 0));
+    porSalir = []; zombis = []; cronoOleada = 8; refrescarHud();
+    return 'Oleada ' + oleada + ' de ' + OLEADAS_TOTALES + '.';
+  }},
+  cortacespedes: { que:'cortacespedes — repone los cinco cortacéspedes', fn(){
+    cortacespedes.forEach(c => { c.usado = false; c.activo = false; c.x = 40; });
+    return 'Las cinco filas vuelven a tener su cortacésped.';
+  }}
+});
+
 </script>
 </body>
 </html>

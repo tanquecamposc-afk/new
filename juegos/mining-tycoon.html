@@ -2172,6 +2172,36 @@ addEventListener('beforeunload', guardarPartida);
 Guardado.registrar(guardarPartida);   // también al cambiar de pantalla o irse a otra pestaña
 
 Arcade.bucle(dt => { actualizar(dt); dibujar(); });
+
+// ---------- Trucos de administración ----------
+// Solo hacen algo con el modo creador encendido (código 2808, tecla F9).
+if (typeof Arcade !== "undefined" && Arcade.admin) Arcade.admin.registrar('mina', 'Mining Tycoon', {
+  dinero: { que:'dinero <n> — fija el dinero de este mundo', fn(n){
+    E.dinero = Math.max(0, +n || 0); refrescar(); guardarPartida();
+    return 'Caja: ' + Math.floor(E.dinero).toLocaleString('es-ES') + ' ' + MUNDO.moneda.simbolo + '.';
+  }},
+  mejoras: { que:'mejoras <n> — pone taladro, ascensor y camión al nivel n', fn(n){
+    const k = Math.max(1, Math.floor(+n) || 1);
+    E.taladro = k; E.ascensor = k; E.camion = k;
+    refrescar(); guardarPartida();
+    return 'Taladro, ascensor y camión al nivel ' + k + '.';
+  }},
+  mineros: { que:'mineros <novatos> <expertos> — fija la plantilla', fn(a, b){
+    E.novatos = Math.max(0, Math.min(40, Math.floor(+a) || 0));
+    E.expertos = Math.max(0, Math.min(40, Math.floor(+b) || 0));
+    mineros = [];
+    for (let i = 0; i < E.novatos; i++) mineros.push(crearMinero('novato'));
+    for (let i = 0; i < E.expertos; i++) mineros.push(crearMinero('experto'));
+    refrescar(); guardarPartida();
+    return E.novatos + ' novatos y ' + E.expertos + ' expertos picando.';
+  }},
+  vaciar: { que:'vaciar — vacía pozo y silo sin tener que subirlos', fn(){
+    E.pozo = { carbon:0, oro:0 }; E.silo = { carbon:0, oro:0 };
+    refrescar(); guardarPartida();
+    return 'Pozo y silo a cero.';
+  }}
+});
+
 </script>
 </body>
 </html>

@@ -615,6 +615,32 @@ C.dificultad = $('dificultad').value;
 sembrarCoches();
 refrescar();
 Arcade.bucle(dt => dibujar(dt));
+
+// ---------- Trucos de administración ----------
+// Solo hacen algo con el modo creador encendido (código 2808, tecla F9).
+if (typeof Arcade !== "undefined" && Arcade.admin) Arcade.admin.registrar('chicken', 'Chicken', {
+  inmortal: { que:'inmortal — la gallina deja de morir', fn(){
+    Object.keys(DIFICULTADES).forEach(k => { DIFICULTADES[k].muertes = 0; });
+    refrescar();
+    return 'Ningún coche la va a pillar. "juego normal" lo deshace.';
+  }},
+  normal: { que:'normal — devuelve el riesgo de cada dificultad', fn(){
+    const originales = { facil:1, media:3, dificil:5, locura:10 };
+    Object.keys(originales).forEach(k => { DIFICULTADES[k].muertes = originales[k]; });
+    refrescar();
+    return 'Riesgo restablecido.';
+  }},
+  saltar: { que:'saltar <n> — avanza n carriles de golpe', fn(n){
+    if (C.fase !== 'andando') return 'Empieza una ronda primero.';
+    const k = Math.max(1, Math.floor(+n) || 1);
+    C.paso = Math.min(CARRILES, C.paso + k);
+    C.xObjetivo = C.paso * ANCHO_CARRIL;
+    C.mejorPaso = Math.max(C.mejorPaso, C.paso);
+    refrescar();
+    return 'Vas por el carril ' + C.paso + ' de ' + CARRILES + '.';
+  }}
+});
+
 </script>
 </body>
 </html>

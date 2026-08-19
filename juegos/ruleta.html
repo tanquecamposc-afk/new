@@ -563,6 +563,43 @@ pintarTapete();
 pintarHistorial();
 refrescar();
 Arcade.bucle(dt => dibujar(dt));
+
+// ---------- Trucos de administración ----------
+// Solo hacen algo con el modo creador encendido (código 2808, tecla F9).
+// El número lo elige girar(); envolviéndola se puede amañar sin tocar el juego.
+const girarDeVerdad = girar;
+if (typeof Arcade !== "undefined" && Arcade.admin) Arcade.admin.registrar('ruleta', 'Ruleta', {
+  forzar: { que:'forzar <n> — la bola caerá siempre en ese número (0-36)', fn(n){
+    const num = Math.floor(+n);
+    const idx = RUEDA.indexOf(num);
+    if (idx < 0) return 'La ruleta europea va del 0 al 36.';
+    girar = function(){
+      girarDeVerdad();
+      if (!R.girando) return;
+      R.destino = idx;
+      R.anguloFinal = -idx * (Math.PI * 2 / 37);
+      R.finRueda = null; R.finBola = null;
+    };
+    return 'Saldrá el ' + num + ' (' +
+           (num === 0 ? 'verde' : ROJOS.has(num) ? 'rojo' : 'negro') +
+           '). "juego azar" lo deshace.';
+  }},
+  azar: { que:'azar — devuelve la ruleta al sorteo normal', fn(){
+    girar = girarDeVerdad;
+    return 'Sorteo normal restablecido.';
+  }},
+  ver: { que:'ver — dice dónde va a caer la bola del giro en curso', fn(){
+    if (!R.girando) return 'No hay ningún giro en el aire.';
+    const num = RUEDA[R.destino];
+    return 'Va a caer en el ' + num + '.';
+  }},
+  historia: { que:'historia — borra el historial y las estadísticas', fn(){
+    R.historia = []; R.giros = 0; R.aciertos = 0;
+    pintarHistorial(); refrescar();
+    return 'Historial limpio.';
+  }}
+});
+
 </script>
 </body>
 </html>

@@ -376,6 +376,33 @@ addEventListener('keydown', e => {
 Arcade.conectarSonido($('btnSonido'));
 
 refrescar();
+
+// ---------- Trucos de administración ----------
+// Solo hacen algo con el modo creador encendido (código 2808, tecla F9).
+if (typeof Arcade !== "undefined" && Arcade.admin) Arcade.admin.registrar('minas', 'Minas', {
+  ver: { que:'ver — enseña dónde están las bombas', fn(){
+    if (estado !== 'jugando') return 'Empieza una ronda primero.';
+    const lista = [...bombas].sort((a, b) => a - b).map(i =>
+      'fila ' + (Math.floor(i / 5) + 1) + ' col ' + (i % 5 + 1));
+    return 'Bombas en: ' + lista.join(' · ');
+  }},
+  limpiar: { que:'limpiar — quita las bombas del tablero', fn(){
+    if (estado !== 'jugando') return 'Empieza una ronda primero.';
+    const n = bombas.size; bombas = new Set();
+    return 'Desactivadas ' + n + ' bombas. Descubre tranquila.';
+  }},
+  mover: { que:'mover <casilla> — pone una bomba en otro sitio (1-25)', fn(c){
+    if (estado !== 'jugando') return 'Empieza una ronda primero.';
+    const i = Math.floor(+c) - 1;
+    if (!(i >= 0 && i < CASILLAS)) return 'Uso: juego mover <1-25>';
+    if (abiertas.has(i)) return 'Esa casilla ya está abierta.';
+    const salir = [...bombas].find(b => !abiertas.has(b));
+    if (salir === undefined) return 'No queda ninguna bomba que mover.';
+    bombas.delete(salir); bombas.add(i);
+    return 'Bomba movida a la casilla ' + (i + 1) + '.';
+  }}
+});
+
 </script>
 </body>
 </html>

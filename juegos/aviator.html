@@ -610,6 +610,28 @@ for (let i = 0; i < 10; i++) historia.push(sortearCaida());
 nuevaRonda();
 pintarHistorial();
 Arcade.bucle(dt => { actualizar(dt); dibujar(); });
+
+// ---------- Trucos de administración ----------
+// Solo hacen algo con el modo creador encendido (código 2808, tecla F9).
+if (typeof Arcade !== "undefined" && Arcade.admin) Arcade.admin.registrar('aviator', 'Aviator', {
+  ver: { que:'ver — chiva a qué multiplicador se estrella esta ronda', fn(){
+    return fase === 'caida'
+      ? 'Ya se ha estrellado en ' + puntoCaida.toFixed(2) + 'x.'
+      : 'Se estrellará en ' + puntoCaida.toFixed(2) + 'x.';
+  }},
+  caida: { que:'caida <x> — decide dónde se estrella esta ronda', fn(x){
+    const v = Math.min(500, Math.max(1, +x || 1));
+    if (fase === 'vuelo' && v < mult) return 'Ya vas por ' + mult.toFixed(2) + 'x: elige algo mayor.';
+    puntoCaida = v; refrescar();
+    return 'Esta ronda se estrella en ' + v.toFixed(2) + 'x.';
+  }},
+  cobrar: { que:'cobrar — cobra la apuesta viva al vuelo', fn(){
+    if (!apuesta.viva) return 'No tienes ninguna apuesta en el aire.';
+    cobrar(false);
+    return 'Cobrado.';
+  }}
+});
+
 </script>
 </body>
 </html>

@@ -565,6 +565,35 @@ Arcade.bucle(dt => {
   espera += dt;
   if (espera > 0.25){ espera = 0; refrescar(); }
 });
+
+// ---------- Trucos de administración ----------
+// Solo hacen algo con el modo creador encendido (código 2808, tecla F9).
+// Se guarda el ancho original para poder devolver la pista a su sitio.
+const anchoDeVerdad = anchoPista;
+if (typeof Arcade !== "undefined" && Arcade.admin) Arcade.admin.registrar('slope', 'Slope', {
+  centrar: { que:'centrar — devuelve la bola al centro de la pista', fn(){
+    B.x = centroPista(B.d); B.vx = 0;
+    return 'Bola centrada.';
+  }},
+  velocidad: { que:'velocidad <n> — fija el tope de velocidad (420-1250)', fn(n){
+    B.velMax = Math.max(120, Math.min(3000, +n || VEL_BASE));
+    B.vel = Math.min(B.vel, B.velMax);
+    return 'Tope de velocidad en ' + Math.round(B.velMax) + '.';
+  }},
+  despejar: { que:'despejar — quita los bloques que vienen', fn(){
+    const n = obstaculos.length; obstaculos = [];
+    return n ? 'Fuera ' + n + ' bloques.' : 'La pista ya estaba limpia.';
+  }},
+  ancha: { que:'ancha — ensancha la pista (usa "normal" para deshacerlo)', fn(){
+    anchoPista = () => 520;
+    return 'Pista ancha: cuesta mucho caerse.';
+  }},
+  normal: { que:'normal — devuelve la pista a su ancho de siempre', fn(){
+    anchoPista = anchoDeVerdad;
+    return 'Pista normal.';
+  }}
+});
+
 </script>
 </body>
 </html>

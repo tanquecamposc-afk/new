@@ -608,6 +608,29 @@ pintarCanas();
 pintarHistorial();
 refrescar();
 Arcade.bucle(dt => dibujar(dt));
+
+// ---------- Trucos de administración ----------
+// Solo hacen algo con el modo creador encendido (código 2808, tecla F9).
+if (typeof Arcade !== "undefined" && Arcade.admin) Arcade.admin.registrar('bigbass', 'Big Bass Crash', {
+  ver: { que:'ver — chiva a qué multiplicador se rompe el sedal', fn(){
+    return G.fase === 'roto'
+      ? 'Ya se rompió en ' + G.rotura.toFixed(2) + 'x.'
+      : 'El sedal se rompe en ' + G.rotura.toFixed(2) + 'x.';
+  }},
+  rotura: { que:'rotura <x> — decide dónde se rompe esta ronda', fn(x){
+    const v = Math.max(1, +x || 1);
+    if (G.fase === 'pescando' && v < G.mult)
+      return 'Ya vas por ' + G.mult.toFixed(2) + 'x: elige algo mayor.';
+    G.rotura = v; refrescar();
+    return 'Esta ronda aguanta hasta ' + v.toFixed(2) + 'x.';
+  }},
+  recoger: { que:'recoger — recoge las tres cañas ahora mismo', fn(){
+    let n = 0;
+    G.canas.forEach((c, i) => { if (c.viva){ recoger(i, false); n++; } });
+    return n ? 'Recogidas ' + n + ' cañas.' : 'No tienes ninguna caña en el agua.';
+  }}
+});
+
 </script>
 </body>
 </html>

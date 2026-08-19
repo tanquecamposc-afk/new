@@ -467,6 +467,32 @@ Arcade.conectarSonido($('btnSonido'));
 cargarPartida();
 refrescarHud();
 $('pendientesTxt').textContent = pendientes().length || S.cartas.length;
+
+// ---------- Trucos de administración ----------
+// Solo hacen algo con el modo creador encendido (código 2808, tecla F9).
+if (typeof Arcade !== "undefined" && Arcade.admin) Arcade.admin.registrar('sparta', 'SpartaHoppers', {
+  racha: { que:'racha <n> — fija la racha de aciertos', fn(n){
+    S.racha = Math.max(0, Math.floor(+n) || 0);
+    S.mejorRacha = Math.max(S.mejorRacha, S.racha);
+    refrescarHud(); guardarPartida();
+    return 'Racha de ' + S.racha + ' (x' + multiplicador().toFixed(1) + ').';
+  }},
+  vencer: { que:'vencer — pone todas las cartas listas para repasar', fn(){
+    const ahora = Date.now();
+    S.cartas.forEach(c => { c.vence = ahora - 1000; });
+    guardarPartida();
+    document.getElementById('pendientesTxt').textContent = pendientes().length;
+    return S.cartas.length + ' cartas pendientes.';
+  }},
+  aplazar: { que:'aplazar — manda todas las cartas a dentro de un mes', fn(){
+    const luego = Date.now() + 30 * DIA;
+    S.cartas.forEach(c => { c.vence = luego; });
+    guardarPartida();
+    document.getElementById('pendientesTxt').textContent = pendientes().length;
+    return 'Nada que repasar hasta dentro de 30 días.';
+  }}
+});
+
 </script>
 </body>
 </html>

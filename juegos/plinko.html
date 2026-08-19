@@ -507,6 +507,40 @@ cargarPartida();
 reconfigurar();
 pintarHistorial();
 Arcade.bucle(dt => dibujar(dt));
+
+// ---------- Trucos de administración ----------
+// Solo hacen algo con el modo creador encendido (código 2808, tecla F9).
+// El sorteo del destino vive dentro de soltar(), así que para amañarlo se
+// envuelve la función y se guarda la original para poder devolverla.
+const soltarDeVerdad = soltar;
+if (typeof Arcade !== "undefined" && Arcade.admin) Arcade.admin.registrar('plinko', 'Plinko', {
+  forzar: { que:'forzar <casilla> — todas las bolas caen ahí (0 = izquierda del todo)', fn(c){
+    const i = Math.max(0, Math.min(P.filas, Math.floor(+c) || 0));
+    soltar = function(){
+      const ok = soltarDeVerdad();
+      if (ok){
+        const b = P.bolas[P.bolas.length - 1];
+        b.destino = i; b.derechas = i; b.izquierdas = P.filas - i;
+      }
+      return ok;
+    };
+    return 'Las bolas caerán en la casilla ' + i + ' (paga ' +
+           (P.pagos[i] || 0).toFixed(2) + 'x). "juego azar" lo deshace.';
+  }},
+  premio: { que:'premio — fuerza la casilla que más paga', fn(){
+    let mejor = 0;
+    P.pagos.forEach((v, i) => { if (v > P.pagos[mejor]) mejor = i; });
+    return Arcade.admin.juegos.plinko.trucos.forzar.fn(mejor);
+  }},
+  azar: { que:'azar — devuelve las bolas al sorteo normal', fn(){
+    soltar = soltarDeVerdad;
+    return 'Sorteo normal restablecido.';
+  }},
+  pagos: { que:'pagos — lista lo que paga cada casilla', fn(){
+    return P.pagos.map((v, i) => i + ':' + v.toFixed(2) + 'x').join('  ');
+  }}
+});
+
 </script>
 </body>
 </html>

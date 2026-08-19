@@ -592,6 +592,32 @@ Arcade.conectarSonido($('btnSonido'));
 cargar(0);
 refrescar();
 Arcade.bucle(dt => { actualizar(dt); dibujar(); });
+
+// ---------- Trucos de administración ----------
+// Solo hacen algo con el modo creador encendido (código 2808, tecla F9).
+if (typeof Arcade !== "undefined" && Arcade.admin) Arcade.admin.registrar('cuerda', 'Cut the Rope', {
+  nivel: { que:'nivel <n> — salta al nivel n', fn(n){
+    const k = Math.max(1, Math.min(NIVELES.length, Math.floor(+n) || 1));
+    empezar(k - 1, false);
+    return 'Nivel ' + k + ' de ' + NIVELES.length + '.';
+  }},
+  estrellas: { que:'estrellas — recoge las tres estrellas del nivel', fn(){
+    let n = 0;
+    estrellas.forEach(e => { if (!e.cogida){ e.cogida = true; n++; C.estrellas++; } });
+    refrescar();
+    return n ? 'Recogidas ' + n + ' estrellas.' : 'Ya las tenías todas.';
+  }},
+  cortar: { que:'cortar — corta todas las cuerdas de golpe', fn(){
+    let n = 0;
+    cuerdas.forEach(c => { if (!c.cortada){ c.cortada = true; n++; } });
+    return n ? 'Cortadas ' + n + ' cuerdas.' : 'Ya no quedaba ninguna.';
+  }},
+  pinchos: { que:'pinchos — quita los pinchos del nivel', fn(){
+    const n = pinchos.length; pinchos = [];
+    return n ? 'Fuera ' + n + ' pinchos.' : 'Este nivel no tenía pinchos.';
+  }}
+});
+
 </script>
 </body>
 </html>

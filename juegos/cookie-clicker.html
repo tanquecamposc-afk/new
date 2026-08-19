@@ -651,6 +651,34 @@ setInterval(guardarPartida, 10000);
 addEventListener('beforeunload', guardarPartida);
 Guardado.registrar(guardarPartida);   // también al cambiar de pantalla o irse a otra pestaña
 Arcade.bucle(dt => { actualizar(dt); dibujar(); refrescar(); });
+
+// ---------- Trucos de administración ----------
+// Solo hacen algo con el modo creador encendido (código 2808, tecla F9).
+if (typeof Arcade !== "undefined" && Arcade.admin) Arcade.admin.registrar('galletas', 'Cookie Clicker', {
+  galletas: { que:'galletas <n> — fija el montón', fn(n){
+    S.galletas = Math.max(0, +n || 0);
+    S.total = Math.max(S.total, S.galletas);
+    refrescar(true); guardarPartida();
+    return 'Tienes ' + fmt(S.galletas) + ' galletas.';
+  }},
+  edificios: { que:'edificios <n> — pone n de cada edificio', fn(n){
+    const k = Math.max(0, Math.floor(+n) || 0);
+    EDIFICIOS.forEach(e => { S.edificios[e.id] = k; });
+    refrescar(true); guardarPartida();
+    return k + ' de cada uno. Producción: ' + fmt(cps()) + ' /s.';
+  }},
+  mejoras: { que:'mejoras — compra todas las mejoras de golpe', fn(){
+    let n = 0;
+    MEJORAS.forEach(m => { if (!S.compradas.includes(m.id)){ S.compradas.push(m.id); n++; } });
+    refrescar(true); guardarPartida();
+    return n ? 'Desbloqueadas ' + n + ' mejoras.' : 'Ya las tenías todas.';
+  }},
+  frenesi: { que:'frenesi <s> — activa el frenesí (60 s por defecto)', fn(s){
+    S.frenesi = +s > 0 ? +s : 60; S.clicLoco = S.frenesi;
+    return 'Frenesí y clic loco durante ' + Math.round(S.frenesi) + ' s.';
+  }}
+});
+
 </script>
 </body>
 </html>

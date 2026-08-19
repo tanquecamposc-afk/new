@@ -642,6 +642,34 @@ iniciarNivel();
 estado = 'listo'; cronoEstado = 1e9; // esperando al botón de jugar
 refrescarHud();
 Arcade.bucle(dt => { actualizar(dt); dibujar(); });
+
+// ---------- Trucos de administración ----------
+// Solo hacen algo con el modo creador encendido (código 2808, tecla F9).
+if (typeof Arcade !== "undefined" && Arcade.admin) Arcade.admin.registrar('comecocos', 'Comecocos', {
+  vidas: { que:'vidas <n> — fija las vidas', fn(n){
+    vidas = Math.max(1, Math.floor(+n) || 3); refrescarHud();
+    return 'Tienes ' + vidas + ' vidas.';
+  }},
+  puntos: { que:'puntos <n> — fija el marcador', fn(n){
+    puntos = Math.max(0, Math.floor(+n) || 0); refrescarHud();
+    return 'Marcador en ' + puntos + '.';
+  }},
+  miedo: { que:'miedo <s> — los fantasmas huyen (999 s por defecto)', fn(s){
+    cronoMiedo = +s > 0 ? +s : 999;
+    fantasmas.forEach(f => { if (f.estado !== 'ojos') f.miedo = true; });
+    return 'Fantasmas asustados durante ' + Math.round(cronoMiedo) + ' s.';
+  }},
+  nivel: { que:'nivel <n> — salta al nivel n (o al siguiente)', fn(n){
+    nivel = +n > 0 ? Math.floor(+n) : nivel + 1;
+    iniciarNivel();
+    return 'Nivel ' + nivel + '.';
+  }},
+  lento: { que:'lento — deja a los fantasmas a media velocidad', fn(){
+    fantasmas.forEach(f => { f.velBase = f.velBase / 2; });
+    return 'Los cuatro van a la mitad de velocidad.';
+  }}
+});
+
 </script>
 </body>
 </html>

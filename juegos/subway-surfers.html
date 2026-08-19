@@ -894,6 +894,33 @@ Arcade.conectarSonido($('btnSonido'));
 
 refrescar();
 Arcade.bucle(dt => { actualizar(dt); dibujar(); });
+
+// ---------- Trucos de administración ----------
+// Solo hacen algo con el modo creador encendido (código 2808, tecla F9).
+if (typeof Arcade !== "undefined" && Arcade.admin) Arcade.admin.registrar('subway', 'Subway Surfers', {
+  inmune: { que:'inmune <s> — no te pilla nada (999 s por defecto)', fn(s){
+    J.invulnerable = +s > 0 ? +s : 999;
+    return 'Invulnerable durante ' + Math.round(J.invulnerable) + ' s.';
+  }},
+  iman: { que:'iman <s> — atrae las monedas (999 s por defecto)', fn(s){
+    J.iman = +s > 0 ? +s : 999;
+    return 'Imán durante ' + Math.round(J.iman) + ' s.';
+  }},
+  monedas: { que:'monedas <n> — fija las monedas de la carrera', fn(n){
+    J.monedas = Math.max(0, Math.floor(+n) || 0);
+    return 'Llevas ' + J.monedas + ' monedas.';
+  }},
+  velocidad: { que:'velocidad <n> — fija la velocidad del tren (320-900)', fn(n){
+    J.vel = Math.max(60, Math.min(VEL_MAX, +n || VEL_BASE));
+    return 'Vas a ' + Math.round(J.vel) + ' unidades por segundo.';
+  }},
+  despejar: { que:'despejar — borra los trenes y vallas que hay delante', fn(){
+    const n = objetos.length;
+    objetos = objetos.filter(o => o.tipo === 'moneda' || o.tipo === 'tabla');
+    return 'Fuera ' + (n - objetos.length) + ' estorbos.';
+  }}
+});
+
 </script>
 </body>
 </html>

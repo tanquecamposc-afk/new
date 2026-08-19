@@ -942,6 +942,27 @@ refrescar();
 $('icoEsme').innerHTML = '<img src="' + ICONO_ESME + '" style="width:22px;height:22px" alt="">';
 ajustarLienzo();
 Arcade.bucle(dt => pintarMotas(dt));
+
+// ---------- Trucos de administración ----------
+// Solo hacen algo con el modo creador encendido (código 2808, tecla F9).
+if (typeof Arcade !== "undefined" && Arcade.admin) Arcade.admin.registrar('cofres', 'Cofres Minecraft', {
+  esmeraldas: { que:'esmeraldas <n> — fija las esmeraldas', fn(n){
+    S.esmeraldas = Math.max(0, Math.floor(+n) || 0);
+    refrescar(); guardarCofres();
+    return 'Tienes ' + S.esmeraldas.toLocaleString('es-ES') + ' esmeraldas.';
+  }},
+  nivel: { que:'nivel <n> — fija el nivel de experiencia', fn(n){
+    S.nivel = Math.max(1, Math.floor(+n) || 1); S.xp = 0;
+    refrescar(); guardarCofres();
+    return 'Nivel ' + S.nivel + '.';
+  }},
+  vaciar: { que:'vaciar — tira el inventario entero', fn(){
+    const n = S.inventario.length; S.inventario = [];
+    refrescar(); guardarCofres();
+    return n ? 'Fuera ' + n + ' objetos.' : 'El inventario ya estaba vacío.';
+  }}
+});
+
 </script>
 </body>
 </html>

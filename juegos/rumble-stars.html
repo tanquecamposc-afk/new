@@ -751,6 +751,35 @@ nuevaPartida();
 estado = 'menu';
 refrescarHud();
 Arcade.bucle(dt => { actualizar(dt); dibujar(); });
+
+// ---------- Trucos de administración ----------
+// Solo hacen algo con el modo creador encendido (código 2808, tecla F9).
+if (typeof Arcade !== "undefined" && Arcade.admin) Arcade.admin.registrar('rumble', 'Rumble Stars', {
+  energia: { que:'energia <n> — fija tu energía de despliegue', fn(n){
+    energia = Math.max(0, Math.min(20, +n || 10)); refrescarHud();
+    return 'Tienes ' + Math.floor(energia) + ' de energía.';
+  }},
+  tanteo: { que:'tanteo <tu> <ia> — fija el marcador', fn(a, b){
+    tanteo.tu = Math.max(0, Math.floor(+a) || 0);
+    tanteo.ia = Math.max(0, Math.floor(+b) || 0);
+    refrescarHud();
+    return 'Vas ' + tanteo.tu + ' - ' + tanteo.ia + '.';
+  }},
+  reloj: { que:'reloj <s> — pone los segundos que quedan', fn(s){
+    reloj = Math.max(1, +s || DURACION); refrescarHud();
+    return 'Quedan ' + Math.round(reloj) + ' segundos.';
+  }},
+  despejar: { que:'despejar — se lleva a los bichos rivales del campo', fn(){
+    const antes = unidades.length;
+    unidades = unidades.filter(u => u.equipo === 'tu');
+    return 'Fuera ' + (antes - unidades.length) + ' rivales.';
+  }},
+  gol: { que:'gol — te pone el balón en la portería contraria', fn(){
+    balon.x = CAMPO.x2 - 20; balon.y = CY; balon.vx = 600; balon.vy = 0;
+    return 'Balón lanzado a portería.';
+  }}
+});
+
 </script>
 </body>
 </html>

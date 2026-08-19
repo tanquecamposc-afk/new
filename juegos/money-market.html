@@ -667,6 +667,32 @@ Arcade.bucle(dt => {
     dibujar();
   }
 });
+
+// ---------- Trucos de administración ----------
+// Solo hacen algo con el modo creador encendido (código 2808, tecla F9).
+if (typeof Arcade !== "undefined" && Arcade.admin) Arcade.admin.registrar('mercado', 'Money Market', {
+  liquidez: { que:'liquidez <n> — fija el dinero disponible', fn(n){
+    M.liquidez = Math.max(0, +n || 0); M.repintar = true; refrescar();
+    return 'Liquidez: ' + Math.round(M.liquidez).toLocaleString('es-ES') + '.';
+  }},
+  cerrar: { que:'cerrar — cierra la posición abierta sin pérdidas', fn(){
+    if (!M.pos) return 'No tienes ninguna posición abierta.';
+    M.liquidez += M.pos.margen; M.pos = null; M.repintar = true; refrescar();
+    return 'Posición cerrada y margen devuelto.';
+  }},
+  sesgo: { que:'sesgo <sube|baja> <s> — inclina el mercado un rato', fn(dir, s){
+    const d = String(dir || 'sube').toLowerCase().startsWith('b') ? -1 : 1;
+    M.sesgo = d * 0.0022;
+    M.sesgoT = Math.max(1, +s || 60);
+    return 'El mercado ' + (d > 0 ? 'sube' : 'baja') +
+           ' durante ' + Math.round(M.sesgoT) + ' velas.';
+  }},
+  vela: { que:'vela — adelanta una vela sin esperar', fn(){
+    empujarVela(); M.repintar = true; refrescar();
+    return 'Vela ' + M.vela + ' de ' + VELAS_SESION + '.';
+  }}
+});
+
 </script>
 </body>
 </html>

@@ -437,6 +437,37 @@ cargarPartida();
 montarTapete();
 refrescar();
 Arcade.bucle(dt => dibujar(dt));
+
+// ---------- Trucos de administración ----------
+// Solo hacen algo con el modo creador encendido (código 2808, tecla F9).
+// El sorteo vive dentro de tirar(); se envuelve para poder amañarlo.
+const tirarDeVerdad = tirar;
+if (typeof Arcade !== "undefined" && Arcade.admin) Arcade.admin.registrar('dados', 'Dados Craps', {
+  forzar: { que:'forzar <a> <b> — los dados saldrán así hasta que digas "azar"', fn(a, b){
+    const x = Math.max(1, Math.min(6, Math.floor(+a) || 1));
+    const y = Math.max(1, Math.min(6, Math.floor(+b) || x));
+    tirar = function(){
+      tirarDeVerdad();
+      if (D.fase === 'rodando') D.destino = [x, y];
+    };
+    return 'Cada tirada saldrá ' + x + ' y ' + y + ' (suma ' + (x + y) +
+           '). "juego azar" lo deshace.';
+  }},
+  azar: { que:'azar — devuelve los dados al azar', fn(){
+    tirar = tirarDeVerdad;
+    return 'Dados normales.';
+  }},
+  ver: { que:'ver — dice qué va a salir en la tirada en curso', fn(){
+    if (D.fase !== 'rodando') return 'No hay ninguna tirada rodando.';
+    return 'Sale ' + D.destino[0] + ' y ' + D.destino[1] +
+           ' (suma ' + (D.destino[0] + D.destino[1]) + ').';
+  }},
+  punto: { que:'punto <n> — pone el punto en n (0 = salida)', fn(n){
+    D.punto = Math.max(0, Math.floor(+n) || 0); refrescar();
+    return D.punto ? 'Punto en el ' + D.punto + '.' : 'Vuelta a la salida.';
+  }}
+});
+
 </script>
 </body>
 </html>

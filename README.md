@@ -519,9 +519,45 @@ Hay un código que no paga monedas: **enciende la consola del creador**. Una vez
 | `perfil` · `perfil reset` | Estadísticas acumuladas, o borrarlas |
 | `ir <juego>` | Salta a un juego por su id (solo en `arcade.html`) |
 | `todo` | Modo dios de golpe: cartera a tope, códigos libres y mina abierta |
+| `trucos` | Lista los juegos que tienen trucos propios |
+| `juego` · `juego <truco> [args]` | Trucos del juego que tengas delante |
 | `salir` | Apaga el modo administrador |
 
 La consola vive en `Arcade.admin` (`juegos/arcade.js`). Añadir un comando es añadir una función a `Arcade.admin.COMANDOS`: el nombre de la función es el comando y sus argumentos llegan como cadenas.
+
+### Trucos por juego
+
+Los **34 juegos** tienen sus propios comandos: 133 en total. No pueden vivir en la consola porque en el arcade empaquetado el estado de cada juego queda encerrado dentro de su función, así que **cada juego se apunta desde su propio script** con `Arcade.admin.registrar(id, nombre, trucos)`, y la consola solo mira qué pantalla está abierta.
+
+Dentro de un juego, `juego` lista lo que tiene a mano y `juego <truco>` lo ejecuta:
+
+```
+> juego
+Minas — trucos disponibles:
+  juego ver       ver — enseña dónde están las bombas
+  juego limpiar   limpiar — quita las bombas del tablero
+  juego mover     mover <casilla> — pone una bomba en otro sitio (1-25)
+
+> juego ver
+Bombas en: fila 3 col 5 · fila 5 col 4 · fila 5 col 5
+```
+
+Unos cuantos ejemplos de lo que hay:
+
+| Juego | Trucos |
+|---|---|
+| Serpiente | `puntos` `crecer` `fantasma` `velocidad` `rocas` |
+| Comecocos | `vidas` `puntos` `miedo` `nivel` `lento` |
+| Aviator · Big Bass | `ver` chiva el multiplicador de caída · `caida`/`rotura` lo deciden |
+| Ruleta · Limbo · Plinko · Dados | `forzar` amaña el sorteo, `azar` lo devuelve a su sitio |
+| Minas · Spire | `ver` destapa dónde están las bombas o las losetas seguras |
+| Blackjack · Bacarrá | `ver` lee el zapato, `poner` coloca la próxima carta |
+| Moto X3M | `nitro` `caidas` `bandera <n>` `meta` `puntos` |
+| Subway Surfers | `inmune` `iman` `monedas` `velocidad` `despejar` |
+| Mining Tycoon | `dinero` `mejoras` `mineros` `vaciar` |
+| Tower Defense | `vidas` `dinero` `ola` `barrer` `habilidades` |
+
+Un truco es `{ que:'descripción', fn(){ … } }`. La descripción es lo que sale al escribir `juego`, y lo que devuelve `fn` es lo que se imprime.
 
 ## 🖥 Rendimiento y nitidez
 

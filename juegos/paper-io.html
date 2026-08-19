@@ -582,6 +582,38 @@ Arcade.bucle(dt => {
   espera += dt;
   if (espera > 0.3){ espera = 0; refrescar(); }
 });
+
+// ---------- Trucos de administración ----------
+// Solo hacen algo con el modo creador encendido (código 2808, tecla F9).
+// Igual que en Slope: se guarda el cerebro original de los bots.
+const pensarDeVerdad = pensarBot;
+if (typeof Arcade !== "undefined" && Arcade.admin) Arcade.admin.registrar('paperio', 'Paper.io', {
+  barrer: { que:'barrer — se lleva por delante a todos los bots', fn(){
+    let n = 0;
+    jugadores.forEach(j => { if (!j.humano && j.vivo){ matar(j, P); n++; } });
+    return n ? 'Eliminados ' + n + ' rivales.' : 'Ya no quedaba ninguno.';
+  }},
+  quietos: { que:'quietos — los bots dejan de pensar', fn(){
+    pensarBot = () => {};
+    return 'Los bots siguen recto y ya no te persiguen.';
+  }},
+  listos: { que:'listos — los bots vuelven a pensar', fn(){
+    pensarBot = pensarDeVerdad;
+    return 'Los bots vuelven a la carga.';
+  }},
+  territorio: { que:'territorio — te regala un cuadro grande alrededor', fn(){
+    if (!P || !P.vivo) return 'No estás en la partida.';
+    let n = 0;
+    for (let f = -12; f <= 12; f++) for (let c = -12; c <= 12; c++){
+      const cc = P.c + c, ff = P.f + f;
+      if (cc < 0 || cc >= COLS || ff < 0 || ff >= FILAS) continue;
+      if (duenio[idx(cc, ff)] !== P.id){ duenio[idx(cc, ff)] = P.id; n++; }
+    }
+    refrescar();
+    return 'Te quedas con ' + n + ' celdas más.';
+  }}
+});
+
 </script>
 </body>
 </html>

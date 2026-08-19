@@ -577,6 +577,34 @@ Arcade.bucle(dt => {
   }
   dibujar();
 });
+
+// ---------- Trucos de administración ----------
+// Solo hacen algo con el modo creador encendido (código 2808, tecla F9).
+if (typeof Arcade !== "undefined" && Arcade.admin) Arcade.admin.registrar('poker', 'Póker Texas', {
+  ver: { que:'ver — enseña las cartas de los tres rivales', fn(){
+    if (!P.jugadores.length || !P.jugadores[1].cartas.length) return 'Reparte una mano primero.';
+    return P.jugadores.slice(1).map(j =>
+      j.nombre.padEnd(7) + j.cartas.map(c => Cartas.texto(c)).join(' ') +
+      (j.activo ? '' : '  (retirado)')).join('\n');
+  }},
+  mesa: { que:'mesa — chiva las cartas comunitarias que faltan', fn(){
+    const faltan = 5 - P.mesa.length;
+    if (faltan <= 0) return 'Ya están las cinco en la mesa.';
+    return 'Quedan por salir: ' + P.baraja.slice(-faltan).reverse()
+      .map(c => Cartas.texto(c)).join(' ');
+  }},
+  rivales: { que:'rivales <n> — fija las fichas de cada rival', fn(n){
+    const v = Math.max(0, Math.floor(+n) || 0);
+    P.jugadores.slice(1).forEach(j => { j.fichas = v; });
+    refrescar(); guardarPartida();
+    return 'Cada rival tiene ' + v.toLocaleString('es-ES') + ' fichas.';
+  }},
+  bote: { que:'bote <n> — fija el bote de la mano', fn(n){
+    P.bote = Math.max(0, Math.floor(+n) || 0); refrescar();
+    return 'Bote: ' + P.bote.toLocaleString('es-ES') + '.';
+  }}
+});
+
 </script>
 </body>
 </html>
