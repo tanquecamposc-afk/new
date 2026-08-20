@@ -1,0 +1,43 @@
+{
+  "project": "NEXO-Sports-Engine",
+  "version": "3.2.0",
+  "aviso": "Motor de simulación para el ARCADE NEXO. Los soles son del juego: no hay dinero real, ni pasarela de pago, ni forma de retirar nada. No está asociado a ninguna casa de apuestas real.",
+  "currency": "PEN_SIMULADO",
+  "architecture": {
+    "pattern": "Motor puro sin efectos de red: la misma lógica corre en el navegador y en Node",
+    "runtime": "Node.js 20 LTS (TypeScript strict)",
+    "persistence": "localStorage del navegador (clave arcade_sports)",
+    "precision": "BigInt de céntimos: nunca coma flotante para dinero"
+  },
+  "desbloqueo": {
+    "coste_nexocoins": 10000000000,
+    "cambio_nexocoins_por_sol": 1000000,
+    "sentido": "SOLO_ENTRADA",
+    "nota": "Los NEXO-COINS entran a soles del juego y no vuelven a salir: es un sumidero de final de partida."
+  },
+  "modules": {
+    "betting_engine": {
+      "supercuotas_bb_boost": {
+        "max_boost_percentage": 25,
+        "min_parlay_legs": 3,
+        "margin_floor_protection": 0.015
+      },
+      "suplente_de_oro": {
+        "enabled": true,
+        "cutoff_minute": 45,
+        "condition": "Cambio en la primera parte con cero goles del jugador sustituido"
+      },
+      "cashout": {
+        "modes": ["FULL", "PARTIAL", "AUTO"],
+        "fee": 0.05,
+        "max_processing_latency_ms": 150
+      },
+      "market_results": ["WIN", "LOSS", "VOID", "HALF_WIN", "HALF_LOSS"]
+    },
+    "cartera": {
+      "instant_methods": ["CAMBIO_NEXOCOINS"],
+      "currency_scale": "CENTIMO_INTEGER_BIGINT",
+      "idempotencia": "Cada movimiento lleva su clave; una clave repetida se rechaza"
+    }
+  }
+}

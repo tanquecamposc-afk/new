@@ -61,7 +61,8 @@ const JUEGOS = [
   { id:'drift',      archivo:'juegos/drift-hunters.html' },
   { id:'basketstars',archivo:'juegos/basketball-stars.html' },
   { id:'unovsuno',   archivo:'juegos/1v1-lol.html' },
-  { id:'cluster',    archivo:'juegos/cluster-rush.html' }
+  { id:'cluster',    archivo:'juegos/cluster-rush.html' },
+  { id:'sports',     archivo:'juegos/nexo-sports.html' }
 ];
 
 const leer = f => fs.readFileSync(path.join(RAIZ, f), 'utf8');

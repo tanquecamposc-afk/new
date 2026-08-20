@@ -2591,6 +2591,135 @@ body{display:block; padding:0; margin:0;}
 #pantalla-cluster .rejillaResumen .e{font-size:11px; color:var(--tenue);}
 
 
+
+/* --- sports --- */
+#pantalla-sports #juego{width:min(1240px,100vw);}
+#pantalla-sports .barra .titulo{color:#ff7a00;}
+#pantalla-sports #tablero{position:relative;}
+#pantalla-sports /* ---------- Caja fuerte (mientras está bloqueado) ---------- */
+  #bloqueo{
+    display:flex; flex-direction:column; align-items:center; gap:18px;
+    padding:40px 24px; text-align:center;
+    background:radial-gradient(circle at 50% 30%, #1a1206, #07060b 70%);
+    border:1px solid rgba(255,122,0,.3); border-radius:16px;
+  }
+#pantalla-sports /* display:flex y display:grid ganan a [hidden], #pantalla-sports que solo pone display:none
+     por defecto: sin estas dos reglas se veían la caja fuerte y la mesa a la vez. */
+  #bloqueo[hidden], #pantalla-sports #mesa[hidden]{display:none;}
+#pantalla-sports #bloqueo .candado{font-size:4rem; line-height:1; filter:drop-shadow(0 0 24px rgba(255,122,0,.5));}
+#pantalla-sports #bloqueo h2{font-size:1.5rem; font-weight:900; letter-spacing:1px; color:#ff7a00;}
+#pantalla-sports #bloqueo .lema{color:var(--tenue); max-width:560px; line-height:1.6; font-size:.9rem;}
+#pantalla-sports #precioCaja{
+    font-family:var(--fuente-arcade); font-size:1.5rem; color:var(--oro);
+    background:rgba(0,0,0,.5); border:1px solid rgba(243,230,0,.35);
+    border-radius:12px; padding:14px 26px;
+  }
+#pantalla-sports #tuCartera{font-size:.85rem; color:var(--tenue);}
+#pantalla-sports #barraCaja{
+    width:min(460px,90%); height:12px; border-radius:6px; overflow:hidden;
+    background:rgba(255,255,255,.08);
+  }
+#pantalla-sports #barraCajaRelleno{height:100%; width:0; background:linear-gradient(90deg,#ff7a00,#f3e600); transition:width .4s;}
+#pantalla-sports /* ---------- Mesa de apuestas ---------- */
+  #mesa{display:grid; grid-template-columns:236px minmax(0,1fr) 306px; gap:12px; align-items:start;}
+@media (max-width:1080px){#pantalla-sports #mesa{grid-template-columns:1fr;}
+ }
+#pantalla-sports .panel{
+    background:rgba(0,0,0,.34); border:1px solid var(--borde);
+    border-radius:14px; padding:12px; display:flex; flex-direction:column; gap:9px;
+  }
+#pantalla-sports .panel h3{
+    font-size:.72rem; font-weight:900; letter-spacing:1.4px; text-transform:uppercase;
+    color:var(--tenue); display:flex; align-items:center; gap:7px;
+  }
+#pantalla-sports .panel h3 .der{margin-left:auto; color:var(--oro); font-family:var(--fuente-arcade);}
+#pantalla-sports /* Lista de partidos */
+  .partido{
+    text-align:left; width:100%; cursor:pointer; color:inherit; font-family:inherit;
+    background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08);
+    border-radius:10px; padding:8px 10px; display:flex; flex-direction:column; gap:3px;
+  }
+#pantalla-sports .partido:hover{border-color:rgba(255,122,0,.5);}
+#pantalla-sports .partido.sel{border-color:#ff7a00; background:rgba(255,122,0,.12);}
+#pantalla-sports .partido .equipos{font-size:.82rem; font-weight:700; display:flex; gap:6px;}
+#pantalla-sports .partido .equipos b{margin-left:auto; font-variant-numeric:tabular-nums; color:var(--oro);}
+#pantalla-sports .partido .min{font-size:.68rem; color:var(--tenue); font-family:var(--fuente-arcade);}
+#pantalla-sports .partido .min.vivo{color:#4ee089;}
+#pantalla-sports .partido .min.fin{color:var(--tenue); opacity:.6;}
+#pantalla-sports #lienzo{display:block; width:100%; height:auto; border-radius:12px; background:#04140a;}
+#pantalla-sports /* Mercados */
+  #mercados{display:flex; flex-direction:column; gap:10px;}
+#pantalla-sports .mercado .nom{font-size:.72rem; color:var(--tenue); margin-bottom:5px; letter-spacing:.5px;}
+#pantalla-sports .opciones{display:flex; gap:6px; flex-wrap:wrap;}
+#pantalla-sports .cuota{
+    flex:1; min-width:74px; cursor:pointer; font-family:inherit; color:inherit;
+    background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.1);
+    border-radius:9px; padding:7px 8px; text-align:center; line-height:1.35;
+  }
+#pantalla-sports .cuota:hover:not(:disabled){border-color:#ff7a00; background:rgba(255,122,0,.12);}
+#pantalla-sports .cuota.sel{border-color:#ff7a00; background:rgba(255,122,0,.22);}
+#pantalla-sports .cuota:disabled{opacity:.35; cursor:not-allowed;}
+#pantalla-sports .cuota .et{display:block; font-size:.68rem; color:var(--tenue);}
+#pantalla-sports .cuota .v{display:block; font-weight:900; font-size:.92rem; color:var(--oro); font-variant-numeric:tabular-nums;}
+#pantalla-sports .cuota .oro-flag{font-size:.6rem; color:#4ee089;}
+#pantalla-sports /* Boleto */
+  .seleccion{
+    background:rgba(255,255,255,.05); border-radius:9px; padding:7px 9px;
+    font-size:.76rem; display:flex; gap:7px; align-items:flex-start;
+  }
+#pantalla-sports .seleccion .txt{flex:1; min-width:0;}
+#pantalla-sports .seleccion .txt b{display:block; font-size:.8rem;}
+#pantalla-sports .seleccion .txt span{color:var(--tenue); font-size:.7rem;}
+#pantalla-sports .seleccion .c{font-weight:900; color:var(--oro); font-variant-numeric:tabular-nums;}
+#pantalla-sports .seleccion .quitar{
+    background:none; border:none; color:var(--rojo); cursor:pointer;
+    padding:0 2px; font-size:1rem; line-height:1;
+  }
+#pantalla-sports #boletoVacio{color:var(--tenue); font-size:.78rem; text-align:center; padding:14px 4px; line-height:1.6;}
+#pantalla-sports #resumen{border-top:1px solid rgba(255,255,255,.08); padding-top:9px; display:flex; flex-direction:column; gap:6px;}
+#pantalla-sports #resumen .fila{display:flex; font-size:.78rem;}
+#pantalla-sports #resumen .fila span:last-child{margin-left:auto; font-variant-numeric:tabular-nums; font-weight:700;}
+#pantalla-sports #resumen .boost{color:#4ee089;}
+#pantalla-sports #resumen .premio span:last-child{color:var(--oro); font-size:.95rem;}
+#pantalla-sports .filaImporte{display:flex; gap:6px; align-items:center;}
+#pantalla-sports .filaImporte input{
+    flex:1; min-width:0; background:rgba(0,0,0,.45); color:var(--oro);
+    border:1px solid rgba(243,230,0,.3); border-radius:9px; padding:8px 10px;
+    font-family:var(--fuente-arcade); font-size:.95rem; text-align:right;
+  }
+#pantalla-sports .filaImporte input:focus{outline:none; border-color:var(--oro);}
+#pantalla-sports .rapidos{display:flex; gap:5px;}
+#pantalla-sports .rapidos button{flex:1; padding:5px 2px; font-size:.68rem;}
+#pantalla-sports /* Apuestas abiertas */
+  .abierta{
+    background:rgba(0,0,0,.3); border:1px solid rgba(255,255,255,.09);
+    border-radius:10px; padding:9px; display:flex; flex-direction:column; gap:6px;
+  }
+#pantalla-sports .abierta.gana{border-color:rgba(78,224,137,.45);}
+#pantalla-sports .abierta.pierde{border-color:rgba(255,61,104,.4);}
+#pantalla-sports .abierta .cab{display:flex; font-size:.74rem; gap:6px;}
+#pantalla-sports .abierta .cab b{color:var(--oro); font-variant-numeric:tabular-nums;}
+#pantalla-sports .abierta .cab .est{margin-left:auto; font-family:var(--fuente-arcade); font-size:.66rem;}
+#pantalla-sports .abierta .patas{display:flex; flex-direction:column; gap:2px; font-size:.7rem; color:var(--tenue);}
+#pantalla-sports .abierta .patas .p{display:flex; gap:5px;}
+#pantalla-sports .abierta .patas .p .ic{width:14px; flex:none;}
+#pantalla-sports .abierta .p.ok{color:#4ee089;}
+#pantalla-sports .abierta .p.no{color:#ff5a72;}
+#pantalla-sports .abierta .p.nulo{color:#7fe3ff;}
+#pantalla-sports .abierta .acciones{display:flex; gap:5px;}
+#pantalla-sports .abierta .acciones button{flex:1; font-size:.68rem; padding:6px 4px;}
+#pantalla-sports #historial{display:flex; flex-direction:column; gap:4px; font-size:.72rem; max-height:150px; overflow-y:auto;}
+#pantalla-sports #historial .h{display:flex; gap:6px; color:var(--tenue);}
+#pantalla-sports #historial .h b{margin-left:auto; font-variant-numeric:tabular-nums;}
+#pantalla-sports #historial .h.gana b{color:#4ee089;}
+#pantalla-sports #historial .h.pierde b{color:#ff5a72;}
+#pantalla-sports .avisoJuego{
+    font-size:.7rem; color:var(--tenue); line-height:1.5;
+    background:rgba(255,122,0,.07); border:1px solid rgba(255,122,0,.22);
+    border-radius:9px; padding:8px 10px;
+  }
+
+
 </style>
 
 <div class="pantalla activa" id="pantalla-portada">
@@ -5142,6 +5271,86 @@ body{display:block; padding:0; margin:0;}
 </div>
 </div>
 
+<div class="pantalla" id="pantalla-sports">
+<div id="juego">
+  <div class="barra">
+    <a class="boton" href="javascript:void 0" data-volver="1">🕹 Arcade</a>
+    <div class="titulo">⚽ NEXO SPORTS</div>
+    <div class="sep"></div>
+    <div class="stat">💵 S/ <span id="saldoTxt" class="oro">0,00</span></div>
+    <div class="stat">🎟 <span id="abiertasTxt" class="verde">0</span></div>
+    <div class="stat">🏆 S/ <span id="recordTxt" class="tenue">—</span></div>
+    <button id="btnSonido" title="Sonido" aria-label="Sonido">🔊</button>
+  </div>
+
+  <div id="tablero">
+    <!-- ---------- Bloqueado ---------- -->
+    <div id="bloqueo">
+      <div class="candado">🔐</div>
+      <h2>CASA DE APUESTAS NEXO SPORTS</h2>
+      <p class="lema">
+        La sala de final de partida. Dentro no se juega con NEXO-COINS: se juega con
+        <b>soles del arcade</b>, y se entra cambiando parte de tu fortuna.
+        <b>Un millón de NEXO-COINS = S/ 1,00</b>, y el cambio va en un solo sentido.
+      </p>
+      <div id="precioCaja">10.000.000.000 NEXO-COINS</div>
+      <div id="barraCaja"><div id="barraCajaRelleno"></div></div>
+      <div id="tuCartera">Tienes 0 NEXO-COINS</div>
+      <button class="primario" id="btnDesbloquear" disabled>🔓 Abrir la casa de apuestas</button>
+      <p class="avisoJuego" style="max-width:560px">
+        Los soles de aquí son de mentira, como las fichas del blackjack o de la ruleta del
+        arcade. No hay dinero real, no hay pasarela de pago y no hay forma de retirar nada.
+        Esto no está asociado a ninguna casa de apuestas de verdad.
+      </p>
+    </div>
+
+    <!-- ---------- Mesa ---------- -->
+    <div id="mesa" hidden>
+      <!-- Partidos -->
+      <div class="panel">
+        <h3>📺 En directo <span class="der" id="relojTxt">—</span></h3>
+        <div id="listaPartidos" style="display:flex;flex-direction:column;gap:6px"></div>
+        <h3 style="margin-top:6px">🧾 Resueltas</h3>
+        <div id="historial"></div>
+      </div>
+
+      <!-- Partido destacado y sus mercados -->
+      <div class="panel">
+        <canvas id="lienzo" width="640" height="330"></canvas>
+        <div id="mercados"></div>
+      </div>
+
+      <!-- Boleto y apuestas vivas -->
+      <div class="panel">
+        <h3>🎟 Tu boleto <span class="der" id="patasTxt">0</span></h3>
+        <div id="boleto"></div>
+        <div id="boletoVacio">Toca una cuota para añadirla.<br>Con <b>3 o más</b> se activa el <b>BB Boost</b>.</div>
+        <div id="resumen" hidden>
+          <div class="fila"><span>Cuota</span><span id="cuotaTxt">1,00</span></div>
+          <div class="fila boost" id="filaBoost" hidden><span>BB Boost</span><span id="boostTxt">—</span></div>
+          <div class="filaImporte">
+            <input id="importe" type="text" inputmode="decimal" value="10,00" aria-label="Importe en soles">
+          </div>
+          <div class="rapidos">
+            <button data-imp="5">5</button>
+            <button data-imp="20">20</button>
+            <button data-imp="100">100</button>
+            <button data-imp="max">Todo</button>
+          </div>
+          <div class="fila premio"><span>Ganancia</span><span id="premioTxt">S/ 0,00</span></div>
+          <button class="primario" id="btnApostar">✅ Apostar</button>
+        </div>
+
+        <h3 style="margin-top:8px">⏳ En juego <span class="der" id="enJuegoTxt">S/ 0,00</span></h3>
+        <div id="abiertas" style="display:flex;flex-direction:column;gap:7px"></div>
+      </div>
+    </div>
+
+    <div class="avisos" id="avisos" style="top:auto;bottom:14px"></div>
+  </div>
+</div>
+</div>
+
 <script>
 /* ====== Utilidades comunes ====== */
 /* ==========================================================
@@ -7559,6 +7768,13 @@ const JUEGOS = [
     portada: portadaKarts
   },
   {
+    id:'sports', archivo:'juegos/nexo-sports.html', nuevo:true,
+    nombre:'⚽ NEXO Sports', genero:'Casino',
+    desc:'Casa de apuestas de fútbol: combinadas con supercuota, cash-out y la regla del Suplente de Oro. Se abre por 10.000 millones.',
+    record(){ const r = Arcade.record('sports'); return r ? 'Récord: ' + r.toLocaleString('es-ES') + ' pts' : 'Sin abrir todavía'; },
+    portada: portadaSports
+  },
+  {
     id:'retrobowl', archivo:'juegos/retro-bowl.html', nuevo:true,
     nombre:'🏈 Retro Bowl', genero:'Deportes',
     desc:'Eres el quarterback: apunta el pase, esquiva a la defensa y mete touchdowns contra el reloj.',
@@ -9343,6 +9559,65 @@ const categoriaDe = j => {
   return c ? c.id : 'arcade';   // si aparece un género nuevo, cae en arcade
 };
 
+
+
+// ---------- NEXO Sports ----------
+function portadaSports(c){
+  // Marcador de televisión sobre el césped, que es como se ve el juego
+  for (let i = 0; i < 10; i++){
+    c.fillStyle = i % 2 ? '#12643a' : '#0e5632';
+    c.fillRect(i * A / 10, 34, A / 10 + 1, AL - 34);
+  }
+  c.strokeStyle = 'rgba(255,255,255,.4)'; c.lineWidth = 1.6;
+  c.strokeRect(10, 42, A - 20, AL - 54);
+  c.beginPath(); c.moveTo(A / 2, 42); c.lineTo(A / 2, AL - 12); c.stroke();
+  c.beginPath(); c.arc(A / 2, (42 + AL - 12) / 2, 24, 0, 6.283); c.stroke();
+  for (const lado of [-1, 1]){
+    const x = lado < 0 ? 10 : A - 10;
+    c.strokeRect(lado < 0 ? x : x - 34, (42 + AL - 12) / 2 - 30, 34, 60);
+  }
+  // balón
+  c.fillStyle = 'rgba(0,0,0,.35)';
+  c.beginPath(); c.ellipse(A * .38, AL * .68 + 4, 6, 2.5, 0, 0, 6.283); c.fill();
+  c.fillStyle = '#fff'; c.beginPath(); c.arc(A * .38, AL * .68, 5.5, 0, 6.283); c.fill();
+  c.fillStyle = '#1a1a1a'; c.beginPath(); c.arc(A * .38, AL * .68, 2.2, 0, 6.283); c.fill();
+
+  // franja del marcador
+  c.fillStyle = 'rgba(4,8,14,.94)'; c.fillRect(0, 0, A, 34);
+  c.textBaseline = 'middle';
+  c.font = '900 14px "Segoe UI", system-ui, sans-serif';
+  c.textAlign = 'right'; c.fillStyle = '#ff7a00'; c.fillText('CÓNDORES', A / 2 - 44, 17);
+  c.textAlign = 'left';  c.fillStyle = '#00f0ff'; c.fillText('NEXO', A / 2 + 44, 17);
+  c.textAlign = 'center';
+  c.fillStyle = '#fff'; c.font = '900 17px "Courier New", monospace';
+  c.fillText('2 - 1', A / 2, 16);
+  c.fillStyle = '#4ee089'; c.font = '700 10px "Courier New", monospace';
+  c.fillText("67'", A / 2, 29);
+
+  // boleto de la combinada, encima del campo
+  c.fillStyle = 'rgba(6,10,18,.92)';
+  c.beginPath(); c.roundRect(A - 128, 46, 118, 96, 9); c.fill();
+  c.strokeStyle = 'rgba(255,122,0,.5)'; c.lineWidth = 1.5; c.stroke();
+  c.textAlign = 'left'; c.font = '800 9px "Segoe UI", system-ui, sans-serif';
+  c.fillStyle = 'rgba(255,255,255,.45)'; c.fillText('COMBINADA · 4', A - 120, 58);
+  [['CON gana', '1.85'], ['Más de 2,5', '2.10'], ['Ambos sí', '1.60'], ['Quispe gol', '2.40']]
+    .forEach(([et, cu], i) => {
+      c.fillStyle = 'rgba(255,255,255,.75)'; c.font = '600 9px "Segoe UI", sans-serif';
+      c.fillText(et, A - 120, 72 + i * 13);
+      c.textAlign = 'right'; c.fillStyle = '#f3e600'; c.font = '800 9px "Courier New", monospace';
+      c.fillText(cu, A - 18, 72 + i * 13);
+      c.textAlign = 'left';
+    });
+  c.fillStyle = '#4ee089'; c.font = '800 10px "Segoe UI", sans-serif';
+  c.fillText('BB BOOST +15 %', A - 120, 132);
+
+  // ficha del suplente de oro
+  c.fillStyle = 'rgba(6,10,18,.9)';
+  c.beginPath(); c.roundRect(12, AL - 34, 150, 24, 8); c.fill();
+  c.strokeStyle = 'rgba(78,224,137,.5)'; c.lineWidth = 1.4; c.stroke();
+  c.fillStyle = '#4ee089'; c.font = '800 10px "Segoe UI", system-ui, sans-serif';
+  c.textAlign = 'left'; c.fillText('⚡ SUPLENTE DE ORO', 22, AL - 22);
+}
 
 // ---------- Retro Bowl ----------
 function portadaRetroBowl(c){
@@ -34290,6 +34565,960 @@ R.y = ASFALTO - camiones[0].alto;
 camX = R.x;
 refrescarHud();
 Arcade.bucle(dt => { actualizar(dt); dibujar(); });
+
+});
+
+registrarJuego("sports", function(document, addEventListener, Arcade){
+
+// ============================================================
+//  NEXO SPORTS — casa de apuestas simulada del arcade
+//
+//  Los soles son del juego, como las fichas del resto: no hay dinero real ni
+//  forma de retirar nada. Todo el dinero se lleva en BigInt de céntimos: una
+//  cuota de 3,50 sobre S/ 20 en coma flotante da 70.00000000000001, y ese
+//  céntimo fantasma acaba descuadrando el saldo. Con enteros no descuadra.
+// ============================================================
+const $ = id => document.getElementById(id);
+const lienzo = $('lienzo');
+const ctx = Arcade.nitido(lienzo);
+const avisos = $('avisos');
+const ANCHO = lienzo.width, ALTO = lienzo.height;
+
+// Lo comprado en la tienda se lee cuando hace falta, no al cargar: así una
+// compra a media partida se nota sin salir del juego.
+const enTienda = id => (typeof Arcade !== 'undefined' && Arcade.tienda)
+  ? Arcade.tienda.nivel('sports', id) : 0;
+
+// ---------- Constantes del pliego ----------
+const COSTE_DESBLOQUEO = 10000000000;      // NEXO-COINS
+const NEXOCOINS_POR_SOL = 1000000;
+const MARGEN = 0.015;                       // 1,5 % de ventaja de la casa
+const COMISION_BASE = 0.05;
+// La Sala VIP puede quitar el recorte del cash-out
+const comisionCashout = () => enTienda('comision') ? 0 : COMISION_BASE;
+const MIN_PATAS_BOOST = 3;
+const SEG_POR_MINUTO = 1.15;                // un partido dura poco menos de dos minutos
+
+const RESULTADO = { WIN:'WIN', LOSS:'LOSS', VOID:'VOID', HALF_WIN:'HALF_WIN', HALF_LOSS:'HALF_LOSS' };
+
+// ---------- Dinero en céntimos ----------
+// Miles con punto y céntimos con coma, como el resto del arcade. Con es-PE los
+// miles salían con coma y el resultado era "10,000,00", ilegible.
+const soles = c => {
+  const neg = c < 0n, a = neg ? -c : c;
+  return (neg ? '-' : '') + (a / 100n).toLocaleString('es-ES') + ',' +
+         (a % 100n).toString().padStart(2, '0');
+};
+/** Lee "12,50" o "12.5" y devuelve 1250n céntimos. */
+const aCentimos = txt => {
+  const limpio = String(txt).replace(/\s/g, '').replace(',', '.');
+  const v = Math.round(parseFloat(limpio) * 100);
+  return Number.isFinite(v) && v > 0 ? BigInt(v) : 0n;
+};
+
+/** Lo que devuelve una selección, incluido el importe. */
+function pagoEnCentimos(importe, cuota, resultado){
+  if (importe <= 0n) return 0n;
+  const esc = BigInt(Math.round(cuota * 10000)), S = 10000n;
+  switch (resultado){
+    case RESULTADO.WIN: return (importe * esc) / S;
+    case RESULTADO.HALF_WIN: {
+      const mitad = importe / 2n;
+      // El céntimo impar se queda en la parte que va a cuota, a favor del jugador
+      return ((importe - mitad) * esc) / S + mitad;
+    }
+    case RESULTADO.VOID: return importe;
+    case RESULTADO.HALF_LOSS: return importe / 2n;
+    default: return 0n;
+  }
+}
+
+/** Producto de cuotas, con un único redondeo al final. */
+function cuotaCombinada(lista){
+  const S = 10000n;
+  let acc = S;
+  for (const c of lista) acc = (acc * BigInt(Math.round(c * 10000))) / S;
+  return Number(acc) / 10000;
+}
+
+/** BB Boost: 3 patas +10 %, 4 +15 %, 5 o más +25 %. */
+function bbBoost(cuota, patas){
+  if (patas < MIN_PATAS_BOOST) return cuota;
+  const f = patas >= 5 ? 0.25 : patas === 4 ? 0.15 : 0.10;
+  return Number((cuota * (1 + f)).toFixed(2));
+}
+const porcentajeBoost = patas =>
+  patas < MIN_PATAS_BOOST ? 0 : patas >= 5 ? 25 : patas === 4 ? 15 : 10;
+
+// ---------- Estado ----------
+const CLAVE = 'sports';
+const S = {
+  abierta: false,
+  saldo: 0n,
+  record: 0n,
+  cambiado: 0,                 // NEXO-COINS metidos, solo para el rótulo
+  partidos: [], destacado: 0,
+  boleto: [], apuestas: [], historial: [],
+  reloj: 0, jornada: 1,
+  destello: 0
+};
+let tiempo = 0;
+
+// ---------- Equipos y plantillas ----------
+const CLUBES = [
+  { nombre:'Cóndores FC',    corto:'CON', color:'#ff7a00' },
+  { nombre:'Atlético Nexo',  corto:'NEX', color:'#00f0ff' },
+  { nombre:'Real Pacífico',  corto:'PAC', color:'#4ee089' },
+  { nombre:'Unión Andina',   corto:'AND', color:'#ff5a72' },
+  { nombre:'Deportivo Sur',  corto:'SUR', color:'#a855f7' },
+  { nombre:'Sporting Costa', corto:'COS', color:'#ffd166' },
+  { nombre:'Club Amazonía',  corto:'AMZ', color:'#39ff88' },
+  { nombre:'Titanes del Alto', corto:'ALT', color:'#7fe3ff' }
+];
+const NOMBRES = ['Quispe','Ramos','Carrillo','Aquino','Flores','Guerrero','Zambrano',
+                 'Peña','Cueva','Advíncula','Lapadula','Reyna','Castillo','Yotún',
+                 'Corzo','Ballón','Grimaldo','Valera'];
+
+let contador = 0;
+const nuevoId = pre => pre + '-' + (++contador).toString(36).toUpperCase();
+
+function plantilla(equipo, lado){
+  const usados = new Set();
+  const saca = () => {
+    let n;
+    do { n = elegir(NOMBRES); } while (usados.has(n));
+    usados.add(n);
+    return n;
+  };
+  // Cinco titulares con distinta pegada y dos suplentes en el banquillo
+  const hacer = (titular, i) => ({
+    id: nuevoId('J'),
+    nombre: saca(),
+    dorsal: titular ? 7 + i * 2 : 15 + i,
+    lado, titular,
+    // Los de arriba marcan mucho más que los de atrás
+    pegada: titular ? [0.30, 0.24, 0.16, 0.09, 0.05][i] : azar(0.10, 0.22),
+    goles: 0, enCampo: titular
+  });
+  return {
+    titulares: [0,1,2,3,4].map(i => hacer(true, i)),
+    banquillo: [0,1].map(i => hacer(false, i))
+  };
+}
+
+function nuevoPartido(local, visita){
+  const fuerzaL = azar(0.95, 1.55), fuerzaV = azar(0.85, 1.45);
+  const pl = plantilla(local, 'local'), pv = plantilla(visita, 'visita');
+  return {
+    id: nuevoId('P'),
+    local, visita, fuerzaL, fuerzaV,
+    golesL:0, golesV:0, minuto:0, estado:'previo', crono:azar(0, 6),
+    jugadores: [...pl.titulares, ...pl.banquillo, ...pv.titulares, ...pv.banquillo],
+    banquilloL: pl.banquillo, banquilloV: pv.banquillo,
+    cambiosL:0, cambiosV:0, eventos:[],
+    suspendido:false, balon:{ x:0.5, y:0.5, vx:azar(-.3,.3), vy:azar(-.2,.2) }
+  };
+}
+
+function nuevaJornada(){
+  const mezcla = mezclar(CLUBES.slice());
+  S.partidos = [];
+  for (let i = 0; i < 8; i += 2)
+    S.partidos.push(nuevoPartido(mezcla[i], mezcla[i + 1]));
+  S.destacado = 0;
+}
+
+// ---------- Probabilidades y cuotas ----------
+/** Goles esperados de cada equipo en lo que queda de partido. */
+function esperados(p){
+  const restante = Math.max(0, (90 - p.minuto) / 90);
+  return { l: p.fuerzaL * restante, v: p.fuerzaV * restante };
+}
+/** Poisson: probabilidad de exactamente k goles con media m. */
+function poisson(k, m){
+  if (m <= 0) return k === 0 ? 1 : 0;
+  let p = Math.exp(-m);
+  for (let i = 1; i <= k; i++) p = p * m / i;
+  return p;
+}
+
+/** Probabilidades de 1X2 contando los goles que ya hay en el marcador. */
+function prob1X2(p){
+  const { l, v } = esperados(p);
+  let pl = 0, pe = 0, pv = 0;
+  for (let a = 0; a <= 6; a++)
+    for (let b = 0; b <= 6; b++){
+      const q = poisson(a, l) * poisson(b, v);
+      const fl = p.golesL + a, fv = p.golesV + b;
+      if (fl > fv) pl += q; else if (fl === fv) pe += q; else pv += q;
+    }
+  const t = pl + pe + pv || 1;
+  return [pl / t, pe / t, pv / t];
+}
+function probMas25(p){
+  const { l, v } = esperados(p);
+  const faltan = Math.max(0, 3 - (p.golesL + p.golesV));   // para pasar de 2,5
+  if (faltan === 0) return 1;
+  const m = l + v;
+  let menos = 0;
+  for (let k = 0; k < faltan; k++) menos += poisson(k, m);
+  return Math.max(0.01, Math.min(0.99, 1 - menos));
+}
+function probAmbos(p){
+  const { l, v } = esperados(p);
+  const yaL = p.golesL > 0, yaV = p.golesV > 0;
+  const marcaL = yaL ? 1 : 1 - poisson(0, l);
+  const marcaV = yaV ? 1 : 1 - poisson(0, v);
+  return Math.max(0.01, Math.min(0.99, marcaL * marcaV));
+}
+/** Probabilidad de que ese jugador marque en lo que queda. */
+function probGoleador(p, j){
+  if (!j.enCampo) return 0.004;
+  const { l, v } = esperados(p);
+  const suyos = (j.lado === 'local' ? l : v) * j.pegada;
+  return Math.max(0.004, Math.min(0.9, 1 - poisson(0, suyos)));
+}
+
+/** De probabilidad a cuota, con la ventaja de la casa del pliego. */
+const aCuota = pr => Math.max(1.01,
+  Number((1 / Math.max(0.004, Math.min(0.995, pr)) * (1 - MARGEN)).toFixed(2)));
+
+/** Todos los mercados de un partido, tal como se pintan y se liquidan. */
+function mercadosDe(p){
+  const [pl, pe, pv] = prob1X2(p);
+  const m25 = probMas25(p), amb = probAmbos(p);
+  const enCampo = p.jugadores.filter(j => j.enCampo)
+    .sort((a, b) => b.pegada - a.pegada).slice(0, 6);
+  return [
+    { id:'1x2', nombre:'Ganador del partido', ops:[
+      { id:'1', et:p.local.corto, pr:pl }, { id:'X', et:'Empate', pr:pe },
+      { id:'2', et:p.visita.corto, pr:pv }
+    ]},
+    { id:'ou', nombre:'Goles', ops:[
+      { id:'mas', et:'Más de 2,5', pr:m25 }, { id:'men', et:'Menos de 2,5', pr:1 - m25 }
+    ]},
+    { id:'btts', nombre:'Ambos marcan', ops:[
+      { id:'si', et:'Sí', pr:amb }, { id:'no', et:'No', pr:1 - amb }
+    ]},
+    { id:'gol', nombre:'Goleador · con Suplente de Oro', oro:true,
+      ops: enCampo.map(j => ({ id:j.id, et:j.dorsal + ' ' + j.nombre, pr:probGoleador(p, j) })) }
+  ];
+}
+
+/** Cómo va una selección ahora mismo: WIN, LOSS o todavía nada. */
+function estadoSeleccion(sel){
+  const p = S.partidos.find(x => x.id === sel.partidoId);
+  if (!p) return sel.resuelto || null;
+  if (p.suspendido) return RESULTADO.VOID;
+  const fin = p.estado === 'fin';
+
+  if (sel.mercado === '1x2'){
+    const gana = p.golesL > p.golesV ? '1' : p.golesL === p.golesV ? 'X' : '2';
+    return fin ? (gana === sel.opcion ? RESULTADO.WIN : RESULTADO.LOSS)
+               : (gana === sel.opcion ? 'vivo' : 'contra');
+  }
+  if (sel.mercado === 'ou'){
+    const tot = p.golesL + p.golesV;
+    if (sel.opcion === 'mas') return tot >= 3 ? RESULTADO.WIN : (fin ? RESULTADO.LOSS : 'contra');
+    return tot >= 3 ? RESULTADO.LOSS : (fin ? RESULTADO.WIN : 'vivo');
+  }
+  if (sel.mercado === 'btts'){
+    const ambos = p.golesL > 0 && p.golesV > 0;
+    if (sel.opcion === 'si') return ambos ? RESULTADO.WIN : (fin ? RESULTADO.LOSS : 'contra');
+    return ambos ? RESULTADO.LOSS : (fin ? RESULTADO.WIN : 'vivo');
+  }
+  if (sel.mercado === 'gol'){
+    const j = p.jugadores.find(x => x.id === sel.opcion);
+    if (!j) return fin ? RESULTADO.LOSS : 'contra';
+    if (j.goles > 0) return RESULTADO.WIN;
+    return fin ? RESULTADO.LOSS : 'contra';
+  }
+  return null;
+}
+const estaResuelta = e => e === RESULTADO.WIN || e === RESULTADO.LOSS ||
+                          e === RESULTADO.VOID || e === RESULTADO.HALF_WIN ||
+                          e === RESULTADO.HALF_LOSS;
+
+// ---------- Simulación de los partidos ----------
+function avanzar(dt){
+  S.reloj += dt;
+  let algunoVivo = false;
+
+  for (const p of S.partidos){
+    if (p.estado === 'fin') continue;
+    algunoVivo = true;
+    p.crono += dt;
+
+    if (p.estado === 'previo'){
+      if (p.crono >= 3){ p.estado = 'vivo'; p.crono = 0; anotarEvento(p, 0, '🟢 Comienza el partido'); }
+      continue;
+    }
+
+    // Movimiento del balón, solo para que el campo tenga vida
+    p.balon.x += p.balon.vx * dt; p.balon.y += p.balon.vy * dt;
+    if (p.balon.x < 0.08 || p.balon.x > 0.92){ p.balon.vx *= -1; p.balon.vx += azar(-.1,.1); }
+    if (p.balon.y < 0.12 || p.balon.y > 0.88){ p.balon.vy *= -1; }
+    p.balon.x = limitar(p.balon.x, 0.08, 0.92);
+    p.balon.y = limitar(p.balon.y, 0.12, 0.88);
+
+    while (p.crono >= SEG_POR_MINUTO && p.estado === 'vivo'){
+      p.crono -= SEG_POR_MINUTO;
+      p.minuto++;
+      minutoDePartido(p);
+      if (p.minuto >= 90){ terminarPartido(p); break; }
+    }
+  }
+
+  if (!algunoVivo && S.partidos.length){
+    S.jornada++;
+    nuevaJornada();
+    Arcade.aviso(avisos, '📅 Jornada ' + S.jornada + ': ocho partidos nuevos', true, 2400);
+    pintarTodo();
+  }
+}
+
+function minutoDePartido(p){
+  // Goles: la fuerza del equipo repartida entre los 90 minutos
+  for (const lado of ['local', 'visita']){
+    const fuerza = lado === 'local' ? p.fuerzaL : p.fuerzaV;
+    if (Math.random() < fuerza / 90) marcarGol(p, lado);
+  }
+
+  // Cambios: uno por equipo en la primera parte, que es lo que activa la regla
+  for (const lado of ['local', 'visita']){
+    const hechos = lado === 'local' ? p.cambiosL : p.cambiosV;
+    const banquillo = lado === 'local' ? p.banquilloL : p.banquilloV;
+    const cupo = p.minuto <= 45 ? 1 : 2;
+    if (hechos >= cupo || hechos >= banquillo.length) continue;
+    const prob = p.minuto <= 45 ? 0.014 : 0.02;
+    if (Math.random() < prob) hacerCambio(p, lado);
+  }
+
+  // Suspensión: rarísima, pero existe y anula las apuestas de ese partido
+  if (Math.random() < 0.00035){
+    p.suspendido = true;
+    anotarEvento(p, p.minuto, '⛔ Partido suspendido · apuestas anuladas');
+    terminarPartido(p);
+  }
+}
+
+function marcarGol(p, lado){
+  const enCampo = p.jugadores.filter(j => j.enCampo && j.lado === lado);
+  if (!enCampo.length) return;
+  // El goleador sale por pegada: el nueve marca mucho más que el central
+  const total = enCampo.reduce((s, j) => s + j.pegada, 0);
+  let r = Math.random() * total, autor = enCampo[0];
+  for (const j of enCampo){ r -= j.pegada; if (r <= 0){ autor = j; break; } }
+  autor.goles++;
+  if (lado === 'local') p.golesL++; else p.golesV++;
+  anotarEvento(p, p.minuto, '⚽ Gol de ' + autor.nombre + ' (' +
+    (lado === 'local' ? p.local.corto : p.visita.corto) + ')');
+  if (p === S.partidos[S.destacado]){ S.destello = 0.8; Sonido.fx('gol'); }
+}
+
+/**
+ * SUPLENTE DE ORO — si tu goleador sale en la primera parte sin haber marcado,
+ * la apuesta se pasa sola al que entra. Sin esto, un cambio al minuto 20 mataba
+ * la apuesta sin que el jugador pudiera hacer nada.
+ */
+function hacerCambio(p, lado){
+  const enCampo = p.jugadores.filter(j => j.enCampo && j.lado === lado && j.titular);
+  const banquillo = (lado === 'local' ? p.banquilloL : p.banquilloV).filter(j => !j.enCampo);
+  if (!enCampo.length || !banquillo.length) return;
+
+  const sale = elegir(enCampo), entra = banquillo[0];
+  sale.enCampo = false; entra.enCampo = true;
+  if (lado === 'local') p.cambiosL++; else p.cambiosV++;
+  anotarEvento(p, p.minuto, '🔄 Cambio: sale ' + sale.nombre + ', entra ' + entra.nombre);
+
+  if (p.minuto > 45 || sale.goles > 0) return;
+
+  // Traspaso de las apuestas vivas sobre el que sale
+  let traspasadas = 0;
+  for (const ap of S.apuestas){
+    if (ap.cerrada) continue;
+    for (const sel of ap.selecciones){
+      if (sel.mercado !== 'gol' || sel.partidoId !== p.id) continue;
+      if (sel.opcion !== sale.id || estaResuelta(sel.resuelto)) continue;
+      sel.opcion = entra.id;
+      sel.detalle = entra.dorsal + ' ' + entra.nombre + ' (suplente de oro)';
+      sel.oro = true;
+      traspasadas++;
+    }
+  }
+  if (traspasadas){
+    anotarEvento(p, p.minuto, '⚡ Suplente de Oro: ' + traspasadas +
+      (traspasadas === 1 ? ' apuesta pasa' : ' apuestas pasan') + ' a ' + entra.nombre);
+    Arcade.aviso(avisos, '⚡ Suplente de Oro: tu apuesta pasa a ' + entra.nombre, true, 2600);
+    Sonido.fx('poder');
+    pintarAbiertas();
+  }
+}
+
+function anotarEvento(p, minuto, texto){
+  p.eventos.unshift({ minuto, texto });
+  if (p.eventos.length > 12) p.eventos.pop();
+}
+
+function terminarPartido(p){
+  p.estado = 'fin';
+  anotarEvento(p, 90, '🏁 Final: ' + p.local.corto + ' ' + p.golesL + '-' + p.golesV + ' ' + p.visita.corto);
+  liquidar();
+  pintarTodo();
+}
+
+// ---------- Apuestas ----------
+function enBoleto(partidoId, mercado){
+  return S.boleto.find(s => s.partidoId === partidoId && s.mercado === mercado);
+}
+
+function alternarSeleccion(p, mercado, op){
+  const ya = S.boleto.find(s => s.partidoId === p.id && s.mercado === mercado.id &&
+                                s.opcion === op.id);
+  if (ya){ S.boleto = S.boleto.filter(s => s !== ya); pintarTodo(); return; }
+  // Un mercado por partido: dos resultados del mismo partido no se combinan
+  S.boleto = S.boleto.filter(s => !(s.partidoId === p.id && s.mercado === mercado.id));
+  if (S.boleto.length >= 8){
+    Arcade.aviso(avisos, 'El boleto admite ocho selecciones como mucho', false, 1800);
+    return;
+  }
+  S.boleto.push({
+    partidoId: p.id, mercado: mercado.id, opcion: op.id,
+    cuota: aCuota(op.pr), oro: !!mercado.oro,
+    titulo: p.local.corto + ' - ' + p.visita.corto,
+    detalle: mercado.nombre + ' · ' + op.et
+  });
+  Sonido.fx('clic');
+  pintarTodo();
+}
+
+function apostar(){
+  const importe = aCentimos($('importe').value);
+  if (importe <= 0n){ Arcade.aviso(avisos, 'Pon un importe válido', false, 1700); return; }
+  if (importe > S.saldo){ Arcade.aviso(avisos, 'No te llega el saldo', false, 1700); Sonido.fx('error'); return; }
+  if (!S.boleto.length) return;
+
+  const base = cuotaCombinada(S.boleto.map(s => s.cuota));
+  const patas = S.boleto.length;
+  const cuota = bbBoost(base, patas);
+
+  S.saldo -= importe;
+  S.apuestas.push({
+    id: nuevoId('B'),
+    selecciones: S.boleto.map(s => ({ ...s, resuelto: null })),
+    importe, cuotaBase: base, cuota, patas,
+    creada: Date.now(), cerrada: false, autoObjetivo: null
+  });
+  S.boleto = [];
+  Sonido.fx('ficha');
+  Arcade.aviso(avisos, '🎟 Apuesta de S/ ' + soles(importe) + ' a cuota ' + cuota.toFixed(2), true, 2000);
+  guardar();
+  pintarTodo();
+}
+
+/** Cuota que queda por resolverse: la de las patas todavía vivas. */
+function cuotaPendiente(ap){
+  const vivas = ap.selecciones.filter(s => !estaResuelta(estadoSeleccion(s)));
+  if (!vivas.length) return 1;
+  return cuotaCombinada(vivas.map(s => s.cuota));
+}
+
+/** Lo que ofrece la casa por cerrar ahora. */
+function valorCashout(ap){
+  const estados = ap.selecciones.map(estadoSeleccion);
+  if (estados.some(e => e === RESULTADO.LOSS)) return 0n;
+  const pendiente = cuotaPendiente(ap);
+  // Con las patas resueltas ya ganadas, lo que queda por decidir es `pendiente`
+  const bruto = Number(ap.importe) * (ap.cuota / pendiente) * (1 - comisionCashout());
+  return BigInt(Math.max(0, Math.floor(bruto)));
+}
+
+function cobrar(ap, parcial){
+  if (ap.cerrada) return;
+  const total = valorCashout(ap);
+  if (total <= 0n){ Arcade.aviso(avisos, 'Esta apuesta ya no vale nada', false, 1700); return; }
+
+  if (parcial){
+    // La mitad se cobra y la otra mitad sigue viva, con el importe reducido
+    const parte = total / 2n;
+    const restaImporte = ap.importe - ap.importe / 2n;
+    ap.importe = restaImporte;
+    S.saldo += parte;
+    Arcade.aviso(avisos, '🏳 Cobras la mitad: S/ ' + soles(parte), true, 2000);
+    ap.parcial = (ap.parcial || 0n) + parte;
+  } else {
+    ap.cerrada = true;
+    ap.pagado = total;
+    S.saldo += total;
+    S.historial.unshift({
+      texto: 'Cash-out · ' + ap.patas + (ap.patas === 1 ? ' pata' : ' patas'),
+      neto: total - ap.importe
+    });
+    Arcade.aviso(avisos, '🏳 Cash-out: S/ ' + soles(total), true, 2000);
+  }
+  Sonido.fx('moneda');
+  guardar();
+  pintarTodo();
+}
+
+/** Liquida lo que ya tenga todas sus patas decididas. */
+function liquidar(){
+  for (const ap of S.apuestas){
+    if (ap.cerrada) continue;
+
+    // El cobro automático salta solo en cuanto llega al objetivo
+    if (ap.autoObjetivo && valorCashout(ap) >= ap.autoObjetivo){
+      Arcade.aviso(avisos, '🤖 Cobro automático disparado', true, 2000);
+      cobrar(ap, false);
+      continue;
+    }
+
+    const estados = ap.selecciones.map(e => {
+      const r = estadoSeleccion(e);
+      if (estaResuelta(r)) e.resuelto = r;
+      return e.resuelto || r;
+    });
+    if (!estados.every(estaResuelta)) continue;
+
+    ap.cerrada = true;
+    if (estados.some(e => e === RESULTADO.LOSS)){
+      ap.pagado = 0n;
+      S.historial.unshift({ texto: ap.patas + ' patas · fallada', neto: -ap.importe });
+      Sonido.fx('derrota');
+    } else {
+      // Las anuladas salen de la combinada: su cuota pasa a 1,00
+      const vivas = ap.selecciones.filter((s, i) => estados[i] !== RESULTADO.VOID);
+      const cuotaFinal = vivas.length
+        ? bbBoost(cuotaCombinada(vivas.map(s => s.cuota)), vivas.length)
+        : 1;
+      ap.pagado = pagoEnCentimos(ap.importe, cuotaFinal, RESULTADO.WIN);
+      S.saldo += ap.pagado;
+      const neto = ap.pagado - ap.importe;
+      if (neto > S.record){ S.record = neto; }
+      S.historial.unshift({
+        texto: ap.patas + ' patas a ' + cuotaFinal.toFixed(2) +
+               (vivas.length < ap.selecciones.length ? ' (con anuladas)' : ''),
+        neto
+      });
+      Arcade.aviso(avisos, '🎉 Apuesta ganada: S/ ' + soles(ap.pagado), true, 2800);
+      Sonido.fx('victoria');
+      Arcade.perfil.partida('sports', { puntos: Number(neto / 100n), victoria: true });
+    }
+  }
+  if (S.historial.length > 30) S.historial.length = 30;
+  S.apuestas = S.apuestas.filter(a => !a.cerrada || Date.now() - a.creada < 1500);
+  guardar();
+}
+
+// ---------- Desbloqueo y cartera ----------
+function pintarBloqueo(){
+  const tengo = Arcade.fichas.saldo();
+  $('tuCartera').textContent = 'Tienes ' + tengo.toLocaleString('es-ES') + ' NEXO-COINS';
+  $('barraCajaRelleno').style.width = Math.min(100, tengo / COSTE_DESBLOQUEO * 100) + '%';
+  $('btnDesbloquear').disabled = tengo < COSTE_DESBLOQUEO;
+  $('btnDesbloquear').textContent = tengo < COSTE_DESBLOQUEO
+    ? '🔒 Te faltan ' + (COSTE_DESBLOQUEO - tengo).toLocaleString('es-ES')
+    : '🔓 Abrir la casa de apuestas';
+}
+
+function desbloquear(){
+  const tengo = Arcade.fichas.saldo();
+  if (tengo < COSTE_DESBLOQUEO) return;
+  Arcade.fichas.ajustar(-COSTE_DESBLOQUEO);
+  S.abierta = true;
+  S.cambiado = COSTE_DESBLOQUEO;
+  // Lo pagado entra como saldo al cambio del pliego: un millón por sol
+  S.saldo = BigInt(Math.floor(COSTE_DESBLOQUEO / NEXOCOINS_POR_SOL)) * 100n;
+  nuevaJornada();
+  guardar();
+  Sonido.fx('victoria');
+  Arcade.aviso(avisos, '🔓 Casa abierta con S/ ' + soles(S.saldo), true, 3200);
+  mostrarMesa();
+  pintarTodo();
+}
+
+function mostrarMesa(){
+  $('bloqueo').hidden = S.abierta;
+  $('mesa').hidden = !S.abierta;
+}
+
+// ---------- Guardado ----------
+function guardar(){
+  Arcade.escribir(CLAVE, JSON.stringify({
+    abierta: S.abierta,
+    saldo: S.saldo.toString(),
+    record: S.record.toString(),
+    cambiado: S.cambiado,
+    jornada: S.jornada,
+    historial: S.historial.slice(0, 20).map(h => ({ texto:h.texto, neto:h.neto.toString() }))
+  }));
+}
+function cargar(){
+  let g = null;
+  try { g = JSON.parse(Arcade.leerTexto(CLAVE, 'null')); } catch(e){}
+  if (!g) return;
+  S.abierta = !!g.abierta;
+  S.saldo = BigInt(g.saldo || '0');
+  S.record = BigInt(g.record || '0');
+  S.cambiado = g.cambiado || 0;
+  S.jornada = g.jornada || 1;
+  S.historial = (g.historial || []).map(h => ({ texto:h.texto, neto: BigInt(h.neto || '0') }));
+}
+Guardado.registrar(guardar);
+
+// ---------- Pintado del panel ----------
+function pintarPartidos(){
+  const cont = $('listaPartidos');
+  cont.innerHTML = '';
+  S.partidos.forEach((p, i) => {
+    const b = document.createElement('button');
+    b.className = 'partido' + (i === S.destacado ? ' sel' : '');
+    const estado = p.suspendido ? 'SUSPENDIDO'
+      : p.estado === 'previo' ? 'por empezar'
+      : p.estado === 'fin' ? 'FINAL' : p.minuto + "'";
+    b.innerHTML =
+      '<div class="equipos">' + p.local.corto + ' - ' + p.visita.corto +
+        '<b>' + p.golesL + '-' + p.golesV + '</b></div>' +
+      '<div class="min ' + (p.estado === 'vivo' ? 'vivo' : p.estado === 'fin' ? 'fin' : '') + '">' +
+        estado + '</div>';
+    b.onclick = () => { S.destacado = i; pintarTodo(); };
+    cont.appendChild(b);
+  });
+  $('relojTxt').textContent = 'J' + S.jornada;
+}
+
+function pintarMercados(){
+  const p = S.partidos[S.destacado];
+  const cont = $('mercados');
+  cont.innerHTML = '';
+  if (!p) return;
+  const cerrado = p.estado === 'fin' || p.suspendido;
+
+  for (const m of mercadosDe(p)){
+    const d = document.createElement('div');
+    d.className = 'mercado';
+    d.innerHTML = '<div class="nom">' + m.nombre + '</div>';
+    const ops = document.createElement('div');
+    ops.className = 'opciones';
+    for (const op of m.ops){
+      const b = document.createElement('button');
+      b.className = 'cuota';
+      const puesta = S.boleto.find(s => s.partidoId === p.id && s.mercado === m.id && s.opcion === op.id);
+      if (puesta) b.classList.add('sel');
+      b.disabled = cerrado;
+      b.innerHTML = '<span class="et">' + op.et + '</span>' +
+                    '<span class="v">' + aCuota(op.pr).toFixed(2) + '</span>' +
+                    (m.oro ? '<span class="oro-flag">⚡ oro</span>' : '');
+      b.onclick = () => alternarSeleccion(p, m, op);
+      ops.appendChild(b);
+    }
+    d.appendChild(ops);
+    cont.appendChild(d);
+  }
+}
+
+function pintarBoleto(){
+  const cont = $('boleto');
+  cont.innerHTML = '';
+  $('patasTxt').textContent = S.boleto.length;
+  $('boletoVacio').hidden = S.boleto.length > 0;
+  $('resumen').hidden = S.boleto.length === 0;
+
+  for (const s of S.boleto){
+    const d = document.createElement('div');
+    d.className = 'seleccion';
+    d.innerHTML = '<div class="txt"><b>' + s.titulo + '</b><span>' + s.detalle + '</span></div>' +
+                  '<div class="c">' + s.cuota.toFixed(2) + '</div>';
+    const x = document.createElement('button');
+    x.className = 'quitar'; x.textContent = '×';
+    x.setAttribute('aria-label', 'Quitar selección');
+    x.onclick = () => { S.boleto = S.boleto.filter(o => o !== s); pintarTodo(); };
+    d.appendChild(x);
+    cont.appendChild(d);
+  }
+  if (!S.boleto.length) return;
+
+  const base = cuotaCombinada(S.boleto.map(s => s.cuota));
+  const patas = S.boleto.length;
+  const cuota = bbBoost(base, patas);
+  $('cuotaTxt').textContent = base.toFixed(2);
+  const pct = porcentajeBoost(patas);
+  $('filaBoost').hidden = !pct;
+  $('boostTxt').textContent = pct ? '+' + pct + ' % → ' + cuota.toFixed(2) : '—';
+
+  const importe = aCentimos($('importe').value);
+  $('premioTxt').textContent = 'S/ ' + soles(pagoEnCentimos(importe, cuota, RESULTADO.WIN));
+  $('btnApostar').disabled = importe <= 0n || importe > S.saldo;
+}
+
+function pintarAbiertas(){
+  const cont = $('abiertas');
+  cont.innerHTML = '';
+  let enJuego = 0n;
+  const vivas = S.apuestas.filter(a => !a.cerrada);
+  for (const ap of vivas){
+    enJuego += ap.importe;
+    const estados = ap.selecciones.map(estadoSeleccion);
+    const perdida = estados.some(e => e === RESULTADO.LOSS);
+    const ganando = estados.every(e => e === RESULTADO.WIN || e === 'vivo' || e === RESULTADO.VOID);
+
+    const d = document.createElement('div');
+    d.className = 'abierta' + (perdida ? ' pierde' : ganando ? ' gana' : '');
+    const valor = valorCashout(ap);
+    d.innerHTML =
+      '<div class="cab">S/ ' + soles(ap.importe) + ' × <b>' + ap.cuota.toFixed(2) + '</b>' +
+      '<span class="est">' + (perdida ? 'PERDIDA' : ganando ? 'GANANDO' : 'EN JUEGO') + '</span></div>' +
+      '<div class="patas">' + ap.selecciones.map((s, i) => {
+        const e = estados[i];
+        const clase = e === RESULTADO.WIN ? 'ok' : e === RESULTADO.LOSS ? 'no'
+                    : e === RESULTADO.VOID ? 'nulo' : '';
+        const ic = e === RESULTADO.WIN ? '✅' : e === RESULTADO.LOSS ? '❌'
+                 : e === RESULTADO.VOID ? '⛔' : e === 'vivo' ? '🟢' : '⏳';
+        return '<div class="p ' + clase + '"><span class="ic">' + ic + '</span>' +
+               s.titulo + ' · ' + s.detalle + (s.oro ? ' ⚡' : '') + '</div>';
+      }).join('') + '</div>';
+
+    const acc = document.createElement('div');
+    acc.className = 'acciones';
+    if (!perdida && valor > 0n){
+      const b1 = document.createElement('button');
+      b1.textContent = '🏳 S/ ' + soles(valor);
+      b1.title = 'Cobrar entera';
+      b1.onclick = () => cobrar(ap, false);
+      const b2 = document.createElement('button');
+      b2.textContent = '½';
+      b2.title = 'Cobrar la mitad';
+      b2.onclick = () => cobrar(ap, true);
+      const b3 = document.createElement('button');
+      b3.textContent = ap.autoObjetivo ? '🤖 ✓' : '🤖';
+      b3.title = 'Cobro automático al doble de lo apostado';
+      b3.onclick = () => {
+        ap.autoObjetivo = ap.autoObjetivo ? null : ap.importe * 2n;
+        Arcade.aviso(avisos, ap.autoObjetivo
+          ? '🤖 Cobrará solo al llegar a S/ ' + soles(ap.autoObjetivo)
+          : '🤖 Cobro automático apagado', true, 2000);
+        pintarAbiertas();
+      };
+      acc.append(b1, b2, b3);
+    }
+    d.appendChild(acc);
+    cont.appendChild(d);
+  }
+  $('enJuegoTxt').textContent = 'S/ ' + soles(enJuego);
+  $('abiertasTxt').textContent = vivas.length;
+}
+
+function pintarHistorial(){
+  const cont = $('historial');
+  cont.innerHTML = S.historial.length
+    ? S.historial.slice(0, 14).map(h =>
+        '<div class="h ' + (h.neto >= 0n ? 'gana' : 'pierde') + '">' + h.texto +
+        '<b>' + (h.neto >= 0n ? '+' : '') + soles(h.neto) + '</b></div>').join('')
+    : '<div class="h">Todavía nada.</div>';
+}
+
+function pintarHud(){
+  $('saldoTxt').textContent = soles(S.saldo);
+  $('recordTxt').textContent = S.record > 0n ? soles(S.record) : '—';
+}
+
+function pintarTodo(){
+  if (!S.abierta) return;
+  pintarPartidos(); pintarMercados(); pintarBoleto();
+  pintarAbiertas(); pintarHistorial(); pintarHud();
+}
+
+// ---------- Campo ----------
+function dibujar(){
+  const p = S.partidos[S.destacado];
+  ctx.clearRect(0, 0, ANCHO, ALTO);
+  if (!p) return;
+
+  const MARCO = 44;                       // franja del marcador de arriba
+  // Césped a rayas
+  for (let i = 0; i < 10; i++){
+    ctx.fillStyle = i % 2 ? '#12643a' : '#0e5632';
+    ctx.fillRect(i * ANCHO / 10, MARCO, ANCHO / 10 + 1, ALTO - MARCO);
+  }
+  // Líneas del campo
+  const cx = ANCHO / 2, cy = MARCO + (ALTO - MARCO) / 2;
+  ctx.strokeStyle = 'rgba(255,255,255,.45)'; ctx.lineWidth = 2;
+  ctx.strokeRect(14, MARCO + 12, ANCHO - 28, ALTO - MARCO - 24);
+  ctx.beginPath(); ctx.moveTo(cx, MARCO + 12); ctx.lineTo(cx, ALTO - 12); ctx.stroke();
+  ctx.beginPath(); ctx.arc(cx, cy, 42, 0, 6.283); ctx.stroke();
+  for (const lado of [-1, 1]){
+    const x = lado < 0 ? 14 : ANCHO - 14;
+    ctx.strokeRect(lado < 0 ? x : x - 62, cy - 56, 62, 112);
+    ctx.strokeRect(lado < 0 ? x : x - 26, cy - 26, 26, 52);
+  }
+
+  // Balón
+  const bx = 14 + p.balon.x * (ANCHO - 28), by = MARCO + 12 + p.balon.y * (ALTO - MARCO - 24);
+  ctx.fillStyle = 'rgba(0,0,0,.35)';
+  ctx.beginPath(); ctx.ellipse(bx, by + 6, 7, 3, 0, 0, 6.283); ctx.fill();
+  ctx.fillStyle = '#fff';
+  ctx.beginPath(); ctx.arc(bx, by, 6, 0, 6.283); ctx.fill();
+  ctx.fillStyle = '#1a1a1a';
+  ctx.beginPath(); ctx.arc(bx, by, 2.4, 0, 6.283); ctx.fill();
+
+  // Marcador
+  ctx.fillStyle = 'rgba(4,8,14,.92)';
+  ctx.fillRect(0, 0, ANCHO, MARCO);
+  ctx.textBaseline = 'middle';
+  ctx.font = '900 17px "Segoe UI", system-ui, sans-serif';
+  ctx.textAlign = 'right';
+  ctx.fillStyle = p.local.color; ctx.fillText(p.local.nombre, cx - 58, MARCO / 2);
+  ctx.textAlign = 'left';
+  ctx.fillStyle = p.visita.color; ctx.fillText(p.visita.nombre, cx + 58, MARCO / 2);
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#fff'; ctx.font = '900 21px "Courier New", monospace';
+  ctx.fillText(p.golesL + ' - ' + p.golesV, cx, MARCO / 2);
+  ctx.font = '700 12px "Courier New", monospace';
+  ctx.fillStyle = p.suspendido ? '#ff5a72'
+    : p.estado === 'vivo' ? '#4ee089' : 'rgba(255,255,255,.5)';
+  const rot = p.suspendido ? 'SUSPENDIDO'
+    : p.estado === 'previo' ? 'EN BREVE' : p.estado === 'fin' ? 'FINAL' : p.minuto + "'";
+  ctx.fillText(rot, cx, MARCO - 8);
+
+  // Últimos eventos, sobre el césped
+  ctx.textAlign = 'left';
+  ctx.font = '600 12px "Segoe UI", system-ui, sans-serif';
+  p.eventos.slice(0, 5).forEach((e, i) => {
+    ctx.fillStyle = 'rgba(0,0,0,' + (0.5 - i * 0.07).toFixed(2) + ')';
+    ctx.fillRect(20, MARCO + 20 + i * 20, 300, 17);
+    ctx.fillStyle = 'rgba(255,255,255,' + (0.9 - i * 0.15).toFixed(2) + ')';
+    ctx.fillText(e.minuto + "'  " + e.texto, 26, MARCO + 29 + i * 20);
+  });
+
+  // Goleadores del partido, a la derecha
+  const goleadores = p.jugadores.filter(j => j.goles > 0);
+  if (goleadores.length){
+    ctx.textAlign = 'right';
+    ctx.font = '700 12px "Segoe UI", system-ui, sans-serif';
+    goleadores.slice(0, 6).forEach((j, i) => {
+      ctx.fillStyle = j.lado === 'local' ? p.local.color : p.visita.color;
+      ctx.fillText('⚽ ' + j.nombre + (j.goles > 1 ? ' ×' + j.goles : ''),
+                   ANCHO - 22, MARCO + 28 + i * 18);
+    });
+  }
+
+  if (S.destello > 0){
+    ctx.fillStyle = 'rgba(255,255,255,' + (S.destello * 0.25).toFixed(3) + ')';
+    ctx.fillRect(0, 0, ANCHO, ALTO);
+  }
+}
+
+// ---------- Ciclo ----------
+let desdeUltimoPintado = 0;
+Arcade.bucle(dt => {
+  if (S.destello > 0) S.destello = Math.max(0, S.destello - dt * 2);
+  if (!S.abierta){ pintarBloqueo(); return; }
+  avanzar(dt);
+  liquidar();
+  dibujar();
+  // El panel se repinta cuatro veces por segundo: cada cuadro es tirar CPU
+  desdeUltimoPintado += dt;
+  if (desdeUltimoPintado > 0.25){ desdeUltimoPintado = 0; pintarTodo(); }
+});
+
+// ---------- Controles ----------
+$('btnDesbloquear').onclick = () => { Sonido.activar(); desbloquear(); };
+$('btnApostar').onclick = () => { Sonido.activar(); apostar(); };
+$('importe').addEventListener('input', pintarBoleto);
+document.querySelectorAll('.rapidos button').forEach(b => {
+  b.onclick = () => {
+    $('importe').value = b.dataset.imp === 'max' ? soles(S.saldo) : b.dataset.imp + ',00';
+    pintarBoleto();
+  };
+});
+Arcade.conectarSonido($('btnSonido'));
+
+// ---------- Tienda del juego ----------
+// Se paga con NEXO-COINS, la moneda común del arcade.
+if (typeof Arcade !== 'undefined' && Arcade.tienda){
+  Arcade.tienda.registrar('sports', 'Sala VIP', [
+    { id:'inyeccion', icono:'💵', nombre:'Inyección de caja', precio:200000, max:20, factor:1.35,
+      etiqueta: n => n ? 'Comprada ' + n + (n === 1 ? ' vez' : ' veces') : 'Sin comprar',
+      desc:'Mete S/ 500 en la cartera de NEXO Sports. Es la única forma de reponer ' +
+           'sin volver a cambiar diez mil millones.',
+      bloqueado: () => S.abierta ? '' : 'Abre antes la casa de apuestas' },
+    { id:'comision', icono:'✂️', nombre:'Cash-out sin recorte', precio:400000, max:1,
+      desc:'La casa deja de quedarse el 5 % al cobrar antes de tiempo.',
+      bloqueado: () => S.abierta ? '' : 'Abre antes la casa de apuestas' }
+  ], id => {
+    if (id === 'inyeccion'){
+      S.saldo += 50000n;                     // S/ 500,00
+      Arcade.aviso(avisos, '💵 +S/ 500,00 en la cartera', true, 2200);
+      guardar(); pintarTodo();
+    }
+  });
+}
+
+// ---------- Trucos de administración ----------
+// Solo hacen algo con el modo creador encendido (código 2808, tecla F9).
+if (typeof Arcade !== 'undefined' && Arcade.admin) Arcade.admin.registrar('sports', 'NEXO Sports', {
+  abrir: { que:'abrir — abre la casa de apuestas sin pagar', fn(){
+    if (S.abierta) return 'Ya estaba abierta.';
+    S.abierta = true;
+    S.saldo = 100000n;                       // S/ 1.000,00
+    nuevaJornada(); guardar(); mostrarMesa(); pintarTodo();
+    return 'Casa abierta con S/ 1.000,00.';
+  }},
+  saldo: { que:'saldo <soles> — fija la cartera en soles', fn(n){
+    const v = Math.max(0, Math.round((parseFloat(String(n).replace(',', '.')) || 0) * 100));
+    S.saldo = BigInt(v); guardar(); pintarTodo();
+    return 'Cartera en S/ ' + soles(S.saldo) + '.';
+  }},
+  ganar: { que:'ganar — hace ganar todas tus apuestas vivas', fn(){
+    const vivas = S.apuestas.filter(a => !a.cerrada);
+    if (!vivas.length) return 'No tienes ninguna apuesta en juego.';
+    for (const ap of vivas){
+      ap.cerrada = true;
+      ap.pagado = pagoEnCentimos(ap.importe, ap.cuota, RESULTADO.WIN);
+      S.saldo += ap.pagado;
+      S.historial.unshift({ texto: ap.patas + ' patas · truco', neto: ap.pagado - ap.importe });
+    }
+    guardar(); pintarTodo();
+    return vivas.length + (vivas.length === 1 ? ' apuesta pagada.' : ' apuestas pagadas.');
+  }},
+  gol: { que:'gol <local|visita> — mete un gol en el partido destacado', fn(lado){
+    const p = S.partidos[S.destacado];
+    if (!p) return 'No hay partido destacado.';
+    if (p.estado === 'previo'){ p.estado = 'vivo'; p.crono = 0; }
+    marcarGol(p, String(lado || 'local').startsWith('v') ? 'visita' : 'local');
+    liquidar(); pintarTodo();
+    return p.local.corto + ' ' + p.golesL + '-' + p.golesV + ' ' + p.visita.corto;
+  }},
+  minuto: { que:'minuto <n> — adelanta el reloj del partido destacado', fn(n){
+    const p = S.partidos[S.destacado];
+    if (!p) return 'No hay partido destacado.';
+    const hasta = Math.max(0, Math.min(90, Math.floor(+n) || 90));
+    if (p.estado === 'previo'){ p.estado = 'vivo'; p.crono = 0; }
+    while (p.minuto < hasta && p.estado === 'vivo'){ p.minuto++; minutoDePartido(p); }
+    if (p.minuto >= 90) terminarPartido(p);
+    liquidar(); pintarTodo();
+    return 'Minuto ' + p.minuto + '.';
+  }},
+  cambio: { que:'cambio — fuerza un cambio, para probar el Suplente de Oro', fn(){
+    const p = S.partidos[S.destacado];
+    if (!p) return 'No hay partido destacado.';
+    if (p.estado === 'previo'){ p.estado = 'vivo'; p.minuto = 20; }
+    hacerCambio(p, 'local');
+    pintarTodo();
+    return 'Cambio hecho en el ' + p.local.corto + '.';
+  }},
+  jornada: { que:'jornada — tira estos partidos y reparte ocho nuevos', fn(){
+    nuevaJornada(); S.jornada++; pintarTodo();
+    return 'Jornada ' + S.jornada + ' con ocho partidos nuevos.';
+  }}
+});
+
+// ---------- Arranque ----------
+cargar();
+if (S.abierta && !S.partidos.length) nuevaJornada();
+mostrarMesa();
+pintarBloqueo();
+pintarTodo();
 
 });
 </script>

@@ -1,6 +1,6 @@
 # 🕹 ARCADE NEXO
 
-Treinta y nueve juegos hechos a mano en **HTML5 + Canvas + JavaScript puro**. Sin dependencias, sin librerías, sin assets externos y sin conexión a internet: todos los gráficos se dibujan por código y todo el sonido se genera en tiempo real con WebAudio.
+Cuarenta juegos hechos a mano en **HTML5 + Canvas + JavaScript puro**. Sin dependencias, sin librerías, sin assets externos y sin conexión a internet: todos los gráficos se dibujan por código y todo el sonido se genera en tiempo real con WebAudio.
 
 ## ▶ Cómo jugar
 
@@ -10,7 +10,7 @@ Cada juego tiene su botón **🕹 Arcade** arriba a la izquierda para volver a l
 
 ### 📦 Versión de un solo archivo
 
-`arcade.html` es el arcade **entero** (portada y los treinta y nueve juegos) empaquetado en un único archivo, sin CSS ni JS externos. Sirve para cuando solo puedes usar una página suelta: mandarlo por correo, subirlo a cualquier sitio o abrirlo desde una memoria USB.
+`arcade.html` es el arcade **entero** (portada y los cuarenta juegos) empaquetado en un único archivo, sin CSS ni JS externos. Sirve para cuando solo puedes usar una página suelta: mandarlo por correo, subirlo a cualquier sitio o abrirlo desde una memoria USB.
 
 Se genera a partir de los archivos de `juegos/`, que siguen siendo la fuente de verdad:
 
@@ -63,6 +63,7 @@ Cada juego queda aislado en su propia pantalla: su CSS se prefija con el selecto
 | 🏀 [Basketball Stars](juegos/basketball-stars.html) | Deportes | Uno contra uno a media cancha, con tiro perfecto por temporización |
 | 🔫 [1v1.LOL](juegos/1v1-lol.html) | Arena | Construye muros y rampas mientras disparas, a cinco rondas |
 | 🚚 [Cluster Rush](juegos/cluster-rush.html) | Corredor | Salta de camión en camión sin tocar el asfalto |
+| ⚽ [NEXO Sports](juegos/nexo-sports.html) | Casino | Casa de apuestas de fútbol: combinadas, cash-out y Suplente de Oro |
 
 ---
 
@@ -509,9 +510,35 @@ Cinco de los más jugados de DuckMath, rehechos desde cero como el resto: Canvas
 | 🔫 **1v1.LOL** | Muros y rampas en una rejilla; las balas comprueban la casilla que cruzan, en **cuatro subpasos** para que una bala rápida no se salte un muro. La máquina dispara a 0,62 s por tiro y falla adrede: con tu misma cadencia ganaba las cinco rondas sin darte tiempo a levantar un muro. |
 | 🚚 **Cluster Rush** | Cada camión tiene su propia velocidad, así que la caravana se estira sola. El reciclado la mantiene junta: los que se descuelgan vuelven al frente y **los que se adelantan demasiado vuelven a la cola**. Las cajas de encima son plataforma de verdad, no adorno. |
 
+## ⚽ NEXO Sports, la sala de final de partida
+
+Una casa de apuestas de fútbol **simulada**, con su propio motor. Se abre pagando **10.000 millones de NEXO-COINS** y, una vez dentro, ya no se juega con monedas del arcade: se juega con **soles del juego**, al cambio de **1.000.000 NEXO-COINS = S/ 1,00**. El cambio va en un solo sentido, así que es el sumidero de final de partida: la única forma de reponer caja después es la Sala VIP de su tienda.
+
+> Los soles son de mentira, igual que las fichas del blackjack o de la ruleta. No hay dinero real, ni pasarela de pago, ni forma de retirar nada, y no está asociado a ninguna casa de apuestas de verdad.
+
+Ocho partidos por jornada corren a la vez: minuto a minuto, con goles repartidos por la pegada de cada jugador, cambios y alguna suspensión rarísima que anula las apuestas de ese partido.
+
+| Pieza | Cómo funciona |
+|---|---|
+| **Dinero en BigInt** | Todo se lleva en céntimos enteros. Una cuota de 3,50 sobre S/ 20 en coma flotante da 70.00000000000001, y ese céntimo fantasma acaba descuadrando el saldo. |
+| **Cuotas** | Salen de un modelo de Poisson sobre los goles esperados que quedan, contando el marcador actual, con un **1,5 % de ventaja de la casa**. Se mueven solas según avanza el partido. |
+| **Mercados** | Ganador, más/menos de 2,5 goles, ambos marcan y goleador. |
+| **BB Boost** | Combinar sube la cuota: **3 patas +10 %, 4 +15 %, 5 o más +25 %**. La cuota combinada se multiplica en enteros escalados y se redondea **una sola vez** al final: encadenar redondeos por pata desvía varios céntimos. |
+| **⚡ Suplente de Oro** | Si tu goleador sale **en la primera parte sin haber marcado**, la apuesta se traspasa sola al que entra. Sin esto, un cambio al minuto 20 mataba la apuesta sin que pudieras hacer nada. |
+| **Cash-out** | Entera, a la mitad o **automática** al doble de lo apostado. El valor sale de la cuota que todavía queda por resolverse, menos la comisión del 5 % (que la Sala VIP puede quitar). |
+| **Liquidación** | WIN, LOSS, VOID, HALF_WIN y HALF_LOSS. Las anuladas salen de la combinada: su cuota pasa a 1,00 y el resto sigue vivo. |
+
+El motor está además suelto en `motor/`, con su pliego en `nexo-sports.spec.json`, para poder correrlo fuera del navegador:
+
+```bash
+node motor/index.ts
+```
+
+Va en TypeScript y corre **sin instalar nada**: Node ejecuta TS quitando los tipos. Por eso los tipos cerrados van como objetos `as const` y no como `enum` — un `enum` genera código en tiempo de ejecución que ese modo no admite.
+
 ## 🔎 Salas y buscador
 
-La portada no es una lista de treinta y nueve cartas: es un **mapa de seis salas** —casino, acción y carreras, arcade clásico, ingenio y memoria, estrategia y gestión e idle—, cada una con su color, su lema y cuántos juegos tiene. Al pulsar una **se abre su espacio**: desaparecen las demás, sale una cabecera con el nombre de la sala y un botón para volver, y abajo quedan solo sus juegos.
+La portada no es una lista de cuarenta cartas: es un **mapa de seis salas** —casino, acción y carreras, arcade clásico, ingenio y memoria, estrategia y gestión e idle—, cada una con su color, su lema y cuántos juegos tiene. Al pulsar una **se abre su espacio**: desaparecen las demás, sale una cabecera con el nombre de la sala y un botón para volver, y abajo quedan solo sus juegos.
 
 Las salas salen del género que ya traía cada juego. Un género nuevo cae en *arcade* en vez de desaparecer de la portada.
 
@@ -519,7 +546,7 @@ El buscador filtra por nombre, género, descripción y sala, **sin tildes y por 
 
 ## 🛒 Tiendas: en qué gastar los NEXO-COINS
 
-Los **39 juegos** tienen su propia tienda, con el botón 🛒 en la barra. Se paga con NEXO-COINS, la moneda común, así que lo que ganas en la ruleta sirve para comprarle un taladro de plasma a la mina.
+Los **40 juegos** tienen su propia tienda, con el botón 🛒 en la barra. Se paga con NEXO-COINS, la moneda común, así que lo que ganas en la ruleta sirve para comprarle un taladro de plasma a la mina.
 
 El módulo vive en `Arcade.tienda` (`juegos/arcade.js`) y cada juego declara sus artículos desde su propio script, igual que los trucos: es el único sitio donde su estado está a mano. Lo comprado se guarda por juego y se lee con `Arcade.tienda.nivel()` **cada vez que hace falta**, no una vez al cargar, para que una compra a mitad de partida se note sin salir.
 
@@ -577,7 +604,7 @@ La consola vive en `Arcade.admin` (`juegos/arcade.js`). Añadir un comando es a�
 
 ### Trucos por juego
 
-Los **39 juegos** tienen sus propios comandos: 161 en total. No pueden vivir en la consola porque en el arcade empaquetado el estado de cada juego queda encerrado dentro de su función, así que **cada juego se apunta desde su propio script** con `Arcade.admin.registrar(id, nombre, trucos)`, y la consola solo mira qué pantalla está abierta.
+Los **40 juegos** tienen sus propios comandos: 168 en total. No pueden vivir en la consola porque en el arcade empaquetado el estado de cada juego queda encerrado dentro de su función, así que **cada juego se apunta desde su propio script** con `Arcade.admin.registrar(id, nombre, trucos)`, y la consola solo mira qué pantalla está abierta.
 
 Dentro de un juego, `juego` lista lo que tiene a mano y `juego <truco>` lo ejecuta:
 

@@ -679,6 +679,13 @@ const JUEGOS = [
     portada: portadaKarts
   },
   {
+    id:'sports', archivo:'juegos/nexo-sports.html', nuevo:true,
+    nombre:'⚽ NEXO Sports', genero:'Casino',
+    desc:'Casa de apuestas de fútbol: combinadas con supercuota, cash-out y la regla del Suplente de Oro. Se abre por 10.000 millones.',
+    record(){ const r = Arcade.record('sports'); return r ? 'Récord: ' + r.toLocaleString('es-ES') + ' pts' : 'Sin abrir todavía'; },
+    portada: portadaSports
+  },
+  {
     id:'retrobowl', archivo:'juegos/retro-bowl.html', nuevo:true,
     nombre:'🏈 Retro Bowl', genero:'Deportes',
     desc:'Eres el quarterback: apunta el pase, esquiva a la defensa y mete touchdowns contra el reloj.',
@@ -2463,6 +2470,65 @@ const categoriaDe = j => {
   return c ? c.id : 'arcade';   // si aparece un género nuevo, cae en arcade
 };
 
+
+
+// ---------- NEXO Sports ----------
+function portadaSports(c){
+  // Marcador de televisión sobre el césped, que es como se ve el juego
+  for (let i = 0; i < 10; i++){
+    c.fillStyle = i % 2 ? '#12643a' : '#0e5632';
+    c.fillRect(i * A / 10, 34, A / 10 + 1, AL - 34);
+  }
+  c.strokeStyle = 'rgba(255,255,255,.4)'; c.lineWidth = 1.6;
+  c.strokeRect(10, 42, A - 20, AL - 54);
+  c.beginPath(); c.moveTo(A / 2, 42); c.lineTo(A / 2, AL - 12); c.stroke();
+  c.beginPath(); c.arc(A / 2, (42 + AL - 12) / 2, 24, 0, 6.283); c.stroke();
+  for (const lado of [-1, 1]){
+    const x = lado < 0 ? 10 : A - 10;
+    c.strokeRect(lado < 0 ? x : x - 34, (42 + AL - 12) / 2 - 30, 34, 60);
+  }
+  // balón
+  c.fillStyle = 'rgba(0,0,0,.35)';
+  c.beginPath(); c.ellipse(A * .38, AL * .68 + 4, 6, 2.5, 0, 0, 6.283); c.fill();
+  c.fillStyle = '#fff'; c.beginPath(); c.arc(A * .38, AL * .68, 5.5, 0, 6.283); c.fill();
+  c.fillStyle = '#1a1a1a'; c.beginPath(); c.arc(A * .38, AL * .68, 2.2, 0, 6.283); c.fill();
+
+  // franja del marcador
+  c.fillStyle = 'rgba(4,8,14,.94)'; c.fillRect(0, 0, A, 34);
+  c.textBaseline = 'middle';
+  c.font = '900 14px "Segoe UI", system-ui, sans-serif';
+  c.textAlign = 'right'; c.fillStyle = '#ff7a00'; c.fillText('CÓNDORES', A / 2 - 44, 17);
+  c.textAlign = 'left';  c.fillStyle = '#00f0ff'; c.fillText('NEXO', A / 2 + 44, 17);
+  c.textAlign = 'center';
+  c.fillStyle = '#fff'; c.font = '900 17px "Courier New", monospace';
+  c.fillText('2 - 1', A / 2, 16);
+  c.fillStyle = '#4ee089'; c.font = '700 10px "Courier New", monospace';
+  c.fillText("67'", A / 2, 29);
+
+  // boleto de la combinada, encima del campo
+  c.fillStyle = 'rgba(6,10,18,.92)';
+  c.beginPath(); c.roundRect(A - 128, 46, 118, 96, 9); c.fill();
+  c.strokeStyle = 'rgba(255,122,0,.5)'; c.lineWidth = 1.5; c.stroke();
+  c.textAlign = 'left'; c.font = '800 9px "Segoe UI", system-ui, sans-serif';
+  c.fillStyle = 'rgba(255,255,255,.45)'; c.fillText('COMBINADA · 4', A - 120, 58);
+  [['CON gana', '1.85'], ['Más de 2,5', '2.10'], ['Ambos sí', '1.60'], ['Quispe gol', '2.40']]
+    .forEach(([et, cu], i) => {
+      c.fillStyle = 'rgba(255,255,255,.75)'; c.font = '600 9px "Segoe UI", sans-serif';
+      c.fillText(et, A - 120, 72 + i * 13);
+      c.textAlign = 'right'; c.fillStyle = '#f3e600'; c.font = '800 9px "Courier New", monospace';
+      c.fillText(cu, A - 18, 72 + i * 13);
+      c.textAlign = 'left';
+    });
+  c.fillStyle = '#4ee089'; c.font = '800 10px "Segoe UI", sans-serif';
+  c.fillText('BB BOOST +15 %', A - 120, 132);
+
+  // ficha del suplente de oro
+  c.fillStyle = 'rgba(6,10,18,.9)';
+  c.beginPath(); c.roundRect(12, AL - 34, 150, 24, 8); c.fill();
+  c.strokeStyle = 'rgba(78,224,137,.5)'; c.lineWidth = 1.4; c.stroke();
+  c.fillStyle = '#4ee089'; c.font = '800 10px "Segoe UI", system-ui, sans-serif';
+  c.textAlign = 'left'; c.fillText('⚡ SUPLENTE DE ORO', 22, AL - 22);
+}
 
 // ---------- Retro Bowl ----------
 function portadaRetroBowl(c){
