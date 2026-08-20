@@ -67,19 +67,75 @@
   .campoBusca input::placeholder{color:#5b6a80;}
   #cuentaBusca{font-size:.78rem; color:var(--tenue); white-space:nowrap;}
 
-  #chips{display:flex; gap:8px; flex-wrap:wrap;}
-  #chips button{
+  /* ---------- Salas ---------- */
+  #salas{
+    display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr));
+    gap:1rem; margin-bottom:2.4rem;
+  }
+  #salas[hidden]{display:none;}
+  .sala{
+    position:relative; overflow:hidden; cursor:pointer; text-align:left;
+    font-family:inherit; color:inherit;
+    border-radius:16px; padding:1.15rem 1.25rem 1.05rem;
+    background:var(--panel); border:1px solid rgba(255,255,255,.07);
+    transition:transform .25s cubic-bezier(.4,0,.2,1), border-color .25s, box-shadow .25s;
+  }
+  /* El tinte de cada sala entra por variable, para no repetir seis reglas */
+  .sala::before{
+    content:''; position:absolute; inset:0; opacity:.16; pointer-events:none;
+    background:radial-gradient(circle at 82% 12%, var(--tinte) 0%, transparent 62%);
+    transition:opacity .25s;
+  }
+  .sala:hover, .sala:focus-visible{
+    transform:translateY(-6px); outline:none;
+    border-color:var(--tinte);
+    box-shadow:0 14px 34px rgba(0,0,0,.55), 0 0 22px color-mix(in srgb, var(--tinte) 35%, transparent);
+  }
+  .sala:hover::before, .sala:focus-visible::before{opacity:.3;}
+  .sala .icoSala{font-size:2.1rem; line-height:1; display:block; margin-bottom:.5rem;}
+  .sala .nomSala{
+    font-size:1.08rem; font-weight:900; letter-spacing:.4px;
+    display:flex; align-items:baseline; gap:9px;
+  }
+  .sala .nSala{
+    margin-left:auto; font-family:var(--fuente-arcade); font-size:.74rem;
+    color:var(--tinte); background:rgba(0,0,0,.4);
+    border:1px solid color-mix(in srgb, var(--tinte) 40%, transparent);
+    border-radius:999px; padding:2px 9px; white-space:nowrap;
+  }
+  .sala .lemaSala{
+    color:var(--tenue); font-size:.8rem; line-height:1.45; margin-top:.45rem;
+    position:relative;
+  }
+  .sala .entrar{
+    margin-top:.85rem; font-size:.7rem; font-weight:900; letter-spacing:1.2px;
+    text-transform:uppercase; color:var(--tinte); position:relative;
+  }
+
+  /* ---------- Cabecera de una sala abierta ---------- */
+  #cabeceraSala{
+    /* La cabecera del arcade es pegajosa: sin este margen, al entrar en una
+       sala el desplazamiento la dejaba justo debajo y no se veía. */
+    scroll-margin-top:96px;
+    display:flex; align-items:center; gap:16px; flex-wrap:wrap;
+    margin-bottom:1.8rem; padding:1rem 1.2rem;
+    background:var(--panel); border-radius:14px;
+    border:1px solid rgba(255,255,255,.07);
+    border-left:4px solid var(--tinte, var(--azul));
+  }
+  #cabeceraSala[hidden]{display:none;}
+  #btnVolverSalas{
     font-family:inherit; font-size:.82rem; font-weight:700; cursor:pointer;
-    padding:7px 14px; border-radius:999px; color:inherit;
-    background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.1);
-    transition:background .2s, border-color .2s, color .2s;
+    padding:8px 15px; border-radius:10px; color:inherit;
+    background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.12);
   }
-  #chips button:hover{border-color:rgba(0,240,255,.5);}
-  #chips button.sel{
-    background:var(--azul); border-color:var(--azul); color:#04161a;
-    box-shadow:0 0 14px rgba(0,240,255,.35);
+  #btnVolverSalas:hover{border-color:var(--azul); background:rgba(0,240,255,.08);}
+  #cabeceraSala .tituloSala h3{font-size:1.3rem; font-weight:900; letter-spacing:.5px;}
+  #cabeceraSala .tituloSala p{color:var(--tenue); font-size:.83rem; margin-top:.2rem;}
+  #salaCuenta{
+    margin-left:auto; font-family:var(--fuente-arcade); font-size:.8rem;
+    color:var(--tinte, var(--azul)); white-space:nowrap;
   }
-  #chips button .n{opacity:.65; margin-left:5px; font-weight:900;}
 
   #sinResultados{
     text-align:center; color:var(--tenue);
@@ -95,6 +151,7 @@
     padding-bottom:.6rem; border-bottom:1px solid rgba(255,255,255,.08);
   }
   .seccion > h3 .cuenta{font-size:.78rem; font-weight:700; color:var(--tenue);}
+  .seccion.sinTitulo > h3{display:none;}
   .seccion > h3 .lema{
     font-size:.8rem; font-weight:400; color:var(--tenue);
     margin-left:auto; text-align:right;
@@ -277,7 +334,7 @@
 <div id="contenido">
   <div id="titulo">
     <h2>SELECCIONA TU JUEGO SUPREMO</h2>
-    <p>Veinticinco motores hechos a mano en HTML5 + Canvas, con renderizado HiDPI y físicas propias.
+    <p>Treinta y nueve motores hechos a mano en HTML5 + Canvas, con renderizado HiDPI y físicas propias.
        Sin instalar nada, sin anuncios y sin conexión.</p>
   </div>
 
@@ -342,7 +399,19 @@
       </label>
       <span id="cuentaBusca" role="status"></span>
     </div>
-    <div id="chips" role="tablist" aria-label="Categorías"></div>
+  </div>
+
+  <!-- Portada de salas: cada una abre su propio espacio con sus juegos -->
+  <div id="salas" aria-label="Salas del arcade"></div>
+
+  <!-- Cabecera que sale al entrar en una sala -->
+  <div id="cabeceraSala" hidden>
+    <button id="btnVolverSalas" type="button">← Todas las salas</button>
+    <div class="tituloSala">
+      <h3 id="salaNombre"></h3>
+      <p id="salaLema"></p>
+    </div>
+    <span id="salaCuenta"></span>
   </div>
 
   <div id="rejilla"></div>
@@ -709,28 +778,66 @@ function portadaTD(c){
 }
 
 function portadaComecocos(c){
-  fondo(c, '#0b1024', '#070b18');
-  c.strokeStyle = '#4f7bff'; c.lineWidth = 4; c.lineJoin = 'round';
-  [[20,20,120,40],[160,20,160,40],[20,80,80,30],[120,80,90,30],[230,80,90,30],[20,130,300,22]].forEach(([x,y,w,h]) => {
-    c.beginPath(); c.roundRect(x, y, w, h, 8); c.stroke();
-  });
-  // cocos
+  fondo(c, '#080c1e', '#04060f');
+  // Muros de doble trazo, como el laberinto original: azul fuerte por fuera
+  // y una línea fina más clara por dentro.
+  const muros = [[14,14,120,26],[148,14,64,26],[226,14,100,26],
+                 [14,54,62,26],[92,54,64,26],[172,54,64,26],[252,54,74,26],
+                 [14,116,146,24],[176,116,150,24]];
+  for (const [x, y, w, h] of muros){
+    c.fillStyle = '#101c46';
+    c.beginPath(); c.roundRect(x, y, w, h, 7); c.fill();
+    c.strokeStyle = '#4f7bff'; c.lineWidth = 2.4;
+    c.beginPath(); c.roundRect(x, y, w, h, 7); c.stroke();
+    c.strokeStyle = 'rgba(150,190,255,.45)'; c.lineWidth = 1;
+    c.beginPath(); c.roundRect(x + 4, y + 4, w - 8, h - 8, 4); c.stroke();
+  }
+
+  // Corredor central con sus cocos
+  const cy = 96;
   c.fillStyle = '#ffe9b0';
-  for (let x = 30; x < 320; x += 22) c.fillRect(x, 68, 4, 4);
-  // pac
+  for (let x = 24; x < A - 14; x += 21) c.fillRect(x, cy - 2, 4, 4);
+  // coco de poder, latiendo
+  c.save();
+  c.shadowColor = '#ffe9b0'; c.shadowBlur = 12;
+  c.beginPath(); c.arc(A - 26, cy, 7, 0, 6.283); c.fill();
+  c.restore();
+
+  // Pac, con la boca abierta hacia donde va
+  c.save();
+  c.shadowColor = '#ffd21e'; c.shadowBlur = 14;
   c.fillStyle = '#ffd21e';
-  c.beginPath(); c.moveTo(70, 70); c.arc(70, 70, 17, 0.35, -0.35); c.closePath(); c.fill();
-  // fantasmas
-  [['#ff5a52', 150], ['#ffb0e0', 195], ['#64e5ff', 240]].forEach(([col, x]) => {
+  c.beginPath(); c.moveTo(64, cy); c.arc(64, cy, 17, 0.38, -0.38); c.closePath(); c.fill();
+  c.restore();
+  c.fillStyle = '#5a4300';
+  c.beginPath(); c.arc(62, cy - 7, 2.4, 0, 6.283); c.fill();
+
+  // Los tres fantasmas, con faldón ondulado y ojos mirando a Pac
+  [['#ff5a52', 132], ['#ffb0e0', 178], ['#64e5ff', 224]].forEach(([col, x], i) => {
     c.fillStyle = col;
-    c.beginPath(); c.arc(x, 68, 15, Math.PI, 0); c.lineTo(x + 15, 82);
-    for (let k = 0; k < 3; k++) c.lineTo(x + 15 - k * 10 - 5, k % 2 ? 82 : 76);
-    c.lineTo(x - 15, 82); c.closePath(); c.fill();
+    c.beginPath();
+    c.arc(x, cy - 2, 15, Math.PI, 0);
+    c.lineTo(x + 15, cy + 12);
+    for (let k = 0; k < 3; k++){
+      const bx = x + 15 - k * 10;
+      c.quadraticCurveTo(bx - 5, cy + (k % 2 ? 5 : 17), bx - 10, cy + 12);
+    }
+    c.lineTo(x - 15, cy - 2); c.closePath(); c.fill();
     c.fillStyle = '#fff';
-    c.beginPath(); c.arc(x - 5, 65, 4.5, 0, 6.3); c.arc(x + 5, 65, 4.5, 0, 6.3); c.fill();
+    c.beginPath(); c.arc(x - 5, cy - 5, 5, 0, 6.283); c.arc(x + 5, cy - 5, 5, 0, 6.283); c.fill();
     c.fillStyle = '#1b2ea8';
-    c.beginPath(); c.arc(x - 6, 65, 2.2, 0, 6.3); c.arc(x + 4, 65, 2.2, 0, 6.3); c.fill();
+    c.beginPath(); c.arc(x - 7, cy - 5, 2.4, 0, 6.283); c.arc(x + 3, cy - 5, 2.4, 0, 6.283); c.fill();
   });
+
+  // Marcador y vidas, como en la máquina
+  c.fillStyle = 'rgba(255,255,255,.55)'; c.font = '700 11px "Courier New", monospace';
+  c.textAlign = 'left'; c.textBaseline = 'alphabetic';
+  c.fillText('1UP  12.480', 14, AL - 8);
+  c.fillStyle = '#ffd21e';
+  for (let i = 0; i < 3; i++){
+    c.beginPath(); c.moveTo(A - 24 - i * 18, AL - 12);
+    c.arc(A - 24 - i * 18, AL - 12, 6, 0.38, -0.38); c.closePath(); c.fill();
+  }
 }
 
 function portadaPvz(c){
@@ -774,31 +881,70 @@ function portadaPvz(c){
 }
 
 function portadaMinas(c){
-  fondo(c, '#1d2740', '#141b2c');
-  const t = 34, hu = 8, x0 = 62, y0 = 16;
-  const contenido = ['g','g','g','g','g', 'g','g','b','g','g', 'g','b','g','g','b', 'g','g','g','b','g'];
+  // Paño de casino con foco: la cuadrícula plana de antes no decía "apuesta"
+  const g = c.createRadialGradient(A * .28, AL * .5, 20, A / 2, AL / 2, A * .75);
+  g.addColorStop(0, '#1b4a38'); g.addColorStop(1, '#08110f');
+  c.fillStyle = g; c.fillRect(0, 0, A, AL);
+
+  // Tablero a la izquierda y panel de cobro a la derecha, sin pisarse
+  const t = 28, hu = 6, x0 = 16, y0 = 22;
+  const mapa = ['ggg.g', 'g.g.g', '.gb..', '..g..'];   // g gema · b bomba · . tapada
   for (let j = 0; j < 4; j++){
     for (let i = 0; i < 5; i++){
-      const x = x0 + i * (t + hu), y = y0 + j * (t + hu), k = j * 5 + i;
-      const abierta = k < 7;
-      c.fillStyle = !abierta ? '#39496e' : (contenido[k] === 'b' ? '#b83b3b' : '#2f9e6f');
-      c.beginPath(); c.roundRect(x, y, t, t, 8); c.fill();
-      c.strokeStyle = !abierta ? '#46577d' : (contenido[k] === 'b' ? '#ff8080' : '#4fdca0');
-      c.lineWidth = 2; c.stroke();
-      if (abierta){
-        c.font = '17px serif'; c.textAlign = 'center'; c.textBaseline = 'middle';
-        c.fillText(contenido[k] === 'b' ? '💣' : '💎', x + t / 2, y + t / 2 + 1);
+      const x = x0 + i * (t + hu), y = y0 + j * (t + hu);
+      const k = mapa[j][i];
+      const tapada = k === '.';
+      // bisel: claro arriba, oscuro abajo, para que la ficha tenga cuerpo
+      const gt = c.createLinearGradient(0, y, 0, y + t);
+      if (tapada){ gt.addColorStop(0, '#33456b'); gt.addColorStop(1, '#1c2740'); }
+      else if (k === 'b'){ gt.addColorStop(0, '#e0574f'); gt.addColorStop(1, '#7d1c1c'); }
+      else { gt.addColorStop(0, '#3fd39a'); gt.addColorStop(1, '#116b4c'); }
+      c.fillStyle = gt;
+      c.beginPath(); c.roundRect(x, y, t, t, 6); c.fill();
+      c.strokeStyle = tapada ? 'rgba(255,255,255,.13)'
+                     : k === 'b' ? 'rgba(255,160,150,.8)' : 'rgba(150,255,215,.8)';
+      c.lineWidth = 1.6; c.stroke();
+      if (!tapada){
+        c.save();
+        c.shadowColor = k === 'b' ? '#ff6b6b' : '#4fdca0'; c.shadowBlur = 11;
+        c.font = '15px serif'; c.textAlign = 'center'; c.textBaseline = 'middle';
+        c.fillText(k === 'b' ? '💣' : '💎', x + t / 2, y + t / 2 + 1);
+        c.restore();
+      } else {
+        c.fillStyle = 'rgba(255,255,255,.06)';
+        c.beginPath(); c.roundRect(x + 4, y + 4, t - 8, 4, 2); c.fill();
       }
     }
   }
-  c.fillStyle = 'rgba(8,14,24,.9)';
-  c.beginPath(); c.roundRect(96, 58, 150, 52, 12); c.fill();
-  c.strokeStyle = '#6fe08b'; c.lineWidth = 2; c.stroke();
-  c.fillStyle = '#6fe08b'; c.font = '900 27px "Segoe UI", sans-serif';
+
+  // Panel de cobro, con marco dorado
+  const px = 196, py = 36, pa = 130, pl = 96;
+  c.save();
+  c.shadowColor = 'rgba(0,0,0,.8)'; c.shadowBlur = 18; c.shadowOffsetY = 5;
+  c.fillStyle = 'rgba(6,12,10,.93)';
+  c.beginPath(); c.roundRect(px, py, pa, pl, 13); c.fill();
+  c.restore();
+  c.strokeStyle = '#f3e600'; c.lineWidth = 2;
+  c.beginPath(); c.roundRect(px, py, pa, pl, 13); c.stroke();
+
+  const cx = px + pa / 2;
   c.textAlign = 'center'; c.textBaseline = 'middle';
-  c.fillText('3.12x', 171, 76);
-  c.fillStyle = '#ffd25e'; c.font = '800 13px "Segoe UI", sans-serif';
-  c.fillText('+1.060 🪙', 171, 97);
+  c.fillStyle = 'rgba(255,255,255,.45)'; c.font = '800 10px "Segoe UI", system-ui, sans-serif';
+  c.fillText('MULTIPLICADOR', cx, py + 18);
+  c.save();
+  c.shadowColor = '#6fe08b'; c.shadowBlur = 16;
+  c.fillStyle = '#6fe08b'; c.font = '900 32px "Segoe UI", system-ui, sans-serif';
+  c.fillText('3.12x', cx, py + 44);
+  c.restore();
+  c.fillStyle = 'rgba(255,255,255,.12)';
+  c.beginPath(); c.roundRect(px + 14, py + 62, pa - 28, 1, 1); c.fill();
+  c.fillStyle = '#ffd25e'; c.font = '800 13px "Segoe UI", system-ui, sans-serif';
+  c.textAlign = 'center'; c.textBaseline = 'middle';
+  c.fillText('cobrar  +1.060 🪙', cx, py + 76);
+
+  c.fillStyle = 'rgba(255,255,255,.4)'; c.font = '700 11px "Segoe UI", sans-serif';
+  c.textAlign = 'left'; c.textBaseline = 'alphabetic';
+  c.fillText('3 minas · 7 gemas destapadas', 16, 15);
 }
 
 function portadaBlock(c){
@@ -1699,7 +1845,10 @@ function portadaLimbo(c){
   c.textAlign = 'center'; c.textBaseline = 'middle';
   c.fillText('27.44x', A / 2, AL / 2 + 4);
   c.restore();
+  // restore() devuelve textAlign a 'left': sin volver a centrar, este rótulo
+  // arrancaba en el medio y se salía por la derecha de la miniatura.
   c.fillStyle = '#4ee089'; c.font = '800 12px "Segoe UI", system-ui, sans-serif';
+  c.textAlign = 'center';
   c.fillText('✅ POR ENCIMA DEL OBJETIVO', A / 2, AL / 2 + 40);
   const xb = 50, ab = A - 100;
   c.fillStyle = 'rgba(0,0,0,.5)';
@@ -1768,6 +1917,7 @@ function portadaBigBass(c){
   c.textAlign = 'center'; c.fillText('8.42x', A / 2, 132);
   c.restore();
   c.fillStyle = 'rgba(255,255,255,.45)'; c.font = '700 11px "Segoe UI", system-ui, sans-serif';
+  c.textAlign = 'center';
   c.fillText('3 cañas · recoge antes de que rompa', A / 2, AL - 12);
 }
 
@@ -1877,76 +2027,145 @@ function portadaHook(c){
 }
 
 function portadaPaper(c){
-  c.fillStyle = '#0e1524'; c.fillRect(0, 0, A, AL);
-  c.strokeStyle = 'rgba(255,255,255,.05)'; c.lineWidth = 1;
+  c.fillStyle = '#0b1120'; c.fillRect(0, 0, A, AL);
+  c.strokeStyle = 'rgba(255,255,255,.045)'; c.lineWidth = 1;
   c.beginPath();
   for (let x = 0; x < A; x += 10){ c.moveTo(x, 0); c.lineTo(x, AL); }
   for (let y = 0; y < AL; y += 10){ c.moveTo(0, y); c.lineTo(A, y); }
   c.stroke();
-  const zonas = [
-    { x:14, y:20, w:52, h:44, col:'#4ade80', claro:'#bbf7d0' },
-    { x:A - 74, y:16, w:46, h:36, col:'#f87171', claro:'#fecaca' },
-    { x:A - 58, y:AL - 58, w:40, h:34, col:'#60a5fa', claro:'#bfdbfe' }
+
+  // Territorios de verdad: manchas irregulares pintadas por celdas, no
+  // rectángulos. Un dueño por celda, decidido por distancia a su centro.
+  const duenos = [
+    { cx:70,  cy:78,  r:52, col:'#22c55e', claro:'#86efac' },
+    { cx:250, cy:52,  r:40, col:'#ef4444', claro:'#fca5a5' },
+    { cx:262, cy:132, r:34, col:'#3b82f6', claro:'#93c5fd' }
   ];
-  for (const z of zonas){
-    c.fillStyle = z.col; c.fillRect(z.x, z.y, z.w, z.h);
-    c.fillStyle = z.claro; c.lineWidth = 3;
-    c.fillRect(z.x, z.y, z.w, 4); c.fillRect(z.x, z.y + z.h - 4, z.w, 4);
-    c.fillRect(z.x, z.y, 4, z.h); c.fillRect(z.x + z.w - 4, z.y, 4, z.h);
+  const T = 10;
+  const mapa = [];
+  for (let j = 0; j * T < AL; j++){
+    mapa[j] = [];
+    for (let i = 0; i * T < A; i++){
+      const x = i * T + T / 2, y = j * T + T / 2;
+      let dueno = -1;
+      duenos.forEach((d, k) => {
+        // el borde ondula con un seno, para que no queden círculos perfectos
+        const ang = Math.atan2(y - d.cy, x - d.cx);
+        const radio = d.r + Math.sin(ang * 3 + k) * 9;
+        if (Math.hypot(x - d.cx, y - d.cy) < radio) dueno = k;
+      });
+      mapa[j][i] = dueno;
+    }
   }
-  // rastro del verde saliendo y volviendo
-  c.strokeStyle = '#15803d'; c.lineWidth = 7; c.lineJoin = 'round'; c.lineCap = 'round';
-  c.beginPath(); c.moveTo(66, 60); c.lineTo(104, 60); c.lineTo(104, 96); c.lineTo(48, 96); c.stroke();
-  c.strokeStyle = '#bbf7d0'; c.lineWidth = 3; c.stroke();
-  c.fillStyle = '#bbf7d0'; c.beginPath(); c.arc(48, 96, 8, 0, 6.283); c.fill();
+  for (let j = 0; j < mapa.length; j++)
+    for (let i = 0; i < mapa[j].length; i++){
+      const d = mapa[j][i];
+      if (d < 0) continue;
+      c.fillStyle = duenos[d].col;
+      c.fillRect(i * T, j * T, T, T);
+      // el borde se marca con el tono claro
+      const fuera = (jj, ii) => !mapa[jj] || mapa[jj][ii] !== d;
+      c.fillStyle = duenos[d].claro;
+      if (fuera(j - 1, i)) c.fillRect(i * T, j * T, T, 3);
+      if (fuera(j + 1, i)) c.fillRect(i * T, j * T + T - 3, T, 3);
+      if (fuera(j, i - 1)) c.fillRect(i * T, j * T, 3, T);
+      if (fuera(j, i + 1)) c.fillRect(i * T + T - 3, j * T, 3, T);
+    }
+
+  // El verde ha salido a por más terreno: rastro fuera de su zona
+  const rastro = [[118,90],[150,90],[150,124],[186,124],[186,150]];
+  c.strokeStyle = 'rgba(34,197,94,.45)'; c.lineWidth = 12;
+  c.lineJoin = 'round'; c.lineCap = 'round';
+  c.beginPath(); rastro.forEach(([x, y], i) => i ? c.lineTo(x, y) : c.moveTo(x, y)); c.stroke();
+  c.strokeStyle = '#86efac'; c.lineWidth = 3.5;
+  c.beginPath(); rastro.forEach(([x, y], i) => i ? c.lineTo(x, y) : c.moveTo(x, y)); c.stroke();
+
+  // cabeza del jugador al final del rastro
+  const [hx, hy] = rastro[rastro.length - 1];
+  c.save();
+  c.shadowColor = '#86efac'; c.shadowBlur = 14;
+  c.fillStyle = '#bbf7d0'; c.beginPath(); c.arc(hx, hy, 9, 0, 6.283); c.fill();
+  c.restore();
   c.fillStyle = '#0b1020';
-  c.beginPath(); c.arc(45, 93, 2, 0, 6.283); c.arc(45, 99, 2, 0, 6.283); c.fill();
+  c.beginPath(); c.arc(hx - 3, hy - 2, 2, 0, 6.283); c.arc(hx + 3, hy - 2, 2, 0, 6.283); c.fill();
+
+  // Marcador de porcentajes, como en el juego
+  c.font = '800 11px "Segoe UI", system-ui, sans-serif';
+  c.textAlign = 'left'; c.textBaseline = 'alphabetic';
+  [['#86efac', '18,4 %'], ['#fca5a5', '9,1 %'], ['#93c5fd', '6,7 %']].forEach(([col, txt], i) => {
+    c.fillStyle = 'rgba(0,0,0,.55)';
+    c.beginPath(); c.roundRect(10, 10 + i * 17, 66, 14, 4); c.fill();
+    c.fillStyle = col; c.fillText(txt, 16, 21 + i * 17);
+  });
 }
 
 function portadaVex(c){
   const g = c.createLinearGradient(0, 0, 0, AL);
-  g.addColorStop(0, '#0b1220'); g.addColorStop(1, '#050810');
+  g.addColorStop(0, '#131a2c'); g.addColorStop(1, '#080b14');
   c.fillStyle = g; c.fillRect(0, 0, A, AL);
-  const T = 18;
-  const poner = (cx, cy, n) => {
-    for (let i = 0; i < n; i++){
-      const x = cx + i * T, y = cy;
-      const gg = c.createLinearGradient(0, y, 0, y + T);
-      gg.addColorStop(0, '#2f3d55'); gg.addColorStop(1, '#131a28');
-      c.fillStyle = gg; c.fillRect(x, y, T, T);
-      c.fillStyle = 'rgba(226,232,240,.55)'; c.fillRect(x, y, T, 2.5);
-    }
-  };
-  poner(0, AL - T, 4); poner(A - T * 5, AL - T, 5);
-  poner(T * 2, AL - T * 3, 3); poner(A - T * 7, AL - T * 4, 3);
-  // pinchos
-  c.fillStyle = '#f87171';
-  for (let i = 0; i < 4; i++){
-    const x = T * 5 + i * 9;
-    c.beginPath(); c.moveTo(x, AL - T); c.lineTo(x + 4.5, AL - T - 13); c.lineTo(x + 9, AL - T); c.closePath(); c.fill();
+
+  // Fondo en dos capas: bloques lejanos apagados, para dar profundidad
+  c.fillStyle = 'rgba(255,255,255,.035)';
+  for (const [x, y, w, h] of [[20,26,90,14],[150,44,70,14],[240,20,80,14],[60,100,80,14]])
+    c.fillRect(x, y, w, h);
+
+  // Plataformas jugables, con canto claro
+  const plat = [[8,140,110,14],[132,116,64,12],[210,86,72,12],[24,74,58,12],[286,140,46,14]];
+  for (const [x, y, w, h] of plat){
+    const gp = c.createLinearGradient(0, y, 0, y + h);
+    gp.addColorStop(0, '#3d4a68'); gp.addColorStop(1, '#1e2537');
+    c.fillStyle = gp;
+    c.beginPath(); c.roundRect(x, y, w, h, 3); c.fill();
+    c.fillStyle = 'rgba(160,200,255,.5)'; c.fillRect(x, y, w, 2.5);
   }
-  // sierra
-  c.save(); c.translate(A * .5, 44);
-  c.fillStyle = '#cbd5e1'; c.beginPath();
+
+  // Pinchos, que es lo que de verdad da miedo en este juego
+  c.fillStyle = '#ff5a72';
+  for (let i = 0; i < 5; i++){
+    const x = 132 + i * 13;
+    c.beginPath(); c.moveTo(x, 116); c.lineTo(x + 6.5, 102); c.lineTo(x + 13, 116);
+    c.closePath(); c.fill();
+  }
+
+  // Sierra con dientes, girando
+  const sx = 250, sy = 52, r = 19;
+  c.save();
+  c.translate(sx, sy); c.rotate(.35);
+  c.fillStyle = '#c7d0e0';
+  c.beginPath();
   for (let i = 0; i < 12; i++){
     const a0 = i / 12 * 6.283, a1 = (i + .5) / 12 * 6.283;
-    i ? c.lineTo(Math.cos(a0) * 15, Math.sin(a0) * 15) : c.moveTo(Math.cos(a0) * 15, Math.sin(a0) * 15);
-    c.lineTo(Math.cos(a1) * 11, Math.sin(a1) * 11);
+    c.lineTo(Math.cos(a0) * r, Math.sin(a0) * r);
+    c.lineTo(Math.cos(a1) * (r - 6), Math.sin(a1) * (r - 6));
   }
   c.closePath(); c.fill();
-  c.fillStyle = '#64748b'; c.beginPath(); c.arc(0, 0, 6, 0, 6.283); c.fill();
+  c.fillStyle = '#5b6478'; c.beginPath(); c.arc(0, 0, 6, 0, 6.283); c.fill();
   c.restore();
-  // muñeco
-  const mx = T * 3.2, my = AL - T * 3 - 6;
-  c.strokeStyle = '#f1f5f9'; c.lineWidth = 3; c.lineCap = 'round';
+
+  // Muñeco en pleno salto de pared, con estela del salto anterior
+  c.strokeStyle = 'rgba(255,255,255,.16)'; c.lineWidth = 2; c.setLineDash([4, 5]);
+  c.beginPath(); c.moveTo(56, 74); c.quadraticCurveTo(110, 40, 150, 100); c.stroke();
+  c.setLineDash([]);
+  const mx = 150, my = 100;
+  c.strokeStyle = '#f0f4f8'; c.lineWidth = 4; c.lineCap = 'round';
   c.beginPath();
-  c.moveTo(mx, my - 6); c.lineTo(mx, my + 6);
-  c.moveTo(mx, my + 6); c.lineTo(mx - 6, my + 15);
-  c.moveTo(mx, my + 6); c.lineTo(mx + 7, my + 13);
-  c.moveTo(mx, my - 3); c.lineTo(mx - 8, my - 10);
-  c.moveTo(mx, my - 3); c.lineTo(mx + 8, my - 9);
+  c.moveTo(mx, my - 14); c.lineTo(mx, my - 4);           // tronco
+  c.moveTo(mx, my - 4); c.lineTo(mx - 7, my + 6);        // piernas
+  c.moveTo(mx, my - 4); c.lineTo(mx + 7, my + 4);
+  c.moveTo(mx, my - 12); c.lineTo(mx - 10, my - 18);     // brazos
+  c.moveTo(mx, my - 12); c.lineTo(mx + 9, my - 20);
   c.stroke();
-  c.fillStyle = '#f1f5f9'; c.beginPath(); c.arc(mx, my - 12, 5.5, 0, 6.283); c.fill();
+  c.fillStyle = '#f0f4f8';
+  c.beginPath(); c.arc(mx, my - 20, 6, 0, 6.283); c.fill();
+
+  // Meta al fondo, que da el objetivo de un vistazo
+  c.fillStyle = '#4ee089';
+  c.fillRect(300, 108, 3, 32);
+  c.beginPath(); c.moveTo(303, 108); c.lineTo(326, 116); c.lineTo(303, 124); c.closePath(); c.fill();
+
+  c.fillStyle = 'rgba(255,255,255,.5)'; c.font = '700 11px "Segoe UI", sans-serif';
+  c.textAlign = 'left'; c.textBaseline = 'alphabetic';
+  c.fillText('ACTO 2  ·  14 muertes', 12, 18);
 }
 
 function portadaTunnel(c){
@@ -2029,49 +2248,92 @@ function portadaCuerda(c){
 
 function portadaBasket(c){
   const g = c.createLinearGradient(0, 0, 0, AL);
-  g.addColorStop(0, '#12203a'); g.addColorStop(1, '#070d18');
+  g.addColorStop(0, '#0f1c33'); g.addColorStop(1, '#060b16');
   c.fillStyle = g; c.fillRect(0, 0, A, AL);
-  for (let i = 0; i < 40; i++){
-    c.fillStyle = ['#1e3a5f','#2a4a72','#33405e'][i % 3];
-    c.beginPath(); c.arc((i * 29) % A, 12 + ((i * 19) % 22), 3.4, 0, 6.283); c.fill();
-  }
-  const suelo = AL - 22;
-  const sg = c.createLinearGradient(0, suelo, 0, AL);
-  sg.addColorStop(0, '#b5762f'); sg.addColorStop(1, '#7a4a18');
-  c.fillStyle = sg; c.fillRect(0, suelo, A, AL - suelo);
-  // canastas
-  for (const lado of [-1, 1]){
-    const ax = lado < 0 ? 26 : A - 26, ay = 58;
-    c.fillStyle = 'rgba(230,240,255,.9)';
-    c.fillRect(ax + lado * 16 - 3, ay - 26, 6, 34);
-    c.strokeStyle = lado < 0 ? '#fb923c' : '#38bdf8'; c.lineWidth = 4; c.lineCap = 'round';
-    c.beginPath(); c.moveTo(ax - 13, ay); c.lineTo(ax + 13, ay); c.stroke();
-    c.strokeStyle = 'rgba(255,255,255,.4)'; c.lineWidth = 1;
-    for (let i = 0; i <= 4; i++){
-      const t = i / 4;
-      c.beginPath(); c.moveTo(ax - 13 + 26 * t, ay); c.lineTo(ax - 7 + 14 * t, ay + 14); c.stroke();
+
+  // Graderío: color fijo por asiento, para que no parezca ruido
+  for (let y = 8; y < 46; y += 11)
+    for (let x = 8; x < A; x += 11){
+      const t = Math.abs(Math.sin(x * 12.9898 + y * 78.233)) % 1;
+      c.fillStyle = t < .45 ? '#26374f' : t < .75 ? '#fb923c' : '#38bdf8';
+      c.globalAlpha = .5;
+      c.beginPath(); c.arc(x, y, 2.6, 0, 6.283); c.fill();
     }
+  c.globalAlpha = 1;
+
+  // Parqué con sus duelas
+  const suelo = AL - 26;
+  const sg = c.createLinearGradient(0, suelo, 0, AL);
+  sg.addColorStop(0, '#c4832f'); sg.addColorStop(1, '#7a4a18');
+  c.fillStyle = sg; c.fillRect(0, suelo, A, AL - suelo);
+  c.strokeStyle = 'rgba(0,0,0,.2)'; c.lineWidth = 1.5;
+  c.beginPath();
+  for (let x = 0; x < A; x += 26){ c.moveTo(x, suelo); c.lineTo(x, AL); }
+  c.stroke();
+  c.fillStyle = 'rgba(255,255,255,.55)'; c.fillRect(0, suelo, A, 2);
+
+  // Las dos canastas, con tablero y red
+  for (const lado of [-1, 1]){
+    const ax = lado < 0 ? 30 : A - 30, ay = 74, col = lado < 0 ? '#fb923c' : '#38bdf8';
+    c.fillStyle = '#2a3140'; c.fillRect(ax - lado * 22 - 2, ay - 34, 5, suelo - ay + 34);
+    c.fillStyle = 'rgba(235,243,255,.92)';
+    c.beginPath(); c.roundRect(ax - lado * 24 - (lado < 0 ? 0 : 12), ay - 38, 12, 44, 3); c.fill();
+    c.strokeStyle = col; c.lineWidth = 3.5; c.lineCap = 'round';
+    c.beginPath(); c.moveTo(ax - 14, ay); c.lineTo(ax + 14, ay); c.stroke();
+    c.strokeStyle = 'rgba(255,255,255,.6)'; c.lineWidth = 1.1;
+    for (let i = 0; i <= 5; i++){
+      const t = i / 5;
+      c.beginPath();
+      c.moveTo(ax - 14 + 28 * t, ay);
+      c.lineTo(ax - 8 + 16 * t, ay + 16);
+      c.stroke();
+    }
+    c.beginPath(); c.moveTo(ax - 8, ay + 16); c.lineTo(ax + 8, ay + 16); c.stroke();
   }
-  // muñecos
-  for (const [mx, col] of [[A * .3, '#fb923c'], [A * .7, '#38bdf8']]){
-    c.strokeStyle = col; c.lineWidth = 7; c.lineCap = 'round';
-    c.beginPath(); c.moveTo(mx, suelo - 14); c.lineTo(mx + 12, suelo - 2); c.stroke();
-    const mg = c.createRadialGradient(mx - 5, suelo - 26, 2, mx, suelo - 20, 16);
-    mg.addColorStop(0, '#fff'); mg.addColorStop(.4, col); mg.addColorStop(1, 'rgba(0,0,0,.6)');
-    c.fillStyle = mg; c.beginPath(); c.arc(mx, suelo - 20, 16, 0, 6.283); c.fill();
-    c.fillStyle = '#fff';
-    c.beginPath(); c.arc(mx - 5, suelo - 26, 4, 0, 6.283); c.arc(mx + 5, suelo - 26, 4, 0, 6.283); c.fill();
-    c.fillStyle = '#111827';
-    c.beginPath(); c.arc(mx - 5, suelo - 26, 1.8, 0, 6.283); c.arc(mx + 5, suelo - 26, 1.8, 0, 6.283); c.fill();
-  }
-  // balón
-  const bx = A / 2, by = 78;
-  const bg = c.createRadialGradient(bx - 5, by - 6, 2, bx, by, 14);
-  bg.addColorStop(0, '#ffb066'); bg.addColorStop(.6, '#e8721f'); bg.addColorStop(1, '#8a3c05');
-  c.fillStyle = bg; c.beginPath(); c.arc(bx, by, 14, 0, 6.283); c.fill();
-  c.strokeStyle = '#3b1d05'; c.lineWidth = 1.4;
-  c.beginPath(); c.moveTo(bx - 14, by); c.lineTo(bx + 14, by); c.stroke();
-  c.beginPath(); c.moveTo(bx, by - 14); c.lineTo(bx, by + 14); c.stroke();
+
+  // Dos muñecos de verdad: tronco, piernas, brazos y cabeza
+  const muneco = (mx, col, som, alza) => {
+    c.strokeStyle = som; c.lineWidth = 6; c.lineCap = 'round';
+    c.beginPath();
+    c.moveTo(mx - 4, suelo - 20); c.lineTo(mx - 8, suelo);
+    c.moveTo(mx + 4, suelo - 20); c.lineTo(mx + 8, suelo);
+    c.stroke();
+    c.fillStyle = col;
+    c.beginPath(); c.roundRect(mx - 10, suelo - 44, 20, 26, 6); c.fill();
+    c.strokeStyle = col; c.lineWidth = 6;
+    c.beginPath();
+    c.moveTo(mx - 9, suelo - 38); c.lineTo(mx - 17, suelo - 38 - alza);
+    c.moveTo(mx + 9, suelo - 38); c.lineTo(mx + 17, suelo - 38 - alza);
+    c.stroke();
+    c.fillStyle = '#e8b07a';
+    c.beginPath(); c.arc(mx, suelo - 53, 9, 0, 6.283); c.fill();
+    c.fillStyle = col;
+    c.beginPath(); c.arc(mx, suelo - 56, 9, Math.PI, 0); c.fill();
+  };
+  muneco(A * .36, '#fb923c', '#7a3d06', 16);
+  muneco(A * .58, '#38bdf8', '#0d3b57', 4);
+
+  // Balón en el aire con su parábola
+  c.strokeStyle = 'rgba(251,146,60,.45)'; c.lineWidth = 2; c.setLineDash([5, 5]);
+  c.beginPath();
+  c.moveTo(A * .36 + 18, suelo - 56);
+  c.quadraticCurveTo(A * .62, 14, A - 30, 72);
+  c.stroke(); c.setLineDash([]);
+  const bx = A * .68, by = 40;
+  const bg = c.createRadialGradient(bx - 4, by - 5, 1, bx, by, 13);
+  bg.addColorStop(0, '#ffb35c'); bg.addColorStop(1, '#c85a10');
+  c.fillStyle = bg; c.beginPath(); c.arc(bx, by, 13, 0, 6.283); c.fill();
+  c.strokeStyle = '#3a1d06'; c.lineWidth = 1.5;
+  c.beginPath(); c.moveTo(bx - 13, by); c.lineTo(bx + 13, by); c.stroke();
+  c.beginPath(); c.moveTo(bx, by - 13); c.lineTo(bx, by + 13); c.stroke();
+  c.beginPath(); c.ellipse(bx, by, 6.5, 13, 0, 0, 6.283); c.stroke();
+
+  // La regla loca del punto, que es la gracia del juego
+  c.fillStyle = 'rgba(0,0,0,.6)';
+  c.beginPath(); c.roundRect(A / 2 - 74, AL - 22, 148, 17, 8); c.fill();
+  c.fillStyle = '#ffd166'; c.font = '800 11px "Segoe UI", system-ui, sans-serif';
+  c.textAlign = 'center'; c.textBaseline = 'middle';
+  c.fillText('🌙 GRAVEDAD BAJA', A / 2, AL - 13);
 }
 
 function portadaKarts(c){
@@ -2177,17 +2439,23 @@ function portadaPlinko(c){
 // Cada juego ya trae su género; las categorías los agrupan en secciones para
 // que la portada no sea una lista de treinta y cuatro cartas sin orden.
 const CATEGORIAS = [
-  { id:'casino', nombre:'🎲 Casino', lema:'Apuestas con la ventaja de la casa siempre al 1 %',
+  { id:'casino', nombre:'🎲 Casino', tinte:'#f3e600',
+    lema:'Cinco clásicos y cinco de riesgo, con la ventaja de la casa siempre al 1 %',
     generos:['Casino', 'Riesgo'] },
-  { id:'accion', nombre:'🏃 Acción y carreras', lema:'Reflejos, velocidad y golpes',
+  { id:'accion', nombre:'🏃 Acción y carreras', tinte:'#ff5a72',
+    lema:'Reflejos, velocidad y golpes: corredores, motos, karts y peleas de arena',
     generos:['Corredor', 'Carreras', 'Plataformas', 'Arena', 'Física', 'Deportes'] },
-  { id:'arcade', nombre:'👾 Arcade clásico', lema:'Los de toda la vida',
+  { id:'arcade', nombre:'👾 Arcade clásico', tinte:'#00ff66',
+    lema:'Los de toda la vida, con el laberinto y la serpiente de siempre',
     generos:['Arcade'] },
-  { id:'ingenio', nombre:'🧠 Ingenio y memoria', lema:'Para pensar y para acordarse',
+  { id:'ingenio', nombre:'🧠 Ingenio y memoria', tinte:'#00f0ff',
+    lema:'Para pensar y para acordarse: puzles, cuerdas y repetición espaciada',
     generos:['Puzle', 'Memoria'] },
-  { id:'estrategia', nombre:'🏰 Estrategia', lema:'Coloca, mejora y aguanta',
+  { id:'estrategia', nombre:'🏰 Estrategia', tinte:'#a855f7',
+    lema:'Coloca, mejora y aguanta la oleada que viene',
     generos:['Estrategia', 'Defensa'] },
-  { id:'gestion', nombre:'⏳ Gestión e idle', lema:'Números que suben solos',
+  { id:'gestion', nombre:'⏳ Gestión e idle', tinte:'#ff9f43',
+    lema:'Números que suben solos: minas, galletas, cofres y mercados',
     generos:['Tycoon', 'Incremental', 'Simulación', 'Cajas'] }
 ];
 const categoriaDe = j => {
@@ -2502,30 +2770,63 @@ function sinTildes(t){
 }
 
 let categoriaActiva = 'todos';
-const chips = document.getElementById('chips');
+const salas = document.getElementById('salas');
+const cabeceraSala = document.getElementById('cabeceraSala');
 const campoBusca = document.getElementById('busca');
 
-[{ id:'todos', nombre:'Todos', n: JUEGOS.length }].concat(
-  CATEGORIAS.map(c => ({ id:c.id, nombre:c.nombre,
-                         n: JUEGOS.filter(j => categoriaDe(j) === c.id).length }))
-).filter(c => c.n).forEach(c => {
+// Cuántos juegos tiene cada sala, para pintarlo en su tarjeta
+const cuentaDe = id => JUEGOS.filter(j => categoriaDe(j) === id).length;
+
+CATEGORIAS.filter(c => cuentaDe(c.id)).forEach(c => {
+  const n = cuentaDe(c.id);
   const b = document.createElement('button');
   b.type = 'button';
+  b.className = 'sala';
   b.dataset.cat = c.id;
-  b.innerHTML = c.nombre + '<span class="n">' + c.n + '</span>';
-  b.setAttribute('aria-pressed', String(c.id === 'todos'));
-  if (c.id === 'todos') b.classList.add('sel');
-  b.onclick = () => {
-    categoriaActiva = c.id;
-    chips.querySelectorAll('button').forEach(x => {
-      const sel = x === b;
-      x.classList.toggle('sel', sel);
-      x.setAttribute('aria-pressed', String(sel));
-    });
-    filtrar();
-  };
-  chips.appendChild(b);
+  b.style.setProperty('--tinte', c.tinte);
+  // El nombre trae el emoji delante; se separa para poder darle su tamaño
+  const emoji = c.nombre.split(' ')[0];
+  const texto = c.nombre.slice(emoji.length).trim();
+  b.innerHTML =
+    '<span class="icoSala" aria-hidden="true">' + emoji + '</span>' +
+    '<span class="nomSala">' + texto +
+      '<span class="nSala">' + n + (n === 1 ? ' juego' : ' juegos') + '</span></span>' +
+    '<p class="lemaSala">' + c.lema + '</p>' +
+    '<div class="entrar">Entrar ▸</div>';
+  b.setAttribute('aria-label', 'Abrir la sala ' + texto + ', ' + n + ' juegos');
+  b.onclick = () => abrirSala(c.id);
+  salas.appendChild(b);
 });
+
+/** Entra en una sala: se queda solo su sección, con su cabecera y su vuelta. */
+function abrirSala(id){
+  const c = CATEGORIAS.find(x => x.id === id);
+  if (!c) return;
+  categoriaActiva = id;
+  campoBusca.value = '';
+  salas.hidden = true;
+  cabeceraSala.hidden = false;
+  cabeceraSala.style.setProperty('--tinte', c.tinte);
+  const emoji = c.nombre.split(' ')[0];
+  document.getElementById('salaNombre').textContent = c.nombre;
+  document.getElementById('salaLema').textContent = c.lema;
+  document.getElementById('salaCuenta').textContent =
+    cuentaDe(id) + (cuentaDe(id) === 1 ? ' juego' : ' juegos');
+  campoBusca.placeholder = 'Busca dentro de ' + c.nombre.slice(emoji.length).trim() + '…';
+  filtrar();
+  // Al entrar se sube a la cabecera: si no, te quedas mirando media rejilla
+  cabeceraSala.scrollIntoView({ behavior:'smooth', block:'start' });
+}
+
+/** Vuelve al mapa de salas. */
+function cerrarSala(){
+  categoriaActiva = 'todos';
+  salas.hidden = false;
+  cabeceraSala.hidden = true;
+  campoBusca.placeholder = 'Busca un juego: ruleta, moto, memoria…';
+  filtrar();
+}
+document.getElementById('btnVolverSalas').onclick = () => cerrarSala();
 
 function filtrar(){
   const texto = sinTildes(campoBusca.value.trim());
@@ -2543,20 +2844,35 @@ function filtrar(){
       if (ver) enSeccion++;
     });
     sec.hidden = enSeccion === 0;
+    // Dentro de una sala su título sobra: ya lo dice la cabecera de arriba
+    sec.classList.toggle('sinTitulo', categoriaActiva !== 'todos');
     sec.querySelector('.cuenta').textContent =
       enSeccion + (enSeccion === 1 ? ' juego' : ' juegos');
     visibles += enSeccion;
   });
 
   document.getElementById('sinResultados').hidden = visibles > 0;
-  document.getElementById('cuentaBusca').textContent = palabras.length || categoriaActiva !== 'todos'
+  if (categoriaActiva !== 'todos')
+    document.getElementById('salaCuenta').textContent =
+      visibles + (visibles === 1 ? ' juego' : ' juegos');
+  document.getElementById('cuentaBusca').textContent = palabras.length
     ? visibles + (visibles === 1 ? ' juego' : ' juegos')
     : '';
 }
 
-campoBusca.addEventListener('input', filtrar);
+campoBusca.addEventListener('input', () => {
+  // Escribir busca en todo el arcade: quedarse encerrado en una sala mientras
+  // buscas es justo lo contrario de lo que espera quien escribe.
+  if (categoriaActiva !== 'todos' && campoBusca.value.trim()) cerrarSala();
+  filtrar();
+});
 campoBusca.addEventListener('keydown', ev => {
   if (ev.key === 'Escape'){ campoBusca.value = ''; filtrar(); }
+});
+// Esc fuera del buscador sale de la sala
+addEventListener('keydown', ev => {
+  if (ev.key === 'Escape' && categoriaActiva !== 'todos' &&
+      !/^(INPUT|TEXTAREA|SELECT)$/.test(ev.target.tagName || '')) cerrarSala();
 });
 // La barra "/" enfoca el buscador, como en cualquier sitio con búsqueda
 addEventListener('keydown', ev => {

@@ -509,11 +509,13 @@ Cinco de los más jugados de DuckMath, rehechos desde cero como el resto: Canvas
 | 🔫 **1v1.LOL** | Muros y rampas en una rejilla; las balas comprueban la casilla que cruzan, en **cuatro subpasos** para que una bala rápida no se salte un muro. La máquina dispara a 0,62 s por tiro y falla adrede: con tu misma cadencia ganaba las cinco rondas sin darte tiempo a levantar un muro. |
 | 🚚 **Cluster Rush** | Cada camión tiene su propia velocidad, así que la caravana se estira sola. El reciclado la mantiene junta: los que se descuelgan vuelven al frente y **los que se adelantan demasiado vuelven a la cola**. Las cajas de encima son plataforma de verdad, no adorno. |
 
-## 🔎 Categorías y buscador
+## 🔎 Salas y buscador
 
-La portada reparte las 39 cartas en seis secciones —**casino**, **acción y carreras**, **arcade clásico**, **ingenio y memoria**, **estrategia** y **gestión e idle**— derivadas del género que ya traía cada juego. Un género nuevo cae en *arcade* en vez de desaparecer de la portada.
+La portada no es una lista de treinta y nueve cartas: es un **mapa de seis salas** —casino, acción y carreras, arcade clásico, ingenio y memoria, estrategia y gestión e idle—, cada una con su color, su lema y cuántos juegos tiene. Al pulsar una **se abre su espacio**: desaparecen las demás, sale una cabecera con el nombre de la sala y un botón para volver, y abajo quedan solo sus juegos.
 
-El buscador filtra por nombre, género, descripción y categoría, **sin tildes y por palabras sueltas**: «moto x3m» y «x3m moto» encuentran lo mismo. Los chips filtran por categoría, las secciones vacías se pliegan solas, la tecla <kbd>/</kbd> enfoca el buscador y <kbd>Esc</kbd> lo vacía.
+Las salas salen del género que ya traía cada juego. Un género nuevo cae en *arcade* en vez de desaparecer de la portada.
+
+El buscador filtra por nombre, género, descripción y sala, **sin tildes y por palabras sueltas**: «moto x3m» y «x3m moto» encuentran lo mismo. Escribir estando dentro de una sala **te saca de ella y busca en todo el arcade**, que es lo que espera quien escribe. La tecla <kbd>/</kbd> enfoca el buscador y <kbd>Esc</kbd> sale de la sala.
 
 ## 🛒 Tiendas: en qué gastar los NEXO-COINS
 
