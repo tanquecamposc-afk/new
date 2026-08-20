@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>1v1.LOL — Arcade NEXO</title>
+<link rel="stylesheet" href="arcade.css">
+<style>
+  #tablero{position:relative; display:flex; flex-direction:column; gap:10px;}
+  #juego{width:min(1060px,100vw);}
+  .barra .titulo{color:#c084fc;}
+
+  #arena{
+    position:relative; border-radius:16px; overflow:hidden;
+    border:2px solid rgba(192,132,252,.32);
+    box-shadow:0 15px 45px rgba(0,0,0,.9), inset 0 0 90px rgba(0,0,0,.55);
+    background:#0a0714; touch-action:none;
+  }
+  #lienzo{display:block; width:100%; height:auto; cursor:crosshair;}
+
+  #mandos{display:grid; grid-template-columns:repeat(5,1fr); gap:9px;}
+  #mandos button{
+    padding:15px 6px; font-size:1.1rem; line-height:1;
+    background:rgba(192,132,252,.1); border:1px solid rgba(192,132,252,.3);
+    border-radius:12px; color:#f0e2ff;
+  }
+  #mandos button:active{background:rgba(192,132,252,.3);}
+  @media (min-width:820px){ #mandos{display:none;} }
+
+  .rejillaResumen{
+    display:grid; grid-template-columns:repeat(auto-fit,minmax(110px,1fr)); gap:10px;
+    margin:14px 0 18px;
+  }
+  .rejillaResumen div{background:rgba(0,0,0,.35); border-radius:10px; padding:11px;}
+  .rejillaResumen .n{font-size:22px; font-weight:800; color:var(--oro);}
+  .rejillaResumen .e{font-size:11px; color:var(--tenue);}
+</style>
+</head>
+<body>
+
+<div id="juego" data-ritmo="accion">
+  <div class="barra">
+    <a class="boton" href="../index.html">🕹 Arcade</a>
+    <div class="titulo">🔫 1V1.LOL</div>
+    <div class="sep"></div>
+    <div class="stat">❤️ <span id="vidaTxt" class="verde">100</span></div>
+    <div class="stat">🧱 <span id="materialTxt" class="oro">400</span></div>
+    <div class="stat">🏅 <span id="rondaTxt" class="azul">Ronda 1</span></div>
+    <div class="stat">🏆 <span id="recordTxt" class="tenue">—</span></div>
+    <button id="btnSonido" title="Sonido" aria-label="Sonido">🔊</button>
+  </div>
+
+  <div id="tablero">
+    <div id="arena">
+      <canvas id="lienzo" width="1000" height="580"></canvas>
+      <div class="avisos" id="avisos"></div>
+    </div>
+
+    <div id="mandos">
+      <button id="mIzq" aria-label="Izquierda">◀</button>
+      <button id="mSalto" aria-label="Saltar">⬆</button>
+      <button id="mMuro" aria-label="Construir muro">🧱</button>
+      <button id="mRampa" aria-label="Construir rampa">📐</button>
+      <button id="mDer" aria-label="Derecha">▶</button>
+    </div>
+
+    <div class="modal visible" id="modalInicio">
+      <div class="tarjetaModal">
+        <h1>🔫 1V1.LOL</h1>
+        <div class="sub">Construye, cúbrete y dispara. El que se quede sin vida, pierde la ronda.</div>
+        <div class="instrucciones">
+          <b>← →</b> te mueven · <b>↑ / W</b> salta (y doble salto sobre tus rampas).<br>
+          <b>Clic</b> dispara hacia el ratón. Cada bala quita 12 de vida y las paredes la paran.<br>
+          <b>Q</b> o 🧱 pone un <b>muro</b> delante de ti · <b>E</b> o 📐 pone una <b>rampa</b> para subir.<br>
+          Construir cuesta <b>material</b>, que se recupera solo poco a poco y del todo al ganar la ronda.<br>
+          Los muros aguantan tres impactos. Gánale <b>cinco rondas</b> antes de que te gane a ti cinco.
+        </div>
+        <div class="filaBotones"><button class="primario" id="btnEmpezar">▶ Entrar en la arena</button></div>
+      </div>
+    </div>
+
+    <div class="modal" id="modalFin">
+      <div class="tarjetaModal">
+        <h1 id="finTitulo">🏁 Fin del duelo</h1>
+        <div class="sub" id="finSub"></div>
+        <div class="rejillaResumen">
+          <div><div class="n" id="finTus">0</div><div class="e">tus rondas</div></div>
+          <div><div class="n" id="finSuyas">0</div><div class="e">suyas</div></div>
+          <div><div class="n" id="finPrecision">0 %</div><div class="e">puntería</div></div>
+          <div><div class="n" id="finPremio">0</div><div class="e">NEXO-COINS</div></div>
+        </div>
+        <div class="filaBotones"><button class="primario" id="btnOtra">▶ Otro duelo</button></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="arcade.js"></script>
+<script>
+// ============================================================
+//  1V1.LOL — duelo de construir y disparar
+//  Las construcciones viven en una rejilla: un muro ocupa una casilla entera y
+//  una rampa media, en diagonal. Las balas comprueban la casilla que cruzan,
+//  así que taparse funciona igual para el jugador que para la máquina.
+// ============================================================
+const $ = id => document.getElementById(id);
+const lienzo = $('lienzo');
+const ctx = Arcade.nitido(lienzo);
+const avisos = $('avisos');
+const ANCHO = lienzo.width, ALTO = lienzo.height;
+
+const enTienda = id => (typeof Arcade !== 'undefined' && Arcade.tienda)
+  ? Arcade.tienda.nivel('unovsuno', id) : 0;
+
+const CEL = 58;
+const COLS = Math.floor(ANCHO / CEL), FILAS = Math.floor(ALTO / CEL);
+const SUELO_F = FILAS - 1;                  // fila de suelo
+const sueloY = SUELO_F * CEL;
+const GRAV = 2100, SALTO = 780, VEL = 320;
+const RONDAS = 5;
+const COSTE_MURO = 40, COSTE_RAMPA = 30;
+const DANO = 12;
+
+const G = {
+  jugando:false, ronda:1, tus:0, suyas:0,
+  disparos:0, aciertos:0,
+  piezas:[],                                 // { c, f, tipo:'muro'|'rampa', de, vida, mira }
+  balas:[], material:400,
+  jugador:null, rival:null,
+  raton:{ x: ANCHO * 0.7, y: 200 },
+  sacudida:0, destello:0,
+  record: Arcade.record('unovsuno')
+};
+let particulas = new Particulas(280), tiempo = 0;
+let izq = false, der = false, salta = false;
+
+const clave = (c, f) => c + ':' + f;
+const piezaEn = (c, f) => G.piezas.find(p => p.c === c && p.f === f);
+
+function nuevoLuchador(x, mira, humano){
+  return { x, y: sueloY, vx:0, vy:0, suelo:true, mira, humano,
+           vida:100, saltos:0, recarga:0, pensar:0, brazo:0, golpe:0 };
+}
+
+// ---------- Ronda ----------
+function nuevaRonda(){
+  G.piezas = []; G.balas = [];
+  G.material = 400 + enTienda('mochila') * 150;
+  G.jugador = nuevoLuchador(180, 1, true);
+  G.rival = nuevoLuchador(ANCHO - 180, -1, false);
+  G.jugador.vida = 100 + enTienda('chaleco') * 25;
+  G.jugador.vidaMax = G.jugador.vida;
+  G.rival.vidaMax = 100;
+  refrescarHud();
+}
+
+function empezar(){
+  Object.assign(G, { jugando:true, ronda:1, tus:0, suyas:0, disparos:0, aciertos:0,
+                     sacudida:0, destello:0 });
+  particulas.lista.length = 0;
+  nuevaRonda();
+  $('modalInicio').classList.remove('visible');
+  $('modalFin').classList.remove('visible');
+}
+
+function finDeRonda(ganaste){
+  if (ganaste) G.tus++; else G.suyas++;
+  G.destello = 0.7;
+  Arcade.aviso(avisos, ganaste ? '🏅 Ronda ganada' : '💀 Ronda perdida', ganaste, 1700);
+  Sonido.fx(ganaste ? 'victoria' : 'derrota');
+  refrescarHud();
+  if (G.tus >= RONDAS || G.suyas >= RONDAS){
+    // Se corta el duelo ya: si se deja andando los 900 ms del cartel, todavía
+    // cabe una ronda más y el marcador acaba en 6 de 5.
+    G.jugando = false;
+    setTimeout(terminar, 900);
+    return;
+  }
+  G.ronda++;
+  setTimeout(nuevaRonda, 900);
+}
+
+function terminar(){
+  G.jugando = false;
+  const gano = G.tus > G.suyas;
+  const precision = G.disparos ? Math.round(G.aciertos / G.disparos * 100) : 0;
+  const puntos = G.tus * 100 + precision;
+  const premio = G.tus * 90 + (gano ? 400 : 0);
+  Arcade.guardarRecord('unovsuno', puntos);
+  G.record = Arcade.record('unovsuno');
+  Arcade.perfil.partida('unovsuno', { puntos, victoria: gano, premio });
+  $('finTitulo').textContent = gano ? '🏆 ¡Duelo ganado!' : '💀 Duelo perdido';
+  $('finSub').textContent = gano
+    ? 'Le has ganado ' + G.tus + ' a ' + G.suyas + '.'
+    : 'Se lo lleva ' + G.suyas + ' a ' + G.tus + '. Cúbrete antes de disparar.';
+  $('finTus').textContent = G.tus;
+  $('finSuyas').textContent = G.suyas;
+  $('finPrecision').textContent = precision + ' %';
+  $('finPremio').textContent = premio.toLocaleString('es-ES');
+  $('modalFin').classList.add('visible');
+  refrescarHud();
+}
+
+// ---------- Construcción ----------
+function construir(quien, tipo){
+  const p = quien.humano ? G.jugador : G.rival;
+  const coste = tipo === 'muro' ? COSTE_MURO : COSTE_RAMPA;
+  if (p.humano && G.material < coste) return false;
+
+  const c = Math.round((p.x + p.mira * CEL * 0.9) / CEL);
+  const f = Math.floor(p.y / CEL) - (tipo === 'muro' ? 0 : 0);
+  if (c < 0 || c >= COLS || f < 0 || f >= SUELO_F) return false;
+  if (piezaEn(c, f)) return false;
+
+  G.piezas.push({ c, f, tipo, de: p.humano ? 'tu' : 'cpu', vida: 3, mira: p.mira, nace: 0.18 });
+  if (p.humano){ G.material -= coste; refrescarHud(); }
+  Sonido.fx('colocar');
+  return true;
+}
+
+/** ¿Hay suelo sólido justo debajo de este punto? Suelo real o pieza. */
+function soporteEn(x, y){
+  if (y >= sueloY) return sueloY;
+  const c = Math.round(x / CEL), f = Math.floor(y / CEL) + 1;
+  const p = piezaEn(c, f);
+  if (p) return f * CEL - CEL * 0.5;
+  return null;
+}
+
+// ---------- Disparos ----------
+function disparar(quien, hx, hy){
+  const p = quien;
+  if (p.recarga > 0) return;
+  // La máquina dispara bastante más despacio que tú: con la misma cadencia y
+  // sin fallar de puntería, ganaba las cinco rondas sin que te diera tiempo a
+  // levantar un muro.
+  p.recarga = p.humano ? 0.26 / cadenciaComprada() : 0.62;
+  const ox = p.x + p.mira * 16, oy = p.y - 44;
+  const ang = Math.atan2(hy - oy, hx - ox);
+  G.balas.push({ x: ox, y: oy, vx: Math.cos(ang) * 1250, vy: Math.sin(ang) * 1250,
+                 de: p.humano ? 'tu' : 'cpu', vida: 1.4 });
+  p.brazo = 0.12;
+  p.mira = Math.sign(hx - p.x) || p.mira;
+  if (p.humano) G.disparos++;
+  Sonido.fx('disparo');
+}
+
+function moverBalas(dt){
+  for (const b of G.balas){
+    const pasos = 4;                       // subpasos: una bala rápida se salta muros
+    for (let i = 0; i < pasos && b.vida > 0; i++){
+      b.x += b.vx * dt / pasos;
+      b.y += b.vy * dt / pasos;
+      if (b.x < 0 || b.x > ANCHO || b.y < 0 || b.y > sueloY + CEL){ b.vida = 0; break; }
+
+      const c = Math.round(b.x / CEL), f = Math.floor(b.y / CEL);
+      const pieza = piezaEn(c, f);
+      if (pieza && pieza.nace <= 0){
+        pieza.vida--;
+        b.vida = 0;
+        particulas.emitir(10, { x:b.x, y:b.y, color:['#c084fc','#f0abfc','#fff'],
+                                velMin:40, velMax:190, vidaMin:0.2, vidaMax:0.5, rMin:1.2, rMax:3 });
+        Sonido.fx('golpe');
+        if (pieza.vida <= 0){
+          G.piezas = G.piezas.filter(x => x !== pieza);
+          particulas.emitir(16, { x:c * CEL, y:f * CEL + CEL / 2, color:['#c084fc','#fff'],
+                                  velMin:60, velMax:260, vidaMin:0.3, vidaMax:0.7, rMin:1.5, rMax:4 });
+        }
+        break;
+      }
+
+      const objetivo = b.de === 'tu' ? G.rival : G.jugador;
+      if (Math.abs(b.x - objetivo.x) < 20 && b.y > objetivo.y - 76 && b.y < objetivo.y - 4){
+        b.vida = 0;
+        impacto(objetivo, b.de);
+        break;
+      }
+    }
+    b.vida -= dt;
+  }
+  G.balas = G.balas.filter(b => b.vida > 0);
+}
+
+function impacto(quien, de){
+  quien.vida -= DANO * (de === 'tu' ? danoComprado() : 1);
+  quien.golpe = 0.25;
+  if (de === 'tu') G.aciertos++;
+  G.sacudida = 8;
+  particulas.emitir(14, { x:quien.x, y:quien.y - 40, color:['#ff5a72','#ffd166','#fff'],
+                          velMin:60, velMax:260, vidaMin:0.25, vidaMax:0.6, rMin:1.5, rMax:4 });
+  Sonido.fx('choque');
+  refrescarHud();
+  if (quien.vida <= 0){
+    quien.vida = 0;
+    finDeRonda(de === 'tu');
+  }
+}
+
+// ---------- Máquina ----------
+function pensarRival(dt){
+  const r = G.rival, j = G.jugador;
+  r.pensar -= dt;
+  const dist = Math.abs(r.x - j.x);
+  r.mira = Math.sign(j.x - r.x) || r.mira;
+
+  // Se acerca hasta media distancia y luego mantiene el hueco
+  const objetivo = j.x + (r.x > j.x ? 300 : -300);
+  r.vx = Math.abs(r.x - objetivo) > 26 ? Math.sign(objetivo - r.x) * VEL * 0.92 : 0;
+
+  // Construye para taparse cuando le están dando
+  if (r.pensar <= 0){
+    if (r.vida < 70 && Math.random() < 0.5){
+      construir(r, 'muro');
+      r.pensar = azar(0.8, 1.6);
+    } else if (Math.random() < 0.25){
+      construir(r, 'rampa');
+      r.pensar = azar(1.2, 2.2);
+    } else {
+      r.pensar = azar(0.3, 0.8);
+    }
+  }
+  if (r.suelo && Math.random() < dt * 0.7){ r.vy = -SALTO; r.suelo = false; }
+
+  // Dispara con algo de error, más fino cuanto más avanzado va el duelo
+  if (dist < 720 && r.recarga <= 0){
+    const err = Math.max(26, 78 - G.ronda * 7);
+    disparar(r, j.x + azar(-err, err), j.y - 44 + azar(-err, err));
+  }
+  if (r.brazo > 0) r.brazo -= dt;
+  fisica(r, dt);
+}
+
+// ---------- Física de los luchadores ----------
+function fisica(p, dt){
+  p.x += p.vx * dt;
+  p.x = Math.max(24, Math.min(ANCHO - 24, p.x));
+
+  p.vy += GRAV * dt;
+  const yAntes = p.y;
+  p.y += p.vy * dt;
+
+  // suelo del mapa
+  if (p.y >= sueloY){ p.y = sueloY; p.vy = 0; p.suelo = true; p.saltos = 0; }
+  else {
+    p.suelo = false;
+    // aterrizar encima de una pieza: solo cayendo y solo si venía de arriba
+    if (p.vy > 0){
+      const c = Math.round(p.x / CEL);
+      for (const pieza of G.piezas){
+        if (pieza.c !== c || pieza.nace > 0) continue;
+        const techo = pieza.f * CEL;
+        if (yAntes <= techo + 4 && p.y >= techo){
+          p.y = techo; p.vy = 0; p.suelo = true; p.saltos = 0;
+          break;
+        }
+      }
+    }
+  }
+  if (p.golpe > 0) p.golpe -= dt;
+  if (p.recarga > 0) p.recarga -= dt;
+}
+
+// ---------- Ciclo ----------
+function actualizar(dt){
+  tiempo += dt;
+  particulas.actualizar(dt);
+  if (G.sacudida > 0) G.sacudida = Math.max(0, G.sacudida - dt * 40);
+  if (G.destello > 0) G.destello = Math.max(0, G.destello - dt * 1.6);
+  G.piezas.forEach(p => { if (p.nace > 0) p.nace -= dt; });
+  if (!G.jugando) return;
+
+  const j = G.jugador;
+  j.vx = ((izq ? -1 : 0) + (der ? 1 : 0)) * VEL * velocidadComprada();
+  if (j.vx) j.mira = Math.sign(j.vx);
+  if (salta && (j.suelo || j.saltos < 1)){
+    j.vy = -SALTO; j.suelo = false; j.saltos++;
+    salta = false;
+    Sonido.fx('paso');
+  }
+  if (j.brazo > 0) j.brazo -= dt;
+  fisica(j, dt);
+
+  pensarRival(dt);
+  moverBalas(dt);
+
+  // El material vuelve poco a poco: construir sin freno mataría el duelo
+  G.material = Math.min(400 + enTienda('mochila') * 150, G.material + dt * 22);
+  refrescarHud();
+}
+
+// ---------- Dibujo ----------
+function dibujar(){
+  ctx.save();
+  if (G.sacudida > 0)
+    ctx.translate(azar(-G.sacudida, G.sacudida) * 0.4, azar(-G.sacudida, G.sacudida) * 0.4);
+
+  dibujarFondo();
+  G.piezas.forEach(dibujarPieza);
+  if (G.jugando){
+    dibujarLuchador(G.rival, '#ff5a72', '#7a1024');
+    dibujarLuchador(G.jugador, '#c084fc', '#4a1d70');
+    dibujarBalas();
+    dibujarMira();
+  }
+  particulas.dibujar(ctx);
+  ctx.restore();
+
+  dibujarHud();
+  if (G.destello > 0){
+    ctx.fillStyle = 'rgba(192,132,252,' + (G.destello * 0.16).toFixed(3) + ')';
+    ctx.fillRect(0, 0, ANCHO, ALTO);
+  }
+}
+
+function dibujarFondo(){
+  const g = ctx.createLinearGradient(0, 0, 0, ALTO);
+  g.addColorStop(0, '#150c28'); g.addColorStop(0.6, '#0c0718'); g.addColorStop(1, '#080410');
+  ctx.fillStyle = g; ctx.fillRect(-40, -40, ANCHO + 80, ALTO + 80);
+
+  // islas flotantes de fondo, para que la arena no parezca un folio
+  ctx.fillStyle = 'rgba(192,132,252,.07)';
+  for (let i = 0; i < 6; i++){
+    const x = ((i * 237 + tiempo * 6) % (ANCHO + 300)) - 150;
+    const y = 90 + (i % 3) * 90;
+    ctx.beginPath(); ctx.ellipse(x, y, 90 - i * 6, 22, 0, 0, 6.2832); ctx.fill();
+  }
+
+  // rejilla de construcción, tenue
+  ctx.strokeStyle = 'rgba(192,132,252,.06)'; ctx.lineWidth = 1;
+  ctx.beginPath();
+  for (let c = 0; c <= COLS; c++){ ctx.moveTo(c * CEL, 0); ctx.lineTo(c * CEL, sueloY); }
+  for (let f = 0; f <= SUELO_F; f++){ ctx.moveTo(0, f * CEL); ctx.lineTo(ANCHO, f * CEL); }
+  ctx.stroke();
+
+  // suelo
+  const gs = ctx.createLinearGradient(0, sueloY, 0, ALTO);
+  gs.addColorStop(0, '#3b2a5c'); gs.addColorStop(1, '#1a1230');
+  ctx.fillStyle = gs; ctx.fillRect(0, sueloY, ANCHO, ALTO - sueloY);
+  ctx.strokeStyle = '#c084fc'; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.moveTo(0, sueloY); ctx.lineTo(ANCHO, sueloY); ctx.stroke();
+}
+
+function dibujarPieza(p){
+  const x = p.c * CEL - CEL / 2, y = p.f * CEL;
+  const mio = p.de === 'tu';
+  const base = mio ? '#8b5cf6' : '#e0405f';
+  const claro = mio ? '#c4a6ff' : '#ff8fa3';
+  const escala = p.nace > 0 ? 1 - p.nace / 0.18 * 0.35 : 1;
+
+  ctx.save();
+  ctx.translate(x + CEL / 2, y + CEL / 2);
+  ctx.scale(escala, escala);
+  ctx.translate(-CEL / 2, -CEL / 2);
+  ctx.globalAlpha = 0.55 + 0.45 * (p.vida / 3);
+
+  if (p.tipo === 'muro'){
+    const g = ctx.createLinearGradient(0, 0, 0, CEL);
+    g.addColorStop(0, claro); g.addColorStop(1, base);
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.roundRect(2, 2, CEL - 4, CEL - 4, 6); ctx.fill();
+    ctx.strokeStyle = 'rgba(0,0,0,.35)'; ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(2, CEL / 2); ctx.lineTo(CEL - 2, CEL / 2);
+    ctx.moveTo(CEL / 2, 2); ctx.lineTo(CEL / 2, CEL / 2);
+    ctx.moveTo(CEL / 4, CEL / 2); ctx.lineTo(CEL / 4, CEL - 2);
+    ctx.stroke();
+  } else {
+    ctx.fillStyle = base;
+    ctx.beginPath();
+    if (p.mira > 0){ ctx.moveTo(2, CEL - 2); ctx.lineTo(CEL - 2, 2); ctx.lineTo(CEL - 2, CEL - 2); }
+    else { ctx.moveTo(CEL - 2, CEL - 2); ctx.lineTo(2, 2); ctx.lineTo(2, CEL - 2); }
+    ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = claro; ctx.lineWidth = 3; ctx.stroke();
+  }
+  // marcas de daño
+  if (p.vida < 3){
+    ctx.strokeStyle = 'rgba(0,0,0,.5)'; ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(8, 14); ctx.lineTo(22, 26); ctx.lineTo(14, 38);
+    if (p.vida < 2){ ctx.moveTo(CEL - 12, 12); ctx.lineTo(CEL - 26, 30); }
+    ctx.stroke();
+  }
+  ctx.restore();
+  ctx.globalAlpha = 1;
+}
+
+function dibujarLuchador(p, color, sombra){
+  const x = p.x, y = p.y;
+  ctx.save();
+  ctx.fillStyle = 'rgba(0,0,0,.35)';
+  ctx.beginPath(); ctx.ellipse(x, y + 3, 18, 5, 0, 0, 6.2832); ctx.fill();
+
+  if (p.golpe > 0){
+    ctx.fillStyle = 'rgba(255,90,114,.3)';
+    ctx.beginPath(); ctx.arc(x, y - 38, 34, 0, 6.2832); ctx.fill();
+  }
+  // piernas
+  ctx.strokeStyle = sombra; ctx.lineWidth = 8; ctx.lineCap = 'round';
+  const paso = p.suelo && p.vx ? Math.sin(tiempo * 14) * 8 : 0;
+  ctx.beginPath();
+  ctx.moveTo(x - 5, y - 30); ctx.lineTo(x - 8 - paso, y);
+  ctx.moveTo(x + 5, y - 30); ctx.lineTo(x + 8 + paso, y);
+  ctx.stroke();
+  // cuerpo
+  ctx.fillStyle = color;
+  ctx.beginPath(); ctx.roundRect(x - 13, y - 62, 26, 34, 8); ctx.fill();
+  // arma
+  ctx.strokeStyle = '#cfd6e4'; ctx.lineWidth = 6;
+  ctx.beginPath();
+  ctx.moveTo(x + p.mira * 4, y - 46);
+  ctx.lineTo(x + p.mira * (28 + (p.brazo > 0 ? -4 : 0)), y - 46);
+  ctx.stroke();
+  if (p.brazo > 0){
+    ctx.fillStyle = '#ffd166';
+    ctx.beginPath(); ctx.arc(x + p.mira * 32, y - 46, 7, 0, 6.2832); ctx.fill();
+  }
+  // cabeza
+  ctx.fillStyle = '#f0d3b0';
+  ctx.beginPath(); ctx.arc(x, y - 74, 12, 0, 6.2832); ctx.fill();
+  ctx.fillStyle = color;
+  ctx.beginPath(); ctx.arc(x, y - 79, 12, Math.PI, 0); ctx.fill();
+
+  // barra de vida encima
+  const an = 46, vv = Math.max(0, p.vida) / (p.vidaMax || 100);
+  ctx.fillStyle = 'rgba(0,0,0,.6)';
+  ctx.beginPath(); ctx.roundRect(x - an / 2, y - 102, an, 7, 3); ctx.fill();
+  ctx.fillStyle = vv > 0.5 ? '#4ee089' : vv > 0.22 ? '#ffd166' : '#ff5a72';
+  ctx.beginPath(); ctx.roundRect(x - an / 2, y - 102, an * vv, 7, 3); ctx.fill();
+  ctx.restore();
+}
+
+function dibujarBalas(){
+  for (const b of G.balas){
+    const g = ctx.createLinearGradient(b.x, b.y, b.x - b.vx * 0.012, b.y - b.vy * 0.012);
+    g.addColorStop(0, b.de === 'tu' ? '#e9d5ff' : '#ffd0d8');
+    g.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.strokeStyle = g; ctx.lineWidth = 3; ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(b.x, b.y);
+    ctx.lineTo(b.x - b.vx * 0.012, b.y - b.vy * 0.012);
+    ctx.stroke();
+  }
+}
+
+function dibujarMira(){
+  const { x, y } = G.raton;
+  ctx.strokeStyle = 'rgba(192,132,252,.75)'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.arc(x, y, 13, 0, 6.2832); ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(x - 20, y); ctx.lineTo(x - 6, y);
+  ctx.moveTo(x + 6, y); ctx.lineTo(x + 20, y);
+  ctx.moveTo(x, y - 20); ctx.lineTo(x, y - 6);
+  ctx.moveTo(x, y + 6); ctx.lineTo(x, y + 20);
+  ctx.stroke();
+}
+
+function dibujarHud(){
+  // rondas ganadas, en bolitas
+  for (let i = 0; i < RONDAS; i++){
+    ctx.fillStyle = i < G.tus ? '#c084fc' : 'rgba(255,255,255,.15)';
+    ctx.beginPath(); ctx.arc(28 + i * 22, 28, 8, 0, 6.2832); ctx.fill();
+    ctx.fillStyle = i < G.suyas ? '#ff5a72' : 'rgba(255,255,255,.15)';
+    ctx.beginPath(); ctx.arc(ANCHO - 28 - i * 22, 28, 8, 0, 6.2832); ctx.fill();
+  }
+  // material
+  const an = 150;
+  ctx.fillStyle = 'rgba(0,0,0,.5)';
+  ctx.beginPath(); ctx.roundRect(24, ALTO - 34, an, 12, 6); ctx.fill();
+  ctx.fillStyle = '#ffd166';
+  const tope = 400 + enTienda('mochila') * 150;
+  ctx.beginPath(); ctx.roundRect(24, ALTO - 34, an * (G.material / tope), 12, 6); ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,.55)';
+  ctx.font = 'bold 11px system-ui, sans-serif'; ctx.textAlign = 'left';
+  ctx.fillText('MATERIAL · Q muro (' + COSTE_MURO + ') · E rampa (' + COSTE_RAMPA + ')', 24, ALTO - 40);
+}
+
+function refrescarHud(){
+  $('vidaTxt').textContent = G.jugador ? Math.max(0, Math.round(G.jugador.vida)) : 100;
+  $('materialTxt').textContent = Math.floor(G.material);
+  $('rondaTxt').textContent = 'Ronda ' + G.ronda + ' · ' + G.tus + '-' + G.suyas;
+  $('recordTxt').textContent = G.record ? G.record : '—';
+}
+
+// ---------- Mejoras compradas ----------
+const velocidadComprada = () => 1 + enTienda('botas') * 0.1;
+const cadenciaComprada  = () => 1 + enTienda('gatillo') * 0.22;
+const danoComprado      = () => 1 + enTienda('municion') * 0.2;
+
+// ---------- Control ----------
+lienzo.addEventListener('pointermove', ev => {
+  const p = Arcade.puntero(lienzo, ev);
+  G.raton.x = p.x; G.raton.y = p.y;
+});
+lienzo.addEventListener('pointerdown', ev => {
+  ev.preventDefault(); Sonido.activar();
+  const p = Arcade.puntero(lienzo, ev);
+  G.raton.x = p.x; G.raton.y = p.y;
+  if (G.jugando) disparar(G.jugador, p.x, p.y);
+});
+
+addEventListener('keydown', ev => {
+  if (/^(INPUT|TEXTAREA|SELECT)$/.test(ev.target.tagName || '')) return;
+  const k = ev.key.toLowerCase();
+  if (['arrowleft','arrowright','arrowup','a','d','w','q','e',' '].includes(k)) ev.preventDefault();
+  if (k === 'arrowleft' || k === 'a') izq = true;
+  if (k === 'arrowright' || k === 'd') der = true;
+  if (k === 'arrowup' || k === 'w') salta = true;
+  if (k === 'q' && G.jugando) construir(G.jugador, 'muro');
+  if (k === 'e' && G.jugando) construir(G.jugador, 'rampa');
+  if (k === ' ' && G.jugando) disparar(G.jugador, G.raton.x, G.raton.y);
+});
+addEventListener('keyup', ev => {
+  const k = ev.key.toLowerCase();
+  if (k === 'arrowleft' || k === 'a') izq = false;
+  if (k === 'arrowright' || k === 'd') der = false;
+  if (k === 'arrowup' || k === 'w') salta = false;
+});
+const mando = (id, set) => {
+  const b = $(id);
+  b.addEventListener('pointerdown', e => { e.preventDefault(); Sonido.activar(); set(true); });
+  b.addEventListener('pointerup', e => { e.preventDefault(); set(false); });
+  b.addEventListener('pointerleave', () => set(false));
+  b.addEventListener('pointercancel', () => set(false));
+};
+mando('mIzq', v => izq = v);
+mando('mDer', v => der = v);
+mando('mSalto', v => salta = v);
+$('mMuro').addEventListener('click', () => { Sonido.activar(); if (G.jugando) construir(G.jugador, 'muro'); });
+$('mRampa').addEventListener('click', () => { Sonido.activar(); if (G.jugando) construir(G.jugador, 'rampa'); });
+
+$('btnEmpezar').onclick = () => { Sonido.activar(); empezar(); };
+$('btnOtra').onclick = () => { Sonido.activar(); empezar(); };
+Arcade.conectarSonido($('btnSonido'));
+
+// ---------- Tienda del juego ----------
+// Se paga con NEXO-COINS, la moneda común del arcade.
+if (typeof Arcade !== 'undefined' && Arcade.tienda){
+  Arcade.tienda.registrar('unovsuno', 'Armería', [
+    { id:'chaleco', icono:'🦺', nombre:'Chaleco', precio:3500, max:4, factor:2.3,
+      etiqueta: n => 'Empiezas con ' + (100 + n * 25) + ' de vida',
+      desc:'Veinticinco puntos de vida más en cada ronda. El rival sigue con cien.' },
+    { id:'gatillo', icono:'🔫', nombre:'Gatillo rápido', precio:4000, max:3, factor:2.4,
+      etiqueta: n => n ? 'Disparas un ' + (n * 22) + ' % más rápido' : 'Sin comprar',
+      desc:'Menos espera entre disparo y disparo.' },
+    { id:'municion', icono:'💥', nombre:'Munición pesada', precio:4500, max:3, factor:2.5,
+      etiqueta: n => 'Cada bala quita ' + Math.round(DANO * (1 + n * 0.2)),
+      desc:'Tus balas hacen más daño. Los muros siguen aguantando tres impactos.' },
+    { id:'mochila', icono:'🎒', nombre:'Mochila grande', precio:3000, max:4, factor:2.2,
+      etiqueta: n => 'Llevas hasta ' + (400 + n * 150) + ' de material',
+      desc:'Más material para construir sin quedarte tirado a mitad de ronda.' },
+    { id:'botas', icono:'👟', nombre:'Botas ligeras', precio:2500, max:3, factor:2.3,
+      etiqueta: n => n ? 'Te mueves un ' + (n * 10) + ' % más rápido' : 'Sin comprar',
+      desc:'Más velocidad para salir del punto de mira.' }
+  ], () => refrescarHud());
+}
+
+// ---------- Trucos de administración ----------
+// Solo hacen algo con el modo creador encendido (código 2808, tecla F9).
+if (typeof Arcade !== 'undefined' && Arcade.admin) Arcade.admin.registrar('unovsuno', '1v1.LOL', {
+  vida: { que:'vida <n> — fija tu vida', fn(n){
+    if (!G.jugador) return 'Empieza un duelo primero.';
+    G.jugador.vida = Math.max(1, Math.floor(+n) || 100);
+    G.jugador.vidaMax = Math.max(G.jugador.vidaMax || 100, G.jugador.vida);
+    refrescarHud();
+    return 'Tienes ' + Math.round(G.jugador.vida) + ' de vida.';
+  }},
+  material: { que:'material <n> — fija el material de construcción', fn(n){
+    G.material = Math.max(0, Math.floor(+n) || 0); refrescarHud();
+    return 'Llevas ' + Math.floor(G.material) + ' de material.';
+  }},
+  rondas: { que:'rondas <tuyas> <suyas> — fija el marcador del duelo', fn(a, b){
+    G.tus = Math.max(0, Math.floor(+a) || 0);
+    G.suyas = Math.max(0, Math.floor(+b) || 0);
+    refrescarHud();
+    return 'Vas ' + G.tus + ' - ' + G.suyas + '.';
+  }},
+  ganar: { que:'ganar — te da la ronda ahora mismo', fn(){
+    if (!G.jugando) return 'Empieza un duelo primero.';
+    finDeRonda(true);
+    return 'Ronda tuya.';
+  }},
+  limpiar: { que:'limpiar — tira todas las construcciones', fn(){
+    const n = G.piezas.length; G.piezas = [];
+    return n ? 'Fuera ' + n + ' piezas.' : 'No había nada construido.';
+  }}
+});
+
+// ---------- Arranque ----------
+refrescarHud();
+Arcade.bucle(dt => { actualizar(dt); dibujar(); });
+</script>
+</body>
+</html>

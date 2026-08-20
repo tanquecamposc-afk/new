@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Basketball Stars — Arcade NEXO</title>
+<link rel="stylesheet" href="arcade.css">
+<style>
+  #tablero{position:relative; display:flex; flex-direction:column; gap:10px;}
+  #juego{width:min(1040px,100vw);}
+  .barra .titulo{color:#ff9f43;}
+
+  #cancha{
+    position:relative; border-radius:16px; overflow:hidden;
+    border:2px solid rgba(255,159,67,.32);
+    box-shadow:0 15px 45px rgba(0,0,0,.9), inset 0 0 90px rgba(0,0,0,.5);
+    background:#160d06; touch-action:none;
+  }
+  #lienzo{display:block; width:100%; height:auto;}
+
+  #mandos{display:grid; grid-template-columns:repeat(4,1fr); gap:9px;}
+  #mandos button{
+    padding:15px 8px; font-size:1.2rem; line-height:1;
+    background:rgba(255,159,67,.1); border:1px solid rgba(255,159,67,.3);
+    border-radius:12px; color:#ffe6cc;
+  }
+  #mandos button:active{background:rgba(255,159,67,.3);}
+  @media (min-width:820px){ #mandos{display:none;} }
+
+  .rejillaResumen{
+    display:grid; grid-template-columns:repeat(auto-fit,minmax(110px,1fr)); gap:10px;
+    margin:14px 0 18px;
+  }
+  .rejillaResumen div{background:rgba(0,0,0,.35); border-radius:10px; padding:11px;}
+  .rejillaResumen .n{font-size:22px; font-weight:800; color:var(--oro);}
+  .rejillaResumen .e{font-size:11px; color:var(--tenue);}
+</style>
+</head>
+<body>
+
+<div id="juego" data-ritmo="accion">
+  <div class="barra">
+    <a class="boton" href="../index.html">🕹 Arcade</a>
+    <div class="titulo">🏀 BASKETBALL STARS</div>
+    <div class="sep"></div>
+    <div class="stat">🟠 <span id="tuTxt" class="oro">0</span></div>
+    <div class="stat">🔵 <span id="cpuTxt" class="azul">0</span></div>
+    <div class="stat">⏱ <span id="relojTxt" class="verde">90</span> s</div>
+    <div class="stat">🏆 <span id="recordTxt" class="tenue">—</span></div>
+    <button id="btnSonido" title="Sonido" aria-label="Sonido">🔊</button>
+  </div>
+
+  <div id="tablero">
+    <div id="cancha">
+      <canvas id="lienzo" width="1000" height="560"></canvas>
+      <div class="avisos" id="avisos"></div>
+    </div>
+
+    <div id="mandos">
+      <button id="mIzq" aria-label="Izquierda">◀</button>
+      <button id="mSalto" aria-label="Saltar">⬆</button>
+      <button id="mTiro" aria-label="Tirar o robar">🏀</button>
+      <button id="mDer" aria-label="Derecha">▶</button>
+    </div>
+
+    <div class="modal visible" id="modalInicio">
+      <div class="tarjetaModal">
+        <h1>🏀 BASKETBALL STARS</h1>
+        <div class="sub">Uno contra uno a media cancha. Noventa segundos, la canasta es la misma para los dos.</div>
+        <div class="instrucciones">
+          <b>← →</b> te mueven · <b>↑ / W</b> salta.<br>
+          <b>Mantén espacio</b> (o el botón 🏀) para <b>cargar el tiro</b> y suéltalo en el punto justo:
+          la barra marca la fuerza y la <b>zona verde es el tiro perfecto</b>.<br>
+          Sin balón, el mismo botón sirve para <b>robar</b>: hay que estar pegado al rival.<br>
+          <b>2 puntos</b> desde dentro y <b>3</b> desde detrás de la línea. Un tiro perfecto suma
+          <b>uno más</b>.<br>
+          Quien encesta pierde la posesión: el balón sale desde el fondo para el otro.
+        </div>
+        <div class="filaBotones"><button class="primario" id="btnEmpezar">▶ Saltar a la cancha</button></div>
+      </div>
+    </div>
+
+    <div class="modal" id="modalFin">
+      <div class="tarjetaModal">
+        <h1 id="finTitulo">🏁 Final</h1>
+        <div class="sub" id="finSub"></div>
+        <div class="rejillaResumen">
+          <div><div class="n" id="finTu">0</div><div class="e">tú</div></div>
+          <div><div class="n" id="finCpu">0</div><div class="e">rival</div></div>
+          <div><div class="n" id="finPerfectos">0</div><div class="e">tiros perfectos</div></div>
+          <div><div class="n" id="finPremio">0</div><div class="e">NEXO-COINS</div></div>
+        </div>
+        <div class="filaBotones"><button class="primario" id="btnOtra">▶ Otro partido</button></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="arcade.js"></script>
+<script>
+// ============================================================
+//  BASKETBALL STARS — uno contra uno a media cancha
+//  El balón es un círculo con gravedad y rebote; la canasta es un aro con dos
+//  postes. Encestar es pasar por dentro del aro yendo hacia abajo.
+// ============================================================
+const $ = id => document.getElementById(id);
+const lienzo = $('lienzo');
+const ctx = Arcade.nitido(lienzo);
+const avisos = $('avisos');
+const ANCHO = lienzo.width, ALTO = lienzo.height;
+
+const enTienda = id => (typeof Arcade !== 'undefined' && Arcade.tienda)
+  ? Arcade.tienda.nivel('basketstars', id) : 0;
+
+const SUELO = ALTO - 54;
+const GRAV = 1900;
+const ARO_X = ANCHO - 168, ARO_Y = 200, ARO_R = 42;   // radio interior del aro
+const TRIPLE_X = ARO_X - 330;                          // línea de tres
+const DURACION = 90;
+
+const J = {
+  jugando:false, reloj:DURACION,
+  tu:0, cpu:0, perfectos:0, tiros:0, encestes:0,
+  jugador:{ x:300, y:SUELO, vx:0, vy:0, suelo:true, mira:1, brazo:0 },
+  rival:{ x:700, y:SUELO, vx:0, vy:0, suelo:true, mira:-1, pensar:0, brazo:0 },
+  balon:{ x:300, y:SUELO - 60, vx:0, vy:0, r:15, libre:false, de:'tu', ultimo:'tu' },
+  carga:0, cargando:false, congelado:0,
+  sacudida:0, destello:0, red:0,
+  record: Arcade.record('basketstars')
+};
+let particulas = new Particulas(240), tiempo = 0;
+let izq = false, der = false, salta = false, accion = false;
+
+// La ventana de tiro perfecto: soltar con la barra dentro de esta franja.
+const PERFECTO_DESDE = 0.72, PERFECTO_HASTA = 0.86;
+
+// ---------- Posesión ----------
+const conBalon = quien => !J.balon.libre && J.balon.de === quien;
+function darBalon(quien, desdeFondo){
+  const p = quien === 'tu' ? J.jugador : J.rival;
+  J.balon.libre = false; J.balon.de = quien; J.balon.ultimo = quien;
+  J.balon.vx = 0; J.balon.vy = 0;
+  if (desdeFondo){
+    p.x = quien === 'tu' ? 180 : ANCHO - 320;
+    p.y = SUELO; p.vy = 0; p.suelo = true;
+  }
+}
+
+// ---------- Tiro ----------
+function soltarTiro(quien){
+  const p = quien === 'tu' ? J.jugador : J.rival;
+  const fuerza = quien === 'tu' ? J.carga : p.cargaIA;
+  const perfecto = fuerza >= PERFECTO_DESDE && fuerza <= PERFECTO_HASTA;
+
+  // Una parábola apuntada al aro: se calcula la velocidad que llega ahí y se
+  // desvía según lo lejos que esté la carga del punto perfecto.
+  // Se apunta al plano del aro, no a un punto por encima: si el balón llega
+  // arriba del hierro todavía le queda caer, y en un tiro largo esa caída lo
+  // desplaza medio aro de lado. Apuntando al plano, cruza justo por el centro.
+  // El balón sale de la mano, no del centro del cuerpo: si se apunta desde el
+  // centro, la parábola nace 20 px corrida y el tiro se va por un lado.
+  const salidaX = p.x + (quien === 'tu' ? 20 : -20);
+  const dx = ARO_X - salidaX, dy = ARO_Y - (p.y - 58);
+  // Cuanto más lejos, más alto el arco: con un tiempo fijo el tiro de tres
+  // salía tenso y se comía el hierro de delante.
+  const t = 0.68 + Math.min(0.5, Math.abs(dx) / 1500);
+  let vx = dx / t;
+  let vy = (dy - 0.5 * GRAV * t * t) / t;
+  const error = perfecto ? 0 : (fuerza - (PERFECTO_DESDE + PERFECTO_HASTA) / 2);
+  const rui = quien === 'tu' ? punteriaComprada() : 1;
+  vx *= 1 + error * 0.55 * rui;
+  vy *= 1 + error * 0.22 * rui;
+  if (quien === 'cpu'){ vx *= azar(0.94, 1.07); vy *= azar(0.96, 1.04); }
+
+  J.balon.x = salidaX;
+  J.balon.y = p.y - 58;
+  J.balon.vx = vx; J.balon.vy = vy;
+  J.balon.libre = true; J.balon.ultimo = quien;
+  J.balon.tirador = quien;
+  J.balon.perfecto = perfecto;
+  J.balon.triple = p.x < TRIPLE_X;
+  J.balon.puedeEncestar = true;
+  // Un respiro antes de que nadie pueda cogerlo: sin esto, un defensa pegado
+  // atrapaba el balón en el mismo cuadro en que salía de la mano.
+  J.balon.gracia = 0.3;
+  p.brazo = 0.35;
+  if (quien === 'tu'){ J.tiros++; J.carga = 0; J.cargando = false; }
+  Sonido.fx('disparo');
+}
+
+function canasta(){
+  const b = J.balon;
+  const base = b.triple ? 3 : 2;
+  const suma = base + (b.perfecto ? 1 : 0);
+  if (b.tirador === 'tu'){
+    J.tu += suma; J.encestes++;
+    if (b.perfecto) J.perfectos++;
+    Arcade.aviso(avisos, (b.perfecto ? '🎯 ¡PERFECTO! +' : '🏀 ¡Canasta! +') + suma, true, 1500);
+  } else {
+    J.cpu += suma;
+    Arcade.aviso(avisos, '🔵 Encesta el rival: +' + suma, false, 1400);
+  }
+  J.red = 1; J.destello = 0.5;
+  particulas.emitir(30, { x: ARO_X, y: ARO_Y + 20, color:['#ff9f43','#ffd166','#fff'],
+                          velMin:60, velMax:260, vidaMin:0.3, vidaMax:0.8, rMin:1.6, rMax:4 });
+  Sonido.fx(b.perfecto ? 'victoria' : 'gema');
+  b.puedeEncestar = false;
+  refrescarHud();
+  // el otro saca de fondo
+  setTimeout(() => darBalon(b.tirador === 'tu' ? 'cpu' : 'tu', true), 700);
+}
+
+// ---------- Robo ----------
+function intentarRobo(quien){
+  const mio = quien === 'tu' ? J.jugador : J.rival;
+  const suyo = quien === 'tu' ? J.rival : J.jugador;
+  const otro = quien === 'tu' ? 'cpu' : 'tu';
+  if (!conBalon(otro)) return;
+  if (Math.abs(mio.x - suyo.x) > 62 || Math.abs(mio.y - suyo.y) > 70) return;
+  const suerte = quien === 'tu' ? 0.42 + manosComprado() : 0.3;
+  if (Math.random() < suerte){
+    darBalon(quien, false);
+    Sonido.fx('golpe');
+    Arcade.aviso(avisos, quien === 'tu' ? '🖐 ¡Robo!' : '🖐 Te lo han robado', quien === 'tu', 1300);
+    J.sacudida = 8;
+  } else {
+    mio.congelado = 0.45;   // fallar deja vendido un momento
+  }
+}
+
+// ---------- Partido ----------
+function empezar(){
+  Object.assign(J, {
+    jugando:true, reloj: DURACION + enTienda('reloj') * 20,
+    tu:0, cpu:0, perfectos:0, tiros:0, encestes:0,
+    carga:0, cargando:false, sacudida:0, destello:0, red:0
+  });
+  J.jugador = { x:300, y:SUELO, vx:0, vy:0, suelo:true, mira:1, brazo:0, congelado:0 };
+  J.rival = { x:700, y:SUELO, vx:0, vy:0, suelo:true, mira:-1, pensar:0, brazo:0,
+              congelado:0, cargaIA:0, cargandoIA:false };
+  J.balon = { x:300, y:SUELO - 60, vx:0, vy:0, r:15, libre:false, de:'tu', ultimo:'tu' };
+  particulas.lista.length = 0;
+  $('modalInicio').classList.remove('visible');
+  $('modalFin').classList.remove('visible');
+  refrescarHud();
+}
+
+function terminar(){
+  J.jugando = false;
+  const gano = J.tu > J.cpu;
+  const premio = Math.floor(J.tu * 22 + (gano ? 300 : 0) + J.perfectos * 40);
+  Arcade.guardarRecord('basketstars', J.tu);
+  J.record = Arcade.record('basketstars');
+  Arcade.perfil.partida('basketstars', { puntos: J.tu, victoria: gano, premio });
+  $('finTitulo').textContent = gano ? '🏆 ¡Victoria!' : J.tu === J.cpu ? '🤝 Empate' : '😤 Derrota';
+  $('finSub').textContent = gano
+    ? 'Le has ganado ' + J.tu + ' a ' + J.cpu + '.'
+    : 'El rival se lo lleva ' + J.cpu + ' a ' + J.tu + '. Prueba a soltar el tiro en la franja verde.';
+  $('finTu').textContent = J.tu;
+  $('finCpu').textContent = J.cpu;
+  $('finPerfectos').textContent = J.perfectos;
+  $('finPremio').textContent = premio.toLocaleString('es-ES');
+  $('modalFin').classList.add('visible');
+  Sonido.fx(gano ? 'victoria' : 'derrota');
+  refrescarHud();
+}
+
+// ---------- Ciclo ----------
+function actualizar(dt){
+  tiempo += dt;
+  particulas.actualizar(dt);
+  if (J.sacudida > 0) J.sacudida = Math.max(0, J.sacudida - dt * 40);
+  if (J.destello > 0) J.destello = Math.max(0, J.destello - dt * 1.8);
+  if (J.red > 0) J.red = Math.max(0, J.red - dt * 1.6);
+  if (!J.jugando) return;
+
+  J.reloj -= dt;
+  if (J.reloj <= 0){ J.reloj = 0; terminar(); return; }
+
+  moverJugador(dt);
+  pensarRival(dt);
+  moverBalon(dt);
+  refrescarHud();
+}
+
+function moverJugador(dt){
+  const p = J.jugador;
+  if (p.congelado > 0){ p.congelado -= dt; }
+  const puede = p.congelado <= 0;
+  p.vx = (puede ? ((izq ? -1 : 0) + (der ? 1 : 0)) : 0) * 330 * velocidadComprada();
+  if (p.vx) p.mira = Math.sign(p.vx);
+  if (salta && p.suelo && puede){ p.vy = -720; p.suelo = false; Sonido.fx('paso'); }
+  fisicaCuerpo(p, dt);
+
+  // Cargar y soltar el tiro
+  if (conBalon('tu')){
+    if (accion && puede){
+      J.cargando = true;
+      J.carga = Math.min(1, J.carga + dt * 1.15);
+    } else if (J.cargando){
+      soltarTiro('tu');
+    }
+  } else if (accion && puede && !J.balon.libre){
+    intentarRobo('tu');
+    accion = false;      // un robo por pulsación
+  }
+  if (p.brazo > 0) p.brazo -= dt;
+}
+
+function pensarRival(dt){
+  const r = J.rival;
+  if (r.congelado > 0) r.congelado -= dt;
+  r.pensar -= dt;
+
+  if (conBalon('cpu')){
+    // Se coloca a distancia de tiro y dispara con una carga casi buena
+    const objetivo = ARO_X - (Math.random() < 0.35 ? 380 : 230);
+    r.vx = Math.sign(objetivo - r.x) * (Math.abs(objetivo - r.x) > 24 ? 250 : 0);
+    if (!r.cargandoIA && Math.abs(objetivo - r.x) < 40 && r.pensar <= 0){
+      r.cargandoIA = true; r.cargaIA = 0;
+      r.objetivoCarga = azar(PERFECTO_DESDE - 0.1, PERFECTO_HASTA + 0.08) * dificultadIA();
+    }
+    if (r.cargandoIA){
+      r.cargaIA += dt * 1.15;
+      if (r.cargaIA >= r.objetivoCarga){
+        soltarTiro('cpu');
+        r.cargandoIA = false;
+        r.pensar = azar(0.5, 1.2);
+      }
+    }
+  } else if (conBalon('tu')){
+    // Defiende: se pega al jugador e intenta robar
+    const objetivo = J.jugador.x + (J.jugador.x < ARO_X ? 46 : -46);
+    r.vx = Math.sign(objetivo - r.x) * (Math.abs(objetivo - r.x) > 16 ? 285 : 0);
+    if (r.pensar <= 0 && Math.abs(r.x - J.jugador.x) < 62){
+      intentarRobo('cpu');
+      r.pensar = azar(0.7, 1.4);
+    }
+    if (r.suelo && J.cargando && Math.random() < dt * 2.2){ r.vy = -640; r.suelo = false; }
+  } else {
+    // Balón suelto: va a por él
+    r.vx = Math.sign(J.balon.x - r.x) * 300;
+  }
+  if (r.vx) r.mira = Math.sign(r.vx);
+  if (r.brazo > 0) r.brazo -= dt;
+  fisicaCuerpo(r, dt);
+}
+
+function fisicaCuerpo(p, dt){
+  p.x += p.vx * dt;
+  p.x = Math.max(60, Math.min(ANCHO - 60, p.x));
+  p.vy += GRAV * dt;
+  p.y += p.vy * dt;
+  if (p.y >= SUELO){ p.y = SUELO; p.vy = 0; p.suelo = true; }
+}
+
+function moverBalon(dt){
+  const b = J.balon;
+  if (!b.libre){
+    const p = b.de === 'tu' ? J.jugador : J.rival;
+    // El balón bota al lado del que lo lleva
+    const bote = p.suelo ? Math.abs(Math.sin(tiempo * 7)) * 26 : 0;
+    b.x = p.x + p.mira * 24;
+    b.y = p.y - 26 - bote;
+    return;
+  }
+
+  b.vy += GRAV * dt;
+  b.x += b.vx * dt;
+  b.y += b.vy * dt;
+
+  // aro: dos postes con los que choca, y el hueco de en medio
+  for (const px of [ARO_X - ARO_R, ARO_X + ARO_R]){
+    // Los hierros son finos: con un margen grande el hueco útil se quedaba en
+    // trece píxeles y hasta el tiro perfecto cantaba el aro.
+    const d = Math.hypot(b.x - px, b.y - ARO_Y);
+    if (d < b.r + 1){
+      const nx = (b.x - px) / (d || 1), ny = (b.y - ARO_Y) / (d || 1);
+      const vn = b.vx * nx + b.vy * ny;
+      b.vx -= 2 * vn * nx * 0.72; b.vy -= 2 * vn * ny * 0.72;
+      b.x = px + nx * (b.r + 1); b.y = ARO_Y + ny * (b.r + 1);
+      Sonido.fx('banda');
+    }
+  }
+  // tablero
+  if (b.x + b.r > ARO_X + 88 && b.y < ARO_Y + 30 && b.y > ARO_Y - 130){
+    b.x = ARO_X + 88 - b.r; b.vx *= -0.68;
+    Sonido.fx('golpe');
+  }
+
+  // canasta: cruzar el plano del aro hacia abajo y por dentro
+  if (b.puedeEncestar && b.vy > 0 &&
+      b.y > ARO_Y && b.y - b.vy * dt <= ARO_Y &&
+      Math.abs(b.x - ARO_X) < ARO_R - 3){
+    canasta();
+  }
+
+  // suelo y paredes
+  if (b.y + b.r > SUELO){
+    b.y = SUELO - b.r; b.vy *= -0.62; b.vx *= 0.9;
+    b.puedeEncestar = false;
+    if (Math.abs(b.vy) < 60){ b.vy = 0; }
+    Sonido.fx('bola');
+  }
+  if (b.x - b.r < 26){ b.x = 26 + b.r; b.vx *= -0.7; }
+  if (b.x + b.r > ANCHO - 26){ b.x = ANCHO - 26 - b.r; b.vx *= -0.7; }
+
+  // recogida: el primero que lo toque se lo queda
+  if (b.gracia > 0){ b.gracia -= dt; return; }
+  for (const [quien, p] of [['tu', J.jugador], ['cpu', J.rival]]){
+    if (Math.hypot(b.x - p.x, b.y - (p.y - 40)) < 44 && Math.abs(b.vy) < 900){
+      darBalon(quien, false);
+      return;
+    }
+  }
+}
+
+// ---------- Dibujo ----------
+function dibujar(){
+  ctx.save();
+  if (J.sacudida > 0)
+    ctx.translate(azar(-J.sacudida, J.sacudida) * 0.4, azar(-J.sacudida, J.sacudida) * 0.4);
+
+  dibujarPabellon();
+  dibujarPista();
+  dibujarCanasta();
+  dibujarPersona(J.rival, '#4fc3ff', '#0d3b57', false);
+  dibujarPersona(J.jugador, '#ff9f43', '#7a3d06', true);
+  dibujarBalon();
+  particulas.dibujar(ctx);
+  dibujarBarra();
+  ctx.restore();
+
+  if (J.destello > 0){
+    ctx.fillStyle = 'rgba(255,159,67,' + (J.destello * 0.18).toFixed(3) + ')';
+    ctx.fillRect(0, 0, ANCHO, ALTO);
+  }
+}
+
+function dibujarPabellon(){
+  const g = ctx.createLinearGradient(0, 0, 0, SUELO);
+  g.addColorStop(0, '#0a0f1c'); g.addColorStop(1, '#1a1008');
+  ctx.fillStyle = g; ctx.fillRect(-40, -40, ANCHO + 80, ALTO + 80);
+
+  // graderío: puntos de color fijos por asiento, con una ola suave
+  for (let fy = 26; fy < SUELO - 210; fy += 17){
+    for (let fx = 24; fx < ANCHO - 20; fx += 15){
+      const s = Math.abs(Math.sin(fx * 12.9898 + fy * 78.233)) % 1;
+      ctx.globalAlpha = 0.4;
+      ctx.fillStyle = s < 0.4 ? '#3d4a60' : s < 0.7 ? '#ff9f43' : s < 0.9 ? '#c7d3e4' : '#4fc3ff';
+      ctx.beginPath();
+      ctx.arc(fx, fy + Math.sin(fx * 0.02 + tiempo * 2) * 2, 3.4, 0, 6.2832);
+      ctx.fill();
+    }
+  }
+  ctx.globalAlpha = 1;
+
+  // marcador colgante
+  ctx.fillStyle = 'rgba(0,0,0,.7)';
+  ctx.beginPath(); ctx.roundRect(ANCHO / 2 - 116, 16, 232, 62, 12); ctx.fill();
+  ctx.strokeStyle = 'rgba(255,159,67,.4)'; ctx.lineWidth = 2; ctx.stroke();
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.font = 'bold 34px system-ui, sans-serif';
+  ctx.fillStyle = '#ff9f43'; ctx.fillText(J.tu, ANCHO / 2 - 62, 44);
+  ctx.fillStyle = 'rgba(255,255,255,.4)'; ctx.fillText('·', ANCHO / 2, 44);
+  ctx.fillStyle = '#4fc3ff'; ctx.fillText(J.cpu, ANCHO / 2 + 62, 44);
+  ctx.font = 'bold 15px system-ui, sans-serif';
+  ctx.fillStyle = J.reloj < 15 ? '#ff5a72' : 'rgba(255,255,255,.65)';
+  ctx.fillText(Math.ceil(J.reloj) + ' s', ANCHO / 2, 66);
+}
+
+function dibujarPista(){
+  const g = ctx.createLinearGradient(0, SUELO - 40, 0, ALTO);
+  g.addColorStop(0, '#b5762f'); g.addColorStop(1, '#7c4a17');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, SUELO, ANCHO, ALTO - SUELO);
+  // duelas
+  ctx.strokeStyle = 'rgba(0,0,0,.18)'; ctx.lineWidth = 2;
+  ctx.beginPath();
+  for (let x = 0; x < ANCHO; x += 46){ ctx.moveTo(x, SUELO); ctx.lineTo(x, ALTO); }
+  ctx.stroke();
+  ctx.strokeStyle = 'rgba(255,255,255,.5)'; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.moveTo(0, SUELO); ctx.lineTo(ANCHO, SUELO); ctx.stroke();
+
+  // línea de tres, dibujada como un arco visto de lado
+  ctx.strokeStyle = 'rgba(255,255,255,.45)'; ctx.lineWidth = 3;
+  ctx.setLineDash([10, 8]);
+  ctx.beginPath(); ctx.moveTo(TRIPLE_X, SUELO); ctx.lineTo(TRIPLE_X, SUELO - 26); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = 'rgba(255,255,255,.35)';
+  ctx.font = 'bold 13px system-ui, sans-serif'; ctx.textAlign = 'center';
+  ctx.fillText('TRIPLE', TRIPLE_X, SUELO - 34);
+}
+
+function dibujarCanasta(){
+  // poste y tablero
+  ctx.fillStyle = '#2a3140';
+  ctx.fillRect(ARO_X + 112, ARO_Y - 130, 16, SUELO - ARO_Y + 130);
+  ctx.fillStyle = 'rgba(240,245,255,.9)';
+  ctx.beginPath(); ctx.roundRect(ARO_X + 84, ARO_Y - 132, 30, 168, 5); ctx.fill();
+  ctx.strokeStyle = '#ff5a72'; ctx.lineWidth = 3;
+  ctx.strokeRect(ARO_X + 86, ARO_Y - 58, 26, 74);
+
+  // aro
+  ctx.strokeStyle = '#ff5a2e'; ctx.lineWidth = 7; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(ARO_X - ARO_R, ARO_Y); ctx.lineTo(ARO_X + ARO_R, ARO_Y); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(ARO_X + ARO_R, ARO_Y); ctx.lineTo(ARO_X + 86, ARO_Y - 4); ctx.stroke();
+
+  // red: cuerdas que se agitan al encestar
+  ctx.strokeStyle = 'rgba(255,255,255,.75)'; ctx.lineWidth = 1.6;
+  const meneo = J.red * 12;
+  for (let i = 0; i <= 6; i++){
+    const t = i / 6;
+    const x0 = ARO_X - ARO_R + t * ARO_R * 2;
+    const x1 = ARO_X - ARO_R * 0.5 + t * ARO_R + Math.sin(tiempo * 14 + i) * meneo;
+    ctx.beginPath(); ctx.moveTo(x0, ARO_Y); ctx.lineTo(x1, ARO_Y + 42 + meneo); ctx.stroke();
+  }
+  ctx.beginPath();
+  ctx.moveTo(ARO_X - ARO_R * 0.5, ARO_Y + 42 + meneo);
+  ctx.lineTo(ARO_X + ARO_R * 0.5, ARO_Y + 42 + meneo);
+  ctx.stroke();
+}
+
+function dibujarPersona(p, color, sombra, esTuyo){
+  const x = p.x, y = p.y;
+  ctx.save();
+  ctx.fillStyle = 'rgba(0,0,0,.4)';
+  ctx.beginPath(); ctx.ellipse(x, SUELO + 4, 26, 7, 0, 0, 6.2832); ctx.fill();
+
+  const salto = Math.max(0, (SUELO - y) / 200);
+  // piernas
+  ctx.strokeStyle = sombra; ctx.lineWidth = 9; ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(x - 8, y - 34); ctx.lineTo(x - 12 - salto * 6, y);
+  ctx.moveTo(x + 8, y - 34); ctx.lineTo(x + 12 + salto * 6, y);
+  ctx.stroke();
+  // tronco
+  ctx.fillStyle = color;
+  ctx.beginPath(); ctx.roundRect(x - 15, y - 68, 30, 38, 9); ctx.fill();
+  ctx.fillStyle = 'rgba(0,0,0,.25)';
+  ctx.beginPath(); ctx.roundRect(x - 15, y - 44, 30, 14, 5); ctx.fill();
+  // brazos: se levantan al tirar
+  const alza = p.brazo > 0 ? 1 : (conBalon(esTuyo ? 'tu' : 'cpu') && (esTuyo ? J.cargando : p.cargandoIA) ? 0.7 : 0);
+  ctx.strokeStyle = color; ctx.lineWidth = 8;
+  ctx.beginPath();
+  ctx.moveTo(x - 13, y - 60);
+  ctx.lineTo(x - 24, y - 60 - alza * 34);
+  ctx.moveTo(x + 13, y - 60);
+  ctx.lineTo(x + 24, y - 60 - alza * 34);
+  ctx.stroke();
+  // cabeza
+  ctx.fillStyle = '#e8b07a';
+  ctx.beginPath(); ctx.arc(x, y - 82, 13, 0, 6.2832); ctx.fill();
+  ctx.fillStyle = color;
+  ctx.beginPath(); ctx.arc(x, y - 88, 13, Math.PI, 0); ctx.fill();
+  if (esTuyo){
+    ctx.fillStyle = '#ffd166';
+    ctx.beginPath(); ctx.arc(x, y - 104, 4, 0, 6.2832); ctx.fill();
+  }
+  ctx.restore();
+}
+
+function dibujarBalon(){
+  const b = J.balon;
+  ctx.save();
+  ctx.translate(b.x, b.y);
+  ctx.rotate(b.libre ? b.x * 0.02 : tiempo * 3);
+  const g = ctx.createRadialGradient(-4, -5, 2, 0, 0, b.r);
+  g.addColorStop(0, '#ffb35c'); g.addColorStop(1, '#c85a10');
+  ctx.fillStyle = g;
+  ctx.beginPath(); ctx.arc(0, 0, b.r, 0, 6.2832); ctx.fill();
+  ctx.strokeStyle = '#3a1d06'; ctx.lineWidth = 1.6;
+  ctx.beginPath(); ctx.moveTo(-b.r, 0); ctx.lineTo(b.r, 0); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(0, -b.r); ctx.lineTo(0, b.r); ctx.stroke();
+  ctx.beginPath(); ctx.ellipse(0, 0, b.r * 0.55, b.r, 0, 0, 6.2832); ctx.stroke();
+  ctx.restore();
+}
+
+function dibujarBarra(){
+  if (!conBalon('tu')) return;
+  const an = 260, x0 = ANCHO / 2 - an / 2, y0 = ALTO - 34;
+  ctx.fillStyle = 'rgba(0,0,0,.6)';
+  ctx.beginPath(); ctx.roundRect(x0 - 6, y0 - 6, an + 12, 24, 8); ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,.12)';
+  ctx.beginPath(); ctx.roundRect(x0, y0, an, 12, 6); ctx.fill();
+  // franja del tiro perfecto
+  ctx.fillStyle = 'rgba(78,224,137,.75)';
+  ctx.fillRect(x0 + an * PERFECTO_DESDE, y0 - 3, an * (PERFECTO_HASTA - PERFECTO_DESDE), 18);
+  ctx.fillStyle = '#ff9f43';
+  ctx.beginPath(); ctx.roundRect(x0, y0, an * J.carga, 12, 6); ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,.6)';
+  ctx.font = 'bold 11px system-ui, sans-serif'; ctx.textAlign = 'center';
+  ctx.fillText('MANTÉN ESPACIO Y SUELTA EN VERDE', ANCHO / 2, y0 - 12);
+}
+
+function refrescarHud(){
+  $('tuTxt').textContent = J.tu;
+  $('cpuTxt').textContent = J.cpu;
+  $('relojTxt').textContent = Math.ceil(J.reloj);
+  $('recordTxt').textContent = J.record ? J.record + ' pts' : '—';
+}
+
+// ---------- Mejoras compradas ----------
+const velocidadComprada = () => 1 + enTienda('botas') * 0.1;
+const punteriaComprada  = () => Math.max(0.3, 1 - enTienda('muñeca') * 0.22);  // menos error
+const manosComprado     = () => enTienda('manos') * 0.14;
+const dificultadIA      = () => 1;
+
+// ---------- Control ----------
+addEventListener('keydown', ev => {
+  if (/^(INPUT|TEXTAREA|SELECT)$/.test(ev.target.tagName || '')) return;
+  const k = ev.key.toLowerCase();
+  if (['arrowleft','arrowright','arrowup','a','d','w',' '].includes(k)) ev.preventDefault();
+  if (k === 'arrowleft' || k === 'a') izq = true;
+  if (k === 'arrowright' || k === 'd') der = true;
+  if (k === 'arrowup' || k === 'w') salta = true;
+  if (k === ' '){ accion = true; Sonido.activar(); }
+});
+addEventListener('keyup', ev => {
+  const k = ev.key.toLowerCase();
+  if (k === 'arrowleft' || k === 'a') izq = false;
+  if (k === 'arrowright' || k === 'd') der = false;
+  if (k === 'arrowup' || k === 'w') salta = false;
+  if (k === ' ') accion = false;
+});
+const mando = (id, set) => {
+  const b = $(id);
+  b.addEventListener('pointerdown', e => { e.preventDefault(); Sonido.activar(); set(true); });
+  b.addEventListener('pointerup', e => { e.preventDefault(); set(false); });
+  b.addEventListener('pointerleave', () => set(false));
+  b.addEventListener('pointercancel', () => set(false));
+};
+mando('mIzq', v => izq = v);
+mando('mDer', v => der = v);
+mando('mSalto', v => salta = v);
+mando('mTiro', v => accion = v);
+
+$('btnEmpezar').onclick = () => { Sonido.activar(); empezar(); };
+$('btnOtra').onclick = () => { Sonido.activar(); empezar(); };
+Arcade.conectarSonido($('btnSonido'));
+
+// ---------- Tienda del juego ----------
+// Se paga con NEXO-COINS, la moneda común del arcade.
+if (typeof Arcade !== 'undefined' && Arcade.tienda){
+  Arcade.tienda.registrar('basketstars', 'Vestuario', [
+    { id:'muñeca', icono:'🎯', nombre:'Muñeca de oro', precio:4000, max:3, factor:2.4,
+      etiqueta: n => n ? 'Un ' + (n * 22) + ' % menos de desvío' : 'Sin comprar',
+      desc:'Los tiros que no sueltas en la franja verde se desvían menos. El tiro ' +
+           'perfecto sigue siendo perfecto: esto salva los que casi lo son.' },
+    { id:'botas', icono:'👟', nombre:'Botas de competición', precio:3000, max:3, factor:2.3,
+      etiqueta: n => n ? 'Corres un ' + (n * 10) + ' % más' : 'Sin comprar',
+      desc:'Te mueves más rápido que el rival: llegas antes al rebote y te zafas de la marca.' },
+    { id:'manos', icono:'🖐', nombre:'Manos rápidas', precio:3500, max:3, factor:2.4,
+      etiqueta: n => n ? 'Robas con un ' + Math.round((0.42 + n * 0.14) * 100) + ' % de acierto' : 'Robas con un 42 %',
+      desc:'Más probabilidad de robar el balón cuando estás pegado al rival.' },
+    { id:'reloj', icono:'⏱', nombre:'Partido largo', precio:3000, max:4, factor:2.2,
+      etiqueta: n => 'Partidos de ' + (90 + n * 20) + ' s',
+      desc:'Veinte segundos más por nivel para remontar.' }
+  ], () => refrescarHud());
+}
+
+// ---------- Trucos de administración ----------
+// Solo hacen algo con el modo creador encendido (código 2808, tecla F9).
+if (typeof Arcade !== 'undefined' && Arcade.admin) Arcade.admin.registrar('basketstars', 'Basketball Stars', {
+  marcador: { que:'marcador <tu> <cpu> — fija el tanteo', fn(a, b){
+    J.tu = Math.max(0, Math.floor(+a) || 0);
+    J.cpu = Math.max(0, Math.floor(+b) || 0);
+    refrescarHud();
+    return 'Vas ' + J.tu + ' - ' + J.cpu + '.';
+  }},
+  reloj: { que:'reloj <s> — pone los segundos que quedan', fn(s){
+    J.reloj = Math.max(1, +s || 90); refrescarHud();
+    return 'Quedan ' + Math.ceil(J.reloj) + ' s.';
+  }},
+  balon: { que:'balon — te da el balón', fn(){
+    darBalon('tu', false);
+    return 'El balón es tuyo.';
+  }},
+  canasta: { que:'canasta — encesta un triple perfecto', fn(){
+    if (!J.jugando) return 'Empieza un partido primero.';
+    J.balon.tirador = 'tu'; J.balon.triple = true; J.balon.perfecto = true;
+    J.balon.puedeEncestar = true;
+  // Un respiro antes de que nadie pueda cogerlo: sin esto, un defensa pegado
+  // atrapaba el balón en el mismo cuadro en que salía de la mano.
+  J.balon.gracia = 0.3;
+    canasta();
+    return 'Cuatro puntos más.';
+  }},
+  quieto: { que:'quieto — deja al rival plantado', fn(){
+    J.rival.congelado = 999;
+    return 'El rival no se mueve hasta el próximo partido.';
+  }}
+});
+
+// ---------- Arranque ----------
+refrescarHud();
+Arcade.bucle(dt => { actualizar(dt); dibujar(); });
+</script>
+</body>
+</html>

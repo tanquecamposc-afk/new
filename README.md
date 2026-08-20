@@ -1,6 +1,6 @@
 # 🕹 ARCADE NEXO
 
-Treinta y cuatro juegos hechos a mano en **HTML5 + Canvas + JavaScript puro**. Sin dependencias, sin librerías, sin assets externos y sin conexión a internet: todos los gráficos se dibujan por código y todo el sonido se genera en tiempo real con WebAudio.
+Treinta y nueve juegos hechos a mano en **HTML5 + Canvas + JavaScript puro**. Sin dependencias, sin librerías, sin assets externos y sin conexión a internet: todos los gráficos se dibujan por código y todo el sonido se genera en tiempo real con WebAudio.
 
 ## ▶ Cómo jugar
 
@@ -10,7 +10,7 @@ Cada juego tiene su botón **🕹 Arcade** arriba a la izquierda para volver a l
 
 ### 📦 Versión de un solo archivo
 
-`arcade.html` es el arcade **entero** (portada y los treinta y cuatro juegos) empaquetado en un único archivo, sin CSS ni JS externos. Sirve para cuando solo puedes usar una página suelta: mandarlo por correo, subirlo a cualquier sitio o abrirlo desde una memoria USB.
+`arcade.html` es el arcade **entero** (portada y los treinta y nueve juegos) empaquetado en un único archivo, sin CSS ni JS externos. Sirve para cuando solo puedes usar una página suelta: mandarlo por correo, subirlo a cualquier sitio o abrirlo desde una memoria USB.
 
 Se genera a partir de los archivos de `juegos/`, que siguen siendo la fuente de verdad:
 
@@ -58,6 +58,11 @@ Cada juego queda aislado en su propia pantalla: su CSS se prefija con el selecto
 | 🍬 [Cut the Rope](juegos/cut-the-rope.html) | Puzle | Corta cuerdas, coge las tres estrellas y dale de comer a Ñam |
 | 🏀 [Basket Random](juegos/basket-random.html) | Deportes | Un botón, dos muñecos y unas reglas que cambian cada punto |
 | 🏎 [Smash Karts](juegos/smash-karts.html) | Arena | Cuatro karts, misiles, minas y turbo. Solo queda uno |
+| 🏈 [Retro Bowl](juegos/retro-bowl.html) | Deportes | Eres el quarterback: apunta el pase y mete touchdowns contra el reloj |
+| 🏎 [Drift Hunters](juegos/drift-hunters.html) | Carreras | Freno de mano, humo y combos por ángulo de derrape y velocidad |
+| 🏀 [Basketball Stars](juegos/basketball-stars.html) | Deportes | Uno contra uno a media cancha, con tiro perfecto por temporización |
+| 🔫 [1v1.LOL](juegos/1v1-lol.html) | Arena | Construye muros y rampas mientras disparas, a cinco rondas |
+| 🚚 [Cluster Rush](juegos/cluster-rush.html) | Corredor | Salta de camión en camión sin tocar el asfalto |
 
 ---
 
@@ -492,6 +497,42 @@ Nueve de los juegos más jugados del mundo en Poki, rehechos desde cero con la m
 
 Todos se comprobaron con **pilotos automáticos** además de a ojo, que es como salieron los ajustes de dificultad: el corredor moría siempre a la misma distancia (era el tope de tiempo de la prueba, no un muro), el túnel parecía imposible hasta que el piloto compensó el giro, y el generador de Subway Surfers cerraba los tres carriles hasta que se le enseñó a mirar hacia atrás.
 
+## 🦆 Los cinco de DuckMath
+
+Cinco de los más jugados de DuckMath, rehechos desde cero como el resto: Canvas, código y nada más.
+
+| Juego | Lo que tiene por dentro |
+|---|---|
+| 🏈 **Retro Bowl** | Campo de 100 yardas en vertical con la cámara siguiendo al balón. Los receptores corren **rutas por tramos** y el pase se resuelve comparando quién está más cerca del punto de caída: si llega antes un defensa, es intercepción. Una barra de presión te obliga a soltar el balón antes de que te capturen. |
+| 🏎 **Drift Hunters** | Derrape de verdad: la velocidad vive **en coordenadas del mundo** y el coche rota por debajo, así que al girar parte de la marcha adelante se convierte en marcha lateral. El agarre decide cuánto dura, y el freno de mano lo baja a 1,15. El volante entra menos cuanto más cruzado vas, que es lo que evita que el coche gire sobre sí mismo. |
+| 🏀 **Basketball Stars** | El tiro apunta **al plano del aro**, no a un punto por encima: apuntando arriba, en un triple la caída restante desplazaba el balón medio aro de lado. El arco se abre con la distancia y el balón sale de la mano, no del centro del cuerpo. |
+| 🔫 **1v1.LOL** | Muros y rampas en una rejilla; las balas comprueban la casilla que cruzan, en **cuatro subpasos** para que una bala rápida no se salte un muro. La máquina dispara a 0,62 s por tiro y falla adrede: con tu misma cadencia ganaba las cinco rondas sin darte tiempo a levantar un muro. |
+| 🚚 **Cluster Rush** | Cada camión tiene su propia velocidad, así que la caravana se estira sola. El reciclado la mantiene junta: los que se descuelgan vuelven al frente y **los que se adelantan demasiado vuelven a la cola**. Las cajas de encima son plataforma de verdad, no adorno. |
+
+## 🔎 Categorías y buscador
+
+La portada reparte las 39 cartas en seis secciones —**casino**, **acción y carreras**, **arcade clásico**, **ingenio y memoria**, **estrategia** y **gestión e idle**— derivadas del género que ya traía cada juego. Un género nuevo cae en *arcade* en vez de desaparecer de la portada.
+
+El buscador filtra por nombre, género, descripción y categoría, **sin tildes y por palabras sueltas**: «moto x3m» y «x3m moto» encuentran lo mismo. Los chips filtran por categoría, las secciones vacías se pliegan solas, la tecla <kbd>/</kbd> enfoca el buscador y <kbd>Esc</kbd> lo vacía.
+
+## 🛒 Tiendas: en qué gastar los NEXO-COINS
+
+Los **39 juegos** tienen su propia tienda, con el botón 🛒 en la barra. Se paga con NEXO-COINS, la moneda común, así que lo que ganas en la ruleta sirve para comprarle un taladro de plasma a la mina.
+
+El módulo vive en `Arcade.tienda` (`juegos/arcade.js`) y cada juego declara sus artículos desde su propio script, igual que los trucos: es el único sitio donde su estado está a mano. Lo comprado se guarda por juego y se lee con `Arcade.tienda.nivel()` **cada vez que hace falta**, no una vez al cargar, para que una compra a mitad de partida se note sin salir.
+
+**Cada compra encarece la siguiente** por su factor. Sin eso, el primer millón de NEXO-COINS compraría la partida entera y el juego se acabaría ahí: el sexto troquel de plata del Cookie Clicker cuesta más de dos millones.
+
+Algunos ejemplos:
+
+| Tienda | Qué se compra |
+|---|---|
+| ⛏ **Bazar de la mina** | Cuatro **pieles del yacimiento** —esmeralda, atardecer, neón, ventisca— que recolorean cielo, estratos, soportes y lámparas **conservando la estructura de cada mundo**, así que el Valle con piel de neón sigue teniendo su techo de estrellas. Más taladro de plasma y contrato con la fundición. |
+| 🍪 **Obrador de plata** | El **troquel** duplica lo que paga canjear un millón de galletas, el horno duplica la producción y el cebo hace salir antes las galletas doradas. |
+| 🎴 **Las seis mesas** | El **paño de la sala se compra una vez y se ve en las seis**: blackjack, póker, bacarrá, ruleta, dados y billar. Cada mesa añade lo suyo: el ojo del crupier, la lectura de rivales, el panel de estadística… |
+| 🛟 **Juegos de apuesta** | El **seguro** devuelve parte de lo perdido en una ronda. No toca el sorteo ni la ventaja de la casa: la matemática sigue siendo la misma, solo amortigua la caída. |
+| 🛡 **Juegos de acción** | **Escudos** que perdonan un choque y se recargan en cada partida, vidas de más, depósitos de nitro, paracaídas… |
+
 ## 🎛 Ayuda, volumen y pausa
 
 Tres cosas que faltaban en todos los juegos a la vez, resueltas una sola vez en `arcade.js` y `arcade.css`:
@@ -527,7 +568,7 @@ La consola vive en `Arcade.admin` (`juegos/arcade.js`). Añadir un comando es a�
 
 ### Trucos por juego
 
-Los **34 juegos** tienen sus propios comandos: 133 en total. No pueden vivir en la consola porque en el arcade empaquetado el estado de cada juego queda encerrado dentro de su función, así que **cada juego se apunta desde su propio script** con `Arcade.admin.registrar(id, nombre, trucos)`, y la consola solo mira qué pantalla está abierta.
+Los **39 juegos** tienen sus propios comandos: 161 en total. No pueden vivir en la consola porque en el arcade empaquetado el estado de cada juego queda encerrado dentro de su función, así que **cada juego se apunta desde su propio script** con `Arcade.admin.registrar(id, nombre, trucos)`, y la consola solo mira qué pantalla está abierta.
 
 Dentro de un juego, `juego` lista lo que tiene a mano y `juego <truco>` lo ejecuta:
 

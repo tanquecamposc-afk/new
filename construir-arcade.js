@@ -56,7 +56,12 @@ const JUEGOS = [
   { id:'tunnel',     archivo:'juegos/tunnel-rush.html' },
   { id:'cuerda',     archivo:'juegos/cut-the-rope.html' },
   { id:'basket',     archivo:'juegos/basket-random.html' },
-  { id:'karts',      archivo:'juegos/smash-karts.html' }
+  { id:'karts',      archivo:'juegos/smash-karts.html' },
+  { id:'retrobowl',  archivo:'juegos/retro-bowl.html' },
+  { id:'drift',      archivo:'juegos/drift-hunters.html' },
+  { id:'basketstars',archivo:'juegos/basketball-stars.html' },
+  { id:'unovsuno',   archivo:'juegos/1v1-lol.html' },
+  { id:'cluster',    archivo:'juegos/cluster-rush.html' }
 ];
 
 const leer = f => fs.readFileSync(path.join(RAIZ, f), 'utf8');

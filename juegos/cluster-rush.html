@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cluster Rush — Arcade NEXO</title>
+<link rel="stylesheet" href="arcade.css">
+<style>
+  #tablero{position:relative; display:flex; flex-direction:column; gap:10px;}
+  #juego{width:min(1040px,100vw);}
+  .barra .titulo{color:#ffe066;}
+
+  #carretera{
+    position:relative; border-radius:16px; overflow:hidden;
+    border:2px solid rgba(255,224,102,.3);
+    box-shadow:0 15px 45px rgba(0,0,0,.9), inset 0 0 90px rgba(0,0,0,.55);
+    background:#05070f; touch-action:none;
+  }
+  #lienzo{display:block; width:100%; height:auto;}
+
+  #mandos{display:grid; grid-template-columns:repeat(3,1fr); gap:9px;}
+  #mandos button{
+    padding:16px 8px; font-size:1.3rem; line-height:1;
+    background:rgba(255,224,102,.1); border:1px solid rgba(255,224,102,.3);
+    border-radius:12px; color:#fff4c9;
+  }
+  #mandos button:active{background:rgba(255,224,102,.3);}
+  @media (min-width:820px){ #mandos{display:none;} }
+
+  .rejillaResumen{
+    display:grid; grid-template-columns:repeat(auto-fit,minmax(110px,1fr)); gap:10px;
+    margin:14px 0 18px;
+  }
+  .rejillaResumen div{background:rgba(0,0,0,.35); border-radius:10px; padding:11px;}
+  .rejillaResumen .n{font-size:22px; font-weight:800; color:var(--oro);}
+  .rejillaResumen .e{font-size:11px; color:var(--tenue);}
+</style>
+</head>
+<body>
+
+<div id="juego" data-ritmo="accion">
+  <div class="barra">
+    <a class="boton" href="../index.html">🕹 Arcade</a>
+    <div class="titulo">🚚 CLUSTER RUSH</div>
+    <div class="sep"></div>
+    <div class="stat">📏 <span id="distTxt" class="oro">0</span> m</div>
+    <div class="stat">🚛 <span id="camionesTxt" class="verde">0</span></div>
+    <div class="stat">🏆 <span id="recordTxt" class="tenue">—</span></div>
+    <button id="btnSonido" title="Sonido" aria-label="Sonido">🔊</button>
+  </div>
+
+  <div id="tablero">
+    <div id="carretera">
+      <canvas id="lienzo" width="1000" height="580"></canvas>
+      <div class="avisos" id="avisos"></div>
+    </div>
+
+    <div id="mandos">
+      <button id="mIzq" aria-label="Izquierda">◀</button>
+      <button id="mSalto" aria-label="Saltar">⬆</button>
+      <button id="mDer" aria-label="Derecha">▶</button>
+    </div>
+
+    <div class="modal visible" id="modalInicio">
+      <div class="tarjetaModal">
+        <h1>🚚 CLUSTER RUSH</h1>
+        <div class="sub">Una caravana de camiones a toda velocidad. Tú vas por encima.</div>
+        <div class="instrucciones">
+          <b>← →</b> o <b>A D</b> te mueven sobre la caja · <b>espacio</b> o <b>↑</b> salta al camión de delante.<br>
+          Los camiones <b>no van a la misma velocidad</b>: el de delante se aleja y el de detrás te alcanza.
+          Hay que saltar en el momento justo.<br>
+          <b>Mantén pulsado el salto</b> para saltar más lejos: la barra de abajo marca el impulso.<br>
+          Algunos llevan <b>cajas</b> por las que trepar y otros <b>frenan de golpe</b>: avisan con las luces.<br>
+          Si tocas el asfalto, se acabó. La distancia es la puntuación.
+        </div>
+        <div class="filaBotones"><button class="primario" id="btnEmpezar">▶ Subir al primero</button></div>
+      </div>
+    </div>
+
+    <div class="modal" id="modalFin">
+      <div class="tarjetaModal">
+        <h1 id="finTitulo">💥 Al asfalto</h1>
+        <div class="sub" id="finSub"></div>
+        <div class="rejillaResumen">
+          <div><div class="n" id="finDist">0</div><div class="e">metros</div></div>
+          <div><div class="n" id="finCamiones">0</div><div class="e">camiones</div></div>
+          <div><div class="n" id="finPuntos">0</div><div class="e">puntos</div></div>
+          <div><div class="n" id="finPremio">0</div><div class="e">NEXO-COINS</div></div>
+        </div>
+        <div class="filaBotones"><button class="primario" id="btnOtra">▶ Otra vez</button></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="arcade.js"></script>
+<script>
+// ============================================================
+//  CLUSTER RUSH — saltar de camión en camión sin tocar el suelo
+//  Todo se mide en el sistema de la carretera: cada camión tiene su posición y
+//  su velocidad, y el corredor también. La cámara sigue al corredor, así que
+//  los camiones más rápidos se van hacia delante y los lentos hacia atrás.
+// ============================================================
+const $ = id => document.getElementById(id);
+const lienzo = $('lienzo');
+const ctx = Arcade.nitido(lienzo);
+const avisos = $('avisos');
+const ANCHO = lienzo.width, ALTO = lienzo.height;
+
+const enTienda = id => (typeof Arcade !== 'undefined' && Arcade.tienda)
+  ? Arcade.tienda.nivel('cluster', id) : 0;
+
+const ASFALTO = ALTO - 96;          // altura del suelo en pantalla
+const GRAV = 2400;
+const SALTO_MIN = 620, SALTO_MAX = 1000;
+const CARGA_MAX = 0.42;             // segundos para cargar el salto entero
+const VEL_BASE = 430;
+
+const R = {
+  jugando:false, muerto:false,
+  x:0, y:0, vx:0, vy:0, suelo:false, encima:null,
+  dist:0, camiones:0, vistos:{}, sacudida:0, destello:0,
+  carga:0, cargando:false, girar:0,
+  record: Arcade.record('cluster')
+};
+let camiones = [], particulas = new Particulas(300), tiempo = 0, proximo = 0;
+let izq = false, der = false, salta = false;
+let camX = 0;
+
+// ---------- Camiones ----------
+// `y` es la altura de la caja sobre el asfalto; `largo`, lo que mide la caja.
+function nuevoCamion(x){
+  const tipo = Math.random();
+  const conCaja = tipo < 0.3;
+  const frenon = tipo > 0.82;
+  return {
+    x, largo: azar(210, 330),
+    alto: azar(96, 132),
+    vel: VEL_BASE + azar(-34, 52),
+    color: elegir(['#e14b4b', '#3f7fd8', '#f0a832', '#43b581', '#8a6fd6', '#d8d8dc']),
+    conCaja, frenon, frenando:0, aviso:0,
+    id: Math.random().toString(36).slice(2)
+  };
+}
+function sembrar(){
+  camiones = [];
+  proximo = 0;
+  for (let i = 0; i < 8; i++){
+    camiones.push(nuevoCamion(proximo));
+    proximo += camiones[i].largo + azar(90, 190);
+  }
+}
+
+// Geometría de la caja que llevan algunos camiones encima, en coordenadas de
+// carretera. Es una plataforma más: se puede aterrizar sobre ella.
+const cajaDe = c => c.conCaja
+  ? { x1: c.x + c.largo * 0.45, x2: c.x + c.largo * 0.45 + 52, techo: ASFALTO - c.alto - 40 }
+  : null;
+
+/**
+ * Sobre qué se apoya el corredor en este punto: el techo de una caja, la caja
+ * de carga de un camión, o nada. Devuelve { camion, altura } o null.
+ */
+function apoyoBajo(x, y, vy){
+  if (vy < 0) return null;
+  let mejor = null;
+  for (const c of camiones){
+    const caja = cajaDe(c);
+    if (caja && x >= caja.x1 - 6 && x <= caja.x2 + 6 &&
+        y >= caja.techo - 2 && y <= caja.techo + 26){
+      if (!mejor || caja.techo < mejor.altura) mejor = { camion: c, altura: caja.techo };
+    }
+    if (x < c.x - 8 || x > c.x + c.largo + 8) continue;
+    const techo = ASFALTO - c.alto;
+    if (y >= techo - 2 && y <= techo + 26){
+      if (!mejor || techo < mejor.altura) mejor = { camion: c, altura: techo };
+    }
+  }
+  return mejor;
+}
+
+// ---------- Partida ----------
+function empezar(){
+  sembrar();
+  const primero = camiones[0];
+  Object.assign(R, {
+    jugando:true, muerto:false,
+    x: primero.x + primero.largo / 2, y: ASFALTO - primero.alto,
+    vx: primero.vel, vy: 0, suelo:true, encima: primero, altura: ASFALTO - primero.alto,
+    dist:0, camiones:1, vistos:{ [primero.id]: true },
+    sacudida:0, destello:0, carga:0, cargando:false, girar:0
+  });
+  particulas.lista.length = 0;
+  paracaidas = enTienda('red');
+  camX = R.x;
+  $('modalInicio').classList.remove('visible');
+  $('modalFin').classList.remove('visible');
+  refrescarHud();
+}
+
+// Paracaídas comprados en la tienda: se recargan al empezar cada carrera.
+let paracaidas = 0;
+
+function morir(motivo){
+  if (R.muerto) return;
+  // El paracaídas te devuelve al camión más cercano en vez de acabar la carrera.
+  if (motivo === 'asfalto' && paracaidas > 0 && camiones.length){
+    paracaidas--;
+    const c = camiones.reduce((m, x) => Math.abs(x.x - R.x) < Math.abs(m.x - R.x) ? x : m);
+    R.x = c.x + c.largo / 2; R.y = ASFALTO - c.alto;
+    R.vx = c.vel; R.vy = 0; R.suelo = true; R.encima = c;
+    R.sacudida = 10; R.destello = 0.5;
+    particulas.emitir(24, { x: pantX(R.x), y: R.y, color:['#7fe3ff','#fff'],
+                            velMin:60, velMax:260, vidaMin:0.3, vidaMax:0.7, rMin:1.5, rMax:4 });
+    Arcade.aviso(avisos, '🪂 ¡Paracaídas! Te quedan ' + paracaidas, true, 1700);
+    Sonido.fx('poder');
+    return;
+  }
+  R.muerto = true; R.jugando = false;
+  R.sacudida = 22;
+  particulas.emitir(46, { x: pantX(R.x), y: R.y, color:['#ffe066','#ff5a72','#fff'],
+                          velMin:100, velMax:420, vidaMin:0.4, vidaMax:0.9, rMin:2, rMax:6 });
+  Sonido.pararMotor();
+  Sonido.fx('choque');
+  setTimeout(() => terminar(motivo), 850);
+}
+
+function terminar(motivo){
+  const dist = Math.floor(R.dist);
+  const puntos = dist * 2 + R.camiones * 60;
+  const premio = Math.floor(puntos / 24);
+  Arcade.guardarRecord('cluster', puntos);
+  R.record = Arcade.record('cluster');
+  Arcade.perfil.partida('cluster', { puntos, victoria: dist > 1200, premio });
+  $('finTitulo').textContent = motivo === 'atras' ? '🚛 Te quedaste atrás' : '💥 Al asfalto';
+  $('finSub').textContent = motivo === 'atras'
+    ? 'La caravana te ha dejado. Salta antes de que el camión se aleje.'
+    : 'Has tocado el suelo. Carga más el salto para llegar al siguiente.';
+  $('finDist').textContent = dist;
+  $('finCamiones').textContent = R.camiones;
+  $('finPuntos').textContent = puntos;
+  $('finPremio').textContent = premio.toLocaleString('es-ES');
+  $('modalFin').classList.add('visible');
+  Sonido.fx('derrota');
+  refrescarHud();
+}
+
+// ---------- Ciclo ----------
+function actualizar(dt){
+  tiempo += dt;
+  particulas.actualizar(dt);
+  if (R.sacudida > 0) R.sacudida = Math.max(0, R.sacudida - dt * 40);
+  if (R.destello > 0) R.destello = Math.max(0, R.destello - dt * 1.8);
+  if (!R.jugando){
+    camX += (R.x - camX) * Math.min(1, dt * 5);
+    return;
+  }
+
+  moverCamiones(dt);
+  moverCorredor(dt);
+
+  R.dist += Math.max(0, R.vx) * dt / 26;
+  camX += (R.x - camX) * Math.min(1, dt * 9);
+  Sonido.motor(0.2 + Math.min(0.4, R.vx / 1400), 0.03);
+  refrescarHud();
+}
+
+function moverCamiones(dt){
+  for (const c of camiones){
+    // Los frenones avisan un momento antes con las luces y luego se plantan
+    if (c.frenon && !c.frenando && c.x - R.x < 700 && c.x > R.x - 200){
+      c.aviso += dt;
+      if (c.aviso > 0.9){ c.frenando = 1; Sonido.fx('alarma'); }
+    }
+    if (c.frenando) c.vel = Math.max(VEL_BASE * 0.45, c.vel - 420 * dt);
+    c.x += c.vel * dt;
+  }
+  // Reciclado: la caravana tiene que seguir siendo una caravana. Los que se
+  // descuelgan por detrás vuelven al frente, y los que se adelantan demasiado
+  // vuelven a la cola: si no, con velocidades distintas el pelotón se estira
+  // hasta que no queda un solo camión a la vista.
+  for (const c of camiones){
+    if (c === R.encima) continue;
+    if (c.x + c.largo < R.x - 800){
+      Object.assign(c, nuevoCamion(Math.max(...camiones.map(o => o.x)) + azar(150, 280)));
+    } else if (c.x > R.x + 1500){
+      Object.assign(c, nuevoCamion(Math.min(...camiones.map(o => o.x)) - azar(200, 340)));
+    }
+  }
+}
+
+function moverCorredor(dt){
+  // Carga del salto: mantener pulsado da más impulso
+  if (salta && R.suelo){
+    R.cargando = true;
+    R.carga = Math.min(CARGA_MAX, R.carga + dt);
+  } else if (R.cargando){
+    saltar();
+  }
+
+  const control = (izq ? -1 : 0) + (der ? 1 : 0);
+  R.girar = control || R.girar;
+
+  if (R.suelo && R.encima){
+    // Sobre la caja: te mueves respecto al camión, no respecto a la carretera
+    R.vx = R.encima.vel + control * 210 * agilidadComprada();
+    R.y = R.altura !== undefined ? R.altura : ASFALTO - R.encima.alto;
+    R.vy = 0;
+    // Si te sales del apoyo (la caja de carga o el cajón de arriba), caes
+    const caja = cajaDe(R.encima);
+    const enCajon = caja && Math.abs(R.altura - caja.techo) < 2;
+    const dentro = enCajon
+      ? (R.x >= caja.x1 - 6 && R.x <= caja.x2 + 6)
+      : (R.x >= R.encima.x - 6 && R.x <= R.encima.x + R.encima.largo + 6);
+    if (!dentro){ R.suelo = false; R.encima = null; R.altura = undefined; }
+  } else {
+    R.vx += control * 190 * dt * agilidadComprada();
+    R.vy += GRAV * dt;
+  }
+
+  R.x += R.vx * dt;
+  R.y += R.vy * dt;
+
+  if (!R.suelo){
+    const ap = apoyoBajo(R.x, R.y, R.vy);
+    if (ap){
+      const c = ap.camion;
+      R.y = ap.altura; R.altura = ap.altura;
+      R.vy = 0; R.suelo = true; R.encima = c;
+      if (!R.vistos[c.id]){
+        R.vistos[c.id] = true; R.camiones++;
+        R.destello = 0.35;
+        Sonido.fx('paso');
+      }
+      particulas.emitir(8, { x: pantX(R.x), y: R.y + 6, color:['#ffe066','#fff'],
+                             velMin:30, velMax:140, vidaMin:0.2, vidaMax:0.5, rMin:1.2, rMax:3 });
+    }
+  }
+
+  // el asfalto mata
+  if (R.y >= ASFALTO - 4){ R.y = ASFALTO - 4; morir('asfalto'); return; }
+  // quedarse muy atrás también
+  if (R.x < Math.min(...camiones.map(c => c.x)) - 700) morir('atras');
+}
+
+function saltar(){
+  const fuerza = SALTO_MIN + (SALTO_MAX - SALTO_MIN) * (R.carga / CARGA_MAX);
+  R.vy = -fuerza * saltoComprado();
+  R.vx += 120;                          // el salto siempre empuja hacia delante
+  R.suelo = false; R.encima = null;
+  R.cargando = false; R.carga = 0;
+  Sonido.fx('poder');
+}
+
+// ---------- Dibujo ----------
+const pantX = x => x - camX + ANCHO * 0.34;
+
+function dibujar(){
+  ctx.save();
+  if (R.sacudida > 0)
+    ctx.translate(azar(-R.sacudida, R.sacudida) * 0.4, azar(-R.sacudida, R.sacudida) * 0.4);
+
+  dibujarCielo();
+  dibujarAsfalto();
+  // de atrás hacia delante, para que los de delante tapen
+  camiones.slice().sort((a, b) => a.x - b.x).forEach(dibujarCamion);
+  dibujarCorredor();
+  particulas.dibujar(ctx);
+  ctx.restore();
+
+  dibujarHud();
+  if (R.destello > 0){
+    ctx.fillStyle = 'rgba(255,224,102,' + (R.destello * 0.14).toFixed(3) + ')';
+    ctx.fillRect(0, 0, ANCHO, ALTO);
+  }
+}
+
+function dibujarCielo(){
+  const g = ctx.createLinearGradient(0, 0, 0, ASFALTO);
+  g.addColorStop(0, '#1a1140'); g.addColorStop(0.55, '#3b2358'); g.addColorStop(1, '#c05a3a');
+  ctx.fillStyle = g; ctx.fillRect(-40, -40, ANCHO + 80, ASFALTO + 40);
+
+  // sol bajo
+  ctx.fillStyle = 'rgba(255,196,90,.35)';
+  ctx.beginPath(); ctx.arc(ANCHO * 0.72, ASFALTO - 110, 70, 0, 6.2832); ctx.fill();
+
+  // montañas y postes, a distintas velocidades: da sensación de profundidad
+  ctx.fillStyle = 'rgba(20,12,40,.85)';
+  ctx.beginPath();
+  ctx.moveTo(-40, ASFALTO);
+  for (let i = 0; i <= 14; i++){
+    const x = ((i * 130 - camX * 0.06) % (ANCHO + 260)) - 130;
+    ctx.lineTo(x, ASFALTO - 60 - (i % 3) * 34);
+    ctx.lineTo(x + 65, ASFALTO);
+  }
+  ctx.lineTo(ANCHO + 40, ASFALTO); ctx.closePath(); ctx.fill();
+
+  ctx.fillStyle = 'rgba(12,8,24,.9)';
+  for (let i = 0; i < 12; i++){
+    const x = ((i * 190 - camX * 0.35) % (ANCHO + 380)) - 190;
+    ctx.fillRect(x, ASFALTO - 128, 9, 128);
+    ctx.fillRect(x - 22, ASFALTO - 132, 52, 8);
+  }
+}
+
+function dibujarAsfalto(){
+  const g = ctx.createLinearGradient(0, ASFALTO, 0, ALTO);
+  g.addColorStop(0, '#2b2b33'); g.addColorStop(1, '#131318');
+  ctx.fillStyle = g; ctx.fillRect(0, ASFALTO, ANCHO, ALTO - ASFALTO);
+  ctx.fillStyle = 'rgba(255,255,255,.55)';
+  ctx.fillRect(0, ASFALTO, ANCHO, 3);
+  // marcas del carril, desplazadas con la cámara
+  ctx.fillStyle = 'rgba(255,224,102,.55)';
+  const paso = 120;
+  for (let x = -((camX % paso) + paso); x < ANCHO + paso; x += paso)
+    ctx.fillRect(x, ASFALTO + 46, 60, 6);
+}
+
+function dibujarCamion(c){
+  const x = pantX(c.x), y = ASFALTO - c.alto;
+  if (x > ANCHO + 200 || x + c.largo < -200) return;
+
+  // sombra
+  ctx.fillStyle = 'rgba(0,0,0,.45)';
+  ctx.beginPath(); ctx.ellipse(x + c.largo / 2, ASFALTO + 6, c.largo * 0.5, 9, 0, 0, 6.2832); ctx.fill();
+
+  // caja
+  const g = ctx.createLinearGradient(0, y, 0, ASFALTO);
+  g.addColorStop(0, c.color);
+  g.addColorStop(1, 'rgba(0,0,0,.55)');
+  ctx.fillStyle = g;
+  ctx.beginPath(); ctx.roundRect(x, y, c.largo, c.alto - 16, 6); ctx.fill();
+  ctx.strokeStyle = 'rgba(0,0,0,.4)'; ctx.lineWidth = 2;
+  ctx.beginPath();
+  for (let i = 1; i < 5; i++){
+    ctx.moveTo(x + c.largo * i / 5, y + 6);
+    ctx.lineTo(x + c.largo * i / 5, y + c.alto - 22);
+  }
+  ctx.stroke();
+
+  // techo transitable, marcado con una banda clara
+  ctx.fillStyle = 'rgba(255,255,255,.22)';
+  ctx.fillRect(x, y, c.largo, 5);
+
+  // cabina delante
+  ctx.fillStyle = '#1d2028';
+  ctx.beginPath(); ctx.roundRect(x + c.largo, y + 18, 62, c.alto - 34, 6); ctx.fill();
+  ctx.fillStyle = 'rgba(150,200,255,.55)';
+  ctx.beginPath(); ctx.roundRect(x + c.largo + 34, y + 24, 24, 26, 4); ctx.fill();
+
+  // cajas encima de algunos
+  if (c.conCaja){
+    ctx.fillStyle = '#8b5a2b';
+    ctx.beginPath(); ctx.roundRect(x + c.largo * 0.45, y - 40, 52, 40, 4); ctx.fill();
+    ctx.strokeStyle = 'rgba(0,0,0,.4)'; ctx.lineWidth = 2;
+    ctx.strokeRect(x + c.largo * 0.45 + 4, y - 36, 44, 32);
+  }
+
+  // ruedas
+  ctx.fillStyle = '#111116';
+  for (const rx of [x + 46, x + c.largo - 60, x + c.largo + 34]){
+    ctx.beginPath(); ctx.arc(rx, ASFALTO - 12, 16, 0, 6.2832); ctx.fill();
+    ctx.fillStyle = '#33343c';
+    ctx.beginPath(); ctx.arc(rx, ASFALTO - 12, 6, 0, 6.2832); ctx.fill();
+    ctx.fillStyle = '#111116';
+  }
+
+  // luces de freno: parpadean antes de frenar y se quedan fijas al hacerlo
+  if (c.frenon){
+    const enc = c.frenando ? 1 : (c.aviso > 0 && Math.floor(tiempo * 8) % 2 === 0 ? 1 : 0);
+    ctx.fillStyle = enc ? '#ff3d3d' : '#5a1414';
+    ctx.beginPath(); ctx.roundRect(x - 8, y + 20, 10, 22, 3); ctx.fill();
+    if (enc){
+      ctx.fillStyle = 'rgba(255,61,61,.22)';
+      ctx.beginPath(); ctx.arc(x - 4, y + 31, 28, 0, 6.2832); ctx.fill();
+    }
+  }
+}
+
+function dibujarCorredor(){
+  const x = pantX(R.x), y = R.y;
+  ctx.save();
+  ctx.translate(x, y);
+  const inclina = R.suelo ? 0 : Math.max(-0.5, Math.min(0.5, R.vy / 1800));
+  ctx.rotate(inclina * 0.5);
+
+  // agachado mientras carga el salto
+  const agache = R.cargando ? R.carga / CARGA_MAX * 10 : 0;
+  ctx.fillStyle = 'rgba(0,0,0,.4)';
+  ctx.beginPath(); ctx.ellipse(0, 2, 14, 4, 0, 0, 6.2832); ctx.fill();
+  // piernas
+  ctx.strokeStyle = '#2a3550'; ctx.lineWidth = 7; ctx.lineCap = 'round';
+  const paso = R.suelo ? Math.sin(tiempo * 18) * 9 : 7;
+  ctx.beginPath();
+  ctx.moveTo(-3, -22 + agache); ctx.lineTo(-6 - paso, 0);
+  ctx.moveTo(3, -22 + agache); ctx.lineTo(6 + paso, 0);
+  ctx.stroke();
+  // cuerpo
+  ctx.fillStyle = '#ffe066';
+  ctx.beginPath(); ctx.roundRect(-11, -50 + agache, 22, 30, 7); ctx.fill();
+  // brazos
+  ctx.strokeStyle = '#ffe066'; ctx.lineWidth = 6;
+  ctx.beginPath();
+  ctx.moveTo(-9, -44 + agache); ctx.lineTo(-20, -34 + agache + (R.suelo ? 0 : -14));
+  ctx.moveTo(9, -44 + agache); ctx.lineTo(20, -34 + agache + (R.suelo ? 0 : -14));
+  ctx.stroke();
+  // cabeza y casco
+  ctx.fillStyle = '#f0d3b0';
+  ctx.beginPath(); ctx.arc(0, -60 + agache, 11, 0, 6.2832); ctx.fill();
+  ctx.fillStyle = '#ff8a3d';
+  ctx.beginPath(); ctx.arc(0, -64 + agache, 11, Math.PI, 0); ctx.fill();
+  ctx.restore();
+}
+
+function dibujarHud(){
+  // barra de impulso del salto
+  if (R.cargando){
+    const an = 180, x0 = ANCHO / 2 - an / 2, y0 = ALTO - 30;
+    ctx.fillStyle = 'rgba(0,0,0,.55)';
+    ctx.beginPath(); ctx.roundRect(x0 - 5, y0 - 5, an + 10, 20, 8); ctx.fill();
+    const g = ctx.createLinearGradient(x0, 0, x0 + an, 0);
+    g.addColorStop(0, '#ffe066'); g.addColorStop(1, '#ff8a3d');
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.roundRect(x0, y0, an * (R.carga / CARGA_MAX), 10, 5); ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,.6)';
+    ctx.font = 'bold 11px system-ui, sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText('IMPULSO', ANCHO / 2, y0 - 10);
+  }
+  // distancia grande
+  ctx.fillStyle = 'rgba(255,224,102,.9)';
+  ctx.font = 'bold 40px system-ui, sans-serif';
+  ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+  ctx.fillText(Math.floor(R.dist) + ' m', 24, 54);
+  ctx.fillStyle = 'rgba(255,255,255,.5)';
+  ctx.font = 'bold 14px system-ui, sans-serif';
+  ctx.fillText(R.camiones + (R.camiones === 1 ? ' camión' : ' camiones'), 24, 76);
+}
+
+function refrescarHud(){
+  $('distTxt').textContent = Math.floor(R.dist);
+  $('camionesTxt').textContent = R.camiones;
+  $('recordTxt').textContent = R.record ? R.record : '—';
+}
+
+// ---------- Mejoras compradas ----------
+const saltoComprado    = () => 1 + enTienda('muelles') * 0.08;
+const agilidadComprada = () => 1 + enTienda('zapatillas') * 0.12;
+
+// ---------- Control ----------
+addEventListener('keydown', ev => {
+  if (/^(INPUT|TEXTAREA|SELECT)$/.test(ev.target.tagName || '')) return;
+  const k = ev.key.toLowerCase();
+  if (['arrowleft','arrowright','arrowup','a','d','w',' '].includes(k)) ev.preventDefault();
+  if (k === 'arrowleft' || k === 'a') izq = true;
+  if (k === 'arrowright' || k === 'd') der = true;
+  if (k === 'arrowup' || k === 'w' || k === ' '){ salta = true; Sonido.activar(); }
+});
+addEventListener('keyup', ev => {
+  const k = ev.key.toLowerCase();
+  if (k === 'arrowleft' || k === 'a') izq = false;
+  if (k === 'arrowright' || k === 'd') der = false;
+  if (k === 'arrowup' || k === 'w' || k === ' ') salta = false;
+});
+const mando = (id, set) => {
+  const b = $(id);
+  b.addEventListener('pointerdown', e => { e.preventDefault(); Sonido.activar(); set(true); });
+  b.addEventListener('pointerup', e => { e.preventDefault(); set(false); });
+  b.addEventListener('pointerleave', () => set(false));
+  b.addEventListener('pointercancel', () => set(false));
+};
+mando('mIzq', v => izq = v);
+mando('mDer', v => der = v);
+mando('mSalto', v => salta = v);
+
+$('btnEmpezar').onclick = () => { Sonido.activar(); empezar(); };
+$('btnOtra').onclick = () => { Sonido.activar(); empezar(); };
+Arcade.conectarSonido($('btnSonido'));
+AlSalir.registrar(() => Sonido.pararMotor());
+
+// ---------- Tienda del juego ----------
+// Se paga con NEXO-COINS, la moneda común del arcade.
+if (typeof Arcade !== 'undefined' && Arcade.tienda){
+  Arcade.tienda.registrar('cluster', 'Tienda del corredor', [
+    { id:'muelles', icono:'🦵', nombre:'Piernas de muelle', precio:3000, max:4, factor:2.3,
+      etiqueta: n => n ? 'Saltas un ' + (n * 8) + ' % más alto' : 'Sin comprar',
+      desc:'Más impulso en cada salto: llegas a camiones que se habían adelantado.' },
+    { id:'zapatillas', icono:'👟', nombre:'Zapatillas de agarre', precio:2500, max:3, factor:2.3,
+      etiqueta: n => n ? 'Corres un ' + (n * 12) + ' % más sobre la caja' : 'Sin comprar',
+      desc:'Te colocas antes en el borde para saltar. También corriges mejor en el aire.' },
+    { id:'red', icono:'🪂', nombre:'Paracaídas de bolsillo', precio:5000, max:3, factor:2.5,
+      etiqueta: n => n ? 'Te salva ' + n + (n === 1 ? ' caída' : ' caídas') + ' por carrera' : 'Sin comprar',
+      desc:'Si tocas el asfalto, te devuelve al camión más cercano en vez de terminar. ' +
+           'Se recarga en cada carrera.' }
+  ], () => refrescarHud());
+}
+
+// ---------- Trucos de administración ----------
+// Solo hacen algo con el modo creador encendido (código 2808, tecla F9).
+if (typeof Arcade !== 'undefined' && Arcade.admin) Arcade.admin.registrar('cluster', 'Cluster Rush', {
+  distancia: { que:'distancia <m> — fija los metros recorridos', fn(m){
+    R.dist = Math.max(0, +m || 0); refrescarHud();
+    return 'Llevas ' + Math.floor(R.dist) + ' m.';
+  }},
+  saltar: { que:'saltar — te pega un salto enorme', fn(){
+    R.vy = -1500; R.suelo = false; R.encima = null;
+    return 'Arriba.';
+  }},
+  subir: { que:'subir — te planta encima del camión más cercano', fn(){
+    if (!camiones.length) return 'Empieza una carrera primero.';
+    const c = camiones.reduce((m, x) => Math.abs(x.x - R.x) < Math.abs(m.x - R.x) ? x : m);
+    R.x = c.x + c.largo / 2; R.y = ASFALTO - c.alto;
+    R.vx = c.vel; R.vy = 0; R.suelo = true; R.encima = c;
+    return 'Encima del camión.';
+  }},
+  lentos: { que:'lentos — deja la caravana a media velocidad', fn(){
+    camiones.forEach(c => { c.vel *= 0.5; });
+    return 'Los camiones van a la mitad.';
+  }},
+  planos: { que:'planos — iguala la altura de todas las cajas', fn(){
+    camiones.forEach(c => { c.alto = 110; });
+    return 'Todas las cajas a la misma altura.';
+  }}
+});
+
+// ---------- Arranque ----------
+sembrar();
+R.x = camiones[0].x + 100;
+R.y = ASFALTO - camiones[0].alto;
+camX = R.x;
+refrescarHud();
+Arcade.bucle(dt => { actualizar(dt); dibujar(); });
+</script>
+</body>
+</html>

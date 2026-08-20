@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Drift Hunters — Arcade NEXO</title>
+<link rel="stylesheet" href="arcade.css">
+<style>
+  #tablero{position:relative; display:flex; flex-direction:column; gap:10px;}
+  #juego{width:min(1060px,100vw);}
+  .barra .titulo{color:#ff7a3d;}
+
+  #pista{
+    position:relative; border-radius:16px; overflow:hidden;
+    border:2px solid rgba(255,122,61,.32);
+    box-shadow:0 15px 45px rgba(0,0,0,.9), inset 0 0 90px rgba(0,0,0,.6);
+    background:#07070c; touch-action:none;
+  }
+  #lienzo{display:block; width:100%; height:auto;}
+
+  #mandos{display:grid; grid-template-columns:repeat(4,1fr); gap:9px;}
+  #mandos button{
+    padding:15px 8px; font-size:1.2rem; line-height:1;
+    background:rgba(255,122,61,.1); border:1px solid rgba(255,122,61,.3);
+    border-radius:12px; color:#ffe2d2;
+  }
+  #mandos button:active{background:rgba(255,122,61,.3);}
+  @media (min-width:820px){ #mandos{display:none;} }
+
+  .rejillaResumen{
+    display:grid; grid-template-columns:repeat(auto-fit,minmax(110px,1fr)); gap:10px;
+    margin:14px 0 18px;
+  }
+  .rejillaResumen div{background:rgba(0,0,0,.35); border-radius:10px; padding:11px;}
+  .rejillaResumen .n{font-size:22px; font-weight:800; color:var(--oro);}
+  .rejillaResumen .e{font-size:11px; color:var(--tenue);}
+</style>
+</head>
+<body>
+
+<div id="juego" data-ritmo="accion">
+  <div class="barra">
+    <a class="boton" href="../index.html">🕹 Arcade</a>
+    <div class="titulo">🏎 DRIFT HUNTERS</div>
+    <div class="sep"></div>
+    <div class="stat">💯 <span id="puntosTxt" class="oro">0</span></div>
+    <div class="stat">⏱ <span id="relojTxt" class="verde">90</span> s</div>
+    <div class="stat">🏆 <span id="recordTxt" class="tenue">—</span></div>
+    <button id="btnSonido" title="Sonido" aria-label="Sonido">🔊</button>
+  </div>
+
+  <div id="tablero">
+    <div id="pista">
+      <canvas id="lienzo" width="1000" height="600"></canvas>
+      <div class="avisos" id="avisos"></div>
+    </div>
+
+    <div id="mandos">
+      <button id="mIzq" aria-label="Girar a la izquierda">◀</button>
+      <button id="mGas" aria-label="Acelerar">⛽</button>
+      <button id="mFreno" aria-label="Freno de mano">✋</button>
+      <button id="mDer" aria-label="Girar a la derecha">▶</button>
+    </div>
+
+    <div class="modal visible" id="modalInicio">
+      <div class="tarjetaModal">
+        <h1>🏎 DRIFT HUNTERS</h1>
+        <div class="sub">Noventa segundos para derrapar todo lo que puedas sin tocar el muro.</div>
+        <div class="instrucciones">
+          <b>↑ / W</b> acelera · <b>↓ / S</b> frena y da marcha atrás · <b>← →</b> giran.<br>
+          <b>Espacio</b> es el <b>freno de mano</b>: rompe el agarre trasero y el coche se cruza.<br>
+          Puntúas por <b>ángulo de derrape × velocidad</b>. Cuanto más cruzado y más rápido, más.<br>
+          Mientras derrapas seguido, el <b>multiplicador sube</b> hasta x8. Si enderezas el coche
+          más de un segundo, el combo se cierra y se suma.<br>
+          <b>Tocar el muro corta el combo</b> y pierdes lo que llevabas sin cerrar.
+        </div>
+        <div class="filaBotones"><button class="primario" id="btnEmpezar">▶ Arrancar</button></div>
+      </div>
+    </div>
+
+    <div class="modal" id="modalFin">
+      <div class="tarjetaModal">
+        <h1>🏁 Se acabó el tiempo</h1>
+        <div class="sub" id="finSub"></div>
+        <div class="rejillaResumen">
+          <div><div class="n" id="finPuntos">0</div><div class="e">puntos</div></div>
+          <div><div class="n" id="finMejor">0</div><div class="e">mejor combo</div></div>
+          <div><div class="n" id="finMulti">x1</div><div class="e">multi. máximo</div></div>
+          <div><div class="n" id="finPremio">0</div><div class="e">NEXO-COINS</div></div>
+        </div>
+        <div class="filaBotones"><button class="primario" id="btnOtra">▶ Otra vuelta</button></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="arcade.js"></script>
+<script>
+// ============================================================
+//  DRIFT HUNTERS — derrape puro, visto desde arriba
+//  El coche es un cuerpo con dos ejes: cada rueda tiene su agarre lateral y
+//  el freno de mano baja el del eje trasero. De ahí sale el derrape, sin
+//  trucos: el coche gira porque el tren de atrás resbala más que el de delante.
+// ============================================================
+const $ = id => document.getElementById(id);
+const lienzo = $('lienzo');
+const ctx = Arcade.nitido(lienzo);
+const avisos = $('avisos');
+const ANCHO = lienzo.width, ALTO = lienzo.height;
+
+const enTienda = id => (typeof Arcade !== 'undefined' && Arcade.tienda)
+  ? Arcade.tienda.nivel('drift', id) : 0;
+
+const DURACION = 90;
+const MUNDO = 2600;                 // lado del circuito, en unidades de mundo
+
+// ---------- Circuito ----------
+// Una pista cerrada: lista de puntos por los que pasa el eje central. El asfalto
+// es todo lo que quede a menos de ANCHO_PISTA/2 de ese eje.
+const ANCHO_PISTA = 250;
+const EJE = [
+  [ 480,  420], [1250,  330], [2050,  520], [2260, 1150],
+  [1850, 1620], [1180, 1500], [ 900, 1900], [1500, 2260],
+  [ 700, 2320], [ 300, 1700], [ 420,  980]
+];
+
+/** Distancia del punto (x,y) al eje del circuito, y el tramo más cercano. */
+function distanciaAlEje(x, y){
+  let mejor = 1e9, idx = 0, u = 0;
+  for (let i = 0; i < EJE.length; i++){
+    const [ax, ay] = EJE[i];
+    const [bx, by] = EJE[(i + 1) % EJE.length];
+    const dx = bx - ax, dy = by - ay;
+    const largo = dx * dx + dy * dy;
+    const t = largo ? Math.max(0, Math.min(1, ((x - ax) * dx + (y - ay) * dy) / largo)) : 0;
+    const px = ax + dx * t, py = ay + dy * t;
+    const d = Math.hypot(x - px, y - py);
+    if (d < mejor){ mejor = d; idx = i; u = t; }
+  }
+  return { d: mejor, idx, u };
+}
+
+const C = {
+  jugando:false,
+  x:480, y:420, ang:-0.1,          // ángulo del morro
+  vx:0, vy:0, vAng:0,
+  gas:0, freno:0, mano:false, volante:0,
+  puntos:0, combo:0, multi:1, mejorCombo:0, mejorMulti:1,
+  sinDerrape:0, reloj:DURACION,
+  humo:[], marcas:[], sacudida:0, golpe:0,
+  record: Arcade.record('drift')
+};
+let particulas = new Particulas(240), tiempo = 0;
+let izq = false, der = false, acel = false, frena = false, mano = false;
+let camX = 0, camY = 0, camZoom = 0.62;
+
+// ---------- Física ----------
+// El coche no gira su velocidad con él: la velocidad vive en coordenadas del
+// mundo y el coche rota por debajo. Al rotar, parte de la marcha adelante pasa
+// a ser marcha lateral, y eso es exactamente el derrape. Lo que decide cuánto
+// dura es el agarre: cuánto se come de esa velocidad lateral cada segundo.
+const ACEL = 430;                  // unidades/s² con el gas a fondo
+const FRENO = 720;
+const GIRO_MAX = 2.5;              // rad/s a velocidad de trabajo
+const LARGO = 46;
+const AGARRE_DEL = 5.4;
+let AGARRE_TRA_NORMAL = 5.0;       // el truco "hielo" lo baja
+const AGARRE_TRA_MANO = 1.15;      // con el freno de mano, el tren trasero suelta
+
+function paso(dt){
+  // 1. el volante sigue al mando con retardo, para que el coche no sea nervioso
+  const objetivo = (izq ? -1 : 0) + (der ? 1 : 0);
+  C.volante += (objetivo - C.volante) * Math.min(1, dt * 9);
+
+  // 2. motor y freno actúan solo sobre la marcha adelante
+  const cos = Math.cos(C.ang), sin = Math.sin(C.ang);
+  let vAdel = C.vx * cos + C.vy * sin;
+  let vLado = -C.vx * sin + C.vy * cos;
+  const empuje = (acel ? ACEL * potenciaComprada() : 0) - (frena ? FRENO : 0);
+  vAdel += empuje * dt;
+  vAdel *= Math.pow(0.988, dt * 60);        // rozamiento y aire
+  vAdel = Math.max(-190, Math.min(700, vAdel));
+  C.vx = vAdel * cos - vLado * sin;
+  C.vy = vAdel * sin + vLado * cos;
+
+  // 3. el coche rota; la velocidad se queda donde estaba
+  const rapidez = Math.hypot(C.vx, C.vy);
+  // Cuanto más cruzado va ya el coche, menos le entra el volante: sin esto,
+  // mantener el freno de mano lo hacía girar sobre sí mismo hasta pararse.
+  const frenoAngulo = 1 - Math.min(0.68, anguloDerrape() / (Math.PI / 2) * 0.8);
+  const giro = C.volante * GIRO_MAX * Math.min(1, rapidez / 170) *
+               (mano ? 1.3 : 1) * frenoAngulo;
+  C.vAng = giro * Math.sign(vAdel >= 0 ? 1 : -1);
+  C.ang += C.vAng * dt;
+
+  // 4. en los ejes nuevos, el agarre se come la velocidad lateral
+  const c2 = Math.cos(C.ang), s2 = Math.sin(C.ang);
+  let a2 = C.vx * c2 + C.vy * s2;
+  let l2 = -C.vx * s2 + C.vy * c2;
+  const agarre = (mano ? AGARRE_TRA_MANO : AGARRE_TRA_NORMAL) * agarreComprado();
+  l2 *= Math.exp(-agarre * dt);
+  // el eje delantero también empuja algo hacia delante lo que resbala
+  a2 += Math.abs(l2) * AGARRE_DEL * 0.012 * dt * Math.sign(a2 || 1);
+  C.vx = a2 * c2 - l2 * s2;
+  C.vy = a2 * s2 + l2 * c2;
+
+  // 5. integrar
+  C.x += C.vx * dt;
+  C.y += C.vy * dt;
+}
+
+/** Ángulo entre hacia dónde mira el coche y hacia dónde va de verdad. */
+function anguloDerrape(){
+  const v = Math.hypot(C.vx, C.vy);
+  if (v < 40) return 0;
+  let a = Math.atan2(C.vy, C.vx) - C.ang;
+  while (a > Math.PI) a -= Math.PI * 2;
+  while (a < -Math.PI) a += Math.PI * 2;
+  return Math.abs(a) > Math.PI / 2 ? Math.PI - Math.abs(a) : Math.abs(a);
+}
+
+// ---------- Puntuación ----------
+function puntuarDerrape(dt){
+  const v = Math.hypot(C.vx, C.vy);
+  const a = anguloDerrape();
+  const derrapando = a > 0.2 && v > 150;
+
+  if (derrapando){
+    C.sinDerrape = 0;
+    C.combo += a * v * dt * 0.55;
+    C.multi = Math.min(8, 1 + Math.floor(C.combo / 900));
+    C.mejorMulti = Math.max(C.mejorMulti, C.multi);
+    if (Math.random() < dt * 40) marcaDeRueda();
+  } else {
+    C.sinDerrape += dt;
+    // Un segundo con el coche recto cierra el combo y lo suma.
+    if (C.sinDerrape > 1 && C.combo > 0) cerrarCombo();
+  }
+}
+function cerrarCombo(){
+  const suma = Math.round(C.combo * C.multi);
+  C.puntos += suma;
+  C.mejorCombo = Math.max(C.mejorCombo, suma);
+  if (suma > 400){
+    Arcade.aviso(avisos, '💨 Combo cerrado: +' + suma.toLocaleString('es-ES') +
+                 ' (x' + C.multi + ')', true, 1600);
+    Sonido.fx('gema');
+  }
+  C.combo = 0; C.multi = 1;
+  refrescarHud();
+}
+function romperCombo(){
+  C.combo = 0; C.multi = 1; C.sinDerrape = 0;
+}
+
+function marcaDeRueda(){
+  const cos = Math.cos(C.ang), sin = Math.sin(C.ang);
+  for (const lado of [-1, 1]){
+    C.marcas.push({
+      x: C.x - cos * LARGO * 0.42 - sin * 15 * lado,
+      y: C.y - sin * LARGO * 0.42 + cos * 15 * lado,
+      vida: 3.2
+    });
+  }
+  if (C.marcas.length > 420) C.marcas.splice(0, 60);
+  C.humo.push({ x: C.x - cos * 26, y: C.y - sin * 26, r: azar(9, 16), vida: 0.9,
+                vx: azar(-30, 30), vy: azar(-30, 30) });
+  if (C.humo.length > 140) C.humo.shift();
+}
+
+// ---------- Muros ----------
+function comprobarMuro(){
+  const { d } = distanciaAlEje(C.x, C.y);
+  const limite = ANCHO_PISTA / 2;
+  if (d <= limite) return;
+
+  // Empujón hacia dentro y pérdida de velocidad: chocar duele, no mata.
+  const eps = 4;
+  const gx = (distanciaAlEje(C.x + eps, C.y).d - distanciaAlEje(C.x - eps, C.y).d) / (2 * eps);
+  const gy = (distanciaAlEje(C.x, C.y + eps).d - distanciaAlEje(C.x, C.y - eps).d) / (2 * eps);
+  const n = Math.hypot(gx, gy) || 1;
+  const nx = gx / n, ny = gy / n;
+  C.x -= nx * (d - limite);
+  C.y -= ny * (d - limite);
+  const vn = C.vx * nx + C.vy * ny;
+  C.vx -= nx * vn * 1.45;
+  C.vy -= ny * vn * 1.45;
+  C.vx *= 0.62; C.vy *= 0.62;
+
+  if (C.golpe <= 0){
+    C.sacudida = 16; C.golpe = 0.6;
+    Sonido.fx('choque');
+    particulas.emitir(20, { x: C.x, y: C.y, color:['#ff7a3d','#ffd166','#fff'],
+                            velMin:60, velMax:260, vidaMin:0.25, vidaMax:0.6, rMin:1.6, rMax:4 });
+    if (C.combo > 300) Arcade.aviso(avisos, '💥 Contra el muro: combo perdido', false, 1500);
+    romperCombo();
+    refrescarHud();
+  }
+}
+
+// ---------- Partida ----------
+function empezar(){
+  Object.assign(C, {
+    jugando:true, x:480, y:420, ang:-0.1, vx:0, vy:0, vAng:0,
+    puntos:0, combo:0, multi:1, mejorCombo:0, mejorMulti:1,
+    sinDerrape:0, reloj: DURACION + enTienda('reloj') * 20,
+    sacudida:0, golpe:0
+  });
+  C.humo = []; C.marcas = [];
+  particulas.lista.length = 0;
+  camX = C.x; camY = C.y;
+  $('modalInicio').classList.remove('visible');
+  $('modalFin').classList.remove('visible');
+  refrescarHud();
+}
+
+function terminar(){
+  cerrarCombo();
+  C.jugando = false;
+  const premio = Math.floor(C.puntos / 260);
+  Arcade.guardarRecord('drift', C.puntos);
+  C.record = Arcade.record('drift');
+  Arcade.perfil.partida('drift', { puntos: C.puntos, victoria: C.puntos > 40000, premio });
+  $('finSub').textContent = C.puntos > 40000
+    ? 'Eso ya es saber derrapar.'
+    : 'Prueba a entrar más rápido y a mantener el coche cruzado más tiempo.';
+  $('finPuntos').textContent = C.puntos.toLocaleString('es-ES');
+  $('finMejor').textContent = C.mejorCombo.toLocaleString('es-ES');
+  $('finMulti').textContent = 'x' + C.mejorMulti;
+  $('finPremio').textContent = premio.toLocaleString('es-ES');
+  $('modalFin').classList.add('visible');
+  Sonido.pararMotor();
+  Sonido.fx(C.puntos > 40000 ? 'victoria' : 'derrota');
+  refrescarHud();
+}
+
+// ---------- Ciclo ----------
+function actualizar(dt){
+  tiempo += dt;
+  particulas.actualizar(dt);
+  if (C.sacudida > 0) C.sacudida = Math.max(0, C.sacudida - dt * 40);
+  if (C.golpe > 0) C.golpe -= dt;
+
+  C.marcas.forEach(m => m.vida -= dt);
+  C.marcas = C.marcas.filter(m => m.vida > 0);
+  C.humo.forEach(h => { h.vida -= dt; h.x += h.vx * dt; h.y += h.vy * dt; h.r += dt * 22; });
+  C.humo = C.humo.filter(h => h.vida > 0);
+
+  if (!C.jugando){
+    // la cámara sigue centrada aunque no se juegue, para que el fondo no salte
+    camX += (C.x - camX) * Math.min(1, dt * 4);
+    camY += (C.y - camY) * Math.min(1, dt * 4);
+    return;
+  }
+
+  C.reloj -= dt;
+  if (C.reloj <= 0){ C.reloj = 0; terminar(); return; }
+
+  // Varios subpasos: con dt grande el agarre se pasa de frenada y el coche vibra.
+  const sub = 3;
+  for (let i = 0; i < sub; i++){ paso(dt / sub); comprobarMuro(); }
+  puntuarDerrape(dt);
+
+  const v = Math.hypot(C.vx, C.vy);
+  Sonido.motor(0.16 + Math.min(0.55, v / 700), acel ? 0.05 : 0.028);
+
+  // La cámara se adelanta un poco en la dirección de marcha y se aleja al correr
+  camX += (C.x + C.vx * 0.35 - camX) * Math.min(1, dt * 5);
+  camY += (C.y + C.vy * 0.35 - camY) * Math.min(1, dt * 5);
+  camZoom += (0.78 - Math.min(0.22, v / 2600) - camZoom) * Math.min(1, dt * 3);
+  refrescarHud();
+}
+
+// ---------- Dibujo ----------
+const pantX = x => (x - camX) * camZoom + ANCHO / 2;
+const pantY = y => (y - camY) * camZoom + ALTO / 2;
+
+function dibujar(){
+  ctx.save();
+  if (C.sacudida > 0)
+    ctx.translate(azar(-C.sacudida, C.sacudida) * 0.4, azar(-C.sacudida, C.sacudida) * 0.4);
+
+  // fondo: hierba con retícula, que da sensación de movimiento
+  ctx.fillStyle = '#0b1a12';
+  ctx.fillRect(-40, -40, ANCHO + 80, ALTO + 80);
+  ctx.strokeStyle = 'rgba(255,255,255,.035)'; ctx.lineWidth = 1;
+  const paso1 = 160 * camZoom;
+  ctx.beginPath();
+  for (let x = -((camX * camZoom) % paso1); x < ANCHO; x += paso1){ ctx.moveTo(x, 0); ctx.lineTo(x, ALTO); }
+  for (let y = -((camY * camZoom) % paso1); y < ALTO; y += paso1){ ctx.moveTo(0, y); ctx.lineTo(ANCHO, y); }
+  ctx.stroke();
+
+  dibujarPista();
+  dibujarMarcas();
+  dibujarHumo();
+  dibujarCoche();
+  particulas.dibujar(ctx);
+  ctx.restore();
+
+  dibujarHud();
+}
+
+function dibujarPista(){
+  // asfalto: una polilínea gorda con el mismo trazo que define la colisión
+  ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+  ctx.beginPath();
+  EJE.forEach(([x, y], i) => {
+    const px = pantX(x), py = pantY(y);
+    i ? ctx.lineTo(px, py) : ctx.moveTo(px, py);
+  });
+  ctx.closePath();
+
+  ctx.strokeStyle = '#c8ccd6';                       // bordillo exterior
+  ctx.lineWidth = (ANCHO_PISTA + 16) * camZoom;
+  ctx.stroke();
+  ctx.strokeStyle = '#26262e';                       // asfalto
+  ctx.lineWidth = ANCHO_PISTA * camZoom;
+  ctx.stroke();
+
+  // línea discontinua del centro
+  ctx.setLineDash([26 * camZoom, 30 * camZoom]);
+  ctx.strokeStyle = 'rgba(255,255,255,.22)';
+  ctx.lineWidth = Math.max(1, 4 * camZoom);
+  ctx.stroke();
+  ctx.setLineDash([]);
+}
+
+function dibujarMarcas(){
+  ctx.lineCap = 'round';
+  for (const m of C.marcas){
+    ctx.globalAlpha = Math.min(0.5, m.vida / 3.2 * 0.5);
+    ctx.fillStyle = '#0a0a0c';
+    ctx.beginPath(); ctx.arc(pantX(m.x), pantY(m.y), 4.5 * camZoom, 0, 6.2832); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+}
+function dibujarHumo(){
+  for (const h of C.humo){
+    ctx.globalAlpha = Math.max(0, h.vida / 0.9) * 0.32;
+    ctx.fillStyle = '#d9dce6';
+    ctx.beginPath(); ctx.arc(pantX(h.x), pantY(h.y), h.r * camZoom, 0, 6.2832); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+}
+
+function dibujarCoche(){
+  const x = pantX(C.x), y = pantY(C.y), e = camZoom;
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(C.ang);
+  ctx.scale(e, e);
+
+  ctx.fillStyle = 'rgba(0,0,0,.45)';
+  ctx.beginPath(); ctx.roundRect(-LARGO / 2 + 3, -20, LARGO, 40, 9); ctx.fill();
+
+  // ruedas: las delanteras giran con el volante
+  ctx.fillStyle = '#131318';
+  for (const [rx, gira] of [[-LARGO * 0.3, 0], [LARGO * 0.32, 1]]){
+    for (const ry of [-19, 19]){
+      ctx.save();
+      ctx.translate(rx, ry);
+      if (gira) ctx.rotate(C.volante * 0.5);
+      ctx.beginPath(); ctx.roundRect(-9, -5, 18, 10, 3); ctx.fill();
+      ctx.restore();
+    }
+  }
+
+  const pintura = PINTURAS[pinturaElegida()];
+  const g = ctx.createLinearGradient(0, -20, 0, 20);
+  g.addColorStop(0, pintura[0]); g.addColorStop(0.5, pintura[1]); g.addColorStop(1, pintura[2]);
+  ctx.fillStyle = g;
+  ctx.beginPath(); ctx.roundRect(-LARGO / 2, -17, LARGO, 34, 8); ctx.fill();
+
+  // cristales y capó
+  ctx.fillStyle = 'rgba(10,16,26,.85)';
+  ctx.beginPath(); ctx.roundRect(-4, -13, 16, 26, 4); ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,.12)';
+  ctx.beginPath(); ctx.roundRect(-LARGO / 2 + 4, -12, 12, 24, 4); ctx.fill();
+  // alerón
+  ctx.fillStyle = '#1b1b22';
+  ctx.beginPath(); ctx.roundRect(-LARGO / 2 - 4, -16, 6, 32, 2); ctx.fill();
+  // faros
+  ctx.fillStyle = '#fff3c4';
+  ctx.beginPath(); ctx.roundRect(LARGO / 2 - 6, -14, 5, 8, 2); ctx.fill();
+  ctx.beginPath(); ctx.roundRect(LARGO / 2 - 6, 6, 5, 8, 2); ctx.fill();
+  ctx.restore();
+}
+
+function dibujarHud(){
+  const v = Math.hypot(C.vx, C.vy);
+  // velocímetro
+  ctx.fillStyle = 'rgba(0,0,0,.55)';
+  ctx.beginPath(); ctx.roundRect(14, ALTO - 88, 190, 74, 12); ctx.fill();
+  ctx.fillStyle = '#ff7a3d';
+  ctx.font = 'bold 34px system-ui, sans-serif';
+  ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+  ctx.fillText(Math.round(v * 0.5), 28, ALTO - 46);
+  ctx.fillStyle = 'rgba(255,255,255,.5)';
+  ctx.font = 'bold 13px system-ui, sans-serif';
+  ctx.fillText('km/h', 96, ALTO - 46);
+  // barra de derrape
+  const a = anguloDerrape() / (Math.PI / 2);
+  ctx.fillStyle = 'rgba(255,255,255,.12)';
+  ctx.beginPath(); ctx.roundRect(28, ALTO - 34, 160, 9, 5); ctx.fill();
+  const gb = ctx.createLinearGradient(28, 0, 188, 0);
+  gb.addColorStop(0, '#7ee081'); gb.addColorStop(0.6, '#ffd166'); gb.addColorStop(1, '#ff5a72');
+  ctx.fillStyle = gb;
+  ctx.beginPath(); ctx.roundRect(28, ALTO - 34, 160 * Math.min(1, a * 1.6), 9, 5); ctx.fill();
+
+  // combo en curso
+  if (C.combo > 60){
+    const pulso = 1 + Math.sin(tiempo * 9) * 0.04;
+    ctx.save();
+    ctx.translate(ANCHO / 2, 62);
+    ctx.scale(pulso, pulso);
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#ffd166';
+    ctx.font = 'bold 40px system-ui, sans-serif';
+    ctx.fillText(Math.round(C.combo).toLocaleString('es-ES'), 0, 0);
+    ctx.fillStyle = '#ff7a3d';
+    ctx.font = 'bold 24px system-ui, sans-serif';
+    ctx.fillText('x' + C.multi, 0, 28);
+    ctx.restore();
+  }
+
+  // brújula: hacia dónde sigue la pista, que desde dentro no siempre se ve
+  const { idx } = distanciaAlEje(C.x, C.y);
+  const [bx, by] = EJE[(idx + 1) % EJE.length];
+  const ang = Math.atan2(by - C.y, bx - C.x);
+  ctx.save();
+  ctx.translate(ANCHO - 56, ALTO - 56);
+  ctx.fillStyle = 'rgba(0,0,0,.55)';
+  ctx.beginPath(); ctx.arc(0, 0, 30, 0, 6.2832); ctx.fill();
+  ctx.rotate(ang);
+  ctx.fillStyle = '#7ee081';
+  ctx.beginPath(); ctx.moveTo(20, 0); ctx.lineTo(-10, -11); ctx.lineTo(-10, 11); ctx.closePath(); ctx.fill();
+  ctx.restore();
+}
+
+function refrescarHud(){
+  $('puntosTxt').textContent = C.puntos.toLocaleString('es-ES');
+  $('relojTxt').textContent = Math.ceil(C.reloj);
+  $('recordTxt').textContent = C.record ? C.record.toLocaleString('es-ES') : '—';
+}
+
+// ---------- Pinturas (tienda) ----------
+const PINTURAS = [
+  ['#ff8b4d', '#ff6a1f', '#a83c08'],   // naranja de casa
+  ['#7fe3ff', '#2aa9d8', '#0d5c7a'],   // azul hielo
+  ['#f0f2f6', '#c3c8d4', '#7b8194'],   // plata
+  ['#ff6bd6', '#c72ea0', '#6d1257'],   // magenta
+  ['#c8ff5e', '#8bd426', '#456d0e']    // lima
+];
+function pinturaElegida(){
+  const n = parseInt(Arcade.leerTexto('drift_pintura', '0'), 10) || 0;
+  return Math.min(Math.max(0, n), 1 + enTienda('pintura') - 1);
+}
+const potenciaComprada = () => 1 + enTienda('motor') * 0.14;
+const agarreComprado   = () => 1 - enTienda('neumaticos') * 0.12;   // menos agarre = más derrape
+
+// ---------- Control ----------
+addEventListener('keydown', ev => {
+  if (/^(INPUT|TEXTAREA|SELECT)$/.test(ev.target.tagName || '')) return;
+  const k = ev.key.toLowerCase();
+  if (['arrowleft','arrowright','arrowup','arrowdown','a','d','w','s',' '].includes(k)) ev.preventDefault();
+  if (k === 'arrowleft' || k === 'a') izq = true;
+  if (k === 'arrowright' || k === 'd') der = true;
+  if (k === 'arrowup' || k === 'w'){ acel = true; Sonido.activar(); }
+  if (k === 'arrowdown' || k === 's') frena = true;
+  if (k === ' ') mano = true;
+});
+addEventListener('keyup', ev => {
+  const k = ev.key.toLowerCase();
+  if (k === 'arrowleft' || k === 'a') izq = false;
+  if (k === 'arrowright' || k === 'd') der = false;
+  if (k === 'arrowup' || k === 'w') acel = false;
+  if (k === 'arrowdown' || k === 's') frena = false;
+  if (k === ' ') mano = false;
+});
+const mando = (id, set) => {
+  const b = $(id);
+  b.addEventListener('pointerdown', e => { e.preventDefault(); Sonido.activar(); set(true); });
+  b.addEventListener('pointerup', e => { e.preventDefault(); set(false); });
+  b.addEventListener('pointerleave', () => set(false));
+  b.addEventListener('pointercancel', () => set(false));
+};
+mando('mIzq', v => izq = v);
+mando('mDer', v => der = v);
+mando('mGas', v => acel = v);
+mando('mFreno', v => mano = v);
+
+$('btnEmpezar').onclick = () => { Sonido.activar(); empezar(); };
+$('btnOtra').onclick = () => { Sonido.activar(); empezar(); };
+Arcade.conectarSonido($('btnSonido'));
+AlSalir.registrar(() => Sonido.pararMotor());
+
+// ---------- Tienda del juego ----------
+// Se paga con NEXO-COINS, la moneda común del arcade.
+if (typeof Arcade !== 'undefined' && Arcade.tienda){
+  Arcade.tienda.registrar('drift', 'Taller de tuning', [
+    { id:'motor', icono:'🔧', nombre:'Preparación de motor', precio:3500, max:4, factor:2.3,
+      etiqueta: n => n ? '+' + (n * 14) + ' % de empuje' : 'Sin comprar',
+      desc:'Más caballos: entras más rápido en las curvas y el derrape puntúa más.' },
+    { id:'neumaticos', icono:'🛞', nombre:'Neumáticos de derrape', precio:4000, max:3, factor:2.4,
+      etiqueta: n => n ? 'Un ' + (n * 12) + ' % menos de agarre atrás' : 'Sin comprar',
+      desc:'Gomas más duras: el tren trasero suelta antes y el coche se cruza solo. ' +
+           'Más puntos, pero también más fácil pasarse de vueltas.' },
+    { id:'reloj', icono:'⏱', nombre:'Sesión larga', precio:3000, max:4, factor:2.2,
+      etiqueta: n => 'Sesiones de ' + (90 + n * 20) + ' s',
+      desc:'Veinte segundos más por nivel para encadenar combos.' },
+    { id:'pintura', icono:'🎨', nombre:'Pintura del coche', precio:2000, max:4, factor:2,
+      etiqueta: n => 'Desbloqueadas: ' + PINTURAS.slice(0, n + 1).length + ' de ' + PINTURAS.length,
+      desc:'Otro color para la carrocería. El botón 🎨 de la barra va cambiando ' +
+           'entre las que tengas.' }
+  ], id => {
+    if (id === 'pintura'){
+      Arcade.escribir('drift_pintura', String(enTienda('pintura')));
+      mostrarBotonPintura();
+    }
+    refrescarHud();
+  });
+}
+
+function mostrarBotonPintura(){
+  const barra = document.querySelector('.barra');
+  if (!barra || document.getElementById('btnPintura') || enTienda('pintura') < 1) return;
+  const b = document.createElement('button');
+  b.id = 'btnPintura';
+  b.type = 'button';
+  b.textContent = '🎨';
+  b.title = 'Cambiar la pintura';
+  b.setAttribute('aria-label', 'Cambiar la pintura del coche');
+  b.onclick = () => {
+    const total = 1 + enTienda('pintura');
+    Arcade.escribir('drift_pintura', String((pinturaElegida() + 1) % total));
+    Sonido.fx('clic');
+  };
+  barra.insertBefore(b, $('btnSonido'));
+}
+mostrarBotonPintura();
+
+// ---------- Trucos de administración ----------
+// Solo hacen algo con el modo creador encendido (código 2808, tecla F9).
+if (typeof Arcade !== 'undefined' && Arcade.admin) Arcade.admin.registrar('drift', 'Drift Hunters', {
+  puntos: { que:'puntos <n> — fija el marcador', fn(n){
+    C.puntos = Math.max(0, Math.floor(+n) || 0); refrescarHud();
+    return 'Llevas ' + C.puntos.toLocaleString('es-ES') + ' puntos.';
+  }},
+  reloj: { que:'reloj <s> — pone los segundos que quedan', fn(s){
+    C.reloj = Math.max(1, +s || 90); refrescarHud();
+    return 'Quedan ' + Math.ceil(C.reloj) + ' s.';
+  }},
+  multi: { que:'multi <n> — fija el multiplicador de combo (1-8)', fn(n){
+    C.multi = Math.max(1, Math.min(8, Math.floor(+n) || 1));
+    C.mejorMulti = Math.max(C.mejorMulti, C.multi);
+    return 'Multiplicador x' + C.multi + '.';
+  }},
+  centrar: { que:'centrar — devuelve el coche al centro de la pista', fn(){
+    const { idx } = distanciaAlEje(C.x, C.y);
+    C.x = EJE[idx][0]; C.y = EJE[idx][1];
+    C.vx = 0; C.vy = 0;
+    return 'Coche recolocado en el tramo ' + (idx + 1) + '.';
+  }},
+  hielo: { que:'hielo — deja la pista sin agarre trasero', fn(){
+    AGARRE_TRA_NORMAL = AGARRE_TRA_NORMAL > 1 ? 0.5 : 5.0;
+    return AGARRE_TRA_NORMAL < 1
+      ? 'El coche patina como en hielo. Repite el truco para deshacerlo.'
+      : 'Agarre normal restablecido.';
+  }}
+});
+
+// ---------- Arranque ----------
+camX = C.x; camY = C.y;
+refrescarHud();
+Arcade.bucle(dt => { actualizar(dt); dibujar(); });
+</script>
+</body>
+</html>

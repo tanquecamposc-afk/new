@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Retro Bowl — Arcade NEXO</title>
+<link rel="stylesheet" href="arcade.css">
+<style>
+  #tablero{position:relative; display:flex; flex-direction:column; gap:10px;}
+  #juego{width:min(1060px,100vw);}
+  .barra .titulo{color:#7ee081;}
+
+  #campo{
+    position:relative; border-radius:16px; overflow:hidden;
+    border:2px solid rgba(126,224,129,.32);
+    box-shadow:0 15px 45px rgba(0,0,0,.9), inset 0 0 90px rgba(0,0,0,.55);
+    background:#04140a; touch-action:none;
+  }
+  #lienzo{display:block; width:100%; height:auto; cursor:crosshair;}
+
+  #mandos{display:grid; grid-template-columns:repeat(3,1fr); gap:9px;}
+  #mandos button{
+    padding:15px 8px; font-size:1.2rem; line-height:1;
+    background:rgba(126,224,129,.1); border:1px solid rgba(126,224,129,.3);
+    border-radius:12px; color:#dcffdd;
+  }
+  #mandos button:active{background:rgba(126,224,129,.3);}
+  @media (min-width:820px){ #mandos{display:none;} }
+
+  .rejillaResumen{
+    display:grid; grid-template-columns:repeat(auto-fit,minmax(110px,1fr)); gap:10px;
+    margin:14px 0 18px;
+  }
+  .rejillaResumen div{background:rgba(0,0,0,.35); border-radius:10px; padding:11px;}
+  .rejillaResumen .n{font-size:22px; font-weight:800; color:var(--oro);}
+  .rejillaResumen .e{font-size:11px; color:var(--tenue);}
+</style>
+</head>
+<body>
+
+<div id="juego" data-ritmo="accion">
+  <div class="barra">
+    <a class="boton" href="../index.html">🕹 Arcade</a>
+    <div class="titulo">🏈 RETRO BOWL</div>
+    <div class="sep"></div>
+    <div class="stat">🏆 <span id="marcadorTxt" class="oro">0</span></div>
+    <div class="stat">⏱ <span id="relojTxt" class="verde">2:00</span></div>
+    <div class="stat">📋 <span id="downTxt" class="tenue">1º y 10</span></div>
+    <div class="stat">🥇 <span id="recordTxt" class="tenue">—</span></div>
+    <button id="btnSonido" title="Sonido" aria-label="Sonido">🔊</button>
+  </div>
+
+  <div id="tablero">
+    <div id="campo">
+      <canvas id="lienzo" width="1000" height="580"></canvas>
+      <div class="avisos" id="avisos"></div>
+    </div>
+
+    <div id="mandos">
+      <button id="mIzq" aria-label="Izquierda">◀</button>
+      <button id="mLanzar" aria-label="Lanzar o correr">🏈</button>
+      <button id="mDer" aria-label="Derecha">▶</button>
+    </div>
+
+    <div class="modal visible" id="modalInicio">
+      <div class="tarjetaModal">
+        <h1>🏈 RETRO BOWL</h1>
+        <div class="sub">Eres el quarterback. Dos minutos para meter los touchdowns que puedas.</div>
+        <div class="instrucciones">
+          <b>Apunta con el ratón</b> (o con <b>← →</b>) y <b>suelta el clic</b> —o pulsa <b>espacio</b>—
+          para lanzar. Cuanto más lejos apuntes, más tarda el balón en llegar.<br>
+          <b>Dos receptores</b> corren sus rutas: el pase es bueno si el balón cae cerca de uno
+          <i>antes</i> que de un defensa.<br>
+          Tras la recepción, <b>← →</b> esquivan y el receptor corre solo hacia la meta.<br>
+          <b>Cuatro intentos</b> para avanzar 10 yardas. Si no llegas, cambio de posesión y vuelves
+          a tu campo.<br>
+          <b>Touchdown = 7 puntos.</b> Una intercepción te cuesta la posesión.
+        </div>
+        <div class="filaBotones"><button class="primario" id="btnEmpezar">▶ Saltar al campo</button></div>
+      </div>
+    </div>
+
+    <div class="modal" id="modalFin">
+      <div class="tarjetaModal">
+        <h1 id="finTitulo">⏱ Final del partido</h1>
+        <div class="sub" id="finSub"></div>
+        <div class="rejillaResumen">
+          <div><div class="n" id="finPuntos">0</div><div class="e">puntos</div></div>
+          <div><div class="n" id="finTD">0</div><div class="e">touchdowns</div></div>
+          <div><div class="n" id="finYardas">0</div><div class="e">yardas</div></div>
+          <div><div class="n" id="finPremio">0</div><div class="e">NEXO-COINS</div></div>
+        </div>
+        <div class="filaBotones"><button class="primario" id="btnOtra">▶ Otro partido</button></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="arcade.js"></script>
+<script>
+// ============================================================
+//  RETRO BOWL — fútbol americano de arcade, visto desde arriba
+//  El campo mide 100 yardas y se dibuja en vertical: tu meta está arriba.
+//  La cámara sigue el balón, así que siempre se ven unas 40 yardas.
+// ============================================================
+const $ = id => document.getElementById(id);
+const lienzo = $('lienzo');
+const ctx = Arcade.nitido(lienzo);
+const avisos = $('avisos');
+const ANCHO = lienzo.width, ALTO = lienzo.height;
+
+// Lo comprado en la tienda se lee con funciones: el jugador puede comprar en
+// mitad del partido y la mejora tiene que notarse sin salir.
+const enTienda = id => (typeof Arcade !== 'undefined' && Arcade.tienda)
+  ? Arcade.tienda.nivel('retrobowl', id) : 0;
+
+const YARDA = 26;                 // píxeles por yarda en vertical
+const CAMPO_AN = 640;             // ancho jugable, centrado
+const IZQ = (ANCHO - CAMPO_AN) / 2;
+const DER = IZQ + CAMPO_AN;
+// La prórroga comprada en la tienda alarga el partido 30 s por nivel.
+const DURACION_BASE = 120;
+const DURACION = DURACION_BASE;   // se conserva para los rótulos de la ayuda
+const duracionReal = () => DURACION_BASE + enTienda('reloj') * 30;
+
+// El estado va en un objeto: es lo que se guarda, se pinta y se reinicia entero.
+const P = {
+  jugando:false, fase:'listo',    // listo | apuntando | vuelo | carrera | muerta | fin
+  reloj: DURACION_BASE,
+  puntos:0, touchdowns:0, yardas:0, intercepciones:0,
+  down:1, faltan:10, linea:20,    // yarda de la jugada (0 = tu fondo, 100 = meta)
+  qb:null, receptores:[], defensas:[], balon:null, portador:null,
+  mira:0.5, potencia:0, camara:0, sacudida:0, destello:0,
+  aviso:'', avisoT:0,
+  record: Arcade.record('retrobowl')
+};
+let particulas = new Particulas(280), tiempo = 0;
+let izq = false, der = false, raton = { x: ANCHO / 2, y: 200, dentro:false };
+
+// Yarda -> y de pantalla. La meta (100) queda arriba del todo.
+const yardaY = y => ALTO - 90 - (y - P.camara) * YARDA;
+
+// ---------- Jugada ----------
+function nuevaJugada(){
+  P.fase = 'listo';
+  P.balon = null; P.portador = null; P.potencia = 0;
+  const xq = ANCHO / 2;
+  P.qb = { x: xq, y: P.linea - 4, vx:0 };
+
+  // Dos receptores con rutas distintas: una corta al exterior y otra profunda.
+  const lado = Math.random() < 0.5 ? -1 : 1;
+  P.receptores = [
+    ruta(xq + 150 * lado, P.linea, 'corta', lado),
+    ruta(xq - 170 * lado, P.linea, 'profunda', -lado)
+  ];
+
+  // Defensas: uno marca a cada receptor y un tercero patrulla el centro.
+  const soltura = 1 - Math.min(0.35, (P.touchdowns * 0.06));   // se aprietan con el marcador
+  P.defensas = [
+    { x: P.receptores[0].x + azar(-30, 30), y: P.linea + 9, vel: 7.2 * soltura, marca: 0 },
+    { x: P.receptores[1].x + azar(-30, 30), y: P.linea + 12, vel: 7.0 * soltura, marca: 1 },
+    { x: xq + azar(-60, 60), y: P.linea + 18, vel: 6.4 * soltura, marca: -1 }
+  ];
+  P.camara = Math.max(0, Math.min(70, P.linea - 8));
+  refrescarHud();
+}
+
+/** Una ruta es una lista de tramos: cada uno dice hacia dónde corre y cuánto. */
+function ruta(x, y, tipo, lado){
+  const tramos = tipo === 'corta'
+    ? [{ dx:0, dy:1, largo:7 }, { dx:lado, dy:0.35, largo:9 }]
+    : [{ dx:0, dy:1, largo:12 }, { dx:lado * 0.55, dy:1, largo:16 }];
+  return { x, y, tramos, tramo:0, avance:0, tipo,
+           vel: tipo === 'corta' ? 8.4 : 8.0, libre:false };
+}
+
+function moverReceptor(r, dt){
+  const paso = r.tramos[Math.min(r.tramo, r.tramos.length - 1)];
+  const n = Math.hypot(paso.dx, paso.dy) || 1;
+  r.x += paso.dx / n * r.vel * YARDA * dt * 0.55;
+  r.y += paso.dy / n * r.vel * dt;
+  r.avance += r.vel * dt;
+  if (r.avance > paso.largo && r.tramo < r.tramos.length - 1){ r.tramo++; r.avance = 0; }
+  r.x = Math.max(IZQ + 16, Math.min(DER - 16, r.x));
+}
+
+// ---------- Lanzamiento ----------
+function apuntar(){
+  if (P.fase !== 'listo' && P.fase !== 'apuntando') return;
+  P.fase = 'apuntando';
+}
+function lanzar(){
+  if (P.fase !== 'apuntando' && P.fase !== 'listo') return;
+  const destino = destinoMira();
+  P.balon = {
+    x: P.qb.x, y: P.qb.y, x0: P.qb.x, y0: P.qb.y,
+    dx: destino.x, dy: destino.y, t: 0,
+    // El brazo de cañón comprado en la tienda acelera el vuelo del balón.
+    dur: Math.max(0.28, Math.hypot(destino.x - P.qb.x, (destino.y - P.qb.y) * YARDA) /
+                        (900 * (1 + enTienda('brazo') * 0.2)))
+  };
+  P.fase = 'vuelo';
+  Sonido.fx('disparo');
+}
+/** Dónde caerá el balón, en coordenadas de campo. */
+function destinoMira(){
+  if (raton.dentro){
+    return { x: Math.max(IZQ + 14, Math.min(DER - 14, raton.x)),
+             y: Math.min(100, P.camara + (ALTO - 90 - raton.y) / YARDA) };
+  }
+  // Sin ratón: la mira va de lado a lado y la profundidad la pone la potencia
+  return { x: IZQ + 14 + (CAMPO_AN - 28) * P.mira, y: Math.min(100, P.linea + 14) };
+}
+
+function resolverPase(){
+  const b = P.balon;
+  const cerca = lista => lista.reduce((mej, e) => {
+    const d = Math.hypot(e.x - b.dx, (e.y - b.dy) * YARDA);
+    return (!mej || d < mej.d) ? { e, d } : mej;
+  }, null);
+  const rec = cerca(P.receptores);
+  const def = cerca(P.defensas);
+
+  if (def && def.d < 46 && def.d < rec.d){
+    intercepcion(def.e);
+    return;
+  }
+  // Los guantes comprados en la tienda amplían el radio de recepción.
+  if (rec && rec.d < 62 + enTienda('manos') * 12){
+    P.portador = rec.e;
+    P.fase = 'carrera';
+    P.destello = 0.6;
+    chispas(rec.e.x, yardaY(rec.e.y), '#7ee081', 22);
+    Sonido.fx('gema');
+    anunciar('🙌 ¡Recepción!');
+    return;
+  }
+  incompleto();
+}
+
+function intercepcion(d){
+  P.intercepciones++;
+  P.fase = 'muerta';
+  P.sacudida = 16;
+  chispas(d.x, yardaY(d.y), '#ff5a72', 30);
+  Sonido.fx('choque');
+  anunciar('🚫 ¡Intercepción! Cambio de posesión');
+  setTimeout(() => cambioDePosesion(), 1400);
+}
+function incompleto(){
+  P.fase = 'muerta';
+  Sonido.fx('error');
+  anunciar('❌ Pase incompleto');
+  setTimeout(() => siguienteDown(0), 1100);
+}
+
+// ---------- Carrera tras la recepción ----------
+function placar(){
+  P.fase = 'muerta';
+  P.sacudida = 12;
+  chispas(P.portador.x, yardaY(P.portador.y), '#ffd166', 24);
+  Sonido.fx('golpe');
+  const ganadas = Math.max(0, Math.round(P.portador.y - P.linea));
+  anunciar(ganadas > 0 ? '🤝 Placado tras ' + ganadas + ' yardas' : '🤝 Placado sin avanzar');
+  setTimeout(() => siguienteDown(ganadas), 1000);
+}
+
+function touchdown(){
+  P.fase = 'muerta';
+  P.puntos += 7;
+  P.touchdowns++;
+  P.yardas += Math.max(0, Math.round(100 - P.linea));
+  P.destello = 1;
+  chispas(P.portador ? P.portador.x : ANCHO / 2, yardaY(100), '#ffd166', 60);
+  Sonido.fx('victoria');
+  anunciar('🏈 ¡TOUCHDOWN! +7');
+  refrescarHud();
+  setTimeout(() => { P.linea = 20; P.down = 1; P.faltan = 10; nuevaJugada(); }, 1700);
+}
+
+function siguienteDown(ganadas){
+  P.linea = Math.min(99, P.linea + ganadas);
+  P.yardas += Math.max(0, ganadas);
+  P.faltan -= ganadas;
+  if (P.faltan <= 0){
+    P.down = 1; P.faltan = 10;
+    anunciar('✅ ¡Primer down!');
+  } else {
+    P.down++;
+    if (P.down > 4){ cambioDePosesion(); return; }
+  }
+  nuevaJugada();
+}
+function cambioDePosesion(){
+  P.linea = 20; P.down = 1; P.faltan = 10;
+  anunciar('🔄 Balón para el rival. Vuelves a tu 20');
+  nuevaJugada();
+}
+
+// ---------- Partido ----------
+function empezar(){
+  Object.assign(P, {
+    jugando:true, reloj: duracionReal(), puntos:0, touchdowns:0, yardas:0, intercepciones:0,
+    down:1, faltan:10, linea:20, sacudida:0, destello:0, aviso:'', avisoT:0
+  });
+  particulas.lista.length = 0;
+  nuevaJugada();
+  $('modalInicio').classList.remove('visible');
+  $('modalFin').classList.remove('visible');
+  refrescarHud();
+}
+
+function terminar(){
+  P.jugando = false;
+  P.fase = 'fin';
+  const premio = Math.floor(P.puntos * 3 + P.yardas / 4);
+  Arcade.guardarRecord('retrobowl', P.puntos);
+  P.record = Arcade.record('retrobowl');
+  Arcade.perfil.partida('retrobowl',
+    { puntos: P.puntos, victoria: P.touchdowns >= 3, premio });
+  $('finSub').textContent = P.touchdowns
+    ? 'Has metido ' + P.touchdowns + (P.touchdowns === 1 ? ' touchdown' : ' touchdowns') +
+      ' y avanzado ' + P.yardas + ' yardas.'
+    : 'Ni un touchdown. La defensa te ha comido.';
+  $('finPuntos').textContent = P.puntos;
+  $('finTD').textContent = P.touchdowns;
+  $('finYardas').textContent = P.yardas;
+  $('finPremio').textContent = premio.toLocaleString('es-ES');
+  $('modalFin').classList.add('visible');
+  Sonido.fx(P.touchdowns >= 3 ? 'victoria' : 'derrota');
+  refrescarHud();
+}
+
+// ---------- Ciclo ----------
+function actualizar(dt){
+  tiempo += dt;
+  particulas.actualizar(dt);
+  if (P.sacudida > 0) P.sacudida = Math.max(0, P.sacudida - dt * 40);
+  if (P.destello > 0) P.destello = Math.max(0, P.destello - dt * 1.6);
+  if (P.avisoT > 0) P.avisoT -= dt;
+  if (!P.jugando) return;
+
+  P.reloj -= dt;
+  if (P.reloj <= 0){ P.reloj = 0; terminar(); return; }
+
+  // La mira de teclado se pasea de lado a lado
+  if (!raton.dentro){
+    if (izq) P.mira = Math.max(0, P.mira - dt * 0.75);
+    if (der) P.mira = Math.min(1, P.mira + dt * 0.75);
+  }
+
+  if (P.fase === 'listo' || P.fase === 'apuntando'){
+    P.receptores.forEach(r => moverReceptor(r, dt));
+    P.defensas.forEach(d => perseguir(d, dt));
+    // La presión: si tardas demasiado, te derriban
+    P.potencia = Math.min(1, P.potencia + dt / 4.5);
+    if (P.potencia >= 1){
+      P.fase = 'muerta';
+      Sonido.fx('golpe');
+      anunciar('💥 ¡Capturado! Pierdes 5 yardas');
+      setTimeout(() => siguienteDown(-5), 1100);
+    }
+  }
+
+  if (P.fase === 'vuelo'){
+    P.receptores.forEach(r => moverReceptor(r, dt));
+    P.defensas.forEach(d => perseguir(d, dt));
+    const b = P.balon;
+    b.t += dt;
+    const u = Math.min(1, b.t / b.dur);
+    b.x = b.x0 + (b.dx - b.x0) * u;
+    b.y = b.y0 + (b.dy - b.y0) * u;
+    P.camara = Math.max(0, Math.min(70, b.y - 12));
+    if (u >= 1) resolverPase();
+  }
+
+  if (P.fase === 'carrera'){
+    const c = P.portador;
+    c.y += 9.2 * dt;
+    if (izq) c.x -= 260 * dt;
+    if (der) c.x += 260 * dt;
+    c.x = Math.max(IZQ + 14, Math.min(DER - 14, c.x));
+    P.camara = Math.max(0, Math.min(70, c.y - 12));
+    P.defensas.forEach(d => {
+      const dx = c.x - d.x, dy = (c.y - d.y) * YARDA;
+      const n = Math.hypot(dx, dy) || 1;
+      d.x += dx / n * d.vel * 30 * dt;
+      d.y += dy / n * d.vel * dt * 1.05;
+      if (Math.hypot(c.x - d.x, (c.y - d.y) * YARDA) < 22) placar();
+    });
+    if (c.y >= 100) touchdown();
+  }
+}
+
+function perseguir(d, dt){
+  const obj = d.marca >= 0 && P.receptores[d.marca]
+    ? P.receptores[d.marca]
+    : { x: ANCHO / 2, y: P.linea + 16 };
+  const dx = obj.x - d.x, dy = (obj.y - d.y) * YARDA;
+  const n = Math.hypot(dx, dy) || 1;
+  d.x += dx / n * d.vel * 26 * dt;
+  d.y += dy / n * d.vel * dt * 0.95;
+}
+
+function chispas(x, y, color, n){
+  particulas.emitir(n, { x, y, color:[color, '#ffffff'], velMin:60, velMax:300,
+                         vidaMin:0.3, vidaMax:0.8, rMin:1.6, rMax:4.5 });
+}
+function anunciar(txt){ P.aviso = txt; P.avisoT = 1.8; Arcade.aviso(avisos, txt, true, 1600); }
+
+// ---------- Dibujo ----------
+function dibujar(){
+  ctx.save();
+  if (P.sacudida > 0)
+    ctx.translate(azar(-P.sacudida, P.sacudida) * 0.35, azar(-P.sacudida, P.sacudida) * 0.35);
+
+  ctx.fillStyle = '#04140a';
+  ctx.fillRect(-40, -40, ANCHO + 80, ALTO + 80);
+
+  dibujarCesped();
+  dibujarLineas();
+
+  if (P.jugando || P.fase === 'fin'){
+    P.defensas.forEach(d => muñeco(d.x, yardaY(d.y), '#ff5a72', '#7a1020', false));
+    P.receptores.forEach(r => muñeco(r.x, yardaY(r.y), '#7ee081', '#14512a', r === P.portador));
+    if (P.fase === 'listo' || P.fase === 'apuntando') dibujarMira();
+    if (P.qb && P.fase !== 'carrera') muñeco(P.qb.x, yardaY(P.qb.y), '#ffd166', '#7a5400', false);
+    if (P.balon) dibujarBalon();
+  }
+
+  particulas.dibujar(ctx);
+  dibujarMarcador();
+  ctx.restore();
+
+  if (P.destello > 0){
+    ctx.fillStyle = 'rgba(255,209,102,' + (P.destello * 0.22).toFixed(3) + ')';
+    ctx.fillRect(0, 0, ANCHO, ALTO);
+  }
+}
+
+function dibujarCesped(){
+  // Bandas de césped de cinco yardas, desplazadas con la cámara
+  for (let y = Math.floor(P.camara / 5) * 5 - 5; y < P.camara + 45; y += 5){
+    const y0 = yardaY(y + 5), y1 = yardaY(y);
+    ctx.fillStyle = (Math.floor(y / 5) % 2 === 0) ? '#125a2b' : '#0f4d24';
+    ctx.fillRect(IZQ, y0, CAMPO_AN, y1 - y0);
+  }
+  // marcas de hash: dos filas de rayitas cada yarda, como en un campo de verdad
+  ctx.strokeStyle = 'rgba(255,255,255,.22)'; ctx.lineWidth = 2;
+  ctx.beginPath();
+  for (let y = Math.floor(P.camara) - 1; y < P.camara + 46; y++){
+    const py = yardaY(y);
+    if (py < -10 || py > ALTO + 10) continue;
+    for (const x of [IZQ + CAMPO_AN * 0.34, IZQ + CAMPO_AN * 0.66]){
+      ctx.moveTo(x - 6, py); ctx.lineTo(x + 6, py);
+    }
+  }
+  ctx.stroke();
+
+  dibujarGraderio();
+  ctx.strokeStyle = 'rgba(255,255,255,.5)'; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.moveTo(IZQ, 0); ctx.lineTo(IZQ, ALTO);
+  ctx.moveTo(DER, 0); ctx.lineTo(DER, ALTO); ctx.stroke();
+}
+
+/**
+ * Graderío a los dos lados. El público es una retícula de puntos con colores
+ * fijos por posición: si se sortearan cada cuadro parpadearía como una tele
+ * estropeada. La ola se hace moviendo la fila entera, no cambiando el color.
+ */
+function dibujarGraderio(){
+  const bandas = [[0, IZQ], [DER, ANCHO]];
+  for (const [x0, x1] of bandas){
+    const g = ctx.createLinearGradient(x0, 0, x1, 0);
+    const haciaDentro = x0 === 0;
+    g.addColorStop(0, haciaDentro ? '#0a0f18' : '#12202c');
+    g.addColorStop(1, haciaDentro ? '#12202c' : '#0a0f18');
+    ctx.fillStyle = g;
+    ctx.fillRect(x0, 0, x1 - x0, ALTO);
+
+    for (let fy = 0; fy < ALTO; fy += 15){
+      const ola = Math.sin(fy * 0.05 + tiempo * 2.4) * 2.2;
+      for (let fx = x0 + 8; fx < x1 - 6; fx += 13){
+        // color estable: depende solo de dónde está sentado el aficionado
+        const s = Math.abs(Math.sin(fx * 12.9898 + fy * 78.233)) % 1;
+        ctx.fillStyle = s < 0.42 ? '#4a5a72' : s < 0.72 ? '#7ee081' : s < 0.9 ? '#c7d3e4' : '#ffd166';
+        ctx.globalAlpha = 0.55;
+        ctx.beginPath(); ctx.arc(fx, fy + ola, 3.2, 0, 6.2832); ctx.fill();
+      }
+    }
+    ctx.globalAlpha = 1;
+    // barandilla
+    ctx.fillStyle = 'rgba(0,0,0,.5)';
+    ctx.fillRect(haciaDentro ? x1 - 8 : x0, 0, 8, ALTO);
+  }
+}
+
+function dibujarLineas(){
+  ctx.font = 'bold 15px system-ui, sans-serif';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  for (let y = 0; y <= 100; y += 10){
+    const py = yardaY(y);
+    if (py < -30 || py > ALTO + 30) continue;
+    ctx.strokeStyle = 'rgba(255,255,255,.32)'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(IZQ, py); ctx.lineTo(DER, py); ctx.stroke();
+    const rotulo = y === 0 ? 'TU FONDO' : y === 100 ? 'META' : (y <= 50 ? y : 100 - y);
+    ctx.fillStyle = 'rgba(255,255,255,.4)';
+    ctx.fillText(rotulo, IZQ + 40, py - 12);
+    ctx.fillText(rotulo, DER - 40, py - 12);
+  }
+  // zona de anotación
+  const yz = yardaY(100), yf = yardaY(110);
+  if (yz > -60){
+    ctx.fillStyle = 'rgba(126,224,129,.16)';
+    ctx.fillRect(IZQ, yf, CAMPO_AN, yz - yf);
+    ctx.fillStyle = 'rgba(126,224,129,.75)';
+    ctx.font = 'bold 30px system-ui, sans-serif';
+    ctx.fillText('ZONA DE ANOTACIÓN', ANCHO / 2, (yz + yf) / 2);
+  }
+  // línea de golpeo y línea de primer down
+  const yl = yardaY(P.linea);
+  ctx.strokeStyle = '#4fc3ff'; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.moveTo(IZQ, yl); ctx.lineTo(DER, yl); ctx.stroke();
+  const yd = yardaY(Math.min(100, P.linea + P.faltan));
+  ctx.strokeStyle = '#ffd166'; ctx.setLineDash([12, 8]);
+  ctx.beginPath(); ctx.moveTo(IZQ, yd); ctx.lineTo(DER, yd); ctx.stroke();
+  ctx.setLineDash([]);
+}
+
+function muñeco(x, y, color, sombra, destacado){
+  ctx.save();
+  ctx.translate(x, y);
+  if (destacado){
+    ctx.fillStyle = 'rgba(255,209,102,.28)';
+    ctx.beginPath(); ctx.arc(0, 4, 24, 0, 6.2832); ctx.fill();
+  }
+  ctx.fillStyle = 'rgba(0,0,0,.4)';
+  ctx.beginPath(); ctx.ellipse(0, 12, 12, 5, 0, 0, 6.2832); ctx.fill();
+  // cuerpo
+  ctx.fillStyle = sombra;
+  ctx.beginPath(); ctx.roundRect(-10, -8, 20, 20, 5); ctx.fill();
+  ctx.fillStyle = color;
+  ctx.beginPath(); ctx.roundRect(-9, -9, 18, 16, 5); ctx.fill();
+  // casco
+  ctx.fillStyle = color;
+  ctx.beginPath(); ctx.arc(0, -14, 8, 0, 6.2832); ctx.fill();
+  ctx.fillStyle = 'rgba(0,0,0,.45)';
+  ctx.beginPath(); ctx.roundRect(-8, -13, 16, 4, 2); ctx.fill();
+  ctx.restore();
+}
+
+function dibujarBalon(){
+  const b = P.balon;
+  const alto = Math.sin(Math.min(1, b.t / b.dur) * Math.PI) * 34;
+  const x = b.x, y = yardaY(b.y) - alto;
+  ctx.fillStyle = 'rgba(0,0,0,.35)';
+  ctx.beginPath(); ctx.ellipse(x, yardaY(b.y) + 4, 8, 3, 0, 0, 6.2832); ctx.fill();
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(tiempo * 12);
+  ctx.fillStyle = '#8b4a1f';
+  ctx.beginPath(); ctx.ellipse(0, 0, 11, 7, 0, 0, 6.2832); ctx.fill();
+  ctx.strokeStyle = '#fff'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(-5, 0); ctx.lineTo(5, 0); ctx.stroke();
+  ctx.restore();
+}
+
+function dibujarMira(){
+  const d = destinoMira();
+  const x = d.x, y = yardaY(d.y);
+  ctx.strokeStyle = 'rgba(255,209,102,.55)'; ctx.lineWidth = 2;
+  ctx.setLineDash([8, 7]);
+  ctx.beginPath(); ctx.moveTo(P.qb.x, yardaY(P.qb.y)); ctx.lineTo(x, y); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.beginPath(); ctx.arc(x, y, 15 + Math.sin(tiempo * 6) * 2, 0, 6.2832); ctx.stroke();
+  ctx.beginPath(); ctx.arc(x, y, 4, 0, 6.2832);
+  ctx.fillStyle = 'rgba(255,209,102,.8)'; ctx.fill();
+
+  // barra de presión: cuando se llena, te capturan
+  const an = 220, x0 = ANCHO / 2 - an / 2, y0 = ALTO - 34;
+  ctx.fillStyle = 'rgba(0,0,0,.55)';
+  ctx.beginPath(); ctx.roundRect(x0, y0, an, 12, 6); ctx.fill();
+  const g = ctx.createLinearGradient(x0, 0, x0 + an, 0);
+  g.addColorStop(0, '#7ee081'); g.addColorStop(0.6, '#ffd166'); g.addColorStop(1, '#ff5a72');
+  ctx.fillStyle = g;
+  ctx.beginPath(); ctx.roundRect(x0, y0, an * P.potencia, 12, 6); ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,.6)';
+  ctx.font = 'bold 11px system-ui, sans-serif'; ctx.textAlign = 'center';
+  ctx.fillText('PRESIÓN DE LA DEFENSA', ANCHO / 2, y0 - 8);
+}
+
+function dibujarMarcador(){
+  ctx.fillStyle = 'rgba(0,0,0,.55)';
+  ctx.beginPath(); ctx.roundRect(14, 14, 210, 54, 10); ctx.fill();
+  ctx.fillStyle = '#ffd166';
+  ctx.font = 'bold 26px system-ui, sans-serif';
+  ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  ctx.fillText(P.puntos + ' pts', 28, 32);
+  ctx.fillStyle = 'rgba(255,255,255,.65)';
+  ctx.font = 'bold 14px system-ui, sans-serif';
+  ctx.fillText(ordinal(P.down) + ' y ' + Math.max(0, Math.ceil(P.faltan)) +
+               ' · yarda ' + Math.round(P.linea), 28, 56);
+}
+const ordinal = n => ['1º', '2º', '3º', '4º'][Math.min(3, n - 1)];
+
+function refrescarHud(){
+  $('marcadorTxt').textContent = P.puntos;
+  const m = Math.floor(P.reloj / 60), s = Math.floor(P.reloj % 60);
+  $('relojTxt').textContent = m + ':' + String(s).padStart(2, '0');
+  $('downTxt').textContent = ordinal(P.down) + ' y ' + Math.max(0, Math.ceil(P.faltan));
+  $('recordTxt').textContent = P.record ? P.record + ' pts' : '—';
+}
+
+// ---------- Control ----------
+lienzo.addEventListener('pointermove', ev => {
+  const p = Arcade.puntero(lienzo, ev);
+  raton.x = p.x; raton.y = p.y; raton.dentro = true;
+});
+lienzo.addEventListener('pointerleave', () => { raton.dentro = false; });
+lienzo.addEventListener('pointerdown', ev => {
+  ev.preventDefault(); Sonido.activar();
+  const p = Arcade.puntero(lienzo, ev);
+  raton.x = p.x; raton.y = p.y; raton.dentro = true;
+  apuntar();
+});
+lienzo.addEventListener('pointerup', ev => { ev.preventDefault(); lanzar(); });
+
+addEventListener('keydown', ev => {
+  if (/^(INPUT|TEXTAREA|SELECT)$/.test(ev.target.tagName || '')) return;
+  const k = ev.key.toLowerCase();
+  if (['arrowleft', 'arrowright', 'a', 'd', ' '].includes(k)) ev.preventDefault();
+  if (k === 'arrowleft' || k === 'a') izq = true;
+  if (k === 'arrowright' || k === 'd') der = true;
+  if (k === ' '){ Sonido.activar(); P.fase === 'vuelo' ? null : lanzar(); }
+});
+addEventListener('keyup', ev => {
+  const k = ev.key.toLowerCase();
+  if (k === 'arrowleft' || k === 'a') izq = false;
+  if (k === 'arrowright' || k === 'd') der = false;
+});
+const mando = (id, set) => {
+  const b = $(id);
+  b.addEventListener('pointerdown', e => { e.preventDefault(); Sonido.activar(); set(true); });
+  b.addEventListener('pointerup', e => { e.preventDefault(); set(false); });
+  b.addEventListener('pointerleave', () => set(false));
+  b.addEventListener('pointercancel', () => set(false));
+};
+mando('mIzq', v => izq = v);
+mando('mDer', v => der = v);
+$('mLanzar').addEventListener('click', () => { Sonido.activar(); lanzar(); });
+
+$('btnEmpezar').onclick = () => { Sonido.activar(); empezar(); };
+$('btnOtra').onclick = () => { Sonido.activar(); empezar(); };
+Arcade.conectarSonido($('btnSonido'));
+
+// ---------- Tienda del juego ----------
+// Se paga con NEXO-COINS, la moneda común del arcade.
+if (typeof Arcade !== 'undefined' && Arcade.tienda){
+  Arcade.tienda.registrar('retrobowl', 'Oficina del club', [
+    { id:'reloj', icono:'⏱', nombre:'Prórroga', precio:3000, max:4, factor:2.3,
+      etiqueta: n => 'Partidos de ' + Math.floor((DURACION_BASE + n * 30) / 60) + ':' +
+                     String((DURACION_BASE + n * 30) % 60).padStart(2, '0'),
+      desc:'Treinta segundos más de partido por nivel. Más tiempo, más touchdowns.' },
+    { id:'brazo', icono:'💪', nombre:'Brazo de cañón', precio:3500, max:3, factor:2.4,
+      etiqueta: n => n ? 'El balón vuela un ' + (n * 20) + ' % más rápido' : 'Sin comprar',
+      desc:'El pase llega antes, así que a los defensas les da menos tiempo a colocarse.' },
+    { id:'manos', icono:'🧤', nombre:'Guantes de receptor', precio:4000, max:3, factor:2.4,
+      etiqueta: n => n ? 'Radio de recepción +' + (n * 12) : 'Sin comprar',
+      desc:'Tus receptores atrapan pases más desviados. No ayuda contra una intercepción ' +
+           'clara: ahí el defensa sigue llegando primero.' }
+  ], () => refrescarHud());
+}
+
+// ---------- Trucos de administración ----------
+// Solo hacen algo con el modo creador encendido (código 2808, tecla F9).
+if (typeof Arcade !== 'undefined' && Arcade.admin) Arcade.admin.registrar('retrobowl', 'Retro Bowl', {
+  puntos: { que:'puntos <n> — fija el marcador', fn(n){
+    P.puntos = Math.max(0, Math.floor(+n) || 0); refrescarHud();
+    return 'Vas ' + P.puntos + ' puntos.';
+  }},
+  reloj: { que:'reloj <s> — pone los segundos que quedan', fn(s){
+    P.reloj = Math.max(1, +s || duracionReal()); refrescarHud();
+    return 'Quedan ' + Math.round(P.reloj) + ' s.';
+  }},
+  touchdown: { que:'touchdown — te apunta un touchdown ahora mismo', fn(){
+    if (!P.jugando) return 'Empieza un partido primero.';
+    P.portador = P.receptores[0];
+    touchdown();
+    return 'Siete puntos más.';
+  }},
+  linea: { que:'linea <yarda> — coloca la jugada en esa yarda', fn(y){
+    P.linea = Math.max(1, Math.min(99, Math.floor(+y) || 20));
+    P.down = 1; P.faltan = 10; nuevaJugada();
+    return 'Jugada en la yarda ' + P.linea + '.';
+  }},
+  facil: { que:'facil — deja a la defensa a media velocidad', fn(){
+    P.defensas.forEach(d => { d.vel *= 0.5; });
+    return 'Los tres defensas van a la mitad.';
+  }}
+});
+
+// ---------- Arranque ----------
+refrescarHud();
+Arcade.bucle(dt => { actualizar(dt); dibujar(); });
+</script>
+</body>
+</html>
