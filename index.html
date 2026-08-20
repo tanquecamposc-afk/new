@@ -2991,7 +2991,7 @@ function canjear(){
   const r = Arcade.codigos.canjear(codigoTxt.value);
   if (r.motivo === 'admin'){
     avisar('👑 Modo administrador ' + (r.repetido ? 'ya estaba activo' : 'activado') +
-           '. Pulsa F9 para abrir la consola.', true);
+           '. El botón 👑 de la barra abre la consola (también F9 o Ctrl+Shift+A).', true);
     Sonido.melodia([440, 660, 880, 1320], 0.09, 'square', 0.06);
     codigoTxt.value = '';
     Arcade.admin.abrir();

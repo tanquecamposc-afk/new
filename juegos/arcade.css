@@ -288,6 +288,16 @@ input:focus-visible, select:focus-visible, a:focus-visible, [tabindex]:focus-vis
 .cajaTienda .primario{width:100%;}
 
 /* ---- Consola del creador (modo administrador) ---- */
+.btnAdmin{
+  padding:6px 10px; font-size:.95rem; line-height:1;
+  background:rgba(243,230,0,.1); border:1px solid rgba(243,230,0,.4);
+  border-radius:8px; cursor:pointer; color:inherit;
+}
+.btnAdmin:hover{
+  border-color:var(--oro); background:rgba(243,230,0,.2);
+  box-shadow:0 0 12px rgba(243,230,0,.3);
+}
+
 .capaAdmin{
   position:fixed; inset:0; z-index:80; display:none;
   align-items:center; justify-content:center;

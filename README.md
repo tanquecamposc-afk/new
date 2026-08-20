@@ -549,24 +549,31 @@ El tower defense es autocontenido y no carga `arcade.js`, así que lleva su prop
 
 ## 👑 Modo administrador
 
-Hay un código que no paga monedas: **enciende la consola del creador**. Una vez activo se queda encendido entre visitas y funciona desde cualquier pantalla del arcade — **F9** la abre y la cierra, <kbd>Esc</kbd> la cierra, y las flechas <kbd>↑</kbd> <kbd>↓</kbd> recorren el historial.
+Hay un código que no paga monedas: **enciende la consola del creador**. Una vez activo se queda encendido entre visitas y sale un botón **👑** en la barra de todas las pantallas.
+
+Se abre de tres maneras: el **botón 👑**, la tecla **F9** o **Ctrl+Shift+A**. (Antes solo estaba F9, y en muchos teclados de portátil o en el móvil esa tecla no existe: el modo quedaba encendido pero sin forma de usarlo.) Dentro, **Tab autocompleta**, las flechas <kbd>↑</kbd> <kbd>↓</kbd> recorren el historial y <kbd>Esc</kbd> cierra. Si te equivocas al escribir, te sugiere el comando más parecido.
 
 | Comando | Qué hace |
 |---|---|
-| `ayuda` | Lista todos los comandos |
-| `monedas <n>` | Fija la cartera en esa cantidad |
-| `dar <n>` | Suma (o resta, con negativos) a la cartera |
-| `codigos` · `codigos reset` | Ve qué códigos van gastados, o los libera todos |
-| `record <juego> [valor]` | Consulta o fija el récord de cualquier juego |
-| `mina` · `mina abrir` · `mina dinero <n>` · `mina borrar` | Estado de Mining Tycoon, abrir los cuatro mundos, llenar las cajas o borrar la partida |
-| `perfil` · `perfil reset` | Estadísticas acumuladas, o borrarlas |
-| `ir <juego>` | Salta a un juego por su id (solo en `arcade.html`) |
-| `todo` | Modo dios de golpe: cartera a tope, códigos libres y mina abierta |
-| `trucos` | Lista los juegos que tienen trucos propios |
-| `juego` · `juego <truco> [args]` | Trucos del juego que tengas delante |
-| `salir` | Apaga el modo administrador |
+| `ayuda` · `ayuda <comando>` | La lista con una línea cada uno, o el detalle de uno |
+| `monedas <n>` · `dar <n>` | Fija la cartera, o suma y resta |
+| `codigos` · `codigos reset` | Qué códigos van gastados, o liberarlos todos |
+| `record <juego> [valor]` · `records` | Consulta o fija un récord · todos de mayor a menor |
+| `tienda` · `tienda <artículo>` · `tienda todo` | La tienda del juego que tengas delante: verla, comprar uno o vaciarla |
+| `juego` · `juego <truco>` | Los trucos propios del juego abierto |
+| `trucos` | Qué juegos tienen trucos y cuáles |
+| `mina` · `mina abrir` · `mina dinero <n>` | Estado de Mining Tycoon y sus cuatro mundos |
+| `ir <juego>` · `buscar <texto>` · `pantalla` | Navegar por el arcade desde la consola |
+| `sonido <0-100>` | Volumen general, el mismo que el del panel de ayuda |
+| `ritmo <0.1-5>` | Cámara lenta o acelerada: multiplica el paso del tiempo de **todos** los juegos |
+| `fps` | Enciende un contador de cuadros por segundo en una esquina |
+| `temporada` | Reparte temporada nueva: códigos libres y cartera repuesta |
+| `almacen` · `exportar` · `importar <texto>` | Qué hay guardado, copia de seguridad al portapapeles y restaurarla |
+| `perfil` · `perfil reset` | Estadísticas acumuladas |
+| `todo` · `dios` | Cartera a tope y mina abierta · lo mismo y además vacía la tienda del juego abierto |
+| `limpiar` · `reiniciar si` · `salir` | Vaciar la consola · borrar TODO el progreso · apagar el modo |
 
-La consola vive en `Arcade.admin` (`juegos/arcade.js`). Añadir un comando es añadir una función a `Arcade.admin.COMANDOS`: el nombre de la función es el comando y sus argumentos llegan como cadenas.
+La consola vive en `Arcade.admin` (`juegos/arcade.js`). Añadir un comando es añadir una función a `Arcade.admin.COMANDOS` y una línea a `DESCRIPCIONES`: el nombre de la función es el comando y sus argumentos llegan como cadenas.
 
 ### Trucos por juego
 

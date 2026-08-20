@@ -291,6 +291,16 @@ input:focus-visible, select:focus-visible, a:focus-visible, [tabindex]:focus-vis
 .cajaTienda .primario{width:100%;}
 
 /* ---- Consola del creador (modo administrador) ---- */
+.btnAdmin{
+  padding:6px 10px; font-size:.95rem; line-height:1;
+  background:rgba(243,230,0,.1); border:1px solid rgba(243,230,0,.4);
+  border-radius:8px; cursor:pointer; color:inherit;
+}
+.btnAdmin:hover{
+  border-color:var(--oro); background:rgba(243,230,0,.2);
+  box-shadow:0 0 12px rgba(243,230,0,.3);
+}
+
 .capaAdmin{
   position:fixed; inset:0; z-index:80; display:none;
   align-items:center; justify-content:center;
@@ -5380,10 +5390,13 @@ const Arcade = {
   borrar(clave){ Almacen.borrar('arcade_' + clave); },
 
   // Bucle de animación con dt acotado (en segundos)
+  /** Multiplicador del paso del tiempo. Lo toca el comando "ritmo". */
+  ritmo: 1,
+
   bucle(fn){
     let previo = performance.now();
     const paso = (t) => {
-      const dt = Math.min(0.05, (t - previo) / 1000);
+      const dt = Math.min(0.05, (t - previo) / 1000) * Arcade.ritmo;
       previo = t;
       // En pausa se sigue pidiendo cuadros pero no se avanza nada: al reanudar
       // no hay un salto de golpe con todo el tiempo que estuvo parado.
@@ -5705,10 +5718,11 @@ Arcade.admin = {
   CLAVE: 'arcade_admin',
 
   activo(){ return Almacen.leer(this.CLAVE) === '1'; },
-  activar(){ Almacen.escribir(this.CLAVE, '1'); this.montar(); },
+  activar(){ Almacen.escribir(this.CLAVE, '1'); this.montar(); this.montarBoton(); },
   desactivar(){
     Almacen.borrar(this.CLAVE);
     document.querySelectorAll('.capaAdmin').forEach(c => c.remove());
+    document.querySelectorAll('.btnAdmin').forEach(b => b.remove());
   },
 
   /**
@@ -5731,15 +5745,52 @@ Arcade.admin = {
     return ids.length === 1 ? this.juegos[ids[0]] : null;
   },
 
+
+  /** Una línea por comando para la ayuda. La primera es la que sale en la lista. */
+  DESCRIPCIONES: {
+    ayuda:     'Lista los comandos. "ayuda <comando>" cuenta uno en detalle.',
+    monedas:   'monedas <n> — deja la cartera exactamente en esa cantidad.',
+    dar:       'dar <n> — suma a la cartera. Admite negativos para quitar.',
+    codigos:   'codigos — cuáles llevas gastados. "codigos reset" los libera todos.',
+    record:    'record <juego> [valor] — consulta o fija el récord de un juego.',
+    records:   'records — todos los récords guardados, de mayor a menor.',
+    mina:      'mina — estado de Mining Tycoon. abrir · dinero <n> · borrar.',
+    perfil:    'perfil — partidas y ganancias. "perfil reset" las borra.',
+    ir:        'ir <juego> — entra en un juego por su id.',
+    buscar:    'buscar <texto> — busca por nombre y entra si solo hay uno.',
+    pantalla:  'pantalla — dice qué hay abierto y lista los juegos.',
+    tienda:    'tienda — la tienda del juego actual. <artículo> compra uno, "todo" compra lo que quepa.',
+    juego:     'juego — trucos del juego que tengas delante. "juego <truco>" lo ejecuta.',
+    trucos:    'trucos — qué juegos tienen trucos propios y cuáles.',
+    sonido:    'sonido <0-100> — volumen general. Sin número, lo dice.',
+    ritmo:     'ritmo <0.1-5> — cámara lenta o acelerada. 1 es lo normal.',
+    fps:       'fps — enciende o apaga el contador de cuadros por segundo.',
+    temporada: 'temporada — reparte temporada nueva: códigos libres y cartera repuesta.',
+    almacen:   'almacen — qué hay guardado en este navegador y cuánto ocupa.',
+    exportar:  'exportar — copia de seguridad de todo el progreso, al portapapeles.',
+    importar:  'importar <texto> — restaura una copia hecha con exportar.',
+    todo:      'todo — cartera a tope, códigos libres y los mundos de la mina abiertos.',
+    dios:      'dios — como todo, y además compra las tiendas de todos los juegos que abras.',
+    limpiar:   'limpiar — vacía lo escrito en la consola.',
+    reiniciar: 'reiniciar si — borra TODO el progreso. No tiene vuelta atrás.',
+    salir:     'salir — apaga el modo administrador.'
+  },
+
   /** Comandos disponibles. Cada uno devuelve el texto que se imprime. */
   COMANDOS: {
-    ayuda(){
-      return Object.keys(Arcade.admin.COMANDOS).sort().map(n => '  ' + n).join('\n') +
-             '\n\nEscribe un comando con sus argumentos. Ejemplos:\n' +
-             '  monedas 1000000000\n  dar 50000\n  mina abrir\n  record serpiente 99999\n' +
-             '  codigos reset\n  ir plinko\n\n' +
-             'Dentro de un juego, "juego" lista sus trucos propios y "juego <truco>"\n' +
-             'lo ejecuta. "trucos" enseña qué juegos tienen y cuáles.';
+    ayuda(que){
+      const D = Arcade.admin.DESCRIPCIONES;
+      if (que){
+        const n = String(que).toLowerCase();
+        return D[n] ? n + '\n  ' + D[n] : 'No conozco "' + que + '". Escribe ayuda a secas.';
+      }
+      const nombres = Object.keys(Arcade.admin.COMANDOS).sort();
+      const ancho = Math.max(...nombres.map(n => n.length));
+      return 'COMANDOS (escribe "ayuda <comando>" para el detalle)\n' +
+        nombres.map(n => '  ' + n.padEnd(ancho + 2) +
+                         (D[n] || '').split('\n')[0]).join('\n') +
+        '\n\nDentro de un juego, "juego" lista sus trucos y "juego <truco>" lo ejecuta.\n' +
+        'Tab autocompleta · ↑ ↓ recorren el historial · Esc cierra.';
     },
     monedas(n){
       const v = Math.max(0, Math.floor(+n));
@@ -5830,6 +5881,232 @@ Arcade.admin = {
       Arcade.admin.avisarCambio();
       return 'Modo dios: cartera a tope, códigos libres y los mundos de la mina abiertos.';
     },
+
+    /** Todos los récords guardados, de mayor a menor. */
+    records(){
+      const juegos = Arcade.perfil.datos().juegos || {};
+      const filas = Object.keys(juegos)
+        .map(id => [id, Arcade.record(id) || juegos[id].mejor || 0])
+        .filter(f => f[1] > 0)
+        .sort((a, b) => b[1] - a[1]);
+      if (!filas.length) return 'Todavía no hay ningún récord guardado.';
+      const ancho = Math.max(...filas.map(f => f[0].length));
+      return filas.map(([id, v]) =>
+        '  ' + id.padEnd(ancho + 2) + v.toLocaleString('es-ES')).join('\n');
+    },
+
+    /** La tienda del juego que tengas delante: ver, comprar uno o comprarlo todo. */
+    tienda(que){
+      const raiz = Arcade.experiencia.activa();
+      const id = raiz && raiz.id && raiz.id.indexOf('pantalla-') === 0
+        ? raiz.id.slice(9)
+        : Object.keys(Arcade.tienda.juegos)[0];
+      const t = id && Arcade.tienda.juegos[id];
+      if (!t) return 'Entra en un juego para ver su tienda.';
+
+      if (que === 'todo'){
+        let n = 0, gasto = 0;
+        // Se compra en rondas: cada compra encarece la siguiente, así que hay
+        // que volver a mirar los precios hasta que no quepa nada más.
+        for (let vuelta = 0; vuelta < 60; vuelta++){
+          let algo = false;
+          for (const art of t.articulos){
+            if (art.tipo === 'accion') continue;
+            const r = Arcade.tienda.comprar(id, art.id);
+            if (r.ok){ n++; gasto += r.coste; algo = true; }
+          }
+          if (!algo) break;
+        }
+        Arcade.admin.avisarCambio();
+        return n ? 'Compradas ' + n + ' mejoras en ' + t.nombre + ' por ' +
+                   gasto.toLocaleString('es-ES') + ' NEXO-COINS.'
+                 : 'No se pudo comprar nada: o está todo al máximo o no llega la cartera.';
+      }
+
+      if (que){
+        const r = Arcade.tienda.comprar(id, que);
+        Arcade.admin.avisarCambio();
+        return r.ok ? '✅ ' + r.art.nombre + ' · -' + r.coste.toLocaleString('es-ES')
+                    : r.motivo;
+      }
+
+      return t.nombre + '\n' + t.articulos.filter(a => a.tipo !== 'accion').map(a => {
+        const n = Arcade.tienda.nivelDe(id, a);
+        const max = a.max || 1;
+        return '  ' + a.id.padEnd(12) + (n >= max ? 'al máximo' :
+               Arcade.tienda.precio(a, n).toLocaleString('es-ES') + ' 💎').padEnd(14) +
+               a.nombre;
+      }).join('\n') + '\n\nUso: tienda <artículo>  ·  tienda todo';
+    },
+
+    /** Volumen general, de 0 a 100. Sin argumento, lo dice. */
+    sonido(n){
+      if (n === undefined)
+        return Sonido.silencio ? 'En silencio.'
+             : 'Volumen al ' + Math.round(Sonido.volumen * 100) + ' %.';
+      const v = Math.max(0, Math.min(100, parseInt(n, 10)));
+      if (!isFinite(v)) return 'Uso: sonido <0-100>';
+      Sonido.volumen = v / 100;
+      Sonido.silencio = v === 0;
+      Arcade.experiencia.guardarSonido();
+      return v ? 'Volumen al ' + v + ' %.' : 'Silencio.';
+    },
+
+    /** Cámara lenta o acelerada: multiplica el paso del tiempo de todos los juegos. */
+    ritmo(x){
+      if (x === undefined) return 'El tiempo va a x' + Arcade.ritmo + '. Uso: ritmo <0.1-5>';
+      const v = Math.max(0.05, Math.min(5, parseFloat(x)));
+      if (!isFinite(v)) return 'Uso: ritmo <0.1-5>   (1 es lo normal)';
+      Arcade.ritmo = v;
+      return v < 1 ? 'Cámara lenta a x' + v + '.'
+           : v > 1 ? 'Todo acelerado a x' + v + '.' : 'Ritmo normal.';
+    },
+
+    /** Qué pantalla está abierta y cuáles hay. */
+    pantalla(){
+      const raiz = Arcade.experiencia.activa();
+      const juegos = [...document.querySelectorAll('[data-juego]')].map(e => e.dataset.juego);
+      return 'Ahora mismo: ' + (raiz && raiz.id ? raiz.id : 'la portada') +
+        (juegos.length ? '\nHay ' + juegos.length + ' juegos: ' + juegos.join(', ') : '');
+    },
+
+    /** Busca juegos por nombre y, si solo hay uno, entra. */
+    buscar(...palabras){
+      const q = palabras.join(' ').toLowerCase()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      if (!q) return 'Uso: buscar <texto>';
+      const cartas = [...document.querySelectorAll('[data-juego]')];
+      const hallados = cartas.filter(c => (c.dataset.busca || c.dataset.juego).includes(q));
+      if (!hallados.length) return 'Nada que encaje con "' + q + '".';
+      if (hallados.length === 1){
+        hallados[0].click();
+        return 'Entrando en ' + hallados[0].dataset.juego + '…';
+      }
+      return hallados.map(c => '  ' + c.dataset.juego).join('\n') +
+             '\nAfina la búsqueda o usa "ir <juego>".';
+    },
+
+    /** Sube de temporada: libera los códigos y repone la cartera. */
+    temporada(){
+      Almacen.borrar('arcade_temporada');
+      const r = Arcade.temporada.aplicar();
+      Arcade.admin.avisarCambio();
+      return r ? 'Temporada ' + Arcade.temporada.ACTUAL + ' repartida: códigos libres y ' +
+                 'cartera en ' + Arcade.fichas.saldo().toLocaleString('es-ES') + '.'
+               : 'Ya estabas al día.';
+    },
+
+    /** Qué hay guardado en este navegador. */
+    almacen(){
+      let claves = [];
+      try {
+        for (let i = 0; i < localStorage.length; i++){
+          const k = localStorage.key(i);
+          if (k && k.indexOf('arcade_') === 0)
+            claves.push([k.slice(7), (localStorage.getItem(k) || '').length]);
+        }
+      } catch(e){ return 'Este navegador no deja leer lo guardado.'; }
+      if (!claves.length) return 'No hay nada guardado todavía.';
+      claves.sort((a, b) => b[1] - a[1]);
+      const total = claves.reduce((s, c) => s + c[1], 0);
+      const ancho = Math.max(...claves.map(c => c[0].length));
+      return claves.slice(0, 24).map(([k, n]) =>
+        '  ' + k.padEnd(ancho + 2) + n + ' car.').join('\n') +
+        '\n' + claves.length + ' claves · ' + (total / 1024).toFixed(1) + ' KB en total';
+    },
+
+    /** Copia de seguridad de todo el progreso, en una línea. */
+    exportar(){
+      const copia = {};
+      try {
+        for (let i = 0; i < localStorage.length; i++){
+          const k = localStorage.key(i);
+          if (k && k.indexOf('arcade_') === 0) copia[k] = localStorage.getItem(k);
+        }
+      } catch(e){ return 'Este navegador no deja leer lo guardado.'; }
+      const txt = JSON.stringify(copia);
+      // Se deja también en el portapapeles si el navegador lo permite
+      try { navigator.clipboard && navigator.clipboard.writeText(txt); } catch(e){}
+      return 'Copia de ' + Object.keys(copia).length + ' claves (ya está en el portapapeles):\n' + txt;
+    },
+
+    /** Restaura una copia hecha con exportar. */
+    importar(...trozos){
+      const txt = trozos.join(' ').trim();
+      if (!txt) return 'Uso: importar <el texto que dio exportar>';
+      let datos;
+      try { datos = JSON.parse(txt); } catch(e){ return 'Eso no es una copia válida.'; }
+      let n = 0;
+      Object.keys(datos).forEach(k => {
+        if (k.indexOf('arcade_') !== 0) return;
+        Almacen.escribir(k, datos[k]); n++;
+      });
+      Arcade.perfil.cache = null;
+      Arcade.admin.avisarCambio();
+      return 'Restauradas ' + n + ' claves. Recarga la página para verlo todo.';
+    },
+
+    /** Contador de cuadros por segundo, en una esquina. */
+    fps(){
+      const viejo = document.getElementById('fpsAdmin');
+      if (viejo){ viejo.remove(); return 'Contador de FPS apagado.'; }
+      const d = document.createElement('div');
+      d.id = 'fpsAdmin';
+      d.style.cssText = 'position:fixed;right:10px;bottom:10px;z-index:200;' +
+        'font:700 12px "Courier New",monospace;color:#7dffb0;background:rgba(0,0,0,.65);' +
+        'border:1px solid rgba(0,255,102,.3);border-radius:8px;padding:5px 10px;' +
+        'pointer-events:none';
+      document.body.appendChild(d);
+      let n = 0, t0 = performance.now();
+      const tic = () => {
+        if (!document.getElementById('fpsAdmin')) return;
+        n++;
+        const ahora = performance.now();
+        if (ahora - t0 >= 500){
+          d.textContent = Math.round(n * 1000 / (ahora - t0)) + ' FPS · x' + Arcade.ritmo;
+          n = 0; t0 = ahora;
+        }
+        requestAnimationFrame(tic);
+      };
+      requestAnimationFrame(tic);
+      return 'Contador de FPS encendido. Vuelve a escribir fps para quitarlo.';
+    },
+
+    /** Vacía lo escrito en la consola. */
+    limpiar(){
+      const s = document.querySelector('.capaAdmin .salidaAdmin');
+      if (s) s.textContent = '';
+      return 'Consola limpia.';
+    },
+
+    /** Borra TODO el progreso. Pide confirmación a propósito. */
+    reiniciar(seguro){
+      if (seguro !== 'si')
+        return '⚠️ Esto borra partidas, récords, fichas, códigos y tiendas.\n' +
+               'Si de verdad quieres: reiniciar si';
+      let n = 0;
+      try {
+        const claves = [];
+        for (let i = 0; i < localStorage.length; i++){
+          const k = localStorage.key(i);
+          if (k && k.indexOf('arcade_') === 0) claves.push(k);
+        }
+        claves.forEach(k => { Almacen.borrar(k); n++; });
+      } catch(e){}
+      Arcade.perfil.cache = null;
+      Arcade.admin.avisarCambio();
+      return 'Borradas ' + n + ' claves. Recarga la página.';
+    },
+
+    /** Como "todo", pero además vacía la tienda del juego que tengas abierto. */
+    dios(){
+      const partes = [Arcade.admin.COMANDOS.todo()];
+      const compras = Arcade.admin.COMANDOS.tienda('todo');
+      if (compras.indexOf('Compradas') === 0) partes.push(compras);
+      Sonido.fx('victoria');
+      return partes.join('\n');
+    },
+
     /** Trucos del juego que tengas delante. Sin argumentos, los lista. */
     juego(truco, ...args){
       const j = Arcade.admin.juegoActivo();
@@ -5853,7 +6130,9 @@ Arcade.admin = {
     trucos(){
       const j = Arcade.admin.juegos;
       const ids = Object.keys(j).sort();
-      if (!ids.length) return 'Ningún juego ha registrado trucos todavía.';
+      if (!ids.length)
+        return 'Todavía no hay ninguno: cada juego apunta sus trucos al entrar en él,\n' +
+               'no al cargar el arcade. Entra en un juego y vuelve a escribir trucos.';
       return ids.map(id => '  ' + id.padEnd(12) + j[id].nombre + '  (' +
                            Object.keys(j[id].trucos).join(', ') + ')').join('\n');
     },
@@ -5871,18 +6150,75 @@ Arcade.admin = {
     }
   },
 
+  /**
+   * Cuánto se parecen dos palabras, de 0 a 1. Es la distancia de edición
+   * normalizada: sirve para adivinar qué quiso escribir quien se equivoca.
+   */
+  parecido(a, b){
+    if (a === b) return 1;
+    const m = a.length, n = b.length;
+    if (!m || !n) return 0;
+    let fila = Array.from({ length: n + 1 }, (_, i) => i);
+    for (let i = 1; i <= m; i++){
+      let anterior = fila[0];
+      fila[0] = i;
+      for (let j = 1; j <= n; j++){
+        const tmp = fila[j];
+        fila[j] = Math.min(fila[j] + 1, fila[j - 1] + 1,
+                           anterior + (a[i - 1] === b[j - 1] ? 0 : 1));
+        anterior = tmp;
+      }
+    }
+    return 1 - fila[n] / Math.max(m, n);
+  },
+
+  /** Los nombres que valen ahora mismo, para el autocompletado con Tab. */
+  sugerencias(linea){
+    const partes = linea.split(/\s+/);
+    if (partes.length <= 1)
+      return Object.keys(this.COMANDOS).filter(n => n.indexOf(partes[0].toLowerCase()) === 0);
+    if (partes[0].toLowerCase() === 'juego'){
+      const j = this.juegoActivo();
+      if (!j) return [];
+      return Object.keys(j.trucos)
+        .filter(n => n.indexOf(partes[1].toLowerCase()) === 0)
+        .map(n => 'juego ' + n);
+    }
+    if (partes[0].toLowerCase() === 'ayuda')
+      return Object.keys(this.COMANDOS)
+        .filter(n => n.indexOf(partes[1].toLowerCase()) === 0)
+        .map(n => 'ayuda ' + n);
+    if (partes[0].toLowerCase() === 'ir')
+      return [...document.querySelectorAll('[data-juego]')]
+        .map(e => e.dataset.juego)
+        .filter(n => n.indexOf(partes[1].toLowerCase()) === 0)
+        .map(n => 'ir ' + n);
+    return [];
+  },
+
   ejecutar(linea){
     const partes = String(linea || '').trim().split(/\s+/);
     const nombre = (partes.shift() || '').toLowerCase();
     if (!nombre) return '';
     const cmd = this.COMANDOS[nombre];
-    if (!cmd) return 'No conozco "' + nombre + '". Escribe ayuda.';
+    if (!cmd){
+      // Se busca el comando más parecido para no dejar al jugador a ciegas
+      const parecido = Object.keys(this.COMANDOS)
+        .map(n => [n, this.parecido(n, nombre)])
+        .filter(x => x[1] > 0.45)
+        .sort((a, b) => b[1] - a[1])[0];
+      return 'No conozco "' + nombre + '".' +
+             (parecido ? ' ¿Querías decir "' + parecido[0] + '"?' : '') +
+             '\nEscribe ayuda para ver la lista.';
+    }
     try { return cmd.apply(null, partes) || 'Hecho.'; }
     catch(e){ return 'Ha fallado: ' + e.message; }
   },
 
   montar(){
-    if (!this.activo() || document.querySelector('.capaAdmin')) return;
+    if (!this.activo()) return;
+    this.montarBoton();
+    if (document.querySelector('.capaAdmin')) return;
     const capa = document.createElement('div');
     capa.className = 'capaAdmin';
     capa.innerHTML =
@@ -5894,7 +6230,7 @@ Arcade.admin = {
           '<input class="entradaAdmin" autocomplete="off" spellcheck="false" ' +
                  'aria-label="Comando" placeholder="ayuda">' +
         '</div>' +
-        '<div class="pieAdmin">F9 abre y cierra · ↑ ↓ recorren el historial · Esc cierra</div>' +
+        '<div class="pieAdmin">Tab autocompleta · ↑ ↓ historial · Esc cierra · F9 o Ctrl+Shift+A la abren desde cualquier sitio</div>' +
       '</div>';
     document.body.appendChild(capa);
 
@@ -5925,12 +6261,46 @@ Arcade.admin = {
         ev.preventDefault();
         cursor = Math.min(historial.length, cursor + 1);
         entrada.value = historial[cursor] || '';
+      } else if (ev.key === 'Tab'){
+        ev.preventDefault();
+        const opciones = this.sugerencias(entrada.value);
+        if (!opciones.length) return;
+        if (opciones.length === 1){
+          entrada.value = opciones[0] + ' ';
+        } else {
+          // Se completa hasta donde todas coinciden y se enseñan las opciones
+          let comun = opciones[0];
+          for (const o of opciones)
+            while (o.indexOf(comun) !== 0) comun = comun.slice(0, -1);
+          if (comun.length > entrada.value.length) entrada.value = comun;
+          imprimir(opciones.map(o => '  ' + o).join('\n'));
+        }
       } else if (ev.key === 'Escape'){
         this.cerrar();
       }
     });
     capa.addEventListener('click', ev => { if (ev.target === capa) this.cerrar(); });
     this._entrada = entrada;
+  },
+
+  /**
+   * Botón visible en la barra de cada pantalla. Antes la consola solo se abría
+   * con F9, y en muchos teclados de portátil o en el móvil esa tecla no está:
+   * el modo administrador quedaba encendido pero sin manera de usarlo.
+   */
+  montarBoton(){
+    if (!this.activo()) return;
+    document.querySelectorAll('.barra, #barraSuperior, [id^="barraSuperior"]').forEach(barra => {
+      if (barra.querySelector('.btnAdmin')) return;
+      const b = document.createElement('button');
+      b.className = 'btnAdmin';
+      b.type = 'button';
+      b.title = 'Consola del creador (F9)';
+      b.setAttribute('aria-label', 'Abrir la consola del creador');
+      b.textContent = '👑';
+      b.onclick = () => this.abrir();
+      barra.appendChild(b);
+    });
   },
 
   abrir(){
@@ -5952,7 +6322,12 @@ Arcade.admin = {
 };
 
 addEventListener('keydown', ev => {
-  if (ev.key === 'F9'){ ev.preventDefault(); Arcade.admin.alternar(); }
+  // Dos atajos: F9, y Ctrl/Cmd+Shift+A para los teclados sin tecla de función
+  if (ev.key === 'F9' ||
+      ((ev.ctrlKey || ev.metaKey) && ev.shiftKey && (ev.key === 'A' || ev.key === 'a'))){
+    ev.preventDefault();
+    Arcade.admin.alternar();
+  }
 });
 
 /* ==========================================================
@@ -9497,7 +9872,7 @@ function canjear(){
   const r = Arcade.codigos.canjear(codigoTxt.value);
   if (r.motivo === 'admin'){
     avisar('👑 Modo administrador ' + (r.repetido ? 'ya estaba activo' : 'activado') +
-           '. Pulsa F9 para abrir la consola.', true);
+           '. El botón 👑 de la barra abre la consola (también F9 o Ctrl+Shift+A).', true);
     Sonido.melodia([440, 660, 880, 1320], 0.09, 'square', 0.06);
     codigoTxt.value = '';
     Arcade.admin.abrir();
