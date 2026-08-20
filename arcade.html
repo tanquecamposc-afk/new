@@ -296,16 +296,6 @@ input:focus-visible, select:focus-visible, a:focus-visible, [tabindex]:focus-vis
 .cajaTienda .primario{width:100%;}
 
 /* ---- Consola del creador (modo administrador) ---- */
-.btnAdmin{
-  padding:6px 10px; font-size:.95rem; line-height:1;
-  background:rgba(243,230,0,.1); border:1px solid rgba(243,230,0,.4);
-  border-radius:8px; cursor:pointer; color:inherit;
-}
-.btnAdmin:hover{
-  border-color:var(--oro); background:rgba(243,230,0,.2);
-  box-shadow:0 0 12px rgba(243,230,0,.3);
-}
-
 .capaAdmin{
   position:fixed; inset:0; z-index:80; display:none;
   align-items:center; justify-content:center;
@@ -5717,6 +5707,9 @@ const Arcade = {
      * en el marcador de canjeados y cada uno lleva su propio registro. Se
      * canjean una sola vez. La clave es el número tal cual se escribe.
      */
+    /** El código del creador. No paga nada: abre la consola. */
+    ADMIN: 2808,
+
     EXTRA: {
       99: 1000000,
       1202: 100000000,
@@ -5759,11 +5752,11 @@ const Arcade = {
     canjear(txt){
       // Se miran antes que la serie: se salen del rango 1-20 y normalizar()
       // los rechazaría como si fueran números inventados.
-      // El 2808 no paga: enciende el modo administrador.
-      if (this.normalizarExtra(txt).replace(/^0+/, '') === '2808'){
+      // El código del creador no paga: enciende el modo administrador.
+      if (this.normalizarExtra(txt).replace(/^0+/, '') === String(this.ADMIN)){
         const yaEstaba = Arcade.admin.activo();
         Arcade.admin.activar();
-        return { ok:true, motivo:'admin', numero:2808, secreto:true, premio:0,
+        return { ok:true, motivo:'admin', numero:this.ADMIN, secreto:true, premio:0,
                  repetido: yaEstaba, saldo:Arcade.fichas.saldo() };
       }
       const extra = this.reconocerExtra(txt);
@@ -5934,10 +5927,11 @@ Arcade.admin = {
   CLAVE: 'arcade_admin',
 
   activo(){ return Almacen.leer(this.CLAVE) === '1'; },
-  activar(){ Almacen.escribir(this.CLAVE, '1'); this.montar(); this.montarBoton(); },
+  activar(){ Almacen.escribir(this.CLAVE, '1'); this.montar(); },
   desactivar(){
     Almacen.borrar(this.CLAVE);
     document.querySelectorAll('.capaAdmin').forEach(c => c.remove());
+    // Por si quedan botones de una versión anterior: el modo no deja rastro
     document.querySelectorAll('.btnAdmin').forEach(b => b.remove());
   },
 
@@ -6355,7 +6349,7 @@ Arcade.admin = {
 
     salir(){
       Arcade.admin.desactivar();
-      return 'Modo administrador apagado. Vuelve a canjear 2808 para encenderlo.';
+      return 'Modo administrador apagado. Teclea el código otra vez para encenderlo.';
     }
   },
 
@@ -6432,9 +6426,7 @@ Arcade.admin = {
   },
 
   montar(){
-    if (!this.activo()) return;
-    this.montarBoton();
-    if (document.querySelector('.capaAdmin')) return;
+    if (!this.activo() || document.querySelector('.capaAdmin')) return;
     const capa = document.createElement('div');
     capa.className = 'capaAdmin';
     capa.innerHTML =
@@ -6446,7 +6438,8 @@ Arcade.admin = {
           '<input class="entradaAdmin" autocomplete="off" spellcheck="false" ' +
                  'aria-label="Comando" placeholder="ayuda">' +
         '</div>' +
-        '<div class="pieAdmin">Tab autocompleta · ↑ ↓ historial · Esc cierra · F9 o Ctrl+Shift+A la abren desde cualquier sitio</div>' +
+        '<div class="pieAdmin">Tab autocompleta · ↑ ↓ historial · Esc cierra · ' +
+          'para volver a abrirla, teclea el código en cualquier pantalla</div>' +
       '</div>';
     document.body.appendChild(capa);
 
@@ -6500,23 +6493,20 @@ Arcade.admin = {
   },
 
   /**
-   * Botón visible en la barra de cada pantalla. Antes la consola solo se abría
-   * con F9, y en muchos teclados de portátil o en el móvil esa tecla no está:
-   * el modo administrador quedaba encendido pero sin manera de usarlo.
+   * La puerta de verdad: teclear el código en cualquier pantalla enciende el
+   * modo y abre la consola. No hay ningún botón ni pista a la vista, que es
+   * justo lo que se le pide a un modo secreto: si se ve, ya no lo es.
    */
-  montarBoton(){
-    if (!this.activo()) return;
-    document.querySelectorAll('.barra, #barraSuperior, [id^="barraSuperior"]').forEach(barra => {
-      if (barra.querySelector('.btnAdmin')) return;
-      const b = document.createElement('button');
-      b.className = 'btnAdmin';
-      b.type = 'button';
-      b.title = 'Consola del creador (F9)';
-      b.setAttribute('aria-label', 'Abrir la consola del creador');
-      b.textContent = '👑';
-      b.onclick = () => this.abrir();
-      barra.appendChild(b);
-    });
+  _tecleado: '',
+  escuchaSecreta(ev){
+    // No se escucha mientras se escribe en una casilla: ahí el código se canjea
+    if (/^(INPUT|TEXTAREA|SELECT)$/.test(ev.target.tagName || '')) return;
+    if (!/^[0-9]$/.test(ev.key)) return;
+    this._tecleado = (this._tecleado + ev.key).slice(-8);
+    if (this._tecleado.indexOf(String(Arcade.codigos.ADMIN)) === -1) return;
+    this._tecleado = '';
+    if (!this.activo()) this.activar();
+    this.abrir();
   },
 
   abrir(){
@@ -6538,12 +6528,14 @@ Arcade.admin = {
 };
 
 addEventListener('keydown', ev => {
-  // Dos atajos: F9, y Ctrl/Cmd+Shift+A para los teclados sin tecla de función
+  // Atajos invisibles para quien ya sabe que existe el modo: F9, y
+  // Ctrl/Cmd+Shift+A para los teclados sin tecla de función.
   if (ev.key === 'F9' ||
       ((ev.ctrlKey || ev.metaKey) && ev.shiftKey && (ev.key === 'A' || ev.key === 'a'))){
     ev.preventDefault();
     Arcade.admin.alternar();
   }
+  Arcade.admin.escuchaSecreta(ev);
 });
 
 /* ==========================================================
@@ -10154,7 +10146,7 @@ function canjear(){
   const r = Arcade.codigos.canjear(codigoTxt.value);
   if (r.motivo === 'admin'){
     avisar('👑 Modo administrador ' + (r.repetido ? 'ya estaba activo' : 'activado') +
-           '. El botón 👑 de la barra abre la consola (también F9 o Ctrl+Shift+A).', true);
+           '. Teclea el código en cualquier pantalla para volver a abrir la consola.', true);
     Sonido.melodia([440, 660, 880, 1320], 0.09, 'square', 0.06);
     codigoTxt.value = '';
     Arcade.admin.abrir();

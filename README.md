@@ -576,9 +576,11 @@ El tower defense es autocontenido y no carga `arcade.js`, así que lleva su prop
 
 ## 👑 Modo administrador
 
-Hay un código que no paga monedas: **enciende la consola del creador**. Una vez activo se queda encendido entre visitas y sale un botón **👑** en la barra de todas las pantallas.
+Hay un código que no paga monedas: **enciende la consola del creador**. Una vez activo se queda encendido entre visitas, y **no deja ningún rastro a la vista**: ni botón, ni icono, ni pista. Si se viera, ya no sería secreto.
 
-Se abre de tres maneras: el **botón 👑**, la tecla **F9** o **Ctrl+Shift+A**. (Antes solo estaba F9, y en muchos teclados de portátil o en el móvil esa tecla no existe: el modo quedaba encendido pero sin forma de usarlo.) Dentro, **Tab autocompleta**, las flechas <kbd>↑</kbd> <kbd>↓</kbd> recorren el historial y <kbd>Esc</kbd> cierra. Si te equivocas al escribir, te sugiere el comando más parecido.
+Para abrirla se **teclea el código en cualquier pantalla**, sin tocar ninguna casilla: el arcade escucha las teclas de número y, en cuanto reconoce la secuencia, enciende el modo y abre la consola. Funciona igual en la portada que dentro de un juego. También valen los atajos **F9** y **Ctrl+Shift+A**, que tampoco se anuncian en ninguna parte.
+
+Dentro, **Tab autocompleta**, las flechas <kbd>↑</kbd> <kbd>↓</kbd> recorren el historial y <kbd>Esc</kbd> cierra. Si te equivocas al escribir, te sugiere el comando más parecido.
 
 | Comando | Qué hace |
 |---|---|
