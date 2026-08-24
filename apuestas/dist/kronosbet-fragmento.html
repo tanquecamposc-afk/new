@@ -1,0 +1,3878 @@
+<title>KRONOS BET</title>
+<style>
+/* ===========================================================
+   KRONOS BET — hoja de estilos única
+   Simulador educativo de casa de apuestas. Sin dinero real.
+   =========================================================== */
+
+:root{
+  --bg:#080b10;
+  --bg2:#0d1219;
+  --panel:#121924;
+  --panel2:#18212f;
+  --panel3:#1f2a3b;
+  --linea:#26334a;
+  --texto:#e9eef7;
+  --tenue:#8b9bb5;
+  --tenue2:#5f6f8a;
+  --acento:#25d07a;
+  --acento2:#19a862;
+  --ambar:#ffc247;
+  --rojo:#ff5c5c;
+  --azul:#4aa8ff;
+  --morado:#a678ff;
+  --rosa:#ff6ec7;
+  --radio:12px;
+  --sombra:0 10px 30px rgba(0,0,0,.45);
+  --fuente:"Segoe UI",system-ui,-apple-system,Roboto,"Helvetica Neue",Arial,sans-serif;
+  --mono:"JetBrains Mono",Consolas,"SF Mono",Menlo,monospace;
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  background:
+    radial-gradient(900px 600px at 85% -12%, rgba(37,208,122,.10), transparent 60%),
+    radial-gradient(700px 500px at 5% 0%, rgba(74,168,255,.08), transparent 55%),
+    var(--bg);
+  color:var(--texto);
+  font-family:var(--fuente);
+  font-size:15px;
+  line-height:1.45;
+  -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+}
+button,input,select{font-family:inherit;font-size:inherit;color:inherit}
+button{cursor:pointer;border:none;background:none}
+a{color:var(--azul);text-decoration:none}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-track{background:var(--bg2)}
+::-webkit-scrollbar-thumb{background:var(--panel3);border-radius:6px}
+::-webkit-scrollbar-thumb:hover{background:#2f3f59}
+
+/* ---------- barra superior ---------- */
+.aviso-legal{
+  background:linear-gradient(90deg,#2a1a05,#3a2408);
+  border-bottom:1px solid #55401a;
+  color:#ffd489;
+  font-size:12px;
+  text-align:center;
+  padding:5px 12px;
+  letter-spacing:.2px;
+}
+.aviso-legal b{color:#fff0cf}
+
+header.top{
+  position:sticky;top:0;z-index:60;
+  background:rgba(10,14,20,.92);
+  backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--linea);
+}
+.top-fila{
+  max-width:1400px;margin:0 auto;
+  display:flex;align-items:center;gap:14px;
+  padding:10px 16px;
+}
+.logo{display:flex;align-items:center;gap:9px;font-weight:800;font-size:19px;letter-spacing:-.4px}
+.logo .k{
+  width:32px;height:32px;border-radius:9px;display:grid;place-items:center;
+  background:linear-gradient(135deg,var(--acento),#0f7d47);
+  color:#04120a;font-size:17px;font-weight:900;
+}
+.logo .demo{
+  font-size:9px;font-weight:800;letter-spacing:1.2px;
+  background:var(--panel3);color:var(--tenue);
+  padding:2px 6px;border-radius:5px;border:1px solid var(--linea);
+}
+.nav{display:flex;gap:2px;margin-left:8px;flex:1;overflow-x:auto;scrollbar-width:none}
+.nav::-webkit-scrollbar{display:none}
+.nav button{
+  padding:8px 14px;border-radius:9px;color:var(--tenue);
+  font-weight:600;white-space:nowrap;transition:.15s;
+}
+.nav button:hover{color:var(--texto);background:var(--panel)}
+.nav button.on{background:var(--panel2);color:var(--texto);box-shadow:inset 0 -2px 0 var(--acento)}
+.nav button .pip{
+  display:inline-block;min-width:17px;height:17px;line-height:17px;
+  background:var(--acento);color:#04120a;border-radius:9px;
+  font-size:11px;font-weight:800;margin-left:6px;padding:0 4px;
+}
+.nav button .vivo-pip{background:var(--rojo);color:#fff}
+
+.saldo-caja{
+  display:flex;align-items:center;gap:10px;
+  background:var(--panel);border:1px solid var(--linea);
+  border-radius:11px;padding:6px 8px 6px 14px;
+}
+.saldo-caja .etq{font-size:10px;color:var(--tenue2);text-transform:uppercase;letter-spacing:.8px}
+.saldo-caja .val{font-weight:800;font-size:16px;font-variant-numeric:tabular-nums}
+.btn{
+  background:var(--acento);color:#04120a;font-weight:800;
+  padding:8px 14px;border-radius:9px;transition:.15s;white-space:nowrap;
+}
+.btn:hover{background:#2ee089;transform:translateY(-1px)}
+.btn:active{transform:none}
+.btn:disabled{background:var(--panel3);color:var(--tenue2);cursor:not-allowed;transform:none}
+.btn.sec{background:var(--panel2);color:var(--texto);border:1px solid var(--linea)}
+.btn.sec:hover{background:var(--panel3)}
+.btn.peligro{background:var(--rojo);color:#2a0000}
+.btn.chico{padding:5px 10px;font-size:13px;border-radius:7px}
+
+/* ---------- layout ---------- */
+.contenedor{max-width:1400px;margin:0 auto;padding:16px;display:grid;grid-template-columns:1fr 336px;gap:16px;align-items:start}
+.contenedor.ancho{grid-template-columns:1fr}
+.col-main{min-width:0}
+.lateral{position:sticky;top:78px;display:flex;flex-direction:column;gap:14px}
+
+.tarjeta{background:var(--panel);border:1px solid var(--linea);border-radius:var(--radio);overflow:hidden}
+.tarjeta > h3{
+  padding:11px 14px;font-size:13px;text-transform:uppercase;letter-spacing:.9px;
+  color:var(--tenue);border-bottom:1px solid var(--linea);background:var(--panel2);
+  display:flex;align-items:center;justify-content:space-between;gap:8px;font-weight:700;
+}
+.tarjeta .cuerpo{padding:14px}
+
+.titulo-sec{display:flex;align-items:center;gap:10px;margin:4px 0 12px}
+.titulo-sec h2{font-size:20px;font-weight:800;letter-spacing:-.3px}
+.titulo-sec .sub{color:var(--tenue);font-size:13px}
+
+/* ---------- chips de deporte ---------- */
+.chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:6px;margin-bottom:12px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{
+  display:flex;align-items:center;gap:7px;padding:8px 14px;border-radius:22px;
+  background:var(--panel);border:1px solid var(--linea);color:var(--tenue);
+  font-weight:600;white-space:nowrap;transition:.15s;font-size:14px;
+}
+.chip:hover{border-color:#3a4b69;color:var(--texto)}
+.chip.on{background:var(--acento);border-color:var(--acento);color:#04120a}
+
+/* ---------- evento ---------- */
+.evento{background:var(--panel);border:1px solid var(--linea);border-radius:var(--radio);margin-bottom:10px;overflow:hidden;transition:border-color .2s}
+.evento:hover{border-color:#334561}
+.ev-cab{display:flex;align-items:center;gap:10px;padding:9px 14px;border-bottom:1px solid var(--linea);background:var(--panel2);font-size:12px;color:var(--tenue)}
+.ev-cab .liga{font-weight:700;color:var(--tenue)}
+.ev-cab .hora{margin-left:auto;font-variant-numeric:tabular-nums}
+.badge-vivo{
+  display:inline-flex;align-items:center;gap:5px;background:rgba(255,92,92,.15);
+  color:#ff8a8a;border:1px solid rgba(255,92,92,.35);
+  padding:2px 8px;border-radius:6px;font-weight:800;font-size:11px;letter-spacing:.5px;
+}
+.punto{width:6px;height:6px;border-radius:50%;background:var(--rojo);animation:latir 1.2s infinite}
+@keyframes latir{0%,100%{opacity:1}50%{opacity:.25}}
+
+.ev-cuerpo{display:grid;grid-template-columns:1fr auto;gap:12px;padding:12px 14px;align-items:center}
+@media(max-width:760px){.ev-cuerpo{grid-template-columns:1fr}}
+.equipos{display:flex;flex-direction:column;gap:5px;min-width:0}
+.equipo{display:flex;align-items:center;gap:9px;font-weight:600}
+.equipo .esc{width:22px;height:22px;border-radius:6px;display:grid;place-items:center;font-size:12px;background:var(--panel3);flex:none}
+.equipo .nom{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.equipo .marc{margin-left:auto;font-weight:800;font-variant-numeric:tabular-nums;color:var(--ambar);padding-left:10px}
+
+.mercado{display:flex;gap:6px}
+.mercado.g3{display:grid;grid-template-columns:repeat(3,minmax(78px,1fr))}
+.mercado.g2{display:grid;grid-template-columns:repeat(2,minmax(90px,1fr))}
+.cuota{
+  position:relative;background:var(--panel2);border:1px solid var(--linea);
+  border-radius:9px;padding:8px 10px;min-width:78px;
+  display:flex;flex-direction:column;align-items:center;gap:2px;transition:.12s;
+}
+.cuota:hover:not(:disabled){background:var(--panel3);border-color:#41567a}
+.cuota .lab{font-size:11px;color:var(--tenue);font-weight:600}
+.cuota .num{font-weight:800;font-size:15px;font-variant-numeric:tabular-nums}
+.cuota.on{background:var(--acento);border-color:var(--acento)}
+.cuota.on .lab,.cuota.on .num{color:#04120a}
+.cuota:disabled{opacity:.42;cursor:not-allowed}
+.cuota.sube{animation:flash-sube .9s}
+.cuota.baja{animation:flash-baja .9s}
+@keyframes flash-sube{0%,60%{box-shadow:inset 0 0 0 2px var(--acento);color:var(--acento)}100%{}}
+@keyframes flash-baja{0%,60%{box-shadow:inset 0 0 0 2px var(--rojo);color:var(--rojo)}100%{}}
+.cuota .flecha{position:absolute;top:2px;right:4px;font-size:9px}
+.ev-pie{display:flex;align-items:center;gap:12px;padding:7px 14px;border-top:1px solid var(--linea);font-size:11.5px;color:var(--tenue2)}
+.ev-pie .mas{margin-left:auto;color:var(--azul);font-weight:600}
+.suspendido{
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  padding:12px;color:var(--ambar);font-weight:700;font-size:13px;
+  background:repeating-linear-gradient(45deg,rgba(255,194,71,.06),rgba(255,194,71,.06) 10px,transparent 10px,transparent 20px);
+}
+
+/* ---------- boleto ---------- */
+.tabs-boleto{display:flex;border-bottom:1px solid var(--linea)}
+.tabs-boleto button{flex:1;padding:9px;font-weight:700;font-size:13px;color:var(--tenue)}
+.tabs-boleto button.on{color:var(--texto);box-shadow:inset 0 -2px 0 var(--acento)}
+.seleccion{padding:11px 13px;border-bottom:1px solid var(--linea);position:relative}
+.seleccion .cerrar{position:absolute;top:8px;right:9px;color:var(--tenue2);font-size:16px;line-height:1}
+.seleccion .cerrar:hover{color:var(--rojo)}
+.seleccion .pick{font-weight:700;padding-right:20px;display:flex;justify-content:space-between;gap:8px}
+.seleccion .pick .c{color:var(--acento);font-variant-numeric:tabular-nums}
+.seleccion .merc{font-size:11.5px;color:var(--tenue2);margin-top:1px}
+.seleccion .part{font-size:12px;color:var(--tenue);margin-top:3px}
+.seleccion .aviso-cambio{margin-top:6px;font-size:11.5px;color:var(--ambar);background:rgba(255,194,71,.1);padding:4px 7px;border-radius:6px}
+.boleto-vacio{padding:26px 18px;text-align:center;color:var(--tenue2);font-size:13px}
+.boleto-vacio .ic{font-size:30px;display:block;margin-bottom:8px;opacity:.5}
+
+.stake-fila{display:flex;gap:8px;align-items:center;padding:12px 13px 8px}
+.stake-fila .sol{color:var(--tenue);font-weight:700}
+.stake-fila input{
+  flex:1;background:var(--bg2);border:1px solid var(--linea);border-radius:8px;
+  padding:9px 11px;font-weight:800;font-size:16px;font-variant-numeric:tabular-nums;
+}
+.stake-fila input:focus{outline:none;border-color:var(--acento)}
+.rapidos{display:flex;gap:6px;padding:0 13px 10px;flex-wrap:wrap}
+.rapidos button{background:var(--panel2);border:1px solid var(--linea);border-radius:7px;padding:4px 10px;font-size:12px;font-weight:700;color:var(--tenue)}
+.rapidos button:hover{background:var(--panel3);color:var(--texto)}
+.resumen{padding:0 13px 12px;font-size:13px}
+.resumen .fila{display:flex;justify-content:space-between;padding:3px 0;color:var(--tenue)}
+.resumen .fila b{color:var(--texto);font-variant-numeric:tabular-nums}
+.resumen .fila.total b{color:var(--acento);font-size:17px}
+.pie-boleto{padding:0 13px 13px}
+.pie-boleto .btn{width:100%;padding:12px;font-size:15px}
+.nota-margen{font-size:11px;color:var(--tenue2);padding:8px 13px;border-top:1px solid var(--linea);background:var(--bg2)}
+.nota-margen b{color:var(--ambar)}
+
+/* ---------- mis apuestas ---------- */
+.apuesta{background:var(--panel);border:1px solid var(--linea);border-radius:var(--radio);margin-bottom:10px;overflow:hidden}
+.ap-cab{display:flex;align-items:center;gap:9px;padding:9px 13px;background:var(--panel2);border-bottom:1px solid var(--linea);font-size:12px;color:var(--tenue)}
+.ap-cab .tipo{font-weight:800;color:var(--texto)}
+.ap-cab .est{margin-left:auto;font-weight:800;padding:2px 9px;border-radius:6px;font-size:11px;letter-spacing:.4px}
+.est.pendiente{background:rgba(255,194,71,.14);color:var(--ambar)}
+.est.ganada{background:rgba(37,208,122,.15);color:var(--acento)}
+.est.perdida{background:rgba(255,92,92,.14);color:var(--rojo)}
+.est.cobrada{background:rgba(74,168,255,.14);color:var(--azul)}
+.est.anulada{background:var(--panel3);color:var(--tenue)}
+.ap-linea{padding:9px 13px;border-bottom:1px solid var(--linea);font-size:13px}
+.ap-linea:last-of-type{border-bottom:none}
+.ap-linea .top{display:flex;justify-content:space-between;gap:8px;font-weight:700}
+.ap-linea .bajo{color:var(--tenue2);font-size:11.5px;margin-top:2px}
+.ap-pie{display:flex;align-items:center;gap:10px;padding:10px 13px;border-top:1px solid var(--linea);background:var(--bg2);flex-wrap:wrap}
+.ap-pie .dato{font-size:12px;color:var(--tenue)}
+.ap-pie .dato b{color:var(--texto);display:block;font-variant-numeric:tabular-nums;font-size:14px}
+.ap-pie .btn{margin-left:auto}
+
+/* ---------- casino ---------- */
+.casino-hero{
+  border-radius:16px;padding:26px 24px;margin-bottom:16px;position:relative;overflow:hidden;
+  background:linear-gradient(120deg,#1a0f2e,#0e1b2c 55%,#0b2019);
+  border:1px solid #2c2247;
+}
+.casino-hero h2{font-size:26px;font-weight:900;letter-spacing:-.6px;margin-bottom:6px}
+.casino-hero p{color:var(--tenue);max-width:560px;font-size:14px}
+.casino-hero .brillo{position:absolute;width:340px;height:340px;border-radius:50%;filter:blur(80px);opacity:.35}
+.casino-hero .b1{background:var(--morado);top:-160px;right:40px}
+.casino-hero .b2{background:var(--acento);bottom:-200px;right:220px}
+.buscador{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.buscador input{
+  flex:1;min-width:200px;background:var(--panel);border:1px solid var(--linea);
+  border-radius:10px;padding:10px 14px;
+}
+.buscador input:focus{outline:none;border-color:var(--acento)}
+
+.grid-juegos{display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:12px}
+.juego{
+  background:var(--panel);border:1px solid var(--linea);border-radius:12px;overflow:hidden;
+  text-align:left;transition:.18s;display:flex;flex-direction:column;
+}
+.juego:hover{transform:translateY(-3px);border-color:#3d5175;box-shadow:var(--sombra)}
+.juego .arte{
+  height:104px;display:grid;place-items:center;font-size:40px;position:relative;
+  border-bottom:1px solid var(--linea);
+}
+.juego .arte .n{position:absolute;top:6px;left:7px;font-size:10px;font-weight:800;color:rgba(255,255,255,.55);background:rgba(0,0,0,.35);padding:1px 5px;border-radius:4px}
+.juego .arte .jugable{position:absolute;bottom:6px;right:6px;font-size:9.5px;font-weight:800;letter-spacing:.4px;background:var(--acento);color:#04120a;padding:2px 6px;border-radius:5px}
+.juego .arte .info-only{position:absolute;bottom:6px;right:6px;font-size:9.5px;font-weight:800;background:var(--panel3);color:var(--tenue);padding:2px 6px;border-radius:5px;border:1px solid var(--linea)}
+.juego .txt{padding:9px 11px 11px;flex:1;display:flex;flex-direction:column;gap:3px}
+.juego .txt .nom{font-weight:700;font-size:13.5px;line-height:1.25}
+.juego .txt .prov{font-size:11px;color:var(--tenue2)}
+.juego .txt .desc{font-size:11px;color:var(--tenue);line-height:1.35;margin-top:3px}
+
+/* ---------- modal ---------- */
+.modal-fondo{
+  position:fixed;inset:0;background:rgba(4,7,11,.82);backdrop-filter:blur(5px);
+  z-index:200;display:grid;place-items:center;padding:16px;overflow-y:auto;
+}
+.modal{
+  background:var(--panel);border:1px solid var(--linea);border-radius:16px;
+  width:min(940px,100%);box-shadow:var(--sombra);max-height:94vh;display:flex;flex-direction:column;
+  animation:subir .18s ease-out;
+}
+@keyframes subir{from{transform:translateY(14px);opacity:0}to{transform:none;opacity:1}}
+.modal-cab{display:flex;align-items:center;gap:12px;padding:13px 16px;border-bottom:1px solid var(--linea);background:var(--panel2);border-radius:16px 16px 0 0}
+.modal-cab h3{font-size:16px;font-weight:800;flex:1}
+.modal-cab .prov{font-size:11.5px;color:var(--tenue2)}
+.modal-cab .x{font-size:22px;color:var(--tenue);line-height:1;padding:0 4px}
+.modal-cab .x:hover{color:var(--rojo)}
+.modal-cuerpo{padding:16px;overflow-y:auto}
+
+/* ---------- juegos de casino ---------- */
+.juego-layout{display:grid;grid-template-columns:250px 1fr;gap:16px}
+@media(max-width:780px){.juego-layout{grid-template-columns:1fr}}
+.panel-apuesta{background:var(--bg2);border:1px solid var(--linea);border-radius:12px;padding:13px;display:flex;flex-direction:column;gap:10px;height:fit-content}
+.campo{display:flex;flex-direction:column;gap:5px}
+.campo label{font-size:11px;color:var(--tenue);text-transform:uppercase;letter-spacing:.7px;font-weight:700}
+.campo input,.campo select{
+  background:var(--panel);border:1px solid var(--linea);border-radius:8px;padding:9px 11px;
+  font-weight:700;font-variant-numeric:tabular-nums;
+}
+.campo input:focus,.campo select:focus{outline:none;border-color:var(--acento)}
+.campo .fila-btns{display:flex;gap:5px}
+.campo .fila-btns button{flex:1;background:var(--panel2);border:1px solid var(--linea);border-radius:7px;padding:5px;font-size:12px;font-weight:700;color:var(--tenue)}
+.campo .fila-btns button:hover{background:var(--panel3);color:var(--texto)}
+.stat-fila{display:flex;justify-content:space-between;font-size:12.5px;color:var(--tenue);padding:2px 0}
+.stat-fila b{color:var(--texto);font-variant-numeric:tabular-nums}
+.zona-juego{background:var(--bg2);border:1px solid var(--linea);border-radius:12px;padding:14px;min-height:330px;display:flex;flex-direction:column}
+
+/* mines */
+.mines-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:7px;max-width:390px;margin:auto;width:100%}
+.celda{
+  aspect-ratio:1;border-radius:10px;background:var(--panel2);border:1px solid var(--linea);
+  display:grid;place-items:center;font-size:24px;transition:.15s;
+}
+.celda:hover:not(:disabled){background:var(--panel3);transform:translateY(-2px)}
+.celda:disabled{cursor:default}
+.celda.estrella{background:rgba(37,208,122,.16);border-color:var(--acento)}
+.celda.mina{background:rgba(255,92,92,.2);border-color:var(--rojo)}
+.celda.revelada{opacity:.42}
+@keyframes pop{from{transform:scale(.5)}to{transform:scale(1)}}
+.celda span{animation:pop .18s}
+
+/* aviator */
+.aviator-lienzo{flex:1;position:relative;border-radius:10px;overflow:hidden;background:#05070b;min-height:260px}
+.aviator-lienzo canvas{width:100%;height:100%;display:block}
+.mult-grande{
+  position:absolute;inset:0;display:grid;place-content:center;text-align:center;pointer-events:none;
+}
+.mult-grande .n{font-size:56px;font-weight:900;font-variant-numeric:tabular-nums;text-shadow:0 4px 24px rgba(0,0,0,.7)}
+.mult-grande .est{font-size:14px;font-weight:700;letter-spacing:2px;text-transform:uppercase;margin-top:4px}
+.historial-mult{display:flex;gap:6px;overflow-x:auto;padding:8px 0 2px;scrollbar-width:none}
+.historial-mult::-webkit-scrollbar{display:none}
+.pill{padding:3px 10px;border-radius:20px;font-size:12px;font-weight:800;font-variant-numeric:tabular-nums;white-space:nowrap;border:1px solid}
+.pill.bajo{background:rgba(74,168,255,.12);color:var(--azul);border-color:rgba(74,168,255,.3)}
+.pill.medio{background:rgba(166,120,255,.12);color:var(--morado);border-color:rgba(166,120,255,.3)}
+.pill.alto{background:rgba(255,194,71,.12);color:var(--ambar);border-color:rgba(255,194,71,.35)}
+
+/* limbo */
+.limbo-pantalla{flex:1;display:grid;place-content:center;text-align:center;gap:8px}
+.limbo-pantalla .res{font-size:64px;font-weight:900;font-variant-numeric:tabular-nums;transition:color .2s}
+.limbo-pantalla .msg{font-size:13px;color:var(--tenue)}
+.limbo-hist{display:flex;flex-wrap:wrap;gap:5px;justify-content:center;margin-top:10px}
+
+/* plinko */
+.plinko-lienzo{flex:1;min-height:300px;position:relative}
+.plinko-lienzo canvas{width:100%;height:100%;display:block}
+.plinko-cubos{display:flex;gap:3px;margin-top:6px}
+.plinko-cubos div{flex:1;text-align:center;font-size:10.5px;font-weight:800;padding:4px 1px;border-radius:5px;background:var(--panel2)}
+
+/* slot */
+.slot-marco{background:linear-gradient(180deg,#141c2b,#0c121c);border:1px solid var(--linea);border-radius:12px;padding:12px;margin:auto;width:100%;max-width:560px}
+.slot-rejilla{display:grid;grid-template-columns:repeat(6,1fr);gap:5px}
+.slot-col{display:flex;flex-direction:column;gap:6px}
+.slot-sim{
+  aspect-ratio:1;background:var(--panel2);border:1px solid var(--linea);border-radius:8px;
+  display:grid;place-items:center;font-size:21px;transition:.12s;
+}
+.slot-sim.gana{background:rgba(255,194,71,.18);border-color:var(--ambar);transform:scale(1.05)}
+.slot-info{display:flex;justify-content:space-between;margin-top:10px;font-size:12px;color:var(--tenue)}
+
+/* ---------- cuenta ---------- */
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px}
+.kpi{display:flex;flex-direction:column;gap:2px;padding:12px;background:var(--bg2);border:1px solid var(--linea);border-radius:10px}
+.kpi .et{font-size:11px;color:var(--tenue2);text-transform:uppercase;letter-spacing:.7px;font-weight:700}
+.kpi .vl{font-size:21px;font-weight:800;font-variant-numeric:tabular-nums}
+.barra{height:7px;background:var(--panel3);border-radius:4px;overflow:hidden;margin-top:6px}
+.barra i{display:block;height:100%;background:var(--acento);border-radius:4px;transition:width .4s}
+.tabla{width:100%;border-collapse:collapse;font-size:13px}
+.tabla th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--tenue2);padding:7px 9px;border-bottom:1px solid var(--linea)}
+.tabla td{padding:8px 9px;border-bottom:1px solid rgba(38,51,74,.55);font-variant-numeric:tabular-nums}
+.tabla tr:last-child td{border-bottom:none}
+.pos{color:var(--acento)}.neg{color:var(--rojo)}
+
+/* ---------- toasts ---------- */
+#toasts{position:fixed;bottom:18px;right:18px;z-index:400;display:flex;flex-direction:column;gap:8px;align-items:flex-end;pointer-events:none}
+.toast{
+  background:var(--panel2);border:1px solid var(--linea);border-left:3px solid var(--acento);
+  border-radius:9px;padding:10px 14px;font-size:13.5px;font-weight:600;box-shadow:var(--sombra);
+  animation:entra .2s;max-width:330px;
+}
+.toast.err{border-left-color:var(--rojo)}
+.toast.warn{border-left-color:var(--ambar)}
+@keyframes entra{from{transform:translateX(30px);opacity:0}to{transform:none;opacity:1}}
+
+/* ---------- varios ---------- */
+.info-bloque{background:var(--bg2);border:1px solid var(--linea);border-radius:10px;padding:12px 14px;font-size:13px;color:var(--tenue);line-height:1.6}
+.info-bloque h4{color:var(--texto);font-size:13.5px;margin-bottom:5px}
+.info-bloque code{font-family:var(--mono);background:var(--panel2);padding:1px 5px;border-radius:4px;font-size:12px;color:var(--ambar)}
+.formula{font-family:var(--mono);font-size:12.5px;background:var(--bg);border:1px solid var(--linea);border-radius:8px;padding:10px 12px;color:var(--acento);overflow-x:auto;white-space:pre;margin:8px 0}
+.vacio{padding:40px 20px;text-align:center;color:var(--tenue2)}
+.vacio .ic{font-size:40px;display:block;margin-bottom:10px;opacity:.4}
+footer.pie{max-width:1400px;margin:20px auto 0;padding:20px 16px 40px;border-top:1px solid var(--linea);color:var(--tenue2);font-size:12px;line-height:1.7}
+footer.pie b{color:var(--tenue)}
+.sep{height:1px;background:var(--linea);margin:12px 0}
+
+@media(max-width:1040px){
+  .contenedor{grid-template-columns:1fr}
+  .lateral{position:static;order:-1}
+}
+@media(max-width:560px){
+  .top-fila{flex-wrap:wrap;gap:8px}
+  .nav{order:3;width:100%}
+  .saldo-caja{margin-left:auto}
+  .mercado.g3{grid-template-columns:repeat(3,1fr)}
+  .cuota{min-width:0}
+}
+
+/* rueda, ruleta, cartas */
+.rueda-lienzo{flex:1;min-height:300px;position:relative}
+.rueda-lienzo canvas{width:100%;height:100%;display:block}
+.opciones{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:6px;margin-top:10px}
+.opciones button{background:var(--panel2);border:1px solid var(--linea);border-radius:8px;padding:7px 6px;font-size:12px;font-weight:700;color:var(--tenue);display:flex;flex-direction:column;gap:2px}
+.opciones button:hover{background:var(--panel3);color:var(--texto)}
+.opciones button.on{background:var(--acento);border-color:var(--acento);color:#04120a}
+.opciones button i{font-style:normal;font-size:10.5px;opacity:.8}
+.mesa{flex:1;display:flex;flex-direction:column;gap:14px;justify-content:center}
+.mano{display:flex;flex-direction:column;gap:6px}
+.mano .et{font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--tenue2);font-weight:700}
+.cartas{display:flex;gap:7px;flex-wrap:wrap}
+.carta{
+  width:56px;height:78px;border-radius:8px;background:#f6f7fb;color:#12161f;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  font-weight:800;font-size:17px;box-shadow:0 4px 12px rgba(0,0,0,.4);animation:pop .18s;
+}
+.carta.roja{color:#d02020}
+.carta.dorso{background:linear-gradient(135deg,#1d3a6b,#0d1b33);color:#4a6ea8;font-size:22px}
+.carta.hold{outline:2px solid var(--acento);outline-offset:2px}
+.carta small{font-size:10px;opacity:.7;font-weight:700}
+.acciones{display:flex;gap:8px;flex-wrap:wrap}
+.acciones .btn{flex:1;min-width:92px}
+.resultado{text-align:center;font-weight:800;font-size:15px;min-height:22px}
+.ruleta-num{font-size:44px;font-weight:900;text-align:center;font-variant-numeric:tabular-nums}
+.tabla-pagos{width:100%;font-size:12px;border-collapse:collapse;margin-top:8px}
+.tabla-pagos td{padding:3px 6px;border-bottom:1px solid var(--linea)}
+.tabla-pagos td:last-child{text-align:right;color:var(--acento);font-weight:700}
+.tabla-pagos tr.gana td{background:rgba(37,208,122,.14)}
+
+</style>
+<div class="aviso-legal">
+  🔞 <b>SIMULADOR EDUCATIVO</b> · Fichas de demostración, sin dinero real ni pagos de ningún tipo.
+  Proyecto hecho para mostrar cómo funciona por dentro una casa de apuestas. El juego con dinero real
+  es solo para mayores de 18 años y puede generar adicción.
+</div>
+
+<header class="top">
+  <div class="top-fila">
+    <div class="logo">
+      <span class="k">K</span>
+      <span>KRONOS BET</span>
+      <span class="demo">DEMO</span>
+    </div>
+    <nav class="nav" id="nav"></nav>
+    <div class="saldo-caja">
+      <div>
+        <div class="etq">Saldo demo</div>
+        <div class="val" id="saldo">S/ 0.00</div>
+      </div>
+      <button class="btn chico" id="btn-deposito">Depositar</button>
+    </div>
+  </div>
+</header>
+
+<div class="contenedor" id="contenedor">
+  <main class="col-main" id="main"></main>
+  <aside class="lateral" id="lateral">
+    <div class="tarjeta">
+      <h3>🎫 Boleto de apuesta</h3>
+      <div id="boleto"></div>
+    </div>
+    <div class="tarjeta">
+      <h3>ℹ️ Cómo leer una cuota</h3>
+      <div class="cuerpo" style="font-size:12.5px;color:var(--tenue);line-height:1.6">
+        Cuota <b style="color:var(--texto)">2.50</b> significa que S/ 100 devuelven S/ 250: 150 de
+        ganancia más tu inversión. Su probabilidad implícita es <b style="color:var(--texto)">1 / 2.50 = 40%</b>.
+        La suma de las implícitas de un mercado siempre pasa del 100%: esa diferencia es el margen de la casa.
+      </div>
+    </div>
+  </aside>
+</div>
+
+<footer class="pie">
+  <b>KRONOS BET</b> es un proyecto de demostración. No acepta dinero, no procesa pagos, no tiene licencia
+  y no está afiliado a ninguna casa de apuestas real. Los nombres de juegos y proveedores que aparecen en
+  el lobby son referencias al catálogo de la industria; los motores que corren acá son propios y están
+  escritos para mostrar la matemática, no para replicar ningún producto comercial.
+  <div class="sep"></div>
+  Si juegas con dinero real: hazlo solo si eres mayor de edad, ponte un límite antes de empezar y trata
+  la pérdida como el precio del entretenimiento, no como una inversión. Ningún sistema, racha ni
+  estrategia cambia el retorno teórico de un juego. En Perú, la línea de orientación del Mincetur y los
+  programas de autoexclusión de los operadores autorizados existen justamente para eso.
+  <div class="sep"></div>
+  Hecho con HTML, CSS y JavaScript sin dependencias. Todo el estado vive en tu navegador.
+</footer>
+
+<div id="toasts"></div>
+
+<script>
+/* ===========================================================
+   core.js — utilidades compartidas
+   =========================================================== */
+const K = {};
+
+K.CLAVE = 'kronosbet.v1';
+
+/* ---------- números y formato ---------- */
+K.sol = n => 'S/ ' + (Math.round(n * 100) / 100).toLocaleString('es-PE', {
+  minimumFractionDigits: 2, maximumFractionDigits: 2
+});
+K.dec = (n, d = 2) => Number(n).toFixed(d);
+K.pct = (n, d = 1) => (n * 100).toFixed(d) + '%';
+K.clamp = (n, a, b) => Math.max(a, Math.min(b, n));
+K.round2 = n => Math.round(n * 100) / 100;
+
+/* ---------- azar ---------- */
+K.rnd = () => Math.random();
+K.entre = (a, b) => a + Math.random() * (b - a);
+K.entero = (a, b) => Math.floor(a + Math.random() * (b - a + 1));
+K.elige = arr => arr[Math.floor(Math.random() * arr.length)];
+K.mezcla = arr => {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+};
+
+/* Normal estándar por Box-Muller, la usan los modelos de básquet y tenis. */
+K.normal = () => {
+  let u = 0, v = 0;
+  while (u === 0) u = Math.random();
+  while (v === 0) v = Math.random();
+  return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+};
+
+/* Aproximación de la CDF normal (Abramowitz-Stegun 7.1.26). */
+K.cdfNormal = z => {
+  const s = z < 0 ? -1 : 1;
+  const x = Math.abs(z) / Math.SQRT2;
+  const t = 1 / (1 + 0.3275911 * x);
+  const y = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-x * x);
+  return 0.5 * (1 + s * y);
+};
+
+/* ---------- DOM ---------- */
+K.$ = (sel, raiz = document) => raiz.querySelector(sel);
+K.$$ = (sel, raiz = document) => [...raiz.querySelectorAll(sel)];
+K.el = (tag, props = {}, hijos = []) => {
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(props)) {
+    if (k === 'class') e.className = v;
+    else if (k === 'html') e.innerHTML = v;
+    else if (k === 'text') e.textContent = v;
+    else if (k.startsWith('on')) e.addEventListener(k.slice(2), v);
+    else if (v !== null && v !== undefined) e.setAttribute(k, v);
+  }
+  for (const h of [].concat(hijos)) if (h) e.appendChild(h);
+  return e;
+};
+K.esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+/* ---------- bus de eventos ---------- */
+K.bus = (() => {
+  const subs = {};
+  return {
+    on: (ev, fn) => { (subs[ev] ||= []).push(fn); },
+    emit: (ev, dato) => { (subs[ev] || []).forEach(fn => fn(dato)); }
+  };
+})();
+
+/* ---------- avisos ---------- */
+K.aviso = (msg, tipo = '') => {
+  const cont = K.$('#toasts');
+  if (!cont) return;
+  const t = K.el('div', { class: 'toast ' + tipo, html: msg });
+  cont.appendChild(t);
+  setTimeout(() => {
+    t.style.transition = 'opacity .3s, transform .3s';
+    t.style.opacity = '0';
+    t.style.transform = 'translateX(20px)';
+    setTimeout(() => t.remove(), 300);
+  }, 3400);
+};
+
+/* ---------- persistencia ---------- */
+K.guardar = estado => {
+  try { localStorage.setItem(K.CLAVE, JSON.stringify(estado)); } catch (e) { /* modo privado */ }
+};
+K.cargar = () => {
+  try {
+    const raw = localStorage.getItem(K.CLAVE);
+    return raw ? JSON.parse(raw) : null;
+  } catch (e) { return null; }
+};
+
+/* ---------- tiempo ---------- */
+K.hora = ms => new Date(ms).toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' });
+K.fecha = ms => new Date(ms).toLocaleDateString('es-PE', { day: '2-digit', month: 'short' });
+K.fechaHora = ms => K.fecha(ms) + ' ' + K.hora(ms);
+K.enEspera = ms => new Promise(r => setTimeout(r, ms));
+
+</script>
+<script>
+/* ===========================================================
+   odds.js — modelos de probabilidad, margen y cuotas
+   Todo el precio que ves en el sitio sale de acá.
+   =========================================================== */
+K.Odds = (() => {
+
+  /* -------- Poisson: base del fútbol -------- */
+  const fact = n => { let r = 1; for (let i = 2; i <= n; i++) r *= i; return r; };
+  const poisson = (lam, k) => Math.exp(-lam) * Math.pow(lam, k) / fact(k);
+
+  /* Matriz de marcadores hasta MAX goles por equipo. */
+  const MAX = 9;
+  function matriz(lh, la) {
+    const m = [];
+    for (let i = 0; i <= MAX; i++) {
+      m[i] = [];
+      for (let j = 0; j <= MAX; j++) m[i][j] = poisson(lh, i) * poisson(la, j);
+    }
+    return m;
+  }
+  /* Suma de todas las celdas donde se cumple la condición. */
+  const sumar = (m, cond) => {
+    let s = 0;
+    for (let i = 0; i <= MAX; i++) for (let j = 0; j <= MAX; j++) if (cond(i, j)) s += m[i][j];
+    return s;
+  };
+
+  /* -------------------------------------------------------
+     Margen: de probabilidad justa a cuota comercial.
+     M = overround (1.05 => 105%). pesos = reparto del dinero
+     que ya entró a cada resultado; si un lado carga mucho,
+     ese lado paga menos.
+     ------------------------------------------------------- */
+  function cuotas(probs, M, pesos) {
+    const n = probs.length;
+    let aj = probs.map((p, i) => {
+      if (!pesos) return p;
+      const desvio = pesos[i] - 1 / n;
+      return p * (1 + 0.9 * desvio);
+    });
+    const s = aj.reduce((a, b) => a + b, 0) || 1;
+    return aj.map(p => {
+      const pf = (p / s) * M;
+      return Math.max(1.01, Math.floor((1 / pf) * 100) / 100);
+    });
+  }
+
+  const overround = cs => cs.reduce((a, c) => a + 1 / c, 0);
+  const implicita = c => 1 / c;
+
+  /* -------------------------------------------------------
+     Valor de cashout.
+       stake * cuotaBloqueada / cuotaActual * (1 - margenCash)
+     ------------------------------------------------------- */
+  function cashout(stake, cuotaBloqueada, cuotaActual, margenCash = 0.05) {
+    if (!cuotaActual || cuotaActual <= 1) return 0;
+    return Math.max(0, K.round2(stake * cuotaBloqueada / cuotaActual * (1 - margenCash)));
+  }
+
+  /* -------------------------------------------------------
+     Mercados de fútbol a partir de goles esperados.
+     En vivo se recorta lambda por el tiempo que queda y se
+     arrastra el marcador actual.
+     ------------------------------------------------------- */
+  function futbol(ev) {
+    const vivo = ev.vivo;
+    const min = vivo ? ev.minuto : 0;
+    const resta = vivo ? Math.max(0.02, (90 - min) / 90) : 1;
+    // Un equipo que va perdiendo empuja un poco más; el que gana se repliega.
+    const gl = ev.marcador.l, gv = ev.marcador.v;
+    const dif = gl - gv;
+    const empujeL = vivo ? (dif < 0 ? 1.12 : dif > 0 ? 0.92 : 1) : 1;
+    const empujeV = vivo ? (dif > 0 ? 1.12 : dif < 0 ? 0.92 : 1) : 1;
+    const lh = ev.modelo.lh * resta * empujeL;
+    const la = ev.modelo.la * resta * empujeV;
+    const m = matriz(lh, la);
+
+    const p1 = sumar(m, (i, j) => i + gl > j + gv);
+    const px = sumar(m, (i, j) => i + gl === j + gv);
+    const p2 = sumar(m, (i, j) => i + gl < j + gv);
+
+    const tot = k => sumar(m, (i, j) => i + j + gl + gv > k);
+    const btts = sumar(m, (i, j) => (i + gl) > 0 && (j + gv) > 0);
+
+    // Hándicap europeo: local con -1 gol de arranque.
+    const h1 = sumar(m, (i, j) => i + gl - 1 > j + gv);
+    const hx = sumar(m, (i, j) => i + gl - 1 === j + gv);
+    const h2 = sumar(m, (i, j) => i + gl - 1 < j + gv);
+
+    const L = ev.local, V = ev.visita;
+    return [
+      { id: '1x2', nombre: 'Resultado del partido', destacado: true, cols: 3,
+        sel: [{ id: '1', lab: '1', p: p1, extra: L }, { id: 'X', lab: 'X', p: px, extra: 'Empate' }, { id: '2', lab: '2', p: p2, extra: V }] },
+      { id: 'dobleop', nombre: 'Doble oportunidad', cols: 3,
+        sel: [{ id: '1X', lab: '1X', p: p1 + px }, { id: '12', lab: '12', p: p1 + p2 }, { id: 'X2', lab: 'X2', p: px + p2 }] },
+      { id: 'ou25', nombre: 'Total de goles 2.5', destacado: true, cols: 2,
+        sel: [{ id: 'O2.5', lab: 'Más de 2.5', p: tot(2.5) }, { id: 'U2.5', lab: 'Menos de 2.5', p: 1 - tot(2.5) }] },
+      { id: 'ou15', nombre: 'Total de goles 1.5', cols: 2,
+        sel: [{ id: 'O1.5', lab: 'Más de 1.5', p: tot(1.5) }, { id: 'U1.5', lab: 'Menos de 1.5', p: 1 - tot(1.5) }] },
+      { id: 'ou35', nombre: 'Total de goles 3.5', cols: 2,
+        sel: [{ id: 'O3.5', lab: 'Más de 3.5', p: tot(3.5) }, { id: 'U3.5', lab: 'Menos de 3.5', p: 1 - tot(3.5) }] },
+      { id: 'btts', nombre: 'Ambos equipos anotan', destacado: true, cols: 2,
+        sel: [{ id: 'BTTS-S', lab: 'Sí', p: btts }, { id: 'BTTS-N', lab: 'No', p: 1 - btts }] },
+      { id: 'hcp', nombre: 'Hándicap ' + L + ' (-1)', cols: 3,
+        sel: [{ id: 'H1', lab: '1', p: h1 }, { id: 'HX', lab: 'X', p: hx }, { id: 'H2', lab: '2', p: h2 }] }
+    ];
+  }
+
+  /* -------- Básquet: margen y total con normal -------- */
+  function basket(ev) {
+    const vivo = ev.vivo;
+    const resta = vivo ? Math.max(0.03, (48 - ev.minuto) / 48) : 1;
+    const dif = ev.marcador.l - ev.marcador.v;
+    const spread = ev.modelo.spread * resta + dif;      // margen esperado final
+    const total = ev.modelo.total * resta + ev.marcador.l + ev.marcador.v;
+    const sd = 11.5 * Math.sqrt(resta);
+    const sdT = 14 * Math.sqrt(resta);
+    const pL = K.cdfNormal(spread / sd);
+    const lineaH = Math.round(ev.modelo.spread * resta * 2) / 2 || 0.5;
+    const lineaT = Math.round(total / 5) * 5 + 0.5;
+
+    const pHL = K.cdfNormal((spread + lineaH) / sd);
+    const pOver = 1 - K.cdfNormal((lineaT - total) / sdT);
+    const L = ev.local, V = ev.visita;
+    return [
+      { id: 'ml', nombre: 'Ganador del partido', destacado: true, cols: 2,
+        sel: [{ id: '1', lab: '1', p: pL, extra: L }, { id: '2', lab: '2', p: 1 - pL, extra: V }] },
+      { id: 'hcp', nombre: 'Hándicap de puntos', destacado: true, cols: 2, linea: lineaH,
+        sel: [{ id: 'H1', lab: L + ' ' + (-lineaH), p: pHL }, { id: 'H2', lab: V + ' +' + lineaH, p: 1 - pHL }] },
+      { id: 'tot', nombre: 'Total de puntos ' + lineaT, destacado: true, cols: 2, linea: lineaT,
+        sel: [{ id: 'O', lab: 'Más de ' + lineaT, p: pOver }, { id: 'U', lab: 'Menos de ' + lineaT, p: 1 - pOver }] }
+    ];
+  }
+
+  /* -------- Tenis: del partido a sets y games -------- */
+  function tenis(ev) {
+    let p = ev.modelo.p1;
+    if (ev.vivo) {
+      // Cada game ganado mueve la probabilidad; el marcador manda.
+      const d = ev.marcador.l - ev.marcador.v;
+      p = K.clamp(p + d * 0.11, 0.02, 0.98);
+    }
+    // Probabilidad de set desde la del partido (al 3, aproximación numérica).
+    let q = 0.5, lo = 0.01, hi = 0.99;
+    for (let i = 0; i < 40; i++) {
+      q = (lo + hi) / 2;
+      const pm = q * q * (1 + 2 * (1 - q));
+      if (pm < p) lo = q; else hi = q;
+    }
+    const dosSets = q * q + (1 - q) * (1 - q);            // 2-0 para cualquiera
+    const L = ev.local, V = ev.visita;
+    return [
+      { id: 'ml', nombre: 'Ganador del partido', destacado: true, cols: 2,
+        sel: [{ id: '1', lab: '1', p, extra: L }, { id: '2', lab: '2', p: 1 - p, extra: V }] },
+      { id: 'sets', nombre: 'Total de sets 2.5', destacado: true, cols: 2,
+        sel: [{ id: 'U2.5', lab: 'Menos de 2.5', p: dosSets }, { id: 'O2.5', lab: 'Más de 2.5', p: 1 - dosSets }] },
+      { id: 'hcps', nombre: 'Hándicap de sets ±1.5', cols: 2, linea: 1.5,
+        sel: [{ id: 'H1', lab: L + ' -1.5', p: q * q }, { id: 'H2', lab: V + ' +1.5', p: 1 - q * q }] }
+    ];
+  }
+
+  /* -------- Series al mejor de N (eSports, vóley) -------- */
+  function series(ev) {
+    const bo = ev.modelo.bo || 3;
+    const need = Math.ceil(bo / 2);
+    let q = ev.modelo.q;
+    if (ev.vivo) {
+      const d = ev.marcador.l - ev.marcador.v;
+      q = K.clamp(q + d * 0.13, 0.03, 0.97);
+    }
+    // Probabilidad de ganar la serie ganando "need" mapas antes que el rival.
+    const comb = (n, k) => { let r = 1; for (let i = 0; i < k; i++) r = r * (n - i) / (i + 1); return r; };
+    let pSerie = 0, p20 = 0;
+    for (let perd = 0; perd < need; perd++) {
+      const juegos = need + perd;
+      const pr = comb(juegos - 1, perd) * Math.pow(q, need) * Math.pow(1 - q, perd);
+      pSerie += pr;
+      if (perd === 0) p20 = pr;
+    }
+    let pBarrida = p20 + Math.pow(1 - q, need);
+    const L = ev.local, V = ev.visita;
+    const uni = ev.deporte === 'volley' ? 'sets' : 'mapas';
+    return [
+      { id: 'ml', nombre: 'Ganador de la serie', destacado: true, cols: 2,
+        sel: [{ id: '1', lab: '1', p: pSerie, extra: L }, { id: '2', lab: '2', p: 1 - pSerie, extra: V }] },
+      { id: 'barrida', nombre: 'Serie sin ' + uni + ' en contra', destacado: true, cols: 2,
+        sel: [{ id: 'SI', lab: 'Sí', p: pBarrida }, { id: 'NO', lab: 'No', p: 1 - pBarrida }] },
+      { id: 'hcp', nombre: 'Hándicap de ' + uni + ' ±1.5', cols: 2,
+        sel: [{ id: 'H1', lab: L + ' -1.5', p: p20 }, { id: 'H2', lab: V + ' +1.5', p: 1 - p20 }] }
+    ];
+  }
+
+  /* -------------------------------------------------------
+     Punto de entrada: devuelve mercados con cuota comercial
+     ya calculada, incluyendo el sesgo por responsabilidad.
+     ------------------------------------------------------- */
+  function construir(ev) {
+    const base = ev.deporte === 'futbol' ? futbol(ev)
+      : ev.deporte === 'basket' ? basket(ev)
+      : ev.deporte === 'tenis' ? tenis(ev)
+      : series(ev);
+
+    // El margen sube en vivo: menos información, más riesgo.
+    const M = ev.margen + (ev.vivo ? 0.025 : 0);
+
+    for (const merc of base) {
+      const probs = merc.sel.map(s => s.p);
+      const exp = merc.sel.map(s => (ev.exposicion && ev.exposicion[merc.id + '|' + s.id]) || 0);
+      const totalExp = exp.reduce((a, b) => a + b, 0);
+      const pesos = totalExp > 0 ? exp.map(e => e / totalExp) : null;
+      const cs = cuotas(probs, M, pesos);
+      merc.sel.forEach((s, i) => {
+        s.cuota = cs[i];
+        s.impl = implicita(cs[i]);
+      });
+      merc.overround = overround(cs);
+      merc.margen = merc.overround - 1;
+    }
+    return base;
+  }
+
+  return { construir, cuotas, overround, implicita, cashout, poisson, matriz };
+})();
+
+</script>
+<script>
+/* ===========================================================
+   wallet.js — saldo virtual, libro mayor, límites y perfilado
+   Nada de esto toca dinero real: son fichas de demostración.
+   =========================================================== */
+K.Wallet = (() => {
+
+  const INICIAL = 1000;
+
+  const base = () => ({
+    saldo: INICIAL,
+    depositado: INICIAL,
+    rollover: 0,                     // cuánto falta apostar para poder "retirar"
+    ledger: [{ t: Date.now(), tipo: 'deposito', monto: INICIAL, det: 'Saldo de bienvenida (demo)', saldo: INICIAL }],
+    apuestas: [],
+    casino: { jugadas: 0, apostado: 0, devuelto: 0, historial: {} },
+    perfil: { clv: [], categoria: 'recreativo', limiteApuesta: 500, marcas: [] },
+    limites: { depositoDiario: 2000, apuestaMax: 500, autoexcluidoHasta: 0, recordatorioMin: 30 },
+    kyc: { verificado: false, nivel: 0 },
+    sesion: { inicio: Date.now(), avisado: 0 }
+  });
+
+  let s = null;
+
+  function init() {
+    const guardado = K.cargar();
+    s = guardado && guardado.saldo !== undefined ? { ...base(), ...guardado } : base();
+    s.sesion = { inicio: Date.now(), avisado: 0 };
+    persistir();
+    return s;
+  }
+  const persistir = () => { K.guardar(s); K.bus.emit('saldo', s.saldo); };
+  const est = () => s;
+
+  /* ---------- movimientos ---------- */
+  function mover(monto, tipo, det) {
+    s.saldo = K.round2(s.saldo + monto);
+    s.ledger.unshift({ t: Date.now(), tipo, monto: K.round2(monto), det, saldo: s.saldo });
+    if (s.ledger.length > 300) s.ledger.length = 300;
+    persistir();
+  }
+
+  function depositar(monto) {
+    if (monto <= 0) return { ok: false, razon: 'Monto inválido' };
+    const hoy = new Date().setHours(0, 0, 0, 0);
+    const yaHoy = s.ledger.filter(l => l.tipo === 'deposito' && l.t >= hoy).reduce((a, l) => a + l.monto, 0);
+    if (yaHoy + monto > s.limites.depositoDiario)
+      return { ok: false, razon: `Superas tu límite diario de depósito (${K.sol(s.limites.depositoDiario)}). Llevas ${K.sol(yaHoy)} hoy.` };
+    s.depositado = K.round2(s.depositado + monto);
+    s.rollover = K.round2(s.rollover + monto);      // regla 1x antes de retirar
+    mover(monto, 'deposito', 'Recarga demo');
+    return { ok: true };
+  }
+
+  function retirar(monto) {
+    if (!s.kyc.verificado) return { ok: false, razon: 'Necesitas completar la verificación de identidad (KYC) antes del primer retiro.' };
+    if (s.rollover > 0) return { ok: false, razon: `Te falta apostar ${K.sol(s.rollover)} para liberar el retiro (regla de rollover 1x).` };
+    if (monto > s.saldo) return { ok: false, razon: 'Saldo insuficiente' };
+    mover(-monto, 'retiro', 'Retiro simulado');
+    return { ok: true };
+  }
+
+  /* ---------- validación previa a apostar ---------- */
+  function puedeApostar(monto) {
+    if (Date.now() < s.limites.autoexcluidoHasta)
+      return { ok: false, razon: 'Tienes una pausa de juego activa hasta ' + K.hora(s.limites.autoexcluidoHasta) + '.' };
+    if (!(monto > 0)) return { ok: false, razon: 'Ingresa un monto válido' };
+    if (monto > s.saldo) return { ok: false, razon: 'Saldo insuficiente' };
+    const tope = Math.min(s.limites.apuestaMax, s.perfil.limiteApuesta);
+    if (monto > tope) return { ok: false, razon: `El límite de esta cuenta es ${K.sol(tope)} por apuesta.` };
+    return { ok: true };
+  }
+
+  /* Congela el importe: sale del saldo apenas se acepta la apuesta. */
+  function apostar(monto, det) {
+    mover(-monto, 'apuesta', det);
+    s.rollover = K.round2(Math.max(0, s.rollover - monto));
+    persistir();
+  }
+  function acreditar(monto, det, tipo = 'ganancia') {
+    if (monto > 0) mover(monto, tipo, det);
+  }
+
+  /* ---------- perfilado del usuario (CLV) ---------- */
+  /* Si el jugador consigue mejores cuotas que las de cierre de forma
+     sistemática, el motor lo marca como sharp y le baja el límite. */
+  function registrarCLV(cuotaTomada, cuotaCierre) {
+    if (!cuotaCierre || !cuotaTomada) return;
+    const valor = (cuotaTomada / cuotaCierre - 1);
+    s.perfil.clv.unshift(K.round2(valor * 100));
+    if (s.perfil.clv.length > 60) s.perfil.clv.length = 60;
+    recalcularPerfil();
+  }
+
+  function recalcularPerfil() {
+    const c = s.perfil.clv;
+    if (c.length < 8) { persistir(); return; }
+    const medio = c.reduce((a, b) => a + b, 0) / c.length;
+    const marcas = [];
+    if (medio > 3) marcas.push('CLV positivo sostenido (+' + medio.toFixed(1) + '%)');
+    const simples = s.apuestas.filter(a => a.lineas.length === 1).length;
+    const total = s.apuestas.length || 1;
+    if (simples / total > 0.85 && total > 10) marcas.push('Casi solo apuestas simples de volumen');
+    const antes = s.apuestas.filter(a => a.antelacionMin > 600).length;
+    if (antes / total > 0.5 && total > 10) marcas.push('Apuesta con mucha antelación');
+
+    const antesCat = s.perfil.categoria;
+    if (medio > 3 && marcas.length >= 2) { s.perfil.categoria = 'sharp'; s.perfil.limiteApuesta = 60; }
+    else if (medio > 1.5) { s.perfil.categoria = 'observado'; s.perfil.limiteApuesta = 220; }
+    else { s.perfil.categoria = 'recreativo'; s.perfil.limiteApuesta = 500; }
+    s.perfil.marcas = marcas;
+    if (antesCat !== s.perfil.categoria && s.perfil.categoria === 'sharp')
+      K.aviso('⚠️ El motor de riesgo te clasificó como <b>sharp</b>. Límite por apuesta reducido a ' + K.sol(60) + '.', 'warn');
+    persistir();
+  }
+
+  /* ---------- juego responsable ---------- */
+  function pausar(minutos) {
+    s.limites.autoexcluidoHasta = Date.now() + minutos * 60000;
+    persistir();
+  }
+  function verificarKYC() {
+    s.kyc = { verificado: true, nivel: 2 };
+    persistir();
+  }
+  function reiniciar() {
+    s = base();
+    persistir();
+  }
+  function tiempoSesion() { return Date.now() - s.sesion.inicio; }
+
+  return {
+    init, est, persistir, mover, depositar, retirar, puedeApostar, apostar,
+    acreditar, registrarCLV, recalcularPerfil, pausar, verificarKYC, reiniciar, tiempoSesion, INICIAL
+  };
+})();
+
+</script>
+<script>
+/* ===========================================================
+   data-sports.js — catálogo de eventos
+   Los "modelo" son los parámetros que come el motor de cuotas:
+     fútbol  -> lh / la  (goles esperados de cada lado)
+     básquet -> spread / total
+     tenis   -> p1 (prob. de que gane el primero)
+     series  -> q (prob. por mapa/set) y bo (al mejor de)
+   =========================================================== */
+K.DEPORTES = [
+  { id: 'futbol', nom: 'Fútbol', ic: '⚽' },
+  { id: 'basket', nom: 'Básquet', ic: '🏀' },
+  { id: 'tenis', nom: 'Tenis', ic: '🎾' },
+  { id: 'esports', nom: 'eSports', ic: '🎮' },
+  { id: 'volley', nom: 'Vóley', ic: '🏐' }
+];
+
+const _m = min => Date.now() + min * 60000;
+
+K.EVENTOS = [
+  /* ---------------- EN VIVO ---------------- */
+  { id: 'e01', deporte: 'futbol', liga: 'Liga 1 · Perú', local: 'Alianza Lima', visita: 'Universitario',
+    escL: '🔵', escV: '🟡', inicio: _m(-37), vivo: true, minuto: 37, marcador: { l: 1, v: 0 },
+    modelo: { lh: 1.42, la: 1.18 }, margen: 1.055 },
+  { id: 'e02', deporte: 'futbol', liga: 'Brasileirão', local: 'Flamengo', visita: 'Palmeiras',
+    escL: '🔴', escV: '🟢', inicio: _m(-63), vivo: true, minuto: 63, marcador: { l: 1, v: 1 },
+    modelo: { lh: 1.55, la: 1.30 }, margen: 1.05 },
+  { id: 'e03', deporte: 'basket', liga: 'NBA', local: 'Lakers', visita: 'Celtics',
+    escL: '🟣', escV: '🟩', inicio: _m(-28), vivo: true, minuto: 28, marcador: { l: 74, v: 81 },
+    modelo: { spread: -1.5, total: 226 }, margen: 1.045 },
+  { id: 'e04', deporte: 'tenis', liga: 'ATP 500 · Río', local: 'C. Alcaraz', visita: 'A. Zverev',
+    escL: '🇪🇸', escV: '🇩🇪', inicio: _m(-44), vivo: true, minuto: 44, marcador: { l: 1, v: 0 },
+    modelo: { p1: 0.66 }, margen: 1.05 },
+  { id: 'e05', deporte: 'esports', liga: 'CS2 · BLAST Premier', local: 'FaZe', visita: 'NAVI',
+    escL: '🟥', escV: '🟨', inicio: _m(-22), vivo: true, minuto: 22, marcador: { l: 1, v: 0 },
+    modelo: { q: 0.53, bo: 3 }, margen: 1.06 },
+  { id: 'e06', deporte: 'volley', liga: 'Liga Nacional · Perú', local: 'Regatas', visita: 'San Martín',
+    escL: '⚪', escV: '🔷', inicio: _m(-31), vivo: true, minuto: 31, marcador: { l: 1, v: 1 },
+    modelo: { q: 0.55, bo: 5 }, margen: 1.07 },
+
+  /* ---------------- FÚTBOL PREPARTIDO ---------------- */
+  { id: 'e10', deporte: 'futbol', liga: 'Liga 1 · Perú', local: 'Sporting Cristal', visita: 'Melgar',
+    escL: '🔷', escV: '🔴', inicio: _m(95), modelo: { lh: 1.68, la: 0.94 }, margen: 1.055 },
+  { id: 'e11', deporte: 'futbol', liga: 'Liga 1 · Perú', local: 'Cienciano', visita: 'Cusco FC',
+    escL: '🔴', escV: '⚫', inicio: _m(180), modelo: { lh: 1.30, la: 1.05 }, margen: 1.06 },
+  { id: 'e12', deporte: 'futbol', liga: 'Copa Libertadores', local: 'River Plate', visita: 'Boca Juniors',
+    escL: '⚪', escV: '🔵', inicio: _m(240), modelo: { lh: 1.48, la: 1.02 }, margen: 1.045 },
+  { id: 'e13', deporte: 'futbol', liga: 'LaLiga', local: 'Real Madrid', visita: 'Girona',
+    escL: '⚪', escV: '🔴', inicio: _m(320), modelo: { lh: 2.35, la: 0.85 }, margen: 1.04 },
+  { id: 'e14', deporte: 'futbol', liga: 'Premier League', local: 'Arsenal', visita: 'Liverpool',
+    escL: '🔴', escV: '🟥', inicio: _m(400), modelo: { lh: 1.62, la: 1.44 }, margen: 1.04 },
+  { id: 'e15', deporte: 'futbol', liga: 'Serie A', local: 'Inter', visita: 'Napoli',
+    escL: '🔵', escV: '🔷', inicio: _m(470), modelo: { lh: 1.55, la: 1.15 }, margen: 1.045 },
+  { id: 'e16', deporte: 'futbol', liga: 'Eliminatorias CONMEBOL', local: 'Perú', visita: 'Chile',
+    escL: '🇵🇪', escV: '🇨🇱', inicio: _m(1400), modelo: { lh: 1.22, la: 0.98 }, margen: 1.05 },
+  { id: 'e17', deporte: 'futbol', liga: 'Champions League', local: 'Bayern', visita: 'PSG',
+    escL: '🔴', escV: '🔵', inicio: _m(1500), modelo: { lh: 1.85, la: 1.35 }, margen: 1.035 },
+
+  /* ---------------- BÁSQUET ---------------- */
+  { id: 'e20', deporte: 'basket', liga: 'NBA', local: 'Nuggets', visita: 'Suns',
+    escL: '🟡', escV: '🟠', inicio: _m(150), modelo: { spread: 5.5, total: 232 }, margen: 1.04 },
+  { id: 'e21', deporte: 'basket', liga: 'NBA', local: 'Warriors', visita: 'Thunder',
+    escL: '🔵', escV: '🟦', inicio: _m(260), modelo: { spread: -3.5, total: 228 }, margen: 1.04 },
+  { id: 'e22', deporte: 'basket', liga: 'Liga ACB', local: 'Real Madrid B.', visita: 'Barça',
+    escL: '⚪', escV: '🔵', inicio: _m(330), modelo: { spread: 2.5, total: 163 }, margen: 1.05 },
+  { id: 'e23', deporte: 'basket', liga: 'NBA', local: 'Bucks', visita: 'Heat',
+    escL: '🟩', escV: '🔴', inicio: _m(420), modelo: { spread: 7.5, total: 221 }, margen: 1.04 },
+
+  /* ---------------- TENIS ---------------- */
+  { id: 'e30', deporte: 'tenis', liga: 'ATP Masters 1000', local: 'J. Sinner', visita: 'D. Medvedev',
+    escL: '🇮🇹', escV: '🇷🇺', inicio: _m(120), modelo: { p1: 0.71 }, margen: 1.045 },
+  { id: 'e31', deporte: 'tenis', liga: 'WTA 1000', local: 'I. Świątek', visita: 'A. Sabalenka',
+    escL: '🇵🇱', escV: '🇧🇾', inicio: _m(200), modelo: { p1: 0.57 }, margen: 1.05 },
+  { id: 'e32', deporte: 'tenis', liga: 'ATP Challenger · Lima', local: 'I. Buse', visita: 'F. Coria',
+    escL: '🇵🇪', escV: '🇦🇷', inicio: _m(280), modelo: { p1: 0.48 }, margen: 1.065 },
+  { id: 'e33', deporte: 'tenis', liga: 'ATP 250', local: 'N. Djokovic', visita: 'H. Rune',
+    escL: '🇷🇸', escV: '🇩🇰', inicio: _m(390), modelo: { p1: 0.68 }, margen: 1.05 },
+
+  /* ---------------- ESPORTS ---------------- */
+  { id: 'e40', deporte: 'esports', liga: 'LoL · LTA Sur', local: 'Leviatán', visita: 'Estral',
+    escL: '🟪', escV: '🟧', inicio: _m(110), modelo: { q: 0.58, bo: 3 }, margen: 1.06 },
+  { id: 'e41', deporte: 'esports', liga: 'Dota 2 · ESL', local: 'Team Spirit', visita: 'Gaimin',
+    escL: '⬛', escV: '🟦', inicio: _m(210), modelo: { q: 0.62, bo: 3 }, margen: 1.06 },
+  { id: 'e42', deporte: 'esports', liga: 'Valorant · VCT', local: 'Sentinels', visita: 'LOUD',
+    escL: '🔴', escV: '🟩', inicio: _m(300), modelo: { q: 0.49, bo: 3 }, margen: 1.065 },
+  { id: 'e43', deporte: 'esports', liga: 'CS2 · IEM', local: 'Vitality', visita: 'G2',
+    escL: '🟨', escV: '⬛', inicio: _m(380), modelo: { q: 0.55, bo: 3 }, margen: 1.06 },
+
+  /* ---------------- VÓLEY ---------------- */
+  { id: 'e50', deporte: 'volley', liga: 'Liga Nacional · Perú', local: 'Alianza Lima', visita: 'Géminis',
+    escL: '🔵', escV: '🟣', inicio: _m(160), modelo: { q: 0.61, bo: 5 }, margen: 1.07 },
+  { id: 'e51', deporte: 'volley', liga: 'VNL Femenina', local: 'Brasil', visita: 'Italia',
+    escL: '🇧🇷', escV: '🇮🇹', inicio: _m(250), modelo: { q: 0.52, bo: 5 }, margen: 1.06 },
+  { id: 'e52', deporte: 'volley', liga: 'Superliga Brasil', local: 'Sesc RJ', visita: 'Praia Clube',
+    escL: '🟥', escV: '🟨', inicio: _m(340), modelo: { q: 0.56, bo: 5 }, margen: 1.065 }
+];
+
+/* Cada evento arranca sin exposición: el libro se va llenando con lo que apuesta el usuario. */
+K.EVENTOS.forEach(e => {
+  e.vivo = !!e.vivo;
+  e.minuto = e.minuto || 0;
+  e.marcador = e.marcador || { l: 0, v: 0 };
+  e.exposicion = {};
+  e.suspendido = false;
+  e.historialCuotas = {};
+});
+
+K.evento = id => K.EVENTOS.find(e => e.id === id);
+
+</script>
+<script>
+/* ===========================================================
+   data-casino.js — lobby del casino
+   motor: mines | aviator | limbo | plinko | slot | info
+   Los títulos y proveedores son referencias del catálogo real;
+   acá todos corren sobre motores propios de demostración.
+   =========================================================== */
+K.CATEGORIAS = [
+  { id: 'todos', nom: 'Todos', ic: '🎰' },
+  { id: 'slots', nom: 'Tragamonedas', ic: '🍒' },
+  { id: 'crash', nom: 'Crash e instantáneos', ic: '🚀' },
+  { id: 'vivo', nom: 'En vivo y game shows', ic: '🎥' },
+  { id: 'mesa', nom: 'Mesa RNG y video póker', ic: '🃏' }
+];
+
+/* Paletas para la portada de cada juego */
+const G = {
+  zeus: 'linear-gradient(140deg,#3b2a6b,#1b2a5e)',
+  dulce: 'linear-gradient(140deg,#7b2a5e,#3a1a4e)',
+  egipto: 'linear-gradient(140deg,#6b5320,#2e2410)',
+  pesca: 'linear-gradient(140deg,#14506b,#0a2a3c)',
+  fruta: 'linear-gradient(140deg,#6b2020,#3a1010)',
+  oro: 'linear-gradient(140deg,#6b5010,#2f2408)',
+  jungla: 'linear-gradient(140deg,#1d5b3a,#0d2a1c)',
+  espacio: 'linear-gradient(140deg,#1b2f6b,#0a1230)',
+  neon: 'linear-gradient(140deg,#5b1d6b,#180a30)',
+  vivo: 'linear-gradient(140deg,#6b1d2a,#2a0a12)',
+  mesa: 'linear-gradient(140deg,#14452e,#072014)',
+  chili: 'linear-gradient(140deg,#7a2a12,#3a1206)'
+};
+
+K.JUEGOS = [
+  /* ---------------- TRAGAMONEDAS (1-12) ---------------- */
+  { n: 1, id: 'gates', nom: 'Gates of Olympus', prov: 'Pragmatic Play', cat: 'slots', ic: '⚡', grad: G.zeus,
+    desc: 'Pagos en cascada y multiplicadores de Zeus hasta x500 con giros gratis.',
+    motor: 'slot', cfg: { simbolos: ['⚡', '👑', '💍', '🏺', '💎', '🔴', '🟣', '🟢'], vol: 'alta', rtp: 96.5, mult: [0, 0, 0, 2, 5, 12, 40, 120] } },
+  { n: 2, id: 'sweet', nom: 'Sweet Bonanza', prov: 'Pragmatic Play', cat: 'slots', ic: '🍭', grad: G.dulce,
+    desc: 'Mecánica Pay Anywhere: pagan 8 símbolos iguales caigan donde caigan.',
+    motor: 'slot', cfg: { simbolos: ['🍭', '🍬', '🍉', '🍇', '🍎', '🫐', '🍌', '💜'], vol: 'alta', rtp: 96.5, mult: [0, 0, 0, 2, 4, 10, 35, 100] } },
+  { n: 3, id: 'bookdead', nom: 'Book of Dead', prov: "Play'n GO", cat: 'slots', ic: '📖', grad: G.egipto,
+    desc: 'Aventura egipcia con símbolo expansivo durante la ronda de bonificación.',
+    motor: 'slot', cfg: { simbolos: ['📖', '🧙', '🦅', '🐍', '🪲', '🅰️', '🇰', '🇶'], vol: 'alta', rtp: 96.2, mult: [0, 0, 0, 3, 6, 15, 45, 150] } },
+  { n: 4, id: 'bigbass', nom: 'Big Bass Bonanza', prov: 'Pragmatic Play', cat: 'slots', ic: '🐟', grad: G.pesca,
+    desc: 'Pesca interactiva: el pescador recolecta los símbolos de dinero.',
+    motor: 'slot', cfg: { simbolos: ['🐟', '🎣', '🪝', '🛶', '🐠', '🅰️', '🇰', '🇶'], vol: 'media', rtp: 96.7, mult: [0, 0, 0, 2, 4, 9, 25, 80] } },
+  { n: 5, id: 'sugar', nom: 'Sugar Rush 1000', prov: 'Pragmatic Play', cat: 'slots', ic: '🧁', grad: G.dulce,
+    desc: 'Cuadrícula con posiciones multiplicadoras que se duplican al repetir premio.',
+    motor: 'slot', cfg: { simbolos: ['🧁', '🍫', '🍩', '🍪', '🍓', '🟦', '🟨', '🟩'], vol: 'alta', rtp: 96.5, mult: [0, 0, 0, 2, 5, 14, 50, 140] } },
+  { n: 6, id: 'chilli', nom: 'Extra Chilli Megaways', prov: 'Big Time Gaming', cat: 'slots', ic: '🌶️', grad: G.chili,
+    desc: 'Megaways con hasta 117.649 formas de ganar y carretes en cascada.',
+    motor: 'slot', cfg: { simbolos: ['🌶️', '🌽', '🥑', '🫘', '🍅', '🇰', '🇶', '🇯'], vol: 'alta', rtp: 96.8, mult: [0, 0, 0, 3, 7, 18, 60, 180] } },
+  { n: 7, id: 'sizzling', nom: 'Sizzling Hot Deluxe', prov: 'Novomatic / Greentube', cat: 'slots', ic: '🍒', grad: G.fruta,
+    desc: 'La tragamonedas de frutas clásica, cinco carretes sin adornos.',
+    motor: 'slot', cfg: { simbolos: ['🍒', '🍋', '🍊', '🍉', '🍇', '⭐', '7️⃣', '🔔'], vol: 'media', rtp: 95.7, mult: [0, 0, 0, 2, 4, 8, 20, 60] } },
+  { n: 8, id: 'wolf', nom: 'Wolf Gold', prov: 'Pragmatic Play', cat: 'slots', ic: '🐺', grad: G.oro,
+    desc: 'Jackpots fijos, giros gratis con mega-símbolo y función Money Respin.',
+    motor: 'slot', cfg: { simbolos: ['🐺', '🦅', '🐎', '🐃', '🌵', '🅰️', '🇰', '🇶'], vol: 'media', rtp: 96.0, mult: [0, 0, 0, 2, 5, 11, 30, 90] } },
+  { n: 9, id: 'gonzo', nom: "Gonzo's Quest Megaways", prov: 'Red Tiger', cat: 'slots', ic: '🗿', grad: G.jungla,
+    desc: 'Avalanchas de símbolos con multiplicador progresivo tras cada caída.',
+    motor: 'slot', cfg: { simbolos: ['🗿', '🐍', '🦜', '🟦', '🟩', '🟨', '🟪', '🟥'], vol: 'alta', rtp: 96.0, mult: [0, 0, 0, 3, 6, 16, 48, 130] } },
+  { n: 10, id: 'bookra', nom: 'Book of Ra Deluxe', prov: 'Novomatic', cat: 'slots', ic: '🏺', grad: G.egipto,
+    desc: 'Referente de la temática de tesoros y arqueología antigua.',
+    motor: 'slot', cfg: { simbolos: ['🏺', '👳', '🐦', '🐞', '📕', '🅰️', '🇰', '🇶'], vol: 'alta', rtp: 95.1, mult: [0, 0, 0, 3, 6, 15, 45, 150] } },
+  { n: 11, id: 'starburst', nom: 'Starburst', prov: 'NetEnt', cat: 'slots', ic: '💎', grad: G.neon,
+    desc: 'Volatilidad baja y comodines expansivos que regalan re-spins.',
+    motor: 'slot', cfg: { simbolos: ['💎', '🔷', '🟨', '🟩', '🟧', '7️⃣', '🔔', '⭐'], vol: 'baja', rtp: 96.1, mult: [0, 0, 0, 1.5, 3, 6, 15, 45] } },
+  { n: 12, id: 'biggerbass', nom: 'Bigger Bass Bonanza', prov: 'Pragmatic Play', cat: 'slots', ic: '🎣', grad: G.pesca,
+    desc: 'Versión ampliada de la saga, con más potencial de multiplicadores.',
+    motor: 'slot', cfg: { simbolos: ['🎣', '🐟', '🐠', '🦈', '🛶', '🅰️', '🇰', '🇶'], vol: 'alta', rtp: 96.7, mult: [0, 0, 0, 2, 5, 12, 38, 110] } },
+
+  /* ---------------- CRASH E INSTANTÁNEOS (13-18 + Limbo) ---------------- */
+  { n: 13, id: 'aviator', nom: 'Aviator', prov: 'Spribe', cat: 'crash', ic: '✈️', grad: G.espacio,
+    desc: 'El crash del avión: cobra antes de que se vaya. Con auto-cashout.', motor: 'aviator', destacado: true },
+  { n: 14, id: 'spaceman', nom: 'Spaceman', prov: 'Pragmatic Play', cat: 'crash', ic: '🧑‍🚀', grad: G.espacio,
+    desc: 'Variante espacial del crash, con opción de cobrar la mitad de la apuesta.', motor: 'aviator', cfg: { tema: 'space', mitad: true } },
+  { n: 15, id: 'plinko', nom: 'Plinko', prov: 'BGaming / Spribe', cat: 'crash', ic: '🔻', grad: G.neon,
+    desc: 'Suelta la bola por la pirámide de clavijas eligiendo el nivel de riesgo.', motor: 'plinko' },
+  { n: 16, id: 'mines', nom: 'Mines', prov: 'Spribe', cat: 'crash', ic: '💣', grad: G.jungla,
+    desc: 'Busca estrellas esquivando minas: cada acierto sube el multiplicador.', motor: 'mines', destacado: true },
+  { n: 17, id: 'balloon', nom: 'Balloon', prov: 'SmartSoft Gaming', cat: 'crash', ic: '🎈', grad: G.dulce,
+    desc: 'Infla el globo para multiplicar la apuesta antes de que reviente.', motor: 'aviator', cfg: { tema: 'globo' } },
+  { n: 18, id: 'maverick', nom: 'Maverick', prov: '1x2 Network', cat: 'crash', ic: '🛩️', grad: G.espacio,
+    desc: 'Crash rápido con despegue de avioneta y rondas muy cortas.', motor: 'aviator', cfg: { tema: 'rapido', veloz: true } },
+  { n: 31, id: 'limbo', nom: 'Limbo', prov: 'Kronos Originals', cat: 'crash', ic: '🎯', grad: G.neon,
+    desc: 'Eliges el multiplicador objetivo y el juego sortea uno: si lo supera, cobras.', motor: 'limbo', destacado: true },
+
+  /* ---------------- EN VIVO Y GAME SHOWS (19-26) ---------------- */
+  { n: 19, id: 'crazytime', nom: 'Crazy Time', prov: 'Evolution', cat: 'vivo', ic: '🎡', grad: G.vivo,
+    desc: 'Rueda con cuatro minijuegos: Pachinko, Cash Hunt, Coin Flip y Crazy Time.', motor: 'rueda',
+    cfg: { segmentos: [{ l: '1', m: 2, p: 21 }, { l: '2', m: 3, p: 13 }, { l: '5', m: 6, p: 7 }, { l: '10', m: 11, p: 4 }, { l: 'Coin Flip', m: 25, p: 4 }, { l: 'Pachinko', m: 60, p: 2 }, { l: 'Cash Hunt', m: 90, p: 2 }, { l: 'Crazy Time', m: 200, p: 1 }] } },
+  { n: 20, id: 'lightning', nom: 'Lightning Roulette', prov: 'Evolution', cat: 'vivo', ic: '⚡', grad: G.vivo,
+    desc: 'Ruleta europea donde los rayos añaden multiplicadores de hasta x500.', motor: 'ruleta', cfg: { rayos: true } },
+  { n: 21, id: 'monopoly', nom: 'Monopoly Live', prov: 'Evolution', cat: 'vivo', ic: '🎩', grad: G.vivo,
+    desc: 'Rueda combinada con un tablero 3D del clásico juego de mesa.', motor: 'rueda',
+    cfg: { segmentos: [{ l: '1', m: 2, p: 22 }, { l: '2', m: 3, p: 15 }, { l: '5', m: 6, p: 7 }, { l: '10', m: 11, p: 3 }, { l: '2 Rolls', m: 30, p: 3 }, { l: '4 Rolls', m: 90, p: 1 }] } },
+  { n: 22, id: 'megawheel', nom: 'Mega Wheel', prov: 'Pragmatic Play Live', cat: 'vivo', ic: '🎯', grad: G.vivo,
+    desc: 'Rueda gigante de la suerte conducida por un presentador en directo.', motor: 'rueda',
+    cfg: { segmentos: [{ l: 'x1', m: 2, p: 24 }, { l: 'x2', m: 3, p: 14 }, { l: 'x5', m: 6, p: 6 }, { l: 'x10', m: 11, p: 4 }, { l: 'x20', m: 21, p: 2 }, { l: 'x40', m: 41, p: 1 }] } },
+  { n: 23, id: 'candyland', nom: 'Sweet Bonanza Candyland', prov: 'Pragmatic Play Live', cat: 'vivo', ic: '🍬', grad: G.dulce,
+    desc: 'Game show que lleva la temática del slot a un estudio real.', motor: 'rueda',
+    cfg: { segmentos: [{ l: '1', m: 2, p: 24 }, { l: '2', m: 3, p: 14 }, { l: '5', m: 6, p: 6 }, { l: 'Candy Drop', m: 25, p: 4 }, { l: 'Sweet Spins', m: 60, p: 2 }] } },
+  { n: 24, id: 'bjvip', nom: 'Live Blackjack VIP', prov: 'Evolution / Pragmatic', cat: 'vivo', ic: '🂡', grad: G.mesa,
+    desc: 'Mesas de 21 con crupier real y apuestas secundarias (Pairs, 21+3).', motor: 'blackjack' },
+  { n: 25, id: 'fireblaze', nom: 'Mega Fire Blaze Roulette', prov: 'Playtech', cat: 'vivo', ic: '🔥', grad: G.vivo,
+    desc: 'Ruleta en vivo con rondas de bonificación acumulativas.', motor: 'ruleta', cfg: { rayos: true } },
+  { n: 26, id: 'speedbac', nom: 'Speed Baccarat', prov: 'Evolution', cat: 'vivo', ic: '🀄', grad: G.mesa,
+    desc: 'Baccarat exprés: cada ronda se resuelve en menos de 30 segundos.', motor: 'baccarat' },
+
+  /* ---------------- MESA RNG Y VIDEO PÓKER (27-30) ---------------- */
+  { n: 27, id: 'fproulette', nom: 'First Person Roulette', prov: 'Evolution', cat: 'mesa', ic: '🎲', grad: G.mesa,
+    desc: 'Ruleta 3D con botón directo para saltar a la mesa en vivo.', motor: 'ruleta' },
+  { n: 28, id: 'fpblackjack', nom: 'First Person Blackjack', prov: 'Evolution', cat: 'mesa', ic: '♠️', grad: G.mesa,
+    desc: 'Experiencia individual de 21 con animaciones realistas.', motor: 'blackjack' },
+  { n: 29, id: 'jacks', nom: 'Jacks or Better', prov: 'Playtech / NetEnt', cat: 'mesa', ic: '🃏', grad: G.mesa,
+    desc: 'El formato clásico de video póker: pagan jotas o mejor.', motor: 'videopoker' },
+  { n: 30, id: 'multihand', nom: 'Multihand Blackjack', prov: 'Pragmatic Play', cat: 'mesa', ic: '♣️', grad: G.mesa,
+    desc: 'Blackjack digital con opción de jugar hasta 3 manos a la vez.', motor: 'blackjack', cfg: { manos: 3 } }
+];
+
+K.juego = id => K.JUEGOS.find(j => j.id === id);
+
+</script>
+<script>
+/* ===========================================================
+   sportsbook.js — libro deportivo: mercados, boleto,
+   liquidación, cashout y motor en vivo
+   =========================================================== */
+K.Sportsbook = (() => {
+
+  /* Reloj virtual: 1 segundo real = 30 segundos de partido.
+     Sin esto un evento prepartido nunca llegaría a jugarse. */
+  const VEL = 30;
+  const arranque = Date.now();
+  const ahora = () => arranque + (Date.now() - arranque) * VEL;
+
+  const DUR = { futbol: 90, basket: 48, tenis: 110, esports: 75, volley: 95 };
+  const SETS_PARA = { tenis: 2, esports: 2, volley: 3 };
+
+  const boleto = { lineas: [], modo: 'simple', stake: 20, aceptarCambios: true, procesando: false };
+  let filtroDeporte = 'futbol';
+  let soloVivo = false;
+  let contenedorLista = null;
+  const nodos = {};        // cuotas y marcadores vivos, para no repintar todo
+
+  /* =========================================================
+     1. LIQUIDACIÓN — qué pasó con cada selección
+     ========================================================= */
+  function resolver(ev, mercId, selId, linea) {
+    const l = ev.marcador.l, v = ev.marcador.v, tot = l + v;
+    const G = 'ganada', P = 'perdida', A = 'anulada';
+    const ou = (pick, ln, valor) => {
+      if (valor === ln) return A;
+      const over = valor > ln;
+      return (pick === 'O') === over ? G : P;
+    };
+
+    if (ev.deporte === 'futbol') {
+      switch (mercId) {
+        case '1x2': return (selId === '1' && l > v) || (selId === 'X' && l === v) || (selId === '2' && l < v) ? G : P;
+        case 'dobleop': {
+          const r = l > v ? '1' : l === v ? 'X' : '2';
+          return selId.includes(r) ? G : P;
+        }
+        case 'ou15': return ou(selId[0], 1.5, tot);
+        case 'ou25': return ou(selId[0], 2.5, tot);
+        case 'ou35': return ou(selId[0], 3.5, tot);
+        case 'btts': { const ambos = l > 0 && v > 0; return (selId === 'BTTS-S') === ambos ? G : P; }
+        case 'hcp': {
+          const d = l - 1 - v;
+          const r = d > 0 ? 'H1' : d === 0 ? 'HX' : 'H2';
+          return selId === r ? G : P;
+        }
+      }
+    }
+    if (ev.deporte === 'basket') {
+      switch (mercId) {
+        case 'ml': return (selId === '1') === (l > v) ? G : P;
+        case 'hcp': { const d = (l - linea) - v; if (d === 0) return A; return (selId === 'H1') === (d > 0) ? G : P; }
+        case 'tot': return ou(selId[0], linea, tot);
+      }
+    }
+    if (ev.deporte === 'tenis') {
+      switch (mercId) {
+        case 'ml': return (selId === '1') === (l > v) ? G : P;
+        case 'sets': return ou(selId.startsWith('O') ? 'O' : 'U', 2.5, tot);
+        case 'hcps': { const gana20 = (l === 2 && v === 0); return (selId === 'H1') === gana20 ? G : P; }
+      }
+    }
+    // eSports y vóley (series al mejor de N)
+    switch (mercId) {
+      case 'ml': return (selId === '1') === (l > v) ? G : P;
+      case 'barrida': { const limpio = v === 0 || l === 0; return (selId === 'SI') === limpio ? G : P; }
+      case 'hcp': { const gana = l > v && (l - v) >= 2; return (selId === 'H1') === gana ? G : P; }
+    }
+    return A;
+  }
+
+  /* =========================================================
+     2. BOLETO
+     ========================================================= */
+  const clave = (evId, mercId, selId) => evId + '|' + mercId + '|' + selId;
+
+  function alternarSeleccion(ev, merc, sel) {
+    const k = clave(ev.id, merc.id, sel.id);
+    const i = boleto.lineas.findIndex(l => l.k === k);
+    if (i >= 0) { boleto.lineas.splice(i, 1); pintarBoleto(); repintarSeleccionadas(); return; }
+    // Una sola selección por evento y mercado dentro del mismo boleto.
+    const choque = boleto.lineas.findIndex(l => l.evId === ev.id && l.mercId === merc.id);
+    if (choque >= 0) boleto.lineas.splice(choque, 1);
+    boleto.lineas.push({
+      k, evId: ev.id, mercId: merc.id, selId: sel.id,
+      pick: sel.extra || sel.lab, merc: merc.nombre, linea: merc.linea ?? null,
+      partido: ev.local + ' vs ' + ev.visita, deporte: ev.deporte,
+      cuota: sel.cuota, cuotaInicial: sel.cuota, cambio: 0
+    });
+    if (boleto.lineas.length > 1 && boleto.modo === 'simple') boleto.modo = 'combinada';
+    pintarBoleto(); repintarSeleccionadas();
+  }
+
+  const cuotaActualDe = (evId, mercId, selId) => {
+    const ev = K.evento(evId);
+    if (!ev) return null;
+    const m = K.Odds.construir(ev).find(x => x.id === mercId);
+    const s = m && m.sel.find(x => x.id === selId);
+    return s ? s.cuota : null;
+  };
+
+  const cuotaTotal = () => boleto.lineas.reduce((a, l) => a * l.cuota, 1);
+
+  function pintarBoleto() {
+    const cont = K.$('#boleto');
+    if (!cont) return;
+    const n = boleto.lineas.length;
+    if (!n) {
+      cont.innerHTML = `<div class="boleto-vacio"><span class="ic">🎫</span>
+        Tu boleto está vacío.<br>Toca una cuota para agregarla.</div>`;
+      return;
+    }
+    // Refrescar cuotas vivas antes de pintar
+    boleto.lineas.forEach(l => {
+      const c = cuotaActualDe(l.evId, l.mercId, l.selId);
+      if (c && c !== l.cuota) { l.cambio = c - l.cuota; l.cuota = c; }
+    });
+
+    const total = cuotaTotal();
+    const stake = boleto.stake || 0;
+    const modo = n === 1 ? 'simple' : boleto.modo;
+    const retorno = modo === 'combinada' ? stake * total : stake * boleto.lineas[0].cuota * n;
+    const apostadoReal = modo === 'combinada' ? stake : stake * n;
+    const overround = boleto.lineas.reduce((a, l) => a + 1 / l.cuota, 0) / n;
+
+    let html = '';
+    if (n > 1) {
+      html += `<div class="tabs-boleto">
+        <button class="${modo === 'simple' ? 'on' : ''}" data-modo="simple">Simples (${n})</button>
+        <button class="${modo === 'combinada' ? 'on' : ''}" data-modo="combinada">Combinada</button>
+      </div>`;
+    }
+    for (const l of boleto.lineas) {
+      html += `<div class="seleccion">
+        <button class="cerrar" data-quita="${l.k}">×</button>
+        <div class="pick"><span>${K.esc(l.pick)}</span><span class="c">${K.dec(l.cuota)}</span></div>
+        <div class="merc">${K.esc(l.merc)}</div>
+        <div class="part">${K.esc(l.partido)}</div>
+        ${Math.abs(l.cuota - l.cuotaInicial) > 0.001
+          ? `<div class="aviso-cambio">La cuota se movió de ${K.dec(l.cuotaInicial)} a ${K.dec(l.cuota)}</div>` : ''}
+      </div>`;
+    }
+    html += `<div class="stake-fila"><span class="sol">S/</span>
+      <input id="stake" type="number" min="1" step="1" value="${stake}"></div>
+      <div class="rapidos">
+        ${[5, 10, 20, 50, 100].map(v => `<button data-stake="${v}">+${v}</button>`).join('')}
+        <button data-stake="max">Máx</button><button data-stake="0">Borrar</button>
+      </div>
+      <div class="resumen">
+        <div class="fila"><span>Cuota ${modo === 'combinada' ? 'combinada' : 'promedio'}</span><b>${K.dec(modo === 'combinada' ? total : total ** (1 / n))}</b></div>
+        <div class="fila"><span>Total apostado</span><b>${K.sol(apostadoReal)}</b></div>
+        <div class="fila"><span>Prob. implícita</span><b>${K.pct(modo === 'combinada' ? 1 / total : overround)}</b></div>
+        <div class="fila total"><span>Retorno potencial</span><b>${K.sol(retorno)}</b></div>
+      </div>
+      <div class="pie-boleto">
+        <label style="display:flex;gap:7px;align-items:center;font-size:12px;color:var(--tenue);margin-bottom:8px">
+          <input type="checkbox" id="aceptar-cambios" ${boleto.aceptarCambios ? 'checked' : ''}>
+          Aceptar cambios de cuota automáticamente
+        </label>
+        <button class="btn" id="apostar" ${boleto.procesando ? 'disabled' : ''}>
+          ${boleto.procesando ? 'Validando…' : 'Apostar ' + K.sol(apostadoReal)}
+        </button>
+      </div>
+      <div class="nota-margen">Margen de la casa en esta selección:
+        <b>${K.pct(overround - 1)}</b> · el retorno ya viene descontado del <i>overround</i>.</div>`;
+
+    cont.innerHTML = html;
+
+    K.$$('[data-quita]', cont).forEach(b => b.onclick = () => {
+      boleto.lineas = boleto.lineas.filter(l => l.k !== b.dataset.quita);
+      pintarBoleto(); repintarSeleccionadas();
+    });
+    K.$$('[data-modo]', cont).forEach(b => b.onclick = () => { boleto.modo = b.dataset.modo; pintarBoleto(); });
+    K.$$('[data-stake]', cont).forEach(b => b.onclick = () => {
+      const v = b.dataset.stake;
+      if (v === 'max') boleto.stake = Math.floor(Math.min(K.Wallet.est().saldo, K.Wallet.est().perfil.limiteApuesta));
+      else if (v === '0') boleto.stake = 0;
+      else boleto.stake = K.round2((boleto.stake || 0) + Number(v));
+      pintarBoleto();
+    });
+    const inp = K.$('#stake', cont);
+    if (inp) inp.oninput = () => { boleto.stake = Number(inp.value) || 0; actualizarResumen(); };
+    const chk = K.$('#aceptar-cambios', cont);
+    if (chk) chk.onchange = () => boleto.aceptarCambios = chk.checked;
+    const btn = K.$('#apostar', cont);
+    if (btn) btn.onclick = colocar;
+  }
+
+  /* Solo refresca los números del resumen, para no perder el foco del input. */
+  function actualizarResumen() {
+    const cont = K.$('#boleto');
+    const n = boleto.lineas.length;
+    if (!cont || !n) return;
+    const modo = n === 1 ? 'simple' : boleto.modo;
+    const total = cuotaTotal();
+    const apostado = modo === 'combinada' ? boleto.stake : boleto.stake * n;
+    const retorno = modo === 'combinada' ? boleto.stake * total : boleto.stake * boleto.lineas[0].cuota * n;
+    const filas = K.$$('.resumen .fila b', cont);
+    if (filas[1]) filas[1].textContent = K.sol(apostado);
+    if (filas[3]) filas[3].textContent = K.sol(retorno);
+    const b = K.$('#apostar', cont);
+    if (b && !boleto.procesando) b.textContent = 'Apostar ' + K.sol(apostado);
+  }
+
+  /* =========================================================
+     3. COLOCAR LA APUESTA (con retardo de aceptación)
+     ========================================================= */
+  async function colocar() {
+    if (boleto.procesando || !boleto.lineas.length) return;
+    const n = boleto.lineas.length;
+    const modo = n === 1 ? 'simple' : boleto.modo;
+    const apostado = modo === 'combinada' ? boleto.stake : boleto.stake * n;
+
+    const val = K.Wallet.puedeApostar(apostado);
+    if (!val.ok) { K.aviso(val.razon, 'err'); return; }
+
+    const hayVivo = boleto.lineas.some(l => (K.evento(l.evId) || {}).vivo);
+    const cuotasAntes = boleto.lineas.map(l => l.cuota);
+
+    boleto.procesando = true;
+    pintarBoleto();
+    const btn = K.$('#apostar');
+
+    /* Bet delay: 3-8 s en vivo para frenar el courtsiding. */
+    const delay = hayVivo ? K.entero(3, 8) : 1;
+    for (let t = delay; t > 0; t--) {
+      if (btn) btn.textContent = hayVivo ? `Aceptando apuesta… ${t}s` : 'Validando…';
+      await K.enEspera(1000);
+      const susp = boleto.lineas.find(l => (K.evento(l.evId) || {}).suspendido);
+      if (susp) {
+        boleto.procesando = false;
+        K.aviso('❌ Apuesta rechazada: el mercado se suspendió durante la validación.', 'err');
+        pintarBoleto();
+        return;
+      }
+    }
+
+    // Revisión de cuota al momento de aceptar
+    let movida = false;
+    boleto.lineas.forEach((l, i) => {
+      const c = cuotaActualDe(l.evId, l.mercId, l.selId);
+      if (c && Math.abs(c - cuotasAntes[i]) > 0.001) { l.cuota = c; movida = true; }
+    });
+    if (movida && !boleto.aceptarCambios) {
+      boleto.procesando = false;
+      K.aviso('⚠️ La cuota cambió y no aceptas cambios automáticos. Revisa el boleto.', 'warn');
+      pintarBoleto();
+      return;
+    }
+
+    const w = K.Wallet.est();
+    const apuestas = [];
+    if (modo === 'combinada') {
+      apuestas.push(crearApuesta(boleto.lineas.slice(), boleto.stake, 'combinada'));
+    } else {
+      boleto.lineas.forEach(l => apuestas.push(crearApuesta([l], boleto.stake, 'simple')));
+    }
+    K.Wallet.apostar(apostado, (modo === 'combinada' ? 'Combinada de ' + n : n + ' apuesta(s) simple(s)'));
+    apuestas.forEach(a => w.apuestas.unshift(a));
+    K.Wallet.persistir();
+
+    boleto.lineas = [];
+    boleto.procesando = false;
+    pintarBoleto();
+    repintarSeleccionadas();
+    K.bus.emit('apuestas');
+    K.aviso('✅ Apuesta aceptada por ' + K.sol(apostado) + '. Revisa <b>Mis apuestas</b>.');
+  }
+
+  function crearApuesta(lineas, stake, tipo) {
+    const ev0 = K.evento(lineas[0].evId);
+    const antelacion = ev0 ? Math.max(0, (ev0.inicio - ahora()) / 60000) : 0;
+    // Cada sol apostado carga el libro del lado elegido: eso mueve la cuota.
+    lineas.forEach(l => {
+      const ev = K.evento(l.evId);
+      if (!ev) return;
+      const k = l.mercId + '|' + l.selId;
+      ev.exposicion[k] = (ev.exposicion[k] || 0) + stake * (l.cuota - 1);
+    });
+    return {
+      id: 'b' + Date.now().toString(36) + K.entero(100, 999),
+      t: Date.now(), tipo, stake, estado: 'pendiente',
+      cuotaTotal: K.round2(lineas.reduce((a, l) => a * l.cuota, 1)),
+      antelacionMin: Math.round(antelacion),
+      lineas: lineas.map(l => ({ ...l, estado: 'pendiente', enVivo: !!(K.evento(l.evId) || {}).vivo })),
+      pago: 0
+    };
+  }
+
+  /* =========================================================
+     4. CASHOUT
+     ========================================================= */
+  function valorCashout(ap) {
+    if (ap.estado !== 'pendiente') return null;
+    let cuotaViva = 1, hayVivo = false;
+    for (const l of ap.lineas) {
+      if (l.estado === 'ganada') continue;
+      if (l.estado === 'perdida') return null;
+      const ev = K.evento(l.evId);
+      if (!ev || !ev.vivo) return null;         // solo con el partido en curso
+      hayVivo = true;
+      const c = cuotaActualDe(l.evId, l.mercId, l.selId);
+      if (!c) return null;
+      cuotaViva *= c;
+    }
+    if (!hayVivo) return null;
+    return K.Odds.cashout(ap.stake, ap.cuotaTotal, cuotaViva, 0.05);
+  }
+
+  function cobrar(ap) {
+    const v = valorCashout(ap);
+    if (v === null) { K.aviso('El cashout no está disponible ahora mismo.', 'warn'); return; }
+    ap.estado = 'cobrada';
+    ap.pago = v;
+    K.Wallet.acreditar(v, 'Cashout de apuesta ' + ap.id, 'cashout');
+    K.bus.emit('apuestas');
+    K.aviso('💸 Cashout cobrado: ' + K.sol(v));
+  }
+
+  /* =========================================================
+     5. MOTOR EN VIVO
+     ========================================================= */
+  function tick() {
+    const t = ahora();
+    let cambioEstructural = false;
+
+    for (const ev of K.EVENTOS) {
+      if (ev.terminado) continue;
+      if (!ev.vivo && t >= ev.inicio) {
+        // La cuota de cierre es la que había justo antes del pitazo inicial.
+        ev.cierre = {};
+        K.Odds.construir(ev).forEach(m => m.sel.forEach(x => ev.cierre[m.id + '|' + x.id] = x.cuota));
+        ev.vivo = true; ev.minuto = 0; cambioEstructural = true;
+      }
+      if (!ev.vivo) continue;
+
+      ev.minuto = Math.round((ev.minuto + 0.5) * 10) / 10;
+      if (ev.suspendido && t > ev.suspendidoHasta) { ev.suspendido = false; cambioEstructural = true; }
+
+      if (ev.deporte === 'futbol') {
+        const pGol = 0.5 / 90;
+        if (!ev.suspendido && Math.random() < ev.modelo.lh * pGol) marcar(ev, 'l');
+        if (!ev.suspendido && Math.random() < ev.modelo.la * pGol) marcar(ev, 'v');
+      } else if (ev.deporte === 'basket') {
+        const ritmo = ev.modelo.total / 48 * 0.5;
+        const sesgo = 0.5 + ev.modelo.spread / 60;
+        if (Math.random() < ritmo / 2.4) ev.marcador.l += K.elige([2, 2, 3]) * (Math.random() < sesgo ? 1 : 0);
+        if (Math.random() < ritmo / 2.4) ev.marcador.v += K.elige([2, 2, 3]) * (Math.random() < 1 - sesgo ? 1 : 0);
+      } else {
+        const pSet = ev.deporte === 'tenis' ? 0.0125 : ev.deporte === 'volley' ? 0.02 : 0.017;
+        if (Math.random() < pSet) {
+          const q = ev.deporte === 'tenis' ? ev.modelo.p1 : ev.modelo.q;
+          if (Math.random() < q) ev.marcador.l++; else ev.marcador.v++;
+          suspender(ev, 3);
+          cambioEstructural = true;
+        }
+      }
+
+      const meta = SETS_PARA[ev.deporte];
+      const fin = meta ? (ev.marcador.l >= meta || ev.marcador.v >= meta) : ev.minuto >= DUR[ev.deporte];
+      if (fin || ev.minuto >= DUR[ev.deporte] * 1.4) { finalizar(ev); cambioEstructural = true; }
+    }
+
+    if (cambioEstructural) K.bus.emit('lista');
+    else patchVivo();
+    pintarBoleto();
+  }
+
+  function marcar(ev, lado) {
+    ev.marcador[lado]++;
+    suspender(ev, 4);
+    const quien = lado === 'l' ? ev.local : ev.visita;
+    K.aviso(`⚽ ¡Gol de <b>${K.esc(quien)}</b>! ${K.esc(ev.local)} ${ev.marcador.l}-${ev.marcador.v} ${K.esc(ev.visita)}`, 'warn');
+    K.bus.emit('lista');
+  }
+
+  /* El proveedor manda SUSPENDED: se congelan los mercados
+     hasta recalcular el modelo con el nuevo marcador. */
+  function suspender(ev, seg) {
+    ev.suspendido = true;
+    ev.suspendidoHasta = ahora() + seg * 1000 * VEL;   // seg reales en escala virtual
+  }
+
+  function finalizar(ev) {
+    ev.terminado = true;
+    ev.vivo = false;
+    liquidar(ev);
+    K.aviso(`🏁 Final: ${K.esc(ev.local)} ${ev.marcador.l}-${ev.marcador.v} ${K.esc(ev.visita)}`);
+  }
+
+  function liquidar(ev) {
+    const w = K.Wallet.est();
+    let hubo = false;
+    for (const ap of w.apuestas) {
+      if (ap.estado !== 'pendiente') continue;
+      let toco = false;
+      for (const l of ap.lineas) {
+        if (l.evId !== ev.id || l.estado !== 'pendiente') continue;
+        l.estado = resolver(ev, l.mercId, l.selId, l.linea);
+        l.marcadorFinal = ev.marcador.l + '-' + ev.marcador.v;
+        toco = true;
+        // CLV: solo tiene sentido contra la línea de cierre de un mercado prepartido.
+        const cierre = !l.enVivo && ev.cierre && ev.cierre[l.mercId + '|' + l.selId];
+        if (cierre) K.Wallet.registrarCLV(l.cuota, cierre);
+      }
+      if (!toco) continue;
+      hubo = true;
+      if (ap.lineas.some(l => l.estado === 'perdida')) {
+        ap.estado = 'perdida'; ap.pago = 0;
+      } else if (ap.lineas.every(l => l.estado !== 'pendiente')) {
+        // Las anuladas salen del cálculo con cuota 1.00 (devolución).
+        const cuota = ap.lineas.reduce((a, l) => a * (l.estado === 'anulada' ? 1 : l.cuota), 1);
+        ap.estado = 'ganada';
+        ap.pago = K.round2(ap.stake * cuota);
+        K.Wallet.acreditar(ap.pago, 'Apuesta ganada ' + ap.id);
+      }
+    }
+    if (hubo) { K.Wallet.persistir(); K.bus.emit('apuestas'); }
+  }
+
+  /* =========================================================
+     6. RENDER
+     ========================================================= */
+  function estaEnBoleto(evId, mercId, selId) {
+    return boleto.lineas.some(l => l.k === clave(evId, mercId, selId));
+  }
+
+  function botonCuota(ev, merc, sel) {
+    const k = clave(ev.id, merc.id, sel.id);
+    const previa = ev.historialCuotas[k];
+    let cls = 'cuota';
+    if (estaEnBoleto(ev.id, merc.id, sel.id)) cls += ' on';
+    if (previa && Math.abs(previa - sel.cuota) > 0.001) cls += sel.cuota > previa ? ' sube' : ' baja';
+    ev.historialCuotas[k] = sel.cuota;
+    const b = K.el('button', {
+      class: cls, 'data-k': k,
+      title: 'Prob. implícita ' + K.pct(sel.impl),
+      onclick: () => {
+        if (ev.suspendido) { K.aviso('Mercado suspendido, espera unos segundos.', 'warn'); return; }
+        alternarSeleccion(ev, merc, sel);
+      }
+    }, [
+      K.el('span', { class: 'lab', text: sel.lab }),
+      K.el('span', { class: 'num', text: K.dec(sel.cuota) })
+    ]);
+    b.disabled = !!ev.suspendido || !!ev.terminado;
+    nodos[k] = b;
+    return b;
+  }
+
+  function tarjetaEvento(ev, opts = {}) {
+    const mercados = K.Odds.construir(ev);
+    const principal = mercados[0];
+    const card = K.el('div', { class: 'evento' });
+
+    const cab = K.el('div', { class: 'ev-cab' });
+    const dep = K.DEPORTES.find(d => d.id === ev.deporte);
+    cab.appendChild(K.el('span', { text: dep ? dep.ic : '•' }));
+    cab.appendChild(K.el('span', { class: 'liga', text: ev.liga }));
+    if (ev.vivo) {
+      const badge = K.el('span', { class: 'badge-vivo' }, [K.el('span', { class: 'punto' })]);
+      badge.appendChild(document.createTextNode('EN VIVO'));
+      cab.appendChild(badge);
+    }
+    const hora = K.el('span', { class: 'hora', text: ev.terminado ? 'Finalizado' : ev.vivo ? minutoTexto(ev) : K.hora(ev.inicio) });
+    nodos['min|' + ev.id] = hora;
+    cab.appendChild(hora);
+    card.appendChild(cab);
+
+    const cuerpo = K.el('div', { class: 'ev-cuerpo' });
+    const equipos = K.el('div', { class: 'equipos' });
+    [['l', ev.local, ev.escL], ['v', ev.visita, ev.escV]].forEach(([lado, nom, esc]) => {
+      const fila = K.el('div', { class: 'equipo' }, [
+        K.el('span', { class: 'esc', text: esc }),
+        K.el('span', { class: 'nom', text: nom })
+      ]);
+      if (ev.vivo || ev.terminado) {
+        const m = K.el('span', { class: 'marc', text: ev.marcador[lado] });
+        nodos['marc|' + ev.id + '|' + lado] = m;
+        fila.appendChild(m);
+      }
+      equipos.appendChild(fila);
+    });
+    cuerpo.appendChild(equipos);
+
+    if (ev.suspendido) {
+      cuerpo.appendChild(K.el('div', { class: 'suspendido', html: '🔒 Mercado suspendido · recalculando cuotas' }));
+    } else {
+      const merc = K.el('div', { class: 'mercado g' + principal.cols });
+      principal.sel.forEach(s => merc.appendChild(botonCuota(ev, principal, s)));
+      cuerpo.appendChild(merc);
+    }
+    card.appendChild(cuerpo);
+
+    const pie = K.el('div', { class: 'ev-pie' });
+    pie.appendChild(K.el('span', { text: 'Margen ' + K.pct(principal.overround - 1) }));
+    pie.appendChild(K.el('span', { text: '·' }));
+    pie.appendChild(K.el('span', { text: 'Suma implícita ' + K.pct(principal.overround) }));
+    if (!opts.sinMas) {
+      pie.appendChild(K.el('button', {
+        class: 'mas', text: '+' + (mercados.length - 1) + ' mercados',
+        onclick: () => abrirEvento(ev.id)
+      }));
+    }
+    card.appendChild(pie);
+    return card;
+  }
+
+  const minutoTexto = ev => {
+    if (ev.deporte === 'tenis' || ev.deporte === 'volley' || ev.deporte === 'esports')
+      return Math.floor(ev.minuto) + "' · en juego";
+    return Math.floor(ev.minuto) + "'";
+  };
+
+  /* Repinta solo lo que cambia cada segundo. */
+  function patchVivo() {
+    for (const ev of K.EVENTOS) {
+      if (!ev.vivo) continue;
+      const nm = nodos['min|' + ev.id];
+      if (nm) nm.textContent = minutoTexto(ev);
+      ['l', 'v'].forEach(lado => {
+        const n = nodos['marc|' + ev.id + '|' + lado];
+        if (n) n.textContent = ev.marcador[lado];
+      });
+      K.Odds.construir(ev).forEach(m => m.sel.forEach(s => {
+        const k = clave(ev.id, m.id, s.id);
+        const b = nodos[k];
+        if (!b || !b.isConnected) return;
+        const previa = ev.historialCuotas[k];
+        if (previa && Math.abs(previa - s.cuota) > 0.001) {
+          b.classList.remove('sube', 'baja');
+          void b.offsetWidth;
+          b.classList.add(s.cuota > previa ? 'sube' : 'baja');
+          const num = b.querySelector('.num');
+          if (num) num.textContent = K.dec(s.cuota);
+        }
+        ev.historialCuotas[k] = s.cuota;
+      }));
+    }
+  }
+
+  function repintarSeleccionadas() {
+    Object.entries(nodos).forEach(([k, n]) => {
+      if (!n || !n.classList || !n.classList.contains) return;
+      if (k.startsWith('min|') || k.startsWith('marc|')) return;
+      n.classList.toggle('on', boleto.lineas.some(l => l.k === k));
+    });
+  }
+
+  /* ---- vista de lista ---- */
+  function vista(root) {
+    contenedorLista = root;
+    root.innerHTML = '';
+    const chips = K.el('div', { class: 'chips' });
+    chips.appendChild(K.el('button', {
+      class: 'chip' + (soloVivo ? ' on' : ''), html: '🔴 En vivo',
+      onclick: () => { soloVivo = !soloVivo; vista(root); }
+    }));
+    K.DEPORTES.forEach(d => chips.appendChild(K.el('button', {
+      class: 'chip' + (!soloVivo && filtroDeporte === d.id ? ' on' : ''),
+      html: d.ic + ' ' + d.nom,
+      onclick: () => { soloVivo = false; filtroDeporte = d.id; vista(root); }
+    })));
+    root.appendChild(chips);
+
+    let lista = K.EVENTOS.filter(e => !e.terminado);
+    lista = soloVivo ? lista.filter(e => e.vivo) : lista.filter(e => e.deporte === filtroDeporte);
+    lista.sort((a, b) => (b.vivo - a.vivo) || (a.inicio - b.inicio));
+
+    if (!lista.length) {
+      root.appendChild(K.el('div', { class: 'vacio', html: '<span class="ic">📭</span>No hay eventos abiertos en esta categoría.' }));
+    }
+    const vivos = lista.filter(e => e.vivo);
+    const luego = lista.filter(e => !e.vivo);
+    if (vivos.length) {
+      root.appendChild(cabecera('🔴 En vivo', vivos.length + ' eventos con cuotas moviéndose'));
+      vivos.forEach(e => root.appendChild(tarjetaEvento(e)));
+    }
+    if (luego.length) {
+      root.appendChild(cabecera('📅 Próximos', 'El reloj corre a 30x para que puedas ver la liquidación'));
+      luego.forEach(e => root.appendChild(tarjetaEvento(e)));
+    }
+    const term = K.EVENTOS.filter(e => e.terminado);
+    if (term.length) {
+      root.appendChild(cabecera('🏁 Finalizados', term.length + ' eventos ya liquidados'));
+      term.slice(0, 6).forEach(e => root.appendChild(tarjetaEvento(e, { sinMas: true })));
+    }
+  }
+
+  const cabecera = (t, sub) => K.el('div', { class: 'titulo-sec' }, [
+    K.el('h2', { text: t }), K.el('span', { class: 'sub', text: sub })
+  ]);
+
+  /* ---- ficha completa del evento ---- */
+  function abrirEvento(id) {
+    const ev = K.evento(id);
+    if (!ev) return;
+    const cuerpo = K.el('div');
+    const pintar = () => {
+      cuerpo.innerHTML = '';
+      const mercados = K.Odds.construir(ev);
+      cuerpo.appendChild(K.el('div', {
+        class: 'info-bloque', html:
+          `<h4>${K.esc(ev.local)} vs ${K.esc(ev.visita)} · ${K.esc(ev.liga)}</h4>
+       ${ev.vivo ? `En juego · minuto ${Math.floor(ev.minuto)} · marcador ${ev.marcador.l}-${ev.marcador.v}`
+              : ev.terminado ? `Finalizado ${ev.marcador.l}-${ev.marcador.v}` : 'Comienza ' + K.fechaHora(ev.inicio)}
+       · margen base <b>${K.pct(ev.margen - 1)}</b>${ev.vivo ? ' + 2.5% por riesgo en vivo' : ''}`
+      }));
+      mercados.forEach(m => {
+        const caja = K.el('div', { class: 'tarjeta', style: 'margin-top:12px' });
+        caja.appendChild(K.el('h3', {
+          html: `${K.esc(m.nombre)} <span style="font-weight:600;text-transform:none;letter-spacing:0">
+            margen ${K.pct(m.overround - 1)}</span>`
+        }));
+        const c = K.el('div', { class: 'cuerpo' });
+        const g = K.el('div', { class: 'mercado g' + m.cols });
+        m.sel.forEach(s => g.appendChild(botonCuota(ev, m, s)));
+        c.appendChild(g);
+        c.appendChild(K.el('div', {
+          style: 'margin-top:8px;font-size:11.5px;color:var(--tenue2)',
+          text: 'Probabilidades implícitas: ' + m.sel.map(s => s.lab + ' ' + K.pct(s.impl)).join(' · ')
+        }));
+        caja.appendChild(c);
+        cuerpo.appendChild(caja);
+      });
+    };
+    pintar();
+    K.modal(ev.local + ' vs ' + ev.visita, cuerpo, ev.liga);
+    const it = setInterval(() => {
+      if (!document.body.contains(cuerpo)) { clearInterval(it); return; }
+      if (ev.vivo) pintar();
+    }, 1500);
+  }
+
+  /* ---- vista Mis apuestas ---- */
+  function vistaApuestas(root) {
+    const w = K.Wallet.est();
+    root.innerHTML = '';
+    root.appendChild(cabecera('🎫 Mis apuestas', w.apuestas.length + ' registradas'));
+    if (!w.apuestas.length) {
+      root.appendChild(K.el('div', { class: 'vacio', html: '<span class="ic">🎫</span>Todavía no hiciste ninguna apuesta.' }));
+      return;
+    }
+    for (const ap of w.apuestas) {
+      const card = K.el('div', { class: 'apuesta' });
+      card.appendChild(K.el('div', {
+        class: 'ap-cab', html:
+          `<span class="tipo">${ap.tipo === 'combinada' ? 'Combinada ×' + ap.lineas.length : 'Simple'}</span>
+       <span>${K.fechaHora(ap.t)}</span>
+       <span class="est ${ap.estado}">${ap.estado.toUpperCase()}</span>`
+      }));
+      ap.lineas.forEach(l => card.appendChild(K.el('div', {
+        class: 'ap-linea', html:
+          `<div class="top"><span>${K.esc(l.pick)}</span><span>${K.dec(l.cuota)}</span></div>
+       <div class="bajo">${K.esc(l.merc)} · ${K.esc(l.partido)}
+       ${l.marcadorFinal ? ' · final ' + l.marcadorFinal : ''}
+       ${l.estado !== 'pendiente' ? ' · <b style="color:var(--' + (l.estado === 'ganada' ? 'acento' : l.estado === 'perdida' ? 'rojo' : 'tenue') + ')">' + l.estado + '</b>' : ''}</div>`
+      })));
+      const pie = K.el('div', { class: 'ap-pie' });
+      pie.appendChild(K.el('div', { class: 'dato', html: 'Apostado<b>' + K.sol(ap.stake) + '</b>' }));
+      pie.appendChild(K.el('div', { class: 'dato', html: 'Cuota<b>' + K.dec(ap.cuotaTotal) + '</b>' }));
+      pie.appendChild(K.el('div', {
+        class: 'dato', html: (ap.estado === 'pendiente' ? 'Retorno potencial' : 'Pagado')
+          + '<b>' + K.sol(ap.estado === 'pendiente' ? ap.stake * ap.cuotaTotal : ap.pago) + '</b>'
+      }));
+      const v = valorCashout(ap);
+      if (v !== null && v > 0) {
+        pie.appendChild(K.el('button', {
+          class: 'btn chico', html: 'Cashout ' + K.sol(v),
+          onclick: () => { cobrar(ap); vistaApuestas(root); }
+        }));
+      }
+      card.appendChild(pie);
+      root.appendChild(card);
+    }
+  }
+
+  /* ---- panel de riesgo del libro ---- */
+  function panelRiesgo() {
+    const filas = [];
+    for (const ev of K.EVENTOS) {
+      for (const [k, monto] of Object.entries(ev.exposicion)) {
+        if (monto > 0) filas.push({ ev, k, monto });
+      }
+    }
+    filas.sort((a, b) => b.monto - a.monto);
+    if (!filas.length) return K.el('div', {
+      class: 'info-bloque',
+      html: 'Todavía no cargaste el libro. Apuesta a un mercado y mira cómo se mueve su cuota: cada sol de responsabilidad empuja el precio hacia abajo del lado que recibe dinero.'
+    });
+    const t = K.el('table', { class: 'tabla' });
+    t.innerHTML = '<tr><th>Evento</th><th>Selección</th><th>Responsabilidad</th></tr>' +
+      filas.slice(0, 12).map(f => `<tr><td>${K.esc(f.ev.local)} vs ${K.esc(f.ev.visita)}</td>
+        <td>${K.esc(f.k.replace('|', ' · '))}</td><td class="neg">${K.sol(f.monto)}</td></tr>`).join('');
+    return t;
+  }
+
+  function iniciar() {
+    setInterval(tick, 1000);
+  }
+
+  const setVivo = v => { soloVivo = v; };
+
+  return { vista, vistaApuestas, pintarBoleto, iniciar, abrirEvento, panelRiesgo, boleto, valorCashout, ahora, setVivo };
+})();
+
+</script>
+<script>
+/* ===========================================================
+   games/base.js — piezas comunes a todos los juegos de casino
+   =========================================================== */
+K.G = (() => {
+
+  let juegoActual = null;
+  const setJuego = j => juegoActual = j;
+
+  /* Descuenta la apuesta. Devuelve false si el monedero la rechaza. */
+  function apostar(monto) {
+    const val = K.Wallet.puedeApostar(monto);
+    if (!val.ok) { K.aviso(val.razon, 'err'); return false; }
+    const w = K.Wallet.est();
+    K.Wallet.apostar(monto, 'Casino · ' + (juegoActual ? juegoActual.nom : 'juego'));
+    w.casino.jugadas++;
+    w.casino.apostado = K.round2(w.casino.apostado + monto);
+    K.Wallet.persistir();
+    return true;
+  }
+
+  function pagar(monto, det) {
+    if (monto <= 0) return;
+    const w = K.Wallet.est();
+    w.casino.devuelto = K.round2(w.casino.devuelto + monto);
+    K.Wallet.acreditar(monto, det || ('Casino · ' + (juegoActual ? juegoActual.nom : '')), 'premio');
+  }
+
+  /* Campo de monto con los atajos típicos de la industria. */
+  function inputMonto(inicial = 5) {
+    const inp = K.el('input', { type: 'number', min: '0.5', step: '0.5', value: inicial });
+    const btns = K.el('div', { class: 'fila-btns' });
+    const set = v => inp.value = String(K.round2(Math.max(0.5, v)));
+    [['½', () => set(Number(inp.value) / 2)],
+     ['2×', () => set(Number(inp.value) * 2)],
+     ['Máx', () => set(Math.min(K.Wallet.est().saldo, K.Wallet.est().perfil.limiteApuesta))]]
+      .forEach(([t, fn]) => btns.appendChild(K.el('button', { text: t, onclick: fn })));
+    const wrap = K.el('div', { class: 'campo' }, [
+      K.el('label', { text: 'Apuesta (S/)' }), inp, btns
+    ]);
+    return { wrap, get: () => K.round2(Number(inp.value) || 0), set, inp };
+  }
+
+  function stat(etiqueta, valor) {
+    const b = K.el('b', { text: valor });
+    const fila = K.el('div', { class: 'stat-fila' }, [K.el('span', { text: etiqueta }), b]);
+    return { fila, set: v => b.textContent = v, nodo: b };
+  }
+
+  /* Historial corto por juego, guardado en el monedero. */
+  function historial(idJuego) {
+    const w = K.Wallet.est();
+    w.casino.historial[idJuego] ||= [];
+    return w.casino.historial[idJuego];
+  }
+  function anotar(idJuego, valor) {
+    const h = historial(idJuego);
+    h.unshift(valor);
+    if (h.length > 24) h.length = 24;
+    K.Wallet.persistir();
+  }
+
+  const claseMult = m => m < 2 ? 'bajo' : m < 10 ? 'medio' : 'alto';
+
+  /* Multiplicador de crash con ventaja de la casa del 3%:
+     P(resultado >= x) = 0.97 / x  */
+  function crashAleatorio(ventaja = 0.97) {
+    const u = Math.random();
+    if (u < 1 - ventaja) return 1.00;
+    return Math.max(1, Math.floor((ventaja / (1 - u)) * 100) / 100);
+  }
+
+  const nota = html => K.el('div', { class: 'info-bloque', style: 'margin-top:12px;font-size:12px', html });
+
+  return { setJuego, apostar, pagar, inputMonto, stat, historial, anotar, claseMult, crashAleatorio, nota };
+})();
+
+</script>
+<script>
+/* ===========================================================
+   games/mines.js — 25 casillas, minas escondidas
+   Multiplicador justo: C(25,k) / C(25-M,k), con 3% de casa.
+   =========================================================== */
+K.Juegos = K.Juegos || {};
+K.Juegos.mines = function (root, juego) {
+  const TOTAL = 25;
+  let minas = 3, tablero = [], abiertas = 0, activo = false, apuesta = 0;
+
+  const comb = (n, k) => { let r = 1; for (let i = 0; i < k; i++) r = r * (n - i) / (i + 1); return r; };
+  const multiplicador = k => k === 0 ? 1 : K.round2(0.97 * comb(TOTAL, k) / comb(TOTAL - minas, k));
+
+  /* ---- panel lateral ---- */
+  const monto = K.G.inputMonto(5);
+  const selMinas = K.el('select');
+  for (let i = 1; i <= 24; i++) selMinas.appendChild(K.el('option', { value: i, text: i + (i === 1 ? ' mina' : ' minas') }));
+  selMinas.value = String(minas);
+  selMinas.onchange = () => { if (!activo) { minas = Number(selMinas.value); refrescarInfo(); } };
+
+  const sMult = K.G.stat('Multiplicador actual', '1.00×');
+  const sProx = K.G.stat('Si abres una más', '—');
+  const sCobro = K.G.stat('Cobro disponible', K.sol(0));
+  const sProb = K.G.stat('Prob. del próximo paso', '—');
+
+  const btnJugar = K.el('button', { class: 'btn', text: 'Apostar y empezar' });
+  const btnCobrar = K.el('button', { class: 'btn sec', text: 'Cobrar' });
+  btnCobrar.disabled = true;
+
+  const panel = K.el('div', { class: 'panel-apuesta' }, [
+    monto.wrap,
+    K.el('div', { class: 'campo' }, [K.el('label', { text: 'Cantidad de minas' }), selMinas]),
+    btnJugar, btnCobrar,
+    K.el('div', { style: 'height:1px;background:var(--linea);margin:2px 0' }),
+    sMult.fila, sProx.fila, sCobro.fila, sProb.fila
+  ]);
+
+  /* ---- tablero ---- */
+  const grid = K.el('div', { class: 'mines-grid' });
+  const zona = K.el('div', { class: 'zona-juego' }, [grid]);
+  const celdas = [];
+  for (let i = 0; i < TOTAL; i++) {
+    const c = K.el('button', { class: 'celda', onclick: () => abrir(i) });
+    c.disabled = true;
+    celdas.push(c);
+    grid.appendChild(c);
+  }
+
+  function refrescarInfo() {
+    const m = multiplicador(abiertas);
+    const prox = multiplicador(abiertas + 1);
+    sMult.set(K.dec(m) + '×');
+    sProx.set(K.dec(prox) + '×');
+    sCobro.set(K.sol(activo ? apuesta * m : 0));
+    const seguras = TOTAL - minas - abiertas;
+    const quedan = TOTAL - abiertas;
+    sProb.set(quedan > 0 ? K.pct(seguras / quedan) : '—');
+  }
+
+  function empezar() {
+    apuesta = monto.get();
+    if (!K.G.apostar(apuesta)) return;
+    tablero = new Array(TOTAL).fill(false);
+    K.mezcla([...Array(TOTAL).keys()]).slice(0, minas).forEach(i => tablero[i] = true);
+    abiertas = 0; activo = true;
+    celdas.forEach(c => { c.className = 'celda'; c.innerHTML = ''; c.disabled = false; });
+    btnJugar.disabled = true; btnCobrar.disabled = false; selMinas.disabled = true;
+    refrescarInfo();
+  }
+
+  function abrir(i) {
+    if (!activo || celdas[i].classList.contains('revelada')) return;
+    if (tablero[i]) {
+      celdas[i].className = 'celda mina';
+      celdas[i].innerHTML = '<span>💣</span>';
+      terminar(false);
+      return;
+    }
+    abiertas++;
+    celdas[i].className = 'celda estrella';
+    celdas[i].innerHTML = '<span>⭐</span>';
+    celdas[i].disabled = true;
+    refrescarInfo();
+    if (abiertas === TOTAL - minas) cobrar();
+  }
+
+  function cobrar() {
+    if (!activo || abiertas === 0) { if (abiertas === 0) K.aviso('Abre al menos una casilla antes de cobrar.', 'warn'); return; }
+    const m = multiplicador(abiertas);
+    const premio = K.round2(apuesta * m);
+    K.G.pagar(premio, `Mines · ${abiertas} aciertos a ${K.dec(m)}×`);
+    K.aviso(`⭐ Cobraste ${K.sol(premio)} con ${K.dec(m)}×`);
+    K.G.anotar('mines', m);
+    terminar(true);
+  }
+
+  function terminar(gano) {
+    activo = false;
+    btnJugar.disabled = false; btnCobrar.disabled = true; selMinas.disabled = false;
+    celdas.forEach((c, i) => {
+      c.disabled = true;
+      if (!c.innerHTML) {
+        c.innerHTML = tablero[i] ? '<span>💣</span>' : '<span>⭐</span>';
+        c.classList.add('revelada');
+      }
+    });
+    if (!gano) { K.aviso('💥 Tocaste una mina. Perdiste ' + K.sol(apuesta) + '.', 'err'); K.G.anotar('mines', 0); }
+    refrescarInfo();
+  }
+
+  btnJugar.onclick = empezar;
+  btnCobrar.onclick = cobrar;
+  refrescarInfo();
+
+  root.appendChild(K.el('div', { class: 'juego-layout' }, [panel, zona]));
+  root.appendChild(K.G.nota(`<h4>Cómo sale el multiplicador</h4>
+    Con <b>${'M'}</b> minas y <b>k</b> casillas abiertas el pago justo es
+    <code>C(25,k) / C(25−M,k)</code>. La casa se queda con un 3%: por eso el multiplicador
+    que ves está a <code>0.97</code> del valor justo. Más minas, menos probabilidad de seguir vivo
+    y más grande el salto por cada acierto.`));
+};
+
+</script>
+<script>
+/* ===========================================================
+   games/limbo.js — eliges el objetivo, el juego sortea
+   P(resultado >= x) = 0.99 / x  →  RTP 99%
+   =========================================================== */
+K.Juegos = K.Juegos || {};
+K.Juegos.limbo = function (root, juego) {
+  const monto = K.G.inputMonto(5);
+  const inpObj = K.el('input', { type: 'number', min: '1.01', step: '0.01', value: '2.00' });
+  const sProb = K.G.stat('Probabilidad de ganar', '49.50%');
+  const sPago = K.G.stat('Pago si acierta', K.sol(10));
+  const sRacha = K.G.stat('Racha actual', '0');
+
+  const btn = K.el('button', { class: 'btn', text: 'Apostar' });
+  const btnAuto = K.el('button', { class: 'btn sec', text: 'Auto ×10' });
+
+  const panel = K.el('div', { class: 'panel-apuesta' }, [
+    monto.wrap,
+    K.el('div', { class: 'campo' }, [
+      K.el('label', { text: 'Multiplicador objetivo' }), inpObj,
+      K.el('div', { class: 'fila-btns' },
+        [1.5, 2, 5, 10].map(v => K.el('button', { text: v + '×', onclick: () => { inpObj.value = v.toFixed(2); refrescar(); } })))
+    ]),
+    btn, btnAuto,
+    K.el('div', { style: 'height:1px;background:var(--linea);margin:2px 0' }),
+    sProb.fila, sPago.fila, sRacha.fila
+  ]);
+
+  const pantalla = K.el('div', { class: 'limbo-pantalla' }, [
+    K.el('div', { class: 'res', text: '1.00×' }),
+    K.el('div', { class: 'msg', text: 'Elige un objetivo y lanza.' })
+  ]);
+  const hist = K.el('div', { class: 'limbo-hist' });
+  const zona = K.el('div', { class: 'zona-juego' }, [pantalla, hist]);
+  const nRes = K.$('.res', pantalla), nMsg = K.$('.msg', pantalla);
+
+  let racha = 0, corriendo = false;
+
+  const objetivo = () => Math.max(1.01, Number(inpObj.value) || 1.01);
+
+  function refrescar() {
+    const o = objetivo();
+    sProb.set(K.pct(0.99 / o, 2));
+    sPago.set(K.sol(monto.get() * o));
+  }
+  inpObj.oninput = refrescar;
+  monto.inp.oninput = refrescar;
+
+  function pintarHistorial() {
+    hist.innerHTML = '';
+    K.G.historial('limbo').slice(0, 14).forEach(v =>
+      hist.appendChild(K.el('span', { class: 'pill ' + K.G.claseMult(v), text: K.dec(v) + '×' })));
+  }
+
+  async function jugar() {
+    if (corriendo) return;
+    const apuesta = monto.get(), obj = objetivo();
+    if (!K.G.apostar(apuesta)) return;
+    corriendo = true; btn.disabled = true; btnAuto.disabled = true;
+
+    const res = K.G.crashAleatorio(0.99);
+    // Cuenta rápida hacia el resultado: nada de suspenso falso, 700 ms.
+    const t0 = performance.now();
+    await new Promise(fin => {
+      const paso = ahora => {
+        const p = Math.min(1, (ahora - t0) / 700);
+        const v = 1 + (res - 1) * (1 - Math.pow(1 - p, 3));
+        nRes.textContent = K.dec(v) + '×';
+        nRes.style.color = 'var(--texto)';
+        if (p < 1) requestAnimationFrame(paso); else fin();
+      };
+      requestAnimationFrame(paso);
+    });
+
+    const gano = res >= obj;
+    nRes.textContent = K.dec(res) + '×';
+    nRes.style.color = gano ? 'var(--acento)' : 'var(--rojo)';
+    if (gano) {
+      const premio = K.round2(apuesta * obj);
+      K.G.pagar(premio, 'Limbo ' + K.dec(obj) + '×');
+      racha++;
+      nMsg.textContent = `Superó tu objetivo de ${K.dec(obj)}× · ganaste ${K.sol(premio)}`;
+    } else {
+      racha = 0;
+      nMsg.textContent = `Se quedó bajo tu objetivo de ${K.dec(obj)}×`;
+    }
+    sRacha.set(String(racha));
+    K.G.anotar('limbo', res);
+    pintarHistorial();
+    corriendo = false; btn.disabled = false; btnAuto.disabled = false;
+    return gano;
+  }
+
+  btn.onclick = jugar;
+  btnAuto.onclick = async () => {
+    for (let i = 0; i < 10; i++) {
+      if (K.Wallet.est().saldo < monto.get()) break;
+      await jugar();
+      await K.enEspera(220);
+    }
+  };
+
+  refrescar(); pintarHistorial();
+  root.appendChild(K.el('div', { class: 'juego-layout' }, [panel, zona]));
+  root.appendChild(K.G.nota(`<h4>La matemática del Limbo</h4>
+    El sorteo cumple <code>P(resultado ≥ x) = 0.99 / x</code>. Si apuntas a 2× ganas el 49.5% de las
+    veces y cobras el doble; si apuntas a 100× ganas el 0.99% y cobras cien veces. El retorno esperado
+    es el mismo en los dos casos: <b>99%</b>. Lo único que cambia es la varianza.`));
+};
+
+</script>
+<script>
+/* ===========================================================
+   games/aviator.js — motor crash (Aviator, Spaceman,
+   Balloon y Maverick comparten esta base)
+   =========================================================== */
+K.Juegos = K.Juegos || {};
+K.Juegos.aviator = function (root, juego) {
+  const cfg = juego.cfg || {};
+  const tema = cfg.tema || 'avion';
+  const icono = tema === 'globo' ? '🎈' : tema === 'space' ? '🧑‍🚀' : tema === 'rapido' ? '🛩️' : '✈️';
+  const vel = cfg.veloz ? 0.155 : 0.085;      // crecimiento del multiplicador por segundo
+
+  const monto = K.G.inputMonto(5);
+  const inpAuto = K.el('input', { type: 'number', min: '1.01', step: '0.1', value: '2.00', placeholder: '2.00' });
+  const chkAuto = K.el('input', { type: 'checkbox' });
+  const sEstado = K.G.stat('Estado', 'Esperando');
+  const sCobro = K.G.stat('Cobro actual', K.sol(0));
+  const sMejor = K.G.stat('Mejor ronda', '—');
+
+  const btn = K.el('button', { class: 'btn', text: 'Apostar y despegar' });
+  const btnMitad = cfg.mitad ? K.el('button', { class: 'btn sec', text: 'Cobrar 50%' }) : null;
+  if (btnMitad) btnMitad.disabled = true;
+
+  const panel = K.el('div', { class: 'panel-apuesta' }, [
+    monto.wrap,
+    K.el('div', { class: 'campo' }, [
+      K.el('label', { text: 'Auto-cashout' }),
+      K.el('div', { style: 'display:flex;gap:8px;align-items:center' }, [chkAuto, inpAuto])
+    ]),
+    btn, btnMitad,
+    K.el('div', { style: 'height:1px;background:var(--linea);margin:2px 0' }),
+    sEstado.fila, sCobro.fila, sMejor.fila
+  ]);
+
+  const cv = K.el('canvas');
+  const grande = K.el('div', { class: 'mult-grande' }, [
+    K.el('div', { class: 'n', text: '1.00×' }),
+    K.el('div', { class: 'est', text: 'listo para despegar' })
+  ]);
+  const lienzo = K.el('div', { class: 'aviator-lienzo' }, [cv, grande]);
+  const hist = K.el('div', { class: 'historial-mult' });
+  const zona = K.el('div', { class: 'zona-juego' }, [lienzo, hist]);
+  const nNum = K.$('.n', grande), nEst = K.$('.est', grande);
+
+  const ctx = cv.getContext('2d');
+  let apuesta = 0, activo = false, mult = 1, crash = 0, t0 = 0, raf = 0, mitadCobrada = false, vivo = true;
+
+  function dimensionar() {
+    const r = lienzo.getBoundingClientRect();
+    cv.width = Math.max(300, r.width) * devicePixelRatio;
+    cv.height = Math.max(220, r.height) * devicePixelRatio;
+  }
+
+  function dibujar(prog) {
+    const W = cv.width, H = cv.height, p = devicePixelRatio;
+    ctx.clearRect(0, 0, W, H);
+    // rejilla de fondo
+    ctx.strokeStyle = 'rgba(255,255,255,.05)';
+    ctx.lineWidth = 1 * p;
+    for (let i = 1; i < 6; i++) {
+      const y = H * i / 6;
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+    }
+    const margen = 40 * p;
+    const x0 = margen, y0 = H - margen;
+    const ancho = W - margen * 2, alto = H - margen * 2;
+    const av = Math.min(1, prog);
+    // curva exponencial normalizada
+    const puntos = [];
+    for (let i = 0; i <= 60; i++) {
+      const f = (i / 60) * av;
+      puntos.push([x0 + ancho * f, y0 - alto * Math.pow(f, 1.7)]);
+    }
+    ctx.beginPath();
+    ctx.moveTo(x0, y0);
+    puntos.forEach(([x, y]) => ctx.lineTo(x, y));
+    ctx.lineTo(puntos.length ? puntos[puntos.length - 1][0] : x0, y0);
+    ctx.closePath();
+    const grad = ctx.createLinearGradient(0, 0, 0, H);
+    grad.addColorStop(0, vivo ? 'rgba(37,208,122,.35)' : 'rgba(255,92,92,.3)');
+    grad.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = grad;
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.moveTo(x0, y0);
+    puntos.forEach(([x, y]) => ctx.lineTo(x, y));
+    ctx.strokeStyle = vivo ? '#25d07a' : '#ff5c5c';
+    ctx.lineWidth = 3 * p;
+    ctx.stroke();
+
+    const punta = puntos[puntos.length - 1] || [x0, y0];
+    ctx.font = (26 * p) + 'px serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(vivo ? icono : '💥', punta[0], punta[1] - 12 * p);
+  }
+
+  function pintarHistorial() {
+    hist.innerHTML = '';
+    K.G.historial(juego.id).slice(0, 16).forEach(v =>
+      hist.appendChild(K.el('span', { class: 'pill ' + K.G.claseMult(v), text: K.dec(v) + '×' })));
+  }
+
+  function despegar() {
+    apuesta = monto.get();
+    if (!K.G.apostar(apuesta)) return;
+    crash = K.G.crashAleatorio(0.97);
+    mult = 1; activo = true; vivo = true; mitadCobrada = false; t0 = performance.now();
+    btn.textContent = 'Cobrar ' + K.sol(apuesta);
+    btn.className = 'btn';
+    if (btnMitad) btnMitad.disabled = false;
+    sEstado.set('En vuelo');
+    nEst.textContent = 'en vuelo';
+    bucle();
+  }
+
+  function bucle() {
+    const paso = ahora => {
+      if (!activo) return;
+      const t = (ahora - t0) / 1000;
+      mult = K.round2(Math.exp(vel * t * (1 + t / 22)));
+      if (mult >= crash) { reventar(); return; }
+      nNum.textContent = K.dec(mult) + '×';
+      nNum.style.color = 'var(--texto)';
+      sCobro.set(K.sol(apuesta * mult));
+      btn.textContent = 'Cobrar ' + K.sol(apuesta * mult);
+      dibujar(Math.min(0.96, Math.log(mult) / Math.log(Math.max(crash, 6)) * 0.9 + t / 60));
+      if (chkAuto.checked && mult >= (Number(inpAuto.value) || 0) && (Number(inpAuto.value) || 0) > 1) { cobrar(); return; }
+      raf = requestAnimationFrame(paso);
+    };
+    raf = requestAnimationFrame(paso);
+  }
+
+  function cobrar() {
+    if (!activo) return;
+    const m = mult;
+    const premio = K.round2(apuesta * m);
+    K.G.pagar(premio, juego.nom + ' ' + K.dec(m) + '×');
+    K.aviso(`${icono} Cobraste ${K.sol(premio)} en ${K.dec(m)}×`);
+    nEst.textContent = 'cobrado en ' + K.dec(m) + '×';
+    cerrarRonda(m, true);
+  }
+
+  function cobrarMitad() {
+    if (!activo || mitadCobrada) return;
+    mitadCobrada = true;
+    const premio = K.round2(apuesta / 2 * mult);
+    K.G.pagar(premio, juego.nom + ' · mitad a ' + K.dec(mult) + '×');
+    apuesta = K.round2(apuesta / 2);
+    K.aviso('Cobraste la mitad: ' + K.sol(premio));
+    btnMitad.disabled = true;
+  }
+
+  function reventar() {
+    vivo = false;
+    nNum.textContent = K.dec(crash) + '×';
+    nNum.style.color = 'var(--rojo)';
+    nEst.textContent = tema === 'globo' ? 'reventó' : 'se fue';
+    dibujar(0.96);
+    K.aviso('💥 Se fue en ' + K.dec(crash) + '× · perdiste ' + K.sol(apuesta), 'err');
+    cerrarRonda(crash, false);
+  }
+
+  function cerrarRonda(valor, gano) {
+    activo = false;
+    cancelAnimationFrame(raf);
+    K.G.anotar(juego.id, gano ? valor : crash);
+    const h = K.G.historial(juego.id);
+    sMejor.set(h.length ? K.dec(Math.max(...h)) + '×' : '—');
+    pintarHistorial();
+    btn.textContent = 'Apostar y despegar';
+    if (btnMitad) btnMitad.disabled = true;
+    sEstado.set('Esperando');
+    sCobro.set(K.sol(0));
+    setTimeout(() => { if (!activo) { nNum.textContent = '1.00×'; nNum.style.color = ''; nEst.textContent = 'listo para despegar'; vivo = true; dibujar(0); } }, 1600);
+  }
+
+  btn.onclick = () => activo ? cobrar() : despegar();
+  if (btnMitad) btnMitad.onclick = cobrarMitad;
+
+  root.appendChild(K.el('div', { class: 'juego-layout' }, [panel, zona]));
+  root.appendChild(K.G.nota(`<h4>Cómo se decide el vuelo</h4>
+    El punto de caída se sortea antes del despegue con <code>P(x ≥ m) = 0.97 / m</code>: hay un 3% de
+    rondas que mueren en 1.00× y el retorno teórico queda en <b>97%</b>. El multiplicador que ves
+    subir es solo la animación de un número que ya estaba decidido, así que salir tarde no "empuja"
+    nada. El auto-cashout existe justamente para no depender de tu reflejo.`));
+
+  dimensionar();
+  dibujar(0);
+  pintarHistorial();
+  const h = K.G.historial(juego.id);
+  if (h.length) sMejor.set(K.dec(Math.max(...h)) + '×');
+  const ro = new ResizeObserver(() => { dimensionar(); dibujar(activo ? 0.5 : 0); });
+  ro.observe(lienzo);
+  return () => { activo = false; cancelAnimationFrame(raf); ro.disconnect(); };
+};
+
+</script>
+<script>
+/* ===========================================================
+   games/plinko.js — 16 filas de clavijas, tres niveles de riesgo
+   =========================================================== */
+K.Juegos = K.Juegos || {};
+K.Juegos.plinko = function (root, juego) {
+  const FILAS = 16;
+  const TABLAS = {
+    bajo:  [16, 9, 2, 1.4, 1.4, 1.2, 1.1, 1, 0.5, 1, 1.1, 1.2, 1.4, 1.4, 2, 9, 16],
+    medio: [110, 41, 10, 5, 3, 1.5, 1, 0.5, 0.3, 0.5, 1, 1.5, 3, 5, 10, 41, 110],
+    alto:  [1000, 130, 26, 9, 4, 2, 0.2, 0.2, 0.2, 0.2, 0.2, 2, 4, 9, 26, 130, 1000]
+  };
+  let riesgo = 'medio';
+
+  const monto = K.G.inputMonto(5);
+  const selR = K.el('select');
+  [['bajo', 'Riesgo bajo'], ['medio', 'Riesgo medio'], ['alto', 'Riesgo alto']]
+    .forEach(([v, t]) => selR.appendChild(K.el('option', { value: v, text: t })));
+  selR.value = riesgo;
+  selR.onchange = () => { riesgo = selR.value; pintarCubos(); };
+
+  const sUlt = K.G.stat('Última bola', '—');
+  const sBolas = K.G.stat('Bolas soltadas', '0');
+  const sNeto = K.G.stat('Resultado neto', K.sol(0));
+
+  const btn = K.el('button', { class: 'btn', text: 'Soltar bola' });
+  const btn5 = K.el('button', { class: 'btn sec', text: 'Soltar 5' });
+
+  const panel = K.el('div', { class: 'panel-apuesta' }, [
+    monto.wrap,
+    K.el('div', { class: 'campo' }, [K.el('label', { text: 'Nivel de riesgo' }), selR]),
+    btn, btn5,
+    K.el('div', { style: 'height:1px;background:var(--linea);margin:2px 0' }),
+    sUlt.fila, sBolas.fila, sNeto.fila
+  ]);
+
+  const cv = K.el('canvas');
+  const cubos = K.el('div', { class: 'plinko-cubos' });
+  const zona = K.el('div', { class: 'zona-juego' }, [
+    K.el('div', { class: 'plinko-lienzo' }, [cv]), cubos
+  ]);
+  const ctx = cv.getContext('2d');
+  let bolas = [], sueltas = 0, neto = 0;
+
+  function pintarCubos() {
+    cubos.innerHTML = '';
+    TABLAS[riesgo].forEach(m => {
+      const color = m >= 10 ? 'var(--rojo)' : m >= 2 ? 'var(--ambar)' : m >= 1 ? 'var(--acento)' : 'var(--tenue2)';
+      cubos.appendChild(K.el('div', { text: m + '×', style: `color:${color};border:1px solid var(--linea)` }));
+    });
+  }
+
+  function dimensionar() {
+    const r = cv.parentElement.getBoundingClientRect();
+    cv.width = Math.max(320, r.width) * devicePixelRatio;
+    cv.height = Math.max(300, r.height) * devicePixelRatio;
+  }
+
+  const pos = (fila, col) => {
+    const p = devicePixelRatio, W = cv.width, H = cv.height;
+    const paso = W / (FILAS + 3);
+    const y = 20 * p + fila * ((H - 40 * p) / FILAS);
+    const x = W / 2 + (col - fila / 2) * paso;
+    return [x, y];
+  };
+
+  function pintar() {
+    const p = devicePixelRatio;
+    ctx.clearRect(0, 0, cv.width, cv.height);
+    ctx.fillStyle = 'rgba(255,255,255,.22)';
+    for (let f = 1; f <= FILAS; f++) {
+      for (let c = 0; c <= f; c++) {
+        const [x, y] = pos(f, c);
+        ctx.beginPath(); ctx.arc(x, y, 2.6 * p, 0, 7); ctx.fill();
+      }
+    }
+    for (const b of bolas) {
+      const f = Math.floor(b.t), frac = b.t - f;
+      const c0 = b.camino[Math.min(f, FILAS)] || 0;
+      const c1 = b.camino[Math.min(f + 1, FILAS)] ?? c0;
+      const [x0, y0] = pos(Math.min(f, FILAS), c0);
+      const [x1, y1] = pos(Math.min(f + 1, FILAS), c1);
+      const x = x0 + (x1 - x0) * frac, y = y0 + (y1 - y0) * frac;
+      ctx.beginPath();
+      ctx.arc(x, y, 6 * p, 0, 7);
+      ctx.fillStyle = '#ffc247';
+      ctx.fill();
+    }
+  }
+
+  function animar() {
+    let vivas = false;
+    for (const b of bolas) {
+      if (b.t < FILAS) { b.t += 0.32; vivas = true; }
+      else if (!b.pagada) { b.pagada = true; pagarBola(b); }
+    }
+    bolas = bolas.filter(b => b.t < FILAS + 1);
+    pintar();
+    if (vivas || bolas.length) requestAnimationFrame(animar); else pintar();
+  }
+
+  function pagarBola(b) {
+    const mult = TABLAS[b.riesgo][b.destino];
+    const premio = K.round2(b.apuesta * mult);
+    K.G.pagar(premio, 'Plinko ' + mult + '×');
+    neto = K.round2(neto + premio - b.apuesta);
+    sUlt.set(mult + '× · ' + K.sol(premio));
+    sNeto.set(K.sol(neto));
+    const nodo = cubos.children[b.destino];
+    if (nodo) { nodo.style.transform = 'scale(1.15)'; setTimeout(() => nodo.style.transform = '', 250); }
+    K.G.anotar('plinko', mult);
+  }
+
+  function soltar() {
+    const apuesta = monto.get();
+    if (!K.G.apostar(apuesta)) return;
+    const camino = [0];
+    let c = 0;
+    for (let f = 0; f < FILAS; f++) { if (Math.random() < 0.5) c++; camino.push(c); }
+    bolas.push({ t: 0, camino, destino: c, apuesta, riesgo, pagada: false });
+    sueltas++; sBolas.set(String(sueltas));
+    if (bolas.length === 1) requestAnimationFrame(animar);
+  }
+
+  btn.onclick = soltar;
+  btn5.onclick = async () => { for (let i = 0; i < 5; i++) { soltar(); await K.enEspera(180); } };
+
+  pintarCubos();
+  root.appendChild(K.el('div', { class: 'juego-layout' }, [panel, zona]));
+  root.appendChild(K.G.nota(`<h4>Por qué el centro paga poco</h4>
+    La bola toma 16 decisiones de 50/50, así que el destino sigue una binomial: caer al centro es
+    <b>miles de veces más probable</b> que caer en un extremo. La tabla de pagos es el reflejo exacto
+    de esa distribución, ajustada para que la casa se quede con su parte.`));
+  dimensionar(); pintar();
+  const ro = new ResizeObserver(() => { dimensionar(); pintar(); });
+  ro.observe(cv.parentElement);
+  return () => ro.disconnect();
+};
+
+</script>
+<script>
+/* ===========================================================
+   games/slot.js — motor de tragamonedas "pay anywhere"
+   Cuadrícula de 6×5. Pagan 8 símbolos iguales caigan donde
+   caigan. La tabla de pagos NO está escrita a mano: se calcula
+   al abrir el juego para que el RTP dé exactamente el declarado.
+   =========================================================== */
+K.Juegos = K.Juegos || {};
+K.Juegos.slot = function (root, juego) {
+  const cfg = juego.cfg;
+  const SIM = cfg.simbolos;                 // del más raro al más común
+  const N = SIM.length;
+  const COLS = 6, FIL = 5, CELDAS = COLS * FIL;
+  const MINIMO = 8;
+  const RTP = cfg.rtp / 100;
+  const VOL = { baja: 1.05, media: 1.22, alta: 1.42 }[cfg.vol] || 1.2;
+
+  /* --- frecuencias: cada símbolo sale un 18% más que el anterior --- */
+  const pesos = SIM.map((_, i) => Math.pow(1.18, i));
+  const sumaP = pesos.reduce((a, b) => a + b, 0);
+  const prob = pesos.map(p => p / sumaP);
+
+  /* --- probabilidad de que un símbolo aparezca n veces en 30 casillas --- */
+  const comb = (n, k) => { let r = 1; for (let i = 0; i < k; i++) r = r * (n - i) / (i + 1); return r; };
+  const binom = (n, k, p) => comb(n, k) * Math.pow(p, k) * Math.pow(1 - p, n - k);
+  const bonoPorCantidad = n => n >= 12 ? 3 : n >= 10 ? 1.5 : 1;
+
+  /* Valor esperado de "veces que se cobra" por símbolo, ya con los bonos. */
+  const esperado = prob.map(p => {
+    let e = 0;
+    for (let n = MINIMO; n <= CELDAS; n++) e += binom(CELDAS, n, p) * bonoPorCantidad(n);
+    return Math.max(e, 1e-9);
+  });
+
+  /* Cómo se reparte el RTP entre símbolos: más volatilidad = más peso en los raros. */
+  const reparto = SIM.map((_, i) => Math.pow(VOL, N - 1 - i));
+  const sumaR = reparto.reduce((a, b) => a + b, 0);
+  const pagos = SIM.map((_, i) => (reparto[i] / sumaR) * RTP / esperado[i]);
+
+  const sortear = () => {
+    let r = Math.random();
+    for (let i = 0; i < N; i++) { r -= prob[i]; if (r <= 0) return i; }
+    return N - 1;
+  };
+
+  const monto = K.G.inputMonto(2);
+  const sUlt = K.G.stat('Último giro', '—');
+  const sGiros = K.G.stat('Giros', '0');
+  const sGratis = K.G.stat('Giros gratis', '0');
+  const sRTP = K.G.stat('RTP teórico', (RTP * 100).toFixed(1) + '%');
+
+  const btn = K.el('button', { class: 'btn', text: 'Girar' });
+  const btnAuto = K.el('button', { class: 'btn sec', text: 'Auto ×15' });
+
+  const panel = K.el('div', { class: 'panel-apuesta' }, [
+    monto.wrap, btn, btnAuto,
+    K.el('div', { style: 'height:1px;background:var(--linea);margin:2px 0' }),
+    sUlt.fila, sGiros.fila, sGratis.fila, sRTP.fila,
+    K.el('div', { class: 'stat-fila' }, [K.el('span', { text: 'Volatilidad' }), K.el('b', { text: cfg.vol })])
+  ]);
+
+  const rejilla = K.el('div', { class: 'slot-rejilla' });
+  const celdas = [];
+  for (let c = 0; c < COLS; c++) {
+    const col = K.el('div', { class: 'slot-col' });
+    for (let f = 0; f < FIL; f++) {
+      const s = K.el('div', { class: 'slot-sim', text: SIM[sortear()] });
+      celdas.push(s); col.appendChild(s);
+    }
+    rejilla.appendChild(col);
+  }
+  const msg = K.el('span', { id: 'slot-msg', text: '' });
+  const marco = K.el('div', { class: 'slot-marco' }, [
+    rejilla,
+    K.el('div', { class: 'slot-info' }, [
+      K.el('span', { text: '8+ símbolos iguales pagan · 10+ ×1.5 · 12+ ×3' }), msg
+    ])
+  ]);
+  const zona = K.el('div', { class: 'zona-juego' }, [marco]);
+
+  let girando = false, giros = 0, gratis = 0;
+
+  async function girar(esGratis = false) {
+    if (girando) return 0;
+    const apuesta = monto.get();
+    if (!esGratis && !K.G.apostar(apuesta)) return 0;
+    girando = true; btn.disabled = true;
+    celdas.forEach(c => c.classList.remove('gana'));
+    msg.textContent = '';
+
+    const t0 = performance.now();
+    await new Promise(fin => {
+      const paso = t => {
+        celdas.forEach(c => c.textContent = SIM[Math.floor(Math.random() * N)]);
+        if (t - t0 < 480) requestAnimationFrame(paso); else fin();
+      };
+      requestAnimationFrame(paso);
+    });
+
+    const res = [];
+    for (let i = 0; i < CELDAS; i++) res.push(sortear());
+    celdas.forEach((c, i) => c.textContent = SIM[res[i]]);
+
+    const cuenta = new Array(N).fill(0);
+    res.forEach(i => cuenta[i]++);
+    let premio = 0; const ganadores = [];
+    cuenta.forEach((n, i) => {
+      if (n >= MINIMO) { premio += apuesta * pagos[i] * bonoPorCantidad(n); ganadores.push(i); }
+    });
+    premio = K.round2(premio * (esGratis ? 2 : 1));
+    celdas.forEach((c, i) => { if (ganadores.includes(res[i])) c.classList.add('gana'); });
+
+    if (premio > 0) {
+      K.G.pagar(premio, juego.nom);
+      sUlt.set('+' + K.sol(premio));
+      msg.innerHTML = `<b style="color:var(--acento)">+${K.sol(premio)}</b>`;
+      if (premio >= apuesta * 25) K.aviso('🎉 ' + K.esc(juego.nom) + ': premio de ' + K.sol(premio));
+    } else { sUlt.set('—'); msg.textContent = ''; }
+
+    if (!esGratis && ganadores.some(i => cuenta[i] >= 11)) {
+      gratis += 5; sGratis.set(String(gratis));
+      K.aviso('🎁 5 giros gratis con pago ×2 en ' + K.esc(juego.nom));
+    }
+    giros++; sGiros.set(String(giros));
+    girando = false; btn.disabled = false;
+
+    if (gratis > 0 && !esGratis) {
+      while (gratis > 0) { gratis--; sGratis.set(String(gratis)); await K.enEspera(400); await girar(true); }
+    }
+    return premio;
+  }
+
+  btn.onclick = () => girar(false);
+  btnAuto.onclick = async () => {
+    for (let i = 0; i < 15; i++) {
+      if (K.Wallet.est().saldo < monto.get()) { K.aviso('Saldo insuficiente para seguir girando.', 'warn'); break; }
+      await girar(false);
+      await K.enEspera(230);
+    }
+  };
+
+  const filasTabla = SIM.map((s, i) =>
+    `<tr><td style="font-size:19px">${s}</td><td>${pagos[i] < 1 ? pagos[i].toFixed(2) : pagos[i].toFixed(1)}×</td>
+     <td>${(prob[i] * 100).toFixed(1)}%</td><td>${(esperado[i] * 100).toFixed(2)}%</td></tr>`).join('');
+
+  root.appendChild(K.el('div', { class: 'juego-layout' }, [panel, zona]));
+  root.appendChild(K.G.nota(`<h4>Tabla de pagos de ${K.esc(juego.nom)}</h4>
+    <table class="tabla"><tr><th>Símbolo</th><th>Pago (8+)</th><th>Frecuencia</th><th>Rondas que paga</th></tr>${filasTabla}</table>
+    <p style="margin-top:8px">Cada pago sale de dividir la porción de RTP asignada al símbolo entre la
+    probabilidad de que aparezca 8 o más veces en las 30 casillas. Por eso el símbolo raro paga cientos
+    de veces la apuesta y el común apenas una fracción: los dos aportan lo mismo al retorno teórico de
+    <b>${(RTP * 100).toFixed(1)}%</b>. La volatilidad <b>${cfg.vol}</b> decide cuánto de ese retorno se
+    concentra en los símbolos raros.</p>`));
+};
+
+</script>
+<script>
+/* ===========================================================
+   games/rueda.js — game shows de rueda (Crazy Time, Monopoly
+   Live, Mega Wheel, Candyland)
+   El pago de cada casilla se calcula desde su frecuencia real
+   en la rueda, con 96% de retorno teórico.
+   =========================================================== */
+K.Juegos = K.Juegos || {};
+K.Juegos.rueda = function (root, juego) {
+  const segs = juego.cfg.segmentos;
+  const total = segs.reduce((a, s) => a + s.p, 0);
+  const RTP = 0.96;
+  const pago = s => Math.round(RTP * total / s.p * 100) / 100;
+
+  const COLORES = ['#25d07a', '#4aa8ff', '#ffc247', '#ff6ec7', '#a678ff', '#ff5c5c', '#19a862', '#5f6f8a'];
+
+  /* La rueda repite cada segmento tantas veces como su frecuencia. */
+  const casillas = [];
+  segs.forEach((s, i) => { for (let k = 0; k < s.p; k++) casillas.push(i); });
+  const orden = K.mezcla(casillas);
+
+  let elegido = 0;
+  const monto = K.G.inputMonto(5);
+  const sPago = K.G.stat('Pago de tu casilla', pago(segs[0]) + '×');
+  const sProb = K.G.stat('Probabilidad', K.pct(segs[0].p / total));
+  const sUlt = K.G.stat('Última rueda', '—');
+
+  const btn = K.el('button', { class: 'btn', text: 'Girar la rueda' });
+  const panel = K.el('div', { class: 'panel-apuesta' }, [monto.wrap, btn,
+    K.el('div', { style: 'height:1px;background:var(--linea);margin:2px 0' }),
+    sPago.fila, sProb.fila, sUlt.fila]);
+
+  const opciones = K.el('div', { class: 'opciones' });
+  const botonesOp = segs.map((s, i) => {
+    const b = K.el('button', { class: i === 0 ? 'on' : '', onclick: () => elegir(i) }, [
+      K.el('span', { text: s.l }), K.el('i', { text: pago(s) + '× · ' + K.pct(s.p / total, 0) })
+    ]);
+    opciones.appendChild(b);
+    return b;
+  });
+  function elegir(i) {
+    elegido = i;
+    botonesOp.forEach((b, k) => b.classList.toggle('on', k === i));
+    sPago.set(pago(segs[i]) + '×');
+    sProb.set(K.pct(segs[i].p / total));
+  }
+
+  const cv = K.el('canvas');
+  const zona = K.el('div', { class: 'zona-juego' }, [
+    K.el('div', { class: 'rueda-lienzo' }, [cv]),
+    K.el('div', { class: 'resultado', id: 'res-rueda' }),
+    opciones
+  ]);
+  const nRes = K.$('#res-rueda', zona);
+  const ctx = cv.getContext('2d');
+  let angulo = 0, girando = false;
+
+  function dimensionar() {
+    const r = cv.parentElement.getBoundingClientRect();
+    cv.width = Math.max(300, r.width) * devicePixelRatio;
+    cv.height = Math.max(280, r.height) * devicePixelRatio;
+  }
+
+  function pintar() {
+    const W = cv.width, H = cv.height, p = devicePixelRatio;
+    const cx = W / 2, cy = H / 2 + 10 * p, R = Math.min(W, H) / 2 - 22 * p;
+    ctx.clearRect(0, 0, W, H);
+    const paso = Math.PI * 2 / orden.length;
+    orden.forEach((idx, i) => {
+      const a0 = angulo + i * paso, a1 = a0 + paso;
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.arc(cx, cy, R, a0, a1);
+      ctx.closePath();
+      ctx.fillStyle = COLORES[idx % COLORES.length];
+      ctx.globalAlpha = idx === elegido ? 1 : .55;
+      ctx.fill();
+      ctx.globalAlpha = 1;
+      ctx.strokeStyle = 'rgba(0,0,0,.35)';
+      ctx.lineWidth = 1 * p;
+      ctx.stroke();
+    });
+    ctx.beginPath(); ctx.arc(cx, cy, R * 0.32, 0, 7);
+    ctx.fillStyle = '#121924'; ctx.fill();
+    ctx.strokeStyle = '#26334a'; ctx.lineWidth = 2 * p; ctx.stroke();
+    ctx.fillStyle = '#e9eef7';
+    ctx.font = '800 ' + (13 * p) + 'px system-ui';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(segs[elegido].l, cx, cy);
+    // aguja
+    ctx.beginPath();
+    ctx.moveTo(cx - 10 * p, cy - R - 6 * p);
+    ctx.lineTo(cx + 10 * p, cy - R - 6 * p);
+    ctx.lineTo(cx, cy - R + 12 * p);
+    ctx.closePath();
+    ctx.fillStyle = '#ffc247'; ctx.fill();
+  }
+
+  function girar() {
+    if (girando) return;
+    const apuesta = monto.get();
+    if (!K.G.apostar(apuesta)) return;
+    girando = true; btn.disabled = true; nRes.textContent = '';
+
+    const destino = Math.floor(Math.random() * orden.length);
+    const paso = Math.PI * 2 / orden.length;
+    // La aguja mira hacia arriba: -PI/2. Se calcula el ángulo final exacto.
+    const objetivo = -Math.PI / 2 - (destino + 0.5) * paso + Math.PI * 2 * 6;
+    const inicio = angulo % (Math.PI * 2);
+    const t0 = performance.now(), dur = 4200;
+    const paso2 = ahora => {
+      const f = Math.min(1, (ahora - t0) / dur);
+      const suave = 1 - Math.pow(1 - f, 3.2);
+      angulo = inicio + (objetivo - inicio) * suave;
+      pintar();
+      if (f < 1) requestAnimationFrame(paso2); else resolver(destino, apuesta);
+    };
+    requestAnimationFrame(paso2);
+  }
+
+  function resolver(destino, apuesta) {
+    const idx = orden[destino];
+    const s = segs[idx];
+    sUlt.set(s.l);
+    if (idx === elegido) {
+      const premio = K.round2(apuesta * pago(s));
+      K.G.pagar(premio, juego.nom + ' · ' + s.l);
+      nRes.innerHTML = `<span style="color:var(--acento)">Salió ${K.esc(s.l)} · ganaste ${K.sol(premio)}</span>`;
+      K.aviso('🎡 ' + K.esc(juego.nom) + ': salió ' + K.esc(s.l) + ' · ' + K.sol(premio));
+    } else {
+      nRes.innerHTML = `<span style="color:var(--tenue)">Salió ${K.esc(s.l)} · tú tenías ${K.esc(segs[elegido].l)}</span>`;
+    }
+    girando = false; btn.disabled = false;
+  }
+
+  btn.onclick = girar;
+  root.appendChild(K.el('div', { class: 'juego-layout' }, [panel, zona]));
+  root.appendChild(K.G.nota(`<h4>De la frecuencia al pago</h4>
+    La rueda tiene <b>${orden.length}</b> casillas repartidas entre ${segs.length} resultados. El pago
+    de cada uno sale de <code>0.96 × ${orden.length} / casillas del resultado</code>, así que todas las
+    opciones devuelven el mismo <b>96%</b> a la larga: apostar al segmento raro solo cambia la varianza,
+    nunca el valor esperado.`));
+  dimensionar(); pintar();
+  const ro = new ResizeObserver(() => { dimensionar(); pintar(); });
+  ro.observe(cv.parentElement);
+  return () => ro.disconnect();
+};
+
+</script>
+<script>
+/* ===========================================================
+   games/ruleta.js — ruleta europea (un solo cero)
+   Variante "rayos": multiplicadores sobre pleno, como
+   Lightning Roulette o Mega Fire Blaze.
+   =========================================================== */
+K.Juegos = K.Juegos || {};
+K.Juegos.ruleta = function (root, juego) {
+  const rayos = !!(juego.cfg && juego.cfg.rayos);
+  const ROJOS = new Set([1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36]);
+  const color = n => n === 0 ? 'verde' : ROJOS.has(n) ? 'rojo' : 'negro';
+
+  /* Apuestas exteriores: pago total (incluye la apuesta). */
+  const APUESTAS = [
+    { id: 'rojo', l: 'Rojo', pago: 2, gana: n => color(n) === 'rojo' },
+    { id: 'negro', l: 'Negro', pago: 2, gana: n => color(n) === 'negro' },
+    { id: 'par', l: 'Par', pago: 2, gana: n => n !== 0 && n % 2 === 0 },
+    { id: 'impar', l: 'Impar', pago: 2, gana: n => n % 2 === 1 },
+    { id: 'bajo', l: '1 a 18', pago: 2, gana: n => n >= 1 && n <= 18 },
+    { id: 'alto', l: '19 a 36', pago: 2, gana: n => n >= 19 },
+    { id: 'd1', l: '1ª docena', pago: 3, gana: n => n >= 1 && n <= 12 },
+    { id: 'd2', l: '2ª docena', pago: 3, gana: n => n >= 13 && n <= 24 },
+    { id: 'd3', l: '3ª docena', pago: 3, gana: n => n >= 25 },
+    { id: 'pleno', l: 'Pleno (número)', pago: rayos ? 30 : 36, gana: (n, num) => n === num }
+  ];
+
+  let sel = 'rojo';
+  const monto = K.G.inputMonto(5);
+  const inpNum = K.el('input', { type: 'number', min: '0', max: '36', value: '7' });
+  const sPago = K.G.stat('Pago', '2.00×');
+  const sProb = K.G.stat('Probabilidad', K.pct(18 / 37));
+  const sUlt = K.G.stat('Últimos', '—');
+
+  const btn = K.el('button', { class: 'btn', text: 'Girar' });
+  const panel = K.el('div', { class: 'panel-apuesta' }, [
+    monto.wrap,
+    K.el('div', { class: 'campo' }, [K.el('label', { text: 'Número para el pleno' }), inpNum]),
+    btn,
+    K.el('div', { style: 'height:1px;background:var(--linea);margin:2px 0' }),
+    sPago.fila, sProb.fila, sUlt.fila
+  ]);
+
+  const opciones = K.el('div', { class: 'opciones' });
+  const botones = APUESTAS.map(a => {
+    const b = K.el('button', { class: a.id === sel ? 'on' : '', onclick: () => elegir(a.id) }, [
+      K.el('span', { text: a.l }), K.el('i', { text: a.pago + '×' })
+    ]);
+    opciones.appendChild(b);
+    return b;
+  });
+  function elegir(id) {
+    sel = id;
+    botones.forEach((b, i) => b.classList.toggle('on', APUESTAS[i].id === id));
+    const a = APUESTAS.find(x => x.id === id);
+    sPago.set(K.dec(a.pago) + '×');
+    const casos = id === 'pleno' ? 1 : id.startsWith('d') ? 12 : 18;
+    sProb.set(K.pct(casos / 37));
+  }
+
+  const num = K.el('div', { class: 'ruleta-num', text: '—' });
+  const detalle = K.el('div', { class: 'resultado', text: rayos ? 'Los rayos caen antes de cada giro' : 'Ruleta europea · 37 casillas' });
+  const rayosCaja = K.el('div', { style: 'text-align:center;font-size:12px;color:var(--ambar);min-height:18px;font-weight:700' });
+  const zona = K.el('div', { class: 'zona-juego' }, [
+    K.el('div', { style: 'flex:1;display:grid;place-content:center;gap:6px' }, [num, detalle, rayosCaja]),
+    opciones
+  ]);
+
+  const historia = [];
+  let girando = false;
+
+  async function girar() {
+    if (girando) return;
+    const apuesta = monto.get();
+    const a = APUESTAS.find(x => x.id === sel);
+    const plenoNum = K.clamp(Math.round(Number(inpNum.value) || 0), 0, 36);
+    if (!K.G.apostar(apuesta)) return;
+    girando = true; btn.disabled = true;
+
+    /* Rayos: 1 a 5 números con multiplicador, sorteados antes del giro. */
+    let mapaRayos = {};
+    if (rayos) {
+      const cuantos = K.entero(1, 5);
+      const nums = K.mezcla([...Array(37).keys()]).slice(0, cuantos);
+      nums.forEach(n => mapaRayos[n] = K.elige([50, 50, 100, 100, 150, 200, 300, 500]));
+      rayosCaja.innerHTML = '⚡ ' + nums.map(n => `${n} (${mapaRayos[n]}×)`).join(' · ');
+    }
+
+    const salida = K.entero(0, 36);
+    const t0 = performance.now();
+    await new Promise(fin => {
+      const paso = ahora => {
+        const f = (ahora - t0) / 2200;
+        if (f < 1) {
+          const n = K.entero(0, 36);
+          num.textContent = n;
+          num.style.color = 'var(--tenue)';
+          setTimeout(() => requestAnimationFrame(paso), 30 + f * 120);
+        } else fin();
+      };
+      requestAnimationFrame(paso);
+    });
+
+    num.textContent = salida;
+    const c = color(salida);
+    num.style.color = c === 'rojo' ? 'var(--rojo)' : c === 'verde' ? 'var(--acento)' : 'var(--texto)';
+    historia.unshift(salida);
+    if (historia.length > 10) historia.length = 10;
+    sUlt.set(historia.slice(0, 6).join(' · '));
+
+    let premio = 0, texto = '';
+    if (a.gana(salida, plenoNum)) {
+      let mult = a.pago;
+      if (a.id === 'pleno' && mapaRayos[salida]) mult = mapaRayos[salida];
+      premio = K.round2(apuesta * mult);
+      K.G.pagar(premio, juego.nom + ' · ' + a.l);
+      texto = `<span style="color:var(--acento)">Salió ${salida} (${c}) · ganaste ${K.sol(premio)}${mult !== a.pago ? ' con rayo ' + mult + '×' : ''}</span>`;
+      K.aviso('🎯 Ruleta: salió ' + salida + ' · ' + K.sol(premio));
+    } else {
+      texto = `<span style="color:var(--tenue)">Salió ${salida} (${c}) · no entró tu apuesta</span>`;
+    }
+    detalle.innerHTML = texto;
+    girando = false; btn.disabled = false;
+  }
+
+  btn.onclick = girar;
+  elegir(sel);
+  root.appendChild(K.el('div', { class: 'juego-layout' }, [panel, zona]));
+  root.appendChild(K.G.nota(`<h4>De dónde sale la ventaja</h4>
+    Hay 37 casillas pero el rojo paga como si hubiera 36: ganas 18 de 37 veces y cobras el doble, o sea
+    <code>18/37 × 2 = 97.3%</code>. Ese <b>2.7%</b> es la ventaja de la casa, y viene entero del cero.
+    ${rayos ? 'En la versión con rayos el pleno baja de 36× a 30×; esa rebaja financia los multiplicadores ' +
+      'que ves antes de cada giro, así que el retorno total termina siendo parecido.' : ''}`));
+};
+
+</script>
+<script>
+/* ===========================================================
+   games/cartas.js — blackjack, baccarat y video póker
+   Comparten baraja, render de cartas y lógica de manos.
+   =========================================================== */
+K.Juegos = K.Juegos || {};
+
+K.Baraja = (() => {
+  const PALOS = [['♠', 0], ['♥', 1], ['♦', 1], ['♣', 0]];
+  const VALORES = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+  const nueva = (mazos = 6) => {
+    const c = [];
+    for (let m = 0; m < mazos; m++)
+      for (const [palo, rojo] of PALOS)
+        for (const v of VALORES) c.push({ v, palo, rojo: !!rojo });
+    return K.mezcla(c);
+  };
+  const sacar = mazo => { if (mazo.length < 15) mazo.push(...nueva(1)); return mazo.pop(); };
+  const nodo = (carta, extra = '') => carta
+    ? K.el('div', { class: 'carta ' + (carta.rojo ? 'roja ' : '') + extra }, [
+        K.el('span', { text: carta.v }), K.el('small', { text: carta.palo })])
+    : K.el('div', { class: 'carta dorso', text: '◆◆' });
+  return { nueva, sacar, nodo, VALORES };
+})();
+
+/* =========================================================
+   BLACKJACK
+   ========================================================= */
+K.Juegos.blackjack = function (root, juego) {
+  const MANOS = (juego.cfg && juego.cfg.manos) || 1;
+  let mazo = K.Baraja.nueva(6);
+  let manos = [], crupier = [], idx = 0, activo = false, apuestaBase = 0;
+
+  const puntos = cartas => {
+    let t = 0, ases = 0;
+    for (const c of cartas) {
+      if (c.v === 'A') { ases++; t += 11; }
+      else if (['J', 'Q', 'K'].includes(c.v)) t += 10;
+      else t += Number(c.v);
+    }
+    while (t > 21 && ases > 0) { t -= 10; ases--; }
+    return t;
+  };
+  const esBJ = c => c.length === 2 && puntos(c) === 21;
+
+  const monto = K.G.inputMonto(10);
+  const selManos = K.el('select');
+  for (let i = 1; i <= MANOS; i++) selManos.appendChild(K.el('option', { value: i, text: i + (i === 1 ? ' mano' : ' manos') }));
+  const sTotal = K.G.stat('Total en juego', K.sol(0));
+  const sCrupier = K.G.stat('Crupier', '—');
+  const sMazo = K.G.stat('Cartas en el zapato', String(mazo.length));
+
+  const btnRepartir = K.el('button', { class: 'btn', text: 'Repartir' });
+  const bPedir = K.el('button', { class: 'btn sec', text: 'Pedir' });
+  const bPlantar = K.el('button', { class: 'btn sec', text: 'Plantarse' });
+  const bDoblar = K.el('button', { class: 'btn sec', text: 'Doblar' });
+  [bPedir, bPlantar, bDoblar].forEach(b => b.disabled = true);
+
+  const panel = K.el('div', { class: 'panel-apuesta' }, [
+    monto.wrap,
+    MANOS > 1 ? K.el('div', { class: 'campo' }, [K.el('label', { text: 'Manos simultáneas' }), selManos]) : null,
+    btnRepartir,
+    K.el('div', { style: 'height:1px;background:var(--linea);margin:2px 0' }),
+    sTotal.fila, sCrupier.fila, sMazo.fila
+  ].filter(Boolean));
+
+  const mesa = K.el('div', { class: 'mesa' });
+  const acciones = K.el('div', { class: 'acciones' }, [bPedir, bPlantar, bDoblar]);
+  const resultado = K.el('div', { class: 'resultado' });
+  const zona = K.el('div', { class: 'zona-juego' }, [mesa, acciones, resultado]);
+
+  function pintar(revelar = false) {
+    mesa.innerHTML = '';
+    const cc = K.el('div', { class: 'cartas' });
+    crupier.forEach((c, i) => cc.appendChild(K.Baraja.nodo(i === 1 && !revelar ? null : c)));
+    mesa.appendChild(K.el('div', { class: 'mano' }, [
+      K.el('div', { class: 'et', text: 'Crupier · ' + (revelar ? puntos(crupier) : puntos(crupier.slice(0, 1)) + '+') }), cc
+    ]));
+    manos.forEach((m, i) => {
+      const cont = K.el('div', { class: 'cartas' });
+      m.cartas.forEach(c => cont.appendChild(K.Baraja.nodo(c)));
+      const et = `Tu mano ${manos.length > 1 ? (i + 1) : ''} · ${puntos(m.cartas)} · ${K.sol(m.apuesta)}` +
+        (m.estado !== 'jugando' ? ' · ' + m.estado : (activo && i === idx ? ' · te toca' : ''));
+      mesa.appendChild(K.el('div', {
+        class: 'mano', style: activo && i === idx ? 'outline:1px dashed var(--linea);padding:6px;border-radius:9px' : ''
+      }, [K.el('div', { class: 'et', text: et }), cont]));
+    });
+    sCrupier.set(revelar ? String(puntos(crupier)) : puntos(crupier.slice(0, 1)) + ' + carta tapada');
+    sMazo.set(String(mazo.length));
+  }
+
+  function repartir() {
+    const n = Number(selManos.value) || 1;
+    apuestaBase = monto.get();
+    const total = K.round2(apuestaBase * n);
+    if (!K.G.apostar(total)) return;
+    sTotal.set(K.sol(total));
+    manos = []; crupier = []; idx = 0; activo = true;
+    resultado.textContent = '';
+    for (let i = 0; i < n; i++) manos.push({ cartas: [K.Baraja.sacar(mazo), K.Baraja.sacar(mazo)], apuesta: apuestaBase, estado: 'jugando' });
+    crupier = [K.Baraja.sacar(mazo), K.Baraja.sacar(mazo)];
+    btnRepartir.disabled = true;
+    [bPedir, bPlantar, bDoblar].forEach(b => b.disabled = false);
+    manos.forEach(m => { if (esBJ(m.cartas)) m.estado = 'blackjack'; });
+    pintar();
+    siguienteMano();
+  }
+
+  function siguienteMano() {
+    while (idx < manos.length && manos[idx].estado !== 'jugando') idx++;
+    if (idx >= manos.length) { turnoCrupier(); return; }
+    bDoblar.disabled = manos[idx].cartas.length !== 2;
+    pintar();
+  }
+
+  function pedir() {
+    const m = manos[idx];
+    m.cartas.push(K.Baraja.sacar(mazo));
+    if (puntos(m.cartas) > 21) { m.estado = 'pasado'; idx++; siguienteMano(); }
+    else { bDoblar.disabled = true; pintar(); }
+  }
+  function plantar() { manos[idx].estado = 'plantado'; idx++; siguienteMano(); }
+  function doblar() {
+    const m = manos[idx];
+    if (!K.G.apostar(m.apuesta)) return;
+    m.apuesta = K.round2(m.apuesta * 2);
+    m.cartas.push(K.Baraja.sacar(mazo));
+    m.estado = puntos(m.cartas) > 21 ? 'pasado' : 'plantado';
+    idx++; siguienteMano();
+  }
+
+  async function turnoCrupier() {
+    [bPedir, bPlantar, bDoblar].forEach(b => b.disabled = true);
+    pintar(true);
+    const hayVivas = manos.some(m => m.estado === 'plantado' || m.estado === 'blackjack');
+    while (hayVivas && puntos(crupier) < 17) {
+      await K.enEspera(520);
+      crupier.push(K.Baraja.sacar(mazo));
+      pintar(true);
+    }
+    liquidar();
+  }
+
+  function liquidar() {
+    const pc = puntos(crupier);
+    const crupierBJ = esBJ(crupier);
+    let pagado = 0;
+    const detalles = [];
+    manos.forEach((m, i) => {
+      const pm = puntos(m.cartas);
+      let premio = 0, texto;
+      if (m.estado === 'pasado') texto = 'te pasaste';
+      else if (m.estado === 'blackjack' && !crupierBJ) { premio = m.apuesta * 2.5; texto = 'blackjack (3:2)'; }
+      else if (m.estado === 'blackjack' && crupierBJ) { premio = m.apuesta; texto = 'empate de blackjacks'; }
+      else if (crupierBJ) texto = 'el crupier tenía blackjack';
+      else if (pc > 21) { premio = m.apuesta * 2; texto = 'el crupier se pasó'; }
+      else if (pm > pc) { premio = m.apuesta * 2; texto = `${pm} contra ${pc}`; }
+      else if (pm === pc) { premio = m.apuesta; texto = 'empate, va devuelta'; }
+      else texto = `${pm} contra ${pc}`;
+      premio = K.round2(premio);
+      pagado += premio;
+      detalles.push(`Mano ${i + 1}: ${texto}${premio > 0 ? ' → ' + K.sol(premio) : ''}`);
+      m.estado = premio > m.apuesta ? 'ganada' : premio === m.apuesta && premio > 0 ? 'empate' : 'perdida';
+    });
+    if (pagado > 0) K.G.pagar(pagado, juego.nom);
+    activo = false;
+    btnRepartir.disabled = false;
+    pintar(true);
+    resultado.innerHTML = detalles.join('<br>') +
+      `<div style="margin-top:6px;color:${pagado > 0 ? 'var(--acento)' : 'var(--tenue)'}">Cobras ${K.sol(pagado)}</div>`;
+  }
+
+  btnRepartir.onclick = repartir;
+  bPedir.onclick = pedir; bPlantar.onclick = plantar; bDoblar.onclick = doblar;
+
+  root.appendChild(K.el('div', { class: 'juego-layout' }, [panel, zona]));
+  root.appendChild(K.G.nota(`<h4>Reglas de la mesa</h4>
+    Seis mazos, el crupier se planta en 17 (incluido el 17 suave), el blackjack natural paga <b>3:2</b>
+    y el empate devuelve la apuesta. Puedes doblar solo con dos cartas. Con estas reglas y estrategia
+    básica la ventaja de la casa queda cerca del <b>0.5%</b>, la más baja del casino; lo que la sube en
+    la práctica son las decisiones malas, no el reparto.`));
+};
+
+/* =========================================================
+   BACCARAT
+   ========================================================= */
+K.Juegos.baccarat = function (root, juego) {
+  let mazo = K.Baraja.nueva(8);
+  const valor = c => c.v === 'A' ? 1 : ['10', 'J', 'Q', 'K'].includes(c.v) ? 0 : Number(c.v);
+  const total = cs => cs.reduce((a, c) => a + valor(c), 0) % 10;
+
+  const OPC = [
+    { id: 'jugador', l: 'Jugador', pago: 2 },
+    { id: 'banca', l: 'Banca', pago: 1.95 },
+    { id: 'empate', l: 'Empate', pago: 9 }
+  ];
+  let sel = 'banca';
+
+  const monto = K.G.inputMonto(10);
+  const sPago = K.G.stat('Pago', '1.95×');
+  const sHist = K.G.stat('Últimas manos', '—');
+  const btn = K.el('button', { class: 'btn', text: 'Repartir' });
+  const panel = K.el('div', { class: 'panel-apuesta' }, [monto.wrap, btn,
+    K.el('div', { style: 'height:1px;background:var(--linea);margin:2px 0' }), sPago.fila, sHist.fila]);
+
+  const opciones = K.el('div', { class: 'opciones' });
+  const botones = OPC.map(o => {
+    const b = K.el('button', { class: o.id === sel ? 'on' : '', onclick: () => { sel = o.id; botones.forEach((x, i) => x.classList.toggle('on', OPC[i].id === o.id)); sPago.set(K.dec(o.pago) + '×'); } },
+      [K.el('span', { text: o.l }), K.el('i', { text: o.pago + '×' })]);
+    opciones.appendChild(b);
+    return b;
+  });
+
+  const mesa = K.el('div', { class: 'mesa' });
+  const resultado = K.el('div', { class: 'resultado' });
+  const zona = K.el('div', { class: 'zona-juego' }, [mesa, resultado, opciones]);
+  const historia = [];
+
+  function pintar(j, b) {
+    mesa.innerHTML = '';
+    [['Jugador', j], ['Banca', b]].forEach(([et, cs]) => {
+      const c = K.el('div', { class: 'cartas' });
+      cs.forEach(x => c.appendChild(K.Baraja.nodo(x)));
+      mesa.appendChild(K.el('div', { class: 'mano' }, [
+        K.el('div', { class: 'et', text: et + ' · ' + total(cs) }), c]));
+    });
+  }
+
+  async function repartir() {
+    const apuesta = monto.get();
+    if (!K.G.apostar(apuesta)) return;
+    btn.disabled = true;
+    if (mazo.length < 30) mazo = K.Baraja.nueva(8);
+    const j = [K.Baraja.sacar(mazo), K.Baraja.sacar(mazo)];
+    const b = [K.Baraja.sacar(mazo), K.Baraja.sacar(mazo)];
+    pintar(j, b);
+    await K.enEspera(500);
+
+    /* Reglas de tercera carta del baccarat punto banco. */
+    const natural = total(j) >= 8 || total(b) >= 8;
+    let terceraJ = null;
+    if (!natural) {
+      if (total(j) <= 5) { terceraJ = K.Baraja.sacar(mazo); j.push(terceraJ); pintar(j, b); await K.enEspera(450); }
+      const tb = total(b);
+      let pide = false;
+      if (terceraJ === null) pide = tb <= 5;
+      else {
+        const v = valor(terceraJ);
+        if (tb <= 2) pide = true;
+        else if (tb === 3) pide = v !== 8;
+        else if (tb === 4) pide = v >= 2 && v <= 7;
+        else if (tb === 5) pide = v >= 4 && v <= 7;
+        else if (tb === 6) pide = v === 6 || v === 7;
+      }
+      if (pide) { b.push(K.Baraja.sacar(mazo)); pintar(j, b); await K.enEspera(450); }
+    }
+
+    const tj = total(j), tb = total(b);
+    const ganador = tj > tb ? 'jugador' : tb > tj ? 'banca' : 'empate';
+    historia.unshift(ganador === 'jugador' ? 'J' : ganador === 'banca' ? 'B' : 'E');
+    if (historia.length > 12) historia.length = 12;
+    sHist.set(historia.join(' '));
+
+    let premio = 0;
+    if (ganador === sel) {
+      premio = K.round2(apuesta * OPC.find(o => o.id === sel).pago);
+      K.G.pagar(premio, 'Baccarat · ' + sel);
+    } else if (ganador === 'empate' && sel !== 'empate') {
+      premio = apuesta;                       // el empate devuelve las apuestas simples
+      K.G.pagar(premio, 'Baccarat · empate, devolución');
+    }
+    resultado.innerHTML = `Jugador ${tj} · Banca ${tb} → <b>${ganador}</b>` +
+      (premio > 0 ? ` · <span style="color:var(--acento)">${K.sol(premio)}</span>` : '');
+    btn.disabled = false;
+  }
+
+  btn.onclick = repartir;
+  root.appendChild(K.el('div', { class: 'juego-layout' }, [panel, zona]));
+  root.appendChild(K.G.nota(`<h4>Por qué la banca paga menos</h4>
+    Las reglas de la tercera carta favorecen a la banca: gana el <b>45.9%</b> de las manos contra
+    <b>44.6%</b> del jugador. Para compensar, la banca paga 0.95 a 1 (una comisión del 5%). Ventaja de
+    la casa: 1.06% a la banca, 1.24% al jugador y un feo <b>14.4%</b> al empate, que es la peor apuesta
+    de la mesa por más que pague 8 a 1.`));
+};
+
+/* =========================================================
+   VIDEO PÓKER — Jacks or Better 9/6
+   ========================================================= */
+K.Juegos.videopoker = function (root, juego) {
+  const PAGOS = [
+    ['Escalera real', 800, m => m.escalera && m.color && m.altas],
+    ['Escalera de color', 50, m => m.escalera && m.color],
+    ['Póker', 25, m => m.grupos[0] === 4],
+    ['Full', 9, m => m.grupos[0] === 3 && m.grupos[1] === 2],
+    ['Color', 6, m => m.color],
+    ['Escalera', 4, m => m.escalera],
+    ['Trío', 3, m => m.grupos[0] === 3],
+    ['Doble par', 2, m => m.grupos[0] === 2 && m.grupos[1] === 2],
+    ['Par de jotas o mejor', 1, m => m.parAlto]
+  ];
+  const ORDEN = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
+
+  let mazo = K.Baraja.nueva(1), mano = [], holds = [false, false, false, false, false], fase = 'apostar';
+
+  function evaluar(cs) {
+    const idx = cs.map(c => ORDEN.indexOf(c.v)).sort((a, b) => a - b);
+    const cuenta = {};
+    cs.forEach(c => cuenta[c.v] = (cuenta[c.v] || 0) + 1);
+    const grupos = Object.values(cuenta).sort((a, b) => b - a);
+    const color = cs.every(c => c.palo === cs[0].palo);
+    let escalera = idx.every((v, i) => i === 0 || v === idx[i - 1] + 1);
+    // As bajo: A 2 3 4 5
+    if (!escalera && idx.join() === '0,1,2,3,12') escalera = true;
+    const altas = idx.join() === '8,9,10,11,12';
+    const parAlto = Object.entries(cuenta).some(([v, n]) => n >= 2 && ORDEN.indexOf(v) >= 9);
+    return { grupos, color, escalera, altas, parAlto };
+  }
+  const premio = cs => {
+    const m = evaluar(cs);
+    for (const [nom, pago, test] of PAGOS) if (test(m)) return { nom, pago };
+    return null;
+  };
+
+  const monto = K.G.inputMonto(2);
+  const sMano = K.G.stat('Mano', '—');
+  const btn = K.el('button', { class: 'btn', text: 'Repartir' });
+  const tabla = K.el('table', { class: 'tabla-pagos' });
+  tabla.innerHTML = PAGOS.map(([n, p]) => `<tr data-n="${n}"><td>${n}</td><td>${p}×</td></tr>`).join('');
+
+  const panel = K.el('div', { class: 'panel-apuesta' }, [monto.wrap, btn,
+    K.el('div', { style: 'height:1px;background:var(--linea);margin:2px 0' }), sMano.fila, tabla]);
+
+  const cartas = K.el('div', { class: 'cartas', style: 'justify-content:center' });
+  const pista = K.el('div', { class: 'resultado', text: 'Reparte y elige qué cartas conservar.' });
+  const zona = K.el('div', { class: 'zona-juego' }, [
+    K.el('div', { style: 'flex:1;display:grid;place-content:center;gap:14px' }, [cartas, pista])
+  ]);
+
+  function pintar() {
+    cartas.innerHTML = '';
+    mano.forEach((c, i) => {
+      const n = K.Baraja.nodo(c, holds[i] ? 'hold' : '');
+      n.style.cursor = fase === 'descartar' ? 'pointer' : 'default';
+      n.onclick = () => { if (fase !== 'descartar') return; holds[i] = !holds[i]; pintar(); };
+      cartas.appendChild(n);
+    });
+  }
+  const marcar = nom => K.$$('tr', tabla).forEach(t => t.classList.toggle('gana', t.dataset.n === nom));
+
+  function repartir() {
+    if (!K.G.apostar(monto.get())) return;
+    mazo = K.Baraja.nueva(1);
+    mano = [0, 0, 0, 0, 0].map(() => K.Baraja.sacar(mazo));
+    holds = [false, false, false, false, false];
+    fase = 'descartar';
+    btn.textContent = 'Cambiar cartas';
+    pista.textContent = 'Toca las cartas que quieres conservar y pulsa cambiar.';
+    marcar(null);
+    sMano.set('—');
+    pintar();
+  }
+
+  function cambiar() {
+    mano = mano.map((c, i) => holds[i] ? c : K.Baraja.sacar(mazo));
+    fase = 'apostar';
+    btn.textContent = 'Repartir';
+    pintar();
+    const p = premio(mano);
+    if (p) {
+      const pago = K.round2(monto.get() * p.pago);
+      K.G.pagar(pago, 'Video póker · ' + p.nom);
+      pista.innerHTML = `<span style="color:var(--acento)">${p.nom} · ${K.sol(pago)}</span>`;
+      sMano.set(p.nom);
+      marcar(p.nom);
+    } else {
+      pista.textContent = 'Sin premio esta vez.';
+      sMano.set('sin premio');
+      marcar(null);
+    }
+  }
+
+  btn.onclick = () => fase === 'apostar' ? repartir() : cambiar();
+  root.appendChild(K.el('div', { class: 'juego-layout' }, [panel, zona]));
+  root.appendChild(K.G.nota(`<h4>La tabla 9/6</h4>
+    El nombre viene de lo que paga el full (9×) y el color (6×). Con esa tabla y juego perfecto el
+    retorno llega al <b>99.5%</b>, uno de los más altos del casino. Las versiones 8/5 o 7/5, que se ven
+    mucho, bajan el retorno a 97% o menos: la diferencia entera está en esas dos líneas.`));
+};
+
+</script>
+<script>
+/* ===========================================================
+   casino.js — lobby, buscador y lanzador de juegos
+   =========================================================== */
+K.Casino = (() => {
+  let cat = 'todos', texto = '';
+
+  function tarjeta(j) {
+    const jugable = !!K.Juegos[j.motor];
+    const card = K.el('button', { class: 'juego', onclick: () => abrir(j.id) });
+    const arte = K.el('div', { class: 'arte', style: 'background:' + j.grad });
+    arte.appendChild(K.el('span', { text: j.ic }));
+    arte.appendChild(K.el('span', { class: 'n', text: '#' + j.n }));
+    arte.appendChild(K.el('span', { class: jugable ? 'jugable' : 'info-only', text: jugable ? 'JUGAR' : 'FICHA' }));
+    card.appendChild(arte);
+    card.appendChild(K.el('div', { class: 'txt' }, [
+      K.el('span', { class: 'nom', text: j.nom }),
+      K.el('span', { class: 'prov', text: j.prov }),
+      K.el('span', { class: 'desc', text: j.desc })
+    ]));
+    return card;
+  }
+
+  function vista(root) {
+    root.innerHTML = '';
+    const hero = K.el('div', { class: 'casino-hero' });
+    hero.innerHTML = `<div class="brillo b1"></div><div class="brillo b2"></div>
+      <h2>Casino Kronos</h2>
+      <p>Treinta títulos del catálogo repartidos en cuatro categorías, todos corriendo sobre motores
+      propios con la matemática a la vista: cada juego te muestra su RTP, su tabla de pagos y de dónde
+      sale la ventaja de la casa. Fichas de demostración, cero dinero real.</p>`;
+    root.appendChild(hero);
+
+    const buscador = K.el('div', { class: 'buscador' });
+    const inp = K.el('input', { type: 'search', placeholder: 'Buscar juego o proveedor…', value: texto });
+    inp.oninput = () => { texto = inp.value; pintarGrid(); };
+    buscador.appendChild(inp);
+    root.appendChild(buscador);
+
+    const chips = K.el('div', { class: 'chips' });
+    K.CATEGORIAS.forEach(c => chips.appendChild(K.el('button', {
+      class: 'chip' + (cat === c.id ? ' on' : ''), html: c.ic + ' ' + c.nom,
+      onclick: () => { cat = c.id; K.$$('.chip', chips).forEach((b, i) => b.classList.toggle('on', K.CATEGORIAS[i].id === cat)); pintarGrid(); }
+    })));
+    root.appendChild(chips);
+
+    const grid = K.el('div', { class: 'grid-juegos', id: 'grid-juegos' });
+    root.appendChild(grid);
+
+    function pintarGrid() {
+      const t = texto.trim().toLowerCase();
+      const lista = K.JUEGOS.filter(j =>
+        (cat === 'todos' || j.cat === cat) &&
+        (!t || j.nom.toLowerCase().includes(t) || j.prov.toLowerCase().includes(t) || j.desc.toLowerCase().includes(t)));
+      grid.innerHTML = '';
+      if (!lista.length) {
+        grid.appendChild(K.el('div', { class: 'vacio', html: '<span class="ic">🔍</span>Ningún juego coincide con esa búsqueda.' }));
+        return;
+      }
+      lista.forEach(j => grid.appendChild(tarjeta(j)));
+    }
+    pintarGrid();
+  }
+
+  function abrir(id) {
+    const j = K.juego(id);
+    if (!j) return;
+    const motor = K.Juegos[j.motor];
+    const cuerpo = K.el('div');
+    if (!motor) {
+      cuerpo.appendChild(K.el('div', {
+        class: 'info-bloque',
+        html: `<h4>${K.esc(j.nom)}</h4>${K.esc(j.desc)}
+          <p style="margin-top:8px">Este título todavía no tiene motor jugable en la demo.</p>`
+      }));
+      K.modal(j.nom, cuerpo, j.prov);
+      return;
+    }
+    K.G.setJuego(j);
+    const limpiar = motor(cuerpo, j);
+    K.modal(j.nom, cuerpo, j.prov + ' · demo', limpiar);
+  }
+
+  return { vista, abrir };
+})();
+
+</script>
+<script>
+/* ===========================================================
+   app.js — navegación, cuenta, modales y arranque
+   =========================================================== */
+
+/* ---------- modal genérico ---------- */
+K.modal = (titulo, nodo, sub = '', limpiar = null) => {
+  const fondo = K.el('div', { class: 'modal-fondo' });
+  const cerrar = () => { if (typeof limpiar === 'function') limpiar(); fondo.remove(); document.body.style.overflow = ''; };
+  const cab = K.el('div', { class: 'modal-cab' }, [
+    K.el('h3', { text: titulo }),
+    sub ? K.el('span', { class: 'prov', text: sub }) : null,
+    K.el('button', { class: 'x', text: '×', onclick: cerrar })
+  ].filter(Boolean));
+  const caja = K.el('div', { class: 'modal' }, [cab, K.el('div', { class: 'modal-cuerpo' }, [nodo])]);
+  fondo.appendChild(caja);
+  fondo.onclick = e => { if (e.target === fondo) cerrar(); };
+  document.addEventListener('keydown', function esc(e) {
+    if (e.key === 'Escape') { cerrar(); document.removeEventListener('keydown', esc); }
+  });
+  document.body.appendChild(fondo);
+  document.body.style.overflow = 'hidden';
+  return cerrar;
+};
+
+K.App = (() => {
+  let vista = 'deportes';
+
+  const VISTAS = [
+    { id: 'deportes', nom: 'Deportes', ic: '⚽', slip: true },
+    { id: 'vivo', nom: 'En vivo', ic: '🔴', slip: true },
+    { id: 'casino', nom: 'Casino', ic: '🎰' },
+    { id: 'apuestas', nom: 'Mis apuestas', ic: '🎫' },
+    { id: 'cuenta', nom: 'Cuenta', ic: '👤' },
+    { id: 'como', nom: 'Cómo funciona', ic: '📐' }
+  ];
+
+  function pintarNav() {
+    const nav = K.$('#nav');
+    nav.innerHTML = '';
+    const vivos = K.EVENTOS.filter(e => e.vivo).length;
+    const pend = K.Wallet.est().apuestas.filter(a => a.estado === 'pendiente').length;
+    VISTAS.forEach(v => {
+      const b = K.el('button', { class: vista === v.id ? 'on' : '', onclick: () => ir(v.id) });
+      b.innerHTML = v.ic + ' ' + v.nom +
+        (v.id === 'vivo' && vivos ? `<span class="pip vivo-pip">${vivos}</span>` : '') +
+        (v.id === 'apuestas' && pend ? `<span class="pip">${pend}</span>` : '');
+      nav.appendChild(b);
+    });
+  }
+
+  function ir(v) {
+    vista = v;
+    pintarNav();
+    pintar();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function pintar() {
+    const cont = K.$('#contenedor');
+    const main = K.$('#main');
+    const lateral = K.$('#lateral');
+    const conSlip = VISTAS.find(v => v.id === vista).slip;
+    cont.classList.toggle('ancho', !conSlip);
+    lateral.style.display = conSlip ? '' : 'none';
+    main.innerHTML = '';
+
+    if (vista === 'deportes' || vista === 'vivo') {
+      K.Sportsbook.setVivo(vista === 'vivo');
+      K.Sportsbook.vista(main);
+      K.Sportsbook.pintarBoleto();
+    } else if (vista === 'casino') K.Casino.vista(main);
+    else if (vista === 'apuestas') K.Sportsbook.vistaApuestas(main);
+    else if (vista === 'cuenta') vistaCuenta(main);
+    else if (vista === 'como') vistaComoFunciona(main);
+  }
+
+  /* =========================================================
+     CUENTA
+     ========================================================= */
+  function vistaCuenta(root) {
+    const w = K.Wallet.est();
+    root.innerHTML = '';
+    root.appendChild(K.el('div', { class: 'titulo-sec' }, [
+      K.el('h2', { text: '👤 Mi cuenta' }),
+      K.el('span', { class: 'sub', text: 'Saldo de demostración · nada de esto es dinero real' })
+    ]));
+
+    const apostadoDep = w.apuestas.reduce((a, b) => a + b.stake, 0);
+    const pagadoDep = w.apuestas.reduce((a, b) => a + b.pago, 0);
+    const neto = K.round2(w.saldo - w.depositado);
+    const rtpCasino = w.casino.apostado > 0 ? w.casino.devuelto / w.casino.apostado : null;
+
+    const kpis = K.el('div', { class: 'grid2' }, [
+      kpi('Saldo actual', K.sol(w.saldo)),
+      kpi('Resultado neto', K.sol(neto), neto >= 0 ? 'pos' : 'neg'),
+      kpi('Apostado en deportes', K.sol(apostadoDep)),
+      kpi('Devuelto en deportes', K.sol(pagadoDep)),
+      kpi('Apostado en casino', K.sol(w.casino.apostado)),
+      kpi('RTP observado en casino', rtpCasino === null ? '—' : K.pct(rtpCasino))
+    ]);
+    root.appendChild(caja('Resumen', kpis));
+
+    /* --- perfil de riesgo --- */
+    const clv = w.perfil.clv;
+    const clvMedio = clv.length ? clv.reduce((a, b) => a + b, 0) / clv.length : 0;
+    const perfil = K.el('div');
+    perfil.innerHTML = `
+      <div class="grid2" style="margin-bottom:12px">
+        <div class="kpi"><span class="et">Categoría asignada</span><span class="vl">${w.perfil.categoria}</span></div>
+        <div class="kpi"><span class="et">CLV promedio</span><span class="vl ${clvMedio >= 0 ? 'pos' : 'neg'}">${clv.length ? (clvMedio >= 0 ? '+' : '') + clvMedio.toFixed(2) + '%' : '—'}</span></div>
+        <div class="kpi"><span class="et">Límite por apuesta</span><span class="vl">${K.sol(w.perfil.limiteApuesta)}</span></div>
+      </div>
+      <div class="info-bloque">
+        El motor compara la cuota que tomaste contra la cuota de cierre del mercado. Si ganas valor de
+        forma sistemática (<b>CLV positivo</b>) te clasifica como <i>sharp</i> y te recorta el límite:
+        así funciona el <i>limiting</i> en las casas reales.
+        ${w.perfil.marcas.length ? '<br><br><b>Marcas activas:</b><br>· ' + w.perfil.marcas.map(K.esc).join('<br>· ') : ''}
+        ${clv.length < 8 ? '<br><br>Necesitas al menos 8 apuestas liquidadas para que el perfil se calcule.' : ''}
+      </div>`;
+    root.appendChild(caja('Motor de riesgo y perfilado', perfil));
+
+    /* --- libro de la casa --- */
+    root.appendChild(caja('Libro de la casa · responsabilidad abierta', K.Sportsbook.panelRiesgo()));
+
+    /* --- depósitos, KYC y rollover --- */
+    const pagos = K.el('div');
+    const rollBarra = w.depositado > 0 ? 1 - w.rollover / Math.max(w.depositado, 1) : 1;
+    pagos.innerHTML = `
+      <div class="info-bloque" style="margin-bottom:12px">
+        <h4>Verificación de identidad (KYC)</h4>
+        Estado: <b style="color:${w.kyc.verificado ? 'var(--acento)' : 'var(--ambar)'}">${w.kyc.verificado ? 'verificada' : 'pendiente'}</b>.
+        En una plataforma real acá se cruzarían tus datos con RENIEC y una prueba de vida biométrica antes
+        del primer retiro. Esta demo no pide ni guarda ningún dato personal: el botón solo simula el trámite.
+      </div>
+      <div class="info-bloque">
+        <h4>Rollover pendiente</h4>
+        Falta apostar <b>${K.sol(w.rollover)}</b> para liberar el retiro (regla 1× sobre lo depositado).
+        <div class="barra"><i style="width:${K.clamp(rollBarra * 100, 0, 100)}%"></i></div>
+      </div>`;
+    const botonera = K.el('div', { class: 'acciones', style: 'margin-top:12px' }, [
+      K.el('button', { class: 'btn', text: 'Depositar fichas demo', onclick: modalDeposito }),
+      K.el('button', { class: 'btn sec', text: 'Retirar', onclick: modalRetiro }),
+      K.el('button', { class: 'btn sec', text: w.kyc.verificado ? 'KYC verificado' : 'Simular verificación', onclick: () => { K.Wallet.verificarKYC(); K.aviso('Identidad verificada (simulación).'); pintar(); } })
+    ]);
+    pagos.appendChild(botonera);
+    root.appendChild(caja('Pagos y cumplimiento', pagos));
+
+    /* --- juego responsable --- */
+    const jr = K.el('div');
+    const min = Math.floor(K.Wallet.tiempoSesion() / 60000);
+    jr.innerHTML = `<div class="info-bloque" style="margin-bottom:12px">
+      Llevas <b>${min} minuto${min === 1 ? '' : 's'}</b> en esta sesión.
+      Las herramientas de abajo funcionan igual que en una casa regulada: los límites se pueden bajar al
+      instante y subir recién después de un período de espera.</div>`;
+    const campos = K.el('div', { class: 'grid2' });
+    campos.appendChild(campoNumero('Límite de depósito diario (S/)', w.limites.depositoDiario, v => { w.limites.depositoDiario = v; K.Wallet.persistir(); }));
+    campos.appendChild(campoNumero('Apuesta máxima (S/)', w.limites.apuestaMax, v => { w.limites.apuestaMax = v; K.Wallet.persistir(); }));
+    jr.appendChild(campos);
+    const pausas = K.el('div', { class: 'acciones', style: 'margin-top:12px' }, [
+      K.el('button', { class: 'btn sec', text: 'Pausa de 15 min', onclick: () => { K.Wallet.pausar(15); K.aviso('Pausa activada por 15 minutos.', 'warn'); pintar(); } }),
+      K.el('button', { class: 'btn sec', text: 'Pausa de 1 hora', onclick: () => { K.Wallet.pausar(60); K.aviso('Pausa activada por 1 hora.', 'warn'); pintar(); } }),
+      K.el('button', { class: 'btn peligro', text: 'Reiniciar la demo', onclick: () => {
+        if (confirm('Esto borra saldo, apuestas e historial de esta demo. ¿Continuar?')) { K.Wallet.reiniciar(); K.aviso('Demo reiniciada.'); pintar(); actualizarSaldo(); }
+      } })
+    ]);
+    jr.appendChild(pausas);
+    if (Date.now() < w.limites.autoexcluidoHasta) {
+      jr.appendChild(K.el('div', {
+        class: 'info-bloque', style: 'margin-top:12px;border-color:var(--ambar);color:var(--ambar)',
+        html: '⏸ Tienes una pausa activa hasta las ' + K.hora(w.limites.autoexcluidoHasta) + '. No puedes apostar hasta entonces.'
+      }));
+    }
+    root.appendChild(caja('Juego responsable', jr));
+
+    /* --- movimientos --- */
+    const t = K.el('table', { class: 'tabla' });
+    t.innerHTML = '<tr><th>Fecha</th><th>Movimiento</th><th>Detalle</th><th>Monto</th><th>Saldo</th></tr>' +
+      w.ledger.slice(0, 40).map(l => `<tr>
+        <td>${K.fechaHora(l.t)}</td><td>${K.esc(l.tipo)}</td><td>${K.esc(l.det)}</td>
+        <td class="${l.monto >= 0 ? 'pos' : 'neg'}">${l.monto >= 0 ? '+' : ''}${K.sol(l.monto)}</td>
+        <td>${K.sol(l.saldo)}</td></tr>`).join('');
+    root.appendChild(caja('Libro mayor de la cuenta', t));
+  }
+
+  const kpi = (et, vl, cls = '') => K.el('div', { class: 'kpi' }, [
+    K.el('span', { class: 'et', text: et }), K.el('span', { class: 'vl ' + cls, text: vl })
+  ]);
+  const caja = (titulo, nodo) => {
+    const c = K.el('div', { class: 'tarjeta', style: 'margin-bottom:14px' });
+    c.appendChild(K.el('h3', { text: titulo }));
+    c.appendChild(K.el('div', { class: 'cuerpo' }, [nodo]));
+    return c;
+  };
+  function campoNumero(etiqueta, valor, onCambio) {
+    const inp = K.el('input', { type: 'number', min: '1', value: valor });
+    inp.onchange = () => { const v = Math.max(1, Number(inp.value) || 1); onCambio(v); K.aviso('Límite actualizado.'); };
+    return K.el('div', { class: 'campo' }, [K.el('label', { text: etiqueta }), inp]);
+  }
+
+  function modalDeposito() {
+    const cuerpo = K.el('div');
+    const inp = K.el('input', { type: 'number', min: '10', step: '10', value: '200' });
+    cuerpo.appendChild(K.el('div', { class: 'info-bloque', html:
+      'Método simulado: <b>Yape · Plin · tarjeta</b>. No se pide ningún dato real y las fichas no tienen valor.' }));
+    cuerpo.appendChild(K.el('div', { class: 'campo', style: 'margin-top:12px' }, [
+      K.el('label', { text: 'Monto a recargar (S/)' }), inp,
+      K.el('div', { class: 'fila-btns' }, [50, 100, 200, 500].map(v =>
+        K.el('button', { text: v, onclick: () => inp.value = v })))
+    ]));
+    const btn = K.el('button', { class: 'btn', style: 'width:100%;margin-top:12px', text: 'Confirmar recarga' });
+    cuerpo.appendChild(btn);
+    const cerrar = K.modal('Depositar fichas demo', cuerpo, 'simulación');
+    btn.onclick = () => {
+      const r = K.Wallet.depositar(K.round2(Number(inp.value) || 0));
+      if (!r.ok) { K.aviso(r.razon, 'err'); return; }
+      K.aviso('Recarga acreditada.');
+      cerrar(); actualizarSaldo(); if (vista === 'cuenta') pintar();
+    };
+  }
+
+  function modalRetiro() {
+    const w = K.Wallet.est();
+    const cuerpo = K.el('div');
+    const inp = K.el('input', { type: 'number', min: '10', step: '10', value: Math.min(100, Math.floor(w.saldo)) });
+    cuerpo.appendChild(K.el('div', { class: 'info-bloque', html:
+      `Para retirar hacen falta dos cosas, igual que en una casa regulada: identidad verificada y el
+       rollover cumplido. Ahora mismo: KYC <b>${w.kyc.verificado ? 'ok' : 'pendiente'}</b>,
+       rollover pendiente <b>${K.sol(w.rollover)}</b>.` }));
+    cuerpo.appendChild(K.el('div', { class: 'campo', style: 'margin-top:12px' }, [
+      K.el('label', { text: 'Monto a retirar (S/)' }), inp]));
+    const btn = K.el('button', { class: 'btn', style: 'width:100%;margin-top:12px', text: 'Solicitar retiro' });
+    cuerpo.appendChild(btn);
+    const cerrar = K.modal('Retirar', cuerpo, 'simulación');
+    btn.onclick = () => {
+      const r = K.Wallet.retirar(K.round2(Number(inp.value) || 0));
+      if (!r.ok) { K.aviso(r.razon, 'err'); return; }
+      K.aviso('Retiro simulado procesado.');
+      cerrar(); actualizarSaldo(); if (vista === 'cuenta') pintar();
+    };
+  }
+
+  /* =========================================================
+     CÓMO FUNCIONA — la parte teórica, con los números del sitio
+     ========================================================= */
+  function vistaComoFunciona(root) {
+    root.innerHTML = '';
+    root.appendChild(K.el('div', { class: 'titulo-sec' }, [
+      K.el('h2', { text: '📐 Cómo funciona por dentro' }),
+      K.el('span', { class: 'sub', text: 'La misma matemática que corre en el sitio, explicada' })
+    ]));
+
+    const ejemplo = K.EVENTOS.find(e => e.deporte === 'futbol' && !e.terminado) || K.EVENTOS[0];
+    const merc = K.Odds.construir(ejemplo)[0];
+    const filas = merc.sel.map(s =>
+      `<tr><td>${K.esc(s.extra || s.lab)}</td><td>${K.dec(s.cuota)}</td><td>${K.pct(s.impl)}</td></tr>`).join('');
+
+    const b1 = K.el('div', { class: 'info-bloque' });
+    b1.innerHTML = `
+      <h4>1. De la probabilidad a la cuota</h4>
+      Para el fútbol el sitio usa un modelo de Poisson: con los goles esperados de cada equipo arma la
+      matriz de todos los marcadores posibles y de ahí saca la probabilidad de cada mercado.
+      <div class="formula">P(marcador i-j) = Poisson(λ_local, i) × Poisson(λ_visita, j)</div>
+      Esas probabilidades suman 1.00 (cuotas justas). Después se les aplica el margen:
+      <div class="formula">P'ᵢ = Pᵢ × M          Cuotaᵢ = 1 / P'ᵢ</div>
+      Con M = 1.05 el libro suma 105% en vez de 100%: ese 5% es la ganancia estructural de la casa.
+      <br><br><b>Ejemplo vivo — ${K.esc(ejemplo.local)} vs ${K.esc(ejemplo.visita)}:</b>
+      <table class="tabla" style="margin-top:6px"><tr><th>Resultado</th><th>Cuota</th><th>Prob. implícita</th></tr>${filas}</table>
+      <p style="margin-top:8px">Suma de implícitas: <b>${K.pct(merc.overround)}</b> → margen de
+      <b>${K.pct(merc.overround - 1)}</b>. Si apuestas S/ 100 a la primera opción, cobras
+      ${K.sol(100 * merc.sel[0].cuota)}: ${K.sol(100 * merc.sel[0].cuota - 100)} de ganancia neta más tu inversión.</p>`;
+    root.appendChild(caja('Cuotas, probabilidad implícita y overround', b1));
+
+    const b2 = K.el('div', { class: 'info-bloque' });
+    b2.innerHTML = `
+      <h4>2. Por qué la cuota se mueve sola</h4>
+      Cada apuesta que aceptas carga el libro de un lado. El motor reparte el margen según ese
+      desbalance, así que el lado que recibe dinero paga menos y el otro paga más. Puedes verlo en vivo:
+      apuesta fuerte a un mercado y mira cómo baja su cuota en la lista.
+      <div class="formula">P'ᵢ = Pᵢ × (1 + 0.9 × (pesoᵢ − 1/n))     con pesoᵢ = responsabilidad del resultado i</div>
+      Cuando el desbalance es grande, una casa real suma dos herramientas más: mover la línea (esto) y
+      cubrirse comprando la posición contraria en un exchange o en otra casa (<i>hedging</i>).`;
+    root.appendChild(caja('Gestión de riesgo del libro', b2));
+
+    const b3 = K.el('div', { class: 'info-bloque' });
+    b3.innerHTML = `
+      <h4>3. En vivo: latencia y suspensión</h4>
+      <div class="formula">[Cancha] → 1-2 s → [Scout] → 100 ms → [Proveedor de datos]
+        → 50 ms → [Motor de riesgo] → 3-8 s de delay → [Tu pantalla]</div>
+      El retardo de 3 a 8 segundos al aceptar una apuesta en vivo no es lentitud: existe para frenar el
+      <i>courtsiding</i>, que es apostar desde el estadio con información que todavía no llegó a la
+      transmisión. Acá está implementado tal cual: cuando apuestas a un partido en vivo aparece la
+      cuenta regresiva, y si en ese lapso cae un gol, tu apuesta se rechaza porque el mercado entra en
+      <code>SUSPENDED</code> mientras se recalcula el modelo con el marcador nuevo.
+      <br><br>El margen en vivo también sube: acá se le suman 2.5 puntos al margen de prepartido, porque
+      la información envejece en segundos.`;
+    root.appendChild(caja('Motor en vivo', b3));
+
+    const b4 = K.el('div', { class: 'info-bloque' });
+    b4.innerHTML = `
+      <h4>4. El cashout no cancela nada</h4>
+      Cobrar antes de tiempo es en realidad vender tu apuesta al precio actual del mercado:
+      <div class="formula">Cashout = (Apuesta × Cuota bloqueada / Cuota actual) × (1 − margen)</div>
+      Con S/ 100 a cuota 3.00, si el partido se pone de tu lado y la cuota vive ahora en 1.50 y la casa
+      retiene un 5%: <b>100 × 3.00 / 1.50 × 0.95 = S/ 190</b>. Te aseguras 190 y la casa se libera del
+      riesgo de pagarte 300. Esa retención del 5% es la comisión del servicio.`;
+    root.appendChild(caja('Cashout', b4));
+
+    const b5 = K.el('div', { class: 'info-bloque' });
+    b5.innerHTML = `
+      <h4>5. Ciclo de vida de una apuesta</h4>
+      <table class="tabla">
+        <tr><th>Etapa</th><th>Qué pasa por dentro</th></tr>
+        <tr><td>Depósito</td><td>Pasarela acredita saldo y se abre el rollover 1×</td></tr>
+        <tr><td>Selección</td><td>Se arma el boleto y se calcula el retorno potencial</td></tr>
+        <tr><td>Validación</td><td>Límites de cuenta, saldo y delay de aceptación; si pasa, el importe se congela</td></tr>
+        <tr><td>Evento</td><td>Cuotas vivas, cashout disponible, suspensiones por incidencias</td></tr>
+        <tr><td>Liquidación</td><td>Con el resultado confirmado se paga o se pierde, y se registra el CLV</td></tr>
+      </table>
+      <p style="margin-top:8px">Sobre el perfilado: cada apuesta liquidada compara tu cuota contra la
+      cuota de cierre. Si le ganas al mercado de forma sostenida, el sistema te baja el límite. Es
+      incómodo pero es exactamente lo que hacen las casas reales, y por eso está acá.</p>`;
+    root.appendChild(caja('Del depósito a la liquidación', b5));
+
+    const b6 = K.el('div', { class: 'info-bloque' });
+    b6.innerHTML = `
+      <h4>6. Casino: dónde está la ventaja</h4>
+      <table class="tabla">
+        <tr><th>Juego</th><th>Retorno teórico</th><th>De dónde sale la ventaja</th></tr>
+        <tr><td>Crash (Aviator, Spaceman…)</td><td>97%</td><td>3% de rondas que mueren en 1.00×</td></tr>
+        <tr><td>Limbo</td><td>99%</td><td>P(x ≥ objetivo) = 0.99 / objetivo</td></tr>
+        <tr><td>Mines</td><td>97%</td><td>El multiplicador vale 0.97 del pago justo</td></tr>
+        <tr><td>Ruleta europea</td><td>97.3%</td><td>El cero: 37 casillas pagando como 36</td></tr>
+        <tr><td>Tragamonedas</td><td>95-97%</td><td>Frecuencia de símbolos contra tabla de pagos</td></tr>
+        <tr><td>Blackjack</td><td>~99.5%</td><td>El jugador actúa primero y se pasa antes</td></tr>
+        <tr><td>Video póker 9/6</td><td>99.5%</td><td>Tabla de pagos ajustada a las manos posibles</td></tr>
+      </table>
+      <p style="margin-top:8px">Ninguno de estos números depende de la suerte ni de rachas: son el
+      promedio al que converge cualquier jugador con volumen suficiente. Cuanto más juegas, más se
+      parece tu resultado al RTP, y el RTP siempre es menor que 100%.</p>`;
+    root.appendChild(caja('Matemática del casino', b6));
+  }
+
+  /* =========================================================
+     ARRANQUE
+     ========================================================= */
+  function actualizarSaldo() {
+    const w = K.Wallet.est();
+    K.$('#saldo').textContent = K.sol(w.saldo);
+  }
+
+  function iniciar() {
+    K.Wallet.init();
+    actualizarSaldo();
+    pintarNav();
+    pintar();
+    K.Sportsbook.iniciar();
+
+    K.bus.on('saldo', actualizarSaldo);
+    K.bus.on('apuestas', () => { pintarNav(); if (vista === 'apuestas') pintar(); });
+    K.bus.on('lista', () => {
+      pintarNav();
+      if (vista === 'deportes' || vista === 'vivo') K.Sportsbook.vista(K.$('#main'));
+    });
+
+    K.$('#btn-deposito').onclick = modalDeposito;
+
+    // Recordatorio de sesión cada 30 minutos, como exige el juego responsable.
+    setInterval(() => {
+      const min = Math.floor(K.Wallet.tiempoSesion() / 60000);
+      const w = K.Wallet.est();
+      if (min > 0 && min % w.limites.recordatorioMin === 0 && w.sesion.avisado !== min) {
+        w.sesion.avisado = min;
+        K.aviso(`⏱ Llevas ${min} minutos jugando. Buen momento para una pausa.`, 'warn');
+      }
+    }, 30000);
+
+    // La vista "En vivo" comparte render con Deportes, solo cambia el filtro por defecto.
+    K.bus.emit('lista');
+  }
+
+  return { iniciar, ir, pintar };
+})();
+
+document.addEventListener('DOMContentLoaded', K.App.iniciar);
+
+</script>
