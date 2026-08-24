@@ -66,7 +66,7 @@ K.Juegos.ruleta = function (root, juego) {
   const panel = K.el('div', { class: 'panel-apuesta' }, [
     K.el('div', { class: 'campo' }, [K.el('label', { text: 'Ficha' }), fichas]),
     btnGirar,
-    K.el('div', { style: 'display:grid;grid-template-columns:repeat(3,1fr);gap:5px' }, [btnDeshacer, btnRepetir, btnLimpiar]),
+    K.el('div', { class: 'trio' }, [btnDeshacer, btnRepetir, btnLimpiar]),
     K.el('div', { class: 'separador' }),
     sTotal.fila, sSpots.fila, sUlt.fila, sNeto.fila
   ]);
@@ -192,6 +192,19 @@ K.Juegos.ruleta = function (root, juego) {
     badge.textContent = monto;
   }
 
+  /* Al pasar por encima de una apuesta se marcan los números que cubre. */
+  function marcarCobertura(spot, on) {
+    for (let n = 0; n <= 36; n++) {
+      const nodo = spotsNodo['n:' + n];
+      if (nodo) nodo.classList.toggle('cubierto', on && resuelve(spot, n));
+    }
+  }
+  function conCobertura(nodo, spot) {
+    nodo.addEventListener('mouseenter', () => marcarCobertura(spot, true));
+    nodo.addEventListener('mouseleave', () => marcarCobertura(spot, false));
+    return nodo;
+  }
+
   function apostarEn(spot) {
     if (girando) return;
     apuestas[spot] = K.round2((apuestas[spot] || 0) + fichaSel);
@@ -232,23 +245,25 @@ K.Juegos.ruleta = function (root, juego) {
         c.style.gridColumn = String(col + 2);
         arriba.appendChild(c);
       }
+      const colId = 'col:' + (3 - fila);
       const colBtn = K.el('button', {
         class: 'pano-ext', html: '2:1',
         style: `grid-row:${fila + 1};grid-column:14`,
-        onclick: () => apostarEn('col:' + (3 - fila)),
+        onclick: () => apostarEn(colId),
         title: 'Columna · paga 3×'
       });
-      spotsNodo['col:' + (3 - fila)] = colBtn;
-      arriba.appendChild(colBtn);
+      spotsNodo[colId] = colBtn;
+      arriba.appendChild(conCobertura(colBtn, colId));
     }
     pano.appendChild(arriba);
 
     const docenas = K.el('div', { class: 'pano-fila', style: 'grid-template-columns:34px repeat(3,1fr) 42px' });
     docenas.appendChild(K.el('span'));
     [['1ª docena', 1], ['2ª docena', 2], ['3ª docena', 3]].forEach(([t, d]) => {
-      const b = K.el('button', { class: 'pano-ext', text: t, onclick: () => apostarEn('doc:' + d), title: 'Paga 3×' });
-      spotsNodo['doc:' + d] = b;
-      docenas.appendChild(b);
+      const id = 'doc:' + d;
+      const b = K.el('button', { class: 'pano-ext', text: t, onclick: () => apostarEn(id), title: 'Paga 3×' });
+      spotsNodo[id] = b;
+      docenas.appendChild(conCobertura(b, id));
     });
     docenas.appendChild(K.el('span'));
     pano.appendChild(docenas);
@@ -260,7 +275,7 @@ K.Juegos.ruleta = function (root, juego) {
       .forEach(([t, id, cls]) => {
         const b = K.el('button', { class: 'pano-ext ' + cls, text: t, onclick: () => apostarEn(id), title: 'Paga 2×' });
         spotsNodo[id] = b;
-        ext.appendChild(b);
+        ext.appendChild(conCobertura(b, id));
       });
     ext.appendChild(K.el('span'));
     pano.appendChild(ext);

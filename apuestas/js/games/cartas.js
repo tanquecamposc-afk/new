@@ -55,11 +55,13 @@ K.Juegos.blackjack = function (root, juego) {
   const sCrupier = K.G.stat('Crupier', '—');
   const sMazo = K.G.stat('Cartas en el zapato', String(mazo.length));
 
-  const btnRepartir = K.el('button', { class: 'btn', text: 'Repartir' });
+  const btnRepartir = K.el('button', { class: 'btn bloque', text: 'Repartir' });
   const bPedir = K.el('button', { class: 'btn sec', text: 'Pedir' });
   const bPlantar = K.el('button', { class: 'btn sec', text: 'Plantarse' });
   const bDoblar = K.el('button', { class: 'btn sec', text: 'Doblar' });
-  [bPedir, bPlantar, bDoblar].forEach(b => b.disabled = true);
+  const bDividir = K.el('button', { class: 'btn sec', text: 'Dividir' });
+  const ACCIONES = [bPedir, bPlantar, bDoblar, bDividir];
+  ACCIONES.forEach(b => b.disabled = true);
 
   const panel = K.el('div', { class: 'panel-apuesta' }, [
     monto.wrap,
@@ -70,7 +72,7 @@ K.Juegos.blackjack = function (root, juego) {
   ].filter(Boolean));
 
   const mesa = K.el('div', { class: 'mesa' });
-  const acciones = K.el('div', { class: 'acciones' }, [bPedir, bPlantar, bDoblar]);
+  const acciones = K.el('div', { class: 'acciones' }, ACCIONES);
   const resultado = K.el('div', { class: 'resultado' });
   const zona = K.el('div', { class: 'zona-juego' }, [mesa, acciones, resultado]);
 
@@ -105,24 +107,51 @@ K.Juegos.blackjack = function (root, juego) {
     for (let i = 0; i < n; i++) manos.push({ cartas: [K.Baraja.sacar(mazo), K.Baraja.sacar(mazo)], apuesta: apuestaBase, estado: 'jugando' });
     crupier = [K.Baraja.sacar(mazo), K.Baraja.sacar(mazo)];
     btnRepartir.disabled = true;
-    [bPedir, bPlantar, bDoblar].forEach(b => b.disabled = false);
+    ACCIONES.forEach(b => b.disabled = false);
     manos.forEach(m => { if (esBJ(m.cartas)) m.estado = 'blackjack'; });
     pintar();
     siguienteMano();
   }
 
+  const MAX_MANOS = 4;
+  const valorCarta = c => c.v === 'A' ? 'A' : ['J', 'Q', 'K', '10'].includes(c.v) ? '10' : c.v;
+  const sePuedeDividir = m =>
+    m.cartas.length === 2 &&
+    valorCarta(m.cartas[0]) === valorCarta(m.cartas[1]) &&
+    manos.length < MAX_MANOS &&
+    K.Wallet.puedeApostar(m.apuesta).ok;
+
   function siguienteMano() {
     while (idx < manos.length && manos[idx].estado !== 'jugando') idx++;
     if (idx >= manos.length) { turnoCrupier(); return; }
-    bDoblar.disabled = manos[idx].cartas.length !== 2;
+    const m = manos[idx];
+    bDoblar.disabled = m.cartas.length !== 2;
+    bDividir.disabled = !sePuedeDividir(m);
     pintar();
+  }
+
+  function dividir() {
+    const m = manos[idx];
+    if (!sePuedeDividir(m)) return;
+    if (!K.G.apostar(m.apuesta)) return;
+    const eranAses = m.cartas[0].v === 'A';
+    const segunda = m.cartas.pop();
+    const nueva = { cartas: [segunda], apuesta: m.apuesta, estado: 'jugando', dividida: true };
+    m.cartas.push(K.Baraja.sacar(mazo));
+    nueva.cartas.push(K.Baraja.sacar(mazo));
+    m.dividida = true;
+    manos.splice(idx + 1, 0, nueva);
+    // Con ases divididos se reparte una sola carta a cada mano.
+    if (eranAses) { m.estado = 'plantado'; nueva.estado = 'plantado'; }
+    sTotal.set(K.sol(manos.reduce((a, x) => a + x.apuesta, 0)));
+    if (eranAses) { idx++; siguienteMano(); } else { bDividir.disabled = true; pintar(); siguienteMano(); }
   }
 
   function pedir() {
     const m = manos[idx];
     m.cartas.push(K.Baraja.sacar(mazo));
     if (puntos(m.cartas) > 21) { m.estado = 'pasado'; idx++; siguienteMano(); }
-    else { bDoblar.disabled = true; pintar(); }
+    else { bDoblar.disabled = true; bDividir.disabled = true; pintar(); }
   }
   function plantar() { manos[idx].estado = 'plantado'; idx++; siguienteMano(); }
   function doblar() {
@@ -135,7 +164,7 @@ K.Juegos.blackjack = function (root, juego) {
   }
 
   async function turnoCrupier() {
-    [bPedir, bPlantar, bDoblar].forEach(b => b.disabled = true);
+    ACCIONES.forEach(b => b.disabled = true);
     pintar(true);
     const hayVivas = manos.some(m => m.estado === 'plantado' || m.estado === 'blackjack');
     while (hayVivas && puntos(crupier) < 17) {
@@ -155,7 +184,10 @@ K.Juegos.blackjack = function (root, juego) {
       const pm = puntos(m.cartas);
       let premio = 0, texto;
       if (m.estado === 'pasado') texto = 'te pasaste';
-      else if (m.estado === 'blackjack' && !crupierBJ) { premio = m.apuesta * 2.5; texto = 'blackjack (3:2)'; }
+      else if (m.estado === 'blackjack' && !crupierBJ) {
+        premio = m.dividida ? m.apuesta * 2 : m.apuesta * 2.5;
+        texto = m.dividida ? '21 tras dividir' : 'blackjack (3:2)';
+      }
       else if (m.estado === 'blackjack' && crupierBJ) { premio = m.apuesta; texto = 'empate de blackjacks'; }
       else if (crupierBJ) texto = 'el crupier tenía blackjack';
       else if (pc > 21) { premio = m.apuesta * 2; texto = 'el crupier se pasó'; }
@@ -176,12 +208,14 @@ K.Juegos.blackjack = function (root, juego) {
   }
 
   btnRepartir.onclick = repartir;
-  bPedir.onclick = pedir; bPlantar.onclick = plantar; bDoblar.onclick = doblar;
+  bPedir.onclick = pedir; bPlantar.onclick = plantar; bDoblar.onclick = doblar; bDividir.onclick = dividir;
 
   root.appendChild(K.el('div', { class: 'juego-layout' }, [panel, zona]));
   root.appendChild(K.G.nota(`<h4>Reglas de la mesa</h4>
     Seis mazos, el crupier se planta en 17 (incluido el 17 suave), el blackjack natural paga <b>3:2</b>
-    y el empate devuelve la apuesta. Puedes doblar solo con dos cartas. Con estas reglas y estrategia
+    y el empate devuelve la apuesta. Puedes doblar con dos cartas y dividir cualquier pareja hasta llegar
+    a cuatro manos; los ases divididos reciben una sola carta y el 21 que salga de una división paga
+    como un 21 normal, no como blackjack. Con estas reglas y estrategia
     básica la ventaja de la casa queda cerca del <b>0.5%</b>, la más baja del casino; lo que la sube en
     la práctica son las decisiones malas, no el reparto.`));
 };

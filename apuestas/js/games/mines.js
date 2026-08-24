@@ -23,13 +23,17 @@ K.Juegos.mines = function (root, juego) {
   const sProb = K.G.stat('Prob. del próximo paso', '—');
 
   const btnJugar = K.el('button', { class: 'btn bloque', text: 'Apostar y empezar' });
-  const btnCobrar = K.el('button', { class: 'btn sec bloque', text: 'Cobrar' });
+  const btnCobrar = K.el('button', { class: 'btn verde bloque', text: 'Cobrar' });
+  const btnAuto = K.el('button', { class: 'btn sec bloque', text: 'Abrir una al azar' });
   btnCobrar.disabled = true;
+  btnAuto.disabled = true;
+
+  const escalera = K.el('div', { class: 'escalera' });
 
   const panel = K.el('div', { class: 'panel-apuesta' }, [
     monto.wrap,
     K.el('div', { class: 'campo' }, [K.el('label', { text: 'Cantidad de minas' }), selMinas]),
-    btnJugar, btnCobrar,
+    btnJugar, btnCobrar, btnAuto,
     K.el('div', { class: 'separador' }),
     sMult.fila, sProx.fila, sCobro.fila, sProb.fila
   ]);
@@ -45,6 +49,23 @@ K.Juegos.mines = function (root, juego) {
     grid.appendChild(c);
   }
 
+  /* Escalera de pagos: cuánto vale cada acierto siguiente. */
+  function pintarEscalera() {
+    escalera.innerHTML = '';
+    const max = TOTAL - minas;
+    const pasos = [];
+    for (let k = 1; k <= max; k++) pasos.push(k);
+    const muestra = pasos.length <= 12 ? pasos
+      : pasos.filter((k, i) => i < 6 || k === max || k % Math.ceil(pasos.length / 8) === 0);
+    muestra.forEach(k => {
+      const nodo = K.el('div', {
+        class: 'peldano' + (k === abiertas ? ' actual' : '') + (k < abiertas ? ' hecho' : ''),
+        html: `<span class="k">${k}</span><b>${K.dec(multiplicador(k))}×</b>`
+      });
+      escalera.appendChild(nodo);
+    });
+  }
+
   function refrescarInfo() {
     const m = multiplicador(abiertas);
     const prox = multiplicador(abiertas + 1);
@@ -54,6 +75,7 @@ K.Juegos.mines = function (root, juego) {
     const seguras = TOTAL - minas - abiertas;
     const quedan = TOTAL - abiertas;
     sProb.set(quedan > 0 ? K.pct(seguras / quedan) : '—');
+    pintarEscalera();
   }
 
   function empezar() {
@@ -63,7 +85,7 @@ K.Juegos.mines = function (root, juego) {
     K.mezcla([...Array(TOTAL).keys()]).slice(0, minas).forEach(i => tablero[i] = true);
     abiertas = 0; activo = true;
     celdas.forEach(c => { c.className = 'celda'; c.innerHTML = ''; c.disabled = false; });
-    btnJugar.disabled = true; btnCobrar.disabled = false; selMinas.disabled = true;
+    btnJugar.disabled = true; btnCobrar.disabled = false; btnAuto.disabled = false; selMinas.disabled = true;
     refrescarInfo();
   }
 
@@ -95,7 +117,7 @@ K.Juegos.mines = function (root, juego) {
 
   function terminar(gano) {
     activo = false;
-    btnJugar.disabled = false; btnCobrar.disabled = true; selMinas.disabled = false;
+    btnJugar.disabled = false; btnCobrar.disabled = true; btnAuto.disabled = true; selMinas.disabled = false;
     celdas.forEach((c, i) => {
       c.disabled = true;
       if (!c.innerHTML) {
@@ -109,9 +131,15 @@ K.Juegos.mines = function (root, juego) {
 
   btnJugar.onclick = empezar;
   btnCobrar.onclick = cobrar;
+  btnAuto.onclick = () => {
+    if (!activo) return;
+    const libres = celdas.map((c, i) => i).filter(i => !celdas[i].classList.contains('estrella') && !celdas[i].disabled);
+    if (libres.length) abrir(K.elige(libres));
+  };
   refrescarInfo();
 
-  root.appendChild(K.el('div', { class: 'juego-layout' }, [panel, zona]));
+  const zonaCompleta = K.el('div', {}, [zona, escalera]);
+  root.appendChild(K.el('div', { class: 'juego-layout' }, [panel, zonaCompleta]));
   root.appendChild(K.G.nota(`<h4>Cómo sale el multiplicador</h4>
     Con <b>${'M'}</b> minas y <b>k</b> casillas abiertas el pago justo es
     <code>C(25,k) / C(25−M,k)</code>. La casa se queda con un 3%: por eso el multiplicador

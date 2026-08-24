@@ -17,6 +17,7 @@ K.Wallet = (() => {
     casino: { jugadas: 0, apostado: 0, devuelto: 0, historial: {} },
     perfil: { clv: [], categoria: 'recreativo', limiteApuesta: 2500, marcas: [] },
     limites: { depositoDiario: 10000, apuestaMax: 2500, autoexcluidoHasta: 0, recordatorioMin: 30 },
+    diaria: { ultimo: 0, racha: 0, total: 0 },
     kyc: { verificado: false, nivel: 0 },
     sesion: { inicio: Date.now(), avisado: 0 }
   });

@@ -169,6 +169,14 @@ K.App = (() => {
         ${K.ic('reloj')} ${min} min jugando<br>
         ${K.ic('billetera')} límite ${K.sol(Math.min(w.limites.apuestaMax, w.perfil.limiteApuesta))} por apuesta
       </div>`);
+    const bDiaria = K.el('button', {
+      class: K.Diaria.disponible() ? 'on' : '',
+      onclick: () => K.Diaria.abrir()
+    });
+    bDiaria.innerHTML = K.ic('regalo') + '<span>Ruleta diaria</span>' +
+      (K.Diaria.disponible() ? '<span class="cuenta" style="background:var(--naranja);color:#fff">libre</span>' : '');
+    jr.appendChild(bDiaria);
+
     const bPausa = K.el('button', { onclick: () => { K.Wallet.pausar(15); K.aviso('Pausa de 15 minutos activada.', 'warn'); pintar(); } });
     bPausa.innerHTML = K.ic('pausa') + '<span>Pausar 15 minutos</span>';
     jr.appendChild(bPausa);
@@ -449,6 +457,25 @@ K.App = (() => {
       promedio al que converge cualquier jugador con volumen suficiente. Cuanto más juegas, más se
       parece tu resultado al RTP, y el RTP siempre es menor que 100%.</p>`;
     root.appendChild(caja('Matemática del casino', b6));
+
+    const b7 = K.el('div', { class: 'info-bloque' });
+    const pr = K.Diaria.PREMIOS;
+    const pesoTotal = pr.reduce((x, y) => x + y.peso, 0);
+    const ev = pr.reduce((x, y) => x + y.monto * y.peso / pesoTotal, 0);
+    b7.innerHTML = `
+      <h4>7. Las promociones también son matemática</h4>
+      Las dos promos del sitio están calculadas, no puestas al azar:
+      <div class="tabla-scroll"><table class="tabla">
+        <tr><th>Promoción</th><th>Qué hace</th><th>Costo para la casa</th></tr>
+        <tr><td>SuperCuota</td><td>Vende una combinación por encima de su precio justo</td>
+          <td>Margen negativo: paga un 24% más que la cuota justa</td></tr>
+        <tr><td>Ruleta diaria</td><td>Un giro gratis cada 20 horas, con bonus de racha</td>
+          <td>Valor esperado de <b>${K.sol(ev)}</b> por giro, hasta ${K.sol(ev * 1.5)} con racha máxima</td></tr>
+      </table></div>
+      <p style="margin-top:8px">Una casa real hace exactamente esto: regala valor medido a cambio de que
+      vuelvas, sabiendo que el margen del resto del catálogo lo recupera con creces. La racha de la
+      ruleta diaria no está para premiarte, está para que entres todos los días.</p>`;
+    root.appendChild(caja('Promociones y bonos', b7));
   }
 
   /* =========================================================
@@ -476,6 +503,18 @@ K.App = (() => {
     });
 
     K.$('#btn-deposito').onclick = modalDeposito;
+
+    const btnDiaria = K.$('#btn-diaria');
+    K.$('.ic-diaria', btnDiaria).innerHTML = K.ic('regalo');
+    btnDiaria.onclick = () => K.Diaria.abrir();
+    const refrescarDiaria = () => {
+      const libre = K.Diaria.disponible();
+      btnDiaria.classList.toggle('lista', libre);
+      btnDiaria.title = libre ? 'Tu giro diario está disponible' : 'Próximo giro en ' + K.Diaria.reloj(K.Diaria.restante());
+    };
+    refrescarDiaria();
+    setInterval(refrescarDiaria, 20000);
+    K.bus.on('diaria', () => { refrescarDiaria(); if (vista === 'cuenta') pintar(); });
 
     // Recordatorio de sesión, como exige el juego responsable.
     setInterval(() => {

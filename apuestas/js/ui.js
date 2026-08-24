@@ -33,6 +33,8 @@ K.ICONOS = {
   pausa: '<circle cx="12" cy="12" r="9"/><path d="M10 9v6M14 9v6"/>',
   mas: '<path d="M12 5v14M5 12h14"/>',
   chevron: '<path d="m9 6 6 6-6 6"/>',
+  regalo: '<rect x="3" y="8" width="18" height="13" rx="2"/><path d="M3 12h18M12 8v13"/><path d="M12 8S9.5 4.5 7.5 5.2 6.6 8 8.5 8h3.5ZM12 8s2.5-3.5 4.5-2.8S17.4 8 15.5 8H12Z"/>',
+  moneda: '<circle cx="12" cy="12" r="8"/><path d="M12 8v8M9.8 9.8h3.4a1.7 1.7 0 0 1 0 3.4h-2.4a1.7 1.7 0 0 0 0 3.4h3.4"/>',
   refresco: '<path d="M4 12a8 8 0 0 1 13.7-5.7L20 8"/><path d="M20 4v4h-4"/><path d="M20 12a8 8 0 0 1-13.7 5.7L4 16"/><path d="M4 20v-4h4"/>'
 };
 

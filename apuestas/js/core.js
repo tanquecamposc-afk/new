@@ -36,6 +36,16 @@ K.normal = () => {
   return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
 };
 
+/* Una muestra de una Poisson (algoritmo de Knuth), para inventar
+   marcadores coherentes con los goles esperados de un partido. */
+K.poissonMuestra = lam => {
+  if (lam <= 0) return 0;
+  const L = Math.exp(-lam);
+  let k = 0, p = 1;
+  do { k++; p *= Math.random(); } while (p > L);
+  return k - 1;
+};
+
 /* Aproximación de la CDF normal (Abramowitz-Stegun 7.1.26). */
 K.cdfNormal = z => {
   const s = z < 0 ? -1 : 1;

@@ -120,6 +120,16 @@ header.top{
 .saldo-pill .et{font-size:9.5px;text-transform:uppercase;letter-spacing:.1em;color:var(--tenue-2);font-weight:700}
 .saldo-pill .vl{font-weight:700;font-size:15px;color:var(--verde-2);font-variant-numeric:tabular-nums}
 
+@media(max-width:1460px){
+  .nav button{padding:8px 10px;font-size:13.5px}
+  .logo{font-size:18px}
+  .logo .demo{display:none}
+}
+@media(max-width:1120px){
+  .nav button span:not(.pip){display:none}
+  .nav button{padding:8px 11px}
+  .nav button .ic{font-size:18px}
+}
 @media(max-width:820px){
   .top-fila{height:auto;flex-wrap:wrap;padding:8px 12px;gap:8px}
   .logo{font-size:17px}
@@ -127,6 +137,7 @@ header.top{
   .saldo-caja{margin-left:auto}
   .nav{order:3;flex:0 0 100%;width:100%;padding-bottom:2px}
   .nav button span:not(.pip){display:inline}
+  .nav button{padding:7px 12px;font-size:13.5px}
 }
 @media(max-width:430px){
   .nav button{padding:7px 10px;font-size:13px}
@@ -152,6 +163,39 @@ header.top{
 .btn.peligro{background:var(--rojo);color:#fff;box-shadow:none}
 .btn.chico{padding:6px 9px;font-size:12.5px}
 .btn.bloque{width:100%}
+
+/* ---- botón de la ruleta diaria ---- */
+#btn-diaria{position:relative;gap:6px}
+#btn-diaria .ic{font-size:16px}
+#btn-diaria .dot{display:none}
+#btn-diaria.lista{border-color:var(--naranja);color:var(--naranja)}
+#btn-diaria.lista .dot{
+  display:block;position:absolute;top:-4px;right:-4px;width:9px;height:9px;border-radius:50%;
+  background:var(--naranja);box-shadow:0 0 0 3px rgba(255,85,0,.25);animation:latir 1.6s infinite;
+}
+@media(max-width:520px){#btn-diaria .txt{display:none}}
+
+/* ---- modal de la ruleta diaria ---- */
+.diaria-layout{display:grid;grid-template-columns:minmax(220px,300px) minmax(0,1fr);gap:18px;align-items:start}
+@media(max-width:700px){.diaria-layout{grid-template-columns:1fr}}
+.diaria-lienzo{position:relative;aspect-ratio:1;width:100%}
+.diaria-lienzo canvas{width:100%;height:100%;display:block}
+.diaria-panel{display:flex;flex-direction:column;gap:12px}
+.diaria-texto{font-size:13px;color:var(--tenue);line-height:1.6}
+.diaria-info{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.diaria-info .vl{font-size:18px}
+.btn.grande{padding:13px;font-size:15px}
+.diaria-mensaje{text-align:center;min-height:44px;display:flex;flex-direction:column;gap:3px;justify-content:center}
+.diaria-mensaje .ganado{font-family:var(--display);font-size:26px;font-weight:900;color:var(--verde-2)}
+.diaria-mensaje .detalle{font-size:11.5px;color:var(--tenue-2)}
+.diaria-tabla{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:6px}
+.premio-pill{
+  display:flex;align-items:center;gap:6px;background:var(--fondo-2);border:1px solid var(--linea);
+  border-radius:var(--r-chico);padding:6px 9px;font-size:12px;
+}
+.premio-pill b{font-variant-numeric:tabular-nums}
+.premio-pill i{margin-left:auto;font-style:normal;font-size:10.5px;color:var(--tenue-2)}
+.punto-color{width:8px;height:8px;border-radius:50%;display:inline-block;flex:none}
 
 /* ================= layout ================= */
 .contenedor{
@@ -244,6 +288,70 @@ header.top{
 .chip .ic{font-size:15px}
 .chip:hover{border-color:var(--linea-2);color:var(--texto)}
 .chip.on{background:var(--naranja);border-color:var(--naranja);color:#fff}
+
+/* ---- teletipo de marcadores en vivo ---- */
+.ticker{
+  overflow:hidden;background:var(--fondo-2);border:1px solid var(--linea);
+  border-radius:var(--r-chico);margin-bottom:12px;position:relative;
+}
+.ticker::after{
+  content:"";position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(90deg,var(--fondo-2),transparent 6%,transparent 94%,var(--fondo-2));
+}
+.ticker-pista{display:flex;width:max-content;animation:correr 40s linear infinite}
+.ticker:hover .ticker-pista{animation-play-state:paused}
+@keyframes correr{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+.ticker-item{
+  display:flex;align-items:center;gap:7px;padding:7px 14px;font-size:12px;color:var(--tenue);
+  border-right:1px solid rgba(51,65,85,.5);white-space:nowrap;
+}
+.ticker-item:hover{color:var(--texto);background:var(--panel)}
+.ticker-item .min{color:var(--rojo);font-weight:800;font-variant-numeric:tabular-nums}
+.ticker-item .m{font-weight:800;color:var(--texto);font-variant-numeric:tabular-nums}
+@media (prefers-reduced-motion:reduce){.ticker-pista{animation:none}.ticker{overflow-x:auto}}
+
+/* ---- cabecera de competición y paginado ---- */
+.liga-cab{
+  display:flex;align-items:center;gap:9px;padding:7px 12px;margin:14px 0 8px;
+  background:var(--fondo-2);border:1px solid var(--linea);border-radius:var(--r-chico);
+  font-size:12.5px;
+}
+.liga-cab .pais{font-size:14px}
+.liga-cab .nom{font-weight:700;color:var(--texto)}
+.liga-cab .cuenta{font-size:11px;background:var(--panel-2);color:var(--tenue);padding:1px 8px;border-radius:20px;font-weight:700}
+.liga-cab .ver-liga{margin-left:auto;font-size:11.5px;color:var(--naranja);font-weight:700}
+.liga-cab .ver-liga:hover{text-decoration:underline}
+.ver-mas{
+  display:flex;align-items:center;justify-content:center;gap:5px;width:100%;
+  padding:8px;margin-bottom:10px;border-radius:var(--r-chico);
+  background:var(--panel);border:1px dashed var(--linea);color:var(--tenue);
+  font-size:12.5px;font-weight:600;
+}
+.ver-mas:hover{border-color:var(--naranja);color:var(--naranja)}
+.ver-mas .ic{transform:rotate(90deg)}
+.chip i{font-style:normal;font-size:11px;opacity:.7;font-variant-numeric:tabular-nums}
+
+/* ---- ficha del evento ---- */
+.ficha-cab{
+  display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:center;
+  background:linear-gradient(160deg,var(--panel-2),var(--fondo-2));
+  border:1px solid var(--linea);border-radius:var(--r);padding:16px;margin-bottom:12px;
+}
+.ficha-eq{display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center}
+.ficha-eq .esc{font-size:30px}
+.ficha-eq .nom{font-weight:700;font-size:14px}
+.ficha-marcador{text-align:center}
+.ficha-marcador .m{font-family:var(--display);font-size:32px;font-weight:900;font-variant-numeric:tabular-nums}
+.ficha-marcador .est{font-size:11px;color:var(--tenue-2);text-transform:uppercase;letter-spacing:.08em;font-weight:700}
+.stats-ev{display:flex;flex-direction:column;gap:9px}
+.stat-linea{display:grid;grid-template-columns:36px 1fr 36px;gap:8px;align-items:center;font-size:12px}
+.stat-linea .et{grid-column:1 / -1;text-align:center;font-size:10.5px;color:var(--tenue-2);text-transform:uppercase;letter-spacing:.07em;font-weight:700}
+.stat-barra{height:6px;background:var(--panel-3);border-radius:3px;overflow:hidden;display:flex}
+.stat-barra i{display:block;height:100%}
+.stat-barra i.l{background:var(--naranja)}
+.stat-barra i.v{background:var(--azul)}
+.stat-linea b{font-variant-numeric:tabular-nums;text-align:center}
+.spark{width:100%;height:56px;display:block}
 
 /* ================= evento ================= */
 .evento{
@@ -455,6 +563,8 @@ input[type="checkbox"]{accent-color:var(--naranja)}
 }
 .campo .fila-btns button:hover{background:var(--panel-3);color:var(--texto)}
 .separador{height:1px;background:var(--linea);margin:2px 0}
+.panel-apuesta .trio{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}
+.panel-apuesta .trio .btn{padding:7px 2px;font-size:11.5px;min-width:0}
 .stat-fila{display:flex;justify-content:space-between;gap:10px;font-size:12.5px;color:var(--tenue);padding:1px 0}
 .stat-fila b{color:var(--texto);font-variant-numeric:tabular-nums}
 .zona-juego{
@@ -484,6 +594,18 @@ input[type="checkbox"]{accent-color:var(--naranja)}
 .celda.revelada{opacity:.35}
 @keyframes pop{from{transform:scale(.4);opacity:0}to{transform:scale(1);opacity:1}}
 .celda span{animation:pop .2s ease-out}
+
+.escalera{display:flex;gap:5px;overflow-x:auto;padding:10px 2px 2px;scrollbar-width:none}
+.escalera::-webkit-scrollbar{display:none}
+.peldano{
+  flex:none;min-width:62px;text-align:center;padding:6px 8px;border-radius:var(--r-chico);
+  background:var(--fondo-2);border:1px solid var(--linea);font-size:11px;color:var(--tenue-2);
+}
+.peldano b{display:block;color:var(--texto);font-size:13px;font-variant-numeric:tabular-nums;font-family:var(--display)}
+.peldano.hecho{border-color:rgba(34,197,94,.45);background:rgba(34,197,94,.1)}
+.peldano.hecho b{color:var(--verde-2)}
+.peldano.actual{border-color:var(--naranja);background:rgba(255,85,0,.14);box-shadow:0 0 0 1px var(--naranja)}
+.peldano.actual b{color:var(--naranja)}
 
 /* --- crash --- */
 .crash-lienzo{flex:1;position:relative;border-radius:10px;overflow:hidden;background:#050a14;min-height:270px}
@@ -528,6 +650,17 @@ input[type="checkbox"]{accent-color:var(--naranja)}
 @keyframes brillo{0%{transform:scale(1)}45%{transform:scale(1.14)}100%{transform:scale(1)}}
 @keyframes aterriza{0%{transform:translateY(-16px);filter:blur(2px)}100%{transform:none;filter:none}}
 .slot-info{display:flex;justify-content:space-between;margin-top:10px;font-size:11.5px;color:var(--tenue-2)}
+
+.cartel-premio{
+  position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;gap:4px;
+  background:radial-gradient(circle at 50% 50%,rgba(255,85,0,.22),rgba(6,10,18,.86) 70%);
+  border-radius:var(--r);pointer-events:none;z-index:3;
+}
+.cartel-premio.on{display:flex;animation:aparece .25s ease-out}
+@keyframes aparece{from{opacity:0;transform:scale(.9)}to{opacity:1;transform:none}}
+.cartel-premio .et{font-size:12px;font-weight:800;letter-spacing:.22em;color:var(--ambar)}
+.cartel-premio .monto{font-family:var(--display);font-size:40px;font-weight:900;color:#fff;text-shadow:0 4px 20px rgba(0,0,0,.7)}
+.cartel-premio .veces{font-size:12.5px;color:var(--tenue)}
 
 /* --- rueda de game show --- */
 .rueda-lienzo{flex:none;height:360px;position:relative;display:flex;justify-content:center}
@@ -590,6 +723,7 @@ input[type="checkbox"]{accent-color:var(--naranja)}
 .pano-num.cero{background:#15803d;height:auto}
 .pano-num:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,.45);border-color:#fff}
 .pano-num.rayo{box-shadow:0 0 0 2px var(--ambar) inset;}
+.pano-num.cubierto{outline:2px solid #fff;outline-offset:-2px;filter:brightness(1.25)}
 .pano-num .rayo-mult{
   position:absolute;top:1px;right:1px;background:var(--ambar);color:#3a2500;
   font-size:7.5px;font-weight:900;padding:0 3px;border-radius:3px;line-height:1.35;
@@ -720,6 +854,9 @@ footer.pie b{color:var(--tenue)}
         <span class="et">Saldo demo</span>
         <span class="vl" id="saldo">S/ 0.00</span>
       </div>
+      <button class="btn sec chico" id="btn-diaria" title="Ruleta diaria">
+        <span class="ic-diaria"></span><span class="txt">Diaria</span><span class="dot"></span>
+      </button>
       <button class="btn chico" id="btn-deposito">Depositar</button>
     </div>
   </div>
@@ -798,6 +935,16 @@ K.normal = () => {
   while (u === 0) u = Math.random();
   while (v === 0) v = Math.random();
   return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+};
+
+/* Una muestra de una Poisson (algoritmo de Knuth), para inventar
+   marcadores coherentes con los goles esperados de un partido. */
+K.poissonMuestra = lam => {
+  if (lam <= 0) return 0;
+  const L = Math.exp(-lam);
+  let k = 0, p = 1;
+  do { k++; p *= Math.random(); } while (p > L);
+  return k - 1;
 };
 
 /* Aproximación de la CDF normal (Abramowitz-Stegun 7.1.26). */
@@ -903,6 +1050,8 @@ K.ICONOS = {
   pausa: '<circle cx="12" cy="12" r="9"/><path d="M10 9v6M14 9v6"/>',
   mas: '<path d="M12 5v14M5 12h14"/>',
   chevron: '<path d="m9 6 6 6-6 6"/>',
+  regalo: '<rect x="3" y="8" width="18" height="13" rx="2"/><path d="M3 12h18M12 8v13"/><path d="M12 8S9.5 4.5 7.5 5.2 6.6 8 8.5 8h3.5ZM12 8s2.5-3.5 4.5-2.8S17.4 8 15.5 8H12Z"/>',
+  moneda: '<circle cx="12" cy="12" r="8"/><path d="M12 8v8M9.8 9.8h3.4a1.7 1.7 0 0 1 0 3.4h-2.4a1.7 1.7 0 0 0 0 3.4h3.4"/>',
   refresco: '<path d="M4 12a8 8 0 0 1 13.7-5.7L20 8"/><path d="M20 4v4h-4"/><path d="M20 12a8 8 0 0 1-13.7 5.7L4 16"/><path d="M4 20v-4h4"/>'
 };
 
@@ -1193,6 +1342,7 @@ K.Wallet = (() => {
     casino: { jugadas: 0, apostado: 0, devuelto: 0, historial: {} },
     perfil: { clv: [], categoria: 'recreativo', limiteApuesta: 2500, marcas: [] },
     limites: { depositoDiario: 10000, apuestaMax: 2500, autoexcluidoHasta: 0, recordatorioMin: 30 },
+    diaria: { ultimo: 0, racha: 0, total: 0 },
     kyc: { verificado: false, nivel: 0 },
     sesion: { inicio: Date.now(), avisado: 0 }
   });
@@ -1333,110 +1483,367 @@ K.Wallet = (() => {
 </script>
 <script>
 /* ===========================================================
-   data-sports.js — catálogo de eventos
-   Los "modelo" son los parámetros que come el motor de cuotas:
+   data-sports.js — catálogo de competiciones y generador de
+   partidos.
+   En vez de escribir evento por evento, se define el plantel de
+   cada liga con su rating y de ahí salen los emparejamientos,
+   los horarios y los parámetros que come el motor de cuotas:
      fútbol  -> lh / la  (goles esperados de cada lado)
      básquet -> spread / total
      tenis   -> p1 (prob. de que gane el primero)
      series  -> q (prob. por mapa/set) y bo (al mejor de)
    =========================================================== */
 K.DEPORTES = [
-  { id: 'futbol', nom: 'Fútbol', ic: '⚽' },
-  { id: 'basket', nom: 'Básquet', ic: '🏀' },
-  { id: 'tenis', nom: 'Tenis', ic: '🎾' },
-  { id: 'esports', nom: 'eSports', ic: '🎮' },
-  { id: 'volley', nom: 'Vóley', ic: '🏐' }
+  { id: 'futbol', nom: 'Fútbol' },
+  { id: 'basket', nom: 'Básquet' },
+  { id: 'tenis', nom: 'Tenis' },
+  { id: 'esports', nom: 'eSports' },
+  { id: 'volley', nom: 'Vóley' }
 ];
 
-const _m = min => Date.now() + min * 60000;
-
-K.EVENTOS = [
-  /* ---------------- EN VIVO ---------------- */
-  { id: 'e01', deporte: 'futbol', liga: 'Liga 1 · Perú', local: 'Alianza Lima', visita: 'Universitario',
-    escL: '🔵', escV: '🟡', inicio: _m(-37), vivo: true, minuto: 37, marcador: { l: 1, v: 0 },
-    modelo: { lh: 1.42, la: 1.18 }, margen: 1.055 },
-  { id: 'e02', deporte: 'futbol', liga: 'Brasileirão', local: 'Flamengo', visita: 'Palmeiras',
-    escL: '🔴', escV: '🟢', inicio: _m(-63), vivo: true, minuto: 63, marcador: { l: 1, v: 1 },
-    modelo: { lh: 1.55, la: 1.30 }, margen: 1.05 },
-  { id: 'e03', deporte: 'basket', liga: 'NBA', local: 'Lakers', visita: 'Celtics',
-    escL: '🟣', escV: '🟩', inicio: _m(-28), vivo: true, minuto: 28, marcador: { l: 74, v: 81 },
-    modelo: { spread: -1.5, total: 226 }, margen: 1.045 },
-  { id: 'e04', deporte: 'tenis', liga: 'ATP 500 · Río', local: 'C. Alcaraz', visita: 'A. Zverev',
-    escL: '🇪🇸', escV: '🇩🇪', inicio: _m(-44), vivo: true, minuto: 44, marcador: { l: 1, v: 0 },
-    modelo: { p1: 0.66 }, margen: 1.05 },
-  { id: 'e05', deporte: 'esports', liga: 'CS2 · BLAST Premier', local: 'FaZe', visita: 'NAVI',
-    escL: '🟥', escV: '🟨', inicio: _m(-22), vivo: true, minuto: 22, marcador: { l: 1, v: 0 },
-    modelo: { q: 0.53, bo: 3 }, margen: 1.06 },
-  { id: 'e06', deporte: 'volley', liga: 'Liga Nacional · Perú', local: 'Regatas', visita: 'San Martín',
-    escL: '⚪', escV: '🔷', inicio: _m(-31), vivo: true, minuto: 31, marcador: { l: 1, v: 1 },
-    modelo: { q: 0.55, bo: 5 }, margen: 1.07 },
-
-  /* ---------------- FÚTBOL PREPARTIDO ---------------- */
-  { id: 'e10', deporte: 'futbol', liga: 'Liga 1 · Perú', local: 'Sporting Cristal', visita: 'Melgar',
-    escL: '🔷', escV: '🔴', inicio: _m(95), modelo: { lh: 1.68, la: 0.94 }, margen: 1.055 },
-  { id: 'e11', deporte: 'futbol', liga: 'Liga 1 · Perú', local: 'Cienciano', visita: 'Cusco FC',
-    escL: '🔴', escV: '⚫', inicio: _m(180), modelo: { lh: 1.30, la: 1.05 }, margen: 1.06 },
-  { id: 'e12', deporte: 'futbol', liga: 'Copa Libertadores', local: 'River Plate', visita: 'Boca Juniors',
-    escL: '⚪', escV: '🔵', inicio: _m(240), modelo: { lh: 1.48, la: 1.02 }, margen: 1.045 },
-  { id: 'e13', deporte: 'futbol', liga: 'LaLiga', local: 'Real Madrid', visita: 'Girona',
-    escL: '⚪', escV: '🔴', inicio: _m(320), modelo: { lh: 2.35, la: 0.85 }, margen: 1.04 },
-  { id: 'e14', deporte: 'futbol', liga: 'Premier League', local: 'Arsenal', visita: 'Liverpool',
-    escL: '🔴', escV: '🟥', inicio: _m(400), modelo: { lh: 1.62, la: 1.44 }, margen: 1.04 },
-  { id: 'e15', deporte: 'futbol', liga: 'Serie A', local: 'Inter', visita: 'Napoli',
-    escL: '🔵', escV: '🔷', inicio: _m(470), modelo: { lh: 1.55, la: 1.15 }, margen: 1.045 },
-  { id: 'e16', deporte: 'futbol', liga: 'Eliminatorias CONMEBOL', local: 'Perú', visita: 'Chile',
-    escL: '🇵🇪', escV: '🇨🇱', inicio: _m(1400), modelo: { lh: 1.22, la: 0.98 }, margen: 1.05 },
-  { id: 'e17', deporte: 'futbol', liga: 'Champions League', local: 'Bayern', visita: 'PSG',
-    escL: '🔴', escV: '🔵', inicio: _m(1500), modelo: { lh: 1.85, la: 1.35 }, margen: 1.035 },
-
-  /* ---------------- BÁSQUET ---------------- */
-  { id: 'e20', deporte: 'basket', liga: 'NBA', local: 'Nuggets', visita: 'Suns',
-    escL: '🟡', escV: '🟠', inicio: _m(150), modelo: { spread: 5.5, total: 232 }, margen: 1.04 },
-  { id: 'e21', deporte: 'basket', liga: 'NBA', local: 'Warriors', visita: 'Thunder',
-    escL: '🔵', escV: '🟦', inicio: _m(260), modelo: { spread: -3.5, total: 228 }, margen: 1.04 },
-  { id: 'e22', deporte: 'basket', liga: 'Liga ACB', local: 'Real Madrid B.', visita: 'Barça',
-    escL: '⚪', escV: '🔵', inicio: _m(330), modelo: { spread: 2.5, total: 163 }, margen: 1.05 },
-  { id: 'e23', deporte: 'basket', liga: 'NBA', local: 'Bucks', visita: 'Heat',
-    escL: '🟩', escV: '🔴', inicio: _m(420), modelo: { spread: 7.5, total: 221 }, margen: 1.04 },
-
-  /* ---------------- TENIS ---------------- */
-  { id: 'e30', deporte: 'tenis', liga: 'ATP Masters 1000', local: 'J. Sinner', visita: 'D. Medvedev',
-    escL: '🇮🇹', escV: '🇷🇺', inicio: _m(120), modelo: { p1: 0.71 }, margen: 1.045 },
-  { id: 'e31', deporte: 'tenis', liga: 'WTA 1000', local: 'I. Świątek', visita: 'A. Sabalenka',
-    escL: '🇵🇱', escV: '🇧🇾', inicio: _m(200), modelo: { p1: 0.57 }, margen: 1.05 },
-  { id: 'e32', deporte: 'tenis', liga: 'ATP Challenger · Lima', local: 'I. Buse', visita: 'F. Coria',
-    escL: '🇵🇪', escV: '🇦🇷', inicio: _m(280), modelo: { p1: 0.48 }, margen: 1.065 },
-  { id: 'e33', deporte: 'tenis', liga: 'ATP 250', local: 'N. Djokovic', visita: 'H. Rune',
-    escL: '🇷🇸', escV: '🇩🇰', inicio: _m(390), modelo: { p1: 0.68 }, margen: 1.05 },
-
-  /* ---------------- ESPORTS ---------------- */
-  { id: 'e40', deporte: 'esports', liga: 'LoL · LTA Sur', local: 'Leviatán', visita: 'Estral',
-    escL: '🟪', escV: '🟧', inicio: _m(110), modelo: { q: 0.58, bo: 3 }, margen: 1.06 },
-  { id: 'e41', deporte: 'esports', liga: 'Dota 2 · ESL', local: 'Team Spirit', visita: 'Gaimin',
-    escL: '⬛', escV: '🟦', inicio: _m(210), modelo: { q: 0.62, bo: 3 }, margen: 1.06 },
-  { id: 'e42', deporte: 'esports', liga: 'Valorant · VCT', local: 'Sentinels', visita: 'LOUD',
-    escL: '🔴', escV: '🟩', inicio: _m(300), modelo: { q: 0.49, bo: 3 }, margen: 1.065 },
-  { id: 'e43', deporte: 'esports', liga: 'CS2 · IEM', local: 'Vitality', visita: 'G2',
-    escL: '🟨', escV: '⬛', inicio: _m(380), modelo: { q: 0.55, bo: 3 }, margen: 1.06 },
-
-  /* ---------------- VÓLEY ---------------- */
-  { id: 'e50', deporte: 'volley', liga: 'Liga Nacional · Perú', local: 'Alianza Lima', visita: 'Géminis',
-    escL: '🔵', escV: '🟣', inicio: _m(160), modelo: { q: 0.61, bo: 5 }, margen: 1.07 },
-  { id: 'e51', deporte: 'volley', liga: 'VNL Femenina', local: 'Brasil', visita: 'Italia',
-    escL: '🇧🇷', escV: '🇮🇹', inicio: _m(250), modelo: { q: 0.52, bo: 5 }, margen: 1.06 },
-  { id: 'e52', deporte: 'volley', liga: 'Superliga Brasil', local: 'Sesc RJ', visita: 'Praia Clube',
-    escL: '🟥', escV: '🟨', inicio: _m(340), modelo: { q: 0.56, bo: 5 }, margen: 1.065 }
+/* ---------------- fútbol ---------------- */
+K.LIGAS_FUTBOL = [
+  { nom: 'Liga 1 · Perú', pais: '🇵🇪', goles: 2.5, margen: 1.06, equipos: [
+    ['Alianza Lima', '🔵', 79], ['Universitario', '🟡', 81], ['Sporting Cristal', '🔷', 80],
+    ['Melgar', '🔴', 74], ['Cienciano', '🔴', 70], ['Cusco FC', '⚫', 71],
+    ['Sport Huancayo', '🔴', 68], ['ADT', '🟡', 65], ['Alianza Atlético', '🔵', 66],
+    ['Atlético Grau', '⚪', 67], ['Sport Boys', '🌹', 64], ['UTC', '🟢', 62],
+    ['Los Chankas', '🔵', 61], ['Comerciantes Unidos', '🟠', 60], ['Juan Pablo II', '🟣', 59],
+    ['Deportivo Garcilaso', '🔵', 69]
+  ]},
+  { nom: 'Liga Profesional · Argentina', pais: '🇦🇷', goles: 2.4, margen: 1.055, equipos: [
+    ['River Plate', '⚪', 85], ['Boca Juniors', '🔵', 83], ['Racing', '🔵', 80],
+    ['Independiente', '🔴', 77], ['San Lorenzo', '🔵', 76], ['Vélez', '🔵', 78],
+    ['Estudiantes', '🔴', 77], ['Talleres', '🔵', 76], ['Lanús', '🔴', 74],
+    ['Rosario Central', '🔵', 75], ['Newell\'s', '🔴', 73], ['Huracán', '🎈', 72],
+    ['Argentinos Jrs', '🔴', 73], ['Defensa y Justicia', '🟢', 71]
+  ]},
+  { nom: 'Brasileirão', pais: '🇧🇷', goles: 2.6, margen: 1.05, equipos: [
+    ['Flamengo', '🔴', 87], ['Palmeiras', '🟢', 86], ['Botafogo', '⚫', 82],
+    ['São Paulo', '🔴', 81], ['Fluminense', '🟢', 78], ['Corinthians', '⚫', 79],
+    ['Grêmio', '🔵', 78], ['Internacional', '🔴', 79], ['Atlético Mineiro', '⚫', 81],
+    ['Cruzeiro', '🔵', 77], ['Vasco da Gama', '⚫', 74], ['Bahia', '🔵', 75],
+    ['Fortaleza', '🔵', 76], ['Athletico Paranaense', '🔴', 75]
+  ]},
+  { nom: 'LaLiga', pais: '🇪🇸', goles: 2.5, margen: 1.04, equipos: [
+    ['Real Madrid', '⚪', 94], ['Barcelona', '🔵', 92], ['Atlético de Madrid', '🔴', 88],
+    ['Athletic Club', '🔴', 83], ['Real Sociedad', '🔵', 81], ['Villarreal', '🟡', 82],
+    ['Betis', '🟢', 80], ['Sevilla', '⚪', 78], ['Valencia', '🦇', 76],
+    ['Girona', '🔴', 79], ['Celta de Vigo', '🔵', 75], ['Osasuna', '🔴', 74],
+    ['Rayo Vallecano', '⚡', 73], ['Mallorca', '🔴', 72], ['Getafe', '🔵', 73],
+    ['Alavés', '🔵', 71]
+  ]},
+  { nom: 'Premier League', pais: '🏴', goles: 2.8, margen: 1.038, equipos: [
+    ['Manchester City', '🔵', 94], ['Arsenal', '🔴', 91], ['Liverpool', '🟥', 91],
+    ['Chelsea', '🔵', 85], ['Tottenham', '⚪', 84], ['Manchester United', '🔴', 83],
+    ['Newcastle', '⚫', 82], ['Aston Villa', '🟣', 82], ['Brighton', '🔵', 79],
+    ['West Ham', '⚒️', 77], ['Brentford', '🐝', 76], ['Crystal Palace', '🦅', 76],
+    ['Fulham', '⚪', 75], ['Everton', '🔵', 73], ['Wolves', '🐺', 73],
+    ['Nottingham Forest', '🌳', 74]
+  ]},
+  { nom: 'Serie A', pais: '🇮🇹', goles: 2.6, margen: 1.042, equipos: [
+    ['Inter', '🔵', 90], ['Juventus', '⚫', 87], ['Milan', '🔴', 86],
+    ['Napoli', '🔷', 86], ['Atalanta', '🔵', 85], ['Roma', '🟡', 82],
+    ['Lazio', '🔷', 81], ['Fiorentina', '🟣', 80], ['Bologna', '🔴', 79],
+    ['Torino', '🐂', 75], ['Udinese', '⚫', 73], ['Genoa', '🔴', 72],
+    ['Como', '🔵', 71], ['Cagliari', '🔴', 70]
+  ]},
+  { nom: 'Bundesliga', pais: '🇩🇪', goles: 3.1, margen: 1.042, equipos: [
+    ['Bayern München', '🔴', 93], ['Bayer Leverkusen', '⚫', 89], ['Borussia Dortmund', '🟡', 85],
+    ['RB Leipzig', '🐂', 84], ['Stuttgart', '⚪', 81], ['Eintracht Frankfurt', '🦅', 80],
+    ['Wolfsburgo', '🐺', 77], ['Freiburg', '🔴', 76], ['Hoffenheim', '🔵', 74],
+    ['Werder Bremen', '🟢', 74], ['Mainz', '🔴', 73], ['Union Berlin', '🔴', 72]
+  ]},
+  { nom: 'Ligue 1', pais: '🇫🇷', goles: 2.7, margen: 1.045, equipos: [
+    ['PSG', '🔵', 92], ['Mónaco', '🔴', 83], ['Marsella', '🔵', 82],
+    ['Lille', '🔴', 80], ['Lyon', '🔴', 79], ['Niza', '🦅', 78],
+    ['Lens', '🟡', 77], ['Rennes', '🔴', 76], ['Nantes', '🟡', 72],
+    ['Estrasburgo', '🔵', 73], ['Toulouse', '🟣', 72], ['Brest', '🔴', 74]
+  ]},
+  { nom: 'Champions League', pais: '🏆', goles: 2.8, margen: 1.035, equipos: [
+    ['Real Madrid', '⚪', 94], ['Manchester City', '🔵', 94], ['Bayern München', '🔴', 93],
+    ['PSG', '🔵', 92], ['Barcelona', '🔵', 92], ['Liverpool', '🟥', 91],
+    ['Inter', '🔵', 90], ['Arsenal', '🔴', 91], ['Bayer Leverkusen', '⚫', 89],
+    ['Atlético de Madrid', '🔴', 88], ['Borussia Dortmund', '🟡', 85], ['Milan', '🔴', 86]
+  ]},
+  { nom: 'Copa Libertadores', pais: '🏆', goles: 2.4, margen: 1.045, equipos: [
+    ['Flamengo', '🔴', 87], ['Palmeiras', '🟢', 86], ['River Plate', '⚪', 85],
+    ['Boca Juniors', '🔵', 83], ['Universitario', '🟡', 81], ['Alianza Lima', '🔵', 79],
+    ['Sporting Cristal', '🔷', 80], ['Nacional', '⚪', 78], ['Peñarol', '🟡', 78],
+    ['Colo-Colo', '⚪', 79], ['Olimpia', '⚪', 77], ['Atlético Nacional', '🟢', 78],
+    ['LDU Quito', '⚪', 76], ['Bolívar', '🔵', 75]
+  ]},
+  { nom: 'Copa Sudamericana', pais: '🏆', goles: 2.3, margen: 1.05, equipos: [
+    ['Lanús', '🔴', 74], ['Racing', '🔵', 80], ['Cruzeiro', '🔵', 77],
+    ['Independiente del Valle', '🟣', 78], ['Cienciano', '🔴', 70], ['Melgar', '🔴', 74],
+    ['Fortaleza', '🔵', 76], ['Corinthians', '⚫', 79], ['Always Ready', '🔴', 68],
+    ['Universidad Católica', '🔵', 73]
+  ]},
+  { nom: 'Liga MX', pais: '🇲🇽', goles: 2.7, margen: 1.05, equipos: [
+    ['América', '🦅', 84], ['Tigres', '🐯', 82], ['Monterrey', '🔵', 81],
+    ['Cruz Azul', '🔵', 80], ['Chivas', '🐐', 78], ['Pumas', '🐆', 76],
+    ['Toluca', '🔴', 78], ['León', '🟢', 75], ['Pachuca', '🔵', 76],
+    ['Santos Laguna', '🟢', 72]
+  ]},
+  { nom: 'MLS', pais: '🇺🇸', goles: 2.9, margen: 1.055, equipos: [
+    ['Inter Miami', '🩷', 82], ['LAFC', '⚫', 80], ['Columbus Crew', '🟡', 79],
+    ['Seattle Sounders', '🟢', 77], ['LA Galaxy', '⚪', 78], ['Atlanta United', '🔴', 74],
+    ['Philadelphia Union', '🔵', 75], ['Cincinnati', '🟠', 76]
+  ]},
+  { nom: 'Eliminatorias CONMEBOL', pais: '🌎', goles: 2.3, margen: 1.05, equipos: [
+    ['Argentina', '🇦🇷', 93], ['Brasil', '🇧🇷', 89], ['Uruguay', '🇺🇾', 86],
+    ['Colombia', '🇨🇴', 85], ['Ecuador', '🇪🇨', 82], ['Perú', '🇵🇪', 76],
+    ['Paraguay', '🇵🇾', 78], ['Chile', '🇨🇱', 77], ['Venezuela', '🇻🇪', 74],
+    ['Bolivia', '🇧🇴', 70]
+  ]}
 ];
 
-/* Cada evento arranca sin exposición: el libro se va llenando con lo que apuesta el usuario. */
-K.EVENTOS.forEach(e => {
-  e.vivo = !!e.vivo;
-  e.minuto = e.minuto || 0;
-  e.marcador = e.marcador || { l: 0, v: 0 };
-  e.exposicion = {};
-  e.suspendido = false;
-  e.historialCuotas = {};
-});
+/* ---------------- tenis ---------------- */
+K.TORNEOS_TENIS = [
+  { nom: 'ATP Masters 1000 · Miami', margen: 1.045, jugadores: [
+    ['J. Sinner', '🇮🇹', 96], ['C. Alcaraz', '🇪🇸', 95], ['N. Djokovic', '🇷🇸', 92],
+    ['A. Zverev', '🇩🇪', 90], ['D. Medvedev', '🇷🇺', 89], ['A. Rublev', '🇷🇺', 86],
+    ['C. Ruud', '🇳🇴', 86], ['H. Rune', '🇩🇰', 85], ['T. Fritz', '🇺🇸', 87],
+    ['G. Dimitrov', '🇧🇬', 84], ['S. Tsitsipas', '🇬🇷', 85], ['A. de Miñaur', '🇦🇺', 86],
+    ['B. Shelton', '🇺🇸', 84], ['U. Humbert', '🇫🇷', 82], ['T. Paul', '🇺🇸', 84],
+    ['K. Khachanov', '🇷🇺', 82]
+  ]},
+  { nom: 'ATP 500 · Río de Janeiro', margen: 1.05, jugadores: [
+    ['S. Báez', '🇦🇷', 82], ['F. Cerúndolo', '🇦🇷', 83], ['A. Tabilo', '🇨🇱', 80],
+    ['N. Jarry', '🇨🇱', 80], ['T. Etcheverry', '🇦🇷', 79], ['F. Díaz Acosta', '🇦🇷', 76],
+    ['T. Seyboth Wild', '🇧🇷', 75], ['M. Navone', '🇦🇷', 77], ['J. Munar', '🇪🇸', 76],
+    ['P. Martínez', '🇪🇸', 75]
+  ]},
+  { nom: 'ATP Challenger · Lima', margen: 1.07, jugadores: [
+    ['I. Buse', '🇵🇪', 72], ['G. Ugo Carabelli', '🇦🇷', 74], ['C. Taberner', '🇪🇸', 73],
+    ['J. Bautista', '🇵🇪', 68], ['B. Zapata Miralles', '🇪🇸', 72], ['D. Elahi Galán', '🇨🇴', 73],
+    ['F. Coria', '🇦🇷', 74], ['A. Barrientos', '🇨🇴', 69]
+  ]},
+  { nom: 'WTA 1000 · Indian Wells', margen: 1.05, jugadores: [
+    ['A. Sabalenka', '🇧🇾', 94], ['I. Świątek', '🇵🇱', 95], ['C. Gauff', '🇺🇸', 92],
+    ['E. Rybakina', '🇰🇿', 91], ['J. Pegula', '🇺🇸', 88], ['Q. Zheng', '🇨🇳', 88],
+    ['J. Paolini', '🇮🇹', 87], ['E. Navarro', '🇺🇸', 86], ['B. Krejčíková', '🇨🇿', 85],
+    ['D. Kasatkina', '🇷🇺', 85], ['M. Keys', '🇺🇸', 86], ['M. Andreeva', '🇷🇺', 87]
+  ]},
+  { nom: 'WTA 250 · Bogotá', margen: 1.065, jugadores: [
+    ['C. Osorio', '🇨🇴', 76], ['M. Bouzková', '🇨🇿', 78], ['S. Sorribes Tormo', '🇪🇸', 79],
+    ['N. Podoroska', '🇦🇷', 75], ['J. Cristian', '🇷🇴', 76], ['L. Bronzetti', '🇮🇹', 77],
+    ['R. Zarazúa', '🇲🇽', 74], ['F. Jorge', '🇵🇪', 70]
+  ]},
+  { nom: 'ATP 250 · Buenos Aires', margen: 1.055, jugadores: [
+    ['C. Alcaraz', '🇪🇸', 95], ['N. Jarry', '🇨🇱', 80], ['F. Cerúndolo', '🇦🇷', 83],
+    ['S. Báez', '🇦🇷', 82], ['L. Darderi', '🇮🇹', 78], ['C. Ugo Carabelli', '🇦🇷', 74],
+    ['M. Navone', '🇦🇷', 77], ['T. Etcheverry', '🇦🇷', 79]
+  ]}
+];
+
+/* ---------------- básquet ---------------- */
+K.LIGAS_BASKET = [
+  { nom: 'NBA', margen: 1.04, total: 228, equipos: [
+    ['Celtics', '🟩', 92], ['Nuggets', '🟡', 89], ['Thunder', '🟦', 90],
+    ['Timberwolves', '🐺', 87], ['Bucks', '🦌', 86], ['Suns', '🟠', 84],
+    ['Lakers', '🟣', 85], ['Warriors', '🔵', 84], ['Knicks', '🗽', 86],
+    ['76ers', '🔵', 85], ['Mavericks', '🐴', 87], ['Heat', '🔥', 83],
+    ['Clippers', '🔴', 83], ['Kings', '👑', 82], ['Pelicans', '🦆', 82],
+    ['Cavaliers', '🍷', 84]
+  ]},
+  { nom: 'Liga ACB · España', margen: 1.05, total: 162, equipos: [
+    ['Real Madrid B.', '⚪', 90], ['Barça Bàsquet', '🔵', 88], ['Unicaja', '🟢', 84],
+    ['Valencia Basket', '🟠', 85], ['Baskonia', '🔵', 83], ['Gran Canaria', '🟡', 80],
+    ['Joventut', '🟢', 79], ['Tenerife', '🔵', 82]
+  ]},
+  { nom: 'Basketball Champions League', margen: 1.055, total: 158, equipos: [
+    ['Unicaja', '🟢', 84], ['Tenerife', '🔵', 82], ['Hapoel Jerusalem', '🔴', 79],
+    ['Bàsquet Girona', '🔴', 77], ['Peristeri', '🔵', 76], ['Galatasaray', '🟡', 78]
+  ]}
+];
+
+/* ---------------- eSports ---------------- */
+K.LIGAS_ESPORTS = [
+  { nom: 'CS2 · BLAST Premier', margen: 1.06, bo: 3, equipos: [
+    ['NAVI', '🟨', 90], ['FaZe', '🟥', 89], ['Vitality', '🐝', 91],
+    ['G2', '⬛', 88], ['Spirit', '⚪', 89], ['MOUZ', '🔴', 87],
+    ['Astralis', '🔴', 84], ['Heroic', '⚫', 83], ['Furia', '🐆', 84],
+    ['Complexity', '🔵', 82]
+  ]},
+  { nom: 'LoL · LTA Sur', margen: 1.065, bo: 3, equipos: [
+    ['Leviatán', '🟪', 84], ['Estral', '🟧', 82], ['Isurus', '🦈', 83],
+    ['Furia LoL', '🐆', 81], ['LOUD', '🟢', 85], ['paiN Gaming', '🔴', 84]
+  ]},
+  { nom: 'Dota 2 · ESL Pro Tour', margen: 1.06, bo: 3, equipos: [
+    ['Team Spirit', '⬛', 92], ['Gaimin Gladiators', '🔵', 88], ['Falcons', '🦅', 89],
+    ['Liquid', '🔵', 88], ['Tundra', '🟣', 85], ['BetBoom', '🟡', 86]
+  ]},
+  { nom: 'Valorant · VCT Américas', margen: 1.065, bo: 3, equipos: [
+    ['Sentinels', '🔴', 86], ['LOUD', '🟢', 87], ['NRG', '⚫', 85],
+    ['Leviatán', '🟪', 86], ['MIBR', '🔵', 83], ['KRÜ', '🟡', 84]
+  ]}
+];
+
+/* ---------------- vóley ---------------- */
+K.LIGAS_VOLLEY = [
+  { nom: 'Liga Nacional · Perú', margen: 1.07, bo: 5, equipos: [
+    ['Alianza Lima', '🔵', 84], ['Regatas', '⚪', 82], ['Géminis', '🟣', 80],
+    ['San Martín', '🔷', 79], ['Circolo Sportivo', '🔴', 76], ['Deportivo Soan', '🟡', 74]
+  ]},
+  { nom: 'VNL Femenina', margen: 1.06, bo: 5, equipos: [
+    ['Brasil', '🇧🇷', 90], ['Italia', '🇮🇹', 91], ['Polonia', '🇵🇱', 89],
+    ['Turquía', '🇹🇷', 90], ['EE. UU.', '🇺🇸', 88], ['China', '🇨🇳', 86],
+    ['Japón', '🇯🇵', 85], ['Serbia', '🇷🇸', 84]
+  ]},
+  { nom: 'Superliga · Brasil', margen: 1.065, bo: 5, equipos: [
+    ['Sesc RJ', '🟥', 86], ['Praia Clube', '🟨', 85], ['Minas', '⚪', 84],
+    ['Osasco', '🔵', 83], ['Barueri', '🟢', 80], ['Pinheiros', '🔴', 79]
+  ]}
+];
+
+/* ===========================================================
+   Generador de partidos
+   =========================================================== */
+(() => {
+  let n = 0;
+  const id = () => 'e' + (++n).toString(36);
+  const min = m => Date.now() + m * 60000;
+
+  /* Empareja los equipos de una liga sin repetir a nadie en la jornada. */
+  function jornada(equipos, cuantos) {
+    const orden = K.mezcla(equipos.slice());
+    const partidos = [];
+    for (let i = 0; i + 1 < orden.length && partidos.length < cuantos; i += 2) {
+      partidos.push([orden[i], orden[i + 1]]);
+    }
+    return partidos;
+  }
+
+  /* Reparte los horarios: unos ya empezados (en vivo) y el resto por venir. */
+  function horario(i, total, vivos) {
+    if (i < vivos) return -K.entero(8, 70);            // minutos jugados
+    const paso = 25 + (i - vivos) * K.entero(18, 40);
+    return paso;
+  }
+
+  const eventos = [];
+
+  /* ---- fútbol ---- */
+  K.LIGAS_FUTBOL.forEach((liga, li) => {
+    const vivos = li < 5 ? K.entero(1, 2) : 0;
+    const partidos = jornada(liga.equipos, li < 6 ? 7 : 5);
+    partidos.forEach(([l, v], i) => {
+      const t = horario(i, partidos.length, vivos);
+      const dif = (l[2] - v[2]) / 100;
+      const lh = liga.goles / 2 * Math.exp(0.95 * dif + 0.16);
+      const la = liga.goles / 2 * Math.exp(-0.95 * dif - 0.02);
+      const vivo = t < 0;
+      const minuto = vivo ? -t : 0;
+      const ev = {
+        id: id(), deporte: 'futbol', liga: liga.nom, pais: liga.pais,
+        local: l[0], visita: v[0], escL: l[1], escV: v[1],
+        ratL: l[2], ratV: v[2],
+        inicio: min(t), vivo, minuto,
+        marcador: { l: 0, v: 0 },
+        modelo: { lh: K.round2(lh), la: K.round2(la) },
+        margen: liga.margen
+      };
+      if (vivo) {                                       // marcador acorde a los minutos jugados
+        const jug = minuto / 90;
+        ev.marcador.l = Math.min(4, Math.round(K.poissonMuestra(lh * jug)));
+        ev.marcador.v = Math.min(4, Math.round(K.poissonMuestra(la * jug)));
+      }
+      eventos.push(ev);
+    });
+  });
+
+  /* ---- tenis ---- */
+  K.TORNEOS_TENIS.forEach((torneo, ti) => {
+    const vivos = ti < 3 ? K.entero(1, 2) : 0;
+    const partidos = jornada(torneo.jugadores, 6);
+    partidos.forEach(([a, b], i) => {
+      const t = horario(i, partidos.length, vivos);
+      const p1 = K.clamp(1 / (1 + Math.pow(10, (b[2] - a[2]) / 17)), 0.06, 0.94);
+      const vivo = t < 0;
+      const ev = {
+        id: id(), deporte: 'tenis', liga: torneo.nom, pais: '🎾',
+        local: a[0], visita: b[0], escL: a[1], escV: b[1],
+        ratL: a[2], ratV: b[2],
+        inicio: min(t), vivo, minuto: vivo ? -t : 0,
+        marcador: { l: 0, v: 0 },
+        modelo: { p1: K.round2(p1) },
+        margen: torneo.margen
+      };
+      if (vivo && ev.minuto > 45) ev.marcador[Math.random() < p1 ? 'l' : 'v'] = 1;
+      eventos.push(ev);
+    });
+  });
+
+  /* ---- básquet ---- */
+  K.LIGAS_BASKET.forEach((liga, li) => {
+    const vivos = li < 2 ? 1 : 0;
+    const partidos = jornada(liga.equipos, 6);
+    partidos.forEach(([l, v], i) => {
+      const t = horario(i, partidos.length, vivos);
+      const spread = K.round2((l[2] - v[2]) * 0.62 + 2.4);
+      const vivo = t < 0;
+      const minuto = vivo ? Math.min(46, -t) : 0;
+      const ev = {
+        id: id(), deporte: 'basket', liga: liga.nom, pais: '🏀',
+        local: l[0], visita: v[0], escL: l[1], escV: v[1],
+        ratL: l[2], ratV: v[2],
+        inicio: min(t), vivo, minuto,
+        marcador: { l: 0, v: 0 },
+        modelo: { spread, total: liga.total + K.entero(-6, 6) },
+        margen: liga.margen
+      };
+      if (vivo) {
+        const frac = minuto / 48;
+        const pts = ev.modelo.total * frac;
+        ev.marcador.l = Math.round(pts / 2 + spread * frac / 2 + K.entero(-5, 5));
+        ev.marcador.v = Math.round(pts / 2 - spread * frac / 2 + K.entero(-5, 5));
+      }
+      eventos.push(ev);
+    });
+  });
+
+  /* ---- series: eSports y vóley ---- */
+  const series = (ligas, deporte, icono) => ligas.forEach((liga, li) => {
+    const vivos = li < 2 ? 1 : 0;
+    const partidos = jornada(liga.equipos, 5);
+    partidos.forEach(([l, v], i) => {
+      const t = horario(i, partidos.length, vivos);
+      const q = K.clamp(1 / (1 + Math.pow(10, (v[2] - l[2]) / 22)), 0.1, 0.9);
+      const vivo = t < 0;
+      const ev = {
+        id: id(), deporte, liga: liga.nom, pais: icono,
+        local: l[0], visita: v[0], escL: l[1], escV: v[1],
+        ratL: l[2], ratV: v[2],
+        inicio: min(t), vivo, minuto: vivo ? -t : 0,
+        marcador: { l: 0, v: 0 },
+        modelo: { q: K.round2(q), bo: liga.bo },
+        margen: liga.margen
+      };
+      if (vivo && ev.minuto > 30) ev.marcador[Math.random() < q ? 'l' : 'v'] = 1;
+      eventos.push(ev);
+    });
+  });
+  series(K.LIGAS_ESPORTS, 'esports', '🎮');
+  series(K.LIGAS_VOLLEY, 'volley', '🏐');
+
+  /* Estado común que espera el motor. */
+  eventos.forEach(e => {
+    e.exposicion = {};
+    e.suspendido = false;
+    e.terminado = false;
+    e.historialCuotas = {};
+    e.serie = [];            // histórico de la cuota principal, para la mini gráfica
+    e.stats = {
+      posesion: K.entero(38, 62),
+      tiros: [K.entero(2, 14), K.entero(2, 14)],
+      corners: [K.entero(0, 8), K.entero(0, 8)],
+      amarillas: [K.entero(0, 4), K.entero(0, 4)]
+    };
+  });
+
+  K.EVENTOS = eventos;
+})();
 
 K.evento = id => K.EVENTOS.find(e => e.id === id);
 
@@ -1583,6 +1990,8 @@ K.Sportsbook = (() => {
   let filtroDeporte = 'futbol';
   let filtroLiga = null;
   let soloVivo = false;
+  let busqueda = '';
+  const abiertas = {};      // ligas desplegadas por completo
   let contenedorLista = null;
   const nodos = {};        // cuotas y marcadores vivos, para no repintar todo
 
@@ -1946,6 +2355,17 @@ K.Sportsbook = (() => {
       if (fin || ev.minuto >= DUR[ev.deporte] * 1.4) { finalizar(ev); cambioEstructural = true; }
     }
 
+    // Cada pocos segundos se guarda la cuota principal para la mini gráfica.
+    if (!tick.n) tick.n = 0;
+    if (++tick.n % 3 === 0) {
+      for (const ev of K.EVENTOS) {
+        if (!ev.vivo) continue;
+        const m = K.Odds.construir(ev)[0];
+        ev.serie.push(m.sel.map(x => x.cuota));
+        if (ev.serie.length > 80) ev.serie.shift();
+      }
+    }
+
     if (cambioEstructural) K.bus.emit('lista');
     else patchVivo();
     pintarBoleto();
@@ -2144,9 +2564,18 @@ K.Sportsbook = (() => {
   function vista(root) {
     contenedorLista = root;
     root.innerHTML = '';
+
     const promo = bannerPromo();
-    if (promo && !soloVivo && !filtroLiga) root.appendChild(promo);
-    if (filtroLiga) {
+    if (promo && !soloVivo && !filtroLiga && !busqueda) root.appendChild(promo);
+
+    const ticker = tickerVivo();
+    if (ticker) root.appendChild(ticker);
+
+    root.appendChild(barraBusqueda(root));
+
+    if (!busqueda) root.appendChild(chipsDeporte(root));
+
+    if (filtroLiga && !busqueda) {
       const aviso = K.el('div', { class: 'chips' });
       aviso.appendChild(K.el('button', {
         class: 'chip on', html: K.ic('cerrar') + ' ' + K.esc(filtroLiga),
@@ -2154,43 +2583,146 @@ K.Sportsbook = (() => {
       }));
       root.appendChild(aviso);
     }
+
+    /* --- selección de eventos --- */
+    const texto = busqueda.trim().toLowerCase();
+    let lista = K.EVENTOS.filter(e => !e.terminado);
+    if (texto) {
+      lista = lista.filter(e =>
+        e.local.toLowerCase().includes(texto) ||
+        e.visita.toLowerCase().includes(texto) ||
+        e.liga.toLowerCase().includes(texto));
+    } else if (filtroLiga) lista = lista.filter(e => e.liga === filtroLiga);
+    else if (soloVivo) lista = lista.filter(e => e.vivo);
+    else lista = lista.filter(e => e.deporte === filtroDeporte);
+
+    const vivos = lista.filter(e => e.vivo).sort((a, b) => b.minuto - a.minuto);
+    const luego = lista.filter(e => !e.vivo).sort((a, b) => a.inicio - b.inicio);
+
+    if (!lista.length) {
+      root.appendChild(K.el('div', {
+        class: 'vacio',
+        html: K.ic('trofeo') + '<div>' + (texto ? 'Ningún partido coincide con esa búsqueda.'
+          : 'No hay eventos abiertos en esta categoría.') + '</div>'
+      }));
+      return;
+    }
+
+    if (vivos.length) {
+      root.appendChild(cabecera('En vivo', vivos.length + (vivos.length === 1 ? ' evento' : ' eventos') + ' con cuotas moviéndose', 'vivo'));
+      porLiga(root, vivos, 'vivo');
+    }
+    if (luego.length) {
+      root.appendChild(cabecera('Próximos', luego.length + ' partidos · el reloj corre a 30×', 'reloj'));
+      porLiga(root, luego, 'prox');
+    }
+    const term = K.EVENTOS.filter(e => e.terminado);
+    if (term.length && !texto) {
+      root.appendChild(cabecera('Finalizados', term.length + ' eventos ya liquidados', 'grafico'));
+      term.slice(-6).reverse().forEach(e => root.appendChild(tarjetaEvento(e, { sinMas: true })));
+    }
+  }
+
+  /* Agrupa por competición y limita cuántos partidos se pintan de cada una. */
+  function porLiga(root, eventos, clave) {
+    const grupos = new Map();
+    eventos.forEach(e => {
+      if (!grupos.has(e.liga)) grupos.set(e.liga, []);
+      grupos.get(e.liga).push(e);
+    });
+    const TOPE = 6;
+    for (const [liga, evs] of grupos) {
+      const k = clave + '|' + liga;
+      const cab = K.el('div', { class: 'liga-cab' });
+      cab.innerHTML = `<span class="pais">${evs[0].pais || ''}</span>
+        <span class="nom">${K.esc(liga)}</span>
+        <span class="cuenta">${evs.length}</span>`;
+      const verTodo = K.el('button', {
+        class: 'ver-liga',
+        text: 'Solo esta liga',
+        onclick: () => { filtroLiga = liga; busqueda = ''; vista(contenedorLista); }
+      });
+      cab.appendChild(verTodo);
+      root.appendChild(cab);
+
+      const visibles = abiertas[k] ? evs : evs.slice(0, TOPE);
+      visibles.forEach(e => root.appendChild(tarjetaEvento(e)));
+      if (evs.length > TOPE) {
+        root.appendChild(K.el('button', {
+          class: 'ver-mas',
+          html: abiertas[k]
+            ? 'Ver menos' + K.ic('chevron')
+            : `Ver los ${evs.length - TOPE} partidos restantes` + K.ic('chevron'),
+          onclick: () => { abiertas[k] = !abiertas[k]; vista(contenedorLista); }
+        }));
+      }
+    }
+  }
+
+  /* Cinta de marcadores en vivo, como el teletipo de una casa real. */
+  function tickerVivo() {
+    const vivos = K.EVENTOS.filter(e => e.vivo);
+    if (vivos.length < 3) return null;
+    const caja = K.el('div', { class: 'ticker' });
+    const pista = K.el('div', { class: 'ticker-pista' });
+    const item = ev => {
+      const b = K.el('button', { class: 'ticker-item', onclick: () => abrirEvento(ev.id) });
+      b.innerHTML = `<span class="min">${Math.floor(ev.minuto)}'</span>
+        <span class="eq">${K.esc(ev.local)}</span>
+        <span class="m">${ev.marcador.l}-${ev.marcador.v}</span>
+        <span class="eq">${K.esc(ev.visita)}</span>`;
+      return b;
+    };
+    // Se duplica la lista para que el bucle no tenga corte visible.
+    vivos.forEach(ev => pista.appendChild(item(ev)));
+    vivos.forEach(ev => pista.appendChild(item(ev)));
+    pista.style.animationDuration = Math.max(24, vivos.length * 4.5) + 's';
+    caja.appendChild(pista);
+    return caja;
+  }
+
+  function barraBusqueda(root) {
+    const caja = K.el('div', { class: 'buscador' });
+    const campo = K.el('div', { class: 'campo-buscar' });
+    campo.innerHTML = K.ic('buscar');
+    const inp = K.el('input', {
+      type: 'search', placeholder: 'Buscar equipo, jugador o competición…', value: busqueda
+    });
+    let t = null;
+    inp.oninput = () => {
+      clearTimeout(t);
+      t = setTimeout(() => {
+        const foco = document.activeElement === inp;
+        busqueda = inp.value;
+        vista(root);
+        if (foco) {
+          const nuevo = K.$('.campo-buscar input', root);
+          if (nuevo) { nuevo.focus(); nuevo.setSelectionRange(nuevo.value.length, nuevo.value.length); }
+        }
+      }, 260);
+    };
+    campo.appendChild(inp);
+    caja.appendChild(campo);
+    return caja;
+  }
+
+  function chipsDeporte(root) {
     const chips = K.el('div', { class: 'chips' });
     const vivosN = K.EVENTOS.filter(e => e.vivo).length;
     chips.appendChild(K.el('button', {
       class: 'chip' + (soloVivo ? ' on' : ''),
       html: '<span class="punto-vivo"></span> En vivo (' + vivosN + ')',
-      onclick: () => { soloVivo = !soloVivo; vista(root); }
+      onclick: () => { soloVivo = !soloVivo; filtroLiga = null; vista(root); }
     }));
-    K.DEPORTES.forEach(d => chips.appendChild(K.el('button', {
-      class: 'chip' + (!soloVivo && filtroDeporte === d.id ? ' on' : ''),
-      html: K.ic(K.icDeporte(d.id)) + ' ' + d.nom,
-      onclick: () => { soloVivo = false; filtroDeporte = d.id; vista(root); }
-    })));
-    root.appendChild(chips);
-
-    let lista = K.EVENTOS.filter(e => !e.terminado);
-    if (filtroLiga) lista = lista.filter(e => e.liga === filtroLiga);
-    else lista = soloVivo ? lista.filter(e => e.vivo) : lista.filter(e => e.deporte === filtroDeporte);
-    lista.sort((a, b) => (b.vivo - a.vivo) || (a.inicio - b.inicio));
-
-    if (!lista.length) {
-      root.appendChild(K.el('div', { class: 'vacio', html: K.ic('trofeo') + '<div>No hay eventos abiertos en esta categoría.</div>' }));
-    }
-    const vivos = lista.filter(e => e.vivo);
-    const luego = lista.filter(e => !e.vivo);
-    if (vivos.length) {
-      root.appendChild(cabecera('En vivo', vivos.length + ' eventos con cuotas moviéndose', 'vivo'));
-      vivos.forEach(e => root.appendChild(tarjetaEvento(e)));
-    }
-    if (luego.length) {
-      root.appendChild(cabecera('Próximos', 'el reloj corre a 30× para que puedas ver la liquidación', 'reloj'));
-      luego.forEach(e => root.appendChild(tarjetaEvento(e)));
-    }
-    const term = K.EVENTOS.filter(e => e.terminado);
-    if (term.length) {
-      root.appendChild(cabecera('Finalizados', term.length + ' eventos ya liquidados', 'grafico'));
-      term.slice(0, 6).forEach(e => root.appendChild(tarjetaEvento(e, { sinMas: true })));
-    }
+    K.DEPORTES.forEach(d => {
+      const n = K.EVENTOS.filter(e => e.deporte === d.id && !e.terminado).length;
+      chips.appendChild(K.el('button', {
+        class: 'chip' + (!soloVivo && !filtroLiga && filtroDeporte === d.id ? ' on' : ''),
+        html: K.ic(K.icDeporte(d.id)) + ' ' + d.nom + ' <i>' + n + '</i>',
+        onclick: () => { soloVivo = false; filtroLiga = null; filtroDeporte = d.id; vista(root); }
+      }));
+    });
+    return chips;
   }
 
   function cabecera(titulo, sub, icono = 'trofeo') {
@@ -2207,16 +2739,41 @@ K.Sportsbook = (() => {
     const ev = K.evento(id);
     if (!ev) return;
     const cuerpo = K.el('div');
+
     const pintar = () => {
+      const scroll = cuerpo.parentElement ? cuerpo.parentElement.scrollTop : 0;
       cuerpo.innerHTML = '';
       const mercados = K.Odds.construir(ev);
+
+      /* cabecera con marcador */
+      const cab = K.el('div', { class: 'ficha-cab' });
+      cab.innerHTML = `
+        <div class="ficha-eq"><span class="esc">${ev.escL}</span><span class="nom">${K.esc(ev.local)}</span></div>
+        <div class="ficha-marcador">
+          <div class="m">${ev.vivo || ev.terminado ? ev.marcador.l + ' - ' + ev.marcador.v : 'vs'}</div>
+          <div class="est">${ev.terminado ? 'finalizado'
+            : ev.vivo ? minutoTexto(ev)
+            : K.fechaHora(ev.inicio)}</div>
+        </div>
+        <div class="ficha-eq"><span class="esc">${ev.escV}</span><span class="nom">${K.esc(ev.visita)}</span></div>`;
+      cuerpo.appendChild(cab);
+
+      /* datos del modelo */
       cuerpo.appendChild(K.el('div', {
         class: 'info-bloque', html:
-          `<h4>${K.esc(ev.local)} vs ${K.esc(ev.visita)} · ${K.esc(ev.liga)}</h4>
-       ${ev.vivo ? `En juego · minuto ${Math.floor(ev.minuto)} · marcador ${ev.marcador.l}-${ev.marcador.v}`
-              : ev.terminado ? `Finalizado ${ev.marcador.l}-${ev.marcador.v}` : 'Comienza ' + K.fechaHora(ev.inicio)}
-       · margen base <b>${K.pct(ev.margen - 1)}</b>${ev.vivo ? ' + 2.5% por riesgo en vivo' : ''}`
+          `<b>${K.esc(ev.liga)}</b> · margen base ${K.pct(ev.margen - 1)}${ev.vivo ? ' + 2.5 puntos por riesgo en vivo' : ''}
+           · rating ${ev.ratL} contra ${ev.ratV}
+           ${ev.deporte === 'futbol' ? ` · goles esperados ${K.dec(ev.modelo.lh)} y ${K.dec(ev.modelo.la)}` : ''}
+           ${ev.deporte === 'basket' ? ` · línea ${ev.modelo.spread > 0 ? '-' : '+'}${Math.abs(ev.modelo.spread)} y total ${ev.modelo.total}` : ''}`
       }));
+
+      /* estadísticas en vivo */
+      if (ev.vivo && ev.deporte === 'futbol') cuerpo.appendChild(bloqueStats(ev));
+
+      /* evolución de la cuota */
+      if (ev.serie.length > 3) cuerpo.appendChild(bloqueGrafica(ev, mercados[0]));
+
+      /* mercados */
       mercados.forEach(m => {
         const caja = K.el('div', { class: 'tarjeta', style: 'margin-top:12px' });
         caja.appendChild(K.el('h3', {
@@ -2225,34 +2782,144 @@ K.Sportsbook = (() => {
         }));
         const c = K.el('div', { class: 'cuerpo' });
         const g = K.el('div', { class: 'mercado g' + m.cols });
-        m.sel.forEach(s => g.appendChild(botonCuota(ev, m, s)));
+        m.sel.forEach(x => g.appendChild(botonCuota(ev, m, x)));
         c.appendChild(g);
         c.appendChild(K.el('div', {
-          style: 'margin-top:8px;font-size:11.5px;color:var(--tenue2)',
-          text: 'Probabilidades implícitas: ' + m.sel.map(s => s.lab + ' ' + K.pct(s.impl)).join(' · ')
+          style: 'margin-top:8px;font-size:11.5px;color:var(--tenue-2)',
+          text: 'Probabilidades implícitas: ' + m.sel.map(x => x.lab + ' ' + K.pct(x.impl)).join(' · ')
         }));
         caja.appendChild(c);
         cuerpo.appendChild(caja);
       });
+      if (cuerpo.parentElement) cuerpo.parentElement.scrollTop = scroll;
     };
+
     pintar();
     K.modal(ev.local + ' vs ' + ev.visita, cuerpo, ev.liga);
     const it = setInterval(() => {
       if (!document.body.contains(cuerpo)) { clearInterval(it); return; }
       if (ev.vivo) pintar();
-    }, 1500);
+    }, 2500);
+  }
+
+  /* Estadísticas simuladas del partido, que se mueven con el marcador. */
+  function bloqueStats(ev) {
+    const s = ev.stats;
+    const caja = K.el('div', { class: 'tarjeta', style: 'margin-top:12px' });
+    caja.appendChild(K.el('h3', { text: 'Estadísticas del partido' }));
+    const c = K.el('div', { class: 'cuerpo stats-ev' });
+    const filas = [
+      ['Posesión', s.posesion, 100 - s.posesion, '%'],
+      ['Tiros al arco', s.tiros[0], s.tiros[1], ''],
+      ['Córners', s.corners[0], s.corners[1], ''],
+      ['Tarjetas amarillas', s.amarillas[0], s.amarillas[1], '']
+    ];
+    filas.forEach(([et, a, b, suf]) => {
+      const total = (a + b) || 1;
+      const fila = K.el('div', { class: 'stat-linea' });
+      fila.innerHTML = `<span class="et">${et}</span>
+        <b>${a}${suf}</b>
+        <span class="stat-barra"><i class="l" style="width:${a / total * 100}%"></i><i class="v" style="width:${b / total * 100}%"></i></span>
+        <b>${b}${suf}</b>`;
+      c.appendChild(fila);
+    });
+    caja.appendChild(c);
+    return caja;
+  }
+
+  /* Mini gráfica de cómo se movió la cuota principal desde que arrancó. */
+  function bloqueGrafica(ev, merc) {
+    const caja = K.el('div', { class: 'tarjeta', style: 'margin-top:12px' });
+    caja.appendChild(K.el('h3', { text: 'Evolución de la cuota · ' + merc.nombre }));
+    const c = K.el('div', { class: 'cuerpo' });
+    const cv = K.el('canvas', { class: 'spark' });
+    c.appendChild(cv);
+    c.appendChild(K.el('div', {
+      style: 'margin-top:6px;font-size:11.5px;color:var(--tenue-2)',
+      text: merc.sel.map((x, i) => ['●', '■', '▲'][i] + ' ' + (x.extra || x.lab)).join('   ')
+    }));
+    caja.appendChild(c);
+
+    requestAnimationFrame(() => {
+      const p = devicePixelRatio;
+      const W = cv.clientWidth * p, H = 56 * p;
+      cv.width = W; cv.height = H;
+      const ctx = cv.getContext('2d');
+      const serie = ev.serie;
+      const cols = ['#ff5500', '#38bdf8', '#a78bfa'];
+      const todos = serie.flat();
+      const min = Math.min(...todos), max = Math.max(...todos);
+      const rango = (max - min) || 1;
+      ctx.clearRect(0, 0, W, H);
+      ctx.strokeStyle = 'rgba(148,163,184,.12)';
+      ctx.lineWidth = 1 * p;
+      for (let i = 0; i <= 2; i++) {
+        const y = (H - 8 * p) * i / 2 + 4 * p;
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+      }
+      const n = serie[0].length;
+      for (let k = 0; k < n; k++) {
+        ctx.beginPath();
+        serie.forEach((punto, i) => {
+          const x = W * (i / Math.max(1, serie.length - 1));
+          const y = H - 4 * p - (H - 8 * p) * ((punto[k] - min) / rango);
+          i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+        });
+        ctx.strokeStyle = cols[k % cols.length];
+        ctx.lineWidth = 2 * p;
+        ctx.stroke();
+      }
+    });
+    return caja;
   }
 
   /* ---- vista Mis apuestas ---- */
+  let filtroApuestas = 'todas';
+
   function vistaApuestas(root) {
     const w = K.Wallet.est();
     root.innerHTML = '';
+    const pendientes = w.apuestas.filter(a => a.estado === 'pendiente');
+    const resueltas = w.apuestas.filter(a => a.estado !== 'pendiente');
+    const ganadas = w.apuestas.filter(a => a.estado === 'ganada' || a.estado === 'cobrada');
+    const invertido = w.apuestas.reduce((a, b) => a + b.stake, 0);
+    const cobrado = w.apuestas.reduce((a, b) => a + b.pago, 0);
+
     root.appendChild(cabecera('Mis apuestas', w.apuestas.length + ' registradas', 'recibo'));
     if (!w.apuestas.length) {
       root.appendChild(K.el('div', { class: 'vacio', html: K.ic('recibo') + '<div>Todavía no hiciste ninguna apuesta.</div>' }));
       return;
     }
-    for (const ap of w.apuestas) {
+
+    const resumen = K.el('div', { class: 'grid2', style: 'margin-bottom:12px' });
+    const tarj = (et, vl, cls) => K.el('div', { class: 'kpi' }, [
+      K.el('span', { class: 'et', text: et }), K.el('span', { class: 'vl ' + (cls || ''), text: vl })
+    ]);
+    resumen.appendChild(tarj('Pendientes', String(pendientes.length)));
+    resumen.appendChild(tarj('Acertadas', ganadas.length + ' de ' + resueltas.length));
+    resumen.appendChild(tarj('Total apostado', K.sol(invertido)));
+    resumen.appendChild(tarj('Balance', K.sol(cobrado - invertido), cobrado - invertido >= 0 ? 'pos' : 'neg'));
+    root.appendChild(resumen);
+
+    const tabs = K.el('div', { class: 'chips' });
+    [['todas', 'Todas', w.apuestas.length],
+     ['pendiente', 'Pendientes', pendientes.length],
+     ['resueltas', 'Liquidadas', resueltas.length]].forEach(([id, nom, n]) => {
+      tabs.appendChild(K.el('button', {
+        class: 'chip' + (filtroApuestas === id ? ' on' : ''),
+        html: nom + ' <i>' + n + '</i>',
+        onclick: () => { filtroApuestas = id; vistaApuestas(root); }
+      }));
+    });
+    root.appendChild(tabs);
+
+    const lista = filtroApuestas === 'pendiente' ? pendientes
+      : filtroApuestas === 'resueltas' ? resueltas : w.apuestas;
+    if (!lista.length) {
+      root.appendChild(K.el('div', { class: 'vacio', html: K.ic('recibo') + '<div>Nada por acá todavía.</div>' }));
+      return;
+    }
+    for (const ap of lista) {
       const card = K.el('div', { class: 'apuesta' });
       card.appendChild(K.el('div', {
         class: 'ap-cab', html:
@@ -2309,7 +2976,12 @@ K.Sportsbook = (() => {
 
   /* ---- banner de SuperCuota ---- */
   function bannerPromo() {
-    const ev = K.EVENTOS.find(e => e.deporte === 'futbol' && !e.vivo && !e.terminado && K.Odds.superCuota(e));
+    /* Se elige el partido más atractivo: el de mayor rating combinado
+       entre los que están por empezar. */
+    const candidatos = K.EVENTOS
+      .filter(e => e.deporte === 'futbol' && !e.vivo && !e.terminado && K.Odds.superCuota(e))
+      .sort((a, b) => (b.ratL + b.ratV) - (a.ratL + a.ratV));
+    const ev = candidatos[0];
     if (!ev) return null;
     const sc = K.Odds.superCuota(ev);
     const el = K.el('div', { class: 'promo' });
@@ -2464,13 +3136,17 @@ K.Juegos.mines = function (root, juego) {
   const sProb = K.G.stat('Prob. del próximo paso', '—');
 
   const btnJugar = K.el('button', { class: 'btn bloque', text: 'Apostar y empezar' });
-  const btnCobrar = K.el('button', { class: 'btn sec bloque', text: 'Cobrar' });
+  const btnCobrar = K.el('button', { class: 'btn verde bloque', text: 'Cobrar' });
+  const btnAuto = K.el('button', { class: 'btn sec bloque', text: 'Abrir una al azar' });
   btnCobrar.disabled = true;
+  btnAuto.disabled = true;
+
+  const escalera = K.el('div', { class: 'escalera' });
 
   const panel = K.el('div', { class: 'panel-apuesta' }, [
     monto.wrap,
     K.el('div', { class: 'campo' }, [K.el('label', { text: 'Cantidad de minas' }), selMinas]),
-    btnJugar, btnCobrar,
+    btnJugar, btnCobrar, btnAuto,
     K.el('div', { class: 'separador' }),
     sMult.fila, sProx.fila, sCobro.fila, sProb.fila
   ]);
@@ -2486,6 +3162,23 @@ K.Juegos.mines = function (root, juego) {
     grid.appendChild(c);
   }
 
+  /* Escalera de pagos: cuánto vale cada acierto siguiente. */
+  function pintarEscalera() {
+    escalera.innerHTML = '';
+    const max = TOTAL - minas;
+    const pasos = [];
+    for (let k = 1; k <= max; k++) pasos.push(k);
+    const muestra = pasos.length <= 12 ? pasos
+      : pasos.filter((k, i) => i < 6 || k === max || k % Math.ceil(pasos.length / 8) === 0);
+    muestra.forEach(k => {
+      const nodo = K.el('div', {
+        class: 'peldano' + (k === abiertas ? ' actual' : '') + (k < abiertas ? ' hecho' : ''),
+        html: `<span class="k">${k}</span><b>${K.dec(multiplicador(k))}×</b>`
+      });
+      escalera.appendChild(nodo);
+    });
+  }
+
   function refrescarInfo() {
     const m = multiplicador(abiertas);
     const prox = multiplicador(abiertas + 1);
@@ -2495,6 +3188,7 @@ K.Juegos.mines = function (root, juego) {
     const seguras = TOTAL - minas - abiertas;
     const quedan = TOTAL - abiertas;
     sProb.set(quedan > 0 ? K.pct(seguras / quedan) : '—');
+    pintarEscalera();
   }
 
   function empezar() {
@@ -2504,7 +3198,7 @@ K.Juegos.mines = function (root, juego) {
     K.mezcla([...Array(TOTAL).keys()]).slice(0, minas).forEach(i => tablero[i] = true);
     abiertas = 0; activo = true;
     celdas.forEach(c => { c.className = 'celda'; c.innerHTML = ''; c.disabled = false; });
-    btnJugar.disabled = true; btnCobrar.disabled = false; selMinas.disabled = true;
+    btnJugar.disabled = true; btnCobrar.disabled = false; btnAuto.disabled = false; selMinas.disabled = true;
     refrescarInfo();
   }
 
@@ -2536,7 +3230,7 @@ K.Juegos.mines = function (root, juego) {
 
   function terminar(gano) {
     activo = false;
-    btnJugar.disabled = false; btnCobrar.disabled = true; selMinas.disabled = false;
+    btnJugar.disabled = false; btnCobrar.disabled = true; btnAuto.disabled = true; selMinas.disabled = false;
     celdas.forEach((c, i) => {
       c.disabled = true;
       if (!c.innerHTML) {
@@ -2550,9 +3244,15 @@ K.Juegos.mines = function (root, juego) {
 
   btnJugar.onclick = empezar;
   btnCobrar.onclick = cobrar;
+  btnAuto.onclick = () => {
+    if (!activo) return;
+    const libres = celdas.map((c, i) => i).filter(i => !celdas[i].classList.contains('estrella') && !celdas[i].disabled);
+    if (libres.length) abrir(K.elige(libres));
+  };
   refrescarInfo();
 
-  root.appendChild(K.el('div', { class: 'juego-layout' }, [panel, zona]));
+  const zonaCompleta = K.el('div', {}, [zona, escalera]);
+  root.appendChild(K.el('div', { class: 'juego-layout' }, [panel, zonaCompleta]));
   root.appendChild(K.G.nota(`<h4>Cómo sale el multiplicador</h4>
     Con <b>${'M'}</b> minas y <b>k</b> casillas abiertas el pago justo es
     <code>C(25,k) / C(25−M,k)</code>. La casa se queda con un 3%: por eso el multiplicador
@@ -3289,7 +3989,9 @@ K.Juegos.slot = function (root, juego) {
 
   const monto = K.G.inputMonto(2);
   const sUlt = K.G.stat('Último giro', '—');
+  const sNeto = K.G.stat('Resultado neto', K.sol(0));
   const sGiros = K.G.stat('Giros', '0');
+  let neto = 0;
   const sGratis = K.G.stat('Giros gratis', '0');
   const sRTP = K.G.stat('RTP teórico', (RTP * 100).toFixed(1) + '%');
 
@@ -3299,7 +4001,7 @@ K.Juegos.slot = function (root, juego) {
   const panel = K.el('div', { class: 'panel-apuesta' }, [
     monto.wrap, btn, btnAuto,
     K.el('div', { style: 'height:1px;background:var(--linea);margin:2px 0' }),
-    sUlt.fila, sGiros.fila, sGratis.fila, sRTP.fila,
+    sUlt.fila, sNeto.fila, sGiros.fila, sGratis.fila, sRTP.fila,
     K.el('div', { class: 'stat-fila' }, [K.el('span', { text: 'Volatilidad' }), K.el('b', { text: cfg.vol })])
   ]);
 
@@ -3314,13 +4016,14 @@ K.Juegos.slot = function (root, juego) {
     rejilla.appendChild(col);
   }
   const msg = K.el('span', { id: 'slot-msg', text: '' });
+  const cartel = K.el('div', { class: 'cartel-premio' });
   const marco = K.el('div', { class: 'slot-marco' }, [
     rejilla,
     K.el('div', { class: 'slot-info' }, [
       K.el('span', { text: '8+ símbolos iguales pagan · 10+ ×1.5 · 12+ ×3' }), msg
     ])
   ]);
-  const zona = K.el('div', { class: 'zona-juego' }, [marco]);
+  const zona = K.el('div', { class: 'zona-juego', style: 'position:relative' }, [marco, cartel]);
 
   let girando = false, giros = 0, gratis = 0;
 
@@ -3328,6 +4031,7 @@ K.Juegos.slot = function (root, juego) {
     if (girando) return 0;
     const apuesta = monto.get();
     if (!esGratis && !K.G.apostar(apuesta)) return 0;
+    if (!esGratis) { neto = K.round2(neto - apuesta); sNeto.set(K.sol(neto)); }
     girando = true; btn.disabled = true;
     celdas.forEach(c => c.classList.remove('gana'));
     msg.textContent = '';
@@ -3532,7 +4236,8 @@ K.Juegos.rueda = function (root, juego) {
       const et = segs[idx].l;
       ctx.save();
       ctx.translate(cx + Math.cos(am) * (R - 16 * p), cy + Math.sin(am) * (R - 16 * p));
-      ctx.rotate(am + Math.PI / 2);
+      const dir = ((am % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+      ctx.rotate(am + Math.PI / 2 + (dir > Math.PI / 2 && dir < Math.PI * 1.5 ? Math.PI : 0));
       ctx.fillStyle = 'rgba(10,12,18,.9)';
       ctx.font = '900 ' + ((et.length > 3 ? 7.5 : 11) * p) + 'px Archivo, system-ui';
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
@@ -3743,7 +4448,7 @@ K.Juegos.ruleta = function (root, juego) {
   const panel = K.el('div', { class: 'panel-apuesta' }, [
     K.el('div', { class: 'campo' }, [K.el('label', { text: 'Ficha' }), fichas]),
     btnGirar,
-    K.el('div', { style: 'display:grid;grid-template-columns:repeat(3,1fr);gap:5px' }, [btnDeshacer, btnRepetir, btnLimpiar]),
+    K.el('div', { class: 'trio' }, [btnDeshacer, btnRepetir, btnLimpiar]),
     K.el('div', { class: 'separador' }),
     sTotal.fila, sSpots.fila, sUlt.fila, sNeto.fila
   ]);
@@ -3869,6 +4574,19 @@ K.Juegos.ruleta = function (root, juego) {
     badge.textContent = monto;
   }
 
+  /* Al pasar por encima de una apuesta se marcan los números que cubre. */
+  function marcarCobertura(spot, on) {
+    for (let n = 0; n <= 36; n++) {
+      const nodo = spotsNodo['n:' + n];
+      if (nodo) nodo.classList.toggle('cubierto', on && resuelve(spot, n));
+    }
+  }
+  function conCobertura(nodo, spot) {
+    nodo.addEventListener('mouseenter', () => marcarCobertura(spot, true));
+    nodo.addEventListener('mouseleave', () => marcarCobertura(spot, false));
+    return nodo;
+  }
+
   function apostarEn(spot) {
     if (girando) return;
     apuestas[spot] = K.round2((apuestas[spot] || 0) + fichaSel);
@@ -3909,23 +4627,25 @@ K.Juegos.ruleta = function (root, juego) {
         c.style.gridColumn = String(col + 2);
         arriba.appendChild(c);
       }
+      const colId = 'col:' + (3 - fila);
       const colBtn = K.el('button', {
         class: 'pano-ext', html: '2:1',
         style: `grid-row:${fila + 1};grid-column:14`,
-        onclick: () => apostarEn('col:' + (3 - fila)),
+        onclick: () => apostarEn(colId),
         title: 'Columna · paga 3×'
       });
-      spotsNodo['col:' + (3 - fila)] = colBtn;
-      arriba.appendChild(colBtn);
+      spotsNodo[colId] = colBtn;
+      arriba.appendChild(conCobertura(colBtn, colId));
     }
     pano.appendChild(arriba);
 
     const docenas = K.el('div', { class: 'pano-fila', style: 'grid-template-columns:34px repeat(3,1fr) 42px' });
     docenas.appendChild(K.el('span'));
     [['1ª docena', 1], ['2ª docena', 2], ['3ª docena', 3]].forEach(([t, d]) => {
-      const b = K.el('button', { class: 'pano-ext', text: t, onclick: () => apostarEn('doc:' + d), title: 'Paga 3×' });
-      spotsNodo['doc:' + d] = b;
-      docenas.appendChild(b);
+      const id = 'doc:' + d;
+      const b = K.el('button', { class: 'pano-ext', text: t, onclick: () => apostarEn(id), title: 'Paga 3×' });
+      spotsNodo[id] = b;
+      docenas.appendChild(conCobertura(b, id));
     });
     docenas.appendChild(K.el('span'));
     pano.appendChild(docenas);
@@ -3937,7 +4657,7 @@ K.Juegos.ruleta = function (root, juego) {
       .forEach(([t, id, cls]) => {
         const b = K.el('button', { class: 'pano-ext ' + cls, text: t, onclick: () => apostarEn(id), title: 'Paga 2×' });
         spotsNodo[id] = b;
-        ext.appendChild(b);
+        ext.appendChild(conCobertura(b, id));
       });
     ext.appendChild(K.el('span'));
     pano.appendChild(ext);
@@ -4185,11 +4905,13 @@ K.Juegos.blackjack = function (root, juego) {
   const sCrupier = K.G.stat('Crupier', '—');
   const sMazo = K.G.stat('Cartas en el zapato', String(mazo.length));
 
-  const btnRepartir = K.el('button', { class: 'btn', text: 'Repartir' });
+  const btnRepartir = K.el('button', { class: 'btn bloque', text: 'Repartir' });
   const bPedir = K.el('button', { class: 'btn sec', text: 'Pedir' });
   const bPlantar = K.el('button', { class: 'btn sec', text: 'Plantarse' });
   const bDoblar = K.el('button', { class: 'btn sec', text: 'Doblar' });
-  [bPedir, bPlantar, bDoblar].forEach(b => b.disabled = true);
+  const bDividir = K.el('button', { class: 'btn sec', text: 'Dividir' });
+  const ACCIONES = [bPedir, bPlantar, bDoblar, bDividir];
+  ACCIONES.forEach(b => b.disabled = true);
 
   const panel = K.el('div', { class: 'panel-apuesta' }, [
     monto.wrap,
@@ -4200,7 +4922,7 @@ K.Juegos.blackjack = function (root, juego) {
   ].filter(Boolean));
 
   const mesa = K.el('div', { class: 'mesa' });
-  const acciones = K.el('div', { class: 'acciones' }, [bPedir, bPlantar, bDoblar]);
+  const acciones = K.el('div', { class: 'acciones' }, ACCIONES);
   const resultado = K.el('div', { class: 'resultado' });
   const zona = K.el('div', { class: 'zona-juego' }, [mesa, acciones, resultado]);
 
@@ -4235,24 +4957,51 @@ K.Juegos.blackjack = function (root, juego) {
     for (let i = 0; i < n; i++) manos.push({ cartas: [K.Baraja.sacar(mazo), K.Baraja.sacar(mazo)], apuesta: apuestaBase, estado: 'jugando' });
     crupier = [K.Baraja.sacar(mazo), K.Baraja.sacar(mazo)];
     btnRepartir.disabled = true;
-    [bPedir, bPlantar, bDoblar].forEach(b => b.disabled = false);
+    ACCIONES.forEach(b => b.disabled = false);
     manos.forEach(m => { if (esBJ(m.cartas)) m.estado = 'blackjack'; });
     pintar();
     siguienteMano();
   }
 
+  const MAX_MANOS = 4;
+  const valorCarta = c => c.v === 'A' ? 'A' : ['J', 'Q', 'K', '10'].includes(c.v) ? '10' : c.v;
+  const sePuedeDividir = m =>
+    m.cartas.length === 2 &&
+    valorCarta(m.cartas[0]) === valorCarta(m.cartas[1]) &&
+    manos.length < MAX_MANOS &&
+    K.Wallet.puedeApostar(m.apuesta).ok;
+
   function siguienteMano() {
     while (idx < manos.length && manos[idx].estado !== 'jugando') idx++;
     if (idx >= manos.length) { turnoCrupier(); return; }
-    bDoblar.disabled = manos[idx].cartas.length !== 2;
+    const m = manos[idx];
+    bDoblar.disabled = m.cartas.length !== 2;
+    bDividir.disabled = !sePuedeDividir(m);
     pintar();
+  }
+
+  function dividir() {
+    const m = manos[idx];
+    if (!sePuedeDividir(m)) return;
+    if (!K.G.apostar(m.apuesta)) return;
+    const eranAses = m.cartas[0].v === 'A';
+    const segunda = m.cartas.pop();
+    const nueva = { cartas: [segunda], apuesta: m.apuesta, estado: 'jugando', dividida: true };
+    m.cartas.push(K.Baraja.sacar(mazo));
+    nueva.cartas.push(K.Baraja.sacar(mazo));
+    m.dividida = true;
+    manos.splice(idx + 1, 0, nueva);
+    // Con ases divididos se reparte una sola carta a cada mano.
+    if (eranAses) { m.estado = 'plantado'; nueva.estado = 'plantado'; }
+    sTotal.set(K.sol(manos.reduce((a, x) => a + x.apuesta, 0)));
+    if (eranAses) { idx++; siguienteMano(); } else { bDividir.disabled = true; pintar(); siguienteMano(); }
   }
 
   function pedir() {
     const m = manos[idx];
     m.cartas.push(K.Baraja.sacar(mazo));
     if (puntos(m.cartas) > 21) { m.estado = 'pasado'; idx++; siguienteMano(); }
-    else { bDoblar.disabled = true; pintar(); }
+    else { bDoblar.disabled = true; bDividir.disabled = true; pintar(); }
   }
   function plantar() { manos[idx].estado = 'plantado'; idx++; siguienteMano(); }
   function doblar() {
@@ -4265,7 +5014,7 @@ K.Juegos.blackjack = function (root, juego) {
   }
 
   async function turnoCrupier() {
-    [bPedir, bPlantar, bDoblar].forEach(b => b.disabled = true);
+    ACCIONES.forEach(b => b.disabled = true);
     pintar(true);
     const hayVivas = manos.some(m => m.estado === 'plantado' || m.estado === 'blackjack');
     while (hayVivas && puntos(crupier) < 17) {
@@ -4285,7 +5034,10 @@ K.Juegos.blackjack = function (root, juego) {
       const pm = puntos(m.cartas);
       let premio = 0, texto;
       if (m.estado === 'pasado') texto = 'te pasaste';
-      else if (m.estado === 'blackjack' && !crupierBJ) { premio = m.apuesta * 2.5; texto = 'blackjack (3:2)'; }
+      else if (m.estado === 'blackjack' && !crupierBJ) {
+        premio = m.dividida ? m.apuesta * 2 : m.apuesta * 2.5;
+        texto = m.dividida ? '21 tras dividir' : 'blackjack (3:2)';
+      }
       else if (m.estado === 'blackjack' && crupierBJ) { premio = m.apuesta; texto = 'empate de blackjacks'; }
       else if (crupierBJ) texto = 'el crupier tenía blackjack';
       else if (pc > 21) { premio = m.apuesta * 2; texto = 'el crupier se pasó'; }
@@ -4306,12 +5058,14 @@ K.Juegos.blackjack = function (root, juego) {
   }
 
   btnRepartir.onclick = repartir;
-  bPedir.onclick = pedir; bPlantar.onclick = plantar; bDoblar.onclick = doblar;
+  bPedir.onclick = pedir; bPlantar.onclick = plantar; bDoblar.onclick = doblar; bDividir.onclick = dividir;
 
   root.appendChild(K.el('div', { class: 'juego-layout' }, [panel, zona]));
   root.appendChild(K.G.nota(`<h4>Reglas de la mesa</h4>
     Seis mazos, el crupier se planta en 17 (incluido el 17 suave), el blackjack natural paga <b>3:2</b>
-    y el empate devuelve la apuesta. Puedes doblar solo con dos cartas. Con estas reglas y estrategia
+    y el empate devuelve la apuesta. Puedes doblar con dos cartas y dividir cualquier pareja hasta llegar
+    a cuatro manos; los ases divididos reciben una sola carta y el 21 que salga de una división paga
+    como un 21 normal, no como blackjack. Con estas reglas y estrategia
     básica la ventaja de la casa queda cerca del <b>0.5%</b>, la más baja del casino; lo que la sube en
     la práctica son las decisiones malas, no el reparto.`));
 };
@@ -4529,6 +5283,223 @@ K.Juegos.videopoker = function (root, juego) {
     retorno llega al <b>99.5%</b>, uno de los más altos del casino. Las versiones 8/5 o 7/5, que se ven
     mucho, bajan el retorno a 97% o menos: la diferencia entera está en esas dos líneas.`));
 };
+
+</script>
+<script>
+/* ===========================================================
+   diaria.js — ruleta diaria de recompensas
+   Un giro gratis cada 20 horas. La racha de días seguidos
+   suma un bonus, hasta +50%.
+   =========================================================== */
+K.Diaria = (() => {
+  const ESPERA = 20 * 3600 * 1000;          // 20 horas entre giros
+  const PREMIOS = [
+    { monto: 25, peso: 26, color: '#3b82f6' },
+    { monto: 50, peso: 22, color: '#22c55e' },
+    { monto: 75, peso: 16, color: '#f59e0b' },
+    { monto: 100, peso: 14, color: '#ec4899' },
+    { monto: 200, peso: 10, color: '#8b5cf6' },
+    { monto: 350, peso: 6, color: '#14b8a6' },
+    { monto: 600, peso: 4, color: '#ef4444' },
+    { monto: 1500, peso: 2, color: '#fbbf24' }
+  ];
+  const PESO_TOTAL = PREMIOS.reduce((a, p) => a + p.peso, 0);
+
+  const estado = () => K.Wallet.est().diaria || (K.Wallet.est().diaria = { ultimo: 0, racha: 0, total: 0 });
+  const restante = () => Math.max(0, estado().ultimo + ESPERA - Date.now());
+  const disponible = () => restante() === 0;
+  const bonusRacha = () => Math.min(0.5, Math.max(0, estado().racha - 1) * 0.1);
+
+  const reloj = ms => {
+    const h = Math.floor(ms / 3600000);
+    const m = Math.floor(ms % 3600000 / 60000);
+    const s = Math.floor(ms % 60000 / 1000);
+    return h > 0 ? `${h} h ${m} min` : m > 0 ? `${m} min ${s} s` : `${s} s`;
+  };
+
+  function sortear() {
+    let r = Math.random() * PESO_TOTAL;
+    for (let i = 0; i < PREMIOS.length; i++) { r -= PREMIOS[i].peso; if (r <= 0) return i; }
+    return 0;
+  }
+
+  /* ---------------- interfaz ---------------- */
+  function abrir() {
+    const cuerpo = K.el('div', { class: 'diaria' });
+    const d = estado();
+
+    const cv = K.el('canvas');
+    const lienzo = K.el('div', { class: 'diaria-lienzo' }, [cv]);
+    const ctx = cv.getContext('2d');
+    let angulo = 0, girando = false;
+
+    const info = K.el('div', { class: 'diaria-info' });
+    const btn = K.el('button', { class: 'btn bloque grande' });
+    const mensaje = K.el('div', { class: 'diaria-mensaje' });
+
+    const tabla = K.el('div', { class: 'diaria-tabla' });
+    PREMIOS.forEach(p => tabla.appendChild(K.el('div', {
+      class: 'premio-pill',
+      html: `<span class="punto-color" style="background:${p.color}"></span>
+             <b>${K.sol(p.monto)}</b><i>${(p.peso / PESO_TOTAL * 100).toFixed(0)}%</i>`
+    })));
+
+    function refrescarInfo() {
+      const dd = estado();
+      info.innerHTML = `
+        <div class="kpi"><span class="et">Racha de días</span><span class="vl">${dd.racha}</span></div>
+        <div class="kpi"><span class="et">Bonus por racha</span><span class="vl pos">+${(bonusRacha() * 100).toFixed(0)}%</span></div>
+        <div class="kpi"><span class="et">Cobrado en total</span><span class="vl">${K.sol(dd.total)}</span></div>`;
+      if (disponible()) {
+        btn.disabled = false;
+        btn.textContent = 'Girar la ruleta diaria';
+      } else {
+        btn.disabled = true;
+        btn.textContent = 'Vuelve en ' + reloj(restante());
+      }
+    }
+
+    function dimensionar() {
+      const r = lienzo.getBoundingClientRect();
+      const lado = Math.max(240, Math.min(r.width, 330));
+      cv.width = lado * devicePixelRatio;
+      cv.height = lado * devicePixelRatio;
+    }
+
+    function pintar() {
+      const W = cv.width, H = cv.height, p = devicePixelRatio;
+      const cx = W / 2, cy = H / 2, R = W / 2 - 10 * p;
+      const paso = Math.PI * 2 / PREMIOS.length;
+      ctx.clearRect(0, 0, W, H);
+
+      // aro
+      ctx.beginPath(); ctx.arc(cx, cy, R + 5 * p, 0, 7);
+      const aro = ctx.createLinearGradient(0, cy - R, 0, cy + R);
+      aro.addColorStop(0, '#4a3410'); aro.addColorStop(.5, '#c08a2e'); aro.addColorStop(1, '#3a2810');
+      ctx.fillStyle = aro; ctx.fill();
+
+      PREMIOS.forEach((pr, i) => {
+        const a0 = angulo + i * paso - Math.PI / 2, a1 = a0 + paso;
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.arc(cx, cy, R, a0, a1);
+        ctx.closePath();
+        ctx.fillStyle = pr.color;
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(8,12,20,.5)';
+        ctx.lineWidth = 1.5 * p;
+        ctx.stroke();
+
+        const am = a0 + paso / 2;
+        ctx.save();
+        ctx.translate(cx + Math.cos(am) * R * 0.66, cy + Math.sin(am) * R * 0.66);
+        // El texto se gira con la casilla, pero nunca queda cabeza abajo.
+        const dir = ((am % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+        ctx.rotate(am + Math.PI / 2 + (dir > Math.PI / 2 && dir < Math.PI * 1.5 ? Math.PI : 0));
+        ctx.fillStyle = 'rgba(9,12,18,.92)';
+        ctx.font = '900 ' + (13 * p) + 'px Archivo, system-ui';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText(pr.monto, 0, 0);
+        ctx.font = '700 ' + (8.5 * p) + 'px Barlow, system-ui';
+        ctx.fillText('soles', 0, 12 * p);
+        ctx.restore();
+      });
+
+      // centro
+      ctx.beginPath(); ctx.arc(cx, cy, R * 0.24, 0, 7);
+      const hub = ctx.createRadialGradient(cx - R * .06, cy - R * .07, R * .03, cx, cy, R * .24);
+      hub.addColorStop(0, '#2a3550'); hub.addColorStop(1, '#0b1220');
+      ctx.fillStyle = hub; ctx.fill();
+      ctx.strokeStyle = '#c08a2e'; ctx.lineWidth = 2 * p; ctx.stroke();
+      ctx.fillStyle = '#f8fafc';
+      ctx.font = '900 ' + (11 * p) + 'px Archivo, system-ui';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText('DIARIA', cx, cy);
+
+      // aguja
+      ctx.beginPath();
+      ctx.moveTo(cx - 9 * p, cy - R - 8 * p);
+      ctx.lineTo(cx + 9 * p, cy - R - 8 * p);
+      ctx.lineTo(cx, cy - R + 14 * p);
+      ctx.closePath();
+      ctx.fillStyle = '#f8fafc';
+      ctx.shadowColor = 'rgba(0,0,0,.7)'; ctx.shadowBlur = 8 * p;
+      ctx.fill(); ctx.shadowBlur = 0;
+    }
+
+    const suave = t => 1 - Math.pow(1 - t, 3.5);
+
+    async function girar() {
+      if (girando || !disponible()) return;
+      girando = true;
+      btn.disabled = true;
+      btn.textContent = 'Girando…';
+      mensaje.textContent = '';
+
+      const idx = sortear();
+      const paso = Math.PI * 2 / PREMIOS.length;
+      const objetivo = -(idx + 0.5) * paso + Math.PI * 2 * 6;
+      const inicio = angulo % (Math.PI * 2);
+      const DUR = 4300, t0 = performance.now();
+
+      await new Promise(fin => {
+        const paso2 = ahora => {
+          const t = Math.min(1, (ahora - t0) / DUR);
+          angulo = inicio + (objetivo - inicio) * suave(t);
+          pintar();
+          if (t < 1) requestAnimationFrame(paso2); else fin();
+        };
+        requestAnimationFrame(paso2);
+      });
+
+      const dd = estado();
+      const seguido = dd.ultimo > 0 && Date.now() - dd.ultimo < ESPERA * 2.4;
+      dd.racha = seguido ? dd.racha + 1 : 1;
+      dd.ultimo = Date.now();
+
+      const base = PREMIOS[idx].monto;
+      const bonus = K.round2(base * bonusRacha());
+      const total = K.round2(base + bonus);
+      dd.total = K.round2(dd.total + total);
+
+      K.Wallet.mover(total, 'premio', 'Ruleta diaria' + (bonus > 0 ? ' (racha +' + (bonusRacha() * 100).toFixed(0) + '%)' : ''));
+      K.Wallet.persistir();
+
+      mensaje.innerHTML = `<span class="ganado">${K.sol(total)}</span>
+        <span class="detalle">Premio ${K.sol(base)}${bonus > 0 ? ' + ' + K.sol(bonus) + ' de racha' : ''} ·
+        vuelve mañana para no cortar la racha</span>`;
+      K.aviso('Ruleta diaria: ganaste ' + K.sol(total), 'ok');
+      girando = false;
+      refrescarInfo();
+      K.bus.emit('diaria');
+    }
+
+    btn.onclick = girar;
+
+    cuerpo.appendChild(K.el('div', { class: 'diaria-layout' }, [
+      lienzo,
+      K.el('div', { class: 'diaria-panel' }, [
+        K.el('p', {
+          class: 'diaria-texto',
+          text: 'Un giro gratis cada 20 horas. Cada día seguido que vuelvas suma un 10% extra al premio, hasta un máximo de +50%.'
+        }),
+        info, btn, mensaje, tabla
+      ])
+    ]));
+
+    K.modal('Ruleta diaria', cuerpo, 'recompensa gratuita');
+    refrescarInfo();
+    dimensionar(); pintar();
+    const it = setInterval(() => {
+      if (!document.body.contains(cuerpo)) { clearInterval(it); return; }
+      if (!girando) refrescarInfo();
+    }, 1000);
+    const ro = new ResizeObserver(() => { dimensionar(); pintar(); });
+    ro.observe(lienzo);
+  }
+
+  return { abrir, disponible, restante, reloj, PREMIOS };
+})();
 
 </script>
 <script>
@@ -4812,6 +5783,14 @@ K.App = (() => {
         ${K.ic('reloj')} ${min} min jugando<br>
         ${K.ic('billetera')} límite ${K.sol(Math.min(w.limites.apuestaMax, w.perfil.limiteApuesta))} por apuesta
       </div>`);
+    const bDiaria = K.el('button', {
+      class: K.Diaria.disponible() ? 'on' : '',
+      onclick: () => K.Diaria.abrir()
+    });
+    bDiaria.innerHTML = K.ic('regalo') + '<span>Ruleta diaria</span>' +
+      (K.Diaria.disponible() ? '<span class="cuenta" style="background:var(--naranja);color:#fff">libre</span>' : '');
+    jr.appendChild(bDiaria);
+
     const bPausa = K.el('button', { onclick: () => { K.Wallet.pausar(15); K.aviso('Pausa de 15 minutos activada.', 'warn'); pintar(); } });
     bPausa.innerHTML = K.ic('pausa') + '<span>Pausar 15 minutos</span>';
     jr.appendChild(bPausa);
@@ -5092,6 +6071,25 @@ K.App = (() => {
       promedio al que converge cualquier jugador con volumen suficiente. Cuanto más juegas, más se
       parece tu resultado al RTP, y el RTP siempre es menor que 100%.</p>`;
     root.appendChild(caja('Matemática del casino', b6));
+
+    const b7 = K.el('div', { class: 'info-bloque' });
+    const pr = K.Diaria.PREMIOS;
+    const pesoTotal = pr.reduce((x, y) => x + y.peso, 0);
+    const ev = pr.reduce((x, y) => x + y.monto * y.peso / pesoTotal, 0);
+    b7.innerHTML = `
+      <h4>7. Las promociones también son matemática</h4>
+      Las dos promos del sitio están calculadas, no puestas al azar:
+      <div class="tabla-scroll"><table class="tabla">
+        <tr><th>Promoción</th><th>Qué hace</th><th>Costo para la casa</th></tr>
+        <tr><td>SuperCuota</td><td>Vende una combinación por encima de su precio justo</td>
+          <td>Margen negativo: paga un 24% más que la cuota justa</td></tr>
+        <tr><td>Ruleta diaria</td><td>Un giro gratis cada 20 horas, con bonus de racha</td>
+          <td>Valor esperado de <b>${K.sol(ev)}</b> por giro, hasta ${K.sol(ev * 1.5)} con racha máxima</td></tr>
+      </table></div>
+      <p style="margin-top:8px">Una casa real hace exactamente esto: regala valor medido a cambio de que
+      vuelvas, sabiendo que el margen del resto del catálogo lo recupera con creces. La racha de la
+      ruleta diaria no está para premiarte, está para que entres todos los días.</p>`;
+    root.appendChild(caja('Promociones y bonos', b7));
   }
 
   /* =========================================================
@@ -5119,6 +6117,18 @@ K.App = (() => {
     });
 
     K.$('#btn-deposito').onclick = modalDeposito;
+
+    const btnDiaria = K.$('#btn-diaria');
+    K.$('.ic-diaria', btnDiaria).innerHTML = K.ic('regalo');
+    btnDiaria.onclick = () => K.Diaria.abrir();
+    const refrescarDiaria = () => {
+      const libre = K.Diaria.disponible();
+      btnDiaria.classList.toggle('lista', libre);
+      btnDiaria.title = libre ? 'Tu giro diario está disponible' : 'Próximo giro en ' + K.Diaria.reloj(K.Diaria.restante());
+    };
+    refrescarDiaria();
+    setInterval(refrescarDiaria, 20000);
+    K.bus.on('diaria', () => { refrescarDiaria(); if (vista === 'cuenta') pintar(); });
 
     // Recordatorio de sesión, como exige el juego responsable.
     setInterval(() => {

@@ -101,7 +101,8 @@ K.Juegos.rueda = function (root, juego) {
       const et = segs[idx].l;
       ctx.save();
       ctx.translate(cx + Math.cos(am) * (R - 16 * p), cy + Math.sin(am) * (R - 16 * p));
-      ctx.rotate(am + Math.PI / 2);
+      const dir = ((am % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+      ctx.rotate(am + Math.PI / 2 + (dir > Math.PI / 2 && dir < Math.PI * 1.5 ? Math.PI : 0));
       ctx.fillStyle = 'rgba(10,12,18,.9)';
       ctx.font = '900 ' + ((et.length > 3 ? 7.5 : 11) * p) + 'px Archivo, system-ui';
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';

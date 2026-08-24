@@ -37,14 +37,26 @@ node tools/build.js          # → dist/kronosbet.html
 | Liquidación | Resolución automática por mercado, incluidas devoluciones por push |
 | Perfilado | Mide el CLV contra la línea de cierre y recorta el límite si detecta un jugador *sharp* |
 
-Deportes: fútbol, básquet, tenis, eSports y vóley. 29 eventos entre prepartido y en vivo, con hasta
-7 mercados por partido.
+Deportes: fútbol, básquet, tenis, eSports y vóley. Los partidos no están escritos a mano: cada liga
+define su plantel con un rating por equipo y de ahí salen los emparejamientos, los horarios y los
+parámetros del modelo. En total, **unos 150 eventos en 30 competiciones** —Liga 1, Liga Profesional
+argentina, Brasileirão, LaLiga, Premier, Serie A, Bundesliga, Ligue 1, Champions, Libertadores,
+Sudamericana, Liga MX, MLS, Eliminatorias, seis torneos de tenis ATP y WTA, NBA, ACB, CS2, LoL, Dota,
+Valorant y tres ligas de vóley— con hasta 7 mercados por partido, teletipo de marcadores en vivo,
+buscador por equipo y ficha de partido con estadísticas y la gráfica de cómo se movió la cuota.
+
+### Ruleta diaria
+
+Un giro gratis cada 20 horas con premios de S/ 25 a S/ 1.500 (valor esperado de unos S/ 138) y un
+bonus del 10% por cada día seguido que vuelvas, hasta +50%. Es el mismo mecanismo de retención que
+usan las casas reales, con los números a la vista en la sección *Cómo funciona*.
 
 ## Casino — 31 juegos, 10 motores
 
 - **Tragamonedas (12)** — cuadrícula 6×5 tipo *pay anywhere*, con carretes que se frenan uno por uno. La
   tabla de pagos se **calcula al abrir el juego** repartiendo el RTP declarado entre los símbolos según
   la probabilidad de que cada uno aparezca 8 o más veces. Volatilidad configurable por título.
+- **Mines** — con escalera de multiplicadores paso a paso y apertura al azar.
 - **Crash e instantáneos (7)** — Aviator, Spaceman (cobro del 50%), Balloon y Maverick corren por rondas:
   5 segundos de apuestas, vuelo con gráfico de ejes autoescalados, caída con explosión y vuelta a
   empezar. Más Mines, Plinko con caída física sobre 16 filas de clavijas, y Limbo.
@@ -55,8 +67,9 @@ Deportes: fútbol, básquet, tenis, eSports y vóley. 29 eventos entre prepartid
 - **Game shows (4)** — Crazy Time, Monopoly Live, Mega Wheel y Candyland sobre una rueda de 50+ casillas
   repartidas sin dos iguales pegadas, con flapper que se dobla al pasar cada casilla. Se puede cubrir
   varios resultados a la vez.
-- **Mesa y cartas (5)** — Blackjack VIP, First Person Blackjack y Multihand (hasta 3 manos), Speed
-  Baccarat con reglas de tercera carta y su camino de resultados, y Jacks or Better 9/6.
+- **Mesa y cartas (5)** — Blackjack VIP, First Person Blackjack y Multihand (hasta 3 manos) con
+  doblar y dividir hasta cuatro manos, Speed Baccarat con reglas de tercera carta y su camino de
+  resultados, y Jacks or Better 9/6.
 
 Cada juego muestra su RTP teórico y una nota explicando de dónde sale la ventaja de la casa.
 
@@ -74,6 +87,7 @@ index.html
 css/styles.css
 js/core.js          utilidades, formato, azar, persistencia
 js/ui.js            set de iconos SVG en línea
+js/diaria.js        ruleta diaria de recompensas
 js/odds.js          modelos de probabilidad, margen, cashout
 js/wallet.js        saldo, libro mayor, límites, perfilado
 js/data-sports.js   catálogo de eventos

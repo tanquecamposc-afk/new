@@ -17,6 +17,8 @@ K.Sportsbook = (() => {
   let filtroDeporte = 'futbol';
   let filtroLiga = null;
   let soloVivo = false;
+  let busqueda = '';
+  const abiertas = {};      // ligas desplegadas por completo
   let contenedorLista = null;
   const nodos = {};        // cuotas y marcadores vivos, para no repintar todo
 
@@ -380,6 +382,17 @@ K.Sportsbook = (() => {
       if (fin || ev.minuto >= DUR[ev.deporte] * 1.4) { finalizar(ev); cambioEstructural = true; }
     }
 
+    // Cada pocos segundos se guarda la cuota principal para la mini gráfica.
+    if (!tick.n) tick.n = 0;
+    if (++tick.n % 3 === 0) {
+      for (const ev of K.EVENTOS) {
+        if (!ev.vivo) continue;
+        const m = K.Odds.construir(ev)[0];
+        ev.serie.push(m.sel.map(x => x.cuota));
+        if (ev.serie.length > 80) ev.serie.shift();
+      }
+    }
+
     if (cambioEstructural) K.bus.emit('lista');
     else patchVivo();
     pintarBoleto();
@@ -578,9 +591,18 @@ K.Sportsbook = (() => {
   function vista(root) {
     contenedorLista = root;
     root.innerHTML = '';
+
     const promo = bannerPromo();
-    if (promo && !soloVivo && !filtroLiga) root.appendChild(promo);
-    if (filtroLiga) {
+    if (promo && !soloVivo && !filtroLiga && !busqueda) root.appendChild(promo);
+
+    const ticker = tickerVivo();
+    if (ticker) root.appendChild(ticker);
+
+    root.appendChild(barraBusqueda(root));
+
+    if (!busqueda) root.appendChild(chipsDeporte(root));
+
+    if (filtroLiga && !busqueda) {
       const aviso = K.el('div', { class: 'chips' });
       aviso.appendChild(K.el('button', {
         class: 'chip on', html: K.ic('cerrar') + ' ' + K.esc(filtroLiga),
@@ -588,43 +610,146 @@ K.Sportsbook = (() => {
       }));
       root.appendChild(aviso);
     }
+
+    /* --- selección de eventos --- */
+    const texto = busqueda.trim().toLowerCase();
+    let lista = K.EVENTOS.filter(e => !e.terminado);
+    if (texto) {
+      lista = lista.filter(e =>
+        e.local.toLowerCase().includes(texto) ||
+        e.visita.toLowerCase().includes(texto) ||
+        e.liga.toLowerCase().includes(texto));
+    } else if (filtroLiga) lista = lista.filter(e => e.liga === filtroLiga);
+    else if (soloVivo) lista = lista.filter(e => e.vivo);
+    else lista = lista.filter(e => e.deporte === filtroDeporte);
+
+    const vivos = lista.filter(e => e.vivo).sort((a, b) => b.minuto - a.minuto);
+    const luego = lista.filter(e => !e.vivo).sort((a, b) => a.inicio - b.inicio);
+
+    if (!lista.length) {
+      root.appendChild(K.el('div', {
+        class: 'vacio',
+        html: K.ic('trofeo') + '<div>' + (texto ? 'Ningún partido coincide con esa búsqueda.'
+          : 'No hay eventos abiertos en esta categoría.') + '</div>'
+      }));
+      return;
+    }
+
+    if (vivos.length) {
+      root.appendChild(cabecera('En vivo', vivos.length + (vivos.length === 1 ? ' evento' : ' eventos') + ' con cuotas moviéndose', 'vivo'));
+      porLiga(root, vivos, 'vivo');
+    }
+    if (luego.length) {
+      root.appendChild(cabecera('Próximos', luego.length + ' partidos · el reloj corre a 30×', 'reloj'));
+      porLiga(root, luego, 'prox');
+    }
+    const term = K.EVENTOS.filter(e => e.terminado);
+    if (term.length && !texto) {
+      root.appendChild(cabecera('Finalizados', term.length + ' eventos ya liquidados', 'grafico'));
+      term.slice(-6).reverse().forEach(e => root.appendChild(tarjetaEvento(e, { sinMas: true })));
+    }
+  }
+
+  /* Agrupa por competición y limita cuántos partidos se pintan de cada una. */
+  function porLiga(root, eventos, clave) {
+    const grupos = new Map();
+    eventos.forEach(e => {
+      if (!grupos.has(e.liga)) grupos.set(e.liga, []);
+      grupos.get(e.liga).push(e);
+    });
+    const TOPE = 6;
+    for (const [liga, evs] of grupos) {
+      const k = clave + '|' + liga;
+      const cab = K.el('div', { class: 'liga-cab' });
+      cab.innerHTML = `<span class="pais">${evs[0].pais || ''}</span>
+        <span class="nom">${K.esc(liga)}</span>
+        <span class="cuenta">${evs.length}</span>`;
+      const verTodo = K.el('button', {
+        class: 'ver-liga',
+        text: 'Solo esta liga',
+        onclick: () => { filtroLiga = liga; busqueda = ''; vista(contenedorLista); }
+      });
+      cab.appendChild(verTodo);
+      root.appendChild(cab);
+
+      const visibles = abiertas[k] ? evs : evs.slice(0, TOPE);
+      visibles.forEach(e => root.appendChild(tarjetaEvento(e)));
+      if (evs.length > TOPE) {
+        root.appendChild(K.el('button', {
+          class: 'ver-mas',
+          html: abiertas[k]
+            ? 'Ver menos' + K.ic('chevron')
+            : `Ver los ${evs.length - TOPE} partidos restantes` + K.ic('chevron'),
+          onclick: () => { abiertas[k] = !abiertas[k]; vista(contenedorLista); }
+        }));
+      }
+    }
+  }
+
+  /* Cinta de marcadores en vivo, como el teletipo de una casa real. */
+  function tickerVivo() {
+    const vivos = K.EVENTOS.filter(e => e.vivo);
+    if (vivos.length < 3) return null;
+    const caja = K.el('div', { class: 'ticker' });
+    const pista = K.el('div', { class: 'ticker-pista' });
+    const item = ev => {
+      const b = K.el('button', { class: 'ticker-item', onclick: () => abrirEvento(ev.id) });
+      b.innerHTML = `<span class="min">${Math.floor(ev.minuto)}'</span>
+        <span class="eq">${K.esc(ev.local)}</span>
+        <span class="m">${ev.marcador.l}-${ev.marcador.v}</span>
+        <span class="eq">${K.esc(ev.visita)}</span>`;
+      return b;
+    };
+    // Se duplica la lista para que el bucle no tenga corte visible.
+    vivos.forEach(ev => pista.appendChild(item(ev)));
+    vivos.forEach(ev => pista.appendChild(item(ev)));
+    pista.style.animationDuration = Math.max(24, vivos.length * 4.5) + 's';
+    caja.appendChild(pista);
+    return caja;
+  }
+
+  function barraBusqueda(root) {
+    const caja = K.el('div', { class: 'buscador' });
+    const campo = K.el('div', { class: 'campo-buscar' });
+    campo.innerHTML = K.ic('buscar');
+    const inp = K.el('input', {
+      type: 'search', placeholder: 'Buscar equipo, jugador o competición…', value: busqueda
+    });
+    let t = null;
+    inp.oninput = () => {
+      clearTimeout(t);
+      t = setTimeout(() => {
+        const foco = document.activeElement === inp;
+        busqueda = inp.value;
+        vista(root);
+        if (foco) {
+          const nuevo = K.$('.campo-buscar input', root);
+          if (nuevo) { nuevo.focus(); nuevo.setSelectionRange(nuevo.value.length, nuevo.value.length); }
+        }
+      }, 260);
+    };
+    campo.appendChild(inp);
+    caja.appendChild(campo);
+    return caja;
+  }
+
+  function chipsDeporte(root) {
     const chips = K.el('div', { class: 'chips' });
     const vivosN = K.EVENTOS.filter(e => e.vivo).length;
     chips.appendChild(K.el('button', {
       class: 'chip' + (soloVivo ? ' on' : ''),
       html: '<span class="punto-vivo"></span> En vivo (' + vivosN + ')',
-      onclick: () => { soloVivo = !soloVivo; vista(root); }
+      onclick: () => { soloVivo = !soloVivo; filtroLiga = null; vista(root); }
     }));
-    K.DEPORTES.forEach(d => chips.appendChild(K.el('button', {
-      class: 'chip' + (!soloVivo && filtroDeporte === d.id ? ' on' : ''),
-      html: K.ic(K.icDeporte(d.id)) + ' ' + d.nom,
-      onclick: () => { soloVivo = false; filtroDeporte = d.id; vista(root); }
-    })));
-    root.appendChild(chips);
-
-    let lista = K.EVENTOS.filter(e => !e.terminado);
-    if (filtroLiga) lista = lista.filter(e => e.liga === filtroLiga);
-    else lista = soloVivo ? lista.filter(e => e.vivo) : lista.filter(e => e.deporte === filtroDeporte);
-    lista.sort((a, b) => (b.vivo - a.vivo) || (a.inicio - b.inicio));
-
-    if (!lista.length) {
-      root.appendChild(K.el('div', { class: 'vacio', html: K.ic('trofeo') + '<div>No hay eventos abiertos en esta categoría.</div>' }));
-    }
-    const vivos = lista.filter(e => e.vivo);
-    const luego = lista.filter(e => !e.vivo);
-    if (vivos.length) {
-      root.appendChild(cabecera('En vivo', vivos.length + ' eventos con cuotas moviéndose', 'vivo'));
-      vivos.forEach(e => root.appendChild(tarjetaEvento(e)));
-    }
-    if (luego.length) {
-      root.appendChild(cabecera('Próximos', 'el reloj corre a 30× para que puedas ver la liquidación', 'reloj'));
-      luego.forEach(e => root.appendChild(tarjetaEvento(e)));
-    }
-    const term = K.EVENTOS.filter(e => e.terminado);
-    if (term.length) {
-      root.appendChild(cabecera('Finalizados', term.length + ' eventos ya liquidados', 'grafico'));
-      term.slice(0, 6).forEach(e => root.appendChild(tarjetaEvento(e, { sinMas: true })));
-    }
+    K.DEPORTES.forEach(d => {
+      const n = K.EVENTOS.filter(e => e.deporte === d.id && !e.terminado).length;
+      chips.appendChild(K.el('button', {
+        class: 'chip' + (!soloVivo && !filtroLiga && filtroDeporte === d.id ? ' on' : ''),
+        html: K.ic(K.icDeporte(d.id)) + ' ' + d.nom + ' <i>' + n + '</i>',
+        onclick: () => { soloVivo = false; filtroLiga = null; filtroDeporte = d.id; vista(root); }
+      }));
+    });
+    return chips;
   }
 
   function cabecera(titulo, sub, icono = 'trofeo') {
@@ -641,16 +766,41 @@ K.Sportsbook = (() => {
     const ev = K.evento(id);
     if (!ev) return;
     const cuerpo = K.el('div');
+
     const pintar = () => {
+      const scroll = cuerpo.parentElement ? cuerpo.parentElement.scrollTop : 0;
       cuerpo.innerHTML = '';
       const mercados = K.Odds.construir(ev);
+
+      /* cabecera con marcador */
+      const cab = K.el('div', { class: 'ficha-cab' });
+      cab.innerHTML = `
+        <div class="ficha-eq"><span class="esc">${ev.escL}</span><span class="nom">${K.esc(ev.local)}</span></div>
+        <div class="ficha-marcador">
+          <div class="m">${ev.vivo || ev.terminado ? ev.marcador.l + ' - ' + ev.marcador.v : 'vs'}</div>
+          <div class="est">${ev.terminado ? 'finalizado'
+            : ev.vivo ? minutoTexto(ev)
+            : K.fechaHora(ev.inicio)}</div>
+        </div>
+        <div class="ficha-eq"><span class="esc">${ev.escV}</span><span class="nom">${K.esc(ev.visita)}</span></div>`;
+      cuerpo.appendChild(cab);
+
+      /* datos del modelo */
       cuerpo.appendChild(K.el('div', {
         class: 'info-bloque', html:
-          `<h4>${K.esc(ev.local)} vs ${K.esc(ev.visita)} · ${K.esc(ev.liga)}</h4>
-       ${ev.vivo ? `En juego · minuto ${Math.floor(ev.minuto)} · marcador ${ev.marcador.l}-${ev.marcador.v}`
-              : ev.terminado ? `Finalizado ${ev.marcador.l}-${ev.marcador.v}` : 'Comienza ' + K.fechaHora(ev.inicio)}
-       · margen base <b>${K.pct(ev.margen - 1)}</b>${ev.vivo ? ' + 2.5% por riesgo en vivo' : ''}`
+          `<b>${K.esc(ev.liga)}</b> · margen base ${K.pct(ev.margen - 1)}${ev.vivo ? ' + 2.5 puntos por riesgo en vivo' : ''}
+           · rating ${ev.ratL} contra ${ev.ratV}
+           ${ev.deporte === 'futbol' ? ` · goles esperados ${K.dec(ev.modelo.lh)} y ${K.dec(ev.modelo.la)}` : ''}
+           ${ev.deporte === 'basket' ? ` · línea ${ev.modelo.spread > 0 ? '-' : '+'}${Math.abs(ev.modelo.spread)} y total ${ev.modelo.total}` : ''}`
       }));
+
+      /* estadísticas en vivo */
+      if (ev.vivo && ev.deporte === 'futbol') cuerpo.appendChild(bloqueStats(ev));
+
+      /* evolución de la cuota */
+      if (ev.serie.length > 3) cuerpo.appendChild(bloqueGrafica(ev, mercados[0]));
+
+      /* mercados */
       mercados.forEach(m => {
         const caja = K.el('div', { class: 'tarjeta', style: 'margin-top:12px' });
         caja.appendChild(K.el('h3', {
@@ -659,34 +809,144 @@ K.Sportsbook = (() => {
         }));
         const c = K.el('div', { class: 'cuerpo' });
         const g = K.el('div', { class: 'mercado g' + m.cols });
-        m.sel.forEach(s => g.appendChild(botonCuota(ev, m, s)));
+        m.sel.forEach(x => g.appendChild(botonCuota(ev, m, x)));
         c.appendChild(g);
         c.appendChild(K.el('div', {
-          style: 'margin-top:8px;font-size:11.5px;color:var(--tenue2)',
-          text: 'Probabilidades implícitas: ' + m.sel.map(s => s.lab + ' ' + K.pct(s.impl)).join(' · ')
+          style: 'margin-top:8px;font-size:11.5px;color:var(--tenue-2)',
+          text: 'Probabilidades implícitas: ' + m.sel.map(x => x.lab + ' ' + K.pct(x.impl)).join(' · ')
         }));
         caja.appendChild(c);
         cuerpo.appendChild(caja);
       });
+      if (cuerpo.parentElement) cuerpo.parentElement.scrollTop = scroll;
     };
+
     pintar();
     K.modal(ev.local + ' vs ' + ev.visita, cuerpo, ev.liga);
     const it = setInterval(() => {
       if (!document.body.contains(cuerpo)) { clearInterval(it); return; }
       if (ev.vivo) pintar();
-    }, 1500);
+    }, 2500);
+  }
+
+  /* Estadísticas simuladas del partido, que se mueven con el marcador. */
+  function bloqueStats(ev) {
+    const s = ev.stats;
+    const caja = K.el('div', { class: 'tarjeta', style: 'margin-top:12px' });
+    caja.appendChild(K.el('h3', { text: 'Estadísticas del partido' }));
+    const c = K.el('div', { class: 'cuerpo stats-ev' });
+    const filas = [
+      ['Posesión', s.posesion, 100 - s.posesion, '%'],
+      ['Tiros al arco', s.tiros[0], s.tiros[1], ''],
+      ['Córners', s.corners[0], s.corners[1], ''],
+      ['Tarjetas amarillas', s.amarillas[0], s.amarillas[1], '']
+    ];
+    filas.forEach(([et, a, b, suf]) => {
+      const total = (a + b) || 1;
+      const fila = K.el('div', { class: 'stat-linea' });
+      fila.innerHTML = `<span class="et">${et}</span>
+        <b>${a}${suf}</b>
+        <span class="stat-barra"><i class="l" style="width:${a / total * 100}%"></i><i class="v" style="width:${b / total * 100}%"></i></span>
+        <b>${b}${suf}</b>`;
+      c.appendChild(fila);
+    });
+    caja.appendChild(c);
+    return caja;
+  }
+
+  /* Mini gráfica de cómo se movió la cuota principal desde que arrancó. */
+  function bloqueGrafica(ev, merc) {
+    const caja = K.el('div', { class: 'tarjeta', style: 'margin-top:12px' });
+    caja.appendChild(K.el('h3', { text: 'Evolución de la cuota · ' + merc.nombre }));
+    const c = K.el('div', { class: 'cuerpo' });
+    const cv = K.el('canvas', { class: 'spark' });
+    c.appendChild(cv);
+    c.appendChild(K.el('div', {
+      style: 'margin-top:6px;font-size:11.5px;color:var(--tenue-2)',
+      text: merc.sel.map((x, i) => ['●', '■', '▲'][i] + ' ' + (x.extra || x.lab)).join('   ')
+    }));
+    caja.appendChild(c);
+
+    requestAnimationFrame(() => {
+      const p = devicePixelRatio;
+      const W = cv.clientWidth * p, H = 56 * p;
+      cv.width = W; cv.height = H;
+      const ctx = cv.getContext('2d');
+      const serie = ev.serie;
+      const cols = ['#ff5500', '#38bdf8', '#a78bfa'];
+      const todos = serie.flat();
+      const min = Math.min(...todos), max = Math.max(...todos);
+      const rango = (max - min) || 1;
+      ctx.clearRect(0, 0, W, H);
+      ctx.strokeStyle = 'rgba(148,163,184,.12)';
+      ctx.lineWidth = 1 * p;
+      for (let i = 0; i <= 2; i++) {
+        const y = (H - 8 * p) * i / 2 + 4 * p;
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+      }
+      const n = serie[0].length;
+      for (let k = 0; k < n; k++) {
+        ctx.beginPath();
+        serie.forEach((punto, i) => {
+          const x = W * (i / Math.max(1, serie.length - 1));
+          const y = H - 4 * p - (H - 8 * p) * ((punto[k] - min) / rango);
+          i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+        });
+        ctx.strokeStyle = cols[k % cols.length];
+        ctx.lineWidth = 2 * p;
+        ctx.stroke();
+      }
+    });
+    return caja;
   }
 
   /* ---- vista Mis apuestas ---- */
+  let filtroApuestas = 'todas';
+
   function vistaApuestas(root) {
     const w = K.Wallet.est();
     root.innerHTML = '';
+    const pendientes = w.apuestas.filter(a => a.estado === 'pendiente');
+    const resueltas = w.apuestas.filter(a => a.estado !== 'pendiente');
+    const ganadas = w.apuestas.filter(a => a.estado === 'ganada' || a.estado === 'cobrada');
+    const invertido = w.apuestas.reduce((a, b) => a + b.stake, 0);
+    const cobrado = w.apuestas.reduce((a, b) => a + b.pago, 0);
+
     root.appendChild(cabecera('Mis apuestas', w.apuestas.length + ' registradas', 'recibo'));
     if (!w.apuestas.length) {
       root.appendChild(K.el('div', { class: 'vacio', html: K.ic('recibo') + '<div>Todavía no hiciste ninguna apuesta.</div>' }));
       return;
     }
-    for (const ap of w.apuestas) {
+
+    const resumen = K.el('div', { class: 'grid2', style: 'margin-bottom:12px' });
+    const tarj = (et, vl, cls) => K.el('div', { class: 'kpi' }, [
+      K.el('span', { class: 'et', text: et }), K.el('span', { class: 'vl ' + (cls || ''), text: vl })
+    ]);
+    resumen.appendChild(tarj('Pendientes', String(pendientes.length)));
+    resumen.appendChild(tarj('Acertadas', ganadas.length + ' de ' + resueltas.length));
+    resumen.appendChild(tarj('Total apostado', K.sol(invertido)));
+    resumen.appendChild(tarj('Balance', K.sol(cobrado - invertido), cobrado - invertido >= 0 ? 'pos' : 'neg'));
+    root.appendChild(resumen);
+
+    const tabs = K.el('div', { class: 'chips' });
+    [['todas', 'Todas', w.apuestas.length],
+     ['pendiente', 'Pendientes', pendientes.length],
+     ['resueltas', 'Liquidadas', resueltas.length]].forEach(([id, nom, n]) => {
+      tabs.appendChild(K.el('button', {
+        class: 'chip' + (filtroApuestas === id ? ' on' : ''),
+        html: nom + ' <i>' + n + '</i>',
+        onclick: () => { filtroApuestas = id; vistaApuestas(root); }
+      }));
+    });
+    root.appendChild(tabs);
+
+    const lista = filtroApuestas === 'pendiente' ? pendientes
+      : filtroApuestas === 'resueltas' ? resueltas : w.apuestas;
+    if (!lista.length) {
+      root.appendChild(K.el('div', { class: 'vacio', html: K.ic('recibo') + '<div>Nada por acá todavía.</div>' }));
+      return;
+    }
+    for (const ap of lista) {
       const card = K.el('div', { class: 'apuesta' });
       card.appendChild(K.el('div', {
         class: 'ap-cab', html:
@@ -743,7 +1003,12 @@ K.Sportsbook = (() => {
 
   /* ---- banner de SuperCuota ---- */
   function bannerPromo() {
-    const ev = K.EVENTOS.find(e => e.deporte === 'futbol' && !e.vivo && !e.terminado && K.Odds.superCuota(e));
+    /* Se elige el partido más atractivo: el de mayor rating combinado
+       entre los que están por empezar. */
+    const candidatos = K.EVENTOS
+      .filter(e => e.deporte === 'futbol' && !e.vivo && !e.terminado && K.Odds.superCuota(e))
+      .sort((a, b) => (b.ratL + b.ratV) - (a.ratL + a.ratV));
+    const ev = candidatos[0];
     if (!ev) return null;
     const sc = K.Odds.superCuota(ev);
     const el = K.el('div', { class: 'promo' });

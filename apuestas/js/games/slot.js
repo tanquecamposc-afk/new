@@ -44,7 +44,9 @@ K.Juegos.slot = function (root, juego) {
 
   const monto = K.G.inputMonto(2);
   const sUlt = K.G.stat('Último giro', '—');
+  const sNeto = K.G.stat('Resultado neto', K.sol(0));
   const sGiros = K.G.stat('Giros', '0');
+  let neto = 0;
   const sGratis = K.G.stat('Giros gratis', '0');
   const sRTP = K.G.stat('RTP teórico', (RTP * 100).toFixed(1) + '%');
 
@@ -54,7 +56,7 @@ K.Juegos.slot = function (root, juego) {
   const panel = K.el('div', { class: 'panel-apuesta' }, [
     monto.wrap, btn, btnAuto,
     K.el('div', { style: 'height:1px;background:var(--linea);margin:2px 0' }),
-    sUlt.fila, sGiros.fila, sGratis.fila, sRTP.fila,
+    sUlt.fila, sNeto.fila, sGiros.fila, sGratis.fila, sRTP.fila,
     K.el('div', { class: 'stat-fila' }, [K.el('span', { text: 'Volatilidad' }), K.el('b', { text: cfg.vol })])
   ]);
 
@@ -69,13 +71,14 @@ K.Juegos.slot = function (root, juego) {
     rejilla.appendChild(col);
   }
   const msg = K.el('span', { id: 'slot-msg', text: '' });
+  const cartel = K.el('div', { class: 'cartel-premio' });
   const marco = K.el('div', { class: 'slot-marco' }, [
     rejilla,
     K.el('div', { class: 'slot-info' }, [
       K.el('span', { text: '8+ símbolos iguales pagan · 10+ ×1.5 · 12+ ×3' }), msg
     ])
   ]);
-  const zona = K.el('div', { class: 'zona-juego' }, [marco]);
+  const zona = K.el('div', { class: 'zona-juego', style: 'position:relative' }, [marco, cartel]);
 
   let girando = false, giros = 0, gratis = 0;
 
@@ -83,6 +86,7 @@ K.Juegos.slot = function (root, juego) {
     if (girando) return 0;
     const apuesta = monto.get();
     if (!esGratis && !K.G.apostar(apuesta)) return 0;
+    if (!esGratis) { neto = K.round2(neto - apuesta); sNeto.set(K.sol(neto)); }
     girando = true; btn.disabled = true;
     celdas.forEach(c => c.classList.remove('gana'));
     msg.textContent = '';
