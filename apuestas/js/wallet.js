@@ -4,8 +4,8 @@
    =========================================================== */
 K.Wallet = (() => {
 
-  const INICIAL = 3000;
-  const VERSION = 2;
+  const INICIAL = 5000;
+  const VERSION = 3;
 
   const base = () => ({
     v: VERSION,
@@ -15,8 +15,8 @@ K.Wallet = (() => {
     ledger: [{ t: Date.now(), tipo: 'deposito', monto: INICIAL, det: 'Saldo de bienvenida (demo)', saldo: INICIAL }],
     apuestas: [],
     casino: { jugadas: 0, apostado: 0, devuelto: 0, historial: {} },
-    perfil: { clv: [], categoria: 'recreativo', limiteApuesta: 1500, marcas: [] },
-    limites: { depositoDiario: 6000, apuestaMax: 1500, autoexcluidoHasta: 0, recordatorioMin: 30 },
+    perfil: { clv: [], categoria: 'recreativo', limiteApuesta: 2500, marcas: [] },
+    limites: { depositoDiario: 10000, apuestaMax: 2500, autoexcluidoHasta: 0, recordatorioMin: 30 },
     kyc: { verificado: false, nivel: 0 },
     sesion: { inicio: Date.now(), avisado: 0 }
   });
@@ -35,13 +35,13 @@ K.Wallet = (() => {
     return s;
   }
 
-  /* Sube una cuenta guardada con los valores viejos (saldo y límites de 1000/500)
-     a los nuevos, sin borrar el historial que ya tenía. */
+  /* Sube una cuenta guardada de una versión anterior a los valores
+     actuales, sin borrar el historial que ya tenía. */
   function migrar() {
     s.v = VERSION;
-    if (s.limites.depositoDiario <= 2000) s.limites.depositoDiario = 6000;
-    if (s.limites.apuestaMax <= 500) s.limites.apuestaMax = 1500;
-    if (s.perfil.categoria === 'recreativo') s.perfil.limiteApuesta = 1500;
+    if (s.limites.depositoDiario <= 6000) s.limites.depositoDiario = 10000;
+    if (s.limites.apuestaMax <= 1500) s.limites.apuestaMax = 2500;
+    if (s.perfil.categoria === 'recreativo') s.perfil.limiteApuesta = 2500;
     if (s.saldo < INICIAL) {
       const falta = K.round2(INICIAL - s.saldo);
       s.depositado = K.round2(s.depositado + falta);
@@ -124,12 +124,12 @@ K.Wallet = (() => {
     if (antes / total > 0.5 && total > 10) marcas.push('Apuesta con mucha antelación');
 
     const antesCat = s.perfil.categoria;
-    if (medio > 3 && marcas.length >= 2) { s.perfil.categoria = 'sharp'; s.perfil.limiteApuesta = 180; }
-    else if (medio > 1.5) { s.perfil.categoria = 'observado'; s.perfil.limiteApuesta = 600; }
-    else { s.perfil.categoria = 'recreativo'; s.perfil.limiteApuesta = 1500; }
+    if (medio > 3 && marcas.length >= 2) { s.perfil.categoria = 'sharp'; s.perfil.limiteApuesta = 300; }
+    else if (medio > 1.5) { s.perfil.categoria = 'observado'; s.perfil.limiteApuesta = 1000; }
+    else { s.perfil.categoria = 'recreativo'; s.perfil.limiteApuesta = 2500; }
     s.perfil.marcas = marcas;
     if (antesCat !== s.perfil.categoria && s.perfil.categoria === 'sharp')
-      K.aviso('El motor de riesgo te clasificó como <b>sharp</b>. Límite por apuesta reducido a ' + K.sol(180) + '.', 'warn');
+      K.aviso('El motor de riesgo te clasificó como <b>sharp</b>. Límite por apuesta reducido a ' + K.sol(300) + '.', 'warn');
     persistir();
   }
 

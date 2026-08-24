@@ -62,8 +62,8 @@ Cada juego muestra su RTP teórico y una nota explicando de dónde sale la venta
 
 ## Juego responsable
 
-Saldo de bienvenida de S/ 3.000 en fichas demo, límite de depósito diario (S/ 6.000), apuesta máxima
-(S/ 1.500), pausas de 15 minutos y 1 hora, recordatorio de sesión cada 30 minutos, rollover 1× antes de
+Saldo de bienvenida de S/ 5.000 en fichas demo, límite de depósito diario (S/ 10.000), apuesta máxima
+(S/ 2.500), pausas de 15 minutos y 1 hora, recordatorio de sesión cada 30 minutos, rollover 1× antes de
 retirar y un trámite de KYC simulado que **no pide ni guarda ningún dato personal**. Las cuentas
 guardadas de la versión anterior se migran solas al abrir el sitio.
 

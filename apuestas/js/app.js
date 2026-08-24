@@ -310,14 +310,14 @@ K.App = (() => {
   /* ---------- depósito y retiro ---------- */
   function modalDeposito() {
     const cuerpo = K.el('div');
-    const inp = K.el('input', { type: 'number', min: '10', step: '10', value: '1000' });
+    const inp = K.el('input', { type: 'number', min: '10', step: '10', value: '2000' });
     cuerpo.appendChild(K.el('div', {
       class: 'info-bloque',
       html: 'Método simulado: <b>Yape · Plin · tarjeta</b>. No se pide ningún dato real y las fichas no tienen valor.'
     }));
     cuerpo.appendChild(K.el('div', { class: 'campo', style: 'margin-top:12px' }, [
       K.el('label', { text: 'Monto a recargar (S/)' }), inp,
-      K.el('div', { class: 'fila-btns' }, [100, 500, 1000, 3000].map(v =>
+      K.el('div', { class: 'fila-btns' }, [500, 1000, 2500, 5000].map(v =>
         K.el('button', { text: v, onclick: () => inp.value = v })))
     ]));
     const btn = K.el('button', { class: 'btn bloque', style: 'margin-top:12px', text: 'Confirmar recarga' });
