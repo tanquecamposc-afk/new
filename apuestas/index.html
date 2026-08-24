@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>KRONOS BET — casa de apuestas y casino (simulador)</title>
+<meta name="description" content="Simulador educativo de casa de apuestas deportivas y casino online: motor de cuotas con margen, apuestas en vivo, cashout y 30 juegos de casino con su matemática a la vista. Fichas de demostración, sin dinero real.">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<div class="aviso-legal">
+  🔞 <b>SIMULADOR EDUCATIVO</b> · Fichas de demostración, sin dinero real ni pagos de ningún tipo.
+  Proyecto hecho para mostrar cómo funciona por dentro una casa de apuestas. El juego con dinero real
+  es solo para mayores de 18 años y puede generar adicción.
+</div>
+
+<header class="top">
+  <div class="top-fila">
+    <div class="logo">
+      <span class="k">K</span>
+      <span>KRONOS BET</span>
+      <span class="demo">DEMO</span>
+    </div>
+    <nav class="nav" id="nav"></nav>
+    <div class="saldo-caja">
+      <div>
+        <div class="etq">Saldo demo</div>
+        <div class="val" id="saldo">S/ 0.00</div>
+      </div>
+      <button class="btn chico" id="btn-deposito">Depositar</button>
+    </div>
+  </div>
+</header>
+
+<div class="contenedor" id="contenedor">
+  <main class="col-main" id="main"></main>
+  <aside class="lateral" id="lateral">
+    <div class="tarjeta">
+      <h3>🎫 Boleto de apuesta</h3>
+      <div id="boleto"></div>
+    </div>
+    <div class="tarjeta">
+      <h3>ℹ️ Cómo leer una cuota</h3>
+      <div class="cuerpo" style="font-size:12.5px;color:var(--tenue);line-height:1.6">
+        Cuota <b style="color:var(--texto)">2.50</b> significa que S/ 100 devuelven S/ 250: 150 de
+        ganancia más tu inversión. Su probabilidad implícita es <b style="color:var(--texto)">1 / 2.50 = 40%</b>.
+        La suma de las implícitas de un mercado siempre pasa del 100%: esa diferencia es el margen de la casa.
+      </div>
+    </div>
+  </aside>
+</div>
+
+<footer class="pie">
+  <b>KRONOS BET</b> es un proyecto de demostración. No acepta dinero, no procesa pagos, no tiene licencia
+  y no está afiliado a ninguna casa de apuestas real. Los nombres de juegos y proveedores que aparecen en
+  el lobby son referencias al catálogo de la industria; los motores que corren acá son propios y están
+  escritos para mostrar la matemática, no para replicar ningún producto comercial.
+  <div class="sep"></div>
+  Si juegas con dinero real: hazlo solo si eres mayor de edad, ponte un límite antes de empezar y trata
+  la pérdida como el precio del entretenimiento, no como una inversión. Ningún sistema, racha ni
+  estrategia cambia el retorno teórico de un juego. En Perú, la línea de orientación del Mincetur y los
+  programas de autoexclusión de los operadores autorizados existen justamente para eso.
+  <div class="sep"></div>
+  Hecho con HTML, CSS y JavaScript sin dependencias. Todo el estado vive en tu navegador.
+</footer>
+
+<div id="toasts"></div>
+
+<script src="js/core.js"></script>
+<script src="js/odds.js"></script>
+<script src="js/wallet.js"></script>
+<script src="js/data-sports.js"></script>
+<script src="js/data-casino.js"></script>
+<script src="js/sportsbook.js"></script>
+<script src="js/games/base.js"></script>
+<script src="js/games/mines.js"></script>
+<script src="js/games/limbo.js"></script>
+<script src="js/games/aviator.js"></script>
+<script src="js/games/plinko.js"></script>
+<script src="js/games/slot.js"></script>
+<script src="js/games/rueda.js"></script>
+<script src="js/games/ruleta.js"></script>
+<script src="js/games/cartas.js"></script>
+<script src="js/casino.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

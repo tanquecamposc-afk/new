@@ -1,0 +1,449 @@
+/* ===========================================================
+   KRONOS BET — hoja de estilos única
+   Simulador educativo de casa de apuestas. Sin dinero real.
+   =========================================================== */
+
+:root{
+  --bg:#080b10;
+  --bg2:#0d1219;
+  --panel:#121924;
+  --panel2:#18212f;
+  --panel3:#1f2a3b;
+  --linea:#26334a;
+  --texto:#e9eef7;
+  --tenue:#8b9bb5;
+  --tenue2:#5f6f8a;
+  --acento:#25d07a;
+  --acento2:#19a862;
+  --ambar:#ffc247;
+  --rojo:#ff5c5c;
+  --azul:#4aa8ff;
+  --morado:#a678ff;
+  --rosa:#ff6ec7;
+  --radio:12px;
+  --sombra:0 10px 30px rgba(0,0,0,.45);
+  --fuente:"Segoe UI",system-ui,-apple-system,Roboto,"Helvetica Neue",Arial,sans-serif;
+  --mono:"JetBrains Mono",Consolas,"SF Mono",Menlo,monospace;
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  background:
+    radial-gradient(900px 600px at 85% -12%, rgba(37,208,122,.10), transparent 60%),
+    radial-gradient(700px 500px at 5% 0%, rgba(74,168,255,.08), transparent 55%),
+    var(--bg);
+  color:var(--texto);
+  font-family:var(--fuente);
+  font-size:15px;
+  line-height:1.45;
+  -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+}
+button,input,select{font-family:inherit;font-size:inherit;color:inherit}
+button{cursor:pointer;border:none;background:none}
+a{color:var(--azul);text-decoration:none}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-track{background:var(--bg2)}
+::-webkit-scrollbar-thumb{background:var(--panel3);border-radius:6px}
+::-webkit-scrollbar-thumb:hover{background:#2f3f59}
+
+/* ---------- barra superior ---------- */
+.aviso-legal{
+  background:linear-gradient(90deg,#2a1a05,#3a2408);
+  border-bottom:1px solid #55401a;
+  color:#ffd489;
+  font-size:12px;
+  text-align:center;
+  padding:5px 12px;
+  letter-spacing:.2px;
+}
+.aviso-legal b{color:#fff0cf}
+
+header.top{
+  position:sticky;top:0;z-index:60;
+  background:rgba(10,14,20,.92);
+  backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--linea);
+}
+.top-fila{
+  max-width:1400px;margin:0 auto;
+  display:flex;align-items:center;gap:14px;
+  padding:10px 16px;
+}
+.logo{display:flex;align-items:center;gap:9px;font-weight:800;font-size:19px;letter-spacing:-.4px}
+.logo .k{
+  width:32px;height:32px;border-radius:9px;display:grid;place-items:center;
+  background:linear-gradient(135deg,var(--acento),#0f7d47);
+  color:#04120a;font-size:17px;font-weight:900;
+}
+.logo .demo{
+  font-size:9px;font-weight:800;letter-spacing:1.2px;
+  background:var(--panel3);color:var(--tenue);
+  padding:2px 6px;border-radius:5px;border:1px solid var(--linea);
+}
+.nav{display:flex;gap:2px;margin-left:8px;flex:1;overflow-x:auto;scrollbar-width:none}
+.nav::-webkit-scrollbar{display:none}
+.nav button{
+  padding:8px 14px;border-radius:9px;color:var(--tenue);
+  font-weight:600;white-space:nowrap;transition:.15s;
+}
+.nav button:hover{color:var(--texto);background:var(--panel)}
+.nav button.on{background:var(--panel2);color:var(--texto);box-shadow:inset 0 -2px 0 var(--acento)}
+.nav button .pip{
+  display:inline-block;min-width:17px;height:17px;line-height:17px;
+  background:var(--acento);color:#04120a;border-radius:9px;
+  font-size:11px;font-weight:800;margin-left:6px;padding:0 4px;
+}
+.nav button .vivo-pip{background:var(--rojo);color:#fff}
+
+.saldo-caja{
+  display:flex;align-items:center;gap:10px;
+  background:var(--panel);border:1px solid var(--linea);
+  border-radius:11px;padding:6px 8px 6px 14px;
+}
+.saldo-caja .etq{font-size:10px;color:var(--tenue2);text-transform:uppercase;letter-spacing:.8px}
+.saldo-caja .val{font-weight:800;font-size:16px;font-variant-numeric:tabular-nums}
+.btn{
+  background:var(--acento);color:#04120a;font-weight:800;
+  padding:8px 14px;border-radius:9px;transition:.15s;white-space:nowrap;
+}
+.btn:hover{background:#2ee089;transform:translateY(-1px)}
+.btn:active{transform:none}
+.btn:disabled{background:var(--panel3);color:var(--tenue2);cursor:not-allowed;transform:none}
+.btn.sec{background:var(--panel2);color:var(--texto);border:1px solid var(--linea)}
+.btn.sec:hover{background:var(--panel3)}
+.btn.peligro{background:var(--rojo);color:#2a0000}
+.btn.chico{padding:5px 10px;font-size:13px;border-radius:7px}
+
+/* ---------- layout ---------- */
+.contenedor{max-width:1400px;margin:0 auto;padding:16px;display:grid;grid-template-columns:1fr 336px;gap:16px;align-items:start}
+.contenedor.ancho{grid-template-columns:1fr}
+.col-main{min-width:0}
+.lateral{position:sticky;top:78px;display:flex;flex-direction:column;gap:14px}
+
+.tarjeta{background:var(--panel);border:1px solid var(--linea);border-radius:var(--radio);overflow:hidden}
+.tarjeta > h3{
+  padding:11px 14px;font-size:13px;text-transform:uppercase;letter-spacing:.9px;
+  color:var(--tenue);border-bottom:1px solid var(--linea);background:var(--panel2);
+  display:flex;align-items:center;justify-content:space-between;gap:8px;font-weight:700;
+}
+.tarjeta .cuerpo{padding:14px}
+
+.titulo-sec{display:flex;align-items:center;gap:10px;margin:4px 0 12px}
+.titulo-sec h2{font-size:20px;font-weight:800;letter-spacing:-.3px}
+.titulo-sec .sub{color:var(--tenue);font-size:13px}
+
+/* ---------- chips de deporte ---------- */
+.chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:6px;margin-bottom:12px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{
+  display:flex;align-items:center;gap:7px;padding:8px 14px;border-radius:22px;
+  background:var(--panel);border:1px solid var(--linea);color:var(--tenue);
+  font-weight:600;white-space:nowrap;transition:.15s;font-size:14px;
+}
+.chip:hover{border-color:#3a4b69;color:var(--texto)}
+.chip.on{background:var(--acento);border-color:var(--acento);color:#04120a}
+
+/* ---------- evento ---------- */
+.evento{background:var(--panel);border:1px solid var(--linea);border-radius:var(--radio);margin-bottom:10px;overflow:hidden;transition:border-color .2s}
+.evento:hover{border-color:#334561}
+.ev-cab{display:flex;align-items:center;gap:10px;padding:9px 14px;border-bottom:1px solid var(--linea);background:var(--panel2);font-size:12px;color:var(--tenue)}
+.ev-cab .liga{font-weight:700;color:var(--tenue)}
+.ev-cab .hora{margin-left:auto;font-variant-numeric:tabular-nums}
+.badge-vivo{
+  display:inline-flex;align-items:center;gap:5px;background:rgba(255,92,92,.15);
+  color:#ff8a8a;border:1px solid rgba(255,92,92,.35);
+  padding:2px 8px;border-radius:6px;font-weight:800;font-size:11px;letter-spacing:.5px;
+}
+.punto{width:6px;height:6px;border-radius:50%;background:var(--rojo);animation:latir 1.2s infinite}
+@keyframes latir{0%,100%{opacity:1}50%{opacity:.25}}
+
+.ev-cuerpo{display:grid;grid-template-columns:1fr auto;gap:12px;padding:12px 14px;align-items:center}
+@media(max-width:760px){.ev-cuerpo{grid-template-columns:1fr}}
+.equipos{display:flex;flex-direction:column;gap:5px;min-width:0}
+.equipo{display:flex;align-items:center;gap:9px;font-weight:600}
+.equipo .esc{width:22px;height:22px;border-radius:6px;display:grid;place-items:center;font-size:12px;background:var(--panel3);flex:none}
+.equipo .nom{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.equipo .marc{margin-left:auto;font-weight:800;font-variant-numeric:tabular-nums;color:var(--ambar);padding-left:10px}
+
+.mercado{display:flex;gap:6px}
+.mercado.g3{display:grid;grid-template-columns:repeat(3,minmax(78px,1fr))}
+.mercado.g2{display:grid;grid-template-columns:repeat(2,minmax(90px,1fr))}
+.cuota{
+  position:relative;background:var(--panel2);border:1px solid var(--linea);
+  border-radius:9px;padding:8px 10px;min-width:78px;
+  display:flex;flex-direction:column;align-items:center;gap:2px;transition:.12s;
+}
+.cuota:hover:not(:disabled){background:var(--panel3);border-color:#41567a}
+.cuota .lab{font-size:11px;color:var(--tenue);font-weight:600}
+.cuota .num{font-weight:800;font-size:15px;font-variant-numeric:tabular-nums}
+.cuota.on{background:var(--acento);border-color:var(--acento)}
+.cuota.on .lab,.cuota.on .num{color:#04120a}
+.cuota:disabled{opacity:.42;cursor:not-allowed}
+.cuota.sube{animation:flash-sube .9s}
+.cuota.baja{animation:flash-baja .9s}
+@keyframes flash-sube{0%,60%{box-shadow:inset 0 0 0 2px var(--acento);color:var(--acento)}100%{}}
+@keyframes flash-baja{0%,60%{box-shadow:inset 0 0 0 2px var(--rojo);color:var(--rojo)}100%{}}
+.cuota .flecha{position:absolute;top:2px;right:4px;font-size:9px}
+.ev-pie{display:flex;align-items:center;gap:12px;padding:7px 14px;border-top:1px solid var(--linea);font-size:11.5px;color:var(--tenue2)}
+.ev-pie .mas{margin-left:auto;color:var(--azul);font-weight:600}
+.suspendido{
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  padding:12px;color:var(--ambar);font-weight:700;font-size:13px;
+  background:repeating-linear-gradient(45deg,rgba(255,194,71,.06),rgba(255,194,71,.06) 10px,transparent 10px,transparent 20px);
+}
+
+/* ---------- boleto ---------- */
+.tabs-boleto{display:flex;border-bottom:1px solid var(--linea)}
+.tabs-boleto button{flex:1;padding:9px;font-weight:700;font-size:13px;color:var(--tenue)}
+.tabs-boleto button.on{color:var(--texto);box-shadow:inset 0 -2px 0 var(--acento)}
+.seleccion{padding:11px 13px;border-bottom:1px solid var(--linea);position:relative}
+.seleccion .cerrar{position:absolute;top:8px;right:9px;color:var(--tenue2);font-size:16px;line-height:1}
+.seleccion .cerrar:hover{color:var(--rojo)}
+.seleccion .pick{font-weight:700;padding-right:20px;display:flex;justify-content:space-between;gap:8px}
+.seleccion .pick .c{color:var(--acento);font-variant-numeric:tabular-nums}
+.seleccion .merc{font-size:11.5px;color:var(--tenue2);margin-top:1px}
+.seleccion .part{font-size:12px;color:var(--tenue);margin-top:3px}
+.seleccion .aviso-cambio{margin-top:6px;font-size:11.5px;color:var(--ambar);background:rgba(255,194,71,.1);padding:4px 7px;border-radius:6px}
+.boleto-vacio{padding:26px 18px;text-align:center;color:var(--tenue2);font-size:13px}
+.boleto-vacio .ic{font-size:30px;display:block;margin-bottom:8px;opacity:.5}
+
+.stake-fila{display:flex;gap:8px;align-items:center;padding:12px 13px 8px}
+.stake-fila .sol{color:var(--tenue);font-weight:700}
+.stake-fila input{
+  flex:1;background:var(--bg2);border:1px solid var(--linea);border-radius:8px;
+  padding:9px 11px;font-weight:800;font-size:16px;font-variant-numeric:tabular-nums;
+}
+.stake-fila input:focus{outline:none;border-color:var(--acento)}
+.rapidos{display:flex;gap:6px;padding:0 13px 10px;flex-wrap:wrap}
+.rapidos button{background:var(--panel2);border:1px solid var(--linea);border-radius:7px;padding:4px 10px;font-size:12px;font-weight:700;color:var(--tenue)}
+.rapidos button:hover{background:var(--panel3);color:var(--texto)}
+.resumen{padding:0 13px 12px;font-size:13px}
+.resumen .fila{display:flex;justify-content:space-between;padding:3px 0;color:var(--tenue)}
+.resumen .fila b{color:var(--texto);font-variant-numeric:tabular-nums}
+.resumen .fila.total b{color:var(--acento);font-size:17px}
+.pie-boleto{padding:0 13px 13px}
+.pie-boleto .btn{width:100%;padding:12px;font-size:15px}
+.nota-margen{font-size:11px;color:var(--tenue2);padding:8px 13px;border-top:1px solid var(--linea);background:var(--bg2)}
+.nota-margen b{color:var(--ambar)}
+
+/* ---------- mis apuestas ---------- */
+.apuesta{background:var(--panel);border:1px solid var(--linea);border-radius:var(--radio);margin-bottom:10px;overflow:hidden}
+.ap-cab{display:flex;align-items:center;gap:9px;padding:9px 13px;background:var(--panel2);border-bottom:1px solid var(--linea);font-size:12px;color:var(--tenue)}
+.ap-cab .tipo{font-weight:800;color:var(--texto)}
+.ap-cab .est{margin-left:auto;font-weight:800;padding:2px 9px;border-radius:6px;font-size:11px;letter-spacing:.4px}
+.est.pendiente{background:rgba(255,194,71,.14);color:var(--ambar)}
+.est.ganada{background:rgba(37,208,122,.15);color:var(--acento)}
+.est.perdida{background:rgba(255,92,92,.14);color:var(--rojo)}
+.est.cobrada{background:rgba(74,168,255,.14);color:var(--azul)}
+.est.anulada{background:var(--panel3);color:var(--tenue)}
+.ap-linea{padding:9px 13px;border-bottom:1px solid var(--linea);font-size:13px}
+.ap-linea:last-of-type{border-bottom:none}
+.ap-linea .top{display:flex;justify-content:space-between;gap:8px;font-weight:700}
+.ap-linea .bajo{color:var(--tenue2);font-size:11.5px;margin-top:2px}
+.ap-pie{display:flex;align-items:center;gap:10px;padding:10px 13px;border-top:1px solid var(--linea);background:var(--bg2);flex-wrap:wrap}
+.ap-pie .dato{font-size:12px;color:var(--tenue)}
+.ap-pie .dato b{color:var(--texto);display:block;font-variant-numeric:tabular-nums;font-size:14px}
+.ap-pie .btn{margin-left:auto}
+
+/* ---------- casino ---------- */
+.casino-hero{
+  border-radius:16px;padding:26px 24px;margin-bottom:16px;position:relative;overflow:hidden;
+  background:linear-gradient(120deg,#1a0f2e,#0e1b2c 55%,#0b2019);
+  border:1px solid #2c2247;
+}
+.casino-hero h2{font-size:26px;font-weight:900;letter-spacing:-.6px;margin-bottom:6px}
+.casino-hero p{color:var(--tenue);max-width:560px;font-size:14px}
+.casino-hero .brillo{position:absolute;width:340px;height:340px;border-radius:50%;filter:blur(80px);opacity:.35}
+.casino-hero .b1{background:var(--morado);top:-160px;right:40px}
+.casino-hero .b2{background:var(--acento);bottom:-200px;right:220px}
+.buscador{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.buscador input{
+  flex:1;min-width:200px;background:var(--panel);border:1px solid var(--linea);
+  border-radius:10px;padding:10px 14px;
+}
+.buscador input:focus{outline:none;border-color:var(--acento)}
+
+.grid-juegos{display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:12px}
+.juego{
+  background:var(--panel);border:1px solid var(--linea);border-radius:12px;overflow:hidden;
+  text-align:left;transition:.18s;display:flex;flex-direction:column;
+}
+.juego:hover{transform:translateY(-3px);border-color:#3d5175;box-shadow:var(--sombra)}
+.juego .arte{
+  height:104px;display:grid;place-items:center;font-size:40px;position:relative;
+  border-bottom:1px solid var(--linea);
+}
+.juego .arte .n{position:absolute;top:6px;left:7px;font-size:10px;font-weight:800;color:rgba(255,255,255,.55);background:rgba(0,0,0,.35);padding:1px 5px;border-radius:4px}
+.juego .arte .jugable{position:absolute;bottom:6px;right:6px;font-size:9.5px;font-weight:800;letter-spacing:.4px;background:var(--acento);color:#04120a;padding:2px 6px;border-radius:5px}
+.juego .arte .info-only{position:absolute;bottom:6px;right:6px;font-size:9.5px;font-weight:800;background:var(--panel3);color:var(--tenue);padding:2px 6px;border-radius:5px;border:1px solid var(--linea)}
+.juego .txt{padding:9px 11px 11px;flex:1;display:flex;flex-direction:column;gap:3px}
+.juego .txt .nom{font-weight:700;font-size:13.5px;line-height:1.25}
+.juego .txt .prov{font-size:11px;color:var(--tenue2)}
+.juego .txt .desc{font-size:11px;color:var(--tenue);line-height:1.35;margin-top:3px}
+
+/* ---------- modal ---------- */
+.modal-fondo{
+  position:fixed;inset:0;background:rgba(4,7,11,.82);backdrop-filter:blur(5px);
+  z-index:200;display:grid;place-items:center;padding:16px;overflow-y:auto;
+}
+.modal{
+  background:var(--panel);border:1px solid var(--linea);border-radius:16px;
+  width:min(940px,100%);box-shadow:var(--sombra);max-height:94vh;display:flex;flex-direction:column;
+  animation:subir .18s ease-out;
+}
+@keyframes subir{from{transform:translateY(14px);opacity:0}to{transform:none;opacity:1}}
+.modal-cab{display:flex;align-items:center;gap:12px;padding:13px 16px;border-bottom:1px solid var(--linea);background:var(--panel2);border-radius:16px 16px 0 0}
+.modal-cab h3{font-size:16px;font-weight:800;flex:1}
+.modal-cab .prov{font-size:11.5px;color:var(--tenue2)}
+.modal-cab .x{font-size:22px;color:var(--tenue);line-height:1;padding:0 4px}
+.modal-cab .x:hover{color:var(--rojo)}
+.modal-cuerpo{padding:16px;overflow-y:auto}
+
+/* ---------- juegos de casino ---------- */
+.juego-layout{display:grid;grid-template-columns:250px 1fr;gap:16px}
+@media(max-width:780px){.juego-layout{grid-template-columns:1fr}}
+.panel-apuesta{background:var(--bg2);border:1px solid var(--linea);border-radius:12px;padding:13px;display:flex;flex-direction:column;gap:10px;height:fit-content}
+.campo{display:flex;flex-direction:column;gap:5px}
+.campo label{font-size:11px;color:var(--tenue);text-transform:uppercase;letter-spacing:.7px;font-weight:700}
+.campo input,.campo select{
+  background:var(--panel);border:1px solid var(--linea);border-radius:8px;padding:9px 11px;
+  font-weight:700;font-variant-numeric:tabular-nums;
+}
+.campo input:focus,.campo select:focus{outline:none;border-color:var(--acento)}
+.campo .fila-btns{display:flex;gap:5px}
+.campo .fila-btns button{flex:1;background:var(--panel2);border:1px solid var(--linea);border-radius:7px;padding:5px;font-size:12px;font-weight:700;color:var(--tenue)}
+.campo .fila-btns button:hover{background:var(--panel3);color:var(--texto)}
+.stat-fila{display:flex;justify-content:space-between;font-size:12.5px;color:var(--tenue);padding:2px 0}
+.stat-fila b{color:var(--texto);font-variant-numeric:tabular-nums}
+.zona-juego{background:var(--bg2);border:1px solid var(--linea);border-radius:12px;padding:14px;min-height:330px;display:flex;flex-direction:column}
+
+/* mines */
+.mines-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:7px;max-width:390px;margin:auto;width:100%}
+.celda{
+  aspect-ratio:1;border-radius:10px;background:var(--panel2);border:1px solid var(--linea);
+  display:grid;place-items:center;font-size:24px;transition:.15s;
+}
+.celda:hover:not(:disabled){background:var(--panel3);transform:translateY(-2px)}
+.celda:disabled{cursor:default}
+.celda.estrella{background:rgba(37,208,122,.16);border-color:var(--acento)}
+.celda.mina{background:rgba(255,92,92,.2);border-color:var(--rojo)}
+.celda.revelada{opacity:.42}
+@keyframes pop{from{transform:scale(.5)}to{transform:scale(1)}}
+.celda span{animation:pop .18s}
+
+/* aviator */
+.aviator-lienzo{flex:1;position:relative;border-radius:10px;overflow:hidden;background:#05070b;min-height:260px}
+.aviator-lienzo canvas{width:100%;height:100%;display:block}
+.mult-grande{
+  position:absolute;inset:0;display:grid;place-content:center;text-align:center;pointer-events:none;
+}
+.mult-grande .n{font-size:56px;font-weight:900;font-variant-numeric:tabular-nums;text-shadow:0 4px 24px rgba(0,0,0,.7)}
+.mult-grande .est{font-size:14px;font-weight:700;letter-spacing:2px;text-transform:uppercase;margin-top:4px}
+.historial-mult{display:flex;gap:6px;overflow-x:auto;padding:8px 0 2px;scrollbar-width:none}
+.historial-mult::-webkit-scrollbar{display:none}
+.pill{padding:3px 10px;border-radius:20px;font-size:12px;font-weight:800;font-variant-numeric:tabular-nums;white-space:nowrap;border:1px solid}
+.pill.bajo{background:rgba(74,168,255,.12);color:var(--azul);border-color:rgba(74,168,255,.3)}
+.pill.medio{background:rgba(166,120,255,.12);color:var(--morado);border-color:rgba(166,120,255,.3)}
+.pill.alto{background:rgba(255,194,71,.12);color:var(--ambar);border-color:rgba(255,194,71,.35)}
+
+/* limbo */
+.limbo-pantalla{flex:1;display:grid;place-content:center;text-align:center;gap:8px}
+.limbo-pantalla .res{font-size:64px;font-weight:900;font-variant-numeric:tabular-nums;transition:color .2s}
+.limbo-pantalla .msg{font-size:13px;color:var(--tenue)}
+.limbo-hist{display:flex;flex-wrap:wrap;gap:5px;justify-content:center;margin-top:10px}
+
+/* plinko */
+.plinko-lienzo{flex:1;min-height:300px;position:relative}
+.plinko-lienzo canvas{width:100%;height:100%;display:block}
+.plinko-cubos{display:flex;gap:3px;margin-top:6px}
+.plinko-cubos div{flex:1;text-align:center;font-size:10.5px;font-weight:800;padding:4px 1px;border-radius:5px;background:var(--panel2)}
+
+/* slot */
+.slot-marco{background:linear-gradient(180deg,#141c2b,#0c121c);border:1px solid var(--linea);border-radius:12px;padding:12px;margin:auto;width:100%;max-width:560px}
+.slot-rejilla{display:grid;grid-template-columns:repeat(6,1fr);gap:5px}
+.slot-col{display:flex;flex-direction:column;gap:6px}
+.slot-sim{
+  aspect-ratio:1;background:var(--panel2);border:1px solid var(--linea);border-radius:8px;
+  display:grid;place-items:center;font-size:21px;transition:.12s;
+}
+.slot-sim.gana{background:rgba(255,194,71,.18);border-color:var(--ambar);transform:scale(1.05)}
+.slot-info{display:flex;justify-content:space-between;margin-top:10px;font-size:12px;color:var(--tenue)}
+
+/* ---------- cuenta ---------- */
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px}
+.kpi{display:flex;flex-direction:column;gap:2px;padding:12px;background:var(--bg2);border:1px solid var(--linea);border-radius:10px}
+.kpi .et{font-size:11px;color:var(--tenue2);text-transform:uppercase;letter-spacing:.7px;font-weight:700}
+.kpi .vl{font-size:21px;font-weight:800;font-variant-numeric:tabular-nums}
+.barra{height:7px;background:var(--panel3);border-radius:4px;overflow:hidden;margin-top:6px}
+.barra i{display:block;height:100%;background:var(--acento);border-radius:4px;transition:width .4s}
+.tabla{width:100%;border-collapse:collapse;font-size:13px}
+.tabla th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--tenue2);padding:7px 9px;border-bottom:1px solid var(--linea)}
+.tabla td{padding:8px 9px;border-bottom:1px solid rgba(38,51,74,.55);font-variant-numeric:tabular-nums}
+.tabla tr:last-child td{border-bottom:none}
+.pos{color:var(--acento)}.neg{color:var(--rojo)}
+
+/* ---------- toasts ---------- */
+#toasts{position:fixed;bottom:18px;right:18px;z-index:400;display:flex;flex-direction:column;gap:8px;align-items:flex-end;pointer-events:none}
+.toast{
+  background:var(--panel2);border:1px solid var(--linea);border-left:3px solid var(--acento);
+  border-radius:9px;padding:10px 14px;font-size:13.5px;font-weight:600;box-shadow:var(--sombra);
+  animation:entra .2s;max-width:330px;
+}
+.toast.err{border-left-color:var(--rojo)}
+.toast.warn{border-left-color:var(--ambar)}
+@keyframes entra{from{transform:translateX(30px);opacity:0}to{transform:none;opacity:1}}
+
+/* ---------- varios ---------- */
+.info-bloque{background:var(--bg2);border:1px solid var(--linea);border-radius:10px;padding:12px 14px;font-size:13px;color:var(--tenue);line-height:1.6}
+.info-bloque h4{color:var(--texto);font-size:13.5px;margin-bottom:5px}
+.info-bloque code{font-family:var(--mono);background:var(--panel2);padding:1px 5px;border-radius:4px;font-size:12px;color:var(--ambar)}
+.formula{font-family:var(--mono);font-size:12.5px;background:var(--bg);border:1px solid var(--linea);border-radius:8px;padding:10px 12px;color:var(--acento);overflow-x:auto;white-space:pre;margin:8px 0}
+.vacio{padding:40px 20px;text-align:center;color:var(--tenue2)}
+.vacio .ic{font-size:40px;display:block;margin-bottom:10px;opacity:.4}
+footer.pie{max-width:1400px;margin:20px auto 0;padding:20px 16px 40px;border-top:1px solid var(--linea);color:var(--tenue2);font-size:12px;line-height:1.7}
+footer.pie b{color:var(--tenue)}
+.sep{height:1px;background:var(--linea);margin:12px 0}
+
+@media(max-width:1040px){
+  .contenedor{grid-template-columns:1fr}
+  .lateral{position:static;order:-1}
+}
+@media(max-width:560px){
+  .top-fila{flex-wrap:wrap;gap:8px}
+  .nav{order:3;width:100%}
+  .saldo-caja{margin-left:auto}
+  .mercado.g3{grid-template-columns:repeat(3,1fr)}
+  .cuota{min-width:0}
+}
+
+/* rueda, ruleta, cartas */
+.rueda-lienzo{flex:1;min-height:300px;position:relative}
+.rueda-lienzo canvas{width:100%;height:100%;display:block}
+.opciones{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:6px;margin-top:10px}
+.opciones button{background:var(--panel2);border:1px solid var(--linea);border-radius:8px;padding:7px 6px;font-size:12px;font-weight:700;color:var(--tenue);display:flex;flex-direction:column;gap:2px}
+.opciones button:hover{background:var(--panel3);color:var(--texto)}
+.opciones button.on{background:var(--acento);border-color:var(--acento);color:#04120a}
+.opciones button i{font-style:normal;font-size:10.5px;opacity:.8}
+.mesa{flex:1;display:flex;flex-direction:column;gap:14px;justify-content:center}
+.mano{display:flex;flex-direction:column;gap:6px}
+.mano .et{font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--tenue2);font-weight:700}
+.cartas{display:flex;gap:7px;flex-wrap:wrap}
+.carta{
+  width:56px;height:78px;border-radius:8px;background:#f6f7fb;color:#12161f;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  font-weight:800;font-size:17px;box-shadow:0 4px 12px rgba(0,0,0,.4);animation:pop .18s;
+}
+.carta.roja{color:#d02020}
+.carta.dorso{background:linear-gradient(135deg,#1d3a6b,#0d1b33);color:#4a6ea8;font-size:22px}
+.carta.hold{outline:2px solid var(--acento);outline-offset:2px}
+.carta small{font-size:10px;opacity:.7;font-weight:700}
+.acciones{display:flex;gap:8px;flex-wrap:wrap}
+.acciones .btn{flex:1;min-width:92px}
+.resultado{text-align:center;font-weight:800;font-size:15px;min-height:22px}
+.ruleta-num{font-size:44px;font-weight:900;text-align:center;font-variant-numeric:tabular-nums}
+.tabla-pagos{width:100%;font-size:12px;border-collapse:collapse;margin-top:8px}
+.tabla-pagos td{padding:3px 6px;border-bottom:1px solid var(--linea)}
+.tabla-pagos td:last-child{text-align:right;color:var(--acento);font-weight:700}
+.tabla-pagos tr.gana td{background:rgba(37,208,122,.14)}
