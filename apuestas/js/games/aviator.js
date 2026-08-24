@@ -292,6 +292,8 @@ K.Juegos.aviator = function (root, juego) {
     neto = K.round2(neto + premio - apuesta);
     sNeto.set(K.sol(neto));
     K.aviso('Cobraste ' + K.sol(premio) + ' en ' + K.dec(m) + '×', 'ok');
+    if (K.Progreso) K.Progreso.registrar('crash', { mult: m });
+    if (m >= 5) K.confeti(70);
     nEst.textContent = 'cobrado en ' + K.dec(m) + '×';
     apuesta = 0;
     btn.disabled = true;

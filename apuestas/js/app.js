@@ -35,6 +35,7 @@ K.App = (() => {
     { id: 'deportes', nom: 'Deportes', ic: 'futbol', slip: true, lateral: 'deportes' },
     { id: 'vivo', nom: 'En vivo', ic: 'rayo', slip: true, lateral: 'deportes' },
     { id: 'casino', nom: 'Casino', ic: 'casino', lateral: 'casino' },
+    { id: 'recompensas', nom: 'Recompensas', ic: 'copa' },
     { id: 'apuestas', nom: 'Mis apuestas', ic: 'recibo', lateral: 'deportes' },
     { id: 'cuenta', nom: 'Cuenta', ic: 'usuario' },
     { id: 'como', nom: 'Cómo funciona', ic: 'grafico' }
@@ -50,9 +51,11 @@ K.App = (() => {
     const pend = K.Wallet.est().apuestas.filter(a => a.estado === 'pendiente').length;
     VISTAS.forEach(v => {
       const b = K.el('button', { class: vista === v.id ? 'on' : '', onclick: () => ir(v.id) });
+      const listas = K.Progreso ? K.Progreso.misionesListas() : 0;
       b.innerHTML = K.ic(v.ic) + '<span>' + v.nom + '</span>' +
         (v.id === 'vivo' && vivos ? `<span class="pip vivo">${vivos}</span>` : '') +
-        (v.id === 'apuestas' && pend ? `<span class="pip">${pend}</span>` : '');
+        (v.id === 'apuestas' && pend ? `<span class="pip">${pend}</span>` : '') +
+        (v.id === 'recompensas' && listas ? `<span class="pip">${listas}</span>` : '');
       nav.appendChild(b);
     });
     const logo = K.$('#logo');
@@ -87,6 +90,7 @@ K.App = (() => {
       K.Sportsbook.pintarBoleto();
     } else if (vista === 'casino') K.Casino.vista(main);
     else if (vista === 'apuestas') K.Sportsbook.vistaApuestas(main);
+    else if (vista === 'recompensas') vistaRecompensas(main);
     else if (vista === 'cuenta') vistaCuenta(main);
     else if (vista === 'como') vistaComoFunciona(main);
   }
@@ -169,6 +173,29 @@ K.App = (() => {
         ${K.ic('reloj')} ${min} min jugando<br>
         ${K.ic('billetera')} límite ${K.sol(Math.min(w.limites.apuestaMax, w.perfil.limiteApuesta))} por apuesta
       </div>`);
+    const listas = K.Progreso.misionesListas();
+    const mis = K.Progreso.misionLista();
+    if (mis.length) {
+      const cm = K.el('div', { class: 'menu-lat' });
+      cm.appendChild(K.el('h4', { text: 'Misiones de hoy' }));
+      mis.forEach((m, i) => {
+        const pc = Math.min(100, m.progreso / m.meta * 100);
+        const b = K.el('button', { onclick: () => ir('recompensas') });
+        b.innerHTML = `${K.ic(K.Progreso.misionCompleta(m) ? 'copa' : 'objetivo')}
+          <span style="flex:1">
+            <span style="display:block;font-size:12px;line-height:1.3">${K.esc(m.txt)}</span>
+            <span class="barra" style="margin-top:5px"><i style="width:${pc}%"></i></span>
+          </span>`;
+        if (m.cobrada) b.style.opacity = '.45';
+        cm.appendChild(b);
+      });
+      if (listas) cm.appendChild(K.el('div', {
+        style: 'padding:6px 9px;font-size:11.5px;color:var(--naranja);font-weight:700',
+        text: listas + (listas === 1 ? ' misión lista para cobrar' : ' misiones listas para cobrar')
+      }));
+      izq.appendChild(cm);
+    }
+
     const bDiaria = K.el('button', {
       class: K.Diaria.disponible() ? 'on' : '',
       onclick: () => K.Diaria.abrir()
@@ -313,6 +340,137 @@ K.App = (() => {
         <td class="${l.monto >= 0 ? 'pos' : 'neg'}">${l.monto >= 0 ? '+' : ''}${K.sol(l.monto)}</td>
         <td>${K.sol(l.saldo)}</td></tr>`).join('');
     root.appendChild(caja('Libro mayor de la cuenta', K.el('div', { class: 'tabla-scroll' }, [t])));
+  }
+
+  /* =========================================================
+     RECOMPENSAS
+     ========================================================= */
+  function vistaRecompensas(root) {
+    const p = K.Progreso.est();
+    root.innerHTML = '';
+    root.appendChild(barraSec('Recompensas', 'niveles, misiones, torneo y jackpot', 'copa'));
+
+    /* --- nivel --- */
+    const falta = K.Progreso.xpNivel(p.nivel) - p.xp;
+    const pct = p.xp / K.Progreso.xpNivel(p.nivel) * 100;
+    const nivel = K.el('div');
+    nivel.innerHTML = `
+      <div class="grid2" style="margin-bottom:12px">
+        <div class="kpi"><span class="et">Nivel actual</span><span class="vl">${p.nivel} · ${K.Progreso.nombreNivel(p.nivel)}</span></div>
+        <div class="kpi"><span class="et">XP para el próximo</span><span class="vl">${falta}</span></div>
+        <div class="kpi"><span class="et">Premio del próximo nivel</span><span class="vl pos">${K.sol(K.Progreso.premioNivel(p.nivel + 1))}</span></div>
+        <div class="kpi"><span class="et">Giros gratis</span><span class="vl">${p.girosGratis}</span></div>
+      </div>
+      <div class="barra" style="height:10px"><i style="width:${pct}%"></i></div>
+      <div style="margin-top:6px;font-size:11.5px;color:var(--tenue-2)">
+        Ganas 1 XP por cada S/ 5 que apuestes, en deportes o en casino. Cada tres niveles caen además 5 giros gratis.
+      </div>`;
+    root.appendChild(caja('Tu nivel', nivel));
+
+    /* --- misiones --- */
+    const cont = K.el('div', { class: 'grid2' });
+    K.Progreso.misionLista().forEach((m, i) => {
+      const listo = K.Progreso.misionCompleta(m);
+      const pc = Math.min(100, m.progreso / m.meta * 100);
+      const nodo = K.el('div', { class: 'mision' + (listo ? ' lista' : '') });
+      const prog = m.id === 'volumen' ? K.sol(m.progreso) + ' de ' + K.sol(m.meta)
+        : Math.min(m.progreso, m.meta) + ' de ' + m.meta;
+      nodo.innerHTML = `
+        <span class="txt">${K.esc(m.txt)}</span>
+        <span class="prog"><span class="barra"><i style="width:${pc}%"></i></span>${prog}</span>`;
+      const pie = K.el('div', { class: 'pie' });
+      pie.appendChild(K.el('span', { class: 'premio', text: K.sol(m.premio) + ' + 40 XP' }));
+      if (m.cobrada) pie.appendChild(K.el('span', { style: 'margin-left:auto;color:var(--verde-2);font-weight:700;font-size:12px', text: 'cobrada' }));
+      else {
+        const btn = K.el('button', {
+          class: 'btn chico' + (listo ? '' : ' sec'), text: listo ? 'Cobrar' : 'En progreso',
+          onclick: () => { if (K.Progreso.cobrarMision(i)) { pintar(); actualizarSaldo(); } }
+        });
+        btn.disabled = !listo;
+        pie.appendChild(btn);
+      }
+      nodo.appendChild(pie);
+      cont.appendChild(nodo);
+    });
+    const misCaja = caja('Misiones de hoy · se renuevan a medianoche', cont);
+    root.appendChild(misCaja);
+
+    /* --- jackpot --- */
+    const jp = K.el('div');
+    jp.innerHTML = `
+      <div class="jackpot-caja">
+        <div class="et">Jackpot progresivo</div>
+        <div class="monto" id="jackpot-monto">${K.sol(K.Progreso.jackpot())}</div>
+        <div class="nota">Crece con el ${(K.Progreso.APORTE * 100).toFixed(1)}% de cada apuesta del casino
+        y puede caer en cualquier giro de tragamonedas. Cuanto mayor la apuesta, más chances por giro.</div>
+      </div>`;
+    root.appendChild(caja('Bote acumulado', jp));
+
+    /* --- diaria y cashback --- */
+    const bonos = K.el('div', { class: 'grid2' });
+    const cbDisp = K.Progreso.cashbackDisponible();
+    const cajaDiaria = K.el('div', { class: 'mision' });
+    cajaDiaria.innerHTML = `<span class="txt">Ruleta diaria</span>
+      <span class="prog">${K.Diaria.disponible() ? 'Tu giro está disponible' : 'Vuelve en ' + K.Diaria.reloj(K.Diaria.restante())}</span>`;
+    const bd = K.el('div', { class: 'pie' }, [
+      K.el('span', { class: 'premio', text: 'hasta ' + K.sol(1500) }),
+      K.el('button', { class: 'btn chico', text: 'Abrir', onclick: () => K.Diaria.abrir() })
+    ]);
+    cajaDiaria.appendChild(bd);
+    bonos.appendChild(cajaDiaria);
+
+    const cajaCb = K.el('div', { class: 'mision' + (cbDisp >= 1 ? ' lista' : '') });
+    cajaCb.innerHTML = `<span class="txt">Cashback semanal del ${(K.Progreso.CASHBACK * 100)}%</span>
+      <span class="prog">Pérdidas netas de la semana: ${K.sol(p.cashback.perdidas)}</span>`;
+    const bcb = K.el('div', { class: 'pie' }, [
+      K.el('span', { class: 'premio', text: K.sol(cbDisp) })
+    ]);
+    const btnCb = K.el('button', {
+      class: 'btn chico' + (cbDisp >= 1 ? '' : ' sec'), text: 'Cobrar',
+      onclick: () => { K.Progreso.cobrarCashback(); pintar(); actualizarSaldo(); }
+    });
+    btnCb.disabled = cbDisp < 1;
+    bcb.appendChild(btnCb);
+    cajaCb.appendChild(bcb);
+    bonos.appendChild(cajaCb);
+    root.appendChild(caja('Bonos activos', bonos));
+
+    /* --- torneo --- */
+    const t = K.el('div');
+    const filas = K.Progreso.tabla();
+    const miPos = filas.findIndex(f => f.yo) + 1;
+    t.innerHTML = `<div class="info-bloque" style="margin-bottom:10px">
+      Ranking de la semana <b>${K.Progreso.semana()}</b> por volumen apostado. Vas <b>${miPos}º</b> de ${filas.length}.
+      Premios: ${K.Progreso.PREMIOS_TORNEO.map((x, i) => (i + 1) + 'º ' + K.sol(x)).join(' · ')}.
+      Los rivales son simulados: nadie está jugando contra ti de verdad.</div>`;
+    filas.forEach((f, i) => {
+      const fila = K.el('div', { class: 'fila-torneo' + (f.yo ? ' yo' : '') });
+      fila.innerHTML = `<span class="pos">${i + 1}º</span>
+        <span class="medalla">${i < 3 ? ['🥇', '🥈', '🥉'][i] : ''}</span>
+        <span>${K.esc(f.n)}</span><span class="pts">${f.p.toLocaleString('es-PE')} pts</span>`;
+      t.appendChild(fila);
+    });
+    root.appendChild(caja('Torneo semanal', t));
+
+    /* --- transparencia --- */
+    const tr = K.el('div', { class: 'info-bloque' });
+    tr.innerHTML = `
+      <h4>Por qué todo esto engancha</h4>
+      Cada cosa de esta página tiene un motivo de diseño, y no es que la pases bien:
+      <div class="tabla-scroll"><table class="tabla" style="margin-top:6px">
+        <tr><th>Mecánica</th><th>Qué activa</th></tr>
+        <tr><td>Misiones diarias</td><td>Te dan una razón para entrar hoy aunque no tuvieras ganas</td></tr>
+        <tr><td>Racha de la ruleta diaria</td><td>Miedo a perder lo acumulado: cortar la racha “duele” más que el premio</td></tr>
+        <tr><td>Niveles y XP</td><td>Progreso visible que sigue avanzando aunque estés perdiendo dinero</td></tr>
+        <tr><td>Jackpot progresivo</td><td>Un premio enorme e improbable que hace que cada giro “podría ser el bueno”</td></tr>
+        <tr><td>Cashback</td><td>Convierte una pérdida en una recompensa y empuja a seguir jugando</td></tr>
+        <tr><td>Torneo</td><td>Compara tu volumen con otros: premia apostar más, no apostar mejor</td></tr>
+        <tr><td>Cuotas que se mueven y cuentas atrás</td><td>Urgencia: decidir rápido y sin pensarlo</td></tr>
+      </table></div>
+      <p style="margin-top:8px">Nada de esto cambia el RTP: los premios que ves acá salen del mismo margen
+      que la casa te cobra en cada apuesta. En una plataforma real, un bono nunca es un regalo,
+      es una inversión en que sigas jugando. Acá está a la vista para que lo reconozcas cuando lo veas afuera.</p>`;
+    root.appendChild(caja('La letra chica de las recompensas', tr));
   }
 
   /* ---------- depósito y retiro ---------- */
@@ -474,7 +632,10 @@ K.App = (() => {
       </table></div>
       <p style="margin-top:8px">Una casa real hace exactamente esto: regala valor medido a cambio de que
       vuelvas, sabiendo que el margen del resto del catálogo lo recupera con creces. La racha de la
-      ruleta diaria no está para premiarte, está para que entres todos los días.</p>`;
+      ruleta diaria no está para premiarte, está para que entres todos los días.</p>
+      <p style="margin-top:8px">El sitio suma además niveles, misiones diarias, torneo semanal, cashback
+      y jackpot progresivo. En la pestaña <b>Recompensas</b> está el desglose de qué palanca psicológica
+      mueve cada uno: es la parte que ninguna casa real te va a explicar.</p>`;
     root.appendChild(caja('Promociones y bonos', b7));
   }
 
@@ -485,14 +646,37 @@ K.App = (() => {
     K.$('#saldo').textContent = K.sol(K.Wallet.est().saldo);
   }
 
+  function actualizarNivel() {
+    const chip = K.$('#nivel-chip');
+    if (!chip || !K.Progreso) return;
+    const p = K.Progreso.est();
+    K.$('.n', chip).textContent = p.nivel;
+    K.$('.et', chip).textContent = K.Progreso.nombreNivel(p.nivel);
+    K.$('.barra i', chip).style.width = (p.xp / K.Progreso.xpNivel(p.nivel) * 100) + '%';
+    chip.title = `Nivel ${p.nivel} · ${p.xp} de ${K.Progreso.xpNivel(p.nivel)} XP`;
+  }
+
   function iniciar() {
     K.Wallet.init();
+    K.Progreso.init();
     actualizarSaldo();
+    actualizarNivel();
     pintarNav();
     pintar();
     K.Sportsbook.iniciar();
 
     K.bus.on('saldo', actualizarSaldo);
+    K.bus.on('xp', actualizarNivel);
+    K.bus.on('progreso', () => {
+      actualizarNivel();
+      pintarNav();
+      if (vista === 'recompensas') pintar();
+      if (K.$('#lat-izq').style.display !== 'none') {
+        const conf = VISTAS.find(v => v.id === vista);
+        if (conf && conf.lateral) pintarLateral(conf.lateral);
+      }
+    });
+    K.$('#nivel-chip').onclick = () => ir('recompensas');
     K.bus.on('apuestas', () => { pintarNav(); if (vista === 'apuestas') pintar(); });
     K.bus.on('lista', () => {
       pintarNav();

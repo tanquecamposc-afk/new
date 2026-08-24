@@ -33,6 +33,9 @@ K.ICONOS = {
   pausa: '<circle cx="12" cy="12" r="9"/><path d="M10 9v6M14 9v6"/>',
   mas: '<path d="M12 5v14M5 12h14"/>',
   chevron: '<path d="m9 6 6 6-6 6"/>',
+  copa: '<path d="M8 4h8v4a4 4 0 0 1-8 0V4Z"/><path d="M8 5H5v2a3 3 0 0 0 3 3M16 5h3v2a3 3 0 0 1-3 3M10 20h4M12 15v5"/>',
+  objetivo: '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="1"/>',
+  subir: '<path d="M12 20V6M6 12l6-6 6 6"/>',
   regalo: '<rect x="3" y="8" width="18" height="13" rx="2"/><path d="M3 12h18M12 8v13"/><path d="M12 8S9.5 4.5 7.5 5.2 6.6 8 8.5 8h3.5ZM12 8s2.5-3.5 4.5-2.8S17.4 8 15.5 8H12Z"/>',
   moneda: '<circle cx="12" cy="12" r="8"/><path d="M12 8v8M9.8 9.8h3.4a1.7 1.7 0 0 1 0 3.4h-2.4a1.7 1.7 0 0 0 0 3.4h3.4"/>',
   refresco: '<path d="M4 12a8 8 0 0 1 13.7-5.7L20 8"/><path d="M20 4v4h-4"/><path d="M20 12a8 8 0 0 1-13.7 5.7L4 16"/><path d="M4 20v-4h4"/>'
@@ -52,6 +55,48 @@ K.icNodo = (nombre, clase = '') => {
   cont.className = 'ic-wrap';
   cont.innerHTML = K.ic(nombre, clase);
   return cont.firstElementChild || cont;
+};
+
+/* Lluvia de confeti para los momentos grandes: subir de nivel,
+   completar una misión o reventar el jackpot. */
+K.confeti = (cantidad = 80) => {
+  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const cv = document.createElement('canvas');
+  cv.className = 'confeti';
+  cv.width = innerWidth * devicePixelRatio;
+  cv.height = innerHeight * devicePixelRatio;
+  document.body.appendChild(cv);
+  const ctx = cv.getContext('2d');
+  const cols = ['#ff5500', '#fbbf24', '#22c55e', '#38bdf8', '#a78bfa', '#f43f5e', '#ffffff'];
+  const trozos = [];
+  for (let i = 0; i < cantidad; i++) {
+    trozos.push({
+      x: Math.random() * cv.width,
+      y: -Math.random() * cv.height * 0.35,
+      vx: (Math.random() - .5) * 2.4 * devicePixelRatio,
+      vy: (1.8 + Math.random() * 3) * devicePixelRatio,
+      w: (5 + Math.random() * 7) * devicePixelRatio,
+      h: (7 + Math.random() * 9) * devicePixelRatio,
+      giro: Math.random() * Math.PI, vg: (Math.random() - .5) * .22,
+      c: cols[Math.floor(Math.random() * cols.length)]
+    });
+  }
+  const t0 = performance.now();
+  const paso = ahora => {
+    ctx.clearRect(0, 0, cv.width, cv.height);
+    trozos.forEach(t => {
+      t.x += t.vx; t.y += t.vy; t.vy += .035 * devicePixelRatio; t.giro += t.vg;
+      ctx.save();
+      ctx.translate(t.x, t.y);
+      ctx.rotate(t.giro);
+      ctx.fillStyle = t.c;
+      ctx.globalAlpha = Math.max(0, 1 - (ahora - t0) / 2600);
+      ctx.fillRect(-t.w / 2, -t.h / 2, t.w, t.h);
+      ctx.restore();
+    });
+    if (ahora - t0 < 2600) requestAnimationFrame(paso); else cv.remove();
+  };
+  requestAnimationFrame(paso);
 };
 
 /* Icono por deporte, para no repetir el mapeo en cada vista. */

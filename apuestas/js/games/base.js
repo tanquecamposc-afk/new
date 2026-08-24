@@ -15,6 +15,13 @@ K.G = (() => {
     w.casino.jugadas++;
     w.casino.apostado = K.round2(w.casino.apostado + monto);
     K.Wallet.persistir();
+    if (K.Progreso) {
+      K.Progreso.registrar('casino', {
+        monto, juego: juegoActual ? juegoActual.id : '', motor: juegoActual ? juegoActual.motor : ''
+      });
+      K.Progreso.aportarJackpot(monto);
+      K.Progreso.resultado(-monto);
+    }
     return true;
   }
 
@@ -23,6 +30,7 @@ K.G = (() => {
     const w = K.Wallet.est();
     w.casino.devuelto = K.round2(w.casino.devuelto + monto);
     K.Wallet.acreditar(monto, det || ('Casino · ' + (juegoActual ? juegoActual.nom : '')), 'premio');
+    if (K.Progreso) { K.Progreso.registrar('ganada', {}); K.Progreso.resultado(monto); }
   }
 
   /* Campo de monto con los atajos típicos de la industria. */

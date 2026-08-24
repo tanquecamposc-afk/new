@@ -39,11 +39,29 @@ node tools/build.js          # → dist/kronosbet.html
 
 Deportes: fútbol, básquet, tenis, eSports y vóley. Los partidos no están escritos a mano: cada liga
 define su plantel con un rating por equipo y de ahí salen los emparejamientos, los horarios y los
-parámetros del modelo. En total, **unos 150 eventos en 30 competiciones** —Liga 1, Liga Profesional
+parámetros del modelo. En total, **unos 230 eventos en 51 competiciones** —Liga 1, Liga Profesional
 argentina, Brasileirão, LaLiga, Premier, Serie A, Bundesliga, Ligue 1, Champions, Libertadores,
-Sudamericana, Liga MX, MLS, Eliminatorias, seis torneos de tenis ATP y WTA, NBA, ACB, CS2, LoL, Dota,
-Valorant y tres ligas de vóley— con hasta 7 mercados por partido, teletipo de marcadores en vivo,
+Sudamericana, Liga MX, MLS, Eredivisie, Liga Portugal, Süper Lig, Championship, Chile, Colombia,
+Ecuador, Uruguay, Saudi Pro League, Copa del Rey, Eliminatorias, nueve torneos de tenis ATP y WTA,
+NBA, EuroLeague, ACB, ligas de Argentina y Brasil, CS2, LoL, Dota, Valorant, Rainbow Six, Rocket
+League y cinco ligas de vóley— con hasta 7 mercados por partido, teletipo de marcadores en vivo,
 buscador por equipo y ficha de partido con estadísticas y la gráfica de cómo se movió la cuota.
+
+### Progresión y enganche
+
+El sitio incluye la capa de retención completa de una casa real, con su explicación al lado:
+
+| Sistema | Cómo funciona |
+|---|---|
+| Niveles y XP | 1 XP por cada S/ 5 apostados; cada nivel paga fichas y cada tres niveles suma 5 giros gratis |
+| Misiones diarias | Tres objetivos que se renuevan a medianoche (giros, apuestas, deportes distintos, crash a 2×…) con premio y XP |
+| Torneo semanal | Ranking por volumen apostado contra nueve rivales simulados, con premios al podio |
+| Cashback semanal | Devuelve el 5% de las pérdidas netas de la semana |
+| Jackpot progresivo | Crece con el 0.5% de cada apuesta del casino y puede caer en cualquier giro de tragamonedas |
+
+La pestaña **Recompensas** cierra con una tabla que dice qué palanca activa cada mecánica —miedo a
+cortar la racha, progreso visible mientras pierdes, premio improbable, pérdida convertida en
+recompensa— y recuerda que ninguna de ellas cambia el RTP.
 
 ### Ruleta diaria
 
@@ -88,6 +106,7 @@ css/styles.css
 js/core.js          utilidades, formato, azar, persistencia
 js/ui.js            set de iconos SVG en línea
 js/diaria.js        ruleta diaria de recompensas
+js/progreso.js      niveles, misiones, torneo, cashback y jackpot
 js/odds.js          modelos de probabilidad, margen, cashout
 js/wallet.js        saldo, libro mayor, límites, perfilado
 js/data-sports.js   catálogo de eventos

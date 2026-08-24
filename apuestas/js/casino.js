@@ -33,6 +33,7 @@ K.Casino = (() => {
       motores propios con la matemática a la vista: cada juego muestra su RTP, su tabla de pagos y de
       dónde sale la ventaja de la casa.</p>
       <div class="tags">
+        <span class="tag jackpot-tag">Jackpot: <b id="jackpot-lobby">${K.sol(K.Progreso.jackpot())}</b></span>
         <span class="tag">Crash y multiplicadores</span>
         <span class="tag">Ruleta con rueda real</span>
         <span class="tag">Game shows</span>

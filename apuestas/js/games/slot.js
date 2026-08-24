@@ -50,11 +50,19 @@ K.Juegos.slot = function (root, juego) {
   const sGratis = K.G.stat('Giros gratis', '0');
   const sRTP = K.G.stat('RTP teórico', (RTP * 100).toFixed(1) + '%');
 
-  const btn = K.el('button', { class: 'btn', text: 'Girar' });
-  const btnAuto = K.el('button', { class: 'btn sec', text: 'Auto ×15' });
+  const btn = K.el('button', { class: 'btn bloque', text: 'Girar' });
+  const btnAuto = K.el('button', { class: 'btn sec bloque', text: 'Auto ×15' });
+  const btnGratis = K.el('button', { class: 'btn verde bloque', text: 'Usar giro gratis' });
+  const jackpotPill = K.el('div', { class: 'jackpot-mini' });
+  const refrescarExtras = () => {
+    const p = K.Progreso.est();
+    btnGratis.style.display = p.girosGratis > 0 ? '' : 'none';
+    btnGratis.textContent = 'Usar giro gratis (' + p.girosGratis + ')';
+    jackpotPill.innerHTML = 'Jackpot <b>' + K.sol(K.Progreso.jackpot()) + '</b>';
+  };
 
   const panel = K.el('div', { class: 'panel-apuesta' }, [
-    monto.wrap, btn, btnAuto,
+    jackpotPill, monto.wrap, btn, btnGratis, btnAuto,
     K.el('div', { style: 'height:1px;background:var(--linea);margin:2px 0' }),
     sUlt.fila, sNeto.fila, sGiros.fila, sGratis.fila, sRTP.fila,
     K.el('div', { class: 'stat-fila' }, [K.el('span', { text: 'Volatilidad' }), K.el('b', { text: cfg.vol })])
@@ -82,11 +90,21 @@ K.Juegos.slot = function (root, juego) {
 
   let girando = false, giros = 0, gratis = 0;
 
-  async function girar(esGratis = false) {
+  async function girar(esGratis = false, gratisDeNivel = false) {
     if (girando) return 0;
     const apuesta = monto.get();
-    if (!esGratis && !K.G.apostar(apuesta)) return 0;
-    if (!esGratis) { neto = K.round2(neto - apuesta); sNeto.set(K.sol(neto)); }
+    if (gratisDeNivel) {
+      const p = K.Progreso.est();
+      if (p.girosGratis <= 0) return 0;
+      p.girosGratis--;
+      K.Wallet.persistir();
+      K.bus.emit('progreso');
+    } else if (!esGratis && !K.G.apostar(apuesta)) return 0;
+    if (!esGratis && !gratisDeNivel) {
+      neto = K.round2(neto - apuesta);
+      sNeto.set(K.sol(neto));
+      if (K.Progreso) K.Progreso.intentarJackpot(apuesta);   // el bote se juega en cada giro
+    }
     girando = true; btn.disabled = true;
     celdas.forEach(c => c.classList.remove('gana'));
     msg.textContent = '';
@@ -141,6 +159,7 @@ K.Juegos.slot = function (root, juego) {
       if (n >= MINIMO) { premio += apuesta * pagos[i] * bonoPorCantidad(n); ganadores.push(i); }
     });
     premio = K.round2(premio * (esGratis ? 2 : 1));
+    refrescarExtras();
     celdas.forEach((c, i) => { if (ganadores.includes(res[i])) c.classList.add('gana'); });
 
     if (premio > 0) {
@@ -164,6 +183,7 @@ K.Juegos.slot = function (root, juego) {
   }
 
   btn.onclick = () => girar(false);
+  btnGratis.onclick = () => girar(false, true);
   btnAuto.onclick = async () => {
     for (let i = 0; i < 15; i++) {
       if (K.Wallet.est().saldo < monto.get()) { K.aviso('Saldo insuficiente para seguir girando.', 'warn'); break; }
@@ -176,6 +196,7 @@ K.Juegos.slot = function (root, juego) {
     `<tr><td style="font-size:19px">${s}</td><td>${pagos[i] < 1 ? pagos[i].toFixed(2) : pagos[i].toFixed(1)}×</td>
      <td>${(prob[i] * 100).toFixed(1)}%</td><td>${(esperado[i] * 100).toFixed(2)}%</td></tr>`).join('');
 
+  refrescarExtras();
   root.appendChild(K.el('div', { class: 'juego-layout' }, [panel, zona]));
   root.appendChild(K.G.nota(`<h4>Tabla de pagos de ${K.esc(juego.nom)}</h4>
     <table class="tabla"><tr><th>Símbolo</th><th>Pago (8+)</th><th>Frecuencia</th><th>Rondas que paga</th></tr>${filasTabla}</table>

@@ -280,6 +280,12 @@ K.Sportsbook = (() => {
     apuestas.forEach(a => w.apuestas.unshift(a));
     K.Wallet.persistir();
 
+    if (K.Progreso) {
+      apuestas.forEach(a => K.Progreso.registrar('apuesta', { monto: a.stake, deporte: a.lineas[0].deporte }));
+      if (modo === 'combinada') K.Progreso.registrar('combinada', {});
+      K.Progreso.resultado(-apostado);
+    }
+
     boleto.lineas = [];
     boleto.procesando = false;
     pintarBoleto();
@@ -334,6 +340,7 @@ K.Sportsbook = (() => {
     ap.estado = 'cobrada';
     ap.pago = v;
     K.Wallet.acreditar(v, 'Cashout de apuesta ' + ap.id, 'cashout');
+    if (K.Progreso) K.Progreso.resultado(v);
     K.bus.emit('apuestas');
     K.aviso('💸 Cashout cobrado: ' + K.sol(v));
   }
@@ -445,6 +452,8 @@ K.Sportsbook = (() => {
         ap.estado = 'ganada';
         ap.pago = K.round2(ap.stake * cuota);
         K.Wallet.acreditar(ap.pago, 'Apuesta ganada ' + ap.id);
+        if (K.Progreso) K.Progreso.resultado(ap.pago);
+        K.confeti(60);
       }
     }
     if (hubo) { K.Wallet.persistir(); K.bus.emit('apuestas'); }

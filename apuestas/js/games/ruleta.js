@@ -397,6 +397,8 @@ K.Juegos.ruleta = function (root, juego) {
       mensaje.innerHTML = `<span style="color:var(--verde-2)">Salió el ${n} (${c}) · cobras ${K.sol(premio)}</span>
         <div style="font-size:11.5px;color:var(--tenue);font-weight:500;margin-top:3px">${detalle.join(' · ')}</div>`;
       K.aviso('Salió el ' + n + ' · ' + K.sol(premio), 'ok');
+      if (K.Progreso) K.Progreso.registrar('ruleta', {});
+      if (premio >= apostado * 8) K.confeti(90);
     } else {
       mensaje.innerHTML = `<span style="color:var(--tenue)">Salió el ${n} (${c}) · no entró ninguna de tus fichas</span>`;
     }

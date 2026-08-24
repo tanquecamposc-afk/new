@@ -106,6 +106,52 @@ K.LIGAS_FUTBOL = [
     ['Seattle Sounders', '🟢', 77], ['LA Galaxy', '⚪', 78], ['Atlanta United', '🔴', 74],
     ['Philadelphia Union', '🔵', 75], ['Cincinnati', '🟠', 76]
   ]},
+  { nom: 'Eredivisie', pais: '🇳🇱', goles: 3.2, margen: 1.05, equipos: [
+    ['PSV', '🔴', 84], ['Ajax', '⚪', 82], ['Feyenoord', '🔴', 83],
+    ['AZ Alkmaar', '🔴', 78], ['Twente', '🔴', 76], ['Utrecht', '⚪', 74],
+    ['Sparta Rotterdam', '⚪', 70], ['Go Ahead Eagles', '🟡', 69]
+  ]},
+  { nom: 'Liga Portugal', pais: '🇵🇹', goles: 2.6, margen: 1.05, equipos: [
+    ['Benfica', '🦅', 86], ['Sporting CP', '🟢', 86], ['Porto', '🔵', 85],
+    ['Braga', '🔴', 79], ['Vitória SC', '⚪', 74], ['Boavista', '⚫', 70],
+    ['Famalicão', '🔵', 71], ['Estoril', '🟡', 69]
+  ]},
+  { nom: 'Süper Lig · Turquía', pais: '🇹🇷', goles: 2.9, margen: 1.055, equipos: [
+    ['Galatasaray', '🟡', 84], ['Fenerbahçe', '🔵', 84], ['Beşiktaş', '⚫', 80],
+    ['Trabzonspor', '🔴', 78], ['Başakşehir', '🟠', 75], ['Adana Demirspor', '🔵', 72]
+  ]},
+  { nom: 'Championship · Inglaterra', pais: '🏴', goles: 2.5, margen: 1.06, equipos: [
+    ['Leeds', '⚪', 77], ['Leicester', '🔵', 78], ['Southampton', '🔴', 76],
+    ['Norwich', '🟡', 73], ['West Bromwich', '🔵', 73], ['Middlesbrough', '🔴', 72],
+    ['Coventry', '🔵', 71], ['Sunderland', '🔴', 72]
+  ]},
+  { nom: 'Primera División · Chile', pais: '🇨🇱', goles: 2.4, margen: 1.065, equipos: [
+    ['Colo-Colo', '⚪', 79], ['Universidad de Chile', '🔵', 77], ['Universidad Católica', '🔵', 76],
+    ['Huachipato', '⚫', 72], ['Palestino', '🔴', 71], ['Cobresal', '🟠', 70],
+    ['Unión Española', '🔴', 69], ['Coquimbo Unido', '🟡', 68]
+  ]},
+  { nom: 'Liga BetPlay · Colombia', pais: '🇨🇴', goles: 2.3, margen: 1.065, equipos: [
+    ['Atlético Nacional', '🟢', 78], ['Millonarios', '🔵', 76], ['América de Cali', '🔴', 75],
+    ['Junior', '🔴', 75], ['Deportivo Cali', '🟢', 72], ['Santa Fe', '🔴', 73],
+    ['Once Caldas', '⚪', 70], ['Tolima', '🟡', 73]
+  ]},
+  { nom: 'LigaPro · Ecuador', pais: '🇪🇨', goles: 2.3, margen: 1.07, equipos: [
+    ['Independiente del Valle', '🟣', 80], ['LDU Quito', '⚪', 78], ['Barcelona SC', '🟡', 76],
+    ['Emelec', '🔵', 73], ['Aucas', '🔴', 71], ['Delfín', '🐬', 69]
+  ]},
+  { nom: 'Primera División · Uruguay', pais: '🇺🇾', goles: 2.4, margen: 1.07, equipos: [
+    ['Nacional', '⚪', 78], ['Peñarol', '🟡', 78], ['Defensor Sporting', '🟣', 71],
+    ['Liverpool FC', '⚫', 72], ['Danubio', '🔵', 69], ['Montevideo City', '🔵', 70]
+  ]},
+  { nom: 'Saudi Pro League', pais: '🇸🇦', goles: 2.9, margen: 1.05, equipos: [
+    ['Al Hilal', '🔵', 85], ['Al Nassr', '🟡', 83], ['Al Ittihad', '🟡', 81],
+    ['Al Ahli', '🟢', 80], ['Al Shabab', '⚪', 74], ['Al Ettifaq', '🟢', 72]
+  ]},
+  { nom: 'Copa del Rey', pais: '🇪🇸', goles: 2.7, margen: 1.055, equipos: [
+    ['Real Madrid', '⚪', 94], ['Barcelona', '🔵', 92], ['Atlético de Madrid', '🔴', 88],
+    ['Athletic Club', '🔴', 83], ['Betis', '🟢', 80], ['Osasuna', '🔴', 74],
+    ['Getafe', '🔵', 73], ['Alavés', '🔵', 71], ['Levante', '🔵', 70], ['Zaragoza', '⚪', 68]
+  ]},
   { nom: 'Eliminatorias CONMEBOL', pais: '🌎', goles: 2.3, margen: 1.05, equipos: [
     ['Argentina', '🇦🇷', 93], ['Brasil', '🇧🇷', 89], ['Uruguay', '🇺🇾', 86],
     ['Colombia', '🇨🇴', 85], ['Ecuador', '🇪🇨', 82], ['Perú', '🇵🇪', 76],
@@ -146,6 +192,21 @@ K.TORNEOS_TENIS = [
     ['N. Podoroska', '🇦🇷', 75], ['J. Cristian', '🇷🇴', 76], ['L. Bronzetti', '🇮🇹', 77],
     ['R. Zarazúa', '🇲🇽', 74], ['F. Jorge', '🇵🇪', 70]
   ]},
+  { nom: 'ATP 500 · Barcelona', margen: 1.048, jugadores: [
+    ['C. Alcaraz', '🇪🇸', 95], ['C. Ruud', '🇳🇴', 86], ['S. Tsitsipas', '🇬🇷', 85],
+    ['A. de Miñaur', '🇦🇺', 86], ['K. Khachanov', '🇷🇺', 82], ['J. Munar', '🇪🇸', 76],
+    ['A. Davidovich', '🇪🇸', 80], ['P. Carreño', '🇪🇸', 78]
+  ]},
+  { nom: 'WTA 500 · Stuttgart', margen: 1.052, jugadores: [
+    ['I. Świątek', '🇵🇱', 95], ['E. Rybakina', '🇰🇿', 91], ['M. Sakkari', '🇬🇷', 84],
+    ['O. Jabeur', '🇹🇳', 85], ['V. Kudermetova', '🇷🇺', 82], ['L. Samsonova', '🇷🇺', 83],
+    ['A. Kalinskaya', '🇷🇺', 81], ['D. Vekić', '🇭🇷', 82]
+  ]},
+  { nom: 'ATP Challenger · Santiago', margen: 1.07, jugadores: [
+    ['N. Jarry', '🇨🇱', 80], ['A. Tabilo', '🇨🇱', 80], ['T. Barrios Vera', '🇨🇱', 73],
+    ['G. Ugo Carabelli', '🇦🇷', 74], ['J. M. Cerúndolo', '🇦🇷', 78], ['I. Buse', '🇵🇪', 72],
+    ['C. Garín', '🇨🇱', 76], ['F. Coria', '🇦🇷', 74]
+  ]},
   { nom: 'ATP 250 · Buenos Aires', margen: 1.055, jugadores: [
     ['C. Alcaraz', '🇪🇸', 95], ['N. Jarry', '🇨🇱', 80], ['F. Cerúndolo', '🇦🇷', 83],
     ['S. Báez', '🇦🇷', 82], ['L. Darderi', '🇮🇹', 78], ['C. Ugo Carabelli', '🇦🇷', 74],
@@ -167,6 +228,19 @@ K.LIGAS_BASKET = [
     ['Real Madrid B.', '⚪', 90], ['Barça Bàsquet', '🔵', 88], ['Unicaja', '🟢', 84],
     ['Valencia Basket', '🟠', 85], ['Baskonia', '🔵', 83], ['Gran Canaria', '🟡', 80],
     ['Joventut', '🟢', 79], ['Tenerife', '🔵', 82]
+  ]},
+  { nom: 'EuroLeague', margen: 1.045, total: 164, equipos: [
+    ['Real Madrid B.', '⚪', 90], ['Panathinaikos', '🟢', 88], ['Olympiacos', '🔴', 88],
+    ['Fenerbahçe B.', '🟡', 87], ['Barça Bàsquet', '🔵', 88], ['Mónaco B.', '🔴', 85],
+    ['Maccabi Tel Aviv', '🟡', 84], ['Zalgiris', '🟢', 83]
+  ]},
+  { nom: 'Liga Nacional · Argentina', margen: 1.06, total: 158, equipos: [
+    ['Boca Juniors B.', '🔵', 80], ['Instituto', '🔴', 79], ['Quimsa', '🟢', 81],
+    ['Obras Sanitarias', '⚪', 76], ['Peñarol MdP', '🟡', 77], ['San Lorenzo B.', '🔵', 78]
+  ]},
+  { nom: 'NBB · Brasil', margen: 1.06, total: 164, equipos: [
+    ['Flamengo B.', '🔴', 82], ['Franca', '🔵', 83], ['Minas B.', '⚪', 79],
+    ['São Paulo B.', '🔴', 78], ['Paulistano', '⚫', 76], ['Pinheiros B.', '🟢', 75]
   ]},
   { nom: 'Basketball Champions League', margen: 1.055, total: 158, equipos: [
     ['Unicaja', '🟢', 84], ['Tenerife', '🔵', 82], ['Hapoel Jerusalem', '🔴', 79],
@@ -190,6 +264,18 @@ K.LIGAS_ESPORTS = [
     ['Team Spirit', '⬛', 92], ['Gaimin Gladiators', '🔵', 88], ['Falcons', '🦅', 89],
     ['Liquid', '🔵', 88], ['Tundra', '🟣', 85], ['BetBoom', '🟡', 86]
   ]},
+  { nom: 'LoL · LEC', margen: 1.06, bo: 3, equipos: [
+    ['G2 Esports', '⬛', 90], ['Fnatic', '🟠', 87], ['MAD Lions', '🦁', 84],
+    ['Team Vitality', '🐝', 85], ['Rogue', '🔵', 83], ['SK Gaming', '⚫', 80]
+  ]},
+  { nom: 'Rainbow Six · SI', margen: 1.065, bo: 3, equipos: [
+    ['G2 R6', '⬛', 87], ['FaZe R6', '🟥', 88], ['Team BDS', '🔵', 86],
+    ['Wolves', '🐺', 84], ['Spacestation', '🚀', 82], ['FURIA R6', '🐆', 83]
+  ]},
+  { nom: 'Rocket League · RLCS', margen: 1.07, bo: 5, equipos: [
+    ['Team BDS RL', '🔵', 88], ['Karmine Corp', '🔷', 86], ['G2 RL', '⬛', 85],
+    ['NRG RL', '⚫', 84], ['Vitality RL', '🐝', 87], ['Gen.G RL', '🟡', 82]
+  ]},
   { nom: 'Valorant · VCT Américas', margen: 1.065, bo: 3, equipos: [
     ['Sentinels', '🔴', 86], ['LOUD', '🟢', 87], ['NRG', '⚫', 85],
     ['Leviatán', '🟪', 86], ['MIBR', '🔵', 83], ['KRÜ', '🟡', 84]
@@ -206,6 +292,14 @@ K.LIGAS_VOLLEY = [
     ['Brasil', '🇧🇷', 90], ['Italia', '🇮🇹', 91], ['Polonia', '🇵🇱', 89],
     ['Turquía', '🇹🇷', 90], ['EE. UU.', '🇺🇸', 88], ['China', '🇨🇳', 86],
     ['Japón', '🇯🇵', 85], ['Serbia', '🇷🇸', 84]
+  ]},
+  { nom: 'Liga Argentina de Vóley', margen: 1.07, bo: 5, equipos: [
+    ['Ciudad Vóley', '🔵', 82], ['UPCN', '🟡', 83], ['Bolívar Vóley', '⚪', 84],
+    ['Gigantes del Sur', '🟢', 78], ['Waiwen', '🔴', 76]
+  ]},
+  { nom: 'Champions League Vóley', margen: 1.06, bo: 5, equipos: [
+    ['Perugia', '🔴', 90], ['Trentino', '🟡', 88], ['Zenit Kazán', '🔵', 87],
+    ['Jastrzębski', '🟠', 86], ['Halkbank', '🔵', 84], ['Ziraat', '🟢', 83]
   ]},
   { nom: 'Superliga · Brasil', margen: 1.065, bo: 5, equipos: [
     ['Sesc RJ', '🟥', 86], ['Praia Clube', '🟨', 85], ['Minas', '⚪', 84],
@@ -242,8 +336,8 @@ K.LIGAS_VOLLEY = [
 
   /* ---- fútbol ---- */
   K.LIGAS_FUTBOL.forEach((liga, li) => {
-    const vivos = li < 5 ? K.entero(1, 2) : 0;
-    const partidos = jornada(liga.equipos, li < 6 ? 7 : 5);
+    const vivos = li < 9 ? K.entero(1, 2) : 0;
+    const partidos = jornada(liga.equipos, li < 8 ? 8 : 6);
     partidos.forEach(([l, v], i) => {
       const t = horario(i, partidos.length, vivos);
       const dif = (l[2] - v[2]) / 100;
@@ -271,8 +365,8 @@ K.LIGAS_VOLLEY = [
 
   /* ---- tenis ---- */
   K.TORNEOS_TENIS.forEach((torneo, ti) => {
-    const vivos = ti < 3 ? K.entero(1, 2) : 0;
-    const partidos = jornada(torneo.jugadores, 6);
+    const vivos = ti < 5 ? K.entero(1, 2) : 0;
+    const partidos = jornada(torneo.jugadores, 8);
     partidos.forEach(([a, b], i) => {
       const t = horario(i, partidos.length, vivos);
       const p1 = K.clamp(1 / (1 + Math.pow(10, (b[2] - a[2]) / 17)), 0.06, 0.94);
@@ -293,8 +387,8 @@ K.LIGAS_VOLLEY = [
 
   /* ---- básquet ---- */
   K.LIGAS_BASKET.forEach((liga, li) => {
-    const vivos = li < 2 ? 1 : 0;
-    const partidos = jornada(liga.equipos, 6);
+    const vivos = li < 3 ? 1 : 0;
+    const partidos = jornada(liga.equipos, 8);
     partidos.forEach(([l, v], i) => {
       const t = horario(i, partidos.length, vivos);
       const spread = K.round2((l[2] - v[2]) * 0.62 + 2.4);
@@ -321,8 +415,8 @@ K.LIGAS_VOLLEY = [
 
   /* ---- series: eSports y vóley ---- */
   const series = (ligas, deporte, icono) => ligas.forEach((liga, li) => {
-    const vivos = li < 2 ? 1 : 0;
-    const partidos = jornada(liga.equipos, 5);
+    const vivos = li < 3 ? 1 : 0;
+    const partidos = jornada(liga.equipos, 6);
     partidos.forEach(([l, v], i) => {
       const t = horario(i, partidos.length, vivos);
       const q = K.clamp(1 / (1 + Math.pow(10, (v[2] - l[2]) / 22)), 0.1, 0.9);
