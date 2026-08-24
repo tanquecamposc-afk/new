@@ -87,18 +87,48 @@ K.Juegos.slot = function (root, juego) {
     celdas.forEach(c => c.classList.remove('gana'));
     msg.textContent = '';
 
+    /* Resultado primero, animación después: los carretes se frenan
+       uno por uno, de izquierda a derecha, como en una máquina real. */
+    const res = [];
+    for (let i = 0; i < CELDAS; i++) res.push(sortear());
+
     const t0 = performance.now();
+    const frenoCol = c => 420 + c * 150;          // ms hasta que para cada columna
+    const ultimoCambio = new Array(COLS).fill(0);
     await new Promise(fin => {
       const paso = t => {
-        celdas.forEach(c => c.textContent = SIM[Math.floor(Math.random() * N)]);
-        if (t - t0 < 480) requestAnimationFrame(paso); else fin();
+        const dt = t - t0;
+        let girandoAlgo = false;
+        for (let c = 0; c < COLS; c++) {
+          const paro = frenoCol(c);
+          if (dt < paro) {
+            girandoAlgo = true;
+            // cuanto más cerca del freno, más lento cambia el carrete
+            const intervalo = dt > paro - 180 ? 80 : 34;
+            if (t - ultimoCambio[c] >= intervalo) {
+              ultimoCambio[c] = t;
+              for (let f = 0; f < FIL; f++) {
+                celdas[c * FIL + f].textContent = SIM[Math.floor(Math.random() * N)];
+              }
+            }
+          } else if (!celdas[c * FIL].dataset.parada) {
+            for (let f = 0; f < FIL; f++) {
+              const cel = celdas[c * FIL + f];
+              cel.textContent = SIM[res[c * FIL + f]];
+              cel.style.animation = 'none';
+              void cel.offsetWidth;
+              cel.style.animation = 'aterriza .22s ease-out';
+            }
+            celdas[c * FIL].dataset.parada = '1';
+          }
+        }
+        if (girandoAlgo) requestAnimationFrame(paso);
+        else fin();
       };
       requestAnimationFrame(paso);
     });
-
-    const res = [];
-    for (let i = 0; i < CELDAS; i++) res.push(sortear());
-    celdas.forEach((c, i) => c.textContent = SIM[res[i]]);
+    celdas.forEach((c, i) => { c.textContent = SIM[res[i]]; delete c.dataset.parada; });
+    await K.enEspera(120);
 
     const cuenta = new Array(N).fill(0);
     res.forEach(i => cuenta[i]++);

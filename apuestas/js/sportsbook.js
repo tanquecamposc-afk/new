@@ -15,6 +15,7 @@ K.Sportsbook = (() => {
 
   const boleto = { lineas: [], modo: 'simple', stake: 20, aceptarCambios: true, procesando: false };
   let filtroDeporte = 'futbol';
+  let filtroLiga = null;
   let soloVivo = false;
   let contenedorLista = null;
   const nodos = {};        // cuotas y marcadores vivos, para no repintar todo
@@ -31,6 +32,10 @@ K.Sportsbook = (() => {
       return (pick === 'O') === over ? G : P;
     };
 
+    if (mercId === 'super') {
+      const ambos = l > 0 && v > 0;
+      return (tot > 2.5 && ambos) ? G : P;
+    }
     if (ev.deporte === 'futbol') {
       switch (mercId) {
         case '1x2': return (selId === '1' && l > v) || (selId === 'X' && l === v) || (selId === '2' && l < v) ? G : P;
@@ -109,7 +114,7 @@ K.Sportsbook = (() => {
     if (!cont) return;
     const n = boleto.lineas.length;
     if (!n) {
-      cont.innerHTML = `<div class="boleto-vacio"><span class="ic">🎫</span>
+      cont.innerHTML = `<div class="boleto-vacio">${K.ic('boleto')}
         Tu boleto está vacío.<br>Toca una cuota para agregarla.</div>`;
       return;
     }
@@ -124,7 +129,16 @@ K.Sportsbook = (() => {
     const modo = n === 1 ? 'simple' : boleto.modo;
     const retorno = modo === 'combinada' ? stake * total : stake * boleto.lineas[0].cuota * n;
     const apostadoReal = modo === 'combinada' ? stake : stake * n;
-    const overround = boleto.lineas.reduce((a, l) => a + 1 / l.cuota, 0) / n;
+    /* Margen real: el del mercado al que pertenece cada selección,
+       no la implícita de una sola opción (eso daría un número sin sentido). */
+    const margenes = boleto.lineas.map(l => {
+      const ev = K.evento(l.evId);
+      if (!ev) return null;
+      const m = K.Odds.construir(ev).find(x => x.id === l.mercId);
+      return m ? m.overround - 1 : null;
+    }).filter(x => x !== null);
+    const margenMedio = margenes.length ? margenes.reduce((a, b) => a + b, 0) / margenes.length : null;
+    const implicitaTotal = modo === 'combinada' ? 1 / total : 1 / boleto.lineas[0].cuota;
 
     let html = '';
     if (n > 1) {
@@ -152,20 +166,22 @@ K.Sportsbook = (() => {
       <div class="resumen">
         <div class="fila"><span>Cuota ${modo === 'combinada' ? 'combinada' : 'promedio'}</span><b>${K.dec(modo === 'combinada' ? total : total ** (1 / n))}</b></div>
         <div class="fila"><span>Total apostado</span><b>${K.sol(apostadoReal)}</b></div>
-        <div class="fila"><span>Prob. implícita</span><b>${K.pct(modo === 'combinada' ? 1 / total : overround)}</b></div>
+        <div class="fila"><span>Prob. implícita</span><b>${K.pct(implicitaTotal)}</b></div>
         <div class="fila total"><span>Retorno potencial</span><b>${K.sol(retorno)}</b></div>
       </div>
       <div class="pie-boleto">
-        <label style="display:flex;gap:7px;align-items:center;font-size:12px;color:var(--tenue);margin-bottom:8px">
+        <label class="check-linea">
           <input type="checkbox" id="aceptar-cambios" ${boleto.aceptarCambios ? 'checked' : ''}>
           Aceptar cambios de cuota automáticamente
         </label>
-        <button class="btn" id="apostar" ${boleto.procesando ? 'disabled' : ''}>
+        <button class="btn bloque" id="apostar" ${boleto.procesando ? 'disabled' : ''}>
           ${boleto.procesando ? 'Validando…' : 'Apostar ' + K.sol(apostadoReal)}
         </button>
       </div>
-      <div class="nota-margen">Margen de la casa en esta selección:
-        <b>${K.pct(overround - 1)}</b> · el retorno ya viene descontado del <i>overround</i>.</div>`;
+      <div class="nota-margen">${margenMedio === null
+        ? 'Selección promocional: la casa vende esta cuota por encima de su precio justo.'
+        : (n > 1 ? 'Margen medio de los mercados: ' : 'Margen de la casa en este mercado: ') +
+          '<b>' + K.pct(margenMedio) + '</b> · el retorno ya viene descontado del <i>overround</i>.'}</div>`;
 
     cont.innerHTML = html;
 
@@ -437,15 +453,21 @@ K.Sportsbook = (() => {
     ev.historialCuotas[k] = sel.cuota;
     const b = K.el('button', {
       class: cls, 'data-k': k,
-      title: 'Prob. implícita ' + K.pct(sel.impl),
+      title: (sel.extra ? sel.extra + ' · ' : '') + 'probabilidad implícita ' + K.pct(sel.impl),
       onclick: () => {
         if (ev.suspendido) { K.aviso('Mercado suspendido, espera unos segundos.', 'warn'); return; }
         alternarSeleccion(ev, merc, sel);
       }
     }, [
       K.el('span', { class: 'lab', text: sel.lab }),
-      K.el('span', { class: 'num', text: K.dec(sel.cuota) })
+      K.el('span', { class: 'val', text: K.dec(sel.cuota) })
     ]);
+    if (previa && Math.abs(previa - sel.cuota) > 0.001) {
+      b.appendChild(K.el('span', {
+        class: 'tri ' + (sel.cuota > previa ? 'up' : 'down'),
+        text: sel.cuota > previa ? '▲' : '▼'
+      }));
+    }
     b.disabled = !!ev.suspendido || !!ev.terminado;
     nodos[k] = b;
     return b;
@@ -457,8 +479,7 @@ K.Sportsbook = (() => {
     const card = K.el('div', { class: 'evento' });
 
     const cab = K.el('div', { class: 'ev-cab' });
-    const dep = K.DEPORTES.find(d => d.id === ev.deporte);
-    cab.appendChild(K.el('span', { text: dep ? dep.ic : '•' }));
+    cab.innerHTML = K.ic(K.icDeporte(ev.deporte));
     cab.appendChild(K.el('span', { class: 'liga', text: ev.liga }));
     if (ev.vivo) {
       const badge = K.el('span', { class: 'badge-vivo' }, [K.el('span', { class: 'punto' })]);
@@ -496,14 +517,13 @@ K.Sportsbook = (() => {
     card.appendChild(cuerpo);
 
     const pie = K.el('div', { class: 'ev-pie' });
-    pie.appendChild(K.el('span', { text: 'Margen ' + K.pct(principal.overround - 1) }));
+    pie.appendChild(K.el('span', { text: principal.nombre }));
     pie.appendChild(K.el('span', { text: '·' }));
-    pie.appendChild(K.el('span', { text: 'Suma implícita ' + K.pct(principal.overround) }));
+    pie.appendChild(K.el('span', { text: 'margen ' + K.pct(principal.overround - 1) }));
     if (!opts.sinMas) {
-      pie.appendChild(K.el('button', {
-        class: 'mas', text: '+' + (mercados.length - 1) + ' mercados',
-        onclick: () => abrirEvento(ev.id)
-      }));
+      const mas = K.el('button', { class: 'mas', onclick: () => abrirEvento(ev.id) });
+      mas.innerHTML = '+' + (mercados.length - 1) + ' mercados' + K.ic('chevron');
+      pie.appendChild(mas);
     }
     card.appendChild(pie);
     return card;
@@ -534,8 +554,12 @@ K.Sportsbook = (() => {
           b.classList.remove('sube', 'baja');
           void b.offsetWidth;
           b.classList.add(s.cuota > previa ? 'sube' : 'baja');
-          const num = b.querySelector('.num');
+          const num = b.querySelector('.val');
           if (num) num.textContent = K.dec(s.cuota);
+          let tri = b.querySelector('.tri');
+          if (!tri) { tri = K.el('span', { class: 'tri' }); b.appendChild(tri); }
+          tri.className = 'tri ' + (s.cuota > previa ? 'up' : 'down');
+          tri.textContent = s.cuota > previa ? '▲' : '▼';
         }
         ev.historialCuotas[k] = s.cuota;
       }));
@@ -554,45 +578,63 @@ K.Sportsbook = (() => {
   function vista(root) {
     contenedorLista = root;
     root.innerHTML = '';
+    const promo = bannerPromo();
+    if (promo && !soloVivo && !filtroLiga) root.appendChild(promo);
+    if (filtroLiga) {
+      const aviso = K.el('div', { class: 'chips' });
+      aviso.appendChild(K.el('button', {
+        class: 'chip on', html: K.ic('cerrar') + ' ' + K.esc(filtroLiga),
+        onclick: () => { filtroLiga = null; vista(root); }
+      }));
+      root.appendChild(aviso);
+    }
     const chips = K.el('div', { class: 'chips' });
+    const vivosN = K.EVENTOS.filter(e => e.vivo).length;
     chips.appendChild(K.el('button', {
-      class: 'chip' + (soloVivo ? ' on' : ''), html: '🔴 En vivo',
+      class: 'chip' + (soloVivo ? ' on' : ''),
+      html: '<span class="punto-vivo"></span> En vivo (' + vivosN + ')',
       onclick: () => { soloVivo = !soloVivo; vista(root); }
     }));
     K.DEPORTES.forEach(d => chips.appendChild(K.el('button', {
       class: 'chip' + (!soloVivo && filtroDeporte === d.id ? ' on' : ''),
-      html: d.ic + ' ' + d.nom,
+      html: K.ic(K.icDeporte(d.id)) + ' ' + d.nom,
       onclick: () => { soloVivo = false; filtroDeporte = d.id; vista(root); }
     })));
     root.appendChild(chips);
 
     let lista = K.EVENTOS.filter(e => !e.terminado);
-    lista = soloVivo ? lista.filter(e => e.vivo) : lista.filter(e => e.deporte === filtroDeporte);
+    if (filtroLiga) lista = lista.filter(e => e.liga === filtroLiga);
+    else lista = soloVivo ? lista.filter(e => e.vivo) : lista.filter(e => e.deporte === filtroDeporte);
     lista.sort((a, b) => (b.vivo - a.vivo) || (a.inicio - b.inicio));
 
     if (!lista.length) {
-      root.appendChild(K.el('div', { class: 'vacio', html: '<span class="ic">📭</span>No hay eventos abiertos en esta categoría.' }));
+      root.appendChild(K.el('div', { class: 'vacio', html: K.ic('trofeo') + '<div>No hay eventos abiertos en esta categoría.</div>' }));
     }
     const vivos = lista.filter(e => e.vivo);
     const luego = lista.filter(e => !e.vivo);
     if (vivos.length) {
-      root.appendChild(cabecera('🔴 En vivo', vivos.length + ' eventos con cuotas moviéndose'));
+      root.appendChild(cabecera('En vivo', vivos.length + ' eventos con cuotas moviéndose', 'vivo'));
       vivos.forEach(e => root.appendChild(tarjetaEvento(e)));
     }
     if (luego.length) {
-      root.appendChild(cabecera('📅 Próximos', 'El reloj corre a 30x para que puedas ver la liquidación'));
+      root.appendChild(cabecera('Próximos', 'el reloj corre a 30× para que puedas ver la liquidación', 'reloj'));
       luego.forEach(e => root.appendChild(tarjetaEvento(e)));
     }
     const term = K.EVENTOS.filter(e => e.terminado);
     if (term.length) {
-      root.appendChild(cabecera('🏁 Finalizados', term.length + ' eventos ya liquidados'));
+      root.appendChild(cabecera('Finalizados', term.length + ' eventos ya liquidados', 'grafico'));
       term.slice(0, 6).forEach(e => root.appendChild(tarjetaEvento(e, { sinMas: true })));
     }
   }
 
-  const cabecera = (t, sub) => K.el('div', { class: 'titulo-sec' }, [
-    K.el('h2', { text: t }), K.el('span', { class: 'sub', text: sub })
-  ]);
+  function cabecera(titulo, sub, icono = 'trofeo') {
+    const c = K.el('div', { class: 'barra-sec' });
+    const h = K.el('h2');
+    h.innerHTML = (icono === 'vivo' ? '<span class="punto-vivo"></span>' : K.ic(icono)) + '<span>' + K.esc(titulo) + '</span>';
+    c.appendChild(h);
+    if (sub) c.appendChild(K.el('span', { class: 'sub', text: sub }));
+    return c;
+  }
 
   /* ---- ficha completa del evento ---- */
   function abrirEvento(id) {
@@ -639,9 +681,9 @@ K.Sportsbook = (() => {
   function vistaApuestas(root) {
     const w = K.Wallet.est();
     root.innerHTML = '';
-    root.appendChild(cabecera('🎫 Mis apuestas', w.apuestas.length + ' registradas'));
+    root.appendChild(cabecera('Mis apuestas', w.apuestas.length + ' registradas', 'recibo'));
     if (!w.apuestas.length) {
-      root.appendChild(K.el('div', { class: 'vacio', html: '<span class="ic">🎫</span>Todavía no hiciste ninguna apuesta.' }));
+      root.appendChild(K.el('div', { class: 'vacio', html: K.ic('recibo') + '<div>Todavía no hiciste ninguna apuesta.</div>' }));
       return;
     }
     for (const ap of w.apuestas) {
@@ -661,6 +703,7 @@ K.Sportsbook = (() => {
       })));
       const pie = K.el('div', { class: 'ap-pie' });
       pie.appendChild(K.el('div', { class: 'dato', html: 'Apostado<b>' + K.sol(ap.stake) + '</b>' }));
+      // el resto de datos van igual, con las clases nuevas de la hoja de estilos
       pie.appendChild(K.el('div', { class: 'dato', html: 'Cuota<b>' + K.dec(ap.cuotaTotal) + '</b>' }));
       pie.appendChild(K.el('div', {
         class: 'dato', html: (ap.estado === 'pendiente' ? 'Retorno potencial' : 'Pagado')
@@ -698,11 +741,54 @@ K.Sportsbook = (() => {
     return t;
   }
 
+  /* ---- banner de SuperCuota ---- */
+  function bannerPromo() {
+    const ev = K.EVENTOS.find(e => e.deporte === 'futbol' && !e.vivo && !e.terminado && K.Odds.superCuota(e));
+    if (!ev) return null;
+    const sc = K.Odds.superCuota(ev);
+    const el = K.el('div', { class: 'promo' });
+    el.innerHTML = `
+      <div class="marca-agua">${K.ic('rayo')}</div>
+      <span class="etq">${K.ic('fuego')} SuperCuota del día</span>
+      <h2>${K.esc(ev.local)} vs ${K.esc(ev.visita)}</h2>
+      <p>Más de 2.5 goles + ambos equipos anotan · ${K.esc(ev.liga)} · ${K.hora(ev.inicio)}</p>
+      <div class="cuotas">
+        <span class="vieja">Cuota normal ${K.dec(sc.normal)}</span>
+        <span class="nueva">${K.dec(sc.boost)}</span>
+        <button class="btn" id="btn-super">Añadir al boleto</button>
+      </div>`;
+    K.$('#btn-super', el).onclick = () => {
+      const merc = { id: 'super', nombre: 'SuperCuota · +2.5 goles y ambos anotan', cols: 1, linea: null };
+      const sel = { id: 'SI', lab: 'Sí', extra: 'SuperCuota ' + ev.local + ' vs ' + ev.visita, cuota: sc.boost, impl: 1 / sc.boost };
+      alternarSeleccion(ev, merc, sel);
+      K.aviso('SuperCuota añadida al boleto a ' + K.dec(sc.boost) + '.', 'ok');
+    };
+    return el;
+  }
+
+  /* ---- datos para el menú lateral ---- */
+  function ligas() {
+    const mapa = {};
+    K.EVENTOS.filter(e => !e.terminado).forEach(e => { mapa[e.liga] = (mapa[e.liga] || 0) + 1; });
+    return Object.entries(mapa).sort((a, b) => b[1] - a[1]);
+  }
+  function porDeporte() {
+    const mapa = {};
+    K.EVENTOS.filter(e => !e.terminado).forEach(e => { mapa[e.deporte] = (mapa[e.deporte] || 0) + 1; });
+    return mapa;
+  }
+  const setLiga = l => { filtroLiga = l; soloVivo = false; };
+  const setDeporte = d => { filtroDeporte = d; filtroLiga = null; soloVivo = false; };
+
   function iniciar() {
     setInterval(tick, 1000);
   }
 
   const setVivo = v => { soloVivo = v; };
 
-  return { vista, vistaApuestas, pintarBoleto, iniciar, abrirEvento, panelRiesgo, boleto, valorCashout, ahora, setVivo };
+  return {
+    vista, vistaApuestas, pintarBoleto, iniciar, abrirEvento, panelRiesgo, boleto,
+    valorCashout, ahora, setVivo, setLiga, setDeporte, ligas, porDeporte,
+    get liga() { return filtroLiga; }, get deporte() { return filtroDeporte; }
+  };
 })();

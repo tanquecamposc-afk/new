@@ -22,15 +22,15 @@ K.Juegos.mines = function (root, juego) {
   const sCobro = K.G.stat('Cobro disponible', K.sol(0));
   const sProb = K.G.stat('Prob. del próximo paso', '—');
 
-  const btnJugar = K.el('button', { class: 'btn', text: 'Apostar y empezar' });
-  const btnCobrar = K.el('button', { class: 'btn sec', text: 'Cobrar' });
+  const btnJugar = K.el('button', { class: 'btn bloque', text: 'Apostar y empezar' });
+  const btnCobrar = K.el('button', { class: 'btn sec bloque', text: 'Cobrar' });
   btnCobrar.disabled = true;
 
   const panel = K.el('div', { class: 'panel-apuesta' }, [
     monto.wrap,
     K.el('div', { class: 'campo' }, [K.el('label', { text: 'Cantidad de minas' }), selMinas]),
     btnJugar, btnCobrar,
-    K.el('div', { style: 'height:1px;background:var(--linea);margin:2px 0' }),
+    K.el('div', { class: 'separador' }),
     sMult.fila, sProx.fila, sCobro.fila, sProb.fila
   ]);
 
@@ -77,7 +77,7 @@ K.Juegos.mines = function (root, juego) {
     }
     abiertas++;
     celdas[i].className = 'celda estrella';
-    celdas[i].innerHTML = '<span>⭐</span>';
+    celdas[i].innerHTML = '<span>💎</span>';
     celdas[i].disabled = true;
     refrescarInfo();
     if (abiertas === TOTAL - minas) cobrar();
@@ -88,7 +88,7 @@ K.Juegos.mines = function (root, juego) {
     const m = multiplicador(abiertas);
     const premio = K.round2(apuesta * m);
     K.G.pagar(premio, `Mines · ${abiertas} aciertos a ${K.dec(m)}×`);
-    K.aviso(`⭐ Cobraste ${K.sol(premio)} con ${K.dec(m)}×`);
+    K.aviso(`Cobraste ${K.sol(premio)} con ${K.dec(m)}×`, 'ok');
     K.G.anotar('mines', m);
     terminar(true);
   }
@@ -99,11 +99,11 @@ K.Juegos.mines = function (root, juego) {
     celdas.forEach((c, i) => {
       c.disabled = true;
       if (!c.innerHTML) {
-        c.innerHTML = tablero[i] ? '<span>💣</span>' : '<span>⭐</span>';
+        c.innerHTML = tablero[i] ? '<span>💣</span>' : '<span>💎</span>';
         c.classList.add('revelada');
       }
     });
-    if (!gano) { K.aviso('💥 Tocaste una mina. Perdiste ' + K.sol(apuesta) + '.', 'err'); K.G.anotar('mines', 0); }
+    if (!gano) { K.aviso('Tocaste una mina. Perdiste ' + K.sol(apuesta) + '.', 'err'); K.G.anotar('mines', 0); }
     refrescarInfo();
   }
 

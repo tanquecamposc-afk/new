@@ -10,8 +10,8 @@ K.Juegos.limbo = function (root, juego) {
   const sPago = K.G.stat('Pago si acierta', K.sol(10));
   const sRacha = K.G.stat('Racha actual', '0');
 
-  const btn = K.el('button', { class: 'btn', text: 'Apostar' });
-  const btnAuto = K.el('button', { class: 'btn sec', text: 'Auto ×10' });
+  const btn = K.el('button', { class: 'btn bloque', text: 'Apostar' });
+  const btnAuto = K.el('button', { class: 'btn sec bloque', text: 'Auto ×10' });
 
   const panel = K.el('div', { class: 'panel-apuesta' }, [
     monto.wrap,
@@ -21,7 +21,7 @@ K.Juegos.limbo = function (root, juego) {
         [1.5, 2, 5, 10].map(v => K.el('button', { text: v + '×', onclick: () => { inpObj.value = v.toFixed(2); refrescar(); } })))
     ]),
     btn, btnAuto,
-    K.el('div', { style: 'height:1px;background:var(--linea);margin:2px 0' }),
+    K.el('div', { class: 'separador' }),
     sProb.fila, sPago.fila, sRacha.fila
   ]);
 

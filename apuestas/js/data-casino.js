@@ -5,11 +5,11 @@
    acá todos corren sobre motores propios de demostración.
    =========================================================== */
 K.CATEGORIAS = [
-  { id: 'todos', nom: 'Todos', ic: '🎰' },
-  { id: 'slots', nom: 'Tragamonedas', ic: '🍒' },
-  { id: 'crash', nom: 'Crash e instantáneos', ic: '🚀' },
-  { id: 'vivo', nom: 'En vivo y game shows', ic: '🎥' },
-  { id: 'mesa', nom: 'Mesa RNG y video póker', ic: '🃏' }
+  { id: 'todos', nom: 'Todos', ic: '🎰', icono: 'casino' },
+  { id: 'slots', nom: 'Tragamonedas', ic: '🍒', icono: 'estrella' },
+  { id: 'crash', nom: 'Crash e instantáneos', ic: '🚀', icono: 'rayo' },
+  { id: 'vivo', nom: 'En vivo y game shows', ic: '🎥', icono: 'fuego' },
+  { id: 'mesa', nom: 'Mesa RNG y video póker', ic: '🃏', icono: 'trofeo' }
 ];
 
 /* Paletas para la portada de cada juego */

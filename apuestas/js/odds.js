@@ -219,5 +219,24 @@ K.Odds = (() => {
     return base;
   }
 
-  return { construir, cuotas, overround, implicita, cashout, poisson, matriz };
+  /* -------------------------------------------------------
+     SuperCuota: combinación de "más de 2.5 goles" y "ambos
+     anotan" con la cuota mejorada por encima del precio justo.
+     Es una promoción de verdad, no una rebaja de mentira: la
+     casa vende esa selección con margen negativo.
+     ------------------------------------------------------- */
+  function superCuota(ev) {
+    if (ev.deporte !== 'futbol' || ev.vivo || ev.terminado) return null;
+    const m = matriz(ev.modelo.lh, ev.modelo.la);
+    const p = sumar(m, (i, j) => i + j > 2.5 && i > 0 && j > 0);
+    if (p <= 0.02) return null;
+    const justa = 1 / p;
+    return {
+      p,
+      normal: Math.floor(justa / ev.margen * 100) / 100,   // lo que costaría con margen normal
+      boost: Math.floor(justa * 1.24 * 100) / 100          // lo que paga la promo
+    };
+  }
+
+  return { construir, cuotas, overround, implicita, cashout, poisson, matriz, superCuota };
 })();

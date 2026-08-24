@@ -69,7 +69,7 @@ K.G = (() => {
     return Math.max(1, Math.floor((ventaja / (1 - u)) * 100) / 100);
   }
 
-  const nota = html => K.el('div', { class: 'info-bloque', style: 'margin-top:12px;font-size:12px', html });
+  const nota = html => K.el('div', { class: 'info-juego', html });
 
   return { setJuego, apostar, pagar, inputMonto, stat, historial, anotar, claseMult, crashAleatorio, nota };
 })();

@@ -15,10 +15,16 @@ K.Baraja = (() => {
     return K.mezcla(c);
   };
   const sacar = mazo => { if (mazo.length < 15) mazo.push(...nueva(1)); return mazo.pop(); };
-  const nodo = (carta, extra = '') => carta
-    ? K.el('div', { class: 'carta ' + (carta.rojo ? 'roja ' : '') + extra }, [
-        K.el('span', { text: carta.v }), K.el('small', { text: carta.palo })])
-    : K.el('div', { class: 'carta dorso', text: '◆◆' });
+  const nodo = (carta, extra = '') => {
+    if (!carta) return K.el('div', { class: 'carta dorso' });
+    const n = K.el('div', { class: 'carta ' + (carta.rojo ? 'roja ' : '') + extra });
+    n.innerHTML = `
+      <span class="esquina ar"><span class="v">${carta.v}</span><span class="p">${carta.palo}</span></span>
+      <span class="centro">${carta.palo}</span>
+      <span class="esquina ab"><span class="v">${carta.v}</span><span class="p">${carta.palo}</span></span>` +
+      (extra.includes('hold') ? '<span class="etq-hold">HOLD</span>' : '');
+    return n;
+  };
   return { nueva, sacar, nodo, VALORES };
 })();
 
@@ -212,8 +218,14 @@ K.Juegos.baccarat = function (root, juego) {
 
   const mesa = K.el('div', { class: 'mesa' });
   const resultado = K.el('div', { class: 'resultado' });
-  const zona = K.el('div', { class: 'zona-juego' }, [mesa, resultado, opciones]);
+  const camino = K.el('div', { class: 'camino' });
+  const zona = K.el('div', { class: 'zona-juego' }, [mesa, resultado, camino, opciones]);
   const historia = [];
+  const pintarCamino = () => {
+    camino.innerHTML = '';
+    historia.slice().reverse().slice(-36).forEach(r =>
+      camino.appendChild(K.el('span', { class: r, text: r })));
+  };
 
   function pintar(j, b) {
     mesa.innerHTML = '';
@@ -258,7 +270,8 @@ K.Juegos.baccarat = function (root, juego) {
     const ganador = tj > tb ? 'jugador' : tb > tj ? 'banca' : 'empate';
     historia.unshift(ganador === 'jugador' ? 'J' : ganador === 'banca' ? 'B' : 'E');
     if (historia.length > 12) historia.length = 12;
-    sHist.set(historia.join(' '));
+    sHist.set(historia.slice(0, 10).join(' '));
+    pintarCamino();
 
     let premio = 0;
     if (ganador === sel) {
@@ -361,6 +374,7 @@ K.Juegos.videopoker = function (root, juego) {
 
   function cambiar() {
     mano = mano.map((c, i) => holds[i] ? c : K.Baraja.sacar(mazo));
+    holds = [false, false, false, false, false];
     fase = 'apostar';
     btn.textContent = 'Repartir';
     pintar();

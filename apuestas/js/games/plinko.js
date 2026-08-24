@@ -1,5 +1,7 @@
 /* ===========================================================
    games/plinko.js — 16 filas de clavijas, tres niveles de riesgo
+   La bola cae con gravedad y rebota en cada clavija; el destino
+   sigue una binomial, igual que en el juego real.
    =========================================================== */
 K.Juegos = K.Juegos || {};
 K.Juegos.plinko = function (root, juego) {
@@ -22,14 +24,14 @@ K.Juegos.plinko = function (root, juego) {
   const sBolas = K.G.stat('Bolas soltadas', '0');
   const sNeto = K.G.stat('Resultado neto', K.sol(0));
 
-  const btn = K.el('button', { class: 'btn', text: 'Soltar bola' });
-  const btn5 = K.el('button', { class: 'btn sec', text: 'Soltar 5' });
+  const btn = K.el('button', { class: 'btn bloque', text: 'Soltar bola' });
+  const btn10 = K.el('button', { class: 'btn sec bloque', text: 'Soltar 10' });
 
   const panel = K.el('div', { class: 'panel-apuesta' }, [
     monto.wrap,
     K.el('div', { class: 'campo' }, [K.el('label', { text: 'Nivel de riesgo' }), selR]),
-    btn, btn5,
-    K.el('div', { style: 'height:1px;background:var(--linea);margin:2px 0' }),
+    btn, btn10,
+    K.el('div', { class: 'separador' }),
     sUlt.fila, sBolas.fila, sNeto.fila
   ]);
 
@@ -39,63 +41,96 @@ K.Juegos.plinko = function (root, juego) {
     K.el('div', { class: 'plinko-lienzo' }, [cv]), cubos
   ]);
   const ctx = cv.getContext('2d');
-  let bolas = [], sueltas = 0, neto = 0;
+  let bolas = [], sueltas = 0, neto = 0, corriendo = false, destellos = [];
 
   function pintarCubos() {
     cubos.innerHTML = '';
-    TABLAS[riesgo].forEach(m => {
-      const color = m >= 10 ? 'var(--rojo)' : m >= 2 ? 'var(--ambar)' : m >= 1 ? 'var(--acento)' : 'var(--tenue2)';
-      cubos.appendChild(K.el('div', { text: m + '×', style: `color:${color};border:1px solid var(--linea)` }));
+    TABLAS[riesgo].forEach((m, i) => {
+      const color = m >= 10 ? '#f43f5e' : m >= 2 ? '#fbbf24' : m >= 1 ? '#22c55e' : '#64748b';
+      cubos.appendChild(K.el('div', { text: m + '×', style: `color:${color}` }));
     });
   }
 
+  /* ---- geometría ---- */
+  let paso = 0, topeY = 0, altoFila = 0;
   function dimensionar() {
     const r = cv.parentElement.getBoundingClientRect();
     cv.width = Math.max(320, r.width) * devicePixelRatio;
-    cv.height = Math.max(300, r.height) * devicePixelRatio;
+    cv.height = Math.max(320, r.height) * devicePixelRatio;
+    paso = cv.width / (FILAS + 3);
+    topeY = 22 * devicePixelRatio;
+    altoFila = (cv.height - 48 * devicePixelRatio) / FILAS;
   }
-
-  const pos = (fila, col) => {
-    const p = devicePixelRatio, W = cv.width, H = cv.height;
-    const paso = W / (FILAS + 3);
-    const y = 20 * p + fila * ((H - 40 * p) / FILAS);
-    const x = W / 2 + (col - fila / 2) * paso;
-    return [x, y];
-  };
+  const clavija = (fila, col) => [cv.width / 2 + (col - fila / 2) * paso, topeY + fila * altoFila];
 
   function pintar() {
     const p = devicePixelRatio;
     ctx.clearRect(0, 0, cv.width, cv.height);
-    ctx.fillStyle = 'rgba(255,255,255,.22)';
+
+    // clavijas
     for (let f = 1; f <= FILAS; f++) {
       for (let c = 0; c <= f; c++) {
-        const [x, y] = pos(f, c);
-        ctx.beginPath(); ctx.arc(x, y, 2.6 * p, 0, 7); ctx.fill();
+        const [x, y] = clavija(f, c);
+        ctx.beginPath();
+        ctx.arc(x, y, 2.8 * p, 0, 7);
+        ctx.fillStyle = 'rgba(226,232,240,.34)';
+        ctx.fill();
       }
     }
-    for (const b of bolas) {
-      const f = Math.floor(b.t), frac = b.t - f;
-      const c0 = b.camino[Math.min(f, FILAS)] || 0;
-      const c1 = b.camino[Math.min(f + 1, FILAS)] ?? c0;
-      const [x0, y0] = pos(Math.min(f, FILAS), c0);
-      const [x1, y1] = pos(Math.min(f + 1, FILAS), c1);
-      const x = x0 + (x1 - x0) * frac, y = y0 + (y1 - y0) * frac;
+    // destellos al golpear
+    destellos.forEach(d => {
+      ctx.globalAlpha = d.vida;
       ctx.beginPath();
-      ctx.arc(x, y, 6 * p, 0, 7);
-      ctx.fillStyle = '#ffc247';
+      ctx.arc(d.x, d.y, (3 + (1 - d.vida) * 7) * p, 0, 7);
+      ctx.strokeStyle = '#ff5500';
+      ctx.lineWidth = 1.5 * p;
+      ctx.stroke();
+    });
+    ctx.globalAlpha = 1;
+
+    // bolas
+    bolas.forEach(b => {
+      const gr = ctx.createRadialGradient(b.x - 2 * p, b.y - 2 * p, 1, b.x, b.y, 7 * p);
+      gr.addColorStop(0, '#ffd9b0'); gr.addColorStop(1, '#ff5500');
+      ctx.beginPath();
+      ctx.arc(b.x, b.y, 5.4 * p, 0, 7);
+      ctx.fillStyle = gr;
+      ctx.shadowColor = 'rgba(255,85,0,.7)'; ctx.shadowBlur = 10 * p;
       ctx.fill();
-    }
+      ctx.shadowBlur = 0;
+    });
   }
 
   function animar() {
-    let vivas = false;
+    const p = devicePixelRatio;
     for (const b of bolas) {
-      if (b.t < FILAS) { b.t += 0.32; vivas = true; }
-      else if (!b.pagada) { b.pagada = true; pagarBola(b); }
+      if (b.fila >= FILAS) {
+        // caída final hasta el cubo
+        b.vy += 0.55 * p;
+        b.y += b.vy;
+        if (!b.pagada && b.y > cv.height - 14 * p) { b.pagada = true; pagarBola(b); }
+        continue;
+      }
+      const [mx, my] = clavija(b.fila + 1, b.col + (b.camino[b.fila] ? 1 : 0));
+      // avance hacia la siguiente clavija con un arco
+      b.t += 0.085;
+      const [px0, py0] = clavija(b.fila, b.col);
+      const t = Math.min(1, b.t);
+      b.x = px0 + (mx - px0) * t;
+      b.y = py0 + (my - py0) * (t * t * 0.72 + t * 0.28);   // acelera al caer
+      if (t >= 1) {
+        b.fila++;
+        b.col += b.camino[b.fila - 1] ? 1 : 0;
+        b.t = 0;
+        destellos.push({ x: mx, y: my, vida: 1 });
+      }
     }
-    bolas = bolas.filter(b => b.t < FILAS + 1);
+    destellos.forEach(d => d.vida -= 0.06);
+    destellos = destellos.filter(d => d.vida > 0);
+    bolas = bolas.filter(b => b.y < cv.height + 30 * p);
     pintar();
-    if (vivas || bolas.length) requestAnimationFrame(animar); else pintar();
+    if (bolas.length || destellos.length) requestAnimationFrame(animar);
+    else { corriendo = false; pintar(); }
   }
 
   function pagarBola(b) {
@@ -106,30 +141,45 @@ K.Juegos.plinko = function (root, juego) {
     sUlt.set(mult + '× · ' + K.sol(premio));
     sNeto.set(K.sol(neto));
     const nodo = cubos.children[b.destino];
-    if (nodo) { nodo.style.transform = 'scale(1.15)'; setTimeout(() => nodo.style.transform = '', 250); }
+    if (nodo) {
+      nodo.style.transform = 'scale(1.18)';
+      nodo.style.background = 'rgba(255,85,0,.28)';
+      setTimeout(() => { nodo.style.transform = ''; nodo.style.background = ''; }, 320);
+    }
+    if (mult >= 10) K.aviso('Plinko: ' + mult + '× · ' + K.sol(premio), 'ok');
     K.G.anotar('plinko', mult);
   }
 
   function soltar() {
     const apuesta = monto.get();
     if (!K.G.apostar(apuesta)) return;
-    const camino = [0];
-    let c = 0;
-    for (let f = 0; f < FILAS; f++) { if (Math.random() < 0.5) c++; camino.push(c); }
-    bolas.push({ t: 0, camino, destino: c, apuesta, riesgo, pagada: false });
+    const camino = [];
+    let destino = 0;
+    for (let f = 0; f < FILAS; f++) { const d = Math.random() < 0.5; camino.push(d); if (d) destino++; }
+    const [x, y] = clavija(0, 0);
+    bolas.push({ x, y, vy: 0, fila: 0, col: 0, t: 0, camino, destino, apuesta, riesgo, pagada: false });
     sueltas++; sBolas.set(String(sueltas));
-    if (bolas.length === 1) requestAnimationFrame(animar);
+    if (!corriendo) { corriendo = true; requestAnimationFrame(animar); }
   }
 
   btn.onclick = soltar;
-  btn5.onclick = async () => { for (let i = 0; i < 5; i++) { soltar(); await K.enEspera(180); } };
+  btn10.onclick = async () => {
+    for (let i = 0; i < 10; i++) {
+      if (K.Wallet.est().saldo < monto.get()) break;
+      soltar();
+      await K.enEspera(220);
+    }
+  };
 
   pintarCubos();
   root.appendChild(K.el('div', { class: 'juego-layout' }, [panel, zona]));
-  root.appendChild(K.G.nota(`<h4>Por qué el centro paga poco</h4>
-    La bola toma 16 decisiones de 50/50, así que el destino sigue una binomial: caer al centro es
-    <b>miles de veces más probable</b> que caer en un extremo. La tabla de pagos es el reflejo exacto
-    de esa distribución, ajustada para que la casa se quede con su parte.`));
+  root.appendChild(K.el('div', {
+    class: 'info-juego', html: `<h4>Por qué el centro paga poco</h4>
+    La bola toma 16 decisiones de 50/50, así que el destino sigue una binomial: terminar al centro es
+    <b>miles de veces más probable</b> que terminar en un extremo — exactamente 12.870 caminos contra
+    uno solo. La tabla de pagos es el reflejo de esa distribución, ajustada para que la casa se quede
+    con su parte. Subir el riesgo no cambia el retorno: mueve premio del centro a los bordes.` }));
+
   dimensionar(); pintar();
   const ro = new ResizeObserver(() => { dimensionar(); pintar(); });
   ro.observe(cv.parentElement);
