@@ -4,17 +4,19 @@
    =========================================================== */
 K.Wallet = (() => {
 
-  const INICIAL = 1000;
+  const INICIAL = 3000;
+  const VERSION = 2;
 
   const base = () => ({
+    v: VERSION,
     saldo: INICIAL,
     depositado: INICIAL,
     rollover: 0,                     // cuánto falta apostar para poder "retirar"
     ledger: [{ t: Date.now(), tipo: 'deposito', monto: INICIAL, det: 'Saldo de bienvenida (demo)', saldo: INICIAL }],
     apuestas: [],
     casino: { jugadas: 0, apostado: 0, devuelto: 0, historial: {} },
-    perfil: { clv: [], categoria: 'recreativo', limiteApuesta: 500, marcas: [] },
-    limites: { depositoDiario: 2000, apuestaMax: 500, autoexcluidoHasta: 0, recordatorioMin: 30 },
+    perfil: { clv: [], categoria: 'recreativo', limiteApuesta: 1500, marcas: [] },
+    limites: { depositoDiario: 6000, apuestaMax: 1500, autoexcluidoHasta: 0, recordatorioMin: 30 },
     kyc: { verificado: false, nivel: 0 },
     sesion: { inicio: Date.now(), avisado: 0 }
   });
@@ -23,10 +25,28 @@ K.Wallet = (() => {
 
   function init() {
     const guardado = K.cargar();
-    s = guardado && guardado.saldo !== undefined ? { ...base(), ...guardado } : base();
+    const existe = !!(guardado && guardado.saldo !== undefined);
+    s = existe ? { ...base(), ...guardado } : base();
+    // Ojo: la versión hay que leerla del objeto guardado, no del mezclado,
+    // porque el spread ya trae la versión nueva de base().
+    if (existe && guardado.v !== VERSION) migrar();
     s.sesion = { inicio: Date.now(), avisado: 0 };
     persistir();
     return s;
+  }
+
+  /* Sube una cuenta guardada con los valores viejos (saldo y límites de 1000/500)
+     a los nuevos, sin borrar el historial que ya tenía. */
+  function migrar() {
+    s.v = VERSION;
+    if (s.limites.depositoDiario <= 2000) s.limites.depositoDiario = 6000;
+    if (s.limites.apuestaMax <= 500) s.limites.apuestaMax = 1500;
+    if (s.perfil.categoria === 'recreativo') s.perfil.limiteApuesta = 1500;
+    if (s.saldo < INICIAL) {
+      const falta = K.round2(INICIAL - s.saldo);
+      s.depositado = K.round2(s.depositado + falta);
+      mover(falta, 'deposito', 'Ajuste del saldo demo a ' + K.sol(INICIAL));
+    }
   }
   const persistir = () => { K.guardar(s); K.bus.emit('saldo', s.saldo); };
   const est = () => s;
@@ -104,12 +124,12 @@ K.Wallet = (() => {
     if (antes / total > 0.5 && total > 10) marcas.push('Apuesta con mucha antelación');
 
     const antesCat = s.perfil.categoria;
-    if (medio > 3 && marcas.length >= 2) { s.perfil.categoria = 'sharp'; s.perfil.limiteApuesta = 60; }
-    else if (medio > 1.5) { s.perfil.categoria = 'observado'; s.perfil.limiteApuesta = 220; }
-    else { s.perfil.categoria = 'recreativo'; s.perfil.limiteApuesta = 500; }
+    if (medio > 3 && marcas.length >= 2) { s.perfil.categoria = 'sharp'; s.perfil.limiteApuesta = 180; }
+    else if (medio > 1.5) { s.perfil.categoria = 'observado'; s.perfil.limiteApuesta = 600; }
+    else { s.perfil.categoria = 'recreativo'; s.perfil.limiteApuesta = 1500; }
     s.perfil.marcas = marcas;
     if (antesCat !== s.perfil.categoria && s.perfil.categoria === 'sharp')
-      K.aviso('⚠️ El motor de riesgo te clasificó como <b>sharp</b>. Límite por apuesta reducido a ' + K.sol(60) + '.', 'warn');
+      K.aviso('El motor de riesgo te clasificó como <b>sharp</b>. Límite por apuesta reducido a ' + K.sol(180) + '.', 'warn');
     persistir();
   }
 
