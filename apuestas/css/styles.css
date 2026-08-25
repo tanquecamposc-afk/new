@@ -1342,3 +1342,57 @@ footer.pie{background-image:linear-gradient(180deg,rgba(255,255,255,.02),transpa
 .evento{margin-bottom:var(--e2)}
 .liga-cab{margin:var(--e3) 0 var(--e2)}
 .barra-sec{display:none}          /* sustituida por .sec-cab */
+
+/* ===========================================================
+   PANEL DE ADMINISTRACIÓN
+   =========================================================== */
+.puerta-admin{
+  margin-top:16px;padding-top:14px;border-top:1px dashed var(--linea);
+}
+.puerta-admin label{
+  display:block;font-size:11px;font-weight:800;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--tenue-2);margin-bottom:7px;
+}
+.fila-codigo{display:flex;gap:8px}
+.fila-codigo input{
+  flex:1;min-width:0;background:var(--panel);border:1px solid var(--linea);
+  border-radius:var(--r-chico);padding:9px 11px;
+  letter-spacing:.3em;font-weight:700;text-align:center;
+}
+.fila-codigo input:focus{outline:none;border-color:var(--naranja)}
+.fila-codigo input::placeholder{letter-spacing:.1em;color:var(--tenue-2)}
+.fila-codigo .btn{flex:none}
+.fila-codigo input.mal{
+  border-color:var(--rojo);animation:admin-no .4s;
+}
+@keyframes admin-no{
+  0%,100%{transform:translateX(0)}
+  25%{transform:translateX(-6px)}
+  75%{transform:translateX(6px)}
+}
+
+.admin-cifra{
+  display:flex;align-items:baseline;justify-content:space-between;gap:12px;
+  margin-top:12px;padding:12px 14px;border-radius:12px;
+  background:linear-gradient(180deg,rgba(255,85,0,.12),rgba(255,85,0,.04));
+  border:1px solid rgba(255,85,0,.28);
+}
+.admin-cifra span{
+  font-size:11px;font-weight:800;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--tenue);
+}
+.admin-cifra b{
+  font-family:var(--display);font-size:28px;font-weight:900;color:#fff;
+  font-variant-numeric:tabular-nums;
+}
+
+.admin-seccion{margin-top:16px}
+.admin-seccion h4{
+  font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--tenue-2);margin-bottom:9px;
+}
+.admin-seccion .acciones{flex-wrap:wrap;gap:8px}
+.admin-seccion .btn{flex:1 1 auto}
+.admin-seccion + .admin-seccion{
+  padding-top:14px;border-top:1px solid var(--linea);
+}

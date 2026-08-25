@@ -528,6 +528,39 @@ K.App = (() => {
     ]));
     const btn = K.el('button', { class: 'btn bloque', style: 'margin-top:12px', text: 'Confirmar recarga' });
     cuerpo.appendChild(btn);
+
+    /* --- puerta al panel de administración --- */
+    const puerta = K.el('div', { class: 'puerta-admin' });
+    const pintarPuerta = () => {
+      puerta.innerHTML = '';
+      if (K.Admin.desbloqueado()) {
+        puerta.appendChild(K.el('button', {
+          class: 'btn sec bloque', text: 'Abrir panel de administración',
+          onclick: () => { cerrar(); modalAdmin(); }
+        }));
+        return;
+      }
+      const codigo = K.el('input', { type: 'password', inputmode: 'numeric', placeholder: 'Código', maxlength: '12' });
+      const entrar = () => {
+        if (!K.Admin.desbloquear(codigo.value)) {
+          codigo.value = '';
+          codigo.classList.add('mal');
+          setTimeout(() => codigo.classList.remove('mal'), 600);
+          K.aviso('Código incorrecto.', 'err');
+          return;
+        }
+        K.aviso('Panel de administración desbloqueado.', 'ok');
+        cerrar(); modalAdmin();
+      };
+      codigo.onkeydown = e => { if (e.key === 'Enter') entrar(); };
+      puerta.appendChild(K.el('label', { text: 'Acceso de administrador' }));
+      puerta.appendChild(K.el('div', { class: 'fila-codigo' }, [
+        codigo, K.el('button', { class: 'btn sec', text: 'Entrar', onclick: entrar })
+      ]));
+    };
+    pintarPuerta();
+    cuerpo.appendChild(puerta);
+
     const cerrar = K.modal('Depositar fichas demo', cuerpo, 'simulación');
     btn.onclick = () => {
       const r = K.Wallet.depositar(K.round2(Number(inp.value) || 0));
@@ -535,6 +568,88 @@ K.App = (() => {
       K.aviso('Recarga acreditada.', 'ok');
       cerrar(); actualizarSaldo(); if (vista === 'cuenta') pintar();
     };
+  }
+
+  /* ---------- panel de administración ---------- */
+  function modalAdmin() {
+    const cuerpo = K.el('div', { class: 'admin' });
+    let cerrar = null;
+
+    const refrescar = () => {
+      actualizarSaldo();
+      if (vista === 'cuenta' || vista === 'recompensas') pintar();
+      K.$('.admin-saldo', cuerpo).textContent = K.sol(K.Wallet.est().saldo);
+    };
+
+    cuerpo.appendChild(K.el('div', {
+      class: 'info-bloque',
+      html: 'Atajo para probar la página sin tener que juntar saldo jugando. Las fichas siguen sin ' +
+        'valer nada: lo que cambia acá no sale del límite diario ni suma rollover.'
+    }));
+
+    cuerpo.appendChild(K.el('div', { class: 'admin-cifra' }, [
+      K.el('span', { text: 'Saldo actual' }),
+      K.el('b', { class: 'admin-saldo', text: K.sol(K.Wallet.est().saldo) })
+    ]));
+
+    /* --- añadir fichas --- */
+    const monto = K.el('input', { type: 'number', step: '100', value: '10000' });
+    const aplicar = (fn, ok) => {
+      const r = fn();
+      if (r && !r.ok) { K.aviso(r.razon, 'err'); return; }
+      K.aviso(ok, 'ok');
+      refrescar();
+    };
+    const bloqueMonto = K.el('div', { class: 'campo' }, [
+      K.el('label', { text: 'Monto (S/)' }), monto,
+      K.el('div', { class: 'fila-btns' }, [
+        ['1 mil', 1000], ['10 mil', 10000], ['100 mil', 100000], ['1 millón', 1000000]
+      ].map(([etiqueta, v]) => K.el('button', { text: etiqueta, onclick: () => monto.value = v })))
+    ]);
+    bloqueMonto.appendChild(K.el('div', { class: 'acciones', style: 'margin-top:10px' }, [
+      K.el('button', { class: 'btn', text: 'Añadir al saldo', onclick: () => aplicar(() => K.Admin.acreditar(monto.value), 'Fichas acreditadas.') }),
+      K.el('button', { class: 'btn sec', text: 'Fijar como saldo', onclick: () => aplicar(() => K.Admin.fijarSaldo(monto.value), 'Saldo actualizado.') }),
+      K.el('button', { class: 'btn sec', text: 'Descontar', onclick: () => aplicar(() => K.Admin.acreditar(-Math.abs(Number(monto.value) || 0)), 'Fichas descontadas.') })
+    ]));
+    cuerpo.appendChild(seccionAdmin('Fichas', bloqueMonto));
+
+    /* --- desbloqueos --- */
+    const extras = K.el('div', { class: 'acciones' }, [
+      K.el('button', {
+        class: 'btn sec', text: 'Liberar el retiro',
+        onclick: () => aplicar(() => K.Admin.liberarRetiro(), 'KYC verificado y rollover en cero.')
+      }),
+      K.el('button', {
+        class: 'btn sec', text: 'Soltar los límites',
+        onclick: () => aplicar(() => K.Admin.soltarLimites(), 'Límite diario y apuesta máxima al tope.')
+      }),
+      K.el('button', {
+        class: 'btn sec', text: 'Subir 5 niveles',
+        onclick: () => aplicar(() => K.Admin.subirNiveles(5), 'Cinco niveles arriba.')
+      })
+    ]);
+    cuerpo.appendChild(seccionAdmin('Desbloqueos', extras));
+
+    /* --- reinicio --- */
+    const peligro = K.el('div', { class: 'acciones' }, [
+      K.el('button', {
+        class: 'btn peligro', text: 'Reiniciar la demo', onclick: () => {
+          if (!confirm('Esto borra saldo, apuestas e historial de esta demo. ¿Continuar?')) return;
+          K.Wallet.reiniciar();
+          K.aviso('Demo reiniciada.', 'ok');
+          cerrar(); actualizarSaldo(); pintar();
+        }
+      })
+    ]);
+    cuerpo.appendChild(seccionAdmin('Zona de peligro', peligro));
+
+    cerrar = K.modal('Panel de administración', cuerpo, 'solo demo');
+  }
+
+  function seccionAdmin(titulo, nodo) {
+    return K.el('div', { class: 'admin-seccion' }, [
+      K.el('h4', { text: titulo }), nodo
+    ]);
   }
 
   function modalRetiro() {
