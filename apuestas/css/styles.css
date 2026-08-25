@@ -475,6 +475,7 @@ header.top{
 .seleccion .merc{font-size:11px;color:var(--tenue-2);margin-top:1px}
 .seleccion .part{font-size:11.5px;color:var(--tenue);margin-top:2px}
 .seleccion .aviso-cambio{margin-top:5px;font-size:11px;color:var(--ambar);background:rgba(251,191,36,.1);padding:3px 7px;border-radius:5px}
+.seleccion .aviso-cambio.cerrada{color:#fda4b4;background:rgba(244,63,94,.12)}
 .boleto-vacio{padding:26px 18px;text-align:center;color:var(--tenue-2);font-size:12.5px}
 .boleto-vacio .ic{font-size:30px;display:block;margin:0 auto 8px;opacity:.45}
 
@@ -1048,3 +1049,150 @@ input[type="range"]{width:100%;accent-color:var(--naranja)}
 .virt-hfila{display:flex;align-items:center;gap:10px;font-size:12.5px;padding:6px 0;border-bottom:1px solid rgba(51,65,85,.5)}
 .virt-hfila:last-child{border-bottom:none}
 .virt-hfila .id{color:var(--tenue-2);font-variant-numeric:tabular-nums;width:44px}
+
+/* ===========================================================
+   CAPA DE ACABADO
+   Profundidad, jerarquía y detalle fino sobre la base anterior.
+   =========================================================== */
+
+/* --- fondo con textura muy sutil, para que no sea un plano muerto --- */
+body::before{
+  content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+  background-image:
+    linear-gradient(rgba(148,163,184,.035) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(148,163,184,.035) 1px,transparent 1px);
+  background-size:56px 56px;
+  mask-image:radial-gradient(circle at 50% 0%,#000 0%,transparent 72%);
+  -webkit-mask-image:radial-gradient(circle at 50% 0%,#000 0%,transparent 72%);
+}
+header.top,.contenedor,footer.pie,#toasts{position:relative;z-index:1}
+
+/* --- superficies con brillo superior, como paneles reales --- */
+.tarjeta,.evento,.apuesta,.menu-lat,.juego,.mision,.logro,.panel-apuesta,
+.zona-juego,.kpi,.info-bloque,.info-juego,.virt-fila{
+  background-image:linear-gradient(180deg,rgba(255,255,255,.035),rgba(255,255,255,0) 42%);
+}
+.tarjeta,.apuesta,.menu-lat{box-shadow:0 1px 0 rgba(255,255,255,.04) inset,0 8px 22px rgba(2,6,16,.28)}
+.evento{box-shadow:0 1px 0 rgba(255,255,255,.03) inset,0 4px 14px rgba(2,6,16,.22)}
+.evento:hover{transform:translateY(-1px);box-shadow:0 1px 0 rgba(255,255,255,.05) inset,0 10px 26px rgba(2,6,16,.4)}
+.evento{transition:transform .16s,border-color .16s,box-shadow .16s}
+
+/* --- cabecera más definida --- */
+header.top{border-bottom:1px solid rgba(51,65,85,.9);box-shadow:0 10px 30px rgba(2,6,16,.45)}
+.logo{text-shadow:0 0 26px rgba(255,85,0,.35)}
+.nav button{position:relative}
+.nav button.on{
+  background:linear-gradient(180deg,rgba(255,85,0,.2),rgba(255,85,0,.08));
+  box-shadow:inset 0 -2px 0 var(--naranja),0 6px 18px rgba(255,85,0,.14);
+}
+.nav button:not(.on):hover{background:rgba(148,163,184,.08)}
+
+/* --- botones con más cuerpo --- */
+.btn{background-image:linear-gradient(180deg,rgba(255,255,255,.16),rgba(255,255,255,0))}
+.btn:not(:disabled):active{transform:translateY(1px) scale(.995)}
+.btn.sec{background-image:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,0))}
+.btn:disabled{background-image:none}
+
+/* --- cuotas: más aire, mejor jerarquía y pulsación --- */
+.cuota{
+  padding:9px 8px;
+  background-image:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,0));
+  transition:transform .12s,background .12s,border-color .12s,box-shadow .12s;
+}
+.cuota .lab{font-size:10px;letter-spacing:.06em}
+.cuota .val{font-size:16px;letter-spacing:-.01em}
+.cuota:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 6px 16px rgba(255,85,0,.18)}
+.cuota:not(:disabled):active{transform:translateY(0) scale(.98)}
+.cuota.on{box-shadow:0 6px 18px rgba(255,85,0,.35)}
+
+/* --- escudos y marcador del evento --- */
+.equipo .esc{
+  background:linear-gradient(150deg,var(--panel-3),var(--panel));
+  border:1px solid rgba(255,255,255,.07);box-shadow:0 2px 6px rgba(0,0,0,.3);
+}
+.equipo .marc{
+  background:rgba(255,85,0,.12);border:1px solid rgba(255,85,0,.25);
+  border-radius:6px;padding:1px 8px;font-size:13px;min-width:26px;text-align:center;
+}
+
+/* --- cabeceras de sección con barra de acento --- */
+.barra-sec h2{position:relative;padding-left:12px}
+.barra-sec h2::before{
+  content:"";position:absolute;left:0;top:50%;transform:translateY(-50%);
+  width:3px;height:16px;border-radius:2px;background:var(--naranja);
+}
+.barra-sec h2 .ic{margin-left:2px}
+
+/* --- menú lateral --- */
+.menu-lat h4{border-bottom:1px solid rgba(51,65,85,.6);margin-bottom:6px}
+.menu-lat button.on{box-shadow:inset 2px 0 0 var(--naranja)}
+
+/* --- promo con capas --- */
+.promo{
+  background:
+    radial-gradient(120% 140% at 100% 0%,rgba(255,255,255,.22),transparent 55%),
+    linear-gradient(115deg,#b83a00,#ff6a14 55%,#ffa249);
+  box-shadow:0 14px 40px rgba(255,85,0,.22);
+}
+.promo::after{
+  content:"";position:absolute;inset:0;pointer-events:none;
+  background-image:repeating-linear-gradient(115deg,rgba(255,255,255,.06) 0 2px,transparent 2px 22px);
+}
+.promo > *{position:relative;z-index:1}
+.promo .nueva{box-shadow:0 6px 18px rgba(0,0,0,.28)}
+
+/* --- lobby de casino --- */
+.juego .arte{transition:transform .25s}
+.juego .arte > span:first-child{transition:transform .25s;display:inline-block}
+.juego:hover .arte > span:first-child{transform:scale(1.16) translateY(-2px)}
+.juego .arte::before{
+  content:"";position:absolute;inset:0;
+  background:radial-gradient(60% 60% at 50% 35%,rgba(255,255,255,.16),transparent 70%);
+}
+.juego:hover{box-shadow:0 14px 32px rgba(2,6,16,.5),0 0 0 1px rgba(255,85,0,.5)}
+.juego .txt .nom{letter-spacing:-.01em}
+.casino-hero{box-shadow:0 18px 44px rgba(2,6,16,.5)}
+
+/* --- boleto --- */
+#boleto .seleccion:hover{background:rgba(148,163,184,.05)}
+.resumen .fila.total b{text-shadow:0 0 22px rgba(34,197,94,.35)}
+.stake-fila input{box-shadow:inset 0 2px 6px rgba(0,0,0,.28)}
+
+/* --- tablas --- */
+.tabla tr:hover td{background:rgba(148,163,184,.05)}
+.tabla th{background:rgba(15,23,42,.4)}
+
+/* --- avisos --- */
+.toast{
+  background-image:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,0));
+  backdrop-filter:blur(8px);
+}
+
+/* --- estados vacíos --- */
+.vacio .ic{opacity:.28}
+.vacio{border:1px dashed var(--linea);border-radius:var(--r);background:rgba(15,23,42,.35)}
+
+/* --- modales --- */
+.modal{box-shadow:0 30px 80px rgba(2,6,16,.7),0 0 0 1px rgba(148,163,184,.06)}
+.modal-cab{background-image:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,0))}
+.modal-cab h3{letter-spacing:-.015em}
+
+/* --- zona de juego con viñeta --- */
+.zona-juego{
+  background-image:
+    radial-gradient(90% 70% at 50% 0%,rgba(255,255,255,.05),transparent 60%),
+    linear-gradient(180deg,var(--fondo-2),#0b1424);
+}
+
+/* --- teletipo --- */
+.ticker{box-shadow:inset 0 1px 0 rgba(255,255,255,.04)}
+.ticker-item .eq{color:var(--tenue)}
+
+/* --- foco visible coherente --- */
+:focus-visible{outline:2px solid var(--naranja);outline-offset:2px;border-radius:6px}
+
+/* --- barras de progreso --- */
+.barra i{background-image:linear-gradient(90deg,var(--naranja),#ff9a4d);box-shadow:0 0 12px rgba(255,85,0,.4)}
+
+/* --- pie --- */
+footer.pie{background-image:linear-gradient(180deg,rgba(255,255,255,.02),transparent)}

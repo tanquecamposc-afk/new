@@ -140,9 +140,21 @@ K.Juegos.mines = function (root, juego) {
 
   const zonaCompleta = K.el('div', {}, [zona, escalera]);
   root.appendChild(K.el('div', { class: 'juego-layout' }, [panel, zonaCompleta]));
+  /* Cerrar la ventana equivale a pulsar Cobrar: nunca se queda tu dinero. */
+  const alCerrar = () => {
+    if (!activo) return;
+    const m = multiplicador(abiertas);
+    const premio = K.round2(apuesta * m);
+    activo = false;
+    K.G.pagar(premio, 'Mines · partida cobrada al cerrar');
+    K.aviso('Partida cobrada al cerrar: ' + K.sol(premio), 'warn');
+  };
+
   root.appendChild(K.G.nota(`<h4>Cómo sale el multiplicador</h4>
     Con <b>${'M'}</b> minas y <b>k</b> casillas abiertas el pago justo es
     <code>C(25,k) / C(25−M,k)</code>. La casa se queda con un 3%: por eso el multiplicador
     que ves está a <code>0.97</code> del valor justo. Más minas, menos probabilidad de seguir vivo
     y más grande el salto por cada acierto.`));
+
+  return alCerrar;
 };

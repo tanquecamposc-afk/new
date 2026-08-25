@@ -29,6 +29,7 @@ node tools/build.js          # → dist/kronosbet.html
 | Motor de cuotas | Poisson para fútbol (matriz de marcadores), normal para básquet, modelo de sets para tenis, binomial para series de eSports y vóley |
 | Margen | `Cuota = 1 / (P × M)` con M entre 1.035 y 1.07 según liga, +2.5 puntos en vivo |
 | Riesgo | Cada apuesta carga la responsabilidad del libro y mueve la cuota de ese lado hacia abajo |
+| Cierre de mercados | Un mercado ya decidido (o sin margen tras el recorte de cuotas) se cierra en vez de ofrecer precios absurdos, y el boleto rechaza una selección si su mercado se cerró mientras validaba |
 | En vivo | Reloj a 30×, goles y canastas simulados, suspensión de mercado al caer un gol y recálculo del modelo |
 | Bet delay | 3 a 8 segundos de validación en las apuestas en vivo; si el mercado se suspende en ese lapso, la apuesta se rechaza |
 | Boleto | Simples y combinadas, aviso de cambio de cuota, retorno potencial y margen real del mercado |
@@ -102,7 +103,10 @@ las apuestas se liquidan solas. Margen del 14%, casi el triple que en fútbol: s
   doblar y dividir hasta cuatro manos, Speed Baccarat con reglas de tercera carta y su camino de
   resultados, y Jacks or Better 9/6.
 
-Cada juego muestra su RTP teórico y una nota explicando de dónde sale la ventaja de la casa.
+Cada juego muestra su RTP teórico y una nota explicando de dónde sale la ventaja de la casa. Cerrar la
+ventana nunca te cuesta dinero: una partida abierta de Mines, Torres, Hi-Lo o Cara o Cruz se cobra al
+valor que tenga en ese momento, las bolas de Plinko que quedan en el aire se liquidan igual y una ronda
+de crash en pleno vuelo se anula y devuelve la apuesta.
 
 ## Juego responsable
 

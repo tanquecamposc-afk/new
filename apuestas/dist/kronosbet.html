@@ -486,6 +486,7 @@ header.top{
 .seleccion .merc{font-size:11px;color:var(--tenue-2);margin-top:1px}
 .seleccion .part{font-size:11.5px;color:var(--tenue);margin-top:2px}
 .seleccion .aviso-cambio{margin-top:5px;font-size:11px;color:var(--ambar);background:rgba(251,191,36,.1);padding:3px 7px;border-radius:5px}
+.seleccion .aviso-cambio.cerrada{color:#fda4b4;background:rgba(244,63,94,.12)}
 .boleto-vacio{padding:26px 18px;text-align:center;color:var(--tenue-2);font-size:12.5px}
 .boleto-vacio .ic{font-size:30px;display:block;margin:0 auto 8px;opacity:.45}
 
@@ -1060,6 +1061,153 @@ input[type="range"]{width:100%;accent-color:var(--naranja)}
 .virt-hfila:last-child{border-bottom:none}
 .virt-hfila .id{color:var(--tenue-2);font-variant-numeric:tabular-nums;width:44px}
 
+/* ===========================================================
+   CAPA DE ACABADO
+   Profundidad, jerarquía y detalle fino sobre la base anterior.
+   =========================================================== */
+
+/* --- fondo con textura muy sutil, para que no sea un plano muerto --- */
+body::before{
+  content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+  background-image:
+    linear-gradient(rgba(148,163,184,.035) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(148,163,184,.035) 1px,transparent 1px);
+  background-size:56px 56px;
+  mask-image:radial-gradient(circle at 50% 0%,#000 0%,transparent 72%);
+  -webkit-mask-image:radial-gradient(circle at 50% 0%,#000 0%,transparent 72%);
+}
+header.top,.contenedor,footer.pie,#toasts{position:relative;z-index:1}
+
+/* --- superficies con brillo superior, como paneles reales --- */
+.tarjeta,.evento,.apuesta,.menu-lat,.juego,.mision,.logro,.panel-apuesta,
+.zona-juego,.kpi,.info-bloque,.info-juego,.virt-fila{
+  background-image:linear-gradient(180deg,rgba(255,255,255,.035),rgba(255,255,255,0) 42%);
+}
+.tarjeta,.apuesta,.menu-lat{box-shadow:0 1px 0 rgba(255,255,255,.04) inset,0 8px 22px rgba(2,6,16,.28)}
+.evento{box-shadow:0 1px 0 rgba(255,255,255,.03) inset,0 4px 14px rgba(2,6,16,.22)}
+.evento:hover{transform:translateY(-1px);box-shadow:0 1px 0 rgba(255,255,255,.05) inset,0 10px 26px rgba(2,6,16,.4)}
+.evento{transition:transform .16s,border-color .16s,box-shadow .16s}
+
+/* --- cabecera más definida --- */
+header.top{border-bottom:1px solid rgba(51,65,85,.9);box-shadow:0 10px 30px rgba(2,6,16,.45)}
+.logo{text-shadow:0 0 26px rgba(255,85,0,.35)}
+.nav button{position:relative}
+.nav button.on{
+  background:linear-gradient(180deg,rgba(255,85,0,.2),rgba(255,85,0,.08));
+  box-shadow:inset 0 -2px 0 var(--naranja),0 6px 18px rgba(255,85,0,.14);
+}
+.nav button:not(.on):hover{background:rgba(148,163,184,.08)}
+
+/* --- botones con más cuerpo --- */
+.btn{background-image:linear-gradient(180deg,rgba(255,255,255,.16),rgba(255,255,255,0))}
+.btn:not(:disabled):active{transform:translateY(1px) scale(.995)}
+.btn.sec{background-image:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,0))}
+.btn:disabled{background-image:none}
+
+/* --- cuotas: más aire, mejor jerarquía y pulsación --- */
+.cuota{
+  padding:9px 8px;
+  background-image:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,0));
+  transition:transform .12s,background .12s,border-color .12s,box-shadow .12s;
+}
+.cuota .lab{font-size:10px;letter-spacing:.06em}
+.cuota .val{font-size:16px;letter-spacing:-.01em}
+.cuota:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 6px 16px rgba(255,85,0,.18)}
+.cuota:not(:disabled):active{transform:translateY(0) scale(.98)}
+.cuota.on{box-shadow:0 6px 18px rgba(255,85,0,.35)}
+
+/* --- escudos y marcador del evento --- */
+.equipo .esc{
+  background:linear-gradient(150deg,var(--panel-3),var(--panel));
+  border:1px solid rgba(255,255,255,.07);box-shadow:0 2px 6px rgba(0,0,0,.3);
+}
+.equipo .marc{
+  background:rgba(255,85,0,.12);border:1px solid rgba(255,85,0,.25);
+  border-radius:6px;padding:1px 8px;font-size:13px;min-width:26px;text-align:center;
+}
+
+/* --- cabeceras de sección con barra de acento --- */
+.barra-sec h2{position:relative;padding-left:12px}
+.barra-sec h2::before{
+  content:"";position:absolute;left:0;top:50%;transform:translateY(-50%);
+  width:3px;height:16px;border-radius:2px;background:var(--naranja);
+}
+.barra-sec h2 .ic{margin-left:2px}
+
+/* --- menú lateral --- */
+.menu-lat h4{border-bottom:1px solid rgba(51,65,85,.6);margin-bottom:6px}
+.menu-lat button.on{box-shadow:inset 2px 0 0 var(--naranja)}
+
+/* --- promo con capas --- */
+.promo{
+  background:
+    radial-gradient(120% 140% at 100% 0%,rgba(255,255,255,.22),transparent 55%),
+    linear-gradient(115deg,#b83a00,#ff6a14 55%,#ffa249);
+  box-shadow:0 14px 40px rgba(255,85,0,.22);
+}
+.promo::after{
+  content:"";position:absolute;inset:0;pointer-events:none;
+  background-image:repeating-linear-gradient(115deg,rgba(255,255,255,.06) 0 2px,transparent 2px 22px);
+}
+.promo > *{position:relative;z-index:1}
+.promo .nueva{box-shadow:0 6px 18px rgba(0,0,0,.28)}
+
+/* --- lobby de casino --- */
+.juego .arte{transition:transform .25s}
+.juego .arte > span:first-child{transition:transform .25s;display:inline-block}
+.juego:hover .arte > span:first-child{transform:scale(1.16) translateY(-2px)}
+.juego .arte::before{
+  content:"";position:absolute;inset:0;
+  background:radial-gradient(60% 60% at 50% 35%,rgba(255,255,255,.16),transparent 70%);
+}
+.juego:hover{box-shadow:0 14px 32px rgba(2,6,16,.5),0 0 0 1px rgba(255,85,0,.5)}
+.juego .txt .nom{letter-spacing:-.01em}
+.casino-hero{box-shadow:0 18px 44px rgba(2,6,16,.5)}
+
+/* --- boleto --- */
+#boleto .seleccion:hover{background:rgba(148,163,184,.05)}
+.resumen .fila.total b{text-shadow:0 0 22px rgba(34,197,94,.35)}
+.stake-fila input{box-shadow:inset 0 2px 6px rgba(0,0,0,.28)}
+
+/* --- tablas --- */
+.tabla tr:hover td{background:rgba(148,163,184,.05)}
+.tabla th{background:rgba(15,23,42,.4)}
+
+/* --- avisos --- */
+.toast{
+  background-image:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,0));
+  backdrop-filter:blur(8px);
+}
+
+/* --- estados vacíos --- */
+.vacio .ic{opacity:.28}
+.vacio{border:1px dashed var(--linea);border-radius:var(--r);background:rgba(15,23,42,.35)}
+
+/* --- modales --- */
+.modal{box-shadow:0 30px 80px rgba(2,6,16,.7),0 0 0 1px rgba(148,163,184,.06)}
+.modal-cab{background-image:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,0))}
+.modal-cab h3{letter-spacing:-.015em}
+
+/* --- zona de juego con viñeta --- */
+.zona-juego{
+  background-image:
+    radial-gradient(90% 70% at 50% 0%,rgba(255,255,255,.05),transparent 60%),
+    linear-gradient(180deg,var(--fondo-2),#0b1424);
+}
+
+/* --- teletipo --- */
+.ticker{box-shadow:inset 0 1px 0 rgba(255,255,255,.04)}
+.ticker-item .eq{color:var(--tenue)}
+
+/* --- foco visible coherente --- */
+:focus-visible{outline:2px solid var(--naranja);outline-offset:2px;border-radius:6px}
+
+/* --- barras de progreso --- */
+.barra i{background-image:linear-gradient(90deg,var(--naranja),#ff9a4d);box-shadow:0 0 12px rgba(255,85,0,.4)}
+
+/* --- pie --- */
+footer.pie{background-image:linear-gradient(180deg,rgba(255,255,255,.02),transparent)}
+
 </style>
 </head>
 <body>
@@ -1388,6 +1536,8 @@ K.Odds = (() => {
      que ya entró a cada resultado; si un lado carga mucho,
      ese lado paga menos.
      ------------------------------------------------------- */
+  const CUOTA_MAX = 500;          // por encima de esto el mercado ya no tiene sentido
+
   function cuotas(probs, M, pesos) {
     const n = probs.length;
     let aj = probs.map((p, i) => {
@@ -1398,7 +1548,8 @@ K.Odds = (() => {
     const s = aj.reduce((a, b) => a + b, 0) || 1;
     return aj.map(p => {
       const pf = (p / s) * M;
-      return Math.max(1.01, Math.floor((1 / pf) * 100) / 100);
+      const c = Math.floor((1 / pf) * 100) / 100;
+      return K.clamp(isFinite(c) ? c : CUOTA_MAX, 1.01, CUOTA_MAX);
     });
   }
 
@@ -1572,6 +1723,12 @@ K.Odds = (() => {
       });
       merc.overround = overround(cs);
       merc.margen = merc.overround - 1;
+      /* Un mercado con un resultado ya decidido (o imposible) se cierra, como
+         hace cualquier casa: no tiene sentido pagar 1.01 por lo seguro ni
+         ofrecer 500 por lo que ya no puede pasar. */
+      /* También se cierra si el recorte de cuotas dejó el libro sin margen:
+         un mercado que suma menos del 102% ya no es vendible. */
+      merc.cerrado = merc.sel.some(s => s.p > 0.97 || s.p < 1 / CUOTA_MAX) || merc.overround < 1.02;
     }
     return base;
   }
@@ -2497,6 +2654,11 @@ K.Sportsbook = (() => {
     }
     // Refrescar cuotas vivas antes de pintar
     boleto.lineas.forEach(l => {
+      const ev = K.evento(l.evId);
+      const merc = ev && l.mercId !== 'super'
+        ? K.Odds.construir(ev).find(x => x.id === l.mercId) : null;
+      l.cerrada = !!(merc && merc.cerrado) || !!(ev && ev.terminado);
+      if (l.cerrada) return;
       const c = cuotaActualDe(l.evId, l.mercId, l.selId);
       if (c && c !== l.cuota) { l.cambio = c - l.cuota; l.cuota = c; }
     });
@@ -2530,8 +2692,10 @@ K.Sportsbook = (() => {
         <div class="pick"><span>${K.esc(l.pick)}</span><span class="c">${K.dec(l.cuota)}</span></div>
         <div class="merc">${K.esc(l.merc)}</div>
         <div class="part">${K.esc(l.partido)}</div>
-        ${Math.abs(l.cuota - l.cuotaInicial) > 0.001
-          ? `<div class="aviso-cambio">La cuota se movió de ${K.dec(l.cuotaInicial)} a ${K.dec(l.cuota)}</div>` : ''}
+        ${l.cerrada
+          ? '<div class="aviso-cambio cerrada">Este mercado se cerró · quita la selección para poder apostar</div>'
+          : Math.abs(l.cuota - l.cuotaInicial) > 0.001
+            ? `<div class="aviso-cambio">La cuota se movió de ${K.dec(l.cuotaInicial)} a ${K.dec(l.cuota)}</div>` : ''}
       </div>`;
     }
     html += `<div class="stake-fila"><span class="sol">S/</span>
@@ -2551,7 +2715,7 @@ K.Sportsbook = (() => {
           <input type="checkbox" id="aceptar-cambios" ${boleto.aceptarCambios ? 'checked' : ''}>
           Aceptar cambios de cuota automáticamente
         </label>
-        <button class="btn bloque" id="apostar" ${boleto.procesando ? 'disabled' : ''}>
+        <button class="btn bloque" id="apostar" ${boleto.procesando || boleto.lineas.some(l => l.cerrada) ? 'disabled' : ''}>
           ${boleto.procesando ? 'Validando…' : 'Apostar ' + K.sol(apostadoReal)}
         </button>
       </div>
@@ -2629,6 +2793,21 @@ K.Sportsbook = (() => {
         pintarBoleto();
         return;
       }
+    }
+
+    /* Si algún mercado se cerró mientras validábamos (el resultado ya está
+       decidido), la apuesta no se acepta. */
+    const cerradas = boleto.lineas.filter(l => {
+      const ev = K.evento(l.evId);
+      if (!ev || l.mercId === 'super') return false;
+      const m = K.Odds.construir(ev).find(x => x.id === l.mercId);
+      return !m || m.cerrado;
+    });
+    if (cerradas.length) {
+      boleto.procesando = false;
+      K.aviso('Apuesta rechazada: ' + K.esc(cerradas[0].merc) + ' ya está cerrado en ese partido.', 'err');
+      pintarBoleto();
+      return;
     }
 
     // Revisión de cuota al momento de aceptar
@@ -2769,7 +2948,8 @@ K.Sportsbook = (() => {
     if (++tick.n % 3 === 0) {
       for (const ev of K.EVENTOS) {
         if (!ev.vivo) continue;
-        const m = K.Odds.construir(ev)[0];
+        const ms = K.Odds.construir(ev);
+        const m = ms.find(x => !x.cerrado) || ms[0];
         ev.serie.push(m.sel.map(x => x.cuota));
         if (ev.serie.length > 80) ev.serie.shift();
       }
@@ -2804,7 +2984,23 @@ K.Sportsbook = (() => {
     ev.suspendidoHasta = ahora() + seg * 1000 * VEL;   // seg reales en escala virtual
   }
 
+  /* Tenis, básquet, eSports y vóley no admiten empate: si el reloj se acaba
+     con el marcador igualado, se resuelve como en la vida real, jugando de
+     más hasta que alguien se ponga por delante. */
+  function desempatar(ev) {
+    if (ev.deporte === 'futbol') return;
+    if (ev.marcador.l !== ev.marcador.v) return;
+    const favorito = ev.deporte === 'tenis' ? ev.modelo.p1
+      : ev.deporte === 'basket' ? (ev.modelo.spread > 0 ? 0.55 : 0.45)
+      : ev.modelo.q;
+    const gana = Math.random() < favorito ? 'l' : 'v';
+    if (ev.deporte === 'basket') ev.marcador[gana] += K.entero(2, 8);
+    else ev.marcador[gana] += 1;
+    ev.prorroga = true;
+  }
+
   function finalizar(ev) {
+    desempatar(ev);
     ev.terminado = true;
     ev.vivo = false;
     const importa = meImporta(ev);
@@ -2879,14 +3075,15 @@ K.Sportsbook = (() => {
         text: sel.cuota > previa ? '▲' : '▼'
       }));
     }
-    b.disabled = !!ev.suspendido || !!ev.terminado;
+    b.disabled = !!ev.suspendido || !!ev.terminado || !!merc.cerrado;
     nodos[k] = b;
     return b;
   }
 
   function tarjetaEvento(ev, opts = {}) {
     const mercados = K.Odds.construir(ev);
-    const principal = mercados[0];
+    const abiertos = mercados.filter(m => !m.cerrado);
+    const principal = abiertos[0] || mercados[0];
     const card = K.el('div', { class: 'evento' });
 
     const cab = K.el('div', { class: 'ev-cab' });
@@ -2919,7 +3116,13 @@ K.Sportsbook = (() => {
     cuerpo.appendChild(equipos);
 
     if (ev.suspendido) {
-      cuerpo.appendChild(K.el('div', { class: 'suspendido', html: '🔒 Mercado suspendido · recalculando cuotas' }));
+      const av = K.el('div', { class: 'suspendido' });
+      av.innerHTML = K.ic('candado') + ' Mercado suspendido · recalculando cuotas';
+      cuerpo.appendChild(av);
+    } else if (!abiertos.length) {
+      const av = K.el('div', { class: 'suspendido' });
+      av.innerHTML = K.ic('candado') + ' Mercados cerrados · el resultado ya está decidido';
+      cuerpo.appendChild(av);
     } else {
       const merc = K.el('div', { class: 'mercado g' + principal.cols });
       principal.sel.forEach(s => merc.appendChild(botonCuota(ev, principal, s)));
@@ -2929,11 +3132,13 @@ K.Sportsbook = (() => {
 
     const pie = K.el('div', { class: 'ev-pie' });
     pie.appendChild(K.el('span', { text: principal.nombre }));
-    pie.appendChild(K.el('span', { text: '·' }));
-    pie.appendChild(K.el('span', { text: 'margen ' + K.pct(principal.overround - 1) }));
-    if (!opts.sinMas) {
+    if (!principal.cerrado) {
+      pie.appendChild(K.el('span', { text: '·' }));
+      pie.appendChild(K.el('span', { text: 'margen ' + K.pct(principal.overround - 1) }));
+    }
+    if (!opts.sinMas && abiertos.length > 1) {
       const mas = K.el('button', { class: 'mas', onclick: () => abrirEvento(ev.id) });
-      mas.innerHTML = '+' + (mercados.length - 1) + ' mercados' + K.ic('chevron');
+      mas.innerHTML = '+' + (abiertos.length - 1) + ' mercados' + K.ic('chevron');
       pie.appendChild(mas);
     }
     card.appendChild(pie);
@@ -3198,8 +3403,16 @@ K.Sportsbook = (() => {
       /* evolución de la cuota */
       if (ev.serie.length > 3) cuerpo.appendChild(bloqueGrafica(ev, mercados[0]));
 
+
       /* mercados */
-      mercados.forEach(m => {
+      const abiertos = mercados.filter(m => !m.cerrado);
+      if (!abiertos.length) {
+        cuerpo.appendChild(K.el('div', {
+          class: 'info-bloque', style: 'margin-top:12px',
+          html: 'Todos los mercados de este partido están cerrados: con el marcador actual ya no queda nada por decidir.'
+        }));
+      }
+      abiertos.forEach(m => {
         const caja = K.el('div', { class: 'tarjeta', style: 'margin-top:12px' });
         caja.appendChild(K.el('h3', {
           html: `${K.esc(m.nombre)} <span style="font-weight:600;text-transform:none;letter-spacing:0">
@@ -3686,11 +3899,23 @@ K.Juegos.mines = function (root, juego) {
 
   const zonaCompleta = K.el('div', {}, [zona, escalera]);
   root.appendChild(K.el('div', { class: 'juego-layout' }, [panel, zonaCompleta]));
+  /* Cerrar la ventana equivale a pulsar Cobrar: nunca se queda tu dinero. */
+  const alCerrar = () => {
+    if (!activo) return;
+    const m = multiplicador(abiertas);
+    const premio = K.round2(apuesta * m);
+    activo = false;
+    K.G.pagar(premio, 'Mines · partida cobrada al cerrar');
+    K.aviso('Partida cobrada al cerrar: ' + K.sol(premio), 'warn');
+  };
+
   root.appendChild(K.G.nota(`<h4>Cómo sale el multiplicador</h4>
     Con <b>${'M'}</b> minas y <b>k</b> casillas abiertas el pago justo es
     <code>C(25,k) / C(25−M,k)</code>. La casa se queda con un 3%: por eso el multiplicador
     que ves está a <code>0.97</code> del valor justo. Más minas, menos probabilidad de seguir vivo
     y más grande el salto por cada acierto.`));
+
+  return alCerrar;
 };
 
 </script>
@@ -4183,7 +4408,19 @@ K.Juegos.aviator = function (root, juego) {
   bucle();
   nuevaRonda();
 
-  return () => { fase = 'cerrado'; cancelAnimationFrame(raf); ro.disconnect(); };
+  /* Si cierras la mesa con una ronda tuya en el aire, la apuesta se devuelve:
+     la ronda no puede seguir sin la ventana abierta. */
+  return () => {
+    if (fase === 'vuelo' && apuesta > 0 && !cobrado) {
+      K.G.pagar(apuesta, juego.nom + ' · ronda anulada al cerrar la mesa');
+      K.aviso('Ronda anulada: te devolvimos ' + K.sol(apuesta) + '.', 'warn');
+    } else if (fase === 'espera' && apuestaLista > 0) {
+      apuestaLista = 0;
+    }
+    fase = 'cerrado';
+    cancelAnimationFrame(raf);
+    ro.disconnect();
+  };
 };
 
 </script>
@@ -4373,7 +4610,12 @@ K.Juegos.plinko = function (root, juego) {
   dimensionar(); pintar();
   const ro = new ResizeObserver(() => { dimensionar(); pintar(); });
   ro.observe(cv.parentElement);
-  return () => ro.disconnect();
+  /* Al cerrar, las bolas que siguen cayendo se liquidan igual: ya están pagadas. */
+  return () => {
+    bolas.filter(b => !b.pagada).forEach(b => { b.pagada = true; pagarBola(b); });
+    bolas = [];
+    ro.disconnect();
+  };
 };
 
 </script>
@@ -6145,6 +6387,13 @@ K.Juegos.moneda = function (root, juego) {
   bCobrar.onclick = cobrar;
   monto.inp.oninput = refrescar;
   refrescar();
+  const alCerrar = () => {
+    if (!activo) return;
+    const premio = bote();
+    activo = false;
+    K.G.pagar(premio, juego.nom + ' · racha cobrada al cerrar');
+    K.aviso('Racha cobrada al cerrar: ' + K.sol(premio), 'warn');
+  };
 
   root.appendChild(K.el('div', { class: 'juego-layout' }, [panel, zona]));
   root.appendChild(K.G.nota(`<h4>Doblar o nada, con su letra chica</h4>
@@ -6153,6 +6402,8 @@ K.Juegos.moneda = function (root, juego) {
     <code>1/1024</code>. La moneda no tiene memoria: después de ocho caras seguidas, la novena sigue
     siendo 50/50. Esa sensación de que "ya toca" tiene nombre, falacia del jugador, y es exactamente
     de lo que vive este juego.`));
+
+  return alCerrar;
 };
 
 /* =========================================================
@@ -6267,6 +6518,13 @@ K.Juegos.hilo = function (root, juego) {
   bMenor.onclick = () => apostarA('menor');
   bCobrar.onclick = cobrar;
   pintar();
+  const alCerrarHilo = () => {
+    if (!activo) return;
+    const premio = K.round2(apuesta * mult);
+    activo = false;
+    K.G.pagar(premio, juego.nom + ' · bote cobrado al cerrar');
+    K.aviso('Bote cobrado al cerrar: ' + K.sol(premio), 'warn');
+  };
 
   root.appendChild(K.el('div', { class: 'juego-layout' }, [panel, zona]));
   root.appendChild(K.G.nota(`<h4>Los pagos salen de la carta que ves</h4>
@@ -6274,6 +6532,8 @@ K.Juegos.hilo = function (root, juego) {
     con un rey, "mayor o igual" es casi seguro y paga 1.07×. El multiplicador se acumula ronda tras
     ronda y podés cobrar cuando quieras: la tensión entre cobrar y seguir es todo el juego, y el 1% de
     la casa se aplica en cada paso, así que cuanto más encadenas, más margen pagas.`));
+
+  return alCerrarHilo;
 };
 
 /* =========================================================
@@ -6393,6 +6653,13 @@ K.Juegos.torres = function (root, juego) {
   btnCobrar.onclick = () => cobrar(false);
   selDif.onchange = () => { if (!activo) { dificultad = selDif.value; piso = 0; refrescar(); } };
   refrescar();
+  const alCerrarTorre = () => {
+    if (!activo) return;
+    const premio = K.round2(apuesta * multPiso(piso));
+    activo = false;
+    K.G.pagar(premio, juego.nom + ' · torre cobrada al cerrar');
+    K.aviso('Torre cobrada al cerrar: ' + K.sol(premio), 'warn');
+  };
 
   root.appendChild(K.el('div', { class: 'juego-layout' }, [panel, zona]));
   root.appendChild(K.G.nota(`<h4>Ocho pisos, una trampa por piso</h4>
@@ -6400,6 +6667,8 @@ K.Juegos.torres = function (root, juego) {
     es <code>0.99 × (3/2)^n</code>. Llegar a la cima paga <b>${multPiso(FILAS)}×</b> en medio, pero solo
     pasa <code>(2/3)^8 = 3.9%</code> de las partidas. Cada piso que subes vale más, y esa es justamente
     la trampa: cuanto más alto llegas, más te cuesta bajarte.`));
+
+  return alCerrarTorre;
 };
 
 /* =========================================================
@@ -6520,6 +6789,7 @@ K.Juegos.rasca = function (root, juego) {
 
   btn.onclick = comprar;
   btnTodo.onclick = () => celdas.forEach((c, i) => setTimeout(() => raspar(i), i * 60));
+  const alCerrarRasca = () => { if (raspando) resolver(); };
 
   root.appendChild(K.el('div', { class: 'juego-layout' }, [panel, zona]));
   root.appendChild(K.G.nota(`<h4>El cartón ya está decidido cuando lo compras</h4>
@@ -6527,6 +6797,8 @@ K.Juegos.rasca = function (root, juego) {
     ya existe. Raspar de a poco no cambia nada, solo estira la expectativa, y por eso las raspaditas
     reales se diseñan así. La tabla de la izquierda muestra la probabilidad exacta de cada premio; todas
     juntas suman un retorno del <b>${(RTP * 100).toFixed(0)}%</b>.`));
+
+  return alCerrarRasca;
 };
 
 </script>

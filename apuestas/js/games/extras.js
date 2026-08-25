@@ -219,6 +219,13 @@ K.Juegos.moneda = function (root, juego) {
   bCobrar.onclick = cobrar;
   monto.inp.oninput = refrescar;
   refrescar();
+  const alCerrar = () => {
+    if (!activo) return;
+    const premio = bote();
+    activo = false;
+    K.G.pagar(premio, juego.nom + ' · racha cobrada al cerrar');
+    K.aviso('Racha cobrada al cerrar: ' + K.sol(premio), 'warn');
+  };
 
   root.appendChild(K.el('div', { class: 'juego-layout' }, [panel, zona]));
   root.appendChild(K.G.nota(`<h4>Doblar o nada, con su letra chica</h4>
@@ -227,6 +234,8 @@ K.Juegos.moneda = function (root, juego) {
     <code>1/1024</code>. La moneda no tiene memoria: después de ocho caras seguidas, la novena sigue
     siendo 50/50. Esa sensación de que "ya toca" tiene nombre, falacia del jugador, y es exactamente
     de lo que vive este juego.`));
+
+  return alCerrar;
 };
 
 /* =========================================================
@@ -341,6 +350,13 @@ K.Juegos.hilo = function (root, juego) {
   bMenor.onclick = () => apostarA('menor');
   bCobrar.onclick = cobrar;
   pintar();
+  const alCerrarHilo = () => {
+    if (!activo) return;
+    const premio = K.round2(apuesta * mult);
+    activo = false;
+    K.G.pagar(premio, juego.nom + ' · bote cobrado al cerrar');
+    K.aviso('Bote cobrado al cerrar: ' + K.sol(premio), 'warn');
+  };
 
   root.appendChild(K.el('div', { class: 'juego-layout' }, [panel, zona]));
   root.appendChild(K.G.nota(`<h4>Los pagos salen de la carta que ves</h4>
@@ -348,6 +364,8 @@ K.Juegos.hilo = function (root, juego) {
     con un rey, "mayor o igual" es casi seguro y paga 1.07×. El multiplicador se acumula ronda tras
     ronda y podés cobrar cuando quieras: la tensión entre cobrar y seguir es todo el juego, y el 1% de
     la casa se aplica en cada paso, así que cuanto más encadenas, más margen pagas.`));
+
+  return alCerrarHilo;
 };
 
 /* =========================================================
@@ -467,6 +485,13 @@ K.Juegos.torres = function (root, juego) {
   btnCobrar.onclick = () => cobrar(false);
   selDif.onchange = () => { if (!activo) { dificultad = selDif.value; piso = 0; refrescar(); } };
   refrescar();
+  const alCerrarTorre = () => {
+    if (!activo) return;
+    const premio = K.round2(apuesta * multPiso(piso));
+    activo = false;
+    K.G.pagar(premio, juego.nom + ' · torre cobrada al cerrar');
+    K.aviso('Torre cobrada al cerrar: ' + K.sol(premio), 'warn');
+  };
 
   root.appendChild(K.el('div', { class: 'juego-layout' }, [panel, zona]));
   root.appendChild(K.G.nota(`<h4>Ocho pisos, una trampa por piso</h4>
@@ -474,6 +499,8 @@ K.Juegos.torres = function (root, juego) {
     es <code>0.99 × (3/2)^n</code>. Llegar a la cima paga <b>${multPiso(FILAS)}×</b> en medio, pero solo
     pasa <code>(2/3)^8 = 3.9%</code> de las partidas. Cada piso que subes vale más, y esa es justamente
     la trampa: cuanto más alto llegas, más te cuesta bajarte.`));
+
+  return alCerrarTorre;
 };
 
 /* =========================================================
@@ -594,6 +621,7 @@ K.Juegos.rasca = function (root, juego) {
 
   btn.onclick = comprar;
   btnTodo.onclick = () => celdas.forEach((c, i) => setTimeout(() => raspar(i), i * 60));
+  const alCerrarRasca = () => { if (raspando) resolver(); };
 
   root.appendChild(K.el('div', { class: 'juego-layout' }, [panel, zona]));
   root.appendChild(K.G.nota(`<h4>El cartón ya está decidido cuando lo compras</h4>
@@ -601,4 +629,6 @@ K.Juegos.rasca = function (root, juego) {
     ya existe. Raspar de a poco no cambia nada, solo estira la expectativa, y por eso las raspaditas
     reales se diseñan así. La tabla de la izquierda muestra la probabilidad exacta de cada premio; todas
     juntas suman un retorno del <b>${(RTP * 100).toFixed(0)}%</b>.`));
+
+  return alCerrarRasca;
 };

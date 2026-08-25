@@ -31,6 +31,8 @@ K.Odds = (() => {
      que ya entró a cada resultado; si un lado carga mucho,
      ese lado paga menos.
      ------------------------------------------------------- */
+  const CUOTA_MAX = 500;          // por encima de esto el mercado ya no tiene sentido
+
   function cuotas(probs, M, pesos) {
     const n = probs.length;
     let aj = probs.map((p, i) => {
@@ -41,7 +43,8 @@ K.Odds = (() => {
     const s = aj.reduce((a, b) => a + b, 0) || 1;
     return aj.map(p => {
       const pf = (p / s) * M;
-      return Math.max(1.01, Math.floor((1 / pf) * 100) / 100);
+      const c = Math.floor((1 / pf) * 100) / 100;
+      return K.clamp(isFinite(c) ? c : CUOTA_MAX, 1.01, CUOTA_MAX);
     });
   }
 
@@ -215,6 +218,12 @@ K.Odds = (() => {
       });
       merc.overround = overround(cs);
       merc.margen = merc.overround - 1;
+      /* Un mercado con un resultado ya decidido (o imposible) se cierra, como
+         hace cualquier casa: no tiene sentido pagar 1.01 por lo seguro ni
+         ofrecer 500 por lo que ya no puede pasar. */
+      /* También se cierra si el recorte de cuotas dejó el libro sin margen:
+         un mercado que suma menos del 102% ya no es vendible. */
+      merc.cerrado = merc.sel.some(s => s.p > 0.97 || s.p < 1 / CUOTA_MAX) || merc.overround < 1.02;
     }
     return base;
   }

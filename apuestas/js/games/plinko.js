@@ -183,5 +183,10 @@ K.Juegos.plinko = function (root, juego) {
   dimensionar(); pintar();
   const ro = new ResizeObserver(() => { dimensionar(); pintar(); });
   ro.observe(cv.parentElement);
-  return () => ro.disconnect();
+  /* Al cerrar, las bolas que siguen cayendo se liquidan igual: ya están pagadas. */
+  return () => {
+    bolas.filter(b => !b.pagada).forEach(b => { b.pagada = true; pagarBola(b); });
+    bolas = [];
+    ro.disconnect();
+  };
 };

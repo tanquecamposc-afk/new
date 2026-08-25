@@ -122,6 +122,11 @@ K.Sportsbook = (() => {
     }
     // Refrescar cuotas vivas antes de pintar
     boleto.lineas.forEach(l => {
+      const ev = K.evento(l.evId);
+      const merc = ev && l.mercId !== 'super'
+        ? K.Odds.construir(ev).find(x => x.id === l.mercId) : null;
+      l.cerrada = !!(merc && merc.cerrado) || !!(ev && ev.terminado);
+      if (l.cerrada) return;
       const c = cuotaActualDe(l.evId, l.mercId, l.selId);
       if (c && c !== l.cuota) { l.cambio = c - l.cuota; l.cuota = c; }
     });
@@ -155,8 +160,10 @@ K.Sportsbook = (() => {
         <div class="pick"><span>${K.esc(l.pick)}</span><span class="c">${K.dec(l.cuota)}</span></div>
         <div class="merc">${K.esc(l.merc)}</div>
         <div class="part">${K.esc(l.partido)}</div>
-        ${Math.abs(l.cuota - l.cuotaInicial) > 0.001
-          ? `<div class="aviso-cambio">La cuota se movió de ${K.dec(l.cuotaInicial)} a ${K.dec(l.cuota)}</div>` : ''}
+        ${l.cerrada
+          ? '<div class="aviso-cambio cerrada">Este mercado se cerró · quita la selección para poder apostar</div>'
+          : Math.abs(l.cuota - l.cuotaInicial) > 0.001
+            ? `<div class="aviso-cambio">La cuota se movió de ${K.dec(l.cuotaInicial)} a ${K.dec(l.cuota)}</div>` : ''}
       </div>`;
     }
     html += `<div class="stake-fila"><span class="sol">S/</span>
@@ -176,7 +183,7 @@ K.Sportsbook = (() => {
           <input type="checkbox" id="aceptar-cambios" ${boleto.aceptarCambios ? 'checked' : ''}>
           Aceptar cambios de cuota automáticamente
         </label>
-        <button class="btn bloque" id="apostar" ${boleto.procesando ? 'disabled' : ''}>
+        <button class="btn bloque" id="apostar" ${boleto.procesando || boleto.lineas.some(l => l.cerrada) ? 'disabled' : ''}>
           ${boleto.procesando ? 'Validando…' : 'Apostar ' + K.sol(apostadoReal)}
         </button>
       </div>
@@ -254,6 +261,21 @@ K.Sportsbook = (() => {
         pintarBoleto();
         return;
       }
+    }
+
+    /* Si algún mercado se cerró mientras validábamos (el resultado ya está
+       decidido), la apuesta no se acepta. */
+    const cerradas = boleto.lineas.filter(l => {
+      const ev = K.evento(l.evId);
+      if (!ev || l.mercId === 'super') return false;
+      const m = K.Odds.construir(ev).find(x => x.id === l.mercId);
+      return !m || m.cerrado;
+    });
+    if (cerradas.length) {
+      boleto.procesando = false;
+      K.aviso('Apuesta rechazada: ' + K.esc(cerradas[0].merc) + ' ya está cerrado en ese partido.', 'err');
+      pintarBoleto();
+      return;
     }
 
     // Revisión de cuota al momento de aceptar
@@ -394,7 +416,8 @@ K.Sportsbook = (() => {
     if (++tick.n % 3 === 0) {
       for (const ev of K.EVENTOS) {
         if (!ev.vivo) continue;
-        const m = K.Odds.construir(ev)[0];
+        const ms = K.Odds.construir(ev);
+        const m = ms.find(x => !x.cerrado) || ms[0];
         ev.serie.push(m.sel.map(x => x.cuota));
         if (ev.serie.length > 80) ev.serie.shift();
       }
@@ -429,7 +452,23 @@ K.Sportsbook = (() => {
     ev.suspendidoHasta = ahora() + seg * 1000 * VEL;   // seg reales en escala virtual
   }
 
+  /* Tenis, básquet, eSports y vóley no admiten empate: si el reloj se acaba
+     con el marcador igualado, se resuelve como en la vida real, jugando de
+     más hasta que alguien se ponga por delante. */
+  function desempatar(ev) {
+    if (ev.deporte === 'futbol') return;
+    if (ev.marcador.l !== ev.marcador.v) return;
+    const favorito = ev.deporte === 'tenis' ? ev.modelo.p1
+      : ev.deporte === 'basket' ? (ev.modelo.spread > 0 ? 0.55 : 0.45)
+      : ev.modelo.q;
+    const gana = Math.random() < favorito ? 'l' : 'v';
+    if (ev.deporte === 'basket') ev.marcador[gana] += K.entero(2, 8);
+    else ev.marcador[gana] += 1;
+    ev.prorroga = true;
+  }
+
   function finalizar(ev) {
+    desempatar(ev);
     ev.terminado = true;
     ev.vivo = false;
     const importa = meImporta(ev);
@@ -504,14 +543,15 @@ K.Sportsbook = (() => {
         text: sel.cuota > previa ? '▲' : '▼'
       }));
     }
-    b.disabled = !!ev.suspendido || !!ev.terminado;
+    b.disabled = !!ev.suspendido || !!ev.terminado || !!merc.cerrado;
     nodos[k] = b;
     return b;
   }
 
   function tarjetaEvento(ev, opts = {}) {
     const mercados = K.Odds.construir(ev);
-    const principal = mercados[0];
+    const abiertos = mercados.filter(m => !m.cerrado);
+    const principal = abiertos[0] || mercados[0];
     const card = K.el('div', { class: 'evento' });
 
     const cab = K.el('div', { class: 'ev-cab' });
@@ -544,7 +584,13 @@ K.Sportsbook = (() => {
     cuerpo.appendChild(equipos);
 
     if (ev.suspendido) {
-      cuerpo.appendChild(K.el('div', { class: 'suspendido', html: '🔒 Mercado suspendido · recalculando cuotas' }));
+      const av = K.el('div', { class: 'suspendido' });
+      av.innerHTML = K.ic('candado') + ' Mercado suspendido · recalculando cuotas';
+      cuerpo.appendChild(av);
+    } else if (!abiertos.length) {
+      const av = K.el('div', { class: 'suspendido' });
+      av.innerHTML = K.ic('candado') + ' Mercados cerrados · el resultado ya está decidido';
+      cuerpo.appendChild(av);
     } else {
       const merc = K.el('div', { class: 'mercado g' + principal.cols });
       principal.sel.forEach(s => merc.appendChild(botonCuota(ev, principal, s)));
@@ -554,11 +600,13 @@ K.Sportsbook = (() => {
 
     const pie = K.el('div', { class: 'ev-pie' });
     pie.appendChild(K.el('span', { text: principal.nombre }));
-    pie.appendChild(K.el('span', { text: '·' }));
-    pie.appendChild(K.el('span', { text: 'margen ' + K.pct(principal.overround - 1) }));
-    if (!opts.sinMas) {
+    if (!principal.cerrado) {
+      pie.appendChild(K.el('span', { text: '·' }));
+      pie.appendChild(K.el('span', { text: 'margen ' + K.pct(principal.overround - 1) }));
+    }
+    if (!opts.sinMas && abiertos.length > 1) {
       const mas = K.el('button', { class: 'mas', onclick: () => abrirEvento(ev.id) });
-      mas.innerHTML = '+' + (mercados.length - 1) + ' mercados' + K.ic('chevron');
+      mas.innerHTML = '+' + (abiertos.length - 1) + ' mercados' + K.ic('chevron');
       pie.appendChild(mas);
     }
     card.appendChild(pie);
@@ -823,8 +871,16 @@ K.Sportsbook = (() => {
       /* evolución de la cuota */
       if (ev.serie.length > 3) cuerpo.appendChild(bloqueGrafica(ev, mercados[0]));
 
+
       /* mercados */
-      mercados.forEach(m => {
+      const abiertos = mercados.filter(m => !m.cerrado);
+      if (!abiertos.length) {
+        cuerpo.appendChild(K.el('div', {
+          class: 'info-bloque', style: 'margin-top:12px',
+          html: 'Todos los mercados de este partido están cerrados: con el marcador actual ya no queda nada por decidir.'
+        }));
+      }
+      abiertos.forEach(m => {
         const caja = K.el('div', { class: 'tarjeta', style: 'margin-top:12px' });
         caja.appendChild(K.el('h3', {
           html: `${K.esc(m.nombre)} <span style="font-weight:600;text-transform:none;letter-spacing:0">

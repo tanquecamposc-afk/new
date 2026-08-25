@@ -375,5 +375,17 @@ K.Juegos.aviator = function (root, juego) {
   bucle();
   nuevaRonda();
 
-  return () => { fase = 'cerrado'; cancelAnimationFrame(raf); ro.disconnect(); };
+  /* Si cierras la mesa con una ronda tuya en el aire, la apuesta se devuelve:
+     la ronda no puede seguir sin la ventana abierta. */
+  return () => {
+    if (fase === 'vuelo' && apuesta > 0 && !cobrado) {
+      K.G.pagar(apuesta, juego.nom + ' · ronda anulada al cerrar la mesa');
+      K.aviso('Ronda anulada: te devolvimos ' + K.sol(apuesta) + '.', 'warn');
+    } else if (fase === 'espera' && apuestaLista > 0) {
+      apuestaLista = 0;
+    }
+    fase = 'cerrado';
+    cancelAnimationFrame(raf);
+    ro.disconnect();
+  };
 };
