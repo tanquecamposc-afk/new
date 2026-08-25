@@ -110,92 +110,96 @@ K.App = (() => {
   function pintarLateral(tipo) {
     const izq = K.$('#lat-izq');
     izq.innerHTML = '';
+    const panel = K.el('div', { class: 'panel-lat' });
+
+    const grupo = (titulo) => {
+      const g = K.el('div', { class: 'grupo' });
+      if (titulo) g.appendChild(K.el('h4', { text: titulo }));
+      panel.appendChild(g);
+      return g;
+    };
 
     if (tipo === 'deportes') {
-      const ligas = K.Sportsbook.ligas().slice(0, 8);
-      const c1 = K.el('div', { class: 'menu-lat' });
-      c1.appendChild(K.el('h4', { text: 'Ligas populares' }));
-      ligas.forEach(([liga, n]) => {
-        const b = K.el('button', {
-          class: K.Sportsbook.liga === liga ? 'on' : '',
-          onclick: () => { K.Sportsbook.setLiga(K.Sportsbook.liga === liga ? null : liga); ir('deportes'); }
-        });
-        b.innerHTML = K.ic(ICONO_LIGA(liga)) + `<span>${K.esc(liga)}</span><span class="cuenta">${n}</span>`;
-        c1.appendChild(b);
-      });
-      izq.appendChild(c1);
-
+      const gDep = grupo('Deportes');
       const cuenta = K.Sportsbook.porDeporte();
-      const c2 = K.el('div', { class: 'menu-lat' });
-      c2.appendChild(K.el('h4', { text: 'Deportes' }));
       K.DEPORTES.forEach(d => {
         const b = K.el('button', {
           class: (!K.Sportsbook.liga && K.Sportsbook.deporte === d.id && vista === 'deportes') ? 'on' : '',
           onclick: () => { K.Sportsbook.setDeporte(d.id); ir('deportes'); }
         });
         b.innerHTML = K.ic(K.icDeporte(d.id)) + `<span>${d.nom}</span><span class="cuenta">${cuenta[d.id] || 0}</span>`;
-        c2.appendChild(b);
+        gDep.appendChild(b);
       });
-      izq.appendChild(c2);
+
+      const gLigas = grupo('Ligas populares');
+      const ligas = K.Sportsbook.ligas();
+      const tope = izq.dataset.todas ? ligas.length : 6;
+      ligas.slice(0, tope).forEach(([liga, n]) => {
+        const b = K.el('button', {
+          class: K.Sportsbook.liga === liga ? 'on' : '',
+          onclick: () => { K.Sportsbook.setLiga(K.Sportsbook.liga === liga ? null : liga); ir('deportes'); }
+        });
+        b.innerHTML = K.ic(ICONO_LIGA(liga)) + `<span>${K.esc(liga)}</span><span class="cuenta">${n}</span>`;
+        gLigas.appendChild(b);
+      });
+      if (ligas.length > 6) {
+        const ver = K.el('button', { style: 'color:var(--naranja);font-weight:700' });
+        ver.innerHTML = K.ic('chevron') + '<span>' + (izq.dataset.todas ? 'Ver menos' : 'Ver las ' + ligas.length + ' competiciones') + '</span>';
+        ver.onclick = () => {
+          if (izq.dataset.todas) delete izq.dataset.todas; else izq.dataset.todas = '1';
+          pintarLateral(tipo);
+        };
+        gLigas.appendChild(ver);
+      }
     }
 
     if (tipo === 'casino') {
-      const c1 = K.el('div', { class: 'menu-lat' });
-      c1.appendChild(K.el('h4', { text: 'Categorías' }));
+      const gCat = grupo('Categorías');
       K.CATEGORIAS.forEach(cat => {
+        const n = cat.id === 'todos' ? K.JUEGOS.length : K.JUEGOS.filter(j => j.cat === cat.id).length;
         const b = K.el('button', {
           class: K.Casino.categoria === cat.id ? 'on' : '',
           onclick: () => { K.Casino.setCategoria(cat.id); pintar(); }
         });
-        const n = cat.id === 'todos' ? K.JUEGOS.length : K.JUEGOS.filter(j => j.cat === cat.id).length;
         b.innerHTML = K.ic(cat.icono) + `<span>${cat.nom}</span><span class="cuenta">${n}</span>`;
-        c1.appendChild(b);
+        gCat.appendChild(b);
       });
-      izq.appendChild(c1);
 
-      const c2 = K.el('div', { class: 'menu-lat' });
-      c2.appendChild(K.el('h4', { text: 'Los más jugados' }));
-      ['aviator', 'mines', 'limbo', 'lightning', 'crazytime', 'gates'].forEach(id => {
+      const gTop = grupo('Los más jugados');
+      ['aviator', 'mines', 'limbo', 'dados', 'lightning', 'crazytime'].forEach(id => {
         const j = K.juego(id);
         if (!j) return;
         const b = K.el('button', { onclick: () => K.Casino.abrir(id) });
-        b.innerHTML = `<span style="font-size:16px">${j.ic}</span><span>${K.esc(j.nom)}</span>`;
-        c2.appendChild(b);
+        b.innerHTML = `<span style="font-size:15px">${j.ic}</span><span>${K.esc(j.nom)}</span>`;
+        gTop.appendChild(b);
       });
-      izq.appendChild(c2);
     }
 
-    // Bloque de juego responsable, siempre visible en el lateral
+    /* Bloque común: progreso del día y herramientas de sesión. */
     const w = K.Wallet.est();
     const min = Math.floor(K.Wallet.tiempoSesion() / 60000);
-    const jr = K.el('div', { class: 'menu-lat' });
-    jr.appendChild(K.el('h4', { text: 'Tu sesión' }));
-    jr.insertAdjacentHTML('beforeend',
-      `<div style="padding:2px 9px 8px;font-size:12px;color:var(--tenue);line-height:1.6">
-        ${K.ic('reloj')} ${min} min jugando<br>
-        ${K.ic('billetera')} límite ${K.sol(Math.min(w.limites.apuestaMax, w.perfil.limiteApuesta))} por apuesta
-      </div>`);
     const listas = K.Progreso.misionesListas();
+    const gJuego = grupo('Tu día');
+
     const mis = K.Progreso.misionLista();
     if (mis.length) {
-      const cm = K.el('div', { class: 'menu-lat' });
-      cm.appendChild(K.el('h4', { text: 'Misiones de hoy' }));
-      mis.forEach((m, i) => {
+      const caja = K.el('div', { class: 'mision-mini' });
+      mis.forEach(m => {
         const pc = Math.min(100, m.progreso / m.meta * 100);
-        const b = K.el('button', { onclick: () => ir('recompensas') });
-        b.innerHTML = `${K.ic(K.Progreso.misionCompleta(m) ? 'copa' : 'objetivo')}
-          <span style="flex:1">
-            <span style="display:block;font-size:12px;line-height:1.3">${K.esc(m.txt)}</span>
-            <span class="barra" style="margin-top:5px"><i style="width:${pc}%"></i></span>
-          </span>`;
-        if (m.cobrada) b.style.opacity = '.45';
-        cm.appendChild(b);
+        const l = K.el('div', { class: 'l' });
+        l.innerHTML = K.ic(K.Progreso.misionCompleta(m) ? 'copa' : 'objetivo') +
+          `<span style="flex:1">${K.esc(m.txt)}</span>`;
+        if (m.cobrada) l.style.opacity = '.45';
+        caja.appendChild(l);
+        const barra = K.el('div', { class: 'barra' });
+        barra.innerHTML = `<i style="width:${pc}%"></i>`;
+        caja.appendChild(barra);
       });
-      if (listas) cm.appendChild(K.el('div', {
-        style: 'padding:6px 9px;font-size:11.5px;color:var(--naranja);font-weight:700',
-        text: listas + (listas === 1 ? ' misión lista para cobrar' : ' misiones listas para cobrar')
-      }));
-      izq.appendChild(cm);
+      gJuego.appendChild(caja);
+      const bMis = K.el('button', { onclick: () => ir('recompensas') });
+      bMis.innerHTML = K.ic('copa') + '<span>Misiones y premios</span>' +
+        (listas ? `<span class="cuenta" style="background:var(--naranja);color:#fff">${listas}</span>` : '');
+      gJuego.appendChild(bMis);
     }
 
     const bDiaria = K.el('button', {
@@ -204,23 +208,30 @@ K.App = (() => {
     });
     bDiaria.innerHTML = K.ic('regalo') + '<span>Ruleta diaria</span>' +
       (K.Diaria.disponible() ? '<span class="cuenta" style="background:var(--naranja);color:#fff">libre</span>' : '');
-    jr.appendChild(bDiaria);
+    gJuego.appendChild(bDiaria);
 
+    const gSesion = grupo('Tu sesión');
+    gSesion.insertAdjacentHTML('beforeend',
+      `<div class="pie-grupo">${K.ic('reloj')} ${min} min jugando ·
+       límite ${K.sol(Math.min(w.limites.apuestaMax, w.perfil.limiteApuesta))} por apuesta</div>`);
     const bPausa = K.el('button', { onclick: () => { K.Wallet.pausar(15); K.aviso('Pausa de 15 minutos activada.', 'warn'); pintar(); } });
     bPausa.innerHTML = K.ic('pausa') + '<span>Pausar 15 minutos</span>';
-    jr.appendChild(bPausa);
-    izq.appendChild(jr);
+    gSesion.appendChild(bPausa);
+
+    izq.appendChild(panel);
   }
 
   /* =========================================================
      CUENTA
      ========================================================= */
   const barraSec = (titulo, sub, icono) => {
-    const c = K.el('div', { class: 'barra-sec' });
+    const c = K.el('div', { class: 'sec-cab' });
     const h = K.el('h2');
     h.innerHTML = K.ic(icono) + '<span>' + K.esc(titulo) + '</span>';
     c.appendChild(h);
-    if (sub) c.appendChild(K.el('span', { class: 'sub', text: sub }));
+    const der = K.el('div', { class: 'der' });
+    if (sub) der.appendChild(K.el('span', { class: 'nota', text: sub }));
+    c.appendChild(der);
     return c;
   };
   const kpi = (et, vl, cls = '') => K.el('div', { class: 'kpi' }, [
@@ -274,10 +285,11 @@ K.App = (() => {
         ${w.perfil.marcas.length ? '<br><br><b>Marcas activas:</b><br>· ' + w.perfil.marcas.map(K.esc).join('<br>· ') : ''}
         ${clv.length < 8 ? '<br><br>Hacen falta al menos 8 apuestas prepartido liquidadas para que el perfil se calcule.' : ''}
       </div>`;
-    root.appendChild(caja('Motor de riesgo y perfilado', perfil));
-
-    root.appendChild(caja('Libro de la casa · responsabilidad abierta',
+    const filaRiesgo = K.el('div', { class: 'dos-col' });
+    filaRiesgo.appendChild(caja('Motor de riesgo y perfilado', perfil));
+    filaRiesgo.appendChild(caja('Libro de la casa · responsabilidad abierta',
       K.el('div', { class: 'tabla-scroll' }, [K.Sportsbook.panelRiesgo()])));
+    root.appendChild(filaRiesgo);
 
     /* --- pagos --- */
     const pagos = K.el('div');
@@ -302,7 +314,8 @@ K.App = (() => {
         onclick: () => { K.Wallet.verificarKYC(); K.aviso('Identidad verificada (simulación).', 'ok'); pintar(); }
       })
     ]));
-    root.appendChild(caja('Pagos y cumplimiento', pagos));
+    const filaPagos = K.el('div', { class: 'dos-col' });
+    filaPagos.appendChild(caja('Pagos y cumplimiento', pagos));
 
     /* --- juego responsable --- */
     const jr = K.el('div');
@@ -332,7 +345,8 @@ K.App = (() => {
         html: 'Tienes una pausa activa hasta las ' + K.hora(w.limites.autoexcluidoHasta) + '. No puedes apostar hasta entonces.'
       }));
     }
-    root.appendChild(caja('Juego responsable', jr));
+    filaPagos.appendChild(caja('Juego responsable', jr));
+    root.appendChild(filaPagos);
 
     /* --- movimientos --- */
     const t = K.el('table', { class: 'tabla' });
@@ -367,7 +381,8 @@ K.App = (() => {
       <div style="margin-top:6px;font-size:11.5px;color:var(--tenue-2)">
         Ganas 1 XP por cada S/ 5 que apuestes, en deportes o en casino. Cada tres niveles caen además 5 giros gratis.
       </div>`;
-    root.appendChild(caja('Tu nivel', nivel));
+    const filaArriba = K.el('div', { class: 'dos-col' });
+    filaArriba.appendChild(caja('Tu nivel', nivel));
 
     /* --- misiones --- */
     const cont = K.el('div', { class: 'grid2' });
@@ -394,8 +409,8 @@ K.App = (() => {
       nodo.appendChild(pie);
       cont.appendChild(nodo);
     });
-    const misCaja = caja('Misiones de hoy · se renuevan a medianoche', cont);
-    root.appendChild(misCaja);
+    root.appendChild(filaArriba);
+    root.appendChild(caja('Misiones de hoy · se renuevan a medianoche', cont));
 
     /* --- jackpot --- */
     const jp = K.el('div');
@@ -406,10 +421,10 @@ K.App = (() => {
         <div class="nota">Crece con el ${(K.Progreso.APORTE * 100).toFixed(1)}% de cada apuesta del casino
         y puede caer en cualquier giro de tragamonedas. Cuanto mayor la apuesta, más chances por giro.</div>
       </div>`;
-    root.appendChild(caja('Bote acumulado', jp));
+    filaArriba.appendChild(caja('Bote y bonos', jp));
 
     /* --- diaria y cashback --- */
-    const bonos = K.el('div', { class: 'grid2' });
+    const bonos = K.el('div', { style: 'display:flex;flex-direction:column;gap:10px' });
     const cbDisp = K.Progreso.cashbackDisponible();
     const cajaDiaria = K.el('div', { class: 'mision' });
     cajaDiaria.innerHTML = `<span class="txt">Ruleta diaria</span>
@@ -435,7 +450,8 @@ K.App = (() => {
     bcb.appendChild(btnCb);
     cajaCb.appendChild(bcb);
     bonos.appendChild(cajaCb);
-    root.appendChild(caja('Bonos activos', bonos));
+    jp.appendChild(K.el('div', { style: 'height:12px' }));
+    jp.appendChild(bonos);
 
     /* --- torneo --- */
     const t = K.el('div');
@@ -452,12 +468,13 @@ K.App = (() => {
         <span>${K.esc(f.n)}</span><span class="pts">${f.p.toLocaleString('es-PE')} pts</span>`;
       t.appendChild(fila);
     });
-    root.appendChild(caja('Torneo semanal', t));
+    const filaAbajo = K.el('div', { class: 'dos-col' });
+    filaAbajo.appendChild(caja('Torneo semanal', t));
 
     /* --- logros --- */
     const logros = K.Progreso.logros();
     const hechos = logros.filter(l => l.hecho).length;
-    const gl = K.el('div', { class: 'logros-grid' });
+    const gl = K.el('div', { class: 'logros-grid una-col' });
     logros.forEach(l => {
       const nodo = K.el('div', { class: 'logro' + (l.hecho ? ' hecho' : '') });
       const pc = Math.min(100, l.progreso / l.meta * 100);
@@ -472,7 +489,8 @@ K.App = (() => {
         </span>`;
       gl.appendChild(nodo);
     });
-    root.appendChild(caja('Logros · ' + hechos + ' de ' + logros.length, gl));
+    filaAbajo.appendChild(caja('Logros · ' + hechos + ' de ' + logros.length, gl));
+    root.appendChild(filaAbajo);
 
     /* --- transparencia --- */
     const tr = K.el('div', { class: 'info-bloque' });
@@ -580,7 +598,8 @@ K.App = (() => {
       <div class="formula">P'ᵢ = Pᵢ × (1 + 0.9 × (pesoᵢ − 1/n))     pesoᵢ = responsabilidad del resultado i</div>
       Cuando el desbalance es grande, una casa real suma otra herramienta: cubrirse comprando la
       posición contraria en un exchange o en otra casa (<i>hedging</i>).`;
-    root.appendChild(caja('Gestión de riesgo del libro', b2));
+    const filaB = K.el('div', { class: 'dos-col' });
+    filaB.appendChild(caja('Gestión de riesgo del libro', b2));
 
     const b3 = K.el('div', { class: 'info-bloque' });
     b3.innerHTML = `
@@ -594,7 +613,8 @@ K.App = (() => {
       <code>SUSPENDED</code> mientras se recalcula el modelo con el marcador nuevo.
       <br><br>El margen en vivo también sube: acá se le suman 2.5 puntos al de prepartido, porque la
       información envejece en segundos.`;
-    root.appendChild(caja('Motor en vivo', b3));
+    filaB.appendChild(caja('Motor en vivo', b3));
+    root.appendChild(filaB);
 
     const b4 = K.el('div', { class: 'info-bloque' });
     b4.innerHTML = `
@@ -604,7 +624,8 @@ K.App = (() => {
       Con S/ 100 a cuota 3.00, si el partido se pone de tu lado y la cuota vive ahora en 1.50 y la casa
       retiene un 5%: <b>100 × 3.00 / 1.50 × 0.95 = S/ 190</b>. Te aseguras 190 y la casa se libera del
       riesgo de pagarte 300. Esa retención del 5% es la comisión del servicio.`;
-    root.appendChild(caja('Cashout', b4));
+    const filaC = K.el('div', { class: 'dos-col' });
+    filaC.appendChild(caja('Cashout', b4));
 
     const b5 = K.el('div', { class: 'info-bloque' });
     b5.innerHTML = `
@@ -617,7 +638,8 @@ K.App = (() => {
         <tr><td>Evento</td><td>Cuotas vivas, cashout disponible, suspensiones por incidencias</td></tr>
         <tr><td>Liquidación</td><td>Con el resultado confirmado se paga o se pierde, y se registra el CLV</td></tr>
       </table></div>`;
-    root.appendChild(caja('Del depósito a la liquidación', b5));
+    filaC.appendChild(caja('Del depósito a la liquidación', b5));
+    root.appendChild(filaC);
 
     const b6 = K.el('div', { class: 'info-bloque' });
     b6.innerHTML = `
@@ -737,7 +759,7 @@ K.App = (() => {
     }, 30000);
   }
 
-  return { iniciar, ir, pintar };
+  return { iniciar, ir, pintar, vistaActual: () => vista };
 })();
 
 document.addEventListener('DOMContentLoaded', K.App.iniciar);

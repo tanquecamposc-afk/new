@@ -1200,6 +1200,152 @@ header.top{border-bottom:1px solid rgba(51,65,85,.9);box-shadow:0 10px 30px rgba
 /* --- pie --- */
 footer.pie{background-image:linear-gradient(180deg,rgba(255,255,255,.02),transparent)}
 
+/* ===========================================================
+   SISTEMA DE ORDEN
+   Un solo patrón de sección, una barra de herramientas, filas
+   con carrusel y una escala de espaciado única para toda la app.
+   =========================================================== */
+:root{
+  --e1:4px; --e2:8px; --e3:12px; --e4:16px; --e5:24px; --e6:32px;
+}
+
+/* --- sección: encabezado + cuerpo, igual en todas las vistas --- */
+.seccion{margin-bottom:var(--e5)}
+.sec-cab{
+  display:flex;align-items:center;gap:var(--e3);
+  padding:0 0 var(--e2);margin-bottom:var(--e3);
+  border-bottom:1px solid var(--linea);
+}
+.sec-cab h2{
+  font-size:14px;text-transform:uppercase;letter-spacing:.09em;
+  display:flex;align-items:center;gap:8px;position:relative;padding-left:11px;
+}
+.sec-cab h2::before{
+  content:"";position:absolute;left:0;top:50%;transform:translateY(-50%);
+  width:3px;height:15px;border-radius:2px;background:var(--naranja);
+}
+.sec-cab h2 .ic{color:var(--naranja);font-size:16px}
+.sec-cab .cuenta{
+  font-size:11px;font-weight:800;color:var(--tenue);background:var(--panel-2);
+  border:1px solid var(--linea);padding:1px 8px;border-radius:20px;font-variant-numeric:tabular-nums;
+}
+.sec-cab .der{margin-left:auto;display:flex;align-items:center;gap:var(--e2)}
+.sec-cab .nota{font-size:11.5px;color:var(--tenue-2)}
+.sec-cab .accion{font-size:12px;font-weight:700;color:var(--naranja);display:flex;align-items:center;gap:4px}
+.sec-cab .accion:hover{text-decoration:underline}
+.sec-cab.plegable{cursor:pointer}
+.sec-cab .chevron{transition:transform .2s;color:var(--tenue-2);font-size:15px}
+.sec-cab.cerrada .chevron{transform:rotate(90deg)}
+
+/* --- barra de herramientas pegajosa --- */
+.toolbar{
+  position:sticky;top:98px;z-index:20;
+  display:flex;align-items:center;gap:var(--e2);flex-wrap:wrap;
+  padding:var(--e2);margin-bottom:var(--e4);
+  background:#101823;background-image:linear-gradient(180deg,rgba(255,255,255,.04),transparent);
+  border:1px solid var(--linea-2);border-radius:var(--r);
+  box-shadow:0 10px 26px rgba(2,6,16,.65);
+}
+.toolbar .campo-buscar{flex:1 1 220px;min-width:180px}
+.toolbar .campo-buscar input{padding:8px 12px 8px 34px;background:var(--fondo-2)}
+.toolbar .campo-buscar .ic{left:11px;font-size:15px}
+.toolbar .grupo{display:flex;gap:5px;overflow-x:auto;scrollbar-width:none}
+.toolbar .grupo::-webkit-scrollbar{display:none}
+.toolbar .chip{padding:6px 11px;font-size:13px;border-radius:8px}
+.toolbar .chip i{font-style:normal;font-size:11px;opacity:.65;margin-left:3px}
+@media(max-width:900px){.toolbar{top:0}}
+
+/* --- fila con carrusel horizontal --- */
+.fila-juegos{
+  display:grid;grid-auto-flow:column;grid-auto-columns:168px;gap:var(--e3);
+  overflow-x:auto;padding-bottom:var(--e2);scroll-snap-type:x proximity;
+  scrollbar-width:thin;
+}
+.fila-juegos::-webkit-scrollbar{height:6px}
+.fila-juegos::-webkit-scrollbar-thumb{background:var(--linea);border-radius:4px}
+.fila-juegos > *{scroll-snap-align:start}
+.fila-nav{display:flex;gap:4px}
+.fila-nav button{
+  width:26px;height:26px;border-radius:7px;display:grid;place-items:center;
+  background:var(--panel-2);border:1px solid var(--linea);color:var(--tenue);
+}
+.fila-nav button:hover{background:var(--panel-3);color:var(--texto)}
+.fila-nav .izq .ic{transform:rotate(180deg)}
+
+/* --- destacado compacto del día --- */
+.destacado{
+  display:flex;align-items:center;gap:var(--e4);flex-wrap:wrap;
+  padding:var(--e3) var(--e4);border-radius:var(--r);margin-bottom:var(--e4);
+  background:
+    radial-gradient(120% 160% at 100% 0%,rgba(255,255,255,.18),transparent 55%),
+    linear-gradient(110deg,#b83a00,#ff6a14 60%,#ff9a3d);
+  box-shadow:0 10px 30px rgba(255,85,0,.2);
+}
+.destacado .etq{
+  display:inline-flex;align-items:center;gap:5px;background:rgba(0,0,0,.3);color:#ffd9a8;
+  font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.12em;
+  padding:3px 9px;border-radius:20px;
+}
+.destacado .txt{flex:1 1 260px;min-width:0}
+.destacado h3{font-size:17px;color:#fff;margin-top:5px;letter-spacing:-.01em}
+.destacado p{font-size:12px;color:#ffe6d2;margin-top:2px}
+.destacado .precio{display:flex;align-items:center;gap:10px}
+.destacado .vieja{text-decoration:line-through;color:#ffcdae;font-size:12px}
+.destacado .nueva{
+  font-family:var(--display);font-weight:900;font-size:22px;color:#fff;
+  background:rgba(0,0,0,.28);padding:4px 12px;border-radius:var(--r-chico);font-variant-numeric:tabular-nums;
+}
+.destacado .btn{background:#fff;color:#b03600;box-shadow:none}
+.destacado .btn:hover{background:#ffe9dc}
+
+/* --- teletipo más delgado y arriba del todo --- */
+.ticker{margin-bottom:var(--e3)}
+.ticker-item{padding:6px 13px;font-size:11.5px}
+
+/* --- cuadrícula de dos columnas para paneles --- */
+.dos-col{display:grid;grid-template-columns:1fr 1fr;gap:var(--e4);align-items:start}
+@media(max-width:980px){.dos-col{grid-template-columns:1fr}}
+
+/* --- panel lateral unificado --- */
+.panel-lat{background:var(--panel);border:1px solid var(--linea);border-radius:var(--r);overflow:hidden}
+.panel-lat .grupo{padding:var(--e2)}
+.panel-lat .grupo + .grupo{border-top:1px solid var(--linea)}
+.panel-lat h4{
+  font-size:10px;text-transform:uppercase;letter-spacing:.11em;color:var(--tenue-2);
+  padding:4px 8px 7px;font-weight:800;
+}
+.panel-lat a,.panel-lat button{
+  display:flex;align-items:center;gap:9px;width:100%;padding:7px 8px;
+  border-radius:var(--r-chico);color:var(--tenue);font-size:13px;font-weight:500;
+  transition:.13s;text-align:left;
+}
+.panel-lat button:hover{background:var(--panel-2);color:var(--texto)}
+.panel-lat button.on{background:rgba(255,85,0,.1);color:var(--naranja);font-weight:700;box-shadow:inset 2px 0 0 var(--naranja)}
+.panel-lat .ic{font-size:15px;color:var(--tenue-2)}
+.panel-lat button.on .ic{color:var(--naranja)}
+.panel-lat .cuenta{
+  margin-left:auto;font-size:11px;background:var(--fondo-2);color:var(--tenue-2);
+  padding:1px 7px;border-radius:20px;font-weight:700;font-variant-numeric:tabular-nums;
+}
+.panel-lat .pie-grupo{padding:2px 8px 6px;font-size:11.5px;color:var(--tenue-2);line-height:1.5}
+.panel-lat .mision-mini{display:flex;flex-direction:column;gap:4px;padding:6px 8px}
+.panel-lat .mision-mini .l{display:flex;gap:7px;align-items:center;font-size:11.5px;color:var(--tenue)}
+.panel-lat .mision-mini .l .ic{font-size:13px}
+.panel-lat .mision-mini .barra{height:4px;margin:0}
+
+.logros-grid.una-col{grid-template-columns:1fr;max-height:520px;overflow-y:auto;padding-right:4px}
+.logros-grid.una-col::-webkit-scrollbar{width:6px}
+.logros-grid.una-col::-webkit-scrollbar-thumb{background:var(--linea);border-radius:4px}
+.dos-col > .tarjeta{margin-bottom:0 !important}
+.dos-col{margin-bottom:var(--e4)}
+
+/* --- ajustes de densidad general --- */
+.contenedor{gap:var(--e4);padding-top:var(--e3)}
+.lat-izq,.lat-der{gap:var(--e3)}
+.evento{margin-bottom:var(--e2)}
+.liga-cab{margin:var(--e3) 0 var(--e2)}
+.barra-sec{display:none}          /* sustituida por .sec-cab */
+
 </style>
 <div class="aviso-legal">
   <b>SIMULADOR EDUCATIVO · +18</b> — fichas de demostración, sin dinero real ni pagos de ningún tipo.
@@ -3077,7 +3223,9 @@ K.Sportsbook = (() => {
 
     const cab = K.el('div', { class: 'ev-cab' });
     cab.innerHTML = K.ic(K.icDeporte(ev.deporte));
-    cab.appendChild(K.el('span', { class: 'liga', text: ev.liga }));
+    // Dentro de un grupo de liga el nombre ya está en la cabecera del grupo.
+    if (!opts.enGrupo) cab.appendChild(K.el('span', { class: 'liga', text: ev.liga }));
+    else if (!ev.vivo) cab.appendChild(K.el('span', { class: 'liga', text: K.fechaHora(ev.inicio) }));
     if (ev.vivo) {
       const badge = K.el('span', { class: 'badge-vivo' }, [K.el('span', { class: 'punto' })]);
       badge.appendChild(document.createTextNode('EN VIVO'));
@@ -3184,26 +3332,18 @@ K.Sportsbook = (() => {
     contenedorLista = root;
     root.innerHTML = '';
 
-    const promo = bannerPromo();
-    if (promo && !soloVivo && !filtroLiga && !busqueda) root.appendChild(promo);
-
+    /* 1. contexto ambiente: marcadores en vivo */
     const ticker = tickerVivo();
     if (ticker) root.appendChild(ticker);
 
-    root.appendChild(barraBusqueda(root));
+    /* 2. la apuesta destacada del día, en una sola línea */
+    const promo = bannerPromo();
+    if (promo && !soloVivo && !filtroLiga && !busqueda) root.appendChild(promo);
 
-    if (!busqueda) root.appendChild(chipsDeporte(root));
+    /* 3. controles: buscar y filtrar, siempre a mano */
+    root.appendChild(barraHerramientas(root));
 
-    if (filtroLiga && !busqueda) {
-      const aviso = K.el('div', { class: 'chips' });
-      aviso.appendChild(K.el('button', {
-        class: 'chip on', html: K.ic('cerrar') + ' ' + K.esc(filtroLiga),
-        onclick: () => { filtroLiga = null; vista(root); }
-      }));
-      root.appendChild(aviso);
-    }
-
-    /* --- selección de eventos --- */
+    /* 4. contenido */
     const texto = busqueda.trim().toLowerCase();
     let lista = K.EVENTOS.filter(e => !e.terminado);
     if (texto) {
@@ -3228,18 +3368,96 @@ K.Sportsbook = (() => {
     }
 
     if (vivos.length) {
-      root.appendChild(cabecera('En vivo', vivos.length + (vivos.length === 1 ? ' evento' : ' eventos') + ' con cuotas moviéndose', 'vivo'));
-      porLiga(root, vivos, 'vivo');
+      const sec = K.el('div', { class: 'seccion' });
+      sec.appendChild(cabecera('En vivo', vivos.length, 'vivo', 'cuotas moviéndose ahora'));
+      porLiga(sec, vivos, 'vivo');
+      root.appendChild(sec);
     }
     if (luego.length) {
-      root.appendChild(cabecera('Próximos', luego.length + ' partidos · el reloj corre a 30×', 'reloj'));
-      porLiga(root, luego, 'prox');
+      const sec = K.el('div', { class: 'seccion' });
+      sec.appendChild(cabecera('Próximos', luego.length, 'reloj', 'el reloj corre a 30×'));
+      porLiga(sec, luego, 'prox');
+      root.appendChild(sec);
     }
+
+    /* 5. lo ya jugado, plegado por defecto */
     const term = K.EVENTOS.filter(e => e.terminado);
     if (term.length && !texto) {
-      root.appendChild(cabecera('Finalizados', term.length + ' eventos ya liquidados', 'grafico'));
-      term.slice(-6).reverse().forEach(e => root.appendChild(tarjetaEvento(e, { sinMas: true })));
+      const sec = K.el('div', { class: 'seccion' });
+      const cab = cabecera('Finalizados', term.length, 'grafico');
+      cab.classList.add('plegable');
+      if (!abiertas.finalizados) cab.classList.add('cerrada');
+      const chev = K.el('span', { class: 'chevron' });
+      chev.innerHTML = K.ic('chevron');
+      cab.der.appendChild(chev);
+      const cuerpo = K.el('div');
+      const pintarTerm = () => {
+        cuerpo.innerHTML = '';
+        if (!abiertas.finalizados) return;
+        term.slice(-8).reverse().forEach(e => cuerpo.appendChild(tarjetaEvento(e, { sinMas: true })));
+      };
+      cab.onclick = () => {
+        abiertas.finalizados = !abiertas.finalizados;
+        cab.classList.toggle('cerrada', !abiertas.finalizados);
+        pintarTerm();
+      };
+      pintarTerm();
+      sec.appendChild(cab);
+      sec.appendChild(cuerpo);
+      root.appendChild(sec);
     }
+  }
+
+  /* Buscador y filtros en una sola barra que sigue al scroll. */
+  function barraHerramientas(root) {
+    const barra = K.el('div', { class: 'toolbar' });
+
+    const campo = K.el('div', { class: 'campo-buscar' });
+    campo.innerHTML = K.ic('buscar');
+    const inp = K.el('input', {
+      type: 'search', placeholder: 'Buscar equipo, jugador o competición…', value: busqueda
+    });
+    let t = null;
+    inp.oninput = () => {
+      clearTimeout(t);
+      t = setTimeout(() => {
+        const foco = document.activeElement === inp;
+        busqueda = inp.value;
+        vista(root);
+        if (foco) {
+          const nuevo = K.$('.toolbar input', root);
+          if (nuevo) { nuevo.focus(); nuevo.setSelectionRange(nuevo.value.length, nuevo.value.length); }
+        }
+      }, 260);
+    };
+    campo.appendChild(inp);
+    barra.appendChild(campo);
+
+    const grupo = K.el('div', { class: 'grupo' });
+    const vivosN = K.EVENTOS.filter(e => e.vivo).length;
+    grupo.appendChild(K.el('button', {
+      class: 'chip' + (soloVivo ? ' on' : ''),
+      html: '<span class="punto-vivo"></span> En vivo <i>' + vivosN + '</i>',
+      onclick: () => { soloVivo = !soloVivo; filtroLiga = null; busqueda = ''; vista(root); }
+    }));
+    K.DEPORTES.forEach(d => {
+      const n = K.EVENTOS.filter(e => e.deporte === d.id && !e.terminado).length;
+      grupo.appendChild(K.el('button', {
+        class: 'chip' + (!soloVivo && !filtroLiga && !busqueda && filtroDeporte === d.id ? ' on' : ''),
+        html: K.ic(K.icDeporte(d.id)) + ' ' + d.nom + ' <i>' + n + '</i>',
+        onclick: () => { soloVivo = false; filtroLiga = null; busqueda = ''; filtroDeporte = d.id; vista(root); }
+      }));
+    });
+    barra.appendChild(grupo);
+
+    if (filtroLiga || busqueda) {
+      barra.appendChild(K.el('button', {
+        class: 'chip on',
+        html: K.ic('cerrar') + ' ' + K.esc(filtroLiga || ('"' + busqueda + '"')),
+        onclick: () => { filtroLiga = null; busqueda = ''; vista(root); }
+      }));
+    }
+    return barra;
   }
 
   /* Agrupa por competición y limita cuántos partidos se pintan de cada una. */
@@ -3256,16 +3474,15 @@ K.Sportsbook = (() => {
       cab.innerHTML = `<span class="pais">${evs[0].pais || ''}</span>
         <span class="nom">${K.esc(liga)}</span>
         <span class="cuenta">${evs.length}</span>`;
-      const verTodo = K.el('button', {
-        class: 'ver-liga',
-        text: 'Solo esta liga',
-        onclick: () => { filtroLiga = liga; busqueda = ''; vista(contenedorLista); }
-      });
-      cab.appendChild(verTodo);
+      if (!filtroLiga) {
+        const verTodo = K.el('button', { class: 'ver-liga', text: 'Solo esta liga' });
+        verTodo.onclick = () => { filtroLiga = liga; busqueda = ''; vista(contenedorLista); };
+        cab.appendChild(verTodo);
+      }
       root.appendChild(cab);
 
       const visibles = abiertas[k] ? evs : evs.slice(0, TOPE);
-      visibles.forEach(e => root.appendChild(tarjetaEvento(e)));
+      visibles.forEach(e => root.appendChild(tarjetaEvento(e, { enGrupo: true })));
       if (evs.length > TOPE) {
         root.appendChild(K.el('button', {
           class: 'ver-mas',
@@ -3300,56 +3517,17 @@ K.Sportsbook = (() => {
     return caja;
   }
 
-  function barraBusqueda(root) {
-    const caja = K.el('div', { class: 'buscador' });
-    const campo = K.el('div', { class: 'campo-buscar' });
-    campo.innerHTML = K.ic('buscar');
-    const inp = K.el('input', {
-      type: 'search', placeholder: 'Buscar equipo, jugador o competición…', value: busqueda
-    });
-    let t = null;
-    inp.oninput = () => {
-      clearTimeout(t);
-      t = setTimeout(() => {
-        const foco = document.activeElement === inp;
-        busqueda = inp.value;
-        vista(root);
-        if (foco) {
-          const nuevo = K.$('.campo-buscar input', root);
-          if (nuevo) { nuevo.focus(); nuevo.setSelectionRange(nuevo.value.length, nuevo.value.length); }
-        }
-      }, 260);
-    };
-    campo.appendChild(inp);
-    caja.appendChild(campo);
-    return caja;
-  }
-
-  function chipsDeporte(root) {
-    const chips = K.el('div', { class: 'chips' });
-    const vivosN = K.EVENTOS.filter(e => e.vivo).length;
-    chips.appendChild(K.el('button', {
-      class: 'chip' + (soloVivo ? ' on' : ''),
-      html: '<span class="punto-vivo"></span> En vivo (' + vivosN + ')',
-      onclick: () => { soloVivo = !soloVivo; filtroLiga = null; vista(root); }
-    }));
-    K.DEPORTES.forEach(d => {
-      const n = K.EVENTOS.filter(e => e.deporte === d.id && !e.terminado).length;
-      chips.appendChild(K.el('button', {
-        class: 'chip' + (!soloVivo && !filtroLiga && filtroDeporte === d.id ? ' on' : ''),
-        html: K.ic(K.icDeporte(d.id)) + ' ' + d.nom + ' <i>' + n + '</i>',
-        onclick: () => { soloVivo = false; filtroLiga = null; filtroDeporte = d.id; vista(root); }
-      }));
-    });
-    return chips;
-  }
-
-  function cabecera(titulo, sub, icono = 'trofeo') {
-    const c = K.el('div', { class: 'barra-sec' });
+  /* Encabezado de sección: acento, título, contador y hueco a la derecha. */
+  function cabecera(titulo, cuenta, icono = 'trofeo', nota) {
+    const c = K.el('div', { class: 'sec-cab' });
     const h = K.el('h2');
     h.innerHTML = (icono === 'vivo' ? '<span class="punto-vivo"></span>' : K.ic(icono)) + '<span>' + K.esc(titulo) + '</span>';
     c.appendChild(h);
-    if (sub) c.appendChild(K.el('span', { class: 'sub', text: sub }));
+    if (cuenta !== undefined && cuenta !== null) c.appendChild(K.el('span', { class: 'cuenta', text: cuenta }));
+    const der = K.el('div', { class: 'der' });
+    if (nota) der.appendChild(K.el('span', { class: 'nota', text: nota }));
+    c.appendChild(der);
+    c.der = der;
     return c;
   }
 
@@ -3512,7 +3690,7 @@ K.Sportsbook = (() => {
     const invertido = w.apuestas.reduce((a, b) => a + b.stake, 0);
     const cobrado = w.apuestas.reduce((a, b) => a + b.pago, 0);
 
-    root.appendChild(cabecera('Mis apuestas', w.apuestas.length + ' registradas', 'recibo'));
+    root.appendChild(cabecera('Mis apuestas', w.apuestas.length, 'recibo'));
     if (!w.apuestas.length) {
       root.appendChild(K.el('div', { class: 'vacio', html: K.ic('recibo') + '<div>Todavía no hiciste ninguna apuesta.</div>' }));
       return;
@@ -3601,24 +3779,23 @@ K.Sportsbook = (() => {
     return t;
   }
 
-  /* ---- banner de SuperCuota ---- */
+  /* ---- apuesta destacada del día ---- */
   function bannerPromo() {
-    /* Se elige el partido más atractivo: el de mayor rating combinado
-       entre los que están por empezar. */
     const candidatos = K.EVENTOS
       .filter(e => e.deporte === 'futbol' && !e.vivo && !e.terminado && K.Odds.superCuota(e))
       .sort((a, b) => (b.ratL + b.ratV) - (a.ratL + a.ratV));
     const ev = candidatos[0];
     if (!ev) return null;
     const sc = K.Odds.superCuota(ev);
-    const el = K.el('div', { class: 'promo' });
+    const el = K.el('div', { class: 'destacado' });
     el.innerHTML = `
-      <div class="marca-agua">${K.ic('rayo')}</div>
-      <span class="etq">${K.ic('fuego')} SuperCuota del día</span>
-      <h2>${K.esc(ev.local)} vs ${K.esc(ev.visita)}</h2>
-      <p>Más de 2.5 goles + ambos equipos anotan · ${K.esc(ev.liga)} · ${K.hora(ev.inicio)}</p>
-      <div class="cuotas">
-        <span class="vieja">Cuota normal ${K.dec(sc.normal)}</span>
+      <div class="txt">
+        <span class="etq">${K.ic('fuego')} SuperCuota del día</span>
+        <h3>${K.esc(ev.local)} vs ${K.esc(ev.visita)}</h3>
+        <p>Más de 2.5 goles y ambos anotan · ${K.esc(ev.liga)} · ${K.hora(ev.inicio)}</p>
+      </div>
+      <div class="precio">
+        <span class="vieja">${K.dec(sc.normal)}</span>
         <span class="nueva">${K.dec(sc.boost)}</span>
         <button class="btn" id="btn-super">Añadir al boleto</button>
       </div>`;
@@ -3666,7 +3843,13 @@ K.Sportsbook = (() => {
 K.G = (() => {
 
   let juegoActual = null;
-  const setJuego = j => juegoActual = j;
+  const setJuego = j => {
+    juegoActual = j;
+    // Historial de "continuar jugando" del lobby.
+    const w = K.Wallet.est();
+    w.casino.recientes = [j.id, ...(w.casino.recientes || []).filter(x => x !== j.id)].slice(0, 8);
+    K.Wallet.persistir();
+  };
 
   /* Descuenta la apuesta. Devuelve false si el monedero la rechaza. */
   function apostar(monto) {
@@ -6816,8 +6999,8 @@ K.Progreso = (() => {
     { id: 'ganadas', txt: 'Gana {m} rondas en el casino', metas: [3, 5, 8], premio: [100, 150, 240] },
     { id: 'volumen', txt: 'Apuesta S/ {m} en total', metas: [200, 400, 800], premio: [90, 160, 280] },
     { id: 'crash', txt: 'Cobra un crash en {m}× o más', metas: [2, 3], premio: [130, 210] },
-    { id: 'ruleta', txt: 'Gana {m} giros en la ruleta', metas: [1, 2], premio: [120, 200] },
-    { id: 'combinada', txt: 'Arma {m} apuesta combinada', metas: [1, 2], premio: [140, 230] }
+    { id: 'ruleta', txt: 'Gana {m} giro{s} en la ruleta', metas: [1, 2], premio: [120, 200] },
+    { id: 'combinada', txt: 'Arma {m} apuesta{s} combinada{s}', metas: [1, 2], premio: [140, 230] }
   ];
 
   const hoy = () => new Date().toISOString().slice(0, 10);
@@ -6890,9 +7073,10 @@ K.Progreso = (() => {
       dia: hoy(),
       lista: elegidas.map(m => {
         const i = K.entero(0, m.metas.length - 1);
+        const meta = m.metas[i];
         return {
-          id: m.id, meta: m.metas[i], premio: m.premio[i], progreso: 0, cobrada: false,
-          txt: m.txt.replace('{m}', m.id === 'volumen' ? m.metas[i] : m.metas[i])
+          id: m.id, meta, premio: m.premio[i], progreso: 0, cobrada: false,
+          txt: m.txt.replace('{m}', meta).replace(/\{s\}/g, meta === 1 ? '' : 's')
         };
       })
     };
@@ -7696,13 +7880,16 @@ K.Virtuales.vista = function (root) {
 </script>
 <script>
 /* ===========================================================
-   casino.js — lobby, buscador y lanzador de juegos
+   casino.js — lobby por secciones
+   Sin búsqueda ni filtro: filas temáticas con carrusel, como
+   un casino de verdad. Con búsqueda o categoría: cuadrícula.
    =========================================================== */
 K.Casino = (() => {
-  let cat = 'todos', texto = '', grid = null;
+  let cat = 'todos', texto = '', raiz = null;
 
-  const setCategoria = c => { cat = c; };
+  const setCategoria = c => { cat = c; if (raiz) vista(raiz); };
 
+  /* ---------------- ficha de juego ---------------- */
   function tarjeta(j) {
     const jugable = !!K.Juegos[j.motor];
     const card = K.el('button', { class: 'juego', onclick: () => abrir(j.id) });
@@ -7713,71 +7900,148 @@ K.Casino = (() => {
     card.appendChild(arte);
     card.appendChild(K.el('div', { class: 'txt' }, [
       K.el('span', { class: 'nom', text: j.nom }),
-      K.el('span', { class: 'prov', text: j.prov }),
-      K.el('span', { class: 'desc', text: j.desc })
+      K.el('span', { class: 'prov', text: j.prov })
     ]));
     return card;
   }
 
+  /* ---------------- fila con carrusel ---------------- */
+  function fila(titulo, icono, juegos, nota) {
+    if (!juegos.length) return null;
+    const sec = K.el('div', { class: 'seccion' });
+    const cab = K.el('div', { class: 'sec-cab' });
+    const h = K.el('h2');
+    h.innerHTML = K.ic(icono) + '<span>' + K.esc(titulo) + '</span>';
+    cab.appendChild(h);
+    cab.appendChild(K.el('span', { class: 'cuenta', text: juegos.length }));
+    const der = K.el('div', { class: 'der' });
+    if (nota) der.appendChild(K.el('span', { class: 'nota', text: nota }));
+
+    const carril = K.el('div', { class: 'fila-juegos' });
+    juegos.forEach(j => carril.appendChild(tarjeta(j)));
+
+    if (juegos.length > 4) {
+      const nav = K.el('div', { class: 'fila-nav' });
+      const mover = d => carril.scrollBy({ left: d * (carril.clientWidth - 80), behavior: 'smooth' });
+      const izq = K.el('button', { class: 'izq', 'aria-label': 'Anterior', onclick: () => mover(-1) });
+      const der2 = K.el('button', { 'aria-label': 'Siguiente', onclick: () => mover(1) });
+      izq.innerHTML = K.ic('chevron');
+      der2.innerHTML = K.ic('chevron');
+      nav.appendChild(izq); nav.appendChild(der2);
+      der.appendChild(nav);
+    }
+    cab.appendChild(der);
+    sec.appendChild(cab);
+    sec.appendChild(carril);
+    return sec;
+  }
+
+  /* ---------------- vista ---------------- */
   function vista(root) {
+    raiz = root;
     root.innerHTML = '';
 
-    const hero = K.el('div', { class: 'casino-hero' });
     const jugables = K.JUEGOS.filter(j => K.Juegos[j.motor]).length;
+    const hero = K.el('div', { class: 'casino-hero' });
     hero.innerHTML = `<div class="brillo b1"></div><div class="brillo b2"></div>
       <h2>Casino Kronos</h2>
-      <p>${K.JUEGOS.length} títulos repartidos en cuatro categorías, ${jugables} de ellos jugables sobre
-      motores propios con la matemática a la vista: cada juego muestra su RTP, su tabla de pagos y de
-      dónde sale la ventaja de la casa.</p>
+      <p>${K.JUEGOS.length} títulos, ${jugables} jugables sobre motores propios. Cada juego enseña su RTP,
+      su tabla de pagos y de dónde sale la ventaja de la casa.</p>
       <div class="tags">
         <span class="tag jackpot-tag">Jackpot: <b id="jackpot-lobby">${K.sol(K.Progreso.jackpot())}</b></span>
-        <span class="tag">Crash y multiplicadores</span>
+        <span class="tag">6 originales Kronos</span>
         <span class="tag">Ruleta con rueda real</span>
-        <span class="tag">Game shows</span>
-        <span class="tag">Blackjack y video póker</span>
+        <span class="tag">Game shows en directo</span>
       </div>`;
     root.appendChild(hero);
+    root.appendChild(barraHerramientas(root));
 
-    const buscador = K.el('div', { class: 'buscador' });
+    const t = texto.trim().toLowerCase();
+    const filtra = lista => lista.filter(j =>
+      !t || j.nom.toLowerCase().includes(t) || j.prov.toLowerCase().includes(t) || j.desc.toLowerCase().includes(t));
+
+    /* Modo búsqueda o categoría: una sola cuadrícula con resultados. */
+    if (t || cat !== 'todos') {
+      const lista = filtra(K.JUEGOS.filter(j => cat === 'todos' || j.cat === cat));
+      const nomCat = (K.CATEGORIAS.find(c => c.id === cat) || {}).nom || 'Todos';
+      const sec = K.el('div', { class: 'seccion' });
+      const cab = K.el('div', { class: 'sec-cab' });
+      const h = K.el('h2');
+      h.innerHTML = K.ic('casino') + '<span>' + (t ? 'Resultados' : nomCat) + '</span>';
+      cab.appendChild(h);
+      cab.appendChild(K.el('span', { class: 'cuenta', text: lista.length }));
+      const der = K.el('div', { class: 'der' });
+      if (t || cat !== 'todos') {
+        const limpiar = K.el('button', { class: 'accion' });
+        limpiar.innerHTML = K.ic('cerrar') + '<span>Quitar filtros</span>';
+        limpiar.onclick = () => { texto = ''; cat = 'todos'; vista(root); };
+        der.appendChild(limpiar);
+      }
+      cab.appendChild(der);
+      sec.appendChild(cab);
+      if (!lista.length) {
+        sec.appendChild(K.el('div', { class: 'vacio', html: K.ic('buscar') + '<div>Ningún juego coincide con esa búsqueda.</div>' }));
+      } else {
+        const grid = K.el('div', { class: 'grid-juegos' });
+        lista.forEach(j => grid.appendChild(tarjeta(j)));
+        sec.appendChild(grid);
+      }
+      root.appendChild(sec);
+      return;
+    }
+
+    /* Modo lobby: filas temáticas. */
+    const recientes = (K.Wallet.est().casino.recientes || []).map(id => K.juego(id)).filter(Boolean);
+    const porCat = c => K.JUEGOS.filter(j => j.cat === c);
+    const originales = K.JUEGOS.filter(j => j.prov === 'Kronos Originals');
+    const destacados = K.JUEGOS.filter(j => j.destacado);
+
+    [
+      recientes.length ? fila('Continuar jugando', 'refresco', recientes, 'lo último que abriste') : null,
+      fila('Destacados', 'fuego', destacados, 'los que más se juegan'),
+      fila('Originales Kronos', 'rayo', originales, 'motores propios, matemática a la vista'),
+      fila('Tragamonedas', 'estrella', porCat('slots')),
+      fila('Crash e instantáneos', 'objetivo', porCat('crash')),
+      fila('En vivo y game shows', 'fuego', porCat('vivo')),
+      fila('Mesa y video póker', 'trofeo', porCat('mesa'))
+    ].forEach(s => { if (s) root.appendChild(s); });
+  }
+
+  function barraHerramientas(root) {
+    const barra = K.el('div', { class: 'toolbar' });
     const campo = K.el('div', { class: 'campo-buscar' });
     campo.innerHTML = K.ic('buscar');
     const inp = K.el('input', { type: 'search', placeholder: 'Buscar juego o proveedor…', value: texto });
-    inp.oninput = () => { texto = inp.value; pintarGrid(); };
+    let t = null;
+    inp.oninput = () => {
+      clearTimeout(t);
+      t = setTimeout(() => {
+        const foco = document.activeElement === inp;
+        texto = inp.value;
+        vista(root);
+        if (foco) {
+          const n = K.$('.toolbar input', root);
+          if (n) { n.focus(); n.setSelectionRange(n.value.length, n.value.length); }
+        }
+      }, 250);
+    };
     campo.appendChild(inp);
-    buscador.appendChild(campo);
-    root.appendChild(buscador);
+    barra.appendChild(campo);
 
-    const chips = K.el('div', { class: 'chips' });
-    K.CATEGORIAS.forEach(c => chips.appendChild(K.el('button', {
-      class: 'chip' + (cat === c.id ? ' on' : ''),
-      html: K.ic(c.icono) + ' ' + c.nom,
-      onclick: () => {
-        cat = c.id;
-        K.$$('.chip', chips).forEach((b, i) => b.classList.toggle('on', K.CATEGORIAS[i].id === cat));
-        pintarGrid();
-      }
-    })));
-    root.appendChild(chips);
-
-    grid = K.el('div', { class: 'grid-juegos' });
-    root.appendChild(grid);
-    pintarGrid();
+    const grupo = K.el('div', { class: 'grupo' });
+    K.CATEGORIAS.forEach(c => {
+      const n = c.id === 'todos' ? K.JUEGOS.length : K.JUEGOS.filter(j => j.cat === c.id).length;
+      grupo.appendChild(K.el('button', {
+        class: 'chip' + (cat === c.id ? ' on' : ''),
+        html: K.ic(c.icono) + ' ' + c.nom + ' <i>' + n + '</i>',
+        onclick: () => { cat = c.id; texto = ''; vista(root); }
+      }));
+    });
+    barra.appendChild(grupo);
+    return barra;
   }
 
-  function pintarGrid() {
-    if (!grid) return;
-    const t = texto.trim().toLowerCase();
-    const lista = K.JUEGOS.filter(j =>
-      (cat === 'todos' || j.cat === cat) &&
-      (!t || j.nom.toLowerCase().includes(t) || j.prov.toLowerCase().includes(t) || j.desc.toLowerCase().includes(t)));
-    grid.innerHTML = '';
-    if (!lista.length) {
-      grid.appendChild(K.el('div', { class: 'vacio', html: K.ic('buscar') + '<div>Ningún juego coincide con esa búsqueda.</div>' }));
-      return;
-    }
-    lista.forEach(j => grid.appendChild(tarjeta(j)));
-  }
-
+  /* ---------------- lanzador ---------------- */
   function abrir(id) {
     const j = K.juego(id);
     if (!j) return;
@@ -7794,13 +8058,13 @@ K.Casino = (() => {
     }
     K.G.setJuego(j);
     const limpiar = motor(cuerpo, j);
-    K.modal(j.nom, cuerpo, j.prov + ' · demo', limpiar);
+    K.modal(j.nom, cuerpo, j.prov + ' · demo', () => {
+      if (typeof limpiar === 'function') limpiar();
+      if (raiz && K.App && K.App.vistaActual && K.App.vistaActual() === 'casino') vista(raiz);
+    });
   }
 
-  return {
-    vista, abrir, setCategoria,
-    get categoria() { return cat; }
-  };
+  return { vista, abrir, setCategoria, get categoria() { return cat; } };
 })();
 
 </script>
@@ -7917,92 +8181,96 @@ K.App = (() => {
   function pintarLateral(tipo) {
     const izq = K.$('#lat-izq');
     izq.innerHTML = '';
+    const panel = K.el('div', { class: 'panel-lat' });
+
+    const grupo = (titulo) => {
+      const g = K.el('div', { class: 'grupo' });
+      if (titulo) g.appendChild(K.el('h4', { text: titulo }));
+      panel.appendChild(g);
+      return g;
+    };
 
     if (tipo === 'deportes') {
-      const ligas = K.Sportsbook.ligas().slice(0, 8);
-      const c1 = K.el('div', { class: 'menu-lat' });
-      c1.appendChild(K.el('h4', { text: 'Ligas populares' }));
-      ligas.forEach(([liga, n]) => {
-        const b = K.el('button', {
-          class: K.Sportsbook.liga === liga ? 'on' : '',
-          onclick: () => { K.Sportsbook.setLiga(K.Sportsbook.liga === liga ? null : liga); ir('deportes'); }
-        });
-        b.innerHTML = K.ic(ICONO_LIGA(liga)) + `<span>${K.esc(liga)}</span><span class="cuenta">${n}</span>`;
-        c1.appendChild(b);
-      });
-      izq.appendChild(c1);
-
+      const gDep = grupo('Deportes');
       const cuenta = K.Sportsbook.porDeporte();
-      const c2 = K.el('div', { class: 'menu-lat' });
-      c2.appendChild(K.el('h4', { text: 'Deportes' }));
       K.DEPORTES.forEach(d => {
         const b = K.el('button', {
           class: (!K.Sportsbook.liga && K.Sportsbook.deporte === d.id && vista === 'deportes') ? 'on' : '',
           onclick: () => { K.Sportsbook.setDeporte(d.id); ir('deportes'); }
         });
         b.innerHTML = K.ic(K.icDeporte(d.id)) + `<span>${d.nom}</span><span class="cuenta">${cuenta[d.id] || 0}</span>`;
-        c2.appendChild(b);
+        gDep.appendChild(b);
       });
-      izq.appendChild(c2);
+
+      const gLigas = grupo('Ligas populares');
+      const ligas = K.Sportsbook.ligas();
+      const tope = izq.dataset.todas ? ligas.length : 6;
+      ligas.slice(0, tope).forEach(([liga, n]) => {
+        const b = K.el('button', {
+          class: K.Sportsbook.liga === liga ? 'on' : '',
+          onclick: () => { K.Sportsbook.setLiga(K.Sportsbook.liga === liga ? null : liga); ir('deportes'); }
+        });
+        b.innerHTML = K.ic(ICONO_LIGA(liga)) + `<span>${K.esc(liga)}</span><span class="cuenta">${n}</span>`;
+        gLigas.appendChild(b);
+      });
+      if (ligas.length > 6) {
+        const ver = K.el('button', { style: 'color:var(--naranja);font-weight:700' });
+        ver.innerHTML = K.ic('chevron') + '<span>' + (izq.dataset.todas ? 'Ver menos' : 'Ver las ' + ligas.length + ' competiciones') + '</span>';
+        ver.onclick = () => {
+          if (izq.dataset.todas) delete izq.dataset.todas; else izq.dataset.todas = '1';
+          pintarLateral(tipo);
+        };
+        gLigas.appendChild(ver);
+      }
     }
 
     if (tipo === 'casino') {
-      const c1 = K.el('div', { class: 'menu-lat' });
-      c1.appendChild(K.el('h4', { text: 'Categorías' }));
+      const gCat = grupo('Categorías');
       K.CATEGORIAS.forEach(cat => {
+        const n = cat.id === 'todos' ? K.JUEGOS.length : K.JUEGOS.filter(j => j.cat === cat.id).length;
         const b = K.el('button', {
           class: K.Casino.categoria === cat.id ? 'on' : '',
           onclick: () => { K.Casino.setCategoria(cat.id); pintar(); }
         });
-        const n = cat.id === 'todos' ? K.JUEGOS.length : K.JUEGOS.filter(j => j.cat === cat.id).length;
         b.innerHTML = K.ic(cat.icono) + `<span>${cat.nom}</span><span class="cuenta">${n}</span>`;
-        c1.appendChild(b);
+        gCat.appendChild(b);
       });
-      izq.appendChild(c1);
 
-      const c2 = K.el('div', { class: 'menu-lat' });
-      c2.appendChild(K.el('h4', { text: 'Los más jugados' }));
-      ['aviator', 'mines', 'limbo', 'lightning', 'crazytime', 'gates'].forEach(id => {
+      const gTop = grupo('Los más jugados');
+      ['aviator', 'mines', 'limbo', 'dados', 'lightning', 'crazytime'].forEach(id => {
         const j = K.juego(id);
         if (!j) return;
         const b = K.el('button', { onclick: () => K.Casino.abrir(id) });
-        b.innerHTML = `<span style="font-size:16px">${j.ic}</span><span>${K.esc(j.nom)}</span>`;
-        c2.appendChild(b);
+        b.innerHTML = `<span style="font-size:15px">${j.ic}</span><span>${K.esc(j.nom)}</span>`;
+        gTop.appendChild(b);
       });
-      izq.appendChild(c2);
     }
 
-    // Bloque de juego responsable, siempre visible en el lateral
+    /* Bloque común: progreso del día y herramientas de sesión. */
     const w = K.Wallet.est();
     const min = Math.floor(K.Wallet.tiempoSesion() / 60000);
-    const jr = K.el('div', { class: 'menu-lat' });
-    jr.appendChild(K.el('h4', { text: 'Tu sesión' }));
-    jr.insertAdjacentHTML('beforeend',
-      `<div style="padding:2px 9px 8px;font-size:12px;color:var(--tenue);line-height:1.6">
-        ${K.ic('reloj')} ${min} min jugando<br>
-        ${K.ic('billetera')} límite ${K.sol(Math.min(w.limites.apuestaMax, w.perfil.limiteApuesta))} por apuesta
-      </div>`);
     const listas = K.Progreso.misionesListas();
+    const gJuego = grupo('Tu día');
+
     const mis = K.Progreso.misionLista();
     if (mis.length) {
-      const cm = K.el('div', { class: 'menu-lat' });
-      cm.appendChild(K.el('h4', { text: 'Misiones de hoy' }));
-      mis.forEach((m, i) => {
+      const caja = K.el('div', { class: 'mision-mini' });
+      mis.forEach(m => {
         const pc = Math.min(100, m.progreso / m.meta * 100);
-        const b = K.el('button', { onclick: () => ir('recompensas') });
-        b.innerHTML = `${K.ic(K.Progreso.misionCompleta(m) ? 'copa' : 'objetivo')}
-          <span style="flex:1">
-            <span style="display:block;font-size:12px;line-height:1.3">${K.esc(m.txt)}</span>
-            <span class="barra" style="margin-top:5px"><i style="width:${pc}%"></i></span>
-          </span>`;
-        if (m.cobrada) b.style.opacity = '.45';
-        cm.appendChild(b);
+        const l = K.el('div', { class: 'l' });
+        l.innerHTML = K.ic(K.Progreso.misionCompleta(m) ? 'copa' : 'objetivo') +
+          `<span style="flex:1">${K.esc(m.txt)}</span>`;
+        if (m.cobrada) l.style.opacity = '.45';
+        caja.appendChild(l);
+        const barra = K.el('div', { class: 'barra' });
+        barra.innerHTML = `<i style="width:${pc}%"></i>`;
+        caja.appendChild(barra);
       });
-      if (listas) cm.appendChild(K.el('div', {
-        style: 'padding:6px 9px;font-size:11.5px;color:var(--naranja);font-weight:700',
-        text: listas + (listas === 1 ? ' misión lista para cobrar' : ' misiones listas para cobrar')
-      }));
-      izq.appendChild(cm);
+      gJuego.appendChild(caja);
+      const bMis = K.el('button', { onclick: () => ir('recompensas') });
+      bMis.innerHTML = K.ic('copa') + '<span>Misiones y premios</span>' +
+        (listas ? `<span class="cuenta" style="background:var(--naranja);color:#fff">${listas}</span>` : '');
+      gJuego.appendChild(bMis);
     }
 
     const bDiaria = K.el('button', {
@@ -8011,23 +8279,30 @@ K.App = (() => {
     });
     bDiaria.innerHTML = K.ic('regalo') + '<span>Ruleta diaria</span>' +
       (K.Diaria.disponible() ? '<span class="cuenta" style="background:var(--naranja);color:#fff">libre</span>' : '');
-    jr.appendChild(bDiaria);
+    gJuego.appendChild(bDiaria);
 
+    const gSesion = grupo('Tu sesión');
+    gSesion.insertAdjacentHTML('beforeend',
+      `<div class="pie-grupo">${K.ic('reloj')} ${min} min jugando ·
+       límite ${K.sol(Math.min(w.limites.apuestaMax, w.perfil.limiteApuesta))} por apuesta</div>`);
     const bPausa = K.el('button', { onclick: () => { K.Wallet.pausar(15); K.aviso('Pausa de 15 minutos activada.', 'warn'); pintar(); } });
     bPausa.innerHTML = K.ic('pausa') + '<span>Pausar 15 minutos</span>';
-    jr.appendChild(bPausa);
-    izq.appendChild(jr);
+    gSesion.appendChild(bPausa);
+
+    izq.appendChild(panel);
   }
 
   /* =========================================================
      CUENTA
      ========================================================= */
   const barraSec = (titulo, sub, icono) => {
-    const c = K.el('div', { class: 'barra-sec' });
+    const c = K.el('div', { class: 'sec-cab' });
     const h = K.el('h2');
     h.innerHTML = K.ic(icono) + '<span>' + K.esc(titulo) + '</span>';
     c.appendChild(h);
-    if (sub) c.appendChild(K.el('span', { class: 'sub', text: sub }));
+    const der = K.el('div', { class: 'der' });
+    if (sub) der.appendChild(K.el('span', { class: 'nota', text: sub }));
+    c.appendChild(der);
     return c;
   };
   const kpi = (et, vl, cls = '') => K.el('div', { class: 'kpi' }, [
@@ -8081,10 +8356,11 @@ K.App = (() => {
         ${w.perfil.marcas.length ? '<br><br><b>Marcas activas:</b><br>· ' + w.perfil.marcas.map(K.esc).join('<br>· ') : ''}
         ${clv.length < 8 ? '<br><br>Hacen falta al menos 8 apuestas prepartido liquidadas para que el perfil se calcule.' : ''}
       </div>`;
-    root.appendChild(caja('Motor de riesgo y perfilado', perfil));
-
-    root.appendChild(caja('Libro de la casa · responsabilidad abierta',
+    const filaRiesgo = K.el('div', { class: 'dos-col' });
+    filaRiesgo.appendChild(caja('Motor de riesgo y perfilado', perfil));
+    filaRiesgo.appendChild(caja('Libro de la casa · responsabilidad abierta',
       K.el('div', { class: 'tabla-scroll' }, [K.Sportsbook.panelRiesgo()])));
+    root.appendChild(filaRiesgo);
 
     /* --- pagos --- */
     const pagos = K.el('div');
@@ -8109,7 +8385,8 @@ K.App = (() => {
         onclick: () => { K.Wallet.verificarKYC(); K.aviso('Identidad verificada (simulación).', 'ok'); pintar(); }
       })
     ]));
-    root.appendChild(caja('Pagos y cumplimiento', pagos));
+    const filaPagos = K.el('div', { class: 'dos-col' });
+    filaPagos.appendChild(caja('Pagos y cumplimiento', pagos));
 
     /* --- juego responsable --- */
     const jr = K.el('div');
@@ -8139,7 +8416,8 @@ K.App = (() => {
         html: 'Tienes una pausa activa hasta las ' + K.hora(w.limites.autoexcluidoHasta) + '. No puedes apostar hasta entonces.'
       }));
     }
-    root.appendChild(caja('Juego responsable', jr));
+    filaPagos.appendChild(caja('Juego responsable', jr));
+    root.appendChild(filaPagos);
 
     /* --- movimientos --- */
     const t = K.el('table', { class: 'tabla' });
@@ -8174,7 +8452,8 @@ K.App = (() => {
       <div style="margin-top:6px;font-size:11.5px;color:var(--tenue-2)">
         Ganas 1 XP por cada S/ 5 que apuestes, en deportes o en casino. Cada tres niveles caen además 5 giros gratis.
       </div>`;
-    root.appendChild(caja('Tu nivel', nivel));
+    const filaArriba = K.el('div', { class: 'dos-col' });
+    filaArriba.appendChild(caja('Tu nivel', nivel));
 
     /* --- misiones --- */
     const cont = K.el('div', { class: 'grid2' });
@@ -8201,8 +8480,8 @@ K.App = (() => {
       nodo.appendChild(pie);
       cont.appendChild(nodo);
     });
-    const misCaja = caja('Misiones de hoy · se renuevan a medianoche', cont);
-    root.appendChild(misCaja);
+    root.appendChild(filaArriba);
+    root.appendChild(caja('Misiones de hoy · se renuevan a medianoche', cont));
 
     /* --- jackpot --- */
     const jp = K.el('div');
@@ -8213,10 +8492,10 @@ K.App = (() => {
         <div class="nota">Crece con el ${(K.Progreso.APORTE * 100).toFixed(1)}% de cada apuesta del casino
         y puede caer en cualquier giro de tragamonedas. Cuanto mayor la apuesta, más chances por giro.</div>
       </div>`;
-    root.appendChild(caja('Bote acumulado', jp));
+    filaArriba.appendChild(caja('Bote y bonos', jp));
 
     /* --- diaria y cashback --- */
-    const bonos = K.el('div', { class: 'grid2' });
+    const bonos = K.el('div', { style: 'display:flex;flex-direction:column;gap:10px' });
     const cbDisp = K.Progreso.cashbackDisponible();
     const cajaDiaria = K.el('div', { class: 'mision' });
     cajaDiaria.innerHTML = `<span class="txt">Ruleta diaria</span>
@@ -8242,7 +8521,8 @@ K.App = (() => {
     bcb.appendChild(btnCb);
     cajaCb.appendChild(bcb);
     bonos.appendChild(cajaCb);
-    root.appendChild(caja('Bonos activos', bonos));
+    jp.appendChild(K.el('div', { style: 'height:12px' }));
+    jp.appendChild(bonos);
 
     /* --- torneo --- */
     const t = K.el('div');
@@ -8259,12 +8539,13 @@ K.App = (() => {
         <span>${K.esc(f.n)}</span><span class="pts">${f.p.toLocaleString('es-PE')} pts</span>`;
       t.appendChild(fila);
     });
-    root.appendChild(caja('Torneo semanal', t));
+    const filaAbajo = K.el('div', { class: 'dos-col' });
+    filaAbajo.appendChild(caja('Torneo semanal', t));
 
     /* --- logros --- */
     const logros = K.Progreso.logros();
     const hechos = logros.filter(l => l.hecho).length;
-    const gl = K.el('div', { class: 'logros-grid' });
+    const gl = K.el('div', { class: 'logros-grid una-col' });
     logros.forEach(l => {
       const nodo = K.el('div', { class: 'logro' + (l.hecho ? ' hecho' : '') });
       const pc = Math.min(100, l.progreso / l.meta * 100);
@@ -8279,7 +8560,8 @@ K.App = (() => {
         </span>`;
       gl.appendChild(nodo);
     });
-    root.appendChild(caja('Logros · ' + hechos + ' de ' + logros.length, gl));
+    filaAbajo.appendChild(caja('Logros · ' + hechos + ' de ' + logros.length, gl));
+    root.appendChild(filaAbajo);
 
     /* --- transparencia --- */
     const tr = K.el('div', { class: 'info-bloque' });
@@ -8387,7 +8669,8 @@ K.App = (() => {
       <div class="formula">P'ᵢ = Pᵢ × (1 + 0.9 × (pesoᵢ − 1/n))     pesoᵢ = responsabilidad del resultado i</div>
       Cuando el desbalance es grande, una casa real suma otra herramienta: cubrirse comprando la
       posición contraria en un exchange o en otra casa (<i>hedging</i>).`;
-    root.appendChild(caja('Gestión de riesgo del libro', b2));
+    const filaB = K.el('div', { class: 'dos-col' });
+    filaB.appendChild(caja('Gestión de riesgo del libro', b2));
 
     const b3 = K.el('div', { class: 'info-bloque' });
     b3.innerHTML = `
@@ -8401,7 +8684,8 @@ K.App = (() => {
       <code>SUSPENDED</code> mientras se recalcula el modelo con el marcador nuevo.
       <br><br>El margen en vivo también sube: acá se le suman 2.5 puntos al de prepartido, porque la
       información envejece en segundos.`;
-    root.appendChild(caja('Motor en vivo', b3));
+    filaB.appendChild(caja('Motor en vivo', b3));
+    root.appendChild(filaB);
 
     const b4 = K.el('div', { class: 'info-bloque' });
     b4.innerHTML = `
@@ -8411,7 +8695,8 @@ K.App = (() => {
       Con S/ 100 a cuota 3.00, si el partido se pone de tu lado y la cuota vive ahora en 1.50 y la casa
       retiene un 5%: <b>100 × 3.00 / 1.50 × 0.95 = S/ 190</b>. Te aseguras 190 y la casa se libera del
       riesgo de pagarte 300. Esa retención del 5% es la comisión del servicio.`;
-    root.appendChild(caja('Cashout', b4));
+    const filaC = K.el('div', { class: 'dos-col' });
+    filaC.appendChild(caja('Cashout', b4));
 
     const b5 = K.el('div', { class: 'info-bloque' });
     b5.innerHTML = `
@@ -8424,7 +8709,8 @@ K.App = (() => {
         <tr><td>Evento</td><td>Cuotas vivas, cashout disponible, suspensiones por incidencias</td></tr>
         <tr><td>Liquidación</td><td>Con el resultado confirmado se paga o se pierde, y se registra el CLV</td></tr>
       </table></div>`;
-    root.appendChild(caja('Del depósito a la liquidación', b5));
+    filaC.appendChild(caja('Del depósito a la liquidación', b5));
+    root.appendChild(filaC);
 
     const b6 = K.el('div', { class: 'info-bloque' });
     b6.innerHTML = `
@@ -8544,7 +8830,7 @@ K.App = (() => {
     }, 30000);
   }
 
-  return { iniciar, ir, pintar };
+  return { iniciar, ir, pintar, vistaActual: () => vista };
 })();
 
 document.addEventListener('DOMContentLoaded', K.App.iniciar);

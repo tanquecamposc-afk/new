@@ -1196,3 +1196,149 @@ header.top{border-bottom:1px solid rgba(51,65,85,.9);box-shadow:0 10px 30px rgba
 
 /* --- pie --- */
 footer.pie{background-image:linear-gradient(180deg,rgba(255,255,255,.02),transparent)}
+
+/* ===========================================================
+   SISTEMA DE ORDEN
+   Un solo patrón de sección, una barra de herramientas, filas
+   con carrusel y una escala de espaciado única para toda la app.
+   =========================================================== */
+:root{
+  --e1:4px; --e2:8px; --e3:12px; --e4:16px; --e5:24px; --e6:32px;
+}
+
+/* --- sección: encabezado + cuerpo, igual en todas las vistas --- */
+.seccion{margin-bottom:var(--e5)}
+.sec-cab{
+  display:flex;align-items:center;gap:var(--e3);
+  padding:0 0 var(--e2);margin-bottom:var(--e3);
+  border-bottom:1px solid var(--linea);
+}
+.sec-cab h2{
+  font-size:14px;text-transform:uppercase;letter-spacing:.09em;
+  display:flex;align-items:center;gap:8px;position:relative;padding-left:11px;
+}
+.sec-cab h2::before{
+  content:"";position:absolute;left:0;top:50%;transform:translateY(-50%);
+  width:3px;height:15px;border-radius:2px;background:var(--naranja);
+}
+.sec-cab h2 .ic{color:var(--naranja);font-size:16px}
+.sec-cab .cuenta{
+  font-size:11px;font-weight:800;color:var(--tenue);background:var(--panel-2);
+  border:1px solid var(--linea);padding:1px 8px;border-radius:20px;font-variant-numeric:tabular-nums;
+}
+.sec-cab .der{margin-left:auto;display:flex;align-items:center;gap:var(--e2)}
+.sec-cab .nota{font-size:11.5px;color:var(--tenue-2)}
+.sec-cab .accion{font-size:12px;font-weight:700;color:var(--naranja);display:flex;align-items:center;gap:4px}
+.sec-cab .accion:hover{text-decoration:underline}
+.sec-cab.plegable{cursor:pointer}
+.sec-cab .chevron{transition:transform .2s;color:var(--tenue-2);font-size:15px}
+.sec-cab.cerrada .chevron{transform:rotate(90deg)}
+
+/* --- barra de herramientas pegajosa --- */
+.toolbar{
+  position:sticky;top:98px;z-index:20;
+  display:flex;align-items:center;gap:var(--e2);flex-wrap:wrap;
+  padding:var(--e2);margin-bottom:var(--e4);
+  background:#101823;background-image:linear-gradient(180deg,rgba(255,255,255,.04),transparent);
+  border:1px solid var(--linea-2);border-radius:var(--r);
+  box-shadow:0 10px 26px rgba(2,6,16,.65);
+}
+.toolbar .campo-buscar{flex:1 1 220px;min-width:180px}
+.toolbar .campo-buscar input{padding:8px 12px 8px 34px;background:var(--fondo-2)}
+.toolbar .campo-buscar .ic{left:11px;font-size:15px}
+.toolbar .grupo{display:flex;gap:5px;overflow-x:auto;scrollbar-width:none}
+.toolbar .grupo::-webkit-scrollbar{display:none}
+.toolbar .chip{padding:6px 11px;font-size:13px;border-radius:8px}
+.toolbar .chip i{font-style:normal;font-size:11px;opacity:.65;margin-left:3px}
+@media(max-width:900px){.toolbar{top:0}}
+
+/* --- fila con carrusel horizontal --- */
+.fila-juegos{
+  display:grid;grid-auto-flow:column;grid-auto-columns:168px;gap:var(--e3);
+  overflow-x:auto;padding-bottom:var(--e2);scroll-snap-type:x proximity;
+  scrollbar-width:thin;
+}
+.fila-juegos::-webkit-scrollbar{height:6px}
+.fila-juegos::-webkit-scrollbar-thumb{background:var(--linea);border-radius:4px}
+.fila-juegos > *{scroll-snap-align:start}
+.fila-nav{display:flex;gap:4px}
+.fila-nav button{
+  width:26px;height:26px;border-radius:7px;display:grid;place-items:center;
+  background:var(--panel-2);border:1px solid var(--linea);color:var(--tenue);
+}
+.fila-nav button:hover{background:var(--panel-3);color:var(--texto)}
+.fila-nav .izq .ic{transform:rotate(180deg)}
+
+/* --- destacado compacto del día --- */
+.destacado{
+  display:flex;align-items:center;gap:var(--e4);flex-wrap:wrap;
+  padding:var(--e3) var(--e4);border-radius:var(--r);margin-bottom:var(--e4);
+  background:
+    radial-gradient(120% 160% at 100% 0%,rgba(255,255,255,.18),transparent 55%),
+    linear-gradient(110deg,#b83a00,#ff6a14 60%,#ff9a3d);
+  box-shadow:0 10px 30px rgba(255,85,0,.2);
+}
+.destacado .etq{
+  display:inline-flex;align-items:center;gap:5px;background:rgba(0,0,0,.3);color:#ffd9a8;
+  font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.12em;
+  padding:3px 9px;border-radius:20px;
+}
+.destacado .txt{flex:1 1 260px;min-width:0}
+.destacado h3{font-size:17px;color:#fff;margin-top:5px;letter-spacing:-.01em}
+.destacado p{font-size:12px;color:#ffe6d2;margin-top:2px}
+.destacado .precio{display:flex;align-items:center;gap:10px}
+.destacado .vieja{text-decoration:line-through;color:#ffcdae;font-size:12px}
+.destacado .nueva{
+  font-family:var(--display);font-weight:900;font-size:22px;color:#fff;
+  background:rgba(0,0,0,.28);padding:4px 12px;border-radius:var(--r-chico);font-variant-numeric:tabular-nums;
+}
+.destacado .btn{background:#fff;color:#b03600;box-shadow:none}
+.destacado .btn:hover{background:#ffe9dc}
+
+/* --- teletipo más delgado y arriba del todo --- */
+.ticker{margin-bottom:var(--e3)}
+.ticker-item{padding:6px 13px;font-size:11.5px}
+
+/* --- cuadrícula de dos columnas para paneles --- */
+.dos-col{display:grid;grid-template-columns:1fr 1fr;gap:var(--e4);align-items:start}
+@media(max-width:980px){.dos-col{grid-template-columns:1fr}}
+
+/* --- panel lateral unificado --- */
+.panel-lat{background:var(--panel);border:1px solid var(--linea);border-radius:var(--r);overflow:hidden}
+.panel-lat .grupo{padding:var(--e2)}
+.panel-lat .grupo + .grupo{border-top:1px solid var(--linea)}
+.panel-lat h4{
+  font-size:10px;text-transform:uppercase;letter-spacing:.11em;color:var(--tenue-2);
+  padding:4px 8px 7px;font-weight:800;
+}
+.panel-lat a,.panel-lat button{
+  display:flex;align-items:center;gap:9px;width:100%;padding:7px 8px;
+  border-radius:var(--r-chico);color:var(--tenue);font-size:13px;font-weight:500;
+  transition:.13s;text-align:left;
+}
+.panel-lat button:hover{background:var(--panel-2);color:var(--texto)}
+.panel-lat button.on{background:rgba(255,85,0,.1);color:var(--naranja);font-weight:700;box-shadow:inset 2px 0 0 var(--naranja)}
+.panel-lat .ic{font-size:15px;color:var(--tenue-2)}
+.panel-lat button.on .ic{color:var(--naranja)}
+.panel-lat .cuenta{
+  margin-left:auto;font-size:11px;background:var(--fondo-2);color:var(--tenue-2);
+  padding:1px 7px;border-radius:20px;font-weight:700;font-variant-numeric:tabular-nums;
+}
+.panel-lat .pie-grupo{padding:2px 8px 6px;font-size:11.5px;color:var(--tenue-2);line-height:1.5}
+.panel-lat .mision-mini{display:flex;flex-direction:column;gap:4px;padding:6px 8px}
+.panel-lat .mision-mini .l{display:flex;gap:7px;align-items:center;font-size:11.5px;color:var(--tenue)}
+.panel-lat .mision-mini .l .ic{font-size:13px}
+.panel-lat .mision-mini .barra{height:4px;margin:0}
+
+.logros-grid.una-col{grid-template-columns:1fr;max-height:520px;overflow-y:auto;padding-right:4px}
+.logros-grid.una-col::-webkit-scrollbar{width:6px}
+.logros-grid.una-col::-webkit-scrollbar-thumb{background:var(--linea);border-radius:4px}
+.dos-col > .tarjeta{margin-bottom:0 !important}
+.dos-col{margin-bottom:var(--e4)}
+
+/* --- ajustes de densidad general --- */
+.contenedor{gap:var(--e4);padding-top:var(--e3)}
+.lat-izq,.lat-der{gap:var(--e3)}
+.evento{margin-bottom:var(--e2)}
+.liga-cab{margin:var(--e3) 0 var(--e2)}
+.barra-sec{display:none}          /* sustituida por .sec-cab */

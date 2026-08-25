@@ -71,6 +71,16 @@ Un giro gratis cada 20 horas con premios de S/ 25 a S/ 1.500 (valor esperado de 
 bonus del 10% por cada día seguido que vuelvas, hasta +50%. Es el mismo mecanismo de retención que
 usan las casas reales, con los números a la vista en la sección *Cómo funciona*.
 
+## Organización de la interfaz
+
+Todas las vistas usan el mismo patrón: una **barra de herramientas pegajosa** con buscador y filtros,
+y secciones con encabezado (barra de acento, título, contador y acciones a la derecha). El lateral
+izquierdo es un único panel con grupos separados por hairline —deportes, ligas, tu día, tu sesión— en
+vez de cuatro tarjetas sueltas. El lobby del casino se organiza en filas temáticas con carrusel
+(continuar jugando, destacados, originales, tragamonedas, en vivo, mesa) y solo pasa a cuadrícula
+cuando buscas o eliges una categoría. Recompensas, Cuenta y Cómo funciona se reparten en dos columnas
+para que ninguna página sea una pila infinita de tarjetas.
+
 ## Carreras virtuales
 
 Una carrera nueva cada minuto sin parar: 40 segundos de apuestas, 18 de carrera animada en canvas y 9

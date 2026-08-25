@@ -4,7 +4,13 @@
 K.G = (() => {
 
   let juegoActual = null;
-  const setJuego = j => juegoActual = j;
+  const setJuego = j => {
+    juegoActual = j;
+    // Historial de "continuar jugando" del lobby.
+    const w = K.Wallet.est();
+    w.casino.recientes = [j.id, ...(w.casino.recientes || []).filter(x => x !== j.id)].slice(0, 8);
+    K.Wallet.persistir();
+  };
 
   /* Descuenta la apuesta. Devuelve false si el monedero la rechaza. */
   function apostar(monto) {

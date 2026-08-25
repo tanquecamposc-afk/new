@@ -22,8 +22,8 @@ K.Progreso = (() => {
     { id: 'ganadas', txt: 'Gana {m} rondas en el casino', metas: [3, 5, 8], premio: [100, 150, 240] },
     { id: 'volumen', txt: 'Apuesta S/ {m} en total', metas: [200, 400, 800], premio: [90, 160, 280] },
     { id: 'crash', txt: 'Cobra un crash en {m}× o más', metas: [2, 3], premio: [130, 210] },
-    { id: 'ruleta', txt: 'Gana {m} giros en la ruleta', metas: [1, 2], premio: [120, 200] },
-    { id: 'combinada', txt: 'Arma {m} apuesta combinada', metas: [1, 2], premio: [140, 230] }
+    { id: 'ruleta', txt: 'Gana {m} giro{s} en la ruleta', metas: [1, 2], premio: [120, 200] },
+    { id: 'combinada', txt: 'Arma {m} apuesta{s} combinada{s}', metas: [1, 2], premio: [140, 230] }
   ];
 
   const hoy = () => new Date().toISOString().slice(0, 10);
@@ -96,9 +96,10 @@ K.Progreso = (() => {
       dia: hoy(),
       lista: elegidas.map(m => {
         const i = K.entero(0, m.metas.length - 1);
+        const meta = m.metas[i];
         return {
-          id: m.id, meta: m.metas[i], premio: m.premio[i], progreso: 0, cobrada: false,
-          txt: m.txt.replace('{m}', m.id === 'volumen' ? m.metas[i] : m.metas[i])
+          id: m.id, meta, premio: m.premio[i], progreso: 0, cobrada: false,
+          txt: m.txt.replace('{m}', meta).replace(/\{s\}/g, meta === 1 ? '' : 's')
         };
       })
     };
