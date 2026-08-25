@@ -14,8 +14,15 @@ let html = fs.readFileSync(path.join(raiz, 'index.html'), 'utf8');
 
 /* Solo se incrusta el CSS local; los enlaces remotos (tipografía) quedan tal cual. */
 const remotos = [];
+html = html.replace(/<noscript>\s*<link rel="stylesheet" href="https?:[^"]+"[^>]*>\s*<\/noscript>\n?/g, '');
 html = html.replace(/<link rel="stylesheet" href="([^"]+)"[^>]*>/g, (tag, href) => {
-  if (/^https?:/.test(href)) { remotos.push(tag); return tag; }
+  // El enlace remoto va normalizado: dentro de un artifact los manejadores en
+  // línea no corren, así que un media="print" con onload dejaría la fuente sin cargar.
+  if (/^https?:/.test(href)) {
+    const limpio = `<link rel="stylesheet" href="${href}">`;
+    remotos.push(limpio);
+    return limpio;
+  }
   return '<style>\n' + fs.readFileSync(path.join(raiz, href), 'utf8') + '\n</style>';
 });
 

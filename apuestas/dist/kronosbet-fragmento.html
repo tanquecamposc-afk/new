@@ -1671,7 +1671,7 @@ K.Odds = (() => {
      que ya entró a cada resultado; si un lado carga mucho,
      ese lado paga menos.
      ------------------------------------------------------- */
-  const CUOTA_MAX = 500;          // por encima de esto el mercado ya no tiene sentido
+  const CUOTA_MAX = 150;          // por encima de esto el mercado ya no tiene sentido
 
   function cuotas(probs, M, pesos) {
     const n = probs.length;
@@ -1863,7 +1863,7 @@ K.Odds = (() => {
          ofrecer 500 por lo que ya no puede pasar. */
       /* También se cierra si el recorte de cuotas dejó el libro sin margen:
          un mercado que suma menos del 102% ya no es vendible. */
-      merc.cerrado = merc.sel.some(s => s.p > 0.97 || s.p < 1 / CUOTA_MAX) || merc.overround < 1.02;
+      merc.cerrado = merc.sel.some(s => s.p > 0.96 || s.p < 1 / CUOTA_MAX) || merc.overround < 1.02;
     }
     return base;
   }
