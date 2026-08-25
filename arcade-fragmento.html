@@ -5592,18 +5592,47 @@ const Arcade = {
   /** Multiplicador del paso del tiempo. Lo toca el comando "ritmo". */
   ritmo: 1,
 
-  bucle(fn){
+  /** Bucles dormidos, a la espera de que su pantalla vuelva a abrirse. */
+  _bucles: [],
+
+  /**
+   * Bucle de animación con dt acotado (en segundos).
+   *
+   * `opciones.activa` es una función que dice si la pantalla del juego está a
+   * la vista. Cuando deja de estarlo el bucle se duerme de verdad: deja de
+   * pedir cuadros en vez de pedirlos para no hacer nada. Sin esto, cada juego
+   * que hubieras abierto seguía despertando en cada fotograma para siempre, y
+   * el arcade se iba volviendo más lento cuanto más jugabas.
+   */
+  bucle(fn, opciones){
+    const activa = (opciones && opciones.activa) || null;
     let previo = performance.now();
+    let pedido = 0;
     const paso = (t) => {
+      pedido = 0;
+      if (activa && !activa()) return;   // dormido; lo despierta el enrutador
       const dt = Math.min(0.05, (t - previo) / 1000) * Arcade.ritmo;
       previo = t;
       // En pausa se sigue pidiendo cuadros pero no se avanza nada: al reanudar
       // no hay un salto de golpe con todo el tiempo que estuvo parado.
       if (!Arcade.experiencia.parado) fn(dt);
-      requestAnimationFrame(paso);
+      pedido = requestAnimationFrame(paso);
     };
-    requestAnimationFrame(paso);
+    const despertar = () => {
+      if (pedido || (activa && !activa())) return;
+      previo = performance.now();        // al volver, sin salto de tiempo
+      pedido = requestAnimationFrame(paso);
+    };
+    if (activa) this._bucles.push(despertar);
+    despertar();
+    return {
+      despertar,
+      parar(){ if (pedido) cancelAnimationFrame(pedido); pedido = 0; }
+    };
   },
+
+  /** El enrutador llama a esto al abrir una pantalla: revive sus bucles. */
+  despertarBucles(){ this._bucles.forEach(f => { try { f(); } catch(e){} }); },
 
   // Aviso flotante dentro de un contenedor .avisos
   aviso(contenedor, texto, importante, ms = 2200){
@@ -7456,6 +7485,7 @@ const Enrutador = {
     destino.classList.add('activa');
     this.actual = id;
     scrollTo(0, 0);
+    Arcade.despertarBucles();      // los bucles de esta pantalla vuelven a pedir cuadros
     // al volver, la portada repinta cartera y récords
     if (id === 'portada' && window.refrescarPortada) window.refrescarPortada();
     if (!this.arrancados[id] && JUEGOS_INICIO[id]){
@@ -7497,7 +7527,9 @@ function registrarJuego(id, codigo){
       set(d, k, v){ d[k] = v; return true; }
     });
     const arcadeLocal = Object.create(Arcade);
-    arcadeLocal.bucle = fn => Arcade.bucle(dt => { if (activa()) fn(dt); });
+    // El bucle no solo se salta el trabajo cuando la pantalla no está a la
+    // vista: se para del todo y el enrutador lo despierta al volver a entrar.
+    arcadeLocal.bucle = fn => Arcade.bucle(fn, { activa });
 
     codigo(doc, escucha, arcadeLocal);
   };
@@ -12769,7 +12801,11 @@ function refrescarHud(){
   document.getElementById('puntosTxt').textContent = puntos;
   document.getElementById('recordTxt').textContent = record;
   document.getElementById('nivelTxt').textContent = nivel;
-  document.getElementById('vidasTxt').textContent = '🟡'.repeat(Math.max(0, vidas - 1)) || '—';
+  // Con muchas vidas no se dibuja una fila infinita de bolitas: nueve y un contador.
+  const sueltas = Math.max(0, Math.min(9, Math.floor(vidas) - 1));
+  const resto = Math.max(0, Math.floor(vidas) - 1 - sueltas);
+  document.getElementById('vidasTxt').textContent =
+    ('🟡'.repeat(sueltas) + (resto ? ' +' + resto : '')) || '—';
 }
 
 // ---------- Lógica de fantasmas ----------
@@ -13183,7 +13219,7 @@ if (typeof Arcade !== "undefined" && Arcade.tienda) Arcade.tienda.registrar('com
 // Solo hacen algo con el modo creador encendido (código 2808, tecla F9).
 if (typeof Arcade !== "undefined" && Arcade.admin) Arcade.admin.registrar('comecocos', 'Comecocos', {
   vidas: { que:'vidas <n> — fija las vidas', fn(n){
-    vidas = Math.max(1, Math.floor(+n) || 3); refrescarHud();
+    vidas = Math.max(1, Math.min(999, Math.floor(+n) || 3)); refrescarHud();
     return 'Tienes ' + vidas + ' vidas.';
   }},
   puntos: { que:'puntos <n> — fija el marcador', fn(n){
@@ -15105,8 +15141,12 @@ if (typeof Arcade !== "undefined" && Arcade.admin) Arcade.admin.registrar('serpi
     return 'Marcador en ' + puntos + '.';
   }},
   crecer: { que:'crecer <n> — alarga la serpiente n casillas', fn(n){
-    const k = Math.max(1, Math.floor(+n) || 1);
-    for (let i = 0; i < k; i++) cuerpo.push({ ...cuerpo[cuerpo.length - 1] });
+    // Más larga que el tablero no cabe, y sin este tope un número absurdo
+    // dejaba el navegador sin memoria intentando crear los trozos.
+    const tope = COLS * FILAS;
+    const k = Math.max(1, Math.min(tope, Math.floor(+n) || 1));
+    for (let i = 0; i < k && cuerpo.length < tope; i++)
+      cuerpo.push({ ...cuerpo[cuerpo.length - 1] });
     return 'Largo: ' + cuerpo.length + ' casillas.';
   }},
   fantasma: { que:'fantasma <s> — atraviesas todo (999 s por defecto)', fn(s){
@@ -30483,7 +30523,9 @@ function dibujarHUD(){
   ctx.fillStyle = 'rgba(255,255,255,.55)';
   ctx.fillText('NIVEL ' + (C.nivel + 1) + ' / ' + NIVELES.length, 18, 22);
   // estrellas del nivel
-  const cogidas = estrellas.filter(e => e.cogida).length;
+  // Siempre tres huecos: si un truco pone más estrellas, no se dibujan de más
+  // (y repeat con un número negativo reventaría el dibujo entero).
+  const cogidas = Math.max(0, Math.min(3, estrellas.filter(e => e.cogida).length));
   ctx.textAlign = 'right';
   ctx.fillStyle = '#f3e600';
   ctx.fillText('⭐ '.repeat(cogidas) + '☆ '.repeat(3 - cogidas), ANCHO - 18, 22);
@@ -31570,7 +31612,10 @@ function dibujarHUD(){
     ctx.fillText(COLORES[k.i].nombre, bx + 25, fy + 1);
     ctx.textAlign = 'right';
     ctx.fillStyle = 'rgba(255,255,255,.5)';
-    ctx.fillText(k.vivo ? '❤️'.repeat(Math.max(0, k.vidas)) : '✖', bx + 128, fy + 1);
+    // Como mucho cinco corazones en la tabla; de ahí para arriba, un contador.
+    const cor = Math.max(0, Math.min(5, Math.floor(k.vidas) || 0));
+    const extra = Math.max(0, Math.floor(k.vidas) - cor);
+    ctx.fillText(k.vivo ? '❤️'.repeat(cor) + (extra ? '+' + extra : '') : '✖', bx + 128, fy + 1);
     ctx.textAlign = 'left';
   });
 }
@@ -31606,7 +31651,7 @@ if (typeof Arcade !== "undefined" && Arcade.tienda) Arcade.tienda.registrar('kar
 if (typeof Arcade !== "undefined" && Arcade.admin) Arcade.admin.registrar('karts', 'Smash Karts', {
   vidas: { que:'vidas <n> — fija tus vidas', fn(n){
     if (!karts.length) return 'Empieza una partida primero.';
-    karts[0].vidas = Math.max(1, Math.floor(+n) || 3); refrescar();
+    karts[0].vidas = Math.max(1, Math.min(999, Math.floor(+n) || 3)); refrescar();
     return 'Tienes ' + karts[0].vidas + ' vidas.';
   }},
   inmortal: { que:'inmortal <s> — te vuelve intocable (999 s por defecto)', fn(s){

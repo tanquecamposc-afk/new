@@ -573,7 +573,9 @@ function dibujarHUD(){
   ctx.fillStyle = 'rgba(255,255,255,.55)';
   ctx.fillText('NIVEL ' + (C.nivel + 1) + ' / ' + NIVELES.length, 18, 22);
   // estrellas del nivel
-  const cogidas = estrellas.filter(e => e.cogida).length;
+  // Siempre tres huecos: si un truco pone más estrellas, no se dibujan de más
+  // (y repeat con un número negativo reventaría el dibujo entero).
+  const cogidas = Math.max(0, Math.min(3, estrellas.filter(e => e.cogida).length));
   ctx.textAlign = 'right';
   ctx.fillStyle = '#f3e600';
   ctx.fillText('⭐ '.repeat(cogidas) + '☆ '.repeat(3 - cogidas), ANCHO - 18, 22);

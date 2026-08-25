@@ -187,6 +187,7 @@ const Enrutador = {
     destino.classList.add('activa');
     this.actual = id;
     scrollTo(0, 0);
+    Arcade.despertarBucles();      // los bucles de esta pantalla vuelven a pedir cuadros
     // al volver, la portada repinta cartera y récords
     if (id === 'portada' && window.refrescarPortada) window.refrescarPortada();
     if (!this.arrancados[id] && JUEGOS_INICIO[id]){
@@ -228,7 +229,9 @@ function registrarJuego(id, codigo){
       set(d, k, v){ d[k] = v; return true; }
     });
     const arcadeLocal = Object.create(Arcade);
-    arcadeLocal.bucle = fn => Arcade.bucle(dt => { if (activa()) fn(dt); });
+    // El bucle no solo se salta el trabajo cuando la pantalla no está a la
+    // vista: se para del todo y el enrutador lo despierta al volver a entrar.
+    arcadeLocal.bucle = fn => Arcade.bucle(fn, { activa });
 
     codigo(doc, escucha, arcadeLocal);
   };

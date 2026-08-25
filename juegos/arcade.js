@@ -247,18 +247,47 @@ const Arcade = {
   /** Multiplicador del paso del tiempo. Lo toca el comando "ritmo". */
   ritmo: 1,
 
-  bucle(fn){
+  /** Bucles dormidos, a la espera de que su pantalla vuelva a abrirse. */
+  _bucles: [],
+
+  /**
+   * Bucle de animación con dt acotado (en segundos).
+   *
+   * `opciones.activa` es una función que dice si la pantalla del juego está a
+   * la vista. Cuando deja de estarlo el bucle se duerme de verdad: deja de
+   * pedir cuadros en vez de pedirlos para no hacer nada. Sin esto, cada juego
+   * que hubieras abierto seguía despertando en cada fotograma para siempre, y
+   * el arcade se iba volviendo más lento cuanto más jugabas.
+   */
+  bucle(fn, opciones){
+    const activa = (opciones && opciones.activa) || null;
     let previo = performance.now();
+    let pedido = 0;
     const paso = (t) => {
+      pedido = 0;
+      if (activa && !activa()) return;   // dormido; lo despierta el enrutador
       const dt = Math.min(0.05, (t - previo) / 1000) * Arcade.ritmo;
       previo = t;
       // En pausa se sigue pidiendo cuadros pero no se avanza nada: al reanudar
       // no hay un salto de golpe con todo el tiempo que estuvo parado.
       if (!Arcade.experiencia.parado) fn(dt);
-      requestAnimationFrame(paso);
+      pedido = requestAnimationFrame(paso);
     };
-    requestAnimationFrame(paso);
+    const despertar = () => {
+      if (pedido || (activa && !activa())) return;
+      previo = performance.now();        // al volver, sin salto de tiempo
+      pedido = requestAnimationFrame(paso);
+    };
+    if (activa) this._bucles.push(despertar);
+    despertar();
+    return {
+      despertar,
+      parar(){ if (pedido) cancelAnimationFrame(pedido); pedido = 0; }
+    };
   },
+
+  /** El enrutador llama a esto al abrir una pantalla: revive sus bucles. */
+  despertarBucles(){ this._bucles.forEach(f => { try { f(); } catch(e){} }); },
 
   // Aviso flotante dentro de un contenedor .avisos
   aviso(contenedor, texto, importante, ms = 2200){
