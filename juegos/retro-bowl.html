@@ -185,11 +185,15 @@ function moverReceptor(r, dt){
 }
 
 // ---------- Lanzamiento ----------
+/** Antes del saque no hay quarterback: apuntar o lanzar ahí no debe hacer nada. */
+const enJugada = () => P.jugando && !!P.qb;
 function apuntar(){
+  if (!enJugada()) return;
   if (P.fase !== 'listo' && P.fase !== 'apuntando') return;
   P.fase = 'apuntando';
 }
 function lanzar(){
+  if (!enJugada()) return;
   if (P.fase !== 'apuntando' && P.fase !== 'listo') return;
   const destino = destinoMira();
   P.balon = {
@@ -362,7 +366,7 @@ function actualizar(dt){
     }
   }
 
-  if (P.fase === 'vuelo'){
+  if (P.fase === 'vuelo' && P.balon){
     P.receptores.forEach(r => moverReceptor(r, dt));
     P.defensas.forEach(d => perseguir(d, dt));
     const b = P.balon;
@@ -374,7 +378,7 @@ function actualizar(dt){
     if (u >= 1) resolverPase();
   }
 
-  if (P.fase === 'carrera'){
+  if (P.fase === 'carrera' && P.portador){
     const c = P.portador;
     c.y += 9.2 * dt;
     if (izq) c.x -= 260 * dt;
@@ -423,7 +427,7 @@ function dibujar(){
   if (P.jugando || P.fase === 'fin'){
     P.defensas.forEach(d => muñeco(d.x, yardaY(d.y), '#ff5a72', '#7a1020', false));
     P.receptores.forEach(r => muñeco(r.x, yardaY(r.y), '#7ee081', '#14512a', r === P.portador));
-    if (P.fase === 'listo' || P.fase === 'apuntando') dibujarMira();
+    if (P.qb && (P.fase === 'listo' || P.fase === 'apuntando')) dibujarMira();
     if (P.qb && P.fase !== 'carrera') muñeco(P.qb.x, yardaY(P.qb.y), '#ffd166', '#7a5400', false);
     if (P.balon) dibujarBalon();
   }
