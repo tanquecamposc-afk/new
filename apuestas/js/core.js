@@ -87,6 +87,7 @@ K.aviso = (msg, tipo = '') => {
   if (!cont) return;
   const t = K.el('div', { class: 'toast ' + tipo, html: msg });
   cont.appendChild(t);
+  while (cont.children.length > 4) cont.firstChild.remove();
   setTimeout(() => {
     t.style.transition = 'opacity .3s, transform .3s';
     t.style.opacity = '0';

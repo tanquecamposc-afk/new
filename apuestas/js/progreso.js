@@ -34,8 +34,35 @@ K.Progreso = (() => {
     return d.getFullYear() + '-W' + sem;
   };
 
+  /* ---------------- logros ---------------- */
+  const LOGROS = [
+    { id: 'primera', nom: 'Primera apuesta', desc: 'Coloca tu primera apuesta deportiva', premio: 50, meta: 1, val: s => s.apuestas },
+    { id: 'habitual', nom: 'Cliente habitual', desc: 'Llega a 25 apuestas deportivas', premio: 150, meta: 25, val: s => s.apuestas },
+    { id: 'veterano', nom: 'Veterano del libro', desc: 'Llega a 100 apuestas deportivas', premio: 400, meta: 100, val: s => s.apuestas },
+    { id: 'curioso', nom: 'Curioso', desc: 'Prueba 10 juegos distintos del casino', premio: 200, meta: 10, val: s => s.juegos.length },
+    { id: 'coleccionista', nom: 'Coleccionista', desc: 'Prueba 25 juegos distintos del casino', premio: 600, meta: 25, val: s => s.juegos.length },
+    { id: 'nivel5', nom: 'Subiendo', desc: 'Alcanza el nivel 5', premio: 250, meta: 5, val: (s, p) => p.nivel },
+    { id: 'nivel10', nom: 'Peso pesado', desc: 'Alcanza el nivel 10', premio: 800, meta: 10, val: (s, p) => p.nivel },
+    { id: 'crash10', nom: 'Sangre fría', desc: 'Cobra un crash en 10× o más', premio: 300, meta: 10, val: s => s.mejorCrash },
+    { id: 'crash50', nom: 'Pulso de acero', desc: 'Cobra un crash en 50× o más', premio: 900, meta: 50, val: s => s.mejorCrash },
+    { id: 'racha3', nom: 'Tres días seguidos', desc: 'Racha de 3 días en la ruleta diaria', premio: 200, meta: 3, val: s => s.rachaDiaria },
+    { id: 'racha7', nom: 'Semana completa', desc: 'Racha de 7 días en la ruleta diaria', premio: 700, meta: 7, val: s => s.rachaDiaria },
+    { id: 'casino20', nom: 'Buena mano', desc: 'Gana 20 rondas en el casino', premio: 250, meta: 20, val: s => s.ganadasCasino },
+    { id: 'deportiva', nom: 'Ojo clínico', desc: 'Gana una apuesta deportiva', premio: 150, meta: 1, val: s => s.deportivasGanadas },
+    { id: 'combinada', nom: 'Combinada premiada', desc: 'Gana una apuesta combinada', premio: 400, meta: 1, val: s => s.combinadasGanadas },
+    { id: 'jackpot', nom: 'Reventar el bote', desc: 'Gana el jackpot progresivo', premio: 1000, meta: 1, val: s => s.jackpots },
+    { id: 'virtuales', nom: 'Aficionado a la pista', desc: 'Gana 5 apuestas en carreras virtuales', premio: 250, meta: 5, val: s => s.carreras },
+    { id: 'misiones', nom: 'Cumplidor', desc: 'Cobra 10 misiones diarias', premio: 300, meta: 10, val: s => s.misiones },
+    { id: 'torre', nom: 'Hasta la cima', desc: 'Corona la torre de 8 pisos', premio: 500, meta: 1, val: s => s.torres }
+  ];
+
   const base = () => ({
     xp: 0, nivel: 1, xpTotal: 0,
+    logros: [],
+    stats: {
+      apuestas: 0, ganadasCasino: 0, mejorCrash: 0, jackpots: 0, carreras: 0,
+      misiones: 0, deportivasGanadas: 0, combinadasGanadas: 0, torres: 0, rachaDiaria: 0, juegos: []
+    },
     misiones: { dia: '', lista: [] },
     cashback: { semana: '', perdidas: 0, cobrado: 0 },
     jackpot: 5000,
@@ -90,6 +117,46 @@ K.Progreso = (() => {
     };
   }
 
+  /* Revisa si alguna insignia quedó desbloqueada y la paga. */
+  function revisarLogros() {
+    const p = est();
+    const s = p.stats;
+    s.rachaDiaria = Math.max(s.rachaDiaria, (K.Wallet.est().diaria || {}).racha || 0);
+    for (const l of LOGROS) {
+      if (p.logros.includes(l.id)) continue;
+      if (l.val(s, p) >= l.meta) {
+        p.logros.push(l.id);
+        K.Wallet.mover(l.premio, 'premio', 'Logro: ' + l.nom);
+        K.aviso(`Logro desbloqueado · <b>${K.esc(l.nom)}</b> · ${K.sol(l.premio)}`, 'ok');
+        K.confeti(70);
+      }
+    }
+  }
+
+  const logros = () => {
+    const p = est();
+    return LOGROS.map(l => ({
+      ...l,
+      hecho: p.logros.includes(l.id),
+      progreso: Math.min(l.meta, l.val(p.stats, p))
+    }));
+  };
+
+  /* Marcadores que alimentan los logros. */
+  function marcar(clave, valor = 1) {
+    const s = est().stats;
+    if (clave === 'juego') {
+      if (!s.juegos.includes(valor)) s.juegos.push(valor);
+    } else if (clave === 'mejorCrash') {
+      s.mejorCrash = Math.max(s.mejorCrash, valor);
+    } else {
+      s[clave] = (s[clave] || 0) + valor;
+    }
+    revisarLogros();
+    K.Wallet.persistir();
+    K.bus.emit('progreso');
+  }
+
   /* ---------------- XP y nivel ---------------- */
   function sumarXP(cantidad) {
     const p = est();
@@ -125,8 +192,15 @@ K.Progreso = (() => {
       sumarXP(Math.max(1, Math.round(monto / 5)));
       p.torneo.puntos += Math.round(monto);
     }
-    if (datos.juego && !p.vistos.juegos.includes(datos.juego)) p.vistos.juegos.push(datos.juego);
+    if (datos.juego) {
+      if (!p.vistos.juegos.includes(datos.juego)) p.vistos.juegos.push(datos.juego);
+      if (!p.stats.juegos.includes(datos.juego)) p.stats.juegos.push(datos.juego);
+    }
     if (datos.deporte && !p.vistos.deportes.includes(datos.deporte)) p.vistos.deportes.push(datos.deporte);
+
+    if (tipo === 'apuesta') p.stats.apuestas++;
+    if (tipo === 'ganada') p.stats.ganadasCasino++;
+    if (tipo === 'crash' && datos.mult) p.stats.mejorCrash = Math.max(p.stats.mejorCrash, datos.mult);
 
     for (const m of p.misiones.lista) {
       if (m.cobrada) continue;
@@ -141,6 +215,7 @@ K.Progreso = (() => {
       if (m.id === 'combinada' && tipo === 'combinada') m.progreso++;
       if (m.progreso > m.meta) m.progreso = m.meta;
     }
+    revisarLogros();
     K.Wallet.persistir();
     K.bus.emit('progreso');
   }
@@ -160,6 +235,7 @@ K.Progreso = (() => {
     const m = misionLista()[idx];
     if (!m || !misionCompleta(m)) return false;
     m.cobrada = true;
+    est().stats.misiones++;
     K.Wallet.mover(m.premio, 'premio', 'Misión diaria: ' + m.txt);
     sumarXP(40);
     K.aviso('Misión completada: ' + K.sol(m.premio), 'ok');
@@ -199,6 +275,7 @@ K.Progreso = (() => {
     if (Math.random() < prob) {
       const premio = K.round2(p.jackpot);
       p.jackpot = 5000;
+      p.stats.jackpots++;
       K.Wallet.mover(premio, 'premio', '¡JACKPOT progresivo!');
       K.aviso('🎉 ¡JACKPOT! Ganaste ' + K.sol(premio), 'ok');
       K.confeti(140);
@@ -221,6 +298,7 @@ K.Progreso = (() => {
 
   return {
     init, registrar, resultado, sumarXP, est, xpNivel, nombreNivel, premioNivel,
+    logros, marcar, revisarLogros, LOGROS,
     misionLista, misionCompleta, misionesListas, cobrarMision,
     cashbackDisponible, cobrarCashback, CASHBACK,
     jackpot, aportarJackpot, intentarJackpot, APORTE,

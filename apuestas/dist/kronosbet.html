@@ -206,7 +206,9 @@ header.top{
 }
 .btn:hover{background:var(--naranja-oscuro)}
 .btn:active{transform:translateY(1px)}
-.btn:disabled{background:var(--panel-3);color:var(--tenue-2);box-shadow:none;cursor:not-allowed}
+.btn:disabled,.btn.verde:disabled,.btn.sec:disabled,.btn.peligro:disabled{
+  background:var(--panel-3);color:var(--tenue-2);box-shadow:none;cursor:not-allowed;border-color:var(--linea);
+}
 .btn.sec{background:var(--panel-2);color:var(--texto);border:1px solid var(--linea);box-shadow:none}
 .btn.sec:hover{background:var(--panel-3);border-color:var(--linea-2)}
 .btn.sec:disabled{color:var(--tenue-2)}
@@ -892,6 +894,172 @@ footer.pie .inner{max-width:1440px;margin:0 auto;padding:22px 16px 34px;color:va
 footer.pie b{color:var(--tenue)}
 .sep{height:1px;background:var(--linea);margin:12px 0}
 
+/* ---- keno ---- */
+.keno-grid{display:grid;grid-template-columns:repeat(8,1fr);gap:6px;max-width:520px;margin:0 auto}
+.keno-num{
+  aspect-ratio:1;border-radius:9px;background:var(--panel-2);border:1px solid var(--linea);
+  font-weight:800;font-size:14px;font-variant-numeric:tabular-nums;color:var(--tenue);transition:.13s;
+}
+.keno-num:hover{background:var(--panel-3);color:var(--texto);transform:translateY(-2px)}
+.keno-num.elegido{background:var(--naranja);border-color:var(--naranja);color:#fff}
+.keno-num.salido{
+  background:var(--panel-3);border-color:#8fa3c0;color:#e2e8f0;
+  box-shadow:inset 0 0 0 2px rgba(143,163,192,.5);
+}
+.keno-num.acierto{
+  background:var(--verde);border-color:var(--verde);color:#04240f;
+  animation:brillo .45s ease-out;box-shadow:0 0 14px rgba(34,197,94,.5);
+}
+.keno-pagos{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:6px;margin-top:14px}
+.keno-pago{
+  display:flex;align-items:center;gap:6px;background:var(--fondo-2);border:1px solid var(--linea);
+  border-radius:var(--r-chico);padding:5px 9px;font-size:11.5px;color:var(--tenue-2);
+}
+.keno-pago b{color:var(--ambar);font-variant-numeric:tabular-nums}
+.keno-pago i{margin-left:auto;font-style:normal;font-size:10px}
+.keno-vacio{color:var(--tenue-2);font-size:12.5px;text-align:center;padding:10px}
+
+.keno-bolas{display:flex;flex-wrap:wrap;gap:5px;align-items:center;justify-content:center;margin-top:12px;min-height:26px}
+.keno-bolas .et{font-size:11px;color:var(--tenue-2);text-transform:uppercase;letter-spacing:.08em;font-weight:800;margin-right:4px}
+.keno-bolas .bola{
+  width:26px;height:26px;border-radius:50%;display:grid;place-items:center;
+  background:var(--panel-3);border:1px solid var(--linea-2);font-size:11.5px;font-weight:800;
+  font-variant-numeric:tabular-nums;animation:pop .25s;
+}
+.keno-bolas .bola.acierto{background:var(--verde);border-color:var(--verde);color:#04240f}
+
+/* ---- dados ---- */
+.dados-num{
+  font-family:var(--display);font-size:60px;font-weight:900;text-align:center;
+  font-variant-numeric:tabular-nums;transition:color .2s;
+}
+.dados-barra{position:relative;height:14px;border-radius:8px;width:min(520px,80vw);margin:0 auto;background:var(--panel-3)}
+.dados-aguja{
+  position:absolute;top:-9px;width:4px;height:32px;background:#fff;border-radius:3px;
+  box-shadow:0 0 10px rgba(255,255,255,.6);transform:translateX(-50%);transition:left .05s linear;
+}
+input[type="range"]{width:100%;accent-color:var(--naranja)}
+
+/* ---- moneda ---- */
+.moneda{
+  width:150px;height:150px;position:relative;transform-style:preserve-3d;
+}
+.moneda .cara,.moneda .cruz{
+  position:absolute;inset:0;border-radius:50%;display:grid;place-items:center;
+  font-family:var(--display);font-weight:900;font-size:22px;backface-visibility:hidden;
+  box-shadow:inset 0 0 0 6px rgba(0,0,0,.18),0 12px 30px rgba(0,0,0,.5);
+}
+.moneda .cara{background:linear-gradient(150deg,#ffd76a,#c8912a);color:#3a2708}
+.moneda .cruz{background:linear-gradient(150deg,#cfd8e6,#7d8ba1);color:#1a2333;transform:rotateY(180deg)}
+
+/* ---- torres ---- */
+.torre{display:flex;flex-direction:column;gap:5px;width:100%;max-width:460px;margin:auto}
+.torre-fila{display:grid;gap:5px;align-items:center}
+.torre-fila.activa .torre-celda{border-color:var(--naranja)}
+.torre-mult{font-size:11.5px;color:var(--tenue-2);font-variant-numeric:tabular-nums;font-weight:700}
+.torre-celda{
+  height:38px;border-radius:8px;background:var(--panel-2);border:1px solid var(--linea);
+  font-size:18px;transition:.12s;color:var(--tenue-2);
+}
+.torre-celda:disabled{opacity:.75}
+.torre-fila.activa .torre-celda:not(:disabled){background:rgba(255,85,0,.12)}
+.torre-celda:hover:not(:disabled){background:var(--panel-3);transform:translateY(-2px)}
+.torre-celda.buena{background:rgba(34,197,94,.18);border-color:var(--verde)}
+.torre-celda.mala{background:rgba(244,63,94,.2);border-color:var(--rojo)}
+
+/* ---- raspadita ---- */
+.rasca-carton{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:14px;border-radius:var(--r);
+  background:linear-gradient(150deg,#3a2a12,#1d1409);border:1px solid #6b4d1e;
+}
+.rasca-celda{
+  position:relative;width:88px;height:88px;border-radius:10px;overflow:hidden;
+  background:var(--panel-2);display:grid;place-items:center;
+}
+.rasca-celda .simbolo{font-size:34px}
+.rasca-celda .tapa{
+  position:absolute;inset:0;
+  background:repeating-linear-gradient(135deg,#b9a06a,#b9a06a 8px,#a08a58 8px,#a08a58 16px);
+  transition:opacity .25s,transform .25s;
+}
+.rasca-celda.abierta .tapa{opacity:0;transform:scale(.6) rotate(-12deg)}
+.rasca-celda.ganadora{box-shadow:0 0 0 3px var(--ambar);animation:brillo .5s}
+.rasca-tabla{display:grid;grid-template-columns:1fr;gap:3px;margin-top:4px}
+.rasca-premio{display:flex;align-items:center;gap:7px;font-size:11.5px;color:var(--tenue-2)}
+.rasca-premio b{color:var(--ambar);font-variant-numeric:tabular-nums}
+.rasca-premio i{margin-left:auto;font-style:normal;font-size:10px}
+
+/* ---- logros ---- */
+.logros-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px}
+.logro{
+  display:flex;gap:11px;padding:11px;background:var(--fondo-2);
+  border:1px solid var(--linea);border-radius:var(--r);
+}
+.logro.hecho{border-color:var(--ambar);background:rgba(251,191,36,.07)}
+.logro .ins{
+  width:34px;height:34px;flex:none;border-radius:10px;display:grid;place-items:center;
+  background:var(--panel-2);color:var(--tenue-2);font-size:17px;
+}
+.logro.hecho .ins{background:linear-gradient(140deg,#fbbf24,#b45309);color:#2a1a02}
+.logro .cuerpo{display:flex;flex-direction:column;gap:3px;min-width:0}
+.logro .nom{font-weight:700;font-size:13px}
+.logro .desc{font-size:11px;color:var(--tenue-2);line-height:1.35}
+.logro .cobrado{font-size:11px;color:var(--ambar);font-weight:700}
+.logro .barra{margin-top:3px}
+
+/* ---- carreras virtuales ---- */
+.virt-cab{display:flex;align-items:center;gap:12px;margin-bottom:10px;flex-wrap:wrap}
+.virt-cab .disc{font-weight:800;font-size:14px}
+.virt-cab .num{font-size:12px;color:var(--tenue-2)}
+.virt-cab .estado{
+  margin-left:auto;font-size:11.5px;font-weight:800;letter-spacing:.05em;
+  padding:3px 10px;border-radius:20px;background:var(--panel-2);border:1px solid var(--linea);color:var(--tenue);
+}
+.virt-cab .estado.carrera{background:rgba(244,63,94,.16);border-color:rgba(244,63,94,.4);color:#fda4b4}
+.virt-cab .estado.resultado{background:rgba(34,197,94,.14);border-color:rgba(34,197,94,.4);color:var(--verde-2)}
+.virt-pista{border-radius:var(--r);overflow:hidden;border:1px solid var(--linea)}
+.virt-lienzo{width:100%;height:260px;display:block}
+.virt-barra{height:5px;background:var(--panel-3);border-radius:3px;margin-top:8px;overflow:hidden}
+.virt-barra i{display:block;height:100%;background:var(--naranja);transition:width .25s linear}
+.virt-barra i.carrera{background:var(--rojo)}
+.virt-barra i.resultado{background:var(--verde)}
+.virt-controles{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.virt-controles label{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--tenue-2);font-weight:800}
+.virt-controles input{
+  width:100px;background:var(--fondo-2);border:1px solid var(--linea);border-radius:var(--r-chico);
+  padding:8px 10px;font-weight:700;font-variant-numeric:tabular-nums;
+}
+.virt-controles .fila-btns{display:flex;gap:5px}
+.virt-controles .fila-btns button{
+  background:var(--panel-2);border:1px solid var(--linea);border-radius:6px;
+  padding:6px 12px;font-size:12px;font-weight:700;color:var(--tenue);
+}
+.virt-controles .fila-btns button:hover{background:var(--panel-3);color:var(--texto)}
+.virt-fila{
+  display:flex;align-items:center;gap:11px;padding:9px 11px;margin-bottom:6px;
+  background:var(--fondo-2);border:1px solid var(--linea);border-radius:var(--r-chico);
+}
+.virt-fila.gano{border-color:var(--verde);background:rgba(34,197,94,.08)}
+.virt-fila .box{
+  width:24px;height:24px;border-radius:7px;display:grid;place-items:center;
+  font-weight:900;font-size:12px;color:#0b1120;
+}
+.virt-fila .nom{font-weight:700;font-size:13.5px}
+.virt-fila .forma{font-size:11px;color:var(--tenue-2)}
+.virt-cuotas{margin-left:auto;display:flex;gap:6px}
+.virt-cuotas .cuota{min-width:74px}
+.virt-fila .puesto{font-weight:900;font-family:var(--display);color:var(--tenue);width:28px;text-align:right}
+.virt-mias{margin-top:10px}
+.virt-mias .et,.virt-hist .et{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--tenue-2);font-weight:800;margin-bottom:6px;display:block}
+.virt-mia{display:flex;gap:10px;align-items:center;font-size:12.5px;padding:6px 10px;border-radius:var(--r-chico);background:var(--fondo-2);border:1px solid var(--linea);margin-bottom:5px}
+.virt-mia b{margin-left:auto;font-variant-numeric:tabular-nums}
+.virt-mia.ganada{border-color:var(--verde)}
+.virt-mia.ganada b{color:var(--verde-2)}
+.virt-mia.perdida b{color:var(--tenue-2)}
+.virt-hfila{display:flex;align-items:center;gap:10px;font-size:12.5px;padding:6px 0;border-bottom:1px solid rgba(51,65,85,.5)}
+.virt-hfila:last-child{border-bottom:none}
+.virt-hfila .id{color:var(--tenue-2);font-variant-numeric:tabular-nums;width:44px}
+
 </style>
 </head>
 <body>
@@ -1051,6 +1219,7 @@ K.aviso = (msg, tipo = '') => {
   if (!cont) return;
   const t = K.el('div', { class: 'toast ' + tipo, html: msg });
   cont.appendChild(t);
+  while (cont.children.length > 4) cont.firstChild.remove();
   setTimeout(() => {
     t.style.transition = 'opacity .3s, transform .3s';
     t.style.opacity = '0';
@@ -2136,6 +2305,37 @@ K.JUEGOS = [
   { n: 31, id: 'limbo', nom: 'Limbo', prov: 'Kronos Originals', cat: 'crash', ic: '🎯', grad: G.neon,
     desc: 'Eliges el multiplicador objetivo y el juego sortea uno: si lo supera, cobras.', motor: 'limbo', destacado: true },
 
+  /* ---------------- RÁPIDOS Y ORIGINALES (32-40) ---------------- */
+  { n: 32, id: 'keno', nom: 'Keno 40', prov: 'Kronos Originals', cat: 'crash', ic: '🔢', grad: G.neon,
+    desc: 'Elige hasta 10 números de 40, salen 10 bolas y la tabla se calcula sola.',
+    motor: 'keno', cfg: { vol: 'media' }, destacado: true },
+  { n: 33, id: 'dados', nom: 'Dados', prov: 'Kronos Originals', cat: 'crash', ic: '🎲', grad: G.jungla,
+    desc: 'Mueve el objetivo y decide si el tiro será mayor o menor. RTP del 99%.',
+    motor: 'dados', destacado: true },
+  { n: 34, id: 'moneda', nom: 'Cara o Cruz', prov: 'Kronos Originals', cat: 'crash', ic: '🪙', grad: G.oro,
+    desc: 'Doblar o nada: encadena aciertos y cobra antes de que se corte la racha.',
+    motor: 'moneda' },
+  { n: 35, id: 'hilo', nom: 'Hi-Lo', prov: 'Kronos Originals', cat: 'crash', ic: '🃏', grad: G.mesa,
+    desc: 'Adivina si la próxima carta será mayor o menor, con el bote acumulándose.',
+    motor: 'hilo' },
+  { n: 36, id: 'torres', nom: 'Torres', prov: 'Kronos Originals', cat: 'crash', ic: '🗼', grad: G.espacio,
+    desc: 'Sube ocho pisos esquivando la trampa de cada nivel. Cobra cuando quieras.',
+    motor: 'torres', destacado: true },
+  { n: 37, id: 'rasca', nom: 'Raspadita Dorada', prov: 'Kronos Originals', cat: 'crash', ic: '🎟️', grad: G.chili,
+    desc: 'Nueve casillas, tres símbolos iguales y hasta 1.000× la apuesta.',
+    motor: 'rasca' },
+
+  /* ---------------- MÁS TRAGAMONEDAS (38-40) ---------------- */
+  { n: 38, id: 'firejoker', nom: 'Fire Joker', prov: "Play'n GO", cat: 'slots', ic: '🃏', grad: G.fruta,
+    desc: 'Frutas clásicas con comodines en llamas y respin de carretes.',
+    motor: 'slot', cfg: { simbolos: ['🃏', '7️⃣', '🔔', '🍉', '🍇', '🍊', '🍋', '🍒'], vol: 'media', rtp: 96.1 } },
+  { n: 39, id: 'moneytrain', nom: 'Money Train', prov: 'Relax Gaming', cat: 'slots', ic: '🚂', grad: G.espacio,
+    desc: 'Bonus de respins con símbolos de dinero que se van sumando.',
+    motor: 'slot', cfg: { simbolos: ['🚂', '💰', '🤠', '🔫', '🎩', '🅰️', '🇰', '🇶'], vol: 'alta', rtp: 96.2 } },
+  { n: 40, id: 'zeushades', nom: 'Zeus vs Hades', prov: 'Pragmatic Play', cat: 'slots', ic: '⚡', grad: G.zeus,
+    desc: 'Duelo de dioses con dos rondas de bonificación enfrentadas.',
+    motor: 'slot', cfg: { simbolos: ['⚡', '🔱', '🔥', '🛡️', '💠', '🅰️', '🇰', '🇶'], vol: 'alta', rtp: 96.4 } },
+
   /* ---------------- EN VIVO Y GAME SHOWS (19-26) ---------------- */
   { n: 19, id: 'crazytime', nom: 'Crazy Time', prov: 'Evolution', cat: 'vivo', ic: '🎡', grad: G.vivo,
     desc: 'Rueda con cuatro minijuegos: Pachinko, Cash Hunt, Coin Flip y Crazy Time.', motor: 'rueda',
@@ -2580,11 +2780,20 @@ K.Sportsbook = (() => {
     pintarBoleto();
   }
 
+  /* ¿Tengo algo en juego en este partido? Con 231 eventos, avisar de todos
+     los goles sería ruido puro. */
+  function meImporta(ev) {
+    return K.Wallet.est().apuestas.some(a =>
+      a.estado === 'pendiente' && a.lineas.some(l => l.evId === ev.id));
+  }
+
   function marcar(ev, lado) {
     ev.marcador[lado]++;
     suspender(ev, 4);
     const quien = lado === 'l' ? ev.local : ev.visita;
-    K.aviso(`⚽ ¡Gol de <b>${K.esc(quien)}</b>! ${K.esc(ev.local)} ${ev.marcador.l}-${ev.marcador.v} ${K.esc(ev.visita)}`, 'warn');
+    if (meImporta(ev)) {
+      K.aviso(`¡Gol de <b>${K.esc(quien)}</b>! ${K.esc(ev.local)} ${ev.marcador.l}-${ev.marcador.v} ${K.esc(ev.visita)}`, 'warn');
+    }
     K.bus.emit('lista');
   }
 
@@ -2598,8 +2807,9 @@ K.Sportsbook = (() => {
   function finalizar(ev) {
     ev.terminado = true;
     ev.vivo = false;
+    const importa = meImporta(ev);
     liquidar(ev);
-    K.aviso(`🏁 Final: ${K.esc(ev.local)} ${ev.marcador.l}-${ev.marcador.v} ${K.esc(ev.visita)}`);
+    if (importa) K.aviso(`Final: ${K.esc(ev.local)} ${ev.marcador.l}-${ev.marcador.v} ${K.esc(ev.visita)}`);
   }
 
   function liquidar(ev) {
@@ -2627,7 +2837,11 @@ K.Sportsbook = (() => {
         ap.estado = 'ganada';
         ap.pago = K.round2(ap.stake * cuota);
         K.Wallet.acreditar(ap.pago, 'Apuesta ganada ' + ap.id);
-        if (K.Progreso) K.Progreso.resultado(ap.pago);
+        if (K.Progreso) {
+          K.Progreso.resultado(ap.pago);
+          K.Progreso.marcar('deportivasGanadas');
+          if (ap.tipo === 'combinada') K.Progreso.marcar('combinadasGanadas');
+        }
         K.confeti(60);
       }
     }
@@ -5531,6 +5745,793 @@ K.Juegos.videopoker = function (root, juego) {
 </script>
 <script>
 /* ===========================================================
+   games/keno.js — keno de 40 bolas
+   Eliges hasta 10 números, salen 10. La tabla de pagos se
+   calcula con la distribución hipergeométrica para que el RTP
+   sea exactamente el declarado, sea cual sea la cantidad de
+   números elegidos.
+   =========================================================== */
+K.Juegos = K.Juegos || {};
+K.Juegos.keno = function (root, juego) {
+  const TOTAL = 40, BOLAS = 10, MAX_PICKS = 10;
+  const RTP = 0.95;
+  const VOL = { baja: 1.6, media: 2.4, alta: 3.4 }[(juego.cfg && juego.cfg.vol) || 'media'];
+
+  const comb = (n, k) => {
+    if (k < 0 || k > n) return 0;
+    let r = 1;
+    for (let i = 0; i < k; i++) r = r * (n - i) / (i + 1);
+    return r;
+  };
+  /* Probabilidad de acertar h de los k elegidos. */
+  const probAciertos = (k, h) => comb(k, h) * comb(TOTAL - k, BOLAS - h) / comb(TOTAL, BOLAS);
+
+  /* Tabla de pagos: reparte el RTP entre los aciertos que pagan, con más
+     peso en los difíciles, y topa el premio máximo en 5.000× repartiendo
+     lo que sobra entre los demás. Sin el tope, acertar 10 de 10 pagaría
+     cientos de millones y el resto de la tabla quedaría en nada. */
+  const TOPE = 5000;
+  function tabla(k) {
+    if (k === 0) return {};
+    const desde = k <= 2 ? k : k <= 6 ? Math.ceil(k / 2) : Math.ceil(k / 2) + 1;
+    const peso = h => Math.pow(VOL, h - desde);
+    let libres = [];
+    for (let h = desde; h <= k; h++) libres.push(h);
+    const pagos = {};
+    let restante = RTP;
+
+    for (let vuelta = 0; vuelta < 8; vuelta++) {
+      const sumaPesos = libres.reduce((a, h) => a + peso(h), 0) || 1;
+      const topados = [];
+      for (const h of libres) {
+        const p = probAciertos(k, h);
+        const pago = p > 0 ? (peso(h) / sumaPesos) * restante / p : 0;
+        if (pago > TOPE) topados.push(h);
+      }
+      if (!topados.length) {
+        libres.forEach(h => {
+          const p = probAciertos(k, h);
+          pagos[h] = p > 0 ? (peso(h) / sumaPesos) * restante / p : 0;
+        });
+        break;
+      }
+      topados.forEach(h => {
+        pagos[h] = TOPE;
+        restante -= TOPE * probAciertos(k, h);
+      });
+      libres = libres.filter(h => !topados.includes(h));
+      if (!libres.length) break;
+    }
+    return pagos;
+  }
+
+  let elegidos = new Set(), salidos = [], jugando = false;
+
+  const monto = K.G.inputMonto(5);
+  const sElegidos = K.G.stat('Números elegidos', '0');
+  const sMejor = K.G.stat('Pago máximo', '—');
+  const sUlt = K.G.stat('Último resultado', '—');
+  const sNeto = K.G.stat('Resultado neto', K.sol(0));
+  let neto = 0;
+
+  const btn = K.el('button', { class: 'btn bloque', text: 'Elige números' });
+  const btnAzar = K.el('button', { class: 'btn sec bloque', text: 'Elegir al azar' });
+  const btnLimpiar = K.el('button', { class: 'btn sec bloque', text: 'Limpiar' });
+
+  const panel = K.el('div', { class: 'panel-apuesta' }, [
+    monto.wrap, btn, btnAzar, btnLimpiar,
+    K.el('div', { class: 'separador' }),
+    sElegidos.fila, sMejor.fila, sUlt.fila, sNeto.fila
+  ]);
+
+  const rejilla = K.el('div', { class: 'keno-grid' });
+  const celdas = [];
+  for (let n = 1; n <= TOTAL; n++) {
+    const c = K.el('button', { class: 'keno-num', text: n, onclick: () => alternar(n) });
+    celdas.push(c);
+    rejilla.appendChild(c);
+  }
+  const bolas = K.el('div', { class: 'keno-bolas' });
+  const pagosCaja = K.el('div', { class: 'keno-pagos' });
+  const mensaje = K.el('div', { class: 'resultado' });
+  const zona = K.el('div', { class: 'zona-juego' }, [rejilla, bolas, mensaje, pagosCaja]);
+
+  function alternar(n) {
+    if (jugando) return;
+    if (elegidos.has(n)) elegidos.delete(n);
+    else {
+      if (elegidos.size >= MAX_PICKS) { K.aviso('Máximo ' + MAX_PICKS + ' números.', 'warn'); return; }
+      elegidos.add(n);
+    }
+    refrescar();
+  }
+
+  function refrescar() {
+    celdas.forEach((c, i) => {
+      const n = i + 1;
+      c.className = 'keno-num' +
+        (elegidos.has(n) ? ' elegido' : '') +
+        (salidos.includes(n) ? (elegidos.has(n) ? ' acierto' : ' salido') : '');
+    });
+    sElegidos.set(elegidos.size + ' de ' + MAX_PICKS);
+    bolas.innerHTML = salidos.length
+      ? '<span class="et">Bolas:</span>' + salidos.map(n =>
+          `<span class="bola${elegidos.has(n) ? ' acierto' : ''}">${n}</span>`).join('')
+      : '';
+    const t = tabla(elegidos.size);
+    const claves = Object.keys(t).map(Number).sort((a, b) => a - b);
+    sMejor.set(claves.length ? K.dec(t[claves[claves.length - 1]], 1) + '×' : '—');
+    pagosCaja.innerHTML = claves.length
+      ? claves.map(h => `<div class="keno-pago"><span>${h} aciertos</span><b>${t[h] < 10 ? t[h].toFixed(2) : t[h].toFixed(0)}×</b>
+          <i>${(probAciertos(elegidos.size, h) * 100).toFixed(2)}%</i></div>`).join('')
+      : '<div class="keno-vacio">Elige entre 1 y 10 números para ver la tabla de pagos.</div>';
+    btn.textContent = elegidos.size ? 'Jugar ' + K.sol(monto.get()) : 'Elige números';
+    btn.disabled = elegidos.size === 0 || jugando;
+  }
+
+  async function jugar() {
+    if (jugando || !elegidos.size) return;
+    const apuesta = monto.get();
+    if (!K.G.apostar(apuesta)) return;
+    jugando = true; btn.disabled = true; mensaje.textContent = '';
+    neto = K.round2(neto - apuesta); sNeto.set(K.sol(neto));
+
+    salidos = [];
+    const bolsa = K.mezcla([...Array(TOTAL).keys()].map(i => i + 1));
+    const sorteo = bolsa.slice(0, BOLAS);
+    for (const n of sorteo) {
+      salidos.push(n);
+      refrescar();
+      await K.enEspera(170);
+    }
+
+    const aciertos = [...elegidos].filter(n => salidos.includes(n)).length;
+    const t = tabla(elegidos.size);
+    const mult = t[aciertos] || 0;
+    const premio = K.round2(apuesta * mult);
+    if (premio > 0) {
+      K.G.pagar(premio, juego.nom + ' · ' + aciertos + ' aciertos');
+      neto = K.round2(neto + premio); sNeto.set(K.sol(neto));
+      mensaje.innerHTML = `<span style="color:var(--verde-2)">${aciertos} aciertos · ${K.dec(mult)}× · ${K.sol(premio)}</span>`;
+      if (mult >= 20) K.confeti(90);
+    } else {
+      mensaje.innerHTML = `<span style="color:var(--tenue)">${aciertos} aciertos · sin premio</span>`;
+    }
+    sUlt.set(aciertos + ' aciertos');
+    jugando = false;
+    refrescar();
+  }
+
+  btn.onclick = jugar;
+  btnAzar.onclick = () => {
+    if (jugando) return;
+    elegidos = new Set(K.mezcla([...Array(TOTAL).keys()].map(i => i + 1)).slice(0, K.entero(4, 8)));
+    salidos = [];
+    refrescar();
+  };
+  btnLimpiar.onclick = () => { if (!jugando) { elegidos.clear(); salidos = []; refrescar(); } };
+  monto.inp.oninput = refrescar;
+
+  refrescar();
+  root.appendChild(K.el('div', { class: 'juego-layout' }, [panel, zona]));
+  root.appendChild(K.G.nota(`<h4>Por qué la tabla cambia según cuántos números elijas</h4>
+    Con 40 bolas y 10 sorteadas, la probabilidad de acertar <b>h</b> de tus <b>k</b> números es
+    <code>C(k,h) × C(40−k,10−h) / C(40,10)</code>. El juego reparte el ${(RTP * 100).toFixed(0)}% de
+    retorno entre los aciertos que pagan, y por eso acertar 8 de 8 puede pagar miles de veces la
+    apuesta: es igual de improbable. Elegir más números no mejora tu retorno, solo mueve el premio
+    hacia resultados más raros.`));
+};
+
+</script>
+<script>
+/* ===========================================================
+   games/extras.js — juegos rápidos
+   Dados, cara o cruz con racha, Hi-Lo, Torres y raspaditas.
+   Todos con su retorno teórico calculado, no inventado.
+   =========================================================== */
+K.Juegos = K.Juegos || {};
+
+/* =========================================================
+   DADOS · elige el objetivo, el juego tira entre 0 y 100
+   ========================================================= */
+K.Juegos.dados = function (root, juego) {
+  const VENTAJA = 0.99;
+  let objetivo = 50, modo = 'menor', tirando = false, neto = 0;
+  const prob = () => (modo === 'menor' ? objetivo : 100 - objetivo) / 100;
+  const mult = () => Math.max(1.01, Math.floor(VENTAJA / prob() * 100) / 100);
+
+  const monto = K.G.inputMonto(5);
+  const rango = K.el('input', { type: 'range', min: '2', max: '98', step: '1', value: '50' });
+  const num = K.el('input', { type: 'number', min: '2', max: '98', value: '50' });
+  const sProb = K.G.stat('Probabilidad', '50.00%');
+  const sMult = K.G.stat('Pago', '1.98×');
+  const sGana = K.G.stat('Ganancia si acierta', K.sol(0));
+  const sNeto = K.G.stat('Resultado neto', K.sol(0));
+
+  const btnModo = K.el('button', { class: 'btn sec bloque', text: 'Apostando a MENOR que 50' });
+  const btn = K.el('button', { class: 'btn bloque', text: 'Tirar' });
+  const btnAuto = K.el('button', { class: 'btn sec bloque', text: 'Auto ×10' });
+
+  const panel = K.el('div', { class: 'panel-apuesta' }, [
+    monto.wrap,
+    K.el('div', { class: 'campo' }, [K.el('label', { text: 'Objetivo' }), num, rango]),
+    btnModo, btn, btnAuto,
+    K.el('div', { class: 'separador' }),
+    sProb.fila, sMult.fila, sGana.fila, sNeto.fila
+  ]);
+
+  const marcador = K.el('div', { class: 'dados-num', text: '—' });
+  const barra = K.el('div', { class: 'dados-barra' });
+  const aguja = K.el('div', { class: 'dados-aguja' });
+  barra.appendChild(aguja);
+  const hist = K.el('div', { class: 'historial-mult' });
+  const zona = K.el('div', { class: 'zona-juego' }, [
+    K.el('div', { style: 'flex:1;display:grid;place-content:center;gap:18px;width:100%' }, [marcador, barra]),
+    hist
+  ]);
+
+  function refrescar() {
+    objetivo = K.clamp(Math.round(Number(num.value) || 50), 2, 98);
+    num.value = objetivo; rango.value = objetivo;
+    sProb.set(K.pct(prob(), 2));
+    sMult.set(K.dec(mult()) + '×');
+    sGana.set(K.sol(monto.get() * (mult() - 1)));
+    btnModo.textContent = 'Apostando a ' + (modo === 'menor' ? 'MENOR' : 'MAYOR') + ' que ' + objetivo;
+    barra.style.background = modo === 'menor'
+      ? `linear-gradient(90deg, var(--verde) 0 ${objetivo}%, var(--panel-3) ${objetivo}% 100%)`
+      : `linear-gradient(90deg, var(--panel-3) 0 ${objetivo}%, var(--verde) ${objetivo}% 100%)`;
+  }
+  rango.oninput = () => { num.value = rango.value; refrescar(); };
+  num.oninput = refrescar;
+  monto.inp.oninput = refrescar;
+  btnModo.onclick = () => { modo = modo === 'menor' ? 'mayor' : 'menor'; refrescar(); };
+
+  async function tirar() {
+    if (tirando) return;
+    const apuesta = monto.get();
+    if (!K.G.apostar(apuesta)) return;
+    tirando = true; btn.disabled = true;
+    neto = K.round2(neto - apuesta); sNeto.set(K.sol(neto));
+
+    const res = K.round2(Math.random() * 100);
+    const t0 = performance.now();
+    await new Promise(fin => {
+      const paso = ahora => {
+        const f = (ahora - t0) / 520;
+        if (f < 1) {
+          const v = K.round2(Math.random() * 100);
+          marcador.textContent = v.toFixed(2);
+          aguja.style.left = v + '%';
+          requestAnimationFrame(paso);
+        } else fin();
+      };
+      requestAnimationFrame(paso);
+    });
+
+    marcador.textContent = res.toFixed(2);
+    aguja.style.left = res + '%';
+    const gano = modo === 'menor' ? res < objetivo : res > objetivo;
+    marcador.style.color = gano ? 'var(--verde-2)' : 'var(--rojo)';
+    if (gano) {
+      const premio = K.round2(apuesta * mult());
+      K.G.pagar(premio, juego.nom + ' ' + K.dec(mult()) + '×');
+      neto = K.round2(neto + premio); sNeto.set(K.sol(neto));
+      if (mult() >= 10) K.confeti(70);
+    }
+    hist.insertBefore(K.el('span', {
+      class: 'pill ' + (gano ? 'alto' : 'bajo'), text: res.toFixed(2)
+    }), hist.firstChild);
+    while (hist.children.length > 16) hist.lastChild.remove();
+    tirando = false; btn.disabled = false;
+    return gano;
+  }
+
+  btn.onclick = tirar;
+  btnAuto.onclick = async () => {
+    for (let i = 0; i < 10; i++) {
+      if (K.Wallet.est().saldo < monto.get()) break;
+      await tirar();
+      await K.enEspera(260);
+    }
+  };
+
+  refrescar();
+  root.appendChild(K.el('div', { class: 'juego-layout' }, [panel, zona]));
+  root.appendChild(K.G.nota(`<h4>La fórmula del pago</h4>
+    El resultado es un número entre 0 y 100 con dos decimales, todos igual de probables. Si apuestas a
+    menor que 50 aciertas la mitad de las veces, y el pago es <code>0.99 / 0.50 = 1.98×</code>. Muevas
+    donde muevas el objetivo, el retorno queda clavado en <b>99%</b>: apuntar a un 2% de probabilidad
+    paga 49.5× pero pierdes 49 de cada 50 tiros. Es el juego más transparente del casino y aun así la
+    casa gana ese 1% cada vez.`));
+};
+
+/* =========================================================
+   CARA O CRUZ · doblar o nada
+   ========================================================= */
+K.Juegos.moneda = function (root, juego) {
+  const VENTAJA = 0.99;
+  const PASO = VENTAJA * 2;            // 1.98 por acierto
+  let racha = 0, apuesta = 0, activo = false, animando = false;
+
+  const monto = K.G.inputMonto(5);
+  const sRacha = K.G.stat('Racha actual', '0');
+  const sBote = K.G.stat('Bote acumulado', K.sol(0));
+  const sProx = K.G.stat('Si aciertas otra', K.sol(0));
+  const sMejor = K.G.stat('Mejor racha', '0');
+
+  const bCara = K.el('button', { class: 'btn bloque', text: 'CARA' });
+  const bCruz = K.el('button', { class: 'btn sec bloque', text: 'CRUZ' });
+  const bCobrar = K.el('button', { class: 'btn verde bloque', text: 'Cobrar' });
+  bCobrar.disabled = true;
+
+  const panel = K.el('div', { class: 'panel-apuesta' }, [
+    monto.wrap, bCara, bCruz, bCobrar,
+    K.el('div', { class: 'separador' }),
+    sRacha.fila, sBote.fila, sProx.fila, sMejor.fila
+  ]);
+
+  const moneda = K.el('div', { class: 'moneda' }, [
+    K.el('div', { class: 'cara', text: 'CARA' }),
+    K.el('div', { class: 'cruz', text: 'CRUZ' })
+  ]);
+  const mensaje = K.el('div', { class: 'resultado', text: 'Elige cara o cruz para empezar la racha.' });
+  const hist = K.el('div', { class: 'historial-mult' });
+  const zona = K.el('div', { class: 'zona-juego' }, [
+    K.el('div', { style: 'flex:1;display:grid;place-content:center' }, [moneda]),
+    mensaje, hist
+  ]);
+
+  const bote = () => K.round2(apuesta * Math.pow(PASO, racha));
+
+  function refrescar() {
+    sRacha.set(String(racha));
+    sBote.set(K.sol(activo ? bote() : 0));
+    sProx.set(K.sol(activo ? bote() * PASO : monto.get() * PASO));
+    bCobrar.disabled = !activo || racha === 0;
+    bCara.textContent = activo ? 'CARA · seguir' : 'CARA';
+    bCruz.textContent = activo ? 'CRUZ · seguir' : 'CRUZ';
+  }
+
+  async function jugar(eleccion) {
+    if (animando) return;
+    if (!activo) {
+      apuesta = monto.get();
+      if (!K.G.apostar(apuesta)) return;
+      activo = true; racha = 0;
+    }
+    animando = true;
+    const salida = Math.random() < 0.5 ? 'cara' : 'cruz';
+    const vueltas = 5 + (salida === 'cruz' ? 0.5 : 0);
+    moneda.style.transition = 'transform 1.1s cubic-bezier(.2,.8,.3,1)';
+    moneda.style.transform = `rotateY(${vueltas * 360}deg)`;
+    await K.enEspera(1150);
+    moneda.style.transition = 'none';
+    moneda.style.transform = `rotateY(${salida === 'cruz' ? 180 : 0}deg)`;
+
+    hist.insertBefore(K.el('span', {
+      class: 'pill ' + (salida === eleccion ? 'alto' : 'bajo'),
+      text: salida === 'cara' ? 'C' : 'X'
+    }), hist.firstChild);
+    while (hist.children.length > 20) hist.lastChild.remove();
+
+    if (salida === eleccion) {
+      racha++;
+      const w = K.Wallet.est();
+      w.casino.historial.monedaMejor = Math.max(w.casino.historial.monedaMejor || 0, racha);
+      sMejor.set(String(w.casino.historial.monedaMejor));
+      mensaje.innerHTML = `<span style="color:var(--verde-2)">Salió ${salida} · racha de ${racha} · bote ${K.sol(bote())}</span>`;
+      if (racha >= 5) K.confeti(80);
+      if (K.Progreso) K.Progreso.registrar('crash', { mult: Math.pow(PASO, racha) });
+    } else {
+      mensaje.innerHTML = `<span style="color:var(--rojo)">Salió ${salida} · se cortó la racha</span>`;
+      activo = false; racha = 0;
+    }
+    animando = false;
+    refrescar();
+  }
+
+  function cobrar() {
+    if (!activo || racha === 0) return;
+    const premio = bote();
+    K.G.pagar(premio, juego.nom + ' · racha de ' + racha);
+    K.aviso('Cobraste ' + K.sol(premio) + ' con ' + racha + ' aciertos seguidos', 'ok');
+    activo = false; racha = 0;
+    mensaje.innerHTML = `<span style="color:var(--verde-2)">Cobraste ${K.sol(premio)}</span>`;
+    refrescar();
+  }
+
+  bCara.onclick = () => jugar('cara');
+  bCruz.onclick = () => jugar('cruz');
+  bCobrar.onclick = cobrar;
+  monto.inp.oninput = refrescar;
+  refrescar();
+
+  root.appendChild(K.el('div', { class: 'juego-layout' }, [panel, zona]));
+  root.appendChild(K.G.nota(`<h4>Doblar o nada, con su letra chica</h4>
+    Cada tiro paga <b>1.98×</b> en vez de 2× exactos: ahí está el 1% de la casa. Con 10 aciertos
+    seguidos el bote llega a <code>1.98^10 = 895×</code> tu apuesta, pero la probabilidad de lograrlo es
+    <code>1/1024</code>. La moneda no tiene memoria: después de ocho caras seguidas, la novena sigue
+    siendo 50/50. Esa sensación de que "ya toca" tiene nombre, falacia del jugador, y es exactamente
+    de lo que vive este juego.`));
+};
+
+/* =========================================================
+   HI-LO · mayor o menor con la baraja
+   ========================================================= */
+K.Juegos.hilo = function (root, juego) {
+  const VENTAJA = 0.99;
+  const ORDEN = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+  let carta = null, mult = 1, apuesta = 0, activo = false, animando = false;
+
+  const rango = c => ORDEN.indexOf(c.v);
+  const pMayor = c => (13 - rango(c)) / 13;      // mayor o igual
+  const pMenor = c => (rango(c) + 1) / 13;       // menor o igual
+
+  const monto = K.G.inputMonto(5);
+  const sMult = K.G.stat('Multiplicador', '1.00×');
+  const sBote = K.G.stat('Bote', K.sol(0));
+  const sMayor = K.G.stat('Pago si mayor', '—');
+  const sMenor = K.G.stat('Pago si menor', '—');
+
+  const btnEmpezar = K.el('button', { class: 'btn bloque', text: 'Repartir' });
+  const bMayor = K.el('button', { class: 'btn sec bloque', text: '▲ Mayor o igual' });
+  const bMenor = K.el('button', { class: 'btn sec bloque', text: '▼ Menor o igual' });
+  const bCobrar = K.el('button', { class: 'btn verde bloque', text: 'Cobrar' });
+  [bMayor, bMenor, bCobrar].forEach(b => b.disabled = true);
+
+  const panel = K.el('div', { class: 'panel-apuesta' }, [
+    monto.wrap, btnEmpezar, bMayor, bMenor, bCobrar,
+    K.el('div', { class: 'separador' }),
+    sMult.fila, sBote.fila, sMayor.fila, sMenor.fila
+  ]);
+
+  const mesa = K.el('div', { class: 'cartas', style: 'justify-content:center' });
+  const mensaje = K.el('div', { class: 'resultado' });
+  const hist = K.el('div', { class: 'historial-mult' });
+  const zona = K.el('div', { class: 'zona-juego' }, [
+    K.el('div', { style: 'flex:1;display:grid;place-content:center;gap:14px' }, [mesa, mensaje]), hist
+  ]);
+
+  const nuevaCarta = () => {
+    const palos = [['♠', 0], ['♥', 1], ['♦', 1], ['♣', 0]];
+    const p = K.elige(palos);
+    return { v: K.elige(ORDEN), palo: p[0], rojo: !!p[1] };
+  };
+
+  function pintar() {
+    mesa.innerHTML = '';
+    mesa.appendChild(K.Baraja.nodo(carta));
+    mesa.appendChild(K.Baraja.nodo(null));
+    if (carta) {
+      sMayor.set(K.dec(VENTAJA / pMayor(carta)) + '× · ' + K.pct(pMayor(carta), 0));
+      sMenor.set(K.dec(VENTAJA / pMenor(carta)) + '× · ' + K.pct(pMenor(carta), 0));
+    }
+    sMult.set(K.dec(mult) + '×');
+    sBote.set(K.sol(activo ? apuesta * mult : 0));
+  }
+
+  function empezar() {
+    apuesta = monto.get();
+    if (!K.G.apostar(apuesta)) return;
+    carta = nuevaCarta(); mult = 1; activo = true;
+    btnEmpezar.disabled = true;
+    [bMayor, bMenor].forEach(b => b.disabled = false);
+    bCobrar.disabled = true;
+    mensaje.textContent = '¿La siguiente será mayor o menor?';
+    pintar();
+  }
+
+  async function apostarA(dir) {
+    if (!activo || animando) return;
+    animando = true;
+    const p = dir === 'mayor' ? pMayor(carta) : pMenor(carta);
+    const paso = VENTAJA / p;
+    const nueva = nuevaCarta();
+    await K.enEspera(220);
+    const gano = dir === 'mayor' ? rango(nueva) >= rango(carta) : rango(nueva) <= rango(carta);
+    hist.insertBefore(K.el('span', {
+      class: 'pill ' + (gano ? 'alto' : 'bajo'), text: nueva.v + nueva.palo
+    }), hist.firstChild);
+    while (hist.children.length > 18) hist.lastChild.remove();
+
+    carta = nueva;
+    if (gano) {
+      mult = K.round2(mult * paso);
+      mensaje.innerHTML = `<span style="color:var(--verde-2)">¡Bien! Bote de ${K.sol(apuesta * mult)}</span>`;
+      bCobrar.disabled = false;
+      if (mult >= 10) K.confeti(70);
+    } else {
+      mensaje.innerHTML = `<span style="color:var(--rojo)">Salió ${nueva.v}${nueva.palo} · perdiste el bote</span>`;
+      activo = false;
+      btnEmpezar.disabled = false;
+      [bMayor, bMenor, bCobrar].forEach(b => b.disabled = true);
+      mult = 1;
+    }
+    pintar();
+    animando = false;
+  }
+
+  function cobrar() {
+    if (!activo || mult <= 1) return;
+    const premio = K.round2(apuesta * mult);
+    K.G.pagar(premio, juego.nom + ' ' + K.dec(mult) + '×');
+    K.aviso('Cobraste ' + K.sol(premio) + ' en ' + K.dec(mult) + '×', 'ok');
+    activo = false; mult = 1;
+    btnEmpezar.disabled = false;
+    [bMayor, bMenor, bCobrar].forEach(b => b.disabled = true);
+    pintar();
+  }
+
+  btnEmpezar.onclick = empezar;
+  bMayor.onclick = () => apostarA('mayor');
+  bMenor.onclick = () => apostarA('menor');
+  bCobrar.onclick = cobrar;
+  pintar();
+
+  root.appendChild(K.el('div', { class: 'juego-layout' }, [panel, zona]));
+  root.appendChild(K.G.nota(`<h4>Los pagos salen de la carta que ves</h4>
+    Con un 7 en la mesa, "mayor o igual" cubre 7 rangos de 13 y paga <code>0.99 / (7/13) = 1.84×</code>;
+    con un rey, "mayor o igual" es casi seguro y paga 1.07×. El multiplicador se acumula ronda tras
+    ronda y podés cobrar cuando quieras: la tensión entre cobrar y seguir es todo el juego, y el 1% de
+    la casa se aplica en cada paso, así que cuanto más encadenas, más margen pagas.`));
+};
+
+/* =========================================================
+   TORRES · sube pisos esquivando la trampa
+   ========================================================= */
+K.Juegos.torres = function (root, juego) {
+  const FILAS = 8;
+  const NIVELES = { facil: 4, medio: 3, dificil: 2 };
+  let dificultad = 'medio', piso = 0, activo = false, tablero = [], apuesta = 0;
+
+  const cols = () => NIVELES[dificultad];
+  const pPaso = () => (cols() - 1) / cols();
+  const multPiso = n => n === 0 ? 1 : K.round2(0.99 * Math.pow(1 / pPaso(), n));
+
+  const monto = K.G.inputMonto(5);
+  const selDif = K.el('select');
+  [['facil', 'Fácil · 1 trampa de 4'], ['medio', 'Medio · 1 de 3'], ['dificil', 'Difícil · 1 de 2']]
+    .forEach(([v, t]) => selDif.appendChild(K.el('option', { value: v, text: t })));
+  selDif.value = dificultad;
+
+  const sPiso = K.G.stat('Piso actual', '0 de ' + FILAS);
+  const sMult = K.G.stat('Multiplicador', '1.00×');
+  const sCobro = K.G.stat('Cobro disponible', K.sol(0));
+  const sProx = K.G.stat('Si subes uno más', '—');
+
+  const btn = K.el('button', { class: 'btn bloque', text: 'Empezar a subir' });
+  const btnCobrar = K.el('button', { class: 'btn verde bloque', text: 'Cobrar' });
+  btnCobrar.disabled = true;
+
+  const panel = K.el('div', { class: 'panel-apuesta' }, [
+    monto.wrap,
+    K.el('div', { class: 'campo' }, [K.el('label', { text: 'Dificultad' }), selDif]),
+    btn, btnCobrar,
+    K.el('div', { class: 'separador' }),
+    sPiso.fila, sMult.fila, sCobro.fila, sProx.fila
+  ]);
+
+  const torre = K.el('div', { class: 'torre' });
+  const zona = K.el('div', { class: 'zona-juego' }, [torre]);
+
+  function construir() {
+    torre.innerHTML = '';
+    for (let f = FILAS - 1; f >= 0; f--) {
+      const fila = K.el('div', { class: 'torre-fila' + (f === piso && activo ? ' activa' : '') });
+      fila.style.gridTemplateColumns = `54px repeat(${cols()},1fr)`;
+      fila.appendChild(K.el('span', { class: 'torre-mult', text: multPiso(f + 1) + '×' }));
+      for (let c = 0; c < cols(); c++) {
+        const b = K.el('button', {
+          class: 'torre-celda', text: '',
+          onclick: () => elegir(f, c)
+        });
+        b.disabled = !activo || f !== piso;
+        if (tablero[f] && tablero[f].revelado) {
+          b.textContent = tablero[f].trampa === c ? '💀' : '💎';
+          b.classList.add(tablero[f].trampa === c ? 'mala' : 'buena');
+        } else if (tablero.length && f < piso) {
+          b.textContent = '·';
+        }
+        fila.appendChild(b);
+      }
+      torre.appendChild(fila);
+    }
+  }
+
+  function refrescar() {
+    sPiso.set(piso + ' de ' + FILAS);
+    sMult.set(multPiso(piso) + '×');
+    sCobro.set(K.sol(activo ? apuesta * multPiso(piso) : 0));
+    sProx.set(piso < FILAS ? multPiso(piso + 1) + '× · ' + K.pct(pPaso(), 0) + ' de pasar' : 'cima');
+    btnCobrar.disabled = !activo || piso === 0;
+    construir();
+  }
+
+  function empezar() {
+    apuesta = monto.get();
+    if (!K.G.apostar(apuesta)) return;
+    tablero = [];
+    for (let f = 0; f < FILAS; f++) tablero.push({ trampa: K.entero(0, cols() - 1), revelado: false });
+    piso = 0; activo = true;
+    btn.disabled = true; selDif.disabled = true;
+    refrescar();
+  }
+
+  function elegir(f, c) {
+    if (!activo || f !== piso) return;
+    tablero[f].revelado = true;
+    if (tablero[f].trampa === c) {
+      activo = false;
+      K.aviso('Caíste en la trampa del piso ' + (f + 1), 'err');
+      tablero.forEach(t => t.revelado = true);
+      terminar();
+      return;
+    }
+    piso++;
+    if (piso >= FILAS) { cobrar(true); return; }
+    refrescar();
+  }
+
+  function cobrar(cima = false) {
+    if (!activo || piso === 0) return;
+    const m = multPiso(piso);
+    const premio = K.round2(apuesta * m);
+    K.G.pagar(premio, juego.nom + ' piso ' + piso);
+    K.aviso((cima ? '¡Llegaste a la cima! ' : 'Cobraste ') + K.sol(premio) + ' con ' + m + '×', 'ok');
+    if (cima && K.Progreso) K.Progreso.marcar('torres');
+    if (cima || m >= 8) K.confeti(90);
+    activo = false;
+    terminar();
+  }
+
+  function terminar() {
+    btn.disabled = false; selDif.disabled = false;
+    refrescar();
+  }
+
+  btn.onclick = empezar;
+  btnCobrar.onclick = () => cobrar(false);
+  selDif.onchange = () => { if (!activo) { dificultad = selDif.value; piso = 0; refrescar(); } };
+  refrescar();
+
+  root.appendChild(K.el('div', { class: 'juego-layout' }, [panel, zona]));
+  root.appendChild(K.G.nota(`<h4>Ocho pisos, una trampa por piso</h4>
+    En dificultad media aciertas 2 de cada 3 veces por piso, así que el multiplicador de subir n pisos
+    es <code>0.99 × (3/2)^n</code>. Llegar a la cima paga <b>${multPiso(FILAS)}×</b> en medio, pero solo
+    pasa <code>(2/3)^8 = 3.9%</code> de las partidas. Cada piso que subes vale más, y esa es justamente
+    la trampa: cuanto más alto llegas, más te cuesta bajarte.`));
+};
+
+/* =========================================================
+   RASPADITA · tres símbolos iguales
+   ========================================================= */
+K.Juegos.rasca = function (root, juego) {
+  const RTP = 0.95;
+  const PREMIOS = [
+    { m: 1, w: 250, s: '🍀' }, { m: 2, w: 120, s: '🔔' }, { m: 5, w: 50, s: '💰' },
+    { m: 10, w: 20, s: '💎' }, { m: 25, w: 6, s: '👑' }, { m: 100, w: 1.5, s: '🏆' },
+    { m: 1000, w: 0.2, s: '⭐' }
+  ];
+  const EV_BRUTO = PREMIOS.reduce((a, p) => a + p.w * p.m, 0);
+  const ESCALA = RTP / EV_BRUTO;                       // probabilidad real de cada premio
+  const OTROS = ['🍋', '🍒', '🍇', '🔶', '🎲', '🃏'];
+
+  let raspando = false, celdas = [], premio = null, reveladas = 0, apuesta = 0;
+
+  const monto = K.G.inputMonto(5);
+  const sUlt = K.G.stat('Último cartón', '—');
+  const sJugados = K.G.stat('Cartones', '0');
+  const sNeto = K.G.stat('Resultado neto', K.sol(0));
+  let jugados = 0, neto = 0;
+
+  const btn = K.el('button', { class: 'btn bloque', text: 'Comprar cartón' });
+  const btnTodo = K.el('button', { class: 'btn sec bloque', text: 'Raspar todo' });
+  btnTodo.disabled = true;
+
+  const panel = K.el('div', { class: 'panel-apuesta' }, [
+    monto.wrap, btn, btnTodo,
+    K.el('div', { class: 'separador' }),
+    sUlt.fila, sJugados.fila, sNeto.fila,
+    K.el('div', { class: 'rasca-tabla' }, PREMIOS.map(p => K.el('div', {
+      class: 'rasca-premio',
+      html: `<span>${p.s}</span><b>${p.m}×</b><i>${(p.w * ESCALA * 100).toFixed(2)}%</i>`
+    })))
+  ]);
+
+  const carton = K.el('div', { class: 'rasca-carton' });
+  const mensaje = K.el('div', { class: 'resultado', text: 'Compra un cartón y raspa las nueve casillas.' });
+  const zona = K.el('div', { class: 'zona-juego' }, [
+    K.el('div', { style: 'flex:1;display:grid;place-content:center' }, [carton]), mensaje
+  ]);
+
+  function sortearPremio() {
+    let r = Math.random();
+    for (const p of PREMIOS) {
+      const prob = p.w * ESCALA;
+      if (r < prob) return p;
+      r -= prob;
+    }
+    return null;
+  }
+
+  function armarCarton() {
+    premio = sortearPremio();
+    const simbolos = [];
+    if (premio) {
+      for (let i = 0; i < 3; i++) simbolos.push(premio.s);
+      const resto = K.mezcla(OTROS.concat(PREMIOS.filter(p => p !== premio).map(p => p.s)));
+      for (let i = 0; i < 6; i++) simbolos.push(resto[i % resto.length]);
+    } else {
+      // Sin premio: como mucho dos iguales de cada símbolo
+      const pool = K.mezcla(OTROS.concat(PREMIOS.map(p => p.s)));
+      const cuenta = {};
+      while (simbolos.length < 9) {
+        const s = pool[K.entero(0, pool.length - 1)];
+        if ((cuenta[s] || 0) >= 2) continue;
+        cuenta[s] = (cuenta[s] || 0) + 1;
+        simbolos.push(s);
+      }
+    }
+    return K.mezcla(simbolos);
+  }
+
+  function comprar() {
+    apuesta = monto.get();
+    if (!K.G.apostar(apuesta)) return;
+    neto = K.round2(neto - apuesta); sNeto.set(K.sol(neto));
+    const simbolos = armarCarton();
+    reveladas = 0;
+    carton.innerHTML = '';
+    celdas = simbolos.map((s, i) => {
+      const c = K.el('button', { class: 'rasca-celda', 'data-s': s, onclick: () => raspar(i) });
+      c.innerHTML = '<span class="tapa"></span><span class="simbolo">' + s + '</span>';
+      carton.appendChild(c);
+      return c;
+    });
+    raspando = true;
+    btn.disabled = true; btnTodo.disabled = false;
+    mensaje.textContent = 'Raspa las nueve casillas.';
+    jugados++; sJugados.set(String(jugados));
+  }
+
+  function raspar(i) {
+    if (!raspando || celdas[i].classList.contains('abierta')) return;
+    celdas[i].classList.add('abierta');
+    reveladas++;
+    if (reveladas === 9) resolver();
+  }
+
+  function resolver() {
+    raspando = false;
+    btn.disabled = false; btnTodo.disabled = true;
+    if (premio) {
+      const pago = K.round2(apuesta * premio.m);
+      K.G.pagar(pago, juego.nom + ' ' + premio.m + '×');
+      neto = K.round2(neto + pago); sNeto.set(K.sol(neto));
+      sUlt.set(premio.m + '× · ' + K.sol(pago));
+      mensaje.innerHTML = `<span style="color:var(--verde-2)">Tres ${premio.s} · ${premio.m}× · ${K.sol(pago)}</span>`;
+      celdas.forEach(c => { if (c.dataset.s === premio.s) c.classList.add('ganadora'); });
+      if (premio.m >= 25) K.confeti(110);
+    } else {
+      sUlt.set('sin premio');
+      mensaje.innerHTML = '<span style="color:var(--tenue)">Sin tres iguales. Otro cartón, otra oportunidad.</span>';
+    }
+  }
+
+  btn.onclick = comprar;
+  btnTodo.onclick = () => celdas.forEach((c, i) => setTimeout(() => raspar(i), i * 60));
+
+  root.appendChild(K.el('div', { class: 'juego-layout' }, [panel, zona]));
+  root.appendChild(K.G.nota(`<h4>El cartón ya está decidido cuando lo compras</h4>
+    El premio se sortea al comprar, antes de que raspes nada: las casillas solo dibujan un resultado que
+    ya existe. Raspar de a poco no cambia nada, solo estira la expectativa, y por eso las raspaditas
+    reales se diseñan así. La tabla de la izquierda muestra la probabilidad exacta de cada premio; todas
+    juntas suman un retorno del <b>${(RTP * 100).toFixed(0)}%</b>.`));
+};
+
+</script>
+<script>
+/* ===========================================================
    progreso.js — capa de enganche: niveles, misiones diarias,
    torneo semanal, cashback y jackpot progresivo.
    Todo esto existe para que vuelvas: está copiado de lo que
@@ -5566,8 +6567,35 @@ K.Progreso = (() => {
     return d.getFullYear() + '-W' + sem;
   };
 
+  /* ---------------- logros ---------------- */
+  const LOGROS = [
+    { id: 'primera', nom: 'Primera apuesta', desc: 'Coloca tu primera apuesta deportiva', premio: 50, meta: 1, val: s => s.apuestas },
+    { id: 'habitual', nom: 'Cliente habitual', desc: 'Llega a 25 apuestas deportivas', premio: 150, meta: 25, val: s => s.apuestas },
+    { id: 'veterano', nom: 'Veterano del libro', desc: 'Llega a 100 apuestas deportivas', premio: 400, meta: 100, val: s => s.apuestas },
+    { id: 'curioso', nom: 'Curioso', desc: 'Prueba 10 juegos distintos del casino', premio: 200, meta: 10, val: s => s.juegos.length },
+    { id: 'coleccionista', nom: 'Coleccionista', desc: 'Prueba 25 juegos distintos del casino', premio: 600, meta: 25, val: s => s.juegos.length },
+    { id: 'nivel5', nom: 'Subiendo', desc: 'Alcanza el nivel 5', premio: 250, meta: 5, val: (s, p) => p.nivel },
+    { id: 'nivel10', nom: 'Peso pesado', desc: 'Alcanza el nivel 10', premio: 800, meta: 10, val: (s, p) => p.nivel },
+    { id: 'crash10', nom: 'Sangre fría', desc: 'Cobra un crash en 10× o más', premio: 300, meta: 10, val: s => s.mejorCrash },
+    { id: 'crash50', nom: 'Pulso de acero', desc: 'Cobra un crash en 50× o más', premio: 900, meta: 50, val: s => s.mejorCrash },
+    { id: 'racha3', nom: 'Tres días seguidos', desc: 'Racha de 3 días en la ruleta diaria', premio: 200, meta: 3, val: s => s.rachaDiaria },
+    { id: 'racha7', nom: 'Semana completa', desc: 'Racha de 7 días en la ruleta diaria', premio: 700, meta: 7, val: s => s.rachaDiaria },
+    { id: 'casino20', nom: 'Buena mano', desc: 'Gana 20 rondas en el casino', premio: 250, meta: 20, val: s => s.ganadasCasino },
+    { id: 'deportiva', nom: 'Ojo clínico', desc: 'Gana una apuesta deportiva', premio: 150, meta: 1, val: s => s.deportivasGanadas },
+    { id: 'combinada', nom: 'Combinada premiada', desc: 'Gana una apuesta combinada', premio: 400, meta: 1, val: s => s.combinadasGanadas },
+    { id: 'jackpot', nom: 'Reventar el bote', desc: 'Gana el jackpot progresivo', premio: 1000, meta: 1, val: s => s.jackpots },
+    { id: 'virtuales', nom: 'Aficionado a la pista', desc: 'Gana 5 apuestas en carreras virtuales', premio: 250, meta: 5, val: s => s.carreras },
+    { id: 'misiones', nom: 'Cumplidor', desc: 'Cobra 10 misiones diarias', premio: 300, meta: 10, val: s => s.misiones },
+    { id: 'torre', nom: 'Hasta la cima', desc: 'Corona la torre de 8 pisos', premio: 500, meta: 1, val: s => s.torres }
+  ];
+
   const base = () => ({
     xp: 0, nivel: 1, xpTotal: 0,
+    logros: [],
+    stats: {
+      apuestas: 0, ganadasCasino: 0, mejorCrash: 0, jackpots: 0, carreras: 0,
+      misiones: 0, deportivasGanadas: 0, combinadasGanadas: 0, torres: 0, rachaDiaria: 0, juegos: []
+    },
     misiones: { dia: '', lista: [] },
     cashback: { semana: '', perdidas: 0, cobrado: 0 },
     jackpot: 5000,
@@ -5622,6 +6650,46 @@ K.Progreso = (() => {
     };
   }
 
+  /* Revisa si alguna insignia quedó desbloqueada y la paga. */
+  function revisarLogros() {
+    const p = est();
+    const s = p.stats;
+    s.rachaDiaria = Math.max(s.rachaDiaria, (K.Wallet.est().diaria || {}).racha || 0);
+    for (const l of LOGROS) {
+      if (p.logros.includes(l.id)) continue;
+      if (l.val(s, p) >= l.meta) {
+        p.logros.push(l.id);
+        K.Wallet.mover(l.premio, 'premio', 'Logro: ' + l.nom);
+        K.aviso(`Logro desbloqueado · <b>${K.esc(l.nom)}</b> · ${K.sol(l.premio)}`, 'ok');
+        K.confeti(70);
+      }
+    }
+  }
+
+  const logros = () => {
+    const p = est();
+    return LOGROS.map(l => ({
+      ...l,
+      hecho: p.logros.includes(l.id),
+      progreso: Math.min(l.meta, l.val(p.stats, p))
+    }));
+  };
+
+  /* Marcadores que alimentan los logros. */
+  function marcar(clave, valor = 1) {
+    const s = est().stats;
+    if (clave === 'juego') {
+      if (!s.juegos.includes(valor)) s.juegos.push(valor);
+    } else if (clave === 'mejorCrash') {
+      s.mejorCrash = Math.max(s.mejorCrash, valor);
+    } else {
+      s[clave] = (s[clave] || 0) + valor;
+    }
+    revisarLogros();
+    K.Wallet.persistir();
+    K.bus.emit('progreso');
+  }
+
   /* ---------------- XP y nivel ---------------- */
   function sumarXP(cantidad) {
     const p = est();
@@ -5657,8 +6725,15 @@ K.Progreso = (() => {
       sumarXP(Math.max(1, Math.round(monto / 5)));
       p.torneo.puntos += Math.round(monto);
     }
-    if (datos.juego && !p.vistos.juegos.includes(datos.juego)) p.vistos.juegos.push(datos.juego);
+    if (datos.juego) {
+      if (!p.vistos.juegos.includes(datos.juego)) p.vistos.juegos.push(datos.juego);
+      if (!p.stats.juegos.includes(datos.juego)) p.stats.juegos.push(datos.juego);
+    }
     if (datos.deporte && !p.vistos.deportes.includes(datos.deporte)) p.vistos.deportes.push(datos.deporte);
+
+    if (tipo === 'apuesta') p.stats.apuestas++;
+    if (tipo === 'ganada') p.stats.ganadasCasino++;
+    if (tipo === 'crash' && datos.mult) p.stats.mejorCrash = Math.max(p.stats.mejorCrash, datos.mult);
 
     for (const m of p.misiones.lista) {
       if (m.cobrada) continue;
@@ -5673,6 +6748,7 @@ K.Progreso = (() => {
       if (m.id === 'combinada' && tipo === 'combinada') m.progreso++;
       if (m.progreso > m.meta) m.progreso = m.meta;
     }
+    revisarLogros();
     K.Wallet.persistir();
     K.bus.emit('progreso');
   }
@@ -5692,6 +6768,7 @@ K.Progreso = (() => {
     const m = misionLista()[idx];
     if (!m || !misionCompleta(m)) return false;
     m.cobrada = true;
+    est().stats.misiones++;
     K.Wallet.mover(m.premio, 'premio', 'Misión diaria: ' + m.txt);
     sumarXP(40);
     K.aviso('Misión completada: ' + K.sol(m.premio), 'ok');
@@ -5731,6 +6808,7 @@ K.Progreso = (() => {
     if (Math.random() < prob) {
       const premio = K.round2(p.jackpot);
       p.jackpot = 5000;
+      p.stats.jackpots++;
       K.Wallet.mover(premio, 'premio', '¡JACKPOT progresivo!');
       K.aviso('🎉 ¡JACKPOT! Ganaste ' + K.sol(premio), 'ok');
       K.confeti(140);
@@ -5753,6 +6831,7 @@ K.Progreso = (() => {
 
   return {
     init, registrar, resultado, sumarXP, est, xpNivel, nombreNivel, premioNivel,
+    logros, marcar, revisarLogros, LOGROS,
     misionLista, misionCompleta, misionesListas, cobrarMision,
     cashbackDisponible, cobrarCashback, CASHBACK,
     jackpot, aportarJackpot, intentarJackpot, APORTE,
@@ -5980,6 +7059,382 @@ K.Diaria = (() => {
 </script>
 <script>
 /* ===========================================================
+   virtuales.js — carreras virtuales
+   Una carrera nueva cada minuto: 40 s de apuestas, 18 s de
+   carrera y 8 s de resultado. El motor corre siempre, estés o
+   no mirando la pestaña, y las apuestas se liquidan solas.
+   =========================================================== */
+K.Virtuales = (() => {
+  const APUESTAS = 40000, CARRERA = 18000, RESULTADO = 9000;
+  const MARGEN = 1.14;                       // los virtuales cargan más margen que el deporte real
+
+  const DISCIPLINAS = [
+    {
+      id: 'caballos', nom: 'Hipódromo Kronos', ic: '🐎', unidad: 'cuerpos',
+      pista: '#2f6b3a', nombres: ['Relámpago', 'Doña Vicky', 'Tornado', 'Halcón Negro', 'Pampero',
+        'Estrella', 'Rey del Sur', 'Corazón', 'Vendaval', 'Cometa', 'Trueno', 'Amanecer']
+    },
+    {
+      id: 'galgos', nom: 'Canódromo Nocturno', ic: '🐕', unidad: 'cuerpos',
+      pista: '#3a3f6b', nombres: ['Flecha', 'Bala', 'Zafiro', 'Rayo', 'Duna', 'Nieve',
+        'Chispa', 'Sombra', 'Turbo', 'Lira', 'Fugaz', 'Bora']
+    },
+    {
+      id: 'motos', nom: 'Circuito Velocidad', ic: '🏍️', unidad: 'segundos',
+      pista: '#4a4a52', nombres: ['Kawa 7', 'Ducat 3', 'Yama 12', 'Honda 21', 'Aprilia 5', 'KTM 9',
+        'Suzu 14', 'BMW 2', 'Triumph 8', 'MV 11', 'Beta 4', 'GasGas 6']
+    }
+  ];
+  const COLORES = ['#ff5500', '#38bdf8', '#22c55e', '#fbbf24', '#a78bfa', '#f43f5e', '#14b8a6', '#f97316'];
+
+  let carrera = null, fase = 'apuestas', finFase = 0, numero = 1;
+  let apuestas = [], historial = [], suscriptores = [];
+
+  const t = () => Math.max(0, finFase - Date.now());
+  const seg = ms => (ms / 1000).toFixed(ms < 10000 ? 1 : 0);
+
+  /* ---------------- creación de la carrera ---------------- */
+  function nueva() {
+    const disc = DISCIPLINAS[(numero - 1) % DISCIPLINAS.length];
+    const nombres = K.mezcla(disc.nombres.slice()).slice(0, 6);
+    const corredores = nombres.map((n, i) => ({
+      n, i, color: COLORES[i], fuerza: K.entero(72, 96), box: i + 1
+    }));
+    /* Probabilidades tipo Plackett-Luce: cada corredor pesa por su fuerza. */
+    const pesos = corredores.map(c => Math.pow(c.fuerza / 70, 6));
+    const suma = pesos.reduce((a, b) => a + b, 0);
+    corredores.forEach((c, i) => {
+      c.p = pesos[i] / suma;
+      c.cuota = Math.max(1.05, Math.floor(1 / (c.p * MARGEN) * 100) / 100);
+      // Top 2: probabilidad aproximada de entrar entre los dos primeros
+      c.pTop2 = Math.min(0.95, c.p * 1.85);
+      c.cuotaTop2 = Math.max(1.02, Math.floor(1 / (c.pTop2 * (MARGEN - 0.03)) * 100) / 100);
+      c.avance = 0;
+    });
+    carrera = {
+      id: numero, disc, corredores,
+      distancia: disc.id === 'motos' ? 1200 : disc.id === 'galgos' ? 480 : 1600,
+      orden: null, empezada: 0
+    };
+    numero++;
+  }
+
+  /* Resuelve el orden de llegada con las probabilidades reales. */
+  function resolverOrden() {
+    const restantes = carrera.corredores.slice();
+    const orden = [];
+    while (restantes.length) {
+      const suma = restantes.reduce((a, c) => a + c.p, 0);
+      let r = Math.random() * suma;
+      let elegido = restantes[restantes.length - 1];
+      for (const c of restantes) { r -= c.p; if (r <= 0) { elegido = c; break; } }
+      orden.push(elegido);
+      restantes.splice(restantes.indexOf(elegido), 1);
+    }
+    // A cada corredor se le asigna un tiempo de llegada coherente con su puesto.
+    orden.forEach((c, pos) => {
+      c.puesto = pos + 1;
+      c.tiempoFin = 0.86 + pos * K.entero(9, 26) / 1000 + Math.random() * 0.012;
+    });
+    carrera.orden = orden;
+  }
+
+  /* ---------------- apuestas ---------------- */
+  function apostar(idx, mercado, monto) {
+    if (fase !== 'apuestas') { K.aviso('Las apuestas de esta carrera están cerradas.', 'warn'); return false; }
+    const val = K.Wallet.puedeApostar(monto);
+    if (!val.ok) { K.aviso(val.razon, 'err'); return false; }
+    const c = carrera.corredores[idx];
+    const cuota = mercado === 'ganador' ? c.cuota : c.cuotaTop2;
+    K.Wallet.apostar(monto, 'Virtuales · ' + carrera.disc.nom + ' #' + carrera.id);
+    apuestas.push({ carrera: carrera.id, idx, mercado, monto, cuota, nombre: c.n });
+    if (K.Progreso) {
+      K.Progreso.registrar('apuesta', { monto, deporte: 'virtuales' });
+      K.Progreso.resultado(-monto);
+    }
+    K.aviso('Apuesta aceptada: ' + K.esc(c.n) + ' a ' + K.dec(cuota), 'ok');
+    avisar();
+    return true;
+  }
+
+  function liquidar() {
+    const mias = apuestas.filter(a => a.carrera === carrera.id);
+    if (!mias.length) return;
+    let total = 0;
+    for (const a of mias) {
+      const c = carrera.corredores[a.idx];
+      const gana = a.mercado === 'ganador' ? c.puesto === 1 : c.puesto <= 2;
+      a.resultado = gana ? 'ganada' : 'perdida';
+      a.pago = gana ? K.round2(a.monto * a.cuota) : 0;
+      total += a.pago;
+      if (gana && K.Progreso) K.Progreso.marcar('carreras');
+    }
+    if (total > 0) {
+      K.Wallet.acreditar(total, 'Virtuales · carrera #' + carrera.id);
+      if (K.Progreso) K.Progreso.resultado(total);
+      K.aviso('Carrera #' + carrera.id + ': cobras ' + K.sol(total), 'ok');
+      K.confeti(70);
+    } else {
+      K.aviso('Carrera #' + carrera.id + ': ganó ' + K.esc(carrera.orden[0].n), 'warn');
+    }
+  }
+
+  /* ---------------- ciclo ---------------- */
+  function ciclo() {
+    if (Date.now() < finFase) return;
+    if (fase === 'apuestas') {
+      resolverOrden();
+      carrera.empezada = Date.now();
+      fase = 'carrera';
+      finFase = Date.now() + CARRERA;
+    } else if (fase === 'carrera') {
+      carrera.corredores.forEach(c => c.avance = 1 - (c.puesto - 1) * 0.018);
+      liquidar();
+      historial.unshift({
+        id: carrera.id, disc: carrera.disc.ic,
+        podio: carrera.orden.slice(0, 3).map(c => c.n)
+      });
+      if (historial.length > 12) historial.pop();
+      fase = 'resultado';
+      finFase = Date.now() + RESULTADO;
+    } else {
+      apuestas = apuestas.filter(a => a.carrera === carrera.id ? false : true);
+      nueva();
+      fase = 'apuestas';
+      finFase = Date.now() + APUESTAS;
+    }
+    avisar();
+  }
+
+  /* Avance de cada corredor durante la carrera, con adelantamientos. */
+  function progreso() {
+    if (fase !== 'carrera' || !carrera.orden) return;
+    const transcurrido = (Date.now() - carrera.empezada) / CARRERA;
+    carrera.corredores.forEach(c => {
+      const ritmo = 1 / c.tiempoFin;
+      // ruido suave para que las posiciones cambien durante la carrera
+      const vaiven = Math.sin(transcurrido * 9 + c.i * 1.7) * 0.035 * (1 - transcurrido);
+      c.avance = K.clamp(transcurrido * ritmo + vaiven, 0, 1);
+    });
+  }
+
+  const estado = () => ({ carrera, fase, restante: t(), apuestas, historial });
+  const suscribir = fn => { suscriptores.push(fn); return () => { suscriptores = suscriptores.filter(x => x !== fn); }; };
+  const avisar = () => suscriptores.forEach(fn => { try { fn(estado()); } catch (e) { /* vista cerrada */ } });
+
+  function iniciar() {
+    nueva();
+    fase = 'apuestas';
+    finFase = Date.now() + APUESTAS;
+    setInterval(() => { ciclo(); progreso(); avisar(); }, 250);
+  }
+
+  return { iniciar, estado, suscribir, apostar, seg, DISCIPLINAS };
+})();
+
+/* ===========================================================
+   Vista de las carreras virtuales
+   =========================================================== */
+K.Virtuales.vista = function (root) {
+  root.innerHTML = '';
+  const cab = K.el('div', { class: 'barra-sec' });
+  cab.innerHTML = `${K.ic('rayo')}<span>Carreras virtuales</span>`;
+  const sub = K.el('span', { class: 'sub', text: 'una carrera nueva cada minuto, todo el día' });
+  cab.appendChild(sub);
+  root.appendChild(cab);
+
+  const cabPista = K.el('div', { class: 'virt-cab' });
+  const cv = K.el('canvas', { class: 'virt-lienzo' });
+  const ctx = cv.getContext('2d');
+  const pista = K.el('div', { class: 'virt-pista' }, [cv]);
+  const barra = K.el('div', { class: 'virt-barra' }, [K.el('i')]);
+  const panelApuestas = K.el('div', { class: 'virt-apuestas' });
+  const misApuestas = K.el('div', { class: 'virt-mias' });
+  const hist = K.el('div', { class: 'virt-hist' });
+
+  const montoInp = K.el('input', { type: 'number', min: '1', step: '1', value: '20' });
+  const controles = K.el('div', { class: 'virt-controles' }, [
+    K.el('label', { text: 'Importe (S/)' }), montoInp,
+    K.el('div', { class: 'fila-btns' }, [5, 10, 20, 50].map(v =>
+      K.el('button', { text: v, onclick: () => montoInp.value = v })))
+  ]);
+
+  root.appendChild(K.el('div', { class: 'tarjeta' }, [
+    K.el('h3', { text: 'Pista en directo' }),
+    K.el('div', { class: 'cuerpo' }, [cabPista, pista, barra])
+  ]));
+  root.appendChild(K.el('div', { class: 'tarjeta', style: 'margin-top:14px' }, [
+    K.el('h3', { text: 'Apuestas de la carrera' }),
+    K.el('div', { class: 'cuerpo' }, [controles, panelApuestas, misApuestas])
+  ]));
+  root.appendChild(K.el('div', { class: 'tarjeta', style: 'margin-top:14px' }, [
+    K.el('h3', { text: 'Últimos resultados' }),
+    K.el('div', { class: 'cuerpo' }, [hist])
+  ]));
+  root.appendChild(K.el('div', {
+    class: 'info-juego', html: `<h4>Qué son los virtuales</h4>
+    No hay ningún caballo: cada corredor tiene una probabilidad y el resultado se sortea con ella antes
+    de que arranque la animación. Por eso una carrera dura un minuto y no hay que esperar a que se juegue
+    nada: es la forma más rápida de repetir la apuesta, y por eso las casas los ponen entre partido y
+    partido. El margen acá es del <b>14%</b>, casi el triple que en fútbol; se paga por la inmediatez.` }));
+
+  /* ---------------- dibujo ---------------- */
+  function dimensionar() {
+    const r = pista.getBoundingClientRect();
+    cv.width = Math.max(320, r.width) * devicePixelRatio;
+    cv.height = 260 * devicePixelRatio;
+  }
+
+  function pintar(est) {
+    const c = est.carrera;
+    if (!c) return;
+    const p = devicePixelRatio, W = cv.width, H = cv.height;
+    const izq = 40 * p, der = 34 * p;
+    const ancho = W - izq - der;
+    const carriles = c.corredores.length;
+    const alto = (H - 26 * p) / carriles;
+
+    ctx.clearRect(0, 0, W, H);
+    const cielo = ctx.createLinearGradient(0, 0, 0, H);
+    cielo.addColorStop(0, '#0d1524'); cielo.addColorStop(1, '#070b13');
+    ctx.fillStyle = cielo; ctx.fillRect(0, 0, W, H);
+
+    // pista
+    ctx.fillStyle = c.disc.pista;
+    ctx.globalAlpha = .28;
+    ctx.fillRect(izq, 12 * p, ancho, H - 26 * p);
+    ctx.globalAlpha = 1;
+    for (let i = 0; i <= carriles; i++) {
+      const y = 12 * p + i * alto;
+      ctx.strokeStyle = 'rgba(255,255,255,.09)';
+      ctx.lineWidth = 1 * p;
+      ctx.beginPath(); ctx.moveTo(izq, y); ctx.lineTo(izq + ancho, y); ctx.stroke();
+    }
+    // marcas de distancia
+    ctx.fillStyle = 'rgba(226,232,240,.35)';
+    ctx.font = (9 * p) + 'px Barlow, system-ui';
+    ctx.textAlign = 'center';
+    for (let i = 1; i < 4; i++) {
+      const x = izq + ancho * i / 4;
+      ctx.setLineDash([4 * p, 6 * p]);
+      ctx.strokeStyle = 'rgba(255,255,255,.12)';
+      ctx.beginPath(); ctx.moveTo(x, 12 * p); ctx.lineTo(x, H - 14 * p); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillText(Math.round(c.distancia * i / 4) + 'm', x, H - 3 * p);
+    }
+    // meta
+    const meta = izq + ancho;
+    for (let y = 12 * p; y < H - 14 * p; y += 8 * p) {
+      ctx.fillStyle = ((y / (8 * p)) | 0) % 2 ? '#ffffff' : '#111827';
+      ctx.fillRect(meta - 6 * p, y, 6 * p, 8 * p);
+    }
+
+    // corredores
+    c.corredores.forEach((r, i) => {
+      const y = 12 * p + i * alto + alto / 2;
+      const x = izq + 10 * p + (ancho - 26 * p) * r.avance;
+      ctx.fillStyle = 'rgba(255,255,255,.5)';
+      ctx.font = '700 ' + (10 * p) + 'px Barlow, system-ui';
+      ctx.textAlign = 'right';
+      ctx.fillText(String(r.box), izq - 6 * p, y + 3 * p);
+
+      ctx.beginPath();
+      ctx.ellipse(x - 10 * p, y + 7 * p, 12 * p, 3 * p, 0, 0, 7);
+      ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.fill();
+
+      ctx.beginPath();
+      ctx.arc(x, y, 9 * p, 0, 7);
+      ctx.fillStyle = r.color; ctx.fill();
+      ctx.font = (13 * p) + 'px serif';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(c.disc.ic, x, y);
+      ctx.textBaseline = 'alphabetic';
+    });
+
+    // marcador de puestos durante la carrera
+    if (est.fase !== 'apuestas') {
+      const orden = est.fase === 'resultado' && c.orden
+        ? c.orden.slice()
+        : c.corredores.slice().sort((a, b) => b.avance - a.avance);
+      ctx.textAlign = 'left';
+      ctx.font = '800 ' + (10 * p) + 'px Barlow, system-ui';
+      orden.slice(0, 3).forEach((r, i) => {
+        ctx.fillStyle = r.color;
+        ctx.fillText(`${i + 1}º ${r.n}`, izq + 8 * p, 24 * p + i * 13 * p);
+      });
+    }
+  }
+
+  /* ---------------- interfaz ---------------- */
+  function pintarPanel(est) {
+    const c = est.carrera;
+    if (!c) return;
+    const abierto = est.fase === 'apuestas';
+    cabPista.innerHTML = `
+      <span class="disc">${c.disc.ic} ${K.esc(c.disc.nom)}</span>
+      <span class="num">Carrera #${c.id} · ${c.distancia} m</span>
+      <span class="estado ${est.fase}">${abierto ? 'Apuestas abiertas · cierran en ' + K.Virtuales.seg(est.restante) + ' s'
+        : est.fase === 'carrera' ? 'EN CARRERA' : 'Resultado oficial'}</span>`;
+    const total = abierto ? 40000 : est.fase === 'carrera' ? 18000 : 9000;
+    barra.firstChild.style.width = (100 - est.restante / total * 100) + '%';
+    barra.firstChild.className = est.fase;
+
+    panelApuestas.innerHTML = '';
+    c.corredores.forEach((r, i) => {
+      const fila = K.el('div', { class: 'virt-fila' + (est.fase !== 'apuestas' && r.puesto === 1 ? ' gano' : '') });
+      fila.innerHTML = `
+        <span class="box" style="background:${r.color}">${r.box}</span>
+        <span class="nom">${K.esc(r.n)}</span>
+        <span class="forma">forma ${r.fuerza} · ${K.pct(r.p, 0)}</span>`;
+      const bGana = K.el('button', { class: 'cuota' });
+      bGana.innerHTML = `<span class="lab">Ganador</span><span class="val">${K.dec(r.cuota)}</span>`;
+      bGana.disabled = !abierto;
+      bGana.onclick = () => K.Virtuales.apostar(i, 'ganador', Number(montoInp.value) || 0);
+      const bTop = K.el('button', { class: 'cuota' });
+      bTop.innerHTML = `<span class="lab">Top 2</span><span class="val">${K.dec(r.cuotaTop2)}</span>`;
+      bTop.disabled = !abierto;
+      bTop.onclick = () => K.Virtuales.apostar(i, 'top2', Number(montoInp.value) || 0);
+      fila.appendChild(K.el('div', { class: 'virt-cuotas' }, [bGana, bTop]));
+      if (est.fase !== 'apuestas' && r.puesto) {
+        fila.appendChild(K.el('span', { class: 'puesto', text: r.puesto + 'º' }));
+      }
+      panelApuestas.appendChild(fila);
+    });
+
+    const mias = est.apuestas.filter(a => a.carrera === c.id);
+    misApuestas.innerHTML = mias.length
+      ? '<div class="et">Tus apuestas en esta carrera</div>' + mias.map(a =>
+          `<div class="virt-mia ${a.resultado || ''}">
+            <span>${K.esc(a.nombre)} · ${a.mercado === 'ganador' ? 'ganador' : 'top 2'}</span>
+            <span>${K.sol(a.monto)} a ${K.dec(a.cuota)}</span>
+            <b>${a.resultado ? (a.pago ? '+' + K.sol(a.pago) : 'perdida') : 'pendiente'}</b>
+          </div>`).join('')
+      : '<div class="et">Todavía no apostaste en esta carrera.</div>';
+
+    hist.innerHTML = est.historial.length
+      ? est.historial.map(h => `<div class="virt-hfila">
+          <span class="ic">${h.disc}</span><span class="id">#${h.id}</span>
+          <span class="podio">🥇 ${K.esc(h.podio[0])} · 🥈 ${K.esc(h.podio[1])} · 🥉 ${K.esc(h.podio[2])}</span>
+        </div>`).join('')
+      : '<div class="et">Las carreras terminadas aparecerán acá.</div>';
+  }
+
+  const refrescar = est => {
+    if (!document.body.contains(cv)) return;
+    pintar(est);
+    pintarPanel(est);
+  };
+  const desuscribir = K.Virtuales.suscribir(refrescar);
+  dimensionar();
+  refrescar(K.Virtuales.estado());
+  const ro = new ResizeObserver(() => { dimensionar(); refrescar(K.Virtuales.estado()); });
+  ro.observe(pista);
+  return () => { desuscribir(); ro.disconnect(); };
+};
+
+</script>
+<script>
+/* ===========================================================
    casino.js — lobby, buscador y lanzador de juegos
    =========================================================== */
 K.Casino = (() => {
@@ -6126,6 +7581,7 @@ K.App = (() => {
     { id: 'deportes', nom: 'Deportes', ic: 'futbol', slip: true, lateral: 'deportes' },
     { id: 'vivo', nom: 'En vivo', ic: 'rayo', slip: true, lateral: 'deportes' },
     { id: 'casino', nom: 'Casino', ic: 'casino', lateral: 'casino' },
+    { id: 'virtuales', nom: 'Virtuales', ic: 'objetivo' },
     { id: 'recompensas', nom: 'Recompensas', ic: 'copa' },
     { id: 'apuestas', nom: 'Mis apuestas', ic: 'recibo', lateral: 'deportes' },
     { id: 'cuenta', nom: 'Cuenta', ic: 'usuario' },
@@ -6181,6 +7637,7 @@ K.App = (() => {
       K.Sportsbook.pintarBoleto();
     } else if (vista === 'casino') K.Casino.vista(main);
     else if (vista === 'apuestas') K.Sportsbook.vistaApuestas(main);
+    else if (vista === 'virtuales') K.Virtuales.vista(main);
     else if (vista === 'recompensas') vistaRecompensas(main);
     else if (vista === 'cuenta') vistaCuenta(main);
     else if (vista === 'como') vistaComoFunciona(main);
@@ -6543,6 +8000,26 @@ K.App = (() => {
     });
     root.appendChild(caja('Torneo semanal', t));
 
+    /* --- logros --- */
+    const logros = K.Progreso.logros();
+    const hechos = logros.filter(l => l.hecho).length;
+    const gl = K.el('div', { class: 'logros-grid' });
+    logros.forEach(l => {
+      const nodo = K.el('div', { class: 'logro' + (l.hecho ? ' hecho' : '') });
+      const pc = Math.min(100, l.progreso / l.meta * 100);
+      nodo.innerHTML = `
+        <span class="ins">${l.hecho ? K.ic('copa') : K.ic('candado')}</span>
+        <span class="cuerpo">
+          <span class="nom">${K.esc(l.nom)}</span>
+          <span class="desc">${K.esc(l.desc)}</span>
+          ${l.hecho ? '<span class="cobrado">cobrado · ' + K.sol(l.premio) + '</span>'
+            : `<span class="barra"><i style="width:${pc}%"></i></span>
+               <span class="desc">${l.progreso} de ${l.meta} · premio ${K.sol(l.premio)}</span>`}
+        </span>`;
+      gl.appendChild(nodo);
+    });
+    root.appendChild(caja('Logros · ' + hechos + ' de ' + logros.length, gl));
+
     /* --- transparencia --- */
     const tr = K.el('div', { class: 'info-bloque' });
     tr.innerHTML = `
@@ -6724,9 +8201,12 @@ K.App = (() => {
       <p style="margin-top:8px">Una casa real hace exactamente esto: regala valor medido a cambio de que
       vuelvas, sabiendo que el margen del resto del catálogo lo recupera con creces. La racha de la
       ruleta diaria no está para premiarte, está para que entres todos los días.</p>
-      <p style="margin-top:8px">El sitio suma además niveles, misiones diarias, torneo semanal, cashback
-      y jackpot progresivo. En la pestaña <b>Recompensas</b> está el desglose de qué palanca psicológica
-      mueve cada uno: es la parte que ninguna casa real te va a explicar.</p>`;
+      <p style="margin-top:8px">El sitio suma además niveles, misiones diarias, logros, torneo semanal,
+      cashback y jackpot progresivo. En la pestaña <b>Recompensas</b> está el desglose de qué palanca
+      psicológica mueve cada uno: es la parte que ninguna casa real te va a explicar.</p>
+      <p style="margin-top:8px">Los <b>virtuales</b> son el caso extremo: una carrera cada minuto, margen
+      del 14% y resultado sorteado antes de que arranque la animación. No existen para que veas una
+      carrera, existen para que no tengas que esperar a que se juegue un partido.</p>`;
     root.appendChild(caja('Promociones y bonos', b7));
   }
 
@@ -6755,6 +8235,7 @@ K.App = (() => {
     pintarNav();
     pintar();
     K.Sportsbook.iniciar();
+    K.Virtuales.iniciar();
 
     K.bus.on('saldo', actualizarSaldo);
     K.bus.on('xp', actualizarNivel);

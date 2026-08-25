@@ -58,6 +58,7 @@ El sitio incluye la capa de retención completa de una casa real, con su explica
 | Torneo semanal | Ranking por volumen apostado contra nueve rivales simulados, con premios al podio |
 | Cashback semanal | Devuelve el 5% de las pérdidas netas de la semana |
 | Jackpot progresivo | Crece con el 0.5% de cada apuesta del casino y puede caer en cualquier giro de tragamonedas |
+| Logros | 18 insignias con premio: primera apuesta, crash en 50×, coronar la torre, reventar el bote… |
 
 La pestaña **Recompensas** cierra con una tabla que dice qué palanca activa cada mecánica —miedo a
 cortar la racha, progreso visible mientras pierdes, premio improbable, pérdida convertida en
@@ -69,7 +70,15 @@ Un giro gratis cada 20 horas con premios de S/ 25 a S/ 1.500 (valor esperado de 
 bonus del 10% por cada día seguido que vuelvas, hasta +50%. Es el mismo mecanismo de retención que
 usan las casas reales, con los números a la vista en la sección *Cómo funciona*.
 
-## Casino — 31 juegos, 10 motores
+## Carreras virtuales
+
+Una carrera nueva cada minuto sin parar: 40 segundos de apuestas, 18 de carrera animada en canvas y 9
+de resultado. Tres disciplinas que rotan (hipódromo, canódromo y circuito de motos), seis corredores
+con su forma y su probabilidad, mercados de ganador y top 2, y el orden de llegada sorteado con un
+modelo Plackett-Luce antes de que arranque la animación. El motor corre aunque estés en otra pestaña y
+las apuestas se liquidan solas. Margen del 14%, casi el triple que en fútbol: se paga la inmediatez.
+
+## Casino — 40 juegos, 16 motores
 
 - **Tragamonedas (12)** — cuadrícula 6×5 tipo *pay anywhere*, con carretes que se frenan uno por uno. La
   tabla de pagos se **calcula al abrir el juego** repartiendo el RTP declarado entre los símbolos según
@@ -85,6 +94,10 @@ usan las casas reales, con los números a la vista en la sección *Cómo funcion
 - **Game shows (4)** — Crazy Time, Monopoly Live, Mega Wheel y Candyland sobre una rueda de 50+ casillas
   repartidas sin dos iguales pegadas, con flapper que se dobla al pasar cada casilla. Se puede cubrir
   varios resultados a la vez.
+- **Rápidos y originales (6)** — Keno de 40 bolas con tabla calculada por distribución hipergeométrica
+  y tope de 5.000×; Dados con objetivo móvil y RTP del 99%; Cara o Cruz de doblar o nada; Hi-Lo con
+  multiplicador acumulado; Torres de ocho pisos con tres dificultades; y Raspadita Dorada, donde el
+  premio se sortea al comprar el cartón.
 - **Mesa y cartas (5)** — Blackjack VIP, First Person Blackjack y Multihand (hasta 3 manos) con
   doblar y dividir hasta cuatro manos, Speed Baccarat con reglas de tercera carta y su camino de
   resultados, y Jacks or Better 9/6.
@@ -106,14 +119,16 @@ css/styles.css
 js/core.js          utilidades, formato, azar, persistencia
 js/ui.js            set de iconos SVG en línea
 js/diaria.js        ruleta diaria de recompensas
-js/progreso.js      niveles, misiones, torneo, cashback y jackpot
+js/progreso.js      niveles, misiones, logros, torneo, cashback y jackpot
+js/virtuales.js     motor y vista de las carreras virtuales
 js/odds.js          modelos de probabilidad, margen, cashout
 js/wallet.js        saldo, libro mayor, límites, perfilado
 js/data-sports.js   catálogo de eventos
 js/data-casino.js   catálogo de 31 juegos
 js/sportsbook.js    mercados, boleto, liquidación, motor en vivo
 js/casino.js        lobby y lanzador
-js/games/           base, mines, limbo, aviator, plinko, slot, rueda, ruleta, cartas
+js/games/           base, mines, limbo, aviator, plinko, slot, rueda, ruleta, cartas,
+                    keno, extras (dados, moneda, hi-lo, torres, raspadita)
                     (rueda = game shows, ruleta = europea, cartas = blackjack,
                      baccarat y video póker)
 js/app.js           navegación, cuenta, modales

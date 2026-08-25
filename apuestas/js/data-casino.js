@@ -83,6 +83,37 @@ K.JUEGOS = [
   { n: 31, id: 'limbo', nom: 'Limbo', prov: 'Kronos Originals', cat: 'crash', ic: '🎯', grad: G.neon,
     desc: 'Eliges el multiplicador objetivo y el juego sortea uno: si lo supera, cobras.', motor: 'limbo', destacado: true },
 
+  /* ---------------- RÁPIDOS Y ORIGINALES (32-40) ---------------- */
+  { n: 32, id: 'keno', nom: 'Keno 40', prov: 'Kronos Originals', cat: 'crash', ic: '🔢', grad: G.neon,
+    desc: 'Elige hasta 10 números de 40, salen 10 bolas y la tabla se calcula sola.',
+    motor: 'keno', cfg: { vol: 'media' }, destacado: true },
+  { n: 33, id: 'dados', nom: 'Dados', prov: 'Kronos Originals', cat: 'crash', ic: '🎲', grad: G.jungla,
+    desc: 'Mueve el objetivo y decide si el tiro será mayor o menor. RTP del 99%.',
+    motor: 'dados', destacado: true },
+  { n: 34, id: 'moneda', nom: 'Cara o Cruz', prov: 'Kronos Originals', cat: 'crash', ic: '🪙', grad: G.oro,
+    desc: 'Doblar o nada: encadena aciertos y cobra antes de que se corte la racha.',
+    motor: 'moneda' },
+  { n: 35, id: 'hilo', nom: 'Hi-Lo', prov: 'Kronos Originals', cat: 'crash', ic: '🃏', grad: G.mesa,
+    desc: 'Adivina si la próxima carta será mayor o menor, con el bote acumulándose.',
+    motor: 'hilo' },
+  { n: 36, id: 'torres', nom: 'Torres', prov: 'Kronos Originals', cat: 'crash', ic: '🗼', grad: G.espacio,
+    desc: 'Sube ocho pisos esquivando la trampa de cada nivel. Cobra cuando quieras.',
+    motor: 'torres', destacado: true },
+  { n: 37, id: 'rasca', nom: 'Raspadita Dorada', prov: 'Kronos Originals', cat: 'crash', ic: '🎟️', grad: G.chili,
+    desc: 'Nueve casillas, tres símbolos iguales y hasta 1.000× la apuesta.',
+    motor: 'rasca' },
+
+  /* ---------------- MÁS TRAGAMONEDAS (38-40) ---------------- */
+  { n: 38, id: 'firejoker', nom: 'Fire Joker', prov: "Play'n GO", cat: 'slots', ic: '🃏', grad: G.fruta,
+    desc: 'Frutas clásicas con comodines en llamas y respin de carretes.',
+    motor: 'slot', cfg: { simbolos: ['🃏', '7️⃣', '🔔', '🍉', '🍇', '🍊', '🍋', '🍒'], vol: 'media', rtp: 96.1 } },
+  { n: 39, id: 'moneytrain', nom: 'Money Train', prov: 'Relax Gaming', cat: 'slots', ic: '🚂', grad: G.espacio,
+    desc: 'Bonus de respins con símbolos de dinero que se van sumando.',
+    motor: 'slot', cfg: { simbolos: ['🚂', '💰', '🤠', '🔫', '🎩', '🅰️', '🇰', '🇶'], vol: 'alta', rtp: 96.2 } },
+  { n: 40, id: 'zeushades', nom: 'Zeus vs Hades', prov: 'Pragmatic Play', cat: 'slots', ic: '⚡', grad: G.zeus,
+    desc: 'Duelo de dioses con dos rondas de bonificación enfrentadas.',
+    motor: 'slot', cfg: { simbolos: ['⚡', '🔱', '🔥', '🛡️', '💠', '🅰️', '🇰', '🇶'], vol: 'alta', rtp: 96.4 } },
+
   /* ---------------- EN VIVO Y GAME SHOWS (19-26) ---------------- */
   { n: 19, id: 'crazytime', nom: 'Crazy Time', prov: 'Evolution', cat: 'vivo', ic: '🎡', grad: G.vivo,
     desc: 'Rueda con cuatro minijuegos: Pachinko, Cash Hunt, Coin Flip y Crazy Time.', motor: 'rueda',

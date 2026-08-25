@@ -405,11 +405,20 @@ K.Sportsbook = (() => {
     pintarBoleto();
   }
 
+  /* ¿Tengo algo en juego en este partido? Con 231 eventos, avisar de todos
+     los goles sería ruido puro. */
+  function meImporta(ev) {
+    return K.Wallet.est().apuestas.some(a =>
+      a.estado === 'pendiente' && a.lineas.some(l => l.evId === ev.id));
+  }
+
   function marcar(ev, lado) {
     ev.marcador[lado]++;
     suspender(ev, 4);
     const quien = lado === 'l' ? ev.local : ev.visita;
-    K.aviso(`⚽ ¡Gol de <b>${K.esc(quien)}</b>! ${K.esc(ev.local)} ${ev.marcador.l}-${ev.marcador.v} ${K.esc(ev.visita)}`, 'warn');
+    if (meImporta(ev)) {
+      K.aviso(`¡Gol de <b>${K.esc(quien)}</b>! ${K.esc(ev.local)} ${ev.marcador.l}-${ev.marcador.v} ${K.esc(ev.visita)}`, 'warn');
+    }
     K.bus.emit('lista');
   }
 
@@ -423,8 +432,9 @@ K.Sportsbook = (() => {
   function finalizar(ev) {
     ev.terminado = true;
     ev.vivo = false;
+    const importa = meImporta(ev);
     liquidar(ev);
-    K.aviso(`🏁 Final: ${K.esc(ev.local)} ${ev.marcador.l}-${ev.marcador.v} ${K.esc(ev.visita)}`);
+    if (importa) K.aviso(`Final: ${K.esc(ev.local)} ${ev.marcador.l}-${ev.marcador.v} ${K.esc(ev.visita)}`);
   }
 
   function liquidar(ev) {
@@ -452,7 +462,11 @@ K.Sportsbook = (() => {
         ap.estado = 'ganada';
         ap.pago = K.round2(ap.stake * cuota);
         K.Wallet.acreditar(ap.pago, 'Apuesta ganada ' + ap.id);
-        if (K.Progreso) K.Progreso.resultado(ap.pago);
+        if (K.Progreso) {
+          K.Progreso.resultado(ap.pago);
+          K.Progreso.marcar('deportivasGanadas');
+          if (ap.tipo === 'combinada') K.Progreso.marcar('combinadasGanadas');
+        }
         K.confeti(60);
       }
     }

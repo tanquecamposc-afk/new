@@ -35,6 +35,7 @@ K.App = (() => {
     { id: 'deportes', nom: 'Deportes', ic: 'futbol', slip: true, lateral: 'deportes' },
     { id: 'vivo', nom: 'En vivo', ic: 'rayo', slip: true, lateral: 'deportes' },
     { id: 'casino', nom: 'Casino', ic: 'casino', lateral: 'casino' },
+    { id: 'virtuales', nom: 'Virtuales', ic: 'objetivo' },
     { id: 'recompensas', nom: 'Recompensas', ic: 'copa' },
     { id: 'apuestas', nom: 'Mis apuestas', ic: 'recibo', lateral: 'deportes' },
     { id: 'cuenta', nom: 'Cuenta', ic: 'usuario' },
@@ -90,6 +91,7 @@ K.App = (() => {
       K.Sportsbook.pintarBoleto();
     } else if (vista === 'casino') K.Casino.vista(main);
     else if (vista === 'apuestas') K.Sportsbook.vistaApuestas(main);
+    else if (vista === 'virtuales') K.Virtuales.vista(main);
     else if (vista === 'recompensas') vistaRecompensas(main);
     else if (vista === 'cuenta') vistaCuenta(main);
     else if (vista === 'como') vistaComoFunciona(main);
@@ -452,6 +454,26 @@ K.App = (() => {
     });
     root.appendChild(caja('Torneo semanal', t));
 
+    /* --- logros --- */
+    const logros = K.Progreso.logros();
+    const hechos = logros.filter(l => l.hecho).length;
+    const gl = K.el('div', { class: 'logros-grid' });
+    logros.forEach(l => {
+      const nodo = K.el('div', { class: 'logro' + (l.hecho ? ' hecho' : '') });
+      const pc = Math.min(100, l.progreso / l.meta * 100);
+      nodo.innerHTML = `
+        <span class="ins">${l.hecho ? K.ic('copa') : K.ic('candado')}</span>
+        <span class="cuerpo">
+          <span class="nom">${K.esc(l.nom)}</span>
+          <span class="desc">${K.esc(l.desc)}</span>
+          ${l.hecho ? '<span class="cobrado">cobrado · ' + K.sol(l.premio) + '</span>'
+            : `<span class="barra"><i style="width:${pc}%"></i></span>
+               <span class="desc">${l.progreso} de ${l.meta} · premio ${K.sol(l.premio)}</span>`}
+        </span>`;
+      gl.appendChild(nodo);
+    });
+    root.appendChild(caja('Logros · ' + hechos + ' de ' + logros.length, gl));
+
     /* --- transparencia --- */
     const tr = K.el('div', { class: 'info-bloque' });
     tr.innerHTML = `
@@ -633,9 +655,12 @@ K.App = (() => {
       <p style="margin-top:8px">Una casa real hace exactamente esto: regala valor medido a cambio de que
       vuelvas, sabiendo que el margen del resto del catálogo lo recupera con creces. La racha de la
       ruleta diaria no está para premiarte, está para que entres todos los días.</p>
-      <p style="margin-top:8px">El sitio suma además niveles, misiones diarias, torneo semanal, cashback
-      y jackpot progresivo. En la pestaña <b>Recompensas</b> está el desglose de qué palanca psicológica
-      mueve cada uno: es la parte que ninguna casa real te va a explicar.</p>`;
+      <p style="margin-top:8px">El sitio suma además niveles, misiones diarias, logros, torneo semanal,
+      cashback y jackpot progresivo. En la pestaña <b>Recompensas</b> está el desglose de qué palanca
+      psicológica mueve cada uno: es la parte que ninguna casa real te va a explicar.</p>
+      <p style="margin-top:8px">Los <b>virtuales</b> son el caso extremo: una carrera cada minuto, margen
+      del 14% y resultado sorteado antes de que arranque la animación. No existen para que veas una
+      carrera, existen para que no tengas que esperar a que se juegue un partido.</p>`;
     root.appendChild(caja('Promociones y bonos', b7));
   }
 
@@ -664,6 +689,7 @@ K.App = (() => {
     pintarNav();
     pintar();
     K.Sportsbook.iniciar();
+    K.Virtuales.iniciar();
 
     K.bus.on('saldo', actualizarSaldo);
     K.bus.on('xp', actualizarNivel);
