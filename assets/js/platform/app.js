@@ -113,8 +113,8 @@
       } else if (e.key === 'Escape') { input.value = ''; renderSuggest(); input.blur(); }
     });
 
-    const themeBtn = h('button.icon-btn', { 'aria-label': 'Cambiar tema', onclick: toggleTheme });
-    const randomBtn = h('button.icon-btn', { html: icon('dice', 19), 'aria-label': 'Juego aleatorio',
+    const themeBtn = h('button.icon-btn.opt-hide', { 'aria-label': 'Cambiar tema', onclick: toggleTheme });
+    const randomBtn = h('button.icon-btn.opt-hide', { html: icon('dice', 19), 'aria-label': 'Juego aleatorio',
       title: 'Juego al azar', onclick: () => V.randomGame() });
     const setBtn = h('button.icon-btn', { html: icon('gear', 19), 'aria-label': 'Ajustes', onclick: openSettings });
 

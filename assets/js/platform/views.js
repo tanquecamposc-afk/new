@@ -259,7 +259,8 @@
               text: M.fmtScore(p.xp) + ' XP · faltan ' + M.fmtScore(Math.max(0, p.to - p.xp)) + ' para el nivel ' + (p.level + 1) })),
           h('div', { style: { textAlign: 'right' } },
             h('div', { style: { fontSize: '22px', fontWeight: 900 }, text: '🔥 ' + S.data.streak.days }),
-            h('div', { style: { fontSize: '12px', color: 'var(--text-mute)' }, text: 'días seguidos' }))),
+            h('div', { style: { fontSize: '12px', color: 'var(--text-mute)' },
+              text: S.data.streak.days === 1 ? 'día seguido' : 'días seguidos' }))),
         h('div.pbar', h('i', { style: { width: (p.pct * 100).toFixed(1) + '%' } })))));
 
     /* métricas */
@@ -269,7 +270,7 @@
       ['Récords batidos', M.fmtScore(st.records)],
       ['Favoritos', String(st.favs)],
       ['Mejor marca', M.fmtScore(st.maxScore)],
-      ['Mejor racha', S.data.streak.best + ' días'],
+      ['Mejor racha', S.data.streak.best + (S.data.streak.best === 1 ? ' día' : ' días')],
     ];
     page.appendChild(D.section('Tus números', '📊',
       h('div.stats', stats.map((s) => h('div.stat', h('div', { class: 'k', text: s[0] }), h('div', { class: 'v', text: s[1] }))))));
