@@ -1,0 +1,21 @@
+{
+  "name": "NEXO Arcade",
+  "short_name": "NEXO",
+  "description": "95 juegos originales gratis en el navegador, sin anuncios ni cuentas.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#070911",
+  "theme_color": "#7c5cff",
+  "lang": "es",
+  "categories": ["games", "entertainment"],
+  "icons": [
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='112' fill='%237c5cff'/%3E%3Cpath d='M150 160v192M150 160l212 192M362 160v192' stroke='%23fff' stroke-width='46' stroke-linecap='round' fill='none'/%3E%3C/svg%3E",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

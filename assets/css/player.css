@@ -1,0 +1,251 @@
+/* NEXO ARCADE — player.css : ficha de juego, reproductor y mandos táctiles */
+
+.gp { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 24px; align-items: start; }
+@media (max-width: 1180px) { .gp { grid-template-columns: minmax(0, 1fr); } }
+
+/* ---------------------------------------------------------- reproductor */
+.player {
+  position: relative;
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  background: var(--bg-deep);
+  border: 1px solid var(--line);
+  box-shadow: var(--sh-3);
+}
+
+.player-top {
+  display: flex; align-items: center; gap: 12px;
+  padding: 9px 14px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+  min-height: 52px;
+}
+.player-top .pt-title { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.player-top .pt-title b { font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.player-top .pt-mark {
+  width: 30px; height: 30px; border-radius: 9px; flex: none;
+  background: var(--grad-brand); display: grid; place-items: center;
+  font-size: 15px;
+}
+
+/* marcadores en vivo */
+.hud { display: flex; gap: 8px; margin-left: auto; flex-wrap: nowrap; overflow: hidden; }
+.hud-item {
+  display: flex; align-items: baseline; gap: 6px;
+  padding: 4px 11px; border-radius: var(--r-full);
+  background: var(--surface-2); border: 1px solid var(--line);
+  font-size: 13px; white-space: nowrap;
+}
+.hud-item .k { font-size: 10px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--text-mute); }
+.hud-item .v { font-family: var(--mono); font-weight: 800; font-variant-numeric: tabular-nums; }
+.hud-item.flash { animation: hud-flash .4s var(--ease); }
+@keyframes hud-flash {
+  0% { background: var(--brand-2); color: #06070d; }
+  100% { background: var(--surface-2); }
+}
+
+/* escenario */
+.stage {
+  position: relative;
+  display: grid; place-items: center;
+  background:
+    radial-gradient(70% 90% at 50% 0%, rgba(124, 92, 255, .10), transparent 70%),
+    var(--bg-deep);
+  aspect-ratio: 16 / 9;
+  max-height: calc(100dvh - 250px);
+  min-height: 320px;
+  overflow: hidden;
+  touch-action: none;
+}
+.stage.tall { aspect-ratio: 4 / 3; }
+.stage canvas.nx-canvas { display: block; border-radius: 0; }
+.stage > iframe { width: 100%; height: 100%; border: 0; display: block; }
+
+/* capas superpuestas */
+.ov {
+  position: absolute; inset: 0; z-index: 10;
+  display: grid; place-items: center;
+  padding: 22px;
+  background: rgba(4, 6, 14, .72);
+  backdrop-filter: blur(9px) saturate(120%);
+  -webkit-backdrop-filter: blur(9px);
+  animation: fade-in .2s;
+  text-align: center;
+}
+.ov.hide { display: none; }
+.ov-inner { max-width: 460px; animation: pop-in .3s var(--ease-out); }
+.ov h2 { font-size: clamp(26px, 4vw, 40px); margin-bottom: 8px; }
+.ov .ov-sub { color: var(--text-dim); margin-bottom: 20px; font-size: 15px; }
+.ov .ov-actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+
+.ov-scores { display: flex; gap: 12px; justify-content: center; margin-bottom: 20px; flex-wrap: wrap; }
+.ov-score {
+  min-width: 118px;
+  padding: 12px 18px; border-radius: var(--r-md);
+  background: rgba(255, 255, 255, .05);
+  border: 1px solid var(--line-strong);
+}
+.ov-score .k { font-size: 10.5px; font-weight: 800; letter-spacing: .13em; text-transform: uppercase; color: var(--text-mute); }
+.ov-score .v { font-size: 30px; font-weight: 900; font-family: var(--mono); letter-spacing: -.03em; }
+.ov-score.gold { border-color: var(--brand-4); }
+.ov-score.gold .v { color: var(--brand-4); }
+
+.ov-record {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 5px 14px; border-radius: var(--r-full);
+  background: linear-gradient(100deg, var(--brand-4), #ff8a3d);
+  color: #16110a; font-weight: 900; font-size: 12.5px;
+  letter-spacing: .06em; text-transform: uppercase;
+  margin-bottom: 14px;
+  animation: float-y 2.4s ease-in-out infinite;
+}
+
+/* pantalla de arranque */
+.ov.start { background: rgba(4, 6, 14, .55); cursor: pointer; }
+.ov.start .play-ring {
+  width: 92px; height: 92px; border-radius: 50%; margin: 0 auto 18px;
+  display: grid; place-items: center;
+  background: var(--grad-brand);
+  box-shadow: 0 18px 50px -14px rgba(124, 92, 255, .95);
+  animation: pulse-ring 2.6s infinite;
+  transition: transform var(--t) var(--spring);
+}
+.ov.start:hover .play-ring { transform: scale(1.07); }
+.ov.start .play-ring svg { width: 34px; height: 34px; color: #fff; margin-left: 5px; }
+.ov-controls {
+  margin-top: 18px; font-size: 13px; color: var(--text-mute);
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 7px 14px; border-radius: var(--r-full);
+  background: rgba(255, 255, 255, .05); border: 1px solid var(--line);
+}
+
+/* cargando */
+.ov-load { display: grid; place-items: center; gap: 14px; }
+.spinner {
+  width: 40px; height: 40px; border-radius: 50%;
+  border: 3px solid var(--surface-3);
+  border-top-color: var(--brand-2);
+  animation: spin .8s linear infinite;
+}
+
+/* barra inferior */
+.player-bar {
+  display: flex; align-items: center; gap: 6px;
+  padding: 8px 12px;
+  background: var(--surface);
+  border-top: 1px solid var(--line);
+}
+.player-bar .sp { flex: 1; }
+.pbtn {
+  display: inline-flex; align-items: center; gap: 7px;
+  height: 36px; padding: 0 12px;
+  border-radius: var(--r-sm);
+  color: var(--text-dim); font-weight: 700; font-size: 13px;
+  transition: background var(--t-fast), color var(--t-fast);
+}
+.pbtn:hover { background: var(--surface-2); color: var(--text); }
+.pbtn.on { color: var(--brand-2); }
+.pbtn svg { width: 17px; height: 17px; }
+.pbtn.icon { padding: 0; width: 36px; justify-content: center; }
+@media (max-width: 620px) { .pbtn .lbl { display: none; } .pbtn { padding: 0; width: 36px; justify-content: center; } }
+
+/* pantalla completa */
+.player.fs {
+  position: fixed; inset: 0; z-index: 500;
+  border-radius: 0; border: 0;
+  display: grid; grid-template-rows: auto minmax(0, 1fr) auto;
+}
+.player.fs .stage { aspect-ratio: auto; max-height: none; height: 100%; }
+
+/* ------------------------------------------------------- mandos táctiles */
+.vpad {
+  position: absolute; inset: auto 0 0 0; z-index: 12;
+  display: none;
+  padding: 14px 16px calc(14px + env(safe-area-inset-bottom));
+  justify-content: space-between; align-items: flex-end;
+  pointer-events: none;
+  user-select: none; -webkit-user-select: none;
+}
+.vpad.on { display: flex; }
+.vpad-dpad {
+  position: relative; width: 132px; height: 132px;
+  pointer-events: auto;
+}
+.vkey {
+  position: absolute;
+  display: grid; place-items: center;
+  width: 44px; height: 44px;
+  border-radius: 12px;
+  background: rgba(20, 26, 44, .55);
+  border: 1px solid rgba(255, 255, 255, .18);
+  backdrop-filter: blur(6px);
+  color: rgba(255, 255, 255, .85);
+  font-size: 17px; font-weight: 900;
+  transition: background var(--t-fast), transform var(--t-fast);
+}
+.vkey.down { background: rgba(124, 92, 255, .8); transform: scale(.94); color: #fff; }
+.vkey.k-up { left: 44px; top: 0; }
+.vkey.k-down { left: 44px; top: 88px; }
+.vkey.k-left { left: 0; top: 44px; }
+.vkey.k-right { left: 88px; top: 44px; }
+.vpad-btns { display: flex; gap: 12px; align-items: center; pointer-events: auto; }
+.vbtn {
+  width: 62px; height: 62px; border-radius: 50%;
+  display: grid; place-items: center;
+  background: rgba(124, 92, 255, .32);
+  border: 1.5px solid rgba(255, 255, 255, .28);
+  backdrop-filter: blur(6px);
+  color: #fff; font-weight: 900; font-size: 13px;
+  transition: background var(--t-fast), transform var(--t-fast);
+}
+.vbtn.down { background: rgba(124, 92, 255, .85); transform: scale(.93); }
+.vbtn.sm { width: 48px; height: 48px; font-size: 11px; }
+
+/* joystick analógico */
+.vstick {
+  position: relative; width: 116px; height: 116px; pointer-events: auto;
+  border-radius: 50%;
+  background: rgba(20, 26, 44, .38);
+  border: 1px solid rgba(255, 255, 255, .14);
+  backdrop-filter: blur(6px);
+}
+.vstick i {
+  position: absolute; left: 50%; top: 50%;
+  width: 46px; height: 46px; margin: -23px 0 0 -23px;
+  border-radius: 50%;
+  background: rgba(124, 92, 255, .6);
+  border: 1.5px solid rgba(255, 255, 255, .32);
+  transition: transform .06s linear;
+}
+
+/* --------------------------------------------------------- info del juego */
+.gp-info { margin-top: 20px; }
+.gp-title { display: flex; align-items: flex-start; gap: 16px; flex-wrap: wrap; margin-bottom: 14px; }
+.gp-title h1 { font-size: clamp(24px, 3vw, 34px); }
+.gp-title .gp-actions { margin-left: auto; display: flex; gap: 8px; }
+.gp-desc { color: var(--text-dim); font-size: 15px; max-width: 70ch; margin-bottom: 16px; }
+
+.kv { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 20px; }
+.kv-item {
+  padding: 12px 14px; border-radius: var(--r-md);
+  background: var(--surface); border: 1px solid var(--line);
+}
+.kv-item .k { font-size: 10.5px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--text-mute); margin-bottom: 3px; }
+.kv-item .v { font-size: 14.5px; font-weight: 700; }
+
+.gp-side .side-card {
+  padding: 16px; border-radius: var(--r-md);
+  background: var(--surface); border: 1px solid var(--line);
+  margin-bottom: 16px;
+}
+.gp-side h3 { margin-bottom: 12px; font-size: 15px; }
+.mini-list { display: flex; flex-direction: column; gap: 8px; }
+.mini {
+  display: flex; align-items: center; gap: 10px;
+  padding: 6px; border-radius: var(--r-sm);
+  transition: background var(--t-fast);
+}
+.mini:hover { background: var(--surface-2); }
+.mini canvas { width: 68px; height: 43px; border-radius: 8px; flex: none; background: var(--surface-3); }
+.mini b { font-size: 13.5px; font-weight: 700; display: block; line-height: 1.2; }
+.mini span { font-size: 11.5px; color: var(--text-mute); }
