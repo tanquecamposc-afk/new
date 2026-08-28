@@ -58,9 +58,11 @@
 
     stage.append(ovLoad, ovStart, ovPause, ovOver);
 
-    /* --------------------------------------------------------- mandos táctiles */
+    /* --------------------------------------------------------- mandos táctiles
+       Van en su propia franja debajo del lienzo, no encima. Flotando sobre el
+       juego tapaban el tablero en todo lo que ocupa la pantalla entera. */
     const vpad = h('div.vpad');
-    stage.appendChild(vpad);
+    player.insertBefore(vpad, bar);
 
     /* Dentro de un iframe el teclado no llega hasta que el juego tiene el foco.
        Si no lo tiene, se avisa en vez de dejar que parezca que está roto. */

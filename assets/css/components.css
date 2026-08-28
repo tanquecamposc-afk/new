@@ -514,3 +514,13 @@ html[data-theme="light"] .hero h1 { color: var(--text); background: none; -webki
   .page-head-tools .filtro-top { flex: 1; justify-content: center; }
   .hero-stats > div:nth-child(n+3) { display: none; }
 }
+
+/* En móvil los avisos salían justo encima de los mandos táctiles. */
+@media (max-width: 760px) {
+  .toast-wrap { bottom: auto; top: calc(var(--nav-h) + 12px); }
+  .toast { animation: toast-in-alto .3s var(--spring); }
+  @keyframes toast-in-alto {
+    from { opacity: 0; transform: translateY(-14px) scale(.94); }
+    to { opacity: 1; transform: none; }
+  }
+}

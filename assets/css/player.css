@@ -64,6 +64,9 @@
   touch-action: none;
 }
 .stage.tall { aspect-ratio: 4 / 3; }
+/* Con juegos verticales el escenario se estrecha por la relación de aspecto:
+   centrado, que si no quedaba pegado a la izquierda con un hueco negro. */
+.stage { margin-inline: auto; }
 .stage canvas.nx-canvas { display: block; border-radius: 0; }
 .stage > iframe { width: 100%; height: 100%; border: 0; display: block; }
 
@@ -171,22 +174,25 @@
 
 /* ------------------------------------------------------- mandos táctiles */
 .vpad {
-  position: absolute; inset: auto 0 0 0; z-index: 12;
+  position: relative;
   display: none;
-  padding: 14px 16px calc(14px + env(safe-area-inset-bottom));
-  justify-content: space-between; align-items: flex-end;
-  pointer-events: none;
+  padding: 10px 16px;
+  justify-content: space-between; align-items: center;
+  gap: 16px; min-height: 96px;
+  background: linear-gradient(180deg, var(--bg-deep), var(--surface));
+  border-top: 1px solid var(--line);
   user-select: none; -webkit-user-select: none;
+  touch-action: none;
 }
 .vpad.on { display: flex; }
 .vpad-dpad {
-  position: relative; width: 132px; height: 132px;
-  pointer-events: auto;
+  position: relative; width: 138px; height: 138px;
+  flex: none;
 }
 .vkey {
   position: absolute;
   display: grid; place-items: center;
-  width: 44px; height: 44px;
+  width: 46px; height: 46px;
   border-radius: 12px;
   background: rgba(20, 26, 44, .55);
   border: 1px solid rgba(255, 255, 255, .18);
@@ -200,7 +206,7 @@
 .vkey.k-down { left: 44px; top: 88px; }
 .vkey.k-left { left: 0; top: 44px; }
 .vkey.k-right { left: 88px; top: 44px; }
-.vpad-btns { display: flex; gap: 12px; align-items: center; pointer-events: auto; }
+.vpad-btns { display: flex; gap: 12px; align-items: center; }
 .vbtn {
   width: 62px; height: 62px; border-radius: 50%;
   display: grid; place-items: center;
@@ -215,7 +221,7 @@
 
 /* joystick analógico */
 .vstick {
-  position: relative; width: 116px; height: 116px; pointer-events: auto;
+  position: relative; width: 122px; height: 122px; flex: none;
   border-radius: 50%;
   background: rgba(20, 26, 44, .38);
   border: 1px solid rgba(255, 255, 255, .14);
@@ -387,3 +393,14 @@
   transition: border-color var(--t-fast);
 }
 .kv-item:hover { border-color: var(--line-strong); }
+
+/* La franja de mandos ocupa alto propio, así que el escenario se recorta un
+   poco para que juego y mandos entren juntos en la pantalla del móvil. */
+.player:has(.vpad.on) .stage { max-height: calc(100dvh - 350px); min-height: 300px; }
+@media (max-width: 620px) {
+  .vpad { padding: 10px 12px; gap: 12px; }
+  .vpad-dpad { width: 126px; height: 126px; }
+  .vkey { width: 42px; height: 42px; }
+  .vbtn { width: 58px; height: 58px; }
+  .vbtn.sm { width: 46px; height: 46px; }
+}
