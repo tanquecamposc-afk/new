@@ -95,6 +95,7 @@ NX.game('escudo-giratorio', {
 
     draw(g) {
       const c = g.ctx;
+      g.bgSpace(E.t, 5);
       for (let i = 1; i <= 6; i++) g.ring(CX, CY, i * 58, 1, alpha(P.a, 0.06));
 
       g.bloom(CX, CY, 110, P.b, 0.3);

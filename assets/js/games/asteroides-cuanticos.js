@@ -158,6 +158,7 @@ NX.game('asteroides-cuanticos', {
 
     draw(g) {
       const c = g.ctx;
+      g.bgSpace(E.t, 3);
       for (let i = 0; i < 60; i++) {
         const x = (i * 173.7) % W, y = (i * 97.1) % H;
         g.circle(x, y, 0.8 + (i % 4) * 0.35, alpha('#ffffff', 0.1 + (i % 4) * 0.06));

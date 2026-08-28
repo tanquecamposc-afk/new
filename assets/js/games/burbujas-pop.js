@@ -22,8 +22,10 @@ NX.game('burbujas-pop', {
         r: E.rng.float(16, 30), col: E.rng.pick(COLS), popped: false, t: 0, ph: E.rng.float(0, 6),
       });
     }
-    target = Math.round(n * 0.45);
-    chain = []; popped = 0; alive = true; shots = 1; msg = ''; msgT = 0;
+    target = Math.round(n * 0.42);
+    /* Tres toques por nivel: con uno solo, un clic flojo te dejaba fuera
+       antes de entender de qué iba el juego. */
+    chain = []; popped = 0; alive = true; shots = 3; msg = ''; msgT = 0;
     if (score == null) score = 0;
     hud();
   }
@@ -73,8 +75,10 @@ NX.game('burbujas-pop', {
         setTimeout(() => {
           level++;
           score += 300 + shots * 100;
-          E.api.win({ score, title: '¡Nivel superado!', msg: popped + ' burbujas con ' + (1 - shots + 1) + ' toque',
-            stats: { Reventadas: popped } });
+          const usados = 3 - shots;
+          E.api.win({ score, title: '¡Nivel superado!',
+            msg: popped + ' burbujas en ' + usados + (usados === 1 ? ' toque' : ' toques'),
+            stats: { Reventadas: popped, Toques: usados } });
         }, 800);
         return;
       }
@@ -90,7 +94,7 @@ NX.game('burbujas-pop', {
         shots--;
         E.camera.kick(3);
         popAt(p.x, p.y, 26, 0);
-        if (!chain.length) { E.sfx('error'); }
+        if (!chain.length) { E.sfx('error'); msg = 'Ese toque no pilló nada'; msgT = 1.4; }
         hud();
       }
     },
@@ -132,8 +136,21 @@ NX.game('burbujas-pop', {
       g.rrect(W / 2 - 150, 34, 300 * M.clamp01(popped / target), 12, 6, P.c);
       g.text(popped + ' / ' + target, W / 2, 26, { size: 14, align: 'center', color: P.ink, weight: 800 });
 
+      /* Toques que te quedan, bien visibles: es el recurso del nivel. */
+      for (let i = 0; i < 3; i++) {
+        const x = W / 2 - 30 + i * 30;
+        g.circle(x, 66, 9, i < shots ? P.c : alpha('#ffffff', 0.14));
+        if (i < shots) g.ring(x, 66, 12, 1.5, alpha(P.c, 0.5));
+      }
+      if (msgT > 0) {
+        msgT -= 1 / 60;
+        g.text(msg, W / 2, 96, { size: 15, align: 'center', weight: 800, color: alpha(P.b, M.clamp01(msgT)) });
+      }
+
       E.particles.draw(g);
-      E.ui.hint(shots > 0 ? 'Toca una burbuja para iniciar la reacción en cadena' : 'Reacción en marcha…', { bottom: 14 });
+      E.ui.hint(shots > 0
+        ? 'Toca una burbuja para iniciar la reacción · te quedan ' + shots
+        : 'Reacción en marcha…', { bottom: 14 });
     },
   };
 });

@@ -136,7 +136,7 @@ NX.game('billar-8', {
 
     draw(g) {
       const c = g.ctx;
-      g.bgGradient(mix(P.bg, P.d, 0.3), P.deep);
+      g.bgArena(E.t, 5);
       g.rrect(6, 6, W - 12, H - 12, 22, mix('#6b4423', P.deep, 0.1));
       g.rrect(CUSH - 8, CUSH - 8, W - (CUSH - 8) * 2, H - (CUSH - 8) * 2, 8, mix('#12603c', P.deep, 0.12));
       POCKETS.forEach((q) => {

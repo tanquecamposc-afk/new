@@ -164,7 +164,7 @@ NX.game('asedio-castillo', {
 
     draw(g) {
       const c = g.ctx;
-      g.bgGradient(mix('#3a2340', P.deep, 0.25), mix(P.bg, P.d, 0.3));
+      g.bgSky(E.t, 0, mix('#3a2340', P.deep, 0.25), mix(P.bg, P.d, 0.3));
       g.circle(W * 0.78, 90, 42, alpha(P.c, 0.4));
       for (let i = 0; i < 5; i++) {
         G.Sprites.cloud(g, ((i * 250 + E.t * 5) % (W + 300)) - 100, 70 + (i % 3) * 42, 44, alpha(P.ink, 0.06));

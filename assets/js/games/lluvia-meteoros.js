@@ -94,7 +94,7 @@ NX.game('lluvia-meteoros', {
 
     draw(g) {
       const c = g.ctx;
-      g.bgGradient(mix(P.bg, P.d, 0.35), P.deep);
+      g.bgSpace(E.t, 19);
       for (let i = 0; i < 50; i++) {
         const x = (i * 151.3) % W, y = (i * 91.7 + E.t * (10 + (i % 4) * 8)) % (GY);
         g.circle(x, y, 0.9 + (i % 3) * 0.4, alpha('#ffffff', 0.12 + (i % 3) * 0.06));

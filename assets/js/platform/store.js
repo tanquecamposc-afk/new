@@ -11,6 +11,8 @@
     plays: {},            /* id -> nº de partidas */
     best: {},             /* id -> mejor marca */
     saves: {},            /* id -> estado propio del juego */
+    ratings: {},          /* id -> estrellas que le ha puesto el jugador (1-5) */
+    flags: {},            /* id -> { motivo, fecha } cuando el jugador lo reporta */
     xp: 0,
     records: 0,           /* récords personales batidos */
     achievements: {},     /* id -> timestamp */
@@ -39,6 +41,8 @@
       chk: (s) => s.totalPlays >= 100 },
     { id: 'veterano', ico: '🎖️', t: 'Veterano', d: 'Juega 500 partidas', xp: 500,
       chk: (s) => s.totalPlays >= 500 },
+    { id: 'critico', ico: '⭐', t: 'Crítico', d: 'Valora 10 juegos con estrellas', xp: 80,
+      chk: (s) => s.rated >= 10 },
     { id: 'con-gusto', ico: '❤️', t: 'Con buen gusto', d: 'Marca 5 juegos como favoritos', xp: 40,
       chk: (s) => s.favs >= 5 },
     { id: 'bibliotecario', ico: '📚', t: 'Bibliotecario', d: 'Marca 20 favoritos', xp: 120,
@@ -173,6 +177,51 @@
       return isNew;
     },
 
+    /* ------------------------------------------------- valoración local
+       Todo esto vive en el navegador de cada quien. No hay servidor, así
+       que las estrellas son las tuyas y solo tú las ves. */
+    rating(id) { return this.data.ratings[id] || 0; },
+    setRating(id, stars) {
+      const n = Math.round(Math.max(0, Math.min(5, stars || 0)));
+      if (n) this.data.ratings[id] = n;
+      else delete this.data.ratings[id];
+      this.save();
+      this.checkAchievements();
+      this.emit('rating', { id, stars: n });
+      return n;
+    },
+    ratedCount() { return Object.keys(this.data.ratings).length; },
+
+    /* ------------------------------------------------------- reportes */
+    isFlagged(id) { return !!this.data.flags[id]; },
+    flagOf(id) { return this.data.flags[id] || null; },
+    flag(id, motivo) {
+      this.data.flags[id] = { motivo: motivo || 'otro', fecha: Date.now() };
+      this.save();
+      this.emit('flag', { id, motivo });
+      return true;
+    },
+    unflag(id) {
+      delete this.data.flags[id];
+      this.save();
+      this.emit('flag', { id, motivo: null });
+      return false;
+    },
+    flagged() { return Object.keys(this.data.flags); },
+
+    /* Puntuación de relevancia: mezcla la nota curada del catálogo, las
+       estrellas del jugador y cuánto lo ha jugado. Sirve para ordenar. */
+    relevance(g) {
+      const id = typeof g === 'string' ? g : g.id;
+      const base = typeof g === 'object' && g.q ? g.q : 3;
+      const mine = this.rating(id);
+      const nota = mine ? (mine * 2 + base) / 3 : base;
+      const partidas = this.plays(id);
+      const empuje = Math.log(1 + partidas) / Math.log(12);
+      const castigo = this.isFlagged(id) ? 0.25 : 1;
+      return nota * (1 + empuje) * castigo;
+    },
+
     /* ---------------------------------------------- guardado por juego */
     gameSave(slug, k, v) {
       const s = this.data.saves[slug] || (this.data.saves[slug] = {});
@@ -222,6 +271,7 @@
         total: CAT ? CAT.count : 95, favs: this.data.favs.length,
         level: this.level(), records: this.data.records, maxScore,
         streak: this.data.streak.days, hour: new Date().getHours(), cats,
+        rated: this.ratedCount(),
       };
     },
 

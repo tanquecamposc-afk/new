@@ -22,7 +22,13 @@
         if (k === 'class') el.className += (el.className ? ' ' : '') + v;
         else if (k === 'html') el.innerHTML = v;
         else if (k === 'text') el.textContent = v;
-        else if (k === 'style' && typeof v === 'object') Object.assign(el.style, v);
+        else if (k === 'style' && typeof v === 'object') {
+          /* Object.assign no vale para las variables CSS: hay que pasar por setProperty. */
+          for (const sk in v) {
+            if (sk.charCodeAt(0) === 45 && sk.charCodeAt(1) === 45) el.style.setProperty(sk, v[sk]);
+            else el.style[sk] = v[sk];
+          }
+        }
         else if (k.slice(0, 2) === 'on' && typeof v === 'function') el.addEventListener(k.slice(2), v);
         else if (k === 'dataset') Object.assign(el.dataset, v);
         else if (k in el && k !== 'list' && typeof v !== 'object') { try { el[k] = v; } catch (e) { el.setAttribute(k, v); } }
@@ -204,13 +210,20 @@
     });
 
     const badges = h('div.card-badges');
-    if (game.hot) badges.appendChild(h('span.badge.hot', { text: 'Top' }));
+    const niv = NX.CATALOG.nivel(game);
+    if (game.q <= 2) badges.appendChild(h('span.badge.experimental', { text: '◇ Experimental' }));
+    else if (game.hot) badges.appendChild(h('span.badge.hot', { text: 'Top' }));
     if (game.nuevo) badges.appendChild(h('span.badge.new', { text: 'Nuevo' }));
+    if (S.isFlagged(game.id)) badges.appendChild(h('span.badge.reportado', { text: '⚑ Reportado' }));
     if (best > 0 && !opts.noBest) badges.appendChild(h('span.badge.best', { text: '★ ' + NX.M.fmtScore(best) }));
 
+    /* Cada tarjeta se tiñe con la paleta de su juego: el color no es
+       decoración suelta, sale de lo que vas a ver al entrar. */
+    const pal = (NX.GFX && NX.GFX.PALETTES[game.pal]) || null;
     const el = h('a.card', {
       href: '#/juego/' + game.id,
       'aria-label': game.t + ' — ' + cat.name,
+      style: pal ? { '--acc': pal.a, '--acc-2': pal.b } : null,
     },
       h('div.card-art', cv, badges, favBtn,
         h('div.card-play', h('span', { html: icon('play', 20) }))),
@@ -219,8 +232,11 @@
         h('div.card-meta',
           h('span', { text: cat.icon + ' ' + cat.name }),
           h('span.dot'),
-          diffDots(game.diff)))
+          diffDots(game.diff),
+          h('span.card-nivel', { style: { color: niv.col }, title: 'Calidad: ' + niv.n,
+            text: niv.ico })))
     );
+    if (S.isFlagged(game.id)) el.classList.add('is-flagged');
 
     el.addEventListener('pointerenter', () => { sizeCanvas(cv); startAnim(cv); });
     el.addEventListener('pointerleave', () => stopAnim(cv));

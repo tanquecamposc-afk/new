@@ -56,6 +56,24 @@
     const vpad = h('div.vpad');
     stage.appendChild(vpad);
 
+    /* Dentro de un iframe el teclado no llega hasta que el juego tiene el foco.
+       Si no lo tiene, se avisa en vez de dejar que parezca que está roto. */
+    const kbNotice = h('button.kb-notice.hide', {
+      html: icon('keyboard', 16) + '<span>Haz clic en el juego para usar el teclado</span>',
+      onclick: () => { if (engine) engine.canvas.focus(); },
+    });
+    stage.appendChild(kbNotice);
+    let kbTimer = 0;
+    function syncFocus() {
+      if (!started || over) { kbNotice.classList.add('hide'); return; }
+      const ok = document.hasFocus() &&
+        (document.activeElement === (engine && engine.canvas) || stage.contains(document.activeElement));
+      kbNotice.classList.toggle('hide', ok);
+    }
+    kbTimer = setInterval(syncFocus, 500);
+    window.addEventListener('focus', syncFocus);
+    window.addEventListener('blur', syncFocus);
+
     function buildVpad(controls) {
       D.clear(vpad);
       if (!controls) { vpad.classList.remove('on'); return; }
@@ -289,8 +307,9 @@
       sessionStart = performance.now();
       S.addRecent(game.id);
       S.checkAchievements();
-      if (engine) engine.start();
+      if (engine) { engine.start(); try { engine.canvas.focus({ preventScroll: true }); } catch (e) { engine.canvas.focus(); } }
       if (iframe) iframe.focus();
+      setTimeout(syncFocus, 200);
     }
 
     const onKey = (e) => {
@@ -318,6 +337,7 @@
         const o = def.opts || {};
         if (o.w && o.h && o.fit !== 'fill') stage.style.aspectRatio = o.w + ' / ' + o.h;
         engine = new NX.Engine(def, stage, api);
+        if (engine.fx && S.get('reduceFx')) engine.fx.enabled = false;
         engine.setPaused(false);
         buildVpad(o.controls);
         stage.insertBefore(engine.canvas, ovLoad);
@@ -333,6 +353,80 @@
     /* ------------------------------------------------------------- página */
     const relacionados = CAT.byCat(game.cat).filter((g) => g.id !== game.id).slice(0, 6);
     const masJugados = NX.Views.popularList ? NX.Views.popularList() : CAT.GAMES;
+
+    /* ------------------------------------------- valoración y reporte */
+    const niv = CAT.nivel(game);
+
+    const estrellas = h('div.estrellas', { role: 'radiogroup', 'aria-label': 'Tu valoración' });
+    const estrellaTxt = h('span.estrellas-txt');
+    function pintaEstrellas(hover) {
+      const mia = S.rating(game.id);
+      const n = hover || mia;
+      Array.prototype.forEach.call(estrellas.children, (b, i) => {
+        b.classList.toggle('on', i < n);
+        b.classList.toggle('preview', !!hover && i < hover && i >= mia);
+      });
+      estrellaTxt.textContent = mia
+        ? ['', 'No la vuelvo a abrir', 'Regulera', 'Está bien', 'Muy buena', 'De las mejores'][mia]
+        : 'Ponle nota';
+    }
+    for (let i = 1; i <= 5; i++) {
+      const b = h('button.estrella', { type: 'button', text: '★',
+        'aria-label': i + ' de 5', title: i + ' de 5' });
+      b.onmouseenter = () => pintaEstrellas(i);
+      b.onfocus = () => pintaEstrellas(i);
+      b.onclick = () => {
+        const actual = S.rating(game.id);
+        const n = S.setRating(game.id, actual === i ? 0 : i);
+        pintaEstrellas(0);
+        NX.toast(n ? 'Guardado: ' + n + ' de 5' : 'Valoración borrada', n ? '⭐' : '↩️');
+        if (NX.Audio) NX.Audio.sfx(n ? 'coin' : 'click');
+      };
+      estrellas.appendChild(b);
+    }
+    estrellas.onmouseleave = () => pintaEstrellas(0);
+
+    const MOTIVOS = [
+      { id: 'roto', t: 'No funciona' },
+      { id: 'calidad', t: 'Calidad baja' },
+      { id: 'aburrido', t: 'Aburrido' },
+    ];
+    const reporteBox = h('div.reporte');
+    function pintaReporte() {
+      D.clear(reporteBox);
+      const f = S.flagOf(game.id);
+      if (f) {
+        const m = MOTIVOS.find((x) => x.id === f.motivo);
+        reporteBox.appendChild(h('div.reporte-hecho',
+          h('span', { text: '⚑ Lo marcaste como “' + (m ? m.t.toLowerCase() : f.motivo) + '”' }),
+          h('button.btn.xs.ghost', { text: 'Deshacer', onclick: () => {
+            S.unflag(game.id); pintaReporte(); NX.toast('Marca retirada', '↩️');
+          } })));
+        return;
+      }
+      reporteBox.appendChild(h('span.reporte-lbl', { text: '¿Algo va mal?' }));
+      MOTIVOS.forEach((m) => reporteBox.appendChild(h('button.btn.xs.ghost', {
+        text: m.t,
+        onclick: () => {
+          S.flag(game.id, m.id);
+          pintaReporte();
+          NX.toast('Anotado. Baja en tu lista y sale de “los mejores”.', '⚑');
+        },
+      })));
+    }
+    pintaReporte();
+
+    const valoracion = h('div.gp-valora',
+      h('div.gp-valora-nota',
+        h('span.nivel-chip', { style: { color: niv.col, borderColor: niv.col + '55' },
+          text: niv.ico + ' ' + niv.n }),
+        h('span.nivel-exp', { text: game.q <= 2
+          ? 'Es un experimento corto. Está aquí por si te pica la curiosidad, no como plato fuerte.'
+          : game.q >= 5 ? 'De los que mejor aguantan una tarde entera.'
+          : 'Probado y funcionando. Da para un buen rato.' })),
+      h('div.gp-valora-tuya', estrellas, estrellaTxt),
+      reporteBox);
+    pintaEstrellas(0);
 
     const info = h('div.gp-info',
       h('div.gp-title',
@@ -351,7 +445,8 @@
         h('div.kv-item', h('div.k', { text: 'Controles' }), h('div.v', { text: game.ctl })),
         h('div.kv-item', h('div.k', { text: 'Tu récord' }),
           h('div.v', { text: S.best(game.id) ? M.fmtScore(S.best(game.id)) : '—' })),
-        h('div.kv-item', h('div.k', { text: 'Etiquetas' }), h('div.v', { text: game.tags.join(' · ') }))));
+        h('div.kv-item', h('div.k', { text: 'Etiquetas' }), h('div.v', { text: game.tags.join(' · ') }))),
+      valoracion);
 
     const side = h('div.gp-side',
       h('div.side-card',
@@ -370,6 +465,9 @@
       h('div.gp', h('div', player, info), side));
 
     page._cleanup = () => {
+      clearInterval(kbTimer);
+      window.removeEventListener('focus', syncFocus);
+      window.removeEventListener('blur', syncFocus);
       document.removeEventListener('keydown', onKey);
       document.removeEventListener('fullscreenchange', onFsChange);
       document.removeEventListener('webkitfullscreenchange', onFsChange);

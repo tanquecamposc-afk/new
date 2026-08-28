@@ -205,6 +205,7 @@ NX.game('nave-guardiana', {
 
     draw(g) {
       const c = g.ctx;
+      g.bgSpace(E.t, 11);
       for (let i = 0; i < 60; i++) {
         const x = (i * 137.5) % W, y = (i * 89.3 + E.t * (60 + (i % 3) * 60)) % H;
         g.circle(x, y, 0.9 + (i % 3) * 0.5, alpha('#ffffff', 0.14 + (i % 3) * 0.08));

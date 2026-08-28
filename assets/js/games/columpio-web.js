@@ -10,13 +10,17 @@ NX.game('columpio-web', {
   const W = E.opts.w, H = E.opts.h;
   const GRAV = 1200;
 
-  let hero, anchors, rope, camX, dist, alive, score, rings, bestX;
+  let hero, anchors, rope, camX, dist, alive, score, rings, bestX, hint, touched;
 
   function reset() {
-    hero = { x: 150, y: 200, vx: 260, vy: 0, r: 15 };
     anchors = []; rings = [];
     for (let i = 0; i < 24; i++) addAnchor(200 + i * E.rng.float(180, 280));
-    rope = null; camX = 0; dist = 0; alive = true; score = 0; bestX = 150;
+    /* Arranca ya colgado del primer punto: si empezara cayendo, la partida
+       se acababa antes de que te diera tiempo a reaccionar. */
+    const a0 = anchors[0];
+    hero = { x: a0.x - 90, y: a0.y + 170, vx: 300, vy: 0, r: 15 };
+    rope = { a: a0, len: M.dist(hero.x, hero.y, a0.x, a0.y) };
+    camX = 0; dist = 0; alive = true; score = 0; bestX = hero.x; hint = 2.6; touched = false;
     hud();
   }
   function hud() { E.api.hud({ Distancia: Math.round(dist) + ' m', Puntos: M.fmtScore(score) }); }
@@ -38,6 +42,7 @@ NX.game('columpio-web', {
   return {
     update(dt) {
       if (!alive) return;
+      if (hint > 0) hint -= dt;
       const press = E.input.down('space') || E.input.pointer.down;
 
       if (press && !rope) {
@@ -52,7 +57,9 @@ NX.game('columpio-web', {
           E.sfx('swoosh');
         }
       }
-      if (!press && rope) {
+      if (press) touched = true;
+      /* La cuerda inicial aguanta hasta que el jugador pulsa por primera vez. */
+      if (!press && rope && touched) {
         rope = null;
         E.sfx('hop');
         E.particles.burst(hero.x - camX, hero.y, 6, { col: [P.c], speed1: 130, add: true });
@@ -144,6 +151,9 @@ NX.game('columpio-web', {
       g.text(Math.round(dist) + ' m', W / 2, 44, {
         size: 28, align: 'center', weight: 900, color: alpha(P.ink, 0.9), mono: true,
       });
+      if (hint > 0) {
+        E.ui.title('Mantén pulsado y suelta para volar', W / 2, 110, { size: 30 });
+      }
       E.ui.hint('Mantén pulsado para lanzar la cuerda · suelta para volar', { bottom: 14 });
     },
   };

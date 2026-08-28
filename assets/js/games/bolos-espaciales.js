@@ -134,7 +134,7 @@ NX.game('bolos-espaciales', {
 
     draw(g) {
       const c = g.ctx;
-      g.bgGradient(mix(P.bg, P.d, 0.32), P.deep);
+      g.bgArena(E.t, 2);
       /* pista */
       c.fillStyle = g.linGrad(0, PIN_Y - 60, 0, H, [[0, mix('#c98b46', P.deep, 0.35)], [1, mix('#e0a95c', P.deep, 0.2)]]);
       c.beginPath();

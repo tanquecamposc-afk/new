@@ -176,6 +176,7 @@ NX.game('doble-canon', {
 
     draw(g) {
       const c = g.ctx;
+      g.bgSpace(E.t, 31);
       g.bgGrid(46, alpha(P.a, 0.055), 1, 0, 0);
 
       orbs.forEach((o) => {

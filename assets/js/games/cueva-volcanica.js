@@ -10,18 +10,21 @@ NX.game('cueva-volcanica', {
   const W = E.opts.w, H = E.opts.h;
   const GRAV = 1450, FLAP = -430;
 
-  let hero, cave, stal, gems, dist, speed, alive, score, seed, phase;
+  let hero, cave, stal, gems, dist, speed, alive, score, seed, phase, warm;
 
   function caveAt(x) {
     const n = Math.sin(x * 0.0032) * 0.6 + Math.sin(x * 0.0071 + 1.7) * 0.3 + Math.sin(x * 0.0135) * 0.12;
     const mid = H / 2 + n * (H * 0.24);
-    const tight = M.clamp(H * 0.42 - dist * 0.22, H * 0.17, H * 0.42);
+    /* la gruta arranca muy abierta y se va cerrando poco a poco */
+    const open0 = M.clamp01(1 - dist / 60);
+    const tight = M.clamp(H * (0.42 + open0 * 0.28) - dist * 0.22, H * 0.17, H * 0.7);
     return { top: mid - tight / 2, bot: mid + tight / 2 };
   }
 
   function reset() {
     hero = { x: 200, y: H / 2, vy: 0, rot: 0 };
     stal = []; gems = []; dist = 0; speed = 250; alive = true; score = 0; phase = 0;
+    warm = 2.6;
     hud();
   }
   function hud() { E.api.hud({ Puntos: M.fmtScore(score), Distancia: Math.round(dist) + ' m' }); }
@@ -38,6 +41,14 @@ NX.game('cueva-volcanica', {
   return {
     update(dt) {
       if (!alive) return;
+      /* Un par de segundos flotando antes de que empiece de verdad. */
+      if (warm > 0) {
+        warm -= dt;
+        hero.y = M.damp(hero.y, H / 2, 6, dt);
+        hero.vy = 0;
+        if (E.input.pressed('space') || E.input.pressed('up') || E.input.pointer.pressed) warm = 0;
+        return;
+      }
       speed = Math.min(560, speed + dt * 8);
       dist += speed * dt / 26;
       score += speed * dt * 0.05;
@@ -141,6 +152,7 @@ NX.game('cueva-volcanica', {
       g.text(Math.round(dist) + ' m', W / 2, 46, {
         size: 28, align: 'center', weight: 900, color: alpha(P.ink, 0.9), mono: true,
       });
+      if (warm > 0) E.ui.title('Toca para empezar a volar', W / 2, 110, { size: 30 });
       E.ui.hint('Espacio o toca para aletear', { bottom: 14 });
     },
   };

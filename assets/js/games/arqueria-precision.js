@@ -96,7 +96,7 @@ NX.game('arqueria-precision', {
 
     draw(g) {
       const c = g.ctx;
-      g.bgGradient(mix('#3a2340', P.deep, 0.2), mix(P.bg, P.d, 0.3));
+      g.bgSky(E.t, 0, mix('#3a2340', P.deep, 0.2), mix(P.bg, P.d, 0.3));
       g.circle(W * 0.78, 90, 44, alpha(P.c, 0.35));
       for (let i = 0; i < 5; i++) {
         G.Sprites.cloud(g, ((i * 260 + E.t * 6) % (W + 300)) - 100, 70 + (i % 3) * 40, 46, alpha(P.ink, 0.06));

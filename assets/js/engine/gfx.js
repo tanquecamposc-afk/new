@@ -84,6 +84,43 @@
     return this;
   };
 
+  /* Envuelve un dibujo en una sombra proyectada. */
+  P.shadowed = function (fn, blur, dy, col) {
+    const c = this.ctx;
+    c.save();
+    c.shadowColor = col || 'rgba(0,0,0,.5)';
+    c.shadowBlur = blur == null ? 14 : blur;
+    c.shadowOffsetY = dy == null ? 5 : dy;
+    fn(this);
+    c.restore();
+    return this;
+  };
+
+  /* Cuerpo con degradado y luz de borde: sustituye al círculo plano. */
+  P.orb = function (x, y, r, col, rim) {
+    const c = this.ctx;
+    c.fillStyle = this.radGrad(x - r * 0.35, y - r * 0.4, r * 0.1, r * 1.15,
+      [[0, mix(col, '#ffffff', 0.55)], [0.5, col], [1, mix(col, '#000000', 0.4)]]);
+    c.beginPath(); c.arc(x, y, r, 0, TAU); c.fill();
+    if (rim !== false) {
+      c.strokeStyle = alpha(mix(col, '#ffffff', 0.7), 0.5);
+      c.lineWidth = Math.max(1, r * 0.09);
+      c.beginPath(); c.arc(x, y, r * 0.94, -2.5, 0.4); c.stroke();
+    }
+    return this;
+  };
+
+  /* Caja con volumen: cara superior clara y base oscura. */
+  P.slab = function (x, y, w, h, r, col) {
+    const c = this.ctx;
+    c.fillStyle = this.linGrad(x, y, x, y + h,
+      [[0, mix(col, '#ffffff', 0.28)], [0.55, col], [1, mix(col, '#000000', 0.3)]]);
+    this.rrectPath(x, y, w, h, r == null ? 6 : r); c.fill();
+    c.fillStyle = alpha('#ffffff', 0.22);
+    this.rrectPath(x + w * 0.06, y + h * 0.08, w * 0.88, h * 0.22, Math.min(r || 6, h * 0.11)); c.fill();
+    return this;
+  };
+
   P.glow = function (color, blur) {
     this.ctx.shadowColor = color || this.pal.a;
     this.ctx.shadowBlur = blur == null ? 18 : blur;
@@ -293,12 +330,137 @@
   };
 
   /* --- fondos --- */
-  P.bgGradient = function (top, bottom) {
-    const c = this.ctx;
-    c.fillStyle = this.linGrad(0, 0, 0, this.H, [[0, top], [1, bottom]]);
-    c.fillRect(0, 0, this.W, this.H);
+  /* Fondo base con dos focos de luz suaves: da profundidad sin coste real
+     y lo usan casi todos los juegos, así que sube el nivel de todos a la vez. */
+  P.bgGradient = function (top, bottom, plain) {
+    const c = this.ctx, W = this.W, H = this.H;
+    c.save();
+    c.fillStyle = this.linGrad(0, 0, W * 0.25, H, [[0, top], [1, bottom]]);
+    c.fillRect(0, 0, W, H);
+    if (!plain) {
+      c.globalCompositeOperation = 'lighter';
+      c.fillStyle = this.radGrad(W * 0.26, -H * 0.12, 0, H * 1.05,
+        [[0, alpha(mix(top, '#ffffff', 0.55), 0.20)], [0.55, alpha(mix(top, '#ffffff', 0.4), 0.05)], [1, 'rgba(0,0,0,0)']]);
+      c.fillRect(0, 0, W, H);
+      c.fillStyle = this.radGrad(W * 0.84, H * 1.05, 0, H * 0.95,
+        [[0, alpha(mix(bottom, this.pal.a, 0.6), 0.16)], [1, 'rgba(0,0,0,0)']]);
+      c.fillRect(0, 0, W, H);
+    }
+    c.restore();
     return this;
   };
+
+  /* Campo de estrellas con nebulosa: para los juegos espaciales vacíos. */
+  P.bgSpace = function (t, seed) {
+    const c = this.ctx, W = this.W, H = this.H, P2 = this.pal;
+    this.bgGradient(mix(P2.bg, P2.d, 0.35), P2.deep, true);
+    c.save();
+    c.globalCompositeOperation = 'lighter';
+    const r = new M.RNG(seed == null ? 7 : seed);
+    for (let i = 0; i < 5; i++) {
+      const x = r.float(0, W), y = r.float(0, H), rad = r.float(H * 0.3, H * 0.75);
+      const col = [P2.a, P2.b, P2.d, P2.c][i % 4];
+      c.fillStyle = this.radGrad(x + Math.sin(t * 0.06 + i) * 18, y + Math.cos(t * 0.05 + i) * 14, 0, rad,
+        [[0, alpha(col, 0.13)], [0.5, alpha(col, 0.04)], [1, 'rgba(0,0,0,0)']]);
+      c.fillRect(0, 0, W, H);
+    }
+    c.restore();
+    /* tres capas de estrellas con parallax */
+    c.save();
+    for (let L = 0; L < 3; L++) {
+      const n = [70, 40, 18][L], sp = [4, 10, 22][L], rr = [0.7, 1.15, 1.9][L];
+      const rng2 = new M.RNG((seed == null ? 7 : seed) * 31 + L);
+      for (let i = 0; i < n; i++) {
+        const bx = rng2.float(0, W);
+        const by = (rng2.float(0, H) + t * sp) % H;
+        c.globalAlpha = 0.22 + L * 0.26 + Math.sin(t * 2 + i) * 0.08;
+        c.fillStyle = L === 2 ? P2.a : '#ffffff';
+        c.beginPath(); c.arc(bx, by, rr, 0, TAU); c.fill();
+      }
+    }
+    c.restore();
+    return this;
+  };
+
+  /* Cielo con nubes en capas para escenas al aire libre. */
+  P.bgSky = function (t, horizon, top, bottom) {
+    const c = this.ctx, W = this.W, H = this.H;
+    this.bgGradient(top, bottom, true);
+    c.save();
+    for (let L = 0; L < 3; L++) {
+      const sp = [5, 11, 20][L], sc = [1.5, 1, 0.7][L], a = [0.05, 0.08, 0.11][L];
+      for (let i = 0; i < 5; i++) {
+        const x = ((i * 260 + t * sp) % (W + 420)) - 210;
+        c.globalAlpha = a;
+        const y = 40 + L * 46 + (i % 3) * 26;
+        c.fillStyle = '#ffffff';
+        c.beginPath();
+        c.arc(x, y, 34 * sc, 0, TAU);
+        c.arc(x - 30 * sc, y + 8 * sc, 24 * sc, 0, TAU);
+        c.arc(x + 32 * sc, y + 7 * sc, 27 * sc, 0, TAU);
+        c.fill();
+      }
+    }
+    c.restore();
+    return this;
+  };
+  /* Césped o moqueta con franjas, para lo deportivo: mesa de billar, campo
+     de fútbol, green de golf. Añade grano y luz cenital. */
+  P.bgTurf = function (t, base, franjas, ancho) {
+    const c = this.ctx, W = this.W, H = this.H;
+    const claro = mix(base, '#ffffff', 0.10);
+    this.bgGradient(claro, mix(base, '#000000', 0.35), true);
+    c.save();
+    const paso = ancho || Math.max(40, H / 8);
+    c.globalAlpha = franjas == null ? 0.055 : franjas;
+    c.fillStyle = '#ffffff';
+    for (let y = 0; y < H; y += paso * 2) c.fillRect(0, y, W, paso);
+    c.restore();
+    /* mota fina para que no sea un plano liso */
+    c.save();
+    c.globalAlpha = 0.05;
+    const r = new M.RNG(4231);
+    for (let i = 0; i < 220; i++) {
+      c.fillStyle = i % 2 ? '#ffffff' : '#000000';
+      c.fillRect(r.float(0, W), r.float(0, H), 2, 2);
+    }
+    c.restore();
+    /* foco cenital */
+    c.save();
+    c.globalCompositeOperation = 'lighter';
+    c.fillStyle = this.radGrad(W * 0.5, -H * 0.1, 0, H * 1.2,
+      [[0, alpha('#ffffff', 0.13)], [0.6, alpha('#ffffff', 0.03)], [1, 'rgba(0,0,0,0)']]);
+    c.fillRect(0, 0, W, H);
+    c.restore();
+    return this;
+  };
+
+  /* Sala abstracta con rejilla en fuga y pulsos de color: para puzles y
+     juegos de tablero que si no se quedan en un fondo plano. */
+  P.bgArena = function (t, seed) {
+    const c = this.ctx, W = this.W, H = this.H, P2 = this.pal;
+    this.bgGradient(mix(P2.bg, P2.d, 0.22), P2.deep, true);
+    const s = seed == null ? 3 : seed;
+    c.save();
+    c.globalCompositeOperation = 'lighter';
+    for (let i = 0; i < 3; i++) {
+      const col = [P2.a, P2.b, P2.d][i];
+      const x = W * (0.2 + 0.3 * i) + Math.sin(t * 0.17 + i * 2 + s) * W * 0.14;
+      const y = H * (0.25 + 0.22 * ((i + s) % 3)) + Math.cos(t * 0.13 + i) * H * 0.12;
+      c.fillStyle = this.radGrad(x, y, 0, Math.min(W, H) * 0.72,
+        [[0, alpha(col, 0.10)], [0.55, alpha(col, 0.03)], [1, 'rgba(0,0,0,0)']]);
+      c.fillRect(0, 0, W, H);
+    }
+    c.restore();
+    /* rejilla que se desvanece hacia el centro */
+    c.save();
+    c.globalAlpha = 0.16;
+    this.bgGrid(Math.max(38, H / 12), alpha(P2.a, 0.30), 1, t * 6, t * 3);
+    c.restore();
+    this.bgVignette(0.4);
+    return this;
+  };
+
   P.bgVignette = function (strength) {
     const c = this.ctx;
     const r = Math.hypot(this.W, this.H) * 0.62;

@@ -59,6 +59,11 @@
           onclick: () => Views.randomGame(),
         }));
       copy.appendChild(actions);
+      copy.appendChild(h('div.hero-stats',
+        h('div', h('b', { text: CAT.count }), h('span', { text: 'juegos propios' })),
+        h('div', h('b', { text: CAT.top(5).length }), h('span', { text: 'destacados' })),
+        h('div', h('b', { text: '0' }), h('span', { text: 'anuncios' })),
+        h('div', h('b', { text: '0' }), h('span', { text: 'cuentas o descargas' }))));
       D.clear(dots);
       picks.forEach((_, k) => dots.appendChild(h('button', {
         class: k === i ? 'on' : '', 'aria-label': 'Destacado ' + (k + 1),
@@ -86,9 +91,16 @@
         rec.length > 12 ? { href: '#/recientes' } : null));
     }
 
+    /* Lo primero que se ve son los que mejor están, no el catálogo en bruto. */
+    const mejores = CAT.ordenar(CAT.top(5), 'rel');
+    if (mejores.length) {
+      page.appendChild(D.section('Lo mejor del catálogo', '★', D.rail(mejores.slice(0, 14)),
+        { href: '#/mejores' }));
+    }
+
     page.appendChild(D.section('Lo más jugado', '🔥', D.rail(popular().slice(0, 14)), { href: '#/juegos' }));
 
-    const fresh = dailyShuffle(CAT.GAMES).slice(0, 14);
+    const fresh = dailyShuffle(CAT.limpiar(CAT.top(4))).slice(0, 14);
     page.appendChild(D.section('Descubre algo nuevo', '✨', D.rail(fresh), { href: '#/juegos' }));
 
     const favs = S.data.favs.map((id) => CAT.byId[id]).filter(Boolean);
@@ -113,7 +125,7 @@
   /* --------------------------------------------------- rejilla con filtros */
   function gridPage(opts) {
     const page = h('div.page');
-    const state = { cat: opts.cat || 'all', sort: 'rel', q: '' };
+    const state = { cat: opts.cat || 'all', sort: 'rel', q: '', soloTop: false };
     const grid = h('div.grid');
 
     const head = h('div.page-head',
@@ -122,16 +134,32 @@
     page.appendChild(head);
 
     const sortSel = h('select.chip', { style: { height: '32px', paddingInline: '10px' } },
-      h('option', { value: 'rel', text: 'Recomendado' }),
+      h('option', { value: 'rel', text: 'Relevancia' }),
       h('option', { value: 'az', text: 'A → Z' }),
       h('option', { value: 'diff', text: 'Dificultad' }),
       h('option', { value: 'plays', text: 'Más jugados' }));
     sortSel.onchange = () => { state.sort = sortSel.value; render(); };
 
+    /* Interruptor de calidad. Por defecto ves el catálogo entero; si le das,
+       se queda solo con lo que está probado y bien valorado. */
+    const topBtn = h('button.chip.filtro-top',
+      h('span', { text: '🔥' }), h('span.filtro-top-txt', { text: 'Solo los mejores' }));
+    topBtn.onclick = () => {
+      state.soloTop = !state.soloTop;
+      topBtn.classList.toggle('on', state.soloTop);
+      topBtn.querySelector('.filtro-top-txt').textContent =
+        state.soloTop ? 'Mostrar todos' : 'Solo los mejores';
+      topBtn.firstChild.textContent = state.soloTop ? '🎮' : '🔥';
+      render();
+    };
+
     if (opts.filters !== false) {
       const chips = h('div.chip-row', { style: { marginBottom: '18px' } });
-      const mk = (id, label, ico) => {
-        const b = h('button.chip', { class: state.cat === id ? 'on' : '' },
+      const mk = (id, label, ico, col) => {
+        const b = h('button.chip', {
+          class: state.cat === id ? 'on' : '',
+          style: col ? { '--cat': col } : null,
+        },
           ico ? h('span', { text: ico }) : null, h('span', { text: label }));
         b.onclick = () => {
           state.cat = id;
@@ -142,9 +170,9 @@
         return b;
       };
       chips.appendChild(mk('all', 'Todos', '🎲'));
-      CAT.CATS.forEach((c) => chips.appendChild(mk(c.id, c.name, c.icon)));
+      CAT.CATS.forEach((c) => chips.appendChild(mk(c.id, c.name, c.icon, c.color)));
       page.appendChild(chips);
-      head.appendChild(h('div', { style: { marginLeft: 'auto' } }, sortSel));
+      head.appendChild(h('div.page-head-tools', topBtn, sortSel));
     }
 
     const countEl = h('p', { style: { color: 'var(--text-dim)', marginBottom: '14px', fontSize: '14px' } });
@@ -154,13 +182,20 @@
     function render() {
       let list = opts.list ? opts.list() : CAT.GAMES.slice();
       if (state.cat !== 'all') list = list.filter((g) => g.cat === state.cat);
+      if (state.soloTop) {
+        const buenos = CAT.top(4);
+        list = list.filter((g) => buenos.indexOf(g) >= 0);
+      } else if (!opts.keepOrder) {
+        list = CAT.limpiar(list);
+      }
       if (state.sort === 'az') list.sort((a, b) => a.t.localeCompare(b.t, 'es'));
       else if (state.sort === 'diff') list.sort((a, b) => a.diff - b.diff || a.t.localeCompare(b.t, 'es'));
       else if (state.sort === 'plays') list.sort((a, b) => S.plays(b.id) - S.plays(a.id));
-      else if (!opts.keepOrder) list = popular().filter((g) => list.indexOf(g) >= 0);
+      else if (!opts.keepOrder) list = CAT.ordenar(list, 'rel');
 
       D.clear(grid);
-      countEl.textContent = list.length + (list.length === 1 ? ' juego' : ' juegos');
+      countEl.textContent = list.length + (list.length === 1 ? ' juego' : ' juegos')
+        + (state.soloTop ? ' · filtro de calidad activo' : '');
       if (!list.length) {
         grid.appendChild(h('div.empty', { style: { gridColumn: '1/-1' } },
           h('div.big', { text: opts.emptyIco || '🫙' }),
@@ -178,6 +213,15 @@
     render();
     return page;
   }
+
+  Views.mejores = () => gridPage({
+    title: 'Lo mejor del catálogo', ico: '★',
+    sub: 'Los que más aguantan: mecánica sólida, dificultad medida y partidas que enganchan.',
+    list: () => CAT.ordenar(CAT.top(5), 'rel'),
+    keepOrder: true,
+    emptyIco: '★', emptyTitle: 'Nada aquí todavía',
+    emptyText: 'Has reportado todos los destacados. Quita alguna marca para verlos.',
+  });
 
   Views.all = () => gridPage({
     title: 'Todos los juegos', ico: '🎮',
@@ -271,6 +315,7 @@
       ['Favoritos', String(st.favs)],
       ['Mejor marca', M.fmtScore(st.maxScore)],
       ['Mejor racha', S.data.streak.best + (S.data.streak.best === 1 ? ' día' : ' días')],
+      ['Juegos valorados', String(S.ratedCount())],
     ];
     page.appendChild(D.section('Tus números', '📊',
       h('div.stats', stats.map((s) => h('div.stat', h('div', { class: 'k', text: s[0] }), h('div', { class: 'v', text: s[1] }))))));
@@ -280,6 +325,33 @@
       .map((id) => CAT.byId[id]).filter(Boolean)
       .sort((a, b) => S.plays(b.id) - S.plays(a.id)).slice(0, 12);
     if (top.length) page.appendChild(D.section('Tus más jugados', '🏅', D.rail(top)));
+
+    /* juegos que has marcado como rotos o flojos */
+    const marcados = S.flagged().map((id) => CAT.byId[id]).filter(Boolean);
+    if (marcados.length) {
+      const lista = h('div.marcados');
+      const pinta = () => {
+        D.clear(lista);
+        S.flagged().map((id) => CAT.byId[id]).filter(Boolean).forEach((g) => {
+          const f = S.flagOf(g.id) || {};
+          lista.appendChild(h('div.marcado',
+            D.cover(g, { w: 76, h: 48 }),
+            h('div.grow',
+              h('b', { text: g.t }),
+              h('span', { text: 'Motivo: ' + (f.motivo || 'otro') })),
+            h('a.btn.sm.ghost', { href: '#/juego/' + g.id, text: 'Abrir' }),
+            h('button.btn.sm', { text: 'Quitar marca', onclick: () => {
+              S.unflag(g.id); pinta(); NX.toast('Marca retirada', '↩️');
+            } })));
+        });
+        if (!S.flagged().length) {
+          lista.appendChild(h('p', { style: { color: 'var(--text-mute)', fontSize: '14px' },
+            text: 'Ya no queda ninguno marcado.' }));
+        }
+      };
+      pinta();
+      page.appendChild(D.section('Lo que has marcado', '⚑', lista));
+    }
 
     /* logros */
     const list = S.ACHIEVEMENTS.slice().sort((a, b) => (S.hasAchievement(b.id) ? 1 : 0) - (S.hasAchievement(a.id) ? 1 : 0));
@@ -345,8 +417,15 @@
         h('a.btn.primary', { href: '#/', text: 'Volver al inicio' }))));
   };
 
+  /* Sorpréndeme no reparte al azar entre los 95: tira del tramo alto,
+     que son los que de verdad aguantan una partida larga. */
   Views.randomGame = function () {
-    const g = M.pick(CAT.GAMES);
+    const actual = (location.hash.match(/#\/juego\/([\w-]+)/) || [])[1];
+    let pool = CAT.top(5);
+    if (pool.length < 6) pool = CAT.top(4);
+    if (!pool.length) pool = CAT.GAMES;
+    const libres = pool.filter((g) => g.id !== actual);
+    const g = M.pick(libres.length ? libres : pool);
     location.hash = '#/juego/' + g.id;
   };
 

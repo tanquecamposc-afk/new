@@ -10,12 +10,13 @@ NX.game('corredor-cubico', {
   const W = E.opts.w, H = E.opts.h;
   const GY = H - 90, GRAV = 2400;
 
-  let hero, obs, coins, dist, speed, alive, spawnX, score, combo, shieldT;
+  let hero, obs, coins, dist, speed, alive, spawnX, score, combo, shieldT, warm;
 
   function reset() {
     hero = { x: 180, y: GY, vy: 0, h: 46, slide: 0, jumps: 0, rot: 0 };
     obs = []; coins = [];
-    dist = 0; speed = 340; alive = true; spawnX = W + 200; score = 0; combo = 0; shieldT = 0;
+    dist = 0; speed = 260; alive = true; spawnX = W + 760; score = 0; combo = 0; shieldT = 0;
+    warm = 2.2;
     hud();
   }
   function hud() {
@@ -50,7 +51,8 @@ NX.game('corredor-cubico', {
   return {
     update(dt) {
       if (!alive) return;
-      speed = Math.min(760, speed + dt * 9);
+      if (warm > 0) warm -= dt;
+      speed = Math.min(760, speed + dt * (warm > 0 ? 22 : 9));
       dist += speed * dt / 26;
       score += speed * dt * 0.06;
       if (shieldT > 0) shieldT -= dt;
@@ -151,6 +153,7 @@ NX.game('corredor-cubico', {
       g.text(M.fmtScore(Math.round(score)), W / 2, 46, {
         size: 30, align: 'center', weight: 900, color: P.ink, mono: true, shadow: alpha(P.c, 0.4), shadowBlur: 14,
       });
+      if (warm > 0) E.ui.title('¡Prepárate!', W / 2, 120, { size: 34 });
       E.ui.hint('↑ saltar (doble salto) · ↓ deslizarte', { bottom: 14 });
     },
   };

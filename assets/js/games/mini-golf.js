@@ -132,7 +132,7 @@ NX.game('mini-golf', {
 
     draw(g) {
       const c = g.ctx;
-      g.bgGradient(mix('#1d5c30', P.deep, 0.4), mix('#123f21', P.deep, 0.35));
+      g.bgTurf(E.t, '#1d5c30', 0.05, 46);
       g.rect(16, 70, W - 32, H - 90, mix('#2f8f45', P.deep, 0.15));
       for (let i = 0; i < 30; i++) g.rect(16, 70 + i * 18, W - 32, 9, alpha('#ffffff', 0.02));
       g.rrectStroke(16, 70, W - 32, H - 90, 6, mix('#7a5a34', P.deep, 0.1), 10);

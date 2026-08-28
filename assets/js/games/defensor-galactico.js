@@ -144,7 +144,7 @@ NX.game('defensor-galactico', {
 
     draw(g) {
       const c = g.ctx;
-      g.bgGradient(mix(P.bg, P.d, 0.3), P.deep);
+      g.bgSpace(E.t, 17);
       for (let i = 0; i < 60; i++) {
         const x = ((i * 173.3 - camX * 0.3) % W + W) % W;
         g.circle(x, (i * 91.7) % (GY - 40), 1 + (i % 3) * 0.4, alpha('#ffffff', 0.14));

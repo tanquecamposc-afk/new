@@ -171,7 +171,7 @@ NX.game('tirachinas', {
 
     draw(g) {
       const c = g.ctx;
-      g.bgGradient(mix('#7cc7f5', P.deep, 0.5), mix(P.bg, P.d, 0.3));
+      g.bgSky(E.t, 0, '#5aa9e6', '#a8d8f0');
       for (let i = 0; i < 5; i++) {
         G.Sprites.cloud(g, ((i * 240 + E.t * 6) % (W + 300)) - 100, 70 + (i % 3) * 44, 46, alpha('#ffffff', 0.12));
       }

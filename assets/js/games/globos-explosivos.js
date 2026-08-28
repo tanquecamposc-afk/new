@@ -90,7 +90,7 @@ NX.game('globos-explosivos', {
 
     draw(g) {
       const c = g.ctx;
-      g.bgGradient(mix('#7cc7f5', P.deep, 0.45), mix(P.bg, P.d, 0.3));
+      g.bgSky(E.t, 0, mix('#7cc7f5', P.deep, 0.45), mix(P.bg, P.d, 0.3));
       for (let i = 0; i < 6; i++) {
         G.Sprites.cloud(g, ((i * 210 + E.t * 8) % (W + 300)) - 100, 70 + (i % 3) * 60, 50, alpha('#ffffff', 0.1));
       }

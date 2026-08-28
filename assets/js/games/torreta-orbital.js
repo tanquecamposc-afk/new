@@ -122,6 +122,7 @@ NX.game('torreta-orbital', {
 
     draw(g) {
       const c = g.ctx;
+      g.bgSpace(E.t, 7);
       /* anillos de fondo */
       for (let i = 1; i <= 5; i++) g.ring(CX, CY, i * 62 + Math.sin(E.t + i) * 3, 1, alpha(P.a, 0.07));
 

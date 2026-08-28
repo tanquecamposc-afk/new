@@ -10,13 +10,16 @@ NX.game('ninja-de-muros', {
   const W = E.opts.w, H = E.opts.h;
   const WALL = 52, GRAV = 1500;
 
-  let hero, saws, coins, camY, height, score, alive, spawnY, speedUp;
+  let hero, saws, coins, camY, height, score, alive, spawnY, speedUp, warm;
 
   function reset() {
-    hero = { x: WALL + 20, y: H - 160, vx: 0, vy: 0, side: -1, r: 15, rot: 0 };
+    /* Pegado a la pared desde el principio: así resbala despacio en vez de
+       caerse al vacío antes de que te dé tiempo a pulsar. */
+    hero = { x: WALL + 8, y: H - 220, vx: 0, vy: 0, side: -1, r: 15, rot: 0 };
     saws = []; coins = []; camY = 0; height = 0; score = 0; alive = true; speedUp = 0;
-    spawnY = H - 300;
-    for (let i = 0; i < 10; i++) { spawnY -= E.rng.float(120, 190); addObstacle(spawnY); }
+    warm = 2.4;
+    spawnY = H - 480;
+    for (let i = 0; i < 10; i++) { spawnY -= E.rng.float(150, 210); addObstacle(spawnY); }
     hud();
   }
   function hud() { E.api.hud({ Altura: Math.round(height) + ' m', Puntos: M.fmtScore(score), Récord: M.fmtScore(E.api.best) }); }
@@ -42,7 +45,9 @@ NX.game('ninja-de-muros', {
   return {
     update(dt) {
       if (!alive) return;
+      if (warm > 0) warm -= dt;
       speedUp += dt * 0.008;
+      /* mientras dura el margen la pantalla no empuja hacia arriba */
       if (E.input.pressed('space') || E.input.pressed('up') || E.input.pointer.pressed) jump();
 
       hero.vy += GRAV * dt;
@@ -50,18 +55,21 @@ NX.game('ninja-de-muros', {
       hero.y += hero.vy * dt;
       hero.rot += hero.vx * dt * 0.02;
 
-      if (hero.x < WALL + hero.r) {
+      /* Con tolerancia: si se ajustaba justo al borde, al fotograma siguiente
+         dejaba de tocar la pared y caía al vacío. */
+      if (hero.x <= WALL + hero.r + 1.5) {
         hero.x = WALL + hero.r; hero.vx = 0; hero.side = -1;
-        hero.vy = Math.min(hero.vy, 120);
+        hero.vy = Math.min(hero.vy, 110);          /* resbala despacio */
+        hero.onWall = -1;
         if (Math.random() < 0.4) E.particles.trail(hero.x - 8, hero.y, { col: P.dim, r: 2, life: 0.3 });
-      }
-      if (hero.x > W - WALL - hero.r) {
+      } else if (hero.x >= W - WALL - hero.r - 1.5) {
         hero.x = W - WALL - hero.r; hero.vx = 0; hero.side = 1;
-        hero.vy = Math.min(hero.vy, 120);
+        hero.vy = Math.min(hero.vy, 110);
+        hero.onWall = 1;
         if (Math.random() < 0.4) E.particles.trail(hero.x + 8, hero.y, { col: P.dim, r: 2, life: 0.3 });
-      }
+      } else hero.onWall = 0;
 
-      camY = Math.min(camY, hero.y - H * 0.55);
+      if (warm <= 0) camY = Math.min(camY, hero.y - H * 0.55);
       height = Math.max(height, (H - 160 - hero.y) / 12);
       score = Math.max(score, Math.round(height * 10));
 
@@ -93,7 +101,7 @@ NX.game('ninja-de-muros', {
         }
       });
 
-      if (hero.y > camY + H + 60) {
+      if (hero.y > camY + H + 150) {
         alive = false;
         E.sfx('lose');
         setTimeout(() => E.api.over({ score, msg: 'Te quedaste atrás' }), 500);
@@ -148,6 +156,7 @@ NX.game('ninja-de-muros', {
       g.text(Math.round(height) + ' m', W / 2, 46, {
         size: 32, align: 'center', weight: 900, color: P.ink, mono: true, shadow: alpha(P.c, 0.4), shadowBlur: 14,
       });
+      if (warm > 0) E.ui.title('Salta de pared en pared', W / 2, 108, { size: 28 });
       E.ui.hint('Espacio o toca para saltar de pared', { bottom: 16 });
     },
   };

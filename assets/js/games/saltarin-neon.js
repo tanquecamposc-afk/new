@@ -115,7 +115,7 @@ NX.game('saltarin-neon', {
 
     draw(g) {
       const c = g.ctx;
-      g.bgGradient(mix(P.bg, P.d, 0.35), P.deep);
+      g.bgSky(E.t, 0, mix(P.bg, P.d, 0.35), P.deep);
       c.save();
       c.translate(0, -camY);
 

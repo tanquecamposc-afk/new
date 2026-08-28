@@ -112,6 +112,7 @@ NX.game('enjambre-letal', {
 
     draw(g) {
       const c = g.ctx;
+      g.bgSpace(E.t, 29);
       g.bgGrid(40, alpha(P.a, 0.05), 1, 0, 0);
 
       emitters.forEach((em, i) => {

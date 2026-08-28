@@ -127,7 +127,7 @@ NX.game('plataformas-precisas', {
 
     draw(g) {
       const c = g.ctx;
-      g.bgGradient(mix(P.bg, P.d, 0.25), P.deep);
+      g.bgArena(E.t, 11);
       g.bgGrid(40, alpha(P.a, 0.05), 1, 0, 0);
 
       blocks.forEach((b) => {

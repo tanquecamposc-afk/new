@@ -11,17 +11,21 @@ NX.game('tunel-hiperluz', {
   const CX = W / 2, CY = H / 2;
   const SEG = 12;                        /* sectores de cada anillo */
 
-  let ang, rings, z, speed, score, alive, spawnZ, combo;
+  let ang, rings, z, speed, score, alive, spawnZ, combo, warm;
 
   function reset() {
-    ang = 0; rings = []; z = 0; speed = 260; score = 0; alive = true; spawnZ = 0; combo = 0;
-    for (let i = 0; i < 8; i++) addRing(200 + i * 170);
+    ang = 0; rings = []; z = 0; speed = 150; score = 0; alive = true; spawnZ = 0; combo = 0;
+    warm = 2;
+    /* El primer anillo aparece muy lejos para que dé tiempo a colocarse. */
+    for (let i = 0; i < 8; i++) addRing(700 + i * 260);
     hud();
   }
   function hud() { E.api.hud({ Puntos: M.fmtScore(score), Velocidad: Math.round(speed), Anillos: combo }); }
 
   function addRing(zz) {
-    const gap = Math.max(2, 4 - Math.floor(score / 3000));
+    /* Los primeros anillos casi no tienen pared: sirven para colocarse. */
+    const facil = rings.length < 3 ? 5 : 0;
+    const gap = Math.max(2, 4 - Math.floor(score / 3000)) + facil;
     rings.push({ z: zz, hole: E.rng.int(SEG), gap, passed: false, hue: E.rng.int(4) });
   }
 
@@ -35,7 +39,8 @@ NX.game('tunel-hiperluz', {
   return {
     update(dt) {
       if (!alive) return;
-      speed += dt * 7;
+      if (warm > 0) warm -= dt;
+      speed += dt * (warm > 0 ? 22 : 7);
       z += speed * dt;
       score += speed * dt * 0.06;
 
@@ -134,6 +139,7 @@ NX.game('tunel-hiperluz', {
       g.text(M.fmtScore(Math.round(score)), W / 2, 46, {
         size: 30, align: 'center', weight: 900, color: P.ink, mono: true, shadow: alpha(P.a, 0.5), shadowBlur: 18,
       });
+      if (warm > 0) E.ui.title('Gira para buscar el hueco', W / 2, 110, { size: 28 });
       E.ui.hint('← → girar el túnel y apuntar al hueco', { bottom: 16 });
     },
   };

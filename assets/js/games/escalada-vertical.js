@@ -10,7 +10,7 @@ NX.game('escalada-vertical', {
   const W = E.opts.w, H = E.opts.h;
   const GRAV = 1600;
 
-  let hero, holds, camY, rise, height, alive, score, wind, windT, flakes;
+  let hero, holds, camY, rise, height, alive, score, wind, windT, flakes, warm;
 
   function makeHold(y) {
     const kind = E.rng.weighted([[0, 10], [1, height > 30 ? 4 : 1], [2, height > 60 ? 3 : 0]]);
@@ -23,6 +23,7 @@ NX.game('escalada-vertical', {
     let y = H - 90;
     for (let i = 0; i < 16; i++) { y -= E.rng.float(74, 108); holds.push(makeHold(y)); }
     camY = 0; rise = 26; height = 0; alive = true; score = 0; wind = 0; windT = 2;
+    warm = 3;
     flakes = [];
     for (let i = 0; i < 60; i++) flakes.push({ x: E.rng.float(0, W), y: E.rng.float(0, H), sp: E.rng.float(40, 120), r: E.rng.float(1, 2.6) });
     hud();
@@ -40,7 +41,9 @@ NX.game('escalada-vertical', {
   return {
     update(dt) {
       if (!alive) return;
-      rise = 26 + height * 0.25;
+      /* Tres segundos de margen antes de que la pared empiece a subir. */
+      if (warm > 0) warm -= dt;
+      rise = warm > 0 ? 0 : 26 + height * 0.25;
       camY -= rise * dt;
       height = Math.max(height, (H - 120 - hero.y) / 14);
       score = Math.round(height * 12);
@@ -83,7 +86,7 @@ NX.game('escalada-vertical', {
         if (f.x < -10) f.x = W + 5; if (f.x > W + 10) f.x = -5;
       });
 
-      if (hero.y > camY + H + 40) die('Te quedaste abajo');
+      if (hero.y > camY + H + 130) die('Te quedaste abajo');
       if (Math.floor(height) !== Math.floor(height - 0.05)) hud();
     },
 
@@ -124,6 +127,7 @@ NX.game('escalada-vertical', {
       if (wind) {
         g.text(wind > 0 ? '→ viento' : 'viento ←', W / 2, 74, { size: 14, align: 'center', color: P.dim, weight: 700 });
       }
+      if (warm > 0) E.ui.title('¡Sube antes de que la pared te alcance!', W / 2, 108, { size: 24 });
       E.ui.hint('← → moverte · Espacio saltar · los agarres amarillos se rompen', { bottom: 14 });
     },
   };

@@ -72,6 +72,10 @@
     const cv = document.createElement('canvas');
     cv.className = 'nx-canvas';
     cv.style.touchAction = 'none';
+    /* El lienzo tiene que poder recibir el foco o el teclado nunca le llega,
+       sobre todo cuando la web va incrustada en un iframe. */
+    cv.tabIndex = 0;
+    cv.style.outline = 'none';
     cv.style.cursor = o.cursor;
     if (o.pixel) cv.style.imageRendering = 'pixelated';
     host.appendChild(cv);
@@ -97,6 +101,10 @@
     this.input = new NX.Input(cv);
     this.ui = NX.UI ? new NX.UI(this) : null;
     this.audio = NX.Audio;
+    this.fx = NX.FX ? new NX.FX(this) : null;
+    if (this.fx && o.fx) this.fx.configure(o.fx);
+    if (this.fx && o.fx === false) this.fx.enabled = false;
+    cv.addEventListener('pointerdown', () => { try { cv.focus({ preventScroll: true }); } catch (e) { cv.focus(); } });
 
     const self = this;
     this.input.setTransform((x, y) => ({
@@ -154,6 +162,7 @@
   E.start = function () {
     if (this.running) return;
     this.running = true;
+    try { this.canvas.focus({ preventScroll: true }); } catch (e) {}
     this._last = performance.now();
     const step = (now) => {
       if (!this.running) return;
@@ -210,13 +219,14 @@
     this.input.endFrame();
   };
 
-  E._render = function () {
+  E._render = function (dt) {
     const g = this.g;
     this.ctx.save();
     if (this.bg) g.clear(this.bg);
     if (this.game && this.game.draw) this.game.draw(g);
     this.camera.drawFlash(g);
     this.ctx.restore();
+    if (this.fx) this.fx.apply(dt || 0.016);
   };
 
   E.setPaused = function (p) {

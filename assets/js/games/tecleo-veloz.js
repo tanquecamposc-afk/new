@@ -96,7 +96,7 @@ NX.game('tecleo-veloz', {
 
     draw(g) {
       const c = g.ctx;
-      g.bgGradient(mix(P.bg, P.d, 0.32), P.deep);
+      g.bgArena(t, 8);
       g.bgGrid(50, alpha(P.a, 0.04), 1, 0, t * 12);
       g.rect(0, GY, W, H - GY, mix(P.d, P.deep, 0.45));
       g.rect(0, GY, W, 3, alpha(P.c, 0.7));

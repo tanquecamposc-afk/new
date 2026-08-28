@@ -121,7 +121,7 @@ NX.game('penales-estelares', {
 
     draw(g) {
       const c = g.ctx;
-      g.bgGradient(mix('#123b1e', P.deep, 0.35), mix('#0b2814', P.deep, 0.3));
+      g.bgTurf(E.t, '#16451f', 0.06, 52);
       /* césped */
       for (let i = 0; i < 12; i++) {
         g.rect(0, GY + i * 40, W, 20, alpha('#ffffff', 0.018));

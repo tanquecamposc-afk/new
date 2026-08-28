@@ -105,7 +105,7 @@ NX.game('atrapa-estrellas', {
 
     draw(g) {
       const c = g.ctx;
-      g.bgGradient(mix(P.bg, P.d, 0.3), P.deep);
+      g.bgSpace(E.t, 13);
       for (let i = 0; i < 40; i++) {
         const x = (i * 167.3) % W, y = (i * 97.7 + E.t * 14) % H;
         g.circle(x, y, 1 + (i % 3) * 0.4, alpha('#ffffff', 0.1));

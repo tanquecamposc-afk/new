@@ -8,9 +8,9 @@ NX.game('alunizaje', {
   const M = E.M, G = E.GFX, P = E.pal;
   const { alpha, mix } = G;
   const W = E.opts.w, H = E.opts.h;
-  const GRAV = 42;
+  const GRAV = 32;
 
-  let lander, terrain, pads, fuel, score, level, alive, landed, msg, msgT;
+  let lander, terrain, pads, fuel, score, level, alive, landed, msg, msgT, warm;
 
   function makeTerrain() {
     terrain = [];
@@ -49,7 +49,10 @@ NX.game('alunizaje', {
   }
   function newLevel() {
     makeTerrain();
-    lander = { x: E.rng.float(120, W - 120), y: 70, vx: E.rng.float(-30, 30), vy: 8, a: 0, th: 0 };
+    lander = { x: E.rng.float(120, W - 120), y: 58, vx: E.rng.float(-18, 18), vy: 0, a: 0, th: 0 };
+    /* Segundo y medio flotando antes de que tire la gravedad: da tiempo a
+       leer los controles en vez de estrellarte mirando el HUD. */
+    warm = 1.6;
     fuel = 100; alive = true; landed = false; msg = ''; msgT = 0;
     hud();
   }
@@ -104,7 +107,12 @@ NX.game('alunizaje', {
         }
         if (Math.floor(E.t * 8) % 2 === 0) E.sfx('engine', lander.th);
       }
-      lander.vy += GRAV * dt;
+      if (warm > 0) {
+        warm -= dt;
+        if (E.input.down('up') || E.input.down('space') || E.input.pointer.down) warm = 0;
+      } else {
+        lander.vy += GRAV * dt;
+      }
       lander.x += lander.vx * dt; lander.y += lander.vy * dt;
       if (lander.x < 10) { lander.x = 10; lander.vx = Math.abs(lander.vx) * 0.4; }
       if (lander.x > W - 10) { lander.x = W - 10; lander.vx = -Math.abs(lander.vx) * 0.4; }
@@ -113,7 +121,7 @@ NX.game('alunizaje', {
       const gy = groundAt(lander.x);
       if (lander.y + 16 >= gy) {
         const pad = pads.find((p) => lander.x > p.x0 - 4 && lander.x < p.x1 + 4);
-        const soft = lander.vy < 34 && Math.abs(lander.vx) < 24 && Math.abs(lander.a) < 0.25;
+        const soft = lander.vy < 42 && Math.abs(lander.vx) < 30 && Math.abs(lander.a) < 0.32;
         if (pad && soft) { lander.y = gy - 16; lander.vx = lander.vy = 0; success(pad); }
         else if (pad) crash('Aterrizaje demasiado brusco');
         else crash('Fuera de la plataforma');
@@ -122,7 +130,7 @@ NX.game('alunizaje', {
 
     draw(g) {
       const c = g.ctx;
-      g.bgGradient('#0a0d14', '#05070b');
+      g.bgSpace(E.t, 23);
       for (let i = 0; i < 70; i++) {
         const x = (i * 197.3) % W, y = (i * 113.7) % (H * 0.7);
         g.circle(x, y, 0.7 + (i % 4) * 0.3, alpha('#ffffff', 0.1 + (i % 4) * 0.07));
@@ -163,7 +171,7 @@ NX.game('alunizaje', {
       }
 
       /* indicadores */
-      const bad = lander.vy > 34;
+      const bad = lander.vy > 42;
       g.text('▼ ' + Math.round(lander.vy), 24, 34, { size: 16, color: bad ? '#ff4d6d' : '#4ade80', weight: 800, mono: true });
       g.text('◀▶ ' + Math.round(Math.abs(lander.vx)), 24, 56,
         { size: 16, color: Math.abs(lander.vx) > 24 ? '#ff4d6d' : '#4ade80', weight: 800, mono: true });
@@ -174,7 +182,9 @@ NX.game('alunizaje', {
       E.particles.draw(g);
       E.floaters.draw(g);
       if (msgT > 0) E.ui.title(msg, W / 2, H * 0.34, { size: 34 });
-      E.ui.hint('↑ propulsar · ← → inclinar · posa suave sobre la plataforma', { bottom: 16 });
+      E.ui.hint(warm > 0
+        ? '↑ o Espacio para propulsar · la gravedad entra en ' + warm.toFixed(1) + ' s'
+        : '↑ propulsar · ← → inclinar · posa suave sobre la plataforma', { bottom: 16 });
     },
   };
 });

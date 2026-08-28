@@ -207,6 +207,7 @@ NX.game('invasores-neon', {
 
     draw(g) {
       const c = g.ctx;
+      g.bgSpace(E.t, 2);
       /* fondo estrellado */
       for (let i = 0; i < 40; i++) {
         const x = (i * 137.5) % W, y = (i * 89.3 + E.t * (8 + (i % 3) * 6)) % H;

@@ -93,7 +93,7 @@ NX.game('tenis-rally', {
 
     draw(g) {
       const c = g.ctx;
-      g.bgGradient(mix(P.bg, P.d, 0.3), P.deep);
+      g.bgTurf(E.t, mix(P.bg, P.d, 0.45), 0.045, 44);
       g.rrect(COURT.x - 10, COURT.y - 10, COURT.w + 20, COURT.h + 20, 8, mix('#1f6f8b', P.deep, 0.4));
       c.strokeStyle = alpha('#ffffff', 0.65); c.lineWidth = 2.5;
       c.strokeRect(COURT.x, COURT.y, COURT.w, COURT.h);

@@ -12,6 +12,7 @@
     routes: [
       [/^\/?$/, () => V.home()],
       [/^\/juegos$/, () => V.all()],
+      [/^\/mejores$/, () => V.mejores()],
       [/^\/cat\/([\w-]+)$/, (m) => V.category(m[1])],
       [/^\/juego\/([\w-]+)$/, (m) => V.game(m[1])],
       [/^\/buscar\/(.*)$/, (m) => V.search(decodeURIComponent(m[1]))],
@@ -54,6 +55,7 @@
     if (p === '/perfil') return 'Tu perfil · ' + base;
     if (p === '/favoritos') return 'Favoritos · ' + base;
     if (p === '/juegos') return 'Todos los juegos · ' + base;
+    if (p === '/mejores') return 'Lo mejor del catálogo · ' + base;
     return base + ' · ' + CAT.count + ' juegos gratis';
   }
 
@@ -90,7 +92,9 @@
       results.forEach((g, i) => {
         const item = h('a.suggest-item', { href: '#/juego/' + g.id, role: 'option', dataset: { i } },
           D.cover(g, { w: 60, h: 38, now: true }),
-          h('div', h('b', { text: g.t }), h('span', { text: CAT.catName(g.cat) + ' · ' + g.tags[0] })));
+          h('div', h('b', { text: g.t }), h('span', { text: CAT.catName(g.cat) + ' · ' + g.tags[0] })),
+          h('span.suggest-nivel', { style: { color: CAT.nivel(g).col },
+            title: 'Calidad: ' + CAT.nivel(g).n, text: CAT.nivel(g).ico }));
         item.onclick = () => { input.value = ''; renderSuggest(); input.blur(); };
         suggest.appendChild(item);
       });
@@ -151,7 +155,9 @@
   /* ------------------------------------------------------- barra lateral */
   let sideEl = null;
   function buildSide() {
-    const link = (href, ico, label, count) => h('a.side-link', { href, dataset: { href } },
+    const link = (href, ico, label, count, col) => h('a.side-link', {
+      href, dataset: { href }, style: col ? { '--cat': col } : null,
+    },
       h('span.ico', { text: ico }), h('span', { text: label }),
       count != null ? h('span.count', { text: String(count) }) : null);
 
@@ -159,12 +165,13 @@
       h('div.side-group',
         link('#/', '🏠', 'Inicio'),
         link('#/juegos', '🎮', 'Todos', CAT.count),
+        link('#/mejores', '★', 'Lo mejor', CAT.top(5).length),
         link('#/favoritos', '❤️', 'Favoritos'),
         link('#/recientes', '⏱️', 'Recientes'),
         link('#/perfil', '👤', 'Perfil')),
       h('div.side-group',
         h('div.side-title', { text: 'Categorías' }),
-        CAT.CATS.map((c) => link('#/cat/' + c.id, c.icon, c.name, CAT.byCat(c.id).length))),
+        CAT.CATS.map((c) => link('#/cat/' + c.id, c.icon, c.name, CAT.byCat(c.id).length, c.color))),
       h('div.side-foot',
         h('div', { text: 'NEXO Arcade' }),
         h('div', { text: CAT.count + ' juegos · sin anuncios · sin cuentas' }),
@@ -212,6 +219,9 @@
     padSel.onchange = () => S.set('vpad', padSel.value);
     body.appendChild(h('div.modal-row',
       h('div.lbl', h('b', { text: 'Mandos en pantalla' }), h('span', { text: 'Botones táctiles sobre el juego' })), padSel));
+
+    body.appendChild(D.toggle('Efectos visuales', 'Resplandor, viñeta y grano sobre el juego',
+      !S.get('reduceFx'), (on) => S.set('reduceFx', !on)));
 
     body.appendChild(D.toggle('Barra lateral compacta', 'Solo iconos, más espacio para los juegos',
       S.get('side') === 'min', (on) => {

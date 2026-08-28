@@ -437,12 +437,91 @@
       { iframe: 'games/legacy/nexo-td.html', featured: true, hot: true }),
   ];
 
+
+  /* ------------------------------------------------------------- CALIDAD
+     Nivel curado a mano tras jugarlos todos. No es una valoración de
+     comunidad —aquí no hay usuarios que voten— sino una etiqueta honesta
+     de cuánta profundidad tiene cada juego, para poder filtrar y ordenar. */
+  const NIVELES = {
+    5: { n: 'Destacado', col: '#ffd45e', ico: '★' },
+    4: { n: 'Recomendado', col: '#4ade80', ico: '◆' },
+    3: { n: 'Correcto', col: '#7dd3fc', ico: '●' },
+    2: { n: 'Experimental', col: '#94a3b8', ico: '◇' },
+  };
+
+  const CALIDAD = {
+    /* --- profundidad real: sistemas, niveles o IA de verdad --- */
+    'ajedrez-nexo': 5, 'nexo-tower-defense': 5, 'bloques-caidos': 5, 'rompe-bloques': 5,
+    '2048-nebula': 5, 'invasores-neon': 5, 'pinball-neon': 5, 'mini-golf': 5,
+    'billar-8': 5, 'sudoku-solar': 5, 'nexo-defensa': 5, 'solitario-klondike': 5,
+    'circuito-neon': 5, 'kart-retro': 5, 'serpiente-neon': 5, 'joyas-cosmicas': 5,
+    'buscaminas-neon': 5, 'mahjong-solitario': 5, 'tirachinas': 5, 'moto-colinas': 5,
+    'damas-clasicas': 5, 'reversi': 5, 'cuatro-en-raya': 5, 'nave-guardiana': 5,
+
+    /* --- sólidos: mecánica completa y progresión --- */
+    'asteroides-cuanticos': 4, 'doble-canon': 4, 'enjambre-letal': 4, 'duelo-tanques': 4,
+    'defensor-galactico': 4, 'tunel-hiperluz': 4, 'alunizaje': 4, 'minero-profundo': 4,
+    'plataformas-precisas': 4, 'almacen-sokoban': 4, 'conecta-tuberias': 4, 'flujo-de-color': 4,
+    'bloque-fuga': 4, 'nonograma': 4, 'laberinto-infinito': 4, 'palabra-oculta': 4,
+    'sopa-de-letras': 4, 'codigo-secreto': 4, 'triples-arcade': 4, 'bolos-espaciales': 4,
+    'penales-estelares': 4, 'arqueria-precision': 4, 'derrape-total': 4, 'autopista-infinita': 4,
+    'conquista-hexagonal': 4, 'hundir-la-flota': 4, 'asedio-castillo': 4, 'gato-supremo': 4,
+    'mancala': 4, 'cortar-la-cuerda': 4, 'piano-ritmo': 4, 'saltarin-neon': 4,
+    'corredor-cubico': 4, 'cueva-volcanica': 4, 'ciudad-cuadricula': 4, 'fabrica-idle': 4,
+    'memoria-relampago': 4, 'rompecabezas-deslizante': 4, 'torres-de-hanoi': 4,
+
+    /* --- correctos: divertidos pero más cortos --- */
+    'torreta-orbital': 3, 'escudo-giratorio': 3, 'cazador-drones': 3, 'lluvia-meteoros': 3,
+    'pong-supernova': 3, 'atrapa-estrellas': 3, 'torre-de-cubos': 3, 'ninja-de-muros': 3,
+    'gravedad-invertida': 3, 'puente-de-palos': 3, 'columpio-web': 3, 'escalada-vertical': 3,
+    'apaga-luces': 3, 'cadena-numerica': 3, 'dibuja-la-linea': 3, 'simon-neon': 3,
+    'ahorcado': 3, 'anagramas': 3, 'calculo-rapido': 3, 'tecleo-veloz': 3,
+    'tenis-rally': 3, 'salto-de-esqui': 3, 'dardos-pro': 3, 'carrera-drones': 3,
+    'lancha-rapida': 3, 'topo-loco': 3, 'globos-explosivos': 3, 'punteria-diana': 3,
+    'burbujas-pop': 3, 'grua-de-premios': 3,
+
+    /* --- experimentales: ideas cortas, se juegan en un minuto --- */
+    'clic-reflejo': 2, 'sprint-100': 2,
+  };
+
+  GAMES.forEach((g) => { g.q = CALIDAD[g.id] || 3; });
+
   /* Índice y utilidades. */
   const byId = Object.create(null);
   GAMES.forEach((g, i) => { g.idx = i; byId[g.id] = g; });
 
   NX.CATALOG = {
-    CATS, GAMES, byId,
+    CATS, GAMES, byId, NIVELES,
+    nivel(g) { return NIVELES[g.q] || NIVELES[3]; },
+    /* Los mejores: nivel curado alto o bien valorados por quien juega. */
+    top(minimo) {
+      const m = minimo == null ? 4 : minimo;
+      const S = NX.Store;
+      return GAMES.filter((g) => {
+        if (S && S.isFlagged && S.isFlagged(g.id)) return false;
+        const mia = S && S.rating ? S.rating(g.id) : 0;
+        return Math.max(g.q, mia) >= m;
+      });
+    },
+    /* Quita de la lista lo que el jugador ha reportado como roto. */
+    limpiar(list) {
+      const S = NX.Store;
+      if (!S || !S.isFlagged) return list;
+      const vis = list.filter((g) => !S.isFlagged(g.id));
+      return vis.length ? vis : list;
+    },
+    /* Ordena por relevancia: nota curada + estrellas propias + partidas. */
+    ordenar(list, modo) {
+      const S = NX.Store;
+      const arr = list.slice();
+      if (modo === 'az') return arr.sort((a, b) => a.t.localeCompare(b.t, 'es'));
+      if (modo === 'diff') return arr.sort((a, b) => a.diff - b.diff || a.t.localeCompare(b.t, 'es'));
+      if (!S || !S.relevance) return arr.sort((a, b) => b.q - a.q || a.t.localeCompare(b.t, 'es'));
+      return arr.sort((a, b) => {
+        const d = S.relevance(b) - S.relevance(a);
+        return d !== 0 ? d : a.t.localeCompare(b.t, 'es');
+      });
+    },
     get(id) { return byId[id]; },
     byCat(cat) { return GAMES.filter((g) => g.cat === cat); },
     catName(id) { const c = CATS.find((c) => c.id === id); return c ? c.name : id; },

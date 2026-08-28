@@ -300,3 +300,52 @@
   .rail { grid-auto-columns: minmax(158px, 1fr); gap: 12px; }
   .rail-btn { display: none; }
 }
+
+/* --------------------------------- encabezados de sección con más peso */
+.section-head { position: relative; padding-bottom: 12px; margin-bottom: 18px; }
+.section-head::after {
+  content: "";
+  position: absolute; left: 0; bottom: 0;
+  width: 46px; height: 3px; border-radius: 3px;
+  background: var(--grad-brand);
+}
+.section-head .ico { filter: drop-shadow(0 3px 10px rgba(124, 92, 255, .55)); }
+
+.page-head { position: relative; padding-bottom: 16px; }
+.page-head::after {
+  content: "";
+  position: absolute; left: 0; bottom: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, var(--line-strong), transparent 55%);
+}
+
+/* barra lateral: el activo lleva su propio raíl luminoso */
+.side-link.active::before { box-shadow: 0 0 14px 1px rgba(124, 92, 255, .75); }
+.side-link.active { background: linear-gradient(90deg, color-mix(in srgb, var(--brand-1) 16%, transparent), transparent 70%); }
+
+/* Cada categoría lleva su color en el punto y en el hover, así la lista
+   deja de ser una columna gris con emojis. */
+.side-link { --cat: var(--brand-1); }
+.side-link:hover { color: var(--text); background: color-mix(in srgb, var(--cat) 12%, transparent); }
+.side-link:hover .ico { transform: scale(1.14); }
+.side-link .ico { transition: transform var(--t-fast) var(--spring); }
+.side-link.active { background: linear-gradient(90deg, color-mix(in srgb, var(--cat) 20%, transparent), transparent 72%); }
+.side-link.active::before { background: var(--cat); box-shadow: 0 0 14px 1px var(--cat); }
+
+/* cabecera: una línea de luz muy fina en vez del borde plano */
+.nav { border-bottom: 0; }
+.nav::after {
+  content: "";
+  position: absolute; left: 0; right: 0; bottom: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--brand-1) 55%, transparent) 22%,
+              color-mix(in srgb, var(--brand-2) 45%, transparent) 55%, transparent);
+}
+.nav { position: sticky; }
+
+/* buscador con foco de marca */
+.search input:focus {
+  border-color: color-mix(in srgb, var(--brand-2) 60%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand-1) 18%, transparent),
+              0 8px 26px -12px rgba(34, 224, 255, .55);
+}
+.suggest-nivel { margin-left: auto; font-size: 13px; flex: none; opacity: .9; }
