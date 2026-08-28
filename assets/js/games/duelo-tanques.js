@@ -175,7 +175,7 @@ NX.game('duelo-tanques', {
 
     draw(g) {
       const c = g.ctx;
-      g.rect(0, 0, W, H, mix(P.deep, P.d, 0.12));
+      g.bgTurf(E.t, mix(P.deep, P.d, 0.30), 0.035, 46);
       g.bgGrid(34, alpha(P.a, 0.05), 1, 0, 0);
       walls.forEach((w) => {
         g.rrect(w.x, w.y, w.w, w.h, 4, mix(P.dim, P.deep, 0.35));

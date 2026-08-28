@@ -136,7 +136,7 @@ NX.game('gato-supremo', {
 
     draw(g) {
       const c = g.ctx;
-      g.bgGradient(mix(P.bg, P.d, 0.25), P.deep);
+      g.bgArena(E.t, 14);
       g.text('GATO SUPREMO', W / 2, 42, { size: 22, align: 'center', weight: 900, color: P.ink, letterSpacing: 3 });
       MODES.forEach((m, i) => {
         const x = W / 2 - 160 + i * 164;

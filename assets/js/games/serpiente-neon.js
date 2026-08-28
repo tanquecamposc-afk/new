@@ -173,8 +173,10 @@ NX.game('serpiente-neon', {
 
     draw(g) {
       const c = g.ctx;
+      /* sala de fondo: sin esto el tablero flotaba sobre un negro plano */
+      g.bgArena(E.t, 1);
       /* fondo del tablero */
-      g.rrect(OX - 10, OY - 10, CELL * COLS + 20, CELL * ROWS + 20, 18, alpha(P.deep, 0.72));
+      g.rrect(OX - 10, OY - 10, CELL * COLS + 20, CELL * ROWS + 20, 18, alpha(P.deep, 0.82));
       c.save();
       g.rrectPath(OX, OY, CELL * COLS, CELL * ROWS, 6); c.clip();
       g.bgGrid(CELL, alpha(P.a, 0.08), 1, OX, OY);

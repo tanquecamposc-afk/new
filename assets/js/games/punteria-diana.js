@@ -104,7 +104,7 @@ NX.game('punteria-diana', {
 
     draw(g) {
       const c = g.ctx;
-      g.bgGradient(mix(P.bg, P.d, 0.32), P.deep);
+      g.bgArena(E.t, 9);
       g.bgGrid(44, alpha(P.a, 0.05), 1, 0, 0);
       MODES.forEach((m, i) => {
         const x = W / 2 - 230 + i * 156;

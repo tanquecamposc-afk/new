@@ -9,7 +9,9 @@ NX.game('2048-nebula', {
   const { alpha, mix } = G;
   const W = E.opts.w, H = E.opts.h;
   const N = 4, PAD = 12;
-  const SIZE = Math.min(W - 60, H - 200);
+  /* Deja hueco abajo para el botón de deshacer y la ayuda: antes se
+     montaban uno encima del otro. */
+  const SIZE = Math.min(W - 60, H - 250);
   const CELL = (SIZE - PAD * (N + 1)) / N;
   const OX = (W - SIZE) / 2, OY = 130;
 
@@ -187,13 +189,13 @@ NX.game('2048-nebula', {
         g.pop();
       });
 
-      const by = OY + SIZE + 14;
+      const by = OY + SIZE + 16;
       const hov = E.input.pointer.y > by && E.input.pointer.y < by + 42 && Math.abs(E.input.pointer.x - W / 2) < 70;
       g.rrect(W / 2 - 70, by, 140, 42, 12, hov ? alpha(P.a, 0.3) : 'rgba(255,255,255,.07)');
       g.rrectStroke(W / 2 - 70, by, 140, 42, 12, alpha(P.a, 0.4), 1.5);
       g.text('↶ Deshacer', W / 2, by + 27, { size: 16, align: 'center', weight: 800, color: P.ink });
 
-      E.ui.hint('Flechas o desliza · Z para deshacer', { bottom: 22 });
+      E.ui.hint('Flechas o desliza · Z para deshacer', { bottom: 16 });
     },
   };
 });

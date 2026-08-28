@@ -101,7 +101,7 @@ NX.game('derrape-total', {
 
     draw(g) {
       const c = g.ctx;
-      g.bgGradient(mix('#2b2f3d', P.deep, 0.45), P.deep);
+      g.bgTurf(E.t, '#2b2f3d', 0.035, 58);
       g.bgGrid(60, alpha(P.a, 0.05), 1, 0, 0);
       g.rrectStroke(20, 20, W - 40, H - 40, 20, alpha(P.c, 0.35), 3);
 

@@ -98,7 +98,7 @@ NX.game('cazador-drones', {
 
     draw(g) {
       const c = g.ctx;
-      g.bgGradient(mix(P.bg, P.d, 0.3), P.deep);
+      g.bgSky(E.t, H * 0.72, mix(P.bg, P.d, 0.42), P.deep);
       for (let i = 0; i < 30; i++) {
         const x = (i * 211.7 - E.t * 12) % (W + 100) - 50;
         G.Sprites.cloud(g, x, 60 + (i % 4) * 90, 40 + (i % 3) * 14, alpha(P.ink, 0.045));

@@ -201,7 +201,7 @@ NX.game('rompe-bloques', {
 
     draw(g) {
       const c = g.ctx;
-      g.bgGradient(mix(P.bg, P.d, 0.22), P.deep);
+      g.bgArena(E.t, 4);
       g.rect(0, 18, W, 2, alpha(P.a, 0.35));
 
       bricks.forEach((b) => {

@@ -138,7 +138,7 @@ NX.game('dibuja-la-linea', {
 
     draw(g) {
       const c = g.ctx;
-      g.bgGradient(mix(P.bg, P.d, 0.3), P.deep);
+      g.bgArena(E.t, 12);
       g.bgGrid(40, alpha(P.a, 0.05), 1, 0, 0);
 
       walls.forEach((w) => {

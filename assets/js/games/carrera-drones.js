@@ -88,7 +88,7 @@ NX.game('carrera-drones', {
 
     draw(g) {
       const c = g.ctx;
-      g.bgGradient(mix(P.bg, P.d, 0.3), P.deep);
+      g.bgArena(E.t, 6);
       g.bgGrid(50, alpha(P.a, 0.06), 1, 0, 0);
 
       rings.forEach((r, i) => {

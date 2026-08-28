@@ -31,10 +31,16 @@
     const ovLoad = h('div.ov.ov-load',
       h('div', h('div.spinner'), h('p', { style: { marginTop: '12px', color: 'var(--text-dim)' }, text: 'Cargando juego…' })));
 
+    const nivStart = CAT.nivel(game);
     const ovStart = h('div.ov.start.hide',
       h('div.ov-inner',
         h('div.play-ring', { html: icon('play', 34) }),
         h('h2', { text: game.t }),
+        h('div.ov-tags',
+          h('span.ov-cat', { text: cat.icon + ' ' + cat.name }),
+          h('span.ov-niv', { style: { color: nivStart.col, borderColor: nivStart.col + '55' },
+            text: nivStart.ico + ' ' + nivStart.n }),
+          h('span.ov-dif', { text: D.DIFF_LABEL[game.diff] })),
         h('p.ov-sub', { text: 'Pulsa para empezar' }),
         h('div.ov-controls', { html: '<span>' + game.ctl + '</span>' })));
     ovStart.onclick = () => start();

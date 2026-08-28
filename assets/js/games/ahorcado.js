@@ -77,7 +77,7 @@ NX.game('ahorcado', {
 
     draw(g) {
       const c = g.ctx;
-      g.bgGradient(mix(P.bg, P.d, 0.22), P.deep);
+      g.bgArena(E.t, 15);
       g.text('AHORCADO', W / 2, 42, { size: 22, align: 'center', weight: 900, color: P.ink, letterSpacing: 4 });
       g.text('Categoría: ' + tema, W / 2, 68, { size: 14, align: 'center', color: P.c, weight: 700 });
 
