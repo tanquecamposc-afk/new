@@ -555,14 +555,24 @@
                     grav: 0, drag: 0, rot: 0, vr: 0, shape: 0, add: false, fade: 1 };
     }
     this.i = 0;
+    this.vivas = 0;      /* cuántas están encendidas ahora mismo */
   }
   Particles.prototype.spawn = function (o) {
-    let tries = 0, p = null;
-    while (tries++ < this.max) {
-      const q = this.p[this.i]; this.i = (this.i + 1) % this.max;
-      if (!q.on) { p = q; break; }
+    let p = null;
+    /* Con el depósito lleno no tiene sentido recorrerlo entero buscando un
+       hueco que no existe: se recicla la siguiente y listo. Antes eran 500
+       vueltas por partícula justo cuando más apretado va todo. */
+    if (this.vivas >= this.max) {
+      p = this.p[this.i]; this.i = (this.i + 1) % this.max;
+    } else {
+      let tries = 0;
+      while (tries++ < this.max) {
+        const q = this.p[this.i]; this.i = (this.i + 1) % this.max;
+        if (!q.on) { p = q; break; }
+      }
+      if (!p) { p = this.p[this.i]; this.i = (this.i + 1) % this.max; }
     }
-    if (!p) { p = this.p[this.i]; this.i = (this.i + 1) % this.max; }
+    if (!p.on) this.vivas++;
     p.on = true;
     p.x = o.x; p.y = o.y;
     p.vx = o.vx || 0; p.vy = o.vy || 0;
@@ -612,7 +622,7 @@
       const p = this.p[i];
       if (!p.on) continue;
       p.life -= dt;
-      if (p.life <= 0) { p.on = false; continue; }
+      if (p.life <= 0) { p.on = false; this.vivas--; continue; }
       p.vy += p.grav * dt;
       if (p.drag) { const d = Math.pow(p.drag, dt * 60 / 60); const k = Math.exp(-(1 - p.drag) * 8 * dt); p.vx *= k; p.vy *= k; }
       p.x += p.vx * dt; p.y += p.vy * dt;
@@ -653,7 +663,7 @@
     }
     c.restore();
   };
-  Particles.prototype.clear = function () { for (const p of this.p) p.on = false; };
+  Particles.prototype.clear = function () { for (const p of this.p) p.on = false; this.vivas = 0; };
 
   /* ------------------------------------------------------------- Cámara */
   function Camera(w, h) {
