@@ -119,7 +119,7 @@ NX.game('laberinto-infinito', {
 
     draw(g) {
       const c = g.ctx;
-      g.bgGradient(mix(P.bg, P.d, 0.25), P.deep);
+      g.bgArena(E.t, 13);
       g.text('LABERINTO', W / 2, 44, { size: 22, align: 'center', weight: 900, color: P.ink, letterSpacing: 3 });
       g.text('Recoge todas las llaves y busca la salida', W / 2, 72,
         { size: 13, align: 'center', color: P.dim, weight: 600 });

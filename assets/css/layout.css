@@ -349,3 +349,7 @@
               0 8px 26px -12px rgba(34, 224, 255, .55);
 }
 .suggest-nivel { margin-left: auto; font-size: 13px; flex: none; opacity: .9; }
+
+.nav-level .av { box-shadow: 0 4px 14px -4px rgba(124, 92, 255, .9); }
+.nav-level:hover { border-color: color-mix(in srgb, var(--brand-1) 45%, transparent); }
+.logo-mark { box-shadow: 0 6px 18px -6px rgba(124, 92, 255, .9), 0 0 0 1px rgba(255, 255, 255, .08); }

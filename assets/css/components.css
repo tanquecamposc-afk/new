@@ -501,3 +501,16 @@ html[data-theme="light"] .player {
   box-shadow: 0 30px 70px -32px rgba(23, 33, 64, .5), 0 0 0 1px rgba(16, 24, 48, .07);
 }
 html[data-theme="light"] .hero h1 { color: var(--text); background: none; -webkit-background-clip: border-box; background-clip: border-box; }
+
+@media (max-width: 900px) {
+  /* En móvil el aro de luz del héroe se come el aire: fuera. */
+  .hero-art::after { display: none; }
+  .hero-art { box-shadow: 0 24px 50px -24px rgba(0, 0, 0, .85); }
+  .hero-stats { gap: 14px 20px; margin-top: 14px; padding-top: 12px; }
+  .hero-stats b { font-size: 15.5px; }
+}
+@media (max-width: 620px) {
+  .page-head-tools { width: 100%; margin-left: 0; }
+  .page-head-tools .filtro-top { flex: 1; justify-content: center; }
+  .hero-stats > div:nth-child(n+3) { display: none; }
+}

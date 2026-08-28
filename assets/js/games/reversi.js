@@ -174,7 +174,7 @@ NX.game('reversi', {
 
     draw(g) {
       const c = g.ctx;
-      g.bgGradient(mix(P.bg, P.d, 0.28), P.deep);
+      g.bgArena(E.t, 7);
       g.text('REVERSI', W / 2, 42, { size: 24, align: 'center', weight: 900, color: P.ink, letterSpacing: 4 });
       LEVELS.forEach((L, i) => {
         const x = W / 2 - 290 + i * 148;

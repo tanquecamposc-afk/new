@@ -154,8 +154,10 @@ NX.game('nave-guardiana', {
         }
       });
       for (let i = foes.length - 1; i >= 0; i--) {
-        if (foes[i].y > H + 40) foes.splice(i, 1);
-        else if (iT <= 0 && M.dist(foes[i].x, foes[i].y, ship.x, ship.y) < foes[i].r + 12) { hurt(); }
+        const f = foes[i];
+        if (!f) break;
+        if (f.y > H + 40) foes.splice(i, 1);
+        else if (iT <= 0 && M.dist(f.x, f.y, ship.x, ship.y) < f.r + 12) { hurt(); if (!alive) break; }
       }
 
       if (boss) {
@@ -184,9 +186,15 @@ NX.game('nave-guardiana', {
 
       for (let i = bullets.length - 1; i >= 0; i--) {
         const b = bullets[i];
+        if (!b) break;
         b.x += b.vx * dt; b.y += b.vy * dt;
         if (b.y > H + 20 || b.y < -20 || b.x < -20 || b.x > W + 20) { bullets.splice(i, 1); continue; }
-        if (iT <= 0 && M.dist(b.x, b.y, ship.x, ship.y) < 11) { bullets.splice(i, 1); hurt(); }
+        if (iT <= 0 && M.dist(b.x, b.y, ship.x, ship.y) < 11) {
+          bullets.splice(i, 1);
+          hurt();
+          /* hurt() vacía el array entero: seguir recorriéndolo revienta. */
+          break;
+        }
       }
 
       for (let i = drops.length - 1; i >= 0; i--) {

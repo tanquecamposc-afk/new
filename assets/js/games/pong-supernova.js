@@ -111,7 +111,7 @@ NX.game('pong-supernova', {
 
     draw(g) {
       const c = g.ctx;
-      g.bgGradient(mix(P.bg, P.d, 0.25), P.deep);
+      g.bgArena(E.t, 10);
       c.save(); c.setLineDash([10, 14]);
       g.line(W / 2, 16, W / 2, H - 16, alpha(P.ink, 0.2), 3);
       c.restore();

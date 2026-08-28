@@ -212,7 +212,7 @@ NX.game('solitario-klondike', {
 
     draw(g) {
       const c = g.ctx;
-      g.bgGradient(mix('#12603c', P.deep, 0.35), mix('#0b3d26', P.deep, 0.3));
+      g.bgTurf(E.t, '#12603c', 0.035, 54);
       for (let i = 0; i < 40; i++) g.circle((i * 137) % W, (i * 91) % H, 40, alpha('#ffffff', 0.006));
 
       /* mazo */

@@ -8,7 +8,7 @@ NX.game('ninja-de-muros', {
   const M = E.M, G = E.GFX, P = E.pal;
   const { alpha, mix } = G;
   const W = E.opts.w, H = E.opts.h;
-  const WALL = 52, GRAV = 1500;
+  const WALL = 52, GRAV = 1300;
 
   let hero, saws, coins, camY, height, score, alive, spawnY, speedUp, warm;
 
@@ -33,9 +33,11 @@ NX.game('ninja-de-muros', {
   }
 
   function jump() {
+    /* El salto tenía que ser más fuerte: con los valores de antes el ninja
+       caía más de lo que subía y perdías sin haber hecho nada mal. */
     hero.side *= -1;
-    hero.vx = hero.side * 330;
-    hero.vy = -430;
+    hero.vx = hero.side * 430;
+    hero.vy = -560;
     E.sfx('hop');
     E.particles.burst(hero.x, hero.y, 8, { col: [P.a, P.c], speed1: 150, life1: 0.35, add: true });
   }

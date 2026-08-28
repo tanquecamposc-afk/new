@@ -143,7 +143,7 @@ NX.game('mahjong-solitario', {
 
     draw(g) {
       const c = g.ctx;
-      g.bgGradient(mix(P.bg, P.d, 0.3), P.deep);
+      g.bgTurf(E.t, mix(P.bg, P.d, 0.5), 0.03, 50);
       g.text('MAHJONG SOLITARIO', W / 2, 40, { size: 20, align: 'center', weight: 900, color: P.ink, letterSpacing: 3 });
 
       const sorted = tiles.filter((q) => !q.gone).sort((a, b) => a.z - b.z || a.y - b.y || a.x - b.x);

@@ -176,12 +176,12 @@ NX.game('serpiente-neon', {
       /* sala de fondo: sin esto el tablero flotaba sobre un negro plano */
       g.bgArena(E.t, 1);
       /* fondo del tablero */
-      g.rrect(OX - 10, OY - 10, CELL * COLS + 20, CELL * ROWS + 20, 18, alpha(P.deep, 0.82));
+      g.rrect(OX - 10, OY - 10, CELL * COLS + 20, CELL * ROWS + 20, 18, alpha(P.deep, 0.5));
       c.save();
       g.rrectPath(OX, OY, CELL * COLS, CELL * ROWS, 6); c.clip();
-      g.bgGrid(CELL, alpha(P.a, 0.08), 1, OX, OY);
+      g.bgGrid(CELL, alpha(P.a, 0.14), 1, OX, OY);
       c.restore();
-      g.rrectStroke(OX - 10, OY - 10, CELL * COLS + 20, CELL * ROWS + 20, 18, alpha(P.a, 0.25), 2);
+      g.rrectStroke(OX - 10, OY - 10, CELL * COLS + 20, CELL * ROWS + 20, 18, alpha(P.a, 0.45), 2);
 
       /* portales en los bordes */
       const pulse = 0.35 + Math.sin(portalPhase * 2.4) * 0.15;

@@ -10,9 +10,10 @@ NX.game('torre-de-cubos', {
   const W = E.opts.w, H = E.opts.h;
   const BH = 26;
 
-  let stack, moving, falling, camY, score, perfect, alive, speed;
+  let stack, moving, falling, camY, score, perfect, alive, speed, aviso, avisoT;
 
   function reset() {
+    aviso = ''; avisoT = 0;
     stack = [{ x: W / 2 - 90, w: 180, y: H - 90 }];
     falling = []; score = 0; perfect = 0; alive = true; speed = 150;
     newBlock();
@@ -24,13 +25,16 @@ NX.game('torre-de-cubos', {
     const top = stack[stack.length - 1];
     moving = {
       x: E.rng.bool() ? -top.w : W, w: top.w, y: top.y - BH,
-      dir: 0, sp: speed,
+      dir: 0, sp: speed, listo: false,
     };
     moving.dir = moving.x < 0 ? 1 : -1;
     camY = 0;
   }
 
   function drop() {
+    /* Mientras el bloque no haya pasado por encima de la torre no se puede
+       soltar: si no, tocar nada más entrar era perder en el acto. */
+    if (!moving.listo) { aviso = 'Espera a que el bloque llegue encima'; avisoT = 1.2; return; }
     const top = stack[stack.length - 1];
     const left = Math.max(moving.x, top.x);
     const right = Math.min(moving.x + moving.w, top.x + top.w);
@@ -76,9 +80,16 @@ NX.game('torre-de-cubos', {
       for (let i = falling.length - 1; i >= 0; i--) if (falling[i].y > H + 200) falling.splice(i, 1);
       if (!alive) return;
 
+      if (avisoT > 0) avisoT -= dt;
       moving.x += moving.dir * moving.sp * dt;
       if (moving.x < -moving.w * 0.6) { moving.x = -moving.w * 0.6; moving.dir = 1; }
       if (moving.x > W - moving.w * 0.4) { moving.x = W - moving.w * 0.4; moving.dir = -1; }
+
+      /* en cuanto solapa con la cima, el bloque ya cuenta como soltable */
+      if (!moving.listo) {
+        const t2 = stack[stack.length - 1];
+        if (Math.min(moving.x + moving.w, t2.x + t2.w) - Math.max(moving.x, t2.x) > 2) moving.listo = true;
+      }
 
       if (E.input.pressed('space') || E.input.pressed('enter') || E.input.pointer.pressed) drop();
     },
@@ -129,6 +140,10 @@ NX.game('torre-de-cubos', {
         size: 52, align: 'center', weight: 900, color: alpha(P.ink, 0.9), mono: true,
         shadow: alpha(P.a, 0.4), shadowBlur: 20,
       });
+      if (avisoT > 0) {
+        g.text(aviso, W / 2, 84, { size: 17, align: 'center', weight: 800,
+          color: G.alpha(P.c, Math.min(1, avisoT / 0.6)) });
+      }
       E.ui.hint('Espacio o toca para soltar el bloque', { bottom: 16 });
     },
   };

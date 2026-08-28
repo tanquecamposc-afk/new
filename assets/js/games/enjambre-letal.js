@@ -97,10 +97,12 @@ NX.game('enjambre-letal', {
 
       for (let i = bullets.length - 1; i >= 0; i--) {
         const b = bullets[i];
+        if (!b) break;
         b.x += b.vx * dt; b.y += b.vy * dt;
         if (b.x < -30 || b.x > W + 30 || b.y < -30 || b.y > H + 30) { bullets.splice(i, 1); continue; }
         const d = M.dist(b.x, b.y, hero.x, hero.y);
-        if (d < b.r + hero.r) { hit(); }
+        /* hit() rehace el array de balas: hay que cortar el recorrido. */
+        if (d < b.r + hero.r) { hit(); break; }
         else if (d < b.r + 22 && !b.g) {
           b.g = 1; graze++;
           E.particles.trail(hero.x, hero.y, { col: P.c, r: 2, life: 0.3 });

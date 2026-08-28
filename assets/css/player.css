@@ -367,3 +367,23 @@
   box-shadow: 0 18px 44px -14px rgba(124, 92, 255, .95), 0 0 0 8px rgba(124, 92, 255, .10);
 }
 .ov.start:hover .play-ring { box-shadow: 0 22px 54px -14px rgba(124, 92, 255, 1), 0 0 0 14px rgba(124, 92, 255, .13); }
+
+/* Fichas laterales con algo de relieve, que se veían como cajas planas. */
+.gp-side .side-card {
+  background: linear-gradient(180deg, var(--surface-2), var(--surface) 60%);
+  box-shadow: 0 12px 30px -22px rgba(0, 0, 0, .9);
+}
+.gp-side h3 {
+  display: flex; align-items: center; gap: 8px;
+  padding-bottom: 10px; margin-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+}
+.mini:hover { background: color-mix(in srgb, var(--brand-1) 10%, var(--surface-2)); }
+.mini canvas { transition: transform var(--t-fast) var(--ease-out); }
+.mini:hover canvas { transform: scale(1.05); }
+
+.kv-item {
+  background: linear-gradient(180deg, var(--surface-2), var(--surface) 70%);
+  transition: border-color var(--t-fast);
+}
+.kv-item:hover { border-color: var(--line-strong); }
