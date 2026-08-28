@@ -102,7 +102,7 @@ NX.game('ciudad-cuadricula', {
 
     draw(g) {
       const c = g.ctx;
-      g.bgGradient(mix(P.bg, P.d, 0.3), P.deep);
+      g.bgArena(E.t, 17);
       g.text('CIUDAD CUADRÍCULA', OX, 52, { size: 21, weight: 900, color: P.ink, letterSpacing: 2 });
       g.text('Cada edificio puntúa según lo que tenga al lado', OX, 78,
         { size: 13, color: P.dim, weight: 600 });

@@ -165,7 +165,7 @@ NX.game('buscaminas-neon', {
 
     draw(g) {
       const c = g.ctx;
-      g.bgGradient(mix(P.bg, P.d, 0.25), P.deep);
+      g.bgArena(t, 16);
       g.text('BUSCAMINAS', W / 2, 44, { size: 24, align: 'center', weight: 900, color: P.ink, letterSpacing: 3 });
 
       for (let i = 0; i < 3; i++) {
@@ -175,7 +175,9 @@ NX.game('buscaminas-neon', {
         g.text(LEVELS[i].n, x + 52, 88, { size: 14, align: 'center', weight: 800, color: on ? '#0d1220' : P.dim });
       }
 
-      g.rrect(OX - 6, OY - 6, cell * cols + 12, cell * rows + 12, 10, alpha(P.deep, 0.75));
+      /* Marco con luz alrededor del tablero, que antes era una caja gris. */
+      g.rrect(OX - 8, OY - 8, cell * cols + 16, cell * rows + 16, 12, alpha(P.deep, 0.8));
+      g.rrectStroke(OX - 8, OY - 8, cell * cols + 16, cell * rows + 16, 12, alpha(P.a, 0.35), 2);
 
       for (let r = 0; r < rows; r++) for (let cc = 0; cc < cols; cc++) {
         const cel = grid[r][cc];
@@ -192,8 +194,11 @@ NX.game('buscaminas-neon', {
         } else {
           const s = cel.t > 0 ? 1 - cel.t * 0.1 : 1;
           g.push(x + cell / 2, y + cell / 2, 0, s);
-          g.rrect(-cell / 2 + 1, -cell / 2 + 1, cell - 2, cell - 2, 4, mix(P.dim, P.deep, 0.5));
-          g.rrect(-cell / 2 + 1, -cell / 2 + 1, cell - 2, (cell - 2) * 0.4, 4, alpha('#ffffff', 0.1));
+          /* Relieve real: cara clara arriba, sombra abajo y borde vivo. */
+          g.rrect(-cell / 2 + 1, -cell / 2 + 1, cell - 2, cell - 2, 4, mix(P.dim, P.deep, 0.42));
+          g.rrect(-cell / 2 + 1, -cell / 2 + 1, cell - 2, (cell - 2) * 0.44, 4, alpha('#ffffff', 0.16));
+          g.rrect(-cell / 2 + 1, cell / 2 - (cell - 2) * 0.18 - 1, cell - 2, (cell - 2) * 0.18, 4, alpha('#000000', 0.22));
+          g.rrectStroke(-cell / 2 + 1, -cell / 2 + 1, cell - 2, cell - 2, 4, alpha(P.a, 0.18), 1);
           g.pop();
           if (cel.f) {
             g.poly([x + cell * 0.3, y + cell * 0.22, x + cell * 0.72, y + cell * 0.36,
