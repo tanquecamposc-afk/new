@@ -83,7 +83,7 @@ NX.game('conecta-tuberias', {
     }
     if (filled === N * N && !done) {
       done = true;
-      E.sfx('win'); E.camera.kick(6);
+      E.sfx('win'); E.camera.kick(13); E.camera.flash(P.a, 0.26);
       for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) {
         E.particles.burst(OX + c * cell + cell / 2, OY + r * cell + cell / 2, 2,
           { col: [P.a], speed1: 90, life1: 0.6, add: true });
@@ -118,7 +118,16 @@ NX.game('conecta-tuberias', {
           grid[r][c].tr += dir * Math.PI / 2;
           moves++;
           E.sfx('tick');
+          const antes = grid.flat().filter((x) => x.on).length;
           flood();
+          const ahora = grid.flat().filter((x) => x.on).length;
+          /* Si el giro deja pasar agua nueva, se ve el tramo encenderse. */
+          if (ahora > antes) {
+            E.sfx('gem');
+            E.particles.burst(OX + c * cell + cell / 2, OY + r * cell + cell / 2, 12,
+              { col: [P.a, '#ffffff'], speed1: 150, life1: 0.5, add: true });
+            E.camera.kick(2);
+          }
           hud();
         }
       }

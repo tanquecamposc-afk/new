@@ -29,9 +29,18 @@ NX.game('ahorcado', {
     used[ch] = true;
     if (word.indexOf(ch) >= 0) {
       E.sfx('select');
+      /* Chispa sobre cada hueco que se revela con esa letra. */
+      const letras = word.split('');
+      const lw = Math.min(42, (W - 360) / letras.length);
+      const startX = W * 0.62 - (letras.length * (lw + 6)) / 2;
+      letras.forEach((k, i) => {
+        if (k !== ch) return;
+        setTimeout(() => E.particles.burst(startX + i * (lw + 6) + lw / 2, 264, 10,
+          { col: [P.c, '#ffffff'], speed1: 130, life1: 0.5, add: true }), i * 60);
+      });
       if (word.split('').every((k) => k === ' ' || used[k])) {
         state = 'win'; wins++; streak++;
-        E.sfx('win'); E.camera.kick(5);
+        E.sfx('win'); E.camera.kick(12); E.camera.flash(P.c, 0.26);
         setTimeout(() => {
           E.api.win({
             score: wins * 500 + streak * 200,
@@ -44,6 +53,8 @@ NX.game('ahorcado', {
     } else {
       wrong++;
       E.sfx('error'); E.camera.kick(4);
+      E.particles.burst(150 + 94, 330 - 150, 10,
+        { col: ['#ff4d6d', P.a], speed1: 150, life1: 0.5, grav: 300 });
       if (wrong >= MAX) {
         state = 'lose'; streak = 0;
         E.sfx('lose');

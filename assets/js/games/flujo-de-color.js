@@ -110,7 +110,7 @@ NX.game('flujo-de-color', {
     for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) if (cellOwner(r, c) >= 0) filled++;
     if (filled < N * N) return;
     done = true;
-    E.sfx('win'); E.camera.kick(5);
+    E.sfx('win'); E.camera.kick(12); E.camera.flash(P.a, 0.25);
     setTimeout(() => {
       level++;
       E.api.win({
@@ -158,7 +158,17 @@ NX.game('flujo-de-color', {
             if (ei >= 0 && ei !== drawing) return;
             path.push([r, c]);
             E.sfx('tick');
-            if (connected(drawing)) { E.sfx('select'); moves++; hud(); checkWin(); }
+            if (connected(drawing)) {
+              E.sfx('select'); moves++;
+              /* La tubería recién cerrada se enciende de punta a punta. */
+              const col = COLORS[drawing % COLORS.length];
+              paths[drawing].forEach(([rr, cc], j) => {
+                setTimeout(() => E.particles.burst(OX + cc * cell + cell / 2, OY + rr * cell + cell / 2, 7,
+                  { col: [col, '#ffffff'], speed1: 110, life1: 0.4, add: true }), j * 32);
+              });
+              E.camera.kick(3);
+              hud(); checkWin();
+            }
           }
         }
       }

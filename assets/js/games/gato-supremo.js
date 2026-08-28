@@ -49,15 +49,30 @@ NX.game('gato-supremo', {
     cells[i] = turn;
     lastMove = i;
     E.sfx(turn === 1 ? 'tap' : 'place');
+    {
+      const sb = Math.floor(i / 9), sc = i % 9;
+      const px = OX + (sb % 3) * BIG + (sc % 3) * SMALL + SMALL / 2;
+      const py = OY + Math.floor(sb / 3) * BIG + Math.floor(sc / 3) * SMALL + SMALL / 2;
+      E.particles.burst(px, py, 6, { col: [turn === 1 ? P.a : P.b, '#ffffff'], speed1: 90, life1: 0.3, add: true });
+    }
     const b = Math.floor(i / 9);
     const w = win3(cells, b * 9);
     if (w) {
       boards[b] = w;
-      E.sfx('select'); E.camera.kick(4);
+      E.sfx('select'); E.camera.kick(7);
+      /* Ganar un tablero pequeño se celebra en su propio cuadrante. */
+      const bx = OX + (b % 3) * BIG + BIG / 2, by = OY + Math.floor(b / 3) * BIG + BIG / 2;
+      E.particles.burst(bx, by, 26, {
+        col: [w === 1 ? P.a : P.b, '#ffffff'], speed1: 240, life1: 0.75, add: true,
+      });
       const bw = win3(boards, 0);
       if (bw) {
         over = true; winner = bw;
         E.sfx('win');
+        E.camera.kick(16); E.camera.flash(bw === 1 ? P.a : P.b, 0.32);
+        E.particles.burst(OX + SIZE / 2, OY + SIZE / 2, 60, {
+          col: [bw === 1 ? P.a : P.b, P.c, '#ffffff'], speed1: 420, life1: 1.2, add: true,
+        });
         setTimeout(() => {
           const won = bw === 1;
           const o = { score: won ? 2500 : 0, title: won ? '¡Ganaste!' : 'Perdiste',

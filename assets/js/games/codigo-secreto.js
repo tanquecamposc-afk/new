@@ -37,9 +37,19 @@ NX.game('codigo-secreto', {
     const res = judge(cur);
     rows.push({ g: cur.slice(), res, t: 0 });
     E.sfx(res.exact === SLOTS ? 'win' : 'select');
+    /* Una chispa verde por acierto exacto, ámbar por color suelto: se lee
+       el resultado de un vistazo sin contar bolitas. */
+    for (let k = 0; k < res.exact; k++) {
+      setTimeout(() => E.particles.burst(W / 2 - 105 + k * 70, 150, 10,
+        { col: ['#4ade80', '#ffffff'], speed1: 140, life1: 0.5, add: true }), k * 80);
+    }
+    for (let k = 0; k < res.part; k++) {
+      setTimeout(() => E.particles.burst(W / 2 - 105 + (res.exact + k) * 70, 150, 6,
+        { col: ['#ffb703'], speed1: 100, life1: 0.4, add: true }), (res.exact + k) * 80);
+    }
     if (res.exact === SLOTS) {
       done = true;
-      E.camera.kick(6);
+      E.camera.kick(14); E.camera.flash('#4ade80', 0.3);
       setTimeout(() => E.api.win({
         score: (TRIES - rows.length + 1) * 600,
         title: '¡Código descifrado!',

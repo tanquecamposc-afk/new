@@ -64,6 +64,12 @@ NX.game('ciudad-cuadricula', {
     placed++;
     anim.push({ i, t: 0, v });
     E.sfx(v > 3 ? 'coin' : 'place');
+    /* Verde si el sitio es bueno, rojo si estás perdiendo puntos. */
+    const cx = OX + (i % N) * CELL + CELL / 2, cy = OY + Math.floor(i / N) * CELL + CELL / 2;
+    E.particles.burst(cx, cy, 6 + Math.min(20, Math.abs(v) * 3), {
+      col: [v >= 0 ? P.c : '#ff4d6d', '#ffffff'], speed1: 110 + Math.abs(v) * 22, life1: 0.5, add: true,
+    });
+    E.camera.kick(Math.min(7, 1 + Math.abs(v)));
     E.floaters.add(OX + (i % N) * CELL + CELL / 2, OY + Math.floor(i / N) * CELL,
       (v >= 0 ? '+' : '') + v, { col: v >= 0 ? P.c : '#ff4d6d', size: 16 + Math.min(12, Math.abs(v) * 2) });
     hand[sel] = E.rng.int(TYPES.length);

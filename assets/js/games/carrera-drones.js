@@ -59,8 +59,9 @@ NX.game('carrera-drones', {
       const target = rings[next];
       if (M.dist(drone.x, drone.y, target.x, target.y) < target.r * 0.8) {
         E.sfx('blip', next);
-        E.particles.burst(target.x, target.y, 12, { col: [P.c, P.a], speed1: 200, add: true });
-        E.camera.kick(3);
+        E.particles.burst(target.x, target.y, 24, { col: [P.c, P.a, '#ffffff'], speed1: 260, life1: 0.7, add: true });
+        E.camera.kick(4);
+        E.floaters.add(target.x, target.y - target.r - 12, String(next + 1) + '/' + rings.length, { col: P.c, size: 18 });
         next++;
         if (next >= rings.length) {
           next = 0;
@@ -70,6 +71,7 @@ NX.game('carrera-drones', {
           lap++;
           msg = 'Vuelta ' + (lap - 1) + ': ' + M.fmtMs(lapTime); msgT = 2;
           E.sfx('levelup');
+          E.camera.kick(10); E.camera.flash(P.a, 0.22);
           if (lap > laps) {
             alive = false;
             setTimeout(() => E.api.win({

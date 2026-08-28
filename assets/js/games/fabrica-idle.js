@@ -46,6 +46,10 @@ NX.game('fabrica-idle', {
     parts -= cst;
     owned[u.id] = (owned[u.id] || 0) + 1;
     if (u.gain) clickPow += u.gain;
+    E.particles.burst(W * 0.52 + 190, 110 + UPGR.indexOf(u) * 66 + 29, 18, {
+      col: [P.c, P.a, '#ffffff'], speed1: 260, life1: 0.7, add: true,
+    });
+    E.camera.kick(5);
     if (u.rate) rate += u.rate;
     E.sfx('power');
     hud();
@@ -85,6 +89,10 @@ NX.game('fabrica-idle', {
           parts += gain; total += gain;
           pops.push({ x: p.x, y: p.y, t: 0, v: '+' + fmt(gain) });
           E.sfx('tap'); E.camera.kick(1.5);
+          /* Virutas saltando del botón: el clic es todo el juego. */
+          E.particles.burst(W * 0.26, H * 0.42, 8, {
+            col: [P.c, '#ffffff'], speed1: 220, life1: 0.5, grav: 380, shape: 1, add: true,
+          });
           hud();
           return;
         }

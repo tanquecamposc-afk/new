@@ -87,11 +87,19 @@ NX.game('rompecabezas-deslizante', {
     blank = i;
     moves++;
     E.sfx('slide');
+    /* Polvillo en el borde por donde entra la pieza. */
+    E.particles.burst(OX + (i % N) * cell + cell / 2, OY + ((i / N) | 0) * cell + cell / 2, 5,
+      { col: [P.a, '#ffffff'], speed1: 80, life1: 0.3, r1: 2.4, add: true });
     hud();
     if (tiles.every((v, k) => v === k)) {
       done = true;
       E.sfx('win');
-      E.camera.kick(6);
+      E.camera.kick(12); E.camera.flash(P.a, 0.28);
+      /* Recorre el tablero encendiendo cada pieza al resolver. */
+      for (let k = 0; k < N * N; k++) {
+        setTimeout(() => E.particles.burst(OX + (k % N) * cell + cell / 2, OY + ((k / N) | 0) * cell + cell / 2, 14,
+          { col: [P.a, P.c, '#ffffff'], speed1: 200, life1: 0.7, add: true }), k * 45);
+      }
       setTimeout(() => E.api.win({
         score: Math.max(0, 30000 - moves * 40 - Math.round(t * 20) + N * 4000),
         title: '¡Rompecabezas resuelto!',

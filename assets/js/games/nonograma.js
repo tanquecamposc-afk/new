@@ -71,7 +71,13 @@ NX.game('nonograma', {
       if (!sol[r][c] && board[r][c] === 1) return;
     }
     done = true;
-    E.sfx('win'); E.camera.kick(5);
+    E.sfx('win'); E.camera.kick(12); E.camera.flash(P.a, 0.25);
+    /* El dibujo se enciende de arriba abajo al completarlo. */
+    for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) {
+      if (!sol[r][c]) continue;
+      setTimeout(() => E.particles.burst(OX + c * cell + cell / 2, OY + r * cell + cell / 2, 8,
+        { col: [P.c, P.a, '#ffffff'], speed1: 150, life1: 0.7, add: true }), r * 70);
+    }
     setTimeout(() => E.api.win({
       score: Math.max(0, N * 1200 - Math.round(t * 8) - errors * 200),
       title: '¡Dibujo revelado!',
@@ -85,10 +91,18 @@ NX.game('nonograma', {
     const prev = board[r][c];
     if (mode === 1) board[r][c] = prev === 1 ? 0 : 1;
     else board[r][c] = prev === 2 ? 0 : 2;
+    const cx = OX + c * cell + cell / 2, cy = OY + r * cell + cell / 2;
     if (board[r][c] === 1 && !sol[r][c]) {
       errors++;
       E.sfx('error'); E.camera.kick(3);
-    } else E.sfx('tick');
+      E.particles.burst(cx, cy, 8, { col: ['#ff4d6d', '#ffffff'], speed1: 140, life1: 0.4, add: true });
+    } else {
+      E.sfx('tick');
+      /* Confirmación silenciosa de que la casilla es correcta. */
+      if (board[r][c] === 1) {
+        E.particles.burst(cx, cy, 5, { col: [P.a, '#ffffff'], speed1: 75, life1: 0.28, r1: 2.2, add: true });
+      }
+    }
     hud();
     check();
   }

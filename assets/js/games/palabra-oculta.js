@@ -58,9 +58,23 @@ NX.game('palabra-oculta', {
       letters[ch] = Math.max(letters[ch] || 0, v);
     });
     E.sfx('select');
+    /* Cada letra en su sitio suelta su chispa: se ve el avance sin leer. */
+    const fila = guesses.length - 1;
+    res.forEach((v, i) => {
+      if (!v) return;
+      setTimeout(() => E.particles.burst(
+        OX + i * (CELL + 6) + CELL / 2, OY + fila * (CELL + 8) + CELL / 2,
+        v === 2 ? 12 : 6,
+        { col: [v === 2 ? '#4ade80' : '#ffb703', '#ffffff'], speed1: v === 2 ? 150 : 100, life1: 0.45, add: true }
+      ), i * 90);
+    });
     if (cur === target) {
       state = 'win';
-      E.sfx('win'); E.camera.kick(6);
+      E.sfx('win'); E.camera.kick(10); E.camera.flash('#4ade80', 0.28);
+      for (let i = 0; i < LEN; i++) {
+        setTimeout(() => E.particles.burst(OX + i * (CELL + 6) + CELL / 2, OY + fila * (CELL + 8) + CELL / 2, 22,
+          { col: ['#4ade80', '#ffffff'], speed1: 260, life1: 0.9, grav: 160, add: true }), i * 70);
+      }
       const pts = (ROWS - guesses.length + 1) * 500;
       setTimeout(() => E.api.win({
         score: pts, title: '¡Acertaste!',

@@ -89,6 +89,8 @@ NX.game('bloque-fuga', {
             sel = b;
             dragOff = b.h ? gc - b.c : gr - b.r;
             E.sfx('tap');
+            E.particles.burst(OX + gc * cell + cell / 2, OY + gr * cell + cell / 2, 5,
+              { col: [b === blocks[0] ? '#ff4d6d' : P.a, '#ffffff'], speed1: 80, life1: 0.28, r1: 2.2, add: true });
           }
         });
       }
@@ -118,6 +120,15 @@ NX.game('bloque-fuga', {
           if (clear && !done) {
             done = true;
             E.sfx('win');
+            /* El rojo sale disparado dejando estela y un fogonazo en la salida. */
+            E.camera.kick(12); E.camera.flash(P.c, 0.3);
+            const sy = OY + EXIT_ROW * cell + cell / 2;
+            for (let k = 0; k < 6; k++) {
+              setTimeout(() => E.particles.burst(OX + N * cell, sy, 16, {
+                col: ['#ff4d6d', P.c, '#ffffff'], speed1: 260, life1: 0.7,
+                angle: 0, spread: 0.9, add: true,
+              }), k * 90);
+            }
             const anim = setInterval(() => {
               red.c += 0.5;
               if (red.c > N + 2) clearInterval(anim);

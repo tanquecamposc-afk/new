@@ -72,11 +72,31 @@ NX.game('circuito-neon', {
       const ang = Math.atan2(car.y - py, car.x - px);
       car.x = px + Math.cos(ang) * (TRACK_W / 2);
       car.y = py + Math.sin(ang) * (TRACK_W / 2);
+      /* Al salirte del asfalto saltan chispas contra el borde. */
+      if (car === me && !car.off) { E.sfx('hit'); E.camera.kick(5); }
+      if (car === me && Math.random() < 0.35) {
+        E.particles.burst(car.x, car.y, 4, {
+          col: ['#ffd45e', '#ff8a3d'], speed1: 130, life1: 0.35, add: true,
+        });
+      }
       car.off = true;
     } else car.off = false;
 
     /* progreso por checkpoints */
-    if (seg.i === car.cp) { car.cp = (car.cp + 1) % PATH.length; if (car.cp === 0) car.lap++; }
+    if (seg.i === car.cp) {
+      car.cp = (car.cp + 1) % PATH.length;
+      if (car.cp === 0) {
+        car.lap++;
+        /* Solo el coche del jugador celebra la vuelta. */
+        if (car === me) {
+          E.sfx('levelup'); E.camera.kick(9); E.camera.flash(P.a, 0.2);
+          E.particles.burst(car.x, car.y, 34, {
+            col: [P.a, P.c, '#ffffff'], speed1: 300, life1: 0.9, add: true,
+          });
+          E.floaters.add(car.x, car.y - 26, 'Vuelta ' + car.lap, { col: P.c, size: 22 });
+        }
+      }
+    }
     car.trail.push({ x: car.x, y: car.y, d: car.drift });
     if (car.trail.length > 26) car.trail.shift();
   }

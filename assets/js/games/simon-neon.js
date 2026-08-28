@@ -72,6 +72,13 @@ NX.game('simon-neon', {
         step++;
         if (step >= seq.length) {
           E.sfx('chime');
+          /* Ronda superada: anillo de chispas alrededor del centro. */
+          E.camera.kick(7);
+          for (let k = 0; k < 4; k++) {
+            const a2 = k * Math.PI / 2 + Math.PI / 4;
+            E.particles.burst(CX + Math.cos(a2) * R * 0.7, CY + Math.sin(a2) * R * 0.7, 12,
+              { col: [COLS[k], '#ffffff'], speed1: 190, life1: 0.6, add: true });
+          }
           setTimeout(() => { if (alive) nextRound(); }, 500);
           showing = true; showT = 0.7; step = 0;
         }

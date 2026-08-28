@@ -35,7 +35,18 @@ NX.game('salto-de-esqui', {
     const pts = Math.round(dist * 10 + (perfect ? 400 : 0) + style * 40);
     scores.push(pts);
     E.sfx(perfect ? 'win' : 'thud');
-    E.camera.kick(perfect ? 4 : 12);
+    E.camera.kick(perfect ? 10 : 14);
+    /* Nieve levantada al tocar suelo, y destellos si el aterrizaje es limpio. */
+    /* Las partículas se pintan fuera del desplazamiento de cámara, así que
+       van en coordenadas de pantalla, no de mundo. */
+    const sx = skier.x - camX;
+    E.particles.burst(sx, skier.y + 12, perfect ? 34 : 20, {
+      col: perfect ? ['#ffffff', P.c, P.a] : ['#ffffff', P.dim],
+      speed1: perfect ? 300 : 200, life1: 0.8, grav: 260,
+      angle: -Math.PI / 2, spread: 1.5, add: perfect,
+    });
+    if (perfect) E.camera.flash(P.c, 0.22);
+    E.floaters.add(sx, skier.y - 40, '+' + pts, { col: perfect ? P.c : P.ink, size: perfect ? 26 : 20 });
     msg = perfect ? '¡Aterrizaje perfecto! +' + pts : 'Caída · +' + pts;
     msgT = 2;
     phase = 'done';

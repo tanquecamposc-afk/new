@@ -71,7 +71,12 @@ NX.game('lancha-rapida', {
       buoys.forEach((b) => { b.ph += dt * 2; });
       if (M.dist(boat.x, boat.y, tg.x, tg.y) < 62) {
         E.sfx('blip', next);
-        E.particles.burst(tg.x, tg.y, 8, { col: [P.c], speed1: 130, add: true });
+        /* Espuma al rodear la boya y un anillo que se abre. */
+        E.particles.burst(tg.x, tg.y, 22, {
+          col: [P.c, '#ffffff', P.a], speed1: 220, life1: 0.7, add: true,
+        });
+        E.camera.kick(4);
+        E.floaters.add(tg.x, tg.y - 34, String(next + 1), { col: P.c, size: 20 });
         next = (next + 1) % buoys.length;
         if (next === 1) {
           lap++;
@@ -88,6 +93,7 @@ NX.game('lancha-rapida', {
           }
           msg = 'Vuelta ' + lap; msgT = 1.6;
           E.sfx('levelup');
+          E.camera.kick(10); E.camera.flash(P.a, 0.22);
         }
         hud();
       }

@@ -131,6 +131,8 @@ NX.game('sprint-100', {
       };
       rivals.forEach((r) => runner(r.dist * 8, laneY(r.lane), P.b, t * 12 + r.lane, false));
       runner(dist * 8, laneY(3), P.a, stride * 1.6, true);
+      /* Dentro del desplazamiento: el polvo se lanza en coordenadas de pista. */
+      E.particles.draw(g);
       c.restore();
 
       if (state === 'ready') {
