@@ -524,3 +524,33 @@ html[data-theme="light"] .hero h1 { color: var(--text); background: none; -webki
     to { opacity: 1; transform: none; }
   }
 }
+
+/* --------------------------------------------------------------- móvil
+   Antes de ver el primer juego había que pasar título, filtros y diez
+   categorías en cinco filas. Se aprieta todo y las categorías pasan a una
+   sola fila que se desliza. */
+@media (max-width: 760px) {
+  .page-head { gap: 10px; margin-bottom: 14px; padding-bottom: 12px; }
+  .page-head h1 { font-size: clamp(24px, 7vw, 32px); gap: 8px; }
+  .page-head h1 > span:first-child { font-size: .8em; }
+  .page-head p { font-size: 13.5px; }
+
+  .chip-row {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    padding-bottom: 4px;
+    margin-inline: -14px;
+    padding-inline: 14px;
+    scroll-snap-type: x proximity;
+  }
+  .chip-row::-webkit-scrollbar { display: none; }
+  .chip-row > .chip { flex: none; scroll-snap-align: start; }
+
+  .section { margin-bottom: 26px; }
+  .section-head { padding-bottom: 9px; margin-bottom: 12px; }
+  .grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+}
+@media (max-width: 400px) {
+  .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+}
