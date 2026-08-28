@@ -10,28 +10,52 @@
   let unlocked = false;
   const state = { muted: false, volume: 0.75, musicOn: true, musicVol: 0.5, sfxVol: 1 };
 
+  let audioRoto = false;
+
   function ensure() {
     if (ctx) return ctx;
+    if (audioRoto) return null;
     const AC = global.AudioContext || global.webkitAudioContext;
     if (!AC) return null;
-    ctx = new AC();
-    comp = ctx.createDynamicsCompressor();
-    comp.threshold.value = -14; comp.knee.value = 24; comp.ratio.value = 8;
-    comp.attack.value = 0.004; comp.release.value = 0.18;
-    master = ctx.createGain();
-    master.gain.value = state.muted ? 0 : state.volume;
-    sfxBus = ctx.createGain(); sfxBus.gain.value = state.sfxVol;
-    musicBus = ctx.createGain(); musicBus.gain.value = state.musicOn ? state.musicVol : 0;
-    sfxBus.connect(comp); musicBus.connect(comp);
-    comp.connect(master); master.connect(ctx.destination);
+    /* Crear el contexto puede fallar: iframes con sandbox, Safari con
+       restricciones, demasiados contextos abiertos. Si revienta aquí y no lo
+       recogemos, se lleva por delante el arranque del juego. */
+    try {
+      ctx = new AC();
+    } catch (e) {
+      audioRoto = true; ctx = null;
+      return null;
+    }
+    try {
+      comp = ctx.createDynamicsCompressor();
+      comp.threshold.value = -14; comp.knee.value = 24; comp.ratio.value = 8;
+      comp.attack.value = 0.004; comp.release.value = 0.18;
+      master = ctx.createGain();
+      master.gain.value = state.muted ? 0 : state.volume;
+      sfxBus = ctx.createGain(); sfxBus.gain.value = state.sfxVol;
+      musicBus = ctx.createGain(); musicBus.gain.value = state.musicOn ? state.musicVol : 0;
+      sfxBus.connect(comp); musicBus.connect(comp);
+      comp.connect(master); master.connect(ctx.destination);
+    } catch (e) {
+      audioRoto = true; ctx = null;
+      return null;
+    }
     return ctx;
   }
 
   function unlock() {
-    ensure();
-    if (!ctx) return;
-    if (ctx.state === 'suspended') ctx.resume();
-    unlocked = true;
+    try {
+      ensure();
+      if (!ctx) return;
+      if (ctx.state === 'suspended') {
+        const pr = ctx.resume();
+        if (pr && pr.catch) pr.catch(() => {});
+      }
+      unlocked = true;
+    } catch (e) {
+      audioRoto = true;
+      unlocked = false;
+    }
   }
 
   function now() { return ctx ? ctx.currentTime : 0; }

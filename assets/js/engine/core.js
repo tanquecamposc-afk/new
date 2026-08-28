@@ -164,22 +164,45 @@
     this.running = true;
     try { this.canvas.focus({ preventScroll: true }); } catch (e) {}
     this._last = performance.now();
-    const step = (now) => {
+    this._visto = this._last;
+
+    const paso = (now) => {
       if (!this.running) return;
-      this._raf = requestAnimationFrame(step);
-      let dt = (now - this._last) / 1000;
-      this._last = now;
-      if (dt > this.opts.maxDt) dt = this.opts.maxDt;
-      if (dt < 0) dt = 0;
-      this.tick(dt);
+      this._raf = requestAnimationFrame(paso);
+      this._avanza(now);
     };
-    this._raf = requestAnimationFrame(step);
-    if (this.opts.music && NX.Audio.state.musicOn) NX.Audio.music.start(this.opts.music);
+    this._raf = requestAnimationFrame(paso);
+
+    /* Red de seguridad: hay entornos donde requestAnimationFrame no llega
+       (iframes que el navegador considera ocultos, pestañas en segundo plano,
+       visores que congelan el marco). Sin esto el lienzo se queda con el
+       primer fotograma pintado y el juego parece una imagen fija. */
+    if (this._salva) clearInterval(this._salva);
+    this._salva = setInterval(() => {
+      if (!this.running) return;
+      const now = performance.now();
+      if (now - this._visto > 320) this._avanza(now);
+    }, 100);
+
+    try {
+      if (this.opts.music && NX.Audio.state.musicOn) NX.Audio.music.start(this.opts.music);
+    } catch (e) {}
+  };
+
+  /* Un paso de reloj, venga de rAF o del intervalo de rescate. */
+  E._avanza = function (now) {
+    this._visto = now;
+    let dt = (now - this._last) / 1000;
+    this._last = now;
+    if (dt > this.opts.maxDt) dt = this.opts.maxDt;
+    if (dt < 0) dt = 0;
+    this.tick(dt);
   };
 
   E.stop = function () {
     this.running = false;
     if (this._raf) cancelAnimationFrame(this._raf);
+    if (this._salva) { clearInterval(this._salva); this._salva = 0; }
     NX.Audio.music.stop();
   };
 

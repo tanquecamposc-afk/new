@@ -298,7 +298,7 @@
       sessionStart = performance.now();
       if (iframe) { iframe.contentWindow.location.reload(); return; }
       if (engine) { engine.restart(); engine.start(); }
-      S.addRecent(game.id);
+      try { S.addRecent(game.id); } catch (e) {}
       btnPause.innerHTML = icon('pause', 17) + '<span class="lbl">Pausa</span>';
     }
 
@@ -306,16 +306,59 @@
       if (started) return;
       started = true;
       ovStart.classList.add('hide');
-      NX.Audio.unlock();
-      NX.Audio.setMuted(!S.get('sound'));
-      NX.Audio.setMusic(S.get('music'));
-      NX.Audio.setVolume(S.get('volume'));
+
+      /* Lo primero es arrancar el motor. Antes iba después del sonido y de
+         guardar la partida en el almacén: si cualquiera de esos dos fallaba
+         (un iframe sin permiso de audio, el almacenamiento bloqueado), la
+         excepción se comía el arranque y te quedabas mirando una imagen
+         quieta con la capa de "pulsa para empezar" ya escondida. */
+      if (engine) {
+        engine.start();
+        try { engine.canvas.focus({ preventScroll: true }); } catch (e) { try { engine.canvas.focus(); } catch (e2) {} }
+      }
+      if (iframe) { try { iframe.focus(); } catch (e) {} }
+
+      try {
+        NX.Audio.unlock();
+        NX.Audio.setMuted(!S.get('sound'));
+        NX.Audio.setMusic(S.get('music'));
+        NX.Audio.setVolume(S.get('volume'));
+      } catch (e) {}
+
       sessionStart = performance.now();
-      S.addRecent(game.id);
-      S.checkAchievements();
-      if (engine) { engine.start(); try { engine.canvas.focus({ preventScroll: true }); } catch (e) { engine.canvas.focus(); } }
-      if (iframe) iframe.focus();
+      try { S.addRecent(game.id); S.checkAchievements(); } catch (e) {}
       setTimeout(syncFocus, 200);
+      vigilarArranque();
+    }
+
+    /* Si al segundo y medio el motor no ha pintado ni un fotograma nuevo,
+       algo lo ha dejado clavado. En vez de dejar la pantalla muerta se
+       reintenta y, si sigue igual, se avisa con un botón. */
+    let vigia = 0;
+    function vigilarArranque() {
+      if (!engine) return;
+      const marca = engine.frame;
+      clearTimeout(vigia);
+      vigia = setTimeout(() => {
+        if (!engine || over) return;
+        if (engine.frame > marca) return;
+        try { engine.stop(); engine.start(); } catch (e) {}
+        vigia = setTimeout(() => {
+          if (!engine || over || engine.frame > marca) return;
+          D.clear(ovStart).appendChild(h('div.ov-inner',
+            h('h2', { text: 'El juego no arrancó' }),
+            h('p.ov-sub', { text: 'Pasa a veces si el navegador congela la ventana. Vuelve a intentarlo.' }),
+            h('div.ov-actions',
+              h('button.btn.primary', { html: icon('restart', 17) + '<span>Reintentar</span>',
+                onclick: (ev) => {
+                  ev.stopPropagation();
+                  ovStart.classList.add('hide');
+                  try { engine.restart(); engine.start(); } catch (e) {}
+                  vigilarArranque();
+                } }))));
+          ovStart.classList.remove('hide');
+        }, 1600);
+      }, 1500);
     }
 
     const onKey = (e) => {
@@ -472,6 +515,7 @@
 
     page._cleanup = () => {
       clearInterval(kbTimer);
+      clearTimeout(vigia);
       window.removeEventListener('focus', syncFocus);
       window.removeEventListener('blur', syncFocus);
       document.removeEventListener('keydown', onKey);

@@ -252,6 +252,24 @@
     Router.outlet = outlet;
 
     global.addEventListener('hashchange', () => Router.render());
+
+    /* Navegación a prueba de visores.
+       Dentro de un iframe (el visor de artefactos, por ejemplo) el clic en un
+       <a href="#/..."> se lo puede quedar el contenedor y entonces no pasa
+       nada: la web se queda en la portada y parece que las tarjetas son solo
+       dibujos. Aquí interceptamos el clic y cambiamos el hash a mano. */
+    document.addEventListener('click', (e) => {
+      if (e.defaultPrevented || e.button != null && e.button !== 0) return;
+      if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      const a = e.target && e.target.closest && e.target.closest('a[href^="#"]');
+      if (!a) return;
+      const href = a.getAttribute('href');
+      if (!href || href === '#') return;
+      e.preventDefault();
+      if (location.hash === href) Router.render();
+      else location.hash = href;
+    }, true);
+
     Router.render();
 
     /* atajos globales */
