@@ -9,6 +9,10 @@ NX.game('codigo-secreto', {
   const W = E.opts.w, H = E.opts.h;
   const COLORS = ['#ff4d6d', '#22e0ff', '#ffd45e', '#4ade80', '#c084fc', '#ff8a3d'];
   const SLOTS = 4, TRIES = 10;
+  /* Geometría del tablero en un solo sitio: el historial y la fila activa se
+     solapaban porque el dibujo y el test de clic usaban números distintos. */
+  const TOP = 126, ROW_H = 38;
+  const AY = TOP + TRIES * ROW_H + 38;
 
   let secret, rows, cur, done, sel, t;
 
@@ -40,11 +44,11 @@ NX.game('codigo-secreto', {
     /* Una chispa verde por acierto exacto, ámbar por color suelto: se lee
        el resultado de un vistazo sin contar bolitas. */
     for (let k = 0; k < res.exact; k++) {
-      setTimeout(() => E.particles.burst(W / 2 - 105 + k * 70, 150, 10,
+      setTimeout(() => E.particles.burst(W / 2 - 150 + k * 56, TOP + (rows.length - 1) * ROW_H + 19, 10,
         { col: ['#4ade80', '#ffffff'], speed1: 140, life1: 0.5, add: true }), k * 80);
     }
     for (let k = 0; k < res.part; k++) {
-      setTimeout(() => E.particles.burst(W / 2 - 105 + (res.exact + k) * 70, 150, 6,
+      setTimeout(() => E.particles.burst(W / 2 - 150 + (res.exact + k) * 56, TOP + (rows.length - 1) * ROW_H + 19, 6,
         { col: ['#ffb703'], speed1: 100, life1: 0.4, add: true }), (res.exact + k) * 80);
     }
     if (res.exact === SLOTS) {
@@ -87,7 +91,7 @@ NX.game('codigo-secreto', {
       const p = E.input.pointer;
       if (p.pressed) {
         /* fila activa */
-        const ay = H - 210;
+        const ay = AY;
         for (let i = 0; i < SLOTS; i++) {
           const x = W / 2 - SLOTS * 34 + i * 68 + 34;
           if (M.dist(p.x, p.y, x, ay) < 28) { sel = i; E.sfx('tap'); }
@@ -125,7 +129,7 @@ NX.game('codigo-secreto', {
       }
 
       /* historial */
-      const rowH = 44, top = 132;
+      const rowH = ROW_H, top = TOP;
       for (let r = 0; r < TRIES; r++) {
         const y = top + r * rowH;
         const row = rows[r];
@@ -146,16 +150,16 @@ NX.game('codigo-secreto', {
         }
       }
 
-      /* fila activa */
-      const ay = H - 210;
+      /* fila activa: justo debajo del historial */
+      const ay = AY;
       g.text('TU JUGADA', W / 2, ay - 34, { size: 11, align: 'center', color: P.dim, weight: 800, letterSpacing: 2 });
       for (let i = 0; i < SLOTS; i++) {
         const x = W / 2 - SLOTS * 34 + i * 68 + 34;
-        if (i === sel) g.ring(x, ay, 27, 2.5, P.c);
+        if (i === sel) g.ring(x, ay, 25, 2.5, P.c);
         if (cur[i] != null) {
-          g.circle(x, ay, 22, COLORS[cur[i]]);
-          g.circle(x - 6, ay - 7, 7, alpha('#ffffff', 0.3));
-        } else g.ring(x, ay, 22, 1.6, alpha(P.ink, 0.2));
+          g.circle(x, ay, 20, COLORS[cur[i]]);
+          g.circle(x - 6, ay - 6, 6.5, alpha('#ffffff', 0.3));
+        } else g.ring(x, ay, 20, 1.6, alpha(P.ink, 0.2));
       }
 
       /* paleta */
@@ -171,7 +175,7 @@ NX.game('codigo-secreto', {
       g.rrect(W / 2 - 90, H - 66, 180, 44, 12, hov ? P.a : alpha(P.a, 0.6));
       g.text('Comprobar', W / 2, H - 37, { size: 16, align: 'center', weight: 800, color: '#0d1220' });
 
-      g.text('🟢 posición exacta   🟡 color correcto', W / 2, top - 12,
+      g.text('🟢 posición exacta   🟡 color correcto', W / 2, top - 4,
         { size: 11.5, align: 'center', color: P.dim, weight: 700 });
     },
   };
