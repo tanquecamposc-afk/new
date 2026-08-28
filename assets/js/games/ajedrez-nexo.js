@@ -285,8 +285,17 @@ NX.game('ajedrez-nexo', {
     hist.push(m);
     lastMove = m;
     E.sfx(m.cap ? 'hit' : 'place');
-    if (m.cap) E.particles.burst(OX + (m.t % 8) * CELL + CELL / 2, OY + Math.floor(m.t / 8) * CELL + CELL / 2,
-      8, { col: [P.c], speed1: 150, add: true });
+    if (m.cap) {
+      /* Comer una pieza tiene que pesar más cuanto más vale la pieza. */
+      const cx = OX + (m.t % 8) * CELL + CELL / 2, cy = OY + Math.floor(m.t / 8) * CELL + CELL / 2;
+      const val = VAL[kind(m.cap)] || 100;
+      const n = Math.min(34, 10 + Math.round(val / 45));
+      E.particles.burst(cx, cy, n, {
+        col: [P.c, isWhite(m.cap) ? '#ffffff' : '#ff8a3d'], speed1: 140 + val / 6, life1: 0.6, add: true,
+      });
+      E.camera.kick(Math.min(12, 3 + val / 110));
+      if (val >= 300) E.floaters.add(cx, cy - CELL * 0.4, GLYPH[m.cap] || '', { col: P.c, size: 26 });
+    }
     turn = turn === 'w' ? 'b' : 'w';
     sel = null;
     afterMove();

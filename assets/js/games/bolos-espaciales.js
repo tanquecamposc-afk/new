@@ -46,7 +46,11 @@ NX.game('bolos-espaciales', {
     scores.push(knocked);
     if (roll === 1 && nowDown === 10) {
       msg = '¡PLENO!'; msgT = 1.8;
-      E.sfx('win'); E.camera.kick(8);
+      E.sfx('win'); E.camera.kick(12);
+      E.camera.flash(P.c, 0.28);
+      E.particles.burst(W / 2, H * 0.35, 46, {
+        col: [P.c, P.a, '#ffffff'], speed1: 340, life1: 1.1, shape: 3, add: true,
+      });
       nextFrame();
     } else if (roll === 2) {
       if (nowDown === 10) { msg = '¡Semipleno!'; msgT = 1.6; E.sfx('chime'); }
@@ -107,6 +111,9 @@ NX.game('bolos-espaciales', {
             pin.vx = (pin.x - ball.x) * 6 + E.rng.float(-60, 60);
             pin.vy = -180 + E.rng.float(-60, 60);
             E.sfx('hit'); E.camera.kick(3);
+            E.particles.burst(pin.x, pin.y, 10, {
+              col: ['#ffffff', P.c], speed1: 210, life1: 0.5, grav: 320, add: true,
+            });
             /* cadena entre bolos */
             pins.forEach((o) => {
               if (o.down || M.dist(o.x, o.y, pin.x, pin.y) > 42) return;

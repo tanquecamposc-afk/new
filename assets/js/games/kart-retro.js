@@ -134,7 +134,16 @@ NX.game('kart-retro', {
 
       const prev = pos;
       pos = (pos + speed * dt) % total;
-      if (pos < prev) { lap++; timeLeft += 24; msg = '¡Vuelta ' + lap + '!'; msgT = 1.8; E.sfx('levelup'); }
+      if (pos < prev) {
+        lap++; timeLeft += 24; msg = '¡Vuelta ' + lap + '!'; msgT = 1.8;
+        E.sfx('levelup');
+        /* Cruzar meta merece confeti y un +24 bien visible. */
+        E.camera.kick(8);
+        E.particles.burst(W / 2, H * 0.55, 40, {
+          col: [P.a, P.c, '#ffffff'], speed1: 380, life1: 1, shape: 1, add: true,
+        });
+        E.floaters.add(W / 2, H * 0.45, '+24 s', { col: P.c, size: 26 });
+      }
 
       rivals.forEach((r) => {
         r.z = (r.z + r.sp * dt) % total;
@@ -145,6 +154,9 @@ NX.game('kart-retro', {
           speed = Math.max(maxSpeed * 0.18, speed * 0.5);
           r.z = (r.z + SEG_LEN * 3) % total;
           E.sfx('hit'); E.camera.kick(10);
+          E.particles.burst(W / 2, H * 0.78, 18, {
+            col: ['#ffd45e', '#ff4d6d', '#ffffff'], speed1: 300, life1: 0.5, add: true,
+          });
         }
       });
       hud();

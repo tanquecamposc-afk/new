@@ -42,7 +42,12 @@ NX.game('dardos-pro', {
     const s = scoreAt(x, y);
     darts.push({ x, y, t: 0, label: s.label });
     E.sfx(s.v > 0 ? 'hit' : 'error');
-    E.camera.kick(3);
+    E.camera.kick(s.mult === 3 ? 8 : s.v > 0 ? 3 : 1);
+    /* Astillas al clavar, más cuanto mejor el tiro. */
+    E.particles.burst(x, y, s.v > 0 ? 8 + s.mult * 5 : 4, {
+      col: [s.mult > 1 ? P.c : P.ink, '#ffffff'], speed1: 90 + s.mult * 60, life1: 0.45, add: true,
+    });
+    if (s.v > 0) E.floaters.add(x, y - 16, s.label, { col: s.mult > 1 ? P.c : P.ink, size: s.mult > 1 ? 22 : 17 });
     throwsLeft--;
 
     const next = remaining - s.v;

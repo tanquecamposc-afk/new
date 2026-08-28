@@ -70,8 +70,16 @@ NX.game('memoria-relampago', {
             cards[a].done = cards[b].done = true;
             matched++;
             E.sfx('select');
-            E.particles.burst(OX + (a % cols) * cw * 1.08 + cw / 2, OY + Math.floor(a / cols) * ch * 1.08 + ch / 2, 8,
-              { col: [COLORS[cards[a].id % COLORS.length]], speed1: 140, add: true });
+            /* Chispas en las dos cartas, no solo en una, y un golpe de cámara. */
+            const col = COLORS[cards[a].id % COLORS.length];
+            [a, b].forEach((k) => {
+              E.particles.burst(OX + (k % cols) * cw * 1.08 + cw / 2,
+                OY + Math.floor(k / cols) * ch * 1.08 + ch / 2, 14,
+                { col: [col, '#ffffff'], speed1: 190, life1: 0.55, add: true });
+            });
+            E.camera.kick(4);
+            E.floaters.add(OX + (b % cols) * cw * 1.08 + cw / 2,
+              OY + Math.floor(b / cols) * ch * 1.08, '¡Pareja!', { col, size: 18 });
             hud();
             if (matched === cols * rows / 2) {
               done = true;

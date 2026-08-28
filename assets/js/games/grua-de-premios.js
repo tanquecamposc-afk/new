@@ -98,6 +98,13 @@ NX.game('grua-de-premios', {
               score += pts;
               E.sfx('coin');
               E.floaters.add(CHUTE_X, FLOOR - 60, '+' + pts, { col: P.c, size: 22 });
+              /* Conseguir un premio es todo el juego: confeti y sacudida. */
+              E.particles.burst(CHUTE_X, FLOOR - 40, held.rare ? 44 : 24, {
+                col: [P.c, P.a, P.b, '#ffffff'], speed1: held.rare ? 320 : 220,
+                life1: 0.9, grav: 260, shape: 1, add: true,
+              });
+              E.camera.kick(held.rare ? 12 : 6);
+              if (held.rare) E.camera.flash(P.c, 0.3);
               held = null;
             }
             phase = 'move';

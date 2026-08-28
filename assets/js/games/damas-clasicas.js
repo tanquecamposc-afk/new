@@ -107,6 +107,14 @@ NX.game('damas-clasicas', {
     return best;
   }
 
+  /* Una captura se ve: chispas, sacudida y la ficha saltando. */
+  function comida(idx, col) {
+    const x = OX + (idx % N) * CELL + CELL / 2, y = OY + Math.floor(idx / N) * CELL + CELL / 2;
+    E.particles.burst(x, y, 22, { col: [col, '#ffffff'], speed1: 230, life1: 0.6, add: true });
+    E.camera.kick(6);
+    E.floaters.add(x, y - CELL * 0.35, '×', { col, size: 24 });
+  }
+
   function aiMove() {
     const mv = allMoves(board, 2);
     if (!mv.length) return finish(1);
@@ -115,8 +123,7 @@ NX.game('damas-clasicas', {
     else m = search(board, 2, lvl === 1 ? 4 : 6, -Infinity, Infinity, 2).m || E.rng.pick(mv);
     board = doMove(board, m, 2);
     E.sfx(m.cap >= 0 ? 'hit' : 'place');
-    if (m.cap >= 0) E.particles.burst(OX + (m.cap % N) * CELL + CELL / 2, OY + Math.floor(m.cap / N) * CELL + CELL / 2,
-      8, { col: [P.a], speed1: 150, add: true });
+    if (m.cap >= 0) comida(m.cap, P.a);
     if (m.cap >= 0 && pieceMoves(board, m.to, 2, true).length) { thinking = 0.4; return; }
     turn = 1;
     hud();
@@ -150,8 +157,7 @@ NX.game('damas-clasicas', {
     board = doMove(board, m, 1);
     E.sfx(m.cap >= 0 ? 'hit' : 'place');
     if (m.cap >= 0) {
-      E.particles.burst(OX + (m.cap % N) * CELL + CELL / 2, OY + Math.floor(m.cap / N) * CELL + CELL / 2,
-        8, { col: [P.b], speed1: 150, add: true });
+      comida(m.cap, P.b);
       if (pieceMoves(board, m.to, 1, true).length) {
         sel = m.to; chain = m.to;
         msg = '¡Sigue capturando!'; msgT = 1.4;

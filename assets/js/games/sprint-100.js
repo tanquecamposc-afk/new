@@ -8,6 +8,8 @@ NX.game('sprint-100', {
   const M = E.M, G = E.GFX, P = E.pal;
   const { alpha, mix } = G;
   const W = E.opts.w, H = E.opts.h;
+  const TRACK_Y = 190;
+  const laneY = (l) => TRACK_Y + (l + 0.5) * (H - TRACK_Y) / 5;
   const DIST = 100;
 
   let state, t, countdown, dist, speed, lastKey, cadence, rivals, alive, falseStart, camX, best, stride;
@@ -40,6 +42,12 @@ NX.game('sprint-100', {
     speed = Math.min(12.5, speed + 0.85);
     E.sfx('step');
     stride++;
+    /* Polvo bajo los pies: es lo único que da sensación de esfuerzo. */
+    E.particles.burst(dist * 8, laneY(3) + 14, 4, {
+      col: [P.dim, '#ffffff'], speed0: 30, speed1: 110, life1: 0.4,
+      angle: Math.PI, spread: 0.8, r1: 3, grav: 220,
+    });
+    if (speed > 9) E.camera.kick(1.2);
   }
 
   reset();
@@ -93,7 +101,7 @@ NX.game('sprint-100', {
       for (let i = 0; i < 70; i++) {
         g.circle((i * 61) % W, 40 + ((i * 37) % 60), 6, alpha(['#ff8a3d', '#ffd45e', '#22e0ff'][i % 3], 0.12));
       }
-      const trackY = 190;
+      const trackY = TRACK_Y;
       g.rect(0, trackY, W, H - trackY, mix('#b23a2e', P.deep, 0.42));
       for (let i = 1; i < 5; i++) g.rect(0, trackY + i * (H - trackY) / 5, W, 2, alpha('#ffffff', 0.35));
 
@@ -109,7 +117,6 @@ NX.game('sprint-100', {
         g.rect(DIST * 8 + 8, trackY + i * 24, 8, 12, i % 2 ? '#ffffff' : '#111827');
       }
 
-      const laneY = (l) => trackY + (l + 0.5) * (H - trackY) / 5;
       const runner = (x, y, col, ph, lead) => {
         const s = Math.sin(ph);
         g.push(x, y);

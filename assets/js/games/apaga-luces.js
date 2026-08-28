@@ -76,6 +76,15 @@ NX.game('apaga-luces', {
           });
           moves++;
           E.sfx('tap');
+          /* Un chispazo en cada casilla que cambia: se ve la cruz de golpe. */
+          [[0, 0], [-1, 0], [1, 0], [0, -1], [0, 1]].forEach((d) => {
+            const rr = r + d[0], cc = c + d[1];
+            if (rr < 0 || rr >= N || cc < 0 || cc >= N) return;
+            E.particles.burst(OX + cc * cell + cell / 2, OY + rr * cell + cell / 2, 6, {
+              col: [grid[rr][cc] ? P.c : P.dim, '#ffffff'], speed1: 120, life1: 0.38, add: true,
+            });
+          });
+          E.camera.kick(2);
           hud();
           if (grid.every((row) => row.every((v) => !v))) {
             done = true;

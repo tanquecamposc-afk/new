@@ -66,6 +66,10 @@ NX.game('buscaminas-neon', {
     cel.o = true; cel.t = 1; opened++;
     if (cel.m) { lose(); return; }
     E.sfx('tap');
+    /* Chispas al destapar: sin esto abrir casillas no daba ninguna sensación. */
+    E.particles.burst(OX + c * cell + cell / 2, OY + r * cell + cell / 2, cel.n ? 5 : 3, {
+      col: [cel.n ? P.a : P.dim, '#ffffff'], speed1: cel.n ? 90 : 60, life1: 0.32, r0: 1.6, add: true,
+    });
     if (cel.n === 0) {
       for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) {
         const rr = r + dr, cc = c + dc;
@@ -93,7 +97,12 @@ NX.game('buscaminas-neon', {
   function lose() {
     over = true;
     E.sfx('explode'); E.camera.kick(16); E.camera.flash('#ff4d6d', 0.4);
-    for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) if (grid[r][c].m) grid[r][c].o = true;
+    for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) if (grid[r][c].m) {
+      grid[r][c].o = true;
+      E.particles.burst(OX + c * cell + cell / 2, OY + r * cell + cell / 2, 10, {
+        col: ['#ff4d6d', '#ffd45e'], speed1: 200, life1: 0.7, add: true,
+      });
+    }
     setTimeout(() => E.api.over({
       score: Math.round(t * 100), label: 'Centésimas', fmt: (v) => M.fmtTime(v / 100), lower: true,
       msg: 'Pisaste una mina en ' + LEVELS[lvl].n,

@@ -92,6 +92,13 @@ NX.game('solitario-klondike', {
     if (found.reduce((a, f) => a + f.length, 0) === 52) {
       won = true;
       E.sfx('win');
+      /* Lluvia de cartas al ganar: es la recompensa de una partida larga. */
+      E.camera.kick(14); E.camera.flash(P.c, 0.3);
+      for (let k = 0; k < 5; k++) {
+        setTimeout(() => E.particles.burst(W * (0.2 + 0.15 * k), H * 0.2, 26, {
+          col: ['#ffffff', P.c, '#ff4d6d'], speed1: 320, life1: 1.4, grav: 420, shape: 1, add: false,
+        }), k * 120);
+      }
       setTimeout(() => E.api.win({
         score: Math.max(0, 12000 - moves * 20 - Math.round(t * 8)),
         title: '¡Solitario resuelto!',
@@ -197,7 +204,12 @@ NX.game('solitario-klondike', {
             ok = true; score += 15;
           }
         }
-        if (ok) { moves++; E.sfx('place'); flipTops(); hud(); checkWin(); }
+        if (ok) {
+          moves++; E.sfx('place');
+          E.particles.burst(E.input.pointer.x, E.input.pointer.y, 6,
+            { col: [P.a, '#ffffff'], speed1: 90, life1: 0.3, r1: 2.5, add: true });
+          flipTops(); hud(); checkWin();
+        }
         else E.sfx('error');
         drag = null;
       }

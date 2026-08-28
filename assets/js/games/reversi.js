@@ -131,7 +131,21 @@ NX.game('reversi', {
     board = res.b;
     flips = res.flips.map((k) => ({ i: k, t: 0 }));
     passes = 0;
-    E.sfx('place'); E.camera.kick(2);
+    E.sfx('place');
+    /* Cuantas más fichas volteas, más gorda la jugada: que se note. */
+    const n = res.flips.length;
+    E.camera.kick(Math.min(11, 2 + n * 1.4));
+    const col = turn === 1 ? '#0f172a' : '#f8fafc';
+    res.flips.forEach((k, j) => {
+      const x = OX + (k % N) * CELL + CELL / 2, y = OY + Math.floor(k / N) * CELL + CELL / 2;
+      setTimeout(() => {
+        E.particles.burst(x, y, 7, { col: [P.a, col], speed1: 110, life1: 0.45, add: true });
+      }, j * 55);
+    });
+    if (n >= 4) {
+      const x = OX + (i % N) * CELL + CELL / 2, y = OY + Math.floor(i / N) * CELL + CELL / 2;
+      E.floaters.add(x, y - CELL * 0.5, '×' + n, { col: P.c, size: 22 });
+    }
     if (!moves(board, 3 - turn).length) {
       if (!moves(board, turn).length) return finish();
       msg = (turn === 1 ? 'La máquina' : 'Tú') + ' pasa turno'; msgT = 1.4;

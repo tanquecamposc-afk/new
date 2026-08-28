@@ -13,6 +13,9 @@ NX.game('2048-nebula', {
      montaban uno encima del otro. */
   const SIZE = Math.min(W - 60, H - 250);
   const CELL = (SIZE - PAD * (N + 1)) / N;
+  /* Centro de una casilla, para lanzar partículas donde toca. */
+  const ccx = (c) => OX + PAD + c * (CELL + PAD) + CELL / 2;
+  const ccy = (r) => OY + PAD + r * (CELL + PAD) + CELL / 2;
   const OX = (W - SIZE) / 2, OY = 130;
 
   const COLORS = {
@@ -94,6 +97,15 @@ NX.game('2048-nebula', {
           if (t) { t.r = nr; t.c = nc; t.dead = true; }
           target.v = grid[nr][nc];
           target.pop = 1;
+          /* La fusión es el momento bueno del juego: que se note. */
+          const v = grid[nr][nc];
+          const col = COLORS[v] || P.c;
+          const fuerza = Math.min(30, 8 + Math.log2(v) * 2);
+          E.particles.burst(ccx(nc), ccy(nr), fuerza, {
+            col: [col, '#ffffff'], speed1: 90 + Math.log2(v) * 22, life1: 0.55, add: true,
+          });
+          E.floaters.add(ccx(nc), ccy(nr) - CELL * 0.3, '+' + v, { col, size: v >= 128 ? 24 : 18 });
+          if (v >= 64) E.camera.kick(Math.min(10, 2 + Math.log2(v) - 5));
           if (grid[nr][nc] === 2048 && !won) {
             won = true;
             E.sfx('win');

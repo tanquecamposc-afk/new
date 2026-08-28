@@ -68,6 +68,8 @@ NX.game('laberinto-infinito', {
     hero.c += dc; hero.r += dr;
     steps++;
     E.sfx('step');
+    E.particles.trail(OX + hero.c * cell + cell / 2, OY + hero.r * cell + cell / 2,
+      { col: alpha(P.a, 0.5), r: 2.5, life: 0.35 });
     for (let dc2 = -2; dc2 <= 2; dc2++) for (let dr2 = -2; dr2 <= 2; dr2++) {
       seen.add((hero.c + dc2) + ',' + (hero.r + dr2));
     }
@@ -75,6 +77,10 @@ NX.game('laberinto-infinito', {
       if (!k.got && k.c === hero.c && k.r === hero.r) {
         k.got = true; E.sfx('coin');
         E.floaters.add(OX + k.c * cell + cell / 2, OY + k.r * cell, '🔑', { col: P.c, size: 22 });
+        E.particles.burst(OX + k.c * cell + cell / 2, OY + k.r * cell + cell / 2, 20, {
+          col: [P.c, '#ffffff'], speed1: 190, life1: 0.6, add: true,
+        });
+        E.camera.kick(5);
       }
     });
     hud();
@@ -82,6 +88,10 @@ NX.game('laberinto-infinito', {
       if (keys.every((k) => k.got)) {
         done = true;
         E.sfx('win');
+        E.camera.kick(12); E.camera.flash(P.a, 0.35);
+        E.particles.burst(OX + exit.c * cell + cell / 2, OY + exit.r * cell + cell / 2, 46, {
+          col: [P.a, P.c, '#ffffff'], speed1: 330, life1: 1.1, add: true,
+        });
         setTimeout(() => {
           level++;
           E.api.win({

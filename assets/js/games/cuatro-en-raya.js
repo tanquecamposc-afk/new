@@ -148,7 +148,20 @@ NX.game('cuatro-en-raya', {
   return {
     update(dt) {
       if (msgT > 0) msgT -= dt;
-      if (drop) { drop.y = M.damp(drop.y, drop.r, 18, dt); if (Math.abs(drop.y - drop.r) < 0.03) drop = null; }
+      if (drop) {
+        drop.y = M.damp(drop.y, drop.r, 18, dt);
+        if (Math.abs(drop.y - drop.r) < 0.03) {
+          /* Impacto al tocar fondo: polvo, sacudida y golpe seco. */
+          const x = OX + drop.c * CELL + CELL / 2, y = OY + drop.r * CELL + CELL / 2;
+          E.particles.burst(x, y + CELL * 0.35, 12, {
+            col: [drop.v === 1 ? P.c : P.a, '#ffffff'], speed1: 170, life1: 0.4,
+            angle: -Math.PI / 2, spread: 2.2, add: true,
+          });
+          E.camera.kick(4);
+          E.sfx('place');
+          drop = null;
+        }
+      }
       if (thinking > 0) { thinking -= dt; if (thinking <= 0) aiMove(); return; }
       if (over) return;
       if (turn === 2 && lvl !== 3) return;
