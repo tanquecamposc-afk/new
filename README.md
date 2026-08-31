@@ -15,6 +15,11 @@ Se abren haciendo doble clic en el archivo. No hacen falta servidor, instalació
 
 Clon de Clash Royale: partidas 1 contra 1 de 3 minutos contra una IA, mazo de 8 cartas, elixir, coronas, cofres y subida de nivel de cartas. Todo el progreso se guarda en el navegador.
 
+<p align="center">
+  <img src="docs/batalla.png" alt="Partida en la Arena 5" width="47%">
+  <img src="docs/menu.png" alt="Menú principal" width="47%">
+</p>
+
 ## ▶ Cómo se juega
 
 Objetivo: **destruir más torres que el rival en 3 minutos**. Cada torre lateral vale una corona 👑 y derribar la **torre del Rey** gana la partida al instante.
@@ -60,7 +65,8 @@ El rival siempre juega al nivel medio de tu mazo, así que subir cartas nunca ro
 
 ## 🧠 Detalles técnicos
 
-- Un solo archivo de ~2.700 líneas, sin librerías ni imágenes: **personajes, torres y arena están dibujados con formas de Canvas**.
+- Un solo archivo de ~2.700 líneas, sin librerías, sin fuentes externas y sin imágenes: **personajes, torres, cofres y arena están dibujados a mano** con formas de Canvas y CSS.
+- El fondo de cada arena (césped, matas, piedras, plataformas y viñeteado) se pre-renderiza una vez en un canvas aparte, así que la escena cuesta lo mismo aunque haya 90 tropas en pantalla.
 - Tropas con búsqueda de objetivo, separación entre unidades y **camino real por los puentes** (las tropas de tierra no cruzan el río a nado; las voladoras sí).
 - IA rival con su propio elixir y ciclo de 8 cartas: defiende lo que cruza, prepara contras y ataca por los puentes.
 - Sonido generado en tiempo real con WebAudio (botón 🔊 para silenciarlo).
