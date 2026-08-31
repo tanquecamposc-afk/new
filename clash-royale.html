@@ -1,0 +1,2689 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0a0d18">
+<title>Choque Real — Clash Royale Clone</title>
+<style>
+:root{
+  --oro:#ffd75e; --oro2:#b8860b;
+  --elixir:#e0459f; --elixir2:#ff8ad0;
+  --azul:#3fa9ff; --azul2:#1b4f86;
+  --rojo:#ff5a5a; --verde:#5ddb86;
+  --panel:#161c2e; --panel2:#222b45; --borde:#39446a;
+  --texto:#eef3ff; --tenue:#95a1c4;
+  --leg:#39e6ff; --epi:#c65cff; --rar:#ff9f2e; --com:#c3ccdd;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;overflow:hidden;}
+body{
+  background:radial-gradient(900px 600px at 50% 0%,#1a2440 0%,#080b14 70%);
+  color:var(--texto);
+  font-family:"Segoe UI",system-ui,-apple-system,Roboto,"Helvetica Neue",Arial,sans-serif;
+  display:flex;align-items:center;justify-content:center;
+  user-select:none;-webkit-user-select:none;touch-action:manipulation;
+}
+button{font-family:inherit;color:inherit;border:0;background:none;cursor:pointer;}
+
+/* ====== MARCO ESCALABLE ====== */
+#frame{
+  position:relative;width:480px;height:812px;flex:none;
+  transform-origin:center center;
+  background:#0b0f1c;border-radius:18px;
+  box-shadow:0 0 0 2px #2b3454,0 20px 60px rgba(0,0,0,.7),0 0 90px rgba(63,169,255,.10);
+  overflow:hidden;
+}
+
+/* ====== ARENA ====== */
+#arena-wrap{position:absolute;top:0;left:0;width:480px;height:640px;overflow:hidden;background:#2d5c22;}
+#arena{display:block;width:480px;height:640px;touch-action:none;}
+
+/* ====== HUD SUPERIOR ====== */
+#battle-hud{
+  position:absolute;top:0;left:0;width:100%;height:46px;z-index:6;pointer-events:none;
+  display:flex;align-items:center;justify-content:space-between;padding:6px 10px;gap:8px;
+  background:linear-gradient(180deg,rgba(6,8,16,.78),rgba(6,8,16,0));
+}
+.crown-box{display:flex;align-items:center;gap:4px;font-weight:900;font-size:13px;text-shadow:0 2px 4px #000;}
+.crown-box .cslot{width:16px;height:16px;border-radius:50%;background:rgba(0,0,0,.45);border:1.5px solid rgba(255,255,255,.25);
+  display:flex;align-items:center;justify-content:center;font-size:10px;line-height:1;}
+.crown-box .cslot.on{background:linear-gradient(180deg,#ffe37a,#e0a200);border-color:#fff6c9;box-shadow:0 0 8px rgba(255,215,94,.8);}
+.tag{padding:2px 8px;border-radius:9px;font-size:11px;font-weight:800;letter-spacing:.4px;}
+.tag.enemy{background:rgba(190,40,40,.55);border:1px solid #ff7676;}
+.tag.mine{background:rgba(30,90,180,.55);border:1px solid #6fc0ff;}
+#timer{
+  font-size:16px;font-weight:900;color:#fff;background:rgba(0,0,0,.6);
+  padding:3px 12px;border-radius:11px;border:1.5px solid rgba(255,255,255,.22);
+  min-width:74px;text-align:center;letter-spacing:1px;font-variant-numeric:tabular-nums;
+}
+#timer.urgent{color:#ffd75e;border-color:var(--oro);box-shadow:0 0 12px rgba(255,215,94,.45);}
+
+/* ====== BANNER ====== */
+#banner{
+  position:absolute;top:33%;left:0;width:100%;text-align:center;z-index:8;pointer-events:none;
+  font-size:34px;font-weight:900;color:var(--oro);
+  text-shadow:0 0 18px rgba(255,80,0,.85),0 3px 0 #000,0 0 4px #000;
+  opacity:0;transform:scale(.55);transition:opacity .25s,transform .35s cubic-bezier(.2,1.7,.5,1);
+}
+#banner.show{opacity:1;transform:scale(1);}
+#toast{
+  position:absolute;bottom:186px;left:50%;transform:translateX(-50%) translateY(10px);
+  z-index:9;pointer-events:none;opacity:0;transition:opacity .18s,transform .18s;
+  background:rgba(8,11,20,.92);border:1px solid #4b5680;border-radius:20px;
+  padding:6px 14px;font-size:12px;font-weight:800;color:#ffd75e;white-space:nowrap;
+  box-shadow:0 4px 14px rgba(0,0,0,.6);
+}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+.deck-preview{display:flex;gap:5px;flex:none;}
+.deck-preview .mini{
+  flex:1;background:linear-gradient(180deg,#212a44,#161d31);border:1.5px solid #3b466e;
+  border-radius:7px;padding:4px 2px;text-align:center;position:relative;
+}
+.deck-preview .mini.Legendary{border-color:var(--leg);}
+.deck-preview .mini.Epic{border-color:var(--epi);}
+.deck-preview .mini.Rare{border-color:var(--rar);}
+.deck-preview .mini .mi{font-size:17px;line-height:1.1;}
+.deck-preview .mini .mc{font-size:8px;font-weight:900;color:var(--elixir2);}
+.avg-cost{font-size:10.5px;color:var(--tenue);text-align:right;font-weight:700;}
+
+/* ====== PANEL INFERIOR ====== */
+#panel{
+  position:absolute;left:0;top:640px;width:100%;height:172px;z-index:5;
+  background:linear-gradient(180deg,#1b2238 0%,#0a0e19 100%);
+  border-top:3px solid #3b466e;
+  display:flex;flex-direction:column;padding:7px 10px 9px;gap:7px;
+}
+.panel-row{display:flex;align-items:center;gap:8px;}
+.icon-btn{
+  width:34px;height:30px;border-radius:9px;font-size:15px;flex:none;
+  background:linear-gradient(180deg,#33436b,#212b47);border:1px solid #4d5c8a;
+  display:flex;align-items:center;justify-content:center;box-shadow:0 2px 0 #10162a;
+}
+.icon-btn:active{transform:translateY(1px);box-shadow:none;}
+#ability-btn{
+  display:none;padding:0 10px;height:30px;border-radius:9px;font-size:11px;font-weight:900;flex:none;
+  background:linear-gradient(180deg,#c93bff,#6a1391);border:1px solid #f0a6ff;color:#fff;
+  box-shadow:0 0 14px rgba(201,59,255,.6);white-space:nowrap;
+}
+#ability-btn.on{display:block;animation:pulseAb .8s infinite alternate;}
+#ability-btn.cd{display:block;background:linear-gradient(180deg,#3a4160,#252b40);border-color:#5b6489;box-shadow:none;opacity:.75;animation:none;}
+@keyframes pulseAb{from{transform:scale(1);}to{transform:scale(1.07);}}
+
+.elixir-bar{
+  position:relative;flex:1;height:22px;border-radius:11px;overflow:hidden;
+  background:#2a0f22;border:2px solid #6b2450;box-shadow:inset 0 2px 6px rgba(0,0,0,.7);
+}
+.elixir-fill{
+  position:absolute;inset:0;width:0%;
+  background:linear-gradient(90deg,#a0186b,#e0459f 55%,#ff9ad8);
+  box-shadow:0 0 14px rgba(224,69,159,.85);transition:width .06s linear;
+}
+.elixir-pips{position:absolute;inset:0;display:flex;}
+.elixir-pips i{flex:1;border-right:1px solid rgba(0,0,0,.45);}
+.elixir-pips i:last-child{border-right:0;}
+.elixir-txt{
+  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font-size:12px;font-weight:900;text-shadow:0 1px 3px #000,0 0 6px #000;letter-spacing:.5px;
+}
+.elixir-bar.x2{border-color:var(--oro);box-shadow:inset 0 2px 6px rgba(0,0,0,.7),0 0 12px rgba(255,215,94,.55);}
+
+/* ====== CARTAS EN MANO ====== */
+.hand-row{display:flex;gap:7px;align-items:flex-end;height:112px;}
+.next-card{
+  width:52px;height:96px;border-radius:9px;flex:none;
+  background:linear-gradient(180deg,#232c48,#161d31);border:2px solid #3c4a72;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+  opacity:.85;
+}
+.next-card .nl{font-size:8px;color:var(--tenue);font-weight:800;letter-spacing:.5px;}
+.next-card .ni{font-size:23px;line-height:1;}
+.next-card .nc{font-size:9px;font-weight:900;color:var(--elixir2);}
+.hand-cards{display:flex;gap:7px;flex:1;height:100%;}
+.card{
+  position:relative;flex:1;border-radius:10px;cursor:grab;
+  background:linear-gradient(180deg,#2b3452,#18203a);
+  border:2px solid #4a5680;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;
+  box-shadow:0 3px 0 rgba(0,0,0,.55);transition:transform .12s,box-shadow .12s,filter .12s;
+  overflow:visible;
+}
+.card .cname{font-size:8.5px;font-weight:800;text-align:center;line-height:1.05;padding:0 2px;color:#dfe7ff;}
+.card .cicon{font-size:29px;line-height:1;filter:drop-shadow(0 2px 3px rgba(0,0,0,.6));}
+.card .clvl{position:absolute;bottom:2px;left:50%;transform:translateX(-50%);font-size:7.5px;font-weight:900;color:#0c1020;background:var(--oro);padding:0 4px;border-radius:5px;}
+.card .ccost{
+  position:absolute;top:-7px;left:-6px;width:23px;height:23px;border-radius:50%;
+  background:radial-gradient(circle at 35% 30%,#ff8ad0,#c1147d);
+  border:2px solid #fff;color:#fff;font-size:12px;font-weight:900;
+  display:flex;align-items:center;justify-content:center;box-shadow:0 2px 5px rgba(0,0,0,.8);
+}
+.card.Legendary{border-color:var(--leg);box-shadow:0 3px 0 rgba(0,0,0,.55),inset 0 0 14px rgba(57,230,255,.28);}
+.card.Epic{border-color:var(--epi);box-shadow:0 3px 0 rgba(0,0,0,.55),inset 0 0 14px rgba(198,92,255,.28);}
+.card.Rare{border-color:var(--rar);box-shadow:0 3px 0 rgba(0,0,0,.55),inset 0 0 14px rgba(255,159,46,.25);}
+.card.Common{border-color:#8794b5;}
+.card.sel{transform:translateY(-10px) scale(1.04);box-shadow:0 0 18px var(--oro),0 6px 0 rgba(0,0,0,.5);border-color:var(--oro)!important;}
+.card.poor{filter:grayscale(.85) brightness(.62);cursor:not-allowed;}
+.card.poor .ccost{background:radial-gradient(circle at 35% 30%,#8d93a8,#4a4f63);}
+
+/* ====== EMOTES ====== */
+#emote-picker{
+  position:absolute;left:8px;top:596px;z-index:9;display:none;gap:6px;padding:7px 9px;
+  background:rgba(10,14,26,.96);border:2px solid var(--oro);border-radius:12px;
+  box-shadow:0 8px 24px rgba(0,0,0,.75);
+}
+#emote-picker.open{display:flex;}
+#emote-picker span{font-size:25px;cursor:pointer;transition:transform .1s;}
+#emote-picker span:active{transform:scale(1.35);}
+
+/* ====== OVERLAY / MENÚ ====== */
+#overlay{position:absolute;inset:0;z-index:20;display:flex;flex-direction:column;background:linear-gradient(180deg,#0d1424,#070a12);}
+#overlay.hidden{display:none;}
+.tabs{display:flex;background:#121829;border-bottom:2px solid #262f4a;flex:none;}
+.tab{flex:1;padding:13px 4px;text-align:center;font-weight:800;font-size:13px;color:#7f8bad;position:relative;}
+.tab.active{color:var(--oro);background:#19203a;}
+.tab.active::after{content:"";position:absolute;left:0;bottom:-2px;width:100%;height:3px;background:var(--oro);}
+.page{flex:1;display:none;flex-direction:column;gap:12px;padding:14px;overflow-y:auto;overscroll-behavior:contain;}
+.page.active{display:flex;}
+.page::-webkit-scrollbar{width:6px;}
+.page::-webkit-scrollbar-thumb{background:#39446a;border-radius:3px;}
+
+.profile{
+  background:linear-gradient(150deg,#1d2540,#141a2c);border:1px solid rgba(255,215,94,.35);
+  border-radius:14px;padding:14px;text-align:center;box-shadow:0 6px 18px rgba(0,0,0,.5);flex:none;
+}
+.profile .tro{font-size:30px;font-weight:900;color:var(--oro);text-shadow:0 0 14px rgba(255,215,94,.35);line-height:1.1;}
+.profile .ar{font-size:14px;font-weight:800;color:var(--leg);margin-top:3px;}
+.profile .stats{display:flex;justify-content:center;gap:14px;margin-top:8px;font-size:12px;font-weight:700;color:var(--tenue);}
+.profile .stats b{color:var(--verde);}
+.bar-track{height:7px;background:#0b0f1c;border-radius:4px;margin-top:9px;overflow:hidden;border:1px solid #2b3350;}
+.bar-fill{height:100%;background:linear-gradient(90deg,#ffd75e,#ff9f2e);border-radius:4px;transition:width .3s;}
+.hint{font-size:10.5px;color:#7c88ab;margin-top:5px;}
+
+h3.sec{font-size:11.5px;color:#8d99bd;text-transform:uppercase;letter-spacing:1.4px;font-weight:800;flex:none;}
+.chests{display:flex;gap:7px;flex:none;}
+.chest{
+  flex:1;height:82px;border-radius:11px;border:2px dashed #354067;background:#141a2c;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+  font-size:9.5px;color:#6f7ba0;text-align:center;padding:3px;transition:transform .12s;
+}
+.chest .cico{font-size:23px;line-height:1;}
+.chest.full{border-style:solid;cursor:pointer;color:#fff;}
+.chest.full:active{transform:scale(.95);}
+.chest.Plata{border-color:#c8d2e6;background:linear-gradient(180deg,#242c40,#161c2c);box-shadow:0 0 10px rgba(200,210,230,.18);}
+.chest.Oro{border-color:var(--oro);background:linear-gradient(180deg,#2c2718,#181510);box-shadow:0 0 12px rgba(255,215,94,.25);}
+.chest.Mágico{border-color:var(--epi);background:linear-gradient(180deg,#291a3a,#160f20);box-shadow:0 0 12px rgba(198,92,255,.3);}
+.chest.Legendario{border-color:var(--leg);background:linear-gradient(180deg,#12313a,#0c1c22);box-shadow:0 0 14px rgba(57,230,255,.35);}
+
+.btn-big{
+  padding:15px;font-size:20px;font-weight:900;letter-spacing:.5px;border-radius:30px;flex:none;
+  background:linear-gradient(180deg,#41d472,#1d8c47);color:#fff;text-shadow:0 2px 3px rgba(0,0,0,.5);
+  box-shadow:0 5px 0 #135c2f,0 8px 20px rgba(45,190,100,.28);
+}
+.btn-big:active{transform:translateY(4px);box-shadow:0 1px 0 #135c2f;}
+.btn-big.alt{background:linear-gradient(180deg,#4aa8ff,#1c66b8);box-shadow:0 5px 0 #10457f,0 8px 20px rgba(60,150,255,.25);}
+.btn-sm{padding:8px 14px;border-radius:10px;font-size:12px;font-weight:800;background:linear-gradient(180deg,#38456d,#242e4b);border:1px solid #4e5b8b;}
+
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;}
+.col-card{
+  position:relative;border-radius:9px;padding:6px 3px 5px;background:linear-gradient(180deg,#212a44,#161d31);
+  border:2px solid #3b466e;
+  display:flex;flex-direction:column;align-items:center;gap:1px;transition:transform .1s;
+}
+.col-card:active{transform:scale(.95);}
+.col-card.Legendary{border-color:var(--leg);}
+.col-card.Epic{border-color:var(--epi);}
+.col-card.Rare{border-color:var(--rar);}
+.col-card.Common{border-color:#8794b5;}
+.col-card.in{background:linear-gradient(180deg,#2e3a5e,#1c2440);box-shadow:0 0 10px rgba(255,215,94,.28);}
+.col-card .ico{font-size:22px;line-height:1;}
+.col-card .nm{font-size:8px;font-weight:800;text-align:center;line-height:1.05;height:18px;display:flex;align-items:center;}
+.col-card .lv{font-size:8px;color:var(--oro);font-weight:800;}
+.col-card .cst{position:absolute;top:-5px;left:-5px;width:17px;height:17px;border-radius:50%;
+  background:radial-gradient(circle at 35% 30%,#ff8ad0,#c1147d);border:1.5px solid #fff;
+  font-size:9px;font-weight:900;display:flex;align-items:center;justify-content:center;}
+.col-card .mark{position:absolute;top:-5px;right:-5px;background:var(--oro);color:#111;font-size:7px;font-weight:900;padding:1px 4px;border-radius:5px;}
+.prog{width:100%;height:4px;background:#0c1020;border-radius:2px;overflow:hidden;margin-top:2px;}
+.prog i{display:block;height:100%;background:linear-gradient(90deg,#4aa8ff,#7fd0ff);}
+.up-btn{
+  margin-top:3px;width:100%;border-radius:5px;padding:3px 2px;font-size:8px;font-weight:900;
+  background:linear-gradient(180deg,#41d472,#1d8c47);color:#fff;
+}
+.up-btn:disabled{background:#333c56;color:#71799a;cursor:not-allowed;}
+.empty-slot{border:2px dashed #3b466e;border-radius:9px;min-height:74px;display:flex;align-items:center;justify-content:center;color:#525d80;font-size:20px;}
+
+/* ====== MODAL ====== */
+#modal{position:absolute;inset:0;z-index:40;display:none;align-items:center;justify-content:center;padding:24px;background:rgba(4,6,12,.82);}
+#modal.open{display:flex;}
+.modal-box{
+  width:100%;background:linear-gradient(160deg,#1e2740,#131a2c);border:2px solid var(--borde);
+  border-radius:16px;padding:20px 18px;text-align:center;box-shadow:0 18px 50px rgba(0,0,0,.8);
+  animation:pop .25s cubic-bezier(.2,1.6,.5,1);
+}
+@keyframes pop{from{transform:scale(.7);opacity:0;}to{transform:scale(1);opacity:1;}}
+.modal-box h2{font-size:25px;margin-bottom:6px;font-weight:900;letter-spacing:.5px;}
+.modal-box h2.win{color:var(--oro);text-shadow:0 0 18px rgba(255,215,94,.5);}
+.modal-box h2.lose{color:var(--rojo);}
+.modal-box h2.draw{color:var(--tenue);}
+.modal-box p{font-size:13px;color:var(--tenue);line-height:1.55;}
+.modal-box .rewards{display:flex;flex-direction:column;gap:6px;margin:14px 0;font-size:14px;font-weight:800;}
+.modal-box .rw{background:rgba(0,0,0,.3);border:1px solid #2f3a5c;border-radius:9px;padding:8px;}
+.modal-actions{display:flex;gap:8px;margin-top:6px;}
+.modal-actions button{flex:1;}
+.help-list{text-align:left;font-size:12px;color:#c3cce6;line-height:1.7;}
+.help-list b{color:var(--oro);}
+</style>
+</head>
+<body>
+<div id="frame">
+  <div id="arena-wrap"><canvas id="arena" width="480" height="640"></canvas></div>
+
+  <div id="battle-hud">
+    <div class="crown-box" id="crowns-enemy"></div>
+    <div id="timer">3:00</div>
+    <div class="crown-box" id="crowns-player"></div>
+  </div>
+
+  <div id="banner"></div>
+  <div id="toast"></div>
+
+  <div id="emote-picker"></div>
+
+  <div id="panel">
+    <div class="panel-row">
+      <button class="icon-btn" id="emote-btn" title="Emotes">💬</button>
+      <div class="elixir-bar" id="elixir-bar">
+        <div class="elixir-fill" id="elixir-fill"></div>
+        <div class="elixir-pips"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+        <div class="elixir-txt" id="elixir-txt">5/10</div>
+      </div>
+      <button id="ability-btn">✨ PODER</button>
+      <button class="icon-btn" id="surrender-btn" title="Rendirse">🏳️</button>
+    </div>
+    <div class="hand-row">
+      <div class="next-card" id="next-card"><div class="nl">SIGUE</div><div class="ni">—</div><div class="nc"></div></div>
+      <div class="hand-cards" id="hand"></div>
+    </div>
+  </div>
+
+  <div id="overlay">
+    <div class="tabs">
+      <div class="tab active" data-tab="battle">⚔️ Batalla</div>
+      <div class="tab" data-tab="cards">🎴 Mazo</div>
+    </div>
+
+    <div class="page active" id="page-battle">
+      <div class="profile">
+        <div class="tro" id="p-trophies">🏆 0</div>
+        <div class="ar" id="p-arena">Arena 1</div>
+        <div class="bar-track"><div class="bar-fill" id="p-arena-bar" style="width:0%"></div></div>
+        <div class="hint" id="p-next-arena">—</div>
+        <div class="stats">
+          <span>🪙 <b id="p-gold">0</b></span>
+          <span>🏅 <b id="p-wins">0</b>V</span>
+          <span>💀 <b id="p-losses">0</b>D</span>
+        </div>
+      </div>
+
+      <h3 class="sec">Tu mazo de batalla</h3>
+      <div class="deck-preview" id="deck-preview"></div>
+      <div class="avg-cost" id="avg-cost"></div>
+
+      <h3 class="sec">Cofres de recompensa</h3>
+      <div class="chests" id="chests"></div>
+
+      <button class="btn-big" id="start-btn">¡A LA BATALLA!</button>
+      <div style="display:flex;gap:8px;">
+        <button class="btn-sm" id="help-btn" style="flex:1">❔ Cómo se juega</button>
+        <button class="btn-sm" id="sound-btn" style="flex:none">🔊</button>
+      </div>
+    </div>
+
+    <div class="page" id="page-cards">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <h3 class="sec">Mazo de batalla (<span id="deck-count">0</span>/8)</h3>
+        <button class="btn-sm" id="random-deck">🎲 Aleatorio</button>
+      </div>
+      <div class="grid" id="deck-grid"></div>
+      <h3 class="sec">Colección (<span id="col-count">0</span> cartas)</h3>
+      <div class="grid" id="collection-grid"></div>
+    </div>
+  </div>
+
+  <div id="modal"><div class="modal-box" id="modal-box"></div></div>
+</div>
+
+<script>
+"use strict";
+/* =========================================================================
+   CHOQUE REAL — clon de Clash Royale en un solo archivo
+   HTML5 Canvas + JavaScript puro. Sin dependencias ni assets externos.
+   ========================================================================= */
+
+/* ---------------------------- UTILIDADES ---------------------------- */
+const TAU = Math.PI * 2;
+const clamp = (v, a, b) => v < a ? a : (v > b ? b : v);
+const lerp = (a, b, t) => a + (b - a) * t;
+const rnd = (a = 1, b = 0) => b + Math.random() * (a - b);
+const rndInt = (a, b) => Math.floor(rnd(b + 1, a));
+const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+const $ = id => document.getElementById(id);
+
+/* Almacenamiento tolerante a fallos (modo incógnito, cookies bloqueadas...) */
+const Store = {
+  get(key, def) {
+    try {
+      const raw = localStorage.getItem(key);
+      if (raw === null || raw === undefined) return def;
+      return JSON.parse(raw);
+    } catch (e) { return def; }
+  },
+  set(key, val) {
+    try { localStorage.setItem(key, JSON.stringify(val)); } catch (e) { /* sin persistencia */ }
+  }
+};
+
+/* ------------------------------ AUDIO ------------------------------- */
+const Snd = {
+  ctx: null, master: null, muted: Store.get('cr2_muted', false),
+  init() {
+    if (this.ctx) { if (this.ctx.state === 'suspended') this.ctx.resume(); return; }
+    try {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return;
+      this.ctx = new AC();
+      this.master = this.ctx.createGain();
+      this.master.gain.value = this.muted ? 0 : 0.5;
+      this.master.connect(this.ctx.destination);
+    } catch (e) { this.ctx = null; }
+  },
+  setMuted(m) {
+    this.muted = m; Store.set('cr2_muted', m);
+    if (this.master) this.master.gain.value = m ? 0 : 0.5;
+  },
+  tone(freq, type, dur, vol, slideTo) {
+    if (!this.ctx || this.muted) return;
+    try {
+      const t = this.ctx.currentTime;
+      const osc = this.ctx.createOscillator();
+      const g = this.ctx.createGain();
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, t);
+      if (slideTo) osc.frequency.exponentialRampToValueAtTime(Math.max(20, slideTo), t + dur);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(Math.max(0.0002, vol), t + 0.012);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      osc.connect(g); g.connect(this.master);
+      osc.start(t); osc.stop(t + dur + 0.02);
+    } catch (e) { /* ignorar */ }
+  },
+  noise(dur, vol, freq) {
+    if (!this.ctx || this.muted) return;
+    try {
+      const t = this.ctx.currentTime;
+      const len = Math.max(1, Math.floor(this.ctx.sampleRate * dur));
+      const buf = this.ctx.createBuffer(1, len, this.ctx.sampleRate);
+      const data = buf.getChannelData(0);
+      for (let i = 0; i < len; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / len);
+      const src = this.ctx.createBufferSource(); src.buffer = buf;
+      const filt = this.ctx.createBiquadFilter();
+      filt.type = 'lowpass'; filt.frequency.value = freq || 900;
+      const g = this.ctx.createGain(); g.gain.value = vol;
+      src.connect(filt); filt.connect(g); g.connect(this.master);
+      src.start(t);
+    } catch (e) { /* ignorar */ }
+  },
+  deploy() { this.tone(330, 'triangle', 0.12, 0.10, 520); this.noise(0.12, 0.06, 1400); },
+  melee() { this.noise(0.07, 0.09, 1800); },
+  shoot() { this.tone(700, 'square', 0.06, 0.045, 380); },
+  hit() { this.noise(0.05, 0.05, 2600); },
+  boom() { this.noise(0.4, 0.22, 420); this.tone(70, 'sine', 0.35, 0.16, 30); },
+  zap() { this.tone(1500, 'sawtooth', 0.16, 0.10, 220); },
+  towerDown() { this.noise(0.7, 0.3, 300); this.tone(120, 'square', 0.6, 0.2, 40); },
+  crown() { this.tone(880, 'sine', 0.16, 0.14); setTimeout(() => this.tone(1320, 'sine', 0.28, 0.14), 130); },
+  emote() { this.tone(560, 'sine', 0.09, 0.09); setTimeout(() => this.tone(840, 'sine', 0.12, 0.09), 80); },
+  ability() { this.tone(400, 'sawtooth', 0.3, 0.13, 1400); },
+  win() { [523, 659, 784, 1046].forEach((f, i) => setTimeout(() => this.tone(f, 'sine', 0.3, 0.15), i * 130)); },
+  lose() { [400, 330, 262, 196].forEach((f, i) => setTimeout(() => this.tone(f, 'triangle', 0.35, 0.13), i * 160)); },
+  chest() { [660, 880, 1100].forEach((f, i) => setTimeout(() => this.tone(f, 'triangle', 0.2, 0.12), i * 90)); }
+};
+
+/* ------------------------------ ARENAS ------------------------------ */
+const ARENAS = [
+  { min: 0,    name: 'Arena 1: Estadio Duende',    grass: '#3f7d2d', grass2: '#377025', river: '#2f7fbe', bridge: '#8b5a2b', fx: 'hojas' },
+  { min: 300,  name: 'Arena 2: Foso de Huesos',    grass: '#4d4033', river: '#25404f', bridge: '#5a4433', fx: 'polvo' },
+  { min: 600,  name: 'Arena 3: Taller Constructor',grass: '#5c6a7a', river: '#243447', bridge: '#a8761d', fx: 'chispas' },
+  { min: 900,  name: 'Arena 4: Fuerte P.E.K.K.A',  grass: '#2b3a4d', river: '#6d3a92', bridge: '#a33', fx: 'brasas' },
+  { min: 1200, name: 'Arena 5: Valle de Hechizos', grass: '#4b2f5c', river: '#2a6fa8', bridge: '#c9a227', fx: 'magia' },
+  { min: 1600, name: 'Arena 6: Arena Real',        grass: '#8a7420', river: '#2b7cc0', bridge: '#e0c04a', fx: 'oro' },
+  { min: 2000, name: 'Arena 7: Pico Helado',       grass: '#6f9fc4', river: '#1d5a86', bridge: '#dceaf5', fx: 'nieve' },
+  { min: 2400, name: 'Arena 8: Electrovalle',      grass: '#26313f', river: '#31b56a', bridge: '#57c98a', fx: 'electro' },
+  { min: 2800, name: 'Arena 9: Pueblo Espeluznante',grass: '#2c2350', river: '#b8452f', bridge: '#7b4bab', fx: 'magia' }
+];
+function arenaFor(tr) {
+  let a = ARENAS[0];
+  for (const x of ARENAS) if (tr >= x.min) a = x;
+  return a;
+}
+function nextArena(tr) {
+  for (const x of ARENAS) if (tr < x.min) return x;
+  return null;
+}
+
+/* ------------------------- CATÁLOGO DE CARTAS -------------------------
+   hp/dmg = nivel 1 · hitSpeed y deploy en segundos · range/sight en px
+   speed en px/s · targets: 'ground' | 'air' | 'all' | 'buildings'
+   ---------------------------------------------------------------------- */
+const CARDS = {
+  /* ---------- COMUNES ---------- */
+  KNIGHT: { name: 'Caballero', rarity: 'Common', cost: 3, icon: '🗡️', type: 'troop',
+    hp: 900, dmg: 90, hitSpeed: 1.1, range: 12, sight: 150, speed: 34, targets: 'ground',
+    r: 11, mass: 1.3, art: { body: '#4a6fa5', trim: '#c9d6ea', skin: '#e8b98a', weapon: 'sword', shape: 'humano' },
+    desc: 'Guerrero resistente y barato. Aguanta todo por delante.' },
+
+  ARCHERS: { name: 'Arqueras', rarity: 'Common', cost: 3, icon: '🏹', type: 'troop', count: 2,
+    hp: 260, dmg: 60, hitSpeed: 0.9, range: 145, sight: 160, speed: 34, targets: 'all',
+    r: 8, mass: 0.7, art: { body: '#5aa06a', trim: '#f0d9a0', skin: '#f0c49b', weapon: 'bow', shape: 'humano' },
+    desc: 'Dos tiradoras que atacan a tierra y aire.' },
+
+  SKELETONS: { name: 'Esqueletos', rarity: 'Common', cost: 1, icon: '💀', type: 'troop', count: 4,
+    hp: 90, dmg: 55, hitSpeed: 0.8, range: 8, sight: 130, speed: 52, targets: 'ground',
+    r: 7, mass: 0.4, art: { body: '#e8e8e0', trim: '#b9b9ae', skin: '#f2f2ea', weapon: 'bone', shape: 'hueso' },
+    desc: 'Cuatro huesitos rápidos. Distraen y hacen daño en grupo.' },
+
+  MINIONS: { name: 'Esbirros', rarity: 'Common', cost: 3, icon: '🦇', type: 'troop', count: 3,
+    hp: 210, dmg: 52, hitSpeed: 0.9, range: 32, sight: 150, speed: 46, targets: 'all', air: true,
+    r: 8, mass: 0.6, art: { body: '#6f5bd6', trim: '#3a2f7a', skin: '#8f7ce8', weapon: 'claw', shape: 'volador' },
+    desc: 'Tres voladores rápidos. Solo los atacan tropas antiaéreas.' },
+
+  ZAP: { name: 'Descarga', rarity: 'Common', cost: 2, icon: '⚡', type: 'spell',
+    dmg: 180, radius: 62, stun: 0.6, towerMult: 0.35, color: '#7fe8ff',
+    desc: 'Daño instantáneo en área y aturde 0,6 s.' },
+
+  CANNON: { name: 'Cañón', rarity: 'Common', cost: 3, icon: '🔫', type: 'building',
+    hp: 780, dmg: 100, hitSpeed: 0.9, range: 145, sight: 145, targets: 'ground', life: 30,
+    r: 14, art: { body: '#6b6f7a', trim: '#3d434f' },
+    desc: 'Estructura defensiva. Atrae a las tropas terrestres.' },
+
+  /* ---------- ESPECIALES ---------- */
+  VALKYRIE: { name: 'Valquiria', rarity: 'Rare', cost: 4, icon: '🪓', type: 'troop',
+    hp: 1300, dmg: 130, hitSpeed: 1.4, range: 14, sight: 150, speed: 34, targets: 'ground', splash: 52,
+    r: 12, mass: 1.4, art: { body: '#b8484f', trim: '#ffd75e', skin: '#f0c49b', weapon: 'axe', shape: 'humano' },
+    desc: 'Golpe giratorio en área. Barre enjambres enteros.' },
+
+  HOG_RIDER: { name: 'Montapuercos', rarity: 'Rare', cost: 4, icon: '🐗', type: 'troop',
+    hp: 1400, dmg: 185, hitSpeed: 1.5, range: 12, sight: 999, speed: 62, targets: 'buildings',
+    r: 12, mass: 1.4, art: { body: '#8a5a3a', trim: '#e0c07a', skin: '#c98a5a', weapon: 'hammer', shape: 'jinete' },
+    desc: 'Corre directo a las torres ignorando a las tropas.' },
+
+  MUSKETEER: { name: 'Mosquetera', rarity: 'Rare', cost: 4, icon: '🔭', type: 'troop',
+    hp: 620, dmg: 165, hitSpeed: 1.1, range: 175, sight: 185, speed: 34, targets: 'all',
+    r: 9, mass: 0.9, art: { body: '#3f6fa8', trim: '#d8dfe8', skin: '#f0c49b', weapon: 'gun', shape: 'humano' },
+    desc: 'Alcance largo y buen daño constante.' },
+
+  WIZARD: { name: 'Mago', rarity: 'Rare', cost: 5, icon: '🧙', type: 'troop',
+    hp: 660, dmg: 165, hitSpeed: 1.4, range: 130, sight: 155, speed: 34, targets: 'all', splash: 46,
+    r: 10, mass: 0.9, art: { body: '#c2452f', trim: '#f5e6c8', skin: '#f0c49b', weapon: 'staff', shape: 'humano' },
+    desc: 'Bolas de fuego en área contra grupos.' },
+
+  GIANT: { name: 'Gigante', rarity: 'Rare', cost: 5, icon: '🛡️', type: 'troop',
+    hp: 2900, dmg: 165, hitSpeed: 1.5, range: 16, sight: 999, speed: 26, targets: 'buildings',
+    r: 17, mass: 3.2, art: { body: '#c98a4a', trim: '#7a4a25', skin: '#e0a86a', weapon: 'fist', shape: 'gigante' },
+    desc: 'Muralla andante que solo golpea estructuras.' },
+
+  ARROWS: { name: 'Flechas', rarity: 'Rare', cost: 3, icon: '🎯', type: 'spell',
+    dmg: 255, radius: 115, towerMult: 0.35, color: '#ffd75e',
+    desc: 'Lluvia amplia. Limpia enjambres y esbirros.' },
+
+  INFERNO: { name: 'Torre Infierno', rarity: 'Rare', cost: 5, icon: '🌋', type: 'building',
+    hp: 850, dmg: 30, hitSpeed: 0.4, range: 150, sight: 150, targets: 'all', life: 30,
+    ramp: true, rampMax: 7, r: 15, art: { body: '#8a3b2a', trim: '#ffb347' },
+    desc: 'Su rayo sube de daño sin parar: derrite tanques.' },
+
+  /* ---------- ÉPICAS ---------- */
+  BABY_DRAGON: { name: 'Bebé Dragón', rarity: 'Epic', cost: 4, icon: '🐲', type: 'troop',
+    hp: 1050, dmg: 115, hitSpeed: 1.6, range: 105, sight: 150, speed: 42, targets: 'all', air: true, splash: 42,
+    r: 13, mass: 1.2, art: { body: '#4fb36b', trim: '#ffd75e', skin: '#8fe0a0', weapon: 'fire', shape: 'volador' },
+    desc: 'Vuela y quema en área. Muy difícil de matar.' },
+
+  PEKKA: { name: 'P.E.K.K.A', rarity: 'Epic', cost: 7, icon: '🤖', type: 'troop',
+    hp: 3700, dmg: 640, hitSpeed: 1.8, range: 16, sight: 150, speed: 26, targets: 'ground',
+    r: 16, mass: 3.0, art: { body: '#4a3f7a', trim: '#39e6ff', skin: '#2a2350', weapon: 'greatsword', shape: 'armadura' },
+    desc: 'Un solo golpe destroza casi cualquier cosa.' },
+
+  WITCH: { name: 'Bruja', rarity: 'Epic', cost: 5, icon: '🔮', type: 'troop',
+    hp: 760, dmg: 95, hitSpeed: 1.1, range: 125, sight: 150, speed: 34, targets: 'all', splash: 32,
+    spawnEvery: 7, spawnCard: 'SKELETONS', spawnCount: 3,
+    r: 10, mass: 0.9, art: { body: '#6a3fa8', trim: '#c9a6ff', skin: '#dcc0b0', weapon: 'staff', shape: 'humano' },
+    desc: 'Invoca esqueletos sin parar mientras vive.' },
+
+  FIREBALL: { name: 'Bola de Fuego', rarity: 'Epic', cost: 4, icon: '🔥', type: 'spell',
+    dmg: 470, radius: 88, knock: 26, towerMult: 0.35, color: '#ff7a2a',
+    desc: 'Gran daño en área y empujón a los supervivientes.' },
+
+  MINER: { name: 'Minero', rarity: 'Epic', cost: 3, icon: '⛏️', type: 'troop',
+    hp: 1150, dmg: 115, hitSpeed: 1.2, range: 12, sight: 140, speed: 44, targets: 'ground', anywhere: true, tunnel: true,
+    r: 11, mass: 1.1, art: { body: '#a8792f', trim: '#4a3a20', skin: '#e8b98a', weapon: 'pick', shape: 'humano' },
+    desc: 'Cava y aparece donde quieras, incluso junto a la torre rival.' },
+
+  RAGE: { name: 'Furia', rarity: 'Epic', cost: 2, icon: '💜', type: 'spell',
+    rage: true, radius: 112, duration: 7, color: '#d24bff',
+    desc: 'Zona morada: tus tropas corren y golpean mucho más rápido.' },
+
+  /* ---------- LEGENDARIAS ---------- */
+  MEGA_KNIGHT: { name: 'Megacaballero', rarity: 'Legendary', cost: 7, icon: '🥊', type: 'troop',
+    hp: 3600, dmg: 245, hitSpeed: 1.7, range: 14, sight: 150, speed: 34, targets: 'ground', splash: 58,
+    spawnDmg: 320, spawnRadius: 70, ability: 'salto',
+    r: 16, mass: 3.0, art: { body: '#2f3a6b', trim: '#39e6ff', skin: '#1b2145', weapon: 'fist', shape: 'armadura' },
+    desc: 'Aplasta al caer y salta sobre el enemigo con su PODER.' },
+
+  SPARKY: { name: 'Chispitas', rarity: 'Legendary', cost: 6, icon: '🔋', type: 'troop',
+    hp: 1400, dmg: 820, hitSpeed: 4.0, range: 130, sight: 150, speed: 26, targets: 'ground', splash: 72,
+    ability: 'carga', r: 14, mass: 2.0, art: { body: '#d9a33a', trim: '#39e6ff', skin: '#7a5c1a', weapon: 'coil', shape: 'maquina' },
+    desc: 'Carga lenta, disparo devastador. El PODER la recarga al instante.' },
+
+  PRINCESS: { name: 'Princesa', rarity: 'Legendary', cost: 3, icon: '👑', type: 'troop',
+    hp: 310, dmg: 135, hitSpeed: 2.8, range: 240, sight: 250, speed: 34, targets: 'all', splash: 46,
+    ability: 'lluvia', r: 8, mass: 0.6, art: { body: '#e05a9a', trim: '#ffd75e', skin: '#f5cba7', weapon: 'bow', shape: 'humano' },
+    desc: 'Dispara desde lejísimos. Su PODER lanza una lluvia de flechas.' },
+
+  LUMBERJACK: { name: 'Leñador', rarity: 'Legendary', cost: 4, icon: '🪵', type: 'troop',
+    hp: 1250, dmg: 185, hitSpeed: 0.7, range: 12, sight: 150, speed: 66, targets: 'ground', dropsRage: true,
+    r: 11, mass: 1.2, art: { body: '#3f8a5a', trim: '#c94f3a', skin: '#e8b98a', weapon: 'axe', shape: 'humano' },
+    desc: 'Golpea rapidísimo y al morir suelta un frasco de Furia.' },
+
+  ELECTRO_WIZARD: { name: 'Mago Eléctrico', rarity: 'Legendary', cost: 4, icon: '🔌', type: 'troop',
+    hp: 660, dmg: 115, hitSpeed: 1.2, range: 125, sight: 150, speed: 38, targets: 'all',
+    spawnZap: 150, spawnZapDmg: 130, hitStun: 0.35,
+    r: 9, mass: 0.9, art: { body: '#2f6fd6', trim: '#7fe8ff', skin: '#f0c49b', weapon: 'coil', shape: 'humano' },
+    desc: 'Aturde en cada golpe y suelta una descarga al aparecer.' }
+};
+Object.keys(CARDS).forEach(id => { CARDS[id].id = id; });
+const CARD_IDS = Object.keys(CARDS);
+const RARITY_ORDER = { Common: 0, Rare: 1, Epic: 2, Legendary: 3 };
+const RARITY_ES = { Common: 'Común', Rare: 'Especial', Epic: 'Épica', Legendary: 'Legendaria' };
+
+/* ------------------------ PROGRESO DEL JUGADOR ------------------------ */
+const MAX_LEVEL = 13;
+const UPGRADE = {
+  Common:    { copies: 6, gold: 60 },
+  Rare:      { copies: 4, gold: 120 },
+  Epic:      { copies: 3, gold: 240 },
+  Legendary: { copies: 2, gold: 500 }
+};
+const DEFAULT_DECK = ['GIANT', 'KNIGHT', 'ARCHERS', 'MUSKETEER', 'FIREBALL', 'ZAP', 'VALKYRIE', 'MINIONS'];
+
+const P = {
+  trophies: Store.get('cr2_trophies', 0),
+  gold: Store.get('cr2_gold', 1200),
+  wins: Store.get('cr2_wins', 0),
+  losses: Store.get('cr2_losses', 0),
+  levels: Store.get('cr2_levels', {}),
+  copies: Store.get('cr2_copies', {}),
+  chests: Store.get('cr2_chests', [null, null, null, null]),
+  deck: Store.get('cr2_deck', null)
+};
+
+/* Saneado: cualquier dato corrupto o de una versión anterior se corrige */
+(function sanitize() {
+  if (typeof P.trophies !== 'number' || !isFinite(P.trophies)) P.trophies = 0;
+  if (typeof P.gold !== 'number' || !isFinite(P.gold)) P.gold = 1200;
+  if (typeof P.wins !== 'number') P.wins = 0;
+  if (typeof P.losses !== 'number') P.losses = 0;
+  if (!P.levels || typeof P.levels !== 'object') P.levels = {};
+  if (!P.copies || typeof P.copies !== 'object') P.copies = {};
+  if (!Array.isArray(P.chests)) P.chests = [null, null, null, null];
+  P.chests.length = 4;
+  for (let i = 0; i < 4; i++) if (P.chests[i] === undefined) P.chests[i] = null;
+
+  for (const id of CARD_IDS) {
+    const lv = parseInt(P.levels[id], 10);
+    P.levels[id] = (isFinite(lv) && lv >= 1) ? Math.min(lv, MAX_LEVEL) : 1;
+    const cp = parseInt(P.copies[id], 10);
+    P.copies[id] = (isFinite(cp) && cp >= 0) ? cp : 8;
+  }
+  for (const k of Object.keys(P.levels)) if (!CARDS[k]) delete P.levels[k];
+  for (const k of Object.keys(P.copies)) if (!CARDS[k]) delete P.copies[k];
+
+  let deck = Array.isArray(P.deck) ? P.deck.filter(id => CARDS[id]) : [];
+  deck = deck.filter((id, i) => deck.indexOf(id) === i).slice(0, 8);
+  for (const id of DEFAULT_DECK) { if (deck.length >= 8) break; if (!deck.includes(id)) deck.push(id); }
+  for (const id of CARD_IDS) { if (deck.length >= 8) break; if (!deck.includes(id)) deck.push(id); }
+  P.deck = deck;
+})();
+
+function save() {
+  Store.set('cr2_trophies', P.trophies); Store.set('cr2_gold', P.gold);
+  Store.set('cr2_wins', P.wins); Store.set('cr2_losses', P.losses);
+  Store.set('cr2_levels', P.levels); Store.set('cr2_copies', P.copies);
+  Store.set('cr2_chests', P.chests); Store.set('cr2_deck', P.deck);
+}
+const levelMult = lvl => Math.pow(1.09, (lvl || 1) - 1);
+const cardLevel = id => P.levels[id] || 1;
+
+/* --------------------------- GEOMETRÍA ------------------------------- */
+const W = 480, H = 640;
+const RIVER_TOP = 296, RIVER_BOT = 340;
+const BRIDGES = [{ x: 78, w: 58, cx: 107 }, { x: 344, w: 58, cx: 373 }];
+const KING_Y = { enemy: 66, player: 574 };
+const PRINCESS = [
+  { x: 100, y: 134 }, { x: 380, y: 134 },
+  { x: 100, y: 506 }, { x: 380, y: 506 }
+];
+const sideOf = y => y < RIVER_TOP ? 'top' : (y > RIVER_BOT ? 'bottom' : 'river');
+const enemyOf = t => t === 'player' ? 'enemy' : 'player';
+
+/* --------------------------- ESTADO GLOBAL ---------------------------- */
+const G = {
+  running: false, over: true, t: 0, time: 180, phase: 'normal',
+  elixir: 5, mult: 1, aiElixir: 5,
+  units: [], buildings: [], shots: [], parts: [], zones: [], casts: [], emotes: [], floats: [],
+  crowns: { player: 0, enemy: 0 },
+  queue: [], hand: [], selected: null, drag: null, pointer: { x: 0, y: 0, down: false },
+  abilityCd: 0, shake: 0, arena: ARENAS[0], enemyLevel: 1, aiSkill: 1,
+  ai: { think: 0, deck: [], hand: [], queue: [], pushCd: 0 },
+  result: null, lastFrame: 0, raf: 0, seq: 0
+};
+
+/* ============================== ENTIDADES ============================== */
+class Entity {
+  constructor(x, y, hp, team) {
+    this.id = ++G.seq;
+    this.pos = { x, y };
+    this.hp = hp; this.maxHp = hp; this.team = team;
+    this.radius = 12; this.alive = true;
+    this.stun = 0; this.rage = 0; this.hitFlash = 0; this.deployed = true;
+    this.air = false; this.isBuilding = false;
+  }
+  hurt(dmg, from) {
+    if (!this.alive || dmg <= 0) return;
+    this.hp -= dmg;
+    this.hitFlash = 0.14;
+    if (from && this.onHurt) this.onHurt(from);
+    if (this.hp <= 0) { this.hp = 0; this.die(); }
+  }
+  die() { this.alive = false; }
+  get pct() { return clamp(this.hp / this.maxHp, 0, 1); }
+}
+
+/* ------------------------------ TORRES -------------------------------- */
+class Building extends Entity {
+  constructor(x, y, team, kind, cardId) {
+    const card = cardId ? CARDS[cardId] : null;
+    const lvl = cardId ? (team === 'player' ? cardLevel(cardId) : G.enemyLevel) : 1;
+    const m = levelMult(lvl);
+    let hp, dmg, rate, range, targets, radius;
+    if (kind === 'king') { hp = 4300; dmg = 95; rate = 1.0; range = 160; targets = 'all'; radius = 26; }
+    else if (kind === 'princess') { hp = 2400; dmg = 62; rate = 0.8; range = 150; targets = 'all'; radius = 21; }
+    else {
+      hp = card.hp * m; dmg = card.dmg * m; rate = card.hitSpeed; range = card.range;
+      targets = card.targets; radius = card.r;
+    }
+    if (kind !== 'king' && kind !== 'princess') {
+      /* estructuras desplegadas escalan con el nivel */
+    } else {
+      const tm = levelMult(team === 'player' ? Math.max(1, Math.round(avgDeckLevel())) : G.enemyLevel);
+      hp = Math.round(hp * tm); dmg = Math.round(dmg * tm);
+    }
+    super(x, y, Math.round(hp), team);
+    this.kind = kind; this.card = card; this.level = lvl;
+    this.isBuilding = true; this.isTower = (kind === 'king' || kind === 'princess');
+    this.dmg = dmg; this.rate = rate; this.range = range; this.targets = targets;
+    this.radius = radius; this.cool = 0; this.target = null; this.angle = team === 'player' ? -Math.PI / 2 : Math.PI / 2;
+    this.fire = 0; this.active = kind !== 'king';
+    this.life = card && card.life ? card.life : 0;
+    this.ramp = card && card.ramp ? 0 : -1;
+    this.deployed = !card; this.deployT = card ? 1 : 0;
+    this.beam = null;
+  }
+  activate() { if (!this.active) { this.active = true; this.cool = 0.4; } }
+  onHurt() { this.activate(); }
+  update(dt) {
+    if (this.hitFlash > 0) this.hitFlash -= dt;
+    if (this.fire > 0) this.fire -= dt;
+    if (!this.deployed) {
+      this.deployT -= dt;
+      if (this.deployT <= 0) this.deployed = true;
+      return;
+    }
+    if (this.life > 0) {
+      this.life -= dt;
+      if (this.life <= 0) { this.hp = 0; this.die(); return; }
+    }
+    this.beam = null;
+    if (!this.active) return;
+
+    if (!validTarget(this, this.target)) this.target = acquireForBuilding(this);
+    const tg = this.target;
+    if (!tg) { this.ramp = this.ramp >= 0 ? 0 : this.ramp; return; }
+    const d = dist(this.pos, tg.pos) - tg.radius;
+    if (d > this.range) { this.target = null; return; }
+    this.angle = Math.atan2(tg.pos.y - this.pos.y, tg.pos.x - this.pos.x);
+
+    if (this.ramp >= 0) {
+      /* Torre Infierno: rayo continuo que sube de daño */
+      this.ramp = Math.min(this.card.rampMax, this.ramp + dt / 1.2);
+      const dps = this.dmg * (1 + this.ramp * 1.15) / this.rate;
+      tg.hurt(dps * dt, this);
+      this.beam = tg;
+      if (Math.random() < dt * 8) spark(tg.pos.x, tg.pos.y, '#ffb347', 2);
+      return;
+    }
+    this.cool -= dt;
+    if (this.cool <= 0) {
+      this.cool = this.rate;
+      this.fire = 0.14;
+      const kind = this.isTower ? 'arrow' : 'ball';
+      G.shots.push(new Shot(this.pos.x, this.pos.y - (this.isTower ? 14 : 4), tg, this.dmg, this.team, kind, 0));
+      Snd.shoot();
+    }
+  }
+  die() {
+    if (!this.alive) return;
+    this.alive = false;
+    boom(this.pos.x, this.pos.y, this.isTower ? 34 : 18, this.isTower ? '#ffb347' : '#9aa4bb');
+    if (this.isTower) {
+      G.shake = Math.max(G.shake, this.kind === 'king' ? 16 : 9);
+      Snd.towerDown();
+      const scorer = enemyOf(this.team);
+      if (this.kind === 'princess') {
+        G.crowns[scorer] += 1;
+        if (this.team === 'enemy') {
+          const lane = this.pos.x < 240 ? { x0: 0, x1: 240, y0: 116 } : { x0: 240, x1: W, y0: 116 };
+          if (!G.openLanes.some(l => l.x0 === lane.x0)) G.openLanes.push(lane);
+        }
+        floatText(this.pos.x, this.pos.y - 20, '¡CORONA!', '#ffd75e');
+        /* Al caer una torre, el rey despierta */
+        for (const b of G.buildings) if (b.team === this.team && b.kind === 'king') b.activate();
+        if (scorer === 'player') Snd.crown();
+        renderCrowns();
+        if (G.phase === 'overtime') endMatch();
+      } else {
+        G.crowns[scorer] = 3;
+        renderCrowns();
+        endMatch();
+      }
+    }
+  }
+}
+function avgDeckLevel() {
+  let s = 0;
+  for (const id of P.deck) s += cardLevel(id);
+  return P.deck.length ? s / P.deck.length : 1;
+}
+
+/* ------------------------------ TROPAS -------------------------------- */
+class Troop extends Entity {
+  constructor(x, y, cardId, team, level) {
+    const c = CARDS[cardId];
+    const lvl = level || (team === 'player' ? cardLevel(cardId) : G.enemyLevel);
+    const m = levelMult(lvl);
+    super(x, y, Math.round(c.hp * m), team);
+    this.card = c; this.level = lvl;
+    this.dmg = c.dmg * m; this.rate = c.hitSpeed; this.range = c.range; this.sight = c.sight || 150;
+    this.speed = c.speed; this.targets = c.targets; this.air = !!c.air;
+    this.splash = c.splash || 0; this.radius = c.r; this.mass = c.mass || 1;
+    this.cool = rnd(0.3); this.target = null; this.retarget = rnd(0.3);
+    this.deployed = false; this.deployT = c.tunnel ? 1.3 : 1.0;
+    this.anim = rnd(TAU); this.face = team === 'player' ? 1 : -1;
+    this.swing = 0; this.walking = false; this.spawnT = c.spawnEvery || 0;
+    this.bob = 0; this.hover = rnd(TAU);
+  }
+  onDeploy() {
+    poof(this.pos.x, this.pos.y, this.card.tunnel ? '#a8792f' : '#cfe4ff', 12);
+    if (this.card.spawnDmg) {
+      dealArea(this.pos.x, this.pos.y, this.card.spawnRadius, this.card.spawnDmg * levelMult(this.level), this.team, { knock: 22 });
+      boom(this.pos.x, this.pos.y, this.card.spawnRadius, '#7fd0ff');
+      G.shake = Math.max(G.shake, 9); Snd.boom();
+    }
+    if (this.card.spawnZap) {
+      dealArea(this.pos.x, this.pos.y, this.card.spawnZap, this.card.spawnZapDmg * levelMult(this.level), this.team, { stun: 0.4 });
+      ring(this.pos.x, this.pos.y, this.card.spawnZap, '#7fe8ff'); Snd.zap();
+    }
+  }
+  update(dt) {
+    if (this.hitFlash > 0) this.hitFlash -= dt;
+    if (this.swing > 0) this.swing -= dt;
+    this.walking = false;
+
+    if (!this.deployed) {
+      this.deployT -= dt;
+      if (this.deployT <= 0) { this.deployed = true; this.onDeploy(); }
+      return;
+    }
+    if (this.stun > 0) { this.stun -= dt; return; }
+
+    /* Zona de furia */
+    this.rage = 0;
+    for (const z of G.zones) {
+      if (z.team === this.team && dist(this.pos, z) <= z.r) { this.rage = 1; break; }
+    }
+    const spdMul = this.rage ? 1.35 : 1, rateMul = this.rage ? 0.7 : 1;
+
+    /* Invocación continua (Bruja) */
+    if (this.card.spawnEvery) {
+      this.spawnT -= dt;
+      if (this.spawnT <= 0) {
+        this.spawnT = this.card.spawnEvery;
+        const dy = this.team === 'player' ? -16 : 16;
+        spawnTroops(this.card.spawnCard, this.pos.x, this.pos.y + dy, this.team, this.card.spawnCount, this.level);
+      }
+    }
+
+    /* Objetivo */
+    this.retarget -= dt;
+    if (!validTarget(this, this.target) || this.retarget <= 0) {
+      this.target = acquire(this);
+      this.retarget = 0.35;
+    }
+    const tg = this.target;
+    if (!tg) { this.moveTo({ x: W / 2, y: this.team === 'player' ? 0 : H }, dt, spdMul); return; }
+
+    const reach = this.range + this.radius + tg.radius;
+    const d = dist(this.pos, tg.pos);
+    if (d <= reach) {
+      this.faceTo(tg.pos);
+      this.cool -= dt;
+      if (this.cool <= 0) {
+        this.cool = this.rate * rateMul;
+        this.swing = 0.24;
+        this.strike(tg);
+      }
+    } else {
+      this.moveTo(tg.pos, dt, spdMul);
+    }
+  }
+  strike(tg) {
+    const c = this.card;
+    if (this.range > 40) {
+      const kind = c.art && c.art.weapon === 'bow' ? 'arrow' : (c.art && (c.art.weapon === 'coil') ? 'bolt' : 'magic');
+      const col = c.art ? (c.art.trim || '#fff') : '#fff';
+      G.shots.push(new Shot(this.pos.x, this.pos.y - 8, tg, this.dmg, this.team, kind, {
+        splash: this.splash, stun: c.hitStun || 0, color: col, speed: kind === 'arrow' ? 320 : 250
+      }));
+      Snd.shoot();
+    } else {
+      if (this.splash) {
+        dealArea(tg.pos.x, tg.pos.y, this.splash, this.dmg, this.team, {});
+        ring(tg.pos.x, tg.pos.y, this.splash, '#ffd9a0');
+      } else {
+        tg.hurt(this.dmg, this);
+      }
+      if (c.hitStun) tg.stun = Math.max(tg.stun, c.hitStun);
+      spark(tg.pos.x, tg.pos.y, '#ffe9a8', 5);
+      Snd.melee();
+    }
+  }
+  faceTo(p) {
+    const dx = p.x - this.pos.x;
+    if (Math.abs(dx) > 3) this.face = dx > 0 ? 1 : -1;
+  }
+  moveTo(p, dt, spdMul) {
+    const dest = pathPoint(this, p);
+    const dx = dest.x - this.pos.x, dy = dest.y - this.pos.y;
+    const d = Math.hypot(dx, dy);
+    if (d < 0.5) return;
+    const step = this.speed * spdMul * dt;
+    this.pos.x += dx / d * step;
+    this.pos.y += dy / d * step;
+    this.walking = true;
+    this.anim += dt * 9;
+    if (Math.abs(dx) > 4) this.face = dx > 0 ? 1 : -1;
+  }
+  die() {
+    if (!this.alive) return;
+    this.alive = false;
+    poof(this.pos.x, this.pos.y, this.team === 'player' ? '#9ed0ff' : '#ffa0a0', 10);
+    if (this.card.dropsRage) {
+      G.zones.push({ x: this.pos.x, y: this.pos.y, r: 100, team: this.team, life: 6, max: 6 });
+      ring(this.pos.x, this.pos.y, 100, '#d24bff');
+      Snd.zap();
+    }
+  }
+}
+
+function spawnTroops(cardId, x, y, team, count, level) {
+  const c = CARDS[cardId];
+  const n = count || c.count || 1;
+  for (let i = 0; i < n; i++) {
+    const a = (i / n) * TAU + rnd(0.5);
+    const rad = n > 1 ? 13 + n : 0;
+    const ux = clamp(x + Math.cos(a) * rad, 12, W - 12);
+    const uy = clamp(y + Math.sin(a) * rad * 0.6, 12, H - 12);
+    G.units.push(new Troop(ux, uy, cardId, team, level));
+  }
+}
+
+/* --------------------------- OBJETIVOS -------------------------------- */
+function canTarget(seeker, t) {
+  if (seeker.targets === 'buildings') return t.isBuilding;
+  if (t.air) return seeker.targets === 'all' || seeker.targets === 'air';
+  return seeker.targets !== 'air';
+}
+function validTarget(s, t) {
+  if (!t || !t.alive || !t.deployed || t.team === s.team) return false;
+  if (!canTarget(s, t)) return false;
+  if (!t.isBuilding && dist(s.pos, t.pos) > (s.sight || 150) * 1.6) return false;
+  return true;
+}
+function nearestBuilding(team, from, seeker) {
+  let best = null, bd = Infinity;
+  for (const b of G.buildings) {
+    if (b.team !== team || !b.alive || !b.deployed) continue;
+    if (seeker && !canTarget(seeker, b)) continue;
+    const d = dist(from, b.pos) - b.radius;
+    if (d < bd) { bd = d; best = b; }
+  }
+  return best;
+}
+function acquire(u) {
+  const foe = enemyOf(u.team);
+  if (u.targets === 'buildings') return nearestBuilding(foe, u.pos, u);
+  let best = null, bd = u.sight;
+  for (const t of G.units) {
+    if (t.team !== foe || !t.alive || !t.deployed || !canTarget(u, t)) continue;
+    const d = dist(u.pos, t.pos) - t.radius;
+    if (d < bd) { bd = d; best = t; }
+  }
+  for (const b of G.buildings) {
+    if (b.team !== foe || !b.alive || !b.deployed || !canTarget(u, b)) continue;
+    const d = dist(u.pos, b.pos) - b.radius;
+    if (d < bd) { bd = d; best = b; }
+  }
+  return best || nearestBuilding(foe, u.pos, u);
+}
+function acquireForBuilding(b) {
+  const foe = enemyOf(b.team);
+  let best = null, bd = b.range;
+  for (const t of G.units) {
+    if (t.team !== foe || !t.alive || !t.deployed) continue;
+    if (t.air && b.targets === 'ground') continue;
+    const d = dist(b.pos, t.pos) - t.radius;
+    if (d < bd) { bd = d; best = t; }
+  }
+  return best;
+}
+
+/* --------------------------- MOVIMIENTO ------------------------------- */
+function bridgeUnder(x) {
+  for (const b of BRIDGES) if (x >= b.x - 2 && x <= b.x + b.w + 2) return b;
+  return null;
+}
+function nearestBridge(u, destY) {
+  const edgeY = sideOf(u.pos.y) === 'top' ? RIVER_TOP : RIVER_BOT;
+  let best = BRIDGES[0], bd = Infinity;
+  for (const b of BRIDGES) {
+    const d = Math.hypot(b.cx - u.pos.x, edgeY - u.pos.y) + Math.abs(b.cx - u.pos.x) * 0.35;
+    if (d < bd) { bd = d; best = b; }
+  }
+  return best;
+}
+function pathPoint(u, dest) {
+  if (u.air) return dest;
+  const us = sideOf(u.pos.y), ds = sideOf(dest.y);
+  if (us === ds) return dest;
+  if (us === 'river') {
+    const b = bridgeUnder(u.pos.x) || nearestBridge(u);
+    if (ds === 'river') return dest;
+    return { x: b.cx, y: ds === 'top' ? RIVER_TOP - 16 : RIVER_BOT + 16 };
+  }
+  const b = nearestBridge(u, dest.y);
+  if (Math.abs(u.pos.x - b.cx) > 6) return { x: b.cx, y: us === 'top' ? RIVER_TOP - 12 : RIVER_BOT + 12 };
+  if (ds === 'river') return { x: b.cx, y: dest.y };
+  return { x: b.cx, y: ds === 'top' ? RIVER_TOP - 16 : RIVER_BOT + 16 };
+}
+function constrain(u) {
+  u.pos.x = clamp(u.pos.x, 10, W - 10);
+  u.pos.y = clamp(u.pos.y, 10, H - 10);
+  if (u.air) return;
+  if (u.pos.y > RIVER_TOP - 3 && u.pos.y < RIVER_BOT + 3) {
+    const b = bridgeUnder(u.pos.x);
+    if (b) {
+      u.pos.x = clamp(u.pos.x, b.x + 7, b.x + b.w - 7);
+    } else {
+      const nb = nearestBridge(u);
+      const dir = Math.sign(nb.cx - u.pos.x) || 1;
+      u.pos.x += dir * Math.min(Math.abs(nb.cx - u.pos.x), 90 * 0.016);
+    }
+  }
+}
+function separate() {
+  const a = G.units;
+  for (let i = 0; i < a.length; i++) {
+    const u = a[i];
+    if (!u.alive || !u.deployed) continue;
+    for (let j = i + 1; j < a.length; j++) {
+      const v = a[j];
+      if (!v.alive || !v.deployed || v.air !== u.air) continue;
+      const dx = v.pos.x - u.pos.x, dy = v.pos.y - u.pos.y;
+      const rr = u.radius + v.radius;
+      const d2 = dx * dx + dy * dy;
+      if (d2 >= rr * rr || d2 < 0.001) continue;
+      const d = Math.sqrt(d2);
+      const ov = (rr - d) * 0.5;
+      const ux = dx / d, uy = dy / d;
+      const tu = v.mass / (u.mass + v.mass), tv = 1 - tu;
+      u.pos.x -= ux * ov * tu; u.pos.y -= uy * ov * tu;
+      v.pos.x += ux * ov * tv; v.pos.y += uy * ov * tv;
+    }
+    if (!u.air) {
+      for (const b of G.buildings) {
+        if (!b.alive) continue;
+        const dx = u.pos.x - b.pos.x, dy = u.pos.y - b.pos.y;
+        const rr = u.radius + b.radius * 0.92;
+        const d2 = dx * dx + dy * dy;
+        if (d2 >= rr * rr || d2 < 0.001) continue;
+        const d = Math.sqrt(d2);
+        u.pos.x = b.pos.x + dx / d * rr;
+        u.pos.y = b.pos.y + dy / d * rr;
+      }
+    }
+    constrain(u);
+  }
+}
+
+/* ---------------------------- PROYECTILES ------------------------------ */
+class Shot {
+  constructor(x, y, target, dmg, team, kind, opts) {
+    this.pos = { x, y }; this.target = target;
+    this.tp = { x: target.pos.x, y: target.pos.y - (target.isBuilding ? 8 : 4) };
+    this.dmg = dmg; this.team = team; this.kind = kind || 'arrow';
+    this.o = opts || {};
+    this.speed = this.o.speed || (this.kind === 'arrow' ? 320 : 250);
+    this.alive = true; this.angle = 0; this.t = 0;
+    this.color = this.o.color || (this.kind === 'bolt' ? '#7fe8ff' : '#ffd75e');
+  }
+  update(dt) {
+    this.t += dt;
+    if (this.target && this.target.alive) {
+      this.tp.x = this.target.pos.x;
+      this.tp.y = this.target.pos.y - (this.target.isBuilding ? 8 : 4);
+    }
+    const dx = this.tp.x - this.pos.x, dy = this.tp.y - this.pos.y;
+    const d = Math.hypot(dx, dy);
+    this.angle = Math.atan2(dy, dx);
+    const step = this.speed * dt;
+    if (d <= step || d < 2) { this.pos.x = this.tp.x; this.pos.y = this.tp.y; this.hit(); return; }
+    this.pos.x += dx / d * step;
+    this.pos.y += dy / d * step;
+    if (this.kind === 'magic' && Math.random() < dt * 30) {
+      G.parts.push(new Part(this.pos.x, this.pos.y, { c: this.color, s: 2, life: .25, vx: 0, vy: 0 }));
+    }
+  }
+  hit() {
+    this.alive = false;
+    if (this.o.splash) {
+      dealArea(this.pos.x, this.pos.y, this.o.splash, this.dmg, this.team, { stun: this.o.stun });
+      ring(this.pos.x, this.pos.y, this.o.splash, this.color);
+      spark(this.pos.x, this.pos.y, this.color, 8);
+      Snd.hit();
+      return;
+    }
+    if (this.target && this.target.alive) {
+      this.target.hurt(this.dmg, this);
+      if (this.o.stun) this.target.stun = Math.max(this.target.stun, this.o.stun);
+      spark(this.pos.x, this.pos.y, this.color, 4);
+      Snd.hit();
+    } else {
+      spark(this.pos.x, this.pos.y, '#cccccc', 2);
+    }
+  }
+}
+
+/* ------------------------------ HECHIZOS ------------------------------- */
+class Cast {
+  constructor(cardId, x, y, team, level) {
+    this.card = CARDS[cardId]; this.x = x; this.y = y; this.team = team;
+    this.level = level || 1;
+    this.delay = this.card.rage ? 0.25 : (this.card.id === 'ZAP' ? 0.12 : 0.55);
+    this.total = this.delay; this.alive = true;
+  }
+  update(dt) {
+    this.delay -= dt;
+    if (this.delay <= 0) { this.apply(); this.alive = false; }
+  }
+  apply() {
+    const c = this.card, m = levelMult(this.level);
+    if (c.rage) {
+      G.zones.push({ x: this.x, y: this.y, r: c.radius, team: this.team, life: c.duration, max: c.duration });
+      ring(this.x, this.y, c.radius, c.color);
+      Snd.zap();
+      return;
+    }
+    dealArea(this.x, this.y, c.radius, c.dmg * m, this.team, {
+      towerMult: c.towerMult, stun: c.stun, knock: c.knock, falloff: c.id === 'FIREBALL'
+    });
+    ring(this.x, this.y, c.radius, c.color);
+    if (c.id === 'ZAP') {
+      Snd.zap();
+      for (let i = 0; i < 10; i++) spark(this.x + rnd(40, -40), this.y + rnd(40, -40), c.color, 2);
+    } else {
+      boom(this.x, this.y, c.radius, c.color);
+      Snd.boom();
+      G.shake = Math.max(G.shake, c.id === 'FIREBALL' ? 10 : 5);
+    }
+  }
+}
+
+function dealArea(x, y, r, dmg, team, opts) {
+  opts = opts || {};
+  const foe = enemyOf(team), p = { x, y };
+  const list = G.units.concat(G.buildings);
+  for (const e of list) {
+    if (!e.alive || e.team !== foe || !e.deployed) continue;
+    const d = dist(e.pos, p);
+    if (d > r + e.radius) continue;
+    let dm = dmg;
+    if (opts.towerMult && e.isTower) dm *= opts.towerMult;
+    if (opts.falloff) dm *= lerp(1, 0.6, clamp(d / (r + e.radius), 0, 1));
+    e.hurt(dm, null);
+    if (opts.stun) e.stun = Math.max(e.stun || 0, opts.stun);
+    if (opts.knock && !e.isBuilding && e.alive) {
+      const a = Math.atan2(e.pos.y - y, e.pos.x - x) || 0;
+      e.pos.x += Math.cos(a) * opts.knock;
+      e.pos.y += Math.sin(a) * opts.knock;
+      constrain(e);
+    }
+  }
+}
+
+/* ------------------------------ EFECTOS -------------------------------- */
+class Part {
+  constructor(x, y, o) {
+    this.x = x; this.y = y;
+    this.vx = o.vx !== undefined ? o.vx : rnd(60, -60);
+    this.vy = o.vy !== undefined ? o.vy : rnd(60, -60);
+    this.g = o.g || 0; this.c = o.c || '#fff'; this.s = o.s || 3;
+    this.life = o.life || 0.5; this.max = this.life; this.shape = o.shape || 'sq';
+  }
+  update(dt) {
+    this.x += this.vx * dt; this.y += this.vy * dt;
+    this.vy += this.g * dt; this.life -= dt;
+  }
+}
+function spark(x, y, c, n) {
+  for (let i = 0; i < n; i++) G.parts.push(new Part(x, y, { c, s: rnd(3, 1.5), life: rnd(.4, .2), g: 120 }));
+}
+function poof(x, y, c, n) {
+  for (let i = 0; i < n; i++) G.parts.push(new Part(x, y, { c, s: rnd(5, 2), life: rnd(.6, .3), vx: rnd(45, -45), vy: rnd(20, -55), g: 40, shape: 'ci' }));
+}
+function boom(x, y, r, c) {
+  G.parts.push(new Part(x, y, { c, s: r, life: .35, vx: 0, vy: 0, shape: 'ring' }));
+  for (let i = 0; i < 16; i++) {
+    const a = rnd(TAU);
+    const sp = rnd(r * 4, r);
+    G.parts.push(new Part(x, y, { c, s: rnd(5, 2), life: rnd(.6, .25), vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, g: 90 }));
+  }
+}
+function ring(x, y, r, c) {
+  G.parts.push(new Part(x, y, { c, s: r, life: .4, vx: 0, vy: 0, shape: 'ring' }));
+}
+function floatText(x, y, text, color) {
+  G.floats.push({ x, y, text, color, life: 1.3, max: 1.3 });
+}
+
+/* ============================== DIBUJO ================================= */
+const cv = $('arena');
+const ctx = cv.getContext('2d');
+let DPR = 1;
+function setupCanvas() {
+  DPR = Math.min(2, window.devicePixelRatio || 1);
+  cv.width = W * DPR; cv.height = H * DPR;
+  cv.style.width = W + 'px'; cv.style.height = H + 'px';
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+}
+setupCanvas();
+
+function rr(x, y, w, h, r) {
+  const rad = Math.min(r, w / 2, h / 2);
+  ctx.beginPath();
+  ctx.moveTo(x + rad, y);
+  ctx.lineTo(x + w - rad, y); ctx.quadraticCurveTo(x + w, y, x + w, y + rad);
+  ctx.lineTo(x + w, y + h - rad); ctx.quadraticCurveTo(x + w, y + h, x + w - rad, y + h);
+  ctx.lineTo(x + rad, y + h); ctx.quadraticCurveTo(x, y + h, x, y + h - rad);
+  ctx.lineTo(x, y + rad); ctx.quadraticCurveTo(x, y, x + rad, y);
+  ctx.closePath();
+}
+function circle(x, y, r) { ctx.beginPath(); ctx.arc(x, y, r, 0, TAU); }
+function shade(hex, amt) {
+  const n = parseInt(hex.slice(1), 16);
+  const r = clamp(((n >> 16) & 255) + amt, 0, 255);
+  const g = clamp(((n >> 8) & 255) + amt, 0, 255);
+  const b = clamp((n & 255) + amt, 0, 255);
+  return 'rgb(' + r + ',' + g + ',' + b + ')';
+}
+
+/* ------------------------------- ARENA -------------------------------- */
+function drawArena() {
+  const A = G.arena;
+  ctx.fillStyle = A.grass;
+  ctx.fillRect(0, 0, W, H);
+  /* césped a cuadros */
+  ctx.fillStyle = 'rgba(255,255,255,0.035)';
+  for (let y = 0; y < H; y += 40) {
+    for (let x = 0; x < W; x += 40) {
+      if (((x / 40) + (y / 40)) % 2 === 0) ctx.fillRect(x, y, 40, 40);
+    }
+  }
+  /* bordes de la arena */
+  const g1 = ctx.createLinearGradient(0, 0, 0, 60);
+  g1.addColorStop(0, 'rgba(0,0,0,.45)'); g1.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = g1; ctx.fillRect(0, 0, W, 60);
+  const g2 = ctx.createLinearGradient(0, H - 70, 0, H);
+  g2.addColorStop(0, 'rgba(0,0,0,0)'); g2.addColorStop(1, 'rgba(0,0,0,.45)');
+  ctx.fillStyle = g2; ctx.fillRect(0, H - 70, W, 70);
+  ctx.fillStyle = 'rgba(0,0,0,.22)';
+  ctx.fillRect(0, 0, 10, H); ctx.fillRect(W - 10, 0, 10, H);
+
+  /* río */
+  const rg = ctx.createLinearGradient(0, RIVER_TOP, 0, RIVER_BOT);
+  rg.addColorStop(0, shade(A.river, -28));
+  rg.addColorStop(0.5, A.river);
+  rg.addColorStop(1, shade(A.river, -34));
+  ctx.fillStyle = rg;
+  ctx.fillRect(0, RIVER_TOP, W, RIVER_BOT - RIVER_TOP);
+  ctx.strokeStyle = 'rgba(255,255,255,.22)'; ctx.lineWidth = 1;
+  for (let i = 0; i < 3; i++) {
+    ctx.beginPath();
+    const yy = RIVER_TOP + 10 + i * 13;
+    for (let x = 0; x <= W; x += 12) {
+      const y = yy + Math.sin((x * 0.05) + G.t * 1.6 + i * 1.3) * 2.4;
+      if (x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+  }
+  /* orillas */
+  ctx.fillStyle = 'rgba(0,0,0,.25)';
+  ctx.fillRect(0, RIVER_TOP - 3, W, 3); ctx.fillRect(0, RIVER_BOT, W, 3);
+
+  /* puentes */
+  for (const b of BRIDGES) {
+    ctx.fillStyle = shade(A.bridge, -35);
+    rr(b.x - 3, RIVER_TOP - 9, b.w + 6, (RIVER_BOT - RIVER_TOP) + 18, 5); ctx.fill();
+    ctx.fillStyle = A.bridge;
+    rr(b.x, RIVER_TOP - 7, b.w, (RIVER_BOT - RIVER_TOP) + 14, 4); ctx.fill();
+    ctx.strokeStyle = 'rgba(0,0,0,.3)'; ctx.lineWidth = 1.5;
+    for (let y = RIVER_TOP - 4; y < RIVER_BOT + 8; y += 9) {
+      ctx.beginPath(); ctx.moveTo(b.x + 2, y); ctx.lineTo(b.x + b.w - 2, y); ctx.stroke();
+    }
+    ctx.strokeStyle = shade(A.bridge, 40); ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.moveTo(b.x + 1, RIVER_TOP - 6); ctx.lineTo(b.x + 1, RIVER_BOT + 6);
+    ctx.moveTo(b.x + b.w - 1, RIVER_TOP - 6); ctx.lineTo(b.x + b.w - 1, RIVER_BOT + 6);
+    ctx.stroke();
+  }
+  /* línea central de campo */
+  ctx.strokeStyle = 'rgba(255,255,255,.10)'; ctx.lineWidth = 2;
+  ctx.setLineDash([7, 9]);
+  ctx.beginPath(); ctx.moveTo(240, 12); ctx.lineTo(240, RIVER_TOP - 6); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(240, RIVER_BOT + 6); ctx.lineTo(240, H - 12); ctx.stroke();
+  ctx.setLineDash([]);
+}
+
+/* zonas de despliegue válidas */
+function unlockedLanes() { return G.openLanes; }
+function canDeploy(card, x, y) {
+  if (x < 14 || x > W - 14 || y < 14 || y > H - 14) return false;
+  if (card.type === 'spell' || card.anywhere) return true;
+  if (y > RIVER_BOT + 6) return true;
+  for (const l of unlockedLanes()) if (x >= l.x0 && x <= l.x1 && y >= l.y0) return true;
+  return false;
+}
+function drawDeployZone(card) {
+  if (card.type === 'spell' || card.anywhere) return;
+  ctx.save();
+  ctx.globalAlpha = 0.16;
+  ctx.fillStyle = '#7fd0ff';
+  ctx.fillRect(0, RIVER_BOT + 6, W, H - RIVER_BOT - 6);
+  for (const l of unlockedLanes()) ctx.fillRect(l.x0, l.y0, l.x1 - l.x0, RIVER_TOP - l.y0);
+  ctx.globalAlpha = 0.55;
+  ctx.strokeStyle = '#bfe8ff'; ctx.lineWidth = 2; ctx.setLineDash([8, 6]);
+  ctx.beginPath(); ctx.moveTo(0, RIVER_BOT + 6); ctx.lineTo(W, RIVER_BOT + 6); ctx.stroke();
+  for (const l of unlockedLanes()) ctx.strokeRect(l.x0 + 2, l.y0, l.x1 - l.x0 - 4, RIVER_TOP - l.y0);
+  ctx.setLineDash([]);
+  ctx.restore();
+}
+
+/* ------------------------- BARRA DE VIDA ------------------------------ */
+function healthBar(e, w, yoff) {
+  if (e.hp >= e.maxHp - 0.01 && !e.isTower) return;
+  const h = 4.5, x = e.pos.x - w / 2, y = e.pos.y - yoff;
+  ctx.fillStyle = 'rgba(0,0,0,.72)';
+  rr(x - 1, y - 1, w + 2, h + 2, 2); ctx.fill();
+  ctx.fillStyle = e.team === 'player' ? '#49d17a' : '#ef5d5d';
+  const pw = Math.max(0, w * e.pct);
+  if (pw > 0) { rr(x, y, pw, h, 1.5); ctx.fill(); }
+}
+
+/* ------------------------------ TORRES -------------------------------- */
+function drawTowerB(b) {
+  const px = b.pos.x, py = b.pos.y;
+  const mine = b.team === 'player';
+  const main = mine ? '#4f86d6' : '#d2564f';
+  const dark = mine ? '#2a4c80' : '#7d2b26';
+  const lite = mine ? '#93c1f5' : '#f0a09a';
+  const king = b.kind === 'king';
+  const w = king ? 60 : 48, h = king ? 60 : 50;
+
+  ctx.save();
+  ctx.fillStyle = 'rgba(0,0,0,.32)';
+  ctx.beginPath(); ctx.ellipse(px, py + h / 2 - 3, w * 0.55, 9, 0, 0, TAU); ctx.fill();
+
+  /* base de piedra */
+  ctx.fillStyle = '#8b8f9c';
+  rr(px - w / 2, py - h / 2 + 12, w, h - 12, 6); ctx.fill();
+  ctx.fillStyle = '#6d7280';
+  rr(px - w / 2, py + h / 2 - 12, w, 12, 5); ctx.fill();
+  ctx.strokeStyle = 'rgba(0,0,0,.35)'; ctx.lineWidth = 1;
+  for (let i = 1; i < 3; i++) {
+    ctx.beginPath();
+    ctx.moveTo(px - w / 2 + 3, py - h / 2 + 12 + i * 13);
+    ctx.lineTo(px + w / 2 - 3, py - h / 2 + 12 + i * 13);
+    ctx.stroke();
+  }
+  /* cuerpo de color */
+  ctx.fillStyle = main;
+  rr(px - w / 2 + 4, py - h / 2 + 4, w - 8, 22, 5); ctx.fill();
+  ctx.fillStyle = dark;
+  rr(px - w / 2 + 4, py - h / 2 + 18, w - 8, 8, 3); ctx.fill();
+  /* almenas */
+  ctx.fillStyle = lite;
+  const n = king ? 5 : 4, seg = (w - 8) / n;
+  for (let i = 0; i < n; i++) {
+    if (i % 2 === 0) ctx.fillRect(px - w / 2 + 4 + i * seg, py - h / 2 - 4, seg - 1.5, 9);
+  }
+  ctx.fillStyle = main;
+  rr(px - w / 2 + 3, py - h / 2 + 2, w - 6, 6, 2); ctx.fill();
+
+  /* cañón / arquera girando hacia el objetivo */
+  const ang = b.angle;
+  ctx.save();
+  ctx.translate(px, py - h / 2 + 14);
+  ctx.rotate(ang);
+  const recoil = b.fire > 0 ? -4 : 0;
+  ctx.fillStyle = '#2f3446';
+  rr(-4 + recoil, -3.5, 17, 7, 3); ctx.fill();
+  ctx.fillStyle = '#454b63';
+  rr(-4 + recoil, -3.5, 9, 7, 3); ctx.fill();
+  ctx.restore();
+  circle(px, py - h / 2 + 14, 7); ctx.fillStyle = mine ? '#2b5ea8' : '#993832'; ctx.fill();
+  ctx.strokeStyle = 'rgba(0,0,0,.4)'; ctx.lineWidth = 1.5; ctx.stroke();
+
+  if (king) {
+    /* corona */
+    ctx.fillStyle = b.active ? '#ffd75e' : '#8d8b7a';
+    ctx.beginPath();
+    const cx = px, cy = py + 6;
+    ctx.moveTo(cx - 13, cy + 7); ctx.lineTo(cx - 15, cy - 8); ctx.lineTo(cx - 7, cy - 1);
+    ctx.lineTo(cx, cy - 11); ctx.lineTo(cx + 7, cy - 1); ctx.lineTo(cx + 15, cy - 8);
+    ctx.lineTo(cx + 13, cy + 7); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = 'rgba(0,0,0,.45)'; ctx.lineWidth = 1.2; ctx.stroke();
+    if (!b.active) {
+      ctx.fillStyle = 'rgba(0,0,0,.35)';
+      rr(px - w / 2, py - h / 2 - 4, w, h + 4, 6); ctx.fill();
+    }
+  } else {
+    /* bandera */
+    ctx.strokeStyle = '#4a4a52'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(px + w / 2 - 8, py - h / 2 - 4); ctx.lineTo(px + w / 2 - 8, py - h / 2 - 20); ctx.stroke();
+    ctx.fillStyle = main;
+    ctx.beginPath();
+    ctx.moveTo(px + w / 2 - 8, py - h / 2 - 20);
+    ctx.lineTo(px + w / 2 - 22, py - h / 2 - 16);
+    ctx.lineTo(px + w / 2 - 8, py - h / 2 - 11);
+    ctx.closePath(); ctx.fill();
+  }
+
+  if (b.hitFlash > 0) {
+    ctx.globalAlpha = clamp(b.hitFlash * 4, 0, .7);
+    ctx.fillStyle = '#fff';
+    rr(px - w / 2, py - h / 2 - 4, w, h + 4, 6); ctx.fill();
+    ctx.globalAlpha = 1;
+  }
+  ctx.restore();
+  healthBar(b, king ? 52 : 44, h / 2 + 14);
+}
+
+function drawStructure(b) {
+  const px = b.pos.x, py = b.pos.y;
+  const art = b.card.art;
+  ctx.save();
+  const sc = b.deployed ? 1 : clamp(1 - b.deployT, .3, 1);
+  ctx.translate(px, py); ctx.scale(sc, sc); ctx.translate(-px, -py);
+  ctx.fillStyle = 'rgba(0,0,0,.3)';
+  ctx.beginPath(); ctx.ellipse(px, py + 12, 16, 6, 0, 0, TAU); ctx.fill();
+  ctx.fillStyle = '#5a4a35';
+  rr(px - 15, py - 2, 30, 16, 4); ctx.fill();
+  ctx.fillStyle = art.body;
+  rr(px - 13, py - 14, 26, 18, 5); ctx.fill();
+  ctx.fillStyle = art.trim;
+  if (b.card.id === 'CANNON') {
+    ctx.save();
+    ctx.translate(px, py - 8); ctx.rotate(b.angle);
+    ctx.fillStyle = '#3a3f4c';
+    rr(-3 + (b.fire > 0 ? -3 : 0), -4, 20, 8, 3); ctx.fill();
+    ctx.restore();
+    ctx.fillStyle = '#4b5160'; circle(px, py - 8, 8); ctx.fill();
+  } else {
+    /* torre infierno */
+    ctx.fillStyle = '#2a1c18';
+    rr(px - 9, py - 22, 18, 12, 4); ctx.fill();
+    const glow = 0.4 + 0.6 * Math.abs(Math.sin(G.t * 6));
+    ctx.fillStyle = 'rgba(255,140,40,' + glow + ')';
+    circle(px, py - 16, 6); ctx.fill();
+    ctx.fillStyle = '#ffe08a';
+    circle(px, py - 16, 3); ctx.fill();
+  }
+  /* temporizador de vida */
+  if (b.life > 0 && b.card.life) {
+    ctx.strokeStyle = 'rgba(255,255,255,.5)'; ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(px, py, 20, -Math.PI / 2, -Math.PI / 2 + TAU * (b.life / b.card.life));
+    ctx.stroke();
+  }
+  if (b.hitFlash > 0) {
+    ctx.globalAlpha = clamp(b.hitFlash * 4, 0, .7); ctx.fillStyle = '#fff';
+    rr(px - 15, py - 20, 30, 34, 5); ctx.fill(); ctx.globalAlpha = 1;
+  }
+  ctx.restore();
+  /* rayo de la torre infierno */
+  if (b.beam && b.beam.alive) {
+    ctx.save();
+    const w = 2 + b.ramp * 1.1;
+    ctx.strokeStyle = 'rgba(255,150,50,.85)'; ctx.lineWidth = w + 3;
+    ctx.beginPath(); ctx.moveTo(px, py - 16); ctx.lineTo(b.beam.pos.x, b.beam.pos.y); ctx.stroke();
+    ctx.strokeStyle = '#fff3c4'; ctx.lineWidth = Math.max(1, w * .5);
+    ctx.beginPath(); ctx.moveTo(px, py - 16); ctx.lineTo(b.beam.pos.x, b.beam.pos.y); ctx.stroke();
+    ctx.restore();
+  }
+  healthBar(b, 32, 30);
+}
+
+/* ------------------------- PERSONAJES (TROPAS) ------------------------ */
+function weapon(art, R, u) {
+  const w = art.weapon;
+  ctx.save();
+  const sw = u.swing > 0 ? Math.sin((0.24 - u.swing) / 0.24 * Math.PI) : 0;
+  ctx.translate(R * 0.55, -R * 0.35);
+  ctx.rotate(-sw * 1.5);
+  switch (w) {
+    case 'sword':
+      ctx.fillStyle = '#3c4356'; ctx.fillRect(-2, -2, 5, 8);
+      ctx.fillStyle = '#dfe6f2'; rr(-1.5, -R * 1.15, 3.5, R * 1.15, 1.5); ctx.fill();
+      break;
+    case 'greatsword':
+      ctx.fillStyle = '#2b3048'; ctx.fillRect(-3, -1, 7, 9);
+      ctx.fillStyle = art.trim; rr(-2.5, -R * 1.5, 5.5, R * 1.5, 2); ctx.fill();
+      break;
+    case 'axe':
+      ctx.fillStyle = '#7a5230'; ctx.fillRect(-1.5, -R, 3, R * 1.2);
+      ctx.fillStyle = '#cfd8e6';
+      ctx.beginPath(); ctx.moveTo(1, -R); ctx.lineTo(R * 0.75, -R * 0.85); ctx.lineTo(1, -R * 0.35); ctx.closePath(); ctx.fill();
+      break;
+    case 'hammer':
+      ctx.fillStyle = '#7a5230'; ctx.fillRect(-1.5, -R, 3, R * 1.1);
+      ctx.fillStyle = '#98a0b0'; rr(-R * 0.2, -R * 1.15, R * 0.75, R * 0.42, 2); ctx.fill();
+      break;
+    case 'pick':
+      ctx.fillStyle = '#7a5230'; ctx.fillRect(-1.5, -R, 3, R * 1.1);
+      ctx.strokeStyle = '#b9c2d0'; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.arc(0, -R, R * 0.55, Math.PI * 1.15, Math.PI * 1.85); ctx.stroke();
+      break;
+    case 'bow':
+      ctx.strokeStyle = '#8a5a2a'; ctx.lineWidth = 2.5;
+      ctx.beginPath(); ctx.arc(0, -R * 0.4, R * 0.6, -1.1, 1.1); ctx.stroke();
+      ctx.strokeStyle = '#e6e6e6'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(R * 0.27, -R); ctx.lineTo(R * 0.27, R * 0.2); ctx.stroke();
+      break;
+    case 'gun':
+      ctx.fillStyle = '#3a4152'; rr(-R * 0.2, -R * 0.55, R * 1.25, R * 0.28, 2); ctx.fill();
+      ctx.fillStyle = '#7a5230'; rr(-R * 0.3, -R * 0.45, R * 0.35, R * 0.45, 2); ctx.fill();
+      break;
+    case 'staff':
+      ctx.fillStyle = '#6b4a2a'; ctx.fillRect(-1.5, -R * 1.1, 3, R * 1.5);
+      ctx.fillStyle = art.trim; circle(0, -R * 1.25, R * 0.3); ctx.fill();
+      ctx.globalAlpha = .5; circle(0, -R * 1.25, R * 0.5); ctx.fill(); ctx.globalAlpha = 1;
+      break;
+    case 'coil':
+      ctx.strokeStyle = art.trim; ctx.lineWidth = 2;
+      circle(0, -R * 0.6, R * 0.4); ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(-R * .3, -R * .6); ctx.lineTo(0, -R * .9); ctx.lineTo(R * .1, -R * .5); ctx.lineTo(R * .4, -R * .8);
+      ctx.stroke();
+      break;
+    case 'bone':
+      ctx.fillStyle = '#e8e8e0'; rr(-1.5, -R * 0.9, 3, R * 0.9, 1.5); ctx.fill();
+      circle(0, -R * 0.95, 2.5); ctx.fill();
+      break;
+    case 'fist':
+      ctx.fillStyle = art.trim; circle(R * 0.1, -R * 0.3, R * 0.36); ctx.fill();
+      break;
+    default: break;
+  }
+  ctx.restore();
+}
+
+function drawTroop(u) {
+  const art = u.card.art || { body: '#888', trim: '#eee', skin: '#ddd', shape: 'humano' };
+  const x = u.pos.x, y = u.pos.y, R = u.radius * 1.22;
+  ctx.save();
+
+  if (!u.deployed) {
+    const total = u.card.tunnel ? 1.3 : 1.0;
+    const t = clamp(1 - u.deployT / total, 0, 1);
+    if (u.card.tunnel) {
+      ctx.fillStyle = '#6b4a24';
+      ctx.beginPath(); ctx.ellipse(x, y, 12 + t * 6, 5 + t * 3, 0, 0, TAU); ctx.fill();
+      ctx.fillStyle = '#8a6430';
+      ctx.beginPath(); ctx.ellipse(x, y - 2, 8 + t * 4, 3 + t * 2, 0, 0, TAU); ctx.fill();
+      if (Math.random() < 0.3) G.parts.push(new Part(x + rnd(8, -8), y, { c: '#8a6430', s: 2.5, life: .4, vy: -40, g: 140 }));
+      ctx.restore(); return;
+    }
+    ctx.globalAlpha = clamp(t * 1.6, 0, 1);
+    ctx.strokeStyle = 'rgba(170,220,255,' + (1 - t).toFixed(2) + ')';
+    ctx.lineWidth = 2.5;
+    circle(x, y, R + 4 + 22 * (1 - t)); ctx.stroke();
+    ctx.translate(x, y); ctx.scale(0.35 + t * 0.65, 0.35 + t * 0.65); ctx.translate(-x, -y);
+  }
+
+  const hover = u.air ? -15 + Math.sin(G.t * 4 + u.hover) * 2.5 : 0;
+  const bob = u.walking && !u.air ? Math.abs(Math.sin(u.anim)) * 1.6 : 0;
+
+  /* sombra + anillo de equipo */
+  ctx.fillStyle = 'rgba(0,0,0,.28)';
+  ctx.beginPath(); ctx.ellipse(x, y + R * 0.55, R * (u.air ? 0.6 : 0.85), R * 0.35, 0, 0, TAU); ctx.fill();
+  ctx.strokeStyle = u.team === 'player' ? 'rgba(95,185,255,.95)' : 'rgba(255,105,105,.95)';
+  ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.ellipse(x, y + R * 0.55, R * 0.85, R * 0.36, 0, 0, TAU); ctx.stroke();
+
+  if (u.rage) {
+    ctx.save(); ctx.globalAlpha = .35; ctx.fillStyle = '#d24bff';
+    circle(x, y + hover - R * 0.3, R * 1.35); ctx.fill(); ctx.restore();
+  }
+
+  ctx.save();
+  ctx.translate(x, y + hover - bob);
+  ctx.scale(u.face, 1);
+
+  const shape = art.shape || 'humano';
+  const legs = u.walking ? Math.sin(u.anim) * R * 0.3 : 0;
+
+  if (shape === 'volador') {
+    const flap = Math.sin(G.t * 12 + u.hover) * 0.5;
+    ctx.fillStyle = shade(art.body, -30);
+    ctx.beginPath();
+    ctx.moveTo(-R * .2, -R * .3); ctx.lineTo(-R * 1.5, -R * .9 - flap * R); ctx.lineTo(-R * .3, R * .25); ctx.closePath(); ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(R * .2, -R * .3); ctx.lineTo(R * 1.5, -R * .9 + flap * R); ctx.lineTo(R * .3, R * .25); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = art.body;
+    ctx.beginPath(); ctx.ellipse(0, 0, R * .62, R * .72, 0, 0, TAU); ctx.fill();
+    ctx.fillStyle = art.skin;
+    circle(R * .2, -R * .75, R * .45); ctx.fill();
+    ctx.fillStyle = '#20242f';
+    circle(R * .38, -R * .82, R * .1); ctx.fill();
+    if (art.weapon === 'fire') {
+      ctx.fillStyle = 'rgba(255,140,40,.9)';
+      circle(R * .62, -R * .62, R * .16); ctx.fill();
+    }
+  } else if (shape === 'hueso') {
+    ctx.strokeStyle = art.body; ctx.lineWidth = R * 0.28; ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(-R * .25 + legs, R * .6); ctx.lineTo(-R * .1, -R * .1);
+    ctx.moveTo(R * .25 - legs, R * .6); ctx.lineTo(R * .1, -R * .1);
+    ctx.moveTo(0, -R * .1); ctx.lineTo(0, -R * .6);
+    ctx.stroke();
+    ctx.fillStyle = art.skin;
+    circle(0, -R * .95, R * .42); ctx.fill();
+    ctx.fillStyle = '#1b1f2a';
+    circle(-R * .15, -R, R * .1); ctx.fill(); circle(R * .18, -R, R * .1); ctx.fill();
+    weapon(art, R, u);
+  } else if (shape === 'maquina') {
+    ctx.fillStyle = '#3a3f4c';
+    circle(-R * .45, R * .35, R * .3); ctx.fill(); circle(R * .45, R * .35, R * .3); ctx.fill();
+    ctx.fillStyle = art.body;
+    rr(-R * .7, -R * .55, R * 1.4, R * .95, R * .3); ctx.fill();
+    const charge = clamp(1 - u.cool / u.rate, 0, 1);
+    ctx.fillStyle = 'rgba(80,220,255,' + (0.25 + charge * 0.7).toFixed(2) + ')';
+    circle(R * .1, -R * .95, R * .45 * (0.7 + charge * 0.5)); ctx.fill();
+    ctx.strokeStyle = art.trim; ctx.lineWidth = 2;
+    circle(R * .1, -R * .95, R * .45); ctx.stroke();
+    if (charge > 0.85) {
+      ctx.strokeStyle = '#bff4ff'; ctx.lineWidth = 1.5;
+      for (let i = 0; i < 3; i++) {
+        const a = rnd(TAU);
+        ctx.beginPath();
+        ctx.moveTo(R * .1, -R * .95);
+        ctx.lineTo(R * .1 + Math.cos(a) * R * .9, -R * .95 + Math.sin(a) * R * .9);
+        ctx.stroke();
+      }
+    }
+  } else if (shape === 'jinete') {
+    ctx.fillStyle = '#6d4a2c';
+    rr(-R * .85, -R * .1, R * 1.7, R * .75, R * .35); ctx.fill();
+    ctx.fillStyle = '#5a3c22';
+    rr(R * .55, -R * .3, R * .55, R * .45, R * .2); ctx.fill();
+    ctx.fillStyle = '#2b2b2b';
+    ctx.fillRect(-R * .6 + legs, R * .55, R * .28, R * .3);
+    ctx.fillRect(R * .35 - legs, R * .55, R * .28, R * .3);
+    ctx.fillStyle = art.body;
+    rr(-R * .45, -R * .95, R * .85, R * .95, R * .3); ctx.fill();
+    ctx.fillStyle = art.skin;
+    circle(0, -R * 1.25, R * .38); ctx.fill();
+    weapon(art, R, u);
+  } else {
+    /* humano / gigante / armadura */
+    const big = shape === 'gigante' || shape === 'armadura';
+    ctx.fillStyle = shade(art.body, -50);
+    rr(-R * .5 + legs, R * .0, R * .38, R * .68, 2); ctx.fill();
+    rr(R * .12 - legs, R * .0, R * .38, R * .68, 2); ctx.fill();
+    ctx.fillStyle = art.body;
+    rr(-R * (big ? .78 : .62), -R * .85, R * (big ? 1.56 : 1.24), R * 1.0, R * .38); ctx.fill();
+    ctx.fillStyle = art.trim;
+    ctx.fillRect(-R * (big ? .78 : .62), -R * .18, R * (big ? 1.56 : 1.24), R * .16);
+    if (shape === 'armadura') {
+      ctx.fillStyle = shade(art.body, 28);
+      rr(-R * .95, -R * .85, R * .42, R * .5, R * .18); ctx.fill();
+      rr(R * .53, -R * .85, R * .42, R * .5, R * .18); ctx.fill();
+    }
+    ctx.fillStyle = art.skin;
+    circle(0, -R * 1.15, R * .44); ctx.fill();
+    ctx.fillStyle = art.trim;
+    ctx.beginPath(); ctx.arc(0, -R * 1.15, R * .46, Math.PI, TAU); ctx.fill();
+    if (shape === 'armadura') {
+      ctx.fillStyle = art.trim;
+      ctx.fillRect(-R * .3, -R * 1.2, R * .62, R * .1);
+      ctx.shadowBlur = 6; ctx.shadowColor = art.trim;
+      ctx.fillRect(-R * .3, -R * 1.2, R * .62, R * .1);
+      ctx.shadowBlur = 0;
+    } else {
+      ctx.fillStyle = '#222733';
+      ctx.fillRect(R * .1, -R * 1.2, R * .13, R * .13);
+    }
+    weapon(art, R, u);
+  }
+  ctx.restore();
+
+  if (u.hitFlash > 0) {
+    ctx.save();
+    ctx.globalAlpha = clamp(u.hitFlash * 3.5, 0, .75);
+    ctx.fillStyle = '#fff';
+    circle(x, y + hover - R * .35, R * 1.05); ctx.fill();
+    ctx.restore();
+  }
+  if (u.stun > 0) {
+    ctx.save();
+    ctx.strokeStyle = '#ffe37a'; ctx.lineWidth = 1.8;
+    for (let i = 0; i < 3; i++) {
+      const a = G.t * 7 + i * TAU / 3;
+      ctx.beginPath();
+      ctx.arc(x + Math.cos(a) * 9, y + hover - R * 1.7 + Math.sin(a) * 3, 2, 0, TAU);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+  ctx.restore();
+  healthBar(u, Math.max(22, R * 2.2), R * (u.air ? 2.3 : 1.9) + (u.air ? 6 : 0));
+}
+
+/* ------------------------- EFECTOS Y DISPAROS ------------------------- */
+function drawShot(s) {
+  ctx.save();
+  if (s.kind === 'arrow') {
+    ctx.translate(s.pos.x, s.pos.y); ctx.rotate(s.angle);
+    ctx.strokeStyle = '#e8e2cf'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(-7, 0); ctx.lineTo(6, 0); ctx.stroke();
+    ctx.fillStyle = s.color;
+    ctx.beginPath(); ctx.moveTo(6, 0); ctx.lineTo(1, -2.5); ctx.lineTo(1, 2.5); ctx.closePath(); ctx.fill();
+  } else if (s.kind === 'bolt') {
+    ctx.strokeStyle = s.color; ctx.lineWidth = 2.5;
+    ctx.shadowBlur = 8; ctx.shadowColor = s.color;
+    ctx.beginPath();
+    ctx.moveTo(s.pos.x - Math.cos(s.angle) * 9, s.pos.y - Math.sin(s.angle) * 9);
+    ctx.lineTo(s.pos.x + rnd(3, -3), s.pos.y + rnd(3, -3));
+    ctx.lineTo(s.pos.x + Math.cos(s.angle) * 5, s.pos.y + Math.sin(s.angle) * 5);
+    ctx.stroke();
+  } else {
+    const r = s.o.splash ? 6 : 4.5;
+    const g = ctx.createRadialGradient(s.pos.x, s.pos.y, 0, s.pos.x, s.pos.y, r * 2.2);
+    g.addColorStop(0, '#ffffff'); g.addColorStop(.35, s.color); g.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = g;
+    circle(s.pos.x, s.pos.y, r * 2.2); ctx.fill();
+  }
+  ctx.restore();
+}
+function drawPart(p) {
+  const a = clamp(p.life / p.max, 0, 1);
+  ctx.save();
+  ctx.globalAlpha = a;
+  if (p.shape === 'ring') {
+    ctx.strokeStyle = p.c; ctx.lineWidth = 3 * a;
+    circle(p.x, p.y, p.s * (1.15 - a * 0.55)); ctx.stroke();
+  } else if (p.shape === 'ci') {
+    ctx.fillStyle = p.c; circle(p.x, p.y, p.s * a); ctx.fill();
+  } else {
+    ctx.fillStyle = p.c;
+    ctx.fillRect(p.x - p.s / 2, p.y - p.s / 2, p.s, p.s);
+  }
+  ctx.restore();
+}
+function drawZone(z) {
+  const a = clamp(z.life / z.max, 0, 1);
+  ctx.save();
+  const grd = ctx.createRadialGradient(z.x, z.y, z.r * .2, z.x, z.y, z.r);
+  grd.addColorStop(0, 'rgba(210,75,255,.30)');
+  grd.addColorStop(.7, 'rgba(180,60,255,.20)');
+  grd.addColorStop(1, 'rgba(140,40,220,.04)');
+  ctx.globalAlpha = .75 + .25 * Math.abs(Math.sin(G.t * 3));
+  ctx.fillStyle = grd;
+  circle(z.x, z.y, z.r); ctx.fill();
+  ctx.globalAlpha = .6 * a;
+  ctx.strokeStyle = '#f0a6ff'; ctx.lineWidth = 2;
+  circle(z.x, z.y, z.r); ctx.stroke();
+  for (let i = 0; i < 6; i++) {
+    const ang = G.t * 1.4 + i * TAU / 6;
+    const rr2 = z.r * .72;
+    ctx.beginPath();
+    ctx.moveTo(z.x + Math.cos(ang) * rr2, z.y + Math.sin(ang) * rr2 - 6);
+    ctx.lineTo(z.x + Math.cos(ang) * rr2 - 4, z.y + Math.sin(ang) * rr2 + 2);
+    ctx.lineTo(z.x + Math.cos(ang) * rr2 + 4, z.y + Math.sin(ang) * rr2 + 2);
+    ctx.closePath(); ctx.fill();
+  }
+  ctx.restore();
+}
+function drawCast(c) {
+  const p = clamp(1 - c.delay / c.total, 0, 1);
+  ctx.save();
+  ctx.strokeStyle = c.card.color; ctx.lineWidth = 2;
+  ctx.globalAlpha = .8;
+  ctx.setLineDash([6, 5]);
+  circle(c.x, c.y, c.card.radius); ctx.stroke();
+  ctx.setLineDash([]);
+  if (!c.card.rage) {
+    const fy = c.y - 260 * (1 - p);
+    const g = ctx.createRadialGradient(c.x, fy, 0, c.x, fy, 14);
+    g.addColorStop(0, '#fff'); g.addColorStop(.4, c.card.color); g.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.globalAlpha = 1; ctx.fillStyle = g;
+    circle(c.x, fy, 14); ctx.fill();
+  }
+  ctx.restore();
+}
+function drawFloat(f) {
+  const a = clamp(f.life / f.max, 0, 1);
+  ctx.save();
+  ctx.globalAlpha = a;
+  ctx.font = '900 15px system-ui, sans-serif';
+  ctx.lineWidth = 3.5; ctx.strokeStyle = 'rgba(0,0,0,.85)';
+  const yy = f.y - (1 - a) * 26;
+  ctx.strokeText(f.text, f.x, yy);
+  ctx.fillStyle = f.color;
+  ctx.fillText(f.text, f.x, yy);
+  ctx.restore();
+}
+function drawEmote(e) {
+  const a = clamp(e.life / 2.2, 0, 1);
+  const yy = e.y - (1 - a) * 22;
+  ctx.save();
+  ctx.globalAlpha = clamp(a * 1.6, 0, 1);
+  ctx.fillStyle = 'rgba(12,16,28,.88)';
+  circle(e.x, yy, 19); ctx.fill();
+  ctx.strokeStyle = e.team === 'player' ? '#6fc0ff' : '#ff8f8f';
+  ctx.lineWidth = 2; ctx.stroke();
+  ctx.font = '22px "Segoe UI Emoji", system-ui, sans-serif';
+  ctx.fillText(e.text, e.x, yy + 1);
+  ctx.restore();
+}
+
+/* ---------------------------- RENDER MASTER --------------------------- */
+function render() {
+  ctx.save();
+  if (G.shake > 0.2) ctx.translate(rnd(G.shake, -G.shake) * .35, rnd(G.shake, -G.shake) * .35);
+  drawArena();
+  for (const z of G.zones) drawZone(z);
+
+  const held = heldCard();
+  if (held) drawDeployZone(held);
+
+  const ents = [];
+  for (const b of G.buildings) if (b.alive) ents.push(b);
+  for (const u of G.units) if (u.alive) ents.push(u);
+  ents.sort((a, b) => (a.air ? 1 : 0) - (b.air ? 1 : 0) || a.pos.y - b.pos.y);
+  for (const e of ents) {
+    if (e.isBuilding) { if (e.isTower) drawTowerB(e); else drawStructure(e); }
+    else drawTroop(e);
+  }
+  for (const p of G.parts) drawPart(p);
+  for (const s of G.shots) drawShot(s);
+  for (const c of G.casts) drawCast(c);
+  for (const f of G.floats) drawFloat(f);
+  for (const e of G.emotes) drawEmote(e);
+
+  /* fantasma de colocación */
+  if (held && G.pointer.inside) {
+    const ok = canDeploy(held, G.pointer.x, G.pointer.y);
+    ctx.save();
+    ctx.globalAlpha = .85;
+    ctx.strokeStyle = ok ? '#7dff9e' : '#ff6b6b';
+    ctx.lineWidth = 2.5;
+    ctx.setLineDash([7, 5]);
+    const rad = held.type === 'spell' ? held.radius : (held.count ? 24 : (held.r || 12) + 6);
+    circle(G.pointer.x, G.pointer.y, rad); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.globalAlpha = .28;
+    ctx.fillStyle = ok ? '#7dff9e' : '#ff6b6b';
+    circle(G.pointer.x, G.pointer.y, rad); ctx.fill();
+    ctx.globalAlpha = 1;
+    ctx.font = '22px "Segoe UI Emoji", system-ui, sans-serif';
+    ctx.fillText(held.icon, G.pointer.x, G.pointer.y - rad - 14);
+    ctx.restore();
+  }
+  ctx.restore();
+}
+
+/* ============================ PARTIDA ================================= */
+function shuffle(a) {
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    const t = a[i]; a[i] = a[j]; a[j] = t;
+  }
+  return a;
+}
+function after(sec, fn) { G.timers.push({ t: sec, fn, done: false }); }
+G.timers = [];
+G.openLanes = [];
+
+function heldCard() {
+  if (G.selected === null || G.selected === undefined) return null;
+  const id = G.hand[G.selected];
+  return id ? CARDS[id] : null;
+}
+function toast(text) {
+  const t = $('toast');
+  t.textContent = text;
+  t.classList.add('show');
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => t.classList.remove('show'), 1200);
+}
+function banner(text) {
+  const b = $('banner');
+  b.textContent = text;
+  b.classList.add('show');
+  clearTimeout(banner._t);
+  banner._t = setTimeout(() => b.classList.remove('show'), 1800);
+}
+
+function newMatch() {
+  G.arena = arenaFor(P.trophies);
+  G.enemyLevel = clamp(Math.round(avgDeckLevel()) + (P.trophies >= 1400 ? 1 : 0), 1, MAX_LEVEL);
+  G.aiSkill = clamp(1 + P.trophies / 3000, 1, 1.6);
+  G.units = []; G.buildings = []; G.shots = []; G.parts = [];
+  G.zones = []; G.casts = []; G.emotes = []; G.floats = []; G.timers = [];
+  G.openLanes = [];
+  G.crowns = { player: 0, enemy: 0 };
+  G.time = 180; G.phase = 'normal'; G.mult = 1;
+  G.elixir = 5; G.aiElixir = 5; G.abilityCd = 0; G.shake = 0; G.t = 0;
+  G.selected = null; G.result = null; G.over = false;
+  G.stats = { player: 0, enemy: 0 };
+  G.matchId = (G.matchId || 0) + 1;
+
+  G.buildings.push(new Building(PRINCESS[0].x, PRINCESS[0].y, 'enemy', 'princess'));
+  G.buildings.push(new Building(PRINCESS[1].x, PRINCESS[1].y, 'enemy', 'princess'));
+  G.buildings.push(new Building(240, KING_Y.enemy, 'enemy', 'king'));
+  G.buildings.push(new Building(PRINCESS[2].x, PRINCESS[2].y, 'player', 'princess'));
+  G.buildings.push(new Building(PRINCESS[3].x, PRINCESS[3].y, 'player', 'princess'));
+  G.buildings.push(new Building(240, KING_Y.player, 'player', 'king'));
+
+  G.queue = shuffle(P.deck.slice());
+  G.hand = G.queue.splice(0, 4);
+  aiInit();
+
+  renderCrowns(); renderHand(true); updateHud();
+  banner('¡ADELANTE!');
+  G.running = true; G.lastFrame = 0;
+  if (!G.raf) G.raf = requestAnimationFrame(loop);
+}
+
+function playHandSlot(i) {
+  const id = G.hand[i];
+  G.queue.push(id);
+  G.hand[i] = G.queue.shift();
+}
+
+function deployCard(id, x, y, team, level) {
+  const c = CARDS[id];
+  if (G.stats) G.stats[team] = (G.stats[team] || 0) + 1;
+  if (c.type === 'spell') {
+    G.casts.push(new Cast(id, x, y, team, level));
+    Snd.deploy();
+    return;
+  }
+  if (c.type === 'building') {
+    G.buildings.push(new Building(x, y, team, 'card', id));
+  } else {
+    spawnTroops(id, x, y, team, c.count || 1, level);
+  }
+  ring(x, y, 22, team === 'player' ? '#7fd0ff' : '#ff9a9a');
+  Snd.deploy();
+}
+
+function tryDeploy(slot, x, y) {
+  if (!G.running) return false;
+  const id = G.hand[slot];
+  if (!id) return false;
+  const card = CARDS[id];
+  if (G.elixir < card.cost) { toast('¡Te falta elixir!'); return false; }
+  if (!canDeploy(card, x, y)) { toast('Solo puedes desplegar en tu zona'); return false; }
+  G.elixir -= card.cost;
+  deployCard(id, x, y, 'player', cardLevel(id));
+  playHandSlot(slot);
+  G.selected = null;
+  renderHand(true);
+  return true;
+}
+
+/* ------------------------- HABILIDAD LEGENDARIA ----------------------- */
+function abilityUnit() {
+  for (const u of G.units) if (u.team === 'player' && u.alive && u.deployed && u.card.ability) return u;
+  return null;
+}
+function useAbility() {
+  const u = abilityUnit();
+  if (!u || G.abilityCd > 0 || G.elixir < 1 || !G.running) return;
+  G.elixir -= 1; G.abilityCd = 8;
+  Snd.ability();
+  poof(u.pos.x, u.pos.y, '#7fe8ff', 14);
+  const m = levelMult(u.level);
+  if (u.card.ability === 'salto') {
+    const tg = acquire(u);
+    if (tg) {
+      const a = Math.atan2(u.pos.y - tg.pos.y, u.pos.x - tg.pos.x);
+      u.pos.x = tg.pos.x + Math.cos(a) * (tg.radius + u.radius);
+      u.pos.y = tg.pos.y + Math.sin(a) * (tg.radius + u.radius);
+      constrain(u);
+      dealArea(u.pos.x, u.pos.y, 78, 330 * m, u.team, { knock: 26 });
+      boom(u.pos.x, u.pos.y, 78, '#7fd0ff');
+      G.shake = 12; Snd.boom();
+    }
+  } else if (u.card.ability === 'carga') {
+    u.cool = 0;
+    spark(u.pos.x, u.pos.y, '#7fe8ff', 16);
+  } else if (u.card.ability === 'lluvia') {
+    for (let i = 0; i < 4; i++) {
+      after(i * 0.22, () => {
+        if (!G.running || !u.alive) return;
+        const tg = acquire(u);
+        if (!tg) return;
+        G.shots.push(new Shot(u.pos.x, u.pos.y - 8, tg, 120 * m, u.team, 'arrow', { splash: 44, color: '#ffd75e', speed: 340 }));
+        Snd.shoot();
+      });
+    }
+  }
+  renderHand(true);
+}
+
+/* ------------------------------- IA ----------------------------------- */
+const AI_POOL = [
+  ['KNIGHT', 'ARCHERS', 'GIANT', 'ARROWS', 'MINIONS', 'MUSKETEER', 'ZAP', 'CANNON'],
+  ['VALKYRIE', 'HOG_RIDER', 'WIZARD', 'FIREBALL', 'SKELETONS', 'MUSKETEER', 'ZAP', 'CANNON'],
+  ['PEKKA', 'WITCH', 'BABY_DRAGON', 'FIREBALL', 'MINIONS', 'KNIGHT', 'ZAP', 'INFERNO'],
+  ['MEGA_KNIGHT', 'ELECTRO_WIZARD', 'BABY_DRAGON', 'ARROWS', 'VALKYRIE', 'HOG_RIDER', 'ZAP', 'INFERNO'],
+  ['GIANT', 'WITCH', 'PRINCESS', 'LUMBERJACK', 'FIREBALL', 'MINIONS', 'ZAP', 'CANNON']
+];
+function aiInit() {
+  const idx = clamp(Math.floor(P.trophies / 500), 0, AI_POOL.length - 1);
+  const deck = AI_POOL[Math.min(idx, AI_POOL.length - 1)].slice();
+  G.ai.queue = shuffle(deck);
+  G.ai.hand = G.ai.queue.splice(0, 4);
+  G.ai.think = 2.2;
+  G.ai.pushCd = rnd(8, 4);
+}
+function aiPlay(slot, x, y) {
+  const id = G.ai.hand[slot];
+  const c = CARDS[id];
+  G.aiElixir -= c.cost;
+  deployCard(id, clamp(x, 20, W - 20), clamp(y, 20, RIVER_TOP - 10), 'enemy', G.enemyLevel);
+  G.ai.queue.push(id);
+  G.ai.hand[slot] = G.ai.queue.shift();
+}
+function aiScore(card, ctxInfo) {
+  let s = 10 - card.cost * 1.5;
+  if (ctxInfo.swarm && card.splash) s += 22;
+  if (ctxInfo.swarm && card.type === 'spell' && card.dmg) s += 26;
+  if (ctxInfo.air && (card.targets === 'all' || card.targets === 'air')) s += 20;
+  if (ctxInfo.air && card.targets === 'ground') s -= 40;
+  if (ctxInfo.tank) {
+    const dps = card.dmg && card.hitSpeed ? card.dmg / card.hitSpeed : 0;
+    if (dps > 100) s += 18;
+    if (card.type === 'building') s += 24;
+    if (card.type === 'spell') s -= 20;
+  }
+  if (ctxInfo.threat && card.type === 'troop' && card.targets === 'buildings') s -= 25;
+  if (!ctxInfo.threat && card.type === 'spell') s -= 30;
+  if (card.type === 'building' && !ctxInfo.threat) s -= 15;
+  return s + rnd(6);
+}
+function aiPickSlot(info, filter) {
+  let bestSlot = -1, best = -Infinity;
+  for (let i = 0; i < G.ai.hand.length; i++) {
+    const c = CARDS[G.ai.hand[i]];
+    if (!c || c.cost > G.aiElixir) continue;
+    if (filter && !filter(c)) continue;
+    const sc = aiScore(c, info);
+    if (sc > best) { best = sc; bestSlot = i; }
+  }
+  return bestSlot;
+}
+function aiCluster(list, radius) {
+  let best = { n: 0, x: 0, y: 0 };
+  for (const t of list) {
+    let n = 0;
+    for (const o of list) if (dist(t.pos, o.pos) <= radius) n++;
+    if (n > best.n) best = { n, x: t.pos.x, y: t.pos.y };
+  }
+  return best;
+}
+function aiCast(slot, x, y) {
+  const id = G.ai.hand[slot];
+  G.aiElixir -= CARDS[id].cost;
+  G.casts.push(new Cast(id, clamp(x, 20, W - 20), clamp(y, 20, H - 20), 'enemy', G.enemyLevel));
+  if (G.stats) G.stats.enemy = (G.stats.enemy || 0) + 1;
+  Snd.deploy();
+  G.ai.queue.push(id);
+  G.ai.hand[slot] = G.ai.queue.shift();
+}
+function aiUpdate(dt) {
+  G.aiElixir = Math.min(10, G.aiElixir + dt * (1 / 2.8) * G.mult);
+  G.ai.think -= dt;
+  G.ai.pushCd -= dt;
+  if (G.ai.think > 0) return;
+  G.ai.think = rnd(1.8, 0.9) / G.aiSkill;
+
+  const mine = G.units.filter(u => u.team === 'player' && u.alive && u.deployed);
+  const near = mine.filter(u => u.pos.y < RIVER_BOT + 70);   /* ya cruzando o cruzado */
+  const coming = mine.filter(u => u.pos.y < 520);            /* empuje en camino */
+  const list = near.length ? near : coming;
+  const info = {
+    threat: near.length > 0,
+    swarm: list.length >= 3,
+    air: list.some(t => t.air),
+    tank: list.some(t => t.maxHp >= 1800)
+  };
+
+  /* 1. DEFENSA inmediata */
+  if (near.length) {
+    let ref = near[0];
+    for (const t of near) if (t.pos.y < ref.pos.y || t.maxHp > ref.maxHp * 1.4) ref = t;
+
+    const spellSlot = aiPickSlot(info, c => c.type === 'spell' && c.dmg);
+    if (spellSlot >= 0) {
+      const card = CARDS[G.ai.hand[spellSlot]];
+      const cl = aiCluster(near, card.radius);
+      const worth = cl.n >= 3 || (cl.n >= 2 && card.cost <= 3) ||
+        (cl.n >= 1 && ref.maxHp <= 700 && ref.hp <= card.dmg * levelMult(G.enemyLevel) * 1.1);
+      if (worth) { aiCast(spellSlot, cl.x, cl.y); return; }
+    }
+    const slot = aiPickSlot(info, c => c.type !== 'spell');
+    if (slot >= 0) {
+      const card = CARDS[G.ai.hand[slot]];
+      const px = card.type === 'building'
+        ? clamp(ref.pos.x < 240 ? 165 : 315, 40, W - 40)
+        : clamp(ref.pos.x + rnd(26, -26), 30, W - 30);
+      const py = clamp(ref.pos.y - (card.range > 100 ? 105 : 62), 45, RIVER_TOP - 16);
+      aiPlay(slot, px, py);
+      if (Math.random() < 0.1) aiEmote();
+    }
+    return;
+  }
+
+  /* 2. PREPARARSE ante un empuje que viene */
+  if (coming.length && G.aiElixir >= 6) {
+    const slot = aiPickSlot(info, c => c.type === 'troop' && c.targets !== 'buildings');
+    if (slot >= 0) {
+      const lane = coming[0].pos.x < 240 ? 150 : 330;
+      aiPlay(slot, clamp(lane + rnd(30, -30), 40, W - 40), rnd(215, 165));
+      return;
+    }
+  }
+
+  /* 3. ATAQUE */
+  if (G.ai.pushCd > 0 && G.aiElixir < 9) return;
+  const slot = aiPickSlot({ threat: false, swarm: false, air: false, tank: false },
+    c => c.type === 'troop');
+  if (slot < 0) return;
+  const card = CARDS[G.ai.hand[slot]];
+  const lane = Math.random() < 0.5 ? BRIDGES[0] : BRIDGES[1];
+  const x = clamp(lane.cx + rnd(26, -26), 28, W - 28);
+  const y = card.targets === 'buildings' ? RIVER_TOP - 26 : rnd(160, 95);
+  aiPlay(slot, x, y);
+  G.ai.pushCd = rnd(8, 3.5) / G.aiSkill;
+  if (Math.random() < 0.08) aiEmote();
+}
+function aiEmote() {
+  const king = G.buildings.find(b => b.team === 'enemy' && b.kind === 'king' && b.alive);
+  if (!king) return;
+  G.emotes.push({ x: king.pos.x, y: king.pos.y + 46, text: pick(['😎', '😂', '👑', '🔥', '😴']), life: 2.2, team: 'enemy' });
+  Snd.emote();
+}
+
+/* --------------------------- BUCLE PRINCIPAL --------------------------- */
+function update(dt) {
+  G.t += dt;
+
+  for (const tm of G.timers) {
+    tm.t -= dt;
+    if (tm.t <= 0 && !tm.done) { tm.done = true; try { tm.fn(); } catch (e) { /* nada */ } }
+  }
+  if (G.timers.length) G.timers = G.timers.filter(t => !t.done);
+
+  G.time -= dt;
+  if (G.phase === 'normal') {
+    if (G.time <= 60 && G.mult < 2) { G.mult = 2; banner('¡ELIXIR x2!'); $('elixir-bar').classList.add('x2'); }
+    if (G.time <= 0) {
+      if (G.crowns.player !== G.crowns.enemy) { endMatch(); return; }
+      G.phase = 'overtime'; G.time = 60; G.mult = 3;
+      banner('¡PRÓRROGA x3!');
+    }
+  } else if (G.time <= 0) { endMatch(); return; }
+
+  G.elixir = Math.min(10, G.elixir + dt * (1 / 2.8) * G.mult);
+  aiUpdate(dt);
+  if (G.abilityCd > 0) G.abilityCd = Math.max(0, G.abilityCd - dt);
+
+  for (let i = 0; i < G.units.length; i++) { const u = G.units[i]; if (u.alive) u.update(dt); }
+  for (let i = 0; i < G.buildings.length; i++) { const b = G.buildings[i]; if (b.alive) b.update(dt); }
+  separate();
+  for (const s of G.shots) s.update(dt);
+  for (const c of G.casts) c.update(dt);
+  for (const p of G.parts) p.update(dt);
+  for (const z of G.zones) z.life -= dt;
+  for (const f of G.floats) f.life -= dt;
+  for (const e of G.emotes) e.life -= dt;
+
+  G.units = G.units.filter(u => u.alive);
+  G.buildings = G.buildings.filter(b => b.alive);
+  G.shots = G.shots.filter(s => s.alive);
+  G.casts = G.casts.filter(c => c.alive);
+  G.parts = G.parts.filter(p => p.life > 0);
+  G.zones = G.zones.filter(z => z.life > 0);
+  G.floats = G.floats.filter(f => f.life > 0);
+  G.emotes = G.emotes.filter(e => e.life > 0);
+  if (G.shake > 0) G.shake = Math.max(0, G.shake - dt * 45);
+}
+
+function loop(ts) {
+  G.raf = requestAnimationFrame(loop);
+  if (!G.lastFrame) G.lastFrame = ts;
+  let dt = (ts - G.lastFrame) / 1000;
+  G.lastFrame = ts;
+  if (!isFinite(dt) || dt < 0) dt = 0;
+  dt = Math.min(dt, 0.05);
+  if (G.running) update(dt);
+  render();
+  updateHud();
+}
+
+/* ---------------------------- FIN DE PARTIDA --------------------------- */
+function lowestTowerPct(team) {
+  let low = 1;
+  for (const b of G.buildings) if (b.team === team && b.isTower && b.alive) low = Math.min(low, b.pct);
+  const alive = G.buildings.filter(b => b.team === team && b.isTower && b.alive).length;
+  if (alive < 3) low -= (3 - alive);
+  return low;
+}
+function decideResult() {
+  if (G.crowns.player > G.crowns.enemy) return 'win';
+  if (G.crowns.enemy > G.crowns.player) return 'lose';
+  const a = lowestTowerPct('player'), b = lowestTowerPct('enemy');
+  if (a > b + 0.005) return 'win';
+  if (b > a + 0.005) return 'lose';
+  return 'draw';
+}
+function endMatch(forced) {
+  if (!G.running) return;
+  G.running = false; G.over = true;
+  G.selected = null;
+  const res = forced === 'lose' ? 'lose' : decideResult();
+  G.result = res;
+  const rw = { gold: 0, trophies: 0, chest: null };
+  if (res === 'win') {
+    rw.trophies = 26 + G.crowns.player * 3;
+    rw.gold = 90 + G.crowns.player * 35;
+    P.wins++;
+    const slot = P.chests.indexOf(null);
+    if (slot !== -1) {
+      const roll = Math.random();
+      const type = roll > 0.94 ? 'Legendario' : roll > 0.75 ? 'Mágico' : roll > 0.4 ? 'Oro' : 'Plata';
+      P.chests[slot] = { type };
+      rw.chest = type;
+    }
+    Snd.win(); banner('¡VICTORIA!');
+  } else if (res === 'lose') {
+    rw.trophies = -(16 + G.crowns.enemy * 3);
+    rw.gold = 18;
+    P.losses++;
+    Snd.lose(); banner('DERROTA');
+  } else {
+    rw.gold = 40;
+    banner('EMPATE');
+  }
+  P.trophies = Math.max(0, P.trophies + rw.trophies);
+  P.gold += rw.gold;
+  save();
+  /* el identificador evita que un resultado atrasado aparezca sobre otra partida */
+  const id = G.matchId;
+  setTimeout(() => { if (G.matchId === id && !G.running) showResult(res, rw); }, 1100);
+}
+
+/* ============================== INTERFAZ =============================== */
+function renderCrowns() {
+  const mk = (n, cls) => {
+    let h = '';
+    if (cls === 'enemy') h += '<span class="tag enemy">RIVAL</span>';
+    for (let i = 0; i < 3; i++) h += '<span class="cslot' + (i < n ? ' on' : '') + '">' + (i < n ? '👑' : '') + '</span>';
+    if (cls === 'mine') h += '<span class="tag mine">TÚ</span>';
+    return h;
+  };
+  $('crowns-enemy').innerHTML = mk(G.crowns.enemy, 'enemy');
+  $('crowns-player').innerHTML = mk(G.crowns.player, 'mine');
+}
+
+const hudCache = { el: -1, tm: '', ab: '', poor: '' };
+function updateHud() {
+  const e = Math.floor(G.elixir);
+  const pctE = clamp(G.elixir / 10, 0, 1) * 100;
+  $('elixir-fill').style.width = pctE.toFixed(1) + '%';
+  if (e !== hudCache.el) {
+    hudCache.el = e;
+    $('elixir-txt').textContent = e + '/10' + (G.mult > 1 ? '  ×' + G.mult : '');
+  }
+  const t = Math.max(0, G.time);
+  const tm = Math.floor(t / 60) + ':' + String(Math.floor(t % 60)).padStart(2, '0');
+  if (tm !== hudCache.tm) {
+    hudCache.tm = tm;
+    const el = $('timer');
+    el.textContent = (G.phase === 'overtime' ? '⏱ ' : '') + tm;
+    el.classList.toggle('urgent', G.time <= 60 || G.phase === 'overtime');
+  }
+  /* botón de poder */
+  const ab = $('ability-btn');
+  const u = G.running ? abilityUnit() : null;
+  let state = 'off';
+  if (u) state = G.abilityCd > 0 ? 'cd' : 'on';
+  const label = state === 'cd' ? '⏳ ' + Math.ceil(G.abilityCd) + 's' : (u ? '✨ ' + u.card.name.split(' ')[0] : '');
+  const sig = state + label;
+  if (sig !== hudCache.ab) {
+    hudCache.ab = sig;
+    ab.className = state === 'off' ? '' : state;
+    ab.textContent = label;
+  }
+  /* cartas que no se pueden pagar */
+  let sig2 = '';
+  for (let i = 0; i < G.hand.length; i++) sig2 += (G.elixir >= CARDS[G.hand[i]].cost ? '1' : '0');
+  sig2 += '|' + G.selected;
+  if (sig2 !== hudCache.poor) {
+    hudCache.poor = sig2;
+    const nodes = $('hand').children;
+    for (let i = 0; i < nodes.length; i++) {
+      const id = G.hand[i];
+      if (!id) continue;
+      nodes[i].classList.toggle('poor', G.elixir < CARDS[id].cost);
+      nodes[i].classList.toggle('sel', G.selected === i);
+    }
+  }
+}
+
+function renderHand(force) {
+  const sig = G.hand.join(',');
+  const box = $('hand');
+  if (force || box.dataset.sig !== sig) {
+    box.dataset.sig = sig;
+    box.innerHTML = '';
+    G.hand.forEach((id, i) => {
+      const c = CARDS[id];
+      const d = document.createElement('div');
+      d.className = 'card ' + c.rarity;
+      d.innerHTML = '<div class="ccost">' + c.cost + '</div>' +
+        '<div class="cicon">' + c.icon + '</div>' +
+        '<div class="cname">' + c.name + '</div>' +
+        '<div class="clvl">N' + cardLevel(id) + '</div>';
+      d.addEventListener('pointerdown', ev => {
+        ev.preventDefault();
+        Snd.init();
+        if (!G.running) return;
+        if (G.elixir < c.cost) { G.selected = null; toast('¡Te falta elixir!'); return; }
+        G.selected = (G.selected === i) ? null : i;
+        updatePointer(ev);
+        hudCache.poor = '';
+      });
+      box.appendChild(d);
+    });
+    hudCache.poor = '';
+  }
+  const nx = G.queue[0] ? CARDS[G.queue[0]] : null;
+  const nc = $('next-card');
+  if (nx && nc.dataset.id !== nx.id) {
+    nc.dataset.id = nx.id;
+    nc.innerHTML = '<div class="nl">SIGUE</div><div class="ni">' + nx.icon + '</div><div class="nc">' + nx.cost + ' 💧</div>';
+  }
+}
+
+/* ------------------------------- MODAL -------------------------------- */
+function modal(html) {
+  $('modal-box').innerHTML = html;
+  $('modal').classList.add('open');
+}
+function closeModal() { $('modal').classList.remove('open'); }
+
+function showResult(res, rw) {
+  const title = res === 'win' ? '¡VICTORIA!' : res === 'lose' ? 'DERROTA' : 'EMPATE';
+  const cls = res === 'win' ? 'win' : res === 'lose' ? 'lose' : 'draw';
+  let h = '<h2 class="' + cls + '">' + title + '</h2>';
+  h += '<p>' + G.crowns.player + ' 👑 &nbsp;—&nbsp; ' + G.crowns.enemy + ' 👑</p><div class="rewards">';
+  h += '<div class="rw">' + (rw.trophies >= 0 ? '+' : '') + rw.trophies + ' 🏆 &nbsp;·&nbsp; total ' + P.trophies + '</div>';
+  h += '<div class="rw">+' + rw.gold + ' 🪙 de oro</div>';
+  if (G.stats) h += '<div class="rw" style="font-size:12px;color:#95a1c4">Cartas jugadas: tú ' +
+    G.stats.player + ' · rival ' + G.stats.enemy + '</div>';
+  if (rw.chest) h += '<div class="rw">🧰 ¡Cofre ' + rw.chest + ' conseguido!</div>';
+  h += '</div><div class="modal-actions"><button class="btn-big" id="m-again">REVANCHA</button>' +
+    '<button class="btn-big alt" id="m-menu">MENÚ</button></div>';
+  modal(h);
+  $('m-again').onclick = () => { closeModal(); startBattle(); };
+  $('m-menu').onclick = () => { closeModal(); toMenu(); };
+}
+
+function toMenu() {
+  G.running = false;
+  if (G.raf) { cancelAnimationFrame(G.raf); G.raf = 0; }
+  $('overlay').classList.remove('hidden');
+  $('elixir-bar').classList.remove('x2');
+  $('emote-picker').classList.remove('open');
+  renderMenu(); renderCards();
+}
+
+function startBattle() {
+  if (P.deck.length !== 8) {
+    modal('<h2>Mazo incompleto</h2><p>Necesitas exactamente <b>8 cartas</b> en el mazo. Ahora tienes ' +
+      P.deck.length + '.</p><div class="modal-actions"><button class="btn-big alt" id="m-ok">IR AL MAZO</button></div>');
+    $('m-ok').onclick = () => { closeModal(); switchTab('cards'); };
+    return;
+  }
+  Snd.init();
+  $('overlay').classList.add('hidden');
+  $('elixir-bar').classList.remove('x2');
+  newMatch();
+}
+
+/* ---------------------------- MENÚ PRINCIPAL --------------------------- */
+function renderMenu() {
+  const ar = arenaFor(P.trophies), nx = nextArena(P.trophies);
+  $('p-trophies').textContent = '🏆 ' + P.trophies;
+  $('p-arena').textContent = ar.name;
+  $('p-gold').textContent = P.gold;
+  $('p-wins').textContent = P.wins;
+  $('p-losses').textContent = P.losses;
+  if (nx) {
+    const span = nx.min - ar.min;
+    $('p-arena-bar').style.width = clamp((P.trophies - ar.min) / span, 0, 1) * 100 + '%';
+    $('p-next-arena').textContent = (nx.min - P.trophies) + ' 🏆 para ' + nx.name;
+  } else {
+    $('p-arena-bar').style.width = '100%';
+    $('p-next-arena').textContent = '¡Arena máxima alcanzada!';
+  }
+  const prev = $('deck-preview');
+  prev.innerHTML = '';
+  let tot = 0;
+  P.deck.forEach(id => {
+    const c = CARDS[id];
+    tot += c.cost;
+    const d = document.createElement('div');
+    d.className = 'mini ' + c.rarity;
+    d.title = c.name + ' — ' + c.desc;
+    d.innerHTML = '<div class="mi">' + c.icon + '</div><div class="mc">' + c.cost + '</div>';
+    prev.appendChild(d);
+  });
+  $('avg-cost').textContent = P.deck.length
+    ? 'Coste medio de elixir: ' + (tot / P.deck.length).toFixed(1) + ' 💧'
+    : '';
+  $('sound-btn').textContent = Snd.muted ? '🔇' : '🔊';
+
+  const box = $('chests');
+  box.innerHTML = '';
+  P.chests.forEach((ch, i) => {
+    const d = document.createElement('div');
+    if (ch && CHESTS[ch.type]) {
+      d.className = 'chest full ' + ch.type;
+      d.innerHTML = '<div class="cico">🧰</div><b>' + ch.type + '</b><span>¡Abrir!</span>';
+      d.onclick = () => openChest(i);
+    } else {
+      d.className = 'chest';
+      d.innerHTML = '<div class="cico">🔓</div>Vacío';
+    }
+    box.appendChild(d);
+  });
+}
+
+const CHESTS = {
+  Plata: { gold: [70, 150], cards: 8, rare: .25, epic: .05, leg: .01 },
+  Oro: { gold: [170, 300], cards: 16, rare: .38, epic: .10, leg: .03 },
+  'Mágico': { gold: [330, 560], cards: 26, rare: .5, epic: .2, leg: .07 },
+  Legendario: { gold: [600, 900], cards: 34, rare: .5, epic: .25, leg: 1 }
+};
+function rollRarity(cfg) {
+  const r = Math.random();
+  if (r < cfg.leg) return 'Legendary';
+  if (r < cfg.leg + cfg.epic) return 'Epic';
+  if (r < cfg.leg + cfg.epic + cfg.rare) return 'Rare';
+  return 'Common';
+}
+function openChest(i) {
+  const ch = P.chests[i];
+  if (!ch || !CHESTS[ch.type]) return;
+  const cfg = CHESTS[ch.type];
+  const gold = rndInt(cfg.gold[0], cfg.gold[1]);
+  P.gold += gold;
+  const won = {};
+  let left = cfg.cards;
+  let guard = 0;
+  while (left > 0 && guard++ < 200) {
+    const rar = rollRarity(cfg);
+    const pool = CARD_IDS.filter(id => CARDS[id].rarity === rar);
+    if (!pool.length) { left--; continue; }
+    const id = pick(pool);
+    const n = Math.min(left, rar === 'Legendary' ? 1 : rar === 'Epic' ? rndInt(1, 3) : rndInt(2, 6));
+    won[id] = (won[id] || 0) + n;
+    P.copies[id] = (P.copies[id] || 0) + n;
+    left -= n;
+  }
+  P.chests[i] = null;
+  save();
+  Snd.chest();
+  let h = '<h2 class="win">🧰 Cofre ' + ch.type + '</h2><div class="rewards"><div class="rw">+' + gold + ' 🪙 de oro</div>';
+  for (const id of Object.keys(won)) {
+    h += '<div class="rw">' + CARDS[id].icon + ' ' + CARDS[id].name + ' ×' + won[id] + '</div>';
+  }
+  h += '</div><div class="modal-actions"><button class="btn-big" id="m-ok">¡GENIAL!</button></div>';
+  modal(h);
+  $('m-ok').onclick = () => { closeModal(); renderMenu(); renderCards(); };
+}
+
+/* --------------------------- MAZO Y COLECCIÓN -------------------------- */
+function upgradeCost(id) {
+  const lvl = cardLevel(id);
+  const u = UPGRADE[CARDS[id].rarity];
+  return { copies: u.copies * lvl, gold: u.gold * lvl, lvl };
+}
+function upgradeCard(id) {
+  const c = upgradeCost(id);
+  if (c.lvl >= MAX_LEVEL) return;
+  if ((P.copies[id] || 0) < c.copies || P.gold < c.gold) return;
+  P.copies[id] -= c.copies;
+  P.gold -= c.gold;
+  P.levels[id] = c.lvl + 1;
+  save();
+  Snd.crown();
+  renderCards(); renderMenu();
+}
+function toggleDeck(id) {
+  const i = P.deck.indexOf(id);
+  if (i !== -1) {
+    P.deck.splice(i, 1);
+  } else {
+    if (P.deck.length >= 8) { flashMsg('El mazo ya tiene 8 cartas. Quita una primero.'); return; }
+    P.deck.push(id);
+  }
+  save(); renderCards();
+}
+function flashMsg(msg) {
+  modal('<h2>Aviso</h2><p>' + msg + '</p><div class="modal-actions"><button class="btn-big alt" id="m-ok">VALE</button></div>');
+  $('m-ok').onclick = closeModal;
+}
+function randomDeck() {
+  P.deck = shuffle(CARD_IDS.slice()).slice(0, 8);
+  save(); renderCards();
+}
+function cardTile(id, inDeck) {
+  const c = CARDS[id];
+  const lvl = cardLevel(id);
+  const cost = upgradeCost(id);
+  const copies = P.copies[id] || 0;
+  const maxed = lvl >= MAX_LEVEL;
+  const can = !maxed && copies >= cost.copies && P.gold >= cost.gold;
+  const d = document.createElement('div');
+  d.className = 'col-card ' + c.rarity + (inDeck ? ' in' : '');
+  d.innerHTML =
+    '<div class="cst">' + c.cost + '</div>' +
+    (inDeck ? '<div class="mark">MAZO</div>' : '') +
+    '<div class="ico">' + c.icon + '</div>' +
+    '<div class="nm">' + c.name + '</div>' +
+    '<div class="lv">Nivel ' + lvl + '</div>' +
+    '<div class="prog"><i style="width:' + (maxed ? 100 : clamp(copies / cost.copies, 0, 1) * 100) + '%"></i></div>' +
+    '<div style="font-size:7.5px;color:#8f9ab9">' + (maxed ? 'MÁX' : copies + '/' + cost.copies) + '</div>' +
+    '<button class="up-btn" ' + (can ? '' : 'disabled') + '>' + (maxed ? '★ MÁX' : '⬆ ' + cost.gold + '🪙') + '</button>';
+  d.querySelector('.up-btn').addEventListener('click', ev => { ev.stopPropagation(); upgradeCard(id); });
+  d.addEventListener('click', () => toggleDeck(id));
+  d.title = c.name + ' — ' + RARITY_ES[c.rarity] + '. ' + c.desc;
+  return d;
+}
+function renderCards() {
+  $('deck-count').textContent = P.deck.length;
+  $('col-count').textContent = CARD_IDS.length;
+  const dg = $('deck-grid');
+  dg.innerHTML = '';
+  P.deck.forEach(id => dg.appendChild(cardTile(id, true)));
+  for (let i = P.deck.length; i < 8; i++) {
+    const e = document.createElement('div');
+    e.className = 'empty-slot'; e.textContent = '+';
+    dg.appendChild(e);
+  }
+  const cg = $('collection-grid');
+  cg.innerHTML = '';
+  CARD_IDS.slice().sort((a, b) =>
+    RARITY_ORDER[CARDS[a].rarity] - RARITY_ORDER[CARDS[b].rarity] || CARDS[a].cost - CARDS[b].cost
+  ).forEach(id => cg.appendChild(cardTile(id, P.deck.includes(id))));
+}
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
+  $('page-battle').classList.toggle('active', name === 'battle');
+  $('page-cards').classList.toggle('active', name === 'cards');
+  if (name === 'cards') renderCards(); else renderMenu();
+}
+
+/* ------------------------------ ENTRADA -------------------------------- */
+function updatePointer(ev) {
+  const r = cv.getBoundingClientRect();
+  if (!r.width || !r.height) return;
+  const x = (ev.clientX - r.left) * (W / r.width);
+  const y = (ev.clientY - r.top) * (H / r.height);
+  G.pointer.x = clamp(x, 0, W);
+  G.pointer.y = clamp(y, 0, H);
+  G.pointer.inside = x >= 0 && x <= W && y >= 0 && y <= H;
+}
+cv.addEventListener('pointerdown', ev => { Snd.init(); updatePointer(ev); ev.preventDefault(); });
+window.addEventListener('pointermove', ev => { if (G.selected !== null) updatePointer(ev); }, { passive: true });
+window.addEventListener('pointerup', ev => {
+  if (G.selected === null || !G.running) return;
+  updatePointer(ev);
+  if (G.pointer.inside) tryDeploy(G.selected, G.pointer.x, G.pointer.y);
+});
+window.addEventListener('keydown', ev => {
+  if (!G.running) return;
+  if (ev.key >= '1' && ev.key <= '4') {
+    const i = parseInt(ev.key, 10) - 1;
+    if (G.hand[i] && G.elixir >= CARDS[G.hand[i]].cost) { G.selected = i; hudCache.poor = ''; }
+  } else if (ev.key === 'Escape') {
+    G.selected = null; hudCache.poor = '';
+  } else if (ev.key.toLowerCase() === 'q') {
+    useAbility();
+  }
+});
+
+const EMOJIS = ['👑', '😂', '😭', '😡', '🔥', '💀', '👍', '🤝'];
+function buildEmotes() {
+  const p = $('emote-picker');
+  p.innerHTML = '';
+  EMOJIS.forEach(em => {
+    const s = document.createElement('span');
+    s.textContent = em;
+    s.onclick = () => {
+      const k = G.buildings.find(b => b.team === 'player' && b.kind === 'king' && b.alive);
+      if (k) G.emotes.push({ x: k.pos.x, y: k.pos.y - 46, text: em, life: 2.2, team: 'player' });
+      Snd.emote();
+      p.classList.remove('open');
+    };
+    p.appendChild(s);
+  });
+}
+
+/* ---------------------------- ESCALADO ---------------------------------- */
+function fitScreen() {
+  const f = $('frame');
+  const s = Math.min(window.innerWidth / 480, window.innerHeight / 812);
+  f.style.transform = 'scale(' + s.toFixed(4) + ')';
+}
+window.addEventListener('resize', fitScreen);
+window.addEventListener('orientationchange', () => setTimeout(fitScreen, 120));
+
+/* ------------------------------ ARRANQUE -------------------------------- */
+function showHelp() {
+  modal('<h2>Cómo se juega</h2><div class="help-list">' +
+    '<b>Objetivo:</b> destruye más torres que el rival en 3 minutos. Cada torre lateral vale 1 corona 👑 y la del Rey da la victoria inmediata.<br>' +
+    '<b>Elixir:</b> se llena solo. Cada carta cuesta elixir (el número rosa). En el último minuto se genera ×2 y en la prórroga ×3.<br>' +
+    '<b>Jugar cartas:</b> toca una carta y luego el campo, o arrástrala. Solo puedes desplegar en <b>tu mitad</b> hasta que derribes una torre rival.<br>' +
+    '<b>Tipos:</b> las tropas de asedio (Gigante, Montapuercos) solo golpean edificios; los hechizos caen donde quieras; los edificios defienden y caducan.<br>' +
+    '<b>Poder ✨:</b> con una carta legendaria en el campo se activa un botón especial (1 de elixir).<br>' +
+    '<b>Teclas:</b> 1-4 elegir carta · Q poder · Esc cancelar.' +
+    '</div><div class="modal-actions"><button class="btn-big" id="m-ok">¡ENTENDIDO!</button></div>');
+  $('m-ok').onclick = closeModal;
+}
+
+function init() {
+  buildEmotes();
+  document.querySelectorAll('.tab').forEach(t => {
+    t.addEventListener('click', () => switchTab(t.dataset.tab));
+  });
+  $('start-btn').addEventListener('click', startBattle);
+  $('help-btn').addEventListener('click', showHelp);
+  $('sound-btn').addEventListener('click', () => {
+    Snd.init();
+    Snd.setMuted(!Snd.muted);
+    $('sound-btn').textContent = Snd.muted ? '🔇' : '🔊';
+  });
+  $('random-deck').addEventListener('click', randomDeck);
+  $('emote-btn').addEventListener('click', () => $('emote-picker').classList.toggle('open'));
+  $('ability-btn').addEventListener('click', useAbility);
+  $('surrender-btn').addEventListener('click', () => {
+    if (!G.running) return;
+    modal('<h2>¿Rendirse?</h2><p>Perderás la partida y tus trofeos.</p><div class="modal-actions">' +
+      '<button class="btn-big alt" id="m-no">SEGUIR</button><button class="btn-big" id="m-yes" style="background:linear-gradient(180deg,#ff6b6b,#a92626);box-shadow:0 5px 0 #7a1c1c">RENDIRSE</button></div>');
+    $('m-no').onclick = closeModal;
+    $('m-yes').onclick = () => { closeModal(); endMatch('lose'); };
+  });
+
+  G.arena = arenaFor(P.trophies);
+  renderMenu(); renderCards(); renderCrowns();
+  fitScreen();
+  render();
+}
+init();
+</script>
+</body>
+</html>
