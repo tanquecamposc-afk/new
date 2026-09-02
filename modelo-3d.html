@@ -1,152 +1,153 @@
-<title>Vía Expresa 3D</title>
+<title>Vía Expresa en 3D</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
 :root{
-  --paper:#EDEFF1; --panel:#F8F9FA; --panel2:#E3E7EA;
-  --ink:#1C2429; --muted:#5C6A73; --line:#C9D0D6;
-  --accent:#C7530F; --accent-soft:#F4E2D4; --accent-ink:#FFFFFF;
-  --sign:#0B6C3F;
-  --f-display:"Arial Narrow","Helvetica Neue Condensed","Liberation Sans Narrow","Roboto Condensed",system-ui,sans-serif;
-  --f-body:system-ui,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
-  --f-mono:ui-monospace,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+  --paper:#FAF8F3; --panel:#FFFFFF; --panel2:#F1EEE7;
+  --ink:#292724; --muted:#6C6961; --line:#DFDACF;
+  --azul:#2F6FB5; --azul-suave:#E9F1F9; --verde:#4C8A4F;
+  --f:system-ui,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
-    --paper:#12161A; --panel:#1A2026; --panel2:#232B32;
-    --ink:#E6EAED; --muted:#94A2AB; --line:#2C353D;
-    --accent:#F07A2E; --accent-soft:#3A2A1D; --accent-ink:#14181C;
+    --paper:#17191B; --panel:#1F2225; --panel2:#282C30;
+    --ink:#E9E7E2; --muted:#9C9990; --line:#333940;
+    --azul:#74AAE0; --azul-suave:#1C2937; --verde:#7CBE7F;
   }
 }
 :root[data-theme="dark"]{
-  --paper:#12161A; --panel:#1A2026; --panel2:#232B32;
-  --ink:#E6EAED; --muted:#94A2AB; --line:#2C353D;
-  --accent:#F07A2E; --accent-soft:#3A2A1D; --accent-ink:#14181C;
+  --paper:#17191B; --panel:#1F2225; --panel2:#282C30;
+  --ink:#E9E7E2; --muted:#9C9990; --line:#333940;
+  --azul:#74AAE0; --azul-suave:#1C2937; --verde:#7CBE7F;
 }
 *{box-sizing:border-box}
-body{margin:0; background:var(--paper); color:var(--ink); font-family:var(--f-body); font-size:16px; line-height:1.6; -webkit-font-smoothing:antialiased}
-h1,h2,h3{font-family:var(--f-display); text-transform:uppercase; letter-spacing:.02em; line-height:1.1; text-wrap:balance; margin:0}
-p{margin:.4em 0 .9em}
-.wrap{max-width:1120px; margin:0 auto; padding:0 20px}
-section{padding:46px 0}
+body{margin:0; background:var(--paper); color:var(--ink); font-family:var(--f); font-size:17px; line-height:1.65}
+h1,h2,h3{line-height:1.2; margin:0; text-wrap:balance}
+h1{font-size:clamp(27px,4.6vw,38px); font-weight:700}
+h2{font-size:clamp(21px,3vw,26px); font-weight:700; margin-bottom:10px}
+h3{font-size:18px; font-weight:600; margin-bottom:4px}
+p{margin:.5em 0 1em}
+code{background:var(--panel2); padding:1px 5px; border-radius:4px; font-size:15px}
+.wrap{max-width:860px; margin:0 auto; padding:0 20px}
+section{padding:36px 0}
 section+section{border-top:1px solid var(--line)}
-.eyebrow{font-family:var(--f-mono); font-size:12px; letter-spacing:.18em; text-transform:uppercase; color:var(--accent); margin:0 0 10px; font-weight:700}
-h1{font-size:clamp(30px,5vw,52px)}
-h2{font-size:clamp(24px,3.5vw,34px); margin-bottom:12px}
-h3{font-size:18px; margin-bottom:8px}
-.lead{font-size:17px; color:var(--muted); max-width:70ch}
-.kicker{font-family:var(--f-mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted)}
-.card{background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:18px 20px}
-.grid{display:grid; gap:16px}
-@media(min-width:760px){ .grid.c3{grid-template-columns:1fr 1fr 1fr} }
-.chip{font-family:var(--f-mono); font-size:12px; letter-spacing:.06em; border:1px solid var(--line); background:var(--panel); color:var(--muted); padding:5px 12px; border-radius:999px}
-.meta{display:flex; flex-wrap:wrap; gap:10px; margin-top:14px}
-
+.muted{color:var(--muted)}
+.small{font-size:15px}
+header.portada{padding:44px 0 8px}
+.caratula{border:2px solid var(--ink); border-radius:10px; padding:24px 26px; background:var(--panel)}
+.curso{color:var(--verde); font-weight:700; font-size:15px; margin:0 0 8px}
+.caratula .sub{color:var(--muted); font-size:18px; margin:6px 0 0}
+.controles{display:flex; flex-wrap:wrap; gap:9px; margin:14px 0 12px}
+button.b{font-family:inherit; font-size:15px; background:var(--panel); color:var(--ink); border:1px solid var(--line); border-radius:8px; padding:7px 14px; cursor:pointer}
+button.b[aria-pressed="true"], button.b.active{background:var(--azul); color:#fff; border-color:var(--azul)}
+button.b:focus-visible, a:focus-visible{outline:2px solid var(--azul); outline-offset:2px}
 .stage{background:var(--panel); border:1px solid var(--line); border-radius:10px; overflow:hidden}
 #lienzo{display:block; width:100%; height:auto; cursor:grab; touch-action:none}
 #lienzo.drag{cursor:grabbing}
-.controls{display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin:16px 0 12px}
-button.tog{font-family:var(--f-mono); font-size:12.5px; letter-spacing:.06em; text-transform:uppercase; background:var(--panel); color:var(--ink); border:1px solid var(--line); border-radius:999px; padding:7px 16px; cursor:pointer}
-button.tog[aria-pressed="true"], button.tog.active{background:var(--accent); color:var(--accent-ink); border-color:var(--accent)}
-button.tog:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
-.scene-note{font-family:var(--f-mono); font-size:11.5px; color:var(--muted); padding:8px 14px; border-top:1px dashed var(--line)}
-a.dl{display:inline-flex; align-items:center; gap:8px; font-family:var(--f-mono); font-size:13px; letter-spacing:.04em; text-transform:uppercase; background:var(--accent); color:var(--accent-ink); border-radius:8px; padding:11px 18px; text-decoration:none; font-weight:700}
-a.dl.sec{background:var(--panel); color:var(--ink); border:1px solid var(--line)}
-ul.plain{margin:.3em 0; padding-left:1.2em}
-ul.plain li{margin:.35em 0; font-size:15px}
-footer{border-top:1px solid var(--line); padding:24px 0 40px; color:var(--muted); font-size:14px}
+.pie{font-size:14px; color:var(--muted); padding:8px 14px; border-top:1px solid var(--line)}
+.descargas{display:flex; flex-wrap:wrap; gap:9px; margin-top:16px}
+a.dl{display:inline-block; font-size:15px; font-weight:600; text-decoration:none; background:var(--azul); color:#fff; border:1px solid var(--azul); border-radius:8px; padding:9px 16px}
+a.dl.sec{background:var(--panel); color:var(--ink); border-color:var(--line); font-weight:500}
+.cajas{display:grid; gap:12px; margin-top:14px}
+@media(min-width:700px){ .cajas.tres{grid-template-columns:1fr 1fr 1fr} .cajas.dos{grid-template-columns:1fr 1fr} }
+.caja{background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:15px 17px}
+.caja p{margin:0; font-size:15.5px}
+.caja h3{color:var(--azul)}
+.caja .nivel{font-size:14px; color:var(--muted); display:block; margin-bottom:2px}
+.nota{background:var(--azul-suave); border-radius:10px; padding:15px 17px; margin-top:16px}
+.nota h3{color:var(--azul)}
+ul{padding-left:1.25em; margin:.4em 0}
+li{margin:.35em 0; font-size:15.5px}
+footer{border-top:1px solid var(--line); padding:22px 0 40px; color:var(--muted); font-size:15px}
 </style>
 
-<header style="padding:48px 0 8px">
+<header class="portada">
   <div class="wrap">
-    <p class="eyebrow">Proyecto EPT 2026 · Complemento de la maqueta</p>
-    <h1>Intercambio vial en 3D</h1>
-    <p class="lead">La Vía Expresa Elevada convertida en un <strong>intercambio a desnivel</strong>, como los
-    de las grandes autopistas: el viaducto principal arriba, la avenida que cruza en un puente intermedio,
-    dos <strong>rampas curvas</strong> que los conectan, lagunas y áreas verdes. Gíralo con el mouse y
-    descárgalo en formato <strong>OBJ</strong> para abrirlo en cualquier programa 3D.</p>
-    <div class="meta">
-      <span class="chip">MODELO 3D REAL · 1 UNIDAD = 1 METRO</span>
-      <span class="chip" id="statChip">— CARAS</span>
-      <span class="chip">FORMATO OBJ + MTL</span>
+    <div class="caratula">
+      <p class="curso">Educación para el Trabajo · segunda parte</p>
+      <h1>Vía Expresa Elevada en 3D</h1>
+      <p class="sub">El cruce completo, para girarlo y verlo por todos lados</p>
     </div>
   </div>
 </header>
 
-<section style="border-top:none; padding-top:24px">
+<main>
+<section>
   <div class="wrap">
-    <div class="controls">
-      <button class="tog vista active" data-v="aerea">Vista aérea</button>
-      <button class="tog vista" data-v="rasante">Vista rasante</button>
-      <button class="tog vista" data-v="superior">Vista superior</button>
-      <button class="tog" id="btnGiro" aria-pressed="false">Girar solo</button>
+    <h2>Qué es esto</h2>
+    <p>En la primera parte hice la vía elevada en línea recta. Acá la convertí en un <b>cruce completo</b>, como los intercambios grandes que se ven desde el avión: mi pista elevada arriba, una avenida que la cruza por un puente más bajo, y dos curvas que conectan las dos.</p>
+    <p>Lo puedes girar con el mouse (o con el dedo) y también <b>descargar el modelo</b> para abrirlo en la computadora o imprimirlo en 3D. Tiene <b id="statChip">—</b> triángulos y está hecho con medidas reales: cada unidad es un metro.</p>
+
+    <div class="controles">
+      <button class="b vista active" data-v="aerea">Vista de arriba</button>
+      <button class="b vista" data-v="rasante">Vista de frente</button>
+      <button class="b vista" data-v="superior">Vista de plano</button>
+      <button class="b" id="btnGiro" aria-pressed="false">Que gire solo</button>
     </div>
     <figure class="stage" style="margin:0">
-      <canvas id="lienzo" aria-label="Modelo 3D del intercambio vial: viaducto elevado, avenida en puente, rampas curvas, Metropolitano, lagunas y áreas verdes"></canvas>
-      <figcaption class="scene-note">ARRASTRA PARA GIRAR · RUEDA O PELLIZCO PARA ACERCAR</figcaption>
+      <canvas id="lienzo" aria-label="Modelo 3D del cruce: la vía elevada, la avenida en puente, las curvas que las conectan, el Metropolitano y dos lagunas"></canvas>
+      <figcaption class="pie">Arrastra para girarlo. Con la rueda del mouse (o pellizcando) te acercas y te alejas.</figcaption>
     </figure>
-    <div class="controls" style="margin-top:16px">
-      <a class="dl" id="dlObj" href="#" download="via-expresa-elevada.obj">⬇ Descargar .OBJ</a>
-      <a class="dl sec" id="dlMtl" href="#" download="via-expresa-elevada.mtl">⬇ Descargar .MTL (colores)</a>
-      <a class="dl sec" id="dlStl" href="#" download="via-expresa-elevada.stl">⬇ Descargar .STL (Tinkercad / impresión 3D)</a>
+
+    <div class="descargas">
+      <a class="dl" id="dlStl" href="#" download="via-expresa-elevada.stl">Descargar STL</a>
+      <a class="dl sec" id="dlObj" href="#" download="via-expresa-elevada.obj">Descargar OBJ</a>
+      <a class="dl sec" id="dlMtl" href="#" download="via-expresa-elevada.mtl">Descargar colores (MTL)</a>
     </div>
-    <p style="font-size:13.5px; color:var(--muted)">OBJ + MTL: guárdalos juntos en la misma carpeta para ver los colores (Blender, Visor 3D de Windows).
-    Para <strong>Tinkercad</strong> usa el <strong>.STL</strong>: Tinkercad no lee archivos .mtl y muestra el modelo en un solo color.</p>
+    <p class="small muted">Si no sabes cuál bajar: el <b>STL</b> sirve para Tinkercad y para imprimir en 3D. El <b>OBJ</b> es para verlo con colores, y ahí sí necesitas bajar también el archivo de colores y dejar los dos en la misma carpeta.</p>
   </div>
 </section>
 
 <section>
   <div class="wrap">
-    <p class="eyebrow">¿Qué estás viendo?</p>
-    <h2>Las piezas del intercambio</h2>
-    <div class="grid c3" style="margin-top:16px">
-      <div class="card"><span class="kicker">Nivel 3 · +13.5 m</span><h3>Viaducto principal</h3>
-        <p style="font-size:15px; margin-bottom:0">Cuatro carriles rápidos sobre columnas centrales, siguiendo el eje de la Vía Expresa, igual que en la maqueta principal.</p></div>
-      <div class="card"><span class="kicker">Nivel 2 · +7 m</span><h3>Avenida que cruza</h3>
-        <p style="font-size:15px; margin-bottom:0">Una avenida transversal (piensa en Javier Prado) pasa en puente sobre el corredor: el tráfico que cruza ya no corta a la Vía Expresa.</p></div>
-      <div class="card"><span class="kicker">Las curvas de la foto</span><h3>Rampas de conexión</h3>
-        <p style="font-size:15px; margin-bottom:0">Dos lazos curvos bajan del viaducto a la avenida sin semáforos. Su pendiente y giro están suavizados, como manda el diseño vial.</p></div>
-      <div class="card"><span class="kicker">Nivel 1 · 0 m</span><h3>El corredor de siempre</h3>
-        <p style="font-size:15px; margin-bottom:0">Calzadas locales, carriles del <strong>Metropolitano</strong> con su estación de andenes laterales, ciclovía y veredas arboladas.</p></div>
-      <div class="card"><span class="kicker">Paisajismo</span><h3>Lagunas y áreas verdes</h3>
-        <p style="font-size:15px; margin-bottom:0">Como en la foto de referencia: lagunas de regulación que además riegan los jardines — clave en una Lima desértica.</p></div>
-      <div class="card"><span class="kicker">Contexto</span><h3>La ciudad alrededor</h3>
-        <p style="font-size:15px; margin-bottom:0">Edificios, palmeras y árboles dan la escala: el intercambio convive con la ciudad en vez de reemplazarla.</p></div>
+    <h2>Qué tiene el cruce</h2>
+    <div class="cajas tres">
+      <div class="caja"><span class="nivel">Lo más alto, 13.5 m</span><h3>Mi vía elevada</h3><p>Los cuatro carriles rápidos sobre columnas, igual que en la maqueta de la primera parte.</p></div>
+      <div class="caja"><span class="nivel">En medio, 7 m</span><h3>La avenida que cruza</h3><p>Una avenida grande (tipo Javier Prado) pasa por encima en un puente, así ya no corta a la Vía Expresa.</p></div>
+      <div class="caja"><span class="nivel">Las curvas</span><h3>Las rampas</h3><p>Dos curvas largas para pasar de una vía a la otra sin semáforos ni cruces.</p></div>
+      <div class="caja"><span class="nivel">Abajo, en el suelo</span><h3>Lo de siempre</h3><p>El Metropolitano con su estación, la pista normal, la ciclovía y las veredas.</p></div>
+      <div class="caja"><span class="nivel">Alrededor</span><h3>Lagunas y áreas verdes</h3><p>Dos lagunas que juntan el agua de lluvia y sirven para regar los jardines.</p></div>
+      <div class="caja"><span class="nivel">De fondo</span><h3>La ciudad</h3><p>Edificios, árboles y palmeras, para que se note el tamaño real de todo.</p></div>
     </div>
   </div>
 </section>
 
 <section>
   <div class="wrap">
-    <p class="eyebrow">Usa el archivo OBJ</p>
-    <h2>Cómo abrir tu modelo</h2>
-    <div class="grid c3" style="margin-top:16px">
-      <div class="card"><h3>En tu computadora</h3>
-        <ul class="plain">
-          <li><strong>Windows</strong>: doble clic — el «Visor 3D» lo abre directo.</li>
-          <li><strong>Blender</strong> (gratis): Archivo → Importar → Wavefront (.obj).</li>
-          <li><strong>SketchUp / Tinkercad</strong>: importa OBJ para editarlo.</li>
-        </ul></div>
-      <div class="card"><h3>Para la exposición</h3>
-        <ul class="plain">
-          <li>Proyecta esta página y gira el modelo en vivo.</li>
-          <li>Toma capturas desde varias vistas para tus láminas.</li>
-          <li>El modelo usa medidas reales: 1 unidad = 1 m.</li>
-        </ul></div>
-      <div class="card"><h3>Impresión 3D</h3>
-        <ul class="plain">
-          <li>En Blender expórtalo como STL.</li>
-          <li>A escala <strong>1:1000</strong> mide 26 × 17 cm: entra en una cama de impresión estándar.</li>
-          <li>Imprime el terreno y el viaducto por separado y píntalos con acrílico.</li>
-        </ul></div>
+    <h2>Cómo abrir el archivo</h2>
+    <div class="cajas dos">
+      <div class="caja">
+        <h3>En la computadora</h3>
+        <ul>
+          <li>En Windows: doble clic al archivo y se abre solo con el «Visor 3D».</li>
+          <li>En Blender (es gratis): Archivo → Importar → Wavefront (.obj).</li>
+          <li>En Tinkercad o SketchUp: Import y eliges el STL.</li>
+        </ul>
+      </div>
+      <div class="caja">
+        <h3>Para imprimirlo en 3D</h3>
+        <ul>
+          <li>Usa el STL, que ya está listo.</li>
+          <li>Achícalo al 10%: te queda de 26 × 17 cm y entra en cualquier impresora.</li>
+          <li>Imprime el terreno y la vía por separado y píntalos con acrílico.</li>
+        </ul>
+      </div>
     </div>
-    <p style="font-size:13.5px; color:var(--muted); margin-top:14px">El modelo se genera con el script <code>tools/genera-modelo-3d.mjs</code> del repositorio: si cambias una medida ahí y lo vuelves a ejecutar, el OBJ y este visor se actualizan solos.</p>
+    <div class="nota">
+      <h3>Para la exposición</h3>
+      <ul>
+        <li>Si hay proyector, abre esta página y gíralo en vivo mientras explicas. Impresiona bastante más que una foto.</li>
+        <li>Si no, toma capturas desde las tres vistas y pégalas en tu papelógrafo o en las diapositivas.</li>
+      </ul>
+    </div>
+    <p class="small muted" style="margin-top:16px">El modelo lo arma el programa <code>tools/genera-modelo-3d.mjs</code>. Si cambias una medida ahí y lo vuelves a ejecutar, se actualiza todo solo.</p>
   </div>
 </section>
+</main>
 
 <footer>
   <div class="wrap">
-    <p class="kicker">Proyecto escolar · Educación para el Trabajo · Lima, Perú 2026</p>
-    Este visor funciona sin internet. La maqueta interactiva por partes está en <code>maqueta-via-expresa.html</code>.
+    Proyecto de EPT · Lima, 2026<br>
+    La maqueta por partes está en <code>maqueta-via-expresa.html</code>.
   </div>
 </footer>
 
@@ -14053,7 +14054,7 @@ const VS=[]; const TRI=[]; // TRI: [i0,i1,i2,matName,esSuelo]
     }
   }
 }
-document.getElementById('statChip').textContent=TRI.length.toLocaleString('es-PE')+' CARAS';
+document.getElementById('statChip').textContent=TRI.length.toLocaleString('es-PE');
 
 /* ---------- STL binario generado al vuelo (Tinkercad / impresión 3D) ---------- */
 {
@@ -14137,10 +14138,9 @@ function render(){
   // base de cámara (lookAt)
   let fx=target[0]-ex, fy=target[1]-ey, fz=target[2]-ez;
   const fl0=Math.hypot(fx,fy,fz); fx/=fl0; fy/=fl0; fz/=fl0;
-  let rx=fz*0-fx*0, ry0=0, rz=0; // right = normalize(cross(f, up(0,1,0)))
-  rx=-fz; ry0=0; rz=fx;
+  let rx=-fz, ry0=0, rz=fx;              // derecha = cross(f, arriba)
   const rl=Math.hypot(rx,rz)||1; rx/=rl; rz/=rl;
-  const ux=ry0*fz-rz*fy, uy=rz*fx-rx*fz, uz=rx*fy-ry0*fx; // up2 = cross(r,f)... r=(rx,0,rz)
+  const ux=ry0*fz-rz*fy, uy=rz*fx-rx*fz, uz=rx*fy-ry0*fx;
   const fl=(ch/2)/Math.tan(0.42);
   const cx0=cw/2, cy0=ch*0.52;
 
