@@ -21,11 +21,22 @@ La página tiene:
 
 ### 🌉 La misma vía en 3D (`modelo-3d.html`)
 
-Acá la vía se convierte en un cruce completo: la pista elevada arriba, una avenida que la cruza por un puente más bajo, dos rampas curvas, lagunas y áreas verdes.
+Un tramo de 96 metros de la vía elevada, con sus tres columnas, y abajo el Metropolitano con su estación, la pista de siempre y la ciclovía. Se **gira con el mouse** en la misma página, con tres vistas y rotación automática.
 
-- Se **gira con el mouse** dentro de la misma página, con tres vistas y rotación automática.
-- Se puede **descargar el modelo**: `via-expresa-elevada.stl` (para Tinkercad e impresión 3D) y `via-expresa-elevada.obj` + `.mtl` (para verlo con colores en Blender). Están en la carpeta `modelo-3d/` y también se bajan desde los botones de la página. Cada unidad del modelo es un metro real.
-- El modelo lo arma `node tools/genera-modelo-3d.mjs`. Si cambias una medida ahí y lo vuelves a ejecutar, se actualizan los archivos y el visor.
+Los archivos del modelo están en `modelo-3d/` y también se bajan desde los botones de la página. Cada unidad es un metro real:
+
+| Archivo | Para qué |
+|---|---|
+| `via-expresa-simple.glb` | **El más fácil.** Un solo archivo, ya trae los colores. Doble clic en Windows y se abre. |
+| `via-expresa-simple.obj` + `.mtl` | Lo mismo pero en dos archivos; hay que dejarlos juntos en la misma carpeta. |
+| `via-expresa-simple-tinkercad.obj` | OBJ sin el archivo de colores, para que Tinkercad no reclame. |
+| `via-expresa-simple.stl` | Para Tinkercad e impresión 3D (sin colores). |
+
+El modelo lo arma `node tools/genera-modelo-simple.mjs`: cambia una medida ahí, vuelve a ejecutarlo y se actualizan los cuatro archivos y el visor.
+
+**Nota sobre el dibujo:** el visor no usa tarjeta de video, pinta las caras ordenadas de atrás hacia adelante. Para que nada se asome donde no debe, el modelo va en capas (piso → cosas paradas en el piso → losa de la pista → lo que se apoya sobre ella) y todas las caras miran hacia afuera, así las que dan la espalda a la cámara se descartan.
+
+La versión anterior, que era un cruce grande con rampas y lagunas, quedó en los archivos `via-expresa-elevada.*` de la misma carpeta.
 
 ---
 
