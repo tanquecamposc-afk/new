@@ -305,15 +305,13 @@ const Arcade = {
    *
    * Devuelve null si todo fue bien, o un texto explicando qué falló.
    */
-  pestanaLimpia(){
-    let ventana;
-    try { ventana = window.open('about:blank', '_blank'); }
-    catch(e){ return 'El navegador no ha dejado abrir la pestaña.'; }
-    if (!ventana) return 'El navegador ha bloqueado la ventana emergente. Permite los pop-ups de esta página.';
-
+  /**
+   * El documento entero en texto, con el progreso incrustado delante del
+   * primer script para que la copia arranque con tus monedas y tus récords.
+   */
+  _htmlCopia(){
     Guardado.ahora();               // lo que estés jugando se guarda antes de copiar
 
-    // El progreso viaja incrustado, porque la copia no podrá leer localStorage.
     const semilla = {};
     try {
       for (let i = 0; i < localStorage.length; i++){
@@ -324,21 +322,66 @@ const Arcade = {
     const inyeccion = '<scr' + 'ipt>window.__ARCADE_SEMILLA=' +
       JSON.stringify(semilla).replace(/</g, '\\u003c') + ';</scr' + 'ipt>';
 
-    let html = document.documentElement.outerHTML;
-    // Delante del primer script, para que el progreso ya esté puesto al arrancar.
-    html = html.indexOf('<script') >= 0
+    const html = document.documentElement.outerHTML;
+    return html.indexOf('<script') >= 0
       ? html.replace('<script', inyeccion + '<script')
       : html + inyeccion;
+  },
 
-    try {
-      ventana.document.open();
-      ventana.document.write(html);
-      ventana.document.close();
-    } catch(e){
-      try { ventana.close(); } catch(e2){}
-      return 'Esta página no deja copiarse a otra pestaña (' + e.message + ').';
+  /**
+   * Abre una copia del arcade en otra pestaña.
+   *
+   * El camino principal es un Blob de text/html con URL.createObjectURL y un
+   * enlace temporal con target="_blank": no usa window.open, que dentro de un
+   * iframe con sandbox está bloqueado. Si crear el Blob falla se prueba con
+   * window.open y about:blank, que es lo que funciona en una página normal.
+   *
+   * La copia vive en un origen opaco y no tiene localStorage propio, así que
+   * el progreso va incrustado y se carga en memoria: puedes seguir donde
+   * ibas, pero lo que juegues allí no se guarda al cerrar la pestaña.
+   *
+   * Devuelve null si se pudo lanzar la apertura, o un texto con el motivo.
+   */
+  pestanaLimpia(){
+    let html;
+    try { html = this._htmlCopia(); }
+    catch(e){ return 'No se ha podido copiar la página (' + e.message + ').'; }
+
+    // El documento entero en un Blob de text/html. La pestaña nueva lo lee de
+    // ahí, así que no hace falta escribirle nada a mano.
+    let url;
+    try { url = URL.createObjectURL(new Blob([html], { type:'text/html' })); }
+    catch(e){ return 'Este navegador no deja crear la copia (' + e.message + ').'; }
+    // No se suelta enseguida: la pestaña nueva todavía lo está leyendo.
+    const soltar = () => setTimeout(() => { try { URL.revokeObjectURL(url); } catch(e){} }, 60000);
+
+    // Se pide la pestaña primero y se navega después. Es la única manera de
+    // enterarse de si el marco permite abrirla: cuando no, window.open
+    // devuelve null, mientras que un enlace bloqueado no dice absolutamente
+    // nada y el botón se quedaría muerto sin explicación.
+    let ventana = null;
+    try { ventana = window.open('', '_blank'); } catch(e){}
+    if (ventana){
+      try { ventana.location.href = url; soltar(); return null; }
+      catch(e){ try { ventana.close(); } catch(e2){} }
     }
-    return null;
+
+    // Sin pestaña: queda el enlace temporal, que en algún navegador pasa
+    // donde no pasa window.open. Si tampoco abre, al menos se avisa.
+    try {
+      const a = document.createElement('a');
+      a.href = url;
+      a.target = '_blank';
+      a.rel = 'noopener';
+      a.style.display = 'none';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      soltar();
+    } catch(e){}
+
+    return 'Esta página está dentro de un marco que no deja abrir pestañas nuevas. ' +
+           'Ábrela en su propia pestaña, o permite las ventanas emergentes, y el botón funcionará.';
   },
 
   // Aviso flotante dentro de un contenedor .avisos

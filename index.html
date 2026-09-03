@@ -286,11 +286,15 @@
   }
 
   /* ---------- Progreso guardado ---------- */
-  #avisoGuardado{
+  #avisoGuardado, #avisoLimpia{
     max-width:760px; margin:0 auto 1.4rem; padding:.85rem 1.1rem; border-radius:12px;
     background:rgba(255,0,127,.09); border:1px solid rgba(255,0,127,.35);
     color:#ffb3d4; font-size:.83rem; line-height:1.5;
   }
+  /* El aviso del botón de pestaña limpia: dentro de un marco sin permiso para
+     ventanas modales, alert() se ignora sin decir nada, así que se pinta aquí. */
+  #avisoLimpia{background:rgba(0,240,255,.08); border-color:rgba(0,240,255,.35); color:#a9e9f5;}
+  #avisoGuardado[hidden], #avisoLimpia[hidden]{display:none;}
   #progreso{
     margin:0 auto 2rem; max-width:760px; padding:1.2rem 1.5rem;
     background:var(--panel); border-radius:16px;
@@ -366,6 +370,8 @@
     ⚠️ Este navegador no deja guardar nada en esta página (modo privado o ventana restringida).
     Puedes jugar igual, pero <strong>el progreso se perderá al recargar</strong>.
   </div>
+
+  <div id="avisoLimpia" hidden role="status"></div>
 
   <div id="progreso">
     <h3>💾 Tu progreso</h3>
@@ -3166,9 +3172,17 @@ addEventListener('focus', refrescarPortada);
 // Lo que juegues allí no se guarda: about:blank no tiene dónde guardarlo.
 document.getElementById('btnLimpia').onclick = () => {
   Sonido.activar();
+  const caja = document.getElementById('avisoLimpia');
   const fallo = Arcade.pestanaLimpia();
-  if (fallo) alert(fallo);
-  else Sonido.fx('moneda');
+  if (fallo){
+    // Nada de alert(): dentro de un marco sin ventanas modales no se ve.
+    caja.textContent = '⚠️ ' + fallo;
+    caja.hidden = false;
+    caja.scrollIntoView({ block:'nearest', behavior:'smooth' });
+  } else {
+    caja.hidden = true;
+    Sonido.fx('moneda');
+  }
 };
 
 document.getElementById('btnBorrar').onclick = () => {
