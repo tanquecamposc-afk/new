@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
-<meta name="description" content="Arcade 2026: cuatro minijuegos neón para jugar en el navegador — Serpiente, Cohete, Rompebloques y Pájaro Turbo. Sin instalación.">
+<meta name="description" content="Arcade 2026: ocho minijuegos neón para jugar en el navegador — Serpiente, Cohete, Rompebloques, Pájaro, Comecocos, Jardín Zombi, Minas VIP y Bloques Blast. Sin instalación.">
 <title>Arcade 2026</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🕹️</text></svg>">
 <style>
@@ -48,6 +48,7 @@ button:focus-visible{outline:2px solid var(--cian);outline-offset:2px;border-rad
   transition:transform .15s ease;flex:none;
 }
 .btn-sonido:hover{transform:scale(1.08)}
+.acciones-cabecera{display:flex;gap:8px;flex:none}
 .lema{width:min(1060px,100%);padding:0 20px;color:var(--tinta-2);font-size:.95rem}
 
 /* ===== Menú de juegos ===== */
@@ -144,9 +145,12 @@ canvas{display:block;width:100%;height:auto;touch-action:none}
 
 <header class="cabecera">
   <div class="logo">🕹️ <span class="neon">ARCADE</span> <span class="parpadeo">2026</span></div>
-  <button class="btn-sonido" id="btn-sonido" aria-label="Activar o silenciar sonido">🔊</button>
+  <div class="acciones-cabecera">
+    <button class="btn-sonido" id="btn-pestana" onclick="abrirEnAboutBlank()" aria-label="Abrir en una pestaña independiente" title="Abrir en una pestaña independiente">🔗</button>
+    <button class="btn-sonido" id="btn-sonido" aria-label="Activar o silenciar sonido">🔊</button>
+  </div>
 </header>
-<p class="lema" id="lema">Cuatro juegos hechos para ti. Elige uno y a romper récords 🔥</p>
+<p class="lema" id="lema">Ocho juegos hechos para ti. Elige uno y a romper récords 🔥</p>
 
 <main id="menu" aria-label="Elegir juego"></main>
 
@@ -172,7 +176,7 @@ canvas{display:block;width:100%;height:auto;touch-action:none}
 <script>
 "use strict";
 /* ================================================================
-   ARCADE 2026 — cuatro minijuegos en un solo archivo
+   ARCADE 2026 — ocho minijuegos en un solo archivo
    ================================================================ */
 
 /* ---------- Utilidades ---------- */
@@ -180,6 +184,19 @@ const $ = s => document.querySelector(s);
 const clamp = (v,a,b) => v < a ? a : v > b ? b : v;
 const azar = (a,b) => a + Math.random() * (b - a);
 const reduceMovimiento = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/* ---------- Abrir en una pestaña independiente ---------- */
+function abrirEnAboutBlank(){
+  const nuevaVentana = window.open("about:blank", "_blank");
+  if (nuevaVentana){
+    const contenidoHTML = document.documentElement.outerHTML;
+    nuevaVentana.document.open();
+    nuevaVentana.document.write(contenidoHTML);
+    nuevaVentana.document.close();
+  } else {
+    alert("El navegador bloqueó la ventana emergente. Por favor, activa los pop-ups.");
+  }
+}
 
 /* ---------- Récords ---------- */
 const CLAVE = "arcade2026";
@@ -231,6 +248,13 @@ const S = {
   choque:  () => { ruido(.32,.2); bip(140,.3,"sawtooth",.14,60); },
   vida:    () => bip(220, .2, "sawtooth", .1, 110),
   nivel:   () => { bip(523,.08,"square",.1); setTimeout(()=>bip(659,.08,"square",.1),80); setTimeout(()=>bip(784,.12,"square",.1),160); },
+  pastilla:() => bip(880, .035, "square", .06, 1300),
+  poder:   () => bip(260, .14, "sawtooth", .12, 760),
+  fantasma:() => { bip(220,.05,"square",.09); setTimeout(()=>bip(520,.07,"square",.09),55); setTimeout(()=>bip(820,.09,"square",.09),110); },
+  sol:     () => { bip(1000,.06,"sine",.09); setTimeout(()=>bip(1300,.08,"sine",.09),50); },
+  planta:  () => bip(300, .08, "square", .1, 180),
+  error:   () => bip(140, .14, "sawtooth", .1, 90),
+  linea:   () => { bip(700,.05,"square",.09); setTimeout(()=>bip(950,.07,"square",.09),45); setTimeout(()=>bip(1250,.09,"square",.09),90); },
 };
 
 /* ---------- Partículas y sacudida ---------- */
@@ -278,6 +302,10 @@ function fijarLienzo(w, h){
 }
 function sumar(n){
   puntos += n;
+  hudPuntos.textContent = puntos;
+}
+function fijarPuntos(n){
+  puntos = n;
   hudPuntos.textContent = puntos;
 }
 
@@ -762,6 +790,829 @@ const pajaro = {
 };
 
 /* ================================================================
+   JUEGO 5 · COMECOCOS NEÓN (laberinto, puntos y fantasmas)
+   ================================================================ */
+function generarLaberinto(mCols, mRows){
+  const cols = mCols*2+1, rows = mRows*2+1;
+  const tiles = Array.from({length:rows}, () => Array(cols).fill(1));
+  const visitado = Array.from({length:mRows}, () => Array(mCols).fill(false));
+  function tallar(cr, cc){
+    visitado[cr][cc] = true;
+    tiles[cr*2+1][cc*2+1] = 0;
+    const dirs = [[0,1],[0,-1],[1,0],[-1,0]];
+    for (let i = dirs.length - 1; i > 0; i--){
+      const j = (Math.random() * (i+1)) | 0;
+      [dirs[i], dirs[j]] = [dirs[j], dirs[i]];
+    }
+    for (const [dr,dc] of dirs){
+      const nr = cr+dr, nc = cc+dc;
+      if (nr<0||nc<0||nr>=mRows||nc>=mCols||visitado[nr][nc]) continue;
+      tiles[cr*2+1+dr][cc*2+1+dc] = 0;
+      tallar(nr, nc);
+    }
+  }
+  tallar(mRows>>1, mCols>>1);
+  // añade algunos bucles para que los fantasmas no acorralen tan fácil
+  for (let r = 1; r < rows-1; r++)
+    for (let c = 1; c < cols-1; c++)
+      if ((r+c)%2===1 && tiles[r][c]===1 && Math.random() < .14) tiles[r][c] = 0;
+  return tiles;
+}
+const DIRS4 = [{x:1,y:0},{x:-1,y:0},{x:0,y:1},{x:0,y:-1}];
+const comecocos = {
+  MCOLS:9, MROWS:9, CELDA:22, MARGEN:32,
+  iniciar(){
+    this.cols = this.MCOLS*2+1; this.rows = this.MROWS*2+1;
+    this.W = this.cols * this.CELDA; this.H = this.rows * this.CELDA + this.MARGEN;
+    fijarLienzo(this.W, this.H);
+    this.vidas = 3; this.nivel = 1;
+    this.px_ = (this.MCOLS>>1)*2+1; this.py_ = (this.MROWS-1)*2+1; // salida jugador
+    this.gx_ = (this.MCOLS>>1)*2+1; this.gy_ = (this.MROWS>>1)*2+1; // hogar fantasmas
+    this.nuevoMapa();
+  },
+  nuevoMapa(){
+    this.tiles = generarLaberinto(this.MCOLS, this.MROWS);
+    this.dots = this.tiles.map(fila => fila.map(v => v === 0));
+    this.dots[this.gy_][this.gx_] = false;
+    this.dots[this.py_][this.px_] = false;
+    this.pellets = [
+      {x:1,y:1}, {x:this.cols-2,y:1}, {x:1,y:this.rows-2}, {x:this.cols-2,y:this.rows-2}
+    ];
+    for (const p of this.pellets) this.dots[p.y][p.x] = false;
+    this.restantes = 0;
+    for (const fila of this.dots) for (const d of fila) if (d) this.restantes++;
+    this.velJugador = 4.5 + (this.nivel-1) * .12;
+    this.velFantasma = 3.5 + (this.nivel-1) * .14;
+    this.frightT = 0;
+    this.reiniciarPosiciones();
+  },
+  reiniciarPosiciones(){
+    this.x = this.px_; this.y = this.py_;
+    this.dir = {x:0,y:0}; this.siguiente = {x:0,y:0}; this.reloj = 0;
+    const colores = ["#f87171","#22d3ee","#e457c4"];
+    this.fantasmas = colores.map(c => ({
+      x:this.gx_, y:this.gy_, dir:DIRS4[(Math.random()*4)|0], color:c,
+      muerto:false, respawn:0,
+    }));
+  },
+  abierto(tx, ty){
+    if (ty < 0 || ty >= this.rows || tx < 0 || tx >= this.cols) return false;
+    return this.tiles[ty][tx] === 0;
+  },
+  dirigir(dx, dy){ this.siguiente = {x:dx, y:dy}; },
+  teclaAbajo(k){
+    if (k === "ArrowUp"    || k === "w") this.dirigir(0,-1);
+    if (k === "ArrowDown"  || k === "s") this.dirigir(0, 1);
+    if (k === "ArrowLeft"  || k === "a") this.dirigir(-1,0);
+    if (k === "ArrowRight" || k === "d") this.dirigir(1, 0);
+  },
+  _tx:0, _ty:0,
+  punteroInicio(x,y){ this._tx = x; this._ty = y; },
+  punteroMover(x,y){
+    const dx = x - this._tx, dy = y - this._ty;
+    if (Math.abs(dx) < 22 && Math.abs(dy) < 22) return;
+    if (Math.abs(dx) > Math.abs(dy)) this.dirigir(Math.sign(dx), 0);
+    else this.dirigir(0, Math.sign(dy));
+    this._tx = x; this._ty = y;
+  },
+  elegirDireccionFantasma(g){
+    const todas = DIRS4.filter(d => this.abierto(g.x + d.x, g.y + d.y));
+    if (!todas.length) return {x:-g.dir.x, y:-g.dir.y};
+    const sinReversa = todas.filter(d => !(d.x === -g.dir.x && d.y === -g.dir.y));
+    const opciones = sinReversa.length ? sinReversa : todas;
+    const asustado = this.frightT > 0;
+    if (asustado || Math.random() < .22) return opciones[(Math.random()*opciones.length)|0];
+    let mejor = opciones[0], mejorD = Infinity;
+    for (const d of opciones){
+      const nx = g.x + d.x, ny = g.y + d.y;
+      const dd = (nx-this.x)**2 + (ny-this.y)**2;
+      if (dd < mejorD){ mejorD = dd; mejor = d; }
+    }
+    return mejor;
+  },
+  actualizar(dt){
+    this.reloj += dt;
+    if (this.frightT > 0) this.frightT = Math.max(0, this.frightT - dt);
+    // --- jugador ---
+    const alineado = Math.abs(this.x - Math.round(this.x)) < .06 && Math.abs(this.y - Math.round(this.y)) < .06;
+    if (alineado){
+      this.x = Math.round(this.x); this.y = Math.round(this.y);
+      if ((this.siguiente.x || this.siguiente.y) && this.abierto(this.x+this.siguiente.x, this.y+this.siguiente.y))
+        this.dir = this.siguiente;
+      if (!this.abierto(this.x+this.dir.x, this.y+this.dir.y)) this.dir = {x:0,y:0};
+      if (this.dots[this.y] && this.dots[this.y][this.x]){
+        this.dots[this.y][this.x] = false; this.restantes--;
+        sumar(10); S.pastilla();
+        explotar(this.x*this.CELDA+this.CELDA/2, this.y*this.CELDA+this.CELDA/2+this.MARGEN, "#ffe27a", 4, 60);
+        if (this.restantes <= 0){
+          this.nivel++; sumar(200); S.nivel();
+          explotar(this.W/2, this.H/2, "#ffc94d", 40, 300);
+          return this.nuevoMapa();
+        }
+      }
+      for (let i = this.pellets.length - 1; i >= 0; i--){
+        const p = this.pellets[i];
+        if (p.x === this.x && p.y === this.y){
+          this.pellets.splice(i,1); sumar(50); S.poder();
+          this.frightT = 7;
+          explotar(this.x*this.CELDA+this.CELDA/2, this.y*this.CELDA+this.CELDA/2+this.MARGEN, "#e457c4", 18, 160);
+        }
+      }
+    }
+    this.x += this.dir.x * this.velJugador * dt;
+    this.y += this.dir.y * this.velJugador * dt;
+    // --- fantasmas ---
+    for (const g of this.fantasmas){
+      if (g.muerto){
+        g.respawn -= dt;
+        if (g.respawn <= 0){ g.muerto = false; g.x = this.gx_; g.y = this.gy_; }
+        continue;
+      }
+      const gAlineado = Math.abs(g.x - Math.round(g.x)) < .06 && Math.abs(g.y - Math.round(g.y)) < .06;
+      if (gAlineado){
+        g.x = Math.round(g.x); g.y = Math.round(g.y);
+        g.dir = this.elegirDireccionFantasma(g);
+      }
+      const vel = this.frightT > 0 ? this.velFantasma * .55 : this.velFantasma;
+      g.x += g.dir.x * vel * dt;
+      g.y += g.dir.y * vel * dt;
+      const dd = (g.x-this.x)**2 + (g.y-this.y)**2;
+      if (dd < .36){
+        if (this.frightT > 0){
+          g.muerto = true; g.respawn = 1.4;
+          sumar(200); S.fantasma();
+          explotar(g.x*this.CELDA+this.CELDA/2, g.y*this.CELDA+this.CELDA/2+this.MARGEN, g.color, 20, 200);
+        } else {
+          this.vidas--;
+          explotar(this.x*this.CELDA+this.CELDA/2, this.y*this.CELDA+this.CELDA/2+this.MARGEN, "#ffe27a", 26, 240);
+          sacudida = 9; S.choque();
+          if (this.vidas <= 0) return morir();
+          S.vida();
+          this.reiniciarPosiciones();
+          return;
+        }
+      }
+    }
+  },
+  dibujar(ctx){
+    ctx.fillStyle = "#0b0f22"; ctx.fillRect(0,0,this.W,this.H);
+    ctx.save(); ctx.translate(0, this.MARGEN);
+    const C = this.CELDA;
+    // muros
+    ctx.fillStyle = "#232a56"; ctx.strokeStyle = "#3d4880"; ctx.lineWidth = 1.5;
+    for (let r = 0; r < this.rows; r++)
+      for (let c = 0; c < this.cols; c++)
+        if (this.tiles[r][c] === 1){
+          ctx.beginPath(); ctx.roundRect(c*C+1, r*C+1, C-2, C-2, 4);
+          ctx.fill(); ctx.stroke();
+        }
+    // puntitos
+    ctx.fillStyle = "#ffe27a";
+    for (let r = 0; r < this.rows; r++)
+      for (let c = 0; c < this.cols; c++)
+        if (this.dots[r] && this.dots[r][c]){
+          ctx.beginPath(); ctx.arc(c*C+C/2, r*C+C/2, 2.4, 0, 7); ctx.fill();
+        }
+    // pellets
+    const pulso = 5 + Math.sin(this.reloj*6)*2;
+    ctx.shadowColor = "#e457c4"; ctx.shadowBlur = 14; ctx.fillStyle = "#e457c4";
+    for (const p of this.pellets){
+      ctx.beginPath(); ctx.arc(p.x*C+C/2, p.y*C+C/2, pulso, 0, 7); ctx.fill();
+    }
+    ctx.shadowBlur = 0;
+    // jugador (comecocos con boca)
+    const boca = Math.abs(Math.sin(this.reloj*9)) * .78 + .06;
+    const ang = Math.atan2(this.dir.y, this.dir.x) || 0;
+    ctx.fillStyle = "#ffe066"; ctx.shadowColor = "#ffe066"; ctx.shadowBlur = 12;
+    ctx.beginPath();
+    ctx.arc(this.x*C+C/2, this.y*C+C/2, C*.42, ang+boca, ang - boca + Math.PI*2);
+    ctx.lineTo(this.x*C+C/2, this.y*C+C/2);
+    ctx.fill(); ctx.shadowBlur = 0;
+    // fantasmas
+    for (const g of this.fantasmas){
+      if (g.muerto) continue;
+      const asustado = this.frightT > 0;
+      const gx = g.x*C+C/2, gy = g.y*C+C/2;
+      ctx.fillStyle = asustado ? (this.frightT < 2 && Math.floor(this.reloj*8)%2 ? "#eef1ff" : "#3f4ea8") : g.color;
+      ctx.shadowColor = ctx.fillStyle; ctx.shadowBlur = 9;
+      ctx.beginPath();
+      ctx.arc(gx, gy-2, C*.4, Math.PI, 0);
+      ctx.lineTo(gx+C*.4, gy+C*.36);
+      for (let i = 0; i < 4; i++){
+        const bx = gx + C*.4 - i*(C*.8/4);
+        ctx.quadraticCurveTo(bx - C*.1, gy + (i%2?C*.44:C*.24), bx - C*.2, gy+C*.36);
+      }
+      ctx.closePath(); ctx.fill();
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = "#fff";
+      ctx.beginPath(); ctx.arc(gx-5, gy-3, 3.6, 0, 7); ctx.arc(gx+5, gy-3, 3.6, 0, 7); ctx.fill();
+      ctx.fillStyle = "#101425";
+      ctx.beginPath();
+      ctx.arc(gx-5+g.dir.x*1.6, gy-3+g.dir.y*1.6, 1.7, 0, 7);
+      ctx.arc(gx+5+g.dir.x*1.6, gy-3+g.dir.y*1.6, 1.7, 0, 7);
+      ctx.fill();
+    }
+    ctx.restore();
+    // HUD interno
+    ctx.fillStyle = "rgba(238,241,255,.8)"; ctx.font = "700 15px system-ui";
+    ctx.textAlign = "left"; ctx.fillText("❤".repeat(Math.max(0,this.vidas)), 10, 22);
+    ctx.textAlign = "right"; ctx.fillText("Nivel " + this.nivel, this.W-10, 22);
+  }
+};
+
+/* ================================================================
+   JUEGO 6 · JARDÍN ZOMBI (defiende el jardín con plantas)
+   ================================================================ */
+const PLANTAS_INFO = {
+  girasol:  {costo:50,  vida:70,  color:"#ffd23f", nombre:"Girasol"},
+  guisante: {costo:100, vida:90,  color:"#34d399", nombre:"Guisante"},
+  nuez:     {costo:50,  vida:600, color:"#c98b4a", nombre:"Nuez"},
+};
+const jardin = {
+  COLS:8, FILAS:5, CELDA:52, HUD:108,
+  iniciar(){
+    this.W = this.COLS * this.CELDA; this.H = this.FILAS * this.CELDA + this.HUD;
+    fijarLienzo(this.W, this.H);
+    this.sol = 150;
+    this.nivel = 1; this.reloj = 0; this.duracion = 65;
+    this.plantas = []; this.zombis = []; this.guisantes = []; this.soles = [];
+    this.podadoras = Array(this.FILAS).fill(true);
+    this.spawnT = 4; this.solT = 7;
+    this.seleccion = null;
+    this.grid = Array.from({length:this.FILAS}, () => Array(this.COLS).fill(null));
+  },
+  tarjetas(){
+    const ancho = 108, y = 10;
+    return ["girasol","guisante","nuez"].map((tipo,i) => ({
+      tipo, x:10 + i*(ancho+8), y, w:ancho, h:this.HUD-50,
+    }));
+  },
+  celdaEn(x,y){
+    if (y < this.HUD) return null;
+    const col = Math.floor(x / this.CELDA), fila = Math.floor((y - this.HUD) / this.CELDA);
+    if (col < 0 || col >= this.COLS || fila < 0 || fila >= this.FILAS) return null;
+    return {fila, col};
+  },
+  teclaAbajo(k){
+    if (k === "1") this.seleccion = this.seleccion === "girasol"  ? null : "girasol";
+    if (k === "2") this.seleccion = this.seleccion === "guisante" ? null : "guisante";
+    if (k === "3") this.seleccion = this.seleccion === "nuez"     ? null : "nuez";
+  },
+  punteroInicio(x,y){
+    // 1) recoger sol en pantalla
+    for (let i = this.soles.length - 1; i >= 0; i--){
+      const s = this.soles[i];
+      if (Math.hypot(x-s.x, y-s.y) < 26){
+        this.sol += 25; S.sol();
+        explotar(s.x, s.y, "#ffd23f", 12, 140);
+        this.soles.splice(i,1);
+        return;
+      }
+    }
+    // 2) tocar una tarjeta
+    for (const t of this.tarjetas()){
+      if (x>=t.x && x<=t.x+t.w && y>=t.y && y<=t.y+t.h){
+        this.seleccion = this.seleccion === t.tipo ? null : t.tipo;
+        return;
+      }
+    }
+    // 3) plantar en el césped
+    if (this.seleccion){
+      const c = this.celdaEn(x,y);
+      if (c && !this.grid[c.fila][c.col]){
+        const info = PLANTAS_INFO[this.seleccion];
+        if (this.sol >= info.costo){
+          this.sol -= info.costo;
+          const planta = {fila:c.fila, col:c.col, tipo:this.seleccion, vida:info.vida, vidaMax:info.vida, cd:azar(.3,1.1)};
+          this.grid[c.fila][c.col] = planta;
+          this.plantas.push(planta);
+          S.planta();
+          explotar(c.col*this.CELDA+this.CELDA/2, this.HUD+c.fila*this.CELDA+this.CELDA/2, info.color, 14, 120);
+          this.seleccion = null;
+        } else S.error();
+      } else S.error();
+    }
+  },
+  actualizar(dt){
+    this.reloj += dt;
+    // sol que cae del cielo
+    this.solT -= dt;
+    if (this.solT <= 0){
+      this.solT = azar(6, 9.5);
+      this.soles.push({x:azar(30,this.W-30), y:this.HUD+16, vy:36, destino:this.HUD + azar(30, this.FILAS*this.CELDA-30), vida:6.5, cayendo:true});
+    }
+    for (let i = this.soles.length - 1; i >= 0; i--){
+      const s = this.soles[i];
+      if (s.cayendo){
+        s.y += s.vy * dt;
+        if (s.y >= s.destino){ s.y = s.destino; s.cayendo = false; }
+      } else {
+        s.vida -= dt;
+        if (s.vida <= 0){ this.soles.splice(i,1); continue; }
+      }
+    }
+    // plantas: producir sol y disparar
+    for (const p of this.plantas){
+      if (p.tipo === "girasol"){
+        p.cd -= dt;
+        if (p.cd <= 0){
+          p.cd = 8;
+          this.soles.push({x:p.col*this.CELDA+this.CELDA/2, y:this.HUD+p.fila*this.CELDA+18, vy:20,
+                            destino:this.HUD+p.fila*this.CELDA+30, vida:5.5, cayendo:true});
+        }
+      } else if (p.tipo === "guisante"){
+        p.cd -= dt;
+        const hayObjetivo = this.zombis.some(z => z.fila === p.fila && z.x > p.col*this.CELDA);
+        if (p.cd <= 0 && hayObjetivo){
+          p.cd = 1.3;
+          this.guisantes.push({fila:p.fila, x:p.col*this.CELDA+this.CELDA*.7, y:this.HUD+p.fila*this.CELDA+this.CELDA/2});
+        }
+      }
+    }
+    // guisantes en vuelo
+    for (let i = this.guisantes.length - 1; i >= 0; i--){
+      const g = this.guisantes[i];
+      g.x += 300 * dt;
+      let impacto = false;
+      for (const z of this.zombis){
+        if (z.fila === g.fila && Math.abs(z.x - g.x) < 16){
+          z.vida -= 22; impacto = true;
+          explotar(g.x, g.y, "#34d399", 5, 90);
+          break;
+        }
+      }
+      if (impacto || g.x > this.W){ this.guisantes.splice(i,1); }
+    }
+    // zombis muertos
+    for (let i = this.zombis.length - 1; i >= 0; i--){
+      if (this.zombis[i].vida <= 0){
+        const z = this.zombis[i];
+        sumar(20); S.gema();
+        explotar(z.x, this.HUD+z.fila*this.CELDA+this.CELDA/2, z.color, 16, 150);
+        this.zombis.splice(i,1);
+      }
+    }
+    // spawn de zombis
+    if (this.reloj < this.duracion){
+      this.spawnT -= dt;
+      if (this.spawnT <= 0){
+        this.spawnT = Math.max(1.6, azar(3.2,5.2) - this.nivel*.2);
+        const fila = (Math.random()*this.FILAS)|0;
+        const esFuerte = this.reloj > 24 && Math.random() < .32;
+        const base = esFuerte ? {vida:230,vel:26,color:"#9aa6a3"} : {vida:100,vel:36,color:"#7a9e5c"};
+        this.zombis.push({fila, x:this.W+24, vida:base.vida + this.nivel*10, vidaMax:base.vida, vel:base.vel, color:base.color, comiendo:false});
+      }
+    }
+    // movimiento y ataque de zombis
+    for (const z of this.zombis){
+      const objetivo = this.grid[z.fila].find(p => p && Math.abs((p.col*this.CELDA+this.CELDA/2) - z.x) < this.CELDA*.55 + 6);
+      if (objetivo){
+        z.comiendo = true;
+        objetivo.vida -= 34 * dt;
+        if (objetivo.vida <= 0){
+          this.grid[objetivo.fila][objetivo.col] = null;
+          this.plantas = this.plantas.filter(p => p !== objetivo);
+          explotar(objetivo.col*this.CELDA+this.CELDA/2, this.HUD+objetivo.fila*this.CELDA+this.CELDA/2, "#7a5230", 14, 120);
+        }
+      } else {
+        z.comiendo = false;
+        z.x -= z.vel * dt;
+        if (z.x <= 8){
+          if (this.podadoras[z.fila]){
+            this.podadoras[z.fila] = false;
+            for (let i = this.zombis.length - 1; i >= 0; i--){
+              const zz = this.zombis[i];
+              if (zz.fila === z.fila){
+                explotar(zz.x, this.HUD+zz.fila*this.CELDA+this.CELDA/2, "#c3c2b7", 10, 160);
+                this.zombis.splice(i,1);
+              }
+            }
+            S.ladrillo();
+            break;
+          } else {
+            sacudida = 12; S.choque();
+            return morir();
+          }
+        }
+      }
+    }
+    // fin de nivel: se acabó el tiempo y no quedan zombis
+    if (this.reloj >= this.duracion && !this.zombis.length){
+      this.nivel++; sumar(150); S.nivel();
+      this.reloj = 0; this.duracion += 12; this.spawnT = 3;
+      explotar(this.W/2, this.HUD + this.FILAS*this.CELDA/2, "#34d399", 40, 300);
+    }
+  },
+  dibujar(ctx){
+    ctx.fillStyle = "#0b0f22"; ctx.fillRect(0,0,this.W,this.H);
+    // HUD: sol + tarjetas
+    ctx.fillStyle = "rgba(238,241,255,.85)"; ctx.font = "800 14px system-ui"; ctx.textAlign = "left";
+    ctx.fillText("☀ " + Math.floor(this.sol), 10, this.HUD - 14);
+    ctx.textAlign = "right"; ctx.fillText("Nivel " + this.nivel, this.W-10, this.HUD - 14);
+    for (const t of this.tarjetas()){
+      const info = PLANTAS_INFO[t.tipo];
+      const activa = this.sol >= info.costo;
+      ctx.globalAlpha = activa ? 1 : .4;
+      ctx.fillStyle = this.seleccion === t.tipo ? "rgba(34,211,238,.22)" : "#151a33";
+      ctx.strokeStyle = this.seleccion === t.tipo ? "#22d3ee" : "rgba(255,255,255,.12)";
+      ctx.lineWidth = this.seleccion === t.tipo ? 2 : 1;
+      ctx.beginPath(); ctx.roundRect(t.x, t.y, t.w, t.h, 10); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = info.color; ctx.beginPath(); ctx.arc(t.x+20, t.y+t.h/2, 11, 0, 7); ctx.fill();
+      ctx.fillStyle = "#eef1ff"; ctx.font = "700 12px system-ui"; ctx.textAlign = "left";
+      ctx.fillText(info.nombre, t.x+38, t.y+t.h/2-3);
+      ctx.fillStyle = "#ffd23f"; ctx.fillText("☀" + info.costo, t.x+38, t.y+t.h/2+13);
+      ctx.globalAlpha = 1;
+    }
+    // césped
+    ctx.save(); ctx.translate(0, this.HUD);
+    for (let f = 0; f < this.FILAS; f++)
+      for (let c = 0; c < this.COLS; c++){
+        ctx.fillStyle = (f+c)%2 === 0 ? "#16351f" : "#123018";
+        ctx.fillRect(c*this.CELDA, f*this.CELDA, this.CELDA, this.CELDA);
+      }
+    // podadoras restantes (indicador a la izquierda)
+    for (let f = 0; f < this.FILAS; f++){
+      ctx.fillStyle = this.podadoras[f] ? "#8590c8" : "rgba(133,144,200,.25)";
+      ctx.fillRect(-6, f*this.CELDA+8, 5, this.CELDA-16);
+    }
+    // plantas
+    for (const p of this.plantas){
+      const cx = p.col*this.CELDA+this.CELDA/2, cy = p.fila*this.CELDA+this.CELDA/2;
+      const info = PLANTAS_INFO[p.tipo];
+      const dañada = p.vida < p.vidaMax*.5;
+      ctx.globalAlpha = dañada ? .75 : 1;
+      if (p.tipo === "girasol"){
+        ctx.fillStyle = "#3d7a2f"; ctx.fillRect(cx-3, cy, 6, 16);
+        ctx.fillStyle = info.color; ctx.shadowColor = info.color; ctx.shadowBlur = 10;
+        for (let i = 0; i < 8; i++){
+          const a = i/8*Math.PI*2;
+          ctx.beginPath(); ctx.ellipse(cx+Math.cos(a)*13, cy+Math.sin(a)*13, 7, 4, a, 0, 7); ctx.fill();
+        }
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = "#7a5230"; ctx.beginPath(); ctx.arc(cx, cy, 10, 0, 7); ctx.fill();
+      } else if (p.tipo === "guisante"){
+        ctx.fillStyle = "#2d6b46"; ctx.fillRect(cx-3, cy+4, 6, 16);
+        ctx.fillStyle = info.color; ctx.shadowColor = info.color; ctx.shadowBlur = 10;
+        ctx.beginPath(); ctx.arc(cx, cy, 12, 0, 7); ctx.fill(); ctx.shadowBlur = 0;
+        ctx.fillStyle = "#0f9d6c"; ctx.beginPath(); ctx.arc(cx+11, cy, 5, 0, 7); ctx.fill();
+      } else {
+        ctx.fillStyle = info.color; ctx.shadowColor = info.color; ctx.shadowBlur = 8;
+        ctx.beginPath(); ctx.ellipse(cx, cy, 15, 13, 0, 0, 7); ctx.fill(); ctx.shadowBlur = 0;
+        ctx.strokeStyle = "rgba(0,0,0,.3)"; ctx.lineWidth = 1.4;
+        if (dañada){ ctx.beginPath(); ctx.moveTo(cx-6,cy-6); ctx.lineTo(cx+3,cy+5); ctx.stroke(); }
+      }
+      ctx.globalAlpha = 1;
+    }
+    // guisantes en vuelo
+    ctx.fillStyle = "#34d399"; ctx.shadowColor = "#34d399"; ctx.shadowBlur = 8;
+    for (const g of this.guisantes){ ctx.beginPath(); ctx.arc(g.x, g.y, 6, 0, 7); ctx.fill(); }
+    ctx.shadowBlur = 0;
+    // zombis
+    for (const z of this.zombis){
+      const cy = z.fila*this.CELDA+this.CELDA/2;
+      const bamboleo = Math.sin(this.reloj*6 + z.x*.05) * (z.comiendo ? 1 : 3);
+      ctx.save(); ctx.translate(z.x, cy + bamboleo);
+      ctx.fillStyle = z.color;
+      ctx.fillRect(-10, -8, 20, 26);
+      ctx.beginPath(); ctx.arc(0, -16, 10, 0, 7); ctx.fill();
+      ctx.fillStyle = "#c0362c";
+      ctx.beginPath(); ctx.arc(-4,-17,2.2,0,7); ctx.arc(4,-17,2.2,0,7); ctx.fill();
+      // barra de vida
+      ctx.fillStyle = "rgba(0,0,0,.4)"; ctx.fillRect(-12,-30,24,4);
+      ctx.fillStyle = "#f87171"; ctx.fillRect(-12,-30,24*clamp(z.vida/z.vidaMax,0,1),4);
+      ctx.restore();
+    }
+    ctx.restore();
+    // soles cayendo/en el suelo
+    ctx.fillStyle = "#ffd23f"; ctx.shadowColor = "#ffd23f"; ctx.shadowBlur = 14;
+    for (const s of this.soles){
+      ctx.globalAlpha = s.cayendo ? 1 : clamp(s.vida/2, .3, 1);
+      ctx.beginPath(); ctx.arc(s.x, s.y, 12, 0, 7); ctx.fill();
+    }
+    ctx.globalAlpha = 1; ctx.shadowBlur = 0;
+    if (this.seleccion){
+      ctx.fillStyle = "rgba(238,241,255,.55)"; ctx.font = "600 12px system-ui"; ctx.textAlign = "center";
+      ctx.fillText("Toca una casilla del césped para plantar", this.W/2, this.H - 8);
+    }
+  }
+};
+
+/* ================================================================
+   JUEGO 7 · MINAS VIP (estilo casino: revela casillas, sube el multiplicador)
+   ================================================================ */
+const minas = {
+  N:5, TOTAL:25, CELDA:66,
+  TITULO_Y:26, SALDO_Y:52, STEP_LABEL_Y:78, STEP_Y:84, STEP_H:30,
+  BOTON_Y:124, BOTON_H:38, GRID_TOP:178,
+  iniciar(){
+    this.W = this.N * this.CELDA + 32;
+    this.H = this.GRID_TOP + this.N*this.CELDA + 56;
+    fijarLienzo(this.W, this.H);
+    this.saldo = 1000; this.apuesta = 100; this.numMinas = 5;
+    this.fase = "apostando"; // apostando | jugando | revelado
+    this.casillas = []; this.k = 0; this.mult = 1; this.mensaje = "";
+    this.temporizador = 0;
+    fijarPuntos(this.saldo);
+  },
+  ox(){ return (this.W - this.N*this.CELDA) / 2; },
+  oy(){ return this.GRID_TOP; },
+  multiplicador(k){
+    let m = 1;
+    for (let i = 0; i < k; i++) m *= (this.TOTAL - i) / (this.TOTAL - i - this.numMinas);
+    return m * .97;
+  },
+  botones(){
+    const cx = this.W/2;
+    return {
+      minasMenos: {x:cx-118, y:this.STEP_Y, w:30, h:this.STEP_H},
+      minasMas:   {x:cx-46,  y:this.STEP_Y, w:30, h:this.STEP_H},
+      apMenos:    {x:cx+18,  y:this.STEP_Y, w:30, h:this.STEP_H},
+      apMas:      {x:cx+90,  y:this.STEP_Y, w:30, h:this.STEP_H},
+      accion:     {x:cx-90,  y:this.BOTON_Y, w:180, h:this.BOTON_H},
+    };
+  },
+  ajustarApuesta(d){
+    this.apuesta = clamp(this.apuesta + d*50, 50, Math.max(50, Math.min(1000, this.saldo)));
+  },
+  ajustarMinas(d){ this.numMinas = clamp(this.numMinas + d, 1, 15); },
+  jugarRonda(){
+    if (this.fase !== "apostando" || this.saldo < this.apuesta) { S.error(); return; }
+    this.saldo -= this.apuesta; fijarPuntos(this.saldo);
+    const idx = Array.from({length:this.TOTAL}, (_,i) => i);
+    for (let i = idx.length-1; i>0; i--){ const j=(Math.random()*(i+1))|0; [idx[i],idx[j]]=[idx[j],idx[i]]; }
+    const minasSet = new Set(idx.slice(0, this.numMinas));
+    this.casillas = Array.from({length:this.TOTAL}, (_,i) => ({mina:minasSet.has(i), revelada:false}));
+    this.k = 0; this.mult = 1; this.fase = "jugando"; this.mensaje = "";
+  },
+  retirar(){
+    if (this.fase !== "jugando" || this.k < 1) { S.error(); return; }
+    const gano = Math.round(this.apuesta * this.mult);
+    this.saldo += gano; fijarPuntos(this.saldo);
+    this.mensaje = "¡Retiraste " + gano + " fichas!";
+    this.finRonda();
+  },
+  finRonda(){
+    for (const c of this.casillas) c.revelada = true;
+    this.fase = "revelado"; this.temporizador = 1.5;
+  },
+  clicCasilla(i){
+    if (this.fase !== "jugando" || this.casillas[i].revelada) return;
+    const c = this.casillas[i];
+    if (c.mina){
+      c.revelada = true;
+      sacudida = 8; S.choque();
+      this.mensaje = "💥 ¡Boom! Perdiste " + this.apuesta + " fichas";
+      this.finRonda();
+    } else {
+      c.revelada = true; this.k++;
+      this.mult = this.multiplicador(this.k);
+      S.gema();
+      const col = i % this.N, fila = (i/this.N)|0;
+      explotar(this.ox()+col*this.CELDA+this.CELDA/2, this.oy()+fila*this.CELDA+this.CELDA/2, "#22d3ee", 10, 130);
+      if (this.k >= this.TOTAL - this.numMinas){
+        const gano = Math.round(this.apuesta * this.mult);
+        this.saldo += gano; fijarPuntos(this.saldo);
+        this.mensaje = "🏆 ¡Despejaste todo! +" + gano + " fichas";
+        S.nivel();
+        explotar(this.W/2, this.H/2, "#ffc94d", 40, 300);
+        this.finRonda();
+      }
+    }
+  },
+  punteroInicio(x,y){
+    const b = this.botones();
+    const en = r => x>=r.x && x<=r.x+r.w && y>=r.y && y<=r.y+r.h;
+    if (this.fase === "apostando"){
+      if (en(b.minasMenos)) return this.ajustarMinas(-1);
+      if (en(b.minasMas))   return this.ajustarMinas(1);
+      if (en(b.apMenos))    return this.ajustarApuesta(-1);
+      if (en(b.apMas))      return this.ajustarApuesta(1);
+      if (en(b.accion))     return this.jugarRonda();
+    } else if (this.fase === "jugando"){
+      if (en(b.accion))     return this.retirar();
+      const ox = this.ox(), oy = this.oy();
+      const col = Math.floor((x-ox)/this.CELDA), fila = Math.floor((y-oy)/this.CELDA);
+      if (col>=0 && col<this.N && fila>=0 && fila<this.N) this.clicCasilla(fila*this.N+col);
+    }
+  },
+  actualizar(dt){
+    if (this.temporizador > 0){
+      this.temporizador -= dt;
+      if (this.temporizador <= 0){ this.fase = "apostando"; this.mensaje = ""; }
+    }
+    if (this.fase === "apostando" && this.saldo < 50) return morir();
+  },
+  dibujar(ctx){
+    ctx.fillStyle = "#0b0f22"; ctx.fillRect(0,0,this.W,this.H);
+    ctx.textAlign = "center";
+    ctx.fillStyle = "#ffc94d"; ctx.font = "900 20px system-ui";
+    ctx.fillText("💎 MINAS VIP", this.W/2, this.TITULO_Y);
+    ctx.fillStyle = "rgba(238,241,255,.7)"; ctx.font = "700 13px system-ui";
+    ctx.fillText("Saldo: " + this.saldo + " fichas", this.W/2, this.SALDO_Y);
+    const b = this.botones();
+    if (this.fase === "apostando"){
+      const dibujarStepper = (r1,r2,val,label,cx) => {
+        ctx.fillStyle = "rgba(255,255,255,.6)"; ctx.font = "700 13px system-ui";
+        ctx.fillText(label, cx, this.STEP_LABEL_Y);
+        [r1,r2].forEach((r,i) => {
+          ctx.fillStyle = "#1b2140"; ctx.beginPath(); ctx.roundRect(r.x,r.y,r.w,r.h,8); ctx.fill();
+          ctx.fillStyle = "#eef1ff"; ctx.font = "900 16px system-ui";
+          ctx.fillText(i===0?"–":"+", r.x+r.w/2, r.y+r.h/2+5);
+        });
+        ctx.fillStyle = "#eef1ff"; ctx.font = "800 14px system-ui";
+        ctx.fillText(val, cx, r1.y+r1.h/2+5);
+      };
+      dibujarStepper(b.minasMenos, b.minasMas, this.numMinas, "💣 Minas", this.W/2-83);
+      dibujarStepper(b.apMenos, b.apMas, this.apuesta, "🪙 Apuesta", this.W/2+54);
+    }
+    // botón principal
+    const activo = this.fase === "apostando" ? this.saldo >= this.apuesta : this.k >= 1;
+    ctx.globalAlpha = activo ? 1 : .45;
+    const grad = ctx.createLinearGradient(b.accion.x,0,b.accion.x+b.accion.w,0);
+    grad.addColorStop(0,"#4f8df9"); grad.addColorStop(1,"#8b5cf6");
+    ctx.fillStyle = grad;
+    ctx.beginPath(); ctx.roundRect(b.accion.x,b.accion.y,b.accion.w,b.accion.h,10); ctx.fill();
+    ctx.fillStyle = "#fff"; ctx.font = "800 14px system-ui";
+    ctx.fillText(this.fase==="apostando" ? "JUGAR RONDA ▸" : "RETIRAR 💰", this.W/2, b.accion.y+b.accion.h/2+5);
+    ctx.globalAlpha = 1;
+    // grid
+    const ox = this.ox(), oy = this.oy();
+    for (let i = 0; i < this.TOTAL; i++){
+      const col = i % this.N, fila = (i/this.N)|0;
+      const x = ox+col*this.CELDA, y = oy+fila*this.CELDA;
+      const c = this.casillas[i];
+      ctx.beginPath(); ctx.roundRect(x+3,y+3,this.CELDA-6,this.CELDA-6,10);
+      if (!c || !c.revelada){
+        ctx.fillStyle = "#1b2140"; ctx.fill();
+        ctx.strokeStyle = "rgba(255,255,255,.08)"; ctx.stroke();
+      } else if (c.mina){
+        ctx.fillStyle = "#3a1620"; ctx.fill();
+        ctx.font = (this.CELDA*.5)+"px system-ui"; ctx.fillStyle="#f87171";
+        ctx.fillText("💣", x+this.CELDA/2, y+this.CELDA/2+this.CELDA*.17);
+      } else {
+        ctx.fillStyle = "#123322"; ctx.fill();
+        ctx.font = (this.CELDA*.42)+"px system-ui"; ctx.fillStyle="#34d399";
+        ctx.fillText("💎", x+this.CELDA/2, y+this.CELDA/2+this.CELDA*.15);
+      }
+    }
+    // multiplicador / mensaje
+    ctx.font = "800 15px system-ui";
+    const msgY = this.H - 24;
+    if (this.fase === "jugando"){
+      const pulso = 1 + Math.sin(performance.now()/180)*.03;
+      ctx.save(); ctx.translate(this.W/2, msgY); ctx.scale(pulso,pulso);
+      ctx.fillStyle = "#ffc94d";
+      ctx.fillText("x" + this.mult.toFixed(2) + "  ·  ganarías " + Math.round(this.apuesta*this.mult) + " fichas", 0, 0);
+      ctx.restore();
+    } else if (this.mensaje){
+      ctx.fillStyle = this.mensaje.includes("Boom") ? "#f87171" : "#34d399";
+      ctx.fillText(this.mensaje, this.W/2, msgY);
+    } else {
+      ctx.fillStyle = "rgba(238,241,255,.5)"; ctx.font = "600 12px system-ui";
+      ctx.fillText("Elige minas y apuesta, luego juega la ronda", this.W/2, msgY);
+    }
+  }
+};
+
+/* ================================================================
+   JUEGO 8 · BLOQUES BLAST (encaja piezas, despeja líneas)
+   ================================================================ */
+function normalizarForma(forma){
+  const minX = Math.min(...forma.map(p=>p[0])), minY = Math.min(...forma.map(p=>p[1]));
+  return forma.map(([x,y]) => [x-minX, y-minY]);
+}
+const FORMAS_BLOQUES = [
+  [[0,0]],
+  [[0,0],[1,0]], [[0,0],[0,1]],
+  [[0,0],[1,0],[2,0]], [[0,0],[0,1],[0,2]],
+  [[0,0],[1,0],[2,0],[3,0]], [[0,0],[0,1],[0,2],[0,3]],
+  [[0,0],[1,0],[0,1],[1,1]],
+  [[0,0],[0,1],[0,2],[1,2]], [[1,0],[1,1],[1,2],[0,2]],
+  [[0,0],[1,0],[2,0],[1,1]],
+  [[1,0],[2,0],[0,1],[1,1]], [[0,0],[1,0],[1,1],[2,1]],
+].map(normalizarForma);
+const COLORES_BLOQUES = ["#4f8df9","#8b5cf6","#e457c4","#22d3ee","#34d399","#ffc94d","#f87171"];
+const bloquesBlast = {
+  N:8, CELDA:41, MARGEN:18, ALTO_BANDEJA:118,
+  iniciar(){
+    this.W = this.N*this.CELDA + this.MARGEN*2;
+    this.H = this.MARGEN + this.N*this.CELDA + 18 + this.ALTO_BANDEJA + this.MARGEN;
+    fijarLienzo(this.W, this.H);
+    this.grid = Array.from({length:this.N}, () => Array(this.N).fill(null));
+    this.seleccion = null;
+    this.bandeja = [null,null,null];
+    this.rellenarBandeja();
+  },
+  piezaAleatoria(){
+    const forma = FORMAS_BLOQUES[(Math.random()*FORMAS_BLOQUES.length)|0];
+    const color = COLORES_BLOQUES[(Math.random()*COLORES_BLOQUES.length)|0];
+    return {forma, color};
+  },
+  rellenarBandeja(){
+    for (let i = 0; i < 3; i++) if (!this.bandeja[i]) this.bandeja[i] = this.piezaAleatoria();
+    if (!this.bandeja.some(p => p && this.cabeEnAlgunLado(p.forma))) return morir();
+  },
+  cabe(forma, col, fila){
+    for (const [dx,dy] of forma){
+      const c = col+dx, f = fila+dy;
+      if (c<0||c>=this.N||f<0||f>=this.N||this.grid[f][c]) return false;
+    }
+    return true;
+  },
+  cabeEnAlgunLado(forma){
+    for (let f = 0; f < this.N; f++) for (let c = 0; c < this.N; c++) if (this.cabe(forma,c,f)) return true;
+    return false;
+  },
+  rectPieza(i){
+    const ancho = (this.W - this.MARGEN*2) / 3;
+    return {x:this.MARGEN + i*ancho, y:this.H - this.ALTO_BANDEJA - this.MARGEN + 8, w:ancho-10, h:this.ALTO_BANDEJA-18};
+  },
+  punteroInicio(x,y){
+    const gy0 = this.MARGEN + 18;
+    // 1) tocar pieza en la bandeja
+    for (let i = 0; i < 3; i++){
+      if (!this.bandeja[i]) continue;
+      const r = this.rectPieza(i);
+      if (x>=r.x && x<=r.x+r.w && y>=r.y && y<=r.y+r.h){
+        this.seleccion = this.seleccion === i ? null : i;
+        return;
+      }
+    }
+    // 2) tocar el tablero para colocar
+    if (this.seleccion !== null && y >= gy0 && y < gy0 + this.N*this.CELDA){
+      const col = Math.floor((x-this.MARGEN) / this.CELDA);
+      const fila = Math.floor((y-gy0) / this.CELDA);
+      const pieza = this.bandeja[this.seleccion];
+      if (pieza && col>=0 && col<this.N && fila>=0 && fila<this.N && this.cabe(pieza.forma,col,fila)){
+        for (const [dx,dy] of pieza.forma) this.grid[fila+dy][col+dx] = pieza.color;
+        sumar(pieza.forma.length * 10);
+        S.ladrillo();
+        this.bandeja[this.seleccion] = null;
+        this.seleccion = null;
+        this.despejarLineas();
+        if (this.bandeja.every(p => !p)) this.rellenarBandeja();
+        else if (!this.bandeja.some(p => p && this.cabeEnAlgunLado(p.forma))) return morir();
+      } else { S.error(); }
+    }
+  },
+  despejarLineas(){
+    const filas = [], cols = [];
+    for (let f = 0; f < this.N; f++) if (this.grid[f].every(v => v)) filas.push(f);
+    for (let c = 0; c < this.N; c++) if (this.grid.every(fila => fila[c])) cols.push(c);
+    const total = filas.length + cols.length;
+    if (!total) return;
+    for (const f of filas) for (let c = 0; c < this.N; c++){
+      explotar(this.MARGEN+c*this.CELDA+this.CELDA/2, this.MARGEN+18+f*this.CELDA+this.CELDA/2, this.grid[f][c], 6, 110);
+      this.grid[f][c] = null;
+    }
+    for (const c of cols) for (let f = 0; f < this.N; f++){
+      if (this.grid[f][c]) explotar(this.MARGEN+c*this.CELDA+this.CELDA/2, this.MARGEN+18+f*this.CELDA+this.CELDA/2, this.grid[f][c], 6, 110);
+      this.grid[f][c] = null;
+    }
+    sumar(total * 100);
+    S.linea(); sacudida = Math.min(10, total*3);
+  },
+  actualizar(){},
+  dibujar(ctx){
+    ctx.fillStyle = "#0b0f22"; ctx.fillRect(0,0,this.W,this.H);
+    ctx.textAlign = "center";
+    ctx.fillStyle = "rgba(238,241,255,.55)"; ctx.font = "700 12px system-ui";
+    ctx.fillText("Bloques Blast", this.W/2, this.MARGEN+2);
+    const gy0 = this.MARGEN + 18;
+    for (let f = 0; f < this.N; f++)
+      for (let c = 0; c < this.N; c++){
+        const x = this.MARGEN+c*this.CELDA, y = gy0+f*this.CELDA;
+        const color = this.grid[f][c];
+        ctx.beginPath(); ctx.roundRect(x+2,y+2,this.CELDA-4,this.CELDA-4,6);
+        if (color){ ctx.shadowColor = color; ctx.shadowBlur = 6; ctx.fillStyle = color; ctx.fill(); ctx.shadowBlur = 0; }
+        else { ctx.fillStyle = "#151a33"; ctx.fill(); }
+      }
+    // bandeja
+    for (let i = 0; i < 3; i++){
+      const r = this.rectPieza(i);
+      ctx.fillStyle = this.seleccion === i ? "rgba(34,211,238,.16)" : "rgba(255,255,255,.03)";
+      ctx.strokeStyle = this.seleccion === i ? "#22d3ee" : "rgba(255,255,255,.08)";
+      ctx.lineWidth = this.seleccion === i ? 2 : 1;
+      ctx.beginPath(); ctx.roundRect(r.x,r.y,r.w,r.h,10); ctx.fill(); ctx.stroke();
+      const p = this.bandeja[i];
+      if (!p) continue;
+      const maxX = Math.max(...p.forma.map(pt=>pt[0])), maxY = Math.max(...p.forma.map(pt=>pt[1]));
+      const celda = Math.min((r.w-16)/(maxX+1), (r.h-16)/(maxY+1), 22);
+      const ox = r.x + (r.w - (maxX+1)*celda)/2, oy = r.y + (r.h - (maxY+1)*celda)/2;
+      ctx.fillStyle = p.color; ctx.shadowColor = p.color; ctx.shadowBlur = 6;
+      for (const [dx,dy] of p.forma){
+        ctx.beginPath(); ctx.roundRect(ox+dx*celda+1, oy+dy*celda+1, celda-2, celda-2, 4); ctx.fill();
+      }
+      ctx.shadowBlur = 0;
+    }
+    if (this.seleccion !== null){
+      ctx.fillStyle = "rgba(238,241,255,.5)"; ctx.font = "600 11px system-ui";
+      ctx.fillText("Toca el tablero para colocar la pieza", this.W/2, this.H - 6);
+    }
+  }
+};
+
+/* ================================================================
    Catálogo
    ================================================================ */
 const CATALOGO = [
@@ -777,6 +1628,18 @@ const CATALOGO = [
   {id:"pajaro", obj:pajaro, emoji:"🐤", nombre:"Pájaro Turbo",
    desc:"Un botón, cero piedad. Aletea entre las tuberías el mayor tiempo posible.",
    ayuda:"⌨ ESPACIO para aletear · 📱 toca la pantalla"},
+  {id:"comecocos", obj:comecocos, emoji:"🟡", nombre:"Comecocos Neón",
+   desc:"Recorre el laberinto, come todos los puntos y esquiva a los fantasmas. Las pastillas grandes te dejan cazarlos.",
+   ayuda:"⌨ Flechas o WASD · 📱 desliza el dedo hacia donde quieras girar"},
+  {id:"jardin", obj:jardin, emoji:"🌻", nombre:"Jardín Zombi",
+   desc:"Junta sol, planta defensas y no dejes que los zombis lleguen a la casa.",
+   ayuda:"📱🖱 Toca una tarjeta y luego una casilla del césped para plantar · toca el sol que cae para recogerlo"},
+  {id:"minas", obj:minas, emoji:"💎", nombre:"Minas VIP",
+   desc:"Estilo casino: revela casillas seguras, el multiplicador sube y retira antes de tocar una mina. Solo fichas de mentira.",
+   ayuda:"📱🖱 Elige minas y apuesta, juega la ronda, toca casillas y retira cuando quieras"},
+  {id:"blast", obj:bloquesBlast, emoji:"🧊", nombre:"Bloques Blast",
+   desc:"Encaja las piezas en la cuadrícula y despeja filas y columnas completas. ¿Hasta cuándo te quedará espacio?",
+   ayuda:"📱🖱 Toca una pieza de la bandeja y luego la casilla donde quieras colocarla"},
 ];
 
 /* ================================================================
