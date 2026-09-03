@@ -169,6 +169,13 @@ const Sonido = {
 const Almacen = (() => {
   const memoria = {};
   let permitido = null;
+  // Una copia abierta en about:blank no tiene localStorage propio, así que el
+  // botón de pestaña limpia deja aquí el progreso para que arranque igual.
+  try {
+    const semilla = window.__ARCADE_SEMILLA;
+    if (semilla && typeof semilla === 'object')
+      for (const k of Object.keys(semilla)) memoria[k] = String(semilla[k]);
+  } catch(e){}
   return {
     // ¿Sobrevive lo guardado a recargar la página? (falso en modo privado o sandbox)
     disponible(){
@@ -288,6 +295,51 @@ const Arcade = {
 
   /** El enrutador llama a esto al abrir una pantalla: revive sus bucles. */
   despertarBucles(){ this._bucles.forEach(f => { try { f(); } catch(e){} }); },
+
+  /**
+   * Abre una copia del arcade en una pestaña about:blank.
+   *
+   * La copia no tiene almacenamiento propio (about:blank no tiene origen), así
+   * que se le pasa el progreso incrustado y ella lo carga en memoria: puedes
+   * seguir donde ibas, pero lo que juegues allí no se guarda al cerrar.
+   *
+   * Devuelve null si todo fue bien, o un texto explicando qué falló.
+   */
+  pestanaLimpia(){
+    let ventana;
+    try { ventana = window.open('about:blank', '_blank'); }
+    catch(e){ return 'El navegador no ha dejado abrir la pestaña.'; }
+    if (!ventana) return 'El navegador ha bloqueado la ventana emergente. Permite los pop-ups de esta página.';
+
+    Guardado.ahora();               // lo que estés jugando se guarda antes de copiar
+
+    // El progreso viaja incrustado, porque la copia no podrá leer localStorage.
+    const semilla = {};
+    try {
+      for (let i = 0; i < localStorage.length; i++){
+        const k = localStorage.key(i);
+        semilla[k] = localStorage.getItem(k);
+      }
+    } catch(e){}
+    const inyeccion = '<scr' + 'ipt>window.__ARCADE_SEMILLA=' +
+      JSON.stringify(semilla).replace(/</g, '\\u003c') + ';</scr' + 'ipt>';
+
+    let html = document.documentElement.outerHTML;
+    // Delante del primer script, para que el progreso ya esté puesto al arrancar.
+    html = html.indexOf('<script') >= 0
+      ? html.replace('<script', inyeccion + '<script')
+      : html + inyeccion;
+
+    try {
+      ventana.document.open();
+      ventana.document.write(html);
+      ventana.document.close();
+    } catch(e){
+      try { ventana.close(); } catch(e2){}
+      return 'Esta página no deja copiarse a otra pestaña (' + e.message + ').';
+    }
+    return null;
+  },
 
   // Aviso flotante dentro de un contenedor .avisos
   aviso(contenedor, texto, importante, ms = 2200){

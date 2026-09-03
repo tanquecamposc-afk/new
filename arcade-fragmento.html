@@ -347,6 +347,24 @@ body{display:block; padding:0; margin:0;}
     box-shadow:0 4px 30px rgba(0,0,0,.7);
   }
 #pantalla-portada #cabecera .marca{display:flex; align-items:center; gap:15px;}
+#pantalla-portada .accionesCabecera{display:flex; align-items:center; gap:12px; flex-wrap:wrap;}
+#pantalla-portada #btnLimpia{
+    display:flex; align-items:center; gap:7px;
+    padding:9px 15px; border-radius:11px; cursor:pointer;
+    font-family:var(--fuente-arcade); font-size:.82rem; font-weight:700;
+    letter-spacing:.5px; white-space:nowrap;
+    color:var(--azul); background:rgba(0,240,255,.08);
+    border:2px solid rgba(0,240,255,.35);
+    transition:background .18s, border-color .18s, transform .12s;
+  }
+#pantalla-portada #btnLimpia:hover{
+    background:rgba(0,240,255,.16); border-color:var(--azul);
+    transform:translateY(-1px);
+  }
+#pantalla-portada #btnLimpia:active{transform:translateY(0);}
+@media (max-width:560px){#pantalla-portada #btnLimpia{font-size:.74rem; padding:8px 11px;}
+
+  }
 #pantalla-portada #cabecera .icono{font-size:2.2rem; animation:latido 2s infinite alternate;}
 @keyframes latido{
     0%{transform:scale(1); filter:drop-shadow(0 0 10px var(--azul));}
@@ -2721,8 +2739,14 @@ body{display:block; padding:0; margin:0;}
       <div class="lema">Ultimate Gamer Edition v4.0</div>
     </div>
   </div>
-  <div id="cartera" title="Fichas ficticias de Minas y Aviator — doble clic para volver a 5.000">
-    💎 <span id="fichasTxt">5000</span> NEXO-COINS
+  <div class="accionesCabecera">
+    <button id="btnLimpia" type="button"
+            title="Abre una copia del arcade en una pestaña about:blank, con tu progreso puesto">
+      🔗 Abrir en about:blank
+    </button>
+    <div id="cartera" title="Fichas ficticias de Minas y Aviator — doble clic para volver a 5.000">
+      💎 <span id="fichasTxt">5000</span> NEXO-COINS
+    </div>
   </div>
 </header>
 
@@ -5514,6 +5538,13 @@ const Sonido = {
 const Almacen = (() => {
   const memoria = {};
   let permitido = null;
+  // Una copia abierta en about:blank no tiene localStorage propio, así que el
+  // botón de pestaña limpia deja aquí el progreso para que arranque igual.
+  try {
+    const semilla = window.__ARCADE_SEMILLA;
+    if (semilla && typeof semilla === 'object')
+      for (const k of Object.keys(semilla)) memoria[k] = String(semilla[k]);
+  } catch(e){}
   return {
     // ¿Sobrevive lo guardado a recargar la página? (falso en modo privado o sandbox)
     disponible(){
@@ -5633,6 +5664,51 @@ const Arcade = {
 
   /** El enrutador llama a esto al abrir una pantalla: revive sus bucles. */
   despertarBucles(){ this._bucles.forEach(f => { try { f(); } catch(e){} }); },
+
+  /**
+   * Abre una copia del arcade en una pestaña about:blank.
+   *
+   * La copia no tiene almacenamiento propio (about:blank no tiene origen), así
+   * que se le pasa el progreso incrustado y ella lo carga en memoria: puedes
+   * seguir donde ibas, pero lo que juegues allí no se guarda al cerrar.
+   *
+   * Devuelve null si todo fue bien, o un texto explicando qué falló.
+   */
+  pestanaLimpia(){
+    let ventana;
+    try { ventana = window.open('about:blank', '_blank'); }
+    catch(e){ return 'El navegador no ha dejado abrir la pestaña.'; }
+    if (!ventana) return 'El navegador ha bloqueado la ventana emergente. Permite los pop-ups de esta página.';
+
+    Guardado.ahora();               // lo que estés jugando se guarda antes de copiar
+
+    // El progreso viaja incrustado, porque la copia no podrá leer localStorage.
+    const semilla = {};
+    try {
+      for (let i = 0; i < localStorage.length; i++){
+        const k = localStorage.key(i);
+        semilla[k] = localStorage.getItem(k);
+      }
+    } catch(e){}
+    const inyeccion = '<scr' + 'ipt>window.__ARCADE_SEMILLA=' +
+      JSON.stringify(semilla).replace(/</g, '\\u003c') + ';</scr' + 'ipt>';
+
+    let html = document.documentElement.outerHTML;
+    // Delante del primer script, para que el progreso ya esté puesto al arrancar.
+    html = html.indexOf('<script') >= 0
+      ? html.replace('<script', inyeccion + '<script')
+      : html + inyeccion;
+
+    try {
+      ventana.document.open();
+      ventana.document.write(html);
+      ventana.document.close();
+    } catch(e){
+      try { ventana.close(); } catch(e2){}
+      return 'Esta página no deja copiarse a otra pestaña (' + e.message + ').';
+    }
+    return null;
+  },
 
   // Aviso flotante dentro de un contenedor .avisos
   aviso(contenedor, texto, importante, ms = 2200){
@@ -9910,6 +9986,10 @@ function portadaCluster(c){
 const rejilla = document.getElementById('rejilla');
 const cartasDe = {};            // id de juego -> su elemento, para filtrar rápido
 
+// Se vacía antes de llenar: la copia en about:blank llega con las cartas ya
+// puestas en el HTML y, sin esto, saldrían las cuarenta por duplicado.
+rejilla.innerHTML = '';
+
 CATEGORIAS.forEach(cat => {
   const juegos = JUEGOS.filter(j => categoriaDe(j) === cat.id);
   if (!juegos.length) return;
@@ -9956,6 +10036,8 @@ const campoBusca = document.getElementById('busca');
 
 // Cuántos juegos tiene cada sala, para pintarlo en su tarjeta
 const cuentaDe = id => JUEGOS.filter(j => categoriaDe(j) === id).length;
+
+salas.innerHTML = '';           // igual que la rejilla: nada de salas duplicadas
 
 CATEGORIAS.filter(c => cuentaDe(c.id)).forEach(c => {
   const n = cuentaDe(c.id);
@@ -10245,6 +10327,15 @@ document.getElementById('cartera').addEventListener('dblclick', () => {
 });
 addEventListener('pageshow', refrescarPortada);
 addEventListener('focus', refrescarPortada);
+
+// Abre una copia del arcade en una pestaña about:blank, con el progreso puesto.
+// Lo que juegues allí no se guarda: about:blank no tiene dónde guardarlo.
+document.getElementById('btnLimpia').onclick = () => {
+  Sonido.activar();
+  const fallo = Arcade.pestanaLimpia();
+  if (fallo) alert(fallo);
+  else Sonido.fx('moneda');
+};
 
 document.getElementById('btnBorrar').onclick = () => {
   if (!confirm('¿Seguro que quieres borrar todos tus récords, el saldo y los códigos canjeados?')) return;
