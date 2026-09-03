@@ -458,6 +458,7 @@ h3.sec{font-family:var(--display);font-size:12px;color:#8f9bc0;text-transform:up
         <button class="btn-sm" id="help-btn" style="flex:1">❔ Cómo se juega</button>
         <button class="btn-sm" id="sound-btn" style="flex:none">🔊</button>
       </div>
+      <button class="btn-sm" id="popout-btn" style="flex:none">🔗 Abrir en pestaña nueva</button>
       <div class="tip" id="tip"></div>
     </div>
 
@@ -3154,6 +3155,21 @@ function showHelp() {
   $('m-ok').onclick = closeModal;
 }
 
+/* Abre una copia estática del juego en una pestaña about:blank.
+   Esa pestaña vive en un origen "null": no comparte localStorage con
+   esta página, así que su progreso se guarda aparte. */
+function abrirEnAboutBlank() {
+  const nuevaVentana = window.open('about:blank', '_blank');
+  if (!nuevaVentana) {
+    alert('El navegador bloqueó la ventana emergente. Por favor, activa los pop-ups para este sitio.');
+    return;
+  }
+  const contenidoHTML = document.documentElement.outerHTML;
+  nuevaVentana.document.open();
+  nuevaVentana.document.write(contenidoHTML);
+  nuevaVentana.document.close();
+}
+
 function init() {
   buildEmotes();
   document.querySelectorAll('.tab').forEach(t => {
@@ -3166,6 +3182,7 @@ function init() {
     Snd.setMuted(!Snd.muted);
     $('sound-btn').textContent = Snd.muted ? '🔇' : '🔊';
   });
+  $('popout-btn').addEventListener('click', abrirEnAboutBlank);
   $('random-deck').addEventListener('click', randomDeck);
   $('emote-btn').addEventListener('click', () => $('emote-picker').classList.toggle('open'));
   $('ability-btn').addEventListener('click', useAbility);
