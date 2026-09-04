@@ -87,6 +87,12 @@ button:focus-visible, input:focus-visible, [tabindex]:focus-visible{
 #btnModo:hover{background:rgba(232,163,61,.22);}
 #btnModo.vuelta{border-color:var(--alza); background:rgba(53,196,137,.12); color:var(--alza);}
 #btnModo.vuelta:hover{background:rgba(53,196,137,.22);}
+#btnBlancoAqui{
+  flex:none; align-self:stretch; padding:0 16px; border-radius:3px;
+  border:1px solid var(--linea); background:var(--panel3); color:var(--tenue);
+  font-size:12px; font-weight:600;
+}
+#btnBlancoAqui:hover{color:var(--texto); border-color:var(--apagado);}
 #modoNota{font-size:12px; color:var(--apagado); max-width:56ch; line-height:1.5;}
 #capaBlanco{
   position:fixed; inset:0; background:#fff; z-index:9999; cursor:pointer;
@@ -337,6 +343,7 @@ tbody tr:hover{background:var(--panel2);}
 
   <div id="barraModo">
     <button id="btnModo"></button>
+    <button id="btnBlancoAqui" hidden>Pantalla en blanco aquí</button>
     <div id="modoNota"></div>
   </div>
 
@@ -1455,7 +1462,6 @@ function abrirEnAboutBlank() {
   } else {
     alert('Por favor, permite las ventanas emergentes (pop-ups) para abrir en about:blank');
   }
-  return nuevaVentana;
 }
 
 // Esta copia corre dentro de about:blank cuando la abrió la ventana original.
@@ -1491,18 +1497,36 @@ function alternarModoBlank(){
     window.close();
     return;
   }
-  let v = null;
-  try { v = abrirEnAboutBlank(); } catch(e){ v = null; }
-  if (v) avisar('Terminal clonada en about:blank. El botón de esa ventana te trae de vuelta acá.', 'ok');
-  else capaBlanca(true);
+  // Se llama abrirEnAboutBlank() tal cual está escrita. El envoltorio de
+  // window.open solo sirve para saber si la ventana llegó a abrirse, sin
+  // tocar la función.
+  const abrirOriginal = window.open;
+  let ventana = null;
+  window.open = function(){
+    try { ventana = abrirOriginal.apply(window, arguments); } catch(e){ ventana = null; }
+    return ventana;
+  };
+  // Si la ventana se abrió, vale aunque la escritura falle: no se reporta bloqueo.
+  try { abrirEnAboutBlank(); } catch(e){}
+  finally { window.open = abrirOriginal; }
+
+  if (ventana){
+    $('#btnBlancoAqui').hidden = true;
+    $('#modoNota').innerHTML = 'Se abrió la copia en <b>about:blank</b>. El botón de esa ventana te trae de vuelta acá; si no la ves, fíjate si el navegador la mandó a otra pestaña.';
+    avisar('Terminal clonada en about:blank.', 'ok');
+  } else {
+    $('#btnBlancoAqui').hidden = false;
+    $('#modoNota').innerHTML = '<b style="color:var(--baja)">El navegador no dejó abrir la ventana.</b> Esta página corre dentro de un marco con sandbox y ahí las ventanas emergentes están bloqueadas. Para el <b>about:blank</b> de verdad abre <b>quantterminal.html</b> directo en el navegador; acá al lado tienes la pantalla en blanco dentro de la misma página.';
+  }
 }
 
 function pintarBotonModo(){
-  const b = $('#btnModo'), n = $('#modoNota');
+  const b = $('#btnModo'), n = $('#modoNota'), sec = $('#btnBlancoAqui');
+  if (sec && (enBlanco() || enBlank())) sec.hidden = true;
   if (enBlanco()){
     b.classList.add('vuelta');
     b.innerHTML = '<b>↩ Volver a la terminal</b><small>Quita la pantalla en blanco</small>';
-    n.innerHTML = 'Estás en <b>pantalla en blanco</b>. Esta página corre dentro de un marco con sandbox, que no deja abrir ventanas nuevas, así que la vista en blanco se hace acá mismo. Para la ventana <b>about:blank</b> de verdad, abre el archivo <b>quantterminal.html</b> directo en el navegador.';
+    n.innerHTML = 'Estás en <b>pantalla en blanco</b> dentro de la misma página. Clic en la capa, Esc o este botón para volver a la terminal.';
     return;
   }
   if (enBlank()){
@@ -1512,7 +1536,7 @@ function pintarBotonModo(){
   } else {
     b.classList.remove('vuelta');
     b.innerHTML = '<b>⧉ Abrir en about:blank</b><small>Clona la terminal en una ventana en blanco</small>';
-    n.innerHTML = 'Estás en la <b>vista normal</b>. El botón clona la terminal en una ventana <b>about:blank</b>; si el navegador no deja abrir ventanas, pasa a pantalla en blanco acá mismo. En los dos casos el mismo botón te trae de vuelta.';
+    n.innerHTML = 'Estás en la <b>vista normal</b>. El botón abre una ventana <b>about:blank</b> y escribe dentro una copia completa de la terminal; desde esa ventana el mismo botón te devuelve acá.';
   }
 }
 
@@ -1552,6 +1576,7 @@ $('#btnVel').addEventListener('click', () => {
   $('#btnVel').classList.toggle('on', velocidad > 1);
 });
 $('#btnModo').addEventListener('click', alternarModoBlank);
+$('#btnBlancoAqui').addEventListener('click', () => capaBlanca(true));
 $('#btnReset').addEventListener('click', () => {
   nuevaSesion();
   $('#estadoSesion').classList.remove('cerrada');
