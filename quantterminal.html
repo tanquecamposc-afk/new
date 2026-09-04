@@ -87,6 +87,21 @@ button:focus-visible, input:focus-visible, [tabindex]:focus-visible{
 #btnModo:hover{background:rgba(232,163,61,.22);}
 #btnModo.vuelta{border-color:var(--alza); background:rgba(53,196,137,.12); color:var(--alza);}
 #btnModo.vuelta:hover{background:rgba(53,196,137,.22);}
+#btnGuardarSalir{
+  display:flex; flex-direction:column; gap:2px; align-items:flex-start; flex:none;
+  padding:11px 20px; border:1px solid var(--linea); border-radius:3px;
+  background:var(--panel3); color:var(--texto); transition:background .12s;
+}
+#btnGuardarSalir b{font-size:15px; font-weight:700;}
+#btnGuardarSalir small{font-size:11.5px; color:var(--tenue); font-weight:500;}
+#btnGuardarSalir:hover{background:#26314A;}
+#btnCargar{
+  flex:none; align-self:stretch; padding:0 16px; border-radius:3px;
+  border:1px solid var(--linea); background:var(--panel); color:var(--tenue);
+  font-size:12px; font-weight:600;
+}
+#btnCargar:hover:not(:disabled){color:var(--texto); border-color:var(--apagado);}
+#btnCargar:disabled{opacity:.4; cursor:not-allowed;}
 #btnBlancoAqui{
   flex:none; align-self:stretch; padding:0 16px; border-radius:3px;
   border:1px solid var(--linea); background:var(--panel3); color:var(--tenue);
@@ -343,6 +358,8 @@ tbody tr:hover{background:var(--panel2);}
 
   <div id="barraModo">
     <button id="btnModo"></button>
+    <button id="btnGuardarSalir"><b>💾 Guardar y salir</b><small>Guarda la rueda y va a about:blank</small></button>
+    <button id="btnCargar">↺ Cargar progreso</button>
     <button id="btnBlancoAqui" hidden>Pantalla en blanco aquí</button>
     <div id="modoNota"></div>
   </div>
@@ -1522,6 +1539,8 @@ function alternarModoBlank(){
 
 function pintarBotonModo(){
   const b = $('#btnModo'), n = $('#modoNota'), sec = $('#btnBlancoAqui');
+  const car = $('#btnCargar');
+  if (car) car.disabled = !hayPartida();
   if (sec && (enBlanco() || enBlank())) sec.hidden = true;
   if (enBlanco()){
     b.classList.add('vuelta');
@@ -1536,8 +1555,92 @@ function pintarBotonModo(){
   } else {
     b.classList.remove('vuelta');
     b.innerHTML = '<b>⧉ Abrir en about:blank</b><small>Clona la terminal en una ventana en blanco</small>';
-    n.innerHTML = 'Estás en la <b>vista normal</b>. El botón abre una ventana <b>about:blank</b> y escribe dentro una copia completa de la terminal; desde esa ventana el mismo botón te devuelve acá.';
+    n.innerHTML = 'Dos caminos a <b>about:blank</b>: el primero abre una ventana nueva y escribe dentro una copia de la terminal (necesita que el navegador permita ventanas emergentes). El segundo guarda la rueda y manda <b>esta misma página</b> a about:blank; para volver, recarga y pulsa <b>Cargar progreso</b>.';
   }
+}
+
+/* ---------- Guardar la rueda y salir a about:blank ---------- */
+const CLAVE_GUARDADO = 'quantterminal_progreso';
+
+function irAAboutBlank() {
+  window.location.href = "about:blank";
+}
+
+function estadoParaGuardar(){
+  return {
+    v: 1, t: tMercado, velocidad, sel: sel.id, seqOrden,
+    cuenta: Object.assign({}, cuenta, {curva: cuenta.curva.slice(-200)}),
+    ordenes: ordenes.slice(-120),
+    ejecuciones: ejecuciones.slice(0, 80),
+    instr: INSTR.map(it => ({
+      id: it.id, px: it.px, ancla: it.ancla, pxAnt: it.pxAnt,
+      deriva: it.deriva, volAct: it.volAct,
+      pos: it.pos, velas: it.velas.slice(-200), vela: it.vela
+    }))
+  };
+}
+
+function guardarPartida(){
+  try {
+    localStorage.setItem(CLAVE_GUARDADO, JSON.stringify(estadoParaGuardar()));
+    return true;
+  } catch(e){
+    return false;   // modo privado, cuota llena o almacenamiento bloqueado
+  }
+}
+
+function hayPartida(){
+  try { return !!localStorage.getItem(CLAVE_GUARDADO); } catch(e){ return false; }
+}
+
+function cargarPartida(){
+  let crudo = null;
+  try { crudo = localStorage.getItem(CLAVE_GUARDADO); } catch(e){}
+  if (!crudo) return 'nada';
+  let d;
+  try { d = JSON.parse(crudo); } catch(e){ return 'roto'; }
+  if (!d || d.v !== 1 || !Array.isArray(d.instr)) return 'roto';
+
+  tMercado = d.t;
+  velocidad = d.velocidad || 1;
+  seqOrden = d.seqOrden || 1;
+  cuenta = d.cuenta;
+  ordenes = d.ordenes || [];
+  ejecuciones = d.ejecuciones || [];
+  for (const g of d.instr){
+    const it = INSTR.find(x => x.id === g.id);
+    if (!it) continue;
+    it.px = g.px; it.ancla = g.ancla; it.pxAnt = g.pxAnt;
+    it.deriva = g.deriva; it.volAct = g.volAct;
+    it.pos = g.pos; it.velas = g.velas || []; it.vela = g.vela || null;
+    fijarCotizacion(it);
+    refrescarLibro(it, true);
+    it.cinta = [];
+    for (let k = 0; k < 12; k++) generarTrade(it, Math.max(0, tMercado - (12-k)*7));
+  }
+  sel = INSTR.find(x => x.id === d.sel) || INSTR[0];
+
+  // la interfaz tiene que reflejar el estado recuperado
+  domSim = null; firmaBlotter = ''; riesgoMontado = false;
+  ultimoBlotter = 0; ultimoPintado = 0; domCentrado = false;
+  $('#btnVel').textContent = '⏩ x' + velocidad;
+  $('#btnVel').classList.toggle('on', velocidad > 1);
+  const cerrada = tMercado >= CIERRE;
+  $('#estadoSesion').classList.toggle('cerrada', cerrada);
+  $('#txtSesion').textContent = cerrada ? 'Rueda cerrada' : 'Rueda abierta';
+  pausado = cerrada;
+  $('#btnPausa').textContent = pausado ? '▶ Seguir' : '⏸ Pausa';
+  $('#btnPausa').classList.toggle('on', pausado);
+  pintar();
+  return 'ok';
+}
+
+function guardarYSalir(){
+  if (!guardarPartida()){
+    avisar('No se pudo guardar: el navegador tiene bloqueado el almacenamiento de esta página. No se sale para no perder la rueda.', 'error');
+    return;
+  }
+  irAAboutBlank();
 }
 
 /* ---------- Controles ---------- */
@@ -1577,6 +1680,15 @@ $('#btnVel').addEventListener('click', () => {
 });
 $('#btnModo').addEventListener('click', alternarModoBlank);
 $('#btnBlancoAqui').addEventListener('click', () => capaBlanca(true));
+$('#btnGuardarSalir').addEventListener('click', guardarYSalir);
+$('#btnCargar').addEventListener('click', () => {
+  const r = cargarPartida();
+  if (r === 'ok') avisar('Progreso cargado: rueda de las ' + hora(tMercado) + ' con ' +
+    INSTR.filter(x => x.pos.cant).length + ' posición(es) y ' +
+    ordenes.filter(o => o.estado === 'trabajando').length + ' orden(es) trabajando.', 'ok');
+  else if (r === 'nada') avisar('No hay ninguna rueda guardada todavía. Usa «Guardar y salir» para grabar esta.', 'error');
+  else avisar('La partida guardada no se pudo leer y se ignoró.', 'error');
+});
 $('#btnReset').addEventListener('click', () => {
   nuevaSesion();
   $('#estadoSesion').classList.remove('cerrada');
@@ -1614,6 +1726,7 @@ nuevaSesion();
 elegirTipo('mercado');
 pintarBotonModo();
 pintar();
+if (hayPartida()) avisar('Hay una rueda guardada. Pulsa «Cargar progreso» para retomarla.', '');
 requestAnimationFrame(ts => { ultimoFrame = ts; requestAnimationFrame(bucle); });
 </script>
 </body>
