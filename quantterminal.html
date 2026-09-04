@@ -88,6 +88,11 @@ button:focus-visible, input:focus-visible, [tabindex]:focus-visible{
 #btnModo.vuelta{border-color:var(--alza); background:rgba(53,196,137,.12); color:var(--alza);}
 #btnModo.vuelta:hover{background:rgba(53,196,137,.22);}
 #modoNota{font-size:12px; color:var(--apagado); max-width:56ch; line-height:1.5;}
+#capaBlanco{
+  position:fixed; inset:0; background:#fff; z-index:9999; cursor:pointer;
+  display:flex; align-items:flex-end; justify-content:center; padding:16px;
+}
+#capaBlanco span{color:#c8c8c8; font:12px/1.4 var(--sans);}
 #modoNota b{color:var(--tenue); font-weight:600;}
 
 /* ---------- Cinta de noticias ---------- */
@@ -331,7 +336,7 @@ tbody tr:hover{background:var(--panel2);}
   </header>
 
   <div id="barraModo">
-    <button id="btnModo" onclick="alternarModoBlank()"></button>
+    <button id="btnModo"></button>
     <div id="modoNota"></div>
   </div>
 
@@ -709,6 +714,22 @@ function noRealizado(){
 function margenUsado(){
   return INSTR.reduce((s,it) => s + Math.abs(it.pos.cant)*it.margen, 0);
 }
+// Margen que ya reservan las órdenes trabajando: sin esto se podían dejar veinte
+// límites en reposo que juntos superaban el patrimonio de la cuenta.
+function margenComprometido(){
+  let total = 0;
+  for (const it of INSTR){
+    for (const lado of ['compra','venta']){
+      const q = ordenes.reduce((a,o) =>
+        a + (o.estado === 'trabajando' && o.sim === it.id && o.lado === lado ? o.cant : 0), 0);
+      if (!q) continue;
+      const cubre = lado === 'compra' ? Math.max(0, -it.pos.cant) : Math.max(0, it.pos.cant);
+      total += Math.max(0, q - cubre) * it.margen;
+    }
+  }
+  return total;
+}
+const poderDeCompra = () => equity() - margenUsado() - margenComprometido();
 function equity(){
   return cuenta.efectivo + cuenta.realizado - cuenta.comisiones + noRealizado();
 }
@@ -1024,7 +1045,7 @@ function pintar(){
   const mn = $('#mNoReal');
   mn.textContent = fmtSig(nr); mn.className = 'v ' + signoClase(nr);
   $('#mMargen').textContent = fmtUSD(mu, 0);
-  $('#mPoder').textContent = fmtUSD(Math.max(0, eq - mu), 0);
+  $('#mPoder').textContent = fmtUSD(Math.max(0, poderDeCompra()), 0);
   $('#mApal').textContent = (exp.bruta/Math.max(1,eq)).toFixed(2) + '×';
   $('#reloj').textContent = hora(tMercado);
   $('#relojLista').textContent = hhmm(tMercado);
@@ -1290,6 +1311,7 @@ function pintarBlotter(eq, nr, mu, pnlDia, exp){
           ${cifra('Patrimonio','rEq')}${cifra('P&L del día','rPnl')}
           ${cifra('Exposición bruta','rBruta')}${cifra('Exposición neta','rNeta')}
           ${cifra('Apalancamiento','rApal')}${cifra('Margen usado','rMargen')}
+          ${cifra('Reservado en órdenes','rRes')}
           ${cifra('Caída máxima','rDd')}${cifra('Comisiones','rCom')}
           ${cifra('Operaciones cerradas','rOps')}${cifra('Ratio de acierto','rTasa')}
         </div>
@@ -1307,6 +1329,7 @@ function pintarBlotter(eq, nr, mu, pnlDia, exp){
     poner('rNeta', fmtSig(exp.neta), signoClase(exp.neta));
     poner('rApal', apal.toFixed(2) + '×', apal > 4 ? 'baja' : '');
     poner('rMargen', fmtUSD(mu,0) + '  (' + fmtN(mu/Math.max(1,eq)*100,0) + '%)', mu/eq > 0.6 ? 'baja' : '');
+    poner('rRes', fmtUSD(margenComprometido(), 0), '');
     poner('rDd', cuenta.ddMax ? '−' + fmtUSD(cuenta.ddMax,0) : fmtUSD(0,0), cuenta.ddMax > 4000 ? 'baja' : '');
     poner('rCom', '−' + fmtUSD(cuenta.comisiones), '');
     poner('rOps', String(cuenta.operaciones), '');
@@ -1349,10 +1372,14 @@ function avisar(txt, tipo){
 function enviar(lado){
   if (tMercado >= CIERRE){ avisar('La rueda está cerrada: no se aceptan órdenes nuevas.', 'error'); return; }
   const cant = Math.max(1, Math.floor(cantidad));
-  const eq = equity(), poder = eq - margenUsado();
+  const poder = poderDeCompra();
   const req = margenDe(sel, lado, cant);
   if (req > poder){
-    avisar('No alcanza el poder de compra: la orden pide ' + fmtUSD(req,0) + ' de margen y tienes ' + fmtUSD(Math.max(0,poder),0) + '. Reduce la cantidad o cierra posiciones.', 'error');
+    const res = margenComprometido();
+    avisar('No alcanza el poder de compra: la orden pide ' + fmtUSD(req,0) + ' de margen y quedan ' +
+           fmtUSD(Math.max(0,poder),0) +
+           (res ? ' (hay ' + fmtUSD(res,0) + ' reservados por órdenes trabajando)' : '') +
+           '. Reduce la cantidad, cancela órdenes o cierra posiciones.', 'error');
     return;
   }
   if (tipoOrden === 'mercado'){
@@ -1436,19 +1463,48 @@ function enBlank(){
   try { return !!window.opener && !window.opener.closed; } catch(e){ return false; }
 }
 
+// Dentro de un iframe con sandbox (el visor de artifacts) window.open no abre nada.
+// En ese caso se tapa la terminal con una capa blanca, que da el mismo ir y volver
+// sin depender de ventanas emergentes.
+function capaBlanca(activar){
+  let capa = $('#capaBlanco');
+  if (activar){
+    if (!capa){
+      capa = document.createElement('div');
+      capa.id = 'capaBlanco';
+      capa.innerHTML = '<span>Haz clic aquí o pulsa Esc para volver a la terminal</span>';
+      capa.addEventListener('click', () => capaBlanca(false));
+      document.body.appendChild(capa);
+    }
+    capa.hidden = false;
+  } else if (capa){
+    capa.hidden = true;
+  }
+  pintarBotonModo();
+}
+const enBlanco = () => { const c = $('#capaBlanco'); return !!c && !c.hidden; };
+
 function alternarModoBlank(){
+  if (enBlanco()){ capaBlanca(false); return; }
   if (enBlank()){
     try { window.opener.focus(); } catch(e){}
     window.close();
     return;
   }
-  const v = abrirEnAboutBlank();
-  if (!v) avisar('El navegador bloqueó la ventana emergente. Permite los pop-ups de esta página y vuelve a intentarlo.', 'error');
-  else avisar('Terminal clonada en about:blank. El botón de esa ventana te trae de vuelta acá.', 'ok');
+  let v = null;
+  try { v = abrirEnAboutBlank(); } catch(e){ v = null; }
+  if (v) avisar('Terminal clonada en about:blank. El botón de esa ventana te trae de vuelta acá.', 'ok');
+  else capaBlanca(true);
 }
 
 function pintarBotonModo(){
   const b = $('#btnModo'), n = $('#modoNota');
+  if (enBlanco()){
+    b.classList.add('vuelta');
+    b.innerHTML = '<b>↩ Volver a la terminal</b><small>Quita la pantalla en blanco</small>';
+    n.innerHTML = 'Estás en <b>pantalla en blanco</b>. Esta página corre dentro de un marco con sandbox, que no deja abrir ventanas nuevas, así que la vista en blanco se hace acá mismo. Para la ventana <b>about:blank</b> de verdad, abre el archivo <b>quantterminal.html</b> directo en el navegador.';
+    return;
+  }
   if (enBlank()){
     b.classList.add('vuelta');
     b.innerHTML = '<b>↩ Volver a la vista normal</b><small>Cierra esta ventana y regresa a la original</small>';
@@ -1456,7 +1512,7 @@ function pintarBotonModo(){
   } else {
     b.classList.remove('vuelta');
     b.innerHTML = '<b>⧉ Abrir en about:blank</b><small>Clona la terminal en una ventana en blanco</small>';
-    n.innerHTML = 'Estás en la <b>vista normal</b>. El botón clona la terminal en una ventana <b>about:blank</b>, y desde ahí el mismo botón te devuelve acá. Necesita que el navegador permita ventanas emergentes.';
+    n.innerHTML = 'Estás en la <b>vista normal</b>. El botón clona la terminal en una ventana <b>about:blank</b>; si el navegador no deja abrir ventanas, pasa a pantalla en blanco acá mismo. En los dos casos el mismo botón te trae de vuelta.';
   }
 }
 
@@ -1495,6 +1551,7 @@ $('#btnVel').addEventListener('click', () => {
   $('#btnVel').textContent = '⏩ x' + velocidad;
   $('#btnVel').classList.toggle('on', velocidad > 1);
 });
+$('#btnModo').addEventListener('click', alternarModoBlank);
 $('#btnReset').addEventListener('click', () => {
   nuevaSesion();
   $('#estadoSesion').classList.remove('cerrada');
@@ -1519,7 +1576,10 @@ document.addEventListener('keydown', ev => {
   if (k === 'b'){ enviar('compra'); return; }
   if (k === 'v' || k === 's'){ enviar('venta'); return; }
   if (k === 'a'){ aplanar(sel); return; }
-  if (k === 'escape'){ cancelarTodo(); return; }
+  if (k === 'escape'){
+    if (enBlanco()){ capaBlanca(false); return; }
+    cancelarTodo(); return;
+  }
   const i = parseInt(k, 10);
   if (i >= 1 && i <= INSTR.length) elegir(INSTR[i-1]);
 });
