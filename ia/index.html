@@ -123,6 +123,13 @@ button,input,select,textarea{font:inherit; color:inherit;}
 .franja .separa{flex:1;}
 .selector{background:var(--hueco); border:1px solid var(--linea); border-radius:var(--radio);
   padding:6px 10px; font-size:13px; font-weight:500; cursor:pointer; max-width:200px;}
+.palanca{display:inline-flex; align-items:center; gap:6px; cursor:pointer; user-select:none;
+  padding:6px 11px; border-radius:var(--radio); border:1px solid var(--linea);
+  background:var(--hueco); font-size:12.5px; font-weight:600; color:var(--tenue);
+  font-family:var(--display); letter-spacing:.02em;}
+.palanca:hover{color:var(--texto);}
+.palanca[aria-pressed="true"]{color:var(--senal); border-color:var(--senal); background:var(--senal-fondo);}
+.palanca[disabled]{opacity:.4; cursor:not-allowed;}
 .aguja{font-family:var(--mono); font-size:11.5px; color:var(--apagado);
   font-variant-numeric:tabular-nums; white-space:nowrap; display:flex; align-items:center; gap:8px;}
 .medidor{width:52px; height:4px; border-radius:3px; background:var(--linea); overflow:hidden;}
@@ -184,6 +191,24 @@ button,input,select,textarea{font:inherit; color:inherit;}
 .hljs-tag .hljs-name{color:var(--morado, #9a6ad6);}
 .hljs-meta,.hljs-deletion{color:var(--tenue);}
 .hljs-emphasis{font-style:italic;} .hljs-strong{font-weight:600;}
+
+.salida{border:1px solid var(--linea); border-radius:var(--radio); background:#0B1020; overflow:hidden;}
+.salida .cab{display:flex; align-items:center; gap:8px; padding:5px 8px 5px 12px;
+  background:rgba(255,255,255,.05); font-family:var(--mono); font-size:11px; color:#93A3C4;}
+.salida .cab .separa{flex:1;}
+.salida pre{margin:0; padding:11px 14px; overflow-x:auto; max-height:280px;}
+.salida code{font-family:var(--mono); font-size:12.6px; line-height:1.6; white-space:pre-wrap; color:#D6DEEF;}
+.salida .err{color:#FF9D93;}
+.salida .val{color:#8CE0AE;}
+
+.rastro{display:flex; flex-direction:column; gap:5px;}
+.paso{display:flex; align-items:center; gap:8px; font-family:var(--mono); font-size:11.5px;
+  color:var(--tenue); border:1px solid var(--linea); border-radius:8px; padding:5px 10px;
+  background:var(--hueco);}
+.paso .icono{flex:none;}
+.paso .arg{color:var(--apagado); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.paso.ok{border-color:color-mix(in srgb,var(--brote) 45%,var(--linea));}
+.paso.mal{border-color:color-mix(in srgb,var(--brasa) 45%,var(--linea)); color:var(--brasa);}
 
 .razonando{border:1px dashed var(--linea); border-radius:var(--radio); background:var(--hueco);}
 .razonando summary{cursor:pointer; padding:7px 12px; font-family:var(--display); font-size:11.5px;
@@ -373,6 +398,7 @@ kbd{font-family:var(--mono); font-size:11px; background:var(--panel-2); border:1
         <option value="default" selected>Equilibrado</option>
         <option value="complex">Profundo</option>
       </select>
+      <button class="palanca" id="palHerr" aria-pressed="false" title="Deja que el modelo calcule, dibuje y busque en tu historial por su cuenta">⚙ Herramientas</button>
       <div class="separa"></div>
       <span class="aguja" id="aguja"></span>
       <button class="btn desnudo" id="btTema" title="Cambiar tema">◐</button>
@@ -451,6 +477,8 @@ kbd{font-family:var(--mono); font-size:11px; background:var(--panel-2); border:1
 
 <input type="file" id="ficheros" multiple hidden>
 <input type="file" id="refFichero" accept="image/*" hidden>
+<iframe id="cajaFuerte" sandbox="allow-scripts" referrerpolicy="no-referrer"
+  style="position:absolute;width:0;height:0;border:0;visibility:hidden" title="Entorno aislado"></iframe>
 
 <div class="velo" id="velo">
   <div class="panel" role="dialog" aria-modal="true" aria-label="Ajustes">
@@ -718,7 +746,7 @@ const cfg = Object.assign({
   clave:"", modelo:"claude-opus-5", maxTokens:32000, buscar:true, razonar:true, compactar:true,
   instrucciones:INSTRUCCIONES_FABRICA, tier:"default", skill:"ninguna",
   estilo:"plano", formato:"cuadrado", tema:"auto",
-  motorImg:"svg",
+  motorImg:"svg", herramientas:false, voz:true,
   gemClave:"", gemModelo:"gemini-2.5-flash-image",
   oaEndpoint:"https://api.openai.com/v1/images/generations", oaClave:"", oaModelo:"gpt-image-1"
 }, leer("nexo.cfg", {}));
@@ -726,7 +754,8 @@ const cfg = Object.assign({
 let chats = leer("nexo.chats", []);
 let obras = leer("nexo.obras", []);
 let activo = null, corriendo = null, adjuntos = [], nivelMax = 3, muestraVisible = true;
-let motor = null, sample = null, db = null, descargas = null, puedeImagenes = false, puedeDocs = false;
+let motor = null, sample = null, db = null, descargas = null;
+let puedeImagenes = false, puedeHerramientas = false;
 let previaActual = null, previaModo = "vista";
 let refImagen = null;
 
@@ -768,10 +797,12 @@ function md(fuente){
     if(marca){
       cerrarL(); cerrarC();
       const b = bloques[+marca[1]];
-      const ejecutable = /^(html|svg)$/.test(b.leng);
+      const verMe = /^(html|svg)$/.test(b.leng);
+      const correrMe = /^(js|javascript|node|jsx)$/.test(b.leng);
       fuera.push('<div class="bloque-codigo" data-bloque="' + marca[1] + '"><div class="cinta"><span>' +
         esc(b.leng) + '</span><span class="grupo">' +
-        (ejecutable ? '<button type="button" class="btn chico ver-bloque">▶ Ver</button>' : "") +
+        (verMe ? '<button type="button" class="btn chico ver-bloque">▶ Ver</button>' : "") +
+        (correrMe ? '<button type="button" class="btn chico correr-bloque">▶ Ejecutar</button>' : "") +
         '<button type="button" class="btn chico copiar-codigo">copiar</button></span></div><pre><code>' +
         esc(b.codigo) + "</code></pre></div>");
       continue;
@@ -862,6 +893,19 @@ function ponerMd(cont, texto, conResaltado){
     };
     const ver = caja.querySelector(".ver-bloque");
     if(ver) ver.onclick = () => abrirPrevia(b);
+    const correr = caja.querySelector(".correr-bloque");
+    if(correr) correr.onclick = async () => {
+      correr.disabled = true;
+      correr.textContent = "ejecutando…";
+      caja.parentNode.querySelectorAll(".salida").forEach(x => x.remove());
+      const r = await ejecutarJS(b.codigo, 5000);
+      const destino = document.createElement("div");
+      caja.after(destino);
+      pintarSalida(r, destino);
+      destino.replaceWith(...destino.childNodes);
+      correr.disabled = false;
+      correr.textContent = "▶ Ejecutar";
+    };
   });
   if(conResaltado) resaltar(cont);
   return bloques;
@@ -980,8 +1024,230 @@ function pintarPrevia(){
 
 function cerrarPrevia(){ $("#previa").hidden = true; previaActual = null; }
 
+/* ═══════════════════════════════════════════════════════════════════
+   Entorno aislado de ejecución
+
+   El código corre dentro de un iframe con sandbox y SIN allow-same-origin,
+   así que vive en un origen opaco: no ve el DOM de la página, ni el
+   almacenamiento, ni las claves. Se habla con él solo por postMessage.
+   ═══════════════════════════════════════════════════════════════════ */
+
+const GUION_CAJA = `
+<script type="text/plain" id="obrero">
+const fmt = v => {
+  if (v === undefined) return "undefined";
+  if (v === null) return "null";
+  if (typeof v === "string") return v;
+  if (typeof v === "function") return v.toString();
+  const seguro = (k, x) => typeof x === "bigint" ? String(x) : x;
+  try {
+    const corto = JSON.stringify(v, seguro);
+    if (corto !== undefined && corto.length <= 90) return corto;
+    return JSON.stringify(v, seguro, 2);
+  } catch (e) { return String(v); }
+};
+onmessage = async ev => {
+  const salida = [];
+  ["log","info","warn","error"].forEach(m => {
+    self.console[m] = (...a) => { salida.push((m === "error" ? "\u26a0 " : "") + a.map(fmt).join(" ")); };
+  });
+  let valor, tieneValor = false, error = null;
+  try {
+    const f = new Function('"use strict";return (async () => {' + ev.data + '})()');
+    valor = await f();
+    tieneValor = valor !== undefined;
+  } catch (e) {
+    error = String(e && e.stack ? String(e.stack).split(String.fromCharCode(10)).slice(0, 3).join(String.fromCharCode(10)) : e);
+  }
+  postMessage({ salida, valor: tieneValor ? fmt(valor) : null, tieneValor, error });
+};
+<\/script>
+<script>
+const FUENTE = document.getElementById("obrero").textContent;
+addEventListener("message", ev => {
+  const d = ev.data || {};
+  if (!d.codigo) return;
+  let obrero;
+  try {
+    obrero = new Worker(URL.createObjectURL(new Blob([FUENTE], { type: "text/javascript" })));
+  } catch (e) {
+    return parent.postMessage({ id: d.id, error: "No se pudo abrir el entorno de ejecución." }, "*");
+  }
+  let cerrado = false;
+  const cerrar = r => {
+    if (cerrado) return;
+    cerrado = true;
+    try { obrero.terminate(); } catch (e) {}
+    parent.postMessage(Object.assign({ id: d.id }, r), "*");
+  };
+  const reloj = setTimeout(() => cerrar({
+    error: "Se pasó de " + (d.ms / 1000) + " s y se cortó. Revisa si hay un bucle sin fin.", cortado: true
+  }), d.ms);
+  obrero.onmessage = m => { clearTimeout(reloj); cerrar(m.data); };
+  obrero.onerror = e => { clearTimeout(reloj); cerrar({ error: e.message || "falló el entorno de ejecución." }); };
+  obrero.postMessage(d.codigo);
+});
+parent.postMessage({ listo: true }, "*");
+<\/script>`;
+
+let cajaLista = null, pendientes = new Map(), seqCaja = 0;
+
+function prepararCaja(){
+  const marco = $("#cajaFuerte");
+  cajaLista = new Promise(res => {
+    const oye = ev => {
+      if(ev.source !== marco.contentWindow) return;   // solo nuestra caja
+      if(ev.data?.listo) return res(true);
+      const p = pendientes.get(ev.data?.id);
+      if(p){ pendientes.delete(ev.data.id); p(ev.data); }
+    };
+    addEventListener("message", oye);
+    setTimeout(() => res(false), 6000);
+  });
+  marco.srcdoc = GUION_CAJA;
+}
+
+/* El código corre en un Worker DENTRO del iframe: hilo aparte, así que un
+   bucle sin fin no congela la página, y terminate() lo mata de verdad. */
+async function ejecutarJS(codigo, ms){
+  if(!(await cajaLista)) return {error:"El entorno de ejecución no arrancó."};
+  const id = ++seqCaja;
+  const respuesta = new Promise(res => pendientes.set(id, res));
+  // Red de seguridad por si el propio iframe dejara de contestar.
+  const corte = new Promise(res => setTimeout(() => res({error:"El entorno dejó de responder."}), ms + 4000));
+  $("#cajaFuerte").contentWindow.postMessage({id, codigo, ms}, "*");
+  const r = await Promise.race([respuesta, corte]);
+  pendientes.delete(id);
+  return r;
+}
+
+function pintarSalida(r, cont){
+  const caja = document.createElement("div");
+  caja.className = "salida";
+  const cab = document.createElement("div");
+  cab.className = "cab";
+  const t = document.createElement("span");
+  t.textContent = r.error ? "error" : "resultado";
+  const sep = document.createElement("div"); sep.className = "separa";
+  const x = document.createElement("button");
+  x.type = "button"; x.className = "btn chico"; x.textContent = "ocultar";
+  x.onclick = () => caja.remove();
+  cab.append(t, sep, x);
+  const pre = document.createElement("pre");
+  const cod = document.createElement("code");
+  const trozos = [];
+  if(r.salida?.length) trozos.push(r.salida.join("\n"));
+  if(r.tieneValor) trozos.push("⟵ " + r.valor);
+  if(r.error) trozos.push("⚠ " + r.error);
+  cod.textContent = trozos.join("\n") || "(sin salida)";
+  if(r.error) cod.classList.add("err");
+  else if(r.tieneValor && !r.salida?.length) cod.classList.add("val");
+  pre.append(cod);
+  caja.append(cab, pre);
+  cont.append(caja);
+  return caja;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   Herramientas que el modelo puede usar por su cuenta.
+   Pocas, de resultado pequeño, y ninguna destructiva.
+   ═══════════════════════════════════════════════════════════════════ */
+function catalogoHerramientas(chat){
+  return [
+    {
+      nombre:"ejecutar_javascript",
+      descripcion:"Ejecuta JavaScript en un entorno aislado y devuelve lo que imprima con console.log y su valor final. " +
+        "Úsalo SIEMPRE que haga falta calcular, contar, ordenar, convertir unidades, procesar texto o comprobar una fórmula, " +
+        "en vez de estimar el resultado de cabeza. No hay red, ni DOM, ni acceso a archivos.",
+      esquema:{type:"object", properties:{
+        codigo:{type:"string", description:"El código. Puede usar await. Lo último que devuelvas o imprimas es el resultado."}},
+        required:["codigo"], additionalProperties:false},
+      icono:"⚡",
+      resumen: e => (e.codigo || "").replace(/\s+/g, " ").slice(0, 70),
+      correr: async e => {
+        const r = await ejecutarJS(String(e.codigo || ""), 5000);
+        if(r.error) return {ok:false, error:r.error, salida:r.salida || []};
+        return {ok:true, salida:r.salida || [], valor: r.tieneValor ? r.valor : null};
+      }
+    },
+    {
+      nombre:"buscar_en_mis_conversaciones",
+      descripcion:"Busca texto en las conversaciones guardadas del usuario y devuelve los fragmentos que coinciden. " +
+        "Úsalo cuando pregunte por algo que ya habló contigo antes.",
+      esquema:{type:"object", properties:{
+        consulta:{type:"string", description:"Palabras a buscar."}}, required:["consulta"], additionalProperties:false},
+      icono:"🔎",
+      resumen: e => e.consulta || "",
+      correr: async e => {
+        const q = String(e.consulta || "").toLowerCase().trim();
+        if(!q) return {hallazgos:[]};
+        const hallazgos = [];
+        for(const c of chats){
+          for(const t of c.turnos){
+            const tx = t.texto || "";
+            const i = tx.toLowerCase().indexOf(q);
+            if(i < 0) continue;
+            hallazgos.push({conversacion:c.titulo, quien:t.rol === "user" ? "usuario" : "tú",
+                            fragmento:tx.slice(Math.max(0, i - 120), i + 220)});
+            if(hallazgos.length >= 6) break;
+          }
+          if(hallazgos.length >= 6) break;
+        }
+        return {hallazgos, total:hallazgos.length};
+      }
+    },
+    {
+      nombre:"leer_archivo_adjunto",
+      descripcion:"Devuelve el contenido completo de un archivo de texto que el usuario adjuntó en esta conversación. " +
+        "Úsalo si necesitas releer una parte que quedó recortada.",
+      esquema:{type:"object", properties:{
+        nombre:{type:"string", description:"Nombre del archivo, tal como aparece."}},
+        required:["nombre"], additionalProperties:false},
+      icono:"📃",
+      resumen: e => e.nombre || "",
+      correr: async e => {
+        const q = String(e.nombre || "").toLowerCase();
+        for(const t of chat.turnos){
+          for(const a of (t.adjuntos || [])){
+            if(a.texto != null && (a.nombre || "").toLowerCase().includes(q))
+              return {nombre:a.nombre, contenido:a.texto.slice(0, 60000)};
+          }
+        }
+        return {error:"No hay ningún archivo de texto con ese nombre en esta conversación."};
+      }
+    },
+    {
+      nombre:"crear_imagen",
+      descripcion:"Dibuja una imagen vectorial y la muestra al usuario. Úsalo cuando pida ver algo, un diagrama, " +
+        "un icono o una ilustración. Describe la escena con detalle.",
+      esquema:{type:"object", properties:{
+        descripcion:{type:"string", description:"Qué dibujar, con detalle."}},
+        required:["descripcion"], additionalProperties:false},
+      icono:"🎨",
+      resumen: e => (e.descripcion || "").slice(0, 70),
+      correr: async (e, alArtefacto) => {
+        const d = String(e.descripcion || "");
+        if(!d) return {error:"Falta la descripción."};
+        const r = await responder({
+          sinHerramientas: true,
+          turnos:[{role:"user", content:[{type:"text", text:recetaDibujo() + d}]}],
+          sistema:"Eres un ilustrador que dibuja con SVG y no escribe nada más.",
+          aviso:() => {}
+        });
+        const limpio = sanearSVG(r.texto);
+        if(!limpio) return {error:"No salió un SVG válido."};
+        obras.unshift({id:nid(), svg:limpio, prompt:d, estilo:cfg.estilo, formato:cfg.formato,
+                       motor:"svg", cuando:Date.now()});
+        guardarObras();
+        alArtefacto?.({svg:limpio, prompt:d});
+        return {ok:true, nota:"Imagen creada y mostrada al usuario. No hace falta que la describas otra vez."};
+      }
+    }
+  ];
+}
+
 /* ═══════════ MOTOR A · Messages API ═══════════ */
-function cuerpoAPI(turnos, sistema, nivel, breve){
+function cuerpoAPI(turnos, sistema, nivel, breve, extras){
   const m = MODELOS[cfg.modelo] || MODELOS["claude-opus-5"];
   const c = {
     model: cfg.modelo,
@@ -994,7 +1260,10 @@ function cuerpoAPI(turnos, sistema, nivel, breve){
   else if(cfg.razonar && !breve) c.thinking = {type:"enabled", budget_tokens: Math.min(8000, c.max_tokens - 1024)};
   if(m.esfuerzo) c.output_config = {effort: breve ? "low" : (ESFUERZO[cfg.tier] || "high")};
   const betas = [];
-  if(nivel >= 1 && cfg.buscar && m.busca && !breve) c.tools = [{type:m.busca, name:"web_search", max_uses:8}];
+  const herr = [];
+  if(nivel >= 1 && cfg.buscar && m.busca && !breve) herr.push({type:m.busca, name:"web_search", max_uses:8});
+  for(const h of (extras || [])) herr.push({name:h.nombre, description:h.descripcion, input_schema:h.esquema});
+  if(herr.length) c.tools = herr;
   if(nivel >= 2 && cfg.compactar){ c.context_management = {edits:[{type:"compact_20260112"}]}; betas.push("compact-2026-01-12"); }
   if(nivel >= 3){ c.fallbacks = "default"; betas.push("server-side-fallback-2026-07-01"); }
   return {c, betas};
@@ -1073,10 +1342,10 @@ async function streamAPI(cuerpo, betas, senal, aviso){
   return res;
 }
 
-async function responderAPI({turnos, sistema, senal, aviso, breve}){
+async function responderAPI({turnos, sistema, senal, aviso, breve, extras}){
   let ultimo = null;
   for(let nivel = nivelMax; nivel >= 0; nivel--){
-    const {c, betas} = cuerpoAPI(turnos, sistema, nivel, breve);
+    const {c, betas} = cuerpoAPI(turnos, sistema, nivel, breve, extras);
     try{
       const r = await streamAPI(c, betas, senal, aviso);
       nivelMax = nivel;
@@ -1091,7 +1360,7 @@ async function responderAPI({turnos, sistema, senal, aviso, breve}){
 }
 
 /* ═══════════ MOTOR B · capacidad sample ═══════════ */
-async function responderSample({turnos, sistema, imagenes, senal, aviso, breve}){
+async function responderSample({turnos, sistema, imagenes, senal, aviso, breve, extras, onPaso, onArtefacto}){
   // No hay rol "system": las instrucciones van como primer turno de usuario.
   const entrada = [{role:"user", content:sistema}];
   for(const t of turnos){
@@ -1105,6 +1374,23 @@ async function responderSample({turnos, sistema, imagenes, senal, aviso, breve})
   const op = {signal:senal, cache:false, modelTier: breve ? "quick" : cfg.tier,
     onText: ({text}) => { res.texto = text; aviso(res); }};
   if(imagenes?.length && puedeImagenes) op.images = imagenes;
+  if(extras?.length && puedeHerramientas){
+    op.tools = extras.map(h => ({
+      name:h.nombre, description:h.descripcion, inputSchema:h.esquema,
+      execute: async entrada => {
+        onPaso?.({nombre:h.nombre, icono:h.icono, resumen:h.resumen(entrada || {}), estado:"corriendo"});
+        try{
+          const r = await h.correr(entrada || {}, x => onArtefacto?.(x));
+          onPaso?.({nombre:h.nombre, icono:h.icono, resumen:h.resumen(entrada || {}),
+                    estado: r?.error ? "mal" : "ok"});
+          return r;
+        }catch(e){
+          onPaso?.({nombre:h.nombre, icono:h.icono, resumen:h.resumen(entrada || {}), estado:"mal"});
+          throw e;
+        }
+      }
+    }));
+  }
 
   const r = await sample(entrada, op);
   res.texto = r.text;
@@ -1113,10 +1399,57 @@ async function responderSample({turnos, sistema, imagenes, senal, aviso, breve})
   return res;
 }
 
+/* Bucle de herramientas para el motor API: la capacidad sample lo lleva
+   por dentro, pero aquí hay que ejecutarlas y devolver los resultados. */
+async function responderAPIconHerramientas(args){
+  const extras = args.extras || [];
+  const porNombre = new Map(extras.map(h => [h.nombre, h]));
+  const turnos = args.turnos.slice();
+  const acumulado = {texto:"", razonamiento:"", fuentes:[], uso:{entrada:0, salida:0}, bloques:[]};
+
+  for(let ronda = 0; ronda < 6; ronda++){
+    const parcial = {texto:"", razonamiento:"", fuentes:[]};
+    const r = await responderAPI(Object.assign({}, args, {turnos, extras,
+      aviso: res => {
+        Object.assign(parcial, res);
+        args.aviso({texto: acumulado.texto + res.texto, razonamiento: acumulado.razonamiento + res.razonamiento,
+                    fuentes: acumulado.fuentes.concat(res.fuentes || [])});
+      }}));
+
+    acumulado.texto += (acumulado.texto && r.texto ? "\n\n" : "") + r.texto;
+    acumulado.razonamiento += r.razonamiento || "";
+    acumulado.fuentes = acumulado.fuentes.concat(r.fuentes || []);
+    acumulado.uso.entrada += r.uso?.entrada || 0;
+    acumulado.uso.salida += r.uso?.salida || 0;
+    acumulado.bloques = r.bloques;
+    acumulado.truncado = r.truncado;
+
+    const usos = (r.bloques || []).filter(b => b.type === "tool_use" && porNombre.has(b.name));
+    if(r.parada !== "tool_use" || !usos.length) return acumulado;
+
+    turnos.push({role:"assistant", content:r.bloques});
+    const resultados = [];
+    for(const u of usos){
+      const h = porNombre.get(u.name);
+      args.onPaso?.({nombre:h.nombre, icono:h.icono, resumen:h.resumen(u.input || {}), estado:"corriendo"});
+      let salida;
+      try{ salida = await h.correr(u.input || {}, x => args.onArtefacto?.(x)); }
+      catch(e){ salida = {error: String(e?.message || e)}; }
+      args.onPaso?.({nombre:h.nombre, icono:h.icono, resumen:h.resumen(u.input || {}),
+                     estado: salida?.error ? "mal" : "ok"});
+      resultados.push({type:"tool_result", tool_use_id:u.id,
+                       content:JSON.stringify(salida).slice(0, 30000), is_error: !!salida?.error});
+    }
+    turnos.push({role:"user", content:resultados});
+  }
+  return acumulado;
+}
+
 /* Punto único de entrada: espera al arranque antes de tocar ningún motor. */
 async function responder(args){
   await arranque;
-  if(motor === "api") return responderAPI(args);
+  if(args.sinHerramientas) args = Object.assign({}, args, {extras:null});
+  if(motor === "api") return args.extras?.length ? responderAPIconHerramientas(args) : responderAPI(args);
   if(motor === "sample") return responderSample(args);
   const e = new Error("La página no logró conectarse con Claude. Recárgala.");
   e.code = "sin_motor";
@@ -1310,6 +1643,21 @@ function dibujarTurno(t, chat){
     return el;
   }
 
+  if(t.pasos?.length){
+    const r = document.createElement("div");
+    r.className = "rastro";
+    for(const p of t.pasos) r.append(dibujarPaso(p));
+    el.append(r);
+  }
+  if(t.artefactos?.length){
+    for(const a of t.artefactos){
+      const marco = document.createElement("div");
+      marco.style.cssText = "background:var(--lienzo);border:1px solid var(--linea);border-radius:12px;padding:10px";
+      const limpio = sanearSVG(a.svg);
+      if(limpio) marco.innerHTML = limpio;
+      el.append(marco);
+    }
+  }
   if(t.razonamiento){
     const det = document.createElement("details");
     det.className = "razonando";
@@ -1383,6 +1731,20 @@ function dibujarTurno(t, chat){
   return el;
 }
 
+const ROTULO_HERR = {
+  ejecutar_javascript:"Calculando", buscar_en_mis_conversaciones:"Buscando en tu historial",
+  leer_archivo_adjunto:"Leyendo el archivo", crear_imagen:"Dibujando"
+};
+function dibujarPaso(p){
+  const d = document.createElement("div");
+  d.className = "paso" + (p.estado === "ok" ? " ok" : p.estado === "mal" ? " mal" : "");
+  const i = document.createElement("span"); i.className = "icono"; i.textContent = p.icono || "⚙";
+  const n = document.createElement("span"); n.textContent = ROTULO_HERR[p.nombre] || p.nombre;
+  const a = document.createElement("span"); a.className = "arg"; a.textContent = p.resumen || "";
+  d.append(i, n, a);
+  return d;
+}
+
 function fichaAdjunto(a){
   if(a.texto != null || a.tipo === "application/pdf"){
     const d = document.createElement("div");
@@ -1425,7 +1787,18 @@ function mandos(t, chat){
       () => { ev.target.textContent = "No se pudo"; setTimeout(() => ev.target.textContent = "Copiar", 1400); });
   });
   if(t.rol === "user") add("Editar", "Volver a escribirla", () => editar(t, chat));
-  else                 add("Otra vez", "Pedir otra respuesta", () => regenerar(t, chat));
+  else{
+    add("Otra vez", "Pedir otra respuesta", () => regenerar(t, chat));
+    if(t.texto && window.speechSynthesis) add("Escuchar", "Leer la respuesta en voz alta", ev => {
+      if(speechSynthesis.speaking){ speechSynthesis.cancel(); ev.target.textContent = "Escuchar"; return; }
+      const u = new SpeechSynthesisUtterance(t.texto.replace(/```[\s\S]*?```/g, " (bloque de código) ")
+        .replace(/[*_#>|`]/g, "").slice(0, 6000));
+      u.lang = "es-ES"; u.rate = 1.05;
+      u.onend = () => { ev.target.textContent = "Escuchar"; };
+      ev.target.textContent = "Detener";
+      speechSynthesis.speak(u);
+    });
+  }
   add("Borrar", "Borrar de aquí en adelante", () => borrarDesde(t, chat));
   return barra;
 }
@@ -1499,7 +1872,7 @@ async function conversar(chat, imagenes, extra){
   await resumirSiHaceFalta(chat);
 
   const turno = {rol:"assistant", texto:"", razonamiento:"", fuentes:[], skill:cfg.skill,
-                 cuando:Date.now(), uso:{entrada:0, salida:0}};
+                 cuando:Date.now(), pasos:[], artefactos:[], uso:{entrada:0, salida:0}};
   chat.turnos.push(turno);
 
   const el = document.createElement("div");
@@ -1530,6 +1903,19 @@ async function conversar(chat, imagenes, extra){
     }
     ultimo = ahora;
     zona.textContent = "";
+    if(turno.pasos.length){
+      const tr = document.createElement("div");
+      tr.className = "rastro";
+      for(const p of turno.pasos) tr.append(dibujarPaso(p));
+      zona.append(tr);
+    }
+    for(const a of turno.artefactos){
+      const marco = document.createElement("div");
+      marco.style.cssText = "background:var(--lienzo);border:1px solid var(--linea);border-radius:12px;padding:10px";
+      const limpio = sanearSVG(a.svg);
+      if(limpio) marco.innerHTML = limpio;
+      zona.append(marco);
+    }
     if(r.razonamiento && cfg.razonar){
       const det = document.createElement("details");
       det.className = "razonando";
@@ -1558,8 +1944,21 @@ async function conversar(chat, imagenes, extra){
   try{
     const turnos = historial(chat, chat.turnos.length - 1);
     if(extra) turnos.push(extra);
+    const conHerramientas = cfg.herramientas && !extra &&
+      (motor === "api" || puedeHerramientas);
     const r = await responder({
       turnos, sistema: sistemaCompleto(), imagenes, senal: mando.signal,
+      extras: conHerramientas ? catalogoHerramientas(chat) : null,
+      onPaso: p => {
+        // Un paso en curso se reemplaza por su resultado, no se duplica.
+        const i = turno.pasos.findIndex(x => x.nombre === p.nombre && x.resumen === p.resumen);
+        if(i >= 0) turno.pasos[i] = p; else turno.pasos.push(p);
+        repintar({texto:turno.texto, razonamiento:turno.razonamiento, fuentes:turno.fuentes}, true);
+      },
+      onArtefacto: a => {
+        turno.artefactos.push(a);
+        repintar({texto:turno.texto, razonamiento:turno.razonamiento, fuentes:turno.fuentes}, true);
+      },
       aviso: res => { Object.assign(turno, {texto:res.texto, razonamiento:res.razonamiento}); repintar(res); }
     });
     Object.assign(turno, {
@@ -1992,6 +2391,7 @@ function abrirImagen(o){
 /* ═══════════ Lista ═══════════ */
 function guardar(chat){
   chat.actualizado = Date.now();
+  if(cfg.ultima !== chat.id){ cfg.ultima = chat.id; guardarCfg(); }
   escribir("nexo.chats", chats.slice(0, 40));
   if(db){
     const {id, ...cuerpo} = chat;
@@ -2050,6 +2450,7 @@ function pintarLista(){
       if(innerWidth <= 840) $("#riel").classList.add("plegado");
       if(c.id === activo) return;
       activo = c.id; muestraVisible = false;
+      cfg.ultima = c.id; guardarCfg();
       pintarLista(); pintarHilo();
     };
     lista.append(fila);
@@ -2321,6 +2722,12 @@ function montar(){
   $("#btEnviar").onclick = enviar;
   $("#btParar").onclick = () => corriendo?.abort();
   $("#btPararImg").onclick = () => corriendo?.abort();
+  $("#palHerr").onclick = () => {
+    cfg.herramientas = !cfg.herramientas;
+    $("#palHerr").setAttribute("aria-pressed", String(cfg.herramientas));
+    guardarCfg();
+  };
+  $("#palHerr").setAttribute("aria-pressed", String(cfg.herramientas));
   $("#btDibujar").onclick = dibujarObra;
   $("#btRef").onclick = () => $("#refFichero").click();
   $("#refFichero").onchange = ev => {
@@ -2378,7 +2785,12 @@ function montar(){
     if((ev.ctrlKey || ev.metaKey) && ev.shiftKey && ev.key.toLowerCase() === "n"){ ev.preventDefault(); $("#btNueva").click(); }
   });
 
+  if(cfg.ultima && chats.some(c => c.id === cfg.ultima && c.turnos.length)){
+    activo = cfg.ultima;
+    muestraVisible = false;
+  }
   if(innerWidth <= 840) $("#riel").classList.add("plegado");
+  prepararCaja();
   prepararVoz();
   pintarFichas();
   verVista("chat");
@@ -2402,6 +2814,14 @@ async function encender(){
         motor = "sample";
         const lim = await sample.limits().catch(() => null);
         puedeImagenes = !!lim?.images;
+        puedeHerramientas = !!lim?.tools;
+        if(!puedeHerramientas){
+          const b = $("#palHerr");
+          b.disabled = true;
+          b.title = "Tu cuenta no puede usar herramientas desde esta página.";
+          cfg.herramientas = false;
+          b.setAttribute("aria-pressed", "false");
+        }
         if(puedeImagenes && lim.images.mediaTypes) $("#ficheros").accept = lim.images.mediaTypes.join(",") + ",text/plain,.md,.csv,.json";
         else $("#ficheros").accept = "text/plain,.md,.csv,.json";
         descargas = await claude.use("downloads").catch(() => null);
@@ -2416,6 +2836,9 @@ async function encender(){
               chats = chats.concat(remotos.filter(r => !vistos.has(r.id)))
                            .sort((a, b) => (b.actualizado || 0) - (a.actualizado || 0));
             }
+            if(cfg.ultima && chats.some(c => c.id === cfg.ultima && c.turnos.length)){
+              activo = cfg.ultima; muestraVisible = false; pintarHilo();
+            }
             pintarLista();
           }catch(e){}
         }
@@ -2428,6 +2851,7 @@ async function encender(){
     // Sin runtime de Claude: archivo local, se usa la clave de la API.
     motor = "api";
     puedeImagenes = true;
+    puedeHerramientas = true;
     $("#secApi").hidden = false;
     $("#secImg").hidden = false;
     $("#ficheros").accept = "image/png,image/jpeg,image/gif,image/webp,application/pdf,text/plain,.md,.csv,.json,.js,.py";

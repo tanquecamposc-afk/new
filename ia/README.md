@@ -39,6 +39,35 @@ Se eligen en el desplegable de arriba y se suman a tus instrucciones, sin reempl
 | 🎯 **Preguntas de práctica** | 8 preguntas que suben de dificultad, con respuestas al final. |
 | ⚖ **Ver las dos caras** | El mejor argumento de cada lado y una postura al cierre, sin "depende". |
 
+## ⚙ Herramientas
+
+Con el interruptor **⚙ Herramientas** de la franja superior, el modelo deja de solo escribir y empieza a
+*hacer*. Cuando le sirve, llama por su cuenta a:
+
+| Herramienta | Para qué |
+|---|---|
+| ⚡ **Ejecutar JavaScript** | Calcular, contar, ordenar, convertir unidades o comprobar una fórmula ejecutándola de verdad, en vez de estimar el resultado |
+| 🔎 **Buscar en tus conversaciones** | Recuperar algo que ya hablaste con él |
+| 📃 **Leer un archivo adjunto** | Releer entero un archivo que le pasaste |
+| 🎨 **Crear una imagen** | Dibujar cuando le pides ver algo, sin cambiar de pestaña |
+
+Debajo de la respuesta ves qué usó y si salió bien. **Viene apagado** a propósito: cada vuelta con
+herramientas es una petición más, así que cuesta y tarda. Enciéndelo cuando lo necesites.
+
+### El entorno de ejecución
+
+El código no corre en la página. Corre en un **Worker dentro de un iframe con `sandbox` y sin
+`allow-same-origin`**, lo que da tres cosas a la vez:
+
+- **Origen opaco**: no ve el DOM de la página ni el almacenamiento donde viven tus claves. Comprobado:
+  intentar leer `parent.document` o `localStorage` desde ahí devuelve un error de referencia.
+- **Hilo aparte**: un bucle infinito no congela la interfaz.
+- **Se puede matar**: al pasarse del tiempo se llama a `terminate()` y el entorno queda listo para la
+  siguiente ejecución. No hay que recargar nada.
+
+Ese mismo entorno alimenta el botón **▶ Ejecutar** que aparece en los bloques de código JavaScript:
+lo pruebas ahí mismo y ves lo que imprime y el valor que devuelve.
+
 ## ✨ Acabado
 
 - **Código resaltado.** Los bloques salen con colores por lenguaje, derivados de los tokens del tema
@@ -49,6 +78,8 @@ Se eligen en el desplegable de arriba y se suman a tus instrucciones, sin reempl
   sin razonar— y ocurre una sola vez por conversación.
 - **El riel agrupa por antigüedad**: Hoy, Ayer, Esta semana, Este mes, Más antiguas.
 - **Hora de cada mensaje**, al pasar el mouse por encima.
+- **Reanuda donde lo dejaste**: al abrir, vuelve a la última conversación en vez de la pantalla vacía.
+- **Escuchar** la respuesta en voz alta, con la voz del sistema.
 - **Imprimible.** `Ctrl+P` saca la conversación como documento limpio: sin paneles, sin botones,
   negro sobre blanco y sin cortar los bloques de código por la mitad.
 - **Accesible.** El hilo es una bitácora que se anuncia sola a los lectores de pantalla
