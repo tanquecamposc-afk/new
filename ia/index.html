@@ -1,1461 +1,1137 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>NEXO IA — asistente con Claude</title>
+<title>NEXO IA</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icono.svg" type="image/svg+xml">
-<meta name="theme-color" content="#0f1420">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Public+Sans:ital,wght@0,400;0,500;0,600;1,400&family=JetBrains+Mono:wght@400;500&display=swap">
 <style>
 :root{
-  --bg:#0f1420; --panel:#1a2233; --panel2:#232e46; --borde:#33415e;
-  --texto:#e8eefc; --tenue:#93a3c4; --oro:#ffd25e; --verde:#6fe08b;
-  --rojo:#ff6b6b; --azul:#5cc8ff; --morado:#b18cff;
-  --burbuja-yo:#2b3a5c; --burbuja-ia:#182034;
+  --fondo:#F0F2F6; --panel:#FFFFFF; --panel-2:#E7EAF1; --hueco:#F7F8FB;
+  --linea:#D3D9E4; --linea-suave:#E4E8EF;
+  --texto:#141B28; --tenue:#5E6A80; --apagado:#8A94A6;
+  --senal:#B4761C; --senal-fondo:rgba(224,160,64,.14);
+  --onda:#1C7FA3; --brasa:#B8483A; --brote:#2E7D5B;
+  --sombra:0 1px 2px rgba(14,20,32,.06), 0 8px 24px -12px rgba(14,20,32,.18);
+  --radio:10px;
+  --fuerte-fondo:#0E1420; --fuerte-texto:#F4F6FA; --glifo-fondo:#0E1420;
+  --lienzo:#FBFBF9;
+  --display:"Archivo","Helvetica Neue",Arial,sans-serif;
+  --cuerpo:"Public Sans",system-ui,-apple-system,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Consolas,monospace;
 }
-*{box-sizing:border-box; margin:0; padding:0;}
-html,body{height:100%;}
-body{
-  background:radial-gradient(1200px 700px at 50% -10%, #1b2438 0%, var(--bg) 60%);
-  color:var(--texto);
-  font-family:"Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif;
-  display:flex; height:100%; overflow:hidden; font-size:15px;
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --fondo:#0E1420; --panel:#161E2C; --panel-2:#1E2837; --hueco:#121A27;
+    --linea:#2A3648; --linea-suave:#212B3B;
+    --texto:#E4E9F2; --tenue:#94A1B8; --apagado:#6B7789;
+    --senal:#E0A040; --senal-fondo:rgba(224,160,64,.13);
+    --onda:#4FB0D4; --brasa:#E08276; --brote:#6BC79A;
+    --sombra:0 1px 2px rgba(0,0,0,.3), 0 10px 30px -14px rgba(0,0,0,.6);
+    --fuerte-fondo:#E0A040; --fuerte-texto:#1A1206; --glifo-fondo:#1E2837;
+    --lienzo:#F4F4F1;
+  }
 }
-button, input, select, textarea{font-family:inherit; color:inherit;}
-button{
-  font-weight:700; cursor:pointer;
-  background:linear-gradient(180deg,#31405f,#26334e); border:1px solid var(--borde);
-  border-radius:9px; padding:7px 13px; font-size:14px; transition:filter .12s, transform .06s;
+:root[data-theme="dark"]{
+  --fondo:#0E1420; --panel:#161E2C; --panel-2:#1E2837; --hueco:#121A27;
+  --linea:#2A3648; --linea-suave:#212B3B;
+  --texto:#E4E9F2; --tenue:#94A1B8; --apagado:#6B7789;
+  --senal:#E0A040; --senal-fondo:rgba(224,160,64,.13);
+  --onda:#4FB0D4; --brasa:#E08276; --brote:#6BC79A;
+  --sombra:0 1px 2px rgba(0,0,0,.3), 0 10px 30px -14px rgba(0,0,0,.6);
+  --fuerte-fondo:#E0A040; --fuerte-texto:#1A1206; --glifo-fondo:#1E2837;
+  --lienzo:#F4F4F1;
 }
-button:hover:not(:disabled){filter:brightness(1.18);}
-button:active:not(:disabled){transform:translateY(1px);}
-button:disabled{opacity:.45; cursor:not-allowed;}
-button.plano{background:none; border-color:transparent; padding:5px 9px;}
-button.plano:hover:not(:disabled){background:rgba(255,255,255,.07); border-color:var(--borde);}
-button.acento{background:linear-gradient(180deg,#3f7fd6,#2c5fa8); border-color:#4f8fe0;}
-button.peligro:hover:not(:disabled){background:rgba(255,107,107,.18); border-color:var(--rojo); color:var(--rojo);}
-input[type=text], input[type=password], input[type=number], select, textarea{
-  background:rgba(0,0,0,.28); border:1px solid var(--borde); border-radius:9px;
-  padding:9px 11px; font-size:14px; width:100%; outline:none;
-}
-input:focus, select:focus, textarea:focus{border-color:var(--azul);}
-::-webkit-scrollbar{width:10px; height:10px;}
-::-webkit-scrollbar-thumb{background:#2e3b57; border-radius:8px;}
-::-webkit-scrollbar-thumb:hover{background:#3c4c6f;}
-::-webkit-scrollbar-track{background:transparent;}
 
-/* ---------- Barra lateral ---------- */
-#lateral{
-  width:270px; flex:0 0 270px; display:flex; flex-direction:column; gap:8px;
-  background:linear-gradient(180deg,#141b2b,#111726); border-right:1px solid var(--borde);
-  padding:12px; transition:margin-left .2s;
-}
-#lateral.oculto{margin-left:-270px;}
-#marca{display:flex; align-items:center; gap:9px; font-weight:800; font-size:18px; padding:2px 4px 8px;}
-#marca .punto{width:11px; height:11px; border-radius:50%; background:var(--verde); box-shadow:0 0 10px var(--verde);}
-#marca .punto.mal{background:var(--rojo); box-shadow:0 0 10px var(--rojo);}
-#listaChats{flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:4px; margin:0 -4px; padding:0 4px;}
-.chatItem{
-  display:flex; align-items:center; gap:6px; padding:9px 10px; border-radius:9px;
-  cursor:pointer; font-size:14px; border:1px solid transparent;
-}
-.chatItem:hover{background:rgba(255,255,255,.05);}
-.chatItem.activo{background:var(--panel2); border-color:var(--borde);}
-.chatItem .titulo{flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
-.chatItem .borrar{opacity:0; font-size:13px; padding:2px 6px; background:none; border:none;}
-.chatItem:hover .borrar{opacity:.6;}
-.chatItem .borrar:hover{opacity:1; color:var(--rojo);}
-#lateral .pie{display:flex; flex-direction:column; gap:6px; border-top:1px solid var(--borde); padding-top:10px;}
+*{box-sizing:border-box;}
+body{margin:0; background:var(--fondo); color:var(--texto); font-family:var(--cuerpo);
+  font-size:15px; line-height:1.6; height:100dvh; overflow:hidden;}
+button,input,select,textarea{font:inherit; color:inherit;}
+:focus-visible{outline:2px solid var(--senal); outline-offset:2px; border-radius:4px;}
+@media (prefers-reduced-motion:reduce){*{animation:none !important; transition:none !important;}}
+::-webkit-scrollbar{width:9px;height:9px}
+::-webkit-scrollbar-thumb{background:var(--linea);border-radius:8px}
 
-#buscador{padding:7px 10px; font-size:13px; border-radius:9px;}
-.chatItem .renombrar{flex:1; padding:3px 6px; font-size:14px; border-radius:6px; min-width:0;}
-.accionesTurno{display:flex; gap:3px; flex-wrap:wrap; opacity:0; transition:opacity .14s;}
-.turno:hover .accionesTurno, .accionesTurno:focus-within{opacity:1;}
-button.mini{font-size:11.5px; padding:3px 8px; font-weight:600; color:var(--tenue);}
-button.mini:hover:not(:disabled){color:var(--texto);}
-.docChip{
-  display:flex; align-items:center; gap:7px; padding:9px 13px; border-radius:9px;
-  background:rgba(0,0,0,.3); border:1px solid var(--borde); font-size:13px; font-weight:600; max-width:260px;
-}
-.docChip .nombre{overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
-#btVoz.grabando{color:var(--rojo); border-color:var(--rojo); background:rgba(255,107,107,.15);}
+.app{display:flex; height:100dvh;}
 
-/* ---------- Zona principal ---------- */
-#principal{flex:1; display:flex; flex-direction:column; min-width:0;}
-#cabecera{
-  display:flex; align-items:center; gap:8px; flex-wrap:wrap;
-  padding:9px 14px; border-bottom:1px solid var(--borde); background:rgba(26,34,51,.6);
-}
-#cabecera select{width:auto; padding:6px 9px; font-size:13px;}
-#cabecera .sep{flex:1;}
-.interruptor{
-  display:flex; align-items:center; gap:6px; font-size:13px; font-weight:700;
-  padding:6px 10px; border-radius:9px; border:1px solid var(--borde);
-  background:rgba(0,0,0,.22); cursor:pointer; user-select:none; color:var(--tenue);
-}
-.interruptor.on{color:var(--azul); border-color:var(--azul); background:rgba(92,200,255,.12);}
-.interruptor input{display:none;}
+/* riel */
+.riel{width:250px; flex:0 0 250px; display:flex; flex-direction:column; gap:9px;
+  background:var(--hueco); border-right:1px solid var(--linea); padding:13px 11px;}
+.riel.plegado{display:none;}
+.marca{display:flex; align-items:center; gap:9px; padding:0 4px 2px;}
+.marca .glifo{width:26px; height:26px; flex:none; border-radius:7px; display:grid; place-items:center;
+  background:var(--glifo-fondo); color:var(--senal); font-family:var(--mono); font-size:14px;}
+.marca .nombre{font-family:var(--display); font-weight:700; font-size:16px; letter-spacing:-.01em;}
+.marca .pulso{width:7px;height:7px;border-radius:50%;background:var(--apagado);margin-left:auto;flex:none;}
+.marca .pulso.viva{background:var(--brote); box-shadow:0 0 0 3px color-mix(in srgb,var(--brote) 22%,transparent);}
+.marca .pulso.muerta{background:var(--brasa);}
 
-/* ---------- Mensajes ---------- */
-#hilo{flex:1; overflow-y:auto; padding:22px 16px 8px; scroll-behavior:smooth;}
-#hilo .envoltura{max-width:860px; margin:0 auto; display:flex; flex-direction:column; gap:18px;}
-.turno{display:flex; flex-direction:column; gap:7px;}
-.turno .quien{display:flex; align-items:center; gap:8px; font-size:12px; font-weight:800; color:var(--tenue); letter-spacing:.4px;}
-.turno.yo .quien{color:var(--oro);}
-.turno.ia .quien{color:var(--azul);}
-.burbuja{
-  background:var(--burbuja-ia); border:1px solid var(--borde); border-radius:13px;
-  padding:13px 16px; line-height:1.62; overflow-wrap:anywhere;
-}
-.turno.yo .burbuja{background:var(--burbuja-yo); border-color:#3d5182;}
-.burbuja>*+*{margin-top:.7em;}
-.burbuja h1,.burbuja h2,.burbuja h3{line-height:1.3; margin-top:1.1em;}
-.burbuja h1{font-size:1.4em;} .burbuja h2{font-size:1.22em;} .burbuja h3{font-size:1.08em;}
-.burbuja ul,.burbuja ol{padding-left:1.4em;}
-.burbuja li+li{margin-top:.28em;}
-.burbuja a{color:var(--azul);}
-.burbuja blockquote{border-left:3px solid var(--borde); padding-left:12px; color:var(--tenue);}
-.burbuja hr{border:none; border-top:1px solid var(--borde);}
-.burbuja code.en-linea{background:rgba(0,0,0,.4); padding:2px 6px; border-radius:5px; font-size:.9em; color:var(--morado);}
-.burbuja table{border-collapse:collapse; width:100%; display:block; overflow-x:auto;}
-.burbuja th,.burbuja td{border:1px solid var(--borde); padding:6px 10px; text-align:left; font-size:.94em;}
-.burbuja th{background:rgba(0,0,0,.25);}
-pre.codigo{background:#0b1020; border:1px solid var(--borde); border-radius:10px; overflow:hidden;}
-pre.codigo .codigo-cab{
-  display:flex; align-items:center; justify-content:space-between;
-  padding:5px 10px; background:rgba(0,0,0,.35); font-size:12px; color:var(--tenue); font-weight:700;
-}
-pre.codigo .codigo-cab button{padding:3px 8px; font-size:11px; background:none; border-color:var(--borde);}
-pre.codigo code{display:block; padding:12px 14px; overflow-x:auto; font-family:"Cascadia Code",Consolas,Monaco,monospace; font-size:13px; line-height:1.55; white-space:pre;}
-.razonamiento{border:1px dashed #4a5a7d; border-radius:10px; background:rgba(177,140,255,.07);}
-.razonamiento summary{cursor:pointer; padding:8px 13px; font-size:13px; font-weight:700; color:var(--morado); user-select:none;}
-.razonamiento .cuerpo{padding:0 14px 12px; color:#c7bbe8; font-size:13.5px; line-height:1.6; white-space:pre-wrap;}
-.fuentes{display:flex; flex-direction:column; gap:5px; border:1px solid var(--borde); border-radius:10px; background:rgba(92,200,255,.06); padding:9px 12px; font-size:13px;}
-.fuentes .cab{font-weight:800; color:var(--azul); font-size:12px; letter-spacing:.3px;}
+.btn{display:inline-flex; align-items:center; justify-content:center; gap:7px; background:var(--panel);
+  border:1px solid var(--linea); border-radius:var(--radio); padding:8px 13px; font-size:13.5px;
+  font-weight:600; cursor:pointer; transition:background .13s,border-color .13s;}
+.btn:hover:not(:disabled){background:var(--panel-2);}
+.btn:disabled{opacity:.45; cursor:not-allowed;}
+.btn.fuerte{background:var(--fuerte-fondo); color:var(--fuerte-texto); border-color:var(--fuerte-fondo);}
+.btn.fuerte:hover:not(:disabled){filter:brightness(1.12);}
+.btn.desnudo{background:none; border-color:transparent; padding:6px 9px;}
+.btn.desnudo:hover:not(:disabled){background:var(--panel-2); border-color:var(--linea-suave);}
+.btn.chico{padding:4px 9px; font-size:12px; font-weight:500; color:var(--tenue);}
+.btn.chico:hover:not(:disabled){color:var(--texto);}
+
+.pestanas{display:flex; gap:3px; background:var(--panel); border:1px solid var(--linea);
+  border-radius:var(--radio); padding:3px;}
+.pestanas button{flex:1; background:none; border:none; border-radius:7px; padding:6px 8px; cursor:pointer;
+  font-family:var(--display); font-size:12.5px; font-weight:600; color:var(--tenue);}
+.pestanas button[aria-selected="true"]{background:var(--fuerte-fondo); color:var(--fuerte-texto);}
+
+.campo-busca{background:var(--panel); border:1px solid var(--linea); border-radius:var(--radio);
+  padding:7px 11px; font-size:13px; width:100%;}
+.lista{flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:2px; margin:0 -4px; padding:0 4px;}
+.hebra{display:flex; align-items:center; gap:6px; padding:8px 10px; border-radius:8px; cursor:pointer;
+  font-size:13.5px; border:1px solid transparent; text-align:left; background:none; width:100%;}
+.hebra:hover{background:var(--panel);}
+.hebra[aria-current="true"]{background:var(--panel); border-color:var(--linea); font-weight:600;}
+.hebra .rotulo{flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.hebra .cerrar{opacity:0; background:none; border:none; cursor:pointer; padding:1px 4px;
+  color:var(--tenue); font-size:14px; line-height:1; border-radius:4px;}
+.hebra:hover .cerrar{opacity:.65;}
+.hebra .cerrar:hover{opacity:1; color:var(--brasa);}
+.vacio{color:var(--apagado); font-size:12.5px; padding:10px 6px; line-height:1.5;}
+.zocalo{border-top:1px solid var(--linea); padding-top:9px; display:flex; flex-direction:column; gap:2px;}
+.zocalo .btn{justify-content:flex-start; font-weight:500; font-size:13px; color:var(--tenue);}
+.zocalo .btn:hover{color:var(--texto);}
+
+/* franja */
+.tablero{flex:1; display:flex; flex-direction:column; min-width:0;}
+.franja{display:flex; align-items:center; gap:7px; flex-wrap:wrap; padding:9px 15px;
+  border-bottom:1px solid var(--linea); background:var(--panel);}
+.franja .separa{flex:1;}
+.selector{background:var(--hueco); border:1px solid var(--linea); border-radius:var(--radio);
+  padding:6px 10px; font-size:13px; font-weight:500; cursor:pointer; max-width:210px;}
+.aguja{font-family:var(--mono); font-size:11.5px; color:var(--apagado);
+  font-variant-numeric:tabular-nums; white-space:nowrap;}
+
+.vista{flex:1; display:flex; flex-direction:column; min-height:0;}
+.vista[hidden]{display:none;}
+
+/* hilo */
+.hilo{flex:1; overflow-y:auto; padding:24px 15px 10px;}
+.columna{max-width:68ch; margin:0 auto; display:flex; flex-direction:column; gap:24px;}
+.turno{display:flex; flex-direction:column; gap:8px;}
+.firma{display:flex; align-items:center; gap:8px; font-family:var(--display); font-size:11px;
+  font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--apagado);}
+.turno.mio .firma{color:var(--tenue);}
+.turno.suyo .firma{color:var(--senal);}
+.insignia{font-family:var(--cuerpo); font-size:10.5px; font-weight:600; letter-spacing:.02em;
+  text-transform:none; color:var(--senal); border:1px solid var(--senal); border-radius:20px; padding:0 7px;}
+.dicho{line-height:1.68;}
+.turno.mio .dicho{background:var(--panel); border:1px solid var(--linea); border-radius:var(--radio);
+  padding:11px 15px; box-shadow:var(--sombra);}
+.dicho>*{margin:0;}
+.dicho>*+*{margin-top:.75em;}
+.dicho h1,.dicho h2,.dicho h3{font-family:var(--display); line-height:1.28; letter-spacing:-.012em; text-wrap:balance;}
+.dicho h1{font-size:1.3em;margin-top:1.1em}.dicho h2{font-size:1.15em;margin-top:1.1em}.dicho h3{font-size:1.02em;margin-top:1em}
+.dicho ul,.dicho ol{padding-left:1.35em;}
+.dicho li+li{margin-top:.3em;}
+.dicho a{color:var(--onda); text-underline-offset:2px;}
+.dicho strong{font-weight:600;}
+.dicho blockquote{border-left:2px solid var(--senal); padding:2px 0 2px 13px; color:var(--tenue); font-style:italic;}
+.dicho hr{border:none; border-top:1px solid var(--linea-suave);}
+.dicho code.suelto{font-family:var(--mono); font-size:.86em; background:var(--panel-2); padding:1px 5px; border-radius:4px;}
+.tabla-marco{overflow-x:auto; border:1px solid var(--linea); border-radius:var(--radio);}
+.dicho table{border-collapse:collapse; width:100%; font-size:.93em;}
+.dicho th,.dicho td{padding:7px 11px; text-align:left; border-bottom:1px solid var(--linea-suave);}
+.dicho th{background:var(--hueco); font-family:var(--display); font-size:11px; font-weight:700;
+  letter-spacing:.05em; text-transform:uppercase; color:var(--tenue);}
+.dicho tr:last-child td{border-bottom:none;}
+.dicho td{font-variant-numeric:tabular-nums;}
+.bloque-codigo{border:1px solid var(--linea); border-radius:var(--radio); overflow:hidden; background:var(--hueco);}
+.bloque-codigo .cinta{display:flex; align-items:center; justify-content:space-between; gap:10px;
+  padding:5px 8px 5px 12px; border-bottom:1px solid var(--linea-suave); background:var(--panel-2);
+  font-family:var(--mono); font-size:11px; color:var(--tenue);}
+.bloque-codigo pre{margin:0; overflow-x:auto; padding:12px 14px;}
+.bloque-codigo code{font-family:var(--mono); font-size:12.8px; line-height:1.62; white-space:pre;}
+
+.razonando{border:1px dashed var(--linea); border-radius:var(--radio); background:var(--hueco);}
+.razonando summary{cursor:pointer; padding:7px 12px; font-family:var(--display); font-size:11.5px;
+  font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--tenue);}
+.razonando .txt{padding:0 13px 11px; color:var(--tenue); font-size:13.5px; line-height:1.6; white-space:pre-wrap;}
+.fuentes{border:1px solid var(--linea); border-radius:var(--radio); background:var(--hueco); padding:9px 12px;
+  display:flex; flex-direction:column; gap:4px; font-size:13px;}
+.fuentes .cab{font-family:var(--display); font-size:10.5px; font-weight:700; letter-spacing:.08em;
+  text-transform:uppercase; color:var(--onda);}
 .fuentes a{color:var(--texto); text-decoration:none; opacity:.85;}
 .fuentes a:hover{opacity:1; text-decoration:underline;}
-.adjuntos{display:flex; flex-wrap:wrap; gap:8px;}
-.adjuntos img{max-height:170px; border-radius:9px; border:1px solid var(--borde);}
-.lienzo{border:1px solid var(--borde); border-radius:12px; background:#fff; padding:10px; display:flex; justify-content:center;}
-.lienzo svg, .lienzo img{max-width:100%; height:auto; display:block;}
-.acciones-img{display:flex; gap:7px; flex-wrap:wrap;}
-.meta{font-size:11.5px; color:var(--tenue); display:flex; gap:12px; flex-wrap:wrap;}
-.aviso{border:1px solid var(--rojo); background:rgba(255,107,107,.12); color:#ffc9c9; border-radius:10px; padding:11px 14px; font-size:13.5px; line-height:1.55;}
-.aviso .tit{font-weight:800; color:var(--rojo); display:block; margin-bottom:3px;}
-.nota{border:1px solid var(--oro); background:rgba(255,210,94,.1); color:#ffe6a8; border-radius:10px; padding:9px 13px; font-size:13px;}
-.puntos::after{content:"·"; animation:puntos 1.2s steps(4,end) infinite;}
-@keyframes puntos{0%{content:"·";}25%{content:"··";}50%{content:"···";}75%{content:"····";}}
 
-/* ---------- Bienvenida ---------- */
-#bienvenida{max-width:760px; margin:8vh auto 0; text-align:center; display:flex; flex-direction:column; gap:16px; align-items:center;}
-#bienvenida h1{font-size:30px;}
-#bienvenida p{color:var(--tenue); line-height:1.65; max-width:600px;}
-#sugerencias{display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:10px; width:100%; margin-top:6px;}
-#sugerencias button{
-  text-align:left; padding:13px 15px; font-weight:600; font-size:13.5px; line-height:1.45;
-  background:var(--panel); border-color:var(--borde);
-}
+.pensando{display:inline-flex; align-items:center; gap:9px; color:var(--tenue); font-size:13.5px;
+  font-family:var(--mono); font-variant-numeric:tabular-nums;}
+.barrido{width:34px; height:2px; border-radius:2px; overflow:hidden; background:var(--linea); position:relative;}
+.barrido::after{content:""; position:absolute; inset:0; width:40%; border-radius:2px;
+  background:var(--senal); animation:barrer 1.15s ease-in-out infinite;}
+@keyframes barrer{0%{transform:translateX(-100%)}100%{transform:translateX(250%)}}
+.nota{font-family:var(--mono); font-size:11.5px; color:var(--apagado); display:flex; gap:13px;
+  flex-wrap:wrap; font-variant-numeric:tabular-nums;}
+.alerta{border:1px solid var(--brasa); border-left-width:3px; border-radius:var(--radio);
+  background:color-mix(in srgb,var(--brasa) 8%,transparent); padding:11px 14px; font-size:13.5px; line-height:1.55;}
+.alerta b{display:block; font-family:var(--display); font-size:11.5px; letter-spacing:.03em;
+  text-transform:uppercase; color:var(--brasa); margin-bottom:3px;}
+.mandos{display:flex; gap:2px; flex-wrap:wrap; opacity:0; transition:opacity .13s;}
+.turno:hover .mandos,.mandos:focus-within{opacity:1;}
+.adjuntos{display:flex; gap:8px; flex-wrap:wrap;}
+.adjuntos img{height:74px; border-radius:8px; border:1px solid var(--linea); display:block;}
+.doc{display:flex; align-items:center; gap:7px; padding:8px 12px; border-radius:9px; background:var(--panel-2);
+  border:1px solid var(--linea); font-size:13px; font-weight:600; max-width:250px;}
+.doc span:last-child{overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
 
-/* ---------- Compositor ---------- */
-#compositor{padding:10px 16px 16px;}
-#compositor .caja{
-  max-width:860px; margin:0 auto; background:var(--panel); border:1px solid var(--borde);
-  border-radius:15px; padding:10px 12px; display:flex; flex-direction:column; gap:8px;
-  box-shadow:0 6px 22px rgba(0,0,0,.35);
-}
-#compositor .caja.arrastre{border-color:var(--azul); background:rgba(92,200,255,.08);}
-#previos{display:flex; gap:8px; flex-wrap:wrap;}
-#previos .previo{position:relative;}
-#previos img{height:62px; border-radius:8px; border:1px solid var(--borde); display:block;}
-#previos .quitar{
-  position:absolute; top:-6px; right:-6px; width:20px; height:20px; border-radius:50%;
-  padding:0; font-size:12px; line-height:1; background:var(--rojo); border-color:#ff9d9d;
-}
-#entrada{
-  border:none; background:none; resize:none; padding:6px 4px; font-size:15px; line-height:1.55;
-  max-height:220px; min-height:26px; overflow-y:auto;
-}
-#barraCompositor{display:flex; align-items:center; gap:7px;}
-#barraCompositor .sep{flex:1;}
-#pista{max-width:860px; margin:7px auto 0; font-size:11.5px; color:var(--tenue); text-align:center;}
+/* portada */
+.portada{max-width:62ch; margin:1.5vh auto 0; display:flex; flex-direction:column; gap:13px;}
+.portada .titular{font-family:var(--display); font-size:24px; font-weight:700; letter-spacing:-.02em; line-height:1.2;}
+.portada p{margin:0; color:var(--tenue);}
+.rejilla{display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:8px;}
+.tarjeta{text-align:left; background:var(--panel); border:1px solid var(--linea); border-radius:var(--radio);
+  padding:10px 12px; cursor:pointer; font-size:13.3px; line-height:1.45; display:flex; flex-direction:column; gap:3px;}
+.tarjeta:hover{border-color:var(--senal); background:var(--senal-fondo);}
+.tarjeta .clase{font-family:var(--display); font-size:10px; font-weight:700; letter-spacing:.09em;
+  text-transform:uppercase; color:var(--apagado);}
 
-/* ---------- Modal ---------- */
-#velo{
-  position:fixed; inset:0; background:rgba(5,8,15,.72); display:none;
-  align-items:center; justify-content:center; padding:20px; z-index:50; backdrop-filter:blur(3px);
-}
-#velo.abierto{display:flex;}
-.modal{
-  background:var(--panel); border:1px solid var(--borde); border-radius:15px;
-  width:min(620px,100%); max-height:88vh; overflow-y:auto; box-shadow:0 20px 60px rgba(0,0,0,.6);
-}
-.modal .cab{display:flex; align-items:center; padding:15px 18px; border-bottom:1px solid var(--borde); font-weight:800; font-size:17px;}
-.modal .cab .sep{flex:1;}
-.modal .cuerpo{padding:18px; display:flex; flex-direction:column; gap:17px;}
-.campo{display:flex; flex-direction:column; gap:6px;}
-.campo label{font-size:13px; font-weight:800; color:var(--tenue); letter-spacing:.3px;}
-.campo .ayuda{font-size:12px; color:var(--tenue); line-height:1.5;}
-.campo textarea{min-height:110px; resize:vertical; line-height:1.55;}
-.fila{display:flex; gap:12px;} .fila>*{flex:1; min-width:0;}
-.seccion{border-top:1px solid var(--borde); padding-top:15px; display:flex; flex-direction:column; gap:15px;}
-.seccion>.tit{font-size:13px; font-weight:800; color:var(--azul); letter-spacing:.5px;}
-.modal .pie{display:flex; gap:9px; padding:15px 18px; border-top:1px solid var(--borde);}
-.modal .pie .sep{flex:1;}
+/* consola */
+.consola{padding:8px 15px 15px;}
+.caja{max-width:68ch; margin:0 auto; background:var(--panel); border:1px solid var(--linea);
+  border-radius:14px; padding:9px 11px; display:flex; flex-direction:column; gap:8px; box-shadow:var(--sombra);}
+.caja:focus-within{border-color:var(--senal);}
+.caja.soltar{border-color:var(--senal); background:var(--senal-fondo);}
+.previos{display:flex; gap:7px; flex-wrap:wrap;}
+.previo{position:relative;}
+.previo img{height:52px; border-radius:7px; border:1px solid var(--linea); display:block;}
+.previo .doc{max-width:170px; font-size:12px; padding:6px 10px;}
+.previo button{position:absolute; top:-6px; right:-6px; width:19px; height:19px; border-radius:50%;
+  border:1px solid var(--panel); background:var(--brasa); color:#fff; font-size:11px; line-height:1; cursor:pointer; padding:0;}
+#texto,#prompt{border:none; background:none; resize:none; width:100%; padding:5px 4px; font-size:15px;
+  line-height:1.55; max-height:190px; min-height:26px; outline:none;}
+.mandos-caja{display:flex; align-items:center; gap:6px; flex-wrap:wrap;}
+.mandos-caja .separa{flex:1;}
+.mandos-caja .btn.chico{border-color:var(--linea); background:var(--hueco); padding:5px 11px; font-weight:600;}
+.mandos-caja .btn.chico:hover:not(:disabled){background:var(--panel-2);}
+.pie{max-width:68ch; margin:8px auto 0; font-family:var(--mono); font-size:11px; color:var(--tenue);
+  text-align:center; line-height:1.5;}
 
-@media (max-width:820px){
-  #lateral{position:fixed; z-index:40; height:100%; box-shadow:0 0 40px rgba(0,0,0,.6);}
-  #lateral.oculto{margin-left:-270px;}
-  #hilo{padding:16px 10px 6px;}
-  #compositor{padding:8px 10px 12px;}
-  #cabecera{padding:8px 10px;}
+/* estudio */
+.estudio{flex:1; overflow-y:auto; padding:20px 15px 10px;}
+.estudio-cols{max-width:1080px; margin:0 auto; display:grid; grid-template-columns:300px 1fr; gap:20px; align-items:start;}
+@media (max-width:900px){.estudio-cols{grid-template-columns:1fr;}}
+.mesa{background:var(--panel); border:1px solid var(--linea); border-radius:14px; padding:15px;
+  display:flex; flex-direction:column; gap:14px; box-shadow:var(--sombra); position:sticky; top:0;}
+@media (max-width:900px){.mesa{position:static;}}
+.grupo{display:flex; flex-direction:column; gap:6px;}
+.grupo>label{font-family:var(--display); font-size:10.5px; font-weight:700; letter-spacing:.08em;
+  text-transform:uppercase; color:var(--tenue);}
+.grupo textarea{background:var(--hueco); border:1px solid var(--linea); border-radius:var(--radio);
+  padding:9px 11px; font-size:14px; line-height:1.55; min-height:92px; resize:vertical; outline:none;}
+.grupo textarea:focus{border-color:var(--senal);}
+.fichas{display:flex; flex-wrap:wrap; gap:5px;}
+.ficha{background:var(--hueco); border:1px solid var(--linea); border-radius:20px; padding:4px 11px;
+  font-size:12.5px; cursor:pointer; font-weight:500;}
+.ficha[aria-pressed="true"]{background:var(--senal-fondo); border-color:var(--senal); color:var(--senal); font-weight:600;}
+.galeria{display:grid; grid-template-columns:repeat(auto-fill,minmax(232px,1fr)); gap:14px;}
+.obra{background:var(--panel); border:1px solid var(--linea); border-radius:12px; overflow:hidden;
+  display:flex; flex-direction:column; box-shadow:var(--sombra);}
+.obra .lienzo{background:var(--lienzo); display:flex; align-items:center; justify-content:center; padding:9px;}
+.obra .lienzo svg{width:100%; height:auto; display:block; max-height:270px;}
+.obra .datos{padding:9px 11px; display:flex; flex-direction:column; gap:7px; border-top:1px solid var(--linea-suave);}
+.obra .desc{font-size:12.5px; color:var(--tenue); line-height:1.45;
+  display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;}
+.obra .barra{display:flex; gap:3px; flex-wrap:wrap;}
+.taller-vacio{border:1px dashed var(--linea); border-radius:12px; padding:34px 20px; text-align:center;
+  color:var(--tenue); font-size:13.5px; line-height:1.6;}
+
+/* ficha modal */
+.velo{position:fixed; inset:0; background:rgba(10,14,22,.62); display:none; align-items:center;
+  justify-content:center; padding:18px; z-index:30;}
+.velo[data-abierto="1"]{display:flex;}
+.panel{background:var(--panel); border:1px solid var(--linea); border-radius:14px; width:min(600px,100%);
+  max-height:86dvh; overflow-y:auto; box-shadow:var(--sombra);}
+.panel header{display:flex; align-items:center; gap:10px; padding:15px 18px; border-bottom:1px solid var(--linea);
+  font-family:var(--display); font-weight:700; font-size:16px;}
+.panel header .separa{flex:1;}
+.panel .cuerpo{padding:18px; display:flex; flex-direction:column; gap:16px;}
+.panel footer{display:flex; gap:8px; padding:14px 18px; border-top:1px solid var(--linea);}
+.panel footer .separa{flex:1;}
+.grupo input[type=password],.grupo input[type=text],.grupo input[type=number],.grupo select{
+  background:var(--hueco); border:1px solid var(--linea); border-radius:var(--radio); padding:9px 11px;
+  font-size:13.5px; width:100%; outline:none;}
+.grupo input:focus,.grupo select:focus{border-color:var(--senal);}
+.grupo .glosa{font-size:12.5px; color:var(--tenue); line-height:1.5;}
+.par{display:flex; gap:12px;} .par>*{flex:1; min-width:0;}
+.hilera{display:flex; align-items:center; gap:8px; font-size:13.5px;}
+.hilera input{width:auto;}
+.seccion{border-top:1px solid var(--linea); padding-top:15px; display:flex; flex-direction:column; gap:15px;}
+.seccion>.rotulo{font-family:var(--display); font-size:11px; font-weight:700; letter-spacing:.08em;
+  text-transform:uppercase; color:var(--senal);}
+
+@media (max-width:840px){
+  .riel{position:fixed; z-index:20; height:100dvh; box-shadow:var(--sombra);}
+  .hilo,.estudio{padding:16px 10px 8px;}
+  .consola{padding:6px 10px 12px;}
 }
 </style>
-</head>
-<body>
 
-<aside id="lateral">
-  <div id="marca"><span class="punto" id="estadoPunto"></span> NEXO IA</div>
-  <button class="acento" id="btNuevo">＋ Conversación nueva</button>
-  <input type="search" id="buscador" placeholder="Buscar en las conversaciones…" autocomplete="off">
-  <div id="listaChats"></div>
-  <div class="pie">
-    <button class="plano" id="btAjustes">⚙ Ajustes y clave API</button>
-    <button class="plano" id="btExportar">⬇ Exportar conversación</button>
-  </div>
-</aside>
+<div class="app">
+  <aside class="riel" id="riel">
+    <div class="marca"><span class="glifo">◈</span><span class="nombre">NEXO</span><span class="pulso" id="pulso"></span></div>
+    <div class="pestanas" role="tablist">
+      <button role="tab" id="tabChat" aria-selected="true">Conversar</button>
+      <button role="tab" id="tabEstudio" aria-selected="false">Estudio</button>
+    </div>
+    <button class="btn" id="btNueva">Conversación nueva</button>
+    <input type="search" class="campo-busca" id="busca" placeholder="Buscar…" autocomplete="off">
+    <div class="lista" id="lista"></div>
+    <div class="zocalo">
+      <button class="btn desnudo" id="btAjustes">Ajustes</button>
+      <button class="btn desnudo" id="btBajar">Descargar conversación</button>
+    </div>
+  </aside>
 
-<div id="principal">
-  <div id="cabecera">
-    <button class="plano" id="btLateral" title="Mostrar/ocultar panel">☰</button>
-    <select id="selModelo" title="Modelo"></select>
-    <select id="selEsfuerzo" title="Esfuerzo de razonamiento">
-      <option value="low">Esfuerzo: bajo</option>
-      <option value="medium">Esfuerzo: medio</option>
-      <option value="high">Esfuerzo: alto</option>
-      <option value="xhigh">Esfuerzo: muy alto</option>
-      <option value="max">Esfuerzo: máximo</option>
-    </select>
-    <label class="interruptor" id="etBusqueda"><input type="checkbox" id="chkBusqueda"> 🌐 Buscar en la web</label>
-    <label class="interruptor" id="etRazonar"><input type="checkbox" id="chkRazonar"> 🧠 Ver razonamiento</label>
-    <div class="sep"></div>
-    <span class="meta" id="metaChat"></span>
-  </div>
+  <div class="tablero">
+    <div class="franja">
+      <button class="btn desnudo" id="btRiel" aria-label="Mostrar u ocultar el panel">☰</button>
+      <select class="selector" id="selSkill" aria-label="Skill"></select>
+      <select class="selector" id="selTier" aria-label="Profundidad">
+        <option value="quick">Rápido</option>
+        <option value="default" selected>Equilibrado</option>
+        <option value="complex">Profundo</option>
+      </select>
+      <div class="separa"></div>
+      <span class="aguja" id="aguja"></span>
+    </div>
 
-  <div id="hilo">
-    <div class="envoltura" id="envoltura"></div>
-  </div>
-
-  <div id="compositor">
-    <div class="caja" id="cajaCompositor">
-      <div id="previos"></div>
-      <textarea id="entrada" rows="1" placeholder="Escribe tu pregunta…  (Enter envía · Shift+Enter salta de línea)"></textarea>
-      <div id="barraCompositor">
-        <button class="plano" id="btAdjuntar" title="Adjuntar imágenes o PDFs para que los lea">📎</button>
-        <button class="plano" id="btVoz" title="Dictar" style="display:none">🎤</button>
-        <label class="interruptor" id="etImagen" title="El siguiente mensaje generará una imagen">
-          <input type="checkbox" id="chkImagen"> 🎨 Crear imagen
-        </label>
-        <div class="sep"></div>
-        <button class="plano peligro" id="btParar" style="display:none">■ Detener</button>
-        <button class="acento" id="btEnviar">Enviar ➤</button>
+    <!-- ══════════ CONVERSAR ══════════ -->
+    <div class="vista" id="vistaChat">
+      <div class="hilo" id="hilo"><div class="columna" id="columna"></div></div>
+      <div class="consola">
+        <div class="caja" id="caja">
+          <div class="previos" id="previos"></div>
+          <textarea id="texto" rows="1" placeholder="Pregunta lo que quieras…"></textarea>
+          <div class="mandos-caja">
+            <button class="btn chico" id="btAdjuntar" hidden>Adjuntar</button>
+            <button class="btn chico" id="btVoz" hidden>Dictar</button>
+            <div class="separa"></div>
+            <button class="btn chico" id="btParar" hidden>Detener</button>
+            <button class="btn fuerte" id="btEnviar">Enviar</button>
+          </div>
+        </div>
+        <div class="pie" id="pie"></div>
       </div>
     </div>
-    <div id="pista"></div>
+
+    <!-- ══════════ ESTUDIO DE IMÁGENES ══════════ -->
+    <div class="vista" id="vistaEstudio" hidden>
+      <div class="estudio">
+        <div class="estudio-cols">
+          <div class="mesa">
+            <div class="grupo">
+              <label for="prompt">Qué quieres ver</label>
+              <textarea id="prompt" placeholder="Un faro en medio de una tormenta, de noche…"></textarea>
+            </div>
+            <div class="grupo">
+              <label>Estilo</label>
+              <div class="fichas" id="fichasEstilo"></div>
+            </div>
+            <div class="grupo">
+              <label>Formato</label>
+              <div class="fichas" id="fichasFormato"></div>
+            </div>
+            <div class="grupo">
+              <label for="paleta">Paleta (opcional)</label>
+              <input type="text" id="paleta" placeholder="azules fríos, dorado, alto contraste…">
+            </div>
+            <div class="mandos-caja">
+              <button class="btn chico" id="btPararImg" hidden>Detener</button>
+              <div class="separa"></div>
+              <button class="btn fuerte" id="btDibujar">Dibujar</button>
+            </div>
+          </div>
+          <div id="taller"></div>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
-<input type="file" id="ficheros" accept="image/png,image/jpeg,image/gif,image/webp,application/pdf" multiple style="display:none">
+<input type="file" id="ficheros" multiple hidden>
 
-<div id="velo">
-  <div class="modal">
-    <div class="cab">⚙ Ajustes <div class="sep"></div><button class="plano" id="btCerrarAjustes">✕</button></div>
+<div class="velo" id="velo">
+  <div class="panel" role="dialog" aria-modal="true" aria-label="Ajustes">
+    <header>Ajustes<div class="separa"></div><button class="btn desnudo" id="btCerrar">✕</button></header>
     <div class="cuerpo">
-
-      <div class="campo">
-        <label for="inClave">Clave de la API de Anthropic</label>
-        <input type="password" id="inClave" placeholder="sk-ant-…" autocomplete="off" spellcheck="false">
-        <span class="ayuda">
-          Se guarda solo en <b>este navegador</b> (localStorage) y viaja únicamente a <code>api.anthropic.com</code>.
-          Consíguela en <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">console.anthropic.com</a>.
-          No la pongas en una página publicada en internet: cualquiera con acceso al navegador podría leerla.
-        </span>
+      <div class="grupo">
+        <label for="areaInstr">Cómo quieres que te responda</label>
+        <textarea id="areaInstr" spellcheck="false" style="min-height:150px"></textarea>
+        <span class="glosa">Va delante de cada conversación. Las skills se suman a esto, no lo reemplazan.</span>
       </div>
-
-      <div class="campo">
-        <label for="inSistema">Instrucciones del sistema</label>
-        <textarea id="inSistema" spellcheck="false"></textarea>
-        <span class="ayuda">Define cómo se comporta el asistente. Puedes reescribirlo entero.</span>
-      </div>
-
-      <div class="fila">
-        <div class="campo">
-          <label for="inMaxTokens">Tokens máx. por respuesta</label>
-          <input type="number" id="inMaxTokens" min="1024" max="128000" step="1024">
+      <div class="seccion" id="secApi">
+        <div class="rotulo">Modo local · clave de API</div>
+        <div class="grupo">
+          <label for="inClave">Clave de Anthropic</label>
+          <input type="password" id="inClave" placeholder="sk-ant-…" autocomplete="off" spellcheck="false">
+          <span class="glosa">Se guarda solo en este navegador y viaja únicamente a api.anthropic.com.
+            Consíguela en console.anthropic.com. Nunca la escribas dentro del archivo.</span>
         </div>
-        <div class="campo">
-          <label for="inMaxBusquedas">Búsquedas web por turno</label>
-          <input type="number" id="inMaxBusquedas" min="1" max="20">
+        <div class="par">
+          <div class="grupo"><label for="selModelo">Modelo</label><select id="selModelo"></select></div>
+          <div class="grupo"><label for="inMaxTokens">Tokens por respuesta</label>
+            <input type="number" id="inMaxTokens" min="1024" max="128000" step="1024"></div>
         </div>
+        <label class="hilera"><input type="checkbox" id="chkBuscar"> Buscar en la web cuando haga falta</label>
+        <label class="hilera"><input type="checkbox" id="chkRazonar"> Mostrar el razonamiento</label>
+        <label class="hilera"><input type="checkbox" id="chkCompactar"> Compactar el historial automáticamente</label>
       </div>
-
-      <div class="campo">
-        <label><input type="checkbox" id="chkCompactar" style="width:auto"> Compactación automática (conversaciones sin límite de largo)</label>
-        <span class="ayuda">Cuando el historial se acerca al límite de contexto, el servidor lo resume solo y la conversación sigue sin cortarse.</span>
-      </div>
-
-      <div class="seccion">
-        <div class="tit">🎨 GENERACIÓN DE IMÁGENES</div>
-        <div class="campo">
-          <label for="selImagen">Motor</label>
-          <select id="selImagen">
-            <option value="svg">Vectorial — dibujado por Claude (no necesita otra clave)</option>
-            <option value="raster">Fotográfico — proveedor externo compatible con OpenAI</option>
-          </select>
-          <span class="ayuda">
-            El modo <b>vectorial</b> funciona solo con tu clave de Anthropic: Claude dibuja la imagen en SVG y la puedes
-            descargar como SVG o PNG. El modo <b>fotográfico</b> necesita la clave de otro proveedor de imágenes.
-          </span>
-        </div>
-        <div id="camposRaster" style="display:none; flex-direction:column; gap:15px;">
-          <div class="campo">
-            <label for="inImgEndpoint">URL del endpoint</label>
-            <input type="text" id="inImgEndpoint" spellcheck="false" placeholder="https://api.openai.com/v1/images/generations">
-          </div>
-          <div class="fila">
-            <div class="campo">
-              <label for="inImgModelo">Modelo</label>
-              <input type="text" id="inImgModelo" spellcheck="false" placeholder="gpt-image-1">
-            </div>
-            <div class="campo">
-              <label for="inImgTam">Tamaño</label>
-              <input type="text" id="inImgTam" spellcheck="false" placeholder="1024x1024">
-            </div>
-          </div>
-          <div class="campo">
-            <label for="inImgClave">Clave del proveedor de imágenes</label>
-            <input type="password" id="inImgClave" autocomplete="off" spellcheck="false">
-          </div>
-        </div>
-      </div>
-
     </div>
-    <div class="pie">
-      <button class="peligro" id="btBorrarTodo">Borrar todo</button>
-      <div class="sep"></div>
-      <button class="acento" id="btGuardar">Guardar</button>
-    </div>
+    <footer>
+      <button class="btn" id="btFabrica">Instrucciones de fábrica</button>
+      <div class="separa"></div>
+      <button class="btn fuerte" id="btGuardar">Guardar</button>
+    </footer>
   </div>
 </div>
 
 <script>
 "use strict";
 
-/* ============================================================
-   NEXO IA — cliente de la API de Anthropic (Messages API)
-   Sin dependencias: fetch + SSE a mano.
-   ============================================================ */
+/* ═══════════════════════════════════════════════════════════════════
+   NEXO IA — un solo archivo, dos motores.
+
+   · Publicado como página en claude.ai  → habla con Claude por la
+     capacidad `sample` del runtime, con la cuenta de quien la abre.
+   · Abierto como archivo local          → habla con la Messages API
+     usando tu clave, y ahí sí busca en la web, lee PDFs y muestra
+     el razonamiento.
+
+   La app detecta sola dónde está corriendo.
+   ═══════════════════════════════════════════════════════════════════ */
 
 const API = "https://api.anthropic.com/v1/messages";
 const VERSION_API = "2023-06-01";
+const LIMITE_ARTIFACT = 46000;   // el tope real es 64 KiB; se deja aire
 
-/* Capacidades por modelo. Cada modelo acepta parametros distintos,
-   asi que esto evita mandar campos que devolverian un 400. */
 const MODELOS = {
-  "claude-opus-5":    {nombre:"Opus 5 · el más equilibrado", pensar:"adaptativo",  esfuerzo:true,  maxSalida:128000, busqueda:"web_search_20260209", precio:[5,25]},
-  "claude-fable-5-1": {nombre:"Fable 5.1 · el más capaz",    pensar:"adaptativo",  esfuerzo:true,  maxSalida:128000, busqueda:"web_search_20260209", precio:[10,50]},
-  "claude-sonnet-5":  {nombre:"Sonnet 5 · rápido y barato",  pensar:"adaptativo",  esfuerzo:true,  maxSalida:128000, busqueda:"web_search_20260209", precio:[2,10]},
-  "claude-haiku-4-5": {nombre:"Haiku 4.5 · el más ligero",   pensar:"presupuesto", esfuerzo:false, maxSalida:64000,  busqueda:"web_search_20250305", precio:[1,5]}
+  "claude-opus-5":    {nombre:"Opus 5 · equilibrado",  pensar:"adaptativo",  esfuerzo:true,  max:128000, busca:"web_search_20260209", precio:[5,25]},
+  "claude-fable-5-1": {nombre:"Fable 5.1 · el mayor",  pensar:"adaptativo",  esfuerzo:true,  max:128000, busca:"web_search_20260209", precio:[10,50]},
+  "claude-sonnet-5":  {nombre:"Sonnet 5 · rápido",     pensar:"adaptativo",  esfuerzo:true,  max:128000, busca:"web_search_20260209", precio:[2,10]},
+  "claude-haiku-4-5": {nombre:"Haiku 4.5 · ligero",    pensar:"presupuesto", esfuerzo:false, max:64000,  busca:"web_search_20250305", precio:[1,5]}
 };
+const ESFUERZO = {quick:"low", default:"high", complex:"max"};
 
-const SISTEMA_POR_DEFECTO =
-`Eres NEXO, un asistente personal. Respondes en español salvo que te escriban en otro idioma.
+const INSTRUCCIONES_FABRICA =
+`Eres NEXO, el asistente personal de quien te escribe. Respondes en español salvo que te hablen en otro idioma.
 
 Cómo respondes:
-- Vas al grano. Nada de preámbulos, disclaimers de relleno ni repetir la pregunta.
-- Respondes de verdad la pregunta que te hicieron, incluso si es incómoda, polémica o técnica. Si un tema es discutido, explicas las distintas posturas y cuál te parece mejor sustentada, en vez de escaparte con un "depende".
-- Si no sabes algo o no estás seguro, lo dices claramente en vez de inventar. Si tienes búsqueda web disponible, la usas para todo lo que cambia con el tiempo: noticias, precios, versiones, resultados.
-- Ajustas el largo a la pregunta: si es simple, dos líneas; si es compleja, te extiendes lo que haga falta sin cortar a la mitad.
-- Usas Markdown cuando ayuda: listas, tablas, bloques de código con su lenguaje.
-- Para código: entregas algo completo y ejecutable, y explicas las decisiones que no sean obvias.`;
+- Directo al grano. Sin preámbulos, sin repetir la pregunta, sin cerrar con "en resumen".
+- Contestas de verdad lo que te preguntaron, aunque sea incómodo, polémico o técnico. Si el tema está discutido, expones las posturas y dices cuál te parece mejor sustentada en vez de escaparte con un "depende".
+- Si no sabes algo o no estás seguro, lo dices. No inventas datos, cifras ni citas.
+- El largo lo pide la pregunta: algo simple se contesta en dos líneas; algo complejo se desarrolla lo que haga falta.
+- Markdown cuando ayuda: listas, tablas, bloques de código con su lenguaje.
+- En código: algo completo y ejecutable, y explicas las decisiones que no se ven solas.`;
 
-const CFG_POR_DEFECTO = {
-  clave:"", modelo:"claude-opus-5", esfuerzo:"high", sistema:SISTEMA_POR_DEFECTO,
-  maxTokens:32000, maxBusquedas:8, busqueda:true, razonar:true, compactar:true,
-  motorImagen:"svg", imgEndpoint:"https://api.openai.com/v1/images/generations",
-  imgModelo:"gpt-image-1", imgTam:"1024x1024", imgClave:""
-};
+/* ═══════════════ SKILLS ═══════════════
+   Cada una añade instrucciones al prompt base. `envoltura`, si está,
+   envuelve lo que escribas para que no tengas que explicar la tarea. */
+const SKILLS = [
+  {id:"ninguna", nombre:"Sin skill", clase:"", sistema:""},
 
-let cfg = cargar("ia.cfg", CFG_POR_DEFECTO);
-let chats = cargar("ia.chats", []);
-let idActual = null;
-let corriendo = null;      // AbortController del stream en curso
-let adjuntos = [];         // imagenes pendientes de enviar
-let nivelMax = 3;          // degradacion progresiva de funciones beta
+  {id:"colegio", nombre:"📚 Tarea del colegio", clase:"Colegio",
+   ejemplo:"Explícame la Guerra del Pacífico para un examen",
+   sistema:
+`Modo tarea escolar. Quien pregunta es un estudiante, así que:
+- No sueltas la respuesta pelada: muestras el razonamiento paso a paso para que se pueda repetir en un examen.
+- Defines los términos técnicos la primera vez que aparecen.
+- Cuando hay un procedimiento (una ecuación, un análisis, un método), lo desglosas en pasos numerados.
+- Cierras con dos o tres preguntas de autoevaluación para comprobar si se entendió.
+- Si el trabajo pide fuentes, avisas de que hay que citarlas en APA y ofreces armarlas.
+- Nunca escribes el trabajo entero como si fuera del alumno: ayudas a entenderlo y a estructurarlo.`},
 
-function cargar(clave, pordefecto){
-  try{
-    const crudo = localStorage.getItem(clave);
-    if(!crudo) return structuredClone(pordefecto);
-    const val = JSON.parse(crudo);
-    return Array.isArray(pordefecto) ? val : Object.assign(structuredClone(pordefecto), val);
-  }catch(e){ return structuredClone(pordefecto); }
+  {id:"apa", nombre:"📎 Citas en APA 7", clase:"Citas",
+   ejemplo:"Arma la referencia de este libro: Sapiens, Yuval Noah Harari, Debate, 2014",
+   sistema:
+`Modo citas. Formato APA 7ª edición, en español. Devuelves la referencia lista para copiar y, aparte, cómo queda la cita dentro del texto.
+
+Moldes:
+- Libro: Apellido, A. A. (Año). *Título del libro en cursiva* (n.ª ed.). Editorial.
+- Capítulo: Apellido, A. A. (Año). Título del capítulo. En B. B. Apellido (Ed.), *Título del libro* (pp. xx-xx). Editorial.
+- Artículo de revista: Apellido, A. A. (Año). Título del artículo. *Nombre de la Revista, volumen*(número), pp-pp. https://doi.org/xxxx
+- Página web: Apellido, A. A. (Año, día de mes). *Título de la página*. Nombre del sitio. URL
+- Video: Canal. (Año, día de mes). *Título* [Video]. YouTube. URL
+- Inteligencia artificial: Anthropic. (Año). *Claude* (versión) [Modelo de lenguaje grande]. https://claude.ai
+
+Reglas que no se saltan:
+- Cita en el texto: (Apellido, año) para parafrasear; (Apellido, año, p. 45) para cita textual. Con dos autores va "y"; con tres o más, "Apellido et al.".
+- La lista de referencias va en orden alfabético, con sangría francesa de 1.27 cm y a doble espacio.
+- Si falta un dato para completar la referencia, lo pides en vez de inventarlo.
+- Marcas las cursivas con asteriscos de Markdown y avisas de qué va en cursiva al pasarlo a Word.`},
+
+  {id:"humanizar", nombre:"✍ Humanizar texto", clase:"Escribir",
+   ejemplo:"Humaniza este párrafo que escribí para mi ensayo",
+   envoltura: t => "Reescribe este texto para que suene escrito por una persona:\n\n" + t,
+   sistema:
+`Modo humanizar. Reescribes el texto que te den para que no suene a IA, conservando lo que dice y su idioma.
+
+Lo que eliminas siempre:
+- Palabras delatoras: "profundizar en", "intrincado", "crucial", "pivotal", "subrayar", "panorama", "fomentar", "testimonio de", "tapiz de".
+- Relleno: "es importante destacar que", "vale la pena mencionar", "cabe resaltar".
+- Conectores formales en cada párrafo ("además", "por otra parte", "asimismo", "sin embargo" repetidos).
+- Cierres de ensayo escolar: "en resumen", "en conclusión", "en definitiva".
+- El paralelismo "no es X, es Y", y la manía de encadenar todo en tríos.
+- Negritas de adorno y guiones largos donde bastaba una coma.
+
+Lo que haces en cambio:
+- Varías el largo de las frases: una corta, después una más larga que desarrolla la idea.
+- Cambias lo abstracto por lo concreto: ejemplos, cifras, nombres.
+- Dejas que el texto tenga una postura en vez de un tono neutro parejo.
+- Aceptas alguna asimetría: una frase que empieza con "y" o "pero", una idea que se retoma.
+
+Devuelves el texto reescrito y nada más. Si te lo piden, después listas los cambios.`},
+
+  {id:"resumir", nombre:"📄 Resumir", clase:"Leer",
+   ejemplo:"Resúmeme este texto en lo esencial",
+   envoltura: t => "Resume lo siguiente:\n\n" + t,
+   sistema:
+`Modo resumen. Devuelves, en este orden:
+1. Una frase con la idea central.
+2. Entre tres y siete viñetas con lo que hay que retener, cada una con su dato concreto.
+3. Si el texto tiene cifras, fechas o nombres importantes, una tabla corta con ellos.
+4. "Lo que no dice": los vacíos o supuestos que noten falta, cuando los haya.
+Nada de opinión propia salvo que te la pidan. Si el texto se contradice, lo señalas.`},
+
+  {id:"corregir", nombre:"✓ Corregir", clase:"Escribir",
+   ejemplo:"Corrige la ortografía y el estilo de esto",
+   envoltura: t => "Corrige este texto:\n\n" + t,
+   sistema:
+`Modo corrección. Devuelves primero el texto ya corregido, completo y listo para copiar.
+Debajo, una tabla con las correcciones: | Decía | Debe decir | Por qué |.
+Corriges ortografía, tildes, puntuación, concordancia y anglicismos innecesarios.
+Arreglas también las frases enredadas, pero sin cambiar la voz de quien escribió ni meter palabras que esa persona no usaría.
+Si algo está bien y solo es cuestión de gusto, lo dices como sugerencia y no lo cambias.`},
+
+  {id:"programar", nombre:"⌨ Programar", clase:"Código",
+   ejemplo:"Un script de Python que renombre fotos por su fecha EXIF",
+   sistema:
+`Modo código. Entregas algo que se pueda pegar y ejecutar:
+- El archivo completo, no fragmentos sueltos con "...".
+- Con manejo de errores en lo que de verdad puede fallar: entrada del usuario, red, archivos.
+- Comentas solo lo que no se ve leyendo el código.
+- Dices qué hay que instalar y cómo se ejecuta, en una línea.
+- Después del código, explicas las decisiones que tomaste y qué cambiarías si el caso creciera.
+Si el pedido es ambiguo en algo que cambia el diseño, eliges lo más razonable, lo dices, y sigues.`},
+
+  {id:"simple", nombre:"💡 Explicar simple", clase:"Entender",
+   ejemplo:"Explícame qué es la inflación como si tuviera 12 años",
+   sistema:
+`Modo explicación simple. Explicas como se lo explicarías a alguien de doce años que es listo pero no sabe del tema:
+- Empiezas con una analogía de la vida cotidiana que de verdad se parezca al mecanismo, no una decorativa.
+- Nada de jerga sin traducir; si una palabra técnica hace falta, la introduces después de explicar la idea.
+- Frases cortas.
+- Terminas con una pregunta que obligue a usar lo explicado, para comprobar si quedó claro.
+No simplificas hasta mentir: si algo es más complicado de lo que dices, lo aclaras en una línea al final.`},
+
+  {id:"traducir", nombre:"🌐 Traducir", clase:"Idiomas",
+   ejemplo:"Traduce esto al inglés, tono formal",
+   sistema:
+`Modo traducción. Si no dicen el idioma de destino, lo preguntas en una línea.
+Traduces respetando el registro del original: lo informal queda informal.
+Devuelves la traducción sola. Debajo, en una nota corta, señalas las expresiones que no tienen equivalente directo y por qué elegiste esa opción.
+Nunca traduces literal un modismo: buscas el que se usa de verdad en ese idioma.`},
+
+  {id:"estudiar", nombre:"🎯 Preguntas de práctica", clase:"Estudiar",
+   ejemplo:"Hazme preguntas de práctica sobre la Segunda Guerra Mundial",
+   sistema:
+`Modo práctica. Del tema que te den generas:
+- 8 preguntas que suban de dificultad, mezclando opción múltiple, de desarrollo corto y de aplicación.
+- Las respuestas van al final, después de una línea "---", para poder intentarlo antes de mirar.
+- En cada respuesta explicas por qué las otras opciones fallan, no solo cuál es la correcta.
+- Cierras señalando qué dos conceptos conviene repasar si varias se fallaron.`},
+
+  {id:"debatir", nombre:"⚖ Ver las dos caras", clase:"Pensar",
+   ejemplo:"¿Conviene estudiar una carrera técnica o universitaria?",
+   sistema:
+`Modo contraste. Ante un tema discutible:
+1. Enuncias la pregunta real que está en juego, sin adornos.
+2. Presentas el mejor argumento de cada lado, en su versión más fuerte, no un espantapájaros.
+3. Señalas en qué están de acuerdo ambos lados, que suele ser más de lo que parece.
+4. Dices qué evidencia haría cambiar de opinión a cada uno.
+5. Cierras con tu postura y por qué, sin escudarte en "depende de cada quien".`}
+];
+
+const ESTILOS = [
+  {id:"plano",   nombre:"Plano",       receta:"ilustración vectorial plana, colores sólidos, formas simples y limpias, sin texturas"},
+  {id:"iso",     nombre:"Isométrico",  receta:"proyección isométrica, profundidad por planos, sombras suaves, aspecto de maqueta"},
+  {id:"linea",   nombre:"Línea",       receta:"solo contorno, trazo continuo de grosor constante, sin relleno, fondo limpio"},
+  {id:"cartel",  nombre:"Cartel",      receta:"composición de afiche, alto contraste, formas grandes, jerarquía marcada"},
+  {id:"suave",   nombre:"Degradados",  receta:"degradados amplios y suaves, luz difusa, atmósfera, transiciones de color largas"},
+  {id:"pixel",   nombre:"Pixel",       receta:"estética de píxeles, bloques cuadrados alineados a una rejilla, paleta corta"},
+  {id:"esquema", nombre:"Diagrama",    receta:"diagrama técnico claro, elementos etiquetados con <text>, líneas guía, fondo neutro"},
+  {id:"marca",   nombre:"Logo",        receta:"logotipo simple y memorable, silueta reconocible en pequeño, dos colores como mucho"}
+];
+
+const FORMATOS = [
+  {id:"cuadrado",   nombre:"Cuadrado",   caja:"0 0 1024 1024"},
+  {id:"horizontal", nombre:"Horizontal", caja:"0 0 1280 720"},
+  {id:"vertical",   nombre:"Vertical",   caja:"0 0 768 1024"}
+];
+
+/* ═══════════════ Estado ═══════════════ */
+
+const cfg = Object.assign({
+  clave:"", modelo:"claude-opus-5", maxTokens:32000, buscar:true, razonar:true, compactar:true,
+  instrucciones:INSTRUCCIONES_FABRICA, tier:"default", skill:"ninguna",
+  estilo:"plano", formato:"cuadrado"
+}, leer("nexo.cfg", {}));
+
+let chats = leer("nexo.chats", []);
+let obras = leer("nexo.obras", []);
+let activo = null, corriendo = null, adjuntos = [], nivelMax = 3, muestraVisible = true;
+let motor = null, sample = null, db = null, descargas = null, puedeImagenes = false;
+
+function leer(k, pordefecto){
+  try{ const v = localStorage.getItem(k); return v ? JSON.parse(v) : structuredClone(pordefecto); }
+  catch(e){ return structuredClone(pordefecto); }
 }
-function guardarCfg(){ try{ localStorage.setItem("ia.cfg", JSON.stringify(cfg)); }catch(e){} }
-function guardarChats(){
-  try{ localStorage.setItem("ia.chats", JSON.stringify(chats)); }
-  catch(e){ console.warn("localStorage lleno", e); }
-}
+function escribir(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){ console.warn("almacenamiento lleno"); } }
+const guardarCfg = () => escribir("nexo.cfg", cfg);
 const $ = s => document.querySelector(s);
-const nuevoId = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+const nid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+const pesa = s => new TextEncoder().encode(s).length;
+const chatActual = () => chats.find(c => c.id === activo) || null;
+const skillDe = id => SKILLS.find(s => s.id === id) || SKILLS[0];
 
-/* ============================================================
-   Markdown minimo (sin dependencias, escapando siempre el HTML)
-   ============================================================ */
+/* ═══════════════ Markdown ═══════════════ */
+
 function esc(s){
   return String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 }
 
 function md(fuente){
   const guardados = [];
-  // 1. Los bloques de codigo salen del camino antes de tocar nada mas.
   let t = String(fuente).replace(/```([\w+-]*)\n?([\s\S]*?)```/g, (m, leng, codigo) => {
-    guardados.push(
-      '<pre class="codigo"><div class="codigo-cab"><span>' + esc(leng || "texto") +
-      '</span><button type="button" class="copiar">copiar</button></div><code>' +
-      esc(codigo.replace(/\n$/, "")) + "</code></pre>"
-    );
-    return "@@BLOQUE" + (guardados.length - 1) + "@@";
+    guardados.push('<div class="bloque-codigo"><div class="cinta"><span>' + esc(leng || "texto") +
+      '</span><button type="button" class="btn chico copiar-codigo">copiar</button></div><pre><code>' +
+      esc(codigo.replace(/\n$/, "")) + "</code></pre></div>");
+    return "@@B" + (guardados.length - 1) + "@@";
   });
-
   t = esc(t);
 
-  // 2. Estructura por lineas.
-  const lineas = t.split("\n");
-  const salida = [];
-  let pila = [];   // listas abiertas: "ul" | "ol"
-  let enCita = false;
-
-  const cerrarListas = () => { while(pila.length) salida.push("</" + pila.pop() + ">"); };
-  const cerrarCita = () => { if(enCita){ salida.push("</blockquote>"); enCita = false; } };
+  const lineas = t.split("\n"), fuera = [];
+  let pila = [], citando = false;
+  const cerrarL = () => { while(pila.length) fuera.push("</" + pila.pop() + ">"); };
+  const cerrarC = () => { if(citando){ fuera.push("</blockquote>"); citando = false; } };
 
   for(let i = 0; i < lineas.length; i++){
-    let l = lineas[i];
-    const marcador = l.match(/^@@BLOQUE(\d+)@@$/);
-    if(marcador){ cerrarListas(); cerrarCita(); salida.push(guardados[+marcador[1]]); continue; }
+    const l = lineas[i];
+    const marca = l.match(/^@@B(\d+)@@$/);
+    if(marca){ cerrarL(); cerrarC(); fuera.push(guardados[+marca[1]]); continue; }
+    if(!l.trim()){ cerrarL(); cerrarC(); continue; }
 
-    if(!l.trim()){ cerrarListas(); cerrarCita(); continue; }
-
-    // Tabla: | a | b |  seguida de | --- | --- |
     if(/^\s*\|.*\|\s*$/.test(l) && i + 1 < lineas.length && /^\s*\|[\s:|-]+\|\s*$/.test(lineas[i+1])){
-      cerrarListas(); cerrarCita();
-      const celdas = f => f.trim().replace(/^\||\|$/g, "").split("|").map(c => enLinea(c.trim()));
-      let html = "<table><thead><tr>" + celdas(l).map(c => "<th>" + c + "</th>").join("") + "</tr></thead><tbody>";
+      cerrarL(); cerrarC();
+      const cel = f => f.trim().replace(/^\||\|$/g, "").split("|").map(c => corrido(c.trim()));
+      let h = '<div class="tabla-marco"><table><thead><tr>' +
+              cel(l).map(c => "<th>" + c + "</th>").join("") + "</tr></thead><tbody>";
       i += 2;
       while(i < lineas.length && /^\s*\|.*\|\s*$/.test(lineas[i])){
-        html += "<tr>" + celdas(lineas[i]).map(c => "<td>" + c + "</td>").join("") + "</tr>";
-        i++;
+        h += "<tr>" + cel(lineas[i]).map(c => "<td>" + c + "</td>").join("") + "</tr>"; i++;
       }
       i--;
-      salida.push(html + "</tbody></table>");
+      fuera.push(h + "</tbody></table></div>");
       continue;
     }
 
     const cita = l.match(/^&gt;\s?(.*)$/);
     if(cita){
-      cerrarListas();
-      if(!enCita){ salida.push("<blockquote>"); enCita = true; }
-      salida.push("<p>" + enLinea(cita[1]) + "</p>");
+      cerrarL();
+      if(!citando){ fuera.push("<blockquote>"); citando = true; }
+      fuera.push("<p>" + corrido(cita[1]) + "</p>");
       continue;
     }
-    cerrarCita();
+    cerrarC();
 
-    if(/^(---|\*\*\*|___)\s*$/.test(l)){ cerrarListas(); salida.push("<hr>"); continue; }
-
+    if(/^(---|\*\*\*|___)\s*$/.test(l)){ cerrarL(); fuera.push("<hr>"); continue; }
     const enc = l.match(/^(#{1,6})\s+(.*)$/);
-    if(enc){ cerrarListas(); salida.push("<h" + enc[1].length + ">" + enLinea(enc[2]) + "</h" + enc[1].length + ">"); continue; }
-
-    const punto  = l.match(/^(\s*)([-*+])\s+(.*)$/);
-    const numero = l.match(/^(\s*)(\d+)[.)]\s+(.*)$/);
-    if(punto || numero){
-      const tipo = punto ? "ul" : "ol";
-      if(pila[pila.length - 1] !== tipo){ cerrarListas(); pila.push(tipo); salida.push("<" + tipo + ">"); }
-      salida.push("<li>" + enLinea((punto || numero)[3]) + "</li>");
+    if(enc){
+      cerrarL();
+      const n = Math.min(enc[1].length, 3);
+      fuera.push("<h" + n + ">" + corrido(enc[2]) + "</h" + n + ">");
       continue;
     }
-    cerrarListas();
-    salida.push("<p>" + enLinea(l) + "</p>");
+    const vin = l.match(/^\s*[-*+]\s+(.*)$/), num = l.match(/^\s*\d+[.)]\s+(.*)$/);
+    if(vin || num){
+      const tipo = vin ? "ul" : "ol";
+      if(pila[pila.length-1] !== tipo){ cerrarL(); pila.push(tipo); fuera.push("<" + tipo + ">"); }
+      fuera.push("<li>" + corrido((vin || num)[1]) + "</li>");
+      continue;
+    }
+    cerrarL();
+    fuera.push("<p>" + corrido(l) + "</p>");
   }
-  cerrarListas(); cerrarCita();
-  return salida.join("\n");
+  cerrarL(); cerrarC();
+  return fuera.join("\n");
 }
 
-function enLinea(s){
-  return s
-    .replace(/`([^`\n]+)`/g, (m, c) => '<code class="en-linea">' + c + "</code>")
+function corrido(s){
+  return s.replace(/`([^`\n]+)`/g, '<code class="suelto">$1</code>')
     .replace(/\*\*([^*\n]+)\*\*/g, "<strong>$1</strong>")
     .replace(/(^|[^*])\*([^*\n]+)\*/g, "$1<em>$2</em>")
     .replace(/\[([^\]\n]+)\]\((https?:\/\/[^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
 }
 
-/* ============================================================
-   Saneado de SVG: el modelo genera el dibujo, pero igual le
-   quitamos scripts, manejadores de eventos y referencias externas.
-   ============================================================ */
-function sanearSVG(texto){
-  const encontrado = String(texto).match(/<svg[\s\S]*<\/svg>/i);
-  if(!encontrado) return null;
-  const doc = new DOMParser().parseFromString(encontrado[0], "image/svg+xml");
+/* ═══════════════ SVG: se limpia antes de tocar el DOM ═══════════════ */
+
+function sanearSVG(bruto){
+  const hallado = String(bruto).match(/<svg[\s\S]*<\/svg>/i);
+  if(!hallado) return null;
+  const doc = new DOMParser().parseFromString(hallado[0], "image/svg+xml");
   const raiz = doc.documentElement;
   if(!raiz || raiz.nodeName.toLowerCase() !== "svg" || doc.querySelector("parsererror")) return null;
 
-  const prohibidos = new Set(["script", "foreignobject", "iframe", "handler", "animate", "set"]);
-  const recorrer = nodo => {
-    for(const hijo of Array.from(nodo.children)){
-      if(prohibidos.has(hijo.nodeName.toLowerCase())){ hijo.remove(); continue; }
-      for(const at of Array.from(hijo.attributes)){
-        const n = at.name.toLowerCase();
-        const v = (at.value || "").trim().toLowerCase();
-        if(n.startsWith("on") || ((n === "href" || n === "xlink:href") && !v.startsWith("#"))) hijo.removeAttribute(at.name);
+  const fuera = new Set(["script","foreignobject","iframe","handler","image"]);
+  const podar = nodo => {
+    for(const h of Array.from(nodo.children)){
+      if(fuera.has(h.nodeName.toLowerCase())){ h.remove(); continue; }
+      for(const a of Array.from(h.attributes)){
+        const n = a.name.toLowerCase(), v = (a.value || "").trim().toLowerCase();
+        if(n.startsWith("on") || ((n === "href" || n === "xlink:href") && !v.startsWith("#"))) h.removeAttribute(a.name);
       }
-      recorrer(hijo);
+      podar(h);
     }
   };
-  for(const at of Array.from(raiz.attributes)) if(at.name.toLowerCase().startsWith("on")) raiz.removeAttribute(at.name);
-  recorrer(raiz);
+  for(const a of Array.from(raiz.attributes)) if(a.name.toLowerCase().startsWith("on")) raiz.removeAttribute(a.name);
+  podar(raiz);
 
   if(!raiz.getAttribute("xmlns")) raiz.setAttribute("xmlns", "http://www.w3.org/2000/svg");
   if(!raiz.getAttribute("viewBox")){
-    const an = parseFloat(raiz.getAttribute("width"))  || 1024;
-    const al = parseFloat(raiz.getAttribute("height")) || 1024;
+    const an = parseFloat(raiz.getAttribute("width")) || 1024, al = parseFloat(raiz.getAttribute("height")) || 1024;
     raiz.setAttribute("viewBox", "0 0 " + an + " " + al);
   }
-  raiz.removeAttribute("width");
-  raiz.removeAttribute("height");
+  raiz.removeAttribute("width"); raiz.removeAttribute("height");
   return new XMLSerializer().serializeToString(raiz);
 }
 
-/* ============================================================
-   Estado de las conversaciones
-
-   Cada turno guarda los bloques de contenido completos que
-   devuelve la API (texto, razonamiento, resultados de busqueda,
-   bloques de compactacion). Hay que reenviarlos tal cual: si se
-   guardara solo el texto, se perderia el estado de compactacion.
-   ============================================================ */
-function chatActual(){ return chats.find(c => c.id === idActual) || null; }
-
-function crearChat(){
-  const c = {id:nuevoId(), titulo:"Conversación nueva", creado:Date.now(), turnos:[]};
-  chats.unshift(c);
-  idActual = c.id;
-  guardarChats();
-  return c;
+function nombreArchivo(s){
+  return (s || "nexo").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 44) || "nexo";
 }
 
-/* Historial en el formato que espera la API. Filtra bloques que
-   no se pueden reenviar (razonamiento sin firma, texto vacio). */
-function historialAPI(chat){
-  const mensajes = [];
-  const ultimaImagen = chat.turnos.reduce((acc, t, i) => (t.imagen ? i : acc), -1);
-
-  for(const t of chat.turnos){
-    if(t.rol === "user"){
-      const contenido = [];
-      for(const a of (t.adjuntos || [])){
-        // Los documentos van antes del texto; asi los lee el modelo.
-        contenido.push(a.tipo === "application/pdf"
-          ? {type:"document", source:{type:"base64", media_type:"application/pdf", data:a.datos}}
-          : {type:"image",    source:{type:"base64", media_type:a.tipo, data:a.datos}});
-      }
-      if(t.texto) contenido.push({type:"text", text:t.texto});
-      if(contenido.length) mensajes.push({role:"user", content:contenido});
-      continue;
-    }
-
-    if(t.imagen){
-      // Solo la imagen mas reciente viaja con su codigo fuente completo,
-      // para poder pedir "hazla mas azul" sin inundar el contexto con
-      // el SVG de cada imagen anterior.
-      const esUltima = chat.turnos.indexOf(t) === ultimaImagen;
-      const texto = (esUltima && t.imagen.tipo === "svg")
-        ? "Generé esta imagen:\n\n```svg\n" + t.imagen.datos + "\n```"
-        : "[Imagen generada: " + (t.imagen.prompt || "sin descripción") + "]";
-      mensajes.push({role:"assistant", content:[{type:"text", text:texto}]});
-      continue;
-    }
-
-    const bloques = (t.bloques || []).filter(b => {
-      if(b.type === "text")     return b.text && b.text.trim();
-      if(b.type === "thinking") return b.thinking && b.signature;
-      return true;
-    });
-    if(bloques.length) mensajes.push({role:"assistant", content:bloques});
+/* En la página publicada los enlaces de descarga quedan inertes, así que
+   ahí se usa la capacidad `downloads`; en local basta un <a download>. */
+async function guardarArchivo(nombre, datos, tipo){
+  if(descargas){
+    try{ await descargas.save({filename:nombre, data:datos}); }catch(e){}
+    return;
   }
-  return mensajes;
+  const url = URL.createObjectURL(new Blob([datos], {type:tipo}));
+  const a = document.createElement("a");
+  a.href = url; a.download = nombre;
+  document.body.append(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-/* ============================================================
-   Construccion de la peticion
+async function svgAPng(svg){
+  const caja = (svg.match(/viewBox="0 0 (\d+) (\d+)"/) || [0, 1024, 1024]).slice(1).map(Number);
+  return new Promise((res, rej) => {
+    const url = URL.createObjectURL(new Blob([svg], {type:"image/svg+xml;charset=utf-8"}));
+    const img = new Image();
+    img.onload = () => {
+      const c = document.createElement("canvas");
+      c.width = caja[0]; c.height = caja[1];
+      const x = c.getContext("2d");
+      x.fillStyle = "#fff"; x.fillRect(0, 0, c.width, c.height);
+      x.drawImage(img, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(url);
+      c.toBlob(b => b ? res(b) : rej(new Error("no se pudo convertir")), "image/png");
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); rej(new Error("no se pudo convertir")); };
+    img.src = url;
+  });
+}
 
-   nivel 3 = todo    2 = sin fallbacks    1 = sin compactacion
-   nivel 0 = sin herramientas (minimo compatible)
-   Si la API rechaza una funcion beta con un 400, se baja de nivel
-   y se reintenta, en vez de dejar al usuario con un error opaco.
-   ============================================================ */
-function construirPeticion(chat, nivel){
+/* ═══════════════ MOTOR A · Messages API (archivo local) ═══════════════ */
+
+function cuerpoAPI(turnos, sistema, nivel){
   const m = MODELOS[cfg.modelo] || MODELOS["claude-opus-5"];
-  const cuerpo = {
+  const c = {
     model: cfg.modelo,
-    max_tokens: Math.max(1024, Math.min(cfg.maxTokens, m.maxSalida)),
+    max_tokens: Math.max(1024, Math.min(cfg.maxTokens, m.max)),
     stream: true,
-    system: [{type:"text", text:cfg.sistema || SISTEMA_POR_DEFECTO, cache_control:{type:"ephemeral"}}],
-    messages: historialAPI(chat)
+    system: [{type:"text", text:sistema, cache_control:{type:"ephemeral"}}],
+    messages: turnos
   };
-
-  // Razonamiento: los modelos actuales usan pensamiento adaptativo;
-  // budget_tokens da 400 en Opus 5 / Fable / Sonnet 5.
-  if(m.pensar === "adaptativo"){
-    cuerpo.thinking = {type:"adaptive", display: cfg.razonar ? "summarized" : "omitted"};
-  }else if(cfg.razonar){
-    cuerpo.thinking = {type:"enabled", budget_tokens: Math.min(8000, cuerpo.max_tokens - 1024)};
-  }
-
-  // output_config.effort no existe en Haiku 4.5.
-  if(m.esfuerzo) cuerpo.output_config = {effort: cfg.esfuerzo};
+  if(m.pensar === "adaptativo") c.thinking = {type:"adaptive", display: cfg.razonar ? "summarized" : "omitted"};
+  else if(cfg.razonar) c.thinking = {type:"enabled", budget_tokens: Math.min(8000, c.max_tokens - 1024)};
+  if(m.esfuerzo) c.output_config = {effort: ESFUERZO[cfg.tier] || "high"};
 
   const betas = [];
-  if(nivel >= 1 && cfg.busqueda && m.busqueda){
-    cuerpo.tools = [{type:m.busqueda, name:"web_search", max_uses:Math.max(1, cfg.maxBusquedas)}];
-  }
-  if(nivel >= 2 && cfg.compactar){
-    cuerpo.context_management = {edits:[{type:"compact_20260112"}]};
-    betas.push("compact-2026-01-12");
-  }
-  if(nivel >= 3){
-    // Si un clasificador rechaza el turno, el servidor lo reintenta
-    // solo en otro modelo dentro de la misma llamada.
-    cuerpo.fallbacks = "default";
-    betas.push("server-side-fallback-2026-07-01");
-  }
-  return {cuerpo, betas};
+  if(nivel >= 1 && cfg.buscar && m.busca) c.tools = [{type:m.busca, name:"web_search", max_uses:8}];
+  if(nivel >= 2 && cfg.compactar){ c.context_management = {edits:[{type:"compact_20260112"}]}; betas.push("compact-2026-01-12"); }
+  if(nivel >= 3){ c.fallbacks = "default"; betas.push("server-side-fallback-2026-07-01"); }
+  return {c, betas};
 }
 
-function cabeceras(betas){
-  const h = {
-    "content-type": "application/json",
-    "x-api-key": cfg.clave,
-    "anthropic-version": VERSION_API,
-    // Necesaria para llamar a la API directamente desde el navegador.
-    "anthropic-dangerous-direct-browser-access": "true"
+async function streamAPI(cuerpo, betas, senal, aviso){
+  const cab = {
+    "content-type":"application/json",
+    "x-api-key":cfg.clave,
+    "anthropic-version":VERSION_API,
+    "anthropic-dangerous-direct-browser-access":"true"
   };
-  if(betas.length) h["anthropic-beta"] = betas.join(",");
-  return h;
-}
+  if(betas.length) cab["anthropic-beta"] = betas.join(",");
 
-/* ============================================================
-   Stream SSE
-
-   onEvento(evt) recibe cada evento ya parseado. Devuelve los
-   bloques de contenido reconstruidos y el uso de tokens.
-   ============================================================ */
-async function transmitir(cuerpo, betas, senal, onEvento){
-  const resp = await fetch(API, {
-    method:"POST", headers:cabeceras(betas), body:JSON.stringify(cuerpo), signal:senal
-  });
-
+  const resp = await fetch(API, {method:"POST", headers:cab, body:JSON.stringify(cuerpo), signal:senal});
   if(!resp.ok){
-    let detalle = "";
-    try{
-      const j = await resp.json();
-      detalle = (j.error && (j.error.message || j.error.type)) || JSON.stringify(j);
-    }catch(e){ detalle = await resp.text().catch(() => ""); }
-    const err = new Error(detalle || ("HTTP " + resp.status));
+    let det = "";
+    try{ const j = await resp.json(); det = j.error?.message || j.error?.type || JSON.stringify(j); }
+    catch(e){ det = await resp.text().catch(() => ""); }
+    const err = new Error(det || ("HTTP " + resp.status));
     err.estado = resp.status;
     throw err;
   }
 
-  const lector = resp.body.getReader();
-  const dec = new TextDecoder();
-  let buffer = "";
-  const bloques = [];
-  const jsonParcial = {};   // indice -> partial_json acumulado
-  let uso = {entrada:0, salida:0, cacheLectura:0};
-  let motivoParada = null;
+  const lec = resp.body.getReader(), dec = new TextDecoder();
+  let buf = "", parada = null;
+  const bloques = [], parcial = {};
+  const res = {texto:"", razonamiento:"", fuentes:[], uso:{entrada:0, salida:0}};
 
   while(true){
-    const {done, value} = await lector.read();
+    const {done, value} = await lec.read();
     if(done) break;
-    buffer += dec.decode(value, {stream:true});
+    buf += dec.decode(value, {stream:true});
+    const trozos = buf.split("\n\n");
+    buf = trozos.pop();
 
-    // Los eventos SSE se separan por linea en blanco.
-    const partes = buffer.split("\n\n");
-    buffer = partes.pop();
+    for(const trozo of trozos){
+      const linea = trozo.split("\n").find(l => l.startsWith("data:"));
+      if(!linea) continue;
+      let e;
+      try{ e = JSON.parse(linea.slice(5).trim()); }catch(err){ continue; }
 
-    for(const parte of partes){
-      const lineaDatos = parte.split("\n").find(l => l.startsWith("data:"));
-      if(!lineaDatos) continue;
-      let evt;
-      try{ evt = JSON.parse(lineaDatos.slice(5).trim()); }catch(e){ continue; }
-
-      switch(evt.type){
-        case "message_start":
-          if(evt.message && evt.message.usage){
-            uso.entrada      = evt.message.usage.input_tokens || 0;
-            uso.cacheLectura = evt.message.usage.cache_read_input_tokens || 0;
-          }
-          break;
-
-        case "content_block_start":
-          bloques[evt.index] = structuredClone(evt.content_block);
-          if(bloques[evt.index].type === "server_tool_use") jsonParcial[evt.index] = "";
-          onEvento({tipo:"bloque", indice:evt.index, bloque:bloques[evt.index]});
-          break;
-
-        case "content_block_delta": {
-          const b = bloques[evt.index];
-          const d = evt.delta || {};
-          if(!b) break;
-          if(d.type === "text_delta"){        b.text      = (b.text || "") + d.text;        onEvento({tipo:"texto", indice:evt.index, trozo:d.text}); }
-          else if(d.type === "thinking_delta"){ b.thinking = (b.thinking || "") + d.thinking; onEvento({tipo:"razonar", indice:evt.index, trozo:d.thinking}); }
-          else if(d.type === "signature_delta"){ b.signature = (b.signature || "") + d.signature; }
-          else if(d.type === "input_json_delta"){ jsonParcial[evt.index] = (jsonParcial[evt.index] || "") + d.partial_json; }
-          break;
-        }
-
-        case "content_block_stop": {
-          const b = bloques[evt.index];
-          if(b && jsonParcial[evt.index]){
-            // Siempre parsear con JSON.parse: el escapado puede variar.
-            try{ b.input = JSON.parse(jsonParcial[evt.index]); }catch(e){}
-            delete jsonParcial[evt.index];
-          }
-          onEvento({tipo:"finBloque", indice:evt.index, bloque:b});
-          break;
-        }
-
-        case "message_delta":
-          if(evt.delta && evt.delta.stop_reason) motivoParada = evt.delta.stop_reason;
-          if(evt.usage && evt.usage.output_tokens) uso.salida = evt.usage.output_tokens;
-          break;
-
-        case "error":
-          throw new Error((evt.error && evt.error.message) || "Error durante la transmisión");
+      if(e.type === "message_start" && e.message?.usage) res.uso.entrada = e.message.usage.input_tokens || 0;
+      else if(e.type === "content_block_start"){
+        bloques[e.index] = structuredClone(e.content_block);
+        if(bloques[e.index].type === "server_tool_use") parcial[e.index] = "";
       }
+      else if(e.type === "content_block_delta"){
+        const b = bloques[e.index], d = e.delta || {};
+        if(!b) continue;
+        if(d.type === "text_delta"){ b.text = (b.text || "") + d.text; res.texto = bloques.filter(x => x?.type === "text").map(x => x.text).join(""); aviso(res); }
+        else if(d.type === "thinking_delta"){ b.thinking = (b.thinking || "") + d.thinking; res.razonamiento += d.thinking; aviso(res); }
+        else if(d.type === "signature_delta") b.signature = (b.signature || "") + d.signature;
+        else if(d.type === "input_json_delta") parcial[e.index] = (parcial[e.index] || "") + d.partial_json;
+      }
+      else if(e.type === "content_block_stop"){
+        const b = bloques[e.index];
+        if(b && parcial[e.index]){ try{ b.input = JSON.parse(parcial[e.index]); }catch(err){} delete parcial[e.index]; }
+        if(b?.type === "web_search_tool_result" && Array.isArray(b.content)){
+          for(const r of b.content) if(r?.url) res.fuentes.push({url:r.url, titulo:r.title || r.url});
+          aviso(res);
+        }
+      }
+      else if(e.type === "message_delta"){
+        if(e.delta?.stop_reason) parada = e.delta.stop_reason;
+        if(e.usage?.output_tokens) res.uso.salida = e.usage.output_tokens;
+      }
+      else if(e.type === "error") throw new Error(e.error?.message || "error en la transmisión");
     }
   }
-  return {bloques: bloques.filter(Boolean), uso, motivoParada};
+  res.bloques = bloques.filter(Boolean);
+  res.parada = parada;
+  return res;
 }
 
-/* Lanza la peticion bajando de nivel si la API rechaza una beta. */
-async function pedirConDegradacion(chat, senal, onEvento){
+async function responderAPI({turnos, sistema, senal, aviso}){
   let ultimo = null;
   for(let nivel = nivelMax; nivel >= 0; nivel--){
-    const {cuerpo, betas} = construirPeticion(chat, nivel);
+    const {c, betas} = cuerpoAPI(turnos, sistema, nivel);
     try{
-      const r = await transmitir(cuerpo, betas, senal, onEvento);
-      nivelMax = nivel;               // recordar lo que funciona en esta sesion
+      const r = await streamAPI(c, betas, senal, aviso);
+      nivelMax = nivel;
       return r;
     }catch(e){
       if(e.name === "AbortError") throw e;
-      // Solo degradar ante un 400: un 401 o un 429 no se arreglan quitando funciones.
       if(e.estado !== 400 || nivel === 0) throw e;
       ultimo = e;
-      onEvento({tipo:"degradar", nivel, motivo:e.message});
     }
   }
   throw ultimo;
 }
 
-/* ============================================================
-   Generacion de imagenes
-   ============================================================ */
-const SISTEMA_SVG =
-`Eres un ilustrador que dibuja con SVG. Devuelves UNA sola imagen SVG completa y nada más.
+/* ═══════════════ MOTOR B · capacidad sample (página publicada) ═══════════════ */
 
-Reglas estrictas:
-- Tu respuesta empieza con "<svg" y termina con "</svg>". Sin explicaciones, sin markdown, sin bloques de código.
-- Usa viewBox="0 0 1024 1024" y xmlns="http://www.w3.org/2000/svg".
-- Nada de <script>, <foreignObject>, ni imágenes o fuentes externas: todo tiene que ser autocontenido.
-- Construye la ilustración con formas: rect, circle, ellipse, path, polygon, y degradados (linearGradient, radialGradient) para dar profundidad.
-- Apunta a algo rico y compuesto: fondo, plano medio y primer plano, con sombras y luces. Entre 40 y 200 elementos según la complejidad.
-- Si el pedido incluye texto, dibújalo con <text> usando familias genéricas (sans-serif, serif).`;
-
-async function generarSVG(prompt, senal){
-  const cuerpo = {
-    model: cfg.modelo,
-    max_tokens: Math.min(32000, (MODELOS[cfg.modelo] || {}).maxSalida || 32000),
-    stream: true,
-    system: [{type:"text", text:SISTEMA_SVG}],
-    messages: [{role:"user", content:[{type:"text", text:"Dibuja: " + prompt}]}]
-  };
-  const m = MODELOS[cfg.modelo] || {};
-  if(m.pensar === "adaptativo") cuerpo.thinking = {type:"adaptive", display:"omitted"};
-  if(m.esfuerzo) cuerpo.output_config = {effort: cfg.esfuerzo === "low" ? "medium" : cfg.esfuerzo};
-
-  const r = await transmitir(cuerpo, [], senal, () => {});
-  const texto = r.bloques.filter(b => b.type === "text").map(b => b.text).join("");
-  const svg = sanearSVG(texto);
-  if(!svg) throw new Error("El modelo no devolvió un SVG válido. Prueba a reformular la descripción.");
-  return {svg, uso:r.uso};
-}
-
-async function generarRaster(prompt, senal){
-  if(!cfg.imgClave) throw new Error("Falta la clave del proveedor de imágenes (Ajustes → Generación de imágenes).");
-  const resp = await fetch(cfg.imgEndpoint, {
-    method:"POST", signal:senal,
-    headers:{"content-type":"application/json", "authorization":"Bearer " + cfg.imgClave},
-    body:JSON.stringify({model:cfg.imgModelo, prompt, n:1, size:cfg.imgTam})
-  });
-  if(!resp.ok){
-    let d = "";
-    try{ const j = await resp.json(); d = (j.error && j.error.message) || JSON.stringify(j); }
-    catch(e){ d = await resp.text().catch(() => ""); }
-    throw new Error("El proveedor de imágenes respondió " + resp.status + ": " + (d || "sin detalle"));
+async function responderSample({turnos, sistema, imagenes, senal, aviso}){
+  // No hay rol "system": las instrucciones van como primer turno de usuario.
+  const entrada = [{role:"user", content:sistema}];
+  for(const t of turnos){
+    const txt = t.content.map(b => b.type === "text" ? b.text : "").join("").trim();
+    if(txt) entrada.push({role:t.role, content:txt});
   }
-  const j = await resp.json();
-  const item = j.data && j.data[0];
-  if(!item) throw new Error("El proveedor no devolvió ninguna imagen.");
-  if(item.b64_json) return "data:image/png;base64," + item.b64_json;
-  if(item.url) return item.url;
-  throw new Error("Respuesta del proveedor en un formato que no reconozco.");
+  const res = {texto:"", razonamiento:"", fuentes:[], uso:{entrada:0, salida:0}};
+  const op = {signal:senal, cache:false, modelTier:cfg.tier,
+    onText: ({text}) => { res.texto = text; aviso(res); }};
+  if(imagenes?.length && puedeImagenes) op.images = imagenes;
+
+  const r = await sample(entrada, op);
+  res.texto = r.text;
+  res.truncado = r.truncated;
+  res.tierAplicado = r.modelTierApplied;
+  return res;
 }
 
-/* SVG -> PNG usando un canvas, para poder descargarlo. */
-function svgAPng(svg, lado){
-  return new Promise((resolve, reject) => {
-    const blob = new Blob([svg], {type:"image/svg+xml;charset=utf-8"});
-    const url = URL.createObjectURL(blob);
-    const img = new Image();
-    img.onload = () => {
-      const lienzo = document.createElement("canvas");
-      lienzo.width = lienzo.height = lado || 1024;
-      const ctx = lienzo.getContext("2d");
-      ctx.fillStyle = "#ffffff";
-      ctx.fillRect(0, 0, lienzo.width, lienzo.height);
-      ctx.drawImage(img, 0, 0, lienzo.width, lienzo.height);
-      URL.revokeObjectURL(url);
-      lienzo.toBlob(b => b ? resolve(b) : reject(new Error("No se pudo convertir a PNG")), "image/png");
-    };
-    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("No se pudo convertir a PNG")); };
-    img.src = url;
-  });
+const responder = args => motor === "api" ? responderAPI(args) : responderSample(args);
+
+/* ═══════════════ Historial ═══════════════ */
+
+function sistemaCompleto(){
+  const s = skillDe(cfg.skill);
+  return cfg.instrucciones + (s.sistema ? "\n\n---\n" + s.sistema : "");
 }
 
-function descargar(blob, nombre){
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url; a.download = nombre;
-  document.body.appendChild(a); a.click(); a.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
-}
+function historial(chat, hasta){
+  const msgs = [];
+  const ultimaImg = chat.turnos.reduce((a, t, i) => (t.svg ? i : a), -1);
+  const lista = chat.turnos.slice(0, hasta);
 
-/* ============================================================
-   Interfaz
-   ============================================================ */
-const envoltura = $("#envoltura"), hilo = $("#hilo"), entrada = $("#entrada");
+  if(chat.resumen) msgs.push({role:"user", content:[{type:"text", text:"Contexto de lo hablado antes:\n" + chat.resumen}]});
 
-/* Busca en el titulo y en el texto de todos los mensajes. */
-function textoBuscable(c){
-  return (c.titulo + " " + c.turnos.map(t =>
-    t.rol === "user" ? (t.texto || "")
-    : t.imagen ? (t.imagen.prompt || "")
-    : extraerEstado(t.bloques || []).texto
-  ).join(" ")).toLowerCase();
-}
-
-/* Cambia el título por un campo de texto, ahí mismo en la lista. */
-function renombrar(c, tit){
-  if(tit.parentNode === null) return;
-  const campo = document.createElement("input");
-  campo.type = "text"; campo.className = "renombrar"; campo.value = c.titulo;
-  let cerrado = false;
-  const confirmar = () => {
-    if(cerrado) return;
-    cerrado = true;
-    c.titulo = campo.value.trim() || c.titulo;
-    guardarChats(); pintarLista();
-  };
-  campo.onblur = confirmar;
-  campo.onkeydown = e => {
-    e.stopPropagation();
-    if(e.key === "Enter"){ e.preventDefault(); confirmar(); }
-    if(e.key === "Escape"){ cerrado = true; pintarLista(); }
-  };
-  campo.onclick = e => e.stopPropagation();
-  campo.ondblclick = e => e.stopPropagation();
-  tit.replaceWith(campo);
-  campo.focus(); campo.select();
-}
-
-function pintarLista(){
-  const cont = $("#listaChats");
-  const filtro = ($("#buscador").value || "").trim().toLowerCase();
-  const visibles = filtro ? chats.filter(c => textoBuscable(c).includes(filtro)) : chats;
-
-  cont.innerHTML = "";
-  if(!visibles.length){
-    cont.innerHTML = '<div style="color:var(--tenue);font-size:13px;padding:10px 4px">' +
-      (filtro ? "Sin resultados para «" + esc(filtro) + "»." : "Todavía no hay conversaciones.") + "</div>";
-    return;
-  }
-
-  for(const c of visibles){
-    const it = document.createElement("div");
-    it.className = "chatItem" + (c.id === idActual ? " activo" : "");
-    const tit = document.createElement("span");
-    tit.className = "titulo";
-    tit.textContent = c.titulo;
-    tit.title = c.titulo + "  (doble clic para renombrar)";
-    tit.ondblclick = ev => { ev.stopPropagation(); renombrar(c, tit); };
-
-    const bre = document.createElement("button");
-    bre.className = "borrar"; bre.type = "button"; bre.textContent = "✎"; bre.title = "Renombrar";
-    bre.onclick = ev => { ev.stopPropagation(); renombrar(c, tit); };
-
-    const bo = document.createElement("button");
-    bo.className = "borrar"; bo.type = "button"; bo.textContent = "✕"; bo.title = "Borrar";
-    bo.onclick = ev => {
-      ev.stopPropagation();
-      if(!confirm("¿Borrar «" + c.titulo + "»?")) return;
-      chats = chats.filter(x => x.id !== c.id);
-      if(idActual === c.id) idActual = chats.length ? chats[0].id : null;
-      guardarChats(); pintarLista(); pintarHilo();
-    };
-    it.append(tit, bre, bo);
-    it.onclick = () => {
-      if(innerWidth <= 820) $("#lateral").classList.add("oculto");
-      // Volver a dibujar la conversación ya abierta tiraría abajo un
-      // renombrado a medio escribir, así que no se hace.
-      if(c.id === idActual) return;
-      idActual = c.id;
-      pintarLista(); pintarHilo();
-    };
-    cont.appendChild(it);
-  }
-}
-
-function pintarHilo(){
-  envoltura.innerHTML = "";
-  const chat = chatActual();
-  if(!chat || !chat.turnos.length){ mostrarBienvenida(); actualizarMeta(); return; }
-  for(const t of chat.turnos) envoltura.appendChild(dibujarTurno(t));
-  actualizarMeta();
-  abajo(true);
-}
-
-function mostrarBienvenida(){
-  const d = document.createElement("div");
-  d.id = "bienvenida";
-  d.innerHTML =
-    "<h1>👋 Hola, soy NEXO</h1>" +
-    "<p>Pregúntame lo que quieras. Puedo buscar en la web, razonar paso a paso, leer las imágenes que me pases y dibujar imágenes nuevas. " +
-    "Sin tope de mensajes ni de largo de conversación: cuando el historial se llena, se compacta solo y seguimos.</p>";
-  const sug = document.createElement("div");
-  sug.id = "sugerencias";
-  const ejemplos = [
-    "Explícame cómo funciona un motor de cohete como si tuviera 12 años",
-    "¿Qué pasó esta semana en las noticias de tecnología?",
-    "Escríbeme un script de Python que ordene mis fotos por fecha",
-    "🎨 Dibuja un zorro leyendo bajo un cerezo al atardecer"
-  ];
-  for(const e of ejemplos){
-    const b = document.createElement("button");
-    b.type = "button"; b.textContent = e;
-    b.onclick = () => {
-      if(e.startsWith("🎨")){ $("#chkImagen").checked = true; sincronizarInterruptores(); entrada.value = e.slice(2).trim(); }
-      else entrada.value = e;
-      entrada.focus(); ajustarAltura(); enviar();
-    };
-    sug.appendChild(b);
-  }
-  d.appendChild(sug);
-  envoltura.appendChild(d);
-}
-
-function dibujarTurno(t){
-  const el = document.createElement("div");
-  el.className = "turno " + (t.rol === "user" ? "yo" : "ia");
-  const quien = document.createElement("div");
-  quien.className = "quien";
-  quien.textContent = t.rol === "user" ? "TÚ" : "NEXO";
-  el.appendChild(quien);
-
-  if(t.rol === "user"){
-    if(t.adjuntos && t.adjuntos.length){
-      const cont = document.createElement("div");
-      cont.className = "adjuntos";
-      for(const a of t.adjuntos) cont.appendChild(fichaAdjunto(a));
-      el.appendChild(cont);
+  for(const t of lista){
+    if(t.rol === "user"){
+      const c = [];
+      for(const a of (t.adjuntos || [])){
+        c.push(a.tipo === "application/pdf"
+          ? {type:"document", source:{type:"base64", media_type:"application/pdf", data:a.datos}}
+          : {type:"image", source:{type:"base64", media_type:a.tipo, data:a.datos}});
+      }
+      if(t.texto) c.push({type:"text", text:t.texto});
+      if(c.length) msgs.push({role:"user", content:c});
+      continue;
     }
-    const b = document.createElement("div");
-    b.className = "burbuja";
-    b.innerHTML = md(t.texto || "");
-    el.appendChild(b);
-    el.appendChild(accionesTurno(t));
-    return el;
+    if(t.svg){
+      const esUlt = chat.turnos.indexOf(t) === ultimaImg;
+      msgs.push({role:"assistant", content:[{type:"text",
+        text: esUlt ? "Dibujé esta imagen:\n\n```svg\n" + t.svg + "\n```"
+                    : "[imagen generada: " + (t.prompt || "") + "]"}]});
+      continue;
+    }
+    if(motor === "api" && t.bloques?.length){
+      const b = t.bloques.filter(x =>
+        x.type === "text"     ? x.text?.trim() :
+        x.type === "thinking" ? x.thinking && x.signature : true);
+      if(b.length) msgs.push({role:"assistant", content:b});
+    }else if(t.texto?.trim()){
+      msgs.push({role:"assistant", content:[{type:"text", text:t.texto}]});
+    }
   }
-
-  if(t.imagen){ el.appendChild(dibujarImagen(t.imagen)); }
-  if(t.error){
-    const a = document.createElement("div");
-    a.className = "aviso";
-    a.innerHTML = '<span class="tit">No se pudo completar</span>' + esc(t.error);
-    el.appendChild(a);
-  }
-  if(t.bloques && t.bloques.length){
-    const cuerpo = document.createElement("div");
-    el.appendChild(cuerpo);
-    pintarCuerpoIA(cuerpo, extraerEstado(t.bloques), false);
-  }
-  if(t.uso){
-    const m = document.createElement("div");
-    m.className = "meta";
-    m.textContent = resumenUso(t.uso, t.modelo);
-    el.appendChild(m);
-  }
-  el.appendChild(accionesTurno(t));
-  return el;
+  return msgs;
 }
 
-/* Barra de acciones bajo cada mensaje: copiar, regenerar, editar, borrar. */
-function accionesTurno(t){
-  const barra = document.createElement("div");
-  barra.className = "accionesTurno";
+/* En modo sample el tope de entrada son 64 KiB: al acercarse se resume
+   lo viejo y la conversación sigue en vez de cortarse. */
+async function resumirSiHaceFalta(chat){
+  if(motor !== "sample" || chat.turnos.length < 6) return;
+  const peso = pesa(sistemaCompleto()) + historial(chat).reduce((n, m) =>
+    n + m.content.reduce((k, b) => k + (b.text ? pesa(b.text) : 0), 0), 0);
+  if(peso < LIMITE_ARTIFACT) return;
 
-  const boton = (etiqueta, titulo, alPulsar) => {
-    const b = document.createElement("button");
-    b.type = "button"; b.className = "plano mini"; b.textContent = etiqueta; b.title = titulo;
-    b.onclick = alPulsar;
-    barra.appendChild(b);
-    return b;
-  };
-
-  const texto = t.rol === "user"
-    ? (t.texto || "")
-    : (t.imagen ? (t.imagen.prompt || "") : extraerEstado(t.bloques || []).texto);
-
-  if(texto){
-    boton("⧉ Copiar", "Copiar al portapapeles", ev => {
-      navigator.clipboard.writeText(texto)
-        .then(() => { ev.target.textContent = "✓ Copiado"; setTimeout(() => ev.target.textContent = "⧉ Copiar", 1500); })
-        .catch(() => { ev.target.textContent = "no se pudo"; setTimeout(() => ev.target.textContent = "⧉ Copiar", 1500); });
-    });
-  }
-
-  if(t.rol === "user"){
-    boton("✎ Editar", "Editar este mensaje y volver a preguntar", () => editarTurno(t));
-  }else{
-    boton("↻ Regenerar", "Pedir otra respuesta a la misma pregunta", () => regenerar(t));
-  }
-  boton("🗑", "Borrar este mensaje y todo lo que sigue", () => borrarDesde(t));
-  return barra;
-}
-
-/* Devuelve el mensaje del usuario al compositor y descarta todo lo posterior. */
-function editarTurno(t){
-  if(corriendo) return;
-  const chat = chatActual();
-  const i = chat.turnos.indexOf(t);
-  if(i < 0) return;
-  entrada.value = t.texto || "";
-  adjuntos = (t.adjuntos || []).slice();
-  chat.turnos.length = i;
-  guardarChats(); pintarHilo(); pintarPrevios(); ajustarAltura();
-  entrada.focus();
-}
-
-/* Descarta la respuesta y vuelve a pedirla con la misma pregunta. */
-async function regenerar(t){
-  if(corriendo) return;
-  const chat = chatActual();
-  const i = chat.turnos.indexOf(t);
-  if(i < 1) return;
-  const pregunta = chat.turnos[i - 1];
-  const eraImagen = !!t.imagen;
-  chat.turnos.length = i;
-  guardarChats(); pintarHilo();
-
-  corriendo = new AbortController();
-  $("#btParar").style.display = "";
-  $("#btEnviar").disabled = true;
+  const viejos = chat.turnos.slice(0, Math.max(2, chat.turnos.length - 4));
+  const texto = viejos.map(t => (t.rol === "user" ? "Yo: " : "Nexo: ") + (t.texto || "[imagen]"))
+    .join("\n\n").slice(0, 38000);
   try{
-    if(eraImagen) await flujoImagen(chat, pregunta.texto || "", corriendo.signal);
-    else          await flujoChat(chat, corriendo.signal);
-  }catch(e){
-    if(e.name !== "AbortError"){
-      const nt = {rol:"assistant", error: mensajeError(e)};
-      chat.turnos.push(nt);
-      envoltura.appendChild(dibujarTurno(nt));
-    }
-  }finally{
-    corriendo = null;
-    $("#btParar").style.display = "none";
-    $("#btEnviar").disabled = false;
-    guardarChats(); actualizarMeta(); abajo();
-  }
+    const {text} = await sample(
+      "Resume esta conversación para que otro asistente pueda retomarla sin haberla leído. " +
+      "Conserva datos concretos, decisiones, nombres y lo que quedó pendiente. Solo el resumen, en viñetas.\n\n" +
+      (chat.resumen ? "Resumen previo:\n" + chat.resumen + "\n\n" : "") + "Conversación:\n" + texto,
+      {modelTier:"quick"});
+    chat.resumen = text;
+    chat.turnos = chat.turnos.slice(viejos.length);
+  }catch(e){ chat.turnos = chat.turnos.slice(-6); }
 }
 
-function borrarDesde(t){
-  if(corriendo) return;
-  const chat = chatActual();
-  const i = chat.turnos.indexOf(t);
-  if(i < 0) return;
-  const cuantos = chat.turnos.length - i;
-  if(cuantos > 1 && !confirm("Se borrarán " + cuantos + " mensajes desde este. ¿Seguro?")) return;
-  chat.turnos.length = i;
-  guardarChats(); pintarHilo(); pintarLista(); actualizarMeta();
-}
+/* ═══════════════ Errores ═══════════════ */
 
-/* Convierte los bloques guardados en el estado que sabe pintar la UI. */
-function extraerEstado(bloques){
-  const est = {razonamiento:"", texto:"", fuentes:[], busquedas:[], compactado:false};
-  for(const b of bloques){
-    if(b.type === "text") est.texto += b.text || "";
-    else if(b.type === "thinking") est.razonamiento += b.thinking || "";
-    else if(b.type === "compaction") est.compactado = true;
-    else if(b.type === "server_tool_use" && b.input && b.input.query) est.busquedas.push(b.input.query);
-    else if(b.type === "web_search_tool_result" && Array.isArray(b.content)){
-      for(const r of b.content) if(r && r.url) est.fuentes.push({url:r.url, titulo:r.title || r.url});
-    }
-  }
-  return est;
-}
+const COPIA = {
+  not_granted:"Hace falta tu permiso para usar tu cuenta de Claude aquí. Recarga la página y acepta.",
+  session_expired:"Tu sesión de Claude venció. Recarga la página.",
+  rate_limited:"Muchas preguntas seguidas. Espera unos segundos.",
+  prompt_too_large:"La conversación pasó del tamaño máximo. Empieza una nueva.",
+  refused:"Claude no quiso responder a esto.",
+  empty_completion:"Volvió una respuesta vacía. Prueba a preguntarlo de otra forma.",
+  upstream_error:"Falló del lado de Claude. Reintenta en un momento.",
+  images_unavailable:"Tu cuenta no puede mandar imágenes desde aquí.",
+  image_rejected:"Esa imagen no se pudo leer. Prueba con un PNG o JPEG de menos de 20 MB.",
+  queue_overflow:"Hay demasiadas peticiones en cola.",
+  sampling_disabled:"Esta página no puede hablar con Claude ahora mismo.",
+  not_declared:"Esta página no puede hablar con Claude ahora mismo.",
+  capability_disabled:"Esta página no puede hablar con Claude ahora mismo.",
+  capability_removed:"Esta página ya no puede hablar con Claude. Recárgala."
+};
 
-function pintarCuerpoIA(cont, est, enVivo){
-  cont.innerHTML = "";
-  cont.style.display = "flex";
-  cont.style.flexDirection = "column";
-  cont.style.gap = "7px";
-
-  if(est.compactado){
-    const n = document.createElement("div");
-    n.className = "nota";
-    n.textContent = "🗜 La conversación se compactó automáticamente para seguir sin límite de largo.";
-    cont.appendChild(n);
-  }
-  if(est.razonamiento){
-    const det = document.createElement("details");
-    det.className = "razonamiento";
-    det.open = enVivo && !est.texto;
-    const s = document.createElement("summary");
-    s.textContent = "🧠 Razonamiento";
-    const c = document.createElement("div");
-    c.className = "cuerpo";
-    c.textContent = est.razonamiento;
-    det.append(s, c);
-    cont.appendChild(det);
-  }
-  if(est.busquedas.length && !est.fuentes.length){
-    const n = document.createElement("div");
-    n.className = "nota";
-    n.textContent = "🌐 Buscando: " + est.busquedas.join(" · ");
-    cont.appendChild(n);
-  }
-  if(est.texto || enVivo){
-    const b = document.createElement("div");
-    b.className = "burbuja";
-    b.innerHTML = est.texto ? md(est.texto) : '<span class="puntos" style="color:var(--tenue)">pensando</span>';
-    cont.appendChild(b);
-  }
-  if(est.fuentes.length){
-    const f = document.createElement("div");
-    f.className = "fuentes";
-    const cab = document.createElement("div");
-    cab.className = "cab";
-    cab.textContent = "🌐 FUENTES CONSULTADAS (" + est.fuentes.length + ")";
-    f.appendChild(cab);
-    const vistas = new Set();
-    for(const s of est.fuentes){
-      if(vistas.has(s.url)) continue;
-      vistas.add(s.url);
-      const a = document.createElement("a");
-      a.href = s.url; a.target = "_blank"; a.rel = "noopener noreferrer";
-      a.textContent = "· " + s.titulo;
-      f.appendChild(a);
-    }
-    cont.appendChild(f);
-  }
-}
-
-function dibujarImagen(img){
-  const caja = document.createElement("div");
-  caja.style.display = "flex"; caja.style.flexDirection = "column"; caja.style.gap = "8px";
-
-  const lienzo = document.createElement("div");
-  lienzo.className = "lienzo";
-  if(img.tipo === "svg"){
-    const limpio = sanearSVG(img.datos);
-    if(limpio) lienzo.innerHTML = limpio;
-    else lienzo.textContent = "SVG inválido";
-  }else{
-    const im = document.createElement("img");
-    im.src = img.datos; im.alt = img.prompt || "imagen generada";
-    lienzo.appendChild(im);
-  }
-  caja.appendChild(lienzo);
-
-  const acciones = document.createElement("div");
-  acciones.className = "acciones-img";
-  const base = "nexo-" + (img.prompt || "imagen").toLowerCase().replace(/[^a-z0-9]+/g, "-").slice(0, 40).replace(/^-|-$/g, "");
-
-  if(img.tipo === "svg"){
-    const bs = document.createElement("button");
-    bs.type = "button"; bs.className = "plano"; bs.textContent = "⬇ SVG";
-    bs.onclick = () => descargar(new Blob([img.datos], {type:"image/svg+xml"}), base + ".svg");
-    const bp = document.createElement("button");
-    bp.type = "button"; bp.className = "plano"; bp.textContent = "⬇ PNG";
-    bp.onclick = async () => {
-      bp.disabled = true;
-      try{ descargar(await svgAPng(img.datos, 1024), base + ".png"); }
-      catch(e){ alert(e.message); }
-      bp.disabled = false;
-    };
-    acciones.append(bs, bp);
-  }else{
-    const ba = document.createElement("a");
-    ba.href = img.datos; ba.download = base + ".png";
-    ba.textContent = "⬇ PNG";
-    ba.style.cssText = "font-size:14px;font-weight:700;color:var(--azul);align-self:center";
-    acciones.appendChild(ba);
-  }
-  const br = document.createElement("button");
-  br.type = "button"; br.className = "plano"; br.textContent = "🔄 Otra versión";
-  br.onclick = () => { $("#chkImagen").checked = true; sincronizarInterruptores(); entrada.value = img.prompt || ""; ajustarAltura(); enviar(); };
-  acciones.appendChild(br);
-  caja.appendChild(acciones);
-  return caja;
-}
-
-function resumenUso(u, modelo){
-  const p = (MODELOS[modelo] || {}).precio;
-  const partes = ["↑ " + (u.entrada || 0).toLocaleString("es") + " tokens", "↓ " + (u.salida || 0).toLocaleString("es") + " tokens"];
-  if(u.cacheLectura) partes.push("caché " + u.cacheLectura.toLocaleString("es"));
-  if(p){
-    const costo = ((u.entrada || 0) * p[0] + (u.salida || 0) * p[1]) / 1e6;
-    partes.push("≈ US$ " + costo.toFixed(costo < 0.01 ? 4 : 3));
-  }
-  return partes.join("   ·   ");
-}
-
-function actualizarMeta(){
-  const c = chatActual();
-  $("#metaChat").textContent = c && c.turnos.length ? c.turnos.filter(t => t.rol === "user").length + " mensajes" : "";
-  $("#estadoPunto").className = "punto" + (cfg.clave ? "" : " mal");
-  $("#pista").textContent = cfg.clave
-    ? "Modelo: " + (MODELOS[cfg.modelo] || {}).nombre + (cfg.busqueda ? " · con búsqueda web" : "")
-    : "⚠ Falta tu clave de la API — ábrela en ⚙ Ajustes para empezar.";
-}
-
-let pegadoAbajo = true;
-hilo.addEventListener("scroll", () => {
-  pegadoAbajo = hilo.scrollHeight - hilo.scrollTop - hilo.clientHeight < 90;
-});
-function abajo(forzar){ if(forzar || pegadoAbajo) hilo.scrollTop = hilo.scrollHeight; }
-
-function avisar(mensaje){
-  const d = document.createElement("div");
-  d.className = "turno ia";
-  d.innerHTML = '<div class="aviso"><span class="tit">Atención</span>' + esc(mensaje) + "</div>";
-  envoltura.appendChild(d);
-  abajo(true);
-}
-
-/* ============================================================
-   Envío
-   ============================================================ */
-async function enviar(){
-  if(corriendo) return;
-  const texto = entrada.value.trim();
-  if(!texto && !adjuntos.length) return;
-
-  if(!cfg.clave){ abrirAjustes(); $("#inClave").focus(); return; }
-
-  let chat = chatActual() || crearChat();
-  if(chat.turnos.length === 0){
-    chat.titulo = texto.slice(0, 46) || "Imagen";
-    if(texto.length > 46) chat.titulo += "…";
-  }
-
-  const turnoUsuario = {rol:"user", texto, adjuntos:adjuntos.slice()};
-  chat.turnos.push(turnoUsuario);
-
-  entrada.value = ""; ajustarAltura();
-  adjuntos = []; pintarPrevios();
-
-  if($("#bienvenida")) envoltura.innerHTML = "";
-  envoltura.appendChild(dibujarTurno(turnoUsuario));
-  pintarLista(); actualizarMeta(); abajo(true);
-
-  const modoImagen = $("#chkImagen").checked;
-  corriendo = new AbortController();
-  $("#btParar").style.display = "";
-  $("#btEnviar").disabled = true;
-
-  try{
-    if(modoImagen) await flujoImagen(chat, texto, corriendo.signal);
-    else           await flujoChat(chat, corriendo.signal);
-  }catch(e){
-    if(e.name !== "AbortError"){
-      const t = {rol:"assistant", error: mensajeError(e)};
-      chat.turnos.push(t);
-      envoltura.appendChild(dibujarTurno(t));
-    }
-  }finally{
-    corriendo = null;
-    $("#btParar").style.display = "none";
-    $("#btEnviar").disabled = false;
-    guardarChats(); actualizarMeta(); abajo();
-    entrada.focus();
-  }
-}
-
-function mensajeError(e){
-  const m = e.message || String(e);
-  if(e.estado === 401) return "La clave de la API no es válida o fue revocada. Revísala en ⚙ Ajustes.";
-  if(e.estado === 429) return "Demasiadas peticiones o crédito agotado. Espera un momento y reintenta.\n\nDetalle: " + m;
-  if(e.estado === 529) return "Los servidores de Anthropic están sobrecargados. Reintenta en unos segundos.";
+function copiaError(e){
+  if(e?.code && COPIA[e.code]) return COPIA[e.code];
+  if(e?.estado === 401) return "La clave de la API no es válida o fue revocada. Revísala en Ajustes.";
+  if(e?.estado === 429) return "Sin crédito o demasiadas peticiones. Espera y reintenta.\n\n" + (e.message || "");
+  if(e?.estado === 529) return "Los servidores de Anthropic están saturados. Reintenta en unos segundos.";
+  const m = e?.message || String(e);
   if(/Failed to fetch|NetworkError|Load failed/i.test(m))
-    return "No se pudo contactar a api.anthropic.com. Puede ser tu conexión, o que estés abriendo la página desde un origen que el navegador bloquea.";
+    return "No se pudo contactar a api.anthropic.com. Revisa tu conexión.";
   return m;
 }
 
-async function flujoChat(chat, senal){
-  const turno = {rol:"assistant", bloques:[], modelo:cfg.modelo, uso:{entrada:0, salida:0, cacheLectura:0}};
-  chat.turnos.push(turno);
+/* ═══════════════ Pintar el hilo ═══════════════ */
 
-  const el = document.createElement("div");
-  el.className = "turno ia";
-  el.innerHTML = '<div class="quien">NEXO</div>';
-  const cuerpo = document.createElement("div");
-  const pieMeta = document.createElement("div");
-  pieMeta.className = "meta";
-  el.append(cuerpo, pieMeta);
-  envoltura.appendChild(el);
-  abajo(true);
+const columna = $("#columna"), hilo = $("#hilo"), texto = $("#texto");
 
-  const est = {razonamiento:"", texto:"", fuentes:[], busquedas:[], compactado:false};
-  let ultimoPintado = 0, pendiente = false;
-  const repintar = forzar => {
-    const ahora = Date.now();
-    if(!forzar && ahora - ultimoPintado < 90){
-      if(!pendiente){ pendiente = true; setTimeout(() => { pendiente = false; repintar(true); }, 100); }
-      return;
-    }
-    ultimoPintado = ahora;
-    pintarCuerpoIA(cuerpo, est, true);
-    abajo();
-  };
-  repintar(true);
-
-  const onEvento = ev => {
-    if(ev.tipo === "texto")        { est.texto += ev.trozo; repintar(); }
-    else if(ev.tipo === "razonar") { est.razonamiento += ev.trozo; repintar(); }
-    else if(ev.tipo === "bloque" && ev.bloque.type === "compaction"){ est.compactado = true; repintar(true); }
-    else if(ev.tipo === "finBloque" && ev.bloque){
-      const b = ev.bloque;
-      if(b.type === "server_tool_use" && b.input && b.input.query){ est.busquedas.push(b.input.query); repintar(true); }
-      if(b.type === "web_search_tool_result" && Array.isArray(b.content)){
-        for(const r of b.content) if(r && r.url) est.fuentes.push({url:r.url, titulo:r.title || r.url});
-        repintar(true);
-      }
-    }
-    else if(ev.tipo === "degradar"){
-      console.warn("Función no disponible en este nivel, reintentando sin ella:", ev.motivo);
-    }
-  };
-
-  // pause_turn: el bucle de herramientas del servidor llegó a su tope
-  // de iteraciones. Se reenvía tal cual y el servidor retoma solo.
-  let continuaciones = 0;
-  while(true){
-    const r = await pedirConDegradacion(chat, senal, onEvento);
-    turno.bloques = turno.bloques.concat(r.bloques);
-    turno.uso.entrada += r.uso.entrada;
-    turno.uso.salida += r.uso.salida;
-    turno.uso.cacheLectura += r.uso.cacheLectura;
-    if(r.motivoParada === "pause_turn" && continuaciones < 5){ continuaciones++; continue; }
-    if(r.motivoParada === "refusal"){
-      est.texto += (est.texto ? "\n\n" : "") + "_(El modelo declinó responder a este pedido.)_";
-    }
-    break;
-  }
-
-  repintar(true);
-  pieMeta.textContent = resumenUso(turno.uso, turno.modelo);
-  // La barra de acciones se agrega recién al terminar: no tiene sentido
-  // ofrecer "copiar" o "regenerar" sobre una respuesta a medio escribir.
-  el.appendChild(accionesTurno(turno));
-  guardarChats();
+function pintarHilo(){
+  columna.textContent = "";
+  const c = chatActual();
+  if(!c || !c.turnos.length){ pintarPortada(); actualizarAguja(); return; }
+  for(const t of c.turnos) columna.append(dibujarTurno(t, c));
+  actualizarAguja();
+  alFondo(true);
 }
 
-async function flujoImagen(chat, prompt, senal){
-  const turno = {rol:"assistant", modelo:cfg.modelo, imagen:null};
-  chat.turnos.push(turno);
+function pintarPortada(){
+  const p = document.createElement("div");
+  p.className = "portada";
+  const h = document.createElement("div");
+  h.className = "titular";
+  h.textContent = "Pregunta lo que sea.";
+  const d = document.createElement("p");
+  d.textContent = motor === "api"
+    ? "Modo local: busca en la web, lee PDFs y te muestra cómo razonó. Elige una skill arriba para que se especialice."
+    : "Corre con tu cuenta de Claude, sin claves. Elige una skill arriba para que se especialice, o pásate al Estudio para crear imágenes.";
+  p.append(h, d);
 
-  const el = document.createElement("div");
-  el.className = "turno ia";
-  el.innerHTML = '<div class="quien">NEXO</div><div class="nota" id="estadoImg">🎨 Dibujando la imagen… puede tardar bastante</div>';
-  envoltura.appendChild(el);
-  abajo(true);
-
-  try{
-    if(cfg.motorImagen === "svg"){
-      const r = await generarSVG(prompt, senal);
-      turno.imagen = {tipo:"svg", datos:r.svg, prompt};
-      turno.uso = r.uso;
-    }else{
-      const url = await generarRaster(prompt, senal);
-      turno.imagen = {tipo:"raster", datos:url, prompt};
-    }
-  }catch(e){
-    if(e.name === "AbortError"){ chat.turnos.pop(); el.remove(); throw e; }
-    turno.error = mensajeError(e);
-  }
-
-  el.replaceWith(dibujarTurno(turno));
-  guardarChats(); abajo(true);
-}
-
-/* ============================================================
-   Adjuntos
-   ============================================================ */
-const TIPOS_IMG = ["image/png", "image/jpeg", "image/gif", "image/webp"];
-const TIPOS_OK  = TIPOS_IMG.concat(["application/pdf"]);
-const TOPE_IMG  = 5 * 1024 * 1024;
-const TOPE_PDF  = 25 * 1024 * 1024;
-
-function agregarFicheros(lista){
-  for(const f of lista){
-    if(!TIPOS_OK.includes(f.type)){
-      avisar("Formato no soportado: " + (f.type || f.name) + ". Se aceptan PNG, JPEG, GIF, WEBP y PDF.");
-      continue;
-    }
-    const tope = f.type === "application/pdf" ? TOPE_PDF : TOPE_IMG;
-    if(f.size > tope){
-      avisar("«" + f.name + "» pesa " + (f.size / 1048576).toFixed(1) + " MB y el tope es " + (tope / 1048576) + " MB.");
-      continue;
-    }
-    const lector = new FileReader();
-    lector.onload = () => {
-      adjuntos.push({tipo:f.type, nombre:f.name, datos:String(lector.result).split(",")[1]});
-      pintarPrevios();
+  const rej = document.createElement("div");
+  rej.className = "rejilla";
+  for(const s of SKILLS.filter(s => s.ejemplo).slice(0, 6)){
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "tarjeta";
+    const cl = document.createElement("span");
+    cl.className = "clase"; cl.textContent = s.clase;
+    const tx = document.createElement("span");
+    tx.textContent = s.ejemplo;
+    b.append(cl, tx);
+    b.onclick = () => {
+      cfg.skill = s.id; $("#selSkill").value = s.id; guardarCfg();
+      texto.value = s.ejemplo; crecer(); enviar();
     };
-    lector.onerror = () => avisar("No se pudo leer «" + f.name + "».");
-    lector.readAsDataURL(f);
+    rej.append(b);
   }
+  p.append(rej);
+
+  if(muestraVisible){
+    const m = document.createElement("div");
+    m.style.cssText = "margin-top:14px;display:flex;flex-direction:column;gap:16px;opacity:.68";
+    m.append(
+      dibujarTurno({rol:"user", texto:"¿Por qué el cielo se pone rojo al atardecer?", muestra:true}),
+      dibujarTurno({rol:"assistant", muestra:true, texto:
+        "Por lo mismo que es azul de día, llevado al extremo.\n\nLa atmósfera dispersa mucho más la luz de onda corta (azul) que la larga (roja): es la **dispersión de Rayleigh**. Al atardecer el Sol está bajo y su luz cruza unas 38 veces más aire que al mediodía, así que el azul se dispersa hasta perderse y a tu ojo solo llega el rojo."})
+    );
+    p.append(m);
+  }
+  columna.append(p);
 }
 
-/* Miniatura para una imagen, ficha con nombre para un PDF. */
+function dibujarTurno(t, chat){
+  const el = document.createElement("div");
+  el.className = "turno " + (t.rol === "user" ? "mio" : "suyo");
+
+  const f = document.createElement("div");
+  f.className = "firma";
+  f.append(document.createTextNode(t.rol === "user" ? "Tú" : "Nexo"));
+  if(t.skill && t.skill !== "ninguna"){
+    const i = document.createElement("span");
+    i.className = "insignia";
+    i.textContent = skillDe(t.skill).nombre.replace(/^\S+\s/, "");
+    f.append(i);
+  }
+  el.append(f);
+
+  if(t.rol === "user"){
+    if(t.adjuntos?.length){
+      const cont = document.createElement("div");
+      cont.className = "adjuntos";
+      for(const a of t.adjuntos) cont.append(fichaAdjunto(a));
+      el.append(cont);
+    }
+    const d = document.createElement("div");
+    d.className = "dicho";
+    d.innerHTML = md(t.texto || "");
+    el.append(d);
+    if(!t.muestra) el.append(mandos(t, chat));
+    return el;
+  }
+
+  if(t.razonamiento){
+    const det = document.createElement("details");
+    det.className = "razonando";
+    const s = document.createElement("summary");
+    s.textContent = "Razonamiento";
+    const c = document.createElement("div");
+    c.className = "txt"; c.textContent = t.razonamiento;
+    det.append(s, c);
+    el.append(det);
+  }
+  if(t.svg){
+    const marco = document.createElement("div");
+    marco.className = "lienzo";
+    marco.style.cssText = "background:var(--lienzo);border:1px solid var(--linea);border-radius:12px;padding:10px";
+    const limpio = sanearSVG(t.svg);
+    if(limpio) marco.innerHTML = limpio;
+    el.append(marco);
+  }
+  if(t.texto){
+    const d = document.createElement("div");
+    d.className = "dicho";
+    d.innerHTML = md(t.texto);
+    el.append(d);
+  }
+  if(t.fuentes?.length){
+    const fu = document.createElement("div");
+    fu.className = "fuentes";
+    const cab = document.createElement("div");
+    cab.className = "cab";
+    cab.textContent = "Fuentes consultadas (" + t.fuentes.length + ")";
+    fu.append(cab);
+    const vistos = new Set();
+    for(const s of t.fuentes){
+      if(vistos.has(s.url)) continue;
+      vistos.add(s.url);
+      const a = document.createElement("a");
+      a.href = s.url; a.target = "_blank"; a.rel = "noopener noreferrer";
+      a.textContent = "· " + s.titulo;
+      fu.append(a);
+    }
+    el.append(fu);
+  }
+  if(t.error){
+    const a = document.createElement("div");
+    a.className = "alerta";
+    const b = document.createElement("b");
+    b.textContent = "No salió";
+    a.append(b, document.createTextNode(t.error));
+    el.append(a);
+  }
+  if(t.uso && !t.muestra){
+    const n = document.createElement("div");
+    n.className = "nota";
+    n.textContent = resumenUso(t.uso);
+    el.append(n);
+  }
+  if(!t.muestra) el.append(mandos(t, chat));
+  return el;
+}
+
 function fichaAdjunto(a){
   if(a.tipo === "application/pdf"){
     const d = document.createElement("div");
-    d.className = "docChip";
-    d.innerHTML = "<span>📄</span>";
-    const n = document.createElement("span");
-    n.className = "nombre";
-    n.textContent = a.nombre || "documento.pdf";
-    d.appendChild(n);
+    d.className = "doc";
+    const i = document.createElement("span"); i.textContent = "📄";
+    const n = document.createElement("span"); n.textContent = a.nombre || "documento.pdf";
+    d.append(i, n);
     return d;
   }
   const im = document.createElement("img");
@@ -1464,224 +1140,678 @@ function fichaAdjunto(a){
   return im;
 }
 
+function resumenUso(u){
+  const p = MODELOS[cfg.modelo]?.precio;
+  const partes = ["↑ " + (u.entrada || 0).toLocaleString("es"), "↓ " + (u.salida || 0).toLocaleString("es")];
+  if(motor === "api" && p){
+    const costo = ((u.entrada || 0) * p[0] + (u.salida || 0) * p[1]) / 1e6;
+    partes.push("≈ US$ " + costo.toFixed(costo < 0.01 ? 4 : 3));
+  }
+  return partes.join("   ·   ");
+}
+
+function mandos(t, chat){
+  const barra = document.createElement("div");
+  barra.className = "mandos";
+  const add = (rot, tit, fn) => {
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "btn chico"; b.textContent = rot; b.title = tit;
+    b.onclick = fn;
+    barra.append(b);
+  };
+  if(t.texto) add("Copiar", "Copiar el texto", ev => {
+    navigator.clipboard.writeText(t.texto).then(
+      () => { ev.target.textContent = "Copiado"; setTimeout(() => ev.target.textContent = "Copiar", 1400); },
+      () => { ev.target.textContent = "No se pudo"; setTimeout(() => ev.target.textContent = "Copiar", 1400); });
+  });
+  if(t.rol === "user") add("Editar", "Volver a escribirla", () => editar(t, chat));
+  else                 add("Otra vez", "Pedir otra respuesta", () => regenerar(t, chat));
+  add("Borrar", "Borrar de aquí en adelante", () => borrarDesde(t, chat));
+  return barra;
+}
+
+let pegado = true;
+hilo.addEventListener("scroll", () => { pegado = hilo.scrollHeight - hilo.scrollTop - hilo.clientHeight < 100; });
+function alFondo(f){ if(f || pegado) hilo.scrollTop = hilo.scrollHeight; }
+
+function actualizarAguja(){
+  const c = chatActual(), partes = [];
+  if(c?.turnos.length) partes.push(c.turnos.filter(t => t.rol === "user").length + " mensajes");
+  if(c?.resumen) partes.push("historial resumido");
+  $("#aguja").textContent = partes.join("  ·  ");
+}
+
+/* ═══════════════ Enviar ═══════════════ */
+
+async function enviar(){
+  if(corriendo) return;
+  let pregunta = texto.value.trim();
+  if(!pregunta && !adjuntos.length) return;
+  if(motor === "api" && !cfg.clave){ abrirAjustes(); $("#inClave").focus(); return; }
+
+  const skill = skillDe(cfg.skill);
+  if(skill.envoltura && pregunta) pregunta = skill.envoltura(pregunta);
+
+  let chat = chatActual();
+  if(!chat){
+    chat = {id:nid(), titulo:"Sin título", creado:Date.now(), resumen:"", turnos:[]};
+    chats.unshift(chat);
+    activo = chat.id;
+  }
+  if(!chat.turnos.length){
+    const base = texto.value.trim() || "Imagen";
+    chat.titulo = base.slice(0, 42) + (base.length > 42 ? "…" : "");
+  }
+
+  const imagenes = adjuntos.filter(a => a.tipo.startsWith("image/")).map(a => a.archivo);
+  const mio = {rol:"user", texto:pregunta, adjuntos:adjuntos.map(a => ({tipo:a.tipo, nombre:a.nombre, datos:a.datos}))};
+  chat.turnos.push(mio);
+
+  texto.value = ""; crecer();
+  adjuntos = []; pintarPrevios();
+  muestraVisible = false;
+  pintarHilo(); pintarLista();
+
+  await conversar(chat, imagenes);
+  guardar(chat);
+  pintarLista(); actualizarAguja();
+}
+
+async function conversar(chat, imagenes){
+  await resumirSiHaceFalta(chat);
+
+  const turno = {rol:"assistant", texto:"", razonamiento:"", fuentes:[], skill:cfg.skill, uso:{entrada:0, salida:0}};
+  chat.turnos.push(turno);
+
+  const el = document.createElement("div");
+  el.className = "turno suyo";
+  el.innerHTML = '<div class="firma">Nexo</div>';
+  const zona = document.createElement("div");
+  zona.style.cssText = "display:flex;flex-direction:column;gap:8px";
+  const espera = document.createElement("div");
+  espera.className = "pensando";
+  espera.innerHTML = '<span class="barrido"></span><span>pensando</span>';
+  const reloj = espera.querySelector("span:last-child");
+  zona.append(espera);
+  el.append(zona);
+  columna.append(el);
+  alFondo(true);
+
+  const desde = Date.now();
+  const tic = setInterval(() => {
+    if(!turno.texto) reloj.textContent = "pensando · " + Math.round((Date.now() - desde) / 1000) + "s";
+  }, 1000);
+
+  let ultimo = 0, encolado = false;
+  const repintar = (r, forzar) => {
+    const ahora = Date.now();
+    if(!forzar && ahora - ultimo < 90){
+      if(!encolado){ encolado = true; setTimeout(() => { encolado = false; repintar(r, true); }, 100); }
+      return;
+    }
+    ultimo = ahora;
+    zona.textContent = "";
+    if(r.razonamiento && cfg.razonar){
+      const det = document.createElement("details");
+      det.className = "razonando";
+      det.open = !r.texto;
+      const s = document.createElement("summary"); s.textContent = "Razonamiento";
+      const c = document.createElement("div"); c.className = "txt"; c.textContent = r.razonamiento;
+      det.append(s, c);
+      zona.append(det);
+    }
+    if(r.texto){
+      const d = document.createElement("div");
+      d.className = "dicho";
+      d.innerHTML = md(r.texto);
+      zona.append(d);
+    }else{
+      zona.append(espera);
+    }
+    alFondo();
+  };
+
+  const mando = new AbortController();
+  corriendo = mando;
+  $("#btParar").hidden = false;
+  $("#btEnviar").disabled = true;
+
+  try{
+    const r = await responder({
+      turnos: historial(chat, chat.turnos.length - 1),
+      sistema: sistemaCompleto(),
+      imagenes, senal: mando.signal,
+      aviso: res => { Object.assign(turno, {texto:res.texto, razonamiento:res.razonamiento}); repintar(res); }
+    });
+    Object.assign(turno, {
+      texto:r.texto, razonamiento:r.razonamiento, fuentes:r.fuentes,
+      bloques:r.bloques, uso:r.uso || turno.uso
+    });
+  }catch(e){
+    if(e?.code === "cancelled" || e?.name === "AbortError"){
+      if(!turno.texto){ chat.turnos.pop(); el.remove(); }
+    }else{
+      turno.texto = e?.text || turno.texto;
+      turno.error = copiaError(e);
+    }
+  }finally{
+    clearInterval(tic);
+    corriendo = null;
+    $("#btParar").hidden = true;
+    $("#btEnviar").disabled = false;
+    if(chat.turnos.includes(turno)) el.replaceWith(dibujarTurno(turno, chat));
+    alFondo();
+    texto.focus();
+  }
+}
+
+async function regenerar(t, chat){
+  if(corriendo || !chat) return;
+  const i = chat.turnos.indexOf(t);
+  if(i < 1) return;
+  chat.turnos.length = i;
+  pintarHilo();
+  await conversar(chat, []);
+  guardar(chat); pintarLista();
+}
+
+function editar(t, chat){
+  if(corriendo || !chat) return;
+  const i = chat.turnos.indexOf(t);
+  if(i < 0) return;
+  texto.value = t.texto || "";
+  adjuntos = (t.adjuntos || []).map(a => Object.assign({}, a));
+  chat.turnos.length = i;
+  guardar(chat); pintarHilo(); pintarPrevios(); crecer();
+  texto.focus();
+}
+
+function borrarDesde(t, chat){
+  if(corriendo || !chat) return;
+  const i = chat.turnos.indexOf(t);
+  if(i < 0) return;
+  chat.turnos.length = i;
+  guardar(chat); pintarHilo(); pintarLista(); actualizarAguja();
+}
+
+/* ═══════════════ ESTUDIO DE IMÁGENES ═══════════════ */
+
+function recetaDibujo(){
+  const est = ESTILOS.find(e => e.id === cfg.estilo) || ESTILOS[0];
+  const fmt = FORMATOS.find(f => f.id === cfg.formato) || FORMATOS[0];
+  const paleta = ($("#paleta").value || "").trim();
+  return `Dibuja con SVG. Devuelves UNA imagen SVG y absolutamente nada más.
+
+Reglas:
+- La respuesta empieza en "<svg" y termina en "</svg>". Sin explicaciones ni bloques de código.
+- viewBox="${fmt.caja}" y xmlns="http://www.w3.org/2000/svg".
+- Nada de <script>, <foreignObject>, <image> ni recursos externos: todo autocontenido.
+- Construye con rect, circle, ellipse, path, polygon y degradados (linearGradient, radialGradient).
+- Composición con fondo, plano medio y primer plano. Entre 40 y 200 elementos según la escena.
+- Si hay texto, va en <text> con familias genéricas (sans-serif, serif).
+
+Estilo: ${est.receta}.
+${paleta ? "Paleta: " + paleta + ".\n" : ""}
+Lo que hay que dibujar: `;
+}
+
+async function dibujarObra(){
+  if(corriendo) return;
+  const idea = $("#prompt").value.trim();
+  if(!idea) return;
+  if(motor === "api" && !cfg.clave){ abrirAjustes(); $("#inClave").focus(); return; }
+
+  const mando = new AbortController();
+  corriendo = mando;
+  $("#btPararImg").hidden = false;
+  $("#btDibujar").disabled = true;
+
+  const taller = $("#taller");
+  const cargando = document.createElement("div");
+  cargando.className = "taller-vacio";
+  cargando.innerHTML = '<div class="pensando" style="justify-content:center"><span class="barrido"></span><span>dibujando</span></div>';
+  const reloj = cargando.querySelector("span:last-child");
+  taller.prepend(cargando);
+  const desde = Date.now();
+  const tic = setInterval(() => { reloj.textContent = "dibujando · " + Math.round((Date.now() - desde) / 1000) + "s"; }, 1000);
+
+  try{
+    const r = await responder({
+      turnos: [{role:"user", content:[{type:"text", text:recetaDibujo() + idea}]}],
+      sistema: "Eres un ilustrador que dibuja con SVG y no escribe nada más.",
+      senal: mando.signal, aviso: () => {}
+    });
+    const limpio = sanearSVG(r.texto);
+    if(!limpio) throw new Error("No devolvió un SVG que se pueda dibujar. Prueba a describirlo de otra forma.");
+    obras.unshift({id:nid(), svg:limpio, prompt:idea, estilo:cfg.estilo, formato:cfg.formato, cuando:Date.now()});
+    obras = obras.slice(0, 20);   // los SVG pesan: se guarda una galería corta
+    escribir("nexo.obras", obras);
+  }catch(e){
+    if(e?.code !== "cancelled" && e?.name !== "AbortError"){
+      const a = document.createElement("div");
+      a.className = "alerta";
+      a.innerHTML = "<b>No salió</b>" + esc(copiaError(e));
+      taller.prepend(a);
+      setTimeout(() => a.remove(), 9000);
+    }
+  }finally{
+    clearInterval(tic);
+    cargando.remove();
+    corriendo = null;
+    $("#btPararImg").hidden = true;
+    $("#btDibujar").disabled = false;
+    pintarTaller();
+  }
+}
+
+function pintarTaller(){
+  const taller = $("#taller");
+  taller.textContent = "";
+  if(!obras.length){
+    const v = document.createElement("div");
+    v.className = "taller-vacio";
+    v.textContent = "Aquí van a aparecer tus imágenes. Describe lo que quieras a la izquierda, elige un estilo y dale a Dibujar.";
+    taller.append(v);
+    return;
+  }
+  const g = document.createElement("div");
+  g.className = "galeria";
+  for(const o of obras){
+    const caja = document.createElement("div");
+    caja.className = "obra";
+    const lz = document.createElement("div");
+    lz.className = "lienzo";
+    const limpio = sanearSVG(o.svg);
+    if(limpio) lz.innerHTML = limpio;
+    const datos = document.createElement("div");
+    datos.className = "datos";
+    const desc = document.createElement("div");
+    desc.className = "desc";
+    desc.textContent = o.prompt;
+    const barra = document.createElement("div");
+    barra.className = "barra";
+    const add = (rot, fn) => {
+      const b = document.createElement("button");
+      b.type = "button"; b.className = "btn chico"; b.textContent = rot;
+      b.onclick = fn;
+      barra.append(b);
+    };
+    add("SVG", () => guardarArchivo(nombreArchivo(o.prompt) + ".svg", o.svg, "image/svg+xml"));
+    add("PNG", async ev => {
+      ev.target.disabled = true;
+      try{ guardarArchivo(nombreArchivo(o.prompt) + ".png", await svgAPng(o.svg), "image/png"); }catch(e){}
+      ev.target.disabled = false;
+    });
+    add("Otra", () => {
+      $("#prompt").value = o.prompt;
+      cfg.estilo = o.estilo; cfg.formato = o.formato; guardarCfg(); pintarFichas();
+      dibujarObra();
+    });
+    add("Borrar", () => {
+      obras = obras.filter(x => x.id !== o.id);
+      escribir("nexo.obras", obras);
+      pintarTaller();
+    });
+    datos.append(desc, barra);
+    caja.append(lz, datos);
+    g.append(caja);
+  }
+  taller.append(g);
+}
+
+function pintarFichas(){
+  const hacer = (cont, items, actual, alElegir) => {
+    cont.textContent = "";
+    for(const it of items){
+      const b = document.createElement("button");
+      b.type = "button"; b.className = "ficha"; b.textContent = it.nombre;
+      b.setAttribute("aria-pressed", String(it.id === actual));
+      b.onclick = () => { alElegir(it.id); guardarCfg(); pintarFichas(); };
+      cont.append(b);
+    }
+  };
+  hacer($("#fichasEstilo"), ESTILOS, cfg.estilo, v => cfg.estilo = v);
+  hacer($("#fichasFormato"), FORMATOS, cfg.formato, v => cfg.formato = v);
+}
+
+/* ═══════════════ Lista de conversaciones ═══════════════ */
+
+function guardar(chat){
+  chat.actualizado = Date.now();
+  escribir("nexo.chats", chats.slice(0, 40));
+  if(db){
+    const {id, ...cuerpo} = chat;
+    db.doc("chats/" + id).set(cuerpo).catch(() => {});
+  }
+}
+
+function pintarLista(){
+  const lista = $("#lista");
+  const filtro = ($("#busca").value || "").trim().toLowerCase();
+  const dentro = c => (c.titulo + " " + c.turnos.map(t => t.texto || "").join(" ")).toLowerCase().includes(filtro);
+  const vistos = filtro ? chats.filter(dentro) : chats;
+
+  lista.textContent = "";
+  if(!vistos.length){
+    const v = document.createElement("div");
+    v.className = "vacio";
+    v.textContent = filtro ? "Nada coincide con «" + filtro + "»." : "Todavía no hay conversaciones.";
+    lista.append(v);
+    return;
+  }
+  for(const c of vistos){
+    const fila = document.createElement("button");
+    fila.type = "button"; fila.className = "hebra";
+    fila.setAttribute("aria-current", String(c.id === activo));
+    const rot = document.createElement("span");
+    rot.className = "rotulo"; rot.textContent = c.titulo;
+    rot.title = c.titulo + " (doble clic para renombrar)";
+    rot.ondblclick = ev => { ev.stopPropagation(); renombrar(c, rot); };
+
+    const x = document.createElement("span");
+    x.className = "cerrar"; x.setAttribute("role", "button"); x.tabIndex = 0; x.textContent = "✕";
+    const borrar = ev => {
+      ev.stopPropagation();
+      chats = chats.filter(y => y.id !== c.id);
+      escribir("nexo.chats", chats);
+      if(db) db.doc("chats/" + c.id).delete().catch(() => {});
+      if(activo === c.id) activo = chats[0]?.id || null;
+      pintarLista(); pintarHilo();
+    };
+    x.onclick = borrar;
+    x.onkeydown = ev => { if(ev.key === "Enter" || ev.key === " ") borrar(ev); };
+
+    fila.append(rot, x);
+    fila.onclick = () => {
+      if(innerWidth <= 840) $("#riel").classList.add("plegado");
+      if(c.id === activo) return;
+      activo = c.id; muestraVisible = false;
+      pintarLista(); pintarHilo();
+    };
+    lista.append(fila);
+  }
+}
+
+function renombrar(c, rot){
+  const campo = document.createElement("input");
+  campo.type = "text"; campo.className = "campo-busca"; campo.value = c.titulo;
+  campo.style.cssText = "flex:1;padding:3px 7px;font-size:13.5px;min-width:0";
+  let cerrado = false;
+  const fijar = () => {
+    if(cerrado) return;
+    cerrado = true;
+    c.titulo = campo.value.trim() || c.titulo;
+    guardar(c); pintarLista();
+  };
+  campo.onblur = fijar;
+  campo.onclick = e => e.stopPropagation();
+  campo.onkeydown = e => {
+    e.stopPropagation();
+    if(e.key === "Enter"){ e.preventDefault(); fijar(); }
+    if(e.key === "Escape"){ cerrado = true; pintarLista(); }
+  };
+  rot.replaceWith(campo);
+  campo.focus(); campo.select();
+}
+
+/* ═══════════════ Adjuntos ═══════════════ */
+
+function sumarArchivos(lista){
+  for(const f of Array.from(lista)){
+    const esPDF = f.type === "application/pdf";
+    if(!f.type.startsWith("image/") && !esPDF) continue;
+    if(esPDF && motor !== "api"){ avisarBreve("Los PDFs solo se leen en el modo local con clave de API."); continue; }
+    if(f.size > (esPDF ? 25 : 5) * 1048576){ avisarBreve("«" + f.name + "» pesa demasiado."); continue; }
+    if(adjuntos.length >= 5) break;
+    const lec = new FileReader();
+    lec.onload = () => {
+      adjuntos.push({tipo:f.type, nombre:f.name, archivo:f, datos:String(lec.result).split(",")[1]});
+      pintarPrevios();
+    };
+    lec.readAsDataURL(f);
+  }
+}
+
 function pintarPrevios(){
   const cont = $("#previos");
-  cont.innerHTML = "";
+  cont.textContent = "";
   adjuntos.forEach((a, i) => {
     const d = document.createElement("div");
     d.className = "previo";
-    const b = document.createElement("button");
-    b.type = "button"; b.className = "quitar"; b.textContent = "✕";
-    b.title = "Quitar";
-    b.onclick = () => { adjuntos.splice(i, 1); pintarPrevios(); };
-    d.append(fichaAdjunto(a), b);
-    cont.appendChild(d);
+    const x = document.createElement("button");
+    x.type = "button"; x.textContent = "✕"; x.title = "Quitar";
+    x.onclick = () => { adjuntos.splice(i, 1); pintarPrevios(); };
+    d.append(fichaAdjunto(a), x);
+    cont.append(d);
   });
 }
 
-/* ============================================================
-   Ajustes
-   ============================================================ */
-function abrirAjustes(){
-  $("#inClave").value        = cfg.clave;
-  $("#inSistema").value      = cfg.sistema;
-  $("#inMaxTokens").value    = cfg.maxTokens;
-  $("#inMaxBusquedas").value = cfg.maxBusquedas;
-  $("#chkCompactar").checked = cfg.compactar;
-  $("#selImagen").value      = cfg.motorImagen;
-  $("#inImgEndpoint").value  = cfg.imgEndpoint;
-  $("#inImgModelo").value    = cfg.imgModelo;
-  $("#inImgTam").value       = cfg.imgTam;
-  $("#inImgClave").value     = cfg.imgClave;
-  $("#camposRaster").style.display = cfg.motorImagen === "raster" ? "flex" : "none";
-  $("#velo").classList.add("abierto");
-}
-function cerrarAjustes(){ $("#velo").classList.remove("abierto"); }
-
-function guardarAjustes(){
-  cfg.clave        = $("#inClave").value.trim();
-  cfg.sistema      = $("#inSistema").value.trim() || SISTEMA_POR_DEFECTO;
-  cfg.maxTokens    = Math.max(1024, Math.min(128000, +$("#inMaxTokens").value || 32000));
-  cfg.maxBusquedas = Math.max(1, Math.min(20, +$("#inMaxBusquedas").value || 8));
-  cfg.compactar    = $("#chkCompactar").checked;
-  cfg.motorImagen  = $("#selImagen").value;
-  cfg.imgEndpoint  = $("#inImgEndpoint").value.trim();
-  cfg.imgModelo    = $("#inImgModelo").value.trim();
-  cfg.imgTam       = $("#inImgTam").value.trim();
-  cfg.imgClave     = $("#inImgClave").value.trim();
-  nivelMax = 3;                       // reintentar las funciones beta tras cambiar algo
-  guardarCfg(); cerrarAjustes(); actualizarMeta();
+function avisarBreve(msg){
+  const a = document.createElement("div");
+  a.className = "alerta";
+  a.innerHTML = "<b>Atención</b>" + esc(msg);
+  columna.append(a);
+  alFondo(true);
+  setTimeout(() => a.remove(), 7000);
 }
 
-function sincronizarInterruptores(){
-  $("#etBusqueda").classList.toggle("on", $("#chkBusqueda").checked);
-  $("#etRazonar").classList.toggle("on", $("#chkRazonar").checked);
-  $("#etImagen").classList.toggle("on", $("#chkImagen").checked);
-  entrada.placeholder = $("#chkImagen").checked
-    ? "Describe la imagen que quieres…  (Enter genera)"
-    : "Escribe tu pregunta…  (Enter envía · Shift+Enter salta de línea)";
-}
+/* ═══════════════ Voz ═══════════════ */
 
-function ajustarAltura(){
-  entrada.style.height = "auto";
-  entrada.style.height = Math.min(entrada.scrollHeight, 220) + "px";
-}
-
-/* ============================================================
-   Dictado por voz (Web Speech API, donde el navegador la traiga)
-   ============================================================ */
 function prepararVoz(){
-  const Reconocimiento = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const R = window.SpeechRecognition || window.webkitSpeechRecognition;
   const bt = $("#btVoz");
-  if(!Reconocimiento) return;          // Firefox todavia no la trae: se deja oculto
-  bt.style.display = "";
-
-  const rec = new Reconocimiento();
-  rec.lang = "es-ES";
-  rec.continuous = true;
-  rec.interimResults = true;
-  let escuchando = false, base = "";
-
+  if(!R) return;
+  bt.hidden = false;
+  const rec = new R();
+  rec.lang = "es-ES"; rec.continuous = true; rec.interimResults = true;
+  let oyendo = false, base = "";
   rec.onresult = ev => {
-    let firme = "", provisional = "";
+    let firme = "", provi = "";
     for(let i = ev.resultIndex; i < ev.results.length; i++){
-      const txt = ev.results[i][0].transcript;
-      if(ev.results[i].isFinal) firme += txt; else provisional += txt;
+      const t = ev.results[i][0].transcript;
+      if(ev.results[i].isFinal) firme += t; else provi += t;
     }
     if(firme) base = (base + " " + firme).trim();
-    entrada.value = (base + " " + provisional).trim();
-    ajustarAltura();
+    texto.value = (base + " " + provi).trim();
+    crecer();
   };
-  rec.onerror = ev => {
-    if(ev.error === "not-allowed") avisar("El navegador bloqueó el micrófono. Dale permiso desde el candado de la barra de direcciones.");
-    parar();
-  };
-  rec.onend = () => { if(escuchando) parar(); };
-
-  function parar(){ escuchando = false; bt.classList.remove("grabando"); bt.title = "Dictar"; try{ rec.stop(); }catch(e){} }
+  const parar = () => { oyendo = false; bt.textContent = "Dictar"; try{ rec.stop(); }catch(e){} };
+  rec.onerror = () => parar();
+  rec.onend = () => { if(oyendo) parar(); };
   bt.onclick = () => {
-    if(escuchando){ parar(); return; }
-    base = entrada.value.trim();
-    escuchando = true;
-    bt.classList.add("grabando");
-    bt.title = "Detener el dictado";
+    if(oyendo){ parar(); return; }
+    base = texto.value.trim(); oyendo = true; bt.textContent = "● Grabando";
     try{ rec.start(); }catch(e){ parar(); }
   };
 }
 
-/* ============================================================
-   Service worker: deja instalar la app y abrirla sin conexión.
-   Solo aplica si la página se sirve por http(s); desde file:// no.
-   ============================================================ */
-function registrarServicio(){
-  if(!("serviceWorker" in navigator) || !location.protocol.startsWith("http")) return;
-  navigator.serviceWorker.register("sw.js").catch(e => console.warn("service worker no registrado:", e));
+/* ═══════════════ Ajustes ═══════════════ */
+
+function abrirAjustes(){
+  $("#areaInstr").value = cfg.instrucciones;
+  $("#inClave").value = cfg.clave;
+  $("#selModelo").value = cfg.modelo;
+  $("#inMaxTokens").value = cfg.maxTokens;
+  $("#chkBuscar").checked = cfg.buscar;
+  $("#chkRazonar").checked = cfg.razonar;
+  $("#chkCompactar").checked = cfg.compactar;
+  $("#velo").dataset.abierto = "1";
+}
+const cerrarAjustes = () => { $("#velo").dataset.abierto = "0"; };
+
+function guardarAjustes(){
+  cfg.instrucciones = $("#areaInstr").value.trim() || INSTRUCCIONES_FABRICA;
+  cfg.clave = $("#inClave").value.trim();
+  cfg.modelo = $("#selModelo").value;
+  cfg.maxTokens = Math.max(1024, Math.min(128000, +$("#inMaxTokens").value || 32000));
+  cfg.buscar = $("#chkBuscar").checked;
+  cfg.razonar = $("#chkRazonar").checked;
+  cfg.compactar = $("#chkCompactar").checked;
+  nivelMax = 3;
+  guardarCfg(); cerrarAjustes(); actualizarPie();
 }
 
-/* ============================================================
-   Arranque
-   ============================================================ */
-function iniciar(){
-  const sel = $("#selModelo");
+function crecer(){
+  texto.style.height = "auto";
+  texto.style.height = Math.min(texto.scrollHeight, 190) + "px";
+}
+
+function verVista(cual){
+  const chat = cual === "chat";
+  $("#vistaChat").hidden = !chat;
+  $("#vistaEstudio").hidden = chat;
+  $("#tabChat").setAttribute("aria-selected", String(chat));
+  $("#tabEstudio").setAttribute("aria-selected", String(!chat));
+  $("#selSkill").style.display = chat ? "" : "none";
+  $("#btNueva").style.display = chat ? "" : "none";
+  $("#busca").style.display = chat ? "" : "none";
+  $("#lista").style.display = chat ? "" : "none";
+  if(!chat) pintarTaller();
+}
+
+function actualizarPie(){
+  const p = $("#pie");
+  if(motor === "api"){
+    p.textContent = cfg.clave
+      ? "Modo local · " + (MODELOS[cfg.modelo]?.nombre || cfg.modelo) + (cfg.buscar ? " · con búsqueda web" : "")
+      : "Falta tu clave de la API — ponla en Ajustes para empezar.";
+  }else{
+    const t = ["Usa tu cuenta de Claude"];
+    if(!puedeImagenes) t.push("sin lectura de imágenes");
+    t.push("no navega por internet");
+    p.textContent = t.join(" · ");
+  }
+}
+
+async function bajarConversacion(){
+  const c = chatActual();
+  if(!c || !c.turnos.length) return;
+  const cuerpo = "# " + c.titulo + "\n\n" + c.turnos.map(t =>
+    t.rol === "user" ? "## Tú\n\n" + (t.texto || "")
+    : t.svg ? "## Nexo\n\n```svg\n" + t.svg + "\n```"
+    : t.error ? "## Nexo\n\n> " + t.error
+    : "## Nexo\n\n" + (t.texto || "")).join("\n\n");
+  await guardarArchivo(nombreArchivo(c.titulo) + ".md", cuerpo, "text/markdown");
+}
+
+/* ═══════════════ Arranque ═══════════════ */
+
+function montar(){
+  const sel = $("#selSkill");
+  for(const s of SKILLS){
+    const o = document.createElement("option");
+    o.value = s.id; o.textContent = s.nombre;
+    sel.append(o);
+  }
+  sel.value = cfg.skill;
+  const selM = $("#selModelo");
   for(const [id, m] of Object.entries(MODELOS)){
     const o = document.createElement("option");
     o.value = id; o.textContent = m.nombre;
-    sel.appendChild(o);
+    selM.append(o);
   }
-  if(!MODELOS[cfg.modelo]) cfg.modelo = "claude-opus-5";
-  sel.value = cfg.modelo;
-  $("#selEsfuerzo").value = cfg.esfuerzo;
-  $("#chkBusqueda").checked = cfg.busqueda;
-  $("#chkRazonar").checked  = cfg.razonar;
-  sincronizarInterruptores();
+  $("#selTier").value = cfg.tier;
 
-  sel.onchange = () => {
-    cfg.modelo = sel.value;
-    const m = MODELOS[cfg.modelo];
-    $("#selEsfuerzo").disabled = !m.esfuerzo;
-    nivelMax = 3;
-    guardarCfg(); actualizarMeta();
-  };
-  $("#selEsfuerzo").disabled = !MODELOS[cfg.modelo].esfuerzo;
-  $("#selEsfuerzo").onchange = () => { cfg.esfuerzo = $("#selEsfuerzo").value; guardarCfg(); };
-  $("#chkBusqueda").onchange = () => { cfg.busqueda = $("#chkBusqueda").checked; sincronizarInterruptores(); guardarCfg(); actualizarMeta(); };
-  $("#chkRazonar").onchange  = () => { cfg.razonar  = $("#chkRazonar").checked;  sincronizarInterruptores(); guardarCfg(); };
-  $("#chkImagen").onchange   = sincronizarInterruptores;
-
-  $("#btNuevo").onclick   = () => { crearChat(); pintarLista(); pintarHilo(); entrada.focus(); };
-  $("#btLateral").onclick = () => $("#lateral").classList.toggle("oculto");
-  $("#btEnviar").onclick  = enviar;
-  $("#btParar").onclick   = () => { if(corriendo) corriendo.abort(); };
+  sel.onchange = () => { cfg.skill = sel.value; guardarCfg(); };
+  $("#selTier").onchange = () => { cfg.tier = $("#selTier").value; guardarCfg(); };
+  $("#tabChat").onclick = () => verVista("chat");
+  $("#tabEstudio").onclick = () => verVista("estudio");
+  $("#btRiel").onclick = () => $("#riel").classList.toggle("plegado");
+  $("#btNueva").onclick = () => { activo = null; muestraVisible = false; pintarLista(); pintarHilo(); texto.focus(); };
+  $("#busca").oninput = pintarLista;
+  $("#btEnviar").onclick = enviar;
+  $("#btParar").onclick = () => corriendo?.abort();
+  $("#btPararImg").onclick = () => corriendo?.abort();
+  $("#btDibujar").onclick = dibujarObra;
+  $("#btBajar").onclick = bajarConversacion;
   $("#btAdjuntar").onclick = () => $("#ficheros").click();
-  $("#ficheros").onchange  = e => { agregarFicheros(e.target.files); e.target.value = ""; };
+  $("#ficheros").onchange = ev => { sumarArchivos(ev.target.files); ev.target.value = ""; };
+  $("#btAjustes").onclick = abrirAjustes;
+  $("#btCerrar").onclick = cerrarAjustes;
+  $("#btGuardar").onclick = guardarAjustes;
+  $("#btFabrica").onclick = () => { $("#areaInstr").value = INSTRUCCIONES_FABRICA; };
+  $("#velo").onclick = ev => { if(ev.target === $("#velo")) cerrarAjustes(); };
 
-  $("#btAjustes").onclick        = abrirAjustes;
-  $("#btCerrarAjustes").onclick  = cerrarAjustes;
-  $("#btGuardar").onclick        = guardarAjustes;
-  $("#selImagen").onchange       = () => { $("#camposRaster").style.display = $("#selImagen").value === "raster" ? "flex" : "none"; };
-  $("#velo").onclick             = e => { if(e.target === $("#velo")) cerrarAjustes(); };
-  $("#btBorrarTodo").onclick = () => {
-    if(!confirm("Esto borra todas las conversaciones y tu clave guardada. ¿Seguro?")) return;
-    localStorage.removeItem("ia.chats"); localStorage.removeItem("ia.cfg");
-    location.reload();
-  };
-
-  $("#btExportar").onclick = () => {
-    const c = chatActual();
-    if(!c || !c.turnos.length){ alert("No hay nada que exportar todavía."); return; }
-    const lineas = c.turnos.map(t => {
-      if(t.rol === "user") return "## Tú\n\n" + (t.texto || "(solo imágenes)");
-      if(t.imagen) return "## NEXO\n\n[imagen generada: " + (t.imagen.prompt || "") + "]";
-      if(t.error)  return "## NEXO\n\n> Error: " + t.error;
-      return "## NEXO\n\n" + extraerEstado(t.bloques || []).texto;
-    });
-    descargar(new Blob(["# " + c.titulo + "\n\n" + lineas.join("\n\n---\n\n")], {type:"text/markdown"}),
-              c.titulo.replace(/[^\w\sáéíóúñ-]/gi, "").slice(0, 40).trim().replace(/\s+/g, "-") + ".md");
-  };
-
-  $("#buscador").addEventListener("input", pintarLista);
-  $("#buscador").addEventListener("keydown", e => {
-    if(e.key === "Escape"){ $("#buscador").value = ""; pintarLista(); }
+  texto.addEventListener("input", crecer);
+  texto.addEventListener("keydown", ev => { if(ev.key === "Enter" && !ev.shiftKey){ ev.preventDefault(); enviar(); } });
+  texto.addEventListener("paste", ev => {
+    const f = Array.from(ev.clipboardData?.files || []);
+    if(f.length){ ev.preventDefault(); sumarArchivos(f); }
+  });
+  $("#prompt").addEventListener("keydown", ev => {
+    if(ev.key === "Enter" && !ev.shiftKey){ ev.preventDefault(); dibujarObra(); }
   });
 
-  prepararVoz();
-  registrarServicio();
+  const caja = $("#caja");
+  ["dragenter","dragover"].forEach(n => caja.addEventListener(n, ev => { ev.preventDefault(); caja.classList.add("soltar"); }));
+  ["dragleave","drop"].forEach(n => caja.addEventListener(n, ev => { ev.preventDefault(); caja.classList.remove("soltar"); }));
+  caja.addEventListener("drop", ev => sumarArchivos(ev.dataTransfer.files));
 
-  entrada.addEventListener("input", ajustarAltura);
-  entrada.addEventListener("keydown", e => {
-    if(e.key === "Enter" && !e.shiftKey){ e.preventDefault(); enviar(); }
-  });
-  entrada.addEventListener("paste", e => {
-    const ficheros = Array.from(e.clipboardData.files || []);
-    if(ficheros.length){ e.preventDefault(); agregarFicheros(ficheros); }
-  });
-
-  const caja = $("#cajaCompositor");
-  ["dragenter", "dragover"].forEach(ev => caja.addEventListener(ev, e => { e.preventDefault(); caja.classList.add("arrastre"); }));
-  ["dragleave", "drop"].forEach(ev => caja.addEventListener(ev, e => { e.preventDefault(); caja.classList.remove("arrastre"); }));
-  caja.addEventListener("drop", e => agregarFicheros(e.dataTransfer.files));
-
-  // Botón "copiar" de los bloques de código (delegado).
-  envoltura.addEventListener("click", e => {
-    const b = e.target.closest("button.copiar");
+  columna.addEventListener("click", ev => {
+    const b = ev.target.closest(".copiar-codigo");
     if(!b) return;
-    const codigo = b.closest("pre.codigo").querySelector("code").textContent;
-    navigator.clipboard.writeText(codigo)
-      .then(() => { b.textContent = "copiado ✓"; setTimeout(() => b.textContent = "copiar", 1500); })
-      .catch(() => { b.textContent = "no se pudo"; setTimeout(() => b.textContent = "copiar", 1500); });
+    const cod = b.closest(".bloque-codigo").querySelector("code").textContent;
+    navigator.clipboard.writeText(cod).then(
+      () => { b.textContent = "copiado"; setTimeout(() => b.textContent = "copiar", 1400); },
+      () => { b.textContent = "no se pudo"; setTimeout(() => b.textContent = "copiar", 1400); });
   });
 
-  document.addEventListener("keydown", e => {
-    if(e.key === "Escape" && $("#velo").classList.contains("abierto")) cerrarAjustes();
+  document.addEventListener("keydown", ev => {
+    if(ev.key === "Escape" && $("#velo").dataset.abierto === "1") cerrarAjustes();
   });
 
-  if(!chats.length) crearChat(); else idActual = chats[0].id;
-  if(innerWidth <= 820) $("#lateral").classList.add("oculto");
-  pintarLista(); pintarHilo(); ajustarAltura();
+  if(innerWidth <= 840) $("#riel").classList.add("plegado");
+  prepararVoz();
+  pintarFichas();
+  verVista("chat");
+  pintarLista();
+  pintarHilo();
+  crecer();
+
+  if("serviceWorker" in navigator && location.protocol.startsWith("http")){
+    navigator.serviceWorker.register("sw.js").catch(() => {});
+  }
+}
+
+/* Las capacidades llegan por promesa, nunca en la primera pasada del
+   script: la página se dibuja sin ellas y se encienden al llegar. */
+async function encender(){
+  const pulso = $("#pulso");
+
+  if(window.claude?.use){
+    sample = await claude.use("sample").catch(() => null);
+    if(sample){
+      motor = "sample";
+      const lim = await sample.limits().catch(() => null);
+      puedeImagenes = !!lim?.images;
+      $("#btAdjuntar").hidden = !puedeImagenes;
+      if(puedeImagenes && lim.images.mediaTypes) $("#ficheros").accept = lim.images.mediaTypes.join(",");
+      descargas = await claude.use("downloads").catch(() => null);
+      db = await claude.use("db").catch(() => null);
+      if(db){
+        try{
+          const snap = await db.collection("chats").orderBy("actualizado", "desc").limit(50).get();
+          const remotos = snap.docs.map(d => Object.assign({id:d.id, resumen:"", turnos:[]}, d.data()));
+          if(remotos.length){ chats = remotos; pintarLista(); }
+        }catch(e){}
+      }
+      $("#secApi").hidden = true;
+      pulso.className = "pulso viva";
+      actualizarPie(); pintarHilo();
+      return;
+    }
+  }
+
+  // Sin runtime de Claude: archivo local, se usa la clave de la API.
+  motor = "api";
+  puedeImagenes = true;
+  $("#btAdjuntar").hidden = false;
+  $("#ficheros").accept = "image/png,image/jpeg,image/gif,image/webp,application/pdf";
+  pulso.className = "pulso " + (cfg.clave ? "viva" : "muerta");
+  actualizarPie(); pintarHilo();
   if(!cfg.clave) abrirAjustes();
 }
 
-iniciar();
+montar();
+encender();
 </script>
-</body>
-</html>
