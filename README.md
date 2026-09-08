@@ -4,7 +4,7 @@ Dos aplicaciones web independientes, cada una en un solo archivo HTML, sin depen
 
 | Proyecto | Qué es |
 |---|---|
-| [**🤖 NEXO IA**](ia/) — `ia/index.html` | Asistente de IA con 11 skills listas (tarea del colegio, citas APA, humanizar, resumir, corregir…) y un estudio para crear imágenes. El mismo archivo funciona con tu cuenta de Claude o con tu clave de API. |
+| [**🤖 NEXO IA**](ia/) — `ia/index.html` | Asistente de IA con 11 skills listas (tarea del colegio, citas APA, humanizar, resumir, corregir…) y un estudio para crear imágenes (vectoriales con Claude, o fotorrealistas con Gemini). El mismo archivo funciona con tu cuenta de Claude o con tu clave de API. |
 | [**🏰 NEXO: Tower Defense**](#nexo-tower-defense-) — `index.html` | Juego de defensa de torres en HTML5 Canvas. Se abre y se juega, sin nada más. |
 
 ---

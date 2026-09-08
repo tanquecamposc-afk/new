@@ -50,12 +50,37 @@ tocar la página ni tus datos.
 ## 🎨 Estudio de imágenes
 
 Pestaña aparte, solo para crear. Escribes qué quieres, eliges estilo (plano, isométrico, línea, cartel,
-degradados, pixel, diagrama, logo) y formato (cuadrado, horizontal, vertical), y opcionalmente una paleta.
+degradados, pixel, diagrama, logo) y formato, y opcionalmente una paleta. Hay **tres motores**:
 
-Claude dibuja en SVG, así que sale nítido a cualquier tamaño y se descarga en SVG o PNG. Cada imagen guarda
-su descripción y con "Otra" pides una variación. La galería guarda las últimas 20.
+| Motor | Qué da | Dónde funciona | Qué necesita |
+|---|---|---|---|
+| **Vectorial** | Claude dibuja en SVG: nítido a cualquier tamaño, ideal para ilustraciones, íconos, diagramas y logos. Sin fotorrealismo. | En los dos lados | Nada más |
+| **Gemini** | Fotorrealismo, y además **retoca** una imagen tuya | Solo archivo local | Clave de Google AI Studio |
+| **Compatible** | Cualquier proveedor con endpoint tipo OpenAI | Solo archivo local | Su clave |
 
-Es ideal para ilustraciones, íconos, diagramas, escenas planas y logos. No da fotorrealismo.
+> **Los motores externos no corren en la página publicada.** Los artifacts bloquean por política de
+> seguridad toda llamada a servidores de terceros. La app te lo avisa antes de intentarlo y te dice que
+> uses el vectorial o abras el archivo local.
+
+### Para usar Gemini
+
+1. Saca una clave gratis en **aistudio.google.com/apikey**. Es una clave de API, no tu cuenta de Google:
+   no inicias sesión en ninguna parte.
+2. Abre `ia/index.html` desde tu computadora, ve a Ajustes → *Imágenes fotográficas* y pégala.
+3. En el Estudio elige el motor **Gemini**.
+
+Queda guardada solo en tu navegador. **Nunca la escribas dentro del archivo ni se la pases a nadie**, ni
+siquiera en un chat: quien la tenga gasta de tu cuota.
+
+El modelo por defecto es `gemini-2.5-flash-image`. Los `gemini-…-image` generan y también retocan;
+los `imagen-…` solo generan. Si Google renombra alguno, se cambia en ese mismo campo sin tocar el código.
+
+**Retocar**: con Gemini aparece un hueco para subir una imagen de partida, y el botón pasa a decir
+"Retocar". También sale al pulsar *Retocar* en una foto que ya generaste.
+
+Las imágenes se guardan en el navegador con su descripción; "Otra" pide una variación. Como las fotos pesan
+mucho más que un SVG, si el navegador se queda sin espacio se van soltando las más viejas.
+
 Los SVG se sanean antes de mostrarse: fuera `<script>`, atributos `on*` y referencias externas.
 
 ## ⌨ Atajos
@@ -96,6 +121,11 @@ y dale a "Añadir a pantalla de inicio". El *service worker* cachea el armazón 
 - Cuando una respuesta se corta por largo, **Continuar** pide el resto y lo pega al mismo turno, sin dejar
   dos respuestas partidas en el hilo.
 - El medidor de la franja superior muestra cuánto del contexto llevas usado.
+- La clave de Gemini viaja en la cabecera `x-goog-api-key`, no en la URL, que suele quedar en registros.
+- Gemini tiene dos formas según el modelo: `gemini-…-image` usa `:generateContent` y la imagen vuelve en
+  `inlineData`; `imagen-…` usa `:predict` y vuelve en `bytesBase64Encoded`. La app elige por el nombre.
+- La proporción va en `generationConfig.imageConfig`, que no todos los modelos aceptan: si lo rechazan con
+  un `400`, se reintenta una vez sin ella.
 
 ## 🚧 Qué *no* hace
 

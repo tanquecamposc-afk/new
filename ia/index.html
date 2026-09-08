@@ -43,6 +43,9 @@
 }
 
 *{box-sizing:border-box;}
+/* Va antes que todo: varios componentes fijan display, que de otro modo
+   le gana al atributo hidden y deja visible lo que debía estar oculto. */
+[hidden]{display:none !important;}
 body{margin:0; background:var(--fondo); color:var(--texto); font-family:var(--cuerpo);
   font-size:15px; line-height:1.6; height:100dvh; overflow:hidden;}
 button,input,select,textarea{font:inherit; color:inherit;}
@@ -367,6 +370,17 @@ kbd{font-family:var(--mono); font-size:11px; background:var(--panel-2); border:1
                 <label for="prompt">Qué quieres ver</label>
                 <textarea id="prompt" placeholder="Un faro en medio de una tormenta, de noche…"></textarea>
               </div>
+              <div class="grupo">
+                <label>Motor</label>
+                <div class="fichas" id="fichasMotorImg"></div>
+                <span class="glosa" id="notaMotorImg"></span>
+              </div>
+              <div class="grupo" id="zonaRef" hidden>
+                <label>Imagen de partida (opcional)</label>
+                <div class="previos" id="refPrevio"></div>
+                <button class="btn chico" id="btRef" style="align-self:flex-start">Subir una imagen</button>
+                <span class="glosa">Gemini puede partir de una imagen tuya y modificarla según lo que le pidas.</span>
+              </div>
               <div class="grupo"><label>Estilo</label><div class="fichas" id="fichasEstilo"></div></div>
               <div class="grupo"><label>Formato</label><div class="fichas" id="fichasFormato"></div></div>
               <div class="grupo">
@@ -399,6 +413,7 @@ kbd{font-family:var(--mono); font-size:11px; background:var(--panel-2); border:1
 </div>
 
 <input type="file" id="ficheros" multiple hidden>
+<input type="file" id="refFichero" accept="image/*" hidden>
 
 <div class="velo" id="velo">
   <div class="panel" role="dialog" aria-modal="true" aria-label="Ajustes">
@@ -409,6 +424,35 @@ kbd{font-family:var(--mono); font-size:11px; background:var(--panel-2); border:1
         <textarea id="areaInstr" spellcheck="false" style="min-height:150px"></textarea>
         <span class="glosa">Va delante de cada conversación. Las skills se suman a esto, no lo reemplazan.</span>
       </div>
+      <div class="seccion" id="secImg" hidden>
+        <div class="rotulo">Imágenes fotográficas</div>
+        <span class="glosa">Solo en el archivo local: la página publicada tiene bloqueadas las llamadas a
+          servidores externos. Las claves se guardan únicamente en este navegador — no las escribas dentro
+          del archivo ni se las pases a nadie.</span>
+        <div class="grupo">
+          <label for="inGemClave">Google AI Studio · clave de API</label>
+          <input type="password" id="inGemClave" placeholder="AIza…" autocomplete="off" spellcheck="false">
+          <span class="glosa">Se saca gratis en <b>aistudio.google.com/apikey</b>. Es una clave de API,
+            no tu cuenta de Google: no hace falta iniciar sesión aquí.</span>
+        </div>
+        <div class="grupo">
+          <label for="inGemModelo">Modelo de Gemini</label>
+          <input type="text" id="inGemModelo" spellcheck="false" placeholder="gemini-2.5-flash-image">
+          <span class="glosa">Los <code>gemini-…-image</code> generan y también retocan una imagen tuya;
+            los <code>imagen-…</code> solo generan. Si Google renombra alguno, cámbialo aquí.</span>
+        </div>
+        <div class="par">
+          <div class="grupo"><label for="inOaModelo">Otro proveedor · modelo</label>
+            <input type="text" id="inOaModelo" spellcheck="false" placeholder="gpt-image-1"></div>
+          <div class="grupo"><label for="inOaClave">Su clave</label>
+            <input type="password" id="inOaClave" autocomplete="off" spellcheck="false"></div>
+        </div>
+        <div class="grupo">
+          <label for="inOaEndpoint">Su endpoint</label>
+          <input type="text" id="inOaEndpoint" spellcheck="false">
+        </div>
+      </div>
+
       <div class="seccion" id="secApi" hidden>
         <div class="rotulo">Modo local · clave de API</div>
         <div class="grupo">
@@ -610,16 +654,29 @@ const ESTILOS = [
   {id:"marca",   nombre:"Logo",        receta:"logotipo simple y memorable, silueta reconocible en pequeño, dos colores como mucho"}
 ];
 const FORMATOS = [
-  {id:"cuadrado",   nombre:"Cuadrado",   caja:"0 0 1024 1024"},
-  {id:"horizontal", nombre:"Horizontal", caja:"0 0 1280 720"},
-  {id:"vertical",   nombre:"Vertical",   caja:"0 0 768 1024"}
+  {id:"cuadrado",   nombre:"Cuadrado",   caja:"0 0 1024 1024", razon:"1:1",  tam:"1024x1024"},
+  {id:"horizontal", nombre:"Horizontal", caja:"0 0 1280 720",  razon:"16:9", tam:"1536x1024"},
+  {id:"vertical",   nombre:"Vertical",   caja:"0 0 768 1024",  razon:"3:4",  tam:"1024x1536"}
 ];
+
+/* Motores de imagen. El vectorial corre en cualquier parte; los
+   fotográficos llaman a servidores externos, que la página publicada
+   tiene bloqueados por política de seguridad. */
+const MOTORES_IMG = [
+  {id:"svg",    nombre:"Vectorial",    externo:false, nota:"Claude dibuja en SVG. No necesita otra clave."},
+  {id:"gemini", nombre:"Gemini",       externo:true,  nota:"Fotorrealista, con tu clave de Google AI Studio."},
+  {id:"openai", nombre:"Compatible",   externo:true,  nota:"Cualquier proveedor con endpoint tipo OpenAI."}
+];
+const motorImgActual = () => MOTORES_IMG.find(m => m.id === cfg.motorImg) || MOTORES_IMG[0];
 
 /* ═══════════ Estado ═══════════ */
 const cfg = Object.assign({
   clave:"", modelo:"claude-opus-5", maxTokens:32000, buscar:true, razonar:true, compactar:true,
   instrucciones:INSTRUCCIONES_FABRICA, tier:"default", skill:"ninguna",
-  estilo:"plano", formato:"cuadrado", tema:"auto"
+  estilo:"plano", formato:"cuadrado", tema:"auto",
+  motorImg:"svg",
+  gemClave:"", gemModelo:"gemini-2.5-flash-image",
+  oaEndpoint:"https://api.openai.com/v1/images/generations", oaClave:"", oaModelo:"gpt-image-1"
 }, leer("nexo.cfg", {}));
 
 let chats = leer("nexo.chats", []);
@@ -627,6 +684,7 @@ let obras = leer("nexo.obras", []);
 let activo = null, corriendo = null, adjuntos = [], nivelMax = 3, muestraVisible = true;
 let motor = null, sample = null, db = null, descargas = null, puedeImagenes = false, puedeDocs = false;
 let previaActual = null, previaModo = "vista";
+let refImagen = null;
 
 function leer(k, d){
   try{ const v = localStorage.getItem(k); return v ? JSON.parse(v) : structuredClone(d); }
@@ -812,6 +870,12 @@ function svgAPng(svg){
 function abrirPrevia(bloque){
   previaActual = bloque;
   previaModo = "vista";
+  $("#btPreviaModo").hidden = false;
+  $("#btPreviaBajar").onclick = () => {
+    if(!previaActual) return;
+    const ext = previaActual.leng === "svg" ? "svg" : "html";
+    guardarArchivo("nexo." + ext, previaActual.codigo, previaActual.leng === "svg" ? "image/svg+xml" : "text/html");
+  };
   $("#previa").hidden = false;
   $("#previaTit").textContent = bloque.leng === "svg" ? "Imagen SVG" : "Página web";
   pintarPrevia();
@@ -1521,12 +1585,94 @@ ${paleta ? "Paleta: " + paleta + ".\n" : ""}
 Lo que hay que dibujar: `;
 }
 
+/* ── Gemini ────────────────────────────────────────────────────────
+   Dos familias con formas distintas:
+   · gemini-*-image  → :generateContent, la imagen vuelve en inlineData
+   · imagen-*        → :predict, vuelve en bytesBase64Encoded
+   El nombre del modelo decide cuál se usa. */
+async function generarGemini(idea, senal){
+  if(!cfg.gemClave) { const e = new Error("Falta tu clave de Google AI Studio (Ajustes → Imágenes fotográficas)."); e.faltaClave = "gemini"; throw e; }
+  const modelo = (cfg.gemModelo || "gemini-2.5-flash-image").trim();
+  const fmt = FORMATOS.find(f => f.id === cfg.formato) || FORMATOS[0];
+  const base = "https://generativelanguage.googleapis.com/v1beta/models/" + encodeURIComponent(modelo);
+  const cab = {"content-type":"application/json", "x-goog-api-key":cfg.gemClave};
+  const est = ESTILOS.find(e => e.id === cfg.estilo) || ESTILOS[0];
+  const paleta = ($("#paleta").value || "").trim();
+  const texto = idea + ". Estilo: " + est.receta + "." + (paleta ? " Paleta: " + paleta + "." : "") +
+                " Proporción " + fmt.razon + ".";
+
+  if(/^imagen-/i.test(modelo)){
+    const r = await fetch(base + ":predict", {method:"POST", headers:cab, signal:senal,
+      body:JSON.stringify({instances:[{prompt:texto}], parameters:{sampleCount:1, aspectRatio:fmt.razon}})});
+    const j = await leerJSON(r, "Google");
+    const b64 = j.predictions?.[0]?.bytesBase64Encoded;
+    if(!b64) throw new Error("Google no devolvió ninguna imagen.");
+    return "data:image/png;base64," + b64;
+  }
+
+  const partes = [{text:texto}];
+  if(refImagen) partes.push({inlineData:{mimeType:refImagen.tipo, data:refImagen.datos}});
+
+  // La proporción va en imageConfig, que no todos los modelos aceptan:
+  // si lo rechazan con un 400, se reintenta sin ella.
+  for(const conConfig of [true, false]){
+    const cuerpo = {contents:[{role:"user", parts:partes}],
+      generationConfig: Object.assign({responseModalities:["IMAGE"]},
+        conConfig ? {imageConfig:{aspectRatio:fmt.razon}} : {})};
+    const r = await fetch(base + ":generateContent", {method:"POST", headers:cab, signal:senal, body:JSON.stringify(cuerpo)});
+    if(!r.ok && r.status === 400 && conConfig) continue;
+    const j = await leerJSON(r, "Google");
+    const trozos = j.candidates?.[0]?.content?.parts || [];
+    const img = trozos.find(p => p.inlineData?.data);
+    if(img) return "data:" + (img.inlineData.mimeType || "image/png") + ";base64," + img.inlineData.data;
+    const dicho = trozos.map(p => p.text).filter(Boolean).join(" ").trim();
+    throw new Error(dicho || "El modelo respondió sin imagen. Revisa que «" + modelo + "» sea un modelo de imagen.");
+  }
+}
+
+async function generarCompatible(idea, senal){
+  if(!cfg.oaClave) { const e = new Error("Falta la clave del proveedor (Ajustes → Imágenes fotográficas)."); e.faltaClave = "openai"; throw e; }
+  const fmt = FORMATOS.find(f => f.id === cfg.formato) || FORMATOS[0];
+  const est = ESTILOS.find(e => e.id === cfg.estilo) || ESTILOS[0];
+  const paleta = ($("#paleta").value || "").trim();
+  const r = await fetch(cfg.oaEndpoint, {method:"POST", signal:senal,
+    headers:{"content-type":"application/json", "authorization":"Bearer " + cfg.oaClave},
+    body:JSON.stringify({model:cfg.oaModelo, n:1, size:fmt.tam,
+      prompt: idea + ". Estilo: " + est.receta + "." + (paleta ? " Paleta: " + paleta + "." : "")})});
+  const j = await leerJSON(r, "El proveedor de imágenes");
+  const it = j.data?.[0];
+  if(it?.b64_json) return "data:image/png;base64," + it.b64_json;
+  if(it?.url) return it.url;
+  throw new Error("Respuesta en un formato que no reconozco.");
+}
+
+async function leerJSON(r, quien){
+  let j = null;
+  try{ j = await r.json(); }catch(e){}
+  if(!r.ok){
+    const det = j?.error?.message || j?.error?.status || (j ? JSON.stringify(j).slice(0, 300) : "");
+    const err = new Error(quien + " respondió " + r.status + (det ? ": " + det : "."));
+    err.estado = r.status;
+    if(r.status === 400 && /API key|api_key/i.test(det || "")) err.message = "La clave no es válida. Revísala en Ajustes.";
+    if(r.status === 403) err.message = quien + " rechazó la clave o el modelo no está habilitado para ella.";
+    throw err;
+  }
+  return j || {};
+}
+
 async function dibujarObra(){
   if(corriendo) return;
   const idea = $("#prompt").value.trim();
   if(!idea) return;
   if(!motor){ $("#btDibujar").disabled = true; await arranque; $("#btDibujar").disabled = false; }
-  if(motor === "api" && !cfg.clave){ abrirAjustes(); $("#inClave").focus(); return; }
+
+  const mi = motorImgActual();
+  if(mi.externo && motor !== "api"){
+    return avisarTaller("El motor «" + mi.nombre + "» llama a un servidor externo, y esta página publicada " +
+      "los tiene bloqueados por política de seguridad. Abre el archivo ia/index.html desde tu computadora " +
+      "para usarlo, o cambia a Vectorial, que funciona aquí.");
+  }
+  if(!mi.externo && motor === "api" && !cfg.clave){ abrirAjustes(); $("#inClave").focus(); return; }
 
   const mando = new AbortController();
   corriendo = mando;
@@ -1542,25 +1688,29 @@ async function dibujarObra(){
   const desde = Date.now();
   const tic = setInterval(() => { reloj.textContent = "dibujando · " + Math.round((Date.now() - desde) / 1000) + "s"; }, 1000);
 
+  let fallo = null;
   try{
-    const r = await responder({
-      turnos: [{role:"user", content:[{type:"text", text:recetaDibujo() + idea}]}],
-      sistema: "Eres un ilustrador que dibuja con SVG y no escribe nada más.",
-      senal: mando.signal, aviso: () => {}
-    });
-    const limpio = sanearSVG(r.texto);
-    if(!limpio) throw new Error("No devolvió un SVG que se pueda dibujar. Prueba a describirlo de otra forma.");
-    obras.unshift({id:nid(), svg:limpio, prompt:idea, estilo:cfg.estilo, formato:cfg.formato, cuando:Date.now()});
-    obras = obras.slice(0, 20);   // los SVG pesan: galería corta
-    escribir("nexo.obras", obras);
-  }catch(e){
-    if(e?.code !== "cancelled" && e?.name !== "AbortError"){
-      const a = document.createElement("div");
-      a.className = "alerta";
-      a.innerHTML = "<b>No salió</b><span>" + esc(copiaError(e)) + "</span>";
-      taller.prepend(a);
-      setTimeout(() => a.remove(), 9000);
+    const obra = {id:nid(), prompt:idea, estilo:cfg.estilo, formato:cfg.formato,
+                  motor:mi.id, cuando:Date.now()};
+    if(mi.id === "svg"){
+      const r = await responder({
+        turnos: [{role:"user", content:[{type:"text", text:recetaDibujo() + idea}]}],
+        sistema: "Eres un ilustrador que dibuja con SVG y no escribe nada más.",
+        senal: mando.signal, aviso: () => {}
+      });
+      const limpio = sanearSVG(r.texto);
+      if(!limpio) throw new Error("No devolvió un SVG que se pueda dibujar. Prueba a describirlo de otra forma.");
+      obra.svg = limpio;
+    }else{
+      obra.url = mi.id === "gemini"
+        ? await generarGemini(idea, mando.signal)
+        : await generarCompatible(idea, mando.signal);
     }
+    obras.unshift(obra);
+    guardarObras();
+    quitarReferencia();
+  }catch(e){
+    if(e?.code !== "cancelled" && e?.name !== "AbortError") fallo = e;
   }finally{
     clearInterval(tic);
     cargando.remove();
@@ -1568,7 +1718,36 @@ async function dibujarObra(){
     $("#btPararImg").hidden = true;
     $("#btDibujar").disabled = false;
     pintarTaller();
+    // Después de repintar: pintarTaller vacía el contenedor y se llevaría el aviso.
+    if(fallo) avisarTaller(copiaError(fallo), fallo.faltaClave);
   }
+}
+
+function avisarTaller(msg, faltaClave){
+  const a = document.createElement("div");
+  a.className = "alerta";
+  const b = document.createElement("b"); b.textContent = "No salió";
+  const s = document.createElement("span"); s.textContent = msg;
+  a.append(b, s);
+  if(faltaClave){
+    const bt = document.createElement("button");
+    bt.type = "button"; bt.className = "btn chico"; bt.textContent = "Abrir Ajustes";
+    bt.onclick = () => { a.remove(); abrirAjustes(); $("#secImg").scrollIntoView({block:"nearest"}); };
+    a.append(bt);
+  }
+  $("#taller").prepend(a);
+  setTimeout(() => a.remove(), 14000);
+}
+
+/* Las fotos pesan mucho más que un SVG: si el navegador se queda sin
+   espacio, se van soltando las más viejas hasta que entre. */
+function guardarObras(){
+  obras = obras.slice(0, 24);
+  while(obras.length){
+    try{ localStorage.setItem("nexo.obras", JSON.stringify(obras)); return; }
+    catch(e){ obras = obras.slice(0, obras.length - 1); }
+  }
+  try{ localStorage.removeItem("nexo.obras"); }catch(e){}
 }
 
 function pintarTaller(){
@@ -1588,8 +1767,15 @@ function pintarTaller(){
     caja.className = "obra";
     const lz = document.createElement("div");
     lz.className = "lienzo";
-    const limpio = sanearSVG(o.svg);
-    if(limpio) lz.innerHTML = limpio;
+    if(o.url){
+      const im = document.createElement("img");
+      im.src = o.url; im.alt = o.prompt; im.loading = "lazy";
+      im.style.cssText = "width:100%;height:auto;display:block;max-height:280px;object-fit:contain";
+      lz.append(im);
+    }else{
+      const limpio = sanearSVG(o.svg);
+      if(limpio) lz.innerHTML = limpio;
+    }
     const datos = document.createElement("div");
     datos.className = "datos";
     const desc = document.createElement("div");
@@ -1603,21 +1789,40 @@ function pintarTaller(){
       b.onclick = fn;
       barra.append(b);
     };
-    add("SVG", () => guardarArchivo(nombreArchivo(o.prompt) + ".svg", o.svg, "image/svg+xml"));
-    add("PNG", async ev => {
-      ev.target.disabled = true;
-      try{ guardarArchivo(nombreArchivo(o.prompt) + ".png", await svgAPng(o.svg), "image/png"); }catch(e){}
-      ev.target.disabled = false;
-    });
-    add("Ampliar", () => abrirPrevia({leng:"svg", codigo:o.svg}));
+    if(o.url){
+      add("PNG", async ev => {
+        ev.target.disabled = true;
+        try{
+          const b = await (await fetch(o.url)).blob();
+          await guardarArchivo(nombreArchivo(o.prompt) + ".png", b, "image/png");
+        }catch(e){ avisarTaller("No se pudo descargar la imagen."); }
+        ev.target.disabled = false;
+      });
+      add("Ampliar", () => abrirImagen(o));
+      add("Retocar", () => {
+        $("#prompt").value = "";
+        ponerReferencia({tipo:"image/png", datos:(o.url.split(",")[1] || ""), nombre:"referencia.png", url:o.url});
+        $("#prompt").focus();
+      });
+    }else{
+      add("SVG", () => guardarArchivo(nombreArchivo(o.prompt) + ".svg", o.svg, "image/svg+xml"));
+      add("PNG", async ev => {
+        ev.target.disabled = true;
+        try{ guardarArchivo(nombreArchivo(o.prompt) + ".png", await svgAPng(o.svg), "image/png"); }catch(e){}
+        ev.target.disabled = false;
+      });
+      add("Ampliar", () => abrirPrevia({leng:"svg", codigo:o.svg}));
+    }
     add("Otra", () => {
       $("#prompt").value = o.prompt;
-      cfg.estilo = o.estilo; cfg.formato = o.formato; guardarCfg(); pintarFichas();
+      cfg.estilo = o.estilo; cfg.formato = o.formato;
+      if(o.motor) cfg.motorImg = o.motor;
+      guardarCfg(); pintarFichas();
       dibujarObra();
     });
     add("Borrar", () => {
       obras = obras.filter(x => x.id !== o.id);
-      escribir("nexo.obras", obras);
+      guardarObras();
       pintarTaller();
     });
     datos.append(desc, barra);
@@ -1638,8 +1843,59 @@ function pintarFichas(){
       cont.append(b);
     }
   };
+  hacer($("#fichasMotorImg"), MOTORES_IMG, cfg.motorImg, v => cfg.motorImg = v);
   hacer($("#fichasEstilo"), ESTILOS, cfg.estilo, v => cfg.estilo = v);
   hacer($("#fichasFormato"), FORMATOS, cfg.formato, v => cfg.formato = v);
+
+  const mi = motorImgActual();
+  $("#notaMotorImg").textContent = mi.nota +
+    (mi.externo && motor === "sample" ? "  ⚠ No disponible en la página publicada." : "");
+  $("#zonaRef").hidden = mi.id !== "gemini";
+  $("#btDibujar").textContent = refImagen ? "Retocar" : "Dibujar";
+}
+
+/* Imagen de referencia: Gemini puede partir de ella para editarla. */
+function ponerReferencia(r){ refImagen = r; pintarReferencia(); }
+function quitarReferencia(){ refImagen = null; pintarReferencia(); }
+function pintarReferencia(){
+  const c = $("#refPrevio");
+  c.textContent = "";
+  if(refImagen){
+    const d = document.createElement("div");
+    d.className = "previo";
+    const im = document.createElement("img");
+    im.src = refImagen.url || ("data:" + refImagen.tipo + ";base64," + refImagen.datos);
+    im.alt = "referencia";
+    const x = document.createElement("button");
+    x.type = "button"; x.textContent = "✕"; x.title = "Quitar la referencia";
+    x.onclick = quitarReferencia;
+    d.append(im, x);
+    c.append(d);
+  }
+  const mi = motorImgActual();
+  $("#btDibujar").textContent = (refImagen && mi.id === "gemini") ? "Retocar" : "Dibujar";
+}
+
+function abrirImagen(o){
+  previaActual = null;
+  $("#previa").hidden = false;
+  $("#previaTit").textContent = o.prompt.slice(0, 60);
+  $("#btPreviaModo").hidden = true;
+  const cuerpo = $("#previaCuerpo");
+  cuerpo.textContent = "";
+  const caja = document.createElement("div");
+  caja.className = "svg-previa";
+  const im = document.createElement("img");
+  im.src = o.url; im.alt = o.prompt;
+  im.style.cssText = "max-width:100%;max-height:100%;object-fit:contain";
+  caja.append(im);
+  cuerpo.append(caja);
+  $("#btPreviaBajar").onclick = async () => {
+    try{
+      const b = await (await fetch(o.url)).blob();
+      await guardarArchivo(nombreArchivo(o.prompt) + ".png", b, "image/png");
+    }catch(e){}
+  };
 }
 
 /* ═══════════ Lista ═══════════ */
@@ -1818,6 +2074,11 @@ function abrirAjustes(){
   $("#chkBuscar").checked = cfg.buscar;
   $("#chkRazonar").checked = cfg.razonar;
   $("#chkCompactar").checked = cfg.compactar;
+  $("#inGemClave").value = cfg.gemClave;
+  $("#inGemModelo").value = cfg.gemModelo;
+  $("#inOaClave").value = cfg.oaClave;
+  $("#inOaModelo").value = cfg.oaModelo;
+  $("#inOaEndpoint").value = cfg.oaEndpoint;
   $("#velo").dataset.abierto = "1";
 }
 const cerrarPanel = () => { $("#velo").dataset.abierto = "0"; };
@@ -1830,8 +2091,13 @@ function guardarAjustes(){
   cfg.buscar = $("#chkBuscar").checked;
   cfg.razonar = $("#chkRazonar").checked;
   cfg.compactar = $("#chkCompactar").checked;
+  cfg.gemClave = $("#inGemClave").value.trim();
+  cfg.gemModelo = $("#inGemModelo").value.trim() || "gemini-2.5-flash-image";
+  cfg.oaClave = $("#inOaClave").value.trim();
+  cfg.oaModelo = $("#inOaModelo").value.trim() || "gpt-image-1";
+  cfg.oaEndpoint = $("#inOaEndpoint").value.trim() || "https://api.openai.com/v1/images/generations";
   nivelMax = 3;
-  guardarCfg(); cerrarPanel(); actualizarPie(); actualizarAguja();
+  guardarCfg(); cerrarPanel(); actualizarPie(); actualizarAguja(); pintarFichas();
   if(motor === "api") $("#pulso").className = "pulso " + (cfg.clave ? "viva" : "muerta");
 }
 
@@ -1943,6 +2209,16 @@ function montar(){
   $("#btParar").onclick = () => corriendo?.abort();
   $("#btPararImg").onclick = () => corriendo?.abort();
   $("#btDibujar").onclick = dibujarObra;
+  $("#btRef").onclick = () => $("#refFichero").click();
+  $("#refFichero").onchange = ev => {
+    const f = ev.target.files?.[0];
+    ev.target.value = "";
+    if(!f || !f.type.startsWith("image/")) return;
+    if(f.size > 7 * 1048576) return avisarTaller("Esa imagen pesa más de 7 MB.");
+    const lec = new FileReader();
+    lec.onload = () => ponerReferencia({tipo:f.type, datos:String(lec.result).split(",")[1], nombre:f.name, url:String(lec.result)});
+    lec.readAsDataURL(f);
+  };
   $("#btBajar").onclick = bajarConversacion;
   $("#btAdjuntar").onclick = () => $("#ficheros").click();
   $("#ficheros").onchange = ev => { sumarArchivos(ev.target.files); ev.target.value = ""; };
@@ -2040,6 +2316,7 @@ async function encender(){
     motor = "api";
     puedeImagenes = true;
     $("#secApi").hidden = false;
+    $("#secImg").hidden = false;
     $("#ficheros").accept = "image/png,image/jpeg,image/gif,image/webp,application/pdf,text/plain,.md,.csv,.json,.js,.py";
     pulso.className = "pulso " + (cfg.clave ? "viva" : "muerta");
     pulso.title = cfg.clave ? "Listo · modo local" : "Falta la clave de la API";
