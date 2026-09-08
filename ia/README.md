@@ -1,6 +1,23 @@
 # NEXO IA 🤖
 
-Un asistente de IA propio, en un solo archivo HTML, que corre con **Claude Opus 5** y tu propia clave de la API.
+Un asistente de IA propio. Hay **dos versiones**, con la misma cara pero motores distintos:
+
+| | `index.html` — local | `nexo-en-linea.html` — publicada |
+|---|---|---|
+| Cómo se abre | Doble clic en el archivo | Como página en claude.ai |
+| Qué necesita | Tu clave de la API de Anthropic | Nada: usa tu cuenta de Claude |
+| Quién paga | Tu cuenta de API, por tokens | Tu plan de Claude |
+| Modelo | Lo eliges: Opus 5, Fable 5.1, Sonnet 5, Haiku 4.5 | Rápido / Equilibrado / Profundo |
+| Buscar en la web | **Sí** | No |
+| Leer PDFs | **Sí** | Solo imágenes |
+| Ver el razonamiento | **Sí** | No |
+| Historial | En ese navegador | Sincronizado entre dispositivos |
+
+La versión local es la más potente; la publicada es la más cómoda. Lo que sigue documenta la **local**.
+
+---
+
+Un solo archivo HTML que corre con **Claude Opus 5** y tu propia clave de la API.
 Sin build, sin servidor, sin `npm install`: abres `index.html` y funciona.
 
 ![Captura de NEXO IA](captura.png)
