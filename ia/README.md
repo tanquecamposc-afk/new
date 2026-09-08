@@ -39,6 +39,21 @@ Se eligen en el desplegable de arriba y se suman a tus instrucciones, sin reempl
 | 🎯 **Preguntas de práctica** | 8 preguntas que suben de dificultad, con respuestas al final. |
 | ⚖ **Ver las dos caras** | El mejor argumento de cada lado y una postura al cierre, sin "depende". |
 
+## ✨ Acabado
+
+- **Código resaltado.** Los bloques salen con colores por lenguaje, derivados de los tokens del tema
+  y no de una hoja ajena, así que combinan en claro y en oscuro. Se resalta solo lo ya terminado:
+  hacerlo durante el streaming sería repintar decenas de veces por segundo.
+- **Títulos de verdad.** En vez de recortar tu primera frase, al cerrar el primer intercambio le pide
+  al modelo un nombre de dos a cinco palabras. Es una petición mínima —nivel rápido, sin herramientas,
+  sin razonar— y ocurre una sola vez por conversación.
+- **El riel agrupa por antigüedad**: Hoy, Ayer, Esta semana, Este mes, Más antiguas.
+- **Hora de cada mensaje**, al pasar el mouse por encima.
+- **Imprimible.** `Ctrl+P` saca la conversación como documento limpio: sin paneles, sin botones,
+  negro sobre blanco y sin cortar los bloques de código por la mitad.
+- **Accesible.** El hilo es una bitácora que se anuncia sola a los lectores de pantalla
+  (`role="log"`, `aria-live`), y el contraste del botón principal es 17:1 en claro y 8,2:1 en oscuro.
+
 ## 👁 Vista previa
 
 Cuando genera una página web o un SVG, el bloque de código trae un botón **▶ Ver**: abre un panel al lado

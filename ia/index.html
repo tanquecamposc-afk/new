@@ -3,6 +3,7 @@
 <title>NEXO IA</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icono.svg" type="image/svg+xml">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"></script>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Public+Sans:ital,wght@0,400;0,500;0,600;1,400&family=JetBrains+Mono:wght@400;500&display=swap">
 <style>
 :root{
@@ -15,6 +16,7 @@
   --radio:10px;
   --fuerte-fondo:#0E1420; --fuerte-texto:#F4F6FA; --glifo-fondo:#0E1420;
   --lienzo:#FBFBF9;
+  --morado:#7B4FB8; --verde-cod:#2C6E49;
   --display:"Archivo","Helvetica Neue",Arial,sans-serif;
   --cuerpo:"Public Sans",system-ui,-apple-system,sans-serif;
   --mono:"JetBrains Mono",ui-monospace,Consolas,monospace;
@@ -29,6 +31,7 @@
     --sombra:0 1px 2px rgba(0,0,0,.3), 0 10px 30px -14px rgba(0,0,0,.6);
     --fuerte-fondo:#E0A040; --fuerte-texto:#1A1206; --glifo-fondo:#1E2837;
     --lienzo:#F4F4F1;
+    --morado:#C4A2F0; --verde-cod:#7FD1A0;
   }
 }
 :root[data-theme="dark"]{
@@ -40,6 +43,7 @@
   --sombra:0 1px 2px rgba(0,0,0,.3), 0 10px 30px -14px rgba(0,0,0,.6);
   --fuerte-fondo:#E0A040; --fuerte-texto:#1A1206; --glifo-fondo:#1E2837;
   --lienzo:#F4F4F1;
+  --morado:#C4A2F0; --verde-cod:#7FD1A0;
 }
 
 *{box-sizing:border-box;}
@@ -77,7 +81,7 @@ button,input,select,textarea{font:inherit; color:inherit;}
 .btn:hover:not(:disabled){background:var(--panel-2);}
 .btn:disabled{opacity:.45; cursor:not-allowed;}
 .btn.fuerte{background:var(--fuerte-fondo); color:var(--fuerte-texto); border-color:var(--fuerte-fondo);}
-.btn.fuerte:hover:not(:disabled){filter:brightness(1.12);}
+.btn.fuerte:hover:not(:disabled){background:var(--fuerte-fondo); filter:brightness(1.12);}
 .btn.desnudo{background:none; border-color:transparent; padding:6px 9px;}
 .btn.desnudo:hover:not(:disabled){background:var(--panel-2); border-color:var(--linea-suave);}
 .btn.chico{padding:4px 9px; font-size:12px; font-weight:500; color:var(--tenue);}
@@ -102,6 +106,12 @@ button,input,select,textarea{font:inherit; color:inherit;}
 .hebra:hover .cerrar{opacity:.65;}
 .hebra .cerrar:hover{opacity:1; color:var(--brasa);}
 .vacio{color:var(--apagado); font-size:12.5px; padding:10px 6px; line-height:1.5;}
+.epigrafe{font-family:var(--display); font-size:10px; font-weight:700; letter-spacing:.1em;
+  text-transform:uppercase; color:var(--apagado); padding:11px 8px 4px;}
+.epigrafe:first-child{padding-top:2px;}
+.sello{font-family:var(--mono); font-size:10.5px; color:var(--apagado); margin-left:auto;
+  opacity:0; transition:opacity .13s; font-variant-numeric:tabular-nums;}
+.turno:hover .sello{opacity:1;}
 .zocalo{border-top:1px solid var(--linea); padding-top:9px; display:flex; flex-direction:column; gap:2px;}
 .zocalo .btn{justify-content:flex-start; font-weight:500; font-size:13px; color:var(--tenue);}
 .zocalo .btn:hover{color:var(--texto);}
@@ -161,6 +171,19 @@ button,input,select,textarea{font:inherit; color:inherit;}
 .bloque-codigo .cinta .grupo{display:flex; gap:2px;}
 .bloque-codigo pre{margin:0; overflow-x:auto; padding:12px 14px; max-height:460px;}
 .bloque-codigo code{font-family:var(--mono); font-size:12.8px; line-height:1.62; white-space:pre;}
+
+/* Resaltado — derivado de los tokens del tema, no de una hoja ajena. */
+.hljs-comment,.hljs-quote{color:var(--apagado); font-style:italic;}
+.hljs-keyword,.hljs-selector-tag,.hljs-literal,.hljs-doctag{color:var(--morado, #9a6ad6); font-weight:500;}
+.hljs-string,.hljs-regexp,.hljs-addition{color:var(--verde-cod, #2f7d52);}
+.hljs-number,.hljs-symbol,.hljs-bullet{color:var(--senal);}
+.hljs-title,.hljs-title.function_,.hljs-section{color:var(--onda);}
+.hljs-attr,.hljs-attribute,.hljs-variable,.hljs-template-variable{color:var(--brasa);}
+.hljs-type,.hljs-class .hljs-title,.hljs-built_in{color:var(--onda);}
+.hljs-tag{color:var(--tenue);}
+.hljs-tag .hljs-name{color:var(--morado, #9a6ad6);}
+.hljs-meta,.hljs-deletion{color:var(--tenue);}
+.hljs-emphasis{font-style:italic;} .hljs-strong{font-weight:600;}
 
 .razonando{border:1px dashed var(--linea); border-radius:var(--radio); background:var(--hueco);}
 .razonando summary{cursor:pointer; padding:7px 12px; font-family:var(--display); font-size:11.5px;
@@ -303,6 +326,20 @@ kbd{font-family:var(--mono); font-size:11px; background:var(--panel-2); border:1
 .atajos div{display:flex; gap:10px; align-items:center;}
 .atajos div span:last-child{color:var(--tenue);}
 
+@media print{
+  body{height:auto; overflow:visible; background:#fff; color:#000; font-size:11pt;}
+  .riel,.franja,.consola,.previa,.velo,.mandos,.sello{display:none !important;}
+  .app,.tablero,.marco-vistas,.vista,.hilo{display:block; height:auto; overflow:visible;}
+  .hilo{padding:0;}
+  .columna{max-width:none; gap:18pt;}
+  .turno.mio .dicho{background:#f4f4f4; border:1px solid #ccc; box-shadow:none;}
+  .bloque-codigo{border:1px solid #ccc; background:#fafafa; break-inside:avoid;}
+  .bloque-codigo pre{max-height:none;}
+  .firma{color:#666 !important;}
+  a{color:#000; text-decoration:underline;}
+  .razonando,.taller-vacio{display:none;}
+}
+
 @media (max-width:840px){
   .riel{position:fixed; z-index:20; height:100dvh; box-shadow:var(--sombra);}
   .hilo,.estudio{padding:16px 10px 8px;}
@@ -319,7 +356,7 @@ kbd{font-family:var(--mono); font-size:11px; background:var(--panel-2); border:1
     </div>
     <button class="btn" id="btNueva">Conversación nueva</button>
     <input type="search" class="campo-busca" id="busca" placeholder="Buscar…" autocomplete="off">
-    <div class="lista" id="lista"></div>
+    <div class="lista" id="lista" role="list" aria-label="Conversaciones"></div>
     <div class="zocalo">
       <button class="btn desnudo" id="btAjustes">Ajustes</button>
       <button class="btn desnudo" id="btAtajos">Atajos de teclado</button>
@@ -344,11 +381,11 @@ kbd{font-family:var(--mono); font-size:11px; background:var(--panel-2); border:1
     <div class="marco-vistas">
       <!-- ══ CONVERSAR ══ -->
       <div class="vista" id="vistaChat">
-        <div class="hilo" id="hilo"><div class="columna" id="columna"></div></div>
+        <div class="hilo" id="hilo"><div class="columna" id="columna" role="log" aria-live="polite" aria-relevant="additions text" aria-label="Conversación"></div></div>
         <div class="consola">
           <div class="caja" id="caja">
             <div class="previos" id="previos"></div>
-            <textarea id="texto" rows="1" placeholder="Pregunta lo que quieras…"></textarea>
+            <textarea id="texto" rows="1" aria-label="Tu mensaje" placeholder="Pregunta lo que quieras…"></textarea>
             <div class="mandos-caja">
               <button class="btn chico" id="btAdjuntar">Adjuntar</button>
               <button class="btn chico" id="btVoz" hidden>Dictar</button>
@@ -399,7 +436,7 @@ kbd{font-family:var(--mono); font-size:11px; background:var(--panel-2); border:1
       </div>
 
       <!-- ══ VISTA PREVIA ══ -->
-      <aside class="previa" id="previa" hidden>
+      <aside class="previa" id="previa" role="region" aria-label="Vista previa" hidden>
         <div class="cab">
           <span class="tit" id="previaTit">Vista previa</span>
           <button class="btn chico" id="btPreviaModo">Código</button>
@@ -507,15 +544,22 @@ const MODELOS = {
 const ESFUERZO = {quick:"low", default:"high", complex:"max"};
 
 const INSTRUCCIONES_FABRICA =
-`Eres NEXO, el asistente personal de quien te escribe. Respondes en español salvo que te hablen en otro idioma.
+`Eres NEXO, el asistente de quien te escribe. Respondes en español salvo que te hablen en otro idioma.
 
 Cómo respondes:
-- Directo al grano. Sin preámbulos, sin repetir la pregunta, sin cerrar con "en resumen".
-- Contestas de verdad lo que te preguntaron, aunque sea incómodo, polémico o técnico. Si el tema está discutido, expones las posturas y dices cuál te parece mejor sustentada en vez de escaparte con un "depende".
-- Si no sabes algo o no estás seguro, lo dices. No inventas datos, cifras ni citas.
-- El largo lo pide la pregunta: algo simple se contesta en dos líneas; algo complejo se desarrolla lo que haga falta.
-- Markdown cuando ayuda: listas, tablas, bloques de código con su lenguaje.
-- En código: algo completo y ejecutable, y explicas las decisiones que no se ven solas. Si haces una página o un componente, entrégalo como un único bloque \`\`\`html autocontenido para poder verlo funcionando.`;
+- Empiezas por la respuesta. Sin preámbulos, sin repetir la pregunta, sin cerrar con "en resumen".
+- Contestas lo que te preguntaron, aunque sea incómodo, polémico o técnico. En un tema discutido expones las posturas y dices cuál te parece mejor sustentada, en vez de escaparte con un "depende".
+- Distingues lo que sabes de lo que supones. No inventas datos, cifras, fechas ni citas; si no estás seguro, lo dices en una línea y sigues.
+- El largo lo fija la pregunta: algo simple se contesta en dos líneas, algo complejo se desarrolla lo que haga falta. No rellenas para parecer completo.
+- Estructuras cuando ayuda a leer: listas para pasos, tablas para comparar, bloques de código con su lenguaje. Prosa cuando el argumento es continuo.
+- Das ejemplos concretos y unidades reales antes que generalidades.
+- Si el pedido es ambiguo en algo que cambia la respuesta, eliges la lectura más razonable, la dices en una línea y sigues; solo preguntas cuando de verdad no se puede avanzar.
+
+En código:
+- Entregas archivos completos y ejecutables, no fragmentos con "...".
+- Manejas los errores que de verdad pueden ocurrir; comentas solo lo que no se ve leyendo.
+- Dices en una línea qué instalar y cómo se ejecuta.
+- Si haces una página o un componente visual, va en UN bloque \`\`\`html autocontenido, con su CSS y su JS dentro, para poder verlo funcionando al instante.`;
 
 /* ═══════════ SKILLS ═══════════ */
 const SKILLS = [
@@ -786,8 +830,26 @@ function corrido(s){
     .replace(/\[([^\]\n]+)\]\((https?:\/\/[^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
 }
 
+const ALIAS_LENG = {js:"javascript", ts:"typescript", py:"python", sh:"bash",
+  yml:"yaml", md:"markdown", "c++":"cpp", "c#":"csharp", texto:"plaintext"};
+
+function resaltar(cont){
+  if(!window.hljs) return;                    // el CDN puede no cargar: se ve sin color
+  cont.querySelectorAll("pre code:not([data-hl])").forEach(el => {
+    el.dataset.hl = "1";
+    const caja = el.closest("[data-bloque]");
+    const leng = (caja?.querySelector(".cinta span")?.textContent || "").trim().toLowerCase();
+    const id = ALIAS_LENG[leng] || leng;
+    try{
+      if(id && hljs.getLanguage(id)) el.innerHTML = hljs.highlight(el.textContent, {language:id}).value;
+      else el.innerHTML = hljs.highlightAuto(el.textContent).value;
+      el.classList.add("hljs");
+    }catch(e){}
+  });
+}
+
 /* Pinta markdown dentro de un contenedor y cablea sus botones. */
-function ponerMd(cont, texto){
+function ponerMd(cont, texto, conResaltado){
   const {html, bloques} = md(texto);
   cont.innerHTML = html;
   cont.querySelectorAll("[data-bloque]").forEach(caja => {
@@ -801,6 +863,7 @@ function ponerMd(cont, texto){
     const ver = caja.querySelector(".ver-bloque");
     if(ver) ver.onclick = () => abrirPrevia(b);
   });
+  if(conResaltado) resaltar(cont);
   return bloques;
 }
 
@@ -918,20 +981,20 @@ function pintarPrevia(){
 function cerrarPrevia(){ $("#previa").hidden = true; previaActual = null; }
 
 /* ═══════════ MOTOR A · Messages API ═══════════ */
-function cuerpoAPI(turnos, sistema, nivel){
+function cuerpoAPI(turnos, sistema, nivel, breve){
   const m = MODELOS[cfg.modelo] || MODELOS["claude-opus-5"];
   const c = {
     model: cfg.modelo,
-    max_tokens: Math.max(1024, Math.min(cfg.maxTokens, m.max)),
+    max_tokens: breve ? 1024 : Math.max(1024, Math.min(cfg.maxTokens, m.max)),
     stream: true,
     system: [{type:"text", text:sistema, cache_control:{type:"ephemeral"}}],
     messages: turnos
   };
-  if(m.pensar === "adaptativo") c.thinking = {type:"adaptive", display: cfg.razonar ? "summarized" : "omitted"};
-  else if(cfg.razonar) c.thinking = {type:"enabled", budget_tokens: Math.min(8000, c.max_tokens - 1024)};
-  if(m.esfuerzo) c.output_config = {effort: ESFUERZO[cfg.tier] || "high"};
+  if(m.pensar === "adaptativo") c.thinking = {type:"adaptive", display: (cfg.razonar && !breve) ? "summarized" : "omitted"};
+  else if(cfg.razonar && !breve) c.thinking = {type:"enabled", budget_tokens: Math.min(8000, c.max_tokens - 1024)};
+  if(m.esfuerzo) c.output_config = {effort: breve ? "low" : (ESFUERZO[cfg.tier] || "high")};
   const betas = [];
-  if(nivel >= 1 && cfg.buscar && m.busca) c.tools = [{type:m.busca, name:"web_search", max_uses:8}];
+  if(nivel >= 1 && cfg.buscar && m.busca && !breve) c.tools = [{type:m.busca, name:"web_search", max_uses:8}];
   if(nivel >= 2 && cfg.compactar){ c.context_management = {edits:[{type:"compact_20260112"}]}; betas.push("compact-2026-01-12"); }
   if(nivel >= 3){ c.fallbacks = "default"; betas.push("server-side-fallback-2026-07-01"); }
   return {c, betas};
@@ -1010,10 +1073,10 @@ async function streamAPI(cuerpo, betas, senal, aviso){
   return res;
 }
 
-async function responderAPI({turnos, sistema, senal, aviso}){
+async function responderAPI({turnos, sistema, senal, aviso, breve}){
   let ultimo = null;
   for(let nivel = nivelMax; nivel >= 0; nivel--){
-    const {c, betas} = cuerpoAPI(turnos, sistema, nivel);
+    const {c, betas} = cuerpoAPI(turnos, sistema, nivel, breve);
     try{
       const r = await streamAPI(c, betas, senal, aviso);
       nivelMax = nivel;
@@ -1028,7 +1091,7 @@ async function responderAPI({turnos, sistema, senal, aviso}){
 }
 
 /* ═══════════ MOTOR B · capacidad sample ═══════════ */
-async function responderSample({turnos, sistema, imagenes, senal, aviso}){
+async function responderSample({turnos, sistema, imagenes, senal, aviso, breve}){
   // No hay rol "system": las instrucciones van como primer turno de usuario.
   const entrada = [{role:"user", content:sistema}];
   for(const t of turnos){
@@ -1039,7 +1102,7 @@ async function responderSample({turnos, sistema, imagenes, senal, aviso}){
   if(entrada[entrada.length - 1].role !== "user") entrada.push({role:"user", content:"Continúa."});
 
   const res = {texto:"", razonamiento:"", fuentes:[], uso:{entrada:0, salida:0}};
-  const op = {signal:senal, cache:false, modelTier:cfg.tier,
+  const op = {signal:senal, cache:false, modelTier: breve ? "quick" : cfg.tier,
     onText: ({text}) => { res.texto = text; aviso(res); }};
   if(imagenes?.length && puedeImagenes) op.images = imagenes;
 
@@ -1224,6 +1287,12 @@ function dibujarTurno(t, chat){
     i.textContent = skillDe(t.skill).nombre.replace(/^\S+\s/, "");
     f.append(i);
   }
+  if(t.cuando && !t.muestra){
+    const h = document.createElement("span");
+    h.className = "sello";
+    h.textContent = new Date(t.cuando).toLocaleTimeString("es", {hour:"2-digit", minute:"2-digit"});
+    f.append(h);
+  }
   el.append(f);
 
   if(t.rol === "user"){
@@ -1235,7 +1304,7 @@ function dibujarTurno(t, chat){
     }
     const d = document.createElement("div");
     d.className = "dicho";
-    ponerMd(d, t.texto || "");
+    ponerMd(d, t.texto || "", true);
     el.append(d);
     if(!t.muestra) el.append(mandos(t, chat));
     return el;
@@ -1259,7 +1328,7 @@ function dibujarTurno(t, chat){
   if(t.texto){
     const d = document.createElement("div");
     d.className = "dicho";
-    ponerMd(d, t.texto);
+    ponerMd(d, t.texto, true);
     el.append(d);
   }
   if(t.fuentes?.length){
@@ -1413,7 +1482,7 @@ async function enviar(){
   }
 
   const imagenes = adjuntos.filter(a => a.archivo && a.tipo.startsWith("image/")).map(a => a.archivo);
-  chat.turnos.push({rol:"user", texto:pregunta,
+  chat.turnos.push({rol:"user", texto:pregunta, cuando:Date.now(),
     adjuntos:adjuntos.map(a => ({tipo:a.tipo, nombre:a.nombre, datos:a.datos, texto:a.texto}))});
 
   texto.value = ""; crecer();
@@ -1429,7 +1498,8 @@ async function enviar(){
 async function conversar(chat, imagenes, extra){
   await resumirSiHaceFalta(chat);
 
-  const turno = {rol:"assistant", texto:"", razonamiento:"", fuentes:[], skill:cfg.skill, uso:{entrada:0, salida:0}};
+  const turno = {rol:"assistant", texto:"", razonamiento:"", fuentes:[], skill:cfg.skill,
+                 cuando:Date.now(), uso:{entrada:0, salida:0}};
   chat.turnos.push(turno);
 
   const el = document.createElement("div");
@@ -1513,6 +1583,7 @@ async function conversar(chat, imagenes, extra){
     guardar(chat);
     actualizarAguja();
     texto.focus();
+    if(!turno.error && chat.turnos.length >= 2) titular(chat);
   }
 }
 
@@ -1534,6 +1605,26 @@ async function continuar(t, chat){
     chat.turnos.pop();
     guardar(chat); pintarHilo();
   }
+}
+
+async function titular(chat){
+  if(chat.titulado || !chat.turnos.length) return;
+  chat.titulado = true;
+  const muestra = chat.turnos.slice(0, 2)
+    .map(t => (t.rol === "user" ? "Usuario: " : "Asistente: ") + (t.texto || "").slice(0, 700))
+    .join("\n\n");
+  try{
+    const r = await responder({
+      breve: true,
+      turnos: [{role:"user", content:[{type:"text", text:
+        "Pon un título a esta conversación. De dos a cinco palabras, sin comillas, sin punto final, " +
+        "en el idioma en que está escrita. Responde solo con el título.\n\n" + muestra}]}],
+      sistema: "Titulas conversaciones. Respondes solo con el título, nada más.",
+      aviso: () => {}
+    });
+    const t = (r.texto || "").trim().replace(/^["'«»\s]+|["'«».\s]+$/g, "").split("\n")[0];
+    if(t && t.length <= 60){ chat.titulo = t; guardar(chat); pintarLista(); }
+  }catch(e){ /* si falla, se queda el título provisional */ }
 }
 
 async function regenerar(t, chat){
@@ -1912,6 +2003,7 @@ function pintarLista(){
   const lista = $("#lista");
   const filtro = ($("#busca").value || "").trim().toLowerCase();
   const dentro = c => (c.titulo + " " + c.turnos.map(t => t.texto || "").join(" ")).toLowerCase().includes(filtro);
+  chats.sort((a, b) => (b.actualizado || b.creado || 0) - (a.actualizado || a.creado || 0));
   const vistos = filtro ? chats.filter(dentro) : chats;
 
   lista.textContent = "";
@@ -1922,9 +2014,18 @@ function pintarLista(){
     lista.append(v);
     return;
   }
+  let grupoActual = null;
   for(const c of vistos){
+    const g = grupoFecha(c.actualizado || c.creado || 0);
+    if(!filtro && g !== grupoActual){
+      grupoActual = g;
+      const ep = document.createElement("div");
+      ep.className = "epigrafe";
+      ep.textContent = g;
+      lista.append(ep);
+    }
     const fila = document.createElement("button");
-    fila.type = "button"; fila.className = "hebra";
+    fila.type = "button"; fila.className = "hebra"; fila.setAttribute("role", "listitem");
     fila.setAttribute("aria-current", String(c.id === activo));
     const rot = document.createElement("span");
     rot.className = "rotulo"; rot.textContent = c.titulo;
@@ -1953,6 +2054,18 @@ function pintarLista(){
     };
     lista.append(fila);
   }
+}
+
+function grupoFecha(ts){
+  if(!ts) return "Más antiguas";
+  const d = new Date(ts), hoy = new Date();
+  const dia = x => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+  const dias = Math.round((dia(hoy) - dia(d)) / 86400000);
+  if(dias <= 0) return "Hoy";
+  if(dias === 1) return "Ayer";
+  if(dias < 7) return "Esta semana";
+  if(dias < 30) return "Este mes";
+  return "Más antiguas";
 }
 
 function renombrar(c, rot){
