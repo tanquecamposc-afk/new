@@ -4,6 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>NEXO IA — asistente con Claude</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icono.svg" type="image/svg+xml">
+<meta name="theme-color" content="#0f1420">
 <style>
 :root{
   --bg:#0f1420; --panel:#1a2233; --panel2:#232e46; --borde:#33415e;
@@ -64,6 +67,19 @@ input:focus, select:focus, textarea:focus{border-color:var(--azul);}
 .chatItem:hover .borrar{opacity:.6;}
 .chatItem .borrar:hover{opacity:1; color:var(--rojo);}
 #lateral .pie{display:flex; flex-direction:column; gap:6px; border-top:1px solid var(--borde); padding-top:10px;}
+
+#buscador{padding:7px 10px; font-size:13px; border-radius:9px;}
+.chatItem .renombrar{flex:1; padding:3px 6px; font-size:14px; border-radius:6px; min-width:0;}
+.accionesTurno{display:flex; gap:3px; flex-wrap:wrap; opacity:0; transition:opacity .14s;}
+.turno:hover .accionesTurno, .accionesTurno:focus-within{opacity:1;}
+button.mini{font-size:11.5px; padding:3px 8px; font-weight:600; color:var(--tenue);}
+button.mini:hover:not(:disabled){color:var(--texto);}
+.docChip{
+  display:flex; align-items:center; gap:7px; padding:9px 13px; border-radius:9px;
+  background:rgba(0,0,0,.3); border:1px solid var(--borde); font-size:13px; font-weight:600; max-width:260px;
+}
+.docChip .nombre{overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+#btVoz.grabando{color:var(--rojo); border-color:var(--rojo); background:rgba(255,107,107,.15);}
 
 /* ---------- Zona principal ---------- */
 #principal{flex:1; display:flex; flex-direction:column; min-width:0;}
@@ -201,6 +217,7 @@ pre.codigo code{display:block; padding:12px 14px; overflow-x:auto; font-family:"
 <aside id="lateral">
   <div id="marca"><span class="punto" id="estadoPunto"></span> NEXO IA</div>
   <button class="acento" id="btNuevo">＋ Conversación nueva</button>
+  <input type="search" id="buscador" placeholder="Buscar en las conversaciones…" autocomplete="off">
   <div id="listaChats"></div>
   <div class="pie">
     <button class="plano" id="btAjustes">⚙ Ajustes y clave API</button>
@@ -234,7 +251,8 @@ pre.codigo code{display:block; padding:12px 14px; overflow-x:auto; font-family:"
       <div id="previos"></div>
       <textarea id="entrada" rows="1" placeholder="Escribe tu pregunta…  (Enter envía · Shift+Enter salta de línea)"></textarea>
       <div id="barraCompositor">
-        <button class="plano" id="btAdjuntar" title="Adjuntar imágenes para que las analice">📎</button>
+        <button class="plano" id="btAdjuntar" title="Adjuntar imágenes o PDFs para que los lea">📎</button>
+        <button class="plano" id="btVoz" title="Dictar" style="display:none">🎤</button>
         <label class="interruptor" id="etImagen" title="El siguiente mensaje generará una imagen">
           <input type="checkbox" id="chkImagen"> 🎨 Crear imagen
         </label>
@@ -247,7 +265,7 @@ pre.codigo code{display:block; padding:12px 14px; overflow-x:auto; font-family:"
   </div>
 </div>
 
-<input type="file" id="ficheros" accept="image/png,image/jpeg,image/gif,image/webp" multiple style="display:none">
+<input type="file" id="ficheros" accept="image/png,image/jpeg,image/gif,image/webp,application/pdf" multiple style="display:none">
 
 <div id="velo">
   <div class="modal">
@@ -545,7 +563,10 @@ function historialAPI(chat){
     if(t.rol === "user"){
       const contenido = [];
       for(const a of (t.adjuntos || [])){
-        contenido.push({type:"image", source:{type:"base64", media_type:a.tipo, data:a.datos}});
+        // Los documentos van antes del texto; asi los lee el modelo.
+        contenido.push(a.tipo === "application/pdf"
+          ? {type:"document", source:{type:"base64", media_type:"application/pdf", data:a.datos}}
+          : {type:"image",    source:{type:"base64", media_type:a.tipo, data:a.datos}});
       }
       if(t.texto) contenido.push({type:"text", text:t.texto});
       if(contenido.length) mensajes.push({role:"user", content:contenido});
@@ -834,19 +855,64 @@ function descargar(blob, nombre){
    ============================================================ */
 const envoltura = $("#envoltura"), hilo = $("#hilo"), entrada = $("#entrada");
 
+/* Busca en el titulo y en el texto de todos los mensajes. */
+function textoBuscable(c){
+  return (c.titulo + " " + c.turnos.map(t =>
+    t.rol === "user" ? (t.texto || "")
+    : t.imagen ? (t.imagen.prompt || "")
+    : extraerEstado(t.bloques || []).texto
+  ).join(" ")).toLowerCase();
+}
+
+/* Cambia el título por un campo de texto, ahí mismo en la lista. */
+function renombrar(c, tit){
+  if(tit.parentNode === null) return;
+  const campo = document.createElement("input");
+  campo.type = "text"; campo.className = "renombrar"; campo.value = c.titulo;
+  let cerrado = false;
+  const confirmar = () => {
+    if(cerrado) return;
+    cerrado = true;
+    c.titulo = campo.value.trim() || c.titulo;
+    guardarChats(); pintarLista();
+  };
+  campo.onblur = confirmar;
+  campo.onkeydown = e => {
+    e.stopPropagation();
+    if(e.key === "Enter"){ e.preventDefault(); confirmar(); }
+    if(e.key === "Escape"){ cerrado = true; pintarLista(); }
+  };
+  campo.onclick = e => e.stopPropagation();
+  campo.ondblclick = e => e.stopPropagation();
+  tit.replaceWith(campo);
+  campo.focus(); campo.select();
+}
+
 function pintarLista(){
   const cont = $("#listaChats");
+  const filtro = ($("#buscador").value || "").trim().toLowerCase();
+  const visibles = filtro ? chats.filter(c => textoBuscable(c).includes(filtro)) : chats;
+
   cont.innerHTML = "";
-  if(!chats.length){
-    cont.innerHTML = '<div style="color:var(--tenue);font-size:13px;padding:10px 4px">Todavía no hay conversaciones.</div>';
+  if(!visibles.length){
+    cont.innerHTML = '<div style="color:var(--tenue);font-size:13px;padding:10px 4px">' +
+      (filtro ? "Sin resultados para «" + esc(filtro) + "»." : "Todavía no hay conversaciones.") + "</div>";
     return;
   }
-  for(const c of chats){
+
+  for(const c of visibles){
     const it = document.createElement("div");
     it.className = "chatItem" + (c.id === idActual ? " activo" : "");
     const tit = document.createElement("span");
     tit.className = "titulo";
     tit.textContent = c.titulo;
+    tit.title = c.titulo + "  (doble clic para renombrar)";
+    tit.ondblclick = ev => { ev.stopPropagation(); renombrar(c, tit); };
+
+    const bre = document.createElement("button");
+    bre.className = "borrar"; bre.type = "button"; bre.textContent = "✎"; bre.title = "Renombrar";
+    bre.onclick = ev => { ev.stopPropagation(); renombrar(c, tit); };
+
     const bo = document.createElement("button");
     bo.className = "borrar"; bo.type = "button"; bo.textContent = "✕"; bo.title = "Borrar";
     bo.onclick = ev => {
@@ -856,8 +922,15 @@ function pintarLista(){
       if(idActual === c.id) idActual = chats.length ? chats[0].id : null;
       guardarChats(); pintarLista(); pintarHilo();
     };
-    it.append(tit, bo);
-    it.onclick = () => { idActual = c.id; pintarLista(); pintarHilo(); if(innerWidth <= 820) $("#lateral").classList.add("oculto"); };
+    it.append(tit, bre, bo);
+    it.onclick = () => {
+      if(innerWidth <= 820) $("#lateral").classList.add("oculto");
+      // Volver a dibujar la conversación ya abierta tiraría abajo un
+      // renombrado a medio escribir, así que no se hace.
+      if(c.id === idActual) return;
+      idActual = c.id;
+      pintarLista(); pintarHilo();
+    };
     cont.appendChild(it);
   }
 }
@@ -912,18 +985,14 @@ function dibujarTurno(t){
     if(t.adjuntos && t.adjuntos.length){
       const cont = document.createElement("div");
       cont.className = "adjuntos";
-      for(const a of t.adjuntos){
-        const im = document.createElement("img");
-        im.src = "data:" + a.tipo + ";base64," + a.datos;
-        im.alt = "adjunto";
-        cont.appendChild(im);
-      }
+      for(const a of t.adjuntos) cont.appendChild(fichaAdjunto(a));
       el.appendChild(cont);
     }
     const b = document.createElement("div");
     b.className = "burbuja";
     b.innerHTML = md(t.texto || "");
     el.appendChild(b);
+    el.appendChild(accionesTurno(t));
     return el;
   }
 
@@ -945,7 +1014,97 @@ function dibujarTurno(t){
     m.textContent = resumenUso(t.uso, t.modelo);
     el.appendChild(m);
   }
+  el.appendChild(accionesTurno(t));
   return el;
+}
+
+/* Barra de acciones bajo cada mensaje: copiar, regenerar, editar, borrar. */
+function accionesTurno(t){
+  const barra = document.createElement("div");
+  barra.className = "accionesTurno";
+
+  const boton = (etiqueta, titulo, alPulsar) => {
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "plano mini"; b.textContent = etiqueta; b.title = titulo;
+    b.onclick = alPulsar;
+    barra.appendChild(b);
+    return b;
+  };
+
+  const texto = t.rol === "user"
+    ? (t.texto || "")
+    : (t.imagen ? (t.imagen.prompt || "") : extraerEstado(t.bloques || []).texto);
+
+  if(texto){
+    boton("⧉ Copiar", "Copiar al portapapeles", ev => {
+      navigator.clipboard.writeText(texto)
+        .then(() => { ev.target.textContent = "✓ Copiado"; setTimeout(() => ev.target.textContent = "⧉ Copiar", 1500); })
+        .catch(() => { ev.target.textContent = "no se pudo"; setTimeout(() => ev.target.textContent = "⧉ Copiar", 1500); });
+    });
+  }
+
+  if(t.rol === "user"){
+    boton("✎ Editar", "Editar este mensaje y volver a preguntar", () => editarTurno(t));
+  }else{
+    boton("↻ Regenerar", "Pedir otra respuesta a la misma pregunta", () => regenerar(t));
+  }
+  boton("🗑", "Borrar este mensaje y todo lo que sigue", () => borrarDesde(t));
+  return barra;
+}
+
+/* Devuelve el mensaje del usuario al compositor y descarta todo lo posterior. */
+function editarTurno(t){
+  if(corriendo) return;
+  const chat = chatActual();
+  const i = chat.turnos.indexOf(t);
+  if(i < 0) return;
+  entrada.value = t.texto || "";
+  adjuntos = (t.adjuntos || []).slice();
+  chat.turnos.length = i;
+  guardarChats(); pintarHilo(); pintarPrevios(); ajustarAltura();
+  entrada.focus();
+}
+
+/* Descarta la respuesta y vuelve a pedirla con la misma pregunta. */
+async function regenerar(t){
+  if(corriendo) return;
+  const chat = chatActual();
+  const i = chat.turnos.indexOf(t);
+  if(i < 1) return;
+  const pregunta = chat.turnos[i - 1];
+  const eraImagen = !!t.imagen;
+  chat.turnos.length = i;
+  guardarChats(); pintarHilo();
+
+  corriendo = new AbortController();
+  $("#btParar").style.display = "";
+  $("#btEnviar").disabled = true;
+  try{
+    if(eraImagen) await flujoImagen(chat, pregunta.texto || "", corriendo.signal);
+    else          await flujoChat(chat, corriendo.signal);
+  }catch(e){
+    if(e.name !== "AbortError"){
+      const nt = {rol:"assistant", error: mensajeError(e)};
+      chat.turnos.push(nt);
+      envoltura.appendChild(dibujarTurno(nt));
+    }
+  }finally{
+    corriendo = null;
+    $("#btParar").style.display = "none";
+    $("#btEnviar").disabled = false;
+    guardarChats(); actualizarMeta(); abajo();
+  }
+}
+
+function borrarDesde(t){
+  if(corriendo) return;
+  const chat = chatActual();
+  const i = chat.turnos.indexOf(t);
+  if(i < 0) return;
+  const cuantos = chat.turnos.length - i;
+  if(cuantos > 1 && !confirm("Se borrarán " + cuantos + " mensajes desde este. ¿Seguro?")) return;
+  chat.turnos.length = i;
+  guardarChats(); pintarHilo(); pintarLista(); actualizarMeta();
 }
 
 /* Convierte los bloques guardados en el estado que sabe pintar la UI. */
@@ -1224,6 +1383,9 @@ async function flujoChat(chat, senal){
 
   repintar(true);
   pieMeta.textContent = resumenUso(turno.uso, turno.modelo);
+  // La barra de acciones se agrega recién al terminar: no tiene sentido
+  // ofrecer "copiar" o "regenerar" sobre una respuesta a medio escribir.
+  el.appendChild(accionesTurno(turno));
   guardarChats();
 }
 
@@ -1258,19 +1420,48 @@ async function flujoImagen(chat, prompt, senal){
 /* ============================================================
    Adjuntos
    ============================================================ */
-const TIPOS_OK = ["image/png", "image/jpeg", "image/gif", "image/webp"];
+const TIPOS_IMG = ["image/png", "image/jpeg", "image/gif", "image/webp"];
+const TIPOS_OK  = TIPOS_IMG.concat(["application/pdf"]);
+const TOPE_IMG  = 5 * 1024 * 1024;
+const TOPE_PDF  = 25 * 1024 * 1024;
 
 function agregarFicheros(lista){
   for(const f of lista){
-    if(!TIPOS_OK.includes(f.type)){ avisar("Formato no soportado: " + (f.type || f.name) + ". Usa PNG, JPEG, GIF o WEBP."); continue; }
-    if(f.size > 5 * 1024 * 1024){ avisar("«" + f.name + "» pesa más de 5 MB. Redúcela antes de adjuntarla."); continue; }
+    if(!TIPOS_OK.includes(f.type)){
+      avisar("Formato no soportado: " + (f.type || f.name) + ". Se aceptan PNG, JPEG, GIF, WEBP y PDF.");
+      continue;
+    }
+    const tope = f.type === "application/pdf" ? TOPE_PDF : TOPE_IMG;
+    if(f.size > tope){
+      avisar("«" + f.name + "» pesa " + (f.size / 1048576).toFixed(1) + " MB y el tope es " + (tope / 1048576) + " MB.");
+      continue;
+    }
     const lector = new FileReader();
     lector.onload = () => {
-      adjuntos.push({tipo:f.type, datos:String(lector.result).split(",")[1]});
+      adjuntos.push({tipo:f.type, nombre:f.name, datos:String(lector.result).split(",")[1]});
       pintarPrevios();
     };
+    lector.onerror = () => avisar("No se pudo leer «" + f.name + "».");
     lector.readAsDataURL(f);
   }
+}
+
+/* Miniatura para una imagen, ficha con nombre para un PDF. */
+function fichaAdjunto(a){
+  if(a.tipo === "application/pdf"){
+    const d = document.createElement("div");
+    d.className = "docChip";
+    d.innerHTML = "<span>📄</span>";
+    const n = document.createElement("span");
+    n.className = "nombre";
+    n.textContent = a.nombre || "documento.pdf";
+    d.appendChild(n);
+    return d;
+  }
+  const im = document.createElement("img");
+  im.src = "data:" + a.tipo + ";base64," + a.datos;
+  im.alt = a.nombre || "adjunto";
+  return im;
 }
 
 function pintarPrevios(){
@@ -1279,12 +1470,11 @@ function pintarPrevios(){
   adjuntos.forEach((a, i) => {
     const d = document.createElement("div");
     d.className = "previo";
-    const im = document.createElement("img");
-    im.src = "data:" + a.tipo + ";base64," + a.datos;
     const b = document.createElement("button");
     b.type = "button"; b.className = "quitar"; b.textContent = "✕";
+    b.title = "Quitar";
     b.onclick = () => { adjuntos.splice(i, 1); pintarPrevios(); };
-    d.append(im, b);
+    d.append(fichaAdjunto(a), b);
     cont.appendChild(d);
   });
 }
@@ -1335,6 +1525,57 @@ function sincronizarInterruptores(){
 function ajustarAltura(){
   entrada.style.height = "auto";
   entrada.style.height = Math.min(entrada.scrollHeight, 220) + "px";
+}
+
+/* ============================================================
+   Dictado por voz (Web Speech API, donde el navegador la traiga)
+   ============================================================ */
+function prepararVoz(){
+  const Reconocimiento = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const bt = $("#btVoz");
+  if(!Reconocimiento) return;          // Firefox todavia no la trae: se deja oculto
+  bt.style.display = "";
+
+  const rec = new Reconocimiento();
+  rec.lang = "es-ES";
+  rec.continuous = true;
+  rec.interimResults = true;
+  let escuchando = false, base = "";
+
+  rec.onresult = ev => {
+    let firme = "", provisional = "";
+    for(let i = ev.resultIndex; i < ev.results.length; i++){
+      const txt = ev.results[i][0].transcript;
+      if(ev.results[i].isFinal) firme += txt; else provisional += txt;
+    }
+    if(firme) base = (base + " " + firme).trim();
+    entrada.value = (base + " " + provisional).trim();
+    ajustarAltura();
+  };
+  rec.onerror = ev => {
+    if(ev.error === "not-allowed") avisar("El navegador bloqueó el micrófono. Dale permiso desde el candado de la barra de direcciones.");
+    parar();
+  };
+  rec.onend = () => { if(escuchando) parar(); };
+
+  function parar(){ escuchando = false; bt.classList.remove("grabando"); bt.title = "Dictar"; try{ rec.stop(); }catch(e){} }
+  bt.onclick = () => {
+    if(escuchando){ parar(); return; }
+    base = entrada.value.trim();
+    escuchando = true;
+    bt.classList.add("grabando");
+    bt.title = "Detener el dictado";
+    try{ rec.start(); }catch(e){ parar(); }
+  };
+}
+
+/* ============================================================
+   Service worker: deja instalar la app y abrirla sin conexión.
+   Solo aplica si la página se sirve por http(s); desde file:// no.
+   ============================================================ */
+function registrarServicio(){
+  if(!("serviceWorker" in navigator) || !location.protocol.startsWith("http")) return;
+  navigator.serviceWorker.register("sw.js").catch(e => console.warn("service worker no registrado:", e));
 }
 
 /* ============================================================
@@ -1397,6 +1638,14 @@ function iniciar(){
     descargar(new Blob(["# " + c.titulo + "\n\n" + lineas.join("\n\n---\n\n")], {type:"text/markdown"}),
               c.titulo.replace(/[^\w\sáéíóúñ-]/gi, "").slice(0, 40).trim().replace(/\s+/g, "-") + ".md");
   };
+
+  $("#buscador").addEventListener("input", pintarLista);
+  $("#buscador").addEventListener("keydown", e => {
+    if(e.key === "Escape"){ $("#buscador").value = ""; pintarLista(); }
+  });
+
+  prepararVoz();
+  registrarServicio();
 
   entrada.addEventListener("input", ajustarAltura);
   entrada.addEventListener("keydown", e => {

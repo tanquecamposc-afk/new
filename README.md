@@ -4,7 +4,7 @@ Dos aplicaciones web independientes, cada una en un solo archivo HTML, sin depen
 
 | Proyecto | Qué es |
 |---|---|
-| [**🤖 NEXO IA**](ia/) — `ia/index.html` | Asistente de IA con Claude Opus 5: responde, busca en la web, razona a la vista, lee imágenes y crea imágenes. Necesita tu clave de la API de Anthropic. |
+| [**🤖 NEXO IA**](ia/) — `ia/index.html` | Asistente de IA con Claude Opus 5: responde, busca en la web, razona a la vista, lee imágenes y PDFs, y crea imágenes. Instalable como app. Necesita tu clave de la API de Anthropic. |
 | [**🏰 NEXO: Tower Defense**](#nexo-tower-defense-) — `index.html` | Juego de defensa de torres en HTML5 Canvas. Se abre y se juega, sin nada más. |
 
 ---

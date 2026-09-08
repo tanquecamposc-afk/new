@@ -23,8 +23,11 @@ verás cuántos gastaste y el costo aproximado.
 | 🧠 **Razonamiento visible** | Se ve, en un desplegable, el resumen de cómo llegó a la respuesta. |
 | 🌐 **Búsqueda web** | Para noticias, precios, versiones o resultados. Lista las fuentes que consultó, con enlace. |
 | 🎨 **Crea imágenes** | Botón "Crear imagen". Descarga en SVG o PNG. |
-| 👁 **Lee imágenes** | Arrastra, pega (Ctrl+V) o adjunta capturas y fotos para que las analice. |
-| 📚 **Varias conversaciones** | Se guardan en el navegador. Exportables a Markdown. |
+| 👁 **Lee imágenes y PDFs** | Arrastra, pega (Ctrl+V) o adjunta capturas, fotos y documentos. Los PDFs los lee enteros, hasta 25 MB. |
+| ✎ **Editar y regenerar** | Cada mensaje tiene su barra: copiar, pedir otra respuesta, corregir tu pregunta y volver a preguntar, o borrar desde ahí. |
+| 🎤 **Dictado** | Botón de micrófono para hablar en vez de escribir (en Chrome, Edge y Safari). |
+| 📚 **Varias conversaciones** | Se guardan en el navegador, se renombran y se buscan por dentro. Exportables a Markdown. |
+| 📱 **Instalable** | Sirviéndola por https se instala como app en el celular o el escritorio, y abre sin conexión. |
 | ⚙ **Todo configurable** | Modelo, esfuerzo de razonamiento, tokens por respuesta y las instrucciones del sistema completas. |
 
 ### Modelos disponibles
@@ -59,7 +62,17 @@ y cualquier referencia externa.
 | `Enter` | Enviar |
 | `Shift` + `Enter` | Salto de línea |
 | `Ctrl` + `V` | Pegar una imagen del portapapeles |
-| `Esc` | Cerrar Ajustes |
+| Doble clic en el título | Renombrar la conversación |
+| `Esc` | Cerrar Ajustes, o limpiar el buscador |
+
+## 📱 Instalarla en el celular
+
+Los archivos son estáticos, así que basta con servirlos por https. Con GitHub Pages activado en el repo
+queda en `https://<tu-usuario>.github.io/new/ia/`: la abres en el celular, le das a "Añadir a pantalla de
+inicio" y queda como una app más, con su ícono y sin barra del navegador.
+
+El *service worker* cachea solo el armazón de la app (HTML, ícono, manifest), nunca las respuestas de la
+API: esas siempre van a la red.
 
 ## 🔧 Detalles técnicos
 
@@ -74,6 +87,9 @@ y cualquier referencia externa.
   manda a Haiku 4.5, y el razonamiento usa `adaptive` en los modelos actuales y `budget_tokens` en Haiku.
 - `pause_turn` (el bucle de herramientas del servidor llegó a su tope) se reanuda solo, hasta 5 veces.
 - El prompt del sistema va con `cache_control` para no pagarlo entero en cada turno.
+- Los PDFs viajan como bloques `document` en base64, colocados antes del texto del mensaje.
+- Al regenerar o editar se recorta el historial en ese punto, así que la petición nueva sale limpia
+  en vez de arrastrar la respuesta descartada.
 
 ### Una advertencia sobre publicarlo
 

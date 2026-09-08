@@ -1,0 +1,16 @@
+{
+  "name": "NEXO IA",
+  "short_name": "NEXO IA",
+  "description": "Asistente de IA con Claude: responde, busca en la web, lee y crea imágenes.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0f1420",
+  "theme_color": "#0f1420",
+  "lang": "es",
+  "icons": [
+    { "src": "icono.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "icono.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "maskable" }
+  ]
+}
