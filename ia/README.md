@@ -39,6 +39,14 @@ Se eligen en el desplegable de arriba y se suman a tus instrucciones, sin reempl
 | 🎯 **Preguntas de práctica** | 8 preguntas que suben de dificultad, con respuestas al final. |
 | ⚖ **Ver las dos caras** | El mejor argumento de cada lado y una postura al cierre, sin "depende". |
 
+## 👁 Vista previa
+
+Cuando genera una página web o un SVG, el bloque de código trae un botón **▶ Ver**: abre un panel al lado
+donde eso corre de verdad. Puedes alternar entre la vista y el código, y descargarlo.
+
+El HTML generado se ejecuta en un `iframe` con `sandbox` y sin `allow-same-origin`, así que no puede
+tocar la página ni tus datos.
+
 ## 🎨 Estudio de imágenes
 
 Pestaña aparte, solo para crear. Escribes qué quieres, eliges estilo (plano, isométrico, línea, cartel,
@@ -67,6 +75,9 @@ y dale a "Añadir a pantalla de inicio". El *service worker* cachea el armazón 
 
 ## 🔧 Detalles técnicos
 
+- **Las capacidades del visor tardan hasta 10 segundos en resolverse**, así que todo lo que necesita el
+  motor espera a una promesa de arranque antes de disparar. Si escribes apenas carga la página, el mensaje
+  queda en espera y sale solo al conectar, en vez de fallar.
 - **Dos motores tras una misma interfaz.** En claude.ai usa la capacidad `sample` del runtime; como archivo
   local habla con la [Messages API](https://platform.claude.com/docs/en/api/messages) por `fetch`,
   parseando el stream SSE a mano.
@@ -82,6 +93,9 @@ y dale a "Añadir a pantalla de inicio". El *service worker* cachea el armazón 
 - En modo `sample` el tope de entrada son 64 KiB: al acercarse, resume la parte vieja y la conversación sigue.
 - Las descargas pasan por la capacidad `downloads` cuando existe, porque el visor deja inertes los enlaces
   de descarga normales.
+- Cuando una respuesta se corta por largo, **Continuar** pide el resto y lo pega al mismo turno, sin dejar
+  dos respuestas partidas en el hilo.
+- El medidor de la franja superior muestra cuánto del contexto llevas usado.
 
 ## 🚧 Qué *no* hace
 
