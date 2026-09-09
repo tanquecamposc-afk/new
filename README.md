@@ -40,10 +40,14 @@ Una versión aparte, mucho más sencilla: **puras cajas, 312 caras**, sin ningú
 
 | Archivo | Para qué |
 |---|---|
-| `via-expresa-tinkercad.obj` | **El que se importa a Tinkercad.** Va sin colores a propósito, porque Tinkercad no lee archivos `.mtl` y da error si se los pones. |
+| `via-expresa-tinkercad-color.obj` + `.mtl` | **El OBJ multicolor.** Los colores van por partida doble: en el `.mtl` de al lado y escritos dentro del propio OBJ (`v x y z r g b`), así se ven aunque el programa no lea el `.mtl`. |
+| `via-expresa-tinkercad.obj` | El mismo modelo sin ninguna referencia de color, que es lo que Tinkercad acepta sin quejarse. |
 | `via-expresa-tinkercad.stl` | Lo mismo, por si prefieres importar STL. |
-| `via-expresa-tinkercad.glb` | Con colores, para mirarlo antes en la computadora. |
+| `via-expresa-tinkercad.glb` | Con colores, en un solo archivo. |
+| `piezas-tinkercad/*.obj` | El modelo partido en 6 pedazos por color, para pintarlo dentro de Tinkercad. |
 | `medidas-tinkercad.md` | La tabla de medidas, pieza por pieza. |
+
+**Sobre los colores en Tinkercad:** Tinkercad no lee colores de ningún archivo 3D — muestra todo lo que importas de un solo color, y si le pasas el `.mtl` da error. No hay forma de evitarlo desde el archivo. Para tener la maqueta de colores ahí, se importan los 6 archivos de `piezas-tinkercad/` uno por uno (calzan solos, porque todos usan las mismas coordenadas) y se pinta cada uno con el balde de pintura.
 
 Todo está en **medidas reales**: 1 unidad = 1 metro. El terreno mide 90 × 50 m y la pista elevada va a 8 m de altura, que es el alto libre que necesita el Metropolitano para pasar por debajo.
 

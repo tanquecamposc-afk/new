@@ -42,7 +42,12 @@ const MATS = {
 const V = [], F = [], LISTA = [];
 let grupo = 'Modelo';
 const o = n => { grupo = n; };
-const v = (x, y, z) => (V.push([x, y, z]), V.length);
+// VCOL guarda el color de cada vértice. Sirve para el OBJ multicolor: aparte
+// del archivo .mtl, el color va escrito en la misma línea del vértice, así
+// los programas que no leen el .mtl igual lo muestran de colores.
+const VCOL = [];
+let matActual = 'pasto';
+const v = (x, y, z) => (V.push([x, y, z]), VCOL.push(MATS[matActual]), V.length);
 const face = (m, ...ids) => F.push({ m, o: grupo, ids });
 const n2 = x => (Math.round(x * 100) / 100);
 
@@ -52,6 +57,7 @@ const n2 = x => (Math.round(x * 100) / 100);
 // normales apunten hacia afuera; si no, en Tinkercad y en las impresoras 3D
 // la pieza puede salir del revés.
 function caja(nombre, x, y, z, largo, alto, ancho, m) {
+  matActual = m;
   const [x0, x1] = [x, x + largo], [y0, y1] = [y, y + alto], [z0, z1] = [z, z + ancho];
   const a = v(x0, y0, z0), b = v(x1, y0, z0), c = v(x1, y0, z1), d = v(x0, y0, z1);
   const e = v(x0, y1, z0), f = v(x1, y1, z0), g = v(x1, y1, z1), h = v(x0, y1, z1);
@@ -164,6 +170,71 @@ const objText = (() => {
 })();
 writeFileSync(OUT('via-expresa-tinkercad.obj'), objText);
 
+/* ---------- OBJ MULTICOLOR ----------
+   Lleva los colores de dos maneras a la vez, para que se vean en el mayor
+   número de programas posible:
+     1. un archivo .mtl al lado, que es la forma normal en OBJ;
+     2. el color escrito en la misma línea de cada vértice (v x y z r g b),
+        que es lo que leen Blender y MeshLab aunque falte el .mtl.
+   Aviso: Tinkercad no lee ninguna de las dos y lo va a mostrar de un solo
+   color. Para tener colores ahí están los archivos por pieza, más abajo. */
+const mtlText = (() => {
+  const L = ['# Colores de la Vía Expresa Elevada', ''];
+  for (const [n, [r, g, b]] of Object.entries(MATS))
+    L.push(`newmtl ${n}`, `Kd ${r} ${g} ${b}`, 'Ka 0 0 0', 'Ks 0.03 0.03 0.03', 'Ns 8', 'd 1', '');
+  return L.join('\n') + '\n';
+})();
+writeFileSync(OUT('via-expresa-tinkercad-color.mtl'), mtlText);
+
+const objColor = (() => {
+  const L = ['# Vía Expresa Elevada — versión multicolor',
+    `# Proyecto de EPT · 1 unidad = 1 metro · mide ${LARGO} x ${ANCHO} unidades`,
+    '# Los colores van en el .mtl de al lado y también en cada vértice.',
+    '# Deja los dos archivos en la misma carpeta.',
+    'mtllib via-expresa-tinkercad-color.mtl', ''];
+  V.forEach(([x, y, z], i) => {
+    const [r, g, b] = VCOL[i];
+    L.push(`v ${x.toFixed(2)} ${y.toFixed(2)} ${z.toFixed(2)} ${r} ${g} ${b}`);
+  });
+  let g = null, m = null;
+  for (const f of F) {
+    if (f.o !== g) { L.push(`o ${f.o.replace(/[^\w]+/g, '_')}`); g = f.o; m = null; }
+    if (f.m !== m) { L.push(`usemtl ${f.m}`); m = f.m; }
+    L.push('f ' + f.ids.join(' '));
+  }
+  return L.join('\n') + '\n';
+})();
+writeFileSync(OUT('via-expresa-tinkercad-color.obj'), objColor);
+
+/* ---------- un OBJ por color, para pintar dentro de Tinkercad ----------
+   Tinkercad le pone un solo color a cada archivo que importas. Entonces la
+   forma de tener la maqueta de colores es importar estas seis piezas por
+   separado y pintar cada una con el balde de pintura. Se importan una encima
+   de otra y calzan solas, porque todas usan las mismas coordenadas. */
+const PIEZAS = {
+  '1-terreno-y-pasto':  ['tierra', 'pasto'],
+  '2-pistas':           ['pista'],
+  '3-concreto':         ['concreto', 'anden'],
+  '4-ciclovia':         ['ciclovia'],
+  '5-carros-y-bus':     ['bus', 'rojo', 'azul', 'amarillo'],
+  '6-arboles':          ['tronco', 'copa'],
+};
+mkdirSync(join(ROOT, 'modelo-3d', 'piezas-tinkercad'), { recursive: true });
+for (const [nombre, materiales] of Object.entries(PIEZAS)) {
+  const usa = new Set(materiales);
+  const caras = F.filter(f => usa.has(f.m));
+  // renumerar: cada archivo lleva solo los vértices que de verdad usa
+  const mapa = new Map(), L = [];
+  for (const f of caras) for (const id of f.ids)
+    if (!mapa.has(id)) { mapa.set(id, mapa.size + 1); const [x, y, z] = V[id - 1]; L.push(`v ${x.toFixed(2)} ${y.toFixed(2)} ${z.toFixed(2)}`); }
+  const cab = [`# Vía Expresa Elevada — pieza "${nombre}"`,
+    '# Impórtala a Tinkercad y píntala con el balde de pintura.',
+    '# Todas las piezas usan las mismas coordenadas, así que calzan solas.', ''];
+  const cuerpo = caras.map(f => 'f ' + f.ids.map(id => mapa.get(id)).join(' '));
+  writeFileSync(join(ROOT, 'modelo-3d', 'piezas-tinkercad', `${nombre}.obj`),
+    cab.concat(L, '', cuerpo).join('\n') + '\n');
+}
+
 /* ---------- triángulos ---------- */
 const porMaterial = new Map();
 for (const f of F) {
@@ -267,6 +338,10 @@ const filas = LISTA.map(p => ({ ...p }));
   let html = readFileSync(htmlPath, 'utf8');
   html = html.replace(/(<script id="objtk" type="text\/plain">)[\s\S]*?(<\/script>)/,
     `$1\n${objText}$2`);
+  html = html.replace(/(<script id="objtkcolor" type="text\/plain">)[\s\S]*?(<\/script>)/,
+    `$1\n${objColor}$2`);
+  html = html.replace(/(<script id="mtltkcolor" type="text\/plain">)[\s\S]*?(<\/script>)/,
+    `$1\n${mtlText}$2`);
   let g = null, t = [];
   for (const p of filas) {
     if (p.grupo !== g) {

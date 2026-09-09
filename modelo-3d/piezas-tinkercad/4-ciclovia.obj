@@ -1,0 +1,19 @@
+# Vía Expresa Elevada — pieza "4-ciclovia"
+# Impórtala a Tinkercad y píntala con el balde de pintura.
+# Todas las piezas usan las mismas coordenadas, así que calzan solas.
+
+v -45.00 0.70 -19.00
+v 45.00 0.70 -19.00
+v 45.00 0.70 -22.00
+v -45.00 0.70 -22.00
+v -45.00 0.40 -22.00
+v 45.00 0.40 -22.00
+v 45.00 0.40 -19.00
+v -45.00 0.40 -19.00
+
+f 1 2 3 4
+f 5 6 7 8
+f 5 4 3 6
+f 8 7 2 1
+f 6 3 2 7
+f 5 8 1 4
