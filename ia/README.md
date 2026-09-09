@@ -1,6 +1,7 @@
 # NEXO IA 🤖
 
-Un asistente de IA en **un solo archivo HTML**, con 11 skills listas y un estudio aparte para crear imágenes.
+Un asistente de IA en **un solo archivo HTML**, con 23 skills listas (y las que tú crees), ejecución de
+código en un entorno aislado y un estudio para crear imágenes.
 Sin build, sin dependencias, sin `npm install`.
 
 El archivo detecta solo dónde está corriendo:
@@ -22,68 +23,37 @@ El archivo detecta solo dónde está corriendo:
 [console.anthropic.com](https://console.anthropic.com/settings/keys) y pégala en Ajustes.
 Se guarda solo en tu navegador y viaja únicamente a `api.anthropic.com`. Nunca la escribas dentro del archivo.
 
-## 🧠 Skills incluidas
+## 🧠 Skills
 
-Se eligen en el desplegable de arriba y se suman a tus instrucciones, sin reemplazarlas.
+**23 skills de fábrica**, en el catálogo que se abre con el botón de la franja o con `Ctrl+J`. Tiene buscador
+—busca también en los ejemplos, no solo en los nombres— y cada una dice en una línea para qué sirve.
+Todas se **suman** a tus instrucciones generales, no las reemplazan.
 
-| Skill | Qué hace |
-|---|---|
-| 📚 **Tarea del colegio** | Muestra el razonamiento paso a paso y cierra con preguntas de autoevaluación. No escribe el trabajo por ti. |
-| 📎 **Citas en APA 7** | Referencias en APA 7 en español, con la cita en el texto aparte. Si falta un dato, lo pide en vez de inventarlo. |
-| ✍ **Humanizar texto** | Reescribe para que no suene a IA: fuera el relleno, los conectores repetidos y los cierres de ensayo escolar. |
-| 📄 **Resumir** | Idea central, viñetas con datos concretos, tabla de cifras y qué se quedó sin decir. |
-| ✓ **Corregir** | Devuelve el texto corregido y una tabla con cada cambio y su porqué. |
-| ⌨ **Programar** | Archivo completo y ejecutable, con manejo de errores y cómo se corre. |
-| 💡 **Explicar simple** | Analogía cotidiana, frases cortas, y una pregunta al final para comprobar. |
-| 🌐 **Traducir** | Respeta el registro y explica las expresiones sin equivalente directo. |
-| 🎯 **Preguntas de práctica** | 8 preguntas que suben de dificultad, con respuestas al final. |
-| ⚖ **Ver las dos caras** | El mejor argumento de cada lado y una postura al cierre, sin "depende". |
+**Colegio** · Tarea del colegio · Citas en APA 7 · Ensayo y monografía · Exposición oral ·
+Matemáticas paso a paso · Preguntas de práctica · Plan de estudio · Análisis literario
 
-## ⚙ Herramientas
+**Escribir** · Humanizar texto · Corregir · Parafrasear · Resumir · Carta o correo formal
 
-Con el interruptor **⚙ Herramientas** de la franja superior, el modelo deja de solo escribir y empieza a
-*hacer*. Cuando le sirve, llama por su cuenta a:
+**Entender** · Explicar simple · Ver las dos caras · Traducir · Verificar una afirmación
 
-| Herramienta | Para qué |
-|---|---|
-| ⚡ **Ejecutar JavaScript** | Calcular, contar, ordenar, convertir unidades o comprobar una fórmula ejecutándola de verdad, en vez de estimar el resultado |
-| 🔎 **Buscar en tus conversaciones** | Recuperar algo que ya hablaste con él |
-| 📃 **Leer un archivo adjunto** | Releer entero un archivo que le pasaste |
-| 🎨 **Crear una imagen** | Dibujar cuando le pides ver algo, sin cambiar de pestaña |
+**Código** · Programar · Revisar código · Explicar código
 
-Debajo de la respuesta ves qué usó y si salió bien. **Viene apagado** a propósito: cada vuelta con
-herramientas es una petición más, así que cuesta y tarda. Enciéndelo cuando lo necesites.
+**Trabajo** · CV y carta de presentación · Practicar entrevista · Hoja de cálculo
 
-### El entorno de ejecución
+No son etiquetas vacías: cada una lleva reglas concretas. La de **APA 7** trae los moldes de cada tipo de
+fuente y se niega a inventar un DOI. La de **parafrasear** avisa de que parafrasear no exime de citar. La de
+**CV** insiste en logros con número en vez de listas de tareas. La de **plan de estudio** reparte con
+repetición espaciada y deja el último día para repaso. La de **entrevista** hace una pregunta y espera, en
+vez de soltarte las cinco de golpe.
 
-El código no corre en la página. Corre en un **Worker dentro de un iframe con `sandbox` y sin
-`allow-same-origin`**, lo que da tres cosas a la vez:
+### Tus propias skills
 
-- **Origen opaco**: no ve el DOM de la página ni el almacenamiento donde viven tus claves. Comprobado:
-  intentar leer `parent.document` o `localStorage` desde ahí devuelve un error de referencia.
-- **Hilo aparte**: un bucle infinito no congela la interfaz.
-- **Se puede matar**: al pasarse del tiempo se llama a `terminate()` y el entorno queda listo para la
-  siguiente ejecución. No hay que recargar nada.
+En el catálogo, **＋ Crear una skill**. Le pones nombre, para qué sirve y las instrucciones, y aparece en un
+grupo *Mías* al principio, lista para usar y reusar. Se guardan en tu navegador.
 
-Ese mismo entorno alimenta el botón **▶ Ejecutar** que aparece en los bloques de código JavaScript:
-lo pruebas ahí mismo y ves lo que imprime y el valor que devuelve.
-
-## ✨ Acabado
-
-- **Código resaltado.** Los bloques salen con colores por lenguaje, derivados de los tokens del tema
-  y no de una hoja ajena, así que combinan en claro y en oscuro. Se resalta solo lo ya terminado:
-  hacerlo durante el streaming sería repintar decenas de veces por segundo.
-- **Títulos de verdad.** En vez de recortar tu primera frase, al cerrar el primer intercambio le pide
-  al modelo un nombre de dos a cinco palabras. Es una petición mínima —nivel rápido, sin herramientas,
-  sin razonar— y ocurre una sola vez por conversación.
-- **El riel agrupa por antigüedad**: Hoy, Ayer, Esta semana, Este mes, Más antiguas.
-- **Hora de cada mensaje**, al pasar el mouse por encima.
-- **Reanuda donde lo dejaste**: al abrir, vuelve a la última conversación en vez de la pantalla vacía.
-- **Escuchar** la respuesta en voz alta, con la voz del sistema.
-- **Imprimible.** `Ctrl+P` saca la conversación como documento limpio: sin paneles, sin botones,
-  negro sobre blanco y sin cortar los bloques de código por la mitad.
-- **Accesible.** El hilo es una bitácora que se anuncia sola a los lectores de pantalla
-  (`role="log"`, `aria-live`), y el contraste del botón principal es 17:1 en claro y 8,2:1 en oscuro.
+La **envoltura** es lo que las vuelve cómodas: si escribes `Revisa este texto de historia: {texto}`, lo que
+tecleés se mete donde dice `{texto}` y no tienes que repetir la instrucción cada vez. Es lo mismo que hacen
+por dentro Humanizar, Corregir y Parafrasear.
 
 ## 👁 Vista previa
 
@@ -173,10 +143,23 @@ y dale a "Añadir a pantalla de inicio". El *service worker* cachea el armazón 
 - La proporción va en `generationConfig.imageConfig`, que no todos los modelos aceptan: si lo rechazan con
   un `400`, se reintenta una vez sin ella.
 
-## 🚧 Qué *no* hace
+## 📏 Sobre los topes de uso
 
-La app no le pone límites propios: ni tope de mensajes, ni recortes, ni instrucciones ocultas. El prompt
-del sistema es tuyo y lo reescribes entero desde Ajustes.
+La app **no te limita**: ni tope de mensajes, ni de largo, ni recortes, ni instrucciones ocultas. El prompt
+del sistema es tuyo y lo reescribes entero desde Ajustes. Pero de dónde sale el uso cambia las cosas:
+
+| | Tope diario |
+|---|---|
+| **Abierta en claude.ai** | El de tu plan de Claude. Lo pone Anthropic y **ninguna página puede levantarlo desde dentro** |
+| **Archivo local con clave de API** | **Ninguno.** Se paga por token: gastas lo que uses |
+
+Si el plan se te queda corto, esa segunda vía es la respuesta. Para estirar el plan: el nivel **Rápido**
+gasta bastante menos que Profundo, y apagar ⚙ Herramientas ahorra las peticiones extra de cada vuelta.
+Abajo a la izquierda ves lo que llevas gastado hoy — en modo local con tokens y costo estimado; en la
+página publicada solo el número de mensajes, porque la capacidad `sample` no informa tokens y no se
+inventan cifras.
+
+## 🚧 Qué *no* hace
 
 Lo que sigue en pie es el entrenamiento del modelo: Claude a veces se niega por su cuenta, y eso no se
 desactiva desde el cliente. Si pasa, la app te lo muestra tal cual en vez de esconderlo.

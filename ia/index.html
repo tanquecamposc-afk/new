@@ -113,6 +113,8 @@ button,input,select,textarea{font:inherit; color:inherit;}
   opacity:0; transition:opacity .13s; font-variant-numeric:tabular-nums;}
 .turno:hover .sello{opacity:1;}
 .zocalo{border-top:1px solid var(--linea); padding-top:9px; display:flex; flex-direction:column; gap:2px;}
+.gasto{font-family:var(--mono); font-size:10.5px; color:var(--apagado); padding:2px 8px 6px;
+  line-height:1.5; font-variant-numeric:tabular-nums;}
 .zocalo .btn{justify-content:flex-start; font-weight:500; font-size:13px; color:var(--tenue);}
 .zocalo .btn:hover{color:var(--texto);}
 
@@ -327,7 +329,11 @@ button,input,select,textarea{font:inherit; color:inherit;}
   justify-content:center; padding:18px; z-index:30;}
 .velo[data-abierto="1"]{display:flex;}
 .panel{background:var(--panel); border:1px solid var(--linea); border-radius:14px; width:min(600px,100%);
-  max-height:86dvh; overflow-y:auto; box-shadow:var(--sombra);}
+  max-height:86dvh; display:flex; flex-direction:column; box-shadow:var(--sombra);}
+.panel.ancho{width:min(880px,100%);}
+.panel>.cuerpo{overflow-y:auto; min-height:0;}
+/* El pie se queda fijo: el botón de crear no debe caer bajo el corte. */
+.panel>header,.panel>footer{flex:none;}
 .panel header{display:flex; align-items:center; gap:10px; padding:15px 18px; border-bottom:1px solid var(--linea);
   font-family:var(--display); font-weight:700; font-size:16px;}
 .panel header .separa{flex:1;}
@@ -347,6 +353,27 @@ button,input,select,textarea{font:inherit; color:inherit;}
   text-transform:uppercase; color:var(--senal);}
 kbd{font-family:var(--mono); font-size:11px; background:var(--panel-2); border:1px solid var(--linea);
   border-bottom-width:2px; border-radius:5px; padding:1px 6px;}
+.buscaSkill{margin-bottom:2px;}
+.gremio{display:flex; flex-direction:column; gap:14px;}
+.familia>.tit{font-family:var(--display); font-size:10.5px; font-weight:700; letter-spacing:.09em;
+  text-transform:uppercase; color:var(--senal); margin-bottom:7px;}
+.mazo{display:grid; grid-template-columns:repeat(auto-fill,minmax(238px,1fr)); gap:7px;}
+.familia.sola .naipe{width:100%;}
+.naipe{display:flex; gap:9px; align-items:flex-start; text-align:left; background:var(--hueco);
+  border:1px solid var(--linea); border-radius:var(--radio); padding:9px 11px; cursor:pointer;}
+.naipe:hover{border-color:var(--senal); background:var(--senal-fondo);}
+.naipe[aria-current="true"]{border-color:var(--senal); background:var(--senal-fondo);}
+.naipe .ico{font-size:15px; line-height:1.35; flex:none;}
+.naipe .cuerpo{min-width:0; display:flex; flex-direction:column; gap:1px;}
+.naipe .nom{font-size:13.5px; font-weight:600;}
+.naipe .pico{font-size:11.5px; color:var(--tenue); line-height:1.4;}
+.naipe .mia{font-family:var(--mono); font-size:9.5px; color:var(--senal); letter-spacing:.06em;}
+.naipe .quitar{margin-left:auto; background:none; border:none; color:var(--tenue); cursor:pointer;
+  padding:0 2px; font-size:13px; opacity:0;}
+.naipe:hover .quitar{opacity:.6;}
+.naipe .quitar:hover{opacity:1; color:var(--brasa);}
+#btSkill{max-width:230px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+
 .atajos{display:flex; flex-direction:column; gap:6px; font-size:13px;}
 .atajos div{display:flex; gap:10px; align-items:center;}
 .atajos div span:last-child{color:var(--tenue);}
@@ -383,6 +410,7 @@ kbd{font-family:var(--mono); font-size:11px; background:var(--panel-2); border:1
     <input type="search" class="campo-busca" id="busca" placeholder="Buscar…" autocomplete="off">
     <div class="lista" id="lista" role="list" aria-label="Conversaciones"></div>
     <div class="zocalo">
+      <div class="gasto" id="gasto"></div>
       <button class="btn desnudo" id="btAjustes">Ajustes</button>
       <button class="btn desnudo" id="btAtajos">Atajos de teclado</button>
       <button class="btn desnudo" id="btBajar">Descargar conversación</button>
@@ -392,7 +420,7 @@ kbd{font-family:var(--mono); font-size:11px; background:var(--panel-2); border:1
   <div class="tablero">
     <div class="franja">
       <button class="btn desnudo" id="btRiel" aria-label="Mostrar u ocultar el panel">☰</button>
-      <select class="selector" id="selSkill" aria-label="Skill"></select>
+      <button class="palanca" id="btSkill" title="Elegir una skill (Ctrl+J)">Sin skill</button>
       <select class="selector" id="selTier" aria-label="Profundidad">
         <option value="quick">Rápido</option>
         <option value="default" selected>Equilibrado</option>
@@ -489,6 +517,19 @@ kbd{font-family:var(--mono); font-size:11px; background:var(--panel-2); border:1
         <textarea id="areaInstr" spellcheck="false" style="min-height:150px"></textarea>
         <span class="glosa">Va delante de cada conversación. Las skills se suman a esto, no lo reemplazan.</span>
       </div>
+      <div class="seccion">
+        <div class="rotulo">Sobre los topes de uso</div>
+        <span class="glosa">Esta página <b>no te limita</b>: no hay tope de mensajes, ni de largo, ni
+          recortes. Pero de dónde sale el uso sí cambia las cosas.<br><br>
+          <b>Abierta en claude.ai</b> consume tu plan de Claude, y ese tope lo pone Anthropic: ninguna
+          página puede levantarlo desde dentro.<br>
+          <b>Abierta como archivo local</b> con tu clave de API se paga por token y <b>no hay tope
+          diario</b>: gastas lo que uses. Es la vía si el plan se te queda corto.<br><br>
+          Para estirar el plan: el nivel <b>Rápido</b> gasta bastante menos que Profundo, y apagar
+          ⚙ Herramientas ahorra las peticiones extra de cada vuelta. Abajo a la izquierda ves lo que
+          llevas gastado hoy.</span>
+      </div>
+
       <div class="seccion" id="secImg" hidden>
         <div class="rotulo">Imágenes fotográficas</div>
         <span class="glosa">Solo en el archivo local: la página publicada tiene bloqueadas las llamadas a
@@ -534,6 +575,33 @@ kbd{font-family:var(--mono); font-size:11px; background:var(--panel-2); border:1
         <label class="hilera"><input type="checkbox" id="chkBuscar"> Buscar en la web cuando haga falta</label>
         <label class="hilera"><input type="checkbox" id="chkRazonar"> Mostrar el razonamiento</label>
         <label class="hilera"><input type="checkbox" id="chkCompactar"> Compactar el historial automáticamente</label>
+      </div>
+    </div>
+    <div class="cuerpo" id="panelSkills" hidden>
+      <input type="search" class="campo-busca buscaSkill" id="buscaSkill" placeholder="Buscar entre las skills…" autocomplete="off">
+      <div class="gremio" id="gremio"></div>
+    </div>
+    <div class="cuerpo" id="panelNuevaSkill" hidden>
+      <div class="grupo">
+        <label for="skNombre">Nombre</label>
+        <input type="text" id="skNombre" placeholder="Corregir mis textos de historia" maxlength="48">
+      </div>
+      <div class="grupo">
+        <label for="skPico">Para qué sirve (una línea)</label>
+        <input type="text" id="skPico" placeholder="Revisa fechas y nombres propios" maxlength="80">
+      </div>
+      <div class="grupo">
+        <label for="skSistema">Instrucciones</label>
+        <textarea id="skSistema" spellcheck="false" style="min-height:170px"
+          placeholder="Escribe cómo quieres que se comporte. Sé concreto: qué hacer, qué evitar, en qué orden responder y con qué formato."></textarea>
+        <span class="glosa">Esto se suma a tus instrucciones generales cuando la skill está activa.
+          Las skills que vienen de fábrica son buenos modelos: describen el orden de la respuesta y lo que NO hay que hacer.</span>
+      </div>
+      <div class="grupo">
+        <label for="skEnvoltura">Envoltura (opcional)</label>
+        <input type="text" id="skEnvoltura" placeholder="Corrige este texto: {texto}">
+        <span class="glosa">Si la pones, lo que escribas se mete donde diga <code>{texto}</code> y no tienes que
+          repetir la instrucción cada vez. Déjala vacía si no la necesitas.</span>
       </div>
     </div>
     <footer>
@@ -593,18 +661,21 @@ En código:
 const SKILLS = [
   {id:"ninguna", nombre:"Sin skill", clase:"", sistema:""},
 
-  {id:"colegio", nombre:"📚 Tarea del colegio", clase:"Colegio",
+  /* ─────────────── COLEGIO ─────────────── */
+  {id:"colegio", nombre:"Tarea del colegio", clase:"Colegio", icono:"📚",
+   pico:"Te explica para que puedas repetirlo en un examen",
    ejemplo:"Explícame la Guerra del Pacífico para un examen",
    sistema:
 `Modo tarea escolar. Quien pregunta es un estudiante, así que:
 - No sueltas la respuesta pelada: muestras el razonamiento paso a paso para poder repetirlo en un examen.
 - Defines los términos técnicos la primera vez que aparecen.
-- Cuando hay un procedimiento (una ecuación, un análisis, un método), lo desglosas en pasos numerados.
+- Cuando hay un procedimiento, lo desglosas en pasos numerados.
 - Cierras con dos o tres preguntas de autoevaluación.
 - Si el trabajo pide fuentes, avisas de que van en APA y ofreces armarlas.
 - Nunca escribes el trabajo entero como si fuera del alumno: ayudas a entenderlo y a estructurarlo.`},
 
-  {id:"apa", nombre:"📎 Citas en APA 7", clase:"Citas",
+  {id:"apa", nombre:"Citas en APA 7", clase:"Colegio", icono:"📎",
+   pico:"Referencias listas para copiar, con la cita en el texto aparte",
    ejemplo:"Arma la referencia de este libro: Sapiens, Yuval Noah Harari, Debate, 2014",
    sistema:
 `Modo citas. Formato APA 7ª edición, en español. Devuelves la referencia lista para copiar y, aparte, la cita dentro del texto.
@@ -616,14 +687,97 @@ Moldes:
 - Página web: Apellido, A. A. (Año, día de mes). *Título de la página*. Nombre del sitio. URL
 - Video: Canal. (Año, día de mes). *Título* [Video]. YouTube. URL
 - Inteligencia artificial: Anthropic. (Año). *Claude* (versión) [Modelo de lenguaje grande]. https://claude.ai
+- Entrevista propia: se cita en el texto como comunicación personal y NO va en la lista de referencias.
 
 Reglas que no se saltan:
 - Cita en el texto: (Apellido, año) al parafrasear; (Apellido, año, p. 45) en cita textual. Dos autores van con "y"; tres o más, "Apellido et al.".
 - La lista de referencias va en orden alfabético, con sangría francesa de 1.27 cm y a doble espacio.
-- Si falta un dato, lo pides en vez de inventarlo.
+- Si falta un dato, lo pides en vez de inventarlo. Jamás te inventas un DOI ni un número de página.
 - Marcas las cursivas con asteriscos y avisas qué va en cursiva al pasarlo a Word.`},
 
-  {id:"humanizar", nombre:"✍ Humanizar texto", clase:"Escribir",
+  {id:"ensayo", nombre:"Ensayo y monografía", clase:"Colegio", icono:"📝",
+   pico:"Tesis discutible, esquema y párrafos con función clara",
+   ejemplo:"Ayúdame con un ensayo sobre la migración interna en el Perú",
+   sistema:
+`Modo ensayo. Ayudas a construirlo, no lo escribes por el alumno.
+
+Vas en este orden y te detienes a que confirme antes de seguir:
+1. **Tesis.** Propones dos o tres tesis posibles y dices cuál se puede defender mejor con la evidencia disponible. Una tesis sirve si alguien razonable podría estar en contra; si nadie discutiría, no es tesis, es un dato.
+2. **Esquema.** Cada párrafo con su función en una línea: qué afirma y qué lo sostiene. Marcas dónde hace falta una fuente.
+3. **Contraargumento.** Señalas la objeción más fuerte y cómo responderla. Un ensayo sin esto suena a folleto.
+4. **Redacción.** Solo cuando el esquema esté cerrado, y por secciones, no todo de golpe.
+
+Nada de párrafos de relleno ni de introducciones que anuncian lo que se va a decir sin decirlo.
+Si te piden el ensayo entero de una vez, lo dices y ofreces el esquema primero.`},
+
+  {id:"exposicion", nombre:"Exposición oral", clase:"Colegio", icono:"🎤",
+   pico:"Guion para hablar, no diapositivas para leer",
+   ejemplo:"Prepárame una exposición de 8 minutos sobre el cambio climático",
+   sistema:
+`Modo exposición. Preparas para hablar delante de gente, no para leer una pantalla.
+
+Devuelves:
+1. **Gancho** para los primeros quince segundos: un dato que sorprenda, una pregunta o una escena concreta. Nunca "hoy les voy a hablar de".
+2. **Tres ideas** como máximo, cada una con su ejemplo. Más de tres no se retienen.
+3. **Guion por minutos**, ajustado al tiempo que te digan. Si no lo dicen, preguntas.
+4. **Qué va en cada diapositiva**: una idea y una imagen. Si una diapositiva tiene párrafos, la audiencia lee y deja de escuchar.
+5. **Cierre** que remate el gancho del inicio.
+6. **Tres preguntas** probables del profesor, con su respuesta.
+
+Marcas dónde conviene una pausa y qué frase decir de memoria.`},
+
+  {id:"mates", nombre:"Matemáticas paso a paso", clase:"Colegio", icono:"🧮",
+   pico:"Resuelve calculando de verdad y verifica el resultado",
+   ejemplo:"Resuelve 3x² - 12x + 9 = 0 y explícame cada paso",
+   sistema:
+`Modo matemáticas. Resuelves mostrando el camino, no solo el resultado.
+
+- Empiezas nombrando qué tipo de problema es y qué método aplica, y por qué ese.
+- Un paso por línea, con la operación a la izquierda y el motivo a la derecha.
+- Si tienes la herramienta de ejecutar JavaScript, la usas para hacer las cuentas y para **verificar** el resultado sustituyéndolo en la ecuación original. No confías en la aritmética hecha de cabeza.
+- Al final: la verificación explícita y el resultado destacado.
+- Señalas el error típico que se comete en ese tipo de ejercicio.
+- Si el enunciado es ambiguo o le falta un dato, lo dices antes de resolver.`},
+
+  {id:"estudiar", nombre:"Preguntas de práctica", clase:"Colegio", icono:"🎯",
+   pico:"Ocho preguntas que suben de dificultad, con respuestas al final",
+   ejemplo:"Hazme preguntas de práctica sobre la Segunda Guerra Mundial",
+   sistema:
+`Modo práctica. Del tema que te den generas:
+- 8 preguntas que suben de dificultad, mezclando opción múltiple, desarrollo corto y aplicación.
+- Las respuestas al final, después de una línea "---", para intentarlo antes de mirar.
+- En cada respuesta explicas por qué fallan las otras opciones.
+- Cierras diciendo qué dos conceptos conviene repasar.`},
+
+  {id:"plan", nombre:"Plan de estudio", clase:"Colegio", icono:"🗓",
+   pico:"Reparte el temario en los días que te quedan",
+   ejemplo:"Tengo examen de biología en 9 días y 6 capítulos, ármame un plan",
+   sistema:
+`Modo plan de estudio. Repartes el temario en el tiempo real que queda.
+
+- Preguntas primero, en una sola línea, lo que falte: cuántos días, cuántas horas al día, qué temas y cuáles te cuestan más.
+- Devuelves una tabla por día: qué tema, cuánto tiempo y con qué técnica (leer no cuenta como estudiar).
+- Aplicas repetición espaciada: cada tema vuelve a aparecer dos o tres veces, cada vez más separado.
+- Dejas el último día para repaso y simulacro, nunca para materia nueva.
+- Pones más tiempo en lo que cuesta, no reparto parejo.
+- Cierras con la señal de que un tema ya está: poder explicarlo de memoria sin mirar.`},
+
+  {id:"literatura", nombre:"Análisis literario", clase:"Colegio", icono:"📖",
+   pico:"Del texto a la interpretación, con citas que la sostengan",
+   ejemplo:"Analiza el uso del tiempo en Cien años de soledad",
+   sistema:
+`Modo análisis literario. Interpretas apoyándote en el texto, no en resúmenes.
+
+- Empiezas por lo que la obra hace, no por lo que significa: qué decisiones tomó quien la escribió (voz, tiempo, punto de vista, estructura).
+- Cada afirmación va con una cita corta que la sostenga. Sin cita, es opinión.
+- Distingues lo que el texto dice de lo que la crítica ha dicho de él, y de lo que tú propones.
+- Sitúas la obra en su contexto solo cuando eso cambia la lectura.
+- Evitas el vocabulario de contratapa: nada de "magistral", "atemporal" ni "nos invita a reflexionar".
+- Cierras con la objeción más fuerte a tu propia lectura.`},
+
+  /* ─────────────── ESCRIBIR ─────────────── */
+  {id:"humanizar", nombre:"Humanizar texto", clase:"Escribir", icono:"✍",
+   pico:"Quita las muletillas que delatan un texto de IA",
    ejemplo:"Humaniza este párrafo que escribí para mi ensayo",
    envoltura: t => "Reescribe este texto para que suene escrito por una persona:\n\n" + t,
    sistema:
@@ -645,7 +799,31 @@ Haces en cambio:
 
 Devuelves el texto reescrito y nada más. Si te lo piden, después listas los cambios.`},
 
-  {id:"resumir", nombre:"📄 Resumir", clase:"Leer",
+  {id:"corregir", nombre:"Corregir", clase:"Escribir", icono:"✓",
+   pico:"Texto corregido y una tabla con cada cambio",
+   ejemplo:"Corrige la ortografía y el estilo de esto",
+   envoltura: t => "Corrige este texto:\n\n" + t,
+   sistema:
+`Modo corrección. Devuelves primero el texto corregido, completo y listo para copiar.
+Debajo, una tabla: | Decía | Debe decir | Por qué |.
+Corriges ortografía, tildes, puntuación, concordancia y anglicismos innecesarios, y desenredas las frases torcidas sin cambiar la voz de quien escribió.
+Si algo está bien y solo es cuestión de gusto, lo dices como sugerencia y no lo cambias.`},
+
+  {id:"parafrasear", nombre:"Parafrasear", clase:"Escribir", icono:"🔁",
+   pico:"Reescribe con tus palabras y te dice cuándo hay que citar",
+   ejemplo:"Parafrasea este párrafo para mi trabajo",
+   envoltura: t => "Parafrasea el siguiente texto:\n\n" + t,
+   sistema:
+`Modo parafrasear. Reescribes con otras palabras y otra estructura, conservando el sentido exacto.
+
+- Cambias la sintaxis, no solo los sinónimos. Sustituir palabra por palabra sigue siendo el texto de otro.
+- Conservas los términos técnicos que no tienen equivalente: cambiarlos falsea el contenido.
+- No añades ni quitas afirmaciones. Si el original dice "algunos estudios sugieren", no lo conviertes en "está demostrado".
+- Al final avisas, en una línea: parafrasear NO exime de citar. La idea sigue siendo de su autor y la cita va igual.
+- Si el fragmento es una definición o una frase tan precisa que no se puede reformular sin romperla, lo dices y recomiendas cita textual entre comillas.`},
+
+  {id:"resumir", nombre:"Resumir", clase:"Escribir", icono:"📄",
+   pico:"Idea central, datos concretos y lo que el texto no dice",
    ejemplo:"Resúmeme este texto en lo esencial",
    envoltura: t => "Resume lo siguiente:\n\n" + t,
    sistema:
@@ -656,28 +834,23 @@ Devuelves el texto reescrito y nada más. Si te lo piden, después listas los ca
 4. "Lo que no dice": vacíos o supuestos, cuando los haya.
 Nada de opinión propia salvo que la pidan. Si el texto se contradice, lo señalas.`},
 
-  {id:"corregir", nombre:"✓ Corregir", clase:"Escribir",
-   ejemplo:"Corrige la ortografía y el estilo de esto",
-   envoltura: t => "Corrige este texto:\n\n" + t,
+  {id:"carta", nombre:"Carta o correo formal", clase:"Escribir", icono:"✉",
+   pico:"Directo, cortés y con lo que pides en la primera línea",
+   ejemplo:"Escribe un correo al profesor pidiendo prórroga para una entrega",
    sistema:
-`Modo corrección. Devuelves primero el texto corregido, completo y listo para copiar.
-Debajo, una tabla: | Decía | Debe decir | Por qué |.
-Corriges ortografía, tildes, puntuación, concordancia y anglicismos innecesarios, y desenredas las frases torcidas sin cambiar la voz de quien escribió.
-Si algo está bien y solo es cuestión de gusto, lo dices como sugerencia y no lo cambias.`},
+`Modo correspondencia formal. Escribes cartas y correos que se leen en veinte segundos.
 
-  {id:"programar", nombre:"⌨ Programar", clase:"Código",
-   ejemplo:"Una página con una calculadora de propinas",
-   sistema:
-`Modo código. Entregas algo que se pueda pegar y ejecutar:
-- El archivo completo, no fragmentos con "...".
-- Con manejo de errores en lo que de verdad puede fallar: entrada del usuario, red, archivos.
-- Comentas solo lo que no se ve leyendo el código.
-- Dices qué instalar y cómo se ejecuta, en una línea.
-- Si es una página web o un componente visual, lo entregas como UN bloque \`\`\`html autocontenido, con su CSS y su JS dentro, para poder verlo funcionando al instante.
-- Después del código, explicas las decisiones y qué cambiarías si el caso creciera.
-Si el pedido es ambiguo en algo que cambia el diseño, eliges lo razonable, lo dices, y sigues.`},
+- El asunto dice de qué va y qué se pide. Nada de "Consulta" a secas.
+- El primer párrafo tiene la petición completa. Los antecedentes van después, y solo los que hagan falta.
+- Cortés sin ser servil: nada de "espero no molestar" ni "de antemano muchas gracias por su valioso tiempo".
+- Una petición por correo. Si hay dos, lo dices y propones separarlas.
+- Cierras con el siguiente paso concreto y una fecha.
+- Ajustas el tratamiento a quién recibe: profesor, empresa, institución.
+- Al final, en una línea aparte, señalas qué habría que revisar antes de enviarlo.`},
 
-  {id:"simple", nombre:"💡 Explicar simple", clase:"Entender",
+  /* ─────────────── ENTENDER ─────────────── */
+  {id:"simple", nombre:"Explicar simple", clase:"Entender", icono:"💡",
+   pico:"Como a alguien de doce años que es listo pero no sabe del tema",
    ejemplo:"Explícame qué es la inflación como si tuviera 12 años",
    sistema:
 `Modo explicación simple. Explicas como a alguien de doce años que es listo pero no sabe del tema:
@@ -687,24 +860,8 @@ Si el pedido es ambiguo en algo que cambia el diseño, eliges lo razonable, lo d
 - Terminas con una pregunta que obligue a usar lo explicado.
 No simplificas hasta mentir: si algo es más complicado, lo aclaras en una línea al final.`},
 
-  {id:"traducir", nombre:"🌐 Traducir", clase:"Idiomas",
-   ejemplo:"Traduce esto al inglés, tono formal",
-   sistema:
-`Modo traducción. Si no dicen el idioma de destino, lo preguntas en una línea.
-Respetas el registro del original: lo informal queda informal.
-Devuelves la traducción sola y, debajo, una nota corta con las expresiones sin equivalente directo.
-Nunca traduces literal un modismo: usas el que se dice de verdad en ese idioma.`},
-
-  {id:"estudiar", nombre:"🎯 Preguntas de práctica", clase:"Estudiar",
-   ejemplo:"Hazme preguntas de práctica sobre la Segunda Guerra Mundial",
-   sistema:
-`Modo práctica. Del tema que te den generas:
-- 8 preguntas que suben de dificultad, mezclando opción múltiple, desarrollo corto y aplicación.
-- Las respuestas al final, después de una línea "---", para intentarlo antes de mirar.
-- En cada respuesta explicas por qué fallan las otras opciones.
-- Cierras diciendo qué dos conceptos conviene repasar.`},
-
-  {id:"debatir", nombre:"⚖ Ver las dos caras", clase:"Pensar",
+  {id:"debatir", nombre:"Ver las dos caras", clase:"Entender", icono:"⚖",
+   pico:"El mejor argumento de cada lado, y una postura al cierre",
    ejemplo:"¿Conviene estudiar una carrera técnica o universitaria?",
    sistema:
 `Modo contraste. Ante un tema discutible:
@@ -712,7 +869,114 @@ Nunca traduces literal un modismo: usas el que se dice de verdad en ese idioma.`
 2. Das el mejor argumento de cada lado, en su versión fuerte, no un espantapájaros.
 3. Señalas en qué coinciden ambos lados.
 4. Dices qué evidencia haría cambiar de opinión a cada uno.
-5. Cierras con tu postura y por qué, sin escudarte en "depende de cada quien".`}
+5. Cierras con tu postura y por qué, sin escudarte en "depende de cada quien".`},
+
+  {id:"traducir", nombre:"Traducir", clase:"Entender", icono:"🌐",
+   pico:"Respeta el registro y explica lo que no tiene equivalente",
+   ejemplo:"Traduce esto al inglés, tono formal",
+   sistema:
+`Modo traducción. Si no dicen el idioma de destino, lo preguntas en una línea.
+Respetas el registro del original: lo informal queda informal.
+Devuelves la traducción sola y, debajo, una nota corta con las expresiones sin equivalente directo.
+Nunca traduces literal un modismo: usas el que se dice de verdad en ese idioma.`},
+
+  {id:"verificar", nombre:"Verificar una afirmación", clase:"Entender", icono:"🔍",
+   pico:"Separa lo comprobable de lo interpretable, sin inventar fuentes",
+   ejemplo:"¿Es cierto que tomar agua con limón acelera el metabolismo?",
+   sistema:
+`Modo verificación. Ante una afirmación:
+1. La reformulas en lo que de verdad se puede comprobar. Muchas afirmaciones mezclan un hecho con una interpretación: los separas.
+2. Dices qué parte es sólida, qué parte está discutida y qué parte es falsa, cada una por separado.
+3. Explicas de dónde sale la confusión, que casi siempre es más útil que el veredicto.
+4. Si tienes búsqueda web, la usas y citas las fuentes con enlace. Si no la tienes, lo dices y avisas de que respondes de memoria, con lo que eso implica.
+5. NUNCA te inventas un estudio, un autor ni una cifra para sonar convincente. "No lo sé con certeza" es una respuesta válida.
+6. Cierras con qué buscarías para zanjarlo.`},
+
+  /* ─────────────── CÓDIGO ─────────────── */
+  {id:"programar", nombre:"Programar", clase:"Código", icono:"⌨",
+   pico:"Archivos completos y ejecutables, con las decisiones explicadas",
+   ejemplo:"Una página con una calculadora de propinas",
+   sistema:
+`Modo código. Entregas algo que se pueda pegar y ejecutar:
+- El archivo completo, no fragmentos con "...".
+- Con manejo de errores en lo que de verdad puede fallar: entrada del usuario, red, archivos.
+- Comentas solo lo que no se ve leyendo el código.
+- Dices qué instalar y cómo se ejecuta, en una línea.
+- Si es una página web o un componente visual, va en UN bloque \`\`\`html autocontenido, con su CSS y su JS dentro, para poder verlo funcionando al instante.
+- Si tienes la herramienta de ejecutar JavaScript, pruebas con ella la lógica que puedas antes de entregarla.
+- Después del código, explicas las decisiones y qué cambiarías si el caso creciera.
+Si el pedido es ambiguo en algo que cambia el diseño, eliges lo razonable, lo dices, y sigues.`},
+
+  {id:"revisar", nombre:"Revisar código", clase:"Código", icono:"🔬",
+   pico:"Ordena los hallazgos por gravedad, con el arreglo concreto",
+   ejemplo:"Revisa este código y dime qué está mal",
+   envoltura: t => "Revisa este código:\n\n" + t,
+   sistema:
+`Modo revisión de código. Ordenas lo que encuentras por gravedad real, no por orden de aparición:
+
+1. **Rompe** — errores que dan resultado incorrecto o revientan. Para cada uno: con qué entrada falla y qué pasa.
+2. **Peligroso** — inyección, datos sin validar, secretos en el código, condiciones de carrera.
+3. **Se va a romper** — casos borde sin cubrir: listas vacías, nulos, números negativos, concurrencia.
+4. **Se puede simplificar** — solo cuando la versión corta sea de verdad más clara.
+5. **Gusto personal** — al final, marcado como tal, y no insistes.
+
+Para cada hallazgo das el arreglo concreto, no "considera revisar esto".
+Si el código está bien, lo dices en una línea en vez de inventar problemas para justificar la revisión.`},
+
+  {id:"explicarcodigo", nombre:"Explicar código", clase:"Código", icono:"🧩",
+   pico:"Qué hace, por qué así, y dónde está la parte difícil",
+   ejemplo:"Explícame qué hace este código línea por línea",
+   envoltura: t => "Explícame este código:\n\n" + t,
+   sistema:
+`Modo explicar código. Vas de lo general a lo particular:
+1. Qué hace el conjunto, en una frase, y con qué entrada y salida.
+2. El recorrido: por dónde entra la ejecución y en qué orden pasa por las partes.
+3. La parte difícil: siempre hay una o dos líneas donde está el truco. Te detienes ahí y la explicas despacio.
+4. Por qué está escrito así y no de la forma obvia, si se nota una decisión deliberada.
+5. Qué pasaría si le cambias tal cosa: eso demuestra si se entendió.
+No parafraseas línea por línea lo que ya se lee solo.`},
+
+  /* ─────────────── TRABAJO ─────────────── */
+  {id:"cv", nombre:"CV y carta de presentación", clase:"Trabajo", icono:"📋",
+   pico:"Logros con números, no listas de tareas",
+   ejemplo:"Ayúdame con mi CV para una práctica de marketing",
+   sistema:
+`Modo CV. La regla que lo cambia todo: un CV lista **logros con resultado**, no tareas.
+
+- Cada línea con la forma: verbo de acción + qué hiciste + resultado medible. "Encargado de redes sociales" no dice nada; "Llevé las redes de un negocio local y subí el alcance de 200 a 1.800 personas en tres meses" sí.
+- Si no hay números, buscas el resultado igual: cuánta gente, cuánto tiempo, cuántas veces.
+- Sin foto, sin edad, sin estado civil, sin "referencias disponibles a solicitud".
+- Una página si tiene menos de cinco años de experiencia.
+- Ordenas la experiencia por relevancia para ESE puesto, no solo por fecha.
+- Preguntas qué puesto es antes de empezar: un CV genérico no compite.
+
+Para la carta: tres párrafos. Por qué esa empresa en concreto, qué llevas que les sirve con una prueba, y qué propones como siguiente paso. Nada de "me dirijo a usted con el fin de".`},
+
+  {id:"entrevista", nombre:"Practicar entrevista", clase:"Trabajo", icono:"💬",
+   pico:"Pregunta, escucha tu respuesta y te dice qué falló",
+   ejemplo:"Practiquemos una entrevista para una práctica de diseño",
+   sistema:
+`Modo entrevista de práctica. Te comportas como quien entrevista, no como quien asesora.
+
+- Preguntas primero qué puesto es. Después haces UNA pregunta y esperas.
+- Cuando responde, evalúas antes de seguir: qué funcionó, qué faltó, y la versión mejorada de su propia respuesta usando sus datos, no unos inventados.
+- Aplicas el método STAR (situación, tarea, acción, resultado) y señalas cuál de las cuatro se saltó, que casi siempre es el resultado.
+- Subes la dificultad: empiezas por las fáciles y llegas a las incómodas (un fracaso, un conflicto, por qué dejó algo).
+- No haces las cinco preguntas de golpe: esto es una conversación.
+- Al cerrar, las tres preguntas que conviene HACER al entrevistador.`},
+
+  {id:"calculo", nombre:"Hoja de cálculo", clase:"Trabajo", icono:"📊",
+   pico:"La fórmula lista para pegar, en español y en inglés",
+   ejemplo:"Necesito una fórmula que busque un nombre y me traiga su nota",
+   sistema:
+`Modo hoja de cálculo. Das la fórmula lista para pegar.
+
+- La escribes en las **dos variantes**: separador de punto y coma y de coma, porque según el idioma del Excel una de las dos falla. Y das el nombre de la función en español y en inglés.
+- Explicas qué hace cada argumento en una línea.
+- Dices qué pasa cuando no encuentra nada, y cómo envolverla para que muestre algo útil en vez de #N/A.
+- Prefieres las funciones modernas cuando existan, y avisas desde qué versión están.
+- Si el problema se resuelve mejor con tabla dinámica que con fórmula, lo dices en vez de forzar la fórmula.
+- Si tienes la herramienta de ejecutar JavaScript, la usas para comprobar la lógica del cálculo con datos de ejemplo antes de entregarla.`}
 ];
 
 const ESTILOS = [
@@ -746,7 +1010,7 @@ const cfg = Object.assign({
   clave:"", modelo:"claude-opus-5", maxTokens:32000, buscar:true, razonar:true, compactar:true,
   instrucciones:INSTRUCCIONES_FABRICA, tier:"default", skill:"ninguna",
   estilo:"plano", formato:"cuadrado", tema:"auto",
-  motorImg:"svg", herramientas:false, voz:true,
+  motorImg:"svg", herramientas:true, voz:true,
   gemClave:"", gemModelo:"gemini-2.5-flash-image",
   oaEndpoint:"https://api.openai.com/v1/images/generations", oaClave:"", oaModelo:"gpt-image-1"
 }, leer("nexo.cfg", {}));
@@ -766,10 +1030,58 @@ function leer(k, d){
 function escribir(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){ console.warn("almacenamiento lleno"); } }
 const guardarCfg = () => escribir("nexo.cfg", cfg);
 const $ = s => document.querySelector(s);
+
+let mias = leer("nexo.skills", []);
+const guardarMias = () => escribir("nexo.skills", mias);
+
+/* Cuenta lo que llevas gastado hoy. La app no impone ningún tope; esto es
+   para que veas el consumo, que en la página publicada sale de tu plan. */
+let gasto = leer("nexo.gasto", {dia:"", msj:0, entrada:0, salida:0});
+function apuntarGasto(uso){
+  const hoy = new Date().toISOString().slice(0, 10);
+  if(gasto.dia !== hoy) gasto = {dia:hoy, msj:0, entrada:0, salida:0};
+  gasto.msj++;
+  gasto.entrada += uso?.entrada || 0;
+  gasto.salida += uso?.salida || 0;
+  escribir("nexo.gasto", gasto);
+  pintarGasto();
+}
+function pintarGasto(){
+  const e = $("#gasto");
+  if(!e) return;
+  const hoy = new Date().toISOString().slice(0, 10);
+  if(gasto.dia !== hoy || !gasto.msj){ e.textContent = ""; return; }
+  const tok = gasto.entrada + gasto.salida;
+  const partes = ["hoy · " + gasto.msj + (gasto.msj === 1 ? " mensaje" : " mensajes")];
+  if(tok) partes.push(tok >= 1000 ? Math.round(tok / 1000) + "k tokens" : tok + " tokens");
+  if(motor === "api"){
+    const pr = MODELOS[cfg.modelo]?.precio;
+    if(pr){
+      const c = (gasto.entrada * pr[0] + gasto.salida * pr[1]) / 1e6;
+      partes.push("≈ US$ " + c.toFixed(c < 0.01 ? 4 : 2));
+    }
+  }
+  e.textContent = partes.join("  ·  ");
+  e.title = motor === "api"
+    ? "Modo local: se paga por token, sin tope diario."
+    : "Sale de tu plan de Claude. El tope diario lo pone Anthropic, no esta página.";
+}
+
+/* Una skill propia se guarda como datos, no como función: la envoltura es
+   una plantilla con {texto} y se aplica al usarla. */
+function normalizar(m){
+  return {
+    id:m.id, nombre:m.nombre, clase:"Mías", icono:"★", pico:m.pico || "", mia:true,
+    sistema:m.sistema || "",
+    envoltura: (m.envoltura && m.envoltura.includes("{texto}"))
+      ? t => m.envoltura.replace("{texto}", t) : null
+  };
+}
+const skillsTodas = () => SKILLS.concat(mias.map(normalizar));
 const nid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
 const pesa = s => new TextEncoder().encode(s || "").length;
 const chatActual = () => chats.find(c => c.id === activo) || null;
-const skillDe = id => SKILLS.find(s => s.id === id) || SKILLS[0];
+const skillDe = id => skillsTodas().find(s => s.id === id) || SKILLS[0];
 
 /* ═══════════ Markdown ═══════════ */
 function esc(s){
@@ -1578,16 +1890,17 @@ function pintarPortada(){
 
   const rej = document.createElement("div");
   rej.className = "rejilla";
-  for(const s of SKILLS.filter(s => s.ejemplo).slice(0, 6)){
+  const surtido = SKILLS.filter(s => s.ejemplo);
+  for(const s of [surtido[0], surtido[1], surtido[8], surtido[2], surtido[14], surtido[18]].filter(Boolean)){
     const b = document.createElement("button");
     b.type = "button"; b.className = "tarjeta";
     const cl = document.createElement("span");
-    cl.className = "clase"; cl.textContent = s.clase;
+    cl.className = "clase"; cl.textContent = (s.icono ? s.icono + " " : "") + s.clase;
     const tx = document.createElement("span");
     tx.textContent = s.ejemplo;
     b.append(cl, tx);
     b.onclick = () => {
-      cfg.skill = s.id; $("#selSkill").value = s.id; guardarCfg();
+      cfg.skill = s.id; guardarCfg(); rotularSkill();
       texto.value = s.ejemplo; crecer(); enviar();
     };
     rej.append(b);
@@ -1981,6 +2294,7 @@ async function conversar(chat, imagenes, extra){
     alFondo();
     guardar(chat);
     actualizarAguja();
+    if(!turno.error) apuntarGasto(turno.uso);
     texto.focus();
     if(!turno.error && chat.turnos.length >= 2) titular(chat);
   }
@@ -2580,6 +2894,12 @@ function prepararVoz(){
 /* ═══════════ Ajustes y tema ═══════════ */
 function abrirAjustes(){
   $("#panelTit").firstChild.textContent = "Ajustes";
+  $("#velo").querySelector(".panel").classList.remove("ancho");
+  for(const id of ["#panelAtajos", "#panelSkills", "#panelNuevaSkill"]){ const e = $(id); if(e) e.hidden = true; }
+  $("#btFabrica").textContent = "Instrucciones de fábrica";
+  $("#btFabrica").dataset.modo = "fabrica";
+  $("#btGuardar").hidden = false;
+  $("#btGuardar").dataset.modo = "ajustes";
   $("#panelCuerpo").hidden = false;
   $("#areaInstr").value = cfg.instrucciones;
   $("#inClave").value = cfg.clave;
@@ -2632,7 +2952,7 @@ function verVista(cual){
   $("#vistaEstudio").hidden = chat;
   $("#tabChat").setAttribute("aria-selected", String(chat));
   $("#tabEstudio").setAttribute("aria-selected", String(!chat));
-  for(const id of ["#selSkill", "#btNueva", "#busca", "#lista"]) $(id).style.display = chat ? "" : "none";
+  for(const id of ["#btSkill", "#btNueva", "#busca", "#lista"]) $(id).style.display = chat ? "" : "none";
   if(!chat) pintarTaller();
 }
 
@@ -2662,8 +2982,141 @@ async function bajarConversacion(){
   await guardarArchivo(nombreArchivo(c.titulo) + ".md", cuerpo, "text/markdown");
 }
 
+const ORDEN_CLASES = ["Mías", "Colegio", "Escribir", "Entender", "Código", "Trabajo"];
+
+function abrirCatalogo(){
+  $("#panelTit").firstChild.textContent = "Skills";
+  for(const id of ["#panelCuerpo", "#panelAtajos", "#panelNuevaSkill"]){ const e = $(id); if(e) e.hidden = true; }
+  $("#panelSkills").hidden = false;
+  $("#velo").querySelector(".panel").classList.add("ancho");
+  $("#btFabrica").textContent = "＋ Crear una skill";
+  $("#btFabrica").dataset.modo = "crear";
+  $("#btGuardar").hidden = true;
+  pintarGremio();
+  $("#velo").dataset.abierto = "1";
+  $("#buscaSkill").focus();
+}
+
+function pintarGremio(){
+  const cont = $("#gremio");
+  const q = ($("#buscaSkill").value || "").trim().toLowerCase();
+  const todas = skillsTodas().filter(s => s.id !== "ninguna");
+  const casan = s => !q || (s.nombre + " " + (s.pico || "") + " " + (s.clase || "") + " " + (s.ejemplo || ""))
+    .toLowerCase().includes(q);
+  const vistas = todas.filter(casan);
+
+  cont.textContent = "";
+
+  const naipe = s => {
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "naipe";
+    b.setAttribute("aria-current", String(s.id === cfg.skill));
+    const i = document.createElement("span"); i.className = "ico"; i.textContent = s.icono || "◈";
+    const c = document.createElement("span"); c.className = "cuerpo";
+    const n = document.createElement("span"); n.className = "nom"; n.textContent = s.nombre;
+    const p = document.createElement("span"); p.className = "pico"; p.textContent = s.pico || "";
+    c.append(n, p);
+    if(s.mia){
+      const m = document.createElement("span"); m.className = "mia"; m.textContent = "TUYA";
+      c.append(m);
+    }
+    b.append(i, c);
+    if(s.mia){
+      const x = document.createElement("button");
+      x.type = "button"; x.className = "quitar"; x.textContent = "✕"; x.title = "Borrar esta skill";
+      x.onclick = ev => {
+        ev.stopPropagation();
+        if(!confirm("¿Borrar la skill «" + s.nombre + "»?")) return;
+        mias = mias.filter(m => m.id !== s.id);
+        guardarMias();
+        if(cfg.skill === s.id){ cfg.skill = "ninguna"; guardarCfg(); rotularSkill(); }
+        pintarGremio();
+      };
+      b.append(x);
+    }
+    b.onclick = () => elegirSkill(s.id);
+    return b;
+  };
+
+  // "Sin skill" siempre a mano, arriba.
+  const cero = document.createElement("div");
+  cero.className = "familia sola";
+  cero.append(naipe({id:"ninguna", nombre:"Sin skill", icono:"—",
+    pico:"Responde con tus instrucciones generales y nada más"}));
+  cont.append(cero);
+
+  if(!vistas.length){
+    const v = document.createElement("div");
+    v.className = "vacio";
+    v.textContent = "Ninguna skill coincide con «" + q + "». Puedes crear una con el botón de abajo.";
+    cont.append(v);
+    return;
+  }
+
+  for(const clase of ORDEN_CLASES){
+    const grupo = vistas.filter(s => s.clase === clase);
+    if(!grupo.length) continue;
+    const fam = document.createElement("div");
+    fam.className = "familia";
+    const t = document.createElement("div");
+    t.className = "tit";
+    t.textContent = clase === "Mías" ? "Mías (" + grupo.length + ")" : clase;
+    const mazo = document.createElement("div");
+    mazo.className = "mazo";
+    for(const s of grupo) mazo.append(naipe(s));
+    fam.append(t, mazo);
+    cont.append(fam);
+  }
+}
+
+function elegirSkill(id){
+  cfg.skill = id;
+  guardarCfg();
+  rotularSkill();
+  cerrarPanel();
+  texto.focus();
+}
+
+function rotularSkill(){
+  const s = skillDe(cfg.skill);
+  const b = $("#btSkill");
+  b.textContent = s.id === "ninguna" ? "Sin skill" : (s.icono || "◈") + " " + s.nombre;
+  b.setAttribute("aria-pressed", String(s.id !== "ninguna"));
+  b.title = s.id === "ninguna" ? "Elegir una skill (Ctrl+J)" : (s.pico || s.nombre) + " — Ctrl+J para cambiar";
+}
+
+function abrirNuevaSkill(){
+  $("#panelTit").firstChild.textContent = "Crear una skill";
+  $("#velo").querySelector(".panel").classList.remove("ancho");
+  for(const id of ["#panelCuerpo", "#panelAtajos", "#panelSkills"]){ const e = $(id); if(e) e.hidden = true; }
+  $("#panelNuevaSkill").hidden = false;
+  $("#skNombre").value = ""; $("#skPico").value = ""; $("#skSistema").value = ""; $("#skEnvoltura").value = "";
+  $("#btFabrica").textContent = "← Volver al catálogo";
+  $("#btFabrica").dataset.modo = "volver";
+  $("#btGuardar").hidden = false;
+  $("#btGuardar").dataset.modo = "skill";
+  $("#velo").dataset.abierto = "1";
+  $("#skNombre").focus();
+}
+
+function guardarNuevaSkill(){
+  const nombre = $("#skNombre").value.trim();
+  const sistema = $("#skSistema").value.trim();
+  if(!nombre || !sistema){
+    alert("Hacen falta al menos el nombre y las instrucciones.");
+    return;
+  }
+  mias.unshift({id:"mia_" + nid(), nombre, pico:$("#skPico").value.trim(),
+                sistema, envoltura:$("#skEnvoltura").value.trim()});
+  guardarMias();
+  abrirCatalogo();
+}
+
 function verAtajos(){
   $("#panelTit").firstChild.textContent = "Atajos de teclado";
+  $("#velo").querySelector(".panel").classList.remove("ancho");
+  for(const id of ["#panelSkills", "#panelNuevaSkill"]){ const e = $(id); if(e) e.hidden = true; }
+  $("#btGuardar").hidden = true;
   $("#panelCuerpo").hidden = true;
   let caja = $("#panelAtajos");
   if(!caja){
@@ -2678,6 +3131,7 @@ function verAtajos(){
       ["Ctrl + V", "Pegar una imagen del portapapeles"],
       ["Ctrl + K", "Ir al buscador"],
       ["Ctrl + Shift + N", "Conversación nueva"],
+      ["Ctrl + J", "Abrir el catálogo de skills"],
       ["Doble clic en el título", "Renombrar la conversación"],
       ["Esc", "Cerrar el panel, la vista previa, o detener la respuesta"]
     ]){
@@ -2696,13 +3150,7 @@ function verAtajos(){
 
 /* ═══════════ Arranque ═══════════ */
 function montar(){
-  const sel = $("#selSkill");
-  for(const s of SKILLS){
-    const o = document.createElement("option");
-    o.value = s.id; o.textContent = s.nombre;
-    sel.append(o);
-  }
-  sel.value = cfg.skill;
+  rotularSkill();
   const selM = $("#selModelo");
   for(const [id, m] of Object.entries(MODELOS)){
     const o = document.createElement("option");
@@ -2712,7 +3160,6 @@ function montar(){
   $("#selTier").value = cfg.tier;
   aplicarTema();
 
-  sel.onchange = () => { cfg.skill = sel.value; guardarCfg(); };
   $("#selTier").onchange = () => { cfg.tier = $("#selTier").value; guardarCfg(); };
   $("#tabChat").onclick = () => verVista("chat");
   $("#tabEstudio").onclick = () => verVista("estudio");
@@ -2745,8 +3192,18 @@ function montar(){
   $("#btAjustes").onclick = abrirAjustes;
   $("#btAtajos").onclick = verAtajos;
   $("#btCerrar").onclick = cerrarPanel;
-  $("#btGuardar").onclick = guardarAjustes;
-  $("#btFabrica").onclick = () => { $("#areaInstr").value = INSTRUCCIONES_FABRICA; };
+  $("#btGuardar").onclick = () => {
+    if($("#btGuardar").dataset.modo === "skill") guardarNuevaSkill();
+    else guardarAjustes();
+  };
+  $("#btFabrica").onclick = () => {
+    const modo = $("#btFabrica").dataset.modo;
+    if(modo === "crear") return abrirNuevaSkill();
+    if(modo === "volver") return abrirCatalogo();
+    $("#areaInstr").value = INSTRUCCIONES_FABRICA;
+  };
+  $("#btSkill").onclick = abrirCatalogo;
+  $("#buscaSkill").oninput = pintarGremio;
   $("#velo").onclick = ev => { if(ev.target === $("#velo")) cerrarPanel(); };
   $("#btPreviaCerrar").onclick = cerrarPrevia;
   $("#btPreviaModo").onclick = () => { previaModo = previaModo === "vista" ? "codigo" : "vista"; pintarPrevia(); };
@@ -2783,6 +3240,7 @@ function montar(){
     }
     if((ev.ctrlKey || ev.metaKey) && ev.key.toLowerCase() === "k"){ ev.preventDefault(); $("#riel").classList.remove("plegado"); $("#busca").focus(); }
     if((ev.ctrlKey || ev.metaKey) && ev.shiftKey && ev.key.toLowerCase() === "n"){ ev.preventDefault(); $("#btNueva").click(); }
+    if((ev.ctrlKey || ev.metaKey) && ev.key.toLowerCase() === "j"){ ev.preventDefault(); abrirCatalogo(); }
   });
 
   if(cfg.ultima && chats.some(c => c.id === cfg.ultima && c.turnos.length)){
@@ -2792,6 +3250,7 @@ function montar(){
   if(innerWidth <= 840) $("#riel").classList.add("plegado");
   prepararCaja();
   prepararVoz();
+  pintarGasto();
   pintarFichas();
   verVista("chat");
   pintarLista();
@@ -2844,7 +3303,7 @@ async function encender(){
         }
         pulso.className = "pulso viva";
         pulso.title = "Listo · tu cuenta de Claude";
-        actualizarPie(); pintarHilo();
+        actualizarPie(); pintarHilo(); pintarGasto();
         return;
       }
     }
