@@ -1010,33 +1010,44 @@ const cfg = Object.assign({
   clave:"", modelo:"claude-opus-5", maxTokens:32000, buscar:true, razonar:true, compactar:true,
   instrucciones:INSTRUCCIONES_FABRICA, tier:"default", skill:"ninguna",
   estilo:"plano", formato:"cuadrado", tema:"auto",
-  motorImg:"svg", herramientas:true, voz:true,
+  motorImg:"svg", herramientas:true, ultima:"",
   gemClave:"", gemModelo:"gemini-2.5-flash-image",
   oaEndpoint:"https://api.openai.com/v1/images/generations", oaClave:"", oaModelo:"gpt-image-1"
 }, leer("nexo.cfg", {}));
 
-let chats = leer("nexo.chats", []);
-let obras = leer("nexo.obras", []);
+let chats = leer("nexo.chats", []).filter(c => c && typeof c === "object" && c.id)
+  .map(c => Object.assign({titulo:"Sin título", resumen:"", actualizado:0}, c,
+                          {turnos: Array.isArray(c.turnos) ? c.turnos.filter(t => t && typeof t === "object") : []}));
+let obras = leer("nexo.obras", []).filter(o => o && typeof o === "object" && (o.svg || o.datos));
 let activo = null, corriendo = null, adjuntos = [], nivelMax = 3, muestraVisible = true;
 let motor = null, sample = null, db = null, descargas = null;
 let puedeImagenes = false, puedeHerramientas = false;
 let previaActual = null, previaModo = "vista";
 let refImagen = null;
 
+/* Lee del almacenamiento sin fiarse de lo que haya: datos de una versión
+   vieja, a medio escribir o manipulados a mano no deben tumbar la página. */
 function leer(k, d){
-  try{ const v = localStorage.getItem(k); return v ? JSON.parse(v) : structuredClone(d); }
-  catch(e){ return structuredClone(d); }
+  try{
+    const v = localStorage.getItem(k);
+    if(v == null || v === "") return structuredClone(d);
+    const x = JSON.parse(v);
+    if(x === null || typeof x !== typeof d) return structuredClone(d);
+    if(Array.isArray(d) !== Array.isArray(x)) return structuredClone(d);
+    return x;
+  }catch(e){ return structuredClone(d); }
 }
 function escribir(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){ console.warn("almacenamiento lleno"); } }
 const guardarCfg = () => escribir("nexo.cfg", cfg);
 const $ = s => document.querySelector(s);
 
-let mias = leer("nexo.skills", []);
+let mias = leer("nexo.skills", []).filter(m => m && typeof m === "object" && m.id && m.nombre);
 const guardarMias = () => escribir("nexo.skills", mias);
 
 /* Cuenta lo que llevas gastado hoy. La app no impone ningún tope; esto es
    para que veas el consumo, que en la página publicada sale de tu plan. */
-let gasto = leer("nexo.gasto", {dia:"", msj:0, entrada:0, salida:0});
+let gasto = Object.assign({dia:"", msj:0, entrada:0, salida:0},
+                          leer("nexo.gasto", {dia:"", msj:0, entrada:0, salida:0}));
 function apuntarGasto(uso){
   const hoy = new Date().toISOString().slice(0, 10);
   if(gasto.dia !== hoy) gasto = {dia:hoy, msj:0, entrada:0, salida:0};
@@ -1754,6 +1765,11 @@ async function responderAPIconHerramientas(args){
     }
     turnos.push({role:"user", content:resultados});
   }
+  /* Se agotaron las vueltas con una herramienta a medias: los bloques
+     tool_use sin su tool_result invalidarían la petición siguiente. */
+  acumulado.bloques = (acumulado.bloques || []).filter(b => b.type !== "tool_use");
+  acumulado.texto += (acumulado.texto ? "\n\n" : "") +
+    "_Corté aquí: llevaba seis rondas seguidas usando herramientas. Dime cómo seguir._";
   return acumulado;
 }
 
@@ -1800,8 +1816,10 @@ function historial(chat, hasta){
     }
     if(motor === "api" && t.bloques?.length){
       const b = t.bloques.filter(x =>
-        x.type === "text"     ? x.text?.trim() :
-        x.type === "thinking" ? x.thinking && x.signature : true);
+        x.type === "text"       ? x.text?.trim() :
+        x.type === "thinking"   ? x.thinking && x.signature :
+        x.type === "tool_use"   ? false :   // su tool_result no se guarda: iría suelto
+        x.type === "tool_result" ? false : true);
       if(b.length) msgs.push({role:"assistant", content:b});
     }else if(t.texto?.trim()){
       msgs.push({role:"assistant", content:[{type:"text", text:t.texto}]});
@@ -2294,7 +2312,8 @@ async function conversar(chat, imagenes, extra){
     alFondo();
     guardar(chat);
     actualizarAguja();
-    if(!turno.error) apuntarGasto(turno.uso);
+    // Una respuesta cancelada sin texto se descarta: no cuenta como gasto.
+    if(!turno.error && chat.turnos.includes(turno)) apuntarGasto(turno.uso);
     texto.focus();
     if(!turno.error && chat.turnos.length >= 2) titular(chat);
   }
@@ -3316,7 +3335,7 @@ async function encender(){
     $("#ficheros").accept = "image/png,image/jpeg,image/gif,image/webp,application/pdf,text/plain,.md,.csv,.json,.js,.py";
     pulso.className = "pulso " + (cfg.clave ? "viva" : "muerta");
     pulso.title = cfg.clave ? "Listo · modo local" : "Falta la clave de la API";
-    actualizarPie(); pintarHilo();
+    actualizarPie(); pintarHilo(); pintarGasto();
     if(!cfg.clave) abrirAjustes();
   }catch(e){
     console.error("fallo al encender:", e);
