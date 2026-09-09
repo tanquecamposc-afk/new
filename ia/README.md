@@ -8,7 +8,7 @@ El archivo detecta solo dónde está corriendo:
 
 | | Como página en claude.ai | Como archivo local |
 |---|---|---|
-| Qué necesita | Nada: tu cuenta de Claude | Tu clave de la API de Anthropic |
+| Qué necesita | Nada: tu cuenta de Claude | Una clave de API, si la quieres |
 | Buscar en la web | No | **Sí** |
 | Leer PDFs | Solo imágenes | **Sí**, hasta 25 MB |
 | Ver el razonamiento | No | **Sí** |
@@ -17,10 +17,14 @@ El archivo detecta solo dónde está corriendo:
 
 ## ▶ Cómo arrancar
 
-**En claude.ai** — publícalo como artifact y ábrelo. La primera vez pide permiso para usar tu cuenta; aceptas y ya.
+**En claude.ai — sin configurar nada.** Publícalo como artifact y ábrelo. La primera vez pide permiso
+para usar tu cuenta; aceptas y ya está respondiendo. No hay claves, ni ajustes obligatorios, ni pasos previos.
 
-**En tu compu** — abre `index.html` con doble clic, consigue una clave en
-[console.anthropic.com](https://console.anthropic.com/settings/keys) y pégala en Ajustes.
+**En tu compu — opcional.** Abre `index.html` con doble clic. Puedes mirar y tocar todo, pero para que
+responda hace falta una clave, porque un archivo suelto no tiene por dónde hablar con Claude. La página te
+ofrece el enlace a la versión que no la necesita, y no te bloquea con ningún diálogo. Si quieres la clave
+—es la única vía **sin tope diario**— se saca en
+[console.anthropic.com](https://console.anthropic.com/settings/keys) y se pega en Ajustes.
 Se guarda solo en tu navegador y viaja únicamente a `api.anthropic.com`. Nunca la escribas dentro del archivo.
 
 ## 🧠 Skills
