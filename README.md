@@ -30,9 +30,26 @@ Los archivos del modelo están en `modelo-3d/` y también se bajan desde los bot
 | `via-expresa-simple.glb` | **El más fácil.** Un solo archivo, ya trae los colores. Doble clic en Windows y se abre. |
 | `via-expresa-simple.obj` + `.mtl` | Lo mismo pero en dos archivos; hay que dejarlos juntos en la misma carpeta. |
 | `via-expresa-simple-tinkercad.obj` | OBJ sin el archivo de colores, para que Tinkercad no reclame. |
-| `via-expresa-simple.stl` | Para Tinkercad e impresión 3D (sin colores). |
+| `via-expresa-simple.stl` | Para impresión 3D (sin colores). |
 
 El modelo lo arma `node tools/genera-modelo-simple.mjs`: cambia una medida ahí, vuelve a ejecutarlo y se actualizan los cuatro archivos y el visor.
+
+### 🧱 Versión para Tinkercad, nivel principiante
+
+Una versión aparte, mucho más sencilla: **puras cajas, 312 caras**, sin ningún detalle chiquito, pero completa. Tiene la pista elevada con sus tres columnas, la pista de siempre, el Metropolitano con su estación y su bus, la ciclovía, las veredas, los jardines con árboles y seis carros.
+
+| Archivo | Para qué |
+|---|---|
+| `via-expresa-tinkercad.obj` | **El que se importa a Tinkercad.** Va sin colores a propósito, porque Tinkercad no lee archivos `.mtl` y da error si se los pones. |
+| `via-expresa-tinkercad.stl` | Lo mismo, por si prefieres importar STL. |
+| `via-expresa-tinkercad.glb` | Con colores, para mirarlo antes en la computadora. |
+| `medidas-tinkercad.md` | La tabla de medidas, pieza por pieza. |
+
+Todo está en **medidas reales**: 1 unidad = 1 metro. El terreno mide 90 × 50 m y la pista elevada va a 8 m de altura, que es el alto libre que necesita el Metropolitano para pasar por debajo.
+
+Tinkercad trabaja en milímetros, así que al importar sale de 90 × 50 mm. Si lo quieres más grande, sube la escala a 200% o 300% en la ventana de importación.
+
+La tabla de medidas la escribe el mismo programa que arma el modelo (`node tools/genera-modelo-tinkercad.mjs`), así que las medidas del documento y las del archivo 3D nunca se desfasan. Esa tabla también sale publicada en `modelo-3d.html`, por si prefieres armar la maqueta a mano en Tinkercad en vez de importarla.
 
 **Nota sobre el dibujo:** el visor no usa tarjeta de video, pinta las caras ordenadas de atrás hacia adelante. Para que nada se asome donde no debe, el modelo va en capas (piso → cosas paradas en el piso → losa de la pista → lo que se apoya sobre ella) y todas las caras miran hacia afuera, así las que dan la espalda a la cámara se descartan.
 
