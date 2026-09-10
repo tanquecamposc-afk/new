@@ -134,7 +134,9 @@ public void onSkin(OneBlockSkinChangeEvent event) {     // cancelable
 ## Base de datos
 
 SQLite en `plugins/OneBlock/oneblock.db` a través de HikariCP (`ob_islands`, `ob_members`,
-índice `ob_islands_blocks` para el Top 10). La interfaz `Database` está pensada para añadir un
+índice `ob_islands_blocks` para el Top 10). La columna `special` recuerda si el bloque que hay
+ahora mismo en la isla es un bloque bonus, para que un reinicio no se lo coma; se añade sola con
+`ALTER TABLE` en bases de datos creadas por versiones anteriores. La interfaz `Database` está pensada para añadir un
 `MySQLStorage` sin tocar el resto del plugin: mismo contrato, mismas llamadas asíncronas.
 
 ## Protección del OneBlock
