@@ -131,7 +131,6 @@ public final class HologramManager {
 
     private Component buildText(Island island, double tick) {
         Phase phase = plugin.getPhaseManager().byIndex(island.getPhaseIndex());
-        Phase next = plugin.getPhaseManager().next(island.getPhaseIndex());
         int progressPercent = (int) Math.round(plugin.getPhaseManager().progress(island.getBlocksBroken()) * 100.0D);
         String template = String.join("<newline>",
                 plugin.getConfigManager().getMessages().getStringList("hologram.island"));
@@ -146,10 +145,10 @@ public final class HologramManager {
                 Bars.phaseProgress(plugin.getPhaseManager().progress(island.getBlocksBroken()), 16));
         return Text.of(template, Messages.of(
                 "owner", island.getOwnerName() == null ? "?" : island.getOwnerName(),
-                "phase", phase == null ? "?" : Text.plain(phase.getDisplayName()),
+                "phase", plugin.getPhaseManager().labelFor(island.getBlocksBroken(), phase),
                 "blocks", String.valueOf(island.getBlocksBroken()),
                 "progress", String.valueOf(progressPercent),
-                "next", next == null ? "MAX" : Text.plain(next.getDisplayName()),
+                "next", plugin.getPhaseManager().nextLabelFor(island.getBlocksBroken()),
                 "remaining", String.valueOf(plugin.getPhaseManager().blocksUntilNext(island.getBlocksBroken()))));
     }
 

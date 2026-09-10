@@ -68,18 +68,19 @@ public final class GUIManager {
                             "<yellow>Usa <white>/ob create</white> para empezar.</yellow>"));
         }
         Phase phase = plugin.getPhaseManager().byIndex(island.getPhaseIndex());
-        Phase next = plugin.getPhaseManager().next(island.getPhaseIndex());
         double ratio = plugin.getPhaseManager().progress(island.getBlocksBroken());
+        String phaseLabel = plugin.getPhaseManager().labelFor(island.getBlocksBroken(), phase);
+        String nextLabel = plugin.getPhaseManager().nextLabelFor(island.getBlocksBroken());
         return Items.head(player, "<gradient:#ff0055:#ff5500><bold>" + player.getName() + "</bold></gradient>",
                 List.of(SEPARATOR,
-                        "<gray>Fase</gray> <white>" + (phase == null ? "-" : phase.getColorTag()
-                                + Text.plain(phase.getDisplayName())),
+                        "<gray>Fase</gray> " + (phase == null ? "<white>-" : phase.getColorTag())
+                                + phaseLabel,
                         "<gray>Bloques</gray> <white>" + island.getBlocksBroken(),
                         "",
                         Bars.phaseProgress(ratio, 20) + " <yellow>" + (int) Math.round(ratio * 100) + "%</yellow>",
-                        "<gray>Siguiente: <white>" + (next == null ? "MAX" : Text.plain(next.getDisplayName()))
-                                + "</white> <dark_gray>(" + plugin.getPhaseManager()
-                                .blocksUntilNext(island.getBlocksBroken()) + " bloques)</dark_gray>",
+                        "<gray>Siguiente: <white>" + nextLabel + "</white> <dark_gray>("
+                                + plugin.getPhaseManager().blocksUntilNext(island.getBlocksBroken())
+                                + " bloques)</dark_gray>",
                         SEPARATOR));
     }
 

@@ -76,6 +76,8 @@ Permisos: `oneblock.use` (default true), `oneblock.admin` (op), `oneblock.skin.*
 | `%oneblock_progress%` | Progreso dentro de la fase (0-100) |
 | `%oneblock_members%` | Miembros de la isla |
 | `%oneblock_halo%` / `%oneblock_pedestal%` | Cosmético equipado |
+| `%oneblock_lap%` | Vuelta actual de la Fase Infinita |
+| `%oneblock_infinite%` | `true` si la isla ya está en la Fase Infinita |
 | `%oneblock_top_<n>_name%` | Nombre del puesto n (1-10) |
 | `%oneblock_top_<n>_blocks%` | Bloques del puesto n |
 | `%oneblock_top_<n>_uuid%` | UUID del puesto n |
@@ -99,11 +101,30 @@ nombre que no exista en la versión del servidor se ignora en vez de romper el p
 
 ## Fases (`phases.yml`)
 
-Cada fase define `required-blocks` (acumulado), `blocks` y `mobs` con pesos `NOMBRE:peso`,
-`icon`, `color` (MiniMessage), `bossbar-color` y `border-size` (tamaño del WorldBorder animado al
-entrar en la fase).
+El orden y los temas siguen al mapa original de OneBlock:
 
-Las tablas de botín (`chest-loot`, `special-loot`) aceptan tres formatos:
+| # | Fase | Bloques | # | Fase | Bloques |
+|---|---|---|---|---|---|
+| 1 | Llanuras | 0 | 6 | Desierto Rojo | 7 500 |
+| 2 | Subterráneo | 500 | 7 | El Nether | 10 500 |
+| 3 | Tundra Helada | 1 500 | 8 | Idilio | 14 000 |
+| 4 | Océano | 3 000 | 9 | Tierra Desolada | 18 000 |
+| 5 | Jungla | 5 000 | 10 | El End | 25 000 |
+
+Cada fase define `blocks` y `mobs` con pesos `NOMBRE:peso`, `icon`, `color` (MiniMessage),
+`bossbar-color` y `border-size` (tamaño del WorldBorder animado al entrar en la fase).
+
+**La meta final es real**: los cofres raros y épicos de El End sueltan `END_PORTAL_FRAME` y
+`ENDER_EYE`, así que con doce de cada se monta el portal a mano y se baja a por el Dragón.
+
+**Fase Infinita**: al terminar El End el bloque no se agota. Pasados
+`infinite.last-phase-length` bloques más, la isla entra en la Fase Infinita, donde salen bloques y
+mobs de todas las fases mezclados; la barra sigue contando por vueltas de `infinite.lap-blocks`.
+
+Las tablas de botín se dividen por rareza (`common`, `uncommon`, `rare`, `epic`), con el reparto en
+`config.yml` → `chest-rarity` (60/25/12/3 por defecto). Si una fase no define la rareza que salió,
+se cae a la inmediatamente inferior. Una lista plana en `chest-loot` sigue valiendo y se lee como
+común. Cada línea acepta tres formatos:
 
 | Formato | Significado |
 |---|---|
@@ -111,8 +132,12 @@ Las tablas de botín (`chest-loot`, `special-loot`) aceptan tres formatos:
 | `DIAMOND:1-3` | Cantidad aleatoria, siempre sale |
 | `DIAMOND:1-3:25` | Cantidad aleatoria con 25 % de probabilidad |
 
-Probabilidades de regeneración, configurables en `config.yml` → `chances`:
-2 % bloque especial, 12 % cofre, 15 % mob, resto bloque normal de la fase.
+Probabilidades de regeneración, en `config.yml` → `chances`: 2 % bloque especial, 12 % cofre,
+15 % mob, 8 % bloque de una fase anterior (para que no falten los básicos) y el resto bloque normal
+de la fase.
+
+Al entrar en una fase nueva cae una **oleada de bienvenida** con mobs de esa fase alrededor del
+bloque (`monster-party` en `config.yml`).
 
 ## Eventos de la API
 

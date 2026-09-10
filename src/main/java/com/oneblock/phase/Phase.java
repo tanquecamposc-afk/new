@@ -17,14 +17,15 @@ public final class Phase {
     private final Material icon;
     private final Map<Material, Integer> blockWeights;
     private final Map<EntityType, Integer> mobWeights;
-    private final List<LootEntry> chestLoot;
+    private final Map<Rarity, List<LootEntry>> chestLoot;
     private final List<LootEntry> specialLoot;
     private final double borderSize;
     private final String bossBarColor;
 
     public Phase(String id, String displayName, String colorTag, int requiredBlocks, Material icon,
                  Map<Material, Integer> blockWeights, Map<EntityType, Integer> mobWeights,
-                 List<LootEntry> chestLoot, List<LootEntry> specialLoot, double borderSize, String bossBarColor) {
+                 Map<Rarity, List<LootEntry>> chestLoot, List<LootEntry> specialLoot,
+                 double borderSize, String bossBarColor) {
         this.id = id;
         this.displayName = displayName;
         this.colorTag = colorTag;
@@ -32,7 +33,7 @@ public final class Phase {
         this.icon = icon;
         this.blockWeights = Collections.unmodifiableMap(blockWeights);
         this.mobWeights = Collections.unmodifiableMap(mobWeights);
-        this.chestLoot = Collections.unmodifiableList(chestLoot);
+        this.chestLoot = Collections.unmodifiableMap(chestLoot);
         this.specialLoot = Collections.unmodifiableList(specialLoot);
         this.borderSize = borderSize;
         this.bossBarColor = bossBarColor;
@@ -67,8 +68,13 @@ public final class Phase {
         return mobWeights;
     }
 
-    public List<LootEntry> getChestLoot() {
+    /** Loot tables of this phase, one per chest rarity. */
+    public Map<Rarity, List<LootEntry>> getChestLoot() {
         return chestLoot;
+    }
+
+    public List<LootEntry> getChestLoot(Rarity rarity) {
+        return chestLoot.getOrDefault(rarity, List.of());
     }
 
     public List<LootEntry> getSpecialLoot() {

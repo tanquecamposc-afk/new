@@ -14,10 +14,33 @@ world:
 # Probabilidades de regeneracion del bloque (en %).
 # El resto hasta 100 es siempre un bloque normal de la fase.
 chances:
-  special: 2.0     # bloque brillante con botin extra
-  chest: 12.0      # cofre con el botin de la fase
-  mob: 15.0        # mob de la fase encima del bloque
+  special: 2.0        # bloque brillante con botin extra
+  chest: 12.0         # cofre con el botin de la fase
+  mob: 15.0           # mob de la fase encima del bloque
+  legacy-block: 8.0   # bloque de una fase anterior, para que no falten los basicos
   special-block: SEA_LANTERN
+
+# Reparto de rarezas de los cofres (peso relativo).
+chest-rarity:
+  common: 60
+  uncommon: 25
+  rare: 12
+  epic: 3
+
+# Al terminar la ultima fase el bloque no se agota: entra en la Fase Infinita,
+# donde salen bloques y mobs de todas las fases a la vez.
+infinite:
+  enabled: true
+  # Bloques que dura la ultima fase antes de que empiece la Fase Infinita.
+  last-phase-length: 5000
+  # Bloques por vuelta, solo para que la barra de progreso siga contando.
+  lap-blocks: 1000
+
+# Oleada de bienvenida al entrar en una fase nueva.
+monster-party:
+  enabled: true
+  mobs: 5
+  radius: 2.5
 
 hologram:
   # Altura del TextDisplay sobre el OneBlock.

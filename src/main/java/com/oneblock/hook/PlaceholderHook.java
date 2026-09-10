@@ -63,13 +63,14 @@ public final class PlaceholderHook extends PlaceholderExpansion {
             };
         }
         Phase phase = plugin.getPhaseManager().byIndex(island.getPhaseIndex());
-        Phase next = plugin.getPhaseManager().next(island.getPhaseIndex());
         return switch (key) {
-            case "phase" -> phase == null ? "-" : Text.plain(phase.getDisplayName());
+            case "phase" -> plugin.getPhaseManager().labelFor(island.getBlocksBroken(), phase);
             case "phase_id" -> phase == null ? "-" : phase.getId();
             case "count", "blocks" -> String.valueOf(island.getBlocksBroken());
             case "next_phase" -> String.valueOf(plugin.getPhaseManager().blocksUntilNext(island.getBlocksBroken()));
-            case "next_phase_name" -> next == null ? "MAX" : Text.plain(next.getDisplayName());
+            case "next_phase_name" -> plugin.getPhaseManager().nextLabelFor(island.getBlocksBroken());
+            case "lap" -> String.valueOf(plugin.getPhaseManager().lapOf(island.getBlocksBroken()));
+            case "infinite" -> String.valueOf(plugin.getPhaseManager().isInfinite(island.getBlocksBroken()));
             case "progress" -> String.valueOf(
                     (int) Math.round(plugin.getPhaseManager().progress(island.getBlocksBroken()) * 100.0D));
             case "members" -> String.valueOf(island.getMembers().size());

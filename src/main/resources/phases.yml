@@ -1,8 +1,14 @@
 # ---------------------------------------------------------------
 #  OneBlock - las 10 fases
 # ---------------------------------------------------------------
+#  El orden y los temas siguen al mapa original: Llanuras, Subterraneo,
+#  Tundra, Oceano, Jungla, Desierto Rojo, Nether, Idilio, Tierra Desolada
+#  y El End. Al terminar la ultima empieza la Fase Infinita, que mezcla
+#  bloques de todas (ver 'infinite' en config.yml).
+#
 #  blocks / mobs usan el formato  NOMBRE:peso  (peso = probabilidad relativa)
-#  chest-loot / special-loot aceptan tres formatos:
+#  chest-loot se divide por rareza: common, uncommon, rare, epic.
+#  Cada linea de botin acepta tres formatos:
 #      NOMBRE:cantidad            -> cantidad fija, siempre sale
 #      NOMBRE:min-max             -> cantidad aleatoria, siempre sale
 #      NOMBRE:min-max:prob        -> cantidad aleatoria con probabilidad en %
@@ -32,10 +38,20 @@ phases:
       - COW:3
       - PIG:3
     chest-loot:
-      - OAK_SAPLING:1-3
-      - WHEAT_SEEDS:2-5
-      - APPLE:1-3:60
-      - BREAD:2:40
+      common:
+        - OAK_SAPLING:1-3
+        - WHEAT_SEEDS:2-5
+        - APPLE:1-3:60
+      uncommon:
+        - WOODEN_PICKAXE:1
+        - BREAD:2-4
+        - WATER_BUCKET:1:35
+      rare:
+        - IRON_INGOT:2-3
+        - LEATHER_BOOTS:1
+      epic:
+        - IRON_PICKAXE:1
+        - GOLDEN_APPLE:1
     special-loot:
       - IRON_INGOT:2-4
       - EXPERIENCE_BOTTLE:3-6
@@ -49,54 +65,71 @@ phases:
     bossbar-color: WHITE
     border-size: 56.0
     blocks:
-      - STONE:40
+      - STONE:38
       - COBBLESTONE:20
       - ANDESITE:10
       - COAL_ORE:10
       - IRON_ORE:8
       - COPPER_ORE:7
       - GRAVEL:5
+      - MOSSY_COBBLESTONE:2
     mobs:
       - ZOMBIE:4
       - SKELETON:3
       - SPIDER:3
       - BAT:2
     chest-loot:
-      - TORCH:8
-      - IRON_INGOT:2
-      - COAL:6
+      common:
+        - TORCH:4-8
+        - COAL:3-6
+      uncommon:
+        - IRON_INGOT:1-3
+        - STRING:2-4
+      rare:
+        - IRON_BLOCK:1
+        - GOLDEN_CARROT:2:50
+      epic:
+        - DIAMOND:1-2
     special-loot:
       - DIAMOND:1
       - IRON_BLOCK:1
 
-  jungle:
-    display-name: 'Jungla'
-    color: '<dark_green>'
+  tundra:
+    display-name: 'Tundra Helada'
+    color: '<blue>'
     required-blocks: 1500
-    icon: JUNGLE_LOG
-    bossbar-color: GREEN
+    icon: PACKED_ICE
+    bossbar-color: BLUE
     border-size: 64.0
     blocks:
-      - JUNGLE_LOG:25
-      - JUNGLE_LEAVES:20
-      - MOSS_BLOCK:15
-      - PODZOL:12
-      - COCOA:8
-      - MELON:8
-      - BAMBOO:7
-      - EMERALD_ORE:3
+      - SNOW_BLOCK:28
+      - ICE:22
+      - PACKED_ICE:16
+      - BLUE_ICE:6
+      - STONE:14
+      - SPRUCE_LOG:8
+      - LAPIS_ORE:6
     mobs:
-      - PARROT:4
-      - OCELOT:3
-      - PANDA:2
-      - CREEPER:3
+      - POLAR_BEAR:2
+      - STRAY:4
+      - WOLF:3
+      - RABBIT:2
     chest-loot:
-      - BAMBOO:8
-      - MELON_SLICE:5
-      - EMERALD:1
+      common:
+        - SNOWBALL:4-8
+        - SPRUCE_SAPLING:1-2
+      uncommon:
+        - LAPIS_LAZULI:3-6
+        - LEATHER:2-4
+      rare:
+        - BLUE_ICE:4-6
+        - IRON_HELMET:1
+      epic:
+        - DIAMOND:1-2
+        - ENCHANTED_BOOK:1
     special-loot:
-      - EMERALD:5
-      - GOLDEN_APPLE:1
+      - BLUE_ICE:6-8
+      - DIAMOND:1-2
 
   ocean:
     display-name: 'Oceano'
@@ -108,11 +141,12 @@ phases:
     blocks:
       - SAND:25
       - PRISMARINE:18
-      - SEA_LANTERN:6
+      - SEA_LANTERN:5
       - KELP_PLANT:15
       - TUBE_CORAL_BLOCK:10
       - CLAY:14
       - GRAVEL:12
+      - DARK_PRISMARINE:6
     mobs:
       - COD:4
       - SALMON:3
@@ -120,71 +154,102 @@ phases:
       - DROWNED:3
       - PUFFERFISH:1
     chest-loot:
-      - PRISMARINE_SHARD:4
-      - NAUTILUS_SHELL:1
-      - COOKED_COD:4
+      common:
+        - PRISMARINE_SHARD:2-5
+        - COOKED_COD:2-4
+      uncommon:
+        - PRISMARINE_CRYSTALS:2-4
+        - FISHING_ROD:1
+      rare:
+        - NAUTILUS_SHELL:1-2
+        - SEA_LANTERN:3-5
+      epic:
+        - HEART_OF_THE_SEA:1
+        - TRIDENT:1:20
     special-loot:
       - HEART_OF_THE_SEA:1
-      - SEA_LANTERN:6
+      - SEA_LANTERN:4-6
 
-  desert:
-    display-name: 'Desierto'
-    color: '<yellow>'
+  jungle:
+    display-name: 'Jungla'
+    color: '<dark_green>'
     required-blocks: 5000
-    icon: SANDSTONE
-    bossbar-color: YELLOW
+    icon: JUNGLE_LOG
+    bossbar-color: GREEN
     border-size: 80.0
     blocks:
-      - SAND:30
-      - SANDSTONE:22
+      - JUNGLE_LOG:24
+      - JUNGLE_LEAVES:20
+      - MOSS_BLOCK:14
+      - PODZOL:12
+      - MOSSY_STONE_BRICKS:9
+      - COCOA:7
+      - MELON:7
+      - BAMBOO:5
+      - EMERALD_ORE:2
+    mobs:
+      - PARROT:4
+      - OCELOT:3
+      - PANDA:2
+      - CREEPER:3
+      - CAVE_SPIDER:2
+    chest-loot:
+      common:
+        - BAMBOO:4-8
+        - MELON_SLICE:3-6
+      uncommon:
+        - COCOA_BEANS:3-6
+        - EMERALD:1-2
+      rare:
+        - EMERALD:3-5
+        - IRON_CHESTPLATE:1
+      epic:
+        - GOLDEN_APPLE:1-2
+        - DIAMOND:2-3
+    special-loot:
+      - EMERALD:4-6
+      - GOLDEN_APPLE:1
+
+  desert:
+    display-name: 'Desierto Rojo'
+    color: '<gold>'
+    required-blocks: 7500
+    icon: RED_SANDSTONE
+    bossbar-color: YELLOW
+    border-size: 88.0
+    blocks:
+      - RED_SAND:30
+      - RED_SANDSTONE:22
       - TERRACOTTA:14
-      - RED_SAND:12
-      - CACTUS:10
-      - DEAD_BUSH:6
+      - ORANGE_TERRACOTTA:10
+      - CACTUS:9
+      - DEAD_BUSH:5
       - GOLD_ORE:6
+      - SANDSTONE:4
     mobs:
       - HUSK:5
       - RABBIT:3
       - CAMEL:1
       - SKELETON:3
     chest-loot:
-      - GOLD_INGOT:2
-      - CACTUS:4
-      - BONE:4
+      common:
+        - CACTUS:2-5
+        - BONE:2-5
+      uncommon:
+        - GOLD_INGOT:1-3
+        - GLASS:4-8
+      rare:
+        - GOLD_BLOCK:1
+        - ENCHANTED_BOOK:1
+      epic:
+        - ENCHANTED_GOLDEN_APPLE:1
+        - DIAMOND:2-4
     special-loot:
-      - GOLD_BLOCK:1
+      - GOLD_BLOCK:1-2
       - ENCHANTED_GOLDEN_APPLE:1
 
-  ice:
-    display-name: 'Glaciar'
-    color: '<blue>'
-    required-blocks: 7500
-    icon: PACKED_ICE
-    bossbar-color: BLUE
-    border-size: 88.0
-    blocks:
-      - SNOW_BLOCK:28
-      - ICE:22
-      - PACKED_ICE:16
-      - BLUE_ICE:8
-      - STONE:14
-      - LAPIS_ORE:7
-      - POWDER_SNOW:5
-    mobs:
-      - POLAR_BEAR:2
-      - STRAY:4
-      - SNOW_GOLEM:2
-      - WOLF:3
-    chest-loot:
-      - LAPIS_LAZULI:6
-      - SNOWBALL:8
-      - LEATHER_BOOTS:1
-    special-loot:
-      - BLUE_ICE:8
-      - DIAMOND:2
-
   nether:
-    display-name: 'Nether'
+    display-name: 'El Nether'
     color: '<red>'
     required-blocks: 10500
     icon: NETHERRACK
@@ -199,6 +264,7 @@ phases:
       - CRIMSON_STEM:8
       - NETHER_QUARTZ_ORE:7
       - NETHER_GOLD_ORE:3
+      - OBSIDIAN:2
     mobs:
       - ZOMBIFIED_PIGLIN:4
       - BLAZE:3
@@ -206,55 +272,116 @@ phases:
       - HOGLIN:2
       - PIGLIN:3
     chest-loot:
-      - QUARTZ:6
-      - BLAZE_ROD:2
-      - GOLD_INGOT:4
+      common:
+        - QUARTZ:3-6
+        - NETHERRACK:6-10
+      uncommon:
+        - GOLD_INGOT:3-5
+        - BLAZE_ROD:1-2
+      rare:
+        - OBSIDIAN:4-6
+        - ANCIENT_DEBRIS:1
+      epic:
+        - NETHERITE_SCRAP:1-2
+        - FLINT_AND_STEEL:1
     special-loot:
       - ANCIENT_DEBRIS:1-2
       - NETHERITE_SCRAP:1-2:50
       - GOLD_BLOCK:1-3
 
-  citadel:
-    display-name: 'Ciudadela'
-    color: '<gold>'
+  idyll:
+    display-name: 'Idilio'
+    color: '<light_purple>'
     required-blocks: 14000
-    icon: DEEPSLATE_BRICKS
-    bossbar-color: YELLOW
+    icon: MOSS_BLOCK
+    bossbar-color: PINK
     border-size: 104.0
     blocks:
-      - DEEPSLATE:26
-      - DEEPSLATE_BRICKS:18
-      - POLISHED_DEEPSLATE:14
-      - DEEPSLATE_IRON_ORE:12
-      - DEEPSLATE_GOLD_ORE:10
-      - DEEPSLATE_DIAMOND_ORE:6
-      - AMETHYST_BLOCK:8
-      - SCULK:6
+      - MOSS_BLOCK:20
+      - AZALEA_LEAVES:14
+      - FLOWERING_AZALEA:8
+      - AMETHYST_BLOCK:12
+      - CALCITE:10
+      - GLOW_LICHEN:8
+      - HONEY_BLOCK:6
+      - BIG_DRIPLEAF:6
+      - DIAMOND_ORE:5
+      - BUDDING_AMETHYST:3
     mobs:
-      - PILLAGER:4
-      - VINDICATOR:3
-      - WITCH:2
-      - RAVAGER:1
+      - ALLAY:3
+      - BEE:4
+      - AXOLOTL:3
+      - GLOW_SQUID:2
+      - VILLAGER:1
     chest-loot:
-      - DIAMOND:2
-      - AMETHYST_SHARD:4
-      - EMERALD:3
+      common:
+        - GLOW_BERRIES:3-6
+        - MOSS_BLOCK:3-6
+      uncommon:
+        - AMETHYST_SHARD:3-6
+        - HONEYCOMB:2-4
+      rare:
+        - DIAMOND:2-3
+        - EXPERIENCE_BOTTLE:6-10
+      epic:
+        - DIAMOND_BLOCK:1
+        - TOTEM_OF_UNDYING:1:40
     special-loot:
       - DIAMOND_BLOCK:1
       - TOTEM_OF_UNDYING:1
 
-  end:
-    display-name: 'El End'
-    color: '<light_purple>'
+  desolation:
+    display-name: 'Tierra Desolada'
+    color: '<dark_gray>'
     required-blocks: 18000
-    icon: END_STONE
-    bossbar-color: PURPLE
+    icon: DEEPSLATE_BRICKS
+    bossbar-color: WHITE
     border-size: 112.0
     blocks:
-      - END_STONE:34
+      - DEEPSLATE:26
+      - DEEPSLATE_BRICKS:16
+      - SCULK:14
+      - POLISHED_DEEPSLATE:12
+      - DEEPSLATE_IRON_ORE:10
+      - DEEPSLATE_GOLD_ORE:8
+      - DEEPSLATE_DIAMOND_ORE:6
+      - SCULK_CATALYST:4
+      - COBBLED_DEEPSLATE:4
+    mobs:
+      - PILLAGER:4
+      - VINDICATOR:3
+      - WITCH:2
+      - PHANTOM:2
+      - RAVAGER:1
+    chest-loot:
+      common:
+        - COBBLED_DEEPSLATE:5-9
+        - BONE:3-6
+      uncommon:
+        - IRON_BLOCK:1-2
+        - CROSSBOW:1
+      rare:
+        - DIAMOND:3-5
+        - ECHO_SHARD:1-2
+      epic:
+        - NETHERITE_INGOT:1
+        - ENCHANTED_GOLDEN_APPLE:1-2
+    special-loot:
+      - NETHERITE_INGOT:1
+      - ECHO_SHARD:2-4
+
+  end:
+    display-name: 'El End'
+    color: '<dark_purple>'
+    required-blocks: 25000
+    icon: END_STONE
+    bossbar-color: PURPLE
+    border-size: 128.0
+    blocks:
+      - END_STONE:32
       - PURPUR_BLOCK:18
       - END_STONE_BRICKS:16
-      - OBSIDIAN:12
+      - OBSIDIAN:14
       - CHORUS_PLANT:10
       - CRYING_OBSIDIAN:6
       - AMETHYST_CLUSTER:4
@@ -263,40 +390,24 @@ phases:
       - SHULKER:2
       - PHANTOM:3
       - ENDERMITE:2
+    # La meta final: con 12 marcos y 12 ojos se puede montar el portal
+    # a mano y bajar a por el Dragon del End.
     chest-loot:
-      - ENDER_PEARL:3
-      - CHORUS_FRUIT:6
-      - OBSIDIAN:6
+      common:
+        - END_STONE:6-10
+        - CHORUS_FRUIT:3-6
+      uncommon:
+        - ENDER_PEARL:2-4
+        - OBSIDIAN:4-8
+      rare:
+        - ENDER_EYE:1-2
+        - END_PORTAL_FRAME:1
+        - SHULKER_SHELL:1-2
+      epic:
+        - END_PORTAL_FRAME:1-2
+        - ENDER_EYE:2-3
+        - ELYTRA:1:25
     special-loot:
-      - ELYTRA:1
-      - SHULKER_SHELL:2
-
-  cosmos:
-    display-name: 'Cosmos'
-    color: '<gradient:#a56bff:#00e5ff>'
-    required-blocks: 25000
-    icon: BEACON
-    bossbar-color: PINK
-    border-size: 128.0
-    blocks:
-      - AMETHYST_BLOCK:24
-      - CALCITE:18
-      - TINTED_GLASS:14
-      - GLOWSTONE:12
-      - SEA_LANTERN:10
-      - BUDDING_AMETHYST:8
-      - OBSIDIAN:8
-      - DIAMOND_ORE:6
-    mobs:
-      - ALLAY:3
-      - VEX:3
-      - GHAST:1
-      - WARDEN:1
-    chest-loot:
-      - AMETHYST_SHARD:8
-      - DIAMOND:3
-      - NETHERITE_SCRAP:1
-    special-loot:
-      - NETHERITE_INGOT:1
-      - BEACON:1:25
-      - DRAGON_EGG:1:2
+      - END_PORTAL_FRAME:1-2
+      - ENDER_EYE:2-4
+      - DRAGON_BREATH:1:30

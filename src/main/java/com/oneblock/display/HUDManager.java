@@ -75,12 +75,11 @@ public final class HUDManager {
 
     private Map<String, String> placeholders(Island island, Phase phase) {
         int percent = (int) Math.round(plugin.getPhaseManager().progress(island.getBlocksBroken()) * 100.0D);
-        Phase next = plugin.getPhaseManager().next(island.getPhaseIndex());
         return Messages.of(
-                "phase", phase == null ? "?" : Text.plain(phase.getDisplayName()),
+                "phase", plugin.getPhaseManager().labelFor(island.getBlocksBroken(), phase),
                 "blocks", String.valueOf(island.getBlocksBroken()),
                 "progress", String.valueOf(percent),
-                "next", next == null ? "MAX" : Text.plain(next.getDisplayName()),
+                "next", plugin.getPhaseManager().nextLabelFor(island.getBlocksBroken()),
                 "remaining", String.valueOf(plugin.getPhaseManager().blocksUntilNext(island.getBlocksBroken())));
     }
 

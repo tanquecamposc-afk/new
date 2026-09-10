@@ -58,10 +58,14 @@ island:
     - '<no-prefix><dark_gray>▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬</dark_gray>'
 
 block:
+  chest: '<gray>Ha salido un <white><rarity></white>.</gray>'
   special: '<gradient:#ffd700:#fff6a9>Bloque especial! Botin extra para ti.</gradient>'
   protected: '<red>El OneBlock no se puede reemplazar.</red>'
 
 phase:
+  # <lap> es el numero de vuelta dentro de la Fase Infinita.
+  infinite-name: 'Fase Infinita ∞ · vuelta <lap>'
+  party: '<red>¡Oleada de bienvenida! La fase nueva llega acompañada.</red>'
   changed: '<aqua>Nueva fase desbloqueada: <white><phase></white></aqua>'
   title: '<gradient:#00e0ff:#a56bff><bold>✦ <phase> ✦</bold></gradient>'
   subtitle: '<gray>Fase desbloqueada</gray>'

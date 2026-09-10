@@ -7,6 +7,7 @@ import com.oneblock.config.Messages;
 import com.oneblock.cosmetics.BlockSkin;
 import com.oneblock.island.Island;
 import com.oneblock.phase.Phase;
+import com.oneblock.phase.Rarity;
 import com.oneblock.util.Text;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -102,6 +103,7 @@ public final class BlockListener implements Listener {
         plugin.getParticleEngine().phasePillar(island.getCenter(), to);
         plugin.getIslandManager().applyBorder(island);
         plugin.getStorage().saveIsland(island);
+        monsterParty(island, to);
         if (to == null) {
             return;
         }
@@ -116,6 +118,38 @@ public final class BlockListener implements Listener {
         }
         plugin.getMessages().send(player, "phase.changed",
                 Messages.of("phase", Text.plain(to.getDisplayName())));
+    }
+
+    /**
+     * The welcome party of the new phase: a ring of its own mobs dropped around the block, the way
+     * the original map greets you when the biome changes.
+     */
+    private void monsterParty(Island island, Phase phase) {
+        if (phase == null || !plugin.getConfigManager().getConfig()
+                .getBoolean("monster-party.enabled", true)) {
+            return;
+        }
+        int count = plugin.getConfigManager().getConfig().getInt("monster-party.mobs", 5);
+        double radius = plugin.getConfigManager().getConfig().getDouble("monster-party.radius", 2.5D);
+        Location center = island.getCenter().add(0.5D, 1.0D, 0.5D);
+        World world = center.getWorld();
+        if (world == null || count <= 0) {
+            return;
+        }
+        for (int i = 0; i < count; i++) {
+            EntityType mob = plugin.getPhaseManager().randomMob(phase);
+            if (mob == null || !mob.isSpawnable()) {
+                continue;
+            }
+            double angle = 2.0D * Math.PI * i / count;
+            world.spawnEntity(center.clone().add(Math.cos(angle) * radius, 0.0D, Math.sin(angle) * radius), mob);
+        }
+        world.playSound(center, "entity.wither.spawn", 0.5F, 1.6F);
+        for (Player online : plugin.getServer().getOnlinePlayers()) {
+            if (island.isTrusted(online.getUniqueId())) {
+                plugin.getMessages().send(online, "phase.party");
+            }
+        }
     }
 
     /** Rolls the next content of the OneBlock: phase block, chest, mob or bonus block. */
@@ -134,6 +168,7 @@ public final class BlockListener implements Listener {
             block.setType(Material.STONE);
             return;
         }
+        boolean infinite = plugin.getPhaseManager().isInfinite(island.getBlocksBroken());
 
         double specialChance = plugin.getConfigManager().getConfig().getDouble("chances.special", 2.0D);
         double chestChance = plugin.getConfigManager().getConfig().getDouble("chances.chest", 12.0D);
@@ -151,22 +186,62 @@ public final class BlockListener implements Listener {
         roll -= specialChance;
 
         if (roll < chestChance) {
+            Rarity rarity = plugin.getPhaseManager().rollRarity();
             block.setType(Material.CHEST);
             if (block.getState() instanceof Chest chest) {
-                for (ItemStack loot : plugin.getPhaseManager().rollLoot(phase.getChestLoot())) {
+                for (ItemStack loot : plugin.getPhaseManager().rollChest(phase, rarity)) {
                     chest.getBlockInventory().addItem(loot);
                 }
                 chest.update();
             }
+            announceChest(island, center, rarity);
             return;
         }
         roll -= chestChance;
 
-        block.setType(plugin.getPhaseManager().randomBlock(phase));
+        block.setType(nextBlock(island, phase));
         if (roll < mobChance) {
-            EntityType mob = plugin.getPhaseManager().randomMob(phase);
+            EntityType mob = infinite
+                    ? plugin.getPhaseManager().randomMobAnyPhase()
+                    : plugin.getPhaseManager().randomMob(phase);
             if (mob != null && mob.isSpawnable()) {
                 world.spawnEntity(center.clone().add(0.5D, 1.0D, 0.5D), mob);
+            }
+        }
+    }
+
+    /**
+     * During the endless run every phase feeds the block; otherwise the current phase does, with a
+     * small chance of an earlier phase slipping through so the basics never dry up.
+     */
+    private Material nextBlock(Island island, Phase phase) {
+        if (plugin.getPhaseManager().isInfinite(island.getBlocksBroken())) {
+            return plugin.getPhaseManager().randomBlockAnyPhase();
+        }
+        double legacyChance = plugin.getConfigManager().getConfig().getDouble("chances.legacy-block", 8.0D);
+        if (random.nextDouble() * 100.0D < legacyChance) {
+            Material legacy = plugin.getPhaseManager().randomLegacyBlock(island.getPhaseIndex());
+            if (legacy != null) {
+                return legacy;
+            }
+        }
+        return plugin.getPhaseManager().randomBlock(phase);
+    }
+
+    /** Rare and epic chests are worth telling the island about. */
+    private void announceChest(Island island, Location center, Rarity rarity) {
+        if (rarity == Rarity.COMMON || rarity == Rarity.UNCOMMON) {
+            return;
+        }
+        World world = center.getWorld();
+        if (world != null) {
+            world.playSound(center, rarity == Rarity.EPIC
+                    ? "entity.player.levelup" : "block.note_block.bell", 0.8F, 1.6F);
+        }
+        for (Player online : plugin.getServer().getOnlinePlayers()) {
+            if (island.isTrusted(online.getUniqueId())) {
+                plugin.getMessages().send(online, "block.chest",
+                        Messages.of("rarity", com.oneblock.util.Text.plain(rarity.getLabel())));
             }
         }
     }

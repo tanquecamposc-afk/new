@@ -9,6 +9,7 @@ import org.bukkit.entity.EntityType;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -79,10 +80,30 @@ public final class PhaseManager {
                 Items.material(section.getString("icon"), Material.STONE),
                 blocks,
                 mobs,
-                readLoot(section.getStringList("chest-loot"), key),
+                readChests(section, key),
                 readLoot(section.getStringList("special-loot"), key),
                 section.getDouble("border-size", 0.0D),
                 section.getString("bossbar-color", "BLUE"));
+    }
+
+    /**
+     * Chests can be graded by rarity ({@code chest-loot.common}, {@code .uncommon}, {@code .rare},
+     * {@code .epic}). A flat {@code chest-loot} list is still accepted and read as the common table.
+     */
+    private Map<Rarity, List<LootEntry>> readChests(ConfigurationSection section, String phaseKey) {
+        Map<Rarity, List<LootEntry>> tables = new EnumMap<>(Rarity.class);
+        ConfigurationSection chests = section.getConfigurationSection("chest-loot");
+        if (chests == null) {
+            tables.put(Rarity.COMMON, readLoot(section.getStringList("chest-loot"), phaseKey));
+            return tables;
+        }
+        for (Rarity rarity : Rarity.values()) {
+            List<String> raw = chests.getStringList(rarity.name().toLowerCase(Locale.ROOT));
+            if (!raw.isEmpty()) {
+                tables.put(rarity, readLoot(raw, phaseKey));
+            }
+        }
+        return tables;
     }
 
     private List<LootEntry> readLoot(List<String> raw, String phaseKey) {
@@ -169,13 +190,56 @@ public final class PhaseManager {
         return index + 1 < phases.size() ? phases.get(index + 1) : null;
     }
 
-    /** Progress inside the current phase, in the 0..1 range. 1 means the last phase is reached. */
+    /** Blocks that make up one lap of the endless run. */
+    public int lapLength() {
+        return Math.max(1, plugin.getConfig().getInt("infinite.lap-blocks", 1000));
+    }
+
+    /** Which lap of the endless run the island is on, starting at 1. */
+    public int lapOf(int blocks) {
+        return infiniteProgress(blocks) / lapLength() + 1;
+    }
+
+    /** Name to show for the current phase, taking the endless run into account. */
+    public String labelFor(int blocks, Phase phase) {
+        if (isInfinite(blocks)) {
+            return plugin.getConfigManager().getMessages()
+                    .getString("phase.infinite-name", "Fase Infinita")
+                    .replace("<lap>", String.valueOf(lapOf(blocks)));
+        }
+        return phase == null ? "?" : com.oneblock.util.Text.plain(phase.getDisplayName());
+    }
+
+    /** Name of whatever comes next: the following phase, the next lap, or the endless run itself. */
+    public String nextLabelFor(int blocks) {
+        if (isInfinite(blocks)) {
+            return plugin.getConfigManager().getMessages()
+                    .getString("phase.infinite-name", "Fase Infinita")
+                    .replace("<lap>", String.valueOf(lapOf(blocks) + 1));
+        }
+        Phase next = next(indexFor(blocks));
+        if (next != null) {
+            return com.oneblock.util.Text.plain(next.getDisplayName());
+        }
+        return plugin.getConfigManager().getMessages()
+                .getString("phase.infinite-name", "Fase Infinita").replace("<lap>", "1");
+    }
+
+    /** Progress inside the current phase, in the 0..1 range. */
     public double progress(int blocks) {
+        if (isInfinite(blocks)) {
+            return (infiniteProgress(blocks) % lapLength()) / (double) lapLength();
+        }
         int index = indexFor(blocks);
         Phase current = byIndex(index);
         Phase next = next(index);
-        if (current == null || next == null) {
+        if (current == null) {
             return 1.0D;
+        }
+        if (next == null) {
+            int span = infiniteFrom() - current.getRequiredBlocks();
+            return span <= 0 ? 1.0D
+                    : Math.max(0.0D, Math.min(1.0D, (blocks - current.getRequiredBlocks()) / (double) span));
         }
         int span = next.getRequiredBlocks() - current.getRequiredBlocks();
         if (span <= 0) {
@@ -185,12 +249,90 @@ public final class PhaseManager {
     }
 
     public int blocksUntilNext(int blocks) {
+        if (isInfinite(blocks)) {
+            return lapLength() - (infiniteProgress(blocks) % lapLength());
+        }
         Phase next = next(indexFor(blocks));
-        return next == null ? 0 : Math.max(0, next.getRequiredBlocks() - blocks);
+        if (next != null) {
+            return Math.max(0, next.getRequiredBlocks() - blocks);
+        }
+        // Last phase: what is left before the endless run starts.
+        return Math.max(0, infiniteFrom() - blocks);
     }
 
     public Material randomBlock(Phase phase) {
         return weighted(phase.getBlockWeights(), Material.STONE);
+    }
+
+    /**
+     * The original map sprinkles blocks from earlier phases into the current one, so the island
+     * never stops producing the basics.
+     */
+    public Material randomLegacyBlock(int currentIndex) {
+        if (currentIndex <= 0) {
+            return null;
+        }
+        Phase earlier = phases.get(random.nextInt(currentIndex));
+        return randomBlock(earlier);
+    }
+
+    /** Once the last phase is cleared the block keeps going, mixing every phase at once. */
+    public boolean isInfinite(int blocks) {
+        if (phases.isEmpty() || !plugin.getConfig().getBoolean("infinite.enabled", true)) {
+            return false;
+        }
+        return blocks >= infiniteFrom();
+    }
+
+    public int infiniteFrom() {
+        if (phases.isEmpty()) {
+            return Integer.MAX_VALUE;
+        }
+        return phases.get(phases.size() - 1).getRequiredBlocks()
+                + plugin.getConfig().getInt("infinite.last-phase-length", 5000);
+    }
+
+    /** How many blocks into the endless run the island is. */
+    public int infiniteProgress(int blocks) {
+        return Math.max(0, blocks - infiniteFrom());
+    }
+
+    /** A block from any phase at all, used while the island is in the endless run. */
+    public Material randomBlockAnyPhase() {
+        if (phases.isEmpty()) {
+            return Material.STONE;
+        }
+        return randomBlock(phases.get(random.nextInt(phases.size())));
+    }
+
+    public EntityType randomMobAnyPhase() {
+        if (phases.isEmpty()) {
+            return null;
+        }
+        return randomMob(phases.get(random.nextInt(phases.size())));
+    }
+
+    /** Picks a chest rarity using the weights in config.yml, then rolls that table. */
+    public Rarity rollRarity() {
+        Map<Rarity, Integer> weights = new EnumMap<>(Rarity.class);
+        for (Rarity rarity : Rarity.values()) {
+            weights.put(rarity, plugin.getConfig().getInt(
+                    "chest-rarity." + rarity.name().toLowerCase(Locale.ROOT), 0));
+        }
+        Rarity rolled = weighted(weights, Rarity.COMMON);
+        return rolled == null ? Rarity.COMMON : rolled;
+    }
+
+    /** Falls back to a less rare table when a phase does not define the rolled one. */
+    public List<ItemStack> rollChest(Phase phase, Rarity rarity) {
+        Rarity[] order = Rarity.values();
+        for (int i = rarity.ordinal(); i >= 0; i--) {
+            List<LootEntry> table = phase.getChestLoot(order[i]);
+            if (!table.isEmpty()) {
+                return rollLoot(table);
+            }
+        }
+        return List.of();
     }
 
     public EntityType randomMob(Phase phase) {

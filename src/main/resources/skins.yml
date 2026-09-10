@@ -31,7 +31,7 @@ skins:
     pedestal-material: AMETHYST_BLOCK
     pedestal-scale: 0.4
     pedestal-count: 6
-    required-phase: 3
+    required-phase: 7
     permission: oneblock.skin.amatista
 
   netherita:
@@ -75,7 +75,7 @@ skins:
       - END_ROD
     particle-count: 4
     radius: 1.0
-    required-phase: 8
+    required-phase: 9
     permission: oneblock.skin.espiral_end
 
   corazones:
