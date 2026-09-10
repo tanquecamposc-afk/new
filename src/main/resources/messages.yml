@@ -3,7 +3,7 @@
 #  Usa <no-prefix> al inicio de una linea para omitir el prefijo.
 # ---------------------------------------------------------------
 
-prefix: '<gradient:#ff0055:#ff5500><bold>OneBlock</bold></gradient> <dark_gray>»</dark_gray> '
+prefix: '<gradient:#ff0055:#ff8a00><bold>ONE</bold></gradient><gradient:#ff8a00:#ffd000><bold>BLOCK</bold></gradient> <dark_gray>❘</dark_gray> '
 
 command:
   players-only: '<red>Este comando solo funciona en el juego.</red>'
@@ -21,7 +21,8 @@ command:
   unknown-phase: '<red>Ese indice de fase no existe.</red>'
   phase-set: '<green>Isla de <white><player></white> movida a la fase <white><phase></white>.</green>'
   help:
-    - '<no-prefix><gradient:#ff0055:#ff5500><bold>              ONEBLOCK              </bold></gradient>'
+    - '<no-prefix><dark_gray>▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬</dark_gray>'
+    - '<no-prefix><gradient:#ff0055:#ffd000><bold>            ONEBLOCK            </bold></gradient>'
     - '<no-prefix><yellow>/ob gui <dark_gray>-</dark_gray> <gray>Abre el menu principal.'
     - '<no-prefix><yellow>/ob create <dark_gray>-</dark_gray> <gray>Crea tu isla.'
     - '<no-prefix><yellow>/ob home <dark_gray>-</dark_gray> <gray>Te lleva a tu isla.'
@@ -32,6 +33,7 @@ command:
     - '<no-prefix><red>/ob reset <jugador> <dark_gray>-</dark_gray> <gray>Reinicia una isla.'
     - '<no-prefix><red>/ob settop <dark_gray>-</dark_gray> <gray>Coloca el holograma del Top.'
     - '<no-prefix><red>/ob reload <dark_gray>-</dark_gray> <gray>Recarga la configuracion.'
+    - '<no-prefix><dark_gray>▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬</dark_gray>'
 
 island:
   created: '<green>Tu isla esta lista. A picar!</green>'
@@ -47,13 +49,13 @@ island:
   transferred: '<gold>Le has entregado la isla a <player>.</gold>'
   received: '<gold><player> te ha entregado su isla.</gold>'
   info:
-    - '<no-prefix><dark_gray>--------------------------------</dark_gray>'
+    - '<no-prefix><dark_gray>▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬</dark_gray>'
     - '<no-prefix><gradient:#00ffcc:#0088ff><bold><owner></bold></gradient>'
     - '<no-prefix><gray>Fase: <white><phase></white> <dark_gray>|</dark_gray> <gray>Bloques: <white><blocks></white>'
     - '<no-prefix><gray>Faltan para la siguiente: <white><remaining></white>'
     - '<no-prefix><gray>Miembros: <white><members></white>'
     - '<no-prefix><gray>Cosmeticos: <white><pedestal></white> <dark_gray>/</dark_gray> <white><halo></white> <dark_gray>/</dark_gray> <white><sound></white>'
-    - '<no-prefix><dark_gray>--------------------------------</dark_gray>'
+    - '<no-prefix><dark_gray>▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬</dark_gray>'
 
 block:
   special: '<gradient:#ffd700:#fff6a9>Bloque especial! Botin extra para ti.</gradient>'
@@ -61,28 +63,30 @@ block:
 
 phase:
   changed: '<aqua>Nueva fase desbloqueada: <white><phase></white></aqua>'
-  title: '<gradient:#00e0ff:#0066ff><bold><phase></bold></gradient>'
-  subtitle: '<gray>Nueva fase desbloqueada</gray>'
+  title: '<gradient:#00e0ff:#a56bff><bold>✦ <phase> ✦</bold></gradient>'
+  subtitle: '<gray>Fase desbloqueada</gray>'
 
 void:
   rescued: '<light_purple>El vacio no te queria. Te devolvemos al bloque.</light_purple>'
 
 hud:
-  bossbar: '<phase> <dark_gray>|</dark_gray> <white><progress>%</white> <dark_gray>|</dark_gray> <gray>faltan <white><remaining></white></gray>'
-  actionbar: '<gray>Bloques: <white><blocks></white> <dark_gray>|</dark_gray> <aqua><phase></aqua> <dark_gray>|</dark_gray> <gray>siguiente en <white><remaining></white></gray>'
+  bossbar: '<white><bold><phase></bold></white> <dark_gray>❘</dark_gray> <yellow><progress>%</yellow> <dark_gray>❘</dark_gray> <gray>faltan</gray> <white><remaining></white> <gray>para</gray> <aqua><next></aqua>'
+  actionbar: '<dark_gray>▛</dark_gray> <gray>Bloques</gray> <white><blocks></white> <dark_gray>❘</dark_gray> <aqua><phase></aqua> <dark_gray>❘</dark_gray> <gray>siguiente en</gray> <white><remaining></white> <dark_gray>▜</dark_gray>'
 
+# <shift> anima el degradado, <bar> dibuja la barra unicode, <phase_color> es el color de la fase.
 hologram:
   island:
-    - '<gradient:#00ffcc:#0088ff><bold><owner></bold></gradient>'
-    - '<phase> <dark_gray>|</dark_gray> <white><blocks></white> <gray>bloques</gray>'
-    - '<dark_gray><bar></dark_gray> <yellow><progress>%</yellow>'
-    - '<gray>Siguiente: <white><next></white> <dark_gray>(<remaining>)</dark_gray></gray>'
+    - '<gradient:#00ffcc:#0088ff:<shift>><bold>◆ <owner> ◆</bold></gradient>'
+    - '<phase_color><bold><phase></bold></phase_color> <dark_gray>❘</dark_gray> <white><blocks></white> <gray>bloques</gray>'
+    - '<bar> <yellow><progress>%</yellow>'
+    - '<dark_gray>▸</dark_gray> <gray>Siguiente <white><next></white> <dark_gray>en <remaining></dark_gray>'
 
 leaderboard:
   header:
-    - '<gradient:#ffd700:#fff6a9><bold>TOP 10 JUGADORES ONEBLOCK</bold></gradient>'
-    - '<dark_gray>--------------------------------</dark_gray>'
-  line: '<medal> <color><position>.</color> <white><player></white> <dark_gray>-</dark_gray> <aqua><blocks></aqua> <gray>bloques</gray>'
+    - '<gradient:#ffd700:#fff6a9:<shift>><bold>✦ TOP 10 ONEBLOCK ✦</bold></gradient>'
+    - '<dark_gray>▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬</dark_gray>'
+  footer: '<dark_gray>▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬</dark_gray>'
+  line: '<medal> <color><bold><position></bold></color> <white><player></white> <dark_gray>❘</dark_gray> <aqua><blocks></aqua>'
   empty: '<gray>Todavia no hay nadie en el ranking.</gray>'
   empty-command: '<gray>El ranking todavia esta vacio.</gray>'
   placed: '<green>Holograma del Top 10 colocado aqui.</green>'
@@ -94,12 +98,12 @@ cosmetic:
 gui:
   back: '<red>Volver'
   main:
-    title: '<dark_gray>OneBlock <dark_gray>| <gradient:#ff0055:#ff5500>Menu</gradient>'
+    title: '<dark_gray>❘ <gradient:#ff0055:#ffd000><bold>ONEBLOCK</bold></gradient> <dark_gray>❘</dark_gray>'
   phases:
-    title: '<dark_gray>OneBlock <dark_gray>| <aqua>Fases</aqua>'
+    title: '<dark_gray>❘ <gradient:#00e0ff:#0066ff><bold>CAMINO DE FASES</bold></gradient> <dark_gray>❘</dark_gray>'
   cosmetics:
-    title: '<dark_gray>OneBlock <dark_gray>| <light_purple>Cosmeticos</light_purple>'
+    title: '<dark_gray>❘ <gradient:#ff00cc:#ff8800><bold>COSMETICOS</bold></gradient> <dark_gray>❘</dark_gray>'
   stats:
-    title: '<dark_gray>OneBlock <dark_gray>| <gold>Top 10</gold>'
+    title: '<dark_gray>❘ <gradient:#ffd700:#fff6a9><bold>PODIO ONEBLOCK</bold></gradient> <dark_gray>❘</dark_gray>'
   settings:
-    title: '<dark_gray>OneBlock <dark_gray>| <green>Ajustes</green>'
+    title: '<dark_gray>❘ <gradient:#9effa0:#2fbf71><bold>AJUSTES DE ISLA</bold></gradient> <dark_gray>❘</dark_gray>'

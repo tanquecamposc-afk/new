@@ -22,6 +22,8 @@ chances:
 hologram:
   # Altura del TextDisplay sobre el OneBlock.
   height: 1.9
+  # Icono 3D de la fase flotando y girando encima del holograma.
+  phase-icon: true
 
 hud:
   bossbar: true

@@ -20,6 +20,7 @@ public final class ParticleHaloTask extends BukkitRunnable {
     private final OneBlockPlugin plugin;
     private final double renderDistanceSquared;
     private double tick;
+    private int frame;
 
     public ParticleHaloTask(OneBlockPlugin plugin) {
         this.plugin = plugin;
@@ -33,14 +34,34 @@ public final class ParticleHaloTask extends BukkitRunnable {
         if (tick > Math.PI * 200.0D) {
             tick = 0.0D;
         }
+        frame++;
         for (Island island : plugin.getIslandManager().getIslands()) {
             if (!hasAudience(island)) {
                 continue;
             }
             plugin.getSkinManager().animatePedestals(island, tick);
+            // Text is a packet per nearby player, so the hologram animates at half the halo rate.
+            if (frame % 2 == 0) {
+                plugin.getHologramManager().animate(island, tick);
+            }
             BlockSkin halo = plugin.getSkinManager().get(island.getHalo());
             if (halo != null && halo.getType() == BlockSkin.Type.HALO) {
                 draw(island, halo);
+            }
+        }
+        animateLeaderboard();
+    }
+
+    /** The Top 10 podium only spins while somebody is actually looking at it. */
+    private void animateLeaderboard() {
+        Location board = plugin.getLeaderboardManager().getLocation();
+        if (board == null || board.getWorld() == null) {
+            return;
+        }
+        for (Player player : board.getWorld().getPlayers()) {
+            if (player.getLocation().distanceSquared(board) <= renderDistanceSquared) {
+                plugin.getLeaderboardManager().animate(tick);
+                return;
             }
         }
     }

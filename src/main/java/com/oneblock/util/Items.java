@@ -3,7 +3,10 @@ package com.oneblock.util;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.OfflinePlayer;
+import org.bukkit.enchantments.Enchantment;
+import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.SkullMeta;
@@ -42,6 +45,29 @@ public final class Items {
             item.setItemMeta(meta);
         }
         return item;
+    }
+
+    /**
+     * Adds the enchantment glint without showing an enchantment. Looked up by key instead of by
+     * enum constant, because that constant was renamed between 1.20.4 and later releases.
+     */
+    public static ItemStack glow(ItemStack item) {
+        ItemMeta meta = item.getItemMeta();
+        if (meta == null) {
+            return item;
+        }
+        Enchantment enchantment = Enchantment.getByKey(NamespacedKey.minecraft("unbreaking"));
+        if (enchantment != null) {
+            meta.addEnchant(enchantment, 1, true);
+            meta.addItemFlags(ItemFlag.HIDE_ENCHANTS, ItemFlag.HIDE_ATTRIBUTES);
+            item.setItemMeta(meta);
+        }
+        return item;
+    }
+
+    public static ItemStack build(Material material, String name, List<String> lore, boolean glow) {
+        ItemStack item = build(material, name, lore);
+        return glow ? glow(item) : item;
     }
 
     public static ItemStack head(OfflinePlayer owner, String name, List<String> lore) {

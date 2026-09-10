@@ -2,6 +2,7 @@ package com.oneblock.display;
 
 import com.oneblock.OneBlockPlugin;
 import com.oneblock.storage.Database;
+import com.oneblock.util.Bars;
 import com.oneblock.util.Text;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
@@ -37,7 +38,7 @@ public final class LeaderboardManager {
 
     private Location location;
     private UUID boardId;
-    private UUID headId;
+    private final UUID[] podiumIds = new UUID[3];
     private List<Database.LeaderboardEntry> cache = Collections.emptyList();
 
     public LeaderboardManager(OneBlockPlugin plugin) {
@@ -107,33 +108,101 @@ public final class LeaderboardManager {
         }
 
         TextDisplay board = board(world);
-        board.text(buildBoard());
+        board.text(buildBoard(0.0D));
 
-        Database.LeaderboardEntry leader = cache.isEmpty() ? null : cache.get(0);
-        ItemDisplay head = head(world);
-        if (leader == null) {
-            head.setItemStack(new ItemStack(org.bukkit.Material.PLAYER_HEAD));
-            return;
-        }
-        OfflinePlayer offline = Bukkit.getOfflinePlayer(leader.uuid());
-        head.setItemStack(com.oneblock.util.Items.head(offline, "<yellow>" + leader.name(), List.of()));
+        podium(world);
     }
 
-    private Component buildBoard() {
+    /**
+     * Three floating heads under the board: the leader in the middle and slightly higher, second
+     * and third to the sides. Empty places are left as a plain skull so the podium keeps its shape.
+     */
+    private void podium(World world) {
+        double base = plugin.getConfigManager().getConfig().getDouble("leaderboard.head-height", 1.4D);
+        double[][] offsets = {{0.0D, base + 0.55D}, {-0.9D, base + 0.1D}, {0.9D, base + 0.1D}};
+        float[] scales = {1.3F, 1.0F, 1.0F};
+        for (int i = 0; i < podiumIds.length; i++) {
+            Location at = location.clone().add(offsets[i][0], offsets[i][1], 0.0D);
+            ItemDisplay display = podiumHead(world, i, at, scales[i]);
+            if (i < cache.size()) {
+                Database.LeaderboardEntry entry = cache.get(i);
+                display.setItemStack(com.oneblock.util.Items.head(Bukkit.getOfflinePlayer(entry.uuid()),
+                        "<yellow>" + entry.name(), List.of()));
+            } else {
+                display.setItemStack(new ItemStack(org.bukkit.Material.SKELETON_SKULL));
+            }
+        }
+    }
+
+    private ItemDisplay podiumHead(World world, int index, Location at, float scale) {
+        UUID id = podiumIds[index];
+        Entity existing = id == null ? null : world.getEntity(id);
+        if (existing instanceof ItemDisplay display && !display.isDead()) {
+            return display;
+        }
+        ItemDisplay display = world.spawn(at, ItemDisplay.class, entity -> {
+            entity.setBillboard(Display.Billboard.FIXED);
+            entity.setBrightness(new Display.Brightness(15, 15));
+            entity.setPersistent(false);
+            entity.setViewRange(1.2F);
+            entity.setTransformation(new Transformation(
+                    new Vector3f(0.0F, 0.0F, 0.0F),
+                    new Quaternionf(),
+                    new Vector3f(scale, scale, scale),
+                    new Quaternionf()));
+        });
+        podiumIds[index] = display.getUniqueId();
+        return display;
+    }
+
+    /** Slow spin plus a gentle bob, so the podium reads as alive from a distance. */
+    public void animate(double tick) {
+        if (location == null || location.getWorld() == null) {
+            return;
+        }
+        World world = location.getWorld();
+        Entity boardEntity = boardId == null ? null : world.getEntity(boardId);
+        if (boardEntity instanceof TextDisplay display && !display.isDead()) {
+            display.text(buildBoard(tick));
+        }
+        double base = plugin.getConfigManager().getConfig().getDouble("leaderboard.head-height", 1.4D);
+        double[][] offsets = {{0.0D, base + 0.55D}, {-0.9D, base + 0.1D}, {0.9D, base + 0.1D}};
+        for (int i = 0; i < podiumIds.length; i++) {
+            UUID id = podiumIds[i];
+            Entity entity = id == null ? null : world.getEntity(id);
+            if (!(entity instanceof ItemDisplay display) || display.isDead()) {
+                continue;
+            }
+            Location at = location.clone().add(
+                    offsets[i][0],
+                    offsets[i][1] + Math.sin(tick + i) * 0.06D,
+                    0.0D);
+            at.setYaw((float) Math.toDegrees(tick * 0.6D));
+            display.teleport(at);
+        }
+    }
+
+    private Component buildBoard(double tick) {
         List<String> header = plugin.getConfigManager().getMessages().getStringList("leaderboard.header");
         String lineFormat = plugin.getConfigManager().getMessages().getString("leaderboard.line",
                 "<medal> <color><position>.</color> <white><player></white> <gray>-</gray> <aqua><blocks></aqua>");
         String empty = plugin.getConfigManager().getMessages().getString("leaderboard.empty",
                 "<gray>Todavia no hay nadie en el ranking.</gray>");
 
+        // The gradient phase is plugin data, so it is inlined before parsing.
+        String headerText = String.join("<newline>", header).replace("<shift>", Bars.shift(tick));
         Component board = header.isEmpty()
-                ? Text.of("<gradient:#ffd700:#fff6a9><bold>TOP 10 JUGADORES ONEBLOCK</bold></gradient>")
-                : Text.of(String.join("<newline>", header));
+                ? Text.of("<gradient:#ffd700:#fff6a9><bold>TOP 10 ONEBLOCK</bold></gradient>")
+                : Text.of(headerText);
         if (cache.isEmpty()) {
             return board.append(Component.newline()).append(Text.of(empty));
         }
         for (int i = 0; i < cache.size(); i++) {
             board = board.append(Component.newline()).append(line(lineFormat, i + 1, cache.get(i)));
+        }
+        String footer = plugin.getConfigManager().getMessages().getString("leaderboard.footer", "");
+        if (!footer.isEmpty()) {
+            board = board.append(Component.newline()).append(Text.of(footer.replace("<shift>", Bars.shift(tick))));
         }
         return board;
     }
@@ -188,35 +257,15 @@ public final class LeaderboardManager {
         return display;
     }
 
-    private ItemDisplay head(World world) {
-        Entity existing = headId == null ? null : world.getEntity(headId);
-        if (existing instanceof ItemDisplay display && !display.isDead()) {
-            return display;
-        }
-        double offset = plugin.getConfigManager().getConfig().getDouble("leaderboard.head-height", 1.4D);
-        ItemDisplay display = world.spawn(location.clone().add(0.0D, offset, 0.0D), ItemDisplay.class, entity -> {
-            entity.setBillboard(Display.Billboard.VERTICAL);
-            entity.setBrightness(new Display.Brightness(15, 15));
-            entity.setPersistent(false);
-            entity.setViewRange(1.2F);
-            entity.setTransformation(new Transformation(
-                    new Vector3f(0.0F, 0.0F, 0.0F),
-                    new Quaternionf(),
-                    new Vector3f(1.2F, 1.2F, 1.2F),
-                    new Quaternionf()));
-        });
-        headId = display.getUniqueId();
-        return display;
-    }
-
     public void despawn() {
         if (location == null || location.getWorld() == null) {
             boardId = null;
-            headId = null;
+            java.util.Arrays.fill(podiumIds, null);
             return;
         }
         World world = location.getWorld();
-        for (UUID id : new UUID[]{boardId, headId}) {
+        UUID[] all = {boardId, podiumIds[0], podiumIds[1], podiumIds[2]};
+        for (UUID id : all) {
             if (id == null) {
                 continue;
             }
@@ -226,6 +275,6 @@ public final class LeaderboardManager {
             }
         }
         boardId = null;
-        headId = null;
+        java.util.Arrays.fill(podiumIds, null);
     }
 }

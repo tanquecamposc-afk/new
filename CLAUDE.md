@@ -139,6 +139,24 @@ ahora mismo en la isla es un bloque bonus, para que un reinicio no se lo coma; s
 `ALTER TABLE` en bases de datos creadas por versiones anteriores. La interfaz `Database` está pensada para añadir un
 `MySQLStorage` sin tocar el resto del plugin: mismo contrato, mismas llamadas asíncronas.
 
+## Diseño visual
+
+Los menús comparten un esqueleto: marco de cristal con color por sección, cabecera con tu perfil
+(fase, bloques y barra de progreso unicode) en el slot 4, y una **barra de pestañas** abajo que
+permite saltar entre Fases, Cosméticos, Podio y Ajustes sin volver atrás. La pestaña activa brilla.
+
+- **Fases**: camino en serpentina (izquierda a derecha y de vuelta), fases superadas con su icono
+  real, la actual con brillo y barra de progreso, las bloqueadas en cristal gris.
+- **Cosméticos**: una fila por categoría con etiqueta a la izquierda y botón de quitar a la derecha;
+  lo equipado brilla; click derecho prueba el cosmético.
+- **Podio**: los tres primeros sobre bloques de oro, hierro y cobre; del 4 al 10 en la fila de abajo.
+- Cada click suena distinto (equipar, bloqueado, cambiar de pestaña, abrir).
+
+El holograma de la isla anima su degradado (`<shift>` en `messages.yml`), dibuja la barra con
+`<bar>` y lleva encima un `ItemDisplay` con el icono de la fase girando (`hologram.phase-icon`).
+El holograma del Top 10 tiene podio propio: tres cabezas 3D flotando, la del primero más alta y
+más grande, todas girando suavemente.
+
 ## Protección del OneBlock
 
 El bloque no se puede perder por vías que no pasan por `BlockBreakEvent`: `WorldListener` cancela
