@@ -1,0 +1,25 @@
+name: OneBlock
+version: '${project.version}'
+main: com.oneblock.OneBlockPlugin
+api-version: '1.20'
+authors: [OneBlock Team]
+description: OneBlock de nivel produccion con hologramas 3D, cosmeticos y Top 10 en vivo.
+softdepend: [PlaceholderAPI]
+folia-supported: false
+
+commands:
+  oneblock:
+    description: Comando principal de OneBlock.
+    aliases: [ob, oneb]
+    usage: /ob gui
+
+permissions:
+  oneblock.use:
+    description: Acceso a los comandos basicos de OneBlock.
+    default: true
+  oneblock.admin:
+    description: Comandos de administracion (/ob settop, /ob reload).
+    default: op
+  oneblock.skin.*:
+    description: Todos los cosmeticos desbloqueados.
+    default: op

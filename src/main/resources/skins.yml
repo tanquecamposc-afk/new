@@ -1,0 +1,176 @@
+# ---------------------------------------------------------------
+#  OneBlock - cosmeticos del bloque
+# ---------------------------------------------------------------
+#  type: PEDESTAL | HALO | SOUND
+#  Desbloqueo: por permiso (permission) O por fase (required-phase,
+#  indice empezando en 0 -> 0 = Llanuras, 6 = Nether, 9 = Cosmos).
+# ---------------------------------------------------------------
+
+skins:
+
+  # ------------------------- PEDESTALES -------------------------
+  cristal:
+    type: PEDESTAL
+    display-name: '<gradient:#7ee8fa:#eec0c6><bold>Pedestal de Cristal</bold></gradient>'
+    lore:
+      - '<gray>Cuatro cristales flotantes girando</gray>'
+      - '<gray>alrededor de tu OneBlock.</gray>'
+    icon: GLASS
+    pedestal-material: TINTED_GLASS
+    pedestal-scale: 0.35
+    pedestal-count: 4
+    required-phase: 0
+    permission: oneblock.skin.cristal
+
+  amatista:
+    type: PEDESTAL
+    display-name: '<gradient:#b06bff:#ff8ae2><bold>Pedestal de Amatista</bold></gradient>'
+    lore:
+      - '<gray>Seis geodas orbitando en espiral.</gray>'
+    icon: AMETHYST_CLUSTER
+    pedestal-material: AMETHYST_BLOCK
+    pedestal-scale: 0.4
+    pedestal-count: 6
+    required-phase: 3
+    permission: oneblock.skin.amatista
+
+  netherita:
+    type: PEDESTAL
+    display-name: '<gradient:#4d4d4d:#ff5722><bold>Pedestal de Netherita</bold></gradient>'
+    lore:
+      - '<gray>Ocho bloques oscuros al rojo vivo.</gray>'
+      - '<dark_gray>Solo para veteranos del Nether.</dark_gray>'
+    icon: NETHERITE_INGOT
+    pedestal-material: NETHERITE_BLOCK
+    pedestal-scale: 0.3
+    pedestal-count: 8
+    required-phase: 6
+    permission: oneblock.skin.netherita
+
+  # ---------------------------- AURAS ---------------------------
+  fuego_nether:
+    type: HALO
+    display-name: '<gradient:#ff5f00:#ffcc00><bold>Aura de Fuego Nether</bold></gradient>'
+    lore:
+      - '<gray>Llamas del inframundo girando</gray>'
+      - '<gray>en un anillo perpetuo.</gray>'
+    icon: BLAZE_POWDER
+    shape: RING
+    particles:
+      - SOUL_FIRE_FLAME
+      - FLAME
+    particle-count: 3
+    radius: 1.2
+    required-phase: 6
+    permission: oneblock.skin.fuego_nether
+
+  espiral_end:
+    type: HALO
+    display-name: '<gradient:#c9a9ff:#ffffff><bold>Espiral del End</bold></gradient>'
+    lore:
+      - '<gray>End rods ascendiendo en espiral.</gray>'
+    icon: END_ROD
+    shape: SPIRAL
+    particles:
+      - END_ROD
+    particle-count: 4
+    radius: 1.0
+    required-phase: 8
+    permission: oneblock.skin.espiral_end
+
+  corazones:
+    type: HALO
+    display-name: '<gradient:#ff5f9e:#ffb3d1><bold>Aura de Corazones</bold></gradient>'
+    lore:
+      - '<gray>Un corazon 3D girando sobre el bloque.</gray>'
+    icon: POPPY
+    shape: HEART
+    particles:
+      - HEART
+    particle-count: 2
+    radius: 1.1
+    required-phase: 0
+    permission: oneblock.skin.corazones
+
+  tormenta:
+    type: HALO
+    display-name: '<gradient:#7ee8fa:#ffffff><bold>Rayos Electricos</bold></gradient>'
+    lore:
+      - '<gray>Descargas ascendentes aleatorias.</gray>'
+    icon: LIGHTNING_ROD
+    shape: STORM
+    particles:
+      - ELECTRIC_SPARK
+      - END_ROD
+    particle-count: 3
+    radius: 1.3
+    required-phase: 4
+    permission: oneblock.skin.tormenta
+
+  vortice:
+    type: HALO
+    display-name: '<gradient:#a56bff:#00e5ff><bold>Vortice Cosmico</bold></gradient>'
+    lore:
+      - '<gray>Tres brazos de energia colapsando</gray>'
+      - '<gray>hacia el centro del bloque.</gray>'
+    icon: NETHER_STAR
+    shape: VORTEX
+    particles:
+      - DUST
+    color:
+      red: 165
+      green: 107
+      blue: 255
+    particle-count: 5
+    radius: 1.4
+    required-phase: 9
+    permission: oneblock.skin.vortice
+
+  # --------------------------- SONIDOS --------------------------
+  piano:
+    type: SOUND
+    display-name: '<gradient:#ffffff:#cccccc><bold>Sonido: Piano</bold></gradient>'
+    lore:
+      - '<gray>Una nota limpia por cada bloque.</gray>'
+    icon: NOTE_BLOCK
+    sound: block.note_block.chime
+    pitch: 1.4
+    volume: 0.9
+    required-phase: 0
+    permission: oneblock.skin.piano
+
+  guitarra:
+    type: SOUND
+    display-name: '<gradient:#e0a96d:#8b5a2b><bold>Sonido: Guitarra</bold></gradient>'
+    lore:
+      - '<gray>Cuerda pulsada con cuerpo.</gray>'
+    icon: JUKEBOX
+    sound: block.note_block.guitar
+    pitch: 1.0
+    volume: 1.0
+    required-phase: 2
+    permission: oneblock.skin.guitarra
+
+  explosion_suave:
+    type: SOUND
+    display-name: '<gradient:#ff8a00:#ff2d55><bold>Sonido: Explosion Suave</bold></gradient>'
+    lore:
+      - '<gray>Un golpe grave y corto.</gray>'
+    icon: TNT
+    sound: entity.generic.explode
+    pitch: 1.8
+    volume: 0.4
+    required-phase: 5
+    permission: oneblock.skin.explosion_suave
+
+  celeste:
+    type: SOUND
+    display-name: '<gradient:#a56bff:#00e5ff><bold>Sonido: Celeste</bold></gradient>'
+    lore:
+      - '<gray>Campanas de amatista del cosmos.</gray>'
+    icon: AMETHYST_SHARD
+    sound: block.amethyst_block.chime
+    pitch: 1.2
+    volume: 1.0
+    required-phase: 9
+    permission: oneblock.skin.celeste

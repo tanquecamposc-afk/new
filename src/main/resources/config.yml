@@ -1,0 +1,57 @@
+# ---------------------------------------------------------------
+#  OneBlock - configuracion principal
+# ---------------------------------------------------------------
+
+world:
+  # Mundo vacio donde viven las islas. Se crea automaticamente si no existe.
+  name: oneblock
+  # Distancia en bloques entre el centro de dos islas.
+  island-spacing: 512
+  # Altura del OneBlock.
+  island-y: 100
+  always-day: true
+
+# Probabilidades de regeneracion del bloque (en %).
+# El resto hasta 100 es siempre un bloque normal de la fase.
+chances:
+  special: 2.0     # bloque brillante con botin extra
+  chest: 12.0      # cofre con el botin de la fase
+  mob: 15.0        # mob de la fase encima del bloque
+  special-block: SEA_LANTERN
+
+hologram:
+  # Altura del TextDisplay sobre el OneBlock.
+  height: 1.9
+
+hud:
+  bossbar: true
+  actionbar: true
+
+border:
+  enabled: true
+  default-size: 64.0
+  animation-seconds: 3
+
+cosmetics:
+  # Cada cuantos ticks se dibujan las auras (1 = cada tick, mas caro).
+  halo-period-ticks: 3
+  # Radio en bloques dentro del cual se renderizan auras y pedestales.
+  render-distance: 32.0
+
+leaderboard:
+  # Cuantos jugadores muestra el holograma del Top.
+  size: 10
+  # Cada cuantos segundos se recalcula (consulta asincrona).
+  refresh-seconds: 60
+  # Altura de la cabeza 3D del numero 1 sobre el texto.
+  head-height: 1.4
+
+void:
+  rescue-y: -60.0
+  sound: entity.enderman.teleport
+
+storage:
+  file: oneblock.db
+  pool-size: 4
+  # Cada cuantos bloques picados se fuerza un guardado.
+  save-every-blocks: 20

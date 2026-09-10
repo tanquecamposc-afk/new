@@ -1,0 +1,297 @@
+# ---------------------------------------------------------------
+#  OneBlock - las 10 fases
+# ---------------------------------------------------------------
+#  blocks / mobs usan el formato  NOMBRE:peso  (peso = probabilidad relativa)
+#  chest-loot / special-loot usan  NOMBRE:cantidad
+#  required-blocks es el total acumulado de bloques picados.
+# ---------------------------------------------------------------
+
+phases:
+
+  plains:
+    display-name: 'Llanuras'
+    color: '<green>'
+    required-blocks: 0
+    icon: GRASS_BLOCK
+    bossbar-color: GREEN
+    border-size: 48.0
+    blocks:
+      - DIRT:40
+      - GRASS_BLOCK:25
+      - OAK_LOG:12
+      - COARSE_DIRT:8
+      - SAND:6
+      - OAK_LEAVES:5
+      - COAL_ORE:4
+    mobs:
+      - CHICKEN:4
+      - SHEEP:4
+      - COW:3
+      - PIG:3
+    chest-loot:
+      - OAK_SAPLING:2
+      - WHEAT_SEEDS:3
+      - APPLE:2
+      - BREAD:2
+    special-loot:
+      - IRON_INGOT:3
+      - EXPERIENCE_BOTTLE:4
+
+  underground:
+    display-name: 'Subterraneo'
+    color: '<gray>'
+    required-blocks: 500
+    icon: STONE
+    bossbar-color: WHITE
+    border-size: 56.0
+    blocks:
+      - STONE:40
+      - COBBLESTONE:20
+      - ANDESITE:10
+      - COAL_ORE:10
+      - IRON_ORE:8
+      - COPPER_ORE:7
+      - GRAVEL:5
+    mobs:
+      - ZOMBIE:4
+      - SKELETON:3
+      - SPIDER:3
+      - BAT:2
+    chest-loot:
+      - TORCH:8
+      - IRON_INGOT:2
+      - COAL:6
+    special-loot:
+      - DIAMOND:1
+      - IRON_BLOCK:1
+
+  jungle:
+    display-name: 'Jungla'
+    color: '<dark_green>'
+    required-blocks: 1500
+    icon: JUNGLE_LOG
+    bossbar-color: GREEN
+    border-size: 64.0
+    blocks:
+      - JUNGLE_LOG:25
+      - JUNGLE_LEAVES:20
+      - MOSS_BLOCK:15
+      - PODZOL:12
+      - COCOA:8
+      - MELON:8
+      - BAMBOO:7
+      - EMERALD_ORE:3
+    mobs:
+      - PARROT:4
+      - OCELOT:3
+      - PANDA:2
+      - CREEPER:3
+    chest-loot:
+      - BAMBOO:8
+      - MELON_SLICE:5
+      - EMERALD:1
+    special-loot:
+      - EMERALD:5
+      - GOLDEN_APPLE:1
+
+  ocean:
+    display-name: 'Oceano'
+    color: '<aqua>'
+    required-blocks: 3000
+    icon: PRISMARINE
+    bossbar-color: BLUE
+    border-size: 72.0
+    blocks:
+      - SAND:25
+      - PRISMARINE:18
+      - SEA_LANTERN:6
+      - KELP_PLANT:15
+      - TUBE_CORAL_BLOCK:10
+      - CLAY:14
+      - GRAVEL:12
+    mobs:
+      - COD:4
+      - SALMON:3
+      - SQUID:3
+      - DROWNED:3
+      - PUFFERFISH:1
+    chest-loot:
+      - PRISMARINE_SHARD:4
+      - NAUTILUS_SHELL:1
+      - COOKED_COD:4
+    special-loot:
+      - HEART_OF_THE_SEA:1
+      - SEA_LANTERN:6
+
+  desert:
+    display-name: 'Desierto'
+    color: '<yellow>'
+    required-blocks: 5000
+    icon: SANDSTONE
+    bossbar-color: YELLOW
+    border-size: 80.0
+    blocks:
+      - SAND:30
+      - SANDSTONE:22
+      - TERRACOTTA:14
+      - RED_SAND:12
+      - CACTUS:10
+      - DEAD_BUSH:6
+      - GOLD_ORE:6
+    mobs:
+      - HUSK:5
+      - RABBIT:3
+      - CAMEL:1
+      - SKELETON:3
+    chest-loot:
+      - GOLD_INGOT:2
+      - CACTUS:4
+      - BONE:4
+    special-loot:
+      - GOLD_BLOCK:1
+      - ENCHANTED_GOLDEN_APPLE:1
+
+  ice:
+    display-name: 'Glaciar'
+    color: '<blue>'
+    required-blocks: 7500
+    icon: PACKED_ICE
+    bossbar-color: BLUE
+    border-size: 88.0
+    blocks:
+      - SNOW_BLOCK:28
+      - ICE:22
+      - PACKED_ICE:16
+      - BLUE_ICE:8
+      - STONE:14
+      - LAPIS_ORE:7
+      - POWDER_SNOW:5
+    mobs:
+      - POLAR_BEAR:2
+      - STRAY:4
+      - SNOW_GOLEM:2
+      - WOLF:3
+    chest-loot:
+      - LAPIS_LAZULI:6
+      - SNOWBALL:8
+      - LEATHER_BOOTS:1
+    special-loot:
+      - BLUE_ICE:8
+      - DIAMOND:2
+
+  nether:
+    display-name: 'Nether'
+    color: '<red>'
+    required-blocks: 10500
+    icon: NETHERRACK
+    bossbar-color: RED
+    border-size: 96.0
+    blocks:
+      - NETHERRACK:30
+      - NETHER_BRICKS:16
+      - SOUL_SAND:14
+      - BASALT:12
+      - BLACKSTONE:10
+      - CRIMSON_STEM:8
+      - NETHER_QUARTZ_ORE:7
+      - NETHER_GOLD_ORE:3
+    mobs:
+      - ZOMBIFIED_PIGLIN:4
+      - BLAZE:3
+      - MAGMA_CUBE:3
+      - HOGLIN:2
+      - PIGLIN:3
+    chest-loot:
+      - QUARTZ:6
+      - BLAZE_ROD:2
+      - GOLD_INGOT:4
+    special-loot:
+      - ANCIENT_DEBRIS:2
+      - NETHERITE_SCRAP:1
+
+  citadel:
+    display-name: 'Ciudadela'
+    color: '<gold>'
+    required-blocks: 14000
+    icon: DEEPSLATE_BRICKS
+    bossbar-color: YELLOW
+    border-size: 104.0
+    blocks:
+      - DEEPSLATE:26
+      - DEEPSLATE_BRICKS:18
+      - POLISHED_DEEPSLATE:14
+      - DEEPSLATE_IRON_ORE:12
+      - DEEPSLATE_GOLD_ORE:10
+      - DEEPSLATE_DIAMOND_ORE:6
+      - AMETHYST_BLOCK:8
+      - SCULK:6
+    mobs:
+      - PILLAGER:4
+      - VINDICATOR:3
+      - WITCH:2
+      - RAVAGER:1
+    chest-loot:
+      - DIAMOND:2
+      - AMETHYST_SHARD:4
+      - EMERALD:3
+    special-loot:
+      - DIAMOND_BLOCK:1
+      - TOTEM_OF_UNDYING:1
+
+  end:
+    display-name: 'El End'
+    color: '<light_purple>'
+    required-blocks: 18000
+    icon: END_STONE
+    bossbar-color: PURPLE
+    border-size: 112.0
+    blocks:
+      - END_STONE:34
+      - PURPUR_BLOCK:18
+      - END_STONE_BRICKS:16
+      - OBSIDIAN:12
+      - CHORUS_PLANT:10
+      - CRYING_OBSIDIAN:6
+      - AMETHYST_CLUSTER:4
+    mobs:
+      - ENDERMAN:5
+      - SHULKER:2
+      - PHANTOM:3
+      - ENDERMITE:2
+    chest-loot:
+      - ENDER_PEARL:3
+      - CHORUS_FRUIT:6
+      - OBSIDIAN:6
+    special-loot:
+      - ELYTRA:1
+      - SHULKER_SHELL:2
+
+  cosmos:
+    display-name: 'Cosmos'
+    color: '<gradient:#a56bff:#00e5ff>'
+    required-blocks: 25000
+    icon: BEACON
+    bossbar-color: PINK
+    border-size: 128.0
+    blocks:
+      - AMETHYST_BLOCK:24
+      - CALCITE:18
+      - TINTED_GLASS:14
+      - GLOWSTONE:12
+      - SEA_LANTERN:10
+      - BUDDING_AMETHYST:8
+      - OBSIDIAN:8
+      - DIAMOND_ORE:6
+    mobs:
+      - ALLAY:3
+      - VEX:3
+      - GHAST:1
+      - WARDEN:1
+    chest-loot:
+      - AMETHYST_SHARD:8
+      - DIAMOND:3
+      - NETHERITE_SCRAP:1
+    special-loot:
+      - NETHERITE_INGOT:1
+      - BEACON:1
+      - DRAGON_EGG:1

@@ -1,0 +1,87 @@
+# ---------------------------------------------------------------
+#  OneBlock - textos (MiniMessage)
+#  Usa <no-prefix> al inicio de una linea para omitir el prefijo.
+# ---------------------------------------------------------------
+
+prefix: '<gradient:#ff0055:#ff5500><bold>OneBlock</bold></gradient> <dark_gray>»</dark_gray> '
+
+command:
+  players-only: '<red>Este comando solo funciona en el juego.</red>'
+  no-permission: '<red>No tienes permiso para hacer eso.</red>'
+  player-offline: '<red>Ese jugador no esta conectado.</red>'
+  reloaded: '<green>Configuracion recargada.</green>'
+  usage-invite: '<gray>Uso: <white>/ob invite <jugador>'
+  usage-kick: '<gray>Uso: <white>/ob kick <jugador>'
+  usage-transfer: '<gray>Uso: <white>/ob transfer <jugador>'
+  help:
+    - '<no-prefix><gradient:#ff0055:#ff5500><bold>              ONEBLOCK              </bold></gradient>'
+    - '<no-prefix><yellow>/ob gui <dark_gray>-</dark_gray> <gray>Abre el menu principal.'
+    - '<no-prefix><yellow>/ob create <dark_gray>-</dark_gray> <gray>Crea tu isla.'
+    - '<no-prefix><yellow>/ob home <dark_gray>-</dark_gray> <gray>Te lleva a tu isla.'
+    - '<no-prefix><yellow>/ob top <dark_gray>-</dark_gray> <gray>Muestra el Top 10.'
+    - '<no-prefix><yellow>/ob invite|kick|transfer <dark_gray>-</dark_gray> <gray>Gestiona miembros.'
+    - '<no-prefix><red>/ob settop <dark_gray>-</dark_gray> <gray>Coloca el holograma del Top.'
+    - '<no-prefix><red>/ob reload <dark_gray>-</dark_gray> <gray>Recarga la configuracion.'
+
+island:
+  created: '<green>Tu isla esta lista. A picar!</green>'
+  create-failed: '<red>No se pudo crear la isla. Avisa a un administrador.</red>'
+  already-exists: '<red>Ya tienes una isla.</red>'
+  none: '<red>Todavia no tienes isla. Usa <white>/ob create</white>.</red>'
+  not-owner: '<red>Solo el dueño de la isla puede hacer eso.</red>'
+  not-trusted: '<red>No tienes permiso para tocar esta isla.</red>'
+  teleported: '<green>Te llevamos a tu isla.</green>'
+  member-added: '<green><player> ahora es miembro de tu isla.</green>'
+  member-joined: '<green><player> te ha invitado a su isla.</green>'
+  member-removed: '<yellow><player> ya no es miembro de tu isla.</yellow>'
+  transferred: '<gold>Le has entregado la isla a <player>.</gold>'
+  received: '<gold><player> te ha entregado su isla.</gold>'
+
+block:
+  special: '<gradient:#ffd700:#fff6a9>Bloque especial! Botin extra para ti.</gradient>'
+  protected: '<red>El OneBlock no se puede reemplazar.</red>'
+
+phase:
+  changed: '<aqua>Nueva fase desbloqueada: <white><phase></white></aqua>'
+  title: '<gradient:#00e0ff:#0066ff><bold><phase></bold></gradient>'
+  subtitle: '<gray>Nueva fase desbloqueada</gray>'
+
+void:
+  rescued: '<light_purple>El vacio no te queria. Te devolvemos al bloque.</light_purple>'
+
+hud:
+  bossbar: '<phase> <dark_gray>|</dark_gray> <white><progress>%</white> <dark_gray>|</dark_gray> <gray>faltan <white><remaining></white></gray>'
+  actionbar: '<gray>Bloques: <white><blocks></white> <dark_gray>|</dark_gray> <aqua><phase></aqua> <dark_gray>|</dark_gray> <gray>siguiente en <white><remaining></white></gray>'
+
+hologram:
+  island:
+    - '<gradient:#00ffcc:#0088ff><bold><owner></bold></gradient>'
+    - '<phase> <dark_gray>|</dark_gray> <white><blocks></white> <gray>bloques</gray>'
+    - '<dark_gray><bar></dark_gray> <yellow><progress>%</yellow>'
+    - '<gray>Siguiente: <white><next></white> <dark_gray>(<remaining>)</dark_gray></gray>'
+
+leaderboard:
+  header:
+    - '<gradient:#ffd700:#fff6a9><bold>TOP 10 JUGADORES ONEBLOCK</bold></gradient>'
+    - '<dark_gray>--------------------------------</dark_gray>'
+  line: '<medal> <color><position>.</color> <white><player></white> <dark_gray>-</dark_gray> <aqua><blocks></aqua> <gray>bloques</gray>'
+  empty: '<gray>Todavia no hay nadie en el ranking.</gray>'
+  empty-command: '<gray>El ranking todavia esta vacio.</gray>'
+  placed: '<green>Holograma del Top 10 colocado aqui.</green>'
+
+cosmetic:
+  equipped: '<green>Has equipado <white><cosmetic></white>.</green>'
+  locked: '<red>Todavia no has desbloqueado ese cosmetico.</red>'
+
+gui:
+  back: '<red>Volver'
+  main:
+    title: '<dark_gray>OneBlock <dark_gray>| <gradient:#ff0055:#ff5500>Menu</gradient>'
+  phases:
+    title: '<dark_gray>OneBlock <dark_gray>| <aqua>Fases</aqua>'
+  cosmetics:
+    title: '<dark_gray>OneBlock <dark_gray>| <light_purple>Cosmeticos</light_purple>'
+  stats:
+    title: '<dark_gray>OneBlock <dark_gray>| <gold>Top 10</gold>'
+  settings:
+    title: '<dark_gray>OneBlock <dark_gray>| <green>Ajustes</green>'
