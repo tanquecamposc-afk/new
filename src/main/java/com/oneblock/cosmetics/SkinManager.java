@@ -204,6 +204,15 @@ public final class SkinManager {
         plugin.getStorage().saveIsland(island);
     }
 
+    /**
+     * Forces a rebuild even when the cosmetic did not change. Needed after a chunk reload, because
+     * display entities are not persistent and die with their chunk.
+     */
+    public void reapply(Island island) {
+        despawnPedestals(island);
+        apply(island);
+    }
+
     /** Rebuilds the pedestal entities of an island to match its equipped cosmetic. */
     public void apply(Island island) {
         String wanted = island.getPedestalSkin() == null ? "none" : island.getPedestalSkin();

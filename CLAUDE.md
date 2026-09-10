@@ -9,6 +9,9 @@ SQLite + HikariCP, PlaceholderAPI opcional).
 mvn clean package
 ```
 
+También corre en CI: `.github/workflows/build.yml` compila cada push y sube el jar como artefacto
+de la ejecución, así que el build queda verificado aunque no se compile en local.
+
 El jar sale en `target/OneBlock-1.0.0.jar` con HikariCP y el driver SQLite ya incluidos
 (shade + relocation de `com.zaxxer.hikari` a `com.oneblock.libs.hikari`).
 
@@ -27,7 +30,7 @@ com.oneblock
 ├── gui/                     GUIManager, GUIHolder, GUIAction, GUIListener
 ├── hook/                    PlaceholderHook
 ├── island/                  Island, IslandManager
-├── listener/                BlockListener, PlayerListener, VoidListener
+├── listener/                BlockListener, PlayerListener, VoidListener, WorldListener
 ├── phase/                   Phase, PhaseManager
 ├── storage/                 Database (interfaz), SQLiteStorage
 └── util/                    Text (MiniMessage), Particles, Items
@@ -54,6 +57,7 @@ inyectar etiquetas en el holograma del Top ni en el chat.
 | `/ob kick <jugador>` | `oneblock.use` | Quita miembro |
 | `/ob transfer <jugador>` | `oneblock.use` | Transfiere la propiedad |
 | `/ob setphase <jugador> <índice>` | `oneblock.admin` | Mueve una isla a una fase |
+| `/ob reset <jugador>` | `oneblock.admin` | Borra el progreso de una isla (pide confirmación) |
 | `/ob settop` | `oneblock.admin` | Coloca el holograma del Top 10 aquí |
 | `/ob reload` | `oneblock.admin` | Recarga config, fases y cosméticos |
 
@@ -133,10 +137,22 @@ SQLite en `plugins/OneBlock/oneblock.db` a través de HikariCP (`ob_islands`, `o
 índice `ob_islands_blocks` para el Top 10). La interfaz `Database` está pensada para añadir un
 `MySQLStorage` sin tocar el resto del plugin: mismo contrato, mismas llamadas asíncronas.
 
+## Protección del OneBlock
+
+El bloque no se puede perder por vías que no pasan por `BlockBreakEvent`: `WorldListener` cancela
+pistones que lo empujen o tiren, flujo de agua y lava, `EntityChangeBlockEvent` (endermans, arena
+que cae, ovejas) y cubos vaciados encima. Colocar bloques y vaciar cubos en una isla ajena queda
+bloqueado para quien no sea miembro.
+
+Las `Display` entities no son persistentes, así que mueren con su chunk. `WorldListener` escucha
+`ChunkLoadEvent` y vuelve a levantar el holograma y los pedestales de la isla que haya en ese chunk.
+
 ## Tareas periódicas
 
 - `ParticleHaloTask`: cada `cosmetics.halo-period-ticks` (3 por defecto), solo para islas con un
   jugador dentro de `cosmetics.render-distance`.
+- HUD: cada segundo sincroniza la BossBar de los jugadores del mundo OneBlock, para que aparezca
+  y desaparezca también cuando se entra a una isla caminando.
 - Leaderboard: cada `leaderboard.refresh-seconds` (60). Antes de consultar vuelca las islas con
   cambios pendientes, para que el ranking no se quede atrás del autoguardado cada N bloques;
   la consulta es asíncrona y el repintado síncrono.

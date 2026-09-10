@@ -14,13 +14,19 @@ import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 /** {@code /oneblock} and all of its sub commands. */
 public final class OneBlockCommand implements CommandExecutor, TabCompleter {
 
+    private static final long CONFIRM_WINDOW_MILLIS = 30_000L;
+
     private final OneBlockPlugin plugin;
+    private final Map<String, Long> pendingResets = new HashMap<>();
+    private final Map<String, String> pendingTargets = new HashMap<>();
 
     public OneBlockCommand(OneBlockPlugin plugin) {
         this.plugin = plugin;
@@ -44,6 +50,7 @@ public final class OneBlockCommand implements CommandExecutor, TabCompleter {
             case "transfer" -> requirePlayer(sender, player -> transfer(player, args));
             case "info" -> info(sender, args);
             case "setphase" -> setphase(sender, args);
+            case "reset" -> reset(sender, args);
             case "settop" -> settop(sender);
             case "reload" -> reload(sender);
             default -> help(sender);
@@ -239,6 +246,42 @@ public final class OneBlockCommand implements CommandExecutor, TabCompleter {
                 "phase", Text.plain(phase.getDisplayName())));
     }
 
+    /**
+     * Wipes the progress of an island back to zero. Destructive, so it needs a second confirming
+     * call within {@code CONFIRM_WINDOW_MILLIS}.
+     */
+    private void reset(CommandSender sender, String[] args) {
+        if (!sender.hasPermission("oneblock.admin")) {
+            plugin.getMessages().send(sender, "command.no-permission");
+            return;
+        }
+        if (args.length < 2) {
+            plugin.getMessages().send(sender, "command.usage-reset");
+            return;
+        }
+        Island island = plugin.getIslandManager()
+                .getIslandOf(Bukkit.getOfflinePlayer(args[1]).getUniqueId());
+        if (island == null) {
+            plugin.getMessages().send(sender, "island.none");
+            return;
+        }
+        String target = island.getOwner().toString();
+        Long pending = pendingResets.get(sender.getName());
+        if (pending == null || !target.equals(pendingTargets.get(sender.getName()))
+                || System.currentTimeMillis() - pending > CONFIRM_WINDOW_MILLIS) {
+            pendingResets.put(sender.getName(), System.currentTimeMillis());
+            pendingTargets.put(sender.getName(), target);
+            plugin.getMessages().send(sender, "command.confirm-reset", Messages.of(
+                    "player", island.getOwnerName() == null ? args[1] : island.getOwnerName()));
+            return;
+        }
+        pendingResets.remove(sender.getName());
+        pendingTargets.remove(sender.getName());
+        plugin.getIslandManager().reset(island);
+        plugin.getMessages().send(sender, "command.reset-done", Messages.of(
+                "player", island.getOwnerName() == null ? args[1] : island.getOwnerName()));
+    }
+
     private void settop(CommandSender sender) {
         if (!sender.hasPermission("oneblock.admin")) {
             plugin.getMessages().send(sender, "command.no-permission");
@@ -271,14 +314,14 @@ public final class OneBlockCommand implements CommandExecutor, TabCompleter {
         List<String> out = new ArrayList<>();
         if (args.length == 1) {
             for (String option : List.of("gui", "menu", "create", "home", "top", "info",
-                    "invite", "kick", "transfer", "setphase", "settop", "reload")) {
+                    "invite", "kick", "transfer", "setphase", "settop", "reset", "reload")) {
                 if (option.startsWith(args[0].toLowerCase(Locale.ROOT))) {
                     out.add(option);
                 }
             }
             return out;
         }
-        if (args.length == 2 && List.of("invite", "kick", "transfer", "info", "setphase")
+        if (args.length == 2 && List.of("invite", "kick", "transfer", "info", "setphase", "reset")
                 .contains(args[0].toLowerCase(Locale.ROOT))) {
             for (Player online : Bukkit.getOnlinePlayers()) {
                 if (online.getName().toLowerCase(Locale.ROOT).startsWith(args[1].toLowerCase(Locale.ROOT))) {

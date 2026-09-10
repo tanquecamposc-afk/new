@@ -17,6 +17,7 @@ import com.oneblock.island.IslandManager;
 import com.oneblock.listener.BlockListener;
 import com.oneblock.listener.PlayerListener;
 import com.oneblock.listener.VoidListener;
+import com.oneblock.listener.WorldListener;
 import com.oneblock.phase.PhaseManager;
 import com.oneblock.storage.Database;
 import com.oneblock.storage.SQLiteStorage;
@@ -49,6 +50,7 @@ public final class OneBlockPlugin extends JavaPlugin {
     private final Set<String> specialBlocks = ConcurrentHashMap.newKeySet();
     private BukkitTask haloTask;
     private BukkitTask leaderboardTask;
+    private BukkitTask hudTask;
     private boolean placeholderHooked;
 
     @Override
@@ -102,6 +104,9 @@ public final class OneBlockPlugin extends JavaPlugin {
         if (leaderboardTask != null) {
             leaderboardTask.cancel();
         }
+        if (hudTask != null) {
+            hudTask.cancel();
+        }
         if (hudManager != null) {
             hudManager.hideAll();
         }
@@ -142,6 +147,7 @@ public final class OneBlockPlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new BlockListener(this), this);
         getServer().getPluginManager().registerEvents(new PlayerListener(this), this);
         getServer().getPluginManager().registerEvents(new VoidListener(this), this);
+        getServer().getPluginManager().registerEvents(new WorldListener(this), this);
         getServer().getPluginManager().registerEvents(new GUIListener(), this);
     }
 
@@ -163,6 +169,23 @@ public final class OneBlockPlugin extends JavaPlugin {
         long leaderboardPeriod = Math.max(20L, getConfig().getLong("leaderboard.refresh-seconds", 60L) * 20L);
         leaderboardTask = getServer().getScheduler().runTaskTimer(this,
                 () -> leaderboardManager.refresh(), leaderboardPeriod, leaderboardPeriod);
+
+        // The boss bar has to follow players that simply walk in or out of an island.
+        hudTask = getServer().getScheduler().runTaskTimer(this, this::syncHud, 20L, 20L);
+    }
+
+    private void syncHud() {
+        if (islandManager.getWorld() == null) {
+            return;
+        }
+        for (var player : islandManager.getWorld().getPlayers()) {
+            Island island = islandManager.getIslandAt(player.getLocation());
+            if (island == null) {
+                hudManager.hide(player);
+            } else {
+                hudManager.show(player, island);
+            }
+        }
     }
 
     private void hookPlaceholderApi() {

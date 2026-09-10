@@ -23,6 +23,8 @@ public final class IslandManager {
     private final Map<UUID, UUID> membership = new ConcurrentHashMap<>();
     /** Grid cell -> island, so looking up "which island is here" never scans the whole map. */
     private final Map<Long, Island> byGrid = new ConcurrentHashMap<>();
+    /** Chunk key -> island, so a chunk load can restore the visuals of the island inside it. */
+    private final Map<Long, Island> byChunk = new ConcurrentHashMap<>();
 
     private World world;
 
@@ -61,6 +63,7 @@ public final class IslandManager {
     public void cache(Island island) {
         islands.put(island.getOwner(), island);
         byGrid.put(gridKey(island.getCenter()), island);
+        byChunk.put(chunkKey(island.getCenter().getBlockX() >> 4, island.getCenter().getBlockZ() >> 4), island);
         for (UUID member : island.getMembers()) {
             membership.put(member, island.getOwner());
         }
@@ -72,6 +75,15 @@ public final class IslandManager {
         long gridX = Math.floorDiv(location.getBlockX() + spacing / 2, spacing);
         long gridZ = Math.floorDiv(location.getBlockZ() + spacing / 2, spacing);
         return (gridX << 32) ^ (gridZ & 0xffffffffL);
+    }
+
+    private long chunkKey(int chunkX, int chunkZ) {
+        return ((long) chunkX << 32) ^ (chunkZ & 0xffffffffL);
+    }
+
+    /** @return the island whose OneBlock sits in that chunk, or {@code null}. */
+    public Island getIslandInChunk(int chunkX, int chunkZ) {
+        return byChunk.get(chunkKey(chunkX, chunkZ));
     }
 
     public Collection<Island> getIslands() {
@@ -216,6 +228,7 @@ public final class IslandManager {
     public Island transfer(Island island, UUID newOwner, String newOwnerName) {
         islands.remove(island.getOwner());
         byGrid.remove(gridKey(island.getCenter()));
+        byChunk.remove(chunkKey(island.getCenter().getBlockX() >> 4, island.getCenter().getBlockZ() >> 4));
         Island transferred = new Island(newOwner, newOwnerName, island.getCenter());
         transferred.setBlocksBroken(island.getBlocksBroken());
         transferred.setPhaseIndex(island.getPhaseIndex());
@@ -232,6 +245,20 @@ public final class IslandManager {
         plugin.getHologramManager().refresh(transferred);
         plugin.getSkinManager().apply(transferred);
         return transferred;
+    }
+
+    /** Wipes an island back to phase 0 and puts a fresh block in place. */
+    public void reset(Island island) {
+        island.setBlocksBroken(0);
+        island.setPhaseIndex(0);
+        Location center = island.getCenter();
+        if (center.getWorld() != null) {
+            center.getBlock().setType(Material.GRASS_BLOCK);
+        }
+        plugin.getStorage().saveIsland(island);
+        plugin.getHologramManager().refresh(island);
+        plugin.getSkinManager().reapply(island);
+        applyBorder(island);
     }
 
     public void saveAll() {
