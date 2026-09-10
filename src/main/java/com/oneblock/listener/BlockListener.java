@@ -65,9 +65,8 @@ public final class BlockListener implements Listener {
             return;
         }
 
-        boolean special = plugin.isSpecialBlock(block.getLocation());
-        if (special) {
-            plugin.clearSpecialBlock(block.getLocation());
+        if (island.isSpecialBlock()) {
+            island.setSpecialBlock(false);
             giveLoot(player, phase == null ? List.of()
                     : plugin.getPhaseManager().rollLoot(phase.getSpecialLoot()));
             plugin.getParticleEngine().specialBlock(block.getLocation());
@@ -145,7 +144,7 @@ public final class BlockListener implements Listener {
             Material specialMaterial = com.oneblock.util.Items.material(
                     plugin.getConfigManager().getConfig().getString("chances.special-block"), Material.SEA_LANTERN);
             block.setType(specialMaterial);
-            plugin.markSpecialBlock(center);
+            island.setSpecialBlock(true);
             plugin.getParticleEngine().specialBlock(center);
             return;
         }

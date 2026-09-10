@@ -36,8 +36,13 @@ public final class SQLiteStorage implements Database {
                 pedestal     TEXT NOT NULL DEFAULT 'none',
                 halo         TEXT NOT NULL DEFAULT 'none',
                 break_sound  TEXT NOT NULL DEFAULT 'default',
-                hologram     INTEGER NOT NULL DEFAULT 1
+                hologram     INTEGER NOT NULL DEFAULT 1,
+                special      INTEGER NOT NULL DEFAULT 0
             )""";
+
+    /** Added after 1.0.0; ignored when the column is already there. */
+    private static final String MIGRATE_SPECIAL =
+            "ALTER TABLE ob_islands ADD COLUMN special INTEGER NOT NULL DEFAULT 0";
 
     private static final String CREATE_MEMBERS = """
             CREATE TABLE IF NOT EXISTS ob_members (
@@ -51,8 +56,8 @@ public final class SQLiteStorage implements Database {
 
     private static final String UPSERT = """
             INSERT INTO ob_islands (owner, owner_name, world, x, y, z, blocks, phase_index,
-                                    pedestal, halo, break_sound, hologram)
-            VALUES (?,?,?,?,?,?,?,?,?,?,?,?)
+                                    pedestal, halo, break_sound, hologram, special)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)
             ON CONFLICT(owner) DO UPDATE SET
                 owner_name = excluded.owner_name,
                 world = excluded.world,
@@ -62,7 +67,8 @@ public final class SQLiteStorage implements Database {
                 pedestal = excluded.pedestal,
                 halo = excluded.halo,
                 break_sound = excluded.break_sound,
-                hologram = excluded.hologram""";
+                hologram = excluded.hologram,
+                special = excluded.special""";
 
     private final OneBlockPlugin plugin;
     private HikariDataSource dataSource;
@@ -95,6 +101,11 @@ public final class SQLiteStorage implements Database {
             statement.executeUpdate(CREATE_ISLANDS);
             statement.executeUpdate(CREATE_MEMBERS);
             statement.executeUpdate(CREATE_INDEX);
+            try {
+                statement.executeUpdate(MIGRATE_SPECIAL);
+            } catch (SQLException ignored) {
+                // The column already exists: this database was created by a newer version.
+            }
         }
     }
 
@@ -160,6 +171,7 @@ public final class SQLiteStorage implements Database {
         island.setHalo(result.getString("halo"));
         island.setBreakSound(result.getString("break_sound"));
         island.setHologramVisible(result.getInt("hologram") == 1);
+        island.setSpecialBlock(result.getInt("special") == 1);
         return island;
     }
 
@@ -178,6 +190,7 @@ public final class SQLiteStorage implements Database {
         String halo = island.getHalo();
         String sound = island.getBreakSound();
         int hologram = island.isHologramVisible() ? 1 : 0;
+        int special = island.isSpecialBlock() ? 1 : 0;
         List<UUID> members = new ArrayList<>(island.getMembers());
         island.clearDirty();
 
@@ -196,6 +209,7 @@ public final class SQLiteStorage implements Database {
                     statement.setString(10, halo);
                     statement.setString(11, sound);
                     statement.setInt(12, hologram);
+                    statement.setInt(13, special);
                     statement.executeUpdate();
                 }
                 try (PreparedStatement delete = connection.prepareStatement(

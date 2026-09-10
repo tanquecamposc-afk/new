@@ -22,14 +22,11 @@ import com.oneblock.phase.PhaseManager;
 import com.oneblock.storage.Database;
 import com.oneblock.storage.SQLiteStorage;
 import org.bukkit.Bukkit;
-import org.bukkit.Location;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
 
 import java.util.List;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 
 /** Entry point: wires every manager together and owns the plugin lifecycle. */
@@ -47,7 +44,6 @@ public final class OneBlockPlugin extends JavaPlugin {
     private GUIManager guiManager;
     private ParticleEngine particleEngine;
 
-    private final Set<String> specialBlocks = ConcurrentHashMap.newKeySet();
     private BukkitTask haloTask;
     private BukkitTask leaderboardTask;
     private BukkitTask hudTask;
@@ -228,23 +224,6 @@ public final class OneBlockPlugin extends JavaPlugin {
             return;
         }
         getServer().getScheduler().runTask(this, runnable);
-    }
-
-    public void markSpecialBlock(Location location) {
-        specialBlocks.add(keyOf(location));
-    }
-
-    public boolean isSpecialBlock(Location location) {
-        return specialBlocks.contains(keyOf(location));
-    }
-
-    public void clearSpecialBlock(Location location) {
-        specialBlocks.remove(keyOf(location));
-    }
-
-    private String keyOf(Location location) {
-        return (location.getWorld() == null ? "?" : location.getWorld().getName())
-                + ":" + location.getBlockX() + ":" + location.getBlockY() + ":" + location.getBlockZ();
     }
 
     public ConfigManager getConfigManager() {

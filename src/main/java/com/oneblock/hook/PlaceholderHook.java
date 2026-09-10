@@ -28,12 +28,15 @@ public final class PlaceholderHook extends PlaceholderExpansion {
 
     @NotNull
     @Override
+    // getPluginMeta() is not available on 1.20.4, which is the version this plugin targets.
+    @SuppressWarnings("deprecation")
     public String getAuthor() {
         return String.join(", ", plugin.getDescription().getAuthors());
     }
 
     @NotNull
     @Override
+    @SuppressWarnings("deprecation")
     public String getVersion() {
         return plugin.getDescription().getVersion();
     }

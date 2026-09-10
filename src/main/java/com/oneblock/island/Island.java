@@ -20,6 +20,7 @@ public final class Island {
     private String halo = "none";
     private String breakSound = "default";
     private boolean hologramVisible = true;
+    private boolean specialBlock;
     private boolean dirty;
 
     public Island(UUID owner, String ownerName, Location center) {
@@ -116,6 +117,16 @@ public final class Island {
 
     public void setHologramVisible(boolean hologramVisible) {
         this.hologramVisible = hologramVisible;
+        this.dirty = true;
+    }
+
+    /** True while the block currently sitting on the island is a bonus block. */
+    public boolean isSpecialBlock() {
+        return specialBlock;
+    }
+
+    public void setSpecialBlock(boolean specialBlock) {
+        this.specialBlock = specialBlock;
         this.dirty = true;
     }
 
