@@ -153,10 +153,11 @@ public final class GUIManager {
 
             List<String> lore = new ArrayList<>(skin.getLore());
             lore.add("<dark_gray>-------------------</dark_gray>");
+            lore.add("<gray>Click derecho para probarlo.</gray>");
             if (equipped) {
                 lore.add("<green>Equipado</green>");
             } else if (unlocked) {
-                lore.add("<yellow>Click para equipar</yellow>");
+                lore.add("<yellow>Click izquierdo para equipar</yellow>");
             } else if (skin.getRequiredPhase() > 0) {
                 lore.add("<red>Se desbloquea en la fase " + (skin.getRequiredPhase() + 1) + "</red>");
             } else {
@@ -167,6 +168,11 @@ public final class GUIManager {
             inventory.setItem(slot, Items.build(
                     unlocked ? skin.getIcon() : Material.GRAY_DYE, skin.getDisplayName(), lore));
             holder.bind(slot, (clicker, click) -> {
+                if (click.isRightClick()) {
+                    clicker.closeInventory();
+                    plugin.getSkinManager().preview(clicker, skin);
+                    return;
+                }
                 if (island == null) {
                     plugin.getMessages().send(clicker, "island.none");
                     return;

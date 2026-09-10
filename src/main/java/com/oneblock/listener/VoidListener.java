@@ -44,12 +44,17 @@ public final class VoidListener implements Listener {
         Location target = BlockListener.safeSpot(island);
         player.setFallDistance(0.0F);
         player.setVelocity(player.getVelocity().zero());
-        player.teleportAsync(target).thenRun(() -> plugin.sync(() -> {
+        player.teleportAsync(target).whenComplete((success, error) -> plugin.sync(() -> {
+            // The flag is always cleared, even if the teleport failed, so a player is never
+            // left unrescuable after a hiccup.
+            rescuing.remove(player.getUniqueId());
+            if (error != null || !Boolean.TRUE.equals(success)) {
+                return;
+            }
             player.setFallDistance(0.0F);
             plugin.getParticleEngine().voidFade(target);
             player.playSound(target, sound, 1.0F, 1.2F);
             plugin.getMessages().send(player, "void.rescued");
-            rescuing.remove(player.getUniqueId());
         }));
     }
 

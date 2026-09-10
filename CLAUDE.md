@@ -36,6 +36,11 @@ com.oneblock
 Regla de hilos: **todo lo que toca el mundo corre en el hilo principal**; todo SQL sale del hilo
 principal vía `OneBlockPlugin#async(...)` y vuelve con `OneBlockPlugin#sync(...)`.
 
+`IslandManager#getIslandAt` se llama en cada movimiento, rotura y explosión, así que resuelve la
+isla en O(1) con un mapa `celda de la rejilla -> isla`; nunca recorre la lista de islas. Los nombres
+de jugador se insertan en MiniMessage como placeholders sin parsear, para que un nick no pueda
+inyectar etiquetas en el holograma del Top ni en el chat.
+
 ## Comandos
 
 | Comando | Permiso | Qué hace |
@@ -44,9 +49,11 @@ principal vía `OneBlockPlugin#async(...)` y vuelve con `OneBlockPlugin#sync(...
 | `/ob create` | `oneblock.use` | Crea la isla y teletransporta |
 | `/ob home` | `oneblock.use` | Vuelve a la isla |
 | `/ob top` | `oneblock.use` | Top 10 por chat |
+| `/ob info [jugador]` | `oneblock.use` (otro jugador: `oneblock.admin`) | Resumen de la isla |
 | `/ob invite <jugador>` | `oneblock.use` | Añade miembro |
 | `/ob kick <jugador>` | `oneblock.use` | Quita miembro |
 | `/ob transfer <jugador>` | `oneblock.use` | Transfiere la propiedad |
+| `/ob setphase <jugador> <índice>` | `oneblock.admin` | Mueve una isla a una fase |
 | `/ob settop` | `oneblock.admin` | Coloca el holograma del Top 10 aquí |
 | `/ob reload` | `oneblock.admin` | Recarga config, fases y cosméticos |
 
@@ -79,6 +86,9 @@ Tres tipos, uno equipable a la vez por isla:
   (`particles`, `particle-count`, `radius`, `color.red/green/blue` para partículas de polvo).
 - `SOUND` — sonido al romper el bloque (`sound` como clave vanilla, `pitch`, `volume`).
 
+En el menú, click izquierdo equipa y **click derecho prueba el cosmético** sobre el propio jugador
+sin equiparlo (`cosmetics.preview-ticks`).
+
 Desbloqueo: por permiso `oneblock.skin.<id>` **o** por progreso, con `required-phase`
 (índice de fase empezando en 0). Los nombres de partícula se resuelven en runtime, así que un
 nombre que no exista en la versión del servidor se ignora en vez de romper el plugin.
@@ -86,8 +96,16 @@ nombre que no exista en la versión del servidor se ignora en vez de romper el p
 ## Fases (`phases.yml`)
 
 Cada fase define `required-blocks` (acumulado), `blocks` y `mobs` con pesos `NOMBRE:peso`,
-`chest-loot` / `special-loot` con `NOMBRE:cantidad`, `icon`, `color` (MiniMessage),
-`bossbar-color` y `border-size` (tamaño del WorldBorder animado al entrar en la fase).
+`icon`, `color` (MiniMessage), `bossbar-color` y `border-size` (tamaño del WorldBorder animado al
+entrar en la fase).
+
+Las tablas de botín (`chest-loot`, `special-loot`) aceptan tres formatos:
+
+| Formato | Significado |
+|---|---|
+| `DIAMOND:2` | Cantidad fija, siempre sale |
+| `DIAMOND:1-3` | Cantidad aleatoria, siempre sale |
+| `DIAMOND:1-3:25` | Cantidad aleatoria con 25 % de probabilidad |
 
 Probabilidades de regeneración, configurables en `config.yml` → `chances`:
 2 % bloque especial, 12 % cofre, 15 % mob, resto bloque normal de la fase.
@@ -119,4 +137,6 @@ SQLite en `plugins/OneBlock/oneblock.db` a través de HikariCP (`ob_islands`, `o
 
 - `ParticleHaloTask`: cada `cosmetics.halo-period-ticks` (3 por defecto), solo para islas con un
   jugador dentro de `cosmetics.render-distance`.
-- Leaderboard: cada `leaderboard.refresh-seconds` (60), consulta asíncrona + repintado síncrono.
+- Leaderboard: cada `leaderboard.refresh-seconds` (60). Antes de consultar vuelca las islas con
+  cambios pendientes, para que el ranking no se quede atrás del autoguardado cada N bloques;
+  la consulta es asíncrona y el repintado síncrono.

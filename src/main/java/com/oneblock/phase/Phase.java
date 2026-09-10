@@ -2,7 +2,6 @@ package com.oneblock.phase;
 
 import org.bukkit.Material;
 import org.bukkit.entity.EntityType;
-import org.bukkit.inventory.ItemStack;
 
 import java.util.Collections;
 import java.util.List;
@@ -18,14 +17,14 @@ public final class Phase {
     private final Material icon;
     private final Map<Material, Integer> blockWeights;
     private final Map<EntityType, Integer> mobWeights;
-    private final List<ItemStack> chestLoot;
-    private final List<ItemStack> specialLoot;
+    private final List<LootEntry> chestLoot;
+    private final List<LootEntry> specialLoot;
     private final double borderSize;
     private final String bossBarColor;
 
     public Phase(String id, String displayName, String colorTag, int requiredBlocks, Material icon,
                  Map<Material, Integer> blockWeights, Map<EntityType, Integer> mobWeights,
-                 List<ItemStack> chestLoot, List<ItemStack> specialLoot, double borderSize, String bossBarColor) {
+                 List<LootEntry> chestLoot, List<LootEntry> specialLoot, double borderSize, String bossBarColor) {
         this.id = id;
         this.displayName = displayName;
         this.colorTag = colorTag;
@@ -68,11 +67,11 @@ public final class Phase {
         return mobWeights;
     }
 
-    public List<ItemStack> getChestLoot() {
+    public List<LootEntry> getChestLoot() {
         return chestLoot;
     }
 
-    public List<ItemStack> getSpecialLoot() {
+    public List<LootEntry> getSpecialLoot() {
         return specialLoot;
     }
 

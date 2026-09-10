@@ -148,6 +148,49 @@ public final class SkinManager {
         return true;
     }
 
+    /**
+     * Plays a cosmetic on the player without equipping it: sounds are played once, auras are drawn
+     * around the player for a few seconds and pedestal materials are shown as a spinning ring.
+     */
+    public void preview(Player player, BlockSkin skin) {
+        if (skin.getType() == BlockSkin.Type.SOUND) {
+            player.playSound(player.getLocation(), skin.getSound(), skin.getVolume(), skin.getPitch());
+            return;
+        }
+        int durationTicks = plugin.getConfigManager().getConfig().getInt("cosmetics.preview-ticks", 60);
+        new org.bukkit.scheduler.BukkitRunnable() {
+            private int elapsed;
+
+            @Override
+            public void run() {
+                if (elapsed >= durationTicks || !player.isOnline()) {
+                    cancel();
+                    return;
+                }
+                Location around = player.getLocation().add(0.0D, 1.0D, 0.0D);
+                double radius = skin.getType() == BlockSkin.Type.PEDESTAL ? 1.2D : skin.getRadius();
+                for (int i = 0; i < 12; i++) {
+                    double angle = elapsed * 0.2D + 2.0D * Math.PI * i / 12.0D;
+                    Location at = around.clone().add(Math.cos(angle) * radius, 0.0D, Math.sin(angle) * radius);
+                    if (skin.getParticles().isEmpty()) {
+                        com.oneblock.util.Particles.dust(player.getWorld(), at,
+                                org.bukkit.Color.fromRGB(clamp(skin.getRed()), clamp(skin.getGreen()),
+                                        clamp(skin.getBlue())), 1.0F, 1);
+                    } else {
+                        com.oneblock.util.Particles.spawn(player.getWorld(),
+                                skin.getParticles().get(i % skin.getParticles().size()),
+                                at, 1, 0.0D, 0.0D, 0.0D, 0.0D);
+                    }
+                }
+                elapsed += 2;
+            }
+        }.runTaskTimer(plugin, 0L, 2L);
+    }
+
+    private int clamp(int value) {
+        return Math.max(0, Math.min(255, value));
+    }
+
     /** Clears the cosmetic of the given slot. */
     public void unequip(Island island, BlockSkin.Type type) {
         switch (type) {

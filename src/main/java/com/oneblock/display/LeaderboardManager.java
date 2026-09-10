@@ -88,6 +88,8 @@ public final class LeaderboardManager {
 
     /** Recomputes the ranking off the main thread and repaints the hologram on the main thread. */
     public void refresh() {
+        // Islands only autosave every N blocks, so flush pending progress before ranking.
+        plugin.getIslandManager().saveAll();
         int limit = plugin.getConfigManager().getConfig().getInt("leaderboard.size", 10);
         plugin.getStorage().topPlayers(limit).thenAccept(entries -> plugin.sync(() -> {
             this.cache = entries;
@@ -124,26 +126,30 @@ public final class LeaderboardManager {
         String empty = plugin.getConfigManager().getMessages().getString("leaderboard.empty",
                 "<gray>Todavia no hay nadie en el ranking.</gray>");
 
-        StringBuilder builder = new StringBuilder();
-        if (header.isEmpty()) {
-            builder.append("<gradient:#ffd700:#fff6a9><bold>TOP 10 JUGADORES ONEBLOCK</bold></gradient>");
-        } else {
-            builder.append(String.join("<newline>", header));
-        }
+        Component board = header.isEmpty()
+                ? Text.of("<gradient:#ffd700:#fff6a9><bold>TOP 10 JUGADORES ONEBLOCK</bold></gradient>")
+                : Text.of(String.join("<newline>", header));
         if (cache.isEmpty()) {
-            builder.append("<newline>").append(empty);
-            return Text.of(builder.toString());
+            return board.append(Component.newline()).append(Text.of(empty));
         }
         for (int i = 0; i < cache.size(); i++) {
-            Database.LeaderboardEntry entry = cache.get(i);
-            builder.append("<newline>").append(lineFormat
-                    .replace("<medal>", medal(i + 1))
-                    .replace("<color>", positionColor(i + 1))
-                    .replace("<position>", String.valueOf(i + 1))
-                    .replace("<player>", entry.name() == null ? "?" : entry.name())
-                    .replace("<blocks>", String.valueOf(entry.blocks())));
+            board = board.append(Component.newline()).append(line(lineFormat, i + 1, cache.get(i)));
         }
-        return Text.of(builder.toString());
+        return board;
+    }
+
+    /**
+     * Builds one row. Medal and colour are plugin-controlled tags and are inlined, but the player
+     * name is passed as an unparsed placeholder so a name can never inject MiniMessage into the board.
+     */
+    private Component line(String format, int position, Database.LeaderboardEntry entry) {
+        String template = format
+                .replace("<medal>", medal(position))
+                .replace("<color>", positionColor(position))
+                .replace("<position>", String.valueOf(position));
+        return Text.of(template, com.oneblock.config.Messages.of(
+                "player", entry.name() == null ? "?" : entry.name(),
+                "blocks", String.valueOf(entry.blocks())));
     }
 
     private String medal(int position) {

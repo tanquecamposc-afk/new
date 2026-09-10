@@ -21,6 +21,8 @@ public final class IslandManager {
     private final OneBlockPlugin plugin;
     private final Map<UUID, Island> islands = new ConcurrentHashMap<>();
     private final Map<UUID, UUID> membership = new ConcurrentHashMap<>();
+    /** Grid cell -> island, so looking up "which island is here" never scans the whole map. */
+    private final Map<Long, Island> byGrid = new ConcurrentHashMap<>();
 
     private World world;
 
@@ -58,9 +60,18 @@ public final class IslandManager {
 
     public void cache(Island island) {
         islands.put(island.getOwner(), island);
+        byGrid.put(gridKey(island.getCenter()), island);
         for (UUID member : island.getMembers()) {
             membership.put(member, island.getOwner());
         }
+    }
+
+    /** Packs the grid cell a location belongs to into a single long. */
+    private long gridKey(Location location) {
+        int spacing = plugin.getConfigManager().getConfig().getInt("world.island-spacing", 512);
+        long gridX = Math.floorDiv(location.getBlockX() + spacing / 2, spacing);
+        long gridZ = Math.floorDiv(location.getBlockZ() + spacing / 2, spacing);
+        return (gridX << 32) ^ (gridZ & 0xffffffffL);
     }
 
     public Collection<Island> getIslands() {
@@ -81,22 +92,15 @@ public final class IslandManager {
         return ownerId == null ? null : islands.get(ownerId);
     }
 
-    /** @return the island whose OneBlock is {@code location}, or {@code null}. */
+    /**
+     * @return the island whose grid cell contains {@code location}, or {@code null}. O(1): this runs
+     *     on every move, break and explosion, so it must never scan the island map.
+     */
     public Island getIslandAt(Location location) {
         if (world == null || location.getWorld() == null || !location.getWorld().equals(world)) {
             return null;
         }
-        int spacing = plugin.getConfigManager().getConfig().getInt("world.island-spacing", 512);
-        int gridX = Math.floorDiv(location.getBlockX() + spacing / 2, spacing);
-        int gridZ = Math.floorDiv(location.getBlockZ() + spacing / 2, spacing);
-        for (Island island : islands.values()) {
-            Location center = island.getCenter();
-            if (Math.floorDiv(center.getBlockX() + spacing / 2, spacing) == gridX
-                    && Math.floorDiv(center.getBlockZ() + spacing / 2, spacing) == gridZ) {
-                return island;
-            }
-        }
-        return null;
+        return byGrid.get(gridKey(location));
     }
 
     /** Creates a brand new island for {@code player}, places its OneBlock and stores it. */
@@ -120,54 +124,40 @@ public final class IslandManager {
         return island;
     }
 
-    /** Islands sit on a square spiral grid so a world never needs pre-generation. */
+    /** Islands sit on a square spiral grid, so a world never needs pre-generation. */
     private Location nextFreeCenter() {
         int spacing = plugin.getConfigManager().getConfig().getInt("world.island-spacing", 512);
         int y = plugin.getConfigManager().getConfig().getInt("world.island-y", 100);
-        int index = islands.size();
-        int ring = (int) Math.ceil((Math.sqrt(index + 1.0D) - 1.0D) / 2.0D);
-        int sideLength = ring * 2 + 1;
-        int offset = index - (sideLength - 2) * (sideLength - 2);
-        if (offset < 0) {
-            offset = 0;
-        }
-        int side = Math.min(3, offset / Math.max(1, sideLength - 1));
-        int step = offset % Math.max(1, sideLength - 1) - ring;
-        int gridX;
-        int gridZ;
-        switch (side) {
-            case 0 -> {
-                gridX = ring;
-                gridZ = step;
+        int gridX = 0;
+        int gridZ = 0;
+        int stepX = 1;
+        int stepZ = 0;
+        int segmentLength = 1;
+        int stepsTaken = 0;
+        int turns = 0;
+        for (int guard = 0; guard < 1_000_000; guard++) {
+            Location candidate = new Location(world, gridX * (double) spacing, y, gridZ * (double) spacing);
+            if (!isOccupied(candidate)) {
+                return candidate;
             }
-            case 1 -> {
-                gridX = -step;
-                gridZ = ring;
-            }
-            case 2 -> {
-                gridX = -ring;
-                gridZ = -step;
-            }
-            default -> {
-                gridX = step;
-                gridZ = -ring;
+            gridX += stepX;
+            gridZ += stepZ;
+            if (++stepsTaken == segmentLength) {
+                stepsTaken = 0;
+                int previousX = stepX;
+                stepX = -stepZ;
+                stepZ = previousX;
+                if (++turns % 2 == 0) {
+                    segmentLength++;
+                }
             }
         }
-        Location candidate = new Location(world, gridX * (double) spacing, y, gridZ * (double) spacing);
-        while (isOccupied(candidate)) {
-            candidate = candidate.add(spacing, 0.0D, 0.0D);
-        }
-        return candidate;
+        // Practically unreachable: a million occupied cells means the grid is full.
+        return new Location(world, 0.0D, y, 0.0D);
     }
 
     private boolean isOccupied(Location location) {
-        for (Island island : islands.values()) {
-            Location center = island.getCenter();
-            if (center.getBlockX() == location.getBlockX() && center.getBlockZ() == location.getBlockZ()) {
-                return true;
-            }
-        }
-        return false;
+        return byGrid.containsKey(gridKey(location));
     }
 
     public void teleport(Player player, Island island) {
@@ -225,6 +215,7 @@ public final class IslandManager {
     /** Hands the island over to a new owner, keeping progress and cosmetics. */
     public Island transfer(Island island, UUID newOwner, String newOwnerName) {
         islands.remove(island.getOwner());
+        byGrid.remove(gridKey(island.getCenter()));
         Island transferred = new Island(newOwner, newOwnerName, island.getCenter());
         transferred.setBlocksBroken(island.getBlocksBroken());
         transferred.setPhaseIndex(island.getPhaseIndex());

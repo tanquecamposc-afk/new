@@ -42,6 +42,8 @@ public final class OneBlockCommand implements CommandExecutor, TabCompleter {
             case "invite" -> requirePlayer(sender, player -> invite(player, args));
             case "kick" -> requirePlayer(sender, player -> kick(player, args));
             case "transfer" -> requirePlayer(sender, player -> transfer(player, args));
+            case "info" -> info(sender, args);
+            case "setphase" -> setphase(sender, args);
             case "settop" -> settop(sender);
             case "reload" -> reload(sender);
             default -> help(sender);
@@ -97,12 +99,13 @@ public final class OneBlockCommand implements CommandExecutor, TabCompleter {
                 "<gray><position>. <white><player></white> - <aqua><blocks></aqua>");
         for (int i = 0; i < top.size(); i++) {
             var entry = top.get(i);
-            sender.sendMessage(Text.of(format
+            String template = format
                     .replace("<medal>", "")
                     .replace("<color>", "<gray>")
-                    .replace("<position>", String.valueOf(i + 1))
-                    .replace("<player>", entry.name() == null ? "?" : entry.name())
-                    .replace("<blocks>", String.valueOf(entry.blocks()))));
+                    .replace("<position>", String.valueOf(i + 1));
+            sender.sendMessage(Text.of(template, Messages.of(
+                    "player", entry.name() == null ? "?" : entry.name(),
+                    "blocks", String.valueOf(entry.blocks()))));
         }
     }
 
@@ -164,6 +167,78 @@ public final class OneBlockCommand implements CommandExecutor, TabCompleter {
         return island;
     }
 
+    /** Read-only summary of an island: progress, phase, cosmetics and members. */
+    private void info(CommandSender sender, String[] args) {
+        Island island;
+        if (args.length > 1) {
+            if (!sender.hasPermission("oneblock.admin")) {
+                plugin.getMessages().send(sender, "command.no-permission");
+                return;
+            }
+            island = plugin.getIslandManager().getIslandOf(Bukkit.getOfflinePlayer(args[1]).getUniqueId());
+        } else if (sender instanceof Player player) {
+            island = plugin.getIslandManager().getIslandOf(player.getUniqueId());
+        } else {
+            plugin.getMessages().send(sender, "command.usage-info");
+            return;
+        }
+        if (island == null) {
+            plugin.getMessages().send(sender, "island.none");
+            return;
+        }
+        var phase = plugin.getPhaseManager().byIndex(island.getPhaseIndex());
+        for (String line : plugin.getConfigManager().getMessages().getStringList("island.info")) {
+            sender.sendMessage(Text.of(line, Messages.of(
+                    "owner", island.getOwnerName() == null ? "?" : island.getOwnerName(),
+                    "blocks", String.valueOf(island.getBlocksBroken()),
+                    "phase", phase == null ? "-" : Text.plain(phase.getDisplayName()),
+                    "remaining", String.valueOf(
+                            plugin.getPhaseManager().blocksUntilNext(island.getBlocksBroken())),
+                    "members", String.valueOf(island.getMembers().size()),
+                    "pedestal", island.getPedestalSkin(),
+                    "halo", island.getHalo(),
+                    "sound", island.getBreakSound())));
+        }
+    }
+
+    /** Admin fix-up: moves an island to a phase and syncs blocks to that phase's threshold. */
+    private void setphase(CommandSender sender, String[] args) {
+        if (!sender.hasPermission("oneblock.admin")) {
+            plugin.getMessages().send(sender, "command.no-permission");
+            return;
+        }
+        if (args.length < 3) {
+            plugin.getMessages().send(sender, "command.usage-setphase");
+            return;
+        }
+        Island island = plugin.getIslandManager()
+                .getIslandOf(Bukkit.getOfflinePlayer(args[1]).getUniqueId());
+        if (island == null) {
+            plugin.getMessages().send(sender, "island.none");
+            return;
+        }
+        int index;
+        try {
+            index = Integer.parseInt(args[2]);
+        } catch (NumberFormatException ex) {
+            plugin.getMessages().send(sender, "command.usage-setphase");
+            return;
+        }
+        if (index < 0 || index >= plugin.getPhaseManager().size()) {
+            plugin.getMessages().send(sender, "command.unknown-phase");
+            return;
+        }
+        var phase = plugin.getPhaseManager().byIndex(index);
+        island.setPhaseIndex(index);
+        island.setBlocksBroken(Math.max(island.getBlocksBroken(), phase.getRequiredBlocks()));
+        plugin.getStorage().saveIsland(island);
+        plugin.getHologramManager().refresh(island);
+        plugin.getIslandManager().applyBorder(island);
+        plugin.getMessages().send(sender, "command.phase-set", Messages.of(
+                "player", island.getOwnerName() == null ? args[1] : island.getOwnerName(),
+                "phase", Text.plain(phase.getDisplayName())));
+    }
+
     private void settop(CommandSender sender) {
         if (!sender.hasPermission("oneblock.admin")) {
             plugin.getMessages().send(sender, "command.no-permission");
@@ -195,19 +270,26 @@ public final class OneBlockCommand implements CommandExecutor, TabCompleter {
                                       @NotNull String alias, String[] args) {
         List<String> out = new ArrayList<>();
         if (args.length == 1) {
-            for (String option : List.of("gui", "menu", "create", "home", "top",
-                    "invite", "kick", "transfer", "settop", "reload")) {
+            for (String option : List.of("gui", "menu", "create", "home", "top", "info",
+                    "invite", "kick", "transfer", "setphase", "settop", "reload")) {
                 if (option.startsWith(args[0].toLowerCase(Locale.ROOT))) {
                     out.add(option);
                 }
             }
             return out;
         }
-        if (args.length == 2 && List.of("invite", "kick", "transfer").contains(args[0].toLowerCase(Locale.ROOT))) {
+        if (args.length == 2 && List.of("invite", "kick", "transfer", "info", "setphase")
+                .contains(args[0].toLowerCase(Locale.ROOT))) {
             for (Player online : Bukkit.getOnlinePlayers()) {
                 if (online.getName().toLowerCase(Locale.ROOT).startsWith(args[1].toLowerCase(Locale.ROOT))) {
                     out.add(online.getName());
                 }
+            }
+            return out;
+        }
+        if (args.length == 3 && args[0].equalsIgnoreCase("setphase")) {
+            for (int i = 0; i < plugin.getPhaseManager().size(); i++) {
+                out.add(String.valueOf(i));
             }
         }
         return out;

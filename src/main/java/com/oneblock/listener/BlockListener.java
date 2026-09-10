@@ -68,7 +68,8 @@ public final class BlockListener implements Listener {
         boolean special = plugin.isSpecialBlock(block.getLocation());
         if (special) {
             plugin.clearSpecialBlock(block.getLocation());
-            giveLoot(player, phase == null ? List.of() : phase.getSpecialLoot());
+            giveLoot(player, phase == null ? List.of()
+                    : plugin.getPhaseManager().rollLoot(phase.getSpecialLoot()));
             plugin.getParticleEngine().specialBlock(block.getLocation());
             plugin.getMessages().send(player, "block.special");
         }
@@ -153,8 +154,8 @@ public final class BlockListener implements Listener {
         if (roll < chestChance) {
             block.setType(Material.CHEST);
             if (block.getState() instanceof Chest chest) {
-                for (ItemStack loot : phase.getChestLoot()) {
-                    chest.getBlockInventory().addItem(loot.clone());
+                for (ItemStack loot : plugin.getPhaseManager().rollLoot(phase.getChestLoot())) {
+                    chest.getBlockInventory().addItem(loot);
                 }
                 chest.update();
             }
@@ -173,7 +174,7 @@ public final class BlockListener implements Listener {
 
     private void giveLoot(Player player, List<ItemStack> loot) {
         for (ItemStack item : loot) {
-            for (ItemStack leftover : player.getInventory().addItem(item.clone()).values()) {
+            for (ItemStack leftover : player.getInventory().addItem(item).values()) {
                 player.getWorld().dropItemNaturally(player.getLocation(), leftover);
             }
         }

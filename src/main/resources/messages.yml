@@ -13,13 +13,19 @@ command:
   usage-invite: '<gray>Uso: <white>/ob invite <jugador>'
   usage-kick: '<gray>Uso: <white>/ob kick <jugador>'
   usage-transfer: '<gray>Uso: <white>/ob transfer <jugador>'
+  usage-info: '<gray>Uso: <white>/ob info <jugador>'
+  usage-setphase: '<gray>Uso: <white>/ob setphase <jugador> <indice>'
+  unknown-phase: '<red>Ese indice de fase no existe.</red>'
+  phase-set: '<green>Isla de <white><player></white> movida a la fase <white><phase></white>.</green>'
   help:
     - '<no-prefix><gradient:#ff0055:#ff5500><bold>              ONEBLOCK              </bold></gradient>'
     - '<no-prefix><yellow>/ob gui <dark_gray>-</dark_gray> <gray>Abre el menu principal.'
     - '<no-prefix><yellow>/ob create <dark_gray>-</dark_gray> <gray>Crea tu isla.'
     - '<no-prefix><yellow>/ob home <dark_gray>-</dark_gray> <gray>Te lleva a tu isla.'
     - '<no-prefix><yellow>/ob top <dark_gray>-</dark_gray> <gray>Muestra el Top 10.'
+    - '<no-prefix><yellow>/ob info <dark_gray>-</dark_gray> <gray>Resumen de tu isla.'
     - '<no-prefix><yellow>/ob invite|kick|transfer <dark_gray>-</dark_gray> <gray>Gestiona miembros.'
+    - '<no-prefix><red>/ob setphase <jugador> <indice> <dark_gray>-</dark_gray> <gray>Ajusta la fase.'
     - '<no-prefix><red>/ob settop <dark_gray>-</dark_gray> <gray>Coloca el holograma del Top.'
     - '<no-prefix><red>/ob reload <dark_gray>-</dark_gray> <gray>Recarga la configuracion.'
 
@@ -36,6 +42,14 @@ island:
   member-removed: '<yellow><player> ya no es miembro de tu isla.</yellow>'
   transferred: '<gold>Le has entregado la isla a <player>.</gold>'
   received: '<gold><player> te ha entregado su isla.</gold>'
+  info:
+    - '<no-prefix><dark_gray>--------------------------------</dark_gray>'
+    - '<no-prefix><gradient:#00ffcc:#0088ff><bold><owner></bold></gradient>'
+    - '<no-prefix><gray>Fase: <white><phase></white> <dark_gray>|</dark_gray> <gray>Bloques: <white><blocks></white>'
+    - '<no-prefix><gray>Faltan para la siguiente: <white><remaining></white>'
+    - '<no-prefix><gray>Miembros: <white><members></white>'
+    - '<no-prefix><gray>Cosmeticos: <white><pedestal></white> <dark_gray>/</dark_gray> <white><halo></white> <dark_gray>/</dark_gray> <white><sound></white>'
+    - '<no-prefix><dark_gray>--------------------------------</dark_gray>'
 
 block:
   special: '<gradient:#ffd700:#fff6a9>Bloque especial! Botin extra para ti.</gradient>'

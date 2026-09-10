@@ -85,8 +85,8 @@ public final class PhaseManager {
                 section.getString("bossbar-color", "BLUE"));
     }
 
-    private List<ItemStack> readLoot(List<String> raw, String phaseKey) {
-        List<ItemStack> loot = new ArrayList<>(raw.size());
+    private List<LootEntry> readLoot(List<String> raw, String phaseKey) {
+        List<LootEntry> loot = new ArrayList<>(raw.size());
         for (String entry : raw) {
             String[] parts = entry.split(":");
             Material material = Items.material(parts[0], null);
@@ -94,10 +94,37 @@ public final class PhaseManager {
                 plugin.getLogger().warning("Phase " + phaseKey + ": unknown loot item '" + parts[0] + "', skipped.");
                 continue;
             }
-            int amount = parts.length > 1 ? Math.max(1, parseInt(parts[1], 1)) : 1;
-            loot.add(new ItemStack(material, Math.min(amount, material.getMaxStackSize())));
+            int min = 1;
+            int max = 1;
+            if (parts.length > 1) {
+                String[] range = parts[1].split("-");
+                min = Math.max(1, parseInt(range[0], 1));
+                max = range.length > 1 ? Math.max(min, parseInt(range[1], min)) : min;
+            }
+            double chance = parts.length > 2 ? parseDouble(parts[2]) : 100.0D;
+            loot.add(new LootEntry(material, min, max, chance));
         }
         return loot;
+    }
+
+    /** Rolls a loot table, honouring the per-entry chance and amount range. */
+    public List<ItemStack> rollLoot(List<LootEntry> table) {
+        List<ItemStack> rolled = new ArrayList<>();
+        for (LootEntry entry : table) {
+            ItemStack item = entry.roll(random);
+            if (item != null) {
+                rolled.add(item);
+            }
+        }
+        return rolled;
+    }
+
+    private double parseDouble(String raw) {
+        try {
+            return Double.parseDouble(raw.trim());
+        } catch (NumberFormatException ex) {
+            return 100.0D;
+        }
     }
 
     private int parseInt(String raw, int fallback) {

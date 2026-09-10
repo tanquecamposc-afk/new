@@ -37,6 +37,8 @@ cosmetics:
   halo-period-ticks: 3
   # Radio en bloques dentro del cual se renderizan auras y pedestales.
   render-distance: 32.0
+  # Duracion (en ticks) de la vista previa al hacer click derecho en el menu.
+  preview-ticks: 60
 
 leaderboard:
   # Cuantos jugadores muestra el holograma del Top.
