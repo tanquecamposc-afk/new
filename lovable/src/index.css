@@ -1,0 +1,37 @@
+@import url("https://fonts.googleapis.com/css2?family=Bungee&family=Pixelify+Sans:wght@400;600&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+  Sistema de diseño del juego. Todos los colores viven aquí como HSL y se usan
+  siempre por su nombre (bg-void, text-dim, border-line...), nunca en crudo
+  dentro de los componentes: así se puede recolorear el juego entero desde
+  este archivo.
+*/
+@layer base {
+  :root {
+    --void: 220 30% 4%;
+    --surface: 222 24% 9%;
+    --surface-2: 220 22% 14%;
+    --line: 217 18% 20%;
+    --ink: 40 25% 92%;
+    --dim: 215 15% 65%;
+    --amber: 42 100% 50%;
+    --danger: 353 100% 62%;
+    --life: 140 65% 65%;
+
+    /* shadcn espera estos alias; el juego es oscuro en cualquier tema. */
+    --background: var(--void);
+    --foreground: var(--ink);
+    --border: var(--line);
+    --radius: 0.6rem;
+  }
+
+  body {
+    @apply bg-void text-ink;
+    margin: 0;
+    overscroll-behavior: none;
+  }
+}
