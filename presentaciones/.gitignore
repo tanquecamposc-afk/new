@@ -1,0 +1,4 @@
+node_modules/
+*.pdf
+d[123]-*.jpg
+package-lock.json
