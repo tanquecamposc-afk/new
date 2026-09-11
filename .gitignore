@@ -1,3 +1,6 @@
 target/
 *.class
 node_modules/
+
+# Zip generado a partir de lovable/ para compartirlo; el codigo fuente ya esta versionado
+oneblock-lovable.zip
