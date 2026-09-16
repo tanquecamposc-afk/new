@@ -178,7 +178,31 @@ Cobertura actual (**409 aserciones, 10 jugadores simulados en paralelo**):
 
 ---
 
-## 7. Otro proyecto en este repositorio
+## 7. Build web jugable
+
+`arise-crossover.html` es el mismo juego jugable **en el navegador**, sin Roblox: un ARPG
+top-down en Canvas 2D, en un solo archivo y sin dependencias externas. Ábrelo y ya.
+
+Usa **las mismas fórmulas y los mismos límites** que el servidor Luau (daño físico, tasa de
+extracción, vida, velocidad, daño de sombra, curva de experiencia, gemas por enemigo) y
+reproduce el mismo bucle: farmear → cuerpo inerte → ARISE de 3 intentos → escuadrón de 4 con
+reemplazo automático del más débil → portal → Double Dungeon → Statue of God → *Awakened*.
+
+| | |
+|---|---|
+| Mover | `WASD` / flechas (en móvil, arrastra) |
+| Atacar / Extraer | `Espacio` / `E` |
+| Auto-ataque y auto-arise | `Q` / `R` |
+| Entrar al portal | `F` |
+| Paneles | `1` atributos · `2` sombras · `3` armería · `4` islas · `H` ayuda |
+
+Diferencia deliberada con el servidor: el portal aparece cada **100 s** en vez de cada 15–30
+minutos, para que una sesión de navegador vea el evento completo. La partida se guarda en
+`localStorage`.
+
+---
+
+## 8. Otro proyecto en este repositorio
 
 `index.html` contiene **NEXO: Tower Defense**, un juego independiente en HTML5 Canvas.
 Su documentación está en [`docs/NEXO-TowerDefense.md`](docs/NEXO-TowerDefense.md).

@@ -1,0 +1,1297 @@
+<title>Monarca de las Sombras</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&family=Rajdhani:wght@400;500;600;700&display=swap">
+<style>
+:root{
+  --void:#070a14; --deep:#0b1022; --panel:#111a35; --panel-2:#16203f; --line:#26335a;
+  --ink:#e9eeff; --muted:#93a3cc; --dim:#6b7ba6;
+  --spec:#6aa8ff; --spec-hi:#a9d6ff; --arise:#3ee0ff;
+  --monarch:#a77bff; --gold:#ffc861; --gem:#7be0ff; --xp:#57e6a5; --hp:#ff5d6c;
+  --t-common:#9bb0d8; --t-rare:#5ad2ff; --t-epic:#a77bff; --t-legend:#ffc861; --t-mythic:#ff7ad1; --t-monarch:#ff5d6c;
+  --f-display:'Cinzel',Georgia,serif; --f-ui:'Rajdhani','Segoe UI',system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{
+  background:var(--void); color:var(--ink); font-family:var(--f-ui);
+  overflow:hidden; -webkit-tap-highlight-color:transparent; user-select:none;
+}
+#app{position:relative;height:100%;width:100%;overflow:hidden;background:var(--void)}
+canvas#stage{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
+
+/* ---------- HUD ---------- */
+.hud{position:absolute;inset:0;pointer-events:none;display:flex;flex-direction:column;justify-content:space-between;
+     padding:calc(10px + env(safe-area-inset-top,0px)) 12px calc(10px + env(safe-area-inset-bottom,0px))}
+.hud > *{pointer-events:none}
+.row{display:flex;gap:10px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap}
+
+.card{background:linear-gradient(180deg,rgba(17,26,53,.94),rgba(11,16,34,.94));border:1px solid var(--line);
+      border-radius:10px;padding:8px 10px;backdrop-filter:blur(6px);box-shadow:0 6px 20px rgba(0,0,0,.45)}
+
+.pcard{min-width:210px;display:grid;gap:6px}
+.pcard .top{display:flex;align-items:center;gap:8px}
+.rankbadge{font-family:var(--f-display);font-weight:900;font-size:20px;line-height:1;width:34px;height:34px;
+           display:grid;place-items:center;border-radius:8px;border:1px solid var(--line);
+           background:radial-gradient(circle at 30% 20%,rgba(106,168,255,.35),rgba(7,10,20,.9));color:var(--spec-hi)}
+.pname{font-weight:700;letter-spacing:.04em;font-size:15px}
+.psub{font-size:11px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase}
+.bar{height:7px;border-radius:99px;background:#0a1020;border:1px solid var(--line);overflow:hidden}
+.bar > i{display:block;height:100%;width:0%;transition:width .18s ease}
+.bar.hp > i{background:linear-gradient(90deg,#ff5d6c,#ff9aa4)}
+.bar.xp > i{background:linear-gradient(90deg,#2fae7a,#57e6a5)}
+.barlabel{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
+
+.purse{display:flex;flex-direction:column;gap:6px;align-items:flex-end}
+.coin{display:flex;align-items:center;gap:6px;font-weight:700;font-variant-numeric:tabular-nums;font-size:15px}
+.coin small{font-size:10px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase}
+.dot{width:12px;height:12px;border-radius:4px;box-shadow:0 0 10px currentColor}
+.gold{color:var(--gold)} .gem{color:var(--gem)}
+
+.islandtag{font-family:var(--f-display);font-weight:700;letter-spacing:.06em;font-size:13px;color:var(--spec-hi);text-align:center}
+.portalclock{font-size:11px;color:var(--muted);text-align:center;font-variant-numeric:tabular-nums}
+
+/* squad */
+.squad{display:flex;gap:6px}
+.slot{width:46px;height:52px;border-radius:8px;border:1px solid var(--line);background:rgba(10,15,32,.85);
+      display:grid;place-items:center;gap:2px;position:relative;overflow:hidden}
+.slot .glyph{font-size:19px;line-height:1}
+.slot .nm{font-size:8.5px;color:var(--muted);letter-spacing:.03em;max-width:42px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.slot.empty{border-style:dashed;opacity:.5}
+.slot .dmg{font-size:8.5px;color:var(--spec-hi);font-variant-numeric:tabular-nums}
+
+/* rails + action bar */
+.rail{display:flex;flex-direction:column;gap:8px;pointer-events:auto}
+.btn{pointer-events:auto;cursor:pointer;font-family:var(--f-ui);font-weight:700;letter-spacing:.06em;color:var(--ink);
+     background:linear-gradient(180deg,var(--panel-2),var(--panel));border:1px solid var(--line);border-radius:10px;
+     padding:9px 12px;font-size:13px;text-transform:uppercase;transition:transform .08s ease,border-color .15s,box-shadow .15s}
+.btn:hover{border-color:var(--spec);box-shadow:0 0 0 1px rgba(106,168,255,.25),0 6px 18px rgba(0,0,0,.4)}
+.btn:active{transform:translateY(1px)}
+.btn:focus-visible{outline:2px solid var(--arise);outline-offset:2px}
+.btn.icon{width:46px;height:46px;display:grid;place-items:center;padding:0;font-size:18px}
+.btn.on{border-color:var(--arise);color:var(--arise);box-shadow:0 0 12px rgba(62,224,255,.25) inset}
+.btn.key::after{content:attr(data-key);position:absolute}
+.actions{display:flex;gap:8px;justify-content:center;align-items:flex-end;flex-wrap:wrap;pointer-events:auto}
+.act{position:relative;min-width:66px;text-align:center}
+.act kbd{position:absolute;top:-8px;right:-6px;background:var(--panel-2);border:1px solid var(--line);border-radius:5px;
+         font-family:var(--f-ui);font-size:9px;padding:1px 4px;color:var(--muted)}
+.act.arise{border-color:rgba(62,224,255,.5);color:var(--arise)}
+
+/* ---------- panels ---------- */
+.scrim{position:absolute;inset:0;background:rgba(4,7,16,.72);backdrop-filter:blur(3px);display:grid;place-items:center;
+       padding:16px;pointer-events:auto;z-index:20}
+.panel{width:min(760px,100%);max-height:min(84vh,720px);overflow:auto;background:linear-gradient(180deg,#101832,#0b1022);
+       border:1px solid var(--line);border-radius:14px;box-shadow:0 30px 80px rgba(0,0,0,.6)}
+.panel header{position:sticky;top:0;background:linear-gradient(180deg,#131c39,#101832);border-bottom:1px solid var(--line);
+              padding:14px 16px;display:flex;justify-content:space-between;align-items:center;gap:12px;z-index:2}
+.panel h2{margin:0;font-family:var(--f-display);font-size:19px;letter-spacing:.08em;font-weight:700}
+.panel .body{padding:14px 16px 18px;display:grid;gap:12px}
+.x{cursor:pointer;background:none;border:1px solid var(--line);border-radius:8px;color:var(--muted);width:32px;height:32px;font-size:16px}
+.x:hover{color:var(--ink);border-color:var(--spec)}
+
+.statgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:8px}
+.statrow{display:flex;align-items:center;gap:10px;background:rgba(13,19,40,.8);border:1px solid var(--line);
+         border-radius:10px;padding:9px 10px}
+.statrow .k{font-family:var(--f-display);font-weight:700;width:38px;color:var(--spec-hi)}
+.statrow .d{flex:1;font-size:11.5px;color:var(--muted);line-height:1.25}
+.statrow .v{font-variant-numeric:tabular-nums;font-weight:700;font-size:16px;min-width:38px;text-align:right}
+.plus{cursor:pointer;width:30px;height:30px;border-radius:8px;border:1px solid var(--line);background:var(--panel-2);
+      color:var(--ink);font-size:17px;font-weight:700;line-height:1}
+.plus:disabled{opacity:.3;cursor:not-allowed}
+.plus:not(:disabled):hover{border-color:var(--arise);color:var(--arise)}
+
+.derived{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px}
+.kv{background:rgba(13,19,40,.7);border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+.kv small{display:block;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.kv b{font-size:17px;font-variant-numeric:tabular-nums}
+
+.list{display:grid;gap:8px}
+.item{display:flex;align-items:center;gap:10px;background:rgba(13,19,40,.75);border:1px solid var(--line);
+      border-radius:10px;padding:9px 10px}
+.item .glyph{width:36px;height:36px;display:grid;place-items:center;border-radius:8px;background:rgba(7,10,20,.8);
+             border:1px solid var(--line);font-size:19px}
+.item .meta{flex:1;min-width:0}
+.item .meta b{display:block;font-size:14.5px;letter-spacing:.02em}
+.item .meta span{font-size:11.5px;color:var(--muted)}
+.item .price{font-variant-numeric:tabular-nums;font-weight:700}
+.tier{font-size:10px;letter-spacing:.1em;text-transform:uppercase;font-weight:700}
+.locked{opacity:.45}
+
+.hint{font-size:12px;color:var(--dim);line-height:1.45}
+.hint b{color:var(--muted)}
+
+/* arise modal */
+.arise-box{width:min(420px,100%);text-align:center;background:linear-gradient(180deg,#0f1a36,#0a0f20);
+           border:1px solid rgba(62,224,255,.35);border-radius:16px;padding:20px 18px;
+           box-shadow:0 0 60px rgba(62,224,255,.18),0 30px 80px rgba(0,0,0,.6)}
+.arise-box h3{font-family:var(--f-display);margin:0 0 2px;font-size:25px;letter-spacing:.16em;color:var(--arise);
+              text-shadow:0 0 18px rgba(62,224,255,.5)}
+.arise-box .sub{font-size:12.5px;color:var(--muted);margin-bottom:12px;letter-spacing:.04em}
+.chance{font-size:42px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1;margin:6px 0}
+.pips{display:flex;gap:6px;justify-content:center;margin:10px 0 14px}
+.pip{width:26px;height:5px;border-radius:99px;background:#222f52}
+.pip.live{background:var(--arise);box-shadow:0 0 10px var(--arise)}
+.arise-actions{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+.log{margin-top:10px;font-size:12px;color:var(--muted);min-height:17px}
+
+/* toasts */
+.toasts{position:absolute;left:50%;transform:translateX(-50%);bottom:110px;display:grid;gap:6px;justify-items:center;z-index:15}
+.toast{background:rgba(11,16,34,.94);border:1px solid var(--line);border-radius:99px;padding:6px 14px;font-size:12.5px;
+       letter-spacing:.03em;animation:pop .3s ease both}
+@keyframes pop{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+
+@media (max-width:560px){
+  .pcard{min-width:0;flex:1}
+  .slot{width:40px;height:46px}
+  .act{min-width:56px;font-size:11.5px;padding:8px 8px}
+  .btn.icon{width:40px;height:40px;font-size:16px}
+  .hud{padding-left:8px;padding-right:8px}
+}
+</style>
+
+<div id="app">
+  <canvas id="stage"></canvas>
+
+  <div class="hud">
+    <div class="row">
+      <div class="card pcard">
+        <div class="top">
+          <div class="rankbadge" id="rank">E</div>
+          <div style="flex:1;min-width:0">
+            <div class="pname" id="title">Novato</div>
+            <div class="psub"><span id="lvl">Nivel 1</span> · <span id="isle">Aldea Inicial</span></div>
+          </div>
+        </div>
+        <div class="barlabel"><span>VIDA</span><span id="hptxt">100 / 100</span></div>
+        <div class="bar hp"><i id="hpbar" style="width:100%"></i></div>
+        <div class="barlabel"><span>EXP</span><span id="xptxt">0 / 100</span></div>
+        <div class="bar xp"><i id="xpbar"></i></div>
+      </div>
+
+      <div class="card purse">
+        <div class="coin gold"><span class="dot" style="background:var(--gold);color:var(--gold)"></span><span id="gold">0</span><small>oro</small></div>
+        <div class="coin gem"><span class="dot" style="background:var(--gem);color:var(--gem)"></span><span id="gems">0</span><small>gemas</small></div>
+        <div class="portalclock" id="portal">Portal en 1:40</div>
+      </div>
+    </div>
+
+    <div class="row" style="align-items:flex-end">
+      <div class="rail">
+        <button class="btn icon" id="b-stats" title="Atributos (1)">⚔</button>
+        <button class="btn icon" id="b-shadows" title="Sombras (2)">☗</button>
+        <button class="btn icon" id="b-shop" title="Tienda (3)">⚑</button>
+        <button class="btn icon" id="b-travel" title="Viajar (4)">◈</button>
+        <button class="btn icon" id="b-help" title="Ayuda (H)">?</button>
+      </div>
+      <div style="flex:1"></div>
+    </div>
+
+    <div style="display:grid;gap:8px;justify-items:center">
+      <div class="squad card" id="squad"></div>
+      <div class="actions">
+        <button class="btn act" id="a-attack">Atacar<kbd>Space</kbd></button>
+        <button class="btn act arise" id="a-arise">Arise<kbd>E</kbd></button>
+        <button class="btn act on" id="a-auto">Auto<kbd>Q</kbd></button>
+        <button class="btn act" id="a-autoarise">Auto-Arise<kbd>R</kbd></button>
+        <button class="btn act" id="a-portal" hidden>Entrar al portal<kbd>F</kbd></button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toasts" id="toasts"></div>
+  <div id="modal" hidden></div>
+</div>
+
+<script>
+"use strict";
+/* ============================================================================
+   Monarca de las Sombras — build web de Arise Crossover+
+   Las formulas y los limites son los mismos que los del servidor Luau en src/:
+     dano      = (armaBase + STR*1.5) * (1 + multiplicadorRango)
+     arise     = clamp(base + base*ariseLuck, 0, 1)
+     vida      = 100 + VIT*12       mana = 50 + MNA*8
+     velocidad = min(16 + AGI*0.12, 120)
+     sombra    = base * (1+(nivel-1)*0.08) * (1+SDW*0.01)
+   ==========================================================================*/
+
+const CFG = {
+  MAX_SQUAD: 4,
+  MAX_ARISE_ATTEMPTS: 3,
+  POINTS_PER_LEVEL: 5,
+  ATTACK_COOLDOWN: 0.45,
+  ATTACK_RANGE: 96,
+  ARISE_RANGE: 104,
+  SHADOW_FOLLOW_RADIUS: 58,
+  SHADOW_AGGRO: 300,
+  SHADOW_ATTACK_RANGE: 52,
+  SHADOW_ATTACK_COOLDOWN: 1.0,
+  SHADOW_SPEED: 210,
+  SHADOW_LEASH: 560,
+  CORPSE_LIFETIME: 26,
+  // El servidor usa 15-30 min entre portales; en la build web se comprime a
+  // 100 s para que una sesion de navegador vea el evento completo.
+  PORTAL_INTERVAL: 100,
+  PORTAL_LIFETIME: 45,
+  DOUBLE_DUNGEON_MULT: 2,
+  AWAKENED_LUCK: 0.60,
+  WORLD: { w: 2200, h: 1600 },
+  CONTACT_DMG_SCALE: 0.02,
+};
+
+const RANKS = [
+  { name:"E",        dmg:0.00, luck:0.00, level:1,   gems:0 },
+  { name:"D",        dmg:0.15, luck:0.05, level:10,  gems:60 },
+  { name:"C",        dmg:0.35, luck:0.10, level:25,  gems:180 },
+  { name:"B",        dmg:0.60, luck:0.18, level:45,  gems:500 },
+  { name:"A",        dmg:1.00, luck:0.28, level:70,  gems:1400 },
+  { name:"S",        dmg:1.75, luck:0.40, level:100, gems:4000 },
+  { name:"National", dmg:3.00, luck:0.60, level:140, gems:11000 },
+  { name:"Monarch",  dmg:5.00, luck:0.85, level:180, gems:30000 },
+];
+const rankIndex = n => Math.max(0, RANKS.findIndex(r => r.name === n));
+const rankOf = n => RANKS[rankIndex(n)];
+
+const WEAPONS = {
+  WoodenSword:       { id:"WoodenSword",       name:"Espada de Madera",       dmg:10,   price:0,       glyph:"🗡" },
+  SteelDagger:       { id:"SteelDagger",       name:"Daga de Acero",          dmg:45,   price:650,     glyph:"🔪" },
+  KnightBlade:       { id:"KnightBlade",       name:"Hoja del Caballero",     dmg:180,  price:9500,    glyph:"⚔" },
+  DemonKingLongsword:{ id:"DemonKingLongsword",name:"Mandibla del Rey Demonio",dmg:900, price:180000,  glyph:"🗡" },
+  MonarchDaggers:    { id:"MonarchDaggers",    name:"Dagas del Monarca",      dmg:4200, price:2600000, glyph:"⚜" },
+};
+
+const TIER_COLOR = { Common:"--t-common", Rare:"--t-rare", Epic:"--t-epic", Legendary:"--t-legend", Mythic:"--t-mythic", Monarch:"--t-monarch" };
+
+const SHADOWS = {
+  Goblin:     { id:"Goblin",     name:"Goblin",          tier:"Common",    dmg:12,    chance:0.55,  gems:4,    glyph:"👺" },
+  Wolf:       { id:"Wolf",       name:"Lobo de Hielo",   tier:"Rare",      dmg:48,    chance:0.35,  gems:12,   glyph:"🐺" },
+  Knight:     { id:"Knight",     name:"Igris",           tier:"Epic",      dmg:210,   chance:0.18,  gems:40,   glyph:"🛡" },
+  Beru:       { id:"Beru",       name:"Beru",            tier:"Legendary", dmg:950,   chance:0.07,  gems:160,  glyph:"🐜" },
+  Bellion:    { id:"Bellion",    name:"Bellion",         tier:"Mythic",    dmg:3800,  chance:0.025, gems:700,  glyph:"👹" },
+  StatueOfGod:{ id:"StatueOfGod",name:"Estatua de Dios", tier:"Monarch",   dmg:12000, chance:0.01,  gems:3000, glyph:"🗿" },
+};
+
+const ENEMIES = {
+  GoblinScout:    { id:"GoblinScout",    name:"Explorador Goblin", level:1,   hp:120,      dmg:8,     shadow:"Goblin",      xp:25,      gold:10,     r:16, color:"#7ad17a" },
+  IceWolf:        { id:"IceWolf",        name:"Lobo de Hielo",     level:15,  hp:1500,     dmg:60,    shadow:"Wolf",        xp:220,     gold:95,     r:18, color:"#bfe9ff" },
+  BlueKnight:     { id:"BlueKnight",     name:"Caballero Azul",    level:40,  hp:24000,    dmg:420,   shadow:"Knight",      xp:2600,    gold:900,    r:20, color:"#6f9cff" },
+  AntKing:        { id:"AntKing",        name:"Rey Hormiga",       level:80,  hp:480000,   dmg:3100,  shadow:"Beru",        xp:42000,   gold:12000,  r:23, color:"#c08bff" },
+  ShadowCommander:{ id:"ShadowCommander",name:"Comandante Sombrio",level:120, hp:3200000,  dmg:11000, shadow:"Bellion",     xp:260000,  gold:70000,  r:26, color:"#ff8fb0" },
+  StatueOfGod:    { id:"StatueOfGod",    name:"Estatua de Dios",   level:200, hp:40000000, dmg:55000, shadow:"StatueOfGod", xp:2500000, gold:400000, r:38, color:"#ffd27a" },
+};
+
+const ISLANDS = [
+  { id:"StarterVillage", name:"Aldea Inicial",        level:1,   enemy:"GoblinScout",     ground:"#16351f", accent:"#2c6b3c", sky:"#0a1a12" },
+  { id:"FrozenPeak",     name:"Pico Helado",          level:20,  enemy:"IceWolf",         ground:"#1b2c44", accent:"#3f6b96", sky:"#081525" },
+  { id:"DemonCastle",    name:"Castillo Demoniaco",   level:55,  enemy:"BlueKnight",      ground:"#2a1b33", accent:"#5b3a6e", sky:"#160b1d" },
+  { id:"AntIsland",      name:"Isla de las Hormigas", level:95,  enemy:"AntKing",         ground:"#33291a", accent:"#6e5a2f", sky:"#1a140a" },
+  { id:"ShadowRealm",    name:"Reino de las Sombras", level:150, enemy:"ShadowCommander", ground:"#141a2e", accent:"#36406b", sky:"#070a14" },
+];
+const islandOf = id => ISLANDS.find(i => i.id === id) || ISLANDS[0];
+
+/* ------------------------------ formulas -------------------------------- */
+const F = {
+  physicalDamage: (weaponBase, str, rankMult) => (weaponBase + str * 1.5) * (1 + rankMult),
+  ariseChance:    (base, luck) => Math.min(1, Math.max(0, base + base * luck)),
+  maxHealth:      s => 100 + s.VIT * 12,
+  maxMana:        s => 50 + s.MNA * 8,
+  walkSpeed:      s => Math.min(16 + s.AGI * 0.12, 120),
+  shadowDamage:   (sh, s) => sh.dmg * (1 + (sh.level - 1) * 0.08) * (1 + s.SDW * 0.01),
+  xpForLevel:     lv => Math.floor(100 * Math.pow(lv, 1.55)),
+  gemsForEnemy:   def => Math.max(1, Math.floor((SHADOWS[def.shadow]?.gems ?? 1) + def.level * 1.5)),
+};
+const ariseLuck = p => rankOf(p.rank).luck + p.stats.INT * 0.002 + (p.awakened ? CFG.AWAKENED_LUCK : 0);
+const playerDamage = p => F.physicalDamage(WEAPONS[p.weapon].dmg, p.stats.STR, rankOf(p.rank).dmg + (p.awakened ? 0.25 : 0));
+
+/* ------------------------------ formato --------------------------------- */
+const SUF = ["","K","M","B","T","Qa","Qi","Sx","Sp","Oc","No","Dc"];
+function fmt(v){
+  v = Math.floor(v); if (v < 1000) return String(v);
+  let i = 0, n = v;
+  while (n >= 1000 && i < SUF.length - 1){ n /= 1000; i++; }
+  return (n < 10 ? n.toFixed(2) : n < 100 ? n.toFixed(1) : Math.floor(n)) + SUF[i];
+}
+const uid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
+const clamp = (v,a,b) => v < a ? a : v > b ? b : v;
+const now = () => performance.now() / 1000;
+
+/* ------------------------------ perfil ---------------------------------- */
+const SAVE_KEY = "arise-crossover-plus/v1";
+function newProfile(){
+  return {
+    level:1, xp:0, rank:"E", gold:0, gems:0,
+    stats:{ STR:0, INT:0, SDW:0, VIT:0, AGI:0, MNA:0, points:5 },
+    weapon:"WoodenSword", weapons:["WoodenSword"], title:"Novato", awakened:false,
+    inventory:{}, equipped:[], islands:["StarterVillage"], island:"StarterVillage",
+    kills:0, arisen:0,
+  };
+}
+function loadProfile(){
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    if (!raw) return newProfile();
+    const data = JSON.parse(raw);
+    return reconcile(data);
+  } catch { return newProfile(); }
+}
+function reconcile(data){
+  const base = newProfile();
+  const p = Object.assign(base, data || {});
+  p.stats = Object.assign(base.stats, data?.stats || {});
+  if (typeof p.inventory !== "object" || !p.inventory) p.inventory = {};
+  if (!Array.isArray(p.equipped)) p.equipped = [];
+  if (!Array.isArray(p.weapons) || !p.weapons.length) p.weapons = ["WoodenSword"];
+  if (!WEAPONS[p.weapon]) p.weapon = "WoodenSword";
+  if (!RANKS.some(r => r.name === p.rank)) p.rank = "E";
+  // poda de UUIDs equipados que ya no existen (mismo reconcile que DataService)
+  p.equipped = p.equipped.filter(u => p.inventory[u]).slice(0, CFG.MAX_SQUAD);
+  if (!ISLANDS.some(i => i.id === p.island)) p.island = "StarterVillage";
+  return p;
+}
+let saveTimer = 0;
+function save(){
+  try { localStorage.setItem(SAVE_KEY, JSON.stringify(P)); } catch {}
+}
+
+let P = loadProfile();
+
+/* --------------------------- progresion --------------------------------- */
+function grantXp(amount){
+  P.xp += Math.floor(amount);
+  let leveled = false;
+  while (P.xp >= F.xpForLevel(P.level)){
+    P.xp -= F.xpForLevel(P.level);
+    P.level++;
+    P.stats.points += CFG.POINTS_PER_LEVEL;
+    leveled = true;
+  }
+  if (leveled){
+    player.maxHp = F.maxHealth(P.stats);
+    player.hp = player.maxHp;
+    toast(`¡Nivel ${P.level}! +${CFG.POINTS_PER_LEVEL} puntos`, "--xp");
+    burst(player.x, player.y, 26, "#57e6a5");
+    unlockCheck();
+  }
+  dirty = true;
+}
+function unlockCheck(){
+  for (const isle of ISLANDS){
+    if (P.level >= isle.level && !P.islands.includes(isle.id)){
+      P.islands.push(isle.id);
+      toast(`Nueva isla: ${isle.name}`, "--spec-hi");
+    }
+  }
+}
+function allocate(stat, points){
+  if (!(stat in P.stats) || stat === "points") return false;
+  points = Math.floor(points);
+  if (!(points > 0) || P.stats.points < points) return false;
+  P.stats.points -= points;
+  P.stats[stat] += points;
+  const ratio = player.hp / player.maxHp;
+  player.maxHp = F.maxHealth(P.stats);
+  player.hp = clamp(player.maxHp * ratio, 1, player.maxHp);
+  dirty = true; save();
+  return true;
+}
+function rankUp(){
+  const next = RANKS[rankIndex(P.rank) + 1];
+  if (!next) return toast("Ya eres Monarca.", "--muted");
+  if (P.level < next.level) return toast(`Requiere nivel ${next.level}.`, "--hp");
+  if (P.gems < next.gems) return toast(`Faltan ${fmt(next.gems - P.gems)} gemas.`, "--hp");
+  P.gems -= next.gems; P.rank = next.name;
+  toast(`Rango ${next.name} alcanzado`, "--monarch");
+  burst(player.x, player.y, 40, "#a77bff");
+  dirty = true; save(); renderPanel();
+}
+
+/* ============================== MUNDO ==================================== */
+const player = { x:CFG.WORLD.w/2, y:CFG.WORLD.h/2, vx:0, vy:0, hp:F.maxHealth(P.stats), maxHp:F.maxHealth(P.stats),
+                 face:1, atkCd:0, swing:0, hurt:0, dead:0, step:0 };
+let enemies = [], corpses = [], shadows = [], floaters = [], parts = [], portal = null;
+let spawnTimer = 0, portalTimer = CFG.PORTAL_INTERVAL, dirty = true, paused = false;
+let dungeon = null;           // { phase:"Phase1"|"DoubleDungeon"|"Cleared", timer }
+let auto = true, autoArise = false;
+const cam = { x:player.x, y:player.y };
+
+function currentEnemyDef(){
+  if (dungeon) return dungeon.def;
+  return ENEMIES[islandOf(P.island).enemy];
+}
+function scaleDef(def, mult){
+  return { ...def, level:Math.floor(def.level*mult), hp:def.hp*mult, dmg:def.dmg*mult,
+           xp:Math.floor(def.xp*mult), gold:Math.floor(def.gold*mult) };
+}
+function spawnEnemy(def, x, y){
+  const d = def || currentEnemyDef();
+  const a = Math.random()*Math.PI*2, dist = 420 + Math.random()*380;
+  const e = {
+    guid: uid(), def: d,
+    x: x ?? clamp(player.x + Math.cos(a)*dist, 60, CFG.WORLD.w-60),
+    y: y ?? clamp(player.y + Math.sin(a)*dist, 60, CFG.WORLD.h-60),
+    hp: d.hp, maxHp: d.hp, atkCd: 1 + Math.random(), hurt:0, step: Math.random()*6, boss: !!d.boss,
+  };
+  enemies.push(e);
+  return e;
+}
+function enemyPop(){ return dungeon ? (dungeon.phase === "Cleared" ? 0 : 6) : 11; }
+
+/* ---------------------------- combate ----------------------------------- */
+function damageEnemy(e, amount, fromShadow){
+  if (e.hp <= 0) return;
+  const applied = Math.min(amount, e.hp);
+  e.hp -= applied; e.hurt = 0.14;
+  floaters.push({ x:e.x + (Math.random()*22-11), y:e.y-e.def.r-6, text:fmt(applied),
+                  color: fromShadow ? "#a9d6ff" : "#ffe58f", life:0.95, vy:-46, big: !fromShadow });
+  if (e.hp <= 0) killEnemy(e);
+}
+function killEnemy(e){
+  enemies = enemies.filter(x => x !== e);
+  P.kills++;
+  grantXp(e.def.xp);
+  P.gold += e.def.gold;
+  burst(e.x, e.y, 18, e.def.color);
+  // cadaver inerte: solo quien remato puede extraer (aqui siempre el jugador)
+  corpses.push({ guid:uid(), def:e.def, x:e.x, y:e.y, attempts:0, born:now(), phase:0 });
+  if (dungeon && e.boss) onBossDefeated(e);
+  dirty = true;
+}
+function nearestEnemy(x, y, range){
+  let best = null, bd = range;
+  for (const e of enemies){
+    const d = Math.hypot(e.x-x, e.y-y);
+    if (d < bd){ bd = d; best = e; }
+  }
+  return best;
+}
+function playerAttack(){
+  if (player.atkCd > 0 || player.dead > 0) return;
+  const target = nearestEnemy(player.x, player.y, CFG.ATTACK_RANGE);
+  player.atkCd = CFG.ATTACK_COOLDOWN;
+  player.swing = 0.24;
+  if (!target) return;
+  player.face = target.x < player.x ? -1 : 1;
+  damageEnemy(target, playerDamage(P), false);
+  for (let i=0;i<5;i++) parts.push({ x:target.x, y:target.y, vx:(Math.random()-.5)*180, vy:(Math.random()-.5)*180,
+                                      life:.3, color:"#ffe58f", size:2.5 });
+}
+
+/* ------------------------------ ARISE ------------------------------------ */
+let ariseTarget = null;
+function nearestCorpse(){
+  let best = null, bd = CFG.ARISE_RANGE;
+  for (const c of corpses){
+    const d = Math.hypot(c.x-player.x, c.y-player.y);
+    if (d < bd){ bd = d; best = c; }
+  }
+  return best;
+}
+function corpseChance(c){ return F.ariseChance(SHADOWS[c.def.shadow].chance, ariseLuck(P)); }
+
+// Reemplazo automatico: con el escuadron lleno cae la Sombra de menor dano.
+function autoEquip(shadow){
+  if (P.equipped.length < CFG.MAX_SQUAD){ P.equipped.push(shadow.uuid); return null; }
+  let worst = null, worstDmg = Infinity;
+  for (const uuid of P.equipped){
+    const s = P.inventory[uuid];
+    const d = s ? F.shadowDamage(s, P.stats) : -1;
+    if (d < worstDmg){ worstDmg = d; worst = uuid; }
+  }
+  if (worst !== null && F.shadowDamage(shadow, P.stats) > worstDmg){
+    P.equipped[P.equipped.indexOf(worst)] = shadow.uuid;
+    return worst;
+  }
+  return null;
+}
+function attemptArise(c){
+  if (!c || c.attempts >= CFG.MAX_ARISE_ATTEMPTS) return { ok:false, reason:"sin intentos" };
+  if (Math.hypot(c.x-player.x, c.y-player.y) > CFG.ARISE_RANGE * 1.4) return { ok:false, reason:"demasiado lejos" };
+  c.attempts++;
+  const chance = corpseChance(c);
+  const roll = Math.random();
+  if (roll <= chance){
+    const def = SHADOWS[c.def.shadow];
+    const shadow = { uuid:uid(), id:def.id, name:def.name, tier:def.tier, level:1, dmg:def.dmg, xp:0 };
+    P.inventory[shadow.uuid] = shadow;
+    const replaced = autoEquip(shadow);
+    P.arisen++;
+    removeCorpse(c);
+    rebuildShadows();
+    dirty = true; save();
+    burst(c.x, c.y, 46, "#3ee0ff");
+    return { ok:true, shadow, replaced, chance };
+  }
+  if (c.attempts >= CFG.MAX_ARISE_ATTEMPTS){
+    const gems = F.gemsForEnemy(c.def);
+    P.gems += gems; removeCorpse(c); dirty = true; save();
+    return { ok:false, chance, exhausted:true, gems };
+  }
+  return { ok:false, chance, attemptsLeft: CFG.MAX_ARISE_ATTEMPTS - c.attempts };
+}
+function declineArise(c){
+  if (!c) return 0;
+  const gems = F.gemsForEnemy(c.def);
+  P.gems += gems; removeCorpse(c); dirty = true; save();
+  toast(`+${fmt(gems)} gemas`, "--gem");
+  return gems;
+}
+function removeCorpse(c){ corpses = corpses.filter(x => x !== c); if (ariseTarget === c) closeArise(); }
+
+/* --------------------------- sombras (FSM) ------------------------------- */
+function rebuildShadows(){
+  const keep = new Map(shadows.map(s => [s.uuid, s]));
+  shadows = P.equipped.map((uuid, i) => {
+    const data = P.inventory[uuid];
+    if (!data) return null;
+    const prev = keep.get(uuid);
+    const angle = (i / CFG.MAX_SQUAD) * Math.PI * 2;
+    return prev ? Object.assign(prev, { slot:i, dmg:F.shadowDamage(data, P.stats), data })
+      : { uuid, id:data.id, data, slot:i, state:"Follow", atkCd:0, step:Math.random()*6,
+          x:player.x + Math.cos(angle)*CFG.SHADOW_FOLLOW_RADIUS,
+          y:player.y + Math.sin(angle)*CFG.SHADOW_FOLLOW_RADIUS,
+          dmg:F.shadowDamage(data, P.stats), target:null, swing:0 };
+  }).filter(Boolean);
+  dirty = true;
+}
+function formationPoint(slot){
+  const a = (slot / CFG.MAX_SQUAD) * Math.PI * 2 + now() * 0.25;
+  return { x: player.x + Math.cos(a) * CFG.SHADOW_FOLLOW_RADIUS, y: player.y + Math.sin(a) * CFG.SHADOW_FOLLOW_RADIUS };
+}
+function stepShadow(s, dt){
+  let target = s.target && enemies.includes(s.target) && s.target.hp > 0 ? s.target : null;
+  if (!target) s.target = null;
+  const distOwner = Math.hypot(s.x-player.x, s.y-player.y);
+  if (distOwner > CFG.SHADOW_LEASH){ s.state = "Return"; s.target = target = null; }
+  if (!target && s.state !== "Return"){
+    target = nearestEnemy(s.x, s.y, CFG.SHADOW_AGGRO);
+    if (target){ s.target = target; s.state = "Chase"; }
+  }
+  let dx, dy;
+  if (target){
+    const d = Math.hypot(target.x-s.x, target.y-s.y);
+    if (d <= CFG.SHADOW_ATTACK_RANGE){
+      s.state = "Attack"; dx = 0; dy = 0;
+      if (s.atkCd <= 0){
+        s.atkCd = CFG.SHADOW_ATTACK_COOLDOWN; s.swing = 0.2;
+        damageEnemy(target, s.dmg, true);
+        for (let i=0;i<4;i++) parts.push({ x:target.x, y:target.y, vx:(Math.random()-.5)*150, vy:(Math.random()-.5)*150,
+                                            life:.35, color:"#6aa8ff", size:2.2 });
+      }
+    } else { s.state = "Chase"; dx = target.x - s.x; dy = target.y - s.y; }
+  } else {
+    const f = formationPoint(s.slot);
+    dx = f.x - s.x; dy = f.y - s.y;
+    s.state = Math.hypot(dx, dy) < 6 ? "Idle" : (s.state === "Return" && Math.hypot(dx,dy) > 20 ? "Return" : "Follow");
+  }
+  const len = Math.hypot(dx, dy);
+  if (len > 1){
+    const speed = CFG.SHADOW_SPEED * (s.state === "Return" ? 1.6 : 1);
+    const step = Math.min(speed * dt, len);
+    s.x += dx / len * step; s.y += dy / len * step;
+    s.face = dx < 0 ? -1 : 1;
+  }
+  s.atkCd -= dt; s.swing = Math.max(0, s.swing - dt); s.step += dt * (s.state === "Idle" ? 1.2 : 5);
+}
+
+/* ---------------------------- mazmorra ---------------------------------- */
+function spawnPortal(){
+  const a = Math.random()*Math.PI*2;
+  portal = { x: clamp(player.x + Math.cos(a)*520, 120, CFG.WORLD.w-120),
+             y: clamp(player.y + Math.sin(a)*520, 120, CFG.WORLD.h-120),
+             born: now(), t:0 };
+  toast("Un portal se ha abierto", "--arise");
+  dirty = true;
+}
+function enterDungeon(){
+  if (!portal) return;
+  portal = null;
+  const base = ENEMIES[islandOf(P.island).enemy];
+  dungeon = { phase:"Phase1", def:base, timer:0 };
+  enemies = []; corpses = [];
+  player.x = CFG.WORLD.w/2; player.y = CFG.WORLD.h/2;
+  const boss = spawnEnemy({ ...scaleDef(base, 6), name:`${base.name} Alfa`, r:base.r*1.6, boss:true, color:"#ff9aa4" },
+                          player.x, player.y - 300);
+  for (let i=0;i<5;i++) spawnEnemy();
+  toast("Mazmorra — Fase 1: derrota al jefe", "--spec-hi");
+  dirty = true;
+}
+function onBossDefeated(e){
+  if (dungeon.phase === "Phase1"){
+    dungeon.phase = "DoubleDungeon"; dungeon.timer = 0;
+    dungeon.def = scaleDef(dungeon.def, CFG.DOUBLE_DUNGEON_MULT);
+    enemies = [];
+    for (let i=0;i<6;i++) spawnEnemy();
+    spawnEnemy({ ...ENEMIES.StatueOfGod, boss:true }, player.x, player.y - 360);
+    toast("DOUBLE DUNGEON — la Estatua de Dios despierta", "--monarch");
+    document.getElementById("app").animate(
+      [{ filter:"brightness(2.4) saturate(.4)" }, { filter:"none" }], { duration:700, easing:"ease-out" });
+  } else if (e.def.id === "StatueOfGod"){
+    dungeon.phase = "Cleared";
+    P.awakened = true; P.title = "Awakened";
+    toast("Has DESPERTADO · +60% de suerte de extracción", "--monarch");
+    burst(player.x, player.y, 90, "#a77bff");
+    save();
+    setTimeout(exitDungeon, 4200);
+  }
+}
+function exitDungeon(){
+  dungeon = null; enemies = []; corpses = [];
+  player.x = CFG.WORLD.w/2; player.y = CFG.WORLD.h/2;
+  portalTimer = CFG.PORTAL_INTERVAL;
+  toast("De vuelta al mundo abierto", "--spec-hi");
+  dirty = true;
+}
+
+/* ------------------------------ fx -------------------------------------- */
+function burst(x, y, n, color){
+  for (let i=0;i<n;i++){
+    const a = Math.random()*Math.PI*2, sp = 60 + Math.random()*240;
+    parts.push({ x, y, vx:Math.cos(a)*sp, vy:Math.sin(a)*sp, life:.35+Math.random()*.5, color, size:1.6+Math.random()*2.6 });
+  }
+}
+function toast(text, colorVar){
+  const el = document.createElement("div");
+  el.className = "toast"; el.textContent = text;
+  if (colorVar) el.style.color = `var(${colorVar})`;
+  const box = document.getElementById("toasts");
+  box.appendChild(el);
+  setTimeout(() => { el.style.opacity = "0"; el.style.transition = "opacity .35s"; }, 2000);
+  setTimeout(() => el.remove(), 2450);
+  while (box.children.length > 4) box.firstChild.remove();
+}
+
+/* ============================== BUCLE ==================================== */
+const canvas = document.getElementById("stage");
+const ctx = canvas.getContext("2d");
+let W = 0, H = 0, DPR = 1, VW = 0, VH = 0;
+// Zoom de camara: el mundo se dibuja en coordenadas VW x VH y se escala, para
+// que los personajes se lean bien tambien en pantallas pequenas.
+function zoomFor(width){ return width < 720 ? 1.55 : 1.3; }
+let Z = 1.3;
+function resize(){
+  DPR = Math.min(window.devicePixelRatio || 1, 2);
+  W = canvas.clientWidth; H = canvas.clientHeight;
+  Z = zoomFor(W);
+  VW = W / Z; VH = H / Z;
+  canvas.width = Math.floor(W * DPR); canvas.height = Math.floor(H * DPR);
+  ctx.setTransform(DPR * Z, 0, 0, DPR * Z, 0, 0);
+}
+window.addEventListener("resize", resize);
+
+const keys = new Set();
+let pointer = null;
+addEventListener("keydown", e => {
+  const k = e.key.toLowerCase();
+  if (["arrowup","arrowdown","arrowleft","arrowright"," "].includes(k)) e.preventDefault();
+  if (k === "escape"){ closePanel(); closeArise(); return; }
+  if (modalOpen() && k !== "e") return;
+  keys.add(k);
+  if (k === " ") playerAttack();
+  if (k === "e") openArise();
+  if (k === "q") setAuto(!auto);
+  if (k === "r") setAutoArise(!autoArise);
+  if (k === "f" && portal) enterDungeon();
+  if (k === "1") openPanel("stats");
+  if (k === "2") openPanel("shadows");
+  if (k === "3") openPanel("shop");
+  if (k === "4") openPanel("travel");
+  if (k === "h") openPanel("help");
+});
+addEventListener("keyup", e => keys.delete(e.key.toLowerCase()));
+addEventListener("blur", () => keys.clear());
+
+canvas.addEventListener("pointerdown", e => { canvas.setPointerCapture(e.pointerId); pointer = { x:e.clientX, y:e.clientY }; });
+canvas.addEventListener("pointermove", e => { if (pointer) pointer = { x:e.clientX, y:e.clientY }; });
+canvas.addEventListener("pointerup", () => { pointer = null; });
+canvas.addEventListener("pointercancel", () => { pointer = null; });
+
+function inputVector(){
+  let dx = 0, dy = 0;
+  if (keys.has("w") || keys.has("arrowup")) dy -= 1;
+  if (keys.has("s") || keys.has("arrowdown")) dy += 1;
+  if (keys.has("a") || keys.has("arrowleft")) dx -= 1;
+  if (keys.has("d") || keys.has("arrowright")) dx += 1;
+  if (!dx && !dy && pointer){
+    const px = pointer.x - W/2, py = pointer.y - H/2;
+    if (Math.hypot(px, py) > 26){ dx = px; dy = py; }
+  }
+  const len = Math.hypot(dx, dy);
+  return len ? { x:dx/len, y:dy/len } : { x:0, y:0 };
+}
+
+function update(dt){
+  const speed = F.walkSpeed(P.stats) * 6.5;
+  const v = inputVector();
+  if (player.dead > 0){
+    player.dead -= dt;
+    if (player.dead <= 0){ player.hp = player.maxHp * 0.6; toast("Has revivido", "--muted"); }
+  } else {
+    player.x = clamp(player.x + v.x * speed * dt, 40, CFG.WORLD.w - 40);
+    player.y = clamp(player.y + v.y * speed * dt, 40, CFG.WORLD.h - 40);
+    if (v.x) player.face = v.x < 0 ? -1 : 1;
+    player.step += (Math.abs(v.x) + Math.abs(v.y)) * dt * 9;
+  }
+  player.atkCd -= dt; player.swing = Math.max(0, player.swing - dt); player.hurt = Math.max(0, player.hurt - dt);
+
+  if (auto && player.atkCd <= 0 && !modalOpen()) playerAttack();
+
+  // enemigos
+  spawnTimer -= dt;
+  if (spawnTimer <= 0 && enemies.length < enemyPop()){ spawnEnemy(); spawnTimer = 1.1; }
+  for (const e of enemies){
+    const d = Math.hypot(player.x-e.x, player.y-e.y);
+    const sp = 74 + Math.min(40, e.def.level * 0.25);
+    if (d > e.def.r + 26){
+      e.x += (player.x-e.x)/d * sp * dt; e.y += (player.y-e.y)/d * sp * dt;
+      e.step += dt * 6;
+    } else if ((e.atkCd -= dt) <= 0 && player.dead <= 0){
+      e.atkCd = 1.25;
+      const dmg = Math.max(1, e.def.dmg * CFG.CONTACT_DMG_SCALE);
+      player.hp -= dmg; player.hurt = 0.2;
+      floaters.push({ x:player.x, y:player.y-30, text:`-${fmt(dmg)}`, color:"#ff8d97", life:.8, vy:-40 });
+      if (player.hp <= 0){
+        player.hp = 0; player.dead = 2.2;
+        toast("Caíste. Tus sombras te cubren…", "--hp");
+        burst(player.x, player.y, 30, "#ff5d6c");
+      }
+      dirty = true;
+    }
+    e.hurt = Math.max(0, e.hurt - dt);
+  }
+
+  for (const s of shadows) stepShadow(s, dt);
+
+  // cadaveres
+  const t = now();
+  for (const c of corpses.slice()){
+    c.phase += dt;
+    if (t - c.born > CFG.CORPSE_LIFETIME) removeCorpse(c);
+  }
+  if (autoArise && !ariseTarget){
+    const c = nearestCorpse();
+    if (c) resolveAuto(c);
+  }
+
+  // portal
+  if (!dungeon){
+    if (!portal){
+      portalTimer -= dt;
+      if (portalTimer <= 0){ spawnPortal(); portalTimer = CFG.PORTAL_INTERVAL + CFG.PORTAL_LIFETIME; }
+    } else {
+      portal.t += dt;
+      if (portal.t > CFG.PORTAL_LIFETIME){ portal = null; toast("El portal se cerró", "--muted"); }
+    }
+  }
+  const nearPortal = portal && Math.hypot(portal.x-player.x, portal.y-player.y) < 90;
+  document.getElementById("a-portal").hidden = !nearPortal;
+
+  // fx
+  for (const f of floaters){ f.life -= dt; f.y += f.vy * dt; f.vy += 42 * dt; }
+  floaters = floaters.filter(f => f.life > 0);
+  for (const p of parts){ p.life -= dt; p.x += p.vx*dt; p.y += p.vy*dt; p.vx *= 0.93; p.vy = p.vy*0.93 + 60*dt; }
+  parts = parts.filter(p => p.life > 0);
+
+  cam.x += (player.x - cam.x) * Math.min(1, dt * 6);
+  cam.y += (player.y - cam.y) * Math.min(1, dt * 6);
+
+  saveTimer -= dt;
+  if (saveTimer <= 0){ save(); saveTimer = 5; }
+}
+
+// Auto-Arise: gasta intentos solo mientras haya probabilidad razonable.
+function resolveAuto(c){
+  const r = attemptArise(c);
+  if (r.ok){ toast(`ARISE · ${r.shadow.name}`, "--arise"); dirty = true; }
+  else if (r.exhausted) toast(`Extracción fallida · +${fmt(r.gems)} gemas`, "--gem");
+}
+
+/* ============================== RENDER =================================== */
+function shade(hex, amount){
+  const n = parseInt(hex.slice(1), 16);
+  const r = clamp(((n >> 16) & 255) + amount, 0, 255);
+  const g = clamp(((n >> 8) & 255) + amount, 0, 255);
+  const b = clamp((n & 255) + amount, 0, 255);
+  return `rgb(${r},${g},${b})`;
+}
+function drawGround(){
+  const isle = islandOf(P.island);
+  const sky = dungeon ? "#0a0713" : isle.sky;
+  const ground = dungeon ? "#191430" : isle.ground;
+  const accent = dungeon ? "#3b2d63" : isle.accent;
+  ctx.fillStyle = sky; ctx.fillRect(0, 0, VW, VH);
+
+  const ox = -cam.x + VW/2, oy = -cam.y + VH/2;
+  ctx.fillStyle = ground;
+  ctx.fillRect(ox, oy, CFG.WORLD.w, CFG.WORLD.h);
+
+  // rejilla del terreno
+  ctx.strokeStyle = accent; ctx.globalAlpha = 0.22; ctx.lineWidth = 1;
+  const g = 80;
+  ctx.beginPath();
+  for (let x = 0; x <= CFG.WORLD.w; x += g){ ctx.moveTo(ox + x, oy); ctx.lineTo(ox + x, oy + CFG.WORLD.h); }
+  for (let y = 0; y <= CFG.WORLD.h; y += g){ ctx.moveTo(ox, oy + y); ctx.lineTo(ox + CFG.WORLD.w, oy + y); }
+  ctx.stroke(); ctx.globalAlpha = 1;
+
+  // decoracion estable (hash por celda)
+  ctx.globalAlpha = 0.5;
+  for (let x = 0; x < CFG.WORLD.w; x += 120){
+    for (let y = 0; y < CFG.WORLD.h; y += 120){
+      const h = ((x * 73856093) ^ (y * 19349663)) >>> 0;
+      if (h % 3) continue;
+      const px = ox + x + (h % 90), py = oy + y + ((h >> 7) % 90);
+      if (px < -60 || py < -60 || px > VW + 60 || py > VH + 60) continue;
+      ctx.fillStyle = shade(accent, -18);
+      if (dungeon){ ctx.fillRect(px-7, py-24, 14, 26); }
+      else {
+        ctx.beginPath(); ctx.ellipse(px, py, 16, 9, 0, 0, Math.PI*2); ctx.fill();
+        ctx.fillRect(px-2, py-16, 4, 16);
+      }
+    }
+  }
+  ctx.globalAlpha = 1;
+  ctx.strokeStyle = accent; ctx.lineWidth = 3; ctx.globalAlpha = .7;
+  ctx.strokeRect(ox, oy, CFG.WORLD.w, CFG.WORLD.h); ctx.globalAlpha = 1;
+}
+function toScreen(x, y){ return { x: x - cam.x + VW/2, y: y - cam.y + VH/2 }; }
+
+function drawShadowUnit(s){
+  const p = toScreen(s.x, s.y);
+  const bob = Math.sin(s.step) * 2.4;
+  const tier = s.data.tier;
+  const color = getComputedStyle(document.documentElement).getPropertyValue(TIER_COLOR[tier] || "--t-common").trim() || "#9bb0d8";
+  ctx.save();
+  ctx.translate(p.x, p.y + bob);
+  // aura
+  const grd = ctx.createRadialGradient(0, -8, 2, 0, -8, 30);
+  grd.addColorStop(0, "rgba(106,168,255,.45)"); grd.addColorStop(1, "rgba(106,168,255,0)");
+  ctx.fillStyle = grd; ctx.beginPath(); ctx.arc(0, -8, 30, 0, Math.PI*2); ctx.fill();
+  // sombra en el suelo
+  ctx.fillStyle = "rgba(0,0,0,.35)"; ctx.beginPath(); ctx.ellipse(0, 10, 12, 4.5, 0, 0, Math.PI*2); ctx.fill();
+  // cuerpo espectral
+  ctx.fillStyle = "rgba(24,52,104,.92)"; ctx.strokeStyle = color; ctx.lineWidth = 1.4;
+  ctx.beginPath();
+  ctx.moveTo(-8, 10); ctx.quadraticCurveTo(-11, -12, 0, -22); ctx.quadraticCurveTo(11, -12, 8, 10);
+  ctx.closePath(); ctx.fill(); ctx.stroke();
+  // ojos
+  ctx.fillStyle = color; ctx.shadowColor = color; ctx.shadowBlur = 8;
+  ctx.fillRect(-4.5, -16, 3, 2.4); ctx.fillRect(1.5, -16, 3, 2.4);
+  ctx.shadowBlur = 0;
+  // arma al atacar
+  if (s.swing > 0){
+    ctx.strokeStyle = "#cfe6ff"; ctx.lineWidth = 2.4; ctx.globalAlpha = s.swing / 0.2;
+    ctx.beginPath(); ctx.arc(0, -6, 22, -0.9, 0.9); ctx.stroke(); ctx.globalAlpha = 1;
+  }
+  ctx.restore();
+}
+function drawEnemy(e){
+  const p = toScreen(e.x, e.y);
+  if (p.x < -80 || p.y < -80 || p.x > VW+80 || p.y > VH+80) return;
+  const r = e.def.r, bob = Math.sin(e.step) * 2;
+  ctx.save(); ctx.translate(p.x, p.y + bob);
+  ctx.fillStyle = "rgba(0,0,0,.38)"; ctx.beginPath(); ctx.ellipse(0, r*0.72, r*0.8, r*0.3, 0, 0, Math.PI*2); ctx.fill();
+  const body = e.hurt > 0 ? "#ffffff" : e.def.color;
+  ctx.fillStyle = body; ctx.strokeStyle = shade(e.def.color, -60); ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.roundRect(-r*0.62, -r*0.9, r*1.24, r*1.6, r*0.35); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = "#101426";
+  ctx.fillRect(-r*0.3, -r*0.5, r*0.22, r*0.18); ctx.fillRect(r*0.08, -r*0.5, r*0.22, r*0.18);
+  if (e.boss){
+    ctx.fillStyle = "#ffd27a";
+    ctx.beginPath(); ctx.moveTo(-r*0.6,-r*0.95); ctx.lineTo(-r*0.3,-r*1.4); ctx.lineTo(0,-r*0.95);
+    ctx.lineTo(r*0.3,-r*1.4); ctx.lineTo(r*0.6,-r*0.95); ctx.closePath(); ctx.fill();
+  }
+  // barra de vida
+  const bw = Math.max(34, r*2.2);
+  ctx.fillStyle = "rgba(6,9,18,.85)"; ctx.fillRect(-bw/2, -r-16, bw, 5);
+  ctx.fillStyle = e.boss ? "#ffc861" : "#ff5d6c";
+  ctx.fillRect(-bw/2+1, -r-15, (bw-2) * clamp(e.hp/e.maxHp, 0, 1), 3);
+  if (e.boss || Math.hypot(e.x-player.x, e.y-player.y) < 240){
+    ctx.fillStyle = e.boss ? "#ffd27a" : "rgba(201,214,245,.78)";
+    ctx.font = `${e.boss ? 700 : 600} ${e.boss ? 12 : 10}px Rajdhani, sans-serif`; ctx.textAlign = "center";
+    ctx.fillText(`${e.def.name} · Nv ${e.def.level}`, 0, -r-20);
+  }
+  ctx.restore();
+}
+function drawCorpse(c){
+  const p = toScreen(c.x, c.y);
+  const pulse = 0.55 + Math.sin(c.phase * 3) * 0.25;
+  const near = Math.hypot(c.x-player.x, c.y-player.y) < CFG.ARISE_RANGE;
+  ctx.save(); ctx.translate(p.x, p.y);
+  const grd = ctx.createRadialGradient(0, 0, 2, 0, 0, 46);
+  grd.addColorStop(0, `rgba(62,224,255,${0.30*pulse})`); grd.addColorStop(1, "rgba(62,224,255,0)");
+  ctx.fillStyle = grd; ctx.beginPath(); ctx.arc(0, 0, 46, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = "rgba(12,20,40,.9)"; ctx.strokeStyle = "rgba(62,224,255,.75)"; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.ellipse(0, 0, c.def.r*0.9, c.def.r*0.5, 0, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+  if (near){
+    ctx.fillStyle = "#3ee0ff"; ctx.font = "700 12px Rajdhani, sans-serif"; ctx.textAlign = "center";
+    ctx.shadowColor = "#3ee0ff"; ctx.shadowBlur = 10;
+    ctx.fillText(`[E] ARISE · ${CFG.MAX_ARISE_ATTEMPTS - c.attempts} intentos`, 0, -c.def.r - 14);
+    ctx.shadowBlur = 0;
+  }
+  ctx.restore();
+}
+function drawPortal(){
+  if (!portal) return;
+  const p = toScreen(portal.x, portal.y);
+  const t = portal.t;
+  ctx.save(); ctx.translate(p.x, p.y);
+  for (let i=0;i<3;i++){
+    const rr = 34 + i*10 + Math.sin(t*2 + i) * 4;
+    ctx.strokeStyle = `rgba(122,160,255,${0.65 - i*0.18})`; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.ellipse(0, 0, rr*0.62, rr, t*0.6 + i, 0, Math.PI*2); ctx.stroke();
+  }
+  const grd = ctx.createRadialGradient(0, 0, 4, 0, 0, 46);
+  grd.addColorStop(0, "rgba(120,170,255,.55)"); grd.addColorStop(1, "rgba(60,80,200,0)");
+  ctx.fillStyle = grd; ctx.beginPath(); ctx.arc(0, 0, 46, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = "#cfe0ff"; ctx.font = "700 12px Rajdhani, sans-serif"; ctx.textAlign = "center";
+  ctx.fillText("PORTAL · [F]", 0, -58);
+  ctx.restore();
+}
+function drawPlayer(){
+  const p = toScreen(player.x, player.y);
+  const bob = Math.sin(player.step) * 2.2;
+  ctx.save(); ctx.translate(p.x, p.y + bob); ctx.scale(player.face, 1);
+  ctx.fillStyle = "rgba(0,0,0,.4)"; ctx.beginPath(); ctx.ellipse(0, 13, 13, 5, 0, 0, Math.PI*2); ctx.fill();
+  if (player.dead > 0) ctx.globalAlpha = 0.45;
+  // capa
+  ctx.fillStyle = P.awakened ? "#5b3aa8" : "#22305c";
+  ctx.beginPath(); ctx.moveTo(-9, -14); ctx.quadraticCurveTo(-17, 4, -6, 12); ctx.lineTo(6, 12); ctx.closePath(); ctx.fill();
+  // cuerpo
+  ctx.fillStyle = player.hurt > 0 ? "#ffd9dc" : "#e8edff";
+  ctx.beginPath(); ctx.roundRect(-7, -14, 14, 24, 4); ctx.fill();
+  ctx.fillStyle = "#101426"; ctx.fillRect(-4, -9, 3, 2.6); ctx.fillRect(1, -9, 3, 2.6);
+  // arma
+  const sw = player.swing > 0 ? (1 - player.swing/0.24) : 0;
+  ctx.save(); ctx.translate(8, -2); ctx.rotate(-0.9 + sw * 2.1);
+  ctx.fillStyle = P.awakened ? "#c9a6ff" : "#9fb6e8";
+  ctx.fillRect(0, -2, 22, 4);
+  ctx.fillStyle = "#6b7ba6"; ctx.fillRect(-4, -3, 5, 6);
+  ctx.restore();
+  if (player.swing > 0){
+    ctx.strokeStyle = P.awakened ? "rgba(199,166,255,.8)" : "rgba(207,230,255,.75)"; ctx.lineWidth = 3;
+    ctx.globalAlpha = player.swing / 0.24;
+    ctx.beginPath(); ctx.arc(4, -2, 30, -1.1, 1.1); ctx.stroke(); ctx.globalAlpha = 1;
+  }
+  ctx.restore();
+}
+function render(){
+  drawGround();
+  drawPortal();
+  for (const c of corpses) drawCorpse(c);
+  const order = [...enemies.map(e => ({ y:e.y, f:() => drawEnemy(e) })),
+                 ...shadows.map(s => ({ y:s.y, f:() => drawShadowUnit(s) })),
+                 { y:player.y, f:drawPlayer }];
+  order.sort((a,b) => a.y - b.y).forEach(o => o.f());
+
+  for (const p of parts){
+    const s = toScreen(p.x, p.y);
+    ctx.globalAlpha = clamp(p.life * 2, 0, 1); ctx.fillStyle = p.color;
+    ctx.fillRect(s.x - p.size/2, s.y - p.size/2, p.size, p.size);
+  }
+  ctx.globalAlpha = 1;
+  ctx.textAlign = "center";
+  for (const f of floaters){
+    const s = toScreen(f.x, f.y);
+    ctx.globalAlpha = clamp(f.life * 1.6, 0, 1);
+    ctx.font = `700 ${f.big ? 18 : 14}px Rajdhani, sans-serif`;
+    ctx.fillStyle = f.color; ctx.strokeStyle = "rgba(4,7,16,.85)"; ctx.lineWidth = 3;
+    ctx.strokeText(f.text, s.x, s.y); ctx.fillText(f.text, s.x, s.y);
+  }
+  ctx.globalAlpha = 1;
+
+  // vineta: concentra la atencion en el personaje
+  const vg = ctx.createRadialGradient(VW/2, VH/2, Math.min(VW,VH)*0.34, VW/2, VH/2, Math.max(VW,VH)*0.78);
+  vg.addColorStop(0, "rgba(0,0,0,0)"); vg.addColorStop(1, "rgba(3,5,12,.72)");
+  ctx.fillStyle = vg; ctx.fillRect(0, 0, VW, VH);
+
+  if (dungeon){
+    ctx.fillStyle = dungeon.phase === "DoubleDungeon" ? "#a77bff" : "#a9d6ff";
+    ctx.font = "700 15px Cinzel, serif"; ctx.textAlign = "center";
+    ctx.fillText(dungeon.phase === "Phase1" ? "MAZMORRA · FASE 1"
+      : dungeon.phase === "DoubleDungeon" ? "DOUBLE DUNGEON" : "MAZMORRA COMPLETADA", VW/2, 74);
+  }
+}
+
+/* ================================ UI ===================================== */
+const $ = id => document.getElementById(id);
+const modal = $("modal");
+let panelKind = null;
+const modalOpen = () => !!panelKind || !!ariseTarget;
+
+function syncHud(){
+  $("rank").textContent = P.rank === "National" ? "N" : P.rank === "Monarch" ? "M" : P.rank;
+  $("rank").title = `Rango ${P.rank}`;
+  $("title").textContent = P.title;
+  $("lvl").textContent = `Nivel ${P.level}`;
+  $("isle").textContent = dungeon ? "Mazmorra" : islandOf(P.island).name;
+  $("gold").textContent = fmt(P.gold);
+  $("gems").textContent = fmt(P.gems);
+  const need = F.xpForLevel(P.level);
+  $("xptxt").textContent = `${fmt(P.xp)} / ${fmt(need)}`;
+  $("xpbar").style.width = `${clamp(P.xp / need * 100, 0, 100)}%`;
+  $("hptxt").textContent = `${fmt(Math.max(0, player.hp))} / ${fmt(player.maxHp)}`;
+  $("hpbar").style.width = `${clamp(player.hp / player.maxHp * 100, 0, 100)}%`;
+  $("portal").textContent = dungeon ? `Fase: ${dungeon.phase === "DoubleDungeon" ? "Double Dungeon" : dungeon.phase}`
+    : portal ? `Portal abierto · ${Math.ceil(CFG.PORTAL_LIFETIME - portal.t)}s`
+    : `Portal en ${Math.floor(portalTimer/60)}:${String(Math.floor(portalTimer%60)).padStart(2,"0")}`;
+
+  const squad = $("squad"); squad.innerHTML = "";
+  for (let i = 0; i < CFG.MAX_SQUAD; i++){
+    const uuid = P.equipped[i], data = uuid && P.inventory[uuid];
+    const el = document.createElement("div");
+    el.className = "slot" + (data ? "" : " empty");
+    if (data){
+      const color = `var(${TIER_COLOR[data.tier]})`;
+      el.innerHTML = `<span class="glyph">${SHADOWS[data.id]?.glyph || "☗"}</span>
+        <span class="nm" style="color:${color}">${data.name}</span>
+        <span class="dmg">${fmt(F.shadowDamage(data, P.stats))}</span>`;
+      el.style.borderColor = color;
+    } else el.innerHTML = `<span class="glyph" style="opacity:.4">+</span><span class="nm">vacío</span>`;
+    squad.appendChild(el);
+  }
+}
+
+/* ------------------------------ paneles --------------------------------- */
+function openPanel(kind){ closeArise(); panelKind = kind; renderPanel(); }
+function closePanel(){ panelKind = null; renderPanel(); }
+function shell(title, body){
+  return `<div class="scrim" data-close="1"><div class="panel" role="dialog" aria-label="${title}">
+    <header><h2>${title}</h2><button class="x" data-close="1" aria-label="Cerrar">✕</button></header>
+    <div class="body">${body}</div></div></div>`;
+}
+const STAT_INFO = {
+  STR:["Fuerza","Daño físico: (arma + STR×1.5) × (1 + rango)"],
+  INT:["Inteligencia","+0.2% de suerte de extracción por punto"],
+  SDW:["Sombras","+1% de daño de cada sombra por punto"],
+  VIT:["Vitalidad","+12 de vida máxima por punto"],
+  AGI:["Agilidad","+0.12 de velocidad por punto (tope 120)"],
+  MNA:["Maná","+8 de maná máximo por punto"],
+};
+function panelStats(){
+  const s = P.stats, next = RANKS[rankIndex(P.rank) + 1];
+  const rows = Object.keys(STAT_INFO).map(k => `
+    <div class="statrow">
+      <span class="k">${k}</span>
+      <span class="d"><b>${STAT_INFO[k][0]}</b><br>${STAT_INFO[k][1]}</span>
+      <span class="v">${s[k]}</span>
+      <button class="plus" data-stat="${k}" ${s.points > 0 ? "" : "disabled"} aria-label="Subir ${k}">+</button>
+    </div>`).join("");
+  const derived = `
+    <div class="derived">
+      <div class="kv"><small>Daño por golpe</small><b>${fmt(playerDamage(P))}</b></div>
+      <div class="kv"><small>Vida máxima</small><b>${fmt(F.maxHealth(s))}</b></div>
+      <div class="kv"><small>Maná</small><b>${fmt(F.maxMana(s))}</b></div>
+      <div class="kv"><small>Velocidad</small><b>${F.walkSpeed(s).toFixed(1)}</b></div>
+      <div class="kv"><small>Suerte de extracción</small><b>+${Math.round(ariseLuck(P)*100)}%</b></div>
+      <div class="kv"><small>Sombras / enemigos</small><b>${P.arisen} / ${fmt(P.kills)}</b></div>
+    </div>`;
+  const rank = next ? `
+    <div class="item">
+      <span class="glyph">${next.name === "Monarch" ? "👑" : "◆"}</span>
+      <span class="meta"><b>Subir a rango ${next.name}</b>
+        <span>Nivel ${next.level} · ${fmt(next.gems)} gemas · daño ×${(1+next.dmg).toFixed(2)} · suerte +${Math.round(next.luck*100)}%</span></span>
+      <button class="btn" id="rankup" ${P.level >= next.level && P.gems >= next.gems ? "" : "disabled style=opacity:.45"}>Ascender</button>
+    </div>` : `<div class="hint">Has alcanzado el rango <b>Monarch</b>.</div>`;
+  return shell(`Atributos · ${s.points} punto${s.points === 1 ? "" : "s"} libre${s.points === 1 ? "" : "s"}`,
+    `<div class="statgrid">${rows}</div>${derived}${rank}
+     <p class="hint">Cada nivel otorga <b>${CFG.POINTS_PER_LEVEL} puntos</b>. Las fórmulas son idénticas a las del servidor Luau de este repositorio.</p>`);
+}
+function panelShadows(){
+  const list = Object.values(P.inventory)
+    .sort((a,b) => F.shadowDamage(b,P.stats) - F.shadowDamage(a,P.stats));
+  const body = list.length ? list.map(s => {
+    const eq = P.equipped.includes(s.uuid);
+    const color = `var(${TIER_COLOR[s.tier]})`;
+    return `<div class="item">
+      <span class="glyph">${SHADOWS[s.id]?.glyph || "☗"}</span>
+      <span class="meta"><b>${s.name}</b>
+        <span><span class="tier" style="color:${color}">${s.tier}</span> · daño ${fmt(F.shadowDamage(s, P.stats))}</span></span>
+      <button class="btn" data-equip="${s.uuid}">${eq ? "Quitar" : "Equipar"}</button>
+    </div>`;
+  }).join("") : `<p class="hint">Todavía no has extraído ninguna sombra. Derrota a un enemigo y pulsa <b>E</b> sobre su cuerpo.</p>`;
+  return shell(`Sombras · ${P.equipped.length}/${CFG.MAX_SQUAD} en el escuadrón`,
+    `<div class="list">${body}</div>
+     <p class="hint">Con el escuadrón lleno, una extracción exitosa <b>desequipa automáticamente la sombra de menor daño</b> si la nueva es mejor.</p>`);
+}
+function panelShop(){
+  const items = Object.values(WEAPONS).map(w => {
+    const owned = P.weapons.includes(w.id), equipped = P.weapon === w.id;
+    return `<div class="item">
+      <span class="glyph">${w.glyph}</span>
+      <span class="meta"><b>${w.name}</b><span>Daño base ${fmt(w.dmg)}</span></span>
+      ${owned ? "" : `<span class="price gold">${fmt(w.price)}</span>`}
+      <button class="btn" data-weapon="${w.id}" ${equipped ? "disabled style=opacity:.45" : ""}>
+        ${equipped ? "Equipada" : owned ? "Equipar" : "Comprar"}</button>
+    </div>`;
+  }).join("");
+  return shell("Armería", `<div class="list">${items}</div>
+    <p class="hint">Oro disponible: <b class="gold">${fmt(P.gold)}</b>. El daño del arma entra directo en la fórmula de daño físico.</p>`);
+}
+function panelTravel(){
+  const items = ISLANDS.map(i => {
+    const unlocked = P.islands.includes(i.id) || P.level >= i.level;
+    const here = P.island === i.id;
+    const e = ENEMIES[i.enemy];
+    return `<div class="item ${unlocked ? "" : "locked"}">
+      <span class="glyph">◈</span>
+      <span class="meta"><b>${i.name}</b><span>${unlocked ? `${e.name} · Nv ${e.level} · ${fmt(e.hp)} vida` : `Requiere nivel ${i.level}`}</span></span>
+      <button class="btn" data-isle="${i.id}" ${!unlocked || here ? "disabled style=opacity:.45" : ""}>${here ? "Aquí" : "Viajar"}</button>
+    </div>`;
+  }).join("");
+  return shell("Islas", `<div class="list">${items}</div>
+    <p class="hint">Cada isla sube el nivel de los enemigos, su vida y sus recompensas — y la rareza de la sombra que dejan.</p>`);
+}
+function panelHelp(){
+  return shell("Cómo se juega", `
+    <div class="derived">
+      <div class="kv"><small>Mover</small><b>WASD / flechas</b></div>
+      <div class="kv"><small>Atacar</small><b>Espacio</b></div>
+      <div class="kv"><small>Extraer</small><b>E</b></div>
+      <div class="kv"><small>Auto-ataque</small><b>Q</b></div>
+      <div class="kv"><small>Auto-arise</small><b>R</b></div>
+      <div class="kv"><small>Entrar al portal</small><b>F</b></div>
+      <div class="kv"><small>Paneles</small><b>1 · 2 · 3 · 4</b></div>
+      <div class="kv"><small>En móvil</small><b>arrastra para mover</b></div>
+    </div>
+    <p class="hint"><b>El bucle:</b> mata enemigos → su cuerpo queda inerte → pulsa <b>E</b> cerca para intentar el ARISE
+    (3 intentos; si fallas los tres, el cuerpo se convierte en gemas). Las sombras extraídas luchan contigo: máximo 4 a la vez.</p>
+    <p class="hint"><b>Portal:</b> cada ${CFG.PORTAL_INTERVAL}s se abre uno. Dentro hay un jefe; al derrotarlo empieza el
+    <b>Double Dungeon</b>: todo reaparece con el doble de estadísticas y despierta la <b>Estatua de Dios</b>.
+    Vencerla te vuelve <b>Awakened</b> (+60% de suerte de extracción).</p>
+    <p class="hint">Sube de rango en el panel de atributos: cada rango multiplica tu daño y tu suerte de extracción.
+    La partida se guarda sola en este navegador.</p>`);
+}
+function renderPanel(){
+  if (!panelKind){ modal.hidden = true; modal.innerHTML = ""; return; }
+  const html = panelKind === "stats" ? panelStats()
+    : panelKind === "shadows" ? panelShadows()
+    : panelKind === "shop" ? panelShop()
+    : panelKind === "travel" ? panelTravel() : panelHelp();
+  modal.innerHTML = html; modal.hidden = false;
+}
+
+/* ---------------------------- modal ARISE -------------------------------- */
+function openArise(){
+  if (ariseTarget) return;
+  const c = nearestCorpse();
+  if (!c) return;
+  if (autoArise) return resolveAuto(c);
+  panelKind = null;
+  ariseTarget = c;
+  renderArise("");
+}
+function closeArise(){ ariseTarget = null; if (!panelKind){ modal.hidden = true; modal.innerHTML = ""; } }
+function renderArise(log){
+  const c = ariseTarget; if (!c) return;
+  const chance = corpseChance(c);
+  const left = CFG.MAX_ARISE_ATTEMPTS - c.attempts;
+  const def = SHADOWS[c.def.shadow];
+  const pips = Array.from({ length: CFG.MAX_ARISE_ATTEMPTS },
+    (_, i) => `<span class="pip ${i < left ? "live" : ""}"></span>`).join("");
+  modal.innerHTML = `<div class="scrim" data-close="1"><div class="arise-box" role="dialog" aria-label="Extracción">
+      <h3>ARISE</h3>
+      <div class="sub">${c.def.name} · sombra <span style="color:var(${TIER_COLOR[def.tier]})">${def.name}</span> (${def.tier})</div>
+      <div class="chance" style="color:var(--arise)">${(chance*100).toFixed(1)}%</div>
+      <div class="sub">probabilidad de extracción</div>
+      <div class="pips">${pips}</div>
+      <div class="arise-actions">
+        <button class="btn" id="do-arise" ${left > 0 ? "" : "disabled style=opacity:.4"}>Extraer (${left})</button>
+        <button class="btn" id="do-decline">Descartar · +${fmt(F.gemsForEnemy(c.def))} gemas</button>
+      </div>
+      <div class="log">${log}</div>
+    </div></div>`;
+  modal.hidden = false;
+}
+
+/* --------------------------- eventos de UI ------------------------------- */
+modal.addEventListener("click", e => {
+  const t = e.target;
+  if (t.dataset && t.dataset.close !== undefined && (t.classList.contains("scrim") || t.classList.contains("x"))){
+    closePanel(); closeArise(); return;
+  }
+  if (t.dataset.stat){ allocate(t.dataset.stat, 1); renderPanel(); return; }
+  if (t.id === "rankup"){ rankUp(); return; }
+  if (t.dataset.equip){
+    const uuid = t.dataset.equip;
+    const i = P.equipped.indexOf(uuid);
+    if (i >= 0) P.equipped.splice(i, 1);
+    else if (P.equipped.length < CFG.MAX_SQUAD) P.equipped.push(uuid);
+    else return toast("Escuadrón lleno: quita una sombra primero.", "--hp");
+    rebuildShadows(); save(); renderPanel(); return;
+  }
+  if (t.dataset.weapon){
+    const w = WEAPONS[t.dataset.weapon];
+    if (P.weapons.includes(w.id)) P.weapon = w.id;
+    else if (P.gold >= w.price){ P.gold -= w.price; P.weapons.push(w.id); P.weapon = w.id; toast(`${w.name} equipada`, "--gold"); }
+    else return toast(`Faltan ${fmt(w.price - P.gold)} de oro.`, "--hp");
+    save(); dirty = true; renderPanel(); return;
+  }
+  if (t.dataset.isle){
+    const isle = islandOf(t.dataset.isle);
+    if (P.level < isle.level) return toast(`Requiere nivel ${isle.level}.`, "--hp");
+    P.island = isle.id;
+    if (!P.islands.includes(isle.id)) P.islands.push(isle.id);
+    enemies = []; corpses = []; spawnTimer = 0;
+    toast(`Viajaste a ${isle.name}`, "--spec-hi");
+    save(); closePanel(); return;
+  }
+  if (t.id === "do-arise"){
+    const c = ariseTarget; if (!c) return;
+    const r = attemptArise(c);
+    if (r.ok){
+      const extra = r.replaced ? ` · reemplaza a ${P.inventory[r.replaced]?.name ?? "la más débil"}` : "";
+      toast(`ARISE · ${r.shadow.name}${extra}`, "--arise");
+      closeArise();
+    } else if (r.exhausted){
+      toast(`Sin intentos · +${fmt(r.gems)} gemas`, "--gem");
+      closeArise();
+    } else {
+      renderArise(`<span style="color:var(--hp)">Fallo.</span> Quedan ${r.attemptsLeft} intentos.`);
+    }
+    return;
+  }
+  if (t.id === "do-decline"){ declineArise(ariseTarget); closeArise(); }
+});
+
+$("b-stats").onclick = () => openPanel("stats");
+$("b-shadows").onclick = () => openPanel("shadows");
+$("b-shop").onclick = () => openPanel("shop");
+$("b-travel").onclick = () => openPanel("travel");
+$("b-help").onclick = () => openPanel("help");
+$("a-attack").onclick = playerAttack;
+$("a-arise").onclick = openArise;
+$("a-portal").onclick = enterDungeon;
+function setAuto(v){ auto = v; $("a-auto").classList.toggle("on", v); }
+function setAutoArise(v){ autoArise = v; $("a-autoarise").classList.toggle("on", v); }
+$("a-auto").onclick = () => setAuto(!auto);
+$("a-autoarise").onclick = () => setAutoArise(!autoArise);
+
+/* ------------------------------- boot ----------------------------------- */
+function start(restored){
+  if (restored && restored.profile){ P = reconcile(restored.profile); }
+  player.maxHp = F.maxHealth(P.stats);
+  player.hp = restored?.hp ?? player.maxHp;
+  unlockCheck();
+  rebuildShadows();
+  resize();
+  syncHud();
+  if (!Object.keys(P.inventory).length && P.level === 1) openPanel("help");
+  let last = performance.now(), hudAcc = 0;
+  function frame(t){
+    const dt = Math.min((t - last) / 1000, 0.05); last = t;
+    if (!document.hidden && !paused){
+      update(dt);
+      render();
+      hudAcc += dt;
+      if (hudAcc > 0.12 || dirty){ syncHud(); hudAcc = 0; dirty = false; }
+    }
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+}
+
+// Republicaciones: conserva la partida en curso de quien ya tiene la pagina abierta.
+window.claude?.hot?.snapshot?.(() => ({ profile: P, hp: player.hp }));
+if (window.claude?.hot?.ready) window.claude.hot.ready(start);
+else start(window.claude?.hot?.data ?? null);
+addEventListener("beforeunload", save);
+</script>
