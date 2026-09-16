@@ -3,7 +3,7 @@
 | Proyecto | Archivo | Curso |
 |---|---|---|
 | 🛣️ **Vía Expresa Elevada** — maqueta de una carretera elevada para Lima | `maqueta-via-expresa.html` | EPT · 2026 |
-| 🌉 **La misma vía en 3D** — el cruce completo, para girarlo y descargarlo | `modelo-3d.html` | EPT · 2026 |
+| 🌉 **La misma vía en 3D** — modelo para girar, descargar e imprimir | `modelo-3d.html` | EPT · 2026 |
 | 🏰 **NEXO: Tower Defense** — juego en HTML5 Canvas | `index.html` | — |
 
 Cada proyecto es un solo archivo HTML: lo descargas, le das doble clic y se abre en el navegador. No necesita internet ni instalar nada.
@@ -21,43 +21,40 @@ La página tiene:
 
 ### 🌉 La misma vía en 3D (`modelo-3d.html`)
 
-Un tramo de 96 metros de la vía elevada, con sus tres columnas, y abajo el Metropolitano con su estación, la pista de siempre y la ciclovía. Se **gira con el mouse** en la misma página, con tres vistas y rotación automática.
+Un tramo de 96 m de la vía elevada con sus tres pilares, y abajo el Metropolitano con su estación, la pista de siempre y la ciclovía. Se gira con el mouse en la misma página, con tres vistas y rotación automática.
 
-Los archivos del modelo están en `modelo-3d/` y también se bajan desde los botones de la página. Cada unidad es un metro real:
-
-| Archivo | Para qué |
-|---|---|
-| `via-expresa-simple.glb` | **El más fácil.** Un solo archivo, ya trae los colores. Doble clic en Windows y se abre. |
-| `via-expresa-simple.obj` + `.mtl` | Lo mismo pero en dos archivos; hay que dejarlos juntos en la misma carpeta. |
-| `via-expresa-simple-tinkercad.obj` | OBJ sin el archivo de colores, para que Tinkercad no reclame. |
-| `via-expresa-simple.stl` | Para impresión 3D (sin colores). |
-
-El modelo lo arma `node tools/genera-modelo-simple.mjs`: cambia una medida ahí, vuelve a ejecutarlo y se actualizan los cuatro archivos y el visor.
-
-### 🧱 Versión para Tinkercad, nivel principiante
-
-Una versión aparte, mucho más sencilla: **puras cajas, 312 caras**, sin ningún detalle chiquito, pero completa. Tiene la pista elevada con sus tres columnas, la pista de siempre, el Metropolitano con su estación y su bus, la ciclovía, las veredas, los jardines con árboles y seis carros.
+Las piezas no son cajas apiladas: cada una sale de su **corte transversal extruido**, que es como se dibujan de verdad las obras viales. De ahí salen los pilares que se afinan hacia arriba y rematan en cabezal de martillo, las barreras con el perfil New Jersey y el tablero de viga cajón con voladizos.
 
 | Archivo | Para qué |
 |---|---|
-| `via-expresa-tinkercad-color.obj` + `.mtl` | **El OBJ multicolor.** Los colores van por partida doble: en el `.mtl` de al lado y escritos dentro del propio OBJ (`v x y z r g b`), así se ven aunque el programa no lea el `.mtl`. |
-| `via-expresa-tinkercad.obj` | El mismo modelo sin ninguna referencia de color, que es lo que Tinkercad acepta sin quejarse. |
-| `via-expresa-tinkercad.stl` | Lo mismo, por si prefieres importar STL. |
-| `via-expresa-tinkercad.glb` | Con colores, en un solo archivo. |
-| `piezas-tinkercad/*.obj` | El modelo partido en 6 pedazos por color, para pintarlo dentro de Tinkercad. |
-| `medidas-tinkercad.md` | La tabla de medidas, pieza por pieza. |
+| `via-expresa.glb` | **El más fácil.** Un archivo, con colores. Doble clic en Windows. |
+| `via-expresa.obj` + `.mtl` | Lo mismo en dos archivos; van juntos en la misma carpeta. |
+| `via-expresa.stl` | Para imprimir en 3D. |
+| `medidas.md` | La tabla de medidas reales. |
 
-**Sobre los colores en Tinkercad:** Tinkercad no lee colores de ningún archivo 3D — muestra todo lo que importas de un solo color, y si le pasas el `.mtl` da error. No hay forma de evitarlo desde el archivo. Para tener la maqueta de colores ahí, se importan los 6 archivos de `piezas-tinkercad/` uno por uno (calzan solos, porque todos usan las mismas coordenadas) y se pinta cada uno con el balde de pintura.
+### 🧱 Versión para Tinkercad
 
-Todo está en **medidas reales**: 1 unidad = 1 metro. El terreno mide 90 × 50 m y la pista elevada va a 8 m de altura, que es el alto libre que necesita el Metropolitano para pasar por debajo.
+El mismo modelo con menos detalle: los pilares y las barreras conservan su forma, y se simplifican los redondeos, las ruedas y las copas de los árboles. Queda en la tercera parte de piezas para que Tinkercad no se trabe.
 
-Tinkercad trabaja en milímetros, así que al importar sale de 90 × 50 mm. Si lo quieres más grande, sube la escala a 200% o 300% en la ventana de importación.
+| Archivo | Para qué |
+|---|---|
+| `via-expresa-tinkercad.obj` + `.mtl` | Multicolor. Los colores van en el `.mtl` y además escritos en cada vértice (`v x y z r g b`), así se ven aunque el programa no lea el `.mtl`. |
+| `via-expresa-tinkercad-sincolor.obj` | Sin ninguna referencia de color, que es lo que Tinkercad acepta sin quejarse. |
+| `via-expresa-tinkercad.stl` / `.glb` | STL para importar o imprimir, GLB para mirarlo con colores. |
+| `piezas-tinkercad/*.obj` | El modelo partido en 6 pedazos por color. |
 
-La tabla de medidas la escribe el mismo programa que arma el modelo (`node tools/genera-modelo-tinkercad.mjs`), así que las medidas del documento y las del archivo 3D nunca se desfasan. Esa tabla también sale publicada en `modelo-3d.html`, por si prefieres armar la maqueta a mano en Tinkercad en vez de importarla.
+**Sobre los colores en Tinkercad:** Tinkercad no lee colores de ningún archivo 3D — muestra todo de un solo color y da error si le pasas el `.mtl`. Para tener la maqueta de colores ahí se importan los 6 archivos de `piezas-tinkercad/` uno por uno (calzan solos, comparten coordenadas) y se pinta cada uno con el balde de pintura.
 
-**Nota sobre el dibujo:** el visor no usa tarjeta de video, pinta las caras ordenadas de atrás hacia adelante. Para que nada se asome donde no debe, el modelo va en capas (piso → cosas paradas en el piso → losa de la pista → lo que se apoya sobre ella) y todas las caras miran hacia afuera, así las que dan la espalda a la cámara se descartan.
+### Cómo se genera
 
-La versión anterior, que era un cruce grande con rampas y lagunas, quedó en los archivos `via-expresa-elevada.*` de la misma carpeta.
+Todo sale de `node tools/genera-modelo.mjs`, que escribe los dos modelos, los seis pedazos, la tabla de medidas y los inyecta en `modelo-3d.html`. Si cambias una medida ahí, se actualiza todo junto y nunca se desfasa.
+
+Dos detalles de implementación que cuestan de encontrar y ahí están resueltos:
+
+- **Caras hacia afuera.** Cada pieza se arma, se le mide el volumen firmado y, si sale negativo, se le da la vuelta a todas sus caras. Con las normales al revés la luz sale mal en el GLB, el STL puede imprimirse invertido y el visor descarta justo las caras que sí se ven.
+- **Nada apilado a la misma altura.** El asfalto no es una plancha encima del tablero sino la propia cara superior del tablero, pintada de otro color. Dos superficies a la misma cota se pelean por cuál se dibuja primero y aparecen manchas.
+
+El visor tampoco usa tarjeta de video: pinta por capas (piso → lo que se para en el piso → tablero → lo que se apoya encima) y dentro de cada capa ordena de atrás hacia adelante.
 
 ---
 
