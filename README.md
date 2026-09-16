@@ -181,7 +181,13 @@ Cobertura actual (**409 aserciones, 10 jugadores simulados en paralelo**):
 ## 7. Build web jugable
 
 `arise-crossover.html` es el mismo juego jugable **en el navegador**, sin Roblox: un ARPG
-top-down en Canvas 2D, en un solo archivo y sin dependencias externas. Ábrelo y ya.
+con mundo **pseudo-3D** en un solo archivo y sin dependencias externas. Ábrelo y ya.
+
+El renderizador es un pequeño motor por software sobre Canvas 2D: proyección en perspectiva
+con la cámara detrás del personaje, personajes construidos con cajas 3D al estilo Roblox
+(piernas, torso, brazos y cabeza animados), suelo de baldosas en perspectiva, cielo con nubes
+y niebla de horizonte, props generados de forma determinista y orden de dibujo por el
+algoritmo del pintor. Corre a 60 FPS sin librerías.
 
 Usa **las mismas fórmulas y los mismos límites** que el servidor Luau (daño físico, tasa de
 extracción, vida, velocidad, daño de sombra, curva de experiencia, gemas por enemigo) y
