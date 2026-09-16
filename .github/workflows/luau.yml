@@ -1,0 +1,22 @@
+name: Luau
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Instalar Luau
+        run: |
+          curl -sSL -o luau.zip https://github.com/luau-lang/luau/releases/latest/download/luau-ubuntu.zip
+          unzip -q luau.zip -d "$HOME/.luau"
+          chmod +x "$HOME/.luau"/luau*
+          echo "$HOME/.luau" >> "$GITHUB_PATH"
+
+      - name: Sintaxis + pruebas de integracion
+        run: ./tests/headless/run.sh
