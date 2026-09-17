@@ -178,10 +178,31 @@ Cobertura actual (**409 aserciones, 10 jugadores simulados en paralelo**):
 
 ---
 
-## 7. Build web jugable
+## 7. Build web jugable (V9 ULTRA)
 
-`arise-crossover.html` es el mismo juego jugable **en el navegador**, sin Roblox: un ARPG
-con mundo **pseudo-3D** en un solo archivo y sin dependencias externas. Ábrelo y ya.
+`arise-v9.html` es la build actual, construida sobre el contrato **Arise Crossover V9 ULTRA**:
+
+- **Fórmulas del contrato** aisladas en `FORMULA`: `Arma + STR×1.5`, `INT×1.6×mod`,
+  `Sombra×(1+SDW·0.012)`, `HPBase+VIT×15`, `100+MNA×10`, `16+AGI×0.05`,
+  `3/(1+AGI·0.005)`, doble salto a AGI 200, `EXPRequired(N)=100·N^1.85+N·50`.
+- **Combate**: cadena M1_1→M1_4 (×1.00/1.05/1.15/1.45) con startup/active/recovery,
+  hitstop e impulso de cámara por golpe, habilidad `Sword_BladeWave` (arco 70°, 30 de maná,
+  7 s de enfriamiento), dash, salto y doble salto, críticos.
+- **ARISE**: `CorpseToken` con UUID, dueño, expiración y 3 intentos; tasa efectiva
+  `clamp(base × (1+suerte/100), 0, 0.95)`; éxito consume el token, tercer fallo lo convierte
+  en gemas; registro de transacciones.
+- **Sombras**: FSM del contrato (IDLE_FOLLOW → TARGET_ACQUIRE → ATTACK → RECOVER, más
+  BOSS_FOCUS y RECALLED) con puntuación de objetivo por distancia, amenaza al dueño, foco
+  manual y peso de jefe. Escuadrón de 4 con reemplazo automático y fusión de 3 copias.
+- **Mazmorras**: Estándar, Puerta Roja, Double Dungeon y Boss Rush, con semilla, salas,
+  temporizador, runas (Salud, Gemas, Tiempo, Oro), jefes con fases 70/40/15% + enrage y
+  telegrafías en el suelo. El Double Dungeon otorga el Despertar.
+- **Contenido**: las 13 islas del catálogo con sus enemigos, jefes y armas; reliquias con sus
+  efectos reales; índice de sombras; rangos E→S y renacer.
+
+### Versión anterior
+
+`arise-crossover.html` es la build previa (V7): mismo motor pseudo-3D, alcance más pequeño.
 
 El renderizador es un pequeño motor por software sobre Canvas 2D: proyección en perspectiva
 con la cámara detrás del personaje, personajes construidos con cajas 3D al estilo Roblox
