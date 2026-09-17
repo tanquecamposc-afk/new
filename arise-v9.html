@@ -228,6 +228,7 @@ canvas#stage{position:absolute;inset:0;width:100%;height:100%;display:block;touc
       <div class="frame infocard">
         <b id="isle">Leveling City</b>
         <span id="portal">Portal en 1:40</span>
+        <span id="quest" style="color:var(--gold)"></span>
         <span id="fps" style="color:var(--dim)"></span>
       </div>
     </div>
@@ -285,15 +286,18 @@ const FLAGS = {
   VERSION_MODE:"V9_CROSSOVER_BASELINE",
   ENABLE_RED_GATE:true, ENABLE_DOUBLE_DUNGEON:true, ENABLE_BOSS_RUSH:true,
   PORTAL_INTERVAL_SECONDS:110,   // el contrato usa 1800; comprimido para la build web
-  MAX_ARISE_RATE:0.95, CORPSE_LIFETIME:30, ARISE_ATTEMPTS:3,
-  SQUAD_CAPACITY:4, LEVEL_CAP:1000, MERGE_COPIES:3,
+  MAX_ARISE_RATE:0.95, CORPSE_LIFETIME:11, ARISE_ATTEMPTS:3, MAX_CORPSES:10,
+  SQUAD_BASE:6, SQUAD_PER_RANK:2, SQUAD_MAX:16, LEVEL_CAP:1000, MERGE_COPIES:3,
 };
 
+// Capacidad de escuadrón: crece con el rango (el juego real te rodea de sombras)
+const squadCap = () => Math.min(FLAGS.SQUAD_MAX, FLAGS.SQUAD_BASE + rankIdx(P.rank) * FLAGS.SQUAD_PER_RANK);
+
 const CFG = {
-  ATTACK_RANGE:135, ARISE_RANGE:130,
+  ATTACK_RANGE:150, ARISE_RANGE:140,
   COMBO_RESET:1.1,
-  SHADOW_FOLLOW:112, SHADOW_AGGRO:340, SHADOW_RANGE:74, SHADOW_CD:1.0, SHADOW_SPEED:235, SHADOW_LEASH:620,
-  ENEMY_POP:10, WORLD:{ w:3000, h:2400 },
+  SHADOW_FOLLOW:120, SHADOW_AGGRO:420, SHADOW_RANGE:78, SHADOW_CD:0.8, SHADOW_SPEED:260, SHADOW_LEASH:700,
+  ENEMY_POP:16, WORLD:{ w:3400, h:2800 },
   CONTACT_SCALE:0.02, GRAVITY:1500, JUMP_V:520,
   DASH_DIST:330, DASH_TIME:0.18,
   CRIT_CHANCE:0.15, CRIT_MULT:2,
@@ -301,10 +305,10 @@ const CFG = {
 
 // Combo M1_1..M1_4 (tabla 04 del V9)
 const COMBO = [
-  { id:"M1_1", startup:0.12, active:0.08, recovery:0.22, mult:1.00, cam:0.20, hitstop:0.020 },
-  { id:"M1_2", startup:0.10, active:0.08, recovery:0.20, mult:1.05, cam:0.22, hitstop:0.022 },
-  { id:"M1_3", startup:0.14, active:0.10, recovery:0.25, mult:1.15, cam:0.28, hitstop:0.030 },
-  { id:"M1_4", startup:0.20, active:0.12, recovery:0.40, mult:1.45, cam:0.45, hitstop:0.050 },
+  { id:"M1_1", startup:0.06, active:0.05, recovery:0.09, mult:1.00, cam:0.20, hitstop:0.012 },
+  { id:"M1_2", startup:0.05, active:0.05, recovery:0.08, mult:1.05, cam:0.22, hitstop:0.014 },
+  { id:"M1_3", startup:0.07, active:0.06, recovery:0.10, mult:1.15, cam:0.28, hitstop:0.018 },
+  { id:"M1_4", startup:0.09, active:0.07, recovery:0.16, mult:1.45, cam:0.45, hitstop:0.028 },
 ];
 // AttackDefinition del contrato V9
 const SKILL = {
@@ -375,7 +379,7 @@ const SHADOWS = {
 
 /* --------------------------- islas (sección 09) --------------------------- */
 const ISLANDS = [
-  { id:"LevelingCity", name:"Leveling City",  level:1,    theme:"city",    enemy:{ name:"Thug",            lvl:3,    hp:70,      dmg:10 },    brute:{ name:"Brute/Mauler", lvl:8, hp:340, dmg:26 },    boss:{ name:"Vermillion",        lvl:25,   hp:90000,   dmg:180,   shadow:"Vermillion" }, shadow:"Soondoo",    weapons:["SpikedMaul","TwinKando","TwinIronNaginata"] },
+  { id:"LevelingCity", name:"Leveling City",  level:1,    theme:"city",    enemy:{ name:"Thug",            lvl:3,    hp:26,      dmg:10 },    brute:{ name:"Brute/Mauler", lvl:8, hp:120, dmg:26 },    boss:{ name:"Vermillion",        lvl:25,   hp:90000,   dmg:180,   shadow:"Vermillion" }, shadow:"Soondoo",    weapons:["SpikedMaul","TwinKando","TwinIronNaginata"] },
   { id:"GrassVillage", name:"Grass Village",  level:50,   theme:"forest",  enemy:{ name:"Grass Bandit",    lvl:52,   hp:26000,   dmg:260 },   brute:{ name:"Heavy Troll",  lvl:62, hp:120000, dmg:720 },  boss:{ name:"DOR",               lvl:80,   hp:2.4e6,   dmg:2100,  shadow:"DOR" },        shadow:"Anders",     weapons:["BeastBane","BronzeWarAxe"] },
   { id:"BrumIsland",   name:"Brum Island",    level:100,  theme:"ice",     enemy:{ name:"Corsair Guard",   lvl:104,  hp:9.2e5,   dmg:4200 },  brute:{ name:"Ice Golem",    lvl:118,hp:4.1e6,  dmg:9800 }, boss:{ name:"Mifalcon",          lvl:140,  hp:6.2e7,   dmg:24000, shadow:"Mifalcon" },   shadow:"Longin",     weapons:["TwinCorsair","IronKando"] },
   { id:"FacehealTown", name:"Faceheal Town",  level:200,  theme:"urban",   enemy:{ name:"Street Brawler",  lvl:206,  hp:2.6e7,   dmg:52000 }, brute:{ name:"Colossal Brute",lvl:224,hp:1.1e8, dmg:118000},boss:{ name:"Murcielago",        lvl:250,  hp:1.6e9,   dmg:310000,shadow:"Murcielago" }, shadow:"Vermillion", weapons:["IronNaginata","ColossalSaber"] },
@@ -427,6 +431,29 @@ const FORMULA = {
   effectiveRate:  (baseRate, luckPercent) => clamp(baseRate * (1 + luckPercent / 100), 0, FLAGS.MAX_ARISE_RATE),
 };
 
+/* ------------------------- clases y talentos ------------------------------ */
+const CLASSES = {
+  Warrior:  { id:"Warrior",  name:"Guerrero", desc:"Equilibrado. +15% daño y +20% vida.",      bonus:{ dmg:0.15, hp:0.20 },              glyph:"🛡" },
+  Assassin: { id:"Assassin", name:"Asesino",  desc:"+35% daño crítico y +20% velocidad.",      bonus:{ crit:0.15, speed:0.20, dmg:0.05 }, glyph:"🗡" },
+  Mage:     { id:"Mage",     name:"Mago",     desc:"+50% daño de habilidad y +40% maná.",      bonus:{ skill:0.50, mana:0.40 },           glyph:"🪄" },
+  Tank:     { id:"Tank",     name:"Tanque",   desc:"+70% vida y −35% daño recibido.",          bonus:{ hp:0.70, armor:0.35 },             glyph:"🧱" },
+  Monarch:  { id:"Monarch",  name:"Monarca",  desc:"+45% daño de sombras y +15% suerte Arise.",bonus:{ shadow:0.45, luck:0.15 },          glyph:"👑" },
+};
+const TALENTS = {
+  power:   { id:"power",   name:"Poder",      desc:"+8% de daño por nivel",            max:10, cost:lv => 250 * Math.pow(2, lv) },
+  haste:   { id:"haste",   name:"Celeridad",  desc:"+6% de velocidad de ataque",       max:10, cost:lv => 300 * Math.pow(2, lv) },
+  crit:    { id:"crit",    name:"Crítico",    desc:"+3% de probabilidad crítica",      max:10, cost:lv => 400 * Math.pow(2, lv) },
+  legion:  { id:"legion",  name:"Legión",     desc:"+15% de daño de sombras",          max:10, cost:lv => 350 * Math.pow(2, lv) },
+  fortune: { id:"fortune", name:"Fortuna",    desc:"+12% de suerte de extracción",     max:10, cost:lv => 500 * Math.pow(2, lv) },
+  vigor:   { id:"vigor",   name:"Vigor",      desc:"+10% de vida máxima",              max:10, cost:lv => 300 * Math.pow(2, lv) },
+};
+const CODES = {
+  ARISE:      { cash:5000,   gems:50,   tickets:1 },
+  SHADOW100K: { cash:250000, gems:400,  tickets:2 },
+  MONARCH:    { cash:1e7,    gems:2500, tickets:5 },
+  UPDATE9:    { cash:1e6,    gems:900,  tickets:3 },
+};
+
 /* ------------------------------ utilidades -------------------------------- */
 const SUF = ["","K","M","B","T","Qa","Qi","Sx","Sp","Oc","No","Dc","Ud","Dd","Td"];
 function fmt(v){
@@ -449,7 +476,8 @@ function newProfile(){
     schema:9, level:1, xp:0, rank:"E", rebirths:0,
     cash:0, gems:0, tickets:0,
     stats:{ STR:0, INT:0, SDW:0, VIT:0, AGI:0, MNA:0, points:5 },
-    weapon:START_WEAPON, weapons:{ [START_WEAPON]:1 },
+    weapon:START_WEAPON, weapons:{ [START_WEAPON]:1 }, weaponLv:{},
+    class:"Warrior", talents:{}, codes:{}, quests:{ active:null, done:0 },
     shadows:{}, squad:[], relics:{}, runes:{},
     islands:["LevelingCity"], island:"LevelingCity",
     title:"Cazador Novato", awakened:false, index:{},
@@ -460,7 +488,10 @@ function reconcile(d){
   const base = newProfile();
   const p = Object.assign(base, d || {});
   p.stats = Object.assign(base.stats, d?.stats || {});
-  for (const k of ["weapons","shadows","relics","runes","index"]) if (typeof p[k] !== "object" || !p[k]) p[k] = {};
+  for (const k of ["weapons","weaponLv","shadows","relics","runes","index","talents","codes"])
+    if (typeof p[k] !== "object" || !p[k]) p[k] = {};
+  if (!CLASSES[p.class]) p.class = "Warrior";
+  if (typeof p.quests !== "object" || !p.quests) p.quests = { active:null, done:0 };
   if (!Array.isArray(p.squad)) p.squad = [];
   if (!Array.isArray(p.islands) || !p.islands.length) p.islands = ["LevelingCity"];
   if (!Array.isArray(p.ledger)) p.ledger = [];
@@ -468,21 +499,32 @@ function reconcile(d){
   if (!p.weapons[p.weapon]) p.weapons[p.weapon] = 1;
   if (!RANKS.some(r => r.name === p.rank)) p.rank = "E";
   if (!isleOf(p.island)) p.island = "LevelingCity";
-  p.squad = p.squad.filter(u => p.shadows[u]).slice(0, FLAGS.SQUAD_CAPACITY);
+  p.squad = p.squad.filter(u => p.shadows[u]).slice(0, FLAGS.SQUAD_MAX);
   return p;
 }
 let P = (() => { try { return reconcile(JSON.parse(localStorage.getItem(SAVE_KEY) || "null")); } catch { return newProfile(); } })();
 function save(){ try { localStorage.setItem(SAVE_KEY, JSON.stringify(P)); } catch {} }
 
 /* --------------------------- valores derivados ---------------------------- */
-const weaponDmg   = () => (WEAPONS[P.weapon] || WEAPONS[START_WEAPON]).dmg;
+// El nivel de arma (fusión de 3 copias) vive en el perfil, no muta el catálogo.
+const weaponLv    = id => P.weaponLv?.[id] || 1;
+const weaponDmg   = () => {
+  const w = WEAPONS[P.weapon] || WEAPONS[START_WEAPON];
+  return Math.max(6, w.dmg) * Math.pow(1.25, weaponLv(w.id) - 1);
+};
 const rankMult    = () => rankOf(P.rank).dmg + (P.awakened ? 0.25 : 0) + P.rebirths * 0.5;
-const baseDamage  = () => FORMULA.physicalDamage(weaponDmg(), P.stats.STR) * (1 + rankMult());
+const classBonus  = k => (CLASSES[P.class] || CLASSES.Warrior).bonus[k] || 0;
+const talentLv    = id => P.talents?.[id] || 0;
+const baseDamage  = () => FORMULA.physicalDamage(weaponDmg(), P.stats.STR)
+  * (1 + rankMult() + classBonus("dmg") + talentLv("power") * 0.08)
+  * (1 + P.level * 0.012);
 const relicBonus  = effect => Object.keys(P.relics).reduce((a, id) => a + (RELICS[id]?.effect === effect ? RELICS[id].value : 0), 0);
-const shadowMult  = () => 1 + relicBonus("shadowDmg");
-const ariseLuck   = () => rankOf(P.rank).luck + P.stats.INT * 0.35 + relicBonus("ariseLuck") + (P.awakened ? 60 : 0);
-const maxHP       = () => FORMULA.maxHP(100 + P.level * 6 + P.rebirths * 500, P.stats.VIT);
-const maxMana     = () => FORMULA.maxMana(P.stats.MNA);
+const shadowMult  = () => 1 + relicBonus("shadowDmg") + classBonus("shadow") + talentLv("legion") * 0.15;
+const ariseLuck   = () => rankOf(P.rank).luck + P.stats.INT * 0.35 + relicBonus("ariseLuck")
+  + (P.awakened ? 60 : 0) + classBonus("luck") * 100 + talentLv("fortune") * 12;
+const maxHP       = () => FORMULA.maxHP(100 + P.level * 6 + P.rebirths * 500, P.stats.VIT)
+  * (1 + classBonus("hp") + talentLv("vigor") * 0.1);
+const maxMana     = () => FORMULA.maxMana(P.stats.MNA) * (1 + classBonus("mana"));
 const shadowDmgOf = s => FORMULA.shadowDamage(SHADOWS[s.id].dmg * (1 + (s.level - 1) * 0.1), P.stats.SDW) * shadowMult();
 const shadowHPOf  = s => FORMULA.shadowHP(SHADOWS[s.id].hp * (1 + (s.level - 1) * 0.1), P.stats.SDW);
 
@@ -526,7 +568,8 @@ function spawnEnemy(def, x, y){
 function dealDamage(e, amount, opts){
   if (!e || e.hp <= 0) return;
   const o = opts || {};
-  const crit = o.crit ?? (Math.random() < CFG.CRIT_CHANCE);
+  const critChance = CFG.CRIT_CHANCE + classBonus("crit") + talentLv("crit") * 0.03;
+  const crit = o.crit ?? (Math.random() < critChance);
   const dmg = amount * (crit ? CFG.CRIT_MULT : 1);
   const applied = Math.min(dmg, e.hp);
   e.hp -= applied; e.hurt = 0.14;
@@ -549,6 +592,7 @@ function killEnemy(e){
   burst(e.x, e.y, 22, e.def.color || "#ffd9a8", 40);
   ring(e.x, e.y, 120, "#8fd0ff", .5);
   // CorpseToken (contrato 07)
+  while (corpses.length >= FLAGS.MAX_CORPSES) corpses.shift();
   corpses.push({
     CorpseId:uid(), EnemyId:e.def.name, ShadowDefinitionId:e.def.shadow || isleOf(P.island).shadow,
     OwnerPlayerId:1, SpawnedAt:now(), ExpiresAt:now() + FLAGS.CORPSE_LIFETIME,
@@ -593,7 +637,9 @@ function requestAttack(){
   if (player.dead > 0 || player.phase !== "idle") return;
   if (now() - player.comboAt > CFG.COMBO_RESET) player.combo = 0;
   const def = COMBO[player.combo % COMBO.length];
-  player.atkDef = def; player.phase = "startup"; player.phaseT = def.startup; player.hitDone = false;
+  const haste = 1 / (1 + talentLv("haste") * 0.06 + classBonus("speed"));
+  player.atkDef = { ...def, active:def.active * haste, recovery:def.recovery * haste };
+  player.phase = "startup"; player.phaseT = def.startup * haste; player.hitDone = false;
   player.combo = (player.combo + 1) % COMBO.length; player.comboAt = now();
 }
 function requestSkill(){
@@ -613,12 +659,10 @@ function resolveHit(){
     const dmg = weaponDmg() * SKILL.damage.weapon + P.stats.STR * SKILL.damage.str * 1.5;
     const total = dmg * (1 + rankMult());
     let hits = 0;
+    const skillDmg = total * (1 + classBonus("skill"));
     for (const e of enemies.slice()){
-      const d = Math.hypot(e.x-player.x, e.y-player.y);
-      if (d > SKILL.hitbox.radius) continue;
-      const ang = Math.abs(Math.atan2(e.x-player.x, -(e.y-player.y)) - Math.atan2(player.face, 0));
-      if (d > 60 && Math.cos(ang) < Math.cos(SKILL.hitbox.angle * Math.PI/180)) continue;
-      dealDamage(e, total, { cam:SKILL.feedback.cam, hitstop:SKILL.feedback.hitstop });
+      if (Math.hypot(e.x-player.x, e.y-player.y) > SKILL.hitbox.radius) continue;
+      dealDamage(e, skillDmg, { cam:SKILL.feedback.cam, hitstop:SKILL.feedback.hitstop });
       hits++;
     }
     ring(player.x, player.y, SKILL.hitbox.radius * 1.1, "#7fc6ff", .55);
@@ -709,7 +753,7 @@ function destroyCorpse(c){
 }
 // Capacidad de escuadrón: al estar lleno cae la sombra de menor daño.
 function autoEquip(shadow){
-  if (P.squad.length < FLAGS.SQUAD_CAPACITY){ P.squad.push(shadow.uuid); return null; }
+  if (P.squad.length < squadCap()){ P.squad.push(shadow.uuid); return null; }
   let worst = null, worstDmg = Infinity;
   for (const u of P.squad){
     const s = P.shadows[u];
@@ -726,11 +770,12 @@ function autoEquip(shadow){
 /* --------------------- sombras: FSM del contrato 06 ----------------------- */
 function rebuildSquad(){
   const keep = new Map(shadows.map(s => [s.uuid, s]));
-  shadows = P.squad.map((uuid, i) => {
+  const cap = squadCap();
+  shadows = P.squad.slice(0, cap).map((uuid, i) => {
     const data = P.shadows[uuid];
     if (!data) return null;
     const prev = keep.get(uuid);
-    const a = (i / FLAGS.SQUAD_CAPACITY) * Math.PI * 2;
+    const a = (i / cap) * Math.PI * 2;
     const base = prev || {
       uuid, id:data.id, slot:i, state:"IDLE_FOLLOW", atkCd:0, step:rnd(0,6), swing:0,
       x:player.x + Math.cos(a)*CFG.SHADOW_FOLLOW, y:player.y + Math.sin(a)*CFG.SHADOW_FOLLOW, target:null,
@@ -774,8 +819,11 @@ function stepShadow(s, dt){
       } else s.state = "RECOVER";
     } else { dx = t.x - s.x; dy = t.y - s.y; }
   } else {
-    const a = (s.slot / FLAGS.SQUAD_CAPACITY) * Math.PI * 2 + now() * 0.3;
-    const fx = player.x + Math.cos(a) * CFG.SHADOW_FOLLOW, fy = player.y + Math.sin(a) * CFG.SHADOW_FOLLOW;
+    // formación en anillos concéntricos: con muchas sombras no se apelotonan
+    const ringIdx = Math.floor(s.slot / 6), inRing = s.slot % 6;
+    const a = (inRing / 6) * Math.PI * 2 + now() * (0.3 - ringIdx * 0.06) + ringIdx * 0.5;
+    const rad = CFG.SHADOW_FOLLOW + ringIdx * 78;
+    const fx = player.x + Math.cos(a) * rad, fy = player.y + Math.sin(a) * rad;
     dx = fx - s.x; dy = fy - s.y;
     if (Math.hypot(dx, dy) < 8) s.state = "IDLE_FOLLOW";
   }
@@ -866,12 +914,14 @@ function clearDungeon(){
   banner("MAZMORRA COMPLETADA", "#5ce8a6");
   note(`+${fmt(gems)} gemas · +${fmt(cash)} oro · +1 ticket`, "--cash");
   save();
-  setTimeout(exitDungeon, 3200);
+  const runId = d.id;
+  setTimeout(() => { if (dungeon && dungeon.id === runId) exitDungeon(); }, 3200);
 }
 function enterDungeon(modeId){
   if (!portal && !modeId) return;
   const mode = modeId || portal.modeId;
   portal = null;
+  dungeon = null;
   dungeon = makeDungeon(mode);
   enemies = []; corpses = []; shadows.forEach(s => { s.target = null; });
   player.x = CFG.WORLD.w/2; player.y = CFG.WORLD.h/2; player.hp = maxHP();
@@ -899,6 +949,38 @@ function spawnPortal(){
   banner(`PORTAL · ${portal.mode.name}`, portal.mode.color);
   note(`Se abrió un portal (${portal.mode.name})`, "--arise");
   dirty = true;
+}
+
+/* -------------------------- misiones de NPC -------------------------------- */
+const QUEST_TEMPLATES = [
+  { id:"hunt",  text:n => `Derrota a ${n} enemigos`,   goal:() => 10 + Math.floor(P.level/2), type:"kills" },
+  { id:"arise", text:n => `Extrae ${n} sombras`,       goal:() => 3 + Math.floor(P.level/20), type:"arisen" },
+  { id:"gate",  text:n => `Completa ${n} mazmorra(s)`, goal:() => 1, type:"dungeons" },
+];
+const npc = { x:CFG.WORLD.w/2 + 240, y:CFG.WORLD.h/2 - 200, step:0 };
+function questProgress(){
+  const q = P.quests.active; if (!q) return 0;
+  const cur = q.type === "kills" ? P.kills : q.type === "arisen" ? P.arisen : P.dungeonsCleared;
+  return cur - q.start;
+}
+function takeQuest(){
+  if (P.quests.active) return;
+  const t = QUEST_TEMPLATES[Math.floor(Math.random()*QUEST_TEMPLATES.length)];
+  const goal = t.goal();
+  P.quests.active = { id:t.id, type:t.type, goal, start: t.type === "kills" ? P.kills : t.type === "arisen" ? P.arisen : P.dungeonsCleared,
+                      text:t.text(goal) };
+  note(`Misión: ${P.quests.active.text}`, "--gold");
+  save(); dirty = true;
+}
+function checkQuest(){
+  const q = P.quests.active;
+  if (!q || questProgress() < q.goal) return;
+  const cash = Math.floor(isleOf(P.island).enemy.hp * 3 * (1 + P.level*0.05));
+  const gems = 25 + P.level * 2;
+  P.cash += cash; P.gems += gems; P.tickets += 1; P.quests.done++; P.quests.active = null;
+  banner("MISIÓN COMPLETADA", "#ffd24a");
+  note(`+${fmt(cash)} oro · +${fmt(gems)} gemas · +1 ticket`, "--cash");
+  save(); dirty = true;
 }
 
 /* -------------------------------- efectos --------------------------------- */
@@ -1078,7 +1160,10 @@ function update(dt){
   spawnT -= dt;
   const pop = dungeon ? (dungeon.phase === "Boss" ? 1 : 6) : CFG.ENEMY_POP;
   if (spawnT <= 0 && enemies.length < pop && !(dungeon && dungeon.phase === "Boss")){
-    spawnEnemy(); spawnT = dungeon ? 2.2 : 1.3;
+    // repone la horda con rapidez: el farmeo del original es continuo
+    const batch = Math.min(3, pop - enemies.length);
+    for (let i=0;i<batch;i++) spawnEnemy();
+    spawnT = dungeon ? 1.2 : 0.5;
   }
   for (const e of enemies){
     e.hurt = Math.max(0, e.hurt - dt);
@@ -1158,6 +1243,7 @@ function update(dt){
   // ---- efectos
   for (const f of floaters) f.life -= dt;
   floaters = floaters.filter(f => f.life > 0);
+  if (floaters.length > 26) floaters.splice(0, floaters.length - 26);
   for (const p of parts){
     p.life -= dt;
     if (!p.ghost){
@@ -1167,6 +1253,7 @@ function update(dt){
     }
   }
   parts = parts.filter(p => p.life > 0);
+  if (parts.length > 260) parts.splice(0, parts.length - 260);
   for (const r of rings) r.life -= dt;
   rings = rings.filter(r => r.life > 0);
 
@@ -1183,13 +1270,17 @@ function update(dt){
   player.dps.since += dt;
   if (player.dps.since >= 1){ player.dps.shown = player.dps.total / player.dps.since; player.dps.total = 0; player.dps.since = 0; }
 
+  checkQuest();
+  if (!dungeon && !P.quests.active && Math.hypot(npc.x-player.x, npc.y-player.y) < 150) takeQuest();
+  npc.step += dt;
+
   saveT -= dt;
   if (saveT <= 0){ save(); saveT = 6; }
 }
 let saveT = 6;
 function hitPlayer(raw){
   if (player.dead > 0) return;
-  const dmg = Math.max(1, raw * CFG.CONTACT_SCALE);
+  const dmg = Math.max(1, raw * CFG.CONTACT_SCALE * (1 - classBonus("armor")));
   player.hp -= dmg; player.hurt = 0.22;
   floaters.push({ x:player.x, y:player.y, h:96, text:`-${fmt(dmg)}`, color:"#ff8d97", life:.85 });
   camImpulse(0.25);
@@ -1332,8 +1423,8 @@ function cachedH(gx, gz){
 function drawGround(){
   const th = themeNow();
   hCache.clear();
-  const gx0 = Math.floor((cam.x - TILE*11)/TILE), gx1 = Math.floor((cam.x + TILE*11)/TILE);
-  const gz0 = Math.floor((cam.y - TILE*16)/TILE), gz1 = Math.floor((cam.y + TILE*4)/TILE);
+  const gx0 = Math.floor((cam.x - TILE*9)/TILE), gx1 = Math.floor((cam.x + TILE*9)/TILE);
+  const gz0 = Math.floor((cam.y - TILE*13)/TILE), gz1 = Math.floor((cam.y + TILE*3)/TILE);
   for (let gz = gz0; gz <= gz1; gz++){
     for (let gx = gx0; gx <= gx1; gx++){
       const x = gx*TILE, z = gz*TILE;
@@ -1364,17 +1455,19 @@ function box(px, py, pz, w, h, d, color, o){
   if (!fbl || !fbr || !ftl || !ftr || !bbl || !bbr || !btl || !btr) return;
   ctx.globalAlpha = o.alpha ?? 1;
   ctx.lineJoin = "round";
-  const stroke = o.outline === false ? null : (o.outline || "rgba(6,10,24,.5)");
+  // el contorno solo se paga cuando la caja ocupa lo suficiente en pantalla
+  const stroke = (o.outline === false || fbl.s < 0.5) ? null : (o.outline || "rgba(6,10,24,.5)");
   if (stroke){ ctx.strokeStyle = stroke; ctx.lineWidth = Math.max(0.7, fbl.s * 1.2); }
-  const face = (pts, fill) => {
+  const face = (pts, fill, outline) => {
     ctx.beginPath(); ctx.moveTo(pts[0].x, pts[0].y);
     for (let i=1;i<pts.length;i++) ctx.lineTo(pts[i].x, pts[i].y);
-    ctx.closePath(); ctx.fillStyle = fill; ctx.fill(); if (stroke) ctx.stroke();
+    ctx.closePath(); ctx.fillStyle = fill; ctx.fill();
+    if (stroke && outline) ctx.stroke();
   };
-  if (px < cam.x - 2) face([fbr, ftr, btr, bbr], shade(color, 0.62));
-  else if (px > cam.x + 2) face([fbl, ftl, btl, bbl], shade(color, 0.62));
-  face([ftl, ftr, btr, btl], shade(color, 1.18));
-  face([fbl, fbr, ftr, ftl], shade(color, 0.92));
+  if (px < cam.x - 2) face([fbr, ftr, btr, bbr], shade(color, 0.62), true);
+  else if (px > cam.x + 2) face([fbl, ftl, btl, bbl], shade(color, 0.62), true);
+  face([ftl, ftr, btr, btl], shade(color, 1.18), false);
+  face([fbl, fbr, ftr, ftl], shade(color, 0.92), true);
   if (o.glow){
     ctx.globalAlpha = (o.alpha ?? 1) * 0.5;
     ctx.fillStyle = o.glow;
@@ -1482,7 +1575,7 @@ function collectProps(items){
   for (let gz = gz0; gz <= gz1; gz++){
     for (let gx = gx0; gx <= gx1; gx++){
       const h = hash2(gx, gz);
-      if (h % 6) continue;
+      if (h % 8) continue;
       const x = gx*TILE + (h % 80) - 40, z = gz*TILE + ((h>>8) % 80) - 40;
       if (Math.hypot(x - player.x, z - player.y) < 330) continue;
       const p = project(x, terrainH(x,z), z);
@@ -1495,15 +1588,22 @@ function collectProps(items){
 /* ------------------------------ personajes -------------------------------- */
 function figure(x, z, y0, o){
   const s = o.scale ?? 1, st = o.step ?? 0;
+  // LOD: a distancia se dibuja una silueta de 3 cajas en vez de 14
+  if (o.lod){
+    box(x, y0, z, 26*s, 26*s, 15*s, o.pants, { alpha:o.alpha ?? 1, outline:o.outline });
+    box(x, y0 + 26*s, z, 27*s, 26*s, 15*s, o.shirt, { alpha:o.alpha ?? 1, outline:o.outline });
+    box(x, y0 + 52*s, z, 23*s, 21*s, 20*s, o.skin, { alpha:o.alpha ?? 1, outline:o.outline });
+    return;
+  }
   const sw = Math.sin(st) * (o.moving ? 1 : .22);
   const opt = { alpha:o.alpha ?? 1, outline:o.outline };
   const atk = o.attack ?? 0;
   const g = y0;
   // piernas + botas
-  box(x - 6.5*s, g, z + sw*9*s, 12*s, 22*s, 13*s, o.pants, opt);
-  box(x + 6.5*s, g, z - sw*9*s, 12*s, 22*s, 13*s, o.pants, opt);
-  box(x - 6.5*s, g, z + sw*9*s, 13*s, 6*s, 15*s, o.boots || o.pants, opt);
-  box(x + 6.5*s, g, z - sw*9*s, 13*s, 6*s, 15*s, o.boots || o.pants, opt);
+  box(x - 6.5*s, g + 5*s, z + sw*9*s, 12*s, 17*s, 13*s, o.pants, opt);
+  box(x + 6.5*s, g + 5*s, z - sw*9*s, 12*s, 17*s, 13*s, o.pants, opt);
+  box(x - 6.5*s, g, z + sw*9*s, 13*s, 5*s, 15*s, o.boots || o.pants, opt);
+  box(x + 6.5*s, g, z - sw*9*s, 13*s, 5*s, 15*s, o.boots || o.pants, opt);
   // torso + cinturón
   box(x, g + 22*s, z, 27*s, 28*s, 15*s, o.shirt, opt);
   box(x, g + 22*s, z, 28*s, 5*s, 16*s, o.belt || shadeHex(o.pants), opt);
@@ -1524,8 +1624,15 @@ function figure(x, z, y0, o){
     box(x - 9*s, g + 68*s, z, 7*s, 17*s, 7*s, o.hornColor || "#ffd27a", opt);
     box(x + 9*s, g + 68*s, z, 7*s, 17*s, 7*s, o.hornColor || "#ffd27a", opt);
   }
-  decal(x - 5*s, g + 58*s, z + 10.2*s, 4.6*s, 5*s, o.eyes || "#12172b");
-  decal(x + 5*s, g + 58*s, z + 10.2*s, 4.6*s, 5*s, o.eyes || "#12172b");
+  // cara: dos ojos y una sonrisa dibujada sobre la cara frontal de la cabeza
+  const fz = z + 10.2*s, ey = o.eyes || "#12172b";
+  decal(x - 5.2*s, g + 58*s, fz, 4.4*s, 5.4*s, ey);
+  decal(x + 5.2*s, g + 58*s, fz, 4.4*s, 5.4*s, ey);
+  if (o.smile !== false){
+    decal(x - 4.6*s, g + 53*s, fz, 2.2*s, 2.4*s, ey);
+    decal(x + 4.6*s, g + 53*s, fz, 2.2*s, 2.4*s, ey);
+    decal(x, g + 51.6*s, fz, 7.4*s, 2.2*s, ey);
+  }
   // arma
   if (o.weapon){
     const wy = atk > 0 ? g + 62*s : g + 26*s, wz = atk > 0 ? z + 28*s : z + 12*s;
@@ -1549,9 +1656,9 @@ function drawPlayer(){
   shadowBlob(player.x, player.y, 24, .34 * (player.h > 0 ? 0.5 : 1));
   figure(player.x, player.y, g, {
     scale:1.06, step:player.step, moving:true, attack:atk,
-    skin:"#ffd9a8", shirt: player.hurt > 0 ? "#ff9aa4" : (awake ? "#3a2870" : "#22326e"),
-    pants: awake ? "#221a44" : "#1a2340", boots:"#141b33",
-    hair: awake ? "#bb8cff" : "#ff8a3d", eyes: awake ? "#bb8cff" : "#12172b",
+    skin:"#f5cd30", shirt: player.hurt > 0 ? "#ff9aa4" : (awake ? "#4b2f9e" : "#2f6bd8"),
+    pants: awake ? "#2a1c56" : "#3f9b4f", boots:"#2b2f40",
+    hair: awake ? "#bb8cff" : "#8b4a22", eyes:"#12172b",
     weapon: awake ? "#ddc4ff" : "#cfd9ee", pauldron: awake ? "#7a54c8" : "#39508f",
     cape: awake ? "#5a2fa8" : null, alpha: player.dead > 0 ? .45 : 1,
   });
@@ -1570,32 +1677,48 @@ function drawPlayer(){
     slashArc(player.x, player.y, g, 1.06, awake ? "#ddb6ff" : "#cfe6ff", 1, !!def?.skill);
   }
   if (player.mounted) box(player.x, g, player.y - 6, 40, 16, 70, awake ? "#6a45c8" : "#7a5a3a", { alpha:.95 });
+  // placa de nombre (como los avatares de Roblox)
+  const tag = project(player.x, g + 100, player.y);
+  if (tag){
+    ctx.textAlign = "center";
+    const sz = clamp(15 * tag.s, 11, 22);
+    ctx.font = `600 ${sz}px Fredoka, sans-serif`;
+    ctx.lineWidth = sz * 0.3; ctx.strokeStyle = "rgba(4,8,20,.9)";
+    ctx.fillStyle = awake ? "#d9c0ff" : "#eaf3ff";
+    const label = `${P.title} · Nv ${P.level}`;
+    ctx.strokeText(label, tag.x, tag.y); ctx.fillText(label, tag.x, tag.y);
+  }
 }
 function drawShadow(s){
   const g = terrainH(s.x, s.y);
   const glow = getComputedStyle(document.documentElement).getPropertyValue(TIER_VAR[s.data.tier] || "--t-C").trim() || "#b9c9e8";
   shadowBlob(s.x, s.y, 21, .3);
+  const farS = Math.hypot(s.x - cam.x, s.y - cam.y) > 780;
   figure(s.x, s.y, g, {
-    scale:.98, step:s.step, moving:s.state !== "IDLE_FOLLOW", attack:s.swing > 0 ? 1 : 0,
+    scale:.98, step:s.step, moving:s.state !== "IDLE_FOLLOW", attack:s.swing > 0 ? 1 : 0, lod:farS,
     skin:"#1b3a72", shirt:"#14294f", pants:"#0e1c3a", boots:"#0b1730", hair:"#1b3a72",
     eyes:glow, weapon:"#7fc6ff", pauldron:"#245a9e", alpha:.88, outline:"rgba(130,205,255,.9)",
   });
   const c = project(s.x, g+2, s.y);
   if (c){
     const rr = 34 * c.s;
-    const gr = ctx.createRadialGradient(c.x, c.y, 1, c.x, c.y, rr);
-    gr.addColorStop(0, "rgba(90,190,255,.4)"); gr.addColorStop(1, "rgba(90,190,255,0)");
-    ctx.fillStyle = gr; ctx.beginPath(); ctx.ellipse(c.x, c.y, rr, rr*.42, 0, 0, Math.PI*2); ctx.fill();
+    if (s.slot < 4){
+      const gr = ctx.createRadialGradient(c.x, c.y, 1, c.x, c.y, rr);
+      gr.addColorStop(0, "rgba(90,190,255,.4)"); gr.addColorStop(1, "rgba(90,190,255,0)");
+      ctx.fillStyle = gr;
+    } else ctx.fillStyle = "rgba(90,190,255,.16)";
+    ctx.beginPath(); ctx.ellipse(c.x, c.y, rr, rr*.42, 0, 0, Math.PI*2); ctx.fill();
   }
   if (s.swing > 0) slashArc(s.x, s.y, g, .98, "#9bdcff", s.swing/0.2);
 }
 function drawEnemy(e){
   const g = terrainH(e.x, e.y);
   const scale = (e.def.r / 18) * (e.boss ? 1.55 : 1);
+  const far = !e.boss && Math.hypot(e.x - cam.x, e.y - cam.y) > 780;
   const hurt = e.hurt > 0;
   const base = e.boss ? "#e0a05a" : (e.def.kind === "brute" ? "#a785ff" : "#8ad07a");
   figure(e.x, e.y, g, {
-    scale, step:e.step, moving:true,
+    scale, step:e.step, moving:true, lod:far,
     skin: hurt ? "#ffffff" : base,
     shirt: hurt ? "#ffe5e8" : shade(base, .72), pants: shade(base, .56), boots: shade(base, .45),
     hair: shade(base, 1.2), eyes: e.boss ? "#ffe066" : "#ff4a4a",
@@ -1604,7 +1727,7 @@ function drawEnemy(e){
   });
   const head = project(e.x, g + 84*scale, e.y);
   if (!head) return;
-  const near = Math.hypot(e.x-player.x, e.y-player.y) < 380;
+  const near = Math.hypot(e.x-player.x, e.y-player.y) < 300;
   if (!near && !e.boss) return;
   const w = (e.boss ? 92 : 48) * clamp(head.s, .55, 1.4), h = (e.boss ? 10 : 6.5) * clamp(head.s, .6, 1.25);
   ctx.fillStyle = "rgba(5,9,22,.88)";
@@ -1622,7 +1745,7 @@ function drawCorpse(c){
   const g = terrainH(c.x, c.y);
   const p = project(c.x, g+2, c.y); if (!p) return;
   const pulse = .55 + Math.sin(c.phase*3)*.25;
-  const rr = 54 * p.s;
+  const rr = 40 * p.s;
   const gr = ctx.createRadialGradient(p.x, p.y, 2, p.x, p.y, rr);
   gr.addColorStop(0, `rgba(47,228,255,${.45*pulse})`); gr.addColorStop(1, "rgba(47,228,255,0)");
   ctx.fillStyle = gr; ctx.beginPath(); ctx.ellipse(p.x, p.y, rr, rr*.45, 0, 0, Math.PI*2); ctx.fill();
@@ -1632,8 +1755,8 @@ function drawCorpse(c){
     const r2 = rr * (.48 + i*.3 + Math.sin(c.phase*2+i)*.05);
     ctx.beginPath(); ctx.ellipse(p.x, p.y, r2, r2*.45, 0, 0, Math.PI*2); ctx.stroke();
   }
-  for (let i=0;i<6;i++){
-    const a = c.phase*1.6 + i*Math.PI/3, len = rr*(.5+Math.sin(c.phase*3+i)*.18);
+  for (let i=0;i<4;i++){
+    const a = c.phase*1.6 + i*Math.PI/2, len = rr*(.5+Math.sin(c.phase*3+i)*.18);
     ctx.globalAlpha = .55;
     ctx.beginPath(); ctx.moveTo(p.x, p.y);
     ctx.lineTo(p.x + Math.cos(a)*len, p.y + Math.sin(a)*len*.45);
@@ -1687,6 +1810,34 @@ function drawTelegraphs(){
   }
 }
 
+function drawNPC(){
+  if (dungeon) return;
+  const g = terrainH(npc.x, npc.y);
+  shadowBlob(npc.x, npc.y, 22, .3);
+  figure(npc.x, npc.y, g, {
+    scale:1, step:npc.step*0.6, moving:false,
+    skin:"#f5cd30", shirt:"#2f8d5a", pants:"#3a3f52", boots:"#23283a",
+    hair:"#4a3524", eyes:"#12172b", pauldron:"#246b46",
+  });
+  const tag = project(npc.x, g + 108 + Math.sin(npc.step*2)*6, npc.y);
+  if (!tag) return;
+  ctx.textAlign = "center";
+  const sz = clamp(26 * tag.s, 16, 40);
+  ctx.font = `700 ${sz}px Fredoka, sans-serif`;
+  ctx.lineWidth = sz*0.28; ctx.strokeStyle = "rgba(4,8,20,.92)";
+  ctx.fillStyle = P.quests.active ? "#8fd0ff" : "#ffd24a";
+  ctx.strokeText(P.quests.active ? "…" : "!", tag.x, tag.y);
+  ctx.fillText(P.quests.active ? "…" : "!", tag.x, tag.y);
+  const t2 = project(npc.x, g + 86, npc.y);
+  if (t2){
+    const s2 = clamp(12*t2.s, 10, 17);
+    ctx.font = `600 ${s2}px Fredoka, sans-serif`;
+    ctx.lineWidth = s2*0.3;
+    ctx.fillStyle = "#eaf3ff";
+    ctx.strokeText("Cazador Jefe", t2.x, t2.y); ctx.fillText("Cazador Jefe", t2.x, t2.y);
+  }
+}
+
 /* -------------------------------- frame ----------------------------------- */
 function render(){
   cosP = Math.cos(CAM.pitch); sinP = Math.sin(CAM.pitch);
@@ -1706,6 +1857,7 @@ function render(){
   for (const e of enemies){ const p = project(e.x, 0, e.y); if (p) items.push({ z:p.z, f:() => drawEnemy(e) }); }
   for (const s of shadows){ const p = project(s.x, 0, s.y); if (p) items.push({ z:p.z, f:() => drawShadow(s) }); }
   { const p = project(player.x, 0, player.y); if (p) items.push({ z:p.z, f:drawPlayer }); }
+  if (!dungeon){ const p = project(npc.x, 0, npc.y); if (p) items.push({ z:p.z, f:drawNPC }); }
   items.sort((a,b) => b.z - a.z);
   for (const it of items) it.f();
 
@@ -1764,6 +1916,10 @@ function syncHud(){
     : portal ? `Portal ${portal.mode.name} · ${Math.ceil(60-portal.t)}s`
     : `Portal en ${Math.floor(portalT/60)}:${String(Math.floor(portalT%60)).padStart(2,"0")}`;
 
+  const q = P.quests.active;
+  $("quest").textContent = q ? `${q.text} · ${Math.min(questProgress(), q.goal)}/${q.goal}`
+    : (dungeon ? "" : "Habla con el Cazador Jefe (!)");
+
   const mh = maxHP(), mm = maxMana(), need = FORMULA.expRequired(P.level);
   $("hpbar").style.width = `${clamp(player.hp/mh*100,0,100)}%`;
   $("hptxt").textContent = `${fmt(Math.max(0,player.hp))} / ${fmt(mh)}`;
@@ -1788,7 +1944,8 @@ function syncHud(){
 
   const squad = $("squad"); squad.innerHTML = "";
   squad.hidden = P.squad.length === 0;
-  for (let i=0;i<FLAGS.SQUAD_CAPACITY;i++){
+  const cap = squadCap();
+  for (let i=0;i<Math.min(cap, 8);i++){
     const u = P.squad[i], d = u && P.shadows[u];
     const el = document.createElement("div");
     el.className = "slot" + (d ? "" : " empty");
@@ -1803,7 +1960,11 @@ function syncHud(){
 }
 
 /* ------------------------------- paneles ---------------------------------- */
-function openPanel(kind){ closeArise(); panelKind = kind; panelTab = kind === "items" ? "Relics" : "Weapons"; renderPanel(); }
+function openPanel(kind){
+  closeArise(); panelKind = kind;
+  panelTab = kind === "items" ? "Relics" : kind === "stats" ? "Stats" : "Weapons";
+  renderPanel();
+}
 function closePanel(){ panelKind = null; renderPanel(); }
 const shell = (title, body) => `<div class="scrim" data-close="1"><div class="panel" role="dialog" aria-label="${title}">
   <header><h2>${title}</h2><button class="x" data-close="1" aria-label="Cerrar">✕</button></header>
@@ -1818,6 +1979,37 @@ const STAT_INFO = {
   MNA:["Maná","Maná máximo · 100 + MNA×10"],
 };
 function panelStats(){
+  const tabs = [["Stats","Atributos"],["Class","Clase"],["Talents","Talentos"],["Codes","Códigos"]];
+  const nav = `<div class="tabs">${tabs.map(([id,label]) =>
+    `<button class="tab ${panelTab===id?"sel":""}" data-tab="${id}">${label}</button>`).join("")}</div>`;
+  if (panelTab === "Class"){
+    const body = Object.values(CLASSES).map(c => `<div class="item">
+      <span class="g">${c.glyph}</span>
+      <span class="meta"><b>${c.name}</b><span>${c.desc}</span></span>
+      <button class="btn ${P.class===c.id?"green":""}" data-class="${c.id}" ${P.class===c.id?"disabled":""}>
+        ${P.class===c.id?"Activa":"Elegir"}</button></div>`).join("");
+    return shell("Clase", nav + `<div class="list">${body}</div>
+      <p class="hint">Puedes cambiar de clase cuando quieras; los bonos se aplican al instante.</p>`);
+  }
+  if (panelTab === "Talents"){
+    const body = Object.values(TALENTS).map(t => {
+      const lv = talentLv(t.id), cost = t.cost(lv);
+      return `<div class="item"><span class="g">✦</span>
+        <span class="meta"><b>${t.name} <span style="opacity:.6">${lv}/${t.max}</span></b><span>${t.desc}</span></span>
+        <span class="price" style="color:var(--gem)">${lv>=t.max?"MAX":fmt(cost)+" 💎"}</span>
+        <button class="btn violet" data-talent="${t.id}" ${lv>=t.max || P.gems<cost?"disabled":""}>Subir</button></div>`;
+    }).join("");
+    return shell("Talentos", nav + `<div class="list">${body}</div>
+      <p class="hint">Gemas disponibles: <b style="color:var(--gem)">${fmt(P.gems)}</b>. Las gemas salen de extracciones fallidas y de mazmorras.</p>`);
+  }
+  if (panelTab === "Codes"){
+    const body = Object.keys(CODES).map(c => `<div class="item ${P.codes[c]?"locked":""}">
+      <span class="g">🎁</span><span class="meta"><b>${c}</b>
+      <span>${fmt(CODES[c].cash)} oro · ${fmt(CODES[c].gems)} gemas · ${CODES[c].tickets} tickets</span></span>
+      <button class="btn gold" data-code="${c}" ${P.codes[c]?"disabled":""}>${P.codes[c]?"Canjeado":"Canjear"}</button></div>`).join("");
+    return shell("Códigos", nav + `<div class="list">${body}</div>
+      <p class="hint">Códigos de bienvenida de esta build.</p>`);
+  }
   const s = P.stats, next = RANKS[rankIdx(P.rank)+1];
   const rows = Object.keys(STAT_INFO).map(k => `
     <div class="statrow"><span class="k">${k}</span>
@@ -1825,7 +2017,7 @@ function panelStats(){
       <span class="v">${fmt(s[k])}</span>
       <button class="plus" data-stat="${k}" ${s.points > 0 ? "" : "disabled"}>+</button></div>`).join("");
   const rebirthCost = 1e6 * Math.pow(10, P.rebirths);
-  return shell(`Atributos · ${s.points} puntos`, `
+  return shell(`Atributos · ${s.points} puntos`, nav + `
     <div class="statgrid">${rows}</div>
     <div class="derived">
       <div class="kv"><small>Daño M1</small><b>${fmt(baseDamage())}</b></div>
@@ -1840,6 +2032,10 @@ function panelStats(){
       <div class="kv"><small>Enemigos</small><b>${fmt(P.kills)}</b></div>
       <div class="kv"><small>Sombras extraídas</small><b>${fmt(P.arisen)}</b></div>
       <div class="kv"><small>Mazmorras</small><b>${fmt(P.dungeonsCleared)}</b></div>
+      <div class="kv"><small>Clase</small><b>${CLASSES[P.class].name}</b></div>
+      <div class="kv"><small>Escuadrón</small><b>${P.squad.length}/${squadCap()}</b></div>
+      <div class="kv"><small>Crítico</small><b>${Math.round((CFG.CRIT_CHANCE + classBonus("crit") + talentLv("crit")*0.03)*100)}%</b></div>
+      <div class="kv"><small>Misiones</small><b>${fmt(P.quests.done)}</b></div>
     </div>
     ${next ? `<div class="item"><span class="g">◆</span>
       <span class="meta"><b>Rango ${next.name}</b><span>Nivel ${next.level} · ${fmt(next.gems)} gemas · daño ×${(1+next.dmg).toFixed(2)} · suerte +${next.luck}%</span></span>
@@ -1864,7 +2060,7 @@ function panelShadows(){
       ${can ? `<button class="btn green" data-merge="${s.id}|${s.level}">Fusionar ×3</button>` : ""}
       <button class="btn" data-equip="${s.uuid}">${eq ? "Quitar" : "Equipar"}</button></div>`;
   }).join("") : `<p class="hint">Sin sombras todavía. Derrota a un enemigo y pulsa <b>B</b> sobre su cuerpo.</p>`;
-  return shell(`Sombras · ${P.squad.length}/${FLAGS.SQUAD_CAPACITY}`, `
+  return shell(`Sombras · ${P.squad.length}/${squadCap()}`, `
     <div class="list">${body}</div>
     <p class="hint">Escuadrón lleno: una extracción mejor <b>desequipa automáticamente la sombra de menor daño</b>.
     Tres copias iguales del mismo nivel se fusionan en una de nivel superior.</p>`);
@@ -2023,10 +2219,29 @@ modal.addEventListener("click", e => {
     }
     return;
   }
+  if (t.dataset.class){
+    P.class = t.dataset.class;
+    player.hp = Math.min(player.hp, maxHP());
+    note(`Clase: ${CLASSES[P.class].name}`, "--gem"); save(); dirty = true; renderPanel(); return;
+  }
+  if (t.dataset.talent){
+    const tal = TALENTS[t.dataset.talent], lv = talentLv(tal.id), cost = tal.cost(lv);
+    if (lv >= tal.max || P.gems < cost) return;
+    P.gems -= cost; P.talents[tal.id] = lv + 1;
+    note(`${tal.name} nivel ${lv+1}`, "--monarch"); save(); dirty = true; renderPanel(); return;
+  }
+  if (t.dataset.code){
+    const c = t.dataset.code;
+    if (P.codes[c]) return;
+    P.codes[c] = true;
+    P.cash += CODES[c].cash; P.gems += CODES[c].gems; P.tickets += CODES[c].tickets;
+    banner("CÓDIGO CANJEADO", "#ffd24a"); note(`${c}: +${fmt(CODES[c].cash)} oro`, "--cash");
+    save(); dirty = true; renderPanel(); return;
+  }
   if (t.dataset.equip){
     const u = t.dataset.equip, i = P.squad.indexOf(u);
     if (i >= 0) P.squad.splice(i, 1);
-    else if (P.squad.length < FLAGS.SQUAD_CAPACITY) P.squad.push(u);
+    else if (P.squad.length < squadCap()) P.squad.push(u);
     else return note("Escuadrón lleno", "--hp");
     rebuildSquad(); save(); renderPanel(); return;
   }
@@ -2044,11 +2259,10 @@ modal.addEventListener("click", e => {
   if (t.dataset.wmerge){
     const id = t.dataset.wmerge;
     if ((P.weapons[id] || 0) < FLAGS.MERGE_COPIES) return;
-    P.weapons[id] -= FLAGS.MERGE_COPIES;
-    const w = WEAPONS[id];
-    WEAPONS[id] = { ...w, dmg: w.dmg * 1.25 };
-    P.weapons[id] = (P.weapons[id] || 0) + 1;
-    note(`${w.name} mejorada · +25% daño`, "--gold"); save(); dirty = true; renderPanel(); return;
+    P.weapons[id] -= FLAGS.MERGE_COPIES - 1;           // 3 copias -> 1 de rango superior
+    P.weaponLv[id] = weaponLv(id) + 1;
+    note(`${WEAPONS[id].name} rango ${P.weaponLv[id]} · +25% daño`, "--gold");
+    save(); dirty = true; renderPanel(); return;
   }
   if (t.dataset.weapon){
     const w = WEAPONS[t.dataset.weapon];
