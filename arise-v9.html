@@ -553,8 +553,19 @@ function enemyDef(kind){
 function spawnEnemy(def, x, y){
   const d = def || enemyDef(Math.random() < 0.25 ? "brute" : "normal");
   const a = rnd(0, Math.PI*2), dist = rnd(300, 560);
+  const seed = Math.floor(Math.random() * 1e9);
+  const pick = (arr, k) => arr[(seed >> k) % arr.length];
+  const look = {
+    shirt: pick(["#d8503f","#3f7ad8","#4aa85a","#c06b28","#7a4ac0","#2f8d8d","#b8484a","#5a6b8c"], 3),
+    pants: pick(["#2f3a52","#3a4a2f","#4a3a2f","#2f2f3a","#40384a"], 7),
+    boots: pick(["#23283a","#2e2418","#1f2b1f"], 11),
+    hair:  pick(["#2b1d12","#5a3a1a","#1a1a22","#8a5a2a","#a03a2a","#d8c060"], 13),
+    hat:   ((seed >> 17) % 5 === 0) ? pick(["#2f3a52","#8a3030","#2d5a35"], 19) : null,
+    backpack: ((seed >> 21) % 6 === 0) ? "#4a3a28" : null,
+    height: 0.92 + ((seed >> 23) % 20) / 100,
+  };
   const e = {
-    guid:uid(), def:d, name:d.name, level:d.lvl,
+    guid:uid(), def:d, name:d.name, level:d.lvl, look,
     x: x ?? clamp(player.x + Math.cos(a)*dist, 80, CFG.WORLD.w-80),
     y: y ?? clamp(player.y + Math.sin(a)*dist, 80, CFG.WORLD.h-80),
     hp:d.hp, maxHp:d.hp, atkCd:rnd(.6,1.8), hurt:0, step:rnd(0,6), stun:0,
@@ -1446,12 +1457,30 @@ function drawGround(){
 }
 
 /* -------------------------------- cajas ----------------------------------- */
+// Caja 3D con rotación opcional (rotX = balanceo de miembros, rotZ = inclinación)
+// alrededor de un pivote local, lo que permite articular brazos y piernas.
 function box(px, py, pz, w, h, d, color, o){
   o = o || {};
-  const hw = w/2, hd = d/2, y1 = py + h;
-  const zF = pz + hd, zB = pz - hd, xL = px - hw, xR = px + hw;
-  const fbl = project(xL, py, zF), fbr = project(xR, py, zF), ftl = project(xL, y1, zF), ftr = project(xR, y1, zF);
-  const bbl = project(xL, py, zB), bbr = project(xR, py, zB), btl = project(xL, y1, zB), btr = project(xR, y1, zB);
+  const hw = w/2, hd = d/2;
+  const rx = o.rotX || 0, rz = o.rotZ || 0;
+  let V;
+  if (rx || rz){
+    const pvY = o.pivotY ?? h, pvZ = o.pivotZ ?? 0;
+    const cx = Math.cos(rx), sx = Math.sin(rx), cz = Math.cos(rz), sz = Math.sin(rz);
+    const tr = (x, y, z) => {
+      let yy = y - pvY, zz = z - pvZ, xx = x;
+      if (rx){ const ny = yy*cx - zz*sx, nz = yy*sx + zz*cx; yy = ny; zz = nz; }
+      if (rz){ const nx = xx*cz - yy*sz, ny2 = xx*sz + yy*cz; xx = nx; yy = ny2; }
+      return project(px + xx, py + yy + pvY, pz + zz + pvZ);
+    };
+    V = [tr(-hw,0,hd), tr(hw,0,hd), tr(-hw,h,hd), tr(hw,h,hd),
+         tr(-hw,0,-hd), tr(hw,0,-hd), tr(-hw,h,-hd), tr(hw,h,-hd)];
+  } else {
+    const y1 = py + h, zF = pz + hd, zB = pz - hd, xL = px - hw, xR = px + hw;
+    V = [project(xL,py,zF), project(xR,py,zF), project(xL,y1,zF), project(xR,y1,zF),
+         project(xL,py,zB), project(xR,py,zB), project(xL,y1,zB), project(xR,y1,zB)];
+  }
+  const [fbl, fbr, ftl, ftr, bbl, bbr, btl, btr] = V;
   if (!fbl || !fbr || !ftl || !ftr || !bbl || !bbr || !btl || !btr) return;
   ctx.globalAlpha = o.alpha ?? 1;
   ctx.lineJoin = "round";
@@ -1586,59 +1615,137 @@ function collectProps(items){
 }
 
 /* ------------------------------ personajes -------------------------------- */
+// Tipo de arma según el nombre del equipo, para modelarla con varias piezas.
+function weaponKind(id){
+  const n = (WEAPONS[id]?.name || "").toLowerCase();
+  if (n.includes("axe")) return "axe";
+  if (n.includes("scythe")) return "scythe";
+  if (n.includes("staff") || n.includes("rod")) return "staff";
+  if (n.includes("naginata") || n.includes("trident") || n.includes("maul")) return "polearm";
+  return "sword";
+}
+function drawWeapon(kind, x, y, z, s, color, swing){
+  const rot = swing ? -1.15 : 0.35;      // el arma acompaña al brazo
+  const o = { rotX:rot, pivotY:0, pivotZ:0 };
+  const gx = x + 16.5*s, gy = y + 19*s, gz = z + 5*s;
+  switch (kind){
+    case "axe":
+      box(gx, gy, gz, 4.5*s, 40*s, 4.5*s, "#6b4a2a", o);
+      box(gx, gy + 32*s, gz, 16*s, 14*s, 6*s, color, o);
+      box(gx - 7*s, gy + 33*s, gz, 6*s, 11*s, 7*s, color, o);
+      break;
+    case "scythe":
+      box(gx, gy, gz, 4*s, 52*s, 4*s, "#4a3a2a", o);
+      box(gx, gy + 48*s, gz, 26*s, 5*s, 5*s, color, o);
+      box(gx + 11*s, gy + 36*s, gz, 5*s, 14*s, 5*s, color, o);
+      break;
+    case "staff":
+      box(gx, gy, gz, 4*s, 50*s, 4*s, "#6b5a3a", o);
+      box(gx, gy + 48*s, gz, 11*s, 11*s, 11*s, color, { ...o, glow:color });
+      break;
+    case "polearm":
+      box(gx, gy, gz, 4*s, 54*s, 4*s, "#5a4a32", o);
+      box(gx, gy + 50*s, gz, 6*s, 16*s, 6*s, color, o);
+      break;
+    default:                                  // espada: hoja, guarda y empuñadura
+      box(gx, gy + 8*s, gz, 6*s, 38*s, 3*s, color, o);
+      box(gx, gy + 4*s, gz, 15*s, 4*s, 6*s, "#8a7a5a", o);
+      box(gx, gy - 6*s, gz, 5*s, 11*s, 5*s, "#4a3a2a", o);
+  }
+}
+// Cara estilo avatar: ojos con brillo y sonrisa curva sobre la cara frontal.
+function drawFace(x, y, z, s, eyes, smile){
+  const c = project(x, y + 57*s, z + 9*s);
+  if (!c) return;
+  const u = c.s * s;
+  if (u < 0.35) return;
+  ctx.fillStyle = eyes;
+  const ew = 3.6*u, eh = 4.6*u, ex = 4.4*u;
+  ctx.fillRect(c.x - ex - ew/2, c.y - eh/2, ew, eh);
+  ctx.fillRect(c.x + ex - ew/2, c.y - eh/2, ew, eh);
+  ctx.fillStyle = "rgba(255,255,255,.85)";
+  ctx.fillRect(c.x - ex - ew/2 + 0.6*u, c.y - eh/2 + 0.6*u, 1.5*u, 1.6*u);
+  ctx.fillRect(c.x + ex - ew/2 + 0.6*u, c.y - eh/2 + 0.6*u, 1.5*u, 1.6*u);
+  if (smile !== false){
+    ctx.strokeStyle = eyes; ctx.lineWidth = Math.max(1, 1.5*u); ctx.lineCap = "round";
+    ctx.beginPath(); ctx.arc(c.x, c.y + 2.2*u, 4.4*u, 0.25*Math.PI, 0.75*Math.PI); ctx.stroke();
+  }
+}
+/*  Personaje articulado: los miembros rotan sobre su pivote (hombro/cadera), el
+    torso respira en reposo y se inclina al correr, y el golpe tiene anticipación,
+    impacto y recuperación.  */
 function figure(x, z, y0, o){
   const s = o.scale ?? 1, st = o.step ?? 0;
-  // LOD: a distancia se dibuja una silueta de 3 cajas en vez de 14
+  const alpha = o.alpha ?? 1;
+  const opt = { alpha, outline:o.outline };
   if (o.lod){
-    box(x, y0, z, 26*s, 26*s, 15*s, o.pants, { alpha:o.alpha ?? 1, outline:o.outline });
-    box(x, y0 + 26*s, z, 27*s, 26*s, 15*s, o.shirt, { alpha:o.alpha ?? 1, outline:o.outline });
-    box(x, y0 + 52*s, z, 23*s, 21*s, 20*s, o.skin, { alpha:o.alpha ?? 1, outline:o.outline });
+    box(x, y0, z, 26*s, 26*s, 15*s, o.pants, opt);
+    box(x, y0 + 26*s, z, 27*s, 26*s, 15*s, o.shirt, opt);
+    box(x, y0 + 52*s, z, 19*s, 18*s, 17.5*s, o.skin, opt);
     return;
   }
-  const sw = Math.sin(st) * (o.moving ? 1 : .22);
-  const opt = { alpha:o.alpha ?? 1, outline:o.outline };
-  const atk = o.attack ?? 0;
-  const g = y0;
-  // piernas + botas
-  box(x - 6.5*s, g + 5*s, z + sw*9*s, 12*s, 17*s, 13*s, o.pants, opt);
-  box(x + 6.5*s, g + 5*s, z - sw*9*s, 12*s, 17*s, 13*s, o.pants, opt);
-  box(x - 6.5*s, g, z + sw*9*s, 13*s, 5*s, 15*s, o.boots || o.pants, opt);
-  box(x + 6.5*s, g, z - sw*9*s, 13*s, 5*s, 15*s, o.boots || o.pants, opt);
-  // torso + cinturón
-  box(x, g + 22*s, z, 27*s, 28*s, 15*s, o.shirt, opt);
-  box(x, g + 22*s, z, 28*s, 5*s, 16*s, o.belt || shadeHex(o.pants), opt);
-  // capa
-  if (o.cape) box(x, g + 24*s, z - 9*s, 26*s, 30*s, 4*s, o.cape, { alpha:(o.alpha ?? 1)*0.95 });
-  // brazos + hombreras
-  box(x - 17.5*s, g + 22*s, z - sw*8*s, 10*s, 26*s, 12*s, o.skin, opt);
-  if (atk > 0) box(x + 17.5*s, g + 38*s, z + 14*s, 10*s, 24*s, 12*s, o.skin, opt);
-  else box(x + 17.5*s, g + 22*s, z + sw*8*s, 10*s, 26*s, 12*s, o.skin, opt);
+  const near = Math.hypot(x - cam.x, z - cam.y) < 430;      // detalle fino solo de cerca
+  const moving = o.moving && (o.speed ?? 1) > 0.05;
+  const swing = moving ? Math.sin(st) : Math.sin(st * 0.5) * 0.12;   // reposo: respira
+  const atk = o.attack ?? 0;                                          // 0..1 progreso del golpe
+  const lean = moving ? 0.1 : 0.02;                                   // inclinación al correr
+  const bob = moving ? Math.abs(Math.sin(st)) * 1.6 * s : Math.sin(st*0.5) * 0.7 * s;
+  const g = y0 + bob;
+
+  // piernas articuladas desde la cadera
+  const legSw = swing * 0.62;
+  box(x - 6.5*s, g + 4*s, z, 12*s, 20*s, 13*s, o.pants, { ...opt, rotX: legSw, pivotY:20*s });
+  box(x + 6.5*s, g + 4*s, z, 12*s, 20*s, 13*s, o.pants, { ...opt, rotX:-legSw, pivotY:20*s });
+  box(x - 6.5*s, g + 4*s, z + Math.sin(legSw)*17*s, 13.5*s, 5*s, 16*s, o.boots || o.pants, opt);
+  box(x + 6.5*s, g + 4*s, z - Math.sin(legSw)*17*s, 13.5*s, 5*s, 16*s, o.boots || o.pants, opt);
+
+  // torso, cinturón y cuello
+  const torsoRot = { ...opt, rotZ: lean * (o.face ?? 1) * 0.35, pivotY:0 };
+  box(x, g + 22*s, z, 27*s, 27*s, 15*s, o.shirt, torsoRot);
+  box(x, g + 22*s, z, 28.5*s, 5*s, 16*s, o.belt || o.pants, opt);
+  if (o.buckle && near) box(x, g + 23*s, z + 8*s, 7*s, 5*s, 2*s, o.buckle, opt);
+  if (o.emblem && near) box(x, g + 33*s, z + 7.7*s, 6*s, 6*s, 1.2*s, o.emblem, opt);
+  box(x, g + 47*s, z, 9.5*s, 4.5*s, 9*s, o.skin, opt);
+  if (o.cape){
+    const flap = moving ? Math.sin(st*1.2) * 0.12 : Math.sin(now()*1.6) * 0.05;
+    box(x, g + 24*s, z - 9*s, 26*s, 30*s, 3*s, o.cape, { alpha:alpha*0.96, rotX:-0.12 + flap, pivotY:30*s });
+  }
+
+  // brazos: el derecho ejecuta el golpe (anticipación -> impacto)
+  // brazos: manga, antebrazo y mano comparten pivote (hombro), así se mueven juntos
+  const armSw = swing * 0.55;
+  const atkRot = atk > 0 ? (-2.0 + (1 - atk) * 0.75) : armSw * -1;
+  const arm = (ax, rot) => {
+    const rp = { ...opt, rotX:rot, pivotY:27*s };
+    box(ax, g + 38*s, z, 10.5*s, 9*s, 11.5*s, o.sleeve || o.shirt, rp);        // manga corta
+    box(ax, g + 21*s, z, 9.5*s, 17*s, 10.5*s, o.skin, rp);                     // brazo
+    if (near) box(ax, g + 17*s, z, 10*s, 5*s, 11*s, o.glove || o.skin, rp);    // mano
+  };
+  arm(x - 16.5*s, armSw);
+  arm(x + 16.5*s, atkRot);
   if (o.pauldron){
-    box(x - 18*s, g + 44*s, z, 14*s, 8*s, 15*s, o.pauldron, opt);
-    box(x + 18*s, g + 44*s, z, 14*s, 8*s, 15*s, o.pauldron, opt);
+    box(x - 17*s, g + 45*s, z, 14*s, 7.5*s, 15*s, o.pauldron, opt);
+    box(x + 17*s, g + 45*s, z, 14*s, 7.5*s, 15*s, o.pauldron, opt);
   }
-  // cabeza
-  box(x, g + 50*s, z, 23*s, 21*s, 20*s, o.skin, opt);
-  if (o.hair) box(x, g + 70*s, z, 25*s, 7*s, 22*s, o.hair, opt);
+
+  // cabeza, pelo y accesorios
+  const headBob = moving ? Math.sin(st*2) * 0.6 * s : 0;
+  box(x, g + 51*s + headBob, z, 19*s, 18*s, 17.5*s, o.skin, opt);
+  if (o.hair){
+    box(x, g + 66.5*s + headBob, z, 20*s, 4.5*s, 18.5*s, o.hair, opt);
+    if (near) box(x, g + 59*s + headBob, z - 8.4*s, 19*s, 8*s, 2.5*s, o.hair, opt);
+  }
+  if (o.hat){
+    box(x, g + 67*s + headBob, z, 21.5*s, 8*s, 20*s, o.hat, opt);
+    box(x, g + 67*s + headBob, z + 7*s, 20*s, 2.5*s, 11*s, o.hat, opt);
+  }
   if (o.horns){
-    box(x - 9*s, g + 68*s, z, 7*s, 17*s, 7*s, o.hornColor || "#ffd27a", opt);
-    box(x + 9*s, g + 68*s, z, 7*s, 17*s, 7*s, o.hornColor || "#ffd27a", opt);
+    box(x - 7.5*s, g + 66*s + headBob, z, 5.5*s, 12*s, 5.5*s, o.hornColor || "#ffd27a", { ...opt, rotX:-0.35, pivotY:0 });
+    box(x + 7.5*s, g + 66*s + headBob, z, 5.5*s, 12*s, 5.5*s, o.hornColor || "#ffd27a", { ...opt, rotX:-0.35, pivotY:0 });
   }
-  // cara: dos ojos y una sonrisa dibujada sobre la cara frontal de la cabeza
-  const fz = z + 10.2*s, ey = o.eyes || "#12172b";
-  decal(x - 5.2*s, g + 58*s, fz, 4.4*s, 5.4*s, ey);
-  decal(x + 5.2*s, g + 58*s, fz, 4.4*s, 5.4*s, ey);
-  if (o.smile !== false){
-    decal(x - 4.6*s, g + 53*s, fz, 2.2*s, 2.4*s, ey);
-    decal(x + 4.6*s, g + 53*s, fz, 2.2*s, 2.4*s, ey);
-    decal(x, g + 51.6*s, fz, 7.4*s, 2.2*s, ey);
-  }
-  // arma
-  if (o.weapon){
-    const wy = atk > 0 ? g + 62*s : g + 26*s, wz = atk > 0 ? z + 28*s : z + 12*s;
-    box(x + 19*s, wy, wz, 5*s, atk > 0 ? 8*s : 42*s, atk > 0 ? 46*s : 6*s, o.weapon, opt);
-    box(x + 19*s, atk > 0 ? wy - 4*s : g + 22*s, wz, 8*s, 6*s, 10*s, "#5b6a88", opt);
-  }
+  if (o.backpack) box(x, g + 26*s, z - 11*s, 18*s, 20*s, 7*s, o.backpack, opt);
+  drawFace(x, g + headBob, z, s, o.eyes || "#12172b", o.smile);
+  if (o.weapon) drawWeapon(o.weaponKind || "sword", x, g, z, s, o.weapon, atk > 0);
 }
 function shadeHex(hex){ return shade(hex, .7).replace("rgb","rgba").replace(")", ",1)"); }
 function slashArc(x, z, y, s, color, t, wide){
@@ -1655,12 +1762,16 @@ function drawPlayer(){
   const atk = player.phase === "active" || player.phase === "startup" ? 1 : 0;
   shadowBlob(player.x, player.y, 24, .34 * (player.h > 0 ? 0.5 : 1));
   figure(player.x, player.y, g, {
-    scale:1.06, step:player.step, moving:true, attack:atk,
+    scale:1.1, step:player.step, moving:true,
+    attack: player.phase === "startup" ? 0.35 : player.phase === "active" ? 1 : 0,
     skin:"#f5cd30", shirt: player.hurt > 0 ? "#ff9aa4" : (awake ? "#4b2f9e" : "#2f6bd8"),
     pants: awake ? "#2a1c56" : "#3f9b4f", boots:"#2b2f40",
     hair: awake ? "#bb8cff" : "#8b4a22", eyes:"#12172b",
-    weapon: awake ? "#ddc4ff" : "#cfd9ee", pauldron: awake ? "#7a54c8" : "#39508f",
+    weapon: awake ? "#ddc4ff" : "#cfd9ee", weaponKind: weaponKind(P.weapon),
+    pauldron: awake ? "#7a54c8" : "#39508f", sleeve: awake ? "#5a3ab8" : "#3f7ae8",
+    buckle:"#ffd24a", emblem: awake ? "#bb8cff" : "#8fd0ff",
     cape: awake ? "#5a2fa8" : null, alpha: player.dead > 0 ? .45 : 1,
+    face: player.face, speed: player.dashT > 0 ? 2 : 1,
   });
   // aura de rango en el suelo
   const c = project(player.x, terrainH(player.x, player.y)+2, player.y);
@@ -1693,11 +1804,12 @@ function drawShadow(s){
   const g = terrainH(s.x, s.y);
   const glow = getComputedStyle(document.documentElement).getPropertyValue(TIER_VAR[s.data.tier] || "--t-C").trim() || "#b9c9e8";
   shadowBlob(s.x, s.y, 21, .3);
-  const farS = Math.hypot(s.x - cam.x, s.y - cam.y) > 780;
+  const farS = Math.hypot(s.x - cam.x, s.y - cam.y) > 700;
   figure(s.x, s.y, g, {
     scale:.98, step:s.step, moving:s.state !== "IDLE_FOLLOW", attack:s.swing > 0 ? 1 : 0, lod:farS,
     skin:"#1b3a72", shirt:"#14294f", pants:"#0e1c3a", boots:"#0b1730", hair:"#1b3a72",
-    eyes:glow, weapon:"#7fc6ff", pauldron:"#245a9e", alpha:.88, outline:"rgba(130,205,255,.9)",
+    eyes:glow, weapon:"#7fc6ff", weaponKind:"sword", pauldron:"#245a9e", sleeve:"#102444",
+    emblem:glow, alpha:.88, outline:"rgba(130,205,255,.9)", smile:false, face:s.face ?? 1,
   });
   const c = project(s.x, g+2, s.y);
   if (c){
@@ -1714,16 +1826,24 @@ function drawShadow(s){
 function drawEnemy(e){
   const g = terrainH(e.x, e.y);
   const scale = (e.def.r / 18) * (e.boss ? 1.55 : 1);
-  const far = !e.boss && Math.hypot(e.x - cam.x, e.y - cam.y) > 780;
+  const far = !e.boss && Math.hypot(e.x - cam.x, e.y - cam.y) > 700;
   const hurt = e.hurt > 0;
   const base = e.boss ? "#e0a05a" : (e.def.kind === "brute" ? "#a785ff" : "#8ad07a");
+  const L = e.look || {};
   figure(e.x, e.y, g, {
-    scale, step:e.step, moving:true, lod:far,
+    scale: scale * (e.boss ? 1 : (L.height || 1)), step:e.step, moving:true, lod:far,
+    attack: e.atkCd > 1.05 && !e.boss ? 1 : 0,
     skin: hurt ? "#ffffff" : base,
-    shirt: hurt ? "#ffe5e8" : shade(base, .72), pants: shade(base, .56), boots: shade(base, .45),
-    hair: shade(base, 1.2), eyes: e.boss ? "#ffe066" : "#ff4a4a",
+    shirt: hurt ? "#ffe5e8" : (e.boss ? shade(base, .72) : L.shirt || shade(base, .72)),
+    sleeve: e.boss ? shade(base, .6) : shade(L.shirt || base, .82),
+    pants: e.boss ? shade(base, .56) : L.pants, boots: e.boss ? shade(base, .45) : L.boots,
+    hair: e.boss ? shade(base, 1.2) : L.hair, hat: e.boss ? null : L.hat, backpack: e.boss ? null : L.backpack,
+    eyes: e.boss ? "#ffe066" : "#2a1010", smile:false,
     horns: e.boss || e.def.kind === "brute", hornColor: e.boss ? "#ffd27a" : "#3c2b56",
-    pauldron: e.boss ? "#8a5a2a" : null,
+    pauldron: e.boss ? "#8a5a2a" : (e.def.kind === "brute" ? shade(L.shirt || base, .6) : null),
+    weapon: e.boss ? "#ffd9a8" : (e.def.kind === "brute" ? "#8a7a6a" : null),
+    weaponKind: e.boss ? "scythe" : "sword",
+    belt:"#2a2218", buckle:"#c9a33a",
   });
   const head = project(e.x, g + 84*scale, e.y);
   if (!head) return;
@@ -1815,9 +1935,10 @@ function drawNPC(){
   const g = terrainH(npc.x, npc.y);
   shadowBlob(npc.x, npc.y, 22, .3);
   figure(npc.x, npc.y, g, {
-    scale:1, step:npc.step*0.6, moving:false,
-    skin:"#f5cd30", shirt:"#2f8d5a", pants:"#3a3f52", boots:"#23283a",
-    hair:"#4a3524", eyes:"#12172b", pauldron:"#246b46",
+    scale:1.06, step:npc.step*0.8, moving:false,
+    skin:"#f5cd30", shirt:"#2f8d5a", sleeve:"#276f48", pants:"#3a3f52", boots:"#23283a",
+    hair:"#4a3524", eyes:"#12172b", pauldron:"#246b46", belt:"#2a2218", buckle:"#c9a33a",
+    cape:"#1f5c3c", emblem:"#ffd24a",
   });
   const tag = project(npc.x, g + 108 + Math.sin(npc.step*2)*6, npc.y);
   if (!tag) return;
