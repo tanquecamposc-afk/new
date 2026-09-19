@@ -180,6 +180,21 @@ Cobertura actual (**409 aserciones, 10 jugadores simulados en paralelo**):
 
 ## 7. Build web jugable (V9 ULTRA)
 
+`arise-3d.html` es la build actual: el mismo juego con **render 3D real en WebGL**
+(Three.js desde CDN, sin bundler). Frente a la versión anterior en canvas 2D:
+
+- luz direccional con **sombras dinámicas**, luz hemisférica y ambiental, niebla por isla;
+- **cel shading** (MeshToonMaterial) para el aspecto anime del original;
+- personajes como **jerarquía de nodos** (caderas, torso, hombros, cuello) animados por
+  rotación: caminan, golpean, respiran y giran hacia donde avanzan;
+- suelo con relieve real deformado por ruido y textura procedural por isla, props 3D
+  propios de cada uno de los 14 temas, cielo con degradado por shader y nubes;
+- efectos en escena: partículas, anillos de impacto, portal emisivo con luz puntual,
+  números de daño como sprites y columna espectral en cada cadáver.
+
+`arise-v9.html` conserva la versión anterior con el motor 2D por software.
+
+
 `arise-v9.html` es la build actual, construida sobre el contrato **Arise Crossover V9 ULTRA**:
 
 - **Fórmulas del contrato** aisladas en `FORMULA`: `Arma + STR×1.5`, `INT×1.6×mod`,
