@@ -296,7 +296,7 @@ const squadCap = () => Math.min(FLAGS.SQUAD_MAX, FLAGS.SQUAD_BASE + rankIdx(P.ra
 const CFG = {
   ATTACK_RANGE:150, ARISE_RANGE:140,
   COMBO_RESET:1.1,
-  SHADOW_FOLLOW:120, SHADOW_AGGRO:420, SHADOW_RANGE:78, SHADOW_CD:0.8, SHADOW_SPEED:260, SHADOW_LEASH:700,
+  SHADOW_FOLLOW:185, SHADOW_AGGRO:420, SHADOW_RANGE:78, SHADOW_CD:0.8, SHADOW_SPEED:260, SHADOW_LEASH:700,
   ENEMY_POP:16, WORLD:{ w:3400, h:2800 },
   CONTACT_SCALE:0.02, GRAVITY:1500, JUMP_V:520,
   DASH_DIST:330, DASH_TIME:0.18,
@@ -532,7 +532,7 @@ const shadowHPOf  = s => FORMULA.shadowHP(SHADOWS[s.id].hp * (1 + (s.level - 1) 
    MUNDO, COMBATE Y SISTEMAS
    =========================================================================== */
 const player = {
-  x:CFG.WORLD.w/2, y:CFG.WORLD.h/2, h:0, vh:0, jumps:0,
+  x:CFG.WORLD.w/2, y:CFG.WORLD.h/2, h:0, vh:0, jumps:0, yaw:Math.PI, moveAmt:0,
   hp:maxHP(), mana:maxMana(), face:1, step:0,
   combo:0, comboAt:0, phase:"idle", phaseT:0, atkDef:null, hitDone:false,
   dashT:0, dashX:0, dashY:0, dashCd:0, skillCd:0, dead:0, hurt:0, mounted:false,
@@ -683,7 +683,7 @@ function resolveHit(){
   }
   const e = nearestEnemy(player.x, player.y, CFG.ATTACK_RANGE);
   if (!e){ return; }
-  player.face = e.x < player.x ? -1 : 1;
+  player.yaw = Math.atan2(e.x - player.x, e.y - player.y);
   dealDamage(e, baseDamage() * def.mult, { cam:def.cam, hitstop:def.hitstop });
 }
 function requestDash(){
@@ -831,19 +831,20 @@ function stepShadow(s, dt){
     } else { dx = t.x - s.x; dy = t.y - s.y; }
   } else {
     // formación en anillos concéntricos: con muchas sombras no se apelotonan
-    const ringIdx = Math.floor(s.slot / 6), inRing = s.slot % 6;
-    const a = (inRing / 6) * Math.PI * 2 + now() * (0.3 - ringIdx * 0.06) + ringIdx * 0.5;
-    const rad = CFG.SHADOW_FOLLOW + ringIdx * 78;
+    const ringIdx = Math.floor(s.slot / 8), inRing = s.slot % 8;
+    const a = (inRing / 8) * Math.PI * 2 + now() * (0.25 - ringIdx * 0.05) + ringIdx * 0.4;
+    const rad = CFG.SHADOW_FOLLOW + ringIdx * 105;
     const fx = player.x + Math.cos(a) * rad, fy = player.y + Math.sin(a) * rad;
     dx = fx - s.x; dy = fy - s.y;
     if (Math.hypot(dx, dy) < 8) s.state = "IDLE_FOLLOW";
   }
   const len = Math.hypot(dx, dy);
+  if (t) s.yaw = Math.atan2(t.x - s.x, t.y - s.y);
   if (len > 2){
     const sp = CFG.SHADOW_SPEED * (s.state === "RECALLED" ? 1.8 : 1);
     const step = Math.min(sp * dt, len);
     s.x += dx/len * step; s.y += dy/len * step;
-    s.face = dx < 0 ? -1 : 1;
+    if (!t) s.yaw = Math.atan2(dx, dy);
     s.step += dt * 7;
     if (s.state === "RECALLED" && dOwner < CFG.SHADOW_FOLLOW * 1.5) s.state = "IDLE_FOLLOW";
   } else s.step += dt * 1.4;
@@ -1075,28 +1076,64 @@ addEventListener("keydown", e => {
 });
 addEventListener("keyup", e => keys.delete(e.key.toLowerCase()));
 addEventListener("blur", () => keys.clear());
+// Puntero: la mitad izquierda es un joystick virtual, la derecha orbita la cámara.
+const stick = { active:false, x:0, y:0, ox:0, oy:0, id:null };
+const drag = { active:false, x:0, y:0, moved:0, id:null };
 canvas.addEventListener("pointerdown", e => {
   canvas.setPointerCapture(e.pointerId);
-  pointer = { x:e.clientX, y:e.clientY, down:now() };
-  if (e.button === 0) requestAttack();
-});
-canvas.addEventListener("pointermove", e => { if (pointer) { pointer.x = e.clientX; pointer.y = e.clientY; } });
-canvas.addEventListener("pointerup", () => { pointer = null; });
-canvas.addEventListener("pointercancel", () => { pointer = null; });
-canvas.addEventListener("contextmenu", e => e.preventDefault());
-
-function inputVector(){
-  let dx = 0, dy = 0;
-  if (keys.has("w") || keys.has("arrowup")) dy -= 1;
-  if (keys.has("s") || keys.has("arrowdown")) dy += 1;
-  if (keys.has("a") || keys.has("arrowleft")) dx -= 1;
-  if (keys.has("d") || keys.has("arrowright")) dx += 1;
-  if (!dx && !dy && pointer && now() - pointer.down > 0.18){
-    const px = pointer.x - W/2, py = pointer.y - H*0.62;
-    if (Math.hypot(px, py) > 30){ dx = px; dy = py; }
+  const touch = e.pointerType !== "mouse";
+  if (touch && e.clientX < W * 0.45){
+    stick.active = true; stick.id = e.pointerId; stick.ox = e.clientX; stick.oy = e.clientY; stick.x = 0; stick.y = 0;
+    return;
   }
-  const len = Math.hypot(dx, dy);
-  return len ? { x:dx/len, y:dy/len } : { x:0, y:0 };
+  drag.active = true; drag.id = e.pointerId; drag.x = e.clientX; drag.y = e.clientY; drag.moved = 0;
+});
+canvas.addEventListener("pointermove", e => {
+  if (stick.active && e.pointerId === stick.id){
+    const dx = e.clientX - stick.ox, dy = e.clientY - stick.oy;
+    const m = Math.hypot(dx, dy) || 1, k = Math.min(1, m / 70);
+    stick.x = dx / m * k; stick.y = dy / m * k;
+    return;
+  }
+  if (!drag.active || e.pointerId !== drag.id) return;
+  const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+  drag.x = e.clientX; drag.y = e.clientY; drag.moved += Math.abs(dx) + Math.abs(dy);
+  CAM.yaw += dx * 0.006;
+  CAM.pitch = clamp(CAM.pitch + dy * 0.003, 0.12, 0.72);
+});
+const endPointer = e => {
+  if (stick.active && e.pointerId === stick.id){ stick.active = false; stick.x = 0; stick.y = 0; }
+  if (drag.active && e.pointerId === drag.id){
+    if (drag.moved < 8 && !auto) requestAttack();      // clic corto = golpe
+    drag.active = false;
+  }
+};
+canvas.addEventListener("pointerup", endPointer);
+canvas.addEventListener("pointercancel", endPointer);
+canvas.addEventListener("contextmenu", e => e.preventDefault());
+canvas.addEventListener("wheel", e => {
+  e.preventDefault();
+  CAM.back = clamp(CAM.back + Math.sign(e.deltaY) * 28, CAM.minBack, CAM.maxBack);
+}, { passive:false });
+
+function cameraKeys(dt){
+  if (keys.has("arrowleft")) CAM.yaw -= 1.8 * dt;
+  if (keys.has("arrowright")) CAM.yaw += 1.8 * dt;
+  if (keys.has("arrowup")) CAM.back = clamp(CAM.back - 220 * dt, CAM.minBack, CAM.maxBack);
+  if (keys.has("arrowdown")) CAM.back = clamp(CAM.back + 220 * dt, CAM.minBack, CAM.maxBack);
+}
+function inputVector(){
+  let f = 0, r = 0;
+  if (keys.has("w")) f += 1;
+  if (keys.has("s")) f -= 1;
+  if (keys.has("d")) r += 1;
+  if (keys.has("a")) r -= 1;
+  if (!f && !r && stick.active){ f = -stick.y; r = stick.x; }
+  if (!f && !r) return { x:0, y:0, amt:0 };
+  let x = camFwd.x * f + camRight.x * r;
+  let y = camFwd.z * f + camRight.z * r;
+  const len = Math.hypot(x, y) || 1;
+  return { x:x/len, y:y/len, amt: Math.min(1, Math.hypot(f, r)) };
 }
 function toggleMount(){
   player.mounted = !player.mounted;
@@ -1109,6 +1146,8 @@ function toggleMount(){
 /* -------------------------------- update ---------------------------------- */
 function update(dt){
   const t = now();
+  cameraKeys(dt);
+  updateCameraBasis();
   // hitstop: congela la simulación, no la cámara
   if (hitstop > 0){ hitstop -= dt; dt *= 0.06; }
 
@@ -1128,6 +1167,7 @@ function update(dt){
   } else {
     const mv = player.phase === "idle" ? 1 : 0.35;
     let mx = v.x, my = v.y;
+    player.moveAmt = v.amt;
     // AUTO: si no hay entrada, el cazador se acerca solo a su objetivo
     if (!mx && !my && auto && !modalOpen()){
       const t2 = nearestEnemy(player.x, player.y, 900);
@@ -1138,8 +1178,15 @@ function update(dt){
     }
     player.x = clamp(player.x + mx * speed * mv * dt, 50, CFG.WORLD.w-50);
     player.y = clamp(player.y + my * speed * mv * dt, 50, CFG.WORLD.h-50);
-    if (mx) player.face = mx < 0 ? -1 : 1;
-    player.step += (Math.abs(mx) + Math.abs(my)) * dt * 10;
+    if (mx || my){
+      // el personaje gira hacia donde avanza (camino más corto)
+      const want = Math.atan2(mx, my);
+      let d = want - player.yaw;
+      while (d > Math.PI) d -= Math.PI * 2;
+      while (d < -Math.PI) d += Math.PI * 2;
+      player.yaw += d * Math.min(1, dt * 12);
+      player.step += Math.hypot(mx, my) * dt * 10;
+    } else player.moveAmt = 0;
   }
   // salto y gravedad
   if (player.h > 0 || player.vh !== 0){
@@ -1192,6 +1239,7 @@ function update(dt){
         camImpulse(0.6); ring(e.x, e.y, 260, "#ff4d61", .9);
       }
     }
+    e.yaw = Math.atan2(player.x - e.x, player.y - e.y);
     if (d > stop){
       const sp = (98 + Math.min(60, e.level * 0.05)) * (e.boss ? 0.8 + e.phase*0.12 : 1);
       e.x += (player.x-e.x)/d * sp * dt; e.y += (player.y-e.y)/d * sp * dt;
@@ -1284,6 +1332,7 @@ function update(dt){
   checkQuest();
   if (!dungeon && !P.quests.active && Math.hypot(npc.x-player.x, npc.y-player.y) < 150) takeQuest();
   npc.step += dt;
+  npc.yaw = Math.atan2(player.x - npc.x, player.y - npc.y);
 
   saveT -= dt;
   if (saveT <= 0){ save(); saveT = 6; }
@@ -1325,7 +1374,7 @@ function separate(dt){
    Cámara en perspectiva detrás del jugador, terreno con relieve, luz
    direccional con sombreado por cara, cel-outline y props por tema de isla.
    =========================================================================== */
-const CAM = { back:300, height:205, pitch:0.345, focal:700 };
+const CAM = { back:265, height:158, pitch:0.29, focal:700, yaw:0, targetYaw:0, minBack:190, maxBack:560 };
 const TILE = 120;
 const LIGHT = { x:-0.45, y:0.82, z:0.35 };
 
@@ -1349,17 +1398,29 @@ const themeNow = () => dungeon ? THEMES.dungeon : (THEMES[isleOf(P.island).theme
 
 /* ----------------------------- proyección --------------------------------- */
 let cosP = 1, sinP = 0, FOC = 690;
-function project(wx, wy, wz){
-  const rx = wx - cam.x;
-  const ry = wy - (CAM.height + cam.shake * 2.2);
-  const rz = (cam.y + CAM.back + cam.dist) - wz;
-  const z2 = rz * cosP - ry * sinP;
-  if (z2 < 16) return null;
-  const y2 = ry * cosP + rz * sinP;
-  const s = FOC / z2;
-  return { x: W/2 + rx * s + cam.shake * 3, y: H/2 - y2 * s, s, z: z2 };
+// Cámara orbital: gira alrededor del jugador (yaw) y siempre lo encuadra.
+const camPos = { x:0, z:0 }, camFwd = { x:0, z:-1 }, camRight = { x:1, z:0 };
+function updateCameraBasis(){
+  const y = CAM.yaw;
+  camFwd.x = -Math.sin(y); camFwd.z = -Math.cos(y);
+  camRight.x = Math.cos(y); camRight.z = -Math.sin(y);
+  const back = CAM.back + cam.dist;
+  camPos.x = cam.x - camFwd.x * back;
+  camPos.z = cam.y - camFwd.z * back;
 }
-const horizonY = () => H/2 - FOC * (sinP / cosP);
+function project(wx, wy, wz){
+  const dx = wx - camPos.x, dz = wz - camPos.z;
+  const rx = dx * camRight.x + dz * camRight.z;
+  const rf = dx * camFwd.x + dz * camFwd.z;
+  const ry = wy - (CAM.height + cam.shake * 2.2);
+  const z2 = rf * cosP - ry * sinP;
+  if (z2 < 16) return null;
+  const y2 = ry * cosP + rf * sinP;
+  const s = FOC / z2;
+  return { x: W/2 + rx * s + cam.shake * 3, y: H*0.36 - y2 * s, s, z: z2 };
+}
+const horizonY = () => H*0.36 - FOC * (sinP / cosP);
+const camDist = (x, z) => Math.hypot(x - camPos.x, z - camPos.z);
 
 /* ------------------------- terreno y sombreado ---------------------------- */
 function terrainH(x, z){
@@ -1387,7 +1448,7 @@ function drawSky(){
     ctx.fillStyle = "rgba(255,255,255,.9)";
     for (let i=0;i<10;i++){
       const s0 = i*137.5;
-      const cx = (((s0*7 - cam.x*0.07) % (W+520)) + W+520) % (W+520) - 260;
+      const cx = (((s0*7 - CAM.yaw*380 - cam.x*0.03) % (W+520)) + W+520) % (W+520) - 260;
       const cy = hy * (0.1 + ((i*29)%60)/150);
       const w = 62 + (i%5)*30, h = w*0.34;
       ctx.beginPath();
@@ -1400,7 +1461,7 @@ function drawSky(){
     ctx.fillStyle = "rgba(255,255,255,.6)";
     for (let i=0;i<50;i++){
       const s0 = (i*7919)%977;
-      const cx = ((s0*11 - cam.x*0.02) % (W+160) + W+160) % (W+160) - 80;
+      const cx = ((s0*11 - CAM.yaw*260) % (W+160) + W+160) % (W+160) - 80;
       ctx.globalAlpha = .2 + (s0%50)/120;
       ctx.fillRect(cx, (s0 % Math.max(1, Math.floor(hy))), 2, 2);
     }
@@ -1410,7 +1471,7 @@ function drawSky(){
   for (let layer = 0; layer < 2; layer++){
     ctx.fillStyle = shade(th.gA, layer ? 0.34 : 0.22);
     ctx.beginPath(); ctx.moveTo(0, hy);
-    const par = cam.x * (layer ? 0.05 : 0.025), amp = layer ? 62 : 92;
+    const par = CAM.yaw * (layer ? 900 : 520) + cam.x * (layer ? 0.02 : 0.01), amp = layer ? 62 : 92;
     for (let x = 0; x <= W; x += 40){
       const hgt = 18 + Math.abs(Math.sin((x + par) * (layer ? 0.009 : 0.006))) * amp;
       ctx.lineTo(x, hy - hgt);
@@ -1434,8 +1495,9 @@ function cachedH(gx, gz){
 function drawGround(){
   const th = themeNow();
   hCache.clear();
-  const gx0 = Math.floor((cam.x - TILE*9)/TILE), gx1 = Math.floor((cam.x + TILE*9)/TILE);
-  const gz0 = Math.floor((cam.y - TILE*13)/TILE), gz1 = Math.floor((cam.y + TILE*3)/TILE);
+  const cx0 = (camPos.x + cam.x) / 2, cz0 = (camPos.z + cam.y) / 2;   // entre cámara y jugador
+  const gx0 = Math.floor((cx0 - TILE*15)/TILE), gx1 = Math.floor((cx0 + TILE*15)/TILE);
+  const gz0 = Math.floor((cz0 - TILE*15)/TILE), gz1 = Math.floor((cz0 + TILE*15)/TILE);
   for (let gz = gz0; gz <= gz1; gz++){
     for (let gx = gx0; gx <= gx1; gx++){
       const x = gx*TILE, z = gz*TILE;
@@ -1457,50 +1519,72 @@ function drawGround(){
 }
 
 /* -------------------------------- cajas ----------------------------------- */
-// Caja 3D con rotación opcional (rotX = balanceo de miembros, rotZ = inclinación)
-// alrededor de un pivote local, lo que permite articular brazos y piernas.
+/*  Caja 3D con transformación de modelo completa.
+    - o.origin + o.yaw: la posición es local al personaje y el conjunto gira sobre
+      su eje vertical, así los personajes se leen desde cualquier ángulo.
+    - o.rotX / o.rotZ sobre un pivote articulan los miembros.
+    Las caras se eligen por orientación real (área con signo) y se sombrean con una
+    luz direccional, de modo que el volumen funciona con la cámara orbital. */
+const CUBE_FACES = [
+  { v:[0,1,3,2], n:[0,0,1] },
+  { v:[5,4,6,7], n:[0,0,-1] },
+  { v:[4,0,2,6], n:[-1,0,0] },
+  { v:[1,5,7,3], n:[1,0,0] },
+  { v:[2,3,7,6], n:[0,1,0] },
+  { v:[4,5,1,0], n:[0,-1,0] },
+];
 function box(px, py, pz, w, h, d, color, o){
   o = o || {};
   const hw = w/2, hd = d/2;
-  const rx = o.rotX || 0, rz = o.rotZ || 0;
-  let V;
-  if (rx || rz){
-    const pvY = o.pivotY ?? h, pvZ = o.pivotZ ?? 0;
-    const cx = Math.cos(rx), sx = Math.sin(rx), cz = Math.cos(rz), sz = Math.sin(rz);
-    const tr = (x, y, z) => {
-      let yy = y - pvY, zz = z - pvZ, xx = x;
-      if (rx){ const ny = yy*cx - zz*sx, nz = yy*sx + zz*cx; yy = ny; zz = nz; }
-      if (rz){ const nx = xx*cz - yy*sz, ny2 = xx*sz + yy*cz; xx = nx; yy = ny2; }
-      return project(px + xx, py + yy + pvY, pz + zz + pvZ);
-    };
-    V = [tr(-hw,0,hd), tr(hw,0,hd), tr(-hw,h,hd), tr(hw,h,hd),
-         tr(-hw,0,-hd), tr(hw,0,-hd), tr(-hw,h,-hd), tr(hw,h,-hd)];
-  } else {
-    const y1 = py + h, zF = pz + hd, zB = pz - hd, xL = px - hw, xR = px + hw;
-    V = [project(xL,py,zF), project(xR,py,zF), project(xL,y1,zF), project(xR,y1,zF),
-         project(xL,py,zB), project(xR,py,zB), project(xL,y1,zB), project(xR,y1,zB)];
+  const rx = o.rotX || 0, rz = o.rotZ || 0, yaw = o.yaw || 0;
+  const org = o.origin;
+  const pvY = o.pivotY ?? h, pvZ = o.pivotZ ?? 0;
+  const cx = Math.cos(rx), sx = Math.sin(rx);
+  const cz = Math.cos(rz), sz = Math.sin(rz);
+  const cy = Math.cos(yaw), sy = Math.sin(yaw);
+  const V = new Array(8);
+  for (let i = 0; i < 8; i++){
+    let X = px + ((i & 1) ? hw : -hw);
+    let Y = py + ((i & 2) ? h : 0);
+    let Z = pz + ((i & 4) ? -hd : hd);
+    if (rx){ const yy = Y - (py + pvY), zz = Z - (pz + pvZ);
+             Y = py + pvY + yy*cx - zz*sx; Z = pz + pvZ + yy*sx + zz*cx; }
+    if (rz){ const xx = X - px, yy = Y - (py + pvY);
+             X = px + xx*cz - yy*sz; Y = py + pvY + xx*sz + yy*cz; }
+    if (org){ const nx = X*cy + Z*sy, nz = -X*sy + Z*cy;
+              V[i] = project(org.x + nx, org.y + Y, org.z + nz); }
+    else V[i] = project(X, Y, Z);
+    if (!V[i]) return;
   }
-  const [fbl, fbr, ftl, ftr, bbl, bbr, btl, btr] = V;
-  if (!fbl || !fbr || !ftl || !ftr || !bbl || !bbr || !btl || !btr) return;
-  ctx.globalAlpha = o.alpha ?? 1;
+  const alpha = o.alpha ?? 1;
+  ctx.globalAlpha = alpha;
   ctx.lineJoin = "round";
-  // el contorno solo se paga cuando la caja ocupa lo suficiente en pantalla
-  const stroke = (o.outline === false || fbl.s < 0.5) ? null : (o.outline || "rgba(6,10,24,.5)");
-  if (stroke){ ctx.strokeStyle = stroke; ctx.lineWidth = Math.max(0.7, fbl.s * 1.2); }
-  const face = (pts, fill, outline) => {
-    ctx.beginPath(); ctx.moveTo(pts[0].x, pts[0].y);
-    for (let i=1;i<pts.length;i++) ctx.lineTo(pts[i].x, pts[i].y);
-    ctx.closePath(); ctx.fillStyle = fill; ctx.fill();
-    if (stroke && outline) ctx.stroke();
-  };
-  if (px < cam.x - 2) face([fbr, ftr, btr, bbr], shade(color, 0.62), true);
-  else if (px > cam.x + 2) face([fbl, ftl, btl, bbl], shade(color, 0.62), true);
-  face([ftl, ftr, btr, btl], shade(color, 1.18), false);
-  face([fbl, fbr, ftr, ftl], shade(color, 0.92), true);
+  const outline = o.outline === false ? null : (o.outline || "rgba(6,10,24,.55)");
+  const drawStroke = outline && V[0].s > 0.45;
+  if (drawStroke){ ctx.strokeStyle = outline; ctx.lineWidth = Math.max(0.7, V[0].s * 1.15); }
+  const vis = [];
+  for (const f of CUBE_FACES){
+    const a = V[f.v[0]], b = V[f.v[1]], c2 = V[f.v[2]];
+    const area = (b.x - a.x) * (c2.y - a.y) - (c2.x - a.x) * (b.y - a.y);
+    if (area >= 0) continue;
+    let nx = f.n[0], nz = f.n[2];
+    if (yaw){ const r1 = nx*cy + nz*sy, r2 = -nx*sy + nz*cy; nx = r1; nz = r2; }
+    const lam = clamp(0.62 + (nx*LIGHT.x + f.n[1]*LIGHT.y + nz*LIGHT.z) * 0.42, 0.5, 1.22);
+    vis.push({ q:f.v, lam, z:(a.z + c2.z) * 0.5 });
+  }
+  vis.sort((m, n) => n.z - m.z);
+  for (const it of vis){
+    const q = it.q;
+    ctx.beginPath(); ctx.moveTo(V[q[0]].x, V[q[0]].y);
+    ctx.lineTo(V[q[1]].x, V[q[1]].y); ctx.lineTo(V[q[2]].x, V[q[2]].y); ctx.lineTo(V[q[3]].x, V[q[3]].y);
+    ctx.closePath(); ctx.fillStyle = shade(color, it.lam); ctx.fill();
+    if (drawStroke) ctx.stroke();
+  }
   if (o.glow){
-    ctx.globalAlpha = (o.alpha ?? 1) * 0.5;
-    ctx.fillStyle = o.glow;
-    ctx.beginPath(); ctx.moveTo(fbl.x,fbl.y); ctx.lineTo(fbr.x,fbr.y); ctx.lineTo(ftr.x,ftr.y); ctx.lineTo(ftl.x,ftl.y);
+    ctx.globalAlpha = alpha * 0.45; ctx.fillStyle = o.glow;
+    const q = CUBE_FACES[0].v;
+    ctx.beginPath(); ctx.moveTo(V[q[0]].x, V[q[0]].y);
+    for (let i=1;i<4;i++) ctx.lineTo(V[q[i]].x, V[q[i]].y);
     ctx.closePath(); ctx.fill();
   }
   ctx.globalAlpha = 1;
@@ -1509,6 +1593,11 @@ function decal(px, py, pz, w, h, color){
   const a = project(px - w/2, py + h, pz), b = project(px + w/2, py, pz);
   if (!a || !b) return;
   ctx.fillStyle = color; ctx.fillRect(a.x, a.y, b.x-a.x, b.y-a.y);
+}
+// Punto local de un personaje (con su yaw) llevado a coordenadas de mundo.
+function localToWorld(org, yaw, lx, ly, lz){
+  const c = Math.cos(yaw), sn = Math.sin(yaw);
+  return { x: org.x + lx*c + lz*sn, y: org.y + ly, z: org.z - lx*sn + lz*c };
 }
 function shadowBlob(px, pz, r, alpha, gh){
   const c = project(px, (gh ?? terrainH(px, pz)) + 1, pz); if (!c) return;
@@ -1599,8 +1688,9 @@ function drawProp(kind, x, z, h){
 }
 function collectProps(items){
   const th = themeNow();
-  const gx0 = Math.floor((cam.x - TILE*10)/TILE), gx1 = Math.floor((cam.x + TILE*10)/TILE);
-  const gz0 = Math.floor((cam.y - TILE*15)/TILE), gz1 = Math.floor((cam.y + TILE*3)/TILE);
+  const cx1 = (camPos.x + cam.x) / 2, cz1 = (camPos.z + cam.y) / 2;
+  const gx0 = Math.floor((cx1 - TILE*10)/TILE), gx1 = Math.floor((cx1 + TILE*10)/TILE);
+  const gz0 = Math.floor((cz1 - TILE*10)/TILE), gz1 = Math.floor((cz1 + TILE*10)/TILE);
   for (let gz = gz0; gz <= gz1; gz++){
     for (let gx = gx0; gx <= gx1; gx++){
       const h = hash2(gx, gz);
@@ -1615,7 +1705,7 @@ function collectProps(items){
 }
 
 /* ------------------------------ personajes -------------------------------- */
-// Tipo de arma según el nombre del equipo, para modelarla con varias piezas.
+// Tipo de arma según el equipo, para modelarla con varias piezas.
 function weaponKind(id){
   const n = (WEAPONS[id]?.name || "").toLowerCase();
   if (n.includes("axe")) return "axe";
@@ -1624,130 +1714,197 @@ function weaponKind(id){
   if (n.includes("naginata") || n.includes("trident") || n.includes("maul")) return "polearm";
   return "sword";
 }
-function drawWeapon(kind, x, y, z, s, color, swing){
-  const rot = swing ? -1.15 : 0.35;      // el arma acompaña al brazo
-  const o = { rotX:rot, pivotY:0, pivotZ:0 };
-  const gx = x + 16.5*s, gy = y + 19*s, gz = z + 5*s;
+function drawWeapon(kind, org, yaw, s, color, swinging, opt){
+  const o = k => ({ ...opt, origin:org, yaw, rotX: swinging ? -0.75 : 0.18, pivotY:0, ...k });
+  const hx = 20*s, hy = 26*s, hz = 10*s;         // mano derecha
   switch (kind){
     case "axe":
-      box(gx, gy, gz, 4.5*s, 40*s, 4.5*s, "#6b4a2a", o);
-      box(gx, gy + 32*s, gz, 16*s, 14*s, 6*s, color, o);
-      box(gx - 7*s, gy + 33*s, gz, 6*s, 11*s, 7*s, color, o);
+      box(hx, hy, hz, 4.5*s, 42*s, 4.5*s, "#6b4a2a", o());
+      box(hx, hy + 34*s, hz, 17*s, 15*s, 6*s, color, o());
+      box(hx - 8*s, hy + 35*s, hz, 6*s, 12*s, 7*s, color, o());
       break;
     case "scythe":
-      box(gx, gy, gz, 4*s, 52*s, 4*s, "#4a3a2a", o);
-      box(gx, gy + 48*s, gz, 26*s, 5*s, 5*s, color, o);
-      box(gx + 11*s, gy + 36*s, gz, 5*s, 14*s, 5*s, color, o);
+      box(hx, hy - 6*s, hz, 4.5*s, 48*s, 4.5*s, "#4a3a2a", o());
+      box(hx, hy + 40*s, hz, 26*s, 5*s, 5*s, color, o());
+      box(hx + 11*s, hy + 30*s, hz, 5*s, 13*s, 5*s, color, o());
       break;
     case "staff":
-      box(gx, gy, gz, 4*s, 50*s, 4*s, "#6b5a3a", o);
-      box(gx, gy + 48*s, gz, 11*s, 11*s, 11*s, color, { ...o, glow:color });
+      box(hx, hy, hz, 4*s, 54*s, 4*s, "#6b5a3a", o());
+      box(hx, hy + 52*s, hz, 12*s, 12*s, 12*s, color, { ...o(), glow:color });
       break;
     case "polearm":
-      box(gx, gy, gz, 4*s, 54*s, 4*s, "#5a4a32", o);
-      box(gx, gy + 50*s, gz, 6*s, 16*s, 6*s, color, o);
+      box(hx, hy - 8*s, hz, 4.5*s, 46*s, 4.5*s, "#5a4a32", o());
+      box(hx, hy + 36*s, hz, 6*s, 15*s, 6*s, color, o());
       break;
-    default:                                  // espada: hoja, guarda y empuñadura
-      box(gx, gy + 8*s, gz, 6*s, 38*s, 3*s, color, o);
-      box(gx, gy + 4*s, gz, 15*s, 4*s, 6*s, "#8a7a5a", o);
-      box(gx, gy - 6*s, gz, 5*s, 11*s, 5*s, "#4a3a2a", o);
+    default:
+      box(hx, hy + 10*s, hz, 6*s, 40*s, 3*s, color, o());
+      box(hx, hy + 6*s, hz, 16*s, 4*s, 7*s, "#8a7a5a", o());
+      box(hx, hy - 5*s, hz, 5*s, 11*s, 5*s, "#4a3a2a", o());
   }
 }
-// Cara estilo avatar: ojos con brillo y sonrisa curva sobre la cara frontal.
-function drawFace(x, y, z, s, eyes, smile){
-  const c = project(x, y + 57*s, z + 9*s);
+// Cara pintada sobre la cara frontal de la cabeza (posición local -> mundo).
+function drawFace(org, yaw, s, headY, eyes, opts){
+  // de espaldas no hay cara que pintar
+  const fx = Math.sin(yaw), fz = Math.cos(yaw);
+  if ((org.x - camPos.x) * fx + (org.z - camPos.z) * fz > -0.15) return;
+  const w = localToWorld(org, yaw, 0, headY, 9.2*s);
+  const c = project(w.x, w.y, w.z);
   if (!c) return;
   const u = c.s * s;
-  if (u < 0.35) return;
+  if (u < 0.32) return;
+  const o = opts || {};
   ctx.fillStyle = eyes;
-  const ew = 3.6*u, eh = 4.6*u, ex = 4.4*u;
+  const ew = 3.6*u, eh = (o.glowEyes ? 3.2 : 4.6)*u, ex = 4.4*u;
+  if (o.glowEyes){ ctx.shadowColor = eyes; ctx.shadowBlur = 10*u; }
   ctx.fillRect(c.x - ex - ew/2, c.y - eh/2, ew, eh);
   ctx.fillRect(c.x + ex - ew/2, c.y - eh/2, ew, eh);
-  ctx.fillStyle = "rgba(255,255,255,.85)";
-  ctx.fillRect(c.x - ex - ew/2 + 0.6*u, c.y - eh/2 + 0.6*u, 1.5*u, 1.6*u);
-  ctx.fillRect(c.x + ex - ew/2 + 0.6*u, c.y - eh/2 + 0.6*u, 1.5*u, 1.6*u);
-  if (smile !== false){
-    ctx.strokeStyle = eyes; ctx.lineWidth = Math.max(1, 1.5*u); ctx.lineCap = "round";
-    ctx.beginPath(); ctx.arc(c.x, c.y + 2.2*u, 4.4*u, 0.25*Math.PI, 0.75*Math.PI); ctx.stroke();
+  ctx.shadowBlur = 0;
+  if (!o.glowEyes){
+    ctx.fillStyle = "rgba(255,255,255,.85)";
+    ctx.fillRect(c.x - ex - ew/2 + .6*u, c.y - eh/2 + .6*u, 1.4*u, 1.5*u);
+    ctx.fillRect(c.x + ex - ew/2 + .6*u, c.y - eh/2 + .6*u, 1.4*u, 1.5*u);
+  }
+  if (o.smile !== false){
+    ctx.strokeStyle = eyes; ctx.lineWidth = Math.max(1, 1.4*u); ctx.lineCap = "round";
+    ctx.beginPath(); ctx.arc(c.x, c.y + 2.2*u, 4.4*u, .25*Math.PI, .75*Math.PI); ctx.stroke();
   }
 }
-/*  Personaje articulado: los miembros rotan sobre su pivote (hombro/cadera), el
-    torso respira en reposo y se inclina al correr, y el golpe tiene anticipación,
-    impacto y recuperación.  */
-function figure(x, z, y0, o){
-  const s = o.scale ?? 1, st = o.step ?? 0;
+
+/*  PERSONAJE
+    Construido en espacio local (x lateral, y altura, z frente) y girado por el
+    yaw del propio personaje: camina hacia donde mira y se ve bien desde
+    cualquier ángulo de cámara. Piezas: botas, muslos, peto con placa, cinturón,
+    hombreras, brazos de tres piezas, cuello, cabeza, pelo y capa. */
+function figure(org, yaw, o){
+  const s = o.scale ?? 1;
+  const st = o.step ?? 0;
   const alpha = o.alpha ?? 1;
-  const opt = { alpha, outline:o.outline };
+  const base = { origin:org, yaw, alpha, outline:o.outline };
   if (o.lod){
-    box(x, y0, z, 26*s, 26*s, 15*s, o.pants, opt);
-    box(x, y0 + 26*s, z, 27*s, 26*s, 15*s, o.shirt, opt);
-    box(x, y0 + 52*s, z, 19*s, 18*s, 17.5*s, o.skin, opt);
+    box(0, 0, 0, 26*s, 26*s, 15*s, o.pants, base);
+    box(0, 26*s, 0, 28*s, 28*s, 16*s, o.shirt, base);
+    box(0, 56*s, 0, 19*s, 18*s, 17.5*s, o.skin, base);
     return;
   }
-  const near = Math.hypot(x - cam.x, z - cam.y) < 430;      // detalle fino solo de cerca
+  const near = camDist(org.x, org.z) < 440;
   const moving = o.moving && (o.speed ?? 1) > 0.05;
-  const swing = moving ? Math.sin(st) : Math.sin(st * 0.5) * 0.12;   // reposo: respira
-  const atk = o.attack ?? 0;                                          // 0..1 progreso del golpe
-  const lean = moving ? 0.1 : 0.02;                                   // inclinación al correr
-  const bob = moving ? Math.abs(Math.sin(st)) * 1.6 * s : Math.sin(st*0.5) * 0.7 * s;
-  const g = y0 + bob;
+  const sw = moving ? Math.sin(st) : Math.sin(st * .5) * .12;
+  const atk = o.attack ?? 0;
+  const bob = moving ? Math.abs(Math.sin(st)) * 1.7 * s : Math.sin(st * .5) * .7 * s;
+  const B = (lx, ly, lz, w, h, d, col, extra) =>
+    box(lx, ly + bob, lz, w, h, d, col, extra ? { ...base, ...extra } : base);
 
-  // piernas articuladas desde la cadera
-  const legSw = swing * 0.62;
-  box(x - 6.5*s, g + 4*s, z, 12*s, 20*s, 13*s, o.pants, { ...opt, rotX: legSw, pivotY:20*s });
-  box(x + 6.5*s, g + 4*s, z, 12*s, 20*s, 13*s, o.pants, { ...opt, rotX:-legSw, pivotY:20*s });
-  box(x - 6.5*s, g + 4*s, z + Math.sin(legSw)*17*s, 13.5*s, 5*s, 16*s, o.boots || o.pants, opt);
-  box(x + 6.5*s, g + 4*s, z - Math.sin(legSw)*17*s, 13.5*s, 5*s, 16*s, o.boots || o.pants, opt);
-
-  // torso, cinturón y cuello
-  const torsoRot = { ...opt, rotZ: lean * (o.face ?? 1) * 0.35, pivotY:0 };
-  box(x, g + 22*s, z, 27*s, 27*s, 15*s, o.shirt, torsoRot);
-  box(x, g + 22*s, z, 28.5*s, 5*s, 16*s, o.belt || o.pants, opt);
-  if (o.buckle && near) box(x, g + 23*s, z + 8*s, 7*s, 5*s, 2*s, o.buckle, opt);
-  if (o.emblem && near) box(x, g + 33*s, z + 7.7*s, 6*s, 6*s, 1.2*s, o.emblem, opt);
-  box(x, g + 47*s, z, 9.5*s, 4.5*s, 9*s, o.skin, opt);
+  // piernas: muslo articulado desde la cadera y bota
+  const legSw = sw * .62;
+  for (const side of [-1, 1]){
+    const rot = legSw * side;
+    const hip = { ...base, rotX:rot, pivotY:22*s };
+    B(side * 6.5*s, 7*s, 0, 12*s, 21*s, 13*s, o.pants, hip);
+    B(side * 6.5*s, 0, Math.sin(rot) * 17*s, 13.5*s, 8*s, 16*s, o.boots || o.pants);
+  }
+  // torso, peto y cinturón
+  B(0, 27*s, 0, 28*s, 28*s, 15.5*s, o.shirt);
+  if (o.armor) B(0, 33*s, 8*s, 23*s, 20*s, 2.5*s, o.armor);
+  B(0, 27*s, 0, 29.5*s, 5.5*s, 16.5*s, o.belt || o.pants);
+  if (o.buckle && near) B(0, 28*s, 8.6*s, 7*s, 4.5*s, 2*s, o.buckle);
+  if (o.emblem && near) B(0, 40*s, 9*s, 6.5*s, 6.5*s, 1.6*s, o.emblem);
   if (o.cape){
-    const flap = moving ? Math.sin(st*1.2) * 0.12 : Math.sin(now()*1.6) * 0.05;
-    box(x, g + 24*s, z - 9*s, 26*s, 30*s, 3*s, o.cape, { alpha:alpha*0.96, rotX:-0.12 + flap, pivotY:30*s });
+    const flap = moving ? Math.sin(st * 1.2) * .14 : Math.sin(now() * 1.5) * .05;
+    B(0, 26*s, -9*s, 26*s, 30*s, 3*s, o.cape, { rotX:-.1 + flap, pivotY:30*s, alpha:alpha * .96 });
+    if (near) B(0, 12*s, -11*s, 22*s, 16*s, 2.5*s, o.cape, { rotX:-.05 + flap * .6, pivotY:16*s, alpha:alpha * .9 });
   }
-
-  // brazos: el derecho ejecuta el golpe (anticipación -> impacto)
-  // brazos: manga, antebrazo y mano comparten pivote (hombro), así se mueven juntos
-  const armSw = swing * 0.55;
-  const atkRot = atk > 0 ? (-2.0 + (1 - atk) * 0.75) : armSw * -1;
-  const arm = (ax, rot) => {
-    const rp = { ...opt, rotX:rot, pivotY:27*s };
-    box(ax, g + 38*s, z, 10.5*s, 9*s, 11.5*s, o.sleeve || o.shirt, rp);        // manga corta
-    box(ax, g + 21*s, z, 9.5*s, 17*s, 10.5*s, o.skin, rp);                     // brazo
-    if (near) box(ax, g + 17*s, z, 10*s, 5*s, 11*s, o.glove || o.skin, rp);    // mano
-  };
-  arm(x - 16.5*s, armSw);
-  arm(x + 16.5*s, atkRot);
+  // brazos: manga, brazo y mano solidarios al hombro
+  const armSw = sw * .55;
+  const atkRot = atk > 0 ? (-2.0 + (1 - atk) * .75) : -armSw;
+  for (const side of [-1, 1]){
+    const rot = side < 0 ? armSw : atkRot;
+    const sh = { ...base, rotX:rot, pivotY:28*s };
+    const ax = side * 17*s;
+    B(ax, 44*s, 0, 10.5*s, 11*s, 12*s, o.sleeve || o.shirt, sh);
+    B(ax, 30*s, 0, 9.5*s, 15*s, 11*s, o.skin, sh);
+    if (near) B(ax, 25*s, 0, 10*s, 6*s, 11.5*s, o.glove || o.skin, sh);
+  }
   if (o.pauldron){
-    box(x - 17*s, g + 45*s, z, 14*s, 7.5*s, 15*s, o.pauldron, opt);
-    box(x + 17*s, g + 45*s, z, 14*s, 7.5*s, 15*s, o.pauldron, opt);
+    B(-16.5*s, 47*s, 0, 12.5*s, 6*s, 13.5*s, o.pauldron);
+    B(16.5*s, 47*s, 0, 12.5*s, 6*s, 13.5*s, o.pauldron);
   }
-
-  // cabeza, pelo y accesorios
-  const headBob = moving ? Math.sin(st*2) * 0.6 * s : 0;
-  box(x, g + 51*s + headBob, z, 19*s, 18*s, 17.5*s, o.skin, opt);
+  // cuello y cabeza
+  const hb = moving ? Math.sin(st * 2) * .6 * s : 0;
+  B(0, 54*s + hb, 0, 9.5*s, 4.5*s, 9*s, o.skin);
+  B(0, 58*s + hb, 0, 19*s, 18*s, 17.5*s, o.skin);
   if (o.hair){
-    box(x, g + 66.5*s + headBob, z, 20*s, 4.5*s, 18.5*s, o.hair, opt);
-    if (near) box(x, g + 59*s + headBob, z - 8.4*s, 19*s, 8*s, 2.5*s, o.hair, opt);
+    B(0, 74*s + hb, 0, 19.5*s, 3.5*s, 18*s, o.hair);            // coronilla
+    if (near){
+      B(0, 68*s + hb, -8.2*s, 18.5*s, 8*s, 2.5*s, o.hair);      // nuca
+      B(0, 71*s + hb, 8.2*s, 18.5*s, 4*s, 2.5*s, o.hair);       // flequillo
+    }
   }
   if (o.hat){
-    box(x, g + 67*s + headBob, z, 21.5*s, 8*s, 20*s, o.hat, opt);
-    box(x, g + 67*s + headBob, z + 7*s, 20*s, 2.5*s, 11*s, o.hat, opt);
+    B(0, 74*s + hb, 0, 21.5*s, 8*s, 20*s, o.hat);
+    B(0, 74*s + hb, 7*s, 20*s, 2.5*s, 11*s, o.hat);
+  }
+  if (o.crown){
+    B(0, 76*s + hb, 0, 20*s, 5*s, 19*s, o.crown);
+    for (const dx of [-6, 0, 6]) B(dx*s, 80*s + hb, 0, 4*s, 7*s, 4*s, o.crown);
   }
   if (o.horns){
-    box(x - 7.5*s, g + 66*s + headBob, z, 5.5*s, 12*s, 5.5*s, o.hornColor || "#ffd27a", { ...opt, rotX:-0.35, pivotY:0 });
-    box(x + 7.5*s, g + 66*s + headBob, z, 5.5*s, 12*s, 5.5*s, o.hornColor || "#ffd27a", { ...opt, rotX:-0.35, pivotY:0 });
+    for (const sd of [-1, 1]){
+      B(sd*7.5*s, 72*s + hb, 0, 4.5*s, 6*s, 4.5*s, o.hornBase || o.hair || "#3c2b56", { rotX:-.3, pivotY:0 });
+      B(sd*7.5*s, 77*s + hb, -1.5*s, 3.4*s, 5*s, 3.4*s, o.hornColor || "#ffd27a", { rotX:-.45, pivotY:0 });
+    }
   }
-  if (o.backpack) box(x, g + 26*s, z - 11*s, 18*s, 20*s, 7*s, o.backpack, opt);
-  drawFace(x, g + headBob, z, s, o.eyes || "#12172b", o.smile);
-  if (o.weapon) drawWeapon(o.weaponKind || "sword", x, g, z, s, o.weapon, atk > 0);
+  if (o.backpack) B(0, 30*s, -10.5*s, 18*s, 20*s, 7*s, o.backpack);
+  drawFace(org, yaw, s, org.y + 64*s + bob + hb, o.eyes || "#12172b", { smile:o.smile, glowEyes:o.glowEyes });
+  if (o.weapon) drawWeapon(o.weaponKind || "sword", { x:org.x, y:org.y + bob, z:org.z }, yaw, s, o.weapon, atk > 0, { alpha });
 }
-function shadeHex(hex){ return shade(hex, .7).replace("rgb","rgba").replace(")", ",1)"); }
+
+/*  SOMBRA EXTRAÍDA
+    Comparte el modelo del personaje (misma anatomía y animación) con una paleta
+    espectral: cuerpo de humo azul, ojos y núcleo encendidos del color de su
+    rango, halo, brasas ascendentes y marcas de rango (cuernos en S, corona en
+    Monarch).  */
+function drawShadowUnit(sh){
+  const g = terrainH(sh.x, sh.y);
+  const org = { x:sh.x, y:g, z:sh.y };
+  const tier = sh.data.tier;
+  const glow = getComputedStyle(document.documentElement).getPropertyValue(TIER_VAR[tier] || "--t-C").trim() || "#b9c9e8";
+  const far = camDist(sh.x, sh.y) > 950;
+  const yaw = sh.yaw || 0;
+  const bob = Math.sin(sh.step * .8) * 2 * .95;                 // flota un poco
+  shadowBlob(sh.x, sh.y, 21, .3);
+  figure({ x:org.x, y:org.y + bob, z:org.z }, yaw, {
+    scale:.95, step:sh.step, moving:sh.state !== "IDLE_FOLLOW", attack: sh.swing > 0 ? 1 : 0,
+    lod:far, alpha:.97,
+    skin:"#3b6bb5", shirt:"#1f3f7d", sleeve:"#2a509a", armor:glow,
+    pants:"#16294d", boots:"#101f3c", glove:"#4d84cc",
+    hair:"#16294d", eyes:glow, glowEyes:true, smile:false,
+    pauldron:"#2d5896", belt:"#101f3c",
+    horns: tier === "S" || tier === "S Elite", hornColor:glow,
+    crown: tier === "Monarch" ? glow : null,
+    cape: tier === "S Elite" || tier === "Monarch" ? "#12294f" : null,
+    weapon: sh.swing > 0 ? glow : null, weaponKind:"sword",
+  });
+  if (far) return;
+  // halo y núcleo encendido
+  const halo = project(sh.x, g + 34, sh.y);
+  if (halo){
+    const rr = 44 * halo.s;
+    const gr = ctx.createRadialGradient(halo.x, halo.y, rr*.3, halo.x, halo.y, rr);
+    gr.addColorStop(0, "rgba(90,190,255,.22)"); gr.addColorStop(1, "rgba(90,190,255,0)");
+    ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(halo.x, halo.y, rr, 0, Math.PI*2); ctx.fill();
+  }
+  const c = project(sh.x, g + 2, sh.y);
+  if (c){
+    const rr = 32 * c.s;
+    ctx.fillStyle = "rgba(90,190,255,.18)";
+    ctx.beginPath(); ctx.ellipse(c.x, c.y, rr, rr*.42, 0, 0, Math.PI*2); ctx.fill();
+  }
+  if (Math.random() < .2){
+    parts.push({ x:sh.x + rnd(-12, 12), y:sh.y + rnd(-8, 8), h:rnd(4, 16),
+                 vx:0, vy:0, vh:rnd(26, 58), life:rnd(.5, .9), color:glow, size:rnd(1.4, 2.4) });
+  }
+}
+
 function slashArc(x, z, y, s, color, t, wide){
   const c = project(x, y + 42*s, z + 26*s); if (!c) return;
   ctx.globalAlpha = clamp(t, 0, 1);
@@ -1758,80 +1915,61 @@ function slashArc(x, z, y, s, color, t, wide){
 }
 function drawPlayer(){
   const g = terrainH(player.x, player.y) + player.h;
+  const org = { x:player.x, y:g, z:player.y };
   const awake = P.awakened;
-  const atk = player.phase === "active" || player.phase === "startup" ? 1 : 0;
-  shadowBlob(player.x, player.y, 24, .34 * (player.h > 0 ? 0.5 : 1));
-  figure(player.x, player.y, g, {
-    scale:1.1, step:player.step, moving:true,
-    attack: player.phase === "startup" ? 0.35 : player.phase === "active" ? 1 : 0,
-    skin:"#f5cd30", shirt: player.hurt > 0 ? "#ff9aa4" : (awake ? "#4b2f9e" : "#2f6bd8"),
+  const atk = player.phase === "startup" ? .35 : player.phase === "active" ? 1 : 0;
+  shadowBlob(player.x, player.y, 24, .34 * (player.h > 0 ? .5 : 1));
+  figure(org, player.yaw, {
+    scale:1.02, step:player.step, moving:true, attack:atk,
+    speed: player.moveAmt ?? 1,
+    skin:"#f5cd30",
+    shirt: player.hurt > 0 ? "#ff9aa4" : (awake ? "#41288f" : "#2f6bd8"),
+    sleeve: awake ? "#5a3ab8" : "#3f7ae8",
+    armor: awake ? "#7a54c8" : "#4a86ee",
     pants: awake ? "#2a1c56" : "#3f9b4f", boots:"#2b2f40",
     hair: awake ? "#bb8cff" : "#8b4a22", eyes:"#12172b",
+    belt:"#2a2218", buckle:"#ffd24a", emblem: awake ? "#bb8cff" : "#8fd0ff",
+    pauldron: awake ? "#7a54c8" : "#39508f", glove:"#e0a83a",
     weapon: awake ? "#ddc4ff" : "#cfd9ee", weaponKind: weaponKind(P.weapon),
-    pauldron: awake ? "#7a54c8" : "#39508f", sleeve: awake ? "#5a3ab8" : "#3f7ae8",
-    buckle:"#ffd24a", emblem: awake ? "#bb8cff" : "#8fd0ff",
-    cape: awake ? "#5a2fa8" : null, alpha: player.dead > 0 ? .45 : 1,
-    face: player.face, speed: player.dashT > 0 ? 2 : 1,
+    cape: awake ? "#5a2fa8" : null,
+    crown: P.rank === "S" ? "#ffd24a" : null,
+    alpha: player.dead > 0 ? .45 : 1,
   });
-  // aura de rango en el suelo
-  const c = project(player.x, terrainH(player.x, player.y)+2, player.y);
+  const c = project(player.x, terrainH(player.x, player.y) + 2, player.y);
   if (c){
     const pulse = .6 + Math.sin(now()*4)*.14;
     const col = awake ? "187,140,255" : "94,168,255";
-    const rr = 48 * c.s;
+    const rr = 50 * c.s;
     const gr = ctx.createRadialGradient(c.x, c.y, 2, c.x, c.y, rr);
-    gr.addColorStop(0, `rgba(${col},${.4*pulse})`); gr.addColorStop(1, `rgba(${col},0)`);
+    gr.addColorStop(0, `rgba(${col},${.42*pulse})`); gr.addColorStop(1, `rgba(${col},0)`);
     ctx.fillStyle = gr; ctx.beginPath(); ctx.ellipse(c.x, c.y, rr, rr*.44, 0, 0, Math.PI*2); ctx.fill();
   }
   if (player.phase === "active"){
-    const def = player.atkDef;
-    slashArc(player.x, player.y, g, 1.06, awake ? "#ddb6ff" : "#cfe6ff", 1, !!def?.skill);
+    slashArc(player.x, player.y, g, 1.1, awake ? "#ddb6ff" : "#cfe6ff", 1, !!player.atkDef?.skill);
   }
-  if (player.mounted) box(player.x, g, player.y - 6, 40, 16, 70, awake ? "#6a45c8" : "#7a5a3a", { alpha:.95 });
-  // placa de nombre (como los avatares de Roblox)
-  const tag = project(player.x, g + 100, player.y);
+  if (player.mounted) box(0, 0, -6, 40, 18, 72, awake ? "#6a45c8" : "#7a5a3a", { origin:org, yaw:player.yaw, alpha:.95 });
+  const tag = project(player.x, g + 104, player.y);
   if (tag){
     ctx.textAlign = "center";
     const sz = clamp(15 * tag.s, 11, 22);
     ctx.font = `600 ${sz}px Fredoka, sans-serif`;
-    ctx.lineWidth = sz * 0.3; ctx.strokeStyle = "rgba(4,8,20,.9)";
+    ctx.lineWidth = sz * .3; ctx.strokeStyle = "rgba(4,8,20,.9)";
     ctx.fillStyle = awake ? "#d9c0ff" : "#eaf3ff";
     const label = `${P.title} · Nv ${P.level}`;
     ctx.strokeText(label, tag.x, tag.y); ctx.fillText(label, tag.x, tag.y);
   }
 }
-function drawShadow(s){
-  const g = terrainH(s.x, s.y);
-  const glow = getComputedStyle(document.documentElement).getPropertyValue(TIER_VAR[s.data.tier] || "--t-C").trim() || "#b9c9e8";
-  shadowBlob(s.x, s.y, 21, .3);
-  const farS = Math.hypot(s.x - cam.x, s.y - cam.y) > 700;
-  figure(s.x, s.y, g, {
-    scale:.98, step:s.step, moving:s.state !== "IDLE_FOLLOW", attack:s.swing > 0 ? 1 : 0, lod:farS,
-    skin:"#1b3a72", shirt:"#14294f", pants:"#0e1c3a", boots:"#0b1730", hair:"#1b3a72",
-    eyes:glow, weapon:"#7fc6ff", weaponKind:"sword", pauldron:"#245a9e", sleeve:"#102444",
-    emblem:glow, alpha:.88, outline:"rgba(130,205,255,.9)", smile:false, face:s.face ?? 1,
-  });
-  const c = project(s.x, g+2, s.y);
-  if (c){
-    const rr = 34 * c.s;
-    if (s.slot < 4){
-      const gr = ctx.createRadialGradient(c.x, c.y, 1, c.x, c.y, rr);
-      gr.addColorStop(0, "rgba(90,190,255,.4)"); gr.addColorStop(1, "rgba(90,190,255,0)");
-      ctx.fillStyle = gr;
-    } else ctx.fillStyle = "rgba(90,190,255,.16)";
-    ctx.beginPath(); ctx.ellipse(c.x, c.y, rr, rr*.42, 0, 0, Math.PI*2); ctx.fill();
-  }
-  if (s.swing > 0) slashArc(s.x, s.y, g, .98, "#9bdcff", s.swing/0.2);
-}
+
 function drawEnemy(e){
   const g = terrainH(e.x, e.y);
   const scale = (e.def.r / 18) * (e.boss ? 1.55 : 1);
-  const far = !e.boss && Math.hypot(e.x - cam.x, e.y - cam.y) > 700;
+  const far = !e.boss && camDist(e.x, e.y) > 900;
   const hurt = e.hurt > 0;
   const base = e.boss ? "#e0a05a" : (e.def.kind === "brute" ? "#a785ff" : "#8ad07a");
   const L = e.look || {};
-  figure(e.x, e.y, g, {
+  figure({ x:e.x, y:g, z:e.y }, e.yaw || 0, {
     scale: scale * (e.boss ? 1 : (L.height || 1)), step:e.step, moving:true, lod:far,
+    armor: e.boss ? shade(base, .5) : null, glove: shade(L.shirt || base, .6),
     attack: e.atkCd > 1.05 && !e.boss ? 1 : 0,
     skin: hurt ? "#ffffff" : base,
     shirt: hurt ? "#ffe5e8" : (e.boss ? shade(base, .72) : L.shirt || shade(base, .72)),
@@ -1934,7 +2072,7 @@ function drawNPC(){
   if (dungeon) return;
   const g = terrainH(npc.x, npc.y);
   shadowBlob(npc.x, npc.y, 22, .3);
-  figure(npc.x, npc.y, g, {
+  figure({ x:npc.x, y:g, z:npc.y }, npc.yaw ?? 0, {
     scale:1.06, step:npc.step*0.8, moving:false,
     skin:"#f5cd30", shirt:"#2f8d5a", sleeve:"#276f48", pants:"#3a3f52", boots:"#23283a",
     hair:"#4a3524", eyes:"#12172b", pauldron:"#246b46", belt:"#2a2218", buckle:"#c9a33a",
@@ -1962,6 +2100,7 @@ function drawNPC(){
 /* -------------------------------- frame ----------------------------------- */
 function render(){
   cosP = Math.cos(CAM.pitch); sinP = Math.sin(CAM.pitch);
+  updateCameraBasis();
   FOC = CAM.focal * (W < 760 ? 0.76 : 1);
   drawSky();
   drawGround();
@@ -1976,7 +2115,7 @@ function render(){
   if (portal){ const p = project(portal.x, 0, portal.y); if (p) items.push({ z:p.z, f:drawPortal }); }
   for (const c of corpses){ const p = project(c.x, 0, c.y); if (p) items.push({ z:p.z, f:() => drawCorpse(c) }); }
   for (const e of enemies){ const p = project(e.x, 0, e.y); if (p) items.push({ z:p.z, f:() => drawEnemy(e) }); }
-  for (const s of shadows){ const p = project(s.x, 0, s.y); if (p) items.push({ z:p.z, f:() => drawShadow(s) }); }
+  for (const s of shadows){ const p = project(s.x, 0, s.y); if (p) items.push({ z:p.z, f:() => drawShadowUnit(s) }); }
   { const p = project(player.x, 0, player.y); if (p) items.push({ z:p.z, f:drawPlayer }); }
   if (!dungeon){ const p = project(npc.x, 0, npc.y); if (p) items.push({ z:p.z, f:drawNPC }); }
   items.sort((a,b) => b.z - a.z);
@@ -2249,7 +2388,10 @@ function panelMap(){
 function panelHelp(){
   return shell("Controles y bucle", `
     <div class="derived">
-      <div class="kv"><small>Mover</small><b>WASD</b></div>
+      <div class="kv"><small>Avanzar / retroceder</small><b>W · S</b></div>
+      <div class="kv"><small>Lateral</small><b>A · D</b></div>
+      <div class="kv"><small>Girar cámara</small><b>← → o arrastrar</b></div>
+      <div class="kv"><small>Acercar cámara</small><b>↑ ↓ o rueda</b></div>
       <div class="kv"><small>Golpe M1</small><b>Clic</b></div>
       <div class="kv"><small>Habilidad</small><b>V</b></div>
       <div class="kv"><small>Arise</small><b>B</b></div>
@@ -2260,6 +2402,9 @@ function panelHelp(){
       <div class="kv"><small>Portal</small><b>F</b></div>
       <div class="kv"><small>Menús</small><b>1-5 · H</b></div>
     </div>
+    <p class="hint"><b>Movimiento:</b> el personaje se mueve en relación a la cámara: W avanza hacia donde miras,
+    S retrocede, A y D se desplazan a los lados, y el cuerpo gira hacia donde avanza. En móvil, arrastra en la
+    mitad izquierda para el joystick y en la derecha para girar la cámara.</p>
     <p class="hint"><b>Bucle:</b> pelea → mata → el cuerpo deja un <b>CorpseToken</b> con 3 intentos → Arise → gestiona el escuadrón
     (4 sombras) → mejora arma y atributos → desbloquea isla → mazmorra → reliquias y runas → rango y renacer.</p>
     <p class="hint"><b>Combo M1:</b> cuatro golpes encadenados (×1.00, ×1.05, ×1.15, ×1.45) con hitstop e impulso de cámara crecientes.
