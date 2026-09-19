@@ -1,0 +1,1637 @@
+<title>Monarca de las Sombras</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&family=Fredoka:wght@500;600;700&display=swap">
+<style>
+:root{
+  --void:#050914; --panel:#132046; --panel-2:#1b2c5e; --line:#33509c; --line-hi:#6f9dff;
+  --ink:#f2f6ff; --muted:#a9bde8; --dim:#7d93c4;
+  --spec:#5ea8ff; --spec-hi:#bfe2ff; --arise:#31e6ff; --monarch:#b98bff;
+  --gold:#ffd24a; --gem:#54e0ff; --xp:#57e6a5; --hp:#ff4f63;
+  --t-common:#b9c9e8; --t-rare:#54d2ff; --t-epic:#b98bff; --t-legend:#ffd24a; --t-mythic:#ff79cf; --t-monarch:#ff5f5f;
+  --f-display:'Cinzel',Georgia,serif; --f-ui:'Fredoka','Segoe UI',system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--void);color:var(--ink);font-family:var(--f-ui);overflow:hidden;
+     -webkit-tap-highlight-color:transparent;user-select:none}
+#app{position:relative;height:100%;width:100%;overflow:hidden;background:var(--void)}
+canvas#stage{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
+
+.hud{position:absolute;inset:0;pointer-events:none;
+     padding:calc(10px + env(safe-area-inset-top,0px)) 12px calc(10px + env(safe-area-inset-bottom,0px))}
+.stroke{paint-order:stroke fill;-webkit-text-stroke:3px rgba(4,9,22,.92);text-shadow:0 3px 0 rgba(4,9,22,.45)}
+
+/* ---- marcos tipo juego ---- */
+.frame{background:linear-gradient(180deg,rgba(27,44,94,.95),rgba(12,20,46,.95));
+       border:2px solid var(--line);border-radius:14px;
+       box-shadow:inset 0 1px 0 rgba(160,195,255,.35),0 8px 22px rgba(0,0,0,.5)}
+
+/* ---- top ---- */
+.top{position:absolute;top:calc(10px + env(safe-area-inset-top,0px));left:12px;right:12px;
+     display:flex;gap:10px;align-items:flex-start;justify-content:space-between}
+.pcard{padding:9px 11px;display:grid;gap:6px;min-width:216px}
+.pcard .top-row{display:flex;align-items:center;gap:9px}
+.rankbadge{width:38px;height:38px;flex:none;display:grid;place-items:center;border-radius:11px;
+  font-family:var(--f-display);font-weight:800;font-size:19px;color:#08101f;
+  background:linear-gradient(180deg,#ffe28a,#ffb43d);border:2px solid #7a4d12;
+  box-shadow:inset 0 2px 0 rgba(255,255,255,.6),0 3px 0 #6b4210}
+.pname{font-weight:700;font-size:15px;letter-spacing:.01em;line-height:1.1}
+.psub{font-size:11.5px;color:var(--muted);font-weight:500}
+.bar{height:16px;border-radius:99px;background:#0a1330;border:2px solid #0a1330;
+     box-shadow:inset 0 2px 4px rgba(0,0,0,.6);position:relative}
+.bar > i{display:block;height:100%;border-radius:99px;transition:width .18s ease;max-width:100%;
+         box-shadow:inset 0 2px 0 rgba(255,255,255,.35)}
+.bar.hp > i{background:linear-gradient(180deg,#ff8a97,#e02338)}
+.bar.xp > i{background:linear-gradient(180deg,#8bf7c6,#23b878)}
+.bar > span{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+            font-size:10.5px;font-weight:600;line-height:1;color:#fff;
+            text-shadow:0 1px 2px rgba(0,0,0,.95);letter-spacing:.02em;pointer-events:none}
+.infocard{padding:8px 12px;text-align:right;display:grid;gap:3px;min-width:150px}
+.infocard b{font-size:13.5px;color:var(--spec-hi);font-weight:600}
+.infocard span{font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+
+.bossbar{flex:1;max-width:420px;display:grid;gap:4px;padding:8px 12px}
+.bossbar .row{display:flex;align-items:center;gap:8px}
+.lvdiamond{width:34px;height:34px;flex:none;display:grid;place-items:center;transform:rotate(45deg);
+  border-radius:7px;background:linear-gradient(180deg,#2b3d70,#14204a);border:2px solid #7f9ad8}
+.lvdiamond > i{transform:rotate(-45deg);font-style:normal;font-size:12px;font-weight:700;line-height:1}
+.bossname{font-weight:600;font-size:13.5px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bosshp{font-size:11.5px;color:var(--gold);font-variant-numeric:tabular-nums}
+
+/* ---- rail lateral ---- */
+.rail{position:absolute;left:12px;top:50%;transform:translateY(-50%);display:grid;gap:9px;pointer-events:auto}
+.ricon{width:50px;height:50px;border-radius:14px;display:grid;place-items:center;cursor:pointer;
+  font-size:21px;border:2px solid rgba(8,14,32,.8);color:#0a1226;
+  box-shadow:inset 0 2px 0 rgba(255,255,255,.55),0 4px 0 rgba(6,11,26,.75),0 8px 16px rgba(0,0,0,.45);
+  transition:transform .08s ease,filter .15s}
+.ricon:hover{filter:brightness(1.12)}
+.ricon:active{transform:translateY(3px);box-shadow:inset 0 2px 0 rgba(255,255,255,.5),0 1px 0 rgba(6,11,26,.75)}
+.ricon:focus-visible{outline:3px solid var(--arise);outline-offset:3px}
+.ric-1{background:linear-gradient(180deg,#ff8f8f,#d8283f)}
+.ric-2{background:linear-gradient(180deg,#c6a6ff,#7a3fe0)}
+.ric-3{background:linear-gradient(180deg,#ffd07a,#e08a1e)}
+.ric-4{background:linear-gradient(180deg,#8ed7ff,#1f86d8)}
+.ric-5{background:linear-gradient(180deg,#9ff0b6,#25a95c)}
+
+/* ---- zona inferior ---- */
+.bottom{position:absolute;left:12px;right:12px;bottom:calc(10px + env(safe-area-inset-bottom,0px));
+        display:flex;align-items:flex-end;gap:12px;justify-content:space-between}
+.purse{display:grid;gap:6px;pointer-events:none}
+.coin{display:flex;align-items:center;gap:8px;padding:5px 13px 5px 8px;border-radius:99px;
+  font-size:24px;font-weight:700;font-variant-numeric:tabular-nums;
+  background:linear-gradient(180deg,rgba(23,38,84,.9),rgba(9,16,38,.9));border:2px solid var(--line);
+  box-shadow:inset 0 1px 0 rgba(160,195,255,.3),0 6px 16px rgba(0,0,0,.45)}
+.coin i{font-style:normal;font-size:21px;filter:drop-shadow(0 2px 3px rgba(0,0,0,.6))}
+.coin.gold{color:#8de07a} .coin.gem{color:#7ce4ff}
+
+.dock{display:grid;gap:7px;justify-items:center;flex:1}
+.squad{display:flex;gap:6px;pointer-events:none}
+.slot{width:50px;height:54px;border-radius:12px;display:grid;place-items:center;gap:1px;
+      background:linear-gradient(180deg,rgba(29,47,100,.96),rgba(11,19,44,.96));border:2px solid var(--line);
+      box-shadow:inset 0 1px 0 rgba(160,195,255,.3)}
+.slot.empty{opacity:.45;border-style:dashed}
+.slot .glyph{font-size:19px;line-height:1}
+.slot .nm{font-size:8.5px;font-weight:600;max-width:44px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.slot .dmg{font-size:9px;color:var(--spec-hi);font-variant-numeric:tabular-nums}
+
+.actions{display:flex;gap:7px;align-items:flex-end;pointer-events:auto;flex-wrap:wrap;justify-content:center}
+.act{position:relative;width:64px;height:62px;border-radius:14px;cursor:pointer;border:2px solid rgba(8,14,32,.85);
+  display:grid;place-items:center;gap:1px;color:#0c1328;font-family:var(--f-ui);
+  box-shadow:inset 0 2px 0 rgba(255,255,255,.5),0 4px 0 rgba(6,11,26,.8),0 8px 16px rgba(0,0,0,.45);
+  transition:transform .07s ease,filter .15s}
+.act:hover{filter:brightness(1.1)}
+.act:active{transform:translateY(3px);box-shadow:inset 0 2px 0 rgba(255,255,255,.45),0 1px 0 rgba(6,11,26,.8)}
+.act:focus-visible{outline:3px solid var(--arise);outline-offset:3px}
+.act .ic{font-size:21px;line-height:1}
+.act .lb{font-size:9px;font-weight:700;letter-spacing:.04em;text-transform:uppercase}
+.act kbd{position:absolute;top:-9px;left:50%;transform:translateX(-50%);font-family:var(--f-ui);font-size:9px;
+  font-weight:600;padding:1px 6px;border-radius:6px;background:#0e1738;color:#cfe0ff;border:1px solid var(--line)}
+.act .state{position:absolute;bottom:-8px;left:50%;transform:translateX(-50%);font-size:8px;font-weight:700;
+  padding:1px 6px;border-radius:6px;background:#0e1738;color:var(--dim);border:1px solid var(--line)}
+.act.on .state{color:#0c1328;background:var(--arise);border-color:#0b5f70}
+.act-punch{background:linear-gradient(180deg,#ff9a9a,#d62b3f)}
+.act-arise{background:linear-gradient(180deg,#9ce6ff,#22a7dd)}
+.act-auto{background:linear-gradient(180deg,#a7f0b6,#28a75e)}
+.act-autoarise{background:linear-gradient(180deg,#d3b2ff,#7a45e0)}
+.act-portal{background:linear-gradient(180deg,#ffd98a,#e09a1e)}
+
+/* ---- paneles ---- */
+.scrim{position:absolute;inset:0;background:rgba(4,8,20,.74);backdrop-filter:blur(4px);display:grid;place-items:center;
+       padding:16px;pointer-events:auto;z-index:20}
+.panel{width:min(760px,100%);max-height:min(84vh,720px);overflow:auto;border-radius:18px;
+  background:linear-gradient(180deg,#16265a,#0b1330);border:2px solid var(--line);
+  box-shadow:inset 0 1px 0 rgba(160,195,255,.3),0 26px 70px rgba(0,0,0,.65)}
+.panel header{position:sticky;top:0;z-index:2;padding:13px 16px;display:flex;gap:12px;align-items:center;
+  justify-content:space-between;background:linear-gradient(180deg,#1d3070,#16265a);border-bottom:2px solid var(--line)}
+.panel h2{margin:0;font-family:var(--f-display);font-size:19px;font-weight:800;letter-spacing:.04em}
+.panel .body{padding:14px 16px 18px;display:grid;gap:11px}
+.x{cursor:pointer;width:34px;height:34px;border-radius:10px;font-size:16px;color:#0c1328;border:2px solid #7a1f2b;
+   background:linear-gradient(180deg,#ff9a9a,#d62b3f);box-shadow:inset 0 2px 0 rgba(255,255,255,.5)}
+.btn{pointer-events:auto;cursor:pointer;font-family:var(--f-ui);font-weight:700;font-size:13px;color:#0c1328;
+  padding:9px 14px;border-radius:11px;border:2px solid rgba(8,14,32,.8);
+  background:linear-gradient(180deg,#9fd8ff,#2f8ddf);
+  box-shadow:inset 0 2px 0 rgba(255,255,255,.55),0 3px 0 rgba(6,11,26,.8)}
+.btn:hover{filter:brightness(1.1)}
+.btn:active{transform:translateY(2px);box-shadow:inset 0 2px 0 rgba(255,255,255,.5),0 1px 0 rgba(6,11,26,.8)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn:focus-visible{outline:3px solid var(--arise);outline-offset:3px}
+.btn.gold{background:linear-gradient(180deg,#ffdf94,#e0a22a)}
+.statgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(224px,1fr));gap:9px}
+.statrow{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:12px;
+  background:linear-gradient(180deg,rgba(29,47,100,.8),rgba(12,20,46,.8));border:2px solid var(--line)}
+.statrow .k{font-family:var(--f-display);font-weight:800;width:40px;color:var(--gold)}
+.statrow .d{flex:1;font-size:11.5px;color:var(--muted);line-height:1.3}
+.statrow .d b{color:var(--ink);font-weight:600}
+.statrow .v{font-variant-numeric:tabular-nums;font-weight:700;font-size:17px;min-width:36px;text-align:right}
+.plus{cursor:pointer;width:32px;height:32px;border-radius:10px;font-size:18px;font-weight:700;color:#0c1328;
+  border:2px solid rgba(8,14,32,.8);background:linear-gradient(180deg,#a7f0b6,#28a75e);
+  box-shadow:inset 0 2px 0 rgba(255,255,255,.5),0 3px 0 rgba(6,11,26,.8)}
+.plus:disabled{opacity:.32;cursor:not-allowed}
+.derived{display:grid;grid-template-columns:repeat(auto-fit,minmax(146px,1fr));gap:9px}
+.kv{padding:8px 11px;border-radius:12px;border:2px solid var(--line);
+    background:linear-gradient(180deg,rgba(29,47,100,.7),rgba(12,20,46,.7))}
+.kv small{display:block;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.kv b{font-size:18px;font-variant-numeric:tabular-nums}
+.list{display:grid;gap:9px}
+.item{display:flex;align-items:center;gap:11px;padding:9px 11px;border-radius:12px;border:2px solid var(--line);
+      background:linear-gradient(180deg,rgba(29,47,100,.78),rgba(12,20,46,.78))}
+.item .glyph{width:40px;height:40px;flex:none;display:grid;place-items:center;border-radius:11px;font-size:20px;
+  background:linear-gradient(180deg,#26407f,#132046);border:2px solid var(--line)}
+.item .meta{flex:1;min-width:0}
+.item .meta b{display:block;font-size:14.5px;font-weight:600}
+.item .meta span{font-size:11.5px;color:var(--muted)}
+.item .price{font-variant-numeric:tabular-nums;font-weight:700;color:var(--gold)}
+.tier{font-size:10px;letter-spacing:.06em;text-transform:uppercase;font-weight:700}
+.locked{opacity:.45}
+.hint{font-size:12px;color:var(--dim);line-height:1.5;margin:0}
+.hint b{color:var(--muted)}
+
+/* ---- modal arise ---- */
+.arise-box{width:min(420px,100%);text-align:center;padding:20px 18px;border-radius:20px;
+  background:linear-gradient(180deg,#123a5e,#08182f);border:2px solid #37c9ff;
+  box-shadow:0 0 60px rgba(49,230,255,.28),0 26px 70px rgba(0,0,0,.6)}
+.arise-box h3{font-family:var(--f-display);margin:0;font-size:27px;font-weight:800;letter-spacing:.2em;color:#9beeff;
+  text-shadow:0 0 22px rgba(49,230,255,.75)}
+.arise-box .sub{font-size:12.5px;color:var(--muted);margin-bottom:10px}
+.chance{font-size:46px;font-weight:700;line-height:1;margin:8px 0 2px;color:#7ff0ff;font-variant-numeric:tabular-nums}
+.pips{display:flex;gap:7px;justify-content:center;margin:12px 0 14px}
+.pip{width:30px;height:7px;border-radius:99px;background:#1b2c5e;border:1px solid #33509c}
+.pip.live{background:linear-gradient(180deg,#9beeff,#22a7dd);border-color:#22a7dd;box-shadow:0 0 12px #31e6ff}
+.arise-actions{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+.log{margin-top:11px;font-size:12.5px;color:var(--muted);min-height:18px}
+
+/* ---- toasts ---- */
+.toasts{position:absolute;left:50%;transform:translateX(-50%);bottom:196px;display:grid;gap:6px;justify-items:center;z-index:15}
+.toast{padding:7px 16px;border-radius:99px;font-size:13px;font-weight:600;
+  background:linear-gradient(180deg,rgba(29,47,100,.97),rgba(11,19,44,.97));border:2px solid var(--line);
+  box-shadow:0 6px 18px rgba(0,0,0,.5);animation:pop .3s ease both}
+@keyframes pop{from{opacity:0;transform:translateY(10px) scale(.96)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+
+@media (max-width:620px){
+  .pcard{min-width:0;max-width:52vw}
+  .infocard{min-width:0}
+  .bossbar{display:none}
+  .rail{gap:7px;top:auto;bottom:150px;transform:none}
+  .ricon{width:42px;height:42px;font-size:18px;border-radius:12px}
+  .act{width:56px;height:56px}
+  .coin{font-size:19px}
+  .slot{width:44px;height:48px}
+  .toasts{bottom:206px}
+}
+</style>
+
+<div id="app">
+  <canvas id="stage"></canvas>
+
+  <div class="hud">
+    <div class="top">
+      <div class="frame pcard">
+        <div class="top-row">
+          <div class="rankbadge" id="rank">E</div>
+          <div style="flex:1;min-width:0">
+            <div class="pname" id="title">Novato</div>
+            <div class="psub"><span id="lvl">Nivel 1</span></div>
+          </div>
+        </div>
+        <div class="bar hp"><i id="hpbar" style="width:100%"></i><span id="hptxt">100 / 100</span></div>
+        <div class="bar xp"><i id="xpbar"></i><span id="xptxt">0 / 100</span></div>
+      </div>
+
+      <div class="frame bossbar" id="bossbar" hidden>
+        <div class="row">
+          <div class="lvdiamond"><i id="boss-lv">1</i></div>
+          <span class="bossname" id="boss-name">Enemigo</span>
+          <span class="bosshp" id="boss-hptxt">0</span>
+        </div>
+        <div class="bar hp"><i id="boss-hp" style="width:100%"></i></div>
+      </div>
+
+      <div class="frame infocard">
+        <b id="isle">Aldea Inicial</b>
+        <span id="portal">Portal en 1:40</span>
+      </div>
+    </div>
+
+    <div class="rail">
+      <button class="ricon ric-1" id="b-stats" title="Atributos (1)" aria-label="Atributos">⚔</button>
+      <button class="ricon ric-2" id="b-shadows" title="Sombras (2)" aria-label="Sombras">👥</button>
+      <button class="ricon ric-3" id="b-shop" title="Armería (3)" aria-label="Armería">🎒</button>
+      <button class="ricon ric-4" id="b-travel" title="Islas (4)" aria-label="Islas">🧭</button>
+      <button class="ricon ric-5" id="b-help" title="Ayuda (H)" aria-label="Ayuda">?</button>
+    </div>
+
+    <div class="bottom">
+      <div class="purse">
+        <div class="coin gold stroke"><i>💵</i><span id="gold">0</span></div>
+        <div class="coin gem stroke"><i>💎</i><span id="gems">0</span></div>
+      </div>
+
+      <div class="dock">
+        <div class="squad" id="squad"></div>
+        <div class="actions">
+          <button class="act act-punch" id="a-attack"><kbd>Space</kbd><span class="ic">👊</span><span class="lb">Golpe</span></button>
+          <button class="act act-arise" id="a-arise"><kbd>E</kbd><span class="ic">💠</span><span class="lb">Arise</span></button>
+          <button class="act act-auto on" id="a-auto"><kbd>Q</kbd><span class="ic">⚡</span><span class="lb">Auto</span><span class="state">ON</span></button>
+          <button class="act act-autoarise" id="a-autoarise"><kbd>R</kbd><span class="ic">♻</span><span class="lb">A-Arise</span><span class="state">OFF</span></button>
+          <button class="act act-portal" id="a-portal" hidden><kbd>F</kbd><span class="ic">🌀</span><span class="lb">Portal</span></button>
+        </div>
+      </div>
+      <div style="width:90px" aria-hidden="true"></div>
+    </div>
+  </div>
+
+  <div class="toasts" id="toasts"></div>
+  <div id="modal" hidden></div>
+</div>
+
+<script>
+
+"use strict";
+/* ============================================================================
+   Monarca de las Sombras — build web de Arise Crossover+
+   Las formulas y los limites son los mismos que los del servidor Luau en src/:
+     dano      = (armaBase + STR*1.5) * (1 + multiplicadorRango)
+     arise     = clamp(base + base*ariseLuck, 0, 1)
+     vida      = 100 + VIT*12       mana = 50 + MNA*8
+     velocidad = min(16 + AGI*0.12, 120)
+     sombra    = base * (1+(nivel-1)*0.08) * (1+SDW*0.01)
+   ==========================================================================*/
+
+const CFG = {
+  MAX_SQUAD: 4,
+  MAX_ARISE_ATTEMPTS: 3,
+  POINTS_PER_LEVEL: 5,
+  ATTACK_COOLDOWN: 0.45,
+  ATTACK_RANGE: 96,
+  ARISE_RANGE: 104,
+  SHADOW_FOLLOW_RADIUS: 104,
+  SHADOW_AGGRO: 300,
+  SHADOW_ATTACK_RANGE: 66,
+  SHADOW_ATTACK_COOLDOWN: 1.0,
+  SHADOW_SPEED: 210,
+  SHADOW_LEASH: 560,
+  CORPSE_LIFETIME: 26,
+  // El servidor usa 15-30 min entre portales; en la build web se comprime a
+  // 100 s para que una sesion de navegador vea el evento completo.
+  PORTAL_INTERVAL: 100,
+  PORTAL_LIFETIME: 45,
+  DOUBLE_DUNGEON_MULT: 2,
+  AWAKENED_LUCK: 0.60,
+  WORLD: { w: 2200, h: 1600 },
+  CONTACT_DMG_SCALE: 0.02,
+};
+
+const RANKS = [
+  { name:"E",        dmg:0.00, luck:0.00, level:1,   gems:0 },
+  { name:"D",        dmg:0.15, luck:0.05, level:10,  gems:60 },
+  { name:"C",        dmg:0.35, luck:0.10, level:25,  gems:180 },
+  { name:"B",        dmg:0.60, luck:0.18, level:45,  gems:500 },
+  { name:"A",        dmg:1.00, luck:0.28, level:70,  gems:1400 },
+  { name:"S",        dmg:1.75, luck:0.40, level:100, gems:4000 },
+  { name:"National", dmg:3.00, luck:0.60, level:140, gems:11000 },
+  { name:"Monarch",  dmg:5.00, luck:0.85, level:180, gems:30000 },
+];
+const rankIndex = n => Math.max(0, RANKS.findIndex(r => r.name === n));
+const rankOf = n => RANKS[rankIndex(n)];
+
+const WEAPONS = {
+  WoodenSword:       { id:"WoodenSword",       name:"Espada de Madera",       dmg:10,   price:0,       glyph:"🗡" },
+  SteelDagger:       { id:"SteelDagger",       name:"Daga de Acero",          dmg:45,   price:650,     glyph:"🔪" },
+  KnightBlade:       { id:"KnightBlade",       name:"Hoja del Caballero",     dmg:180,  price:9500,    glyph:"⚔" },
+  DemonKingLongsword:{ id:"DemonKingLongsword",name:"Mandibla del Rey Demonio",dmg:900, price:180000,  glyph:"🗡" },
+  MonarchDaggers:    { id:"MonarchDaggers",    name:"Dagas del Monarca",      dmg:4200, price:2600000, glyph:"⚜" },
+};
+
+const TIER_COLOR = { Common:"--t-common", Rare:"--t-rare", Epic:"--t-epic", Legendary:"--t-legend", Mythic:"--t-mythic", Monarch:"--t-monarch" };
+
+const SHADOWS = {
+  Goblin:     { id:"Goblin",     name:"Goblin",          tier:"Common",    dmg:12,    chance:0.55,  gems:4,    glyph:"👺" },
+  Wolf:       { id:"Wolf",       name:"Lobo de Hielo",   tier:"Rare",      dmg:48,    chance:0.35,  gems:12,   glyph:"🐺" },
+  Knight:     { id:"Knight",     name:"Igris",           tier:"Epic",      dmg:210,   chance:0.18,  gems:40,   glyph:"🛡" },
+  Beru:       { id:"Beru",       name:"Beru",            tier:"Legendary", dmg:950,   chance:0.07,  gems:160,  glyph:"🐜" },
+  Bellion:    { id:"Bellion",    name:"Bellion",         tier:"Mythic",    dmg:3800,  chance:0.025, gems:700,  glyph:"👹" },
+  StatueOfGod:{ id:"StatueOfGod",name:"Estatua de Dios", tier:"Monarch",   dmg:12000, chance:0.01,  gems:3000, glyph:"🗿" },
+};
+
+const ENEMIES = {
+  GoblinScout:    { id:"GoblinScout",    name:"Explorador Goblin", level:1,   hp:120,      dmg:8,     shadow:"Goblin",      xp:25,      gold:10,     r:16, color:"#7ad17a" },
+  IceWolf:        { id:"IceWolf",        name:"Lobo de Hielo",     level:15,  hp:1500,     dmg:60,    shadow:"Wolf",        xp:220,     gold:95,     r:18, color:"#bfe9ff" },
+  BlueKnight:     { id:"BlueKnight",     name:"Caballero Azul",    level:40,  hp:24000,    dmg:420,   shadow:"Knight",      xp:2600,    gold:900,    r:20, color:"#6f9cff" },
+  AntKing:        { id:"AntKing",        name:"Rey Hormiga",       level:80,  hp:480000,   dmg:3100,  shadow:"Beru",        xp:42000,   gold:12000,  r:23, color:"#c08bff" },
+  ShadowCommander:{ id:"ShadowCommander",name:"Comandante Sombrio",level:120, hp:3200000,  dmg:11000, shadow:"Bellion",     xp:260000,  gold:70000,  r:26, color:"#ff8fb0" },
+  StatueOfGod:    { id:"StatueOfGod",    name:"Estatua de Dios",   level:200, hp:40000000, dmg:55000, shadow:"StatueOfGod", xp:2500000, gold:400000, r:38, color:"#ffd27a" },
+};
+
+const ISLANDS = [
+  { id:"StarterVillage", name:"Aldea Inicial",        level:1,   enemy:"GoblinScout",     ground:"#16351f", accent:"#2c6b3c", sky:"#0a1a12" },
+  { id:"FrozenPeak",     name:"Pico Helado",          level:20,  enemy:"IceWolf",         ground:"#1b2c44", accent:"#3f6b96", sky:"#081525" },
+  { id:"DemonCastle",    name:"Castillo Demoniaco",   level:55,  enemy:"BlueKnight",      ground:"#2a1b33", accent:"#5b3a6e", sky:"#160b1d" },
+  { id:"AntIsland",      name:"Isla de las Hormigas", level:95,  enemy:"AntKing",         ground:"#33291a", accent:"#6e5a2f", sky:"#1a140a" },
+  { id:"ShadowRealm",    name:"Reino de las Sombras", level:150, enemy:"ShadowCommander", ground:"#141a2e", accent:"#36406b", sky:"#070a14" },
+];
+const islandOf = id => ISLANDS.find(i => i.id === id) || ISLANDS[0];
+
+/* ------------------------------ formulas -------------------------------- */
+const F = {
+  physicalDamage: (weaponBase, str, rankMult) => (weaponBase + str * 1.5) * (1 + rankMult),
+  ariseChance:    (base, luck) => Math.min(1, Math.max(0, base + base * luck)),
+  maxHealth:      s => 100 + s.VIT * 12,
+  maxMana:        s => 50 + s.MNA * 8,
+  walkSpeed:      s => Math.min(16 + s.AGI * 0.12, 120),
+  shadowDamage:   (sh, s) => sh.dmg * (1 + (sh.level - 1) * 0.08) * (1 + s.SDW * 0.01),
+  xpForLevel:     lv => Math.floor(100 * Math.pow(lv, 1.55)),
+  gemsForEnemy:   def => Math.max(1, Math.floor((SHADOWS[def.shadow]?.gems ?? 1) + def.level * 1.5)),
+};
+const ariseLuck = p => rankOf(p.rank).luck + p.stats.INT * 0.002 + (p.awakened ? CFG.AWAKENED_LUCK : 0);
+const playerDamage = p => F.physicalDamage(WEAPONS[p.weapon].dmg, p.stats.STR, rankOf(p.rank).dmg + (p.awakened ? 0.25 : 0));
+
+/* ------------------------------ formato --------------------------------- */
+const SUF = ["","K","M","B","T","Qa","Qi","Sx","Sp","Oc","No","Dc"];
+function fmt(v){
+  v = Math.floor(v); if (v < 1000) return String(v);
+  let i = 0, n = v;
+  while (n >= 1000 && i < SUF.length - 1){ n /= 1000; i++; }
+  return (n < 10 ? n.toFixed(2) : n < 100 ? n.toFixed(1) : Math.floor(n)) + SUF[i];
+}
+const uid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
+const clamp = (v,a,b) => v < a ? a : v > b ? b : v;
+const now = () => performance.now() / 1000;
+
+/* ------------------------------ perfil ---------------------------------- */
+const SAVE_KEY = "arise-crossover-plus/v1";
+function newProfile(){
+  return {
+    level:1, xp:0, rank:"E", gold:0, gems:0,
+    stats:{ STR:0, INT:0, SDW:0, VIT:0, AGI:0, MNA:0, points:5 },
+    weapon:"WoodenSword", weapons:["WoodenSword"], title:"Novato", awakened:false,
+    inventory:{}, equipped:[], islands:["StarterVillage"], island:"StarterVillage",
+    kills:0, arisen:0,
+  };
+}
+function loadProfile(){
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    if (!raw) return newProfile();
+    const data = JSON.parse(raw);
+    return reconcile(data);
+  } catch { return newProfile(); }
+}
+function reconcile(data){
+  const base = newProfile();
+  const p = Object.assign(base, data || {});
+  p.stats = Object.assign(base.stats, data?.stats || {});
+  if (typeof p.inventory !== "object" || !p.inventory) p.inventory = {};
+  if (!Array.isArray(p.equipped)) p.equipped = [];
+  if (!Array.isArray(p.weapons) || !p.weapons.length) p.weapons = ["WoodenSword"];
+  if (!WEAPONS[p.weapon]) p.weapon = "WoodenSword";
+  if (!RANKS.some(r => r.name === p.rank)) p.rank = "E";
+  // poda de UUIDs equipados que ya no existen (mismo reconcile que DataService)
+  p.equipped = p.equipped.filter(u => p.inventory[u]).slice(0, CFG.MAX_SQUAD);
+  if (!ISLANDS.some(i => i.id === p.island)) p.island = "StarterVillage";
+  return p;
+}
+let saveTimer = 0;
+function save(){
+  try { localStorage.setItem(SAVE_KEY, JSON.stringify(P)); } catch {}
+}
+
+let P = loadProfile();
+
+/* --------------------------- progresion --------------------------------- */
+function grantXp(amount){
+  P.xp += Math.floor(amount);
+  let leveled = false;
+  while (P.xp >= F.xpForLevel(P.level)){
+    P.xp -= F.xpForLevel(P.level);
+    P.level++;
+    P.stats.points += CFG.POINTS_PER_LEVEL;
+    leveled = true;
+  }
+  if (leveled){
+    player.maxHp = F.maxHealth(P.stats);
+    player.hp = player.maxHp;
+    toast(`¡Nivel ${P.level}! +${CFG.POINTS_PER_LEVEL} puntos`, "--xp");
+    burst(player.x, player.y, 26, "#57e6a5");
+    unlockCheck();
+  }
+  dirty = true;
+}
+function unlockCheck(){
+  for (const isle of ISLANDS){
+    if (P.level >= isle.level && !P.islands.includes(isle.id)){
+      P.islands.push(isle.id);
+      toast(`Nueva isla: ${isle.name}`, "--spec-hi");
+    }
+  }
+}
+function allocate(stat, points){
+  if (!(stat in P.stats) || stat === "points") return false;
+  points = Math.floor(points);
+  if (!(points > 0) || P.stats.points < points) return false;
+  P.stats.points -= points;
+  P.stats[stat] += points;
+  const ratio = player.hp / player.maxHp;
+  player.maxHp = F.maxHealth(P.stats);
+  player.hp = clamp(player.maxHp * ratio, 1, player.maxHp);
+  dirty = true; save();
+  return true;
+}
+function rankUp(){
+  const next = RANKS[rankIndex(P.rank) + 1];
+  if (!next) return toast("Ya eres Monarca.", "--muted");
+  if (P.level < next.level) return toast(`Requiere nivel ${next.level}.`, "--hp");
+  if (P.gems < next.gems) return toast(`Faltan ${fmt(next.gems - P.gems)} gemas.`, "--hp");
+  P.gems -= next.gems; P.rank = next.name;
+  toast(`Rango ${next.name} alcanzado`, "--monarch");
+  burst(player.x, player.y, 40, "#a77bff");
+  dirty = true; save(); renderPanel();
+}
+
+/* ============================== MUNDO ==================================== */
+const player = { x:CFG.WORLD.w/2, y:CFG.WORLD.h/2, vx:0, vy:0, hp:F.maxHealth(P.stats), maxHp:F.maxHealth(P.stats),
+                 face:1, atkCd:0, swing:0, hurt:0, dead:0, step:0 };
+let enemies = [], corpses = [], shadows = [], floaters = [], parts = [], portal = null;
+let spawnTimer = 0, portalTimer = CFG.PORTAL_INTERVAL, dirty = true, paused = false;
+let dungeon = null;           // { phase:"Phase1"|"DoubleDungeon"|"Cleared", timer }
+let auto = true, autoArise = false;
+const cam = { x:player.x, y:player.y };
+
+function currentEnemyDef(){
+  if (dungeon) return dungeon.def;
+  return ENEMIES[islandOf(P.island).enemy];
+}
+function scaleDef(def, mult){
+  return { ...def, level:Math.floor(def.level*mult), hp:def.hp*mult, dmg:def.dmg*mult,
+           xp:Math.floor(def.xp*mult), gold:Math.floor(def.gold*mult) };
+}
+function spawnEnemy(def, x, y){
+  const d = def || currentEnemyDef();
+  const a = Math.random()*Math.PI*2, dist = 420 + Math.random()*380;
+  const e = {
+    guid: uid(), def: d,
+    x: x ?? clamp(player.x + Math.cos(a)*dist, 60, CFG.WORLD.w-60),
+    y: y ?? clamp(player.y + Math.sin(a)*dist, 60, CFG.WORLD.h-60),
+    hp: d.hp, maxHp: d.hp, atkCd: 1 + Math.random(), hurt:0, step: Math.random()*6, boss: !!d.boss,
+  };
+  enemies.push(e);
+  return e;
+}
+function enemyPop(){ return dungeon ? (dungeon.phase === "Cleared" ? 0 : 6) : 11; }
+
+/* ---------------------------- combate ----------------------------------- */
+function damageEnemy(e, amount, fromShadow){
+  if (e.hp <= 0) return;
+  const applied = Math.min(amount, e.hp);
+  e.hp -= applied; e.hurt = 0.14;
+  floaters.push({ x:e.x + (Math.random()*22-11), y:e.y-e.def.r-6, text:fmt(applied),
+                  color: fromShadow ? "#a9d6ff" : "#ffe58f", life:0.95, vy:-46, big: !fromShadow });
+  if (e.hp <= 0) killEnemy(e);
+}
+function killEnemy(e){
+  enemies = enemies.filter(x => x !== e);
+  P.kills++;
+  grantXp(e.def.xp);
+  P.gold += e.def.gold;
+  burst(e.x, e.y, 18, e.def.color);
+  // cadaver inerte: solo quien remato puede extraer (aqui siempre el jugador)
+  corpses.push({ guid:uid(), def:e.def, x:e.x, y:e.y, attempts:0, born:now(), phase:0 });
+  if (dungeon && e.boss) onBossDefeated(e);
+  dirty = true;
+}
+function nearestEnemy(x, y, range){
+  let best = null, bd = range;
+  for (const e of enemies){
+    const d = Math.hypot(e.x-x, e.y-y);
+    if (d < bd){ bd = d; best = e; }
+  }
+  return best;
+}
+function playerAttack(){
+  if (player.atkCd > 0 || player.dead > 0) return;
+  const target = nearestEnemy(player.x, player.y, CFG.ATTACK_RANGE);
+  player.atkCd = CFG.ATTACK_COOLDOWN;
+  player.swing = 0.24;
+  if (!target) return;
+  player.face = target.x < player.x ? -1 : 1;
+  damageEnemy(target, playerDamage(P), false);
+  spark(target.x, target.y, 46, 7, "#fff3b0");
+}
+
+/* ------------------------------ ARISE ------------------------------------ */
+let ariseTarget = null;
+function nearestCorpse(){
+  let best = null, bd = CFG.ARISE_RANGE;
+  for (const c of corpses){
+    const d = Math.hypot(c.x-player.x, c.y-player.y);
+    if (d < bd){ bd = d; best = c; }
+  }
+  return best;
+}
+function corpseChance(c){ return F.ariseChance(SHADOWS[c.def.shadow].chance, ariseLuck(P)); }
+
+// Reemplazo automatico: con el escuadron lleno cae la Sombra de menor dano.
+function autoEquip(shadow){
+  if (P.equipped.length < CFG.MAX_SQUAD){ P.equipped.push(shadow.uuid); return null; }
+  let worst = null, worstDmg = Infinity;
+  for (const uuid of P.equipped){
+    const s = P.inventory[uuid];
+    const d = s ? F.shadowDamage(s, P.stats) : -1;
+    if (d < worstDmg){ worstDmg = d; worst = uuid; }
+  }
+  if (worst !== null && F.shadowDamage(shadow, P.stats) > worstDmg){
+    P.equipped[P.equipped.indexOf(worst)] = shadow.uuid;
+    return worst;
+  }
+  return null;
+}
+function attemptArise(c){
+  if (!c || c.attempts >= CFG.MAX_ARISE_ATTEMPTS) return { ok:false, reason:"sin intentos" };
+  if (Math.hypot(c.x-player.x, c.y-player.y) > CFG.ARISE_RANGE * 1.4) return { ok:false, reason:"demasiado lejos" };
+  c.attempts++;
+  const chance = corpseChance(c);
+  const roll = Math.random();
+  if (roll <= chance){
+    const def = SHADOWS[c.def.shadow];
+    const shadow = { uuid:uid(), id:def.id, name:def.name, tier:def.tier, level:1, dmg:def.dmg, xp:0 };
+    P.inventory[shadow.uuid] = shadow;
+    const replaced = autoEquip(shadow);
+    P.arisen++;
+    removeCorpse(c);
+    rebuildShadows();
+    dirty = true; save();
+    burst(c.x, c.y, 46, "#3ee0ff");
+    return { ok:true, shadow, replaced, chance };
+  }
+  if (c.attempts >= CFG.MAX_ARISE_ATTEMPTS){
+    const gems = F.gemsForEnemy(c.def);
+    P.gems += gems; removeCorpse(c); dirty = true; save();
+    return { ok:false, chance, exhausted:true, gems };
+  }
+  return { ok:false, chance, attemptsLeft: CFG.MAX_ARISE_ATTEMPTS - c.attempts };
+}
+function declineArise(c){
+  if (!c) return 0;
+  const gems = F.gemsForEnemy(c.def);
+  P.gems += gems; removeCorpse(c); dirty = true; save();
+  toast(`+${fmt(gems)} gemas`, "--gem");
+  return gems;
+}
+function removeCorpse(c){ corpses = corpses.filter(x => x !== c); if (ariseTarget === c) closeArise(); }
+
+/* --------------------------- sombras (FSM) ------------------------------- */
+function rebuildShadows(){
+  const keep = new Map(shadows.map(s => [s.uuid, s]));
+  shadows = P.equipped.map((uuid, i) => {
+    const data = P.inventory[uuid];
+    if (!data) return null;
+    const prev = keep.get(uuid);
+    const angle = (i / CFG.MAX_SQUAD) * Math.PI * 2;
+    return prev ? Object.assign(prev, { slot:i, dmg:F.shadowDamage(data, P.stats), data })
+      : { uuid, id:data.id, data, slot:i, state:"Follow", atkCd:0, step:Math.random()*6,
+          x:player.x + Math.cos(angle)*CFG.SHADOW_FOLLOW_RADIUS,
+          y:player.y + Math.sin(angle)*CFG.SHADOW_FOLLOW_RADIUS,
+          dmg:F.shadowDamage(data, P.stats), target:null, swing:0 };
+  }).filter(Boolean);
+  dirty = true;
+}
+function formationPoint(slot){
+  const a = (slot / CFG.MAX_SQUAD) * Math.PI * 2 + now() * 0.25;
+  return { x: player.x + Math.cos(a) * CFG.SHADOW_FOLLOW_RADIUS, y: player.y + Math.sin(a) * CFG.SHADOW_FOLLOW_RADIUS };
+}
+function stepShadow(s, dt){
+  let target = s.target && enemies.includes(s.target) && s.target.hp > 0 ? s.target : null;
+  if (!target) s.target = null;
+  const distOwner = Math.hypot(s.x-player.x, s.y-player.y);
+  if (distOwner > CFG.SHADOW_LEASH){ s.state = "Return"; s.target = target = null; }
+  if (!target && s.state !== "Return"){
+    target = nearestEnemy(s.x, s.y, CFG.SHADOW_AGGRO);
+    if (target){ s.target = target; s.state = "Chase"; }
+  }
+  let dx, dy;
+  if (target){
+    const d = Math.hypot(target.x-s.x, target.y-s.y);
+    if (d <= CFG.SHADOW_ATTACK_RANGE){
+      s.state = "Attack"; dx = 0; dy = 0;
+      if (s.atkCd <= 0){
+        s.atkCd = CFG.SHADOW_ATTACK_COOLDOWN; s.swing = 0.2;
+        damageEnemy(target, s.dmg, true);
+        spark(target.x, target.y, 40, 6, "#9bdcff");
+      }
+    } else { s.state = "Chase"; dx = target.x - s.x; dy = target.y - s.y; }
+  } else {
+    const f = formationPoint(s.slot);
+    dx = f.x - s.x; dy = f.y - s.y;
+    s.state = Math.hypot(dx, dy) < 6 ? "Idle" : (s.state === "Return" && Math.hypot(dx,dy) > 20 ? "Return" : "Follow");
+  }
+  const len = Math.hypot(dx, dy);
+  if (len > 1){
+    const speed = CFG.SHADOW_SPEED * (s.state === "Return" ? 1.6 : 1);
+    const step = Math.min(speed * dt, len);
+    s.x += dx / len * step; s.y += dy / len * step;
+    s.face = dx < 0 ? -1 : 1;
+  }
+  s.atkCd -= dt; s.swing = Math.max(0, s.swing - dt); s.step += dt * (s.state === "Idle" ? 1.2 : 5);
+}
+
+/* ---------------------------- mazmorra ---------------------------------- */
+function spawnPortal(){
+  const a = Math.random()*Math.PI*2;
+  portal = { x: clamp(player.x + Math.cos(a)*520, 120, CFG.WORLD.w-120),
+             y: clamp(player.y + Math.sin(a)*520, 120, CFG.WORLD.h-120),
+             born: now(), t:0 };
+  toast("Un portal se ha abierto", "--arise");
+  dirty = true;
+}
+function enterDungeon(){
+  if (!portal) return;
+  portal = null;
+  const base = ENEMIES[islandOf(P.island).enemy];
+  dungeon = { phase:"Phase1", def:base, timer:0 };
+  enemies = []; corpses = [];
+  player.x = CFG.WORLD.w/2; player.y = CFG.WORLD.h/2;
+  const boss = spawnEnemy({ ...scaleDef(base, 6), name:`${base.name} Alfa`, r:base.r*1.6, boss:true, color:"#ff9aa4" },
+                          player.x, player.y - 300);
+  for (let i=0;i<5;i++) spawnEnemy();
+  toast("Mazmorra — Fase 1: derrota al jefe", "--spec-hi");
+  dirty = true;
+}
+function onBossDefeated(e){
+  if (dungeon.phase === "Phase1"){
+    dungeon.phase = "DoubleDungeon"; dungeon.timer = 0;
+    dungeon.def = scaleDef(dungeon.def, CFG.DOUBLE_DUNGEON_MULT);
+    enemies = [];
+    for (let i=0;i<6;i++) spawnEnemy();
+    spawnEnemy({ ...ENEMIES.StatueOfGod, boss:true }, player.x, player.y - 360);
+    toast("DOUBLE DUNGEON — la Estatua de Dios despierta", "--monarch");
+    document.getElementById("app").animate(
+      [{ filter:"brightness(2.4) saturate(.4)" }, { filter:"none" }], { duration:700, easing:"ease-out" });
+  } else if (e.def.id === "StatueOfGod"){
+    dungeon.phase = "Cleared";
+    P.awakened = true; P.title = "Awakened";
+    toast("Has DESPERTADO · +60% de suerte de extracción", "--monarch");
+    burst(player.x, player.y, 90, "#a77bff");
+    save();
+    setTimeout(exitDungeon, 4200);
+  }
+}
+function exitDungeon(){
+  dungeon = null; enemies = []; corpses = [];
+  player.x = CFG.WORLD.w/2; player.y = CFG.WORLD.h/2;
+  portalTimer = CFG.PORTAL_INTERVAL;
+  toast("De vuelta al mundo abierto", "--spec-hi");
+  dirty = true;
+}
+
+/* ------------------------------ fx -------------------------------------- */
+function burst(x, y, n, color, height){
+  for (let i=0;i<n;i++){
+    const a = Math.random()*Math.PI*2, sp = 50 + Math.random()*210;
+    parts.push({ x, y, h:(height ?? 34) + Math.random()*20,
+                 vx:Math.cos(a)*sp, vy:Math.sin(a)*sp*0.55, vh:90 + Math.random()*230,
+                 life:.4+Math.random()*.55, color, size:1.8+Math.random()*2.8 });
+  }
+}
+// Chispa corta de impacto.
+function spark(x, y, height, n, color){
+  for (let i=0;i<n;i++){
+    const a = Math.random()*Math.PI*2, sp = 70 + Math.random()*170;
+    parts.push({ x, y, h:height, vx:Math.cos(a)*sp, vy:Math.sin(a)*sp*0.5, vh:60 + Math.random()*180,
+                 life:.28+Math.random()*.22, color, size:2.2+Math.random()*2 });
+  }
+}
+function toast(text, colorVar){
+  const el = document.createElement("div");
+  el.className = "toast"; el.textContent = text;
+  if (colorVar) el.style.color = `var(${colorVar})`;
+  const box = document.getElementById("toasts");
+  box.appendChild(el);
+  setTimeout(() => { el.style.opacity = "0"; el.style.transition = "opacity .35s"; }, 2000);
+  setTimeout(() => el.remove(), 2450);
+  while (box.children.length > 4) box.firstChild.remove();
+}
+
+/* ============================== BUCLE ==================================== */
+const canvas = document.getElementById("stage");
+const ctx = canvas.getContext("2d");
+let W = 0, H = 0, DPR = 1, VW = 0, VH = 0;
+// El mundo se dibuja en coordenadas de pantalla; la escala la da la
+// perspectiva del renderizador 3D (ver CAM.focal).
+let Z = 1;
+function resize(){
+  DPR = Math.min(window.devicePixelRatio || 1, 2);
+  W = canvas.clientWidth; H = canvas.clientHeight;
+  VW = W; VH = H;
+  canvas.width = Math.floor(W * DPR); canvas.height = Math.floor(H * DPR);
+  ctx.setTransform(DPR * Z, 0, 0, DPR * Z, 0, 0);
+}
+window.addEventListener("resize", resize);
+
+const keys = new Set();
+let pointer = null;
+addEventListener("keydown", e => {
+  const k = e.key.toLowerCase();
+  if (["arrowup","arrowdown","arrowleft","arrowright"," "].includes(k)) e.preventDefault();
+  if (k === "escape"){ closePanel(); closeArise(); return; }
+  if (modalOpen() && k !== "e") return;
+  keys.add(k);
+  if (k === " ") playerAttack();
+  if (k === "e") openArise();
+  if (k === "q") setAuto(!auto);
+  if (k === "r") setAutoArise(!autoArise);
+  if (k === "f" && portal) enterDungeon();
+  if (k === "1") openPanel("stats");
+  if (k === "2") openPanel("shadows");
+  if (k === "3") openPanel("shop");
+  if (k === "4") openPanel("travel");
+  if (k === "h") openPanel("help");
+});
+addEventListener("keyup", e => keys.delete(e.key.toLowerCase()));
+addEventListener("blur", () => keys.clear());
+
+canvas.addEventListener("pointerdown", e => { canvas.setPointerCapture(e.pointerId); pointer = { x:e.clientX, y:e.clientY }; });
+canvas.addEventListener("pointermove", e => { if (pointer) pointer = { x:e.clientX, y:e.clientY }; });
+canvas.addEventListener("pointerup", () => { pointer = null; });
+canvas.addEventListener("pointercancel", () => { pointer = null; });
+
+function inputVector(){
+  let dx = 0, dy = 0;
+  if (keys.has("w") || keys.has("arrowup")) dy -= 1;
+  if (keys.has("s") || keys.has("arrowdown")) dy += 1;
+  if (keys.has("a") || keys.has("arrowleft")) dx -= 1;
+  if (keys.has("d") || keys.has("arrowright")) dx += 1;
+  if (!dx && !dy && pointer){
+    const px = pointer.x - W/2, py = pointer.y - H/2;
+    if (Math.hypot(px, py) > 26){ dx = px; dy = py; }
+  }
+  const len = Math.hypot(dx, dy);
+  return len ? { x:dx/len, y:dy/len } : { x:0, y:0 };
+}
+
+function update(dt){
+  const speed = F.walkSpeed(P.stats) * 6.5;
+  const v = inputVector();
+  if (player.dead > 0){
+    player.dead -= dt;
+    if (player.dead <= 0){ player.hp = player.maxHp * 0.6; toast("Has revivido", "--muted"); }
+  } else {
+    player.x = clamp(player.x + v.x * speed * dt, 40, CFG.WORLD.w - 40);
+    player.y = clamp(player.y + v.y * speed * dt, 40, CFG.WORLD.h - 40);
+    if (v.x) player.face = v.x < 0 ? -1 : 1;
+    player.step += (Math.abs(v.x) + Math.abs(v.y)) * dt * 9;
+  }
+  player.atkCd -= dt; player.swing = Math.max(0, player.swing - dt); player.hurt = Math.max(0, player.hurt - dt);
+
+  if (auto && player.atkCd <= 0 && !modalOpen()) playerAttack();
+
+  // enemigos
+  spawnTimer -= dt;
+  if (spawnTimer <= 0 && enemies.length < enemyPop()){ spawnEnemy(); spawnTimer = 1.1; }
+  for (const e of enemies){
+    const d = Math.hypot(player.x-e.x, player.y-e.y);
+    const sp = 74 + Math.min(40, e.def.level * 0.25);
+    if (d > e.def.r + 58){
+      e.x += (player.x-e.x)/d * sp * dt; e.y += (player.y-e.y)/d * sp * dt;
+      e.step += dt * 6;
+    } else if ((e.atkCd -= dt) <= 0 && player.dead <= 0){
+      e.atkCd = 1.25;
+      const dmg = Math.max(1, e.def.dmg * CFG.CONTACT_DMG_SCALE);
+      player.hp -= dmg; player.hurt = 0.2;
+      floaters.push({ x:player.x, y:player.y-30, text:`-${fmt(dmg)}`, color:"#ff8d97", life:.8, vy:-40 });
+      if (player.hp <= 0){
+        player.hp = 0; player.dead = 2.2;
+        toast("Caíste. Tus sombras te cubren…", "--hp");
+        burst(player.x, player.y, 30, "#ff5d6c");
+      }
+      dirty = true;
+    }
+    e.hurt = Math.max(0, e.hurt - dt);
+  }
+
+  separate(dt);
+
+  for (const s of shadows) stepShadow(s, dt);
+
+  // cadaveres
+  const t = now();
+  for (const c of corpses.slice()){
+    c.phase += dt;
+    if (t - c.born > CFG.CORPSE_LIFETIME) removeCorpse(c);
+  }
+  if (autoArise && !ariseTarget){
+    const c = nearestCorpse();
+    if (c) resolveAuto(c);
+  }
+
+  // portal
+  if (!dungeon){
+    if (!portal){
+      portalTimer -= dt;
+      if (portalTimer <= 0){ spawnPortal(); portalTimer = CFG.PORTAL_INTERVAL + CFG.PORTAL_LIFETIME; }
+    } else {
+      portal.t += dt;
+      if (portal.t > CFG.PORTAL_LIFETIME){ portal = null; toast("El portal se cerró", "--muted"); }
+    }
+  }
+  const nearPortal = portal && Math.hypot(portal.x-player.x, portal.y-player.y) < 90;
+  document.getElementById("a-portal").hidden = !nearPortal;
+
+  // fx
+  for (const f of floaters) f.life -= dt;
+  floaters = floaters.filter(f => f.life > 0);
+  for (const p of parts){
+    p.life -= dt;
+    p.x += p.vx*dt; p.y += p.vy*dt; p.h += p.vh*dt;
+    p.vx *= 0.94; p.vy *= 0.94; p.vh -= 520*dt;
+    if (p.h < 2){ p.h = 2; p.vh = 0; }
+  }
+  parts = parts.filter(p => p.life > 0);
+
+  cam.x += (player.x - cam.x) * Math.min(1, dt * 6);
+  cam.y += (player.y - cam.y) * Math.min(1, dt * 6);
+
+  saveTimer -= dt;
+  if (saveTimer <= 0){ save(); saveTimer = 5; }
+}
+
+// Empuje mutuo: evita que los cuerpos se solapen y tapen al jugador.
+function separate(dt){
+  for (let i = 0; i < enemies.length; i++){
+    const a = enemies[i];
+    for (let j = i + 1; j < enemies.length; j++){
+      const b = enemies[j];
+      const dx = b.x - a.x, dy = b.y - a.y;
+      const d = Math.hypot(dx, dy) || 0.001;
+      const min = (a.def.r + b.def.r) * 1.7 + 26;
+      if (d < min){
+        const push = (min - d) * 0.5 * Math.min(1, dt * 12);
+        a.x -= dx/d * push; a.y -= dy/d * push;
+        b.x += dx/d * push; b.y += dy/d * push;
+      }
+    }
+    const dx = a.x - player.x, dy = a.y - player.y;
+    const d = Math.hypot(dx, dy) || 0.001;
+    const min = a.def.r + 54;
+    if (d < min){
+      const push = (min - d) * Math.min(1, dt * 14);
+      a.x += dx/d * push; a.y += dy/d * push;
+    }
+  }
+}
+
+// Auto-Arise: gasta intentos solo mientras haya probabilidad razonable.
+function resolveAuto(c){
+  const r = attemptArise(c);
+  if (r.ok){ toast(`ARISE · ${r.shadow.name}`, "--arise"); dirty = true; }
+  else if (r.exhausted) toast(`Extracción fallida · +${fmt(r.gems)} gemas`, "--gem");
+}
+
+/* ========================= RENDER PSEUDO-3D ==============================
+   Motor por software: proyeccion perspectiva con la camara detras del
+   personaje. Todo se construye con cajas (estilo Roblox) que se proyectan y
+   se pintan con el algoritmo del pintor, mas un suelo de baldosas en
+   perspectiva, cielo con nubes y props generados de forma determinista.
+   ======================================================================== */
+const CAM = { back:250, height:175, pitch:0.36, focal:660 };
+const TILE = 110;
+
+const PALETTE = {
+  StarterVillage:{ gA:"#57c94f", gB:"#49b843", skyTop:"#2f8fe0", skyBot:"#cdefff", fog:"#cdefff", prop:"tree",   clouds:true },
+  FrozenPeak:    { gA:"#e2f4ff", gB:"#c9e8fb", skyTop:"#4aa8e8", skyBot:"#ecfaff", fog:"#ecfaff", prop:"pine",   clouds:true },
+  DemonCastle:   { gA:"#6d4c88", gB:"#5c3f75", skyTop:"#2a1030", skyBot:"#8a3f72", fog:"#6a2c58", prop:"tower",  clouds:false },
+  AntIsland:     { gA:"#e5ca79", gB:"#d6ba69", skyTop:"#e98c3a", skyBot:"#ffdda6", fog:"#ffdda6", prop:"mound",  clouds:true },
+  ShadowRealm:   { gA:"#333a68", gB:"#2b3059", skyTop:"#0b0a22", skyBot:"#3d3173", fog:"#282250", prop:"crystal",clouds:false },
+  Dungeon:       { gA:"#3c2c52", gB:"#342749", skyTop:"#120a20", skyBot:"#57203f", fog:"#2c1533", prop:"pillar", clouds:false },
+};
+const paletteNow = () => dungeon ? PALETTE.Dungeon : PALETTE[P.island] || PALETTE.StarterVillage;
+
+/* --------------------------- proyeccion ---------------------------------- */
+let cosP = Math.cos(CAM.pitch), sinP = Math.sin(CAM.pitch), FOC = CAM.focal;
+function project(wx, wy, wz){
+  const rx = wx - cam.x;
+  const ry = wy - CAM.height;
+  const rz = (cam.y + CAM.back) - wz;
+  const z2 = rz * cosP - ry * sinP;
+  if (z2 < 14) return null;
+  const y2 = ry * cosP + rz * sinP;
+  const s = FOC / z2;
+  return { x: VW/2 + rx * s, y: VH/2 - y2 * s, s, z: z2 };
+}
+const horizonY = () => VH/2 - FOC * (sinP / cosP);
+
+/* ------------------------------ color ------------------------------------ */
+function tint(hex, amt){
+  const n = parseInt(hex.slice(1), 16);
+  const r = clamp(((n>>16)&255) + amt, 0, 255), g = clamp(((n>>8)&255) + amt, 0, 255), b = clamp((n&255) + amt, 0, 255);
+  return `rgb(${r},${g},${b})`;
+}
+
+/* ------------------------------ cajas ------------------------------------ */
+// Pinta una caja 3D: cara lateral, superior y frontal, con contorno.
+function box(px, py, pz, w, h, d, color, opt){
+  const o = opt || {};
+  const hw = w/2, hd = d/2, y0 = py, y1 = py + h;
+  const zF = pz + hd, zB = pz - hd, xL = px - hw, xR = px + hw;
+  const p = {
+    fbl: project(xL, y0, zF), fbr: project(xR, y0, zF), ftl: project(xL, y1, zF), ftr: project(xR, y1, zF),
+    bbl: project(xL, y0, zB), bbr: project(xR, y0, zB), btl: project(xL, y1, zB), btr: project(xR, y1, zB),
+  };
+  for (const k in p) if (!p[k]) return;
+  const a = o.alpha ?? 1;
+  ctx.globalAlpha = a;
+  ctx.lineJoin = "round";
+  ctx.strokeStyle = o.outline || "rgba(8,12,26,.55)";
+  ctx.lineWidth = Math.max(0.6, (p.fbl.s || 1) * 1.1);
+  const face = (pts, fill) => {
+    ctx.beginPath();
+    ctx.moveTo(pts[0].x, pts[0].y);
+    for (let i=1;i<pts.length;i++) ctx.lineTo(pts[i].x, pts[i].y);
+    ctx.closePath(); ctx.fillStyle = fill; ctx.fill();
+    if (o.outline !== false) ctx.stroke();
+  };
+  // lateral visible segun el lado de la camara
+  if (px < cam.x - 2) face([p.fbr, p.ftr, p.btr, p.bbr], tint(color, -34));
+  else if (px > cam.x + 2) face([p.fbl, p.ftl, p.btl, p.bbl], tint(color, -34));
+  face([p.ftl, p.ftr, p.btr, p.btl], tint(color, 26));   // superior
+  face([p.fbl, p.fbr, p.ftr, p.ftl], color);             // frontal
+  ctx.globalAlpha = 1;
+}
+// Rectangulo pegado a la cara frontal de una caja (ojos, ventanas, detalles).
+function decal(px, py, pz, w, h, color){
+  const a = project(px - w/2, py + h, pz), b = project(px + w/2, py, pz);
+  if (!a || !b) return;
+  ctx.fillStyle = color;
+  ctx.fillRect(a.x, a.y, b.x - a.x, b.y - a.y);
+}
+function groundShadow(px, pz, r, alpha){
+  const c = project(px, 1, pz); if (!c) return;
+  ctx.save(); ctx.globalAlpha = alpha ?? .32; ctx.fillStyle = "#050a16";
+  ctx.beginPath(); ctx.ellipse(c.x, c.y, r * c.s, r * c.s * 0.42, 0, 0, Math.PI*2); ctx.fill(); ctx.restore();
+}
+
+/* ------------------------------ cielo ------------------------------------ */
+function drawSky(){
+  const pal = paletteNow();
+  const hy = horizonY();
+  const g = ctx.createLinearGradient(0, 0, 0, Math.max(hy, 1));
+  g.addColorStop(0, pal.skyTop); g.addColorStop(1, pal.skyBot);
+  ctx.fillStyle = g; ctx.fillRect(0, 0, VW, Math.max(hy, 0));
+
+  if (pal.clouds){
+    // sol
+    const sx = VW * 0.74, sy = hy * 0.32;
+    const sg = ctx.createRadialGradient(sx, sy, 4, sx, sy, 120);
+    sg.addColorStop(0, "rgba(255,252,225,.95)"); sg.addColorStop(1, "rgba(255,240,180,0)");
+    ctx.fillStyle = sg; ctx.beginPath(); ctx.arc(sx, sy, 120, 0, Math.PI*2); ctx.fill();
+    // nubes con parallax
+    ctx.fillStyle = "rgba(255,255,255,.92)";
+    for (let i = 0; i < 9; i++){
+      const seed = i * 97.3;
+      const cx = ((seed * 61 - cam.x * 0.08) % (VW + 460)) - 230;
+      const cy = hy * (0.14 + ((i * 37) % 55) / 160);
+      const w = 70 + (i % 4) * 34, h = w * 0.36;
+      ctx.beginPath();
+      ctx.ellipse(cx, cy, w, h, 0, 0, Math.PI*2);
+      ctx.ellipse(cx + w*0.55, cy + h*0.22, w*0.62, h*0.78, 0, 0, Math.PI*2);
+      ctx.ellipse(cx - w*0.58, cy + h*0.3, w*0.5, h*0.7, 0, 0, Math.PI*2);
+      ctx.fill();
+    }
+  } else {
+    ctx.fillStyle = "rgba(255,255,255,.55)";
+    for (let i = 0; i < 40; i++){
+      const seed = (i * 8191) % 997;
+      const cx = ((seed * 13 - cam.x * 0.03) % (VW + 200)) - 100;
+      const cy = (seed % Math.max(1, Math.floor(hy)));
+      ctx.globalAlpha = .25 + (seed % 60) / 160;
+      ctx.fillRect(cx, cy, 2, 2);
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  // cordillera / muralla lejana
+  const pal2 = paletteNow();
+  ctx.fillStyle = tint(pal2.gA, -58);
+  ctx.beginPath(); ctx.moveTo(0, hy);
+  for (let x = 0; x <= VW; x += 48){
+    const h = 26 + Math.abs(Math.sin((x + cam.x * 0.05) * 0.011)) * 74;
+    ctx.lineTo(x, hy - h);
+  }
+  ctx.lineTo(VW, hy); ctx.closePath(); ctx.fill();
+
+  // niebla del horizonte
+  const fg = ctx.createLinearGradient(0, hy - 60, 0, hy + 90);
+  fg.addColorStop(0, "rgba(0,0,0,0)"); fg.addColorStop(.5, pal.fog); fg.addColorStop(1, "rgba(0,0,0,0)");
+  ctx.globalAlpha = .3; ctx.fillStyle = fg; ctx.fillRect(0, hy - 60, VW, 150); ctx.globalAlpha = 1;
+}
+
+/* ------------------------------ suelo ------------------------------------ */
+function drawGround(){
+  const pal = paletteNow();
+  const gx0 = Math.floor((cam.x - TILE*11) / TILE), gx1 = Math.floor((cam.x + TILE*11) / TILE);
+  const gz0 = Math.floor((cam.y - TILE*16) / TILE), gz1 = Math.floor((cam.y + TILE*4) / TILE);
+  ctx.lineWidth = 1;
+  for (let gz = gz0; gz <= gz1; gz++){
+    for (let gx = gx0; gx <= gx1; gx++){
+      const x = gx * TILE, z = gz * TILE;
+      const a = project(x, 0, z + TILE), b = project(x + TILE, 0, z + TILE),
+            c = project(x + TILE, 0, z), d = project(x, 0, z);
+      if (!a || !b || !c || !d) continue;
+      if (Math.max(a.y,b.y,c.y,d.y) < -20 || Math.min(a.y,b.y,c.y,d.y) > VH + 20) continue;
+      if (Math.max(a.x,b.x,c.x,d.x) < -20 || Math.min(a.x,b.x,c.x,d.x) > VW + 20) continue;
+      const even = ((gx + gz) & 1) === 0;
+      ctx.fillStyle = even ? pal.gA : pal.gB;
+      ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.lineTo(c.x,c.y); ctx.lineTo(d.x,d.y);
+      ctx.closePath(); ctx.fill();
+    }
+  }
+  // limite del mundo
+  const corners = [project(0,0,0), project(CFG.WORLD.w,0,0), project(CFG.WORLD.w,0,CFG.WORLD.h), project(0,0,CFG.WORLD.h)];
+  if (corners.every(Boolean)){
+    ctx.strokeStyle = "rgba(255,255,255,.28)"; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(corners[0].x, corners[0].y);
+    for (let i=1;i<4;i++) ctx.lineTo(corners[i].x, corners[i].y);
+    ctx.closePath(); ctx.stroke();
+  }
+}
+
+/* ------------------------------ props ------------------------------------ */
+function hash2(x, z){ let h = (x*73856093) ^ (z*19349663); h = (h ^ (h >>> 13)) >>> 0; return h; }
+function drawProp(kind, x, z, h){
+  const pal = paletteNow();
+  if (kind === "tree"){
+    box(x, 0, z, 16, 46, 16, "#7a4a24");
+    box(x, 42, z, 62, 40, 62, "#2fa83f");
+    box(x, 76, z, 42, 30, 42, "#36bd48");
+  } else if (kind === "pine"){
+    box(x, 0, z, 14, 38, 14, "#6d4b2e");
+    box(x, 34, z, 58, 34, 58, "#dff3ff");
+    box(x, 62, z, 38, 28, 38, "#ffffff");
+  } else if (kind === "tower"){
+    box(x, 0, z, 70, 150 + (h % 90), 70, "#4a3560");
+    box(x, 150 + (h % 90), z, 86, 22, 86, "#6b4a86");
+    decal(x, 60, z + 36, 22, 30, "#ffbe4d");
+  } else if (kind === "mound"){
+    box(x, 0, z, 90, 34, 90, "#c9a854");
+    box(x, 30, z, 52, 26, 52, "#b8963f");
+  } else if (kind === "crystal"){
+    box(x, 0, z, 26, 90 + (h % 70), 26, "#6d5cff", { alpha:.9 });
+    box(x + 22, 0, z + 12, 16, 50, 16, "#9b8bff", { alpha:.9 });
+  } else if (kind === "pillar"){
+    box(x, 0, z, 44, 190, 44, "#241a33");
+    box(x, 190, z, 56, 18, 56, "#3a2a4f");
+    decal(x, 120, z + 23, 10, 54, "rgba(255,80,80,.75)");
+  }
+}
+function collectProps(items){
+  const pal = paletteNow();
+  const gx0 = Math.floor((cam.x - TILE*10) / TILE), gx1 = Math.floor((cam.x + TILE*10) / TILE);
+  const gz0 = Math.floor((cam.y - TILE*15) / TILE), gz1 = Math.floor((cam.y + TILE*3) / TILE);
+  for (let gz = gz0; gz <= gz1; gz++){
+    for (let gx = gx0; gx <= gx1; gx++){
+      const h = hash2(gx, gz);
+      if (h % 7) continue;
+      const x = gx*TILE + (h % 70) - 35, z = gz*TILE + ((h>>8) % 70) - 35;
+      if (Math.hypot(x - player.x, z - player.y) < 240) continue;
+      const p = project(x, 0, z);
+      if (!p || p.z < 190) continue;
+      items.push({ z:p.z, f: () => { groundShadow(x, z, 26, .25); drawProp(pal.prop, x, z, h); } });
+    }
+  }
+}
+
+/* --------------------------- personajes ---------------------------------- */
+// Figura blocky estilo Roblox: piernas, torso, brazos, cabeza y pelo.
+function figure(x, z, o){
+  const s = o.scale ?? 1, st = o.step ?? 0, sw = Math.sin(st) * (o.moving ? 1 : .25);
+  const opt = { alpha:o.alpha ?? 1, outline:o.outline };
+  const atk = o.attack ?? 0;
+  groundShadow(x, z, 22*s, (o.alpha ?? 1) * .34);
+  // piernas
+  box(x - 6.5*s, 0, z + sw*8*s, 12*s, 26*s, 13*s, o.pants, opt);
+  box(x + 6.5*s, 0, z - sw*8*s, 12*s, 26*s, 13*s, o.pants, opt);
+  // torso
+  box(x, 26*s, z, 27*s, 28*s, 15*s, o.shirt, opt);
+  // brazos (el derecho se alza al atacar)
+  box(x - 17.5*s, 26*s, z - sw*7*s, 10*s, 27*s, 12*s, o.skin, opt);
+  if (atk > 0) box(x + 17.5*s, 40*s, z + 13*s, 10*s, 24*s, 12*s, o.skin, opt);
+  else box(x + 17.5*s, 26*s, z + sw*7*s, 10*s, 27*s, 12*s, o.skin, opt);
+  // cabeza + pelo + ojos
+  box(x, 54*s, z, 23*s, 21*s, 20*s, o.skin, opt);
+  if (o.hair) box(x, 74*s, z, 25*s, 6*s, 22*s, o.hair, opt);
+  decal(x - 5*s, 62*s, z + 10.1*s, 4.5*s, 5*s, o.eyes || "#14182b");
+  decal(x + 5*s, 62*s, z + 10.1*s, 4.5*s, 5*s, o.eyes || "#14182b");
+  if (o.horns){
+    box(x - 9*s, 72*s, z, 7*s, 16*s, 7*s, "#ffd27a", opt);
+    box(x + 9*s, 72*s, z, 7*s, 16*s, 7*s, "#ffd27a", opt);
+  }
+  // arma
+  if (o.weapon){
+    const wy = atk > 0 ? 64*s : 30*s, wz = atk > 0 ? z + 26*s : z + 10*s;
+    box(x + 19*s, wy, wz, 5*s, atk > 0 ? 8*s : 40*s, atk > 0 ? 44*s : 6*s, o.weapon, opt);
+  }
+}
+function slash(x, z, s, color, t){
+  const c = project(x, 42*s, z + 26*s); if (!c) return;
+  ctx.save(); ctx.globalAlpha = clamp(t, 0, 1);
+  ctx.strokeStyle = color; ctx.lineWidth = 6 * c.s; ctx.lineCap = "round";
+  ctx.beginPath(); ctx.arc(c.x, c.y, 26 * c.s, -1.0 + (1-t)*1.2, 0.8 + (1-t)*1.2); ctx.stroke();
+  ctx.globalAlpha = clamp(t, 0, 1) * .5; ctx.strokeStyle = "#ffffff"; ctx.lineWidth = 2.5 * c.s;
+  ctx.stroke(); ctx.restore();
+}
+function drawPlayerFigure(){
+  const bob = Math.abs(Math.sin(player.step)) * 2;
+  const awake = P.awakened;
+  figure(player.x, player.y, {
+    scale:1.06, step:player.step, moving:true, attack:player.swing,
+    skin:"#ffd9a8", shirt: player.hurt > 0 ? "#ff9aa4" : (awake ? "#3b2a6b" : "#1f2f6b"),
+    pants: awake ? "#221a44" : "#1a2340", hair: awake ? "#b98bff" : "#ff8a3d",
+    eyes: awake ? "#b98bff" : "#14182b", weapon: awake ? "#d9c2ff" : "#cfd9ee",
+    alpha: player.dead > 0 ? .45 : 1,
+  });
+  // aura en el suelo
+  const c = project(player.x, 2, player.y);
+  if (c){
+    ctx.save();
+    const rr = 44 * c.s, pulse = 0.6 + Math.sin(now()*4)*0.12;
+    const g = ctx.createRadialGradient(c.x, c.y, 2, c.x, c.y, rr);
+    const col = awake ? "185,139,255" : "94,168,255";
+    g.addColorStop(0, `rgba(${col},${0.42*pulse})`); g.addColorStop(1, `rgba(${col},0)`);
+    ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(c.x, c.y, rr, rr*0.45, 0, 0, Math.PI*2); ctx.fill();
+    ctx.restore();
+  }
+  if (player.swing > 0) slash(player.x, player.y, 1.06, awake ? "#d9b6ff" : "#bfe2ff", player.swing / 0.24);
+}
+function drawShadowFigure(s){
+  const data = s.data, tierVar = TIER_COLOR[data.tier] || "--t-common";
+  const glow = getComputedStyle(document.documentElement).getPropertyValue(tierVar).trim() || "#b9c9e8";
+  figure(s.x, s.y, {
+    scale:0.98, step:s.step, moving:s.state !== "Idle", attack:s.swing,
+    skin:"#1b3a72", shirt:"#14294f", pants:"#0f1e3c", hair:"#1b3a72",
+    eyes:glow, weapon:"#7fc6ff", alpha:.86, outline:"rgba(120,200,255,.85)",
+  });
+  const c = project(s.x, 2, s.y);
+  if (c){
+    ctx.save();
+    const rr = 34 * c.s;
+    const g = ctx.createRadialGradient(c.x, c.y, 1, c.x, c.y, rr);
+    g.addColorStop(0, "rgba(90,190,255,.4)"); g.addColorStop(1, "rgba(90,190,255,0)");
+    ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(c.x, c.y, rr, rr*0.42, 0, 0, Math.PI*2); ctx.fill();
+    ctx.restore();
+  }
+  if (s.swing > 0) slash(s.x, s.y, .98, "#9bdcff", s.swing / 0.2);
+}
+function drawEnemyFigure(e){
+  const scale = (e.def.r / 18) * (e.boss ? 1.5 : 1);
+  const hurt = e.hurt > 0;
+  figure(e.x, e.y, {
+    scale, step:e.step, moving:true,
+    skin: hurt ? "#ffffff" : e.def.color,
+    shirt: hurt ? "#ffe5e8" : tint(e.def.color, -34),
+    pants: tint(e.def.color, -58), hair: tint(e.def.color, 22),
+    eyes: e.boss ? "#ffe066" : "#ff4a4a", horns: e.boss,
+  });
+  // etiqueta de vida
+  const head = project(e.x, 80 * scale, e.y);
+  if (!head) return;
+  const near = Math.hypot(e.x - player.x, e.y - player.y) < 330;
+  if (!near && !e.boss) return;
+  const w = (e.boss ? 88 : 46) * clamp(head.s, .55, 1.4), h = (e.boss ? 10 : 6.5) * clamp(head.s, .6, 1.25);
+  ctx.save();
+  ctx.fillStyle = "rgba(6,10,24,.88)"; ctx.strokeStyle = "rgba(6,10,24,.9)"; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.roundRect(head.x - w/2, head.y - h, w, h, h/2); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = e.boss ? "#ffd24a" : "#ff4f63";
+  const pct = clamp(e.hp / e.maxHp, 0, 1);
+  ctx.beginPath(); ctx.roundRect(head.x - w/2 + 1.5, head.y - h + 1.5, (w - 3) * pct, h - 3, (h-3)/2); ctx.fill();
+  if (e.boss){
+    ctx.font = `700 ${clamp(14 * head.s, 12, 20)}px Fredoka, sans-serif`;
+    ctx.textAlign = "center"; ctx.lineWidth = 4; ctx.strokeStyle = "rgba(5,9,20,.92)";
+    ctx.fillStyle = "#ffe9a8";
+    const label = `${e.def.name} · Nv ${e.def.level}`;
+    ctx.strokeText(label, head.x, head.y - h - 5); ctx.fillText(label, head.x, head.y - h - 5);
+  }
+  ctx.restore();
+}
+function drawCorpse(c){
+  const p = project(c.x, 2, c.y); if (!p) return;
+  const pulse = .55 + Math.sin(c.phase * 3) * .25;
+  ctx.save();
+  const rr = 52 * p.s;
+  const g = ctx.createRadialGradient(p.x, p.y, 2, p.x, p.y, rr);
+  g.addColorStop(0, `rgba(49,230,255,${.42*pulse})`); g.addColorStop(1, "rgba(49,230,255,0)");
+  ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(p.x, p.y, rr, rr*.45, 0, 0, Math.PI*2); ctx.fill();
+  ctx.strokeStyle = `rgba(49,230,255,${.55 + pulse*.3})`; ctx.lineWidth = 2.2;
+  for (let i=0;i<2;i++){
+    const r2 = rr * (0.5 + i*0.28 + Math.sin(c.phase*2 + i)*0.05);
+    ctx.beginPath(); ctx.ellipse(p.x, p.y, r2, r2*.45, 0, 0, Math.PI*2); ctx.stroke();
+  }
+  ctx.restore();
+  // cuerpo caido
+  box(c.x, 0, c.y, 34, 14, 46, "#1b2a4d", { alpha:.85, outline:"rgba(120,200,255,.6)" });
+  const near = Math.hypot(c.x-player.x, c.y-player.y) < CFG.ARISE_RANGE;
+  const tag = project(c.x, 70, c.y);
+  if (near && tag){
+    ctx.save(); ctx.textAlign = "center";
+    ctx.font = `700 ${clamp(15*tag.s, 12, 22)}px Fredoka, sans-serif`;
+    ctx.lineWidth = 4; ctx.strokeStyle = "rgba(4,9,22,.92)";
+    ctx.fillStyle = "#6ef0ff";
+    const t = `[E] ARISE · ${CFG.MAX_ARISE_ATTEMPTS - c.attempts}`;
+    ctx.strokeText(t, tag.x, tag.y); ctx.fillText(t, tag.x, tag.y);
+    ctx.restore();
+  }
+}
+function drawPortal(){
+  if (!portal) return;
+  const base = project(portal.x, 0, portal.y), top = project(portal.x, 150, portal.y);
+  if (!base || !top) return;
+  const h = base.y - top.y, w = h * 0.62;
+  ctx.save();
+  ctx.translate(portal.x ? base.x : base.x, base.y - h/2);
+  const g = ctx.createRadialGradient(0, 0, 4, 0, 0, w);
+  g.addColorStop(0, "rgba(180,220,255,.85)"); g.addColorStop(.6, "rgba(90,140,255,.5)"); g.addColorStop(1, "rgba(60,80,200,0)");
+  ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(0, 0, w*0.7, h*0.5, 0, 0, Math.PI*2); ctx.fill();
+  for (let i=0;i<3;i++){
+    ctx.strokeStyle = `rgba(150,200,255,${.75 - i*.2})`; ctx.lineWidth = 4 - i;
+    const k = 1 + i*0.12 + Math.sin(portal.t*2 + i)*0.04;
+    ctx.beginPath(); ctx.ellipse(0, 0, w*0.7*k, h*0.5*k, 0, 0, Math.PI*2); ctx.stroke();
+  }
+  ctx.textAlign = "center"; ctx.font = "700 15px Fredoka, sans-serif";
+  ctx.lineWidth = 4; ctx.strokeStyle = "rgba(4,9,22,.9)"; ctx.fillStyle = "#cfe6ff";
+  ctx.strokeText("PORTAL · [F]", 0, -h*0.5 - 12); ctx.fillText("PORTAL · [F]", 0, -h*0.5 - 12);
+  ctx.restore();
+}
+
+/* ------------------------------ frame ------------------------------------ */
+function render(){
+  cosP = Math.cos(CAM.pitch); sinP = Math.sin(CAM.pitch); FOC = CAM.focal * (VW < 760 ? 0.78 : 1);
+  drawSky();
+  drawGround();
+
+  const items = [];
+  collectProps(items);
+  if (portal){ const p = project(portal.x, 0, portal.y); if (p) items.push({ z:p.z, f:drawPortal }); }
+  for (const c of corpses){ const p = project(c.x, 0, c.y); if (p) items.push({ z:p.z, f:() => drawCorpse(c) }); }
+  for (const e of enemies){ const p = project(e.x, 0, e.y); if (p) items.push({ z:p.z, f:() => drawEnemyFigure(e) }); }
+  for (const s of shadows){ const p = project(s.x, 0, s.y); if (p) items.push({ z:p.z, f:() => drawShadowFigure(s) }); }
+  { const p = project(player.x, 0, player.y); if (p) items.push({ z:p.z, f:drawPlayerFigure }); }
+  items.sort((a, b) => b.z - a.z);
+  for (const it of items) it.f();
+
+  // particulas
+  for (const pt of parts){
+    const p = project(pt.x, pt.h ?? 30, pt.y); if (!p) continue;
+    ctx.globalAlpha = clamp(pt.life * 2, 0, 1);
+    ctx.fillStyle = pt.color;
+    const sz = pt.size * p.s * 1.6;
+    ctx.fillRect(p.x - sz/2, p.y - sz/2, sz, sz);
+  }
+  ctx.globalAlpha = 1;
+
+  // numeros de dano
+  ctx.textAlign = "center";
+  for (const f of floaters){
+    const p = project(f.x, (f.h ?? 70) + (1 - f.life) * 46, f.y); if (!p) continue;
+    ctx.globalAlpha = clamp(f.life * 1.7, 0, 1);
+    const size = clamp((f.big ? 24 : 18) * p.s, 12, f.big ? 40 : 30);
+    ctx.font = `700 ${size}px Fredoka, sans-serif`;
+    ctx.lineWidth = Math.max(3, size * 0.22); ctx.strokeStyle = "rgba(4,9,22,.92)";
+    ctx.strokeText(f.text, p.x, p.y); ctx.fillStyle = f.color; ctx.fillText(f.text, p.x, p.y);
+  }
+  ctx.globalAlpha = 1;
+
+  if (dungeon){
+    ctx.textAlign = "center";
+    ctx.font = "800 20px Cinzel, serif";
+    ctx.lineWidth = 5; ctx.strokeStyle = "rgba(4,9,22,.92)";
+    ctx.fillStyle = dungeon.phase === "DoubleDungeon" ? "#c8a6ff" : "#bfe2ff";
+    const t = dungeon.phase === "Phase1" ? "MAZMORRA · FASE 1"
+      : dungeon.phase === "DoubleDungeon" ? "DOUBLE DUNGEON" : "MAZMORRA COMPLETADA";
+    ctx.strokeText(t, VW/2, 96); ctx.fillText(t, VW/2, 96);
+  }
+}
+
+/* ================================ UI ===================================== */
+const $ = id => document.getElementById(id);
+const modal = $("modal");
+let panelKind = null;
+const modalOpen = () => !!panelKind || !!ariseTarget;
+
+function syncHud(){
+  $("rank").textContent = P.rank === "National" ? "N" : P.rank === "Monarch" ? "M" : P.rank;
+  $("rank").title = `Rango ${P.rank}`;
+  $("title").textContent = P.title;
+  $("lvl").textContent = `Nivel ${P.level}`;
+  $("isle").textContent = dungeon ? "Mazmorra" : islandOf(P.island).name;
+  $("gold").textContent = fmt(P.gold);
+  $("gems").textContent = fmt(P.gems);
+  const need = F.xpForLevel(P.level);
+  $("xptxt").textContent = `${fmt(P.xp)} / ${fmt(need)}`;
+  $("xpbar").style.width = `${clamp(P.xp / need * 100, 0, 100)}%`;
+  $("hptxt").textContent = `${fmt(Math.max(0, player.hp))} / ${fmt(player.maxHp)}`;
+  $("hpbar").style.width = `${clamp(player.hp / player.maxHp * 100, 0, 100)}%`;
+  $("portal").textContent = dungeon ? `Fase: ${dungeon.phase === "DoubleDungeon" ? "Double Dungeon" : dungeon.phase}`
+    : portal ? `Portal abierto · ${Math.ceil(CFG.PORTAL_LIFETIME - portal.t)}s`
+    : `Portal en ${Math.floor(portalTimer/60)}:${String(Math.floor(portalTimer%60)).padStart(2,"0")}`;
+
+  // barra del objetivo: jefe si lo hay, si no el enemigo mas cercano
+  const hurtTarget = enemies.find(e => e.hp < e.maxHp);
+  const boss = enemies.find(e => e.boss) || hurtTarget;
+  const bb = $("bossbar");
+  if (boss){
+    bb.hidden = false;
+    $("boss-lv").textContent = boss.def.level;
+    $("boss-name").textContent = boss.def.name;
+    $("boss-hptxt").textContent = `${fmt(boss.hp)} / ${fmt(boss.maxHp)}`;
+    $("boss-hp").style.width = `${clamp(boss.hp / boss.maxHp * 100, 0, 100)}%`;
+  } else bb.hidden = true;
+
+  const squad = $("squad"); squad.innerHTML = "";
+  squad.hidden = P.equipped.length === 0;
+  for (let i = 0; i < CFG.MAX_SQUAD; i++){
+    const uuid = P.equipped[i], data = uuid && P.inventory[uuid];
+    const el = document.createElement("div");
+    el.className = "slot" + (data ? "" : " empty");
+    if (data){
+      const color = `var(${TIER_COLOR[data.tier]})`;
+      el.innerHTML = `<span class="glyph">${SHADOWS[data.id]?.glyph || "☗"}</span>
+        <span class="nm" style="color:${color}">${data.name}</span>
+        <span class="dmg">${fmt(F.shadowDamage(data, P.stats))}</span>`;
+      el.style.borderColor = color;
+    } else el.innerHTML = `<span class="glyph" style="opacity:.4">+</span><span class="nm">vacío</span>`;
+    squad.appendChild(el);
+  }
+}
+
+/* ------------------------------ paneles --------------------------------- */
+function openPanel(kind){ closeArise(); panelKind = kind; renderPanel(); }
+function closePanel(){ panelKind = null; renderPanel(); }
+function shell(title, body){
+  return `<div class="scrim" data-close="1"><div class="panel" role="dialog" aria-label="${title}">
+    <header><h2>${title}</h2><button class="x" data-close="1" aria-label="Cerrar">✕</button></header>
+    <div class="body">${body}</div></div></div>`;
+}
+const STAT_INFO = {
+  STR:["Fuerza","Daño físico: (arma + STR×1.5) × (1 + rango)"],
+  INT:["Inteligencia","+0.2% de suerte de extracción por punto"],
+  SDW:["Sombras","+1% de daño de cada sombra por punto"],
+  VIT:["Vitalidad","+12 de vida máxima por punto"],
+  AGI:["Agilidad","+0.12 de velocidad por punto (tope 120)"],
+  MNA:["Maná","+8 de maná máximo por punto"],
+};
+function panelStats(){
+  const s = P.stats, next = RANKS[rankIndex(P.rank) + 1];
+  const rows = Object.keys(STAT_INFO).map(k => `
+    <div class="statrow">
+      <span class="k">${k}</span>
+      <span class="d"><b>${STAT_INFO[k][0]}</b><br>${STAT_INFO[k][1]}</span>
+      <span class="v">${s[k]}</span>
+      <button class="plus" data-stat="${k}" ${s.points > 0 ? "" : "disabled"} aria-label="Subir ${k}">+</button>
+    </div>`).join("");
+  const derived = `
+    <div class="derived">
+      <div class="kv"><small>Daño por golpe</small><b>${fmt(playerDamage(P))}</b></div>
+      <div class="kv"><small>Vida máxima</small><b>${fmt(F.maxHealth(s))}</b></div>
+      <div class="kv"><small>Maná</small><b>${fmt(F.maxMana(s))}</b></div>
+      <div class="kv"><small>Velocidad</small><b>${F.walkSpeed(s).toFixed(1)}</b></div>
+      <div class="kv"><small>Suerte de extracción</small><b>+${Math.round(ariseLuck(P)*100)}%</b></div>
+      <div class="kv"><small>Sombras / enemigos</small><b>${P.arisen} / ${fmt(P.kills)}</b></div>
+    </div>`;
+  const rank = next ? `
+    <div class="item">
+      <span class="glyph">${next.name === "Monarch" ? "👑" : "◆"}</span>
+      <span class="meta"><b>Subir a rango ${next.name}</b>
+        <span>Nivel ${next.level} · ${fmt(next.gems)} gemas · daño ×${(1+next.dmg).toFixed(2)} · suerte +${Math.round(next.luck*100)}%</span></span>
+      <button class="btn" id="rankup" ${P.level >= next.level && P.gems >= next.gems ? "" : "disabled style=opacity:.45"}>Ascender</button>
+    </div>` : `<div class="hint">Has alcanzado el rango <b>Monarch</b>.</div>`;
+  return shell(`Atributos · ${s.points} punto${s.points === 1 ? "" : "s"} libre${s.points === 1 ? "" : "s"}`,
+    `<div class="statgrid">${rows}</div>${derived}${rank}
+     <p class="hint">Cada nivel otorga <b>${CFG.POINTS_PER_LEVEL} puntos</b>. Las fórmulas son idénticas a las del servidor Luau de este repositorio.</p>`);
+}
+function panelShadows(){
+  const list = Object.values(P.inventory)
+    .sort((a,b) => F.shadowDamage(b,P.stats) - F.shadowDamage(a,P.stats));
+  const body = list.length ? list.map(s => {
+    const eq = P.equipped.includes(s.uuid);
+    const color = `var(${TIER_COLOR[s.tier]})`;
+    return `<div class="item">
+      <span class="glyph">${SHADOWS[s.id]?.glyph || "☗"}</span>
+      <span class="meta"><b>${s.name}</b>
+        <span><span class="tier" style="color:${color}">${s.tier}</span> · daño ${fmt(F.shadowDamage(s, P.stats))}</span></span>
+      <button class="btn" data-equip="${s.uuid}">${eq ? "Quitar" : "Equipar"}</button>
+    </div>`;
+  }).join("") : `<p class="hint">Todavía no has extraído ninguna sombra. Derrota a un enemigo y pulsa <b>E</b> sobre su cuerpo.</p>`;
+  return shell(`Sombras · ${P.equipped.length}/${CFG.MAX_SQUAD} en el escuadrón`,
+    `<div class="list">${body}</div>
+     <p class="hint">Con el escuadrón lleno, una extracción exitosa <b>desequipa automáticamente la sombra de menor daño</b> si la nueva es mejor.</p>`);
+}
+function panelShop(){
+  const items = Object.values(WEAPONS).map(w => {
+    const owned = P.weapons.includes(w.id), equipped = P.weapon === w.id;
+    return `<div class="item">
+      <span class="glyph">${w.glyph}</span>
+      <span class="meta"><b>${w.name}</b><span>Daño base ${fmt(w.dmg)}</span></span>
+      ${owned ? "" : `<span class="price gold">${fmt(w.price)}</span>`}
+      <button class="btn" data-weapon="${w.id}" ${equipped ? "disabled style=opacity:.45" : ""}>
+        ${equipped ? "Equipada" : owned ? "Equipar" : "Comprar"}</button>
+    </div>`;
+  }).join("");
+  return shell("Armería", `<div class="list">${items}</div>
+    <p class="hint">Oro disponible: <b class="gold">${fmt(P.gold)}</b>. El daño del arma entra directo en la fórmula de daño físico.</p>`);
+}
+function panelTravel(){
+  const items = ISLANDS.map(i => {
+    const unlocked = P.islands.includes(i.id) || P.level >= i.level;
+    const here = P.island === i.id;
+    const e = ENEMIES[i.enemy];
+    return `<div class="item ${unlocked ? "" : "locked"}">
+      <span class="glyph">◈</span>
+      <span class="meta"><b>${i.name}</b><span>${unlocked ? `${e.name} · Nv ${e.level} · ${fmt(e.hp)} vida` : `Requiere nivel ${i.level}`}</span></span>
+      <button class="btn" data-isle="${i.id}" ${!unlocked || here ? "disabled style=opacity:.45" : ""}>${here ? "Aquí" : "Viajar"}</button>
+    </div>`;
+  }).join("");
+  return shell("Islas", `<div class="list">${items}</div>
+    <p class="hint">Cada isla sube el nivel de los enemigos, su vida y sus recompensas — y la rareza de la sombra que dejan.</p>`);
+}
+function panelHelp(){
+  return shell("Cómo se juega", `
+    <div class="derived">
+      <div class="kv"><small>Mover</small><b>WASD / flechas</b></div>
+      <div class="kv"><small>Atacar</small><b>Espacio</b></div>
+      <div class="kv"><small>Extraer</small><b>E</b></div>
+      <div class="kv"><small>Auto-ataque</small><b>Q</b></div>
+      <div class="kv"><small>Auto-arise</small><b>R</b></div>
+      <div class="kv"><small>Entrar al portal</small><b>F</b></div>
+      <div class="kv"><small>Paneles</small><b>1 · 2 · 3 · 4</b></div>
+      <div class="kv"><small>En móvil</small><b>arrastra para mover</b></div>
+    </div>
+    <p class="hint"><b>El bucle:</b> mata enemigos → su cuerpo queda inerte → pulsa <b>E</b> cerca para intentar el ARISE
+    (3 intentos; si fallas los tres, el cuerpo se convierte en gemas). Las sombras extraídas luchan contigo: máximo 4 a la vez.</p>
+    <p class="hint"><b>Portal:</b> cada ${CFG.PORTAL_INTERVAL}s se abre uno. Dentro hay un jefe; al derrotarlo empieza el
+    <b>Double Dungeon</b>: todo reaparece con el doble de estadísticas y despierta la <b>Estatua de Dios</b>.
+    Vencerla te vuelve <b>Awakened</b> (+60% de suerte de extracción).</p>
+    <p class="hint">Sube de rango en el panel de atributos: cada rango multiplica tu daño y tu suerte de extracción.
+    La partida se guarda sola en este navegador.</p>`);
+}
+function renderPanel(){
+  if (!panelKind){ modal.hidden = true; modal.innerHTML = ""; return; }
+  const html = panelKind === "stats" ? panelStats()
+    : panelKind === "shadows" ? panelShadows()
+    : panelKind === "shop" ? panelShop()
+    : panelKind === "travel" ? panelTravel() : panelHelp();
+  modal.innerHTML = html; modal.hidden = false;
+}
+
+/* ---------------------------- modal ARISE -------------------------------- */
+function openArise(){
+  if (ariseTarget) return;
+  const c = nearestCorpse();
+  if (!c) return;
+  if (autoArise) return resolveAuto(c);
+  panelKind = null;
+  ariseTarget = c;
+  renderArise("");
+}
+function closeArise(){ ariseTarget = null; if (!panelKind){ modal.hidden = true; modal.innerHTML = ""; } }
+function renderArise(log){
+  const c = ariseTarget; if (!c) return;
+  const chance = corpseChance(c);
+  const left = CFG.MAX_ARISE_ATTEMPTS - c.attempts;
+  const def = SHADOWS[c.def.shadow];
+  const pips = Array.from({ length: CFG.MAX_ARISE_ATTEMPTS },
+    (_, i) => `<span class="pip ${i < left ? "live" : ""}"></span>`).join("");
+  modal.innerHTML = `<div class="scrim" data-close="1"><div class="arise-box" role="dialog" aria-label="Extracción">
+      <h3>ARISE</h3>
+      <div class="sub">${c.def.name} · sombra <span style="color:var(${TIER_COLOR[def.tier]})">${def.name}</span> (${def.tier})</div>
+      <div class="chance" style="color:var(--arise)">${(chance*100).toFixed(1)}%</div>
+      <div class="sub">probabilidad de extracción</div>
+      <div class="pips">${pips}</div>
+      <div class="arise-actions">
+        <button class="btn" id="do-arise" ${left > 0 ? "" : "disabled style=opacity:.4"}>Extraer (${left})</button>
+        <button class="btn" id="do-decline">Descartar · +${fmt(F.gemsForEnemy(c.def))} gemas</button>
+      </div>
+      <div class="log">${log}</div>
+    </div></div>`;
+  modal.hidden = false;
+}
+
+/* --------------------------- eventos de UI ------------------------------- */
+modal.addEventListener("click", e => {
+  const t = e.target;
+  if (t.dataset && t.dataset.close !== undefined && (t.classList.contains("scrim") || t.classList.contains("x"))){
+    closePanel(); closeArise(); return;
+  }
+  if (t.dataset.stat){ allocate(t.dataset.stat, 1); renderPanel(); return; }
+  if (t.id === "rankup"){ rankUp(); return; }
+  if (t.dataset.equip){
+    const uuid = t.dataset.equip;
+    const i = P.equipped.indexOf(uuid);
+    if (i >= 0) P.equipped.splice(i, 1);
+    else if (P.equipped.length < CFG.MAX_SQUAD) P.equipped.push(uuid);
+    else return toast("Escuadrón lleno: quita una sombra primero.", "--hp");
+    rebuildShadows(); save(); renderPanel(); return;
+  }
+  if (t.dataset.weapon){
+    const w = WEAPONS[t.dataset.weapon];
+    if (P.weapons.includes(w.id)) P.weapon = w.id;
+    else if (P.gold >= w.price){ P.gold -= w.price; P.weapons.push(w.id); P.weapon = w.id; toast(`${w.name} equipada`, "--gold"); }
+    else return toast(`Faltan ${fmt(w.price - P.gold)} de oro.`, "--hp");
+    save(); dirty = true; renderPanel(); return;
+  }
+  if (t.dataset.isle){
+    const isle = islandOf(t.dataset.isle);
+    if (P.level < isle.level) return toast(`Requiere nivel ${isle.level}.`, "--hp");
+    P.island = isle.id;
+    if (!P.islands.includes(isle.id)) P.islands.push(isle.id);
+    enemies = []; corpses = []; spawnTimer = 0;
+    toast(`Viajaste a ${isle.name}`, "--spec-hi");
+    save(); closePanel(); return;
+  }
+  if (t.id === "do-arise"){
+    const c = ariseTarget; if (!c) return;
+    const r = attemptArise(c);
+    if (r.ok){
+      const extra = r.replaced ? ` · reemplaza a ${P.inventory[r.replaced]?.name ?? "la más débil"}` : "";
+      toast(`ARISE · ${r.shadow.name}${extra}`, "--arise");
+      closeArise();
+    } else if (r.exhausted){
+      toast(`Sin intentos · +${fmt(r.gems)} gemas`, "--gem");
+      closeArise();
+    } else {
+      renderArise(`<span style="color:var(--hp)">Fallo.</span> Quedan ${r.attemptsLeft} intentos.`);
+    }
+    return;
+  }
+  if (t.id === "do-decline"){ declineArise(ariseTarget); closeArise(); }
+});
+
+$("b-stats").onclick = () => openPanel("stats");
+$("b-shadows").onclick = () => openPanel("shadows");
+$("b-shop").onclick = () => openPanel("shop");
+$("b-travel").onclick = () => openPanel("travel");
+$("b-help").onclick = () => openPanel("help");
+$("a-attack").onclick = playerAttack;
+$("a-arise").onclick = openArise;
+$("a-portal").onclick = enterDungeon;
+function setAuto(v){
+  auto = v;
+  $("a-auto").classList.toggle("on", v);
+  $("a-auto").querySelector(".state").textContent = v ? "ON" : "OFF";
+}
+function setAutoArise(v){
+  autoArise = v;
+  $("a-autoarise").classList.toggle("on", v);
+  $("a-autoarise").querySelector(".state").textContent = v ? "ON" : "OFF";
+}
+$("a-auto").onclick = () => setAuto(!auto);
+$("a-autoarise").onclick = () => setAutoArise(!autoArise);
+
+/* ------------------------------- boot ----------------------------------- */
+function start(restored){
+  if (restored && restored.profile){ P = reconcile(restored.profile); }
+  player.maxHp = F.maxHealth(P.stats);
+  player.hp = restored?.hp ?? player.maxHp;
+  unlockCheck();
+  rebuildShadows();
+  resize();
+  syncHud();
+  if (!Object.keys(P.inventory).length && P.level === 1) openPanel("help");
+  let last = performance.now(), hudAcc = 0;
+  function frame(t){
+    const dt = Math.min((t - last) / 1000, 0.05); last = t;
+    if (!document.hidden && !paused){
+      update(dt);
+      render();
+      hudAcc += dt;
+      if (hudAcc > 0.12 || dirty){ syncHud(); hudAcc = 0; dirty = false; }
+    }
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+}
+
+// Republicaciones: conserva la partida en curso de quien ya tiene la pagina abierta.
+window.claude?.hot?.snapshot?.(() => ({ profile: P, hp: player.hp }));
+if (window.claude?.hot?.ready) window.claude.hot.ready(start);
+else start(window.claude?.hot?.data ?? null);
+addEventListener("beforeunload", save);
+</script>

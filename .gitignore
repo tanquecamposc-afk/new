@@ -1,0 +1,10 @@
+# Artefactos de build y pruebas
+/.headless-build/
+/Packages/
+/ServerPackages/
+/DevPackages/
+*.rbxl
+*.rbxlx
+*.rbxl.lock
+*.rbxlx.lock
+sourcemap.json
