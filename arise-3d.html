@@ -47,7 +47,7 @@ canvas#stage{position:absolute;inset:0;width:100%;height:100%;display:block;touc
 .bar.hp>i{background:linear-gradient(180deg,#ff8d99,#dc1f34)}
 .bar.mana>i{background:linear-gradient(180deg,#8ccaff,#1f6fd0)}
 .bar.xp>i{background:linear-gradient(180deg,#96f8cd,#1fae74)}
-.target{flex:1;max-width:430px;display:grid;gap:4px;padding:8px 12px}
+.target{flex:1;max-width:430px;display:grid;gap:4px;padding:8px 12px;margin-top:56px}
 .trow{display:flex;align-items:center;gap:9px}
 .lvd{width:34px;height:34px;flex:none;display:grid;place-items:center;transform:rotate(45deg);border-radius:8px;
      background:linear-gradient(180deg,#2c4079,#141f4c);border:2px solid #86a2e0}
@@ -120,15 +120,44 @@ canvas#stage{position:absolute;inset:0;width:100%;height:100%;display:block;touc
 .a-portal{background:linear-gradient(180deg,#8af0ff,#17b9d8)}
 
 /* --- notificaciones --- */
-.lane{position:absolute;right:12px;top:96px;display:grid;gap:6px;justify-items:end;pointer-events:none;max-width:280px}
+.lane{position:absolute;left:12px;top:calc(150px + env(safe-area-inset-top,0px));display:grid;gap:6px;justify-items:start;pointer-events:none;max-width:260px;z-index:4}
 .note{padding:7px 13px;border-radius:11px;font-size:12.5px;font-weight:600;border:2px solid var(--line);
   background:linear-gradient(180deg,rgba(24,41,92,.96),rgba(9,16,38,.96));box-shadow:0 6px 18px rgba(0,0,0,.5);
   animation:slide .32s ease both}
-@keyframes slide{from{opacity:0;transform:translateX(26px)}to{opacity:1;transform:none}}
+@keyframes slide{from{opacity:0;transform:translateX(-26px)}to{opacity:1;transform:none}}
 .banner{position:absolute;left:50%;top:22%;transform:translateX(-50%);text-align:center;pointer-events:none;
   font-family:var(--f-display);font-weight:800;font-size:34px;letter-spacing:.1em;
   animation:bpop .5s ease both}
 @keyframes bpop{from{opacity:0;transform:translateX(-50%) scale(.82)}to{opacity:1;transform:translateX(-50%) scale(1)}}
+
+/* --- objetivo, minimapa y pantalla de inicio --- */
+#objective{position:absolute;z-index:5;left:50%;top:calc(14px + env(safe-area-inset-top,0px));transform:translateX(-50%);
+  padding:9px 18px;border-radius:12px;font-size:14px;font-weight:600;z-index:3;pointer-events:none;
+  display:flex;align-items:center;gap:12px;max-width:min(680px,90vw);line-height:1.35}
+#objective b{color:var(--gold)}
+#objective .step{flex:none;font-size:11px;color:var(--muted);font-weight:600;letter-spacing:.06em;text-transform:uppercase}
+#mapwrap{position:absolute;right:12px;top:calc(158px + env(safe-area-inset-top,0px));width:150px;z-index:3;
+  pointer-events:none;display:grid;justify-items:center;gap:4px}
+#minimap{width:150px;height:150px;border-radius:50%;border:2px solid var(--line);
+  background:rgba(8,14,34,.82);box-shadow:0 8px 22px rgba(0,0,0,.5)}
+#mapregion{font-size:11px;font-weight:600;color:var(--muted);text-shadow:0 1px 3px rgba(0,0,0,.8)}
+#startScreen{position:absolute;inset:0;z-index:30;display:grid;place-items:center;padding:20px;
+  background:radial-gradient(ellipse at 50% 40%, rgba(24,44,110,.9), rgba(3,6,16,.97));backdrop-filter:blur(6px)}
+.start-card{width:min(520px,100%);text-align:center;padding:26px 24px;border-radius:20px;
+  background:linear-gradient(180deg,rgba(22,39,85,.96),rgba(8,14,34,.96));border:2px solid var(--line);
+  box-shadow:0 30px 80px rgba(0,0,0,.6)}
+.start-card h1{margin:0;font-family:var(--f-display);font-size:42px;font-weight:800;letter-spacing:.14em;
+  color:#bfe2ff;text-shadow:0 0 30px rgba(90,170,255,.6)}
+.start-card h1 span{display:block;font-family:var(--f-ui);font-size:15px;font-weight:600;letter-spacing:.42em;
+  color:var(--muted);margin-top:4px}
+.start-card .tag{margin:14px 0 20px;font-size:14px;color:var(--muted)}
+.btn.big{font-size:17px;padding:13px 40px;border-radius:14px}
+.start-card .keys{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin:22px 0 10px;
+  font-size:12px;color:var(--muted)}
+.start-card .keys b{color:var(--ink)}
+.start-card .foot{margin:6px 0 0;font-size:11px;color:var(--dim)}
+@media (max-width:680px){ #mapwrap{width:104px;top:auto;bottom:210px} #minimap{width:104px;height:104px}
+  #objective{font-size:12px;padding:7px 12px} .start-card h1{font-size:32px} }
 
 /* --- paneles --- */
 .scrim{position:absolute;inset:0;background:rgba(3,7,18,.76);backdrop-filter:blur(4px);display:grid;place-items:center;
@@ -200,7 +229,7 @@ canvas#stage{position:absolute;inset:0;width:100%;height:100%;display:block;touc
   .pcard{min-width:0;max-width:54vw} .infocard{min-width:0} .target{display:none}
   .hexwrap{top:auto;bottom:158px;transform:none} .hex{width:44px;height:50px;font-size:17px} .hexrow.odd{margin-left:23px}
   .act{width:56px;height:56px} .coin{font-size:17px} .slot{width:44px;height:48px}
-  .lane{top:auto;bottom:230px;max-width:200px} .banner{font-size:24px}
+  .lane{top:auto;bottom:250px;max-width:180px} .banner{font-size:24px}
 }
 </style>
 
@@ -265,12 +294,30 @@ canvas#stage{position:absolute;inset:0;width:100%;height:100%;display:block;touc
           <button class="act a-weapon" id="a-skill"><kbd>V</kbd><span class="ic">🌊</span><span class="lb">Arma</span><i class="cd" id="cd-skill" style="transform:scaleY(0)"></i></button>
           <button class="act a-arise" id="a-arise"><kbd>B</kbd><span class="ic">💠</span><span class="lb">Arise</span></button>
           <button class="act a-dash" id="a-dash"><kbd>Q</kbd><span class="ic">💨</span><span class="lb">Dash</span><i class="cd" id="cd-dash" style="transform:scaleY(0)"></i></button>
-          <button class="act a-auto on" id="a-auto"><kbd>R</kbd><span class="ic">🔁</span><span class="lb">Auto</span><span class="st">ON</span></button>
+          <button class="act a-auto" id="a-auto"><kbd>R</kbd><span class="ic">🔁</span><span class="lb">Auto</span><span class="st">OFF</span></button>
           <button class="act a-mount" id="a-mount"><kbd>M</kbd><span class="ic">🐎</span><span class="lb">Montura</span><span class="st">OFF</span></button>
           <button class="act a-portal" id="a-portal" hidden><kbd>F</kbd><span class="ic">🌀</span><span class="lb">Portal</span></button>
         </div>
       </div>
       <div style="width:96px" aria-hidden="true"></div>
+    </div>
+  </div>
+  <!-- objetivo actual, siempre una sola línea -->
+  <div id="objective" class="frame" hidden></div>
+  <!-- minimapa -->
+  <div id="mapwrap"><canvas id="minimap" width="150" height="150"></canvas><span id="mapregion"></span></div>
+  <!-- pantalla de inicio -->
+  <div id="startScreen">
+    <div class="start-card">
+      <h1>ARISE<span>crossover</span></h1>
+      <p class="tag">Cazas. Extraes su sombra. Tu ejército crece.</p>
+      <button class="btn big" id="btn-play">Jugar</button>
+      <div class="keys">
+        <span><b>W A S D</b> moverse</span><span><b>Clic izq.</b> golpear (mantén)</span><span><b>B</b> extraer</span>
+        <span><b>Q</b> dash</span><span><b>Espacio</b> saltar</span><span><b>G</b> hablar</span>
+        <span><b>Ratón</b> girar cámara</span><span><b>1-5</b> menús</span>
+      </div>
+      <p class="foot">Tu partida se guarda sola en este navegador.</p>
     </div>
   </div>
   <div id="banner"></div>
@@ -309,8 +356,8 @@ const squadCap = () => Math.min(FLAGS.SQUAD_MAX, FLAGS.SQUAD_BASE + rankIdx(P.ra
 const CFG = {
   ATTACK_RANGE:150, ARISE_RANGE:140,
   COMBO_RESET:1.1,
-  SHADOW_FOLLOW:185, SHADOW_AGGRO:420, SHADOW_RANGE:78, SHADOW_CD:0.8, SHADOW_SPEED:260, SHADOW_LEASH:700,
-  ENEMY_POP:16,
+  SHADOW_FOLLOW:215, SHADOW_AGGRO:420, SHADOW_RANGE:78, SHADOW_CD:0.8, SHADOW_SPEED:260, SHADOW_LEASH:700,
+  ENEMY_POP:9,
   // Mundo abierto continuo: el centro es la zona inicial y cada anillo de
   // RING_WIDTH unidades es una región nueva, más dura cuanto más te alejas.
   WORLD:{ w:34000, h:34000, cx:17000, cy:17000 },
@@ -511,7 +558,7 @@ function newProfile(){
     shadows:{}, squad:[], relics:{}, runes:{},
     islands:["LevelingCity"], island:"LevelingCity",
     title:"Cazador Novato", awakened:false, index:{},
-    kills:0, arisen:0, dungeonsCleared:0, ledger:[],
+    kills:0, arisen:0, dungeonsCleared:0, ledger:[], tutorial:0,
   };
 }
 function reconcile(d){
@@ -522,6 +569,7 @@ function reconcile(d){
     if (typeof p[k] !== "object" || !p[k]) p[k] = {};
   if (!CLASSES[p.class]) p.class = "Warrior";
   if (typeof p.quests !== "object" || !p.quests) p.quests = { active:null, done:0 };
+  if (typeof p.tutorial !== "number") p.tutorial = 0;
   if (!Array.isArray(p.squad)) p.squad = [];
   if (!Array.isArray(p.islands) || !p.islands.length) p.islands = ["LevelingCity"];
   if (!Array.isArray(p.ledger)) p.ledger = [];
@@ -570,7 +618,7 @@ const player = {
   dps:{ total:0, since:0, shown:0 },
 };
 let enemies = [], corpses = [], shadows = [], floaters = [], parts = [], rings = [], portal = null, dungeon = null;
-let spawnT = 0, portalT = FLAGS.PORTAL_INTERVAL_SECONDS, hitstop = 0, auto = true, dirty = true;
+let spawnT = 0, portalT = FLAGS.PORTAL_INTERVAL_SECONDS, hitstop = 0, auto = false, dirty = true, paused = false;
 const cam = { x:player.x, y:player.y, shake:0, shakeV:0, impulse:0, dist:0, distV:0 };
 let target = null;
 
@@ -1113,7 +1161,7 @@ function note(text, colorVar){
   lane.appendChild(el);
   setTimeout(() => { el.style.opacity = "0"; el.style.transition = "opacity .4s"; }, 2600);
   setTimeout(() => el.remove(), 3100);
-  while (lane.children.length > 5) lane.firstChild.remove();
+  while (lane.children.length > 2) lane.firstChild.remove();
 }
 
 /* ===========================================================================
@@ -1161,6 +1209,7 @@ canvas.addEventListener("pointerdown", e => {
     return;
   }
   drag.active = true; drag.id = e.pointerId; drag.x = e.clientX; drag.y = e.clientY; drag.moved = 0;
+  if (e.button === 0 && !modalOpen()){ drag.attacking = true; requestAttack(); }
 });
 canvas.addEventListener("pointermove", e => {
   if (stick.active && e.pointerId === stick.id){
@@ -1177,10 +1226,7 @@ canvas.addEventListener("pointermove", e => {
 });
 const endPointer = e => {
   if (stick.active && e.pointerId === stick.id){ stick.active = false; stick.x = 0; stick.y = 0; }
-  if (drag.active && e.pointerId === drag.id){
-    if (drag.moved < 8 && !auto) requestAttack();      // clic corto = golpe
-    drag.active = false;
-  }
+  if (drag.active && e.pointerId === drag.id){ drag.active = false; drag.attacking = false; }
 };
 canvas.addEventListener("pointerup", endPointer);
 canvas.addEventListener("pointercancel", endPointer);
@@ -1284,9 +1330,10 @@ function update(dt){
   player.skillCd = Math.max(0, player.skillCd - dt);
   player.hurt = Math.max(0, player.hurt - dt);
   player.mana = Math.min(maxMana(), player.mana + maxMana() * 0.08 * dt);
-  // AUTO: autoclick + auto-arise (el género espera que el farmeo sea continuo)
-  if (auto && player.phase === "idle" && !modalOpen() && player.dead <= 0) requestAttack();
-  else if (pointer && now() - pointer.down > 0.25 && player.phase === "idle") requestAttack();
+  // golpe: automático con AUTO, o encadenado mientras mantengas el clic
+  if (player.phase === "idle" && player.dead <= 0 && !modalOpen()){
+    if (auto || drag.attacking) requestAttack();
+  }
 
   // ---- región actual del mundo abierto
   if (!dungeon){
@@ -1313,19 +1360,20 @@ function update(dt){
 
   // ---- enemigos
   spawnT -= dt;
-  const pop = dungeon ? (dungeon.phase === "Boss" ? 1 : 6) : CFG.ENEMY_POP;
+  const pop = dungeon ? (dungeon.phase === "Boss" ? 1 : 6)
+    : (P.tutorial < 2 ? 3 : P.tutorial < TUTORIAL.length ? 6 : CFG.ENEMY_POP);
   if (spawnT <= 0 && enemies.length < pop && !(dungeon && dungeon.phase === "Boss")){
     // repone la horda con rapidez: el farmeo del original es continuo
-    const batch = Math.min(3, pop - enemies.length);
+    const batch = Math.min(2, pop - enemies.length);
     for (let i=0;i<batch;i++) spawnEnemy();
-    spawnT = dungeon ? 1.2 : 0.5;
+    spawnT = dungeon ? 1.4 : 1.1;
   }
   for (const e of enemies){
     e.hurt = Math.max(0, e.hurt - dt);
     e.stun = Math.max(0, e.stun - dt);
     if (e.stun > 0) continue;
     const d = Math.hypot(player.x-e.x, player.y-e.y) || 1;
-    const stop = e.def.r + (e.boss ? 120 : 92);
+    const stop = e.def.r + (e.boss ? 150 : 128);
     // fases del jefe (contrato 10.1)
     if (e.boss && dungeon?.bossState){
       const pct = e.hp / e.maxHp, th = dungeon.bossState.thresholds;
@@ -1399,7 +1447,7 @@ function update(dt){
   // ---- efectos
   for (const f of floaters) f.life -= dt;
   floaters = floaters.filter(f => f.life > 0);
-  if (floaters.length > 26) floaters.splice(0, floaters.length - 26);
+  if (floaters.length > 7) floaters.splice(0, floaters.length - 7);
   for (const p of parts){
     p.life -= dt;
     if (!p.ghost){
@@ -1426,6 +1474,10 @@ function update(dt){
   player.dps.since += dt;
   if (player.dps.since >= 1){ player.dps.shown = player.dps.total / player.dps.since; player.dps.total = 0; player.dps.since = 0; }
 
+  tutState.moved += Math.hypot(player.x - (tutState.lastX || player.x), player.y - (tutState.lastY || player.y));
+  tutState.lastX = player.x; tutState.lastY = player.y;
+  updateObjective(dt);
+  drawMinimap(dt);
   checkQuest();
   if (!dungeon && !P.quests.active && Math.hypot(npc.x-player.x, npc.y-player.y) < 150) takeQuest();
   npc.step += dt;
@@ -1454,7 +1506,10 @@ function hitPlayer(raw){
   if (player.dead > 0) return;
   const dmg = Math.max(1, raw * CFG.CONTACT_SCALE * (1 - classBonus("armor")));
   player.hp -= dmg; player.hurt = 0.22;
-  floaters.push({ x:player.x, y:player.y, h:96, text:`-${fmt(dmg)}`, color:"#ff8d97", life:.85 });
+  const ph = floaters.find(f => f.src === player);
+  if (ph){ ph.amount += dmg; ph.text = `-${fmt(ph.amount)}`; ph.life = .9; }
+  else floaters.push({ src:player, amount:dmg, x:player.x, y:player.y, h:100,
+                       text:`-${fmt(dmg)}`, color:"#ff8d97", life:.9 });
   camImpulse(0.25);
   if (player.hp <= 0){
     player.hp = 0; player.dead = 2.4;
@@ -1469,14 +1524,14 @@ function separate(dt){
     for (let j = i+1; j < enemies.length; j++){
       const b = enemies[j];
       const dx = b.x-a.x, dy = b.y-a.y, d = Math.hypot(dx, dy) || .001;
-      const min = (a.def.r + b.def.r) * 2.1 + 52;
+      const min = (a.def.r + b.def.r) * 2.4 + 84;
       if (d < min){
         const push = (min-d) * 0.5 * Math.min(1, dt*12);
         a.x -= dx/d*push; a.y -= dy/d*push; b.x += dx/d*push; b.y += dy/d*push;
       }
     }
     const dx = a.x-player.x, dy = a.y-player.y, d = Math.hypot(dx, dy) || .001;
-    const min = a.def.r + (a.boss ? 104 : 88);
+    const min = a.def.r + (a.boss ? 130 : 118);
     if (d < min){ const push = (min-d) * Math.min(1, dt*14); a.x += dx/d*push; a.y += dy/d*push; }
   }
 }
@@ -1492,7 +1547,7 @@ const THREE_OK = typeof THREE !== "undefined";
 /*  Calidad adaptativa: el render mide su propio ritmo y baja o sube el nivel de
     detalle para mantener la fluidez. 3 = alta, 2 = media, 1 = baja.  */
 const QUALITY = {
-  level: 3, auto: true,
+  level: 2, auto: true,
   shadows: true, grass: true, props: 1, motes: true, charDetail: 900, maxChars: 26, pixel: 1.5,
 };
 function applyQuality(){
@@ -1803,7 +1858,7 @@ function terrainH(x, z){
   if (a <= 0.5) return 0;
   return (Math.sin(x*0.0021) * Math.cos(z*0.0017) * .65 + Math.sin((x+z)*0.0009) * .35) * a;
 }
-const CAM = { back:285, height:160, pitch:0.33, yaw:0, minBack:200, maxBack:700 };
+const CAM = { back:320, height:160, pitch:0.38, yaw:0, minBack:200, maxBack:700 };
 const camFwd = { x:0, z:-1 }, camRight = { x:1, z:0 };
 function updateCameraBasis(){
   camFwd.x = -Math.sin(CAM.yaw); camFwd.z = -Math.cos(CAM.yaw);
@@ -2271,7 +2326,7 @@ function updateCamera(dt){
   updateCameraBasis();
   const tx = player.x, tz = player.y, ty = terrainH(tx, tz) + 55;
   const back = CAM.back;
-  const height = Math.max(95, back * Math.tan(CAM.pitch) * 1.05 + 62);
+  const height = Math.max(150, back * Math.tan(CAM.pitch) * 1.15 + 95);
   camera.position.set(tx - camFwd.x * back + cam.shake * 2, ty + height, tz - camFwd.z * back);
   camera.lookAt(tx, ty + 34, tz);
   sunLight.position.set(tx + 420, 760, tz + 260);
@@ -2330,7 +2385,7 @@ function render(dt){
     if (!v.hud){
       const hud = new THREE.Group();
       const bar = healthBar();
-      bar.scale.setScalar(e.boss ? 1.35 : .78);
+      bar.scale.setScalar(e.boss ? 1.25 : .62);
       hud.add(bar); hud.bar = bar;
       const nameSp = labelSprite(`${e.name} · Nv ${e.level}`, e.boss ? "#ffe9a8" : "#eaf3ff", 46);
       nameSp.scale.set(e.boss ? 150 : 104, e.boss ? 37 : 26, 1);
@@ -2341,8 +2396,8 @@ function render(dt){
     }
     v.hud.bar.setPct(e.hp / e.maxHp, e.boss ? 0xffd24a : 0xff4d61);
     const dp = Math.hypot(e.x - player.x, e.y - player.y);
-    v.hud.visible = e.boss || dp < 520;
-    v.hud.name.visible = e.boss || e === target;      // el resto solo muestra barra
+    v.hud.visible = (e.boss || e === target || dp < 300) && e.hp > 0;
+    v.hud.name.visible = e.boss || e === target;
     v.hud.rotation.y = -v.rotation.y;                     // el HUD siempre de frente
     // destello al recibir daño
     const hurt = e.hurt > 0;
@@ -2464,7 +2519,7 @@ function render(dt){
     const rise = (1 - f.life) * 70;
     rec.sp.position.set(f.x, terrainH(f.x, f.y) + (f.h || 80) + rise, f.y);
     rec.sp.material.opacity = clamp(f.life * 1.6, 0, 1);
-    const sc = f.crit ? 62 : (f.big ? 50 : 40);
+    const sc = f.crit ? 52 : (f.big ? 42 : 34);
     rec.sp.scale.set(sc, sc * .5, 1);
   }
   // anillos
@@ -2840,12 +2895,12 @@ function panelHelp(){
       <div class="kv"><small>Lateral</small><b>A · D</b></div>
       <div class="kv"><small>Girar cámara</small><b>← → o arrastrar</b></div>
       <div class="kv"><small>Acercar cámara</small><b>↑ ↓ o rueda</b></div>
-      <div class="kv"><small>Golpe M1</small><b>Clic</b></div>
+      <div class="kv"><small>Golpe</small><b>Clic izq.</b></div>
       <div class="kv"><small>Habilidad</small><b>V</b></div>
       <div class="kv"><small>Arise</small><b>B</b></div>
       <div class="kv"><small>Dash</small><b>Q</b></div>
       <div class="kv"><small>Saltar</small><b>Espacio</b></div>
-      <div class="kv"><small>Auto-Arise</small><b>R</b></div>
+      <div class="kv"><small>Auto (golpe+arise)</small><b>R</b></div>
       <div class="kv"><small>Montura</small><b>M</b></div>
       <div class="kv"><small>Portal</small><b>F</b></div>
       <div class="kv"><small>Hablar con cazador</small><b>G</b></div>
@@ -2879,16 +2934,21 @@ function renderPanel(){
 }
 
 /* ----------------------------- modal ARISE -------------------------------- */
+// Extracción directa: una pulsación, un intento. Sin ventanas que corten el ritmo.
 function openArise(){
-  if (ariseToken) return;
   const c = nearestCorpse();
-  if (!c) return;
-  if (auto){
-    const r = attemptArise(c);
-    if (r.ok) note(`ARISE · ${r.shadow.name}`, "--arise");
-    return;
+  if (!c) return note("No hay ningún cuerpo cerca", "--dim");
+  const r = attemptArise(c);
+  if (r.ok){
+    note(`ARISE · ${r.shadow.name}${r.replaced ? " (sustituye a la más débil)" : ""}`, "--arise");
+    banner("ARISE", "#2fe4ff");
+  } else if (r.code === "EXHAUSTED"){
+    note(`Sin intentos · +${fmt(r.gems)} gemas`, "--gem");
+  } else if (r.code === "FAILED"){
+    note(`Fallo · quedan ${r.attempts} intentos`, "--hp");
+  } else if (r.code === "TOO_FAR"){
+    note("Acércate más al cuerpo", "--dim");
   }
-  panelKind = null; ariseToken = c; renderArise("");
 }
 function closeArise(){ ariseToken = null; if (!panelKind){ modal.hidden = true; modal.innerHTML = ""; } }
 function renderArise(log){
@@ -3070,6 +3130,113 @@ function setAuto(v){
 }
 $("a-auto").onclick = () => setAuto(!auto);
 
+/* ------------------------ objetivo guiado (tutorial) ---------------------- */
+const TUTORIAL = [
+  { id:"move",  text:"Muévete con <b>W A S D</b> y gira la cámara arrastrando el ratón",
+    done: () => tutState.moved > 120 },
+  { id:"fight", text:"Acércate a un enemigo y golpéalo con el <b>clic izquierdo</b> (mantenlo para encadenar)",
+    done: () => P.kills >= 1 },
+  { id:"arise", text:"Ponte sobre el cuerpo que deja y pulsa <b>B</b> para extraer su sombra",
+    done: () => P.arisen >= 1 },
+  { id:"squad", text:"Tu sombra lucha contigo. Consigue <b>3 sombras</b> para tener escuadrón",
+    done: () => P.arisen >= 3 },
+  { id:"hunter",text:"Busca al <b>Cazador Jefe (!)</b> en el mapa y habla con él pulsando <b>G</b>",
+    done: () => P.quests.done >= 1 || P.quests.active },
+];
+const tutState = { moved:0, lastX:0, lastY:0 };
+function tutorialStep(){
+  if (P.tutorial >= TUTORIAL.length) return null;
+  return TUTORIAL[P.tutorial];
+}
+function updateObjective(dt){
+  const el = $("objective");
+  const step = tutorialStep();
+  if (step){
+    if (step.done()){
+      P.tutorial++;
+      save();
+      const next = tutorialStep();
+      banner(next ? "SIGUIENTE PASO" : "¡LISTO!", "#5ce8a6");
+      if (!next) note("Tutorial completado · suerte, cazador", "--xp");
+    }
+    const cur = tutorialStep();
+    if (cur){
+      el.hidden = false;
+      el.innerHTML = `<span class="step">Paso ${P.tutorial + 1}/${TUTORIAL.length}</span> ${cur.text}`;
+      return;
+    }
+  }
+  const q = P.quests.active;
+  if (q){
+    el.hidden = false;
+    el.innerHTML = `<span class="step">Misión</span> ${q.text} · <b>${Math.min(questProgress(), q.goal)}/${q.goal}</b>`;
+  } else if (portal){
+    el.hidden = false;
+    el.innerHTML = `<span class="step">Evento</span> Portal <b>${portal.mode.name}</b> abierto · pulsa <b>F</b> dentro del círculo`;
+  } else {
+    el.hidden = false;
+    const nx = distanceToNextRegion();
+    el.innerHTML = nx
+      ? `<span class="step">Rumbo</span> ${nx.next.name} a <b>${Math.round(nx.dist)} m</b> · habla con el Cazador Jefe para una misión`
+      : `<span class="step">Rumbo</span> Has llegado al confín del mundo`;
+  }
+}
+
+/* -------------------------------- minimapa -------------------------------- */
+const mini = { cv:null, ctx:null, t:0 };
+function drawMinimap(dt){
+  if (!mini.cv){
+    mini.cv = document.getElementById("minimap");
+    if (!mini.cv) return;
+    mini.ctx = mini.cv.getContext("2d");
+  }
+  mini.t -= dt;
+  if (mini.t > 0) return;
+  mini.t = 0.1;
+  const c = mini.ctx, R = 75, scale = 0.055;      // 1 px ≈ 18 unidades
+  c.clearRect(0, 0, 150, 150);
+  c.save();
+  c.beginPath(); c.arc(R, R, R - 2, 0, Math.PI*2); c.clip();
+  const th = themeNow();
+  c.fillStyle = th.g2; c.globalAlpha = .5; c.fillRect(0, 0, 150, 150); c.globalAlpha = 1;
+  // anillo de la región siguiente
+  const idx = ringAt(player.x, player.y);
+  const dc = Math.hypot(player.x - CFG.WORLD.cx, player.y - CFG.WORLD.cy);
+  const ringPx = ((idx + 1) * CFG.RING_WIDTH - dc) * scale;
+  if (ringPx < R * 1.6){
+    const ang = Math.atan2(CFG.WORLD.cy - player.y, CFG.WORLD.cx - player.x);
+    c.strokeStyle = "rgba(143,208,255,.65)"; c.lineWidth = 2; c.setLineDash([5, 5]);
+    c.beginPath();
+    c.arc(R - Math.cos(ang) * (dc * scale), R - Math.sin(ang) * (dc * scale),
+          Math.max(4, (idx + 1) * CFG.RING_WIDTH * scale), 0, Math.PI*2);
+    c.stroke(); c.setLineDash([]);
+  }
+  const put = (x, y, color, size) => {
+    const dx = (x - player.x) * scale, dy = (y - player.y) * scale;
+    if (Math.hypot(dx, dy) > R - 4) return;
+    c.fillStyle = color;
+    c.beginPath(); c.arc(R + dx, R + dy, size, 0, Math.PI*2); c.fill();
+  };
+  for (const e of enemies) put(e.x, e.y, e.boss ? "#ffd24a" : "#ff5d6c", e.boss ? 4.5 : 2.6);
+  for (const sh of shadows) put(sh.x, sh.y, "#6aa8ff", 2.4);
+  for (const co of corpses) put(co.x, co.y, "#31e4ff", 2.6);
+  for (const h of HUNTERS) put(h.x, h.y, "#ffe9a8", 3.4);
+  if (!dungeon) put(npc.x, npc.y, "#5ce8a6", 3.4);
+  if (portal) put(portal.x, portal.y, portal.mode.color, 5);
+  // jugador con su orientación
+  c.save();
+  c.translate(R, R); c.rotate(player.yaw);
+  c.fillStyle = "#ffffff";
+  c.beginPath(); c.moveTo(0, -7); c.lineTo(5, 5); c.lineTo(0, 2); c.lineTo(-5, 5); c.closePath(); c.fill();
+  c.restore();
+  c.restore();
+  // norte
+  c.fillStyle = "rgba(200,220,255,.7)"; c.font = "600 10px Fredoka, sans-serif"; c.textAlign = "center";
+  c.fillText("N", R, 13);
+  const reg = document.getElementById("mapregion");
+  if (reg) reg.textContent = dungeon ? dungeon.mode.name : regionAt(player.x, player.y).name;
+}
+
 /* -------------------------------- arranque -------------------------------- */
 function start(restored){
   if (restored?.profile) P = reconcile(restored.profile);
@@ -3083,11 +3250,17 @@ function start(restored){
   }
   initScene();
   rebuildSquad(); resize(); syncHud();
-  if (P.level === 1 && !Object.keys(P.shadows).length) openPanel("help");
+  paused = true;
+  const startEl = document.getElementById("startScreen");
+  document.getElementById("btn-play").onclick = () => {
+    startEl.style.display = "none";
+    paused = false;
+    if (P.tutorial === 0) banner("BIENVENIDO, CAZADOR", "#bfe2ff");
+  };
   let last = performance.now(), hudT = 0, fpsT = 0, frames = 0;
   function frame(t){
     const dt = Math.min((t - last)/1000, 0.05); last = t;
-    if (!document.hidden){
+    if (!document.hidden && !paused){
       update(dt);
       render(dt);
       frames++; fpsT += dt;
