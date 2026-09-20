@@ -1391,6 +1391,22 @@ let playerView = null, npcView = null, portalView = null;
 const propPool = [];
 let sparkPoints = null, sparkGeo = null;
 
+const glowCache = new Map();
+function glowTexture(color){
+  let t = glowCache.get(color);
+  if (t) return t;
+  const cv = document.createElement("canvas");
+  cv.width = cv.height = 128;
+  const x = cv.getContext("2d");
+  const g = x.createRadialGradient(64, 64, 2, 64, 64, 64);
+  g.addColorStop(0, color); g.addColorStop(.35, color.replace(")", ",.55)").replace("rgb", "rgba"));
+  g.addColorStop(1, "rgba(255,255,255,0)");
+  x.fillStyle = g; x.beginPath(); x.arc(64, 64, 64, 0, Math.PI*2); x.fill();
+  t = new THREE.CanvasTexture(cv);
+  glowCache.set(color, t);
+  return t;
+}
+
 const GEO = new Map();
 function boxGeo(w, h, d){
   const k = `${w.toFixed(2)}|${h.toFixed(2)}|${d.toFixed(2)}`;
@@ -1620,7 +1636,7 @@ function terrainH(x, z){
   if (a <= 0.5) return 0;
   return (Math.sin(x*0.0021) * Math.cos(z*0.0017) * .65 + Math.sin((x+z)*0.0009) * .35) * a;
 }
-const CAM = { back:315, height:160, pitch:0.46, yaw:0, minBack:200, maxBack:700 };
+const CAM = { back:285, height:160, pitch:0.33, yaw:0, minBack:200, maxBack:700 };
 const camFwd = { x:0, z:-1 }, camRight = { x:1, z:0 };
 function updateCameraBasis(){
   camFwd.x = -Math.sin(CAM.yaw); camFwd.z = -Math.cos(CAM.yaw);
@@ -1686,6 +1702,39 @@ function initScene(){
     cl.userData.cloud = true;
     scene.add(cl);
   }
+  // sol visible con destello
+  const sunSprite = new THREE.Sprite(new THREE.SpriteMaterial({
+    map: glowTexture("#fff6d8"), transparent:true, depthWrite:false, blending:THREE.AdditiveBlending }));
+  sunSprite.scale.set(900, 900, 1);
+  sunSprite.position.set(1400, 1500, -1800);
+  scene.add(sunSprite); scene.userData.sun = sunSprite;
+
+  // lámina de agua bajo el mundo
+  const water = new THREE.Mesh(new THREE.PlaneGeometry(12000, 12000),
+    new THREE.MeshLambertMaterial({ color:0x2f7fd0, transparent:true, opacity:.92 }));
+  water.rotation.x = -Math.PI / 2;
+  water.position.y = -46;
+  scene.add(water); scene.userData.water = water;
+
+  // motas ambientales flotando
+  const moteGeo = new THREE.BufferGeometry();
+  const mp = new Float32Array(160 * 3);
+  for (let i = 0; i < 160; i++){
+    mp[i*3] = rnd(-900, 900); mp[i*3+1] = rnd(20, 420); mp[i*3+2] = rnd(-900, 900);
+  }
+  moteGeo.setAttribute("position", new THREE.BufferAttribute(mp, 3));
+  const motes = new THREE.Points(moteGeo, new THREE.PointsMaterial({
+    color:0xffffff, size:4.5, transparent:true, opacity:.45, depthWrite:false }));
+  motes.frustumCulled = false;
+  scene.add(motes); scene.userData.motes = motes;
+
+  // hierba/roquitas instanciadas alrededor del jugador
+  const bladeGeo = new THREE.ConeGeometry(3.2, 13, 4);
+  const blades = new THREE.InstancedMesh(bladeGeo, new THREE.MeshLambertMaterial({ color:0x4f9e46 }), 620);
+  blades.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+  blades.castShadow = false; blades.receiveShadow = false;
+  scene.add(blades); scene.userData.blades = blades;
+
   // partículas
   sparkGeo = new THREE.BufferGeometry();
   sparkGeo.setAttribute("position", new THREE.BufferAttribute(new Float32Array(900), 3));
@@ -1703,7 +1752,7 @@ function applyTheme(force){
   currentThemeKey = key;
   skyMesh.material.uniforms.top.value.set(th.sky1);
   skyMesh.material.uniforms.bottom.value.set(th.sky2);
-  scene.fog = new THREE.Fog(new THREE.Color(th.fog), 1500, 4000);
+  scene.fog = new THREE.Fog(new THREE.Color(th.fog), 1900, 4600);
   hemiLight.color.set(th.sky2); hemiLight.groundColor.set(th.g2);
   sunLight.color.set(th.sun);
   groundMesh.material.map = groundTexture(th);
@@ -1934,7 +1983,7 @@ function getFloatSprite(){
   cv.width = 256; cv.height = 128;
   const tex = new THREE.CanvasTexture(cv);
   const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map:tex, transparent:true, depthTest:false }));
-  sp.scale.set(70, 35, 1);
+  sp.scale.set(45, 22, 1);
   sp.visible = false;
   scene.add(sp);
   const rec = { cv, tex, sp, busy:false };
@@ -1959,13 +2008,76 @@ function paintFloat(rec, text, color, crit){
 const ringPool = [];
 function getRing(){
   for (const r of ringPool) if (!r.busy) return r;
+  // (cada anillo lleva un destello aditivo asociado)
   const m = new THREE.Mesh(new THREE.RingGeometry(.7, 1, 32),
     new THREE.MeshBasicMaterial({ color:0xffffff, transparent:true, opacity:.8, side:THREE.DoubleSide, depthWrite:false }));
   m.rotation.x = -Math.PI / 2; m.visible = false;
   scene.add(m);
-  const rec = { mesh:m, busy:false };
+  const flash = new THREE.Sprite(new THREE.SpriteMaterial({
+    map: glowTexture("#ffffff"), transparent:true, depthWrite:false, depthTest:false,
+    blending:THREE.AdditiveBlending, opacity:.6 }));
+  flash.visible = false;
+  scene.add(flash);
+  const rec = { mesh:m, flash, busy:false };
   ringPool.push(rec);
   return rec;
+}
+
+/* -------------------- etiquetas y barras en la escena --------------------- */
+function labelSprite(text, color, size){
+  const cv = document.createElement("canvas");
+  cv.width = 512; cv.height = 128;
+  const x = cv.getContext("2d");
+  x.font = `600 ${size || 56}px Fredoka, sans-serif`;
+  x.textAlign = "center"; x.textBaseline = "middle";
+  x.lineWidth = 12; x.strokeStyle = "rgba(4,8,20,.92)";
+  x.strokeText(text, 256, 64); x.fillStyle = color; x.fillText(text, 256, 64);
+  const tex = new THREE.CanvasTexture(cv);
+  const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map:tex, transparent:true, depthTest:false }));
+  sp.scale.set(150, 37, 1);
+  sp.userData.cv = cv; sp.userData.tex = tex;
+  return sp;
+}
+function repaintLabel(sp, text, color, size){
+  const cv = sp.userData.cv, x = cv.getContext("2d");
+  x.clearRect(0, 0, 512, 128);
+  x.font = `600 ${size || 56}px Fredoka, sans-serif`;
+  x.textAlign = "center"; x.textBaseline = "middle";
+  x.lineWidth = 12; x.strokeStyle = "rgba(4,8,20,.92)";
+  x.strokeText(text, 256, 64); x.fillStyle = color; x.fillText(text, 256, 64);
+  sp.userData.tex.needsUpdate = true;
+}
+const BAR_BG = new THREE.SpriteMaterial({ color:0x0a1020, transparent:true, opacity:.85, depthTest:false });
+function healthBar(){
+  const g = new THREE.Group();
+  const bg = new THREE.Sprite(BAR_BG.clone());
+  bg.scale.set(80, 11, 1);
+  const fill = new THREE.Sprite(new THREE.SpriteMaterial({ color:0xff4d61, depthTest:false }));
+  fill.scale.set(76, 7, 1);
+  g.add(bg, fill);
+  g.fill = fill;
+  g.setPct = (pct, color) => {
+    const w = 76 * clamp(pct, 0, 1);
+    fill.scale.set(Math.max(0.001, w), 7, 1);
+    fill.position.x = -(76 - w) / 2;
+    fill.material.color.set(color);
+  };
+  return g;
+}
+// Contorno cel: cada pieza lleva dentro una copia invertida algo mayor.
+function addOutline(view, color, scale){
+  if (view.userData.outline) return;
+  const om = new THREE.MeshBasicMaterial({ color: color ?? 0x0a1224, side:THREE.BackSide });
+  const targets = [];
+  view.traverse(o => { if (o.isMesh && !o.userData.isOutline) targets.push(o); });
+  for (const o of targets){
+    const m = new THREE.Mesh(o.geometry, om);
+    m.scale.setScalar(scale ?? 1.08);
+    m.userData.isOutline = true;
+    m.castShadow = false; m.receiveShadow = false;
+    o.add(m);
+  }
+  view.userData.outline = true;
 }
 
 /* ------------------------------- frame ----------------------------------- */
@@ -1989,9 +2101,9 @@ function updateCamera(dt){
   updateCameraBasis();
   const tx = player.x, tz = player.y, ty = terrainH(tx, tz) + 55;
   const back = CAM.back;
-  const height = Math.max(100, back * Math.tan(CAM.pitch) * 1.1 + 55);
+  const height = Math.max(95, back * Math.tan(CAM.pitch) * 1.05 + 62);
   camera.position.set(tx - camFwd.x * back + cam.shake * 2, ty + height, tz - camFwd.z * back);
-  camera.lookAt(tx, ty + 26, tz);
+  camera.lookAt(tx, ty + 34, tz);
   sunLight.position.set(tx + 420, 760, tz + 260);
   sunLight.target.position.set(tx, 0, tz);
   sunLight.target.updateMatrixWorld();
@@ -2010,6 +2122,15 @@ function render(dt){
 
   // jugador
   const pv = ensurePlayerView();
+  if (!pv.tag){
+    pv.tag = labelSprite(`${P.title} · Nv ${P.level}`, "#eaf3ff", 46);
+    pv.tag.position.y = 112; pv.tag.scale.set(110, 27, 1); pv.add(pv.tag);
+    pv.tagKey = `${P.title}|${P.level}`;
+  } else if (pv.tagKey !== `${P.title}|${P.level}`){
+    repaintLabel(pv.tag, `${P.title} · Nv ${P.level}`, P.awakened ? "#d9c0ff" : "#eaf3ff", 46);
+    pv.tagKey = `${P.title}|${P.level}`;
+  }
+  pv.tag.rotation.y = -player.yaw;
   poseEntity(pv, player.x, player.y, player.yaw, {
     step:player.step, moving:(player.moveAmt || 0) > .05,
     attack: player.phase === "startup" ? .35 : player.phase === "active" ? 1 : 0,
@@ -2017,14 +2138,36 @@ function render(dt){
   });
   pv.visible = player.dead <= 0 || Math.sin(now() * 20) > 0;
 
-  // enemigos
+  // enemigos + barra de vida y nombre
   syncGroup(enemies, views.enemies, enemyConfig, e => e.guid);
   for (const e of enemies){
-    poseEntity(e.__view, e.x, e.y, e.yaw || 0, {
-      step:e.step, moving:true, attack: e.telegraph ? .6 : 0,
-    });
+    const v = e.__view;
+    poseEntity(v, e.x, e.y, e.yaw || 0, { step:e.step, moving:true, attack: e.telegraph ? .6 : 0 });
+    if (e.boss && !v.userData.outline) addOutline(v, 0x1a0e18, 1.06);
+    if (!v.hud){
+      const hud = new THREE.Group();
+      const bar = healthBar();
+      bar.scale.setScalar(e.boss ? 1.35 : .78);
+      hud.add(bar); hud.bar = bar;
+      const nameSp = labelSprite(`${e.name} · Nv ${e.level}`, e.boss ? "#ffe9a8" : "#eaf3ff", 46);
+      nameSp.scale.set(e.boss ? 150 : 96, e.boss ? 37 : 24, 1);
+      nameSp.position.y = 15;
+      hud.add(nameSp); hud.name = nameSp;
+      hud.position.y = (e.boss ? 132 : 86) * (e.def.r / 18);
+      v.add(hud); v.hud = hud;
+    }
+    v.hud.bar.setPct(e.hp / e.maxHp, e.boss ? 0xffd24a : 0xff4d61);
+    const near = Math.hypot(e.x - player.x, e.y - player.y) < 620;
+    v.hud.visible = e.boss || near;
+    v.hud.name.visible = e.boss || Math.hypot(e.x - player.x, e.y - player.y) < 260;
+    v.hud.rotation.y = -v.rotation.y;                     // el HUD siempre de frente
+    // destello al recibir daño
     const hurt = e.hurt > 0;
-    e.__view.traverse(o => { if (o.isMesh && o.material.emissive){ o.material.emissiveIntensity = hurt ? 1 : (o.material.userData?.ei ?? o.material.emissiveIntensity); } });
+    if (hurt !== v.userData.hurt){
+      v.userData.hurt = hurt;
+      v.traverse(o => { if (o.isMesh && !o.userData.isOutline && o.material.emissive){
+        o.material.emissive.setHex(hurt ? 0x883333 : 0x000000); } });
+    }
   }
   // sombras
   syncGroup(shadows, views.shadows, shadowConfig, sh => sh.uuid);
@@ -2046,6 +2189,16 @@ function render(dt){
     v.ring.scale.setScalar(.9 + pulse * .2);
     v.pillar.material.opacity = .08 + pulse * .12;
     v.rotation.y += 0.01;
+    const nearC = Math.hypot(c.x - player.x, c.y - player.y) < CFG.ARISE_RANGE;
+    if (nearC){
+      if (!v.tag){ v.tag = labelSprite("[B] ARISE · 3", "#6ef0ff", 50); v.tag.position.y = 96; v.tag.scale.set(110, 27, 1); v.add(v.tag); }
+      if (v.tagN !== c.AttemptsRemaining){
+        repaintLabel(v.tag, `[B] ARISE · ${c.AttemptsRemaining}`, "#6ef0ff", 50);
+        v.tagN = c.AttemptsRemaining;
+      }
+      v.tag.visible = true;
+      v.tag.rotation.y = -v.rotation.y;
+    } else if (v.tag) v.tag.visible = false;
   }
   for (const [k, v] of views.corpses){
     if (!aliveC.has(k)){ scene.remove(v); views.corpses.delete(k); }
@@ -2076,6 +2229,10 @@ function render(dt){
     portalView.disc.material.opacity = .45 + Math.sin(now() * 3) * .12;
   } else if (portalView) portalView.visible = false;
 
+  // telegrafías del jefe y marca de objetivo
+  syncTelegraphs();
+  syncTargetRing();
+
   // partículas
   const posAttr = sparkGeo.attributes.position, colAttr = sparkGeo.attributes.color;
   const n = Math.min(parts.length, 300);
@@ -2100,11 +2257,11 @@ function render(dt){
     const rise = (1 - f.life) * 70;
     rec.sp.position.set(f.x, terrainH(f.x, f.y) + (f.h || 80) + rise, f.y);
     rec.sp.material.opacity = clamp(f.life * 1.6, 0, 1);
-    const sc = f.crit ? 95 : (f.big ? 78 : 62);
+    const sc = f.crit ? 62 : (f.big ? 50 : 40);
     rec.sp.scale.set(sc, sc * .5, 1);
   }
   // anillos
-  for (const rec of ringPool){ rec.busy = false; rec.mesh.visible = false; }
+  for (const rec of ringPool){ rec.busy = false; rec.mesh.visible = false; rec.flash.visible = false; }
   for (const r of rings){
     const rec = getRing();
     rec.busy = true; rec.mesh.visible = true;
@@ -2114,12 +2271,96 @@ function render(dt){
     rec.mesh.position.set(r.x, terrainH(r.x, r.y) + 3 + (r.h || 0), r.y);
     rec.mesh.material.color.set(r.color);
     rec.mesh.material.opacity = (1 - k) * .75;
+    rec.flash.visible = true;
+    rec.flash.position.set(r.x, terrainH(r.x, r.y) + 40 + (r.h || 0), r.y);
+    rec.flash.scale.setScalar(rad * 2.4);
+    rec.flash.material.color.set(r.color);
+    rec.flash.material.opacity = (1 - k) * .5;
   }
+  // hierba, motas, agua y sol siguen al jugador
+  const blades = scene.userData.blades;
+  if (blades){
+    const m = new THREE.Matrix4(), q = new THREE.Quaternion(), sc = new THREE.Vector3(1, 1, 1);
+    const baseX = Math.round(player.x / 60) * 60, baseZ = Math.round(player.y / 60) * 60;
+    let i = 0;
+    for (let gz = -10; gz <= 10 && i < 620; gz++){
+      for (let gx = -10; gx <= 10 && i < 620; gx++){
+        const x = baseX + gx * 60, z = baseZ + gz * 60;
+        let h2 = (Math.floor(x) * 73856093) ^ (Math.floor(z) * 19349663); h2 = (h2 ^ (h2 >>> 13)) >>> 0;
+        if (h2 % 2) continue;
+        const ox = ((h2 % 50) - 25), oz = (((h2 >> 7) % 50) - 25);
+        const wx = x + ox, wz = z + oz;
+        sc.set(1, .7 + (h2 % 7) / 10, 1);
+        m.compose(new THREE.Vector3(wx, terrainH(wx, wz) + 6, wz), q, sc);
+        blades.setMatrixAt(i++, m);
+      }
+    }
+    blades.count = i;
+    blades.instanceMatrix.needsUpdate = true;
+    const th2 = themeNow();
+    blades.material.color.set(th2.g2);
+    blades.visible = !dungeon && th2.amp > 4;
+  }
+  if (scene.userData.motes){
+    scene.userData.motes.position.set(player.x, 0, player.y);
+    scene.userData.motes.rotation.y += dt * .04;
+  }
+  if (scene.userData.water){
+    scene.userData.water.position.set(player.x, -46 + Math.sin(now() * .6) * 3, player.y);
+    scene.userData.water.material.color.set(themeNow().fog);
+    scene.userData.water.visible = !dungeon;
+  }
+  if (scene.userData.sun){
+    scene.userData.sun.position.set(player.x + 1500, 1400, player.y - 1900);
+    scene.userData.sun.visible = !dungeon;
+  }
+
   // nubes a la deriva
   scene.traverse(o => { if (o.userData.cloud) o.position.x += dt * 5; });
 
   renderer.render(scene, camera);
 }
+const telePool = [];
+function syncTelegraphs(){
+  for (const t of telePool){ t.busy = false; t.disc.visible = false; t.ring.visible = false; }
+  for (const e of enemies){
+    if (!e.telegraph) continue;
+    let rec = telePool.find(t => !t.busy);
+    if (!rec){
+      const disc = new THREE.Mesh(new THREE.CircleGeometry(1, 36),
+        new THREE.MeshBasicMaterial({ color:0xff4d61, transparent:true, opacity:.32, depthWrite:false }));
+      disc.rotation.x = -Math.PI / 2;
+      const ring = new THREE.Mesh(new THREE.RingGeometry(.93, 1, 36),
+        new THREE.MeshBasicMaterial({ color:0xff8d97, transparent:true, opacity:.9, side:THREE.DoubleSide, depthWrite:false }));
+      ring.rotation.x = -Math.PI / 2;
+      scene.add(disc, ring);
+      rec = { disc, ring, busy:false };
+      telePool.push(rec);
+    }
+    rec.busy = true;
+    const tg = e.telegraph, k = clamp(tg.t / tg.dur, 0, 1);
+    const y = terrainH(tg.x, tg.y) + 3;
+    rec.disc.visible = rec.ring.visible = true;
+    rec.disc.position.set(tg.x, y, tg.y); rec.disc.scale.setScalar(tg.r * k);
+    rec.ring.position.set(tg.x, y + 1, tg.y); rec.ring.scale.setScalar(tg.r);
+  }
+}
+let targetRing = null;
+function syncTargetRing(){
+  const t = enemies.find(e => e.boss) || (target && enemies.includes(target) ? target : null);
+  if (!targetRing){
+    targetRing = new THREE.Mesh(new THREE.RingGeometry(.82, 1, 32),
+      new THREE.MeshBasicMaterial({ color:0xffd24a, transparent:true, opacity:.8, side:THREE.DoubleSide, depthWrite:false }));
+    targetRing.rotation.x = -Math.PI / 2;
+    scene.add(targetRing);
+  }
+  if (!t){ targetRing.visible = false; return; }
+  targetRing.visible = true;
+  targetRing.position.set(t.x, terrainH(t.x, t.y) + 4, t.y);
+  const r = (t.def.r || 18) * 2.6;
+  targetRing.scale.setScalar(r + Math.sin(now() * 4) * 2);
+}
+
 function resize(){
   W = canvas.clientWidth; H = canvas.clientHeight;
   if (!renderer) return;
