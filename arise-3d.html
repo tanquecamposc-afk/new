@@ -233,8 +233,10 @@ canvas#stage{position:absolute;inset:0;width:100%;height:100%;display:block;touc
       <div class="frame infocard">
         <b id="isle">Leveling City</b>
         <span id="portal">Portal en 1:40</span>
+        <span id="nextRegion" style="color:var(--spec)"></span>
         <span id="quest" style="color:var(--gold)"></span>
         <span id="fps" style="color:var(--dim)"></span>
+        <span id="qualityTag" style="color:var(--dim);cursor:pointer;pointer-events:auto" title="Clic para cambiar la calidad">Calidad alta (auto)</span>
       </div>
     </div>
 
@@ -245,6 +247,10 @@ canvas#stage{position:absolute;inset:0;width:100%;height:100%;display:block;touc
     </div>
 
     <div class="lane" id="lane"></div>
+    <div id="hunterHint" hidden style="position:absolute;left:50%;bottom:190px;transform:translateX(-50%);
+      padding:8px 16px;border-radius:12px;font-size:13px;pointer-events:none;
+      background:linear-gradient(180deg,rgba(24,41,92,.96),rgba(9,16,38,.96));border:2px solid var(--line);
+      box-shadow:0 8px 22px rgba(0,0,0,.5)"></div>
 
     <div class="bottom">
       <div class="wallet">
@@ -304,7 +310,11 @@ const CFG = {
   ATTACK_RANGE:150, ARISE_RANGE:140,
   COMBO_RESET:1.1,
   SHADOW_FOLLOW:185, SHADOW_AGGRO:420, SHADOW_RANGE:78, SHADOW_CD:0.8, SHADOW_SPEED:260, SHADOW_LEASH:700,
-  ENEMY_POP:16, WORLD:{ w:3400, h:2800 },
+  ENEMY_POP:16,
+  // Mundo abierto continuo: el centro es la zona inicial y cada anillo de
+  // RING_WIDTH unidades es una región nueva, más dura cuanto más te alejas.
+  WORLD:{ w:34000, h:34000, cx:17000, cy:17000 },
+  RING_WIDTH:1400, RING_SAFE:120,
   CONTACT_SCALE:0.02, GRAVITY:1500, JUMP_V:520,
   DASH_DIST:330, DASH_TIME:0.18,
   CRIT_CHANCE:0.15, CRIT_MULT:2,
@@ -401,6 +411,19 @@ const ISLANDS = [
   { id:"HurricaneTown",name:"Hurricane Town", level:1600, theme:"storm",   enemy:{ name:"Wind Nomad",      lvl:1612, hp:9.7e20,  dmg:1.4e18 },brute:{ name:"Storm Herald", lvl:1660,hp:4.2e21,dmg:3.1e18},boss:{ name:"Hurricane Overlord",lvl:1700, hp:6.1e22,  dmg:9e18,  shadow:"Monarch" },    shadow:"Hurricane",  weapons:["SilverThorn"] },
 ];
 const isleOf = id => ISLANDS.find(i => i.id === id) || ISLANDS[0];
+// Región del mundo abierto según la distancia al centro.
+function ringAt(x, y){
+  const d = Math.hypot(x - CFG.WORLD.cx, y - CFG.WORLD.cy);
+  return clamp(Math.floor(d / CFG.RING_WIDTH), 0, ISLANDS.length - 1);
+}
+const regionAt = (x, y) => ISLANDS[ringAt(x, y)];
+const ringRadius = i => i * CFG.RING_WIDTH + CFG.RING_WIDTH * 0.55;
+function distanceToNextRegion(){
+  const d = Math.hypot(player.x - CFG.WORLD.cx, player.y - CFG.WORLD.cy);
+  const idx = ringAt(player.x, player.y);
+  if (idx >= ISLANDS.length - 1) return null;
+  return { next: ISLANDS[idx + 1], dist: Math.max(0, (idx + 1) * CFG.RING_WIDTH - d) };
+}
 
 /* ------------------------------ reliquias -------------------------------- */
 const RELICS = {
@@ -522,7 +545,8 @@ const weaponDmg   = () => {
 const rankMult    = () => rankOf(P.rank).dmg + (P.awakened ? 0.25 : 0) + P.rebirths * 0.5;
 const classBonus  = k => (CLASSES[P.class] || CLASSES.Warrior).bonus[k] || 0;
 const talentLv    = id => P.talents?.[id] || 0;
-const baseDamage  = () => FORMULA.physicalDamage(weaponDmg(), P.stats.STR)
+const blessed     = () => (P.blessing || 0) > now();
+const baseDamage  = () => FORMULA.physicalDamage(weaponDmg(), P.stats.STR) * (blessed() ? 1.4 : 1)
   * (1 + rankMult() + classBonus("dmg") + talentLv("power") * 0.08)
   * (1 + P.level * 0.012);
 const relicBonus  = effect => Object.keys(P.relics).reduce((a, id) => a + (RELICS[id]?.effect === effect ? RELICS[id].value : 0), 0);
@@ -539,7 +563,7 @@ const shadowHPOf  = s => FORMULA.shadowHP(SHADOWS[s.id].hp * (1 + (s.level - 1) 
    MUNDO, COMBATE Y SISTEMAS
    =========================================================================== */
 const player = {
-  x:CFG.WORLD.w/2, y:CFG.WORLD.h/2, h:0, vh:0, jumps:0, yaw:Math.PI, moveAmt:0,
+  x:CFG.WORLD.cx, y:CFG.WORLD.cy - 40, h:0, vh:0, jumps:0, yaw:Math.PI, moveAmt:0,
   hp:maxHP(), mana:maxMana(), face:1, step:0,
   combo:0, comboAt:0, phase:"idle", phaseT:0, atkDef:null, hitDone:false,
   dashT:0, dashX:0, dashY:0, dashCd:0, skillCd:0, dead:0, hurt:0, mounted:false,
@@ -552,7 +576,7 @@ let target = null;
 
 /* ------------------------------- enemigos --------------------------------- */
 function enemyDef(kind){
-  const isle = isleOf(P.island);
+  const isle = dungeon ? dungeon.isle : regionAt(player.x, player.y);
   if (dungeon) return dungeon.enemyDef(kind);
   const base = kind === "brute" ? isle.brute : isle.enemy;
   return { ...base, isle:isle.id, shadow: kind === "brute" ? isle.shadow : isle.shadow, kind, r: kind === "brute" ? 24 : 18 };
@@ -943,7 +967,7 @@ function enterDungeon(modeId){
   dungeon = null;
   dungeon = makeDungeon(mode);
   enemies = []; corpses = []; shadows.forEach(s => { s.target = null; });
-  player.x = CFG.WORLD.w/2; player.y = CFG.WORLD.h/2; player.hp = maxHP();
+  player.x = CFG.WORLD.cx; player.y = CFG.WORLD.cy; player.hp = maxHP();
   banner(dungeon.mode.name.toUpperCase(), dungeon.mode.color);
   const runeNames = Object.keys(dungeon.runes).map(k => RUNES[k].name).join(" · ");
   if (runeNames) note(`Runas activas: ${runeNames}`, "--gem");
@@ -952,7 +976,7 @@ function enterDungeon(modeId){
 }
 function exitDungeon(){
   dungeon = null; enemies = []; corpses = [];
-  player.x = CFG.WORLD.w/2; player.y = CFG.WORLD.h/2;
+  player.x = CFG.WORLD.cx; player.y = CFG.WORLD.cy;
   portalT = FLAGS.PORTAL_INTERVAL_SECONDS;
   note("De vuelta al mundo abierto", "--spec");
   dirty = true;
@@ -976,7 +1000,56 @@ const QUEST_TEMPLATES = [
   { id:"arise", text:n => `Extrae ${n} sombras`,       goal:() => 3 + Math.floor(P.level/20), type:"arisen" },
   { id:"gate",  text:n => `Completa ${n} mazmorra(s)`, goal:() => 1, type:"dungeons" },
 ];
-const npc = { x:CFG.WORLD.w/2 + 240, y:CFG.WORLD.h/2 - 200, step:0 };
+const npc = { x:CFG.WORLD.cx + 230, y:CFG.WORLD.cy - 210, step:0 };
+/*  Elenco propio de cazadores: cada uno vive en un anillo del mapa abierto y
+    ofrece un servicio distinto. (Diseños y nombres originales.)  */
+const HUNTERS = [
+  { id:"forge", name:"Herrera Min Serin", rank:"A", ring:1, angle:0.8, role:"forja",
+    line:"Tu arma puede dar más. Págame y la templo.",
+    look:{ shirt:"#8a3b2a", sleeve:"#6f2f20", pants:"#33302c", hair:"#2b1d12", pauldron:"#b06a3a", armor:"#e0a83a", weaponKind:"axe", weapon:"#c9c2b8" } },
+  { id:"heal", name:"Sanadora Hana Sori", rank:"S", ring:2, angle:2.2, role:"sanar",
+    line:"Descansa un momento, cazador. Yo te cierro las heridas.",
+    line2:"Bendición: +40% de daño durante 30 s.",
+    look:{ shirt:"#d8e4f5", sleeve:"#b9cbe8", pants:"#2f4a7a", hair:"#e0c060", pauldron:"#8fb8e8", armor:"#8fd0ff", weaponKind:"staff", weapon:"#8fd0ff" } },
+  { id:"train", name:"Comandante Ryu Kanan", rank:"S", ring:3, angle:4.1, role:"entrenar",
+    line:"El rango no se regala. Entrena conmigo y te daré puntos.",
+    look:{ shirt:"#1f3f7d", sleeve:"#16305e", pants:"#14203a", hair:"#141a26", pauldron:"#3f7ae8", armor:"#c9d6ee", weaponKind:"sword", weapon:"#e8eefc" } },
+  { id:"archive", name:"Archivista Jo Taemin", rank:"B", ring:5, angle:5.6, role:"archivo",
+    line:"Todo lo que extraes queda escrito. Consulta el índice.",
+    look:{ shirt:"#3a2f5e", sleeve:"#2d2549", pants:"#232038", hair:"#5a4a7a", pauldron:"#6b5aa0", armor:"#b98bff", weaponKind:"staff", weapon:"#b98bff" } },
+];
+for (const h of HUNTERS){
+  const r = ringRadius(h.ring);
+  h.x = CFG.WORLD.cx + Math.cos(h.angle) * r;
+  h.y = CFG.WORLD.cy + Math.sin(h.angle) * r;
+  h.step = 0; h.yaw = 0; h.cooldown = 0;
+}
+let hunterNear = null;
+function hunterService(h){
+  if (h.cooldown > 0) return note(`${h.name} necesita un momento (${Math.ceil(h.cooldown)}s)`, "--dim");
+  if (h.role === "forja"){
+    const cost = Math.floor(1e4 * Math.pow(3, weaponLv(P.weapon) - 1));
+    if (P.cash < cost) return note(`Faltan ${fmt(cost - P.cash)} de oro para templar`, "--hp");
+    P.cash -= cost; P.weaponLv[P.weapon] = weaponLv(P.weapon) + 1;
+    note(`${WEAPONS[P.weapon].name} templada · rango ${P.weaponLv[P.weapon]}`, "--gold");
+    banner("ARMA TEMPLADA", "#ffd24a");
+  } else if (h.role === "sanar"){
+    player.hp = maxHP(); player.mana = maxMana();
+    P.blessing = now() + 30;
+    note("Curado por completo · bendición +40% de daño (30 s)", "--xp");
+    banner("BENDICIÓN", "#5ce8a6");
+    h.cooldown = 60;
+  } else if (h.role === "entrenar"){
+    const cost = 200 + P.level * 20;
+    if (P.gems < cost) return note(`Faltan ${fmt(cost - P.gems)} gemas para entrenar`, "--hp");
+    P.gems -= cost; P.stats.points += 5;
+    note("+5 puntos de atributo", "--gem");
+    h.cooldown = 20;
+  } else {
+    openPanel("items"); panelTab = "Index"; renderPanel();
+  }
+  save(); dirty = true;
+}
 function questProgress(){
   const q = P.quests.active; if (!q) return 0;
   const cur = q.type === "kills" ? P.kills : q.type === "arisen" ? P.arisen : P.dungeonsCleared;
@@ -1066,6 +1139,7 @@ addEventListener("keydown", e => {
   if (k === "q") requestDash();
   if (k === "r") setAuto(!auto);
   if (k === "m") toggleMount();
+  if (k === "g" && hunterNear) hunterService(hunterNear);
   if (k === "f" && portal) enterDungeon();
   if (k === "1") openPanel("stats");
   if (k === "2") openPanel("shadows");
@@ -1160,8 +1234,8 @@ function update(dt){
   } else if (player.dashT > 0){
     player.dashT -= dt;
     const d = CFG.DASH_DIST / CFG.DASH_TIME;
-    player.x = clamp(player.x + player.dashX * d * dt, 50, CFG.WORLD.w-50);
-    player.y = clamp(player.y + player.dashY * d * dt, 50, CFG.WORLD.h-50);
+    player.x += player.dashX * d * dt;
+    player.y += player.dashY * d * dt;
     if (Math.random() < 0.6) parts.push({ x:player.x, y:player.y, h:30, vx:0, vy:0, vh:6,
                                           life:.3, color:"#8fc8ff", size:5, ghost:true });
   } else {
@@ -1176,8 +1250,8 @@ function update(dt){
         if (d > CFG.ATTACK_RANGE * 0.7){ mx = (t2.x-player.x)/d; my = (t2.y-player.y)/d; }
       }
     }
-    player.x = clamp(player.x + mx * speed * mv * dt, 50, CFG.WORLD.w-50);
-    player.y = clamp(player.y + my * speed * mv * dt, 50, CFG.WORLD.h-50);
+    player.x += mx * speed * mv * dt;
+    player.y += my * speed * mv * dt;
     if (mx || my){
       // el personaje gira hacia donde avanza (camino más corto)
       const want = Math.atan2(mx, my);
@@ -1213,6 +1287,29 @@ function update(dt){
   // AUTO: autoclick + auto-arise (el género espera que el farmeo sea continuo)
   if (auto && player.phase === "idle" && !modalOpen() && player.dead <= 0) requestAttack();
   else if (pointer && now() - pointer.down > 0.25 && player.phase === "idle") requestAttack();
+
+  // ---- región actual del mundo abierto
+  if (!dungeon){
+    const reg = regionAt(player.x, player.y);
+    if (reg.id !== P.island){
+      P.island = reg.id;
+      if (!P.islands.includes(reg.id)) P.islands.push(reg.id);
+      banner(reg.name.toUpperCase(), P.level >= reg.level ? "#8fd0ff" : "#ff8d97");
+      note(P.level >= reg.level ? `Has entrado en ${reg.name}`
+        : `${reg.name} · zona de nivel ${reg.level}: aquí golpean muy fuerte`,
+        P.level >= reg.level ? "--spec" : "--hp");
+      enemies = []; corpses = []; spawnT = 0;
+      dirty = true;
+    }
+    // borde del mundo: se vuelve suavemente hacia dentro
+    const dc = Math.hypot(player.x - CFG.WORLD.cx, player.y - CFG.WORLD.cy);
+    const maxR = ISLANDS.length * CFG.RING_WIDTH + 600;
+    if (dc > maxR){
+      const k = maxR / dc;
+      player.x = CFG.WORLD.cx + (player.x - CFG.WORLD.cx) * k;
+      player.y = CFG.WORLD.cy + (player.y - CFG.WORLD.cy) * k;
+    }
+  }
 
   // ---- enemigos
   spawnT -= dt;
@@ -1333,6 +1430,21 @@ function update(dt){
   if (!dungeon && !P.quests.active && Math.hypot(npc.x-player.x, npc.y-player.y) < 150) takeQuest();
   npc.step += dt;
   npc.yaw = Math.atan2(player.x - npc.x, player.y - npc.y);
+  hunterNear = null;
+  for (const h of HUNTERS){
+    h.cooldown = Math.max(0, h.cooldown - dt);
+    h.step += dt;
+    const d = Math.hypot(h.x - player.x, h.y - player.y);
+    if (d < 170){
+      h.yaw = Math.atan2(player.x - h.x, player.y - h.y);
+      if (!hunterNear || d < Math.hypot(hunterNear.x - player.x, hunterNear.y - player.y)) hunterNear = h;
+    }
+  }
+  const hint = document.getElementById("hunterHint");
+  if (hint){
+    hint.hidden = !hunterNear;
+    if (hunterNear) hint.innerHTML = `<b>${hunterNear.name}</b> · ${hunterNear.line} <kbd>G</kbd>`;
+  }
 
   saveT -= dt;
   if (saveT <= 0){ save(); saveT = 6; }
@@ -1376,6 +1488,45 @@ function separate(dt){
    caderas, torso, hombros y cuello) animados por rotación.
    =========================================================================== */
 const THREE_OK = typeof THREE !== "undefined";
+
+/*  Calidad adaptativa: el render mide su propio ritmo y baja o sube el nivel de
+    detalle para mantener la fluidez. 3 = alta, 2 = media, 1 = baja.  */
+const QUALITY = {
+  level: 3, auto: true,
+  shadows: true, grass: true, props: 1, motes: true, charDetail: 900, maxChars: 26, pixel: 1.5,
+};
+function applyQuality(){
+  const q = QUALITY.level;
+  QUALITY.shadows = q >= 3;
+  QUALITY.grass = q >= 2;
+  QUALITY.props = q >= 3 ? 1 : q === 2 ? 0.6 : 0.35;
+  QUALITY.motes = q >= 3;
+  QUALITY.charDetail = q >= 3 ? 900 : q === 2 ? 560 : 340;
+  QUALITY.maxChars = q >= 3 ? 26 : q === 2 ? 18 : 12;
+  QUALITY.pixel = q >= 3 ? 1.5 : q === 2 ? 1.2 : 1;
+  if (renderer){
+    renderer.shadowMap.enabled = QUALITY.shadows;
+    renderer.setPixelRatio(Math.min(devicePixelRatio || 1, QUALITY.pixel));
+    resize();
+  }
+  if (sunLight) sunLight.castShadow = QUALITY.shadows;
+  if (scene?.userData.motes) scene.userData.motes.visible = QUALITY.motes;
+  if (scene?.userData.blades) scene.userData.blades.visible = QUALITY.grass;
+  clearProps();
+  const el = document.getElementById("qualityTag");
+  if (el) el.textContent = `Calidad ${["", "baja", "media", "alta"][QUALITY.level]}${QUALITY.auto ? " (auto)" : ""}`;
+}
+let fpsWindow = [], qualityCooldown = 0;
+function trackPerformance(dt){
+  fpsWindow.push(dt);
+  if (fpsWindow.length > 70) fpsWindow.shift();
+  qualityCooldown -= dt;
+  if (!QUALITY.auto || fpsWindow.length < 60 || qualityCooldown > 0) return;
+  const avg = fpsWindow.reduce((a, b) => a + b, 0) / fpsWindow.length;
+  const fps = 1 / Math.max(avg, 0.0001);
+  if (fps < 42 && QUALITY.level > 1){ QUALITY.level--; applyQuality(); qualityCooldown = 6; fpsWindow = []; }
+  else if (fps > 58 && QUALITY.level < 3){ QUALITY.level++; applyQuality(); qualityCooldown = 12; fpsWindow = []; }
+}
 // Tipo de arma según el equipo, para modelarla con varias piezas.
 function weaponKind(id){
   const n = (WEAPONS[id]?.name || "").toLowerCase();
@@ -1434,7 +1585,7 @@ function mat(color, opts){
 }
 function part(w, h, d, color, opts){
   const m = new THREE.Mesh(boxGeo(w, h, d), mat(color, opts));
-  m.castShadow = true; m.receiveShadow = true;
+  m.castShadow = true; m.receiveShadow = false;
   return m;
 }
 // Textura de cara dibujada en canvas (ojos con brillo y sonrisa).
@@ -1473,6 +1624,16 @@ function faceTexture(eye, glow){
 function buildCharacter(cfg){
   const g = new THREE.Group();
   const s = cfg.scale ?? 1;
+  // silueta simple para la distancia (3 mallas en vez de ~20)
+  const simple = new THREE.Group();
+  const sp1 = part(26*s, 26*s, 15*s, cfg.pants); sp1.position.y = 13*s;
+  const sp2 = part(28*s, 28*s, 16*s, cfg.shirt); sp2.position.y = 41*s;
+  const sp3 = part(19*s, 18*s, 17.5*s, cfg.skin); sp3.position.y = 66*s;
+  simple.add(sp1, sp2, sp3);
+  simple.visible = false;
+  g.add(simple); g.simple = simple;
+  const detail = new THREE.Group();
+  g.add(detail); g.detail = detail;
   const skin = cfg.skin, shirt = cfg.shirt, pants = cfg.pants;
   const opts = cfg.opts || {};
   const P0 = (w, h, d, c, o) => part(w*s, h*s, d*s, c, o || opts);
@@ -1487,25 +1648,25 @@ function buildCharacter(cfg){
     const boot = P0(13.5, 8, 16, cfg.boots || pants);
     boot.position.set(0, -25 * s, 1.5 * s);
     hip.add(thigh, boot);
-    g.add(hip); g.legs.push(hip);
+    detail.add(hip); g.legs.push(hip);
   }
   // torso
   const torso = P0(28, 28, 15.5, shirt);
   torso.position.y = 41 * s;
-  g.add(torso); g.torso = torso;
+  detail.add(torso); g.torso = torso;
   const belt = P0(29.5, 5.5, 16.5, cfg.belt || pants);
-  belt.position.y = 29.5 * s; g.add(belt);
+  belt.position.y = 29.5 * s; detail.add(belt);
   if (cfg.armor){
     const plate = P0(22, 19, 2.5, cfg.armor, { ...opts, emissive: cfg.armorGlow || 0 });
-    plate.position.set(0, 43 * s, 8.4 * s); g.add(plate);
+    plate.position.set(0, 43 * s, 8.4 * s); detail.add(plate);
   }
   if (cfg.buckle){
     const b = P0(7, 4.5, 2, cfg.buckle);
-    b.position.set(0, 30 * s, 8.8 * s); g.add(b);
+    b.position.set(0, 30 * s, 8.8 * s); detail.add(b);
   }
   if (cfg.cape){
     const cape = P0(26, 32, 2.6, cfg.cape);
-    cape.position.set(0, 40 * s, -9 * s); g.add(cape); g.cape = cape;
+    cape.position.set(0, 40 * s, -9 * s); detail.add(cape); g.cape = cape;
   }
   // brazos
   g.arms = [];
@@ -1519,14 +1680,14 @@ function buildCharacter(cfg){
     const hand = P0(10, 6, 11.5, cfg.glove || skin);
     hand.position.y = -27 * s;
     sh.add(sleeve, arm, hand);
-    g.add(sh); g.arms.push(sh);
+    detail.add(sh); g.arms.push(sh);
   }
   if (cfg.pauldron){
     for (const side of [-1, 1]){
       const p2 = P0(12.5, 6, 13.5, cfg.pauldron);
       p2.position.set(side * 16.5 * s, 53 * s, 0);
       p2.rotation.z = side * -0.18;
-      g.add(p2);
+      detail.add(p2);
     }
   }
   // cabeza
@@ -1564,7 +1725,7 @@ function buildCharacter(cfg){
       spike.position.set(dx * s, 29 * s, 0); neck.add(spike);
     }
   }
-  g.add(neck); g.neck = neck;
+  detail.add(neck); g.neck = neck;
   // arma en la mano derecha
   if (cfg.weapon){
     const wg = new THREE.Group();
@@ -1596,6 +1757,12 @@ function buildCharacter(cfg){
     g.weapon = wg;
   }
   g.scaleRef = s;
+  g.setLod = far => {
+    if (g.__far === far) return;
+    g.__far = far;
+    simple.visible = far;
+    detail.visible = !far;
+  };
   return g;
 }
 // Anima un personaje: paso, brazos, golpe, rebote y giro.
@@ -1630,7 +1797,7 @@ const THEMES = {
   storm:   { g1:"#5a6b7a", g2:"#4e5e6c", sky1:"#2a3348", sky2:"#8fa4bc", fog:"#61758c", amp:32, sun:"#dfe8f5", prop:"storm" },
   dungeon: { g1:"#3c2c52", g2:"#342749", sky1:"#0e0820", sky2:"#5a1f42", fog:"#2a1533", amp:8,  sun:"#ff9ab0", prop:"dungeon" },
 };
-const themeNow = () => dungeon ? THEMES.dungeon : (THEMES[isleOf(P.island).theme] || THEMES.city);
+const themeNow = () => dungeon ? THEMES.dungeon : (THEMES[regionAt(player.x, player.y).theme] || THEMES.city);
 function terrainH(x, z){
   const a = themeNow().amp;
   if (a <= 0.5) return 0;
@@ -1658,9 +1825,9 @@ function groundTexture(th){
 let currentThemeKey = null, groundTex = null;
 function initScene(){
   scene = new THREE.Scene();
-  camera = new THREE.PerspectiveCamera(52, 1, 1, 6000);
+  camera = new THREE.PerspectiveCamera(52, 1, 1, 9000);
   renderer = new THREE.WebGLRenderer({ canvas, antialias:true, powerPreference:"high-performance" });
-  renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
+  renderer.setPixelRatio(Math.min(devicePixelRatio || 1, QUALITY.pixel));
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
@@ -1682,7 +1849,7 @@ function initScene(){
     vertexShader:"varying vec3 vP; void main(){ vP = position; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }",
     fragmentShader:"uniform vec3 top; uniform vec3 bottom; varying vec3 vP; void main(){ float h = clamp((normalize(vP).y + .18) / 1.1, 0., 1.); gl_FragColor = vec4(mix(bottom, top, h), 1.); }",
   });
-  skyMesh = new THREE.Mesh(new THREE.SphereGeometry(3200, 24, 16), skyMat);
+  skyMesh = new THREE.Mesh(new THREE.SphereGeometry(5200, 24, 16), skyMat);
   scene.add(skyMesh);
 
   // suelo deformable
@@ -1747,7 +1914,7 @@ function initScene(){
 }
 function applyTheme(force){
   const th = themeNow();
-  const key = dungeon ? "dungeon" : isleOf(P.island).theme;
+  const key = dungeon ? "dungeon" : regionAt(player.x, player.y).theme;
   if (!force && key === currentThemeKey) return;
   currentThemeKey = key;
   skyMesh.material.uniforms.top.value.set(th.sky1);
@@ -1850,18 +2017,21 @@ const PROP_TILE = 190;
 function syncProps(){
   const th = themeNow();
   const seen = new Set();
-  const gx0 = Math.floor((player.x - 1500) / PROP_TILE), gx1 = Math.floor((player.x + 1500) / PROP_TILE);
-  const gz0 = Math.floor((player.y - 1500) / PROP_TILE), gz1 = Math.floor((player.y + 1500) / PROP_TILE);
+  const range = QUALITY.level >= 3 ? 1500 : QUALITY.level === 2 ? 1150 : 850;
+  const gx0 = Math.floor((player.x - range) / PROP_TILE), gx1 = Math.floor((player.x + range) / PROP_TILE);
+  const gz0 = Math.floor((player.y - range) / PROP_TILE), gz1 = Math.floor((player.y + range) / PROP_TILE);
   for (let gz = gz0; gz <= gz1; gz++){
     for (let gx = gx0; gx <= gx1; gx++){
       let h = (gx * 73856093) ^ (gz * 19349663); h = (h ^ (h >>> 13)) >>> 0;
       if (h % 5) continue;
+      if (QUALITY.props < 1 && (h % 100) / 100 > QUALITY.props) continue;
       const key = gx + "," + gz;
       seen.add(key);
       if (propPool.some(p2 => p2.key === key)) continue;
       const x = gx * PROP_TILE + (h % 90) - 45, z = gz * PROP_TILE + ((h >> 8) % 90) - 45;
       if (Math.hypot(x - player.x, z - player.y) < 420) continue;
       const obj = buildProp(th.prop, h);
+      if (!QUALITY.shadows) obj.traverse(o => { if (o.isMesh) o.castShadow = false; });
       obj.position.set(x, terrainH(x, z), z);
       obj.rotation.y = ((h >> 5) % 360) * Math.PI / 180;
       scene.add(obj);
@@ -2115,6 +2285,7 @@ function poseEntity(v, x, z, yaw, o){
 }
 function render(dt){
   if (!THREE_OK || !renderer) return;
+  trackPerformance(dt);
   applyTheme(false);
   syncGround();
   syncProps();
@@ -2140,8 +2311,20 @@ function render(dt){
 
   // enemigos + barra de vida y nombre
   syncGroup(enemies, views.enemies, enemyConfig, e => e.guid);
+  const lodSorted = enemies.map(e => ({ e, d: Math.hypot(e.x - player.x, e.y - player.y) }))
+                           .sort((a, b) => a.d - b.d);
+  lodSorted.forEach((row, idx) => {
+    const far = !row.e.boss && (row.d > QUALITY.charDetail || idx >= QUALITY.maxChars);
+    row.e.__lodFar = far;
+  });
   for (const e of enemies){
     const v = e.__view;
+    if (v.setLod) v.setLod(!!e.__lodFar);
+    const closeEnough = !e.__lodFar && QUALITY.shadows;
+    if (v.userData.cast !== closeEnough){
+      v.userData.cast = closeEnough;
+      v.traverse(o => { if (o.isMesh) o.castShadow = closeEnough; });
+    }
     poseEntity(v, e.x, e.y, e.yaw || 0, { step:e.step, moving:true, attack: e.telegraph ? .6 : 0 });
     if (e.boss && !v.userData.outline) addOutline(v, 0x1a0e18, 1.06);
     if (!v.hud){
@@ -2150,16 +2333,16 @@ function render(dt){
       bar.scale.setScalar(e.boss ? 1.35 : .78);
       hud.add(bar); hud.bar = bar;
       const nameSp = labelSprite(`${e.name} · Nv ${e.level}`, e.boss ? "#ffe9a8" : "#eaf3ff", 46);
-      nameSp.scale.set(e.boss ? 150 : 96, e.boss ? 37 : 24, 1);
+      nameSp.scale.set(e.boss ? 150 : 104, e.boss ? 37 : 26, 1);
       nameSp.position.y = 15;
       hud.add(nameSp); hud.name = nameSp;
       hud.position.y = (e.boss ? 132 : 86) * (e.def.r / 18);
       v.add(hud); v.hud = hud;
     }
     v.hud.bar.setPct(e.hp / e.maxHp, e.boss ? 0xffd24a : 0xff4d61);
-    const near = Math.hypot(e.x - player.x, e.y - player.y) < 620;
-    v.hud.visible = e.boss || near;
-    v.hud.name.visible = e.boss || Math.hypot(e.x - player.x, e.y - player.y) < 260;
+    const dp = Math.hypot(e.x - player.x, e.y - player.y);
+    v.hud.visible = e.boss || dp < 520;
+    v.hud.name.visible = e.boss || e === target;      // el resto solo muestra barra
     v.hud.rotation.y = -v.rotation.y;                     // el HUD siempre de frente
     // destello al recibir daño
     const hurt = e.hurt > 0;
@@ -2172,6 +2355,8 @@ function render(dt){
   // sombras
   syncGroup(shadows, views.shadows, shadowConfig, sh => sh.uuid);
   for (const sh of shadows){
+    const dS = Math.hypot(sh.x - player.x, sh.y - player.y);
+    if (sh.__view.setLod) sh.__view.setLod(dS > QUALITY.charDetail);
     const bob = Math.sin(sh.step * .8) * 2.2;
     poseEntity(sh.__view, sh.x, sh.y, sh.yaw || 0, {
       step:sh.step, moving: sh.state !== "IDLE_FOLLOW", attack: sh.swing > 0 ? 1 : 0, lift: 4 + bob,
@@ -2214,6 +2399,28 @@ function render(dt){
     npcView.visible = true;
     poseEntity(npcView, npc.x, npc.y, npc.yaw ?? 0, { step:npc.step * .8, moving:false, attack:0 });
   } else if (npcView) npcView.visible = false;
+
+  // cazadores del elenco
+  for (const h of HUNTERS){
+    const d = Math.hypot(h.x - player.x, h.y - player.y);
+    if (d > 1500){ if (h.__view) h.__view.visible = false; continue; }
+    if (!h.__view){
+      h.__view = buildCharacter({ scale:1.06, skin:"#f5cd30", boots:"#23283a", belt:"#2a2218",
+        buckle:"#c9a33a", eyes:"#12172b", glove:"#e0a83a", cape:h.look.cape || null, ...h.look });
+      scene.add(h.__view);
+      h.__tag = labelSprite(`${h.name} · ${h.rank}`, "#ffe9a8", 44);
+      h.__tag.scale.set(150, 37, 1); h.__tag.position.y = 118;
+      h.__view.add(h.__tag);
+      const beam = new THREE.Mesh(new THREE.CylinderGeometry(26, 34, 260, 12, 1, true),
+        new THREE.MeshBasicMaterial({ color:0xffd24a, transparent:true, opacity:.10, side:THREE.DoubleSide, depthWrite:false }));
+      beam.position.y = 130; h.__view.add(beam); h.__beam = beam;
+    }
+    h.__view.visible = true;
+    if (h.__view.setLod) h.__view.setLod(d > QUALITY.charDetail);
+    h.__tag.rotation.y = -h.yaw;
+    h.__beam.material.opacity = .06 + Math.sin(now() * 2 + h.ring) * .04;
+    poseEntity(h.__view, h.x, h.y, h.yaw ?? 0, { step:h.step * .7, moving:false, attack:0 });
+  }
 
   // portal
   if (portal){
@@ -2299,9 +2506,9 @@ function render(dt){
     blades.instanceMatrix.needsUpdate = true;
     const th2 = themeNow();
     blades.material.color.set(th2.g2);
-    blades.visible = !dungeon && th2.amp > 4;
+    blades.visible = QUALITY.grass && !dungeon && th2.amp > 4;
   }
-  if (scene.userData.motes){
+  if (scene.userData.motes && QUALITY.motes){
     scene.userData.motes.position.set(player.x, 0, player.y);
     scene.userData.motes.rotation.y += dt * .04;
   }
@@ -2315,8 +2522,17 @@ function render(dt){
     scene.userData.sun.visible = !dungeon;
   }
 
-  // nubes a la deriva
-  scene.traverse(o => { if (o.userData.cloud) o.position.x += dt * 5; });
+  // el cielo acompaña a la cámara y las nubes derivan a su alrededor
+  skyMesh.position.set(camera.position.x, 0, camera.position.z);
+  for (const o of scene.children){
+    if (!o.userData.cloud) continue;
+    if (o.userData.ox === undefined){
+      o.userData.ox = o.position.x; o.userData.oz = o.position.z;
+    }
+    o.userData.ox += dt * 5;
+    if (o.userData.ox > 2400) o.userData.ox = -2400;
+    o.position.set(player.x + o.userData.ox, o.position.y, player.y + o.userData.oz);
+  }
 
   renderer.render(scene, camera);
 }
@@ -2384,7 +2600,9 @@ function syncHud(){
   $("cash").textContent = fmt(P.cash);
   $("gems").textContent = fmt(P.gems);
   $("tickets").textContent = fmt(P.tickets);
-  $("isle").textContent = dungeon ? `${dungeon.mode.name} · ${dungeon.isle.name}` : isleOf(P.island).name;
+  $("isle").textContent = dungeon ? `${dungeon.mode.name} · ${dungeon.isle.name}` : regionAt(player.x, player.y).name;
+  const nx = dungeon ? null : distanceToNextRegion();
+  $("nextRegion").textContent = nx ? `${nx.next.name} a ${Math.round(nx.dist)} m` : "";
   $("portal").textContent = dungeon
     ? `Sala ${dungeon.room}/${dungeon.rooms} · ${Math.max(0,Math.floor(dungeon.timer))}s`
     : portal ? `Portal ${portal.mode.name} · ${Math.ceil(60-portal.t)}s`
@@ -2584,20 +2802,36 @@ function panelItems(){
     <p class="hint">Las reliquias caen en mazmorras de su isla. Las runas modifican la siguiente mazmorra (activación del líder).</p>`);
 }
 function panelMap(){
-  const isles = ISLANDS.map(i => {
-    const un = P.islands.includes(i.id) || P.level >= i.level, here = P.island === i.id;
-    return `<div class="item ${un?"":"locked"}"><span class="g">🏝</span>
-      <span class="meta"><b>${i.name}</b><span>${un ? `${i.enemy.name} Nv ${i.enemy.lvl} · jefe ${i.boss.name} · sombra ${SHADOWS[i.shadow].name}` : `Requiere nivel ${i.level}`}</span></span>
-      <button class="btn" data-isle="${i.id}" ${!un || here ? "disabled" : ""}>${here ? "Aquí" : "Viajar"}</button></div>`;
+  const cur = ringAt(player.x, player.y);
+  const isles = ISLANDS.map((i, idx) => {
+    const un = P.level >= i.level || P.islands.includes(i.id);
+    const here = idx === cur;
+    const r = Math.round(ringRadius(idx));
+    return `<div class="item ${un ? "" : "locked"}"><span class="g">${here ? "📍" : "🧭"}</span>
+      <span class="meta"><b>${i.name} <span style="opacity:.6">· anillo ${idx}</span></b>
+      <span>${un ? `${i.enemy.name} Nv ${i.enemy.lvl} · jefe ${i.boss.name} · a ${fmt(r)} m del centro`
+                 : `Requiere nivel ${i.level} para viajar (puedes llegar caminando)`}</span></span>
+      <button class="btn" data-ring="${idx}" ${!un || here ? "disabled" : ""}>${here ? "Aquí" : "Viajar"}</button></div>`;
   }).join("");
+  const hunters = HUNTERS.map(h => `<div class="item"><span class="g">🛡</span>
+    <span class="meta"><b>${h.name} <span style="opacity:.6">Rango ${h.rank}</span></b>
+    <span>${h.role === "forja" ? "Templa tu arma a cambio de oro"
+      : h.role === "sanar" ? "Cura completa y bendición de daño"
+      : h.role === "entrenar" ? "Entrena por gemas y da puntos de atributo"
+      : "Consulta el índice de sombras"} · anillo ${h.ring}</span></span>
+    <button class="btn green" data-hunter="${h.id}">Ir</button></div>`).join("");
   const modes = Object.entries(DUNGEON_MODES).map(([id, m]) => `
     <div class="item"><span class="g">🌀</span>
-      <span class="meta"><b>${m.name}</b><span>${m.rooms} salas · enemigos ×${m.mult} · recompensa ×${m.reward}${id==="DoubleDungeon"?" · otorga el Despertar":""}</span></span>
+      <span class="meta"><b>${m.name}</b><span>${m.rooms} salas · enemigos ×${m.mult} · recompensa ×${m.reward}${id === "DoubleDungeon" ? " · otorga el Despertar" : ""}</span></span>
       <button class="btn violet" data-dungeon="${id}" ${P.tickets > 0 || id === "Standard" ? "" : "disabled"}>${id === "Standard" ? "Entrar" : "1 🎟"}</button></div>`).join("");
-  return shell("Mapa del mundo", `<div class="list">${isles}</div>
+  return shell("Mapa del mundo", `
+    <p class="hint">El mundo es <b>abierto y continuo</b>: el centro es Leveling City y cada anillo que cruzas
+    es una región más dura. Puedes ir caminando a cualquier sitio; el viaje rápido solo pide el nivel de la zona.</p>
+    <div class="list">${isles}</div>
+    <h3 style="margin:6px 0 0;font-family:var(--f-display);font-size:15px">Cazadores</h3>
+    <div class="list">${hunters}</div>
     <h3 style="margin:6px 0 0;font-family:var(--f-display);font-size:15px">Puertas</h3>
-    <div class="list">${modes}</div>
-    <p class="hint">Los portales también aparecen solos cada ${FLAGS.PORTAL_INTERVAL_SECONDS}s (el contrato usa 1800s; comprimido para la web).</p>`);
+    <div class="list">${modes}</div>`);
 }
 function panelHelp(){
   return shell("Controles y bucle", `
@@ -2614,8 +2848,17 @@ function panelHelp(){
       <div class="kv"><small>Auto-Arise</small><b>R</b></div>
       <div class="kv"><small>Montura</small><b>M</b></div>
       <div class="kv"><small>Portal</small><b>F</b></div>
+      <div class="kv"><small>Hablar con cazador</small><b>G</b></div>
       <div class="kv"><small>Menús</small><b>1-5 · H</b></div>
     </div>
+    <p class="hint"><b>Mundo abierto:</b> no hay pantallas de carga entre zonas. El centro del mapa es Leveling City y
+    cada anillo que cruzas caminando es una región nueva, con su bioma, sus enemigos y su nivel recomendado. En el mapa
+    (tecla 5) puedes ver a qué distancia queda la siguiente y viajar rápido a las que ya tengas nivel para pisar.</p>
+    <p class="hint"><b>Cazadores:</b> repartidos por los anillos hay cazadores con nombre propio. Acércate y pulsa
+    <b>G</b>: la herrera templa tu arma, la sanadora te cura y te da una bendición de daño, el comandante te entrena por
+    gemas y el archivista abre el índice de sombras.</p>
+    <p class="hint"><b>Rendimiento:</b> el juego mide su propio ritmo y baja o sube el detalle solo. Puedes fijarlo a
+    mano haciendo clic en «Calidad» (arriba a la derecha).</p>
     <p class="hint"><b>Movimiento:</b> el personaje se mueve en relación a la cámara: W avanza hacia donde miras,
     S retrocede, A y D se desplazan a los lados, y el cuerpo gira hacia donde avanza. En móvil, arrastra en la
     mitad izquierda para el joystick y en la derecha para girar la cámara.</p>
@@ -2751,6 +2994,25 @@ modal.addEventListener("click", e => {
     else return note(`Faltan ${fmt(w.cost - P.cash)} de oro`, "--hp");
     save(); dirty = true; renderPanel(); return;
   }
+  if (t.dataset.ring){
+    const idx = +t.dataset.ring, isle = ISLANDS[idx];
+    if (P.level < isle.level && !P.islands.includes(isle.id)) return note(`Requiere nivel ${isle.level}`, "--hp");
+    const ang = Math.atan2(player.y - CFG.WORLD.cy, player.x - CFG.WORLD.cx) || 0;
+    const r = ringRadius(idx);
+    player.x = CFG.WORLD.cx + Math.cos(ang) * r;
+    player.y = CFG.WORLD.cy + Math.sin(ang) * r;
+    enemies = []; corpses = []; spawnT = 0;
+    banner(isle.name.toUpperCase(), "#8fd0ff");
+    save(); closePanel(); return;
+  }
+  if (t.dataset.hunter){
+    const h = HUNTERS.find(x => x.id === t.dataset.hunter);
+    if (!h) return;
+    player.x = h.x + 70; player.y = h.y + 70;
+    enemies = []; corpses = [];
+    note(`Vas al encuentro de ${h.name}`, "--gem");
+    closePanel(); return;
+  }
   if (t.dataset.isle){
     const isle = isleOf(t.dataset.isle);
     if (P.level < isle.level) return note(`Requiere nivel ${isle.level}`, "--hp");
@@ -2780,6 +3042,14 @@ modal.addEventListener("click", e => {
   }
   if (t.id === "do-destroy"){ destroyCorpse(ariseToken); closeArise(); }
 });
+$("qualityTag").onclick = () => {
+  // auto -> alta -> media -> baja -> auto
+  if (QUALITY.auto){ QUALITY.auto = false; QUALITY.level = 3; }
+  else if (QUALITY.level > 1) QUALITY.level--;
+  else { QUALITY.auto = true; QUALITY.level = 3; }
+  applyQuality();
+  note(`Calidad ${["", "baja", "media", "alta"][QUALITY.level]}${QUALITY.auto ? " (auto)" : ""}`, "--gem");
+};
 $("b-stats").onclick = () => openPanel("stats");
 $("b-shadows").onclick = () => openPanel("shadows");
 $("b-shop").onclick = () => openPanel("shop");
