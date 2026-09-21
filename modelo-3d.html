@@ -99,8 +99,10 @@ footer{border-top:1px solid var(--line); padding:22px 0 40px; color:var(--muted)
       <a class="dl sec" id="dlObj" href="#" download="via-expresa.obj">Descargar OBJ</a>
       <a class="dl sec" id="dlMtl" href="#" download="via-expresa.mtl">+ colores del OBJ (MTL)</a>
       <a class="dl sec" id="dlStl" href="#" download="via-expresa.stl">Descargar STL</a>
+      <a class="dl" id="dlZip" href="#" hidden>Descargar todo (ZIP)</a>
     </div>
-    <p class="small muted"><b>¿Cuál bajo?</b> Si solo quieres verlo bonito y con sus colores, baja el <b>GLB</b>: es un archivo solo, ya trae los colores adentro y en Windows se abre con doble clic. El <b>OBJ</b> es lo mismo pero necesita que bajes también el MTL y los dejes juntos en la misma carpeta. El <b>STL</b> es para Tinkercad y para imprimir en 3D (ese va sin colores).</p>
+    <p class="small muted solo-artifact" hidden>Acá dentro los archivos van todos juntos en un ZIP: al abrirlo vas a encontrar el GLB, el OBJ con su MTL, el STL y la versión para Tinkercad, más un <code>LEEME.txt</code> que explica cuál es cuál.</p>
+    <p class="small muted solo-local"><b>¿Cuál bajo?</b> Si solo quieres verlo bonito y con sus colores, baja el <b>GLB</b>: es un archivo solo, ya trae los colores adentro y en Windows se abre con doble clic. El <b>OBJ</b> es lo mismo pero necesita que bajes también el MTL y los dejes juntos en la misma carpeta. El <b>STL</b> es para Tinkercad y para imprimir en 3D (ese va sin colores).</p>
   </div>
 </section>
 
@@ -13821,21 +13823,29 @@ Z2xURgIAAAC8VQMA0CgAAEpTT057ImFzc2V0Ijp7InZlcnNpb24iOiIyLjAiLCJnZW5lcmF0b3IiOiJn
 const objText=document.getElementById('objdata').textContent;
 const mtlText=document.getElementById('mtldata').textContent;
 
-/* descargas */
-function makeDL(id,text,mime){
-  const a=document.getElementById(id);
-  a.href=URL.createObjectURL(new Blob([text],{type:mime}));
+/* ---------- los archivos que ofrece la página ---------- */
+const ARCHIVOS=[];   // {nombre, datos, mime, boton}
+const utf8=new TextEncoder();
+function archivo(nombre,datos,mime,boton){
+  const bytes=typeof datos==='string'?utf8.encode(datos):datos;
+  ARCHIVOS.push({nombre,bytes,mime,boton});
+  if(boton){
+    const a=document.getElementById(boton);
+    if(a) a.href=URL.createObjectURL(new Blob([bytes],{type:mime}));
+  }
 }
-makeDL('dlObj',objText,'model/obj'); makeDL('dlMtl',mtlText,'model/mtl');
-makeDL('dlTkObj',document.getElementById('objtk').textContent.trim()+'\n','model/obj');
-makeDL('dlTkColorObj',document.getElementById('objtkcolor').textContent.trim()+'\n','model/obj');
-makeDL('dlTkColorMtl',document.getElementById('mtltkcolor').textContent.trim()+'\n','model/mtl');
+const texto=id=>document.getElementById(id).textContent.trim()+'\n';
+archivo('via-expresa.obj',objText,'model/obj','dlObj');
+archivo('via-expresa.mtl',mtlText,'model/mtl','dlMtl');
+archivo('via-expresa-tinkercad.obj',texto('objtkcolor'),'model/obj','dlTkColorObj');
+archivo('via-expresa-tinkercad.mtl',texto('mtltkcolor'),'model/mtl','dlTkColorMtl');
+archivo('via-expresa-tinkercad-sincolor.obj',texto('objtk'),'model/obj','dlTkObj');
 // el GLB viene en base64 dentro de la página; lo devolvemos a binario
 {
-  const b64=document.getElementById('glbdata').textContent.trim();
-  const bin=atob(b64), bytes=new Uint8Array(bin.length);
+  const bin=atob(document.getElementById('glbdata').textContent.trim());
+  const bytes=new Uint8Array(bin.length);
   for(let i=0;i<bin.length;i++) bytes[i]=bin.charCodeAt(i);
-  document.getElementById('dlGlb').href=URL.createObjectURL(new Blob([bytes],{type:'model/gltf-binary'}));
+  archivo('via-expresa.glb',bytes,'model/gltf-binary','dlGlb');
 }
 
 /* ---------- parsear MTL ---------- */
@@ -13894,8 +13904,81 @@ document.getElementById('statChip').textContent=TRI.length.toLocaleString('es-PE
     dv.setUint16(off+48,0,true);
     off+=50;
   }
-  document.getElementById('dlStl').href=URL.createObjectURL(new Blob([buf],{type:'model/stl'}));
+  archivo('via-expresa.stl',new Uint8Array(buf),'model/stl','dlStl');
 }
+
+/* ---------- Descargar todo en un ZIP ----------
+   Hace falta porque dentro de claude.ai la página no puede entregar archivos
+   con un enlace normal: tiene que pedírselo al visor, y ese solo acepta cierta
+   lista de extensiones donde no están .obj, .glb ni .stl — pero sí .zip.
+   El ZIP se arma acá mismo, sin comprimir (método "store"), que para texto y
+   binarios chicos está bien y evita cargar una librería. */
+const TABLA_CRC=(()=>{const t=new Uint32Array(256);
+  for(let i=0;i<256;i++){let c=i;for(let k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[i]=c>>>0;}
+  return t;})();
+function crc32(b){let c=0xFFFFFFFF;for(let i=0;i<b.length;i++)c=TABLA_CRC[(c^b[i])&0xFF]^(c>>>8);return (c^0xFFFFFFFF)>>>0;}
+function armarZip(archivos){
+  const partes=[],central=[];let offset=0;
+  const u16=n=>[n&255,(n>>8)&255];
+  const u32=n=>[n&255,(n>>8)&255,(n>>16)&255,(n>>>24)&255];
+  for(const f of archivos){
+    const nombre=utf8.encode(f.nombre), crc=crc32(f.bytes), n=f.bytes.length;
+    const local=new Uint8Array([...u32(0x04034b50),...u16(20),...u16(0),...u16(0),
+      ...u16(0),...u16(0),...u32(crc),...u32(n),...u32(n),...u16(nombre.length),...u16(0),...nombre]);
+    partes.push(local,f.bytes);
+    central.push(new Uint8Array([...u32(0x02014b50),...u16(20),...u16(20),...u16(0),...u16(0),
+      ...u16(0),...u16(0),...u32(crc),...u32(n),...u32(n),...u16(nombre.length),
+      ...u16(0),...u16(0),...u16(0),...u16(0),...u32(0),...u32(offset),...nombre]));
+    offset+=local.length+n;
+  }
+  const tam=central.reduce((a,c)=>a+c.length,0);
+  central.push(new Uint8Array([...u32(0x06054b50),...u16(0),...u16(0),
+    ...u16(archivos.length),...u16(archivos.length),...u32(tam),...u32(offset),...u16(0)]));
+  return new Blob([...partes,...central],{type:'application/zip'});
+}
+(async () => {
+  const boton=document.getElementById('dlZip');
+  if(!boton) return;
+  const leeme=['Vía Expresa Elevada — modelo 3D del proyecto de EPT','',
+    'via-expresa.glb   → el más fácil: un archivo, con colores. Doble clic en Windows.',
+    'via-expresa.obj   → va junto con via-expresa.mtl, en la misma carpeta.',
+    'via-expresa.stl   → para imprimir en 3D.','',
+    'Los que dicen "tinkercad" son la versión con menos detalle.',
+    'El que dice "sincolor" es el que Tinkercad acepta sin marcar error.','',
+    '1 unidad = 1 metro. El terreno mide 96 x 50 m.',''].join('\n');
+  const hacerZip=()=>armarZip([...ARCHIVOS.map(f=>({nombre:f.nombre,bytes:f.bytes})),
+    {nombre:'LEEME.txt',bytes:utf8.encode(leeme)}]);
+  // De entrada se deja como enlace normal, que es lo que sirve al abrir el
+  // archivo en la computadora. Preguntar por la capacidad puede demorar hasta
+  // 10 segundos si nadie contesta, y mientras tanto la página ya funciona.
+  boton.hidden=false;
+  boton.href=URL.createObjectURL(hacerZip());
+  boton.setAttribute('download','via-expresa-elevada.zip');
+
+  const guardar=window.claude&&claude.use
+    ? await claude.use('downloads').catch(()=>null) : null;
+  if(!guardar) return;
+
+  // Dentro de claude.ai los enlaces sueltos no entregan nada: hay que pedirle
+  // el archivo al visor, y solo acepta ciertas extensiones. Queda el ZIP.
+  document.querySelectorAll('a.dl[download]').forEach(a=>{ if(a!==boton) a.remove(); });
+  document.querySelectorAll('.solo-local').forEach(e=>e.remove());
+  document.querySelectorAll('.solo-artifact').forEach(e=>e.hidden=false);
+  boton.removeAttribute('href'); boton.removeAttribute('download');
+  boton.style.cursor='pointer';
+  boton.addEventListener('click',async e=>{
+    e.preventDefault();
+    const antes=boton.textContent;
+    boton.textContent='Preparando…';
+    try{
+      await guardar.save({filename:'via-expresa-elevada.zip',data:hacerZip()});
+      boton.textContent='Listo ✓';
+    }catch(err){
+      boton.textContent=err&&err.code==='declined'?antes:'No se pudo descargar';
+    }
+    setTimeout(()=>{boton.textContent=antes;},2500);
+  });
+})();
 
 /* ---------- sombreado plano precalculado ---------- */
 const L=(function(){const v=[0.45,0.8,0.4],l=Math.hypot(...v);return v.map(c=>c/l);})();
