@@ -640,6 +640,35 @@ function reconcile(d){
   if (!Array.isArray(p.squad)) p.squad = [];
   if (!Array.isArray(p.islands) || !p.islands.length) p.islands = ["Seoul"];
   if (!Array.isArray(p.ledger)) p.ledger = [];
+  // Un guardado viejo o manipulado puede traer textos o NaN donde van números:
+  // si se cuelan, el oro o la EXP se vuelven NaN y la partida queda inservible.
+  const num = (v, def, min) => { const n = Number(v); return Number.isFinite(n) ? Math.max(min, n) : def; };
+  p.level    = Math.min(FLAGS.LEVEL_CAP, Math.round(num(p.level, 1, 1)));
+  p.xp       = num(p.xp, 0, 0);
+  p.cash     = num(p.cash, 0, 0);
+  p.gems     = num(p.gems, 0, 0);
+  p.tickets  = Math.round(num(p.tickets, 0, 0));
+  p.rebirths = Math.round(num(p.rebirths, 0, 0));
+  p.kills    = Math.round(num(p.kills, 0, 0));
+  p.arisen   = Math.round(num(p.arisen, 0, 0));
+  p.dungeonsCleared = Math.round(num(p.dungeonsCleared, 0, 0));
+  p.tutorial = Math.round(num(p.tutorial, 0, 0));
+  p.chapter  = clamp(Math.round(num(p.chapter, 0, 0)), 0, 99);
+  for (const k of ["STR","INT","SDW","VIT","AGI","MNA","points"])
+    p.stats[k] = Math.round(num(p.stats[k], 0, 0));
+  for (const k in p.weapons)  p.weapons[k]  = Math.round(num(p.weapons[k], 1, 0));
+  for (const k in p.weaponLv) p.weaponLv[k] = Math.round(num(p.weaponLv[k], 1, 1));
+  for (const k in p.talents)  p.talents[k]  = Math.round(num(p.talents[k], 0, 0));
+  for (const u in p.shadows){
+    const sh = p.shadows[u];
+    if (!sh || !SHADOWS[sh.id]){ delete p.shadows[u]; continue; }   // sombra de una versión anterior
+    sh.level = Math.round(num(sh.level, 1, 1));
+    sh.xp = num(sh.xp, 0, 0);
+  }
+  for (const k in p.relics) if (!RELICS[k]) delete p.relics[k];
+  for (const k in p.runes)  if (!RUNES[k])  delete p.runes[k];
+  p.islands = p.islands.filter(id => ISLANDS.some(i => i.id === id));
+  if (!p.islands.length) p.islands = ["Seoul"];
   if (!WEAPONS[p.weapon]) p.weapon = START_WEAPON;
   if (!p.weapons[p.weapon]) p.weapons[p.weapon] = 1;
   if (!RANKS.some(r => r.name === p.rank)) p.rank = "E";
@@ -1008,6 +1037,7 @@ const DUNGEON_MODES = {
   DoubleDungeon: { name:"Double Dungeon",   rooms:2, mult:5.0,  reward:6.0, color:"#bb8cff" },
   BossRush:      { name:"Boss Rush",        rooms:5, mult:2.4,  reward:4.0, color:"#ffd24a" },
 };
+let returnPoint = null;   // sitio del mundo abierto al que se vuelve al salir de una mazmorra
 function makeDungeon(modeId){
   const mode = DUNGEON_MODES[modeId] || DUNGEON_MODES.Standard;
   const isle = isleOf(P.island);
@@ -1086,6 +1116,8 @@ function enterDungeon(modeId){
   dungeon = null;
   dungeon = makeDungeon(mode);
   enemies = []; corpses = []; shadows.forEach(s => { s.target = null; });
+  // Se guarda dónde estabas: al salir vuelves ahí, no al centro del mundo.
+  returnPoint = { x:player.x, y:player.y };
   player.x = CFG.WORLD.cx; player.y = CFG.WORLD.cy; player.hp = maxHP();
   banner(dungeon.mode.name.toUpperCase(), dungeon.mode.color);
   const runeNames = Object.keys(dungeon.runes).map(k => RUNES[k].name).join(" · ");
@@ -1095,7 +1127,9 @@ function enterDungeon(modeId){
 }
 function exitDungeon(){
   dungeon = null; enemies = []; corpses = [];
-  player.x = CFG.WORLD.cx; player.y = CFG.WORLD.cy;
+  if (returnPoint){ player.x = returnPoint.x; player.y = returnPoint.y; returnPoint = null; }
+  else { player.x = CFG.WORLD.cx; player.y = CFG.WORLD.cy; }
+  P.island = regionAt(player.x, player.y).id;
   portalT = FLAGS.PORTAL_INTERVAL_SECONDS;
   note("De vuelta al mundo abierto", "--spec");
   dirty = true;
@@ -1400,9 +1434,12 @@ function update(dt){
       player.invuln = now() + 2.5;
       if (el) el.hidden = true;
       note("De vuelta en pie · 2 s de gracia", "--xp");
-      // un paso atrás para no revivir dentro de la horda
-      const a = Math.atan2(player.y - CFG.WORLD.cy, player.x - CFG.WORLD.cx);
-      player.x -= Math.cos(a) * 220; player.y -= Math.sin(a) * 220;
+      // un paso atrás para no revivir dentro de la horda: te apartas del
+      // enemigo más cercano (dentro de una mazmorra el centro no sirve)
+      const near = nearestEnemy(player.x, player.y, 1e9);
+      const a = near ? Math.atan2(player.y - near.y, player.x - near.x)
+                     : Math.atan2(player.y - CFG.WORLD.cy, player.x - CFG.WORLD.cx);
+      player.x += Math.cos(a) * 220; player.y += Math.sin(a) * 220;
       enemies = enemies.filter(e => Math.hypot(e.x - player.x, e.y - player.y) > 260 || e.boss);
     }
   } else if (player.dashT > 0){
@@ -1426,6 +1463,17 @@ function update(dt){
     }
     player.x += mx * speed * mv * dt;
     player.y += my * speed * mv * dt;
+    // Muro blando: más allá del último anillo solo hay vacío, así que el
+    // mundo te frena ahí en vez de dejarte caminar indefinidamente.
+    if (!dungeon){
+      const bx = player.x - CFG.WORLD.cx, by = player.y - CFG.WORLD.cy;
+      const d = Math.hypot(bx, by), lim = ISLANDS.length * CFG.RING_WIDTH - CFG.RING_SAFE;
+      if (d > lim){
+        player.x = CFG.WORLD.cx + bx / d * lim;
+        player.y = CFG.WORLD.cy + by / d * lim;
+        if (!update._edge || t - update._edge > 6){ update._edge = t; note("El mundo termina aquí", "--dim"); }
+      }
+    }
     if (mx || my){
       // el personaje gira hacia donde avanza (camino más corto)
       const want = Math.atan2(mx, my);
@@ -1458,6 +1506,12 @@ function update(dt){
   player.skillCd = Math.max(0, player.skillCd - dt);
   player.hurt = Math.max(0, player.hurt - dt);
   player.mana = Math.min(maxMana(), player.mana + maxMana() * 0.08 * dt);
+  // Regeneración fuera de combate: sin esto la vida solo se recuperaba
+  // muriendo o pagando a un cazador, y acababas arrastrándote a 1 de vida.
+  if (player.dead <= 0 && t - (player.lastHit || 0) > 5){
+    const mh = maxHP();
+    if (player.hp < mh) player.hp = Math.min(mh, player.hp + mh * 0.06 * dt);
+  }
   // golpe: automático con AUTO, o encadenado mientras mantengas el clic
   if (player.phase === "idle" && player.dead <= 0 && !modalOpen()){
     if (auto || drag.attacking) requestAttack();
@@ -1634,7 +1688,7 @@ let saveT = 6;
 function hitPlayer(raw){
   if (player.dead > 0 || (player.invuln || 0) > now()) return;
   const dmg = Math.max(1, raw * CFG.CONTACT_SCALE * (1 - classBonus("armor")));
-  player.hp -= dmg; player.hurt = 0.22;
+  player.hp -= dmg; player.hurt = 0.22; player.lastHit = now();
   const ph = floaters.find(f => f.src === player);
   if (ph){ ph.amount += dmg; ph.text = `-${fmt(ph.amount)}`; ph.life = .9; }
   else floaters.push({ src:player, amount:dmg, x:player.x, y:player.y, h:100,
@@ -1727,6 +1781,9 @@ const propPool = [];
 let sparkPoints = null, sparkGeo = null;
 
 const glowCache = new Map();
+// Recursos de GPU compartidos por muchas vistas: nunca se liberan al
+// retirar una entidad de la escena.
+const SHARED = new WeakSet();
 function glowTexture(color){
   let t = glowCache.get(color);
   if (t) return t;
@@ -1738,6 +1795,7 @@ function glowTexture(color){
   g.addColorStop(1, "rgba(255,255,255,0)");
   x.fillStyle = g; x.beginPath(); x.arc(64, 64, 64, 0, Math.PI*2); x.fill();
   t = new THREE.CanvasTexture(cv);
+  SHARED.add(t);
   glowCache.set(color, t);
   return t;
 }
@@ -1746,13 +1804,15 @@ const GEO = new Map();
 function boxGeo(w, h, d){
   const k = `${w.toFixed(2)}|${h.toFixed(2)}|${d.toFixed(2)}`;
   let g = GEO.get(k);
-  if (!g){ g = new THREE.BoxGeometry(w, h, d); GEO.set(k, g); }
+  if (!g){ g = new THREE.BoxGeometry(w, h, d); SHARED.add(g); GEO.set(k, g); }
   return g;
 }
 const MAT = new Map();
 function mat(color, opts){
   const o = opts || {};
-  const k = `${color}|${o.emissive||0}|${o.opacity ?? 1}|${o.flat ? 1 : 0}`;
+  // MeshToonMaterial no admite flatShading (ya sombrea por bandas planas),
+  // asi que no se le pasa: three avisaba por consola en cada material.
+  const k = `${color}|${o.emissive||0}|${o.opacity ?? 1}`;
   let m = MAT.get(k);
   if (!m){
     m = new THREE.MeshToonMaterial({
@@ -1761,8 +1821,8 @@ function mat(color, opts){
       emissiveIntensity: o.emissiveIntensity ?? 1,
       transparent: (o.opacity ?? 1) < 1,
       opacity: o.opacity ?? 1,
-      flatShading: !!o.flat,
     });
+    SHARED.add(m);
     MAT.set(k, m);
   }
   return m;
@@ -1795,6 +1855,7 @@ function faceTexture(eye, glow){
   x.beginPath(); x.arc(64, 74, 22, .22 * Math.PI, .78 * Math.PI); x.stroke();
   t = new THREE.CanvasTexture(c);
   t.magFilter = THREE.LinearFilter;
+  SHARED.add(t);
   faceTexCache.set(k, t);
   return t;
 }
@@ -2194,7 +2255,7 @@ function buildProp(kind, h){
   return g;
 }
 function clearProps(){
-  for (const p2 of propPool){ scene.remove(p2.obj); }
+  for (const p2 of propPool){ scene.remove(p2.obj); disposeView(p2.obj); }
   propPool.length = 0;
 }
 const PROP_TILE = 190;
@@ -2224,7 +2285,7 @@ function syncProps(){
   }
   for (let i = propPool.length - 1; i >= 0; i--){
     if (!seen.has(propPool[i].key)){
-      scene.remove(propPool[i].obj);
+      scene.remove(propPool[i].obj); disposeView(propPool[i].obj);
       propPool.splice(i, 1);
     }
   }
@@ -2248,7 +2309,7 @@ function playerConfig(){
 function ensurePlayerView(){
   const cfg = playerConfig();
   if (playerView && playerView.userData.key === cfg.key) return playerView;
-  if (playerView) scene.remove(playerView);
+  if (playerView){ scene.remove(playerView); disposeView(playerView); }
   playerView = buildCharacter(cfg);
   playerView.userData.key = cfg.key;
   scene.add(playerView);
@@ -2284,6 +2345,21 @@ function shadowConfig(sh){
     weapon: glow, weaponKind:"sword",
   };
 }
+// Libera la memoria de GPU de una vista que sale de la escena. Sin esto las
+// etiquetas, barras y geometrías propias de cada entidad se acumulaban: en
+// partidas largas el número de texturas crecía sin parar y el juego se atascaba.
+function disposeView(v){
+  if (!v) return;
+  v.traverse(o => {
+    if (o.geometry && !SHARED.has(o.geometry)) o.geometry.dispose();
+    const mats = Array.isArray(o.material) ? o.material : (o.material ? [o.material] : []);
+    for (const m of mats){
+      if (SHARED.has(m)) continue;
+      if (m.map && !SHARED.has(m.map)) m.map.dispose();
+      if (m.dispose) m.dispose();
+    }
+  });
+}
 function syncGroup(list, map, buildCfg, keyOf){
   const alive = new Set();
   for (const item of list){
@@ -2298,7 +2374,7 @@ function syncGroup(list, map, buildCfg, keyOf){
     item.__view = v;
   }
   for (const [key, v] of map){
-    if (!alive.has(key)){ scene.remove(v); map.delete(key); }
+    if (!alive.has(key)){ scene.remove(v); disposeView(v); map.delete(key); }
   }
 }
 // ---- cadáveres ----
@@ -2570,7 +2646,7 @@ function render(dt){
     } else if (v.tag) v.tag.visible = false;
   }
   for (const [k, v] of views.corpses){
-    if (!aliveC.has(k)){ scene.remove(v); views.corpses.delete(k); }
+    if (!aliveC.has(k)){ scene.remove(v); disposeView(v); views.corpses.delete(k); }
   }
   // NPC
   if (false){
@@ -2609,7 +2685,7 @@ function render(dt){
   // portal
   if (portal){
     if (!portalView || portalView.userData.mode !== portal.modeId){
-      if (portalView) scene.remove(portalView);
+      if (portalView){ scene.remove(portalView); disposeView(portalView); }
       portalView = buildPortal(portal.mode.color);
       portalView.userData.mode = portal.modeId;
       scene.add(portalView);
@@ -3021,7 +3097,7 @@ function panelMap(){
       <span class="meta"><b>${m.name}</b><span>${m.rooms} salas · enemigos ×${m.mult} · recompensa ×${m.reward}${id === "DoubleDungeon" ? " · otorga el Despertar" : ""}</span></span>
       <button class="btn violet" data-dungeon="${id}" ${P.tickets > 0 || id === "Standard" ? "" : "disabled"}>${id === "Standard" ? "Entrar" : "1 🎟"}</button></div>`).join("");
   return shell("Mapa del mundo", `
-    <p class="hint">El mundo es <b>abierto y continuo</b>: el centro es Leveling City y cada anillo que cruzas
+    <p class="hint">El mundo es <b>abierto y continuo</b>: el centro es Seúl y cada anillo que cruzas
     es una región más dura. Puedes ir caminando a cualquier sitio; el viaje rápido solo pide el nivel de la zona.</p>
     <div class="list">${isles}</div>
     <h3 style="margin:6px 0 0;font-family:var(--f-display);font-size:15px">Cazadores</h3>
@@ -3047,19 +3123,21 @@ function panelHelp(){
       <div class="kv"><small>Hablar con cazador</small><b>G</b></div>
       <div class="kv"><small>Menús</small><b>1-5 · H</b></div>
     </div>
-    <p class="hint"><b>Mundo abierto:</b> no hay pantallas de carga entre zonas. El centro del mapa es Leveling City y
+    <p class="hint"><b>Mundo abierto:</b> no hay pantallas de carga entre zonas. El centro del mapa es Seúl y
     cada anillo que cruzas caminando es una región nueva, con su bioma, sus enemigos y su nivel recomendado. En el mapa
     (tecla 5) puedes ver a qué distancia queda la siguiente y viajar rápido a las que ya tengas nivel para pisar.</p>
     <p class="hint"><b>Cazadores:</b> repartidos por los anillos hay cazadores con nombre propio. Acércate y pulsa
     <b>G</b>: la herrera templa tu arma, la sanadora te cura y te da una bendición de daño, el comandante te entrena por
     gemas y el archivista abre el índice de sombras.</p>
+    <p class="hint"><b>Vida y maná:</b> el maná se rellena solo y la vida se regenera cuando llevas 5 segundos
+    sin recibir daño. Cha Hae-In te cura del todo y te da una bendición de daño si hablas con ella.</p>
     <p class="hint"><b>Rendimiento:</b> el juego mide su propio ritmo y baja o sube el detalle solo. Puedes fijarlo a
     mano haciendo clic en «Calidad» (arriba a la derecha).</p>
     <p class="hint"><b>Movimiento:</b> el personaje se mueve en relación a la cámara: W avanza hacia donde miras,
     S retrocede, A y D se desplazan a los lados, y el cuerpo gira hacia donde avanza. En móvil, arrastra en la
     mitad izquierda para el joystick y en la derecha para girar la cámara.</p>
     <p class="hint"><b>Bucle:</b> pelea → mata → el cuerpo deja un <b>CorpseToken</b> con 3 intentos → Arise → gestiona el escuadrón
-    (4 sombras) → mejora arma y atributos → desbloquea isla → mazmorra → reliquias y runas → rango y renacer.</p>
+    (su tamaño crece con tu rango) → mejora arma y atributos → desbloquea isla → mazmorra → reliquias y runas → rango y renacer.</p>
     <p class="hint"><b>Combo M1:</b> cuatro golpes encadenados (×1.00, ×1.05, ×1.15, ×1.45) con hitstop e impulso de cámara crecientes.
     <b>Habilidad V:</b> arco de 70° y radio 190, cuesta 30 de maná.</p>
     <p class="hint"><b>Double Dungeon</b> otorga el Despertar: +60% de suerte de Arise y el sigilo Black Monarch.</p>`);
