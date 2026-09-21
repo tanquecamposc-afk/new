@@ -53,6 +53,12 @@ lejos, más duro.
 | 11 | Sala del Arquitecto | 1250 | místico | Eco del Sistema | El Arquitecto |
 | 12 | Trono del Rey de las Sombras | 1400 | cíber | Soberano Caído | Antares |
 
+La dificultad sube **de forma continua dentro de cada anillo**: cuanto más te
+acercas al borde, más se parecen los enemigos a los de la región siguiente
+(pasado el 62% del anillo salen como «veteranos»). Cruzar una frontera ya no es
+un muro: el salto de vida al pasar de un anillo al otro es de ×1,1 en vez de
+×346.
+
 Cada región tiene su propia familia de criaturas, no humanos recoloreados:
 limos con núcleo brillante, bestias cuadrúpedas, golems de roca agrietada,
 hormigas de seis patas y espectros flotantes. Los jefes rompen el molde: siempre
@@ -191,6 +197,21 @@ Reliquias que suben daño de sombras, suerte de extracción, suerte de rango y
 probabilidad de botín. Las runas se activan dentro de las mazmorras y modifican
 esa incursión.
 
+### Peleas de jefe
+
+Todos los jefes —de mazmorra y de mundo abierto— tienen **cuatro fases** según
+les baja la vida (70%, 40%, 15%), y cada fase abre un movimiento nuevo:
+
+| Fase | Qué hace |
+|---|---|
+| 1 | Golpe al suelo: un círculo se llena donde estás, tienes ~1,4 s para salir |
+| 2 | Añade el combo: tres golpes encadenados, cada uno cae donde estés |
+| 3 | Añade la onda expansiva: solo daña en su anillo exterior, así que se esquiva pegándote al jefe o corriendo lejos |
+| 4 | Enrage: llama a dos guardias, ataca más rápido y avisa con menos tiempo |
+
+Cada aviso suena antes de caer, y el cambio de fase tiene su propio golpe de
+cámara y de sonido.
+
 ### Mazmorras
 
 Cada 110 segundos se abre un portal cerca de ti. Cuatro modos:
@@ -217,7 +238,15 @@ Siete cazadores con nombre repartidos por el mundo. Te acercas y pulsas **G**:
 - **Go Gunhee** — examen de rango
 - **Thomas Andre** — desafío: invoca un jefe para ti
 
-## 6. Controles
+## 6. El tutorial
+
+Once pasos encadenados que cubren todo el juego, no solo los primeros minutos:
+moverse, golpear, extraer, esquivar, usar la habilidad, repartir atributos,
+reunir tres sombras, comprar arma, hablar con un cazador, cruzar a la región
+siguiente y entrar a un portal. Cada paso espera a que lo hagas de verdad antes
+de pasar al siguiente, y los textos cambian según juegues con teclado o táctil.
+
+## 7. Controles
 
 | Acción | Teclado y ratón | Móvil |
 |---|---|---|
@@ -238,7 +267,7 @@ Siete cazadores con nombre repartidos por el mundo. Te acercas y pulsas **G**:
 El combo de golpe encadena cuatro ataques (×1,00, ×1,05, ×1,15, ×1,45) con
 hitstop e impulso de cámara crecientes.
 
-## 7. Cómo está hecho por dentro
+## 8. Cómo está hecho por dentro
 
 - **Render**: three.js con luz direccional y sombras reales, niebla, cielo por
   shader, suelo con textura procedural y personajes articulados por jerarquía de
@@ -249,14 +278,19 @@ hitstop e impulso de cámara crecientes.
 - **Nivel de detalle**: cada personaje tiene dos versiones, una de ~20 mallas de
   cerca y otra de 3 cajas de lejos.
 - **Sonido**: todo se sintetiza con WebAudio en el momento — golpes, críticos,
-  muerte, extracción, subida de nivel, portal, dash. No hay ficheros de audio.
+  muerte, extracción, subida de nivel, portal, dash, avisos y golpes de jefe.
+  No hay ficheros de audio.
+- **Música**: una progresión de acordes por bioma, tocada nota a nota desde el
+  bucle del juego (sin temporizadores sueltos). Cada región tiene su escala y su
+  tempo, y la música acelera cuando hay enemigos cerca. El interruptor de sonido
+  del HUD la silencia también.
 - **Guardado**: `localStorage`, con validación al cargar. Un guardado viejo o
   manipulado (textos donde van números, sombras de otra versión) se normaliza en
   vez de romper la partida.
 - **Sin red**: three.js va incrustado en la versión de un solo archivo y llega
   por npm en la versión de Lovable. El juego funciona sin conexión.
 
-## 8. Dos entregables
+## 9. Dos entregables
 
 1. **`arise-3d.html`** — el juego entero en un archivo. Lo abres y juega, sin
    servidor ni instalación.

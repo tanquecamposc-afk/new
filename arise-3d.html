@@ -729,7 +729,23 @@ function enemyDef(kind){
   const isle = dungeon ? dungeon.isle : regionAt(player.x, player.y);
   if (dungeon) return dungeon.enemyDef(kind);
   const base = kind === "brute" ? isle.brute : isle.enemy;
-  return { ...base, isle:isle.id, shadow: kind === "brute" ? isle.shadow : isle.shadow, kind, r: kind === "brute" ? 24 : 18 };
+  // La dificultad sube de forma continua dentro del anillo hacia la región
+  // siguiente. Sin esto, cruzar una frontera multiplicaba de golpe por
+  // trescientos la vida del enemigo y el salto era un muro.
+  const idx = ringAt(player.x, player.y);
+  const next = ISLANDS[idx + 1];
+  const def = { ...base };
+  if (next){
+    const d = Math.hypot(player.x - CFG.WORLD.cx, player.y - CFG.WORLD.cy);
+    const t = clamp((d - idx * CFG.RING_WIDTH) / CFG.RING_WIDTH, 0, 1);
+    const k = t * t;                       // la subida se nota al acercarte al borde
+    const nb = kind === "brute" ? next.brute : next.enemy;
+    def.lvl = Math.max(1, Math.round(base.lvl + (nb.lvl - base.lvl) * k));
+    def.hp  = Math.round(base.hp  * Math.pow(nb.hp  / base.hp,  k));
+    def.dmg = Math.round(base.dmg * Math.pow(nb.dmg / base.dmg, k));
+    if (t > 0.62) def.name = `${base.name} veterano`;
+  }
+  return { ...def, isle:isle.id, shadow: isle.shadow, kind, r: kind === "brute" ? 24 : 18 };
 }
 function spawnEnemy(def, x, y){
   const d = def || enemyDef(Math.random() < 0.25 ? "brute" : "normal");
@@ -845,7 +861,7 @@ function requestSkill(){
   player.skillCd = SKILL.cooldown;
   player.atkDef = { ...SKILL, mult:0, skill:true, cam:SKILL.feedback.cam, hitstop:SKILL.feedback.hitstop };
   player.phase = "startup"; player.phaseT = SKILL.startup; player.hitDone = false;
-  SFX.skill();
+  SFX.skill(); tutState.skilled = true;
 }
 function resolveHit(){
   const def = player.atkDef;
@@ -879,7 +895,7 @@ function requestDash(){
   player.dashX = dx/len; player.dashY = dy/len;
   player.dashT = CFG.DASH_TIME;
   player.dashCd = FORMULA.dashCooldown(P.stats.AGI);
-  camImpulse(0.35); SFX.dash();
+  camImpulse(0.35); SFX.dash(); tutState.dashed = true;
   for (let i=0;i<10;i++) parts.push({ x:player.x, y:player.y, h:rnd(10,60), vx:rnd(-60,60), vy:rnd(-60,60),
                                       vh:rnd(20,80), life:rnd(.25,.45), color:"#bfe2ff", size:rnd(2,4) });
 }
@@ -1138,6 +1154,7 @@ function enterDungeon(modeId){
   returnPoint = { x:player.x, y:player.y };
   player.x = CFG.WORLD.cx; player.y = CFG.WORLD.cy; player.hp = maxHP();
   banner(dungeon.mode.name.toUpperCase(), dungeon.mode.color);
+  tutState.entered = true;
   const runeNames = Object.keys(dungeon.runes).map(k => RUNES[k].name).join(" · ");
   if (runeNames) note(`Runas activas: ${runeNames}`, "--gem");
   nextRoom();
@@ -1381,6 +1398,45 @@ const SFX = {
   skill(){ this.tone(660, .18, "sawtooth", .2, 240); this.noise(.2, .14, 600, 1); },
   death(){ this.arp([392, 294, 220, 147], .12, "sawtooth", .28); },
   ui(){ if (this.throttle("ui", 40)) this.tone(660, .05, "triangle", .12); },
+  bossWarn(){ if (this.throttle("bw", 200)) this.tone(150, .3, "sawtooth", .2, 220); },
+  bossHit(kind){ this.noise(kind === "wave" ? .4 : .22, .32, kind === "wave" ? 220 : 400, .8);
+                 this.tone(90, .3, "square", .24, 45); },
+  bossPhase(n){ this.arp(n >= 4 ? [220, 185, 147, 110] : [147, 185, 220], .1, "sawtooth", .3); },
+  /* Música. No hay ficheros: una progresión de acordes se va tocando nota a
+     nota desde el bucle del juego, con la escala y el tempo de cada región.
+     Al vivir en el bucle no deja temporizadores sueltos al desmontar. */
+  music:{ t:0, paso:0, escala:null, tempo:2.2 },
+  padre(freq, dur, gain){
+    if (!this.ctx || this.muted) return;
+    const t = this.ctx.currentTime;
+    const o = this.ctx.createOscillator(), o2 = this.ctx.createOscillator(), g = this.ctx.createGain();
+    o.type = "sine"; o2.type = "triangle";
+    o.frequency.value = freq; o2.frequency.value = freq * 1.005;   // leve desafinado: suena más cálido
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(gain, t + dur * 0.35);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); o2.connect(g); g.connect(this.master);
+    o.start(t); o2.start(t); o.stop(t + dur + .05); o2.stop(t + dur + .05);
+  },
+  stepMusic(dt, claveRegion, enCombate){
+    if (!this.ctx || this.muted) return;
+    const m = this.music;
+    const esc = MUSIC_SCALES[claveRegion] || MUSIC_SCALES.city;
+    if (m.escala !== esc){ m.escala = esc; m.paso = 0; m.t = 0; }
+    const tempo = enCombate ? esc.tempo * 0.6 : esc.tempo;
+    m.t -= dt;
+    if (m.t > 0) return;
+    m.t = tempo;
+    const acorde = esc.acordes[m.paso % esc.acordes.length];
+    acorde.forEach((f, i) => this.padre(f, tempo * 1.7, (i ? .045 : .07) * (enCombate ? 1.25 : 1)));
+    // una nota suelta de melodía cada dos compases
+    if (m.paso % 2 === 1){
+      const nota = esc.melodia[Math.floor(Math.random() * esc.melodia.length)];
+      setTimeout(() => this.tone(nota, tempo * 0.5, "triangle", .05), tempo * 400);
+    }
+    m.paso++;
+  },
+
 };
 function banner(text, color){
   const el = document.getElementById("banner");
@@ -1597,6 +1653,9 @@ function update(dt){
   player.skillCd = Math.max(0, player.skillCd - dt);
   player.hurt = Math.max(0, player.hurt - dt);
   player.mana = Math.min(maxMana(), player.mana + maxMana() * 0.08 * dt);
+  // la música sigue al bioma y acelera cuando hay enemigos cerca
+  SFX.stepMusic(dt, dungeon ? "dungeon" : regionAt(player.x, player.y).theme,
+                enemies.some(e => Math.hypot(e.x - player.x, e.y - player.y) < 700));
   // Regeneración fuera de combate: sin esto la vida solo se recuperaba
   // muriendo o pagando a un cazador, y acababas arrastrándote a 1 de vida.
   if (player.dead <= 0 && t - (player.lastHit || 0) > 5){
@@ -1647,14 +1706,29 @@ function update(dt){
     if (e.stun > 0) continue;
     const d = Math.hypot(player.x-e.x, player.y-e.y) || 1;
     const stop = e.def.r + (e.boss ? 150 : 128);
-    // fases del jefe (contrato 10.1)
-    if (e.boss && dungeon?.bossState){
-      const pct = e.hp / e.maxHp, th = dungeon.bossState.thresholds;
-      const newPhase = pct <= 0.15 ? 4 : pct <= th[1] ? 3 : pct <= th[0] ? 2 : 1;
+    // Fases del jefe. Antes solo las tenían los jefes de mazmorra; ahora
+    // cualquier jefe cambia de comportamiento según le baja la vida.
+    if (e.boss){
+      const pct = e.hp / e.maxHp;
+      const th = dungeon?.bossState?.thresholds || [0.70, 0.40, 0.15];
+      const newPhase = pct <= th[2] ? 4 : pct <= th[1] ? 3 : pct <= th[0] ? 2 : 1;
       if (newPhase > e.phase){
         e.phase = newPhase;
         banner(newPhase === 4 ? "ENRAGE" : `FASE ${newPhase}`, newPhase === 4 ? "#ff4d61" : "#ffd24a");
+        note(newPhase === 4 ? `${e.name} se desata` : `${e.name} cambia de fase`, "--hp");
         camImpulse(0.6); ring(e.x, e.y, 260, "#ff4d61", .9);
+        SFX.bossPhase(newPhase);
+        e.telegraph = null; e.atkCd = 0.9;
+        // al enfurecerse llama a dos secuaces, una sola vez
+        if (newPhase === 4 && !e.summoned){
+          e.summoned = true;
+          for (const side of [-1, 1]){
+            const m = spawnEnemy({ ...enemyDef("brute"), name:`Guardia de ${e.name}` },
+                                 e.x + side * 190, e.y + 120);
+            if (m) m.isle = e.isle;
+          }
+          note("Invoca a sus guardias", "--hp");
+        }
       }
     }
     e.yaw = Math.atan2(player.x - e.x, player.y - e.y);
@@ -1667,17 +1741,30 @@ function update(dt){
     if (e.telegraph){
       e.telegraph.t += dt;
       if (e.telegraph.t >= e.telegraph.dur){
-        const r = e.telegraph.r;
-        if (Math.hypot(player.x-e.telegraph.x, player.y-e.telegraph.y) < r && player.h < 60) hitPlayer(e.def.dmg * 2.2);
-        ring(e.telegraph.x, e.telegraph.y, r, "#ff4d61", .5);
-        burst(e.telegraph.x, e.telegraph.y, 26, "#ff8a5c", 20);
-        camImpulse(0.5);
+        const tg = e.telegraph;
+        const dist = Math.hypot(player.x - tg.x, player.y - tg.y);
+        // la onda expansiva solo daña en su anillo exterior: se esquiva
+        // quedándote pegado al jefe o saliendo del todo
+        const dentro = tg.kind === "wave"
+          ? dist > tg.r * 0.45 && dist < tg.r
+          : dist < tg.r;
+        if (dentro && player.h < 60) hitPlayer(e.def.dmg * (tg.mult || 2.2));
+        ring(tg.x, tg.y, tg.r, "#ff4d61", .5);
+        burst(tg.x, tg.y, tg.kind === "wave" ? 40 : 26, "#ff8a5c", 20);
+        camImpulse(tg.kind === "wave" ? 0.8 : 0.5);
+        SFX.bossHit(tg.kind);
         e.telegraph = null;
+        // los combos encadenan: el segundo y el tercer golpe caen donde estés
+        if (tg.chain > 0){
+          e.telegraph = { x:player.x, y:player.y, r:tg.r, t:0, dur:0.45,
+                          kind:tg.kind, mult:tg.mult, chain:tg.chain - 1 };
+          SFX.bossWarn();
+        }
       }
     } else if ((e.atkCd -= dt) <= 0){
       if (e.boss){
-        e.atkCd = Math.max(1.1, 2.6 - e.phase * 0.35);
-        e.telegraph = { x:player.x, y:player.y, r:150, t:0, dur:Math.max(0.6, 1.4 - e.phase*0.18) };
+        e.atkCd = Math.max(1.0, 2.6 - e.phase * 0.35);
+        startBossAttack(e);
       } else {
         e.atkCd = 1.35;
         if (d <= stop + 26 && player.h < 50) hitPlayer(e.def.dmg);
@@ -1791,6 +1878,29 @@ function hitPlayer(raw){
     burst(player.x, player.y, 34, "#ff4d61", 30);
   }
   dirty = true;
+}
+/* Ataques de jefe. Cada fase abre un movimiento nuevo, así que la pelea
+   cambia de ritmo en vez de ser el mismo golpe repetido:
+     fase 1  golpe al suelo donde estás
+     fase 2  combo de tres golpes encadenados
+     fase 3  onda expansiva que solo daña en su anillo exterior
+     fase 4  todo lo anterior, más rápido, tras llamar a sus guardias        */
+function startBossAttack(e){
+  const ph = e.phase || 1;
+  const roll = Math.random();
+  let tg;
+  if (ph >= 3 && roll < 0.34){
+    tg = { x:e.x, y:e.y, r:430, t:0, dur:Math.max(0.85, 1.6 - ph*0.15),
+           kind:"wave", mult:2.6, chain:0 };
+  } else if (ph >= 2 && roll < 0.62){
+    tg = { x:player.x, y:player.y, r:135, t:0, dur:Math.max(0.5, 1.1 - ph*0.12),
+           kind:"combo", mult:1.5, chain:2 };
+  } else {
+    tg = { x:player.x, y:player.y, r:150, t:0, dur:Math.max(0.6, 1.4 - ph*0.18),
+           kind:"slam", mult:2.2, chain:0 };
+  }
+  e.telegraph = tg;
+  SFX.bossWarn();
 }
 function separate(dt){
   for (let i = 0; i < enemies.length; i++){
@@ -2384,6 +2494,24 @@ const THEMES = {
   mystic:  { g1:"#3e3a72", g2:"#363165", sky1:"#161046", sky2:"#6b4cc0", fog:"#3b2f78", amp:18, sun:"#c0a8ff", prop:"mystic" },
   storm:   { g1:"#5a6b7a", g2:"#4e5e6c", sky1:"#2a3348", sky2:"#8fa4bc", fog:"#61758c", amp:32, sun:"#dfe8f5", prop:"storm" },
   dungeon: { g1:"#3c2c52", g2:"#342749", sky1:"#0e0820", sky2:"#5a1f42", fog:"#2a1533", amp:8,  sun:"#ff9ab0", prop:"dungeon" },
+};
+/* Una paleta sonora por bioma, igual que hay una paleta de color. Los números
+   son frecuencias en Hz: acordes de tres notas y unas pocas notas de melodía. */
+const MUSIC_SCALES = {
+  city:    { tempo:2.4, acordes:[[131,196,262],[147,220,294],[110,165,220],[147,196,247]], melodia:[523,587,659,784] },
+  urban:   { tempo:2.2, acordes:[[123,185,247],[110,165,220],[139,208,277],[110,165,220]], melodia:[494,554,659,740] },
+  forest:  { tempo:2.8, acordes:[[110,165,220],[123,185,247],[98,147,196],[131,196,262]], melodia:[440,494,587,659] },
+  ice:     { tempo:3.2, acordes:[[131,196,247],[147,220,277],[110,165,208],[123,185,233]], melodia:[587,698,784,880] },
+  shrine:  { tempo:3.0, acordes:[[110,147,220],[98,131,196],[123,165,247],[110,147,220]], melodia:[440,523,659,698] },
+  dark:    { tempo:3.4, acordes:[[82,123,165],[87,131,175],[73,110,147],[82,123,165]],     melodia:[330,392,440,523] },
+  volcano: { tempo:2.0, acordes:[[73,110,147],[82,123,165],[69,104,139],[78,117,156]],     melodia:[294,349,415,466] },
+  dragon:  { tempo:2.0, acordes:[[69,104,139],[73,110,147],[62,93,124],[69,104,139]],      melodia:[277,330,392,415] },
+  royal:   { tempo:2.6, acordes:[[131,165,196],[147,185,220],[110,139,165],[123,156,185]], melodia:[494,587,659,740] },
+  guild:   { tempo:2.6, acordes:[[131,196,262],[110,165,220],[147,220,294],[123,185,247]], melodia:[523,587,698,784] },
+  storm:   { tempo:2.8, acordes:[[98,147,185],[87,131,165],[104,156,196],[98,147,185]],    melodia:[392,466,554,622] },
+  mystic:  { tempo:3.0, acordes:[[92,138,185],[104,156,208],[87,131,175],[98,147,196]],    melodia:[370,440,554,659] },
+  cyber:   { tempo:2.2, acordes:[[87,131,175],[98,147,196],[78,117,156],[87,131,175]],     melodia:[349,415,523,622] },
+  dungeon: { tempo:2.4, acordes:[[73,110,139],[78,117,147],[65,98,123],[73,110,139]],      melodia:[294,349,440,523] },
 };
 const themeNow = () => dungeon ? THEMES.dungeon : (THEMES[regionAt(player.x, player.y).theme] || THEMES.city);
 function terrainH(x, z){
@@ -3901,23 +4029,47 @@ function showDialog(speaker, text, title){
 
 /* ------------------------ objetivo guiado (tutorial) ---------------------- */
 // En móvil los controles son otros, así que el tutorial cambia de texto.
+// En móvil los controles son otros, así que el tutorial cambia de texto.
 const TOUCH = (matchMedia && matchMedia("(pointer:coarse)").matches) || navigator.maxTouchPoints > 0;
-const TUTORIAL = TOUCH ? [
+// Ocho pasos en vez de tres: el juego tiene demasiados sistemas como para
+// soltarte después de la primera extracción.
+const TUTORIAL = (TOUCH ? [
   { id:"move",  text:"Arrastra en la <b>mitad izquierda</b> para moverte y en la <b>derecha</b> para girar la cámara",
     done: () => tutState.moved > 120 },
-  { id:"fight", text:"Acércate a un enemigo y toca <b>GOLPE</b> (mantén pulsado para encadenar)",
+  { id:"fight", text:"Acércate a un enemigo y toca <b>GOLPE</b> (mantén pulsado para encadenar el combo)",
     done: () => P.kills >= 1 },
   { id:"arise", text:"Ponte sobre el cuerpo que deja y toca <b>ARISE</b> para extraer su sombra",
     done: () => P.arisen >= 1 },
+  { id:"dash",  text:"Toca <b>DASH</b> para esquivar: eres invulnerable mientras dura",
+    done: () => tutState.dashed },
+  { id:"skill", text:"Toca <b>ARMA</b> para lanzar la onda de tu arma: cuesta 30 de maná",
+    done: () => tutState.skilled },
 ] : [
   { id:"move",  text:"Muévete con <b>W A S D</b> y gira la cámara arrastrando el ratón",
     done: () => tutState.moved > 120 },
-  { id:"fight", text:"Acércate a un enemigo y golpéalo con el <b>clic izquierdo</b> (mantenlo para encadenar)",
+  { id:"fight", text:"Acércate a un enemigo y golpéalo con el <b>clic izquierdo</b> (mantenlo para encadenar el combo)",
     done: () => P.kills >= 1 },
   { id:"arise", text:"Ponte sobre el cuerpo que deja y pulsa <b>B</b> para extraer su sombra",
     done: () => P.arisen >= 1 },
-];
-const tutState = { moved:0, lastX:0, lastY:0 };
+  { id:"dash",  text:"Pulsa <b>Q</b> para esquivar: eres invulnerable mientras dura el impulso",
+    done: () => tutState.dashed },
+  { id:"skill", text:"Pulsa <b>V</b> para lanzar la onda de tu arma: cuesta 30 de maná",
+    done: () => tutState.skilled },
+]).concat([
+  { id:"stats",  text:"Has ganado puntos al subir de nivel: abre <b>Atributos</b> y repártelos",
+    done: () => P.stats.points === 0 && P.level >= 2 },
+  { id:"squad",  text:"Reúne <b>3 sombras</b> en tu escuadrón: pelean solas y siguen tus objetivos",
+    done: () => P.squad.length >= 3 },
+  { id:"shop",   text:"Abre la <b>Armería</b> y compra el arma siguiente: el daño base manda",
+    done: () => Object.keys(P.weapons).length >= 2 },
+  { id:"hunter", text:"Busca a <b>Woo Jinchul</b> en el mapa y habla con él para un encargo",
+    done: () => !!P.quests.active || P.quests.done > 0 },
+  { id:"region", text:"Aléjate del centro para llegar a la <b>región siguiente</b>: más nivel, mejores sombras",
+    done: () => ringAt(player.x, player.y) >= 1 },
+  { id:"portal", text:"Cuando se abra un <b>portal</b>, entra: las mazmorras dan las mejores sombras",
+    done: () => P.dungeonsCleared >= 1 || tutState.entered },
+]);
+const tutState = { moved:0, lastX:0, lastY:0, dashed:false, skilled:false, entered:false };
 function tutorialStep(){
   if (P.tutorial >= TUTORIAL.length) return null;
   return TUTORIAL[P.tutorial];
