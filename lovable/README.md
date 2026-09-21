@@ -9,12 +9,25 @@ mismo esqueleto que usa Lovable, listo para importar.
 
 ## Cómo llevarlo a Lovable
 
-1. Sube este directorio a un repositorio de GitHub (o usa este mismo).
-2. En Lovable: **New Project → GitHub → Import repository** y elige el repo.
-   Si el proyecto no está en la raíz, indica `lovable/` como directorio.
-3. Lovable instala las dependencias y arranca `npm run dev` solo. No hace falta
-   ninguna variable de entorno ni ningún servicio: el juego guarda la partida en
-   el `localStorage` del navegador.
+Lovable importa repositorios con **un solo `package.json` en la raíz**, así que
+sube el *contenido* de este directorio como repositorio propio (no el repo
+entero, donde `package.json` quedaría en un subdirectorio):
+
+```bash
+cd lovable && rm -rf node_modules dist
+git init && git add -A && git commit -m "Arise Crossover+"
+git branch -M main
+git remote add origin https://github.com/TU-USUARIO/arise-crossover-plus.git
+git push -u origin main
+```
+
+Luego, en Lovable: **New Project → Import from GitHub**, autoriza la GitHub App
+para ese repo y elígelo. Instala las dependencias y arranca la vista previa
+solo. No hace falta ninguna variable de entorno ni ningún servicio: el juego
+guarda la partida en el `localStorage` del navegador.
+
+Antes de importar, comprueba en tu máquina que `npm install && npm run build`
+funciona: si falla en local, falla en Lovable.
 
 También funciona en local:
 
@@ -59,3 +72,8 @@ en TypeScript estricto.
 ## Descripción del juego
 
 En [`GAME.md`](./GAME.md): historia, sistemas, fórmulas, progresión y controles.
+
+## Cómo pedirle cambios a Lovable
+
+En [`PROMPTS.md`](./PROMPTS.md): cómo importarlo, qué reglas darle y un catálogo
+de peticiones listas para copiar.
