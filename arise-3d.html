@@ -320,6 +320,7 @@ canvas#stage{position:absolute;inset:0;width:100%;height:100%;display:block;touc
         <span id="quest" style="color:var(--gold)"></span>
         <span id="fps" style="color:var(--dim)"></span>
         <span id="qualityTag" style="color:var(--dim);cursor:pointer;pointer-events:auto" title="Clic para cambiar la calidad">Calidad alta (auto)</span>
+        <span id="soundTag" style="color:var(--dim);cursor:pointer;pointer-events:auto" title="Clic para silenciar">Sonido: on</span>
       </div>
     </div>
 
@@ -635,6 +636,7 @@ function reconcile(d){
   if (!CLASSES[p.class]) p.class = "Warrior";
   if (typeof p.quests !== "object" || !p.quests) p.quests = { active:null, done:0 };
   if (typeof p.tutorial !== "number") p.tutorial = 0;
+  p.muted = !!p.muted;
   if (typeof p.chapter !== "number") p.chapter = 0;
   p.blessing = 0;   // el reloj se reinicia en cada carga
   if (!Array.isArray(p.squad)) p.squad = [];
@@ -770,6 +772,7 @@ function dealDamage(e, amount, opts){
                   color: crit ? "#ffd24a" : (o.shadow ? "#bfe2ff" : "#fff3c4"), big:!o.shadow, crit });
   spark(e.x, e.y, 52, crit ? 14 : 7, crit ? "#ffe9a8" : (o.shadow ? "#9bdcff" : "#fff1b8"));
   if (crit) ring(e.x, e.y, 90, "#ffd24a", .45);
+  SFX.hit(crit);
   if (!o.shadow){ hitstop = Math.max(hitstop, o.hitstop ?? 0.02); camImpulse(o.cam ?? 0.2); }
   if (e.hp <= 0) killEnemy(e);
 }
@@ -782,6 +785,7 @@ function killEnemy(e){
   P.cash += cash;
   burst(e.x, e.y, 22, e.def.color || "#ffd9a8", 40);
   ring(e.x, e.y, 120, "#8fd0ff", .5);
+  SFX.kill();
   // CorpseToken (contrato 07)
   while (corpses.length >= FLAGS.MAX_CORPSES) corpses.shift();
   corpses.push({
@@ -803,7 +807,7 @@ function gainXP(amount){
   if (leveled){
     player.hp = maxHP(); player.mana = maxMana();
     note(`Nivel ${P.level} · +3 puntos`, "--xp");
-    burst(player.x, player.y, 30, "#5ce8a6", 30);
+    burst(player.x, player.y, 30, "#5ce8a6", 30); SFX.levelUp();
     for (const isle of ISLANDS){
       if (P.level >= isle.level && !P.islands.includes(isle.id)){
         P.islands.push(isle.id);
@@ -841,6 +845,7 @@ function requestSkill(){
   player.skillCd = SKILL.cooldown;
   player.atkDef = { ...SKILL, mult:0, skill:true, cam:SKILL.feedback.cam, hitstop:SKILL.feedback.hitstop };
   player.phase = "startup"; player.phaseT = SKILL.startup; player.hitDone = false;
+  SFX.skill();
 }
 function resolveHit(){
   const def = player.atkDef;
@@ -874,7 +879,7 @@ function requestDash(){
   player.dashX = dx/len; player.dashY = dy/len;
   player.dashT = CFG.DASH_TIME;
   player.dashCd = FORMULA.dashCooldown(P.stats.AGI);
-  camImpulse(0.35);
+  camImpulse(0.35); SFX.dash();
   for (let i=0;i<10;i++) parts.push({ x:player.x, y:player.y, h:rnd(10,60), vx:rnd(-60,60), vy:rnd(-60,60),
                                       vh:rnd(20,80), life:rnd(.25,.45), color:"#bfe2ff", size:rnd(2,4) });
 }
@@ -919,6 +924,7 @@ function attemptArise(c){
     consumeCorpse(c, true);
     rebuildSquad(); save(); dirty = true;
     burst(c.x, c.y, 54, "#2fe4ff", 20); ring(c.x, c.y, 180, "#2fe4ff", .8);
+    SFX.arise();
     camImpulse(0.5);
     return { ok:true, shadow, replaced, rate };
   }
@@ -927,7 +933,7 @@ function attemptArise(c){
     P.gems += gems; consumeCorpse(c, true); save(); dirty = true;
     return { ok:false, code:"EXHAUSTED", gems, rate };
   }
-  burst(c.x, c.y, 16, "#4a5f8a", 16);
+  burst(c.x, c.y, 16, "#4a5f8a", 16); SFX.ariseFail();
   return { ok:false, code:"FAILED", attempts:c.AttemptsRemaining, rate };
 }
 function consumeCorpse(c, consumed){
@@ -1155,6 +1161,7 @@ function spawnPortal(){
              x:clamp(player.x + Math.cos(a)*600, 150, CFG.WORLD.w-150),
              y:clamp(player.y + Math.sin(a)*600, 150, CFG.WORLD.h-150) };
   banner(`PORTAL · ${portal.mode.name}`, portal.mode.color);
+  SFX.portal();
   note(`Se abrió un portal (${portal.mode.name})`, "--arise");
   dirty = true;
 }
@@ -1303,6 +1310,78 @@ function camImpulse(force){
   cam.distV += force * 90;
 }
 let banners = [];
+/* ---------------------------------------------------------------------------
+   Sonido. Todo se sintetiza con WebAudio en el momento: no hay ficheros de
+   audio que cargar, así que el juego sigue funcionando sin red y sin pesar
+   más. El contexto se crea en el primer gesto del jugador, como exigen los
+   navegadores.
+   --------------------------------------------------------------------------- */
+const SFX = {
+  ctx:null, master:null, muted:false, last:{},
+  init(){
+    if (this.ctx || typeof AudioContext === "undefined") return;
+    this.ctx = new AudioContext();
+    this.master = this.ctx.createGain();
+    this.master.gain.value = this.muted ? 0 : .32;
+    this.master.connect(this.ctx.destination);
+  },
+  setMuted(v){
+    this.muted = !!v;
+    if (this.master) this.master.gain.value = this.muted ? 0 : .32;
+  },
+  // limita repeticiones: veinte golpes a la vez no deben saturar
+  throttle(id, ms){
+    const t = performance.now();
+    if (this.last[id] && t - this.last[id] < ms) return false;
+    this.last[id] = t; return true;
+  },
+  tone(freq, dur, type, gain, slideTo){
+    if (!this.ctx || this.muted) return;
+    const t = this.ctx.currentTime;
+    const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+    o.type = type || "square";
+    o.frequency.setValueAtTime(freq, t);
+    if (slideTo) o.frequency.exponentialRampToValueAtTime(Math.max(20, slideTo), t + dur);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(gain ?? .3, t + 0.008);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(this.master);
+    o.start(t); o.stop(t + dur + .02);
+  },
+  noise(dur, gain, freq, q){
+    if (!this.ctx || this.muted) return;
+    const t = this.ctx.currentTime, n = Math.floor(this.ctx.sampleRate * dur);
+    const buf = this.ctx.createBuffer(1, n, this.ctx.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / n);
+    const src = this.ctx.createBufferSource(); src.buffer = buf;
+    const f = this.ctx.createBiquadFilter();
+    f.type = "bandpass"; f.frequency.value = freq || 900; f.Q.value = q || 1.2;
+    const g = this.ctx.createGain(); g.gain.value = gain ?? .25;
+    src.connect(f); f.connect(g); g.connect(this.master);
+    src.start(t);
+  },
+  arp(notes, step, type, gain){
+    if (!this.ctx || this.muted) return;
+    notes.forEach((f, i) => setTimeout(() => this.tone(f, step * 1.6, type || "triangle", gain ?? .26), i * step * 1000));
+  },
+  hit(crit){
+    if (!this.throttle("hit", 55)) return;
+    this.noise(.09, crit ? .3 : .18, crit ? 1500 : 850, 1.6);
+    this.tone(crit ? 330 : 210, .07, "square", crit ? .2 : .12, crit ? 150 : 110);
+  },
+  kill(){ if (this.throttle("kill", 90)) this.arp([440, 330, 220], .045, "sawtooth", .18); },
+  hurt(){ if (this.throttle("hurt", 220)) { this.noise(.16, .3, 320, .9); this.tone(180, .16, "sawtooth", .16, 90); } },
+  arise(){ this.arp([392, 523, 659, 880], .07, "triangle", .3); },
+  ariseFail(){ this.tone(200, .22, "square", .16, 90); },
+  levelUp(){ this.arp([523, 659, 784, 1047], .08, "triangle", .3); },
+  rankUp(){ this.arp([392, 494, 587, 784, 988], .09, "triangle", .32); },
+  portal(){ this.tone(120, .7, "sine", .22, 520); this.noise(.5, .1, 400, .7); },
+  dash(){ if (this.throttle("dash", 120)) this.noise(.14, .16, 1800, .8); },
+  skill(){ this.tone(660, .18, "sawtooth", .2, 240); this.noise(.2, .14, 600, 1); },
+  death(){ this.arp([392, 294, 220, 147], .12, "sawtooth", .28); },
+  ui(){ if (this.throttle("ui", 40)) this.tone(660, .05, "triangle", .12); },
+};
 function banner(text, color){
   const el = document.getElementById("banner");
   el.innerHTML = `<div class="banner stroke" style="color:${color}">${text}</div>`;
@@ -1700,14 +1779,14 @@ let saveT = 6;
 function hitPlayer(raw){
   if (player.dead > 0 || (player.invuln || 0) > now()) return;
   const dmg = Math.max(1, raw * CFG.CONTACT_SCALE * (1 - classBonus("armor")));
-  player.hp -= dmg; player.hurt = 0.22; player.lastHit = now();
+  player.hp -= dmg; player.hurt = 0.22; player.lastHit = now(); SFX.hurt();
   const ph = floaters.find(f => f.src === player);
   if (ph){ ph.amount += dmg; ph.text = `-${fmt(ph.amount)}`; ph.life = .9; }
   else floaters.push({ src:player, amount:dmg, x:player.x, y:player.y, h:100,
                        text:`-${fmt(dmg)}`, color:"#ff8d97", life:.9 });
   camImpulse(0.25);
   if (player.hp <= 0){
-    player.hp = 0; player.dead = 2.4;
+    player.hp = 0; player.dead = 2.4; SFX.death();
     note("Has caído · tus sombras te cubren", "--hp");
     burst(player.x, player.y, 34, "#ff4d61", 30);
   }
@@ -3302,6 +3381,7 @@ function syncHud(){
 
 /* ------------------------------- paneles ---------------------------------- */
 function openPanel(kind){
+  SFX.ui();
   closeArise(); panelKind = kind;
   panelTab = kind === "items" ? "Relics" : kind === "stats" ? "Stats" : "Weapons";
   renderPanel();
@@ -3593,6 +3673,7 @@ modal.addEventListener("click", e => {
     const next = RANKS[rankIdx(P.rank)+1];
     if (next && P.level >= next.level && P.gems >= next.gems){
       P.gems -= next.gems; P.rank = next.name;
+      SFX.rankUp();
       banner(`RANGO ${next.name}`, "#ffd24a"); note(`Rango ${next.name}`, "--gold");
       burst(player.x, player.y, 46, "#ffd24a", 34); camImpulse(0.75);
       save(); dirty = true; renderPanel();
@@ -3957,7 +4038,18 @@ function start(restored){
   rebuildSquad(); resize(); syncHud();
   paused = true;
   const startEl = document.getElementById("startScreen");
+  const soundEl = document.getElementById("soundTag");
+  SFX.setMuted(!!P.muted);
+  const paintSound = () => { if (soundEl) soundEl.textContent = `Sonido: ${SFX.muted ? "off" : "on"}`; };
+  paintSound();
+  if (soundEl) soundEl.onclick = () => {
+    SFX.init(); SFX.setMuted(!SFX.muted); P.muted = SFX.muted; save(); paintSound();
+    if (!SFX.muted) SFX.ui();
+  };
   document.getElementById("btn-play").onclick = () => {
+    SFX.init();                         // el navegador exige un gesto del jugador
+    SFX.setMuted(!!P.muted); paintSound();
+    SFX.ui();
     startEl.style.display = "none";
     paused = false;
     if (P.chapter === 0 && P.kills === 0){
