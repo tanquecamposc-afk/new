@@ -1,3 +1,5 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <title>Arise Crossover V9</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -249,10 +251,31 @@ canvas#stage{position:absolute;inset:0;width:100%;height:100%;display:block;touc
 .log{margin-top:10px;font-size:12.5px;color:var(--muted);min-height:18px}
 @media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
 @media (max-width:680px){
-  .pcard{min-width:0;max-width:54vw} .infocard{min-width:0} .target{display:none}
-  .hexwrap{top:auto;bottom:158px;transform:none} .hex{width:44px;height:50px;font-size:17px} .hexrow.odd{margin-left:23px}
-  .act{width:56px;height:56px} .coin{font-size:17px} .slot{width:44px;height:48px}
-  .lane{top:auto;bottom:250px;max-width:180px} .banner{font-size:24px}
+  /* Teléfono: el HUD se aparta para dejar libre el centro de la pantalla,
+     que es donde se arrastra para mover y girar la cámara. */
+  .top{gap:4px;padding:6px}
+  .pcard{min-width:0;max-width:46vw;font-size:11px;padding:6px 8px}
+  .infocard{min-width:0;max-width:46vw;font-size:11px;padding:6px 8px}
+  .target{display:none}
+  .pcard .bar,.infocard .bar{height:12px}
+  /* Los menús pasan a una fila centrada: las esquinas inferiores son para los pulgares. */
+  .hexwrap{top:auto;bottom:118px;left:50%;right:auto;transform:translateX(-50%);display:flex;flex-direction:row;gap:4px}
+  .hexrow{display:flex;flex-direction:row;gap:4px;margin:0}
+  .hex{width:36px;height:41px;font-size:15px} .hexrow.odd{margin-left:0}
+  .squad{display:none}
+  .wallet{gap:3px;font-size:11px;position:absolute;left:6px;bottom:64px;flex-direction:row!important;margin:0}
+  .coin{font-size:11px;padding:2px 6px}
+  .dock{width:100%}
+  .bottom{padding:0 2px 6px;justify-content:center} .bottom > div[aria-hidden]{display:none}
+  .hotbar{gap:4px;flex-wrap:nowrap;justify-content:center;width:100%}
+  .act{width:min(46px,12vw);height:52px;padding-bottom:2px} .act .lb{font-size:8px} .act .ic{font-size:17px} .act kbd{display:none}
+  .lane{top:auto;bottom:190px;max-width:165px;font-size:11px}
+  .banner{font-size:22px}
+  #mapwrap{display:none}
+  #dialog{bottom:120px;font-size:13px;max-height:46vh;overflow:auto}
+  #objective{font-size:11px;top:auto;bottom:166px;left:50%;max-width:88vw;width:max-content;
+    flex-wrap:wrap;justify-content:center;text-align:center;line-height:1.35}
+  .start-card .keys{display:none}
 }
 </style>
 
@@ -1291,7 +1314,9 @@ const drag = { active:false, x:0, y:0, moved:0, id:null };
 canvas.addEventListener("pointerdown", e => {
   canvas.setPointerCapture(e.pointerId);
   const touch = e.pointerType !== "mouse";
-  if (touch && e.clientX < W * 0.45){
+  // W es el buffer de render; para dividir la pantalla hay que usar px CSS.
+  const cssW = canvas.clientWidth || innerWidth;
+  if (touch && e.clientX < cssW * 0.45){
     stick.active = true; stick.id = e.pointerId; stick.ox = e.clientX; stick.oy = e.clientY; stick.x = 0; stick.y = 0;
     return;
   }
@@ -3327,7 +3352,16 @@ function showDialog(speaker, text, title){
 }
 
 /* ------------------------ objetivo guiado (tutorial) ---------------------- */
-const TUTORIAL = [
+// En móvil los controles son otros, así que el tutorial cambia de texto.
+const TOUCH = (matchMedia && matchMedia("(pointer:coarse)").matches) || navigator.maxTouchPoints > 0;
+const TUTORIAL = TOUCH ? [
+  { id:"move",  text:"Arrastra en la <b>mitad izquierda</b> para moverte y en la <b>derecha</b> para girar la cámara",
+    done: () => tutState.moved > 120 },
+  { id:"fight", text:"Acércate a un enemigo y toca <b>GOLPE</b> (mantén pulsado para encadenar)",
+    done: () => P.kills >= 1 },
+  { id:"arise", text:"Ponte sobre el cuerpo que deja y toca <b>ARISE</b> para extraer su sombra",
+    done: () => P.arisen >= 1 },
+] : [
   { id:"move",  text:"Muévete con <b>W A S D</b> y gira la cámara arrastrando el ratón",
     done: () => tutState.moved > 120 },
   { id:"fight", text:"Acércate a un enemigo y golpéalo con el <b>clic izquierdo</b> (mantenlo para encadenar)",
