@@ -745,6 +745,7 @@ function spawnEnemy(def, x, y){
   };
   const e = {
     guid:uid(), def:d, name:d.name, level:d.lvl, look,
+    isle: (dungeon ? regionAt(player.x, player.y) : regionAt(x ?? player.x, y ?? player.y)).id,
     x: x ?? clamp(player.x + Math.cos(a)*dist, 80, CFG.WORLD.w-80),
     y: y ?? clamp(player.y + Math.sin(a)*dist, 80, CFG.WORLD.h-80),
     hp:d.hp, maxHp:d.hp, atkCd:rnd(.6,1.8), hurt:0, step:rnd(0,6), stun:0,
@@ -1813,7 +1814,11 @@ function glowTexture(color){
 
 const GEO = new Map();
 function boxGeo(w, h, d){
-  const k = `${w.toFixed(2)}|${h.toFixed(2)}|${d.toFixed(2)}`;
+  // Se redondea a medias unidades: dos piezas casi iguales comparten geometría
+  // y el catálogo no crece sin fin al variar la escala de cada criatura.
+  const q = v => Math.max(0.25, Math.round(v * 2) / 2);
+  w = q(w); h = q(h); d = q(d);
+  const k = `${w}|${h}|${d}`;
   let g = GEO.get(k);
   if (!g){ g = new THREE.BoxGeometry(w, h, d); SHARED.add(g); GEO.set(k, g); }
   return g;
@@ -1877,9 +1882,168 @@ function faceTexture(eye, glow){
      ├ torso ── peto, cinturón, capa, hombreras
      │           └ shoulderL/R ── brazo + mano (pivote en el hombro)
      └ neck  ── cabeza, pelo, cara, cuernos/corona            */
-function buildCharacter(cfg){
+/* ---------------------------------------------------------------------------
+   Siluetas de criatura. Los mobs ya no son humanos recoloreados: cada familia
+   (limo, golem, bestia, insecto, espectro) tiene su propio cuerpo. Todas
+   exponen legs/arms/torso/neck para que la animación común siga valiendo.
+   --------------------------------------------------------------------------- */
+function limbStubs(g, detail){
+  g.legs = []; g.arms = [];
+  for (let i = 0; i < 2; i++){
+    const l = new THREE.Group(); detail.add(l); g.legs.push(l);
+    const a = new THREE.Group(); detail.add(a); g.arms.push(a);
+  }
+}
+function buildCreature(cfg){
   const g = new THREE.Group();
-  const s = cfg.scale ?? 1;
+  const s = Math.round((cfg.scale ?? 1) * 20) / 20;
+  const opts = cfg.opts || {};
+  const P0 = (w, h, d, c, o) => part(w*s, h*s, d*s, c, o || opts);
+  const glowOpts = c => ({ ...opts, emissive:c, emissiveIntensity:1.1 });
+  const detail = new THREE.Group(); g.add(detail); g.detail = detail;
+  const simple = new THREE.Group(); simple.visible = false; g.add(simple); g.simple = simple;
+  const body = cfg.body;
+  const main = cfg.skin, dark = cfg.pants || "#1b2340", glow = cfg.eyes || "#ffd24a";
+
+  // silueta lejana: tres cajas con el volumen aproximado
+  const b1 = part(34*s, 20*s, 30*s, main); b1.position.y = 14*s;
+  const b2 = part(26*s, 16*s, 24*s, main); b2.position.y = 34*s;
+  const b3 = part(16*s, 14*s, 16*s, dark); b3.position.y = 50*s;
+  simple.add(b1, b2, b3);
+
+  limbStubs(g, detail);
+  const torso = new THREE.Group(); torso.position.y = 41*s; detail.add(torso); g.torso = torso;
+  const neck  = new THREE.Group(); neck.position.y  = 56*s; detail.add(neck);  g.neck  = neck;
+
+  if (body === "slime"){
+    // limo: cúpula gelatinosa, núcleo brillante dentro y goterones
+    const tiers = [[46, 18, 46, 0], [40, 14, 40, 17], [30, 11, 30, 29], [18, 8, 18, 38]];
+    for (const [w, h, d, y] of tiers){
+      const m = P0(w, h, d, main, { ...opts, opacity:(opts.opacity ?? 1) * 0.82 });
+      m.position.y = (y - 41) * s; torso.add(m);
+    }
+    const core = P0(13, 13, 13, glow, glowOpts(glow));
+    core.position.y = (20 - 41) * s; torso.add(core);
+    for (const side of [-1, 1]){
+      const eye = P0(6, 7, 3, "#10182e"); eye.position.set(side*7*s, (30-41)*s, 20*s); torso.add(eye);
+      const drip = P0(5, 9, 5, main, { ...opts, opacity:.75 });
+      drip.position.set(side*17*s, (6-41)*s, side*9*s); torso.add(drip);
+    }
+    g.wobble = torso;
+  } else if (body === "golem"){
+    // golem: bloques de roca, grietas encendidas y brazos enormes
+    const hips = P0(34, 16, 26, dark); hips.position.y = (14-41)*s; torso.add(hips);
+    const chest = P0(46, 30, 30, main); chest.position.y = (40-41)*s; torso.add(chest);
+    for (const y of [32, 44]){
+      const crack = P0(40, 2.4, 31, glow, glowOpts(glow));
+      crack.position.y = (y-41)*s; torso.add(crack);
+    }
+    for (const side of [-1, 1]){
+      const leg = P0(14, 20, 16, dark);
+      leg.position.set(side*11*s, (-31)*s, 0); g.legs[side>0?1:0].add(leg);
+      g.legs[side>0?1:0].position.set(0, 27*s, 0);
+      const arm = new THREE.Group(); arm.position.set(side*28*s, 52*s, 0); detail.add(arm);
+      const up = P0(15, 24, 16, main); up.position.y = -12*s; arm.add(up);
+      const fist = P0(19, 17, 19, dark); fist.position.y = -30*s; arm.add(fist);
+      g.arms[side>0?1:0].parent.remove(g.arms[side>0?1:0]);
+      g.arms[side>0?1:0] = arm;
+    }
+    const head = P0(20, 16, 19, main); head.position.y = 6*s; neck.add(head);
+    for (const side of [-1, 1]){
+      const eye = P0(5, 4, 2.5, glow, glowOpts(glow));
+      eye.position.set(side*5*s, 7*s, 10*s); neck.add(eye);
+    }
+    const crest = P0(6, 11, 6, dark); crest.position.y = 17*s; crest.rotation.z = .3; neck.add(crest);
+  } else if (body === "beast"){
+    // bestia: cuadrúpedo bajo, hocico, melena y cola
+    const trunk = P0(24, 20, 48, main); trunk.position.y = (30-41)*s; torso.add(trunk);
+    const mane  = P0(28, 24, 12, cfg.hair || dark); mane.position.set(0, (34-41)*s, 17*s); torso.add(mane);
+    for (const [sx, sz, idx] of [[-1,1,0],[1,1,1],[-1,-1,0],[1,-1,1]]){
+      const leg = P0(8, 22, 9, dark);
+      leg.position.set(sx*9*s, (8-41)*s, sz*16*s); torso.add(leg);
+    }
+    for (let i = 0; i < 2; i++){ g.legs[i].position.set(0, 30*s, 0); }
+    const tail = P0(6, 6, 22, main); tail.position.set(0, (34-41)*s, -30*s); torso.add(tail); g.tail = tail;
+    const head = P0(18, 16, 18, main); head.position.set(0, -6*s, 24*s); neck.add(head);
+    const snout = P0(11, 9, 12, cfg.hair || dark); snout.position.set(0, -9*s, 36*s); neck.add(snout);
+    for (const side of [-1, 1]){
+      const ear = P0(5, 8, 3, main); ear.position.set(side*6*s, 4*s, 22*s); neck.add(ear);
+      const eye = P0(4.5, 4, 2.5, glow, glowOpts(glow)); eye.position.set(side*5*s, -3*s, 33*s); neck.add(eye);
+    }
+  } else if (body === "insect"){
+    // insecto: tórax, abdomen segmentado, mandíbulas y seis patas
+    const thorax = P0(24, 18, 26, main); thorax.position.y = (32-41)*s; torso.add(thorax);
+    let z = -18;
+    for (const w of [22, 18, 13]){
+      const seg = P0(w, w*0.85, w, main); seg.position.set(0, (30-41)*s, z*s); torso.add(seg);
+      z -= w * 0.8;
+    }
+    const plate = P0(20, 4, 20, glow, glowOpts(glow)); plate.position.set(0, (41-41)*s, -20*s); torso.add(plate);
+    for (const sz of [-10, 3, 15]){
+      for (const side of [-1, 1]){
+        const femur = P0(3.5, 3.5, 13, dark);
+        femur.position.set(side*13*s, (26-41)*s, sz*s);
+        femur.rotation.set(0, side*1.1, side*0.55); torso.add(femur);
+        const tibia = P0(3, 14, 3, dark);
+        tibia.position.set(side*20*s, (16-41)*s, sz*s);
+        tibia.rotation.z = side*0.25; torso.add(tibia);
+      }
+    }
+    for (let i = 0; i < 2; i++) g.legs[i].position.set(0, 30*s, 0);
+    const head = P0(16, 14, 16, main); head.position.set(0, -4*s, 22*s); neck.add(head);
+    for (const side of [-1, 1]){
+      const jaw = P0(3.5, 3.5, 14, dark); jaw.position.set(side*6*s, -9*s, 33*s); jaw.rotation.y = side*0.22; neck.add(jaw);
+      const eye = P0(5, 5, 3, glow, glowOpts(glow)); eye.position.set(side*5*s, 0, 30*s); neck.add(eye);
+      const ant = P0(2, 12, 2, dark); ant.position.set(side*4*s, 8*s, 26*s); ant.rotation.x = -0.5; neck.add(ant);
+    }
+  } else {
+    // espectro: flota, sin piernas, capucha y jirones
+    const hood = P0(22, 18, 20, dark); hood.position.y = 4*s; neck.add(hood);
+    const face = P0(15, 11, 3, "#05070f"); face.position.set(0, 1*s, 10*s); neck.add(face);
+    for (const side of [-1, 1]){
+      const eye = P0(4, 4, 2, glow, glowOpts(glow)); eye.position.set(side*4*s, 2*s, 11.5*s); neck.add(eye);
+    }
+    const chest = P0(26, 24, 16, main, { ...opts, opacity:(opts.opacity ?? 1) * .92 });
+    chest.position.y = 0; torso.add(chest);
+    let w = 24;
+    for (let i = 0; i < 4; i++){
+      const rag = P0(w, 9, w*0.6, main, { ...opts, opacity:.7 - i*.13 });
+      rag.position.y = (-14 - i*9) * s; torso.add(rag);
+      w -= 4.5;
+    }
+    for (const side of [-1, 1]){
+      const arm = new THREE.Group(); arm.position.set(side*17*s, 50*s, 0); detail.add(arm);
+      const sleeve = P0(9, 20, 9, main, { ...opts, opacity:.85 }); sleeve.position.y = -10*s; arm.add(sleeve);
+      const claw = P0(8, 8, 8, glow, glowOpts(glow)); claw.position.y = -23*s; arm.add(claw);
+      g.arms[side>0?1:0].parent.remove(g.arms[side>0?1:0]);
+      g.arms[side>0?1:0] = arm;
+    }
+    g.float = true;
+  }
+
+  if (cfg.crown){
+    const c1 = P0(20, 4.5, 19, cfg.crown, glowOpts(cfg.crown)); c1.position.y = 16*s; neck.add(c1);
+    for (const dx of [-6, 0, 6]){
+      const sp = P0(4, 8, 4, cfg.crown, glowOpts(cfg.crown)); sp.position.set(dx*s, 22*s, 0); neck.add(sp);
+    }
+  }
+  if (cfg.horns){
+    for (const side of [-1, 1]){
+      const h = P0(4.5, 12, 4.5, cfg.hornColor || glow, glowOpts(cfg.hornColor || glow));
+      h.position.set(side*8*s, 16*s, 0); h.rotation.z = side*0.35; neck.add(h);
+    }
+  }
+  g.scaleRef = s;
+  g.setLod = far => {
+    if (g.__far === far) return;
+    g.__far = far; simple.visible = far; detail.visible = !far;
+  };
+  return g;
+}
+function buildCharacter(cfg){
+  if (cfg.body && cfg.body !== "humanoid") return buildCreature(cfg);
+  const g = new THREE.Group();
+  const s = Math.round((cfg.scale ?? 1) * 20) / 20;
   // silueta simple para la distancia (3 mallas en vez de ~20)
   const simple = new THREE.Group();
   const sp1 = part(26*s, 26*s, 15*s, cfg.pants); sp1.position.y = 13*s;
@@ -1939,11 +2103,57 @@ function buildCharacter(cfg){
     detail.add(sh); g.arms.push(sh);
   }
   if (cfg.pauldron){
+    // hombreras en dos capas; con `spikes` salen púas, como la armadura de sombra
     for (const side of [-1, 1]){
-      const p2 = P0(12.5, 6, 13.5, cfg.pauldron);
-      p2.position.set(side * 16.5 * s, 53 * s, 0);
+      const p2 = P0(14, 7, 15, cfg.pauldron);
+      p2.position.set(side * 17 * s, 54 * s, 0);
       p2.rotation.z = side * -0.18;
       detail.add(p2);
+      const p3 = P0(16.5, 6, 17, cfg.pauldron2 || cfg.pauldron);
+      p3.position.set(side * 18 * s, 58.5 * s, 0);
+      p3.rotation.z = side * -0.26;
+      detail.add(p3);
+      if (cfg.spikes){
+        for (const dz of [-4.5, 0, 4.5]){
+          const sp = P0(3.2, 9, 3.2, cfg.spikes, { ...opts, emissive:cfg.spikes, emissiveIntensity:.5 });
+          sp.position.set(side * 20 * s, 63 * s, dz * s);
+          sp.rotation.z = side * -0.5;
+          detail.add(sp);
+        }
+      }
+    }
+  }
+  if (cfg.gauntlet){
+    for (let i = 0; i < 2; i++){
+      const gt = P0(11.5, 9, 12.5, cfg.gauntlet);
+      gt.position.y = -22 * s; g.arms[i].add(gt);
+    }
+  }
+  if (cfg.tassets){
+    // faldón de placas colgando del cinturón
+    for (const dx of [-9.5, 0, 9.5]){
+      const t2 = P0(8.5, 13, 3, cfg.tassets);
+      t2.position.set(dx * s, 21 * s, 8.4 * s); detail.add(t2);
+    }
+    const rear = P0(26, 12, 3, cfg.tassets);
+    rear.position.set(0, 21 * s, -8.4 * s); detail.add(rear);
+  }
+  if (cfg.greaves){
+    for (let i = 0; i < 2; i++){
+      const gv = P0(14.5, 12, 15, cfg.greaves);
+      gv.position.set(0, -16 * s, 1 * s); g.legs[i].add(gv);
+    }
+  }
+  if (cfg.core){
+    const c2 = P0(7, 7, 3, cfg.core, { ...opts, emissive:cfg.core, emissiveIntensity:1.3 });
+    c2.position.set(0, 45 * s, 9.4 * s); detail.add(c2);
+  }
+  if (cfg.backSpikes){
+    for (const dx of [-8, 0, 8]){
+      const bs = P0(3.5, 14 - Math.abs(dx) * .5, 3.5, cfg.backSpikes,
+                    { ...opts, emissive:cfg.backSpikes, emissiveIntensity:.6 });
+      bs.position.set(dx * s, 54 * s, -9.5 * s);
+      bs.rotation.x = 0.35; detail.add(bs);
     }
   }
   // cabeza
@@ -1956,10 +2166,53 @@ function buildCharacter(cfg){
   const head = new THREE.Mesh(boxGeo(19*s, 18*s, 17.5*s), headMat);
   head.castShadow = true; head.position.y = 12 * s;
   neck.add(head);
-  if (cfg.hair){
+  if (cfg.hair && !cfg.helm && !cfg.hood){
     const top = P0(19.5, 4, 18, cfg.hair); top.position.y = 22 * s; neck.add(top);
     const back = P0(18.5, 9, 3, cfg.hair); back.position.set(0, 15 * s, -8 * s); neck.add(back);
     const fringe = P0(18.5, 4.5, 3, cfg.hair); fringe.position.set(0, 19 * s, 8 * s); neck.add(fringe);
+  }
+  if (cfg.hood){
+    // capucha de cazador: caída trasera, borde frontal y sombra sobre los ojos
+    const back = P0(21, 15, 8, cfg.hood); back.position.set(0, 14 * s, -7 * s); neck.add(back);
+    const top  = P0(21, 6, 19, cfg.hood); top.position.y = 21 * s; neck.add(top);
+    for (const side of [-1, 1]){
+      const sidep = P0(3.5, 13, 19, cfg.hood); sidep.position.set(side * 9.2 * s, 14 * s, 0); neck.add(sidep);
+    }
+    const brim = P0(20, 4, 5, cfg.hood2 || cfg.hood); brim.position.set(0, 18.5 * s, 8.5 * s);
+    brim.rotation.x = 0.25; neck.add(brim);
+    const scarf = P0(20, 6, 18, cfg.hood2 || cfg.hood); scarf.position.y = 5 * s; neck.add(scarf);
+  }
+  if (cfg.rig){
+    // arnés táctico: correas cruzadas y cargadores
+    const strapA = P0(5, 30, 2.5, cfg.rig); strapA.position.set(0, 43 * s, 8.6 * s);
+    strapA.rotation.z = 0.5; detail.add(strapA);
+    const strapB = P0(5, 30, 2.5, cfg.rig); strapB.position.set(0, 43 * s, 8.6 * s);
+    strapB.rotation.z = -0.5; detail.add(strapB);
+    for (const dx of [-9, 9]){
+      const pouch = P0(7, 8, 3.5, cfg.rig2 || cfg.rig); pouch.position.set(dx * s, 33 * s, 8.8 * s); detail.add(pouch);
+    }
+  }
+  if (cfg.kneepads){
+    for (let i = 0; i < 2; i++){
+      const kp = P0(13, 6, 4, cfg.kneepads); kp.position.set(0, -15 * s, 7 * s); g.legs[i].add(kp);
+    }
+  }
+  if (cfg.helm){
+    // yelmo cerrado: cúpula, visera encendida, mejillas y cresta
+    const dome = P0(20.5, 11, 19, cfg.helm); dome.position.y = 19 * s; neck.add(dome);
+    const brow = P0(21, 3.5, 20, cfg.helm2 || cfg.helm); brow.position.y = 13.5 * s; neck.add(brow);
+    for (const side of [-1, 1]){
+      const cheek = P0(3.5, 11, 18, cfg.helm); cheek.position.set(side * 8.5 * s, 8 * s, 0); neck.add(cheek);
+    }
+    const visor = P0(15, 3.2, 2.5, cfg.visor || "#31e4ff",
+                     { ...opts, emissive:cfg.visor || "#31e4ff", emissiveIntensity:1.4 });
+    visor.position.set(0, 11 * s, 9.2 * s); neck.add(visor);
+    if (cfg.crest){
+      for (const [dy, h] of [[26, 7], [30, 5]]){
+        const cr = P0(3.5, h, 12, cfg.crest, { ...opts, emissive:cfg.crest, emissiveIntensity:.5 });
+        cr.position.y = dy * s; neck.add(cr);
+      }
+    }
   }
   if (cfg.hat){
     const h1 = P0(21.5, 8, 20, cfg.hat); h1.position.y = 23 * s; neck.add(h1);
@@ -2038,17 +2291,17 @@ function poseCharacter(v, o){
 
 /* ------------------------------ escena ----------------------------------- */
 const THEMES = {
-  city:    { g1:"#57b94f", g2:"#4aa845", sky1:"#2f8fe0", sky2:"#cfeeff", fog:"#bfe4ff", sun:"#fff6e0", amp:6,  prop:"city" },
+  city:    { g1:"#57b94f", g2:"#4aa845", road:"#3c4356", curb:"#e6ebf5", sky1:"#2f8fe0", sky2:"#cfeeff", fog:"#bfe4ff", sun:"#fff6e0", amp:0,  prop:"city" },
   forest:  { g1:"#3c9c45", g2:"#34883b", sky1:"#2e86c8", sky2:"#cfeeff", fog:"#b9e2ff", sun:"#fff2d8", amp:26, prop:"forest" },
   ice:     { g1:"#e3f4ff", g2:"#c9e7fb", sky1:"#4aa8e8", sky2:"#ecfaff", fog:"#dff4ff", sun:"#ffffff", amp:30, prop:"ice" },
-  urban:   { g1:"#8d97a8", g2:"#7f8998", sky1:"#3b6ea8", sky2:"#bcd6ee", fog:"#9fc0de", sun:"#fff4e2", amp:5,  prop:"urban" },
-  royal:   { g1:"#77c36a", g2:"#67b25c", sky1:"#3b7fd0", sky2:"#ffe6b8", fog:"#e8dcc0", sun:"#fff0cf", amp:16, prop:"royal" },
+  urban:   { g1:"#8d97a8", g2:"#7f8998", road:"#2f3646", curb:"#b9c2d2", sky1:"#3b6ea8", sky2:"#bcd6ee", fog:"#9fc0de", sun:"#fff4e2", amp:0,  prop:"urban" },
+  royal:   { g1:"#77c36a", g2:"#67b25c", sky1:"#3b7fd0", sky2:"#ffe6b8", fog:"#e8dcc0", sun:"#fff0cf", amp:10, prop:"royal" },
   shrine:  { g1:"#7fbf6a", g2:"#6faf5c", sky1:"#e0705a", sky2:"#ffd9c2", fog:"#f0c3ae", sun:"#ffd9b0", amp:20, prop:"shrine" },
   dark:    { g1:"#3a4a3c", g2:"#334233", sky1:"#161a2c", sky2:"#3b3550", fog:"#2b2a42", amp:24, sun:"#9fb0ff", prop:"dark" },
   dragon:  { g1:"#7a5f45", g2:"#6b523b", sky1:"#7a2e20", sky2:"#e6a05a", fog:"#b2703f", sun:"#ffd2a0", amp:52, prop:"dragon" },
-  cyber:   { g1:"#2a3350", g2:"#242c46", sky1:"#0b1030", sky2:"#5a2a86", fog:"#2c1e50", amp:5,  sun:"#b98cff", prop:"cyber" },
+  cyber:   { g1:"#2a3350", g2:"#242c46", road:"#171d33", curb:"#4a3a86", sky1:"#0b1030", sky2:"#5a2a86", fog:"#2c1e50", amp:0,  sun:"#b98cff", prop:"cyber" },
   volcano: { g1:"#3a2a2a", g2:"#322424", sky1:"#2a0c0c", sky2:"#e0562a", fog:"#6e2a18", amp:36, sun:"#ffb07a", prop:"volcano" },
-  guild:   { g1:"#6fae7a", g2:"#619e6c", sky1:"#2f7fc8", sky2:"#dff0ff", fog:"#c6e3f7", amp:12, sun:"#fff6e0", prop:"guild" },
+  guild:   { g1:"#6fae7a", g2:"#619e6c", road:"#3a4456", curb:"#e0e8f2", sky1:"#2f7fc8", sky2:"#dff0ff", fog:"#c6e3f7", amp:0, sun:"#fff6e0", prop:"guild" },
   mystic:  { g1:"#3e3a72", g2:"#363165", sky1:"#161046", sky2:"#6b4cc0", fog:"#3b2f78", amp:18, sun:"#c0a8ff", prop:"mystic" },
   storm:   { g1:"#5a6b7a", g2:"#4e5e6c", sky1:"#2a3348", sky2:"#8fa4bc", fog:"#61758c", amp:32, sun:"#dfe8f5", prop:"storm" },
   dungeon: { g1:"#3c2c52", g2:"#342749", sky1:"#0e0820", sky2:"#5a1f42", fog:"#2a1533", amp:8,  sun:"#ff9ab0", prop:"dungeon" },
@@ -2067,15 +2320,30 @@ function updateCameraBasis(){
 }
 function groundTexture(th){
   const c = document.createElement("canvas");
-  c.width = c.height = 128;
+  c.width = c.height = 256;
   const x = c.getContext("2d");
-  x.fillStyle = th.g1; x.fillRect(0, 0, 128, 128);
-  x.fillStyle = th.g2; x.fillRect(0, 0, 64, 64); x.fillRect(64, 64, 64, 64);
+  x.fillStyle = th.g1; x.fillRect(0, 0, 256, 256);
+  x.fillStyle = th.g2; x.fillRect(0, 0, 128, 128); x.fillRect(128, 128, 128, 128);
+  if (th.road){
+    // Calzada en cruz con línea discontinua y aceras, al estilo de las
+    // islas-ciudad: el suelo deja de ser un tablero de ajedrez vacío.
+    const road = th.road, curb = th.curb || "#d8dee8";
+    x.fillStyle = curb; x.fillRect(0, 96, 256, 64); x.fillRect(96, 0, 64, 256);
+    x.fillStyle = road; x.fillRect(0, 102, 256, 52); x.fillRect(102, 0, 52, 256);
+    x.fillStyle = "#f5f0c0";
+    for (let i = 0; i < 256; i += 32){
+      x.fillRect(i + 6, 126, 16, 4);
+      x.fillRect(126, i + 6, 4, 16);
+    }
+    x.fillStyle = "rgba(255,255,255,.25)";
+    x.fillRect(0, 100, 256, 2); x.fillRect(0, 154, 256, 2);
+    x.fillRect(100, 0, 2, 256); x.fillRect(154, 0, 2, 256);
+  }
   x.globalAlpha = .14; x.fillStyle = "#ffffff";
-  for (let i = 0; i < 140; i++) x.fillRect(Math.random()*128, Math.random()*128, 2, 2);
+  for (let i = 0; i < 220; i++) x.fillRect(Math.random()*256, Math.random()*256, 3, 3);
   const t = new THREE.CanvasTexture(c);
   t.wrapS = t.wrapT = THREE.RepeatWrapping;
-  t.repeat.set(26, 26);
+  t.repeat.set(th.road ? 14 : 26, th.road ? 14 : 26);
   return t;
 }
 let currentThemeKey = null, groundTex = null;
@@ -2191,25 +2459,66 @@ function buildProp(kind, h){
     const m = part(w, ht, d, col, o); m.position.set(x, y + ht/2, z); g.add(m); return m;
   };
   switch (kind){
-    case "city":
-      add(96, 90 + v * .8, 96, "#eef3ff", 0, 0, 0);
-      add(110, 12, 110, "#cfe0ff", 0, 90 + v * .8, 0);
-      for (let i = 0; i < 3; i++) add(64, 16, 2, "#7fd6ff", 0, 28 + i*38, 53, { emissive:"#3ba9d6", emissiveIntensity:.5 });
+    case "city": {
+      // Rascacielos de colores con bandas de ventanas encendidas en las
+      // cuatro caras, azotea, antena y zócalo: el skyline de una isla-ciudad.
+      const pal = ["#f2c14e","#e8734f","#4fa3e8","#8a6bd8","#4fc99a","#e85f8a","#f0f3ff"];
+      const body = pal[v % pal.length];
+      const floors = 3 + (v % 5);
+      const ht = 70 + floors * 26;
+      add(20 + (v % 3) * 4 + 76, 8, 96 + (v % 3) * 4, "#b9c2d2", 0, 0, 0);   // zócalo
+      add(88, ht, 88, body, 0, 8, 0);
+      add(100, 10, 100, "#e9eef7", 0, 8 + ht, 0);                            // cornisa
+      const win = v % 2 ? "#ffe9a8" : "#9fe4ff";
+      for (let i = 0; i < floors; i++){
+        const y = 26 + i * 26;
+        add(62, 12, 2, win, 0, y, 45, { emissive:win, emissiveIntensity:.9 });
+        add(62, 12, 2, win, 0, y, -45, { emissive:win, emissiveIntensity:.9 });
+        add(2, 12, 62, win, 45, y, 0, { emissive:win, emissiveIntensity:.9 });
+        add(2, 12, 62, win, -45, y, 0, { emissive:win, emissiveIntensity:.9 });
+      }
+      add(26, 14, 26, "#cfd8e8", 0, 18 + ht, 0);                             // caseta
+      add(5, 34, 5, "#8f9bb0", 0, 32 + ht, 0);                               // antena
+      add(8, 8, 8, "#ff5a6a", 0, 66 + ht, 0, { emissive:"#ff5a6a", emissiveIntensity:1.4 });
       break;
-    case "forest":
-      add(18, 56, 18, "#7a4a24", 0, 0, 0);
-      add(76, 46, 76, "#2fa83f", 0, 50, 0);
-      add(52, 34, 52, "#3ec24e", 0, 90, 0);
+    }
+    case "forest": {
+      // palmera: tronco inclinado por tramos y hojas radiales
+      let off = 0;
+      for (let i = 0; i < 6; i++){
+        off += (v % 3) - 1;
+        add(13 - i, 12, 13 - i, i % 2 ? "#8a5a2e" : "#7a4a24", off * 2.2, i * 12, 0);
+      }
+      const topY = 72, tx = off * 2.2;
+      for (let a = 0; a < 6; a++){
+        const ang = (a / 6) * Math.PI * 2 + (v % 7) * .1;
+        const leaf = part(38, 5, 13, a % 2 ? "#2fa83f" : "#3ec24e");
+        leaf.position.set(tx + Math.cos(ang) * 21, topY + 4 - (a % 2) * 3, Math.sin(ang) * 21);
+        leaf.rotation.y = -ang; leaf.rotation.z = .22;
+        g.add(leaf);
+      }
+      add(9, 9, 9, "#c98a3a", tx, topY - 6, 8);                              // cocos
       break;
+    }
     case "ice":
       add(16, 44, 16, "#6d4b2e", 0, 0, 0);
       add(68, 40, 68, "#dff3ff", 0, 40, 0);
       add(44, 32, 44, "#ffffff", 0, 74, 0);
       break;
-    case "urban":
-      add(100, 90 + v, 100, "#9aa6b8", 0, 0, 0);
-      add(48, 28, 2, "#3b4a60", 0, 32, 51);
+    case "urban": {
+      // bloque urbano: hormigón, franjas de ventanas y neón en la fachada
+      const ht = 110 + v * 1.6;
+      add(104, 10, 104, "#7c8698", 0, 0, 0);
+      add(94, ht, 94, v % 2 ? "#9aa6b8" : "#8592a6", 0, 10, 0);
+      for (let i = 0; i < 4 + (v % 3); i++){
+        const y = 30 + i * 28;
+        add(70, 13, 2, "#cfe4ff", 0, y, 48, { emissive:"#7fb7e8", emissiveIntensity:.55 });
+        add(2, 13, 70, "#cfe4ff", -48, y, 0, { emissive:"#7fb7e8", emissiveIntensity:.55 });
+      }
+      add(10, 44, 3, "#ff6a8a", 40, 40, 49, { emissive:"#ff6a8a", emissiveIntensity:1.2 });
+      add(104, 12, 104, "#6b7688", 0, 10 + ht, 0);
       break;
+    }
     case "royal":
       add(84, 170 + v, 84, "#e8e2d0", 0, 0, 0);
       add(100, 24, 100, "#c9bfa4", 0, 170 + v, 0);
@@ -2304,16 +2613,44 @@ function syncProps(){
 
 /* --------------------------- vistas de entidades -------------------------- */
 function playerConfig(){
+  // El cazador cambia de aspecto según avanza: de chaqueta de novato a
+  // armadura completa, y de ahí a la armadura del Monarca de las Sombras.
+  const r = rankIdx(P.rank);                       // 0=E … 5=S, 6=Nacional
   const awake = P.awakened;
+  const monarch = awake && r >= 4;
+  const armored = r >= 2 || awake;
+  const heavy = r >= 4 || monarch;
+  const base = monarch
+    ? { shirt:"#170d33", sleeve:"#241552", pants:"#120a2a", boots:"#0d0720",
+        plate:"#3b2178", trim:"#8a5cff", glowC:"#b48cff" }
+    : awake
+      ? { shirt:"#1b2c62", sleeve:"#25397d", pants:"#16224a", boots:"#101833",
+          plate:"#2f4a9e", trim:"#5aa8ff", glowC:"#7fd0ff" }
+      : { shirt:"#23407e", sleeve:"#2d51a0", pants:"#2a3350", boots:"#1d2438",
+          plate:"#3f6ac0", trim:"#8fc0ff", glowC:"#9fd6ff" };
   return {
-    scale:1.05, skin:"#f5cd30",
-    shirt: awake ? "#41288f" : "#2f6bd8", sleeve: awake ? "#5a3ab8" : "#3f7ae8",
-    armor: awake ? "#7a54c8" : "#4a86ee", armorGlow: awake ? "#8a5cff" : 0,
-    pants: awake ? "#2a1c56" : "#3f9b4f", boots:"#2b2f40", belt:"#2a2218", buckle:"#ffd24a",
-    hair: awake ? "#bb8cff" : "#8b4a22", eyes:"#12172b",
-    pauldron: awake ? "#7a54c8" : "#39508f", glove:"#e0a83a",
-    cape: awake ? "#5a2fa8" : null, crown: P.rank === "S" ? "#ffd24a" : null,
-    weapon: awake ? "#ddc4ff" : "#cfd9ee", weaponKind: weaponKind(P.weapon),
+    scale:1.06, skin:"#e8b98a", eyes: monarch ? "#b48cff" : "#12172b", glowEyes: monarch,
+    shirt: base.shirt, sleeve: base.sleeve, pants: base.pants, boots: base.boots,
+    belt:"#1a1428", buckle: base.trim,
+    hair: null,
+    hood: heavy ? null : (monarch ? "#1b0f3c" : "#141b33"),
+    hood2: heavy ? null : base.trim,
+    rig: armored ? null : "#0f1526", rig2: armored ? null : base.trim,
+    kneepads: heavy ? null : "#0f1526",
+    armor: base.plate, armorGlow: monarch ? base.trim : 0,
+    core: armored ? base.glowC : null,
+    pauldron: base.plate, pauldron2: armored ? base.trim : null,
+    spikes: monarch ? base.trim : null,
+    gauntlet: base.plate,
+    tassets: r >= 1 || awake ? base.plate : null,
+    greaves: heavy ? base.plate : null,
+    backSpikes: monarch ? base.trim : null,
+    helm: heavy ? base.plate : null, helm2: heavy ? base.trim : null,
+    visor: heavy ? base.glowC : null, crest: monarch ? base.trim : null,
+    glove: base.trim,
+    cape: monarch ? "#1b0f3c" : (r >= 3 ? base.plate : null),
+    crown: (monarch && r >= 6) ? "#ffd24a" : null,
+    weapon: monarch ? "#c8a8ff" : "#dce6f8", weaponKind: weaponKind(P.weapon),
     key: `${awake}|${P.rank}|${P.weapon}`,
   };
 }
@@ -2326,34 +2663,75 @@ function ensurePlayerView(){
   scene.add(playerView);
   return playerView;
 }
+// Cada región tiene su familia de criatura, con su paleta y su brillo.
+const MOB_LOOK = {
+  Seoul:       { body:"slime",    skin:"#6fe0a8", dark:"#1d5a45", glow:"#b7ffe6" },
+  Hongdae:     { body:"beast",    skin:"#7a8ad0", dark:"#232b4a", glow:"#ffd24a", hair:"#3a4470" },
+  Temple:      { body:"golem",    skin:"#a89a86", dark:"#5b5044", glow:"#ffb45a" },
+  Reawaken:    { body:"wraith",   skin:"#3d3358", dark:"#1a1430", glow:"#9f7bff" },
+  HighOrcs:    { body:"humanoid", skin:"#6fae6a", dark:"#2a3a28", glow:"#ffe066" },
+  RedGate:     { body:"beast",    skin:"#cfe8ff", dark:"#4a6a8a", glow:"#7fe0ff", hair:"#9fc4e8" },
+  Jeju:        { body:"insect",   skin:"#2e2a3a", dark:"#15121f", glow:"#8fff6a" },
+  Japan:       { body:"humanoid", skin:"#b06a5a", dark:"#3a1f28", glow:"#ff7a5a" },
+  DemonCastle: { body:"wraith",   skin:"#5a2438", dark:"#2a0f1c", glow:"#ff5a7a" },
+  IceMonarch:  { body:"golem",    skin:"#cfe9ff", dark:"#5f7f9f", glow:"#9fe8ff" },
+  BeastMonarch:{ body:"beast",    skin:"#8a5a3a", dark:"#3a2418", glow:"#ffb45a", hair:"#5a3a24" },
+  Architect:   { body:"wraith",   skin:"#4a4a86", dark:"#1f1f44", glow:"#9fa8ff" },
+  ShadowRealm: { body:"humanoid", skin:"#2a2a4a", dark:"#12122a", glow:"#c08cff" },
+};
 function enemyConfig(e){
   const L = e.look || {};
   const boss = e.boss, brute = e.def.kind === "brute";
-  const base = boss ? "#e0a05a" : (brute ? "#a785ff" : "#8ad07a");
+  const reg = MOB_LOOK[(e.isle || regionAt(e.x, e.y).id)] || MOB_LOOK.Seoul;
+  // los jefes rompen el molde de su región: siempre humanoides acorazados
+  const body = boss ? "humanoid" : reg.body;
+  const glow = reg.glow;
+  const cfg = {
+    body,
+    scale: (e.def.r / 18) * (boss ? 1.75 : brute ? 1.25 : (L.height || 1)),
+    skin: brute ? reg.dark : reg.skin,
+    pants: reg.dark, eyes: glow, hair: reg.hair || reg.dark,
+    horns: brute || boss, hornColor: glow,
+    crown: boss ? glow : null,
+  };
+  if (body !== "humanoid") return cfg;
+  // humanoide: guerrero con placas, más recargado cuanto más duro es
   return {
-    scale: (e.def.r / 18) * (boss ? 1.6 : (L.height || 1)),
-    skin: base, shirt: boss ? "#6b4a2a" : (L.shirt || "#3f7ad8"), sleeve: L.shirt || "#356ac0",
-    pants: L.pants || "#2f3a52", boots: L.boots || "#23283a", belt:"#2a2218",
-    hair: boss ? "#3a2a1a" : (L.hair || "#2b1d12"), hat: boss ? null : L.hat,
-    eyes: boss ? "#ffe066" : "#2a1010",
-    pauldron: boss ? "#8a5a2a" : (brute ? "#5a4a8a" : null),
-    horns: boss || brute, hornColor: boss ? "#ffd27a" : "#4a3a6a",
-    weapon: boss ? "#ffd9a8" : (brute ? "#8a7a6a" : null), weaponKind: boss ? "scythe" : "sword",
-    armor: boss ? "#8a5a2a" : null,
+    ...cfg,
+    skin: boss ? "#c9a06a" : reg.skin,
+    shirt: reg.dark, sleeve: reg.dark, boots:"#15182a", belt:"#1a1626",
+    glowEyes:true,
+    armor: reg.dark, armorGlow: brute || boss ? glow : 0,
+    core: boss ? glow : null,
+    pauldron: reg.dark, pauldron2: brute || boss ? glow : null,
+    spikes: boss ? glow : null,
+    gauntlet: brute || boss ? reg.dark : null,
+    tassets: boss ? reg.dark : null,
+    greaves: boss ? reg.dark : null,
+    helm: boss ? reg.dark : null, helm2: boss ? glow : null, visor: boss ? glow : null,
+    cape: boss ? reg.dark : null,
+    weapon: boss ? glow : (brute ? "#8a7a6a" : null),
+    weaponKind: boss ? "scythe" : "sword",
   };
 }
 function shadowConfig(sh){
   const tier = sh.data.tier;
   const glow = getComputedStyle(document.documentElement).getPropertyValue(TIER_VAR[tier] || "--t-C").trim() || "#b9c9e8";
+  const elite = tier === "S" || tier === "S Elite" || tier === "Monarch";
+  const monarch = tier === "Monarch";
   return {
-    scale:.97, opts:{ opacity:.93 },
-    skin:"#3b6bb5", shirt:"#1f3f7d", sleeve:"#2a509a", pants:"#16294d", boots:"#101f3c",
-    belt:"#101f3c", hair:"#16294d", glove:"#4d84cc", pauldron:"#2d5896",
-    armor: glow, armorGlow: glow, eyes: glow, glowEyes:true,
-    horns: tier === "S" || tier === "S Elite", hornColor: glow, hornBase:"#16294d",
-    crown: tier === "Monarch" ? glow : null,
-    cape: (tier === "S Elite" || tier === "Monarch") ? "#12294f" : null,
-    weapon: glow, weaponKind:"sword",
+    scale: monarch ? 1.12 : elite ? 1.04 : .97, opts:{ opacity:.94 },
+    skin:"#2b4f86", shirt:"#14294f", eyes: glow, glowEyes:true,
+    sleeve:"#1d3d72", pants:"#0e1c38", boots:"#081428", belt:"#0e1c38",
+    hair:null, glove: glow,
+    armor:"#1b3866", armorGlow: glow, core: glow,
+    pauldron:"#1b3866", pauldron2: glow, spikes: elite ? glow : null,
+    gauntlet:"#1b3866", tassets:"#1b3866", greaves:"#1b3866",
+    backSpikes: monarch ? glow : null,
+    helm:"#1b3866", helm2: glow, visor: glow, crest: elite ? glow : null,
+    crown: monarch ? glow : null,
+    cape: elite ? "#0d1f3f" : null,
+    weapon: glow, weaponKind: monarch ? "scythe" : "sword",
   };
 }
 // Libera la memoria de GPU de una vista que sale de la escena. Sin esto las
@@ -2777,7 +3155,7 @@ function render(dt){
     blades.instanceMatrix.needsUpdate = true;
     const th2 = themeNow();
     blades.material.color.set(th2.g2);
-    blades.visible = QUALITY.grass && !dungeon && th2.amp > 4;
+    blades.visible = QUALITY.grass && !dungeon && th2.amp > 4 && !th2.road;
   }
   if (scene.userData.motes && QUALITY.motes){
     scene.userData.motes.position.set(player.x, 0, player.y);
