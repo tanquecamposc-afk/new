@@ -988,7 +988,18 @@ function scoreTarget(s, e){
 function stepShadow(s, dt){
   let t = s.target && enemies.includes(s.target) && s.target.hp > 0 ? s.target : null;
   if (!t) s.target = null;
-  const dOwner = Math.hypot(s.x-player.x, s.y-player.y);
+  let dOwner = Math.hypot(s.x-player.x, s.y-player.y);
+  // Si el ejército se queda demasiado atrás (viaje rápido, mazmorra, dash,
+  // reaparición) tardaba minutos en volver y entretanto no peleaba. Pasado
+  // ese punto la sombra reaparece junto a ti, como en el propio Solo Leveling.
+  if (dOwner > CFG.SHADOW_LEASH * 3){
+    const a = (s.slot / 8) * Math.PI * 2;
+    s.x = player.x + Math.cos(a) * CFG.SHADOW_FOLLOW;
+    s.y = player.y + Math.sin(a) * CFG.SHADOW_FOLLOW;
+    dOwner = CFG.SHADOW_FOLLOW;
+    s.state = "IDLE_FOLLOW";
+    spark(s.x, s.y, 40, 8, "#31e4ff");
+  }
   if (dOwner > CFG.SHADOW_LEASH){ s.state = "RECALLED"; s.target = t = null; }
 
   if (!t && s.state !== "RECALLED"){
