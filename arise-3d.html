@@ -130,6 +130,19 @@ canvas#stage{position:absolute;inset:0;width:100%;height:100%;display:block;touc
   animation:bpop .5s ease both}
 @keyframes bpop{from{opacity:0;transform:translateX(-50%) scale(.82)}to{opacity:1;transform:translateX(-50%) scale(1)}}
 
+/* --- diálogo de personaje / mensajes del Sistema --- */
+#dialog{position:absolute;left:50%;bottom:216px;transform:translateX(-50%);z-index:12;width:min(560px,90vw);
+  padding:16px 18px;border-radius:16px;text-align:left;
+  background:linear-gradient(180deg,rgba(24,41,92,.97),rgba(9,16,38,.97));border:2px solid var(--line);
+  box-shadow:0 18px 50px rgba(0,0,0,.6);animation:pop .25s ease both}
+#dialog .who{font-family:var(--f-display);font-weight:800;letter-spacing:.08em;color:var(--gold);font-size:15px}
+#dialog .chapter{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-top:2px}
+#dialog p{margin:10px 0 12px;font-size:14px;line-height:1.5;color:var(--ink)}
+#dialog.system{border-color:#31e4ff;box-shadow:0 0 40px rgba(49,228,255,.25),0 18px 50px rgba(0,0,0,.6)}
+#dialog.system .who{color:#7ff0ff;font-family:var(--f-ui);letter-spacing:.24em}
+#dialog.system p{color:#cdf6ff}
+@media (max-width:680px){ #dialog{bottom:260px;font-size:13px} }
+
 /* --- objetivo, minimapa y pantalla de inicio --- */
 #objective{position:absolute;z-index:5;left:50%;top:calc(14px + env(safe-area-inset-top,0px));transform:translateX(-50%);
   padding:9px 18px;border-radius:12px;font-size:14px;font-weight:600;z-index:3;pointer-events:none;
@@ -320,6 +333,7 @@ canvas#stage{position:absolute;inset:0;width:100%;height:100%;display:block;touc
       <p class="foot">Tu partida se guarda sola en este navegador.</p>
     </div>
   </div>
+  <div id="dialog" hidden></div>
   <div id="banner"></div>
   <div id="modal" hidden></div>
 </div>
@@ -398,64 +412,65 @@ const TIER_VAR = { C:"--t-C", B:"--t-B", A:"--t-A", S:"--t-S", "S Elite":"--t-SE
 /* --------------------------- catálogo de armas ---------------------------
    Nombres, costes y daños base del catálogo suministrado (sección 08.1).   */
 const WEAPONS = {
-  SpikedMaul:      { id:"SpikedMaul",      name:"Spiked Maul",         dmg:3,        cost:0,       isle:"LevelingCity", glyph:"🔨" },
-  TwinKando:       { id:"TwinKando",       name:"Twin Kando Blades",   dmg:15,       cost:400,     isle:"LevelingCity", glyph:"⚔" },
-  TwinIronNaginata:{ id:"TwinIronNaginata",name:"Twin Iron Naginatas", dmg:125,      cost:4500,    isle:"LevelingCity", glyph:"🔱" },
-  BeastBane:       { id:"BeastBane",       name:"Beast Bane",          dmg:251,      cost:10000,   isle:"GrassVillage", glyph:"🗡" },
-  BronzeWarAxe:    { id:"BronzeWarAxe",    name:"Bronze War Axe",      dmg:4030,     cost:242000,  isle:"GrassVillage", glyph:"🪓" },
-  TwinCorsair:     { id:"TwinCorsair",     name:"Twin Corsair Blades", dmg:16300,    cost:1.2e6,   isle:"BrumIsland",   glyph:"⚔" },
-  IronKando:       { id:"IronKando",       name:"Iron Kando Blade",    dmg:516100,   cost:6.0e7,   isle:"BrumIsland",   glyph:"🗡" },
-  IronNaginata:    { id:"IronNaginata",    name:"Iron Naginata",       dmg:1.03e6,   cost:1.32e8,  isle:"FacehealTown", glyph:"🔱" },
-  ColossalSaber:   { id:"ColossalSaber",   name:"Colossal Saber",      dmg:3.3e7,    cost:6.7e9,   isle:"FacehealTown", glyph:"🗡" },
-  TwinColossal:    { id:"TwinColossal",    name:"Twin Colossal Sabers",dmg:6.6e7,    cost:1.407e10,isle:"LuckyKingdom", glyph:"⚔" },
-  TwinTridents:    { id:"TwinTridents",    name:"Twin Tridents",       dmg:2.11e9,   cost:4.4622e11,isle:"LuckyKingdom",glyph:"🔱" },
-  EmeraldBlade:    { id:"EmeraldBlade",    name:"Emerald Blade",       dmg:4e9,      cost:8.4e11,  isle:"NiponCity",    glyph:"🗡" },
-  TwinSacredAxes:  { id:"TwinSacredAxes",  name:"Twin Sacred Axes",    dmg:1.28e11,  cost:2.664e13,isle:"NiponCity",    glyph:"🪓" },
-  ReaperScythe:    { id:"ReaperScythe",    name:"Reaper's Scythe",     dmg:8.19e12,  cost:1.33e15, isle:"MoriTown",     glyph:"⚰" },
-  TwinDraconic:    { id:"TwinDraconic",    name:"Twin Draconic Axes",  dmg:3.113e14, cost:8.658e16,isle:"DragonCity",   glyph:"🐉" },
-  ChargedBlade:    { id:"ChargedBlade",    name:"Charged Blade",       dmg:1.475e16, cost:5.2e18,  isle:"XZCity",       glyph:"⚡" },
-  SacredMaul:      { id:"SacredMaul",      name:"Sacred Maul",         dmg:2.5834e17,cost:4.225e20,isle:"KindamaCity",  glyph:"🔨" },
-  ArchmageStaff:   { id:"ArchmageStaff",   name:"Archmage's Staff",    dmg:4.31e18,  cost:3.042e22,isle:"HunterCity",   glyph:"🪄" },
-  GildedReaver:    { id:"GildedReaver",    name:"Gilded Reaver",       dmg:2.635e19, cost:2.19e24, isle:"NenCity",      glyph:"⚜" },
-  SilverThorn:     { id:"SilverThorn",     name:"Silver Thorn",        dmg:3.51e20,  cost:6.327e25,isle:"HurricaneTown",glyph:"🌪" },
+  SpikedMaul:      { id:"SpikedMaul",      name:"Spiked Maul",         dmg:3,        cost:0,       isle:"Seoul", glyph:"🔨" },
+  TwinKando:       { id:"TwinKando",       name:"Twin Kando Blades",   dmg:15,       cost:400,     isle:"Seoul", glyph:"⚔" },
+  TwinIronNaginata:{ id:"TwinIronNaginata",name:"Twin Iron Naginatas", dmg:125,      cost:4500,    isle:"Seoul", glyph:"🔱" },
+  BeastBane:       { id:"BeastBane",       name:"Beast Bane",          dmg:251,      cost:10000,   isle:"Hongdae", glyph:"🗡" },
+  BronzeWarAxe:    { id:"BronzeWarAxe",    name:"Bronze War Axe",      dmg:4030,     cost:242000,  isle:"Hongdae", glyph:"🪓" },
+  TwinCorsair:     { id:"TwinCorsair",     name:"Twin Corsair Blades", dmg:16300,    cost:1.2e6,   isle:"Temple",   glyph:"⚔" },
+  IronKando:       { id:"IronKando",       name:"Iron Kando Blade",    dmg:516100,   cost:6.0e7,   isle:"Temple",   glyph:"🗡" },
+  IronNaginata:    { id:"IronNaginata",    name:"Iron Naginata",       dmg:1.03e6,   cost:1.32e8,  isle:"Reawaken", glyph:"🔱" },
+  ColossalSaber:   { id:"ColossalSaber",   name:"Colossal Saber",      dmg:3.3e7,    cost:6.7e9,   isle:"Reawaken", glyph:"🗡" },
+  TwinColossal:    { id:"TwinColossal",    name:"Twin Colossal Sabers",dmg:6.6e7,    cost:1.407e10,isle:"HighOrcs", glyph:"⚔" },
+  TwinTridents:    { id:"TwinTridents",    name:"Twin Tridents",       dmg:2.11e9,   cost:4.4622e11,isle:"HighOrcs",glyph:"🔱" },
+  EmeraldBlade:    { id:"EmeraldBlade",    name:"Emerald Blade",       dmg:4e9,      cost:8.4e11,  isle:"Jeju",    glyph:"🗡" },
+  TwinSacredAxes:  { id:"TwinSacredAxes",  name:"Twin Sacred Axes",    dmg:1.28e11,  cost:2.664e13,isle:"Jeju",    glyph:"🪓" },
+  ReaperScythe:    { id:"ReaperScythe",    name:"Reaper's Scythe",     dmg:8.19e12,  cost:1.33e15, isle:"Japan",     glyph:"⚰" },
+  TwinDraconic:    { id:"TwinDraconic",    name:"Twin Draconic Axes",  dmg:3.113e14, cost:8.658e16,isle:"DemonCastle",   glyph:"🐉" },
+  ChargedBlade:    { id:"ChargedBlade",    name:"Charged Blade",       dmg:1.475e16, cost:5.2e18,  isle:"IceMonarch",       glyph:"⚡" },
+  SacredMaul:      { id:"SacredMaul",      name:"Sacred Maul",         dmg:2.5834e17,cost:4.225e20,isle:"BeastMonarch",  glyph:"🔨" },
+  ArchmageStaff:   { id:"ArchmageStaff",   name:"Archmage's Staff",    dmg:4.31e18,  cost:3.042e22,isle:"Architect",   glyph:"🪄" },
+  GildedReaver:    { id:"GildedReaver",    name:"Gilded Reaver",       dmg:2.635e19, cost:2.19e24, isle:"ShadowRealm",      glyph:"⚜" },
+  SilverThorn:     { id:"SilverThorn",     name:"Silver Thorn",        dmg:3.51e20,  cost:6.327e25,isle:"ShadowRealm",glyph:"🌪" },
 };
 const START_WEAPON = "SpikedMaul";
 
 /* ------------------------------ sombras ---------------------------------- */
 const SHADOWS = {
-  Soondoo:   { id:"Soondoo",   name:"Soondoo",   tier:"C",       dmg:18,      hp:120,   rate:0.55,  gems:4,     glyph:"👤" },
-  Anders:    { id:"Anders",    name:"Anders",    tier:"A",       dmg:640,     hp:2600,  rate:0.20,  gems:26,    glyph:"🗡" },
-  Longin:    { id:"Longin",    name:"Longin",    tier:"S",       dmg:4200,    hp:9000,  rate:0.10,  gems:90,    glyph:"🔥" },
-  Vermillion:{ id:"Vermillion",name:"Vermillion",tier:"S",       dmg:26000,   hp:52000, rate:0.06,  gems:260,   glyph:"💜" },
-  DOR:       { id:"DOR",       name:"DOR",       tier:"S",       dmg:150000,  hp:310000,rate:0.045, gems:900,   glyph:"🐗" },
-  Mifalcon:  { id:"Mifalcon",  name:"Mifalcon",  tier:"S Elite", dmg:920000,  hp:1.9e6, rate:0.03,  gems:3200,  glyph:"❄" },
-  Murcielago:{ id:"Murcielago",name:"Murcielago",tier:"S Elite", dmg:6.1e6,   hp:1.2e7, rate:0.024, gems:11000, glyph:"🦇" },
-  TimeKing:  { id:"TimeKing",  name:"Time King", tier:"S Elite", dmg:4.4e7,   hp:8.8e7, rate:0.019, gems:42000, glyph:"⏳" },
-  Chainsaw:  { id:"Chainsaw",  name:"Chainsaw",  tier:"S Elite", dmg:3.2e8,   hp:6.4e8, rate:0.016, gems:160000,glyph:"🪚" },
-  Gucci:     { id:"Gucci",     name:"Gucci",     tier:"S Elite", dmg:2.4e9,   hp:4.6e9, rate:0.013, gems:620000,glyph:"💀" },
-  Leviathan: { id:"Leviathan", name:"Leviathan", tier:"S Elite", dmg:1.8e10,  hp:3.5e10,rate:0.011, gems:2.4e6, glyph:"🐉" },
-  FrostMech: { id:"FrostMech", name:"Frost Mech",tier:"S Elite", dmg:1.4e11,  hp:2.7e11,rate:0.009, gems:9e6,   glyph:"🤖" },
-  FlameTitan:{ id:"FlameTitan",name:"Flame Titan",tier:"S Elite",dmg:1.1e12,  hp:2.1e12,rate:0.008, gems:3.4e7, glyph:"🌋" },
-  ShadowReaper:{id:"ShadowReaper",name:"Shadow Reaper",tier:"S Elite",dmg:9e12,hp:1.7e13,rate:0.007,gems:1.3e8, glyph:"☠" },
-  Hurricane: { id:"Hurricane", name:"Hurricane Overlord",tier:"S Elite",dmg:7.4e13,hp:1.4e14,rate:0.006,gems:5e8,glyph:"🌪" },
-  Monarch:   { id:"Monarch",   name:"Monarca de las Sombras", tier:"Monarch", dmg:1e15, hp:2e15, rate:0.01, gems:2e9, glyph:"👑" },
+  Soldier:  { id:"Soldier",  name:"Soldado",  tier:"C",       dmg:18,      hp:120,   rate:0.55,  gems:4,     glyph:"👤" },
+  Iron:     { id:"Iron",     name:"Iron",     tier:"B",       dmg:120,     hp:900,   rate:0.32,  gems:12,    glyph:"🛡" },
+  Tank:     { id:"Tank",     name:"Tank",     tier:"B",       dmg:260,     hp:2600,  rate:0.26,  gems:20,    glyph:"🐻" },
+  Igris:    { id:"Igris",    name:"Igris",    tier:"A",       dmg:940,     hp:5200,  rate:0.16,  gems:48,    glyph:"⚔" },
+  Tusk:     { id:"Tusk",     name:"Tusk",     tier:"A",       dmg:2600,    hp:9000,  rate:0.11,  gems:110,   glyph:"🔮" },
+  Kaisel:   { id:"Kaisel",   name:"Kaisel",   tier:"S",       dmg:16000,   hp:38000, rate:0.07,  gems:320,   glyph:"🐉" },
+  Greed:    { id:"Greed",    name:"Greed",    tier:"S",       dmg:92000,   hp:180000,rate:0.05,  gems:900,   glyph:"🗡" },
+  Baruka:   { id:"Baruka",   name:"Baruka",   tier:"S",       dmg:520000,  hp:1.1e6, rate:0.038, gems:2800,  glyph:"❄" },
+  Beru:     { id:"Beru",     name:"Beru",     tier:"S Elite", dmg:4.2e6,   hp:8.5e6, rate:0.026, gems:9000,  glyph:"🐜" },
+  Bellion:  { id:"Bellion",  name:"Bellion",  tier:"S Elite", dmg:3.4e7,   hp:6.8e7, rate:0.02,  gems:36000, glyph:"👹" },
+  Kamish:   { id:"Kamish",   name:"Kamish",   tier:"S Elite", dmg:2.6e8,   hp:5.2e8, rate:0.015, gems:140000,glyph:"🔥" },
+  Antares:  { id:"Antares",  name:"Antares",  tier:"Monarch", dmg:2.1e9,   hp:4.2e9, rate:0.01,  gems:6e5,   glyph:"👑" },
+  Architect:{ id:"Architect",name:"Arquitecto",tier:"Monarch",dmg:1.6e10,  hp:3.2e10,rate:0.008, gems:2.4e6, glyph:"🗿" },
+  Ashborn:  { id:"Ashborn",  name:"Ashborn",  tier:"Monarch", dmg:1.2e11,  hp:2.4e11,rate:0.006, gems:9e6,   glyph:"🌑" },
 };
 
 /* --------------------------- islas (sección 09) --------------------------- */
+/*  Regiones del mundo abierto, siguiendo el recorrido de la historia:
+    Seúl → mazmorras de instancia → el Doble Dungeon → los altos orcos →
+    Isla Jeju → las Puertas Rojas → la guerra de los Monarcas.            */
 const ISLANDS = [
-  { id:"LevelingCity", name:"Leveling City",  level:1,    theme:"city",    enemy:{ name:"Thug",            lvl:3,    hp:26,      dmg:10 },    brute:{ name:"Brute/Mauler", lvl:8, hp:120, dmg:26 },    boss:{ name:"Vermillion",        lvl:25,   hp:90000,   dmg:180,   shadow:"Vermillion" }, shadow:"Soondoo",    weapons:["SpikedMaul","TwinKando","TwinIronNaginata"] },
-  { id:"GrassVillage", name:"Grass Village",  level:50,   theme:"forest",  enemy:{ name:"Grass Bandit",    lvl:52,   hp:26000,   dmg:260 },   brute:{ name:"Heavy Troll",  lvl:62, hp:120000, dmg:720 },  boss:{ name:"DOR",               lvl:80,   hp:2.4e6,   dmg:2100,  shadow:"DOR" },        shadow:"Anders",     weapons:["BeastBane","BronzeWarAxe"] },
-  { id:"BrumIsland",   name:"Brum Island",    level:100,  theme:"ice",     enemy:{ name:"Corsair Guard",   lvl:104,  hp:9.2e5,   dmg:4200 },  brute:{ name:"Ice Golem",    lvl:118,hp:4.1e6,  dmg:9800 }, boss:{ name:"Mifalcon",          lvl:140,  hp:6.2e7,   dmg:24000, shadow:"Mifalcon" },   shadow:"Longin",     weapons:["TwinCorsair","IronKando"] },
-  { id:"FacehealTown", name:"Faceheal Town",  level:200,  theme:"urban",   enemy:{ name:"Street Brawler",  lvl:206,  hp:2.6e7,   dmg:52000 }, brute:{ name:"Colossal Brute",lvl:224,hp:1.1e8, dmg:118000},boss:{ name:"Murcielago",        lvl:250,  hp:1.6e9,   dmg:310000,shadow:"Murcielago" }, shadow:"Vermillion", weapons:["IronNaginata","ColossalSaber"] },
-  { id:"LuckyKingdom", name:"Lucky Kingdom",  level:350,  theme:"royal",   enemy:{ name:"Royal Guard",     lvl:356,  hp:8.4e8,   dmg:1.4e6 }, brute:{ name:"Wyvern Lord",  lvl:382,hp:3.6e9,  dmg:3.1e6 },boss:{ name:"Time King",         lvl:410,  hp:5.2e10,  dmg:8.6e6, shadow:"TimeKing" },   shadow:"Mifalcon",   weapons:["TwinColossal","TwinTridents"] },
-  { id:"NiponCity",    name:"Nipon City",     level:500,  theme:"shrine",  enemy:{ name:"Samurai Warrior", lvl:508,  hp:2.7e10,  dmg:4.2e7 }, brute:{ name:"Demon Shogun", lvl:540,hp:1.2e11, dmg:9.4e7 },boss:{ name:"Chainsaw",          lvl:580,  hp:1.7e12,  dmg:2.6e8, shadow:"Chainsaw" },   shadow:"Murcielago", weapons:["EmeraldBlade","TwinSacredAxes"] },
-  { id:"MoriTown",     name:"Mori Town",      level:650,  theme:"dark",    enemy:{ name:"Forest Wraith",   lvl:660,  hp:8.6e11,  dmg:1.3e9 }, brute:{ name:"Reaper Monarch",lvl:700,hp:3.8e12,dmg:2.9e9 },boss:{ name:"Gucci",             lvl:740,  hp:5.4e13,  dmg:8.1e9, shadow:"Gucci" },      shadow:"TimeKing",   weapons:["ReaperScythe"] },
-  { id:"DragonCity",   name:"Dragon City",    level:800,  theme:"dragon",  enemy:{ name:"Draconic Cultist",lvl:812,  hp:2.8e13,  dmg:4.1e10 },brute:{ name:"Leviathan",    lvl:860,hp:1.2e14, dmg:9.2e10},boss:{ name:"Leviathan Prime",   lvl:900,  hp:1.7e15,  dmg:2.6e11,shadow:"Leviathan" },  shadow:"Chainsaw",   weapons:["TwinDraconic"] },
-  { id:"XZCity",       name:"XZ City",        level:950,  theme:"cyber",   enemy:{ name:"Cyber Enforcer",  lvl:962,  hp:9.1e14,  dmg:1.3e12 },brute:{ name:"Frost Mech",   lvl:1000,hp:4e15,  dmg:2.9e12},boss:{ name:"Frost Mech Alfa",   lvl:1040, hp:5.6e16,  dmg:8.3e12,shadow:"FrostMech" },  shadow:"Gucci",      weapons:["ChargedBlade"] },
-  { id:"KindamaCity",  name:"Kindama City",   level:1100, theme:"volcano", enemy:{ name:"Magma Brute",     lvl:1112, hp:2.9e16,  dmg:4.2e13 },brute:{ name:"Flame Titan",  lvl:1150,hp:1.3e17,dmg:9.4e13},boss:{ name:"Flame Titan Rex",   lvl:1190, hp:1.8e18,  dmg:2.7e14,shadow:"FlameTitan" }, shadow:"Leviathan",  weapons:["SacredMaul"] },
-  { id:"HunterCity",   name:"Hunter City",    level:1250, theme:"guild",   enemy:{ name:"High Hunter",     lvl:1262, hp:9.4e17,  dmg:1.4e15 },brute:{ name:"Archmage",     lvl:1300,hp:4.1e18,dmg:3e15 }, boss:{ name:"Archmage Supremo",  lvl:1340, hp:5.8e19,  dmg:8.7e15,shadow:"ShadowReaper" },shadow:"FrostMech", weapons:["ArchmageStaff"] },
-  { id:"NenCity",      name:"Nen City",       level:1400, theme:"mystic",  enemy:{ name:"Nen Master",      lvl:1412, hp:3e19,    dmg:4.4e16 },brute:{ name:"Shadow Reaper",lvl:1450,hp:1.3e20,dmg:9.8e16},boss:{ name:"Shadow Reaper Rey", lvl:1490, hp:1.9e21,  dmg:2.8e17,shadow:"Hurricane" },  shadow:"FlameTitan", weapons:["GildedReaver"] },
-  { id:"HurricaneTown",name:"Hurricane Town", level:1600, theme:"storm",   enemy:{ name:"Wind Nomad",      lvl:1612, hp:9.7e20,  dmg:1.4e18 },brute:{ name:"Storm Herald", lvl:1660,hp:4.2e21,dmg:3.1e18},boss:{ name:"Hurricane Overlord",lvl:1700, hp:6.1e22,  dmg:9e18,  shadow:"Monarch" },    shadow:"Hurricane",  weapons:["SilverThorn"] },
+  { id:"Seoul",        name:"Seúl · Distrito de Guardias", level:1,    theme:"city",    enemy:{ name:"Gnomo de Mazmorra", lvl:3,    hp:26,      dmg:10 },    brute:{ name:"Golem de Piedra",  lvl:8,   hp:120,   dmg:26 },    boss:{ name:"Kasaka",                lvl:22,   hp:70000,   dmg:160,   shadow:"Iron" },     shadow:"Soldier",  weapons:["SpikedMaul","TwinKando","TwinIronNaginata"] },
+  { id:"Hongdae",      name:"Hongdae · Puerta Clase D",    level:20,   theme:"urban",   enemy:{ name:"Lagarto Kasaka",   lvl:24,   hp:9000,    dmg:140 },   brute:{ name:"Cerbero",          lvl:32,  hp:52000, dmg:420 },   boss:{ name:"Cazador de Élite",      lvl:45,   hp:6.5e5,   dmg:1400,  shadow:"Tank" },     shadow:"Iron",     weapons:["BeastBane"] },
+  { id:"Temple",       name:"El Doble Dungeon",            level:50,   theme:"shrine",  enemy:{ name:"Estatua Menor",    lvl:54,   hp:9.2e4,   dmg:900 },   brute:{ name:"Guardián de Piedra",lvl:64, hp:4.6e5, dmg:2600 },  boss:{ name:"Estatua de Dios",       lvl:80,   hp:9.5e6,   dmg:8000,  shadow:"Igris" },    shadow:"Tank",     weapons:["BronzeWarAxe"] },
+  { id:"Reawaken",     name:"Cárcel de Reawakening",       level:100,  theme:"dark",    enemy:{ name:"Guardia Sombrío",  lvl:104,  hp:1.6e6,   dmg:6200 },  brute:{ name:"Caballero Rojo",   lvl:118, hp:7.4e6, dmg:16000 }, boss:{ name:"Caballero del Templo",  lvl:140,  hp:1.2e8,   dmg:44000, shadow:"Tusk" },     shadow:"Igris",    weapons:["TwinCorsair","IronKando"] },
+  { id:"HighOrcs",     name:"Isla de los Altos Orcos",     level:200,  theme:"ice",     enemy:{ name:"Alto Orco",        lvl:206,  hp:4.2e7,   dmg:72000 }, brute:{ name:"Chamán Kargalgan", lvl:224, hp:1.9e8, dmg:180000 },boss:{ name:"Baruka",                lvl:250,  hp:2.6e9,   dmg:420000,shadow:"Baruka" },   shadow:"Tusk",     weapons:["IronNaginata","ColossalSaber"] },
+  { id:"RedGate",      name:"La Puerta Roja",              level:350,  theme:"volcano", enemy:{ name:"Lobo de Hielo",    lvl:356,  hp:1.2e9,   dmg:1.8e6 }, brute:{ name:"Gigante de Hielo", lvl:382, hp:5.2e9, dmg:4.1e6 }, boss:{ name:"Rey de los Hielos",     lvl:410,  hp:7.4e10,  dmg:1.1e7, shadow:"Kaisel" },   shadow:"Baruka",   weapons:["TwinColossal","TwinTridents"] },
+  { id:"Jeju",         name:"Isla Jeju",                   level:500,  theme:"forest",  enemy:{ name:"Hormiga Soldado",  lvl:508,  hp:3.8e10,  dmg:5.6e7 }, brute:{ name:"Hormiga Élite",    lvl:540, hp:1.7e11,dmg:1.2e8 }, boss:{ name:"Rey Hormiga",           lvl:580,  hp:2.4e12,  dmg:3.4e8, shadow:"Beru" },     shadow:"Greed",    weapons:["EmeraldBlade","TwinSacredAxes"] },
+  { id:"Japan",        name:"Puerta de Shinjuku",          level:650,  theme:"royal",   enemy:{ name:"Cazador Caído",    lvl:660,  hp:1.2e12,  dmg:1.8e9 }, brute:{ name:"Demonio Menor",    lvl:700, hp:5.4e12,dmg:4.1e9 }, boss:{ name:"Rey Demonio Baran",     lvl:740,  hp:7.6e13,  dmg:1.1e10,shadow:"Bellion" },  shadow:"Beru",     weapons:["ReaperScythe"] },
+  { id:"DemonCastle",  name:"Castillo del Demonio",        level:800,  theme:"dragon",  enemy:{ name:"Guardia Demoníaco",lvl:812,  hp:3.9e13,  dmg:5.8e10 },brute:{ name:"Caballero Infernal",lvl:860,hp:1.7e14,dmg:1.3e11 },boss:{ name:"Kamish",                lvl:900,  hp:2.4e15,  dmg:3.6e11,shadow:"Kamish" },   shadow:"Bellion",  weapons:["TwinDraconic"] },
+  { id:"IceMonarch",   name:"Dominio del Monarca de Hielo",level:950,  theme:"storm",   enemy:{ name:"Soldado de Escarcha",lvl:962,hp:1.3e15,  dmg:1.8e12 },brute:{ name:"Heraldo Glacial",  lvl:1000,hp:5.6e15,dmg:4.1e12 },boss:{ name:"Monarca de Hielo",      lvl:1040, hp:7.8e16,  dmg:1.2e13,shadow:"Kamish" },   shadow:"Kaisel",   weapons:["ChargedBlade"] },
+  { id:"BeastMonarch", name:"Dominio del Monarca Bestia",  level:1100, theme:"guild",   enemy:{ name:"Bestia Menor",     lvl:1112, hp:4.1e16,  dmg:5.9e13 },brute:{ name:"Bestia Mayor",     lvl:1150,hp:1.8e17,dmg:1.3e14 },boss:{ name:"Monarca de las Bestias",lvl:1190, hp:2.5e18,  dmg:3.8e14,shadow:"Antares" },  shadow:"Antares",  weapons:["SacredMaul"] },
+  { id:"Architect",    name:"Sala del Arquitecto",         level:1250, theme:"mystic",  enemy:{ name:"Eco del Sistema",  lvl:1262, hp:1.3e18,  dmg:1.9e15 },brute:{ name:"Centinela Rúnico", lvl:1300,hp:5.8e18,dmg:4.2e15 },boss:{ name:"El Arquitecto",         lvl:1340, hp:8.1e19,  dmg:1.2e16,shadow:"Architect" },shadow:"Architect",weapons:["ArchmageStaff"] },
+  { id:"ShadowRealm",  name:"Trono del Rey de las Sombras",level:1400, theme:"cyber",   enemy:{ name:"Soberano Caído",   lvl:1412, hp:4.2e19,  dmg:6.1e16 },brute:{ name:"General Monarca",  lvl:1450,hp:1.8e20,dmg:1.4e17 },boss:{ name:"Antares",               lvl:1490, hp:2.6e21,  dmg:3.9e17,shadow:"Ashborn" },  shadow:"Ashborn",  weapons:["GildedReaver","SilverThorn"] },
 ];
 const isleOf = id => ISLANDS.find(i => i.id === id) || ISLANDS[0];
 // Región del mundo abierto según la distancia al centro.
@@ -474,14 +489,14 @@ function distanceToNextRegion(){
 
 /* ------------------------------ reliquias -------------------------------- */
 const RELICS = {
-  ClawboundRing:{ id:"ClawboundRing", name:"Clawbound Ring", effect:"shadowDmg", value:0.15,   isle:"LevelingCity", glyph:"💍" },
-  SilentVeil:   { id:"SilentVeil",    name:"Silent Veil",    effect:"ariseLuck", value:10,     isle:"GrassVillage", glyph:"🌫" },
-  InkOfDepth:   { id:"InkOfDepth",    name:"Ink of Depth",   effect:"shadowDmg", value:0.28,   isle:"LuckyKingdom", glyph:"🖋" },
-  FlickerCrest: { id:"FlickerCrest",  name:"Flicker Crest",  effect:"ariseLuck", value:22.5,   isle:"MoriTown",     glyph:"🔥" },
-  PulseEmblem:  { id:"PulseEmblem",   name:"Pulse Emblem",   effect:"shadowDmg", value:0.45,   isle:"XZCity",       glyph:"📡" },
-  NenCore:      { id:"NenCore",       name:"Nen Core",       effect:"ariseLuck", value:35,     isle:"NenCity",      glyph:"🔮" },
-  BlackMonarch: { id:"BlackMonarch",  name:"Black Monarch Sigil", effect:"rankUp", value:25,   isle:"DoubleDungeon",glyph:"🖤" },
-  EyeAscension: { id:"EyeAscension",  name:"Eye of Ascension",    effect:"rankUp", value:40,   isle:"StatueOfGod",  glyph:"👁" },
+  ClawboundRing:{ id:"ClawboundRing", name:"Anillo del Demonio", effect:"shadowDmg", value:0.15,   isle:"Seoul", glyph:"💍" },
+  SilentVeil:   { id:"SilentVeil",    name:"Velo del Asesino",    effect:"ariseLuck", value:10,     isle:"Hongdae", glyph:"🌫" },
+  InkOfDepth:   { id:"InkOfDepth",    name:"Tinta del Abismo",   effect:"shadowDmg", value:0.28,   isle:"HighOrcs", glyph:"🖋" },
+  FlickerCrest: { id:"FlickerCrest",  name:"Cresta de Kamish",  effect:"ariseLuck", value:22.5,   isle:"Japan",     glyph:"🔥" },
+  PulseEmblem:  { id:"PulseEmblem",   name:"Emblema del Sistema",   effect:"shadowDmg", value:0.45,   isle:"IceMonarch",       glyph:"📡" },
+  NenCore:      { id:"NenCore",       name:"Núcleo de Monarca",       effect:"ariseLuck", value:35,     isle:"ShadowRealm",      glyph:"🔮" },
+  BlackMonarch: { id:"BlackMonarch",  name:"Black Monarch Sigil", effect:"rankUp", value:25,   isle:"Temple",glyph:"🖤" },
+  EyeAscension: { id:"EyeAscension",  name:"Eye of Ascension",    effect:"rankUp", value:40,   isle:"Architect",  glyph:"👁" },
 };
 
 /* ------------------------------- runas ----------------------------------- */
@@ -556,9 +571,9 @@ function newProfile(){
     weapon:START_WEAPON, weapons:{ [START_WEAPON]:1 }, weaponLv:{},
     class:"Warrior", talents:{}, codes:{}, quests:{ active:null, done:0 },
     shadows:{}, squad:[], relics:{}, runes:{},
-    islands:["LevelingCity"], island:"LevelingCity",
+    islands:["Seoul"], island:"Seoul",
     title:"Cazador Novato", awakened:false, index:{},
-    kills:0, arisen:0, dungeonsCleared:0, ledger:[], tutorial:0,
+    kills:0, arisen:0, dungeonsCleared:0, ledger:[], tutorial:0, chapter:0,
   };
 }
 function reconcile(d){
@@ -570,13 +585,14 @@ function reconcile(d){
   if (!CLASSES[p.class]) p.class = "Warrior";
   if (typeof p.quests !== "object" || !p.quests) p.quests = { active:null, done:0 };
   if (typeof p.tutorial !== "number") p.tutorial = 0;
+  if (typeof p.chapter !== "number") p.chapter = 0;
   if (!Array.isArray(p.squad)) p.squad = [];
-  if (!Array.isArray(p.islands) || !p.islands.length) p.islands = ["LevelingCity"];
+  if (!Array.isArray(p.islands) || !p.islands.length) p.islands = ["Seoul"];
   if (!Array.isArray(p.ledger)) p.ledger = [];
   if (!WEAPONS[p.weapon]) p.weapon = START_WEAPON;
   if (!p.weapons[p.weapon]) p.weapons[p.weapon] = 1;
   if (!RANKS.some(r => r.name === p.rank)) p.rank = "E";
-  if (!isleOf(p.island)) p.island = "LevelingCity";
+  if (!isleOf(p.island)) p.island = "Seoul";
   p.squad = p.squad.filter(u => p.shadows[u]).slice(0, FLAGS.SQUAD_MAX);
   return p;
 }
@@ -1052,19 +1068,27 @@ const npc = { x:CFG.WORLD.cx + 230, y:CFG.WORLD.cy - 210, step:0 };
 /*  Elenco propio de cazadores: cada uno vive en un anillo del mapa abierto y
     ofrece un servicio distinto. (Diseños y nombres originales.)  */
 const HUNTERS = [
-  { id:"forge", name:"Herrera Min Serin", rank:"A", ring:1, angle:0.8, role:"forja",
-    line:"Tu arma puede dar más. Págame y la templo.",
-    look:{ shirt:"#8a3b2a", sleeve:"#6f2f20", pants:"#33302c", hair:"#2b1d12", pauldron:"#b06a3a", armor:"#e0a83a", weaponKind:"axe", weapon:"#c9c2b8" } },
-  { id:"heal", name:"Sanadora Hana Sori", rank:"S", ring:2, angle:2.2, role:"sanar",
-    line:"Descansa un momento, cazador. Yo te cierro las heridas.",
-    line2:"Bendición: +40% de daño durante 30 s.",
-    look:{ shirt:"#d8e4f5", sleeve:"#b9cbe8", pants:"#2f4a7a", hair:"#e0c060", pauldron:"#8fb8e8", armor:"#8fd0ff", weaponKind:"staff", weapon:"#8fd0ff" } },
-  { id:"train", name:"Comandante Ryu Kanan", rank:"S", ring:3, angle:4.1, role:"entrenar",
-    line:"El rango no se regala. Entrena conmigo y te daré puntos.",
-    look:{ shirt:"#1f3f7d", sleeve:"#16305e", pants:"#14203a", hair:"#141a26", pauldron:"#3f7ae8", armor:"#c9d6ee", weaponKind:"sword", weapon:"#e8eefc" } },
-  { id:"archive", name:"Archivista Jo Taemin", rank:"B", ring:5, angle:5.6, role:"archivo",
-    line:"Todo lo que extraes queda escrito. Consulta el índice.",
-    look:{ shirt:"#3a2f5e", sleeve:"#2d2549", pants:"#232038", hair:"#5a4a7a", pauldron:"#6b5aa0", armor:"#b98bff", weaponKind:"staff", weapon:"#b98bff" } },
+  { id:"jinho", name:"Yoo Jinho", rank:"D", ring:0, angle:1.5, role:"suministros",
+    line:"¡Jefe! Le he traído suministros del gremio. Dígame qué necesita.",
+    look:{ shirt:"#1f4f8a", sleeve:"#17406f", pants:"#20283a", hair:"#1b1b22", pauldron:"#2f6bd8", armor:"#8fd0ff", weaponKind:"sword", weapon:"#cfd9ee" } },
+  { id:"jinchul", name:"Woo Jinchul", rank:"B", ring:0, angle:4.7, role:"asociacion",
+    line:"Asociación de Cazadores. Tengo trabajo para ti si lo quieres.",
+    look:{ shirt:"#23283a", sleeve:"#1a1f2e", pants:"#181c28", hair:"#14161e", pauldron:"#3a4358", armor:"#7d8aa8", weaponKind:"sword", weapon:"#b9c4d8" } },
+  { id:"haein", name:"Cha Hae-In", rank:"S", ring:2, angle:2.2, role:"bendicion",
+    line:"Hueles distinto al resto de cazadores. Deja que te cubra la espalda.",
+    look:{ shirt:"#f0e6d2", sleeve:"#dccfb4", pants:"#2f3a52", hair:"#f2d06b", pauldron:"#e8d9a8", armor:"#ffe9a8", weaponKind:"sword", weapon:"#fff3c4" } },
+  { id:"yoonho", name:"Baek Yoonho", rank:"S", ring:3, angle:0.6, role:"entrenar",
+    line:"Los Tigres Blancos entrenamos duro. Enséñame lo que sabes hacer.",
+    look:{ shirt:"#3a2a1e", sleeve:"#2d2018", pants:"#241a12", hair:"#e8e2d8", pauldron:"#8a6a44", armor:"#d8c8a8", weaponKind:"axe", weapon:"#c9b898" } },
+  { id:"jongin", name:"Choi Jong-In", rank:"S", ring:4, angle:3.6, role:"forja",
+    line:"Puedo grabar runas de fuego en tu arma. No será barato.",
+    look:{ shirt:"#7a1f2b", sleeve:"#5e1620", pants:"#2a1a1e", hair:"#c93a2a", pauldron:"#b0402f", armor:"#ff7a3a", weaponKind:"staff", weapon:"#ff9a4d" } },
+  { id:"gunhee", name:"Go Gunhee", rank:"S", ring:5, angle:5.6, role:"rango",
+    line:"Presido esta Asociación desde hace décadas. Veamos de qué eres capaz.",
+    look:{ shirt:"#2a2f45", sleeve:"#20243a", pants:"#1a1e2e", hair:"#e8e8ec", pauldron:"#4a5570", armor:"#ffd24a", weaponKind:"staff", weapon:"#ffd24a" } },
+  { id:"thomas", name:"Thomas Andre", rank:"Nacional", ring:8, angle:2.9, role:"desafio",
+    line:"Rango nacional. Si quieres pelear conmigo, trae a tu ejército entero.",
+    look:{ shirt:"#20303f", sleeve:"#18242f", pants:"#141c26", hair:"#c9a33a", pauldron:"#6b7a94", armor:"#9fd8ff", weaponKind:"axe", weapon:"#dfe8f5" } },
 ];
 for (const h of HUNTERS){
   const r = ringRadius(h.ring);
@@ -1075,7 +1099,38 @@ for (const h of HUNTERS){
 let hunterNear = null;
 function hunterService(h){
   if (h.cooldown > 0) return note(`${h.name} necesita un momento (${Math.ceil(h.cooldown)}s)`, "--dim");
-  if (h.role === "forja"){
+  if (h.role === "suministros"){
+    const gain = Math.floor(600 * (1 + P.level * 0.6));
+    P.cash += gain; P.tickets += 1;
+    note(`Yoo Jinho: suministros entregados · +${fmt(gain)} de oro y 1 ticket`, "--cash");
+    h.cooldown = 90;
+  } else if (h.role === "asociacion"){
+    if (!P.quests.active) takeQuest();
+    else note("Woo Jinchul: termina el encargo que ya tienes", "--dim");
+  } else if (h.role === "bendicion"){
+    player.hp = maxHP(); player.mana = maxMana();
+    P.blessing = now() + 30;
+    note("Cha Hae-In te cubre · +40% de daño durante 30 s", "--xp");
+    banner("BENDICIÓN", "#ffe9a8");
+    h.cooldown = 60;
+  } else if (h.role === "rango"){
+    const next = RANKS[rankIdx(P.rank) + 1];
+    if (!next) return note("Go Gunhee: ya no queda rango por encima del tuyo", "--gold");
+    if (P.level < next.level) return note(`Go Gunhee: vuelve al nivel ${next.level}`, "--hp");
+    if (P.gems < next.gems) return note(`Faltan ${fmt(next.gems - P.gems)} gemas para el examen`, "--hp");
+    P.gems -= next.gems; P.rank = next.name;
+    banner(`RANGO ${next.name}`, "#ffd24a");
+    note(`Go Gunhee: examen superado. Ahora eres rango ${next.name}`, "--gold");
+  } else if (h.role === "desafio"){
+    if (enemies.some(e => e.boss)) return note("Ya tienes un jefe encima", "--dim");
+    const def = regionAt(player.x, player.y).boss;
+    spawnEnemy({ name:`${def.name} (desafío)`, lvl:def.lvl, hp:def.hp * 1.5, dmg:def.dmg * 1.2,
+                 shadow:def.shadow, kind:"boss", r:38, boss:true, color:"#ffb36b" },
+               player.x, player.y - 320);
+    banner("DESAFÍO ACEPTADO", "#ff8d97");
+    note("Thomas Andre invoca a un jefe para ti", "--hp");
+    h.cooldown = 120;
+  } else if (h.role === "forja"){
     const cost = Math.floor(1e4 * Math.pow(3, weaponLv(P.weapon) - 1));
     if (P.cash < cost) return note(`Faltan ${fmt(cost - P.cash)} de oro para templar`, "--hp");
     P.cash -= cost; P.weaponLv[P.weapon] = weaponLv(P.weapon) + 1;
@@ -1479,7 +1534,8 @@ function update(dt){
   updateObjective(dt);
   drawMinimap(dt);
   checkQuest();
-  if (!dungeon && !P.quests.active && Math.hypot(npc.x-player.x, npc.y-player.y) < 150) takeQuest();
+  checkCampaign();
+
   npc.step += dt;
   npc.yaw = Math.atan2(player.x - npc.x, player.y - npc.y);
   hunterNear = null;
@@ -2444,7 +2500,7 @@ function render(dt){
     if (!aliveC.has(k)){ scene.remove(v); views.corpses.delete(k); }
   }
   // NPC
-  if (!dungeon){
+  if (false){
     if (!npcView){
       npcView = buildCharacter({ scale:1.04, skin:"#f5cd30", shirt:"#2f8d5a", sleeve:"#276f48",
         pants:"#3a3f52", boots:"#23283a", belt:"#2a2218", buckle:"#c9a33a", hair:"#4a3524",
@@ -2665,7 +2721,7 @@ function syncHud(){
 
   const q = P.quests.active;
   $("quest").textContent = q ? `${q.text} · ${Math.min(questProgress(), q.goal)}/${q.goal}`
-    : (dungeon ? "" : "Habla con el Cazador Jefe (!)");
+    : (dungeon ? "" : "Habla con Woo Jinchul (!)");
 
   const mh = maxHP(), mm = maxMana(), need = FORMULA.expRequired(P.level);
   $("hpbar").style.width = `${clamp(player.hp/mh*100,0,100)}%`;
@@ -2829,10 +2885,22 @@ function panelShop(){
     Las armas se desbloquean al llegar a su isla.</p>`);
 }
 function panelItems(){
-  const tabs = ["Relics","Runes","Index"];
+  const tabs = ["Story","Relics","Runes","Index"];
   const nav = `<div class="tabs">${tabs.map(t => `<button class="tab ${panelTab===t?"sel":""}" data-tab="${t}">${
-    t === "Relics" ? "Reliquias" : t === "Runes" ? "Runas" : "Índice"}</button>`).join("")}</div>`;
+    t === "Story" ? "Historia" : t === "Relics" ? "Reliquias" : t === "Runes" ? "Runas" : "Índice"}</button>`).join("")}</div>`;
   let body = "";
+  if (panelTab === "Story"){
+    body = CAMPAIGN.map((c, i) => {
+      const state = i < P.chapter ? "cerrado" : i === P.chapter ? "en curso" : "bloqueado";
+      const color = i < P.chapter ? "var(--cash)" : i === P.chapter ? "var(--gold)" : "var(--dim)";
+      return `<div class="item ${i > P.chapter ? "locked" : ""}"><span class="g">${i < P.chapter ? "✔" : i === P.chapter ? "▶" : "·"}</span>
+        <span class="meta"><b>${i + 1}. ${c.title}</b><span>${i <= P.chapter ? c.goal : "Sigue avanzando para desbloquearlo"}</span></span>
+        <span class="tier" style="color:${color}">${state}</span></div>`;
+    }).join("");
+    return shell("Historia", nav + `<div class="list">${body}</div>
+      <p class="hint">Juego de fan, sin relación oficial con la obra. Personajes y lugares se usan como homenaje;
+      todos los modelos y el arte son originales de este proyecto.</p>`);
+  }
   if (panelTab === "Relics"){
     body = Object.values(RELICS).map(r => {
       const has = !!P.relics[r.id];
@@ -3130,6 +3198,84 @@ function setAuto(v){
 }
 $("a-auto").onclick = () => setAuto(!auto);
 
+/* ----------------------------- CAMPAÑA -----------------------------------
+   Sigue el recorrido de la historia: de cazador de rango E en Seúl al trono
+   del Rey de las Sombras. Cada capítulo fija un objetivo, lo anuncia el
+   Sistema o un cazador, y al cerrarse da su recompensa.                    */
+const CAMPAIGN = [
+  { id:"weakest", title:"El cazador más débil de la humanidad",
+    goal:"Sobrevive a tu primera cacería: derrota a 10 enemigos en Seúl",
+    done:() => P.kills >= 10,
+    speaker:"Woo Jinchul", dialog:"Rango E. Estadísticas de rango E. Y aun así sigues entrando en las puertas. Ten cuidado ahí dentro.",
+    reward:() => { P.cash += 800; note("+800 de oro", "--cash"); } },
+  { id:"double", title:"El Doble Dungeon",
+    goal:"Camina hasta el templo del Doble Dungeon (segunda región al alejarte del centro)",
+    done:() => ringAt(player.x, player.y) >= 2,
+    speaker:"SISTEMA", dialog:"Has entrado en el templo. Las estatuas te observan. Recita los mandamientos o muere.",
+    reward:() => { note("El templo reconoce tu presencia", "--arise"); } },
+  { id:"system", title:"Has adquirido el Sistema",
+    goal:"Alcanza el nivel 10 y reparte tus puntos de atributo",
+    done:() => P.level >= 10 && P.stats.points === 0,
+    speaker:"SISTEMA", dialog:"Has cumplido los requisitos para ser jugador. ¿Aceptas? La recompensa: la oportunidad de volverte más fuerte.",
+    reward:() => { P.stats.points += 5; note("+5 puntos de atributo", "--gem"); } },
+  { id:"class", title:"Cambio de clase · Monarca de las Sombras",
+    goal:"Extrae tu primera sombra pulsando B sobre un cuerpo",
+    done:() => P.arisen >= 1,
+    speaker:"SISTEMA", dialog:"Clase adquirida: Nigromante. Corrección… Monarca de las Sombras. Ahora tus enemigos caídos te siguen.",
+    reward:() => { P.gems += 60; note("+60 gemas", "--gem"); } },
+  { id:"army", title:"Un ejército propio",
+    goal:"Forma un escuadrón de 6 sombras",
+    done:() => P.squad.length >= 6,
+    speaker:"Yoo Jinho", dialog:"¡Jefe, esto ya no es un equipo, es un ejército! ¿De dónde saca usted a tanta gente?",
+    reward:() => { P.cash += 25000; note("+25.000 de oro", "--cash"); } },
+  { id:"igris", title:"Igris, el Caballero Sangriento",
+    goal:"Derrota a la Estatua de Dios en una mazmorra y extrae a Igris",
+    done:() => !!P.index.Igris,
+    speaker:"SISTEMA", dialog:"El caballero se arrodilla ante ti. Tu primer mariscal.",
+    reward:() => { P.tickets += 3; note("+3 tickets de puerta", "--ticket"); } },
+  { id:"orcs", title:"Los Altos Orcos",
+    goal:"Llega a la Isla de los Altos Orcos y derrota a Baruka",
+    done:() => !!P.index.Baruka,
+    speaker:"Baek Yoonho", dialog:"Vi lo que hiciste con esos orcos. Nadie de rango S pelea así. ¿Qué eres exactamente?",
+    reward:() => { P.gems += 4000; note("+4.000 gemas", "--gem"); } },
+  { id:"jeju", title:"La incursión de la Isla Jeju",
+    goal:"Cruza hasta Isla Jeju y arrebátale al Rey Hormiga su sombra",
+    done:() => !!P.index.Beru,
+    speaker:"Cha Hae-In", dialog:"Todos los gremios juntos no pudieron con la isla. Tú entraste solo. Quiero luchar a tu lado.",
+    reward:() => { P.cash += 5e8; note("Recompensa de la Asociación", "--cash"); } },
+  { id:"kamish", title:"La sombra del dragón",
+    goal:"Alcanza el Castillo del Demonio y vence a Kamish",
+    done:() => !!P.index.Kamish,
+    speaker:"Choi Jong-In", dialog:"Kamish mató a cuatro cazadores de rango nacional. Tú lo traes de vuelta como soldado.",
+    reward:() => { P.gems += 2e6; note("+2M gemas", "--gem"); } },
+  { id:"monarchs", title:"La guerra de los Monarcas",
+    goal:"Llega al Trono del Rey de las Sombras y derrota a Antares",
+    done:() => !!P.index.Antares || !!P.index.Ashborn,
+    speaker:"SISTEMA", dialog:"El Rey de las Sombras despierta. Levántate. Este mundo aún te necesita.",
+    reward:() => { P.title = "Rey de las Sombras"; banner("REY DE LAS SOMBRAS", "#bb8cff"); } },
+];
+function currentChapter(){ return CAMPAIGN[P.chapter] || null; }
+function checkCampaign(){
+  const ch = currentChapter();
+  if (!ch || !ch.done()) return;
+  P.chapter++;
+  ch.reward?.();
+  showDialog(ch.speaker, ch.dialog, ch.title);
+  save(); dirty = true;
+}
+function showDialog(speaker, text, title){
+  const box = document.getElementById("dialog");
+  const isSystem = speaker === "SISTEMA";
+  box.className = isSystem ? "system" : "";
+  box.innerHTML = `<div class="who">${speaker}</div>
+    ${title ? `<div class="chapter">${title}</div>` : ""}
+    <p>${text}</p><button class="btn" id="dlg-ok">Continuar</button>`;
+  box.hidden = false;
+  document.getElementById("dlg-ok").onclick = () => { box.hidden = true; };
+  clearTimeout(showDialog._t);
+  showDialog._t = setTimeout(() => { box.hidden = true; }, 12000);
+}
+
 /* ------------------------ objetivo guiado (tutorial) ---------------------- */
 const TUTORIAL = [
   { id:"move",  text:"Muévete con <b>W A S D</b> y gira la cámara arrastrando el ratón",
@@ -3138,10 +3284,6 @@ const TUTORIAL = [
     done: () => P.kills >= 1 },
   { id:"arise", text:"Ponte sobre el cuerpo que deja y pulsa <b>B</b> para extraer su sombra",
     done: () => P.arisen >= 1 },
-  { id:"squad", text:"Tu sombra lucha contigo. Consigue <b>3 sombras</b> para tener escuadrón",
-    done: () => P.arisen >= 3 },
-  { id:"hunter",text:"Busca al <b>Cazador Jefe (!)</b> en el mapa y habla con él pulsando <b>G</b>",
-    done: () => P.quests.done >= 1 || P.quests.active },
 ];
 const tutState = { moved:0, lastX:0, lastY:0 };
 function tutorialStep(){
@@ -3166,10 +3308,16 @@ function updateObjective(dt){
       return;
     }
   }
+  const ch = currentChapter();
+  if (ch){
+    el.hidden = false;
+    el.innerHTML = `<span class="step">Capítulo ${P.chapter + 1}</span> ${ch.goal}`;
+    return;
+  }
   const q = P.quests.active;
   if (q){
     el.hidden = false;
-    el.innerHTML = `<span class="step">Misión</span> ${q.text} · <b>${Math.min(questProgress(), q.goal)}/${q.goal}</b>`;
+    el.innerHTML = `<span class="step">Encargo</span> ${q.text} · <b>${Math.min(questProgress(), q.goal)}/${q.goal}</b>`;
   } else if (portal){
     el.hidden = false;
     el.innerHTML = `<span class="step">Evento</span> Portal <b>${portal.mode.name}</b> abierto · pulsa <b>F</b> dentro del círculo`;
@@ -3177,7 +3325,7 @@ function updateObjective(dt){
     el.hidden = false;
     const nx = distanceToNextRegion();
     el.innerHTML = nx
-      ? `<span class="step">Rumbo</span> ${nx.next.name} a <b>${Math.round(nx.dist)} m</b> · habla con el Cazador Jefe para una misión`
+      ? `<span class="step">Rumbo</span> ${nx.next.name} a <b>${Math.round(nx.dist)} m</b> · habla con Woo Jinchul para un encargo`
       : `<span class="step">Rumbo</span> Has llegado al confín del mundo`;
   }
 }
@@ -3221,7 +3369,7 @@ function drawMinimap(dt){
   for (const sh of shadows) put(sh.x, sh.y, "#6aa8ff", 2.4);
   for (const co of corpses) put(co.x, co.y, "#31e4ff", 2.6);
   for (const h of HUNTERS) put(h.x, h.y, "#ffe9a8", 3.4);
-  if (!dungeon) put(npc.x, npc.y, "#5ce8a6", 3.4);
+
   if (portal) put(portal.x, portal.y, portal.mode.color, 5);
   // jugador con su orientación
   c.save();
@@ -3255,7 +3403,9 @@ function start(restored){
   document.getElementById("btn-play").onclick = () => {
     startEl.style.display = "none";
     paused = false;
-    if (P.tutorial === 0) banner("BIENVENIDO, CAZADOR", "#bfe2ff");
+    if (P.chapter === 0 && P.kills === 0){
+      showDialog("SISTEMA", "Seúl, año 2026. Las puertas siguen abriéndose y alguien tiene que entrar. Eres el cazador más débil de la humanidad… por ahora.", "Capítulo 1");
+    }
   };
   let last = performance.now(), hudT = 0, fpsT = 0, frames = 0;
   function frame(t){
