@@ -59,6 +59,11 @@ acercas al borde, más se parecen los enemigos a los de la región siguiente
 un muro: el salto de vida al pasar de un anillo al otro es de ×1,1 en vez de
 ×346.
 
+El cielo tiene **islas flotantes**: trozos de tierra con hierba, roca acabada en
+punta y un par de árboles encima, colgados entre las nubes y acompañando al
+jugador. Las zonas urbanas mezclan rascacielos con árboles, casas bajas de
+colores y monumentos con arcos, en vez de repetir la misma torre.
+
 Cada región tiene su propia familia de criaturas, no humanos recoloreados:
 limos con núcleo brillante, bestias cuadrúpedas, golems de roca agrietada,
 hormigas de seis patas y espectros flotantes. Los jefes rompen el molde: siempre
@@ -107,6 +112,10 @@ Catorce sombras en cinco niveles. Cuanto mejor la sombra, más rara:
 | Antares | Monarca | 2,1 G | 4,2 G | 1% |
 | Arquitecto | Monarca | 16 G | 32 G | 0,8% |
 | Ashborn | Monarca | 120 G | 240 G | 0,6% |
+
+Las sombras no son caballeros de placas: son siluetas oscuras encapuchadas, con
+jirones de sombra que cuelgan de la espalda y ondean, los ojos y el arma
+encendidos del color de su rango, y corona en las Monarca.
 
 Tres copias iguales del mismo nivel se **fusionan** en una de nivel superior. El
 escuadrón empieza con 6 huecos y crece 2 por cada rango que subes, hasta 16. Al
@@ -179,9 +188,10 @@ De E a S. Cada rango pide nivel y gemas, y da daño y suerte de extracción:
 | S | 560 | 60.000 | +280% | 90 |
 
 Tu aspecto cambia con el rango: cazador encapuchado con arnés táctico en E/D,
-placas y hombreras en C/B, armadura completa con capa en A/S, y la armadura del
-Monarca de las Sombras al despertar (yelmo con visor y cresta, hombreras con
-púas, núcleo violeta y púas dorsales).
+placas y hombreras en C/B, armadura completa con yelmo y visor en A/S. Al
+**despertar** cambia la silueta entera: abrigo largo negro de faldones, vetas de
+energía violeta recorriendo pecho, cinturón, antebrazos y abrigo, hombreras
+oscuras, pelo en púas, ojos encendidos y una hoja de energía con su halo.
 
 ### Renacer
 

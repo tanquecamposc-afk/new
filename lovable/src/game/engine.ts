@@ -1972,8 +1972,8 @@ function buildCharacter(cfg){
     }
   }
   if (cfg.core){
-    const c2 = P0(7, 7, 3, cfg.core, { ...opts, emissive:cfg.core, emissiveIntensity:1.3 });
-    c2.position.set(0, 45 * s, 9.4 * s); detail.add(c2);
+    const c2 = P0(5, 5, 2.5, cfg.core, { ...opts, emissive:cfg.core, emissiveIntensity:1.1 });
+    c2.position.set(0, 41 * s, 9.2 * s); detail.add(c2);
   }
   if (cfg.backSpikes){
     for (const dx of [-8, 0, 8]){
@@ -1993,10 +1993,69 @@ function buildCharacter(cfg){
   const head = new THREE.Mesh(boxGeo(19*s, 18*s, 17.5*s), headMat);
   head.castShadow = true; head.position.y = 12 * s;
   neck.add(head);
-  if (cfg.hair && !cfg.helm && !cfg.hood){
+  if (cfg.hair && !cfg.helm && !cfg.hood && !cfg.spikyHair){
     const top = P0(19.5, 4, 18, cfg.hair); top.position.y = 22 * s; neck.add(top);
     const back = P0(18.5, 9, 3, cfg.hair); back.position.set(0, 15 * s, -8 * s); neck.add(back);
     const fringe = P0(18.5, 4.5, 3, cfg.hair); fringe.position.set(0, 19 * s, 8 * s); neck.add(fringe);
+  }
+  if (cfg.coat){
+    // Abrigo largo de faldones: dos delante y uno detrás, con las líneas
+    // encendidas que recorren la tela. Es la silueta del cazador despertado.
+    for (const [dx, w] of [[-7, 12], [7, 12]]){
+      const panel = P0(w, 30, 3.5, cfg.coat);
+      panel.position.set(dx * s, 14 * s, 8.6 * s); detail.add(panel);
+      if (cfg.trim){
+        const line = P0(2, 26, 1.2, cfg.trim, { ...opts, emissive:cfg.trim, emissiveIntensity:1.1 });
+        line.position.set(dx * s, 14 * s, 10.4 * s); detail.add(line);
+      }
+    }
+    const back = P0(27, 34, 3.5, cfg.coat);
+    back.position.set(0, 12 * s, -9 * s); detail.add(back);
+    g.coatBack = back;
+    for (const side of [-1, 1]){
+      const flank = P0(3.5, 28, 17, cfg.coat);
+      flank.position.set(side * 14.5 * s, 14 * s, 0); detail.add(flank);
+    }
+  }
+  if (cfg.trim){
+    // vetas de energía: pecho, hombros y antebrazos
+    for (const dx of [-5.5, 5.5]){
+      const v = P0(1.8, 22, 1.2, cfg.trim, { ...opts, emissive:cfg.trim, emissiveIntensity:1.2 });
+      v.position.set(dx * s, 44 * s, 8.6 * s); detail.add(v);
+    }
+    const belt2 = P0(24, 2, 1.5, cfg.trim, { ...opts, emissive:cfg.trim, emissiveIntensity:1.2 });
+    belt2.position.set(0, 31 * s, 8.8 * s); detail.add(belt2);
+    for (let i = 0; i < 2; i++){
+      const band = P0(11.5, 2, 12.5, cfg.trim, { ...opts, emissive:cfg.trim, emissiveIntensity:1 });
+      band.position.y = -13 * s; g.arms[i].add(band);
+    }
+  }
+  if (cfg.tatters){
+    // Jirones de sombra: tiras largas que cuelgan de la espalda y ondean.
+    g.tatters = [];
+    const col = cfg.tatters;
+    let i = 0;
+    for (const dx of [-9, -3, 3, 9]){
+      const len = 26 + ((i % 2) ? 10 : 0);
+      const strip = P0(5.5, len, 2.5, col, { ...opts, opacity:(opts.opacity ?? 1) * (.85 - i * .06) });
+      strip.position.set(dx * s, (48 - len / 2) * s, -9.5 * s);
+      detail.add(strip); g.tatters.push(strip);
+      i++;
+    }
+    const collar = P0(24, 7, 8, col, { ...opts, opacity:(opts.opacity ?? 1) * .95 });
+    collar.position.set(0, 55 * s, -6 * s); detail.add(collar);
+  }
+  if (cfg.spikyHair){
+    // pelo en púas: mechones inclinados en vez de un bloque liso
+    const base = P0(19.5, 5, 18, cfg.spikyHair); base.position.y = 21 * s; neck.add(base);
+    let n = 0;
+    for (const [dx, dz, h, tilt] of [[-6,-4,6,-.6], [0,-6,7,-.4], [6,-4,6,.6],
+                                     [-4,4,5,-.9], [4,4,5,.9], [0,0,7,0]]){
+      const sp = P0(4 - (n % 2) * .8, h, 4, cfg.spikyHair);
+      sp.position.set(dx * s, (23 + h / 2) * s, dz * s);
+      sp.rotation.z = tilt; sp.rotation.x = -dz * .04;
+      neck.add(sp); n++;
+    }
   }
   if (cfg.hood){
     // capucha de cazador: caída trasera, borde frontal y sombra sobre los ojos
@@ -2083,9 +2142,20 @@ function buildCharacter(cfg){
       const haft = P0(4.5, 46, 4.5, "#5a4a32"); haft.position.y = 23 * s; wg.add(haft);
       const tip = P0(6, 15, 6, cfg.weapon); tip.position.y = 50 * s; wg.add(tip);
     } else {
-      const blade = P0(6, 38, 3, cfg.weapon); blade.position.y = 30 * s; wg.add(blade);
-      const guard = P0(16, 4, 7, "#8a7a5a"); guard.position.y = 11 * s; wg.add(guard);
-      const grip = P0(5, 11, 5, "#4a3a2a"); grip.position.y = 3 * s; wg.add(grip);
+      const glowing = !!cfg.weaponGlow;
+      const bopts = glowing ? { ...opts, emissive:cfg.weapon, emissiveIntensity:1.4 } : opts;
+      const blade = P0(6, 38, 3, cfg.weapon, bopts); blade.position.y = 30 * s; wg.add(blade);
+      const edge = P0(2.2, 40, 1.4, glowing ? "#ffffff" : cfg.weapon,
+                      { ...opts, emissive: glowing ? cfg.weapon : 0, emissiveIntensity: glowing ? 1.8 : 0 });
+      edge.position.set(2.6 * s, 31 * s, 0); wg.add(edge);
+      const guard = P0(16, 4, 7, glowing ? "#1b1230" : "#8a7a5a"); guard.position.y = 11 * s; wg.add(guard);
+      const grip = P0(5, 11, 5, glowing ? "#0e0a1c" : "#4a3a2a"); grip.position.y = 3 * s; wg.add(grip);
+      if (glowing){
+        const halo = new THREE.Sprite(new THREE.SpriteMaterial({
+          map: glowTexture(cfg.weapon), transparent:true, depthWrite:false,
+          blending:THREE.AdditiveBlending, opacity:.55 }));
+        halo.scale.set(44 * s, 44 * s, 1); halo.position.y = 30 * s; wg.add(halo);
+      }
     }
     wg.traverse(o => { if (o.isMesh){ o.castShadow = true; } });
     g.arms[1].add(wg);
@@ -2238,6 +2308,27 @@ function initScene(){
     cl.userData.cloud = true;
     scene.add(cl);
   }
+  // Islas flotantes: trozos de tierra colgados del cielo, con hierba arriba y
+  // la roca acabando en punta. Acompañan al jugador como las nubes.
+  for (let i = 0; i < 11; i++){
+    const isle = new THREE.Group();
+    const w = rnd(140, 320), d = w * rnd(.6, 1);
+    const top = part(w, 24, d, "#57b94f"); top.position.y = 0; isle.add(top);
+    const rock = part(w * .86, 46, d * .86, "#7a6a54"); rock.position.y = -34; isle.add(rock);
+    const tip = part(w * .42, 54, d * .42, "#6b5c48"); tip.position.y = -80; isle.add(tip);
+    const point = part(w * .16, 40, d * .16, "#5d5040"); point.position.y = -120; isle.add(point);
+    // un par de árboles encima
+    for (let t = 0; t < 2; t++){
+      const tx = rnd(-w * .3, w * .3), tz = rnd(-d * .3, d * .3);
+      const trunk = part(9, 26, 9, "#7a4a24"); trunk.position.set(tx, 25, tz); isle.add(trunk);
+      const leaf = part(34, 26, 34, "#3ec24e"); leaf.position.set(tx, 48, tz); isle.add(leaf);
+    }
+    isle.traverse(o => { if (o.isMesh){ o.castShadow = false; o.receiveShadow = false; } });
+    const a = (i / 11) * Math.PI * 2 + rnd(-.25, .25), rad = rnd(1250, 2600);
+    isle.position.set(Math.cos(a) * rad, rnd(430, 900), Math.sin(a) * rad);
+    isle.userData.skyIsle = true;
+    scene.add(isle);
+  }
   // sol visible con destello
   const sunSprite = new THREE.Sprite(new THREE.SpriteMaterial({
     map: glowTexture("#fff6d8"), transparent:true, depthWrite:false, blending:THREE.AdditiveBlending }));
@@ -2305,6 +2396,33 @@ function buildProp(kind, h){
   };
   switch (kind){
     case "city": {
+      // La ciudad mezcla: no todo son rascacielos. Según el hash sale una
+      // torre, un árbol, una casa baja o un monumento, como en una isla real.
+      const roll = (h >> 11) % 10;
+      if (roll < 3){                                   // árbol de ciudad
+        add(11, 30, 11, "#7a4a24", 0, 0, 0);
+        add(44, 30, 44, "#3ea84a", 0, 28, 0);
+        add(30, 22, 30, "#4ec25c", 0, 54, 0);
+        break;
+      }
+      if (roll < 5){                                   // casa baja de colores
+        const pal2 = ["#f2c14e","#e8734f","#4fa3e8","#8a6bd8","#4fc99a"];
+        const c2 = pal2[(h >> 3) % pal2.length];
+        add(78, 8, 78, "#b9c2d2", 0, 0, 0);
+        add(70, 46, 70, c2, 0, 8, 0);
+        add(82, 9, 82, "#e9eef7", 0, 54, 0);
+        for (const dz of [37, -37]) add(40, 12, 2, "#ffe9a8", 0, 24, dz, { emissive:"#ffe9a8", emissiveIntensity:.8 });
+        add(20, 16, 3, "#6b4a2a", 0, 8, 36);
+        break;
+      }
+      if (roll === 5){                                 // monumento con arcos
+        add(120, 10, 90, "#d8d2c2", 0, 0, 0);
+        for (const dx of [-44, -15, 15, 44]) add(13, 62, 13, "#efe9da", dx, 10, 0);
+        add(128, 14, 96, "#cfc7b4", 0, 72, 0);
+        add(36, 26, 36, "#b9b09a", 0, 86, 0);
+        add(10, 30, 10, "#7fd6ff", 0, 112, 0, { emissive:"#3ba9d6", emissiveIntensity:1 });
+        break;
+      }
       // Rascacielos de colores con bandas de ventanas encendidas en las
       // cuatro caras, azotea, antena y zócalo: el skyline de una isla-ciudad.
       const pal = ["#f2c14e","#e8734f","#4fa3e8","#8a6bd8","#4fc99a","#e85f8a","#f0f3ff"];
@@ -2458,44 +2576,48 @@ function syncProps(){
 
 /* --------------------------- vistas de entidades -------------------------- */
 function playerConfig(){
-  // El cazador cambia de aspecto según avanza: de chaqueta de novato a
-  // armadura completa, y de ahí a la armadura del Monarca de las Sombras.
-  const r = rankIdx(P.rank);                       // 0=E … 5=S, 6=Nacional
+  // El cazador cambia de aspecto según avanza: de encapuchado de rango E a
+  // armadura de placas, y al despertar al abrigo largo del Monarca de las
+  // Sombras, con las vetas encendidas y la hoja de energía.
+  const r = rankIdx(P.rank);                       // 0=E … 5=S
   const awake = P.awakened;
-  const monarch = awake && r >= 4;
-  const armored = r >= 2 || awake;
-  const heavy = r >= 4 || monarch;
+  const monarch = awake;                           // el despertar ya cambia la silueta
+  const heavy = !monarch && r >= 4;                // armadura pesada solo sin despertar
+  const armored = r >= 2 || monarch;
   const base = monarch
-    ? { shirt:"#170d33", sleeve:"#241552", pants:"#120a2a", boots:"#0d0720",
-        plate:"#3b2178", trim:"#8a5cff", glowC:"#b48cff" }
-    : awake
-      ? { shirt:"#1b2c62", sleeve:"#25397d", pants:"#16224a", boots:"#101833",
-          plate:"#2f4a9e", trim:"#5aa8ff", glowC:"#7fd0ff" }
-      : { shirt:"#23407e", sleeve:"#2d51a0", pants:"#2a3350", boots:"#1d2438",
-          plate:"#3f6ac0", trim:"#8fc0ff", glowC:"#9fd6ff" };
+    ? { shirt:"#0b0a16", sleeve:"#120f22", pants:"#0b0a16", boots:"#080714",
+        plate:"#171233", trim:"#a86cff", glowC:"#c9a6ff" }
+    : { shirt:"#23407e", sleeve:"#2d51a0", pants:"#2a3350", boots:"#1d2438",
+        plate:"#3f6ac0", trim:"#8fc0ff", glowC:"#9fd6ff" };
   return {
-    scale:1.06, skin:"#e8b98a", eyes: monarch ? "#b48cff" : "#12172b", glowEyes: monarch,
+    scale:1.06, skin:"#e8b98a",
+    eyes: monarch ? "#c9a6ff" : "#12172b", glowEyes: monarch,
     shirt: base.shirt, sleeve: base.sleeve, pants: base.pants, boots: base.boots,
     belt:"#1a1428", buckle: base.trim,
+    // despertado: pelo en púas y cara a la vista; antes, capucha o yelmo
+    spikyHair: monarch ? "#15121f" : null,
     hair: null,
-    hood: heavy ? null : (monarch ? "#1b0f3c" : "#141b33"),
-    hood2: heavy ? null : base.trim,
-    rig: armored ? null : "#0f1526", rig2: armored ? null : base.trim,
-    kneepads: heavy ? null : "#0f1526",
-    armor: base.plate, armorGlow: monarch ? base.trim : 0,
-    core: armored ? base.glowC : null,
-    pauldron: base.plate, pauldron2: armored ? base.trim : null,
-    spikes: monarch ? base.trim : null,
+    hood: (!monarch && !heavy) ? "#141b33" : null,
+    hood2: (!monarch && !heavy) ? base.trim : null,
+    rig: (!armored && !monarch) ? "#0f1526" : null, rig2: base.trim,
+    kneepads: (!heavy && !monarch) ? "#0f1526" : null,
+    coat: monarch ? "#0b0a16" : null,
+    trim: monarch ? base.trim : null,
+    armor: monarch ? null : base.plate, armorGlow: 0,
+    core: monarch ? "#a86cff" : (armored ? base.glowC : null),
+    pauldron: base.plate, pauldron2: monarch ? base.plate : (armored ? base.trim : null),
+    spikes: monarch && r >= 4 ? base.trim : null,
     gauntlet: base.plate,
-    tassets: r >= 1 || awake ? base.plate : null,
+    tassets: (!monarch && (r >= 1)) ? base.plate : null,
     greaves: heavy ? base.plate : null,
-    backSpikes: monarch ? base.trim : null,
+    backSpikes: monarch && r >= 5 ? base.trim : null,
     helm: heavy ? base.plate : null, helm2: heavy ? base.trim : null,
-    visor: heavy ? base.glowC : null, crest: monarch ? base.trim : null,
+    visor: heavy ? base.glowC : null, crest: null,
     glove: base.trim,
-    cape: monarch ? "#1b0f3c" : (r >= 3 ? base.plate : null),
-    crown: (monarch && r >= 6) ? "#ffd24a" : null,
-    weapon: monarch ? "#c8a8ff" : "#dce6f8", weaponKind: weaponKind(P.weapon),
+    cape: monarch ? null : (r >= 3 ? base.plate : null),
+    crown: null,                    // la cabeza se ve: pelo en púas y ojos encendidos
+    weapon: monarch ? "#b07cff" : "#dce6f8", weaponGlow: monarch,
+    weaponKind: weaponKind(P.weapon),
     key: `${awake}|${P.rank}|${P.weapon}`,
   };
 }
@@ -2560,23 +2682,26 @@ function enemyConfig(e){
   };
 }
 function shadowConfig(sh){
+  // El ejército no son caballeros de placas: son siluetas oscuras con capucha
+  // y jirones de sombra que ondean detrás, con los ojos del color de su rango.
   const tier = sh.data.tier;
   const glow = getComputedStyle(document.documentElement).getPropertyValue(TIER_VAR[tier] || "--t-C").trim() || "#b9c9e8";
   const elite = tier === "S" || tier === "S Elite" || tier === "Monarch";
   const monarch = tier === "Monarch";
   return {
-    scale: monarch ? 1.12 : elite ? 1.04 : .97, opts:{ opacity:.94 },
-    skin:"#2b4f86", shirt:"#14294f", eyes: glow, glowEyes:true,
-    sleeve:"#1d3d72", pants:"#0e1c38", boots:"#081428", belt:"#0e1c38",
-    hair:null, glove: glow,
-    armor:"#1b3866", armorGlow: glow, core: glow,
-    pauldron:"#1b3866", pauldron2: glow, spikes: elite ? glow : null,
-    gauntlet:"#1b3866", tassets:"#1b3866", greaves:"#1b3866",
-    backSpikes: monarch ? glow : null,
-    helm:"#1b3866", helm2: glow, visor: glow, crest: elite ? glow : null,
+    scale: monarch ? 1.14 : elite ? 1.05 : .97, opts:{ opacity:.95 },
+    skin:"#140f26", shirt:"#0c0918", sleeve:"#110d20", pants:"#080611", boots:"#060510",
+    belt:"#0c0918", hair:null, glove: glow,
+    eyes: glow, glowEyes:true,
+    hood:"#160f2b", hood2: glow,
+    tatters: monarch ? "#4a2394" : elite ? "#3d1e7a" : "#2c1659",
+    trim: elite ? glow : null,
+    armor:"#1a1230", armorGlow: glow, core: elite ? glow : null,
+    pauldron:"#1a1230", pauldron2: elite ? glow : null,
+    spikes: monarch ? glow : null,
+    gauntlet:"#1a1230",
     crown: monarch ? glow : null,
-    cape: elite ? "#0d1f3f" : null,
-    weapon: glow, weaponKind: monarch ? "scythe" : "sword",
+    weapon: glow, weaponGlow:true, weaponKind: monarch ? "scythe" : "sword",
   };
 }
 // Libera la memoria de GPU de una vista que sale de la escena. Sin esto las
@@ -3019,6 +3144,12 @@ function render(dt){
   // el cielo acompaña a la cámara y las nubes derivan a su alrededor
   skyMesh.position.set(camera.position.x, 0, camera.position.z);
   for (const o of scene.children){
+    if (o.userData.skyIsle){
+      if (o.userData.ox === undefined){ o.userData.ox = o.position.x; o.userData.oz = o.position.z; }
+      o.position.set(player.x + o.userData.ox, o.position.y, player.y + o.userData.oz);
+      o.visible = !dungeon;
+      continue;
+    }
     if (!o.userData.cloud) continue;
     if (o.userData.ox === undefined){
       o.userData.ox = o.position.x; o.userData.oz = o.position.z;
