@@ -3165,6 +3165,9 @@ const STAT_INFO = {
   AGI:["Agilidad","Velocidad, dash y doble salto a 200"],
   MNA:["Maná","Maná máximo · 100 + MNA×10"],
 };
+// Puntos ya colocados en atributos (todo menos la bolsa sin repartir).
+const STAT_KEYS = ["STR", "INT", "SDW", "VIT", "AGI", "MNA"];
+const spentPoints = () => STAT_KEYS.reduce((a, k) => a + (P.stats[k] || 0), 0);
 function panelStats(){
   const tabs = [["Stats","Atributos"],["Class","Clase"],["Talents","Talentos"],["Codes","Códigos"]];
   const nav = `<div class="tabs">${tabs.map(([id,label]) =>
@@ -3228,6 +3231,9 @@ function panelStats(){
       <span class="meta"><b>Rango ${next.name}</b><span>Nivel ${next.level} · ${fmt(next.gems)} gemas · daño ×${(1+next.dmg).toFixed(2)} · suerte +${next.luck}%</span></span>
       <button class="btn gold" id="rankup" ${P.level>=next.level && P.gems>=next.gems ? "" : "disabled"}>Ascender</button></div>`
      : `<p class="hint">Rango máximo <b>S</b> alcanzado.</p>`}
+    <div class="item"><span class="g">↺</span>
+      <span class="meta"><b>Reiniciar atributos</b><span>Te devuelve los ${fmt(spentPoints())} puntos repartidos para que los coloques de otra forma · gratis</span></span>
+      <button class="btn" id="respec-btn" ${spentPoints() > 0 ? "" : "disabled"}>Reiniciar</button></div>
     <div class="item"><span class="g">🌀</span>
       <span class="meta"><b>Renacer</b><span>Reinicia nivel y atributos · +50% daño permanente por renacer · coste ${fmt(rebirthCost)} oro</span></span>
       <button class="btn violet" id="rebirth-btn" ${P.level>=200 && P.cash>=rebirthCost ? "" : "disabled"}>Renacer</button></div>
@@ -3444,6 +3450,22 @@ modal.addEventListener("click", e => {
       burst(player.x, player.y, 46, "#ffd24a", 34); camImpulse(0.75);
       save(); dirty = true; renderPanel();
     }
+    return;
+  }
+  if (t.id === "respec-btn"){
+    // Devuelve los puntos repartidos sin tocar el nivel ni nada más. Es
+    // gratis a propósito: probar otra combinación no debería costar una
+    // partida entera.
+    const back = spentPoints();
+    if (back <= 0) return;
+    for (const k of STAT_KEYS) P.stats[k] = 0;
+    P.stats.points += back;
+    player.hp = Math.min(player.hp, maxHP());
+    player.mana = Math.min(player.mana, maxMana());
+    rebuildSquad();
+    note(`Atributos reiniciados · ${fmt(back)} puntos devueltos`, "--gem");
+    SFX.ui();
+    save(); dirty = true; renderPanel();
     return;
   }
   if (t.id === "rebirth-btn"){

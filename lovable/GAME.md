@@ -135,6 +135,10 @@ Seis atributos, 3 puntos por nivel:
 | AGI | velocidad, enfriamiento del dash; doble salto a partir de 200 |
 | MNA | +10 de maná máximo |
 
+Si te arrepientes del reparto, el panel de Atributos tiene **Reiniciar
+atributos**: te devuelve todos los puntos colocados para que los repartas de
+otra forma, gratis y sin tocar tu nivel.
+
 ### Fórmulas
 
 ```
