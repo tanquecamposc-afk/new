@@ -61,8 +61,14 @@ un muro: el salto de vida al pasar de un anillo al otro es de ×1,1 en vez de
 
 El cielo tiene **islas flotantes**: trozos de tierra con hierba, roca acabada en
 punta y un par de árboles encima, colgados entre las nubes y acompañando al
-jugador. Las zonas urbanas mezclan rascacielos con árboles, casas bajas de
-colores y monumentos con arcos, en vez de repetir la misma torre.
+jugador.
+
+Cada bioma construye con **cuatro piezas distintas** en vez de repetir una: la
+ciudad mezcla rascacielos, árboles, casas bajas y monumentos; el bosque, palmeras,
+árboles frondosos, rocas con musgo y troncos caídos; el hielo, agujas, arcos
+helados, bloques agrietados y abetos nevados; el templo, torii, faroles de
+piedra, pagodas y campanas; y así las catorce zonas, hasta la mazmorra con sus
+jaulas, altares y muros de púas.
 
 Cada región tiene su propia familia de criaturas, no humanos recoloreados:
 limos con núcleo brillante, bestias cuadrúpedas, golems de roca agrietada,

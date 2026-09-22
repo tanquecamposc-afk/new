@@ -1677,14 +1677,18 @@ function part(w, h, d, color, opts){
 }
 // Textura de cara dibujada en canvas (ojos con brillo y sonrisa).
 const faceTexCache = new Map();
-function faceTexture(eye, glow){
-  const k = `${eye}|${glow ? 1 : 0}`;
+function faceTexture(eye, glow, skin){
+  const k = `${eye}|${glow ? 1 : 0}|${skin}`;
   let t = faceTexCache.get(k);
   if (t) return t;
   const c = document.createElement("canvas");
   c.width = c.height = 128;
   const x = c.getContext("2d");
-  x.clearRect(0, 0, 128, 128);
+  // Base opaca del color de la piel. Sin esto el lienzo quedaba transparente
+  // salvo en ojos y boca, y se veía a través de la cara hasta el interior de
+  // la cabeza.
+  x.fillStyle = skin || "#e8b98a";
+  x.fillRect(0, 0, 128, 128);
   x.fillStyle = eye;
   if (glow){ x.shadowColor = eye; x.shadowBlur = 18; }
   x.fillRect(34, 46, 16, 22);
@@ -1987,9 +1991,15 @@ function buildCharacter(cfg){
   const neck = new THREE.Group();
   neck.position.y = 56 * s;
   const neckM = P0(9.5, 4.5, 9, skin); neckM.position.y = 1 * s; neck.add(neckM);
+  // La cara solo entra en la pasada transparente si de verdad lo es: marcarla
+  // siempre como transparente la hacía traslúcida y desordenaba la profundidad.
+  const faceAlpha = opts.opacity ?? 1;
+  const faceMat = new THREE.MeshLambertMaterial({
+    map: faceTexture(cfg.eyes || "#12172b", !!cfg.glowEyes, skin),
+    transparent: faceAlpha < 1, opacity: faceAlpha,
+  });
   const headMat = [mat(skin, opts), mat(skin, opts), mat(skin, opts), mat(skin, opts),
-                   new THREE.MeshLambertMaterial({ color:new THREE.Color(skin), map:faceTexture(cfg.eyes || "#12172b", !!cfg.glowEyes), transparent:true, opacity:opts.opacity ?? 1 }),
-                   mat(skin, opts)];
+                   faceMat, mat(skin, opts)];
   const head = new THREE.Mesh(boxGeo(19*s, 18*s, 17.5*s), headMat);
   head.castShadow = true; head.position.y = 12 * s;
   neck.add(head);
@@ -2391,14 +2401,25 @@ function applyTheme(force){
 function buildProp(kind, h){
   const g = new THREE.Group();
   const v = h % 100;
+  // El hash del mundo ya viene filtrado por `h % 5 === 0` al elegir las
+  // casillas con prop, y eso sesgaba cualquier reparto sacado de sus bits:
+  // salía siempre la misma variante. Se vuelve a mezclar antes de repartir.
+  const mix = (n, salt) => {
+    let r = (n ^ salt) >>> 0;
+    r = Math.imul(r ^ (r >>> 16), 2246822507) >>> 0;
+    r = Math.imul(r ^ (r >>> 13), 3266489909) >>> 0;
+    return (r ^ (r >>> 16)) >>> 0;
+  };
+  const roll = mix(h, 0x9e37) % 10;            // reparto de variantes por bioma
+  const pick = arr => arr[mix(h, 0x85eb) % arr.length];
   const add = (w, ht, d, col, x, y, z, o) => {
     const m = part(w, ht, d, col, o); m.position.set(x, y + ht/2, z); g.add(m); return m;
   };
+  const glowOpts = c => ({ emissive:c, emissiveIntensity:1.1 });
   switch (kind){
     case "city": {
       // La ciudad mezcla: no todo son rascacielos. Según el hash sale una
       // torre, un árbol, una casa baja o un monumento, como en una isla real.
-      const roll = (h >> 11) % 10;
       if (roll < 3){                                   // árbol de ciudad
         add(11, 30, 11, "#7a4a24", 0, 0, 0);
         add(44, 30, 44, "#3ea84a", 0, 28, 0);
@@ -2406,12 +2427,11 @@ function buildProp(kind, h){
         break;
       }
       if (roll < 5){                                   // casa baja de colores
-        const pal2 = ["#f2c14e","#e8734f","#4fa3e8","#8a6bd8","#4fc99a"];
-        const c2 = pal2[(h >> 3) % pal2.length];
+        const c2 = pick(["#f2c14e","#e8734f","#4fa3e8","#8a6bd8","#4fc99a"]);
         add(78, 8, 78, "#b9c2d2", 0, 0, 0);
         add(70, 46, 70, c2, 0, 8, 0);
         add(82, 9, 82, "#e9eef7", 0, 54, 0);
-        for (const dz of [37, -37]) add(40, 12, 2, "#ffe9a8", 0, 24, dz, { emissive:"#ffe9a8", emissiveIntensity:.8 });
+        for (const dz of [37, -37]) add(40, 12, 2, "#ffe9a8", 0, 24, dz, glowOpts("#ffe9a8"));
         add(20, 16, 3, "#6b4a2a", 0, 8, 36);
         break;
       }
@@ -2420,32 +2440,49 @@ function buildProp(kind, h){
         for (const dx of [-44, -15, 15, 44]) add(13, 62, 13, "#efe9da", dx, 10, 0);
         add(128, 14, 96, "#cfc7b4", 0, 72, 0);
         add(36, 26, 36, "#b9b09a", 0, 86, 0);
-        add(10, 30, 10, "#7fd6ff", 0, 112, 0, { emissive:"#3ba9d6", emissiveIntensity:1 });
+        add(10, 30, 10, "#7fd6ff", 0, 112, 0, glowOpts("#3ba9d6"));
         break;
       }
-      // Rascacielos de colores con bandas de ventanas encendidas en las
-      // cuatro caras, azotea, antena y zócalo: el skyline de una isla-ciudad.
-      const pal = ["#f2c14e","#e8734f","#4fa3e8","#8a6bd8","#4fc99a","#e85f8a","#f0f3ff"];
-      const body = pal[v % pal.length];
-      const floors = 3 + (v % 5);
-      const ht = 70 + floors * 26;
-      add(20 + (v % 3) * 4 + 76, 8, 96 + (v % 3) * 4, "#b9c2d2", 0, 0, 0);   // zócalo
+      // rascacielos con ventanas encendidas en las cuatro caras
+      const body = pick(["#f2c14e","#e8734f","#4fa3e8","#8a6bd8","#4fc99a","#e85f8a","#f0f3ff"]);
+      const floors = 3 + (v % 5), ht = 70 + floors * 26;
+      add(96, 8, 96, "#b9c2d2", 0, 0, 0);
       add(88, ht, 88, body, 0, 8, 0);
-      add(100, 10, 100, "#e9eef7", 0, 8 + ht, 0);                            // cornisa
+      add(100, 10, 100, "#e9eef7", 0, 8 + ht, 0);
       const win = v % 2 ? "#ffe9a8" : "#9fe4ff";
       for (let i = 0; i < floors; i++){
         const y = 26 + i * 26;
-        add(62, 12, 2, win, 0, y, 45, { emissive:win, emissiveIntensity:.9 });
-        add(62, 12, 2, win, 0, y, -45, { emissive:win, emissiveIntensity:.9 });
-        add(2, 12, 62, win, 45, y, 0, { emissive:win, emissiveIntensity:.9 });
-        add(2, 12, 62, win, -45, y, 0, { emissive:win, emissiveIntensity:.9 });
+        add(62, 12, 2, win, 0, y, 45, glowOpts(win));
+        add(62, 12, 2, win, 0, y, -45, glowOpts(win));
+        add(2, 12, 62, win, 45, y, 0, glowOpts(win));
+        add(2, 12, 62, win, -45, y, 0, glowOpts(win));
       }
-      add(26, 14, 26, "#cfd8e8", 0, 18 + ht, 0);                             // caseta
-      add(5, 34, 5, "#8f9bb0", 0, 32 + ht, 0);                               // antena
-      add(8, 8, 8, "#ff5a6a", 0, 66 + ht, 0, { emissive:"#ff5a6a", emissiveIntensity:1.4 });
+      add(26, 14, 26, "#cfd8e8", 0, 18 + ht, 0);
+      add(5, 34, 5, "#8f9bb0", 0, 32 + ht, 0);
+      add(8, 8, 8, "#ff5a6a", 0, 66 + ht, 0, glowOpts("#ff5a6a"));
       break;
     }
     case "forest": {
+      if (roll < 3){                                   // árbol frondoso
+        add(16, 46, 16, "#7a4a24", 0, 0, 0);
+        add(70, 34, 70, "#2b9a3c", 0, 40, 0);
+        add(52, 26, 52, "#3ec24e", 0, 70, 0);
+        add(30, 18, 30, "#4ed45e", 0, 92, 0);
+        break;
+      }
+      if (roll === 3){                                 // roca con musgo y matorral
+        add(54, 26, 48, "#7c8a76", 0, 0, 0);
+        add(34, 18, 30, "#8d9c86", 12, 24, -6);
+        add(30, 10, 28, "#3ea84a", -14, 24, 8);
+        break;
+      }
+      if (roll === 4){                                 // tronco caído con setas
+        const log = add(22, 22, 84, "#6b4224", 0, 0, 0);
+        log.rotation.y = (v % 60) * Math.PI / 180;
+        add(9, 4, 9, "#d8d0b8", 6, 22, 18);
+        add(12, 5, 12, "#c9503f", -8, 22, -14);
+        break;
+      }
       // palmera: tronco inclinado por tramos y hojas radiales
       let off = 0;
       for (let i = 0; i < 6; i++){
@@ -2460,80 +2497,338 @@ function buildProp(kind, h){
         leaf.rotation.y = -ang; leaf.rotation.z = .22;
         g.add(leaf);
       }
-      add(9, 9, 9, "#c98a3a", tx, topY - 6, 8);                              // cocos
+      add(9, 9, 9, "#c98a3a", tx, topY - 6, 8);
       break;
     }
-    case "ice":
-      add(16, 44, 16, "#6d4b2e", 0, 0, 0);
+    case "ice": {
+      if (roll < 3){                                   // aguja de hielo
+        add(30, 70 + v, 30, "#dff3ff", 0, 0, 0, { opacity:.92 });
+        add(18, 46, 18, "#ffffff", 4, 60 + v, -2, { opacity:.9 });
+        add(10, 30, 10, "#bfe8ff", -8, 40, 6, { opacity:.85 });
+        break;
+      }
+      if (roll === 3){                                 // arco helado
+        for (const dx of [-30, 30]) add(16, 76, 20, "#e6f6ff", dx, 0, 0, { opacity:.93 });
+        add(88, 16, 24, "#ffffff", 0, 76, 0, { opacity:.93 });
+        add(12, 18, 12, "#7fd6ff", 0, 60, 0, glowOpts("#7fd6ff"));
+        break;
+      }
+      if (roll === 4){                                 // bloque de hielo agrietado
+        add(72, 40, 60, "#e9f7ff", 0, 0, 0, { opacity:.95 });
+        add(74, 3, 62, "#8fd6ff", 0, 22, 0, glowOpts("#8fd6ff"));
+        break;
+      }
+      add(16, 44, 16, "#6d4b2e", 0, 0, 0);             // abeto nevado
       add(68, 40, 68, "#dff3ff", 0, 40, 0);
       add(44, 32, 44, "#ffffff", 0, 74, 0);
       break;
+    }
     case "urban": {
-      // bloque urbano: hormigón, franjas de ventanas y neón en la fachada
-      const ht = 110 + v * 1.6;
+      if (roll < 2){                                   // nave baja con tejado
+        add(120, 10, 96, "#6b7688", 0, 0, 0);
+        add(110, 44, 88, "#98a3b5", 0, 10, 0);
+        add(118, 8, 96, "#5c6676", 0, 54, 0);
+        for (const dx of [-36, 0, 36]) add(22, 20, 2, "#cfe4ff", dx, 18, 45, glowOpts("#7fb7e8"));
+        break;
+      }
+      if (roll === 2){                                 // torre de antenas
+        add(48, 12, 48, "#5c6676", 0, 0, 0);
+        add(20, 150 + v, 20, "#8592a6", 0, 12, 0);
+        for (const y of [60, 100, 140]) add(56, 5, 56, "#6b7688", 0, y, 0);
+        add(8, 30, 8, "#ff6a8a", 0, 162 + v, 0, glowOpts("#ff6a8a"));
+        break;
+      }
+      if (roll === 3){                                 // valla publicitaria
+        for (const dx of [-26, 26]) add(9, 70, 9, "#4a5364", dx, 0, 0);
+        add(84, 44, 6, "#1d2534", 0, 62, 0);
+        add(74, 34, 3, pick(["#ff6a8a","#4ff0ff","#ffd24a"]), 0, 67, 4,
+            glowOpts(pick(["#ff6a8a","#4ff0ff","#ffd24a"])));
+        break;
+      }
+      const ht2 = 110 + v * 1.6;                       // bloque de pisos
       add(104, 10, 104, "#7c8698", 0, 0, 0);
-      add(94, ht, 94, v % 2 ? "#9aa6b8" : "#8592a6", 0, 10, 0);
+      add(94, ht2, 94, v % 2 ? "#9aa6b8" : "#8592a6", 0, 10, 0);
       for (let i = 0; i < 4 + (v % 3); i++){
         const y = 30 + i * 28;
-        add(70, 13, 2, "#cfe4ff", 0, y, 48, { emissive:"#7fb7e8", emissiveIntensity:.55 });
-        add(2, 13, 70, "#cfe4ff", -48, y, 0, { emissive:"#7fb7e8", emissiveIntensity:.55 });
+        add(70, 13, 2, "#cfe4ff", 0, y, 48, glowOpts("#7fb7e8"));
+        add(2, 13, 70, "#cfe4ff", -48, y, 0, glowOpts("#7fb7e8"));
       }
-      add(10, 44, 3, "#ff6a8a", 40, 40, 49, { emissive:"#ff6a8a", emissiveIntensity:1.2 });
-      add(104, 12, 104, "#6b7688", 0, 10 + ht, 0);
+      add(10, 44, 3, "#ff6a8a", 40, 40, 49, glowOpts("#ff6a8a"));
+      add(104, 12, 104, "#6b7688", 0, 10 + ht2, 0);
       break;
     }
-    case "royal":
-      add(84, 170 + v, 84, "#e8e2d0", 0, 0, 0);
+    case "royal": {
+      if (roll < 3){                                   // seto recortado con estatua
+        add(70, 26, 70, "#4f9a55", 0, 0, 0);
+        add(54, 16, 54, "#5cb063", 0, 26, 0);
+        add(16, 30, 16, "#e8e2d0", 0, 42, 0);
+        add(20, 10, 20, "#d4ccb6", 0, 72, 0);
+        break;
+      }
+      if (roll === 3){                                 // fuente
+        add(92, 12, 92, "#e8e2d0", 0, 0, 0);
+        add(70, 10, 70, "#4aa8e8", 0, 12, 0, { opacity:.85 });
+        add(20, 34, 20, "#d4ccb6", 0, 22, 0);
+        add(30, 8, 30, "#efe9da", 0, 56, 0);
+        break;
+      }
+      if (roll === 4){                                 // arco de entrada
+        for (const dx of [-40, 40]) add(20, 96, 24, "#efe9da", dx, 0, 0);
+        add(112, 20, 30, "#d8d0b8", 0, 96, 0);
+        add(40, 22, 22, "#b8443f", 0, 116, 0);
+        break;
+      }
+      add(84, 170 + v, 84, "#e8e2d0", 0, 0, 0);        // torre de palacio
       add(100, 24, 100, "#c9bfa4", 0, 170 + v, 0);
       const cone = new THREE.Mesh(new THREE.ConeGeometry(58, 70, 8), mat("#b8443f"));
       cone.position.y = 170 + v + 24 + 35; cone.castShadow = true; g.add(cone);
       break;
-    case "shrine":
-      add(12, 112, 12, "#d33b3b", -34, 0, 0);
+    }
+    case "shrine": {
+      if (roll < 3){                                   // farol de piedra
+        add(30, 14, 30, "#9a9182", 0, 0, 0);
+        add(14, 34, 14, "#b0a693", 0, 14, 0);
+        add(34, 18, 34, "#c9c0ac", 0, 48, 0);
+        add(20, 14, 20, "#ffcf7a", 0, 50, 0, glowOpts("#ffb347"));
+        add(40, 8, 40, "#8e8576", 0, 66, 0);
+        break;
+      }
+      if (roll === 3){                                 // pagoda de tres pisos
+        add(86, 12, 86, "#9a9182", 0, 0, 0);
+        let w2 = 70, y2 = 12;
+        for (let i = 0; i < 3; i++){
+          add(w2, 30, w2, "#d8b48a", 0, y2, 0);
+          add(w2 + 26, 10, w2 + 26, "#b32f2f", 0, y2 + 30, 0);
+          y2 += 40; w2 -= 14;
+        }
+        add(10, 26, 10, "#d33b3b", 0, y2, 0);
+        break;
+      }
+      if (roll === 4){                                 // campana bajo pórtico
+        for (const dx of [-30, 30]) add(12, 70, 12, "#8e7a5a", dx, 0, 0);
+        add(84, 12, 26, "#6b5a3a", 0, 70, 0);
+        add(30, 36, 30, "#c9a74a", 0, 30, 0, { emissive:"#6b5220", emissiveIntensity:.3 });
+        break;
+      }
+      add(12, 112, 12, "#d33b3b", -34, 0, 0);          // torii
       add(12, 112, 12, "#d33b3b", 34, 0, 0);
       add(104, 12, 20, "#b32f2f", 0, 106, 0);
       add(122, 10, 24, "#d33b3b", 0, 120, 0);
       break;
-    case "dark":
-      add(14, 72, 14, "#2b2a24", 0, 0, 0);
+    }
+    case "dark": {
+      if (roll < 3){                                   // muro derruido
+        add(96, 44, 18, "#3a3a2e", 0, 0, 0);
+        add(54, 26, 18, "#33332a", -18, 44, 0);
+        add(20, 14, 18, "#2b2a24", 34, 44, 0);
+        break;
+      }
+      if (roll === 3){                                 // torre con barrotes
+        add(66, 100 + v, 66, "#2f2f28", 0, 0, 0);
+        for (const dx of [-14, 0, 14]) add(4, 30, 4, "#5a5a4c", dx, 40, 34);
+        add(74, 14, 74, "#23231d", 0, 100 + v, 0);
+        add(10, 12, 10, "#ffb84d", 0, 60, 34, glowOpts("#ff9a2d"));
+        break;
+      }
+      if (roll === 4){                                 // brasero
+        add(34, 16, 34, "#3a3a2e", 0, 0, 0);
+        add(16, 40, 16, "#2b2a24", 0, 16, 0);
+        add(30, 12, 30, "#4a4a3c", 0, 56, 0);
+        add(20, 14, 20, "#ff9a2d", 0, 62, 0, glowOpts("#ff6a1d"));
+        break;
+      }
+      add(14, 72, 14, "#2b2a24", 0, 0, 0);             // árbol seco
       add(56, 12, 56, "#3a3a2e", 0, 68, 0);
-      add(10, 14, 10, "#ffb84d", 24, 72, 0, { emissive:"#ff9a2d", emissiveIntensity:1 });
+      add(10, 14, 10, "#ffb84d", 24, 72, 0, glowOpts("#ff9a2d"));
       break;
-    case "dragon":
-      add(72, 120 + v, 72, "#6b5240", 0, 0, 0);
+    }
+    case "dragon": {
+      if (roll < 3){                                   // columna rota
+        add(46, 70 + v, 46, "#6b5240", 0, 0, 0);
+        add(54, 12, 54, "#59422f", 0, 70 + v, 0);
+        add(26, 20, 26, "#4a3626", 10, 82 + v, -8);
+        break;
+      }
+      if (roll === 3){                                 // grieta de lava
+        add(90, 10, 70, "#241a1a", 0, 0, 0);
+        add(70, 5, 50, "#ff5a1e", 0, 10, 0, glowOpts("#ff5a1e"));
+        for (const dx of [-30, 26]) add(18, 30, 18, "#3a2a24", dx, 12, 0);
+        break;
+      }
+      if (roll === 4){                                 // arco de hueso
+        for (const dx of [-34, 34]) add(14, 80, 14, "#d8cfae", dx, 0, 0);
+        add(96, 14, 18, "#c9bf9a", 0, 80, 0);
+        add(24, 20, 20, "#b5ab86", 0, 94, 0);
+        break;
+      }
+      add(72, 120 + v, 72, "#6b5240", 0, 0, 0);        // torre de roca
       add(46, 42, 46, "#59422f", 0, 120 + v, 0);
       break;
-    case "cyber":
-      add(90, 210 + v*2, 90, "#232b46", 0, 0, 0);
-      for (let i = 0; i < 4; i++) add(58, 8, 2, i % 2 ? "#ff4fd0" : "#4ff0ff", 0, 40 + i*46, 46, { emissive:i % 2 ? "#ff4fd0" : "#4ff0ff", emissiveIntensity:1.2 });
-      add(16, 40, 16, "#4ff0ff", 0, 210 + v*2, 0, { emissive:"#4ff0ff", emissiveIntensity:1.4 });
+    }
+    case "cyber": {
+      if (roll < 3){                                   // panel holográfico
+        add(40, 12, 40, "#1b2238", 0, 0, 0);
+        for (const dx of [-16, 16]) add(7, 70, 7, "#2f3a5c", dx, 12, 0);
+        const neon = pick(["#4ff0ff","#ff4fd0","#b98cff"]);
+        add(66, 46, 4, neon, 0, 60, 0, glowOpts(neon));
+        break;
+      }
+      if (roll === 3){                                 // bloque de servidores
+        add(88, 14, 72, "#1b2238", 0, 0, 0);
+        add(78, 56, 62, "#232b46", 0, 14, 0);
+        for (let i = 0; i < 4; i++) add(70, 3, 2, "#4ff0ff", 0, 22 + i * 12, 32, glowOpts("#4ff0ff"));
+        break;
+      }
+      if (roll === 4){                                 // antena de datos
+        add(36, 10, 36, "#232b46", 0, 0, 0);
+        add(12, 130 + v, 12, "#2f3a5c", 0, 10, 0);
+        for (const y of [50, 90, 130]) add(44, 4, 4, "#ff4fd0", 0, y, 0, glowOpts("#ff4fd0"));
+        add(14, 14, 14, "#4ff0ff", 0, 142 + v, 0, glowOpts("#4ff0ff"));
+        break;
+      }
+      add(90, 210 + v*2, 90, "#232b46", 0, 0, 0);      // torre de neón
+      for (let i = 0; i < 4; i++)
+        add(58, 8, 2, i % 2 ? "#ff4fd0" : "#4ff0ff", 0, 40 + i*46, 46,
+            glowOpts(i % 2 ? "#ff4fd0" : "#4ff0ff"));
+      add(16, 40, 16, "#4ff0ff", 0, 210 + v*2, 0, glowOpts("#4ff0ff"));
       break;
-    case "volcano":
-      add(82, 60 + v, 82, "#241a1a", 0, 0, 0);
-      add(46, 16, 46, "#ff5a1e", 0, 60 + v, 0, { emissive:"#ff5a1e", emissiveIntensity:1.3 });
+    }
+    case "volcano": {
+      if (roll < 3){                                   // aguja de obsidiana
+        add(34, 90 + v, 34, "#1c1418", 0, 0, 0);
+        add(18, 40, 18, "#2a1e22", 8, 80 + v, -4);
+        add(10, 20, 10, "#ff5a1e", 0, 40, 18, glowOpts("#ff5a1e"));
+        break;
+      }
+      if (roll === 3){                                 // géiser de lava
+        add(70, 16, 70, "#241a1a", 0, 0, 0);
+        add(46, 26, 46, "#3a2420", 0, 16, 0);
+        add(30, 18, 30, "#ff7a2a", 0, 42, 0, glowOpts("#ff5a1e"));
+        add(14, 46, 14, "#ffb07a", 0, 58, 0, { emissive:"#ff7a2a", emissiveIntensity:1.3, opacity:.8 });
+        break;
+      }
+      if (roll === 4){                                 // cráter humeante
+        add(110, 14, 110, "#2a1e1e", 0, 0, 0);
+        add(78, 10, 78, "#ff5a1e", 0, 14, 0, glowOpts("#ff5a1e"));
+        for (const [dx, dz] of [[-44,0],[44,0],[0,-44],[0,44]]) add(24, 26, 24, "#241a1a", dx, 14, dz);
+        break;
+      }
+      add(82, 60 + v, 82, "#241a1a", 0, 0, 0);         // roca volcánica
+      add(46, 16, 46, "#ff5a1e", 0, 60 + v, 0, glowOpts("#ff5a1e"));
       break;
-    case "guild":
-      add(112, 122, 112, "#c9d4e4", 0, 0, 0);
+    }
+    case "guild": {
+      if (roll < 3){                                   // casa del gremio
+        add(90, 10, 80, "#a9b4c6", 0, 0, 0);
+        add(80, 50, 70, "#e3e9f3", 0, 10, 0);
+        add(92, 12, 82, "#6b7a94", 0, 60, 0);
+        add(24, 26, 3, "#6b4a2a", 0, 10, 36);
+        add(40, 10, 3, "#3f7fd0", 0, 46, 37, glowOpts("#3f7fd0"));
+        break;
+      }
+      if (roll === 3){                                 // muñeco de entrenamiento
+        add(34, 10, 34, "#8a7a5a", 0, 0, 0);
+        add(12, 54, 12, "#6b5a3a", 0, 10, 0);
+        add(34, 26, 20, "#c9a06a", 0, 46, 0);
+        add(18, 18, 16, "#b08a5a", 0, 72, 0);
+        break;
+      }
+      if (roll === 4){                                 // postes con estandartes
+        for (const dx of [-34, 34]){
+          add(10, 92, 10, "#6b7a94", dx, 0, 0);
+          add(26, 44, 3, "#3f7fd0", dx, 40, 6, glowOpts("#3f7fd0"));
+        }
+        add(88, 8, 12, "#c9d4e4", 0, 92, 0);
+        break;
+      }
+      add(112, 122, 112, "#c9d4e4", 0, 0, 0);          // salón del gremio
       add(128, 20, 128, "#6b7a94", 0, 122, 0);
       add(8, 60, 8, "#8a97b0", -40, 142, 0);
-      add(34, 26, 2, "#3f7fd0", -24, 168, 4);
+      add(34, 26, 2, "#3f7fd0", -24, 168, 4, glowOpts("#3f7fd0"));
       break;
-    case "mystic":
-      const crystal = new THREE.Mesh(new THREE.OctahedronGeometry(30), mat("#8a6bff", { emissive:"#6b4cff", emissiveIntensity:.7, opacity:.92 }));
+    }
+    case "mystic": {
+      if (roll < 3){                                   // obelisco rúnico
+        add(40, 14, 40, "#3a3468", 0, 0, 0);
+        add(26, 96 + v, 26, "#4b428c", 0, 14, 0);
+        for (const y of [40, 70, 100]) add(28, 4, 28, "#c0a8ff", 0, y, 0, glowOpts("#8a6bff"));
+        break;
+      }
+      if (roll === 3){                                 // arco de runas
+        for (const dx of [-32, 32]) add(16, 78, 16, "#4b428c", dx, 0, 0);
+        add(88, 14, 20, "#5b4fa8", 0, 78, 0);
+        add(24, 24, 6, "#c0a8ff", 0, 54, 0, glowOpts("#8a6bff"));
+        break;
+      }
+      if (roll === 4){                                 // piedra flotante
+        add(46, 26, 40, "#3e3a72", 0, 40, 0, { opacity:.95 });
+        add(26, 10, 24, "#8a6bff", 0, 36, 0, glowOpts("#8a6bff"));
+        add(18, 30, 18, "#5b46b0", 0, 4, 0, { opacity:.7 });
+        g.userData.spin = true;
+        break;
+      }
+      const crystal = new THREE.Mesh(new THREE.OctahedronGeometry(30),
+        mat("#8a6bff", { emissive:"#6b4cff", emissiveIntensity:.7, opacity:.92 }));
       crystal.position.y = 70 + v; crystal.castShadow = true; g.add(crystal);
       add(16, 32, 16, "#5b46b0", 0, 18, 0, { opacity:.8 });
       g.userData.spin = true;
       break;
-    case "storm":
-      add(98, 30, 98, "#6b7a8c", 0, 0, 0);
+    }
+    case "storm": {
+      if (roll < 3){                                   // pararrayos
+        add(44, 12, 44, "#4e5e6c", 0, 0, 0);
+        add(14, 120 + v, 14, "#8b98a8", 0, 12, 0);
+        add(30, 6, 30, "#6b7a8c", 0, 70, 0);
+        add(8, 22, 8, "#dfe8f5", 0, 132 + v, 0, glowOpts("#bcd8ff"));
+        break;
+      }
+      if (roll === 3){                                 // molino
+        add(60, 14, 60, "#5a6b7a", 0, 0, 0);
+        add(40, 90, 40, "#8b98a8", 0, 14, 0);
+        add(48, 16, 48, "#c3cedd", 0, 104, 0);
+        for (let a = 0; a < 4; a++){
+          const bl = part(70, 8, 6, "#dfe8f5");
+          bl.position.set(0, 86, 26); bl.rotation.z = a * Math.PI / 2;
+          g.add(bl);
+        }
+        break;
+      }
+      if (roll === 4){                                 // columna partida
+        add(40, 60 + v, 40, "#6b7a8c", 0, 0, 0);
+        add(46, 10, 46, "#8b98a8", 0, 60 + v, 0);
+        add(24, 26, 24, "#5a6b7a", 12, 70 + v, -6);
+        break;
+      }
+      add(98, 30, 98, "#6b7a8c", 0, 0, 0);             // torre de vigía
       add(14, 92, 14, "#8b98a8", 0, 30, 0);
       add(82, 10, 18, "#c3cedd", 0, 120, 0);
       break;
-    case "dungeon":
-      add(48, 200, 48, "#241a33", 0, 0, 0);
+    }
+    case "dungeon": {
+      if (roll < 3){                                   // jaula
+        add(56, 8, 56, "#241a33", 0, 0, 0);
+        for (const [dx, dz] of [[-22,-22],[22,-22],[-22,22],[22,22]]) add(6, 60, 6, "#3a2a4f", dx, 8, dz);
+        add(60, 8, 60, "#241a33", 0, 68, 0);
+        add(18, 18, 18, "#ff4646", 0, 24, 0, glowOpts("#ff2222"));
+        break;
+      }
+      if (roll === 3){                                 // altar
+        add(72, 14, 72, "#2b1f3d", 0, 0, 0);
+        add(48, 22, 48, "#3a2a4f", 0, 14, 0);
+        add(26, 10, 26, "#ff4646", 0, 36, 0, glowOpts("#ff2222"));
+        for (const dx of [-30, 30]) add(8, 40, 8, "#241a33", dx, 14, 0);
+        break;
+      }
+      if (roll === 4){                                 // muro de púas
+        add(90, 20, 20, "#241a33", 0, 0, 0);
+        for (const dx of [-32, -11, 11, 32]) add(8, 34, 8, "#5a4a6f", dx, 20, 0);
+        break;
+      }
+      add(48, 200, 48, "#241a33", 0, 0, 0);            // pilar
       add(62, 18, 62, "#3a2a4f", 0, 200, 0);
-      add(12, 56, 2, "#ff4646", 0, 110, 25, { emissive:"#ff2222", emissiveIntensity:1.2 });
+      add(12, 56, 2, "#ff4646", 0, 110, 25, glowOpts("#ff2222"));
       break;
+    }
   }
   return g;
 }
