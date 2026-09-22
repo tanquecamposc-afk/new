@@ -86,6 +86,8 @@ export const GAME_HTML = `<div id="app">
       <p class="foot">Tu partida se guarda sola en este navegador.</p>
     </div>
   </div>
+  <div id="crossFlash"></div>
+  <div id="crossName"><b></b><small></small></div>
   <div id="deathOverlay" hidden></div>
   <div id="dialog" hidden></div>
   <div id="banner"></div>

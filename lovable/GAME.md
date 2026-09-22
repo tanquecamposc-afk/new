@@ -75,6 +75,12 @@ limos con núcleo brillante, bestias cuadrúpedas, golems de roca agrietada,
 hormigas de seis patas y espectros flotantes. Los jefes rompen el molde: siempre
 humanoides con armadura completa, capa y guadaña.
 
+Y encima, **rasgos por isla**, para que dos zonas con el mismo cuerpo no se
+parezcan: melenas de púas, alas membranosas con el hueso encendido, cristales en
+la espalda, caparazón segmentado, colmillos, filas de ojos de más, colas con
+punta brillante y halos flotantes. Los brutos añaden caparazón y los jefes, halo
+y cristales, así que se reconocen de lejos sin mirar la barra de vida.
+
 ## 4. El bucle de juego
 
 ```

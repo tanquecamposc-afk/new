@@ -1037,6 +1037,8 @@ const SFX = {
   death(){ this.arp([392, 294, 220, 147], .12, "sawtooth", .28); },
   ui(){ if (this.throttle("ui", 40)) this.tone(660, .05, "triangle", .12); },
   bossWarn(){ if (this.throttle("bw", 200)) this.tone(150, .3, "sawtooth", .2, 220); },
+  cross(ok){ this.arp(ok ? [392, 523, 659] : [330, 262, 196], .11, "triangle", .26);
+              this.noise(.5, .1, 500, .6); },
   bossHit(kind){ this.noise(kind === "wave" ? .4 : .22, .32, kind === "wave" ? 220 : 400, .8);
                  this.tone(90, .3, "square", .24, 45); },
   bossPhase(n){ this.arp(n >= 4 ? [220, 185, 147, 110] : [147, 185, 220], .1, "sawtooth", .3); },
@@ -1076,6 +1078,36 @@ const SFX = {
   },
 
 };
+/* Cruce de región: velo del color de la zona, su nombre en grande, sonido y
+   un par de segundos de gracia, para que pasar de una isla a otra se note y no
+   te reciban a golpes en el primer frame. */
+function crossRegion(reg, first){
+  const th = THEMES[reg.theme] || THEMES.city;
+  const flash = document.getElementById("crossFlash");
+  const name = document.getElementById("crossName");
+  const puedes = P.level >= reg.level;
+  if (flash){
+    flash.style.setProperty("--cross", th.sky1);
+    flash.classList.add("on");
+    setTimeout(() => flash.classList.remove("on"), 260);
+  }
+  if (name){
+    name.querySelector("b").textContent = reg.name;
+    name.querySelector("small").textContent =
+      `${first ? "Región descubierta" : "Región"} · nivel recomendado ${fmt(reg.level)}`;
+    name.classList.add("on");
+    clearTimeout(crossRegion._t);
+    crossRegion._t = setTimeout(() => name.classList.remove("on"), 2600);
+  }
+  note(puedes ? `Has entrado en ${reg.name}`
+              : `${reg.name} · zona de nivel ${reg.level}: aquí golpean muy fuerte`,
+       puedes ? "--spec" : "--hp");
+  if (first) banner("NUEVA REGIÓN", th.sky1);
+  SFX.cross(puedes);
+  player.invuln = Math.max(player.invuln || 0, now() + 1.8);
+  camImpulse(0.4);
+  ring(player.x, player.y, 320, th.sky1, .7);
+}
 function banner(text, color){
   const el = document.getElementById("banner");
   el.innerHTML = `<div class="banner stroke" style="color:${color}">${text}</div>`;
@@ -1309,12 +1341,10 @@ function update(dt){
   if (!dungeon){
     const reg = regionAt(player.x, player.y);
     if (reg.id !== P.island){
+      const first = !P.islands.includes(reg.id);
       P.island = reg.id;
-      if (!P.islands.includes(reg.id)) P.islands.push(reg.id);
-      banner(reg.name.toUpperCase(), P.level >= reg.level ? "#8fd0ff" : "#ff8d97");
-      note(P.level >= reg.level ? `Has entrado en ${reg.name}`
-        : `${reg.name} · zona de nivel ${reg.level}: aquí golpean muy fuerte`,
-        P.level >= reg.level ? "--spec" : "--hp");
+      if (first) P.islands.push(reg.id);
+      crossRegion(reg, first);
       enemies = []; corpses = []; spawnT = 0;
       dirty = true;
     }
@@ -1718,6 +1748,84 @@ function faceTexture(eye, glow, skin){
    (limo, golem, bestia, insecto, espectro) tiene su propio cuerpo. Todas
    exponen legs/arms/torso/neck para que la animación común siga valiendo.
    --------------------------------------------------------------------------- */
+/* Rasgos de criatura. Sin esto, dos regiones con el mismo tipo de cuerpo se
+   distinguían solo por el color. Cada isla monta su combinación: melenas,
+   alas, cristales, caparazón, colmillos, ojos de más, cola o halo.          */
+function addFeatures(detail, cfg, s, opts){
+  const list = cfg.features;
+  if (!list || !list.length) return;
+  const glow = cfg.eyes || "#ffd24a";
+  const dark = cfg.pants || "#1b2340";
+  const P0 = (w, h, d, c, o) => part(w*s, h*s, d*s, c, o || opts);
+  const G = c => ({ ...opts, emissive:c, emissiveIntensity:1.1 });
+  for (const f of list){
+    if (f === "mane"){                                   // melena de púas al cuello
+      for (let i = 0; i < 8; i++){
+        const a = (i / 8) * Math.PI * 2;
+        const sp = P0(4.5, 13, 4.5, cfg.hair || dark);
+        sp.position.set(Math.cos(a) * 15 * s, 54 * s, Math.sin(a) * 14 * s);
+        sp.rotation.set(Math.sin(a) * .6, 0, -Math.cos(a) * .6);
+        detail.add(sp);
+      }
+    } else if (f === "wings"){                           // alas membranosas
+      for (const side of [-1, 1]){
+        const w1 = P0(26, 34, 3, dark, { ...opts, opacity:(opts.opacity ?? 1) * .92 });
+        w1.position.set(side * 24 * s, 50 * s, -10 * s);
+        w1.rotation.set(.2, side * -.5, side * -.35);
+        detail.add(w1);
+        const w2 = P0(18, 22, 3, dark, { ...opts, opacity:(opts.opacity ?? 1) * .85 });
+        w2.position.set(side * 40 * s, 62 * s, -16 * s);
+        w2.rotation.set(.2, side * -.7, side * -.6);
+        detail.add(w2);
+        const bone = P0(3, 34, 3, glow, G(glow));
+        bone.position.set(side * 22 * s, 52 * s, -9 * s);
+        bone.rotation.z = side * -.35; detail.add(bone);
+      }
+    } else if (f === "crystals"){                        // cristales en la espalda
+      let i = 0;
+      for (const [dx, h2] of [[-9, 16], [0, 22], [9, 16]]){
+        const c = P0(6, h2, 6, glow, G(glow));
+        c.position.set(dx * s, (46 + h2 / 2) * s, -9 * s);
+        c.rotation.z = (i - 1) * .3; c.rotation.x = -.25;
+        detail.add(c); i++;
+      }
+    } else if (f === "carapace"){                        // caparazón segmentado
+      let y = 52;
+      for (const w of [26, 22, 17]){
+        const pl = P0(w, 5, 12, dark); pl.position.set(0, y * s, -7 * s);
+        pl.rotation.x = .3; detail.add(pl); y -= 7;
+      }
+    } else if (f === "tusks"){                           // colmillos
+      for (const side of [-1, 1]){
+        const tk = P0(3.5, 11, 3.5, "#efe6cf");
+        tk.position.set(side * 6 * s, 62 * s, 9 * s);
+        tk.rotation.x = .35; tk.rotation.z = side * .2;
+        detail.add(tk);
+      }
+    } else if (f === "extraEyes"){                       // ojos de más
+      for (const [dx, dy] of [[-8, 74], [8, 74], [-4, 80], [4, 80]]){
+        const e = P0(3, 3, 2, glow, G(glow));
+        e.position.set(dx * s, dy * s, 9.5 * s); detail.add(e);
+      }
+    } else if (f === "tail"){                            // cola segmentada
+      let z = -12, w = 8;
+      for (let i = 0; i < 4; i++){
+        const seg = P0(w, w, 10, dark);
+        seg.position.set(0, (30 - i * 2) * s, z * s); detail.add(seg);
+        z -= 9; w -= 1.2;
+      }
+      const tip = P0(4, 10, 4, glow, G(glow));
+      tip.position.set(0, 24 * s, (z + 2) * s); tip.rotation.x = .6; detail.add(tip);
+    } else if (f === "halo"){                            // anillo flotante
+      for (let i = 0; i < 8; i++){
+        const a = (i / 8) * Math.PI * 2;
+        const seg = P0(5, 2.5, 5, glow, G(glow));
+        seg.position.set(Math.cos(a) * 13 * s, 86 * s, Math.sin(a) * 13 * s);
+        detail.add(seg);
+      }
+    }
+  }
+}
 function limbStubs(g, detail){
   g.legs = []; g.arms = [];
   for (let i = 0; i < 2; i++){
@@ -1864,6 +1972,7 @@ function buildCreature(cfg){
       h.position.set(side*8*s, 16*s, 0); h.rotation.z = side*0.35; neck.add(h);
     }
   }
+  addFeatures(detail, cfg, s, opts);
   g.scaleRef = s;
   g.setLod = far => {
     if (g.__far === far) return;
@@ -2172,6 +2281,7 @@ function buildCharacter(cfg){
     wg.position.set(0, -26 * s, 4 * s);
     g.weapon = wg;
   }
+  addFeatures(detail, cfg, s, opts);
   g.scaleRef = s;
   g.setLod = far => {
     if (g.__far === far) return;
@@ -2832,6 +2942,99 @@ function buildProp(kind, h){
   }
   return g;
 }
+/* ---------------------------------------------------------------------------
+   Frontera entre regiones. Antes cruzar de zona era un cambio de tema
+   instantáneo y nada más: no se veía venir. Ahora cada anillo tiene un muro
+   de portales — pilares con una cortina de energía del color de la región de
+   destino y un cartel con su nombre y nivel — que solo se construye en el
+   trozo de círculo que tienes delante.
+   --------------------------------------------------------------------------- */
+const borderPool = [];
+let borderRing = -1, borderSignLabel = null;
+function buildBorderGate(color){
+  const g = new THREE.Group();
+  const col = new THREE.Color(color);
+  for (const dx of [-95, 95]){
+    const post = part(22, 250, 22, "#141a30", { emissive:color, emissiveIntensity:.35 });
+    post.position.set(dx, 125, 0); g.add(post);
+    // franjas encendidas para que el poste se lea de lejos
+    for (const y of [60, 130, 200]){
+      const band = part(28, 10, 28, color, { emissive:color, emissiveIntensity:1.3 });
+      band.position.set(dx, y, 0); g.add(band);
+    }
+    const cap = part(34, 18, 34, color, { emissive:color, emissiveIntensity:1.4 });
+    cap.position.set(dx, 258, 0); g.add(cap);
+  }
+  const beam = part(212, 18, 24, "#141a30", { emissive:color, emissiveIntensity:.5 });
+  beam.position.y = 244; g.add(beam);
+  // línea encendida en el suelo: marca la frontera aunque estés lejos
+  const strip = part(230, 4, 14, color, { emissive:color, emissiveIntensity:1.5 });
+  strip.position.y = 3; g.add(strip);
+  // cortina de energía que late
+  const curtain = new THREE.Mesh(new THREE.PlaneGeometry(190, 236),
+    new THREE.MeshBasicMaterial({ color:col, transparent:true, opacity:.3,
+                                  side:THREE.DoubleSide, depthWrite:false,
+                                  blending:THREE.AdditiveBlending }));
+  curtain.position.y = 122; g.add(curtain); g.curtain = curtain;
+  g.traverse(o => { if (o.isMesh) o.castShadow = false; });
+  return g;
+}
+function syncBorder(dt){
+  if (dungeon){
+    for (const b of borderPool){ b.obj.visible = false; }
+    if (borderSignLabel) borderSignLabel.visible = false;
+    return;
+  }
+  const idx = ringAt(player.x, player.y);
+  const next = ISLANDS[idx + 1];
+  if (!next){
+    for (const b of borderPool){ b.obj.visible = false; }
+    if (borderSignLabel) borderSignLabel.visible = false;
+    return;
+  }
+  const rad = (idx + 1) * CFG.RING_WIDTH;
+  const th = THEMES[next.theme] || THEMES.city;
+  const color = th.sky1;
+  // el muro se reconstruye solo al cambiar de anillo
+  if (borderRing !== idx){
+    borderRing = idx;
+    for (const b of borderPool){ scene.remove(b.obj); disposeView(b.obj); }
+    borderPool.length = 0;
+    for (let i = 0; i < 16; i++){
+      const obj = buildBorderGate(color);
+      obj.visible = false; scene.add(obj);
+      borderPool.push({ obj });
+    }
+    if (borderSignLabel){ scene.remove(borderSignLabel); disposeView(borderSignLabel); }
+    borderSignLabel = null;
+  }
+  // se reparten las puertas por el arco que tienes delante
+  const ang0 = Math.atan2(player.y - CFG.WORLD.cy, player.x - CFG.WORLD.cx);
+  const step = 230 / rad;                        // separación angular entre puertas
+  const pulse = .30 + Math.sin(now() * 2.2) * .12;
+  for (let i = 0; i < borderPool.length; i++){
+    const k = i - (borderPool.length - 1) / 2;
+    const a = ang0 + k * step;
+    const x = CFG.WORLD.cx + Math.cos(a) * rad, y = CFG.WORLD.cy + Math.sin(a) * rad;
+    const b = borderPool[i];
+    const d = Math.hypot(x - player.x, y - player.y);
+    b.obj.visible = d < 1700;
+    if (!b.obj.visible) continue;
+    b.obj.position.set(x, terrainH(x, y), y);
+    b.obj.rotation.y = -a + Math.PI / 2;         // la puerta mira al centro
+    b.obj.curtain.material.opacity = pulse;
+    // cartel con el nombre de la región, solo sobre la puerta más cercana
+    if (i === Math.floor(borderPool.length / 2)){
+      if (!borderSignLabel){
+        borderSignLabel = labelSprite(next.name, "#ffffff", 44);
+        borderSignLabel.scale.set(290, 72, 1);
+        scene.add(borderSignLabel);
+      }
+      borderSignLabel.visible = true;
+      borderSignLabel.position.set(x, terrainH(x, y) + 320, y);
+    }
+  }
+}
 function clearProps(){
   for (const p2 of propPool){ scene.remove(p2.obj); disposeView(p2.obj); }
   propPool.length = 0;
@@ -2853,6 +3056,13 @@ function syncProps(){
       if (propPool.some(p2 => p2.key === key)) continue;
       const x = gx * PROP_TILE + (h % 90) - 45, z = gz * PROP_TILE + ((h >> 8) % 90) - 45;
       if (Math.hypot(x - player.x, z - player.y) < 420) continue;
+      // se deja un pasillo limpio en la frontera: si no, los edificios tapan
+      // las puertas y no se ve dónde acaba una región y empieza la otra
+      if (!dungeon){
+        const dc2 = Math.hypot(x - CFG.WORLD.cx, z - CFG.WORLD.cy);
+        const borde = Math.round(dc2 / CFG.RING_WIDTH) * CFG.RING_WIDTH;
+        if (borde > 0 && Math.abs(dc2 - borde) < 190) continue;
+      }
       const obj = buildProp(th.prop, h);
       if (!QUALITY.shadows) obj.traverse(o => { if (o.isMesh) o.castShadow = false; });
       obj.position.set(x, terrainH(x, z), z);
@@ -2927,19 +3137,33 @@ function ensurePlayerView(){
 }
 // Cada región tiene su familia de criatura, con su paleta y su brillo.
 const MOB_LOOK = {
-  Seoul:       { body:"slime",    skin:"#6fe0a8", dark:"#1d5a45", glow:"#b7ffe6" },
-  Hongdae:     { body:"beast",    skin:"#7a8ad0", dark:"#232b4a", glow:"#ffd24a", hair:"#3a4470" },
-  Temple:      { body:"golem",    skin:"#a89a86", dark:"#5b5044", glow:"#ffb45a" },
-  Reawaken:    { body:"wraith",   skin:"#3d3358", dark:"#1a1430", glow:"#9f7bff" },
-  HighOrcs:    { body:"humanoid", skin:"#6fae6a", dark:"#2a3a28", glow:"#ffe066" },
-  RedGate:     { body:"beast",    skin:"#cfe8ff", dark:"#4a6a8a", glow:"#7fe0ff", hair:"#9fc4e8" },
-  Jeju:        { body:"insect",   skin:"#2e2a3a", dark:"#15121f", glow:"#8fff6a" },
-  Japan:       { body:"humanoid", skin:"#b06a5a", dark:"#3a1f28", glow:"#ff7a5a" },
-  DemonCastle: { body:"wraith",   skin:"#5a2438", dark:"#2a0f1c", glow:"#ff5a7a" },
-  IceMonarch:  { body:"golem",    skin:"#cfe9ff", dark:"#5f7f9f", glow:"#9fe8ff" },
-  BeastMonarch:{ body:"beast",    skin:"#8a5a3a", dark:"#3a2418", glow:"#ffb45a", hair:"#5a3a24" },
-  Architect:   { body:"wraith",   skin:"#4a4a86", dark:"#1f1f44", glow:"#9fa8ff" },
-  ShadowRealm: { body:"humanoid", skin:"#2a2a4a", dark:"#12122a", glow:"#c08cff" },
+  // Cada región monta su propio bicho: tipo de cuerpo, paleta y rasgos, para
+  // que dos zonas con el mismo cuerpo no se parezcan en nada.
+  Seoul:       { body:"slime",    skin:"#6fe0a8", dark:"#1d5a45", glow:"#b7ffe6", features:[] },
+  Hongdae:     { body:"beast",    skin:"#7a8ad0", dark:"#232b4a", glow:"#ffd24a", hair:"#3a4470",
+                 features:["mane", "tail"] },
+  Temple:      { body:"golem",    skin:"#a89a86", dark:"#5b5044", glow:"#ffb45a",
+                 features:["crystals"] },
+  Reawaken:    { body:"wraith",   skin:"#3d3358", dark:"#1a1430", glow:"#9f7bff",
+                 features:["extraEyes"] },
+  HighOrcs:    { body:"humanoid", skin:"#6fae6a", dark:"#2a3a28", glow:"#ffe066",
+                 features:["tusks", "mane"] },
+  RedGate:     { body:"beast",    skin:"#cfe8ff", dark:"#4a6a8a", glow:"#7fe0ff", hair:"#9fc4e8",
+                 features:["crystals", "tail"] },
+  Jeju:        { body:"insect",   skin:"#2e2a3a", dark:"#15121f", glow:"#8fff6a",
+                 features:["wings", "carapace"] },
+  Japan:       { body:"humanoid", skin:"#b06a5a", dark:"#3a1f28", glow:"#ff7a5a",
+                 features:["tail", "mane"] },
+  DemonCastle: { body:"wraith",   skin:"#5a2438", dark:"#2a0f1c", glow:"#ff5a7a",
+                 features:["wings", "extraEyes"] },
+  IceMonarch:  { body:"golem",    skin:"#cfe9ff", dark:"#5f7f9f", glow:"#9fe8ff",
+                 features:["crystals", "halo"] },
+  BeastMonarch:{ body:"beast",    skin:"#8a5a3a", dark:"#3a2418", glow:"#ffb45a", hair:"#5a3a24",
+                 features:["tusks", "mane", "tail"] },
+  Architect:   { body:"wraith",   skin:"#4a4a86", dark:"#1f1f44", glow:"#9fa8ff",
+                 features:["halo", "crystals"] },
+  ShadowRealm: { body:"humanoid", skin:"#2a2a4a", dark:"#12122a", glow:"#c08cff",
+                 features:["wings", "halo", "extraEyes"] },
 };
 function enemyConfig(e){
   const L = e.look || {};
@@ -2948,8 +3172,16 @@ function enemyConfig(e){
   // los jefes rompen el molde de su región: siempre humanoides acorazados
   const body = boss ? "humanoid" : reg.body;
   const glow = reg.glow;
+  // los brutos añaden caparazón y los jefes, además, halo: se distinguen de
+  // lejos sin cambiarles el color
+  const features = (reg.features || []).slice();
+  if (brute && !features.includes("carapace")) features.push("carapace");
+  if (boss){
+    if (!features.includes("halo")) features.push("halo");
+    if (!features.includes("crystals")) features.push("crystals");
+  }
   const cfg = {
-    body,
+    body, features,
     scale: (e.def.r / 18) * (boss ? 1.75 : brute ? 1.25 : (L.height || 1)),
     skin: brute ? reg.dark : reg.skin,
     pants: reg.dark, eyes: glow, hair: reg.hair || reg.dark,
@@ -3203,6 +3435,7 @@ function render(dt){
   applyTheme(false);
   syncGround();
   syncProps();
+  syncBorder(dt);
   updateCamera(dt);
 
   // jugador
@@ -3965,7 +4198,11 @@ modal.addEventListener("click", e => {
     player.x = CFG.WORLD.cx + Math.cos(ang) * r;
     player.y = CFG.WORLD.cy + Math.sin(ang) * r;
     enemies = []; corpses = []; spawnT = 0;
-    banner(isle.name.toUpperCase(), "#8fd0ff");
+    // el viaje rápido usa la misma transición que cruzar a pie
+    const nuevo = !P.islands.includes(isle.id);
+    P.island = isle.id;
+    if (nuevo) P.islands.push(isle.id);
+    crossRegion(isle, nuevo);
     save(); closePanel(); return;
   }
   if (t.dataset.hunter){

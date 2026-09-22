@@ -244,6 +244,19 @@ canvas#stage{position:absolute;inset:0;width:100%;height:100%;display:block;touc
 .pip.live{background:linear-gradient(180deg,#9beeff,#1fa5dd);box-shadow:0 0 12px #2fe4ff}
 .arise-actions{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
 .log{margin-top:10px;font-size:12.5px;color:var(--muted);min-height:18px}
+/* destello al cruzar de región: un velo del color de la zona que entra */
+#crossFlash{position:absolute;inset:0;z-index:20;pointer-events:none;opacity:0;
+  background:radial-gradient(circle at 50% 55%,transparent 35%,var(--cross,#8fd0ff) 140%);
+  transition:opacity .5s ease}
+#crossFlash.on{opacity:.85;transition:opacity .12s ease}
+#crossName{position:absolute;left:50%;top:38%;transform:translate(-50%,-50%);z-index:21;
+  pointer-events:none;text-align:center;opacity:0;transition:opacity .4s ease}
+#crossName.on{opacity:1}
+#crossName b{display:block;font-family:var(--f-display);font-weight:800;font-size:34px;
+  letter-spacing:.08em;color:#fff;text-shadow:0 4px 18px rgba(0,0,0,.7)}
+#crossName small{display:block;margin-top:6px;font-size:13px;letter-spacing:.22em;
+  text-transform:uppercase;color:#dbe8ff;text-shadow:0 2px 10px rgba(0,0,0,.7)}
+@media (max-width:680px){ #crossName b{font-size:22px} #crossName small{font-size:11px} }
 @media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
 @media (max-width:680px){
   /* Teléfono: el HUD se aparta para dejar libre el centro de la pantalla,
