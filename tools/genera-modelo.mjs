@@ -83,15 +83,30 @@ function afuera(construirPieza) {
   if (vol < 0) for (let i = desde; i < F.length; i++) F[i].ids.reverse();
 }
 
-/* --- caja recta --- */
+/* Ninguna cara debe pasar de unos 25 m. Los visores que dibujan por orden de
+   profundidad, como el de la página, descartan un triángulo entero si uno de
+   sus vértices queda detrás de la cámara: con una franja de piso de 210 m eso
+   significa que al acercarte desaparece el suelo. Partirlas también hace que
+   el orden de dibujo salga bien. */
+const TROZO = 25;
+const trozos = (a, b) => Math.max(1, Math.ceil((b - a) / TROZO));
+
+/* --- caja recta, partida en trozos si es grande --- */
 function caja(x0, x1, y0, y1, z0, z1, m) {
   matActual = m;
+  const nx = trozos(x0, x1), nz = trozos(z0, z1);
   afuera(() => {
-  const a = v(x0, y0, z0), b = v(x1, y0, z0), c = v(x1, y0, z1), d = v(x0, y0, z1);
-  const e = v(x0, y1, z0), f = v(x1, y1, z0), g = v(x1, y1, z1), h = v(x0, y1, z1);
-  face(h, g, f, e); face(a, b, c, d);
-  face(a, e, f, b); face(d, c, g, h);
-  face(b, f, g, c); face(a, d, h, e);
+    const X = i => x0 + (x1 - x0) * i / nx, Z = k => z0 + (z1 - z0) * k / nz;
+    for (let i = 0; i < nx; i++) for (let k = 0; k < nz; k++) {
+      const [p, q, r, t] = [X(i), X(i + 1), Z(k), Z(k + 1)];
+      const a = v(p, y0, r), b = v(q, y0, r), c = v(q, y0, t), d = v(p, y0, t);
+      const e = v(p, y1, r), f = v(q, y1, r), g = v(q, y1, t), h = v(p, y1, t);
+      face(h, g, f, e); face(a, b, c, d);              // arriba y abajo
+      if (k === 0) face(a, e, f, b);                   // costado z0
+      if (k === nz - 1) face(d, c, g, h);              // costado z1
+      if (i === nx - 1) face(b, f, g, c);              // tapa x1
+      if (i === 0) face(a, d, h, e);                   // tapa x0
+    }
   });
 }
 // losa delgada apoyada en el piso (pistas, jardines, veredas)
@@ -104,24 +119,65 @@ const losa = (x0, x1, z0, z1, m, y = 0.15, esp = 0.15) => caja(x0, x1, y - esp, 
 function extruirX(perfil, x0, x1, m, { tapaIni = true, tapaFin = true, mArriba = null } = {}) {
   matActual = m;
   const desde = F.length;
+  const n = perfil.length, nx = trozos(x0, x1);
   afuera(() => {
-  const n = perfil.length;
-  const A = perfil.map(([z, y]) => v(x0, y, z));
-  const B = perfil.map(([z, y]) => v(x1, y, z));
-  for (let i = 0; i < n; i++) { const j = (i + 1) % n; face(A[i], A[j], B[j], B[i]); }
-  if (tapaIni) for (let i = 1; i < n - 1; i++) face(A[0], A[i + 1], A[i]);
-  if (tapaFin) for (let i = 1; i < n - 1; i++) face(B[0], B[i], B[i + 1]);
+    // aros intermedios: la pieza queda partida a lo largo, por lo mismo que las cajas
+    const aros = [];
+    for (let i = 0; i <= nx; i++) {
+      const x = x0 + (x1 - x0) * i / nx;
+      aros.push(perfil.map(([z, y]) => v(x, y, z)));
+    }
+    for (let i = 0; i < nx; i++) {
+      const A = aros[i], B = aros[i + 1];
+      for (let j = 0; j < n; j++) { const k = (j + 1) % n; face(A[j], A[k], B[k], B[j]); }
+    }
+    const P = aros[0], U = aros[nx];
+    if (tapaIni) for (let j = 1; j < n - 1; j++) face(P[0], P[j + 1], P[j]);
+    if (tapaFin) for (let j = 1; j < n - 1; j++) face(U[0], U[j], U[j + 1]);
   });
-  // Pintar de otro color las caras que miran hacia arriba (el asfalto sobre el
-  // tablero). Se hace así, y no apilando una segunda pieza encima, porque dos
-  // superficies a la misma altura se pelean por cuál se dibuja primero.
-  if (mArriba) for (let i = desde; i < F.length; i++) {
+  pintarArriba(desde, mArriba);
+}
+
+/* Repinta las caras que miran hacia arriba. Así el asfalto es la propia cara
+   superior de la pieza: apilar una plancha encima a la misma altura hace que
+   las dos se peleen por cuál se dibuja primero y salgan manchas. */
+function pintarArriba(desde, mArriba) {
+  if (!mArriba) return;
+  for (let i = desde; i < F.length; i++) {
     const [p, q, r] = F[i].ids.map(id => V[id - 1]);
     const u = [q[0] - p[0], q[1] - p[1], q[2] - p[2]], w = [r[0] - p[0], r[1] - p[1], r[2] - p[2]];
     const ny = u[2] * w[0] - u[0] * w[2];
     const nl = Math.hypot(u[1] * w[2] - u[2] * w[1], ny, u[0] * w[1] - u[1] * w[0]) || 1;
     if (ny / nl > 0.7) F[i].m = mArriba;
   }
+}
+
+/* --- barrido: estira un perfil a lo largo de un camino en 3D ---
+   Hace falta para las rampas, que no van rectas ni horizontales: bajan
+   mientras se apartan del viaducto. En cada punto del camino se coloca el
+   perfil de canto, girado según hacia dónde va la rampa en ese tramo. */
+function barrer(perfil, camino, m, { mArriba = null } = {}) {
+  const desde = F.length;
+  matActual = m;
+  afuera(() => {
+    const n = perfil.length;
+    const aros = camino.map((p, i) => {
+      const a = camino[Math.max(0, i - 1)], b = camino[Math.min(camino.length - 1, i + 1)];
+      let dx = b.x - a.x, dz = b.z - a.z;
+      const l = Math.hypot(dx, dz) || 1; dx /= l; dz /= l;
+      const nx = -dz, nz = dx;                       // perpendicular, visto en planta
+      return perfil.map(([dl, dy]) => v(p.x + nx * dl, p.y + dy, p.z + nz * dl));
+    });
+    for (let i = 0; i < aros.length - 1; i++)
+      for (let j = 0; j < n; j++) {
+        const k = (j + 1) % n;
+        face(aros[i][j], aros[i][k], aros[i + 1][k], aros[i + 1][j]);
+      }
+    const A = aros[0], B = aros[aros.length - 1];
+    for (let j = 1; j < n - 1; j++) face(A[0], A[j + 1], A[j]);
+    for (let j = 1; j < n - 1; j++) face(B[0], B[j], B[j + 1]);
+  });
+  pintarArriba(desde, mArriba);
 }
 /* --- extrusión a lo largo del eje Z (para los carros, que miran de lado) --- */
 function extruirZ(perfil, z0, z1, m) {
@@ -250,15 +306,40 @@ function poste(cx, cz, h, brazo) {
      vereda 3 · ciclovía 2.5 · jardín 2 · pista 10 · mediana 15 ·
      Metropolitano 3.5 + andén 3.5 + 3.5 · jardín 3 · vereda 4
 ===================================================================== */
-const LARGO = 96, X0 = -LARGO / 2, X1 = LARGO / 2;
-const Z0 = -25, Z1 = 25;
+const LARGO = 210, X0 = -LARGO / 2, X1 = LARGO / 2;
+const Z0 = -33, Z1 = 25;
 const GALIBO = 8;            // altura libre debajo del tablero
 const CANTO = 2;             // espesor del tablero
 const YTAB = GALIBO + CANTO; // cota de la pista de arriba = 10 m
 const MEDIA = 7.5;           // medio ancho del tablero (15 m en total)
-const PILARES = [-32, 0, 32];
+const VANO = 30;             // separación entre pilares
+const PILARES = [];
+for (let x = -90; x <= 90; x += VANO) PILARES.push(x);
+
+/* --- las rampas de salida ---
+   Salen del medio del viaducto, una hacia cada lado, y bajan hasta
+   desembocar en la avenida de abajo. Son las que evitan que todo el tráfico
+   se acumule al final: el que ya llegó a su destino se sale antes. */
+const RAMPA = {
+  xIni: 7,                    // dónde se despega del tablero
+  xFin: X1 - 4,               // dónde toca la avenida
+  anchoMedio: 3.2,            // 6.4 m: un carril con sus bermas
+  yFin: 0.55,
+  tBaja: 0.04,                // antes de esto va al nivel del tablero (cuña de salida)
+  zFin: -20.5,                // en qué carril de la avenida desemboca
+};
+RAMPA.zIni = -(MEDIA + RAMPA.anchoMedio);   // pegada al borde del tablero
+RAMPA.xBaja = RAMPA.xIni + (RAMPA.xFin - RAMPA.xIni) * RAMPA.tBaja;
+RAMPA.largo = RAMPA.xFin - RAMPA.xIni;
+RAMPA.pendiente = (YTAB - RAMPA.yFin) / (RAMPA.xFin - RAMPA.xBaja) * 100;
+
+const suave = t => t * t * (3 - 2 * t);
+const tramo = (t, a, b) => Math.min(1, Math.max(0, (t - a) / (b - a)));
 
 function construir() {
+  const paso = (a, b) => { const r = []; for (let x = a; x <= b; x += 1) r.push(x); return r; };
+  void paso;
+
   /* --- terreno --- */
   o('Terreno');
   caja(X0, X1, -1.2, 0, Z0, Z1, 'tierra');
@@ -266,18 +347,24 @@ function construir() {
 
   /* --- el piso del corredor --- */
   o('CorredorVial');
-  losa(X0, X1, -25, -22, 'vereda');
-  losa(X0, X1, -22, -19.5, 'ciclovia');
-  losa(X0, X1, -17.5, -7.5, 'asfalto');           // pista de siempre, 3 carriles
+  // Cada franja va un poco más arriba que la anterior. Si dos quedan a la
+  // misma cota se pelean por cuál se dibuja: en la página no se nota porque
+  // pinta por capas, pero en Blender o en el visor de Windows parpadean.
+  const PISO = 0.17, MARCA = 0.19;
+  losa(X0, X1, -33, -30, 'vereda', PISO);
+  losa(X0, X1, -30, -27.5, 'ciclovia', PISO);
+  losa(X0, X1, -25.5, -15.5, 'asfalto', PISO);    // la avenida de abajo, 3 carriles
+  // entre la avenida y el viaducto queda una berma verde de 8 m: por ahí bajan
+  // las rampas, así no le pasan por encima a la avenida en todo su recorrido
   // debajo del viaducto el pasto va más oscuro: es la sombra del tablero
   losa(X0, X1, -7.5, 7.5, 'pastoOsc', 0.16, 0.02);
-  losa(X0, X1, 7.5, 11, 'asfaltoBus');
-  losa(X0, X1, 14.5, 18, 'asfaltoBus');
-  losa(X0, X1, 21, 25, 'vereda');
-  // líneas de la pista de abajo
-  for (const z of [-14.2, -10.8]) for (let x = X0 + 3; x < X1 - 3; x += 9)
-    losa(x, x + 4, z - 0.1, z + 0.1, 'lineaBl', 0.17, 0.02);
-  for (const z of [-17.4, -7.6]) losa(X0, X1, z - 0.1, z + 0.1, 'lineaBl', 0.17, 0.02);
+  losa(X0, X1, 7.5, 11, 'asfaltoBus', PISO);
+  losa(X0, X1, 14.5, 18, 'asfaltoBus', PISO);
+  losa(X0, X1, 21, 25, 'vereda', PISO);
+  // líneas de la avenida
+  for (const z of [-22.2, -18.8]) for (let x = X0 + 3; x < X1 - 3; x += 9)
+    losa(x, x + 4, z - 0.1, z + 0.1, 'lineaBl', MARCA, 0.02);
+  for (const z of [-25.4, -15.6]) losa(X0, X1, z - 0.1, z + 0.1, 'lineaBl', MARCA, 0.02);
   // bordes amarillos del andén
   for (const z of [11.3, 14.2]) losa(X0 + 2, X1 - 2, z - 0.12, z + 0.12, 'lineaAm', 1.06, 0.02);
 
@@ -298,7 +385,7 @@ function construir() {
   }
   for (const x of [-15, -5, 5, 15]) cilindro(x, 12.75, 1.05, 4.15, 0.13, 0.11, 'metal', alto() ? 8 : 4);
   busArticulado(-4, 0.15, 9.25);
-  if (alto()) busArticulado(30, 0.15, 16.25);
+  if (alto()) busArticulado(46, 0.15, 16.25);
 
   /* --- pilares --- */
   o('Columnas');
@@ -320,10 +407,44 @@ function construir() {
             [MEDIA - 3.4, GALIBO], [-(MEDIA - 3.4), GALIBO], [-MEDIA, YTAB - 0.55]],
     X0 + 2, X1 - 2, 'concreto', { mArriba: 'asfalto' });
 
+  /* --- las dos rampas de salida ---
+     Salen del medio, una hacia cada lado, y bajan hasta desembocar en la
+     avenida. Cada una sirve a un sentido del viaducto: el tráfico que ya
+     llegó se baja antes en vez de amontonarse todo al final. --- */
+  o('Rampas');
+  for (const lado of [1, -1]) {
+    const N = alto() ? 34 : 18;
+    const camino = [];
+    for (let i = 0; i <= N; i++) {
+      const t = i / N;
+      const x = (RAMPA.xIni + RAMPA.largo * t) * lado;
+      // primero se despega de costado, después baja
+      const z = RAMPA.zIni + (RAMPA.zFin - RAMPA.zIni) * suave(tramo(t, 0.05, 0.70));
+      const y = YTAB + (RAMPA.yFin - YTAB) * suave(tramo(t, RAMPA.tBaja, 1));
+      camino.push({ x, y, z });
+    }
+    const a = RAMPA.anchoMedio;
+    barrer([[-a, 0], [a, 0], [a, -0.35], [a - 0.9, -0.95], [-(a - 0.9), -0.95], [-a, -0.35]],
+      camino, 'concreto', { mArriba: 'asfalto' });
+    for (const dl of [-(a - 0.3), a - 0.3])      // barreras a los dos lados
+      barrer(mover(perfilNewJersey(0.95), dl, 0), camino, 'concreto');
+    // pilares de la rampa, donde va alta
+    for (let i = 4; i < N - 2; i++) {
+      if (i % (alto() ? 5 : 4)) continue;
+      const q = camino[i];
+      if (q.y < 3.4) continue;
+      caja(q.x - 1.9, q.x + 1.9, 0, 0.45, q.z - 1.9, q.z + 1.9, 'concretoOsc');
+      cilindro(q.x, q.z, 0.45, q.y - 1.05, 1.15, 0.9, 'concreto', alto() ? 10 : 6);
+    }
+  }
+
   /* --- lo que va encima del tablero --- */
   o('ViaElevadaEncima');
-  for (const z of [-(MEDIA - 0.3), MEDIA - 0.3])
-    extruirX(mover(perfilNewJersey(), z, YTAB), X0 + 2, X1 - 2, 'concreto');
+  // la barrera del borde norte se abre donde arrancan las rampas: por ahí salen
+  const corte = RAMPA.xIni + RAMPA.largo * 0.20;
+  for (const [a, b] of [[X0 + 2, -corte], [-RAMPA.xIni, RAMPA.xIni], [corte, X1 - 2]])
+    extruirX(mover(perfilNewJersey(), -(MEDIA - 0.3), YTAB), a, b, 'concreto');
+  extruirX(mover(perfilNewJersey(), MEDIA - 0.3, YTAB), X0 + 2, X1 - 2, 'concreto');
   extruirX(mover(perfilNewJersey(0.9), 0, YTAB), X0 + 2, X1 - 2, 'concretoOsc');
   // marcas de los carriles
   const YM = YTAB + 0.04;
@@ -332,21 +453,35 @@ function construir() {
     losa(x, x + 4, z - 0.1, z + 0.1, 'lineaBl', YM, 0.02);
   for (const z of [-(MEDIA - 0.85), MEDIA - 0.85]) losa(X0 + 3, X1 - 3, z - 0.1, z + 0.1, 'lineaBl', YM, 0.02);
   // postes de luz sobre la barrera central
-  for (const x of [-24, 8, 40]) poste(x, 0, YTAB + 7.5, 2.6);
+  for (let x = X0 + 18; x < X1 - 10; x += 34) poste(x, 0, YTAB + 7.5, 2.6);
 
   /* --- carros --- */
   o('Vehiculos');
-  carro(-28, YTAB + 0.06, -5.2, 'blanco'); carro(2, YTAB + 0.06, -2.4, 'rojo');
-  carro(34, YTAB + 0.06, -5.2, 'gris');    carro(-14, YTAB + 0.06, 2.4, 'azul');
-  carro(18, YTAB + 0.06, 5.2, 'blanco');   carro(44, YTAB + 0.06, 2.4, 'amarillo');
-  carro(-34, 0.15, -15.9, 'azul');  carro(-6, 0.15, -12.5, 'blanco');
-  carro(24, 0.15, -15.9, 'rojo');   carro(40, 0.15, -9.1, 'gris');
+  const YC = YTAB + 0.06;
+  // arriba, en el viaducto
+  for (const [x, z, c] of [[-86, -5.2, 'blanco'], [-52, -2.4, 'rojo'], [-20, -5.2, 'gris'],
+                           [16, -2.4, 'azul'], [52, -5.2, 'amarillo'], [88, -2.4, 'blanco'],
+                           [-70, 2.4, 'gris'], [-32, 5.2, 'blanco'], [8, 2.4, 'rojo'],
+                           [44, 5.2, 'azul'], [78, 2.4, 'blanco']])
+    carro(x, YC, z, c);
+  // bajando por las rampas
+  for (const lado of [1, -1]) for (const t of [0.22, 0.55, 0.82]) {
+    const x = (RAMPA.xIni + RAMPA.largo * t) * lado;
+    const z = RAMPA.zIni + (RAMPA.zFin - RAMPA.zIni) * suave(tramo(t, 0.05, 0.70));
+    const y = YTAB + (RAMPA.yFin - YTAB) * suave(tramo(t, RAMPA.tBaja, 1));
+    carro(x, y + 0.06, z, t < 0.4 ? 'rojo' : t < 0.7 ? 'blanco' : 'amarillo');
+  }
+  // abajo, en la avenida
+  for (const [x, z, c] of [[-92, -23.9, 'azul'], [-64, -17.1, 'blanco'], [-40, -23.9, 'rojo'],
+                           [-12, -20.5, 'gris'], [20, -17.1, 'amarillo'], [56, -23.9, 'blanco'],
+                           [84, -17.1, 'azul']])
+    carro(x, 0.15, z, c);
 
   /* --- vegetación y alumbrado de la calle --- */
   o('Arboles');
-  for (const [i, x] of [-40, -26, -12, 2, 16, 30, 44].entries()) arbol(x, -18.5, 6.5 + (i % 3) * 0.6, i % 3 === 1);
-  for (const [i, x] of [-34, -16, 6, 28, 46].entries()) arbol(x, 19.5, 6 + (i % 2) * 0.8, i % 2 === 0);
-  if (alto()) for (const x of [-36, -12, 12, 36]) poste(x, -20.8, 6.5, 0);
+  for (let i = 0, x = X0 + 6; x < X1 - 4; x += 14, i++) arbol(x, -26.5, 6.5 + (i % 3) * 0.6, i % 3 === 1);
+  for (let i = 0, x = X0 + 12; x < X1 - 6; x += 18, i++) arbol(x, 19.5, 6 + (i % 2) * 0.8, i % 2 === 0);
+  if (alto()) for (let x = X0 + 14; x < X1 - 8; x += 26) poste(x, -28.8, 6.5, 0);
 }
 
 /* =====================================================================
@@ -504,6 +639,7 @@ const MEDIDAS = [
   ['El terreno', [
     ['Largo del tramo', `${LARGO} m`],
     ['Ancho del corredor', `${Z1 - Z0} m`],
+    ['Berma entre la avenida y el viaducto', '8 m', 'por ahí bajan las rampas'],
   ]],
   ['La pista elevada', [
     ['Altura libre por debajo', `${GALIBO} m`, 'el Metropolitano necesita 5.50 m como mínimo'],
@@ -513,14 +649,21 @@ const MEDIDAS = [
     ['Barrera New Jersey', '1.05 m de alto'],
     ['Postes de luz', `${(7.5).toFixed(1)} m sobre la pista`, 'brazo doble, alumbran los 4 carriles'],
   ]],
+  ['Las salidas', [
+    ['Cuántas', 'dos', 'una por cada sentido, saliendo del medio'],
+    ['Largo de cada rampa', `${RAMPA.largo.toFixed(0)} m`],
+    ['Pendiente de bajada', `${RAMPA.pendiente.toFixed(0)} %`, 'en una obra real se buscaría 8 %, alargándola'],
+    ['Ancho', `${(RAMPA.anchoMedio * 2).toFixed(1)} m`, 'un carril con sus bermas'],
+    ['Dónde desemboca', 'en la avenida de abajo'],
+  ]],
   ['Los pilares', [
-    ['Separación entre pilares', `${PILARES[1] - PILARES[0]} m`],
+    ['Separación entre pilares', `${VANO} m`],
     ['Fuste', '3.40 × 2.60 m abajo, 2.40 × 2.00 m arriba', 'se afina hacia arriba'],
     ['Cabezal en martillo', '13.20 m de ancho'],
     ['Zapata', '5.20 × 4.40 × 0.55 m'],
   ]],
   ['Lo que va abajo', [
-    ['Pista de siempre', '10 m', '3 carriles'],
+    ['Avenida de abajo', '10 m', '3 carriles; acá desembocan las rampas'],
     ['Carriles del Metropolitano', '3.50 m cada uno'],
     ['Andén de la estación', '3.50 m de ancho, 36 m de largo'],
     ['Ciclovía', '2.50 m'],

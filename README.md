@@ -21,7 +21,7 @@ La página tiene:
 
 ### 🌉 La misma vía en 3D (`modelo-3d.html`)
 
-Un tramo de 96 m de la vía elevada con sus tres pilares, y abajo el Metropolitano con su estación, la pista de siempre y la ciclovía. Se gira con el mouse en la misma página, con tres vistas y rotación automática.
+Un tramo de 210 m de la vía elevada con **dos rampas de salida** que bajan desde el medio, una por sentido, y desembocan en la avenida de abajo: sin salidas la vía embotella todo al final, porque entra mucho carro y no tiene por dónde irse. Abajo siguen el Metropolitano con su estación, la avenida y la ciclovía. Se gira con el mouse en la misma página, con tres vistas y una lámina descargable.
 
 Las piezas no son cajas apiladas: cada una sale de su **corte transversal extruido**, que es como se dibujan de verdad las obras viales. De ahí salen los pilares que se afinan hacia arriba y rematan en cabezal de martillo, las barreras con el perfil New Jersey y el tablero de viga cajón con voladizos.
 
@@ -31,6 +31,7 @@ Las piezas no son cajas apiladas: cada una sale de su **corte transversal extrui
 | `via-expresa.obj` + `.mtl` | Lo mismo en dos archivos; van juntos en la misma carpeta. |
 | `via-expresa.stl` | Para imprimir en 3D. |
 | `medidas.md` | La tabla de medidas reales. |
+| `lamina-3-vistas.png` | Las tres vistas en una sola imagen, para imprimir. |
 
 ### 🧱 Versión para Tinkercad
 
@@ -52,7 +53,8 @@ Todo sale de `node tools/genera-modelo.mjs`, que escribe los dos modelos, los se
 Dos detalles de implementación que cuestan de encontrar y ahí están resueltos:
 
 - **Caras hacia afuera.** Cada pieza se arma, se le mide el volumen firmado y, si sale negativo, se le da la vuelta a todas sus caras. Con las normales al revés la luz sale mal en el GLB, el STL puede imprimirse invertido y el visor descarta justo las caras que sí se ven.
-- **Nada apilado a la misma altura.** El asfalto no es una plancha encima del tablero sino la propia cara superior del tablero, pintada de otro color. Dos superficies a la misma cota se pelean por cuál se dibuja primero y aparecen manchas.
+- **Nada apilado a la misma altura.** El asfalto no es una plancha encima del tablero sino la propia cara superior del tablero, pintada de otro color. Dos superficies a la misma cota se pelean por cuál se dibuja primero y aparecen manchas. Por lo mismo, cada franja del piso va unos centímetros más arriba que la anterior.
+- **Ninguna cara pasa de unos 25 m.** Los visores que dibujan por orden de profundidad descartan un triángulo entero si uno de sus vértices queda detrás de la cámara: con una franja de piso de 210 m, al acercarte desaparecía el suelo. Las piezas largas se parten solas.
 
 El visor tampoco usa tarjeta de video: pinta por capas (piso → lo que se para en el piso → tablero → lo que se apoya encima) y dentro de cada capa ordena de atrás hacia adelante.
 
