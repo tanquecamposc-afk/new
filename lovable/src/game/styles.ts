@@ -282,7 +282,8 @@ canvas#stage{position:absolute;inset:0;width:100%;height:100%;display:block;touc
 .card.poor{opacity:.6}
 .card .cg{font-size:26px;line-height:1.1;filter:drop-shadow(0 0 8px color-mix(in srgb,var(--tc) 70%,transparent))}
 .card b{font-size:12.5px;font-weight:600;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.card small{font-size:10.5px;color:var(--muted)}
+.card small{font-size:10.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card{align-content:start;grid-auto-rows:min-content}
 .card .ctier{position:absolute;top:7px;right:8px;font:700 9.5px var(--f-ui);font-style:normal;letter-spacing:.06em;color:var(--tc)}
 .card .ctier.up{color:var(--cash)}
 .card .cbadge{position:absolute;top:28px;right:6px;font:700 8.5px var(--f-ui);font-style:normal;padding:2px 5px;border-radius:6px;
@@ -333,6 +334,44 @@ canvas#stage{position:absolute;inset:0;width:100%;height:100%;display:block;touc
   .hero{grid-template-columns:110px 1fr} .cards{max-height:none}
   .pls .plus.sm{height:28px;padding:0 5px;font-size:9.5px}
 }
+/* --- mapa interactivo y bestiario --- */
+.mapwrap2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);gap:14px;align-items:start}
+.mapside{display:grid;gap:8px}
+.wmap{width:100%;max-width:420px;justify-self:center;filter:drop-shadow(0 10px 26px rgba(0,0,0,.5))}
+.wmap .ring{cursor:pointer;opacity:.85;transition:opacity .15s,stroke-width .15s,filter .15s}
+.wmap .ring:hover{opacity:1;filter:brightness(1.35)}
+.wmap .ring.lk{opacity:.22;filter:saturate(.3)}
+.wmap .ring.lk:hover{opacity:.4}
+.wmap .ring.cur{filter:brightness(1.15)}
+.wmap .ring.sel{opacity:1;filter:brightness(1.5) drop-shadow(0 0 6px #fff);animation:ringPulse 1.6s ease-in-out infinite}
+@keyframes ringPulse{50%{filter:brightness(1.8) drop-shadow(0 0 10px #fff)}}
+.wmap .rlbl{font:700 7px var(--f-ui);fill:rgba(5,10,24,.75);text-anchor:middle;pointer-events:none}
+.wmap .hpin{fill:var(--gold);stroke:#0a1020;stroke-width:1.2}
+.wmap .ppin{fill:var(--monarch);stroke:#fff;stroke-width:1.2;animation:blink 1s steps(2) infinite}
+.wmap .medot{fill:var(--arise);stroke:#fff;stroke-width:1.5}
+.wmap .mepulse{fill:none;stroke:var(--arise);stroke-width:2;transform-origin:center;animation:mePulse 1.6s ease-out infinite}
+@keyframes mePulse{from{r:4;opacity:1}to{r:16;opacity:0}}
+@keyframes blink{50%{opacity:.35}}
+.legend{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;font-size:11px;color:var(--muted)}
+.legend .lg{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:4px;vertical-align:-1px}
+.lg.me{background:var(--arise)} .lg.hp{background:var(--gold)} .lg.pp{background:var(--monarch)} .lg.lk{background:#1a2140;border:1px solid var(--line)}
+.mapinfo{display:grid;gap:10px;min-width:0}
+.rcard{--tc:var(--line-hi);display:grid;gap:10px;padding:12px;border-radius:16px;border:2px solid color-mix(in srgb,var(--tc) 60%,transparent);
+  background:linear-gradient(180deg,color-mix(in srgb,var(--sky,#1a2a5a) 35%,transparent),rgba(11,19,45,.92) 45%);animation:rowIn .3s ease both}
+.rhead{display:grid;gap:2px}
+.rhead small{font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.rhead b{font-family:var(--f-display);font-size:19px}
+.rhead span{font-size:12px;color:var(--muted)}
+.rcard .pv{aspect-ratio:16/10;max-height:240px}
+.big-w{width:100%;padding:11px;font-size:14px}
+.card.lock{opacity:.5;filter:grayscale(.6)}
+.card.lock:hover{transform:none}
+div.card{cursor:default}
+.collect{display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:center;font:600 12px var(--f-ui);color:var(--muted)}
+.cards.grid-only{max-height:none}
+.locked-pv{display:grid;place-items:center;font-size:42px;opacity:.6}
+.locked-pv::after{content:none}
+@media (max-width:680px){ .mapwrap2{grid-template-columns:1fr} }
 .arise-box{width:min(430px,100%);text-align:center;padding:20px 18px;border-radius:20px;
   background:linear-gradient(180deg,#0f3a5e,#06162e);border:2px solid #2fe4ff;
   box-shadow:0 0 62px rgba(47,228,255,.3),0 26px 70px rgba(0,0,0,.6)}

@@ -223,6 +223,25 @@ Reliquias que suben daño de sombras, suerte de extracción, suerte de rango y
 probabilidad de botín. Las runas se activan dentro de las mazmorras y modifican
 esa incursión.
 
+### Bestiario de regiones
+
+Cada región tiene su propia especie, con cuerpo, paleta y animación propios:
+
+| Región | Criatura | Rasgos |
+|---|---|---|
+| Seúl | Goblin | encorvado, orejas largas, daga oxidada, rodillas que se doblan al correr |
+| Hongdae | Serpiente Kasaka | diez anillos que ondulan, capucha con borde encendido, colmillos; se yergue para morder |
+| Doble Dungeon | Estatua viviente | bloques de piedra con grietas encendidas |
+| Cárcel de Reawakening | Caballero sombrío | yelmo con visor rojo, escudo de torre con blasón, capa |
+| Altos Orcos | Alto orco | piel verde, colmillos, hacha y hombreras de piel |
+| Puerta Roja / Monarca Bestia | Lobo | pelo erizado en el lomo, patas con rodilla, hocico con mandíbula que se abre |
+| Jeju | Hormiga | caparazón con bandas brillantes, seis patas en trípode, mandíbulas que chasquean |
+| Shinjuku | Cazador caído | capucha y jirones |
+| Castillo del Demonio | Demonio | piel roja, cuernos, alas, cola y alabarda |
+| Monarca de Hielo | Elfo de escarcha | yelmo de hielo, cristales y lanza |
+
+Al atacar, las criaturas embisten hacia delante y abren la boca o las mandíbulas.
+
 ### Enemigos élite
 
 Uno de cada diez enemigos normales sale **élite**: un 20% más grande, con una
@@ -338,6 +357,13 @@ hitstop e impulso de cámara crecientes.
   fuegos fatuos en las zonas oscuras y místicas, datos de neón en la ciudad
   cyber y lluvia con relámpagos en la tormenta. El suelo también cambia: vetas
   de lava, grietas de hielo, matas de hierba o circuitos.
+- **Mapa del mundo**: un plano circular con los 13 anillos pintados del color
+  de su bioma, tu posición con un pulso, el portal y los cazadores. Al tocar un
+  anillo se abre su ficha, con el enemigo, el bruto o el jefe en 3D, sus números
+  y el botón de viaje. Hay pestañas para cazadores y puertas.
+- **Inventario**: reliquias, runas e índice en tarjetas con una barra de
+  colección, y un **bestiario** con la criatura de cada región en 3D (las
+  regiones sin descubrir salen bloqueadas).
 - **Menús**: entran con una animación y sus filas aparecen escalonadas. Las
   sombras y la armería son rejillas de tarjetas con el color de su rango, con
   filtros y orden, y una ficha lateral con la figura en 3D sobre un pedestal

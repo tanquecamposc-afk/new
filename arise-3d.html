@@ -287,7 +287,8 @@ canvas#stage{position:absolute;inset:0;width:100%;height:100%;display:block;touc
 .card.poor{opacity:.6}
 .card .cg{font-size:26px;line-height:1.1;filter:drop-shadow(0 0 8px color-mix(in srgb,var(--tc) 70%,transparent))}
 .card b{font-size:12.5px;font-weight:600;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.card small{font-size:10.5px;color:var(--muted)}
+.card small{font-size:10.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card{align-content:start;grid-auto-rows:min-content}
 .card .ctier{position:absolute;top:7px;right:8px;font:700 9.5px var(--f-ui);font-style:normal;letter-spacing:.06em;color:var(--tc)}
 .card .ctier.up{color:var(--cash)}
 .card .cbadge{position:absolute;top:28px;right:6px;font:700 8.5px var(--f-ui);font-style:normal;padding:2px 5px;border-radius:6px;
@@ -338,6 +339,44 @@ canvas#stage{position:absolute;inset:0;width:100%;height:100%;display:block;touc
   .hero{grid-template-columns:110px 1fr} .cards{max-height:none}
   .pls .plus.sm{height:28px;padding:0 5px;font-size:9.5px}
 }
+/* --- mapa interactivo y bestiario --- */
+.mapwrap2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);gap:14px;align-items:start}
+.mapside{display:grid;gap:8px}
+.wmap{width:100%;max-width:420px;justify-self:center;filter:drop-shadow(0 10px 26px rgba(0,0,0,.5))}
+.wmap .ring{cursor:pointer;opacity:.85;transition:opacity .15s,stroke-width .15s,filter .15s}
+.wmap .ring:hover{opacity:1;filter:brightness(1.35)}
+.wmap .ring.lk{opacity:.22;filter:saturate(.3)}
+.wmap .ring.lk:hover{opacity:.4}
+.wmap .ring.cur{filter:brightness(1.15)}
+.wmap .ring.sel{opacity:1;filter:brightness(1.5) drop-shadow(0 0 6px #fff);animation:ringPulse 1.6s ease-in-out infinite}
+@keyframes ringPulse{50%{filter:brightness(1.8) drop-shadow(0 0 10px #fff)}}
+.wmap .rlbl{font:700 7px var(--f-ui);fill:rgba(5,10,24,.75);text-anchor:middle;pointer-events:none}
+.wmap .hpin{fill:var(--gold);stroke:#0a1020;stroke-width:1.2}
+.wmap .ppin{fill:var(--monarch);stroke:#fff;stroke-width:1.2;animation:blink 1s steps(2) infinite}
+.wmap .medot{fill:var(--arise);stroke:#fff;stroke-width:1.5}
+.wmap .mepulse{fill:none;stroke:var(--arise);stroke-width:2;transform-origin:center;animation:mePulse 1.6s ease-out infinite}
+@keyframes mePulse{from{r:4;opacity:1}to{r:16;opacity:0}}
+@keyframes blink{50%{opacity:.35}}
+.legend{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;font-size:11px;color:var(--muted)}
+.legend .lg{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:4px;vertical-align:-1px}
+.lg.me{background:var(--arise)} .lg.hp{background:var(--gold)} .lg.pp{background:var(--monarch)} .lg.lk{background:#1a2140;border:1px solid var(--line)}
+.mapinfo{display:grid;gap:10px;min-width:0}
+.rcard{--tc:var(--line-hi);display:grid;gap:10px;padding:12px;border-radius:16px;border:2px solid color-mix(in srgb,var(--tc) 60%,transparent);
+  background:linear-gradient(180deg,color-mix(in srgb,var(--sky,#1a2a5a) 35%,transparent),rgba(11,19,45,.92) 45%);animation:rowIn .3s ease both}
+.rhead{display:grid;gap:2px}
+.rhead small{font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.rhead b{font-family:var(--f-display);font-size:19px}
+.rhead span{font-size:12px;color:var(--muted)}
+.rcard .pv{aspect-ratio:16/10;max-height:240px}
+.big-w{width:100%;padding:11px;font-size:14px}
+.card.lock{opacity:.5;filter:grayscale(.6)}
+.card.lock:hover{transform:none}
+div.card{cursor:default}
+.collect{display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:center;font:600 12px var(--f-ui);color:var(--muted)}
+.cards.grid-only{max-height:none}
+.locked-pv{display:grid;place-items:center;font-size:42px;opacity:.6}
+.locked-pv::after{content:none}
+@media (max-width:680px){ .mapwrap2{grid-template-columns:1fr} }
 .arise-box{width:min(430px,100%);text-align:center;padding:20px 18px;border-radius:20px;
   background:linear-gradient(180deg,#0f3a5e,#06162e);border:2px solid #2fe4ff;
   box-shadow:0 0 62px rgba(47,228,255,.3),0 26px 70px rgba(0,0,0,.6)}
@@ -2510,6 +2549,141 @@ function buildCreature(cfg){
       const eye = P0(5, 5, 3, glow, glowOpts(glow)); eye.position.set(side*5*s, 0, 30*s); neck.add(eye);
       const ant = P0(2, 12, 2, dark); ant.position.set(side*4*s, 8*s, 26*s); ant.rotation.x = -0.5; neck.add(ant);
     }
+  } else if (body === "goblin"){
+    // goblin: pequeño, encorvado, orejas largas, nariz ganchuda y daga oxidada
+    g.gait = [];
+    for (const side of [-1, 1]){
+      const hip = new THREE.Group(); hip.position.set(side*5*s, 19*s, 0); detail.add(hip);
+      const th = P0(7, 10, 7, dark); th.position.y = -5*s; hip.add(th);
+      const knee = new THREE.Group(); knee.position.y = -10*s; hip.add(knee);
+      const sh = P0(6, 8, 6, main); sh.position.y = -4*s; knee.add(sh);
+      const ft = P0(7, 3, 11, dark); ft.position.set(0, -8.5*s, 2.5*s); knee.add(ft);
+      g.legs[side>0?1:0].parent.remove(g.legs[side>0?1:0]); g.legs[side>0?1:0] = hip;
+      g.gait.push({ n:knee, ph:side > 0 ? Math.PI + 1.3 : 1.3, amp:.45, base:.35, axis:"x", pos:false });
+    }
+    const loin = P0(17, 7, 12, "#4a3a22"); loin.position.y = (19-41)*s; torso.add(loin);
+    const flap = P0(9, 9, 1.5, "#3a2c18"); flap.position.set(0, (13-41)*s, 6.2*s); torso.add(flap);
+    const belly = P0(17, 12, 12, main); belly.position.set(0, (27-41)*s, 1*s); torso.add(belly);
+    const chest = P0(19, 12, 12, main); chest.position.set(0, (36-41)*s, 4*s); chest.rotation.x = .45; torso.add(chest);
+    const strap = P0(20, 2.5, 13, "#2a2016"); strap.position.set(0, (33-41)*s, 3*s); strap.rotation.set(.45, 0, .5); torso.add(strap);
+    for (const side of [-1, 1]){
+      const arm = new THREE.Group(); arm.position.set(side*11*s, 39*s, 6*s); detail.add(arm);
+      const up = P0(5, 10, 5, main); up.position.y = -5*s; arm.add(up);
+      const fo = P0(5, 10, 5, main); fo.position.set(0, -14*s, 1*s); arm.add(fo);
+      const cl = P0(6, 5, 6, dark); cl.position.set(0, -20*s, 1.5*s); arm.add(cl);
+      if (side > 0){
+        const bl = P0(2.5, 15, 1.5, "#8f8a80"); bl.position.set(0, -24*s, 8*s); bl.rotation.x = 1.35; arm.add(bl);
+        const hi = P0(3, 4, 3, "#3a2a1a"); hi.position.set(0, -22*s, 2.5*s); hi.rotation.x = 1.35; arm.add(hi);
+      }
+      g.arms[side>0?1:0].parent.remove(g.arms[side>0?1:0]); g.arms[side>0?1:0] = arm;
+    }
+    const hd = new THREE.Group(); hd.position.set(0, -11*s, 9*s); neck.add(hd);
+    const skull = P0(15, 12, 13, main); hd.add(skull);
+    const brow = P0(15, 3, 3, dark); brow.position.set(0, 3*s, 6.4*s); brow.rotation.x = .25; hd.add(brow);
+    const nose = P0(4, 4, 8, main); nose.position.set(0, -1*s, 9*s); nose.rotation.x = .35; hd.add(nose);
+    const mouth = P0(9, 2, 1, "#1a0c0c"); mouth.position.set(0, -4.5*s, 6.6*s); hd.add(mouth);
+    for (const side of [-1, 1]){
+      const ear = P0(13, 5, 2, main); ear.position.set(side*12*s, 2*s, -1*s); ear.rotation.set(0, side*-.25, side*.45); hd.add(ear);
+      const eye = P0(3.5, 3, 1.5, glow, glowOpts(glow)); eye.position.set(side*3.8*s, 1*s, 6.8*s); hd.add(eye);
+      const tooth = P0(1.6, 2.6, 1.2, "#e8dcc0"); tooth.position.set(side*2.6*s, -5.4*s, 6.9*s); hd.add(tooth);
+    }
+    g.hunch = .32;
+  } else if (body === "serpent"){
+    // serpiente gigante (Kasaka): cuerpo de anillos que ondula, capucha y colmillos
+    g.spine = [];
+    const H = [50, 40, 28, 17, 10, 7, 6, 5.5, 5, 4.5];
+    let w = 17;
+    for (let i = 0; i < H.length; i++){
+      const seg = new THREE.Group(); seg.position.set(0, H[i]*s, (16 - i*10)*s); detail.add(seg);
+      const m = P0(w, w*.82, 13, main); seg.add(m);
+      const belly = P0(w*.7, 2.2, 12.6, cfg.hair || "#d8c9a0"); belly.position.set(0, -w*.41*s, 1*s); seg.add(belly);
+      if (i % 2 === 0){ const sc = P0(w*.55, 1.6, 6, dark); sc.position.set(0, w*.42*s, 0); seg.add(sc); }
+      if (i === 1){
+        for (const side of [-1, 1]){
+          const hood = P0(14, 20, 2.5, dark); hood.position.set(side*10*s, 4*s, -1*s); hood.rotation.set(-.15, side*-.55, side*-.2); seg.add(hood);
+          const rim = P0(2, 18, 2.8, glow, glowOpts(glow)); rim.position.set(side*16*s, 4*s, -3.5*s); rim.rotation.y = side*-.55; seg.add(rim);
+        }
+      }
+      if (i === 0){
+        const skull = P0(15, 9, 17, main); skull.position.set(0, 3*s, 6*s); seg.add(skull);
+        const jaw = new THREE.Group(); jaw.position.set(0, -1*s, 2*s); seg.add(jaw); g.jaw = jaw;
+        const lj = P0(12, 3, 14, dark); lj.position.z = 6*s; jaw.add(lj);
+        for (const side of [-1, 1]){
+          const fang = P0(1.8, 6, 1.8, "#f4ecd8"); fang.position.set(side*4*s, -1*s, 13*s); seg.add(fang);
+          const eye = P0(3.5, 2.5, 3, glow, glowOpts(glow)); eye.position.set(side*6.2*s, 5*s, 10*s); seg.add(eye);
+        }
+      }
+      g.spine.push(seg);
+      w = Math.max(6, w - 1.3);
+    }
+    const tip = P0(3, 3, 10, glow, glowOpts(glow)); tip.position.set(0, 0, -7*s); g.spine[g.spine.length-1].add(tip);
+  } else if (body === "wolf"){
+    // lobo: pecho alto, lomo con pelo erizado, patas articuladas y hocico largo
+    g.gait = [];
+    const chest = P0(21, 20, 20, main); chest.position.set(0, (37-41)*s, 9*s); torso.add(chest);
+    const ruff = P0(24, 22, 10, cfg.hair || dark); ruff.position.set(0, (39-41)*s, 17*s); torso.add(ruff);
+    const hind = P0(17, 16, 22, main); hind.position.set(0, (35-41)*s, -11*s); torso.add(hind);
+    const bel = P0(14, 5, 30, dark); bel.position.set(0, (27-41)*s, 0); torso.add(bel);
+    for (let i = 0; i < 5; i++){
+      const hk = P0(4, 7 - i*.7, 5, cfg.hair || dark); hk.position.set(0, (48-41 - i*.8)*s, (12 - i*6)*s); hk.rotation.x = -.6; torso.add(hk);
+    }
+    for (const [sx, sz, ph] of [[-1, 13, 0], [1, 13, Math.PI], [-1, -15, Math.PI], [1, -15, 0]]){
+      const hip = new THREE.Group(); hip.position.set(sx*8*s, 30*s, sz*s); detail.add(hip);
+      const up = P0(7, 14, 9, main); up.position.y = -6*s; hip.add(up);
+      const knee = new THREE.Group(); knee.position.set(0, -13*s, sz < 0 ? -2*s : 1*s); hip.add(knee);
+      const lo = P0(5, 13, 5, dark); lo.position.y = -6*s; knee.add(lo);
+      const paw = P0(7, 3.5, 9, dark); paw.position.set(0, -13*s, 2*s); knee.add(paw);
+      g.gait.push({ n:hip, ph, amp:.6, base:0, axis:"x" });
+      g.gait.push({ n:knee, ph:ph + 1.4, amp:.4, base: sz < 0 ? -.25 : .2, axis:"x" });
+    }
+    const tail = new THREE.Group(); tail.position.set(0, 38*s, -22*s); detail.add(tail);
+    for (let i = 0; i < 3; i++){ const t = P0(7 - i*1.4, 7 - i*1.4, 9, cfg.hair || main); t.position.set(0, -i*2.5*s, -i*8*s); t.rotation.x = .35; tail.add(t); }
+    detail.userData.tail = tail;
+    const hd = new THREE.Group(); hd.position.set(0, -17*s, 26*s); neck.add(hd); g.head = hd;
+    const skull = P0(15, 13, 14, main); hd.add(skull);
+    const snout = P0(9, 7, 13, main); snout.position.set(0, -2.5*s, 12*s); hd.add(snout);
+    const nose = P0(5, 3.5, 3, "#0c0c10"); nose.position.set(0, -.5*s, 19*s); hd.add(nose);
+    const jaw = new THREE.Group(); jaw.position.set(0, -6*s, 5*s); hd.add(jaw); g.jaw = jaw;
+    const lj = P0(8, 3, 12, dark); lj.position.z = 6*s; jaw.add(lj);
+    for (const side of [-1, 1]){
+      const ear = P0(4.5, 10, 3, main); ear.position.set(side*5*s, 10*s, -3*s); ear.rotation.z = side*-.2; hd.add(ear);
+      const eye = P0(4, 2.2, 2, glow, glowOpts(glow)); eye.position.set(side*4.3*s, 2*s, 7.2*s); eye.rotation.z = side*.25; hd.add(eye);
+      const fang = P0(1.4, 3.5, 1.4, "#f4ecd8"); fang.position.set(side*3*s, -6*s, 17*s); hd.add(fang);
+    }
+  } else if (body === "ant"){
+    // hormiga de Jeju: caparazón brillante, mandíbulas y seis patas en trípode
+    g.gait = [];
+    const thorax = P0(20, 15, 22, main); thorax.position.set(0, (33-41)*s, 4*s); torso.add(thorax);
+    const waist = P0(8, 8, 8, dark); waist.position.set(0, (32-41)*s, -9*s); torso.add(waist);
+    const abd = P0(26, 22, 30, main); abd.position.set(0, (36-41)*s, -27*s); abd.rotation.x = -.25; torso.add(abd);
+    for (let i = 0; i < 3; i++){
+      const band = P0(27, 3, 3, glow, glowOpts(glow)); band.position.set(0, (38-41 + i*1.5)*s, (-18 - i*8)*s); band.rotation.x = -.25; torso.add(band);
+    }
+    const ridge = P0(6, 4, 20, dark); ridge.position.set(0, (41-41)*s, 4*s); torso.add(ridge);
+    let li = 0;
+    for (const sz of [13, 3, -7]){
+      for (const side of [-1, 1]){
+        const hip = new THREE.Group(); hip.position.set(side*10*s, 30*s, sz*s); detail.add(hip);
+        const fem = P0(15, 3.5, 3.5, dark); fem.position.set(side*7*s, 4*s, 0); fem.rotation.z = side*.5; hip.add(fem);
+        const tib = P0(3, 22, 3, dark); tib.position.set(side*15*s, -7*s, 0); tib.rotation.z = side*-.2; hip.add(tib);
+        const ph = (li % 2 === 0) === (side < 0) ? 0 : Math.PI;
+        g.gait.push({ n:hip, ph, amp:.45, base:0, axis:"y" });
+        g.gait.push({ n:hip, ph:ph + Math.PI/2, amp:.18, base:0, axis:"z", sign:side });
+      }
+      li++;
+    }
+    const hd = new THREE.Group(); hd.position.set(0, -20*s, 19*s); neck.add(hd);
+    const skull = P0(17, 13, 14, main); hd.add(skull);
+    const crest = P0(12, 3, 10, glow, glowOpts(glow)); crest.position.set(0, 7*s, 0); hd.add(crest);
+    g.mandibles = [];
+    for (const side of [-1, 1]){
+      const mj = new THREE.Group(); mj.position.set(side*5*s, -4*s, 7*s); hd.add(mj); mj.userData.side = side;
+      const m1 = P0(3.5, 3.5, 12, dark); m1.position.z = 6*s; mj.add(m1);
+      const m2 = P0(6, 3, 3, dark); m2.position.set(-side*2.5*s, 0, 12*s); mj.add(m2);
+      g.mandibles.push(mj);
+      const eye = P0(6, 6, 3, glow, glowOpts(glow)); eye.position.set(side*7*s, 2*s, 4*s); hd.add(eye);
+      const ant = P0(2, 16, 2, dark); ant.position.set(side*4*s, 12*s, 3*s); ant.rotation.set(-.7, 0, side*.35); hd.add(ant);
+    }
   } else {
     // espectro: flota, sin piernas, capucha y jirones
     const hood = P0(22, 18, 20, dark); hood.position.y = 4*s; neck.add(hood);
@@ -2616,6 +2790,17 @@ function buildCharacter(cfg){
     hand.position.y = -27 * s;
     sh.add(sleeve, arm, hand);
     detail.add(sh); g.arms.push(sh);
+  }
+  if (cfg.shield){
+    // escudo de torre en el brazo izquierdo, con blasón encendido
+    const sg = new THREE.Group(); sg.position.set(-6 * s, -18 * s, 4 * s); g.arms[0].add(sg);
+    const board = P0(3.5, 26, 18, cfg.shield); sg.add(board);
+    const rim = P0(4, 27.5, 2, cfg.pauldron || "#1a1826"); rim.position.z = 9 * s; sg.add(rim);
+    const rim2 = P0(4, 27.5, 2, cfg.pauldron || "#1a1826"); rim2.position.z = -9 * s; sg.add(rim2);
+    if (cfg.shieldGlow){
+      const em = P0(1.5, 8, 5, cfg.shieldGlow, { ...opts, emissive:cfg.shieldGlow, emissiveIntensity:1.2 });
+      em.position.x = -2 * s; sg.add(em);
+    }
   }
   if (cfg.pauldron){
     // hombreras en dos capas; con `spikes` salen púas, como la armadura de sombra
@@ -2901,7 +3086,7 @@ function poseCharacter(v, o){
     v.arms[1].rotation.x = air ? -1.1 : dash ? .9 : walk * .55 * mv + (mv ? 0 : -breathe * .04);
   }
   // cuerpo entero: se inclina al correr y al hacer dash, se echa atrás al encajar
-  const leanT = mv * .12 + dash * .32 - hurt * .35 + (atk > 0 && !o.swing ? .12 : 0);
+  const leanT = (v.hunch || 0) + mv * .12 + dash * .32 - hurt * .35 + (atk > 0 && !o.swing ? .12 : 0);
   U.lean += (leanT - U.lean) * .25;
   U.twist += (twistT - U.twist) * .45;
   U.sway += ((mv ? walk * .05 : 0) - U.sway) * .3;
@@ -2910,7 +3095,30 @@ function poseCharacter(v, o){
     v.detail.rotation.y = U.twist;
     v.detail.rotation.z = U.sway;
     v.detail.position.y = v.float ? (Math.sin(t * 2.4 + U.seed) * 3 + 2) * s : 0;
+    v.detail.position.z = v.gait || v.spine ? atk * 9 * s : 0;       // embestida al atacar
   }
+  // criaturas: patas articuladas, cuerpo de serpiente, mandíbulas
+  if (v.gait){
+    const k = mv ? 1 : .07;
+    for (const G of v.gait){
+      const val = (G.base || 0) + Math.sin(o.step * 1.15 + G.ph) * G.amp * k * (G.sign || 1);
+      G.n.rotation[G.axis || "x"] = val;
+    }
+  }
+  if (v.spine){
+    const sp = mv ? 5 : 2, amp = (mv ? 7 : 3) * s;
+    for (let i = 0; i < v.spine.length; i++){
+      const sg = v.spine[i], f = Math.min(1, i / 2 + .25), ph = t * sp - i * .8 + U.seed;
+      sg.position.x = Math.sin(ph) * amp * f;
+      sg.rotation.y = Math.cos(ph) * .35 * f;
+    }
+    v.spine[0].rotation.x = -atk * .55 - hurt * .3 + Math.sin(t * 1.3 + U.seed) * .05;
+    v.spine[1].rotation.x = -atk * .25;
+  }
+  if (v.jaw) v.jaw.rotation.x = .08 + atk * .7 + hurt * .35 + (mv ? 0 : Math.max(0, Math.sin(t * .9 + U.seed)) * .12);
+  if (v.head) v.head.rotation.x = (mv ? Math.sin(o.step * 2.3) * .06 : Math.sin(t * .8 + U.seed) * .08) - atk * .2;
+  if (v.mandibles) for (const mj of v.mandibles)
+    mj.rotation.y = mj.userData.side * (.12 + Math.abs(Math.sin(t * (atk ? 16 : 3) + U.seed)) * (atk ? .55 : .14));
   const bob = o.moving ? Math.abs(Math.sin(o.step)) * 1.8 * s : breathe * .5 * s;
   v.torso.position.y = (41 * s) + bob;
   v.torso.scale.y = 1 + (mv ? 0 : breathe * .018);
@@ -3833,27 +4041,27 @@ function ensurePlayerView(){
 const MOB_LOOK = {
   // Cada región monta su propio bicho: tipo de cuerpo, paleta y rasgos, para
   // que dos zonas con el mismo cuerpo no se parezcan en nada.
-  Seoul:       { body:"slime",    skin:"#6fe0a8", dark:"#1d5a45", glow:"#b7ffe6", features:[] },
-  Hongdae:     { body:"beast",    skin:"#7a8ad0", dark:"#232b4a", glow:"#ffd24a", hair:"#3a4470",
-                 features:["mane", "tail"] },
-  Temple:      { body:"golem",    skin:"#a89a86", dark:"#5b5044", glow:"#ffb45a",
-                 features:["crystals"] },
-  Reawaken:    { body:"wraith",   skin:"#3d3358", dark:"#1a1430", glow:"#9f7bff",
-                 features:["extraEyes"] },
-  HighOrcs:    { body:"humanoid", skin:"#6fae6a", dark:"#2a3a28", glow:"#ffe066",
-                 features:["tusks", "mane"] },
-  RedGate:     { body:"beast",    skin:"#cfe8ff", dark:"#4a6a8a", glow:"#7fe0ff", hair:"#9fc4e8",
-                 features:["crystals", "tail"] },
-  Jeju:        { body:"insect",   skin:"#2e2a3a", dark:"#15121f", glow:"#8fff6a",
-                 features:["wings", "carapace"] },
-  Japan:       { body:"humanoid", skin:"#b06a5a", dark:"#3a1f28", glow:"#ff7a5a",
-                 features:["tail", "mane"] },
-  DemonCastle: { body:"wraith",   skin:"#5a2438", dark:"#2a0f1c", glow:"#ff5a7a",
-                 features:["wings", "extraEyes"] },
-  IceMonarch:  { body:"golem",    skin:"#cfe9ff", dark:"#5f7f9f", glow:"#9fe8ff",
-                 features:["crystals", "halo"] },
-  BeastMonarch:{ body:"beast",    skin:"#8a5a3a", dark:"#3a2418", glow:"#ffb45a", hair:"#5a3a24",
-                 features:["tusks", "mane", "tail"] },
+  // Criaturas inspiradas en las mazmorras de la obra: goblins en las puertas
+  // bajas, la serpiente de Kasaka, estatuas del Doble Dungeon, caballeros del
+  // Castillo, altos orcos, lobos de hielo, hormigas de Jeju, demonios...
+  Seoul:       { body:"goblin",   skin:"#6f8a55", dark:"#3a3226", glow:"#ffcc33", features:[] },
+  Hongdae:     { body:"serpent",  skin:"#3f5a48", dark:"#1c2a22", glow:"#c8ff4a", hair:"#c8b98a", features:[] },
+  Temple:      { body:"golem",    skin:"#8f8674", dark:"#4a4438", glow:"#ffb45a", features:[] },
+  Reawaken:    { body:"humanoid", skin:"#2a2630", dark:"#1c1a24", glow:"#ff3a3a", features:[],
+                 kit:{ helm:"#2e2a36", helm2:"#5a1420", visor:"#ff3a3a", shield:"#3a3440", shieldGlow:"#ff3a3a",
+                       cape:"#5a1420", weapon:"#b8bcc8", weaponKind:"sword", greaves:"#2e2a36" } },
+  HighOrcs:    { body:"humanoid", skin:"#5f7f4a", dark:"#3a2a1c", glow:"#ff6a2a", hair:"#1a1410",
+                 features:["tusks"], kit:{ weapon:"#8a8f96", weaponKind:"axe", pauldron:"#6a4a2a", pauldron2:"#8a6a3a",
+                       armor:null, shirt:"#4a3624", hair:"#1a1410", glowEyes:true } },
+  RedGate:     { body:"wolf",     skin:"#8fa4ba", dark:"#3e4e62", glow:"#6fd8ff", hair:"#d6e6f5", features:[] },
+  Jeju:        { body:"ant",      skin:"#241d2c", dark:"#120e18", glow:"#b8ff3a", features:[] },
+  Japan:       { body:"humanoid", skin:"#c9a58a", dark:"#23202c", glow:"#ff5a5a", features:[],
+                 kit:{ hood:"#1a1824", hood2:"#ff5a5a", tatters:"#2a2436", weapon:"#d8dce6", weaponKind:"sword", armor:null } },
+  DemonCastle: { body:"humanoid", skin:"#7a2a2a", dark:"#2a0f14", glow:"#ffb03a", features:["wings", "tail"],
+                 kit:{ horns:true, hornColor:"#1a1010", weapon:"#6a1a1a", weaponKind:"polearm", spikes:"#ffb03a" } },
+  IceMonarch:  { body:"humanoid", skin:"#d8e8f5", dark:"#3a5a7a", glow:"#8fe8ff", features:["crystals"],
+                 kit:{ helm:"#9fc4e8", helm2:"#e8f6ff", visor:"#8fe8ff", weapon:"#cfefff", weaponKind:"polearm", cape:"#5f8fbf" } },
+  BeastMonarch:{ body:"wolf",     skin:"#4a3a30", dark:"#241a14", glow:"#ffb45a", hair:"#2a1e18", features:[] },
   Architect:   { body:"wraith",   skin:"#4a4a86", dark:"#1f1f44", glow:"#9fa8ff",
                  features:["halo", "crystals"] },
   ShadowRealm: { body:"humanoid", skin:"#2a2a4a", dark:"#12122a", glow:"#c08cff",
@@ -3876,7 +4084,8 @@ function enemyConfig(e){
   }
   const cfg = {
     body, features,
-    scale: (e.def.r / 18) * (boss ? 1.75 : brute ? 1.25 : (L.height || 1)) * (e.elite ? 1.2 : 1),
+    scale: (e.def.r / 18) * (boss ? 1.75 : brute ? 1.25 : (L.height || 1)) * (e.elite ? 1.2 : 1)
+      * (body === "serpent" ? 1.3 : body === "goblin" ? 1.1 : 1),
     skin: brute ? reg.dark : reg.skin,
     pants: reg.dark, eyes: glow, hair: reg.hair || reg.dark,
     horns: brute || boss, hornColor: glow,
@@ -3900,6 +4109,7 @@ function enemyConfig(e){
     cape: boss ? reg.dark : null,
     weapon: boss ? glow : (brute ? "#8a7a6a" : null),
     weaponKind: boss ? "scythe" : "sword",
+    ...(boss ? {} : (reg.kit || {})),
   };
 }
 function shadowConfig(sh){
@@ -4744,6 +4954,7 @@ function openPanel(kind){
   panelTab = kind === "items" ? "Relics" : kind === "stats" ? "Stats" : "Weapons";
   panelEnter = true;
   if (kind === "shop") shopSel = null;
+  if (kind === "map"){ mapSel = null; mapTab = "Regions"; mobKind = "enemy"; }
   renderPanel();
 }
 function closePanel(){ panelKind = null; renderPanel(); }
@@ -4935,10 +5146,33 @@ function panelShop(){
     <p class="hint">Oro: <b class="price">${fmt(P.cash)}</b>. Tres copias de un arma se fusionan y suben su rango (+25% de daño).
     Las armas se desbloquean al llegar a su isla.</p>`);
 }
+let beastSel = null;
 function panelItems(){
-  const tabs = ["Story","Relics","Runes","Index"];
+  const tabs = ["Story","Relics","Runes","Index","Beasts"];
   const nav = `<div class="tabs">${tabs.map(t => `<button class="tab ${panelTab===t?"sel":""}" data-tab="${t}">${
-    t === "Story" ? "Historia" : t === "Relics" ? "Reliquias" : t === "Runes" ? "Runas" : "Índice"}</button>`).join("")}</div>`;
+    t === "Story" ? "Historia" : t === "Relics" ? "Reliquias" : t === "Runes" ? "Runas" : t === "Index" ? "Índice" : "Bestiario"}</button>`).join("")}</div>`;
+  const card = (o, i) => `<div class="card ${o.locked ? "lock" : ""}" style="--tc:${o.tc};--i:${i}"><span class="cg">${o.g}</span>
+    <b>${o.name}</b><small>${o.sub}</small>${o.tag ? `<i class="ctier">${o.tag}</i>` : ""}</div>`;
+  if (panelTab === "Beasts"){
+    if (!beastSel || !ISLANDS.some(i => i.id === beastSel)) beastSel = regionAt(player.x, player.y).id;
+    const cards = ISLANDS.map((isle, i) => {
+      const un = regionUnlocked(isle), th = THEMES[isle.theme] || THEMES.city;
+      return `<button class="card ${isle.id === beastSel ? "sel" : ""} ${un ? "" : "lock"}" data-beast="${isle.id}" style="--tc:${th.g1};--i:${i}">
+        <span class="cg">${un ? "👁" : "🔒"}</span><b>${un ? isle.enemy.name : "???"}</b><small>${isle.name}</small><i class="ctier">Nv ${isle.enemy.lvl}</i></button>`;
+    }).join("");
+    const isle = isleOf(beastSel), un = regionUnlocked(isle), th = THEMES[isle.theme] || THEMES.city;
+    const look = MOB_LOOK[isle.id] || {};
+    const side = un ? `<div class="pv" data-pv="beast" style="--tc:${th.g1}"></div>
+      <div class="sheet" style="--tc:${th.g1}"><b class="sname">${isle.enemy.name}</b>
+        <span class="tchip">${isle.name}</span>
+        <span class="lv">Especie: ${({ goblin:"goblin", serpent:"serpiente", golem:"estatua viviente", wolf:"lobo", ant:"hormiga", wraith:"espectro", humanoid:"humanoide" })[look.body] || look.body}</span>
+        <div class="sbar hp"><small>Vida</small><i style="width:${Math.min(100, (Math.log10(isle.enemy.hp) / 20) * 100)}%"></i><em>${fmt(isle.enemy.hp)}</em></div>
+        <div class="sbar"><small>Daño</small><i style="width:${Math.min(100, (Math.log10(isle.enemy.dmg) / 17) * 100)}%"></i><em>${fmt(isle.enemy.dmg)}</em></div>
+        <p class="hint">Bruto: <b>${isle.brute.name}</b> · Jefe: <b>${isle.boss.name}</b></p></div>`
+      : `<div class="pv locked-pv"><span>🔒</span></div><p class="hint">Llega al nivel ${isle.level} para descubrir esta criatura.</p>`;
+    return shell("Inventario", nav + `<div class="inv"><aside class="inv-side">${side}</aside>
+      <div class="inv-main"><div class="cards">${cards}</div></div></div>`);
+  }
   let body = "";
   if (panelTab === "Story"){
     body = CAMPAIGN.map((c, i) => {
@@ -4952,60 +5186,92 @@ function panelItems(){
       <p class="hint">Juego de fan, sin relación oficial con la obra. Personajes y lugares se usan como homenaje;
       todos los modelos y el arte son originales de este proyecto.</p>`);
   }
+  let got = 0, total = 0;
   if (panelTab === "Relics"){
-    body = Object.values(RELICS).map(r => {
-      const has = !!P.relics[r.id];
-      return `<div class="item ${has?"":"locked"}"><span class="g">${r.glyph}</span>
-        <span class="meta"><b>${r.name}</b><span>${r.effect === "shadowDmg" ? `Daño de sombras +${(r.value*100).toFixed(0)}%`
-          : r.effect === "ariseLuck" ? `Suerte de Arise +${r.value}%` : `Rank Up +${r.value}%`} · ${isleOf(r.isle)?.name || r.isle}</span></span>
-        <span class="tier" style="color:${has?"var(--cash)":"var(--dim)"}">${has ? "ACTIVA" : "BLOQUEADA"}</span></div>`;
-    }).join("");
+    const all = Object.values(RELICS); total = all.length;
+    body = all.map((r, i) => { const has = !!P.relics[r.id]; if (has) got++;
+      return card({ locked:!has, tc: has ? "var(--gold)" : "var(--line)", g:r.glyph, name:r.name, tag: has ? "ACTIVA" : "🔒",
+        sub: `${r.effect === "shadowDmg" ? `Sombras +${(r.value*100).toFixed(0)}%` : r.effect === "ariseLuck" ? `Arise +${r.value}%` : `Rango +${r.value}%`} · ${isleOf(r.isle)?.name || r.isle}` }, i); }).join("");
   } else if (panelTab === "Runes"){
-    body = Object.values(RUNES).map(r => `<div class="item ${P.runes[r.id]?"":"locked"}"><span class="g">${r.glyph}</span>
-      <span class="meta"><b>${r.name}</b><span>${r.desc}</span></span>
-      <span class="price">×${fmt(P.runes[r.id] || 0)}</span></div>`).join("");
+    const all = Object.values(RUNES); total = all.length;
+    body = all.map((r, i) => { const n = P.runes[r.id] || 0; if (n) got++;
+      return card({ locked:!n, tc: n ? "var(--gem)" : "var(--line)", g:r.glyph, name:r.name, sub:r.desc, tag:`×${fmt(n)}` }, i); }).join("");
   } else {
-    body = Object.values(SHADOWS).map(s => {
-      const n = P.index[s.id] || 0;
-      return `<div class="item ${n?"":"locked"}"><span class="g">${s.glyph}</span>
-        <span class="meta"><b>${s.name}</b><span><span class="tier" style="color:var(${TIER_VAR[s.tier]})">${s.tier}</span> · daño base ${fmt(s.dmg)} · tasa ${(s.rate*100).toFixed(1)}%</span></span>
-        <span class="price">${n ? `×${n}` : "—"}</span></div>`;
-    }).join("");
+    const all = Object.values(SHADOWS); total = all.length;
+    body = all.map((s, i) => { const n = P.index[s.id] || 0; if (n) got++;
+      return card({ locked:!n, tc:`var(${TIER_VAR[s.tier]})`, g: n ? s.glyph : "❔", name: n ? s.name : "???",
+        sub: `daño ${fmt(s.dmg)} · tasa ${(s.rate*100).toFixed(1)}%`, tag: n ? `${s.tier} ×${n}` : s.tier }, i); }).join("");
   }
-  return shell("Inventario", nav + `<div class="list">${body}</div>
+  const pct = total ? got / total * 100 : 0;
+  return shell("Inventario", nav + `<div class="collect"><span>Colección</span><div class="sbar xp"><i style="width:${pct}%"></i><em>${got} / ${total}</em></div></div>
+    <div class="cards grid-only">${body}</div>
     <p class="hint">Las reliquias caen en mazmorras de su isla. Las runas modifican la siguiente mazmorra (activación del líder).</p>`);
+}
+/* Mapa del mundo interactivo: anillos concéntricos con el color de su bioma,
+   tu posición real, el portal y los cazadores. Tocar un anillo abre su ficha
+   con el enemigo típico en 3D y el botón de viaje. */
+let mapSel = null, mapTab = "Regions", mobKind = "enemy";
+function regionUnlocked(i){ return P.level >= i.level || P.islands.includes(i.id); }
+function worldMapSVG(){
+  const N = ISLANDS.length, R = 150, band = R / N, cur = ringAt(player.x, player.y);
+  const toMap = (x, y) => { const k = R / (N * CFG.RING_WIDTH); return [160 + (x - CFG.WORLD.cx) * k, 160 + (y - CFG.WORLD.cy) * k]; };
+  let rings = "";
+  for (let i = N - 1; i >= 0; i--){
+    const isle = ISLANDS[i], th = THEMES[isle.theme] || THEMES.city, un = regionUnlocked(isle);
+    rings += `<circle class="ring ${un ? "" : "lk"} ${i === mapSel ? "sel" : ""} ${i === cur ? "cur" : ""}" data-mring="${i}"
+      cx="160" cy="160" r="${(i + .5) * band}" stroke="${th.g1}" stroke-width="${band - 1}" fill="none"><title>${isle.name}</title></circle>`;
+  }
+  const labels = ISLANDS.map((isle, i) => `<text x="160" y="${160 - (i + .5) * band + 3}" class="rlbl">${i}</text>`).join("");
+  const [px, py] = toMap(player.x, player.y);
+  const hunters = HUNTERS.map(h => { const [hx, hy] = toMap(h.x, h.y); return `<circle cx="${hx}" cy="${hy}" r="3" class="hpin"><title>${h.name}</title></circle>`; }).join("");
+  const port = portal ? (() => { const [qx, qy] = toMap(portal.x, portal.y); return `<circle cx="${qx}" cy="${qy}" r="5" class="ppin"><title>Portal</title></circle>`; })() : "";
+  return `<svg class="wmap" viewBox="0 0 320 320" role="img" aria-label="Mapa del mundo">
+    <defs><radialGradient id="wmg"><stop offset="0" stop-color="#fff" stop-opacity=".25"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient></defs>
+    ${rings}${labels}<circle cx="160" cy="160" r="150" fill="url(#wmg)" pointer-events="none"/>
+    ${hunters}${port}
+    <g class="me" transform="translate(${px} ${py})"><circle r="9" class="mepulse"/><circle r="4.5" class="medot"/></g>
+  </svg>`;
 }
 function panelMap(){
   const cur = ringAt(player.x, player.y);
-  const isles = ISLANDS.map((i, idx) => {
-    const un = P.level >= i.level || P.islands.includes(i.id);
-    const here = idx === cur;
-    const r = Math.round(ringRadius(idx));
-    return `<div class="item ${un ? "" : "locked"}"><span class="g">${here ? "📍" : "🧭"}</span>
-      <span class="meta"><b>${i.name} <span style="opacity:.6">· anillo ${idx}</span></b>
-      <span>${un ? `${i.enemy.name} Nv ${i.enemy.lvl} · jefe ${i.boss.name} · a ${fmt(r)} m del centro`
-                 : `Requiere nivel ${i.level} para viajar (puedes llegar caminando)`}</span></span>
-      <button class="btn" data-ring="${idx}" ${!un || here ? "disabled" : ""}>${here ? "Aquí" : "Viajar"}</button></div>`;
-  }).join("");
-  const hunters = HUNTERS.map(h => `<div class="item"><span class="g">🛡</span>
-    <span class="meta"><b>${h.name} <span style="opacity:.6">Rango ${h.rank}</span></b>
-    <span>${h.role === "forja" ? "Templa tu arma a cambio de oro"
-      : h.role === "sanar" ? "Cura completa y bendición de daño"
-      : h.role === "entrenar" ? "Entrena por gemas y da puntos de atributo"
-      : "Consulta el índice de sombras"} · anillo ${h.ring}</span></span>
-    <button class="btn green" data-hunter="${h.id}">Ir</button></div>`).join("");
-  const modes = Object.entries(DUNGEON_MODES).map(([id, m]) => `
-    <div class="item"><span class="g">🌀</span>
+  if (mapSel === null || !ISLANDS[mapSel]) mapSel = cur;
+  const isle = ISLANDS[mapSel], un = regionUnlocked(isle), th = THEMES[isle.theme] || THEMES.city;
+  const r = Math.round(ringRadius(mapSel)), here = mapSel === cur;
+  const dist = Math.round(Math.abs(Math.hypot(player.x - CFG.WORLD.cx, player.y - CFG.WORLD.cy) - r));
+  const tabs = [["Regions","Región"],["Hunters","Cazadores"],["Gates","Puertas"]];
+  const nav = `<div class="tabs">${tabs.map(([id, l]) => `<button class="tab ${mapTab === id ? "sel" : ""}" data-maptab="${id}">${l}</button>`).join("")}</div>`;
+  let right = "";
+  if (mapTab === "Regions"){
+    right = `<div class="rcard" style="--tc:${th.g1};--sky:${th.sky1}">
+      <div class="rhead"><small>Anillo ${mapSel} · ${isle.theme}</small><b>${isle.name}</b>
+        <span>${here ? "📍 Estás aquí" : un ? `a ${fmt(dist)} m` : `🔒 Requiere nivel ${isle.level}`}</span></div>
+      <div class="pv" data-pv="mob" style="--tc:${th.g1}"></div>
+      <div class="chips">${["enemy","brute","boss"].map(k => `<button class="chip ${mobKind === k ? "sel" : ""}" data-mobkind="${k}">${
+        k === "enemy" ? isle.enemy.name : k === "brute" ? isle.brute.name : "👑 " + isle.boss.name}</button>`).join("")}</div>
+      <div class="derived">
+        <div class="kv"><small>Nivel recomendado</small><b>${isle.level}</b></div>
+        <div class="kv"><small>Vida típica</small><b>${fmt(isle[mobKind].hp)}</b></div>
+        <div class="kv"><small>Daño</small><b>${fmt(isle[mobKind].dmg)}</b></div>
+        <div class="kv"><small>Sombra</small><b>${SHADOWS[isle.shadow]?.name || isle.shadow}</b></div>
+      </div>
+      <button class="btn ${here ? "" : "green"} big-w" data-ring="${mapSel}" ${!un || here ? "disabled" : ""}>${here ? "Estás aquí" : un ? "Viajar ahora" : "Bloqueada"}</button>
+    </div>`;
+  } else if (mapTab === "Hunters"){
+    right = `<div class="list">${HUNTERS.map(h => `<div class="item"><span class="g">🛡</span>
+      <span class="meta"><b>${h.name} <span style="opacity:.6">Rango ${h.rank}</span></b>
+      <span>${h.role === "forja" ? "Templa tu arma a cambio de oro" : h.role === "sanar" ? "Cura completa y bendición de daño"
+        : h.role === "entrenar" ? "Entrena por gemas y da puntos de atributo" : "Consulta el índice de sombras"} · anillo ${h.ring}</span></span>
+      <button class="btn green" data-hunter="${h.id}">Ir</button></div>`).join("")}</div>`;
+  } else {
+    right = `<div class="list">${Object.entries(DUNGEON_MODES).map(([id, m]) => `<div class="item"><span class="g">🌀</span>
       <span class="meta"><b>${m.name}</b><span>${m.rooms} salas · enemigos ×${m.mult} · recompensa ×${m.reward}${id === "DoubleDungeon" ? " · otorga el Despertar" : ""}</span></span>
-      <button class="btn violet" data-dungeon="${id}" ${P.tickets > 0 || id === "Standard" ? "" : "disabled"}>${id === "Standard" ? "Entrar" : "1 🎟"}</button></div>`).join("");
-  return shell("Mapa del mundo", `
-    <p class="hint">El mundo es <b>abierto y continuo</b>: el centro es Seúl y cada anillo que cruzas
-    es una región más dura. Puedes ir caminando a cualquier sitio; el viaje rápido solo pide el nivel de la zona.</p>
-    <div class="list">${isles}</div>
-    <h3 style="margin:6px 0 0;font-family:var(--f-display);font-size:15px">Cazadores</h3>
-    <div class="list">${hunters}</div>
-    <h3 style="margin:6px 0 0;font-family:var(--f-display);font-size:15px">Puertas</h3>
-    <div class="list">${modes}</div>`);
+      <button class="btn violet" data-dungeon="${id}" ${P.tickets > 0 || id === "Standard" ? "" : "disabled"}>${id === "Standard" ? "Entrar" : "1 🎟"}</button></div>`).join("")}</div>`;
+  }
+  return shell("Mapa del mundo", `<div class="mapwrap2">
+      <div class="mapside">${worldMapSVG()}
+        <div class="legend"><span><i class="lg me"></i>Tú</span><span><i class="lg hp"></i>Cazador</span><span><i class="lg pp"></i>Portal</span><span><i class="lg lk"></i>Bloqueada</span></div>
+        <p class="hint">Toca un anillo para ver la región. El centro es Seúl; cada anillo es una región más dura.</p></div>
+      <div class="mapinfo">${nav}${right}</div></div>`);
 }
 function panelHelp(){
   return shell("Controles y bucle", `
@@ -5112,6 +5378,12 @@ function previewConfig(kind){
     const d = P.shadows[shadowSel];
     return d ? { cfg: shadowConfig({ data:d }), key:`sh|${d.id}|${d.tier}` } : null;
   }
+  if (kind === "mob" || kind === "beast"){
+    const isle = kind === "beast" ? (isleOf(beastSel) || ISLANDS[0]) : ISLANDS[mapSel ?? 0];
+    const k = kind === "beast" ? "enemy" : mobKind;
+    const def = { ...isle[k], kind: k === "brute" ? "brute" : "normal", r:18, boss: k === "boss" };
+    return { cfg: enemyConfig({ def, isle:isle.id, look:{}, boss: k === "boss", x:0, y:0 }), key:`mob|${isle.id}|${k}` };
+  }
   if (kind === "weapon"){
     const w = WEAPONS[shopSel] || WEAPONS[P.weapon];
     const base = playerConfig();
@@ -5135,6 +5407,9 @@ function mountPreview(){
     PV.cam.lookAt(0, 38 * sc, 0);
     PV.ped.scale.setScalar(sc);
   }
+  // el lienzo toma la forma de su hueco (ficha alta o banda panorámica)
+  const w = Math.max(80, Math.round(slot.clientWidth || 240)), h = Math.max(80, Math.round(slot.clientHeight || 260));
+  if (PV.w !== w || PV.h !== h){ PV.w = w; PV.h = h; PV.r.setSize(w, h, false); PV.cam.aspect = w / h; PV.cam.updateProjectionMatrix(); }
   const col = getComputedStyle(slot).getPropertyValue("--tc").trim();
   if (col) try { PV.ped.glow.material.color.set(col); } catch (err){}
   slot.appendChild(PV.cv);
@@ -5193,6 +5468,11 @@ modal.addEventListener("click", e => {
   if (t.dataset.close !== undefined && (t.classList.contains("scrim") || t.classList.contains("x"))){ closePanel(); closeArise(); return; }
   if (t.dataset.tab){ panelTab = t.dataset.tab; panelEnter = true; SFX.ui(); renderPanel(); return; }
   if (t.dataset.pick){ shadowSel = t.dataset.pick; SFX.ui(); renderPanel(); return; }
+  const ringEl = e.target.closest("[data-mring]");
+  if (ringEl){ mapSel = +ringEl.dataset.mring; mapTab = "Regions"; SFX.ui(); renderPanel(); return; }
+  if (t.dataset.maptab){ mapTab = t.dataset.maptab; SFX.ui(); renderPanel(); return; }
+  if (t.dataset.mobkind){ mobKind = t.dataset.mobkind; SFX.ui(); renderPanel(); return; }
+  if (t.dataset.beast){ beastSel = t.dataset.beast; SFX.ui(); renderPanel(); return; }
   if (t.dataset.wpick){ shopSel = t.dataset.wpick; SFX.ui(); renderPanel(); return; }
   if (t.dataset.sfilter){ shadowFilter = t.dataset.sfilter; SFX.ui(); renderPanel(); return; }
   if (t.dataset.ssort){ shadowSort = t.dataset.ssort; SFX.ui(); renderPanel(); return; }
