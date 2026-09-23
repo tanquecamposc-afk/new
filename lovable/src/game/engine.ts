@@ -405,8 +405,14 @@ function spawnEnemy(def, x, y){
     x: x ?? clamp(player.x + Math.cos(a)*dist, 80, CFG.WORLD.w-80),
     y: y ?? clamp(player.y + Math.sin(a)*dist, 80, CFG.WORLD.h-80),
     hp:d.hp, maxHp:d.hp, atkCd:rnd(.6,1.8), hurt:0, step:rnd(0,6), stun:0,
-    boss:!!d.boss, phase:1, telegraph:null, moveCd:0,
+    boss:!!d.boss, phase:1, telegraph:null, moveCd:0, born:now(),
   };
+  // Élite: uno de cada diez enemigos normales sale más grande, con aura
+  // dorada, el triple de vida y el triple de botín.
+  if (!e.boss && !def && Math.random() < 0.1){
+    e.elite = true; e.hp = e.maxHp = d.hp * 3; e.dmgMult = 1.5;
+    e.name = `★ ${d.name}`; e.level = d.lvl + 2;
+  }
   enemies.push(e);
   return e;
 }
@@ -434,8 +440,10 @@ function killEnemy(e){
   enemies = enemies.filter(x => x !== e);
   if (target === e) target = null;
   P.kills++;
-  gainXP(FORMULA.expReward(e.level, P.rebirths));
-  const cash = Math.max(1, Math.floor(e.level * 12 * (1 + P.rebirths * 0.3) * (dungeon?.runes?.Cash ? 1.1 : 1)));
+  const loot = e.elite ? 3 : 1;
+  gainXP(FORMULA.expReward(e.level, P.rebirths) * loot);
+  const cash = Math.max(1, Math.floor(e.level * 12 * loot * (1 + P.rebirths * 0.3) * (dungeon?.runes?.Cash ? 1.1 : 1)));
+  if (e.elite){ P.gems += 5; note(`Élite derrotado · +${fmt(cash)} oro · +5 gemas`, "--gold"); ring(e.x, e.y, 170, "#ffd24a", .6); }
   P.cash += cash;
   burst(e.x, e.y, 22, e.def.color || "#ffd9a8", 40);
   ring(e.x, e.y, 120, "#8fd0ff", .5);
@@ -1040,6 +1048,7 @@ const SFX = {
     this.tone(crit ? 330 : 210, .07, "square", crit ? .2 : .12, crit ? 150 : 110);
   },
   kill(){ if (this.throttle("kill", 90)) this.arp([440, 330, 220], .045, "sawtooth", .18); },
+  thunder(){ this.noise(1.3, .32, 120, .6); this.tone(55, 1.1, "sine", .2, 30); },
   hurt(){ if (this.throttle("hurt", 220)) { this.noise(.16, .3, 320, .9); this.tone(180, .16, "sawtooth", .16, 90); } },
   arise(){ this.arp([392, 523, 659, 880], .07, "triangle", .3); },
   ariseFail(){ this.tone(200, .22, "square", .16, 90); },
@@ -1128,6 +1137,22 @@ function banner(text, color){
   el.innerHTML = `<div class="banner stroke" style="color:${color}">${text}</div>`;
   clearTimeout(banner._t);
   banner._t = setTimeout(() => { el.innerHTML = ""; }, 1900);
+}
+// Contadores del HUD que ruedan hasta su valor y dan un saltito al subir.
+const rollShown = {};
+function rollCounter(id, value){
+  const el = $(id); if (!el) return;
+  let v = rollShown[id];
+  if (v === undefined || !isFinite(v)) v = value;
+  const up = value > v + .5;
+  v = Math.abs(value - v) < Math.max(1, Math.abs(value) * .004) ? value : v + (value - v) * .45;
+  rollShown[id] = v;
+  el.textContent = fmt(Math.round(v));
+  if (up && !el.classList.contains("bump")){
+    el.classList.add("bump");
+    setTimeout(() => el.classList.remove("bump"), 460);
+  }
+  if (v !== value) dirty = true;
 }
 function note(text, colorVar){
   const lane = document.getElementById("lane");
@@ -1467,7 +1492,7 @@ function update(dt){
         const dentro = tg.kind === "wave"
           ? dist > tg.r * 0.45 && dist < tg.r
           : dist < tg.r;
-        if (dentro && player.h < 60) hitPlayer(e.def.dmg * (tg.mult || 2.2));
+        if (dentro && player.h < 60) hitPlayer(e.def.dmg * (e.dmgMult || 1) * (tg.mult || 2.2));
         ring(tg.x, tg.y, tg.r, "#ff4d61", .5);
         burst(tg.x, tg.y, tg.kind === "wave" ? 40 : 26, "#ff8a5c", 20);
         camImpulse(tg.kind === "wave" ? 0.8 : 0.5);
@@ -1486,7 +1511,7 @@ function update(dt){
         startBossAttack(e);
       } else {
         e.atkCd = 1.35;
-        if (d <= stop + 26 && player.h < 50) hitPlayer(e.def.dmg);
+        if (d <= stop + 26 && player.h < 50) hitPlayer(e.def.dmg * (e.dmgMult || 1));
       }
     }
   }
@@ -1658,7 +1683,7 @@ function applyQuality(){
   QUALITY.shadows = q >= 3;
   QUALITY.grass = q >= 2;
   QUALITY.props = q >= 3 ? 1 : q === 2 ? 0.6 : 0.35;
-  QUALITY.motes = q >= 3;
+  QUALITY.motes = q >= 2;
   QUALITY.charDetail = q >= 3 ? 900 : q === 2 ? 560 : 340;
   QUALITY.maxChars = q >= 3 ? 26 : q === 2 ? 18 : 12;
   QUALITY.pixel = q >= 3 ? 1.5 : q === 2 ? 1.2 : 1;
@@ -1829,19 +1854,23 @@ function addFeatures(detail, cfg, s, opts){
         sp.rotation.set(Math.sin(a) * .6, 0, -Math.cos(a) * .6);
         detail.add(sp);
       }
-    } else if (f === "wings"){                           // alas membranosas
+    } else if (f === "wings"){                           // alas membranosas que baten
+      detail.userData.wings = [];
       for (const side of [-1, 1]){
+        const pivot = new THREE.Group();
+        pivot.position.set(side * 12 * s, 52 * s, -8 * s); pivot.userData.side = side;
         const w1 = P0(26, 34, 3, dark, { ...opts, opacity:(opts.opacity ?? 1) * .92 });
-        w1.position.set(side * 24 * s, 50 * s, -10 * s);
+        w1.position.set(side * 12 * s, -2 * s, -2 * s);
         w1.rotation.set(.2, side * -.5, side * -.35);
-        detail.add(w1);
+        pivot.add(w1);
         const w2 = P0(18, 22, 3, dark, { ...opts, opacity:(opts.opacity ?? 1) * .85 });
-        w2.position.set(side * 40 * s, 62 * s, -16 * s);
+        w2.position.set(side * 28 * s, 10 * s, -8 * s);
         w2.rotation.set(.2, side * -.7, side * -.6);
-        detail.add(w2);
+        pivot.add(w2);
         const bone = P0(3, 34, 3, glow, G(glow));
-        bone.position.set(side * 22 * s, 52 * s, -9 * s);
-        bone.rotation.z = side * -.35; detail.add(bone);
+        bone.position.set(side * 10 * s, 0, -1 * s);
+        bone.rotation.z = side * -.35; pivot.add(bone);
+        detail.add(pivot); detail.userData.wings.push(pivot);
       }
     } else if (f === "crystals"){                        // cristales en la espalda
       let i = 0;
@@ -1869,22 +1898,27 @@ function addFeatures(detail, cfg, s, opts){
         const e = P0(3, 3, 2, glow, G(glow));
         e.position.set(dx * s, dy * s, 9.5 * s); detail.add(e);
       }
-    } else if (f === "tail"){                            // cola segmentada
-      let z = -12, w = 8;
+    } else if (f === "tail"){                            // cola segmentada que se mece
+      const pivot = new THREE.Group(); pivot.position.set(0, 30 * s, -12 * s);
+      let z = 0, w = 8;
       for (let i = 0; i < 4; i++){
         const seg = P0(w, w, 10, dark);
-        seg.position.set(0, (30 - i * 2) * s, z * s); detail.add(seg);
+        seg.position.set(0, -i * 2 * s, z * s); pivot.add(seg);
         z -= 9; w -= 1.2;
       }
       const tip = P0(4, 10, 4, glow, G(glow));
-      tip.position.set(0, 24 * s, (z + 2) * s); tip.rotation.x = .6; detail.add(tip);
-    } else if (f === "halo"){                            // anillo flotante
+      tip.position.set(0, -6 * s, (z + 2) * s); tip.rotation.x = .6; pivot.add(tip);
+      detail.add(pivot); detail.userData.tail = pivot;
+    } else if (f === "halo"){                            // anillo flotante que gira
+      const ring = new THREE.Group(); ring.position.y = 86 * s; ring.userData.y0 = 86 * s;
       for (let i = 0; i < 8; i++){
         const a = (i / 8) * Math.PI * 2;
         const seg = P0(5, 2.5, 5, glow, G(glow));
-        seg.position.set(Math.cos(a) * 13 * s, 86 * s, Math.sin(a) * 13 * s);
-        detail.add(seg);
+        seg.position.set(Math.cos(a) * 13 * s, 0, Math.sin(a) * 13 * s);
+        seg.rotation.y = -a;
+        ring.add(seg);
       }
+      detail.add(ring); detail.userData.halo = ring;
     }
   }
 }
@@ -2355,17 +2389,67 @@ function buildCharacter(cfg){
 }
 // Anima un personaje: paso, brazos, golpe, rebote y giro.
 function poseCharacter(v, o){
-  const s = v.scaleRef;
-  const walk = o.moving ? Math.sin(o.step) : Math.sin(o.step * .5) * .12;
-  const atk = o.attack || 0;
-  v.legs[0].rotation.x = walk * .62;
-  v.legs[1].rotation.x = -walk * .62;
-  v.arms[0].rotation.x = -walk * .55;
-  v.arms[1].rotation.x = atk > 0 ? (-2.1 + (1 - atk) * .7) : walk * .55;
-  const bob = o.moving ? Math.abs(Math.sin(o.step)) * 1.6 * s : Math.sin(o.step * .5) * .6 * s;
+  const s = v.scaleRef, t = now();
+  const U = v.userData.pose || (v.userData.pose = { lean:0, twist:0, sway:0, seed:Math.random() * 6.28 });
+  const mv = o.moving ? 1 : 0;
+  const walk = Math.sin(o.step);
+  const breathe = Math.sin(t * 2.1 + U.seed);
+  const atk = o.attack || 0, hurt = o.hurt || 0, air = o.air ? 1 : 0, dash = o.dash ? 1 : 0;
+  // piernas: zancada al andar, recogidas en el aire
+  if (air){
+    v.legs[0].rotation.x += (-.75 - v.legs[0].rotation.x) * .3;
+    v.legs[1].rotation.x += (.4 - v.legs[1].rotation.x) * .3;
+  } else {
+    const stride = mv ? walk * (.62 + dash * .3) : Math.sin(o.step * .5) * .06;
+    v.legs[0].rotation.x = stride; v.legs[1].rotation.x = -stride;
+  }
+  // brazos: contrabalanceo, un poco abiertos y respirando en reposo
+  const armOpen = mv ? .1 : .07 + breathe * .025;
+  v.arms[0].rotation.z = -armOpen; v.arms[1].rotation.z = armOpen;
+  v.arms[0].rotation.x = air ? -1.1 : dash ? .9 : -walk * .55 * mv + (mv ? 0 : breathe * .04);
+  let twistT = 0;
+  if (o.swing > 0){
+    // golpe del jugador en tres tiempos: carga, tajo y recogida
+    const dir = o.swingDir || 1, w = o.swing;
+    if (w < .35){ const k = w / .35;  v.arms[1].rotation.x = -1.1 - 1.5 * k; twistT = .5 * k * dir; }
+    else if (w < .75){ const k = (w - .35) / .4; v.arms[1].rotation.x = -2.6 + 2.4 * k; twistT = (.5 - 1.15 * k) * dir; }
+    else { const k = (w - .75) / .25; v.arms[1].rotation.x = -.2 - .3 * (1 - k); twistT = -.65 * (1 - k) * dir; }
+    v.arms[0].rotation.x = -.5 - twistT * .6 * dir;
+  } else if (atk > 0){
+    v.arms[1].rotation.x = -2.1 + (1 - atk) * .7;
+    twistT = atk * .25;
+  } else {
+    v.arms[1].rotation.x = air ? -1.1 : dash ? .9 : walk * .55 * mv + (mv ? 0 : -breathe * .04);
+  }
+  // cuerpo entero: se inclina al correr y al hacer dash, se echa atrás al encajar
+  const leanT = mv * .12 + dash * .32 - hurt * .35 + (atk > 0 && !o.swing ? .12 : 0);
+  U.lean += (leanT - U.lean) * .25;
+  U.twist += (twistT - U.twist) * .45;
+  U.sway += ((mv ? walk * .05 : 0) - U.sway) * .3;
+  if (v.detail){
+    v.detail.rotation.x = U.lean;
+    v.detail.rotation.y = U.twist;
+    v.detail.rotation.z = U.sway;
+    v.detail.position.y = v.float ? (Math.sin(t * 2.4 + U.seed) * 3 + 2) * s : 0;
+  }
+  const bob = o.moving ? Math.abs(Math.sin(o.step)) * 1.8 * s : breathe * .5 * s;
   v.torso.position.y = (41 * s) + bob;
+  v.torso.scale.y = 1 + (mv ? 0 : breathe * .018);
   v.neck.position.y = (56 * s) + bob;
-  if (v.cape) v.cape.rotation.x = -.08 + (o.moving ? Math.sin(o.step * 1.2) * .12 : Math.sin(now() * 1.5) * .04);
+  v.neck.rotation.x = -U.lean * .5 + (mv ? 0 : Math.sin(t * .7 + U.seed) * .04);
+  v.neck.rotation.y = -U.twist * .4 + (mv ? 0 : Math.sin(t * .45 + U.seed) * .12);
+  const F = v.detail && v.detail.userData;
+  if (F){
+    if (F.wings) for (const w of F.wings){
+      const flap = Math.sin(t * (mv ? 9 : 4.5) + U.seed);
+      w.rotation.y = w.userData.side * (flap * .45 - .1);
+      w.rotation.z = w.userData.side * flap * .12;
+    }
+    if (F.tail){ F.tail.rotation.y = Math.sin(t * (mv ? 6 : 2.6) + U.seed) * .45; F.tail.rotation.x = Math.sin(t * 1.7) * .1; }
+    if (F.halo){ F.halo.rotation.y = t * 1.4; F.halo.position.y = F.halo.userData.y0 + Math.sin(t * 2 + U.seed) * 2.5 * s; }
+  }
+  if (v.cape) v.cape.rotation.x = -.08 - U.lean * .8 - dash * .5
+    + (o.moving ? Math.sin(o.step * 1.2) * .12 : Math.sin(t * 1.5) * .04);
 }
 
 /* ------------------------------ escena ----------------------------------- */
@@ -2415,6 +2499,52 @@ function updateCameraBasis(){
   camFwd.x = -Math.sin(CAM.yaw); camFwd.z = -Math.cos(CAM.yaw);
   camRight.x = Math.cos(CAM.yaw); camRight.z = -Math.sin(CAM.yaw);
 }
+/* Detalle pintado en la loseta de suelo según el bioma: matas de hierba,
+   grietas de hielo, vetas de lava, losas de templo, circuitos de neón... */
+function groundDetail(x, th){
+  const R = Math.random, kind = th.prop;
+  const blobs = (n, col, r0, r1, a) => { x.globalAlpha = a; x.fillStyle = col;
+    for (let i = 0; i < n; i++){ x.beginPath(); x.arc(R()*256, R()*256, r0 + R()*(r1-r0), 0, 6.3); x.fill(); } };
+  const cracks = (n, col, w, a) => { x.globalAlpha = a; x.strokeStyle = col; x.lineWidth = w;
+    for (let i = 0; i < n; i++){ let px = R()*256, py = R()*256; x.beginPath(); x.moveTo(px, py);
+      for (let k = 0; k < 5; k++){ px += (R()-.5)*50; py += (R()-.5)*50; x.lineTo(px, py); } x.stroke(); } };
+  const tufts = (n, col, a) => { x.globalAlpha = a; x.fillStyle = col;
+    for (let i = 0; i < n; i++){ const px = R()*256, py = R()*256;
+      for (let k = -1; k <= 1; k++) x.fillRect(px + k*3, py - 4 - Math.abs(k)*-2, 2, 6 - Math.abs(k)*2); } };
+  if (kind === "forest" || kind === "royal" || kind === "shrine" || kind === "city" || kind === "guild"){
+    blobs(18, "rgba(0,0,0,1)", 10, 26, .06);
+    blobs(14, "rgba(255,255,160,1)", 8, 20, .07);
+    tufts(70, "#2c6e2c", .45);
+    if (kind === "royal" || kind === "shrine") blobs(26, kind === "shrine" ? "#ff9fbf" : "#fff3a0", 1.5, 3, .9);
+  } else if (kind === "ice"){
+    blobs(12, "#a8d8f5", 12, 30, .25);
+    cracks(10, "#8cc4ea", 1.5, .6);
+    blobs(40, "#ffffff", 1, 2.2, .95);
+  } else if (kind === "volcano" || kind === "dragon"){
+    blobs(16, "#000000", 10, 24, .18);
+    cracks(kind === "volcano" ? 12 : 6, "#ff6a2a", 2.6, .85);
+    cracks(kind === "volcano" ? 12 : 6, "#ffd27a", 1, .7);
+  } else if (kind === "dark" || kind === "mystic" || kind === "dungeon"){
+    blobs(20, "#000000", 10, 30, .16);
+    tufts(40, kind === "dark" ? "#243324" : "#2a2250", .6);
+    blobs(18, kind === "dark" ? "#9fb0ff" : "#c9a8ff", 1.2, 2.4, .8);
+    if (kind !== "dark"){ x.globalAlpha = .35; x.strokeStyle = "#b08cff"; x.lineWidth = 1.5;
+      for (let i = 0; i < 3; i++){ x.beginPath(); x.arc(R()*256, R()*256, 10 + R()*10, 0, 6.3); x.stroke(); } }
+  } else if (kind === "storm"){
+    blobs(22, "#2a3848", 8, 22, .25);
+    blobs(10, "#9fb4c8", 6, 14, .3);
+    cracks(5, "#3a4858", 1.5, .5);
+  } else if (kind === "cyber"){
+    x.globalAlpha = .55; x.strokeStyle = "#6ef0ff"; x.lineWidth = 1.5;
+    for (let i = 0; i < 6; i++){ let px = Math.floor(R()*8)*32, py = Math.floor(R()*8)*32;
+      x.beginPath(); x.moveTo(px, py); px += 32 * (R() < .5 ? 1 : -1); x.lineTo(px, py); py += 32; x.lineTo(px, py); x.stroke();
+      x.fillStyle = "#ff5ad8"; x.fillRect(px - 2, py - 2, 4, 4); }
+  } else if (kind === "urban"){
+    blobs(14, "#5a6272", 6, 18, .3);
+    cracks(6, "#4a5262", 1.2, .5);
+  }
+  x.globalAlpha = 1;
+}
 function groundTexture(th){
   const c = document.createElement("canvas");
   c.width = c.height = 256;
@@ -2436,8 +2566,10 @@ function groundTexture(th){
     x.fillRect(0, 100, 256, 2); x.fillRect(0, 154, 256, 2);
     x.fillRect(100, 0, 2, 256); x.fillRect(154, 0, 2, 256);
   }
+  groundDetail(x, th);
   x.globalAlpha = .14; x.fillStyle = "#ffffff";
   for (let i = 0; i < 220; i++) x.fillRect(Math.random()*256, Math.random()*256, 3, 3);
+  x.globalAlpha = 1;
   const t = new THREE.CanvasTexture(c);
   t.wrapS = t.wrapT = THREE.RepeatWrapping;
   t.repeat.set(th.road ? 14 : 26, th.road ? 14 : 26);
@@ -2525,16 +2657,16 @@ function initScene(){
   water.position.y = -46;
   scene.add(water); scene.userData.water = water;
 
-  // motas ambientales flotando
+  // clima de cada bioma: nieve, ascuas, luciérnagas, pétalos, lluvia...
+  const MOTES_N = 260;
   const moteGeo = new THREE.BufferGeometry();
-  const mp = new Float32Array(160 * 3);
-  for (let i = 0; i < 160; i++){
-    mp[i*3] = rnd(-900, 900); mp[i*3+1] = rnd(20, 420); mp[i*3+2] = rnd(-900, 900);
-  }
+  const mp = new Float32Array(MOTES_N * 3);
   moteGeo.setAttribute("position", new THREE.BufferAttribute(mp, 3));
   const motes = new THREE.Points(moteGeo, new THREE.PointsMaterial({
-    color:0xffffff, size:4.5, transparent:true, opacity:.45, depthWrite:false }));
+    color:0xffffff, size:6, map: dotTexture(), transparent:true, opacity:.8, depthWrite:false, alphaTest:.02 }));
   motes.frustumCulled = false;
+  motes.userData.seeds = Array.from({ length:MOTES_N }, () => ({
+    x:rnd(-900, 900), z:rnd(-900, 900), y:rnd(0, 520), ph:rnd(0, 6.28), sp:rnd(.6, 1.4) }));
   scene.add(motes); scene.userData.motes = motes;
 
   // hierba/roquitas instanciadas alrededor del jugador
@@ -3259,13 +3391,13 @@ function enemyConfig(e){
   // lejos sin cambiarles el color
   const features = (reg.features || []).slice();
   if (brute && !features.includes("carapace")) features.push("carapace");
-  if (boss){
+  if (boss || e.elite){
     if (!features.includes("halo")) features.push("halo");
     if (!features.includes("crystals")) features.push("crystals");
   }
   const cfg = {
     body, features,
-    scale: (e.def.r / 18) * (boss ? 1.75 : brute ? 1.25 : (L.height || 1)),
+    scale: (e.def.r / 18) * (boss ? 1.75 : brute ? 1.25 : (L.height || 1)) * (e.elite ? 1.2 : 1),
     skin: brute ? reg.dark : reg.skin,
     pants: reg.dark, eyes: glow, hair: reg.hair || reg.dark,
     horns: brute || boss, hornColor: glow,
@@ -3329,7 +3461,7 @@ function disposeView(v){
     }
   });
 }
-function syncGroup(list, map, buildCfg, keyOf){
+function syncGroup(list, map, buildCfg, keyOf, onRemove){
   const alive = new Set();
   for (const item of list){
     const key = keyOf(item);
@@ -3343,8 +3475,44 @@ function syncGroup(list, map, buildCfg, keyOf){
     item.__view = v;
   }
   for (const [key, v] of map){
-    if (!alive.has(key)){ scene.remove(v); disposeView(v); map.delete(key); }
+    if (!alive.has(key)){
+      map.delete(key);
+      if (onRemove && onRemove(v)) continue;
+      scene.remove(v); disposeView(v);
+    }
   }
+}
+// Vistas de enemigos que acaban de morir: caen de espaldas, se hunden y se
+// deshacen en humo antes de liberarse.
+let dyingViews = [];
+function startDeath(v){
+  if (dyingViews.length > 12) return false;
+  if (v.hud) v.hud.visible = false;
+  if (v.userData.flash) v.userData.flash.visible = false;
+  if (v.userData.aura) v.userData.aura.visible = false;
+  v.userData.dieT = 0;
+  v.userData.dieSide = Math.random() < .5 ? -1 : 1;
+  dyingViews.push(v);
+  return true;
+}
+function syncDying(dt){
+  const keep = [];
+  for (const v of dyingViews){
+    const u = v.userData;
+    u.dieT += dt;
+    const k = clamp(u.dieT / .75, 0, 1), e = 1 - Math.pow(1 - Math.min(1, k * 1.6), 3);
+    if (v.detail){ v.detail.rotation.x = -e * 1.35; v.detail.rotation.z = u.dieSide * e * .25; }
+    const sc = 1 - Math.max(0, k - .45) / .55;
+    v.scale.set(sc, sc, sc);
+    v.position.y -= dt * 30 * k;
+    if (Math.random() < .5){
+      const a = Math.random() * 6.28, r = 16 * (v.scaleRef || 1);
+      parts.push({ x:v.position.x + Math.cos(a) * r, y:v.position.z + Math.sin(a) * r, h:rnd(6, 40),
+                   vx:0, vy:0, vh:rnd(40, 110), life:rnd(.4, .8), color:"#2a1d3d", size:4 });
+    }
+    if (k >= 1){ scene.remove(v); disposeView(v); } else keep.push(v);
+  }
+  dyingViews = keep;
 }
 // ---- cadáveres ----
 function buildCorpse(){
@@ -3453,16 +3621,25 @@ function healthBar(){
   bg.scale.set(80, 11, 1);
   const fill = new THREE.Sprite(new THREE.SpriteMaterial({ color:0xff4d61, depthTest:false }));
   fill.scale.set(76, 7, 1);
-  g.add(bg, fill);
-  g.fill = fill;
+  // estela blanca que baja detrás de la vida: se ve cuánto se acaba de quitar
+  const chip = new THREE.Sprite(new THREE.SpriteMaterial({ color:0xfff1d0, depthTest:false }));
+  chip.scale.set(76, 7, 1);
+  g.add(bg, chip, fill);
+  g.fill = fill; g.chipPct = 1;
   g.setPct = (pct, color) => {
-    const w = 76 * clamp(pct, 0, 1);
+    const p = clamp(pct, 0, 1), w = 76 * p;
     fill.scale.set(Math.max(0.001, w), 7, 1);
     fill.position.x = -(76 - w) / 2;
     fill.material.color.set(color);
+    g.chipPct = g.chipPct < p ? p : g.chipPct + (p - g.chipPct) * .06;
+    const cw = 76 * g.chipPct;
+    chip.scale.set(Math.max(0.001, cw), 7, 1);
+    chip.position.x = -(76 - cw) / 2;
   };
   return g;
 }
+let AURA_GEO_ = null;
+const auraGeo = () => AURA_GEO_ || (SHARED.add(AURA_GEO_ = new THREE.RingGeometry(26, 40, 32, 1, 0, Math.PI * 1.7)), AURA_GEO_);
 // Contorno cel: cada pieza lleva dentro una copia invertida algo mayor.
 function addOutline(view, color, scale){
   if (view.userData.outline) return;
@@ -3507,6 +3684,15 @@ function updateCamera(dt){
   sunLight.target.position.set(tx, 0, tz);
   sunLight.target.updateMatrixWorld();
 }
+// Avance continuo del golpe del jugador (0..1) para animar carga, tajo y recogida.
+function playerSwing(){
+  const d = player.atkDef;
+  if (!d || player.phase === "idle") return 0;
+  const f = (T, dur) => clamp(1 - T / Math.max(dur || .1, .001), 0, 1);
+  if (player.phase === "startup") return .02 + f(player.phaseT, d.startup) * .33;
+  if (player.phase === "active") return .35 + f(player.phaseT, d.active) * .4;
+  return .75 + f(player.phaseT, d.recovery) * .25;
+}
 function poseEntity(v, x, z, yaw, o){
   v.position.set(x, terrainH(x, z) + (o.lift || 0), z);
   v.rotation.y = yaw;
@@ -3534,13 +3720,15 @@ function render(dt){
   pv.tag.rotation.y = -player.yaw;
   poseEntity(pv, player.x, player.y, player.yaw, {
     step:player.step, moving:(player.moveAmt || 0) > .05,
-    attack: player.phase === "startup" ? .35 : player.phase === "active" ? 1 : 0,
-    lift: player.h,
+    swing: playerSwing(), swingDir: (player.combo % 2) ? -1 : 1,
+    lift: player.h, air: player.h > 3, dash: player.dashT > 0,
+    hurt: clamp(player.hurt / 0.22, 0, 1),
   });
   pv.visible = player.dead <= 0 || Math.sin(now() * 20) > 0;
 
   // enemigos + barra de vida y nombre
-  syncGroup(enemies, views.enemies, enemyConfig, e => e.guid);
+  syncGroup(enemies, views.enemies, enemyConfig, e => e.guid, startDeath);
+  syncDying(dt);
   const lodSorted = enemies.map(e => ({ e, d: Math.hypot(e.x - player.x, e.y - player.y) }))
                            .sort((a, b) => a.d - b.d);
   lodSorted.forEach((row, idx) => {
@@ -3555,8 +3743,22 @@ function render(dt){
       v.userData.cast = closeEnough;
       v.traverse(o => { if (o.isMesh) o.castShadow = closeEnough; });
     }
-    poseEntity(v, e.x, e.y, e.yaw || 0, { step:e.step, moving:true, attack: e.telegraph ? .6 : 0 });
+    poseEntity(v, e.x, e.y, e.yaw || 0, { step:e.step, moving:!e.stun, attack: e.telegraph ? .6 : 0,
+      hurt: clamp(e.hurt / 0.14, 0, 1) });
     if (e.boss && !v.userData.outline) addOutline(v, 0x1a0e18, 1.06);
+    if (e.elite && !v.userData.outline) addOutline(v, 0x6a4a08, 1.07);
+    // aura en el suelo: dorada para élites y jefes
+    if ((e.elite || e.boss) && !v.userData.aura){
+      const au = new THREE.Mesh(auraGeo(), new THREE.MeshBasicMaterial({ color: e.boss ? 0xff5d6c : 0xffd24a,
+        transparent:true, opacity:.5, depthWrite:false, blending:THREE.AdditiveBlending, side:THREE.DoubleSide }));
+      au.rotation.x = -Math.PI / 2; au.position.y = 2; au.scale.setScalar((v.scaleRef || 1) * (e.boss ? 1.4 : 1));
+      v.add(au); v.userData.aura = au;
+    }
+    if (v.userData.aura){
+      const au = v.userData.aura;
+      au.rotation.z = now() * 1.6;
+      au.material.opacity = .35 + Math.sin(now() * 4) * .15;
+    }
     if (!v.hud){
       const hud = new THREE.Group();
       const bar = healthBar();
@@ -3587,11 +3789,32 @@ function render(dt){
       f.scale.set(sc, sc, 1); f.position.y = 42 * (v.scaleRef || 1);
       f.visible = false; v.add(f); v.userData.flash = f;
     }
+    // resplandor de los ojos: se lee de lejos quién te está mirando
+    if (!v.userData.eyeGlow && v.neck){
+      const L = MOB_LOOK[(e.isle || regionAt(e.x, e.y).id)] || MOB_LOOK.Seoul;
+      const eg = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTexture(L.glow || "#ffd24a"), transparent:true,
+        depthWrite:false, blending:THREE.AdditiveBlending, opacity:.7 }));
+      const sc = (v.scaleRef || 1);
+      eg.scale.set(34 * sc, 22 * sc, 1); eg.position.set(0, 8 * sc, 11 * sc);
+      v.neck.add(eg); v.userData.eyeGlow = eg;
+    }
+    if (v.userData.eyeGlow){
+      v.userData.eyeGlow.visible = !e.__lodFar;
+      v.userData.eyeGlow.material.opacity = (e.telegraph ? 1 : .55) + Math.sin(now() * 5 + e.step) * .15;
+    }
     const hurtK = clamp(e.hurt / 0.14, 0, 1);
     v.userData.flash.visible = hurtK > 0;
     v.userData.flash.material.opacity = hurtK * .9;
     const pop = 1 + hurtK * .07;                          // pequeño aplastamiento al encajar
-    v.scale.set(pop, 2 - pop, pop);
+    // aparición: brota del suelo con un rebote en el primer medio segundo
+    const age = now() - (e.born || 0);
+    let grow = 1;
+    if (age < .5){
+      const k = clamp(age / .5, 0, 1);
+      grow = 1 + Math.sin(k * Math.PI) * .18 - (1 - k) * (1 - k) * .9;
+      if (!v.userData.spawnFx){ v.userData.spawnFx = true; ring(e.x, e.y, 70 * (v.scaleRef || 1), e.elite ? "#ffd24a" : "#b07cff", .5); burst(e.x, e.y, 10, "#3a2a55", 6); }
+    }
+    v.scale.set(pop * grow, (2 - pop) * grow, pop * grow);
   }
   // sombras
   syncGroup(shadows, views.shadows, shadowConfig, sh => sh.uuid);
@@ -3750,10 +3973,7 @@ function render(dt){
     blades.material.color.set(th2.g2);
     blades.visible = QUALITY.grass && !dungeon && th2.amp > 4 && !th2.road;
   }
-  if (scene.userData.motes && QUALITY.motes){
-    scene.userData.motes.position.set(player.x, 0, player.y);
-    scene.userData.motes.rotation.y += dt * .04;
-  }
+  if (scene.userData.motes) syncWeather(dt);
   if (scene.userData.water){
     scene.userData.water.position.set(player.x, -46 + Math.sin(now() * .6) * 3, player.y);
     scene.userData.water.material.color.set(themeNow().fog);
@@ -3783,6 +4003,85 @@ function render(dt){
   }
 
   renderer.render(scene, camera);
+}
+/* Clima por bioma. Cada partícula vive en una caja de 1800 alrededor del
+   jugador y se recicla por el lado contrario al salir, así el efecto nunca se
+   acaba ni cuesta más con el mundo. */
+const WEATHER = {
+  city:    { kind:"dust",    color:"#fff6d8", size:4,  n:90,  add:false },
+  guild:   { kind:"dust",    color:"#fff6d8", size:4,  n:90,  add:false },
+  urban:   { kind:"dust",    color:"#d8dde8", size:4,  n:120, add:false },
+  forest:  { kind:"firefly", color:"#d8ff7a", size:9,  n:150, add:true  },
+  ice:     { kind:"snow",    color:"#ffffff", size:8,  n:260, add:false },
+  royal:   { kind:"petal",   color:"#ffd0e2", size:8,  n:140, add:false },
+  shrine:  { kind:"petal",   color:"#ff9fbf", size:8,  n:200, add:false },
+  dark:    { kind:"wisp",    color:"#9fb0ff", size:10, n:120, add:true  },
+  mystic:  { kind:"wisp",    color:"#c9a8ff", size:10, n:170, add:true  },
+  dragon:  { kind:"ember",   color:"#ffb060", size:7,  n:200, add:true  },
+  volcano: { kind:"ember",   color:"#ff7a3a", size:8,  n:260, add:true  },
+  storm:   { kind:"rain",    color:"#bcd6ff", size:5,  n:260, add:false },
+  cyber:   { kind:"data",    color:"#6ef0ff", size:6,  n:180, add:true  },
+  dungeon: { kind:"wisp",    color:"#ff8ab8", size:9,  n:140, add:true  },
+};
+let weatherKey = null, lightning = 0, lightningT = 8;
+function syncWeather(dt){
+  const m = scene.userData.motes;
+  m.visible = QUALITY.motes;
+  const key = dungeon ? "dungeon" : regionAt(player.x, player.y).theme;
+  const W = WEATHER[key] || WEATHER.city;
+  if (weatherKey !== key){
+    weatherKey = key;
+    m.material.color.set(W.color);
+    m.material.size = W.size;
+    m.material.blending = W.add ? THREE.AdditiveBlending : THREE.NormalBlending;
+    m.material.opacity = W.add ? .95 : .8;
+    m.material.needsUpdate = true;
+  }
+  // relámpagos en la tormenta: la luz del cielo da un latigazo
+  if (key === "storm" && !dungeon){
+    lightningT -= dt;
+    if (lightningT <= 0){ lightning = 1; lightningT = rnd(6, 14); SFX.thunder && SFX.thunder(); }
+  }
+  lightning = Math.max(0, lightning - dt * 3.2);
+  hemiLight.intensity = .42 + lightning * (Math.random() < .5 ? 1.6 : .8);
+  if (!m.visible) return;
+  const pos = m.geometry.attributes.position, t = now();
+  const seeds = m.userData.seeds, n = Math.min(W.n, seeds.length);
+  for (let i = 0; i < seeds.length; i++){
+    const p = seeds[i];
+    if (i >= n){ pos.setXYZ(i, 0, -9999, 0); continue; }
+    switch (W.kind){
+      case "snow":    p.y -= 45 * p.sp * dt; p.x += Math.sin(t * .8 + p.ph) * 18 * dt; break;
+      case "rain":    p.y -= 620 * p.sp * dt; p.x += 60 * dt; break;
+      case "petal":   p.y -= 32 * p.sp * dt; p.x += (Math.sin(t * 1.3 + p.ph) * 40 + 20) * dt; p.z += Math.cos(t + p.ph) * 20 * dt; break;
+      case "ember":   p.y += 70 * p.sp * dt; p.x += Math.sin(t * 2 + p.ph) * 25 * dt; break;
+      case "wisp":    p.y += 14 * p.sp * dt; p.x += Math.sin(t * .6 + p.ph) * 22 * dt; p.z += Math.cos(t * .5 + p.ph) * 22 * dt; break;
+      case "data":    p.y += 55 * p.sp * dt; break;
+      case "firefly": p.y += Math.sin(t * 1.4 + p.ph) * 20 * dt; p.x += Math.cos(t * .9 + p.ph) * 26 * dt; p.z += Math.sin(t * .7 + p.ph) * 26 * dt; break;
+      default:        p.y += Math.sin(t * .5 + p.ph) * 6 * dt; p.x += 8 * dt;
+    }
+    const top = W.kind === "firefly" ? 160 : 520;
+    if (p.y < 0) p.y += top; else if (p.y > top) p.y -= top;
+    // coordenadas del mundo: al andar las atraviesas, y las que quedan atrás
+    // reaparecen delante
+    if (p.x - player.x < -900) p.x += 1800; else if (p.x - player.x > 900) p.x -= 1800;
+    if (p.z - player.y < -900) p.z += 1800; else if (p.z - player.y > 900) p.z -= 1800;
+    const wx = p.x, wz = p.z;
+    const blink = W.kind === "firefly" && Math.sin(t * 3 + p.ph * 5) < -.4;
+    pos.setXYZ(i, wx, blink ? -9999 : terrainH(wx, wz) + p.y + 4, wz);
+  }
+  pos.needsUpdate = true;
+}
+let dotTex = null;
+function dotTexture(){
+  if (dotTex) return dotTex;
+  const cv = document.createElement("canvas"); cv.width = cv.height = 32;
+  const x = cv.getContext("2d");
+  const g = x.createRadialGradient(16, 16, 0, 16, 16, 16);
+  g.addColorStop(0, "rgba(255,255,255,1)"); g.addColorStop(.45, "rgba(255,255,255,.85)"); g.addColorStop(1, "rgba(255,255,255,0)");
+  x.fillStyle = g; x.fillRect(0, 0, 32, 32);
+  dotTex = new THREE.CanvasTexture(cv); SHARED.add(dotTex);
+  return dotTex;
 }
 const telePool = [];
 /* Tajos. Antes el golpe no dejaba rastro: solo se veía el número de daño.
@@ -3891,9 +4190,9 @@ function syncHud(){
   $("title").textContent = P.title;
   $("lvl").textContent = `Nv ${P.level}`;
   $("rebirth").textContent = `Renacer ${P.rebirths}`;
-  $("cash").textContent = fmt(P.cash);
-  $("gems").textContent = fmt(P.gems);
-  $("tickets").textContent = fmt(P.tickets);
+  rollCounter("cash", P.cash);
+  rollCounter("gems", P.gems);
+  rollCounter("tickets", P.tickets);
   $("isle").textContent = dungeon ? `${dungeon.mode.name} · ${dungeon.isle.name}` : regionAt(player.x, player.y).name;
   const nx = dungeon ? null : distanceToNextRegion();
   $("nextRegion").textContent = nx ? `${nx.next.name} a ${Math.round(nx.dist)} m` : "";
@@ -3964,6 +4263,8 @@ function openPanel(kind){
   SFX.ui();
   closeArise(); panelKind = kind;
   panelTab = kind === "items" ? "Relics" : kind === "stats" ? "Stats" : "Weapons";
+  panelEnter = true;
+  if (kind === "shop") shopSel = null;
   renderPanel();
 }
 function closePanel(){ panelKind = null; renderPanel(); }
@@ -4018,10 +4319,21 @@ function panelStats(){
   const rows = Object.keys(STAT_INFO).map(k => `
     <div class="statrow"><span class="k">${k}</span>
       <span class="d"><b>${STAT_INFO[k][0]}</b><br>${STAT_INFO[k][1]}</span>
-      <span class="v">${fmt(s[k])}</span>
-      <button class="plus" data-stat="${k}" ${s.points > 0 ? "" : "disabled"}>+</button></div>`).join("");
+      <span class="v" data-bump="stat-${k}">${fmt(s[k])}</span>
+      <span class="pls">
+        <button class="plus" data-stat="${k}" data-n="1" ${s.points > 0 ? "" : "disabled"} aria-label="+1 ${k}">+</button>
+        <button class="plus sm" data-stat="${k}" data-n="5" ${s.points > 0 ? "" : "disabled"}>+5</button>
+        <button class="plus sm" data-stat="${k}" data-n="max" ${s.points > 0 ? "" : "disabled"}>MAX</button>
+      </span>
+      <i class="sfill" style="width:${Math.min(100, s[k] / Math.max(1, spentPoints() + s.points) * 100)}%"></i></div>`).join("");
+  const need = FORMULA.expRequired(P.level);
+  const hero = `<div class="hero"><div class="pv" data-pv="player" style="--tc:var(${P.awakened ? "--monarch" : "--arise"})"></div>
+    <div class="hmeta"><small>${CLASSES[P.class].name} · Rango ${P.rank}${P.awakened ? " · Despertado" : ""}</small>
+      <b>${P.title}</b><span>Nivel ${P.level}${P.rebirths ? ` · Renacer ${P.rebirths}` : ""}</span>
+      <div class="sbar xp"><small>EXP</small><i style="width:${clamp(P.xp / need * 100, 0, 100)}%"></i><em>${fmt(P.xp)} / ${fmt(need)}</em></div>
+      <div class="pts ${s.points ? "live" : ""}">${s.points} puntos por repartir</div></div></div>`;
   const rebirthCost = 1e6 * Math.pow(10, P.rebirths);
-  return shell(`Atributos · ${s.points} puntos`, nav + `
+  return shell(`Atributos · ${s.points} puntos`, nav + hero + `
     <div class="statgrid">${rows}</div>
     <div class="derived">
       <div class="kv"><small>Daño M1</small><b>${fmt(baseDamage())}</b></div>
@@ -4053,38 +4365,94 @@ function panelStats(){
       <button class="btn violet" id="rebirth-btn" ${P.level>=200 && P.cash>=rebirthCost ? "" : "disabled"}>Renacer</button></div>
     <p class="hint">Fórmulas del contrato V9: <b>EXPRequired(N)=100·N^1.85+N·50</b> · <b>EXPReward=Nivel·25·(1+Renacer·0.25)</b>.</p>`);
 }
+/* Inventario de sombras: rejilla de tarjetas con el color de su rango,
+   filtros, orden y una ficha lateral con la sombra en 3D girando. */
+let shadowFilter = "all", shadowSort = "dmg", shadowSel = null;
+const TIER_ORDER = ["C", "B", "A", "S", "S Elite", "Monarch"];
 function panelShadows(){
-  const list = Object.values(P.shadows).sort((a,b) => shadowDmgOf(b) - shadowDmgOf(a));
-  // merge: 3 copias iguales del mismo nivel -> +1 nivel (regla 08.2)
+  let list = Object.values(P.shadows);
   const counts = {};
   for (const s of list) counts[`${s.id}|${s.level}`] = (counts[`${s.id}|${s.level}`] || 0) + 1;
-  const body = list.length ? list.map(s => {
-    const eq = P.squad.includes(s.uuid), col = `var(${TIER_VAR[s.tier]})`;
-    const can = counts[`${s.id}|${s.level}`] >= FLAGS.MERGE_COPIES;
-    return `<div class="item"><span class="g">${SHADOWS[s.id]?.glyph || "👤"}</span>
-      <span class="meta"><b>${s.name} <span style="opacity:.6">Nv ${s.level}</span></b>
-        <span><span class="tier" style="color:${col}">${s.tier}</span> · daño ${fmt(shadowDmgOf(s))} · vida ${fmt(shadowHPOf(s))}</span></span>
-      ${can ? `<button class="btn green" data-merge="${s.id}|${s.level}">Fusionar ×3</button>` : ""}
-      <button class="btn" data-equip="${s.uuid}">${eq ? "Quitar" : "Equipar"}</button></div>`;
-  }).join("") : `<p class="hint">Sin sombras todavía. Derrota a un enemigo y pulsa <b>B</b> sobre su cuerpo.</p>`;
+  if (shadowFilter === "eq") list = list.filter(s => P.squad.includes(s.uuid));
+  else if (shadowFilter !== "all") list = list.filter(s => s.tier === shadowFilter);
+  const by = { dmg:(a, b) => shadowDmgOf(b) - shadowDmgOf(a), lvl:(a, b) => b.level - a.level || shadowDmgOf(b) - shadowDmgOf(a),
+               tier:(a, b) => TIER_ORDER.indexOf(b.tier) - TIER_ORDER.indexOf(a.tier) || shadowDmgOf(b) - shadowDmgOf(a) };
+  list.sort(by[shadowSort] || by.dmg);
+  if (!P.shadows[shadowSel]) shadowSel = (list[0] || Object.values(P.shadows)[0])?.uuid || null;
+  const tiersHave = TIER_ORDER.filter(t => Object.values(P.shadows).some(s => s.tier === t));
+  const chip = (attr, val, cur, label) => `<button class="chip ${cur === val ? "sel" : ""}" data-${attr}="${val}">${label}</button>`;
+  const filters = `<div class="chips">${chip("sfilter", "all", shadowFilter, "Todas")}${chip("sfilter", "eq", shadowFilter, "Equipadas")}${
+    tiersHave.map(t => chip("sfilter", t, shadowFilter, t)).join("")}<span class="grow"></span>${
+    chip("ssort", "dmg", shadowSort, "Daño")}${chip("ssort", "lvl", shadowSort, "Nivel")}${chip("ssort", "tier", shadowSort, "Rango")}</div>`;
+  const maxDmg = Math.max(1, ...Object.values(P.shadows).map(shadowDmgOf));
+  const cards = list.map((s, i) => {
+    const eq = P.squad.includes(s.uuid), can = counts[`${s.id}|${s.level}`] >= FLAGS.MERGE_COPIES;
+    return `<button class="card ${eq ? "eq" : ""} ${s.uuid === shadowSel ? "sel" : ""}" data-pick="${s.uuid}"
+      style="--tc:var(${TIER_VAR[s.tier]});--i:${i}">
+      <span class="cg">${SHADOWS[s.id]?.glyph || "👤"}</span>
+      <b>${s.name}</b><small>Nv ${s.level} · ${fmt(shadowDmgOf(s))}</small>
+      <i class="ctier">${s.tier}</i>${eq ? `<i class="cbadge">EQ</i>` : ""}${can ? `<i class="cbadge m">×3</i>` : ""}
+      <i class="cbar" style="width:${Math.max(6, shadowDmgOf(s) / maxDmg * 100)}%"></i></button>`;
+  }).join("");
+  const sel = P.shadows[shadowSel];
+  let side = `<div class="pv" data-pv="shadow"></div><p class="hint">Sin sombras todavía. Derrota a un enemigo y pulsa <b>B</b> sobre su cuerpo.</p>`;
+  if (sel){
+    const eq = P.squad.includes(sel.uuid), can = counts[`${sel.id}|${sel.level}`] >= FLAGS.MERGE_COPIES;
+    const maxHp = Math.max(1, ...Object.values(P.shadows).map(shadowHPOf));
+    side = `<div class="pv" data-pv="shadow" style="--tc:var(${TIER_VAR[sel.tier]})"></div>
+      <div class="sheet" style="--tc:var(${TIER_VAR[sel.tier]})">
+        <b class="sname">${sel.name}</b>
+        <span class="tchip">${sel.tier}</span> <span class="lv">Nivel ${sel.level}</span>
+        <div class="sbar"><small>Daño</small><i style="width:${shadowDmgOf(sel) / maxDmg * 100}%"></i><em>${fmt(shadowDmgOf(sel))}</em></div>
+        <div class="sbar hp"><small>Vida</small><i style="width:${shadowHPOf(sel) / maxHp * 100}%"></i><em>${fmt(shadowHPOf(sel))}</em></div>
+        <div class="sact">
+          <button class="btn ${eq ? "" : "green"}" data-equip="${sel.uuid}">${eq ? "Quitar del escuadrón" : "Equipar"}</button>
+          ${can ? `<button class="btn violet" data-merge="${sel.id}|${sel.level}">Fusionar ×3</button>` : ""}
+        </div>
+      </div>`;
+  }
   return shell(`Sombras · ${P.squad.length}/${squadCap()}`, `
-    <div class="list">${body}</div>
-    <p class="hint">Escuadrón lleno: una extracción mejor <b>desequipa automáticamente la sombra de menor daño</b>.
+    <div class="inv"><aside class="inv-side">${side}</aside>
+      <div class="inv-main">${filters}
+        <div class="cards">${cards || `<p class="hint">Ninguna sombra con este filtro.</p>`}</div></div></div>
+    <p class="hint">Arrastra la figura para girarla. Escuadrón lleno: una extracción mejor <b>desequipa automáticamente la sombra de menor daño</b>.
     Tres copias iguales del mismo nivel se fusionan en una de nivel superior.</p>`);
 }
+let shopSel = null;
 function panelShop(){
-  const isle = isleOf(P.island);
-  const items = Object.values(WEAPONS).filter(w => P.islands.includes(w.isle)).map(w => {
-    const owned = (P.weapons[w.id] || 0) > 0, eq = P.weapon === w.id;
-    const copies = P.weapons[w.id] || 0;
-    return `<div class="item"><span class="g">${w.glyph}</span>
-      <span class="meta"><b>${w.name}${copies > 1 ? ` ×${copies}` : ""}</b>
-        <span>${isleOf(w.isle).name} · daño base ${fmt(w.dmg)}</span></span>
-      ${owned ? "" : `<span class="price">${fmt(w.cost)}</span>`}
-      ${copies >= FLAGS.MERGE_COPIES ? `<button class="btn green" data-wmerge="${w.id}">Fusionar ×3</button>` : ""}
-      <button class="btn" data-weapon="${w.id}" ${eq ? "disabled" : ""}>${eq ? "Equipada" : owned ? "Equipar" : "Comprar"}</button></div>`;
+  const cur = WEAPONS[P.weapon];
+  const avail = Object.values(WEAPONS).filter(w => P.islands.includes(w.isle));
+  // al abrir, la ficha muestra la siguiente mejora que aún no tienes
+  if (!avail.some(w => w.id === shopSel))
+    shopSel = (avail.filter(w => !(P.weapons[w.id] > 0) && w.dmg > (cur?.dmg || 0)).sort((x, y) => x.cost - y.cost)[0] || cur || avail[0]).id;
+  const cards = avail.map((w, i) => {
+    const owned = (P.weapons[w.id] || 0) > 0, eq = P.weapon === w.id, copies = P.weapons[w.id] || 0;
+    const delta = cur ? (w.dmg / cur.dmg - 1) * 100 : 0;
+    const dTxt = eq ? "equipada" : `${delta >= 0 ? "+" : ""}${delta >= 1000 ? fmt(delta) : delta.toFixed(0)}%`;
+    return `<button class="card ${eq ? "eq" : ""} ${w.id === shopSel ? "sel" : ""} ${!owned && P.cash < w.cost ? "poor" : ""}" data-wpick="${w.id}"
+      style="--tc:${eq ? "var(--gold)" : delta > 0 ? "var(--cash)" : "var(--line-hi)"};--i:${i}">
+      <span class="cg">${w.glyph}</span><b>${w.name}${copies > 1 ? ` ×${copies}` : ""}</b>
+      <small>${owned ? "en tu arsenal" : fmt(w.cost) + " oro"}</small>
+      <i class="ctier ${delta > 0 && !eq ? "up" : ""}">${dTxt}</i>${eq ? `<i class="cbadge">EQ</i>` : ""}
+      ${copies >= FLAGS.MERGE_COPIES ? `<i class="cbadge m">×3</i>` : ""}</button>`;
   }).join("");
-  return shell("Armería", `<div class="list">${items}</div>
+  const w = WEAPONS[shopSel];
+  const owned = (P.weapons[w.id] || 0) > 0, eq = P.weapon === w.id, copies = P.weapons[w.id] || 0;
+  const maxD = Math.max(...avail.map(a => a.dmg));
+  const side = `<div class="pv" data-pv="weapon" style="--tc:var(--gold)"></div>
+    <div class="sheet" style="--tc:var(--gold)">
+      <b class="sname">${w.glyph} ${w.name}</b>
+      <span class="tchip">${isleOf(w.isle).name}</span>
+      <div class="sbar"><small>Daño</small><i style="width:${Math.max(4, Math.log10(w.dmg + 1) / Math.log10(maxD + 1) * 100)}%"></i><em>${fmt(w.dmg)}</em></div>
+      ${cur && !eq ? `<p class="cmp ${w.dmg >= cur.dmg ? "up" : "down"}">${w.dmg >= cur.dmg ? "▲" : "▼"} ${fmt(Math.abs(w.dmg - cur.dmg))} respecto a ${cur.name}</p>` : ""}
+      <div class="sact">
+        ${copies >= FLAGS.MERGE_COPIES ? `<button class="btn green" data-wmerge="${w.id}">Fusionar ×3</button>` : ""}
+        <button class="btn ${owned ? "" : "gold"}" data-weapon="${w.id}" ${eq || (!owned && P.cash < w.cost) ? "disabled" : ""}>${
+          eq ? "Equipada" : owned ? "Equipar" : `Comprar · ${fmt(w.cost)}`}</button>
+      </div>
+    </div>`;
+  return shell("Armería", `<div class="inv"><aside class="inv-side">${side}</aside>
+    <div class="inv-main"><div class="cards">${cards}</div></div></div>
     <p class="hint">Oro: <b class="price">${fmt(P.cash)}</b>. Tres copias de un arma se fusionan y suben su rango (+25% de daño).
     Las armas se desbloquean al llegar a su isla.</p>`);
 }
@@ -4198,14 +4566,107 @@ function panelHelp(){
     <b>Habilidad V:</b> arco de 70° y radio 190, cuesta 30 de maná.</p>
     <p class="hint"><b>Double Dungeon</b> otorga el Despertar: +60% de suerte de Arise y el sigilo Black Monarch.</p>`);
 }
+let panelEnter = false, bumpPrev = new Map();
 function renderPanel(){
-  if (!panelKind){ modal.hidden = true; modal.innerHTML = ""; return; }
+  if (!panelKind){ modal.hidden = true; modal.innerHTML = ""; bumpPrev.clear(); return; }
+  const scroll = modal.querySelector(".panel")?.scrollTop || 0;
+  const cardScroll = modal.querySelector(".cards")?.scrollTop || 0;
   modal.innerHTML = panelKind === "stats" ? panelStats()
     : panelKind === "shadows" ? panelShadows()
     : panelKind === "shop" ? panelShop()
     : panelKind === "items" ? panelItems()
     : panelKind === "map" ? panelMap() : panelHelp();
   modal.hidden = false;
+  const scrim = modal.querySelector(".scrim");
+  if (panelEnter){ scrim?.classList.add("enter"); panelEnter = false; }
+  else {
+    const pn = modal.querySelector(".panel"); if (pn) pn.scrollTop = scroll;
+    const cs = modal.querySelector(".cards"); if (cs) cs.scrollTop = cardScroll;
+  }
+  // escalonado de entrada de filas y tarjetas
+  modal.querySelectorAll(".item,.kv,.statrow").forEach((el, i) => el.style.setProperty("--i", Math.min(i, 24)));
+  // los números que cambian dan un saltito
+  const next = new Map();
+  modal.querySelectorAll(".kv").forEach(kv => { const k = kv.querySelector("small")?.textContent; if (k) kv.dataset.bump = "kv-" + k; });
+  modal.querySelectorAll("[data-bump]").forEach(el => {
+    const k = el.dataset.bump, v = el.textContent.trim();
+    next.set(k, v);
+    if (bumpPrev.has(k) && bumpPrev.get(k) !== v) el.classList.add("bump");
+  });
+  bumpPrev = next;
+  mountPreview();
+}
+/* Vista 3D de los menús: un segundo renderer pequeño con su propia escena,
+   un pedestal y luz de estudio. El lienzo se reutiliza entre repintados del
+   panel y se puede girar arrastrando. */
+const PV = { r:null, scene:null, cam:null, obj:null, key:null, cv:null, spin:0, drag:null, ped:null };
+function previewInit(){
+  if (PV.r) return true;
+  if (!THREE_OK) return false;
+  try {
+    PV.cv = document.createElement("canvas"); PV.cv.className = "pv-canvas";
+    PV.r = new THREE.WebGLRenderer({ canvas:PV.cv, antialias:true, alpha:true });
+    PV.r.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
+    PV.r.setSize(240, 260, false);
+    PV.scene = new THREE.Scene();
+    PV.scene.add(new THREE.HemisphereLight(0xe6eeff, 0x2a1d44, .75));
+    const key = new THREE.DirectionalLight(0xffffff, .95); key.position.set(90, 170, 140); PV.scene.add(key);
+    const rim = new THREE.DirectionalLight(0x9f7cff, .8); rim.position.set(-140, 90, -160); PV.scene.add(rim);
+    const ped = new THREE.Group();
+    const top = new THREE.Mesh(new THREE.CylinderGeometry(54, 60, 10, 40), new THREE.MeshLambertMaterial({ color:0x1c2656 }));
+    top.position.y = -5; ped.add(top);
+    const glow = new THREE.Mesh(new THREE.RingGeometry(46, 56, 48),
+      new THREE.MeshBasicMaterial({ color:0x2fe4ff, transparent:true, opacity:.7, side:THREE.DoubleSide, blending:THREE.AdditiveBlending, depthWrite:false }));
+    glow.rotation.x = -Math.PI / 2; glow.position.y = .6; ped.add(glow); ped.glow = glow;
+    PV.scene.add(ped); PV.ped = ped;
+    PV.cam = new THREE.PerspectiveCamera(30, 240 / 260, 1, 3000);
+    const move = x => { if (PV.drag === null) return; PV.spin += (x - PV.drag) * .012; PV.drag = x; };
+    PV.cv.addEventListener("pointerdown", e => { PV.drag = e.clientX; PV.cv.setPointerCapture?.(e.pointerId); });
+    PV.cv.addEventListener("pointermove", e => move(e.clientX));
+    const up = () => { PV.drag = null; };
+    PV.cv.addEventListener("pointerup", up); PV.cv.addEventListener("pointercancel", up);
+  } catch (err){ PV.r = null; return false; }
+  return true;
+}
+function previewConfig(kind){
+  if (kind === "shadow"){
+    const d = P.shadows[shadowSel];
+    return d ? { cfg: shadowConfig({ data:d }), key:`sh|${d.id}|${d.tier}` } : null;
+  }
+  if (kind === "weapon"){
+    const w = WEAPONS[shopSel] || WEAPONS[P.weapon];
+    const base = playerConfig();
+    return { cfg:{ ...base, weaponKind: weaponKind(w.id), weapon: base.weaponGlow ? base.weapon : "#e8eefc" }, key:`wp|${base.key}|${weaponKind(w.id)}` };
+  }
+  const c = playerConfig();
+  return { cfg:c, key:`pl|${c.key}` };
+}
+function mountPreview(){
+  const slot = modal.querySelector("[data-pv]");
+  if (!slot || !previewInit()) return;
+  const pc = previewConfig(slot.dataset.pv);
+  if (!pc) return;
+  if (PV.key !== pc.key){
+    if (PV.obj){ PV.scene.remove(PV.obj); disposeView(PV.obj); }
+    PV.obj = buildCharacter(pc.cfg);
+    addOutline(PV.obj, 0x07060d, 1.05);
+    PV.scene.add(PV.obj); PV.key = pc.key;
+    const sc = PV.obj.scaleRef || 1;
+    PV.cam.position.set(0, 64 * sc, 300 * sc);
+    PV.cam.lookAt(0, 38 * sc, 0);
+    PV.ped.scale.setScalar(sc);
+  }
+  const col = getComputedStyle(slot).getPropertyValue("--tc").trim();
+  if (col) try { PV.ped.glow.material.color.set(col); } catch (err){}
+  slot.appendChild(PV.cv);
+}
+function previewTick(dt){
+  if (!PV.r || !PV.obj || !PV.cv.isConnected) return;
+  if (PV.drag === null) PV.spin += dt * .7;
+  PV.obj.rotation.y = PV.spin;
+  poseCharacter(PV.obj, { step: now() * 2, moving:false, attack:0 });
+  PV.ped.glow.material.opacity = .5 + Math.sin(now() * 3) * .2;
+  PV.r.render(PV.scene, PV.cam);
 }
 
 /* ----------------------------- modal ARISE -------------------------------- */
@@ -4248,12 +4709,18 @@ function renderArise(log){
 
 /* ------------------------------- eventos ---------------------------------- */
 modal.addEventListener("click", e => {
-  const t = e.target;
+  // las tarjetas y botones llevan texto e iconos dentro: se busca el botón
+  const t = e.target.closest("button") || e.target;
   if (t.dataset.close !== undefined && (t.classList.contains("scrim") || t.classList.contains("x"))){ closePanel(); closeArise(); return; }
-  if (t.dataset.tab){ panelTab = t.dataset.tab; renderPanel(); return; }
+  if (t.dataset.tab){ panelTab = t.dataset.tab; panelEnter = true; SFX.ui(); renderPanel(); return; }
+  if (t.dataset.pick){ shadowSel = t.dataset.pick; SFX.ui(); renderPanel(); return; }
+  if (t.dataset.wpick){ shopSel = t.dataset.wpick; SFX.ui(); renderPanel(); return; }
+  if (t.dataset.sfilter){ shadowFilter = t.dataset.sfilter; SFX.ui(); renderPanel(); return; }
+  if (t.dataset.ssort){ shadowSort = t.dataset.ssort; SFX.ui(); renderPanel(); return; }
   if (t.dataset.stat){
     const k = t.dataset.stat;
-    if (P.stats.points > 0){ P.stats.points--; P.stats[k]++; rebuildSquad(); save(); dirty = true; renderPanel(); }
+    const n = t.dataset.n === "max" ? P.stats.points : Math.min(P.stats.points, +t.dataset.n || 1);
+    if (n > 0){ P.stats.points -= n; P.stats[k] += n; rebuildSquad(); save(); dirty = true; SFX.ui(); renderPanel(); }
     return;
   }
   if (t.id === "rankup"){
@@ -4328,6 +4795,7 @@ modal.addEventListener("click", e => {
     const def = SHADOWS[id];
     const merged = { uuid:uid(), id, name:def.name, tier:def.tier, level:+lvl + 1, xp:0, lock:false };
     P.shadows[merged.uuid] = merged;
+    shadowSel = merged.uuid;
     autoEquip(merged); rebuildSquad(); save();
     note(`${def.name} Nv ${merged.level}`, "--gem"); renderPanel(); return;
   }
@@ -4694,6 +5162,7 @@ function start(restored){
     if (!document.hidden && !paused){
       update(dt);
       render(dt);
+      previewTick(dt);
       frames++; fpsT += dt;
       if (fpsT >= 1){ $("fps").textContent = `${Math.round(frames/fpsT)} FPS`; frames = 0; fpsT = 0; }
       hudT += dt;

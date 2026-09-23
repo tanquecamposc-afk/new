@@ -223,6 +223,13 @@ Reliquias que suben daño de sombras, suerte de extracción, suerte de rango y
 probabilidad de botín. Las runas se activan dentro de las mazmorras y modifican
 esa incursión.
 
+### Enemigos élite
+
+Uno de cada diez enemigos normales sale **élite**: un 20% más grande, con una
+★ delante del nombre, contorno dorado, halo y un aura giratoria en el suelo.
+Tiene el triple de vida, pega un 50% más fuerte y deja el triple de oro y de EXP,
+más 5 gemas.
+
 ### Peleas de jefe
 
 Todos los jefes —de mazmorra y de mundo abierto— tienen **cuatro fases** según
@@ -317,6 +324,27 @@ hitstop e impulso de cámara crecientes.
 - **Estilo**: sombreado toon, contorno oscuro alrededor del protagonista y
   tajos en media luna que siguen cada golpe (más grandes en el remate del combo
   y en la habilidad, y del color de tu forma: blanco, violeta o magenta).
+- **Animación**: los personajes respiran en reposo, se inclinan al correr,
+  recogen las piernas al saltar y se echan atrás al encajar un golpe. El golpe
+  del jugador tiene tres tiempos (carga, tajo y recogida) con giro de cadera,
+  alternando el lado en cada golpe del combo. Las alas baten, las colas se mecen
+  y los halos giran.
+- **Enemigos**: brotan del suelo con un rebote y un anillo al aparecer, y al
+  morir caen de espaldas, se hunden y se deshacen en humo. Los ojos brillan con
+  el color de su región, y la barra de vida deja una estela blanca que muestra
+  cuánto les acabas de quitar.
+- **Clima por bioma**: pétalos en los santuarios y en el reino, luciérnagas en
+  el bosque, nieve en el hielo, ascuas en el volcán y en la región del dragón,
+  fuegos fatuos en las zonas oscuras y místicas, datos de neón en la ciudad
+  cyber y lluvia con relámpagos en la tormenta. El suelo también cambia: vetas
+  de lava, grietas de hielo, matas de hierba o circuitos.
+- **Menús**: entran con una animación y sus filas aparecen escalonadas. Las
+  sombras y la armería son rejillas de tarjetas con el color de su rango, con
+  filtros y orden, y una ficha lateral con la figura en 3D sobre un pedestal
+  que gira sola y se puede arrastrar. La armería compara cada arma con la
+  equipada y abre directamente en la siguiente mejora. En los atributos hay
+  botones +1, +5 y MAX, y los números que cambian dan un salto. Los contadores
+  de oro y gemas ruedan hasta su valor.
 - **Golpes**: al recibir daño, el enemigo se aplasta un instante y suelta un
   destello rojo propio. Así no toca los materiales compartidos, y los ojos,
   núcleos y cristales de los demás enemigos siguen brillando.
