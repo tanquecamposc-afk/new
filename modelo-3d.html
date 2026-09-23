@@ -57,6 +57,13 @@ a.dl.sec{background:var(--panel); color:var(--ink); border-color:var(--line); fo
 .nota h3{color:var(--azul)}
 ul{padding-left:1.25em; margin:.4em 0}
 li{margin:.35em 0; font-size:15.5px}
+.vistas3{display:grid; gap:14px; margin-top:16px}
+@media(min-width:760px){ .vistas3{grid-template-columns:1fr 1fr 1fr} }
+.vistas3 figure{margin:0; background:var(--panel); border:1px solid var(--line); border-radius:10px; overflow:hidden}
+.vistas3 canvas{display:block; width:100%; height:auto}
+.vistas3 figcaption{padding:9px 12px; border-top:1px solid var(--line); font-size:14px}
+.vistas3 figcaption b{display:block; color:var(--azul)}
+.vistas3 figcaption span{color:var(--muted)}
 table{border-collapse:collapse; width:100%; margin-top:8px; font-size:15px}
 th,td{padding:7px 10px; text-align:left; border-bottom:1px solid var(--line)}
 th{font-size:13.5px; color:var(--muted); font-weight:600}
@@ -103,6 +110,22 @@ footer{border-top:1px solid var(--line); padding:22px 0 40px; color:var(--muted)
     </div>
     <p class="small muted solo-artifact" hidden>Acá dentro los archivos van todos juntos en un ZIP: al abrirlo vas a encontrar el GLB, el OBJ con su MTL, el STL y la versión para Tinkercad, más un <code>LEEME.txt</code> que explica cuál es cuál.</p>
     <p class="small muted solo-local"><b>¿Cuál bajo?</b> Si solo quieres verlo bonito y con sus colores, baja el <b>GLB</b>: es un archivo solo, ya trae los colores adentro y en Windows se abre con doble clic. El <b>OBJ</b> es lo mismo pero necesita que bajes también el MTL y los dejes juntos en la misma carpeta. El <b>STL</b> es para Tinkercad y para imprimir en 3D (ese va sin colores).</p>
+  </div>
+</section>
+
+<section id="vistas">
+  <div class="wrap">
+    <h2>Las tres vistas</h2>
+    <p>El mismo modelo mirado desde tres lados. Es la forma en que se presentan los proyectos de obra: una vista de conjunto, una de frente para que se lea la altura, y una desde arriba para que se lea el ancho.</p>
+    <div class="vistas3">
+      <figure><canvas class="mini" data-cam="conjunto"></canvas><figcaption><b>En perspectiva</b><span>Cómo se ve el conjunto</span></figcaption></figure>
+      <figure><canvas class="mini" data-cam="frente"></canvas><figcaption><b>De frente</b><span>Se ven los 8 m de altura libre</span></figcaption></figure>
+      <figure><canvas class="mini" data-cam="planta"></canvas><figcaption><b>Desde arriba</b><span>Se ve el ancho del corredor</span></figcaption></figure>
+    </div>
+    <div class="descargas" style="margin-top:16px">
+      <a class="dl" id="dlLamina" href="#" hidden>Descargar la lámina (PNG)</a>
+    </div>
+    <p class="small muted">Sale una imagen sola con las tres vistas, el título y las medidas. Lista para imprimir o pegar en las diapositivas.</p>
   </div>
 </section>
 
@@ -14030,15 +14053,21 @@ window.addEventListener('resize',resize);
 const sx=new Float32Array(VS.length), sy=new Float32Array(VS.length), sz=new Float32Array(VS.length);
 const order=new Int32Array(N), depth=new Float32Array(N);
 
-function render(){
-  const cw=canvas.width, ch=canvas.height;
+/* Dibuja la escena. Sin argumentos pinta el lienzo grande con la cámara que
+   el usuario está moviendo; con ellos, cualquier otro lienzo desde un ángulo
+   fijo — que es lo que usan las tres vistas y la lámina. */
+function dibujar(destino,cam){
+  const lienzo=destino||canvas;
+  const ctx=lienzo.getContext('2d');
+  const CAM=cam||{yaw,pitch,dist};
+  const cw=lienzo.width, ch=lienzo.height;
   // cielo
   const g=ctx.createLinearGradient(0,0,0,ch);
   g.addColorStop(0,'#BFD2DE'); g.addColorStop(0.62,'#DCE4E9'); g.addColorStop(1,'#CFD8DE');
   ctx.fillStyle=g; ctx.fillRect(0,0,cw,ch);
 
-  const cp=Math.cos(pitch),sp=Math.sin(pitch),cy=Math.cos(yaw),sy2=Math.sin(yaw);
-  const ex=target[0]+dist*cp*sy2, ey=target[1]+dist*sp, ez=target[2]+dist*cp*cy;
+  const cp=Math.cos(CAM.pitch),sp=Math.sin(CAM.pitch),cy=Math.cos(CAM.yaw),sy2=Math.sin(CAM.yaw);
+  const ex=target[0]+CAM.dist*cp*sy2, ey=target[1]+CAM.dist*sp, ez=target[2]+CAM.dist*cp*cy;
   // base de cámara (lookAt)
   let fx=target[0]-ex, fy=target[1]-ey, fz=target[2]-ez;
   const fl0=Math.hypot(fx,fy,fz); fx/=fl0; fy/=fl0; fz/=fl0;
@@ -14141,11 +14170,97 @@ btnGiro.addEventListener('click',()=>{
 
 function loop(){
   if(spinning){ yaw+=0.0035; dirty=true; }
-  if(dirty){ render(); dirty=false; }
+  if(dirty){ dibujar(); dirty=false; }
   requestAnimationFrame(loop);
 }
 resize();
 if(reduceMotion) spinning=false;
 requestAnimationFrame(loop);
+
+/* ---------- las tres vistas ----------
+   Los mismos ángulos con los que se presenta un proyecto de obra: una de
+   conjunto, una de frente donde se lee la altura y una de planta donde se lee
+   el ancho. Se dibujan una sola vez, no dan vueltas. */
+const CAMARAS={
+  conjunto:{yaw:0.62,pitch:0.44,dist:100},
+  frente:  {yaw:1.97,pitch:0.11,dist:82},
+  planta:  {yaw:0.00,pitch:1.44,dist:108},
+};
+const VISTAS=[['conjunto','En perspectiva','Cómo se ve el conjunto'],
+              ['frente','De frente','Se ven los 8 m de altura libre'],
+              ['planta','Desde arriba','Se ve el ancho del corredor']];
+function pintarMinis(){
+  for(const c of document.querySelectorAll('canvas.mini')){
+    const w=c.clientWidth||330, h=Math.round(w*0.74);
+    const d=Math.min(2,window.devicePixelRatio||1);
+    c.style.height=h+'px';
+    c.width=Math.round(w*d); c.height=Math.round(h*d);
+    dibujar(c,CAMARAS[c.dataset.cam]);
+  }
+}
+pintarMinis();
+window.addEventListener('resize',pintarMinis);
+
+/* ---------- la lámina: una sola imagen con las tres vistas ---------- */
+function armarLamina(){
+  const W=2100,H=1000,P=44;
+  const hoja=document.createElement('canvas'); hoja.width=W; hoja.height=H;
+  const c=hoja.getContext('2d');
+  const F=n=>n+'px system-ui, -apple-system, Segoe UI, Roboto, sans-serif';
+  c.fillStyle='#FAF8F3'; c.fillRect(0,0,W,H);
+  c.fillStyle='#4C8A4F'; c.font='600 '+F(24);
+  c.fillText('EDUCACIÓN PARA EL TRABAJO',P,58);
+  c.fillStyle='#292724'; c.font='700 '+F(52);
+  c.fillText('Vía Expresa Elevada',P,114);
+  c.fillStyle='#6C6961'; c.font=F(26);
+  c.fillText('Las tres vistas del modelo · 1 unidad = 1 metro',P,152);
+
+  const pw=Math.floor((W-P*4)/3), ph=600, top=200;
+  VISTAS.forEach(([cam,titulo,pie],i)=>{
+    const x=P+i*(pw+P);
+    const tmp=document.createElement('canvas');
+    tmp.width=pw*2; tmp.height=ph*2;          // al doble, para que no salga pixeleada
+    dibujar(tmp,CAMARAS[cam]);
+    c.drawImage(tmp,x,top,pw,ph);
+    c.strokeStyle='#DFDACF'; c.lineWidth=2; c.strokeRect(x+1,top+1,pw-2,ph-2);
+    c.fillStyle='#2F6FB5'; c.font='600 '+F(32);
+    c.fillText(titulo,x,top+ph+46);
+    c.fillStyle='#6C6961'; c.font=F(25);
+    c.fillText(pie,x,top+ph+82);
+  });
+
+  c.strokeStyle='#DFDACF'; c.lineWidth=2;
+  c.beginPath(); c.moveTo(P,H-74); c.lineTo(W-P,H-74); c.stroke();
+  c.fillStyle='#6C6961'; c.font=F(25);
+  c.fillText('Altura libre 8 m  ·  tablero de 15 m de ancho y 2 m de canto  ·  pilares cada 32 m  ·  tramo de 96 m',P,H-30);
+  return hoja;
+}
+const laminaBlob=()=>new Promise(r=>armarLamina().toBlob(r,'image/png'));
+
+(async () => {
+  const boton=document.getElementById('dlLamina');
+  if(!boton) return;
+  boton.hidden=false;
+  boton.href=URL.createObjectURL(await laminaBlob());
+  boton.setAttribute('download','via-expresa-3-vistas.png');
+
+  const guardar=window.claude&&claude.use
+    ? await claude.use('downloads').catch(()=>null) : null;
+  if(!guardar) return;
+  boton.removeAttribute('href'); boton.removeAttribute('download');
+  boton.style.cursor='pointer';
+  boton.addEventListener('click',async e=>{
+    e.preventDefault();
+    const antes=boton.textContent;
+    boton.textContent='Preparando…';
+    try{
+      await guardar.save({filename:'via-expresa-3-vistas.png',data:await laminaBlob()});
+      boton.textContent='Listo ✓';
+    }catch(err){
+      boton.textContent=err&&err.code==='declined'?antes:'No se pudo descargar';
+    }
+    setTimeout(()=>{boton.textContent=antes;},2500);
+  });
+})();
 })();
 </script>
