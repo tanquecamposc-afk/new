@@ -252,6 +252,21 @@ Cada 110 segundos se abre un portal cerca de ti. Cuatro modos:
 El **Double Dungeon** otorga el Despertar: +60% de suerte de extracción y el
 sigilo del Monarca Negro. Al salir vuelves exactamente a donde estabas.
 
+### Transformación del Monarca
+
+Una vez despertado aparece el botón **Monarca** (tecla **T**). Durante 15 s te
+conviertes en una bestia de sombra: un 50% más grande, piel violeta casi negra,
+cuernos, púas, jirones y una sonrisa dentada que brilla en magenta. Mientras
+dura:
+
+- **+60% de daño** y un 15% más de velocidad
+- el golpe básico se vuelve un **barrido de 130°** que alcanza a todos los
+  enemigos delante de ti, con un 40% más de alcance
+- recibes un **40% menos de daño**
+
+Luego tiene 60 s de recarga. El botón muestra los segundos que quedan y
+"LISTO" cuando se puede volver a usar.
+
 ### Cazadores
 
 Siete cazadores con nombre repartidos por el mundo. Te acercas y pulsas **G**:
@@ -288,6 +303,7 @@ de pasar al siguiente, y los textos cambian según juegues con teclado o táctil
 | Montura | M | botón MONTURA |
 | Entrar al portal | F | botón PORTAL |
 | Hablar con un cazador | G | acercarse |
+| Transformación (despertado) | T | botón MONARCA |
 | Menús | 1-5, H | botones hexagonales |
 
 El combo de golpe encadena cuatro ataques (×1,00, ×1,05, ×1,15, ×1,45) con
@@ -298,6 +314,12 @@ hitstop e impulso de cámara crecientes.
 - **Render**: three.js con luz direccional y sombras reales, niebla, cielo por
   shader, suelo con textura procedural y personajes articulados por jerarquía de
   nodos (caderas, torso, hombros, cuello) animados por rotación.
+- **Estilo**: sombreado toon, contorno oscuro alrededor del protagonista y
+  tajos en media luna que siguen cada golpe (más grandes en el remate del combo
+  y en la habilidad, y del color de tu forma: blanco, violeta o magenta).
+- **Golpes**: al recibir daño, el enemigo se aplasta un instante y suelta un
+  destello rojo propio. Así no toca los materiales compartidos, y los ojos,
+  núcleos y cristales de los demás enemigos siguen brillando.
 - **Calidad adaptativa**: el juego mide sus propios fps y sube o baja el detalle
   (sombras, hierba, props, número de personajes detallados, resolución) para
   mantener la fluidez. También se puede fijar a mano.

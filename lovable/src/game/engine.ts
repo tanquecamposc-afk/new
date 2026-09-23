@@ -334,7 +334,7 @@ const rankMult    = () => rankOf(P.rank).dmg + (P.awakened ? 0.25 : 0) + P.rebir
 const classBonus  = k => (CLASSES[P.class] || CLASSES.Warrior).bonus[k] || 0;
 const talentLv    = id => P.talents?.[id] || 0;
 const blessed     = () => (P.blessing || 0) > now();
-const baseDamage  = () => FORMULA.physicalDamage(weaponDmg(), P.stats.STR) * (blessed() ? 1.4 : 1)
+const baseDamage  = () => FORMULA.physicalDamage(weaponDmg(), P.stats.STR) * (blessed() ? 1.4 : 1) * (formActive() ? FORM.dmg : 1)
   * (1 + rankMult() + classBonus("dmg") + talentLv("power") * 0.08)
   * (1 + P.level * 0.012);
 const relicBonus  = effect => Object.keys(P.relics).reduce((a, id) => a + (RELICS[id]?.effect === effect ? RELICS[id].value : 0), 0);
@@ -516,13 +516,27 @@ function resolveHit(){
       hits++;
     }
     ring(player.x, player.y, SKILL.hitbox.radius * 1.1, "#7fc6ff", .55);
+    slashFx("skill");
     camImpulse(SKILL.feedback.cam);
     if (!hits) hitstop = Math.max(hitstop, 0.02);
     return;
   }
-  const e = nearestEnemy(player.x, player.y, CFG.ATTACK_RANGE);
+  const reach = CFG.ATTACK_RANGE * (formActive() ? FORM.reach : 1);
+  const e = nearestEnemy(player.x, player.y, reach);
+  if (e) player.yaw = Math.atan2(e.x - player.x, e.y - player.y);
+  slashFx(def.id === "M1_4" ? "finisher" : "normal");     // el tajo se ve aunque falles
   if (!e){ return; }
-  player.yaw = Math.atan2(e.x - player.x, e.y - player.y);
+  if (formActive()){
+    // transformado, cada golpe barre todo lo que hay en un cono de 130°
+    const fx = Math.sin(player.yaw), fz = Math.cos(player.yaw);
+    for (const o of enemies.slice()){
+      const dx = o.x - player.x, dz = o.y - player.y, d = Math.hypot(dx, dz) || 1;
+      if (d > reach) continue;
+      if ((dx * fx + dz * fz) / d < Math.cos(65 * Math.PI / 180)) continue;
+      dealDamage(o, baseDamage() * def.mult, { cam:def.cam, hitstop:def.hitstop });
+    }
+    return;
+  }
   dealDamage(e, baseDamage() * def.mult, { cam:def.cam, hitstop:def.hitstop });
 }
 function requestDash(){
@@ -1037,6 +1051,7 @@ const SFX = {
   death(){ this.arp([392, 294, 220, 147], .12, "sawtooth", .28); },
   ui(){ if (this.throttle("ui", 40)) this.tone(660, .05, "triangle", .12); },
   bossWarn(){ if (this.throttle("bw", 200)) this.tone(150, .3, "sawtooth", .2, 220); },
+  form(){ this.arp([98, 147, 196, 294, 392], .09, "sawtooth", .32); this.noise(.8, .22, 180, .5); },
   cross(ok){ this.arp(ok ? [392, 523, 659] : [330, 262, 196], .11, "triangle", .26);
               this.noise(.5, .1, 500, .6); },
   bossHit(kind){ this.noise(kind === "wave" ? .4 : .22, .32, kind === "wave" ? 220 : 400, .8);
@@ -1148,6 +1163,7 @@ addEventListener("keydown", e => {
   if (k === "q") requestDash();
   if (k === "r") setAuto(!auto);
   if (k === "m") toggleMount();
+  if (k === "t") activateForm();
   if (k === "g" && hunterNear) hunterService(hunterNear);
   if (k === "f" && portal) enterDungeon();
   if (k === "1") openPanel("stats");
@@ -1218,6 +1234,28 @@ function inputVector(){
   const len = Math.hypot(x, y) || 1;
   return { x:x/len, y:y/len, amt: Math.min(1, Math.hypot(f, r)) };
 }
+/* Transformación del Monarca de las Sombras. Se desbloquea con el Despertar:
+   durante 15 s el cazador se convierte en la bestia acorazada — más grande,
+   golpes que barren todo lo que tiene delante, más daño y menos daño recibido —
+   y después necesita un minuto para volver a hacerlo. */
+const FORM = { dur:15, cd:60, dmg:1.6, reach:1.4, armor:0.6, speed:1.15 };
+const formActive = () => (player.formUntil || 0) > now();
+function activateForm(){
+  if (!P.awakened) return note("Necesitas el Despertar del Double Dungeon", "--dim");
+  if (player.dead > 0 || formActive()) return;
+  const t = now();
+  if ((player.formReady || 0) > t)
+    return note(`Transformación disponible en ${Math.ceil(player.formReady - t)} s`, "--dim");
+  player.formUntil = t + FORM.dur;
+  player.formReady = t + FORM.dur + FORM.cd;
+  banner("MONARCA DE LAS SOMBRAS", "#b07cff");
+  note("Te transformas · +60% daño, golpes en barrido, −40% daño recibido", "--monarch");
+  burst(player.x, player.y, 70, "#b07cff", 60);
+  ring(player.x, player.y, 360, "#d05aff", 1);
+  camImpulse(0.9); hitstop = Math.max(hitstop, 0.08);
+  SFX.form();
+  dirty = true;
+}
 function toggleMount(){
   player.mounted = !player.mounted;
   const b = document.getElementById("a-mount");
@@ -1235,7 +1273,7 @@ function update(dt){
   if (hitstop > 0){ hitstop -= dt; dt *= 0.06; }
 
   // ---- jugador
-  const speed = FORMULA.walkSpeed(P.stats.AGI) * 11 * (player.mounted ? 2.1 : 1);
+  const speed = FORMULA.walkSpeed(P.stats.AGI) * 11 * (player.mounted ? 2.1 : 1) * (formActive() ? FORM.speed : 1);
   const v = inputVector();
   if (player.dead > 0){
     player.dead -= dt;
@@ -1323,6 +1361,19 @@ function update(dt){
   player.skillCd = Math.max(0, player.skillCd - dt);
   player.hurt = Math.max(0, player.hurt - dt);
   player.mana = Math.min(maxMana(), player.mana + maxMana() * 0.08 * dt);
+  // aura de la transformación y aviso al terminar
+  if (formActive()){
+    player.wasForm = true;
+    if (Math.random() < .7)
+      parts.push({ x:player.x + rnd(-40, 40), y:player.y + rnd(-40, 40), h:rnd(10, 90),
+                   vx:rnd(-20, 20), vy:rnd(-20, 20), vh:rnd(40, 110), life:rnd(.4, .8),
+                   color: Math.random() < .5 ? "#b07cff" : "#ff5ad8", size:rnd(3, 6) });
+  } else if (player.wasForm){
+    player.wasForm = false;
+    note("La transformación se desvanece · vuelve a estar lista en 1 min", "--dim");
+    burst(player.x, player.y, 30, "#b07cff", 30);
+    dirty = true;
+  }
   // la música sigue al bioma y acelera cuando hay enemigos cerca
   SFX.stepMusic(dt, dungeon ? "dungeon" : regionAt(player.x, player.y).theme,
                 enemies.some(e => Math.hypot(e.x - player.x, e.y - player.y) < 700));
@@ -1533,7 +1584,7 @@ function update(dt){
 let saveT = 6;
 function hitPlayer(raw){
   if (player.dead > 0 || (player.invuln || 0) > now()) return;
-  const dmg = Math.max(1, raw * CFG.CONTACT_SCALE * (1 - classBonus("armor")));
+  const dmg = Math.max(1, raw * CFG.CONTACT_SCALE * (1 - classBonus("armor")) * (formActive() ? FORM.armor : 1));
   player.hp -= dmg; player.hurt = 0.22; player.lastHit = now(); SFX.hurt();
   const ph = floaters.find(f => f.src === player);
   if (ph){ ph.amount += dmg; ph.text = `-${fmt(ph.amount)}`; ph.life = .9; }
@@ -1707,8 +1758,8 @@ function part(w, h, d, color, opts){
 }
 // Textura de cara dibujada en canvas (ojos con brillo y sonrisa).
 const faceTexCache = new Map();
-function faceTexture(eye, glow, skin){
-  const k = `${eye}|${glow ? 1 : 0}|${skin}`;
+function faceTexture(eye, glow, skin, grin){
+  const k = `${eye}|${glow ? 1 : 0}|${skin}|${grin || ""}`;
   let t = faceTexCache.get(k);
   if (t) return t;
   const c = document.createElement("canvas");
@@ -1728,8 +1779,19 @@ function faceTexture(eye, glow, skin){
     x.fillStyle = "rgba(255,255,255,.9)";
     x.fillRect(37, 49, 6, 7); x.fillRect(81, 49, 6, 7);
   }
-  x.strokeStyle = eye; x.lineWidth = 6; x.lineCap = "round";
-  x.beginPath(); x.arc(64, 74, 22, .22 * Math.PI, .78 * Math.PI); x.stroke();
+  if (grin){
+    // boca de bestia: una sonrisa en zigzag que brilla, de oreja a oreja
+    x.fillStyle = grin; x.shadowColor = grin; x.shadowBlur = 14;
+    x.beginPath(); x.moveTo(14, 78);
+    for (let i = 0; i <= 10; i++) x.lineTo(14 + i * 10, i % 2 ? 100 : 82);
+    x.lineTo(114, 78); x.lineTo(104, 92);
+    for (let i = 10; i >= 0; i--) x.lineTo(14 + i * 10, i % 2 ? 96 : 106);
+    x.closePath(); x.fill();
+    x.shadowBlur = 0;
+  } else {
+    x.strokeStyle = eye; x.lineWidth = 6; x.lineCap = "round";
+    x.beginPath(); x.arc(64, 74, 22, .22 * Math.PI, .78 * Math.PI); x.stroke();
+  }
   t = new THREE.CanvasTexture(c);
   t.magFilter = THREE.LinearFilter;
   SHARED.add(t);
@@ -2104,7 +2166,7 @@ function buildCharacter(cfg){
   // siempre como transparente la hacía traslúcida y desordenaba la profundidad.
   const faceAlpha = opts.opacity ?? 1;
   const faceMat = new THREE.MeshLambertMaterial({
-    map: faceTexture(cfg.eyes || "#12172b", !!cfg.glowEyes, skin),
+    map: faceTexture(cfg.eyes || "#12172b", !!cfg.glowEyes, skin, cfg.grin),
     transparent: faceAlpha < 1, opacity: faceAlpha,
   });
   const headMat = [mat(skin, opts), mat(skin, opts), mat(skin, opts), mat(skin, opts),
@@ -3080,7 +3142,26 @@ function syncProps(){
 }
 
 /* --------------------------- vistas de entidades -------------------------- */
+// La bestia acorazada de la transformación: más grande, púas por todas
+// partes, cara oscura con ojos y sonrisa dentada encendidos, núcleo en el
+// pecho, jirones de sombra y la hoja de energía.
+function monarchFormConfig(){
+  return {
+    scale:1.5, skin:"#1a0f33", eyes:"#ff5ad8", glowEyes:true, grin:"#ff5ad8",
+    shirt:"#140b28", sleeve:"#1d1238", pants:"#110a22", boots:"#0b0716", belt:"#140b28",
+    buckle:"#b07cff",
+    armor:"#2a1752", armorGlow:0, core:"#ff5ad8",
+    pauldron:"#2a1752", pauldron2:"#3a2170", spikes:"#b07cff",
+    gauntlet:"#2a1752", tassets:"#2a1752", greaves:"#2a1752",
+    backSpikes:"#b07cff", tatters:"#3d1e7a", trim:"#b07cff",
+    spikyHair:"#2a1752", horns:true, hornColor:"#d05aff", hornBase:"#2a1752",
+    glove:"#b07cff",
+    weapon:"#d05aff", weaponGlow:true, weaponKind:"sword",
+    key:`form|${P.weapon}`,
+  };
+}
 function playerConfig(){
+  if (typeof formActive === "function" && formActive()) return monarchFormConfig();
   // El cazador cambia de aspecto según avanza: de encapuchado de rango E a
   // armadura de placas, y al despertar al abrigo largo del Monarca de las
   // Sombras, con las vetas encendidas y la hoja de energía.
@@ -3131,6 +3212,8 @@ function ensurePlayerView(){
   if (playerView && playerView.userData.key === cfg.key) return playerView;
   if (playerView){ scene.remove(playerView); disposeView(playerView); }
   playerView = buildCharacter(cfg);
+  // contorno de cómic: la silueta del protagonista se lee sobre cualquier fondo
+  addOutline(playerView, 0x07060d, 1.05);
   playerView.userData.key = cfg.key;
   scene.add(playerView);
   return playerView;
@@ -3491,13 +3574,24 @@ function render(dt){
     v.hud.visible = (e.boss || e === target || dp < 300) && e.hp > 0;
     v.hud.name.visible = e.boss || e === target;
     v.hud.rotation.y = -v.rotation.y;                     // el HUD siempre de frente
-    // destello al recibir daño
-    const hurt = e.hurt > 0;
-    if (hurt !== v.userData.hurt){
-      v.userData.hurt = hurt;
-      v.traverse(o => { if (o.isMesh && !o.userData.isOutline && o.material.emissive){
-        o.material.emissive.setHex(hurt ? 0x883333 : 0x000000); } });
+    // Destello al recibir daño. Antes se escribía el emissive de los
+    // materiales, pero son compartidos entre todos los personajes del mismo
+    // color: pegarle a uno hacía brillar a todos, y al acabar el destello se
+    // apagaban los ojos, núcleos y cristales encendidos de todos los enemigos
+    // (desde el primer frame, de hecho). Ahora es un halo propio de cada vista.
+    if (!v.userData.flash){
+      const f = new THREE.Sprite(new THREE.SpriteMaterial({
+        map: glowTexture("#ff6a6a"), transparent:true, depthWrite:false,
+        blending:THREE.AdditiveBlending, opacity:0 }));
+      const sc = (v.scaleRef || 1) * 150;
+      f.scale.set(sc, sc, 1); f.position.y = 42 * (v.scaleRef || 1);
+      f.visible = false; v.add(f); v.userData.flash = f;
     }
+    const hurtK = clamp(e.hurt / 0.14, 0, 1);
+    v.userData.flash.visible = hurtK > 0;
+    v.userData.flash.material.opacity = hurtK * .9;
+    const pop = 1 + hurtK * .07;                          // pequeño aplastamiento al encajar
+    v.scale.set(pop, 2 - pop, pop);
   }
   // sombras
   syncGroup(shadows, views.shadows, shadowConfig, sh => sh.uuid);
@@ -3585,6 +3679,7 @@ function render(dt){
 
   // telegrafías del jefe y marca de objetivo
   syncTelegraphs();
+  syncSlashes(dt);
   syncTargetRing();
 
   // partículas
@@ -3690,6 +3785,52 @@ function render(dt){
   renderer.render(scene, camera);
 }
 const telePool = [];
+/* Tajos. Antes el golpe no dejaba rastro: solo se veía el número de daño.
+   Cada ataque dibuja ahora una media luna aditiva delante del personaje, que
+   alterna la diagonal según el golpe del combo y se agranda en el remate. */
+const slashPool = [], SLASH_GEO = {};
+function slashGeo(kind){
+  if (SLASH_GEO[kind]) return SLASH_GEO[kind];
+  const [r0, r1] = kind === "skill" ? [60, 210] : kind === "finisher" ? [50, 175] : [44, 138];
+  const g = new THREE.RingGeometry(r0, r1, 28, 1, -Math.PI * .46, Math.PI * .92);
+  SHARED.add(g); SLASH_GEO[kind] = g;
+  return g;
+}
+let slashFlip = 1;
+function slashFx(kind){
+  if (!scene) return;
+  let rec = slashPool.find(r => !r.busy);
+  if (!rec){
+    const m = new THREE.Mesh(slashGeo(kind), new THREE.MeshBasicMaterial({
+      transparent:true, opacity:.9, side:THREE.DoubleSide, depthWrite:false,
+      blending:THREE.AdditiveBlending }));
+    m.rotation.order = "YXZ"; m.visible = false; scene.add(m);
+    rec = { mesh:m, busy:false, life:0, max:1 };
+    slashPool.push(rec);
+  }
+  const color = formActive() ? "#ff5ad8" : P.awakened ? "#b07cff" : "#bfe6ff";
+  rec.busy = true;
+  rec.max = rec.life = kind === "skill" ? .32 : kind === "finisher" ? .26 : .17;
+  rec.mesh.geometry = slashGeo(kind);
+  rec.mesh.material.color.set(color);
+  const sc = formActive() ? 1.35 : 1;
+  rec.mesh.scale.set(sc, sc, sc);
+  slashFlip = -slashFlip;
+  rec.mesh.position.set(player.x, terrainH(player.x, player.y) + (kind === "skill" ? 30 : 48) * sc, player.y);
+  rec.mesh.rotation.set(-Math.PI / 2 + (kind === "skill" ? 0 : slashFlip * .38), player.yaw - Math.PI / 2, 0);
+  rec.mesh.visible = true;
+}
+function syncSlashes(dt){
+  for (const r of slashPool){
+    if (!r.busy) continue;
+    r.life -= dt;
+    if (r.life <= 0){ r.busy = false; r.mesh.visible = false; continue; }
+    const k = r.life / r.max;
+    r.mesh.material.opacity = .95 * k;
+    const grow = 1 + (1 - k) * .25;
+    r.mesh.scale.multiplyScalar(1 + (grow - 1) * dt * 6);
+  }
+}
 function syncTelegraphs(){
   for (const t of telePool){ t.busy = false; t.disc.visible = false; t.ring.visible = false; }
   for (const e of enemies){
@@ -3785,6 +3926,20 @@ function syncHud(){
   } else tb.hidden = true;
 
   $("cd-skill").style.transform = `scaleY(${player.skillCd / SKILL.cooldown})`;
+  {
+    // botón de transformación: solo con el Despertar; muestra lo que queda
+    // de transformación o de enfriamiento
+    const fb = $("a-form");
+    fb.hidden = !P.awakened;
+    if (P.awakened){
+      const t = now(), act = formActive();
+      fb.classList.toggle("on", act);
+      const cdLeft = Math.max(0, (player.formReady || 0) - t);
+      fb.querySelector(".st").textContent = act ? `${Math.ceil(player.formUntil - t)}s`
+                                               : cdLeft > 0 ? `${Math.ceil(cdLeft)}s` : "LISTO";
+      $("cd-form").style.transform = `scaleY(${act ? 0 : cdLeft / FORM.cd})`;
+    }
+  }
   $("cd-dash").style.transform = `scaleY(${player.dashCd / Math.max(.01, FORMULA.dashCooldown(P.stats.AGI))})`;
 
   const squad = $("squad"); squad.innerHTML = "";
@@ -4019,6 +4174,7 @@ function panelHelp(){
       <div class="kv"><small>Saltar</small><b>Espacio</b></div>
       <div class="kv"><small>Auto (golpe+arise)</small><b>R</b></div>
       <div class="kv"><small>Montura</small><b>M</b></div>
+      <div class="kv"><small>Transformación (despertado)</small><b>T</b></div>
       <div class="kv"><small>Portal</small><b>F</b></div>
       <div class="kv"><small>Hablar con cazador</small><b>G</b></div>
       <div class="kv"><small>Menús</small><b>1-5 · H</b></div>
@@ -4261,6 +4417,7 @@ $("a-skill").onclick = requestSkill;
 $("a-arise").onclick = openArise;
 $("a-dash").onclick = requestDash;
 $("a-mount").onclick = toggleMount;
+$("a-form").onclick = activateForm;
 $("a-portal").onclick = () => enterDungeon();
 function setAuto(v){
   auto = v;

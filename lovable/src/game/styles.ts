@@ -115,6 +115,9 @@ canvas#stage{position:absolute;inset:0;width:100%;height:100%;display:block;touc
 .a-auto{background:linear-gradient(180deg,#a9f0ba,#28a75e)}
 .a-mount{background:linear-gradient(180deg,#d3b2ff,#7a45e0)}
 .a-portal{background:linear-gradient(180deg,#8af0ff,#17b9d8)}
+.a-form{background:linear-gradient(180deg,#f0b8ff,#6a22c8)}
+.a-form.on{box-shadow:0 0 0 3px #f0b8ff,0 0 26px #b07cff}
+.act .st.t{font-variant-numeric:tabular-nums}
 
 /* --- notificaciones --- */
 .lane{position:absolute;left:12px;top:calc(150px + env(safe-area-inset-top,0px));display:grid;gap:6px;justify-items:start;pointer-events:none;max-width:260px;z-index:4}

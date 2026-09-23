@@ -62,6 +62,7 @@ export const GAME_HTML = `<div id="app">
           <button class="act a-dash" id="a-dash"><kbd>Q</kbd><span class="ic">💨</span><span class="lb">Dash</span><i class="cd" id="cd-dash" style="transform:scaleY(0)"></i></button>
           <button class="act a-auto" id="a-auto"><kbd>R</kbd><span class="ic">🔁</span><span class="lb">Auto</span><span class="st">OFF</span></button>
           <button class="act a-mount" id="a-mount"><kbd>M</kbd><span class="ic">🐎</span><span class="lb">Montura</span><span class="st">OFF</span></button>
+          <button class="act a-form" id="a-form" hidden><kbd>T</kbd><span class="ic">👹</span><span class="lb">Monarca</span><span class="st t"></span><i class="cd" id="cd-form" style="transform:scaleY(0)"></i></button>
           <button class="act a-portal" id="a-portal" hidden><kbd>F</kbd><span class="ic">🌀</span><span class="lb">Portal</span></button>
         </div>
       </div>
