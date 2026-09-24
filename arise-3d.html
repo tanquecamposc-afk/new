@@ -346,11 +346,39 @@ canvas#stage{position:absolute;inset:0;width:100%;height:100%;display:block;touc
 .crank{position:absolute;left:8px;top:6px;font:800 12px var(--f-display);font-style:normal;color:var(--rc);text-shadow:0 0 8px var(--rc)}
 .card .cg{margin-left:14px}
 .rkrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-.rkbig{display:grid;place-items:center;width:34px;height:34px;border-radius:9px;font:800 20px var(--f-display);color:#0a1020;
+.rkbig{display:grid;place-items:center;min-width:34px;padding:0 7px;height:34px;border-radius:9px;font:800 20px var(--f-display);color:#0a1020;
   background:var(--rc);box-shadow:0 0 16px var(--rc)}
 .odds{display:flex;gap:6px;flex-wrap:wrap}
 .odds span{padding:4px 9px;border-radius:999px;border:1px solid var(--rc);font-size:11px;color:var(--muted)}
 .odds b{color:var(--rc);margin-right:5px;font-family:var(--f-display)}
+/* --- accesibilidad de menús --- */
+.card.myth{border-color:var(--rc,#ff3af0);animation:mythGlow 2s ease-in-out infinite}
+@keyframes mythGlow{50%{box-shadow:0 0 22px color-mix(in srgb,var(--tc) 70%,transparent),0 0 0 2px #fff3}}
+
+.kbhelp{margin:0;font-size:11.5px;color:var(--muted);line-height:1.6}
+.kbhelp kbd{display:inline-block;min-width:20px;padding:1px 6px;margin:0 2px;border-radius:6px;border:1px solid var(--line-hi);
+  background:rgba(16,28,63,.9);font:700 10.5px var(--f-ui);color:var(--ink);text-align:center}
+.card:focus-visible,.rpill:focus-visible,.chip:focus-visible,.tab:focus-visible,.rstep:focus-visible{outline:3px solid var(--arise);outline-offset:2px}
+.card{min-height:84px}
+.chip{min-height:34px;padding:6px 13px}
+.tab{min-height:36px}
+.rstrip{display:flex;gap:6px;align-items:center}
+.rpills{flex:1;display:flex;gap:5px;overflow-x:auto;padding:3px 2px;scrollbar-width:thin}
+.rpill{--tc:var(--line-hi);flex:none;min-width:40px;height:40px;border-radius:12px;cursor:pointer;font:700 14px var(--f-ui);color:#0a1020;
+  border:2px solid rgba(5,10,24,.7);background:var(--tc);transition:transform .12s,box-shadow .12s}
+.rpill:hover{transform:translateY(-2px)}
+.rpill.lk{background:rgba(16,28,63,.9);color:var(--dim);border-color:var(--line)}
+.rpill.cur{box-shadow:inset 0 0 0 3px var(--arise)}
+.rpill.sel{transform:translateY(-2px) scale(1.08);box-shadow:0 0 0 3px #fff,0 0 16px var(--tc)}
+.rstep{flex:none;width:40px;height:40px;border-radius:12px;cursor:pointer;font-size:15px;color:var(--ink);
+  border:2px solid var(--line);background:rgba(16,28,63,.9)}
+.rstep:hover{border-color:var(--line-hi)}
+.wmap .ring{stroke-linecap:butt}
+@media (max-width:680px){
+  .inv-side .sact,.rcard > .big-w{position:sticky;bottom:0;z-index:3;padding:8px 0 2px;background:linear-gradient(0deg,#0a1230 70%,transparent)}
+  .sact .btn,.big-w{min-height:46px;font-size:14px;flex:1}
+  .card{min-height:96px}
+}
 /* --- mapa interactivo y bestiario --- */
 .mapwrap2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);gap:14px;align-items:start}
 .mapside{display:grid;gap:8px}
@@ -622,18 +650,23 @@ const rankOf  = n => RANKS[rankIdx(n)] || RANKS[0];
    vida y daño, más botín, más difícil de extraer y más fuerte su sombra. Las
    probabilidades suman 1; la suerte de Arise desplaza un poco hacia arriba. */
 const MOB_RANKS = [
-  { r:"E", p:.40,  hp:1,   dmg:1,    loot:1,   sh:1,    arise:1,    col:"#9aa6b8" },
-  { r:"D", p:.27,  hp:1.7, dmg:1.25, loot:1.7, sh:1.4,  arise:.92,  col:"#7ee07a" },
-  { r:"C", p:.17,  hp:2.8, dmg:1.55, loot:2.8, sh:2,    arise:.82,  col:"#5ad2ff" },
-  { r:"B", p:.10,  hp:4.5, dmg:1.9,  loot:4.5, sh:3,    arise:.7,   col:"#bb8cff" },
-  { r:"A", p:.045, hp:7.5, dmg:2.4,  loot:8,   sh:4.6,  arise:.56,  col:"#ffd24a" },
-  { r:"S", p:.015, hp:13,  dmg:3.2,  loot:15,  sh:7.5,  arise:.42,  col:"#ff5d6c" },
+  { r:"E",   p:.47,    hp:1,   dmg:1,    loot:1,   sh:1,    arise:1,   col:"#9aa6b8" },
+  { r:"D",   p:.30,    hp:1.7, dmg:1.25, loot:1.7, sh:1.4,  arise:.92, col:"#7ee07a" },
+  { r:"C",   p:.15,    hp:2.8, dmg:1.55, loot:2.8, sh:2,    arise:.82, col:"#5ad2ff" },
+  { r:"B",   p:.055,   hp:4.5, dmg:1.9,  loot:4.5, sh:3,    arise:.7,  col:"#bb8cff" },
+  { r:"A",   p:.0139,  hp:7.5, dmg:2.4,  loot:8,   sh:4.6,  arise:.56, col:"#ffd24a" },
+  { r:"S",   p:.01,    hp:14,  dmg:3.2,  loot:18,  sh:8,    arise:.42, col:"#ff5d6c" },
+  // los dos rangos míticos: rarísimos, durísimos y con premio enorme
+  { r:"SS",  p:.001,   hp:40,  dmg:4.6,  loot:80,  sh:22,   arise:.3,  col:"#ff3af0", myth:true },
+  { r:"SSS", p:.0001,  hp:120, dmg:6.5,  loot:400, sh:70,   arise:.2,  col:"#fff27a", myth:true },
 ];
 const mobRank = r => MOB_RANKS.find(x => x.r === r) || MOB_RANKS[0];
+const pctTxt = p => { const v = p * 100; return (v >= 1 ? +v.toFixed(1) : v >= .1 ? v.toFixed(1) : v.toFixed(2)).toString().replace(".", ",") + "%"; };
+const rankIdxOf = r => Math.max(0, MOB_RANKS.findIndex(m => m.r === (r || "E")));
 function rollMobRank(){
-  // la suerte (hasta +100%) roba probabilidad a E y la reparte hacia arriba
+  // la suerte solo mueve probabilidad de E hacia D–A; S, SS y SSS no se tocan
   const luck = clamp((typeof ariseLuck === "function" ? ariseLuck() : 0) / 100, 0, 1);
-  const w = MOB_RANKS.map((m, i) => i === 0 ? m.p * (1 - luck * .35) : m.p * (1 + luck * .35 * i / 2));
+  const w = MOB_RANKS.map((m, i) => i === 0 ? m.p * (1 - luck * .3) : i <= 4 ? m.p * (1 + luck * .3 * (MOB_RANKS[0].p / .47) * (i / 4)) : m.p);
   let x = Math.random() * w.reduce((a, b) => a + b, 0);
   for (let i = 0; i < w.length; i++){ x -= w[i]; if (x <= 0) return MOB_RANKS[i].r; }
   return "E";
@@ -1051,7 +1084,11 @@ function spawnEnemy(def, x, y){
     e.hp = e.maxHp = d.hp * R.hp; e.dmgMult = R.dmg;
     e.level = d.lvl + MOB_RANKS.indexOf(R) * 2;
   }
-  e.elite = !e.boss && (e.rank === "A" || e.rank === "S");
+  e.elite = !e.boss && rankIdxOf(e.rank) >= 4;
+  if (!e.boss && R.myth){
+    banner(`¡RANGO ${e.rank} DETECTADO!`, R.col);
+    note(`Ha aparecido ${e.name} de rango ${e.rank}`, R.col); SFX.bossPhase && SFX.bossPhase(4);
+  }
   enemies.push(e);
   return e;
 }
@@ -1085,7 +1122,8 @@ function killEnemy(e){
   gainXP(FORMULA.expReward(e.level, P.rebirths) * loot);
   const cash = Math.max(1, Math.floor(e.level * 12 * loot * (1 + P.rebirths * 0.3) * (dungeon?.runes?.Cash ? 1.1 : 1)));
   if (!e.boss && MOB_RANKS.indexOf(R) >= 3){
-    const gems = 3 * MOB_RANKS.indexOf(R) ** 2;
+    const gems = Math.round(3 * MOB_RANKS.indexOf(R) ** 2 * (R.myth ? R.loot / 10 : 1));
+    if (R.myth) banner(`${e.rank} DERROTADO`, R.col);
     P.gems += gems; note(`Rango ${e.rank} derrotado · +${fmt(cash)} oro · +${gems} gemas`, R.col); ring(e.x, e.y, 170, R.col, .6);
   }
   P.cash += cash;
@@ -1976,6 +2014,7 @@ addEventListener("keydown", e => {
   const k = e.key.toLowerCase();
   if (["arrowup","arrowdown","arrowleft","arrowright"," "].includes(k)) e.preventDefault();
   if (k === "escape"){ closePanel(); closeArise(); return; }
+  if (panelKind && panelKey(k, e)) return;
   if (e.repeat) return;
   if (modalOpen() && k !== "b") return;
   keys.add(k);
@@ -4559,7 +4598,7 @@ function enemyConfig(e){
   }
   const cfg = {
     body, features,
-    scale: (e.def.r / 18) * (boss ? 1.75 : brute ? 1.25 : (L.height || 1)) * (1 + Math.max(0, MOB_RANKS.findIndex(m => m.r === e.rank)) * .05)
+    scale: (e.def.r / 18) * (boss ? 1.75 : brute ? 1.25 : (L.height || 1)) * (1 + rankIdxOf(e.rank) * .05 + (mobRank(e.rank).myth ? .15 : 0))
       * (body === "serpent" ? 1.3 : body === "goblin" ? 1.1 : 1),
     skin: brute ? reg.dark : reg.skin,
     pants: reg.dark, eyes: glow, hair: reg.hair || reg.dark,
@@ -4921,7 +4960,14 @@ function render(dt){
     poseEntity(v, e.x, e.y, e.yaw || 0, { step:e.step, moving:!e.stun, attack: e.telegraph ? .6 : 0,
       hurt: clamp(e.hurt / 0.14, 0, 1) });
     if (e.boss && !v.userData.outline) addOutline(v, 0x1a0e18, 1.06);
-    if (e.elite && !v.userData.outline) addOutline(v, e.rank === "S" ? 0x6a0a14 : 0x6a4a08, 1.07);
+    if (e.elite && !v.userData.outline) addOutline(v, new THREE.Color(mobRank(e.rank).col).multiplyScalar(.35).getHex(), 1.07);
+    // SS y SSS: columna de luz que se ve desde lejos
+    if (mobRank(e.rank).myth && !v.userData.beam){
+      const bm = new THREE.Mesh(new THREE.CylinderGeometry(20, 34, 520, 12, 1, true), new THREE.MeshBasicMaterial({ color:new THREE.Color(mobRank(e.rank).col),
+        transparent:true, opacity:.22, side:THREE.DoubleSide, depthWrite:false, blending:THREE.AdditiveBlending }));
+      bm.position.y = 260; v.add(bm); v.userData.beam = bm;
+    }
+    if (v.userData.beam) v.userData.beam.material.opacity = .15 + Math.sin(now() * 3) * .08;
     // aura en el suelo con el color del rango (de C para arriba) y la de jefe
     const rIdx = MOB_RANKS.findIndex(m => m.r === e.rank);
     if ((rIdx >= 2 || e.boss) && !v.userData.aura){
@@ -5552,13 +5598,13 @@ function panelShadows(){
   const counts = {};
   for (const s of list) counts[`${s.id}|${s.level}`] = (counts[`${s.id}|${s.level}`] || 0) + 1;
   if (shadowFilter === "eq") list = list.filter(s => P.squad.includes(s.uuid));
-  else if (shadowFilter !== "all") list = list.filter(s => s.tier === shadowFilter);
+  else if (shadowFilter !== "all") list = list.filter(s => (s.rank || "E") === shadowFilter);
   const rk = x => MOB_RANKS.findIndex(m => m.r === (x.rank || "E"));
   const by = { dmg:(a, b) => shadowDmgOf(b) - shadowDmgOf(a), lvl:(a, b) => rk(b) - rk(a) || shadowDmgOf(b) - shadowDmgOf(a),
                tier:(a, b) => TIER_ORDER.indexOf(b.tier) - TIER_ORDER.indexOf(a.tier) || shadowDmgOf(b) - shadowDmgOf(a) };
   list.sort(by[shadowSort] || by.dmg);
   if (!P.shadows[shadowSel]) shadowSel = (list[0] || Object.values(P.shadows)[0])?.uuid || null;
-  const tiersHave = TIER_ORDER.filter(t => Object.values(P.shadows).some(s => s.tier === t));
+  const tiersHave = MOB_RANKS.map(m => m.r).filter(r => Object.values(P.shadows).some(s => (s.rank || "E") === r));
   const chip = (attr, val, cur, label) => `<button class="chip ${cur === val ? "sel" : ""}" data-${attr}="${val}">${label}</button>`;
   const filters = `<div class="chips">${chip("sfilter", "all", shadowFilter, "Todas")}${chip("sfilter", "eq", shadowFilter, "Equipadas")}${
     tiersHave.map(t => chip("sfilter", t, shadowFilter, t)).join("")}<span class="grow"></span>${
@@ -5566,7 +5612,8 @@ function panelShadows(){
   const maxDmg = Math.max(1, ...Object.values(P.shadows).map(shadowDmgOf));
   const cards = list.map((s, i) => {
     const eq = P.squad.includes(s.uuid), can = false, R = mobRank(s.rank);
-    return `<button class="card ${eq ? "eq" : ""} ${s.uuid === shadowSel ? "sel" : ""}" data-pick="${s.uuid}"
+    return `<button class="card ${eq ? "eq" : ""} ${s.uuid === shadowSel ? "sel" : ""} ${R.myth ? "myth" : ""}" data-pick="${s.uuid}" role="option"
+      aria-selected="${s.uuid === shadowSel}" aria-label="${s.name}, rango ${R.r}, ${eq ? "equipada" : "sin equipar"}"
       style="--tc:var(${TIER_VAR[s.tier]});--i:${i}">
       <span class="cg">${SHADOWS[s.id]?.glyph || "👤"}</span>
       <b>${s.name}</b><small>${fmt(shadowDmgOf(s))} de daño</small><i class="crank" style="--rc:${R.col}">${R.r}</i>
@@ -5593,10 +5640,11 @@ function panelShadows(){
   return shell(`Sombras · ${P.squad.length}/${squadCap()}`, `
     <div class="inv"><aside class="inv-side">${side}</aside>
       <div class="inv-main">${filters}
-        <div class="cards">${cards || `<p class="hint">Ninguna sombra con este filtro.</p>`}</div></div></div>
+        <div class="cards" role="listbox" aria-label="Sombras">${cards || `<p class="hint">Ninguna sombra con este filtro.</p>`}</div></div></div>
+    <p class="kbhelp">⌨ Flechas para elegir · <kbd>Enter</kbd> equipa o quita · 📱 toca otra vez la tarjeta elegida para equiparla</p>
     <p class="hint">Arrastra la figura para girarla. Escuadrón lleno: una extracción mejor <b>desequipa automáticamente la sombra de menor daño</b>.
-    Cada enemigo nace con un rango de <b>E</b> a <b>S</b>: cuanto más alto, más cuesta vencerlo y extraerlo, y más fuerte sale su sombra.</p>
-    <div class="odds">${MOB_RANKS.map(m => `<span style="--rc:${m.col}"><b>${m.r}</b>${(m.p * 100).toFixed(m.p < .05 ? 1 : 0)}%</span>`).join("")}</div>`);
+    Cada enemigo nace con un rango de <b>E</b> a <b>SSS</b>: cuanto más alto, más cuesta vencerlo y extraerlo, y más fuerte sale su sombra.</p>
+    <div class="odds">${MOB_RANKS.map(m => `<span style="--rc:${m.col}"><b>${m.r}</b>${pctTxt(m.p)}</span>`).join("")}</div>`);
 }
 let shopSel = null;
 function panelShop(){
@@ -5609,7 +5657,7 @@ function panelShop(){
     const owned = (P.weapons[w.id] || 0) > 0, eq = P.weapon === w.id, copies = P.weapons[w.id] || 0;
     const delta = cur ? (w.dmg / cur.dmg - 1) * 100 : 0;
     const dTxt = eq ? "equipada" : `${delta >= 0 ? "+" : ""}${delta >= 1000 ? fmt(delta) : delta.toFixed(0)}%`;
-    return `<button class="card ${eq ? "eq" : ""} ${w.id === shopSel ? "sel" : ""} ${!owned && P.cash < w.cost ? "poor" : ""}" data-wpick="${w.id}"
+    return `<button class="card ${eq ? "eq" : ""} ${w.id === shopSel ? "sel" : ""} ${!owned && P.cash < w.cost ? "poor" : ""}" data-wpick="${w.id}" role="option" aria-selected="${w.id === shopSel}"
       style="--tc:${eq ? "var(--gold)" : delta > 0 ? "var(--cash)" : "var(--line-hi)"};--i:${i}">
       <span class="cg">${w.glyph}</span><b>${w.name}${copies > 1 ? ` ×${copies}` : ""}</b>
       <small>${kitOf(w.id).sname}</small><small>${owned ? "en tu arsenal" : fmt(w.cost) + " oro"}</small>
@@ -5635,7 +5683,8 @@ function panelShop(){
       </div>
     </div>`;
   return shell("Armería", `<div class="inv"><aside class="inv-side">${side}</aside>
-    <div class="inv-main"><div class="cards">${cards}</div></div></div>
+    <div class="inv-main"><div class="cards" role="listbox" aria-label="Armas">${cards}</div></div></div>
+    <p class="kbhelp">⌨ Flechas para elegir · <kbd>Enter</kbd> compra o equipa · 📱 toca otra vez la tarjeta elegida</p>
     <p class="hint">Oro: <b class="price">${fmt(P.cash)}</b>. Tres copias de un arma se fusionan y suben su rango (+25% de daño).
     Las armas se desbloquean al llegar a su isla.</p>`);
 }
@@ -5761,10 +5810,16 @@ function panelMap(){
       <span class="meta"><b>${m.name}</b><span>${m.rooms} salas · enemigos ×${m.mult} · recompensa ×${m.reward}${id === "DoubleDungeon" ? " · otorga el Despertar" : ""}</span></span>
       <button class="btn violet" data-dungeon="${id}" ${P.tickets > 0 || id === "Standard" ? "" : "disabled"}>${id === "Standard" ? "Entrar" : "1 🎟"}</button></div>`).join("")}</div>`;
   }
-  return shell("Mapa del mundo", `<div class="mapwrap2">
+  const strip = `<div class="rstrip" role="listbox" aria-label="Regiones">
+    <button class="rstep" data-mstep="-1" aria-label="Región anterior">◀</button>
+    <div class="rpills">${ISLANDS.map((is, i) => { const t2 = THEMES[is.theme] || THEMES.city, u = regionUnlocked(is);
+      return `<button class="rpill ${i === mapSel ? "sel" : ""} ${u ? "" : "lk"} ${i === cur ? "cur" : ""}" data-mring="${i}" role="option"
+        aria-selected="${i === mapSel}" aria-label="${is.name}${u ? "" : ", bloqueada"}" style="--tc:${t2.g1}">${u ? i : "🔒"}</button>`; }).join("")}</div>
+    <button class="rstep" data-mstep="1" aria-label="Región siguiente">▶</button></div>`;
+  return shell("Mapa del mundo", `${strip}<div class="mapwrap2">
       <div class="mapside">${worldMapSVG()}
         <div class="legend"><span><i class="lg me"></i>Tú</span><span><i class="lg hp"></i>Cazador</span><span><i class="lg pp"></i>Portal</span><span><i class="lg lk"></i>Bloqueada</span></div>
-        <p class="hint">Toca un anillo para ver la región. El centro es Seúl; cada anillo es una región más dura.</p></div>
+        <p class="kbhelp">Toca un anillo o un número · ⌨ <kbd>←</kbd><kbd>→</kbd> cambian de región · <kbd>Enter</kbd> viaja</p></div>
       <div class="mapinfo">${nav}${right}</div></div>`);
 }
 function panelHelp(){
@@ -5805,6 +5860,39 @@ function panelHelp(){
     <b>Habilidad V:</b> arco de 70° y radio 190, cuesta 30 de maná.</p>
     <p class="hint"><b>Double Dungeon</b> otorga el Despertar: +60% de suerte de Arise y el sigilo Black Monarch.</p>`);
 }
+/* Navegación de los menús con teclado (y mando de flechas): las flechas mueven
+   la selección por la rejilla o por las regiones y Enter hace la acción
+   principal de la ficha. */
+let kbNav = false;
+function panelPrimary(){
+  const btn = modal.querySelector(".sheet [data-equip], .sheet [data-weapon]:not([disabled]), .rcard [data-ring]:not([disabled])");
+  if (btn){ btn.click(); return true; }
+  return false;
+}
+function mapStep(d){
+  mapSel = clamp((mapSel ?? 0) + d, 0, ISLANDS.length - 1); mapTab = "Regions"; SFX.ui(); renderPanel();
+}
+function panelKey(k, e){
+  const arrows = ["arrowleft", "arrowright", "arrowup", "arrowdown"];
+  if (k === "enter"){
+    const f = document.activeElement;
+    if (f && modal.contains(f) && f.tagName === "BUTTON" && !f.classList.contains("card") && !f.classList.contains("rpill")) return false;
+    e.preventDefault(); return panelPrimary();
+  }
+  if (!arrows.includes(k)) return false;
+  e.preventDefault(); kbNav = true;
+  const dx = k === "arrowleft" ? -1 : k === "arrowright" ? 1 : 0, dy = k === "arrowup" ? -1 : k === "arrowdown" ? 1 : 0;
+  if (panelKind === "map"){ mapStep(dx || dy); return true; }
+  const cards = [...modal.querySelectorAll(".cards .card[data-pick], .cards .card[data-wpick], .cards .card[data-beast]")];
+  if (!cards.length) return true;
+  let i = cards.findIndex(c => c.classList.contains("sel")); if (i < 0) i = 0;
+  const cols = Math.max(1, Math.round(cards[0].parentElement.clientWidth / (cards[0].offsetWidth + 9)));
+  const j = clamp(i + dx + dy * cols, 0, cards.length - 1);
+  const c = cards[j];
+  if (c.dataset.pick) shadowSel = c.dataset.pick; else if (c.dataset.wpick) shopSel = c.dataset.wpick; else beastSel = c.dataset.beast;
+  SFX.ui(); renderPanel();
+  return true;
+}
 let panelEnter = false, bumpPrev = new Map();
 function renderPanel(){
   if (!panelKind){ modal.hidden = true; modal.innerHTML = ""; bumpPrev.clear(); return; }
@@ -5834,6 +5922,9 @@ function renderPanel(){
   });
   bumpPrev = next;
   mountPreview();
+  // la tarjeta elegida queda a la vista y con el foco del teclado
+  const selc = modal.querySelector(".card.sel, .rpill.sel");
+  if (selc){ selc.scrollIntoView?.({ block:"nearest", inline:"nearest" }); if (kbNav) selc.focus({ preventScroll:true }); }
 }
 /* Vista 3D de los menús: un segundo renderer pequeño con su propia escena,
    un pedestal y luz de estudio. El lienzo se reutiliza entre repintados del
@@ -5959,15 +6050,24 @@ function renderArise(log){
 modal.addEventListener("click", e => {
   // las tarjetas y botones llevan texto e iconos dentro: se busca el botón
   const t = e.target.closest("button") || e.target;
+  kbNav = false;
   if (t.dataset.close !== undefined && (t.classList.contains("scrim") || t.classList.contains("x"))){ closePanel(); closeArise(); return; }
   if (t.dataset.tab){ panelTab = t.dataset.tab; panelEnter = true; SFX.ui(); renderPanel(); return; }
-  if (t.dataset.pick){ shadowSel = t.dataset.pick; SFX.ui(); renderPanel(); return; }
+  if (t.dataset.pick){
+    // segundo toque sobre la tarjeta ya elegida = equipar / quitar
+    if (shadowSel === t.dataset.pick){ panelPrimary(); return; }
+    shadowSel = t.dataset.pick; SFX.ui(); renderPanel(); return;
+  }
+  if (t.dataset.mstep){ mapStep(+t.dataset.mstep); return; }
   const ringEl = e.target.closest("[data-mring]");
   if (ringEl){ mapSel = +ringEl.dataset.mring; mapTab = "Regions"; SFX.ui(); renderPanel(); return; }
   if (t.dataset.maptab){ mapTab = t.dataset.maptab; SFX.ui(); renderPanel(); return; }
   if (t.dataset.mobkind){ mobKind = t.dataset.mobkind; SFX.ui(); renderPanel(); return; }
   if (t.dataset.beast){ beastSel = t.dataset.beast; SFX.ui(); renderPanel(); return; }
-  if (t.dataset.wpick){ shopSel = t.dataset.wpick; SFX.ui(); renderPanel(); return; }
+  if (t.dataset.wpick){
+    if (shopSel === t.dataset.wpick){ panelPrimary(); return; }
+    shopSel = t.dataset.wpick; SFX.ui(); renderPanel(); return;
+  }
   if (t.dataset.sfilter){ shadowFilter = t.dataset.sfilter; SFX.ui(); renderPanel(); return; }
   if (t.dataset.ssort){ shadowSort = t.dataset.ssort; SFX.ui(); renderPanel(); return; }
   if (t.dataset.stat){

@@ -302,21 +302,25 @@ Además de su bono, cada reliquia tiene un poder propio:
 
 ### Rangos de los enemigos
 
-Las sombras ya no se fusionan. Cada enemigo nace con un rango de **E** a **S**
-que se ve en su nombre y en el aura del suelo:
+Las sombras ya no se fusionan. Cada enemigo nace con un rango de **E** a
+**SSS** que se ve en su nombre y en el aura del suelo:
 
 | Rango | Probabilidad | Vida | Daño | Botín | Facilidad de extracción | Poder de su sombra |
 |---|---|---|---|---|---|---|
-| E | 40% | ×1 | ×1 | ×1 | 100% | ×1 |
-| D | 27% | ×1,7 | ×1,25 | ×1,7 | 92% | ×1,4 |
-| C | 17% | ×2,8 | ×1,55 | ×2,8 | 82% | ×2 |
-| B | 10% | ×4,5 | ×1,9 | ×4,5 | 70% | ×3 |
-| A | 4,5% | ×7,5 | ×2,4 | ×8 | 56% | ×4,6 |
-| S | 1,5% | ×13 | ×3,2 | ×15 | 42% | ×7,5 |
+| E | 47% | ×1 | ×1 | ×1 | 100% | ×1 |
+| D | 30% | ×1,7 | ×1,25 | ×1,7 | 92% | ×1,4 |
+| C | 15% | ×2,8 | ×1,55 | ×2,8 | 82% | ×2 |
+| B | 5,5% | ×4,5 | ×1,9 | ×4,5 | 70% | ×3 |
+| A | 1,39% | ×7,5 | ×2,4 | ×8 | 56% | ×4,6 |
+| S | 1% | ×14 | ×3,2 | ×18 | 42% | ×8 |
+| **SS** | 0,1% | ×40 | ×4,6 | ×80 | 30% | ×22 |
+| **SSS** | 0,01% | ×120 | ×6,5 | ×400 | 20% | ×70 |
 
-La suerte de Arise desplaza las probabilidades hacia los rangos altos. Los
-enemigos de rango B o superior dan gemas extra, y los de A o S llevan contorno.
-La sombra que extraes hereda el rango del enemigo.
+La suerte de Arise solo mueve probabilidad de E hacia D–A: S, SS y SSS no se
+pueden forzar. Cuando aparece un SS o un SSS salta un aviso en pantalla y el
+enemigo lleva una columna de luz visible desde lejos. Derrotarlo da un botín
+enorme y muchas gemas, y su sombra (que hereda el rango) brilla en el
+inventario. Los rangos A y superiores tienen contorno.
 
 ### Monumentos de las islas
 
@@ -451,6 +455,12 @@ hitstop e impulso de cámara crecientes.
   fuegos fatuos en las zonas oscuras y místicas, datos de neón en la ciudad
   cyber y lluvia con relámpagos en la tormenta. El suelo también cambia: vetas
   de lava, grietas de hielo, matas de hierba o circuitos.
+- **Accesibilidad de los menús**: en sombras, armería y bestiario las flechas
+  mueven la selección y **Enter** hace la acción principal (equipar, comprar,
+  viajar). En móvil, tocar otra vez la tarjeta elegida la equipa o la compra, y
+  el botón de acción queda fijo abajo. El mapa tiene una fila de botones
+  numerados por región y flechas ◀ ▶ además de los anillos. Los botones son más
+  grandes, el foco del teclado se ve, y las sombras se filtran por rango.
 - **Mapa del mundo**: un plano circular con los 13 anillos pintados del color
   de su bioma, tu posición con un pulso, el portal y los cazadores. Al tocar un
   anillo se abre su ficha, con el enemigo, el bruto o el jefe en 3D, sus números

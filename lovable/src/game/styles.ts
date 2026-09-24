@@ -341,11 +341,39 @@ canvas#stage{position:absolute;inset:0;width:100%;height:100%;display:block;touc
 .crank{position:absolute;left:8px;top:6px;font:800 12px var(--f-display);font-style:normal;color:var(--rc);text-shadow:0 0 8px var(--rc)}
 .card .cg{margin-left:14px}
 .rkrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-.rkbig{display:grid;place-items:center;width:34px;height:34px;border-radius:9px;font:800 20px var(--f-display);color:#0a1020;
+.rkbig{display:grid;place-items:center;min-width:34px;padding:0 7px;height:34px;border-radius:9px;font:800 20px var(--f-display);color:#0a1020;
   background:var(--rc);box-shadow:0 0 16px var(--rc)}
 .odds{display:flex;gap:6px;flex-wrap:wrap}
 .odds span{padding:4px 9px;border-radius:999px;border:1px solid var(--rc);font-size:11px;color:var(--muted)}
 .odds b{color:var(--rc);margin-right:5px;font-family:var(--f-display)}
+/* --- accesibilidad de menús --- */
+.card.myth{border-color:var(--rc,#ff3af0);animation:mythGlow 2s ease-in-out infinite}
+@keyframes mythGlow{50%{box-shadow:0 0 22px color-mix(in srgb,var(--tc) 70%,transparent),0 0 0 2px #fff3}}
+
+.kbhelp{margin:0;font-size:11.5px;color:var(--muted);line-height:1.6}
+.kbhelp kbd{display:inline-block;min-width:20px;padding:1px 6px;margin:0 2px;border-radius:6px;border:1px solid var(--line-hi);
+  background:rgba(16,28,63,.9);font:700 10.5px var(--f-ui);color:var(--ink);text-align:center}
+.card:focus-visible,.rpill:focus-visible,.chip:focus-visible,.tab:focus-visible,.rstep:focus-visible{outline:3px solid var(--arise);outline-offset:2px}
+.card{min-height:84px}
+.chip{min-height:34px;padding:6px 13px}
+.tab{min-height:36px}
+.rstrip{display:flex;gap:6px;align-items:center}
+.rpills{flex:1;display:flex;gap:5px;overflow-x:auto;padding:3px 2px;scrollbar-width:thin}
+.rpill{--tc:var(--line-hi);flex:none;min-width:40px;height:40px;border-radius:12px;cursor:pointer;font:700 14px var(--f-ui);color:#0a1020;
+  border:2px solid rgba(5,10,24,.7);background:var(--tc);transition:transform .12s,box-shadow .12s}
+.rpill:hover{transform:translateY(-2px)}
+.rpill.lk{background:rgba(16,28,63,.9);color:var(--dim);border-color:var(--line)}
+.rpill.cur{box-shadow:inset 0 0 0 3px var(--arise)}
+.rpill.sel{transform:translateY(-2px) scale(1.08);box-shadow:0 0 0 3px #fff,0 0 16px var(--tc)}
+.rstep{flex:none;width:40px;height:40px;border-radius:12px;cursor:pointer;font-size:15px;color:var(--ink);
+  border:2px solid var(--line);background:rgba(16,28,63,.9)}
+.rstep:hover{border-color:var(--line-hi)}
+.wmap .ring{stroke-linecap:butt}
+@media (max-width:680px){
+  .inv-side .sact,.rcard > .big-w{position:sticky;bottom:0;z-index:3;padding:8px 0 2px;background:linear-gradient(0deg,#0a1230 70%,transparent)}
+  .sact .btn,.big-w{min-height:46px;font-size:14px;flex:1}
+  .card{min-height:96px}
+}
 /* --- mapa interactivo y bestiario --- */
 .mapwrap2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);gap:14px;align-items:start}
 .mapside{display:grid;gap:8px}
