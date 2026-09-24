@@ -14,9 +14,13 @@ mkdir -p "$CACHE" "$OUT"
 
 fetch() { # id version
   local id="$1" v="$2" dir="$CACHE/$1"
-  [ -d "$dir" ] && return
-  curl -fsSL -o "$CACHE/$id.nupkg" "https://api.nuget.org/v3-flatcontainer/$id/$v/$id.$v.nupkg"
-  mkdir -p "$dir" && (cd "$dir" && unzip -oq "../$id.nupkg")
+  if [ ! -d "$dir" ]; then
+    curl -fsSL -o "$CACHE/$id.nupkg" "https://api.nuget.org/v3-flatcontainer/$id/$v/$id.$v.nupkg"
+    mkdir -p "$dir" && (cd "$dir" && unzip -oq "../$id.nupkg")
+  fi
+  # algunos .nupkg (UnityEngine.Modules) guardan los archivos con permisos 000:
+  # como root se leen igual, pero un usuario normal (el CI) no puede abrirlos
+  chmod -R u+rwX,go+rX "$dir"
 }
 fetch microsoft.net.compilers 4.2.0
 fetch unityengine.modules 2021.3.33
