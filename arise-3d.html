@@ -413,6 +413,7 @@ canvas#stage{position:absolute;inset:0;width:100%;height:100%;display:block;touc
 .dcell.done{opacity:.55;border-color:var(--cash)}
 .dcell.cur{border-color:var(--gold);box-shadow:0 0 18px rgba(255,210,74,.45);animation:glowp 1.4s ease-in-out infinite}
 .dcell.big{grid-column:span 2;background:linear-gradient(180deg,rgba(255,210,74,.18),rgba(11,19,45,.9))}
+.gearbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 /* --- accesibilidad de menús --- */
 .card.myth{border-color:var(--rc,#ff3af0);animation:mythGlow 2s ease-in-out infinite}
 @keyframes mythGlow{50%{box-shadow:0 0 22px color-mix(in srgb,var(--tc) 70%,transparent),0 0 0 2px #fff3}}
@@ -1625,7 +1626,15 @@ function requestAttack(){
   player.combo = (player.combo + 1) % COMBO.length; player.comboAt = now();
 }
 function requestSkill(){
-  if (player.dead > 0 || player.phase !== "idle") return;
+  if (player.dead > 0) return;
+  if (player.phase !== "idle"){
+    // en pleno golpe (o en AUTO, que encadena golpes sin parar) la habilidad
+    // se guarda y sale en cuanto termina el golpe actual
+    const k0 = kitOf(P.weapon), i0 = SKILL_INFO[k0.skill];
+    if (player.skillCd <= 0 && player.mana >= i0.mana) player.skillQueued = now();
+    return;
+  }
+  player.skillQueued = 0;
   if (player.skillCd > 0) return note("Habilidad en enfriamiento", "--dim");
   const kit = kitOf(P.weapon), info = SKILL_INFO[kit.skill];
   if (player.mana < info.mana) return note("Maná insuficiente", "--mana");
@@ -2746,7 +2755,17 @@ function update(dt){
   }
   // golpe: automático con AUTO, o encadenado mientras mantengas el clic
   if (player.phase === "idle" && player.dead <= 0 && !modalOpen()){
-    if (auto || drag.attacking) requestAttack();
+    // primero la habilidad pendiente (pulsada durante un golpe, válida 1,5 s)
+    if (player.skillQueued && now() - player.skillQueued < 1.5) requestSkill();
+    else {
+      player.skillQueued = 0;
+      // AUTO también usa la habilidad del arma: con un jefe o 2+ enemigos cerca
+      if (auto && player.skillCd <= 0 && player.mana >= SKILL_INFO[kitOf(P.weapon).skill].mana){
+        const near = enemies.filter(e => Math.hypot(e.x - player.x, e.y - player.y) < 260);
+        if (near.length >= 2 || near.some(e => e.boss || e.elite)) requestSkill();
+      }
+      if (player.phase === "idle" && (auto || drag.attacking)) requestAttack();
+    }
   }
 
   // ---- región actual del mundo abierto
@@ -6466,7 +6485,8 @@ function panelShop(){
           eq ? "Equipada" : owned ? "Equipar" : `Comprar · ${fmt(w.cost)}`}</button>
       </div>
     </div>`;
-  return shell("Armería", `<div class="inv"><aside class="inv-side">${side}</aside>
+  return shell("Armería", `<div class="gearbar"><button class="btn gold" data-bestgear="1">⚡ Equipar lo mejor · arma y clase</button>
+      <span class="hint">Equipa tu arma más fuerte y tu clase más rara de las que ya tienes.</span></div><div class="inv"><aside class="inv-side">${side}</aside>
     <div class="inv-main"><div class="cards" role="listbox" aria-label="Armas">${cards}</div></div></div>
     <p class="kbhelp">⌨ Flechas para elegir · <kbd>Enter</kbd> compra o equipa · 📱 toca otra vez la tarjeta elegida</p>
     <p class="hint">Oro: <b class="price">${fmt(P.cash)}</b>. Tres copias de un arma se fusionan y suben su rango (+25% de daño).
@@ -6922,6 +6942,18 @@ modal.addEventListener("click", e => {
   }
   if (t.dataset.mstep){ mapStep(+t.dataset.mstep); return; }
   if (t.dataset.more){ shadowShown += 60; renderPanel(); return; }
+  if (t.dataset.bestgear){
+    const wd = id => Math.max(6, WEAPONS[id].dmg) * Math.pow(1.25, weaponLv(id) - 1);
+    const bestW = Object.keys(P.weapons).filter(id => P.weapons[id] > 0 && WEAPONS[id]).sort((a, b) => wd(b) - wd(a))[0];
+    const rk = Object.keys(CLASS_RARITY);
+    const bestC = P.classes.slice().sort((a, b) => rk.indexOf(CLASSES[b].rar) - rk.indexOf(CLASSES[a].rar)
+      || Object.values(CLASSES[b].bonus).reduce((x, y) => x + y, 0) - Object.values(CLASSES[a].bonus).reduce((x, y) => x + y, 0))[0];
+    const changed = (bestW && bestW !== P.weapon) || (bestC && bestC !== P.class);
+    if (bestW) P.weapon = bestW; if (bestC) P.class = bestC;
+    player.hp = Math.min(player.hp, maxHP()); save(); dirty = true; SFX.ui();
+    note(changed ? `Equipado: ${WEAPONS[P.weapon].name} · clase ${CLASSES[P.class].name}` : "Ya llevas lo mejor que tienes", "--gold");
+    renderPanel(); return;
+  }
   if (t.dataset.autoequip){
     // las de más daño que no estén de expedición, hasta llenar el escuadrón
     const best = Object.values(P.shadows).filter(x => !x.busy).sort((a, b) => shadowDmgOf(b) - shadowDmgOf(a)).slice(0, squadCap()).map(x => x.uuid);

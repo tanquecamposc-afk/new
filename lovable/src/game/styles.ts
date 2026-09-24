@@ -408,6 +408,7 @@ canvas#stage{position:absolute;inset:0;width:100%;height:100%;display:block;touc
 .dcell.done{opacity:.55;border-color:var(--cash)}
 .dcell.cur{border-color:var(--gold);box-shadow:0 0 18px rgba(255,210,74,.45);animation:glowp 1.4s ease-in-out infinite}
 .dcell.big{grid-column:span 2;background:linear-gradient(180deg,rgba(255,210,74,.18),rgba(11,19,45,.9))}
+.gearbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 /* --- accesibilidad de menús --- */
 .card.myth{border-color:var(--rc,#ff3af0);animation:mythGlow 2s ease-in-out infinite}
 @keyframes mythGlow{50%{box-shadow:0 0 22px color-mix(in srgb,var(--tc) 70%,transparent),0 0 0 2px #fff3}}

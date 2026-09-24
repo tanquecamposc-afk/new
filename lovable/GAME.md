@@ -389,6 +389,14 @@ una pasiva que se activa con los golpes normales. Hay 11 tipos de habilidad:
 | Dagas del Monarca de las Sombras | dagger | Danza de sombras (sombra) | crítico |
 | Filo de Ashborn | greatsword | Juicio de Ashborn (sombra) | robo de vida |
 
+En la **Armería**, el botón **⚡ Equipar lo mejor** pone tu arma más fuerte
+(contando su rango de fusión) y tu clase más rara de las que ya tienes.
+
+La habilidad **V** funciona también en modo **AUTO**: si la pulsas en mitad
+de un golpe, queda en cola y sale en cuanto este termina. Además, en AUTO el
+cazador la lanza solo cuando tiene dos o más enemigos cerca, o un jefe o un
+élite, si hay maná y está lista.
+
 ### Poderes de las reliquias
 
 Además de su bono, cada reliquia tiene un poder propio:
