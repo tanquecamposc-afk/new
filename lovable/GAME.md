@@ -243,6 +243,62 @@ Cada región tiene su propia especie, con cuerpo, paleta y animación propios:
 
 Al atacar, las criaturas embisten hacia delante y abren la boca o las mandíbulas.
 
+### Aspecto del cazador (vestidor)
+
+En **Atributos › Aspecto** eliges cómo va vestido el cazador entre lo que has
+desbloqueado jugando. Hay siete categorías: conjunto, armadura, peinado, color
+de pelo, ojos, capa y aura. Cada pieza pide algo: un nivel, un rango, un número
+de bajas, el Despertar o haber vencido a un enemigo SS o SSS. Al conseguirla
+salta un aviso de «Nuevo aspecto».
+
+Los conjuntos dan además un bono mientras los llevas:
+
+| Conjunto | Bono |
+|---|---|
+| Noche | +3% velocidad |
+| Carmesí | +4% daño |
+| Blanco de Élite | +5% vida |
+| Dorado de Rango S | +8% daño |
+| Monarca | +10% daño, +5% vida |
+| Leyenda SSS | +15% daño, +10% vida, +5% velocidad |
+
+La cara del cazador siempre se ve: cejas, ojos con iris y brillo (los ojos
+brillan con los colores especiales), nariz y orejas en relieve, boca y rubor.
+
+### Monturas
+
+La tecla **M** monta y desmonta; en **Atributos › Monturas** eliges cuál usar.
+Cada montura tiene su criatura, sus colores y su velocidad. Todas salvo la
+inicial se encuentran: caen de los enemigos como un orbe brillante con una
+columna de luz, y hay que recogerlo antes de 60 segundos.
+
+| Montura | Velocidad | Dónde |
+|---|---|---|
+| Lobo sombrío | ×2,1 | inicial |
+| Kasaka domada | ×2,2 | 2% en Hongdae |
+| Jabalí de guerra | ×2,25 | 2% en los Altos Orcos |
+| Colmillo de Escarcha | ×2,35 | 2% en la Puerta Roja |
+| Hormiga alada | ×2,45 | 1,8% en Jeju |
+| Corcel infernal | ×2,6 | 1,5% en el Castillo del Demonio |
+| Tigre de guerra | ×2,7 | 1,5% en el Dominio del Monarca Bestia |
+| Disco del Sistema (vuela) | ×2,9 | 1,2% en la Sala del Arquitecto |
+| Dragón de Kaisel (vuela) | ×3,1 | 25% al vencer a un SS o SSS; 0,05% en las regiones 8+ |
+| Lobo dorado | ×3,4 | garantizado al vencer a un SSS |
+
+Los enemigos de rango alto multiplican la probabilidad de soltar su montura.
+
+### Diseño de las sombras
+
+Cada sombra conserva la forma de lo que fue, hecha de sombra translúcida con el
+brillo de su clase: Iron es un coloso con escudo y martillo, Tank un oso, Igris
+un caballero con penacho rojo y mandoble, Tusk un chamán orco, Kaisel y Kamish
+dragones alados, Greed un asesino con dagas, Baruka un elfo de hielo, Beru la
+hormiga reina alada, Bellion un mariscal con alas y halo, Antares un rey dragón
+con corona y Ashborn el primer Monarca con abrigo, púas y corona. En el mundo
+llevan un aura del color de su rango en el suelo, una llama de sombra que
+crece al atacar y humo negro al moverse, y los dragones vuelan. La ficha de
+cada sombra incluye una línea de historia.
+
 ### Habilidades de las armas
 
 Cada arma tiene su propio modelo, su color, una habilidad para la tecla **V** y
@@ -455,6 +511,10 @@ hitstop e impulso de cámara crecientes.
   fuegos fatuos en las zonas oscuras y místicas, datos de neón en la ciudad
   cyber y lluvia con relámpagos en la tormenta. El suelo también cambia: vetas
   de lava, grietas de hielo, matas de hierba o circuitos.
+- **Rendimiento con menús**: con un menú abierto la escena del fondo se dibuja a
+  un tercio del ritmo y sin desenfoque, la vista 3D va a 30 fps, el daño de
+  las sombras se calcula una sola vez por repintado y elegir una tarjeta solo
+  cambia la ficha lateral. Las listas largas se cargan de 60 en 60.
 - **Accesibilidad de los menús**: en sombras, armería y bestiario las flechas
   mueven la selección y **Enter** hace la acción principal (equipar, comprar,
   viajar). En móvil, tocar otra vez la tarjeta elegida la equipa o la compra, y

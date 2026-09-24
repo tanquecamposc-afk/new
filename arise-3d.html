@@ -189,7 +189,7 @@ canvas#stage{position:absolute;inset:0;width:100%;height:100%;display:block;touc
   #objective{font-size:12px;padding:7px 12px} .start-card h1{font-size:32px} }
 
 /* --- paneles --- */
-.scrim{position:absolute;inset:0;background:rgba(3,7,18,.76);backdrop-filter:blur(4px);display:grid;place-items:center;
+.scrim{position:absolute;inset:0;background:rgba(3,7,18,.84);display:grid;place-items:center;
        padding:16px;pointer-events:auto;z-index:20}
 .panel{width:min(820px,100%);max-height:min(86vh,760px);overflow:auto;border-radius:18px;
   background:linear-gradient(180deg,#152755,#0a1230);border:2px solid var(--line);
@@ -351,6 +351,13 @@ canvas#stage{position:absolute;inset:0;width:100%;height:100%;display:block;touc
 .odds{display:flex;gap:6px;flex-wrap:wrap}
 .odds span{padding:4px 9px;border-radius:999px;border:1px solid var(--rc);font-size:11px;color:var(--muted)}
 .odds b{color:var(--rc);margin-right:5px;font-family:var(--f-display)}
+.lookrow{display:grid;gap:6px;padding:8px 10px;border-radius:12px;border:1px solid var(--line);background:rgba(11,19,45,.6)}
+.lk-cat{font:700 11px var(--f-ui);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.lchip{display:inline-flex;align-items:center;gap:6px}
+.lchip em{font-style:normal;font-size:10px;color:var(--cash)}
+.lchip.lk{opacity:.5;border-style:dashed}
+.lchip .sw{width:14px;height:14px;border-radius:50%;border:2px solid rgba(255,255,255,.6);display:inline-block}
+.lore{margin:0;font-size:11.5px;line-height:1.45;color:var(--muted);font-style:italic}
 /* --- accesibilidad de menús --- */
 .card.myth{border-color:var(--rc,#ff3af0);animation:mythGlow 2s ease-in-out infinite}
 @keyframes mythGlow{50%{box-shadow:0 0 22px color-mix(in srgb,var(--tc) 70%,transparent),0 0 0 2px #fff3}}
@@ -920,6 +927,124 @@ const rnd = (a, b) => a + Math.random() * (b - a);
 
 /* ------------------------------- perfil ----------------------------------- */
 const SAVE_KEY = "arise-crossover-v9/v1";
+/* ------------------------- aspecto del cazador ---------------------------
+   Todo se desbloquea jugando: nivel, rango, bajas, Despertar o haber vencido a
+   un enemigo SS / SSS. Los conjuntos de ropa dan además un pequeño bono. */
+const LOOKS = {
+  outfit: [
+    { id:"hunter",  name:"Cazador",          c:{ shirt:"#23407e", sleeve:"#2d51a0", pants:"#2a3350", boots:"#1d2438", plate:"#3f6ac0", trim:"#8fc0ff" } },
+    { id:"night",   name:"Noche",            need:{ level:15 },  bonus:{ spd:.03 }, c:{ shirt:"#1a1c2a", sleeve:"#242838", pants:"#14161f", boots:"#0e1018", plate:"#3a3f55", trim:"#9fb0ff" } },
+    { id:"crimson", name:"Carmesí",          need:{ kills:500 }, bonus:{ dmg:.04 }, c:{ shirt:"#5a1420", sleeve:"#6e1a28", pants:"#2a1418", boots:"#1a0c10", plate:"#8a2030", trim:"#ff7a8a" } },
+    { id:"elite",   name:"Blanco de Élite",  need:{ rank:"C" },  bonus:{ hp:.05 },  c:{ shirt:"#dfe6f2", sleeve:"#c8d2e2", pants:"#3a4258", boots:"#262c3a", plate:"#eef2fa", trim:"#6ef0ff" } },
+    { id:"gold",    name:"Dorado de Rango S",need:{ rank:"S" },  bonus:{ dmg:.08 }, c:{ shirt:"#2a2418", sleeve:"#3a3020", pants:"#1e1a12", boots:"#14110c", plate:"#c9a33a", trim:"#ffe39a" } },
+    { id:"monarch", name:"Monarca",          need:{ awakened:true }, bonus:{ dmg:.1, hp:.05 }, c:{ shirt:"#0b0a16", sleeve:"#120f22", pants:"#0b0a16", boots:"#080714", plate:"#171233", trim:"#a86cff" } },
+    { id:"legend",  name:"Leyenda SSS",      need:{ sss:1 },     bonus:{ dmg:.15, hp:.1, spd:.05 }, c:{ shirt:"#1a1408", sleeve:"#241c0c", pants:"#120e06", boots:"#0c0a04", plate:"#fff27a", trim:"#ffffff" } },
+  ],
+  armor: [
+    { id:"light", name:"Arnés ligero" }, { id:"plate", name:"Placas", need:{ rank:"C" } },
+    { id:"heavy", name:"Armadura pesada", need:{ rank:"A" } }, { id:"coat", name:"Abrigo largo", need:{ awakened:true } },
+  ],
+  hair: [
+    { id:"hood", name:"Capucha" }, { id:"short", name:"Corto" }, { id:"spiky", name:"En púas", need:{ level:30 } },
+    { id:"long", name:"Largo", need:{ level:60 } },
+  ],
+  hairColor: [
+    { id:"#15121f", name:"Negro" }, { id:"#5a3a1a", name:"Castaño", need:{ level:10 } }, { id:"#e8e8ec", name:"Blanco", need:{ level:100 } },
+    { id:"#b0242e", name:"Rojo", need:{ kills:2000 } }, { id:"#7a4ae0", name:"Violeta", need:{ awakened:true } },
+  ],
+  eyes: [
+    { id:"#4a5a78", name:"Grises" }, { id:"#3aa8ff", name:"Azul brillante", need:{ level:50 }, glow:true },
+    { id:"#c9a6ff", name:"Violeta del Monarca", need:{ awakened:true }, glow:true }, { id:"#ff3a4a", name:"Rojo sangre", need:{ ss:1 }, glow:true },
+    { id:"#ffd24a", name:"Oro SSS", need:{ sss:1 }, glow:true },
+  ],
+  cape: [
+    { id:"none", name:"Sin capa" }, { id:"short", name:"Capa corta", need:{ rank:"D" } }, { id:"long", name:"Capa larga", need:{ rank:"B" } },
+    { id:"shadow", name:"Capa de sombras", need:{ awakened:true } },
+  ],
+  aura: [
+    { id:"none", name:"Sin aura" }, { id:"#4aa8ff", name:"Azul", need:{ level:80 } }, { id:"#a86cff", name:"Violeta", need:{ awakened:true } },
+    { id:"#ff8a2a", name:"Fuego", need:{ ss:1 } }, { id:"#ffd24a", name:"Dorada", need:{ rank:"S" } }, { id:"#ffffff", name:"Luz SSS", need:{ sss:1 } },
+  ],
+};
+const LOOK_CAT = { outfit:"Conjunto", armor:"Armadura", hair:"Peinado", hairColor:"Color de pelo", eyes:"Ojos", cape:"Capa", aura:"Aura" };
+const LOOK_DEFAULT = { outfit:"hunter", armor:"light", hair:"hood", hairColor:"#15121f", eyes:"#4a5a78", cape:"none", aura:"none" };
+function needMet(n){
+  if (!n) return true;
+  if (n.level && P.level < n.level) return false;
+  if (n.rank && rankIdx(P.rank) < rankIdx(n.rank)) return false;
+  if (n.kills && P.kills < n.kills) return false;
+  if (n.awakened && !P.awakened) return false;
+  if (n.ss && ((P.rankKills?.SS || 0) + (P.rankKills?.SSS || 0)) < n.ss) return false;
+  if (n.sss && (P.rankKills?.SSS || 0) < n.sss) return false;
+  return true;
+}
+function needText(n){
+  if (!n) return "Disponible";
+  return [n.level && `Nivel ${n.level}`, n.rank && `Rango ${n.rank}`, n.kills && `${fmt(n.kills)} bajas`, n.awakened && "Despertar",
+          n.ss && "Vencer a un SS", n.sss && "Vencer a un SSS"].filter(Boolean).join(" · ");
+}
+const lookItem = cat => LOOKS[cat].find(o => o.id === P.look?.[cat]) || LOOKS[cat][0];
+const lookBonus = k => lookItem("outfit").bonus?.[k] || 0;
+function checkLookUnlocks(){
+  let fresh = [];
+  for (const cat in LOOKS) for (const o of LOOKS[cat]){
+    if (!o.need) continue;
+    const key = `${cat}:${o.id}`;
+    if (needMet(o.need) && !P.lookSeen.includes(key)){ P.lookSeen.push(key); fresh.push(o.name); }
+  }
+  if (fresh.length){ banner("NUEVO ASPECTO", "#ffd24a"); note(`Desbloqueado: ${fresh.join(", ")} · menú Atributos › Aspecto`, "--gold"); save(); }
+}
+/* -------------------------------- monturas --------------------------------
+   Cada montura tiene su criatura, sus colores y su velocidad. Salvo el lobo
+   inicial, se encuentran: caen de los enemigos de su región como un orbe
+   brillante que hay que recoger antes de que se apague. */
+const MOUNTS = {
+  ShadowWolf: { name:"Lobo sombrío",        body:"wolf",    skin:"#1a1230", dark:"#0c0918", hair:"#2a1a4a", eyes:"#b07cff", scale:1.45, speed:2.1, src:"Montura inicial" },
+  Kasaka:     { name:"Kasaka domada",       body:"serpent", skin:"#3f5a48", dark:"#1c2a22", hair:"#c8b98a", eyes:"#c8ff4a", scale:1.15, speed:2.2, isle:"Hongdae", chance:.02 },
+  WarBoar:    { name:"Jabalí de guerra",    body:"wolf",    skin:"#5a3a24", dark:"#2a1a10", hair:"#1a120c", eyes:"#ff6a2a", scale:1.5,  speed:2.25, isle:"HighOrcs", chance:.02, features:["tusks"] },
+  FrostFang:  { name:"Colmillo de Escarcha",body:"wolf",    skin:"#9fb4c8", dark:"#3e4e62", hair:"#eef6ff", eyes:"#6fd8ff", scale:1.6,  speed:2.35, isle:"RedGate", chance:.02, features:["crystals"] },
+  WingedAnt:  { name:"Hormiga alada",       body:"ant",     skin:"#241d2c", dark:"#120e18", hair:"#1a1420", eyes:"#b8ff3a", scale:1.35, speed:2.45, isle:"Jeju", chance:.018, features:["wings"] },
+  Nightmare:  { name:"Corcel infernal",     body:"wolf",    skin:"#2a0f14", dark:"#140608", hair:"#ff6a1a", eyes:"#ffb03a", scale:1.7,  speed:2.6, isle:"DemonCastle", chance:.015, horns:true, features:["tail"] },
+  WarTiger:   { name:"Tigre de guerra",     body:"wolf",    skin:"#c07a3a", dark:"#2a1a10", hair:"#f0e0c0", eyes:"#ffd24a", scale:1.65, speed:2.7, isle:"BeastMonarch", chance:.015 },
+  SystemDisc: { name:"Disco del Sistema",   body:"disc",    skin:"#4a4a86", dark:"#1f1f44", hair:"#9fa8ff", eyes:"#9fa8ff", scale:1.2,  speed:2.9, isle:"Architect", chance:.012, fly:true },
+  SkyDragon:  { name:"Dragón de Kaisel",    body:"wolf",    skin:"#241a3a", dark:"#120c20", hair:"#3a2a5a", eyes:"#ff5d6c", scale:1.95, speed:3.1, fly:true, horns:true,
+                features:["wings", "tail"], src:"Rarísimo: 25% al vencer a un SS o SSS, o 0,05% en las regiones 8 en adelante" },
+  GoldenWolf: { name:"Lobo dorado",         body:"wolf",    skin:"#c9a33a", dark:"#6a5418", hair:"#fff27a", eyes:"#ffffff", scale:1.7,  speed:3.4, features:["halo"], src:"Garantizado al vencer a un enemigo SSS" },
+};
+const mountOf = () => MOUNTS[P.mount] || MOUNTS.ShadowWolf;
+function mountSource(id){
+  const m = MOUNTS[id];
+  return m.src || `${(m.chance * 100).toFixed(1).replace(".", ",")}% al vencer enemigos de ${isleOf(m.isle).name} (más con rangos altos)`;
+}
+function mountConfig(id){
+  const m = MOUNTS[id] || MOUNTS.ShadowWolf;
+  return { body: m.body === "disc" ? "wraith" : m.body, skin:m.skin, pants:m.dark, hair:m.hair, eyes:m.eyes, scale:m.scale,
+           features:(m.features || []).slice(), horns:!!m.horns, hornColor:m.eyes };
+}
+let mountDrops = [];
+function rollMountDrop(e){
+  const reg = regionAt(e.x, e.y), R = mobRank(e.rank), ri = rankIdxOf(e.rank);
+  const give = (id, why) => { if (P.mounts.includes(id) || mountDrops.some(d => d.id === id)) return false;
+    mountDrops.push({ id, x:e.x, y:e.y, t:60 }); banner("¡UNA MONTURA HA CAÍDO!", MOUNTS[id].eyes); note(`${MOUNTS[id].name} · recógela antes de 60 s${why ? " · " + why : ""}`, "--gold"); return true; };
+  if (e.rank === "SSS") give("GoldenWolf", "SSS");
+  if (R.myth && Math.random() < .25) give("SkyDragon");
+  if (ringAt(e.x, e.y) >= 8 && Math.random() < .0005) give("SkyDragon");
+  for (const id in MOUNTS){
+    const m = MOUNTS[id];
+    if (m.isle === reg.id && Math.random() < m.chance * (1 + ri * .5)) give(id);
+  }
+}
+function syncMountDrops(dt){
+  for (const d of mountDrops){
+    d.t -= dt;
+    if (Math.hypot(d.x - player.x, d.y - player.y) < 70){
+      d.t = -1; P.mounts.push(d.id); P.mount = d.id;
+      banner(`NUEVA MONTURA: ${MOUNTS[d.id].name.toUpperCase()}`, MOUNTS[d.id].eyes);
+      note("Pulsa M para montarla · menú Atributos › Monturas", "--gold"); SFX.levelUp(); burst(d.x, d.y, 40, MOUNTS[d.id].eyes, 30); save();
+    }
+  }
+  mountDrops = mountDrops.filter(d => d.t > 0);
+}
 function newProfile(){
   return {
     schema:9, level:1, xp:0, rank:"E", rebirths:0,
@@ -932,6 +1057,7 @@ function newProfile(){
     title:"Cazador Novato", awakened:false, index:{},
     kills:0, arisen:0, dungeonsCleared:0, ledger:[], tutorial:0, chapter:0,
     pos:null,
+    look:{ ...LOOK_DEFAULT }, lookSeen:[], rankKills:{}, mounts:["ShadowWolf"], mount:"ShadowWolf",
   };
 }
 function reconcile(d){
@@ -949,6 +1075,21 @@ function reconcile(d){
   if (!Array.isArray(p.squad)) p.squad = [];
   if (!Array.isArray(p.islands) || !p.islands.length) p.islands = ["Seoul"];
   if (!Array.isArray(p.ledger)) p.ledger = [];
+  p.look = Object.assign({ ...LOOK_DEFAULT }, typeof d?.look === "object" && d.look ? d.look : {});
+  for (const cat in LOOKS) if (!LOOKS[cat].some(o => o.id === p.look[cat])) p.look[cat] = LOOK_DEFAULT[cat];
+  if (d && !d.look){
+    // partidas anteriores al vestidor: se viste al cazador según lo ya logrado
+    const ri = RANKS.findIndex(r => r.name === p.rank);
+    p.look.armor = p.awakened ? "coat" : ri >= 4 ? "heavy" : ri >= 2 ? "plate" : "light";
+    p.look.outfit = p.awakened ? "monarch" : "hunter";
+    p.look.hair = p.awakened ? "spiky" : "hood";
+    if (p.awakened){ p.look.eyes = "#c9a6ff"; p.look.cape = "none"; }
+  }
+  if (!Array.isArray(p.lookSeen)) p.lookSeen = [];
+  if (typeof p.rankKills !== "object" || !p.rankKills) p.rankKills = {};
+  if (!Array.isArray(p.mounts)) p.mounts = ["ShadowWolf"];
+  p.mounts = p.mounts.filter(m => MOUNTS[m]); if (!p.mounts.includes("ShadowWolf")) p.mounts.unshift("ShadowWolf");
+  if (!p.mounts.includes(p.mount)) p.mount = "ShadowWolf";
   // Un guardado viejo o manipulado puede traer textos o NaN donde van números:
   // si se cuelan, el oro o la EXP se vuelven NaN y la partida queda inservible.
   const num = (v, def, min) => { const n = Number(v); return Number.isFinite(n) ? Math.max(min, n) : def; };
@@ -1005,12 +1146,12 @@ const talentLv    = id => P.talents?.[id] || 0;
 const blessed     = () => (P.blessing || 0) > now();
 const baseDamage  = () => FORMULA.physicalDamage(weaponDmg(), P.stats.STR) * (blessed() ? 1.4 : 1) * (formActive() ? FORM.dmg : 1)
   * (1 + rankMult() + classBonus("dmg") + talentLv("power") * 0.08)
-  * (1 + P.level * 0.012) * (now() < (player.dmgBuffUntil || 0) ? 1.3 : 1);
+  * (1 + P.level * 0.012) * (now() < (player.dmgBuffUntil || 0) ? 1.3 : 1) * (1 + lookBonus("dmg"));
 const relicBonus  = effect => Object.keys(P.relics).reduce((a, id) => a + (RELICS[id]?.effect === effect ? RELICS[id].value : 0), 0);
 const shadowMult  = () => 1 + relicBonus("shadowDmg") + classBonus("shadow") + talentLv("legion") * 0.15;
 const ariseLuck   = () => rankOf(P.rank).luck + P.stats.INT * 0.35 + relicBonus("ariseLuck")
   + (P.awakened ? 60 : 0) + classBonus("luck") * 100 + talentLv("fortune") * 12;
-const maxHP       = () => FORMULA.maxHP(100 + P.level * 6 + P.rebirths * 500, P.stats.VIT)
+const maxHP       = () => FORMULA.maxHP(100 + P.level * 6 + P.rebirths * 500, P.stats.VIT) * (1 + lookBonus("hp"))
   * (1 + classBonus("hp") + talentLv("vigor") * 0.1);
 const maxMana     = () => FORMULA.maxMana(P.stats.MNA) * (1 + classBonus("mana"));
 const shadowDmgOf = s => FORMULA.shadowDamage(SHADOWS[s.id].dmg * (1 + (s.level - 1) * 0.1) * mobRank(s.rank).sh, P.stats.SDW) * shadowMult()
@@ -1140,6 +1281,8 @@ function killEnemy(e){
   });
   if (dungeon) dungeon.onKill(e);
   relicOnKill(e);
+  if (e.rank && !e.boss){ P.rankKills[e.rank] = (P.rankKills[e.rank] || 0) + 1; }
+  rollMountDrop(e);
   dirty = true;
 }
 function gainXP(amount){
@@ -1217,7 +1360,7 @@ function resolveHit(){
   playerHit(e, baseDamage() * def.mult, { cam:def.cam, hitstop:def.hitstop });
 }
 /* ------------------- habilidades y pasivas de las armas -------------------- */
-let pendingFx = [];
+let pendingFx = [], lookT = 0;
 const later = (t, fn) => pendingFx.push({ t, fn });
 const skillBase = () => (weaponDmg() * SKILL.damage.weapon + P.stats.STR * SKILL.damage.str * 1.5)
   * (1 + rankMult()) * (1 + classBonus("skill")) * (kitOf(P.weapon).big ? 1.2 : 1);
@@ -1485,7 +1628,7 @@ function rebuildSquad(){
     const prev = keep.get(uuid);
     const a = (i / cap) * Math.PI * 2;
     const base = prev || {
-      uuid, id:data.id, slot:i, state:"IDLE_FOLLOW", atkCd:0, step:rnd(0,6), swing:0,
+      uuid, id:data.id, slot:i, state:"IDLE_FOLLOW", atkCd:0, step:rnd(0,6), swing:0, rank:data.rank,
       x:player.x + Math.cos(a)*CFG.SHADOW_FOLLOW, y:player.y + Math.sin(a)*CFG.SHADOW_FOLLOW, target:null,
     };
     base.slot = i; base.data = data; base.dmg = shadowDmgOf(data); base.hp = shadowHPOf(data);
@@ -2122,7 +2265,7 @@ function toggleMount(){
   const b = document.getElementById("a-mount");
   b.classList.toggle("on", player.mounted);
   b.querySelector(".st").textContent = player.mounted ? "ON" : "OFF";
-  note(player.mounted ? "Montura invocada" : "Montura guardada", "--monarch");
+  note(player.mounted ? `${mountOf().name} invocada` : "Montura guardada", "--monarch");
 }
 
 /* -------------------------------- update ---------------------------------- */
@@ -2134,7 +2277,7 @@ function update(dt){
   if (hitstop > 0){ hitstop -= dt; dt *= 0.06; }
 
   // ---- jugador
-  const speed = FORMULA.walkSpeed(P.stats.AGI) * 11 * (player.mounted ? 2.1 : 1) * (formActive() ? FORM.speed : 1);
+  const speed = FORMULA.walkSpeed(P.stats.AGI) * 11 * (player.mounted ? mountOf().speed : 1) * (formActive() ? FORM.speed : 1) * (1 + lookBonus("spd"));
   const v = inputVector();
   if (player.dead > 0){
     player.dead -= dt;
@@ -2231,6 +2374,8 @@ function update(dt){
   player.spinT = Math.max(0, (player.spinT || 0) - dt);
   player.flickerT = Math.max(0, (player.flickerT || 0) - dt);
   relicTick(dt);
+  syncMountDrops(dt);
+  lookT = (lookT || 0) + dt; if (lookT > 1){ lookT = 0; checkLookUnlocks(); }
   player.mana = Math.min(maxMana(), player.mana + maxMana() * 0.08 * dt);
   // aura de la transformación y aviso al terminar
   if (formActive()){
@@ -2587,7 +2732,26 @@ function weaponKind(id){
 }
 let scene, camera, renderer, sunLight, hemiLight, groundMesh, skyMesh;
 const views = { enemies:new Map(), shadows:new Map(), corpses:new Map() };
-let playerView = null, npcView = null, portalView = null;
+let playerView = null, npcView = null, portalView = null, mountView = null, dropViews = [];
+function buildMountView(id){
+  const m = MOUNTS[id] || MOUNTS.ShadowWolf;
+  let v;
+  if (m.body === "disc"){
+    // disco flotante del Sistema: anillos que giran y runas encendidas
+    v = new THREE.Group();
+    const detail = new THREE.Group(); v.add(detail); v.detail = detail;
+    const disc = new THREE.Group(); detail.add(disc); v.disc = disc;
+    const base = new THREE.Mesh(new THREE.CylinderGeometry(46 * m.scale, 40 * m.scale, 6, 24), mat(m.skin)); disc.add(base);
+    const rim = new THREE.Mesh(new THREE.TorusGeometry(46 * m.scale, 3, 6, 32), mat(m.hair, { emissive:m.hair, emissiveIntensity:1.2 }));
+    rim.rotation.x = Math.PI / 2; disc.add(rim);
+    for (let i = 0; i < 6; i++){ const a = i / 6 * Math.PI * 2; const r = part(6, 3, 6, m.eyes, { emissive:m.eyes, emissiveIntensity:1.4 });
+      r.position.set(Math.cos(a) * 30 * m.scale, 4, Math.sin(a) * 30 * m.scale); disc.add(r); }
+    v.legs = [new THREE.Group(), new THREE.Group()]; v.arms = [new THREE.Group(), new THREE.Group()];
+    v.torso = new THREE.Group(); v.neck = new THREE.Group(); v.scaleRef = m.scale;
+  } else v = buildCharacter(mountConfig(id));
+  v.userData.id = id;
+  return v;
+}
 const propPool = [];
 let sparkPoints = null, sparkGeo = null;
 
@@ -2649,6 +2813,44 @@ function part(w, h, d, color, opts){
 }
 // Textura de cara dibujada en canvas (ojos con brillo y sonrisa).
 const faceTexCache = new Map();
+// Cara del protagonista: cejas firmes, ojos con iris, brillo y párpado,
+// sombra de nariz, boca y un poco de rubor. Se ve a la distancia de juego.
+function heroFaceTexture(iris, glow, skin, scar){
+  const k = `hero|${iris}|${glow ? 1 : 0}|${skin}|${scar ? 1 : 0}`;
+  let t = faceTexCache.get(k);
+  if (t) return t;
+  const c = document.createElement("canvas"); c.width = c.height = 128;
+  const x = c.getContext("2d");
+  x.fillStyle = skin; x.fillRect(0, 0, 128, 128);
+  // sombreado suave en los bordes y bajo el pelo
+  const sh = x.createLinearGradient(0, 0, 0, 128); sh.addColorStop(0, "rgba(40,20,10,.28)"); sh.addColorStop(.25, "rgba(40,20,10,0)");
+  sh.addColorStop(.85, "rgba(40,20,10,0)"); sh.addColorStop(1, "rgba(40,20,10,.22)"); x.fillStyle = sh; x.fillRect(0, 0, 128, 128);
+  // cejas inclinadas (mirada decidida)
+  x.fillStyle = "#1a1420";
+  x.beginPath(); x.moveTo(24, 40); x.lineTo(54, 45); x.lineTo(54, 51); x.lineTo(26, 46); x.fill();
+  x.beginPath(); x.moveTo(104, 40); x.lineTo(74, 45); x.lineTo(74, 51); x.lineTo(102, 46); x.fill();
+  for (const ex of [40, 88]){
+    // esclerótica almendrada
+    x.fillStyle = "#f4f0ea";
+    x.beginPath(); x.ellipse(ex, 62, 13, 8, 0, 0, Math.PI * 2); x.fill();
+    // iris y pupila
+    if (glow){ x.shadowColor = iris; x.shadowBlur = 14; }
+    x.fillStyle = iris; x.beginPath(); x.ellipse(ex + (ex < 64 ? 2 : -2), 63, 7, 8, 0, 0, Math.PI * 2); x.fill();
+    x.shadowBlur = 0;
+    x.fillStyle = glow ? "#ffffff" : "#0a0a12"; x.beginPath(); x.ellipse(ex + (ex < 64 ? 2 : -2), 63, 3, 4, 0, 0, Math.PI * 2); x.fill();
+    x.fillStyle = "rgba(255,255,255,.95)"; x.fillRect(ex + (ex < 64 ? 3 : -1), 58, 3, 3);
+    // párpado superior
+    x.strokeStyle = "#1a1420"; x.lineWidth = 3.5; x.beginPath(); x.ellipse(ex, 62, 13, 8, 0, Math.PI * 1.05, Math.PI * 1.95); x.stroke();
+  }
+  // nariz y boca
+  x.strokeStyle = "rgba(90,45,25,.55)"; x.lineWidth = 3; x.beginPath(); x.moveTo(64, 70); x.lineTo(60, 84); x.lineTo(66, 86); x.stroke();
+  x.strokeStyle = "#6a2a24"; x.lineWidth = 3.5; x.lineCap = "round";
+  x.beginPath(); x.moveTo(52, 100); x.quadraticCurveTo(64, 104, 76, 99); x.stroke();
+  x.fillStyle = "rgba(230,110,100,.22)"; x.beginPath(); x.ellipse(28, 84, 9, 5, 0, 0, 6.3); x.fill(); x.beginPath(); x.ellipse(100, 84, 9, 5, 0, 0, 6.3); x.fill();
+  if (scar){ x.strokeStyle = "rgba(150,60,60,.8)"; x.lineWidth = 2.5; x.beginPath(); x.moveTo(94, 42); x.lineTo(84, 76); x.stroke(); }
+  t = new THREE.CanvasTexture(c); t.magFilter = THREE.LinearFilter; SHARED.add(t); faceTexCache.set(k, t);
+  return t;
+}
 function faceTexture(eye, glow, skin, grin){
   const k = `${eye}|${glow ? 1 : 0}|${skin}|${grin || ""}`;
   let t = faceTexCache.get(k);
@@ -3124,6 +3326,7 @@ function buildCharacter(cfg){
   if (cfg.cape){
     const cape = P0(26, 32, 2.6, cfg.cape);
     cape.position.set(0, 40 * s, -9 * s); detail.add(cape); g.cape = cape;
+    if (cfg.capeLong){ cape.scale.y = 1.45; cape.position.y = 34 * s; }
   }
   // brazos
   g.arms = [];
@@ -3212,7 +3415,8 @@ function buildCharacter(cfg){
   // siempre como transparente la hacía traslúcida y desordenaba la profundidad.
   const faceAlpha = opts.opacity ?? 1;
   const faceMat = new THREE.MeshLambertMaterial({
-    map: faceTexture(cfg.eyes || "#12172b", !!cfg.glowEyes, skin, cfg.grin),
+    map: cfg.hero ? heroFaceTexture(cfg.iris || "#4a5a78", !!cfg.glowEyes, skin, cfg.scar)
+                  : faceTexture(cfg.eyes || "#12172b", !!cfg.glowEyes, skin, cfg.grin),
     transparent: faceAlpha < 1, opacity: faceAlpha,
   });
   const headMat = [mat(skin, opts), mat(skin, opts), mat(skin, opts), mat(skin, opts),
@@ -3220,6 +3424,15 @@ function buildCharacter(cfg){
   const head = new THREE.Mesh(boxGeo(19*s, 18*s, 17.5*s), headMat);
   head.castShadow = true; head.position.y = 12 * s;
   neck.add(head);
+  if (cfg.hero){
+    // nariz y orejas en relieve: la cabeza deja de ser un cubo liso
+    const nose = P0(3, 4, 2.5, skin); nose.position.set(0, 10 * s, 9.6 * s); neck.add(nose);
+    for (const sd of [-1, 1]){ const ear = P0(2.5, 6, 4, skin); ear.position.set(sd * 10.3 * s, 12 * s, 0); neck.add(ear); }
+  }
+  if (cfg.longHair && !cfg.helm && !cfg.hood){
+    const mane = P0(18.5, 18, 4, cfg.longHair); mane.position.set(0, 8 * s, -9 * s); neck.add(mane);
+    for (const sd of [-1, 1]){ const lock = P0(3, 14, 6, cfg.longHair); lock.position.set(sd * 9.5 * s, 11 * s, 4 * s); neck.add(lock); }
+  }
   if (cfg.hair && !cfg.helm && !cfg.hood && !cfg.spikyHair){
     const top = P0(19.5, 4, 18, cfg.hair); top.position.y = 22 * s; neck.add(top);
     const back = P0(18.5, 9, 3, cfg.hair); back.position.set(0, 15 * s, -8 * s); neck.add(back);
@@ -3293,7 +3506,7 @@ function buildCharacter(cfg){
     }
     const brim = P0(20, 4, 5, cfg.hood2 || cfg.hood); brim.position.set(0, 18.5 * s, 8.5 * s);
     brim.rotation.x = 0.25; neck.add(brim);
-    const scarf = P0(20, 6, 18, cfg.hood2 || cfg.hood); scarf.position.y = 5 * s; neck.add(scarf);
+    if (!cfg.hero){ const scarf = P0(20, 6, 18, cfg.hood2 || cfg.hood); scarf.position.y = 5 * s; neck.add(scarf); }
   }
   if (cfg.rig){
     // arnés táctico: correas cruzadas y cargadores
@@ -4495,49 +4708,39 @@ function monarchFormConfig(){
 }
 function playerConfig(){
   if (typeof formActive === "function" && formActive()) return monarchFormConfig();
-  // El cazador cambia de aspecto según avanza: de encapuchado de rango E a
-  // armadura de placas, y al despertar al abrigo largo del Monarca de las
-  // Sombras, con las vetas encendidas y la hoja de energía.
-  const r = rankIdx(P.rank);                       // 0=E … 5=S
-  const awake = P.awakened;
-  const monarch = awake;                           // el despertar ya cambia la silueta
-  const heavy = !monarch && r >= 4;                // armadura pesada solo sin despertar
-  const armored = r >= 2 || monarch;
-  const base = monarch
-    ? { shirt:"#0b0a16", sleeve:"#120f22", pants:"#0b0a16", boots:"#080714",
-        plate:"#171233", trim:"#a86cff", glowC:"#c9a6ff" }
-    : { shirt:"#23407e", sleeve:"#2d51a0", pants:"#2a3350", boots:"#1d2438",
-        plate:"#3f6ac0", trim:"#8fc0ff", glowC:"#9fd6ff" };
+  // El aspecto lo elige el jugador en el vestidor (Atributos › Aspecto) entre
+  // lo que ya ha desbloqueado; la cara siempre queda a la vista.
+  const L = P.look || LOOK_DEFAULT;
+  const out = lookItem("outfit").c, armor = lookItem("armor").id, hair = lookItem("hair").id;
+  const eyeI = lookItem("eyes"), capeI = lookItem("cape").id;
+  const heavy = armor === "heavy", plate = armor === "plate" || heavy, coat = armor === "coat";
+  const glowEye = !!eyeI.glow;
   return {
-    scale:1.06, skin:"#e8b98a",
-    eyes: monarch ? "#c9a6ff" : "#12172b", glowEyes: monarch,
-    shirt: base.shirt, sleeve: base.sleeve, pants: base.pants, boots: base.boots,
-    belt:"#1a1428", buckle: base.trim,
-    // despertado: pelo en púas y cara a la vista; antes, capucha o yelmo
-    spikyHair: monarch ? "#15121f" : null,
-    hair: null,
-    hood: (!monarch && !heavy) ? "#141b33" : null,
-    hood2: (!monarch && !heavy) ? base.trim : null,
-    rig: (!armored && !monarch) ? "#0f1526" : null, rig2: base.trim,
-    kneepads: (!heavy && !monarch) ? "#0f1526" : null,
-    coat: monarch ? "#0b0a16" : null,
-    trim: monarch ? base.trim : null,
-    armor: monarch ? null : base.plate, armorGlow: 0,
-    core: monarch ? "#a86cff" : (armored ? base.glowC : null),
-    pauldron: base.plate, pauldron2: monarch ? base.plate : (armored ? base.trim : null),
-    spikes: monarch && r >= 4 ? base.trim : null,
-    gauntlet: base.plate,
-    tassets: (!monarch && (r >= 1)) ? base.plate : null,
-    greaves: heavy ? base.plate : null,
-    backSpikes: monarch && r >= 5 ? base.trim : null,
-    helm: heavy ? base.plate : null, helm2: heavy ? base.trim : null,
-    visor: heavy ? base.glowC : null, crest: null,
-    glove: base.trim,
-    cape: monarch ? null : (r >= 3 ? base.plate : null),
-    crown: null,                    // la cabeza se ve: pelo en púas y ojos encendidos
-    weapon: kitOf(P.weapon).color, weaponGlow: monarch || !!kitOf(P.weapon).glow,
+    scale:1.06, skin:"#e8b98a", hero:true, iris:eyeI.id, glowEyes: glowEye, eyes: glowEye ? eyeI.id : "#12172b",
+    shirt: out.shirt, sleeve: out.sleeve, pants: out.pants, boots: out.boots,
+    belt:"#1a1428", buckle: out.trim,
+    spikyHair: hair === "spiky" ? L.hairColor : null,
+    hair: hair === "short" || hair === "long" ? L.hairColor : null, longHair: hair === "long" ? L.hairColor : null,
+    hood: hair === "hood" ? out.plate : null, hood2: hair === "hood" ? out.trim : null,
+    rig: armor === "light" ? "#0f1526" : null, rig2: out.trim,
+    kneepads: armor === "light" ? "#0f1526" : null,
+    coat: coat ? out.shirt : null,
+    trim: coat || heavy ? out.trim : null,
+    armor: coat ? null : out.plate, armorGlow: 0,
+    core: plate || coat ? out.trim : null,
+    pauldron: out.plate, pauldron2: plate || coat ? out.trim : null,
+    spikes: heavy || (coat && P.awakened) ? out.trim : null,
+    gauntlet: out.plate,
+    tassets: plate ? out.plate : null,
+    greaves: heavy ? out.plate : null,
+    backSpikes: coat && rankIdx(P.rank) >= 5 ? out.trim : null,
+    helm: null, crest: heavy ? out.trim : null,
+    glove: out.trim,
+    cape: capeI === "none" ? null : capeI === "shadow" ? "#120c24" : out.plate, capeLong: capeI === "long" || capeI === "shadow",
+    crown: null,
+    weapon: kitOf(P.weapon).color, weaponGlow: P.awakened || !!kitOf(P.weapon).glow,
     weaponKind: weaponKind(P.weapon),
-    key: `${awake}|${P.rank}|${P.weapon}`,
+    key: `${JSON.stringify(L)}|${P.rank}|${P.weapon}|${P.awakened}`,
   };
 }
 function ensurePlayerView(){
@@ -4626,27 +4829,59 @@ function enemyConfig(e){
     ...(boss ? {} : (reg.kit || {})),
   };
 }
+/* Cada sombra conserva la forma de lo que fue: el oso Tank, el dragón Kaisel,
+   la hormiga Beru, el caballero Igris con su penacho... todo hecho de sombra
+   (negro violáceo translúcido) con el brillo de su clase en ojos, filos y vetas. */
+const SHADOW_LOOK = {
+  Soldier:  { lore:"Soldado raso del ejército de sombras. Siempre en primera línea." },
+  Iron:     { kit:{ helm:"#1a1230", visor:true, shield:"#140f26", greaves:"#1a1230", weaponKind:"hammer" }, scale:1.18,
+              lore:"Coloso con escudo de torre. Aguanta lo que ningún otro." },
+  Tank:     { body:"wolf", scale:1.55, features:["mane"], lore:"Oso de sombra. Embiste y arrastra a los enemigos." },
+  Igris:    { kit:{ helm:"#1a1230", visor:true, crest:"#ff3a4a", cape:"#4a0f1c", weaponKind:"greatsword", greaves:"#1a1230" },
+              glow:"#ff3a4a", lore:"El Caballero Rojo. Leal hasta el fin, su penacho arde como sangre." },
+  Tusk:     { kit:{ weaponKind:"staff", hood:"#160f2b" }, features:["tusks"], scale:1.12, lore:"Chamán alto orco. Su bastón guarda fuego de sombra." },
+  Kaisel:   { body:"wolf", scale:1.7, features:["wings", "tail"], horns:true, lore:"Dragón volador. Montura y arma a la vez." },
+  Greed:    { kit:{ weaponKind:"dagger", hood:"#160f2b" }, features:["extraEyes"], lore:"Asesino silencioso. Golpea desde el borde de la luz." },
+  Baruka:   { kit:{ weaponKind:"dagger", helm:"#1a1f3a" }, features:["crystals"], glow:"#9fe8ff", lore:"Jefe de los elfos de hielo. Su filo congela el aire." },
+  Beru:     { body:"ant", scale:1.5, features:["wings"], glow:"#b8ff3a", lore:"El Rey Hormiga. Hambre y velocidad sin fin." },
+  Bellion:  { kit:{ helm:"#1a1230", visor:true, weaponKind:"spear", spikes:true, greaves:"#1a1230", cape:"#2a1060" }, features:["wings", "halo"], scale:1.25,
+              lore:"Gran Mariscal del ejército. Ninguna sombra le supera." },
+  Kamish:   { body:"wolf", scale:2.1, features:["wings", "tail", "crystals"], horns:true, glow:"#ff8a2a", lore:"El dragón que hizo temblar el mundo, ahora a tus órdenes." },
+  Antares:  { kit:{ weaponKind:"greatsword", spikes:true, cape:"#3a0a1a" }, features:["wings", "tail"], horns:true, crown:true, glow:"#ff4a4a", scale:1.3,
+              lore:"Rey de los Dragones. Su llama es negra y roja." },
+  Architect:{ body:"wraith", features:["halo", "crystals"], scale:1.2, lore:"Una conciencia hecha de runas del Sistema." },
+  Ashborn:  { kit:{ coat:"#0b0a16", weaponKind:"greatsword", spikes:true, backSpikes:true }, features:["halo"], crown:true, scale:1.35, glow:"#b07cff",
+              lore:"El primer Monarca de las Sombras. Su sola presencia oscurece el cielo." },
+};
 function shadowConfig(sh){
-  // El ejército no son caballeros de placas: son siluetas oscuras con capucha
-  // y jirones de sombra que ondean detrás, con los ojos del color de su rango.
-  const tier = sh.data.tier;
-  const glow = getComputedStyle(document.documentElement).getPropertyValue(TIER_VAR[tier] || "--t-C").trim() || "#b9c9e8";
+  const d = sh.data, tier = d.tier, L = SHADOW_LOOK[d.id] || {};
+  const tierGlow = getComputedStyle(document.documentElement).getPropertyValue(TIER_VAR[tier] || "--t-C").trim() || "#b9c9e8";
+  const glow = L.glow || tierGlow;
   const elite = tier === "S" || tier === "S Elite" || tier === "Monarch";
   const monarch = tier === "Monarch";
-  return {
-    scale: monarch ? 1.14 : elite ? 1.05 : .97, opts:{ opacity:.95 },
+  const myth = mobRank(d.rank).myth;
+  const scale = (L.scale || (monarch ? 1.14 : elite ? 1.05 : .97)) * (1 + rankIdxOf(d.rank) * .03);
+  const base = {
+    body: L.body, features: (L.features || []).slice(), scale, opts:{ opacity:.93 },
     skin:"#140f26", shirt:"#0c0918", sleeve:"#110d20", pants:"#080611", boots:"#060510",
-    belt:"#0c0918", hair:null, glove: glow,
-    eyes: glow, glowEyes:true,
-    hood:"#160f2b", hood2: glow,
+    belt:"#0c0918", hair:"#1a1230", glove: glow, eyes: glow, glowEyes:true,
+    horns: !!L.horns, hornColor: glow, crown: L.crown || monarch ? glow : null,
+  };
+  if (myth && !base.features.includes("halo")) base.features.push("halo");
+  if (L.body) return base;
+  const k = L.kit || {};
+  return {
+    ...base,
+    hood: k.hood !== undefined ? k.hood : (k.helm || k.coat ? null : "#160f2b"), hood2: glow,
     tatters: monarch ? "#4a2394" : elite ? "#3d1e7a" : "#2c1659",
-    trim: elite ? glow : null,
-    armor:"#1a1230", armorGlow: glow, core: elite ? glow : null,
+    trim: elite || k.coat ? glow : null, coat: k.coat || null,
+    armor: k.coat ? null : "#1a1230", armorGlow: glow, core: elite ? glow : null,
     pauldron:"#1a1230", pauldron2: elite ? glow : null,
-    spikes: monarch ? glow : null,
-    gauntlet:"#1a1230",
-    crown: monarch ? glow : null,
-    weapon: glow, weaponGlow:true, weaponKind: monarch ? "scythe" : "sword",
+    spikes: k.spikes || monarch ? glow : null, backSpikes: k.backSpikes ? glow : null,
+    gauntlet:"#1a1230", greaves: k.greaves || null,
+    helm: k.helm || null, helm2: k.helm ? glow : null, visor: k.visor ? glow : null, crest: k.crest || null,
+    cape: k.cape || null, shield: k.shield || null, shieldGlow: k.shield ? glow : null,
+    weapon: glow, weaponGlow:true, weaponKind: k.weaponKind || (monarch ? "scythe" : "sword"),
   };
 }
 // Libera la memoria de GPU de una vista que sale de la escena. Sin esto las
@@ -4922,13 +5157,43 @@ function render(dt){
     pv.tagKey = `${P.title}|${P.level}`;
   }
   pv.tag.rotation.y = -player.yaw;
+  // montura bajo el jugador
+  const mo = mountOf();
+  if (player.mounted){
+    if (!mountView || mountView.userData.id !== P.mount){
+      if (mountView){ scene.remove(mountView); disposeView(mountView); }
+      mountView = buildMountView(P.mount); scene.add(mountView);
+    }
+    mountView.visible = true;
+    const fly = mo.fly ? 26 + Math.sin(now() * 2) * 5 : 0;
+    poseEntity(mountView, player.x, player.y, player.yaw, { step:player.step * 1.3, moving:(player.moveAmt || 0) > .05, lift: player.h + fly });
+    if (mountView.disc) mountView.disc.rotation.y += dt * 3;
+  } else if (mountView) mountView.visible = false;
+  const saddle = player.mounted ? (mo.body === "disc" ? 14 : mo.body === "serpent" ? 30 : mo.body === "ant" ? 30 : 33) * mo.scale + (mo.fly ? 26 + Math.sin(now() * 2) * 5 : 0) - 14 : 0;
   poseEntity(pv, player.x, player.y, player.yaw, {
     step:player.step, moving:(player.moveAmt || 0) > .05,
     swing: playerSwing(), swingDir: (player.combo % 2) ? -1 : 1,
-    lift: player.h, air: player.h > 3, dash: player.dashT > 0,
+    lift: player.h + saddle, air: !player.mounted && player.h > 3, dash: player.dashT > 0,
     hurt: clamp(player.hurt / 0.22, 0, 1),
   });
   pv.visible = player.dead <= 0 || Math.sin(now() * 20) > 0;
+  if (player.mounted){                                  // sentado a horcajadas
+    pv.legs[0].rotation.set(-1.25, 0, -.35); pv.legs[1].rotation.set(-1.25, 0, .35);
+  } else { pv.legs[0].rotation.z = 0; pv.legs[1].rotation.z = 0; }
+  // aura elegida en el vestidor
+  const auraC = lookItem("aura").id;
+  if (auraC !== "none"){
+    if (!pv.userData.lookAura || pv.userData.lookAuraC !== auraC){
+      if (pv.userData.lookAura){ pv.remove(pv.userData.lookAura); disposeView(pv.userData.lookAura); }
+      const au = new THREE.Mesh(auraGeo(), new THREE.MeshBasicMaterial({ color:new THREE.Color(auraC), transparent:true, opacity:.5,
+        depthWrite:false, blending:THREE.AdditiveBlending, side:THREE.DoubleSide }));
+      au.rotation.x = -Math.PI / 2; au.position.y = 2; au.scale.setScalar(1.3); pv.add(au);
+      pv.userData.lookAura = au; pv.userData.lookAuraC = auraC;
+    }
+    pv.userData.lookAura.visible = true; pv.userData.lookAura.rotation.z = now() * 2;
+    if (Math.random() < .35) parts.push({ x:player.x + rnd(-22, 22), y:player.y + rnd(-22, 22), h:rnd(5, 70) + saddle, vx:0, vy:0, vh:rnd(40, 110),
+      life:rnd(.4, .8), color: auraC === "#ffffff" ? `hsl(${(now() * 120) % 360},90%,70%)` : auraC, size:rnd(3, 6) });
+  } else if (pv.userData.lookAura) pv.userData.lookAura.visible = false;
   // animaciones de habilidad: giro del torbellino, parpadeo del iaido
   if (player.spinT > 0 && pv.detail) pv.detail.rotation.y = (1 - player.spinT / .62) * Math.PI * 4;
   if (player.flickerT > 0) pv.visible = Math.sin(now() * 70) > -.2;
@@ -5044,9 +5309,30 @@ function render(dt){
     const dS = Math.hypot(sh.x - player.x, sh.y - player.y);
     if (sh.__view.setLod) sh.__view.setLod(dS > QUALITY.charDetail);
     const bob = Math.sin(sh.step * .8) * 2.2;
-    poseEntity(sh.__view, sh.x, sh.y, sh.yaw || 0, {
-      step:sh.step, moving: sh.state !== "IDLE_FOLLOW", attack: sh.swing > 0 ? 1 : 0, lift: 4 + bob,
+    const v = sh.__view;
+    const flying = (SHADOW_LOOK[sh.id] || {}).features?.includes("wings") && (SHADOW_LOOK[sh.id] || {}).body;
+    poseEntity(v, sh.x, sh.y, sh.yaw || 0, {
+      step:sh.step, moving: sh.state !== "IDLE_FOLLOW", attack: sh.swing > 0 ? 1 : 0, lift: (flying ? 34 : 4) + bob * (flying ? 3 : 1),
     });
+    // presencia de sombra: aura en el suelo con el color de su rango, ojos que
+    // arden y humo negro que se desprende al moverse
+    if (!v.userData.sAura){
+      const R = mobRank(sh.data.rank);
+      const au = new THREE.Mesh(auraGeo(), new THREE.MeshBasicMaterial({ color:new THREE.Color(R.col), transparent:true, opacity:.4,
+        depthWrite:false, blending:THREE.AdditiveBlending, side:THREE.DoubleSide }));
+      au.rotation.x = -Math.PI / 2; au.position.y = 2; au.scale.setScalar((v.scaleRef || 1) * (.7 + rankIdxOf(sh.data.rank) * .08)); v.add(au); v.userData.sAura = au;
+      const fl = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTexture("#5a2ab0"), transparent:true, depthWrite:false,
+        blending:THREE.AdditiveBlending, opacity:.35 }));
+      fl.scale.set(90 * (v.scaleRef || 1), 120 * (v.scaleRef || 1), 1); fl.position.y = 40 * (v.scaleRef || 1); v.add(fl); v.userData.sFlame = fl;
+    }
+    v.userData.sAura.rotation.z = -now() * 1.2 - sh.slot;
+    v.userData.sAura.visible = dS < 900;
+    v.userData.sFlame.material.opacity = .25 + Math.sin(now() * 3 + sh.slot) * .1 + (sh.swing > 0 ? .25 : 0);
+    if (dS < 700 && Math.random() < (sh.state !== "IDLE_FOLLOW" ? .5 : .15)){
+      const sc = v.scaleRef || 1;
+      parts.push({ x:sh.x + rnd(-12, 12) * sc, y:sh.y + rnd(-12, 12) * sc, h:rnd(10, 60) * sc, vx:0, vy:0, vh:rnd(30, 80),
+                   life:rnd(.4, .8), color: Math.random() < .7 ? "#1a0f33" : "#7a4ae0", size:rnd(4, 7) });
+    }
   }
   // cadáveres
   const aliveC = new Set();
@@ -5107,6 +5393,25 @@ function render(dt){
     h.__beam.material.opacity = .06 + Math.sin(now() * 2 + h.ring) * .04;
     poseEntity(h.__view, h.x, h.y, h.yaw ?? 0, { step:h.step * .7, moving:false, attack:0 });
   }
+
+  // orbes de montura caídos: huevo brillante con columna de luz
+  const aliveD = new Set();
+  for (const d of mountDrops){
+    aliveD.add(d);
+    if (!d.view){
+      const g = new THREE.Group(), col = MOUNTS[d.id].eyes;
+      const egg = new THREE.Mesh(new THREE.IcosahedronGeometry(18, 1), mat(col, { emissive:col, emissiveIntensity:.9 })); egg.position.y = 30; g.add(egg); g.egg = egg;
+      const beam = new THREE.Mesh(new THREE.CylinderGeometry(14, 22, 420, 10, 1, true), new THREE.MeshBasicMaterial({ color:new THREE.Color(col), transparent:true,
+        opacity:.25, side:THREE.DoubleSide, depthWrite:false, blending:THREE.AdditiveBlending })); beam.position.y = 210; g.add(beam);
+      const tag = labelSprite(MOUNTS[d.id].name, col, 44); tag.scale.set(150, 37, 1); tag.position.y = 80; g.add(tag);
+      scene.add(g); d.view = g;
+    }
+    d.view.position.set(d.x, terrainH(d.x, d.y), d.y);
+    d.view.egg.rotation.y += dt * 2; d.view.egg.position.y = 30 + Math.sin(now() * 3) * 6;
+    d.view.visible = d.t > 5 || Math.sin(now() * 12) > 0;
+  }
+  for (const v of dropViews) if (![...aliveD].some(d => d.view === v)){ scene.remove(v); disposeView(v); }
+  dropViews = mountDrops.map(d => d.view).filter(Boolean);
 
   // portal
   if (portal){
@@ -5488,6 +5793,7 @@ function openPanel(kind){
   panelTab = kind === "items" ? "Relics" : kind === "stats" ? "Stats" : "Weapons";
   panelEnter = true;
   if (kind === "shop") shopSel = null;
+  if (kind === "shadows") shadowShown = 60;
   if (kind === "map"){ mapSel = null; mapTab = "Regions"; mobKind = "enemy"; }
   renderPanel();
 }
@@ -5508,9 +5814,37 @@ const STAT_INFO = {
 const STAT_KEYS = ["STR", "INT", "SDW", "VIT", "AGI", "MNA"];
 const spentPoints = () => STAT_KEYS.reduce((a, k) => a + (P.stats[k] || 0), 0);
 function panelStats(){
-  const tabs = [["Stats","Atributos"],["Class","Clase"],["Talents","Talentos"],["Codes","Códigos"]];
+  const tabs = [["Stats","Atributos"],["Look","Aspecto"],["Mounts","Monturas"],["Class","Clase"],["Talents","Talentos"],["Codes","Códigos"]];
   const nav = `<div class="tabs">${tabs.map(([id,label]) =>
     `<button class="tab ${panelTab===id?"sel":""}" data-tab="${id}">${label}</button>`).join("")}</div>`;
+  if (panelTab === "Look"){
+    const rows = Object.keys(LOOKS).map(cat => `<div class="lookrow"><span class="lk-cat">${LOOK_CAT[cat]}</span><div class="chips">${
+      LOOKS[cat].map(o => { const un = needMet(o.need), on = P.look[cat] === o.id, sw = cat === "hairColor" || cat === "eyes" || (cat === "aura" && o.id !== "none");
+        return `<button class="chip lchip ${on ? "sel" : ""} ${un ? "" : "lk"}" data-look="${cat}|${o.id}" ${un ? "" : "aria-disabled=\"true\""}
+          title="${un ? o.name : "Se desbloquea con: " + needText(o.need)}">${sw ? `<i class="sw" style="background:${o.id}"></i>` : ""}${un ? "" : "🔒 "}${o.name}${
+          o.bonus ? ` <em>${Object.entries(o.bonus).map(([k, v]) => `+${Math.round(v * 100)}% ${k === "dmg" ? "daño" : k === "hp" ? "vida" : "vel."}`).join(" ")}</em>` : ""}</button>`; }).join("")}</div></div>`).join("");
+    const total = Object.values(LOOKS).reduce((a, l) => a + l.length, 0), got = Object.values(LOOKS).reduce((a, l) => a + l.filter(o => needMet(o.need)).length, 0);
+    return shell("Aspecto del cazador", nav + `<div class="inv"><aside class="inv-side"><div class="pv" data-pv="player" style="--tc:var(--arise)"></div>
+      <div class="collect"><span>Desbloqueado</span><div class="sbar xp"><i style="width:${got / total * 100}%"></i><em>${got} / ${total}</em></div></div></aside>
+      <div class="inv-main">${rows}</div></div>
+      <p class="kbhelp">Pasa el ratón o mantén pulsado un 🔒 para ver cómo se desbloquea. Los conjuntos dan un pequeño bono mientras los llevas.</p>`);
+  }
+  if (panelTab === "Mounts"){
+    if (!MOUNTS[mountSel]) mountSel = P.mount;
+    const cards = Object.entries(MOUNTS).map(([id, m], i) => { const own = P.mounts.includes(id);
+      return `<button class="card ${id === mountSel ? "sel" : ""} ${own ? "" : "lock"} ${P.mount === id ? "eq" : ""}" data-mpick="${id}" role="option" aria-selected="${id === mountSel}"
+        style="--tc:${m.eyes};--i:${i}"><span class="cg">${own ? (m.fly ? "🐉" : m.body === "serpent" ? "🐍" : m.body === "ant" ? "🐜" : "🐺") : "❔"}</span>
+        <b>${own ? m.name : "???"}</b><small>velocidad ×${m.speed}</small>${m.fly ? `<i class="ctier">VUELA</i>` : ""}${P.mount === id ? `<i class="cbadge">EN USO</i>` : ""}</button>`; }).join("");
+    const m = MOUNTS[mountSel], own = P.mounts.includes(mountSel);
+    const side = `<div class="pv" data-pv="mount" style="--tc:${m.eyes}"></div>
+      <div class="sheet" style="--tc:${m.eyes}"><b class="sname">${own ? m.name : "Montura desconocida"}</b>
+        <span class="tchip">×${m.speed} de velocidad${m.fly ? " · vuela" : ""}</span>
+        <p class="lore">${own ? "Ya es tuya." : "Cómo conseguirla: " + mountSource(mountSel)}</p>
+        <div class="sact"><button class="btn green" data-mount="${mountSel}" ${own && P.mount !== mountSel ? "" : "disabled"}>${P.mount === mountSel ? "En uso" : own ? "Usar esta montura" : "Bloqueada"}</button></div></div>`;
+    return shell(`Monturas · ${P.mounts.length}/${Object.keys(MOUNTS).length}`, nav + `<div class="inv"><aside class="inv-side">${side}</aside>
+      <div class="inv-main"><div class="cards" role="listbox" aria-label="Monturas">${cards}</div></div></div>
+      <p class="kbhelp">Las monturas caen como un orbe brillante con columna de luz: acércate para recogerlo antes de 60 s. <kbd>M</kbd> monta y desmonta.</p>`);
+  }
   if (panelTab === "Class"){
     const body = Object.values(CLASSES).map(c => `<div class="item">
       <span class="g">${c.glyph}</span>
@@ -5593,15 +5927,57 @@ function panelStats(){
    filtros, orden y una ficha lateral con la sombra en 3D girando. */
 let shadowFilter = "all", shadowSort = "dmg", shadowSel = null;
 const TIER_ORDER = ["C", "B", "A", "S", "S Elite", "Monarch"];
+// Daño y vida de cada sombra, calculados una vez por repintado: antes se
+// recalculaban cientos de veces al ordenar y el menú se trababa.
+let shadowCache = null, shadowShown = 60;
+function shadowStats(){
+  const dmg = new Map(), hp = new Map();
+  let maxD = 1, maxH = 1;
+  for (const s of Object.values(P.shadows)){
+    const d = shadowDmgOf(s), h = shadowHPOf(s);
+    dmg.set(s.uuid, d); hp.set(s.uuid, h);
+    if (d > maxD) maxD = d; if (h > maxH) maxH = h;
+  }
+  return (shadowCache = { dmg, hp, maxD, maxH });
+}
+function shadowSideHTML(){
+  const C = shadowCache || shadowStats();
+  const sel = P.shadows[shadowSel];
+  if (!sel) return `<div class="pv" data-pv="shadow"></div><p class="hint">Sin sombras todavía. Derrota a un enemigo y pulsa <b>B</b> sobre su cuerpo.</p>`;
+  const eq = P.squad.includes(sel.uuid), SR = mobRank(sel.rank), look = SHADOW_LOOK[sel.id] || {};
+  return `<div class="pv" data-pv="shadow" style="--tc:var(${TIER_VAR[sel.tier]})"></div>
+      <div class="sheet" style="--tc:var(${TIER_VAR[sel.tier]})">
+        <b class="sname">${sel.name}</b>
+        <span class="rkrow"><span class="rkbig" style="--rc:${SR.col}">${SR.r}</span><span class="tchip">${sel.tier}</span>
+          <span class="lv">Poder ×${SR.sh} por rango</span></span>
+        ${look.lore ? `<p class="lore">${look.lore}</p>` : ""}
+        <div class="sbar"><small>Daño</small><i style="width:${C.dmg.get(sel.uuid) / C.maxD * 100}%"></i><em>${fmt(C.dmg.get(sel.uuid))}</em></div>
+        <div class="sbar hp"><small>Vida</small><i style="width:${C.hp.get(sel.uuid) / C.maxH * 100}%"></i><em>${fmt(C.hp.get(sel.uuid))}</em></div>
+        <div class="sact">
+          <button class="btn ${eq ? "" : "green"}" data-equip="${sel.uuid}">${eq ? "Quitar del escuadrón" : "Equipar"}</button>
+        </div>
+      </div>`;
+}
+// Cambio rápido de selección: solo se tocan la tarjeta y la ficha lateral.
+function selectShadowFast(uuid){
+  shadowSel = uuid;
+  const side = modal.querySelector(".inv-side");
+  if (!side || panelKind !== "shadows") return renderPanel();
+  modal.querySelectorAll(".card.sel").forEach(c => { c.classList.remove("sel"); c.setAttribute("aria-selected", "false"); });
+  const c = modal.querySelector(`.card[data-pick="${uuid}"]`);
+  if (c){ c.classList.add("sel"); c.setAttribute("aria-selected", "true"); c.scrollIntoView?.({ block:"nearest" }); if (kbNav) c.focus({ preventScroll:true }); }
+  side.innerHTML = shadowSideHTML();
+  mountPreview();
+}
 function panelShadows(){
+  const C = shadowStats();
   let list = Object.values(P.shadows);
-  const counts = {};
-  for (const s of list) counts[`${s.id}|${s.level}`] = (counts[`${s.id}|${s.level}`] || 0) + 1;
   if (shadowFilter === "eq") list = list.filter(s => P.squad.includes(s.uuid));
   else if (shadowFilter !== "all") list = list.filter(s => (s.rank || "E") === shadowFilter);
-  const rk = x => MOB_RANKS.findIndex(m => m.r === (x.rank || "E"));
-  const by = { dmg:(a, b) => shadowDmgOf(b) - shadowDmgOf(a), lvl:(a, b) => rk(b) - rk(a) || shadowDmgOf(b) - shadowDmgOf(a),
-               tier:(a, b) => TIER_ORDER.indexOf(b.tier) - TIER_ORDER.indexOf(a.tier) || shadowDmgOf(b) - shadowDmgOf(a) };
+  const rk = x => rankIdxOf(x.rank);
+  const D = x => C.dmg.get(x.uuid);
+  const by = { dmg:(a, b) => D(b) - D(a), lvl:(a, b) => rk(b) - rk(a) || D(b) - D(a),
+               tier:(a, b) => TIER_ORDER.indexOf(b.tier) - TIER_ORDER.indexOf(a.tier) || D(b) - D(a) };
   list.sort(by[shadowSort] || by.dmg);
   if (!P.shadows[shadowSel]) shadowSel = (list[0] || Object.values(P.shadows)[0])?.uuid || null;
   const tiersHave = MOB_RANKS.map(m => m.r).filter(r => Object.values(P.shadows).some(s => (s.rank || "E") === r));
@@ -5609,34 +5985,20 @@ function panelShadows(){
   const filters = `<div class="chips">${chip("sfilter", "all", shadowFilter, "Todas")}${chip("sfilter", "eq", shadowFilter, "Equipadas")}${
     tiersHave.map(t => chip("sfilter", t, shadowFilter, t)).join("")}<span class="grow"></span>${
     chip("ssort", "dmg", shadowSort, "Daño")}${chip("ssort", "lvl", shadowSort, "Rango E–S")}${chip("ssort", "tier", shadowSort, "Clase")}</div>`;
-  const maxDmg = Math.max(1, ...Object.values(P.shadows).map(shadowDmgOf));
-  const cards = list.map((s, i) => {
-    const eq = P.squad.includes(s.uuid), can = false, R = mobRank(s.rank);
+  const total = list.length;
+  const selIdx = list.findIndex(x => x.uuid === shadowSel);
+  if (selIdx >= shadowShown) shadowShown = Math.ceil((selIdx + 1) / 60) * 60;
+  const cards = list.slice(0, shadowShown).map((s, i) => {
+    const eq = P.squad.includes(s.uuid), R = mobRank(s.rank);
     return `<button class="card ${eq ? "eq" : ""} ${s.uuid === shadowSel ? "sel" : ""} ${R.myth ? "myth" : ""}" data-pick="${s.uuid}" role="option"
       aria-selected="${s.uuid === shadowSel}" aria-label="${s.name}, rango ${R.r}, ${eq ? "equipada" : "sin equipar"}"
-      style="--tc:var(${TIER_VAR[s.tier]});--i:${i}">
+      style="--tc:var(${TIER_VAR[s.tier]});--i:${Math.min(i, 20)}">
       <span class="cg">${SHADOWS[s.id]?.glyph || "👤"}</span>
-      <b>${s.name}</b><small>${fmt(shadowDmgOf(s))} de daño</small><i class="crank" style="--rc:${R.col}">${R.r}</i>
-      <i class="ctier">${s.tier}</i>${eq ? `<i class="cbadge">EQ</i>` : ""}${can ? `<i class="cbadge m">×3</i>` : ""}
-      <i class="cbar" style="width:${Math.max(6, shadowDmgOf(s) / maxDmg * 100)}%"></i></button>`;
-  }).join("");
-  const sel = P.shadows[shadowSel];
-  let side = `<div class="pv" data-pv="shadow"></div><p class="hint">Sin sombras todavía. Derrota a un enemigo y pulsa <b>B</b> sobre su cuerpo.</p>`;
-  if (sel){
-    const eq = P.squad.includes(sel.uuid), can = false, SR = mobRank(sel.rank);
-    const maxHp = Math.max(1, ...Object.values(P.shadows).map(shadowHPOf));
-    side = `<div class="pv" data-pv="shadow" style="--tc:var(${TIER_VAR[sel.tier]})"></div>
-      <div class="sheet" style="--tc:var(${TIER_VAR[sel.tier]})">
-        <b class="sname">${sel.name}</b>
-        <span class="rkrow"><span class="rkbig" style="--rc:${SR.col}">${SR.r}</span><span class="tchip">${sel.tier}</span>
-          <span class="lv">Poder ×${SR.sh} por rango</span></span>
-        <div class="sbar"><small>Daño</small><i style="width:${shadowDmgOf(sel) / maxDmg * 100}%"></i><em>${fmt(shadowDmgOf(sel))}</em></div>
-        <div class="sbar hp"><small>Vida</small><i style="width:${shadowHPOf(sel) / maxHp * 100}%"></i><em>${fmt(shadowHPOf(sel))}</em></div>
-        <div class="sact">
-          <button class="btn ${eq ? "" : "green"}" data-equip="${sel.uuid}">${eq ? "Quitar del escuadrón" : "Equipar"}</button>
-        </div>
-      </div>`;
-  }
+      <b>${s.name}</b><small>${fmt(D(s))} de daño</small><i class="crank" style="--rc:${R.col}">${R.r}</i>
+      <i class="ctier">${s.tier}</i>${eq ? `<i class="cbadge">EQ</i>` : ""}
+      <i class="cbar" style="width:${Math.max(6, D(s) / C.maxD * 100)}%"></i></button>`;
+  }).join("") + (total > shadowShown ? `<button class="chip more" data-more="1">Ver ${Math.min(60, total - shadowShown)} más (${total - shadowShown} restantes)</button>` : "");
+  const side = shadowSideHTML();
   return shell(`Sombras · ${P.squad.length}/${squadCap()}`, `
     <div class="inv"><aside class="inv-side">${side}</aside>
       <div class="inv-main">${filters}
@@ -5646,7 +6008,7 @@ function panelShadows(){
     Cada enemigo nace con un rango de <b>E</b> a <b>SSS</b>: cuanto más alto, más cuesta vencerlo y extraerlo, y más fuerte sale su sombra.</p>
     <div class="odds">${MOB_RANKS.map(m => `<span style="--rc:${m.col}"><b>${m.r}</b>${pctTxt(m.p)}</span>`).join("")}</div>`);
 }
-let shopSel = null;
+let shopSel = null, mountSel = null;
 function panelShop(){
   const cur = WEAPONS[P.weapon];
   const avail = Object.values(WEAPONS).filter(w => P.islands.includes(w.isle));
@@ -5865,7 +6227,7 @@ function panelHelp(){
    principal de la ficha. */
 let kbNav = false;
 function panelPrimary(){
-  const btn = modal.querySelector(".sheet [data-equip], .sheet [data-weapon]:not([disabled]), .rcard [data-ring]:not([disabled])");
+  const btn = modal.querySelector(".sheet [data-equip], .sheet [data-weapon]:not([disabled]), .sheet [data-mount]:not([disabled]), .rcard [data-ring]:not([disabled])");
   if (btn){ btn.click(); return true; }
   return false;
 }
@@ -5883,13 +6245,14 @@ function panelKey(k, e){
   e.preventDefault(); kbNav = true;
   const dx = k === "arrowleft" ? -1 : k === "arrowright" ? 1 : 0, dy = k === "arrowup" ? -1 : k === "arrowdown" ? 1 : 0;
   if (panelKind === "map"){ mapStep(dx || dy); return true; }
-  const cards = [...modal.querySelectorAll(".cards .card[data-pick], .cards .card[data-wpick], .cards .card[data-beast]")];
+  const cards = [...modal.querySelectorAll(".cards .card[data-pick], .cards .card[data-wpick], .cards .card[data-beast], .cards .card[data-mpick]")];
   if (!cards.length) return true;
   let i = cards.findIndex(c => c.classList.contains("sel")); if (i < 0) i = 0;
   const cols = Math.max(1, Math.round(cards[0].parentElement.clientWidth / (cards[0].offsetWidth + 9)));
   const j = clamp(i + dx + dy * cols, 0, cards.length - 1);
   const c = cards[j];
-  if (c.dataset.pick) shadowSel = c.dataset.pick; else if (c.dataset.wpick) shopSel = c.dataset.wpick; else beastSel = c.dataset.beast;
+  if (c.dataset.pick){ SFX.ui(); selectShadowFast(c.dataset.pick); return true; }
+  if (c.dataset.wpick) shopSel = c.dataset.wpick; else if (c.dataset.mpick) mountSel = c.dataset.mpick; else beastSel = c.dataset.beast;
   SFX.ui(); renderPanel();
   return true;
 }
@@ -5963,6 +6326,10 @@ function previewConfig(kind){
     const d = P.shadows[shadowSel];
     return d ? { cfg: shadowConfig({ data:d }), key:`sh|${d.id}|${d.tier}` } : null;
   }
+  if (kind === "mount"){
+    const id = mountSel || P.mount;
+    return { build: () => buildMountView(id), key:`mount|${id}|${P.mounts.includes(id)}`, dark: !P.mounts.includes(id) };
+  }
   if (kind === "mob" || kind === "beast"){
     const isle = kind === "beast" ? (isleOf(beastSel) || ISLANDS[0]) : ISLANDS[mapSel ?? 0];
     const k = kind === "beast" ? "enemy" : mobKind;
@@ -5984,7 +6351,8 @@ function mountPreview(){
   if (!pc) return;
   if (PV.key !== pc.key){
     if (PV.obj){ PV.scene.remove(PV.obj); disposeView(PV.obj); }
-    PV.obj = buildCharacter(pc.cfg);
+    PV.obj = pc.build ? pc.build() : buildCharacter(pc.cfg);
+    if (pc.dark) PV.obj.traverse(o => { if (o.isMesh){ o.material = new THREE.MeshBasicMaterial({ color:0x05060d }); } });
     addOutline(PV.obj, 0x07060d, 1.05);
     PV.scene.add(PV.obj); PV.key = pc.key;
     const sc = PV.obj.scaleRef || 1;
@@ -6001,6 +6369,9 @@ function mountPreview(){
 }
 function previewTick(dt){
   if (!PV.r || !PV.obj || !PV.cv.isConnected) return;
+  PV.acc = (PV.acc || 0) + dt;
+  if (PV.acc < 1 / 30) return;                 // la vista 3D va a 30 fps como mucho
+  dt = PV.acc; PV.acc = 0;
   if (PV.drag === null) PV.spin += dt * .7;
   PV.obj.rotation.y = PV.spin;
   poseCharacter(PV.obj, { step: now() * 2, moving:false, attack:0 });
@@ -6056,9 +6427,23 @@ modal.addEventListener("click", e => {
   if (t.dataset.pick){
     // segundo toque sobre la tarjeta ya elegida = equipar / quitar
     if (shadowSel === t.dataset.pick){ panelPrimary(); return; }
-    shadowSel = t.dataset.pick; SFX.ui(); renderPanel(); return;
+    SFX.ui(); selectShadowFast(t.dataset.pick); return;
   }
   if (t.dataset.mstep){ mapStep(+t.dataset.mstep); return; }
+  if (t.dataset.more){ shadowShown += 60; renderPanel(); return; }
+  if (t.dataset.look){
+    const [cat, id] = t.dataset.look.split("|"), o = LOOKS[cat].find(x => x.id === id);
+    if (!needMet(o.need)){ note(`Se desbloquea con: ${needText(o.need)}`, "--dim"); return; }
+    P.look[cat] = id; save(); dirty = true; SFX.ui(); renderPanel(); return;
+  }
+  if (t.dataset.mpick){
+    if (mountSel === t.dataset.mpick){ panelPrimary(); return; }
+    mountSel = t.dataset.mpick; SFX.ui(); renderPanel(); return;
+  }
+  if (t.dataset.mount){
+    if (!P.mounts.includes(t.dataset.mount)) return;
+    P.mount = t.dataset.mount; note(`Montura: ${MOUNTS[P.mount].name}`, "--gold"); save(); SFX.ui(); renderPanel(); return;
+  }
   const ringEl = e.target.closest("[data-mring]");
   if (ringEl){ mapSel = +ringEl.dataset.mring; mapTab = "Regions"; SFX.ui(); renderPanel(); return; }
   if (t.dataset.maptab){ mapTab = t.dataset.maptab; SFX.ui(); renderPanel(); return; }
@@ -6509,12 +6894,15 @@ function start(restored){
       showDialog("SISTEMA", "Seúl, año 2026. Las puertas siguen abriéndose y alguien tiene que entrar. Eres el cazador más débil de la humanidad… por ahora.", "Capítulo 1");
     }
   };
-  let last = performance.now(), hudT = 0, fpsT = 0, frames = 0;
+  let last = performance.now(), hudT = 0, fpsT = 0, frames = 0, menuSkip = 0;
   function frame(t){
     const dt = Math.min((t - last)/1000, 0.1); last = t;   // con pocos fps el juego iba a cámara lenta
     if (!document.hidden && !paused){
       update(dt);
-      render(dt);
+      // con un menú abierto la escena de fondo se dibuja a un tercio del ritmo:
+      // el menú y su vista 3D van fluidos incluso en móvil
+      menuSkip = panelKind ? (menuSkip + 1) % 3 : 0;
+      if (!menuSkip) render(panelKind ? dt * 3 : dt);
       previewTick(dt);
       frames++; fpsT += dt;
       if (fpsT >= 1){ $("fps").textContent = `${Math.round(frames/fpsT)} FPS`; frames = 0; fpsT = 0; }

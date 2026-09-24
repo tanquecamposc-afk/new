@@ -184,7 +184,7 @@ canvas#stage{position:absolute;inset:0;width:100%;height:100%;display:block;touc
   #objective{font-size:12px;padding:7px 12px} .start-card h1{font-size:32px} }
 
 /* --- paneles --- */
-.scrim{position:absolute;inset:0;background:rgba(3,7,18,.76);backdrop-filter:blur(4px);display:grid;place-items:center;
+.scrim{position:absolute;inset:0;background:rgba(3,7,18,.84);display:grid;place-items:center;
        padding:16px;pointer-events:auto;z-index:20}
 .panel{width:min(820px,100%);max-height:min(86vh,760px);overflow:auto;border-radius:18px;
   background:linear-gradient(180deg,#152755,#0a1230);border:2px solid var(--line);
@@ -346,6 +346,13 @@ canvas#stage{position:absolute;inset:0;width:100%;height:100%;display:block;touc
 .odds{display:flex;gap:6px;flex-wrap:wrap}
 .odds span{padding:4px 9px;border-radius:999px;border:1px solid var(--rc);font-size:11px;color:var(--muted)}
 .odds b{color:var(--rc);margin-right:5px;font-family:var(--f-display)}
+.lookrow{display:grid;gap:6px;padding:8px 10px;border-radius:12px;border:1px solid var(--line);background:rgba(11,19,45,.6)}
+.lk-cat{font:700 11px var(--f-ui);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.lchip{display:inline-flex;align-items:center;gap:6px}
+.lchip em{font-style:normal;font-size:10px;color:var(--cash)}
+.lchip.lk{opacity:.5;border-style:dashed}
+.lchip .sw{width:14px;height:14px;border-radius:50%;border:2px solid rgba(255,255,255,.6);display:inline-block}
+.lore{margin:0;font-size:11.5px;line-height:1.45;color:var(--muted);font-style:italic}
 /* --- accesibilidad de menús --- */
 .card.myth{border-color:var(--rc,#ff3af0);animation:mythGlow 2s ease-in-out infinite}
 @keyframes mythGlow{50%{box-shadow:0 0 22px color-mix(in srgb,var(--tc) 70%,transparent),0 0 0 2px #fff3}}
