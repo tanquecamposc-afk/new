@@ -334,6 +334,18 @@ canvas#stage{position:absolute;inset:0;width:100%;height:100%;display:block;touc
   .hero{grid-template-columns:110px 1fr} .cards{max-height:none}
   .pls .plus.sm{height:28px;padding:0 5px;font-size:9.5px}
 }
+.skillbox{--tc:var(--gold);display:grid;gap:3px;padding:9px 10px;border-radius:12px;border:1px solid color-mix(in srgb,var(--tc) 50%,transparent);
+  background:linear-gradient(90deg,color-mix(in srgb,var(--tc) 18%,transparent),transparent)}
+.skillbox b{font-size:12px;color:var(--tc)} .skillbox span{font-size:11.5px;color:var(--muted);line-height:1.35}
+.cpow{margin:4px 0 0;font-size:10.5px;line-height:1.35;color:var(--ink);opacity:.85;white-space:normal}
+.crank{position:absolute;left:8px;top:6px;font:800 12px var(--f-display);font-style:normal;color:var(--rc);text-shadow:0 0 8px var(--rc)}
+.card .cg{margin-left:14px}
+.rkrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.rkbig{display:grid;place-items:center;width:34px;height:34px;border-radius:9px;font:800 20px var(--f-display);color:#0a1020;
+  background:var(--rc);box-shadow:0 0 16px var(--rc)}
+.odds{display:flex;gap:6px;flex-wrap:wrap}
+.odds span{padding:4px 9px;border-radius:999px;border:1px solid var(--rc);font-size:11px;color:var(--muted)}
+.odds b{color:var(--rc);margin-right:5px;font-family:var(--f-display)}
 /* --- mapa interactivo y bestiario --- */
 .mapwrap2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);gap:14px;align-items:start}
 .mapside{display:grid;gap:8px}

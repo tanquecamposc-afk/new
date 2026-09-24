@@ -129,7 +129,8 @@ Las sombras no son caballeros de placas: son siluetas oscuras encapuchadas, con
 jirones de sombra que cuelgan de la espalda y ondean, los ojos y el arma
 encendidos del color de su rango, y corona en las Monarca.
 
-Tres copias iguales del mismo nivel se **fusionan** en una de nivel superior. El
+Cada sombra hereda el **rango (E–S)** del enemigo del que sale, y ese rango
+multiplica su daño y su vida (ver «Rangos de los enemigos»). El
 escuadrón empieza con 6 huecos y crece 2 por cada rango que subes, hasta 16. Al
 extraer una sombra mejor que la peor del escuadrón, el cambio es automático.
 
@@ -242,12 +243,105 @@ Cada región tiene su propia especie, con cuerpo, paleta y animación propios:
 
 Al atacar, las criaturas embisten hacia delante y abren la boca o las mandíbulas.
 
+### Habilidades de las armas
+
+Cada arma tiene su propio modelo, su color, una habilidad para la tecla **V** y
+una pasiva que se activa con los golpes normales. Hay 11 tipos de habilidad:
+
+- **estocada**: te lanzas hacia delante atravesando la línea
+- **tajo**: onda cortante en arco
+- **torbellino**: giras con el arma
+- **terremoto**: saltas y golpeas el suelo, con aturdimiento
+- **veneno**: nube tóxica
+- **iaido**: cinco cortes saltando de enemigo en enemigo
+- **fuego**: llamarada que deja ardiendo
+- **hielo**: nova que congela
+- **meteoro**: impacto que cae del cielo
+- **garra**: seis zarpazos que curan
+- **sombra**: anillo de dagas que además potencia a tus sombras
+
+| Arma | Modelo | Habilidad (V) | Pasiva |
+|---|---|---|---|
+| Cuchillo de Cazador | dagger | Puñalada veloz (estocada) | crítico |
+| Espada Corta de Acero | sword | Tajo de acero (tajo) | sangrado |
+| Colmillo Venenoso de Kasaka | dagger | Mordida de Kasaka (veneno) | veneno |
+| Maza de Hierro | hammer | Golpe sísmico (terremoto) | aturdir |
+| Espada del Templo | sword | Juicio del Templo (tajo) | daño a jefes |
+| Hacha del Guardián | axe | Remolino del Guardián (torbellino) | robo de vida |
+| Matacaballeros | sword | Ejecución (iaido) | ejecutar |
+| Daga de Baruka | dagger | Sombra de Baruka (iaido) | crítico |
+| Hacha de Kargalgan | axe | Ira del Chamán (terremoto) | rayo en cadena |
+| Lanza de Escarcha | spear | Lanza de escarcha (estocada) | ralentizar |
+| Filo Carmesí | sword | Luna carmesí (tajo) | sangrado |
+| Aguijón de la Reina | dagger | Aguijón real (veneno) | veneno |
+| Espada de la Élite | sword | Frenesí de la Élite (garra) | robo de vida |
+| Naginata Demoníaca | spear | Danza demoníaca (torbellino) | quemadura |
+| Ira de Kamish | greatsword | Aliento de Kamish (meteoro) | quemadura |
+| Filo Glacial | sword | Filo glacial (hielo) | ralentizar |
+| Cetro de Escarcha | staff | Tormenta de escarcha (hielo) | ralentizar |
+| Garra del Monarca Bestia | claw | Frenesí bestial (garra) | robo de vida |
+| Maza Bestial | hammer | Rugido bestial (terremoto) | aturdir |
+| Runa Viva | orb | Runas vivas (meteoro) | ejecutar |
+| Dagas del Monarca de las Sombras | dagger | Danza de sombras (sombra) | crítico |
+| Filo de Ashborn | greatsword | Juicio de Ashborn (sombra) | robo de vida |
+
+### Poderes de las reliquias
+
+Además de su bono, cada reliquia tiene un poder propio:
+
+| Reliquia | Poder |
+|---|---|
+| Anillo del Demonio | cada 12 golpes, una garra demoníaca estalla alrededor del objetivo |
+| Velo del Asesino | tras un dash eres invisible 1,5 s y tu siguiente golpe es crítico |
+| Tinta del Abismo | los enemigos que matas dejan un charco de tinta que sigue dañando |
+| Cresta de Kamish | 10% al golpear: nova de fuego |
+| Emblema del Sistema | pulso automático cada 8 s |
+| Núcleo de Monarca | escudo que absorbe la mitad del daño con menos del 30% de vida |
+| Black Monarch Sigil | cada ARISE te cura un 20% y da +30% de daño durante 5 s |
+| Eye of Ascension | los críticos devuelven 5 de maná |
+
+### Rangos de los enemigos
+
+Las sombras ya no se fusionan. Cada enemigo nace con un rango de **E** a **S**
+que se ve en su nombre y en el aura del suelo:
+
+| Rango | Probabilidad | Vida | Daño | Botín | Facilidad de extracción | Poder de su sombra |
+|---|---|---|---|---|---|---|
+| E | 40% | ×1 | ×1 | ×1 | 100% | ×1 |
+| D | 27% | ×1,7 | ×1,25 | ×1,7 | 92% | ×1,4 |
+| C | 17% | ×2,8 | ×1,55 | ×2,8 | 82% | ×2 |
+| B | 10% | ×4,5 | ×1,9 | ×4,5 | 70% | ×3 |
+| A | 4,5% | ×7,5 | ×2,4 | ×8 | 56% | ×4,6 |
+| S | 1,5% | ×13 | ×3,2 | ×15 | 42% | ×7,5 |
+
+La suerte de Arise desplaza las probabilidades hacia los rangos altos. Los
+enemigos de rango B o superior dan gemas extra, y los de A o S llevan contorno.
+La sombra que extraes hereda el rango del enemigo.
+
+### Monumentos de las islas
+
+Cada región tiene tres monumentos únicos que se ven de lejos:
+
+| Región | Monumento |
+|---|---|
+| Seúl | torre de la Asociación de Cazadores |
+| Hongdae | puerta dimensional |
+| Doble Dungeon | estatua de dios con los ojos encendidos |
+| Cárcel de Reawakening | torre-prisión con ventanas rojas |
+| Altos Orcos | campamento con tótems y hoguera |
+| Puerta Roja | agujas de cristal rojo |
+| Jeju | hormiguero gigante |
+| Shinjuku | torii con linternas |
+| Castillo del Demonio | castillo sobre un foso de lava |
+| Monarca de Hielo | trono de hielo |
+| Monarca Bestia | cráneo colosal |
+| Sala del Arquitecto | cubos rúnicos flotando |
+| Trono del Rey de las Sombras | trono de obsidiana |
+
 ### Enemigos élite
 
-Uno de cada diez enemigos normales sale **élite**: un 20% más grande, con una
-★ delante del nombre, contorno dorado, halo y un aura giratoria en el suelo.
-Tiene el triple de vida, pega un 50% más fuerte y deja el triple de oro y de EXP,
-más 5 gemas.
+Los enemigos de rango **A** o **S** son élites: más grandes, con contorno, halo
+y un aura giratoria del color de su rango, y con el nombre siempre visible.
 
 ### Peleas de jefe
 
