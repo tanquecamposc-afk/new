@@ -323,13 +323,46 @@ const FORMULA = {
 };
 
 /* ------------------------- clases y talentos ------------------------------ */
-const CLASSES = {
-  Warrior:  { id:"Warrior",  name:"Guerrero", desc:"Equilibrado. +15% daño y +20% vida.",      bonus:{ dmg:0.15, hp:0.20 },              glyph:"🛡" },
-  Assassin: { id:"Assassin", name:"Asesino",  desc:"+35% daño crítico y +20% velocidad.",      bonus:{ crit:0.15, speed:0.20, dmg:0.05 }, glyph:"🗡" },
-  Mage:     { id:"Mage",     name:"Mago",     desc:"+50% daño de habilidad y +40% maná.",      bonus:{ skill:0.50, mana:0.40 },           glyph:"🪄" },
-  Tank:     { id:"Tank",     name:"Tanque",   desc:"+70% vida y −35% daño recibido.",          bonus:{ hp:0.70, armor:0.35 },             glyph:"🧱" },
-  Monarch:  { id:"Monarch",  name:"Monarca",  desc:"+45% daño de sombras y +15% suerte Arise.",bonus:{ shadow:0.45, luck:0.15 },          glyph:"👑" },
+/* 20 clases ordenadas por rareza. No se eligen: salen de la ruleta de clases
+   (los giros solo se consiguen con códigos). Las que ya tienes se pueden
+   cambiar cuando quieras. La mejor, Monarca de las Sombras, sale un 0,5%. */
+const CLASS_RARITY = {
+  comun:     { name:"Común",      col:"#b9c9e8" },
+  pococomun: { name:"Poco común", col:"#7ee07a" },
+  raro:      { name:"Rara",       col:"#5ad2ff" },
+  epico:     { name:"Épica",      col:"#bb8cff" },
+  legend:    { name:"Legendaria", col:"#ffd24a" },
+  mitico:    { name:"Mítica",     col:"#ff3af0" },
 };
+const CLASSES = {
+  Novice:   { id:"Novice",   name:"Novato",          rar:"comun",     p:12,  glyph:"🔰", bonus:{ dmg:0.05, hp:0.05 },                         desc:"+5% daño y +5% vida." },
+  Warrior:  { id:"Warrior",  name:"Guerrero",        rar:"comun",     p:10,  glyph:"🛡", bonus:{ dmg:0.15, hp:0.20 },                         desc:"+15% daño y +20% vida." },
+  Scout:    { id:"Scout",    name:"Explorador",      rar:"comun",     p:9,   glyph:"🧭", bonus:{ speed:0.20, crit:0.05 },                     desc:"+20% velocidad y +5% crítico." },
+  Healer:   { id:"Healer",   name:"Sanador",         rar:"comun",     p:9,   glyph:"✚", bonus:{ hp:0.30, mana:0.30 },                        desc:"+30% vida y +30% maná." },
+  Mage:     { id:"Mage",     name:"Mago",            rar:"comun",     p:8,   glyph:"🪄", bonus:{ skill:0.50, mana:0.40 },                     desc:"+50% daño de habilidad y +40% maná." },
+  Assassin: { id:"Assassin", name:"Asesino",         rar:"pococomun", p:7,   glyph:"🗡", bonus:{ crit:0.15, speed:0.20, dmg:0.05 },           desc:"+15% crítico, +20% velocidad y +5% daño." },
+  Tank:     { id:"Tank",     name:"Tanque",          rar:"pococomun", p:7,   glyph:"🧱", bonus:{ hp:0.70, armor:0.35 },                       desc:"+70% vida y −35% daño recibido." },
+  Berserker:{ id:"Berserker",name:"Berserker",       rar:"pococomun", p:6,   glyph:"🪓", bonus:{ dmg:0.35, armor:-0.10 },                     desc:"+35% daño, pero recibes un 10% más." },
+  Summoner: { id:"Summoner", name:"Invocador",       rar:"pococomun", p:5.5, glyph:"🌀", bonus:{ shadow:0.35, luck:0.05 },                    desc:"+35% daño de sombras y +5% suerte Arise." },
+  Knight:   { id:"Knight",   name:"Caballero",       rar:"pococomun", p:4.5, glyph:"⚜", bonus:{ hp:0.40, armor:0.20, dmg:0.10 },            desc:"+40% vida, −20% daño recibido y +10% daño." },
+  Wind:     { id:"Wind",     name:"Espada del Viento",rar:"raro",     p:4,   glyph:"🌪", bonus:{ dmg:0.30, speed:0.25, crit:0.08 },           desc:"+30% daño, +25% velocidad y +8% crítico." },
+  IceMage:  { id:"IceMage",  name:"Mago de Hielo",   rar:"raro",      p:3.5, glyph:"❄", bonus:{ skill:0.90, mana:0.50, armor:0.10 },          desc:"+90% habilidad, +50% maná y −10% daño recibido." },
+  Slayer:   { id:"Slayer",   name:"Cazadragones",    rar:"raro",      p:3,   glyph:"🐲", bonus:{ dmg:0.45, hp:0.25 },                         desc:"+45% daño y +25% vida." },
+  Paladin:  { id:"Paladin",  name:"Paladín",         rar:"raro",      p:2.5, glyph:"🔆", bonus:{ hp:0.80, armor:0.30, dmg:0.15 },            desc:"+80% vida, −30% daño recibido y +15% daño." },
+  Necro:    { id:"Necro",    name:"Nigromante",      rar:"raro",      p:2,   glyph:"💀", bonus:{ shadow:0.70, luck:0.10 },                    desc:"+70% daño de sombras y +10% suerte Arise." },
+  WeaponMaster:{ id:"WeaponMaster", name:"Maestro de Armas", rar:"epico", p:2, glyph:"⚔", bonus:{ dmg:0.70, crit:0.15, speed:0.15 },    desc:"+70% daño, +15% crítico y +15% velocidad." },
+  Archmage: { id:"Archmage", name:"Archimago",       rar:"epico",     p:1.5, glyph:"🔮", bonus:{ skill:1.40, mana:1.00, dmg:0.15 },           desc:"+140% habilidad, +100% maná y +15% daño." },
+  Warlord:  { id:"Warlord",  name:"Señor de la Guerra",rar:"epico",   p:1.1, glyph:"🏴", bonus:{ dmg:0.60, hp:0.60, armor:0.25 },            desc:"+60% daño, +60% vida y −25% daño recibido." },
+  Monarch:  { id:"Monarch",  name:"Monarca",         rar:"legend",    p:1.9, glyph:"👑", bonus:{ shadow:0.80, luck:0.20, dmg:0.30 },           desc:"+80% sombras, +20% suerte Arise y +30% daño." },
+  ShadowMonarch:{ id:"ShadowMonarch", name:"Monarca de las Sombras", rar:"mitico", p:0.5, glyph:"🌑",
+    bonus:{ dmg:0.80, hp:0.50, shadow:1.20, luck:0.30, crit:0.15, speed:0.20, skill:0.50, armor:0.20 },
+    desc:"La mejor clase: +80% daño, +50% vida, +120% sombras, +30% suerte, +15% crítico, +20% velocidad, +50% habilidad y −20% daño recibido." },
+};
+function rollClass(){
+  let x = Math.random() * Object.values(CLASSES).reduce((a, c) => a + c.p, 0);
+  for (const c of Object.values(CLASSES)){ x -= c.p; if (x <= 0) return c.id; }
+  return "Novice";
+}
 const TALENTS = {
   power:   { id:"power",   name:"Poder",      desc:"+8% de daño por nivel",            max:10, cost:lv => 250 * Math.pow(2, lv) },
   haste:   { id:"haste",   name:"Celeridad",  desc:"+6% de velocidad de ataque",       max:10, cost:lv => 300 * Math.pow(2, lv) },
@@ -338,14 +371,14 @@ const TALENTS = {
   fortune: { id:"fortune", name:"Fortuna",    desc:"+12% de suerte de extracción",     max:10, cost:lv => 500 * Math.pow(2, lv) },
   vigor:   { id:"vigor",   name:"Vigor",      desc:"+10% de vida máxima",              max:10, cost:lv => 300 * Math.pow(2, lv) },
 };
+// Cinco códigos. Dan sobre todo giros de la ruleta de clases y un empujón
+// pequeño de recursos; ninguno rompe la progresión.
 const CODES = {
-  ARISE:      { cash:5000,   gems:50,   tickets:1 },
-  SHADOW100K: { cash:250000, gems:400,  tickets:2 },
-  MONARCH:    { cash:1e7,    gems:2500, tickets:5 },
-  UPDATE9:    { cash:1e6,    gems:900,  tickets:3 },
-  IGRIS:      { cash:2e6,    gems:1500, tickets:3 },
-  JINWOO:     { cash:5e5,    gems:700,  tickets:2 },
-  BERU:       { cash:5e7,    gems:9000, tickets:6 },
+  ARISE:   { cash:2000,  gems:20,  tickets:1, spins:2 },
+  SOMBRAS: { cash:0,     gems:50,  tickets:0, spins:1 },
+  MONARCA: { cash:0,     gems:0,   tickets:0, spins:3 },
+  IGRIS:   { cash:5000,  gems:0,   tickets:1, spins:1 },
+  RULETA:  { cash:0,     gems:0,   tickets:0, spins:2 },
 };
 
 /* ------------------------------ utilidades -------------------------------- */
@@ -491,7 +524,7 @@ function newProfile(){
     cash:0, gems:0, tickets:0,
     stats:{ STR:0, INT:0, SDW:0, VIT:0, AGI:0, MNA:0, points:5 },
     weapon:START_WEAPON, weapons:{ [START_WEAPON]:1 }, weaponLv:{},
-    class:"Warrior", talents:{}, codes:{}, quests:{ active:null, done:0 },
+    class:"Novice", classes:["Novice"], spins:0, talents:{}, codes:{}, quests:{ active:null, done:0 },
     shadows:{}, squad:[], relics:{}, runes:{},
     islands:["Seoul"], island:"Seoul",
     title:"Cazador Novato", awakened:false, index:{},
@@ -506,7 +539,10 @@ function reconcile(d){
   p.stats = Object.assign(base.stats, d?.stats || {});
   for (const k of ["weapons","weaponLv","shadows","relics","runes","index","talents","codes"])
     if (typeof p[k] !== "object" || !p[k]) p[k] = {};
-  if (!CLASSES[p.class]) p.class = "Warrior";
+  if (!CLASSES[p.class]) p.class = "Novice";
+  if (!Array.isArray(p.classes)) p.classes = [p.class];     // partidas viejas conservan la clase que tenían
+  p.classes = p.classes.filter(c => CLASSES[c]); if (!p.classes.includes(p.class)) p.classes.push(p.class);
+  p.spins = Math.max(0, Math.round(Number(p.spins) || 0));
   if (typeof p.quests !== "object" || !p.quests) p.quests = { active:null, done:0 };
   if (typeof p.tutorial !== "number") p.tutorial = 0;
   p.muted = !!p.muted;
@@ -5324,13 +5360,24 @@ function panelStats(){
       <p class="kbhelp">Las monturas caen como un orbe brillante con columna de luz: acércate para recogerlo antes de 60 s. <kbd>M</kbd> monta y desmonta.</p>`);
   }
   if (panelTab === "Class"){
-    const body = Object.values(CLASSES).map(c => `<div class="item">
-      <span class="g">${c.glyph}</span>
-      <span class="meta"><b>${c.name}</b><span>${c.desc}</span></span>
-      <button class="btn ${P.class===c.id?"green":""}" data-class="${c.id}" ${P.class===c.id?"disabled":""}>
-        ${P.class===c.id?"Activa":"Elegir"}</button></div>`).join("");
-    return shell("Clase", nav + `<div class="list">${body}</div>
-      <p class="hint">Puedes cambiar de clase cuando quieras; los bonos se aplican al instante.</p>`);
+    const list = Object.values(CLASSES);
+    const reel = `<div class="reelwrap"><div class="reelmark"></div><div class="reel" id="reel">${
+      Array.from({ length:5 }, () => list.map(c => `<span class="rcell" style="--rc:${CLASS_RARITY[c.rar].col}">${c.glyph}<small>${c.name}</small></span>`).join("")).join("")}</div></div>`;
+    const cur = CLASSES[P.class];
+    const rows = list.map(c => { const own = P.classes.includes(c.id), R = CLASS_RARITY[c.rar];
+      return `<div class="item ${own ? "" : "locked"}" style="border-color:${own ? R.col : ""}"><span class="g" style="border-color:${R.col}">${own ? c.glyph : "❔"}</span>
+        <span class="meta"><b>${own ? c.name : "???"} <span class="tier" style="color:${R.col}">${R.name} · ${String(c.p).replace(".", ",")}%</span></b>
+        <span>${own ? c.desc : "Sale en la ruleta de clases"}</span></span>
+        ${own ? `<button class="btn ${P.class === c.id ? "green" : ""}" data-class="${c.id}" ${P.class === c.id ? "disabled" : ""}>${P.class === c.id ? "Activa" : "Usar"}</button>` : ""}</div>`; }).join("");
+    return shell("Clase", nav + `<div class="spinbox">
+        <div class="spinhead"><div><small>Clase activa</small><b style="color:${CLASS_RARITY[cur.rar].col}">${cur.glyph} ${cur.name}</b></div>
+          <div class="spins"><small>Giros</small><b>${P.spins}</b></div></div>
+        ${reel}
+        <button class="btn gold big-w" id="spin-btn" ${P.spins > 0 && !spinning ? "" : "disabled"}>${spinning ? "Girando…" : P.spins > 0 ? "🎰 Girar la ruleta (1 giro)" : "Sin giros · consíguelos con códigos"}</button>
+        <p class="codemsg" id="spin-msg" role="status"></p></div>
+      <h3 class="subh">Clases · ${P.classes.length}/${list.length} · ordenadas por rareza</h3>
+      <div class="list">${rows}</div>
+      <p class="hint">Las clases que ya tienes se cambian gratis cuando quieras. Si la ruleta te da una repetida, la conviertes en gemas.</p>`);
   }
   if (panelTab === "Talents"){
     const body = Object.values(TALENTS).map(t => {
@@ -5347,7 +5394,7 @@ function panelStats(){
     // Los códigos no se muestran: hay que conocerlos y escribirlos.
     const used = Object.keys(P.codes).filter(c => P.codes[c] && CODES[c]);
     const body = used.length ? used.map(c => `<div class="item locked"><span class="g">✔</span><span class="meta"><b>${c}</b>
-      <span>${fmt(CODES[c].cash)} oro · ${fmt(CODES[c].gems)} gemas · ${CODES[c].tickets} tickets</span></span></div>`).join("")
+      <span>${[CODES[c].spins && `${CODES[c].spins} giros`, CODES[c].cash && `${fmt(CODES[c].cash)} oro`, CODES[c].gems && `${fmt(CODES[c].gems)} gemas`, CODES[c].tickets && `${CODES[c].tickets} ticket`].filter(Boolean).join(" · ")}</span></span></div>`).join("")
       : `<p class="hint">Todavía no has canjeado ningún código.</p>`;
     return shell("Códigos", nav + `<form class="codebox" id="code-form" autocomplete="off">
         <label for="code-in">Escribe un código</label>
@@ -5756,10 +5803,52 @@ function redeemCode(){
   if (!CODES[c]){ SFX.ariseFail?.(); inp.classList.remove("shake"); void inp.offsetWidth; inp.classList.add("shake"); return say("Ese código no existe."); }
   if (P.codes[c]) return say("Ya canjeaste ese código.");
   P.codes[c] = true;
-  P.cash += CODES[c].cash; P.gems += CODES[c].gems; P.tickets += CODES[c].tickets;
-  banner("CÓDIGO CANJEADO", "#ffd24a"); note(`${c}: +${fmt(CODES[c].cash)} oro · +${fmt(CODES[c].gems)} gemas`, "--cash");
+  P.cash += CODES[c].cash; P.gems += CODES[c].gems; P.tickets += CODES[c].tickets; P.spins += CODES[c].spins || 0;
+  banner("CÓDIGO CANJEADO", "#ffd24a");
+  note(`${c}: ${[CODES[c].spins && `+${CODES[c].spins} giros de clase`, CODES[c].cash && `+${fmt(CODES[c].cash)} oro`, CODES[c].gems && `+${fmt(CODES[c].gems)} gemas`, CODES[c].tickets && `+${CODES[c].tickets} ticket`].filter(Boolean).join(" · ")}`, "--gold");
   SFX.levelUp?.(); save(); dirty = true; renderPanel();
   const m2 = document.getElementById("code-msg"); if (m2){ m2.textContent = `¡${c} canjeado!`; m2.className = "codemsg ok"; }
+}
+let spinning = false;
+function spinClass(){
+  if (spinning || P.spins <= 0) return;
+  P.spins--; spinning = true; save();
+  const got = rollClass(), list = Object.keys(CLASSES);
+  const reel = document.getElementById("reel"), btn = document.getElementById("spin-btn");
+  if (btn){ btn.disabled = true; btn.textContent = "Girando…"; }
+  const sp = document.querySelector(".spins b"); if (sp) sp.textContent = P.spins;
+  SFX.ui();
+  const finish = () => {
+    spinning = false;
+    const c = CLASSES[got], R = CLASS_RARITY[c.rar], fresh = !P.classes.includes(got);
+    if (fresh){ P.classes.push(got); P.class = got; }
+    else { const g = [10, 25, 60, 150, 400, 1500][Object.keys(CLASS_RARITY).indexOf(c.rar)]; P.gems += g; }
+    save(); dirty = true;
+    banner(`${c.glyph} ${c.name.toUpperCase()}`, R.col);
+    if (fresh && (c.rar === "legend" || c.rar === "mitico")){ SFX.levelUp(); burst(player.x, player.y, 60, R.col, 40); camImpulse(.8); }
+    renderPanel();
+    // la cinta se queda sobre la clase ganadora, resaltada
+    const r2 = document.getElementById("reel");
+    if (r2){
+      const cells = r2.querySelectorAll(".rcell"), w2 = cells[0] ? cells[0].offsetWidth + 6 : 96, i2 = 3 * list.length + list.indexOf(got);
+      r2.style.transition = "none"; r2.style.transform = `translateX(${-(i2 * w2) + r2.parentElement.clientWidth / 2 - w2 / 2}px)`;
+      cells[i2]?.classList.add("win");
+    }
+    const m = document.getElementById("spin-msg");
+    if (m){ m.className = "codemsg ok"; m.textContent = fresh ? `¡Nueva clase ${R.name.toLowerCase()}: ${c.name}! Ya está activa.`
+      : `${c.name} repetida · convertida en gemas.`; }
+  };
+  if (!reel){ finish(); return; }
+  // la cinta da varias vueltas y frena sobre la clase que ha salido
+  const cell = reel.querySelector(".rcell"), w = cell ? cell.offsetWidth + 6 : 96;
+  const idx = 3 * list.length + list.indexOf(got);
+  const mid = reel.parentElement.clientWidth / 2 - w / 2;
+  reel.style.transition = "none"; reel.style.transform = "translateX(0)";
+  void reel.offsetWidth;
+  reel.style.transition = "transform 3.2s cubic-bezier(.12,.72,.18,1)";
+  reel.style.transform = `translateX(${-(idx * w) + mid}px)`;
+  let ticks = 0; const tick = setInterval(() => { if (++ticks > 18) clearInterval(tick); else SFX.ui(); }, 150);
+  setTimeout(finish, 3300);
 }
 let panelEnter = false, bumpPrev = new Map();
 function renderPanel(){
@@ -6006,6 +6095,7 @@ modal.addEventListener("click", e => {
     return;
   }
   if (t.dataset.class){
+    if (!P.classes.includes(t.dataset.class)) return;
     P.class = t.dataset.class;
     player.hp = Math.min(player.hp, maxHP());
     note(`Clase: ${CLASSES[P.class].name}`, "--gem"); save(); dirty = true; renderPanel(); return;
@@ -6017,6 +6107,7 @@ modal.addEventListener("click", e => {
     note(`${tal.name} nivel ${lv+1}`, "--monarch"); save(); dirty = true; renderPanel(); return;
   }
   if (t.id === "code-go"){ e.preventDefault(); redeemCode(); return; }
+  if (t.id === "spin-btn"){ spinClass(); return; }
   if (t.dataset.code){
     const c = t.dataset.code;
     if (P.codes[c]) return;

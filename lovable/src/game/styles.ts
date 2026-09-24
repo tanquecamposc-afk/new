@@ -371,6 +371,21 @@ canvas#stage{position:absolute;inset:0;width:100%;height:100%;display:block;touc
 .chron summary span{font-size:11.5px;color:var(--muted)}
 .chron p{margin:0 0 12px;font-size:12.5px;line-height:1.55;color:var(--ink)}
 .chron.locked{opacity:.45;pointer-events:none}
+.spinbox{display:grid;gap:10px;padding:14px;border-radius:16px;border:2px solid var(--gold);
+  background:radial-gradient(120% 90% at 50% 0%,rgba(255,210,74,.16),transparent 70%),linear-gradient(180deg,#14224f,#0a1230)}
+.spinhead{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.spinhead small{display:block;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.spinhead b{font-family:var(--f-display);font-size:18px}
+.spins{text-align:center;padding:6px 14px;border-radius:12px;border:2px solid var(--gold)}
+.spins b{color:var(--gold);font-size:22px}
+.reelwrap{position:relative;overflow:hidden;height:92px;border-radius:12px;border:2px solid var(--line);background:#060a1c;
+  mask-image:linear-gradient(90deg,transparent,#000 15%,#000 85%,transparent)}
+.reel{display:flex;gap:6px;padding:6px;will-change:transform}
+.rcell{flex:none;width:90px;height:78px;display:grid;place-items:center;align-content:center;gap:2px;border-radius:10px;font-size:26px;
+  border:2px solid var(--rc);background:linear-gradient(180deg,color-mix(in srgb,var(--rc) 22%,transparent),#0a1230)}
+.rcell small{font:600 9.5px var(--f-ui);color:var(--ink);text-align:center;line-height:1.1;padding:0 3px}
+.rcell.win{transform:scale(1.08);box-shadow:0 0 0 3px #fff,0 0 24px var(--rc);animation:mythGlow 1.4s ease-in-out infinite}
+.reelmark{position:absolute;z-index:2;left:50%;top:0;bottom:0;width:3px;margin-left:-1.5px;background:var(--gold);box-shadow:0 0 12px var(--gold)}
 /* --- accesibilidad de menús --- */
 .card.myth{border-color:var(--rc,#ff3af0);animation:mythGlow 2s ease-in-out infinite}
 @keyframes mythGlow{50%{box-shadow:0 0 22px color-mix(in srgb,var(--tc) 70%,transparent),0 0 0 2px #fff3}}

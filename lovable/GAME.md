@@ -176,11 +176,41 @@ EXPNecesaria(N)  = 100 × N^1,85 + N × 50
 EXPRecompensa    = NivelEnemigo × 25 × (1 + Renaceres × 0,25)
 ```
 
-### Clases
+### Clases y ruleta
 
-Eliges una y puedes cambiarla: Guerrero (+15% daño, +20% vida), Asesino (+35%
-crítico, +20% velocidad), Mago (+50% daño de habilidad, +40% maná), Tanque
-(+70% vida, −35% daño recibido) y Monarca (+45% daño de sombras, +15% suerte).
+Hay **20 clases** ordenadas por rareza. No se eligen: salen de la **ruleta de
+clases** en Atributos › Clase, y cada giro gasta uno de tus giros. Los giros
+**solo** se consiguen con códigos. Una clase nueva se activa sola. Si sale una
+repetida se convierte en gemas (más cuanto más rara). Entre las clases que ya
+tienes puedes cambiar gratis cuando quieras.
+
+| Clase | Rareza | Probabilidad |
+|---|---|---|
+| Novato | Común | 12% |
+| Guerrero | Común | 10% |
+| Explorador | Común | 9% |
+| Sanador | Común | 9% |
+| Mago | Común | 8% |
+| Asesino | Poco común | 7% |
+| Tanque | Poco común | 7% |
+| Berserker | Poco común | 6% |
+| Invocador | Poco común | 5,5% |
+| Caballero | Poco común | 4,5% |
+| Espada del Viento | Rara | 4% |
+| Mago de Hielo | Rara | 3,5% |
+| Cazadragones | Rara | 3% |
+| Paladín | Rara | 2,5% |
+| Nigromante | Rara | 2% |
+| Maestro de Armas | Épica | 2% |
+| Archimago | Épica | 1,5% |
+| Señor de la Guerra | Épica | 1,1% |
+| Monarca | Legendaria | 1,9% |
+| **Monarca de las Sombras** | **Mítica** | 0,5% |
+
+La mejor, **Monarca de las Sombras** (0,5%), da +80% daño, +50% vida, +120%
+daño de sombras, +30% suerte de Arise, +15% crítico, +20% velocidad, +50% daño
+de habilidad y −20% daño recibido. Las partidas anteriores conservan la clase
+que tenían.
 
 ### Talentos
 
@@ -435,8 +465,9 @@ cámara y de sonido.
 
 ### Códigos
 
-Los códigos no aparecen en el juego: hay que escribirlos en **Atributos ›
-Códigos**. Si el código no existe, el campo tiembla y lo avisa; los canjeados
+Hay **cinco** códigos y no aparecen en el juego: hay que escribirlos en
+**Atributos › Códigos**. Dan sobre todo giros de la ruleta de clases (nueve
+en total) y un poco de oro, gemas o tickets. Si el código no existe, el campo tiembla y lo avisa; los canjeados
 se listan debajo.
 
 ### Historia ampliada
