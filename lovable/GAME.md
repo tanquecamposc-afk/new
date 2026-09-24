@@ -137,6 +137,13 @@ extraer una sombra mejor que la peor del escuadrón, el cambio es automático.
 El botón **⚡ Equipar las mejores** del menú de sombras llena el escuadrón
 con las de más daño que no estén de expedición.
 
+**Daño de las sombras**: el golpe de cada sombra acompaña al tuyo. Es una
+parte de tu daño según su clase (15% las C, 30% las A, 40% las S, 62% las
+Monarca), multiplicada por la raíz de su multiplicador de rango y por el
+atributo SDW. Si su tabla propia da más, se queda con la tabla. Tú golpeas
+unas cuatro veces por segundo y cada sombra una vez cada 0,8 s, así que un
+escuadrón de 6 sombras hace más o menos tu mismo daño por segundo.
+
 ### Las sombras en combate
 
 Cada sombra es una máquina de estados: `IDLE_FOLLOW` (formación en anillos
@@ -279,8 +286,11 @@ Al atacar, las criaturas embisten hacia delante y abren la boca o las mandíbula
 ### Aspecto del cazador (vestidor)
 
 En **Atributos › Aspecto** eliges cómo va vestido el cazador entre lo que has
-desbloqueado jugando. Hay siete categorías: conjunto, armadura, peinado, color
-de pelo, ojos, capa y aura. Cada pieza pide algo: un nivel, un rango, un número
+desbloqueado jugando. Hay **doce categorías y 61 piezas**: conjunto, armadura,
+peinado, color de pelo, ojos, **piel** (seis tonos), **altura** (bajo, normal,
+alto y gigante), **cabeza** (cinta, máscara, yelmo, cuernos, corona),
+**espalda** (espada, púas, alas de sombra), **brillo del arma** (cinco
+colores), capa y aura. Cada pieza pide algo: un nivel, un rango, un número
 de bajas, el Despertar o haber vencido a un enemigo SS o SSS. Al conseguirla
 salta un aviso de «Nuevo aspecto».
 
@@ -582,6 +592,20 @@ largas. Las épicas o mejores se anuncian con un cartel del color de su rareza,
 y en el inventario las que aún no tienes salen como «Runa desconocida».
 
 ### Mazmorras
+
+Cada sala de mazmorra pide **una cantidad de bajas según el portal**: los
+enemigos siguen llegando (hasta 6 a la vez) y, al llegar a la cuota, se anuncia
+«¡Sala superada!» y se pasa a la siguiente. El HUD muestra las bajas de la
+sala: por ejemplo «Sala 1/3 · 7/12 bajas».
+
+| Portal | Salas | Bajas por sala |
+|---|---|---|
+| Estándar | 3 | 12 |
+| Puerta Roja | 4 | 25 |
+| Double Dungeon | 2 | 18 |
+| Boss Rush | 5 | 6 |
+
+### Mazmorras (detalles)
 
 Cada 110 segundos se abre un portal cerca de ti. Cuatro modos:
 

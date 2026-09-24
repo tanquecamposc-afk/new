@@ -1093,8 +1093,33 @@ const LOOKS = {
     { id:"#ff8a2a", name:"Fuego", need:{ ss:2 }, bonus:{ dmg:.1 } }, { id:"#ffd24a", name:"Dorada", need:{ rank:"S", kills:25000 }, bonus:{ dmg:.12, hp:.08 } }, { id:"#ffffff", name:"Luz SSS", need:{ sss:5, level:800 }, bonus:{ dmg:.4, hp:.25, spd:.08 } },
   ],
 };
-const LOOK_CAT = { outfit:"Conjunto", armor:"Armadura", hair:"Peinado", hairColor:"Color de pelo", eyes:"Ojos", cape:"Capa", aura:"Aura" };
-const LOOK_DEFAULT = { outfit:"hunter", armor:"light", hair:"hood", hairColor:"#15121f", eyes:"#4a5a78", cape:"none", aura:"none" };
+Object.assign(LOOKS, {
+  skin: [
+    { id:"#e8b98a", name:"Clara" }, { id:"#f5d0a9", name:"Muy clara" }, { id:"#c68e5e", name:"Morena" },
+    { id:"#8d5a3a", name:"Oscura" }, { id:"#5a3a26", name:"Muy oscura" }, { id:"#c9d8f0", name:"Espectral", need:{ awakened:true } },
+  ],
+  height: [
+    { id:"1.06", name:"Normal" }, { id:"0.98", name:"Bajo" }, { id:"1.14", name:"Alto", need:{ level:40 } },
+    { id:"1.24", name:"Gigante", need:{ rank:"S" }, bonus:{ hp:.05 } },
+  ],
+  head: [
+    { id:"none", name:"Nada" }, { id:"band", name:"Cinta", need:{ level:10 } }, { id:"mask", name:"Máscara", need:{ kills:3000 } },
+    { id:"helm", name:"Yelmo", need:{ rank:"A" }, bonus:{ hp:.04 } }, { id:"horns", name:"Cuernos", need:{ ss:1 }, bonus:{ dmg:.04 } },
+    { id:"crown", name:"Corona", need:{ rank:"S", level:500 }, bonus:{ dmg:.08 } },
+  ],
+  back: [
+    { id:"none", name:"Nada" }, { id:"sword", name:"Espada a la espalda", need:{ level:50 } }, { id:"spikes", name:"Púas", need:{ rank:"B" } },
+    { id:"wings", name:"Alas de sombra", need:{ awakened:true, level:200 }, bonus:{ spd:.05 } },
+  ],
+  weaponGlow: [
+    { id:"auto", name:"El de tu arma" }, { id:"#6ef0ff", name:"Cian", need:{ level:20 } }, { id:"#ff3a4a", name:"Carmesí", need:{ kills:1500 } },
+    { id:"#8fff6a", name:"Veneno", need:{ level:150 } }, { id:"#ffd24a", name:"Dorado", need:{ rank:"A" } }, { id:"#b07cff", name:"Sombra", need:{ awakened:true } },
+  ],
+});
+const LOOK_CAT = { outfit:"Conjunto", armor:"Armadura", hair:"Peinado", hairColor:"Color de pelo", eyes:"Ojos", skin:"Piel",
+                   height:"Altura", head:"Cabeza", back:"Espalda", weaponGlow:"Brillo del arma", cape:"Capa", aura:"Aura" };
+const LOOK_DEFAULT = { outfit:"hunter", armor:"light", hair:"hood", hairColor:"#15121f", eyes:"#4a5a78", cape:"none", aura:"none",
+                       skin:"#e8b98a", height:"1.06", head:"none", back:"none", weaponGlow:"auto" };
 function needMet(n){
   if (!n) return true;
   if (n.level && P.level < n.level) return false;
@@ -1455,8 +1480,18 @@ const ariseLuck   = () => rankOf(P.rank).luck + P.stats.INT * 0.35 + relicBonus(
 const maxHP       = () => FORMULA.maxHP(100 + P.level * 6 + P.rebirths * 500, P.stats.VIT) * (1 + lookBonus("hp")) * (1 + runeN("Monarch", 3) * .3)
   * (1 + classBonus("hp") + talentLv("vigor") * 0.1);
 const maxMana     = () => FORMULA.maxMana(P.stats.MNA) * (1 + classBonus("mana"));
-const shadowDmgOf = s => FORMULA.shadowDamage(SHADOWS[s.id].dmg * (1 + (s.level - 1) * 0.1) * mobRank(s.rank).sh, P.stats.SDW) * shadowMult()
-  * (now() < (player.shadowBuffUntil || 0) ? 1.3 : 1);
+// El daño de una sombra acompaña al tuyo: antes salía solo de su tabla y a
+// partir del nivel 100 se quedaba en un 1–5% de tu golpe. Ahora es una parte
+// de tu daño según su clase y su rango (raíz del multiplicador, para que un
+// SSS sea enorme sin romper el juego); con 6 sombras el escuadrón hace más o
+// menos lo mismo que tú. Si la tabla da más, se queda la tabla.
+const SHADOW_TIER_RATIO = { C:.15, B:.21, A:.3, S:.4, "S Elite":.5, Monarch:.62 };
+const shadowDmgOf = s => {
+  const table = FORMULA.shadowDamage(SHADOWS[s.id].dmg * (1 + (s.level - 1) * 0.1) * mobRank(s.rank).sh, P.stats.SDW);
+  const tied = baseDamage() * (SHADOW_TIER_RATIO[SHADOWS[s.id].tier] || .2) * Math.sqrt(mobRank(s.rank).sh)
+    * (1 + (s.level - 1) * 0.1) * (1 + P.stats.SDW * 0.0015);
+  return Math.max(table, tied) * shadowMult() * (now() < (player.shadowBuffUntil || 0) ? 1.3 : 1);
+};
 const shadowHPOf  = s => FORMULA.shadowHP(SHADOWS[s.id].hp * (1 + (s.level - 1) * 0.1) * mobRank(s.rank).sh, P.stats.SDW);
 
 /* ===========================================================================
@@ -2013,10 +2048,11 @@ function stepShadow(s, dt){
 
 /* --------------------------- motor de mazmorra ---------------------------- */
 const DUNGEON_MODES = {
-  Standard:      { name:"Estándar",         rooms:3, mult:1.6,  reward:1.5, color:"#6aa8ff" },
-  RedGate:       { name:"Puerta Roja",      rooms:4, mult:3.2,  reward:3.0, color:"#ff5d6c" },
-  DoubleDungeon: { name:"Double Dungeon",   rooms:2, mult:5.0,  reward:6.0, color:"#bb8cff" },
-  BossRush:      { name:"Boss Rush",        rooms:5, mult:2.4,  reward:4.0, color:"#ffd24a" },
+  // quota: enemigos que hay que matar en cada sala para pasar a la siguiente
+  Standard:      { name:"Estándar",         rooms:3, mult:1.6,  reward:1.5, color:"#6aa8ff", quota:12 },
+  RedGate:       { name:"Puerta Roja",      rooms:4, mult:3.2,  reward:3.0, color:"#ff5d6c", quota:25 },
+  DoubleDungeon: { name:"Double Dungeon",   rooms:2, mult:5.0,  reward:6.0, color:"#bb8cff", quota:18 },
+  BossRush:      { name:"Boss Rush",        rooms:5, mult:2.4,  reward:4.0, color:"#ffd24a", quota:6 },
   // oleadas sin fin: cada una más dura; cuanto más lejos, más runas
   Infinite:      { name:"Modo Infinito",    rooms:1e9, mult:1.0, reward:1.0, color:"#6ef0ff", infinite:true },
 };
@@ -2052,7 +2088,7 @@ function makeDungeon(modeId){
   const seed = Math.floor(Math.random() * 1e9);
   const runeKeys = mode.infinite ? [] : ["Health", "Gems", "Time", "Cash"].filter(() => Math.random() < 0.4);
   const d = {
-    id:uid(), modeId, mode, seed, isle, room:1, rooms:mode.rooms, phase:"Wave",
+    id:uid(), modeId, mode, seed, isle, room:1, rooms:mode.rooms, phase:"Wave", quota:mode.quota || 10, roomKills:0,
     timeLimit:180, timer:mode.infinite ? 90 : 180 + (runeKeys.includes("Time") ? 60 : 0),
     runes:Object.fromEntries(runeKeys.map(k => [k, true])),
     bossState:null, cleared:false, rewardTx:null,
@@ -2071,8 +2107,13 @@ function makeDungeon(modeId){
     if (e.boss){
       if (d.room >= d.rooms){ clearDungeon(); }
       else { d.room++; nextRoom(); }
-    } else if (!enemies.length && d.phase === "Wave"){
-      d.room < d.rooms ? (d.room++, nextRoom()) : spawnBoss();
+    } else if (d.phase === "Wave"){
+      // cada baja cuenta; al llegar a la cuota de la sala se pasa a la siguiente
+      d.roomKills = (d.roomKills || 0) + 1;
+      if (d.roomKills >= d.quota){
+        banner("¡SALA SUPERADA!", d.mode.color);
+        later(1, () => { if (dungeon !== d) return; d.room < d.rooms ? (d.room++, nextRoom()) : spawnBoss(); });
+      }
     }
   };
   return d;
@@ -2094,9 +2135,10 @@ function nextRoom(){
     return;
   }
   d.phase = d.room >= d.rooms ? "Boss" : "Wave";
-  banner(d.phase === "Boss" ? "SALA DEL JEFE" : `SALA ${d.room} / ${d.rooms}`, d.mode.color);
+  d.roomKills = 0;
+  banner(d.phase === "Boss" ? "SALA DEL JEFE" : `SALA ${d.room} / ${d.rooms} · MATA ${d.quota}`, d.mode.color);
   if (d.phase === "Boss") spawnBoss();
-  else for (let i=0;i<5;i++) spawnEnemy(d.enemyDef(i % 3 === 0 ? "brute" : "normal"));
+  else for (let i=0;i<Math.min(6, d.quota);i++) spawnEnemy(d.enemyDef(i % 3 === 0 ? "brute" : "normal"));
 }
 function spawnBoss(){
   const d = dungeon; if (!d) return;
@@ -2794,7 +2836,13 @@ function update(dt){
   spawnT -= dt;
   const pop = dungeon ? (dungeon.phase === "Boss" ? 1 : 6)
     : (P.tutorial < 2 ? 3 : P.tutorial < TUTORIAL.length ? 6 : CFG.ENEMY_POP);
-  if (spawnT <= 0 && enemies.length < pop && !(dungeon && dungeon.phase === "Boss")){
+  if (dungeon && !dungeon.mode.infinite){
+    const d = dungeon, left = d.quota - (d.roomKills || 0);
+    if (d.phase === "Wave" && spawnT <= 0 && left > enemies.length && enemies.length < 6){
+      spawnEnemy(d.enemyDef(Math.random() < .3 ? "brute" : "normal")); spawnT = .6;
+    }
+  } else if (dungeon){ /* el modo infinito lanza sus oleadas él solo */ }
+  else if (spawnT <= 0 && enemies.length < pop){
     // repone la horda con rapidez: el farmeo del original es continuo
     const batch = Math.min(2, pop - enemies.length);
     for (let i=0;i<batch;i++) spawnEnemy();
@@ -3823,6 +3871,20 @@ function buildCharacter(cfg){
     // nariz y orejas en relieve: la cabeza deja de ser un cubo liso
     const nose = P0(3, 4, 2.5, skin); nose.position.set(0, 10 * s, 9.6 * s); neck.add(nose);
     for (const sd of [-1, 1]){ const ear = P0(2.5, 6, 4, skin); ear.position.set(sd * 10.3 * s, 12 * s, 0); neck.add(ear); }
+  }
+  if (cfg.headband){
+    const hb = P0(20, 3, 18.5, cfg.headband, { ...opts, emissive:cfg.headband, emissiveIntensity:.5 }); hb.position.y = 17 * s; neck.add(hb);
+    const tail = P0(3, 10, 2, cfg.headband); tail.position.set(4 * s, 13 * s, -10 * s); tail.rotation.z = .3; neck.add(tail);
+  }
+  if (cfg.mask){
+    const mk = P0(19.5, 7, 2, cfg.mask); mk.position.set(0, 7 * s, 9.2 * s); neck.add(mk);
+    const ml = P0(12, 1, 1, "#ff3a4a", { ...opts, emissive:"#ff3a4a", emissiveIntensity:1 }); ml.position.set(0, 8 * s, 10.4 * s); neck.add(ml);
+  }
+  if (cfg.backSword){
+    const bs = new THREE.Group(); bs.position.set(0, 42 * s, -10 * s); bs.rotation.z = .6; detail.add(bs);
+    const bl = P0(5, 40, 2, cfg.backSword, { ...opts, emissive:cfg.backSword, emissiveIntensity:.6 }); bl.position.y = 8 * s; bs.add(bl);
+    const gd = P0(14, 3, 5, "#2a2438"); gd.position.y = -13 * s; bs.add(gd);
+    const gp = P0(3.5, 9, 3.5, "#1a1426"); gp.position.y = -19 * s; bs.add(gp);
   }
   if (cfg.longHair && !cfg.helm && !cfg.hood){
     const mane = P0(18.5, 18, 4, cfg.longHair); mane.position.set(0, 8 * s, -9 * s); neck.add(mane);
@@ -5160,7 +5222,11 @@ function playerConfig(){
   const heavy = armor === "heavy", plate = armor === "plate" || heavy, coat = armor === "coat";
   const glowEye = !!eyeI.glow;
   return {
-    scale:1.06, skin:"#e8b98a", hero:true, iris:eyeI.id, glowEyes: glowEye, eyes: glowEye ? eyeI.id : "#12172b",
+    scale:+lookItem("height").id, skin:lookItem("skin").id, hero:true,
+    headband: lookItem("head").id === "band" ? out.trim : null, mask: lookItem("head").id === "mask" ? out.plate : null,
+    horns: lookItem("head").id === "horns", hornColor: out.trim,
+    backSword: lookItem("back").id === "sword" ? kitOf(P.weapon).color : null,
+    features: lookItem("back").id === "wings" ? ["wings"] : [], iris:eyeI.id, glowEyes: glowEye, eyes: glowEye ? eyeI.id : "#12172b",
     shirt: out.shirt, sleeve: out.sleeve, pants: out.pants, boots: out.boots,
     belt:"#1a1428", buckle: out.trim,
     spikyHair: hair === "spiky" ? L.hairColor : null,
@@ -5173,16 +5239,18 @@ function playerConfig(){
     armor: coat ? null : out.plate, armorGlow: 0,
     core: plate || coat ? out.trim : null,
     pauldron: out.plate, pauldron2: plate || coat ? out.trim : null,
-    spikes: heavy || (coat && P.awakened) ? out.trim : null,
+    spikes: heavy || (coat && P.awakened) || lookItem("back").id === "spikes" ? out.trim : null,
     gauntlet: out.plate,
     tassets: plate ? out.plate : null,
     greaves: heavy ? out.plate : null,
-    backSpikes: coat && rankIdx(P.rank) >= 5 ? out.trim : null,
-    helm: null, crest: heavy ? out.trim : null,
+    backSpikes: (coat && rankIdx(P.rank) >= 5) || lookItem("back").id === "spikes" ? out.trim : null,
+    helm: lookItem("head").id === "helm" ? out.plate : null, helm2: lookItem("head").id === "helm" ? out.trim : null,
+    visor: lookItem("head").id === "helm" ? out.trim : null, crest: heavy ? out.trim : null,
     glove: out.trim,
     cape: capeI === "none" ? null : capeI === "shadow" ? "#120c24" : out.plate, capeLong: capeI === "long" || capeI === "shadow",
-    crown: null,
-    weapon: kitOf(P.weapon).color, weaponGlow: P.awakened || !!kitOf(P.weapon).glow,
+    crown: lookItem("head").id === "crown" ? "#ffd24a" : null,
+    weapon: lookItem("weaponGlow").id === "auto" ? kitOf(P.weapon).color : lookItem("weaponGlow").id,
+    weaponGlow: P.awakened || !!kitOf(P.weapon).glow || lookItem("weaponGlow").id !== "auto",
     weaponKind: weaponKind(P.weapon),
     key: `${JSON.stringify(L)}|${P.rank}|${P.weapon}|${P.awakened}`,
   };
@@ -6191,7 +6259,8 @@ function syncHud(){
   $("nextRegion").textContent = nx ? `${nx.next.name} a ${Math.round(nx.dist)} m` : "";
   $("portal").textContent = dungeon
     ? (dungeon.mode.infinite ? `Oleada ${dungeon.room} · récord ${P.infBest || 0} · ${Math.max(0,Math.floor(dungeon.timer))}s`
-                             : `Sala ${dungeon.room}/${dungeon.rooms} · ${Math.max(0,Math.floor(dungeon.timer))}s`)
+                             : dungeon.phase === "Boss" ? `Sala del jefe · ${Math.max(0,Math.floor(dungeon.timer))}s`
+                             : `Sala ${dungeon.room}/${dungeon.rooms} · ${dungeon.roomKills || 0}/${dungeon.quota} bajas · ${Math.max(0,Math.floor(dungeon.timer))}s`)
     : portal ? `Portal ${portal.mode.name} · ${Math.ceil(60-portal.t)}s`
     : `Portal en ${Math.floor(portalT/60)}:${String(Math.floor(portalT%60)).padStart(2,"0")}`;
 
@@ -6286,7 +6355,7 @@ function panelStats(){
     `<button class="tab ${panelTab===id?"sel":""}" data-tab="${id}">${label}</button>`).join("")}</div>`;
   if (panelTab === "Look"){
     const rows = Object.keys(LOOKS).map(cat => `<div class="lookrow"><span class="lk-cat">${LOOK_CAT[cat]}</span><div class="chips">${
-      LOOKS[cat].map(o => { const un = needMet(o.need), on = P.look[cat] === o.id, sw = cat === "hairColor" || cat === "eyes" || (cat === "aura" && o.id !== "none");
+      LOOKS[cat].map(o => { const un = needMet(o.need), on = P.look[cat] === o.id, sw = cat === "hairColor" || cat === "eyes" || cat === "skin" || (cat === "weaponGlow" && o.id !== "auto") || (cat === "aura" && o.id !== "none");
         return `<button class="chip lchip ${on ? "sel" : ""} ${un ? "" : "lk"}" data-look="${cat}|${o.id}" ${un ? "" : "aria-disabled=\"true\""}
           title="${un ? o.name : "Se desbloquea con: " + needText(o.need)}">${sw ? `<i class="sw" style="background:${o.id}"></i>` : ""}${un ? "" : "🔒 "}${o.name}${
           o.bonus ? ` <em>${Object.entries(o.bonus).map(([k, v]) => `+${Math.round(v * 100)}% ${k === "dmg" ? "daño" : k === "hp" ? "vida" : "vel."}`).join(" ")}</em>` : ""}</button>`; }).join("")}</div></div>`).join("");
@@ -6672,7 +6741,7 @@ function panelMap(){
     right = `<div class="list">${Object.entries(DUNGEON_MODES).map(([id, m]) => m.infinite ? `<div class="item inf"><span class="g">♾</span>
       <span class="meta"><b>${m.name}</b><span>Oleadas sin fin, cada una más dura · jefe cada 10 · runas raras desde la oleada 10 (épicas desde la 20, legendarias desde la 40, la mítica desde la 60) · récord: oleada ${P.infBest || 0}</span></span>
       <button class="btn" data-dungeon="Infinite">Entrar gratis</button></div>` : `<div class="item"><span class="g">🌀</span>
-      <span class="meta"><b>${m.name}</b><span>${m.rooms} salas · enemigos ×${m.mult} · recompensa ×${m.reward}${id === "DoubleDungeon" ? " · otorga el Despertar" : ""}</span></span>
+      <span class="meta"><b>${m.name}</b><span>${m.rooms} salas · ${m.quota} bajas por sala · enemigos ×${m.mult} · recompensa ×${m.reward}${id === "DoubleDungeon" ? " · otorga el Despertar" : ""}</span></span>
       <button class="btn violet" data-dungeon="${id}" ${P.tickets > 0 || id === "Standard" ? "" : "disabled"}>${id === "Standard" ? "Entrar" : "1 🎟"}</button></div>`).join("")}</div>`;
   }
   const strip = `<div class="rstrip" role="listbox" aria-label="Regiones">
