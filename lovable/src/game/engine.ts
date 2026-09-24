@@ -368,7 +368,7 @@ const FORMULA = {
 };
 
 /* ------------------------- clases y talentos ------------------------------ */
-/* 20 clases ordenadas por rareza. No se eligen: salen de la ruleta de clases
+/* 31 clases ordenadas por rareza. No se eligen: salen de la ruleta de clases
    (los giros solo se consiguen con códigos). Las que ya tienes se pueden
    cambiar cuando quieras. La mejor, Monarca de las Sombras, sale un 0,5%. */
 const CLASS_RARITY = {
@@ -380,25 +380,36 @@ const CLASS_RARITY = {
   mitico:    { name:"Mítica",     col:"#ff3af0" },
 };
 const CLASSES = {
-  Novice:   { id:"Novice",   name:"Novato",          rar:"comun",     p:12,  glyph:"🔰", bonus:{ dmg:0.05, hp:0.05 },                         desc:"+5% daño y +5% vida." },
-  Warrior:  { id:"Warrior",  name:"Guerrero",        rar:"comun",     p:10,  glyph:"🛡", bonus:{ dmg:0.15, hp:0.20 },                         desc:"+15% daño y +20% vida." },
-  Scout:    { id:"Scout",    name:"Explorador",      rar:"comun",     p:9,   glyph:"🧭", bonus:{ speed:0.20, crit:0.05 },                     desc:"+20% velocidad y +5% crítico." },
-  Healer:   { id:"Healer",   name:"Sanador",         rar:"comun",     p:9,   glyph:"✚", bonus:{ hp:0.30, mana:0.30 },                        desc:"+30% vida y +30% maná." },
-  Mage:     { id:"Mage",     name:"Mago",            rar:"comun",     p:8,   glyph:"🪄", bonus:{ skill:0.50, mana:0.40 },                     desc:"+50% daño de habilidad y +40% maná." },
-  Assassin: { id:"Assassin", name:"Asesino",         rar:"pococomun", p:7,   glyph:"🗡", bonus:{ crit:0.15, speed:0.20, dmg:0.05 },           desc:"+15% crítico, +20% velocidad y +5% daño." },
-  Tank:     { id:"Tank",     name:"Tanque",          rar:"pococomun", p:7,   glyph:"🧱", bonus:{ hp:0.70, armor:0.35 },                       desc:"+70% vida y −35% daño recibido." },
-  Berserker:{ id:"Berserker",name:"Berserker",       rar:"pococomun", p:6,   glyph:"🪓", bonus:{ dmg:0.35, armor:-0.10 },                     desc:"+35% daño, pero recibes un 10% más." },
-  Summoner: { id:"Summoner", name:"Invocador",       rar:"pococomun", p:5.5, glyph:"🌀", bonus:{ shadow:0.35, luck:0.05 },                    desc:"+35% daño de sombras y +5% suerte Arise." },
-  Knight:   { id:"Knight",   name:"Caballero",       rar:"pococomun", p:4.5, glyph:"⚜", bonus:{ hp:0.40, armor:0.20, dmg:0.10 },            desc:"+40% vida, −20% daño recibido y +10% daño." },
-  Wind:     { id:"Wind",     name:"Espada del Viento",rar:"raro",     p:4,   glyph:"🌪", bonus:{ dmg:0.30, speed:0.25, crit:0.08 },           desc:"+30% daño, +25% velocidad y +8% crítico." },
-  IceMage:  { id:"IceMage",  name:"Mago de Hielo",   rar:"raro",      p:3.5, glyph:"❄", bonus:{ skill:0.90, mana:0.50, armor:0.10 },          desc:"+90% habilidad, +50% maná y −10% daño recibido." },
-  Slayer:   { id:"Slayer",   name:"Cazadragones",    rar:"raro",      p:3,   glyph:"🐲", bonus:{ dmg:0.45, hp:0.25 },                         desc:"+45% daño y +25% vida." },
-  Paladin:  { id:"Paladin",  name:"Paladín",         rar:"raro",      p:2.5, glyph:"🔆", bonus:{ hp:0.80, armor:0.30, dmg:0.15 },            desc:"+80% vida, −30% daño recibido y +15% daño." },
-  Necro:    { id:"Necro",    name:"Nigromante",      rar:"raro",      p:2,   glyph:"💀", bonus:{ shadow:0.70, luck:0.10 },                    desc:"+70% daño de sombras y +10% suerte Arise." },
-  WeaponMaster:{ id:"WeaponMaster", name:"Maestro de Armas", rar:"epico", p:2, glyph:"⚔", bonus:{ dmg:0.70, crit:0.15, speed:0.15 },    desc:"+70% daño, +15% crítico y +15% velocidad." },
-  Archmage: { id:"Archmage", name:"Archimago",       rar:"epico",     p:1.5, glyph:"🔮", bonus:{ skill:1.40, mana:1.00, dmg:0.15 },           desc:"+140% habilidad, +100% maná y +15% daño." },
-  Warlord:  { id:"Warlord",  name:"Señor de la Guerra",rar:"epico",   p:1.1, glyph:"🏴", bonus:{ dmg:0.60, hp:0.60, armor:0.25 },            desc:"+60% daño, +60% vida y −25% daño recibido." },
-  Monarch:  { id:"Monarch",  name:"Monarca",         rar:"legend",    p:1.9, glyph:"👑", bonus:{ shadow:0.80, luck:0.20, dmg:0.30 },           desc:"+80% sombras, +20% suerte Arise y +30% daño." },
+  Novice:   { id:"Novice",   name:"Novato",          rar:"comun",     p:7,  glyph:"🔰", bonus:{ dmg:0.05, hp:0.05 },                         desc:"+5% daño y +5% vida." },
+  Warrior:  { id:"Warrior",  name:"Guerrero",        rar:"comun",     p:7,  glyph:"🛡", bonus:{ dmg:0.15, hp:0.20 },                         desc:"+15% daño y +20% vida." },
+  Scout:    { id:"Scout",    name:"Explorador",      rar:"comun",     p:6,   glyph:"🧭", bonus:{ speed:0.20, crit:0.05 },                     desc:"+20% velocidad y +5% crítico." },
+  Healer:   { id:"Healer",   name:"Sanador",         rar:"comun",     p:6,   glyph:"✚", bonus:{ hp:0.30, mana:0.30 },                        desc:"+30% vida y +30% maná." },
+  Mage:     { id:"Mage",     name:"Mago",            rar:"comun",     p:6,   glyph:"🪄", bonus:{ skill:0.50, mana:0.40 },                     desc:"+50% daño de habilidad y +40% maná." },
+  Archer:   { id:"Archer",   name:"Arquero",         rar:"comun",     p:7,   glyph:"🏹", bonus:{ crit:0.10, speed:0.10 },                    desc:"+10% crítico y +10% velocidad." },
+  Monk:     { id:"Monk",     name:"Monje",           rar:"comun",     p:6.2, glyph:"🥋", bonus:{ hp:0.15, speed:0.15, dmg:0.05 },             desc:"+15% vida, +15% velocidad y +5% daño." },
+  Assassin: { id:"Assassin", name:"Asesino",         rar:"pococomun", p:5,   glyph:"🗡", bonus:{ crit:0.15, speed:0.20, dmg:0.05 },           desc:"+15% crítico, +20% velocidad y +5% daño." },
+  Tank:     { id:"Tank",     name:"Tanque",          rar:"pococomun", p:5,   glyph:"🧱", bonus:{ hp:0.70, armor:0.35 },                       desc:"+70% vida y −35% daño recibido." },
+  Berserker:{ id:"Berserker",name:"Berserker",       rar:"pococomun", p:4.5,   glyph:"🪓", bonus:{ dmg:0.35, armor:-0.10 },                     desc:"+35% daño, pero recibes un 10% más." },
+  Summoner: { id:"Summoner", name:"Invocador",       rar:"pococomun", p:4, glyph:"🌀", bonus:{ shadow:0.35, luck:0.05 },                    desc:"+35% daño de sombras y +5% suerte Arise." },
+  Knight:   { id:"Knight",   name:"Caballero",       rar:"pococomun", p:3.5, glyph:"⚜", bonus:{ hp:0.40, armor:0.20, dmg:0.10 },            desc:"+40% vida, −20% daño recibido y +10% daño." },
+  Lancer:   { id:"Lancer",   name:"Lancero",         rar:"pococomun", p:4,   glyph:"🔱", bonus:{ dmg:0.25, crit:0.05 },                      desc:"+25% daño y +5% crítico." },
+  BeastHunter:{ id:"BeastHunter", name:"Cazador de Bestias", rar:"pococomun", p:3.5, glyph:"🐺", bonus:{ dmg:0.20, luck:0.05, speed:0.10 }, desc:"+20% daño, +5% suerte Arise y +10% velocidad." },
+  Wind:     { id:"Wind",     name:"Espada del Viento",rar:"raro",     p:3,   glyph:"🌪", bonus:{ dmg:0.30, speed:0.25, crit:0.08 },           desc:"+30% daño, +25% velocidad y +8% crítico." },
+  IceMage:  { id:"IceMage",  name:"Mago de Hielo",   rar:"raro",      p:2.5, glyph:"❄", bonus:{ skill:0.90, mana:0.50, armor:0.10 },          desc:"+90% habilidad, +50% maná y −10% daño recibido." },
+  Slayer:   { id:"Slayer",   name:"Cazadragones",    rar:"raro",      p:2.2,   glyph:"🐲", bonus:{ dmg:0.45, hp:0.25 },                         desc:"+45% daño y +25% vida." },
+  Paladin:  { id:"Paladin",  name:"Paladín",         rar:"raro",      p:1.8, glyph:"🔆", bonus:{ hp:0.80, armor:0.30, dmg:0.15 },            desc:"+80% vida, −30% daño recibido y +15% daño." },
+  Necro:    { id:"Necro",    name:"Nigromante",      rar:"raro",      p:1.5,   glyph:"💀", bonus:{ shadow:0.70, luck:0.10 },                    desc:"+70% daño de sombras y +10% suerte Arise." },
+  SwordSaint:{ id:"SwordSaint", name:"Santo de la Espada", rar:"raro",  p:2,   glyph:"🗡", bonus:{ dmg:0.50, crit:0.10 },                    desc:"+50% daño y +10% crítico." },
+  Stormcaller:{ id:"Stormcaller", name:"Invocatormentas", rar:"raro",   p:2,   glyph:"⚡", bonus:{ skill:1.00, speed:0.15, mana:0.30 },      desc:"+100% habilidad, +15% velocidad y +30% maná." },
+  BloodKnight:{ id:"BloodKnight", name:"Caballero de Sangre", rar:"raro", p:1.6, glyph:"🩸", bonus:{ dmg:0.40, hp:0.40, armor:-0.05 },     desc:"+40% daño y +40% vida, pero recibes un 5% más." },
+  WeaponMaster:{ id:"WeaponMaster", name:"Maestro de Armas", rar:"epico", p:1.4, glyph:"⚔", bonus:{ dmg:0.70, crit:0.15, speed:0.15 },    desc:"+70% daño, +15% crítico y +15% velocidad." },
+  Archmage: { id:"Archmage", name:"Archimago",       rar:"epico",     p:1.1, glyph:"🔮", bonus:{ skill:1.40, mana:1.00, dmg:0.15 },           desc:"+140% habilidad, +100% maná y +15% daño." },
+  Warlord:  { id:"Warlord",  name:"Señor de la Guerra",rar:"epico",   p:0.9, glyph:"🏴", bonus:{ dmg:0.60, hp:0.60, armor:0.25 },            desc:"+60% daño, +60% vida y −25% daño recibido." },
+  Reaper:   { id:"Reaper",   name:"Segador",         rar:"epico",     p:1,   glyph:"⚰", bonus:{ dmg:0.60, shadow:0.50, crit:0.10 },          desc:"+60% daño, +50% sombras y +10% crítico." },
+  DragonRider:{ id:"DragonRider", name:"Jinete de Dragón", rar:"epico",  p:.9,  glyph:"🐉", bonus:{ dmg:0.50, hp:0.70, speed:0.15 },          desc:"+50% daño, +70% vida y +15% velocidad." },
+  Monarch:  { id:"Monarch",  name:"Monarca",         rar:"legend",    p:1.2, glyph:"👑", bonus:{ shadow:0.80, luck:0.20, dmg:0.30 },           desc:"+80% sombras, +20% suerte Arise y +30% daño." },
+  FrostMonarch:{ id:"FrostMonarch", name:"Monarca de Hielo", rar:"legend", p:.9, glyph:"🧊", bonus:{ skill:1.20, armor:0.30, dmg:0.40, mana:0.60 }, desc:"+120% habilidad, −30% daño recibido, +40% daño y +60% maná." },
+  BeastMonarch:{ id:"BeastMonarch", name:"Monarca Bestia", rar:"legend", p:.8, glyph:"🦁", bonus:{ dmg:0.70, speed:0.30, crit:0.15 },     desc:"+70% daño, +30% velocidad y +15% crítico." },
   ShadowMonarch:{ id:"ShadowMonarch", name:"Monarca de las Sombras", rar:"mitico", p:0.5, glyph:"🌑",
     bonus:{ dmg:0.80, hp:0.50, shadow:1.20, luck:0.30, crit:0.15, speed:0.20, skill:0.50, armor:0.20 },
     desc:"La mejor clase: +80% daño, +50% vida, +120% sombras, +30% suerte, +15% crítico, +20% velocidad, +50% habilidad y −20% daño recibido." },
@@ -1519,12 +1530,12 @@ function infWaveClear(d){
     const r = rollRune(w >= 60 ? 3 : w >= 40 ? 2 : w >= 20 ? 1 : 0);
     note(`${RUNES[r].glyph} ${RUNES[r].name} (oleada ${w})`, "--gem");
   }
-  // giros de clase: uno fijo por cada jefe (oleada 10, 20, 30…), un 6% por
-  // oleada desde la 15 y +2 al batir el récord en un múltiplo de 25
+  // giros de clase: uno fijo cada 20 oleadas, un 3% por oleada desde la 25
+  // y +1 al batir el récord en un múltiplo de 25
   let giros = 0;
-  if (w % 10 === 0) giros++;
-  if (w >= 15 && Math.random() < .06) giros++;
-  if (w > (P.infBest || 0) && w % 25 === 0) giros += 2;
+  if (w % 20 === 0) giros++;
+  if (w >= 25 && Math.random() < .03) giros++;
+  if (w > (P.infBest || 0) && w % 25 === 0) giros++;
   if (giros){ P.spins += giros; note(`🎰 +${giros} giro${giros > 1 ? "s" : ""} de clase (oleada ${w})`, "--gold"); }
   if (w > (P.infBest || 0)){ P.infBest = w; if (w % 5 === 0) note(`Nuevo récord infinito: oleada ${w}`, "--gold"); }
   save();
@@ -5715,6 +5726,22 @@ function render(dt){
         blending:THREE.AdditiveBlending, opacity:.35 }));
       fl.scale.set(90 * (v.scaleRef || 1), 120 * (v.scaleRef || 1), 1); fl.position.y = 40 * (v.scaleRef || 1); v.add(fl); v.userData.sFlame = fl;
     }
+    // contorno del color de su rango (A o más) y cartel con rango y nombre
+    const rI = rankIdxOf(sh.data.rank);
+    if (!v.userData.outline && !sh.data.shiny && rI >= 4)
+      addOutline(v, new THREE.Color(mobRank(sh.data.rank).col).multiplyScalar(.55).getHex(), 1.07);
+    if (!v.userData.sTag){
+      const R = mobRank(sh.data.rank), nm = SHADOWS[sh.data.id]?.name || sh.data.id;
+      const tg = labelSprite(`[${sh.data.rank}] ${nm}${sh.data.shiny ? " ✦" : ""}`, sh.data.shiny ? "#fff27a" : R.col, 40);
+      tg.scale.set(104, 26, 1); tg.position.y = 96 * (v.scaleRef || 1); tg.renderOrder = 23; v.add(tg); v.userData.sTag = tg;
+    }
+    v.userData.sTag.visible = dS < 520;
+    // humo de sombra: jirones negro-violeta que suben de los hombros
+    if (dS < 800 && Math.random() < (sh.state !== "IDLE_FOLLOW" ? .5 : .22)){
+      const sc = v.scaleRef || 1;
+      parts.push({ x:sh.x + rnd(-14, 14) * sc, y:sh.y + rnd(-14, 14) * sc, h:rnd(40, 70) * sc, vx:rnd(-8, 8), vy:rnd(-8, 8), vh:rnd(25, 55),
+                   life:rnd(.5, 1.1), color: Math.random() < .6 ? "#1a0f33" : (rI >= 4 ? mobRank(sh.data.rank).col : "#7a4ae0"), size:rnd(4, 8) });
+    }
     if (sh.data.shiny && !v.userData.shinyFx){
       v.userData.shinyFx = true;
       addOutline(v, 0xc9a33a, 1.06);
@@ -6628,7 +6655,7 @@ function panelMap(){
       <button class="btn green" data-hunter="${h.id}">Ir</button></div>`).join("")}</div>`;
   } else {
     right = `<div class="list">${Object.entries(DUNGEON_MODES).map(([id, m]) => m.infinite ? `<div class="item inf"><span class="g">♾</span>
-      <span class="meta"><b>${m.name}</b><span>Oleadas sin fin, cada una más dura · jefe cada 10 que da 1 giro de clase · 6% de giro por oleada desde la 15 · +2 giros por récord cada 25 · runas raras desde la oleada 10 (épicas desde la 20, legendarias desde la 40, la mítica desde la 60) · récord: oleada ${P.infBest || 0}</span></span>
+      <span class="meta"><b>${m.name}</b><span>Oleadas sin fin, cada una más dura · jefe cada 10 · 1 giro de clase cada 20 oleadas · 3% de giro por oleada desde la 25 · +1 giro por récord cada 25 · runas raras desde la oleada 10 (épicas desde la 20, legendarias desde la 40, la mítica desde la 60) · récord: oleada ${P.infBest || 0}</span></span>
       <button class="btn" data-dungeon="Infinite">Entrar gratis</button></div>` : `<div class="item"><span class="g">🌀</span>
       <span class="meta"><b>${m.name}</b><span>${m.rooms} salas · ${m.quota} bajas por sala · enemigos ×${m.mult} · recompensa ×${m.reward}${id === "DoubleDungeon" ? " · otorga el Despertar" : ""}</span></span>
       <button class="btn violet" data-dungeon="${id}" ${P.tickets > 0 || id === "Standard" ? "" : "disabled"}>${id === "Standard" ? "Entrar" : "1 🎟"}</button></div>`).join("")}</div>`;

@@ -188,7 +188,7 @@ EXPRecompensa    = NivelEnemigo × 25 × (1 + Renaceres × 0,25)
 
 ### Clases y ruleta
 
-Hay **20 clases** ordenadas por rareza. No se eligen: salen de la **ruleta de
+Hay **31 clases** ordenadas por rareza. No se eligen: salen de la **ruleta de
 clases** en Atributos › Clase, y cada giro gasta uno de tus giros. Los giros
 **solo** se consiguen con códigos (20 en total). Una clase nueva se activa sola. Si sale una
 repetida se convierte en gemas (más cuanto más rara). Entre las clases que ya
@@ -850,3 +850,22 @@ aserciones de prueba, que fue el punto de partida del diseño.
   - Siempre muestran `[Rango] Nombre [Nv. X]` y la barra de vida cuando están cerca.
   - El texto de los carteles se ajusta para no cortarse.
   - Se arregló el orden de pintado de las barras: antes la estela clara tapaba la vida y todas se veían blancas.
+
+## Más clases, giros más difíciles y sombras mejoradas
+- **Clases:**
+  - Hay 11 clases nuevas, con 31 en total:
+    - **Comunes:** Arquero y Monje.
+    - **Poco comunes:** Lancero y Cazador de Bestias.
+    - **Raras:** Santo de la Espada, Invocatormentas y Caballero de Sangre.
+    - **Épicas:** Segador y Jinete de Dragón.
+    - **Legendarias:** Monarca de Hielo y Monarca Bestia.
+  - Las probabilidades se reajustaron para que sigan sumando 100%. El Monarca de las Sombras sigue siendo la mejor y sale con un 0,5%.
+- **Giros en el modo infinito (más difíciles):**
+  - 1 giro seguro cada 20 oleadas.
+  - Un 3% de giro por oleada desde la 25.
+  - +1 giro al batir el récord en un múltiplo de 25.
+  - Antes era 1 cada 10 oleadas, un 6% desde la 15 y +2 por récord.
+- **Sombras:**
+  - Cartel con `[Rango] Nombre` (✦ si es shiny).
+  - Contorno del color de su rango desde A.
+  - Humo negro-violeta que les sube de los hombros siempre, y más al moverse.
