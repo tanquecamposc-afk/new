@@ -409,6 +409,12 @@ canvas#stage{position:absolute;inset:0;width:100%;height:100%;display:block;touc
 .dcell.cur{border-color:var(--gold);box-shadow:0 0 18px rgba(255,210,74,.45);animation:glowp 1.4s ease-in-out infinite}
 .dcell.big{grid-column:span 2;background:linear-gradient(180deg,rgba(255,210,74,.18),rgba(11,19,45,.9))}
 .gearbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.card.shiny{border-color:#fff27a;background:linear-gradient(120deg,rgba(255,242,122,.22),rgba(187,140,255,.22),rgba(110,240,255,.2)),linear-gradient(180deg,#1c2e66,#0b1330);
+  box-shadow:0 0 16px rgba(255,242,122,.45)}
+.card.shiny::after{content:"";position:absolute;inset:0;border-radius:12px;pointer-events:none;
+  background:linear-gradient(110deg,transparent 35%,rgba(255,255,255,.35) 50%,transparent 65%);background-size:250% 100%;animation:sweep 2.2s linear infinite}
+.shinytag{font:800 10px var(--f-ui);padding:2px 7px;border-radius:999px;color:#0a1020;
+  background:linear-gradient(90deg,#fff27a,#ffb0f0,#8ff0ff);vertical-align:2px}
 /* --- accesibilidad de menús --- */
 .card.myth{border-color:var(--rc,#ff3af0);animation:mythGlow 2s ease-in-out infinite}
 @keyframes mythGlow{50%{box-shadow:0 0 22px color-mix(in srgb,var(--tc) 70%,transparent),0 0 0 2px #fff3}}

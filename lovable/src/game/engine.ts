@@ -547,18 +547,27 @@ function checkLookUnlocks(){
    Cada montura tiene su criatura, sus colores y su velocidad. Salvo el lobo
    inicial, se encuentran: caen de los enemigos de su región como un orbe
    brillante que hay que recoger antes de que se apague. */
+// Una montura por isla (más la inicial y dos premios de rango). Cuanto más
+// lejos está su isla, más rápida es: las mejores solo salen en las últimas.
 const MOUNTS = {
-  ShadowWolf: { name:"Lobo sombrío",        body:"wolf",    skin:"#1a1230", dark:"#0c0918", hair:"#2a1a4a", eyes:"#b07cff", scale:1.45, speed:2.1, src:"Montura inicial" },
-  Kasaka:     { name:"Kasaka domada",       body:"serpent", skin:"#3f5a48", dark:"#1c2a22", hair:"#c8b98a", eyes:"#c8ff4a", scale:1.15, speed:2.2, isle:"Hongdae", chance:.02 },
-  WarBoar:    { name:"Jabalí de guerra",    body:"wolf",    skin:"#5a3a24", dark:"#2a1a10", hair:"#1a120c", eyes:"#ff6a2a", scale:1.5,  speed:2.25, isle:"HighOrcs", chance:.02, features:["tusks"] },
-  FrostFang:  { name:"Colmillo de Escarcha",body:"wolf",    skin:"#9fb4c8", dark:"#3e4e62", hair:"#eef6ff", eyes:"#6fd8ff", scale:1.6,  speed:2.35, isle:"RedGate", chance:.02, features:["crystals"] },
-  WingedAnt:  { name:"Hormiga alada",       body:"ant",     skin:"#241d2c", dark:"#120e18", hair:"#1a1420", eyes:"#b8ff3a", scale:1.35, speed:2.45, isle:"Jeju", chance:.018, features:["wings"] },
-  Nightmare:  { name:"Corcel infernal",     body:"wolf",    skin:"#2a0f14", dark:"#140608", hair:"#ff6a1a", eyes:"#ffb03a", scale:1.7,  speed:2.6, isle:"DemonCastle", chance:.015, horns:true, features:["tail"] },
-  WarTiger:   { name:"Tigre de guerra",     body:"wolf",    skin:"#c07a3a", dark:"#2a1a10", hair:"#f0e0c0", eyes:"#ffd24a", scale:1.65, speed:2.7, isle:"BeastMonarch", chance:.015 },
-  SystemDisc: { name:"Disco del Sistema",   body:"disc",    skin:"#4a4a86", dark:"#1f1f44", hair:"#9fa8ff", eyes:"#9fa8ff", scale:1.2,  speed:2.9, isle:"Architect", chance:.012, fly:true },
-  SkyDragon:  { name:"Dragón de Kaisel",    body:"wolf",    skin:"#241a3a", dark:"#120c20", hair:"#3a2a5a", eyes:"#ff5d6c", scale:1.95, speed:3.1, fly:true, horns:true,
-                features:["wings", "tail"], src:"Rarísimo: 25% al vencer a un SS o SSS, o 0,05% en las regiones 8 en adelante" },
-  GoldenWolf: { name:"Lobo dorado",         body:"wolf",    skin:"#c9a33a", dark:"#6a5418", hair:"#fff27a", eyes:"#ffffff", scale:1.7,  speed:3.4, features:["halo"], src:"Garantizado al vencer a un enemigo SSS" },
+  ShadowWolf: { name:"Lobo sombrío",          body:"wolf",    skin:"#1a1230", dark:"#0c0918", hair:"#2a1a4a", eyes:"#b07cff", scale:1.45, speed:2.1,  src:"Montura inicial" },
+  StreetHound:{ name:"Sabueso de la Puerta",  body:"wolf",    skin:"#5a5f6a", dark:"#2a2d34", hair:"#8a8f99", eyes:"#ffcc33", scale:1.3,  speed:2.15, isle:"Seoul", chance:.025 },
+  Kasaka:     { name:"Kasaka domada",         body:"serpent", skin:"#3f5a48", dark:"#1c2a22", hair:"#c8b98a", eyes:"#c8ff4a", scale:1.15, speed:2.2,  isle:"Hongdae", chance:.02 },
+  StoneGolem: { name:"Gólem del Templo",      body:"golem",   skin:"#8f8674", dark:"#4a4438", hair:"#6a604e", eyes:"#ffb45a", scale:1.1,  speed:2.25, isle:"Temple", chance:.02 },
+  RedSteed:   { name:"Corcel del Caballero Rojo", body:"wolf",skin:"#3a1418", dark:"#1a0a0c", hair:"#ff3a3a", eyes:"#ff3a3a", scale:1.6,  speed:2.3,  isle:"Reawaken", chance:.018, features:["crystals"] },
+  WarBoar:    { name:"Jabalí de guerra",      body:"wolf",    skin:"#5a3a24", dark:"#2a1a10", hair:"#1a120c", eyes:"#ff6a2a", scale:1.5,  speed:2.35, isle:"HighOrcs", chance:.018, features:["tusks"] },
+  FrostFang:  { name:"Colmillo de Escarcha",  body:"wolf",    skin:"#9fb4c8", dark:"#3e4e62", hair:"#eef6ff", eyes:"#6fd8ff", scale:1.6,  speed:2.4,  isle:"RedGate", chance:.016, features:["crystals"] },
+  WingedAnt:  { name:"Hormiga alada",         body:"ant",     skin:"#241d2c", dark:"#120e18", hair:"#1a1420", eyes:"#b8ff3a", scale:1.35, speed:2.5,  isle:"Jeju", chance:.015, features:["wings"] },
+  Kitsune:    { name:"Kitsune de Shinjuku",   body:"wolf",    skin:"#f0e6dc", dark:"#b8a898", hair:"#ff7a5a", eyes:"#ff5a5a", scale:1.5,  speed:2.6,  isle:"Japan", chance:.013, features:["tail", "halo"] },
+  Nightmare:  { name:"Corcel infernal",       body:"wolf",    skin:"#2a0f14", dark:"#140608", hair:"#ff6a1a", eyes:"#ffb03a", scale:1.7,  speed:2.7,  isle:"DemonCastle", chance:.012, horns:true, features:["tail"] },
+  FrostBear:  { name:"Oso Glacial",           body:"wolf",    skin:"#cfe9ff", dark:"#5f7f9f", hair:"#ffffff", eyes:"#9fe8ff", scale:1.9,  speed:2.8,  isle:"IceMonarch", chance:.01, features:["mane", "crystals"] },
+  WarTiger:   { name:"Tigre de guerra",       body:"wolf",    skin:"#c07a3a", dark:"#2a1a10", hair:"#f0e0c0", eyes:"#ffd24a", scale:1.65, speed:2.9,  isle:"BeastMonarch", chance:.009 },
+  SystemDisc: { name:"Disco del Sistema",     body:"disc",    skin:"#4a4a86", dark:"#1f1f44", hair:"#9fa8ff", eyes:"#9fa8ff", scale:1.2,  speed:3.1,  isle:"Architect", chance:.008, fly:true },
+  ObsidianDragon:{ name:"Dragón de Obsidiana",body:"wolf",    skin:"#0e0a1c", dark:"#060410", hair:"#c08cff", eyes:"#c08cff", scale:2.2,  speed:3.6,  isle:"ShadowRealm", chance:.006, fly:true, horns:true,
+                features:["wings", "tail", "halo"] },
+  SkyDragon:  { name:"Dragón de Kaisel",      body:"wolf",    skin:"#241a3a", dark:"#120c20", hair:"#3a2a5a", eyes:"#ff5d6c", scale:1.95, speed:3.3,  fly:true, horns:true,
+                features:["wings", "tail"], src:"25% al vencer a un SS o SSS en las tres últimas regiones" },
+  GoldenWolf: { name:"Lobo dorado",           body:"wolf",    skin:"#c9a33a", dark:"#6a5418", hair:"#fff27a", eyes:"#ffffff", scale:1.7,  speed:3.45, features:["halo"], src:"Garantizado al vencer a un SSS en las cuatro últimas regiones" },
 };
 const mountOf = () => MOUNTS[P.mount] || MOUNTS.ShadowWolf;
 function mountSource(id){
@@ -575,9 +584,9 @@ function rollMountDrop(e){
   const reg = regionAt(e.x, e.y), R = mobRank(e.rank), ri = rankIdxOf(e.rank);
   const give = (id, why) => { if (P.mounts.includes(id) || mountDrops.some(d => d.id === id)) return false;
     mountDrops.push({ id, x:e.x, y:e.y, t:60 }); banner("¡UNA MONTURA HA CAÍDO!", MOUNTS[id].eyes); note(`${MOUNTS[id].name} · recógela antes de 60 s${why ? " · " + why : ""}`, "--gold"); return true; };
-  if (e.rank === "SSS") give("GoldenWolf", "SSS");
-  if (R.myth && Math.random() < .25) give("SkyDragon");
-  if (ringAt(e.x, e.y) >= 8 && Math.random() < .0005) give("SkyDragon");
+  const ring = ringAt(e.x, e.y);
+  if (e.rank === "SSS" && ring >= 9) give("GoldenWolf", "SSS");
+  if (R.myth && ring >= 10 && Math.random() < .25) give("SkyDragon");
   for (const id in MOUNTS){
     const m = MOUNTS[id];
     if (m.isle === reg.id && Math.random() < m.chance * (1 + ri * .5)) give(id);
@@ -714,7 +723,8 @@ function rollDaily(i){
   if (big){
     out.cash = Math.floor(base.cash * 2.5 * k()); out.gems = Math.floor(base.gems * 2.5 * k()); out.tickets = 3 + Math.floor(Math.random() * 5);
     if (Math.random() < .35){ const r = rollRune(2); out.extras.push(`${RUNES[r].glyph} ${RUNES[r].name}`); }
-    const missing = Object.keys(MOUNTS).filter(m => !P.mounts.includes(m) && MOUNTS[m].isle);
+    const missing = Object.keys(MOUNTS).filter(m => !P.mounts.includes(m) && MOUNTS[m].isle && P.islands.includes(MOUNTS[m].isle)
+      && ISLANDS.findIndex(i => i.id === MOUNTS[m].isle) <= 6);
     if (missing.length && Math.random() < .12){
       const m = missing[Math.floor(Math.random() * missing.length)]; P.mounts.push(m); out.extras.push(`🐺 Montura: ${MOUNTS[m].name}`);
     }
@@ -885,9 +895,9 @@ const shadowDmgOf = s => {
   const table = FORMULA.shadowDamage(SHADOWS[s.id].dmg * (1 + (s.level - 1) * 0.1) * mobRank(s.rank).sh, P.stats.SDW);
   const tied = baseDamage() * (SHADOW_TIER_RATIO[SHADOWS[s.id].tier] || .2) * Math.sqrt(mobRank(s.rank).sh)
     * (1 + (s.level - 1) * 0.1) * (1 + P.stats.SDW * 0.0015);
-  return Math.max(table, tied) * shadowMult() * (now() < (player.shadowBuffUntil || 0) ? 1.3 : 1);
+  return Math.max(table, tied) * shadowMult() * (now() < (player.shadowBuffUntil || 0) ? 1.3 : 1) * (s.shiny ? 2 : 1);
 };
-const shadowHPOf  = s => FORMULA.shadowHP(SHADOWS[s.id].hp * (1 + (s.level - 1) * 0.1) * mobRank(s.rank).sh, P.stats.SDW);
+const shadowHPOf  = s => FORMULA.shadowHP(SHADOWS[s.id].hp * (1 + (s.level - 1) * 0.1) * mobRank(s.rank).sh, P.stats.SDW) * (s.shiny ? 2 : 1);
 
 /* ===========================================================================
    MUNDO, COMBATE Y SISTEMAS
@@ -1316,6 +1326,11 @@ function attemptArise(c){
   if (Math.random() <= rate){
     const def = SHADOWS[c.ShadowDefinitionId];
     const shadow = { uuid:uid(), id:def.id, name:def.name, tier:def.tier, level:1, xp:0, lock:false, rank:c.rank || "E" };
+    // mutación shiny: 1% en las de rango A o superior; doble de fuerza y otro brillo
+    if (rankIdxOf(shadow.rank) >= 4 && Math.random() < .01){
+      shadow.shiny = true;
+      setTimeout(() => { banner(`✨ ¡${def.name.toUpperCase()} SHINY! ✨`, "#fff27a"); note("Mutación shiny: esta sombra es el doble de fuerte", "--gold"); }, 600);
+    }
     P.shadows[shadow.uuid] = shadow;
     P.index[def.id] = (P.index[def.id] || 0) + 1;
     P.arisen++;
@@ -4792,7 +4807,22 @@ function mobShadowConfig(d){
   cfg.scale *= 1 + rankIdxOf(d.rank) * .03;
   return cfg;
 }
+// Shiny: la misma sombra, pero de cristal dorado-violeta, sin transparencia y
+// con todas las vetas encendidas en oro claro.
+function shinyfy(cfg){
+  const G = "#fff27a";
+  const out = { ...cfg, opts:{}, skin:"#3a2a66", shirt:"#2a1f4a", sleeve:"#342660", pants:"#221a3e", boots:"#1a1430",
+    eyes:G, glowEyes:true, glove:G, hornColor:G, hood2: cfg.hood ? G : cfg.hood2, trim:G, armorGlow:G, core:G, pauldron2:G,
+    weapon:G, weaponGlow:true, crown: cfg.crown ? G : cfg.crown, spikes: cfg.spikes ? G : cfg.spikes, hair:"#4a3a80" };
+  out.features = [...new Set([...(cfg.features || []), "halo"])];
+  out.scale = (cfg.scale || 1) * 1.08;
+  return out;
+}
 function shadowConfig(sh){
+  const c = shadowConfigBase(sh);
+  return sh.data?.shiny ? shinyfy(c) : c;
+}
+function shadowConfigBase(sh){
   const d = sh.data, tier = d.tier, L = SHADOW_LOOK[d.id] || {};
   if (SHADOWS[d.id]?.mob) return mobShadowConfig(d);
   const tierGlow = getComputedStyle(document.documentElement).getPropertyValue(TIER_VAR[tier] || "--t-C").trim() || "#b9c9e8";
@@ -5110,7 +5140,7 @@ function render(dt){
     poseEntity(mountView, player.x, player.y, player.yaw, { step:player.step * 1.3, moving:(player.moveAmt || 0) > .05, lift: player.h + fly });
     if (mountView.disc) mountView.disc.rotation.y += dt * 3;
   } else if (mountView) mountView.visible = false;
-  const saddle = player.mounted ? (mo.body === "disc" ? 14 : mo.body === "serpent" ? 30 : mo.body === "ant" ? 30 : 33) * mo.scale + (mo.fly ? 26 + Math.sin(now() * 2) * 5 : 0) - 14 : 0;
+  const saddle = player.mounted ? (mo.body === "disc" ? 14 : mo.body === "serpent" ? 30 : mo.body === "ant" ? 30 : mo.body === "golem" ? 58 : 33) * mo.scale + (mo.fly ? 26 + Math.sin(now() * 2) * 5 : 0) - 14 : 0;
   poseEntity(pv, player.x, player.y, player.yaw, {
     step:player.step, moving:(player.moveAmt || 0) > .05,
     swing: playerSwing(), swingDir: (player.combo % 2) ? -1 : 1,
@@ -5265,6 +5295,17 @@ function render(dt){
       const fl = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTexture("#5a2ab0"), transparent:true, depthWrite:false,
         blending:THREE.AdditiveBlending, opacity:.35 }));
       fl.scale.set(90 * (v.scaleRef || 1), 120 * (v.scaleRef || 1), 1); fl.position.y = 40 * (v.scaleRef || 1); v.add(fl); v.userData.sFlame = fl;
+    }
+    if (sh.data.shiny && !v.userData.shinyFx){
+      v.userData.shinyFx = true;
+      addOutline(v, 0xc9a33a, 1.06);
+      v.userData.sAura.material.color.set("#fff27a");
+      v.userData.sFlame.material.map = glowTexture("#ffe98a"); v.userData.sFlame.material.needsUpdate = true;
+    }
+    if (sh.data.shiny && dS < 900 && Math.random() < .6){
+      const sc = v.scaleRef || 1;
+      parts.push({ x:sh.x + rnd(-20, 20) * sc, y:sh.y + rnd(-20, 20) * sc, h:rnd(10, 80) * sc, vx:0, vy:0, vh:rnd(20, 60),
+                   life:rnd(.4, .9), color:`hsl(${(now() * 160 + Math.random() * 80) % 360},100%,75%)`, size:rnd(3, 6) });
     }
     v.userData.sAura.rotation.z = -now() * 1.2 - sh.slot;
     v.userData.sAura.visible = dS < 900;
@@ -5928,7 +5969,7 @@ function shadowSideHTML(){
   const eq = P.squad.includes(sel.uuid), SR = mobRank(sel.rank), look = SHADOW_LOOK[sel.id] || {};
   return `<div class="pv" data-pv="shadow" style="--tc:var(${TIER_VAR[sel.tier]})"></div>
       <div class="sheet" style="--tc:var(${TIER_VAR[sel.tier]})">
-        <b class="sname">${sel.name}</b>
+        <b class="sname">${sel.shiny ? "✨ " : ""}${sel.name}${sel.shiny ? ` <span class="shinytag">SHINY ×2</span>` : ""}</b>
         <span class="rkrow"><span class="rkbig" style="--rc:${SR.col}">${SR.r}</span><span class="tchip">${sel.tier}</span>
           <span class="lv">Poder ×${SR.sh} por rango</span></span>
         ${look.lore ? `<p class="lore">${look.lore}</p>` : ""}
@@ -5974,11 +6015,11 @@ function panelShadows(){
   if (selIdx >= shadowShown) shadowShown = Math.ceil((selIdx + 1) / 60) * 60;
   const cards = list.slice(0, shadowShown).map((s, i) => {
     const eq = P.squad.includes(s.uuid), R = mobRank(s.rank);
-    return `<button class="card ${eq ? "eq" : ""} ${s.uuid === shadowSel ? "sel" : ""} ${R.myth ? "myth" : ""}" data-pick="${s.uuid}" role="option"
+    return `<button class="card ${eq ? "eq" : ""} ${s.uuid === shadowSel ? "sel" : ""} ${R.myth ? "myth" : ""} ${s.shiny ? "shiny" : ""}" data-pick="${s.uuid}" role="option"
       aria-selected="${s.uuid === shadowSel}" aria-label="${s.name}, rango ${R.r}, ${eq ? "equipada" : "sin equipar"}"
       style="--tc:var(${TIER_VAR[s.tier]});--i:${Math.min(i, 20)}">
       <span class="cg">${SHADOWS[s.id]?.glyph || "👤"}</span>
-      <b>${s.name}</b><small>${fmt(D(s))} de daño</small><i class="crank" style="--rc:${R.col}">${R.r}</i>
+      <b>${s.shiny ? "✨ " : ""}${s.name}</b><small>${fmt(D(s))} de daño</small><i class="crank" style="--rc:${R.col}">${R.r}</i>
       <i class="ctier">${s.tier}</i>${eq ? `<i class="cbadge">EQ</i>` : ""}
       <i class="cbar" style="width:${Math.max(6, D(s) / C.maxD * 100)}%"></i></button>`;
   }).join("") + (total > shadowShown ? `<button class="chip more" data-more="1">Ver ${Math.min(60, total - shadowShown)} más (${total - shadowShown} restantes)</button>` : "");
@@ -5989,6 +6030,7 @@ function panelShadows(){
         <div class="cards" role="listbox" aria-label="Sombras">${cards || `<p class="hint">Ninguna sombra con este filtro.</p>`}</div></div></div>
     <p class="kbhelp">⌨ Flechas para elegir · <kbd>Enter</kbd> equipa o quita · 📱 toca otra vez la tarjeta elegida para equiparla</p>
     <p class="hint">Arrastra la figura para girarla. Escuadrón lleno: una extracción mejor <b>desequipa automáticamente la sombra de menor daño</b>.
+    Las de rango <b>A</b> o superior tienen un <b>1%</b> de salir ✨ shiny: el doble de fuertes y doradas.
     Cada enemigo nace con un rango de <b>E</b> a <b>SSS</b>: cuanto más alto, más cuesta vencerlo y extraerlo, y más fuerte sale su sombra.</p>
     <div class="odds">${MOB_RANKS.map(m => `<span style="--rc:${m.col}"><b>${m.r}</b>${pctTxt(m.p)}</span>`).join("")}</div>`);
 }
@@ -6377,7 +6419,7 @@ function previewInit(){
 function previewConfig(kind){
   if (kind === "shadow"){
     const d = P.shadows[shadowSel];
-    return d ? { cfg: shadowConfig({ data:d }), key:`sh|${d.id}|${d.tier}` } : null;
+    return d ? { cfg: shadowConfig({ data:d }), key:`sh|${d.id}|${d.tier}|${d.rank}|${d.shiny ? 1 : 0}` } : null;
   }
   if (kind === "mount"){
     const id = mountSel || P.mount;

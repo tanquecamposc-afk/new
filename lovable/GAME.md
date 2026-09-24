@@ -322,18 +322,30 @@ Cada montura tiene su criatura, sus colores y su velocidad. Todas salvo la
 inicial se encuentran: caen de los enemigos como un orbe brillante con una
 columna de luz, y hay que recogerlo antes de 60 segundos.
 
+Hay **una montura por isla** y cuanto más lejos está su isla, más rápida es:
+las mejores solo se consiguen en las últimas.
+
 | Montura | Velocidad | Dónde |
 |---|---|---|
 | Lobo sombrío | ×2,1 | inicial |
+| Sabueso de la Puerta | ×2,15 | 2,5% en Seúl |
 | Kasaka domada | ×2,2 | 2% en Hongdae |
-| Jabalí de guerra | ×2,25 | 2% en los Altos Orcos |
-| Colmillo de Escarcha | ×2,35 | 2% en la Puerta Roja |
-| Hormiga alada | ×2,45 | 1,8% en Jeju |
-| Corcel infernal | ×2,6 | 1,5% en el Castillo del Demonio |
-| Tigre de guerra | ×2,7 | 1,5% en el Dominio del Monarca Bestia |
-| Disco del Sistema (vuela) | ×2,9 | 1,2% en la Sala del Arquitecto |
-| Dragón de Kaisel (vuela) | ×3,1 | 25% al vencer a un SS o SSS; 0,05% en las regiones 8+ |
-| Lobo dorado | ×3,4 | garantizado al vencer a un SSS |
+| Gólem del Templo | ×2,25 | 2% en el Doble Dungeon |
+| Corcel del Caballero Rojo | ×2,3 | 1,8% en la Cárcel de Reawakening |
+| Jabalí de guerra | ×2,35 | 1,8% en los Altos Orcos |
+| Colmillo de Escarcha | ×2,4 | 1,6% en la Puerta Roja |
+| Hormiga alada | ×2,5 | 1,5% en Jeju |
+| Kitsune de Shinjuku | ×2,6 | 1,3% en Shinjuku |
+| Corcel infernal | ×2,7 | 1,2% en el Castillo del Demonio |
+| Oso Glacial | ×2,8 | 1% en el Dominio del Monarca de Hielo |
+| Tigre de guerra | ×2,9 | 0,9% en el Dominio del Monarca Bestia |
+| Disco del Sistema (vuela) | ×3,1 | 0,8% en la Sala del Arquitecto |
+| Dragón de Kaisel (vuela) | ×3,3 | 25% al vencer a un SS o SSS en las tres últimas regiones |
+| Lobo dorado | ×3,45 | seguro al vencer a un SSS en las cuatro últimas regiones |
+| **Dragón de Obsidiana** (vuela) | **×3,6** | 0,6% en el Trono del Rey de las Sombras |
+
+El cofre del día 7 solo puede dar monturas de las primeras siete islas, y solo
+de islas a las que ya has llegado.
 
 Los enemigos de rango alto multiplican la probabilidad de soltar su montura.
 
@@ -344,6 +356,15 @@ hombreras de losa, runas en los brazos, falda de piedra, núcleo y un halo que
 gira a su espalda. El espectro del Arquitecto lleva máscara blanca, cadenas y
 fragmentos de runa orbitando. El cazador caído de Shinjuku empuña katana con
 capa larga, y el soberano caído del Trono lleva abrigo, cuernos, púas y mandoble.
+
+### Sombras shiny
+
+Cada sombra extraída de un enemigo de rango **A o superior** tiene un **1%** de
+salir con la **mutación shiny**. Es el doble de fuerte (daño y vida ×2), un 8%
+más grande, sin transparencia, con piel violeta clara, todas las vetas, ojos,
+arma y corona en oro, contorno dorado, halo y chispas de colores al moverse.
+Al conseguirla sale un cartel especial. En el inventario lleva ✨, una
+tarjeta tornasolada con brillo que la recorre y la etiqueta «SHINY ×2».
 
 ### Una sombra por cada enemigo
 
