@@ -32,8 +32,8 @@ en el mundo, un diálogo cuando lo cumples y una recompensa.
 
 ## 3. El mundo
 
-Un mundo abierto **continuo y sin pantallas de carga**: 34.000 × 34.000
-unidades. El centro es Seúl y cada anillo de 1.400 unidades que te alejas es una
+Un mundo abierto **continuo y sin pantallas de carga**: 64.000 × 64.000
+unidades. El centro es Seúl y cada anillo de 2.400 unidades que te alejas es una
 región nueva, con su bioma, sus enemigos y su nivel recomendado. Cuanto más
 lejos, más duro.
 
@@ -434,9 +434,20 @@ enemigo lleva una columna de luz visible desde lejos. Derrotarlo da un botín
 enorme y muchas gemas, y su sombra (que hereda el rango) brilla en el
 inventario. Los rangos A y superiores tienen contorno.
 
+### Mundo ampliado y cofres
+
+El mundo pasó de 34.000 a **64.000 unidades** de lado y cada región mide ahora
+2.400 de ancho en vez de 1.400, así que hay mucho más que recorrer. Las
+partidas anteriores conservan su región y su dirección al cargar.
+
+Por todo el mapa hay **104 cofres escondidos** (ocho por región), con un
+brillo dorado y una columna de luz que se ven de lejos, y un punto dorado en el
+minimapa cuando estás cerca. Basta con acercarse para abrirlos. Dan oro y
+gemas según la región, y a veces un ticket o una runa. Se rellenan cada día.
+
 ### Monumentos de las islas
 
-Cada región tiene tres monumentos únicos que se ven de lejos:
+Cada región tiene cinco monumentos únicos que se ven de lejos:
 
 | Región | Monumento |
 |---|---|

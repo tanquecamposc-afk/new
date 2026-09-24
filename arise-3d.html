@@ -676,8 +676,9 @@ const CFG = {
   ENEMY_POP:9,
   // Mundo abierto continuo: el centro es la zona inicial y cada anillo de
   // RING_WIDTH unidades es una región nueva, más dura cuanto más te alejas.
-  WORLD:{ w:34000, h:34000, cx:17000, cy:17000 },
-  RING_WIDTH:1400, RING_SAFE:120,
+  // mundo ampliado: cada región mide 2400 de ancho (antes 1400)
+  WORLD:{ w:64000, h:64000, cx:32000, cy:32000 },
+  RING_WIDTH:2400, RING_SAFE:120,
   CONTACT_SCALE:0.02, GRAVITY:1500, JUMP_V:520,
   DASH_DIST:330, DASH_TIME:0.18,
   CRIT_CHANCE:0.15, CRIT_MULT:2,
@@ -4861,9 +4862,9 @@ function buildBorderGate(color){
    y dicen dónde estás sin mirar el mapa. Se construyen al acercarte y se
    liberan al alejarte. */
 const LANDMARKS = [];
-for (let i = 0; i < 13; i++) for (let k = 0; k < 3; k++){
-  const a = i * 1.37 + k * 2.094 + .4;
-  const r = i === 0 ? 900 + k * 120 : i * 1400 + 700 + (k - 1) * 260;
+for (let i = 0; i < 13; i++) for (let k = 0; k < 5; k++){
+  const a = i * 1.37 + k * (Math.PI * 2 / 5) + .4;
+  const r = i === 0 ? 1100 + (k % 2) * 400 : i * CFG.RING_WIDTH + CFG.RING_WIDTH * (.3 + (k % 3) * .2);
   LANDMARKS.push({ ring:i, k, x:0, y:0, a, r, view:null });
 }
 function landmarkPos(L){ return [CFG.WORLD.cx + Math.cos(L.a) * L.r, CFG.WORLD.cy + Math.sin(L.a) * L.r]; }
@@ -4962,6 +4963,53 @@ function buildLandmark(id, k){
   }
   g.userData.anim = anim;
   return g;
+}
+/* Cofres escondidos por todo el mapa: ocho por región, con un brillo que se
+   ve de lejos. Dan oro y gemas según la región y se rellenan cada día. */
+const CHESTS = [];
+for (let i = 0; i < 13; i++) for (let k = 0; k < 8; k++){
+  const h = Math.sin((i + 1) * 91.7 + k * 13.3) * 43758.5453, fr = h - Math.floor(h);
+  const a = k * (Math.PI / 4) + fr * .6 + i * .5;
+  const r = i * CFG.RING_WIDTH + CFG.RING_WIDTH * (.15 + fr * .7) + (i === 0 ? 500 : 0);
+  CHESTS.push({ id:`${i}-${k}`, ring:i, x:CFG.WORLD.cx + Math.cos(a) * r, y:CFG.WORLD.cy + Math.sin(a) * r, view:null });
+}
+function chestOpened(c){ const D = P.chests || {}; return D.day === dayKey() && D.open?.includes(c.id); }
+function openChest(c){
+  if (chestOpened(c)) return;
+  if (!P.chests || P.chests.day !== dayKey()) P.chests = { day:dayKey(), open:[] };
+  P.chests.open.push(c.id);
+  const isle = ISLANDS[c.ring], lv = 1 + P.level * .02;
+  const cash = Math.floor(isle.enemy.hp * rnd(2, 6) * lv), gems = Math.floor((20 + c.ring * 30) * rnd(.6, 1.8) * lv);
+  P.cash += cash; P.gems += gems;
+  let extra = "";
+  if (Math.random() < .08){ P.tickets++; extra = " · +1 ticket"; }
+  if (Math.random() < .015){ const r = rollRune(c.ring >= 8 ? 2 : 1); extra += ` · ${RUNES[r].name}`; }
+  banner("¡COFRE!", "#ffd24a"); note(`Cofre de ${isle.name}: +${fmt(cash)} oro · +${fmt(gems)} gemas${extra}`, "--gold");
+  burst(c.x, c.y, 30, "#ffd24a", 20); SFX.levelUp?.(); save(); dirty = true;
+}
+function syncChests(dt){
+  const t = now();
+  for (const c of CHESTS){
+    const d = Math.hypot(c.x - player.x, c.y - player.y), open = chestOpened(c);
+    if (dungeon || d > 2600){ if (c.view){ scene.remove(c.view); disposeView(c.view); c.view = null; } continue; }
+    if (!c.view){
+      const g = new THREE.Group();
+      const base = part(40, 22, 28, "#6b4424"); base.position.y = 11; g.add(base);
+      const band = part(42, 4, 30, "#c9a33a", { emissive:"#c9a33a", emissiveIntensity:.4 }); band.position.y = 16; g.add(band);
+      const lid = new THREE.Group(); lid.position.set(0, 22, -14); g.add(lid); g.lid = lid;
+      const top = part(40, 9, 28, "#7a5230"); top.position.set(0, 4.5, 14); lid.add(top);
+      const lock = part(7, 8, 3, "#ffd24a", { emissive:"#ffd24a", emissiveIntensity:1 }); lock.position.set(0, 14, 15); g.add(lock);
+      const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTexture("#ffd24a"), transparent:true, depthWrite:false, blending:THREE.AdditiveBlending, opacity:.6 }));
+      glow.scale.set(120, 120, 1); glow.position.y = 22; g.add(glow); g.glow = glow;
+      const beam = new THREE.Mesh(new THREE.CylinderGeometry(8, 14, 300, 8, 1, true), new THREE.MeshBasicMaterial({ color:0xffd24a, transparent:true,
+        opacity:.14, side:THREE.DoubleSide, depthWrite:false, blending:THREE.AdditiveBlending })); beam.position.y = 150; g.add(beam); g.beam = beam;
+      g.position.set(c.x, terrainH(c.x, c.y), c.y); g.rotation.y = (c.x + c.y) % 6;
+      scene.add(g); c.view = g;
+    }
+    c.view.lid.rotation.x = open ? -1.6 : Math.sin(t * 3 + c.x) * .03;
+    c.view.glow.visible = c.view.beam.visible = !open;
+    if (!open){ c.view.glow.material.opacity = .45 + Math.sin(t * 3) * .2; if (d < 70) openChest(c); }
+  }
 }
 function syncLandmarks(dt){
   const t = now();
@@ -5543,6 +5591,7 @@ function render(dt){
   syncProps();
   syncBorder(dt);
   syncLandmarks(dt);
+  syncChests(dt);
   updateCamera(dt);
 
   // jugador
@@ -7442,6 +7491,7 @@ function drawMinimap(dt){
     c.fillStyle = color;
     c.beginPath(); c.arc(R + dx, R + dy, size, 0, Math.PI*2); c.fill();
   };
+  for (const c of CHESTS) if (!chestOpened(c) && Math.hypot(c.x - player.x, c.y - player.y) < 1800) put(c.x, c.y, "#ffd24a", 3);
   for (const e of enemies) put(e.x, e.y, e.boss ? "#ffd24a" : "#ff5d6c", e.boss ? 4.5 : 2.6);
   for (const sh of shadows) put(sh.x, sh.y, "#6aa8ff", 2.4);
   for (const co of corpses) put(co.x, co.y, "#31e4ff", 2.6);
@@ -7465,6 +7515,13 @@ function drawMinimap(dt){
 /* -------------------------------- arranque -------------------------------- */
 function start(restored){
   if (restored?.profile) P = reconcile(restored.profile);
+  // partidas del mundo pequeño: se lleva la posición al mundo nuevo
+  // conservando el anillo y el ángulo en el que estabas
+  if (P.pos && (P.worldV || 1) < 2 && isFinite(P.pos.x)){
+    const ox = P.pos.x - 17000, oy = P.pos.y - 17000, k = 2400 / 1400;
+    P.pos = { x:CFG.WORLD.cx + ox * k, y:CFG.WORLD.cy + oy * k };
+  }
+  P.worldV = 2;
   if (P.pos && isFinite(P.pos.x) && isFinite(P.pos.y)){
     player.x = P.pos.x; player.y = P.pos.y;
     P.island = regionAt(player.x, player.y).id;
