@@ -2143,6 +2143,13 @@ function infWaveClear(d){
     const r = rollRune(w >= 60 ? 3 : w >= 40 ? 2 : w >= 20 ? 1 : 0);
     note(`${RUNES[r].glyph} ${RUNES[r].name} (oleada ${w})`, "--gem");
   }
+  // giros de clase: uno fijo por cada jefe (oleada 10, 20, 30…), un 6% por
+  // oleada desde la 15 y +2 al batir el récord en un múltiplo de 25
+  let giros = 0;
+  if (w % 10 === 0) giros++;
+  if (w >= 15 && Math.random() < .06) giros++;
+  if (w > (P.infBest || 0) && w % 25 === 0) giros += 2;
+  if (giros){ P.spins += giros; note(`🎰 +${giros} giro${giros > 1 ? "s" : ""} de clase (oleada ${w})`, "--gold"); }
   if (w > (P.infBest || 0)){ P.infBest = w; if (w % 5 === 0) note(`Nuevo récord infinito: oleada ${w}`, "--gold"); }
   save();
 }
@@ -6801,7 +6808,7 @@ function panelStats(){
         <div class="spinhead"><div><small>Clase activa</small><b style="color:${CLASS_RARITY[cur.rar].col}">${cur.glyph} ${cur.name}</b></div>
           <div class="spins"><small>Giros</small><b>${P.spins}</b></div></div>
         ${reel}
-        <button class="btn gold big-w" id="spin-btn" ${P.spins > 0 && !spinning ? "" : "disabled"}>${spinning ? "Girando…" : P.spins > 0 ? "🎰 Girar la ruleta (1 giro)" : "Sin giros · consíguelos con códigos"}</button>
+        <button class="btn gold big-w" id="spin-btn" ${P.spins > 0 && !spinning ? "" : "disabled"}>${spinning ? "Girando…" : P.spins > 0 ? "🎰 Girar la ruleta (1 giro)" : "Sin giros · consíguelos con códigos o en el modo infinito"}</button>
         <p class="codemsg" id="spin-msg" role="status"></p></div>
       <h3 class="subh">Clases · ${P.classes.length}/${list.length} · ordenadas por rareza</h3>
       <div class="list">${rows}</div>
@@ -7146,7 +7153,7 @@ function panelMap(){
       <button class="btn green" data-hunter="${h.id}">Ir</button></div>`).join("")}</div>`;
   } else {
     right = `<div class="list">${Object.entries(DUNGEON_MODES).map(([id, m]) => m.infinite ? `<div class="item inf"><span class="g">♾</span>
-      <span class="meta"><b>${m.name}</b><span>Oleadas sin fin, cada una más dura · jefe cada 10 · runas raras desde la oleada 10 (épicas desde la 20, legendarias desde la 40, la mítica desde la 60) · récord: oleada ${P.infBest || 0}</span></span>
+      <span class="meta"><b>${m.name}</b><span>Oleadas sin fin, cada una más dura · jefe cada 10 que da 1 giro de clase · 6% de giro por oleada desde la 15 · +2 giros por récord cada 25 · runas raras desde la oleada 10 (épicas desde la 20, legendarias desde la 40, la mítica desde la 60) · récord: oleada ${P.infBest || 0}</span></span>
       <button class="btn" data-dungeon="Infinite">Entrar gratis</button></div>` : `<div class="item"><span class="g">🌀</span>
       <span class="meta"><b>${m.name}</b><span>${m.rooms} salas · ${m.quota} bajas por sala · enemigos ×${m.mult} · recompensa ×${m.reward}${id === "DoubleDungeon" ? " · otorga el Despertar" : ""}</span></span>
       <button class="btn violet" data-dungeon="${id}" ${P.tickets > 0 || id === "Standard" ? "" : "disabled"}>${id === "Standard" ? "Entrar" : "1 🎟"}</button></div>`).join("")}</div>`;

@@ -834,3 +834,8 @@ aserciones de prueba, que fue el punto de partida del diseño.
   - Dan el oro de unas 10–25 bajas de su región, en vez de 2–6 veces la vida del enemigo, que eran miles de millones.
   - Las gemas bajan un poco.
   - Solo se abren si tienes el nivel de su región. Si no, salen en rojo en el mundo y en el minimapa, y avisan del nivel que necesitas.
+
+## Giros de clase en el modo infinito
+- **Cada jefe** (las oleadas 10, 20, 30…) da 1 giro de clase seguro.
+- **Desde la oleada 15**, cada oleada superada tiene un 6% de dar 1 giro extra.
+- **Récord:** al batir tu récord en una oleada múltiplo de 25 (25, 50, 75…) ganas +2 giros.
