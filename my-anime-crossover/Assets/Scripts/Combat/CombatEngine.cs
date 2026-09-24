@@ -1,93 +1,132 @@
 using System;
 using UnityEngine;
 using AnimeCrossover.Core;
+using AnimeCrossover.Core.Pooling;
+using AnimeCrossover.Data;
 
 namespace AnimeCrossover.Combat
 {
-    // Ejecuta los golpes por frame data (Startup → Active → Recovery) a paso fijo.
-    // CharacterMovement lo usa desde su estado de ataque.
-    public class CombatEngine : MonoBehaviour
+    /// <summary>
+    /// Ejecuta el combo por frame data en FixedUpdate. Guarda la pulsación durante
+    /// el golpe (input buffer) y encadena el siguiente al terminar la ventana activa.
+    /// Al conectar congela el golpe (hit stop) y lanza el VFX desde el pool.
+    /// </summary>
+    [RequireComponent(typeof(HitboxManager))]
+    public sealed class CombatEngine : MonoBehaviour
     {
-        [SerializeField] private HitboxManager _hitboxManager;
-        [SerializeField] private HitboxData[] _lightComboChain;
+        [SerializeField] private ComboDefinition _lightCombo;
+        [SerializeField] private Animator _animator;
+        [Tooltip("Frames que se guarda una pulsación de ataque")]
+        [SerializeField, Min(0)] private int _inputBufferFrames = 12;
 
-        private int _comboIndex = 0;
-        private float _lastAttackTime = -999f;
-        private const float COMBO_WINDOW = 1.2f;
+        private HitboxManager _hitboxManager;
+        private readonly AttackTimeline _timeline = new AttackTimeline();
+        private AttackDefinition _current;
+        private int _comboIndex;
+        private float _lastAttackTime = float.NegativeInfinity;
+        private int _bufferedFrames;
 
-        private HitboxData _current;
-        private int _frame;
-        private bool _attacking;
-        private bool _bufferedAttack;   // pulsación guardada durante la recuperación
+        public bool IsAttacking => _timeline.IsRunning;
+        public bool CanCancel => _timeline.IsCancelable;
+        public AttackPhase Phase => _timeline.Phase;
+        public AttackDefinition CurrentAttack => _current;
+        public int ComboStep => _comboIndex;
 
-        public bool IsAttacking => _attacking;
-        public bool CanCancel => _attacking && _frame >= _current.startupFrames + _current.activeFrames;
+        public event Action<AttackDefinition> AttackStarted;
         public event Action AttackFinished;
+        public event Action<DamageInfo> HitLanded;
 
-        // Pide un golpe ligero. Si ya hay uno en curso, se guarda y encadena en la recuperación.
-        public bool ExecuteLightAttack()
+        private void Awake()
         {
-            if (_lightComboChain == null || _lightComboChain.Length == 0) return false;
-            if (_attacking)
+            _hitboxManager = GetComponent<HitboxManager>();
+            if (_animator == null) _animator = GetComponentInChildren<Animator>();
+        }
+
+        private void OnEnable() => _hitboxManager.HitLanded += OnHitLanded;
+        private void OnDisable() => _hitboxManager.HitLanded -= OnHitLanded;
+
+        /// <summary>Pide un golpe ligero. Si ya hay uno en curso se guarda en el buffer.</summary>
+        public bool RequestLightAttack()
+        {
+            if (_lightCombo == null || !_lightCombo.IsValid) return false;
+            if (_timeline.IsRunning)
             {
-                _bufferedAttack = true;
+                _bufferedFrames = _inputBufferFrames;
                 return false;
             }
-            StartAttack();
+            StartNextAttack();
             return true;
         }
 
         public void CancelAttack()
         {
-            _attacking = false;
-            _bufferedAttack = false;
+            bool wasRunning = _timeline.IsRunning;
+            _timeline.Stop();
+            _bufferedFrames = 0;
+            if (_animator != null) _animator.speed = 1f;
+            if (wasRunning) AttackFinished?.Invoke();
         }
 
-        private void StartAttack()
+        /// <summary>Velocidad de avance durante la preparación, para que el motor la aplique.</summary>
+        public Vector3 LungeVelocity
         {
-            if (Time.time - _lastAttackTime > COMBO_WINDOW)
+            get
             {
-                _comboIndex = 0;
+                if (_current == null || _timeline.Phase != AttackPhase.Startup) return Vector3.zero;
+                int startup = Mathf.Max(1, _current.Hitbox.startupFrames);
+                return transform.forward * (_current.LungeDistance / FrameTime.ToSeconds(startup));
             }
-
-            _current = _lightComboChain[_comboIndex];
-            _frame = 0;
-            _attacking = true;
-            _bufferedAttack = false;
-            _hitboxManager.BeginSwing();
-
-            // Avanzar en la cadena de combos
-            _comboIndex = (_comboIndex + 1) % _lightComboChain.Length;
-            _lastAttackTime = Time.time;
         }
 
-        // FixedUpdate a 60 Hz (Project Settings → Time → Fixed Timestep = 0.01666)
+        private void StartNextAttack()
+        {
+            if (Time.time - _lastAttackTime > _lightCombo.ComboWindow) _comboIndex = 0;
+
+            _current = _lightCombo[_comboIndex];
+            _comboIndex = (_comboIndex + 1) % _lightCombo.Length;
+            _lastAttackTime = Time.time;
+            _bufferedFrames = 0;
+
+            HitboxData hitbox = _current.Hitbox;
+            _timeline.Begin(hitbox);
+            _hitboxManager.BeginSwing();
+            if (_animator != null && !string.IsNullOrEmpty(_current.AnimatorTrigger))
+                _animator.SetTrigger(_current.AnimatorTrigger);
+            AttackStarted?.Invoke(_current);
+        }
+
         private void FixedUpdate()
         {
-            if (!_attacking) return;
+            if (!_timeline.IsRunning) return;
 
-            int activeStart = _current.startupFrames;
-            int activeEnd = _current.startupFrames + _current.activeFrames;
+            bool frozen = _timeline.IsFrozen;
+            HitboxData data = _timeline.Data;
+            AttackPhase phase = _timeline.Step();
+            if (_animator != null) _animator.speed = _timeline.IsFrozen ? 0f : 1f;
+            if (frozen) return;
 
-            if (_frame >= activeStart && _frame < activeEnd)
+            if (phase == AttackPhase.Active) _hitboxManager.CheckHitbox(data);
+            if (_bufferedFrames > 0) _bufferedFrames--;
+
+            // encadenar en cuanto se puede cancelar y hay pulsación guardada
+            if (_bufferedFrames > 0 && _timeline.IsCancelable)
             {
-                _hitboxManager.CheckHitbox(_current);
-            }
-
-            _frame++;
-
-            // El combo encadena en cuanto termina la ventana activa si había pulsación guardada
-            if (_bufferedAttack && _frame >= activeEnd)
-            {
-                StartAttack();
+                StartNextAttack();
                 return;
             }
 
-            if (_frame >= _current.TotalFrames)
+            if (!_timeline.IsRunning)
             {
-                _attacking = false;
+                if (_animator != null) _animator.speed = 1f;
                 AttackFinished?.Invoke();
             }
+        }
+
+        private void OnHitLanded(DamageInfo info)
+        {
+            _timeline.Freeze(info.Hit.hitStopFrames);
+            if (_current != null) PoolService.Spawn(_current.HitVfxKey, info.HitPoint, Quaternion.LookRotation(-transform.forward));
+            HitLanded?.Invoke(info);
         }
     }
 }

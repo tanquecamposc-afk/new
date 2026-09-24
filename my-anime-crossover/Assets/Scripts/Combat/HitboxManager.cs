@@ -1,81 +1,81 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using AnimeCrossover.Core;
 
 namespace AnimeCrossover.Combat
 {
-    public class HitboxManager : MonoBehaviour
+    /// <summary>
+    /// Detección de impactos con Physics.OverlapBoxNonAlloc frame a frame (sin triggers,
+    /// sin tunneling y sin basura). El CombatEngine lo llama en cada frame activo.
+    /// </summary>
+    public sealed class HitboxManager : MonoBehaviour
     {
-        [SerializeField] private LayerMask _enemyLayer;
-        [SerializeField] private int _maxHitsPerCheck = 16;
+        [SerializeField] private LayerMask _hurtboxLayers = ~0;
+        [SerializeField, Min(1)] private int _maxHitsPerCheck = 16;
+        [SerializeField] private QueryTriggerInteraction _triggerInteraction = QueryTriggerInteraction.Collide;
 
         private Transform _ownerTransform;
-        private Collider[] _hitBuffer;                       // pre-reservado: sin basura por frame
+        private Team _ownerTeam = Team.Neutral;
+        private Collider[] _hitBuffer;
         private readonly HashSet<IDamageable> _hitThisSwing = new HashSet<IDamageable>();
-        private HitboxData _lastData;
-        private bool _hasLastData;
+
+        private HitboxData _gizmoData;
+        private bool _hasGizmoData;
+
+        /// <summary>Se dispara por cada objetivo al que el golpe llega de verdad.</summary>
+        public event Action<DamageInfo> HitLanded;
 
         private void Awake()
         {
             _ownerTransform = transform;
             _hitBuffer = new Collider[_maxHitsPerCheck];
+            IDamageable self = GetComponentInParent<IDamageable>();
+            if (self != null) _ownerTeam = self.Team;
         }
 
-        // Llamar al empezar cada golpe: un mismo objetivo solo recibe un impacto por golpe,
-        // aunque la hitbox siga activa varios frames o tenga varios colliders.
-        public void BeginSwing()
-        {
-            _hitThisSwing.Clear();
-        }
+        /// <summary>Al empezar cada golpe: un objetivo solo recibe un impacto por golpe.</summary>
+        public void BeginSwing() => _hitThisSwing.Clear();
 
-        // Ejecutado en cada frame activo (frame-counter del CombatEngine o Animation Events)
-        public void CheckHitbox(HitboxData data)
+        /// <returns>Cuántos objetivos nuevos recibieron el golpe este frame.</returns>
+        public int CheckHitbox(in HitboxData data)
         {
-            _lastData = data;
-            _hasLastData = true;
+            _gizmoData = data;
+            _hasGizmoData = true;
 
-            Vector3 center = _ownerTransform.position + (_ownerTransform.rotation * data.boxOffset);
-            int count = Physics.OverlapBoxNonAlloc(center, data.boxSize / 2f, _hitBuffer, _ownerTransform.rotation, _enemyLayer);
+            Quaternion rotation = _ownerTransform.rotation;
+            Vector3 center = _ownerTransform.position + rotation * data.boxOffset;
+            int count = Physics.OverlapBoxNonAlloc(center, data.boxSize * 0.5f, _hitBuffer, rotation, _hurtboxLayers, _triggerInteraction);
+            int landed = 0;
 
             for (int i = 0; i < count; i++)
             {
                 Collider hit = _hitBuffer[i];
+                if (!Hurtbox.TryGet(hit, out Hurtbox hurtbox) || hurtbox.Owner == null) continue;
+                if (hurtbox.OwnerRoot == _ownerTransform.root) continue;         // auto-impacto
+                if (!_hitThisSwing.Add(hurtbox.Owner)) continue;                  // ya golpeado en este golpe
 
-                // Previene auto-impactos
-                if (hit.transform.root == _ownerTransform.root) continue;
+                Vector3 point = hit.ClosestPoint(center);
+                DamageInfo info = new DamageInfo(data, gameObject, _ownerTeam, point, rotation * data.knockbackForce);
+                bool applied = hurtbox.Owner is Health health
+                    ? health.TakeDamage(info, hurtbox.DamageMultiplier)
+                    : hurtbox.Owner.TakeDamage(info);
 
-                if (hit.TryGetComponent<IDamageable>(out IDamageable target) && _hitThisSwing.Add(target))
+                if (applied)
                 {
-                    target.TakeDamage(data);
-                    ApplyHitEffects(hit.ClosestPoint(center), data);
+                    landed++;
+                    HitLanded?.Invoke(info);
                 }
             }
-        }
-
-        private void ApplyHitEffects(Vector3 hitPoint, HitboxData data)
-        {
-            // Tomar del Pool los VFX de impacto; nunca Instantiate en el bucle de combate.
-            // P.ej. ObjectPooler.Instance.SpawnFromPool("HitVFX", hitPoint, Quaternion.identity);
+            return landed;
         }
 
         private void OnDrawGizmosSelected()
         {
-            // Visualización en editor: dibuja la última hitbox comprobada con su tamaño real
-            Gizmos.color = Color.red;
-            if (_hasLastData)
-            {
-                Gizmos.matrix = Matrix4x4.TRS(transform.position + transform.rotation * _lastData.boxOffset, transform.rotation, Vector3.one);
-                Gizmos.DrawWireCube(Vector3.zero, _lastData.boxSize);
-            }
-            else
-            {
-                Gizmos.DrawWireCube(transform.position, new Vector3(1, 2, 1));
-            }
+            if (!_hasGizmoData) return;
+            Gizmos.color = new Color(1f, 0.2f, 0.2f, 0.9f);
+            Gizmos.matrix = Matrix4x4.TRS(transform.position + transform.rotation * _gizmoData.boxOffset, transform.rotation, Vector3.one);
+            Gizmos.DrawWireCube(Vector3.zero, _gizmoData.boxSize);
         }
-    }
-
-    public interface IDamageable
-    {
-        void TakeDamage(HitboxData data);
     }
 }

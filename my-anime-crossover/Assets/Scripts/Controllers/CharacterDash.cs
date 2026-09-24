@@ -1,61 +1,74 @@
+using System;
 using UnityEngine;
+using AnimeCrossover.Core;
+using AnimeCrossover.Data;
 
 namespace AnimeCrossover.Controllers
 {
-    // Dash con i-frames (invulnerabilidad temporal) usando Rigidbody.
-    // Se activa con Shift a través de CharacterMovement (acción "Dash" del Input System),
-    // que solo lo permite desde los estados que aceptan dash.
-    [RequireComponent(typeof(Rigidbody))]
-    public class CharacterDash : MonoBehaviour
+    /// <summary>
+    /// Dash con i-frames (invulnerabilidad temporal). Cuenta en frames a 60 FPS y
+    /// mueve al personaje a través del CharacterMotor. Health lo consulta como
+    /// IInvulnerabilitySource, así los golpes lo atraviesan durante los i-frames.
+    /// </summary>
+    [RequireComponent(typeof(CharacterMotor))]
+    [DefaultExecutionOrder(-10)]   // antes que el motor, para que la velocidad del dash valga este frame
+    public sealed class CharacterDash : MonoBehaviour, IInvulnerabilitySource
     {
-        [SerializeField] private float _dashSpeed = 22f;
-        [SerializeField] private int _dashFrames = 12;          // duración a 60 FPS
-        [SerializeField] private int _invulnerableFrames = 9;   // i-frames desde el inicio
-        [SerializeField] private float _cooldown = 0.6f;
+        [SerializeField] private CharacterStats _stats;
+        [Tooltip("Velocidad que se conserva al terminar (0-1)")]
+        [SerializeField, Range(0f, 1f)] private float _exitSpeedFactor = 0.2f;
 
-        private Rigidbody _rigidbody;
+        private CharacterMotor _motor;
         private Vector3 _direction;
         private int _frame;
         private float _readyTime;
 
         public bool IsDashing { get; private set; }
-        public bool IsInvulnerable => IsDashing && _frame < _invulnerableFrames;
+        public bool IsInvulnerable => IsDashing && _frame < InvulnerableFrames;
         public float CooldownLeft => Mathf.Max(0f, _readyTime - Time.time);
+        public bool IsReady => !IsDashing && Time.time >= _readyTime;
 
-        private void Awake()
-        {
-            _rigidbody = GetComponent<Rigidbody>();
-        }
+        public event Action DashStarted;
+        public event Action DashEnded;
 
-        public bool TryDash(Vector3 direction)
+        private float Speed => _stats != null ? _stats.DashSpeed : 22f;
+        private int Frames => _stats != null ? _stats.DashFrames : 12;
+        private int InvulnerableFrames => _stats != null ? _stats.DashInvulnerableFrames : 9;
+        private float Cooldown => _stats != null ? _stats.DashCooldown : 0.6f;
+
+        private void Awake() => _motor = GetComponent<CharacterMotor>();
+
+        public bool TryDash(Vector3 worldDirection)
         {
-            if (IsDashing || Time.time < _readyTime) return false;
-            _direction = new Vector3(direction.x, 0f, direction.z).normalized;
-            if (_direction.sqrMagnitude < 0.001f) _direction = transform.forward;
+            if (!IsReady) return false;
+            worldDirection.y = 0f;
+            _direction = worldDirection.sqrMagnitude > 0.0001f ? worldDirection.normalized : transform.forward;
             _frame = 0;
             IsDashing = true;
-            _readyTime = Time.time + _cooldown;
-            _rigidbody.MoveRotation(Quaternion.LookRotation(_direction, Vector3.up));
+            _readyTime = Time.time + Cooldown;
+            _motor.Face(_direction);
+            DashStarted?.Invoke();
             return true;
+        }
+
+        public void Cancel()
+        {
+            if (!IsDashing) return;
+            IsDashing = false;
+            DashEnded?.Invoke();
         }
 
         private void FixedUpdate()
         {
             if (!IsDashing) return;
 
-            // velocidad constante durante el dash; se frena de golpe al final
-            Vector3 velocity = _direction * _dashSpeed;
-            velocity.y = _rigidbody.velocity.y;
-            _rigidbody.velocity = velocity;
-
             _frame++;
-            if (_frame >= _dashFrames)
+            bool last = _frame >= Frames;
+            _motor.SetVelocityOverride(_direction * (last ? Speed * _exitSpeedFactor : Speed));
+            if (last)
             {
                 IsDashing = false;
-                Vector3 stop = _rigidbody.velocity;
-                stop.x *= 0.2f;
-                stop.z *= 0.2f;
-                _rigidbody.velocity = stop;
+                DashEnded?.Invoke();
             }
         }
     }
