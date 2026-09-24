@@ -180,7 +180,7 @@ EXPRecompensa    = NivelEnemigo × 25 × (1 + Renaceres × 0,25)
 
 Hay **20 clases** ordenadas por rareza. No se eligen: salen de la **ruleta de
 clases** en Atributos › Clase, y cada giro gasta uno de tus giros. Los giros
-**solo** se consiguen con códigos. Una clase nueva se activa sola. Si sale una
+**solo** se consiguen con códigos (20 en total). Una clase nueva se activa sola. Si sale una
 repetida se convierte en gemas (más cuanto más rara). Entre las clases que ya
 tienes puedes cambiar gratis cuando quieras.
 
@@ -465,8 +465,8 @@ cámara y de sonido.
 
 ### Códigos
 
-Hay **cinco** códigos y no aparecen en el juego: hay que escribirlos en
-**Atributos › Códigos**. Dan sobre todo giros de la ruleta de clases (nueve
+Hay **diez** códigos y no aparecen en el juego: hay que escribirlos en
+**Atributos › Códigos**. Dan sobre todo giros de la ruleta de clases (veinte
 en total) y un poco de oro, gemas o tickets. Si el código no existe, el campo tiembla y lo avisa; los canjeados
 se listan debajo.
 

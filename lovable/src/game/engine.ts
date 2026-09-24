@@ -374,7 +374,7 @@ const TALENTS = {
   fortune: { id:"fortune", name:"Fortuna",    desc:"+12% de suerte de extracción",     max:10, cost:lv => 500 * Math.pow(2, lv) },
   vigor:   { id:"vigor",   name:"Vigor",      desc:"+10% de vida máxima",              max:10, cost:lv => 300 * Math.pow(2, lv) },
 };
-// Cinco códigos. Dan sobre todo giros de la ruleta de clases y un empujón
+// Diez códigos (20 giros en total). Dan sobre todo giros de la ruleta de clases y un empujón
 // pequeño de recursos; ninguno rompe la progresión.
 const CODES = {
   ARISE:   { cash:2000,  gems:20,  tickets:1, spins:2 },
@@ -382,6 +382,12 @@ const CODES = {
   MONARCA: { cash:0,     gems:0,   tickets:0, spins:3 },
   IGRIS:   { cash:5000,  gems:0,   tickets:1, spins:1 },
   RULETA:  { cash:0,     gems:0,   tickets:0, spins:2 },
+  // códigos de lanzamiento: entre todos suman 20 giros
+  RELEASE:    { cash:10000, gems:100, tickets:1, spins:3 },
+  UPDATE10:   { cash:0,     gems:80,  tickets:0, spins:2 },
+  GRACIAS:    { cash:3000,  gems:30,  tickets:0, spins:2 },
+  LEVELUP:    { cash:0,     gems:0,   tickets:1, spins:2 },
+  SHADOWARMY: { cash:0,     gems:60,  tickets:0, spins:2 },
 };
 
 /* ------------------------------ utilidades -------------------------------- */
