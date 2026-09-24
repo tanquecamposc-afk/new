@@ -14,7 +14,7 @@ namespace AnimeCrossover.Controllers
     [DefaultExecutionOrder(-10)]   // antes que el motor, para que la velocidad del dash valga este frame
     public sealed class CharacterDash : MonoBehaviour, IInvulnerabilitySource
     {
-        [SerializeField] private CharacterStats _stats;
+        [SerializeField] private CharacterStats _stats = null;
         [Tooltip("Velocidad que se conserva al terminar (0-1)")]
         [SerializeField, Range(0f, 1f)] private float _exitSpeedFactor = 0.2f;
 

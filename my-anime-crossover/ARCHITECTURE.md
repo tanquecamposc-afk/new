@@ -52,7 +52,8 @@ flowchart LR
 
 - **OverlapBox por frame en vez de triggers.** Los triggers dependen de que los colliders se crucen entre dos pasos de física, así que a mucha velocidad se saltan golpes (tunneling). Además no se controla en qué frame golpean.
 - **Registro de Hurtbox.** Evita `GetComponent` por impacto y permite varias zonas por personaje, como la cabeza con más daño.
-- **`AttackTimeline` en C# puro.** La lógica de frames se prueba sin escena y sin Play Mode.
+- **Reglas en C# puro, componentes finos.** `AttackTimeline` (frames), `ComboSequencer` (qué golpe toca) y `HealthModel` (vida, equipos, invulnerabilidad) no dependen de Unity. Los MonoBehaviour solo los envuelven y lanzan eventos. Así, `tools/verify.sh` y el CI los prueban sin abrir el editor.
+- **Reciclado en vez de Instantiate.** `EnemySpawner` crea los enemigos una vez y los reaparece con `EnemyBrain.Respawn`. Los VFX salen de `PoolService`.
 - **Un solo escritor de velocidad.** Si varios scripts escriben `rigidbody.velocity` se pisan entre ellos. El motor combina movimiento, empuje y dash en un único sitio.
 - **Eventos de `Health` en vez de llamadas directas.** El sistema de daño no sabe nada de animaciones ni de IA. La interfaz, los sonidos o las estadísticas se pueden suscribir sin tocar el combate.
 - **Orden de ejecución.**

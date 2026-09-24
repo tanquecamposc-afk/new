@@ -18,9 +18,9 @@ namespace AnimeCrossover.Controllers
 
     public sealed class CharacterInput : MonoBehaviour, ICharacterInput
     {
-        [SerializeField] private InputActionReference _moveAction;
-        [SerializeField] private InputActionReference _attackAction;
-        [SerializeField] private InputActionReference _dashAction;   // asignar a Shift
+        [SerializeField] private InputActionReference _moveAction = null;
+        [SerializeField] private InputActionReference _attackAction = null;
+        [SerializeField] private InputActionReference _dashAction = null;   // asignar a Shift
 
         public Vector2 Move { get; private set; }
         public event Action AttackPressed;

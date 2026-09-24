@@ -16,6 +16,7 @@ namespace AnimeCrossover.Combat
         [SerializeField] private QueryTriggerInteraction _triggerInteraction = QueryTriggerInteraction.Collide;
 
         private Transform _ownerTransform;
+        private IDamageable _self;
         private Team _ownerTeam = Team.Neutral;
         private Collider[] _hitBuffer;
         private readonly HashSet<IDamageable> _hitThisSwing = new HashSet<IDamageable>();
@@ -30,8 +31,8 @@ namespace AnimeCrossover.Combat
         {
             _ownerTransform = transform;
             _hitBuffer = new Collider[_maxHitsPerCheck];
-            IDamageable self = GetComponentInParent<IDamageable>();
-            if (self != null) _ownerTeam = self.Team;
+            _self = GetComponentInParent<IDamageable>();
+            if (_self != null) _ownerTeam = _self.Team;
         }
 
         /// <summary>Al empezar cada golpe: un objetivo solo recibe un impacto por golpe.</summary>
@@ -52,7 +53,7 @@ namespace AnimeCrossover.Combat
             {
                 Collider hit = _hitBuffer[i];
                 if (!Hurtbox.TryGet(hit, out Hurtbox hurtbox) || hurtbox.Owner == null) continue;
-                if (hurtbox.OwnerRoot == _ownerTransform.root) continue;         // auto-impacto
+                if (hurtbox.Owner == _self) continue;                             // auto-impacto
                 if (!_hitThisSwing.Add(hurtbox.Owner)) continue;                  // ya golpeado en este golpe
 
                 Vector3 point = hit.ClosestPoint(center);

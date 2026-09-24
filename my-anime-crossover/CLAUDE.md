@@ -29,13 +29,20 @@
 |---|---|
 | `Assets/Scripts/Core` | Tipos compartidos (`HitboxData`, `DamageInfo`, `IDamageable`, `FrameTime`), `StateMachine/`, `Pooling/` |
 | `Assets/Scripts/Data` | ScriptableObjects: `AttackDefinition`, `ComboDefinition`, `CharacterStats` |
-| `Assets/Scripts/Combat` | `AttackTimeline`, `HitboxManager`, `Hurtbox`, `Health`, `CombatEngine` |
-| `Assets/Scripts/Controllers` | `CharacterInput`, `CharacterMotor`, `CharacterDash`, `CharacterMovement` (cerebro) y `States/` |
-| `Assets/Scripts/Enemies` | `EnemyBrain` (IA cuerpo a cuerpo) |
-| `Assets/Tests/EditMode` | Pruebas de `AttackTimeline`, `StateMachine` y `Health` |
+| `Assets/Scripts/Combat` | Lógica pura (`AttackTimeline`, `ComboSequencer`, `HealthModel`) + componentes (`HitboxManager`, `Hurtbox`, `Health`, `CombatEngine`, `TargetAssist`, `HealthBarWorld`) |
+| `Assets/Scripts/Controllers` | `CharacterInput`, `CharacterMotor`, `CharacterDash`, `CharacterMovement` (cerebro), `PlayerRespawner` y `States/` |
+| `Assets/Scripts/Enemies` | `EnemyBrain` (IA cuerpo a cuerpo), `EnemySpawner` (reciclado sin Instantiate) |
+| `Assets/Tests/EditMode` | Pruebas de `AttackTimeline`, `ComboSequencer`, `StateMachine`, `HealthModel` y `Health` |
+| `tools/` | `verify.sh`: compila contra Unity y pasa las pruebas sin abrir el editor |
 
 See `ARCHITECTURE.md` for the component diagram and `README.md` for scene setup.
 
+## Rules learned
+- Unity may call one component's `OnEnable` before another component's `Awake` on the same object: in `OnEnable`, only use references obtained in that component's own `Awake`.
+- Put game rules in plain C# classes (`*Model`, `*Timeline`, `*Sequencer`) and keep MonoBehaviours as thin wrappers, so they can be tested without the engine.
+- Clear static registries in `[RuntimeInitializeOnLoadMethod(SubsystemRegistration)]` (Enter Play Mode without domain reload).
+- Initialise serialized reference fields to `null` so CS0649 does not fire (verify runs with warnings as errors).
+
 ## Checks before committing
+- `./tools/verify.sh` must end with "Todo en verde". It compiles against Unity with zero warnings and runs the tests that do not need the engine.
 - Test Runner → EditMode → Run All must be green.
-- No new warnings in the Console.

@@ -1,0 +1,26 @@
+name: Unity (compilación y pruebas)
+
+on:
+  push:
+    branches: ["**"]
+    paths: ["my-anime-crossover/**", ".github/workflows/unity.yml"]
+  pull_request:
+    paths: ["my-anime-crossover/**", ".github/workflows/unity.yml"]
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Instalar mono
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq mono-devel
+
+      - name: Caché de ensamblados de referencia
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/anime-crossover-verify
+          key: unity-refs-${{ hashFiles('my-anime-crossover/tools/verify.sh') }}
+
+      - name: Compilar contra Unity y ejecutar pruebas sin motor
+        run: ./my-anime-crossover/tools/verify.sh

@@ -10,8 +10,8 @@ namespace AnimeCrossover.Controllers
     [RequireComponent(typeof(Rigidbody))]
     public sealed class CharacterMotor : MonoBehaviour
     {
-        [SerializeField] private CharacterStats _stats;
-        [SerializeField] private Transform _cameraTransform;
+        [SerializeField] private CharacterStats _stats = null;
+        [SerializeField] private Transform _cameraTransform = null;
         [Tooltip("Frenado del empuje recibido (por segundo)")]
         [SerializeField, Min(0f)] private float _knockbackDamping = 10f;
 
@@ -51,10 +51,31 @@ namespace AnimeCrossover.Controllers
 
         public void Stop() => _desiredPlanar = Vector3.zero;
 
-        public void Face(Vector3 worldDirection)
+        /// <param name="snap">true = girar al instante (inicio de un golpe), false = girar a TurnSpeed.</param>
+        public void Face(Vector3 worldDirection, bool snap = false)
         {
             worldDirection.y = 0f;
-            if (worldDirection.sqrMagnitude > 0.0001f) _faceDirection = worldDirection;
+            if (worldDirection.sqrMagnitude <= 0.0001f) return;
+            _faceDirection = worldDirection;
+            if (snap)
+            {
+                Quaternion look = Quaternion.LookRotation(worldDirection, Vector3.up);
+                _rigidbody.rotation = look;
+                transform.rotation = look;   // la hitbox de este mismo frame ya sale en la nueva dirección
+            }
+        }
+
+        /// <summary>Recoloca al personaje sin arrastrar velocidades (reaparición).</summary>
+        public void Teleport(Vector3 position, Quaternion rotation)
+        {
+            _desiredPlanar = Vector3.zero;
+            _externalVelocity = Vector3.zero;
+            _overrideVelocity = null;
+            _faceDirection = rotation * Vector3.forward;
+            _rigidbody.velocity = Vector3.zero;
+            _rigidbody.position = position;
+            _rigidbody.rotation = rotation;
+            transform.SetPositionAndRotation(position, rotation);
         }
 
         public void SetVelocityOverride(Vector3 planarVelocity) => _overrideVelocity = planarVelocity;

@@ -14,23 +14,23 @@ namespace AnimeCrossover.Combat
     [RequireComponent(typeof(HitboxManager))]
     public sealed class CombatEngine : MonoBehaviour
     {
-        [SerializeField] private ComboDefinition _lightCombo;
-        [SerializeField] private Animator _animator;
+        [SerializeField] private ComboDefinition _lightCombo = null;
+        [SerializeField] private Animator _animator = null;
         [Tooltip("Frames que se guarda una pulsación de ataque")]
         [SerializeField, Min(0)] private int _inputBufferFrames = 12;
 
         private HitboxManager _hitboxManager;
         private readonly AttackTimeline _timeline = new AttackTimeline();
         private AttackDefinition _current;
-        private int _comboIndex;
-        private float _lastAttackTime = float.NegativeInfinity;
+        private ComboSequencer _sequencer;
         private int _bufferedFrames;
 
         public bool IsAttacking => _timeline.IsRunning;
         public bool CanCancel => _timeline.IsCancelable;
         public AttackPhase Phase => _timeline.Phase;
         public AttackDefinition CurrentAttack => _current;
-        public int ComboStep => _comboIndex;
+        /// <summary>Índice del golpe en curso dentro del combo (-1 si ninguno).</summary>
+        public int ComboStep => _sequencer != null ? _sequencer.Current : -1;
 
         public event Action<AttackDefinition> AttackStarted;
         public event Action AttackFinished;
@@ -80,11 +80,9 @@ namespace AnimeCrossover.Combat
 
         private void StartNextAttack()
         {
-            if (Time.time - _lastAttackTime > _lightCombo.ComboWindow) _comboIndex = 0;
+            if (_sequencer == null || _sequencer.Length != _lightCombo.Length) _sequencer = new ComboSequencer(_lightCombo.Length, _lightCombo.ComboWindow);
 
-            _current = _lightCombo[_comboIndex];
-            _comboIndex = (_comboIndex + 1) % _lightCombo.Length;
-            _lastAttackTime = Time.time;
+            _current = _lightCombo[_sequencer.Advance(Time.time)];
             _bufferedFrames = 0;
 
             HitboxData hitbox = _current.Hitbox;

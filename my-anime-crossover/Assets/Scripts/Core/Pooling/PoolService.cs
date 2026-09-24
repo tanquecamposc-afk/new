@@ -13,9 +13,11 @@ namespace AnimeCrossover.Core.Pooling
         [System.Serializable]
         private struct PoolEntry
         {
+#pragma warning disable CS0649   // los rellena el inspector
             public string key;
             public GameObject prefab;
             [Min(1)] public int prewarm;
+#pragma warning restore CS0649
         }
 
         [SerializeField] private PoolEntry[] _pools = new PoolEntry[0];
@@ -23,6 +25,10 @@ namespace AnimeCrossover.Core.Pooling
         private readonly Dictionary<string, ObjectPool> _byKey = new Dictionary<string, ObjectPool>();
 
         public static PoolService Instance { get; private set; }
+
+        // Con "Enter Play Mode Options" sin recarga de dominio los estáticos sobreviven entre partidas.
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStatics() => Instance = null;
 
         private void Awake()
         {

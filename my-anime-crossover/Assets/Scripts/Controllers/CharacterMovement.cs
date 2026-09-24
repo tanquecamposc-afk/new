@@ -18,8 +18,8 @@ namespace AnimeCrossover.Controllers
     public sealed class CharacterMovement : MonoBehaviour
     {
         [Tooltip("Vacío = usa el CharacterInput de este objeto")]
-        [SerializeField] private MonoBehaviour _inputSource;
-        [SerializeField] private Animator _animator;
+        [SerializeField] private MonoBehaviour _inputSource = null;
+        [SerializeField] private Animator _animator = null;
 
         private readonly StateMachine<CharacterStateId> _machine = new StateMachine<CharacterStateId>();
         private HitStunState _hitStun;
@@ -34,6 +34,8 @@ namespace AnimeCrossover.Controllers
         public CharacterDash Dash { get; private set; }
         public CombatEngine Combat { get; private set; }
         public Health Health { get; private set; }
+        /// <summary>Opcional: si existe, el ataque se gira hacia el enemigo más conveniente.</summary>
+        public TargetAssist Assist { get; private set; }
 
         public CharacterStateId StateId => _machine.CurrentId;
         public event Action<CharacterStateId, CharacterStateId> StateChanged
@@ -50,6 +52,7 @@ namespace AnimeCrossover.Controllers
             Dash = GetComponent<CharacterDash>();
             Combat = GetComponent<CombatEngine>();
             Health = GetComponent<Health>();
+            Assist = GetComponent<TargetAssist>();
             Controls = _inputSource as ICharacterInput ?? GetComponent<ICharacterInput>();
             if (Controls == null) Debug.LogError($"[CharacterMovement] {name} no tiene una fuente de entrada (ICharacterInput).", this);
             if (_animator == null) _animator = GetComponentInChildren<Animator>();
@@ -96,6 +99,15 @@ namespace AnimeCrossover.Controllers
         private void FixedUpdate() => _machine.FixedTick(Time.fixedDeltaTime);
 
         public void ChangeState(CharacterStateId next) => _machine.ChangeState(next);
+
+        /// <summary>Resucita en una posición (lo usa PlayerRespawner).</summary>
+        public void Revive(Vector3 position, Quaternion rotation)
+        {
+            Motor.Teleport(position, rotation);
+            Health.Revive();
+            if (_animator != null) _animator.SetBool(DeadParam, false);
+            ChangeState(CharacterStateId.Idle);
+        }
 
         private void OnAttackPressed()
         {

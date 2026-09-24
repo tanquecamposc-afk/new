@@ -55,9 +55,10 @@ namespace AnimeCrossover.Controllers.States
         public override void Enter()
         {
             Owner.Motor.Stop();
-            // girar hacia donde apunta el jugador al empezar el combo
+            // girar hacia donde apunta el jugador; con TargetAssist, hacia el enemigo más conveniente
             Vector3 aim = Owner.Motor.ToWorldDirection(Owner.Controls.Move);
-            if (aim.sqrMagnitude > 0.01f) Owner.Motor.Face(aim);
+            if (Owner.Assist != null && Owner.Assist.TryFindTarget(aim, out Vector3 toTarget)) aim = toTarget;
+            if (aim.sqrMagnitude > 0.01f) Owner.Motor.Face(aim, snap: true);
             Owner.Combat.AttackFinished += OnFinished;
         }
 
@@ -82,6 +83,7 @@ namespace AnimeCrossover.Controllers.States
         public override void Enter()
         {
             Owner.Combat.CancelAttack();
+            Owner.Dash.Cancel();          // un golpe tras los i-frames corta el dash
             Owner.Motor.Stop();
         }
 

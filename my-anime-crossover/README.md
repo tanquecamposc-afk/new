@@ -46,7 +46,9 @@ En un GameObject con Rigidbody y CapsuleCollider, añade:
 - `Health` (Team = Player, Stats);
 - `HitboxManager`;
 - `CombatEngine` (Combo, Animator);
-- `CharacterMovement`.
+- `CharacterMovement`;
+- opcional: `TargetAssist`, para girar el golpe hacia el enemigo más cercano en la dirección que pulsas;
+- opcional: `PlayerRespawner`, para reaparecer en el punto de control al morir.
 
 Dentro, crea un hijo con un collider en la capa Hurtbox y el componente `Hurtbox`. Ponle la etiqueta **Player** al objeto raíz.
 
@@ -55,7 +57,17 @@ Monta lo mismo que el jugador, pero con estos cambios:
 - quita `CharacterInput`, `CharacterDash` y `CharacterMovement`, y añade `EnemyBrain`;
 - en `Health`, pon Team = Enemy.
 
-### 6. VFX
+### 6. Barra de vida
+Dentro del personaje, crea un hijo `HealthBar` con el componente `HealthBarWorld`. Dentro de él pon:
+- un hijo `Visual` (asígnalo a *Visual Root*) con dos quads o sprites, `Fill` y `Trail`, cada uno con el pivote en su borde izquierdo;
+- asigna esos dos al componente.
+
+La barra mira a la cámara, se oculta con la vida llena y la estela baja con retraso.
+
+### 7. Zonas de enemigos
+Crea un objeto con `EnemySpawner`, asígnale el prefab del enemigo, cuántos quieres y, si quieres, puntos de aparición. Los enemigos se crean una sola vez. Al morir se desactivan y el spawner los reaparece reciclados pasado un tiempo, siempre lejos del jugador.
+
+### 8. VFX
 Añade a la escena un objeto `PoolService` con una entrada `HitVFX`: el prefab de partículas y un precalentado de 16. Pon un `PooledObject` al prefab con Lifetime de 0,5 s para que vuelva solo al pool.
 
 ### Parámetros del Animator
@@ -67,10 +79,18 @@ Todos son opcionales:
 
 ## Pruebas
 
-**Window → General → Test Runner → EditMode → Run All.** Cubren:
+**Sin Unity:** `./tools/verify.sh` hace dos cosas (requiere mono):
+- compila todo el código contra los ensamblados de referencia reales de Unity, con los avisos tratados como errores;
+- ejecuta las pruebas que no necesitan el motor.
+
+El CI de GitHub (`.github/workflows/unity.yml`) lo lanza en cada push que toca este proyecto.
+
+**En Unity:** Window → General → Test Runner → EditMode → Run All. Cubren:
 - las fases de `AttackTimeline`, el hit stop y la cancelación;
 - las transiciones de `StateMachine` y sus errores;
-- `Health`: daño, muerte, fuego amigo, multiplicador, invulnerabilidad y curación.
+- `ComboSequencer`: encadenar golpes, volver al primero y reiniciar por tiempo;
+- `HealthModel`: daño, muerte, fuego amigo, invulnerabilidad, daño negativo y curación;
+- `Health` con GameObjects: multiplicador de daño y fuentes de invulnerabilidad.
 
 ## Estructura
 
@@ -89,9 +109,21 @@ my-anime-crossover/
     │   │   ├── StateMachine/StateMachine.cs  máquina de estados genérica
     │   │   └── Pooling/                      ObjectPool, PooledObject, PoolService
     │   ├── Data/                             AttackDefinition, ComboDefinition, CharacterStats
-    │   ├── Combat/                           AttackTimeline, HitboxManager, Hurtbox, Health, CombatEngine
-    │   ├── Controllers/                      CharacterInput, CharacterMotor, CharacterDash, CharacterMovement
+    │   ├── Combat/
+    │   │   ├── AttackTimeline.cs             frames de un golpe (C# puro)
+    │   │   ├── ComboSequencer.cs             qué golpe del combo toca (C# puro)
+    │   │   ├── HealthModel.cs                reglas de la vida (C# puro)
+    │   │   ├── Health.cs                     IDamageable + eventos
+    │   │   ├── Hurtbox.cs                    zona golpeable con registro
+    │   │   ├── HitboxManager.cs              OverlapBoxNonAlloc por frame
+    │   │   ├── CombatEngine.cs               combo, buffer, hit stop, VFX
+    │   │   ├── TargetAssist.cs               apuntado al empezar el golpe
+    │   │   └── HealthBarWorld.cs             barra de vida sin UGUI
+    │   ├── Controllers/                      CharacterInput, CharacterMotor, CharacterDash, CharacterMovement, PlayerRespawner
     │   │   └── States/CharacterStates.cs     Idle, Move, Attack, HitStun, Dash, Dead
-    │   └── Enemies/EnemyBrain.cs             IA: Idle → Chase → Attack → HitStun/Dead
-    └── Tests/EditMode/                       AnimeCrossover.Tests.EditMode.asmdef + pruebas
+    │   └── Enemies/                          EnemyBrain (IA), EnemySpawner (reciclado)
+    ├── Tests/EditMode/                       AnimeCrossover.Tests.EditMode.asmdef + pruebas
+└── tools/
+    ├── verify.sh                             compila contra Unity y pasa las pruebas sin abrir el editor
+    └── stubs/InputSystemStub.cs              firmas del Input System para compilar fuera de Unity
 ```

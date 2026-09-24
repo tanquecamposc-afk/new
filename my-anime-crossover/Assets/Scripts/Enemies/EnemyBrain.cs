@@ -100,6 +100,17 @@ namespace AnimeCrossover.Enemies
 
         private void OnDied(DamageInfo info) => _machine.ChangeState(EnemyStateId.Dead);
 
+        /// <summary>Reaparece reciclado (lo usa EnemySpawner en vez de Instantiate).</summary>
+        public void Respawn(Vector3 position, Quaternion rotation)
+        {
+            gameObject.SetActive(true);
+            Motor.Teleport(position, rotation);
+            Health.Revive();
+            _hitStunTimer = 0f;
+            _nextAttackTime = Time.time + _attackCooldown;
+            if (_machine.Current != null) _machine.ChangeState(EnemyStateId.Idle);
+        }
+
         // ---------------------------------------------------------------- estados
 
         private sealed class Idle : State
@@ -152,7 +163,7 @@ namespace AnimeCrossover.Enemies
             public override void Enter()
             {
                 _b.Motor.Stop();
-                _b.Motor.Face(_b.ToTarget());
+                _b.Motor.Face(_b.ToTarget(), snap: true);
                 _b.Combat.AttackFinished += OnFinished;
                 // no se puede cambiar de estado dentro de Enter: si no hay combo, se sale en Tick
                 _failed = !_b.Combat.RequestLightAttack();

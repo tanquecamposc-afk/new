@@ -20,18 +20,19 @@ namespace AnimeCrossover.Combat
 
         public IDamageable Owner { get; private set; }
         public float DamageMultiplier => _damageMultiplier;
-        public Transform OwnerRoot { get; private set; }
 
         private void Awake()
         {
             _collider = GetComponent<Collider>();
             Owner = GetComponentInParent<IDamageable>();
-            OwnerRoot = Owner is Component c ? c.transform : transform.root;
             if (Owner == null) Debug.LogError($"[Hurtbox] {name} no tiene un IDamageable en sus padres.", this);
         }
 
         private void OnEnable() { if (_collider != null) Registry[_collider] = this; }
         private void OnDisable() { if (_collider != null) Registry.Remove(_collider); }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStatics() => Registry.Clear();   // sin recarga de dominio
 
         public static bool TryGet(Collider collider, out Hurtbox hurtbox) => Registry.TryGetValue(collider, out hurtbox);
     }
