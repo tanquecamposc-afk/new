@@ -353,6 +353,24 @@ canvas#stage{position:absolute;inset:0;width:100%;height:100%;display:block;touc
 .lchip.lk{opacity:.5;border-style:dashed}
 .lchip .sw{width:14px;height:14px;border-radius:50%;border:2px solid rgba(255,255,255,.6);display:inline-block}
 .lore{margin:0;font-size:11.5px;line-height:1.45;color:var(--muted);font-style:italic}
+.codebox{display:grid;gap:8px;padding:14px;border-radius:14px;border:2px solid var(--gold);
+  background:linear-gradient(180deg,rgba(255,210,74,.12),rgba(11,19,45,.9))}
+.codebox label{font:700 12px var(--f-ui);letter-spacing:.08em;text-transform:uppercase;color:var(--gold)}
+.coderow{display:flex;gap:8px}
+.coderow input{flex:1;min-width:0;min-height:44px;padding:0 14px;border-radius:12px;border:2px solid var(--line-hi);background:#070c20;
+  color:var(--ink);font:700 18px var(--f-display);letter-spacing:.18em;text-transform:uppercase;user-select:text}
+.coderow input:focus{outline:3px solid var(--gold);outline-offset:2px}
+.codemsg{margin:0;min-height:18px;font-size:12.5px;font-weight:600}
+.codemsg.ok{color:var(--cash)} .codemsg.bad{color:var(--hp)}
+.shake{animation:shake .35s}
+@keyframes shake{20%,60%{transform:translateX(-6px)}40%,80%{transform:translateX(6px)}}
+.subh{margin:4px 0 0;font:800 14px var(--f-display);color:var(--muted)}
+.quote{display:block;margin-top:4px;font-style:italic;color:var(--ink)!important;opacity:.8;line-height:1.4}
+.chron{border-radius:12px;border:2px solid var(--line);background:rgba(11,19,45,.7);padding:0 12px}
+.chron summary{cursor:pointer;display:flex;justify-content:space-between;gap:10px;padding:11px 0;min-height:44px;align-items:center;list-style:none}
+.chron summary span{font-size:11.5px;color:var(--muted)}
+.chron p{margin:0 0 12px;font-size:12.5px;line-height:1.55;color:var(--ink)}
+.chron.locked{opacity:.45;pointer-events:none}
 /* --- accesibilidad de menús --- */
 .card.myth{border-color:var(--rc,#ff3af0);animation:mythGlow 2s ease-in-out infinite}
 @keyframes mythGlow{50%{box-shadow:0 0 22px color-mix(in srgb,var(--tc) 70%,transparent),0 0 0 2px #fff3}}

@@ -251,16 +251,23 @@ de pelo, ojos, capa y aura. Cada pieza pide algo: un nivel, un rango, un número
 de bajas, el Despertar o haber vencido a un enemigo SS o SSS. Al conseguirla
 salta un aviso de «Nuevo aspecto».
 
-Los conjuntos dan además un bono mientras los llevas:
+Lo más difícil de conseguir es lo que más da. El bono se suma entre todas las
+piezas que lleves puestas (conjunto, armadura, ojos, capa y aura):
 
-| Conjunto | Bono |
-|---|---|
-| Noche | +3% velocidad |
-| Carmesí | +4% daño |
-| Blanco de Élite | +5% vida |
-| Dorado de Rango S | +8% daño |
-| Monarca | +10% daño, +5% vida |
-| Leyenda SSS | +15% daño, +10% vida, +5% velocidad |
+| Pieza | Requisito | Bono |
+|---|---|---|
+| Conjunto Noche | nivel 25 | +4% velocidad |
+| Conjunto Carmesí | 2.000 bajas | +7% daño |
+| Blanco de Élite | rango B y nivel 150 | +10% vida, +4% daño |
+| Dorado de Rango S | rango S y 10.000 bajas | +16% daño, +8% vida |
+| Monarca | Despertar y nivel 300 | +25% daño, +12% vida, +4% vel. |
+| **Leyenda SSS** | 3 SSS vencidos y nivel 600 | **+50% daño, +30% vida, +10% vel.** |
+| Armadura pesada | rango A y nivel 250 | +8% vida |
+| Abrigo largo | Despertar y rango S | +6% daño, +3% vel. |
+| Ojos Rojo sangre / Oro SSS | 3 SS / 2 SSS y nivel 500 | +8% / +15% daño |
+| Capa de sombras | Despertar y 20.000 bajas | +8% daño, +6% vida |
+| Aura de Fuego / Dorada | 2 SS / rango S y 25.000 bajas | +10% / +12% daño |
+| **Aura Luz SSS** | 5 SSS vencidos y nivel 800 | **+40% daño, +25% vida, +8% vel.** |
 
 La cara del cazador siempre se ve: cejas, ojos con iris y brillo (los ojos
 brillan con los colores especiales), nariz y orejas en relieve, boca y rubor.
@@ -286,6 +293,14 @@ columna de luz, y hay que recogerlo antes de 60 segundos.
 | Lobo dorado | ×3,4 | garantizado al vencer a un SSS |
 
 Los enemigos de rango alto multiplican la probabilidad de soltar su montura.
+
+### Enemigos retocados
+
+La estatua del Doble Dungeon tiene ahora máscara tallada, boca encendida,
+hombreras de losa, runas en los brazos, falda de piedra, núcleo y un halo que
+gira a su espalda. El espectro del Arquitecto lleva máscara blanca, cadenas y
+fragmentos de runa orbitando. El cazador caído de Shinjuku empuña katana con
+capa larga, y el soberano caído del Trono lleva abrigo, cuernos, púas y mandoble.
 
 ### Diseño de las sombras
 
@@ -417,6 +432,24 @@ les baja la vida (70%, 40%, 15%), y cada fase abre un movimiento nuevo:
 
 Cada aviso suena antes de caer, y el cambio de fase tiene su propio golpe de
 cámara y de sonido.
+
+### Códigos
+
+Los códigos no aparecen en el juego: hay que escribirlos en **Atributos ›
+Códigos**. Si el código no existe, el campo tiembla y lo avisa; los canjeados
+se listan debajo.
+
+### Historia ampliada
+
+- **Crónicas de región**: la primera vez que pisas cada una de las 13 regiones,
+  un personaje (o el Sistema) cuenta su historia. Todas quedan guardadas en
+  Inventario › Historia, y la ficha del mapa muestra su primera línea.
+- **Frases de jefe**: cada jefe de mazmorra dice algo al aparecer.
+- **Epílogo**: seis capítulos más tras la guerra de los Monarcas (Los
+  Gobernantes, La Legión sin fin, Jinete de sombras, Lo que no debería existir,
+  El ciclo del Monarca y Arise), con recompensas y los títulos «Cazador de
+  Leyendas» y «Monarca Eterno».
+- En la Historia los capítulos cerrados muestran de nuevo su diálogo.
 
 ### Mazmorras
 

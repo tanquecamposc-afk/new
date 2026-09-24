@@ -343,6 +343,9 @@ const CODES = {
   SHADOW100K: { cash:250000, gems:400,  tickets:2 },
   MONARCH:    { cash:1e7,    gems:2500, tickets:5 },
   UPDATE9:    { cash:1e6,    gems:900,  tickets:3 },
+  IGRIS:      { cash:2e6,    gems:1500, tickets:3 },
+  JINWOO:     { cash:5e5,    gems:700,  tickets:2 },
+  BERU:       { cash:5e7,    gems:9000, tickets:6 },
 };
 
 /* ------------------------------ utilidades -------------------------------- */
@@ -368,37 +371,37 @@ const SAVE_KEY = "arise-crossover-v9/v1";
 const LOOKS = {
   outfit: [
     { id:"hunter",  name:"Cazador",          c:{ shirt:"#23407e", sleeve:"#2d51a0", pants:"#2a3350", boots:"#1d2438", plate:"#3f6ac0", trim:"#8fc0ff" } },
-    { id:"night",   name:"Noche",            need:{ level:15 },  bonus:{ spd:.03 }, c:{ shirt:"#1a1c2a", sleeve:"#242838", pants:"#14161f", boots:"#0e1018", plate:"#3a3f55", trim:"#9fb0ff" } },
-    { id:"crimson", name:"Carmesí",          need:{ kills:500 }, bonus:{ dmg:.04 }, c:{ shirt:"#5a1420", sleeve:"#6e1a28", pants:"#2a1418", boots:"#1a0c10", plate:"#8a2030", trim:"#ff7a8a" } },
-    { id:"elite",   name:"Blanco de Élite",  need:{ rank:"C" },  bonus:{ hp:.05 },  c:{ shirt:"#dfe6f2", sleeve:"#c8d2e2", pants:"#3a4258", boots:"#262c3a", plate:"#eef2fa", trim:"#6ef0ff" } },
-    { id:"gold",    name:"Dorado de Rango S",need:{ rank:"S" },  bonus:{ dmg:.08 }, c:{ shirt:"#2a2418", sleeve:"#3a3020", pants:"#1e1a12", boots:"#14110c", plate:"#c9a33a", trim:"#ffe39a" } },
-    { id:"monarch", name:"Monarca",          need:{ awakened:true }, bonus:{ dmg:.1, hp:.05 }, c:{ shirt:"#0b0a16", sleeve:"#120f22", pants:"#0b0a16", boots:"#080714", plate:"#171233", trim:"#a86cff" } },
-    { id:"legend",  name:"Leyenda SSS",      need:{ sss:1 },     bonus:{ dmg:.15, hp:.1, spd:.05 }, c:{ shirt:"#1a1408", sleeve:"#241c0c", pants:"#120e06", boots:"#0c0a04", plate:"#fff27a", trim:"#ffffff" } },
+    { id:"night",   name:"Noche",            need:{ level:25 },  bonus:{ spd:.04 }, c:{ shirt:"#1a1c2a", sleeve:"#242838", pants:"#14161f", boots:"#0e1018", plate:"#3a3f55", trim:"#9fb0ff" } },
+    { id:"crimson", name:"Carmesí",          need:{ kills:2000 }, bonus:{ dmg:.07 }, c:{ shirt:"#5a1420", sleeve:"#6e1a28", pants:"#2a1418", boots:"#1a0c10", plate:"#8a2030", trim:"#ff7a8a" } },
+    { id:"elite",   name:"Blanco de Élite",  need:{ rank:"B", level:150 }, bonus:{ hp:.1, dmg:.04 },  c:{ shirt:"#dfe6f2", sleeve:"#c8d2e2", pants:"#3a4258", boots:"#262c3a", plate:"#eef2fa", trim:"#6ef0ff" } },
+    { id:"gold",    name:"Dorado de Rango S",need:{ rank:"S", kills:10000 }, bonus:{ dmg:.16, hp:.08 }, c:{ shirt:"#2a2418", sleeve:"#3a3020", pants:"#1e1a12", boots:"#14110c", plate:"#c9a33a", trim:"#ffe39a" } },
+    { id:"monarch", name:"Monarca",          need:{ awakened:true, level:300 }, bonus:{ dmg:.25, hp:.12, spd:.04 }, c:{ shirt:"#0b0a16", sleeve:"#120f22", pants:"#0b0a16", boots:"#080714", plate:"#171233", trim:"#a86cff" } },
+    { id:"legend",  name:"Leyenda SSS",      need:{ sss:3, level:600 }, bonus:{ dmg:.5, hp:.3, spd:.1 }, c:{ shirt:"#1a1408", sleeve:"#241c0c", pants:"#120e06", boots:"#0c0a04", plate:"#fff27a", trim:"#ffffff" } },
   ],
   armor: [
     { id:"light", name:"Arnés ligero" }, { id:"plate", name:"Placas", need:{ rank:"C" } },
-    { id:"heavy", name:"Armadura pesada", need:{ rank:"A" } }, { id:"coat", name:"Abrigo largo", need:{ awakened:true } },
+    { id:"heavy", name:"Armadura pesada", need:{ rank:"A", level:250 }, bonus:{ hp:.08 } }, { id:"coat", name:"Abrigo largo", need:{ awakened:true, rank:"S" }, bonus:{ dmg:.06, spd:.03 } },
   ],
   hair: [
     { id:"hood", name:"Capucha" }, { id:"short", name:"Corto" }, { id:"spiky", name:"En púas", need:{ level:30 } },
-    { id:"long", name:"Largo", need:{ level:60 } },
+    { id:"long", name:"Largo", need:{ level:120 } },
   ],
   hairColor: [
-    { id:"#15121f", name:"Negro" }, { id:"#5a3a1a", name:"Castaño", need:{ level:10 } }, { id:"#e8e8ec", name:"Blanco", need:{ level:100 } },
-    { id:"#b0242e", name:"Rojo", need:{ kills:2000 } }, { id:"#7a4ae0", name:"Violeta", need:{ awakened:true } },
+    { id:"#15121f", name:"Negro" }, { id:"#5a3a1a", name:"Castaño", need:{ level:10 } }, { id:"#e8e8ec", name:"Blanco", need:{ level:400 } },
+    { id:"#b0242e", name:"Rojo", need:{ kills:5000 } }, { id:"#7a4ae0", name:"Violeta", need:{ awakened:true, level:200 } },
   ],
   eyes: [
-    { id:"#4a5a78", name:"Grises" }, { id:"#3aa8ff", name:"Azul brillante", need:{ level:50 }, glow:true },
-    { id:"#c9a6ff", name:"Violeta del Monarca", need:{ awakened:true }, glow:true }, { id:"#ff3a4a", name:"Rojo sangre", need:{ ss:1 }, glow:true },
-    { id:"#ffd24a", name:"Oro SSS", need:{ sss:1 }, glow:true },
+    { id:"#4a5a78", name:"Grises" }, { id:"#3aa8ff", name:"Azul brillante", need:{ level:80 }, glow:true },
+    { id:"#c9a6ff", name:"Violeta del Monarca", need:{ awakened:true }, glow:true, bonus:{ dmg:.03 } }, { id:"#ff3a4a", name:"Rojo sangre", need:{ ss:3 }, glow:true, bonus:{ dmg:.08 } },
+    { id:"#ffd24a", name:"Oro SSS", need:{ sss:2, level:500 }, glow:true, bonus:{ dmg:.15, hp:.05 } },
   ],
   cape: [
-    { id:"none", name:"Sin capa" }, { id:"short", name:"Capa corta", need:{ rank:"D" } }, { id:"long", name:"Capa larga", need:{ rank:"B" } },
-    { id:"shadow", name:"Capa de sombras", need:{ awakened:true } },
+    { id:"none", name:"Sin capa" }, { id:"short", name:"Capa corta", need:{ rank:"D" } }, { id:"long", name:"Capa larga", need:{ rank:"A" }, bonus:{ hp:.04 } },
+    { id:"shadow", name:"Capa de sombras", need:{ awakened:true, kills:20000 }, bonus:{ dmg:.08, hp:.06 } },
   ],
   aura: [
-    { id:"none", name:"Sin aura" }, { id:"#4aa8ff", name:"Azul", need:{ level:80 } }, { id:"#a86cff", name:"Violeta", need:{ awakened:true } },
-    { id:"#ff8a2a", name:"Fuego", need:{ ss:1 } }, { id:"#ffd24a", name:"Dorada", need:{ rank:"S" } }, { id:"#ffffff", name:"Luz SSS", need:{ sss:1 } },
+    { id:"none", name:"Sin aura" }, { id:"#4aa8ff", name:"Azul", need:{ level:120 } }, { id:"#a86cff", name:"Violeta", need:{ awakened:true, level:250 }, bonus:{ dmg:.05 } },
+    { id:"#ff8a2a", name:"Fuego", need:{ ss:2 }, bonus:{ dmg:.1 } }, { id:"#ffd24a", name:"Dorada", need:{ rank:"S", kills:25000 }, bonus:{ dmg:.12, hp:.08 } }, { id:"#ffffff", name:"Luz SSS", need:{ sss:5, level:800 }, bonus:{ dmg:.4, hp:.25, spd:.08 } },
   ],
 };
 const LOOK_CAT = { outfit:"Conjunto", armor:"Armadura", hair:"Peinado", hairColor:"Color de pelo", eyes:"Ojos", cape:"Capa", aura:"Aura" };
@@ -411,15 +414,17 @@ function needMet(n){
   if (n.awakened && !P.awakened) return false;
   if (n.ss && ((P.rankKills?.SS || 0) + (P.rankKills?.SSS || 0)) < n.ss) return false;
   if (n.sss && (P.rankKills?.SSS || 0) < n.sss) return false;
+  if (n.ss && n.ss > 1 && ((P.rankKills?.SS || 0) + (P.rankKills?.SSS || 0)) < n.ss) return false;
   return true;
 }
 function needText(n){
   if (!n) return "Disponible";
   return [n.level && `Nivel ${n.level}`, n.rank && `Rango ${n.rank}`, n.kills && `${fmt(n.kills)} bajas`, n.awakened && "Despertar",
-          n.ss && "Vencer a un SS", n.sss && "Vencer a un SSS"].filter(Boolean).join(" · ");
+          n.ss && (n.ss > 1 ? `Vencer a ${n.ss} SS` : "Vencer a un SS"), n.sss && (n.sss > 1 ? `Vencer a ${n.sss} SSS` : "Vencer a un SSS")].filter(Boolean).join(" · ");
 }
 const lookItem = cat => LOOKS[cat].find(o => o.id === P.look?.[cat]) || LOOKS[cat][0];
-const lookBonus = k => lookItem("outfit").bonus?.[k] || 0;
+// bono total de todo lo que llevas puesto: lo más difícil de conseguir es lo que más da
+const lookBonus = k => Object.keys(LOOKS).reduce((a, cat) => a + (lookItem(cat).bonus?.[k] || 0), 0);
 function checkLookUnlocks(){
   let fresh = [];
   for (const cat in LOOKS) for (const o of LOOKS[cat]){
@@ -492,7 +497,7 @@ function newProfile(){
     title:"Cazador Novato", awakened:false, index:{},
     kills:0, arisen:0, dungeonsCleared:0, ledger:[], tutorial:0, chapter:0,
     pos:null,
-    look:{ ...LOOK_DEFAULT }, lookSeen:[], rankKills:{}, mounts:["ShadowWolf"], mount:"ShadowWolf",
+    look:{ ...LOOK_DEFAULT }, lookSeen:[], rankKills:{}, mounts:["ShadowWolf"], mount:"ShadowWolf", lore:[],
   };
 }
 function reconcile(d){
@@ -521,6 +526,7 @@ function reconcile(d){
     if (p.awakened){ p.look.eyes = "#c9a6ff"; p.look.cape = "none"; }
   }
   if (!Array.isArray(p.lookSeen)) p.lookSeen = [];
+  if (!Array.isArray(p.lore)) p.lore = [];
   if (typeof p.rankKills !== "object" || !p.rankKills) p.rankKills = {};
   if (!Array.isArray(p.mounts)) p.mounts = ["ShadowWolf"];
   p.mounts = p.mounts.filter(m => MOUNTS[m]); if (!p.mounts.includes("ShadowWolf")) p.mounts.unshift("ShadowWolf");
@@ -1191,6 +1197,7 @@ function spawnBoss(){
   d.bossState = { phase:1, thresholds:[0.70, 0.40, 0.15] };
   target = boss;
   banner(b.name.toUpperCase(), "#ffd24a");
+  if (BOSS_LINES[d.isle.id]) setTimeout(() => note(`${b.name}: ${BOSS_LINES[d.isle.id]}`, "--hp"), 900);
 }
 function clearDungeon(){
   const d = dungeon; if (!d || d.cleared) return;
@@ -1540,6 +1547,7 @@ function crossRegion(reg, first){
               : `${reg.name} · zona de nivel ${reg.level}: aquí golpean muy fuerte`,
        puedes ? "--spec" : "--hp");
   if (first) banner("NUEVA REGIÓN", th.sky1);
+  tellRegionLore(reg);
   SFX.cross(puedes);
   player.invuln = Math.max(player.invuln || 0, now() + 1.8);
   camImpulse(0.4);
@@ -1590,6 +1598,7 @@ let pointer = null;
 const modalOpen = () => !!panelKind || !!ariseToken;
 addEventListener("keydown", e => {
   const k = e.key.toLowerCase();
+  if (e.target && (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA")){ if (k === "escape"){ closePanel(); } return; }
   if (["arrowup","arrowdown","arrowleft","arrowright"," "].includes(k)) e.preventDefault();
   if (k === "escape"){ closePanel(); closeArise(); return; }
   if (panelKind && panelKey(k, e)) return;
@@ -2492,6 +2501,21 @@ function buildCreature(cfg){
       eye.position.set(side*5*s, 7*s, 10*s); neck.add(eye);
     }
     const crest = P0(6, 11, 6, dark); crest.position.y = 17*s; crest.rotation.z = .3; neck.add(crest);
+    // estatua del templo: máscara tallada, hombreras de losa, runas que
+    // recorren los brazos, falda de piedra y el halo de las estatuas de dios
+    const mask = P0(16, 11, 3, dark); mask.position.set(0, 5*s, 10*s); neck.add(mask);
+    const mouth = P0(8, 2, 1.5, glow, glowOpts(glow)); mouth.position.set(0, 1*s, 11.8*s); neck.add(mouth);
+    const brow = P0(18, 3, 4, dark); brow.position.set(0, 11*s, 9*s); neck.add(brow);
+    for (const side of [-1, 1]){
+      const slab = P0(22, 7, 22, dark); slab.position.set(side*28*s, 56*s, 0); slab.rotation.z = side*-.2; detail.add(slab);
+      const rune = P0(2, 18, 17, glow, glowOpts(glow)); rune.position.set(side*7.6*s, -14*s, 0); g.arms[side>0?1:0].add(rune);
+      const band = P0(17, 3, 18, glow, glowOpts(glow)); band.position.y = -24*s; g.arms[side>0?1:0].add(band);
+    }
+    for (const [w, y] of [[40, 22], [36, 16]]){ const sk = P0(w, 5, 30, dark); sk.position.y = (y-41)*s; torso.add(sk); }
+    const core = P0(12, 12, 4, glow, glowOpts(glow)); core.position.set(0, (42-41)*s, 15.5*s); torso.add(core);
+    const haloR = new THREE.Group(); haloR.position.set(0, 12*s, -12*s); neck.add(haloR);
+    for (let i = 0; i < 10; i++){ const a = i / 10 * Math.PI * 2; const hs = P0(4, 4, 2, glow, glowOpts(glow)); hs.position.set(Math.cos(a) * 17*s, Math.sin(a) * 17*s, 0); haloR.add(hs); }
+    g.spinHalo = haloR;
   } else if (body === "beast"){
     // bestia: cuadrúpedo bajo, hocico, melena y cola
     const trunk = P0(24, 20, 48, main); trunk.position.y = (30-41)*s; torso.add(trunk);
@@ -2670,12 +2694,23 @@ function buildCreature(cfg){
       const ant = P0(2, 16, 2, dark); ant.position.set(side*4*s, 12*s, 3*s); ant.rotation.set(-.7, 0, side*.35); hd.add(ant);
     }
   } else {
-    // espectro: flota, sin piernas, capucha y jirones
+    // espectro: flota, sin piernas, capucha y jirones; máscara del Sistema,
+    // cadenas espectrales y fragmentos de runa orbitando a su alrededor
     const hood = P0(22, 18, 20, dark); hood.position.y = 4*s; neck.add(hood);
+    const hoodTip = P0(14, 8, 14, dark); hoodTip.position.set(0, 14*s, -4*s); hoodTip.rotation.x = -.4; neck.add(hoodTip);
     const face = P0(15, 11, 3, "#05070f"); face.position.set(0, 1*s, 10*s); neck.add(face);
+    const mask = P0(13, 9, 1.5, "#d8dcf0"); mask.position.set(0, 1*s, 11.8*s); neck.add(mask);
     for (const side of [-1, 1]){
-      const eye = P0(4, 4, 2, glow, glowOpts(glow)); eye.position.set(side*4*s, 2*s, 11.5*s); neck.add(eye);
+      const eye = P0(4, 1.8, 2, glow, glowOpts(glow)); eye.position.set(side*3.5*s, 2.5*s, 12.8*s); eye.rotation.z = side*.25; neck.add(eye);
     }
+    const mline = P0(1.5, 6, 1, glow, glowOpts(glow)); mline.position.set(0, -1*s, 12.8*s); neck.add(mline);
+    for (const side of [-1, 1]) for (let i = 0; i < 4; i++){
+      const link = P0(3, 3, 3, "#5a5f7a"); link.position.set(side*(12 - i)*s, (-4 - i*6)*s, 6*s); link.rotation.z = .7; torso.add(link);
+    }
+    const orbit = new THREE.Group(); orbit.position.y = 44*s; detail.add(orbit);
+    for (let i = 0; i < 4; i++){ const a = i / 4 * Math.PI * 2; const sh2 = P0(5, 9, 2, glow, glowOpts(glow));
+      sh2.position.set(Math.cos(a) * 26*s, (i % 2 ? 6 : -4)*s, Math.sin(a) * 26*s); sh2.rotation.y = -a; orbit.add(sh2); }
+    g.orbit = orbit;
     const chest = P0(26, 24, 16, main, { ...opts, opacity:(opts.opacity ?? 1) * .92 });
     chest.position.y = 0; torso.add(chest);
     let w = 24;
@@ -3153,6 +3188,8 @@ function poseCharacter(v, o){
   }
   if (v.jaw) v.jaw.rotation.x = .08 + atk * .7 + hurt * .35 + (mv ? 0 : Math.max(0, Math.sin(t * .9 + U.seed)) * .12);
   if (v.head) v.head.rotation.x = (mv ? Math.sin(o.step * 2.3) * .06 : Math.sin(t * .8 + U.seed) * .08) - atk * .2;
+  if (v.spinHalo) v.spinHalo.rotation.z = t * .8;
+  if (v.orbit){ v.orbit.rotation.y = t * 1.6 + U.seed; v.orbit.position.y = (44 + Math.sin(t * 2) * 3) * s; }
   if (v.mandibles) for (const mj of v.mandibles)
     mj.rotation.y = mj.userData.side * (.12 + Math.abs(Math.sin(t * (atk ? 16 : 3) + U.seed)) * (atk ? .55 : .14));
   const bob = o.moving ? Math.abs(Math.sin(o.step)) * 1.8 * s : breathe * .5 * s;
@@ -4208,7 +4245,8 @@ const MOB_LOOK = {
   RedGate:     { body:"wolf",     skin:"#8fa4ba", dark:"#3e4e62", glow:"#6fd8ff", hair:"#d6e6f5", features:[] },
   Jeju:        { body:"ant",      skin:"#241d2c", dark:"#120e18", glow:"#b8ff3a", features:[] },
   Japan:       { body:"humanoid", skin:"#c9a58a", dark:"#23202c", glow:"#ff5a5a", features:[],
-                 kit:{ hood:"#1a1824", hood2:"#ff5a5a", tatters:"#2a2436", weapon:"#d8dce6", weaponKind:"sword", armor:null } },
+                 kit:{ hood:"#1a1824", hood2:"#ff5a5a", tatters:"#2a2436", weapon:"#e8ecf6", weaponKind:"katana", armor:null,
+                       cape:"#3a1a24", capeLong:true, gauntlet:"#2a2436", kneepads:"#1a1824", rig:"#3a1a24", rig2:"#ff5a5a" } },
   DemonCastle: { body:"humanoid", skin:"#7a2a2a", dark:"#2a0f14", glow:"#ffb03a", features:["wings", "tail"],
                  kit:{ horns:true, hornColor:"#1a1010", weapon:"#6a1a1a", weaponKind:"polearm", spikes:"#ffb03a" } },
   IceMonarch:  { body:"humanoid", skin:"#d8e8f5", dark:"#3a5a7a", glow:"#8fe8ff", features:["crystals"],
@@ -4217,7 +4255,9 @@ const MOB_LOOK = {
   Architect:   { body:"wraith",   skin:"#4a4a86", dark:"#1f1f44", glow:"#9fa8ff",
                  features:["halo", "crystals"] },
   ShadowRealm: { body:"humanoid", skin:"#2a2a4a", dark:"#12122a", glow:"#c08cff",
-                 features:["wings", "halo", "extraEyes"] },
+                 features:["wings", "halo", "extraEyes"],
+                 kit:{ coat:"#0e0e22", trim:"#c08cff", horns:true, hornColor:"#c08cff", spikes:"#c08cff", backSpikes:"#c08cff",
+                       weapon:"#c08cff", weaponGlow:true, weaponKind:"greatsword", armor:null, helm:null } },
 };
 function enemyConfig(e){
   const L = e.look || {};
@@ -5259,7 +5299,10 @@ function panelStats(){
           title="${un ? o.name : "Se desbloquea con: " + needText(o.need)}">${sw ? `<i class="sw" style="background:${o.id}"></i>` : ""}${un ? "" : "🔒 "}${o.name}${
           o.bonus ? ` <em>${Object.entries(o.bonus).map(([k, v]) => `+${Math.round(v * 100)}% ${k === "dmg" ? "daño" : k === "hp" ? "vida" : "vel."}`).join(" ")}</em>` : ""}</button>`; }).join("")}</div></div>`).join("");
     const total = Object.values(LOOKS).reduce((a, l) => a + l.length, 0), got = Object.values(LOOKS).reduce((a, l) => a + l.filter(o => needMet(o.need)).length, 0);
+    const bon = ["dmg", "hp", "spd"].map(k => [k, lookBonus(k)]).filter(([, v]) => v > 0);
     return shell("Aspecto del cazador", nav + `<div class="inv"><aside class="inv-side"><div class="pv" data-pv="player" style="--tc:var(--arise)"></div>
+      <div class="sheet"><b class="sname">Bono de tu aspecto</b><span class="lv">${bon.length ? bon.map(([k, v]) =>
+        `+${Math.round(v * 100)}% ${k === "dmg" ? "daño" : k === "hp" ? "vida" : "velocidad"}`).join(" · ") : "Sin bono: equipa piezas raras para ganarlo"}</span></div>
       <div class="collect"><span>Desbloqueado</span><div class="sbar xp"><i style="width:${got / total * 100}%"></i><em>${got} / ${total}</em></div></div></aside>
       <div class="inv-main">${rows}</div></div>
       <p class="kbhelp">Pasa el ratón o mantén pulsado un 🔒 para ver cómo se desbloquea. Los conjuntos dan un pequeño bono mientras los llevas.</p>`);
@@ -5301,12 +5344,18 @@ function panelStats(){
       <p class="hint">Gemas disponibles: <b style="color:var(--gem)">${fmt(P.gems)}</b>. Las gemas salen de extracciones fallidas y de mazmorras.</p>`);
   }
   if (panelTab === "Codes"){
-    const body = Object.keys(CODES).map(c => `<div class="item ${P.codes[c]?"locked":""}">
-      <span class="g">🎁</span><span class="meta"><b>${c}</b>
-      <span>${fmt(CODES[c].cash)} oro · ${fmt(CODES[c].gems)} gemas · ${CODES[c].tickets} tickets</span></span>
-      <button class="btn gold" data-code="${c}" ${P.codes[c]?"disabled":""}>${P.codes[c]?"Canjeado":"Canjear"}</button></div>`).join("");
-    return shell("Códigos", nav + `<div class="list">${body}</div>
-      <p class="hint">Códigos de bienvenida de esta build.</p>`);
+    // Los códigos no se muestran: hay que conocerlos y escribirlos.
+    const used = Object.keys(P.codes).filter(c => P.codes[c] && CODES[c]);
+    const body = used.length ? used.map(c => `<div class="item locked"><span class="g">✔</span><span class="meta"><b>${c}</b>
+      <span>${fmt(CODES[c].cash)} oro · ${fmt(CODES[c].gems)} gemas · ${CODES[c].tickets} tickets</span></span></div>`).join("")
+      : `<p class="hint">Todavía no has canjeado ningún código.</p>`;
+    return shell("Códigos", nav + `<form class="codebox" id="code-form" autocomplete="off">
+        <label for="code-in">Escribe un código</label>
+        <div class="coderow"><input id="code-in" maxlength="24" spellcheck="false" placeholder="CÓDIGO" aria-label="Código">
+          <button class="btn gold" type="submit" id="code-go">Canjear</button></div>
+        <p class="codemsg" id="code-msg" role="status"></p></form>
+      <h3 class="subh">Canjeados</h3><div class="list">${body}</div>
+      <p class="hint">Los códigos no se revelan dentro del juego. Mayúsculas y minúsculas dan igual.</p>`);
   }
   const s = P.stats, next = RANKS[rankIdx(P.rank)+1];
   const rows = Object.keys(STAT_INFO).map(k => `
@@ -5518,10 +5567,16 @@ function panelItems(){
       const state = i < P.chapter ? "cerrado" : i === P.chapter ? "en curso" : "bloqueado";
       const color = i < P.chapter ? "var(--cash)" : i === P.chapter ? "var(--gold)" : "var(--dim)";
       return `<div class="item ${i > P.chapter ? "locked" : ""}"><span class="g">${i < P.chapter ? "✔" : i === P.chapter ? "▶" : "·"}</span>
-        <span class="meta"><b>${i + 1}. ${c.title}</b><span>${i <= P.chapter ? c.goal : "Sigue avanzando para desbloquearlo"}</span></span>
+        <span class="meta"><b>${i + 1}. ${c.title}</b><span>${i <= P.chapter ? c.goal : "Sigue avanzando para desbloquearlo"}</span>
+        ${i < P.chapter ? `<span class="quote">${c.speaker}: «${c.dialog}»</span>` : ""}</span>
         <span class="tier" style="color:${color}">${state}</span></div>`;
     }).join("");
+    const known = ISLANDS.filter(is => is.id === "Seoul" || (P.lore || []).includes(is.id));
+    const chron = ISLANDS.map(is => { const L = REGION_LORE[is.id], k = known.includes(is);
+      return `<details class="chron ${k ? "" : "locked"}" ${k ? "" : "aria-disabled=\"true\""}><summary><b>${k ? is.name : "Región sin descubrir"}</b>
+        <span>${k ? L.who : "🔒"}</span></summary>${k ? `<p>${L.text}</p>` : ""}</details>`; }).join("");
     return shell("Historia", nav + `<div class="list">${body}</div>
+      <h3 class="subh">Crónicas de las regiones · ${known.length}/${ISLANDS.length}</h3><div class="list">${chron}</div>
       <p class="hint">Juego de fan, sin relación oficial con la obra. Personajes y lugares se usan como homenaje;
       todos los modelos y el arte son originales de este proyecto.</p>`);
   }
@@ -5585,6 +5640,7 @@ function panelMap(){
     right = `<div class="rcard" style="--tc:${th.g1};--sky:${th.sky1}">
       <div class="rhead"><small>Anillo ${mapSel} · ${isle.theme}</small><b>${isle.name}</b>
         <span>${here ? "📍 Estás aquí" : un ? `a ${fmt(dist)} m` : `🔒 Requiere nivel ${isle.level}`}</span></div>
+      ${un && (isle.id === "Seoul" || (P.lore || []).includes(isle.id)) ? `<p class="lore">«${REGION_LORE[isle.id].text.split(". ")[0]}.»</p>` : ""}
       <div class="pv" data-pv="mob" style="--tc:${th.g1}"></div>
       <div class="chips">${["enemy","brute","boss"].map(k => `<button class="chip ${mobKind === k ? "sel" : ""}" data-mobkind="${k}">${
         k === "enemy" ? isle.enemy.name : k === "brute" ? isle.brute.name : "👑 " + isle.boss.name}</button>`).join("")}</div>
@@ -5690,6 +5746,20 @@ function panelKey(k, e){
   if (c.dataset.wpick) shopSel = c.dataset.wpick; else if (c.dataset.mpick) mountSel = c.dataset.mpick; else beastSel = c.dataset.beast;
   SFX.ui(); renderPanel();
   return true;
+}
+function redeemCode(){
+  const inp = document.getElementById("code-in"), msg = document.getElementById("code-msg");
+  if (!inp) return;
+  const c = inp.value.trim().toUpperCase().replace(/\s+/g, "");
+  const say = (t, ok) => { if (msg){ msg.textContent = t; msg.className = "codemsg " + (ok ? "ok" : "bad"); } };
+  if (!c) return say("Escribe un código primero.");
+  if (!CODES[c]){ SFX.ariseFail?.(); inp.classList.remove("shake"); void inp.offsetWidth; inp.classList.add("shake"); return say("Ese código no existe."); }
+  if (P.codes[c]) return say("Ya canjeaste ese código.");
+  P.codes[c] = true;
+  P.cash += CODES[c].cash; P.gems += CODES[c].gems; P.tickets += CODES[c].tickets;
+  banner("CÓDIGO CANJEADO", "#ffd24a"); note(`${c}: +${fmt(CODES[c].cash)} oro · +${fmt(CODES[c].gems)} gemas`, "--cash");
+  SFX.levelUp?.(); save(); dirty = true; renderPanel();
+  const m2 = document.getElementById("code-msg"); if (m2){ m2.textContent = `¡${c} canjeado!`; m2.className = "codemsg ok"; }
 }
 let panelEnter = false, bumpPrev = new Map();
 function renderPanel(){
@@ -5853,6 +5923,7 @@ function renderArise(log){
 }
 
 /* ------------------------------- eventos ---------------------------------- */
+modal.addEventListener("submit", e => { if (e.target.id === "code-form"){ e.preventDefault(); redeemCode(); } });
 modal.addEventListener("click", e => {
   // las tarjetas y botones llevan texto e iconos dentro: se busca el botón
   const t = e.target.closest("button") || e.target;
@@ -5945,6 +6016,7 @@ modal.addEventListener("click", e => {
     P.gems -= cost; P.talents[tal.id] = lv + 1;
     note(`${tal.name} nivel ${lv+1}`, "--monarch"); save(); dirty = true; renderPanel(); return;
   }
+  if (t.id === "code-go"){ e.preventDefault(); redeemCode(); return; }
   if (t.dataset.code){
     const c = t.dataset.code;
     if (P.codes[c]) return;
@@ -6123,8 +6195,73 @@ const CAMPAIGN = [
     done:() => !!P.index.Antares || !!P.index.Ashborn,
     speaker:"SISTEMA", dialog:"El Rey de las Sombras despierta. Levántate. Este mundo aún te necesita.",
     reward:() => { P.title = "Rey de las Sombras"; banner("REY DE LAS SOMBRAS", "#bb8cff"); } },
+  // ---- epílogo: lo que viene después de la corona
+  { id:"ruler", title:"Los Gobernantes",
+    goal:"Consigue una sombra de rango SS o superior",
+    done:() => Object.values(P.shadows).some(x => rankIdxOf(x.rank) >= 6),
+    speaker:"SISTEMA", dialog:"Los Gobernantes observan. Ninguna sombra de ese poder había vuelto a obedecer a nadie desde la primera guerra.",
+    reward:() => { P.gems += 5e6; note("+5M gemas", "--gem"); } },
+  { id:"legion", title:"La Legión sin fin",
+    goal:"Reúne 100 sombras",
+    done:() => Object.keys(P.shadows).length >= 100,
+    speaker:"Bellion", dialog:"Mi señor, la legión está formada. Cien espadas esperan su orden. Mil vendrán después.",
+    reward:() => { P.tickets += 10; note("+10 tickets de puerta", "--ticket"); } },
+  { id:"rider", title:"Jinete de sombras",
+    goal:"Consigue 4 monturas distintas",
+    done:() => (P.mounts || []).length >= 4,
+    speaker:"Yoo Jinho", dialog:"¿Ahora también dragones? Jefe, la próxima vez avíseme antes de aterrizar en la sede del gremio.",
+    reward:() => { P.cash += 1e12; note("+1T de oro", "--cash"); } },
+  { id:"sss", title:"Lo que no debería existir",
+    goal:"Derrota a un enemigo de rango SSS",
+    done:() => (P.rankKills?.SSS || 0) >= 1,
+    speaker:"Thomas Andre", dialog:"Vi la columna de luz desde Estados Unidos. Todos los gremios del mundo la vieron. Y después, silencio. ¿Fuiste tú?",
+    reward:() => { P.gems += 5e7; banner("CAZADOR DE LEYENDAS", "#fff27a"); } },
+  { id:"rebirth", title:"El ciclo del Monarca",
+    goal:"Renace por primera vez",
+    done:() => P.rebirths >= 1,
+    speaker:"Ashborn", dialog:"Yo también empecé de nuevo muchas veces. La fuerza no es no caer: es volver a levantarse sabiendo lo que cuesta.",
+    reward:() => { P.stats.points += 50; note("+50 puntos de atributo", "--gem"); } },
+  { id:"end", title:"Arise",
+    goal:"Alcanza el nivel 1000",
+    done:() => P.level >= 1000,
+    speaker:"SISTEMA", dialog:"No queda nada que el Sistema pueda enseñarte. A partir de aquí, la historia la escribes tú. Levántate, Monarca.",
+    reward:() => { P.title = "Monarca Eterno"; banner("MONARCA ETERNO", "#fff27a"); } },
 ];
 function currentChapter(){ return CAMPAIGN[P.chapter] || null; }
+/* Crónicas de las regiones: se cuentan la primera vez que pisas cada una y
+   quedan guardadas en Inventario › Historia. */
+const REGION_LORE = {
+  Seoul:       { who:"Woo Jinchul", text:"Hace diez años se abrieron las primeras puertas sobre Seúl. Desde entonces la ciudad vive con un ojo en el cielo. Los gnomos de las puertas bajas son lo primero que aprende a matar un cazador… o lo último." },
+  Hongdae:     { who:"Yoo Jinho", text:"En Hongdae se abrió una puerta de clase D que nadie consiguió cerrar. Dentro vive Kasaka, una serpiente que tiñe de verde el agua. Su colmillo vale una fortuna en el mercado de la Asociación." },
+  Temple:      { who:"SISTEMA", text:"Mandamiento uno: adora a tu dios. Mandamiento dos: alaba a tu dios. Mandamiento tres: demuestra tu fe. En el Doble Dungeon las estatuas sonríen mientras cuentan a los que no salen." },
+  Reawaken:    { who:"SISTEMA", text:"La Cárcel de Reawakening guarda a los caballeros que juraron lealtad a un rey muerto. El Caballero Rojo aún patrulla sus pasillos, esperando a alguien digno de su espada." },
+  HighOrcs:    { who:"Baek Yoonho", text:"Los altos orcos no son bestias: tienen chamanes, estandartes y un código. Baruka, el jefe de los elfos de hielo que les sirve, ha cazado a más cazadores de rango A que cualquier gremio." },
+  RedGate:     { who:"Cha Hae-In", text:"Una puerta roja no se cierra hasta que alguien mata a su señor. Dentro nieva siempre, y el tiempo corre distinto: tres días aquí son una hora fuera. Los lobos huelen el miedo." },
+  Jeju:        { who:"Choi Jong-In", text:"La isla Jeju fue abandonada tras la primera marea de hormigas. Treinta cazadores de rango S cayeron intentando recuperarla. Dicen que el Rey Hormiga aprendió a hablar comiéndose a los que lo intentaban." },
+  Japan:       { who:"Thomas Andre", text:"Cuando la gran puerta se abrió sobre Shinjuku, los cazadores de Japón fueron los primeros en caer. Algunos siguen ahí, vacíos, empuñando katanas contra quien entre." },
+  DemonCastle: { who:"SISTEMA", text:"El Castillo del Demonio tiene cien pisos y en la cima espera el Rey Demonio Baran. Más arriba aún, en el cielo rojo, duerme Kamish: el dragón que mató a cuatro cazadores de rango nacional en una sola noche." },
+  IceMonarch:  { who:"SISTEMA", text:"El Monarca de la Escarcha no odia a la humanidad: simplemente la considera un error. Su dominio es silencio blanco, y quien se detiene demasiado se convierte en una estatua más." },
+  BeastMonarch:{ who:"Go Gunhee", text:"El Monarca de los Colmillos gobierna a todas las bestias. En sus tierras no hay caminos, solo rastros. Cada cráneo del arco de la entrada perteneció a un cazador que se creyó cazador." },
+  Architect:   { who:"SISTEMA", text:"Esta sala no debería existir. El Arquitecto construyó el Sistema, y el Sistema te construyó a ti. Todo lo que ves es un examen, y la nota es sobrevivir." },
+  ShadowRealm: { who:"Ashborn", text:"Yo también fui un Monarca que eligió proteger a quienes debía destruir. Ahora el trono es tuyo. Mira bien a tu ejército: cada uno murió por algo. Asegúrate de que tú también sepas por qué luchas." },
+};
+// Lo que dice cada jefe al aparecer
+const BOSS_LINES = {
+  Seoul:"«Otro humano… pequeño y ruidoso.»", Hongdae:"«Tu veneno no me alcanza, cazador. El mío a ti sí.»",
+  Temple:"«¿Has recitado los mandamientos? Entonces arrodíllate.»", Reawaken:"«Mi rey me ordenó guardar esta puerta. Él no ha vuelto.»",
+  HighOrcs:"«Eres demasiado débil para morir a manos de Baruka.»", RedGate:"«El frío es eterno. Tú no.»",
+  Jeju:"«Tengo hambre… tanta hambre.»", Japan:"«Esta ciudad ya es mía. Todos sus cazadores me pertenecen.»",
+  DemonCastle:"«¿Un humano que llega hasta aquí? Qué divertido.»", IceMonarch:"«Te convertiré en un recuerdo helado.»",
+  BeastMonarch:"«Las bestias no se inclinan. Tampoco yo.»", Architect:"«Ejecutando prueba final. Probabilidad de éxito: 0,0001%.»",
+  ShadowRealm:"«El Rey de las Sombras… por fin nos vemos.»",
+};
+function tellRegionLore(reg){
+  const L = REGION_LORE[reg.id]; if (!L) return;
+  P.lore = P.lore || [];
+  if (P.lore.includes(reg.id)) return;
+  P.lore.push(reg.id); save();
+  setTimeout(() => showDialog(L.who, L.text, `Crónica · ${reg.name}`), 1400);
+}
 function checkCampaign(){
   const dlg = document.getElementById("dialog");
   if (dlg && !dlg.hidden) return;          // deja leer el capítulo anterior
