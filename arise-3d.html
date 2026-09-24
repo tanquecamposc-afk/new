@@ -1551,17 +1551,20 @@ let target = null;
 
 /* ------------------------------- enemigos --------------------------------- */
 function enemyDef(kind){
-  const isle = dungeon ? dungeon.isle : regionAt(player.x, player.y);
   if (dungeon) return dungeon.enemyDef(kind);
+  return enemyDefAt(player.x, player.y, kind);
+}
+function enemyDefAt(px, py, kind){
+  const isle = regionAt(px, py);
   const base = kind === "brute" ? isle.brute : isle.enemy;
   // La dificultad sube de forma continua dentro del anillo hacia la región
   // siguiente. Sin esto, cruzar una frontera multiplicaba de golpe por
   // trescientos la vida del enemigo y el salto era un muro.
-  const idx = ringAt(player.x, player.y);
+  const idx = ringAt(px, py);
   const next = ISLANDS[idx + 1];
   const def = { ...base };
   if (next){
-    const d = Math.hypot(player.x - CFG.WORLD.cx, player.y - CFG.WORLD.cy);
+    const d = Math.hypot(px - CFG.WORLD.cx, py - CFG.WORLD.cy);
     const t = clamp((d - idx * CFG.RING_WIDTH) / CFG.RING_WIDTH, 0, 1);
     const k = t * t;                       // la subida se nota al acercarte al borde
     const nb = kind === "brute" ? next.brute : next.enemy;
@@ -1572,8 +1575,8 @@ function enemyDef(kind){
   }
   return { ...def, isle:isle.id, shadow: isle.shadow, kind, r: kind === "brute" ? 24 : 18 };
 }
-function spawnEnemy(def, x, y){
-  const d = def || enemyDef(Math.random() < 0.25 ? "brute" : "normal");
+function spawnEnemy(def, x, y, kind){
+  const d = def || (x !== undefined && !dungeon ? enemyDefAt(x, y, kind) : enemyDef(kind || (Math.random() < 0.25 ? "brute" : "normal")));
   const a = rnd(0, Math.PI*2), dist = rnd(300, 560);
   const seed = Math.floor(Math.random() * 1e9);
   const pick = (arr, k) => arr[(seed >> k) % arr.length];
@@ -2926,7 +2929,14 @@ function update(dt){
   else if (spawnT <= 0 && enemies.length < pop){
     // repone la horda con rapidez: el farmeo del original es continuo
     const batch = Math.min(2, pop - enemies.length);
-    for (let i=0;i<batch;i++) spawnEnemy();
+    const camp = P.tutorial >= 2 ? nearestCamp(player.x, player.y, 1500) : null;
+    for (let i=0;i<batch;i++){
+      if (camp){
+        const a = rnd(0, Math.PI * 2), r = rnd(0, 220), isle = ISLANDS[camp.ring];
+        const kind = camp.brute ? (Math.random() < .6 ? "brute" : "normal") : (Math.random() < .12 ? "brute" : "normal");
+        spawnEnemy(null, camp.x + Math.cos(a) * r, camp.y + Math.sin(a) * r, kind);
+      } else spawnEnemy();
+    }
     spawnT = dungeon ? 1.4 : 1.1;
   }
   for (const e of enemies){
@@ -4555,10 +4565,51 @@ const MUSIC_SCALES = {
   dungeon: { tempo:2.4, acordes:[[73,110,139],[78,117,147],[65,98,123],[73,110,139]],      melodia:[294,349,440,523] },
 };
 const themeNow = () => dungeon ? THEMES.dungeon : (THEMES[regionAt(player.x, player.y).theme] || THEMES.city);
+/* Cada región es una isla: en cada frontera hay un canal de agua poco
+   profundo que se cruza vadeando, con playa a los lados. */
+const CHANNEL = 190;
+function borderDist(x, z){
+  if (dungeon) return 1e9;
+  const r = Math.hypot(x - CFG.WORLD.cx, z - CFG.WORLD.cy), RW = CFG.RING_WIDTH;
+  const k = Math.round(r / RW);
+  return k < 1 || k > ISLANDS.length - 1 ? 1e9 : Math.abs(r - k * RW);
+}
 function terrainH(x, z){
   const a = themeNow().amp;
-  if (a <= 0.5) return 0;
-  return (Math.sin(x*0.0021) * Math.cos(z*0.0017) * .65 + Math.sin((x+z)*0.0009) * .35) * a;
+  const base = a <= 0.5 ? 0 : (Math.sin(x*0.0021) * Math.cos(z*0.0017) * .65 + Math.sin((x+z)*0.0009) * .35) * a;
+  const bd = borderDist(x, z);
+  if (bd >= CHANNEL * 2) return base;
+  const k = clamp((bd - CHANNEL * .55) / (CHANNEL * 1.45), 0, 1), s = k * k * (3 - 2 * k);
+  return -16 + (base + 16) * s;
+}
+let waterRings = null;
+function syncWater(dt){
+  if (!waterRings){
+    waterRings = new THREE.Group();
+    const RW = CFG.RING_WIDTH;
+    const wm = new THREE.MeshPhongMaterial({ color:0x2a9fe0, emissive:0x0a3a66, shininess:90, specular:0xbfe8ff,
+      transparent:true, opacity:.82, depthWrite:false });
+    const foam = new THREE.MeshBasicMaterial({ color:0xeaf8ff, transparent:true, opacity:.7, depthWrite:false });
+    const sand = new THREE.MeshLambertMaterial({ color:0xe8d49a, transparent:true, opacity:.9, depthWrite:false });
+    for (let k = 1; k < ISLANDS.length; k++){
+      const R0 = k * RW, seg = 720;
+      for (const [inner, outer, m, y] of [[R0 - CHANNEL * 1.25, R0 + CHANNEL * 1.25, sand, -.5],
+                                          [R0 - CHANNEL * .8, R0 + CHANNEL * .8, wm, -4],
+                                          [R0 - CHANNEL * .82, R0 - CHANNEL * .74, foam, -3.5],
+                                          [R0 + CHANNEL * .74, R0 + CHANNEL * .82, foam, -3.5]]){
+        const ring = new THREE.Mesh(new THREE.RingGeometry(inner, outer, seg, 1), m);
+        ring.rotation.x = -Math.PI / 2; ring.position.set(CFG.WORLD.cx, y, CFG.WORLD.cy);
+        ring.renderOrder = m === sand ? 1 : m === wm ? 2 : 3;
+        waterRings.add(ring);
+      }
+    }
+    waterRings.userData.wm = wm; waterRings.userData.foam = foam;
+    scene.add(waterRings);
+  }
+  waterRings.visible = !dungeon;
+  const t = now();
+  waterRings.userData.wm.emissive.setRGB(.04, .2 + Math.sin(t * 1.3) * .03, .36 + Math.sin(t * 1.3) * .04);
+  waterRings.userData.foam.opacity = .45 + Math.sin(t * 2.2) * .25;
 }
 const CAM = { back:320, height:160, pitch:0.38, yaw:0, minBack:200, maxBack:700 };
 const camFwd = { x:0, z:-1 }, camRight = { x:1, z:0 };
@@ -5355,6 +5406,49 @@ for (let i = 0; i < 13; i++) for (let k = 0; k < 8; k++){
   const r = i * CFG.RING_WIDTH + CFG.RING_WIDTH * (.15 + fr * .7) + (i === 0 ? 500 : 0);
   CHESTS.push({ id:`${i}-${k}`, ring:i, x:CFG.WORLD.cx + Math.cos(a) * r, y:CFG.WORLD.cy + Math.sin(a) * r, view:null });
 }
+/* Zonas de caza: cinco campamentos fijos por región donde aparecen sus
+   enemigos, marcados con un círculo en el suelo y un cartel con nombre y nivel. */
+const CAMPS = [];
+for (let i = 0; i < 13; i++) for (let k = 0; k < 5; k++){
+  const h = Math.sin((i + 3) * 57.3 + k * 29.1) * 24634.6345, fr = h - Math.floor(h);
+  const a = k * (Math.PI * 2 / 5) + fr * .9 + i * 1.3;
+  const r = i * CFG.RING_WIDTH + CFG.RING_WIDTH * (.3 + fr * .45) + (i === 0 ? 700 : 0);
+  CAMPS.push({ ring:i, k, brute: k === 4, x:CFG.WORLD.cx + Math.cos(a) * r, y:CFG.WORLD.cy + Math.sin(a) * r, view:null });
+}
+function nearestCamp(x, y, max){
+  let best = null, bd = max;
+  for (const c of CAMPS){ const d = Math.hypot(c.x - x, c.y - y); if (d < bd){ bd = d; best = c; } }
+  return best;
+}
+function syncCamps(dt){
+  const t = now();
+  for (const c of CAMPS){
+    const d = Math.hypot(c.x - player.x, c.y - player.y);
+    if (dungeon || d > 2600){ if (c.view){ scene.remove(c.view); disposeView(c.view); c.view = null; } continue; }
+    if (!c.view){
+      const isle = ISLANDS[c.ring], def = enemyDefAt(c.x, c.y, c.brute ? "brute" : "normal"), col = (THEMES[isle.theme] || THEMES.city).sun;
+      const g = new THREE.Group();
+      const ring = new THREE.Mesh(new THREE.RingGeometry(250, 262, 64), new THREE.MeshBasicMaterial({ color:new THREE.Color(c.brute ? "#ff5d6c" : "#ffd24a"),
+        transparent:true, opacity:.55, depthWrite:false, side:THREE.DoubleSide }));
+      ring.rotation.x = -Math.PI / 2; ring.position.y = 3; g.add(ring); g.ring = ring;
+      // cartel de madera con el nombre y nivel de la zona
+      const post = part(6, 70, 6, "#5a3c22"); post.position.set(0, 35, 0);
+      const board = part(70, 26, 5, "#7a5230"); board.position.set(0, 74, 0);
+      const trim = part(74, 3, 6, "#c9a33a"); trim.position.set(0, 88, 0);
+      const sign = new THREE.Group(); sign.add(post, board, trim); sign.position.set(0, 0, -270); g.add(sign);
+      const tag = labelSprite(`${c.brute ? "☠ " : "⚔ "}${def.name} · Nv ${def.lvl}`, c.brute ? "#ff9aa4" : "#ffe9a8", 40);
+      tag.scale.set(220, 55, 1); tag.position.set(0, 120, -270); g.add(tag);
+      for (let i = 0; i < 6; i++){                     // antorchas alrededor
+        const a = i / 6 * Math.PI * 2, tc = part(4, 26, 4, "#3a2a1a"); tc.position.set(Math.cos(a) * 256, 13, Math.sin(a) * 256); g.add(tc);
+        const fl = new THREE.Sprite(new THREE.SpriteMaterial({ map:glowTexture(c.brute ? "#ff5d6c" : col), transparent:true, depthWrite:false, blending:THREE.AdditiveBlending }));
+        fl.scale.set(30, 30, 1); fl.position.set(Math.cos(a) * 256, 30, Math.sin(a) * 256); g.add(fl);
+      }
+      g.position.set(c.x, terrainH(c.x, c.y), c.y);
+      scene.add(g); c.view = g;
+    }
+    c.view.ring.material.opacity = .4 + Math.sin(t * 2 + c.k) * .15;
+  }
+}
 function chestOpened(c){ const D = P.chests || {}; return D.day === dayKey() && D.open?.includes(c.id); }
 function openChest(c){
   if (chestOpened(c)) return;
@@ -5919,7 +6013,9 @@ function labelSprite(text, color, size){
   const cv = document.createElement("canvas");
   cv.width = 512; cv.height = 128;
   const x = cv.getContext("2d");
-  x.font = `600 ${size || 56}px Fredoka, sans-serif`;
+  let fs = size || 56;
+  x.font = `600 ${fs}px Fredoka, sans-serif`;
+  while (fs > 18 && x.measureText(text).width > 488){ fs -= 2; x.font = `600 ${fs}px Fredoka, sans-serif`; }
   x.textAlign = "center"; x.textBaseline = "middle";
   x.lineWidth = 12; x.strokeStyle = "rgba(4,8,20,.92)";
   x.strokeText(text, 256, 64); x.fillStyle = color; x.fillText(text, 256, 64);
@@ -5932,7 +6028,9 @@ function labelSprite(text, color, size){
 function repaintLabel(sp, text, color, size){
   const cv = sp.userData.cv, x = cv.getContext("2d");
   x.clearRect(0, 0, 512, 128);
-  x.font = `600 ${size || 56}px Fredoka, sans-serif`;
+  let fs = size || 56;
+  x.font = `600 ${fs}px Fredoka, sans-serif`;
+  while (fs > 18 && x.measureText(text).width > 488){ fs -= 2; x.font = `600 ${fs}px Fredoka, sans-serif`; }
   x.textAlign = "center"; x.textBaseline = "middle";
   x.lineWidth = 12; x.strokeStyle = "rgba(4,8,20,.92)";
   x.strokeText(text, 256, 64); x.fillStyle = color; x.fillText(text, 256, 64);
@@ -5948,6 +6046,9 @@ function healthBar(){
   // estela blanca que baja detrás de la vida: se ve cuánto se acaba de quitar
   const chip = new THREE.Sprite(new THREE.SpriteMaterial({ color:0xfff1d0, depthTest:false }));
   chip.scale.set(76, 7, 1);
+  // sin depthTest el orden lo decide renderOrder: antes la estela clara se
+  // pintaba encima de la vida y todas las barras se veían blancas
+  bg.renderOrder = 20; chip.renderOrder = 21; fill.renderOrder = 22;
   g.add(bg, chip, fill);
   g.fill = fill; g.chipPct = 1;
   g.setPct = (pct, color) => {
@@ -6056,7 +6157,7 @@ function render(dt){
   syncProps();
   syncBorder(dt);
   syncLandmarks(dt);
-  syncChests(dt);
+  syncChests(dt); syncWater(dt); syncCamps(dt);
   updateCamera(dt);
 
   // jugador
@@ -6166,17 +6267,18 @@ function render(dt){
       const bar = healthBar();
       bar.scale.setScalar(e.boss ? 1.25 : .62);
       hud.add(bar); hud.bar = bar;
-      const nameSp = labelSprite(`[${e.rank || "E"}] ${e.name} · Nv ${e.level}`, e.boss ? "#ffe9a8" : mobRank(e.rank).col, 46);
+      const nameSp = labelSprite(`[${e.rank || "E"}] ${e.name} [Nv. ${e.level}]`, e.boss ? "#ffe9a8" : mobRank(e.rank).col, 46);
       nameSp.scale.set(e.boss ? 150 : 104, e.boss ? 37 : 26, 1);
-      nameSp.position.y = 15;
+      nameSp.position.y = 15; nameSp.renderOrder = 23;
       hud.add(nameSp); hud.name = nameSp;
       hud.position.y = (e.boss ? 132 : 86) * (e.def.r / 18);
       v.add(hud); v.hud = hud;
     }
     v.hud.bar.setPct(e.hp / e.maxHp, e.boss ? 0xffd24a : 0xff4d61);
     const dp = Math.hypot(e.x - player.x, e.y - player.y);
-    v.hud.visible = (e.boss || e === target || dp < 300) && e.hp > 0;
-    v.hud.name.visible = e.boss || e === target || e.elite;
+    // como en los juegos de Roblox: nombre, nivel y vida siempre a la vista de cerca
+    v.hud.visible = (e.boss || e === target || dp < 650) && e.hp > 0;
+    v.hud.name.visible = true;
     v.hud.rotation.y = -v.rotation.y;                     // el HUD siempre de frente
     // Destello al recibir daño. Antes se escribía el emissive de los
     // materiales, pero son compartidos entre todos los personajes del mismo

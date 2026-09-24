@@ -839,3 +839,14 @@ aserciones de prueba, que fue el punto de partida del diseño.
 - **Cada jefe** (las oleadas 10, 20, 30…) da 1 giro de clase seguro.
 - **Desde la oleada 15**, cada oleada superada tiene un 6% de dar 1 giro extra.
 - **Récord:** al batir tu récord en una oleada múltiplo de 25 (25, 50, 75…) ganas +2 giros.
+
+## Estilo de ARPG de Roblox: islas, zonas de caza y carteles
+- **Islas:** cada región es una isla. En cada frontera hay un canal de agua poco profundo, con espuma y playa de arena a los dos lados (`borderDist`, `syncWater`). Se cruza vadeando y el terreno baja al canal.
+- **Zonas de caza (`CAMPS`, `syncCamps`):**
+  - Hay 5 por región. Cada una tiene un círculo en el suelo, 6 antorchas y un cartel de madera con el enemigo y su nivel.
+  - La quinta zona es la de bestias, marcada con ☠ y en rojo.
+  - Los enemigos del mundo aparecen en la zona más cercana si hay una a menos de 1500 unidades.
+- **Enemigos:**
+  - Siempre muestran `[Rango] Nombre [Nv. X]` y la barra de vida cuando están cerca.
+  - El texto de los carteles se ajusta para no cortarse.
+  - Se arregló el orden de pintado de las barras: antes la estela clara tapaba la vida y todas se veían blancas.
