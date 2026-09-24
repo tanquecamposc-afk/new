@@ -5784,7 +5784,7 @@ function render(dt){
     if (v.userData.beam) v.userData.beam.material.opacity = .15 + Math.sin(now() * 3) * .08;
     // aura en el suelo con el color del rango (de C para arriba) y la de jefe
     const rIdx = MOB_RANKS.findIndex(m => m.r === e.rank);
-    if ((rIdx >= 2 || e.boss) && !v.userData.aura){
+    if ((rIdx >= 2 || e.boss || e.elite) && !v.userData.aura){
       const au = new THREE.Mesh(auraGeo(), new THREE.MeshBasicMaterial({ color: new THREE.Color(e.boss ? "#ff5d6c" : mobRank(e.rank).col),
         transparent:true, opacity:.5, depthWrite:false, blending:THREE.AdditiveBlending, side:THREE.DoubleSide }));
       au.rotation.x = -Math.PI / 2; au.position.y = 2; au.scale.setScalar((v.scaleRef || 1) * (e.boss ? 1.4 : .8 + rIdx * .1));
