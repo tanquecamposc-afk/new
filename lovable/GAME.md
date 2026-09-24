@@ -805,3 +805,19 @@ aserciones de prueba, que fue el punto de partida del diseño.
 - Abrigo largo negro abierto con capucha sobre camiseta blanca, pantalón negro y botas con cordones (`outfit: shadowcoat`, `coatOpen`, `laces`).
 - Nueva categoría de vestuario **Modelo del arma**: `monarchblade`, un espadón cian con vetas oscuras y guarda negra con púas.
 - Las partidas antiguas migran una vez a este look mediante `lookV3`. Las demás prendas siguen disponibles en el vestuario.
+
+## Cómo se llevan y se ven las armas
+- Cada tipo de arma tiene su postura de carga (`WEAPON_CARRY`) cuando no estás atacando:
+  - **Espadones, hachas, martillos y guadañas:** apoyados en el hombro.
+  - **Espadas y katanas:** en guardia hacia delante.
+  - **Lanzas y bastones:** de pie, como un bastón.
+  - **Dagas:** hacia abajo, en agarre invertido.
+- Al golpear, el arma pasa suavemente de esa postura a alinearse con el brazo y después vuelve a ella.
+- Al cortar, la punta del arma deja una estela luminosa (`updateSlashTrail`, 18 destellos reutilizados). La estela es del color del arma si brilla y blanca si no.
+- Los modelos tienen más detalle:
+  - **Espada:** acanaladura, doble filo, punta, gavilanes, gema, empuñadura con vendas y pomo.
+  - **Katana:** hoja curva con filo claro, habaki y punta (kissaki).
+  - **Hacha:** cabeza con barba, filo claro, contrapunta y mango con vendas.
+  - **Guadaña:** hoja curva en cuatro tramos con filo.
+  - **Alabarda:** hoja con punta, filo claro y borla.
+  - **Bastón:** anillos dorados y tres garras que sujetan un orbe con halo.

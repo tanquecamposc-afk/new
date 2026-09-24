@@ -4228,20 +4228,44 @@ function buildCharacter(cfg){
     wg.position.set(17 * s, 30 * s, 6 * s);
     const kind = cfg.weaponKind || "sword";
     if (kind === "axe"){
-      const haft = P0(4.5, 42, 4.5, "#6b4a2a"); haft.position.y = 21 * s; wg.add(haft);
-      const head2 = P0(17, 15, 6, cfg.weapon); head2.position.set(-5*s, 38*s, 0); wg.add(head2);
+      const haft = P0(4.5, 44, 4.5, "#5a3c22"); haft.position.y = 20 * s; wg.add(haft);
+      for (const y of [4, 9, 14]){ const wrap = P0(5.4, 2, 5.4, "#2a1a10"); wrap.position.y = y * s; wg.add(wrap); }
+      const pom = P0(6.5, 4, 6.5, "#3a3a44"); pom.position.y = -2 * s; wg.add(pom);
+      const collar = P0(6.5, 9, 6.5, "#3a3a44"); collar.position.y = 38 * s; wg.add(collar);
+      const head2 = P0(15, 17, 3.4, cfg.weapon); head2.position.set(-9*s, 38*s, 0); wg.add(head2);
+      const beard = P0(6, 9, 3, cfg.weapon); beard.position.set(-15*s, 30*s, 0); beard.rotation.z = .5; wg.add(beard);
+      const bit = P0(2.4, 22, 3.6, "#f4f6fa", { ...opts, emissive:"#9aa8c0", emissiveIntensity:.35 }); bit.position.set(-17*s, 37*s, 0); wg.add(bit);
+      const back = P0(8, 6, 3, "#3a3a44"); back.position.set(6*s, 39*s, 0); back.rotation.z = -.4; wg.add(back);
+      const top = P0(3, 8, 3, "#3a3a44"); top.position.y = 46 * s; wg.add(top);
     } else if (kind === "scythe"){
-      const haft = P0(4.5, 50, 4.5, "#4a3a2a"); haft.position.y = 25 * s; wg.add(haft);
-      const blade = P0(26, 5, 5, cfg.weapon); blade.position.set(10*s, 48*s, 0); wg.add(blade);
-      const tip = P0(5, 13, 5, cfg.weapon); tip.position.set(21*s, 40*s, 0); wg.add(tip);
+      const haft = P0(4, 54, 4, "#2e2420"); haft.position.y = 25 * s; wg.add(haft);
+      for (const y of [8, 30]){ const band = P0(5.2, 2.4, 5.2, "#8a7a5a"); band.position.y = y * s; wg.add(band); }
+      const sock = P0(7, 7, 7, "#1a1418"); sock.position.y = 50 * s; wg.add(sock);
+      const segs = [[6, 51, 10, .12], [14, 50, 10, -.18], [21, 46, 9, -.55], [26, 40, 8, -.95]];
+      for (const [x, y, w, rz] of segs){
+        const b = P0(w, 4.5, 2.6, cfg.weapon); b.position.set(x*s, y*s, 0); b.rotation.z = rz; wg.add(b);
+        const e = P0(w, 1.4, 2.8, "#f2f4fa", { ...opts, emissive:"#a8b4d0", emissiveIntensity:.35 });
+        e.position.set(x*s, (y - 2.6)*s, 0); e.rotation.z = rz; wg.add(e); }
     } else if (kind === "staff"){
-      const haft = P0(4, 50, 4, "#6b5a3a"); haft.position.y = 25 * s; wg.add(haft);
-      const orb = new THREE.Mesh(new THREE.SphereGeometry(7*s, 12, 10),
-        mat(cfg.weapon, { ...opts, emissive: cfg.weapon, emissiveIntensity:.8 }));
-      orb.position.y = 52 * s; wg.add(orb);
+      const haft = P0(4, 50, 4, "#5a4a30"); haft.position.y = 25 * s; wg.add(haft);
+      for (const y of [6, 20, 34]){ const band = P0(5, 2, 5, "#c9a33a"); band.position.y = y * s; wg.add(band); }
+      const foot = P0(5, 5, 5, "#c9a33a"); foot.position.y = -1 * s; wg.add(foot);
+      const orb = new THREE.Mesh(new THREE.SphereGeometry(6.5*s, 14, 12),
+        mat(cfg.weapon, { ...opts, emissive: cfg.weapon, emissiveIntensity:1.1 }));
+      orb.position.y = 56 * s; wg.add(orb);
+      for (let i = 0; i < 3; i++){ const a = i / 3 * Math.PI * 2;
+        const prong = P0(2, 13, 2, "#c9a33a"); prong.position.set(Math.cos(a) * 6 * s, 54 * s, Math.sin(a) * 6 * s);
+        prong.rotation.set(Math.sin(a) * .35, 0, -Math.cos(a) * .35); wg.add(prong); }
+      const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTexture(cfg.weapon), transparent:true, depthWrite:false, blending:THREE.AdditiveBlending, opacity:.6 }));
+      halo.scale.set(34 * s, 34 * s, 1); halo.position.y = 56 * s; wg.add(halo);
     } else if (kind === "polearm"){
-      const haft = P0(4.5, 46, 4.5, "#5a4a32"); haft.position.y = 23 * s; wg.add(haft);
-      const tip = P0(6, 15, 6, cfg.weapon); tip.position.y = 50 * s; wg.add(tip);
+      const haft = P0(4, 50, 4, "#3a2a22"); haft.position.y = 23 * s; wg.add(haft);
+      for (const y of [4, 16, 40]){ const band = P0(5, 2, 5, "#8a7a5a"); band.position.y = y * s; wg.add(band); }
+      const collar = P0(6, 5, 6, "#2a2a30"); collar.position.y = 47 * s; wg.add(collar);
+      const tip = P0(6.5, 18, 2.6, cfg.weapon); tip.position.y = 58 * s; wg.add(tip);
+      const pt = P0(4, 6, 2.4, cfg.weapon); pt.position.y = 69 * s; pt.rotation.z = .78; wg.add(pt);
+      const edge = P0(1.4, 18, 2.8, "#f2f4fa", { ...opts, emissive:"#a8b4d0", emissiveIntensity:.35 }); edge.position.set(3.3*s, 58*s, 0); wg.add(edge);
+      const tassel = P0(3, 8, 3, "#b02a2a"); tassel.position.set(0, 43 * s, 0); wg.add(tassel);
     } else if (kind === "dagger"){
       const gl = cfg.weaponGlow ? { ...opts, emissive:cfg.weapon, emissiveIntensity:1.3 } : opts;
       const blade = P0(4.5, 20, 2, cfg.weapon, gl); blade.position.y = 18 * s; wg.add(blade);
@@ -4249,8 +4273,14 @@ function buildCharacter(cfg){
       const guard = P0(10, 2.5, 4, "#3a3040"); guard.position.y = 7.5 * s; wg.add(guard);
       const grip = P0(3.5, 8, 3.5, "#2a2018"); grip.position.y = 2 * s; wg.add(grip);
     } else if (kind === "katana"){
-      const blade = P0(3, 44, 1.4, cfg.weapon, { ...opts, emissive:cfg.weapon, emissiveIntensity:.25 });
-      blade.position.set(0, 30 * s, .8 * s); blade.rotation.x = .05; wg.add(blade);
+      // hoja curva en tres tramos con filo claro y hamon
+      for (const [y, h, z, rx] of [[18, 16, 0, 0], [33, 16, .9, .06], [47, 14, 2.4, .14]]){
+        const b = P0(3, h, 1.4, cfg.weapon, { ...opts, emissive:cfg.weapon, emissiveIntensity:.25 });
+        b.position.set(0, y * s, z * s); b.rotation.x = rx; wg.add(b);
+        const ed = P0(1, h, 1.6, "#ffffff", { ...opts, emissive:"#cfe0ff", emissiveIntensity:.5 });
+        ed.position.set(1.6 * s, y * s, z * s); ed.rotation.x = rx; wg.add(ed); }
+      const kis = P0(2.4, 5, 1.4, "#ffffff"); kis.position.set(.4 * s, 56 * s, 3.6 * s); kis.rotation.set(.2, 0, -.5); wg.add(kis);
+      const habaki = P0(4, 3, 2.4, "#c9a33a"); habaki.position.y = 10.5 * s; wg.add(habaki);
       const tsuba = P0(8, 1.8, 8, "#c9a33a"); tsuba.position.y = 8 * s; wg.add(tsuba);
       const tsuka = P0(3.2, 13, 3.2, "#1a1426"); tsuka.position.y = 1 * s; wg.add(tsuka);
       for (let i = 0; i < 3; i++){ const wr = P0(3.6, 1, 3.6, "#e8e0cc"); wr.position.y = (-3 + i * 4) * s; wg.add(wr); }
@@ -4303,8 +4333,19 @@ function buildCharacter(cfg){
       const edge = P0(2.2, 40, 1.4, glowing ? "#ffffff" : cfg.weapon,
                       { ...opts, emissive: glowing ? cfg.weapon : 0, emissiveIntensity: glowing ? 1.8 : 0 });
       edge.position.set(2.6 * s, 31 * s, 0); wg.add(edge);
+      const tipS = P0(4.4, 7, 2.6, cfg.weapon, bopts); tipS.position.y = 50 * s; tipS.rotation.z = .78; tipS.scale.y = .8; wg.add(tipS);
+      const fuller = P0(1.6, 28, 3.4, glowing ? "#ffffff" : "#6a7488", glowing ? { ...opts, emissive:cfg.weapon, emissiveIntensity:2 } : opts);
+      fuller.position.y = 28 * s; wg.add(fuller);
+      const edgeL = P0(1.4, 40, 1.4, glowing ? "#ffffff" : "#f4f6fa", { ...opts, emissive: glowing ? cfg.weapon : "#8a96b0", emissiveIntensity: glowing ? 1.8 : .25 });
+      edgeL.position.set(-2.6 * s, 31 * s, 0); wg.add(edgeL);
       const guard = P0(16, 4, 7, glowing ? "#1b1230" : "#8a7a5a"); guard.position.y = 11 * s; wg.add(guard);
+      for (const sd of [-1, 1]){ const q = P0(4, 5, 5, glowing ? cfg.weapon : "#c9a33a", glowing ? { ...opts, emissive:cfg.weapon, emissiveIntensity:1 } : opts);
+        q.position.set(sd * 9 * s, 12.5 * s, 0); wg.add(q); }
+      const gem = P0(3, 3, 7.6, glowing ? "#ffffff" : "#c0392b", { ...opts, emissive: glowing ? cfg.weapon : "#c0392b", emissiveIntensity:.8 });
+      gem.position.y = 11 * s; wg.add(gem);
       const grip = P0(5, 11, 5, glowing ? "#0e0a1c" : "#4a3a2a"); grip.position.y = 3 * s; wg.add(grip);
+      for (const y of [0, 3, 6]){ const wr = P0(5.6, 1.2, 5.6, glowing ? "#2a1e44" : "#2a1a10"); wr.position.y = y * s; wg.add(wr); }
+      const pom = P0(6, 5, 6, glowing ? "#1b1230" : "#8a7a5a"); pom.position.y = -4.5 * s; wg.add(pom);
       if (glowing){
         const halo = new THREE.Sprite(new THREE.SpriteMaterial({
           map: glowTexture(cfg.weapon), transparent:true, depthWrite:false,
@@ -4316,6 +4357,12 @@ function buildCharacter(cfg){
     g.arms[1].add(wg);
     wg.position.set(0, -26 * s, 4 * s);
     g.weapon = wg;
+    // postura de carga: las pesadas descansan sobre el hombro, las hojas en
+    // guardia hacia delante y las astas de pie como un bastón
+    g.carry = WEAPON_CARRY[kind] || WEAPON_CARRY.sword;
+    g.userData.slashCol = cfg.weaponGlow || kind === "monarchblade" ? cfg.weapon : "#dfe8ff";
+    g.weaponTip = new THREE.Object3D();
+    g.weaponTip.position.y = (WEAPON_REACH[kind] || 40) * s; wg.add(g.weaponTip);
   }
   addFeatures(detail, cfg, s, opts);
   g.scaleRef = s;
@@ -4328,6 +4375,23 @@ function buildCharacter(cfg){
   return g;
 }
 // Anima un personaje: paso, brazos, golpe, rebote y giro.
+const WEAPON_CARRY = {
+  monarchblade:{ arm:-.55, x:-.05, z:-.2, sway:.14 },
+  greatsword:  { arm:-.55, x:-.05, z:-.2, sway:.14 },
+  hammer:      { arm:-.5,  x:-.1,  z:-.2, sway:.14 },
+  axe:         { arm:-.5,  x:-.1,  z:-.2, sway:.16 },
+  scythe:      { arm:-.45, x:-.05, z:-.25, sway:.14 },
+  polearm:     { arm:-.3,  x:.28,  z:.05, sway:.2 },
+  spear:       { arm:-.3,  x:.28,  z:.05, sway:.2 },
+  staff:       { arm:-.25, x:.22,  z:.04, sway:.22 },
+  sword:       { arm:-.3,  x:1.25, z:-.1, sway:.3 },
+  katana:      { arm:-.3,  x:1.3,  z:-.12,sway:.3 },
+  dagger:      { arm:-.2,  x:1.9,  z:0,   sway:.4 },
+  claw:        { arm:-.15, x:.2,   z:0,   sway:.45 },
+  orb:         { arm:-.35, x:0,    z:0,   sway:.35 },
+};
+const WEAPON_REACH = { monarchblade:82, greatsword:64, hammer:44, axe:44, scythe:50, polearm:56, spear:72,
+  staff:56, sword:48, katana:52, dagger:32, claw:22, orb:16 };
 function poseCharacter(v, o){
   const s = v.scaleRef, t = now();
   const U = v.userData.pose || (v.userData.pose = { lean:0, twist:0, sway:0, seed:Math.random() * 6.28 });
@@ -4358,8 +4422,19 @@ function poseCharacter(v, o){
   } else if (atk > 0){
     v.arms[1].rotation.x = -2.1 + (1 - atk) * .7;
     twistT = atk * .25;
+  } else if (v.carry && !air){
+    const C = v.carry;
+    v.arms[1].rotation.x = C.arm + (dash ? .5 : 0) + walk * .55 * C.sway * mv - breathe * .03;
+    v.arms[1].rotation.z = armOpen + .08;
   } else {
     v.arms[1].rotation.x = air ? -1.1 : dash ? .9 : walk * .55 * mv + (mv ? 0 : -breathe * .04);
+  }
+  // el arma pasa de la postura de carga a alinearse con el brazo al golpear
+  if (v.weapon && v.carry){
+    const fight = o.swing > 0 || atk > 0, C = v.carry, k = fight ? .5 : .14;
+    const tx = fight ? 0 : C.x + (mv ? Math.sin(o.step) * .05 : breathe * .02), tz = fight ? 0 : C.z;
+    v.weapon.rotation.x += (tx - v.weapon.rotation.x) * k;
+    v.weapon.rotation.z += (tz - v.weapon.rotation.z) * k;
   }
   // cuerpo entero: se inclina al correr y al hacer dash, se echa atrás al encajar
   const leanT = (v.hunch || 0) + mv * .12 + dash * .32 - hurt * .35 + (atk > 0 && !o.swing ? .12 : 0);
@@ -5894,6 +5969,32 @@ function updateCamera(dt){
   sunLight.target.updateMatrixWorld();
 }
 // Avance continuo del golpe del jugador (0..1) para animar carga, tajo y recogida.
+/* Estela del tajo: destellos aditivos que siguen la punta del arma mientras
+   corta y se apagan en unas décimas. Se reutilizan siempre los mismos. */
+const SLASH = { pool:[], i:0, col:null };
+const _tipV = new THREE.Vector3();
+function updateSlashTrail(pv, cutting, dt){
+  if (!pv.weaponTip) return;
+  const col = pv.userData.slashCol || "#ffffff";
+  if (SLASH.col !== col || SLASH.scene !== scene){
+    for (const sp of SLASH.pool){ sp.parent?.remove(sp); sp.material.dispose(); }
+    SLASH.pool = []; SLASH.col = col; SLASH.scene = scene;
+    for (let k = 0; k < 18; k++){
+      const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTexture(col), transparent:true,
+        depthWrite:false, blending:THREE.AdditiveBlending, opacity:0 }));
+      sp.visible = false; scene.add(sp); SLASH.pool.push(sp);
+    }
+  }
+  if (cutting){
+    pv.weaponTip.getWorldPosition(_tipV);
+    const sp = SLASH.pool[SLASH.i = (SLASH.i + 1) % SLASH.pool.length];
+    sp.position.copy(_tipV); sp.visible = true; sp.material.opacity = .9; sp.scale.set(34, 34, 1);
+  }
+  for (const sp of SLASH.pool) if (sp.visible){
+    sp.material.opacity -= dt * 3.2; sp.scale.multiplyScalar(1 - dt * 1.5);
+    if (sp.material.opacity <= 0) sp.visible = false;
+  }
+}
 function playerSwing(){
   const d = player.atkDef;
   if (!d || player.phase === "idle") return 0;
@@ -5950,6 +6051,7 @@ function render(dt){
     hurt: clamp(player.hurt / 0.22, 0, 1),
   });
   pv.visible = player.dead <= 0 || Math.sin(now() * 20) > 0;
+  updateSlashTrail(pv, playerSwing() > .3 && playerSwing() < .8, dt);
   if (player.mounted){                                  // sentado a horcajadas
     pv.legs[0].rotation.set(-1.25, 0, -.35); pv.legs[1].rotation.set(-1.25, 0, .35);
   } else { pv.legs[0].rotation.z = 0; pv.legs[1].rotation.z = 0; }
