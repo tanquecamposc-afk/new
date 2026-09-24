@@ -391,6 +391,13 @@ canvas#stage{position:absolute;inset:0;width:100%;height:100%;display:block;touc
 .rcell small{font:600 9.5px var(--f-ui);color:var(--ink);text-align:center;line-height:1.1;padding:0 3px}
 .rcell.win{transform:scale(1.08);box-shadow:0 0 0 3px #fff,0 0 24px var(--rc);animation:mythGlow 1.4s ease-in-out infinite}
 .reelmark{position:absolute;z-index:2;left:50%;top:0;bottom:0;width:3px;margin-left:-1.5px;background:var(--gold);box-shadow:0 0 12px var(--gold)}
+.xslots{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:9px}
+.xslot{display:grid;gap:6px;padding:11px;border-radius:14px;border:2px solid var(--monarch);background:linear-gradient(180deg,rgba(187,140,255,.14),rgba(11,19,45,.9))}
+.xslot.empty{place-items:center;min-height:86px;border-style:dashed;border-color:var(--line);color:var(--dim);background:rgba(11,19,45,.5)}
+.xslot.done{border-color:var(--cash);animation:mythGlow 1.6s ease-in-out infinite}
+.xslot b{font-size:13px} .xslot small{font-size:11px;color:var(--muted)}
+.chip em{font-style:normal;font-size:10px;opacity:.75;margin-left:3px}
+.item.inf{border-color:#6ef0ff;background:linear-gradient(90deg,rgba(110,240,255,.14),rgba(11,19,45,.85))}
 /* --- accesibilidad de menús --- */
 .card.myth{border-color:var(--rc,#ff3af0);animation:mythGlow 2s ease-in-out infinite}
 @keyframes mythGlow{50%{box-shadow:0 0 22px color-mix(in srgb,var(--tc) 70%,transparent),0 0 0 2px #fff3}}
@@ -902,6 +909,9 @@ const RUNES = {
   Gems:  { id:"Gems",   name:"Runa de Gemas", desc:"Gemas +10%",       glyph:"💎" },
   Time:  { id:"Time",   name:"Runa de Tiempo",desc:"Temporizador +60s",glyph:"⏱" },
   Cash:  { id:"Cash",   name:"Runa de Oro",   desc:"Oro +10%",         glyph:"💵" },
+  // exclusivas del modo infinito; cada copia da un bono permanente (hasta 10)
+  Void:     { id:"Void",     name:"Runa del Vacío",     desc:"+5% de daño por copia (máx. 10) · solo en el modo infinito, oleada 20+", glyph:"🕳" },
+  Eternity: { id:"Eternity", name:"Runa de la Eternidad",desc:"+5% de gemas por copia (máx. 10) · solo en el modo infinito, oleada 30+", glyph:"♾" },
 };
 
 /* ---------------------------- FORMULA SERVICE ----------------------------- */
@@ -1116,6 +1126,90 @@ function syncMountDrops(dt){
   }
   mountDrops = mountDrops.filter(d => d.t > 0);
 }
+/* ------------------------------ expediciones ------------------------------
+   Mandas sombras de tu colección a misiones que duran horas reales. Corren con
+   el reloj del sistema, así que avanzan aunque cierres el juego. Las que
+   aparecen dependen de tu nivel y de tu mejor DPS, y las difíciles pagan más. */
+const EXPEDITIONS = [
+  { id:"patrol",  name:"Patrulla por Seúl",           hours:1,  lvl:1,    dps:0,     need:60,     cash:3000,  gems:20,    tickets:0, rune:0,   icon:"🏙" },
+  { id:"sewers",  name:"Alcantarillas de Hongdae",    hours:2,  lvl:15,   dps:500,   need:800,    cash:4e4,   gems:80,    tickets:1, rune:0,   icon:"🐍" },
+  { id:"temple",  name:"Ruinas del Templo",            hours:3,  lvl:45,   dps:2e4,   need:2e4,    cash:1.2e6, gems:400,   tickets:1, rune:.05, icon:"🗿" },
+  { id:"prison",  name:"Pasillos de la Cárcel",        hours:4,  lvl:90,   dps:8e5,   need:6e5,    cash:6e7,   gems:1800,  tickets:2, rune:.1,  icon:"⛓" },
+  { id:"glacier", name:"Glaciar de los Orcos",         hours:6,  lvl:180,  dps:3e7,   need:2e7,    cash:4e9,   gems:9000,  tickets:2, rune:.15, icon:"🧊" },
+  { id:"redgate", name:"Más allá de la Puerta Roja",   hours:8,  lvl:320,  dps:1e9,   need:8e8,    cash:3e11,  gems:4e4,   tickets:3, rune:.2,  icon:"🟥" },
+  { id:"hive",    name:"Nido de la Reina de Jeju",     hours:10, lvl:480,  dps:5e10,  need:4e10,   cash:2e13,  gems:2e5,   tickets:4, rune:.25, icon:"🐜" },
+  { id:"castle",  name:"Asedio al Castillo del Demonio",hours:12,lvl:780,  dps:5e13,  need:4e13,   cash:3e16,  gems:3e6,   tickets:5, rune:.35, icon:"🏰" },
+  { id:"rift",    name:"Grieta de los Monarcas",       hours:16, lvl:1100, dps:1e17,  need:8e16,   cash:5e19,  gems:6e7,   tickets:6, rune:.5,  icon:"🌑" },
+];
+const EXP_SLOTS = 3, EXP_MAX_SHADOWS = 4;
+const expUnlocked = x => P.level >= x.lvl && (P.bestDps || 0) >= x.dps;
+const expPower = uuids => uuids.reduce((a, u) => a + (P.shadows[u] ? shadowDmgOf(P.shadows[u]) : 0), 0);
+const expChance = (x, uuids) => clamp(.35 + .65 * expPower(uuids) / x.need, .35, 1);
+function startExpedition(id, uuids){
+  const x = EXPEDITIONS.find(e => e.id === id);
+  if (!x || !expUnlocked(x)) return note("Esa expedición aún no está disponible", "--hp");
+  if ((P.expeditions || []).length >= EXP_SLOTS) return note("No tienes huecos de expedición libres", "--hp");
+  uuids = uuids.filter(u => P.shadows[u] && !P.shadows[u].busy).slice(0, EXP_MAX_SHADOWS);
+  if (!uuids.length) return note("Elige al menos una sombra", "--hp");
+  const t0 = Date.now();
+  const ex = { uid:uid(), id, uuids, start:t0, end:t0 + x.hours * 3600e3, chance:expChance(x, uuids) };
+  for (const u of uuids){ P.shadows[u].busy = ex.uid; const i = P.squad.indexOf(u); if (i >= 0) P.squad.splice(i, 1); }
+  P.expeditions.push(ex); rebuildSquad(); save();
+  note(`${x.name}: ${uuids.length} sombra(s) en marcha · vuelven en ${x.hours} h`, "--monarch");
+}
+function claimExpedition(euid){
+  const ex = (P.expeditions || []).find(e => e.uid === euid);
+  if (!ex || Date.now() < ex.end) return;
+  const x = EXPEDITIONS.find(e => e.id === ex.id);
+  const ok = Math.random() < ex.chance, k = ok ? 1 : .3;
+  // la recompensa crece con tu nivel para que las viejas no se queden en nada
+  const lv = 1 + P.level * .01;
+  const cash = Math.floor(x.cash * k * lv), gems = Math.floor(x.gems * k * lv), tickets = ok ? x.tickets : 0;
+  P.cash += cash; P.gems += gems; P.tickets += tickets;
+  let extra = "";
+  if (ok && Math.random() < x.rune){
+    const r = ["Health", "Gems", "Cash", "Time"][Math.floor(Math.random() * 4)];
+    P.runes[r] = (P.runes[r] || 0) + 1; extra = ` · ${RUNES[r].name}`;
+  }
+  for (const u of ex.uuids) if (P.shadows[u]) delete P.shadows[u].busy;
+  P.expeditions = P.expeditions.filter(e => e !== ex);
+  banner(ok ? "EXPEDICIÓN CON ÉXITO" : "EXPEDICIÓN FALLIDA", ok ? "#5ce8a6" : "#ff8d97");
+  note(`${x.name}: +${fmt(cash)} oro · +${fmt(gems)} gemas${tickets ? ` · +${tickets} tickets` : ""}${extra}`, ok ? "--cash" : "--dim");
+  save(); dirty = true;
+}
+const hms = ms => { const t = Math.max(0, Math.ceil(ms / 1000)); const h = Math.floor(t / 3600), m = Math.floor(t % 3600 / 60), s2 = t % 60;
+  return h ? `${h} h ${String(m).padStart(2, "0")} min` : `${m}:${String(s2).padStart(2, "0")}`; };
+let expSel = null, expPick = [];
+function panelExpeditions(nav){
+  const nowT = Date.now(), act = P.expeditions || [];
+  const slots = Array.from({ length:EXP_SLOTS }, (_, i) => {
+    const ex = act[i];
+    if (!ex) return `<div class="xslot empty"><span>Hueco libre</span></div>`;
+    const x = EXPEDITIONS.find(e => e.id === ex.id), done = nowT >= ex.end, pct = clamp((nowT - ex.start) / (ex.end - ex.start), 0, 1) * 100;
+    return `<div class="xslot ${done ? "done" : ""}"><b>${x.icon} ${x.name}</b>
+      <small>${ex.uuids.map(u => P.shadows[u]?.name || "?").join(" · ")} · éxito ${Math.round(ex.chance * 100)}%</small>
+      <div class="sbar xp"><i style="width:${pct}%" data-xbar="${ex.uid}"></i><em data-xleft="${ex.uid}">${done ? "¡Lista!" : hms(ex.end - nowT)}</em></div>
+      ${done ? `<button class="btn green" data-xclaim="${ex.uid}">Recoger recompensa</button>` : ""}</div>`;
+  }).join("");
+  const list = EXPEDITIONS.map(x => { const un = expUnlocked(x);
+    return `<button class="card ${expSel === x.id ? "sel" : ""} ${un ? "" : "lock"}" data-xsel="${x.id}" style="--tc:${un ? "var(--monarch)" : "var(--line)"}">
+      <span class="cg">${un ? x.icon : "🔒"}</span><b>${x.name}</b><small>${x.hours} h · ${un ? `+${fmt(x.cash * (1 + P.level * .01))} oro` : `Nv ${x.lvl} · ${fmt(x.dps)} DPS`}</small></button>`; }).join("");
+  let pick = "";
+  const x = EXPEDITIONS.find(e => e.id === expSel);
+  if (x && expUnlocked(x)){
+    const free = Object.values(P.shadows).filter(sh => !sh.busy).sort((a, b) => shadowDmgOf(b) - shadowDmgOf(a)).slice(0, 40);
+    expPick = expPick.filter(u => free.some(f => f.uuid === u));
+    pick = `<div class="sheet" style="--tc:var(--monarch)"><b class="sname">${x.icon} ${x.name}</b>
+      <span class="lv">${x.hours} horas · poder recomendado ${fmt(x.need)} · recompensa ${fmt(x.cash * (1 + P.level * .01))} oro, ${fmt(x.gems * (1 + P.level * .01))} gemas${x.tickets ? `, ${x.tickets} tickets` : ""}${x.rune ? `, ${Math.round(x.rune * 100)}% de runa` : ""}</span>
+      <div class="chips">${free.map(sh => `<button class="chip ${expPick.includes(sh.uuid) ? "sel" : ""}" data-xpick="${sh.uuid}">${SHADOWS[sh.id]?.glyph || "👤"} ${sh.name} <em>${mobRank(sh.rank).r}</em></button>`).join("") || `<span class="hint">No tienes sombras libres.</span>`}</div>
+      <div class="sbar"><small>Poder</small><i style="width:${clamp(expPower(expPick) / x.need, 0, 1) * 100}%"></i><em>${fmt(expPower(expPick))} / ${fmt(x.need)} · éxito ${Math.round(expChance(x, expPick) * 100)}%</em></div>
+      <div class="sact"><button class="btn" data-xauto="1">Elegir las mejores</button>
+        <button class="btn green" data-xgo="${x.id}" ${expPick.length && act.length < EXP_SLOTS ? "" : "disabled"}>Enviar (${expPick.length}/${EXP_MAX_SHADOWS})</button></div></div>`;
+  }
+  return shell("Expediciones", nav + `<div class="xslots">${slots}</div>
+    <h3 class="subh">Destinos · tu mejor DPS: ${fmt(P.bestDps || 0)}</h3><div class="cards">${list}</div>${pick}
+    <p class="kbhelp">Las sombras enviadas salen del escuadrón hasta que vuelvan. El tiempo corre aunque cierres el juego. Si fallan, traen solo un 30% del botín.</p>`);
+}
 function newProfile(){
   return {
     schema:9, level:1, xp:0, rank:"E", rebirths:0,
@@ -1129,6 +1223,7 @@ function newProfile(){
     kills:0, arisen:0, dungeonsCleared:0, ledger:[], tutorial:0, chapter:0,
     pos:null,
     look:{ ...LOOK_DEFAULT }, lookSeen:[], rankKills:{}, mounts:["ShadowWolf"], mount:"ShadowWolf", lore:[],
+    expeditions:[], bestDps:0, infBest:0,
   };
 }
 function reconcile(d){
@@ -1161,6 +1256,9 @@ function reconcile(d){
   }
   if (!Array.isArray(p.lookSeen)) p.lookSeen = [];
   if (!Array.isArray(p.lore)) p.lore = [];
+  if (!Array.isArray(p.expeditions)) p.expeditions = [];
+  p.expeditions = p.expeditions.filter(e => e && EXPEDITIONS.some(x => x.id === e.id) && Array.isArray(e.uuids) && Number.isFinite(e.end));
+  p.bestDps = Math.max(0, Number(p.bestDps) || 0); p.infBest = Math.max(0, Math.round(Number(p.infBest) || 0));
   if (typeof p.rankKills !== "object" || !p.rankKills) p.rankKills = {};
   if (!Array.isArray(p.mounts)) p.mounts = ["ShadowWolf"];
   p.mounts = p.mounts.filter(m => MOUNTS[m]); if (!p.mounts.includes("ShadowWolf")) p.mounts.unshift("ShadowWolf");
@@ -1221,7 +1319,8 @@ const talentLv    = id => P.talents?.[id] || 0;
 const blessed     = () => (P.blessing || 0) > now();
 const baseDamage  = () => FORMULA.physicalDamage(weaponDmg(), P.stats.STR) * (blessed() ? 1.4 : 1) * (formActive() ? FORM.dmg : 1)
   * (1 + rankMult() + classBonus("dmg") + talentLv("power") * 0.08)
-  * (1 + P.level * 0.012) * (now() < (player.dmgBuffUntil || 0) ? 1.3 : 1) * (1 + lookBonus("dmg"));
+  * (1 + P.level * 0.012) * (now() < (player.dmgBuffUntil || 0) ? 1.3 : 1) * (1 + lookBonus("dmg"))
+  * (1 + Math.min(10, P.runes?.Void || 0) * .05);
 const relicBonus  = effect => Object.keys(P.relics).reduce((a, id) => a + (RELICS[id]?.effect === effect ? RELICS[id].value : 0), 0);
 const shadowMult  = () => 1 + relicBonus("shadowDmg") + classBonus("shadow") + talentLv("legion") * 0.15;
 const ariseLuck   = () => rankOf(P.rank).luck + P.stats.INT * 0.35 + relicBonus("ariseLuck")
@@ -1783,26 +1882,58 @@ const DUNGEON_MODES = {
   RedGate:       { name:"Puerta Roja",      rooms:4, mult:3.2,  reward:3.0, color:"#ff5d6c" },
   DoubleDungeon: { name:"Double Dungeon",   rooms:2, mult:5.0,  reward:6.0, color:"#bb8cff" },
   BossRush:      { name:"Boss Rush",        rooms:5, mult:2.4,  reward:4.0, color:"#ffd24a" },
+  // oleadas sin fin: cada una más dura; cuanto más lejos, más runas
+  Infinite:      { name:"Modo Infinito",    rooms:1e9, mult:1.0, reward:1.0, color:"#6ef0ff", infinite:true },
 };
+// Probabilidad de runa al superar una oleada del modo infinito
+function infRuneChance(w){ return w < 10 ? 0 : w < 20 ? .08 : w < 30 ? .18 : w < 50 ? .32 : .5; }
+function infWaveClear(d){
+  const w = d.room;
+  const gems = Math.floor(8 * w * (1 + P.level * .01)), cash = Math.floor(d.isle.enemy.hp * .05 * w);
+  P.gems += gems; P.cash += cash;
+  d.timer = Math.min(d.timer + 35, 120);
+  if (Math.random() < infRuneChance(w)){
+    // las runas del Vacío y de la Eternidad solo salen aquí, y solo desde lejos
+    const pool = w >= 30 ? ["Void", "Eternity", "Health", "Gems", "Cash", "Time"] : w >= 20 ? ["Void", "Health", "Gems", "Cash", "Time"] : ["Health", "Gems", "Cash", "Time"];
+    const r = pool[Math.floor(Math.random() * pool.length)];
+    P.runes[r] = (P.runes[r] || 0) + 1;
+    banner(`RUNA: ${RUNES[r].name.toUpperCase()}`, "#5ae2ff"); note(`${RUNES[r].glyph} ${RUNES[r].name} (oleada ${w})`, "--gem");
+  }
+  if (w > (P.infBest || 0)){ P.infBest = w; if (w % 5 === 0) note(`Nuevo récord infinito: oleada ${w}`, "--gold"); }
+  save();
+}
+function endInfinite(reason){
+  const d = dungeon; if (!d || !d.mode.infinite || d.ended) return;
+  d.ended = true;
+  const w = d.room - 1;
+  banner(`FIN · OLEADA ${w}`, "#6ef0ff");
+  note(`${reason} · récord: oleada ${P.infBest || w}`, "--gem");
+  save();
+  setTimeout(() => { if (dungeon === d) exitDungeon(); }, 2600);
+}
 let returnPoint = null;   // sitio del mundo abierto al que se vuelve al salir de una mazmorra
 function makeDungeon(modeId){
   const mode = DUNGEON_MODES[modeId] || DUNGEON_MODES.Standard;
   const isle = isleOf(P.island);
   const seed = Math.floor(Math.random() * 1e9);
-  const runeKeys = Object.keys(RUNES).filter(() => Math.random() < 0.4);
+  const runeKeys = mode.infinite ? [] : ["Health", "Gems", "Time", "Cash"].filter(() => Math.random() < 0.4);
   const d = {
     id:uid(), modeId, mode, seed, isle, room:1, rooms:mode.rooms, phase:"Wave",
-    timeLimit:180, timer:180 + (runeKeys.includes("Time") ? 60 : 0),
+    timeLimit:180, timer:mode.infinite ? 90 : 180 + (runeKeys.includes("Time") ? 60 : 0),
     runes:Object.fromEntries(runeKeys.map(k => [k, true])),
     bossState:null, cleared:false, rewardTx:null,
   };
   d.enemyDef = kind => {
     const base = kind === "brute" ? isle.brute : isle.enemy;
-    const hpMult = mode.mult * (d.runes.Health ? 0.95 : 1) * (d.room * 0.9);
-    return { ...base, name:`${base.name} de la Puerta`, hp:base.hp*hpMult, dmg:base.dmg*mode.mult,
+    const hpMult = mode.infinite ? Math.pow(1.13, d.room - 1) * .8 : mode.mult * (d.runes.Health ? 0.95 : 1) * (d.room * 0.9);
+    return { ...base, name:`${base.name} de la Puerta`, hp:base.hp*hpMult, dmg:base.dmg*(mode.infinite ? Math.pow(1.07, d.room - 1) : mode.mult),
              lvl:Math.floor(base.lvl*1.2), isle:isle.id, shadow:isle.shadow, kind, r: kind === "brute" ? 24 : 18 };
   };
   d.onKill = e => {
+    if (mode.infinite){
+      if (!enemies.length && !d.ended){ infWaveClear(d); d.room++; later(1.2, () => { if (dungeon === d && !d.ended) nextRoom(); }); }
+      return;
+    }
     if (e.boss){
       if (d.room >= d.rooms){ clearDungeon(); }
       else { d.room++; nextRoom(); }
@@ -1815,6 +1946,19 @@ function makeDungeon(modeId){
 function nextRoom(){
   const d = dungeon; if (!d) return;
   enemies = []; corpses = [];
+  if (d.mode.infinite){
+    // cada 10 oleadas un jefe acompañado; si no, una horda que crece
+    d.phase = "Wave";
+    banner(d.room % 10 === 0 ? `OLEADA ${d.room} · JEFE` : `OLEADA ${d.room}`, d.mode.color);
+    const n = Math.min(12, 4 + Math.floor(d.room / 3));
+    for (let i = 0; i < n; i++) spawnEnemy(d.enemyDef(i % 3 === 0 ? "brute" : "normal"));
+    if (d.room % 10 === 0){
+      const b = d.isle.boss;
+      spawnEnemy({ name:`${b.name} del Abismo`, lvl:b.lvl + d.room, hp:b.hp * .15 * Math.pow(1.13, d.room - 1), dmg:b.dmg * .3 * Math.pow(1.07, d.room - 1),
+        shadow:b.shadow, isle:d.isle.id, kind:"boss", r:38, boss:true, color:"#6ef0ff" }, player.x, player.y - 380);
+    }
+    return;
+  }
   d.phase = d.room >= d.rooms ? "Boss" : "Wave";
   banner(d.phase === "Boss" ? "SALA DEL JEFE" : `SALA ${d.room} / ${d.rooms}`, d.mode.color);
   if (d.phase === "Boss") spawnBoss();
@@ -1837,7 +1981,7 @@ function clearDungeon(){
   const d = dungeon; if (!d || d.cleared) return;
   d.cleared = true; d.rewardTx = uid();
   P.dungeonsCleared++;
-  const gems = Math.floor(400 * d.mode.reward * (1 + P.level*0.02) * (d.runes.Gems ? 1.1 : 1));
+  const gems = Math.floor(400 * d.mode.reward * (1 + P.level*0.02) * (d.runes.Gems ? 1.1 : 1) * (1 + Math.min(10, P.runes?.Eternity || 0) * .05));
   const cash = Math.floor(d.isle.enemy.hp * 0.4 * d.mode.reward * (d.runes.Cash ? 1.1 : 1));
   P.gems += gems; P.cash += cash; P.tickets += 1;
   // Recompensas especiales por modo
@@ -1849,7 +1993,7 @@ function clearDungeon(){
   }
   const relic = Object.values(RELICS).find(r => r.isle === d.isle.id && !P.relics[r.id]);
   if (relic && Math.random() < 0.5){ P.relics[relic.id] = true; note(`Reliquia: ${relic.name}`, "--gold"); }
-  const rune = Object.keys(RUNES)[Math.floor(Math.random()*4)];
+  const rune = ["Health", "Gems", "Time", "Cash"][Math.floor(Math.random()*4)];
   P.runes[rune] = (P.runes[rune] || 0) + 1;
   banner("MAZMORRA COMPLETADA", "#5ce8a6");
   note(`+${fmt(gems)} gemas · +${fmt(cash)} oro · +1 ticket`, "--cash");
@@ -2617,7 +2761,9 @@ function update(dt){
   // ---- portal / mazmorra
   if (dungeon){
     dungeon.timer -= dt;
-    if (dungeon.timer <= 0 && !dungeon.cleared){ note("Tiempo agotado", "--hp"); exitDungeon(); }
+    if (dungeon.timer <= 0 && !dungeon.cleared){
+      if (dungeon.mode.infinite) endInfinite("Tiempo agotado"); else { note("Tiempo agotado", "--hp"); exitDungeon(); }
+    }
   } else {
     if (!portal){
       portalT -= dt;
@@ -2658,7 +2804,8 @@ function update(dt){
 
   // ---- DPS
   player.dps.since += dt;
-  if (player.dps.since >= 1){ player.dps.shown = player.dps.total / player.dps.since; player.dps.total = 0; player.dps.since = 0; }
+  if (player.dps.since >= 1){ player.dps.shown = player.dps.total / player.dps.since; player.dps.total = 0; player.dps.since = 0;
+    if (player.dps.shown > (P.bestDps || 0)){ P.bestDps = player.dps.shown; } }
 
   tutState.moved += Math.hypot(player.x - (tutState.lastX || player.x), player.y - (tutState.lastY || player.y));
   tutState.lastX = player.x; tutState.lastY = player.y;
@@ -2706,6 +2853,7 @@ function hitPlayer(raw){
   camImpulse(0.25);
   if (player.hp <= 0){
     player.hp = 0; player.dead = 2.4; SFX.death();
+    if (dungeon?.mode.infinite) endInfinite("Has caído");
     note("Has caído · tus sombras te cubren", "--hp");
     burst(player.x, player.y, 34, "#ff4d61", 30);
   }
@@ -5821,7 +5969,25 @@ const $ = id => document.getElementById(id);
 const modal = $("modal");
 let panelKind = null, panelTab = "Weapons";
 
+let expNoticeT = 0;
+function syncExpeditions(){
+  const nowT = Date.now();
+  if (panelKind === "shadows" && panelTab === "Exped"){
+    for (const ex of P.expeditions || []){
+      const l = modal.querySelector(`[data-xleft="${ex.uid}"]`), b = modal.querySelector(`[data-xbar="${ex.uid}"]`);
+      if (l) l.textContent = nowT >= ex.end ? "¡Lista!" : hms(ex.end - nowT);
+      if (b) b.style.width = `${clamp((nowT - ex.start) / (ex.end - ex.start), 0, 1) * 100}%`;
+      if (nowT >= ex.end && !modal.querySelector(`[data-xclaim="${ex.uid}"]`)) renderPanel();
+    }
+  }
+  if (nowT > expNoticeT){
+    expNoticeT = nowT + 60e3;
+    const ready = (P.expeditions || []).filter(e => nowT >= e.end).length;
+    if (ready) note(`${ready} expedición(es) de vuelta · menú Sombras › Expediciones`, "--monarch");
+  }
+}
 function syncHud(){
+  syncExpeditions();
   $("rank").textContent = P.rank;
   $("title").textContent = P.title;
   $("lvl").textContent = `Nv ${P.level}`;
@@ -5833,7 +5999,8 @@ function syncHud(){
   const nx = dungeon ? null : distanceToNextRegion();
   $("nextRegion").textContent = nx ? `${nx.next.name} a ${Math.round(nx.dist)} m` : "";
   $("portal").textContent = dungeon
-    ? `Sala ${dungeon.room}/${dungeon.rooms} · ${Math.max(0,Math.floor(dungeon.timer))}s`
+    ? (dungeon.mode.infinite ? `Oleada ${dungeon.room} · récord ${P.infBest || 0} · ${Math.max(0,Math.floor(dungeon.timer))}s`
+                             : `Sala ${dungeon.room}/${dungeon.rooms} · ${Math.max(0,Math.floor(dungeon.timer))}s`)
     : portal ? `Portal ${portal.mode.name} · ${Math.ceil(60-portal.t)}s`
     : `Portal en ${Math.floor(portalT/60)}:${String(Math.floor(portalT%60)).padStart(2,"0")}`;
 
@@ -5899,7 +6066,7 @@ function syncHud(){
 function openPanel(kind){
   SFX.ui();
   closeArise(); panelKind = kind;
-  panelTab = kind === "items" ? "Relics" : kind === "stats" ? "Stats" : "Weapons";
+  panelTab = kind === "items" ? "Relics" : kind === "stats" ? "Stats" : kind === "shadows" ? "Army" : "Weapons";
   panelEnter = true;
   if (kind === "shop") shopSel = null;
   if (kind === "shadows") shadowShown = 60;
@@ -6099,6 +6266,9 @@ function selectShadowFast(uuid){
   mountPreview();
 }
 function panelShadows(){
+  const snav = `<div class="tabs"><button class="tab ${panelTab !== "Exped" ? "sel" : ""}" data-tab="Army">Ejército</button>
+    <button class="tab ${panelTab === "Exped" ? "sel" : ""}" data-tab="Exped">Expediciones${(P.expeditions || []).some(e => Date.now() >= e.end) ? " ✅" : (P.expeditions || []).length ? ` (${P.expeditions.length})` : ""}</button></div>`;
+  if (panelTab === "Exped") return panelExpeditions(snav);
   const C = shadowStats();
   let list = Object.values(P.shadows);
   if (shadowFilter === "eq") list = list.filter(s => P.squad.includes(s.uuid));
@@ -6128,7 +6298,7 @@ function panelShadows(){
       <i class="cbar" style="width:${Math.max(6, D(s) / C.maxD * 100)}%"></i></button>`;
   }).join("") + (total > shadowShown ? `<button class="chip more" data-more="1">Ver ${Math.min(60, total - shadowShown)} más (${total - shadowShown} restantes)</button>` : "");
   const side = shadowSideHTML();
-  return shell(`Sombras · ${P.squad.length}/${squadCap()}`, `
+  return shell(`Sombras · ${P.squad.length}/${squadCap()}`, snav + `
     <div class="inv"><aside class="inv-side">${side}</aside>
       <div class="inv-main">${filters}
         <div class="cards" role="listbox" aria-label="Sombras">${cards || `<p class="hint">Ninguna sombra con este filtro.</p>`}</div></div></div>
@@ -6304,7 +6474,9 @@ function panelMap(){
         : h.role === "entrenar" ? "Entrena por gemas y da puntos de atributo" : "Consulta el índice de sombras"} · anillo ${h.ring}</span></span>
       <button class="btn green" data-hunter="${h.id}">Ir</button></div>`).join("")}</div>`;
   } else {
-    right = `<div class="list">${Object.entries(DUNGEON_MODES).map(([id, m]) => `<div class="item"><span class="g">🌀</span>
+    right = `<div class="list">${Object.entries(DUNGEON_MODES).map(([id, m]) => m.infinite ? `<div class="item inf"><span class="g">♾</span>
+      <span class="meta"><b>${m.name}</b><span>Oleadas sin fin, cada una más dura · jefe cada 10 · runas desde la oleada 10 (exclusivas desde la 20 y la 30) · récord: oleada ${P.infBest || 0}</span></span>
+      <button class="btn" data-dungeon="Infinite">Entrar gratis</button></div>` : `<div class="item"><span class="g">🌀</span>
       <span class="meta"><b>${m.name}</b><span>${m.rooms} salas · enemigos ×${m.mult} · recompensa ×${m.reward}${id === "DoubleDungeon" ? " · otorga el Despertar" : ""}</span></span>
       <button class="btn violet" data-dungeon="${id}" ${P.tickets > 0 || id === "Standard" ? "" : "disabled"}>${id === "Standard" ? "Entrar" : "1 🎟"}</button></div>`).join("")}</div>`;
   }
@@ -6624,6 +6796,12 @@ modal.addEventListener("click", e => {
   }
   if (t.dataset.mstep){ mapStep(+t.dataset.mstep); return; }
   if (t.dataset.more){ shadowShown += 60; renderPanel(); return; }
+  if (t.dataset.xsel){ expSel = t.dataset.xsel; expPick = []; SFX.ui(); renderPanel(); return; }
+  if (t.dataset.xpick){ const u = t.dataset.xpick, i = expPick.indexOf(u);
+    if (i >= 0) expPick.splice(i, 1); else if (expPick.length < EXP_MAX_SHADOWS) expPick.push(u); SFX.ui(); renderPanel(); return; }
+  if (t.dataset.xauto){ expPick = Object.values(P.shadows).filter(sh => !sh.busy).sort((a, b) => shadowDmgOf(b) - shadowDmgOf(a)).slice(0, EXP_MAX_SHADOWS).map(sh => sh.uuid); renderPanel(); return; }
+  if (t.dataset.xgo){ startExpedition(t.dataset.xgo, expPick); expPick = []; renderPanel(); return; }
+  if (t.dataset.xclaim){ claimExpedition(t.dataset.xclaim); renderPanel(); return; }
   if (t.dataset.look){
     const [cat, id] = t.dataset.look.split("|"), o = LOOKS[cat].find(x => x.id === id);
     if (!needMet(o.need)){ note(`Se desbloquea con: ${needText(o.need)}`, "--dim"); return; }
@@ -6716,6 +6894,7 @@ modal.addEventListener("click", e => {
   }
   if (t.dataset.equip){
     const u = t.dataset.equip, i = P.squad.indexOf(u);
+    if (i < 0 && P.shadows[u]?.busy) return note("Esa sombra está de expedición", "--hp");
     if (i >= 0) P.squad.splice(i, 1);
     else if (P.squad.length < squadCap()) P.squad.push(u);
     else return note("Escuadrón lleno", "--hp");
@@ -6781,7 +6960,7 @@ modal.addEventListener("click", e => {
   }
   if (t.dataset.dungeon){
     const id = t.dataset.dungeon;
-    if (id !== "Standard"){
+    if (id !== "Standard" && id !== "Infinite"){
       if (P.tickets < 1) return note("Necesitas un ticket", "--hp");
       P.tickets--;
     }

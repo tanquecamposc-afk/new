@@ -386,6 +386,13 @@ canvas#stage{position:absolute;inset:0;width:100%;height:100%;display:block;touc
 .rcell small{font:600 9.5px var(--f-ui);color:var(--ink);text-align:center;line-height:1.1;padding:0 3px}
 .rcell.win{transform:scale(1.08);box-shadow:0 0 0 3px #fff,0 0 24px var(--rc);animation:mythGlow 1.4s ease-in-out infinite}
 .reelmark{position:absolute;z-index:2;left:50%;top:0;bottom:0;width:3px;margin-left:-1.5px;background:var(--gold);box-shadow:0 0 12px var(--gold)}
+.xslots{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:9px}
+.xslot{display:grid;gap:6px;padding:11px;border-radius:14px;border:2px solid var(--monarch);background:linear-gradient(180deg,rgba(187,140,255,.14),rgba(11,19,45,.9))}
+.xslot.empty{place-items:center;min-height:86px;border-style:dashed;border-color:var(--line);color:var(--dim);background:rgba(11,19,45,.5)}
+.xslot.done{border-color:var(--cash);animation:mythGlow 1.6s ease-in-out infinite}
+.xslot b{font-size:13px} .xslot small{font-size:11px;color:var(--muted)}
+.chip em{font-style:normal;font-size:10px;opacity:.75;margin-left:3px}
+.item.inf{border-color:#6ef0ff;background:linear-gradient(90deg,rgba(110,240,255,.14),rgba(11,19,45,.85))}
 /* --- accesibilidad de menús --- */
 .card.myth{border-color:var(--rc,#ff3af0);animation:mythGlow 2s ease-in-out infinite}
 @keyframes mythGlow{50%{box-shadow:0 0 22px color-mix(in srgb,var(--tc) 70%,transparent),0 0 0 2px #fff3}}

@@ -482,6 +482,51 @@ se listan debajo.
   Leyendas» y «Monarca Eterno».
 - En la Historia los capítulos cerrados muestran de nuevo su diálogo.
 
+### Expediciones de sombras
+
+En **Sombras › Expediciones** mandas hasta 4 sombras de tu colección a una
+misión que dura horas reales. Tienes 3 huecos a la vez. El tiempo corre con
+el reloj del sistema, así que la expedición avanza aunque cierres el juego.
+Mientras tanto, esas sombras salen del escuadrón.
+
+Los destinos se desbloquean según tu **nivel** y tu **mejor DPS**. Los
+difíciles duran más y pagan mucho más:
+
+| Destino | Duración | Requisito |
+|---|---|---|
+| Patrulla por Seúl | 1 h | nivel 1 |
+| Alcantarillas de Hongdae | 2 h | nivel 15 · 500 DPS |
+| Ruinas del Templo | 3 h | nivel 45 · 20K DPS |
+| Pasillos de la Cárcel | 4 h | nivel 90 · 800K DPS |
+| Glaciar de los Orcos | 6 h | nivel 180 · 30M DPS |
+| Más allá de la Puerta Roja | 8 h | nivel 320 · 1B DPS |
+| Nido de la Reina de Jeju | 10 h | nivel 480 · 50B DPS |
+| Asedio al Castillo del Demonio | 12 h | nivel 780 · 50T DPS |
+| Grieta de los Monarcas | 16 h | nivel 1100 · 100Qa DPS |
+
+La probabilidad de éxito depende del poder de las sombras que mandes frente al
+recomendado (entre 35% y 100%). Si fallan, traen solo el 30% del botín. Las
+recompensas son oro, gemas, tickets y, en las altas, runas, y crecen con tu
+nivel. Cuando una vuelve, un aviso te lo recuerda.
+
+### Modo infinito
+
+Desde el mapa (pestaña Puertas), gratis y sin ticket. Son oleadas sin fin:
+cada una tiene un 13% más de vida y un 7% más de daño, y cada 10 aparece un
+jefe del Abismo. Superar una oleada da oro, gemas y 35 s más de tiempo (máximo
+120). La partida acaba si caes o se agota el tiempo, y se guarda tu récord.
+
+| Oleada | Probabilidad de runa al superarla | Runas posibles |
+|---|---|---|
+| 1–9 | 0% | — |
+| 10–19 | 8% | las cuatro normales |
+| 20–29 | 18% | + **Runa del Vacío** |
+| 30–49 | 32% | + **Runa de la Eternidad** |
+| 50+ | 50% | todas |
+
+Las dos runas exclusivas dan un bono permanente por copia, hasta 10: el Vacío
+da +5% de daño y la Eternidad +5% de gemas.
+
 ### Mazmorras
 
 Cada 110 segundos se abre un portal cerca de ti. Cuatro modos:
