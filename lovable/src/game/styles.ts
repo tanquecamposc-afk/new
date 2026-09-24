@@ -393,6 +393,19 @@ canvas#stage{position:absolute;inset:0;width:100%;height:100%;display:block;touc
 .xslot b{font-size:13px} .xslot small{font-size:11px;color:var(--muted)}
 .chip em{font-style:normal;font-size:10px;opacity:.75;margin-left:3px}
 .item.inf{border-color:#6ef0ff;background:linear-gradient(90deg,rgba(110,240,255,.14),rgba(11,19,45,.85))}
+.daily{display:grid;gap:12px}
+.dhead{display:flex;gap:12px}
+.dhead > div{flex:1;padding:10px 12px;border-radius:12px;border:2px solid var(--gold);background:rgba(255,210,74,.08)}
+.dhead small{display:block;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.dhead b{font:800 22px var(--f-display);color:var(--gold)}
+.dgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(104px,1fr));gap:8px}
+.dcell{display:grid;gap:3px;justify-items:center;text-align:center;padding:10px 6px;border-radius:14px;border:2px solid var(--line);background:rgba(11,19,45,.8)}
+.dcell small{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.dcell .dic{font-size:26px}
+.dcell b{font-size:11.5px} .dcell em{font-style:normal;font-size:10px;color:var(--muted)}
+.dcell.done{opacity:.55;border-color:var(--cash)}
+.dcell.cur{border-color:var(--gold);box-shadow:0 0 18px rgba(255,210,74,.45);animation:glowp 1.4s ease-in-out infinite}
+.dcell.big{grid-column:span 2;background:linear-gradient(180deg,rgba(255,210,74,.18),rgba(11,19,45,.9))}
 /* --- accesibilidad de menús --- */
 .card.myth{border-color:var(--rc,#ff3af0);animation:mythGlow 2s ease-in-out infinite}
 @keyframes mythGlow{50%{box-shadow:0 0 22px color-mix(in srgb,var(--tc) 70%,transparent),0 0 0 2px #fff3}}

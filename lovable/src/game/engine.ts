@@ -611,6 +611,57 @@ function panelExpeditions(nav){
     <h3 class="subh">Destinos · tu mejor DPS: ${fmt(P.bestDps || 0)}</h3><div class="cards">${list}</div>${pick}
     <p class="kbhelp">Las sombras enviadas salen del escuadrón hasta que vuelvan. El tiempo corre aunque cierres el juego. Si fallan, traen solo un 30% del botín.</p>`);
 }
+/* --------------------------- recompensas diarias --------------------------
+   Un calendario de 7 días: se reclama una vez por día natural. Si pasas un día
+   entero sin entrar, la racha vuelve al día 1. Crece con tu nivel. */
+const DAILY = [
+  { cash:1, gems:1,   tickets:0, label:"Oro y gemas" },
+  { cash:1.5, gems:1.5, tickets:0, label:"Más oro y gemas" },
+  { cash:0, gems:3,   tickets:1, label:"Gemas y 1 ticket" },
+  { cash:3, gems:2,   tickets:0, label:"Mucho oro" },
+  { cash:2, gems:4,   tickets:1, label:"Gemas y 1 ticket" },
+  { cash:5, gems:5,   tickets:1, label:"Gran cofre" },
+  { cash:10, gems:12, tickets:3, label:"Cofre del Monarca", big:true },
+];
+const dayKey = (t = Date.now()) => { const d = new Date(t); return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`; };
+const dayNum = key => { const [y, m, d] = key.split("-").map(Number); return Math.round(new Date(y, m - 1, d).getTime() / 864e5); };
+function dailyState(){
+  const D = P.daily || (P.daily = { last:null, streak:0 });
+  const today = dayKey();
+  const gap = D.last ? dayNum(today) - dayNum(D.last) : 99;
+  const can = D.last !== today;
+  const next = !D.last || gap > 1 ? 0 : D.streak % 7;             // racha rota → día 1
+  return { can, next, streak: gap > 1 ? 0 : D.streak, broke: D.last && gap > 1 };
+}
+function dailyAmount(i){
+  const r = DAILY[i], lv = 1 + P.level * .05;
+  return { cash: Math.floor(2500 * r.cash * lv * (1 + P.level * .02)), gems: Math.floor(25 * r.gems * lv), tickets: r.tickets };
+}
+function claimDaily(){
+  const st = dailyState(); if (!st.can) return;
+  const a = dailyAmount(st.next);
+  P.cash += a.cash; P.gems += a.gems; P.tickets += a.tickets;
+  P.daily = { last:dayKey(), streak: st.next + 1 + (st.streak >= 7 && st.next === 0 ? 0 : 0) };
+  P.daily.total = (P.daily.total || 0) + 1;
+  banner(`DÍA ${st.next + 1} RECLAMADO`, DAILY[st.next].big ? "#ffd24a" : "#5ce8a6");
+  note(`+${fmt(a.cash)} oro · +${fmt(a.gems)} gemas${a.tickets ? ` · +${a.tickets} ticket` : ""}`, "--cash");
+  SFX.levelUp?.(); save(); dirty = true;
+}
+function panelDaily(nav){
+  const st = dailyState();
+  const cells = DAILY.map((r, i) => { const a = dailyAmount(i), done = i < st.next || (!st.can && i === st.next - 0 && false), cur = i === st.next;
+    const claimed = st.can ? i < st.next : i < ((P.daily.streak - 1) % 7) + 1;
+    return `<div class="dcell ${claimed ? "done" : ""} ${cur && st.can ? "cur" : ""} ${r.big ? "big" : ""}">
+      <small>Día ${i + 1}</small><span class="dic">${claimed ? "✔" : r.big ? "👑" : r.tickets ? "🎟" : "🎁"}</span>
+      <b>${r.label}</b><em>${a.cash ? fmt(a.cash) + " oro" : ""}${a.cash && a.gems ? " · " : ""}${fmt(a.gems)} gemas${a.tickets ? ` · ${a.tickets} 🎟` : ""}</em></div>`; }).join("");
+  return shell("Recompensas diarias", nav + `<div class="daily">
+      <div class="dhead"><div><small>Racha</small><b>${st.can ? st.next : ((P.daily.streak - 1) % 7) + 1} / 7</b></div>
+        <div><small>Días reclamados</small><b>${P.daily?.total || 0}</b></div></div>
+      ${st.broke ? `<p class="codemsg bad">Te saltaste un día: la racha empieza de nuevo.</p>` : ""}
+      <div class="dgrid">${cells}</div>
+      <button class="btn gold big-w" id="daily-btn" ${st.can ? "" : "disabled"}>${st.can ? `Reclamar día ${st.next + 1}` : "Vuelve mañana"}</button>
+      <p class="kbhelp">Se reclama una vez por día. Las recompensas crecen con tu nivel; el día 7 da el Cofre del Monarca y la racha vuelve a empezar.</p></div>`);
+}
 function newProfile(){
   return {
     schema:9, level:1, xp:0, rank:"E", rebirths:0,
@@ -624,7 +675,7 @@ function newProfile(){
     kills:0, arisen:0, dungeonsCleared:0, ledger:[], tutorial:0, chapter:0,
     pos:null,
     look:{ ...LOOK_DEFAULT }, lookSeen:[], rankKills:{}, mounts:["ShadowWolf"], mount:"ShadowWolf", lore:[],
-    expeditions:[], bestDps:0, infBest:0,
+    expeditions:[], bestDps:0, infBest:0, daily:{ last:null, streak:0, total:0 },
   };
 }
 function reconcile(d){
@@ -658,6 +709,7 @@ function reconcile(d){
   if (!Array.isArray(p.lookSeen)) p.lookSeen = [];
   if (!Array.isArray(p.lore)) p.lore = [];
   if (!Array.isArray(p.expeditions)) p.expeditions = [];
+  if (typeof p.daily !== "object" || !p.daily) p.daily = { last:null, streak:0, total:0 };
   p.expeditions = p.expeditions.filter(e => e && EXPEDITIONS.some(x => x.id === e.id) && Array.isArray(e.uuids) && Number.isFinite(e.end));
   p.bestDps = Math.max(0, Number(p.bestDps) || 0); p.infBest = Math.max(0, Math.round(Number(p.infBest) || 0));
   if (typeof p.rankKills !== "object" || !p.rankKills) p.rankKills = {};
@@ -5752,9 +5804,10 @@ function panelShop(){
 }
 let beastSel = null;
 function panelItems(){
-  const tabs = ["Story","Relics","Runes","Index","Beasts"];
+  const tabs = ["Daily","Story","Relics","Runes","Index","Beasts"];
   const nav = `<div class="tabs">${tabs.map(t => `<button class="tab ${panelTab===t?"sel":""}" data-tab="${t}">${
-    t === "Story" ? "Historia" : t === "Relics" ? "Reliquias" : t === "Runes" ? "Runas" : t === "Index" ? "Índice" : "Bestiario"}</button>`).join("")}</div>`;
+    t === "Daily" ? `Diario${dailyState().can ? " 🎁" : ""}` : t === "Story" ? "Historia" : t === "Relics" ? "Reliquias" : t === "Runes" ? "Runas" : t === "Index" ? "Índice" : "Bestiario"}</button>`).join("")}</div>`;
+  if (panelTab === "Daily") return panelDaily(nav);
   const card = (o, i) => `<div class="card ${o.locked ? "lock" : ""}" style="--tc:${o.tc};--i:${i}"><span class="cg">${o.g}</span>
     <b>${o.name}</b><small>${o.sub}</small>${o.power ? `<p class="cpow">${o.power}</p>` : ""}${o.tag ? `<i class="ctier">${o.tag}</i>` : ""}</div>`;
   if (panelTab === "Beasts"){
@@ -6285,6 +6338,7 @@ modal.addEventListener("click", e => {
   }
   if (t.id === "code-go"){ e.preventDefault(); redeemCode(); return; }
   if (t.id === "spin-btn"){ spinClass(); return; }
+  if (t.id === "daily-btn"){ claimDaily(); renderPanel(); return; }
   if (t.dataset.code){
     const c = t.dataset.code;
     if (P.codes[c]) return;
@@ -6731,6 +6785,9 @@ function start(restored){
     SFX.ui();
     startEl.style.display = "none";
     paused = false;
+    // recompensa del día: se abre sola si está disponible (tras el tutorial)
+    setTimeout(() => { if (dailyState().can && P.tutorial >= 2 && !panelKind){ openPanel("items"); panelTab = "Daily"; renderPanel(); } }, 1500);
+    if (dailyState().can) setTimeout(() => note("🎁 Tienes una recompensa diaria · Inventario › Diario", "--gold"), 2500);
     if (P.chapter === 0 && P.kills === 0){
       showDialog("SISTEMA", "Seúl, año 2026. Las puertas siguen abriéndose y alguien tiene que entrar. Eres el cazador más débil de la humanidad… por ahora.", "Capítulo 1");
     }

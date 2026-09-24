@@ -463,6 +463,14 @@ les baja la vida (70%, 40%, 15%), y cada fase abre un movimiento nuevo:
 Cada aviso suena antes de caer, y el cambio de fase tiene su propio golpe de
 cámara y de sonido.
 
+### Recompensas diarias
+
+En **Inventario › Diario** hay un calendario de 7 días: se reclama una vez por
+día natural. Si pasas un día entero sin entrar, la racha vuelve al día 1. Las
+recompensas crecen con tu nivel: oro y gemas, tickets los días 3, 5 y 6, y el
+día 7 el **Cofre del Monarca** (10× oro, 12× gemas y 3 tickets). Al entrar al
+juego, si hay una recompensa pendiente, el calendario se abre solo.
+
 ### Códigos
 
 Hay **diez** códigos y no aparecen en el juego: hay que escribirlos en
