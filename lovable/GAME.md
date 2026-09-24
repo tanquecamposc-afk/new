@@ -134,6 +134,9 @@ multiplica su daño y su vida (ver «Rangos de los enemigos»). El
 escuadrón empieza con 6 huecos y crece 2 por cada rango que subes, hasta 16. Al
 extraer una sombra mejor que la peor del escuadrón, el cambio es automático.
 
+El botón **⚡ Equipar las mejores** del menú de sombras llena el escuadrón
+con las de más daño que no estén de expedición.
+
 ### Las sombras en combate
 
 Cada sombra es una máquina de estados: `IDLE_FOLLOW` (formación en anillos

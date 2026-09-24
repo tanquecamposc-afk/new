@@ -6404,7 +6404,7 @@ function panelShadows(){
   if (!P.shadows[shadowSel]) shadowSel = (list[0] || Object.values(P.shadows)[0])?.uuid || null;
   const tiersHave = MOB_RANKS.map(m => m.r).filter(r => Object.values(P.shadows).some(s => (s.rank || "E") === r));
   const chip = (attr, val, cur, label) => `<button class="chip ${cur === val ? "sel" : ""}" data-${attr}="${val}">${label}</button>`;
-  const filters = `<div class="chips">${chip("sfilter", "all", shadowFilter, "Todas")}${chip("sfilter", "eq", shadowFilter, "Equipadas")}${
+  const filters = `<div class="chips"><button class="btn gold" data-autoequip="1" title="Llena el escuadrón con las sombras de más daño">⚡ Equipar las mejores</button>${chip("sfilter", "all", shadowFilter, "Todas")}${chip("sfilter", "eq", shadowFilter, "Equipadas")}${
     tiersHave.map(t => chip("sfilter", t, shadowFilter, t)).join("")}<span class="grow"></span>${
     chip("ssort", "dmg", shadowSort, "Daño")}${chip("ssort", "lvl", shadowSort, "Rango E–S")}${chip("ssort", "tier", shadowSort, "Clase")}</div>`;
   const total = list.length;
@@ -6922,6 +6922,14 @@ modal.addEventListener("click", e => {
   }
   if (t.dataset.mstep){ mapStep(+t.dataset.mstep); return; }
   if (t.dataset.more){ shadowShown += 60; renderPanel(); return; }
+  if (t.dataset.autoequip){
+    // las de más daño que no estén de expedición, hasta llenar el escuadrón
+    const best = Object.values(P.shadows).filter(x => !x.busy).sort((a, b) => shadowDmgOf(b) - shadowDmgOf(a)).slice(0, squadCap()).map(x => x.uuid);
+    const same = best.length === P.squad.length && best.every(u => P.squad.includes(u));
+    P.squad = best; rebuildSquad(); save(); dirty = true; SFX.ui();
+    note(same ? "Ya llevas las mejores sombras" : `Escuadrón: ${best.length} sombras más fuertes equipadas`, "--monarch");
+    renderPanel(); return;
+  }
   if (t.dataset.xsel){ expSel = t.dataset.xsel; expPick = []; SFX.ui(); renderPanel(); return; }
   if (t.dataset.xpick){ const u = t.dataset.xpick, i = expPick.indexOf(u);
     if (i >= 0) expPick.splice(i, 1); else if (expPick.length < EXP_MAX_SHADOWS) expPick.push(u); SFX.ui(); renderPanel(); return; }
