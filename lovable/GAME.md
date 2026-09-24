@@ -869,3 +869,16 @@ aserciones de prueba, que fue el punto de partida del diseño.
   - Cartel con `[Rango] Nombre` (✦ si es shiny).
   - Contorno del color de su rango desde A.
   - Humo negro-violeta que les sube de los hombros siempre, y más al moverse.
+
+## Islas avanzadas y el Trono del Rey de las Sombras
+- **Dominio del Monarca Bestia:** tiene su propio bioma, `savage`: una sabana roja con colinas, árboles planos, costillares gigantes, tótems con ojos encendidos y rocas rojas, en vez de la ciudad que tenía. Sus bestias ahora tienen melena, cola y cristales.
+- **Trono del Rey de las Sombras:** tiene el bioma `throne`:
+  - suelo de losas de obsidiana con grietas de energía y círculos de runas;
+  - agujas con vetas violetas, braseros de fuego de sombra, columnas rotas, cristales flotantes y estatuas arrodilladas;
+  - en el cielo (`syncRealmFx`): una corona gigante que gira con su halo, ocho columnas de sombra en el horizonte, relámpagos que iluminan el suelo y ceniza violeta que cae;
+  - las nubes y las islas flotantes se ocultan aquí;
+  - música propia, más lenta y grave.
+- **Enemigos del Trono:** los Soberanos Caídos tienen tonos violeta más oscuros, corona, capa y hombreras encendidas.
+- **Enemigos del anillo 8 en adelante:** llevan una llama de su color detrás y sueltan brasas.
+- **Resto de islas avanzadas:** hay chispas de su color flotando en el aire.
+- **Partículas:** pueden tener gravedad propia (`g`), así la ceniza cae despacio y el humo sube.

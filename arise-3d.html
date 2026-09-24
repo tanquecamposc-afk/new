@@ -860,9 +860,9 @@ const ISLANDS = [
   { id:"Japan",        name:"Puerta de Shinjuku",          level:650,  theme:"royal",   enemy:{ name:"Cazador Caído",    lvl:660,  hp:1.2e12,  dmg:1.8e9 }, brute:{ name:"Demonio Menor",    lvl:700, hp:5.4e12,dmg:4.1e9 }, boss:{ name:"Rey Demonio Baran",     lvl:740,  hp:7.6e13,  dmg:1.1e10,shadow:"Bellion" },  shadow:"Beru",     weapons:["ShinjukuKatana","DemonNaginata"] },
   { id:"DemonCastle",  name:"Castillo del Demonio",        level:800,  theme:"dragon",  enemy:{ name:"Guardia Demoníaco",lvl:812,  hp:3.9e13,  dmg:5.8e10 },brute:{ name:"Caballero Infernal",lvl:860,hp:1.7e14,dmg:1.3e11 },boss:{ name:"Kamish",                lvl:900,  hp:2.4e15,  dmg:3.6e11,shadow:"Kamish" },   shadow:"Bellion",  weapons:["BaranLongsword","KamishWrath"] },
   { id:"IceMonarch",   name:"Dominio del Monarca de Hielo",level:950,  theme:"storm",   enemy:{ name:"Soldado de Escarcha",lvl:962,hp:1.3e15,  dmg:1.8e12 },brute:{ name:"Heraldo Glacial",  lvl:1000,hp:5.6e15,dmg:4.1e12 },boss:{ name:"Monarca de Hielo",      lvl:1040, hp:7.8e16,  dmg:1.2e13,shadow:"Kamish" },   shadow:"Kaisel",   weapons:["GlacialEdge","FrostScepter"] },
-  { id:"BeastMonarch", name:"Dominio del Monarca Bestia",  level:1100, theme:"guild",   enemy:{ name:"Bestia Menor",     lvl:1112, hp:4.1e16,  dmg:5.9e13 },brute:{ name:"Bestia Mayor",     lvl:1150,hp:1.8e17,dmg:1.3e14 },boss:{ name:"Monarca de las Bestias",lvl:1190, hp:2.5e18,  dmg:3.8e14,shadow:"Antares" },  shadow:"Antares",  weapons:["MonarchClaw","BeastMaul"] },
+  { id:"BeastMonarch", name:"Dominio del Monarca Bestia",  level:1100, theme:"savage",  enemy:{ name:"Bestia Menor",     lvl:1112, hp:4.1e16,  dmg:5.9e13 },brute:{ name:"Bestia Mayor",     lvl:1150,hp:1.8e17,dmg:1.3e14 },boss:{ name:"Monarca de las Bestias",lvl:1190, hp:2.5e18,  dmg:3.8e14,shadow:"Antares" },  shadow:"Antares",  weapons:["MonarchClaw","BeastMaul"] },
   { id:"Architect",    name:"Sala del Arquitecto",         level:1250, theme:"mystic",  enemy:{ name:"Eco del Sistema",  lvl:1262, hp:1.3e18,  dmg:1.9e15 },brute:{ name:"Centinela Rúnico", lvl:1300,hp:5.8e18,dmg:4.2e15 },boss:{ name:"El Arquitecto",         lvl:1340, hp:8.1e19,  dmg:1.2e16,shadow:"Architect" },shadow:"Architect",weapons:["ArchitectStaff","LivingRune"] },
-  { id:"ShadowRealm",  name:"Trono del Rey de las Sombras",level:1400, theme:"cyber",   enemy:{ name:"Soberano Caído",   lvl:1412, hp:4.2e19,  dmg:6.1e16 },brute:{ name:"General Monarca",  lvl:1450,hp:1.8e20,dmg:1.4e17 },boss:{ name:"Antares",               lvl:1490, hp:2.6e21,  dmg:3.9e17,shadow:"Ashborn" },  shadow:"Ashborn",  weapons:["ShadowDaggers","AshbornBlade"] },
+  { id:"ShadowRealm",  name:"Trono del Rey de las Sombras",level:1400, theme:"throne",  enemy:{ name:"Soberano Caído",   lvl:1412, hp:4.2e19,  dmg:6.1e16 },brute:{ name:"General Monarca",  lvl:1450,hp:1.8e20,dmg:1.4e17 },boss:{ name:"Antares",               lvl:1490, hp:2.6e21,  dmg:3.9e17,shadow:"Ashborn" },  shadow:"Ashborn",  weapons:["ShadowDaggers","AshbornBlade"] },
 ];
 const isleOf = id => ISLANDS.find(i => i.id === id) || ISLANDS[0];
 /* Una sombra por cada enemigo: el común y el bruto de cada región dan su
@@ -3077,7 +3077,7 @@ function update(dt){
     p.life -= dt;
     if (!p.ghost){
       p.x += p.vx*dt; p.y += p.vy*dt; p.h += p.vh*dt;
-      p.vx *= 0.94; p.vy *= 0.94; p.vh -= 620*dt;
+      p.vx *= 0.94; p.vy *= 0.94; p.vh -= 620 * (p.g ?? 1) * dt;
       if (p.h < 2){ p.h = 2; p.vh *= -0.35; }
     }
   }
@@ -4555,6 +4555,8 @@ const THEMES = {
   guild:   { g1:"#6fae7a", g2:"#619e6c", road:"#3a4456", curb:"#e0e8f2", sky1:"#2f7fc8", sky2:"#dff0ff", fog:"#c6e3f7", amp:0, sun:"#fff6e0", prop:"guild" },
   mystic:  { g1:"#3e3a72", g2:"#363165", sky1:"#161046", sky2:"#6b4cc0", fog:"#3b2f78", amp:18, sun:"#c0a8ff", prop:"mystic" },
   storm:   { g1:"#5a6b7a", g2:"#4e5e6c", sky1:"#2a3348", sky2:"#8fa4bc", fog:"#61758c", amp:32, sun:"#dfe8f5", prop:"storm" },
+  savage:  { g1:"#5a3a26", g2:"#4e3220", sky1:"#5a1a0e", sky2:"#e8904a", fog:"#8a4a28", amp:42, sun:"#ffc890", prop:"savage" },
+  throne:  { g1:"#141026", g2:"#100c1f", sky1:"#05020f", sky2:"#3a0f5a", fog:"#1a0a2e", amp:14, sun:"#c9a0ff", prop:"throne" },
   dungeon: { g1:"#3c2c52", g2:"#342749", sky1:"#0e0820", sky2:"#5a1f42", fog:"#2a1533", amp:8,  sun:"#ff9ab0", prop:"dungeon" },
 };
 /* Una paleta sonora por bioma, igual que hay una paleta de color. Los números
@@ -4573,6 +4575,8 @@ const MUSIC_SCALES = {
   storm:   { tempo:2.8, acordes:[[98,147,185],[87,131,165],[104,156,196],[98,147,185]],    melodia:[392,466,554,622] },
   mystic:  { tempo:3.0, acordes:[[92,138,185],[104,156,208],[87,131,175],[98,147,196]],    melodia:[370,440,554,659] },
   cyber:   { tempo:2.2, acordes:[[87,131,175],[98,147,196],[78,117,156],[87,131,175]],     melodia:[349,415,523,622] },
+  savage:  { tempo:1.8, acordes:[[73,110,147],[65,98,131],[82,123,165],[73,110,147]],     melodia:[294,330,392,440] },
+  throne:  { tempo:3.6, acordes:[[55,82,110],[58,87,116],[49,73,98],[55,82,123]],         melodia:[220,262,277,330] },
   dungeon: { tempo:2.4, acordes:[[73,110,139],[78,117,147],[65,98,123],[73,110,139]],      melodia:[294,349,440,523] },
 };
 const themeNow = () => dungeon ? THEMES.dungeon : (THEMES[regionAt(player.x, player.y).theme] || THEMES.city);
@@ -4592,6 +4596,76 @@ function terrainH(x, z){
   if (bd >= CHANNEL * 2) return base;
   const k = clamp((bd - CHANNEL * .55) / (CHANNEL * 1.45), 0, 1), s = k * k * (3 - 2 * k);
   return -16 + (base + 16) * s;
+}
+/* Ambiente de las islas avanzadas. En la última, el Trono del Rey de las
+   Sombras: una corona gigante gira en el cielo, columnas de sombra se alzan
+   en el horizonte, cae ceniza violeta y los relámpagos iluminan el suelo. */
+const REALM = { sky:null, bolt:null, flash:0, nextBolt:4, hemi0:null };
+function syncRealmFx(dt){
+  const ring = dungeon ? -1 : ringAt(player.x, player.y), th = dungeon ? null : ISLANDS[ring].theme;
+  const throne = th === "throne";
+  if (throne && !REALM.sky){
+    const g = new THREE.Group();
+    const V = new THREE.Color("#9a4dff"), L = new THREE.Color("#e0c0ff");
+    const mk = c => new THREE.MeshBasicMaterial({ color:c, fog:false, transparent:true, opacity:.95 });
+    const crown = new THREE.Group();
+    crown.add(new THREE.Mesh(new THREE.TorusGeometry(520, 34, 10, 64), mk(V)));
+    crown.add(new THREE.Mesh(new THREE.TorusGeometry(470, 12, 8, 64), mk(L)));
+    for (let i = 0; i < 12; i++){
+      const a = i / 12 * Math.PI * 2, sp = new THREE.Mesh(new THREE.ConeGeometry(46, i % 2 ? 180 : 300, 6), mk(i % 2 ? L : V));
+      sp.position.set(Math.cos(a) * 520, Math.sin(a) * 520, 0); sp.rotation.z = a - Math.PI / 2; crown.add(sp);
+    }
+    crown.rotation.x = Math.PI / 2.4; crown.position.y = 1700; g.add(crown); g.crown = crown;
+    const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map:glowTexture("#9a4dff"), fog:false, transparent:true, depthWrite:false, blending:THREE.AdditiveBlending, opacity:.6 }));
+    halo.scale.set(2600, 2600, 1); halo.position.y = 1700; g.add(halo); g.halo = halo;
+    // columnas de sombra en el horizonte
+    g.pillars = [];
+    for (let i = 0; i < 8; i++){
+      const a = i / 8 * Math.PI * 2 + .3, col = new THREE.Group();
+      const body = new THREE.Mesh(new THREE.CylinderGeometry(70, 150, 2600, 8, 1, true), new THREE.MeshBasicMaterial({ color:0x07040f, fog:false, transparent:true, opacity:.9, side:THREE.DoubleSide }));
+      body.position.y = 1300; col.add(body);
+      const core = new THREE.Mesh(new THREE.CylinderGeometry(22, 40, 2600, 6, 1, true), new THREE.MeshBasicMaterial({ color:V, fog:false, transparent:true, opacity:.55,
+        blending:THREE.AdditiveBlending, depthWrite:false, side:THREE.DoubleSide }));
+      core.position.y = 1300; col.add(core);
+      col.position.set(Math.cos(a) * 3400, 0, Math.sin(a) * 3400); g.add(col); g.pillars.push(col);
+    }
+    const bolt = new THREE.Mesh(new THREE.BoxGeometry(14, 1800, 14), new THREE.MeshBasicMaterial({ color:0xe0c0ff, fog:false, transparent:true, opacity:0,
+      blending:THREE.AdditiveBlending, depthWrite:false }));
+    bolt.position.y = 900; g.add(bolt); REALM.bolt = bolt;
+    scene.add(g); REALM.sky = g;
+  }
+  if (REALM.sky){
+    REALM.sky.visible = throne;
+    if (throne){
+      const t = now();
+      REALM.sky.position.set(player.x, 0, player.y);
+      REALM.sky.crown.rotation.z = t * .08;
+      REALM.sky.halo.material.opacity = .45 + Math.sin(t * .9) * .15;
+      REALM.sky.pillars.forEach((c, i) => { c.children[1].material.opacity = .4 + Math.sin(t * 1.6 + i) * .2; });
+      // relámpagos
+      if (REALM.hemi0 === null) REALM.hemi0 = hemiLight.intensity;
+      REALM.nextBolt -= dt;
+      if (REALM.nextBolt <= 0){
+        REALM.nextBolt = rnd(3.5, 8); REALM.flash = .35;
+        REALM.bolt.position.x = rnd(-900, 900); REALM.bolt.position.z = rnd(-900, 900);
+        REALM.bolt.rotation.z = rnd(-.15, .15);
+        SFX.bossHit?.("slam");
+      }
+      REALM.flash = Math.max(0, REALM.flash - dt);
+      REALM.bolt.material.opacity = REALM.flash > 0 ? .9 * (REALM.flash / .35) : 0;
+      hemiLight.intensity = REALM.hemi0 * (1 + REALM.flash * 4);
+      // ceniza violeta que cae
+      if (Math.random() < .6)
+        parts.push({ x:player.x + rnd(-700, 700), y:player.y + rnd(-700, 700), h:rnd(220, 420), vx:rnd(-10, 10), vy:rnd(-10, 10), vh:-rnd(40, 80),
+                     life:rnd(3, 5), color: Math.random() < .5 ? "#c9a0ff" : "#2a1a40", size:rnd(3, 6), g:0 });
+    } else if (REALM.hemi0 !== null){ hemiLight.intensity = REALM.hemi0; }
+  }
+  // resto de islas avanzadas: brasas o chispas de su color flotando en el aire
+  if (!throne && ring >= 8 && Math.random() < .5){
+    const col = (THEMES[th] || THEMES.city).sun;
+    parts.push({ x:player.x + rnd(-600, 600), y:player.y + rnd(-600, 600), h:rnd(0, 40), vx:rnd(-6, 6), vy:rnd(-6, 6), vh:rnd(20, 50),
+                 life:rnd(2, 3.5), color:col, size:rnd(2, 4), g:0 });
+  }
 }
 let waterRings = null;
 function syncWater(dt){
@@ -4668,6 +4742,20 @@ function groundDetail(x, th){
     for (let i = 0; i < 6; i++){ let px = Math.floor(R()*8)*32, py = Math.floor(R()*8)*32;
       x.beginPath(); x.moveTo(px, py); px += 32 * (R() < .5 ? 1 : -1); x.lineTo(px, py); py += 32; x.lineTo(px, py); x.stroke();
       x.fillStyle = "#ff5ad8"; x.fillRect(px - 2, py - 2, 4, 4); }
+  } else if (kind === "throne"){
+    // losas de obsidiana con grietas de energía y círculos de runas
+    x.globalAlpha = .5; x.strokeStyle = "#05030c"; x.lineWidth = 2;
+    for (let i = 0; i <= 256; i += 64){ x.beginPath(); x.moveTo(i, 0); x.lineTo(i, 256); x.moveTo(0, i); x.lineTo(256, i); x.stroke(); }
+    cracks(7, "#8a3aff", 2.2, .8); cracks(7, "#e0c0ff", .8, .7);
+    x.globalAlpha = .45; x.strokeStyle = "#b07cff"; x.lineWidth = 1.2;
+    for (let i = 0; i < 2; i++){ const cx2 = R()*256, cy2 = R()*256, rr = 14 + R()*12;
+      x.beginPath(); x.arc(cx2, cy2, rr, 0, 6.3); x.stroke(); x.beginPath(); x.arc(cx2, cy2, rr * .6, 0, 6.3); x.stroke(); }
+    blobs(10, "#c9a0ff", .8, 1.6, .9);
+  } else if (kind === "savage"){
+    blobs(24, "#3a2416", 8, 26, .3);
+    tufts(50, "#6a7a2a", .7);
+    blobs(8, "#e8dcc0", 1.5, 3, .7);          // huesos sueltos
+    cracks(4, "#2a180e", 1.6, .5);
   } else if (kind === "urban"){
     blobs(14, "#5a6272", 6, 18, .3);
     cracks(6, "#4a5262", 1.2, .5);
@@ -5096,6 +5184,63 @@ function buildProp(kind, h){
       }
       add(72, 120 + v, 72, "#6b5240", 0, 0, 0);        // torre de roca
       add(46, 42, 46, "#59422f", 0, 120 + v, 0);
+      break;
+    }
+    case "throne": {
+      const V = "#9a4dff", gV = glowOpts(V);
+      if (roll < 3){                                   // aguja de obsidiana con vetas
+        add(46, 150 + v, 46, "#0c0918", 0, 0, 0);
+        add(30, 70, 30, "#120d24", 0, 150 + v, 0);
+        for (const [x2, y2] of [[23, 40], [-23, 90], [23, 130]]) add(3, 40, 3, V, x2, y2, 0, gV);
+        add(10, 20, 10, V, 0, 220 + v, 0, gV);
+        break;
+      }
+      if (roll === 3){                                 // brasero de fuego de sombra
+        add(40, 36, 40, "#1a1430", 0, 0, 0);
+        add(54, 8, 54, "#2a2046", 0, 36, 0);
+        add(34, 30, 34, V, 0, 44, 0, gV);
+        add(18, 30, 18, "#e0c0ff", 0, 60, 0, glowOpts("#e0c0ff"));
+        break;
+      }
+      if (roll === 4){                                 // columna rota del trono
+        add(50, 12, 50, "#1a1430", 0, 0, 0);
+        add(36, 90 + v, 36, "#241c3c", 0, 12, 0);
+        add(40, 20, 40, "#1a1430", 6, 104 + v, 4).rotation.z = .3;
+        add(38, 3, 38, V, 0, 60, 0, gV);
+        break;
+      }
+      if (roll === 5){                                 // cristal flotante
+        add(10, 16, 10, "#0c0918", 0, 0, 0);
+        const cr = add(28, 56, 28, V, 0, 60, 0, gV); cr.rotation.set(.6, .8, 0);
+        break;
+      }
+      add(120, 16, 80, "#0c0918", 0, 0, 0);            // escalinata con estatua arrodillada
+      add(90, 16, 60, "#140f26", 0, 16, 0);
+      add(26, 50, 30, "#1a1430", 0, 32, 0);
+      add(22, 22, 22, "#1a1430", 0, 82, 4);
+      add(4, 4, 2, V, -5, 92, 16, gV); add(4, 4, 2, V, 5, 92, 16, gV);
+      break;
+    }
+    case "savage": {
+      if (roll < 3){                                   // árbol de la sabana
+        add(18, 110 + v, 18, "#4a2e1a", 0, 0, 0);
+        add(130, 22, 110, "#7a8a2a", 0, 110 + v, 0);
+        add(90, 16, 80, "#8a9a34", 10, 130 + v, -6);
+        break;
+      }
+      if (roll === 3){                                 // costillar gigante
+        for (let i = 0; i < 5; i++){ const r2 = add(10, 90 - Math.abs(i - 2) * 12, 10, "#e8dcc0", -60 + i * 30, 0, 0); r2.rotation.x = .35; }
+        add(150, 12, 14, "#d8ccb0", 0, 4, -20);
+        break;
+      }
+      if (roll === 4){                                 // tótem con cara de bestia
+        add(34, 150 + v, 34, "#5a3a22", 0, 0, 0);
+        for (const y of [30, 80, 130]){ add(40, 20, 40, "#8a4a2a", 0, y, 0); add(8, 6, 2, "#ffb45a", -9, y + 12, 20, glowOpts("#ffb45a")); add(8, 6, 2, "#ffb45a", 9, y + 12, 20, glowOpts("#ffb45a")); }
+        add(70, 14, 14, "#e8dcc0", 0, 150 + v, 0);
+        break;
+      }
+      add(90, 50 + v / 2, 70, "#6a4a32", 0, 0, 0);     // roca roja
+      add(60, 30, 50, "#7a5a3a", 8, 50 + v / 2, 4);
       break;
     }
     case "cyber": {
@@ -5731,13 +5876,14 @@ const MOB_LOOK = {
                  kit:{ horns:true, hornColor:"#1a1010", weapon:"#6a1a1a", weaponKind:"polearm", spikes:"#ffb03a" } },
   IceMonarch:  { body:"humanoid", skin:"#d8e8f5", dark:"#3a5a7a", glow:"#8fe8ff", features:["crystals"],
                  kit:{ helm:"#9fc4e8", helm2:"#e8f6ff", visor:"#8fe8ff", weapon:"#cfefff", weaponKind:"polearm", cape:"#5f8fbf" } },
-  BeastMonarch:{ body:"wolf",     skin:"#4a3a30", dark:"#241a14", glow:"#ffb45a", hair:"#2a1e18", features:[] },
+  BeastMonarch:{ body:"wolf",     skin:"#5a3a26", dark:"#2a1a10", glow:"#ffb45a", hair:"#1a0e08", features:["mane", "tail", "crystals"] },
   Architect:   { body:"wraith",   skin:"#4a4a86", dark:"#1f1f44", glow:"#9fa8ff",
                  features:["halo", "crystals"] },
-  ShadowRealm: { body:"humanoid", skin:"#2a2a4a", dark:"#12122a", glow:"#c08cff",
+  ShadowRealm: { body:"humanoid", skin:"#1a1030", dark:"#0a0616", glow:"#9a4dff",
                  features:["wings", "halo", "extraEyes"],
-                 kit:{ coat:"#0e0e22", trim:"#c08cff", horns:true, hornColor:"#c08cff", spikes:"#c08cff", backSpikes:"#c08cff",
-                       weapon:"#c08cff", weaponGlow:true, weaponKind:"greatsword", armor:null, helm:null } },
+                 kit:{ coat:"#0a0616", trim:"#7a2ae0", horns:true, hornColor:"#9a4dff", spikes:"#7a2ae0", backSpikes:"#9a4dff",
+                       crown:"#e0c0ff", cape:"#1a0a33", pauldron2:"#9a4dff",
+                       weapon:"#b07cff", weaponGlow:true, weaponKind:"greatsword", armor:null, helm:null } },
 };
 function enemyConfig(e){
   const L = e.look || {};
@@ -6168,7 +6314,7 @@ function render(dt){
   syncProps();
   syncBorder(dt);
   syncLandmarks(dt);
-  syncChests(dt); syncWater(dt); syncCamps(dt);
+  syncChests(dt); syncWater(dt); syncCamps(dt); syncRealmFx(dt);
   updateCamera(dt);
 
   // jugador
@@ -6267,6 +6413,21 @@ function render(dt){
         transparent:true, opacity:.5, depthWrite:false, blending:THREE.AdditiveBlending, side:THREE.DoubleSide }));
       au.rotation.x = -Math.PI / 2; au.position.y = 2; au.scale.setScalar((v.scaleRef || 1) * (e.boss ? 1.4 : .8 + rIdx * .1));
       v.add(au); v.userData.aura = au;
+    }
+    // islas avanzadas (anillo 8+): llama de su color detrás y brasas que suben
+    const ringE = ISLANDS.findIndex(is => is.id === e.isle);
+    if (ringE >= 8 && !v.userData.advFx){
+      const col = (MOB_LOOK[e.isle] || {}).glow || "#ffffff", sc = v.scaleRef || 1;
+      const fl = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTexture(col), transparent:true, depthWrite:false, blending:THREE.AdditiveBlending, opacity:.5 }));
+      fl.scale.set(80 * sc, 120 * sc, 1); fl.position.y = 42 * sc; v.add(fl); v.userData.advFx = fl; v.userData.advCol = col;
+    }
+    if (v.userData.advFx){
+      v.userData.advFx.material.opacity = .35 + Math.sin(now() * 5 + e.x) * .15;
+      if (Math.random() < .12 && Math.hypot(e.x - player.x, e.y - player.y) < 700){
+        const sc = v.scaleRef || 1;
+        parts.push({ x:e.x + rnd(-16, 16) * sc, y:e.y + rnd(-16, 16) * sc, h:rnd(20, 70) * sc, vx:0, vy:0, vh:rnd(30, 70),
+                     life:rnd(.4, .9), color:v.userData.advCol, size:rnd(3, 6), g:0 });
+      }
     }
     if (v.userData.aura){
       const au = v.userData.aura;
@@ -6367,7 +6528,7 @@ function render(dt){
     if (dS < 800 && Math.random() < (sh.state !== "IDLE_FOLLOW" ? .5 : .22)){
       const sc = v.scaleRef || 1;
       parts.push({ x:sh.x + rnd(-14, 14) * sc, y:sh.y + rnd(-14, 14) * sc, h:rnd(40, 70) * sc, vx:rnd(-8, 8), vy:rnd(-8, 8), vh:rnd(25, 55),
-                   life:rnd(.5, 1.1), color: Math.random() < .6 ? "#1a0f33" : (rI >= 4 ? mobRank(sh.data.rank).col : "#7a4ae0"), size:rnd(4, 8) });
+                   life:rnd(.5, 1.1), color: Math.random() < .6 ? "#1a0f33" : (rI >= 4 ? mobRank(sh.data.rank).col : "#7a4ae0"), size:rnd(4, 8), g:0 });
     }
     if (sh.data.shiny && !v.userData.shinyFx){
       v.userData.shinyFx = true;
@@ -6572,10 +6733,11 @@ function render(dt){
     if (o.userData.skyIsle){
       if (o.userData.ox === undefined){ o.userData.ox = o.position.x; o.userData.oz = o.position.z; }
       o.position.set(player.x + o.userData.ox, o.position.y, player.y + o.userData.oz);
-      o.visible = !dungeon;
+      o.visible = !dungeon && currentThemeKey !== "throne";
       continue;
     }
     if (!o.userData.cloud) continue;
+    o.visible = currentThemeKey !== "throne";
     if (o.userData.ox === undefined){
       o.userData.ox = o.position.x; o.userData.oz = o.position.z;
     }
