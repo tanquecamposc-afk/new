@@ -471,12 +471,12 @@ entrar, si hay una recompensa pendiente, el calendario se abre solo.
 
 Cada cofre es una **tirada al azar**: la cantidad de oro y gemas cambia de
 ×0,5 a ×2,5 cada vez, a veces sale un **golpe de suerte ×5**, puede caer un
-ticket extra y hay un 15% de runa. Todo crece con tu nivel. El último cofre
+ticket extra y hay un 4% de runa común. Todo crece con tu nivel. El último cofre
 abierto queda a la vista.
 
 El **día 7 es el Cofre del Monarca**, muy por encima del resto (de media unas
-35 veces las gemas del día 1): entre 3 y 7 tickets, una runa segura, un 20% de
-runa exclusiva (Vacío o Eternidad), un 12% de montura y un 15% de golpe de
+35 veces las gemas del día 1): entre 3 y 7 tickets, un 35% de runa (que puede ser
+legendaria), un 12% de montura y un 15% de golpe de
 suerte ×5.
 
 ### Códigos
@@ -532,16 +532,32 @@ cada una tiene un 13% más de vida y un 7% más de daño, y cada 10 aparece un
 jefe del Abismo. Superar una oleada da oro, gemas y 35 s más de tiempo (máximo
 120). La partida acaba si caes o se agota el tiempo, y se guarda tu récord.
 
-| Oleada | Probabilidad de runa al superarla | Runas posibles |
+| Oleada | Probabilidad de runa al superarla | Techo de rareza |
 |---|---|---|
 | 1–9 | 0% | — |
-| 10–19 | 8% | las cuatro normales |
-| 20–29 | 18% | + **Runa del Vacío** |
-| 30–49 | 32% | + **Runa de la Eternidad** |
-| 50+ | 50% | todas |
+| 10–19 | 3% | común |
+| 20–39 | 6–10% | épica |
+| 40–59 | 10–15% | legendaria |
+| 60+ | 15% | **mítica** |
 
-Las dos runas exclusivas dan un bono permanente por copia, hasta 10: el Vacío
-da +5% de daño y la Eternidad +5% de gemas.
+### Runas por rareza
+
+Las runas son escasas a propósito. Cuando cae una, lo normal es que sea común;
+las buenas casi nunca salen:
+
+| Rareza | Runas | Efecto | Probabilidad dentro de la tirada |
+|---|---|---|---|
+| Común | Salud, Gemas, Tiempo, Oro | modifican mazmorras | ~78% |
+| Épica | Vacío, Eternidad | +5% daño / +5% gemas por copia (máx. 10) | ~16% |
+| Legendaria | **Codicia** | +40% oro y gemas por copia (máx. 3) | ~5% (a partes iguales con el Tiempo Roto) |
+| Legendaria | **Tiempo Roto** | −15% recarga de habilidad por copia (máx. 3) | |
+| Mítica | **Runa del Monarca** | +30% daño y +30% vida por copia (máx. 3) | ~1% |
+
+Dónde caen: modo infinito (tabla de arriba), 25% al completar una mazmorra
+(hasta épica en Puerta Roja y Double Dungeon), 4% en el cofre diario normal,
+35% en el Cofre del Monarca (hasta legendaria) y rara vez en expediciones
+largas. Las épicas o mejores se anuncian con un cartel del color de su rareza,
+y en el inventario las que aún no tienes salen como «Runa desconocida».
 
 ### Mazmorras
 

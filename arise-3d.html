@@ -924,10 +924,35 @@ const RUNES = {
   Gems:  { id:"Gems",   name:"Runa de Gemas", desc:"Gemas +10%",       glyph:"💎" },
   Time:  { id:"Time",   name:"Runa de Tiempo",desc:"Temporizador +60s",glyph:"⏱" },
   Cash:  { id:"Cash",   name:"Runa de Oro",   desc:"Oro +10%",         glyph:"💵" },
-  // exclusivas del modo infinito; cada copia da un bono permanente (hasta 10)
-  Void:     { id:"Void",     name:"Runa del Vacío",     desc:"+5% de daño por copia (máx. 10) · solo en el modo infinito, oleada 20+", glyph:"🕳" },
-  Eternity: { id:"Eternity", name:"Runa de la Eternidad",desc:"+5% de gemas por copia (máx. 10) · solo en el modo infinito, oleada 30+", glyph:"♾" },
+  // épicas: cada copia da un bono permanente (hasta 10)
+  Void:     { id:"Void",     name:"Runa del Vacío",     desc:"+5% de daño por copia (máx. 10)", glyph:"🕳", rar:"epica" },
+  Eternity: { id:"Eternity", name:"Runa de la Eternidad",desc:"+5% de gemas por copia (máx. 10)", glyph:"♾", rar:"epica" },
+  // legendarias y mítica: rarísimas y muy fuertes
+  Greed:    { id:"Greed",    name:"Runa de la Codicia",  desc:"+40% de oro y gemas por copia (máx. 3)", glyph:"💰", rar:"legend" },
+  Chrono:   { id:"Chrono",   name:"Runa del Tiempo Roto",desc:"−15% de recarga de habilidad por copia (máx. 3)", glyph:"⌛", rar:"legend" },
+  Monarch:  { id:"Monarch",  name:"Runa del Monarca",    desc:"+30% de daño y +30% de vida por copia (máx. 3)", glyph:"👁", rar:"mitica" },
 };
+for (const k of ["Health", "Gems", "Time", "Cash"]) RUNES[k].rar = "comun";
+const RUNE_RARITY = { comun:{ name:"Común", col:"#b9c9e8" }, epica:{ name:"Épica", col:"#bb8cff" },
+                      legend:{ name:"Legendaria", col:"#ffd24a" }, mitica:{ name:"Mítica", col:"#ff3af0" } };
+/* Tirada de runa: se llama solo cuando ya ha tocado dar una (y eso es raro).
+   Dentro, lo normal es una común; las buenas casi nunca. `tier` sube el
+   techo: 0 = solo comunes, 1 = hasta épicas, 2 = hasta legendarias,
+   3 = hasta la mítica. */
+function rollRune(tier){
+  const x = Math.random();
+  let pool;
+  if (tier >= 3 && x < .01) pool = ["Monarch"];
+  else if (tier >= 2 && x < .06) pool = ["Greed", "Chrono"];
+  else if (tier >= 1 && x < .22) pool = ["Void", "Eternity"];
+  else pool = ["Health", "Gems", "Cash", "Time"];
+  const r = pool[Math.floor(Math.random() * pool.length)];
+  P.runes[r] = (P.runes[r] || 0) + 1;
+  const R = RUNE_RARITY[RUNES[r].rar];
+  if (RUNES[r].rar !== "comun") banner(`RUNA ${R.name.toUpperCase()}: ${RUNES[r].name.toUpperCase()}`, R.col);
+  return r;
+}
+const runeN = (id, max) => Math.min(max, P.runes?.[id] || 0);
 
 /* ---------------------------- FORMULA SERVICE ----------------------------- */
 const FORMULA = {
@@ -1188,9 +1213,8 @@ function claimExpedition(euid){
   const cash = Math.floor(x.cash * k * lv), gems = Math.floor(x.gems * k * lv), tickets = ok ? x.tickets : 0;
   P.cash += cash; P.gems += gems; P.tickets += tickets;
   let extra = "";
-  if (ok && Math.random() < x.rune){
-    const r = ["Health", "Gems", "Cash", "Time"][Math.floor(Math.random() * 4)];
-    P.runes[r] = (P.runes[r] || 0) + 1; extra = ` · ${RUNES[r].name}`;
+  if (ok && Math.random() < x.rune * .4){
+    const r = rollRune(x.hours >= 12 ? 2 : x.hours >= 6 ? 1 : 0); extra = ` · ${RUNES[r].name}`;
   }
   for (const u of ex.uuids) if (P.shadows[u]) delete P.shadows[u].busy;
   P.expeditions = P.expeditions.filter(e => e !== ex);
@@ -1221,7 +1245,7 @@ function panelExpeditions(nav){
     const free = Object.values(P.shadows).filter(sh => !sh.busy).sort((a, b) => shadowDmgOf(b) - shadowDmgOf(a)).slice(0, 40);
     expPick = expPick.filter(u => free.some(f => f.uuid === u));
     pick = `<div class="sheet" style="--tc:var(--monarch)"><b class="sname">${x.icon} ${x.name}</b>
-      <span class="lv">${x.hours} horas · poder recomendado ${fmt(x.need)} · recompensa ${fmt(x.cash * (1 + P.level * .01))} oro, ${fmt(x.gems * (1 + P.level * .01))} gemas${x.tickets ? `, ${x.tickets} tickets` : ""}${x.rune ? `, ${Math.round(x.rune * 100)}% de runa` : ""}</span>
+      <span class="lv">${x.hours} horas · poder recomendado ${fmt(x.need)} · recompensa ${fmt(x.cash * (1 + P.level * .01))} oro, ${fmt(x.gems * (1 + P.level * .01))} gemas${x.tickets ? `, ${x.tickets} tickets` : ""}${x.rune ? `, ${Math.round(x.rune * 40)}% de runa` : ""}</span>
       <div class="chips">${free.map(sh => `<button class="chip ${expPick.includes(sh.uuid) ? "sel" : ""}" data-xpick="${sh.uuid}">${SHADOWS[sh.id]?.glyph || "👤"} ${sh.name} <em>${mobRank(sh.rank).r}</em></button>`).join("") || `<span class="hint">No tienes sombras libres.</span>`}</div>
       <div class="sbar"><small>Poder</small><i style="width:${clamp(expPower(expPick) / x.need, 0, 1) * 100}%"></i><em>${fmt(expPower(expPick))} / ${fmt(x.need)} · éxito ${Math.round(expChance(x, expPick) * 100)}%</em></div>
       <div class="sact"><button class="btn" data-xauto="1">Elegir las mejores</button>
@@ -1267,9 +1291,7 @@ function rollDaily(i){
   const k = () => (0.5 + Math.random() * 2) * luck;
   if (big){
     out.cash = Math.floor(base.cash * 2.5 * k()); out.gems = Math.floor(base.gems * 2.5 * k()); out.tickets = 3 + Math.floor(Math.random() * 5);
-    const r = ["Health", "Gems", "Cash", "Time"][Math.floor(Math.random() * 4)];
-    P.runes[r] = (P.runes[r] || 0) + 1; out.extras.push(`${RUNES[r].glyph} ${RUNES[r].name}`);
-    if (Math.random() < .2){ const x = Math.random() < .5 ? "Void" : "Eternity"; P.runes[x] = (P.runes[x] || 0) + 1; out.extras.push(`${RUNES[x].glyph} ${RUNES[x].name}`); }
+    if (Math.random() < .35){ const r = rollRune(2); out.extras.push(`${RUNES[r].glyph} ${RUNES[r].name}`); }
     const missing = Object.keys(MOUNTS).filter(m => !P.mounts.includes(m) && MOUNTS[m].isle);
     if (missing.length && Math.random() < .12){
       const m = missing[Math.floor(Math.random() * missing.length)]; P.mounts.push(m); out.extras.push(`🐺 Montura: ${MOUNTS[m].name}`);
@@ -1278,8 +1300,7 @@ function rollDaily(i){
     out.cash = Math.random() < .85 ? Math.floor(base.cash * k() + base.gems * 50 * Math.random()) : 0;
     out.gems = Math.floor(base.gems * k());
     out.tickets = base.tickets + (Math.random() < .2 ? 1 : 0);
-    if (Math.random() < .15){ const r = ["Health", "Gems", "Cash", "Time"][Math.floor(Math.random() * 4)];
-      P.runes[r] = (P.runes[r] || 0) + 1; out.extras.push(`${RUNES[r].glyph} ${RUNES[r].name}`); }
+    if (Math.random() < .04){ const r = rollRune(0); out.extras.push(`${RUNES[r].glyph} ${RUNES[r].name}`); }
   }
   if (luck > 1) out.extras.unshift("✨ ¡Golpe de suerte ×5!");
   return out;
@@ -1301,8 +1322,8 @@ function panelDaily(nav){
     const claimed = st.can ? i < st.next : i < ((P.daily.streak - 1) % 7) + 1;
     return `<div class="dcell ${claimed ? "done" : ""} ${cur && st.can ? "cur" : ""} ${r.big ? "big" : ""}">
       <small>Día ${i + 1}</small><span class="dic">${claimed ? "✔" : r.big ? "👑" : r.tickets ? "🎟" : "🎁"}</span>
-      <b>${r.label}</b><em>${r.big ? `${fmt(a.gems * 1.25)}–${fmt(a.gems * 6.25)} gemas · 3–7 🎟 · runa segura · 20% runa exclusiva · 12% montura`
-        : `~${fmt(a.gems * .5)}–${fmt(a.gems * 2.5)} gemas${a.tickets ? ` · ${a.tickets}+ 🎟` : ""} · 15% runa`}</em></div>`; }).join("");
+      <b>${r.label}</b><em>${r.big ? `${fmt(a.gems * 1.25)}–${fmt(a.gems * 6.25)} gemas · 3–7 🎟 · 35% runa (puede ser legendaria) · 12% montura`
+        : `~${fmt(a.gems * .5)}–${fmt(a.gems * 2.5)} gemas${a.tickets ? ` · ${a.tickets}+ 🎟` : ""} · 4% runa`}</em></div>`; }).join("");
   const L = P.daily?.lastRoll;
   const last = L ? `<div class="dlast"><small>Último cofre · día ${L.day}</small><b>${[L.cash && `${fmt(L.cash)} oro`, L.gems && `${fmt(L.gems)} gemas`, L.tickets && `${L.tickets} tickets`, ...(L.extras || [])].filter(Boolean).join(" · ")}</b></div>` : "";
   return shell("Recompensas diarias", nav + `<div class="daily">
@@ -1424,12 +1445,12 @@ const blessed     = () => (P.blessing || 0) > now();
 const baseDamage  = () => FORMULA.physicalDamage(weaponDmg(), P.stats.STR) * (blessed() ? 1.4 : 1) * (formActive() ? FORM.dmg : 1)
   * (1 + rankMult() + classBonus("dmg") + talentLv("power") * 0.08)
   * (1 + P.level * 0.012) * (now() < (player.dmgBuffUntil || 0) ? 1.3 : 1) * (1 + lookBonus("dmg"))
-  * (1 + Math.min(10, P.runes?.Void || 0) * .05);
+  * (1 + Math.min(10, P.runes?.Void || 0) * .05) * (1 + runeN("Monarch", 3) * .3);
 const relicBonus  = effect => Object.keys(P.relics).reduce((a, id) => a + (RELICS[id]?.effect === effect ? RELICS[id].value : 0), 0);
 const shadowMult  = () => 1 + relicBonus("shadowDmg") + classBonus("shadow") + talentLv("legion") * 0.15;
 const ariseLuck   = () => rankOf(P.rank).luck + P.stats.INT * 0.35 + relicBonus("ariseLuck")
   + (P.awakened ? 60 : 0) + classBonus("luck") * 100 + talentLv("fortune") * 12;
-const maxHP       = () => FORMULA.maxHP(100 + P.level * 6 + P.rebirths * 500, P.stats.VIT) * (1 + lookBonus("hp"))
+const maxHP       = () => FORMULA.maxHP(100 + P.level * 6 + P.rebirths * 500, P.stats.VIT) * (1 + lookBonus("hp")) * (1 + runeN("Monarch", 3) * .3)
   * (1 + classBonus("hp") + talentLv("vigor") * 0.1);
 const maxMana     = () => FORMULA.maxMana(P.stats.MNA) * (1 + classBonus("mana"));
 const shadowDmgOf = s => FORMULA.shadowDamage(SHADOWS[s.id].dmg * (1 + (s.level - 1) * 0.1) * mobRank(s.rank).sh, P.stats.SDW) * shadowMult()
@@ -1539,7 +1560,7 @@ function killEnemy(e){
   P.kills++;
   const R = mobRank(e.rank), loot = e.boss ? 1 : R.loot;
   gainXP(FORMULA.expReward(e.level, P.rebirths) * loot);
-  const cash = Math.max(1, Math.floor(e.level * 12 * loot * (1 + P.rebirths * 0.3) * (dungeon?.runes?.Cash ? 1.1 : 1)));
+  const cash = Math.max(1, Math.floor(e.level * 12 * loot * (1 + P.rebirths * 0.3) * (dungeon?.runes?.Cash ? 1.1 : 1) * (1 + runeN("Greed", 3) * .4)));
   if (!e.boss && MOB_RANKS.indexOf(R) >= 3){
     const gems = Math.round(3 * MOB_RANKS.indexOf(R) ** 2 * (R.myth ? R.loot / 10 : 1));
     if (R.myth) banner(`${e.rank} DERROTADO`, R.col);
@@ -1609,7 +1630,7 @@ function requestSkill(){
   const kit = kitOf(P.weapon), info = SKILL_INFO[kit.skill];
   if (player.mana < info.mana) return note("Maná insuficiente", "--mana");
   player.mana -= info.mana;
-  player.skillCd = player.skillCdMax = info.cd;
+  player.skillCd = player.skillCdMax = info.cd * (1 - runeN("Chrono", 3) * .15);
   player.atkDef = { ...SKILL, startup:info.startup, mult:0, skill:true, cam:SKILL.feedback.cam, hitstop:SKILL.feedback.hitstop };
   player.phase = "startup"; player.phaseT = info.startup; player.hitDone = false;
   banner(kit.sname.toUpperCase(), kit.color);
@@ -1990,18 +2011,17 @@ const DUNGEON_MODES = {
   Infinite:      { name:"Modo Infinito",    rooms:1e9, mult:1.0, reward:1.0, color:"#6ef0ff", infinite:true },
 };
 // Probabilidad de runa al superar una oleada del modo infinito
-function infRuneChance(w){ return w < 10 ? 0 : w < 20 ? .08 : w < 30 ? .18 : w < 50 ? .32 : .5; }
+function infRuneChance(w){ return w < 10 ? 0 : w < 20 ? .03 : w < 30 ? .06 : w < 50 ? .1 : .15; }
 function infWaveClear(d){
   const w = d.room;
   const gems = Math.floor(8 * w * (1 + P.level * .01)), cash = Math.floor(d.isle.enemy.hp * .05 * w);
   P.gems += gems; P.cash += cash;
   d.timer = Math.min(d.timer + 35, 120);
   if (Math.random() < infRuneChance(w)){
-    // las runas del Vacío y de la Eternidad solo salen aquí, y solo desde lejos
-    const pool = w >= 30 ? ["Void", "Eternity", "Health", "Gems", "Cash", "Time"] : w >= 20 ? ["Void", "Health", "Gems", "Cash", "Time"] : ["Health", "Gems", "Cash", "Time"];
-    const r = pool[Math.floor(Math.random() * pool.length)];
-    P.runes[r] = (P.runes[r] || 0) + 1;
-    banner(`RUNA: ${RUNES[r].name.toUpperCase()}`, "#5ae2ff"); note(`${RUNES[r].glyph} ${RUNES[r].name} (oleada ${w})`, "--gem");
+    // cuanto más lejos, más alto el techo: épicas desde la 20, legendarias
+    // desde la 40 y la mítica solo desde la oleada 60
+    const r = rollRune(w >= 60 ? 3 : w >= 40 ? 2 : w >= 20 ? 1 : 0);
+    note(`${RUNES[r].glyph} ${RUNES[r].name} (oleada ${w})`, "--gem");
   }
   if (w > (P.infBest || 0)){ P.infBest = w; if (w % 5 === 0) note(`Nuevo récord infinito: oleada ${w}`, "--gold"); }
   save();
@@ -2085,7 +2105,7 @@ function clearDungeon(){
   const d = dungeon; if (!d || d.cleared) return;
   d.cleared = true; d.rewardTx = uid();
   P.dungeonsCleared++;
-  const gems = Math.floor(400 * d.mode.reward * (1 + P.level*0.02) * (d.runes.Gems ? 1.1 : 1) * (1 + Math.min(10, P.runes?.Eternity || 0) * .05));
+  const gems = Math.floor(400 * d.mode.reward * (1 + P.level*0.02) * (d.runes.Gems ? 1.1 : 1) * (1 + Math.min(10, P.runes?.Eternity || 0) * .05) * (1 + runeN("Greed", 3) * .4));
   const cash = Math.floor(d.isle.enemy.hp * 0.4 * d.mode.reward * (d.runes.Cash ? 1.1 : 1));
   P.gems += gems; P.cash += cash; P.tickets += 1;
   // Recompensas especiales por modo
@@ -2097,8 +2117,7 @@ function clearDungeon(){
   }
   const relic = Object.values(RELICS).find(r => r.isle === d.isle.id && !P.relics[r.id]);
   if (relic && Math.random() < 0.5){ P.relics[relic.id] = true; note(`Reliquia: ${relic.name}`, "--gold"); }
-  const rune = ["Health", "Gems", "Time", "Cash"][Math.floor(Math.random()*4)];
-  P.runes[rune] = (P.runes[rune] || 0) + 1;
+  if (Math.random() < .25) rollRune(d.modeId === "DoubleDungeon" || d.modeId === "RedGate" ? 1 : 0);
   banner("MAZMORRA COMPLETADA", "#5ce8a6");
   note(`+${fmt(gems)} gemas · +${fmt(cash)} oro · +1 ticket`, "--cash");
   save();
@@ -6510,7 +6529,9 @@ function panelItems(){
   } else if (panelTab === "Runes"){
     const all = Object.values(RUNES); total = all.length;
     body = all.map((r, i) => { const n = P.runes[r.id] || 0; if (n) got++;
-      return card({ locked:!n, tc: n ? "var(--gem)" : "var(--line)", g:r.glyph, name:r.name, sub:r.desc, tag:`×${fmt(n)}` }, i); }).join("");
+      const R = RUNE_RARITY[r.rar || "comun"];
+      return card({ locked:!n, tc: n ? R.col : "var(--line)", g: n || r.rar === "comun" ? r.glyph : "❔", name: n || r.rar === "comun" ? r.name : "Runa desconocida",
+        sub: n || r.rar === "comun" ? r.desc : "Muy rara", tag:`${R.name} ×${fmt(n)}` }, i); }).join("");
   } else {
     const all = Object.values(SHADOWS); total = all.length;
     body = all.map((s, i) => { const n = P.index[s.id] || 0; if (n) got++;
@@ -6580,7 +6601,7 @@ function panelMap(){
       <button class="btn green" data-hunter="${h.id}">Ir</button></div>`).join("")}</div>`;
   } else {
     right = `<div class="list">${Object.entries(DUNGEON_MODES).map(([id, m]) => m.infinite ? `<div class="item inf"><span class="g">♾</span>
-      <span class="meta"><b>${m.name}</b><span>Oleadas sin fin, cada una más dura · jefe cada 10 · runas desde la oleada 10 (exclusivas desde la 20 y la 30) · récord: oleada ${P.infBest || 0}</span></span>
+      <span class="meta"><b>${m.name}</b><span>Oleadas sin fin, cada una más dura · jefe cada 10 · runas raras desde la oleada 10 (épicas desde la 20, legendarias desde la 40, la mítica desde la 60) · récord: oleada ${P.infBest || 0}</span></span>
       <button class="btn" data-dungeon="Infinite">Entrar gratis</button></div>` : `<div class="item"><span class="g">🌀</span>
       <span class="meta"><b>${m.name}</b><span>${m.rooms} salas · enemigos ×${m.mult} · recompensa ×${m.reward}${id === "DoubleDungeon" ? " · otorga el Despertar" : ""}</span></span>
       <button class="btn violet" data-dungeon="${id}" ${P.tickets > 0 || id === "Standard" ? "" : "disabled"}>${id === "Standard" ? "Entrar" : "1 🎟"}</button></div>`).join("")}</div>`;
