@@ -2586,7 +2586,125 @@ function buildMountView(id){
     v.torso = new THREE.Group(); v.neck = new THREE.Group(); v.scaleRef = m.scale;
   } else v = buildCharacter(mountConfig(id));
   v.userData.id = id;
+  decorateMount(v, id);
   return v;
+}
+/* Adornos y efectos de las monturas de las islas altas: silla, armadura,
+   crines de fuego, colas de kitsune, cristales, runas... Cada pieza animada
+   queda en userData.mfx y animateMount la mueve cada fotograma. */
+function decorateMount(v, id){
+  const m = MOUNTS[id], s = v.scaleRef || 1, d = v.detail || v, fx = [];
+  const B = (w, h, dd, c, x, y, z, glow, parent) => { const o = part(w * s, h * s, dd * s, c, glow ? { emissive:c, emissiveIntensity: glow === true ? 1.1 : glow } : undefined);
+    o.position.set(x * s, y * s, z * s); (parent || d).add(o); return o; };
+  const spr = (col, sc, x, y, z, parent) => { const o = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTexture(col), transparent:true, depthWrite:false,
+    blending:THREE.AdditiveBlending, opacity:.7 })); o.scale.set(sc * s, sc * s, 1); o.position.set(x * s, y * s, z * s); (parent || d).add(o); return o; };
+  const wolfy = m.body === "wolf";
+  const top = m.body === "ant" ? 36 : 48;
+  const late = ["FrostFang", "WingedAnt", "Kitsune", "Nightmare", "FrostBear", "WarTiger", "SystemDisc", "ObsidianDragon", "SkyDragon", "GoldenWolf"];
+  if (!late.includes(id)) return;
+  // silla de montar con borde encendido y estribos
+  if (m.body !== "disc"){
+    B(18, 4, 22, "#2a1a10", 0, top, 0); B(19, 1.5, 23, m.eyes, 0, top + 2.5, 0, .9);
+    B(14, 6, 4, "#2a1a10", 0, top + 4, -10);
+    for (const sd of [-1, 1]){ B(2, 12, 2, "#5a4a3a", sd * 10, top - 6, 2); B(5, 2, 6, m.eyes, sd * 10, top - 12, 2, .6); }
+  }
+  switch (id){
+    case "FrostFang":
+      for (let i = 0; i < 5; i++){ const c = B(4, 9 + (i % 2) * 5, 4, "#bff0ff", 0, top + 4, 16 - i * 7, .7); c.rotation.x = -.35; fx.push({ o:c, kind:"shine", ph:i }); }
+      fx.push({ kind:"breath", col:"#dff4ff", z:40, y:30, rate:.35 }, { kind:"trail", col:"#bff0ff", rate:.5 });
+      break;
+    case "WingedAnt":
+      for (let i = 0; i < 3; i++){ const b = B(24, 2, 3, "#b8ff3a", 0, 32 - i * 1.5, -20 - i * 8, 1.2); fx.push({ o:b, kind:"pulse", ph:i }); }
+      fx.push({ kind:"buzz" }, { kind:"trail", col:"#b8ff3a", rate:.3 });
+      break;
+    case "Kitsune": {
+      // nueve colas en abanico que ondulan, y fuegos fatuos orbitando
+      const fan = new THREE.Group(); fan.position.set(0, 38 * s, -22 * s); d.add(fan);
+      if (d.userData.tail) d.userData.tail.visible = false;
+      for (let i = 0; i < 9; i++){
+        const t = new THREE.Group(); t.rotation.set(.5, 0, (i - 4) * .22); fan.add(t);
+        for (let k = 0; k < 3; k++){ const seg = part((6 - k * 1.3) * s, (6 - k * 1.3) * s, 9 * s, k === 2 ? m.hair : m.skin, k === 2 ? { emissive:m.hair, emissiveIntensity:.8 } : undefined);
+          seg.position.set(0, k * 2 * s, -k * 8 * s); t.add(seg); }
+        fx.push({ o:t, kind:"tail", ph:i * .5 });
+      }
+      const orb = new THREE.Group(); orb.position.y = 50 * s; d.add(orb);
+      for (let i = 0; i < 3; i++){ const w = spr("#ff7a5a", 22, Math.cos(i * 2.1) * 26, 0, Math.sin(i * 2.1) * 26, orb); fx.push({ o:w, kind:"flick" }); }
+      fx.push({ o:orb, kind:"orbit", sp:1.6 });
+      break;
+    }
+    case "Nightmare":
+      // crin y cola de fuego, cascos que dejan brasas
+      for (let i = 0; i < 6; i++){ const f = spr(i % 2 ? "#ff6a1a" : "#ffb03a", 22, 0, top + 2 + (i % 2) * 3, 22 - i * 6); fx.push({ o:f, kind:"flick" }); }
+      for (let i = 0; i < 3; i++){ const f = spr("#ff6a1a", 18, 0, 36 - i * 3, -26 - i * 7); fx.push({ o:f, kind:"flick" }); }
+      for (const sd of [-1, 1]){ B(10, 3, 18, "#1a0808", sd * 11, 34, 6); }
+      fx.push({ kind:"trail", col:"#ff6a1a", rate:.8 }, { kind:"breath", col:"#ff8a2a", z:42, y:26, rate:.25 });
+      break;
+    case "FrostBear":
+      for (const sd of [-1, 1]){ B(12, 12, 20, "#9fd4f5", sd * 12, 40, 4, .3); }
+      B(22, 6, 18, "#9fd4f5", 0, 46, 14, .3);
+      for (let i = 0; i < 4; i++){ const c = B(3.5, 12, 3.5, "#e8f6ff", (i - 1.5) * 5, top + 8, 6, .8); fx.push({ o:c, kind:"shine", ph:i }); }
+      fx.push({ kind:"breath", col:"#ffffff", z:44, y:26, rate:.4 }, { kind:"ring", col:"#9fe8ff" });
+      break;
+    case "WarTiger":
+      for (let i = 0; i < 6; i++) for (const sd of [-1, 1]){ const st = B(1.6, 12, 3, "#1a0e06", sd * 10.6, 36, 14 - i * 6); st.rotation.x = .2; }
+      for (const sd of [-1, 1]){ B(3, 10, 16, "#c9a33a", sd * 11.5, 38, 8, .25); }
+      { const pole = B(2, 34, 2, "#3a2a1a", 0, top + 20, -12); const flag = B(1, 12, 14, "#b0242e", 0, top + 30, -19); fx.push({ o:flag, kind:"flag" }); }
+      break;
+    case "SystemDisc": {
+      for (let i = 0; i < 3; i++){
+        const rg = new THREE.Mesh(new THREE.TorusGeometry((22 + i * 12) * s, 1.2 * s, 6, 40), mat(m.eyes, { emissive:m.eyes, emissiveIntensity:1.3 }));
+        rg.rotation.x = Math.PI / 2; rg.position.y = (8 + i * 6) * s; d.add(rg); fx.push({ o:rg, kind:"spinring", sp:(i % 2 ? -1 : 1) * (1 + i * .6) });
+      }
+      const cone = new THREE.Mesh(new THREE.ConeGeometry(40 * s, 60 * s, 24, 1, true), new THREE.MeshBasicMaterial({ color:0x9fa8ff, transparent:true, opacity:.14,
+        side:THREE.DoubleSide, depthWrite:false, blending:THREE.AdditiveBlending })); cone.position.y = -30 * s; cone.rotation.x = Math.PI; d.add(cone); fx.push({ o:cone, kind:"pulsem" });
+      fx.push({ kind:"trail", col:"#9fa8ff", rate:.5 });
+      break;
+    }
+    case "ObsidianDragon":
+      for (let i = 0; i < 7; i++){ const c = B(4, 10 - Math.abs(i - 3), 4, "#c08cff", 0, top + 4, 20 - i * 7, 1.2); c.rotation.x = -.4; fx.push({ o:c, kind:"shine", ph:i }); }
+      for (const sd of [-1, 1]) B(12, 4, 20, "#1a1030", sd * 10, 44, 8);
+      fx.push({ kind:"breath", col:"#c08cff", z:46, y:32, rate:.5 }, { kind:"trail", col:"#5a2ab0", rate:.9 }, { kind:"bigwings" });
+      break;
+    case "SkyDragon":
+      fx.push({ kind:"trail", col:"#ffd0d8", rate:.6, streak:true }, { kind:"bigwings" }, { kind:"breath", col:"#ff5d6c", z:44, y:30, rate:.2 });
+      for (const sd of [-1, 1]) B(3, 3, 3, "#ff5d6c", sd * 5, 40, 34, 1.4);
+      break;
+    case "GoldenWolf": {
+      for (const sd of [-1, 1]){ B(3, 12, 20, "#fff27a", sd * 11.5, 38, 6, .5); }
+      B(20, 4, 10, "#fff27a", 0, 50, 22, .6);
+      const halo = spr("#fff27a", 120, 0, 40, 0); fx.push({ o:halo, kind:"flick" });
+      fx.push({ kind:"sparkle" }, { kind:"trail", col:"#fff27a", rate:.7 });
+      break;
+    }
+  }
+  v.userData.mfx = fx;
+}
+function animateMount(v, dt, moving, x, y){
+  const fx = v.userData.mfx; if (!fx) return;
+  const t = now(), s = v.scaleRef || 1;
+  const wx = x ?? v.position.x, wz = y ?? v.position.z;
+  const fwd = { x:Math.sin(v.rotation.y), z:Math.cos(v.rotation.y) };
+  for (const f of fx){
+    switch (f.kind){
+      case "shine": f.o.scale.y = 1 + Math.sin(t * 4 + f.ph) * .15; break;
+      case "pulse": f.o.material.emissiveIntensity = .8 + Math.sin(t * 5 + f.ph) * .6; break;
+      case "flick": f.o.material.opacity = .45 + Math.random() * .45; f.o.scale.y = f.o.scale.x * (1.1 + Math.random() * .5); break;
+      case "tail": f.o.rotation.y = Math.sin(t * (moving ? 6 : 2.4) + f.ph) * .35; f.o.rotation.x = .5 + Math.sin(t * 1.8 + f.ph) * .12; break;
+      case "orbit": f.o.rotation.y += dt * f.sp; break;
+      case "spinring": f.o.rotation.z += dt * f.sp; break;
+      case "pulsem": f.o.material.opacity = .1 + Math.sin(t * 3) * .06; break;
+      case "flag": f.o.rotation.y = Math.sin(t * (moving ? 9 : 3)) * .5; break;
+      case "buzz": if (v.detail?.userData.wings) for (const w of v.detail.userData.wings) w.rotation.y = w.userData.side * (Math.sin(t * 40) * .5); break;
+      case "bigwings": if (v.detail?.userData.wings) for (const w of v.detail.userData.wings){ const fl = Math.sin(t * (moving ? 7 : 3)); w.rotation.y = w.userData.side * (fl * .7 - .2); w.rotation.z = w.userData.side * fl * .3; w.scale.setScalar(1.35); } break;
+      case "ring": if (Math.random() < .08) ring(wx, wz, 60 * s, f.col, .5); break;
+      case "sparkle": if (Math.random() < .5) parts.push({ x:wx + rnd(-30, 30) * s, y:wz + rnd(-30, 30) * s, h:rnd(10, 70) * s, vx:0, vy:0, vh:rnd(20, 60), life:rnd(.4, .8),
+        color:`hsl(${45 + Math.random() * 15},100%,${70 + Math.random() * 20}%)`, size:rnd(3, 6) }); break;
+      case "breath": if (Math.random() < f.rate) parts.push({ x:wx + fwd.x * f.z * s, y:wz + fwd.z * f.z * s, h:f.y * s, vx:fwd.x * rnd(40, 90), vy:fwd.z * rnd(40, 90), vh:rnd(10, 40),
+        life:rnd(.3, .6), color:f.col, size:rnd(4, 7) }); break;
+      case "trail": if (moving && Math.random() < f.rate) parts.push({ x:wx - fwd.x * 20 * s + rnd(-10, 10), y:wz - fwd.z * 20 * s + rnd(-10, 10), h:f.streak ? rnd(20, 60) * s : 6,
+        vx:0, vy:0, vh:f.streak ? 0 : rnd(20, 50), life:rnd(.4, .8), color:f.col, size:f.streak ? 8 : rnd(3, 6), ghost:!!f.streak }); break;
+    }
+  }
 }
 const propPool = [];
 let sparkPoints = null, sparkGeo = null;
@@ -5139,6 +5257,7 @@ function render(dt){
     const fly = mo.fly ? 26 + Math.sin(now() * 2) * 5 : 0;
     poseEntity(mountView, player.x, player.y, player.yaw, { step:player.step * 1.3, moving:(player.moveAmt || 0) > .05, lift: player.h + fly });
     if (mountView.disc) mountView.disc.rotation.y += dt * 3;
+    animateMount(mountView, dt, (player.moveAmt || 0) > .05, player.x, player.y);
   } else if (mountView) mountView.visible = false;
   const saddle = player.mounted ? (mo.body === "disc" ? 14 : mo.body === "serpent" ? 30 : mo.body === "ant" ? 30 : mo.body === "golem" ? 58 : 33) * mo.scale + (mo.fly ? 26 + Math.sin(now() * 2) * 5 : 0) - 14 : 0;
   poseEntity(pv, player.x, player.y, player.yaw, {
@@ -6470,6 +6589,7 @@ function previewTick(dt){
   if (PV.drag === null) PV.spin += dt * .7;
   PV.obj.rotation.y = PV.spin;
   poseCharacter(PV.obj, { step: now() * 2, moving:false, attack:0 });
+  if (PV.obj.userData.mfx) animateMount(PV.obj, dt, true, 1e9, 1e9);
   PV.ped.glow.material.opacity = .5 + Math.sin(now() * 3) * .2;
   PV.r.render(PV.scene, PV.cam);
 }

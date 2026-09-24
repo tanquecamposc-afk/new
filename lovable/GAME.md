@@ -344,6 +344,20 @@ las mejores solo se consiguen en las últimas.
 | Lobo dorado | ×3,45 | seguro al vencer a un SSS en las cuatro últimas regiones |
 | **Dragón de Obsidiana** (vuela) | **×3,6** | 0,6% en el Trono del Rey de las Sombras |
 
+Las diez monturas de las islas altas llevan **silla con borde encendido y
+estribos** y efectos propios, animados también en la vista 3D del menú:
+
+- **Colmillo de Escarcha**: cristales en el lomo que brillan, aliento helado y rastro de escarcha.
+- **Hormiga alada**: alas que zumban y bandas del abdomen que laten.
+- **Kitsune**: nueve colas en abanico que ondulan y tres fuegos fatuos orbitando.
+- **Corcel infernal**: crin y cola de fuego que parpadean, aliento ardiente y brasas al galopar.
+- **Oso Glacial**: armadura de hielo, púas de cristal, aliento blanco y aura de escarcha.
+- **Tigre de guerra**: rayas, placas doradas y un estandarte que ondea al correr.
+- **Disco del Sistema**: tres anillos de runas girando en sentidos opuestos y un cono de luz.
+- **Dragón de Obsidiana**: cresta de cristales violetas, alas enormes batiendo, aliento violeta y humo.
+- **Dragón de Kaisel**: alas grandes, ojos rojos, aliento y estelas de viento.
+- **Lobo dorado**: armadura de oro, gran halo y chispas doradas constantes.
+
 El cofre del día 7 solo puede dar monturas de las primeras siete islas, y solo
 de islas a las que ya has llegado.
 
