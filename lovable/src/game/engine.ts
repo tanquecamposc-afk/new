@@ -1043,6 +1043,26 @@ function killEnemy(e){
   rollMountDrop(e);
   dirty = true;
 }
+/* Renacer: pide más nivel en cada vuelta (200, 250, 300… hasta 1000) y un
+   coste en oro que crece ×4, no ×10, para que siga siendo alcanzable. */
+const rebirthLevel = () => Math.min(FLAGS.LEVEL_CAP, 200 + P.rebirths * 50);
+const rebirthCost  = () => 1e6 * Math.pow(4, P.rebirths);
+const rebirthPoints = () => 5 + P.rebirths * 10;         // puntos con los que empiezas
+function doRebirth(){
+  if (dungeon) return note("Sal de la mazmorra antes de renacer", "--hp");
+  if (P.level < rebirthLevel()) return note(`Necesitas nivel ${rebirthLevel()} para renacer`, "--hp");
+  if (P.cash < rebirthCost()) return note(`Necesitas ${fmt(rebirthCost())} de oro para renacer`, "--hp");
+  P.cash -= rebirthCost(); P.rebirths++; P.level = 1; P.xp = 0;
+  P.stats = { STR:0, INT:0, SDW:0, VIT:0, AGI:0, MNA:0, points:rebirthPoints() };
+  // vuelves a Seúl: a nivel 1 las regiones altas te matarían al instante
+  player.x = CFG.WORLD.cx; player.y = CFG.WORLD.cy; P.island = ISLANDS[0].id;
+  enemies = []; corpses = []; spawnT = 0;
+  player.hp = maxHP(); player.mana = maxMana();
+  banner("RENACER", "#bb8cff");
+  note(`Renacer ${P.rebirths} · daño ×${(1 + P.rebirths * .5).toFixed(1)} · +${fmt(P.rebirths * 500)} vida · XP y oro +${P.rebirths * 25}%/${P.rebirths * 30}% · ${rebirthPoints()} puntos`, "--monarch");
+  burst(player.x, player.y, 60, "#bb8cff", 40); SFX.levelUp?.();
+  save(); dirty = true; renderPanel();
+}
 function gainXP(amount){
   P.xp += amount;
   let leveled = false;
@@ -4704,10 +4724,17 @@ for (let i = 0; i < 13; i++) for (let k = 0; k < 8; k++){
 function chestOpened(c){ const D = P.chests || {}; return D.day === dayKey() && D.open?.includes(c.id); }
 function openChest(c){
   if (chestOpened(c)) return;
+  const need = ISLANDS[c.ring].level;
+  if (P.level < need){
+    if (now() - (c.warnT || 0) > 4){ c.warnT = now(); note(`Cofre sellado · necesitas nivel ${need}`, "--hp"); }
+    return;
+  }
   if (!P.chests || P.chests.day !== dayKey()) P.chests = { day:dayKey(), open:[] };
   P.chests.open.push(c.id);
-  const isle = ISLANDS[c.ring], lv = 1 + P.level * .02;
-  const cash = Math.floor(isle.enemy.hp * rnd(2, 6) * lv), gems = Math.floor((20 + c.ring * 30) * rnd(.6, 1.8) * lv);
+  // lo mismo que dan unas 10-25 bajas de la región: ayuda, pero no rompe la economía
+  const isle = ISLANDS[c.ring];
+  const cash = Math.floor(isle.enemy.lvl * 12 * (1 + P.rebirths * .3) * rnd(10, 25));
+  const gems = Math.floor((10 + c.ring * 12) * rnd(.6, 1.4));
   P.cash += cash; P.gems += gems;
   let extra = "";
   if (Math.random() < .08){ P.tickets++; extra = " · +1 ticket"; }
@@ -4736,6 +4763,12 @@ function syncChests(dt){
     }
     c.view.lid.rotation.x = open ? -1.6 : Math.sin(t * 3 + c.x) * .03;
     c.view.glow.visible = c.view.beam.visible = !open;
+    const locked = P.level < ISLANDS[c.ring].level;
+    if (c.view.locked !== locked){
+      c.view.locked = locked;
+      c.view.glow.material.color.set(locked ? "#ff4a5a" : "#ffffff");
+      c.view.beam.material.color.set(locked ? "#ff4a5a" : "#ffd24a");
+    }
     if (!open){ c.view.glow.material.opacity = .45 + Math.sin(t * 3) * .2; if (d < 70) openChest(c); }
   }
 }
@@ -6189,7 +6222,7 @@ function panelStats(){
       <b>${P.title}</b><span>Nivel ${P.level}${P.rebirths ? ` · Renacer ${P.rebirths}` : ""}</span>
       <div class="sbar xp"><small>EXP</small><i style="width:${clamp(P.xp / need * 100, 0, 100)}%"></i><em>${fmt(P.xp)} / ${fmt(need)}</em></div>
       <div class="pts ${s.points ? "live" : ""}">${s.points} puntos por repartir</div></div></div>`;
-  const rebirthCost = 1e6 * Math.pow(10, P.rebirths);
+  const rbLv = rebirthLevel(), rbCost = rebirthCost(), rbOk = P.level >= rbLv && P.cash >= rbCost && !dungeon;
   return shell(`Atributos · ${s.points} puntos`, nav + hero + `
     <div class="statgrid">${rows}</div>
     <div class="derived">
@@ -6218,8 +6251,11 @@ function panelStats(){
       <span class="meta"><b>Reiniciar atributos</b><span>Te devuelve los ${fmt(spentPoints())} puntos repartidos para que los coloques de otra forma · gratis</span></span>
       <button class="btn" id="respec-btn" ${spentPoints() > 0 ? "" : "disabled"}>Reiniciar</button></div>
     <div class="item"><span class="g">🌀</span>
-      <span class="meta"><b>Renacer</b><span>Reinicia nivel y atributos · +50% daño permanente por renacer · coste ${fmt(rebirthCost)} oro</span></span>
-      <button class="btn violet" id="rebirth-btn" ${P.level>=200 && P.cash>=rebirthCost ? "" : "disabled"}>Renacer</button></div>
+      <span class="meta"><b>Renacer ${P.rebirths + 1}</b><span>Pide nivel <b style="color:${P.level >= rbLv ? "var(--xp)" : "var(--hp)"}">${P.level}/${rbLv}</b>
+        y <b style="color:${P.cash >= rbCost ? "var(--xp)" : "var(--hp)"}">${fmt(P.cash)}/${fmt(rbCost)}</b> oro.
+        Reinicia nivel y atributos y te lleva a Seúl. Conservas sombras, armas, islas y rango.
+        Ganas daño ×${(1 + (P.rebirths + 1) * .5).toFixed(1)}, +${fmt((P.rebirths + 1) * 500)} de vida, +25% de XP, +30% de oro y empiezas con ${5 + (P.rebirths + 1) * 10} puntos.</span></span>
+      <button class="btn violet" id="rebirth-btn" ${rbOk ? "" : "disabled"}>Renacer</button></div>
     <p class="hint">Fórmulas del contrato V9: <b>EXPRequired(N)=100·N^1.85+N·50</b> · <b>EXPReward=Nivel·25·(1+Renacer·0.25)</b>.</p>`);
 }
 /* Inventario de sombras: rejilla de tarjetas con el color de su rango,
@@ -6889,15 +6925,7 @@ modal.addEventListener("click", e => {
     return;
   }
   if (t.id === "rebirth-btn"){
-    const cost = 1e6 * Math.pow(10, P.rebirths);
-    if (P.level >= 200 && P.cash >= cost){
-      P.cash -= cost; P.rebirths++; P.level = 1; P.xp = 0;
-      P.stats = { STR:0, INT:0, SDW:0, VIT:0, AGI:0, MNA:0, points:5 };
-      player.hp = maxHP(); player.mana = maxMana();
-      banner("RENACER", "#bb8cff"); note(`Renacer ${P.rebirths} · +50% de daño permanente`, "--monarch");
-      save(); dirty = true; renderPanel();
-    }
-    return;
+    doRebirth(); return;
   }
   if (t.dataset.class){
     if (!P.classes.includes(t.dataset.class)) return;
@@ -7305,7 +7333,7 @@ function drawMinimap(dt){
     c.fillStyle = color;
     c.beginPath(); c.arc(R + dx, R + dy, size, 0, Math.PI*2); c.fill();
   };
-  for (const c of CHESTS) if (!chestOpened(c) && Math.hypot(c.x - player.x, c.y - player.y) < 1800) put(c.x, c.y, "#ffd24a", 3);
+  for (const c of CHESTS) if (!chestOpened(c) && Math.hypot(c.x - player.x, c.y - player.y) < 1800) put(c.x, c.y, P.level < ISLANDS[c.ring].level ? "#ff4a5a" : "#ffd24a", 3);
   for (const e of enemies) put(e.x, e.y, e.boss ? "#ffd24a" : "#ff5d6c", e.boss ? 4.5 : 2.6);
   for (const sh of shadows) put(sh.x, sh.y, "#6aa8ff", 2.4);
   for (const co of corpses) put(co.x, co.y, "#31e4ff", 2.6);

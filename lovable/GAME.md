@@ -821,3 +821,16 @@ aserciones de prueba, que fue el punto de partida del diseño.
   - **Guadaña:** hoja curva en cuatro tramos con filo.
   - **Alabarda:** hoja con punta, filo claro y borla.
   - **Bastón:** anillos dorados y tres garras que sujetan un orbe con halo.
+
+## Renacer y cofres (ajuste)
+- **Renacer:**
+  - Pide nivel 200 la primera vez y 50 niveles más en cada renacer siguiente (tope 1000).
+  - Cuesta 1M de oro ×4 por renacer (antes era ×10).
+  - No se puede renacer dentro de una mazmorra.
+  - Al renacer te lleva a Seúl y empiezas con 5 + 10×renacer puntos.
+  - Conservas sombras, armas, islas y rango.
+  - El panel muestra en verde o rojo si cumples el nivel y el oro que pide, y todo lo que ganas.
+- **Cofres:**
+  - Dan el oro de unas 10–25 bajas de su región, en vez de 2–6 veces la vida del enemigo, que eran miles de millones.
+  - Las gemas bajan un poco.
+  - Solo se abren si tienes el nivel de su región. Si no, salen en rojo en el mundo y en el minimapa, y avisan del nivel que necesitas.
