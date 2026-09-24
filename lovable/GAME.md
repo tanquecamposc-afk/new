@@ -799,3 +799,9 @@ hitstop e impulso de cámara crecientes.
 El repositorio también incluye `src/`, una implementación del mismo bucle en
 Luau para Roblox (servidor autoritativo, ProfileService, anti-exploit) con 409
 aserciones de prueba, que fue el punto de partida del diseño.
+
+## Aspecto del cazador (look por defecto)
+- Pelo negro revuelto con flequillo (`messyHair`), ojos azules brillantes, piel clara.
+- Abrigo largo negro abierto con capucha sobre camiseta blanca, pantalón negro y botas con cordones (`outfit: shadowcoat`, `coatOpen`, `laces`).
+- Nueva categoría de vestuario **Modelo del arma**: `monarchblade`, un espadón cian con vetas oscuras y guarda negra con púas.
+- Las partidas antiguas migran una vez a este look mediante `lookV3`. Las demás prendas siguen disponibles en el vestuario.

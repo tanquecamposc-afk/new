@@ -1081,6 +1081,7 @@ const SAVE_KEY = "arise-crossover-v9/v1";
    un enemigo SS / SSS. Los conjuntos de ropa dan además un pequeño bono. */
 const LOOKS = {
   outfit: [
+    { id:"shadowcoat", name:"Abrigo del Cazador de Sombras", c:{ shirt:"#eceae6", sleeve:"#15151a", pants:"#141418", boots:"#0f0f14", plate:"#15151a", trim:"#3a3a44" }, coat:true },
     { id:"hunter",  name:"Cazador",          c:{ shirt:"#23407e", sleeve:"#2d51a0", pants:"#2a3350", boots:"#1d2438", plate:"#3f6ac0", trim:"#8fc0ff" } },
     { id:"night",   name:"Noche",            need:{ level:25 },  bonus:{ spd:.04 }, c:{ shirt:"#1a1c2a", sleeve:"#242838", pants:"#14161f", boots:"#0e1018", plate:"#3a3f55", trim:"#9fb0ff" } },
     { id:"crimson", name:"Carmesí",          need:{ kills:2000 }, bonus:{ dmg:.07 }, c:{ shirt:"#5a1420", sleeve:"#6e1a28", pants:"#2a1418", boots:"#1a0c10", plate:"#8a2030", trim:"#ff7a8a" } },
@@ -1094,15 +1095,15 @@ const LOOKS = {
     { id:"heavy", name:"Armadura pesada", need:{ rank:"A", level:250 }, bonus:{ hp:.08 } }, { id:"coat", name:"Abrigo largo", need:{ awakened:true, rank:"S" }, bonus:{ dmg:.06, spd:.03 } },
   ],
   hair: [
-    { id:"hood", name:"Capucha" }, { id:"short", name:"Corto" }, { id:"spiky", name:"En púas", need:{ level:30 } },
+    { id:"messy", name:"Revuelto con flequillo" }, { id:"hood", name:"Capucha" }, { id:"short", name:"Corto" }, { id:"spiky", name:"En púas", need:{ level:30 } },
     { id:"long", name:"Largo", need:{ level:120 } },
   ],
   hairColor: [
-    { id:"#15121f", name:"Negro" }, { id:"#5a3a1a", name:"Castaño", need:{ level:10 } }, { id:"#e8e8ec", name:"Blanco", need:{ level:400 } },
+    { id:"#121218", name:"Negro azabache" }, { id:"#15121f", name:"Negro" }, { id:"#5a3a1a", name:"Castaño", need:{ level:10 } }, { id:"#e8e8ec", name:"Blanco", need:{ level:400 } },
     { id:"#b0242e", name:"Rojo", need:{ kills:5000 } }, { id:"#7a4ae0", name:"Violeta", need:{ awakened:true, level:200 } },
   ],
   eyes: [
-    { id:"#4a5a78", name:"Grises" }, { id:"#3aa8ff", name:"Azul brillante", need:{ level:80 }, glow:true },
+    { id:"#4a5a78", name:"Grises" }, { id:"#3aa8ff", name:"Azul brillante", glow:true },
     { id:"#c9a6ff", name:"Violeta del Monarca", need:{ awakened:true }, glow:true, bonus:{ dmg:.03 } }, { id:"#ff3a4a", name:"Rojo sangre", need:{ ss:3 }, glow:true, bonus:{ dmg:.08 } },
     { id:"#ffd24a", name:"Oro SSS", need:{ sss:2, level:500 }, glow:true, bonus:{ dmg:.15, hp:.05 } },
   ],
@@ -1117,7 +1118,7 @@ const LOOKS = {
 };
 Object.assign(LOOKS, {
   skin: [
-    { id:"#e8b98a", name:"Clara" }, { id:"#f5d0a9", name:"Muy clara" }, { id:"#c68e5e", name:"Morena" },
+    { id:"#f0c9a0", name:"Clara (cazador)" }, { id:"#e8b98a", name:"Clara" }, { id:"#f5d0a9", name:"Muy clara" }, { id:"#c68e5e", name:"Morena" },
     { id:"#8d5a3a", name:"Oscura" }, { id:"#5a3a26", name:"Muy oscura" }, { id:"#c9d8f0", name:"Espectral", need:{ awakened:true } },
   ],
   height: [
@@ -1133,15 +1134,20 @@ Object.assign(LOOKS, {
     { id:"none", name:"Nada" }, { id:"sword", name:"Espada a la espalda", need:{ level:50 } }, { id:"spikes", name:"Púas", need:{ rank:"B" } },
     { id:"wings", name:"Alas de sombra", need:{ awakened:true, level:200 }, bonus:{ spd:.05 } },
   ],
+  weaponStyle: [
+    { id:"auto", name:"El modelo de tu arma" }, { id:"monarchblade", name:"Espadón de hoja cian" },
+  ],
   weaponGlow: [
-    { id:"auto", name:"El de tu arma" }, { id:"#6ef0ff", name:"Cian", need:{ level:20 } }, { id:"#ff3a4a", name:"Carmesí", need:{ kills:1500 } },
+    { id:"auto", name:"El de tu arma" }, { id:"#26e0ff", name:"Cian del Monarca" }, { id:"#6ef0ff", name:"Cian claro", need:{ level:20 } }, { id:"#ff3a4a", name:"Carmesí", need:{ kills:1500 } },
     { id:"#8fff6a", name:"Veneno", need:{ level:150 } }, { id:"#ffd24a", name:"Dorado", need:{ rank:"A" } }, { id:"#b07cff", name:"Sombra", need:{ awakened:true } },
   ],
 });
 const LOOK_CAT = { outfit:"Conjunto", armor:"Armadura", hair:"Peinado", hairColor:"Color de pelo", eyes:"Ojos", skin:"Piel",
-                   height:"Altura", head:"Cabeza", back:"Espalda", weaponGlow:"Brillo del arma", cape:"Capa", aura:"Aura" };
-const LOOK_DEFAULT = { outfit:"hunter", armor:"light", hair:"hood", hairColor:"#15121f", eyes:"#4a5a78", cape:"none", aura:"none",
-                       skin:"#e8b98a", height:"1.06", head:"none", back:"none", weaponGlow:"auto" };
+                   height:"Altura", head:"Cabeza", back:"Espalda", weaponStyle:"Modelo del arma", weaponGlow:"Brillo del arma", cape:"Capa", aura:"Aura" };
+// Aspecto de partida: el cazador de pelo negro revuelto, ojos azules,
+// abrigo largo negro con capucha sobre camiseta blanca y el espadón cian.
+const LOOK_DEFAULT = { outfit:"shadowcoat", armor:"light", hair:"messy", hairColor:"#121218", eyes:"#3aa8ff", cape:"none", aura:"none",
+                       skin:"#f0c9a0", height:"1.06", head:"none", back:"none", weaponStyle:"monarchblade", weaponGlow:"#26e0ff" };
 function needMet(n){
   if (!n) return true;
   if (n.level && P.level < n.level) return false;
@@ -1439,6 +1445,8 @@ function reconcile(d){
   }
   if (!Array.isArray(p.lookSeen)) p.lookSeen = [];
   if (!Array.isArray(p.lore)) p.lore = [];
+  if (!p.lookV3){ Object.assign(p.look, { outfit:"shadowcoat", hair:"messy", hairColor:"#121218", eyes: p.look.eyes === "#4a5a78" ? "#3aa8ff" : p.look.eyes,
+    skin:"#f0c9a0", weaponStyle:"monarchblade", weaponGlow:"#26e0ff", armor:"light", head:"none" }); p.lookV3 = true; }
   if (!Array.isArray(p.expeditions)) p.expeditions = [];
   if (typeof p.daily !== "object" || !p.daily) p.daily = { last:null, streak:0, total:0 };
   p.expeditions = p.expeditions.filter(e => e && EXPEDITIONS.some(x => x.id === e.id) && Array.isArray(e.uuids) && Number.isFinite(e.end));
@@ -3912,6 +3920,12 @@ function buildCharacter(cfg){
     const thigh = P0(12, 21, 13, pants);
     thigh.position.y = -10.5 * s;
     const boot = P0(13.5, 8, 16, cfg.boots || pants);
+    if (cfg.laces){
+      // botas altas con cordones cruzados
+      const shaft = P0(13, 7, 14, cfg.boots); shaft.position.set(0, -18.5 * s, 1 * s); hip.add(shaft);
+      for (let k = 0; k < 3; k++){ const lc = P0(8, 1, 1, cfg.laces); lc.position.set(0, (-26 + k * 3.2) * s, 9.6 * s); lc.rotation.z = k % 2 ? .35 : -.35; hip.add(lc); }
+      const sole = P0(14.5, 2, 17.5, "#0a0a10"); sole.position.set(0, -28.6 * s, 1.5 * s); hip.add(sole);
+    }
     boot.position.set(0, -25 * s, 1.5 * s);
     hip.add(thigh, boot);
     detail.add(hip); g.legs.push(hip);
@@ -3942,7 +3956,7 @@ function buildCharacter(cfg){
     sh.position.set(side * 17 * s, 54 * s, 0);
     const sleeve = P0(10.5, 11, 12, cfg.sleeve || shirt);
     sleeve.position.y = -5 * s;
-    const arm = P0(9.5, 15, 11, skin);
+    const arm = P0(9.5, 15, 11, cfg.armColor || skin);
     arm.position.y = -17 * s;
     const hand = P0(10, 6, 11.5, cfg.glove || skin);
     hand.position.y = -27 * s;
@@ -4033,7 +4047,7 @@ function buildCharacter(cfg){
   neck.add(head);
   if (cfg.hero){
     // nariz y orejas en relieve: la cabeza deja de ser un cubo liso
-    const nose = P0(3, 4, 2.5, skin); nose.position.set(0, 10 * s, 9.6 * s); neck.add(nose);
+    const nose = P0(2.6, 3.5, 2, cfg.noseColor || "#d9a57c"); nose.position.set(0, 10 * s, 9.4 * s); neck.add(nose);
     for (const sd of [-1, 1]){ const ear = P0(2.5, 6, 4, skin); ear.position.set(sd * 10.3 * s, 12 * s, 0); neck.add(ear); }
   }
   if (cfg.headband){
@@ -4059,7 +4073,19 @@ function buildCharacter(cfg){
     const back = P0(18.5, 9, 3, cfg.hair); back.position.set(0, 15 * s, -8 * s); neck.add(back);
     const fringe = P0(18.5, 4.5, 3, cfg.hair); fringe.position.set(0, 19 * s, 8 * s); neck.add(fringe);
   }
-  if (cfg.coat){
+  if (cfg.coat && cfg.coatOpen){
+    // abrigo largo abierto: dos faldones a los lados del pecho (se ve la
+    // camiseta), espalda hasta los tobillos, cuello alto y capucha caída
+    for (const sd of [-1, 1]){
+      const pan = P0(8.5, 44, 3.5, cfg.coat); pan.position.set(sd * 10.2 * s, 32 * s, 8.4 * s); detail.add(pan);
+      const hem = P0(9, 20, 3, cfg.coat); hem.position.set(sd * 10.4 * s, 5 * s, 9 * s); hem.rotation.x = -.12; hem.rotation.z = sd * .08; detail.add(hem); g.coatHems = (g.coatHems || []).concat(hem);
+      const lap = P0(4, 14, 2, cfg.coat); lap.position.set(sd * 6.5 * s, 49 * s, 9.6 * s); lap.rotation.z = sd * -.25; detail.add(lap);
+      const flank = P0(3.5, 50, 17, cfg.coat); flank.position.set(sd * 14.5 * s, 29 * s, 0); detail.add(flank);
+    }
+    const back = P0(28, 56, 3.5, cfg.coat); back.position.set(0, 26 * s, -9 * s); detail.add(back); g.coatBack = back;
+    const hoodB = P0(20, 12, 7, cfg.coat); hoodB.position.set(0, 58 * s, -9 * s); hoodB.rotation.x = .3; detail.add(hoodB);
+    const collar = P0(22, 6, 18, cfg.coat); collar.position.y = 55 * s; detail.add(collar);
+  } else if (cfg.coat){
     // Abrigo largo de faldones: dos delante y uno detrás, con las líneas
     // encendidas que recorren la tela. Es la silueta del cazador despertado.
     for (const [dx, w] of [[-7, 12], [7, 12]]){
@@ -4105,6 +4131,20 @@ function buildCharacter(cfg){
     }
     const collar = P0(24, 7, 8, col, { ...opts, opacity:(opts.opacity ?? 1) * .95 });
     collar.position.set(0, 55 * s, -6 * s); detail.add(collar);
+  }
+  if (cfg.messyHair){
+    // pelo negro revuelto: casquete, mechones de punta hacia atrás y los lados,
+    // y un flequillo largo que cae sobre los ojos
+    const H = cfg.messyHair;
+    const cap = P0(20.5, 6, 19.5, H); cap.position.y = 21 * s; neck.add(cap);
+    const backH = P0(20, 12, 5, H); backH.position.set(0, 15 * s, -8.5 * s); neck.add(backH);
+    for (const sd of [-1, 1]){ const side = P0(3, 11, 15, H); side.position.set(sd * 10 * s, 15 * s, -1 * s); neck.add(side);
+      const burn = P0(2.5, 6, 3, H); burn.position.set(sd * 9.8 * s, 10 * s, 5 * s); neck.add(burn); }
+    const tufts = [[-7,-3,8,-.7,-.5],[-2,-6,9,-.2,-.8],[4,-5,8,.4,-.7],[8,-1,7,.9,-.3],[-8,3,6,-1,.2],[2,1,8,.1,-.3],[6,4,6,.8,.3],[-4,-1,9,-.4,-.4],[0,-8,7,0,-1.1]];
+    for (const [dx, dz, h, tz, tx] of tufts){ const t = P0(4.2, h, 4.2, H); t.position.set(dx * s, (23 + h / 2) * s, dz * s); t.rotation.set(tx, 0, tz); neck.add(t); }
+    // flequillo: mechones que tapan la frente y bajan entre los ojos
+    for (const [dx, h, tz] of [[-6.5, 7, .25], [-2.5, 9, .1], [1.5, 10, -.12], [5.5, 7, -.3]]){
+      const f = P0(4.5, h, 3, H); f.position.set(dx * s, (20.5 - h / 2 + 2) * s, 9.2 * s); f.rotation.z = tz; f.rotation.x = -.18; neck.add(f); }
   }
   if (cfg.spikyHair){
     // pelo en púas: mechones inclinados en vez de un bloque liso
@@ -4214,6 +4254,20 @@ function buildCharacter(cfg){
       const tsuba = P0(8, 1.8, 8, "#c9a33a"); tsuba.position.y = 8 * s; wg.add(tsuba);
       const tsuka = P0(3.2, 13, 3.2, "#1a1426"); tsuka.position.y = 1 * s; wg.add(tsuka);
       for (let i = 0; i < 3; i++){ const wr = P0(3.6, 1, 3.6, "#e8e0cc"); wr.position.y = (-3 + i * 4) * s; wg.add(wr); }
+    } else if (kind === "monarchblade"){
+      // espadón de hoja cian que brilla, con vetas negras como raíces y una
+      // guarda negra de púas
+      const G = cfg.weapon;
+      const blade = P0(9, 66, 2.2, G, { ...opts, emissive:G, emissiveIntensity:1.5 }); blade.position.y = 44 * s; wg.add(blade);
+      const tip = P0(7, 8, 2, G, { ...opts, emissive:G, emissiveIntensity:1.5 }); tip.position.set(1.5 * s, 80 * s, 0); tip.rotation.z = -.55; wg.add(tip);
+      for (const [dx, y, h, rz] of [[-1.5, 22, 14, .15], [1.2, 34, 12, -.25], [-.8, 46, 16, .2], [1.6, 60, 10, -.3], [0, 70, 7, .1]]){
+        const vein = P0(1.2, h, 2.6, "#0c0c14"); vein.position.set(dx * s, y * s, 0); vein.rotation.z = rz; wg.add(vein); }
+      const guard = P0(20, 5, 7, "#101018"); guard.position.y = 11 * s; wg.add(guard);
+      for (const sd of [-1, 1]){ const sp = P0(4, 10, 4, "#101018"); sp.position.set(sd * 10 * s, 14 * s, 0); sp.rotation.z = sd * -.6; wg.add(sp); }
+      const grip = P0(4, 16, 4, "#101018"); grip.position.y = 1 * s; wg.add(grip);
+      const pom = P0(6, 4, 6, "#101018"); pom.position.y = -8 * s; wg.add(pom);
+      const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTexture(G), transparent:true, depthWrite:false, blending:THREE.AdditiveBlending, opacity:.45 }));
+      halo.scale.set(40 * s, 90 * s, 1); halo.position.y = 44 * s; wg.add(halo);
     } else if (kind === "greatsword"){
       const gl = cfg.weaponGlow ? { ...opts, emissive:cfg.weapon, emissiveIntensity:1.2 } : opts;
       const blade = P0(10, 54, 3, cfg.weapon, gl); blade.position.y = 37 * s; wg.add(blade);
@@ -5392,30 +5446,32 @@ function playerConfig(){
     backSword: lookItem("back").id === "sword" ? kitOf(P.weapon).color : null,
     features: lookItem("back").id === "wings" ? ["wings"] : [], iris:eyeI.id, glowEyes: glowEye, eyes: glowEye ? eyeI.id : "#12172b",
     shirt: out.shirt, sleeve: out.sleeve, pants: out.pants, boots: out.boots,
-    belt:"#1a1428", buckle: out.trim,
+    armColor: lookItem("outfit").coat ? out.sleeve : null, laces: lookItem("outfit").coat ? "#3a3a44" : null,
+    coatOpen: !!lookItem("outfit").coat, messyHair: hair === "messy" ? L.hairColor : null,
+    belt: lookItem("outfit").coat ? "#101014" : "#1a1428", buckle: lookItem("outfit").coat ? "#2a2a30" : out.trim,
     spikyHair: hair === "spiky" ? L.hairColor : null,
     hair: hair === "short" || hair === "long" ? L.hairColor : null, longHair: hair === "long" ? L.hairColor : null,
     hood: hair === "hood" ? out.plate : null, hood2: hair === "hood" ? out.trim : null,
-    rig: armor === "light" ? "#0f1526" : null, rig2: out.trim,
-    kneepads: armor === "light" ? "#0f1526" : null,
-    coat: coat ? out.shirt : null,
+    rig: armor === "light" && !lookItem("outfit").coat ? "#0f1526" : null, rig2: out.trim,
+    kneepads: armor === "light" && !lookItem("outfit").coat ? "#0f1526" : null,
+    coat: lookItem("outfit").coat ? out.sleeve : coat ? out.shirt : null,
     trim: coat || heavy ? out.trim : null,
-    armor: coat ? null : out.plate, armorGlow: 0,
+    armor: coat || lookItem("outfit").coat ? null : out.plate, armorGlow: 0,
     core: plate || coat ? out.trim : null,
-    pauldron: out.plate, pauldron2: plate || coat ? out.trim : null,
+    pauldron: lookItem("outfit").coat && !plate ? null : out.plate, pauldron2: plate || coat ? out.trim : null,
     spikes: heavy || (coat && P.awakened) || lookItem("back").id === "spikes" ? out.trim : null,
-    gauntlet: out.plate,
+    gauntlet: lookItem("outfit").coat && !plate ? null : out.plate,
+    glove: lookItem("outfit").coat ? null : out.trim,
     tassets: plate ? out.plate : null,
     greaves: heavy ? out.plate : null,
     backSpikes: (coat && rankIdx(P.rank) >= 5) || lookItem("back").id === "spikes" ? out.trim : null,
     helm: lookItem("head").id === "helm" ? out.plate : null, helm2: lookItem("head").id === "helm" ? out.trim : null,
     visor: lookItem("head").id === "helm" ? out.trim : null, crest: heavy ? out.trim : null,
-    glove: out.trim,
     cape: capeI === "none" ? null : capeI === "shadow" ? "#120c24" : out.plate, capeLong: capeI === "long" || capeI === "shadow",
     crown: lookItem("head").id === "crown" ? "#ffd24a" : null,
     weapon: lookItem("weaponGlow").id === "auto" ? kitOf(P.weapon).color : lookItem("weaponGlow").id,
     weaponGlow: P.awakened || !!kitOf(P.weapon).glow || lookItem("weaponGlow").id !== "auto",
-    weaponKind: weaponKind(P.weapon),
+    weaponKind: lookItem("weaponStyle").id === "monarchblade" ? "monarchblade" : weaponKind(P.weapon),
     key: `${JSON.stringify(L)}|${P.rank}|${P.weapon}|${P.awakened}`,
   };
 }
