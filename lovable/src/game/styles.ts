@@ -403,6 +403,8 @@ canvas#stage{position:absolute;inset:0;width:100%;height:100%;display:block;touc
 .dcell small{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
 .dcell .dic{font-size:26px}
 .dcell b{font-size:11.5px} .dcell em{font-style:normal;font-size:10px;color:var(--muted)}
+.dlast{padding:10px 12px;border-radius:12px;border:2px solid var(--cash);background:rgba(126,224,122,.08)}
+.dlast small{display:block;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)} .dlast b{font-size:13px}
 .dcell.done{opacity:.55;border-color:var(--cash)}
 .dcell.cur{border-color:var(--gold);box-shadow:0 0 18px rgba(255,210,74,.45);animation:glowp 1.4s ease-in-out infinite}
 .dcell.big{grid-column:span 2;background:linear-gradient(180deg,rgba(255,210,74,.18),rgba(11,19,45,.9))}

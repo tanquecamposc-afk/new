@@ -466,10 +466,18 @@ cámara y de sonido.
 ### Recompensas diarias
 
 En **Inventario › Diario** hay un calendario de 7 días: se reclama una vez por
-día natural. Si pasas un día entero sin entrar, la racha vuelve al día 1. Las
-recompensas crecen con tu nivel: oro y gemas, tickets los días 3, 5 y 6, y el
-día 7 el **Cofre del Monarca** (10× oro, 12× gemas y 3 tickets). Al entrar al
-juego, si hay una recompensa pendiente, el calendario se abre solo.
+día natural. Si pasas un día entero sin entrar, la racha vuelve al día 1. Al
+entrar, si hay una recompensa pendiente, el calendario se abre solo.
+
+Cada cofre es una **tirada al azar**: la cantidad de oro y gemas cambia de
+×0,5 a ×2,5 cada vez, a veces sale un **golpe de suerte ×5**, puede caer un
+ticket extra y hay un 15% de runa. Todo crece con tu nivel. El último cofre
+abierto queda a la vista.
+
+El **día 7 es el Cofre del Monarca**, muy por encima del resto (de media unas
+35 veces las gemas del día 1): entre 3 y 7 tickets, una runa segura, un 20% de
+runa exclusiva (Vacío o Eternidad), un 12% de montura y un 15% de golpe de
+suerte ×5.
 
 ### Códigos
 

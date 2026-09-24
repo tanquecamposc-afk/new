@@ -633,18 +633,46 @@ function dailyState(){
   const next = !D.last || gap > 1 ? 0 : D.streak % 7;             // racha rota → día 1
   return { can, next, streak: gap > 1 ? 0 : D.streak, broke: D.last && gap > 1 };
 }
+// Base de cada día; lo que sale de verdad se tira al reclamar.
 function dailyAmount(i){
   const r = DAILY[i], lv = 1 + P.level * .05;
   return { cash: Math.floor(2500 * r.cash * lv * (1 + P.level * .02)), gems: Math.floor(25 * r.gems * lv), tickets: r.tickets };
 }
+/* Tirada del cofre diario: cantidades que varían de ×0,5 a ×2,5, a veces un
+   golpe de suerte ×5, y botín extra al azar. El día 7 es un cofre aparte:
+   mucho más grande, runa segura, opción de runa exclusiva y de una montura. */
+function rollDaily(i){
+  const base = dailyAmount(i), big = DAILY[i].big, out = { cash:0, gems:0, tickets:0, extras:[] };
+  const luck = Math.random() < (big ? .15 : .06) ? 5 : 1;
+  const k = () => (0.5 + Math.random() * 2) * luck;
+  if (big){
+    out.cash = Math.floor(base.cash * 2.5 * k()); out.gems = Math.floor(base.gems * 2.5 * k()); out.tickets = 3 + Math.floor(Math.random() * 5);
+    const r = ["Health", "Gems", "Cash", "Time"][Math.floor(Math.random() * 4)];
+    P.runes[r] = (P.runes[r] || 0) + 1; out.extras.push(`${RUNES[r].glyph} ${RUNES[r].name}`);
+    if (Math.random() < .2){ const x = Math.random() < .5 ? "Void" : "Eternity"; P.runes[x] = (P.runes[x] || 0) + 1; out.extras.push(`${RUNES[x].glyph} ${RUNES[x].name}`); }
+    const missing = Object.keys(MOUNTS).filter(m => !P.mounts.includes(m) && MOUNTS[m].isle);
+    if (missing.length && Math.random() < .12){
+      const m = missing[Math.floor(Math.random() * missing.length)]; P.mounts.push(m); out.extras.push(`🐺 Montura: ${MOUNTS[m].name}`);
+    }
+  } else {
+    out.cash = Math.random() < .85 ? Math.floor(base.cash * k() + base.gems * 50 * Math.random()) : 0;
+    out.gems = Math.floor(base.gems * k());
+    out.tickets = base.tickets + (Math.random() < .2 ? 1 : 0);
+    if (Math.random() < .15){ const r = ["Health", "Gems", "Cash", "Time"][Math.floor(Math.random() * 4)];
+      P.runes[r] = (P.runes[r] || 0) + 1; out.extras.push(`${RUNES[r].glyph} ${RUNES[r].name}`); }
+  }
+  if (luck > 1) out.extras.unshift("✨ ¡Golpe de suerte ×5!");
+  return out;
+}
 function claimDaily(){
   const st = dailyState(); if (!st.can) return;
-  const a = dailyAmount(st.next);
+  const a = rollDaily(st.next);
   P.cash += a.cash; P.gems += a.gems; P.tickets += a.tickets;
-  P.daily = { last:dayKey(), streak: st.next + 1 + (st.streak >= 7 && st.next === 0 ? 0 : 0) };
-  P.daily.total = (P.daily.total || 0) + 1;
-  banner(`DÍA ${st.next + 1} RECLAMADO`, DAILY[st.next].big ? "#ffd24a" : "#5ce8a6");
-  note(`+${fmt(a.cash)} oro · +${fmt(a.gems)} gemas${a.tickets ? ` · +${a.tickets} ticket` : ""}`, "--cash");
+  P.daily = { last:dayKey(), streak: st.next + 1, total:(P.daily?.total || 0) + 1,
+              lastRoll:{ day:st.next + 1, ...a } };
+  banner(DAILY[st.next].big ? "¡COFRE DEL MONARCA!" : `DÍA ${st.next + 1} RECLAMADO`, DAILY[st.next].big ? "#ffd24a" : "#5ce8a6");
+  note([a.cash && `+${fmt(a.cash)} oro`, a.gems && `+${fmt(a.gems)} gemas`, a.tickets && `+${a.tickets} tickets`, ...a.extras].filter(Boolean).join(" · "), "--cash");
+  if (DAILY[st.next].big){ burst(player.x, player.y, 60, "#ffd24a", 40); camImpulse(.6); }
   SFX.levelUp?.(); save(); dirty = true;
 }
 function panelDaily(nav){
@@ -653,14 +681,17 @@ function panelDaily(nav){
     const claimed = st.can ? i < st.next : i < ((P.daily.streak - 1) % 7) + 1;
     return `<div class="dcell ${claimed ? "done" : ""} ${cur && st.can ? "cur" : ""} ${r.big ? "big" : ""}">
       <small>Día ${i + 1}</small><span class="dic">${claimed ? "✔" : r.big ? "👑" : r.tickets ? "🎟" : "🎁"}</span>
-      <b>${r.label}</b><em>${a.cash ? fmt(a.cash) + " oro" : ""}${a.cash && a.gems ? " · " : ""}${fmt(a.gems)} gemas${a.tickets ? ` · ${a.tickets} 🎟` : ""}</em></div>`; }).join("");
+      <b>${r.label}</b><em>${r.big ? `${fmt(a.gems * 1.25)}–${fmt(a.gems * 6.25)} gemas · 3–7 🎟 · runa segura · 20% runa exclusiva · 12% montura`
+        : `~${fmt(a.gems * .5)}–${fmt(a.gems * 2.5)} gemas${a.tickets ? ` · ${a.tickets}+ 🎟` : ""} · 15% runa`}</em></div>`; }).join("");
+  const L = P.daily?.lastRoll;
+  const last = L ? `<div class="dlast"><small>Último cofre · día ${L.day}</small><b>${[L.cash && `${fmt(L.cash)} oro`, L.gems && `${fmt(L.gems)} gemas`, L.tickets && `${L.tickets} tickets`, ...(L.extras || [])].filter(Boolean).join(" · ")}</b></div>` : "";
   return shell("Recompensas diarias", nav + `<div class="daily">
       <div class="dhead"><div><small>Racha</small><b>${st.can ? st.next : ((P.daily.streak - 1) % 7) + 1} / 7</b></div>
         <div><small>Días reclamados</small><b>${P.daily?.total || 0}</b></div></div>
       ${st.broke ? `<p class="codemsg bad">Te saltaste un día: la racha empieza de nuevo.</p>` : ""}
-      <div class="dgrid">${cells}</div>
+      <div class="dgrid">${cells}</div>${last}
       <button class="btn gold big-w" id="daily-btn" ${st.can ? "" : "disabled"}>${st.can ? `Reclamar día ${st.next + 1}` : "Vuelve mañana"}</button>
-      <p class="kbhelp">Se reclama una vez por día. Las recompensas crecen con tu nivel; el día 7 da el Cofre del Monarca y la racha vuelve a empezar.</p></div>`);
+      <p class="kbhelp">Cada cofre es una tirada: la cantidad cambia cada vez y a veces sale un golpe de suerte ×5. Crece con tu nivel. El día 7 es el Cofre del Monarca, mucho mejor que el resto.</p></div>`);
 }
 function newProfile(){
   return {
