@@ -824,8 +824,8 @@ aserciones de prueba, que fue el punto de partida del diseño.
 
 ## Renacer y cofres (ajuste)
 - **Renacer:**
-  - Pide nivel 200 la primera vez y 50 niveles más en cada renacer siguiente (tope 1000).
-  - Cuesta 1M de oro ×4 por renacer (antes era ×10).
+  - El primero pide nivel 100 y cada renacer siguiente 50 niveles más: 150, 200, 250… (tope 1000).
+  - Cuesta 200.000 de oro ×2,2 por renacer.
   - No se puede renacer dentro de una mazmorra.
   - Al renacer te lleva a Seúl y empiezas con 5 + 10×renacer puntos.
   - Conservas sombras, armas, islas y rango.

@@ -1670,10 +1670,10 @@ function killEnemy(e){
   rollMountDrop(e);
   dirty = true;
 }
-/* Renacer: pide más nivel en cada vuelta (200, 250, 300… hasta 1000) y un
-   coste en oro que crece ×4, no ×10, para que siga siendo alcanzable. */
-const rebirthLevel = () => Math.min(FLAGS.LEVEL_CAP, 200 + P.rebirths * 50);
-const rebirthCost  = () => 1e6 * Math.pow(4, P.rebirths);
+/* Renacer: el primero a nivel 100 y luego uno cada 50 niveles más (150, 200,
+   250… hasta 1000). El coste en oro crece ×2,2 por renacer. */
+const rebirthLevel = () => Math.min(FLAGS.LEVEL_CAP, 100 + P.rebirths * 50);
+const rebirthCost  = () => Math.round(2e5 * Math.pow(2.2, P.rebirths));
 const rebirthPoints = () => 5 + P.rebirths * 10;         // puntos con los que empiezas
 function doRebirth(){
   if (dungeon) return note("Sal de la mazmorra antes de renacer", "--hp");
