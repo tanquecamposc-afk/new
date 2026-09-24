@@ -114,6 +114,7 @@ function rollMobRank(){
   for (let i = 0; i < w.length; i++){ x -= w[i]; if (x <= 0) return MOB_RANKS[i].r; }
   return "E";
 }
+const TIER_ORDER_BASE = ["C", "B", "A", "S", "S Elite", "Monarch"];
 const TIER_VAR = { C:"--t-C", B:"--t-B", A:"--t-A", S:"--t-S", "S Elite":"--t-SE", Monarch:"--t-M" };
 
 /* --------------------------- catálogo de armas ---------------------------
@@ -237,6 +238,21 @@ const ISLANDS = [
   { id:"ShadowRealm",  name:"Trono del Rey de las Sombras",level:1400, theme:"cyber",   enemy:{ name:"Soberano Caído",   lvl:1412, hp:4.2e19,  dmg:6.1e16 },brute:{ name:"General Monarca",  lvl:1450,hp:1.8e20,dmg:1.4e17 },boss:{ name:"Antares",               lvl:1490, hp:2.6e21,  dmg:3.9e17,shadow:"Ashborn" },  shadow:"Ashborn",  weapons:["ShadowDaggers","AshbornBlade"] },
 ];
 const isleOf = id => ISLANDS.find(i => i.id === id) || ISLANDS[0];
+/* Una sombra por cada enemigo: el común y el bruto de cada región dan su
+   propia sombra, con la forma de ese enemigo hecha de oscuridad; el jefe sigue
+   dando su sombra con nombre (Igris, Beru, Kaisel…). */
+const MOB_SHADOW_TIER = ["C", "C", "B", "B", "A", "A", "A", "S", "S", "S", "S Elite", "S Elite", "Monarch"];
+ISLANDS.forEach((isle, i) => {
+  const base = SHADOWS[isle.shadow] || SHADOWS.Soldier;
+  for (const [k, src, mult] of [["n", isle.enemy, 1], ["b", isle.brute, 1.6]]){
+    const tierI = Math.min(5, TIER_ORDER_BASE.indexOf(MOB_SHADOW_TIER[i]) + (k === "b" ? 1 : 0));
+    SHADOWS[`${isle.id}_${k}`] = {
+      id:`${isle.id}_${k}`, name:`${src.name} sombrío`, tier:TIER_ORDER_BASE[tierI],
+      dmg: base.dmg * mult, hp: base.hp * mult, rate: Math.max(.05, (.5 - i * .03) * (k === "b" ? .6 : 1)),
+      gems: Math.ceil(base.gems * mult), glyph: k === "b" ? "💠" : "🌑", mob:{ isle:isle.id, brute:k === "b" },
+    };
+  }
+});
 // Región del mundo abierto según la distancia al centro.
 function ringAt(x, y){
   const d = Math.hypot(x - CFG.WORLD.cx, y - CFG.WORLD.cy);
@@ -970,6 +986,15 @@ function dealDamage(e, amount, opts){
   if (!o.shadow){ hitstop = Math.max(hitstop, o.hitstop ?? 0.02); camImpulse(o.cam ?? 0.2); }
   if (e.hp <= 0) killEnemy(e);
 }
+// Qué sombra deja cada cuerpo: el jefe, la suya con nombre; el resto, la de
+// su propia especie, y de vez en cuando (8%) la sombra con nombre de la región.
+function corpseShadowId(e){
+  const isleId = e.isle || regionAt(e.x, e.y).id, isle = isleOf(isleId);
+  if (e.boss) return e.def.shadow || isle.shadow;
+  const own = `${isleId}_${e.def.kind === "brute" ? "b" : "n"}`;
+  if (!SHADOWS[own] || Math.random() < .08) return e.def.shadow || isle.shadow;
+  return own;
+}
 function killEnemy(e){
   enemies = enemies.filter(x => x !== e);
   if (target === e) target = null;
@@ -989,7 +1014,7 @@ function killEnemy(e){
   // CorpseToken (contrato 07)
   while (corpses.length >= FLAGS.MAX_CORPSES) corpses.shift();
   corpses.push({
-    CorpseId:uid(), EnemyId:e.def.name, ShadowDefinitionId:e.def.shadow || isleOf(P.island).shadow, rank:e.rank || "E",
+    CorpseId:uid(), EnemyId:e.def.name, ShadowDefinitionId: corpseShadowId(e), rank:e.rank || "E",
     OwnerPlayerId:1, SpawnedAt:now(), ExpiresAt:now() + FLAGS.CORPSE_LIFETIME,
     AttemptsRemaining:FLAGS.ARISE_ATTEMPTS, Consumed:false,
     x:e.x, y:e.y, level:e.level, phase:0, boss:e.boss,
@@ -4747,8 +4772,29 @@ const SHADOW_LOOK = {
   Ashborn:  { kit:{ coat:"#0b0a16", weaponKind:"greatsword", spikes:true, backSpikes:true }, features:["halo"], crown:true, scale:1.35, glow:"#b07cff",
               lore:"El primer Monarca de las Sombras. Su sola presencia oscurece el cielo." },
 };
+// Versión de sombra de un enemigo: su mismo cuerpo, rasgos y equipo, pero
+// hecho de negro violáceo translúcido y con el brillo de su clase.
+function mobShadowConfig(d){
+  const src = SHADOWS[d.id].mob, reg = MOB_LOOK[src.isle] || MOB_LOOK.Seoul;
+  // vetas con el color de su región; los ojos con el de su clase
+  const tierC = getComputedStyle(document.documentElement).getPropertyValue(TIER_VAR[d.tier] || "--t-C").trim() || reg.glow;
+  const glow = reg.glow;
+  const key = `__sh_${d.id}`;
+  if (!MOB_LOOK[key]){
+    const kit = {};
+    for (const [k, v] of Object.entries(reg.kit || {})) kit[k] = typeof v === "string" && v.startsWith("#") ? (/weapon|visor|Glow|hood2|helm2|spikes|trim|hornColor/.test(k) ? glow : "#1a1230") : v;
+    MOB_LOOK[key] = { ...reg, skin:"#1a1232", dark:"#0b0818", hair:"#241a40", glow, kit, features:[...(reg.features || []), "halo"] };
+  }
+  const cfg = enemyConfig({ def:{ kind: src.brute ? "brute" : "normal", r:18 }, isle:key, look:{}, rank:d.rank, x:0, y:0 });
+  cfg.opts = { opacity:.92 };
+  cfg.eyes = tierC;
+  if (cfg.body === "humanoid"){ Object.assign(cfg, { glowEyes:true, eyes:tierC, skin:"#1a1232", armorGlow:glow, core:glow, trim: cfg.trim ? glow : cfg.trim }); }
+  cfg.scale *= 1 + rankIdxOf(d.rank) * .03;
+  return cfg;
+}
 function shadowConfig(sh){
   const d = sh.data, tier = d.tier, L = SHADOW_LOOK[d.id] || {};
+  if (SHADOWS[d.id]?.mob) return mobShadowConfig(d);
   const tierGlow = getComputedStyle(document.documentElement).getPropertyValue(TIER_VAR[tier] || "--t-C").trim() || "#b9c9e8";
   const glow = L.glow || tierGlow;
   const elite = tier === "S" || tier === "S Elite" || tier === "Monarch";
@@ -6106,7 +6152,7 @@ function panelMap(){
         <div class="kv"><small>Nivel recomendado</small><b>${isle.level}</b></div>
         <div class="kv"><small>Vida típica</small><b>${fmt(isle[mobKind].hp)}</b></div>
         <div class="kv"><small>Daño</small><b>${fmt(isle[mobKind].dmg)}</b></div>
-        <div class="kv"><small>Sombra</small><b>${SHADOWS[isle.shadow]?.name || isle.shadow}</b></div>
+        <div class="kv"><small>Sombras</small><b style="font-size:12px">${[SHADOWS[isle.id + "_n"], SHADOWS[isle.id + "_b"], SHADOWS[isle.boss.shadow]].filter(Boolean).map(x => x.name).join(" · ")}</b></div>
       </div>
       <button class="btn ${here ? "" : "green"} big-w" data-ring="${mapSel}" ${!un || here ? "disabled" : ""}>${here ? "Estás aquí" : un ? "Viajar ahora" : "Bloqueada"}</button>
     </div>`;

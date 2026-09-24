@@ -345,6 +345,17 @@ gira a su espalda. El espectro del Arquitecto lleva máscara blanca, cadenas y
 fragmentos de runa orbitando. El cazador caído de Shinjuku empuña katana con
 capa larga, y el soberano caído del Trono lleva abrigo, cuernos, púas y mandoble.
 
+### Una sombra por cada enemigo
+
+Cada región da **tres sombras**: la de su enemigo común, la de su bruto y la
+del jefe. En total hay 40 sombras. Las sombras de enemigo tienen **la misma
+forma que el enemigo del que salen**: el goblin sombrío es un goblin, la
+serpiente sombría es una serpiente, el caballero sombrío lleva escudo… hechas
+de negro violáceo translúcido, con las vetas del color de su región, los ojos
+del color de su clase y un halo. La del bruto es una clase más alta que la del
+común. De vez en cuando (8%), un enemigo normal deja en su lugar la sombra con
+nombre de su región. La ficha del mapa muestra las tres sombras de cada región.
+
 ### Diseño de las sombras
 
 Cada sombra conserva la forma de lo que fue, hecha de sombra translúcida con el
