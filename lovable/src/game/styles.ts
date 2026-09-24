@@ -426,8 +426,8 @@ canvas#stage{position:absolute;inset:0;width:100%;height:100%;display:block;touc
 .card{min-height:84px}
 .chip{min-height:34px;padding:6px 13px}
 .tab{min-height:36px}
-.rstrip{display:flex;gap:6px;align-items:center}
-.rpills{flex:1;display:flex;gap:5px;overflow-x:auto;padding:3px 2px;scrollbar-width:thin}
+.rstrip{display:flex;gap:6px;align-items:center;min-width:0;max-width:100%}
+.rpills{flex:1;min-width:0;display:flex;gap:5px;overflow-x:auto;padding:3px 2px;scrollbar-width:thin}
 .rpill{--tc:var(--line-hi);flex:none;min-width:40px;height:40px;border-radius:12px;cursor:pointer;font:700 14px var(--f-ui);color:#0a1020;
   border:2px solid rgba(5,10,24,.7);background:var(--tc);transition:transform .12s,box-shadow .12s}
 .rpill:hover{transform:translateY(-2px)}
@@ -445,7 +445,8 @@ canvas#stage{position:absolute;inset:0;width:100%;height:100%;display:block;touc
 }
 /* --- mapa interactivo y bestiario --- */
 .mapwrap2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);gap:14px;align-items:start}
-.mapside{display:grid;gap:8px}
+.mapside{display:grid;gap:8px;min-width:0}
+.mapwrap2,.panel .body > *{min-width:0}
 .wmap{width:100%;max-width:420px;justify-self:center;filter:drop-shadow(0 10px 26px rgba(0,0,0,.5))}
 .wmap .ring{cursor:pointer;opacity:.85;transition:opacity .15s,stroke-width .15s,filter .15s}
 .wmap .ring:hover{opacity:1;filter:brightness(1.35)}
@@ -472,7 +473,7 @@ canvas#stage{position:absolute;inset:0;width:100%;height:100%;display:block;touc
 .rhead b{font-family:var(--f-display);font-size:19px}
 .rhead span{font-size:12px;color:var(--muted)}
 .rcard .pv{aspect-ratio:16/10;max-height:240px}
-.big-w{width:100%;padding:11px;font-size:14px}
+.big-w{width:100%;padding:11px;font-size:14px;white-space:normal;line-height:1.25}
 .card.lock{opacity:.5;filter:grayscale(.6)}
 .card.lock:hover{transform:none}
 div.card{cursor:default}

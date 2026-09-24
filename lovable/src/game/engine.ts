@@ -3952,6 +3952,9 @@ const MUSIC_SCALES = {
   throne:  { tempo:3.6, acordes:[[55,82,110],[58,87,116],[49,73,98],[55,82,123]],         melodia:[220,262,277,330] },
   dungeon: { tempo:2.4, acordes:[[73,110,139],[78,117,147],[65,98,123],[73,110,139]],      melodia:[294,349,440,523] },
 };
+const BIOME_NAME = { city:"Ciudad", forest:"Bosque", ice:"Hielo", urban:"Metrópoli", royal:"Reino", shrine:"Templo", dark:"Prisión",
+  dragon:"Tierra de dragones", cyber:"Neón", volcano:"Volcán", guild:"Gremio", mystic:"Arcano", storm:"Tormenta", dungeon:"Mazmorra",
+  savage:"Sabana salvaje", throne:"Reino de las Sombras" };
 const themeNow = () => dungeon ? THEMES.dungeon : (THEMES[regionAt(player.x, player.y).theme] || THEMES.city);
 /* Cada región es una isla: en cada frontera hay un canal de agua poco
    profundo que se cruza vadeando, con playa a los lados. */
@@ -6463,6 +6466,13 @@ function panelStats(){
     const reel = `<div class="reelwrap"><div class="reelmark"></div><div class="reel" id="reel">${
       Array.from({ length:5 }, () => list.map(c => `<span class="rcell" style="--rc:${CLASS_RARITY[c.rar].col}">${c.glyph}<small>${c.name}</small></span>`).join("")).join("")}</div></div>`;
     const cur = CLASSES[P.class];
+    // en reposo, la cinta se centra en la clase activa bajo la marca
+    if (!spinning) requestAnimationFrame(() => {
+      const r = document.getElementById("reel"), c0 = r?.querySelector(".rcell");
+      if (!r || !c0 || spinning || r.dataset.spun) return;
+      const w = c0.offsetWidth + 6, i = 2 * list.length + list.indexOf(cur);
+      r.style.transition = "none"; r.style.transform = `translateX(${-(i * w) - 6 + r.parentElement.clientWidth / 2 - (w - 6) / 2}px)`;
+    });
     const rows = list.map(c => { const own = P.classes.includes(c.id), R = CLASS_RARITY[c.rar];
       return `<div class="item ${own ? "" : "locked"}" style="border-color:${own ? R.col : ""}"><span class="g" style="border-color:${R.col}">${own ? c.glyph : "❔"}</span>
         <span class="meta"><b>${own ? c.name : "???"} <span class="tier" style="color:${R.col}">${R.name} · ${String(c.p).replace(".", ",")}%</span></b>
@@ -6554,7 +6564,7 @@ function panelStats(){
         Reinicia nivel y atributos y te lleva a Seúl. Conservas sombras, armas, islas y rango.
         Ganas daño ×${(1 + (P.rebirths + 1) * .5).toFixed(1)}, +${fmt((P.rebirths + 1) * 500)} de vida, +25% de XP, +30% de oro y empiezas con ${5 + (P.rebirths + 1) * 10} puntos.</span></span>
       <button class="btn violet" id="rebirth-btn" ${rbOk ? "" : "disabled"}>Renacer</button></div>
-    <p class="hint">Fórmulas del contrato V9: <b>EXPRequired(N)=100·N^1.85+N·50</b> · <b>EXPReward=Nivel·25·(1+Renacer·0.25)</b>.</p>`);
+    <p class="hint">Fórmulas: <b>EXPRequired(N)=100·N^1.85+N·50</b> · <b>EXPReward=Nivel·25·(1+Renacer·0.25)</b>.</p>`);
 }
 /* Inventario de sombras: rejilla de tarjetas con el color de su rango,
    filtros, orden y una ficha lateral con la sombra en 3D girando. */
@@ -6795,7 +6805,7 @@ function panelMap(){
   let right = "";
   if (mapTab === "Regions"){
     right = `<div class="rcard" style="--tc:${th.g1};--sky:${th.sky1}">
-      <div class="rhead"><small>Anillo ${mapSel} · ${isle.theme}</small><b>${isle.name}</b>
+      <div class="rhead"><small>Anillo ${mapSel} · ${BIOME_NAME[isle.theme] || isle.theme}</small><b>${isle.name}</b>
         <span>${here ? "📍 Estás aquí" : un ? `a ${fmt(dist)} m` : `🔒 Requiere nivel ${isle.level}`}</span></div>
       ${un && (isle.id === "Seoul" || (P.lore || []).includes(isle.id)) ? `<p class="lore">«${REGION_LORE[isle.id].text.split(". ")[0]}.»</p>` : ""}
       <div class="pv" data-pv="mob" style="--tc:${th.g1}"></div>
@@ -6943,7 +6953,7 @@ function spinClass(){
     const r2 = document.getElementById("reel");
     if (r2){
       const cells = r2.querySelectorAll(".rcell"), w2 = cells[0] ? cells[0].offsetWidth + 6 : 96, i2 = 3 * list.length + list.indexOf(got);
-      r2.style.transition = "none"; r2.style.transform = `translateX(${-(i2 * w2) + r2.parentElement.clientWidth / 2 - w2 / 2}px)`;
+      r2.dataset.spun = "1"; r2.style.transition = "none"; r2.style.transform = `translateX(${-(i2 * w2) + r2.parentElement.clientWidth / 2 - w2 / 2}px)`;
       cells[i2]?.classList.add("win");
     }
     const m = document.getElementById("spin-msg");

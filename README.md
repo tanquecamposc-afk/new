@@ -8,6 +8,18 @@ Escrito en **Luau con tipado estricto** (`--!strict`), servidor autoritativo y u
 arquitectura de simulación híbrida que mantiene el `Heartbeat` del servidor estable sin
 importar cuántas Sombras haya en el mundo.
 
+## Versión final jugable
+
+**`arise-3d.html` es el juego completo en un solo archivo.** Ábrelo con doble clic en cualquier navegador; funciona sin conexión y sin instalar nada. `lovable/` es el mismo juego como proyecto Vite + React listo para importar en Lovable, y `lovable/GAME.md` describe todos sus sistemas.
+
+- **Mundo:** 13 islas separadas por canales de agua, cada una con su bioma, sus zonas de caza, cofres, monumentos y jefe. La última es el Trono del Rey de las Sombras.
+- **Progresión:**
+  - Rangos de enemigo de E a SSS, extracción ARISE y sombras shiny.
+  - 31 clases en una ruleta.
+  - Renacimientos cada 50 niveles.
+  - Modo infinito con runas y giros.
+  - Recompensas diarias, expediciones, monturas, vestuario y 10 códigos secretos.
+
 ---
 
 ## 1. Arquitectura
