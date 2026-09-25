@@ -1,0 +1,2615 @@
+<title>Arise Crossover V9</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&family=Fredoka:wght@400;500;600;700&display=swap">
+<style>
+:root{
+  --void:#04070f; --panel:#101c3f; --panel-2:#18295c; --line:#32509e; --line-hi:#7aa8ff;
+  --ink:#f3f7ff; --muted:#a6bce9; --dim:#7789b8;
+  --spec:#5ea8ff; --arise:#2fe4ff; --monarch:#bb8cff;
+  --cash:#7ee07a; --gem:#5ae2ff; --ticket:#ffc65a; --gold:#ffd24a;
+  --xp:#5ce8a6; --hp:#ff4d61; --mana:#4aa8ff;
+  --t-C:#b9c9e8; --t-B:#7ee07a; --t-A:#5ad2ff; --t-S:#bb8cff; --t-SE:#ffd24a; --t-M:#ff6b8a;
+  --f-display:'Cinzel',Georgia,serif; --f-ui:'Fredoka','Segoe UI',system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--void);color:var(--ink);font-family:var(--f-ui);overflow:hidden;
+     -webkit-tap-highlight-color:transparent;user-select:none}
+#app{position:relative;height:100%;width:100%;overflow:hidden;background:var(--void)}
+canvas#stage{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
+.hud{position:absolute;inset:0;pointer-events:none;
+     padding:calc(10px + env(safe-area-inset-top,0px)) 12px calc(10px + env(safe-area-inset-bottom,0px))}
+.stroke{paint-order:stroke fill;-webkit-text-stroke:3.5px rgba(3,7,18,.92)}
+.frame{background:linear-gradient(180deg,rgba(24,41,92,.94),rgba(10,17,42,.94));border:2px solid var(--line);
+       border-radius:14px;box-shadow:inset 0 1px 0 rgba(150,190,255,.32),0 8px 22px rgba(0,0,0,.5)}
+
+/* --- top --- */
+.top{position:absolute;top:calc(10px + env(safe-area-inset-top,0px));left:12px;right:12px;
+     display:flex;gap:10px;align-items:flex-start;justify-content:space-between}
+.pcard{padding:9px 11px 10px;display:grid;gap:5px;min-width:238px}
+.prow{display:flex;align-items:center;gap:9px}
+.rankbadge{width:40px;height:40px;flex:none;display:grid;place-items:center;border-radius:12px;
+  font-family:var(--f-display);font-weight:800;font-size:19px;color:#0a1020;
+  background:linear-gradient(180deg,#ffe692,#ffb43d);border:2px solid #8a5714;
+  box-shadow:inset 0 2px 0 rgba(255,255,255,.62),0 3px 0 #6f4510}
+.pname{font-weight:600;font-size:15px;line-height:1.15}
+.psub{font-size:11.5px;color:var(--muted)}
+.bar{height:15px;border-radius:99px;background:#09102a;border:2px solid #09102a;position:relative;
+     box-shadow:inset 0 2px 5px rgba(0,0,0,.65)}
+.bar>i{display:block;height:100%;max-width:100%;border-radius:99px;transition:width .16s ease;
+       box-shadow:inset 0 2px 0 rgba(255,255,255,.36)}
+.bar>span{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:10px;
+          font-weight:600;line-height:1;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.95)}
+.bar.hp>i{background:linear-gradient(180deg,#ff8d99,#dc1f34)}
+.bar.mana>i{background:linear-gradient(180deg,#8ccaff,#1f6fd0)}
+.bar.xp>i{background:linear-gradient(180deg,#96f8cd,#1fae74)}
+.target{flex:1;max-width:430px;display:grid;gap:4px;padding:8px 12px}
+.trow{display:flex;align-items:center;gap:9px}
+.lvd{width:34px;height:34px;flex:none;display:grid;place-items:center;transform:rotate(45deg);border-radius:8px;
+     background:linear-gradient(180deg,#2c4079,#141f4c);border:2px solid #86a2e0}
+.lvd>i{transform:rotate(-45deg);font-style:normal;font-size:12px;font-weight:700}
+.tname{flex:1;font-weight:600;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tdps{font-size:11px;color:var(--gold);font-variant-numeric:tabular-nums}
+.thp{font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums;text-align:right}
+.infocard{padding:8px 12px;text-align:right;display:grid;gap:2px;min-width:158px}
+.infocard b{font-size:13.5px;color:#cfe6ff;font-weight:600}
+.infocard span{font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+
+/* --- hex cluster --- */
+.hexwrap{position:absolute;left:10px;top:50%;transform:translateY(-50%);display:grid;gap:5px;pointer-events:auto}
+.hexrow{display:flex;gap:5px}
+.hexrow.odd{margin-left:27px}
+.hex{width:52px;height:58px;display:grid;place-items:center;cursor:pointer;border:0;padding:0;
+  clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);
+  font-size:20px;color:#0a1020;filter:drop-shadow(0 3px 4px rgba(0,0,0,.55));
+  transition:transform .08s ease,filter .15s}
+.hex:hover{filter:drop-shadow(0 3px 4px rgba(0,0,0,.55)) brightness(1.13)}
+.hex:active{transform:translateY(2px)}
+.hex:focus-visible{outline:3px solid var(--arise);outline-offset:2px}
+.hx-shop{background:linear-gradient(180deg,#ffd68a,#e08a1e)}
+.hx-items{background:linear-gradient(180deg,#ffa3a3,#d42b3f)}
+.hx-shadow{background:linear-gradient(180deg,#c9a9ff,#7a3fe0)}
+.hx-stats{background:linear-gradient(180deg,#9be0ff,#1f86d8)}
+.hx-map{background:linear-gradient(180deg,#a6f0ba,#25a95c)}
+.hx-help{background:linear-gradient(180deg,#d7dff0,#7f8db0)}
+
+/* --- bottom --- */
+.bottom{position:absolute;left:12px;right:12px;bottom:calc(10px + env(safe-area-inset-bottom,0px));
+        display:flex;align-items:flex-end;gap:12px;justify-content:space-between}
+.wallet{display:grid;gap:5px;pointer-events:none}
+.coin{display:flex;align-items:center;gap:8px;padding:4px 13px 4px 8px;border-radius:99px;font-size:21px;
+  font-weight:700;font-variant-numeric:tabular-nums;background:linear-gradient(180deg,rgba(24,41,92,.9),rgba(8,15,36,.9));
+  border:2px solid var(--line);box-shadow:inset 0 1px 0 rgba(150,190,255,.3),0 6px 16px rgba(0,0,0,.45)}
+.coin i{font-style:normal;font-size:18px}
+.c-cash{color:var(--cash)} .c-gem{color:var(--gem)} .c-tk{color:var(--ticket)}
+.dock{display:grid;gap:7px;justify-items:center;flex:1}
+.squad{display:flex;gap:6px;pointer-events:none}
+.slot{width:52px;height:56px;border-radius:12px;display:grid;place-items:center;gap:1px;
+  background:linear-gradient(180deg,rgba(28,46,102,.96),rgba(10,18,44,.96));border:2px solid var(--line);
+  box-shadow:inset 0 1px 0 rgba(150,190,255,.3);position:relative;overflow:hidden}
+.slot.empty{opacity:.4;border-style:dashed}
+.slot .g{font-size:18px;line-height:1}
+.slot .n{font-size:8.5px;font-weight:600;max-width:46px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.slot .d{font-size:9px;color:#bfe2ff;font-variant-numeric:tabular-nums}
+.hotbar{display:flex;gap:7px;align-items:flex-end;pointer-events:auto;flex-wrap:wrap;justify-content:center}
+.act{position:relative;width:64px;height:62px;border-radius:14px;cursor:pointer;border:2px solid rgba(6,12,28,.85);
+  display:grid;place-items:center;gap:1px;color:#0a1020;font-family:var(--f-ui);overflow:hidden;
+  box-shadow:inset 0 2px 0 rgba(255,255,255,.5),0 4px 0 rgba(5,10,24,.8),0 8px 16px rgba(0,0,0,.45);
+  transition:transform .07s ease,filter .15s}
+.act:hover{filter:brightness(1.1)}
+.act:active{transform:translateY(3px);box-shadow:inset 0 2px 0 rgba(255,255,255,.45),0 1px 0 rgba(5,10,24,.8)}
+.act:focus-visible{outline:3px solid var(--arise);outline-offset:3px}
+.act .ic{font-size:20px;line-height:1}
+.act .lb{font-size:8.5px;font-weight:700;letter-spacing:.03em;text-transform:uppercase}
+.act kbd{position:absolute;top:-9px;left:50%;transform:translateX(-50%);font-family:var(--f-ui);font-size:9px;
+  font-weight:600;padding:1px 6px;border-radius:6px;background:#0c1634;color:#cfe0ff;border:1px solid var(--line)}
+.act .st{position:absolute;bottom:-8px;left:50%;transform:translateX(-50%);font-size:8px;font-weight:700;
+  padding:1px 6px;border-radius:6px;background:#0c1634;color:var(--dim);border:1px solid var(--line)}
+.act.on .st{color:#0a1020;background:var(--arise);border-color:#0b5f70}
+.act .cd{position:absolute;inset:0;background:rgba(4,8,20,.72);transform-origin:bottom;pointer-events:none}
+.a-punch{background:linear-gradient(180deg,#ff9f9f,#d62b3f)}
+.a-weapon{background:linear-gradient(180deg,#a9c6ff,#3c5fd6)}
+.a-arise{background:linear-gradient(180deg,#9ae9ff,#1fa5dd)}
+.a-dash{background:linear-gradient(180deg,#ffe08a,#e0a41e)}
+.a-auto{background:linear-gradient(180deg,#a9f0ba,#28a75e)}
+.a-mount{background:linear-gradient(180deg,#d3b2ff,#7a45e0)}
+.a-portal{background:linear-gradient(180deg,#8af0ff,#17b9d8)}
+
+/* --- notificaciones --- */
+.lane{position:absolute;right:12px;top:96px;display:grid;gap:6px;justify-items:end;pointer-events:none;max-width:280px}
+.note{padding:7px 13px;border-radius:11px;font-size:12.5px;font-weight:600;border:2px solid var(--line);
+  background:linear-gradient(180deg,rgba(24,41,92,.96),rgba(9,16,38,.96));box-shadow:0 6px 18px rgba(0,0,0,.5);
+  animation:slide .32s ease both}
+@keyframes slide{from{opacity:0;transform:translateX(26px)}to{opacity:1;transform:none}}
+.banner{position:absolute;left:50%;top:22%;transform:translateX(-50%);text-align:center;pointer-events:none;
+  font-family:var(--f-display);font-weight:800;font-size:34px;letter-spacing:.1em;
+  animation:bpop .5s ease both}
+@keyframes bpop{from{opacity:0;transform:translateX(-50%) scale(.82)}to{opacity:1;transform:translateX(-50%) scale(1)}}
+
+/* --- paneles --- */
+.scrim{position:absolute;inset:0;background:rgba(3,7,18,.76);backdrop-filter:blur(4px);display:grid;place-items:center;
+       padding:16px;pointer-events:auto;z-index:20}
+.panel{width:min(820px,100%);max-height:min(86vh,760px);overflow:auto;border-radius:18px;
+  background:linear-gradient(180deg,#152755,#0a1230);border:2px solid var(--line);
+  box-shadow:inset 0 1px 0 rgba(150,190,255,.3),0 26px 70px rgba(0,0,0,.66)}
+.panel header{position:sticky;top:0;z-index:2;padding:13px 16px;display:flex;gap:12px;align-items:center;
+  justify-content:space-between;background:linear-gradient(180deg,#1c3070,#152755);border-bottom:2px solid var(--line)}
+.panel h2{margin:0;font-family:var(--f-display);font-size:18px;font-weight:800;letter-spacing:.05em}
+.panel .body{padding:14px 16px 18px;display:grid;gap:11px}
+.tabs{display:flex;gap:6px;flex-wrap:wrap}
+.tab{cursor:pointer;font-family:var(--f-ui);font-size:12px;font-weight:600;padding:6px 12px;border-radius:9px;
+  border:2px solid var(--line);background:rgba(16,28,63,.9);color:var(--muted)}
+.tab.sel{background:linear-gradient(180deg,#9be0ff,#1f86d8);color:#0a1020;border-color:#11507f}
+.x{cursor:pointer;width:34px;height:34px;border-radius:10px;font-size:16px;color:#0a1020;border:2px solid #7a1f2b;
+   background:linear-gradient(180deg,#ff9f9f,#d62b3f);box-shadow:inset 0 2px 0 rgba(255,255,255,.5)}
+.btn{pointer-events:auto;cursor:pointer;font-family:var(--f-ui);font-weight:600;font-size:12.5px;color:#0a1020;
+  padding:8px 13px;border-radius:11px;border:2px solid rgba(6,12,28,.8);white-space:nowrap;
+  background:linear-gradient(180deg,#9ed8ff,#2f8ddf);box-shadow:inset 0 2px 0 rgba(255,255,255,.55),0 3px 0 rgba(5,10,24,.8)}
+.btn:hover{filter:brightness(1.1)} .btn:active{transform:translateY(2px)}
+.btn:disabled{opacity:.42;cursor:not-allowed}
+.btn:focus-visible{outline:3px solid var(--arise);outline-offset:3px}
+.btn.gold{background:linear-gradient(180deg,#ffdf94,#e0a22a)}
+.btn.green{background:linear-gradient(180deg,#a9f0ba,#28a75e)}
+.btn.violet{background:linear-gradient(180deg,#d3b2ff,#7a45e0)}
+.statgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(232px,1fr));gap:9px}
+.statrow{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:12px;
+  background:linear-gradient(180deg,rgba(28,46,102,.8),rgba(11,19,45,.8));border:2px solid var(--line)}
+.statrow .k{font-family:var(--f-display);font-weight:800;width:40px;color:var(--gold)}
+.statrow .d{flex:1;font-size:11.5px;color:var(--muted);line-height:1.3}
+.statrow .v{font-variant-numeric:tabular-nums;font-weight:700;font-size:17px;min-width:44px;text-align:right}
+.plus{cursor:pointer;width:32px;height:32px;border-radius:10px;font-size:17px;font-weight:700;color:#0a1020;
+  border:2px solid rgba(6,12,28,.8);background:linear-gradient(180deg,#a9f0ba,#28a75e);
+  box-shadow:inset 0 2px 0 rgba(255,255,255,.5),0 3px 0 rgba(5,10,24,.8)}
+.plus:disabled{opacity:.3;cursor:not-allowed}
+.derived{display:grid;grid-template-columns:repeat(auto-fit,minmax(148px,1fr));gap:9px}
+.kv{padding:8px 11px;border-radius:12px;border:2px solid var(--line);
+    background:linear-gradient(180deg,rgba(28,46,102,.7),rgba(11,19,45,.7))}
+.kv small{display:block;font-size:10px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.kv b{font-size:17px;font-variant-numeric:tabular-nums}
+.list{display:grid;gap:8px}
+.item{display:flex;align-items:center;gap:11px;padding:9px 11px;border-radius:12px;border:2px solid var(--line);
+      background:linear-gradient(180deg,rgba(28,46,102,.78),rgba(11,19,45,.78))}
+.item .g{width:40px;height:40px;flex:none;display:grid;place-items:center;border-radius:11px;font-size:19px;
+  background:linear-gradient(180deg,#254080,#122045);border:2px solid var(--line)}
+.item .meta{flex:1;min-width:0}
+.item .meta b{display:block;font-size:14px;font-weight:600}
+.item .meta span{font-size:11.5px;color:var(--muted)}
+.item .price{font-variant-numeric:tabular-nums;font-weight:700;color:var(--cash)}
+.tier{font-size:10px;letter-spacing:.06em;text-transform:uppercase;font-weight:700}
+.locked{opacity:.45}
+.hint{font-size:12px;color:var(--dim);line-height:1.5;margin:0}
+.hint b{color:var(--muted)}
+.arise-box{width:min(430px,100%);text-align:center;padding:20px 18px;border-radius:20px;
+  background:linear-gradient(180deg,#0f3a5e,#06162e);border:2px solid #2fe4ff;
+  box-shadow:0 0 62px rgba(47,228,255,.3),0 26px 70px rgba(0,0,0,.6)}
+.arise-box h3{font-family:var(--f-display);margin:0;font-size:27px;font-weight:800;letter-spacing:.2em;color:#9beeff;
+  text-shadow:0 0 22px rgba(47,228,255,.8)}
+.arise-box .sub{font-size:12.5px;color:var(--muted);margin-bottom:8px}
+.chance{font-size:46px;font-weight:700;line-height:1;margin:8px 0 2px;color:#7ff0ff;font-variant-numeric:tabular-nums}
+.pips{display:flex;gap:7px;justify-content:center;margin:12px 0 14px}
+.pip{width:30px;height:7px;border-radius:99px;background:#1a2c5e;border:1px solid #32509e}
+.pip.live{background:linear-gradient(180deg,#9beeff,#1fa5dd);box-shadow:0 0 12px #2fe4ff}
+.arise-actions{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+.log{margin-top:10px;font-size:12.5px;color:var(--muted);min-height:18px}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+@media (max-width:680px){
+  .pcard{min-width:0;max-width:54vw} .infocard{min-width:0} .target{display:none}
+  .hexwrap{top:auto;bottom:158px;transform:none} .hex{width:44px;height:50px;font-size:17px} .hexrow.odd{margin-left:23px}
+  .act{width:56px;height:56px} .coin{font-size:17px} .slot{width:44px;height:48px}
+  .lane{top:auto;bottom:230px;max-width:200px} .banner{font-size:24px}
+}
+</style>
+
+<div id="app">
+  <canvas id="stage"></canvas>
+  <div class="hud">
+    <div class="top">
+      <div class="frame pcard">
+        <div class="prow">
+          <div class="rankbadge" id="rank">E</div>
+          <div style="flex:1;min-width:0">
+            <div class="pname" id="title">Cazador Novato</div>
+            <div class="psub"><span id="lvl">Nv 1</span> · <span id="rebirth">Renacer 0</span></div>
+          </div>
+        </div>
+        <div class="bar hp"><i id="hpbar" style="width:100%"></i><span id="hptxt">100 / 100</span></div>
+        <div class="bar mana"><i id="mpbar" style="width:100%"></i><span id="mptxt">100 / 100</span></div>
+        <div class="bar xp"><i id="xpbar"></i><span id="xptxt">0 / 150</span></div>
+      </div>
+      <div class="frame target" id="targetbar" hidden>
+        <div class="trow">
+          <div class="lvd"><i id="t-lv">1</i></div>
+          <span class="tname" id="t-name">Enemigo</span>
+          <span class="tdps" id="t-dps">0 DPS</span>
+        </div>
+        <div class="bar hp"><i id="t-hp" style="width:100%"></i><span id="t-hptxt">0 / 0</span></div>
+      </div>
+      <div class="frame infocard">
+        <b id="isle">Leveling City</b>
+        <span id="portal">Portal en 1:40</span>
+        <span id="quest" style="color:var(--gold)"></span>
+        <span id="fps" style="color:var(--dim)"></span>
+      </div>
+    </div>
+
+    <div class="hexwrap">
+      <div class="hexrow"><button class="hex hx-stats" id="b-stats" title="Atributos (1)">🗡</button><button class="hex hx-shadow" id="b-shadows" title="Sombras (2)">👥</button></div>
+      <div class="hexrow odd"><button class="hex hx-shop" id="b-shop" title="Tienda (3)">🛒</button><button class="hex hx-items" id="b-items" title="Inventario (4)">🎒</button></div>
+      <div class="hexrow"><button class="hex hx-map" id="b-map" title="Mapa (5)">🗺</button><button class="hex hx-help" id="b-help" title="Ayuda (H)">?</button></div>
+    </div>
+
+    <div class="lane" id="lane"></div>
+
+    <div class="bottom">
+      <div class="wallet">
+        <div class="coin c-cash stroke"><i>💵</i><span id="cash">0</span></div>
+        <div class="coin c-gem stroke"><i>💎</i><span id="gems">0</span></div>
+        <div class="coin c-tk stroke"><i>🎟</i><span id="tickets">0</span></div>
+      </div>
+      <div class="dock">
+        <div class="squad" id="squad"></div>
+        <div class="hotbar">
+          <button class="act a-punch" id="a-attack"><kbd>M1</kbd><span class="ic">👊</span><span class="lb">Golpe</span></button>
+          <button class="act a-weapon" id="a-skill"><kbd>V</kbd><span class="ic">🌊</span><span class="lb">Arma</span><i class="cd" id="cd-skill" style="transform:scaleY(0)"></i></button>
+          <button class="act a-arise" id="a-arise"><kbd>B</kbd><span class="ic">💠</span><span class="lb">Arise</span></button>
+          <button class="act a-dash" id="a-dash"><kbd>Q</kbd><span class="ic">💨</span><span class="lb">Dash</span><i class="cd" id="cd-dash" style="transform:scaleY(0)"></i></button>
+          <button class="act a-auto on" id="a-auto"><kbd>R</kbd><span class="ic">🔁</span><span class="lb">Auto</span><span class="st">ON</span></button>
+          <button class="act a-mount" id="a-mount"><kbd>M</kbd><span class="ic">🐎</span><span class="lb">Montura</span><span class="st">OFF</span></button>
+          <button class="act a-portal" id="a-portal" hidden><kbd>F</kbd><span class="ic">🌀</span><span class="lb">Portal</span></button>
+        </div>
+      </div>
+      <div style="width:96px" aria-hidden="true"></div>
+    </div>
+  </div>
+  <div id="banner"></div>
+  <div id="modal" hidden></div>
+</div>
+
+<script>
+"use strict";
+/* ===========================================================================
+   ARISE CROSSOVER V9 ULTRA — build web jugable
+   Fórmulas, contratos y sistemas tomados del Master Prompt V9:
+     PhysicalDamage = WeaponDamage + STR*1.5
+     MagicDamage    = INT*1.6*SpellModifier
+     ShadowDamage   = Base*(1+SDW*0.012)     ShadowHP = BaseHP*(1+SDW*0.008)
+     MaxHP          = HPBase + VIT*15        MaxMana  = 100 + MNA*10
+     WalkSpeed      = 16 + AGI*0.05          DashCooldown = 3/(1+AGI*0.005)
+     AGI >= 200 -> doble salto
+     EXPRequired(N) = 100*N^1.85 + N*50      EXPReward = EnemyLevel*25*(1+Rebirth*0.25)
+     effectiveRate  = clamp(BaseAriseRate * (1 + AriseLuck%/100), 0, MaxAriseRate)
+   Toda fórmula vive en FORMULA; el resto del juego la consume.
+   =========================================================================== */
+
+const FLAGS = {
+  VERSION_MODE:"V9_CROSSOVER_BASELINE",
+  ENABLE_RED_GATE:true, ENABLE_DOUBLE_DUNGEON:true, ENABLE_BOSS_RUSH:true,
+  PORTAL_INTERVAL_SECONDS:110,   // el contrato usa 1800; comprimido para la build web
+  MAX_ARISE_RATE:0.95, CORPSE_LIFETIME:11, ARISE_ATTEMPTS:3, MAX_CORPSES:10,
+  SQUAD_BASE:6, SQUAD_PER_RANK:2, SQUAD_MAX:16, LEVEL_CAP:1000, MERGE_COPIES:3,
+};
+
+// Capacidad de escuadrón: crece con el rango (el juego real te rodea de sombras)
+const squadCap = () => Math.min(FLAGS.SQUAD_MAX, FLAGS.SQUAD_BASE + rankIdx(P.rank) * FLAGS.SQUAD_PER_RANK);
+
+const CFG = {
+  ATTACK_RANGE:150, ARISE_RANGE:140,
+  COMBO_RESET:1.1,
+  SHADOW_FOLLOW:185, SHADOW_AGGRO:420, SHADOW_RANGE:78, SHADOW_CD:0.8, SHADOW_SPEED:260, SHADOW_LEASH:700,
+  ENEMY_POP:16, WORLD:{ w:3400, h:2800 },
+  CONTACT_SCALE:0.02, GRAVITY:1500, JUMP_V:520,
+  DASH_DIST:330, DASH_TIME:0.18,
+  CRIT_CHANCE:0.15, CRIT_MULT:2,
+};
+
+// Combo M1_1..M1_4 (tabla 04 del V9)
+const COMBO = [
+  { id:"M1_1", startup:0.06, active:0.05, recovery:0.09, mult:1.00, cam:0.20, hitstop:0.012 },
+  { id:"M1_2", startup:0.05, active:0.05, recovery:0.08, mult:1.05, cam:0.22, hitstop:0.014 },
+  { id:"M1_3", startup:0.07, active:0.06, recovery:0.10, mult:1.15, cam:0.28, hitstop:0.018 },
+  { id:"M1_4", startup:0.09, active:0.07, recovery:0.16, mult:1.45, cam:0.45, hitstop:0.028 },
+];
+// AttackDefinition del contrato V9
+const SKILL = {
+  id:"Sword_BladeWave", input:"V", startup:0.22, active:0.08, recovery:0.34,
+  hitbox:{ shape:"Arc", radius:190, angle:70 },
+  damage:{ weapon:1.75, str:0.90 }, costs:{ mana:30 }, cooldown:7.0,
+  feedback:{ cam:0.65, hitstop:0.04 },
+};
+
+const RANKS = [
+  { name:"E", dmg:0.00, luck:0,   level:1,   gems:0 },
+  { name:"D", dmg:0.18, luck:8,   level:25,  gems:120 },
+  { name:"C", dmg:0.42, luck:18,  level:80,  gems:600 },
+  { name:"B", dmg:0.80, luck:32,  level:180, gems:2600 },
+  { name:"A", dmg:1.50, luck:55,  level:330, gems:12000 },
+  { name:"S", dmg:2.80, luck:90,  level:560, gems:60000 },
+];
+const rankIdx = n => Math.max(0, RANKS.findIndex(r => r.name === n));
+const rankOf  = n => RANKS[rankIdx(n)] || RANKS[0];
+
+const TIER_VAR = { C:"--t-C", B:"--t-B", A:"--t-A", S:"--t-S", "S Elite":"--t-SE", Monarch:"--t-M" };
+
+/* --------------------------- catálogo de armas ---------------------------
+   Nombres, costes y daños base del catálogo suministrado (sección 08.1).   */
+const WEAPONS = {
+  SpikedMaul:      { id:"SpikedMaul",      name:"Spiked Maul",         dmg:3,        cost:0,       isle:"LevelingCity", glyph:"🔨" },
+  TwinKando:       { id:"TwinKando",       name:"Twin Kando Blades",   dmg:15,       cost:400,     isle:"LevelingCity", glyph:"⚔" },
+  TwinIronNaginata:{ id:"TwinIronNaginata",name:"Twin Iron Naginatas", dmg:125,      cost:4500,    isle:"LevelingCity", glyph:"🔱" },
+  BeastBane:       { id:"BeastBane",       name:"Beast Bane",          dmg:251,      cost:10000,   isle:"GrassVillage", glyph:"🗡" },
+  BronzeWarAxe:    { id:"BronzeWarAxe",    name:"Bronze War Axe",      dmg:4030,     cost:242000,  isle:"GrassVillage", glyph:"🪓" },
+  TwinCorsair:     { id:"TwinCorsair",     name:"Twin Corsair Blades", dmg:16300,    cost:1.2e6,   isle:"BrumIsland",   glyph:"⚔" },
+  IronKando:       { id:"IronKando",       name:"Iron Kando Blade",    dmg:516100,   cost:6.0e7,   isle:"BrumIsland",   glyph:"🗡" },
+  IronNaginata:    { id:"IronNaginata",    name:"Iron Naginata",       dmg:1.03e6,   cost:1.32e8,  isle:"FacehealTown", glyph:"🔱" },
+  ColossalSaber:   { id:"ColossalSaber",   name:"Colossal Saber",      dmg:3.3e7,    cost:6.7e9,   isle:"FacehealTown", glyph:"🗡" },
+  TwinColossal:    { id:"TwinColossal",    name:"Twin Colossal Sabers",dmg:6.6e7,    cost:1.407e10,isle:"LuckyKingdom", glyph:"⚔" },
+  TwinTridents:    { id:"TwinTridents",    name:"Twin Tridents",       dmg:2.11e9,   cost:4.4622e11,isle:"LuckyKingdom",glyph:"🔱" },
+  EmeraldBlade:    { id:"EmeraldBlade",    name:"Emerald Blade",       dmg:4e9,      cost:8.4e11,  isle:"NiponCity",    glyph:"🗡" },
+  TwinSacredAxes:  { id:"TwinSacredAxes",  name:"Twin Sacred Axes",    dmg:1.28e11,  cost:2.664e13,isle:"NiponCity",    glyph:"🪓" },
+  ReaperScythe:    { id:"ReaperScythe",    name:"Reaper's Scythe",     dmg:8.19e12,  cost:1.33e15, isle:"MoriTown",     glyph:"⚰" },
+  TwinDraconic:    { id:"TwinDraconic",    name:"Twin Draconic Axes",  dmg:3.113e14, cost:8.658e16,isle:"DragonCity",   glyph:"🐉" },
+  ChargedBlade:    { id:"ChargedBlade",    name:"Charged Blade",       dmg:1.475e16, cost:5.2e18,  isle:"XZCity",       glyph:"⚡" },
+  SacredMaul:      { id:"SacredMaul",      name:"Sacred Maul",         dmg:2.5834e17,cost:4.225e20,isle:"KindamaCity",  glyph:"🔨" },
+  ArchmageStaff:   { id:"ArchmageStaff",   name:"Archmage's Staff",    dmg:4.31e18,  cost:3.042e22,isle:"HunterCity",   glyph:"🪄" },
+  GildedReaver:    { id:"GildedReaver",    name:"Gilded Reaver",       dmg:2.635e19, cost:2.19e24, isle:"NenCity",      glyph:"⚜" },
+  SilverThorn:     { id:"SilverThorn",     name:"Silver Thorn",        dmg:3.51e20,  cost:6.327e25,isle:"HurricaneTown",glyph:"🌪" },
+};
+const START_WEAPON = "SpikedMaul";
+
+/* ------------------------------ sombras ---------------------------------- */
+const SHADOWS = {
+  Soondoo:   { id:"Soondoo",   name:"Soondoo",   tier:"C",       dmg:18,      hp:120,   rate:0.55,  gems:4,     glyph:"👤" },
+  Anders:    { id:"Anders",    name:"Anders",    tier:"A",       dmg:640,     hp:2600,  rate:0.20,  gems:26,    glyph:"🗡" },
+  Longin:    { id:"Longin",    name:"Longin",    tier:"S",       dmg:4200,    hp:9000,  rate:0.10,  gems:90,    glyph:"🔥" },
+  Vermillion:{ id:"Vermillion",name:"Vermillion",tier:"S",       dmg:26000,   hp:52000, rate:0.06,  gems:260,   glyph:"💜" },
+  DOR:       { id:"DOR",       name:"DOR",       tier:"S",       dmg:150000,  hp:310000,rate:0.045, gems:900,   glyph:"🐗" },
+  Mifalcon:  { id:"Mifalcon",  name:"Mifalcon",  tier:"S Elite", dmg:920000,  hp:1.9e6, rate:0.03,  gems:3200,  glyph:"❄" },
+  Murcielago:{ id:"Murcielago",name:"Murcielago",tier:"S Elite", dmg:6.1e6,   hp:1.2e7, rate:0.024, gems:11000, glyph:"🦇" },
+  TimeKing:  { id:"TimeKing",  name:"Time King", tier:"S Elite", dmg:4.4e7,   hp:8.8e7, rate:0.019, gems:42000, glyph:"⏳" },
+  Chainsaw:  { id:"Chainsaw",  name:"Chainsaw",  tier:"S Elite", dmg:3.2e8,   hp:6.4e8, rate:0.016, gems:160000,glyph:"🪚" },
+  Gucci:     { id:"Gucci",     name:"Gucci",     tier:"S Elite", dmg:2.4e9,   hp:4.6e9, rate:0.013, gems:620000,glyph:"💀" },
+  Leviathan: { id:"Leviathan", name:"Leviathan", tier:"S Elite", dmg:1.8e10,  hp:3.5e10,rate:0.011, gems:2.4e6, glyph:"🐉" },
+  FrostMech: { id:"FrostMech", name:"Frost Mech",tier:"S Elite", dmg:1.4e11,  hp:2.7e11,rate:0.009, gems:9e6,   glyph:"🤖" },
+  FlameTitan:{ id:"FlameTitan",name:"Flame Titan",tier:"S Elite",dmg:1.1e12,  hp:2.1e12,rate:0.008, gems:3.4e7, glyph:"🌋" },
+  ShadowReaper:{id:"ShadowReaper",name:"Shadow Reaper",tier:"S Elite",dmg:9e12,hp:1.7e13,rate:0.007,gems:1.3e8, glyph:"☠" },
+  Hurricane: { id:"Hurricane", name:"Hurricane Overlord",tier:"S Elite",dmg:7.4e13,hp:1.4e14,rate:0.006,gems:5e8,glyph:"🌪" },
+  Monarch:   { id:"Monarch",   name:"Monarca de las Sombras", tier:"Monarch", dmg:1e15, hp:2e15, rate:0.01, gems:2e9, glyph:"👑" },
+};
+
+/* --------------------------- islas (sección 09) --------------------------- */
+const ISLANDS = [
+  { id:"LevelingCity", name:"Leveling City",  level:1,    theme:"city",    enemy:{ name:"Thug",            lvl:3,    hp:26,      dmg:10 },    brute:{ name:"Brute/Mauler", lvl:8, hp:120, dmg:26 },    boss:{ name:"Vermillion",        lvl:25,   hp:90000,   dmg:180,   shadow:"Vermillion" }, shadow:"Soondoo",    weapons:["SpikedMaul","TwinKando","TwinIronNaginata"] },
+  { id:"GrassVillage", name:"Grass Village",  level:50,   theme:"forest",  enemy:{ name:"Grass Bandit",    lvl:52,   hp:26000,   dmg:260 },   brute:{ name:"Heavy Troll",  lvl:62, hp:120000, dmg:720 },  boss:{ name:"DOR",               lvl:80,   hp:2.4e6,   dmg:2100,  shadow:"DOR" },        shadow:"Anders",     weapons:["BeastBane","BronzeWarAxe"] },
+  { id:"BrumIsland",   name:"Brum Island",    level:100,  theme:"ice",     enemy:{ name:"Corsair Guard",   lvl:104,  hp:9.2e5,   dmg:4200 },  brute:{ name:"Ice Golem",    lvl:118,hp:4.1e6,  dmg:9800 }, boss:{ name:"Mifalcon",          lvl:140,  hp:6.2e7,   dmg:24000, shadow:"Mifalcon" },   shadow:"Longin",     weapons:["TwinCorsair","IronKando"] },
+  { id:"FacehealTown", name:"Faceheal Town",  level:200,  theme:"urban",   enemy:{ name:"Street Brawler",  lvl:206,  hp:2.6e7,   dmg:52000 }, brute:{ name:"Colossal Brute",lvl:224,hp:1.1e8, dmg:118000},boss:{ name:"Murcielago",        lvl:250,  hp:1.6e9,   dmg:310000,shadow:"Murcielago" }, shadow:"Vermillion", weapons:["IronNaginata","ColossalSaber"] },
+  { id:"LuckyKingdom", name:"Lucky Kingdom",  level:350,  theme:"royal",   enemy:{ name:"Royal Guard",     lvl:356,  hp:8.4e8,   dmg:1.4e6 }, brute:{ name:"Wyvern Lord",  lvl:382,hp:3.6e9,  dmg:3.1e6 },boss:{ name:"Time King",         lvl:410,  hp:5.2e10,  dmg:8.6e6, shadow:"TimeKing" },   shadow:"Mifalcon",   weapons:["TwinColossal","TwinTridents"] },
+  { id:"NiponCity",    name:"Nipon City",     level:500,  theme:"shrine",  enemy:{ name:"Samurai Warrior", lvl:508,  hp:2.7e10,  dmg:4.2e7 }, brute:{ name:"Demon Shogun", lvl:540,hp:1.2e11, dmg:9.4e7 },boss:{ name:"Chainsaw",          lvl:580,  hp:1.7e12,  dmg:2.6e8, shadow:"Chainsaw" },   shadow:"Murcielago", weapons:["EmeraldBlade","TwinSacredAxes"] },
+  { id:"MoriTown",     name:"Mori Town",      level:650,  theme:"dark",    enemy:{ name:"Forest Wraith",   lvl:660,  hp:8.6e11,  dmg:1.3e9 }, brute:{ name:"Reaper Monarch",lvl:700,hp:3.8e12,dmg:2.9e9 },boss:{ name:"Gucci",             lvl:740,  hp:5.4e13,  dmg:8.1e9, shadow:"Gucci" },      shadow:"TimeKing",   weapons:["ReaperScythe"] },
+  { id:"DragonCity",   name:"Dragon City",    level:800,  theme:"dragon",  enemy:{ name:"Draconic Cultist",lvl:812,  hp:2.8e13,  dmg:4.1e10 },brute:{ name:"Leviathan",    lvl:860,hp:1.2e14, dmg:9.2e10},boss:{ name:"Leviathan Prime",   lvl:900,  hp:1.7e15,  dmg:2.6e11,shadow:"Leviathan" },  shadow:"Chainsaw",   weapons:["TwinDraconic"] },
+  { id:"XZCity",       name:"XZ City",        level:950,  theme:"cyber",   enemy:{ name:"Cyber Enforcer",  lvl:962,  hp:9.1e14,  dmg:1.3e12 },brute:{ name:"Frost Mech",   lvl:1000,hp:4e15,  dmg:2.9e12},boss:{ name:"Frost Mech Alfa",   lvl:1040, hp:5.6e16,  dmg:8.3e12,shadow:"FrostMech" },  shadow:"Gucci",      weapons:["ChargedBlade"] },
+  { id:"KindamaCity",  name:"Kindama City",   level:1100, theme:"volcano", enemy:{ name:"Magma Brute",     lvl:1112, hp:2.9e16,  dmg:4.2e13 },brute:{ name:"Flame Titan",  lvl:1150,hp:1.3e17,dmg:9.4e13},boss:{ name:"Flame Titan Rex",   lvl:1190, hp:1.8e18,  dmg:2.7e14,shadow:"FlameTitan" }, shadow:"Leviathan",  weapons:["SacredMaul"] },
+  { id:"HunterCity",   name:"Hunter City",    level:1250, theme:"guild",   enemy:{ name:"High Hunter",     lvl:1262, hp:9.4e17,  dmg:1.4e15 },brute:{ name:"Archmage",     lvl:1300,hp:4.1e18,dmg:3e15 }, boss:{ name:"Archmage Supremo",  lvl:1340, hp:5.8e19,  dmg:8.7e15,shadow:"ShadowReaper" },shadow:"FrostMech", weapons:["ArchmageStaff"] },
+  { id:"NenCity",      name:"Nen City",       level:1400, theme:"mystic",  enemy:{ name:"Nen Master",      lvl:1412, hp:3e19,    dmg:4.4e16 },brute:{ name:"Shadow Reaper",lvl:1450,hp:1.3e20,dmg:9.8e16},boss:{ name:"Shadow Reaper Rey", lvl:1490, hp:1.9e21,  dmg:2.8e17,shadow:"Hurricane" },  shadow:"FlameTitan", weapons:["GildedReaver"] },
+  { id:"HurricaneTown",name:"Hurricane Town", level:1600, theme:"storm",   enemy:{ name:"Wind Nomad",      lvl:1612, hp:9.7e20,  dmg:1.4e18 },brute:{ name:"Storm Herald", lvl:1660,hp:4.2e21,dmg:3.1e18},boss:{ name:"Hurricane Overlord",lvl:1700, hp:6.1e22,  dmg:9e18,  shadow:"Monarch" },    shadow:"Hurricane",  weapons:["SilverThorn"] },
+];
+const isleOf = id => ISLANDS.find(i => i.id === id) || ISLANDS[0];
+
+/* ------------------------------ reliquias -------------------------------- */
+const RELICS = {
+  ClawboundRing:{ id:"ClawboundRing", name:"Clawbound Ring", effect:"shadowDmg", value:0.15,   isle:"LevelingCity", glyph:"💍" },
+  SilentVeil:   { id:"SilentVeil",    name:"Silent Veil",    effect:"ariseLuck", value:10,     isle:"GrassVillage", glyph:"🌫" },
+  InkOfDepth:   { id:"InkOfDepth",    name:"Ink of Depth",   effect:"shadowDmg", value:0.28,   isle:"LuckyKingdom", glyph:"🖋" },
+  FlickerCrest: { id:"FlickerCrest",  name:"Flicker Crest",  effect:"ariseLuck", value:22.5,   isle:"MoriTown",     glyph:"🔥" },
+  PulseEmblem:  { id:"PulseEmblem",   name:"Pulse Emblem",   effect:"shadowDmg", value:0.45,   isle:"XZCity",       glyph:"📡" },
+  NenCore:      { id:"NenCore",       name:"Nen Core",       effect:"ariseLuck", value:35,     isle:"NenCity",      glyph:"🔮" },
+  BlackMonarch: { id:"BlackMonarch",  name:"Black Monarch Sigil", effect:"rankUp", value:25,   isle:"DoubleDungeon",glyph:"🖤" },
+  EyeAscension: { id:"EyeAscension",  name:"Eye of Ascension",    effect:"rankUp", value:40,   isle:"StatueOfGod",  glyph:"👁" },
+};
+
+/* ------------------------------- runas ----------------------------------- */
+const RUNES = {
+  Health:{ id:"Health", name:"Runa de Salud", desc:"Vida enemiga −5%", glyph:"❤" },
+  Gems:  { id:"Gems",   name:"Runa de Gemas", desc:"Gemas +10%",       glyph:"💎" },
+  Time:  { id:"Time",   name:"Runa de Tiempo",desc:"Temporizador +60s",glyph:"⏱" },
+  Cash:  { id:"Cash",   name:"Runa de Oro",   desc:"Oro +10%",         glyph:"💵" },
+};
+
+/* ---------------------------- FORMULA SERVICE ----------------------------- */
+const FORMULA = {
+  physicalDamage: (weaponDmg, str) => weaponDmg + str * 1.5,
+  magicDamage:    (int, spellMod) => (int * 1.6) * spellMod,
+  shadowDamage:   (base, sdw) => base * (1 + sdw * 0.012),
+  shadowHP:       (base, sdw) => base * (1 + sdw * 0.008),
+  maxHP:          (hpBase, vit) => hpBase + vit * 15,
+  maxMana:        mna => 100 + mna * 10,
+  walkSpeed:      agi => 16 + agi * 0.05,
+  dashCooldown:   agi => 3 / (1 + agi * 0.005),
+  doubleJump:     agi => agi >= 200,
+  expRequired:    n => Math.floor(100 * Math.pow(n, 1.85) + n * 50),
+  expReward:      (enemyLevel, rebirth) => Math.floor(enemyLevel * 25 * (1 + rebirth * 0.25)),
+  effectiveRate:  (baseRate, luckPercent) => clamp(baseRate * (1 + luckPercent / 100), 0, FLAGS.MAX_ARISE_RATE),
+};
+
+/* ------------------------- clases y talentos ------------------------------ */
+const CLASSES = {
+  Warrior:  { id:"Warrior",  name:"Guerrero", desc:"Equilibrado. +15% daño y +20% vida.",      bonus:{ dmg:0.15, hp:0.20 },              glyph:"🛡" },
+  Assassin: { id:"Assassin", name:"Asesino",  desc:"+35% daño crítico y +20% velocidad.",      bonus:{ crit:0.15, speed:0.20, dmg:0.05 }, glyph:"🗡" },
+  Mage:     { id:"Mage",     name:"Mago",     desc:"+50% daño de habilidad y +40% maná.",      bonus:{ skill:0.50, mana:0.40 },           glyph:"🪄" },
+  Tank:     { id:"Tank",     name:"Tanque",   desc:"+70% vida y −35% daño recibido.",          bonus:{ hp:0.70, armor:0.35 },             glyph:"🧱" },
+  Monarch:  { id:"Monarch",  name:"Monarca",  desc:"+45% daño de sombras y +15% suerte Arise.",bonus:{ shadow:0.45, luck:0.15 },          glyph:"👑" },
+};
+const TALENTS = {
+  power:   { id:"power",   name:"Poder",      desc:"+8% de daño por nivel",            max:10, cost:lv => 250 * Math.pow(2, lv) },
+  haste:   { id:"haste",   name:"Celeridad",  desc:"+6% de velocidad de ataque",       max:10, cost:lv => 300 * Math.pow(2, lv) },
+  crit:    { id:"crit",    name:"Crítico",    desc:"+3% de probabilidad crítica",      max:10, cost:lv => 400 * Math.pow(2, lv) },
+  legion:  { id:"legion",  name:"Legión",     desc:"+15% de daño de sombras",          max:10, cost:lv => 350 * Math.pow(2, lv) },
+  fortune: { id:"fortune", name:"Fortuna",    desc:"+12% de suerte de extracción",     max:10, cost:lv => 500 * Math.pow(2, lv) },
+  vigor:   { id:"vigor",   name:"Vigor",      desc:"+10% de vida máxima",              max:10, cost:lv => 300 * Math.pow(2, lv) },
+};
+const CODES = {
+  ARISE:      { cash:5000,   gems:50,   tickets:1 },
+  SHADOW100K: { cash:250000, gems:400,  tickets:2 },
+  MONARCH:    { cash:1e7,    gems:2500, tickets:5 },
+  UPDATE9:    { cash:1e6,    gems:900,  tickets:3 },
+};
+
+/* ------------------------------ utilidades -------------------------------- */
+const SUF = ["","K","M","B","T","Qa","Qi","Sx","Sp","Oc","No","Dc","Ud","Dd","Td"];
+function fmt(v){
+  if (!isFinite(v)) return "∞";
+  v = Math.floor(v);
+  if (v < 1000) return String(v);
+  let i = 0, n = v;
+  while (n >= 1000 && i < SUF.length - 1){ n /= 1000; i++; }
+  return (n < 10 ? n.toFixed(2) : n < 100 ? n.toFixed(1) : Math.floor(n)) + SUF[i];
+}
+const uid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
+const clamp = (v,a,b) => v < a ? a : v > b ? b : v;
+const now = () => performance.now() / 1000;
+const rnd = (a, b) => a + Math.random() * (b - a);
+
+/* ------------------------------- perfil ----------------------------------- */
+const SAVE_KEY = "arise-crossover-v9/v1";
+function newProfile(){
+  return {
+    schema:9, level:1, xp:0, rank:"E", rebirths:0,
+    cash:0, gems:0, tickets:0,
+    stats:{ STR:0, INT:0, SDW:0, VIT:0, AGI:0, MNA:0, points:5 },
+    weapon:START_WEAPON, weapons:{ [START_WEAPON]:1 }, weaponLv:{},
+    class:"Warrior", talents:{}, codes:{}, quests:{ active:null, done:0 },
+    shadows:{}, squad:[], relics:{}, runes:{},
+    islands:["LevelingCity"], island:"LevelingCity",
+    title:"Cazador Novato", awakened:false, index:{},
+    kills:0, arisen:0, dungeonsCleared:0, ledger:[],
+  };
+}
+function reconcile(d){
+  const base = newProfile();
+  const p = Object.assign(base, d || {});
+  p.stats = Object.assign(base.stats, d?.stats || {});
+  for (const k of ["weapons","weaponLv","shadows","relics","runes","index","talents","codes"])
+    if (typeof p[k] !== "object" || !p[k]) p[k] = {};
+  if (!CLASSES[p.class]) p.class = "Warrior";
+  if (typeof p.quests !== "object" || !p.quests) p.quests = { active:null, done:0 };
+  if (!Array.isArray(p.squad)) p.squad = [];
+  if (!Array.isArray(p.islands) || !p.islands.length) p.islands = ["LevelingCity"];
+  if (!Array.isArray(p.ledger)) p.ledger = [];
+  if (!WEAPONS[p.weapon]) p.weapon = START_WEAPON;
+  if (!p.weapons[p.weapon]) p.weapons[p.weapon] = 1;
+  if (!RANKS.some(r => r.name === p.rank)) p.rank = "E";
+  if (!isleOf(p.island)) p.island = "LevelingCity";
+  p.squad = p.squad.filter(u => p.shadows[u]).slice(0, FLAGS.SQUAD_MAX);
+  return p;
+}
+let P = (() => { try { return reconcile(JSON.parse(localStorage.getItem(SAVE_KEY) || "null")); } catch { return newProfile(); } })();
+function save(){ try { localStorage.setItem(SAVE_KEY, JSON.stringify(P)); } catch {} }
+
+/* --------------------------- valores derivados ---------------------------- */
+// El nivel de arma (fusión de 3 copias) vive en el perfil, no muta el catálogo.
+const weaponLv    = id => P.weaponLv?.[id] || 1;
+const weaponDmg   = () => {
+  const w = WEAPONS[P.weapon] || WEAPONS[START_WEAPON];
+  return Math.max(6, w.dmg) * Math.pow(1.25, weaponLv(w.id) - 1);
+};
+const rankMult    = () => rankOf(P.rank).dmg + (P.awakened ? 0.25 : 0) + P.rebirths * 0.5;
+const classBonus  = k => (CLASSES[P.class] || CLASSES.Warrior).bonus[k] || 0;
+const talentLv    = id => P.talents?.[id] || 0;
+const baseDamage  = () => FORMULA.physicalDamage(weaponDmg(), P.stats.STR)
+  * (1 + rankMult() + classBonus("dmg") + talentLv("power") * 0.08)
+  * (1 + P.level * 0.012);
+const relicBonus  = effect => Object.keys(P.relics).reduce((a, id) => a + (RELICS[id]?.effect === effect ? RELICS[id].value : 0), 0);
+const shadowMult  = () => 1 + relicBonus("shadowDmg") + classBonus("shadow") + talentLv("legion") * 0.15;
+const ariseLuck   = () => rankOf(P.rank).luck + P.stats.INT * 0.35 + relicBonus("ariseLuck")
+  + (P.awakened ? 60 : 0) + classBonus("luck") * 100 + talentLv("fortune") * 12;
+const maxHP       = () => FORMULA.maxHP(100 + P.level * 6 + P.rebirths * 500, P.stats.VIT)
+  * (1 + classBonus("hp") + talentLv("vigor") * 0.1);
+const maxMana     = () => FORMULA.maxMana(P.stats.MNA) * (1 + classBonus("mana"));
+const shadowDmgOf = s => FORMULA.shadowDamage(SHADOWS[s.id].dmg * (1 + (s.level - 1) * 0.1), P.stats.SDW) * shadowMult();
+const shadowHPOf  = s => FORMULA.shadowHP(SHADOWS[s.id].hp * (1 + (s.level - 1) * 0.1), P.stats.SDW);
+
+/* ===========================================================================
+   MUNDO, COMBATE Y SISTEMAS
+   =========================================================================== */
+const player = {
+  x:CFG.WORLD.w/2, y:CFG.WORLD.h/2, h:0, vh:0, jumps:0, yaw:Math.PI, moveAmt:0,
+  hp:maxHP(), mana:maxMana(), face:1, step:0,
+  combo:0, comboAt:0, phase:"idle", phaseT:0, atkDef:null, hitDone:false,
+  dashT:0, dashX:0, dashY:0, dashCd:0, skillCd:0, dead:0, hurt:0, mounted:false,
+  dps:{ total:0, since:0, shown:0 },
+};
+let enemies = [], corpses = [], shadows = [], floaters = [], parts = [], rings = [], portal = null, dungeon = null;
+let spawnT = 0, portalT = FLAGS.PORTAL_INTERVAL_SECONDS, hitstop = 0, auto = true, dirty = true;
+const cam = { x:player.x, y:player.y, shake:0, shakeV:0, impulse:0, dist:0, distV:0 };
+let target = null;
+
+/* ------------------------------- enemigos --------------------------------- */
+function enemyDef(kind){
+  const isle = isleOf(P.island);
+  if (dungeon) return dungeon.enemyDef(kind);
+  const base = kind === "brute" ? isle.brute : isle.enemy;
+  return { ...base, isle:isle.id, shadow: kind === "brute" ? isle.shadow : isle.shadow, kind, r: kind === "brute" ? 24 : 18 };
+}
+function spawnEnemy(def, x, y){
+  const d = def || enemyDef(Math.random() < 0.25 ? "brute" : "normal");
+  const a = rnd(0, Math.PI*2), dist = rnd(300, 560);
+  const seed = Math.floor(Math.random() * 1e9);
+  const pick = (arr, k) => arr[(seed >> k) % arr.length];
+  const look = {
+    shirt: pick(["#d8503f","#3f7ad8","#4aa85a","#c06b28","#7a4ac0","#2f8d8d","#b8484a","#5a6b8c"], 3),
+    pants: pick(["#2f3a52","#3a4a2f","#4a3a2f","#2f2f3a","#40384a"], 7),
+    boots: pick(["#23283a","#2e2418","#1f2b1f"], 11),
+    hair:  pick(["#2b1d12","#5a3a1a","#1a1a22","#8a5a2a","#a03a2a","#d8c060"], 13),
+    hat:   ((seed >> 17) % 5 === 0) ? pick(["#2f3a52","#8a3030","#2d5a35"], 19) : null,
+    backpack: ((seed >> 21) % 6 === 0) ? "#4a3a28" : null,
+    height: 0.92 + ((seed >> 23) % 20) / 100,
+  };
+  const e = {
+    guid:uid(), def:d, name:d.name, level:d.lvl, look,
+    x: x ?? clamp(player.x + Math.cos(a)*dist, 80, CFG.WORLD.w-80),
+    y: y ?? clamp(player.y + Math.sin(a)*dist, 80, CFG.WORLD.h-80),
+    hp:d.hp, maxHp:d.hp, atkCd:rnd(.6,1.8), hurt:0, step:rnd(0,6), stun:0,
+    boss:!!d.boss, phase:1, telegraph:null, moveCd:0,
+  };
+  enemies.push(e);
+  return e;
+}
+
+/* -------------------------------- daño ------------------------------------ */
+function dealDamage(e, amount, opts){
+  if (!e || e.hp <= 0) return;
+  const o = opts || {};
+  const critChance = CFG.CRIT_CHANCE + classBonus("crit") + talentLv("crit") * 0.03;
+  const crit = o.crit ?? (Math.random() < critChance);
+  const dmg = amount * (crit ? CFG.CRIT_MULT : 1);
+  const applied = Math.min(dmg, e.hp);
+  e.hp -= applied; e.hurt = 0.14;
+  player.dps.total += applied;
+  target = e;
+  floaters.push({ x:e.x + rnd(-24,24), y:e.y, h:78 + e.def.r*1.6, text:fmt(applied), life:1,
+                  color: crit ? "#ffd24a" : (o.shadow ? "#bfe2ff" : "#fff3c4"), big:!o.shadow, crit });
+  spark(e.x, e.y, 52, crit ? 14 : 7, crit ? "#ffe9a8" : (o.shadow ? "#9bdcff" : "#fff1b8"));
+  if (crit) ring(e.x, e.y, 90, "#ffd24a", .45);
+  if (!o.shadow){ hitstop = Math.max(hitstop, o.hitstop ?? 0.02); camImpulse(o.cam ?? 0.2); }
+  if (e.hp <= 0) killEnemy(e);
+}
+function killEnemy(e){
+  enemies = enemies.filter(x => x !== e);
+  if (target === e) target = null;
+  P.kills++;
+  gainXP(FORMULA.expReward(e.level, P.rebirths));
+  const cash = Math.max(1, Math.floor(e.level * 12 * (1 + P.rebirths * 0.3) * (dungeon?.runes?.Cash ? 1.1 : 1)));
+  P.cash += cash;
+  burst(e.x, e.y, 22, e.def.color || "#ffd9a8", 40);
+  ring(e.x, e.y, 120, "#8fd0ff", .5);
+  // CorpseToken (contrato 07)
+  while (corpses.length >= FLAGS.MAX_CORPSES) corpses.shift();
+  corpses.push({
+    CorpseId:uid(), EnemyId:e.def.name, ShadowDefinitionId:e.def.shadow || isleOf(P.island).shadow,
+    OwnerPlayerId:1, SpawnedAt:now(), ExpiresAt:now() + FLAGS.CORPSE_LIFETIME,
+    AttemptsRemaining:FLAGS.ARISE_ATTEMPTS, Consumed:false,
+    x:e.x, y:e.y, level:e.level, phase:0, boss:e.boss,
+  });
+  if (dungeon) dungeon.onKill(e);
+  dirty = true;
+}
+function gainXP(amount){
+  P.xp += amount;
+  let leveled = false;
+  while (P.level < FLAGS.LEVEL_CAP && P.xp >= FORMULA.expRequired(P.level)){
+    P.xp -= FORMULA.expRequired(P.level);
+    P.level++; P.stats.points += 3; leveled = true;
+  }
+  if (leveled){
+    player.hp = maxHP(); player.mana = maxMana();
+    note(`Nivel ${P.level} · +3 puntos`, "--xp");
+    burst(player.x, player.y, 30, "#5ce8a6", 30);
+    for (const isle of ISLANDS){
+      if (P.level >= isle.level && !P.islands.includes(isle.id)){
+        P.islands.push(isle.id);
+        note(`Isla desbloqueada: ${isle.name}`, "--gem");
+      }
+    }
+  }
+  dirty = true;
+}
+
+/* ------------------------- combate del jugador ---------------------------- */
+function nearestEnemy(x, y, range, cone){
+  let best = null, bd = range;
+  for (const e of enemies){
+    const d = Math.hypot(e.x-x, e.y-y);
+    if (d < bd){ bd = d; best = e; }
+  }
+  return best;
+}
+// M1: cadena de 4 golpes con startup/active/recovery del contrato V9.
+function requestAttack(){
+  if (player.dead > 0 || player.phase !== "idle") return;
+  if (now() - player.comboAt > CFG.COMBO_RESET) player.combo = 0;
+  const def = COMBO[player.combo % COMBO.length];
+  const haste = 1 / (1 + talentLv("haste") * 0.06 + classBonus("speed"));
+  player.atkDef = { ...def, active:def.active * haste, recovery:def.recovery * haste };
+  player.phase = "startup"; player.phaseT = def.startup * haste; player.hitDone = false;
+  player.combo = (player.combo + 1) % COMBO.length; player.comboAt = now();
+}
+function requestSkill(){
+  if (player.dead > 0 || player.phase !== "idle") return;
+  if (player.skillCd > 0) return note("Habilidad en enfriamiento", "--dim");
+  if (player.mana < SKILL.costs.mana) return note("Maná insuficiente", "--mana");
+  player.mana -= SKILL.costs.mana;
+  player.skillCd = SKILL.cooldown;
+  player.atkDef = { ...SKILL, mult:0, skill:true, cam:SKILL.feedback.cam, hitstop:SKILL.feedback.hitstop };
+  player.phase = "startup"; player.phaseT = SKILL.startup; player.hitDone = false;
+}
+function resolveHit(){
+  const def = player.atkDef;
+  if (!def) return;
+  if (def.skill){
+    // Arco: radio 190, 70° al frente (hitbox del AttackDefinition)
+    const dmg = weaponDmg() * SKILL.damage.weapon + P.stats.STR * SKILL.damage.str * 1.5;
+    const total = dmg * (1 + rankMult());
+    let hits = 0;
+    const skillDmg = total * (1 + classBonus("skill"));
+    for (const e of enemies.slice()){
+      if (Math.hypot(e.x-player.x, e.y-player.y) > SKILL.hitbox.radius) continue;
+      dealDamage(e, skillDmg, { cam:SKILL.feedback.cam, hitstop:SKILL.feedback.hitstop });
+      hits++;
+    }
+    ring(player.x, player.y, SKILL.hitbox.radius * 1.1, "#7fc6ff", .55);
+    camImpulse(SKILL.feedback.cam);
+    if (!hits) hitstop = Math.max(hitstop, 0.02);
+    return;
+  }
+  const e = nearestEnemy(player.x, player.y, CFG.ATTACK_RANGE);
+  if (!e){ return; }
+  player.yaw = Math.atan2(e.x - player.x, e.y - player.y);
+  dealDamage(e, baseDamage() * def.mult, { cam:def.cam, hitstop:def.hitstop });
+}
+function requestDash(){
+  if (player.dashCd > 0 || player.dead > 0) return;
+  const v = inputVector();
+  const dx = v.x || 0, dy = v.y || (v.x ? 0 : -1);
+  const len = Math.hypot(dx, dy) || 1;
+  player.dashX = dx/len; player.dashY = dy/len;
+  player.dashT = CFG.DASH_TIME;
+  player.dashCd = FORMULA.dashCooldown(P.stats.AGI);
+  camImpulse(0.35);
+  for (let i=0;i<10;i++) parts.push({ x:player.x, y:player.y, h:rnd(10,60), vx:rnd(-60,60), vy:rnd(-60,60),
+                                      vh:rnd(20,80), life:rnd(.25,.45), color:"#bfe2ff", size:rnd(2,4) });
+}
+function requestJump(){
+  if (player.dead > 0) return;
+  const maxJumps = FORMULA.doubleJump(P.stats.AGI) ? 2 : 1;
+  if (player.jumps >= maxJumps) return;
+  player.jumps++;
+  player.vh = CFG.JUMP_V * (player.jumps > 1 ? 0.88 : 1);
+  if (player.jumps > 1) ring(player.x, player.y, 60, "#9bdcff", .3, player.h);
+}
+
+/* ------------------------- ARISE (contrato 07) ---------------------------- */
+let ariseToken = null, ariseAnim = 0;
+function nearestCorpse(){
+  let best = null, bd = CFG.ARISE_RANGE;
+  for (const c of corpses){
+    const d = Math.hypot(c.x-player.x, c.y-player.y);
+    if (d < bd){ bd = d; best = c; }
+  }
+  return best;
+}
+const corpseRate = c => FORMULA.effectiveRate(SHADOWS[c.ShadowDefinitionId]?.rate ?? 0.3, ariseLuck());
+// READ -> VALIDATE -> ROLL -> CREATE -> RECORD -> CONSUME -> ACK
+function attemptArise(c){
+  if (!c || c.Consumed) return { ok:false, code:"CONSUMED" };
+  if (c.ExpiresAt < now()) { consumeCorpse(c, false); return { ok:false, code:"EXPIRED" }; }
+  if (c.AttemptsRemaining <= 0) return { ok:false, code:"NO_ATTEMPTS" };
+  if (Math.hypot(c.x-player.x, c.y-player.y) > CFG.ARISE_RANGE * 1.5) return { ok:false, code:"TOO_FAR" };
+  c.AttemptsRemaining--;
+  const rate = corpseRate(c);
+  ariseAnim = now();
+  if (Math.random() <= rate){
+    const def = SHADOWS[c.ShadowDefinitionId];
+    const shadow = { uuid:uid(), id:def.id, name:def.name, tier:def.tier, level:1, xp:0, lock:false };
+    P.shadows[shadow.uuid] = shadow;
+    P.index[def.id] = (P.index[def.id] || 0) + 1;
+    P.arisen++;
+    const replaced = autoEquip(shadow);
+    P.ledger.push({ tx:uid(), type:"ShadowCreated", id:def.id, at:Date.now() });
+    if (P.ledger.length > 50) P.ledger.shift();
+    consumeCorpse(c, true);
+    rebuildSquad(); save(); dirty = true;
+    burst(c.x, c.y, 54, "#2fe4ff", 20); ring(c.x, c.y, 180, "#2fe4ff", .8);
+    camImpulse(0.5);
+    return { ok:true, shadow, replaced, rate };
+  }
+  if (c.AttemptsRemaining <= 0){
+    const gems = Math.max(1, Math.floor((SHADOWS[c.ShadowDefinitionId]?.gems ?? 1) * (1 + c.level * 0.05)));
+    P.gems += gems; consumeCorpse(c, true); save(); dirty = true;
+    return { ok:false, code:"EXHAUSTED", gems, rate };
+  }
+  burst(c.x, c.y, 16, "#4a5f8a", 16);
+  return { ok:false, code:"FAILED", attempts:c.AttemptsRemaining, rate };
+}
+function consumeCorpse(c, consumed){
+  c.Consumed = true;
+  corpses = corpses.filter(x => x !== c);
+  if (ariseToken === c) closeArise();
+}
+function destroyCorpse(c){
+  if (!c) return 0;
+  const gems = Math.max(1, Math.floor((SHADOWS[c.ShadowDefinitionId]?.gems ?? 1) * (1 + c.level * 0.05)));
+  P.gems += gems; consumeCorpse(c, true); save(); dirty = true;
+  note(`+${fmt(gems)} gemas`, "--gem");
+  return gems;
+}
+// Capacidad de escuadrón: al estar lleno cae la sombra de menor daño.
+function autoEquip(shadow){
+  if (P.squad.length < squadCap()){ P.squad.push(shadow.uuid); return null; }
+  let worst = null, worstDmg = Infinity;
+  for (const u of P.squad){
+    const s = P.shadows[u];
+    const d = s ? shadowDmgOf(s) : -1;
+    if (d < worstDmg){ worstDmg = d; worst = u; }
+  }
+  if (worst && shadowDmgOf(shadow) > worstDmg){
+    P.squad[P.squad.indexOf(worst)] = shadow.uuid;
+    return worst;
+  }
+  return null;
+}
+
+/* --------------------- sombras: FSM del contrato 06 ----------------------- */
+function rebuildSquad(){
+  const keep = new Map(shadows.map(s => [s.uuid, s]));
+  const cap = squadCap();
+  shadows = P.squad.slice(0, cap).map((uuid, i) => {
+    const data = P.shadows[uuid];
+    if (!data) return null;
+    const prev = keep.get(uuid);
+    const a = (i / cap) * Math.PI * 2;
+    const base = prev || {
+      uuid, id:data.id, slot:i, state:"IDLE_FOLLOW", atkCd:0, step:rnd(0,6), swing:0,
+      x:player.x + Math.cos(a)*CFG.SHADOW_FOLLOW, y:player.y + Math.sin(a)*CFG.SHADOW_FOLLOW, target:null,
+    };
+    base.slot = i; base.data = data; base.dmg = shadowDmgOf(data); base.hp = shadowHPOf(data);
+    return base;
+  }).filter(Boolean);
+  dirty = true;
+}
+// TargetScore = distancia + amenaza al dueño + foco manual + peso de jefe
+function scoreTarget(s, e){
+  const d = Math.hypot(e.x-s.x, e.y-s.y);
+  if (d > CFG.SHADOW_AGGRO) return -Infinity;
+  let score = 100 - d * 0.2;
+  if (Math.hypot(e.x-player.x, e.y-player.y) < 160) score += 45;   // ownerThreat
+  if (e === target) score += 30;                                    // manualFocus
+  if (e.boss) score += 60;                                          // bossWeight
+  return score;
+}
+function stepShadow(s, dt){
+  let t = s.target && enemies.includes(s.target) && s.target.hp > 0 ? s.target : null;
+  if (!t) s.target = null;
+  const dOwner = Math.hypot(s.x-player.x, s.y-player.y);
+  if (dOwner > CFG.SHADOW_LEASH){ s.state = "RECALLED"; s.target = t = null; }
+
+  if (!t && s.state !== "RECALLED"){
+    let best = null, bestScore = -Infinity;
+    for (const e of enemies){
+      const sc = scoreTarget(s, e);
+      if (sc > bestScore){ bestScore = sc; best = e; }
+    }
+    if (best){ s.target = t = best; s.state = best.boss ? "BOSS_FOCUS" : "TARGET_ACQUIRE"; }
+  }
+  let dx = 0, dy = 0;
+  if (t){
+    const d = Math.hypot(t.x-s.x, t.y-s.y);
+    if (d <= CFG.SHADOW_RANGE){
+      if (s.atkCd <= 0){
+        s.state = "ATTACK"; s.atkCd = CFG.SHADOW_CD; s.swing = 0.2;
+        dealDamage(t, s.dmg, { shadow:true, crit:Math.random() < 0.1 });
+      } else s.state = "RECOVER";
+    } else { dx = t.x - s.x; dy = t.y - s.y; }
+  } else {
+    // formación en anillos concéntricos: con muchas sombras no se apelotonan
+    const ringIdx = Math.floor(s.slot / 8), inRing = s.slot % 8;
+    const a = (inRing / 8) * Math.PI * 2 + now() * (0.25 - ringIdx * 0.05) + ringIdx * 0.4;
+    const rad = CFG.SHADOW_FOLLOW + ringIdx * 105;
+    const fx = player.x + Math.cos(a) * rad, fy = player.y + Math.sin(a) * rad;
+    dx = fx - s.x; dy = fy - s.y;
+    if (Math.hypot(dx, dy) < 8) s.state = "IDLE_FOLLOW";
+  }
+  const len = Math.hypot(dx, dy);
+  if (t) s.yaw = Math.atan2(t.x - s.x, t.y - s.y);
+  if (len > 2){
+    const sp = CFG.SHADOW_SPEED * (s.state === "RECALLED" ? 1.8 : 1);
+    const step = Math.min(sp * dt, len);
+    s.x += dx/len * step; s.y += dy/len * step;
+    if (!t) s.yaw = Math.atan2(dx, dy);
+    s.step += dt * 7;
+    if (s.state === "RECALLED" && dOwner < CFG.SHADOW_FOLLOW * 1.5) s.state = "IDLE_FOLLOW";
+  } else s.step += dt * 1.4;
+  s.atkCd -= dt; s.swing = Math.max(0, s.swing - dt);
+}
+
+/* --------------------------- motor de mazmorra ---------------------------- */
+const DUNGEON_MODES = {
+  Standard:      { name:"Estándar",         rooms:3, mult:1.6,  reward:1.5, color:"#6aa8ff" },
+  RedGate:       { name:"Puerta Roja",      rooms:4, mult:3.2,  reward:3.0, color:"#ff5d6c" },
+  DoubleDungeon: { name:"Double Dungeon",   rooms:2, mult:5.0,  reward:6.0, color:"#bb8cff" },
+  BossRush:      { name:"Boss Rush",        rooms:5, mult:2.4,  reward:4.0, color:"#ffd24a" },
+};
+function makeDungeon(modeId){
+  const mode = DUNGEON_MODES[modeId] || DUNGEON_MODES.Standard;
+  const isle = isleOf(P.island);
+  const seed = Math.floor(Math.random() * 1e9);
+  const runeKeys = Object.keys(RUNES).filter(() => Math.random() < 0.4);
+  const d = {
+    id:uid(), modeId, mode, seed, isle, room:1, rooms:mode.rooms, phase:"Wave",
+    timeLimit:180, timer:180 + (runeKeys.includes("Time") ? 60 : 0),
+    runes:Object.fromEntries(runeKeys.map(k => [k, true])),
+    bossState:null, cleared:false, rewardTx:null,
+  };
+  d.enemyDef = kind => {
+    const base = kind === "brute" ? isle.brute : isle.enemy;
+    const hpMult = mode.mult * (d.runes.Health ? 0.95 : 1) * (d.room * 0.9);
+    return { ...base, name:`${base.name} de la Puerta`, hp:base.hp*hpMult, dmg:base.dmg*mode.mult,
+             lvl:Math.floor(base.lvl*1.2), isle:isle.id, shadow:isle.shadow, kind, r: kind === "brute" ? 24 : 18 };
+  };
+  d.onKill = e => {
+    if (e.boss){
+      if (d.room >= d.rooms){ clearDungeon(); }
+      else { d.room++; nextRoom(); }
+    } else if (!enemies.length && d.phase === "Wave"){
+      d.room < d.rooms ? (d.room++, nextRoom()) : spawnBoss();
+    }
+  };
+  return d;
+}
+function nextRoom(){
+  const d = dungeon; if (!d) return;
+  enemies = []; corpses = [];
+  d.phase = d.room >= d.rooms ? "Boss" : "Wave";
+  banner(d.phase === "Boss" ? "SALA DEL JEFE" : `SALA ${d.room} / ${d.rooms}`, d.mode.color);
+  if (d.phase === "Boss") spawnBoss();
+  else for (let i=0;i<5;i++) spawnEnemy(d.enemyDef(i % 3 === 0 ? "brute" : "normal"));
+}
+function spawnBoss(){
+  const d = dungeon; if (!d) return;
+  d.phase = "Boss";
+  const b = d.isle.boss;
+  const boss = spawnEnemy({
+    name:b.name, lvl:b.lvl, hp:b.hp * d.mode.mult * (d.runes.Health ? 0.95 : 1), dmg:b.dmg * d.mode.mult,
+    shadow:b.shadow, isle:d.isle.id, kind:"boss", r:38, boss:true, color:"#ffb36b",
+  }, player.x, player.y - 420);
+  d.bossState = { phase:1, thresholds:[0.70, 0.40, 0.15] };
+  target = boss;
+  banner(b.name.toUpperCase(), "#ffd24a");
+}
+function clearDungeon(){
+  const d = dungeon; if (!d || d.cleared) return;
+  d.cleared = true; d.rewardTx = uid();
+  P.dungeonsCleared++;
+  const gems = Math.floor(400 * d.mode.reward * (1 + P.level*0.02) * (d.runes.Gems ? 1.1 : 1));
+  const cash = Math.floor(d.isle.enemy.hp * 0.4 * d.mode.reward * (d.runes.Cash ? 1.1 : 1));
+  P.gems += gems; P.cash += cash; P.tickets += 1;
+  // Recompensas especiales por modo
+  if (d.modeId === "DoubleDungeon" && !P.awakened){
+    P.awakened = true; P.title = "Awakened";
+    P.relics.BlackMonarch = true;
+    banner("DESPERTAR", "#bb8cff");
+    note("Awakened · +60% suerte de Arise · Black Monarch Sigil", "--monarch");
+  }
+  const relic = Object.values(RELICS).find(r => r.isle === d.isle.id && !P.relics[r.id]);
+  if (relic && Math.random() < 0.5){ P.relics[relic.id] = true; note(`Reliquia: ${relic.name}`, "--gold"); }
+  const rune = Object.keys(RUNES)[Math.floor(Math.random()*4)];
+  P.runes[rune] = (P.runes[rune] || 0) + 1;
+  banner("MAZMORRA COMPLETADA", "#5ce8a6");
+  note(`+${fmt(gems)} gemas · +${fmt(cash)} oro · +1 ticket`, "--cash");
+  save();
+  const runId = d.id;
+  setTimeout(() => { if (dungeon && dungeon.id === runId) exitDungeon(); }, 3200);
+}
+function enterDungeon(modeId){
+  if (!portal && !modeId) return;
+  const mode = modeId || portal.modeId;
+  portal = null;
+  dungeon = null;
+  dungeon = makeDungeon(mode);
+  enemies = []; corpses = []; shadows.forEach(s => { s.target = null; });
+  player.x = CFG.WORLD.w/2; player.y = CFG.WORLD.h/2; player.hp = maxHP();
+  banner(dungeon.mode.name.toUpperCase(), dungeon.mode.color);
+  const runeNames = Object.keys(dungeon.runes).map(k => RUNES[k].name).join(" · ");
+  if (runeNames) note(`Runas activas: ${runeNames}`, "--gem");
+  nextRoom();
+  dirty = true;
+}
+function exitDungeon(){
+  dungeon = null; enemies = []; corpses = [];
+  player.x = CFG.WORLD.w/2; player.y = CFG.WORLD.h/2;
+  portalT = FLAGS.PORTAL_INTERVAL_SECONDS;
+  note("De vuelta al mundo abierto", "--spec");
+  dirty = true;
+}
+function spawnPortal(){
+  const modes = ["Standard", FLAGS.ENABLE_RED_GATE && "RedGate", FLAGS.ENABLE_DOUBLE_DUNGEON && "DoubleDungeon",
+                 FLAGS.ENABLE_BOSS_RUSH && "BossRush"].filter(Boolean);
+  const modeId = modes[Math.floor(Math.random()*modes.length)];
+  const a = rnd(0, Math.PI*2);
+  portal = { modeId, mode:DUNGEON_MODES[modeId], t:0,
+             x:clamp(player.x + Math.cos(a)*600, 150, CFG.WORLD.w-150),
+             y:clamp(player.y + Math.sin(a)*600, 150, CFG.WORLD.h-150) };
+  banner(`PORTAL · ${portal.mode.name}`, portal.mode.color);
+  note(`Se abrió un portal (${portal.mode.name})`, "--arise");
+  dirty = true;
+}
+
+/* -------------------------- misiones de NPC -------------------------------- */
+const QUEST_TEMPLATES = [
+  { id:"hunt",  text:n => `Derrota a ${n} enemigos`,   goal:() => 10 + Math.floor(P.level/2), type:"kills" },
+  { id:"arise", text:n => `Extrae ${n} sombras`,       goal:() => 3 + Math.floor(P.level/20), type:"arisen" },
+  { id:"gate",  text:n => `Completa ${n} mazmorra(s)`, goal:() => 1, type:"dungeons" },
+];
+const npc = { x:CFG.WORLD.w/2 + 240, y:CFG.WORLD.h/2 - 200, step:0 };
+function questProgress(){
+  const q = P.quests.active; if (!q) return 0;
+  const cur = q.type === "kills" ? P.kills : q.type === "arisen" ? P.arisen : P.dungeonsCleared;
+  return cur - q.start;
+}
+function takeQuest(){
+  if (P.quests.active) return;
+  const t = QUEST_TEMPLATES[Math.floor(Math.random()*QUEST_TEMPLATES.length)];
+  const goal = t.goal();
+  P.quests.active = { id:t.id, type:t.type, goal, start: t.type === "kills" ? P.kills : t.type === "arisen" ? P.arisen : P.dungeonsCleared,
+                      text:t.text(goal) };
+  note(`Misión: ${P.quests.active.text}`, "--gold");
+  save(); dirty = true;
+}
+function checkQuest(){
+  const q = P.quests.active;
+  if (!q || questProgress() < q.goal) return;
+  const cash = Math.floor(isleOf(P.island).enemy.hp * 3 * (1 + P.level*0.05));
+  const gems = 25 + P.level * 2;
+  P.cash += cash; P.gems += gems; P.tickets += 1; P.quests.done++; P.quests.active = null;
+  banner("MISIÓN COMPLETADA", "#ffd24a");
+  note(`+${fmt(cash)} oro · +${fmt(gems)} gemas · +1 ticket`, "--cash");
+  save(); dirty = true;
+}
+
+/* -------------------------------- efectos --------------------------------- */
+function burst(x, y, n, color, h){
+  for (let i=0;i<n;i++){
+    const a = rnd(0, Math.PI*2), sp = rnd(50, 260);
+    parts.push({ x, y, h:(h ?? 34) + rnd(0,22), vx:Math.cos(a)*sp, vy:Math.sin(a)*sp*0.55,
+                 vh:rnd(90, 320), life:rnd(.4,.95), color, size:rnd(1.8,4.6) });
+  }
+}
+function spark(x, y, h, n, color){
+  for (let i=0;i<n;i++){
+    const a = rnd(0, Math.PI*2), sp = rnd(70, 240);
+    parts.push({ x, y, h, vx:Math.cos(a)*sp, vy:Math.sin(a)*sp*0.5, vh:rnd(60,220),
+                 life:rnd(.22,.45), color, size:rnd(2,4.4) });
+  }
+}
+function ring(x, y, r, color, life, h){
+  rings.push({ x, y, r, color, life, max:life, h:h ?? 4 });
+}
+// Muelle de cámara del contrato 15 (Stiffness 150, Damping 12)
+function camImpulse(force){
+  cam.shakeV += force * 26;
+  cam.distV += force * 90;
+}
+let banners = [];
+function banner(text, color){
+  const el = document.getElementById("banner");
+  el.innerHTML = `<div class="banner stroke" style="color:${color}">${text}</div>`;
+  clearTimeout(banner._t);
+  banner._t = setTimeout(() => { el.innerHTML = ""; }, 1900);
+}
+function note(text, colorVar){
+  const lane = document.getElementById("lane");
+  const el = document.createElement("div");
+  el.className = "note"; el.textContent = text;
+  if (colorVar) el.style.color = colorVar.startsWith("--") ? `var(${colorVar})` : colorVar;
+  lane.appendChild(el);
+  setTimeout(() => { el.style.opacity = "0"; el.style.transition = "opacity .4s"; }, 2600);
+  setTimeout(() => el.remove(), 3100);
+  while (lane.children.length > 5) lane.firstChild.remove();
+}
+
+/* ===========================================================================
+   ENTRADA Y BUCLE
+   =========================================================================== */
+const canvas = document.getElementById("stage");
+const ctx = canvas.getContext("2d", { alpha:false });
+let W = 0, H = 0, DPR = 1;
+function resize(){
+  DPR = Math.min(window.devicePixelRatio || 1, 2);
+  W = canvas.clientWidth; H = canvas.clientHeight;
+  canvas.width = Math.floor(W * DPR); canvas.height = Math.floor(H * DPR);
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+}
+addEventListener("resize", resize);
+
+const keys = new Set();
+let pointer = null;
+const modalOpen = () => !!panelKind || !!ariseToken;
+addEventListener("keydown", e => {
+  const k = e.key.toLowerCase();
+  if (["arrowup","arrowdown","arrowleft","arrowright"," "].includes(k)) e.preventDefault();
+  if (k === "escape"){ closePanel(); closeArise(); return; }
+  if (e.repeat) return;
+  if (modalOpen() && k !== "b") return;
+  keys.add(k);
+  if (k === " ") requestJump();
+  if (k === "v") requestSkill();
+  if (k === "b") openArise();
+  if (k === "q") requestDash();
+  if (k === "r") setAuto(!auto);
+  if (k === "m") toggleMount();
+  if (k === "f" && portal) enterDungeon();
+  if (k === "1") openPanel("stats");
+  if (k === "2") openPanel("shadows");
+  if (k === "3") openPanel("shop");
+  if (k === "4") openPanel("items");
+  if (k === "5") openPanel("map");
+  if (k === "h") openPanel("help");
+});
+addEventListener("keyup", e => keys.delete(e.key.toLowerCase()));
+addEventListener("blur", () => keys.clear());
+// Puntero: la mitad izquierda es un joystick virtual, la derecha orbita la cámara.
+const stick = { active:false, x:0, y:0, ox:0, oy:0, id:null };
+const drag = { active:false, x:0, y:0, moved:0, id:null };
+canvas.addEventListener("pointerdown", e => {
+  canvas.setPointerCapture(e.pointerId);
+  const touch = e.pointerType !== "mouse";
+  if (touch && e.clientX < W * 0.45){
+    stick.active = true; stick.id = e.pointerId; stick.ox = e.clientX; stick.oy = e.clientY; stick.x = 0; stick.y = 0;
+    return;
+  }
+  drag.active = true; drag.id = e.pointerId; drag.x = e.clientX; drag.y = e.clientY; drag.moved = 0;
+});
+canvas.addEventListener("pointermove", e => {
+  if (stick.active && e.pointerId === stick.id){
+    const dx = e.clientX - stick.ox, dy = e.clientY - stick.oy;
+    const m = Math.hypot(dx, dy) || 1, k = Math.min(1, m / 70);
+    stick.x = dx / m * k; stick.y = dy / m * k;
+    return;
+  }
+  if (!drag.active || e.pointerId !== drag.id) return;
+  const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+  drag.x = e.clientX; drag.y = e.clientY; drag.moved += Math.abs(dx) + Math.abs(dy);
+  CAM.yaw += dx * 0.006;
+  CAM.pitch = clamp(CAM.pitch + dy * 0.003, 0.12, 0.72);
+});
+const endPointer = e => {
+  if (stick.active && e.pointerId === stick.id){ stick.active = false; stick.x = 0; stick.y = 0; }
+  if (drag.active && e.pointerId === drag.id){
+    if (drag.moved < 8 && !auto) requestAttack();      // clic corto = golpe
+    drag.active = false;
+  }
+};
+canvas.addEventListener("pointerup", endPointer);
+canvas.addEventListener("pointercancel", endPointer);
+canvas.addEventListener("contextmenu", e => e.preventDefault());
+canvas.addEventListener("wheel", e => {
+  e.preventDefault();
+  CAM.back = clamp(CAM.back + Math.sign(e.deltaY) * 28, CAM.minBack, CAM.maxBack);
+}, { passive:false });
+
+function cameraKeys(dt){
+  if (keys.has("arrowleft")) CAM.yaw -= 1.8 * dt;
+  if (keys.has("arrowright")) CAM.yaw += 1.8 * dt;
+  if (keys.has("arrowup")) CAM.back = clamp(CAM.back - 220 * dt, CAM.minBack, CAM.maxBack);
+  if (keys.has("arrowdown")) CAM.back = clamp(CAM.back + 220 * dt, CAM.minBack, CAM.maxBack);
+}
+function inputVector(){
+  let f = 0, r = 0;
+  if (keys.has("w")) f += 1;
+  if (keys.has("s")) f -= 1;
+  if (keys.has("d")) r += 1;
+  if (keys.has("a")) r -= 1;
+  if (!f && !r && stick.active){ f = -stick.y; r = stick.x; }
+  if (!f && !r) return { x:0, y:0, amt:0 };
+  let x = camFwd.x * f + camRight.x * r;
+  let y = camFwd.z * f + camRight.z * r;
+  const len = Math.hypot(x, y) || 1;
+  return { x:x/len, y:y/len, amt: Math.min(1, Math.hypot(f, r)) };
+}
+function toggleMount(){
+  player.mounted = !player.mounted;
+  const b = document.getElementById("a-mount");
+  b.classList.toggle("on", player.mounted);
+  b.querySelector(".st").textContent = player.mounted ? "ON" : "OFF";
+  note(player.mounted ? "Montura invocada" : "Montura guardada", "--monarch");
+}
+
+/* -------------------------------- update ---------------------------------- */
+function update(dt){
+  const t = now();
+  cameraKeys(dt);
+  updateCameraBasis();
+  // hitstop: congela la simulación, no la cámara
+  if (hitstop > 0){ hitstop -= dt; dt *= 0.06; }
+
+  // ---- jugador
+  const speed = FORMULA.walkSpeed(P.stats.AGI) * 11 * (player.mounted ? 2.1 : 1);
+  const v = inputVector();
+  if (player.dead > 0){
+    player.dead -= dt;
+    if (player.dead <= 0){ player.hp = maxHP() * 0.6; note("Has revivido", "--muted"); }
+  } else if (player.dashT > 0){
+    player.dashT -= dt;
+    const d = CFG.DASH_DIST / CFG.DASH_TIME;
+    player.x = clamp(player.x + player.dashX * d * dt, 50, CFG.WORLD.w-50);
+    player.y = clamp(player.y + player.dashY * d * dt, 50, CFG.WORLD.h-50);
+    if (Math.random() < 0.6) parts.push({ x:player.x, y:player.y, h:30, vx:0, vy:0, vh:6,
+                                          life:.3, color:"#8fc8ff", size:5, ghost:true });
+  } else {
+    const mv = player.phase === "idle" ? 1 : 0.35;
+    let mx = v.x, my = v.y;
+    player.moveAmt = v.amt;
+    // AUTO: si no hay entrada, el cazador se acerca solo a su objetivo
+    if (!mx && !my && auto && !modalOpen()){
+      const t2 = nearestEnemy(player.x, player.y, 900);
+      if (t2){
+        const d = Math.hypot(t2.x-player.x, t2.y-player.y);
+        if (d > CFG.ATTACK_RANGE * 0.7){ mx = (t2.x-player.x)/d; my = (t2.y-player.y)/d; }
+      }
+    }
+    player.x = clamp(player.x + mx * speed * mv * dt, 50, CFG.WORLD.w-50);
+    player.y = clamp(player.y + my * speed * mv * dt, 50, CFG.WORLD.h-50);
+    if (mx || my){
+      // el personaje gira hacia donde avanza (camino más corto)
+      const want = Math.atan2(mx, my);
+      let d = want - player.yaw;
+      while (d > Math.PI) d -= Math.PI * 2;
+      while (d < -Math.PI) d += Math.PI * 2;
+      player.yaw += d * Math.min(1, dt * 12);
+      player.step += Math.hypot(mx, my) * dt * 10;
+    } else player.moveAmt = 0;
+  }
+  // salto y gravedad
+  if (player.h > 0 || player.vh !== 0){
+    player.vh -= CFG.GRAVITY * dt;
+    player.h += player.vh * dt;
+    if (player.h <= 0){ player.h = 0; player.vh = 0; player.jumps = 0; }
+  }
+  // fases del golpe
+  if (player.phase !== "idle"){
+    player.phaseT -= dt;
+    if (player.phaseT <= 0){
+      if (player.phase === "startup"){
+        player.phase = "active"; player.phaseT = player.atkDef.active;
+        resolveHit(); player.hitDone = true;
+      } else if (player.phase === "active"){
+        player.phase = "recovery"; player.phaseT = player.atkDef.recovery;
+      } else { player.phase = "idle"; player.atkDef = null; }
+    }
+  }
+  player.dashCd = Math.max(0, player.dashCd - dt);
+  player.skillCd = Math.max(0, player.skillCd - dt);
+  player.hurt = Math.max(0, player.hurt - dt);
+  player.mana = Math.min(maxMana(), player.mana + maxMana() * 0.08 * dt);
+  // AUTO: autoclick + auto-arise (el género espera que el farmeo sea continuo)
+  if (auto && player.phase === "idle" && !modalOpen() && player.dead <= 0) requestAttack();
+  else if (pointer && now() - pointer.down > 0.25 && player.phase === "idle") requestAttack();
+
+  // ---- enemigos
+  spawnT -= dt;
+  const pop = dungeon ? (dungeon.phase === "Boss" ? 1 : 6) : CFG.ENEMY_POP;
+  if (spawnT <= 0 && enemies.length < pop && !(dungeon && dungeon.phase === "Boss")){
+    // repone la horda con rapidez: el farmeo del original es continuo
+    const batch = Math.min(3, pop - enemies.length);
+    for (let i=0;i<batch;i++) spawnEnemy();
+    spawnT = dungeon ? 1.2 : 0.5;
+  }
+  for (const e of enemies){
+    e.hurt = Math.max(0, e.hurt - dt);
+    e.stun = Math.max(0, e.stun - dt);
+    if (e.stun > 0) continue;
+    const d = Math.hypot(player.x-e.x, player.y-e.y) || 1;
+    const stop = e.def.r + (e.boss ? 120 : 92);
+    // fases del jefe (contrato 10.1)
+    if (e.boss && dungeon?.bossState){
+      const pct = e.hp / e.maxHp, th = dungeon.bossState.thresholds;
+      const newPhase = pct <= 0.15 ? 4 : pct <= th[1] ? 3 : pct <= th[0] ? 2 : 1;
+      if (newPhase > e.phase){
+        e.phase = newPhase;
+        banner(newPhase === 4 ? "ENRAGE" : `FASE ${newPhase}`, newPhase === 4 ? "#ff4d61" : "#ffd24a");
+        camImpulse(0.6); ring(e.x, e.y, 260, "#ff4d61", .9);
+      }
+    }
+    e.yaw = Math.atan2(player.x - e.x, player.y - e.y);
+    if (d > stop){
+      const sp = (98 + Math.min(60, e.level * 0.05)) * (e.boss ? 0.8 + e.phase*0.12 : 1);
+      e.x += (player.x-e.x)/d * sp * dt; e.y += (player.y-e.y)/d * sp * dt;
+      e.step += dt * 6;
+    }
+    // telegrafía + golpe
+    if (e.telegraph){
+      e.telegraph.t += dt;
+      if (e.telegraph.t >= e.telegraph.dur){
+        const r = e.telegraph.r;
+        if (Math.hypot(player.x-e.telegraph.x, player.y-e.telegraph.y) < r && player.h < 60) hitPlayer(e.def.dmg * 2.2);
+        ring(e.telegraph.x, e.telegraph.y, r, "#ff4d61", .5);
+        burst(e.telegraph.x, e.telegraph.y, 26, "#ff8a5c", 20);
+        camImpulse(0.5);
+        e.telegraph = null;
+      }
+    } else if ((e.atkCd -= dt) <= 0){
+      if (e.boss){
+        e.atkCd = Math.max(1.1, 2.6 - e.phase * 0.35);
+        e.telegraph = { x:player.x, y:player.y, r:150, t:0, dur:Math.max(0.6, 1.4 - e.phase*0.18) };
+      } else {
+        e.atkCd = 1.35;
+        if (d <= stop + 26 && player.h < 50) hitPlayer(e.def.dmg);
+      }
+    }
+  }
+  separate(dt);
+  for (const s of shadows) stepShadow(s, dt);
+
+  // ---- cadáveres (expiran por contrato)
+  for (const c of corpses.slice()){
+    c.phase += dt;
+    if (c.ExpiresAt < t) consumeCorpse(c, false);
+  }
+  if (auto && !ariseToken){
+    const c = nearestCorpse();
+    if (c){
+      const r = attemptArise(c);
+      if (r.ok) note(`ARISE · ${r.shadow.name}`, "--arise");
+      else if (r.code === "EXHAUSTED") note(`Fallo · +${fmt(r.gems)} gemas`, "--gem");
+    }
+  }
+
+  // ---- portal / mazmorra
+  if (dungeon){
+    dungeon.timer -= dt;
+    if (dungeon.timer <= 0 && !dungeon.cleared){ note("Tiempo agotado", "--hp"); exitDungeon(); }
+  } else {
+    if (!portal){
+      portalT -= dt;
+      if (portalT <= 0) spawnPortal();
+    } else {
+      portal.t += dt;
+      if (portal.t > 60){ portal = null; portalT = FLAGS.PORTAL_INTERVAL_SECONDS; note("El portal se cerró", "--dim"); }
+    }
+  }
+  const nearPortal = portal && Math.hypot(portal.x-player.x, portal.y-player.y) < 120;
+  document.getElementById("a-portal").hidden = !nearPortal;
+
+  // ---- efectos
+  for (const f of floaters) f.life -= dt;
+  floaters = floaters.filter(f => f.life > 0);
+  if (floaters.length > 26) floaters.splice(0, floaters.length - 26);
+  for (const p of parts){
+    p.life -= dt;
+    if (!p.ghost){
+      p.x += p.vx*dt; p.y += p.vy*dt; p.h += p.vh*dt;
+      p.vx *= 0.94; p.vy *= 0.94; p.vh -= 620*dt;
+      if (p.h < 2){ p.h = 2; p.vh *= -0.35; }
+    }
+  }
+  parts = parts.filter(p => p.life > 0);
+  if (parts.length > 260) parts.splice(0, parts.length - 260);
+  for (const r of rings) r.life -= dt;
+  rings = rings.filter(r => r.life > 0);
+
+  // ---- cámara (muelle: fuerza = (objetivo-pos)*k - vel*d)
+  const stiff = 150, damp = 12;
+  cam.shakeV += (0 - cam.shake) * stiff * dt - cam.shakeV * damp * dt;
+  cam.shake += cam.shakeV * dt;
+  cam.distV += (0 - cam.dist) * stiff * dt - cam.distV * damp * dt;
+  cam.dist += cam.distV * dt;
+  cam.x += (player.x - cam.x) * Math.min(1, dt * 7);
+  cam.y += (player.y - cam.y) * Math.min(1, dt * 7);
+
+  // ---- DPS
+  player.dps.since += dt;
+  if (player.dps.since >= 1){ player.dps.shown = player.dps.total / player.dps.since; player.dps.total = 0; player.dps.since = 0; }
+
+  checkQuest();
+  if (!dungeon && !P.quests.active && Math.hypot(npc.x-player.x, npc.y-player.y) < 150) takeQuest();
+  npc.step += dt;
+  npc.yaw = Math.atan2(player.x - npc.x, player.y - npc.y);
+
+  saveT -= dt;
+  if (saveT <= 0){ save(); saveT = 6; }
+}
+let saveT = 6;
+function hitPlayer(raw){
+  if (player.dead > 0) return;
+  const dmg = Math.max(1, raw * CFG.CONTACT_SCALE * (1 - classBonus("armor")));
+  player.hp -= dmg; player.hurt = 0.22;
+  floaters.push({ x:player.x, y:player.y, h:96, text:`-${fmt(dmg)}`, color:"#ff8d97", life:.85 });
+  camImpulse(0.25);
+  if (player.hp <= 0){
+    player.hp = 0; player.dead = 2.4;
+    note("Has caído · tus sombras te cubren", "--hp");
+    burst(player.x, player.y, 34, "#ff4d61", 30);
+  }
+  dirty = true;
+}
+function separate(dt){
+  for (let i = 0; i < enemies.length; i++){
+    const a = enemies[i];
+    for (let j = i+1; j < enemies.length; j++){
+      const b = enemies[j];
+      const dx = b.x-a.x, dy = b.y-a.y, d = Math.hypot(dx, dy) || .001;
+      const min = (a.def.r + b.def.r) * 2.1 + 52;
+      if (d < min){
+        const push = (min-d) * 0.5 * Math.min(1, dt*12);
+        a.x -= dx/d*push; a.y -= dy/d*push; b.x += dx/d*push; b.y += dy/d*push;
+      }
+    }
+    const dx = a.x-player.x, dy = a.y-player.y, d = Math.hypot(dx, dy) || .001;
+    const min = a.def.r + (a.boss ? 104 : 88);
+    if (d < min){ const push = (min-d) * Math.min(1, dt*14); a.x += dx/d*push; a.y += dy/d*push; }
+  }
+}
+
+/* ===========================================================================
+   RENDER — motor pseudo-3D por software
+   Cámara en perspectiva detrás del jugador, terreno con relieve, luz
+   direccional con sombreado por cara, cel-outline y props por tema de isla.
+   =========================================================================== */
+const CAM = { back:265, height:158, pitch:0.29, focal:700, yaw:0, targetYaw:0, minBack:190, maxBack:560 };
+const TILE = 120;
+const LIGHT = { x:-0.45, y:0.82, z:0.35 };
+
+const THEMES = {
+  city:    { gA:"#63cf5a", gB:"#55c04e", sky1:"#2f8fe0", sky2:"#d3f1ff", fog:"#d3f1ff", amp:8,  water:"#2f7fd0", clouds:1, prop:"city" },
+  forest:  { gA:"#3fae4a", gB:"#369a41", sky1:"#2e86c8", sky2:"#cfeeff", fog:"#cfeeff", amp:30, water:"#2a70b8", clouds:1, prop:"forest" },
+  ice:     { gA:"#e3f4ff", gB:"#c9e7fb", sky1:"#4aa8e8", sky2:"#ecfaff", fog:"#eafaff", amp:34, water:"#4fa7d8", clouds:1, prop:"ice" },
+  urban:   { gA:"#8d97a8", gB:"#7f8998", sky1:"#3b6ea8", sky2:"#bcd6ee", fog:"#bcd6ee", amp:6,  water:"#3a6f9e", clouds:1, prop:"urban" },
+  royal:   { gA:"#77c36a", gB:"#67b25c", sky1:"#3b7fd0", sky2:"#ffe6b8", fog:"#ffe6b8", amp:18, water:"#3b86c8", clouds:1, prop:"royal" },
+  shrine:  { gA:"#7fbf6a", gB:"#6faf5c", sky1:"#e0705a", sky2:"#ffd9c2", fog:"#ffd9c2", amp:22, water:"#c9604e", clouds:1, prop:"shrine" },
+  dark:    { gA:"#3a4a3c", gB:"#334233", sky1:"#161a2c", sky2:"#3b3550", fog:"#2a2740", amp:26, water:"#22243a", clouds:0, prop:"dark" },
+  dragon:  { gA:"#7a5f45", gB:"#6b523b", sky1:"#7a2e20", sky2:"#e6a05a", fog:"#c07a46", amp:58, water:"#8a3a22", clouds:1, prop:"dragon" },
+  cyber:   { gA:"#2a3350", gB:"#242c46", sky1:"#0b1030", sky2:"#5a2a86", fog:"#331e58", amp:6,  water:"#1d3f7a", clouds:0, prop:"cyber" },
+  volcano: { gA:"#3a2a2a", gB:"#322424", sky1:"#2a0c0c", sky2:"#e0562a", fog:"#7a2a1a", amp:40, water:"#d2431a", clouds:0, prop:"volcano" },
+  guild:   { gA:"#6fae7a", gB:"#619e6c", sky1:"#2f7fc8", sky2:"#dff0ff", fog:"#dff0ff", amp:14, water:"#2f7fc8", clouds:1, prop:"guild" },
+  mystic:  { gA:"#3e3a72", gB:"#363165", sky1:"#161046", sky2:"#6b4cc0", fog:"#3a2a78", amp:20, water:"#3a2a90", clouds:0, prop:"mystic" },
+  storm:   { gA:"#5a6b7a", gB:"#4e5e6c", sky1:"#2a3348", sky2:"#8fa4bc", fog:"#6a7c92", amp:36, water:"#3d5570", clouds:1, prop:"storm" },
+  dungeon: { gA:"#3c2c52", gB:"#342749", sky1:"#0e0820", sky2:"#5a1f42", fog:"#2c1533", amp:10, water:"#2a1030", clouds:0, prop:"dungeon" },
+};
+const themeNow = () => dungeon ? THEMES.dungeon : (THEMES[isleOf(P.island).theme] || THEMES.city);
+
+/* ----------------------------- proyección --------------------------------- */
+let cosP = 1, sinP = 0, FOC = 690;
+// Cámara orbital: gira alrededor del jugador (yaw) y siempre lo encuadra.
+const camPos = { x:0, z:0 }, camFwd = { x:0, z:-1 }, camRight = { x:1, z:0 };
+function updateCameraBasis(){
+  const y = CAM.yaw;
+  camFwd.x = -Math.sin(y); camFwd.z = -Math.cos(y);
+  camRight.x = Math.cos(y); camRight.z = -Math.sin(y);
+  const back = CAM.back + cam.dist;
+  camPos.x = cam.x - camFwd.x * back;
+  camPos.z = cam.y - camFwd.z * back;
+}
+function project(wx, wy, wz){
+  const dx = wx - camPos.x, dz = wz - camPos.z;
+  const rx = dx * camRight.x + dz * camRight.z;
+  const rf = dx * camFwd.x + dz * camFwd.z;
+  const ry = wy - (CAM.height + cam.shake * 2.2);
+  const z2 = rf * cosP - ry * sinP;
+  if (z2 < 16) return null;
+  const y2 = ry * cosP + rf * sinP;
+  const s = FOC / z2;
+  return { x: W/2 + rx * s + cam.shake * 3, y: H*0.36 - y2 * s, s, z: z2 };
+}
+const horizonY = () => H*0.36 - FOC * (sinP / cosP);
+const camDist = (x, z) => Math.hypot(x - camPos.x, z - camPos.z);
+
+/* ------------------------- terreno y sombreado ---------------------------- */
+function terrainH(x, z){
+  const a = themeNow().amp;
+  if (a <= 0.5) return 0;
+  return (Math.sin(x*0.0021) * Math.cos(z*0.0017) * 0.65 + Math.sin((x+z)*0.0009) * 0.35) * a;
+}
+function shade(hex, f){
+  const n = parseInt(hex.slice(1), 16);
+  const r = clamp(Math.round(((n>>16)&255) * f), 0, 255);
+  const g = clamp(Math.round(((n>>8)&255) * f), 0, 255);
+  const b = clamp(Math.round((n&255) * f), 0, 255);
+  return `rgb(${r},${g},${b})`;
+}
+function drawSky(){
+  const th = themeNow(), hy = horizonY();
+  const g = ctx.createLinearGradient(0, 0, 0, Math.max(hy, 1));
+  g.addColorStop(0, th.sky1); g.addColorStop(1, th.sky2);
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, Math.max(hy, 0));
+  if (th.clouds){
+    const sx = W*0.72, sy = hy*0.28;
+    const sg = ctx.createRadialGradient(sx, sy, 3, sx, sy, 150);
+    sg.addColorStop(0, "rgba(255,252,228,.95)"); sg.addColorStop(1, "rgba(255,240,180,0)");
+    ctx.fillStyle = sg; ctx.beginPath(); ctx.arc(sx, sy, 150, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = "rgba(255,255,255,.9)";
+    for (let i=0;i<10;i++){
+      const s0 = i*137.5;
+      const cx = (((s0*7 - CAM.yaw*380 - cam.x*0.03) % (W+520)) + W+520) % (W+520) - 260;
+      const cy = hy * (0.1 + ((i*29)%60)/150);
+      const w = 62 + (i%5)*30, h = w*0.34;
+      ctx.beginPath();
+      ctx.ellipse(cx, cy, w, h, 0, 0, Math.PI*2);
+      ctx.ellipse(cx+w*0.6, cy+h*0.2, w*0.6, h*0.78, 0, 0, Math.PI*2);
+      ctx.ellipse(cx-w*0.62, cy+h*0.28, w*0.52, h*0.7, 0, 0, Math.PI*2);
+      ctx.fill();
+    }
+  } else {
+    ctx.fillStyle = "rgba(255,255,255,.6)";
+    for (let i=0;i<50;i++){
+      const s0 = (i*7919)%977;
+      const cx = ((s0*11 - CAM.yaw*260) % (W+160) + W+160) % (W+160) - 80;
+      ctx.globalAlpha = .2 + (s0%50)/120;
+      ctx.fillRect(cx, (s0 % Math.max(1, Math.floor(hy))), 2, 2);
+    }
+    ctx.globalAlpha = 1;
+  }
+  // cordillera de fondo (dos capas con parallax)
+  for (let layer = 0; layer < 2; layer++){
+    ctx.fillStyle = shade(th.gA, layer ? 0.34 : 0.22);
+    ctx.beginPath(); ctx.moveTo(0, hy);
+    const par = CAM.yaw * (layer ? 900 : 520) + cam.x * (layer ? 0.02 : 0.01), amp = layer ? 62 : 92;
+    for (let x = 0; x <= W; x += 40){
+      const hgt = 18 + Math.abs(Math.sin((x + par) * (layer ? 0.009 : 0.006))) * amp;
+      ctx.lineTo(x, hy - hgt);
+    }
+    ctx.lineTo(W, hy); ctx.closePath(); ctx.fill();
+  }
+  // agua más allá del borde del mundo
+  ctx.fillStyle = th.water; ctx.globalAlpha = .9;
+  ctx.fillRect(0, hy, W, H - hy); ctx.globalAlpha = 1;
+  const fg = ctx.createLinearGradient(0, hy-70, 0, hy+110);
+  fg.addColorStop(0, "rgba(0,0,0,0)"); fg.addColorStop(.45, th.fog); fg.addColorStop(1, "rgba(0,0,0,0)");
+  ctx.globalAlpha = .34; ctx.fillStyle = fg; ctx.fillRect(0, hy-70, W, 180); ctx.globalAlpha = 1;
+}
+const hCache = new Map();
+function cachedH(gx, gz){
+  const k = gx * 8192 + gz;
+  let v = hCache.get(k);
+  if (v === undefined){ v = terrainH(gx*TILE, gz*TILE); hCache.set(k, v); }
+  return v;
+}
+function drawGround(){
+  const th = themeNow();
+  hCache.clear();
+  const cx0 = (camPos.x + cam.x) / 2, cz0 = (camPos.z + cam.y) / 2;   // entre cámara y jugador
+  const gx0 = Math.floor((cx0 - TILE*15)/TILE), gx1 = Math.floor((cx0 + TILE*15)/TILE);
+  const gz0 = Math.floor((cz0 - TILE*15)/TILE), gz1 = Math.floor((cz0 + TILE*15)/TILE);
+  for (let gz = gz0; gz <= gz1; gz++){
+    for (let gx = gx0; gx <= gx1; gx++){
+      const x = gx*TILE, z = gz*TILE;
+      const h00 = cachedH(gx, gz), h10 = cachedH(gx+1, gz), h11 = cachedH(gx+1, gz+1), h01 = cachedH(gx, gz+1);
+      const a = project(x, h01, z+TILE), b = project(x+TILE, h11, z+TILE),
+            c = project(x+TILE, h10, z),  d = project(x, h00, z);
+      if (!a || !b || !c || !d) continue;
+      if (Math.max(a.y,b.y,c.y,d.y) < -30 || Math.min(a.y,b.y,c.y,d.y) > H+30) continue;
+      if (Math.max(a.x,b.x,c.x,d.x) < -30 || Math.min(a.x,b.x,c.x,d.x) > W+30) continue;
+      // normal aproximada -> lambert
+      const nx = (h00 - h10) / TILE, nz = (h00 - h01) / TILE;
+      const lam = clamp(0.72 + (nx*LIGHT.x + nz*LIGHT.z) * 2.6, 0.55, 1.25);
+      const even = ((gx+gz) & 1) === 0;
+      ctx.fillStyle = shade(even ? th.gA : th.gB, lam);
+      ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.lineTo(c.x,c.y); ctx.lineTo(d.x,d.y);
+      ctx.closePath(); ctx.fill();
+    }
+  }
+}
+
+/* -------------------------------- cajas ----------------------------------- */
+/*  Caja 3D con transformación de modelo completa.
+    - o.origin + o.yaw: la posición es local al personaje y el conjunto gira sobre
+      su eje vertical, así los personajes se leen desde cualquier ángulo.
+    - o.rotX / o.rotZ sobre un pivote articulan los miembros.
+    Las caras se eligen por orientación real (área con signo) y se sombrean con una
+    luz direccional, de modo que el volumen funciona con la cámara orbital. */
+const CUBE_FACES = [
+  { v:[0,1,3,2], n:[0,0,1] },
+  { v:[5,4,6,7], n:[0,0,-1] },
+  { v:[4,0,2,6], n:[-1,0,0] },
+  { v:[1,5,7,3], n:[1,0,0] },
+  { v:[2,3,7,6], n:[0,1,0] },
+  { v:[4,5,1,0], n:[0,-1,0] },
+];
+function box(px, py, pz, w, h, d, color, o){
+  o = o || {};
+  const hw = w/2, hd = d/2;
+  const rx = o.rotX || 0, rz = o.rotZ || 0, yaw = o.yaw || 0;
+  const org = o.origin;
+  const pvY = o.pivotY ?? h, pvZ = o.pivotZ ?? 0;
+  const cx = Math.cos(rx), sx = Math.sin(rx);
+  const cz = Math.cos(rz), sz = Math.sin(rz);
+  const cy = Math.cos(yaw), sy = Math.sin(yaw);
+  const V = new Array(8);
+  for (let i = 0; i < 8; i++){
+    let X = px + ((i & 1) ? hw : -hw);
+    let Y = py + ((i & 2) ? h : 0);
+    let Z = pz + ((i & 4) ? -hd : hd);
+    if (rx){ const yy = Y - (py + pvY), zz = Z - (pz + pvZ);
+             Y = py + pvY + yy*cx - zz*sx; Z = pz + pvZ + yy*sx + zz*cx; }
+    if (rz){ const xx = X - px, yy = Y - (py + pvY);
+             X = px + xx*cz - yy*sz; Y = py + pvY + xx*sz + yy*cz; }
+    if (org){ const nx = X*cy + Z*sy, nz = -X*sy + Z*cy;
+              V[i] = project(org.x + nx, org.y + Y, org.z + nz); }
+    else V[i] = project(X, Y, Z);
+    if (!V[i]) return;
+  }
+  const alpha = o.alpha ?? 1;
+  ctx.globalAlpha = alpha;
+  ctx.lineJoin = "round";
+  const outline = o.outline === false ? null : (o.outline || "rgba(6,10,24,.55)");
+  const drawStroke = outline && V[0].s > 0.45;
+  if (drawStroke){ ctx.strokeStyle = outline; ctx.lineWidth = Math.max(0.7, V[0].s * 1.15); }
+  const vis = [];
+  for (const f of CUBE_FACES){
+    const a = V[f.v[0]], b = V[f.v[1]], c2 = V[f.v[2]];
+    const area = (b.x - a.x) * (c2.y - a.y) - (c2.x - a.x) * (b.y - a.y);
+    if (area >= 0) continue;
+    let nx = f.n[0], nz = f.n[2];
+    if (yaw){ const r1 = nx*cy + nz*sy, r2 = -nx*sy + nz*cy; nx = r1; nz = r2; }
+    const lam = clamp(0.62 + (nx*LIGHT.x + f.n[1]*LIGHT.y + nz*LIGHT.z) * 0.42, 0.5, 1.22);
+    vis.push({ q:f.v, lam, z:(a.z + c2.z) * 0.5 });
+  }
+  vis.sort((m, n) => n.z - m.z);
+  for (const it of vis){
+    const q = it.q;
+    ctx.beginPath(); ctx.moveTo(V[q[0]].x, V[q[0]].y);
+    ctx.lineTo(V[q[1]].x, V[q[1]].y); ctx.lineTo(V[q[2]].x, V[q[2]].y); ctx.lineTo(V[q[3]].x, V[q[3]].y);
+    ctx.closePath(); ctx.fillStyle = shade(color, it.lam); ctx.fill();
+    if (drawStroke) ctx.stroke();
+  }
+  if (o.glow){
+    ctx.globalAlpha = alpha * 0.45; ctx.fillStyle = o.glow;
+    const q = CUBE_FACES[0].v;
+    ctx.beginPath(); ctx.moveTo(V[q[0]].x, V[q[0]].y);
+    for (let i=1;i<4;i++) ctx.lineTo(V[q[i]].x, V[q[i]].y);
+    ctx.closePath(); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+}
+function decal(px, py, pz, w, h, color){
+  const a = project(px - w/2, py + h, pz), b = project(px + w/2, py, pz);
+  if (!a || !b) return;
+  ctx.fillStyle = color; ctx.fillRect(a.x, a.y, b.x-a.x, b.y-a.y);
+}
+// Punto local de un personaje (con su yaw) llevado a coordenadas de mundo.
+function localToWorld(org, yaw, lx, ly, lz){
+  const c = Math.cos(yaw), sn = Math.sin(yaw);
+  return { x: org.x + lx*c + lz*sn, y: org.y + ly, z: org.z - lx*sn + lz*c };
+}
+function shadowBlob(px, pz, r, alpha, gh){
+  const c = project(px, (gh ?? terrainH(px, pz)) + 1, pz); if (!c) return;
+  ctx.globalAlpha = alpha ?? .34; ctx.fillStyle = "#06101f";
+  ctx.beginPath(); ctx.ellipse(c.x, c.y, r*c.s, r*c.s*0.42, 0, 0, Math.PI*2); ctx.fill();
+  ctx.globalAlpha = 1;
+}
+function groundCircle(x, z, r, color, alpha, lw){
+  const c = project(x, terrainH(x,z)+2, z); if (!c) return;
+  ctx.globalAlpha = alpha; ctx.strokeStyle = color; ctx.lineWidth = (lw ?? 3) * clamp(c.s, .3, 2);
+  ctx.beginPath(); ctx.ellipse(c.x, c.y, r*c.s, r*c.s*0.42, 0, 0, Math.PI*2); ctx.stroke();
+  ctx.globalAlpha = 1;
+}
+
+/* -------------------------------- props ----------------------------------- */
+function hash2(x, z){ let h = (x*73856093) ^ (z*19349663); h = (h ^ (h>>>13)) >>> 0; return h; }
+function drawProp(kind, x, z, h){
+  const g = terrainH(x, z);
+  const v = h % 100;
+  switch (kind){
+    case "city":
+      box(x, g, z, 104, 96 + v*0.9, 104, "#f0f4ff");
+      box(x, g + 96 + v*0.9, z, 120, 14, 120, "#cfe0ff");
+      for (let i=0;i<3;i++) decal(x, g + 36 + i*44, z + 61, 60, 22, "#7fd6ff");
+      break;
+    case "forest":
+      box(x, g, z, 18, 54, 18, "#7a4a24");
+      box(x, g+50, z, 74, 44, 74, "#2fa83f");
+      box(x, g+88, z, 50, 32, 50, "#3ec24e");
+      break;
+    case "ice":
+      box(x, g, z, 16, 42, 16, "#6d4b2e");
+      box(x, g+38, z, 66, 38, 66, "#dff3ff");
+      box(x, g+70, z, 42, 30, 42, "#ffffff");
+      break;
+    case "urban":
+      box(x, g, z, 100, 90 + v, 100, "#9aa6b8");
+      decal(x, g+30, z+51, 46, 26, "#3b4a60");
+      break;
+    case "royal":
+      box(x, g, z, 84, 170 + v, 84, "#e8e2d0");
+      box(x, g+170+v, z, 100, 26, 100, "#c9bfa4");
+      box(x, g+196+v, z, 54, 46, 54, "#b8443f");
+      break;
+    case "shrine":
+      box(x-34, g, z, 12, 110, 12, "#d33b3b"); box(x+34, g, z, 12, 110, 12, "#d33b3b");
+      box(x, g+108, z, 100, 12, 20, "#b32f2f"); box(x, g+124, z, 118, 10, 24, "#d33b3b");
+      break;
+    case "dark":
+      box(x, g, z, 14, 70, 14, "#2b2a24");
+      box(x, g+66, z, 54, 12, 54, "#3a3a2e");
+      box(x+26, g+72, z, 10, 14, 10, "#ffb84d", { glow:"#ffb84d" });
+      break;
+    case "dragon":
+      box(x, g, z, 70, 120 + v, 70, "#6b5240");
+      box(x, g+120+v, z, 44, 40, 44, "#59422f");
+      break;
+    case "cyber":
+      box(x, g, z, 90, 220 + v*2, 90, "#232b46");
+      for (let i=0;i<4;i++) decal(x, g + 40 + i*48, z + 46, 56, 8, i%2 ? "#ff4fd0" : "#4ff0ff");
+      box(x, g+220+v*2, z, 16, 40, 16, "#4ff0ff", { glow:"#4ff0ff" });
+      break;
+    case "volcano":
+      box(x, g, z, 80, 60 + v, 80, "#241a1a");
+      box(x, g+60+v, z, 44, 16, 44, "#ff5a1e", { glow:"#ff7a3a" });
+      break;
+    case "guild":
+      box(x, g, z, 110, 120, 110, "#c9d4e4");
+      box(x, g+120, z, 126, 20, 126, "#6b7a94");
+      box(x-40, g+140, z, 8, 60, 8, "#8a97b0");
+      decal(x-24, g+165, z+4, 34, 26, "#3f7fd0");
+      break;
+    case "mystic":
+      box(x, g+60+v, z, 46, 46, 46, "#8a6bff", { alpha:.92, glow:"#b39cff" });
+      box(x, g+20, z, 16, 30, 16, "#5b46b0", { alpha:.7 });
+      break;
+    case "storm":
+      box(x, g, z, 96, 30, 96, "#6b7a8c");
+      box(x, g+30, z, 14, 90, 14, "#8b98a8");
+      box(x, g+118, z, 80, 10, 18, "#c3cedd");
+      break;
+    case "dungeon":
+      box(x, g, z, 48, 200, 48, "#241a33");
+      box(x, g+200, z, 62, 18, 62, "#3a2a4f");
+      decal(x, g+120, z+25, 12, 56, "rgba(255,70,70,.8)");
+      break;
+  }
+}
+function collectProps(items){
+  const th = themeNow();
+  const cx1 = (camPos.x + cam.x) / 2, cz1 = (camPos.z + cam.y) / 2;
+  const gx0 = Math.floor((cx1 - TILE*10)/TILE), gx1 = Math.floor((cx1 + TILE*10)/TILE);
+  const gz0 = Math.floor((cz1 - TILE*10)/TILE), gz1 = Math.floor((cz1 + TILE*10)/TILE);
+  for (let gz = gz0; gz <= gz1; gz++){
+    for (let gx = gx0; gx <= gx1; gx++){
+      const h = hash2(gx, gz);
+      if (h % 8) continue;
+      const x = gx*TILE + (h % 80) - 40, z = gz*TILE + ((h>>8) % 80) - 40;
+      if (Math.hypot(x - player.x, z - player.y) < 330) continue;
+      const p = project(x, terrainH(x,z), z);
+      if (!p || p.z < 200) continue;
+      items.push({ z:p.z, f:() => { shadowBlob(x, z, 30, .22); drawProp(th.prop, x, z, h); } });
+    }
+  }
+}
+
+/* ------------------------------ personajes -------------------------------- */
+// Tipo de arma según el equipo, para modelarla con varias piezas.
+function weaponKind(id){
+  const n = (WEAPONS[id]?.name || "").toLowerCase();
+  if (n.includes("axe")) return "axe";
+  if (n.includes("scythe")) return "scythe";
+  if (n.includes("staff") || n.includes("rod")) return "staff";
+  if (n.includes("naginata") || n.includes("trident") || n.includes("maul")) return "polearm";
+  return "sword";
+}
+function drawWeapon(kind, org, yaw, s, color, swinging, opt){
+  const o = k => ({ ...opt, origin:org, yaw, rotX: swinging ? -0.75 : 0.18, pivotY:0, ...k });
+  const hx = 20*s, hy = 26*s, hz = 10*s;         // mano derecha
+  switch (kind){
+    case "axe":
+      box(hx, hy, hz, 4.5*s, 42*s, 4.5*s, "#6b4a2a", o());
+      box(hx, hy + 34*s, hz, 17*s, 15*s, 6*s, color, o());
+      box(hx - 8*s, hy + 35*s, hz, 6*s, 12*s, 7*s, color, o());
+      break;
+    case "scythe":
+      box(hx, hy - 6*s, hz, 4.5*s, 48*s, 4.5*s, "#4a3a2a", o());
+      box(hx, hy + 40*s, hz, 26*s, 5*s, 5*s, color, o());
+      box(hx + 11*s, hy + 30*s, hz, 5*s, 13*s, 5*s, color, o());
+      break;
+    case "staff":
+      box(hx, hy, hz, 4*s, 54*s, 4*s, "#6b5a3a", o());
+      box(hx, hy + 52*s, hz, 12*s, 12*s, 12*s, color, { ...o(), glow:color });
+      break;
+    case "polearm":
+      box(hx, hy - 8*s, hz, 4.5*s, 46*s, 4.5*s, "#5a4a32", o());
+      box(hx, hy + 36*s, hz, 6*s, 15*s, 6*s, color, o());
+      break;
+    default:
+      box(hx, hy + 10*s, hz, 6*s, 40*s, 3*s, color, o());
+      box(hx, hy + 6*s, hz, 16*s, 4*s, 7*s, "#8a7a5a", o());
+      box(hx, hy - 5*s, hz, 5*s, 11*s, 5*s, "#4a3a2a", o());
+  }
+}
+// Cara pintada sobre la cara frontal de la cabeza (posición local -> mundo).
+function drawFace(org, yaw, s, headY, eyes, opts){
+  // de espaldas no hay cara que pintar
+  const fx = Math.sin(yaw), fz = Math.cos(yaw);
+  if ((org.x - camPos.x) * fx + (org.z - camPos.z) * fz > -0.15) return;
+  const w = localToWorld(org, yaw, 0, headY, 9.2*s);
+  const c = project(w.x, w.y, w.z);
+  if (!c) return;
+  const u = c.s * s;
+  if (u < 0.32) return;
+  const o = opts || {};
+  ctx.fillStyle = eyes;
+  const ew = 3.6*u, eh = (o.glowEyes ? 3.2 : 4.6)*u, ex = 4.4*u;
+  if (o.glowEyes){ ctx.shadowColor = eyes; ctx.shadowBlur = 10*u; }
+  ctx.fillRect(c.x - ex - ew/2, c.y - eh/2, ew, eh);
+  ctx.fillRect(c.x + ex - ew/2, c.y - eh/2, ew, eh);
+  ctx.shadowBlur = 0;
+  if (!o.glowEyes){
+    ctx.fillStyle = "rgba(255,255,255,.85)";
+    ctx.fillRect(c.x - ex - ew/2 + .6*u, c.y - eh/2 + .6*u, 1.4*u, 1.5*u);
+    ctx.fillRect(c.x + ex - ew/2 + .6*u, c.y - eh/2 + .6*u, 1.4*u, 1.5*u);
+  }
+  if (o.smile !== false){
+    ctx.strokeStyle = eyes; ctx.lineWidth = Math.max(1, 1.4*u); ctx.lineCap = "round";
+    ctx.beginPath(); ctx.arc(c.x, c.y + 2.2*u, 4.4*u, .25*Math.PI, .75*Math.PI); ctx.stroke();
+  }
+}
+
+/*  PERSONAJE
+    Construido en espacio local (x lateral, y altura, z frente) y girado por el
+    yaw del propio personaje: camina hacia donde mira y se ve bien desde
+    cualquier ángulo de cámara. Piezas: botas, muslos, peto con placa, cinturón,
+    hombreras, brazos de tres piezas, cuello, cabeza, pelo y capa. */
+function figure(org, yaw, o){
+  const s = o.scale ?? 1;
+  const st = o.step ?? 0;
+  const alpha = o.alpha ?? 1;
+  const base = { origin:org, yaw, alpha, outline:o.outline };
+  if (o.lod){
+    box(0, 0, 0, 26*s, 26*s, 15*s, o.pants, base);
+    box(0, 26*s, 0, 28*s, 28*s, 16*s, o.shirt, base);
+    box(0, 56*s, 0, 19*s, 18*s, 17.5*s, o.skin, base);
+    return;
+  }
+  const near = camDist(org.x, org.z) < 440;
+  const moving = o.moving && (o.speed ?? 1) > 0.05;
+  const sw = moving ? Math.sin(st) : Math.sin(st * .5) * .12;
+  const atk = o.attack ?? 0;
+  const bob = moving ? Math.abs(Math.sin(st)) * 1.7 * s : Math.sin(st * .5) * .7 * s;
+  const B = (lx, ly, lz, w, h, d, col, extra) =>
+    box(lx, ly + bob, lz, w, h, d, col, extra ? { ...base, ...extra } : base);
+
+  // piernas: muslo articulado desde la cadera y bota
+  const legSw = sw * .62;
+  for (const side of [-1, 1]){
+    const rot = legSw * side;
+    const hip = { ...base, rotX:rot, pivotY:22*s };
+    B(side * 6.5*s, 7*s, 0, 12*s, 21*s, 13*s, o.pants, hip);
+    B(side * 6.5*s, 0, Math.sin(rot) * 17*s, 13.5*s, 8*s, 16*s, o.boots || o.pants);
+  }
+  // torso, peto y cinturón
+  B(0, 27*s, 0, 28*s, 28*s, 15.5*s, o.shirt);
+  if (o.armor) B(0, 33*s, 8*s, 23*s, 20*s, 2.5*s, o.armor);
+  B(0, 27*s, 0, 29.5*s, 5.5*s, 16.5*s, o.belt || o.pants);
+  if (o.buckle && near) B(0, 28*s, 8.6*s, 7*s, 4.5*s, 2*s, o.buckle);
+  if (o.emblem && near) B(0, 40*s, 9*s, 6.5*s, 6.5*s, 1.6*s, o.emblem);
+  if (o.cape){
+    const flap = moving ? Math.sin(st * 1.2) * .14 : Math.sin(now() * 1.5) * .05;
+    B(0, 26*s, -9*s, 26*s, 30*s, 3*s, o.cape, { rotX:-.1 + flap, pivotY:30*s, alpha:alpha * .96 });
+    if (near) B(0, 12*s, -11*s, 22*s, 16*s, 2.5*s, o.cape, { rotX:-.05 + flap * .6, pivotY:16*s, alpha:alpha * .9 });
+  }
+  // brazos: manga, brazo y mano solidarios al hombro
+  const armSw = sw * .55;
+  const atkRot = atk > 0 ? (-2.0 + (1 - atk) * .75) : -armSw;
+  for (const side of [-1, 1]){
+    const rot = side < 0 ? armSw : atkRot;
+    const sh = { ...base, rotX:rot, pivotY:28*s };
+    const ax = side * 17*s;
+    B(ax, 44*s, 0, 10.5*s, 11*s, 12*s, o.sleeve || o.shirt, sh);
+    B(ax, 30*s, 0, 9.5*s, 15*s, 11*s, o.skin, sh);
+    if (near) B(ax, 25*s, 0, 10*s, 6*s, 11.5*s, o.glove || o.skin, sh);
+  }
+  if (o.pauldron){
+    B(-16.5*s, 47*s, 0, 12.5*s, 6*s, 13.5*s, o.pauldron);
+    B(16.5*s, 47*s, 0, 12.5*s, 6*s, 13.5*s, o.pauldron);
+  }
+  // cuello y cabeza
+  const hb = moving ? Math.sin(st * 2) * .6 * s : 0;
+  B(0, 54*s + hb, 0, 9.5*s, 4.5*s, 9*s, o.skin);
+  B(0, 58*s + hb, 0, 19*s, 18*s, 17.5*s, o.skin);
+  if (o.hair){
+    B(0, 74*s + hb, 0, 19.5*s, 3.5*s, 18*s, o.hair);            // coronilla
+    if (near){
+      B(0, 68*s + hb, -8.2*s, 18.5*s, 8*s, 2.5*s, o.hair);      // nuca
+      B(0, 71*s + hb, 8.2*s, 18.5*s, 4*s, 2.5*s, o.hair);       // flequillo
+    }
+  }
+  if (o.hat){
+    B(0, 74*s + hb, 0, 21.5*s, 8*s, 20*s, o.hat);
+    B(0, 74*s + hb, 7*s, 20*s, 2.5*s, 11*s, o.hat);
+  }
+  if (o.crown){
+    B(0, 76*s + hb, 0, 20*s, 5*s, 19*s, o.crown);
+    for (const dx of [-6, 0, 6]) B(dx*s, 80*s + hb, 0, 4*s, 7*s, 4*s, o.crown);
+  }
+  if (o.horns){
+    for (const sd of [-1, 1]){
+      B(sd*7.5*s, 72*s + hb, 0, 4.5*s, 6*s, 4.5*s, o.hornBase || o.hair || "#3c2b56", { rotX:-.3, pivotY:0 });
+      B(sd*7.5*s, 77*s + hb, -1.5*s, 3.4*s, 5*s, 3.4*s, o.hornColor || "#ffd27a", { rotX:-.45, pivotY:0 });
+    }
+  }
+  if (o.backpack) B(0, 30*s, -10.5*s, 18*s, 20*s, 7*s, o.backpack);
+  drawFace(org, yaw, s, org.y + 64*s + bob + hb, o.eyes || "#12172b", { smile:o.smile, glowEyes:o.glowEyes });
+  if (o.weapon) drawWeapon(o.weaponKind || "sword", { x:org.x, y:org.y + bob, z:org.z }, yaw, s, o.weapon, atk > 0, { alpha });
+}
+
+/*  SOMBRA EXTRAÍDA
+    Comparte el modelo del personaje (misma anatomía y animación) con una paleta
+    espectral: cuerpo de humo azul, ojos y núcleo encendidos del color de su
+    rango, halo, brasas ascendentes y marcas de rango (cuernos en S, corona en
+    Monarch).  */
+function drawShadowUnit(sh){
+  const g = terrainH(sh.x, sh.y);
+  const org = { x:sh.x, y:g, z:sh.y };
+  const tier = sh.data.tier;
+  const glow = getComputedStyle(document.documentElement).getPropertyValue(TIER_VAR[tier] || "--t-C").trim() || "#b9c9e8";
+  const far = camDist(sh.x, sh.y) > 950;
+  const yaw = sh.yaw || 0;
+  const bob = Math.sin(sh.step * .8) * 2 * .95;                 // flota un poco
+  shadowBlob(sh.x, sh.y, 21, .3);
+  figure({ x:org.x, y:org.y + bob, z:org.z }, yaw, {
+    scale:.95, step:sh.step, moving:sh.state !== "IDLE_FOLLOW", attack: sh.swing > 0 ? 1 : 0,
+    lod:far, alpha:.97,
+    skin:"#3b6bb5", shirt:"#1f3f7d", sleeve:"#2a509a", armor:glow,
+    pants:"#16294d", boots:"#101f3c", glove:"#4d84cc",
+    hair:"#16294d", eyes:glow, glowEyes:true, smile:false,
+    pauldron:"#2d5896", belt:"#101f3c",
+    horns: tier === "S" || tier === "S Elite", hornColor:glow,
+    crown: tier === "Monarch" ? glow : null,
+    cape: tier === "S Elite" || tier === "Monarch" ? "#12294f" : null,
+    weapon: sh.swing > 0 ? glow : null, weaponKind:"sword",
+  });
+  if (far) return;
+  // halo y núcleo encendido
+  const halo = project(sh.x, g + 34, sh.y);
+  if (halo){
+    const rr = 44 * halo.s;
+    const gr = ctx.createRadialGradient(halo.x, halo.y, rr*.3, halo.x, halo.y, rr);
+    gr.addColorStop(0, "rgba(90,190,255,.22)"); gr.addColorStop(1, "rgba(90,190,255,0)");
+    ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(halo.x, halo.y, rr, 0, Math.PI*2); ctx.fill();
+  }
+  const c = project(sh.x, g + 2, sh.y);
+  if (c){
+    const rr = 32 * c.s;
+    ctx.fillStyle = "rgba(90,190,255,.18)";
+    ctx.beginPath(); ctx.ellipse(c.x, c.y, rr, rr*.42, 0, 0, Math.PI*2); ctx.fill();
+  }
+  if (Math.random() < .2){
+    parts.push({ x:sh.x + rnd(-12, 12), y:sh.y + rnd(-8, 8), h:rnd(4, 16),
+                 vx:0, vy:0, vh:rnd(26, 58), life:rnd(.5, .9), color:glow, size:rnd(1.4, 2.4) });
+  }
+}
+
+function slashArc(x, z, y, s, color, t, wide){
+  const c = project(x, y + 42*s, z + 26*s); if (!c) return;
+  ctx.globalAlpha = clamp(t, 0, 1);
+  ctx.strokeStyle = color; ctx.lineWidth = (wide ? 10 : 6) * c.s; ctx.lineCap = "round";
+  ctx.beginPath(); ctx.arc(c.x, c.y, (wide ? 46 : 27) * c.s, -1.05 + (1-t)*1.25, 0.85 + (1-t)*1.25); ctx.stroke();
+  ctx.globalAlpha = clamp(t,0,1) * .55; ctx.strokeStyle = "#ffffff"; ctx.lineWidth = (wide ? 4 : 2.4) * c.s;
+  ctx.stroke(); ctx.globalAlpha = 1;
+}
+function drawPlayer(){
+  const g = terrainH(player.x, player.y) + player.h;
+  const org = { x:player.x, y:g, z:player.y };
+  const awake = P.awakened;
+  const atk = player.phase === "startup" ? .35 : player.phase === "active" ? 1 : 0;
+  shadowBlob(player.x, player.y, 24, .34 * (player.h > 0 ? .5 : 1));
+  figure(org, player.yaw, {
+    scale:1.02, step:player.step, moving:true, attack:atk,
+    speed: player.moveAmt ?? 1,
+    skin:"#f5cd30",
+    shirt: player.hurt > 0 ? "#ff9aa4" : (awake ? "#41288f" : "#2f6bd8"),
+    sleeve: awake ? "#5a3ab8" : "#3f7ae8",
+    armor: awake ? "#7a54c8" : "#4a86ee",
+    pants: awake ? "#2a1c56" : "#3f9b4f", boots:"#2b2f40",
+    hair: awake ? "#bb8cff" : "#8b4a22", eyes:"#12172b",
+    belt:"#2a2218", buckle:"#ffd24a", emblem: awake ? "#bb8cff" : "#8fd0ff",
+    pauldron: awake ? "#7a54c8" : "#39508f", glove:"#e0a83a",
+    weapon: awake ? "#ddc4ff" : "#cfd9ee", weaponKind: weaponKind(P.weapon),
+    cape: awake ? "#5a2fa8" : null,
+    crown: P.rank === "S" ? "#ffd24a" : null,
+    alpha: player.dead > 0 ? .45 : 1,
+  });
+  const c = project(player.x, terrainH(player.x, player.y) + 2, player.y);
+  if (c){
+    const pulse = .6 + Math.sin(now()*4)*.14;
+    const col = awake ? "187,140,255" : "94,168,255";
+    const rr = 50 * c.s;
+    const gr = ctx.createRadialGradient(c.x, c.y, 2, c.x, c.y, rr);
+    gr.addColorStop(0, `rgba(${col},${.42*pulse})`); gr.addColorStop(1, `rgba(${col},0)`);
+    ctx.fillStyle = gr; ctx.beginPath(); ctx.ellipse(c.x, c.y, rr, rr*.44, 0, 0, Math.PI*2); ctx.fill();
+  }
+  if (player.phase === "active"){
+    slashArc(player.x, player.y, g, 1.1, awake ? "#ddb6ff" : "#cfe6ff", 1, !!player.atkDef?.skill);
+  }
+  if (player.mounted) box(0, 0, -6, 40, 18, 72, awake ? "#6a45c8" : "#7a5a3a", { origin:org, yaw:player.yaw, alpha:.95 });
+  const tag = project(player.x, g + 104, player.y);
+  if (tag){
+    ctx.textAlign = "center";
+    const sz = clamp(15 * tag.s, 11, 22);
+    ctx.font = `600 ${sz}px Fredoka, sans-serif`;
+    ctx.lineWidth = sz * .3; ctx.strokeStyle = "rgba(4,8,20,.9)";
+    ctx.fillStyle = awake ? "#d9c0ff" : "#eaf3ff";
+    const label = `${P.title} · Nv ${P.level}`;
+    ctx.strokeText(label, tag.x, tag.y); ctx.fillText(label, tag.x, tag.y);
+  }
+}
+
+function drawEnemy(e){
+  const g = terrainH(e.x, e.y);
+  const scale = (e.def.r / 18) * (e.boss ? 1.55 : 1);
+  const far = !e.boss && camDist(e.x, e.y) > 900;
+  const hurt = e.hurt > 0;
+  const base = e.boss ? "#e0a05a" : (e.def.kind === "brute" ? "#a785ff" : "#8ad07a");
+  const L = e.look || {};
+  figure({ x:e.x, y:g, z:e.y }, e.yaw || 0, {
+    scale: scale * (e.boss ? 1 : (L.height || 1)), step:e.step, moving:true, lod:far,
+    armor: e.boss ? shade(base, .5) : null, glove: shade(L.shirt || base, .6),
+    attack: e.atkCd > 1.05 && !e.boss ? 1 : 0,
+    skin: hurt ? "#ffffff" : base,
+    shirt: hurt ? "#ffe5e8" : (e.boss ? shade(base, .72) : L.shirt || shade(base, .72)),
+    sleeve: e.boss ? shade(base, .6) : shade(L.shirt || base, .82),
+    pants: e.boss ? shade(base, .56) : L.pants, boots: e.boss ? shade(base, .45) : L.boots,
+    hair: e.boss ? shade(base, 1.2) : L.hair, hat: e.boss ? null : L.hat, backpack: e.boss ? null : L.backpack,
+    eyes: e.boss ? "#ffe066" : "#2a1010", smile:false,
+    horns: e.boss || e.def.kind === "brute", hornColor: e.boss ? "#ffd27a" : "#3c2b56",
+    pauldron: e.boss ? "#8a5a2a" : (e.def.kind === "brute" ? shade(L.shirt || base, .6) : null),
+    weapon: e.boss ? "#ffd9a8" : (e.def.kind === "brute" ? "#8a7a6a" : null),
+    weaponKind: e.boss ? "scythe" : "sword",
+    belt:"#2a2218", buckle:"#c9a33a",
+  });
+  const head = project(e.x, g + 84*scale, e.y);
+  if (!head) return;
+  const near = Math.hypot(e.x-player.x, e.y-player.y) < 300;
+  if (!near && !e.boss) return;
+  const w = (e.boss ? 92 : 48) * clamp(head.s, .55, 1.4), h = (e.boss ? 10 : 6.5) * clamp(head.s, .6, 1.25);
+  ctx.fillStyle = "rgba(5,9,22,.88)";
+  ctx.beginPath(); ctx.roundRect(head.x-w/2, head.y-h, w, h, h/2); ctx.fill();
+  ctx.fillStyle = e.boss ? "#ffd24a" : "#ff4d61";
+  ctx.beginPath(); ctx.roundRect(head.x-w/2+1.5, head.y-h+1.5, (w-3)*clamp(e.hp/e.maxHp,0,1), h-3, (h-3)/2); ctx.fill();
+  if (e.boss){
+    ctx.textAlign = "center"; ctx.font = `700 ${clamp(14*head.s,12,20)}px Fredoka, sans-serif`;
+    ctx.lineWidth = 4; ctx.strokeStyle = "rgba(4,8,20,.92)"; ctx.fillStyle = "#ffe9a8";
+    const l = `${e.name} · Nv ${e.level}`;
+    ctx.strokeText(l, head.x, head.y-h-6); ctx.fillText(l, head.x, head.y-h-6);
+  }
+}
+function drawCorpse(c){
+  const g = terrainH(c.x, c.y);
+  const p = project(c.x, g+2, c.y); if (!p) return;
+  const pulse = .55 + Math.sin(c.phase*3)*.25;
+  const rr = 40 * p.s;
+  const gr = ctx.createRadialGradient(p.x, p.y, 2, p.x, p.y, rr);
+  gr.addColorStop(0, `rgba(47,228,255,${.45*pulse})`); gr.addColorStop(1, "rgba(47,228,255,0)");
+  ctx.fillStyle = gr; ctx.beginPath(); ctx.ellipse(p.x, p.y, rr, rr*.45, 0, 0, Math.PI*2); ctx.fill();
+  // sello + tendrils
+  ctx.strokeStyle = `rgba(47,228,255,${.5+pulse*.35})`; ctx.lineWidth = 2.2;
+  for (let i=0;i<2;i++){
+    const r2 = rr * (.48 + i*.3 + Math.sin(c.phase*2+i)*.05);
+    ctx.beginPath(); ctx.ellipse(p.x, p.y, r2, r2*.45, 0, 0, Math.PI*2); ctx.stroke();
+  }
+  for (let i=0;i<4;i++){
+    const a = c.phase*1.6 + i*Math.PI/2, len = rr*(.5+Math.sin(c.phase*3+i)*.18);
+    ctx.globalAlpha = .55;
+    ctx.beginPath(); ctx.moveTo(p.x, p.y);
+    ctx.lineTo(p.x + Math.cos(a)*len, p.y + Math.sin(a)*len*.45);
+    ctx.stroke(); ctx.globalAlpha = 1;
+  }
+  box(c.x, g, c.y, 34, 13, 46, "#16284d", { alpha:.85, outline:"rgba(120,200,255,.6)" });
+  const tag = project(c.x, g+76, c.y);
+  const near = Math.hypot(c.x-player.x, c.y-player.y) < CFG.ARISE_RANGE;
+  if (near && tag){
+    ctx.textAlign = "center"; ctx.font = `700 ${clamp(15*tag.s,12,22)}px Fredoka, sans-serif`;
+    ctx.lineWidth = 4.5; ctx.strokeStyle = "rgba(4,8,20,.92)"; ctx.fillStyle = "#6ef0ff";
+    const t = `[B] ARISE · ${c.AttemptsRemaining}`;
+    ctx.strokeText(t, tag.x, tag.y); ctx.fillText(t, tag.x, tag.y);
+  }
+}
+function drawPortal(){
+  if (!portal) return;
+  const g = terrainH(portal.x, portal.y);
+  const base = project(portal.x, g, portal.y), top = project(portal.x, g+180, portal.y);
+  if (!base || !top) return;
+  const h = base.y - top.y, w = h*0.6;
+  const col = portal.mode.color;
+  ctx.save(); ctx.translate(base.x, base.y - h/2);
+  const gr = ctx.createRadialGradient(0, 0, 4, 0, 0, w);
+  gr.addColorStop(0, "rgba(255,255,255,.9)"); gr.addColorStop(.55, col); gr.addColorStop(1, "rgba(0,0,0,0)");
+  ctx.globalAlpha = .75; ctx.fillStyle = gr;
+  ctx.beginPath(); ctx.ellipse(0, 0, w*.7, h*.5, 0, 0, Math.PI*2); ctx.fill(); ctx.globalAlpha = 1;
+  for (let i=0;i<3;i++){
+    ctx.strokeStyle = col; ctx.globalAlpha = .8 - i*.2; ctx.lineWidth = 4-i;
+    const k = 1 + i*.13 + Math.sin(portal.t*2+i)*.04;
+    ctx.beginPath(); ctx.ellipse(0, 0, w*.7*k, h*.5*k, 0, 0, Math.PI*2); ctx.stroke();
+  }
+  ctx.globalAlpha = 1; ctx.textAlign = "center"; ctx.font = "700 15px Fredoka, sans-serif";
+  ctx.lineWidth = 4.5; ctx.strokeStyle = "rgba(4,8,20,.92)"; ctx.fillStyle = "#e8f4ff";
+  const label = `${portal.mode.name.toUpperCase()} · [F]`;
+  ctx.strokeText(label, 0, -h*.5-14); ctx.fillText(label, 0, -h*.5-14);
+  ctx.restore();
+}
+function drawTelegraphs(){
+  for (const e of enemies){
+    if (!e.telegraph) continue;
+    const tg = e.telegraph, k = clamp(tg.t / tg.dur, 0, 1);
+    const c = project(tg.x, terrainH(tg.x, tg.y)+2, tg.y); if (!c) continue;
+    const rr = tg.r * c.s;
+    ctx.globalAlpha = .3;
+    ctx.fillStyle = "#ff4d61";
+    ctx.beginPath(); ctx.ellipse(c.x, c.y, rr*k, rr*k*.42, 0, 0, Math.PI*2); ctx.fill();
+    ctx.globalAlpha = .85; ctx.strokeStyle = "#ff8d97"; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.ellipse(c.x, c.y, rr, rr*.42, 0, 0, Math.PI*2); ctx.stroke();
+    ctx.globalAlpha = 1;
+  }
+}
+
+function drawNPC(){
+  if (dungeon) return;
+  const g = terrainH(npc.x, npc.y);
+  shadowBlob(npc.x, npc.y, 22, .3);
+  figure({ x:npc.x, y:g, z:npc.y }, npc.yaw ?? 0, {
+    scale:1.06, step:npc.step*0.8, moving:false,
+    skin:"#f5cd30", shirt:"#2f8d5a", sleeve:"#276f48", pants:"#3a3f52", boots:"#23283a",
+    hair:"#4a3524", eyes:"#12172b", pauldron:"#246b46", belt:"#2a2218", buckle:"#c9a33a",
+    cape:"#1f5c3c", emblem:"#ffd24a",
+  });
+  const tag = project(npc.x, g + 108 + Math.sin(npc.step*2)*6, npc.y);
+  if (!tag) return;
+  ctx.textAlign = "center";
+  const sz = clamp(26 * tag.s, 16, 40);
+  ctx.font = `700 ${sz}px Fredoka, sans-serif`;
+  ctx.lineWidth = sz*0.28; ctx.strokeStyle = "rgba(4,8,20,.92)";
+  ctx.fillStyle = P.quests.active ? "#8fd0ff" : "#ffd24a";
+  ctx.strokeText(P.quests.active ? "…" : "!", tag.x, tag.y);
+  ctx.fillText(P.quests.active ? "…" : "!", tag.x, tag.y);
+  const t2 = project(npc.x, g + 86, npc.y);
+  if (t2){
+    const s2 = clamp(12*t2.s, 10, 17);
+    ctx.font = `600 ${s2}px Fredoka, sans-serif`;
+    ctx.lineWidth = s2*0.3;
+    ctx.fillStyle = "#eaf3ff";
+    ctx.strokeText("Cazador Jefe", t2.x, t2.y); ctx.fillText("Cazador Jefe", t2.x, t2.y);
+  }
+}
+
+/* -------------------------------- frame ----------------------------------- */
+function render(){
+  cosP = Math.cos(CAM.pitch); sinP = Math.sin(CAM.pitch);
+  updateCameraBasis();
+  FOC = CAM.focal * (W < 760 ? 0.76 : 1);
+  drawSky();
+  drawGround();
+  drawTelegraphs();
+  for (const r of rings){
+    const k = 1 - r.life / r.max;
+    groundCircle(r.x, r.y, r.r * (0.35 + k*0.75), r.color, (1-k) * .85, 4);
+  }
+
+  const items = [];
+  collectProps(items);
+  if (portal){ const p = project(portal.x, 0, portal.y); if (p) items.push({ z:p.z, f:drawPortal }); }
+  for (const c of corpses){ const p = project(c.x, 0, c.y); if (p) items.push({ z:p.z, f:() => drawCorpse(c) }); }
+  for (const e of enemies){ const p = project(e.x, 0, e.y); if (p) items.push({ z:p.z, f:() => drawEnemy(e) }); }
+  for (const s of shadows){ const p = project(s.x, 0, s.y); if (p) items.push({ z:p.z, f:() => drawShadowUnit(s) }); }
+  { const p = project(player.x, 0, player.y); if (p) items.push({ z:p.z, f:drawPlayer }); }
+  if (!dungeon){ const p = project(npc.x, 0, npc.y); if (p) items.push({ z:p.z, f:drawNPC }); }
+  items.sort((a,b) => b.z - a.z);
+  for (const it of items) it.f();
+
+  for (const pt of parts){
+    const p = project(pt.x, pt.h, pt.y); if (!p) continue;
+    ctx.globalAlpha = clamp(pt.life * 2, 0, 1) * (pt.ghost ? .35 : 1);
+    ctx.fillStyle = pt.color;
+    const sz = pt.size * p.s * (pt.ghost ? 6 : 1.7);
+    ctx.fillRect(p.x - sz/2, p.y - sz/2, sz, sz * (pt.ghost ? 2 : 1));
+  }
+  ctx.globalAlpha = 1;
+
+  ctx.textAlign = "center";
+  for (const f of floaters){
+    const p = project(f.x, f.h + (1-f.life)*54, f.y); if (!p) continue;
+    ctx.globalAlpha = clamp(f.life*1.7, 0, 1);
+    const size = clamp((f.big ? 25 : 18) * p.s * (f.crit ? 1.3 : 1), 12, f.crit ? 46 : 34);
+    ctx.font = `700 ${size}px Fredoka, sans-serif`;
+    ctx.lineWidth = Math.max(3, size*0.22); ctx.strokeStyle = "rgba(4,8,20,.92)";
+    ctx.strokeText(f.text, p.x, p.y);
+    ctx.fillStyle = f.color; ctx.fillText(f.text, p.x, p.y);
+    if (f.crit){
+      ctx.font = `700 ${size*0.42}px Fredoka, sans-serif`; ctx.fillStyle = "#ffd24a";
+      ctx.strokeText("CRÍTICO", p.x, p.y - size*0.85); ctx.fillText("CRÍTICO", p.x, p.y - size*0.85);
+    }
+  }
+  ctx.globalAlpha = 1;
+
+  if (dungeon){
+    ctx.textAlign = "center"; ctx.font = "800 17px Cinzel, serif";
+    ctx.lineWidth = 5; ctx.strokeStyle = "rgba(4,8,20,.92)"; ctx.fillStyle = dungeon.mode.color;
+    const mm = Math.max(0, Math.floor(dungeon.timer/60)), ss = String(Math.max(0, Math.floor(dungeon.timer%60))).padStart(2,"0");
+    const t = `${dungeon.mode.name.toUpperCase()} · SALA ${dungeon.room}/${dungeon.rooms} · ${mm}:${ss}`;
+    ctx.strokeText(t, W/2, 104); ctx.fillText(t, W/2, 104);
+  }
+}
+
+/* ===========================================================================
+   INTERFAZ
+   =========================================================================== */
+const $ = id => document.getElementById(id);
+const modal = $("modal");
+let panelKind = null, panelTab = "Weapons";
+
+function syncHud(){
+  $("rank").textContent = P.rank;
+  $("title").textContent = P.title;
+  $("lvl").textContent = `Nv ${P.level}`;
+  $("rebirth").textContent = `Renacer ${P.rebirths}`;
+  $("cash").textContent = fmt(P.cash);
+  $("gems").textContent = fmt(P.gems);
+  $("tickets").textContent = fmt(P.tickets);
+  $("isle").textContent = dungeon ? `${dungeon.mode.name} · ${dungeon.isle.name}` : isleOf(P.island).name;
+  $("portal").textContent = dungeon
+    ? `Sala ${dungeon.room}/${dungeon.rooms} · ${Math.max(0,Math.floor(dungeon.timer))}s`
+    : portal ? `Portal ${portal.mode.name} · ${Math.ceil(60-portal.t)}s`
+    : `Portal en ${Math.floor(portalT/60)}:${String(Math.floor(portalT%60)).padStart(2,"0")}`;
+
+  const q = P.quests.active;
+  $("quest").textContent = q ? `${q.text} · ${Math.min(questProgress(), q.goal)}/${q.goal}`
+    : (dungeon ? "" : "Habla con el Cazador Jefe (!)");
+
+  const mh = maxHP(), mm = maxMana(), need = FORMULA.expRequired(P.level);
+  $("hpbar").style.width = `${clamp(player.hp/mh*100,0,100)}%`;
+  $("hptxt").textContent = `${fmt(Math.max(0,player.hp))} / ${fmt(mh)}`;
+  $("mpbar").style.width = `${clamp(player.mana/mm*100,0,100)}%`;
+  $("mptxt").textContent = `${fmt(player.mana)} / ${fmt(mm)}`;
+  $("xpbar").style.width = `${clamp(P.xp/need*100,0,100)}%`;
+  $("xptxt").textContent = `${fmt(P.xp)} / ${fmt(need)}`;
+
+  const tb = $("targetbar");
+  const tgt = enemies.find(e => e.boss) || (target && enemies.includes(target) ? target : null);
+  if (tgt){
+    tb.hidden = false;
+    $("t-lv").textContent = tgt.level;
+    $("t-name").textContent = tgt.name;
+    $("t-hp").style.width = `${clamp(tgt.hp/tgt.maxHp*100,0,100)}%`;
+    $("t-hptxt").textContent = `${fmt(tgt.hp)} / ${fmt(tgt.maxHp)}`;
+    $("t-dps").textContent = `${fmt(player.dps.shown)} DPS`;
+  } else tb.hidden = true;
+
+  $("cd-skill").style.transform = `scaleY(${player.skillCd / SKILL.cooldown})`;
+  $("cd-dash").style.transform = `scaleY(${player.dashCd / Math.max(.01, FORMULA.dashCooldown(P.stats.AGI))})`;
+
+  const squad = $("squad"); squad.innerHTML = "";
+  squad.hidden = P.squad.length === 0;
+  const cap = squadCap();
+  for (let i=0;i<Math.min(cap, 8);i++){
+    const u = P.squad[i], d = u && P.shadows[u];
+    const el = document.createElement("div");
+    el.className = "slot" + (d ? "" : " empty");
+    if (d){
+      const col = `var(${TIER_VAR[d.tier]})`;
+      el.innerHTML = `<span class="g">${SHADOWS[d.id]?.glyph || "👤"}</span>
+        <span class="n" style="color:${col}">${d.name}</span><span class="d">${fmt(shadowDmgOf(d))}</span>`;
+      el.style.borderColor = col;
+    } else el.innerHTML = `<span class="g" style="opacity:.4">+</span><span class="n">vacío</span>`;
+    squad.appendChild(el);
+  }
+}
+
+/* ------------------------------- paneles ---------------------------------- */
+function openPanel(kind){
+  closeArise(); panelKind = kind;
+  panelTab = kind === "items" ? "Relics" : kind === "stats" ? "Stats" : "Weapons";
+  renderPanel();
+}
+function closePanel(){ panelKind = null; renderPanel(); }
+const shell = (title, body) => `<div class="scrim" data-close="1"><div class="panel" role="dialog" aria-label="${title}">
+  <header><h2>${title}</h2><button class="x" data-close="1" aria-label="Cerrar">✕</button></header>
+  <div class="body">${body}</div></div></div>`;
+
+const STAT_INFO = {
+  STR:["Fuerza","Daño físico · Arma + STR×1.5"],
+  INT:["Inteligencia","Daño mágico e suerte de Arise"],
+  SDW:["Sombras","Daño ×(1+SDW·0.012) y vida ×(1+SDW·0.008)"],
+  VIT:["Vitalidad","Vida máxima · base + VIT×15"],
+  AGI:["Agilidad","Velocidad, dash y doble salto a 200"],
+  MNA:["Maná","Maná máximo · 100 + MNA×10"],
+};
+function panelStats(){
+  const tabs = [["Stats","Atributos"],["Class","Clase"],["Talents","Talentos"],["Codes","Códigos"]];
+  const nav = `<div class="tabs">${tabs.map(([id,label]) =>
+    `<button class="tab ${panelTab===id?"sel":""}" data-tab="${id}">${label}</button>`).join("")}</div>`;
+  if (panelTab === "Class"){
+    const body = Object.values(CLASSES).map(c => `<div class="item">
+      <span class="g">${c.glyph}</span>
+      <span class="meta"><b>${c.name}</b><span>${c.desc}</span></span>
+      <button class="btn ${P.class===c.id?"green":""}" data-class="${c.id}" ${P.class===c.id?"disabled":""}>
+        ${P.class===c.id?"Activa":"Elegir"}</button></div>`).join("");
+    return shell("Clase", nav + `<div class="list">${body}</div>
+      <p class="hint">Puedes cambiar de clase cuando quieras; los bonos se aplican al instante.</p>`);
+  }
+  if (panelTab === "Talents"){
+    const body = Object.values(TALENTS).map(t => {
+      const lv = talentLv(t.id), cost = t.cost(lv);
+      return `<div class="item"><span class="g">✦</span>
+        <span class="meta"><b>${t.name} <span style="opacity:.6">${lv}/${t.max}</span></b><span>${t.desc}</span></span>
+        <span class="price" style="color:var(--gem)">${lv>=t.max?"MAX":fmt(cost)+" 💎"}</span>
+        <button class="btn violet" data-talent="${t.id}" ${lv>=t.max || P.gems<cost?"disabled":""}>Subir</button></div>`;
+    }).join("");
+    return shell("Talentos", nav + `<div class="list">${body}</div>
+      <p class="hint">Gemas disponibles: <b style="color:var(--gem)">${fmt(P.gems)}</b>. Las gemas salen de extracciones fallidas y de mazmorras.</p>`);
+  }
+  if (panelTab === "Codes"){
+    const body = Object.keys(CODES).map(c => `<div class="item ${P.codes[c]?"locked":""}">
+      <span class="g">🎁</span><span class="meta"><b>${c}</b>
+      <span>${fmt(CODES[c].cash)} oro · ${fmt(CODES[c].gems)} gemas · ${CODES[c].tickets} tickets</span></span>
+      <button class="btn gold" data-code="${c}" ${P.codes[c]?"disabled":""}>${P.codes[c]?"Canjeado":"Canjear"}</button></div>`).join("");
+    return shell("Códigos", nav + `<div class="list">${body}</div>
+      <p class="hint">Códigos de bienvenida de esta build.</p>`);
+  }
+  const s = P.stats, next = RANKS[rankIdx(P.rank)+1];
+  const rows = Object.keys(STAT_INFO).map(k => `
+    <div class="statrow"><span class="k">${k}</span>
+      <span class="d"><b>${STAT_INFO[k][0]}</b><br>${STAT_INFO[k][1]}</span>
+      <span class="v">${fmt(s[k])}</span>
+      <button class="plus" data-stat="${k}" ${s.points > 0 ? "" : "disabled"}>+</button></div>`).join("");
+  const rebirthCost = 1e6 * Math.pow(10, P.rebirths);
+  return shell(`Atributos · ${s.points} puntos`, nav + `
+    <div class="statgrid">${rows}</div>
+    <div class="derived">
+      <div class="kv"><small>Daño M1</small><b>${fmt(baseDamage())}</b></div>
+      <div class="kv"><small>Daño habilidad</small><b>${fmt((weaponDmg()*SKILL.damage.weapon + s.STR*SKILL.damage.str*1.5)*(1+rankMult()))}</b></div>
+      <div class="kv"><small>Vida</small><b>${fmt(maxHP())}</b></div>
+      <div class="kv"><small>Maná</small><b>${fmt(maxMana())}</b></div>
+      <div class="kv"><small>Velocidad</small><b>${FORMULA.walkSpeed(s.AGI).toFixed(1)}</b></div>
+      <div class="kv"><small>Dash CD</small><b>${FORMULA.dashCooldown(s.AGI).toFixed(2)}s</b></div>
+      <div class="kv"><small>Doble salto</small><b>${FORMULA.doubleJump(s.AGI) ? "Sí" : `${s.AGI}/200`}</b></div>
+      <div class="kv"><small>Suerte Arise</small><b>+${ariseLuck().toFixed(1)}%</b></div>
+      <div class="kv"><small>Daño sombras</small><b>×${shadowMult().toFixed(2)}</b></div>
+      <div class="kv"><small>Enemigos</small><b>${fmt(P.kills)}</b></div>
+      <div class="kv"><small>Sombras extraídas</small><b>${fmt(P.arisen)}</b></div>
+      <div class="kv"><small>Mazmorras</small><b>${fmt(P.dungeonsCleared)}</b></div>
+      <div class="kv"><small>Clase</small><b>${CLASSES[P.class].name}</b></div>
+      <div class="kv"><small>Escuadrón</small><b>${P.squad.length}/${squadCap()}</b></div>
+      <div class="kv"><small>Crítico</small><b>${Math.round((CFG.CRIT_CHANCE + classBonus("crit") + talentLv("crit")*0.03)*100)}%</b></div>
+      <div class="kv"><small>Misiones</small><b>${fmt(P.quests.done)}</b></div>
+    </div>
+    ${next ? `<div class="item"><span class="g">◆</span>
+      <span class="meta"><b>Rango ${next.name}</b><span>Nivel ${next.level} · ${fmt(next.gems)} gemas · daño ×${(1+next.dmg).toFixed(2)} · suerte +${next.luck}%</span></span>
+      <button class="btn gold" id="rankup" ${P.level>=next.level && P.gems>=next.gems ? "" : "disabled"}>Ascender</button></div>`
+     : `<p class="hint">Rango máximo <b>S</b> alcanzado.</p>`}
+    <div class="item"><span class="g">🌀</span>
+      <span class="meta"><b>Renacer</b><span>Reinicia nivel y atributos · +50% daño permanente por renacer · coste ${fmt(rebirthCost)} oro</span></span>
+      <button class="btn violet" id="rebirth-btn" ${P.level>=200 && P.cash>=rebirthCost ? "" : "disabled"}>Renacer</button></div>
+    <p class="hint">Fórmulas del contrato V9: <b>EXPRequired(N)=100·N^1.85+N·50</b> · <b>EXPReward=Nivel·25·(1+Renacer·0.25)</b>.</p>`);
+}
+function panelShadows(){
+  const list = Object.values(P.shadows).sort((a,b) => shadowDmgOf(b) - shadowDmgOf(a));
+  // merge: 3 copias iguales del mismo nivel -> +1 nivel (regla 08.2)
+  const counts = {};
+  for (const s of list) counts[`${s.id}|${s.level}`] = (counts[`${s.id}|${s.level}`] || 0) + 1;
+  const body = list.length ? list.map(s => {
+    const eq = P.squad.includes(s.uuid), col = `var(${TIER_VAR[s.tier]})`;
+    const can = counts[`${s.id}|${s.level}`] >= FLAGS.MERGE_COPIES;
+    return `<div class="item"><span class="g">${SHADOWS[s.id]?.glyph || "👤"}</span>
+      <span class="meta"><b>${s.name} <span style="opacity:.6">Nv ${s.level}</span></b>
+        <span><span class="tier" style="color:${col}">${s.tier}</span> · daño ${fmt(shadowDmgOf(s))} · vida ${fmt(shadowHPOf(s))}</span></span>
+      ${can ? `<button class="btn green" data-merge="${s.id}|${s.level}">Fusionar ×3</button>` : ""}
+      <button class="btn" data-equip="${s.uuid}">${eq ? "Quitar" : "Equipar"}</button></div>`;
+  }).join("") : `<p class="hint">Sin sombras todavía. Derrota a un enemigo y pulsa <b>B</b> sobre su cuerpo.</p>`;
+  return shell(`Sombras · ${P.squad.length}/${squadCap()}`, `
+    <div class="list">${body}</div>
+    <p class="hint">Escuadrón lleno: una extracción mejor <b>desequipa automáticamente la sombra de menor daño</b>.
+    Tres copias iguales del mismo nivel se fusionan en una de nivel superior.</p>`);
+}
+function panelShop(){
+  const isle = isleOf(P.island);
+  const items = Object.values(WEAPONS).filter(w => P.islands.includes(w.isle)).map(w => {
+    const owned = (P.weapons[w.id] || 0) > 0, eq = P.weapon === w.id;
+    const copies = P.weapons[w.id] || 0;
+    return `<div class="item"><span class="g">${w.glyph}</span>
+      <span class="meta"><b>${w.name}${copies > 1 ? ` ×${copies}` : ""}</b>
+        <span>${isleOf(w.isle).name} · daño base ${fmt(w.dmg)}</span></span>
+      ${owned ? "" : `<span class="price">${fmt(w.cost)}</span>`}
+      ${copies >= FLAGS.MERGE_COPIES ? `<button class="btn green" data-wmerge="${w.id}">Fusionar ×3</button>` : ""}
+      <button class="btn" data-weapon="${w.id}" ${eq ? "disabled" : ""}>${eq ? "Equipada" : owned ? "Equipar" : "Comprar"}</button></div>`;
+  }).join("");
+  return shell("Armería", `<div class="list">${items}</div>
+    <p class="hint">Oro: <b class="price">${fmt(P.cash)}</b>. Tres copias de un arma se fusionan y suben su rango (+25% de daño).
+    Las armas se desbloquean al llegar a su isla.</p>`);
+}
+function panelItems(){
+  const tabs = ["Relics","Runes","Index"];
+  const nav = `<div class="tabs">${tabs.map(t => `<button class="tab ${panelTab===t?"sel":""}" data-tab="${t}">${
+    t === "Relics" ? "Reliquias" : t === "Runes" ? "Runas" : "Índice"}</button>`).join("")}</div>`;
+  let body = "";
+  if (panelTab === "Relics"){
+    body = Object.values(RELICS).map(r => {
+      const has = !!P.relics[r.id];
+      return `<div class="item ${has?"":"locked"}"><span class="g">${r.glyph}</span>
+        <span class="meta"><b>${r.name}</b><span>${r.effect === "shadowDmg" ? `Daño de sombras +${(r.value*100).toFixed(0)}%`
+          : r.effect === "ariseLuck" ? `Suerte de Arise +${r.value}%` : `Rank Up +${r.value}%`} · ${isleOf(r.isle)?.name || r.isle}</span></span>
+        <span class="tier" style="color:${has?"var(--cash)":"var(--dim)"}">${has ? "ACTIVA" : "BLOQUEADA"}</span></div>`;
+    }).join("");
+  } else if (panelTab === "Runes"){
+    body = Object.values(RUNES).map(r => `<div class="item ${P.runes[r.id]?"":"locked"}"><span class="g">${r.glyph}</span>
+      <span class="meta"><b>${r.name}</b><span>${r.desc}</span></span>
+      <span class="price">×${fmt(P.runes[r.id] || 0)}</span></div>`).join("");
+  } else {
+    body = Object.values(SHADOWS).map(s => {
+      const n = P.index[s.id] || 0;
+      return `<div class="item ${n?"":"locked"}"><span class="g">${s.glyph}</span>
+        <span class="meta"><b>${s.name}</b><span><span class="tier" style="color:var(${TIER_VAR[s.tier]})">${s.tier}</span> · daño base ${fmt(s.dmg)} · tasa ${(s.rate*100).toFixed(1)}%</span></span>
+        <span class="price">${n ? `×${n}` : "—"}</span></div>`;
+    }).join("");
+  }
+  return shell("Inventario", nav + `<div class="list">${body}</div>
+    <p class="hint">Las reliquias caen en mazmorras de su isla. Las runas modifican la siguiente mazmorra (activación del líder).</p>`);
+}
+function panelMap(){
+  const isles = ISLANDS.map(i => {
+    const un = P.islands.includes(i.id) || P.level >= i.level, here = P.island === i.id;
+    return `<div class="item ${un?"":"locked"}"><span class="g">🏝</span>
+      <span class="meta"><b>${i.name}</b><span>${un ? `${i.enemy.name} Nv ${i.enemy.lvl} · jefe ${i.boss.name} · sombra ${SHADOWS[i.shadow].name}` : `Requiere nivel ${i.level}`}</span></span>
+      <button class="btn" data-isle="${i.id}" ${!un || here ? "disabled" : ""}>${here ? "Aquí" : "Viajar"}</button></div>`;
+  }).join("");
+  const modes = Object.entries(DUNGEON_MODES).map(([id, m]) => `
+    <div class="item"><span class="g">🌀</span>
+      <span class="meta"><b>${m.name}</b><span>${m.rooms} salas · enemigos ×${m.mult} · recompensa ×${m.reward}${id==="DoubleDungeon"?" · otorga el Despertar":""}</span></span>
+      <button class="btn violet" data-dungeon="${id}" ${P.tickets > 0 || id === "Standard" ? "" : "disabled"}>${id === "Standard" ? "Entrar" : "1 🎟"}</button></div>`).join("");
+  return shell("Mapa del mundo", `<div class="list">${isles}</div>
+    <h3 style="margin:6px 0 0;font-family:var(--f-display);font-size:15px">Puertas</h3>
+    <div class="list">${modes}</div>
+    <p class="hint">Los portales también aparecen solos cada ${FLAGS.PORTAL_INTERVAL_SECONDS}s (el contrato usa 1800s; comprimido para la web).</p>`);
+}
+function panelHelp(){
+  return shell("Controles y bucle", `
+    <div class="derived">
+      <div class="kv"><small>Avanzar / retroceder</small><b>W · S</b></div>
+      <div class="kv"><small>Lateral</small><b>A · D</b></div>
+      <div class="kv"><small>Girar cámara</small><b>← → o arrastrar</b></div>
+      <div class="kv"><small>Acercar cámara</small><b>↑ ↓ o rueda</b></div>
+      <div class="kv"><small>Golpe M1</small><b>Clic</b></div>
+      <div class="kv"><small>Habilidad</small><b>V</b></div>
+      <div class="kv"><small>Arise</small><b>B</b></div>
+      <div class="kv"><small>Dash</small><b>Q</b></div>
+      <div class="kv"><small>Saltar</small><b>Espacio</b></div>
+      <div class="kv"><small>Auto-Arise</small><b>R</b></div>
+      <div class="kv"><small>Montura</small><b>M</b></div>
+      <div class="kv"><small>Portal</small><b>F</b></div>
+      <div class="kv"><small>Menús</small><b>1-5 · H</b></div>
+    </div>
+    <p class="hint"><b>Movimiento:</b> el personaje se mueve en relación a la cámara: W avanza hacia donde miras,
+    S retrocede, A y D se desplazan a los lados, y el cuerpo gira hacia donde avanza. En móvil, arrastra en la
+    mitad izquierda para el joystick y en la derecha para girar la cámara.</p>
+    <p class="hint"><b>Bucle:</b> pelea → mata → el cuerpo deja un <b>CorpseToken</b> con 3 intentos → Arise → gestiona el escuadrón
+    (4 sombras) → mejora arma y atributos → desbloquea isla → mazmorra → reliquias y runas → rango y renacer.</p>
+    <p class="hint"><b>Combo M1:</b> cuatro golpes encadenados (×1.00, ×1.05, ×1.15, ×1.45) con hitstop e impulso de cámara crecientes.
+    <b>Habilidad V:</b> arco de 70° y radio 190, cuesta 30 de maná.</p>
+    <p class="hint"><b>Double Dungeon</b> otorga el Despertar: +60% de suerte de Arise y el sigilo Black Monarch.</p>`);
+}
+function renderPanel(){
+  if (!panelKind){ modal.hidden = true; modal.innerHTML = ""; return; }
+  modal.innerHTML = panelKind === "stats" ? panelStats()
+    : panelKind === "shadows" ? panelShadows()
+    : panelKind === "shop" ? panelShop()
+    : panelKind === "items" ? panelItems()
+    : panelKind === "map" ? panelMap() : panelHelp();
+  modal.hidden = false;
+}
+
+/* ----------------------------- modal ARISE -------------------------------- */
+function openArise(){
+  if (ariseToken) return;
+  const c = nearestCorpse();
+  if (!c) return;
+  if (auto){
+    const r = attemptArise(c);
+    if (r.ok) note(`ARISE · ${r.shadow.name}`, "--arise");
+    return;
+  }
+  panelKind = null; ariseToken = c; renderArise("");
+}
+function closeArise(){ ariseToken = null; if (!panelKind){ modal.hidden = true; modal.innerHTML = ""; } }
+function renderArise(log){
+  const c = ariseToken; if (!c) return;
+  const def = SHADOWS[c.ShadowDefinitionId];
+  const rate = corpseRate(c);
+  const pips = Array.from({ length:FLAGS.ARISE_ATTEMPTS }, (_, i) =>
+    `<span class="pip ${i < c.AttemptsRemaining ? "live" : ""}"></span>`).join("");
+  modal.innerHTML = `<div class="scrim" data-close="1"><div class="arise-box" role="dialog" aria-label="Arise">
+    <h3>ARISE</h3>
+    <div class="sub">${c.EnemyId} · sombra <span style="color:var(${TIER_VAR[def.tier]})">${def.name}</span> (${def.tier})</div>
+    <div class="chance">${(rate*100).toFixed(1)}%</div>
+    <div class="sub">tasa efectiva · base ${(def.rate*100).toFixed(1)}% × suerte +${ariseLuck().toFixed(0)}%</div>
+    <div class="pips">${pips}</div>
+    <div class="arise-actions">
+      <button class="btn" id="do-arise" ${c.AttemptsRemaining > 0 ? "" : "disabled"}>Extraer (${c.AttemptsRemaining})</button>
+      <button class="btn gold" id="do-destroy">Destruir · +gemas</button>
+    </div>
+    <div class="log">${log}</div></div></div>`;
+  modal.hidden = false;
+}
+
+/* ------------------------------- eventos ---------------------------------- */
+modal.addEventListener("click", e => {
+  const t = e.target;
+  if (t.dataset.close !== undefined && (t.classList.contains("scrim") || t.classList.contains("x"))){ closePanel(); closeArise(); return; }
+  if (t.dataset.tab){ panelTab = t.dataset.tab; renderPanel(); return; }
+  if (t.dataset.stat){
+    const k = t.dataset.stat;
+    if (P.stats.points > 0){ P.stats.points--; P.stats[k]++; rebuildSquad(); save(); dirty = true; renderPanel(); }
+    return;
+  }
+  if (t.id === "rankup"){
+    const next = RANKS[rankIdx(P.rank)+1];
+    if (next && P.level >= next.level && P.gems >= next.gems){
+      P.gems -= next.gems; P.rank = next.name;
+      banner(`RANGO ${next.name}`, "#ffd24a"); note(`Rango ${next.name}`, "--gold");
+      burst(player.x, player.y, 46, "#ffd24a", 34); camImpulse(0.75);
+      save(); dirty = true; renderPanel();
+    }
+    return;
+  }
+  if (t.id === "rebirth-btn"){
+    const cost = 1e6 * Math.pow(10, P.rebirths);
+    if (P.level >= 200 && P.cash >= cost){
+      P.cash -= cost; P.rebirths++; P.level = 1; P.xp = 0;
+      P.stats = { STR:0, INT:0, SDW:0, VIT:0, AGI:0, MNA:0, points:5 };
+      player.hp = maxHP(); player.mana = maxMana();
+      banner("RENACER", "#bb8cff"); note(`Renacer ${P.rebirths} · +50% de daño permanente`, "--monarch");
+      save(); dirty = true; renderPanel();
+    }
+    return;
+  }
+  if (t.dataset.class){
+    P.class = t.dataset.class;
+    player.hp = Math.min(player.hp, maxHP());
+    note(`Clase: ${CLASSES[P.class].name}`, "--gem"); save(); dirty = true; renderPanel(); return;
+  }
+  if (t.dataset.talent){
+    const tal = TALENTS[t.dataset.talent], lv = talentLv(tal.id), cost = tal.cost(lv);
+    if (lv >= tal.max || P.gems < cost) return;
+    P.gems -= cost; P.talents[tal.id] = lv + 1;
+    note(`${tal.name} nivel ${lv+1}`, "--monarch"); save(); dirty = true; renderPanel(); return;
+  }
+  if (t.dataset.code){
+    const c = t.dataset.code;
+    if (P.codes[c]) return;
+    P.codes[c] = true;
+    P.cash += CODES[c].cash; P.gems += CODES[c].gems; P.tickets += CODES[c].tickets;
+    banner("CÓDIGO CANJEADO", "#ffd24a"); note(`${c}: +${fmt(CODES[c].cash)} oro`, "--cash");
+    save(); dirty = true; renderPanel(); return;
+  }
+  if (t.dataset.equip){
+    const u = t.dataset.equip, i = P.squad.indexOf(u);
+    if (i >= 0) P.squad.splice(i, 1);
+    else if (P.squad.length < squadCap()) P.squad.push(u);
+    else return note("Escuadrón lleno", "--hp");
+    rebuildSquad(); save(); renderPanel(); return;
+  }
+  if (t.dataset.merge){
+    const [id, lvl] = t.dataset.merge.split("|");
+    const pool = Object.values(P.shadows).filter(s => s.id === id && s.level === +lvl).slice(0, FLAGS.MERGE_COPIES);
+    if (pool.length < FLAGS.MERGE_COPIES) return;
+    for (const s of pool){ delete P.shadows[s.uuid]; const i = P.squad.indexOf(s.uuid); if (i>=0) P.squad.splice(i,1); }
+    const def = SHADOWS[id];
+    const merged = { uuid:uid(), id, name:def.name, tier:def.tier, level:+lvl + 1, xp:0, lock:false };
+    P.shadows[merged.uuid] = merged;
+    autoEquip(merged); rebuildSquad(); save();
+    note(`${def.name} Nv ${merged.level}`, "--gem"); renderPanel(); return;
+  }
+  if (t.dataset.wmerge){
+    const id = t.dataset.wmerge;
+    if ((P.weapons[id] || 0) < FLAGS.MERGE_COPIES) return;
+    P.weapons[id] -= FLAGS.MERGE_COPIES - 1;           // 3 copias -> 1 de rango superior
+    P.weaponLv[id] = weaponLv(id) + 1;
+    note(`${WEAPONS[id].name} rango ${P.weaponLv[id]} · +25% daño`, "--gold");
+    save(); dirty = true; renderPanel(); return;
+  }
+  if (t.dataset.weapon){
+    const w = WEAPONS[t.dataset.weapon];
+    if (P.weapons[w.id]) P.weapon = w.id;
+    else if (P.cash >= w.cost){ P.cash -= w.cost; P.weapons[w.id] = 1; P.weapon = w.id; note(`${w.name} comprada`, "--cash"); }
+    else return note(`Faltan ${fmt(w.cost - P.cash)} de oro`, "--hp");
+    save(); dirty = true; renderPanel(); return;
+  }
+  if (t.dataset.isle){
+    const isle = isleOf(t.dataset.isle);
+    if (P.level < isle.level) return note(`Requiere nivel ${isle.level}`, "--hp");
+    P.island = isle.id;
+    if (!P.islands.includes(isle.id)) P.islands.push(isle.id);
+    enemies = []; corpses = []; spawnT = 0;
+    banner(isle.name.toUpperCase(), "#8fd0ff"); save(); closePanel(); return;
+  }
+  if (t.dataset.dungeon){
+    const id = t.dataset.dungeon;
+    if (id !== "Standard"){
+      if (P.tickets < 1) return note("Necesitas un ticket", "--hp");
+      P.tickets--;
+    }
+    closePanel(); enterDungeon(id); return;
+  }
+  if (t.id === "do-arise"){
+    const c = ariseToken; if (!c) return;
+    const r = attemptArise(c);
+    if (r.ok){
+      note(`ARISE · ${r.shadow.name}${r.replaced ? " (reemplaza a la más débil)" : ""}`, "--arise");
+      banner("ARISE", "#2fe4ff"); closeArise();
+    } else if (r.code === "EXHAUSTED"){ note(`Sin intentos · +${fmt(r.gems)} gemas`, "--gem"); closeArise(); }
+    else if (r.code === "FAILED") renderArise(`<span style="color:var(--hp)">Fallo.</span> Quedan ${r.attempts} intentos.`);
+    else closeArise();
+    return;
+  }
+  if (t.id === "do-destroy"){ destroyCorpse(ariseToken); closeArise(); }
+});
+$("b-stats").onclick = () => openPanel("stats");
+$("b-shadows").onclick = () => openPanel("shadows");
+$("b-shop").onclick = () => openPanel("shop");
+$("b-items").onclick = () => openPanel("items");
+$("b-map").onclick = () => openPanel("map");
+$("b-help").onclick = () => openPanel("help");
+$("a-attack").onclick = requestAttack;
+$("a-skill").onclick = requestSkill;
+$("a-arise").onclick = openArise;
+$("a-dash").onclick = requestDash;
+$("a-mount").onclick = toggleMount;
+$("a-portal").onclick = () => enterDungeon();
+function setAuto(v){
+  auto = v;
+  const b = $("a-auto");
+  b.classList.toggle("on", v);
+  b.querySelector(".st").textContent = v ? "ON" : "OFF";
+}
+$("a-auto").onclick = () => setAuto(!auto);
+
+/* -------------------------------- arranque -------------------------------- */
+function start(restored){
+  if (restored?.profile) P = reconcile(restored.profile);
+  player.hp = restored?.hp ?? maxHP();
+  player.mana = maxMana();
+  rebuildSquad(); resize(); syncHud();
+  if (P.level === 1 && !Object.keys(P.shadows).length) openPanel("help");
+  let last = performance.now(), hudT = 0, fpsT = 0, frames = 0;
+  function frame(t){
+    const dt = Math.min((t - last)/1000, 0.05); last = t;
+    if (!document.hidden){
+      update(dt);
+      render();
+      frames++; fpsT += dt;
+      if (fpsT >= 1){ $("fps").textContent = `${Math.round(frames/fpsT)} FPS`; frames = 0; fpsT = 0; }
+      hudT += dt;
+      if (hudT > 0.1 || dirty){ syncHud(); hudT = 0; dirty = false; }
+    }
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+}
+window.claude?.hot?.snapshot?.(() => ({ profile:P, hp:player.hp }));
+if (window.claude?.hot?.ready) window.claude.hot.ready(start);
+else start(window.claude?.hot?.data ?? null);
+addEventListener("beforeunload", save);
+</script>
