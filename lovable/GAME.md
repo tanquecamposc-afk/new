@@ -897,3 +897,7 @@ aserciones de prueba, que fue el punto de partida del diseño.
 - Abrir la siguiente: 200 + 150·t bajas en la más alta abierta; desde la Amenaza 2 pide Renacer t−1.
 - Esencia del Abismo (solo con amenaza ≥1) + oro → 4 Sellos permanentes (Poder, Vigor, Legión, Codicia), hasta nivel 50, coste creciente (oro ×40 por nivel).
 - El renacer ahora cuesta 2e5·6^n de oro.
+
+## Vida del jugador
+- La vida máxima se multiplica por (1 + nivel·0,012)·(1 + multiplicador de rango·0,6), igual que crece el daño.
+- Ningún golpe quita más del 40% de la vida máxima.

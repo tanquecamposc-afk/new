@@ -972,7 +972,9 @@ const shadowMult  = () => 1 + relicBonus("shadowDmg") + classBonus("shadow") + t
 const ariseLuck   = () => rankOf(P.rank).luck + P.stats.INT * 0.35 + relicBonus("ariseLuck")
   + (P.awakened ? 60 : 0) + classBonus("luck") * 100 + talentLv("fortune") * 12;
 const maxHP       = () => FORMULA.maxHP(100 + P.level * 6 + P.rebirths * 500, P.stats.VIT) * (1 + lookBonus("hp")) * (1 + runeN("Monarch", 3) * .3)
-  * (1 + classBonus("hp") + talentLv("vigor") * 0.1) * (1 + (P.seals?.vigor || 0) * .1);
+  * (1 + classBonus("hp") + talentLv("vigor") * 0.1) * (1 + (P.seals?.vigor || 0) * .1)
+  // la vida crece con el nivel, el rango y los renaceres igual que el daño: antes solo sumaba y un golpe te mataba
+  * (1 + P.level * 0.012) * (1 + rankMult() * .6);
 const maxMana     = () => FORMULA.maxMana(P.stats.MNA) * (1 + classBonus("mana"));
 // El daño de una sombra acompaña al tuyo: antes salía solo de su tabla y a
 // partir del nivel 100 se quedaba en un 1–5% de tu golpe. Ahora es una parte
@@ -2681,7 +2683,9 @@ function hitPlayer(raw){
     note("Núcleo de Monarca: escudo activo", "--monarch"); ring(player.x, player.y, 90, "#c9a8ff", .8, 40);
   }
   const shield = (player.shieldUntil || 0) > now() ? .5 : 1;
-  const dmg = Math.max(1, raw * shield * CFG.CONTACT_SCALE * (1 - classBonus("armor")) * (formActive() ? FORM.armor : 1));
+  let dmg = Math.max(1, raw * shield * CFG.CONTACT_SCALE * (1 - classBonus("armor")) * (formActive() ? FORM.armor : 1));
+  // ningún golpe quita más del 40% de tu vida máxima: se puede morir, pero no de un solo golpe
+  dmg = Math.min(dmg, maxHP() * .4);
   player.hp -= dmg; player.hurt = 0.22; player.lastHit = now(); SFX.hurt();
   const ph = floaters.find(f => f.src === player);
   if (ph){ ph.amount += dmg; ph.text = `-${fmt(ph.amount)}`; ph.life = .9; }
