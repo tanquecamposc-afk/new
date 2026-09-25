@@ -32,6 +32,7 @@ export const GAME_HTML = `<div id="app">
         <span id="fps" style="color:var(--dim)"></span>
         <span id="qualityTag" style="color:var(--dim);cursor:pointer;pointer-events:auto" title="Clic para cambiar la calidad">Calidad alta (auto)</span>
         <span id="soundTag" style="color:var(--dim);cursor:pointer;pointer-events:auto" title="Clic para silenciar">Sonido: on</span>
+        <span id="cloudTag" style="color:var(--dim)" title="Dónde se guarda tu progreso">💾 Local</span>
       </div>
     </div>
 
@@ -79,6 +80,7 @@ export const GAME_HTML = `<div id="app">
       <h1>ARISE<span>crossover</span></h1>
       <p class="tag">Cazas. Extraes su sombra. Tu ejército crece.</p>
       <button class="btn big" id="btn-play">Jugar</button>
+      <p id="cloudStart" style="margin:8px 0 0;font-size:13px;color:var(--dim)">💾 Guardado en este dispositivo</p>
       <div class="keys">
         <span><b>W A S D</b> moverse</span><span><b>Clic izq.</b> golpear (mantén)</span><span><b>B</b> extraer</span>
         <span><b>Q</b> dash</span><span><b>Espacio</b> saltar</span><span><b>G</b> hablar</span>

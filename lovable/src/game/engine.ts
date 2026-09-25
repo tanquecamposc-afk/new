@@ -877,10 +877,74 @@ function reconcile(d){
 }
 let P = (() => { try { return reconcile(JSON.parse(localStorage.getItem(SAVE_KEY) || "null")); } catch { return newProfile(); } })();
 function save(){
+  if (typeof CLOUD !== "undefined" && CLOUD.adopting) return;   // se está cargando la partida de la cuenta
   // guarda también dónde estabas, para no reaparecer en el centro del mundo
   if (typeof player !== "undefined" && !dungeon) P.pos = { x:player.x, y:player.y };
+  P.savedAt = Date.now();
   try { localStorage.setItem(SAVE_KEY, JSON.stringify(P)); } catch {}
+  CLOUD.dirty = true;
 }
+
+/* ------------------------- guardado en la nube -----------------------------
+   Dentro de Claude, la partida se guarda también en la cuenta de quien juega
+   (db privado en data/users/<id>/save), así sigue en el móvil, el PC o la
+   tablet. Fuera de Claude (archivo local, Lovable) no hay nube y todo sigue
+   igual con localStorage. Gana siempre la copia guardada más tarde. */
+// fecha de la copia local tal como estaba al abrir, antes de cualquier autoguardado:
+// si no, un dispositivo viejo o vacío parecería "más nuevo" que la cuenta y la pisaría
+const CLOUD = { doc:null, dirty:false, busy:false, lastPush:0, state:"local", bootSavedAt: P.savedAt || 0 };
+function paintCloud(msg){
+  const txt = { local:"💾 Local", syncing:"☁ Sincronizando…", ok:"☁ En tu cuenta", error:"☁ Sin conexión" }[CLOUD.state];
+  const a = document.getElementById("cloudTag"); if (a) a.textContent = txt;
+  const b = document.getElementById("cloudStart");
+  if (b) b.textContent = msg || (CLOUD.state === "local" ? "💾 Guardado en este dispositivo"
+    : CLOUD.state === "error" ? "☁ No se pudo conectar con tu cuenta · se guarda en este dispositivo"
+    : "☁ Tu progreso se guarda en tu cuenta de Claude y te sigue en todos tus dispositivos");
+}
+async function cloudInit(){
+  if (!window.claude || typeof window.claude.use !== "function") return;   // fuera de Claude
+  try {
+    const [db, user] = await Promise.all([window.claude.use("db"), window.claude.use("user")]);
+    const uid = user ? await user.id() : null;
+    if (!db || !uid) return;
+    CLOUD.doc = db.doc("data/users/" + uid + "/save");
+    CLOUD.state = "syncing"; paintCloud();
+    const snap = await CLOUD.doc.get();
+    const remote = snap.exists ? snap.data() : null;
+    if (remote && typeof remote.json === "string" && (remote.savedAt || 0) > CLOUD.bootSavedAt){
+      // la copia de la cuenta es más nueva: se adopta y se recarga para arrancar limpio con ella
+      const prof = reconcile(JSON.parse(remote.json));
+      prof.savedAt = remote.savedAt;
+      CLOUD.adopting = true;            // ni el autoguardado ni el de salida pueden pisarla
+      localStorage.setItem(SAVE_KEY, JSON.stringify(prof));
+      paintCloud(`☁ Cargando tu partida (nivel ${remote.level || prof.level})…`);
+      setTimeout(() => location.reload(), 400);
+      return;
+    }
+    CLOUD.state = "ok"; paintCloud();
+    if (!remote || CLOUD.bootSavedAt > (remote.savedAt || 0)){ CLOUD.dirty = true; cloudPush(true); }
+  } catch (e) {
+    CLOUD.state = "error"; paintCloud();
+  }
+}
+async function cloudPush(force){
+  if (!CLOUD.doc || CLOUD.busy || !CLOUD.dirty || CLOUD.adopting) return;
+  if (!force && performance.now() - CLOUD.lastPush < 20000) return;     // como mucho una subida cada 20 s
+  CLOUD.busy = true; CLOUD.dirty = false; CLOUD.lastPush = performance.now();
+  try {
+    const json = JSON.stringify(P);
+    if (json.length > 250000) throw new Error("partida demasiado grande para la nube");   // límite de 256 KiB por documento
+    await CLOUD.doc.set({ json, savedAt: P.savedAt || Date.now(), level: P.level, rebirths: P.rebirths || 0 });
+    CLOUD.state = "ok";
+  } catch (e) {
+    CLOUD.dirty = true; CLOUD.state = "error";
+  } finally {
+    CLOUD.busy = false; paintCloud();
+  }
+}
+setInterval(() => cloudPush(false), 5000);
+document.addEventListener("visibilitychange", () => { if (document.hidden) cloudPush(true); });
+setTimeout(cloudInit, 0);
 
 /* --------------------------- valores derivados ---------------------------- */
 // El nivel de arma (fusión de 3 copias) vive en el perfil, no muta el catálogo.

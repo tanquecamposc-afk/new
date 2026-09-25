@@ -882,3 +882,10 @@ aserciones de prueba, que fue el punto de partida del diseño.
 - **Enemigos del anillo 8 en adelante:** llevan una llama de su color detrás y sueltan brasas.
 - **Resto de islas avanzadas:** hay chispas de su color flotando en el aire.
 - **Partículas:** pueden tener gravedad propia (`g`), así la ceniza cae despacio y el humo sube.
+
+## Guardado en la cuenta (varios dispositivos)
+- Dentro de Claude, la partida también se guarda en la cuenta de quien juega, en su espacio privado `data/users/<id>/save` (capacidades `db` y `user` del artefacto). Así se continúa en el móvil, el PC o la tablet.
+- Al abrir, gana la copia guardada más tarde. La fecha local se toma antes de cualquier autoguardado, para que un dispositivo viejo o vacío no pise la cuenta. Si la cuenta es más nueva, se adopta y el juego se recarga con ella, sin que el guardado de salida la sobrescriba.
+- Se sube como mucho cada 20 s, y siempre al cambiar de pestaña o cerrar.
+- Fuera de Claude (archivo suelto, Lovable) no hay nube: se guarda solo en `localStorage`, como antes.
+- El HUD muestra dónde se guarda: 💾 Local, ☁ Sincronizando…, ☁ En tu cuenta o ☁ Sin conexión.
