@@ -889,3 +889,11 @@ aserciones de prueba, que fue el punto de partida del diseño.
 - Se sube como mucho cada 20 s, y siempre al cambiar de pestaña o cerrar.
 - Fuera de Claude (archivo suelto, Lovable) no hay nube: se guarda solo en `localStorage`, como antes.
 - El HUD muestra dónde se guarda: 💾 Local, ☁ Sincronizando…, ☁ En tu cuenta o ☁ Sin conexión.
+
+## Niveles de Amenaza y Sellos del Abismo
+
+- Atributos → **Abismo**. Cada nivel de amenaza: vida enemiga ×3,2, daño ×1,9, botín ×1,55 y 25 niveles más por enemigo.
+- Modificadores que cambian con cada nivel (1 hasta el 3, 2 del 4 al 7, 3 desde el 8): Furiosos, Blindados, Veloces, Vampíricos, Explosivos, Regenerantes.
+- Abrir la siguiente: 200 + 150·t bajas en la más alta abierta; desde la Amenaza 2 pide Renacer t−1.
+- Esencia del Abismo (solo con amenaza ≥1) + oro → 4 Sellos permanentes (Poder, Vigor, Legión, Codicia), hasta nivel 50, coste creciente (oro ×40 por nivel).
+- El renacer ahora cuesta 2e5·6^n de oro.

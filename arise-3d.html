@@ -1503,6 +1503,12 @@ function reconcile(d){
   if (!RANKS.some(r => r.name === p.rank)) p.rank = "E";
   if (!isleOf(p.island)) p.island = "Seoul";
   p.squad = p.squad.filter(u => p.shadows[u]).slice(0, FLAGS.SQUAD_MAX);
+  p.tierMax = clamp(Math.round(num(p.tierMax, 0, 0)), 0, 99);
+  p.tier = clamp(Math.round(num(p.tier, 0, 0)), 0, p.tierMax);
+  p.tierKills = Math.round(num(p.tierKills, 0, 0));
+  p.essence = Math.floor(num(p.essence, 0, 0));
+  if (typeof p.seals !== "object" || !p.seals) p.seals = {};
+  for (const k of ["power","vigor","legion","greed"]) p.seals[k] = clamp(Math.round(num(p.seals[k], 0, 0)), 0, 50);
   return p;
 }
 let P = (() => { try { return reconcile(JSON.parse(localStorage.getItem(SAVE_KEY) || "null")); } catch { return newProfile(); } })();
@@ -1590,13 +1596,13 @@ const blessed     = () => (P.blessing || 0) > now();
 const baseDamage  = () => FORMULA.physicalDamage(weaponDmg(), P.stats.STR) * (blessed() ? 1.4 : 1) * (formActive() ? FORM.dmg : 1)
   * (1 + rankMult() + classBonus("dmg") + talentLv("power") * 0.08)
   * (1 + P.level * 0.012) * (now() < (player.dmgBuffUntil || 0) ? 1.3 : 1) * (1 + lookBonus("dmg"))
-  * (1 + Math.min(10, P.runes?.Void || 0) * .05) * (1 + runeN("Monarch", 3) * .3);
+  * (1 + Math.min(10, P.runes?.Void || 0) * .05) * (1 + runeN("Monarch", 3) * .3) * (1 + (P.seals?.power || 0) * .12);
 const relicBonus  = effect => Object.keys(P.relics).reduce((a, id) => a + (RELICS[id]?.effect === effect ? RELICS[id].value : 0), 0);
-const shadowMult  = () => 1 + relicBonus("shadowDmg") + classBonus("shadow") + talentLv("legion") * 0.15;
+const shadowMult  = () => 1 + relicBonus("shadowDmg") + classBonus("shadow") + talentLv("legion") * 0.15 + (P.seals?.legion || 0) * .12;
 const ariseLuck   = () => rankOf(P.rank).luck + P.stats.INT * 0.35 + relicBonus("ariseLuck")
   + (P.awakened ? 60 : 0) + classBonus("luck") * 100 + talentLv("fortune") * 12;
 const maxHP       = () => FORMULA.maxHP(100 + P.level * 6 + P.rebirths * 500, P.stats.VIT) * (1 + lookBonus("hp")) * (1 + runeN("Monarch", 3) * .3)
-  * (1 + classBonus("hp") + talentLv("vigor") * 0.1);
+  * (1 + classBonus("hp") + talentLv("vigor") * 0.1) * (1 + (P.seals?.vigor || 0) * .1);
 const maxMana     = () => FORMULA.maxMana(P.stats.MNA) * (1 + classBonus("mana"));
 // El daño de una sombra acompaña al tuyo: antes salía solo de su tabla y a
 // partir del nivel 100 se quedaba en un 1–5% de tu golpe. Ahora es una parte
@@ -1683,6 +1689,7 @@ function spawnEnemy(def, x, y, kind){
     e.level = d.lvl + MOB_RANKS.indexOf(R) * 2;
   }
   e.elite = !e.boss && rankIdxOf(e.rank) >= 4;
+  applyThreat(e);
   if (!e.boss && R.myth){
     banner(`¡RANGO ${e.rank} DETECTADO!`, R.col);
     note(`Ha aparecido ${e.name} de rango ${e.rank}`, R.col); SFX.bossPhase && SFX.bossPhase(4);
@@ -1725,15 +1732,16 @@ function killEnemy(e){
   enemies = enemies.filter(x => x !== e);
   if (target === e) target = null;
   P.kills++;
-  const R = mobRank(e.rank), loot = e.boss ? 1 : R.loot;
-  gainXP(FORMULA.expReward(e.level, P.rebirths) * loot);
+  const R = mobRank(e.rank), loot = (e.boss ? 1 : R.loot) * threatLootOf(e);
+  threatOnKill(e, R);
+  gainXP(FORMULA.expReward(e.level, P.rebirths) * loot * (1 + (P.seals?.greed || 0) * .1));
   const cash = Math.max(1, Math.floor(e.level * 12 * loot * (1 + P.rebirths * 0.3) * (dungeon?.runes?.Cash ? 1.1 : 1) * (1 + runeN("Greed", 3) * .4)));
   if (!e.boss && MOB_RANKS.indexOf(R) >= 3){
     const gems = Math.round(3 * MOB_RANKS.indexOf(R) ** 2 * (R.myth ? R.loot / 10 : 1));
     if (R.myth) banner(`${e.rank} DERROTADO`, R.col);
     P.gems += gems; note(`Rango ${e.rank} derrotado · +${fmt(cash)} oro · +${gems} gemas`, R.col); ring(e.x, e.y, 170, R.col, .6);
   }
-  P.cash += cash;
+  P.cash += cash * (1 + (P.seals?.greed || 0) * .1);
   burst(e.x, e.y, 22, e.def.color || "#ffd9a8", 40);
   ring(e.x, e.y, 120, "#8fd0ff", .5);
   SFX.kill();
@@ -1751,10 +1759,108 @@ function killEnemy(e){
   rollMountDrop(e);
   dirty = true;
 }
+/* Niveles de Amenaza: al acabar las islas el mundo se quedaba fácil. Cada
+   nivel multiplica la vida (×3,2) y el daño (×1,9) de todo lo que aparece
+   fuera de mazmorras, añade modificadores que cambian cómo se pelea y paga
+   más (×1,55) además de Esencia del Abismo para los Sellos. Para abrir el
+   siguiente hay que cazar en el más alto abierto, y a partir del 2 pide
+   renacer: así renacer vuelve a importar. */
+const THREAT_AFFIX = [
+  { id:"furia",  name:"Furiosos",     desc:"+60% de daño",                  dmg:1.6 },
+  { id:"blind",  name:"Blindados",    desc:"+80% de vida",                  hp:1.8 },
+  { id:"rapid",  name:"Veloces",      desc:"+35% de velocidad",             spd:1.35 },
+  { id:"vamp",   name:"Vampíricos",   desc:"se curan un 4% al golpearte",   vamp:.04 },
+  { id:"boom",   name:"Explosivos",   desc:"estallan al morir: aléjate",    boom:true },
+  { id:"regen",  name:"Regenerantes", desc:"recuperan un 1,5% de vida por segundo", regen:.015 },
+];
+const threatHP   = t => Math.pow(3.2, t);
+const threatDmg  = t => Math.pow(1.9, t);
+const threatLoot = t => Math.pow(1.55, t);
+const threatNeed = t => 200 + t * 150;                  // bajas en el nivel t para abrir t+1
+const threatRebirthNeed = t => Math.max(0, t - 1);      // renaceres para abrir el nivel t
+function threatAffixes(t){
+  const n = t <= 0 ? 0 : t < 4 ? 1 : t < 8 ? 2 : 3, out = [];
+  for (let k = 0; out.length < n; k++){ const a = THREAT_AFFIX[(t * 5 + k * 2) % THREAT_AFFIX.length]; if (!out.includes(a)) out.push(a); }
+  return out;
+}
+const threatLootOf = e => e.threat ? threatLoot(e.threat) : 1;
+function applyThreat(e){
+  const t = dungeon ? 0 : P.tier;
+  if (!t) return;
+  e.threat = t;
+  let hp = threatHP(t), dm = threatDmg(t);
+  for (const a of threatAffixes(t)){
+    hp *= a.hp || 1; dm *= a.dmg || 1;
+    if (a.spd) e.spdMult = a.spd; if (a.vamp) e.vamp = a.vamp; if (a.boom) e.boom = true; if (a.regen) e.regen = a.regen;
+  }
+  e.hp = e.maxHp = e.maxHp * hp; e.dmgMult = (e.dmgMult || 1) * dm; e.level += t * 25;
+}
+function threatOnKill(e, R){
+  if (!e.threat) return;
+  const ess = Math.max(1, Math.round(e.threat * (e.boss ? 25 : Math.min(10, R.loot))));
+  P.essence += ess;
+  if (e.boom && Math.hypot(player.x - e.x, player.y - e.y) < 150){ hitPlayer(e.def.dmg * (e.dmgMult || 1) * 1.5); }
+  if (e.boom){ ring(e.x, e.y, 150, "#ff6a3a", .6); burst(e.x, e.y, 26, "#ff8a3a", 30); }
+  if (e.threat === P.tierMax){
+    P.tierKills++;
+    if (P.tierKills === threatNeed(P.tierMax)){
+      const nx = P.tierMax + 1;
+      if (P.rebirths >= threatRebirthNeed(nx)) note(`Amenaza ${nx} lista para abrir en Atributos → Abismo`, "--monarch");
+      else note(`Amenaza ${nx}: te falta llegar a Renacer ${threatRebirthNeed(nx)}`, "--monarch");
+    }
+  }
+}
+function threatUnlock(){
+  const nx = P.tierMax + 1;
+  if (P.tierKills < threatNeed(P.tierMax) || P.rebirths < threatRebirthNeed(nx)) return;
+  P.tierMax = nx; P.tierKills = 0; setThreat(nx);
+  banner(`AMENAZA ${nx}`, "#ff4d61"); SFX.bossPhase?.(4);
+}
+function setThreat(t){
+  if (dungeon) return note("Sal de la mazmorra para cambiar la amenaza", "--hp");
+  t = clamp(t, 0, P.tierMax); if (t === P.tier) return;
+  P.tier = t; enemies = enemies.filter(e => e.boss); spawnT = 0;
+  note(t ? `Amenaza ${t}: ${threatAffixes(t).map(a => a.name).join(", ")}` : "Amenaza 0: mundo normal", "--monarch");
+  save(); dirty = true; renderPanel();
+}
+const SEALS = {
+  power:  { name:"Sello del Poder",   desc:"+12% de daño por nivel",           g:"⚔️" },
+  vigor:  { name:"Sello del Vigor",   desc:"+10% de vida por nivel",           g:"❤️" },
+  legion: { name:"Sello de la Legión",desc:"+12% de daño de sombras por nivel",g:"👥" },
+  greed:  { name:"Sello de la Codicia",desc:"+10% de oro y EXP por nivel",     g:"💰" },
+};
+const sealCost = lv => ({ ess: Math.floor(25 * Math.pow(1.45, lv)), cash: 1e9 * Math.pow(40, lv) });
+function buySeal(id){
+  const lv = P.seals[id] || 0, c = sealCost(lv);
+  if (lv >= 50 || P.essence < c.ess || P.cash < c.cash) return;
+  P.essence -= c.ess; P.cash -= c.cash; P.seals[id] = lv + 1;
+  player.hp = Math.min(player.hp, maxHP());
+  note(`${SEALS[id].name} ${lv + 1}`, "--monarch"); SFX.levelUp?.(); save(); dirty = true; renderPanel();
+}
+function panelAbyss(nav){
+  const tiers = Array.from({ length:P.tierMax + 1 }, (_, t) => `<button class="chip ${P.tier === t ? "sel" : ""}" data-tier="${t}">Amenaza ${t}</button>`).join("");
+  const aff = threatAffixes(P.tier);
+  const nx = P.tierMax + 1, need = threatNeed(P.tierMax), rbNeed = threatRebirthNeed(nx);
+  const ready = P.tierKills >= need && P.rebirths >= rbNeed;
+  const seals = Object.entries(SEALS).map(([id, S]) => { const lv = P.seals[id] || 0, c = sealCost(lv), ok = lv < 50 && P.essence >= c.ess && P.cash >= c.cash;
+    return `<div class="item"><span class="g">${S.g}</span><span class="meta"><b>${S.name} · Nv ${lv}/50</b><span>${S.desc} · coste ${fmt(c.ess)} esencia + ${fmt(c.cash)} oro</span></span>
+      <button class="btn violet" data-seal="${id}" ${ok ? "" : "disabled"}>Mejorar</button></div>`; }).join("");
+  return shell("Abismo", nav + `<div class="spinbox">
+      <div class="spinhead"><div><small>Amenaza activa</small><b style="color:#ff6a7a">${P.tier}</b></div>
+        <div class="spins"><small>Esencia del Abismo</small><b>${fmt(P.essence)}</b></div></div>
+      <div class="chips">${tiers}</div>
+      <p class="hint">${P.tier ? `Enemigos con ×${fmt(threatHP(P.tier))} vida y ×${threatDmg(P.tier).toFixed(1)} daño · botín ×${threatLoot(P.tier).toFixed(2)} · ${aff.map(a => `<b>${a.name}</b> (${a.desc})`).join(" · ")}`
+        : "Mundo normal. Sube la amenaza para que los enemigos sean más duros y den más botín y Esencia."}</p>
+      <div class="collect"><span>Para abrir Amenaza ${nx}: bajas en Amenaza ${P.tierMax}${rbNeed ? ` y Renacer ${rbNeed}` : ""}</span>
+        <div class="sbar xp"><i style="width:${Math.min(100, P.tierKills / need * 100)}%"></i><em>${fmt(Math.min(P.tierKills, need))} / ${fmt(need)}</em></div></div>
+      <button class="btn gold big-w" id="tier-btn" ${ready ? "" : "disabled"}>${ready ? `Abrir Amenaza ${nx}` : P.rebirths < rbNeed ? `Necesitas Renacer ${rbNeed}` : "Sigue cazando"}</button></div>
+    <h3 class="subh">Sellos del Abismo</h3><div class="list">${seals}</div>
+    <p class="kbhelp">La Esencia solo cae con amenaza 1 o más. Los modificadores cambian con cada nivel, así que cada amenaza se juega distinto.</p>`);
+}
 /* Renacer: el primero a nivel 100 y luego uno cada 50 niveles más (150, 200,
    250… hasta 1000). El coste en oro crece ×2,2 por renacer. */
 const rebirthLevel = () => Math.min(FLAGS.LEVEL_CAP, 100 + P.rebirths * 50);
-const rebirthCost  = () => Math.round(2e5 * Math.pow(2.2, P.rebirths));
+const rebirthCost  = () => Math.round(2e5 * Math.pow(6, P.rebirths));
 const rebirthPoints = () => 5 + P.rebirths * 10;         // puntos con los que empiezas
 function doRebirth(){
   if (dungeon) return note("Sal de la mazmorra antes de renacer", "--hp");
@@ -3061,9 +3167,10 @@ function update(dt){
         }
       }
     }
+    if (e.regen && e.hp < e.maxHp) e.hp = Math.min(e.maxHp, e.hp + e.maxHp * e.regen * dt);
     e.yaw = Math.atan2(player.x - e.x, player.y - e.y);
     if (d > stop){
-      const sp = (98 + Math.min(60, e.level * 0.05)) * (e.boss ? 0.8 + e.phase*0.12 : 1) * (e.slowT > 0 ? .5 : 1);
+      const sp = (98 + Math.min(60, e.level * 0.05)) * (e.boss ? 0.8 + e.phase*0.12 : 1) * (e.slowT > 0 ? .5 : 1) * (e.spdMult || 1);
       e.x += (player.x-e.x)/d * sp * dt; e.y += (player.y-e.y)/d * sp * dt;
       e.step += dt * 6;
     }
@@ -3097,7 +3204,7 @@ function update(dt){
         startBossAttack(e);
       } else {
         e.atkCd = 1.35;
-        if (d <= stop + 26 && player.h < 50) hitPlayer(e.def.dmg * (e.dmgMult || 1));
+        if (d <= stop + 26 && player.h < 50){ hitPlayer(e.def.dmg * (e.dmgMult || 1)); if (e.vamp) e.hp = Math.min(e.maxHp, e.hp + e.maxHp * e.vamp); }
       }
     }
   }
@@ -7021,7 +7128,7 @@ function syncHud(){
   $("rank").textContent = P.rank;
   $("title").textContent = P.title;
   $("lvl").textContent = `Nv ${P.level}`;
-  $("rebirth").textContent = `Renacer ${P.rebirths}`;
+  $("rebirth").textContent = `Renacer ${P.rebirths}${P.tier ? ` · Amenaza ${P.tier}` : ""}`;
   rollCounter("cash", P.cash);
   rollCounter("gems", P.gems);
   rollCounter("tickets", P.tickets);
@@ -7121,7 +7228,7 @@ const STAT_INFO = {
 const STAT_KEYS = ["STR", "INT", "SDW", "VIT", "AGI", "MNA"];
 const spentPoints = () => STAT_KEYS.reduce((a, k) => a + (P.stats[k] || 0), 0);
 function panelStats(){
-  const tabs = [["Stats","Atributos"],["Look","Aspecto"],["Mounts","Monturas"],["Class","Clase"],["Talents","Talentos"],["Codes","Códigos"]];
+  const tabs = [["Stats","Atributos"],["Abyss","Abismo"],["Look","Aspecto"],["Mounts","Monturas"],["Class","Clase"],["Talents","Talentos"],["Codes","Códigos"]];
   const nav = `<div class="tabs">${tabs.map(([id,label]) =>
     `<button class="tab ${panelTab===id?"sel":""}" data-tab="${id}">${label}</button>`).join("")}</div>`;
   if (panelTab === "Look"){
@@ -7193,6 +7300,7 @@ function panelStats(){
     return shell("Talentos", nav + `<div class="list">${body}</div>
       <p class="hint">Gemas disponibles: <b style="color:var(--gem)">${fmt(P.gems)}</b>. Las gemas salen de extracciones fallidas y de mazmorras.</p>`);
   }
+  if (panelTab === "Abyss") return panelAbyss(nav);
   if (panelTab === "Codes"){
     // Los códigos no se muestran: hay que conocerlos y escribirlos.
     const used = Object.keys(P.codes).filter(c => P.codes[c] && CODES[c]);
@@ -7929,6 +8037,9 @@ modal.addEventListener("click", e => {
   if (t.id === "rebirth-btn"){
     doRebirth(); return;
   }
+  if (t.id === "tier-btn"){ threatUnlock(); return; }
+  if (t.dataset.tier !== undefined){ setThreat(+t.dataset.tier); return; }
+  if (t.dataset.seal){ buySeal(t.dataset.seal); return; }
   if (t.dataset.class){
     if (!P.classes.includes(t.dataset.class)) return;
     P.class = t.dataset.class;
