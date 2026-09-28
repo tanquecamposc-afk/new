@@ -260,7 +260,7 @@ export const INTERACTABLES: Interactable[] = [
   { id: 'arch_p13', pos: P(-9.05, 1.35, -9.6), ...doc('P13_OVERVIEW', 'OPEN DRAWER') },
   relay('B'),
   {
-    id: 'arch_wall', pos: P(-6.5, 2.3, -19.6), range: 2.8, label: () => 'INSPECT WALL',
+    id: 'arch_wall', pos: P(-9.6, 2.3, -18.5), range: 2.8, label: () => 'INSPECT WALL',
     act: () => {
       const sawCam = world.flags.has('sawObserverCctv');
       if (sawCam) Memory.discoverClue('EMPTY_ROOM');

@@ -54,7 +54,7 @@ export const ROOMS: RoomDef[] = [
   { id: 'RESTRICTED', name: 'Restricted Sector', area: 'RESTRICTED', rect: [14, -8, 24, 8], height: 3.4, floor: 'metal', wall: 'panel', lamp: '#d8e2ff', lampIntensity: 4.5, lampSpacing: 4.5 },
   { id: 'RR_CORR', name: 'Reactor Access', area: 'RESTRICTED', rect: [19, 8, 22, 10], height: 3, floor: 'grate', wall: 'dark', lamp: '#ffb46b', lampIntensity: 3, corridor: true },
   { id: 'REACTOR', name: 'Reactor', area: 'REACTOR', rect: [17, 10, 31, 26], height: 6, floor: 'grate', wall: 'dark', lamp: '#ffc890', lampIntensity: 7, lampSpacing: 5.5 },
-  { id: 'UNKNOWN', name: 'Sector 7', area: 'UNKNOWN', rect: [24, -6, 34, 4], height: 3, floor: 'concrete', wall: 'tally', lamp: '#ffe9c4', lampIntensity: 2.5, lampSpacing: 6 },
+  { id: 'UNKNOWN', name: 'Sector 7', area: 'UNKNOWN', rect: [24, -6, 34, 4], height: 3, floor: 'concrete', wall: 'tally', lamp: '#ffe9c4', lampIntensity: 4, lampSpacing: 6 },
 ];
 
 export const DOORS: DoorDef[] = [
@@ -274,7 +274,7 @@ export interface CctvDef {
 export const CCTV: CctvDef[] = [
   { id: 'CAM-01', name: 'CENTRAL HUB', room: 'HUB', pos: [9.4, 3.9, 7.5], target: [-2, 0.5, -3] },
   { id: 'CAM-02', name: 'LABORATORY', room: 'LAB', pos: [3.55, 3.1, 8.5], target: [-1, 0.6, 15] },
-  { id: 'CAM-03', name: 'ARCHIVES', room: 'ARCHIVES', pos: [-2.5, 3.1, -8.55], target: [-6.5, 1.8, -19.5] },
+  { id: 'CAM-03', name: 'ARCHIVES', room: 'ARCHIVES', pos: [-2.6, 2.95, -19.45], target: [-9.7, 1.6, -18.3] },
   { id: 'CAM-04', name: 'REACTOR', room: 'REACTOR', pos: [30.4, 5.4, 10.6], target: [22, 0.5, 20] },
   { id: 'CAM-05', name: 'CORE ACCESS', room: 'ANTE', pos: [3.5, 3.1, -8.5], target: [6, 1, -13.8] },
   { id: 'CAM-06', name: 'DORMITORY', room: 'DORM', pos: [-13.5, 2.95, 6.6], target: [-20, 0.3, -4] },

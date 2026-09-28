@@ -10,7 +10,7 @@ export function updateLighting(dt: number): void {
   L.alarm = t >= 600 && !world.final.active;
   if (world.final.active) L.mode = world.final.broken ? 'final' : 'core';
   else if (blackout) L.mode = 'blackout';
-  else if (world.observer.visible && !world.observer.cctvOnly && world.observer.mode !== 'DORMANT' && world.observer.mode !== 'DISAPPEARING') L.mode = 'observer';
+  else if (world.observer.visible && !world.observer.cctvOnly && world.observer.mode !== 'DORMANT' && world.observer.mode !== 'DISAPPEARING' && world.observer.pos.distanceTo(world.player.pos) < 14) L.mode = 'observer';
   else if (L.alarm) L.mode = 'alarm';
   else L.mode = 'normal';
   const targetPower = L.mode === 'blackout' ? 0.04 : 1;
@@ -24,7 +24,7 @@ export function lampFactor(id: string, time: number): number {
   let f = L.power;
   if (L.mode === 'observer' || L.flicker > 0) {
     const n = Math.sin(time * 37 + id.length * 3.1) * Math.sin(time * 13.3 + id.charCodeAt(0));
-    f *= n > 0.2 ? 1 : 0.15;
+    f *= n > 0.2 ? 1 : 0.35;
   }
   if (world.flags.has('lamp_broken') && id === 'HUB_1_1') {
     const n = Math.sin(time * 23.0) + Math.sin(time * 7.7);

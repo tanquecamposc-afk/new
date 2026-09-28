@@ -23,6 +23,7 @@ import { Cutscenes } from './systems/Cutscenes';
 import { Endings } from './systems/EndingSystem';
 import { Flow, isPlayPhase } from './systems/Flow';
 import { SaveSystem } from './systems/SaveSystem';
+import { Memory } from './systems/MemorySystem';
 import { Audio } from './audio/AudioEngine';
 import { view } from './core/view';
 import { roomAt } from './data/level';
@@ -96,6 +97,12 @@ export const Game = {
     updateInteraction(dt, rules.interact);
     if (phase !== 'PAUSED') updateLighting(dt);
     if (world.final.active) Endings.updateFinal(scaled);
+
+    // ── first time inside the Temporal Core ──
+    if (isPlayPhase(G().phase) && world.player.room === 'CORE' && !Memory.hasFlag('coreSeen')) {
+      Memory.setFlag('coreSeen');
+      Cutscenes.coreDiscovery(() => undefined);
+    }
 
     // ── death ──
     if (world.player.health <= 0 && !world.player.dead && isPlayPhase(phase)) LoopSystem.die();

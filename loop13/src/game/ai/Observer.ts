@@ -19,7 +19,7 @@ import { say } from '../systems/Voice';
 import { Cutscenes } from '../systems/Cutscenes';
 
 const O = () => world.observer;
-const ARCHIVE_SPOT = { x: -6.5, z: -18.95 };
+const ARCHIVE_SPOT = { x: -8.9, z: -18.7 };
 
 function setMode(m: ObserverMode): void {
   const o = O();
@@ -111,7 +111,7 @@ export function updateObserver(dt: number): void {
       o.cctvOnly = true;
       o.visible = true;
       o.pos.set(ARCHIVE_SPOT.x, 0, ARCHIVE_SPOT.z);
-      o.yaw = Math.PI;
+      o.yaw = -Math.PI / 2;
       o.symbolsDrawn = 0;
     }
     o.anim = 'reach';
@@ -137,6 +137,15 @@ export function updateObserver(dt: number): void {
 
   switch (o.mode) {
     case 'DORMANT': {
+      // New Game+: it is standing at the foot of your bed when you wake up
+      if (world.flags.has('ngpWake') && G().run.ngPlus > 0 && t < 30) {
+        world.flags.delete('ngpWake');
+        setMode('WATCHING');
+        o.visible = true;
+        o.pos.set(-4.3, 0, 13.3);
+        o.yaw = -Math.PI / 2;
+        break;
+      }
       if (o.cooldown > 0 || stage === 0 || t < 45) break;
       if (stage >= 4 && t > at('12:52:40') && !world.flags.has('observerMet') && !world.flags.has('observerContactTried')) {
         // direct contact: waiting in the Hub
