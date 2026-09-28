@@ -1,3 +1,10 @@
+# Juegos
+
+- **[MUNDO·CAJA](worldbox/)**: simulador de dios en pixel art estilo WorldBox. Abre `worldbox/index.html`.
+- **NEXO: Tower Defense**: abre `index.html` (detalles abajo).
+
+---
+
 # NEXO: Tower Defense 🏰
 
 Juego de defensa de torres hecho en **HTML5 + Canvas + JavaScript puro** — un solo archivo, sin dependencias ni assets externos. Interfaz completamente en español.
