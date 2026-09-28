@@ -12,6 +12,7 @@ import { buildRacing } from './builders/racing';
 import { buildHorror, buildWatcher } from './builders/horror';
 import { buildStealth } from './builders/stealth';
 import { buildPrecision } from './builders/precision';
+import { buildSurvival } from './builders/survival';
 
 export function buildLevel(s: Session, meta: LevelMeta): LevelLogic {
   switch (meta.genre) {
@@ -33,6 +34,8 @@ export function buildLevel(s: Session, meta: LevelMeta): LevelLogic {
       return buildStealth(s, meta.variant);
     case 'precision':
       return buildPrecision(s, meta.variant);
+    case 'survival':
+      return buildSurvival(s, meta.variant);
     case 'bossrush':
       return buildBossLevel(s, { bossId: meta.boss! });
     default:

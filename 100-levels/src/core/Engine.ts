@@ -132,13 +132,17 @@ export class Engine {
     cancelAnimationFrame(this.raf);
   }
 
-  private frame(rawDt: number) {
+  private tickTimeScale(rawDt: number) {
     // Slow-mo timer runs in real time
     if (this.slowmoTimer > 0) {
       this.slowmoTimer -= rawDt;
       if (this.slowmoTimer <= 0) this.timeScaleTarget = 1;
     }
     this.timeScale = damp(this.timeScale, this.timeScaleTarget, this.timeScaleTarget < this.timeScale ? 30 : 3, rawDt);
+  }
+
+  private frame(rawDt: number) {
+    this.tickTimeScale(rawDt);
     const dt = rawDt * this.timeScale * this.speedMul;
     this.time += rawDt;
     this.updater?.update(dt, rawDt);
@@ -161,6 +165,7 @@ export class Engine {
     const n = Math.ceil(seconds / step);
     for (let i = 0; i < n; i++) {
       this.time += step;
+      this.tickTimeScale(step);
       this.updater?.update(step * this.timeScale * this.speedMul, step);
       Input.endFrameKeepHeld();
     }
