@@ -8,7 +8,7 @@ import { view } from '../game/core/view';
 import { world } from '../game/core/world';
 import { Input } from '../game/core/input';
 import { G } from '../game/core/store';
-import { CCTV } from '../game/data/level';
+import { CCTV, roomAt } from '../game/data/level';
 import { segmentCast, solidBoxes } from '../game/physics/colliders';
 import { clamp, damp } from '../game/core/rng';
 import { updateVisibility } from '../world/visibility';
@@ -104,6 +104,9 @@ export function CameraRig() {
       // wall avoidance: cast from pivot to desired camera position
       const hit = segmentCast(pivot.x, pivot.y, pivot.z, desired.x, desired.y, desired.z, solidBoxes(true), 0.18);
       if (hit < 1) desired.lerpVectors(pivot, desired, Math.max(0.08, hit - 0.04));
+      // never rise through the ceiling
+      const ceil = (roomAt(pivot.x, pivot.z)?.height ?? 3) - 0.25;
+      if (desired.y > ceil) desired.y = ceil;
       if (!initialised) { smoothPos.copy(desired); initialised = true; }
       // lag: faster when pulled in by a wall so we never clip
       const lambda = hit < 1 ? 30 : 11;

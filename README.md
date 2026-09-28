@@ -1,3 +1,5 @@
+> 🕰 **Nuevo:** [LOOP 13](loop13/README.md) — juego 3D de misterio y terror psicológico (React + Three.js) en la carpeta `loop13/`.
+
 # NEXO: Tower Defense 🏰
 
 Juego de defensa de torres hecho en **HTML5 + Canvas + JavaScript puro** — un solo archivo, sin dependencias ni assets externos. Interfaz completamente en español.

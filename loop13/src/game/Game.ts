@@ -213,5 +213,5 @@ function debugKeys(): void {
 
 // Debug / test hook
 if (typeof window !== 'undefined') {
-  (window as unknown as Record<string, unknown>).__loop13 = { world, G, Game, view, LoopSystem, Input };
+  (window as unknown as Record<string, unknown>).__loop13 = { world, G, Game, view, LoopSystem, Input, Endings, Memory };
 }
