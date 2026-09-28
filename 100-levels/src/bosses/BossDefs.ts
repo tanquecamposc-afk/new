@@ -221,6 +221,16 @@ export const BOSSES: Record<string, BossDef> = {
       }
     },
   },
+  master: {
+    id: 'master', name: 'THE MASTER', subtitle: 'Solve its puzzles to break the shield', hp: 750, phases: 3, radius: 2.2, height: 4, speed: 3, hover: 4,
+    color: 0xb48cff, model: (s) => orbBoss(s, 0xb48cff, 1.3, 4, 0xffe066), preferredDist: 12, shielded: true, arenaRadius: 22,
+    attacks: [
+      [A.homing(3, 0xb48cff, 12), A.strikes('void', 4, 2.4, 1.1, 0.4, 18)],
+      [A.homing(4, 0xb48cff, 14), A.strikes('void', 6, 2.4, 1, 0.3, 20), A.sweep(0xb48cff, 2.4, 2.6, 18, 0.2)],
+      [A.homing(5, 0xb48cff, 14), A.strikes('void', 8, 2.4, 0.9, 0.25, 20), A.sweep(0xb48cff, 3.2, 2.4, 20, 0.2, 2)],
+    ],
+    rest: [3, 2.4, 1.8],
+  },
   skyduel: {
     id: 'skyduel', name: 'SKY WARDEN', subtitle: 'Keeper of the Floating Isles', hp: 1700, phases: 3, radius: 2.2, height: 4, speed: 6, hover: 4,
     color: 0x40e0ff, model: (s) => orbBoss(s, 0x40e0ff, 1.2, 5, 0x3dffa2), preferredDist: 10, arenaRadius: 26,

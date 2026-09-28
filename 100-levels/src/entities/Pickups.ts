@@ -314,6 +314,11 @@ export class Switch extends Entity {
     if (!this.toggleable && v) this.it.enabled = false;
     this.onToggle(v);
   }
+  /** Reset a one-shot switch so it can be used again. */
+  rearm() {
+    this.set(false, true);
+    this.it.enabled = true;
+  }
   update(dt: number) {
     this.handle.rotation.x += ((this.on ? -0.6 : 0.6) - this.handle.rotation.x) * Math.min(1, dt * 10);
   }

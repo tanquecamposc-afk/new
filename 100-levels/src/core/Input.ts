@@ -174,6 +174,24 @@ class InputManager {
     this.wheel = 0;
   }
 
+  /** Clears one-shot presses but keeps held keys (used by simulation). */
+  endFrameKeepHeld() {
+    this.pressed.clear();
+    this.released.clear();
+    this.mouseDX = this.mouseDY = this.wheel = 0;
+  }
+
+  /** Programmatic key state (testing / automation). */
+  press(a: Action, down: boolean) {
+    if (down) {
+      if (!this.down.has(a)) this.pressed.add(a);
+      this.down.add(a);
+    } else {
+      this.down.delete(a);
+      this.released.add(a);
+    }
+  }
+
   reset() {
     this.down.clear();
     this.touchDown.clear();

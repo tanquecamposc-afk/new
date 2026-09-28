@@ -347,7 +347,7 @@ input { font-family: inherit; }
 .banner .line { height: 2px; width: 0; margin: 12px auto 0; background: linear-gradient(90deg, transparent, var(--bc), transparent); animation: lineGrow 1s .2s ease both; }
 @keyframes lineGrow { to { width: min(600px, 70vw); } }
 @keyframes bannerIn { 0% { opacity: 0; transform: translateY(20px) scale(.96); letter-spacing: .4em; } 12% { opacity: 1; transform: none; } 82% { opacity: 1; } 100% { opacity: 0; transform: translateY(-10px); } }
-.toasts { position: absolute; right: 20px; bottom: 110px; display: flex; flex-direction: column; gap: 8px; align-items: flex-end; pointer-events: none; z-index: 60; }
+.toasts { position: absolute; right: 20px; bottom: 190px; display: flex; flex-direction: column; gap: 8px; align-items: flex-end; pointer-events: none; z-index: 60; }
 .toast { display: flex; gap: 12px; align-items: center; padding: 10px 16px; min-width: 260px; max-width: 380px; border-left: 3px solid var(--tc, var(--gold)); animation: toastIn .4s cubic-bezier(.2,1.2,.4,1) both; }
 .toast .ti { font-size: 26px; }
 .toast .tt { font-family: var(--font-display); font-size: 11px; letter-spacing: .15em; color: var(--tc, var(--gold)); }

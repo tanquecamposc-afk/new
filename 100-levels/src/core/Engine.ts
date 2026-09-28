@@ -147,13 +147,22 @@ export class Engine {
     else this.renderer.render(this.scene, this.camera);
     Input.endFrame();
 
-    this.fpsAcc += rawDt;
     this.fpsFrames++;
     if (this.fpsAcc >= 0.5) {
       this.fps = Math.round(this.fpsFrames / this.fpsAcc);
       this.fpsAcc = 0;
       this.fpsFrames = 0;
       this.onFps?.(this.fps);
+    }
+  }
+
+  /** Dev/testing: advance the simulation without rendering. */
+  simulate(seconds: number, step = 1 / 30) {
+    const n = Math.ceil(seconds / step);
+    for (let i = 0; i < n; i++) {
+      this.time += step;
+      this.updater?.update(step * this.timeScale * this.speedMul, step);
+      Input.endFrameKeepHeld();
     }
   }
 
