@@ -10,6 +10,8 @@ import { buildPuzzleWorld } from './builders/puzzle';
 import { buildMaster } from './builders/puzzleBoss';
 import { buildRacing } from './builders/racing';
 import { buildHorror, buildWatcher } from './builders/horror';
+import { buildStealth } from './builders/stealth';
+import { buildPrecision } from './builders/precision';
 
 export function buildLevel(s: Session, meta: LevelMeta): LevelLogic {
   switch (meta.genre) {
@@ -27,6 +29,10 @@ export function buildLevel(s: Session, meta: LevelMeta): LevelLogic {
     case 'horror':
       if (meta.variant === 'boss') return buildWatcher(s);
       return buildHorror(s, meta.variant);
+    case 'stealth':
+      return buildStealth(s, meta.variant);
+    case 'precision':
+      return buildPrecision(s, meta.variant);
     case 'bossrush':
       return buildBossLevel(s, { bossId: meta.boss! });
     default:

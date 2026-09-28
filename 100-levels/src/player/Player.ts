@@ -76,6 +76,8 @@ export class Player {
   private lockYaw: number | null = null;
   private stunT = 0;
   aiming = false;
+  /** Level logic can force the aiming stance (precision world). */
+  forceAim = false;
   private bowCharge = 0;
   private interactHold = 0;
   private holdTarget: Interactable | null = null;
@@ -457,7 +459,7 @@ export class Player {
   private handleCombat(dt: number, wish: THREE.Vector3, wishLen: number) {
     this.attackT = Math.max(0, this.attackT - dt);
     if (!this.combatEnabled) {
-      this.aiming = false;
+      this.aiming = this.forceAim;
       return;
     }
     const w = this.weapon;

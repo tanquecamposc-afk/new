@@ -421,7 +421,7 @@ export class SecurityCamera extends Entity {
   private coneMat: THREE.MeshBasicMaterial;
   private t = rand(0, 5);
   private yaw = 0;
-  constructor(private dir: StealthDirector, private pos: THREE.Vector3, private baseYaw: number, private sweep = 1.2, private range = 13, private tilt = 0.5) {
+  constructor(private dir: StealthDirector, public pos: THREE.Vector3, private baseYaw: number, private sweep = 1.2, private range = 13, private tilt = 0.5) {
     super();
     this.head = new THREE.Group();
     const body = new THREE.Mesh(boxGeo(0.35, 0.3, 0.6), M.metal());
