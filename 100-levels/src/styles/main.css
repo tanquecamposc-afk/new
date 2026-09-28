@@ -184,11 +184,11 @@ input { font-family: inherit; }
 
 /* ─── Main menu ───────────────────────────────────────────────────────── */
 .main-menu { justify-content: center; padding: 0 7vw; background: linear-gradient(90deg, rgba(5,6,11,.85) 0%, rgba(5,6,11,.35) 45%, transparent 70%); }
-.main-menu .logo { font-size: clamp(70px, 11vw, 160px); margin-bottom: 4px; }
+.main-menu .logo { font-size: clamp(48px, 7.5vw, 118px); margin-bottom: 4px; }
 .main-menu .logo small { display: block; font-size: .16em; letter-spacing: .6em; color: #fff; -webkit-text-fill-color: #fff; opacity: .7; margin-top: 12px; filter: none; }
-.menu-buttons { display: flex; flex-direction: column; gap: 10px; margin-top: 34px; width: min(360px, 86vw); }
+.menu-buttons { display: flex; flex-direction: column; gap: 8px; margin-top: 22px; width: min(360px, 86vw); }
 .menu-btn {
-  justify-content: flex-start; padding-left: 22px; font-size: 16px; min-height: 52px;
+  justify-content: flex-start; padding-left: 22px; font-size: 15px; min-height: 44px; padding-top: 8px; padding-bottom: 8px;
   animation: slideIn .5s cubic-bezier(.2,.9,.3,1.1) both;
 }
 .menu-btn .ico { width: 26px; text-align: center; font-size: 18px; }
@@ -316,7 +316,7 @@ input { font-family: inherit; }
 .crosshair::before { left: 12px; top: 0; width: 2px; height: 26px; clip-path: polygon(0 0,100% 0,100% 35%,0 35%,0 65%,100% 65%,100% 100%,0 100%); }
 .crosshair::after { top: 12px; left: 0; height: 2px; width: 26px; clip-path: polygon(0 0,35% 0,35% 100%,0 100%,0 0,65% 0,100% 0,100% 100%,65% 100%); }
 .crosshair .dot { position: absolute; left: 11px; top: 11px; width: 4px; height: 4px; border-radius: 50%; background: var(--gold); }
-.boss-bar { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); width: min(620px, 56vw); text-align: center; animation: screenIn .5s both; }
+.boss-bar { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); width: min(520px, 42vw); text-align: center; animation: screenIn .5s both; }
 .boss-bar .name { font-weight: 900; letter-spacing: .25em; font-size: 18px; text-shadow: 0 0 20px #ff3040, 0 2px 4px #000; }
 .boss-bar .sub { font-family: var(--font-body); font-size: 13px; color: #ffb0b8; letter-spacing: .1em; }
 .boss-bar .bar { height: 16px; margin-top: 6px; background: rgba(0,0,0,.6); border-color: rgba(255,60,80,.4); }
@@ -419,6 +419,10 @@ input { font-family: inherit; }
 .credits .roll { animation: roll 22s linear infinite; color: var(--muted); line-height: 2; }
 @keyframes roll { from { transform: translateY(30vh); } to { transform: translateY(-100%); } }
 
+@media (max-height: 800px) {
+  .continue-card { display: none; }
+  .main-menu .logo small { margin-top: 6px; }
+}
 @media (max-width: 900px) {
   .world-list { width: 170px; }
   .side-preview { display: none; }

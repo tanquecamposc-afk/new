@@ -23,6 +23,7 @@ export default function App() {
   const [tip] = useState(() => BOOT_TIPS[Math.floor(Math.random() * BOOT_TIPS.length)]);
 
   useEffect(() => {
+    if (import.meta.env.DEV) Object.assign(window, { __gm: GameManager, __profile: useProfile, __game: useGame });
     useProfile.getState().load();
     useProfile.getState().checkAchievements();
     const coarse = window.matchMedia?.('(pointer: coarse)').matches;
