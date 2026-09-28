@@ -61,14 +61,14 @@ export const THEMES: Record<string, EnvTheme> = {
   }),
   horror: t({
     skyTop: 0x020204, skyHorizon: 0x0c1014, skyBottom: 0x000000, sunColor: 0x6070a0, sunIntensity: 0.25, sunDir: [-0.3, 0.8, 0.5],
-    hemiSky: 0x202838, hemiGround: 0x050505, hemiIntensity: 0.12, fogColor: 0x05070a, fogDensity: 0.07, envIntensity: 0.05, stars: 0.2, clouds: 0.9, exposure: 1.1,
-    grade: { bloom: 0.5, sat: 0.55, contrast: 1.15, grain: 0.07, vignette: 0.75, tint: 0xd8e4ff, ca: 0.003 },
+    hemiSky: 0x303a50, hemiGround: 0x0a0808, hemiIntensity: 0.28, fogColor: 0x05070a, fogDensity: 0.042, envIntensity: 0.05, stars: 0.2, clouds: 0.9, exposure: 1.1,
+    grade: { bloom: 0.5, sat: 0.6, contrast: 1.12, grain: 0.045, vignette: 0.7, tint: 0xd8e4ff, ca: 0.003 },
     ambient: [{ preset: 'dust', rate: 14, radius: 12, height: [0, 4], opts: { size: [0.08, 0.08], life: [3, 6], velSpread: 0.2, up: 0, alpha: 0.4, color: 0x8090a0, gravity: 0 } }],
   }),
   forest: t({
     skyTop: 0x020306, skyHorizon: 0x0a1410, skyBottom: 0x000000, sunColor: 0x7080b0, sunIntensity: 0.35, sunDir: [0.4, 0.7, -0.3],
-    hemiSky: 0x203020, hemiGround: 0x050805, hemiIntensity: 0.15, fogColor: 0x040806, fogDensity: 0.06, envIntensity: 0.05, stars: 0.6, clouds: 0.6,
-    grade: { bloom: 0.5, sat: 0.5, contrast: 1.15, grain: 0.07, vignette: 0.75, tint: 0xd8ffe8, ca: 0.003 },
+    hemiSky: 0x304030, hemiGround: 0x080a08, hemiIntensity: 0.3, fogColor: 0x040806, fogDensity: 0.04, envIntensity: 0.05, stars: 0.6, clouds: 0.6,
+    grade: { bloom: 0.5, sat: 0.55, contrast: 1.12, grain: 0.045, vignette: 0.7, tint: 0xd8ffe8, ca: 0.003 },
     ambient: [
       { preset: 'leaves', rate: 3, radius: 18, height: [4, 10], opts: { color: 0x303820, color2: 0x202418 } },
       { preset: 'magic', rate: 2, radius: 16, height: [0.5, 3], opts: { size: [0.12, 0.05], life: [2, 4], velSpread: 0.4, up: 0.1, gravity: 0, color: 0xb0ff60, color2: 0x608020 } },

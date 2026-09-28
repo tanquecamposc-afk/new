@@ -38,7 +38,7 @@ export default function App() {
       await document.fonts?.ready.catch(() => undefined);
       await step(0.85);
       await step(1);
-      setTimeout(() => !cancelled && useGame.getState().setScreen('menu'), 350);
+      setTimeout(() => !cancelled && useGame.getState().screen === 'boot' && useGame.getState().setScreen('menu'), 350);
     })();
     // Audio can only start after a user gesture
     const unlock = () => {
