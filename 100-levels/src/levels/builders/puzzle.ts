@@ -10,7 +10,7 @@ import { buildRoom } from './combat';
 import { Door, PushCrate, MovingPlatform } from '../../entities/Platforms';
 import { Switch, PressurePlate, Trigger } from '../../entities/Pickups';
 import { GlyphTablet, CodePanel, MemoryTiles, InvisiblePlatform, Mirror, LightBeam, Lamp } from '../../entities/Puzzle';
-import { ForceZone, KillZone, SpinBeam, Laser } from '../../entities/Hazards';
+import { ForceZone, SpinBeam, Laser } from '../../entities/Hazards';
 import { columns } from '../Decor';
 import { Audio } from '../../audio/AudioManager';
 
@@ -39,7 +39,7 @@ export interface PuzzleCtx {
 
 export const templeMats = () => ({
   wall: mat('templeWall', { tex: 'hex', color: 0x8a80a8, roughness: 0.4, metalness: 0.4, emissive: 0x8060ff, emissiveIntensity: 0.7, emissiveMap: true }),
-  floor: mat('templeFloor', { tex: 'marble', color: 0xc8c0e0, roughness: 0.2, metalness: 0.1 }),
+  floor: mat('templeFloor', { tex: 'marble', color: 0x8a84a4, roughness: 0.5, metalness: 0.05 }),
 });
 
 /** Build one puzzle inside a chamber centred at c. */
@@ -220,10 +220,12 @@ export function buildPuzzleWorld(s: Session, variant: string): LevelLogic {
     doors.south?.open();
     const north = doors.north!;
     const ctx: PuzzleCtx & { door?: Door } = { s, b, c, size, done: () => north.open(), timeScale, door: north };
+    const cp = c.clone().add(new THREE.Vector3(0, 0.1, -size / 2 + 2));
+    b.add(new Trigger(cp.clone().add(new THREE.Vector3(-3, -1, -1.5)), cp.clone().add(new THREE.Vector3(3, 3, 1.5)), () => s.setCheckpoint(cp, 0)));
     buildPuzzle(kind, ctx);
     // Decorative glowing columns in corners
     columns(b, [new THREE.Vector3(c.x - size / 2 + 1.5, 0, c.z - size / 2 + 1.5), new THREE.Vector3(c.x + size / 2 - 1.5, 0, c.z - size / 2 + 1.5)], 5.5, M.darkMarble(), 0.5, 0xb48cff);
-    if (b.lights < 5) b.light(c.clone().setY(4.5), 0xb48cff, 18, 22);
+    if (b.lights < 5) b.light(c.clone().setY(5.5), 0xb48cff, 7, 20);
     // Corridor
     const nz = c.z + size / 2 + 1;
     b.plat(0, 0, nz + 3, 5, 6, floor);
@@ -255,7 +257,6 @@ export function pitRoom(b: Builder, c: THREE.Vector3, size: number, wall: THREE.
   const southLen = pit[0] + half, northLen = half - pit[1];
   b.plat(c.x, c.y, c.z - half + southLen / 2, size, southLen, floor);
   b.plat(c.x, c.y, c.z + half - northLen / 2, size, northLen, floor);
-  b.add(new KillZone(new THREE.Vector3(c.x - half, c.y - 30, c.z + pit[0]), new THREE.Vector3(c.x + half, c.y - 6, c.z + pit[1]), 999, false));
   const glow = new THREE.Mesh(new THREE.PlaneGeometry(size, pit[1] - pit[0]), new THREE.MeshBasicMaterial({ color: 0x6040ff, transparent: true, opacity: 0.25, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false }));
   glow.rotation.x = -Math.PI / 2;
   glow.position.set(c.x, c.y - 12, c.z + (pit[0] + pit[1]) / 2);

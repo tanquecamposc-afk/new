@@ -9,7 +9,10 @@ export default defineConfig({
     chunkSizeWarningLimit: 1500,
     rollupOptions: {
       output: {
-        manualChunks: { three: ['three'], react: ['react', 'react-dom'] },
+        manualChunks(id: string) {
+          if (id.includes('node_modules/three')) return 'three';
+          if (/node_modules\/(react|react-dom|scheduler)\//.test(id)) return 'react';
+        },
       },
     },
   },

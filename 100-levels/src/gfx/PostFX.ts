@@ -150,7 +150,8 @@ export class PostFX {
     u.uVignette.value = this.base.vignette;
     u.uGrain.value = this.base.grain;
     this.bloom.strength = this.base.bloom;
-    this.bloom.threshold = this.base.bloomThreshold;
+    // Only genuinely emissive / HDR highlights bloom (lit white surfaces stay crisp)
+    this.bloom.threshold = Math.max(1.3, this.base.bloomThreshold);
     this.bloom.radius = this.base.bloomRadius;
   }
 

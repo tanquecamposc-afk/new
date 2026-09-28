@@ -6,7 +6,7 @@ import type { Session, LevelLogic } from '../Session';
 import { Builder } from '../Builder';
 import { Course, SegKind, voidGlow } from './parkourKit';
 import { cityBackdrop } from '../Decor';
-import { M, glowMat } from '../../gfx/Materials';
+import { M, glowMat, mat, cachedGeo } from '../../gfx/Materials';
 import { BreakableWall } from '../../entities/Pickups';
 import { LaunchPad } from '../../entities/Platforms';
 
@@ -22,12 +22,24 @@ const PLANS: Record<string, { segs: [SegKind, number][]; diff: number }> = {
   gauntlet: { segs: [['gaps', 3], ['lasers', 3], ['vanish', 2], ['spinners', 1], ['crushers', 3], ['speed', 1], ['moving', 2], ['wind', 2]], diff: 0.75 },
 };
 
-export function buildParkour(s: Session, variant: string, opts: { diffBoost?: number; turns?: boolean } = {}): LevelLogic {
+export interface ParkourOpts {
+  diffBoost?: number;
+  turns?: boolean;
+  onPad?: (c: THREE.Vector3, b: Builder) => void;
+  theme?: string;
+  music?: string;
+  plan?: [SegKind, number][];
+  retro?: boolean;
+}
+
+export function buildParkour(s: Session, variant: string, opts: ParkourOpts = {}): LevelLogic {
   const b = new Builder(s, s.meta.num * 101 + 7);
-  const plan = PLANS[variant] ?? PLANS.basics;
+  const plan = opts.plan ? { segs: opts.plan, diff: PLANS[variant]?.diff ?? 0.5 } : PLANS[variant] ?? PLANS.basics;
   const diff = Math.min(1, plan.diff + (opts.diffBoost ?? 0) + (s.diff.id === 'normal' ? 0 : s.diff.id === 'hard' ? 0.1 : 0.2));
-  const course = new Course(b, new THREE.Vector3(0, 20, 0), diff, M.concrete(), 0x34d4ff);
+  const retroMat = opts.retro ? mat('retroBrick', { tex: 'brick', color: 0xc86a30, roughness: 1, flatShading: true }) : null;
+  const course = new Course(b, new THREE.Vector3(0, 20, 0), diff, retroMat ?? M.concrete(), opts.retro ? 0xffe066 : 0x34d4ff);
   course.hints = s.meta.num <= 3;
+  if (opts.onPad) course.onPad = (c) => opts.onPad!(c, b);
 
   // Start rooftop
   course.plat(0, 0, 0, 12, 12);
@@ -59,13 +71,24 @@ export function buildParkour(s: Session, variant: string, opts: { diffBoost?: nu
   b.goal(goal);
   b.light(goal.clone().setY(goal.y + 3), 0x40ffb0, 25, 16);
 
-  decorateCity(b, course.pos, s);
+  if (!opts.retro) decorateCity(b, course.pos, s);
+  else {
+    // Classic mode: blue sky, green hills, blocky clouds
+    for (let i = 0; i < 30; i++) {
+      const p = course.pos.clone().multiplyScalar(0.5).add(new THREE.Vector3(b.rng.range(-120, 120), b.rng.range(30, 60), b.rng.range(-80, 160)));
+      b.box(p, new THREE.Vector3(b.rng.range(6, 14), 3, b.rng.range(4, 8)), mat('cloud', { color: 0xffffff, roughness: 1, flatShading: true }), { collide: false, shadow: false });
+    }
+    for (let i = 0; i < 20; i++) {
+      const p = course.pos.clone().multiplyScalar(0.5).add(new THREE.Vector3(b.rng.range(-150, 150), -10, b.rng.range(-60, 200)));
+      b.mesh(cachedGeo('hill', () => new THREE.SphereGeometry(1, 8, 6)), mat('hillM', { color: 0x40c040, roughness: 1, flatShading: true }), p, undefined, new THREE.Vector3(b.rng.range(15, 30), b.rng.range(15, 30), b.rng.range(15, 30)), false);
+    }
+  }
   b.finalize();
   return {
     spawn: new THREE.Vector3(0, 20.05, -3),
     spawnYaw: 0,
-    theme: 'city',
-    music: 'parkour',
+    theme: opts.theme ?? 'city',
+    music: opts.music ?? 'parkour',
     ambient: ['wind', 'city'],
     objective: 'Reach the exit portal',
     abilityMode: 'airdash',

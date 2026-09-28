@@ -24,6 +24,8 @@ export class Course {
   segCount = 0;
   hints = true;
   scale = 1;
+  /** Called with the centre of each landing pad (used to place enemies in chaos levels). */
+  onPad: ((center: THREE.Vector3) => void) | null = null;
 
   constructor(public b: Builder, start: THREE.Vector3, diff: number, platMat?: THREE.Material, trimColor = 0x34d4ff) {
     this.pos = start.clone();
@@ -78,6 +80,7 @@ export class Course {
   /** Landing / checkpoint pad of length L; cursor ends at its far edge. */
   pad(L = 8, W = 8, checkpoint = false) {
     this.plat(0, 0, L / 2, W, L);
+    this.onPad?.(this.P(0, 0.05, L / 2));
     if (checkpoint) this.b.checkpoint(this.P(W / 2 - 1.2, 0, L / 2), this.yaw);
     this.advance(L);
   }

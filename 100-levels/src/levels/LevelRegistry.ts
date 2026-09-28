@@ -13,6 +13,8 @@ import { buildHorror, buildWatcher } from './builders/horror';
 import { buildStealth } from './builders/stealth';
 import { buildPrecision } from './builders/precision';
 import { buildSurvival } from './builders/survival';
+import { buildChaos, buildSecret } from './builders/chaos';
+import { buildFinal } from './builders/final';
 
 export function buildLevel(s: Session, meta: LevelMeta): LevelLogic {
   switch (meta.genre) {
@@ -38,6 +40,12 @@ export function buildLevel(s: Session, meta: LevelMeta): LevelLogic {
       return buildSurvival(s, meta.variant);
     case 'bossrush':
       return buildBossLevel(s, { bossId: meta.boss! });
+    case 'chaos':
+      return buildChaos(s, meta.variant);
+    case 'final':
+      return buildFinal(s);
+    case 'secret':
+      return buildSecret(s, meta.variant);
     default:
       return buildParkour(s, 'basics');
   }

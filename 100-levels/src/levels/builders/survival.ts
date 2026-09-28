@@ -559,7 +559,7 @@ function buildVolcano(s: Session): LevelLogic {
   b.goal(summit.clone(), false, 0xffb627);
   void topY;
   if (s.meta.hasSecret) b.secret(pts[20].clone().add(new THREE.Vector3(0, 4, 0)));
-  const lava = s.add(new RisingLava(-3, 0.55 * (2 - s.diff.timeLimit)));
+  const lava = s.add(new RisingLava(-9, 0.5 * (2 - s.diff.timeLimit)));
   let rockT = 3;
   b.finalize();
   return {
@@ -582,7 +582,7 @@ function buildVolcano(s: Session): LevelLogic {
     },
     update: (dt) => {
       if (s.state !== 'playing') return;
-      if (!lava.active) {
+      if (!lava.active && s.time > 3) {
         lava.active = true;
         Audio.play('rumble');
         s.rig.shake(0.5);

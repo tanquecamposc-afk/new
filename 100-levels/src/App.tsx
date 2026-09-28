@@ -23,6 +23,7 @@ export default function App() {
   const [tip] = useState(() => BOOT_TIPS[Math.floor(Math.random() * BOOT_TIPS.length)]);
 
   useEffect(() => {
+    Input.canLock = () => useGame.getState().screen === 'playing' && !useGame.getState().craftOpen;
     if (import.meta.env.DEV) Object.assign(window, { __gm: GameManager, __profile: useProfile, __game: useGame, __input: Input });
     useProfile.getState().load();
     useProfile.getState().checkAchievements();
@@ -56,6 +57,7 @@ export default function App() {
   // Input only active while actually playing
   useEffect(() => {
     Input.enabled = screen === 'playing';
+    if (screen !== 'playing') Input.exitPointerLock();
   }, [screen]);
 
   // Clicking the canvas during gameplay captures the mouse

@@ -89,7 +89,7 @@ const STYLES: Record<string, ArenaStyle> = {
     },
   },
   ancient: {
-    theme: 'boss_ancient', floor: mat('goldFloor', { tex: 'tiles', color: 0xd8c090, roughness: 0.35, metalness: 0.3 }), ambient: ['wind', 'hum'],
+    theme: 'boss_ancient', floor: mat('goldFloor', { tex: 'tiles', color: 0xc0a878, roughness: 0.55, metalness: 0.1 }), ambient: ['wind', 'hum'],
     deco: (b, c, r) => {
       columns(b, ringPositions(c, r + 1, 14), 11, mat('sandstone', { tex: 'marble', color: 0xd8b880 }), 0.7, 0xffd040);
     },
@@ -203,7 +203,7 @@ export function buildDiscArena(b: Builder, c: THREE.Vector3, R: number, floor: T
     col.blocksSight = false;
   }
   // Void underneath (if something falls through)
-  b.add(new KillZone(new THREE.Vector3(c.x - 500, c.y - 60, c.z - 500), new THREE.Vector3(c.x + 500, c.y - 25, c.z + 500), 999, true, 'void'));
+  b.add(new KillZone(new THREE.Vector3(c.x - 500, c.y - 90, c.z - 500), new THREE.Vector3(c.x + 500, c.y - 50, c.z + 500), 999, true, 'void'));
 }
 
 /** Cinematic intro: sweep to the boss, roar + name card, back to the player. */
@@ -218,7 +218,7 @@ export function bossIntro(s: Session, boss: Boss, spawn: THREE.Vector3): Shot[] 
     s.rig.shake(0.5);
     useGame.getState().showBanner({ title: boss.def.name, subtitle: boss.def.subtitle, color: '#' + new THREE.Color(boss.def.color).getHexString(), big: true }, 3000);
   });
-  s.after(0.1, () => s.post.setDOF(true, 9, 0.003));
+  s.after(0.1, () => s.state === 'intro' && s.post.setDOF(true, 9, 0.003));
   return [
     { from: far, to: near, lookFrom: bc, lookTo: bc.clone().setY(bc.y + boss.halfHeight * 0.4), duration: 1.8, fov: 50 },
     { from: near, to: near.clone().add(new THREE.Vector3(-1, 0.3, -1)), lookFrom: bc.clone().setY(bc.y + boss.halfHeight * 0.4), lookTo: bc.clone().setY(bc.y + boss.halfHeight * 0.5), duration: 1.6, fov: 42 },

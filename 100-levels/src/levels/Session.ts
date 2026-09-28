@@ -256,6 +256,7 @@ export class Session {
     if (this.state !== 'intro') return;
     this.state = 'playing';
     this.post.letterboxTarget = 0;
+    this.post.setDOF(false);
     this.rig.reset(this.cameraTarget(), this.logic.spawnYaw);
     Input.requestPointerLock();
     if (this.objective) useGame.getState().notify({ icon: '🎯', title: 'OBJECTIVE', text: this.objective, color: worldOf(Math.min(100, this.meta.num)).color });
@@ -507,7 +508,8 @@ export class Session {
         { from: p.clone().addScaledVector(f, 3.2).setY(p.y + 1.6), to: p.clone().addScaledVector(f, 2.6).add(new THREE.Vector3(f.z * 2, 0, -f.x * 2)).setY(p.y + 1.9), lookFrom: look, lookTo: look, duration: 2.5, fov: 45 },
       ]);
     }
-    const delay = this.meta.id === '100' ? 0.2 : 2.2;
+    if (this.meta.id === '100') s_playEnding();
+    const delay = this.meta.id === '100' ? 3 : 2.2;
     this.after(delay, () => this.finishVictory());
   }
 
@@ -672,6 +674,10 @@ export class Session {
     this.engine.resetTime();
     Audio.setEngine(-1);
   }
+}
+
+function s_playEnding() {
+  setTimeout(() => Audio.playMusic('ending'), 1200);
 }
 
 function abilityLabel(p: Player): string {

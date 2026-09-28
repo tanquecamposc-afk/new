@@ -81,9 +81,9 @@ export const THEMES: Record<string, EnvTheme> = {
     ambient: [{ preset: 'dust', rate: 6, radius: 20, height: [0, 8], opts: { size: [0.1, 0.1], life: [3, 6], velSpread: 0.2, up: 0, alpha: 0.25, color: 0x80ffd0, gravity: 0 } }],
   }),
   training: t({
-    skyTop: 0x3a78c8, skyHorizon: 0xd8e8f8, skyBottom: 0x707880, sunColor: 0xffffff, sunIntensity: 2.8, sunDir: [0.3, 0.9, 0.35],
-    hemiSky: 0xe0f0ff, hemiGround: 0x606878, hemiIntensity: 0.9, fogColor: 0xd0e0f0, fogDensity: 0.004, envIntensity: 0.8, clouds: 0.4,
-    grade: { bloom: 0.45, tint: 0xfaffff, sat: 1.05 },
+    skyTop: 0x3a78c8, skyHorizon: 0xd8e8f8, skyBottom: 0x707880, sunColor: 0xffffff, sunIntensity: 2.2, sunDir: [0.3, 0.9, 0.35],
+    hemiSky: 0xe0f0ff, hemiGround: 0x606878, hemiIntensity: 0.6, fogColor: 0xd0e0f0, fogDensity: 0.004, envIntensity: 0.8, clouds: 0.4,
+    grade: { bloom: 0.35, bloomThreshold: 2, tint: 0xfaffff, sat: 1.05 },
   }),
   island: t({
     skyTop: 0x2a70d0, skyHorizon: 0xb8e0ff, skyBottom: 0x6090a0, sunColor: 0xfff4d8, sunIntensity: 3, sunDir: [0.5, 0.75, 0.2],

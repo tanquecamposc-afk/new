@@ -180,7 +180,7 @@ export const BOSSES: Record<string, BossDef> = {
   },
   ancient: {
     id: 'ancient', name: 'ELDER', subtitle: 'Older Than the Levels Themselves', hp: 2100, phases: 3, radius: 1.8, height: 6, speed: 3.5,
-    color: 0xffd040, model: (s) => humanoidBoss(s, 'boss_ancient', 3.1, { halo: 0xffe080, aura: 'magic', auraColor: 0xffe080, weapon: 'wpn_staff' }), preferredDist: 8,
+    color: 0xffd040, model: (s) => humanoidBoss(s, 'boss_ancient', 3.1, { halo: 0xffe080, aura: 'dust', auraColor: 0xd0b070, weapon: 'wpn_staff' }), preferredDist: 8,
     attacks: [
       [A.sweep(0xffd040, 2.6, 2.4, 22, 0.12), A.homing(5, 0xffd040, 14, 'electric'), A.shockwaves(2, 0.8)],
       [A.sweep(0xffd040, 3, 2.2, 24, 0.12, 2), A.rain(10, 'meteor', 24), A.summon('knight', 2), A.strikes('electric', 8, 2.5, 0.9, 0.25)],

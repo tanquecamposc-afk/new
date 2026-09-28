@@ -40,6 +40,8 @@ class InputManager {
   enabled = true;
   private canvas: HTMLElement | null = null;
   onPause: (() => void) | null = null;
+  /** Whether pointer lock is currently allowed (only during gameplay). */
+  canLock: () => boolean = () => true;
 
   attach(canvas: HTMLElement) {
     this.canvas = canvas;
@@ -53,11 +55,13 @@ class InputManager {
     canvas.addEventListener('contextmenu', (e) => e.preventDefault());
     document.addEventListener('pointerlockchange', () => {
       this.pointerLocked = document.pointerLockElement === this.canvas;
+      // A lock granted late (after the game left gameplay) must not trap the UI
+      if (this.pointerLocked && !this.canLock()) this.exitPointerLock();
     });
   }
 
   requestPointerLock() {
-    if (!this.canvas || this.pointerLocked) return;
+    if (!this.canvas || this.pointerLocked || !this.canLock()) return;
     try {
       const p = (this.canvas as HTMLCanvasElement).requestPointerLock?.() as unknown;
       if (p && typeof (p as Promise<void>).catch === 'function') (p as Promise<void>).catch(() => {});

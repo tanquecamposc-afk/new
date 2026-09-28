@@ -147,7 +147,7 @@ export function buildPrecision(s: Session, variant: string): LevelLogic {
   const wall = mat('trainWall', { tex: 'grid', color: 0xd8e0ec, roughness: 0.5 });
   // Shooting booth
   b.plat(0, 0, 0, 10, 6, M.darkMetal());
-  b.box(new THREE.Vector3(0, 0.55, 3.2), new THREE.Vector3(10, 1.1, 0.3), mat('rail', { color: 0x3a4250, metalness: 0.8, roughness: 0.3 }));
+  b.box(new THREE.Vector3(0, 0.55, 3.2), new THREE.Vector3(10, 1.1, 0.3), mat('rail', { color: 0x3a4250, metalness: 0.5, roughness: 0.65 }));
   b.neon(new THREE.Vector3(-5, 1.12, 3.35), new THREE.Vector3(5, 1.12, 3.35), 0xff3d9a, 0.06);
   // Range
   b.plat(0, -0.5, 40, 60, 70, floor, 1, { tile: 4 });
@@ -164,7 +164,7 @@ export function buildPrecision(s: Session, variant: string): LevelLogic {
     b.deco(m);
     b.neon(new THREE.Vector3(-29.5, 0.05, z), new THREE.Vector3(29.5, 0.05, z), 0x34d4ff, 0.05);
   }
-  for (let i = 0; i < 4; i++) b.light(new THREE.Vector3(-15 + i * 10, 11, 35), 0xffffff, 40, 40);
+  for (let i = 0; i < 4; i++) b.light(new THREE.Vector3(-15 + i * 10, 11, 35), 0xffffff, 8, 40);
 
   let score = 0;
   let hits = 0;

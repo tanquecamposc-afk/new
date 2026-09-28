@@ -36,8 +36,10 @@ uniform float uScale;
 void main() {
   vec4 mv = modelViewMatrix * vec4(position, 1.0);
   gl_Position = projectionMatrix * mv;
-  gl_PointSize = aSize * uScale / max(0.1, -mv.z);
-  vAlpha = aAlpha;
+  float z = max(0.1, -mv.z);
+  gl_PointSize = min(aSize * uScale / z, uScale * 0.12);
+  // Fade particles that get too close to the camera (avoids screen-filling blobs)
+  vAlpha = aAlpha * smoothstep(0.6, 2.5, z);
   vColor = aColor;
 }`;
 const FRAG = /* glsl */ `
@@ -287,7 +289,7 @@ export class AmbientEmitter {
     while (this.acc >= 1) {
       this.acc -= 1;
       const a = Math.random() * Math.PI * 2;
-      const r = Math.sqrt(Math.random()) * this.radius;
+      const r = 3 + Math.sqrt(Math.random()) * Math.max(0, this.radius - 3);
       p.set(center.x + Math.cos(a) * r, center.y + rand(this.height[0], this.height[1]), center.z + Math.sin(a) * r);
       this.particles.emit(this.preset, p, { count: 1, spread: 0, ...this.opts });
     }

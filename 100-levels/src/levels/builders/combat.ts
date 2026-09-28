@@ -184,6 +184,12 @@ const PLANS: Record<string, { rooms: Wave[][]; weapon?: string; hint?: string }>
   waves: { rooms: [[['grunt', 'grunt'], ['grunt', 'archer', 'archer'], ['brute', 'grunt', 'grunt'], ['charger', 'archer', 'grunt'], ['brute', 'charger', 'archer', 'grunt']]] },
   staff: { rooms: [[['grunt', 'archer', 'grunt'], ['brute', 'archer']], [['charger', 'grunt', 'grunt'], ['shaman', 'grunt', 'brute']]], weapon: 'wpn_staff' },
   shamans: { rooms: [[['shaman', 'grunt', 'grunt'], ['shaman', 'brute']], [['shaman', 'shaman', 'grunt', 'archer'], ['shaman', 'charger', 'brute', 'grunt']]], hint: 'Shamans heal their allies. Kill them first.' },
+  legion: {
+    rooms: [
+      [['grunt', 'grunt', 'archer'], ['zombie', 'zombie', 'exploder', 'exploder'], ['brute', 'shaman', 'archer']],
+      [['charger', 'knight', 'archer'], ['clone', 'clone', 'clone', 'shaman'], ['warrior', 'brute', 'charger', 'exploder', 'knight']],
+    ],
+  },
   colosseum: { rooms: [[['knight', 'knight'], ['brute', 'archer', 'archer', 'shaman'], ['charger', 'charger', 'knight', 'grunt'], ['brute', 'brute', 'shaman', 'archer', 'knight']]] },
 };
 
