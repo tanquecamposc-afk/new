@@ -936,8 +936,8 @@ function attack(a,b){
   if(a.kind==='zombie'&&KINDS[b.kind].civ&&chance(.2))b.infected=true;
 }
 function tryConquer(c,kid){
-  let def=0;unitsIn(c.x,c.y,7,v=>{if(v.city===c.id&&v.adult&&KINDS[v.kind].civ)def++});
-  const hb=buildings.get(c.hall);if(def>1){if(hb)hb.hp=Math.max(hb.hp,1);return}
+  let def=0;unitsIn(c.x,c.y,7,v=>{if(v.city===c.id&&(v.soldier||v.mage)&&!v.onboat)def++});
+  const hb=buildings.get(c.hall);if(def>0){if(hb)hb.hp=Math.max(hb.hp,1);return}
   const old=kingdoms.get(c.king),nk=kingdoms.get(kid);if(!nk)return;
   c.king=kid;if(hb)hb.hp=hb.maxHp*.5;
   for(const u of units)if(u.city===c.id){u.king=kid;u.task=null;u.target=0}
@@ -1012,7 +1012,7 @@ function cityTick(){
     // mejorar tropas con oro
     if(c.gold>=6){const v=c.mem.filter(v=>v.soldier&&v.level<4).sort((a,b)=>a.level-b.level)[0];if(v){v.level++;v.maxHp*=1.1;v.hp=v.maxHp;v.atk*=1.08;c.gold-=6}}
     // objetivo de guerra
-    if(war){if(!c.warTarget||!cities.has(c.warTarget)||!atWar(c.king,cities.get(c.warTarget).king)){c.warTarget=0;c.armyGo=false;c.warSea=null;let bd=90;const isl=island[idx(c.x,c.y)];
+    if(war){if(!c.warTarget||!cities.has(c.warTarget)||!atWar(c.king,cities.get(c.warTarget).king)){c.warTarget=0;c.armyGo=false;c.warSea=null;let bd=130;const isl=island[idx(c.x,c.y)];
         for(const o of cities.values()){if(!atWar(c.king,o.king))continue;const d=Math.hypot(o.x-c.x,o.y-c.y);if(d<bd&&island[idx(o.x,o.y)]===isl){bd=d;c.warTarget=o.id}}
         if(!c.warTarget&&dock)planNavalWar(c,dock)}
       if(c.warSea){if(c.soldiers>=5&&!c.ships&&chance(.3))launchExpedition(c,dock,'war')}
@@ -1050,7 +1050,7 @@ function yearTick(){
     let near=1e9;for(const c1 of cities.values()){if(c1.king!==A.id)continue;for(const c2 of cities.values())if(c2.king===Bk.id)near=Math.min(near,Math.hypot(c1.x-c2.x,c1.y-c2.y))}
     const sameIsl=island[idx(cA.x,cA.y)]===island[idx(cB.x,cB.y)];
     if(A.wars.has(Bk.id)){const since=G.year-A.wars.get(Bk.id);if(since>4&&chance(.1/era.w)){A.wars.delete(Bk.id);Bk.wars.delete(A.id);addNews(`🕊️ <b style="color:${A.color}">${A.name}</b> y <b style="color:${Bk.color}">${Bk.name}</b> firman la paz.`,cA.x,cA.y)}}
-    else if(G.laws.war&&(sameIsl&&near<70||near<110&&tech(A.id,'Navegación')&&tech(Bk.id,'Navegación'))&&!A.allies.has(Bk.id)&&G.year>6&&chance(.09*era.w*(A.race===Bk.race?.5:1))){declareWar(A,Bk)}
+    else if(G.laws.war&&(sameIsl&&near<110||near<120&&tech(A.id,'Navegación')&&tech(Bk.id,'Navegación'))&&!A.allies.has(Bk.id)&&G.year>6&&chance(.09*era.w*(A.race===Bk.race?.5:1))){declareWar(A,Bk)}
     else if(G.laws.diplomacy&&!A.allies.has(Bk.id)&&chance(.007*(A.race===Bk.race?3:1)/era.w)){A.allies.add(Bk.id);Bk.allies.add(A.id);addNews(`🤝 <b style="color:${A.color}">${A.name}</b> y <b style="color:${Bk.color}">${Bk.name}</b> forman una alianza.`,cA.x,cA.y)}
     else if(A.allies.has(Bk.id)&&chance(.012+.03*era.w)){A.allies.delete(Bk.id);Bk.allies.delete(A.id);addNews(`💔 Se rompe la alianza entre <b style="color:${A.color}">${A.name}</b> y <b style="color:${Bk.color}">${Bk.name}</b>.`,cA.x,cA.y)}
   }
