@@ -62,17 +62,49 @@ Todos los efectos de sonido se generan en tiempo real con WebAudio (sin archivos
 
 # Blockverse 🧱
 
-Juego de bloques en 3D estilo sandbox (inspirado en juegos como bloxd.io), hecho desde cero con **Three.js**: mundo infinito generado por procedimientos, texturas pixeladas creadas por código, romper y colocar bloques, vuelo y guardado automático en el navegador.
+Juego de bloques en 3D (inspirado en juegos como bloxd.io), hecho desde cero con **Three.js**. Tiene dos modos:
 
-Abre `blockverse/index.html` en un navegador moderno (necesita internet para cargar Three.js desde cdnjs). Funciona con teclado y ratón.
+- **Supervivencia:** vida, hambre, daño por caída, minado con tiempo según la herramienta, fabricación, horno, cofres, animales, zombis nocturnos y muerte con reaparición.
+- **Creativo:** bloques infinitos, rotura instantánea y vuelo.
+
+Abre `blockverse/index.html` en un navegador moderno (necesita internet para cargar Three.js desde cdnjs). Se juega con teclado y ratón; el mundo se guarda solo en el navegador.
+
+## Controles
 
 | Tecla / acción | Efecto |
 |---|---|
 | `WASD` | Moverse |
-| `Espacio` | Saltar (doble toque: volar) |
+| `Espacio` | Saltar (creativo: doble toque para volar) |
 | `Shift` | Correr / bajar volando |
-| `F` | Activar / desactivar vuelo |
-| Clic izquierdo / derecho | Romper / colocar bloque |
-| `1`–`9` o rueda | Elegir bloque |
-| `E` | Inventario de bloques |
+| Clic izquierdo (mantener) | Minar / atacar |
+| Clic derecho | Colocar bloque, comer (mantener) o abrir mesa, horno y cofre |
+| `1`–`9` o rueda | Elegir objeto |
+| `E` | Inventario y fabricación 2×2 (creativo: paleta de objetos) |
+| `Q` | Tirar el objeto de la mano |
 | `Esc` | Pausa |
+
+En el inventario: clic toma o suelta una pila, clic derecho toma la mitad o deja uno, y Shift+clic mueve rápido.
+
+## Cómo empezar a sobrevivir
+
+1. Rompe troncos con la mano y conviértelos en **tablones** (1 tronco → 4 tablones).
+2. Con 4 tablones haz una **mesa de trabajo**, colócala y ábrela con clic derecho.
+3. Fabrica **palos** (2 tablones en vertical) y un **pico de madera** (3 tablones arriba, 2 palos en el centro).
+4. Mina piedra para conseguir **roca** y haz herramientas de piedra y un **horno** (8 de roca en anillo).
+5. Baja a las cuevas: el **hierro** necesita pico de piedra y el **diamante**, pico de hierro. Funde el hierro en el horno usando carbón o madera como combustible.
+6. Come manzanas (caen de las hojas) o carne de cerdos y vacas; en el horno la carne se cocina y alimenta más.
+7. De noche salen **zombis**: construye un refugio o hazles frente con una espada. Se queman con el sol.
+
+## Recetas
+
+| Objeto | Receta |
+|---|---|
+| Tablones ×4 | 1 tronco |
+| Palos ×4 | 2 tablones en vertical |
+| Mesa de trabajo | 2×2 tablones |
+| Cofre | 8 tablones en anillo |
+| Horno | 8 de roca en anillo |
+| Ladrillo ×4 | 2×2 piedra |
+| Pico / hacha / pala / espada | Material (tablones, roca, lingote de hierro o diamante) + palos, con la forma clásica |
+
+**Horno:** hierro en bruto → lingote · roca → piedra · arena → vidrio · tronco → carbón · carne cruda → carne asada.
