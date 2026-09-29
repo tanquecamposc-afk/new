@@ -243,7 +243,7 @@ function construirMallaChunk(ch){
   ch.sucio=false;
   const poner=(clave,geo,mat)=>{
     if(ch[clave]){ch[clave].geometry.dispose();if(geo)ch[clave].geometry=geo;else{escena.remove(ch[clave]);ch[clave]=null;}}
-    else if(geo){const m=new THREE.Mesh(geo,mat);m.position.set(ch.cx*CX,0,ch.cz*CZ);escena.add(m);ch[clave]=m;}
+    else if(geo){const m=new THREE.Mesh(geo,mat);m.position.set(ch.cx*CX,0,ch.cz*CZ);m.layers.enable(1);escena.add(m);ch[clave]=m;}
   };
   poner('mallaO',g.opaca,matOpaco);
   poner('mallaT',g.trans,matTrans);

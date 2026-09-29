@@ -20,11 +20,11 @@ texAtlas.magFilter=THREE.NearestFilter; texAtlas.minFilter=THREE.NearestFilter; 
 
 const VS_BLOQUES=`
 attribute vec3 luz; attribute vec4 tinte;
-uniform float uTiempo;
-varying vec2 vUv; varying vec3 vLuz; varying vec4 vTinte; varying vec3 vWPos;
+uniform float uTiempo; uniform mat4 uSombraMat;
+varying vec2 vUv; varying vec3 vLuz; varying vec4 vTinte; varying vec3 vWPos; varying vec4 vSombra; varying float vMece;
 #include <fog_pars_vertex>
 void main(){
-  vUv=uv; vLuz=luz; vTinte=vec4(tinte.rgb,mod(tinte.w,10.0));
+  vUv=uv; vLuz=luz; vTinte=vec4(tinte.rgb,mod(tinte.w,10.0)); vMece=(tinte.w>9.5&&tinte.w<19.5)?1.0:0.0;
   vec3 p=position;
   vec3 w=p+vec3(modelMatrix[3][0],modelMatrix[3][1],modelMatrix[3][2]);
   if(tinte.w>19.5){ // hojas: vaivén suave con el viento
@@ -32,14 +32,28 @@ void main(){
   else if(tinte.w>9.5){
     p.x+=sin(uTiempo*1.8+w.x*.7+w.z*.5)*.06; p.z+=cos(uTiempo*1.4+w.x*.4+w.z*.8)*.06; }
   vWPos=(modelMatrix*vec4(p,1.0)).xyz;
+  vSombra=uSombraMat*vec4(vWPos,1.0);
   vec4 mvPosition=modelViewMatrix*vec4(p,1.0); gl_Position=projectionMatrix*mvPosition;
 #include <fog_vertex>
 }`;
 const FS_BLOQUES=`
-uniform sampler2D mapa; uniform vec3 uColSol; uniform vec3 uSolDir; uniform vec3 uReflejo; uniform float uDia; uniform float uAmb; uniform float uAlpha; uniform float uOpac; uniform float uTiempo; uniform vec2 uAtlas;
-varying vec2 vUv; varying vec3 vLuz; varying vec4 vTinte; varying vec3 vWPos;
+uniform sampler2D mapa; uniform sampler2D uMapaSombra; uniform float uVibrante; uniform float uTexelSombra; uniform vec3 uNieblaSol; uniform vec3 uCieloAmb;
+uniform vec3 uColSol; uniform vec3 uSolDir; uniform vec3 uReflejo; uniform float uDia; uniform float uAmb; uniform float uAlpha; uniform float uOpac; uniform float uTiempo; uniform vec2 uAtlas;
+varying vec2 vUv; varying vec3 vLuz; varying vec4 vTinte; varying vec3 vWPos; varying vec4 vSombra; varying float vMece;
+#include <packing>
 #include <fog_pars_fragment>
 float curva(float l){ return l<0.01 ? 0.0 : pow(0.8,(1.0-l)*15.0); }
+// Sombra del sol con filtrado suave (4 muestras) y desvanecida en el borde del mapa
+float sombraSol(float ndl){
+  if(uTexelSombra<0.0)return 1.0;
+  vec3 c=vSombra.xyz/vSombra.w*0.5+0.5;
+  if(c.x<0.0||c.x>1.0||c.y<0.0||c.y>1.0||c.z>1.0)return 1.0;
+  float bias=0.0009+0.0025*(1.0-ndl), suma=0.0;
+  for(int i=0;i<4;i++){vec2 o=vec2(i==1?1.0:i==2?-1.0:0.0,i==3?1.0:i==0?-1.0:0.0)*uTexelSombra*0.75;
+    suma+=(c.z-bias>unpackRGBAToDepth(texture2D(uMapaSombra,c.xy+o)))?0.0:1.0;}
+  float borde=smoothstep(0.0,0.08,min(min(c.x,1.0-c.x),min(c.y,1.0-c.y)));
+  return mix(1.0,suma*0.25,borde);
+}
 void main(){
   vec2 uv=vUv; float m=vTinte.w;
   if(m>2.5){
@@ -57,7 +71,15 @@ void main(){
   else if(m>1.5&&m<3.5) col*=vTinte.rgb;
   float s=curva(vLuz.r)*uDia; float b=curva(vLuz.g);
   b*=0.95+0.05*sin(uTiempo*7.0+vWPos.x*2.3+vWPos.z*1.7)*step(0.3,vLuz.g);  // parpadeo de antorchas
-  vec3 l=max(vec3(s)*uColSol,vec3(b,b*0.92,b*0.78));
+  vec3 cieloL=vec3(s)*uColSol;
+  if(uVibrante>0.5&&s>0.001){  // luz directa del sol con sombras + luz azulada del cielo
+    vec3 n=normalize(cross(dFdx(vWPos),dFdy(vWPos)));
+    float ndl=vMece>0.5?0.7:max(dot(n,uSolDir),0.0);
+    if(m>2.5&&m<3.5)ndl=max(ndl,0.5);
+    float sh=ndl>0.0?sombraSol(ndl):0.0;
+    cieloL=s*(uCieloAmb*0.62+uColSol*0.58*ndl*sh);
+  }
+  vec3 l=max(cieloL,vec3(b,b*0.92,b*0.78));
   l=pow(max(l,vec3(uAmb)),vec3(0.72));
   if(m>3.5&&m<4.5) l=vec3(1.0);
   vec4 salida=vec4(col*l*vLuz.b,t.a*uOpac);
@@ -72,12 +94,18 @@ void main(){
     salida.rgb+=vec3(1.0,.93,.78)*spec*1.4;
     salida.a=clamp(salida.a+fres*.35+spec,0.0,1.0);
   }
+  if(uVibrante>0.5){float lu=dot(salida.rgb,vec3(.299,.587,.114));salida.rgb=max(mix(vec3(lu),salida.rgb,1.14),0.0);}
   gl_FragColor=salida;
-  #include <fog_fragment>
+  #ifdef USE_FOG
+    float ff=smoothstep(fogNear,fogFar,fogDepth);
+    vec3 vd=normalize(vWPos-cameraPosition);
+    vec3 nieb=fogColor+uNieblaSol*pow(max(dot(vd,uSolDir),0.0),6.0);  // la niebla brilla del lado del sol
+    gl_FragColor.rgb=mix(gl_FragColor.rgb,nieb,ff);
+  #endif
 }`;
 function materialBloques(transparente){
   const m=new THREE.ShaderMaterial({
-    uniforms:THREE.UniformsUtils.merge([THREE.UniformsLib.fog,{mapa:{value:null},uDia:{value:1},uAmb:{value:.02},uAlpha:{value:transparente?.02:.5},uOpac:{value:1},uColSol:{value:new THREE.Vector3(1,1,1)},uSolDir:{value:new THREE.Vector3(0,1,0)},uReflejo:{value:new THREE.Color(0x8ecbff)},uTiempo:{value:0},uAtlas:{value:new THREE.Vector2(ATW,ATH)}}]),
+    uniforms:THREE.UniformsUtils.merge([THREE.UniformsLib.fog,{mapa:{value:null},uDia:{value:1},uAmb:{value:.02},uAlpha:{value:transparente?.02:.5},uOpac:{value:1},uColSol:{value:new THREE.Vector3(1,1,1)},uMapaSombra:{value:null},uSombraMat:{value:new THREE.Matrix4()},uVibrante:{value:0},uTexelSombra:{value:1/2048},uNieblaSol:{value:new THREE.Color(0,0,0)},uCieloAmb:{value:new THREE.Vector3(.85,.92,1.08)},uSolDir:{value:new THREE.Vector3(0,1,0)},uReflejo:{value:new THREE.Color(0x8ecbff)},uTiempo:{value:0},uAtlas:{value:new THREE.Vector2(ATW,ATH)}}]),
     vertexShader:VS_BLOQUES, fragmentShader:FS_BLOQUES, fog:true, transparent:transparente, depthWrite:!transparente,
     side:transparente?THREE.DoubleSide:THREE.FrontSide});
   m.extensions={derivatives:true};
