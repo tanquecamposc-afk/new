@@ -36,7 +36,7 @@ function carne(elipse,linea,P,c,c2,hueso){elipse(8.5,8,6,4.2,c,14);linea(5,7,12,
 function muslo(elipse,linea,P,c){elipse(9,7,4.5,4,c,12);linea(5,10,3,13,[236,230,214]);P(2,13,[236,230,214]);P(3,14,[236,230,214]);}
 function dibujarItem(id){
   const it=ITEMS[id];
-  if(it.herr)return dibujarHerramienta(it);
+  if(it.herr&&!it.iconoPropio)return dibujarHerramienta(it);
   if(it.armadura)return dibujarArmadura(it);
   return lienzo16(id*31,({P,linea,elipse,rect,rnd})=>{
     switch(id){
@@ -122,6 +122,10 @@ function dibujarItem(id){
       case 534: elipse(8,9,5,4,[92,70,64],16); for(let k=0;k<6;k++)P(5+rnd()*6,6+rnd()*5,[140,110,96]); break;
       case 535: lingote(P,rect,[82,74,80]); break;
       case 536: for(let y=3;y<=13;y++){const w=Math.round(3-Math.abs(y-8)*.5);for(let x=8-w;x<=8+w;x++)P(x,y,[20,60+y*6,80+y*6]);} P(8,6,[140,250,255]); break;
+      case 538: elipse(8,8,5,5,[190,230,240],10); elipse(8,8,3,3,[120,190,220],8); linea(5,8,11,8,[240,255,255]); P(8,5,[240,255,255]); break;
+      case 539: linea(4,12,12,4,[210,240,250]); linea(5,12,12,5,[140,190,220]); break;
+      case 540: linea(3,13,10,6,[120,90,60]); linea(4,13,10,7,[90,64,40]); rect(9,2,14,7,[110,112,122]); rect(10,3,13,6,[150,154,166]); P(14,2,[200,204,214]); break;
+      case 541: elipse(5,6,3,3,[230,160,70],8); for(let x=7;x<=13;x++)P(x,9,[230,160,70]); P(12,10,[230,160,70]); P(10,10,[230,160,70]); P(5,6,[60,40,20]); break;
       default: elipse(8,8,4,4,[200,0,200],0);
     }
   });

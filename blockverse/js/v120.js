@@ -51,6 +51,7 @@ function generarV120(ch,info){
     }
   }
   construirCiudadesAntiguas(ch);
+  construirCamarasPrueba(ch);
   // ---- Superficie: pozos, pirámides y ruinas ----
   const centro=info[8*CX+8], hC=centro.h;
   const pozo=centro.bioma===BIOMA.desierto&&hash2(cx,cz,s+960)<.01;
@@ -314,7 +315,7 @@ const IA_EXTRA={
     if(m.olfatoT<=0){m.olfatoT=5;if(c.dist3<8&&objetivoValido()){m.ira=Math.min(150,m.ira+25);m.calmaT=0;}}
     // Oscuridad pulsante alrededor
     m.oscT=(m.oscT||0)-dt;
-    if(m.oscT<=0){m.oscT=6;if(c.dist3<20&&estado!=='muerto')efectos.oscuridad={t:8,n:1};}
+    if(m.oscT<=0){m.oscT=6;if(c.dist3<20&&objetivoValido())efectos.oscuridad={t:8,n:1};}
     // Latido
     m.latidoT=(m.latidoT||0)-dt;
     const ritmo=1.4-Math.min(1,m.ira/100)*.9;
@@ -449,6 +450,7 @@ UI_EXTRA.herreria={
 
 /* ---------- Clic derecho: camellos, barro y pincel ---------- */
 function usarDerechoV120(p,id,it){
+  if(usarDerechoV121(p,id,it))return true;
   const m=apuntadoEnt&&apuntadoEnt.mob;
   if(m&&m.def.montable&&id!==m.def.comida&&!jugador.agachado){montar(m);return true;}
   if(id===501&&apuntado&&apuntado.b===B.tierra){
@@ -473,6 +475,7 @@ function particulasCerezo(dt){
 
 /* ---------- Localizar estructuras y biomas nuevos ---------- */
 function localizarV120(q){
+  const t=localizarV121(q); if(t)return t;
   const j=jugador.pos;
   if(q.startsWith('anc')||q.startsWith('ciudad')){
     const l=ciudadesAntiguasCerca(j.x-3000,j.z-3000,j.x+3000,j.z+3000).sort((a,b)=>Math.hypot(a.x-j.x,a.z-j.z)-Math.hypot(b.x-j.x,b.z-j.z));
@@ -494,6 +497,7 @@ function localizarV120(q){
 /* ---------- Bucle ---------- */
 function actualizarV120(dt){
   procesarVibraciones(dt);
+  actualizarPruebas(dt);
   actualizarPincel(dt);
   particulasCerezo(dt);
 }

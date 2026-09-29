@@ -113,9 +113,11 @@ function generarBotin(tipo,rnd){
       [344,1,1,3],[423,1,1,3],[314,1,1,3],[304,1,1,3],[433,1,1,3],[I.cohete||523,2,6,6],[I.perlaEnder,1,2,4]],
     fortalezaNether:[[I.diamante,1,3,5],[I.lingoteHierro,1,5,5],[I.lingoteOro,1,3,15],[330+3,1,1,5],[410+1,1,1,5],[I.mechero,1,1,5],
       [B.obsidiana,2,4,2],[I.polvoBlaze,1,3,6],[I.cuerda,2,6,6],[533,1,1,6],[534,1,1,2]],
+    piramide:[[I.hueso,4,6,25],[I.carnePodrida,3,7,16],[I.polvora,1,8,10],[B.arena,1,8,10],[I.cuerda,1,8,10],[I.lingoteHierro,1,5,15],
+      [I.lingoteOro,2,7,15],[I.esmeralda,1,3,15],[I.diamante,1,3,5],[I.manzanaDorada,1,1,6],[I.libro,1,1,5],[304,1,1,2],[403,1,1,2]],
     ciudadAntigua:[[I.manzanaDorada,1,2,6],[536,1,3,12],[B.sensorSculk,1,3,10],[B.catalizador,1,2,5],[I.hueso,1,15,20],[I.harinaHueso,1,15,10],
       [I.carbon,6,15,10],[B.farolAlmas,1,4,8],[423,1,1,3],[344,1,1,4],[I.perlaEnder,1,3,6],[I.lingoteHierro,1,4,6],[533,1,1,1]],
-  }[tipo];
+  }[tipo]||[[I.pan,1,2,1]];
   const cofre=new Array(27).fill(null), total=tablas.reduce((a,t)=>a+t[3],0);
   const n=4+Math.floor(rnd()*5);
   for(let i=0;i<n;i++){
@@ -319,9 +321,9 @@ function ponerArbolTipo(poner,tipo,wx,h,wz,r){
       for(let i=0;i<3;i++){bx2+=dx;bz2+=dz;if(i>0)by++;tronco(bx2,by,bz2,B.troncoCerezo);}
       copas.push([bx2,by,bz2]);}
     for(const [cx2,cy2,cz2] of copas){
-      for(let dx=-4;dx<=4;dx++)for(let dz=-4;dz<=4;dz++)for(let dy=-1;dy<=2;dy++){
-        const d=(dx*dx+dz*dz)/16+(dy-.5)*(dy-.5)/2.2;if(d<=1+r()*.15)hoja(cx2+dx,cy2+dy,cz2+dz,B.hojasCerezo);}
-      for(let k=0;k<7;k++)hoja(cx2+Math.floor(r()*7)-3,cy2-2,cz2+Math.floor(r()*7)-3,B.hojasCerezo);
+      for(let dx=-3;dx<=3;dx++)for(let dz=-3;dz<=3;dz++)for(let dy=-1;dy<=2;dy++){
+        const d=(dx*dx+dz*dz)/10.5+(dy-.5)*(dy-.5)/2.2;if(d<=1+r()*.15)hoja(cx2+dx,cy2+dy,cz2+dz,B.hojasCerezo);}
+      for(let k=0;k<5;k++)hoja(cx2+Math.floor(r()*5)-2,cy2-2,cz2+Math.floor(r()*7)-3,B.hojasCerezo);
     }
   }else if(tipo==='mangle'){
     const base=h+2+Math.floor(r()*2), cima=base+5+Math.floor(r()*4);
@@ -336,7 +338,7 @@ function ponerArbolTipo(poner,tipo,wx,h,wz,r){
 const ARBOLES_BIOMA=[
   null,null,[.003,r=>r<.15?'robleGrande':'roble'],[.05,r=>r<.2?'abedul':r<.3?'robleGrande':'roble'],null,[.004,()=>'abeto'],[.006,()=>'abeto'],
   [.045,()=>'abeto'],[.05,r=>r<.08?'roble':'abedul'],[.1,r=>r<.45?'arbusto':r<.55?'robleGrande':'jungla'],[.006,()=>'acacia'],[.014,()=>'pantano'],null,null,
-  [.022,()=>'cerezo'],[.075,()=>'mangle']];
+  [.012,()=>'cerezo'],[.075,()=>'mangle']];
 
 /* ---------- Superficie ---------- */
 function generarSuperficie(ch){

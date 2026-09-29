@@ -59,7 +59,7 @@ const elEfectos=document.createElement('div');
 elEfectos.id='efectosHUD';
 elEfectos.style.cssText='position:fixed;right:10px;top:10px;display:flex;flex-direction:column;gap:4px;pointer-events:none;font:12px/1.2 ui-monospace,Consolas,monospace;z-index:5';
 document.body.appendChild(elEfectos);
-const COLOR_EFECTO={fuerza:'#c84040',rapidez:'#7cafc6',regeneracion:'#cd5cab',resistenciaFuego:'#e49a3a',veneno:'#4e9331',hambre:'#587653'};
+const COLOR_EFECTO={fuerza:'#c84040',rapidez:'#7cafc6',regeneracion:'#cd5cab',resistenciaFuego:'#e49a3a',veneno:'#4e9331',hambre:'#587653',oscuridad:'#292929'};
 let hudEfT=0;
 function pintarEfectos(){
   const ks=Object.keys(efectos);
@@ -104,7 +104,7 @@ const esFrasco=id=>id===500||id===501||id===502||!!(ITEMS[id]&&ITEMS[id].pocion)
 /* ---------- Yunque ---------- */
 const MAT_REPARA_HERR=[B.tablones,B.roca,I.lingoteHierro,I.lingoteOro,I.diamante,535], MAT_REPARA_ARM=[I.cuero,I.lingoteOro,I.lingoteHierro,I.diamante,535];
 function materialReparacion(id){
-  const it=ITEMS[id]; if(it.elitros)return I.cuero;
+  const it=ITEMS[id]; if(it.elitros)return I.cuero; if(id===540)return 539;
   if(it.herr)return MAT_REPARA_HERR[it.herr.mat];
   if(it.armadura)return MAT_REPARA_ARM[it.armadura.mat];
   return 0;

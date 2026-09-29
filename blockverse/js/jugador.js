@@ -113,6 +113,7 @@ function fisicaJugador(dt,entrada){
   pasoFisico(j,dt);
   if(j.suelo&&j.vuela)j.vuela=false;
   if(j.suelo||j.vuela||j.enAgua||j.enLava||j.enEscalera){
+    if(j.alturaViento!==undefined){j.maxY=Math.min(j.maxY,j.alturaViento);j.alturaViento=undefined;}
     const caida=j.maxY-j.pos.y;
     if(sup&&j.suelo&&!j.vuela&&!j.enAgua&&caida>3.2){
       const bajo=getBloque(Math.floor(j.pos.x),Math.floor(j.pos.y-.2),Math.floor(j.pos.z));
@@ -380,6 +381,7 @@ function atacar(){
   const critico=carga>.9&&!jugador.suelo&&jugador.vel.y<0&&!jugador.enAgua&&!jugador.vuela;
   if(critico){dano*=1.5;sonar('critico');}
   if(efectos.fuerza)dano+=3;
+  if(h&&h.tipo==='maza')dano+=impactoMaza(apuntadoEnt.mob||null);
   if(!supervivencia()&&h&&h.tipo==='espada')dano=Math.max(dano,1);
   agotamiento+=.1;
   if(apuntadoEnt.dragon){dragon.herir(dano,'jugador');gastarObjetoEnMano(h&&h.tipo==='espada'?1:2);return true;}

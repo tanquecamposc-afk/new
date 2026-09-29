@@ -375,6 +375,20 @@ function tile(nombre,gen){T[nombre]=_genTiles.length;_genTiles.push(gen);}
   tile('netheriteBlock',bloqueMetal([70,64,68]));
   tile('smithingTop',(p,r)=>cada((x,y)=>{const k=n(r,8);const b=x<1||y<1||x>14||y>14;p(x,y,(b?40:60)+k,(b?40:58)+k,(b?48:66)+k);}));
   tile('smithingSide',(p,r)=>{tablones(p,r,[120,86,60]);cada((x,y)=>{if(y<4)p(x,y,60+n(r,8),58+n(r,8),66+n(r,8));if(y>=4&&y<6)p(x,y,190,70,60);});});
+  /* ---- 1.21: cámaras de prueba ---- */
+  tile('tuff',(p,r)=>{const s=S();cada((x,y)=>{const k=n(r,12)+(pn(x,y,4,s)-.5)*18;const g=r()<.06?-18:0;p(x,y,108+k+g,110+k+g,100+k+g);});});
+  tile('tuffBricks',(p,r)=>ladrillos(p,r,[112,116,104],[70,72,64],4,8));
+  tile('cutCopper',(p,r)=>cada((x,y)=>{const k=n(r,10);const b=x%8===7||y%8===7||x%8===0||y%8===0;p(x,y,(b?170:200)+k,(b?90:110)+k,(b?60:74)+k);}));
+  tile('copperBulb',(p,r)=>cada((x,y)=>{const k=n(r,8);const borde=x<2||y<2||x>13||y>13;const cen=Math.hypot(x-7.5,y-7.5)<4.5;
+    p(x,y,borde?190+k:cen?255:236,borde?100+k:cen?236:170+k,borde?66+k:cen?150:90);}));
+  tile('trialSpawner',(p,r)=>cada((x,y)=>{const k=n(r,8);const reja=x%4===0||y%4===0;const borde=x<1||y<1||x>14||y>14;
+    if(borde)return p(x,y,60+k,64+k,58+k);if(reja)p(x,y,90+k,96+k,86+k);else p(x,y,Math.hypot(x-7.5,y-7.5)<4?230:40,Math.hypot(x-7.5,y-7.5)<4?140:30,30,Math.hypot(x-7.5,y-7.5)<4?255:0);}));
+  tile('trialSpawnerOff',(p,r)=>cada((x,y)=>{const k=n(r,8);const reja=x%4===0||y%4===0;const borde=x<1||y<1||x>14||y>14;
+    if(borde)return p(x,y,60+k,64+k,58+k);if(reja)p(x,y,90+k,96+k,86+k);else p(x,y,0,0,0,0);}));
+  tile('vault',(p,r)=>cada((x,y)=>{const k=n(r,8);const borde=x<2||y<2||x>13||y>13;const ojo=Math.hypot(x-7.5,y-7.5)<3;
+    p(x,y,borde?70+k:ojo?120:44+k,borde?74+k:ojo?220:48+k,borde?66+k:ojo?255:44+k);}));
+  tile('vaultOpen',(p,r)=>cada((x,y)=>{const k=n(r,8);const borde=x<2||y<2||x>13||y>13;p(x,y,borde?70+k:30,borde?74+k:32,borde?66+k:30);}));
+  tile('heavyCore',(p,r)=>cada((x,y)=>{const k=n(r,10);const b=x%5===0||y%5===0;p(x,y,(b?60:88)+k,(b?62:90)+k,(b?70:100)+k);}));
   tile('pathSide',(p,r)=>{tierra(p,r);cada((x,y)=>{if(y<2){const k=n(r,12);p(x,y,148+k,122+k,66+k);}});});
 })();
 

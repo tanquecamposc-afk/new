@@ -239,6 +239,16 @@ bloque(1308,'vasija','Vasija decorada','decoratedPot',{forma:'cajas',cajas:[[.12
 bloque(1309,'restosAncestrales','Restos ancestrales',tx('ancientDebrisTop','ancientDebrisTop','ancientDebrisSide'),{dureza:30,herr:'pico',nivel:4,resistencia:1200});
 bloque(1310,'bloqueNetherite','Bloque de netherite','netheriteBlock',{dureza:50,herr:'pico',nivel:4,resistencia:1200});
 bloque(1311,'mesaHerreria','Mesa de herrería',tx('smithingTop','planks','smithingSide'),{dureza:2.5,herr:'hacha',inter:'herreria',inflamable:true});
+/* ---------- 1.21 "Tricky Trials": cámaras de prueba ---------- */
+bloque(1312,'toba','Toba','tuff',{dureza:1.5,herr:'pico',nivel:1,resistencia:6});
+bloque(1313,'ladrillosToba','Ladrillos de toba','tuffBricks',{dureza:1.5,herr:'pico',nivel:1,resistencia:6});
+bloque(1314,'cobreCortado','Cobre cortado','cutCopper',{dureza:3,herr:'pico',nivel:2,resistencia:6});
+bloque(1315,'bombillaCobre','Bombilla de cobre','copperBulb',{dureza:3,herr:'pico',nivel:2,luz:15,resistencia:6});
+bloque(1316,'generadorPruebas','Generador de pruebas','trialSpawner',{trans:true,opaco:false,dureza:50,herr:'pico',suelta:0,luz:6,resistencia:50});
+bloque(1317,'generadorPruebasOff','Generador de pruebas','trialSpawnerOff',{trans:true,opaco:false,dureza:50,herr:'pico',suelta:0,resistencia:50});
+bloque(1318,'boveda','Bóveda',tx('vault','tuffBricks','vault'),{dureza:50,herr:'pico',suelta:0,luz:6,resistencia:50});
+bloque(1319,'bovedaAbierta','Bóveda',tx('vaultOpen','tuffBricks','vaultOpen'),{dureza:50,herr:'pico',suelta:0,resistencia:50});
+bloque(1320,'nucleoPesado','Núcleo pesado','heavyCore',{forma:'cajas',cajas:[[.25,0,.25,.75,.5,.75]],opaco:false,dureza:10,herr:'pico',resistencia:1200});
 const NB=BLOQUES.length;
 const SOLIDO=new Uint8Array(NB), OPACO=new Uint8Array(NB), TRANS=new Uint8Array(NB), LUZB=new Uint8Array(NB),
       OPAC_LUZ=new Uint8Array(NB), OCLUYE=new Uint8Array(NB), FORMA=new Uint8Array(NB), REEMPL=new Uint8Array(NB);
@@ -264,7 +274,7 @@ const nivelLiquido=id=>BLOQUES[id].nivelL;
    Registro de objetos
    ========================================================= */
 const ITEMS=[], I={};
-const esVariante=i=>(i>=130&&i<=132)||(i>=134&&i<=136)||(i>=138&&i<=140)||(i>=146&&i<=148)||(i>=149&&i<=168)||(i>=1192&&i<=1212)||i===1283||i===1216||i===1218||i===1220||i===1223||(i>=1224&&i<=1259&&i!==1227&&i!==1245)||(i>=1261&&i<=1269)||(i>=1271&&i<=1273)||i===1287;
+const esVariante=i=>(i>=130&&i<=132)||(i>=134&&i<=136)||(i>=138&&i<=140)||(i>=146&&i<=148)||(i>=149&&i<=168)||(i>=1192&&i<=1212)||i===1283||i===1216||i===1218||i===1220||i===1223||(i>=1224&&i<=1259&&i!==1227&&i!==1245)||(i>=1261&&i<=1269)||(i>=1271&&i<=1273)||i===1287||i===1317||i===1319;
 BLOQUES.forEach((b,i)=>{if(b&&!b.liquido&&b.forma!=='portal'&&i!==86&&!(i>=41&&i<=48)&&!esVariante(i))ITEMS[i]={nombre:b.nombre,bloque:true,max:64,clave:b.clave};});
 function item(id,clave,nombre,props){ITEMS[id]=Object.assign({nombre,max:64,clave},props);I[clave]=id;}
 item(200,'palo','Palo'); item(201,'carbon','Carbón'); item(202,'hierroBruto','Hierro en bruto'); item(203,'lingoteHierro','Lingote de hierro');
@@ -308,6 +318,10 @@ item(531,'fragPeligro','Fragmento de cerámica: peligro'); item(532,'fragAmigo',
 item(533,'plantillaNetherite','Plantilla de mejora de netherite');
 item(534,'chatarraNetherite','Chatarra de netherite',{ignifugo:true}); item(535,'lingoteNetherite','Lingote de netherite',{ignifugo:true});
 item(536,'fragmentoEco','Fragmento de eco');
+// 1.21
+item(538,'cargaViento','Carga de viento'); item(539,'varaBreeze','Vara de breeze');
+item(540,'maza','Maza',{max:1,dur:500,tipoHerr:'maza',iconoPropio:true,herr:{tipo:'maza',nivel:0,vel:1,dano:6,cad:.6,mat:2,enc:15}});
+item(541,'llavePrueba','Llave de prueba');
 
 const MATS=[
   {n:'madera',nivel:1,vel:2,dur:59,enc:15,col:[176,138,82]},
@@ -458,6 +472,9 @@ receta(['BB','BB'],{B:B.barro},B.ladrillosBarro,4);
 receta(['.L.','L.L','.L.'],{L:I.ladrillo},B.vasija);
 receta(['.I.','IAI','.I.'],{I:I.lingoteHierro,A:B.arenaAlmas},B.farolAlmas);
 receta(['EEE','ECE','EEE'],{E:536,C:I.lingoteCobre},B.catalizador);
+receta(['N','V'],{N:B.nucleoPesado,V:539},540); recetaSin([539],538,4);
+receta(['TT','TT'],{T:B.toba},B.ladrillosToba,4); receta(['CC','CC'],{C:I.lingoteCobre},B.cobreCortado);
+receta(['.C.','CVC','.R.'],{C:B.cobreCortado,V:I.varaBlaze,R:I.redstone},B.bombillaCobre,4);
 // Los tablones de cerezo y mangle sirven en todas las recetas de madera
 const EQUIV_RECETA={[B.tablonesCerezo]:B.tablones,[B.tablonesMangle]:B.tablones,[B.troncoCerezo]:B.tronco,[B.troncoMangle]:B.tronco};
 
@@ -510,4 +527,4 @@ function resultadoFermentar(base,ing){
   return 0;
 }
 const DURACION_POCION={curacion:0,fuerza:180,rapidez:180,regeneracion:45,resistenciaFuego:180};
-const NOMBRE_EFECTO={fuerza:'Fuerza',rapidez:'Rapidez',regeneracion:'Regeneración',resistenciaFuego:'Resistencia al fuego',veneno:'Veneno',hambre:'Hambre'};
+const NOMBRE_EFECTO={fuerza:'Fuerza',rapidez:'Rapidez',regeneracion:'Regeneración',resistenciaFuego:'Resistencia al fuego',veneno:'Veneno',hambre:'Hambre',oscuridad:'Oscuridad'};
