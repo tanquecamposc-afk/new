@@ -129,6 +129,24 @@ function actualizarHudOB(ob){
   document.getElementById('obCuenta').textContent=sig?`${ob.n-F.n} / ${sig.n-F.n} bloques · total ${ob.n}`:`Bloques rotos: ${ob.n}`;
 }
 
+// El bloque reaparece en el mismo instante en que se rompe, para no caer por el hueco
+let obRegenerando=false;
+const _setBloqueBase=setBloque;
+setBloque=function(x,y,z,id,opc){
+  const r=_setBloqueBase(x,y,z,id,opc);
+  if(x===OB.x&&y===OB.y&&z===OB.z&&!obRegenerando&&(id===0||esLiquido(id))&&dim===DIMS.superficie&&mundoEstado&&mundoEstado.oneBlock){
+    obRegenerando=true;
+    try{regenerarOB(mundoEstado.oneBlock);}finally{obRegenerando=false;}
+  }
+  return r;
+};
+// Red de seguridad: si el jugador queda metido en el bloque mágico, sube encima
+function sostenerJugadorOB(){
+  const j=jugador.pos;
+  if(Math.abs(j.x-OB.x-.5)<.8&&Math.abs(j.z-OB.z-.5)<.8&&j.y>OB.y-.9&&j.y<OB.y+1&&SOLIDO[getBloque(OB.x,OB.y,OB.z)]){
+    j.y=OB.y+1; if(jugador.vel.y<0)jugador.vel.y=0; jugador.maxY=j.y; jugador.suelo=true;
+  }
+}
 function actualizarOneBlock(dt){
   const ob=mundoEstado&&mundoEstado.oneBlock;
   hudOB.classList.toggle('oculto',!ob||estado==='menu');
@@ -136,7 +154,8 @@ function actualizarOneBlock(dt){
   obHudT-=dt; if(obHudT<=0){obHudT=.2;actualizarHudOB(ob);}
   if(dim!==DIMS.superficie)return;
   const b=getBloqueSiCargado(OB.x,OB.y,OB.z); if(b<0)return;
-  if(b===0||esLiquido(b))regenerarOB(ob);
+  if(b===0||esLiquido(b)){obRegenerando=true;try{regenerarOB(ob);}finally{obRegenerando=false;}}
+  sostenerJugadorOB();
 }
 const _actualizarFinalOB=actualizarFinal;
 actualizarFinal=function(dt){_actualizarFinalOB(dt);actualizarOneBlock(dt);};
