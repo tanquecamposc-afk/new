@@ -43,9 +43,29 @@ const NOMBRE_MOB={cerdo:'Cerdo',vaca:'Vaca',oveja:'Oveja',gallina:'Gallina',zomb
 const COCINADO={[I.cerdoCrudo]:I.cerdoAsado,[I.resCruda]:I.filete,[I.corderoCrudo]:I.corderoAsado,[I.polloCrudo]:I.polloAsado};
 
 /* ---------- Modelos ---------- */
-function parte(w,h,d,color,pivoteArriba){
+// Texturas en escala de grises que se multiplican por el color de cada pieza: dan relieve pixelado
+const TEX_MOB=(()=>{
+  const hacer=(tipo,sem)=>{
+    const c=document.createElement('canvas');c.width=c.height=16;const x=c.getContext('2d'),im=x.createImageData(16,16),r=mulberry32(sem);
+    for(let y=0;y<16;y++)for(let i=0;i<16;i++){
+      let v=232+(r()-.5)*22;
+      if(tipo==='lana')v=206+hash2(i>>1,y>>1,sem)*44+(r()-.5)*10;
+      if(tipo==='pelo')v=226+(((i+y*3)%5===0)?-26:0)+(r()-.5)*14;
+      if(tipo==='corteza')v=214+((i%4===0)?-34:0)+(r()-.5)*26;
+      if(y<3)v+=10; if(y>12)v-=12;
+      if(i===0||y===0||i===15||y===15)v-=46; else if(i===1||y===1)v+=10;
+      const k=(y*16+i)*4; im.data[k]=im.data[k+1]=im.data[k+2]=clamp(v,0,255); im.data[k+3]=255;
+    }
+    x.putImageData(im,0,0);
+    const t=new THREE.CanvasTexture(c);t.magFilter=THREE.NearestFilter;t.minFilter=THREE.NearestFilter;return t;
+  };
+  return {piel:hacer('piel',11),lana:hacer('lana',12),pelo:hacer('pelo',13),corteza:hacer('corteza',14)};
+})();
+const matSombra=new THREE.MeshBasicMaterial({color:0,transparent:true,opacity:.32,depthWrite:false});
+function parte(w,h,d,color,pivoteArriba,tex='piel'){
   const g=new THREE.BoxGeometry(w,h,d); if(pivoteArriba)g.translate(0,-h/2,0);
-  const m=new THREE.Mesh(g,new THREE.MeshLambertMaterial({color}));m.userData.base=new THREE.Color(color);return m;
+  const chica=Math.max(w,h,d)<.16;
+  const m=new THREE.Mesh(g,new THREE.MeshLambertMaterial(chica||!tex?{color}:{color,map:TEX_MOB[tex]}));m.userData.base=new THREE.Color(color);return m;
 }
 const PROFESIONES={
   granjero:{nombre:'Granjero',ropa:0x7a5a32,extra:0xd8c070},
@@ -67,7 +87,9 @@ function ofertasProfesion(pr,r){
 function modeloMob(tipo,opc={}){
   const g=new THREE.Group(), piernas=[], brazos=[], extra={};
   const pon=(m,x,y,z)=>{m.position.set(x,y,z);g.add(m);return m;};
-  const ojos=(y,z,sep,col=0x111111,t=.09)=>{pon(parte(t,t,.02,col),-sep,y,z);pon(parte(t,t,.02,col),sep,y,z);};
+  const ojos=(y,z,sep,col=0x111111,t=.09)=>{
+    if(col===0x111111||col===0x2a6a2a){pon(parte(t*1.9,t*1.1,.02,0xf4f4f0),-sep-t*.45,y,z-.003);pon(parte(t*1.9,t*1.1,.02,0xf4f4f0),sep+t*.45,y,z-.003);}
+    pon(parte(t,t,.025,col),-sep,y,z);pon(parte(t,t,.025,col),sep,y,z);};
   const cuadrupedo=(ancho,largo,altP,colP,grosor=.22)=>[[-1,-1],[1,-1],[-1,1],[1,1]].forEach(([a,b])=>{
     const p=pon(parte(grosor,altP,grosor,colP,true),a*ancho,altP,b*largo);p.userData.s=a*b;piernas.push(p);});
   const humanoide=(piel,camisa,pant,brazoCol,delgado=.25)=>{
@@ -77,22 +99,30 @@ function modeloMob(tipo,opc={}){
     [-1,1].forEach(s=>{const b=pon(parte(delgado,.75,delgado,brazoCol,true),s*(.25+delgado/2),1.5,0);b.userData.s=s;brazos.push(b);});
   };
   switch(tipo){
-    case 'cerdo':
-      cuadrupedo(.16,.26,.32,0xe79a9a,.2);
-      pon(parte(.58,.46,.86,0xf0a9a9),0,.55,0); extra.cabeza=pon(parte(.46,.44,.4,0xf0a9a9),0,.72,.58);
-      pon(parte(.24,.15,.06,0xd98585),0,.66,.8); ojos(.8,.785,.13); break;
-    case 'vaca':
-      cuadrupedo(.22,.36,.55,0x3b2718);
-      pon(parte(.72,.62,1.08,0x4a3222),0,.86,0); pon(parte(.74,.3,.42,0xeeeeee),0,.9,.12);
-      extra.cabeza=pon(parte(.46,.46,.36,0x4a3222),0,1.12,.68); pon(parte(.3,.18,.06,0xc9a58a),0,1.0,.87);
-      pon(parte(.08,.12,.08,0xdddddd),-.2,1.4,.66); pon(parte(.08,.12,.08,0xdddddd),.2,1.4,.66); ojos(1.2,.865,.14); break;
+    case 'cerdo':{
+      const [c1,c2,c3]={calida:[0xa8643a,0xb8703e,0x8a4e2a],fria:[0xc8b8a8,0xdccbb8,0xb09a8a]}[opc.variante]||[0xe79a9a,0xf0a9a9,0xd98585];
+      cuadrupedo(.16,.26,.32,c1,.2);
+      pon(parte(.58,.46,.86,c2,false,opc.variante==='fria'?'pelo':'piel'),0,.55,0); extra.cabeza=pon(parte(.46,.44,.4,c2),0,.72,.58);
+      pon(parte(.24,.15,.06,c3),0,.66,.8); pon(parte(.05,.06,.02,0x5a3030),-.06,.66,.832); pon(parte(.05,.06,.02,0x5a3030),.06,.66,.832);
+      if(opc.variante==='calida')pon(parte(.3,.1,.5,0x5a3a20),0,.79,.1);
+      ojos(.8,.785,.13); break;}
+    case 'vaca':{
+      const [c1,c2]={calida:[0x7a3a1a,0xa8582a],fria:[0x4a3020,0x6a4630]}[opc.variante]||[0x3b2718,0x4a3222];
+      const pelo=opc.variante==='fria'?'pelo':'piel';
+      cuadrupedo(.22,.36,.55,c1);
+      pon(parte(.72,.62,1.08,c2,false,pelo),0,.86,0); if(opc.variante!=='calida')pon(parte(.74,.3,.42,0xeeeeee),0,.9,.12);
+      if(opc.variante==='fria')pon(parte(.78,.2,1.1,c1,false,'pelo'),0,.52,0);
+      extra.cabeza=pon(parte(.46,.46,.36,c2,false,pelo),0,1.12,.68); pon(parte(.3,.18,.06,0xc9a58a),0,1.0,.87);
+      const cuerno=opc.variante==='calida'?[.1,.24,.1]:[.08,.12,.08];
+      pon(parte(...cuerno,0xe8e0cc),-.22,1.42,.66); pon(parte(...cuerno,0xe8e0cc),.22,1.42,.66); ojos(1.2,.865,.14); break;}
     case 'oveja':
       cuadrupedo(.2,.3,.5,0xe0cbb0,.2);
-      pon(parte(.8,.7,1.1,0xf4f4f4),0,.9,0); extra.cabeza=pon(parte(.4,.42,.46,0xe0cbb0),0,1.15,.62);
-      pon(parte(.46,.2,.3,0xf4f4f4),0,1.34,.56); ojos(1.18,.855,.12); break;
+      pon(parte(.8,.7,1.1,0xf4f4f4,false,'lana'),0,.9,0); extra.cabeza=pon(parte(.4,.42,.46,0xe0cbb0),0,1.15,.62);
+      pon(parte(.46,.2,.3,0xf4f4f4,false,'lana'),0,1.34,.56); ojos(1.18,.855,.12); break;
     case 'gallina':
       [-1,1].forEach(s=>{const p=pon(parte(.06,.3,.06,0xf0c040,true),s*.1,.3,0);p.userData.s=s;piernas.push(p);});
-      pon(parte(.36,.34,.48,0xf6f6f6),0,.45,0); extra.cabeza=pon(parte(.22,.3,.18,0xf6f6f6),0,.75,.24);
+      {const cg={calida:0xd08a44,fria:0x9aa0a8}[opc.variante]||0xf6f6f6;
+      pon(parte(.36,.34,.48,cg,false,'pelo'),0,.45,0); extra.cabeza=pon(parte(.22,.3,.18,cg),0,.75,.24);}
       pon(parte(.16,.08,.1,0xf0a030),0,.74,.37); pon(parte(.08,.1,.06,0xd02020),0,.64,.34);
       [-1,1].forEach(s=>{const b=pon(parte(.06,.26,.34,0xeeeeee,true),s*.2,.58,0);b.userData.s=s;brazos.push(b);}); ojos(.8,.335,.07,0x111111,.05); break;
     case 'zombi':
@@ -173,6 +203,8 @@ function crearMob(tipo,x,y,z,opc={}){
     yaw:Math.random()*6.28,yawObj:0,grupo:mod.g,piernas:mod.piernas,brazos:mod.brazos,extra:mod.extra,fase:0,t:0,mover:false,
     huir:0,flash:0,cd:Math.random(),fuego:0,fuegoT:0,inv:0,suelo:false,chocoH:false,sonidoT:4+Math.random()*10,luzT:0,
     vuela:!!def.vuela,enfadado:0,mecha:0,amor:0,bebe:opc.bebe?300:0,origen:new THREE.Vector3(x,y,z),ataqueT:0,rafaga:0,generador:opc.generador,golpeT:0,profesion:opc.profesion,ofertas:opc.ofertas};
+  m.variante=opc.variante;
+  if(!def.vuela){const s=new THREE.Mesh(new THREE.CircleGeometry(Math.max(.3,def.ancho*1.25),14),matSombra);s.rotation.x=-Math.PI/2;s.position.y=.03;s.renderOrder=1;m.grupo.add(s);}
   if(m.bebe)m.grupo.scale.setScalar(.5),m.ancho*=.5,m.alto*=.5;
   if(def.ia==='cubo'){const t=[.5,1,2][opc.tam??1];m.tam=opc.tam??1;m.ancho=t/2*.98;m.alto=t;m.vida=[1,4,16][m.tam];}
   escena.add(m.grupo); mobs.push(m); return m;
@@ -189,6 +221,7 @@ function limpiarMobs(){while(mobs.length)quitarMob(mobs[0]);for(const c of cadav
 /* ---------- Daño y muerte ---------- */
 function herirMob(m,d,dir,fuente,empuje=0){
   if(m.muerto)return;
+  if(m.def.invulnerable){golpeInvulnerable(m,fuente);return;}
   if(m.inv>0&&fuente!=='fuego')return;
   if(m.def.inmuneFuego&&(fuente==='fuego'||fuente==='lava'))return;
   m.vida-=d; m.flash=.3; m.inv=fuente==='fuego'?0:.5;
@@ -352,7 +385,7 @@ function actualizarMob(m,dt){
   else if(m.amor>0&&(m.pareja=buscarPareja(m))){
     const p=m.pareja, ddx=p.pos.x-m.pos.x, ddz=p.pos.z-m.pos.z, d2=Math.hypot(ddx,ddz);
     mover(m,d2>1?ddx:0,d2>1?ddz:0,def.vel);
-    if(d2<1.3&&m.amor>0&&p.amor>0){m.amor=p.amor=0;m.cria=p.cria=300;crearMob(m.tipo,m.pos.x,m.pos.y+.2,m.pos.z,{bebe:true});
+    if(d2<1.3&&m.amor>0&&p.amor>0){m.amor=p.amor=0;m.cria=p.cria=300;crearMob(m.tipo,m.pos.x,m.pos.y+.2,m.pos.z,{bebe:true,variante:m.variante});
       soltarXP(azar(1,7),m.pos.x,m.pos.y,m.pos.z);emitirParticulas(m.pos.x,m.pos.y+1,m.pos.z,0xff6080,8,1,.8,-1);}
   }else if(!def.vuela){
     m.t-=dt;if(m.t<=0){m.t=2+Math.random()*5;m.mover=Math.random()<.5;m.yawObj=Math.random()*Math.PI*2;
@@ -477,7 +510,8 @@ function intentoAparicion(){
       let y=CY-1;while(y>0&&!getBloque(x,y,z))y--;
       if(getBloque(x,y,z)!==B.cesped||(luzEn(x,y+1,z)>>4)<9)return;
       const tipo=elegirPeso([['cerdo',25],['vaca',20],['oveja',25],['gallina',20]]);
-      const n=azar(2,4);for(let k=0;k<n;k++){const ox=x+azar(-2,2),oz=z+azar(-2,2),oy=buscarSuelo(ox,y+3,oz,6,2);if(oy>0&&getBloque(ox,oy-1,oz)===B.cesped)crearMob(tipo,ox+.5,oy,oz+.5);}
+      const bv=infoColumna(x,z).bioma, variante=[BIOMA.desierto,BIOMA.sabana,BIOMA.jungla,BIOMA.badlands,BIOMA.manglar].includes(bv)?'calida':[BIOMA.nevado,BIOMA.taiga,BIOMA.montana].includes(bv)?'fria':undefined;
+      const n=azar(2,4);for(let k=0;k<n;k++){const ox=x+azar(-2,2),oz=z+azar(-2,2),oy=buscarSuelo(ox,y+3,oz,6,2);if(oy>0&&getBloque(ox,oy-1,oz)===B.cesped)crearMob(tipo,ox+.5,oy,oz+.5,{variante});}
       return;
     }
     if(hostiles>=20)return;

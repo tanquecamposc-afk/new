@@ -389,6 +389,35 @@ function tile(nombre,gen){T[nombre]=_genTiles.length;_genTiles.push(gen);}
     p(x,y,borde?70+k:ojo?120:44+k,borde?74+k:ojo?220:48+k,borde?66+k:ojo?255:44+k);}));
   tile('vaultOpen',(p,r)=>cada((x,y)=>{const k=n(r,8);const borde=x<2||y<2||x>13||y>13;p(x,y,borde?70+k:30,borde?74+k:32,borde?66+k:30);}));
   tile('heavyCore',(p,r)=>cada((x,y)=>{const k=n(r,10);const b=x%5===0||y%5===0;p(x,y,(b?60:88)+k,(b?62:90)+k,(b?70:100)+k);}));
+  /* ---- 1.21.4: jardín pálido ---- */
+  tile('paleLog',corteza([200,192,186],[150,140,136],false)); tile('paleTop',anillos([232,222,214],[190,182,176]));
+  tile('paleLeaves',(p,r)=>{const s=S();cada((x,y)=>{if(r()<.07)return p(x,y,0,0,0,0);const v=pn(x,y,8,s);const k=n(r,12);p(x,y,132+v*34+k,146+v*32+k,128+v*28+k);});});
+  tile('palePlanks',(p,r)=>tablones(p,r,[228,218,210]));
+  tile('paleMoss',(p,r)=>{const s=S();cada((x,y)=>{const v=pn(x,y,4,s);const k=n(r,16);p(x,y,118+v*40+k,126+v*40+k,112+v*34+k);});});
+  tile('hangingMoss',planta((p,r)=>{for(let k=0;k<6;k++){const x0=1+Math.floor(r()*14),l=6+Math.floor(r()*10);for(let y=0;y<l;y++)p(x0+(y%5===4?1:0),y,120+n(r,30),130+n(r,30),116+n(r,30));}}));
+  const corazon=(on)=>(p,r)=>{corteza([200,192,186],[150,140,136],false)(p,r);cada((x,y)=>{
+    if(x>=4&&x<=11&&y>=3&&y<=12){const k=n(r,10);p(x,y,90+k,76+k,70+k);}
+    if((x===6||x===9)&&(y===6||y===7))p(x,y,on?255:70,on?150:60,on?30:50);});};
+  tile('creakingHeart',corazon(false)); tile('creakingHeartOn',corazon(true));
+  tile('eyeblossomClosed',planta((p,r)=>{tallo(p,7,8,15,[90,110,80]);for(let y=4;y<=8;y++)for(let x=6;x<=9;x++)p(x,y,130+n(r,16),120+n(r,16),130+n(r,16));}));
+  tile('eyeblossomOpen',planta((p,r)=>{tallo(p,7,8,15,[90,110,80]);for(const [a,b] of [[0,-2],[-2,0],[2,0],[0,2],[-1,-1],[1,-1],[-1,1],[1,1],[0,-1],[-1,0],[1,0],[0,1]])p(7+a,6+b,240,230,236);p(7,6,255,150,40);p(8,6,255,190,60);}));
+  tile('resinBlock',(p,r)=>{const s=S();cada((x,y)=>{const v=pn(x,y,4,s);const k=n(r,14);p(x,y,220+k,110+v*60+k,30+k*.3);});});
+  tile('resinBricks',(p,r)=>ladrillos(p,r,[214,110,36],[150,70,20],4,8));
+  /* ---- 1.21.5: primavera ---- */
+  tile('leafLitter',planta((p,r)=>{for(let k=0;k<14;k++){const cx=r()*16,cy=r()*16,c=[[150,100,40],[180,120,50],[120,80,40],[170,140,60]][Math.floor(r()*4)];
+    for(const [a,b] of [[0,0],[1,0],[0,1],[1,1],[-1,0]])p(cx+a,cy+b,c[0]+n(r,20),c[1]+n(r,20),c[2]+n(r,20));}}));
+  tile('wildflowers',planta((p,r)=>{for(let k=0;k<10;k++){const cx=1+r()*14,cy=1+r()*14,c=r()<.5?[250,210,70]:[240,160,200];
+    for(const [a,b] of [[0,-1],[-1,0],[1,0],[0,1]])p(cx+a,cy+b,...c);p(cx,cy,250,250,230);}for(let k=0;k<16;k++)p(r()*16,r()*16,90,150,50);}));
+  tile('fireflyBush',planta((p,r)=>{for(let b=0;b<12;b++){const x0=1+Math.floor(r()*14),h=5+Math.floor(r()*10);for(let y=15;y>15-h;y--)p(x0+(y%4===0?(r()<.5?-1:1):0),y,70+n(r,20),110+n(r,20),50+n(r,20));}
+    for(let k=0;k<5;k++)p(2+r()*12,2+r()*8,255,240,120);}));
+  tile('bush',planta((p,r)=>{for(let y=5;y<16;y++)for(let x=1;x<15;x++)if(Math.hypot((x-7.5)/7,(y-11)/6)<1&&r()<.85){const v=clamp(150+n(r,50),80,220);p(x,y,v,v,v,TINTE_A);}}));
+  /* ---- 1.21.6: ghast seco ---- */
+  tile('driedGhast',(p,r)=>cada((x,y)=>{const k=n(r,12);const cara=(y===6||y===7)&&(x===4||x===5||x===10||x===11)||(y===10&&x>=6&&x<=9);p(x,y,cara?60+k:170+k,cara?56+k:158+k,cara?54+k:150+k);}));
+  /* ---- 1.21.9: la edad del cobre ---- */
+  tile('copperChestTop',(p,r)=>cada((x,y)=>{const k=n(r,10);const b=x===0||y===0||x===15||y===15;p(x,y,(b?150:204)+k,(b?80:112)+k,(b?50:70)+k);}));
+  tile('copperChestSide',(p,r)=>cada((x,y)=>{const k=n(r,10);const b=x===0||y===0||x===15||y===15||y===5;const cerr=x>=7&&x<=8&&y>=4&&y<=7;
+    p(x,y,cerr?90:(b?150:204)+k,cerr?200:(b?80:112)+k,cerr?160:(b?50:70)+k);}));
+  tile('paleSapling',planta((p,r)=>{tallo(p,7,8,15,[150,140,130]);for(let k=0;k<20;k++){const a=r()*6.28,d=r()*4;p(7.5+Math.cos(a)*d,6+Math.sin(a)*d*.8,170,176,160);}}));
   tile('pathSide',(p,r)=>{tierra(p,r);cada((x,y)=>{if(y<2){const k=n(r,12);p(x,y,148+k,122+k,66+k);}});});
 })();
 
@@ -405,7 +434,7 @@ const atlas=document.createElement('canvas'); atlas.width=TS*ATW; atlas.height=T
   ctx.putImageData(img,0,0);
 })();
 // Atlas para iconos, objetos sueltos y partículas: el tinte ya aplicado
-const TINTE_ICONO={grassTop:[.57,.74,.35],grassSide:[.57,.74,.35],tallGrass:[.57,.74,.35],fern:[.52,.72,.36],leaves:[.47,.67,.18],spruceLeaves:[.38,.6,.38],mangroveLeaves:[.55,.69,.15]};
+const TINTE_ICONO={grassTop:[.57,.74,.35],grassSide:[.57,.74,.35],tallGrass:[.57,.74,.35],fern:[.52,.72,.36],leaves:[.47,.67,.18],spruceLeaves:[.38,.6,.38],mangroveLeaves:[.55,.69,.15],bush:[.47,.67,.18]};
 const atlasIconos=document.createElement('canvas'); atlasIconos.width=atlas.width; atlasIconos.height=atlas.height;
 (function(){
   const ctx=atlasIconos.getContext('2d'); ctx.drawImage(atlas,0,0);
@@ -430,8 +459,12 @@ function lienzo16(semillaDib,fn){
   const c=document.createElement('canvas');c.width=c.height=16;const ctx=c.getContext('2d'),img=ctx.createImageData(16,16);
   for(let y=0;y<16;y++)for(let x=0;x<16;x++){
     const i=y*16+x;let col=G[i];
-    if(!col){const v=[[1,0],[-1,0],[0,1],[0,-1]].some(([a,b])=>{const X=x+a,Y=y+b;return X>=0&&Y>=0&&X<16&&Y<16&&G[Y*16+X];});
+    const hay=(X,Y)=>X>=0&&Y>=0&&X<16&&Y<16&&!!G[Y*16+X];
+    if(!col){const v=[[1,0],[-1,0],[0,1],[0,-1]].some(([a,b])=>hay(x+a,y+b));
       if(v)col=[28,22,18];}
+    else{ // relieve: luz arriba a la izquierda, sombra abajo a la derecha
+      const f=(!hay(x,y-1)||!hay(x-1,y))?1.22:(!hay(x,y+1)||!hay(x+1,y))?.74:1;
+      if(f!==1)col=[col[0]*f+(f>1?12:0),col[1]*f+(f>1?12:0),col[2]*f+(f>1?12:0)];}
     if(col){img.data[i*4]=clamp(col[0],0,255);img.data[i*4+1]=clamp(col[1],0,255);img.data[i*4+2]=clamp(col[2],0,255);img.data[i*4+3]=255;}
   }
   ctx.putImageData(img,0,0);return c;
@@ -449,5 +482,14 @@ function iconoCubo(arriba,lado,alto=1){
   cara(lado,[1.25,.625,0,1.5,4,12+dy],.22,true);
   cara(lado,[1.25,-.625,0,1.5,24,22+dy],.38,true);
   cara(arriba,[1.25,-.625,1.25,.625,4,12+dy],0,false);
+  // Aristas iluminadas y contorno suave
+  x.setTransform(1,0,0,1,0,0);
+  x.strokeStyle='rgba(255,255,255,.28)';x.lineWidth=1;x.beginPath();
+  x.moveTo(4,12+dy);x.lineTo(24,22+dy);x.lineTo(44,12+dy);x.moveTo(24,22+dy);x.lineTo(24,46);x.stroke();
+  const d=x.getImageData(0,0,48,48),o=new Uint8ClampedArray(d.data);
+  for(let yy=0;yy<48;yy++)for(let xx=0;xx<48;xx++){const k=(yy*48+xx)*4;if(d.data[k+3])continue;
+    for(const [a,b] of [[1,0],[-1,0],[0,1],[0,-1]]){const X=xx+a,Y=yy+b;if(X<0||Y<0||X>=48||Y>=48)continue;
+      if(d.data[(Y*48+X)*4+3]>200){o[k]=20;o[k+1]=16;o[k+2]=14;o[k+3]=150;break;}}}
+  x.putImageData(new ImageData(o,48,48),0,0);
   return c;
 }

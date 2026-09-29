@@ -249,6 +249,29 @@ bloque(1317,'generadorPruebasOff','Generador de pruebas','trialSpawnerOff',{tran
 bloque(1318,'boveda','Bóveda',tx('vault','tuffBricks','vault'),{dureza:50,herr:'pico',suelta:0,luz:6,resistencia:50});
 bloque(1319,'bovedaAbierta','Bóveda',tx('vaultOpen','tuffBricks','vaultOpen'),{dureza:50,herr:'pico',suelta:0,resistencia:50});
 bloque(1320,'nucleoPesado','Núcleo pesado','heavyCore',{forma:'cajas',cajas:[[.25,0,.25,.75,.5,.75]],opaco:false,dureza:10,herr:'pico',resistencia:1200});
+/* ---------- 1.21.4 "The Garden Awakens": jardín pálido ---------- */
+bloque(1321,'troncoPalido','Tronco de roble pálido',tx('paleTop','paleTop','paleLog'),{dureza:2,herr:'hacha',inflamable:true,resistencia:2});
+bloque(1322,'hojasPalidas','Hojas de roble pálido','paleLeaves',Object.assign({suelta:sueltaHojas(1339,false)},propHojas));
+bloque(1323,'tablonesPalidos','Tablones de roble pálido','palePlanks',{dureza:2,herr:'hacha',inflamable:true,resistencia:3});
+bloque(1324,'musgoPalido','Bloque de musgo pálido','paleMoss',{dureza:.1,herr:'azada',resistencia:.1});
+bloque(1325,'alfombraMusgo','Alfombra de musgo pálido','paleMoss',{forma:'cajas',cajas:[[0,0,0,1,.0625,1]],solido:false,opaco:false,reemplazable:true,dureza:.1});
+bloque(1326,'musgoColgante','Musgo pálido colgante','hangingMoss',{forma:'cruz',dureza:0,reemplazable:true});
+bloque(1327,'corazonCreaking','Corazón de creaking',tx('paleTop','paleTop','creakingHeart'),{dureza:10,herr:'hacha',suelta:()=>[[543,azar(1,3)]],resistencia:10});
+bloque(1328,'corazonCreakingOn','Corazón de creaking',tx('paleTop','paleTop','creakingHeartOn'),{dureza:10,herr:'hacha',luz:6,suelta:()=>[[543,azar(1,3)]],resistencia:10});
+bloque(1329,'floresOjo','Flor de ojo cerrada','eyeblossomClosed',{forma:'cruz',dureza:0});
+bloque(1330,'floresOjoOn','Flor de ojo abierta','eyeblossomOpen',{forma:'cruz',dureza:0,luz:4,suelta:1329});
+bloque(1331,'bloqueResina','Bloque de resina','resinBlock',{dureza:0,resistencia:0});
+bloque(1332,'ladrillosResina','Ladrillos de resina','resinBricks',{dureza:1.5,herr:'pico',nivel:1,resistencia:6});
+/* ---------- 1.21.5 "Spring to Life" ---------- */
+bloque(1333,'hojarasca','Hojarasca','leafLitter',{forma:'cajas',cajas:[[0,0,0,1,.0625,1]],solido:false,opaco:false,reemplazable:true,dureza:0,inflamable:true});
+bloque(1334,'floresSilvestres','Flores silvestres','wildflowers',{forma:'cajas',cajas:[[0,0,0,1,.0625,1]],solido:false,opaco:false,reemplazable:true,dureza:0});
+bloque(1335,'arbustoLuciernagas','Arbusto de luciérnagas','fireflyBush',{forma:'cruz',dureza:0,luz:2});
+bloque(1336,'arbusto','Arbusto','bush',{forma:'cruz',dureza:0,tinte:'pasto',reemplazable:true});
+/* ---------- 1.21.6 "Chase the Skies" ---------- */
+bloque(1337,'ghastSeco','Ghast seco','driedGhast',{forma:'cajas',cajas:[[.12,0,.12,.88,.8,.88]],opaco:false,dureza:0});
+/* ---------- 1.21.9 "The Copper Age" ---------- */
+bloque(1338,'cofreCobre','Cofre de cobre',tx('copperChestTop','copperChestTop','copperChestSide'),{dureza:3,herr:'pico',inter:'cofre'});
+bloque(1339,'brotePalido','Brote de roble pálido','paleSapling',{forma:'cruz',dureza:0});
 const NB=BLOQUES.length;
 const SOLIDO=new Uint8Array(NB), OPACO=new Uint8Array(NB), TRANS=new Uint8Array(NB), LUZB=new Uint8Array(NB),
       OPAC_LUZ=new Uint8Array(NB), OCLUYE=new Uint8Array(NB), FORMA=new Uint8Array(NB), REEMPL=new Uint8Array(NB);
@@ -258,7 +281,7 @@ const TINTE=new Uint8Array(NB), TREPA=new Uint8Array(NB);
 BLOQUES.forEach((b,i)=>{if(!b)return;SOLIDO[i]=b.solido?1:0;OPACO[i]=b.opaco?1:0;TRANS[i]=b.trans?1:0;LUZB[i]=b.luz;
   OPAC_LUZ[i]=b.opacidadLuz;OCLUYE[i]=(b.forma==='cubo'&&!b.sinSombra)?1:0;FORMA[i]=FORMAS[b.forma];REEMPL[i]=b.reemplazable?1:0;
   TINTE[i]=TINTES[b.tinte]||0;TREPA[i]=b.trepable?1:0;});
-const esTronco=id=>id===4||(id>=94&&id<=97)||id===1294||id===1299, esHojas=id=>id===5||(id>=98&&id<=101)||id===1295||id===1300, esPuerta=id=>id>=149&&id<=164;
+const esTronco=id=>id===4||(id>=94&&id<=97)||id===1294||id===1299||id===1321, esHojas=id=>id===5||(id>=98&&id<=101)||id===1295||id===1300||id===1322, esPuerta=id=>id>=149&&id<=164;
 // Cajas de colisión (coordenadas dentro del bloque)
 function cajasColision(id){
   const b=BLOQUES[id];
@@ -274,7 +297,7 @@ const nivelLiquido=id=>BLOQUES[id].nivelL;
    Registro de objetos
    ========================================================= */
 const ITEMS=[], I={};
-const esVariante=i=>(i>=130&&i<=132)||(i>=134&&i<=136)||(i>=138&&i<=140)||(i>=146&&i<=148)||(i>=149&&i<=168)||(i>=1192&&i<=1212)||i===1283||i===1216||i===1218||i===1220||i===1223||(i>=1224&&i<=1259&&i!==1227&&i!==1245)||(i>=1261&&i<=1269)||(i>=1271&&i<=1273)||i===1287||i===1317||i===1319;
+const esVariante=i=>(i>=130&&i<=132)||(i>=134&&i<=136)||(i>=138&&i<=140)||(i>=146&&i<=148)||(i>=149&&i<=168)||(i>=1192&&i<=1212)||i===1283||i===1216||i===1218||i===1220||i===1223||(i>=1224&&i<=1259&&i!==1227&&i!==1245)||(i>=1261&&i<=1269)||(i>=1271&&i<=1273)||i===1287||i===1317||i===1319||i===1328||i===1330;
 BLOQUES.forEach((b,i)=>{if(b&&!b.liquido&&b.forma!=='portal'&&i!==86&&!(i>=41&&i<=48)&&!esVariante(i))ITEMS[i]={nombre:b.nombre,bloque:true,max:64,clave:b.clave};});
 function item(id,clave,nombre,props){ITEMS[id]=Object.assign({nombre,max:64,clave},props);I[clave]=id;}
 item(200,'palo','Palo'); item(201,'carbon','Carbón'); item(202,'hierroBruto','Hierro en bruto'); item(203,'lingoteHierro','Lingote de hierro');
@@ -322,6 +345,9 @@ item(536,'fragmentoEco','Fragmento de eco');
 item(538,'cargaViento','Carga de viento'); item(539,'varaBreeze','Vara de breeze');
 item(540,'maza','Maza',{max:1,dur:500,tipoHerr:'maza',iconoPropio:true,herr:{tipo:'maza',nivel:0,vel:1,dano:6,cad:.6,mat:2,enc:15}});
 item(541,'llavePrueba','Llave de prueba');
+// 1.21.2 - 1.21.9
+item(542,'saquito','Saquito',{max:1,saquito:true}); item(543,'grumoResina','Grumo de resina'); item(544,'ladrilloResina','Ladrillo de resina');
+item(545,'arnes','Arnés',{max:1});
 
 const MATS=[
   {n:'madera',nivel:1,vel:2,dur:59,enc:15,col:[176,138,82]},
@@ -330,13 +356,14 @@ const MATS=[
   {n:'oro',nivel:1,vel:12,dur:32,enc:22,col:[250,214,70]},
   {n:'diamante',nivel:4,vel:8,dur:1561,enc:10,col:[84,232,222]},
   {n:'netherite',nivel:4,vel:9,dur:2031,enc:15,col:[88,80,86],ignifugo:true},
+  {n:'cobre',nivel:2,vel:5,dur:190,enc:13,col:[222,130,84]},
 ];
 const HERRS=[
-  {tipo:'pico',nom:'Pico',dano:[2,3,4,2,5,6],cad:[1.2,1.2,1.2,1.2,1.2,1.2]},
-  {tipo:'hacha',nom:'Hacha',dano:[7,9,9,7,9,10],cad:[.8,.8,.9,1,1,1]},
-  {tipo:'pala',nom:'Pala',dano:[2.5,3.5,4.5,2.5,5.5,6.5],cad:[1,1,1,1,1,1]},
-  {tipo:'espada',nom:'Espada',dano:[4,5,6,4,7,8],cad:[1.6,1.6,1.6,1.6,1.6,1.6]},
-  {tipo:'azada',nom:'Azada',dano:[1,1,1,1,1,1],cad:[1,2,3,1,4,4]},
+  {tipo:'pico',nom:'Pico',dano:[2,3,4,2,5,6,3],cad:[1.2,1.2,1.2,1.2,1.2,1.2,1.2]},
+  {tipo:'hacha',nom:'Hacha',dano:[7,9,9,7,9,10,9],cad:[.8,.8,.9,1,1,1,.8]},
+  {tipo:'pala',nom:'Pala',dano:[2.5,3.5,4.5,2.5,5.5,6.5,3.5],cad:[1,1,1,1,1,1,1]},
+  {tipo:'espada',nom:'Espada',dano:[4,5,6,4,7,8,5],cad:[1.6,1.6,1.6,1.6,1.6,1.6,1.6]},
+  {tipo:'azada',nom:'Azada',dano:[1,1,1,1,1,1,1],cad:[1,2,3,1,4,4,2]},
 ];
 HERRS.forEach((h,ti)=>MATS.forEach((m,k)=>item(300+ti*10+k,h.tipo+'_'+m.n,`${h.nom} de ${m.n}`,
   {max:1,dur:m.dur,tipoHerr:h.tipo,ignifugo:m.ignifugo,herr:{tipo:h.tipo,nivel:m.nivel,vel:m.vel,dano:h.dano[k],cad:h.cad[k],mat:k,enc:m.enc}})));
@@ -346,6 +373,7 @@ const ARM_MATS=[
   {n:'hierro',mult:15,def:[2,6,5,2],dureza:0,enc:9,col:[216,216,216]},
   {n:'diamante',mult:33,def:[3,8,6,3],dureza:2,enc:10,col:[84,232,222]},
   {n:'netherite',mult:37,def:[3,8,6,3],dureza:3,enc:15,col:[88,80,86],ignifugo:true},
+  {n:'cobre',mult:11,def:[2,4,3,1],dureza:0,enc:8,col:[222,130,84]},
 ];
 const PIEZAS=[{n:'casco',nom:'Casco',dur:11},{n:'pechera',nom:'Pechera',dur:16},{n:'pantalones',nom:'Pantalones',dur:15},{n:'botas',nom:'Botas',dur:13}];
 PIEZAS.forEach((p,pi)=>ARM_MATS.forEach((m,k)=>item(400+pi*10+k,p.n+'_'+m.n,`${p.nom} de ${m.n}`,
@@ -472,11 +500,21 @@ receta(['BB','BB'],{B:B.barro},B.ladrillosBarro,4);
 receta(['.L.','L.L','.L.'],{L:I.ladrillo},B.vasija);
 receta(['.I.','IAI','.I.'],{I:I.lingoteHierro,A:B.arenaAlmas},B.farolAlmas);
 receta(['EEE','ECE','EEE'],{E:536,C:I.lingoteCobre},B.catalizador);
-receta(['N','V'],{N:B.nucleoPesado,V:539},540); recetaSin([539],538,4);
+receta(['N','V'],{N:B.nucleoPesado,V:539},540);
+// 1.21.2 - 1.21.9
+receta(['C','L'],{C:I.cuerda,L:I.cuero},542);
+recetaSin([B.troncoPalido],B.tablonesPalidos,4);
+receta(['GG','GG'],{G:543},B.bloqueResina); recetaSin([B.bloqueResina],543,9);
+receta(['LL','LL'],{L:544},B.ladrillosResina);
+receta(['TTT','TST','TTT'],{T:I.lagrimaGhast,S:B.arenaAlmas},B.ghastSeco);
+receta(['CCC','VLV'],{C:I.cuero,V:B.vidrio,L:B.lana},545);
+receta(['CCC','C.C','CCC'],{C:I.lingoteCobre},B.cofreCobre);
+{const c={M:I.lingoteCobre,S:I.palo};receta(['MMM','.S.','.S.'],c,306);receta(['MM','MS','.S'],c,316);receta(['M','S','S'],c,326);receta(['M','M','S'],c,336);receta(['MM','.S','.S'],c,346);
+ const a={M:I.lingoteCobre};receta(['MMM','M.M'],a,405);receta(['M.M','MMM','MMM'],a,415);receta(['MMM','M.M','M.M'],a,425);receta(['M.M','M.M'],a,435);} recetaSin([539],538,4);
 receta(['TT','TT'],{T:B.toba},B.ladrillosToba,4); receta(['CC','CC'],{C:I.lingoteCobre},B.cobreCortado);
 receta(['.C.','CVC','.R.'],{C:B.cobreCortado,V:I.varaBlaze,R:I.redstone},B.bombillaCobre,4);
 // Los tablones de cerezo y mangle sirven en todas las recetas de madera
-const EQUIV_RECETA={[B.tablonesCerezo]:B.tablones,[B.tablonesMangle]:B.tablones,[B.troncoCerezo]:B.tronco,[B.troncoMangle]:B.tronco};
+const EQUIV_RECETA={[B.tablonesPalidos]:B.tablones,[B.troncoPalido]:B.tronco,[B.cofreCobre]:B.cofre,[B.tablonesCerezo]:B.tablones,[B.tablonesMangle]:B.tablones,[B.troncoCerezo]:B.tronco,[B.troncoMangle]:B.tronco};
 
 function buscarReceta(grid,w){
   const exacta=buscarRecetaExacta(grid,w);
@@ -510,7 +548,7 @@ const FUNDIR={
   [B.roca]:B.piedra,[B.arena]:B.vidrio,[B.arenaRoja]:B.vidrio,[B.tronco]:I.carbon,[B.troncoAbedul]:I.carbon,[B.troncoAbeto]:I.carbon,[B.troncoJungla]:I.carbon,[B.troncoAcacia]:I.carbon,
   [251]:250,[B.arcilla]:B.terracota,[519]:526,[B.piedraNegra]:B.piedraNegra,
   [I.cerdoCrudo]:I.cerdoAsado,[I.resCruda]:I.filete,[I.polloCrudo]:I.polloAsado,[I.corderoCrudo]:I.corderoAsado,
-  [B.restosAncestrales]:534,[B.troncoCerezo]:I.carbon,[B.troncoMangle]:I.carbon,
+  [B.restosAncestrales]:534,[543]:544,[B.troncoPalido]:I.carbon,[B.troncoCerezo]:I.carbon,[B.troncoMangle]:I.carbon,
 };
 [B.restosAncestrales,B.bloqueNetherite].forEach(id=>ITEMS[id].ignifugo=true);
 const COMBUSTIBLE={1178:15,1179:15,[I.carbon]:80,[B.bloqueCarbon]:800,[I.cuboLava]:1000,[I.varaBlaze]:120,[B.tablones]:15,[B.tronco]:15,

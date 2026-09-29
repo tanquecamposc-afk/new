@@ -450,6 +450,7 @@ function colocarBloque(id){
   setBloque(x,y,z,real);
   if(esRiel(real))colocarRiel(x,y,z);
   if(real===B.calabaza||real===B.linternaCalabaza)comprobarGolem(x,y,z);
+  if(real===B.ghastSeco)registrarFantasma(x,y,z);
   sonar('poner',{x,y,z},1); pasoSonido(real,1);
   balancearMano();
   return true;

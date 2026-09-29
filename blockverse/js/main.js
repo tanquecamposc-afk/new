@@ -147,6 +147,7 @@ function actualizarCielo(dt){
     const ocaso=clamp(1-Math.abs(sol)/.22,0,1)*.45;
     if(ocaso>0&&!lloviendo)cielo.lerp(CIELO_OCASO,ocaso);
     if(lloviendo)cielo.lerp(tmpC.copy(CIELO_LLUVIA).multiplyScalar((tormenta?.2:.3)+fDia*(tormenta?.45:.7)),tormenta?.85:.7);
+    if(biomaEnJugador()===BIOMA.jardinPalido){cielo.lerp(tmpC.setRGB(.66,.68,.66),.6*fDia+.2);uDia*=.85;}
     if(destelloRayo>0){cielo.lerp(tmpC.setRGB(.9,.92,1),destelloRayo*.8);uDia=Math.min(1,uDia+destelloRayo*.8);}
     const dx=Math.cos(a),dy=Math.sin(a);
     sol3d.position.set(c.x+dx*350,c.y+dy*350,c.z+40); sol3d.lookAt(c);

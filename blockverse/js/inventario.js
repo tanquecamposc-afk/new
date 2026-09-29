@@ -23,6 +23,8 @@ function nombrePila(p){
   if(!p)return '';
   let t=ITEMS[p.id].nombre;
   if(p.enc)for(const k in p.enc)t+='\n'+ENCANTOS[k].nombre+' '+ROMANOS[p.enc[k]];
+  if(p.contenido&&p.contenido.length)t+='\n'+p.contenido.map(c=>ITEMS[c.id].nombre+' ×'+c.n).join('\n')+`\n${pesoSaquito(p)}/64`;
+  else if(p.id===542)t+='\nVacío · clic derecho para guardar objetos';
   const it=ITEMS[p.id];
   if(it.dur)t+=`\nDurabilidad: ${p.dur} / ${it.dur}`;
   if(it.armadura)t+=`\n+${it.armadura.def} de armadura`;
@@ -36,6 +38,7 @@ function htmlPila(p){
   const it=ITEMS[p.id];
   if(it.dur&&p.dur<it.dur){const f=Math.max(0,p.dur/it.dur);h+=`<i style="--f:${f};--c:hsl(${f*120},80%,50%)"></i>`;}
   if(p.enc)h+='<u></u>';
+  if(p.id===542&&p.contenido&&p.contenido.length)h+=`<i style="--f:${pesoSaquito(p)/64};--c:#6a7aff"></i>`;
   return h;
 }
 
@@ -52,6 +55,7 @@ function crearSlot(cont,ref,grande,fondo){
   cont.appendChild(el); refsUI.push({el,ref}); return el;
 }
 function clicSlot(ref,boton,shift){
+  if(ref.tipo==='normal'&&clicSaquito(ref,boton))return;
   if(ref.tipo==='resultado')return clicResultado(shift);
   const s=ref.get();
   if(shift){if(!s)return;ref.set(null);const r=ref.shift(s);if(r)ref.set(r);return;}
@@ -168,7 +172,7 @@ function construirUI(){
 function soltarXPHorno(h){if(h.xp>=1){soltarXP(Math.floor(h.xp),jugador.pos.x,jugador.pos.y+.5,jugador.pos.z);h.xp-=Math.floor(h.xp);}}
 function refrescarUI(){
   if(!ui||ui.tipo==='paleta')return;
-  for(const {el,ref} of refsUI){const p=ref.get();el.innerHTML=htmlPila(p);el.title=nombrePila(p);el.classList.toggle('vacio',!p);}
+  for(const {el,ref} of refsUI){const p=ref.get();el.innerHTML=htmlPila(p);el.dataset.tip=nombrePila(p);el.removeAttribute('title');el.classList.toggle('vacio',!p);}
   elCursor.innerHTML=htmlPila(cursor); elCursor.classList.toggle('oculto',!cursor);
   if(ui.horno){const h=ui.horno;
     document.getElementById('barFuego').style.width=(h.quemaMax?h.quema/h.quemaMax*100:0)+'%';
@@ -283,7 +287,7 @@ function cerrarUI(){
 /* ---------- Paleta del modo creativo ---------- */
 const rejillaPaleta=document.getElementById('rejillaPaleta');
 const celdasPaleta=[];
-ITEMS.forEach((it,i)=>{if(!it)return;const d=document.createElement('div');d.className='celda';d.title=it.nombre;
+ITEMS.forEach((it,i)=>{if(!it)return;const d=document.createElement('div');d.className='celda';d.dataset.tip=it.nombre;
   d.innerHTML=`<img src="${ICONOS[i]}" alt=""><span>${it.nombre}</span>`;
   d.onmousedown=e=>{e.preventDefault();const p=crearPila(i,e.button===2?1:maxPila(i));
     if(e.shiftKey){insertarInv(p);sonar('recoger');}else{inv[ranura]=p;actualizarHUD();cerrarUI();}};

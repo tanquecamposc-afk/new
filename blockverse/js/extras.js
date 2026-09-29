@@ -64,7 +64,7 @@ let hudEfT=0;
 function pintarEfectos(){
   const ks=Object.keys(efectos);
   elEfectos.innerHTML=ks.map(k=>{const t=Math.ceil(efectos[k].t),m=Math.floor(t/60),s=String(t%60).padStart(2,'0');
-    return `<div style="background:rgba(20,24,34,.8);border:1px solid rgba(255,255,255,.18);border-left:4px solid ${COLOR_EFECTO[k]||'#aaa'};border-radius:6px;padding:4px 8px;color:#fff">${NOMBRE_EFECTO[k]||k}${efectos[k].n>1?' II':''} <span style="opacity:.7">${m}:${s}</span></div>`;}).join('');
+    return `<div style="background:rgba(16,16,16,.72);border:2px solid #000;box-shadow:inset 2px 2px 0 rgba(255,255,255,.1);border-left:6px solid ${COLOR_EFECTO[k]||'#aaa'};padding:4px 9px;color:#fff;font-family:var(--pixel);font-size:13px;text-shadow:1px 1px 0 #333">${NOMBRE_EFECTO[k]||k}${efectos[k].n>1?' II':''} <span style="opacity:.7">${m}:${s}</span></div>`;}).join('');
 }
 
 /* ---------- Soporte para pociones ---------- */
@@ -102,7 +102,7 @@ function actualizarSoportes(dt){
 const esFrasco=id=>id===500||id===501||id===502||!!(ITEMS[id]&&ITEMS[id].pocion);
 
 /* ---------- Yunque ---------- */
-const MAT_REPARA_HERR=[B.tablones,B.roca,I.lingoteHierro,I.lingoteOro,I.diamante,535], MAT_REPARA_ARM=[I.cuero,I.lingoteOro,I.lingoteHierro,I.diamante,535];
+const MAT_REPARA_HERR=[B.tablones,B.roca,I.lingoteHierro,I.lingoteOro,I.diamante,535,I.lingoteCobre], MAT_REPARA_ARM=[I.cuero,I.lingoteOro,I.lingoteHierro,I.diamante,535,I.lingoteCobre];
 function materialReparacion(id){
   const it=ITEMS[id]; if(it.elitros)return I.cuero; if(id===540)return 539;
   if(it.herr)return MAT_REPARA_HERR[it.herr.mat];
@@ -263,7 +263,7 @@ function golpearVehiculo(e){
 }
 function asientoJinete(e){
   if(jugador.montura!==e)return;
-  const off=e.tipo==='barco'?-.35:e.tipo==='camello'?(e.sentado?.55:1.15):-.25;
+  const off=e.tipo==='barco'?-.35:e.tipo==='camello'?(e.sentado?.55:1.15):e.tipo==='ghastFeliz'?4.02:-.25;
   jugador.pos.set(e.pos.x,e.pos.y+off,e.pos.z); jugador.vel.set(0,0,0); jugador.maxY=jugador.pos.y;
 }
 function dirEntradaCamara(){

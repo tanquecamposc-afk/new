@@ -52,6 +52,7 @@ function generarV120(ch,info){
   }
   construirCiudadesAntiguas(ch);
   construirCamarasPrueba(ch);
+  registrarCorazones(ch);
   // ---- Superficie: pozos, pirámides y ruinas ----
   const centro=info[8*CX+8], hC=centro.h;
   const pozo=centro.bioma===BIOMA.desierto&&hash2(cx,cz,s+960)<.01;
@@ -450,6 +451,7 @@ UI_EXTRA.herreria={
 
 /* ---------- Clic derecho: camellos, barro y pincel ---------- */
 function usarDerechoV120(p,id,it){
+  if(usarDerechoRecientes(p,id,it))return true;
   if(usarDerechoV121(p,id,it))return true;
   const m=apuntadoEnt&&apuntadoEnt.mob;
   if(m&&m.def.montable&&id!==m.def.comida&&!jugador.agachado){montar(m);return true;}
@@ -481,7 +483,7 @@ function localizarV120(q){
     const l=ciudadesAntiguasCerca(j.x-3000,j.z-3000,j.x+3000,j.z+3000).sort((a,b)=>Math.hypot(a.x-j.x,a.z-j.z)-Math.hypot(b.x-j.x,b.z-j.z));
     return l.length?`Ciudad antigua cerca de X ${l[0].x}, Z ${l[0].z} (Y ${l[0].y-OY}).`:'No hay ciudades antiguas cerca.';
   }
-  const biomas={cherry:BIOMA.cerezo,cerezo:BIOMA.cerezo,mangrove:BIOMA.manglar,manglar:BIOMA.manglar,desierto:BIOMA.desierto,desert:BIOMA.desierto};
+  const biomas={pale:BIOMA.jardinPalido,palido:BIOMA.jardinPalido,cherry:BIOMA.cerezo,cerezo:BIOMA.cerezo,mangrove:BIOMA.manglar,manglar:BIOMA.manglar,desierto:BIOMA.desierto,desert:BIOMA.desierto};
   const clave=Object.keys(biomas).find(k=>q.startsWith(k.slice(0,4)));
   if(clave){
     const obj=biomas[clave];
@@ -497,6 +499,7 @@ function localizarV120(q){
 /* ---------- Bucle ---------- */
 function actualizarV120(dt){
   procesarVibraciones(dt);
+  actualizarRecientes(dt);
   actualizarPruebas(dt);
   actualizarPincel(dt);
   particulasCerezo(dt);
