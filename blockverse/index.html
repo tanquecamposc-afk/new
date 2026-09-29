@@ -551,8 +551,13 @@ document.addEventListener('pointerlockchange',()=>{
   if(estado==='jugando'){estado='menu';elMenu.classList.remove('oculto');document.getElementById('btnJugar').textContent='Continuar';guardarPartida();}
 });
 document.getElementById('btnJugar').onclick=empezar;
-document.getElementById('btnNuevo').onclick=()=>{
-  if(Object.keys(ediciones).length&&!confirm('¿Crear un mundo nuevo? Se perderán tus construcciones.'))return;
+const btnNuevo=document.getElementById('btnNuevo');
+let confirmarNuevo=0;
+btnNuevo.onclick=()=>{
+  if(Object.keys(ediciones).length&&!confirmarNuevo){
+    btnNuevo.textContent='Pulsa otra vez: se borrarán tus construcciones';
+    confirmarNuevo=setTimeout(()=>{confirmarNuevo=0;btnNuevo.textContent='Nuevo mundo';},3000);return;}
+  clearTimeout(confirmarNuevo);confirmarNuevo=0;btnNuevo.textContent='Nuevo mundo';
   semilla=1+Math.floor(Math.random()*1e6); ediciones={}; posGuardada=null;
   for(const ch of chunks.values())if(ch.malla){escena.remove(ch.malla);ch.malla.geometry.dispose();}
   chunks.clear(); aparecer(); jugador.vuela=false; gestionarChunks(9); guardarPartida(); empezar();
