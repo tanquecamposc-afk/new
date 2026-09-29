@@ -57,3 +57,22 @@ Cada torre puede **mejorarse** (⬆), **venderse** (70% de reembolso) y cambiar 
 ## 🔊 Sonido
 
 Todos los efectos de sonido se generan en tiempo real con WebAudio (sin archivos de audio). Botón 🔊 para silenciar.
+
+---
+
+# Blockverse 🧱
+
+Juego de bloques en 3D estilo sandbox (inspirado en juegos como bloxd.io), hecho desde cero con **Three.js**: mundo infinito generado por procedimientos, texturas pixeladas creadas por código, romper y colocar bloques, vuelo y guardado automático en el navegador.
+
+Abre `blockverse/index.html` en un navegador moderno (necesita internet para cargar Three.js desde cdnjs). Funciona con teclado y ratón.
+
+| Tecla / acción | Efecto |
+|---|---|
+| `WASD` | Moverse |
+| `Espacio` | Saltar (doble toque: volar) |
+| `Shift` | Correr / bajar volando |
+| `F` | Activar / desactivar vuelo |
+| Clic izquierdo / derecho | Romper / colocar bloque |
+| `1`–`9` o rueda | Elegir bloque |
+| `E` | Inventario de bloques |
+| `Esc` | Pausa |

@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Blockverse</title>
+<style>
+:root{
+  --panel:rgba(20,24,34,.82); --borde:rgba(255,255,255,.18);
+  --texto:#f2f5ff; --tenue:#aab4cc; --acento:#5fd068; --acento2:#3fa84a;
+}
+*{box-sizing:border-box; margin:0; padding:0; user-select:none; -webkit-user-select:none;}
+html,body{height:100%; overflow:hidden; background:#87c5ff; color:var(--texto);
+  font-family:"Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif;}
+canvas#vista{display:block; width:100vw; height:100vh;}
+
+#mira{position:fixed; left:50%; top:50%; width:22px; height:22px; transform:translate(-50%,-50%);
+  pointer-events:none; mix-blend-mode:difference;}
+#mira::before,#mira::after{content:""; position:absolute; background:#fff;}
+#mira::before{left:10px; top:0; width:2px; height:22px;}
+#mira::after{left:0; top:10px; width:22px; height:2px;}
+
+#info{position:fixed; left:10px; top:10px; font:13px/1.5 ui-monospace,Consolas,monospace;
+  background:rgba(0,0,0,.35); padding:6px 10px; border-radius:6px; pointer-events:none; white-space:pre;}
+
+#barra{position:fixed; left:50%; bottom:14px; transform:translateX(-50%); display:flex; gap:4px;
+  background:rgba(0,0,0,.45); padding:5px; border-radius:10px; border:1px solid var(--borde);}
+.ranura{width:54px; height:54px; border:2px solid rgba(255,255,255,.18); border-radius:7px;
+  display:flex; align-items:center; justify-content:center; position:relative; background:rgba(255,255,255,.06);}
+.ranura.activa{border-color:#fff; background:rgba(255,255,255,.22); box-shadow:0 0 0 2px rgba(0,0,0,.5) inset;}
+.ranura img{width:42px; height:42px; image-rendering:pixelated;}
+.ranura span{position:absolute; left:4px; top:1px; font-size:11px; color:#fff; text-shadow:0 1px 2px #000;}
+#nombreBloque{position:fixed; left:50%; bottom:84px; transform:translateX(-50%); font-weight:700;
+  text-shadow:0 2px 4px #000; transition:opacity .4s; pointer-events:none;}
+
+.capa{position:fixed; inset:0; display:flex; align-items:center; justify-content:center;
+  background:rgba(10,14,24,.55); backdrop-filter:blur(3px); padding:16px;}
+.oculto{display:none !important;}
+.tarjeta{background:var(--panel); border:1px solid var(--borde); border-radius:16px; padding:28px 30px;
+  width:min(460px,100%); text-align:center; box-shadow:0 20px 50px rgba(0,0,0,.45);}
+.titulo{font-size:46px; font-weight:900; letter-spacing:1px; line-height:1;
+  color:#fff; text-shadow:0 4px 0 #2e7d32, 0 8px 18px rgba(0,0,0,.5);}
+.sub{color:var(--tenue); margin:10px 0 22px;}
+button{font:inherit; cursor:pointer; border:0; border-radius:10px; padding:12px 18px; width:100%;
+  font-weight:700; color:#fff; background:linear-gradient(180deg,var(--acento),var(--acento2));
+  box-shadow:0 4px 0 #276b2e; margin-top:10px;}
+button:active{transform:translateY(2px); box-shadow:0 2px 0 #276b2e;}
+button.secundario{background:linear-gradient(180deg,#56607a,#414a60); box-shadow:0 4px 0 #2b3142;}
+.fila{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:14px; color:var(--tenue); font-size:14px;}
+select{font:inherit; padding:6px 8px; border-radius:8px; background:#2b3244; color:#fff; border:1px solid var(--borde);}
+.controles{margin-top:18px; text-align:left; font-size:13px; color:var(--tenue); line-height:1.7;
+  display:grid; grid-template-columns:auto 1fr; gap:0 12px;}
+.controles b{color:#fff; font-weight:600;}
+
+#inventario .tarjeta{width:min(520px,100%);}
+#rejilla{display:grid; grid-template-columns:repeat(auto-fill,minmax(64px,1fr)); gap:8px; margin-top:16px;}
+.celda{background:rgba(255,255,255,.07); border:2px solid transparent; border-radius:10px; padding:6px 2px;
+  cursor:pointer; font-size:11px; color:var(--tenue);}
+.celda:hover{border-color:#fff; color:#fff;}
+.celda img{width:44px; height:44px; image-rendering:pixelated; display:block; margin:0 auto 3px;}
+</style>
+</head>
+<body>
+<canvas id="vista"></canvas>
+<div id="mira" class="oculto"></div>
+<div id="info" class="oculto"></div>
+<div id="nombreBloque"></div>
+<div id="barra" class="oculto"></div>
+
+<div id="menu" class="capa">
+  <div class="tarjeta">
+    <div class="titulo">BLOCKVERSE</div>
+    <div class="sub">Construye, rompe y explora un mundo infinito de bloques.</div>
+    <button id="btnJugar">Jugar</button>
+    <button id="btnNuevo" class="secundario">Nuevo mundo</button>
+    <div class="fila">Distancia de visión
+      <select id="selDistancia">
+        <option value="4">Corta</option>
+        <option value="6" selected>Media</option>
+        <option value="8">Lejana</option>
+      </select>
+    </div>
+    <div class="controles">
+      <b>WASD</b><span>Moverse</span>
+      <b>Espacio</b><span>Saltar / subir volando</span>
+      <b>Shift</b><span>Correr / bajar volando</span>
+      <b>F</b><span>Activar / desactivar vuelo</span>
+      <b>Clic izq.</b><span>Romper bloque</span>
+      <b>Clic der.</b><span>Colocar bloque</span>
+      <b>1–9 / rueda</b><span>Elegir bloque</span>
+      <b>E</b><span>Inventario de bloques</span>
+      <b>Esc</b><span>Pausa</span>
+    </div>
+  </div>
+</div>
+
+<div id="inventario" class="capa oculto">
+  <div class="tarjeta">
+    <div class="titulo" style="font-size:30px">Bloques</div>
+    <div class="sub" style="margin-bottom:0">Elige un bloque para la ranura seleccionada.</div>
+    <div id="rejilla"></div>
+    <button id="btnCerrarInv" class="secundario">Volver al juego (E)</button>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+"use strict";
+/* =========================================================
+   Utilidades: PRNG, hash y ruido
+   ========================================================= */
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);
+  t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+function hash2(x,z,s){let h=Math.imul(x,374761393)+Math.imul(z,668265263)+Math.imul(s,1442695041)|0;
+  h=Math.imul(h^(h>>>13),1274126177);h^=h>>>16;return (h>>>0)/4294967296;}
+function smooth(t){return t*t*(3-2*t);}
+function valueNoise(x,z,s){
+  const x0=Math.floor(x), z0=Math.floor(z), fx=smooth(x-x0), fz=smooth(z-z0);
+  const a=hash2(x0,z0,s), b=hash2(x0+1,z0,s), c=hash2(x0,z0+1,s), d=hash2(x0+1,z0+1,s);
+  return (a+(b-a)*fx)+((c+(d-c)*fx)-(a+(b-a)*fx))*fz;
+}
+function fbm(x,z,s,oct){let v=0,amp=1,tot=0,f=1;
+  for(let i=0;i<oct;i++){v+=valueNoise(x*f,z*f,s+i*101)*amp;tot+=amp;amp*=0.5;f*=2;}return v/tot;}
+
+/* =========================================================
+   Texturas procedurales (atlas 16x16 por baldosa)
+   ========================================================= */
+const TS=16, NT=16;
+const T={grassTop:0,grassSide:1,dirt:2,stone:3,logSide:4,logTop:5,leaves:6,sand:7,planks:8,
+  cobble:9,brick:10,glass:11,snow:12,snowSide:13};
+const atlas=document.createElement('canvas'); atlas.width=TS*NT; atlas.height=TS;
+(function construirAtlas(){
+  const ctx=atlas.getContext('2d'), img=ctx.createImageData(TS*NT,TS), d=img.data, r=mulberry32(1337);
+  const cl=v=>Math.max(0,Math.min(255,v|0));
+  function set(t,x,y,R,G,B,A=255){const i=((y*TS*NT)+t*TS+x)*4;d[i]=cl(R);d[i+1]=cl(G);d[i+2]=cl(B);d[i+3]=A;}
+  function ruido(t,R,G,B,v){for(let y=0;y<TS;y++)for(let x=0;x<TS;x++){const n=(r()-.5)*v;set(t,x,y,R+n,G+n,B+n);}}
+  const tierra=(t)=>{for(let y=0;y<TS;y++)for(let x=0;x<TS;x++){let n=(r()-.5)*28;if(r()<.08)n-=25;set(t,x,y,134+n,96+n,67+n);}};
+  tierra(T.dirt);
+  for(let y=0;y<TS;y++)for(let x=0;x<TS;x++){let n=(r()-.5)*34;if(r()<.1)n+=18;set(T.grassTop,x,y,92+n,160+n,52+n*.6);}
+  tierra(T.grassSide);
+  for(let x=0;x<TS;x++){const h=3+Math.floor(r()*3);for(let y=0;y<h;y++){const n=(r()-.5)*30;set(T.grassSide,x,y,92+n,160+n,52+n*.6);}}
+  for(let y=0;y<TS;y++)for(let x=0;x<TS;x++){let n=(r()-.5)*24;if(r()<.07)n-=30;set(T.stone,x,y,126+n,126+n,128+n);}
+  for(let y=0;y<TS;y++)for(let x=0;x<TS;x++){let n=(r()-.5)*16;if(x%4===0)n-=22;if(r()<.05)n-=20;set(T.logSide,x,y,104+n,80+n,50+n);}
+  for(let y=0;y<TS;y++)for(let x=0;x<TS;x++){const dd=Math.max(Math.abs(x-7.5),Math.abs(y-7.5));const n=(r()-.5)*12;
+    if(dd>6.5)set(T.logTop,x,y,98+n,76+n,48+n);else if(Math.floor(dd)%2)set(T.logTop,x,y,150+n,116+n,72+n);else set(T.logTop,x,y,178+n,142+n,92+n);}
+  for(let y=0;y<TS;y++)for(let x=0;x<TS;x++){const n=(r()-.5)*44;set(T.leaves,x,y,58+n*.6,128+n,40+n*.5,r()<.18?0:255);}
+  ruido(T.sand,220,207,160,18);
+  for(let y=0;y<TS;y++)for(let x=0;x<TS;x++){let n=(r()-.5)*14;const banda=y>>2;
+    if(y%4===3)n-=40;if(x===((banda*7+3)%16))n-=35;set(T.planks,x,y,170+n,135+n,84+n);}
+  // Roca (voronoi que se repite)
+  const pts=[];for(let i=0;i<7;i++)pts.push([r()*TS,r()*TS,r()]);
+  for(let y=0;y<TS;y++)for(let x=0;x<TS;x++){let d1=1e9,d2=1e9,id=0;
+    for(const p of pts)for(let ox=-1;ox<=1;ox++)for(let oy=-1;oy<=1;oy++){const dx=x+.5-(p[0]+ox*TS),dy=y+.5-(p[1]+oy*TS),dd=Math.hypot(dx,dy);
+      if(dd<d1){d2=d1;d1=dd;id=p[2];}else if(dd<d2)d2=dd;}
+    const n=(r()-.5)*14;if(d2-d1<1.3)set(T.cobble,x,y,78+n,78+n,80+n);else{const b=112+id*48+n-d1*2;set(T.cobble,x,y,b,b,b+2);}}
+  for(let y=0;y<TS;y++)for(let x=0;x<TS;x++){const off=((y>>2)%2)*4;const n=(r()-.5)*24;
+    if(y%4===3||(x+off)%8===7)set(T.brick,x,y,190+n*.3,184+n*.3,172+n*.3);else set(T.brick,x,y,152+n,66+n*.5,50+n*.5);}
+  for(let y=0;y<TS;y++)for(let x=0;x<TS;x++){const borde=x===0||y===0||x===15||y===15;
+    const brillo=(x-y===6&&x>7&&x<12)||(x-y===4&&x>3&&x<7)||(x-y===5&&x>4&&x<11);
+    if(borde)set(T.glass,x,y,214,236,244);else if(brillo)set(T.glass,x,y,250,252,255);else set(T.glass,x,y,0,0,0,0);}
+  ruido(T.snow,240,244,250,12);
+  tierra(T.snowSide);
+  for(let x=0;x<TS;x++){const h=3+Math.floor(r()*3);for(let y=0;y<h;y++){const n=(r()-.5)*12;set(T.snowSide,x,y,240+n,244+n,250+n);}}
+  ctx.putImageData(img,0,0);
+})();
+
+/* =========================================================
+   Bloques
+   ========================================================= */
+const BLOQUES=[null,
+  {nombre:'Césped',  arriba:T.grassTop,abajo:T.dirt,  lado:T.grassSide},
+  {nombre:'Tierra',  arriba:T.dirt,    abajo:T.dirt,  lado:T.dirt},
+  {nombre:'Piedra',  arriba:T.stone,   abajo:T.stone, lado:T.stone},
+  {nombre:'Tronco',  arriba:T.logTop,  abajo:T.logTop,lado:T.logSide},
+  {nombre:'Hojas',   arriba:T.leaves,  abajo:T.leaves,lado:T.leaves, trans:true},
+  {nombre:'Arena',   arriba:T.sand,    abajo:T.sand,  lado:T.sand},
+  {nombre:'Tablones',arriba:T.planks,  abajo:T.planks,lado:T.planks},
+  {nombre:'Roca',    arriba:T.cobble,  abajo:T.cobble,lado:T.cobble},
+  {nombre:'Ladrillo',arriba:T.brick,   abajo:T.brick, lado:T.brick},
+  {nombre:'Vidrio',  arriba:T.glass,   abajo:T.glass, lado:T.glass, trans:true, sinSombra:true},
+  {nombre:'Nieve',   arriba:T.snow,    abajo:T.dirt,  lado:T.snowSide},
+];
+const B={aire:0,cesped:1,tierra:2,piedra:3,tronco:4,hojas:5,arena:6,tablones:7,roca:8,ladrillo:9,vidrio:10,nieve:11};
+const TRANS=new Uint8Array(BLOQUES.length), OCLUYE=new Uint8Array(BLOQUES.length);
+BLOQUES.forEach((b,i)=>{if(!b)return;TRANS[i]=b.trans?1:0;OCLUYE[i]=b.sinSombra?0:1;});
+
+function iconoBloque(id){
+  const c=document.createElement('canvas');c.width=48;c.height=48;const x=c.getContext('2d');x.imageSmoothingEnabled=false;
+  const b=BLOQUES[id];
+  const cara=(t,m,osc)=>{x.setTransform(...m);x.drawImage(atlas,t*TS,0,TS,TS,0,0,TS,TS);
+    if(osc){x.globalCompositeOperation='source-atop';x.fillStyle=`rgba(0,0,0,${osc})`;x.fillRect(0,0,TS,TS);x.globalCompositeOperation='source-over';}};
+  cara(b.lado,[1.25,.625,0,1.5,4,12],.22);
+  cara(b.lado,[1.25,-.625,0,1.5,24,22],.38);
+  cara(b.arriba,[1.25,-.625,1.25,.625,4,12],0);
+  return c.toDataURL();
+}
+
+/* =========================================================
+   Mundo: chunks de 16 x 64 x 16
+   ========================================================= */
+const CX=16, CY=64, CZ=16;
+const CLAVE_GUARDADO='blockverse-mundo-v1';
+let semilla=1+Math.floor(Math.random()*1e6);
+let ediciones={};           // clave de chunk -> { "x,y,z": id }
+let posGuardada=null;
+
+function cargarPartida(){
+  try{const s=JSON.parse(localStorage.getItem(CLAVE_GUARDADO)||'null');
+    if(s&&s.semilla){semilla=s.semilla;ediciones=s.ediciones||{};posGuardada=s.pos||null;}}catch(e){}
+}
+let temporizadorGuardado=0;
+function guardarPartida(){
+  clearTimeout(temporizadorGuardado);
+  temporizadorGuardado=setTimeout(()=>{try{localStorage.setItem(CLAVE_GUARDADO,JSON.stringify({semilla,ediciones,
+    pos:[jugador.pos.x,jugador.pos.y,jugador.pos.z,jugador.yaw,jugador.pitch,jugador.vuela]}));}catch(e){}},400);
+}
+
+function altura(x,z){
+  const continente=fbm(x*0.004,z*0.004,semilla,3);
+  const colinas=fbm(x*0.018,z*0.018,semilla+50,4);
+  const montes=Math.pow(Math.max(0,fbm(x*0.008,z*0.008,semilla+90,3)-0.45)*2.2,2);
+  const h=14+continente*14+colinas*12+montes*30;
+  return Math.max(2,Math.min(CY-10,Math.floor(h)));
+}
+function hayArbol(x,z){return hash2(x,z,semilla+777)<0.006;}
+function altoArbol(x,z){return 4+Math.floor(hash2(x,z,semilla+778)*3);}
+
+const chunks=new Map();     // "cx,cz" -> {cx,cz,datos,malla}
+const idx=(x,y,z)=>x+z*CX+y*CX*CZ;
+const claveChunk=(cx,cz)=>cx+','+cz;
+
+function generarChunk(cx,cz){
+  const datos=new Uint8Array(CX*CY*CZ), bx=cx*CX, bz=cz*CZ;
+  for(let x=0;x<CX;x++)for(let z=0;z<CZ;z++){
+    const wx=bx+x, wz=bz+z, h=altura(wx,wz);
+    const arenoso=h<=20, nevado=h>=46;
+    for(let y=0;y<=h;y++){
+      let id;
+      if(y===h) id=arenoso?B.arena:(nevado?B.nieve:B.cesped);
+      else if(y>h-4) id=arenoso?B.arena:B.tierra;
+      else id=B.piedra;
+      datos[idx(x,y,z)]=id;
+    }
+  }
+  // Árboles (también los de columnas vecinas que asoman a este chunk)
+  for(let wx=bx-2;wx<bx+CX+2;wx++)for(let wz=bz-2;wz<bz+CZ+2;wz++){
+    if(!hayArbol(wx,wz))continue;
+    const h=altura(wx,wz); if(h<=20||h>=44)continue;
+    const alto=altoArbol(wx,wz), cima=h+alto;
+    const poner=(x,y,z,id,soloAire)=>{const lx=x-bx,lz=z-bz;
+      if(lx<0||lz<0||lx>=CX||lz>=CZ||y<0||y>=CY)return;const i=idx(lx,y,lz);if(soloAire&&datos[i])return;datos[i]=id;};
+    for(let y=cima-2;y<=cima+1;y++){const rad=y>=cima?1:2;
+      for(let dx=-rad;dx<=rad;dx++)for(let dz=-rad;dz<=rad;dz++){
+        if(Math.abs(dx)===rad&&Math.abs(dz)===rad&&(y===cima+1||hash2(wx+dx*7,wz+dz*13+y,semilla)<.5))continue;
+        poner(wx+dx,y,wz+dz,B.hojas,true);}}
+    for(let y=h+1;y<=cima;y++)poner(wx,y,wz,B.tronco,false);
+  }
+  const ed=ediciones[claveChunk(cx,cz)];
+  if(ed)for(const k in ed){const [x,y,z]=k.split(',').map(Number);datos[idx(x,y,z)]=ed[k];}
+  const ch={cx,cz,datos,malla:null};
+  chunks.set(claveChunk(cx,cz),ch);
+  return ch;
+}
+function obtenerChunk(cx,cz){return chunks.get(claveChunk(cx,cz))||generarChunk(cx,cz);}
+function getBloque(x,y,z){
+  if(y<0)return B.piedra; if(y>=CY)return 0;
+  const cx=Math.floor(x/CX), cz=Math.floor(z/CZ);
+  return obtenerChunk(cx,cz).datos[idx(x-cx*CX,y,z-cz*CZ)];
+}
+function setBloque(x,y,z,id){
+  if(y<0||y>=CY)return;
+  const cx=Math.floor(x/CX), cz=Math.floor(z/CZ), lx=x-cx*CX, lz=z-cz*CZ;
+  const ch=obtenerChunk(cx,cz); ch.datos[idx(lx,y,lz)]=id;
+  const k=claveChunk(cx,cz); (ediciones[k]||(ediciones[k]={}))[lx+','+y+','+lz]=id;
+  reconstruir(ch);
+  const bx=lx===0?-1:lx===CX-1?1:0, bz=lz===0?-1:lz===CZ-1?1:0;
+  if(bx)reconstruirEn(cx+bx,cz); if(bz)reconstruirEn(cx,cz+bz); if(bx&&bz)reconstruirEn(cx+bx,cz+bz);
+  guardarPartida();
+}
+function reconstruirEn(cx,cz){const ch=chunks.get(claveChunk(cx,cz));if(ch&&ch.malla)reconstruir(ch);}
+
+/* =========================================================
+   Mallado con oclusión ambiental por vértice
+   ========================================================= */
+const CARAS=[
+  {dir:[-1,0,0],luz:.78,ld:'lado', c:[[0,1,0,0,1],[0,0,0,0,0],[0,1,1,1,1],[0,0,1,1,0]]},
+  {dir:[ 1,0,0],luz:.78,ld:'lado', c:[[1,1,1,0,1],[1,0,1,0,0],[1,1,0,1,1],[1,0,0,1,0]]},
+  {dir:[0,-1,0],luz:.5, ld:'abajo',c:[[1,0,1,1,0],[0,0,1,0,0],[1,0,0,1,1],[0,0,0,0,1]]},
+  {dir:[0, 1,0],luz:1,  ld:'arriba',c:[[0,1,1,1,1],[1,1,1,0,1],[0,1,0,1,0],[1,1,0,0,0]]},
+  {dir:[0,0,-1],luz:.66,ld:'lado', c:[[1,0,0,0,0],[0,0,0,1,0],[1,1,0,0,1],[0,1,0,1,1]]},
+  {dir:[0,0, 1],luz:.66,ld:'lado', c:[[0,0,1,0,0],[1,0,1,1,0],[0,1,1,0,1],[1,1,1,1,1]]},
+];
+const NIVEL_AO=[.45,.65,.82,1];
+const EPS_UV=0.0008;
+
+function construirGeometria(ch){
+  const pos=[],uv=[],col=[],ind=[];
+  const {datos,cx,cz}=ch, bx=cx*CX, bz=cz*CZ;
+  const vecinos=new Map();
+  const get=(x,y,z)=>{
+    if(y<0)return B.piedra; if(y>=CY)return 0;
+    if(x>=0&&x<CX&&z>=0&&z<CZ)return datos[idx(x,y,z)];
+    const ncx=cx+Math.floor(x/CX), ncz=cz+Math.floor(z/CZ), k=ncx+','+ncz;
+    let d=vecinos.get(k); if(!d){d=obtenerChunk(ncx,ncz).datos;vecinos.set(k,d);}
+    return d[idx(x-(ncx-cx)*CX,y,z-(ncz-cz)*CZ)];
+  };
+  const ocl=(x,y,z)=>OCLUYE[get(x,y,z)];
+  const ao=[0,0,0,0];
+  for(let y=0;y<CY;y++)for(let z=0;z<CZ;z++)for(let x=0;x<CX;x++){
+    const b=datos[idx(x,y,z)]; if(!b)continue;
+    const def=BLOQUES[b];
+    for(const f of CARAS){
+      const nx=x+f.dir[0], ny=y+f.dir[1], nz=z+f.dir[2], n=get(nx,ny,nz);
+      if(n&&!(TRANS[n]&&n!==b))continue;
+      const t=def[f.ld], u0=t/NT+EPS_UV, u1=(t+1)/NT-EPS_UV;
+      const ndx=pos.length/3;
+      // ejes tangentes de la cara
+      const ej=f.dir[0]?[1,2]:f.dir[1]?[0,2]:[0,1];
+      for(let i=0;i<4;i++){
+        const c=f.c[i];
+        pos.push(x+c[0],y+c[1],z+c[2]);
+        uv.push(c[3]?u1:u0, c[4]?1-EPS_UV:EPS_UV);
+        const o=[nx,ny,nz];
+        const da=c[ej[0]]*2-1, db=c[ej[1]]*2-1;
+        const pa=o.slice(); pa[ej[0]]+=da;
+        const pb=o.slice(); pb[ej[1]]+=db;
+        const pc=pa.slice(); pc[ej[1]]+=db;
+        const s1=ocl(pa[0],pa[1],pa[2]), s2=ocl(pb[0],pb[1],pb[2]), s3=ocl(pc[0],pc[1],pc[2]);
+        ao[i]=(s1&&s2)?0:3-(s1+s2+s3);
+        const l=f.luz*NIVEL_AO[ao[i]];
+        col.push(l,l,l);
+      }
+      if(ao[0]+ao[3]>ao[1]+ao[2]) ind.push(ndx,ndx+1,ndx+3, ndx,ndx+3,ndx+2);
+      else ind.push(ndx,ndx+1,ndx+2, ndx+2,ndx+1,ndx+3);
+    }
+  }
+  const g=new THREE.BufferGeometry();
+  g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));
+  g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
+  g.setAttribute('color',new THREE.Float32BufferAttribute(col,3));
+  g.setIndex(ind);
+  g.computeBoundingSphere();
+  return g;
+}
+
+/* =========================================================
+   Three.js: escena, cámara y materiales
+   ========================================================= */
+const lienzo=document.getElementById('vista');
+const renderer=new THREE.WebGLRenderer({canvas:lienzo,antialias:false});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.setSize(innerWidth,innerHeight);
+const escena=new THREE.Scene();
+const CIELO=new THREE.Color(0x8ecbff);
+escena.background=CIELO;
+escena.fog=new THREE.Fog(CIELO,40,96);
+const camara=new THREE.PerspectiveCamera(75,innerWidth/innerHeight,0.05,1000);
+camara.rotation.order='YXZ';
+
+const texAtlas=new THREE.CanvasTexture(atlas);
+texAtlas.magFilter=THREE.NearestFilter; texAtlas.minFilter=THREE.NearestFilter; texAtlas.generateMipmaps=false;
+const matMundo=new THREE.MeshBasicMaterial({map:texAtlas,vertexColors:true,alphaTest:.5});
+
+function reconstruir(ch){
+  const g=construirGeometria(ch);
+  if(ch.malla){ch.malla.geometry.dispose();ch.malla.geometry=g;}
+  else{ch.malla=new THREE.Mesh(g,matMundo);ch.malla.position.set(ch.cx*CX,0,ch.cz*CZ);escena.add(ch.malla);}
+}
+
+// Nubes: textura de ruido en un plano muy grande
+const nubesCanvas=document.createElement('canvas');nubesCanvas.width=nubesCanvas.height=64;
+(function(){const x=nubesCanvas.getContext('2d'),img=x.createImageData(64,64);
+  // ruido de valor periódico para que la textura se repita sin costuras
+  const periodico=(x,z,p,s)=>{const x0=Math.floor(x),z0=Math.floor(z),fx=smooth(x-x0),fz=smooth(z-z0),m=v=>((v%p)+p)%p;
+    const a=hash2(m(x0),m(z0),s),b=hash2(m(x0+1),m(z0),s),c=hash2(m(x0),m(z0+1),s),d=hash2(m(x0+1),m(z0+1),s);
+    const ab=a+(b-a)*fx;return ab+((c+(d-c)*fx)-ab)*fz;};
+  for(let j=0;j<64;j++)for(let i=0;i<64;i++){
+    const v=periodico(i/8,j/8,8,4242)*.7+periodico(i/4,j/4,16,4343)*.3;
+    const a=v>.56?235:0, k=(j*64+i)*4; img.data[k]=img.data[k+1]=img.data[k+2]=255; img.data[k+3]=a;}
+  x.putImageData(img,0,0);})();
+const texNubes=new THREE.CanvasTexture(nubesCanvas);
+texNubes.magFilter=THREE.NearestFilter;texNubes.minFilter=THREE.NearestFilter;
+texNubes.wrapS=texNubes.wrapT=THREE.RepeatWrapping;texNubes.repeat.set(12,12);
+const nubes=new THREE.Mesh(new THREE.PlaneGeometry(64*12*4,64*12*4),
+  new THREE.MeshBasicMaterial({map:texNubes,transparent:true,opacity:.85,fog:false,depthWrite:false,side:THREE.DoubleSide}));
+nubes.rotation.x=-Math.PI/2; nubes.position.y=CY+30; escena.add(nubes);
+
+// Contorno del bloque apuntado
+const contorno=new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(1.004,1.004,1.004)),
+  new THREE.LineBasicMaterial({color:0x000000,transparent:true,opacity:.55}));
+contorno.visible=false; escena.add(contorno);
+
+/* =========================================================
+   Jugador y física
+   ========================================================= */
+const ANCHO=0.3, ALTO=1.8, OJOS=1.62;
+const jugador={pos:new THREE.Vector3(),vel:new THREE.Vector3(),yaw:0,pitch:0,suelo:false,vuela:false};
+const teclas={};
+
+function esSolido(x,y,z){const b=getBloque(x,y,z);return b!==0;}
+function choca(p){
+  const x0=Math.floor(p.x-ANCHO),x1=Math.floor(p.x+ANCHO-1e-7),
+        y0=Math.floor(p.y),y1=Math.floor(p.y+ALTO-1e-7),
+        z0=Math.floor(p.z-ANCHO),z1=Math.floor(p.z+ANCHO-1e-7);
+  for(let x=x0;x<=x1;x++)for(let y=y0;y<=y1;y++)for(let z=z0;z<=z1;z++)if(esSolido(x,y,z))return [x,y,z];
+  return null;
+}
+function moverEje(eje,d){
+  const p=jugador.pos; p[eje]+=d;
+  for(let n=0;n<4;n++){
+    const c=choca(p); if(!c)return false;
+    const b=c[eje==='x'?0:eje==='y'?1:2];
+    if(eje==='y')p.y=d>0?b-ALTO-1e-4:b+1+1e-4;
+    else p[eje]=d>0?b-ANCHO-1e-4:b+1+ANCHO+1e-4;
+  }
+  return true;
+}
+function fisica(dt){
+  const j=jugador, rapidez=j.vuela?11:(teclas.ShiftLeft||teclas.ShiftRight?6.2:4.3);
+  let fx=0,fz=0;
+  if(teclas.KeyW)fz-=1; if(teclas.KeyS)fz+=1; if(teclas.KeyA)fx-=1; if(teclas.KeyD)fx+=1;
+  const len=Math.hypot(fx,fz)||1; fx/=len; fz/=len;
+  const s=Math.sin(j.yaw), c=Math.cos(j.yaw);
+  const wx=(fx*c+fz*s)*rapidez, wz=(-fx*s+fz*c)*rapidez;
+  const k=Math.min(1,dt*(j.suelo||j.vuela?14:4));
+  j.vel.x+=(wx-j.vel.x)*k; j.vel.z+=(wz-j.vel.z)*k;
+  if(j.vuela){
+    let vy=0; if(teclas.Space)vy+=1; if(teclas.ShiftLeft||teclas.ShiftRight)vy-=1;
+    j.vel.y+=(vy*9-j.vel.y)*Math.min(1,dt*12);
+  }else{
+    j.vel.y-=30*dt; if(j.vel.y<-50)j.vel.y=-50;
+    if(teclas.Space&&j.suelo)j.vel.y=8.6;
+  }
+  const pasos=Math.ceil(Math.max(Math.abs(j.vel.x),Math.abs(j.vel.y),Math.abs(j.vel.z))*dt/0.25)||1;
+  const h=dt/pasos; let tocoSuelo=false;
+  for(let i=0;i<pasos;i++){
+    if(moverEje('x',j.vel.x*h))j.vel.x=0;
+    if(moverEje('z',j.vel.z*h))j.vel.z=0;
+    const vy=j.vel.y;
+    if(moverEje('y',vy*h)){if(vy<0){tocoSuelo=true;if(j.vuela)j.vuela=false;}j.vel.y=0;}
+  }
+  j.suelo=tocoSuelo||(!j.vuela&&j.vel.y<=0&&!!choca({x:j.pos.x,y:j.pos.y-0.02,z:j.pos.z}));
+  if(j.pos.y<-30)aparecer();
+}
+function aparecer(){
+  let x=8.5,z=8.5; // busca una columna seca cerca del origen
+  for(let r=0;r<200;r+=4){const h=altura(Math.floor(x+r),Math.floor(z));if(h>20){x+=r;break;}}
+  let y=CY-1; while(y>0&&!getBloque(Math.floor(x),y,Math.floor(z)))y--;
+  jugador.pos.set(x,y+1.01,z); jugador.vel.set(0,0,0);
+}
+
+/* =========================================================
+   Rayo (DDA) para apuntar bloques
+   ========================================================= */
+function lanzarRayo(o,d,max){
+  let x=Math.floor(o.x),y=Math.floor(o.y),z=Math.floor(o.z);
+  const sx=Math.sign(d.x),sy=Math.sign(d.y),sz=Math.sign(d.z);
+  const tdx=sx?Math.abs(1/d.x):Infinity,tdy=sy?Math.abs(1/d.y):Infinity,tdz=sz?Math.abs(1/d.z):Infinity;
+  let tx=sx>0?(x+1-o.x)*tdx:sx<0?(o.x-x)*tdx:Infinity;
+  let ty=sy>0?(y+1-o.y)*tdy:sy<0?(o.y-y)*tdy:Infinity;
+  let tz=sz>0?(z+1-o.z)*tdz:sz<0?(o.z-z)*tdz:Infinity;
+  let n=[0,0,0],t=0;
+  while(t<=max){
+    const b=getBloque(x,y,z);
+    if(b)return {x,y,z,n,b};
+    if(tx<ty&&tx<tz){x+=sx;t=tx;tx+=tdx;n=[-sx,0,0];}
+    else if(ty<tz){y+=sy;t=ty;ty+=tdy;n=[0,-sy,0];}
+    else{z+=sz;t=tz;tz+=tdz;n=[0,0,-sz];}
+  }
+  return null;
+}
+let apuntado=null;
+function actualizarApuntado(){
+  const dir=new THREE.Vector3(); camara.getWorldDirection(dir);
+  apuntado=lanzarRayo(camara.position,dir,6);
+  contorno.visible=!!apuntado;
+  if(apuntado)contorno.position.set(apuntado.x+.5,apuntado.y+.5,apuntado.z+.5);
+}
+function romper(){
+  if(!apuntado)return;
+  if(apuntado.y<=0)return; // capa del fondo indestructible
+  setBloque(apuntado.x,apuntado.y,apuntado.z,0);
+}
+function colocar(){
+  if(!apuntado)return;
+  const x=apuntado.x+apuntado.n[0],y=apuntado.y+apuntado.n[1],z=apuntado.z+apuntado.n[2];
+  if(y<0||y>=CY||getBloque(x,y,z))return;
+  const p=jugador.pos;
+  const solapa=x+1>p.x-ANCHO&&x<p.x+ANCHO&&y+1>p.y&&y<p.y+ALTO&&z+1>p.z-ANCHO&&z<p.z+ANCHO;
+  if(solapa)return;
+  setBloque(x,y,z,barra[ranura]);
+}
+
+/* =========================================================
+   Carga / descarga de chunks alrededor del jugador
+   ========================================================= */
+let radio=6, offsets=[];
+function calcularOffsets(){
+  offsets=[];for(let x=-radio;x<=radio;x++)for(let z=-radio;z<=radio;z++)if(x*x+z*z<=radio*radio+1)offsets.push([x,z,x*x+z*z]);
+  offsets.sort((a,b)=>a[2]-b[2]);
+  escena.fog.near=radio*CX*.55; escena.fog.far=radio*CX;
+}
+function gestionarChunks(presupuesto){
+  const pcx=Math.floor(jugador.pos.x/CX), pcz=Math.floor(jugador.pos.z/CZ);
+  let hechos=0;
+  for(const [ox,oz] of offsets){
+    const ch=obtenerChunk(pcx+ox,pcz+oz);
+    if(!ch.malla){reconstruir(ch);if(++hechos>=presupuesto)break;}
+  }
+  // descarga lejana
+  const lim=radio+2;
+  for(const [k,ch] of chunks){
+    const dx=ch.cx-pcx,dz=ch.cz-pcz;
+    if(ch.malla&&(Math.abs(dx)>lim||Math.abs(dz)>lim)){escena.remove(ch.malla);ch.malla.geometry.dispose();ch.malla=null;}
+    if(Math.abs(dx)>lim+2||Math.abs(dz)>lim+2)chunks.delete(k);
+  }
+}
+
+/* =========================================================
+   Interfaz: barra rápida, inventario y menú
+   ========================================================= */
+const ICONOS=BLOQUES.map((b,i)=>b?iconoBloque(i):null);
+let barra=[B.cesped,B.tierra,B.piedra,B.roca,B.tablones,B.tronco,B.ladrillo,B.vidrio,B.hojas];
+let ranura=0;
+const elBarra=document.getElementById('barra'), elNombre=document.getElementById('nombreBloque');
+let temporizadorNombre=0;
+function pintarBarra(){
+  elBarra.innerHTML='';
+  barra.forEach((id,i)=>{const d=document.createElement('div');d.className='ranura'+(i===ranura?' activa':'');
+    d.innerHTML=`<span>${i+1}</span><img src="${ICONOS[id]}" alt="${BLOQUES[id].nombre}">`;elBarra.appendChild(d);});
+  elNombre.textContent=BLOQUES[barra[ranura]].nombre; elNombre.style.opacity=1;
+  clearTimeout(temporizadorNombre); temporizadorNombre=setTimeout(()=>elNombre.style.opacity=0,1500);
+}
+const rejilla=document.getElementById('rejilla');
+BLOQUES.forEach((b,i)=>{if(!b)return;const d=document.createElement('div');d.className='celda';
+  d.innerHTML=`<img src="${ICONOS[i]}" alt="">${b.nombre}`;
+  d.onclick=()=>{barra[ranura]=i;pintarBarra();cerrarInventario();};rejilla.appendChild(d);});
+
+let estado='menu'; // 'menu' | 'jugando' | 'inventario'
+const elMenu=document.getElementById('menu'), elInv=document.getElementById('inventario');
+const hud=[document.getElementById('mira'),document.getElementById('info'),elBarra];
+function mostrarHud(v){hud.forEach(e=>e.classList.toggle('oculto',!v));}
+function bloquear(){lienzo.requestPointerLock&&lienzo.requestPointerLock();}
+function empezar(){
+  estado='jugando'; elMenu.classList.add('oculto'); elInv.classList.add('oculto'); mostrarHud(true); pintarBarra(); bloquear();
+}
+function abrirInventario(){estado='inventario';elInv.classList.remove('oculto');document.exitPointerLock();}
+function cerrarInventario(){elInv.classList.add('oculto');empezar();}
+document.addEventListener('pointerlockchange',()=>{
+  if(document.pointerLockElement===lienzo)return;
+  if(estado==='jugando'){estado='menu';elMenu.classList.remove('oculto');document.getElementById('btnJugar').textContent='Continuar';guardarPartida();}
+});
+document.getElementById('btnJugar').onclick=empezar;
+document.getElementById('btnNuevo').onclick=()=>{
+  if(Object.keys(ediciones).length&&!confirm('¿Crear un mundo nuevo? Se perderán tus construcciones.'))return;
+  semilla=1+Math.floor(Math.random()*1e6); ediciones={}; posGuardada=null;
+  for(const ch of chunks.values())if(ch.malla){escena.remove(ch.malla);ch.malla.geometry.dispose();}
+  chunks.clear(); aparecer(); jugador.vuela=false; gestionarChunks(9); guardarPartida(); empezar();
+};
+const selDist=document.getElementById('selDistancia');
+try{const r=localStorage.getItem('blockverse-radio');if(r)selDist.value=r;}catch(e){}
+radio=+selDist.value;
+selDist.onchange=()=>{radio=+selDist.value;calcularOffsets();try{localStorage.setItem('blockverse-radio',radio);}catch(e){}};
+lienzo.addEventListener('click',()=>{if(estado==='jugando'&&document.pointerLockElement!==lienzo)bloquear();});
+
+/* ---------- Entrada ---------- */
+let ultimoEspacio=0, clicIzq=false, clicDer=false, repetir=0;
+document.addEventListener('keydown',e=>{
+  if(e.code==='KeyE'){if(estado==='jugando')abrirInventario();else if(estado==='inventario')cerrarInventario();return;}
+  if(e.code==='Escape'&&estado==='inventario'){cerrarInventario();return;}
+  if(estado!=='jugando')return;
+  teclas[e.code]=true;
+  if(e.code==='Space'){e.preventDefault();
+    const ahora=performance.now(); if(!e.repeat){if(ahora-ultimoEspacio<280){jugador.vuela=!jugador.vuela;jugador.vel.y=0;}ultimoEspacio=ahora;}}
+  if(e.code==='KeyF'&&!e.repeat){jugador.vuela=!jugador.vuela;jugador.vel.y=0;}
+  if(/^Digit[1-9]$/.test(e.code)){ranura=+e.code.slice(5)-1;pintarBarra();}
+});
+document.addEventListener('keyup',e=>{teclas[e.code]=false;});
+window.addEventListener('blur',()=>{for(const k in teclas)teclas[k]=false;clicIzq=clicDer=false;});
+document.addEventListener('mousemove',e=>{
+  if(document.pointerLockElement!==lienzo)return;
+  jugador.yaw-=e.movementX*0.0022; jugador.pitch-=e.movementY*0.0022;
+  jugador.pitch=Math.max(-Math.PI/2+.001,Math.min(Math.PI/2-.001,jugador.pitch));
+});
+document.addEventListener('mousedown',e=>{
+  if(document.pointerLockElement!==lienzo)return;
+  if(e.button===0){clicIzq=true;romper();repetir=.28;}
+  if(e.button===2){clicDer=true;colocar();repetir=.28;}
+});
+document.addEventListener('mouseup',e=>{if(e.button===0)clicIzq=false;if(e.button===2)clicDer=false;});
+document.addEventListener('contextmenu',e=>e.preventDefault());
+document.addEventListener('wheel',e=>{if(estado!=='jugando')return;ranura=(ranura+(e.deltaY>0?1:-1)+9)%9;pintarBarra();},{passive:true});
+window.addEventListener('resize',()=>{camara.aspect=innerWidth/innerHeight;camara.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);});
+
+/* =========================================================
+   Bucle principal
+   ========================================================= */
+cargarPartida();
+calcularOffsets();
+if(posGuardada){jugador.pos.set(posGuardada[0],posGuardada[1],posGuardada[2]);jugador.yaw=posGuardada[3]||0;jugador.pitch=posGuardada[4]||0;jugador.vuela=!!posGuardada[5];}
+else aparecer();
+if(posGuardada)document.getElementById('btnJugar').textContent='Continuar';
+gestionarChunks(25);
+
+const elInfo=document.getElementById('info');
+let previo=performance.now(), fpsT=0, fpsN=0, fps=0, tiempo=0, guardadoT=0;
+function bucle(ahora){
+  requestAnimationFrame(bucle);
+  const dt=Math.min(.05,(ahora-previo)/1000); previo=ahora; tiempo+=dt;
+  if(estado==='jugando'){
+    fisica(dt);
+    if(clicIzq||clicDer){repetir-=dt;if(repetir<=0){repetir=.2;actualizarApuntado();clicIzq?romper():colocar();}}
+    guardadoT+=dt; if(guardadoT>5){guardadoT=0;guardarPartida();}
+  }
+  gestionarChunks(2);
+  camara.position.set(jugador.pos.x,jugador.pos.y+OJOS,jugador.pos.z);
+  camara.rotation.set(jugador.pitch,jugador.yaw,0);
+  actualizarApuntado();
+  nubes.position.x=jugador.pos.x; nubes.position.z=jugador.pos.z;
+  texNubes.offset.set((jugador.pos.x+tiempo*1.5)/(64*4),-(jugador.pos.z)/(64*4));
+  renderer.render(escena,camara);
+  fpsN++; fpsT+=dt; if(fpsT>=.5){fps=Math.round(fpsN/fpsT);fpsN=0;fpsT=0;
+    const p=jugador.pos;
+    elInfo.textContent=`Blockverse  ${fps} FPS\nXYZ: ${p.x.toFixed(1)} / ${p.y.toFixed(1)} / ${p.z.toFixed(1)}\nModo: ${jugador.vuela?'vuelo':'a pie'}   Semilla: ${semilla}`;}
+}
+requestAnimationFrame(bucle);
+</script>
+</body>
+</html>
