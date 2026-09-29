@@ -1,9 +1,10 @@
 "use strict";
 /* =========================================================
-   Atlas de texturas procedurales: baldosas de 16x16 en
-   una rejilla de 16 columnas.
+   Atlas de texturas procedurales: baldosas de 16x16 en una
+   rejilla de 16 columnas. Los píxeles con alfa 250 se tiñen
+   con el color del bioma (césped, hojas); el shader lo usa.
    ========================================================= */
-const TS=16, ATW=16;
+const TS=16, ATW=16, TINTE_A=250;
 const T={};
 const _genTiles=[];
 function tile(nombre,gen){T[nombre]=_genTiles.length;_genTiles.push(gen);}
@@ -11,154 +12,261 @@ function tile(nombre,gen){T[nombre]=_genTiles.length;_genTiles.push(gen);}
 (function definirBaldosas(){
   const n=(r,v)=>(r()-.5)*v;
   const cada=f=>{for(let y=0;y<TS;y++)for(let x=0;x<TS;x++)f(x,y);};
-  // ayudantes reutilizables
-  const tierra=(p,r)=>cada((x,y)=>{let k=n(r,28);if(r()<.08)k-=25;p(x,y,134+k,96+k,67+k);});
-  const piedra=(p,r)=>cada((x,y)=>{let k=n(r,24);if(r()<.07)k-=30;p(x,y,126+k,126+k,128+k);});
-  const pizarra=(p,r)=>cada((x,y)=>{let k=n(r,18);if((x+Math.floor(y/3))%5===0)k-=14;p(x,y,74+k,74+k,82+k);});
-  const netherrack=(p,r)=>cada((x,y)=>{let k=n(r,34);if(r()<.12)k-=30;p(x,y,112+k,46+k*.5,44+k*.5);});
-  const mena=(base,col,brillo)=>(p,r)=>{base(p,r);
-    for(let k=0;k<5;k++){const cx=2+Math.floor(r()*11), cy=2+Math.floor(r()*11);
-      for(const [a,b] of [[0,0],[1,0],[0,1],[1,1],[-1,0],[0,-1]])if(r()<.75){const q=n(r,30);p(cx+a,cy+b,col[0]+q,col[1]+q,col[2]+q);}
+  // Ruido de valor periódico (se repite cada 16 píxeles, sin costuras)
+  const pn=(x,y,celdas,s)=>{const f=16/celdas,gx=x/f,gy=y/f,x0=Math.floor(gx),y0=Math.floor(gy),fx=smooth(gx-x0),fy=smooth(gy-y0),m=v=>((v%celdas)+celdas)%celdas;
+    const a=hash2(m(x0),m(y0),s),b=hash2(m(x0+1),m(y0),s),c=hash2(m(x0),m(y0+1),s),d=hash2(m(x0+1),m(y0+1),s);
+    const ab=a+(b-a)*fx;return ab+((c+(d-c)*fx)-ab)*fy;};
+  const semi={v:1};
+  const S=()=>semi.v++*97;
+  // ---- materiales base ----
+  const piedra=(p,r,s=S())=>cada((x,y)=>{const b=pn(x,y,4,s)*22+pn(x,y,8,s+1)*14;let k=n(r,10)+b-18;
+    if(pn(x,y,8,s+2)>.78)k-=16;p(x,y,128+k,128+k,130+k);});
+  const tierra=(p,r,s=S())=>cada((x,y)=>{const b=pn(x,y,8,s)*20;let k=n(r,16)+b-10;if(r()<.07)k-=22;if(r()<.04)k+=18;
+    p(x,y,134+k,95+k*.9,66+k*.8);});
+  const pizarra=(p,r,s=S())=>cada((x,y)=>{const b=pn(x,y,4,s)*14;let k=n(r,10)+b;if((x*3+Math.floor(y/2)*5)%11===0)k-=14;
+    if(y%5===0&&r()<.4)k-=8;p(x,y,70+k,70+k,78+k);});
+  const netherrack=(p,r,s=S())=>cada((x,y)=>{const b=pn(x,y,8,s)*30;let k=n(r,24)+b-15;if(r()<.1)k-=25;
+    p(x,y,114+k,44+k*.5,42+k*.45);});
+  // Mineral: grupos de píxeles con borde oscuro y brillo
+  const mena=(base,col,osc,brillo)=>(p,r)=>{base(p,r);
+    const grupos=4+Math.floor(r()*2);
+    for(let k=0;k<grupos;k++){const cx=2+Math.floor(r()*11), cy=2+Math.floor(r()*11);
+      const pix=[[0,0],[1,0],[0,1],[1,1],[-1,0],[0,-1],[2,1],[1,2]].filter(()=>r()<.72);
+      for(const [a,b] of pix)p(cx+a,cy+b,...osc);
+      for(const [a,b] of pix)if(r()<.8)p(cx+a,cy+b-(r()<.3?0:0),col[0]+n(r,24),col[1]+n(r,24),col[2]+n(r,24));
       p(cx,cy,...brillo);}};
-  const tablones=(p,r,R=170,G=135,B=84)=>cada((x,y)=>{let k=n(r,14);const banda=y>>2;
-    if(y%4===3)k-=40;if(x===((banda*7+3)%16))k-=35;p(x,y,R+k,G+k,B+k);});
-  const ladrillos=(p,r,col,mortero,alto=4,ancho=8)=>cada((x,y)=>{const off=(Math.floor(y/alto)%2)*(ancho/2);const k=n(r,20);
-    if(y%alto===alto-1||(x+off)%ancho===ancho-1)p(x,y,mortero[0]+k*.3,mortero[1]+k*.3,mortero[2]+k*.3);else p(x,y,col[0]+k,col[1]+k,col[2]+k);});
-  const bloqueMetal=(col)=>(p,r)=>cada((x,y)=>{const b=x===0||y===0||x===15||y===15;const k=n(r,10)+(x+y<10?14:0);
-    const f=b?.7:1;p(x,y,col[0]*f+k,col[1]*f+k,col[2]*f+k);});
+  const tablones=(p,r,col=[168,133,84],s=S())=>cada((x,y)=>{
+    const tabla=Math.floor(y/4), off=(tabla*5)%16;
+    let k=n(r,8)+(pn(x+off,tabla*4,4,s+tabla)-.5)*22;
+    if(y%4===3)k-=34; if(y%4===0)k+=6;
+    if(((x+off)%16)===15)k-=26;
+    if(((x*7+tabla*3)%13)===0&&y%4===1)k-=10;
+    p(x,y,col[0]+k,col[1]+k*.9,col[2]+k*.8);});
+  const corteza=(col,oscuro,rayas)=>(p,r,s=S())=>cada((x,y)=>{
+    const surco=pn(x*2,y*.5,8,s)>.62||x%4===0&&pn(x,y,8,s+1)>.4;
+    let k=n(r,12)+(pn(x,y,8,s+2)-.5)*16;
+    if(rayas){const raya=(y%5===Math.floor(pn(x,0,4,s+3)*5))&&r()<.7;if(raya)return p(x,y,40+k,40+k,40+k);}
+    if(surco)p(x,y,oscuro[0]+k,oscuro[1]+k,oscuro[2]+k);else p(x,y,col[0]+k,col[1]+k,col[2]+k);});
+  const anillos=(corte,borde)=>(p,r)=>cada((x,y)=>{const d=Math.hypot(x-7.5,y-7.5);const e=Math.max(Math.abs(x-7.5),Math.abs(y-7.5));const k=n(r,10);
+    if(e>6.6)return p(x,y,borde[0]+k,borde[1]+k,borde[2]+k);
+    const anillo=Math.floor(d*1.1)%2;const f=anillo?.86:1;p(x,y,corte[0]*f+k,corte[1]*f+k,corte[2]*f+k);});
+  const ladrillos=(p,r,col,mortero,alto=4,ancho=8)=>cada((x,y)=>{const fila=Math.floor(y/alto),off=(fila%2)*(ancho/2);const k=n(r,14)+(hash2(Math.floor((x+off)/ancho),fila,7)-.5)*24;
+    if(y%alto===alto-1||(x+off)%ancho===ancho-1)p(x,y,mortero[0]+k*.3,mortero[1]+k*.3,mortero[2]+k*.3);
+    else{const lx=(x+off)%ancho,ly=y%alto;const b=(lx===0||ly===0)?10:0;p(x,y,col[0]+k+b,col[1]+k+b,col[2]+k+b);}});
+  const bloqueMetal=(col,s=S())=>(p,r)=>cada((x,y)=>{const borde=x===0||y===0||x===15||y===15;const bis=x===1||y===1;
+    const k=n(r,6)+(pn(x,y,4,s)-.5)*10;const f=borde?.66:bis?1.12:1;p(x,y,col[0]*f+k,col[1]*f+k,col[2]*f+k);});
   const planta=(dibujar)=>(p,r)=>{cada((x,y)=>p(x,y,0,0,0,0));dibujar(p,r);};
-  const tallo=(p,x0,y0,y1,col)=>{for(let y=y0;y<=y1;y++)p(x0,y,...col);};
+  const tallo=(p,x0,y0,y1,col,a=255)=>{for(let y=y0;y<=y1;y++)p(x0,y,...col,a);};
+  const hojas=(densidad,s=S())=>(p,r)=>cada((x,y)=>{
+    const g=pn(x,y,8,s)*50+n(r,40);
+    if(r()<densidad)return p(x,y,0,0,0,0);
+    const v=clamp(165+g,70,240);
+    const brillo=r()<.08?30:0;p(x,y,v+brillo,v+brillo,v+brillo,TINTE_A);});
+  const florSimple=(petalo,centro,alto=8)=>planta((p,r)=>{
+    tallo(p,7,16-alto,15,[70,140,40]); p(6,13,60,150,40); p(8,12,60,150,40); p(5,12,50,130,35);
+    const cy=16-alto-1;
+    for(const [a,b] of [[0,-1],[-1,0],[1,0],[0,1],[-1,-1],[1,-1],[-1,1],[1,1],[0,-2],[-2,0],[2,0]])if(Math.abs(a)+Math.abs(b)<3)p(7+a,cy+b,petalo[0]+n(r,20),petalo[1]+n(r,20),petalo[2]+n(r,20));
+    p(7,cy,...centro);});
+  const cruzPasto=(alfa)=>planta((p,r)=>{for(let b=0;b<9;b++){const x0=1+Math.floor(r()*14),h=5+Math.floor(r()*10);
+    for(let y=15;y>15-h;y--){const v=150+((15-y)/h)*80+n(r,20);p(clamp(x0+Math.round((15-y)*(r()-.5)*.35),0,15),y,v,v,v,alfa);}}});
 
-  tile('grassTop',(p,r)=>cada((x,y)=>{let k=n(r,34);if(r()<.1)k+=18;p(x,y,92+k,160+k,52+k*.6);}));
-  tile('grassSide',(p,r)=>{tierra(p,r);for(let x=0;x<TS;x++){const h=3+Math.floor(r()*3);for(let y=0;y<h;y++){const k=n(r,30);p(x,y,92+k,160+k,52+k*.6);}}});
+  /* ---- Superficie ---- */
+  tile('grassTop',(p,r)=>{const s=S();cada((x,y)=>{const v=clamp(196+(pn(x,y,8,s)-.5)*36+n(r,30)+(r()<.1?18:0),120,250);p(x,y,v,v,v,TINTE_A);});});
+  tile('grassSide',(p,r)=>{tierra(p,r);const s=S();for(let x=0;x<TS;x++){let h=2+Math.floor(pn(x,0,4,s)*3);if(r()<.25)h+=1+Math.floor(r()*2);
+    for(let y=0;y<h;y++){const v=clamp(192+n(r,36),120,245);p(x,y,v,v,v,TINTE_A);}}});
   tile('dirt',tierra);
   tile('stone',piedra);
-  tile('logSide',(p,r)=>cada((x,y)=>{let k=n(r,16);if(x%4===0)k-=22;if(r()<.05)k-=20;p(x,y,104+k,80+k,50+k);}));
-  tile('logTop',(p,r)=>cada((x,y)=>{const d=Math.max(Math.abs(x-7.5),Math.abs(y-7.5));const k=n(r,12);
-    if(d>6.5)p(x,y,98+k,76+k,48+k);else if(Math.floor(d)%2)p(x,y,150+k,116+k,72+k);else p(x,y,178+k,142+k,92+k);}));
-  tile('leaves',(p,r)=>cada((x,y)=>{const k=n(r,44);p(x,y,58+k*.6,128+k,40+k*.5,r()<.18?0:255);}));
-  tile('sand',(p,r)=>cada((x,y)=>{const k=n(r,18);p(x,y,220+k,207+k,160+k);}));
+  tile('logSide',corteza([106,82,50],[72,54,32]));
+  tile('logTop',anillos([176,140,88],[98,76,46]));
+  tile('leaves',hojas(.16));
+  tile('sand',(p,r)=>{const s=S();cada((x,y)=>{const k=n(r,14)+(pn(x,y,8,s)-.5)*12+(r()<.06?-18:0);p(x,y,220+k,206+k,160+k);});});
   tile('planks',(p,r)=>tablones(p,r));
-  tile('cobble',(p,r)=>{const pts=[];for(let i=0;i<7;i++)pts.push([r()*TS,r()*TS,r()]);
+  tile('cobble',(p,r)=>{const pts=[];for(let i=0;i<8;i++)pts.push([r()*TS,r()*TS,r()]);
     cada((x,y)=>{let d1=1e9,d2=1e9,id=0;
       for(const q of pts)for(let ox=-1;ox<=1;ox++)for(let oy=-1;oy<=1;oy++){const dx=x+.5-(q[0]+ox*TS),dy=y+.5-(q[1]+oy*TS),dd=Math.hypot(dx,dy);
         if(dd<d1){d2=d1;d1=dd;id=q[2];}else if(dd<d2)d2=dd;}
-      const k=n(r,14);if(d2-d1<1.3)p(x,y,78+k,78+k,80+k);else{const b=112+id*48+k-d1*2;p(x,y,b,b,b+2);}});});
-  tile('brick',(p,r)=>ladrillos(p,r,[152,66,50],[190,184,172]));
+      const k=n(r,12);if(d2-d1<1.2)p(x,y,72+k,72+k,74+k);else{const b=100+id*56+k-d1*3+(d2-d1<2.2?-10:0);p(x,y,b,b,b+2);}});});
+  tile('brick',(p,r)=>ladrillos(p,r,[150,68,52],[186,180,168]));
   tile('glass',(p,r)=>cada((x,y)=>{const borde=x===0||y===0||x===15||y===15;
-    const brillo=(x-y===6&&x>7&&x<12)||(x-y===4&&x>3&&x<7)||(x-y===5&&x>4&&x<11);
-    if(borde)p(x,y,214,236,244);else if(brillo)p(x,y,250,252,255);else p(x,y,0,0,0,0);}));
-  tile('snow',(p,r)=>cada((x,y)=>{const k=n(r,12);p(x,y,240+k,244+k,250+k);}));
-  tile('snowSide',(p,r)=>{tierra(p,r);for(let x=0;x<TS;x++){const h=3+Math.floor(r()*3);for(let y=0;y<h;y++){const k=n(r,12);p(x,y,240+k,244+k,250+k);}}});
-  tile('bedrock',(p,r)=>cada((x,y)=>{let v=70+n(r,70);if(r()<.3)v=28;p(x,y,v,v,v+3);}));
-  tile('coalOre',mena(piedra,[38,38,42],[80,80,86]));
-  tile('ironOre',mena(piedra,[214,168,128],[240,205,172]));
-  tile('goldOre',mena(piedra,[250,210,50],[255,245,150]));
-  tile('diamondOre',mena(piedra,[70,222,212],[200,255,250]));
-  tile('redstoneOre',mena(piedra,[200,20,20],[255,90,90]));
-  tile('lapisOre',mena(piedra,[30,60,190],[80,120,240]));
-  tile('emeraldOre',mena(piedra,[30,200,90],[150,255,180]));
-  tile('copperOre',mena(piedra,[210,120,70],[120,200,160]));
+    const brillo=(x-y===6&&x>7&&x<12)||(x-y===4&&x>3&&x<7)||(x-y===5&&x>4&&x<11)||(x===2&&y===2);
+    if(borde)p(x,y,200+(x+y)%3*12,228,238);else if(brillo)p(x,y,250,252,255);else p(x,y,0,0,0,0);}));
+  tile('snow',(p,r)=>{const s=S();cada((x,y)=>{const k=n(r,8)+(pn(x,y,8,s)-.5)*10;p(x,y,242+k,246+k,252);});});
+  tile('snowSide',(p,r)=>{tierra(p,r);for(let x=0;x<TS;x++){const h=3+Math.floor(r()*2)+(r()<.2?2:0);for(let y=0;y<h;y++){const k=n(r,10);p(x,y,240+k,244+k,250);}}});
+  tile('bedrock',(p,r)=>{const s=S();cada((x,y)=>{let v=60+pn(x,y,4,s)*70+n(r,40);if(r()<.25)v=24;p(x,y,v,v,v+3);});});
+  // Menas
+  tile('coalOre',mena(piedra,[34,34,38],[20,20,22],[78,78,84]));
+  tile('ironOre',mena(piedra,[218,172,132],[150,112,84],[244,212,180]));
+  tile('goldOre',mena(piedra,[252,212,48],[190,130,20],[255,250,170]));
+  tile('diamondOre',mena(piedra,[80,226,214],[20,120,110],[210,255,252]));
+  tile('redstoneOre',mena(piedra,[210,20,20],[110,0,0],[255,110,110]));
+  tile('lapisOre',mena(piedra,[34,64,196],[14,30,110],[90,130,245]));
+  tile('emeraldOre',mena(piedra,[36,206,96],[10,110,44],[160,255,190]));
+  tile('copperOre',mena(piedra,[222,128,74],[140,70,40],[120,210,170]));
   tile('deepslate',pizarra);
-  tile('deepslateTop',(p,r)=>cada((x,y)=>{const k=n(r,16);const d=Math.max(Math.abs(x-7.5),Math.abs(y-7.5));p(x,y,78+k-(d>6?10:0),78+k-(d>6?10:0),86+k);}));
-  tile('dsCoal',mena(pizarra,[30,30,34],[70,70,76]));
-  tile('dsIron',mena(pizarra,[204,160,122],[235,200,170]));
-  tile('dsGold',mena(pizarra,[245,205,50],[255,240,150]));
-  tile('dsRedstone',mena(pizarra,[190,20,20],[255,80,80]));
-  tile('dsLapis',mena(pizarra,[30,60,190],[80,120,240]));
-  tile('dsDiamond',mena(pizarra,[70,222,212],[200,255,250]));
-  tile('dsCopper',mena(pizarra,[200,115,70],[120,200,160]));
-  tile('gravel',(p,r)=>cada((x,y)=>{const k=n(r,40);const c=r()<.3?[140,120,110]:[126,122,122];p(x,y,c[0]+k,c[1]+k,c[2]+k);}));
-  tile('obsidian',(p,r)=>cada((x,y)=>{const k=n(r,12);const b=r()<.08;p(x,y,(b?70:20)+k,(b?40:14)+k,(b?100:30)+k);}));
-  tile('craftTop',(p,r)=>cada((x,y)=>{const k=n(r,14);
-    if(x===0||y===0||x===15||y===15)p(x,y,96+k,70+k,42+k);
-    else if(x===5||x===10||y===5||y===10)p(x,y,128+k,96+k,58+k);else p(x,y,178+k,142+k,90+k);}));
-  tile('craftSide',(p,r)=>{tablones(p,r);cada((x,y)=>{const k=n(r,10);
-    if(y<3||x===0||x===15)p(x,y,100+k,72+k,44+k);
-    if(y>=6&&y<=8&&x>=2&&x<=6)p(x,y,160+k,160+k,165+k);
+  tile('deepslateTop',(p,r)=>{const s=S();cada((x,y)=>{const k=n(r,12)+(pn(x,y,4,s)-.5)*14;const d=Math.max(Math.abs(x-7.5),Math.abs(y-7.5));p(x,y,76+k-(d>6?10:0),76+k-(d>6?10:0),84+k);});});
+  tile('dsCoal',mena(pizarra,[28,28,32],[14,14,16],[66,66,72]));
+  tile('dsIron',mena(pizarra,[206,162,124],[130,98,72],[236,204,172]));
+  tile('dsGold',mena(pizarra,[246,206,50],[170,120,20],[255,245,160]));
+  tile('dsRedstone',mena(pizarra,[196,20,20],[100,0,0],[255,96,96]));
+  tile('dsLapis',mena(pizarra,[34,64,196],[14,30,110],[90,130,245]));
+  tile('dsDiamond',mena(pizarra,[80,226,214],[20,120,110],[210,255,252]));
+  tile('dsCopper',mena(pizarra,[210,118,70],[130,66,38],[120,210,170]));
+  tile('gravel',(p,r)=>{const pts=[];for(let i=0;i<22;i++)pts.push([r()*TS,r()*TS,r()]);
+    cada((x,y)=>{let d1=1e9,id=0,d2=1e9;for(const q of pts)for(let ox=-1;ox<=1;ox++)for(let oy=-1;oy<=1;oy++){const dd=Math.hypot(x+.5-(q[0]+ox*TS),y+.5-(q[1]+oy*TS));if(dd<d1){d2=d1;d1=dd;id=q[2];}else if(dd<d2)d2=dd;}
+      const k=n(r,10);const base=id<.3?[140,122,112]:id<.6?[118,114,114]:[150,146,144];const f=d2-d1<.9?.62:1;p(x,y,base[0]*f+k,base[1]*f+k,base[2]*f+k);});});
+  tile('obsidian',(p,r)=>{const s=S();cada((x,y)=>{const k=n(r,8)+pn(x,y,4,s)*10;const b=pn(x,y,8,s+1)>.72;p(x,y,(b?64:18)+k,(b?36:12)+k,(b?96:28)+k);});});
+  tile('craftTop',(p,r)=>{tablones(p,r);cada((x,y)=>{const k=n(r,10);
+    if(x===0||y===0||x===15||y===15)p(x,y,92+k,66+k,38+k);else if(x===1||y===1||x===14||y===14)p(x,y,120+k,90+k,54+k);
+    else if((x===5||x===10)||(y===5||y===10))p(x,y,110+k,82+k,50+k);});});
+  tile('craftSide',(p,r)=>{tablones(p,r);cada((x,y)=>{const k=n(r,8);
+    if(y<3||x===0||x===15)p(x,y,96+k,70+k,42+k);
+    if(y>=6&&y<=8&&x>=2&&x<=6)p(x,y,(y===6?180:150)+k,(y===6?180:150)+k,(y===6?186:156)+k);
     if(x>=7&&x<=8&&y>=6&&y<=9)p(x,y,70+k,48+k,28+k);
-    if(y>=5&&y<=6&&x>=10&&x<=13)p(x,y,150+k,150+k,155+k);
+    if(y>=5&&y<=6&&x>=10&&x<=13)p(x,y,140+k,140+k,146+k);
     if(x===11&&y>=7&&y<=13)p(x,y,86+k,60+k,34+k);});});
-  tile('furnaceFront',(p,r)=>cada((x,y)=>{const k=n(r,18);const off=((y>>2)%2)*3;
-    const v=(y%4===3||(x+off)%6===5)?92:124; p(x,y,v+k,v+k,v+k+2);
-    if(y===7&&x>=3&&x<=12)p(x,y,84+k,84+k,86+k);
-    if(y>=8&&y<=13&&x>=4&&x<=11)p(x,y,24+k*.4,22+k*.4,22+k*.4);}));
-  tile('furnaceTop',(p,r)=>cada((x,y)=>{const k=n(r,14);const b=x===0||y===0||x===15||y===15;p(x,y,(b?96:140)+k,(b?96:140)+k,(b?98:142)+k);}));
-  tile('chestTop',(p,r)=>cada((x,y)=>{const k=n(r,16);const b=x===0||y===0||x===15||y===15;
-    if(b)p(x,y,78+k,50+k,22+k);else p(x,y,164+k,112+k,52+k*.6);}));
-  tile('chestSide',(p,r)=>cada((x,y)=>{const k=n(r,16);const b=x===0||y===0||x===15||y===15||y===5||y===6;
-    if(b)p(x,y,78+k,50+k,22+k);else p(x,y,164+k,112+k,52+k*.6);
-    if(x>=7&&x<=8&&y>=4&&y<=8){const c=(x===7&&y>4&&y<8)?210:130;p(x,y,c,c,c+5);}}));
-  tile('torch',planta((p,r)=>{tallo(p,7,6,15,[120,86,48]);tallo(p,8,6,15,[96,68,36]);
-    p(7,4,255,230,120);p(8,4,255,200,80);p(7,5,255,180,60);p(8,5,255,160,40);p(7,3,255,250,200);p(8,3,255,220,120);}));
-  tile('bedTop',(p,r)=>cada((x,y)=>{const k=n(r,10);if(y<5)p(x,y,236+k,236+k,240+k);else p(x,y,178+k,30+k*.5,34+k*.5);
+  tile('furnaceFront',(p,r)=>{piedra(p,r);cada((x,y)=>{const k=n(r,10);
+    if(y===7&&x>=3&&x<=12)p(x,y,78+k,78+k,80+k);
+    if(y>=8&&y<=13&&x>=4&&x<=11)p(x,y,22+k*.4,20+k*.4,20+k*.4);
+    if(y===13&&x>=5&&x<=10&&r()<.5)p(x,y,90,40,20);
+    if(x===0||x===15||y===0||y===15)p(x,y,90+k,90+k,92+k);});});
+  tile('furnaceTop',(p,r)=>{piedra(p,r);cada((x,y)=>{if(x===0||y===0||x===15||y===15)p(x,y,92,92,94);});});
+  tile('chestTop',(p,r)=>{tablones(p,r,[164,112,52]);cada((x,y)=>{const b=x===0||y===0||x===15||y===15;if(b)p(x,y,74,46,20);});});
+  tile('chestSide',(p,r)=>{tablones(p,r,[164,112,52]);cada((x,y)=>{const b=x===0||y===0||x===15||y===15||y===5||y===6;
+    if(b)p(x,y,74,46,20);if(x>=7&&x<=8&&y>=4&&y<=8){const c=(x===7&&y>4&&y<8)?214:128;p(x,y,c,c,c+6);}});});
+  tile('torch',planta((p,r)=>{tallo(p,7,6,15,[128,92,52]);tallo(p,8,6,15,[98,70,38]);
+    p(7,5,255,190,70);p(8,5,255,160,40);p(7,4,255,230,120);p(8,4,255,210,90);p(7,3,255,252,210);p(8,3,255,236,150);p(7,2,255,255,230);}));
+  tile('bedTop',(p,r)=>cada((x,y)=>{const k=n(r,8);if(y<5)p(x,y,236+k,236+k,240+k);else{const f=(x+y)%4===0?.9:1;p(x,y,(176+k)*f,(30+k*.5)*f,(34+k*.5)*f);}
     if(x===0||x===15)p(x,y,140+k,110+k,70+k);}));
-  tile('bedSide',(p,r)=>cada((x,y)=>{const k=n(r,10);
-    if(y<7)p(x,y,0,0,0,0);else if(y<11)p(x,y,178+k,30+k*.5,34+k*.5);else if(y<13)p(x,y,150+k,116+k,70+k);
+  tile('bedSide',(p,r)=>cada((x,y)=>{const k=n(r,8);
+    if(y<7)p(x,y,0,0,0,0);else if(y<11)p(x,y,176+k,30+k*.5,34+k*.5);else if(y<13)p(x,y,150+k,116+k,70+k);
     else if(x<3||x>12)p(x,y,120+k,90+k,55+k);else p(x,y,0,0,0,0);}));
-  tile('tntSide',(p,r)=>cada((x,y)=>{const k=n(r,14);
+  tile('tntSide',(p,r)=>cada((x,y)=>{const k=n(r,10);
     if(y>=5&&y<=10){p(x,y,236+k,236+k,230+k);
       const letras=['###.#..#.###','.#..##.#..#.','.#..#.##..#.','.#..#..#..#.'];
       const fy=y-6,fx=x-2;if(fy>=0&&fy<4&&fx>=0&&fx<12&&letras[fy][fx]==='#')p(x,y,30,30,30);}
-    else p(x,y,200+k,40+k*.4,30+k*.4);}));
-  tile('tntTop',(p,r)=>cada((x,y)=>{const k=n(r,14);const c=Math.hypot(x-7.5,y-7.5)<3;p(x,y,c?90:200+k,c?90:40+k*.4,c?90:30+k*.4);}));
-  tile('wool',(p,r)=>cada((x,y)=>{const k=n(r,14)+((x+y)%4===0?-8:0);p(x,y,234+k,234+k,234+k);}));
-  tile('tallGrass',planta((p,r)=>{for(let b=0;b<7;b++){const x0=1+Math.floor(r()*14),h=6+Math.floor(r()*8);
-    for(let y=15;y>15-h;y--){const k=n(r,30);p(clamp(x0+Math.round((15-y)*(r()-.5)*.3),0,15),y,70+k*.5,140+k,40+k*.4);}}}));
-  tile('flowerY',planta((p,r)=>{tallo(p,7,8,15,[60,140,40]);p(6,11,60,160,40);p(8,12,60,160,40);
-    for(const [a,b] of [[7,5],[6,6],[8,6],[7,7],[6,4],[8,4],[5,5],[9,5],[5,7],[9,7]])p(a,b,250,220,40);p(7,6,200,140,20);}));
-  tile('flowerR',planta((p,r)=>{tallo(p,7,8,15,[60,140,40]);p(8,11,60,160,40);p(6,13,60,160,40);
-    for(const [a,b] of [[7,5],[6,6],[8,6],[7,7],[6,4],[8,4],[7,3],[6,7],[8,7],[5,5],[9,5]])p(a,b,220,30,30);p(7,6,60,20,20);}));
-  for(let e=0;e<8;e++)tile('wheat'+e,planta((p,r)=>{const alto=3+e*1.6, madura=e===7;
+    else{const raya=x%4===0?-20:0;p(x,y,200+k+raya,40+k*.4,30+k*.4);}}));
+  tile('tntTop',(p,r)=>cada((x,y)=>{const k=n(r,10);const c=Math.hypot(x-7.5,y-7.5)<3;p(x,y,c?80:200+k,c?80:40+k*.4,c?80:30+k*.4);if(Math.hypot(x-7.5,y-7.5)<1)p(x,y,40,40,40);}));
+  tile('wool',(p,r)=>{const s=S();cada((x,y)=>{const k=n(r,10)+(pn(x,y,8,s)-.5)*12+((x+y*3)%5===0?-8:0);p(x,y,232+k,232+k,232+k);});});
+  tile('tallGrass',cruzPasto(TINTE_A));
+  tile('flowerY',florSimple([250,220,40],[220,160,20]));
+  tile('flowerR',florSimple([220,30,30],[60,20,20],7));
+  for(let e=0;e<8;e++)tile('wheat'+e,planta((p,r)=>{const alto=2+e*1.7, madura=e===7;
     for(let c=0;c<5;c++){const x0=1+c*3+Math.floor(r()*2);
-      for(let y=15;y>15-alto;y--){const k=n(r,20);if(madura&&y<15-alto+4)p(x0,y,200+k,170+k,60+k*.5);else p(x0,y,e>4?120+k:60+k*.5,150+k,40+k*.4);}}}));
-  tile('farmland',(p,r)=>cada((x,y)=>{const k=n(r,18);const surco=y%4===0;p(x,y,(surco?70:100)+k,(surco?46:66)+k,(surco?28:40)+k);}));
-  tile('cactusSide',(p,r)=>cada((x,y)=>{const k=n(r,14);const borde=x===0||x===15;const linea=x%4===2;
-    if(borde)p(x,y,0,0,0,0);else p(x,y,(linea?30:50)+k,(linea?110:140)+k,(linea?30:40)+k);if(!borde&&r()<.05)p(x,y,220,220,180);}));
-  tile('cactusTop',(p,r)=>cada((x,y)=>{const k=n(r,14);const b=x===0||y===0||x===15||y===15;
-    if(b)p(x,y,0,0,0,0);else p(x,y,70+k,150+k,50+k);}));
-  tile('ice',(p,r)=>cada((x,y)=>{const k=n(r,10);const raya=(x+y*2)%11===0;p(x,y,(raya?220:150)+k,(raya?240:195)+k,250);}));
-  tile('sandstoneSide',(p,r)=>cada((x,y)=>{const k=n(r,10);const b=y<3?-8:y>12?-14:0;p(x,y,216+k+b,200+k+b,150+k+b);}));
-  tile('sandstoneTop',(p,r)=>cada((x,y)=>{const k=n(r,10);p(x,y,222+k,206+k,156+k);}));
-  tile('water',(p,r)=>cada((x,y)=>{const k=n(r,16)+Math.sin((x+y)*.8)*8;p(x,y,48+k,90+k,210+k,180);}));
-  tile('lava',(p,r)=>cada((x,y)=>{const v=valueNoise(x/4,y/4,77);const k=n(r,20);p(x,y,220+k,90+v*120+k,20+v*30,255);}));
+      for(let y=15;y>15-alto;y--){const k=n(r,18);const arriba=y<15-alto+4;
+        if(madura&&arriba)p(x0,y,206+k,172+k,64+k*.5);else if(e>4&&arriba)p(x0,y,150+k,170+k,60);else p(x0,y,70+k*.5,150+k,40+k*.4);}
+      if(madura)p(x0+1,Math.floor(15-alto+1),220,190,80);}}));
+  tile('farmland',(p,r)=>cada((x,y)=>{const k=n(r,14);const surco=y%4===0||y%4===1&&r()<.3;p(x,y,(surco?66:96)+k,(surco?42:62)+k,(surco?26:38)+k);}));
+  tile('cactusSide',(p,r)=>cada((x,y)=>{const k=n(r,10);const borde=x===0||x===15;const linea=x%4===2;
+    if(borde)return p(x,y,0,0,0,0);p(x,y,(linea?34:54)+k,(linea?112:142)+k,(linea?30:42)+k);if(linea&&y%4===1)p(x,y,230,230,190);}));
+  tile('cactusTop',(p,r)=>cada((x,y)=>{const k=n(r,10);const b=x===0||y===0||x===15||y===15;
+    if(b)return p(x,y,0,0,0,0);const d=Math.max(Math.abs(x-7.5),Math.abs(y-7.5));p(x,y,(d<3?90:64)+k,(d<3?170:146)+k,(d<3?60:44)+k);}));
+  tile('ice',(p,r)=>cada((x,y)=>{const k=n(r,8);const raya=(x+y*2)%11===0||(x*2-y+30)%13===0;p(x,y,(raya?220:146)+k,(raya?240:190)+k,252);}));
+  tile('sandstoneSide',(p,r)=>cada((x,y)=>{const k=n(r,8);const b=y<3?-6:y>12?-14:(y%4===0?-6:0);p(x,y,216+k+b,200+k+b,150+k+b);}));
+  tile('sandstoneTop',(p,r)=>{const s=S();cada((x,y)=>{const k=n(r,8)+(pn(x,y,4,s)-.5)*10;p(x,y,222+k,206+k,156+k);});});
+  tile('water',(p,r)=>{const s=S();cada((x,y)=>{const w=pn(x,y,4,s)*.6+pn(x,y,8,s+1)*.4;const v=clamp(150+w*80+n(r,10),120,245);p(x,y,v,v,v,170);});});
+  tile('lava',(p,r)=>{const s=S();cada((x,y)=>{const v=pn(x,y,4,s)*.7+pn(x,y,8,s+1)*.3;const k=n(r,14);
+    if(v<.32)p(x,y,150+k,40+k*.3,10);else p(x,y,226+k,96+v*130+k,20+v*40);});});
   tile('netherrack',netherrack);
-  tile('soulSand',(p,r)=>cada((x,y)=>{const k=n(r,22);const cara=((x%8===2||x%8===5)&&y%8===3)||(y%8===5&&x%8>=2&&x%8<=5);
-    p(x,y,(cara?60:92)+k,(cara?44:70)+k,(cara?34:54)+k);}));
-  tile('glowstone',(p,r)=>cada((x,y)=>{const k=n(r,40);const v=valueNoise(x/3,y/3,9);p(x,y,200+v*55+k*.3,150+v*80+k*.5,70+v*60+k*.3);}));
-  tile('quartzOre',mena(netherrack,[235,225,215],[255,255,255]));
-  tile('netherBrick',(p,r)=>ladrillos(p,r,[60,24,30],[30,12,16],4,8));
-  tile('netherPortal',(p,r)=>cada((x,y)=>{const v=Math.sin(x*.9+Math.cos(y*.7)*2)*.5+.5;p(x,y,90+v*80,20+v*30,170+v*70,190);}));
-  tile('netherGoldOre',mena(netherrack,[250,200,50],[255,240,140]));
-  tile('endStone',(p,r)=>cada((x,y)=>{let k=n(r,14);if(r()<.08)k-=18;p(x,y,222+k,224+k,166+k);}));
-  tile('endFrameSide',(p,r)=>cada((x,y)=>{const k=n(r,12);if(y<4)p(x,y,50+k,90+k,80+k);else p(x,y,214+k,218+k,160+k);}));
-  tile('endFrameTop',(p,r)=>cada((x,y)=>{const k=n(r,12);const d=Math.max(Math.abs(x-7.5),Math.abs(y-7.5));
-    p(x,y,d<4?20:50+k,d<4?30:90+k,d<4?30:80+k);}));
-  tile('endFrameTopEye',(p,r)=>cada((x,y)=>{const k=n(r,12);const d=Math.max(Math.abs(x-7.5),Math.abs(y-7.5));
-    if(d<4){const c=Math.hypot(x-7.5,y-7.5);p(x,y,c<1.5?10:40,c<1.5?40:140+k,c<1.5?20:70);}else p(x,y,50+k,90+k,80+k);}));
-  tile('endPortal',(p,r)=>cada((x,y)=>{const e=r()<.06;const c=[[120,220,200],[200,120,240],[250,250,250]][Math.floor(r()*3)];
-    p(x,y,e?c[0]:10,e?c[1]:14,e?c[2]:22);}));
-  tile('stoneBricks',(p,r)=>ladrillos(p,r,[124,124,124],[88,88,90],8,16));
-  tile('mossyStoneBricks',(p,r)=>{ladrillos(p,r,[124,124,124],[88,88,90],8,16);
-    cada((x,y)=>{if(valueNoise(x/3,y/3,31)>.55){const k=n(r,20);p(x,y,80+k,120+k,60+k);}});});
-  tile('ironBlock',bloqueMetal([220,220,222]));
-  tile('goldBlock',bloqueMetal([250,210,60]));
-  tile('diamondBlock',bloqueMetal([100,232,224]));
-  tile('coalBlock',bloqueMetal([36,36,40]));
-  tile('dragonEgg',(p,r)=>cada((x,y)=>{const k=n(r,10);const e=r()<.07;p(x,y,e?120:14+k,e?40:8+k,e?160:22+k);}));
-  tile('fire',planta((p,r)=>{for(let x=0;x<TS;x++){const h=6+Math.floor(r()*9);
-    for(let y=15;y>15-h;y--){const f=(15-y)/h;p(x,y,255,clamp(220-f*170,40,255),f<.3?80:20,r()<.1?0:230);}}}));
+  tile('soulSand',(p,r)=>{const s=S();cada((x,y)=>{const k=n(r,16)+(pn(x,y,4,s)-.5)*16;
+    const cara=((x%8===2||x%8===5)&&y%8===3)||(y%8===5&&x%8>=2&&x%8<=5);p(x,y,(cara?56:90)+k,(cara?40:68)+k,(cara?30:52)+k);});});
+  tile('glowstone',(p,r)=>{const s=S();cada((x,y)=>{const v=pn(x,y,4,s);const k=n(r,24);const borde=pn(x,y,8,s+1)>.66;
+    p(x,y,(borde?150:200+v*55)+k*.3,(borde?96:150+v*90)+k*.4,(borde?50:70+v*70)+k*.3);});});
+  tile('quartzOre',mena(netherrack,[236,228,218],[180,160,150],[255,255,255]));
+  tile('netherBrick',(p,r)=>ladrillos(p,r,[60,26,32],[28,12,16],4,8));
+  tile('netherPortal',(p,r)=>cada((x,y)=>{const v=Math.sin(x*.9+Math.cos(y*.7)*2)*.5+.5;const w=Math.sin((x+y)*.5)*.5+.5;p(x,y,90+v*90,20+w*30,170+v*80,200);}));
+  tile('netherGoldOre',mena(netherrack,[252,204,48],[170,110,20],[255,244,150]));
+  tile('endStone',(p,r)=>{const s=S();cada((x,y)=>{let k=n(r,10)+(pn(x,y,4,s)-.5)*14;if(r()<.08)k-=16;p(x,y,222+k,224+k,166+k);});});
+  tile('endFrameSide',(p,r)=>{const s=S();cada((x,y)=>{const k=n(r,10)+(pn(x,y,4,s)-.5)*10;if(y<4)p(x,y,46+k,92+k,82+k);else p(x,y,214+k,218+k,160+k);});});
+  tile('endFrameTop',(p,r)=>cada((x,y)=>{const k=n(r,10);const d=Math.max(Math.abs(x-7.5),Math.abs(y-7.5));
+    p(x,y,d<4?16:46+k,d<4?26:92+k,d<4?26:82+k);if(d>=4&&d<5)p(x,y,30,60,54);}));
+  tile('endFrameTopEye',(p,r)=>cada((x,y)=>{const k=n(r,10);const d=Math.max(Math.abs(x-7.5),Math.abs(y-7.5));
+    if(d<4){const c=Math.hypot(x-7.5,y-7.5);p(x,y,c<1.5?10:40,c<1.5?40:150+k,c<1.5?20:80);}else p(x,y,46+k,92+k,82+k);}));
+  tile('endPortal',(p,r)=>cada((x,y)=>{const e=r()<.07;const c=[[120,220,200],[200,120,240],[250,250,250],[100,160,255]][Math.floor(r()*4)];
+    p(x,y,e?c[0]:8,e?c[1]:12,e?c[2]:22);}));
+  tile('stoneBricks',(p,r)=>{piedra(p,r);cada((x,y)=>{const fila=Math.floor(y/8),off=(fila%2)*8;
+    if(y%8===7||(x+off)%16===15)p(x,y,84,84,86);else if(y%8===0||(x+off)%16===0)p(x,y,150,150,152);});});
+  tile('mossyStoneBricks',(p,r)=>{piedra(p,r);const s=S();cada((x,y)=>{const fila=Math.floor(y/8),off=(fila%2)*8;
+    if(y%8===7||(x+off)%16===15)p(x,y,84,84,86);else if(y%8===0||(x+off)%16===0)p(x,y,150,150,152);
+    if(pn(x,y,4,s)>.58){const k=n(r,20);p(x,y,74+k,112+k,54+k);}});});
+  tile('ironBlock',bloqueMetal([222,222,224]));
+  tile('goldBlock',bloqueMetal([252,212,64]));
+  tile('diamondBlock',bloqueMetal([104,234,226]));
+  tile('coalBlock',bloqueMetal([34,34,38]));
+  tile('dragonEgg',(p,r)=>cada((x,y)=>{const k=n(r,8);const e=r()<.07;p(x,y,e?120:14+k,e?40:8+k,e?160:22+k);}));
+  tile('fire',planta((p,r)=>{const s=S();for(let x=0;x<TS;x++){const h=5+Math.floor(pn(x,0,4,s)*8+r()*3);
+    for(let y=15;y>15-h;y--){const f=(15-y)/h;p(x,y,255,clamp(230-f*180,40,255),f<.3?90:20,r()<.08?0:235);}}}));
   tile('sapling',planta((p,r)=>{tallo(p,7,9,15,[100,70,40]);tallo(p,8,10,15,[90,62,34]);
-    for(let i=0;i<30;i++){const a=r()*Math.PI*2,d=r()*5;p(Math.round(7.5+Math.cos(a)*d),Math.round(6+Math.sin(a)*d*.8),50+n(r,30),130+n(r,40),40);}}));
-  tile('sugarCane',planta((p,r)=>{for(const x0 of [3,7,11]){for(let y=0;y<16;y++){const k=n(r,20);p(x0,y,120+k,190+k,90+k);p(x0+1,y,100+k,170+k,70+k);if(y%5===0)p(x0,y,90,150,60);}
-    p(x0+2,6+x0%5,110,180,80);}}));
-  tile('enchantTop',(p,r)=>cada((x,y)=>{const k=n(r,10);const esq=(x<3||x>12)&&(y<3||y>12);
-    if(esq)p(x,y,90,230,220);else if(x===0||y===0||x===15||y===15)p(x,y,30,20,40);else p(x,y,170+k,30+k*.4,40+k*.4);}));
-  tile('enchantSide',(p,r)=>cada((x,y)=>{const k=n(r,10);
-    if(y<4)p(x,y,170+k,30+k*.4,40+k*.4);else{const b=r()<.08;p(x,y,(b?70:20)+k,(b?40:14)+k,(b?100:30)+k);}}));
-  tile('spawner',(p,r)=>cada((x,y)=>{const barra=x%4===0||y%4===0;const k=n(r,20);
-    if(barra)p(x,y,40+k,50+k,60+k);else p(x,y,0,0,0,0);}));
-  tile('hayTop',(p,r)=>cada((x,y)=>{const k=n(r,20);p(x,y,200+k,170+k,40+k*.5);}));
+    for(let i=0;i<34;i++){const a=r()*Math.PI*2,d=r()*5;p(Math.round(7.5+Math.cos(a)*d),Math.round(6+Math.sin(a)*d*.8),50+n(r,30),130+n(r,40),40);}}));
+  tile('sugarCane',planta((p,r)=>{for(const x0 of [3,7,11]){for(let y=0;y<16;y++){const k=n(r,16);p(x0,y,124+k,192+k,94+k);p(x0+1,y,100+k,170+k,70+k);if(y%5===0)p(x0,y,86,150,60);}
+    p(x0+2,6+x0%5,110,180,80);p(x0-1,10-x0%4,110,180,80);}}));
+  tile('enchantTop',(p,r)=>cada((x,y)=>{const k=n(r,8);const esq=(x<3||x>12)&&(y<3||y>12);
+    if(esq)p(x,y,90,230,220);else if(x===0||y===0||x===15||y===15)p(x,y,30,20,40);else p(x,y,168+k,30+k*.4,40+k*.4);
+    if(x>=6&&x<=9&&y>=5&&y<=10)p(x,y,236,230,210);if(x===7&&y>=5&&y<=10)p(x,y,120,70,40);}));
+  tile('enchantSide',(p,r)=>cada((x,y)=>{const k=n(r,8);
+    if(y<5)p(x,y,168+k,30+k*.4,40+k*.4);else{const b=r()<.08;p(x,y,(b?64:18)+k,(b?36:12)+k,(b?96:28)+k);}}));
+  tile('spawner',(p,r)=>cada((x,y)=>{const barra=x%4===0||y%4===0;const k=n(r,16);
+    if(barra)p(x,y,44+k,54+k,64+k);else p(x,y,0,0,0,0);}));
+  tile('hayTop',(p,r)=>cada((x,y)=>{const k=n(r,16);const d=Math.max(Math.abs(x-7.5),Math.abs(y-7.5));p(x,y,(d>6.5?150:200)+k,(d>6.5?120:170)+k,40+k*.5);}));
+  /* ---- Nuevos ---- */
+  tile('haySide',(p,r)=>cada((x,y)=>{const k=n(r,16);const banda=(y>=3&&y<=4)||(y>=11&&y<=12);
+    p(x,y,(banda?140:204)+k,(banda?60:170)+k,(banda?30:44)+k*.5);if(x%3===0&&!banda)p(x,y,180+k,146+k,36);}));
+  tile('birchSide',corteza([222,220,212],[190,186,176],true));
+  tile('birchTop',anillos([206,186,130],[210,206,196]));
+  tile('spruceSide',corteza([72,52,32],[46,32,20]));
+  tile('spruceTop',anillos([130,98,58],[66,46,28]));
+  tile('jungleSide',(p,r)=>{corteza([100,78,40],[74,56,28])(p,r);cada((x,y)=>{if(r()<.05)p(x,y,70,110,40);});});
+  tile('jungleTop',anillos([176,132,86],[92,70,36]));
+  tile('acaciaSide',corteza([108,100,90],[82,76,68]));
+  tile('acaciaTop',anillos([196,106,56],[108,100,90]));
+  tile('spruceLeaves',(p,r)=>{const s=S();cada((x,y)=>{const g=pn(x,y,8,s)*40+n(r,30);if(r()<.1)return p(x,y,0,0,0,0);
+    const v=clamp(150+g-((x+y)%4===0?20:0),60,225);p(x,y,v,v,v,TINTE_A);});});
+  tile('birchSapling',planta((p,r)=>{tallo(p,7,9,15,[220,220,210]);for(let i=0;i<30;i++){const a=r()*Math.PI*2,d=r()*4.5;p(Math.round(7.5+Math.cos(a)*d),Math.round(6+Math.sin(a)*d*.8),100+n(r,30),150+n(r,30),70);}}));
+  tile('spruceSapling',planta((p,r)=>{tallo(p,7,4,15,[70,50,30]);for(let y=4;y<13;y++){const w=Math.floor((y-3)/2.5);for(let x=7-w;x<=7+w;x++)if(r()<.8)p(x,y,40+n(r,20),80+n(r,20),50);}}));
+  tile('jungleSapling',planta((p,r)=>{tallo(p,7,9,15,[100,78,40]);for(let i=0;i<40;i++){const a=r()*Math.PI*2,d=r()*5.5;p(Math.round(7.5+Math.cos(a)*d),Math.round(6+Math.sin(a)*d*.7),30+n(r,20),140+n(r,40),20);}}));
+  tile('acaciaSapling',planta((p,r)=>{tallo(p,7,8,15,[108,100,90]);for(let x=2;x<14;x++)for(let y=4;y<8;y++)if(r()<.7)p(x,y,120+n(r,30),140+n(r,30),40);}));
+  tile('fern',planta((p,r)=>{for(let h=0;h<3;h++){const x0=3+h*5;for(let y=15;y>3;y--){const w=Math.floor((y-3)/4);p(x0,y,170,170,170,TINTE_A);if(y%2===0)for(let k=1;k<=w;k++){p(x0-k,y-k*.5,150+n(r,30),150+n(r,30),150+n(r,30),TINTE_A);p(x0+k,y-k*.5,150+n(r,30),150+n(r,30),150+n(r,30),TINTE_A);}}}}));
+  tile('deadBush',planta((p,r)=>{const rama=(x,y,dx,dy,l)=>{for(let i=0;i<l;i++){p(Math.round(x+dx*i),Math.round(y+dy*i),120+n(r,20),84+n(r,20),46);}};
+    rama(7,15,0,-1,6);rama(7,10,-.8,-1,6);rama(7,11,.9,-1,6);rama(7,9,.3,-1,6);rama(4,7,-.6,-.6,3);rama(11,7,.6,-.8,3);}));
+  tile('cornflower',florSimple([70,110,230],[240,240,120]));
+  tile('orchid',florSimple([60,180,240],[200,240,255]));
+  tile('daisy',florSimple([244,244,244],[240,200,30],7));
+  tile('mushRed',planta((p,r)=>{tallo(p,7,10,15,[230,220,200]);tallo(p,8,10,15,[210,200,180]);
+    for(let x=3;x<=12;x++)for(let y=5;y<=9;y++){const d=Math.hypot((x-7.5)/4.6,(y-9)/4.2);if(d<1&&y<=9)p(x,y,210,30,30);}
+    for(const [a,b] of [[5,7],[9,6],[7,5],[11,8]])p(a,b,250,250,250);}));
+  tile('mushBrown',planta((p,r)=>{tallo(p,7,11,15,[230,220,200]);tallo(p,8,11,15,[210,200,180]);
+    for(let x=3;x<=12;x++)for(let y=8;y<=10;y++)p(x,y,150+n(r,20),110+n(r,20),80);for(let x=5;x<=10;x++)p(x,7,160,120,90);}));
+  tile('pumpkinSide',(p,r)=>cada((x,y)=>{const k=n(r,10);const surco=x%4===0;p(x,y,(surco?190:230)+k,(surco?100:128)+k,(surco?20:30)+k*.4);}));
+  tile('pumpkinTop',(p,r)=>cada((x,y)=>{const k=n(r,10);const d=Math.hypot(x-7.5,y-7.5);
+    if(d<1.6)p(x,y,90,70,30);else{const surco=Math.floor(Math.atan2(y-7.5,x-7.5)*1.3)%2;p(x,y,(surco?210:230)+k,(surco?110:128)+k,26);}}));
+  tile('jackFace',(p,r)=>cada((x,y)=>{const k=n(r,10);const surco=x%4===0;p(x,y,(surco?190:230)+k,(surco?100:128)+k,30);
+    const ojo=(y>=4&&y<=6)&&((x>=3&&x<=5)||(x>=10&&x<=12));const boca=(y>=9&&y<=11&&x>=3&&x<=12)&&!(y===9&&(x===5||x===10));
+    if(ojo||boca)p(x,y,255,220-(y-4)*6,80);}));
+  tile('melonSide',(p,r)=>cada((x,y)=>{const k=n(r,10);const raya=(x+Math.floor(y/3))%4===0;p(x,y,(raya?80:110)+k,(raya?150:180)+k,(raya?40:50)+k);}));
+  tile('melonTop',(p,r)=>cada((x,y)=>{const k=n(r,10);const d=Math.hypot(x-7.5,y-7.5);p(x,y,(d<2?120:100)+k,(d<2?170:170)+k,50);}));
+  tile('lilyPad',planta((p,r)=>{for(let y=1;y<15;y++)for(let x=1;x<15;x++){const d=Math.hypot(x-7.5,y-7.5);const corte=x>7&&Math.abs(y-7.5)<1.2;
+    if(d<6.8&&!corte){const v=120+n(r,30)+((x+y)%5===0?-20:0);p(x,y,v*.4,v,v*.35);}}}));
+  tile('clay',(p,r)=>{const s=S();cada((x,y)=>{const k=n(r,8)+(pn(x,y,4,s)-.5)*10;p(x,y,160+k,166+k,178+k);});});
+  tile('redSand',(p,r)=>{const s=S();cada((x,y)=>{const k=n(r,14)+(pn(x,y,8,s)-.5)*12;p(x,y,190+k,102+k*.7,36+k*.4);});});
+  const TERR=[[152,94,68],[162,84,38],[186,134,36],[142,60,46],[76,50,36],[210,178,160],[134,106,98]];
+  ['terracotta','terr0','terr1','terr2','terr3','terr4','terr5'].forEach((nom,i)=>tile(nom,(p,r)=>{const c=TERR[i];cada((x,y)=>{const k=n(r,8);p(x,y,c[0]+k,c[1]+k,c[2]+k);});}));
+  tile('mossyCobble',(p,r)=>{_genTiles[T.cobble](p,r);const s=S();cada((x,y)=>{if(pn(x,y,4,s)>.56){const k=n(r,20);p(x,y,70+k,110+k,50+k);}});});
+  tile('cryingObsidian',(p,r)=>{_genTiles[T.obsidian](p,r);const s=S();cada((x,y)=>{if(pn(x,y,4,s)>.62)p(x,y,120+n(r,30),40,220);});});
+  tile('bookshelf',(p,r)=>{tablones(p,r);const cols=[[150,40,40],[40,70,150],[40,120,60],[160,120,40],[110,60,130]];
+    for(const fila of [1,9])for(let x=1;x<15;){const w=1+Math.floor(r()*2),c=cols[Math.floor(r()*cols.length)],h=5+Math.floor(r()*2);
+      for(let a=0;a<w&&x+a<15;a++)for(let y=fila;y<fila+h;y++)p(x+a,y+(6-h),c[0]+n(r,16),c[1]+n(r,16),c[2]+n(r,16));x+=w;}});
+  tile('ladder',planta((p,r)=>{for(let y=0;y<16;y++){p(2,y,120,90,50);p(3,y,100,74,40);p(12,y,120,90,50);p(13,y,100,74,40);}
+    for(const y of [2,6,10,14])for(let x=2;x<=13;x++){p(x,y,136,102,58);p(x,y+1,98,72,40);}}));
+  tile('doorTop',(p,r)=>{tablones(p,r);cada((x,y)=>{if(x===0||x===15||y===0)p(x,y,110,82,48);
+    if(x>=3&&x<=6&&y>=3&&y<=11||x>=9&&x<=12&&y>=3&&y<=11)p(x,y,0,0,0,0);});});
+  tile('doorBottom',(p,r)=>{tablones(p,r);cada((x,y)=>{if(x===0||x===15||y===15)p(x,y,110,82,48);
+    if((x===3||x===12)&&y>2&&y<13)p(x,y,120,90,52);if(x===12&&y===4)p(x,y,60,60,60);});});
+  tile('pathTop',(p,r)=>{const s=S();cada((x,y)=>{const k=n(r,12)+(pn(x,y,8,s)-.5)*14;p(x,y,148+k,122+k,66+k);});});
+  const piedraColor=(c,manchas,cm)=>(p,r)=>{const s=S();cada((x,y)=>{const v=pn(x,y,8,s);let k=n(r,12)+(v-.5)*20;const m=pn(x,y,4,s+1)>manchas;
+    const col=m?cm:c;p(x,y,col[0]+k,col[1]+k,col[2]+k);});};
+  tile('granite',piedraColor([150,104,86],.6,[176,124,104]));
+  tile('diorite',piedraColor([188,188,190],.62,[228,228,230]));
+  tile('andesite',piedraColor([134,134,136],.64,[112,112,114]));
+  tile('pathSide',(p,r)=>{tierra(p,r);cada((x,y)=>{if(y<2){const k=n(r,12);p(x,y,148+k,122+k,66+k);}});});
 })();
 
 const NT=_genTiles.length, ATH=Math.ceil(NT/ATW);
@@ -168,12 +276,22 @@ const atlas=document.createElement('canvas'); atlas.width=TS*ATW; atlas.height=T
   const cl=v=>Math.max(0,Math.min(255,v|0));
   _genTiles.forEach((gen,t)=>{
     const ox=(t%ATW)*TS, oy=Math.floor(t/ATW)*TS;
-    const p=(x,y,R,G,B,A=255)=>{if(x<0||y<0||x>=TS||y>=TS)return;const i=((oy+y)*atlas.width+ox+x)*4;d[i]=cl(R);d[i+1]=cl(G);d[i+2]=cl(B);d[i+3]=A;};
+    const p=(x,y,R,G,B,A=255)=>{x=Math.round(x);y=Math.round(y);if(x<0||y<0||x>=TS||y>=TS)return;const i=((oy+y)*atlas.width+ox+x)*4;d[i]=cl(R);d[i+1]=cl(G);d[i+2]=cl(B);d[i+3]=A;};
     gen(p,r);
   });
   ctx.putImageData(img,0,0);
 })();
-// Coordenadas UV (flipY de three: v=1 arriba)
+// Atlas para iconos, objetos sueltos y partículas: el tinte ya aplicado
+const TINTE_ICONO={grassTop:[.57,.74,.35],grassSide:[.57,.74,.35],tallGrass:[.57,.74,.35],fern:[.52,.72,.36],leaves:[.47,.67,.18],spruceLeaves:[.38,.6,.38]};
+const atlasIconos=document.createElement('canvas'); atlasIconos.width=atlas.width; atlasIconos.height=atlas.height;
+(function(){
+  const ctx=atlasIconos.getContext('2d'); ctx.drawImage(atlas,0,0);
+  const img=ctx.getImageData(0,0,atlas.width,atlas.height), d=img.data;
+  for(const nom in TINTE_ICONO){const t=T[nom],c=TINTE_ICONO[nom],ox=(t%ATW)*TS,oy=Math.floor(t/ATW)*TS;
+    for(let y=0;y<TS;y++)for(let x=0;x<TS;x++){const i=((oy+y)*atlas.width+ox+x)*4;if(d[i+3]===TINTE_A){d[i]*=c[0];d[i+1]*=c[1];d[i+2]*=c[2];d[i+3]=255;}}}
+  {const t=T.water,ox=(t%ATW)*TS,oy=Math.floor(t/ATW)*TS;for(let y=0;y<TS;y++)for(let x=0;x<TS;x++){const i=((oy+y)*atlas.width+ox+x)*4;d[i]*=.25;d[i+1]*=.46;d[i+2]*=.9;}}
+  ctx.putImageData(img,0,0);
+})();
 function uvTile(t){const c=t%ATW, f=Math.floor(t/ATW);return {u0:c/ATW,u1:(c+1)/ATW,v0:1-(f+1)/ATH,v1:1-f/ATH};}
 
 /* ---------- Iconos de objetos (16x16 dibujados) ---------- */
@@ -183,7 +301,7 @@ function lienzo16(semillaDib,fn){
   const linea=(x0,y0,x1,y1,c)=>{const m=Math.max(Math.abs(x1-x0),Math.abs(y1-y0))||1;
     for(let i=0;i<=m;i++)P(x0+(x1-x0)*i/m,y0+(y1-y0)*i/m,c);};
   const elipse=(cx,cy,rx,ry,c,v=16)=>{for(let y=0;y<16;y++)for(let x=0;x<16;x++){const dx=(x+.5-cx)/rx,dy=(y+.5-cy)/ry;
-    if(dx*dx+dy*dy<=1){const q=(rnd()-.5)*v;P(x,y,[c[0]+q,c[1]+q,c[2]+q]);}}};
+    if(dx*dx+dy*dy<=1){const q=(rnd()-.5)*v;const luz=(-dx-dy)*14;P(x,y,[c[0]+q+luz,c[1]+q+luz,c[2]+q+luz]);}}};
   const rect=(x0,y0,x1,y1,c)=>{for(let y=y0;y<=y1;y++)for(let x=x0;x<=x1;x++)P(x,y,c);};
   fn({P,linea,elipse,rect,rnd});
   const c=document.createElement('canvas');c.width=c.height=16;const ctx=c.getContext('2d'),img=ctx.createImageData(16,16);
@@ -197,14 +315,16 @@ function lienzo16(semillaDib,fn){
 }
 function lienzoTile(t){
   const c=document.createElement('canvas');c.width=c.height=16;
-  c.getContext('2d').drawImage(atlas,(t%ATW)*TS,Math.floor(t/ATW)*TS,TS,TS,0,0,16,16);return c;
+  c.getContext('2d').drawImage(atlasIconos,(t%ATW)*TS,Math.floor(t/ATW)*TS,TS,TS,0,0,16,16);return c;
 }
-function iconoCubo(arriba,lado){
+function iconoCubo(arriba,lado,alto=1){
   const c=document.createElement('canvas');c.width=48;c.height=48;const x=c.getContext('2d');x.imageSmoothingEnabled=false;
-  const cara=(t,m,osc)=>{x.setTransform(...m);x.drawImage(atlas,(t%ATW)*TS,Math.floor(t/ATW)*TS,TS,TS,0,0,TS,TS);
+  const dy=(1-alto)*24;
+  const cara=(t,m,osc,recorte)=>{x.setTransform(...m);
+    x.drawImage(atlasIconos,(t%ATW)*TS,Math.floor(t/ATW)*TS+(recorte?TS*(1-alto):0),TS,recorte?TS*alto:TS,0,0,TS,recorte?TS*alto:TS);
     if(osc){x.globalCompositeOperation='source-atop';x.fillStyle=`rgba(0,0,0,${osc})`;x.fillRect(0,0,TS,TS);x.globalCompositeOperation='source-over';}};
-  cara(lado,[1.25,.625,0,1.5,4,12],.22);
-  cara(lado,[1.25,-.625,0,1.5,24,22],.38);
-  cara(arriba,[1.25,-.625,1.25,.625,4,12],0);
+  cara(lado,[1.25,.625,0,1.5,4,12+dy],.22,true);
+  cara(lado,[1.25,-.625,0,1.5,24,22+dy],.38,true);
+  cara(arriba,[1.25,-.625,1.25,.625,4,12+dy],0,false);
   return c;
 }

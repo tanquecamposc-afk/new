@@ -19,23 +19,31 @@ function choca(p,a,h){
   const x0=Math.floor(p.x-a),x1=Math.floor(p.x+a-1e-7),y0=Math.floor(p.y-.5),y1=Math.floor(p.y+h-1e-7),z0=Math.floor(p.z-a),z1=Math.floor(p.z+a-1e-7);
   for(let x=x0;x<=x1;x++)for(let y=y0;y<=y1;y++)for(let z=z0;z<=z1;z++){
     const b=getBloque(x,y,z); if(!SOLIDO[b])continue;
-    const alt=BLOQUES[b].altura;
-    if(p.y<y+alt-1e-7&&p.y+h>y)return [x,y,z,alt];
+    for(const c of cajasColision(b)){
+      const X0=x+c[0],Y0=y+c[1],Z0=z+c[2],X1=x+c[3],Y1=y+c[4],Z1=z+c[5];
+      if(p.x-a<X1-1e-7&&p.x+a>X0+1e-7&&p.z-a<Z1-1e-7&&p.z+a>Z0+1e-7&&p.y<Y1-1e-7&&p.y+h>Y0+1e-7)return [X0,Y0,Z0,X1,Y1,Z1];
+    }
   }
   return null;
 }
 function moverEje(e,eje,d){
   const p=e.pos; p[eje]+=d;
   let hubo=false;
-  for(let n=0;n<4;n++){
+  for(let n=0;n<6;n++){
     const c=choca(p,e.ancho,e.alto); if(!c)return hubo;
-    // subir escalones bajos (tierra de cultivo, losas)
-    if(eje!=='y'&&e.suelo&&e.subir){const sub=c[1]+c[3]-p.y;if(sub>0&&sub<=.6){const py=p.y;p.y+=sub+1e-4;if(!choca(p,e.ancho,e.alto))return hubo;p.y=py;}}
+    // subir escalones bajos (losas, escaleras, caminos)
+    if(eje!=='y'&&e.suelo&&e.subir){const sub=c[4]-p.y;if(sub>0&&sub<=.6){const py=p.y;p.y+=sub+1e-4;if(!choca(p,e.ancho,e.alto))return hubo;p.y=py;}}
     hubo=true;
-    if(eje==='y')p.y=d>0?c[1]-e.alto-1e-4:c[1]+c[3]+1e-4;
-    else{const b=c[eje==='x'?0:2];p[eje]=d>0?b-e.ancho-1e-4:b+1+e.ancho+1e-4;}
+    if(eje==='y')p.y=d>0?c[1]-e.alto-1e-4:c[4]+1e-4;
+    else if(eje==='x')p.x=d>0?c[0]-e.ancho-1e-4:c[3]+e.ancho+1e-4;
+    else p.z=d>0?c[2]-e.ancho-1e-4:c[5]+e.ancho+1e-4;
   }
   return hubo;
+}
+function enEscalera(e){
+  const x0=Math.floor(e.pos.x-e.ancho-.05),x1=Math.floor(e.pos.x+e.ancho+.05),z0=Math.floor(e.pos.z-e.ancho-.05),z1=Math.floor(e.pos.z+e.ancho+.05);
+  for(let y=Math.floor(e.pos.y);y<=Math.floor(e.pos.y+1);y++)for(let x=x0;x<=x1;x++)for(let z=z0;z<=z1;z++)if(TREPA[getBloque(x,y,z)])return true;
+  return false;
 }
 function haySoporte(e,x,z){return !!choca({x,y:e.pos.y-.1,z},e.ancho,.1);}
 function pasoFisico(e,dt){
@@ -92,10 +100,17 @@ function fisicaJugador(dt,entrada){
     if(entrada&&teclas.Space&&j.suelo){j.vel.y=8.9;if(sup)agotamiento+=j.corriendo?.2:.05;
       if(j.corriendo){j.vel.x+=Math.sin(j.yaw)*-1.8;j.vel.z+=Math.cos(j.yaw)*-1.8;}}
   }
+  j.enEscalera=!j.vuela&&enEscalera(j);
+  if(j.enEscalera){
+    j.vel.x=clamp(j.vel.x,-2.2,2.2);j.vel.z=clamp(j.vel.z,-2.2,2.2);
+    if(j.vel.y<-2.4)j.vel.y=-2.4;
+    if(j.agachado&&j.vel.y<0)j.vel.y=0;
+    if(entrada&&(teclas.Space||(j.chocoH&&(teclas.KeyW||teclas.KeyA||teclas.KeyS||teclas.KeyD))))j.vel.y=2.4;
+  }
   const x0=j.pos.x,z0=j.pos.z;
   pasoFisico(j,dt);
   if(j.suelo&&j.vuela)j.vuela=false;
-  if(j.suelo||j.vuela||j.enAgua||j.enLava){
+  if(j.suelo||j.vuela||j.enAgua||j.enLava||j.enEscalera){
     const caida=j.maxY-j.pos.y;
     if(sup&&j.suelo&&!j.vuela&&!j.enAgua&&caida>3.2){
       const bajo=getBloque(Math.floor(j.pos.x),Math.floor(j.pos.y-.2),Math.floor(j.pos.z));
@@ -143,7 +158,7 @@ function danarJugador(n,tipo,dir){
     d*=1-Math.min(20,epf)*.04;
   }
   if(invuln<=0)ultimoDano=n;
-  salud=Math.max(0,salud-d); invuln=.5; agotamiento+=.1;
+  salud=Math.max(0,salud-d); invuln=.5; agotamiento+=.1; sacudida=1;
   sonar('dano');
   destelloDano();
   if(dir){jugador.vel.x+=dir.x*6;jugador.vel.z+=dir.z*6;jugador.vel.y=Math.max(jugador.vel.y,4.5);}
@@ -211,7 +226,7 @@ function morir(causa){
   efectos={}; fuegoJ=0;
   const textos={caida:'Caíste desde muy alto.',mob:'Una criatura acabó contigo.',flecha:'Te dispararon una flecha.',hambre:'Moriste de hambre.',
     vacio:'Caíste al vacío.',lava:'Intentaste nadar en lava.',fuego:'Ardiste hasta morir.',ahogo:'Te ahogaste.',explosion:'Volaste por los aires.',
-    cactus:'Te pinchaste hasta morir.',magia:'El aliento del dragón te alcanzó.',veneno:'El veneno pudo contigo.',asfixia:'Te aplastó un bloque.'};
+    cactus:'Te pinchaste hasta morir.',rayo:'Te alcanzó un rayo.',magia:'El aliento del dragón te alcanzó.',veneno:'El veneno pudo contigo.',asfixia:'Te aplastó un bloque.'};
   document.getElementById('textoMuerte').textContent=(textos[causa]||'')+' Tus objetos quedaron donde caíste.';
   document.getElementById('muerte').classList.remove('oculto'); mostrarHud(false);
   if(document.pointerLockElement)document.exitPointerLock();
@@ -336,7 +351,7 @@ function romperApuntado(){
 }
 function terminarRomper(x,y,z,b){
   sonar('romper',{x:x+.5,y:y+.5,z:z+.5});
-  emitirParticulas(x+.5,y+.5,z+.5,colorTile[BLOQUES[b].lado],10,2.5,.6);
+  particulasBloque(x+.5,y+.5,z+.5,BLOQUES[b].lado,14,2.8,.7);
 }
 
 /* ---------- Atacar ---------- */
@@ -385,21 +400,64 @@ function posColocar(){
   if(REEMPL[apuntado.b]&&!esLiquido(apuntado.b)&&apuntado.b!==B.fuego)return [apuntado.x,apuntado.y,apuntado.z];
   return [apuntado.x+apuntado.n[0],apuntado.y+apuntado.n[1],apuntado.z+apuntado.n[2]];
 }
+function facingJugador(){const dx=-Math.sin(jugador.yaw),dz=-Math.cos(jugador.yaw);return Math.abs(dx)>Math.abs(dz)?(dx>0?1:3):(dz>0?2:0);}
+function cubreEntidad(id,x,y,z){
+  if(!SOLIDO[id])return false;
+  for(const c of cajasColision(id)){
+    const cubre=e=>x+c[3]>e.pos.x-e.ancho&&x+c[0]<e.pos.x+e.ancho&&y+c[4]>e.pos.y&&y+c[1]<e.pos.y+e.alto&&z+c[5]>e.pos.z-e.ancho&&z+c[2]<e.pos.z+e.ancho;
+    if(cubre(jugador)||mobs.some(cubre))return true;
+  }
+  return false;
+}
 function colocarBloque(id){
-  const q=posColocar(); if(!q)return false;
+  let q=posColocar(); if(!q)return false;
+  if(id===B.nenufar){
+    camara.getWorldDirection(dirVista);
+    const r=lanzarRayo(camara.position,dirVista,5,true);
+    if(!r||r.b!==B.agua||getBloque(r.x,r.y+1,r.z))return false;
+    q=[r.x,r.y+1,r.z];
+  }
   const [x,y,z]=q;
   if(y<0||y>=CY)return false;
   const actual=getBloque(x,y,z);
   if(actual&&!(REEMPL[actual]))return false;
-  if(!puedeColocarEn(id,x,y,z))return false;
-  if(SOLIDO[id]){
-    const alt=BLOQUES[id].altura;
-    const cubre=e=>x+1>e.pos.x-e.ancho&&x<e.pos.x+e.ancho&&y+alt>e.pos.y&&y<e.pos.y+e.alto&&z+1>e.pos.z-e.ancho&&z<e.pos.z+e.ancho;
-    if(cubre(jugador)||mobs.some(cubre))return false;
+  const def=BLOQUES[id];
+  let real=id;
+  if(def.orienta==='escalera')real=def.base+facingJugador();
+  else if(def.orienta==='pared'||id===B.antorcha){
+    const n=apuntado.n;
+    if(n[1]!==0){if(id!==B.antorcha)return false;}
+    else{
+      const f=DIRF.findIndex(([a,b])=>a===-n[0]&&b===-n[2]);
+      const pared=getBloque(x+DIRF[f][0],y,z+DIRF[f][1]);
+      if(!SOLIDO[pared]||FORMA[pared]!==0)return false;
+      real=id===B.antorcha?165+f:def.base+f;
+    }
   }
-  setBloque(x,y,z,id);
+  if(real===id&&!puedeColocarEn(id,x,y,z))return false;
+  if(cubreEntidad(real,x,y,z))return false;
+  setBloque(x,y,z,real);
+  sonar('poner',{x,y,z},1); pasoSonido(real,1);
+  balancearMano();
+  return true;
+}
+function colocarPuerta(){
+  const q=posColocar(); if(!q)return false;
+  const [x,y,z]=q;
+  const a=getBloque(x,y,z), b=getBloque(x,y+1,z);
+  if((a&&!REEMPL[a])||(b&&!REEMPL[b])||!SOLIDO[getBloque(x,y-1,z)])return false;
+  const f=facingJugador(), id=149+f*4;
+  if(cubreEntidad(id,x,y,z)||cubreEntidad(id+1,x,y+1,z))return false;
+  setBloque(x,y,z,id,{sinAviso:true}); setBloque(x,y+1,z,id+1);
   sonar('poner',{x,y,z}); balancearMano();
   return true;
+}
+function alternarPuerta(x,y,z){
+  const b=getBloque(x,y,z), pu=BLOQUES[b].puerta; if(!pu)return;
+  const yb=pu.m?y-1:y;
+  const base=149+pu.f*4+(1-pu.ab)*2;
+  setBloque(x,yb,z,base,{sinAviso:true}); setBloque(x,yb+1,z,base+1,{sinAviso:true});
+  sonar('puerta',{x,y,z});
 }
 function consumirEnMano(n=1){if(!supervivencia())return;const p=enMano();if(p&&(p.n-=n)<=0)inv[ranura]=null;actualizarHUD();}
 let comiendo=-1, arcoCarga=-1, cdUso=0;
@@ -409,7 +467,8 @@ function terminarComer(){
   const it=ITEMS[p.id];
   hambre=Math.min(20,hambre+it.comida[0]); saturacion=Math.min(hambre,saturacion+it.comida[1]);
   if(it.efecto&&prob(it.efecto[2]||1)){const [nombre,seg]=it.efecto;efectos[nombre]={t:seg,n:it.id===I.manzanaDorada?2:1};}
-  consumirEnMano(); sonar('recoger'); actualizarHUD();
+  consumirEnMano(); if(it.devuelve&&supervivencia()){const r=insertarInv(crearPila(it.devuelve));if(r)soltarItem(r,jugador.pos.x,jugador.pos.y+1,jugador.pos.z,false);}
+  sonar('recoger'); actualizarHUD();
 }
 function soltarArco(){
   if(arcoCarga<0)return;
@@ -435,11 +494,13 @@ function usarDerecho(){
   // Criaturas: alimentar para criar
   if(apuntadoEnt&&apuntadoEnt.mob){
     const m=apuntadoEnt.mob;
+    if(m.tipo==='aldeano'&&m.ofertas){abrirUI('comercio',null,{aldeano:m});return;}
     if(m.def.comida===id&&!m.bebe&&!(m.cria>0)&&!(m.amor>0)){m.amor=30;consumirEnMano();emitirParticulas(m.pos.x,m.pos.y+m.alto,m.pos.z,0xff6080,5,1,.8,-1);return;}
   }
   // Bloques con los que se interactúa
   if(apuntado&&!apuntadoEnt&&!jugador.agachado){
     const b=apuntado.b, inter=BLOQUES[b].inter;
+    if(esPuerta(b)){alternarPuerta(apuntado.x,apuntado.y,apuntado.z);balancearMano();return;}
     if(inter==='cama'){dormir(apuntado);return;}
     if(inter){abrirUI(inter,apuntado);return;}
     if(b===B.tnt&&(id===I.mechero)){setBloque(apuntado.x,apuntado.y,apuntado.z,0);activarTNT(apuntado.x,apuntado.y,apuntado.z);gastarObjetoEnMano();return;}
@@ -485,7 +546,7 @@ function usarDerecho(){
     const {x,y,z,b}=apuntado;
     let usado=false;
     if(b>=B.trigo0&&b<B.trigo0+7){setBloque(x,y,z,Math.min(B.trigo0+7,b+azar(2,5)));usado=true;}
-    else if(b===B.brote){if(prob(.45))crecerArbol(x,y,z);usado=true;}
+    else if(esBrote(b)){if(prob(.45))crecerArbol(x,y,z);usado=true;}
     else if(b===B.cesped&&!getBloque(x,y+1,z)){
       for(let k=0;k<12;k++){const nx=x+azar(-3,3),nz=z+azar(-3,3);let ny=y+1;
         if(getBloque(nx,ny-1,nz)===B.cesped&&!getBloque(nx,ny,nz))setBloque(nx,ny,nz,prob(.85)?B.hierbaAlta:prob(.5)?B.florAmarilla:B.florRoja);}
@@ -502,6 +563,7 @@ function usarDerecho(){
     if(apuntado.b===B.cultivo&&!getBloque(apuntado.x,apuntado.y+1,apuntado.z)){setBloque(apuntado.x,apuntado.y+1,apuntado.z,B.trigo0);consumirEnMano();balancearMano();}
     return;
   }
+  if(it.coloca==='puerta'){if(colocarPuerta())consumirEnMano();return;}
   if(it.bloque){if(colocarBloque(id))consumirEnMano();return;}
 }
 
@@ -509,12 +571,12 @@ function usarDerecho(){
 function dormir(a){
   if(dim!==DIMS.superficie){setBloque(a.x,a.y,a.z,0);explosion(a.x+.5,a.y+.5,a.z+.5,5,{fuego:true});return;}
   spawnCama=[a.x,a.y,a.z];
-  if(sol>-.02&&!lloviendo){mostrarMensaje('Solo puedes dormir de noche. Punto de reaparición guardado.');return;}
+  if(sol>-.02&&!tormenta){mostrarMensaje('Solo puedes dormir de noche. Punto de reaparición guardado.');return;}
   if(mobs.some(m=>m.def.tipo==='hostil'&&m.pos.distanceTo(jugador.pos)<8)){mostrarMensaje('No puedes descansar ahora, hay monstruos cerca.');return;}
   estado='durmiendo'; soltarControles();
   const velo=document.getElementById('velo'); velo.classList.remove('oculto'); velo.style.opacity=0;
   requestAnimationFrame(()=>{velo.style.opacity=1;});
-  setTimeout(()=>{tiempoDia=.0;lloviendo=false;climaT=600+Math.random()*1200;velo.style.opacity=0;
+  setTimeout(()=>{tiempoDia=.0;lloviendo=false;tormenta=false;climaT=600+Math.random()*1200;velo.style.opacity=0;
     setTimeout(()=>{velo.classList.add('oculto');if(estado==='durmiendo'){estado='jugando';bloquear();}},700);
     mostrarMensaje('Buenos días. Punto de reaparición guardado.');guardarPartida();},2200);
 }

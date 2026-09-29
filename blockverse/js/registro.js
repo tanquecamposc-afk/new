@@ -6,7 +6,7 @@ const BLOQUES=[], B={aire:0};
 function bloque(id,clave,nombre,tex,props={}){
   const t=typeof tex==='string'?{arriba:T[tex],abajo:T[tex],lado:T[tex]}:{arriba:T[tex.arriba],abajo:T[tex.abajo],lado:T[tex.lado]};
   const forma=props.forma||'cubo';
-  const cubo=forma==='cubo'||forma==='losa';
+  const cubo=forma==='cubo'||forma==='losa'||forma==='cajas'||forma==='conecta';
   const def=Object.assign({id,clave,nombre,forma,solido:cubo,opaco:cubo&&!props.trans&&forma==='cubo',trans:false,luz:0,
     dureza:1,herr:null,nivel:0,altura:forma==='losa'?.5625:1,resistencia:null,reemplazable:!cubo,inflamable:false},t,props);
   if(def.resistencia===null)def.resistencia=def.dureza===Infinity?3600000:def.dureza*3;
@@ -16,12 +16,13 @@ function bloque(id,clave,nombre,tex,props={}){
 const tx=(arriba,abajo,lado)=>({arriba,abajo,lado});
 const sueltaOre=(item,min,max)=>ctx=>{let n=azar(min,max);if(ctx.fortuna)n*=Math.max(1,azar(0,ctx.fortuna+1));return [[item,n]];};
 
-bloque(1,'cesped','Bloque de césped',tx('grassTop','dirt','grassSide'),{dureza:.6,herr:'pala',suelta:2,resistencia:.6});
+bloque(1,'cesped','Bloque de césped',tx('grassTop','dirt','grassSide'),{dureza:.6,herr:'pala',suelta:2,resistencia:.6,tinte:'pasto'});
 bloque(2,'tierra','Tierra','dirt',{dureza:.5,herr:'pala',resistencia:.5});
 bloque(3,'piedra','Piedra','stone',{dureza:1.5,herr:'pico',nivel:1,suelta:8,resistencia:6});
 bloque(4,'tronco','Tronco de roble',tx('logTop','logTop','logSide'),{dureza:2,herr:'hacha',inflamable:true,resistencia:2});
-bloque(5,'hojas','Hojas de roble','leaves',{dureza:.2,herr:'azada',trans:true,opaco:false,opacidadLuz:1,inflamable:true,resistencia:.2,
-  suelta:ctx=>{const r=[];if(prob(.05*(1+ctx.fortuna*.25)))r.push([88,1]);if(prob(.005*(1+ctx.fortuna)))r.push([205,1]);if(prob(.02))r.push([200,azar(1,2)]);return r;}});
+const sueltaHojas=(brote,manzana)=>ctx=>{const r=[];if(prob(.05*(1+ctx.fortuna*.25)))r.push([brote,1]);if(manzana&&prob(.005*(1+ctx.fortuna)))r.push([205,1]);if(prob(.02))r.push([200,azar(1,2)]);return r;};
+bloque(5,'hojas','Hojas de roble','leaves',{dureza:.2,herr:'azada',trans:true,opaco:false,opacidadLuz:1,inflamable:true,resistencia:.2,tinte:'follaje',
+  suelta:sueltaHojas(88,true)});
 bloque(6,'arena','Arena','sand',{dureza:.5,herr:'pala',gravedad:true,resistencia:.5});
 bloque(7,'tablones','Tablones de roble','planks',{dureza:2,herr:'hacha',inflamable:true,resistencia:3});
 bloque(8,'roca','Roca','cobble',{dureza:2,herr:'pico',nivel:1,resistencia:6});
@@ -55,7 +56,7 @@ bloque(34,'antorcha','Antorcha','torch',{forma:'antorcha',dureza:0,luz:14,resist
 bloque(35,'cama','Cama',tx('bedTop','planks','bedSide'),{forma:'losa',dureza:.2,inter:'cama',opaco:false,inflamable:true});
 bloque(36,'tnt','Dinamita',tx('tntTop','tntTop','tntSide'),{dureza:0,resistencia:0,inflamable:true});
 bloque(37,'lana','Lana blanca','wool',{dureza:.8,inflamable:true,resistencia:.8});
-bloque(38,'hierbaAlta','Hierba alta','tallGrass',{forma:'cruz',dureza:0,inflamable:true,suelta:ctx=>prob(.125)?[[235,1]]:[]});
+bloque(38,'hierbaAlta','Hierba alta','tallGrass',{forma:'cruz',dureza:0,inflamable:true,tinte:'pasto',suelta:ctx=>prob(.125)?[[235,1]]:[]});
 bloque(39,'florAmarilla','Diente de león','flowerY',{forma:'cruz',dureza:0});
 bloque(40,'florRoja','Amapola','flowerR',{forma:'cruz',dureza:0});
 for(let e=0;e<8;e++)bloque(41+e,'trigo'+e,'Trigo','wheat'+e,{forma:'cruz',dureza:0,
@@ -64,8 +65,8 @@ bloque(49,'cultivo','Tierra de cultivo',tx('farmland','dirt','dirt'),{dureza:.6,
 bloque(50,'cactus','Cactus',tx('cactusTop','cactusTop','cactusSide'),{dureza:.4,trans:true,opaco:false,resistencia:.4});
 bloque(51,'hielo','Hielo','ice',{dureza:.5,herr:'pico',opaco:false,trans:true,opacidadLuz:2,suelta:0,resbala:true,resistencia:.5});
 bloque(52,'arenisca','Arenisca',tx('sandstoneTop','sandstoneTop','sandstoneSide'),{dureza:.8,herr:'pico',nivel:1,resistencia:.8});
-bloque(53,'agua','Agua','water',{forma:'liquido',dureza:Infinity,opacidadLuz:2,liquido:'agua',nivelL:0});
-for(let k=1;k<=7;k++)bloque(53+k,'agua'+k,'Agua','water',{forma:'liquido',dureza:Infinity,opacidadLuz:2,liquido:'agua',nivelL:k});
+bloque(53,'agua','Agua','water',{forma:'liquido',dureza:Infinity,opacidadLuz:2,liquido:'agua',nivelL:0,tinte:'agua'});
+for(let k=1;k<=7;k++)bloque(53+k,'agua'+k,'Agua','water',{forma:'liquido',dureza:Infinity,opacidadLuz:2,liquido:'agua',nivelL:k,tinte:'agua'});
 bloque(61,'lava','Lava','lava',{forma:'liquido',dureza:Infinity,luz:15,liquido:'lava',nivelL:0});
 for(let k=1;k<=7;k++)bloque(61+k,'lava'+k,'Lava','lava',{forma:'liquido',dureza:Infinity,luz:15,liquido:'lava',nivelL:k});
 bloque(69,'netherrack','Netherrack','netherrack',{dureza:.4,herr:'pico',nivel:1,resistencia:.4,eterno:true});
@@ -93,13 +94,75 @@ bloque(89,'cana','Caña de azúcar','sugarCane',{forma:'cruz',dureza:0});
 bloque(90,'mesaEncantar','Mesa de encantamientos',tx('enchantTop','obsidian','enchantSide'),{forma:'losa',altura:.75,dureza:5,herr:'pico',nivel:1,inter:'encantar',luz:7,resistencia:1200,opaco:false});
 bloque(91,'generador','Generador de criaturas','spawner',{dureza:5,herr:'pico',nivel:1,trans:true,opaco:false,suelta:0,xp:[15,43]});
 bloque(92,'bloqueNieve','Bloque de nieve','snow',{dureza:.2,herr:'pala',resistencia:.2});
-bloque(93,'heno','Bala de heno',tx('hayTop','hayTop','hayTop'),{dureza:.5,herr:'azada',inflamable:true});
+bloque(93,'heno','Bala de heno',tx('hayTop','hayTop','haySide'),{dureza:.5,herr:'azada',inflamable:true});
+/* ---------- Bloques nuevos ---------- */
+const DIRF=[[0,-1],[1,0],[0,1],[-1,0]];
+const cajaLado=(f,g)=>[[0,0,0,1,1,g],[1-g,0,0,1,1,1],[0,0,1-g,1,1,1],[0,0,0,g,1,1]][f];
+const cajasEscalera=f=>[[0,0,0,1,.5,1],[[0,.5,0,1,1,.5],[.5,.5,0,1,1,1],[0,.5,.5,1,1,1],[0,.5,0,.5,1,1]][f]];
+const cajaAntorchaPared=f=>{const a=7/16,b=9/16;return [[a,.2,0,b,.82,.14],[.86,.2,a,1,.82,b],[a,.2,.86,b,.82,1],[0,.2,a,.14,.82,b]][f];};
+bloque(94,'troncoAbedul','Tronco de abedul',tx('birchTop','birchTop','birchSide'),{dureza:2,herr:'hacha',inflamable:true,resistencia:2});
+bloque(95,'troncoAbeto','Tronco de abeto',tx('spruceTop','spruceTop','spruceSide'),{dureza:2,herr:'hacha',inflamable:true,resistencia:2});
+bloque(96,'troncoJungla','Tronco de la jungla',tx('jungleTop','jungleTop','jungleSide'),{dureza:2,herr:'hacha',inflamable:true,resistencia:2});
+bloque(97,'troncoAcacia','Tronco de acacia',tx('acaciaTop','acaciaTop','acaciaSide'),{dureza:2,herr:'hacha',inflamable:true,resistencia:2});
+const propHojas={dureza:.2,herr:'azada',trans:true,opaco:false,opacidadLuz:1,inflamable:true,resistencia:.2};
+bloque(98,'hojasAbedul','Hojas de abedul','leaves',Object.assign({tinte:'abedul',suelta:sueltaHojas(102,false)},propHojas));
+bloque(99,'hojasAbeto','Hojas de abeto','spruceLeaves',Object.assign({tinte:'abeto',suelta:sueltaHojas(103,false)},propHojas));
+bloque(100,'hojasJungla','Hojas de la jungla','leaves',Object.assign({tinte:'follaje',suelta:sueltaHojas(104,false)},propHojas));
+bloque(101,'hojasAcacia','Hojas de acacia','leaves',Object.assign({tinte:'follaje',suelta:sueltaHojas(105,false)},propHojas));
+bloque(102,'broteAbedul','Brote de abedul','birchSapling',{forma:'cruz',dureza:0});
+bloque(103,'broteAbeto','Brote de abeto','spruceSapling',{forma:'cruz',dureza:0});
+bloque(104,'broteJungla','Brote de la jungla','jungleSapling',{forma:'cruz',dureza:0});
+bloque(105,'broteAcacia','Brote de acacia','acaciaSapling',{forma:'cruz',dureza:0});
+bloque(106,'helecho','Helecho','fern',{forma:'cruz',dureza:0,inflamable:true,tinte:'pasto',suelta:()=>prob(.125)?[[235,1]]:[]});
+bloque(107,'arbustoSeco','Arbusto seco','deadBush',{forma:'cruz',dureza:0,inflamable:true,suelta:()=>[[200,azar(0,2)]]});
+bloque(108,'aciano','Aciano','cornflower',{forma:'cruz',dureza:0});
+bloque(109,'orquidea','Orquídea azul','orchid',{forma:'cruz',dureza:0});
+bloque(110,'margarita','Margarita','daisy',{forma:'cruz',dureza:0});
+bloque(111,'champinonRojo','Champiñón rojo','mushRed',{forma:'cruz',dureza:0});
+bloque(112,'champinonMarron','Champiñón marrón','mushBrown',{forma:'cruz',dureza:0,luz:1});
+bloque(113,'calabaza','Calabaza',tx('pumpkinTop','pumpkinTop','pumpkinSide'),{dureza:1,herr:'hacha',resistencia:1});
+bloque(114,'linternaCalabaza','Linterna de calabaza',tx('pumpkinTop','pumpkinTop','jackFace'),{dureza:1,herr:'hacha',luz:15,resistencia:1});
+bloque(115,'sandia','Sandía',tx('melonTop','melonTop','melonSide'),{dureza:1,herr:'hacha',resistencia:1,suelta:ctx=>[[254,Math.min(9,azar(3,7)+azar(0,ctx.fortuna))]]});
+bloque(116,'nenufar','Nenúfar','lilyPad',{forma:'cajas',cajas:[[0,0,0,1,.06,1]],dureza:0,opaco:false,soloArriba:true});
+bloque(117,'capaNieve','Capa de nieve','snow',{forma:'cajas',cajas:[[0,0,0,1,.125,1]],dureza:.1,herr:'pala',suelta:0,opaco:false,reemplazable:true});
+bloque(118,'arcilla','Arcilla','clay',{dureza:.6,herr:'pala',suelta:()=>[[251,4]],resistencia:.6});
+bloque(119,'arenaRoja','Arena roja','redSand',{dureza:.5,herr:'pala',gravedad:true,resistencia:.5});
+bloque(120,'terracota','Terracota','terracotta',{dureza:1.25,herr:'pico',nivel:1,resistencia:4.2});
+['naranja','amarilla','roja','marrón','blanca','gris claro'].forEach((c,i)=>bloque(121+i,'terracota'+i,'Terracota '+c,'terr'+i,{dureza:1.25,herr:'pico',nivel:1,resistencia:4.2}));
+bloque(127,'valla','Valla de roble','planks',{forma:'conecta',conecta:'valla',dureza:2,herr:'hacha',inflamable:true,opaco:false,colAlta:1.5});
+bloque(128,'panel','Panel de vidrio','glass',{forma:'conecta',conecta:'panel',dureza:.3,suelta:0,opaco:false,sinSombra:true});
+[['escaleraRoca','Escaleras de roca','cobble',129,'pico'],['escaleraMadera','Escaleras de roble','planks',133,'hacha'],['escaleraLadrillos','Escaleras de ladrillos de piedra','stoneBricks',137,'pico']].forEach(([cl,nom,t,base,h])=>{
+  for(let f=0;f<4;f++)bloque(base+f,cl+(f||''),nom,t,{forma:'cajas',cajas:cajasEscalera(f),dureza:2,herr:h,nivel:h==='pico'?1:0,opaco:false,orienta:'escalera',base,resistencia:6,suelta:base,inflamable:h==='hacha'});});
+[['losaRoca','Losa de roca','cobble','pico'],['losaMadera','Losa de roble','planks','hacha'],['losaPiedra','Losa de piedra','stone','pico'],['losaLadrillos','Losa de ladrillos de piedra','stoneBricks','pico']].forEach(([cl,nom,t,h],i)=>
+  bloque(141+i,cl,nom,t,{forma:'cajas',cajas:[[0,0,0,1,.5,1]],dureza:2,herr:h,nivel:h==='pico'?1:0,opaco:false,resistencia:6,inflamable:h==='hacha'}));
+for(let f=0;f<4;f++)bloque(145+f,'escaleraMano'+(f||''),'Escalera de mano','ladder',{forma:'cajas',cajas:[cajaLado(f,3/16)],dureza:.4,herr:'hacha',opaco:false,trepable:true,orienta:'pared',base:145,suelta:145,cara:f,inflamable:true});
+for(let f=0;f<4;f++)for(let ab=0;ab<2;ab++)for(let m=0;m<2;m++){const id=149+f*4+ab*2+m;
+  bloque(id,'puerta'+(id-149||''),'Puerta de roble',m?'doorTop':'doorBottom',{forma:'cajas',cajas:[cajaLado(ab?(f+1)%4:f,3/16)],dureza:3,herr:'hacha',opaco:false,puerta:{f,ab,m},suelta:m?0:255,inflamable:true});}
+for(let f=0;f<4;f++)bloque(165+f,'antorchaPared'+(f||''),'Antorcha','torch',{forma:'antorcha',dureza:0,luz:14,suelta:34,cara:f,resistencia:0});
+bloque(169,'senda','Camino de tierra',tx('pathTop','dirt','pathSide'),{forma:'cajas',cajas:[[0,0,0,1,15/16,1]],dureza:.65,herr:'pala',opaco:false,suelta:2,resistencia:.65});
+bloque(170,'rocaMusgo','Roca musgosa','mossyCobble',{dureza:2,herr:'pico',nivel:1,resistencia:6});
+bloque(171,'obsidianaLlorosa','Obsidiana llorosa','cryingObsidian',{dureza:50,herr:'pico',nivel:4,luz:10,resistencia:1200});
+bloque(173,'granito','Granito','granite',{dureza:1.5,herr:'pico',nivel:1,resistencia:6});
+bloque(174,'diorita','Diorita','diorite',{dureza:1.5,herr:'pico',nivel:1,resistencia:6});
+bloque(175,'andesita','Andesita','andesite',{dureza:1.5,herr:'pico',nivel:1,resistencia:6});
+bloque(172,'estanteria','Librería',tx('planks','planks','bookshelf'),{dureza:1.5,herr:'hacha',inflamable:true,suelta:()=>[[248,3]],resistencia:1.5});
 const NB=BLOQUES.length;
 const SOLIDO=new Uint8Array(NB), OPACO=new Uint8Array(NB), TRANS=new Uint8Array(NB), LUZB=new Uint8Array(NB),
       OPAC_LUZ=new Uint8Array(NB), OCLUYE=new Uint8Array(NB), FORMA=new Uint8Array(NB), REEMPL=new Uint8Array(NB);
-const FORMAS={cubo:0,losa:1,cruz:2,antorcha:3,liquido:4,portal:5};
+const FORMAS={cubo:0,losa:1,cruz:2,antorcha:3,liquido:4,portal:5,cajas:6,conecta:7};
+const TINTES={pasto:1,follaje:2,abedul:3,abeto:4,agua:5};
+const TINTE=new Uint8Array(NB), TREPA=new Uint8Array(NB);
 BLOQUES.forEach((b,i)=>{if(!b)return;SOLIDO[i]=b.solido?1:0;OPACO[i]=b.opaco?1:0;TRANS[i]=b.trans?1:0;LUZB[i]=b.luz;
-  OPAC_LUZ[i]=b.opacidadLuz;OCLUYE[i]=(b.forma==='cubo'&&!b.sinSombra)?1:0;FORMA[i]=FORMAS[b.forma];REEMPL[i]=b.reemplazable?1:0;});
+  OPAC_LUZ[i]=b.opacidadLuz;OCLUYE[i]=(b.forma==='cubo'&&!b.sinSombra)?1:0;FORMA[i]=FORMAS[b.forma];REEMPL[i]=b.reemplazable?1:0;
+  TINTE[i]=TINTES[b.tinte]||0;TREPA[i]=b.trepable?1:0;});
+const esTronco=id=>id===4||(id>=94&&id<=97), esHojas=id=>id===5||(id>=98&&id<=101), esPuerta=id=>id>=149&&id<=164;
+// Cajas de colisión (coordenadas dentro del bloque)
+function cajasColision(id){
+  const b=BLOQUES[id];
+  if(b.forma==='cajas')return b.cajas;
+  if(b.forma==='conecta')return [[0,0,0,1,b.colAlta||1,1]];
+  return [[0,0,0,1,b.altura,1]];
+}
 REEMPL[0]=1;
 const esAgua=id=>id>=53&&id<=60, esLava=id=>id>=61&&id<=68, esLiquido=id=>id>=53&&id<=68;
 const nivelLiquido=id=>BLOQUES[id].nivelL;
@@ -108,7 +171,8 @@ const nivelLiquido=id=>BLOQUES[id].nivelL;
    Registro de objetos
    ========================================================= */
 const ITEMS=[], I={};
-BLOQUES.forEach((b,i)=>{if(b&&!b.liquido&&b.forma!=='portal'&&i!==86&&!(i>=41&&i<=48))ITEMS[i]={nombre:b.nombre,bloque:true,max:64,clave:b.clave};});
+const esVariante=i=>(i>=130&&i<=132)||(i>=134&&i<=136)||(i>=138&&i<=140)||(i>=146&&i<=148)||(i>=149&&i<=168);
+BLOQUES.forEach((b,i)=>{if(b&&!b.liquido&&b.forma!=='portal'&&i!==86&&!(i>=41&&i<=48)&&!esVariante(i))ITEMS[i]={nombre:b.nombre,bloque:true,max:64,clave:b.clave};});
 function item(id,clave,nombre,props){ITEMS[id]=Object.assign({nombre,max:64,clave},props);I[clave]=id;}
 item(200,'palo','Palo'); item(201,'carbon','Carbón'); item(202,'hierroBruto','Hierro en bruto'); item(203,'lingoteHierro','Lingote de hierro');
 item(204,'diamante','Diamante'); item(205,'manzana','Manzana',{comida:[4,2.4]});
@@ -129,6 +193,9 @@ item(242,'manzanaDorada','Manzana dorada',{comida:[4,9.6],efecto:['regeneracion'
 item(243,'cuero','Cuero'); item(244,'resCruda','Filete crudo',{comida:[3,1.8]}); item(245,'filete','Filete',{comida:[8,12.8]});
 item(246,'polvoLuminoso','Polvo de piedra luminosa'); item(247,'papel','Papel'); item(248,'libro','Libro');
 item(249,'ojoArana','Ojo de araña',{comida:[2,3.2],efecto:['veneno',4,1]});
+item(250,'ladrillo','Ladrillo'); item(251,'bolaArcilla','Bola de arcilla'); item(252,'cuenco','Cuenco');
+item(253,'estofado','Estofado de champiñones',{comida:[6,7.2],max:1,devuelve:252}); item(254,'rodajaSandia','Rodaja de sandía',{comida:[2,1.2]});
+item(255,'puerta','Puerta de roble',{coloca:'puerta'});
 
 const MATS=[
   {n:'madera',nivel:1,vel:2,dur:59,enc:15,col:[176,138,82]},
@@ -192,7 +259,20 @@ function encantabilidad(id){const it=ITEMS[id];return it.herr?it.herr.enc:it.arm
 const RECETAS=[];
 function receta(patron,clave,id,n=1){RECETAS.push({patron,clave,id,n});}
 function recetaSin(ingredientes,id,n=1){RECETAS.push({sin:ingredientes.slice().sort((a,b)=>a-b),id,n});}
-recetaSin([B.tronco],B.tablones,4);
+[B.tronco,B.troncoAbedul,B.troncoAbeto,B.troncoJungla,B.troncoAcacia].forEach(t=>recetaSin([t],B.tablones,4));
+[[B.roca,129],[B.tablones,133],[B.ladrillosPiedra,137]].forEach(([m,e])=>receta(['M..','MM.','MMM'],{M:m},e,4));
+[[B.roca,141],[B.tablones,142],[B.piedra,143],[B.ladrillosPiedra,144]].forEach(([m,l])=>receta(['MMM'],{M:m},l,6));
+receta(['S.S','SSS','S.S'],{S:200},145,3);
+receta(['PP','PP','PP'],{P:B.tablones},255,3);
+receta(['PSP','PSP'],{P:B.tablones,S:200},B.valla,3);
+receta(['GGG','GGG'],{G:B.vidrio},B.panel,16);
+recetaSin([B.calabaza,B.antorcha],B.linternaCalabaza);
+receta(['P.P','.P.'],{P:B.tablones},252,4);
+recetaSin([252,B.champinonRojo,B.champinonMarron],253);
+receta(['LL','LL'],{L:250},B.ladrillos);
+receta(['BB','BB'],{B:251},B.arcilla);
+receta(['PPP','LLL','PPP'],{P:B.tablones,L:248},B.estanteria);
+receta(['RRR','RRR','RRR'],{R:254},B.sandia);
 receta(['P','P'],{P:B.tablones},I.palo,4);
 receta(['PP','PP'],{P:B.tablones},B.mesa);
 receta(['PPP','P.P','PPP'],{P:B.tablones},B.cofre);
@@ -253,9 +333,11 @@ const FUNDIR={
   [B.menaHierro]:I.lingoteHierro,[B.menaOro]:I.lingoteOro,[B.menaCobre]:I.lingoteCobre,[B.menaDiamante]:I.diamante,
   [B.menaCarbon]:I.carbon,[B.menaLapis]:I.lapis,[B.menaRedstone]:I.redstone,[B.menaEsmeralda]:I.esmeralda,[B.menaCuarzo]:I.cuarzo,
   [B.pHierro]:I.lingoteHierro,[B.pOro]:I.lingoteOro,[B.pCobre]:I.lingoteCobre,[B.pDiamante]:I.diamante,
-  [B.roca]:B.piedra,[B.arena]:B.vidrio,[B.tronco]:I.carbon,[B.cactus]:B.cactus,
+  [B.roca]:B.piedra,[B.arena]:B.vidrio,[B.arenaRoja]:B.vidrio,[B.tronco]:I.carbon,[B.troncoAbedul]:I.carbon,[B.troncoAbeto]:I.carbon,[B.troncoJungla]:I.carbon,[B.troncoAcacia]:I.carbon,
+  [251]:250,[B.arcilla]:B.terracota,
   [I.cerdoCrudo]:I.cerdoAsado,[I.resCruda]:I.filete,[I.polloCrudo]:I.polloAsado,[I.corderoCrudo]:I.corderoAsado,
 };
 const COMBUSTIBLE={[I.carbon]:80,[B.bloqueCarbon]:800,[I.cuboLava]:1000,[I.varaBlaze]:120,[B.tablones]:15,[B.tronco]:15,
+  94:15,95:15,96:15,97:15,[B.valla]:15,133:15,142:7.5,255:10,145:15,[B.estanteria]:15,252:5,
   [I.palo]:5,[B.mesa]:15,[B.cofre]:15,[B.brote]:5,[B.lana]:5,[I.arco]:15,[B.heno]:5,300:10,310:10,320:10,330:10,340:10};
 const TIEMPO_FUNDIR=10;

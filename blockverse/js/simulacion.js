@@ -74,6 +74,14 @@ NECESITA_SOPORTE[B.cana]=s=>s===B.cana||s===B.cesped||s===B.tierra||s===B.arena;
 NECESITA_SOPORTE[B.cactus]=s=>s===B.cactus||s===B.arena;
 NECESITA_SOPORTE[B.antorcha]=s=>SOLIDO[s]&&FORMA[s]===0;
 NECESITA_SOPORTE[B.cama]=s=>s!==0&&!esLiquido(s);
+const TIERRAS=s=>s===B.cesped||s===B.tierra||s===B.cultivo||s===B.cespedNevado||s===B.senda;
+[B.broteAbedul,B.broteAbeto,B.broteJungla,B.broteAcacia,B.helecho,B.aciano,B.orquidea,B.margarita].forEach(b=>NECESITA_SOPORTE[b]=TIERRAS);
+[B.champinonRojo,B.champinonMarron].forEach(b=>NECESITA_SOPORTE[b]=s=>SOLIDO[s]&&OPACO[s]);
+NECESITA_SOPORTE[B.arbustoSeco]=s=>s===B.arena||s===B.arenaRoja||s===B.tierra||(s>=B.terracota&&s<=B.terracota5);
+NECESITA_SOPORTE[B.cactus]=s=>s===B.cactus||s===B.arena||s===B.arenaRoja;
+NECESITA_SOPORTE[B.cana]=s=>s===B.cana||s===B.cesped||s===B.tierra||s===B.arena||s===B.arenaRoja;
+NECESITA_SOPORTE[B.nenufar]=s=>s===B.agua||s===B.hielo;
+NECESITA_SOPORTE[B.capaNieve]=s=>SOLIDO[s]&&(OPACO[s]||esHojas(s));
 function notificarCambio(x,y,z,anterior,nuevo){
   for(let k=-1;k<6;k++){
     const [dx,dy,dz]=k<0?[0,0,0]:DIR6[k];
@@ -83,11 +91,17 @@ function notificarCambio(x,y,z,anterior,nuevo){
     if(esLiquido(id))programarLiquido(px,py,pz,esAgua(id));
     if(BLOQUES[id].gravedad)comprobarCaida(px,py,pz,id);
     const sop=NECESITA_SOPORTE[id];
-    if(sop&&!(k===-1)&&dy>=0){const s=getBloque(px,py-1,pz);if(!sop(s))romperBloqueNatural(px,py,pz);}
+    if(sop&&!(k===-1)&&dy>=0){const s=getBloque(px,py-1,pz);if(!sop(s)){romperBloqueNatural(px,py,pz);continue;}}
+    const def=BLOQUES[id];
+    if(def.cara!==undefined&&k!==-1){const [dx2,dz2]=DIRF[def.cara];const pared=getBloque(px+dx2,py,pz+dz2);if(!SOLIDO[pared]||FORMA[pared]!==0){romperBloqueNatural(px,py,pz);continue;}}
+    if(def.puerta&&k!==-1){const pu=def.puerta,otro=getBloque(px,py+(pu.m?-1:1),pz);
+      const bo=BLOQUES[otro];
+      if(!bo||!bo.puerta||bo.puerta.m===pu.m)romperBloqueNatural(px,py,pz);
+      else if(!pu.m&&!SOLIDO[getBloque(px,py-1,pz)])romperBloqueNatural(px,py,pz);}
     if(id===B.fuego&&k>=0&&dy===1&&!SOLIDO[getBloque(px,py-1,pz)])setBloque(px,py,pz,0);
   }
   if((anterior===B.obsidiana||anterior===B.portalNether)&&nuevo!==B.portalNether)romperPortal(x,y,z);
-  if(anterior===B.tronco&&!nuevo)programarHojas(x,y,z);
+  if(esTronco(anterior)&&!nuevo)programarHojas(x,y,z);
 }
 function romperBloqueNatural(x,y,z){
   const id=getBloque(x,y,z);
@@ -129,16 +143,16 @@ function romperPortal(x,y,z){
 const colaHojas=[];
 function programarHojas(x,y,z){
   for(let dx=-4;dx<=4;dx++)for(let dy=-4;dy<=4;dy++)for(let dz=-4;dz<=4;dz++)
-    if(getBloqueSiCargado(x+dx,y+dy,z+dz)===B.hojas)colaHojas.push({x:x+dx,y:y+dy,z:z+dz,t:tiempoJuego+1+Math.random()*8});
+    if(esHojas(getBloqueSiCargado(x+dx,y+dy,z+dz)))colaHojas.push({x:x+dx,y:y+dy,z:z+dz,t:tiempoJuego+1+Math.random()*8});
 }
 function procesarHojas(){
   for(let i=colaHojas.length-1;i>=0;i--){
     const h=colaHojas[i]; if(h.t>tiempoJuego)continue;
     colaHojas.splice(i,1);
-    if(getBloqueSiCargado(h.x,h.y,h.z)!==B.hojas)continue;
+    if(!esHojas(getBloqueSiCargado(h.x,h.y,h.z)))continue;
     let tronco=false;
     for(let dx=-4;dx<=4&&!tronco;dx++)for(let dy=-4;dy<=4&&!tronco;dy++)for(let dz=-4;dz<=4;dz++)
-      if(Math.abs(dx)+Math.abs(dy)+Math.abs(dz)<=5&&getBloqueSiCargado(h.x+dx,h.y+dy,h.z+dz)===B.tronco){tronco=true;break;}
+      if(Math.abs(dx)+Math.abs(dy)+Math.abs(dz)<=5&&esTronco(getBloqueSiCargado(h.x+dx,h.y+dy,h.z+dz))){tronco=true;break;}
     if(!tronco)romperBloqueNatural(h.x,h.y,h.z);
   }
 }
@@ -167,7 +181,7 @@ function tickBloque(x,y,z,id){
   if(id>=B.trigo0&&id<B.trigo0+7){
     const suelo=getBloque(x,y-1,z);
     if(luzCieloBloque(x,y,z)>=9&&prob(suelo===B.cultivo&&aguaCerca(x,y-1,z)?.2:.1))setBloque(x,y,z,id+1);
-  }else if(id===B.brote){
+  }else if(esBrote(id)){
     if(luzCieloBloque(x,y,z)>=9&&prob(.12))crecerArbol(x,y,z);
   }else if(id===B.cana||id===B.cactus){
     if(getBloque(x,y+1,z)===0&&prob(.1)){let h=1;while(getBloque(x,y-h,z)===id)h++;if(h<3)setBloque(x,y+1,z,id);}
@@ -197,15 +211,16 @@ function aguaCerca(x,y,z){
   for(let dx=-4;dx<=4;dx++)for(let dz=-4;dz<=4;dz++)if(esAgua(getBloqueSiCargado(x+dx,y,z+dz)))return true;
   return false;
 }
+const TIPO_BROTE={88:'roble',102:'abedul',103:'abeto',104:'jungla',105:'acacia'};
+const esBrote=id=>TIPO_BROTE[id]!==undefined;
 function crecerArbol(x,y,z){
-  const alto=4+Math.floor(Math.random()*3), cima=y+alto;
-  for(let k=1;k<=alto+1;k++)if(SOLIDO[getBloque(x,y+k,z)])return;
+  const id=getBloque(x,y,z), tipo=TIPO_BROTE[id]||'roble';
+  for(let k=1;k<=5;k++)if(SOLIDO[getBloque(x,y+k,z)])return;
+  const r=mulberry32(Math.floor(Math.random()*1e9));
   setBloque(x,y,z,0,{sinAviso:true});
-  for(let yy=cima-2;yy<=cima+1;yy++){const rad=yy>=cima?1:2;
-    for(let dx=-rad;dx<=rad;dx++)for(let dz=-rad;dz<=rad;dz++){
-      if(Math.abs(dx)===rad&&Math.abs(dz)===rad&&(yy===cima+1||Math.random()<.5))continue;
-      if(!getBloque(x+dx,yy,z+dz))setBloque(x+dx,yy,z+dz,B.hojas,{sinAviso:true});}}
-  for(let yy=y;yy<=cima;yy++)setBloque(x,yy,z,B.tronco,{sinAviso:true});
+  const poner=(px,py,pz,b,soloAire)=>{if(py<0||py>=CY)return;const a=getBloque(px,py,pz);
+    if(soloAire&&a&&!REEMPL[a])return;if(!soloAire&&a&&SOLIDO[a]&&!esHojas(a)&&a!==B.tierra&&a!==B.cesped)return;setBloque(px,py,pz,b,{sinAviso:true});};
+  ponerArbolTipo(poner,tipo==='roble'&&r()<.1?'robleGrande':tipo,x,y-1,z,r);
   if(getBloque(x,y-1,z)===B.cesped)setBloque(x,y-1,z,B.tierra,{sinAviso:true});
 }
 

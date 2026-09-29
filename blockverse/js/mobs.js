@@ -24,13 +24,14 @@ const DEF_MOB={
     suelta:b=>[[I.perlaEnder,azar(0,1+b)]]},
   piglin:{vida:20,ancho:.3,alto:1.95,vel:2.3,tipo:'neutral',ia:'melee',dano:8,xp:[5,5],sonido:'piglin',inmuneFuego:true,
     suelta:b=>[[I.carnePodrida,azar(0,1+b)],[I.pepitaOro,azar(0,1+b)],[330+3,prob(.08)?1:0]]},
+  aldeano:{vida:20,ancho:.3,alto:1.95,vel:1.3,tipo:'pasivo',ia:'aldeano',xp:[0,0],sonido:'aldeano',suelta:()=>[]},
   ghast:{vida:10,ancho:2,alto:4,vel:2,tipo:'hostil',ia:'ghast',vuela:true,xp:[5,5],sonido:'ghast',inmuneFuego:true,
     suelta:b=>[[I.lagrimaGhast,azar(0,1+b)],[I.polvora,azar(0,2+b)]]},
   blaze:{vida:20,ancho:.3,alto:1.8,vel:2.3,tipo:'hostil',ia:'blaze',vuela:true,xp:[10,10],sonido:'blaze',inmuneFuego:true,odiaAgua:true,
     suelta:b=>[[I.varaBlaze,azar(0,1+b)]]},
 };
 const NOMBRE_MOB={cerdo:'Cerdo',vaca:'Vaca',oveja:'Oveja',gallina:'Gallina',zombi:'Zombi',esqueleto:'Esqueleto',creeper:'Creeper',
-  arana:'Araña',enderman:'Enderman',piglin:'Piglin zombificado',ghast:'Ghast',blaze:'Blaze'};
+  arana:'Araña',enderman:'Enderman',aldeano:'Aldeano',piglin:'Piglin zombificado',ghast:'Ghast',blaze:'Blaze'};
 const COCINADO={[I.cerdoCrudo]:I.cerdoAsado,[I.resCruda]:I.filete,[I.corderoCrudo]:I.corderoAsado,[I.polloCrudo]:I.polloAsado};
 
 /* ---------- Modelos ---------- */
@@ -38,7 +39,24 @@ function parte(w,h,d,color,pivoteArriba){
   const g=new THREE.BoxGeometry(w,h,d); if(pivoteArriba)g.translate(0,-h/2,0);
   const m=new THREE.Mesh(g,new THREE.MeshLambertMaterial({color}));m.userData.base=new THREE.Color(color);return m;
 }
-function modeloMob(tipo){
+const PROFESIONES={
+  granjero:{nombre:'Granjero',ropa:0x7a5a32,extra:0xd8c070},
+  bibliotecario:{nombre:'Bibliotecario',ropa:0xe8e8e0,extra:0xb03030},
+  herrero:{nombre:'Herrero',ropa:0x3a3a3a,extra:0x222222},
+  clerigo:{nombre:'Clérigo',ropa:0x7a3a9a,extra:0xd0b040},
+};
+function ofertasProfesion(pr,r){
+  const T={
+    granjero:[[[I.trigo,20],[I.esmeralda,1]],[[I.esmeralda,1],[I.pan,6]],[[B.calabaza,6],[I.esmeralda,1]],[[I.esmeralda,1],[I.manzana,4]],[[I.esmeralda,3],[I.polloAsado,8]]],
+    bibliotecario:[[[I.papel,24],[I.esmeralda,1]],[[I.libro,4],[I.esmeralda,1]],[[I.esmeralda,9],[B.estanteria,1]],[[I.esmeralda,1],[B.vidrio,4]],[[I.esmeralda,5],[B.mesaEncantar,1]]],
+    herrero:[[[I.carbon,15],[I.esmeralda,1]],[[I.lingoteHierro,4],[I.esmeralda,1]],[[I.esmeralda,5],[400+2,1]],[[I.esmeralda,9],[410+2,1]],[[I.esmeralda,3],[312,1]],[[I.diamante,1],[I.esmeralda,1]]],
+    clerigo:[[[I.carnePodrida,32],[I.esmeralda,1]],[[I.esmeralda,1],[I.redstone,2]],[[I.esmeralda,1],[I.lapis,1]],[[I.esmeralda,5],[I.perlaEnder,1]],[[I.esmeralda,4],[B.piedraLuminosa,1]]],
+  }[pr];
+  const lista=T.slice(); const n=3+Math.floor(r()*2);
+  while(lista.length>n)lista.splice(Math.floor(r()*lista.length),1);
+  return lista.map(([c,d])=>({costo:c,da:d,usos:0,max:8+Math.floor(r()*5)}));
+}
+function modeloMob(tipo,opc={}){
   const g=new THREE.Group(), piernas=[], brazos=[], extra={};
   const pon=(m,x,y,z)=>{m.position.set(x,y,z);g.add(m);return m;};
   const ojos=(y,z,sep,col=0x111111,t=.09)=>{pon(parte(t,t,.02,col),-sep,y,z);pon(parte(t,t,.02,col),sep,y,z);};
@@ -94,6 +112,18 @@ function modeloMob(tipo){
       humanoide(0xe8a0a0,0x9a6a50,0x6a4a30,0xe8a0a0); pon(parte(.3,.2,.08,0xd88888),0,1.66,.27); ojos(1.82,.26,.13,0x111111);
       pon(parte(.15,.22,.15,0x6aa84a),-.18,1.9,.2);
       extra.espada=pon(parte(.06,.7,.06,0xf0d040),.38,1.0,.4); break;
+    case 'aldeano':{
+      const pr=PROFESIONES[opc.profesion||'granjero'];
+      [-1,1].forEach(s=>{const p=pon(parte(.22,.7,.22,0x5a3a26,true),s*.12,.7,0);p.userData.s=s;piernas.push(p);});
+      pon(parte(.52,.95,.34,pr.ropa),0,1.18,0);
+      extra.cabeza=pon(parte(.46,.56,.46,0xc89a78),0,1.93,0);
+      pon(parte(.12,.24,.1,0xb08060),0,1.84,.28); ojos(1.98,.235,.1,0x2a6a2a);
+      pon(parte(.36,.08,.06,0x6a4a30),0,2.08,.23);
+      pon(parte(.62,.22,.26,pr.ropa),0,1.42,.2);
+      if(opc.profesion==='herrero')pon(parte(.54,.6,.02,0x222222),0,1.1,.18);
+      if(opc.profesion==='granjero')pon(parte(.62,.1,.62,0xd8c070),0,2.24,0);
+      if(opc.profesion==='bibliotecario')pon(parte(.5,.14,.5,0xb03030),0,2.26,0);
+      break;}
     case 'ghast':
       extra.cabeza=pon(parte(4,4,4,0xf2f2f2),0,2.6,0);
       pon(parte(.5,.2,.05,0x444444),-.9,3.1,2.01); pon(parte(.5,.2,.05,0x444444),.9,3.1,2.01); pon(parte(.8,.4,.05,0x444444),0,2.2,2.01);
@@ -107,11 +137,11 @@ function modeloMob(tipo){
   return {g,piernas,brazos,extra};
 }
 function crearMob(tipo,x,y,z,opc={}){
-  const def=DEF_MOB[tipo], mod=modeloMob(tipo);
+  const def=DEF_MOB[tipo], mod=modeloMob(tipo,opc);
   const m={tipo,def,pos:new THREE.Vector3(x,y,z),vel:new THREE.Vector3(),ancho:def.ancho,alto:def.alto,vida:def.vida,
     yaw:Math.random()*6.28,yawObj:0,grupo:mod.g,piernas:mod.piernas,brazos:mod.brazos,extra:mod.extra,fase:0,t:0,mover:false,
     huir:0,flash:0,cd:Math.random(),fuego:0,fuegoT:0,inv:0,suelo:false,chocoH:false,sonidoT:4+Math.random()*10,luzT:0,
-    vuela:!!def.vuela,enfadado:0,mecha:0,amor:0,bebe:opc.bebe?300:0,origen:new THREE.Vector3(x,y,z),ataqueT:0,rafaga:0,generador:opc.generador};
+    vuela:!!def.vuela,enfadado:0,mecha:0,amor:0,bebe:opc.bebe?300:0,origen:new THREE.Vector3(x,y,z),ataqueT:0,rafaga:0,generador:opc.generador,golpeT:0,profesion:opc.profesion,ofertas:opc.ofertas};
   if(m.bebe)m.grupo.scale.setScalar(.5),m.ancho*=.5,m.alto*=.5;
   escena.add(m.grupo); mobs.push(m); return m;
 }
@@ -122,7 +152,7 @@ function quitarMob(m){
   m.grupo.traverse(o=>{if(o.isMesh){o.geometry.dispose();o.material.dispose();}});
   const i=mobs.indexOf(m); if(i>=0)mobs.splice(i,1);
 }
-function limpiarMobs(){while(mobs.length)quitarMob(mobs[0]);}
+function limpiarMobs(){while(mobs.length)quitarMob(mobs[0]);for(const c of cadaveres){escena.remove(c.m.grupo);}cadaveres.length=0;}
 
 /* ---------- Daño y muerte ---------- */
 function herirMob(m,d,dir,fuente,empuje=0){
@@ -151,8 +181,23 @@ function matarMob(m,fuente){
     }
     if(fuente==='jugador'||tiempoJuego-(m.ultimoGolpeJugador||-99)<5)soltarXP(azar(m.def.xp[0],m.def.xp[1]),m.pos.x,m.pos.y,m.pos.z);
   }
-  emitirParticulas(m.pos.x,m.pos.y+m.alto/2,m.pos.z,0xdddddd,10,2,.6,-1);
-  quitarMob(m);
+  m.muerto=true;
+  const i=mobs.indexOf(m); if(i>=0)mobs.splice(i,1);
+  m.grupo.traverse(o=>{if(o.isMesh&&o.material.emissive)o.material.emissive.setRGB(.55,0,0);});
+  cadaveres.push({m,t:0,lado:Math.random()<.5?1:-1});
+}
+const cadaveres=[];
+function actualizarCadaveres(dt){
+  for(let i=cadaveres.length-1;i>=0;i--){
+    const c=cadaveres[i]; c.t+=dt; const m=c.m;
+    m.grupo.rotation.z=c.lado*Math.min(1,c.t/.45)*Math.PI/2;
+    m.grupo.position.y=m.pos.y+Math.min(1,c.t/.45)*m.ancho*.8;
+    if(c.t>1){
+      emitirParticulas(m.pos.x,m.pos.y+.4,m.pos.z,0xdddddd,12,1.6,.7,-2);
+      escena.remove(m.grupo); m.grupo.traverse(o=>{if(o.isMesh){o.geometry.dispose();o.material.dispose();}});
+      cadaveres.splice(i,1);
+    }
+  }
 }
 function teletransportarMob(m){
   for(let k=0;k<16;k++){
@@ -232,11 +277,20 @@ function actualizarMob(m,dt){
     if(m.rafaga>0&&m.cd<=0){m.rafaga--;m.cd=.35;sonar('blaze',m.pos,.6);
       const dir=new THREE.Vector3(dx+(Math.random()-.5)*dist*.1,dy+1-m.alto*.8,dz+(Math.random()-.5)*dist*.1).normalize();
       dispararBola('bolaFuego',eye.clone().addScaledVector(dir,.6),dir,16,{dueno:'mob',duenoMob:m});}
+  }else if(def.ia==='aldeano'){
+    let zombi=null,dz2=8;
+    for(const o of mobs)if(o.tipo==='zombi'){const d=o.pos.distanceTo(m.pos);if(d<dz2){dz2=d;zombi=o;}}
+    if(zombi){mover(m,m.pos.x-zombi.pos.x,m.pos.z-zombi.pos.z,def.vel*1.8);}
+    else if(m.huir>0){m.huir-=dt;mover(m,-dx,-dz,def.vel*1.8);}
+    else if(ui&&ui.aldeano===m){m.mover=false;m.yawObj=Math.atan2(dx,dz);}
+    else{const ox=m.origen.x-m.pos.x,oz=m.origen.z-m.pos.z;
+      m.t-=dt;if(m.t<=0){m.t=2+Math.random()*5;
+        if(Math.hypot(ox,oz)>14){m.mover=true;m.yawObj=Math.atan2(ox,oz);}else{m.mover=Math.random()<.5;m.yawObj=Math.random()*Math.PI*2;}}}
   }else if(persigue){ // cuerpo a cuerpo
     mover(m,dx,dz,def.vel*(m.enfadado>0&&m.tipo==='enderman'?1.4:1));
     if(def.trepa&&m.chocoH)m.vel.y=Math.max(m.vel.y,3);
     if(m.tipo==='arana'&&m.suelo&&dist<3.5&&dist>1.4&&m.cd<=0&&Math.random()<dt*2){m.vel.y=5;m.vel.x+=dx/dist*4;m.vel.z+=dz/dist*4;}
-    if(dist<m.ancho+1.1&&Math.abs(dy)<1.8&&m.cd<=0){m.cd=1;danarJugador(def.dano,'mob',{x:dx/(dist||1),z:dz/(dist||1)});}
+    if(dist<m.ancho+1.1&&Math.abs(dy)<1.8&&m.cd<=0){m.cd=1;m.golpeT=.35;danarJugador(def.dano,'mob',{x:dx/(dist||1),z:dz/(dist||1)});}
     if(m.tipo==='enderman'&&dist>12&&prob(dt*.3))teletransportarMob(m);
   }else if(m.huir>0){m.huir-=dt;mover(m,-dx,-dz,def.vel*2.2);}
   else if(def.tipo==='pasivo'&&objetivoValido2()&&dist<10&&enManoId()===def.comida){mover(m,dist>2?dx:0,dist>2?dz:0,def.vel);if(dist<=2)m.yawObj=Math.atan2(dx,dz);}
@@ -282,12 +336,23 @@ function actualizarMob(m,dt){
   const a=Math.sin(m.fase)*Math.min(1,sp)*.7;
   for(const p of m.piernas){if(p.userData.pata)p.rotation.y=a*.5*p.userData.s;else p.rotation.x=m.tipo==='ghast'?Math.sin(tiempoJuego*2+p.userData.s)*.2:a*p.userData.s;}
   const brazosArriba=m.tipo==='zombi'||m.tipo==='piglin'&&m.enfadado>0||m.tipo==='esqueleto'&&persigue||m.tipo==='enderman'&&m.enfadado>0;
+  m.golpeT=Math.max(0,m.golpeT-dt);
+  const golpe=Math.sin(Math.min(1,m.golpeT/.35)*Math.PI)*.9;
   for(const b of m.brazos){if(m.tipo==='gallina')b.rotation.z=b.userData.s*(m.suelo?0:Math.sin(tiempoJuego*30)*.6);
-    else b.rotation.x=(brazosArriba?-Math.PI/2:0)+a*.3*b.userData.s;}
+    else b.rotation.x=(brazosArriba?-Math.PI/2:0)+a*.3*b.userData.s-golpe;}
+  // La cabeza mira al jugador cuando está cerca
+  const cab=m.extra.cabeza;
+  if(cab&&m.tipo!=='ghast'&&m.tipo!=='blaze'){
+    let ry=0,rx=0;
+    if(dist3<10&&estado!=='muerto'&&!(m.huir>0)){const rel=((Math.atan2(dx,dz)-m.yaw+Math.PI*3)%(Math.PI*2))-Math.PI;
+      ry=clamp(rel,-1.1,1.1);rx=clamp(-Math.atan2(dy+1.5-m.alto*.9,dist),-.6,.6);}
+    cab.rotation.y+=(ry-cab.rotation.y)*Math.min(1,dt*6); cab.rotation.x+=(rx-cab.rotation.x)*Math.min(1,dt*6);
+  }
   if(m.extra.varas){m.extra.varas.forEach((r,i)=>{const ang=tiempoJuego*(i<4?2:i<8?-1.5:1.2)+i*Math.PI/2,rad=i<4?.7:i<8?.55:.4,h=i<4?1.2:i<8?.8:.4;
     r.position.set(Math.cos(ang)*rad,h+Math.sin(tiempoJuego*3+i)*.1,Math.sin(ang)*rad);});}
   if(m.tipo==='creeper'){const s=1+m.mecha*.12;m.grupo.scale.set(s,1+m.mecha*.05,s);}
   m.grupo.position.copy(m.pos);
+  if(m.suelo&&m.piernas.length===2&&sp>.3)m.grupo.position.y+=Math.abs(Math.sin(m.fase))*.05;
   if(def.ia==='ghast'||m.tipo==='blaze')m.grupo.position.y+=Math.sin(tiempoJuego*2+m.origen.x)*.1;
   m.grupo.rotation.y=m.yaw;
   // Color: luz del entorno, destello rojo al recibir daño y blanco al explotar
@@ -331,8 +396,25 @@ function intentoAparicion(){
   const ang=Math.random()*Math.PI*2, d=24+Math.random()*24;
   const x=Math.floor(j.x+Math.cos(ang)*d), z=Math.floor(j.z+Math.sin(ang)*d);
   const ch=chunkSiExiste(Math.floor(x/CX),Math.floor(z/CZ)); if(!ch||!ch.malla)return;
+  if(dim===DIMS.superficie&&Math.random()<.25){
+    for(const al of aldeasCerca(j.x,j.z)){
+      if(Math.hypot(al.x-j.x,al.z-j.z)>90)continue;
+      const cap=Math.min(10,al.edificios.length+2);
+      if(contar(m=>m.tipo==='aldeano'&&Math.hypot(m.pos.x-al.x,m.pos.z-al.z)<60)>=cap)continue;
+      const e=al.edificios[Math.floor(Math.random()*al.edificios.length)]||{x0:al.x+2,z0:al.z+2,w:1,p:1};
+      const [ddx,ddz]=DIRF[e.puerta||0];
+      const x=Math.floor(e.x0+e.w/2)+ddx*(Math.floor(Math.max(e.w,e.p)/2)+2),z=Math.floor(e.z0+e.p/2)+ddz*(Math.floor(Math.max(e.w,e.p)/2)+2);
+      const ch=chunkSiExiste(Math.floor(x/CX),Math.floor(z/CZ)); if(!ch||!ch.malla)continue;
+      let y=CY-1;while(y>0&&(!SOLIDO[getBloque(x,y,z)]||esHojas(getBloque(x,y,z))))y--;
+      if(getBloque(x,y+1,z)&&!REEMPL[getBloque(x,y+1,z)])continue;
+      const prof=Object.keys(PROFESIONES)[Math.floor(Math.random()*4)];
+      const m=crearMob('aldeano',x+.5,y+1,z+.5,{profesion:prof,ofertas:ofertasProfesion(prof,Math.random)});
+      m.origen.set(al.x,y+1,al.z);
+      return;
+    }
+  }
   if(dim===DIMS.superficie){
-    const pasivos=contar(m=>m.def.tipo==='pasivo'), hostiles=contar(m=>m.def.tipo!=='pasivo');
+    const pasivos=contar(m=>m.def.tipo==='pasivo'&&m.tipo!=='aldeano'), hostiles=contar(m=>m.def.tipo!=='pasivo');
     if(Math.random()<.08&&pasivos<10){
       let y=CY-1;while(y>0&&!getBloque(x,y,z))y--;
       if(getBloque(x,y,z)!==B.cesped||(luzEn(x,y+1,z)>>4)<9)return;
@@ -392,5 +474,5 @@ function actualizarGeneradores(dt){
 function despawnMobs(){
   const j=jugador.pos;
   for(const m of mobs.slice()){const d=m.pos.distanceTo(j);
-    if((m.def.tipo!=='pasivo'&&d>80)||d>140)quitarMob(m);}
+    if((m.def.tipo!=='pasivo'&&d>80)||d>(m.tipo==='aldeano'?110:140))quitarMob(m);}
 }

@@ -68,6 +68,14 @@ Abre `blockverse/index.html` en un navegador moderno de escritorio (necesita int
 
 ## Qué incluye
 
+- **Mundo aleatorio como Minecraft:** 14 biomas (llanura, bosque, bosque de abedules, taiga, tundra nevada, jungla, sabana, pantano, desierto, badlands, montañas, océano, playa y río), ríos, lagos de agua y lava, y colores de césped, hojas y agua que cambian según el bioma y se mezclan en los bordes.
+- **Árboles:** roble, roble grande, abedul, abeto, jungla y acacia, cada uno con su brote.
+- **Vetas de mineral con los valores de Minecraft 1.18** (intentos, tamaño y rango de altura), además de granito, diorita y andesita.
+- **Estructuras:** aldeas con casas, granjas, herrería, pozo y farolas; aldeanos granjeros, bibliotecarios, herreros y clérigos con los que puedes comerciar esmeraldas; portales en ruinas y pozos del desierto.
+- **Bloques de construcción:** escaleras, losas, puertas, escaleras de mano, vallas, paneles de vidrio, antorchas de pared, calabazas, linternas de calabaza, sandías, champiñones, flores, nenúfares, capas de nieve, arcilla, ladrillos, terracota y librerías (potencian la mesa de encantamientos).
+- **Efectos:** agua, lava y portales animados; plantas que se mecen con el viento; tormentas con rayos y truenos; nieve en los biomas fríos; pasos que suenan según el suelo; balanceo de cámara; sacudida al recibir daño; llamas y humo en las antorchas; burbujas, salpicaduras y ceniza en el Nether.
+- **Animaciones:** las criaturas giran la cabeza hacia ti, levantan los brazos al golpear y caen de lado al morir; la mano cambia de objeto, come y tensa el arco.
+
 - **Mundo:** capas de Y -64 a 127, lecho de roca, pizarra profunda bajo Y 0, cuevas, lagos de lava profundos, océanos, playas y biomas (llanura, bosque, desierto, nevado y montañas).
 - **Minerales por capas:** carbón, cobre, hierro, oro, redstone, lapislázuli, diamante (más abundante cerca de Y -59) y esmeralda en montañas, con sus variantes de pizarra profunda.
 - **Minado como en Minecraft:** misma fórmula de tiempo por dureza y herramienta, niveles de pico (hierro necesita piedra, diamante necesita hierro, obsidiana necesita diamante) y botín con probabilidades (pedernal de la grava, brotes y manzanas de las hojas, semillas de la hierba…).
@@ -96,7 +104,7 @@ Abre `blockverse/index.html` en un navegador moderno de escritorio (necesita int
 | `1`–`9` o rueda | Elegir objeto |
 | `E` | Inventario |
 | `Q` / `Shift+Q` | Tirar uno / toda la pila |
-| `T` o `/` | Comandos (`/help`, `/gamemode`, `/time`, `/give`, `/tp`, `/locate`…) |
+| `T` o `/` | Comandos (`/help`, `/gamemode`, `/time`, `/weather thunder`, `/give`, `/tp`, `/locate`, `/summon aldeano`…) |
 | `F3` | Información de depuración |
 | `Esc` | Pausa |
 
@@ -112,4 +120,4 @@ Abre `blockverse/index.html` en un navegador moderno de escritorio (necesita int
 
 ## Qué no incluye (todavía)
 
-Circuitos de redstone, aldeas y aldeanos, pociones y destilación, yunque, barcos, vagonetas y caballos, puertas, escaleras y losas, más tipos de árboles y biomas, islas exteriores del End, élitros, multijugador y controles táctiles.
+Circuitos de redstone, pociones y destilación, yunque, barcos, vagonetas y caballos, gólems de hierro, biomas del Nether, islas exteriores del End, élitros, multijugador y controles táctiles.

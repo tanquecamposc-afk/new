@@ -34,6 +34,7 @@ function actualizarHUD(){
     const arm=armaduraTotal().def;
     pintarFila('armadura',arm,IC_ARMADURA,arm>0);
     pintarFila('corazones',Math.ceil(salud),efectos.veneno?IC_VENENO:IC_VIDA);
+    $('corazones').classList.toggle('poca-vida',salud<=4);
     pintarFila('comida',hambre,efectos.hambre?IC_HAMBRE:IC_COMIDA);
     const b=Math.ceil(aire/1.5);
     filas.burbujas.forEach((im,i)=>{im.style.visibility=aire<15&&i<b?'visible':'hidden';if(!im.getAttribute('src'))im.setAttribute('src',IC_BURBUJA);});
@@ -91,7 +92,7 @@ function ejecutarComando(t){
   const [cmd,...a]=t.trim().replace(/^\//,'').split(/\s+/);
   const ok=m=>escribirChat(m);
   switch((cmd||'').toLowerCase()){
-    case 'help':ok('Comandos: /gamemode survival|creative · /time set day|night|<0-24000> · /tp x y z · /give objeto [cantidad] · /kill · /weather clear|rain · /xp n · /locate stronghold|fortress · /seed · /effect clear · /spawnpoint · /summon criatura');break;
+    case 'help':ok('Comandos: /gamemode survival|creative · /time set day|night|<0-24000> · /tp x y z · /give objeto [cantidad] · /kill · /weather clear|rain|thunder · /xp n · /locate stronghold|fortress · /seed · /effect clear · /spawnpoint · /summon criatura');break;
     case 'gamemode':case 'gm':{const m=(a[0]||'').toLowerCase();
       if(['s','0','survival','supervivencia'].includes(m))modo='supervivencia';else if(['c','1','creative','creativo'].includes(m))modo='creativo';else{ok('Modo desconocido.');break;}
       selModo.value=modo;if(!supervivencia())darKitCreativo();actualizarHUD();ok('Modo: '+(supervivencia()?'Supervivencia':'Creativo'));break;}
@@ -104,7 +105,7 @@ function ejecutarComando(t){
       let n=parseInt(a[1]||'1',10);while(n>0){const k=Math.min(n,maxPila(id));n-=k;const r=insertarInv(crearPila(id,k));if(r)soltarItem(r,jugador.pos.x,jugador.pos.y+1,jugador.pos.z,false);}
       ok('Recibiste '+ITEMS[id].nombre+'.');break;}
     case 'kill':danarJugador(1000,'vacio',null);break;
-    case 'weather':lloviendo=(a[0]||'')==='rain';climaT=600;ok(lloviendo?'Empieza a llover.':'El cielo se despeja.');break;
+    case 'weather':lloviendo=['rain','thunder','lluvia','tormenta'].includes(a[0]);tormenta=['thunder','tormenta'].includes(a[0]);climaT=600;ok(tormenta?'Se acerca una tormenta.':lloviendo?'Empieza a llover.':'El cielo se despeja.');break;
     case 'xp':ganarXP(parseInt(a[0]||'0',10));ok('Experiencia añadida.');break;
     case 'seed':ok('Semilla: '+semilla);break;
     case 'effect':efectos={};ok('Efectos eliminados.');break;
@@ -137,13 +138,14 @@ function actualizarCielo(dt){
     const a=tiempoDia*Math.PI*2;
     sol=Math.sin(a);
     const luzDia=.2+.8*clamp((sol+.2)/.5,0,1);
-    factorCielo=luzDia*(lloviendo?.7:1);
+    factorCielo=luzDia*(lloviendo?(tormenta?.5:.7):1);
     uDia=factorCielo;
     const fDia=clamp((sol+.15)/.45,0,1);
     cielo.copy(CIELO_NOCHE).lerp(CIELO_DIA,fDia);
     const ocaso=clamp(1-Math.abs(sol)/.22,0,1)*.45;
     if(ocaso>0&&!lloviendo)cielo.lerp(CIELO_OCASO,ocaso);
-    if(lloviendo)cielo.lerp(tmpC.copy(CIELO_LLUVIA).multiplyScalar(.3+fDia*.7),.7);
+    if(lloviendo)cielo.lerp(tmpC.copy(CIELO_LLUVIA).multiplyScalar((tormenta?.2:.3)+fDia*(tormenta?.45:.7)),tormenta?.85:.7);
+    if(destelloRayo>0){cielo.lerp(tmpC.setRGB(.9,.92,1),destelloRayo*.8);uDia=Math.min(1,uDia+destelloRayo*.8);}
     const dx=Math.cos(a),dy=Math.sin(a);
     sol3d.position.set(c.x+dx*350,c.y+dy*350,c.z+40); sol3d.lookAt(c);
     luna3d.position.set(c.x-dx*350,c.y-dy*350,c.z-40); luna3d.lookAt(c);
@@ -169,9 +171,14 @@ function actualizarCielo(dt){
   const llueveAqui=sup&&lloviendo&&!OPACO[getBloque(Math.floor(c.x),Math.min(CY-1,Math.floor(c.y)+6),Math.floor(c.z))];
   lluvia.visible=llueveAqui;
   if(llueveAqui){
-    const pos=lluvia.geometry.attributes.position;
-    for(let i=0;i<N_GOTAS;i++){const g=gotas[i];g.y-=dt*22;if(g.y<-12){g.y=18;g.x=(Math.random()-.5)*40;g.z=(Math.random()-.5)*40;}
-      pos.setXYZ(i*2,c.x+g.x,c.y+g.y,c.z+g.z);pos.setXYZ(i*2+1,c.x+g.x,c.y+g.y-.7,c.z+g.z);}
+    const bio=biomaEnJugador(), nieva=bio===BIOMA.nevado||(bio===BIOMA.montana&&c.y>OY+90), seco=bio===BIOMA.desierto||bio===BIOMA.badlands||bio===BIOMA.sabana;
+    lluvia.visible=!seco;
+    lluvia.material.color.setHex(nieva?0xffffff:0x9fb6d8); lluvia.material.opacity=nieva?.9:.55;
+    const pos=lluvia.geometry.attributes.position, vel=nieva?3:22, largo=nieva?.08:.7;
+    for(let i=0;i<N_GOTAS;i++){const g=gotas[i];g.y-=dt*vel;if(nieva){g.x+=Math.sin(tiempoJuego+i)*dt*.6;}
+      if(g.y<-12){g.y=18;g.x=(Math.random()-.5)*40;g.z=(Math.random()-.5)*40;
+        if(!nieva&&Math.random()<.08)emitirParticulas(c.x+g.x,c.y-1.5,c.z+g.z,0xbcd0f0,1,.8,.2,8);}
+      pos.setXYZ(i*2,c.x+g.x,c.y+g.y,c.z+g.z);pos.setXYZ(i*2+1,c.x+g.x+(nieva?.05:0),c.y+g.y-largo,c.z+g.z);}
     pos.needsUpdate=true;
   }
 }
@@ -183,11 +190,11 @@ function actualizarClima(dt){
   if(dim!==DIMS.superficie)return;
   tiempoDia=(tiempoDia+dt/DURACION_DIA)%1;
   climaT-=dt;
-  if(climaT<=0){lloviendo=!lloviendo;climaT=lloviendo?150+Math.random()*300:500+Math.random()*1200;}
+  if(climaT<=0){lloviendo=!lloviendo;tormenta=lloviendo&&Math.random()<.3;climaT=lloviendo?150+Math.random()*300:500+Math.random()*1200;}
 }
 
 /* ---------- Guardado ---------- */
-const CLAVE_GUARDADO='blockverse-mundo-v3';
+const CLAVE_GUARDADO='blockverse-mundo-v4';
 let guardado=null, temporizadorGuardado=0;
 function cargarPartida(){
   try{const s=JSON.parse(localStorage.getItem(CLAVE_GUARDADO)||'null');if(s&&s.semilla)guardado=s;}catch(e){guardado=null;}
@@ -198,7 +205,7 @@ function guardarPartida(){
     const j=jugador;
     localStorage.setItem(CLAVE_GUARDADO,JSON.stringify({semilla,modo,dim:dim.clave,
       ediciones:{superficie:DIMS.superficie.ediciones,nether:DIMS.nether.ediciones,end:DIMS.end.ediciones},
-      hornos,cofres,mundoEstado,inv,tiempoDia,lloviendo,climaT,
+      hornos,cofres,mundoEstado,inv,tiempoDia,lloviendo,tormenta,climaT,
       j:{pos:[j.pos.x,j.pos.y,j.pos.z,j.yaw,j.pitch,j.vuela],salud,hambre,saturacion,aire,xp,efectos,spawnMundo,spawnCama}}));
   }catch(e){}},300);
 }
@@ -207,7 +214,7 @@ function aplicarGuardado(s){
   for(const k of ['superficie','nether','end'])DIMS[k].ediciones=(s.ediciones&&s.ediciones[k])||{};
   hornos=s.hornos||{}; cofres=s.cofres||{}; mundoEstado=Object.assign({dragonMuerto:false,cristalesRotos:[],fin:false},s.mundoEstado||{});
   inv=(s.inv||[]).slice(0,40); while(inv.length<40)inv.push(null);
-  tiempoDia=s.tiempoDia??.02; lloviendo=!!s.lloviendo; climaT=s.climaT||900;
+  tiempoDia=s.tiempoDia??.02; lloviendo=!!s.lloviendo; tormenta=!!s.tormenta; climaT=s.climaT||900;
   const j=s.j||{};
   salud=j.salud??20; hambre=j.hambre??20; saturacion=j.saturacion??5; aire=j.aire??15;
   xp=j.xp||{nivel:0,puntos:0}; efectos=j.efectos||{}; spawnMundo=j.spawnMundo||null; spawnCama=j.spawnCama||null;
@@ -339,7 +346,7 @@ function manejarClics(dt){
       const t=tiempoRomper(apuntado.b,enMano());
       minado.prog+=t===0?1:dt/t;
       sonidoMinar-=dt;if(sonidoMinar<=0){sonidoMinar=.24;sonar('golpeBloque');balancearMano();
-        emitirParticulas(apuntado.x+.5+apuntado.n[0]*.5,apuntado.y+.5+apuntado.n[1]*.5,apuntado.z+.5+apuntado.n[2]*.5,colorTile[BLOQUES[apuntado.b].lado],2,1.2,.4);}
+        particulasBloque(apuntado.x+.5+apuntado.n[0]*.55,apuntado.y+.5+apuntado.n[1]*.55,apuntado.z+.5+apuntado.n[2]*.55,BLOQUES[apuntado.b].lado,3,1.4,.45);}
       if(minado.prog>=1){romperApuntado();minado=null;}
     }else minado=null;
   }
@@ -375,7 +382,8 @@ function bucle(ahora){
     for(let i=mobs.length-1;i>=0;i--){const m=mobs[i];if(m&&!m.muerto)actualizarMob(m,dt);}
     generarMobs(dt); actualizarGeneradores(dt);
     despawnT-=dt; if(despawnT<=0){despawnT=2;despawnMobs();}
-    actualizarDragon(dt);
+    actualizarDragon(dt); actualizarCadaveres(dt);
+    actualizarPasos(dt); actualizarClimaEfectos(dt); actualizarAmbiente(dt); comprobarSalpicadura();
     actualizarEntidades(dt);
     actualizarHornos(dt);
     if(ui&&ui.horno){hornoUIT-=dt;if(hornoUIT<=0){hornoUIT=.2;refrescarUI();}}
@@ -385,8 +393,9 @@ function bucle(ahora){
   actualizarParticulas(dt);
   gestionarChunks(estado==='menu'?20:7,jugador.pos.x,jugador.pos.z);
   const agachado=jugador.agachado;
-  camara.position.set(jugador.pos.x,jugador.pos.y+(agachado?1.32:1.62),jugador.pos.z);
-  camara.rotation.set(jugador.pitch,jugador.yaw,0);
+  const ce=Math.cos(jugador.yaw),se=Math.sin(jugador.yaw);
+  camara.position.set(jugador.pos.x+ce*efectoCam.x,jugador.pos.y+(agachado?1.32:1.62)+efectoCam.y,jugador.pos.z-se*efectoCam.x);
+  camara.rotation.set(jugador.pitch,jugador.yaw,efectoCam.rz);
   camara.fov+=(((jugador.corriendo&&estado==='jugando')?84:75)-camara.fov)*Math.min(1,dt*8); camara.updateProjectionMatrix();
   oyente=camara.position;
   actualizarApuntado();

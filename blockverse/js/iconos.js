@@ -91,6 +91,11 @@ function dibujarItem(id){
       case I.cuero: rect(4,4,11,12,[150,94,56]); rect(3,6,3,10,[150,94,56]); rect(12,6,12,10,[150,94,56]); rect(5,5,10,5,[180,120,70]); break;
       case I.papel: for(let y=3;y<=12;y++)for(let x=4+(y%3===0?1:0);x<=12;x++)P(x,y,[240,240,236]); break;
       case I.libro: rect(4,3,11,12,[110,60,30]); rect(11,4,12,12,[240,240,236]); rect(5,4,6,11,[140,80,40]); break;
+      case I.ladrillo: for(let y=6;y<=10;y++)for(let x=3;x<=12;x++)P(x,y,y===6?[200,110,90]:y===10?[120,50,40]:[170,76,58]); break;
+      case I.bolaArcilla: elipse(8,8.5,4.5,4,[160,168,182],12); break;
+      case I.cuenco: for(let y=7;y<=11;y++){const w=6-Math.floor((y-7)*1.2);for(let x=8-w;x<=7+w;x++)P(x,y,y===7?[150,110,70]:[124,90,52]);} break;
+      case I.estofado: for(let y=7;y<=11;y++){const w=6-Math.floor((y-7)*1.2);for(let x=8-w;x<=7+w;x++)P(x,y,y===7?[190,140,90]:[124,90,52]);} rect(4,6,11,7,[170,120,80]); P(6,6,[210,40,40]); P(9,6,[160,120,80]); break;
+      case I.rodajaSandia: for(let y=4;y<=12;y++){const w=Math.floor((y-3)*.8);for(let x=8-w;x<=7+w;x++)P(x,y,y>=11?[70,150,50]:y>=10?[230,240,200]:[220,50,60]);} P(7,7,[20,20,20]);P(9,8,[20,20,20]);P(6,9,[20,20,20]); break;
       default: elipse(8,8,4,4,[200,0,200],0);
     }
   });
@@ -98,7 +103,14 @@ function dibujarItem(id){
 const LIENZOS=[], ICONOS=[];
 ITEMS.forEach((it,id)=>{
   if(!it)return;
-  if(it.bloque){const f=FORMA[id];LIENZOS[id]=(f===0||f===1)?iconoCubo(BLOQUES[id].arriba,BLOQUES[id].lado):lienzoTile(BLOQUES[id].lado);}
+  const bq=BLOQUES[id];
+  if(it.bloque){const f=FORMA[id];
+    if(f===0||f===1)LIENZOS[id]=iconoCubo(bq.arriba,bq.lado,f===1?bq.altura:1);
+    else if(f===6&&!bq.trepable&&id!==B.nenufar){const alto=Math.max(...bq.cajas.map(c=>c[4]));LIENZOS[id]=iconoCubo(bq.arriba,bq.lado,alto);}
+    else if(id===B.valla)LIENZOS[id]=lienzo16(id,({rect})=>{rect(3,2,5,15,[168,133,84]);rect(10,2,12,15,[168,133,84]);rect(5,5,10,6,[150,118,72]);rect(5,10,10,11,[150,118,72]);});
+    else LIENZOS[id]=lienzoTile(bq.lado);}
+  else if(it.coloca==='puerta'){const c=document.createElement('canvas');c.width=c.height=16;const x=c.getContext('2d');
+    x.drawImage(atlasIconos,(T.doorTop%ATW)*TS,Math.floor(T.doorTop/ATW)*TS,TS,TS,4,0,8,8);x.drawImage(atlasIconos,(T.doorBottom%ATW)*TS,Math.floor(T.doorBottom/ATW)*TS,TS,TS,4,8,8,8);LIENZOS[id]=c;}
   else LIENZOS[id]=dibujarItem(id);
   ICONOS[id]=LIENZOS[id].toDataURL();
 });

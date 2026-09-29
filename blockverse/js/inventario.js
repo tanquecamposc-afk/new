@@ -143,9 +143,14 @@ function construirUI(){
     titulo('COFRE');
     const g=document.createElement('div');g.className='rejillaSlots';elSup.appendChild(g);
     ui.cofre.forEach((_,i)=>crearSlot(g,refArr(ui.cofre,i,{shift:aJugador})));
+  }else if(ui.tipo==='comercio'){
+    const m=ui.aldeano;
+    titulo((PROFESIONES[m.profesion]||{nombre:'Aldeano'}).nombre.toUpperCase());
+    const lista=document.createElement('div');lista.className='ofertas';lista.id='ofertas';elSup.appendChild(lista);
   }else if(ui.tipo==='encantar'){
     titulo('MESA DE ENCANTAMIENTOS');
     const z=fila();
+    const nl=contarLibrerias(ui.clave);if(nl){const d=document.createElement('div');d.className='pista';d.textContent=`Librerías alrededor: ${nl} de 15`;elSup.insertBefore(d,z);}
     const col=document.createElement('div');col.className='hornoCol';
     crearSlot(col,refObj(ui.enc,'item',{max:1,acepta:p=>encantabilidad(p.id)>0&&!p.enc,shift:aJugador}),false,'objeto');
     crearSlot(col,refObj(ui.enc,'lapis',{acepta:p=>p.id===I.lapis,shift:aJugador}),false,'lapis');
@@ -167,16 +172,26 @@ function refrescarUI(){
     document.getElementById('barFuego').style.width=(h.quemaMax?h.quema/h.quemaMax*100:0)+'%';
     document.getElementById('barFundir').style.width=(h.prog/TIEMPO_FUNDIR*100)+'%';}
   if(ui.tipo==='encantar')pintarOpcionesEnc();
+  if(ui.tipo==='comercio')pintarOfertas();
   actualizarHUD();
 }
 document.addEventListener('mousemove',e=>{if(estado==='ui'){elCursor.style.left=e.clientX+'px';elCursor.style.top=e.clientY+'px';}});
 
 /* ---------- Encantamientos ---------- */
 let semillaEnc=Math.floor(Math.random()*1e9);
+function contarLibrerias(clave){
+  if(!clave)return 0;
+  const [x,y,z]=clave.split(':')[1].split(',').map(Number);let n=0;
+  for(let dx=-2;dx<=2;dx++)for(let dz=-2;dz<=2;dz++){if(Math.max(Math.abs(dx),Math.abs(dz))!==2)continue;
+    for(let dy=0;dy<=1;dy++){const mx=Math.sign(dx),mz=Math.sign(dz);
+      if(getBloque(x+dx,y+dy,z+dz)===B.estanteria&&!getBloque(x+(Math.abs(dx)===2?mx:0),y+dy,z+(Math.abs(dz)===2?mz:0)))n++;}}
+  return Math.min(15,n);
+}
 function opcionesEncantar(p){
   const r=mulberry32(semillaEnc^(p.id*7919));
-  const b=2+Math.floor(r()*7);
-  const costes=[Math.max(1,Math.floor(b/3)),Math.floor(b*2/3)+1,Math.max(b,3)];
+  const libs=contarLibrerias(ui&&ui.clave);
+  const b=1+Math.floor(r()*8)+Math.floor(libs/2)+Math.floor(r()*(libs+1));
+  const costes=[Math.max(1,Math.floor(b/3)),Math.floor(b*2/3)+1,Math.max(b,libs*2)];
   return costes.map((c,i)=>({coste:c,lapis:i+1,niveles:i+1,enc:generarEncantos(p.id,c,r)}));
 }
 function generarEncantos(id,coste,r){
@@ -213,10 +228,31 @@ function pintarOpcionesEnc(){
   });
 }
 
+/* ---------- Comercio con aldeanos ---------- */
+function contarEnInv(id){let n=0;for(let i=0;i<36;i++)if(inv[i]&&inv[i].id===id)n+=inv[i].n;return n;}
+function quitarDeInv(id,n){for(let i=0;i<36&&n>0;i++){const p=inv[i];if(p&&p.id===id){const k=Math.min(n,p.n);p.n-=k;n-=k;if(!p.n)inv[i]=null;}}}
+function pintarOfertas(){
+  const cont=document.getElementById('ofertas'); if(!cont)return;
+  cont.innerHTML='';
+  for(const o of ui.aldeano.ofertas||[]){
+    const agotada=o.usos>=o.max, tiene=contarEnInv(o.costo[0])>=o.costo[1];
+    const b=document.createElement('button');b.className='oferta';b.disabled=agotada||!tiene;
+    b.innerHTML=`<span class="pila"><img src="${ICONOS[o.costo[0]]}" alt=""><b>${o.costo[1]}</b></span><span class="flechita">➜</span>`+
+      `<span class="pila"><img src="${ICONOS[o.da[0]]}" alt=""><b>${o.da[1]>1?o.da[1]:''}</b></span><em>${agotada?'Agotado':ITEMS[o.da[0]].nombre}</em>`;
+    b.title=`${o.costo[1]} × ${ITEMS[o.costo[0]].nombre} por ${o.da[1]} × ${ITEMS[o.da[0]].nombre}`;
+    b.onmousedown=e=>{e.preventDefault();e.stopPropagation();
+      if(agotada||contarEnInv(o.costo[0])<o.costo[1])return;
+      quitarDeInv(o.costo[0],o.costo[1]);
+      let n=o.da[1];while(n>0){const k=Math.min(n,maxPila(o.da[0]));n-=k;const r=insertar(crearPila(o.da[0],k),inv,IDX_INV);if(r)soltarItem(r,jugador.pos.x,jugador.pos.y+1,jugador.pos.z,false);}
+      o.usos++; soltarXP(azar(1,3),ui.aldeano.pos.x,ui.aldeano.pos.y+1,ui.aldeano.pos.z); sonar('aldeano',ui.aldeano.pos); refrescarUI();};
+    cont.appendChild(b);
+  }
+}
 /* ---------- Abrir y cerrar ---------- */
-function abrirUI(tipo,pos){
+function abrirUI(tipo,pos,extra){
   if(estado!=='jugando')return;
   ui={tipo};
+  if(extra)Object.assign(ui,extra);
   if(pos)ui.clave=claveCont(pos.x,pos.y,pos.z);
   if(tipo==='inv'){ui.w=2;ui.craft=new Array(4).fill(null);}
   else if(tipo==='mesa'){ui.w=3;ui.craft=new Array(9).fill(null);}

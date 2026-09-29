@@ -75,6 +75,15 @@ const SND={
   dragon:v=>{tonoSnd(120,60,1.2,'sawtooth',.2*v);ruidoSnd(1,500,.2*v);},
   encantar:v=>{for(let i=0;i<4;i++)tonoSnd(800+i*200,1200+i*200,.2,'sine',.05*v,i*.08);},
   mensaje:v=>tonoSnd(880,880,.06,'sine',.04*v),
+  puerta:v=>{ruidoSnd(.12,700,.3*v,'bandpass');tonoSnd(180,120,.12,'square',.05*v);},
+  pasoPasto:v=>ruidoSnd(.09,900,.07*v), pasoPiedra:v=>ruidoSnd(.05,2200,.08*v,'bandpass'), pasoArena:v=>ruidoSnd(.1,500,.07*v),
+  pasoMadera:v=>{ruidoSnd(.05,1200,.06*v,'bandpass');tonoSnd(220,160,.05,'triangle',.04*v);}, pasoNieve:v=>ruidoSnd(.1,1600,.05*v,'highpass'),
+  pasoGrava:v=>ruidoSnd(.1,1400,.09*v,'bandpass'), chapoteo:v=>ruidoSnd(.35,700,.25*v,'bandpass'),
+  trueno:v=>{ruidoSnd(2.5,180,.9*v);tonoSnd(60,25,2,'sine',.6*v);}, rayo:v=>{ruidoSnd(.4,5000,.5*v,'highpass');ruidoSnd(1.8,250,.8*v);},
+  cueva:v=>{tonoSnd(90+Math.random()*60,40,3,'sine',.07*v);tonoSnd(140,70,2.5,'triangle',.04*v,.4);},
+  burbuja:v=>tonoSnd(500+Math.random()*400,1200,.08,'sine',.03*v),
+  lluvia:v=>ruidoSnd(.6,2400,.035*v,'highpass'),
+  aldeano:v=>{tonoSnd(220,170,.25,'sawtooth',.05*v);tonoSnd(260,200,.2,'sawtooth',.04*v,.2);},
 };
 function sonar(nombre,pos,vol=1){
   if(!actx)return;

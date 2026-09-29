@@ -19,36 +19,57 @@ const texAtlas=new THREE.CanvasTexture(atlas);
 texAtlas.magFilter=THREE.NearestFilter; texAtlas.minFilter=THREE.NearestFilter; texAtlas.generateMipmaps=false;
 
 const VS_BLOQUES=`
-attribute vec3 luz;
-varying vec2 vUv; varying vec3 vLuz;
+attribute vec3 luz; attribute vec4 tinte;
+uniform float uTiempo;
+varying vec2 vUv; varying vec3 vLuz; varying vec4 vTinte;
 #include <fog_pars_vertex>
-void main(){ vUv=uv; vLuz=luz; vec4 mvPosition=modelViewMatrix*vec4(position,1.0); gl_Position=projectionMatrix*mvPosition;
+void main(){
+  vUv=uv; vLuz=luz; vTinte=vec4(tinte.rgb,mod(tinte.w,10.0));
+  vec3 p=position;
+  if(tinte.w>9.5){ vec3 w=p+vec3(modelMatrix[3][0],0.0,modelMatrix[3][2]);
+    p.x+=sin(uTiempo*1.8+w.x*.7+w.z*.5)*.06; p.z+=cos(uTiempo*1.4+w.x*.4+w.z*.8)*.06; }
+  vec4 mvPosition=modelViewMatrix*vec4(p,1.0); gl_Position=projectionMatrix*mvPosition;
 #include <fog_vertex>
 }`;
 const FS_BLOQUES=`
-uniform sampler2D mapa; uniform float uDia; uniform float uAmb; uniform float uAlpha; uniform float uOpac; uniform float uTiempo;
-varying vec2 vUv; varying vec3 vLuz;
+uniform sampler2D mapa; uniform float uDia; uniform float uAmb; uniform float uAlpha; uniform float uOpac; uniform float uTiempo; uniform vec2 uAtlas;
+varying vec2 vUv; varying vec3 vLuz; varying vec4 vTinte;
 #include <fog_pars_fragment>
 float curva(float l){ return l<0.01 ? 0.0 : pow(0.8,(1.0-l)*15.0); }
 void main(){
-  vec4 t=texture2D(mapa,vUv);
+  vec2 uv=vUv; float m=vTinte.w;
+  if(m>2.5){
+    vec2 celda=floor(vUv*uAtlas), loc=fract(vUv*uAtlas);
+    if(m<3.5) loc=fract(loc+vec2(uTiempo*.025,uTiempo*.05));
+    else if(m<4.5) loc=fract(loc+vec2(sin(uTiempo*.25)*.06,uTiempo*.018));
+    else if(m<5.5) loc=fract(loc+vec2(sin(uTiempo*1.3+loc.y*6.0)*.07,uTiempo*.12));
+    else loc=fract(loc+vec2(uTiempo*.01,uTiempo*.02));
+    uv=(celda+clamp(loc,.03,.97))/uAtlas;
+  }
+  vec4 t=texture2D(mapa,uv);
   if(t.a<uAlpha) discard;
+  vec3 col=t.rgb;
+  if(m>.5&&m<1.5){ if(t.a>.97&&t.a<.995) col*=vTinte.rgb; }
+  else if(m>1.5&&m<3.5) col*=vTinte.rgb;
   float s=curva(vLuz.r)*uDia; float b=curva(vLuz.g);
   vec3 l=max(vec3(s),vec3(b,b*0.92,b*0.78));
   l=pow(max(l,vec3(uAmb)),vec3(0.72));
-  gl_FragColor=vec4(t.rgb*l*vLuz.b,t.a*uOpac);
+  if(m>3.5&&m<4.5) l=vec3(1.0);
+  gl_FragColor=vec4(col*l*vLuz.b,t.a*uOpac);
   #include <fog_fragment>
 }`;
 function materialBloques(transparente){
   const m=new THREE.ShaderMaterial({
-    uniforms:THREE.UniformsUtils.merge([THREE.UniformsLib.fog,{mapa:{value:null},uDia:{value:1},uAmb:{value:.02},uAlpha:{value:transparente?.02:.5},uOpac:{value:1},uTiempo:{value:0}}]),
+    uniforms:THREE.UniformsUtils.merge([THREE.UniformsLib.fog,{mapa:{value:null},uDia:{value:1},uAmb:{value:.02},uAlpha:{value:transparente?.02:.5},uOpac:{value:1},uTiempo:{value:0},uAtlas:{value:new THREE.Vector2(ATW,ATH)}}]),
     vertexShader:VS_BLOQUES, fragmentShader:FS_BLOQUES, fog:true, transparent:transparente, depthWrite:!transparente,
     side:transparente?THREE.DoubleSide:THREE.FrontSide});
   m.uniforms.mapa.value=texAtlas;
   return m;
 }
 const matOpaco=materialBloques(false), matTrans=materialBloques(true);
-const matItemBloque=new THREE.MeshBasicMaterial({map:texAtlas,alphaTest:.5});
+const texIconos=new THREE.CanvasTexture(atlasIconos);
+texIconos.magFilter=THREE.NearestFilter; texIconos.minFilter=THREE.NearestFilter; texIconos.generateMipmaps=false;
+const matItemBloque=new THREE.MeshBasicMaterial({map:texIconos,alphaTest:.5});
 // Luces para criaturas y dragón (el brillo del entorno se aplica en su color)
 const luzAmb=new THREE.AmbientLight(0xffffff,.72), luzDir=new THREE.DirectionalLight(0xffffff,.45);
 luzDir.position.set(.4,1,.3); escena.add(luzAmb,luzDir);
@@ -137,24 +158,29 @@ const mano=new THREE.Group(); camara.add(mano);
 mano.position.set(.48,-.46,-.72);
 const brazo=new THREE.Mesh(new THREE.BoxGeometry(.18,.18,.6),new THREE.MeshBasicMaterial({color:0xd8a47a}));
 brazo.position.set(.05,-.05,.15); brazo.rotation.set(.2,-.2,0);
-let manoObjeto=null, manoId=-1, balanceo=0;
+let manoObjeto=null, manoId=-1, balanceo=0, cambioMano=0;
 function actualizarMano(id,brillo,dt,agachado){
   if(id!==manoId){
-    manoId=id; if(manoObjeto){mano.remove(manoObjeto);manoObjeto=null;}
+    manoId=id; cambioMano=1; if(manoObjeto){mano.remove(manoObjeto);manoObjeto=null;}
     mano.remove(brazo);
     if(id<=0)mano.add(brazo);
-    else if(esCuboItem(id)){manoObjeto=new THREE.Mesh(geoCuboItem(id,.3),new THREE.MeshBasicMaterial({map:texAtlas,alphaTest:.5}));
+    else if(esCuboItem(id)){manoObjeto=new THREE.Mesh(geoCuboItem(id,.3),new THREE.MeshBasicMaterial({map:texIconos,alphaTest:.5}));
       manoObjeto.rotation.set(.1,.7,0);mano.add(manoObjeto);}
     else{const t=new THREE.CanvasTexture(LIENZOS[id]);t.magFilter=t.minFilter=THREE.NearestFilter;
       manoObjeto=new THREE.Mesh(new THREE.PlaneGeometry(.42,.42),new THREE.MeshBasicMaterial({map:t,alphaTest:.5,side:THREE.DoubleSide}));
       manoObjeto.rotation.set(0,-.9,.3);manoObjeto.position.set(0,.08,0);mano.add(manoObjeto);}
   }
-  const m=manoObjeto||brazo; if(m.material.color)m.material.color.setScalar(clamp(brillo,.15,1));
-  if(!manoObjeto)brazo.material.color.setRGB(.85*clamp(brillo,.15,1),.64*clamp(brillo,.15,1),.48*clamp(brillo,.15,1));
-  balanceo=Math.max(0,balanceo-dt*4);
+  const m=manoObjeto||brazo, b=clamp(brillo,.15,1);
+  if(manoObjeto)m.material.color.setScalar(b);else brazo.material.color.setRGB(.85*b,.64*b,.48*b);
+  balanceo=Math.max(0,balanceo-dt*4); cambioMano=Math.max(0,cambioMano-dt*5);
   const s=Math.sin(balanceo*Math.PI);
-  mano.rotation.set(-s*.9,s*.3,0);
-  mano.position.set(.48,-.46-(agachado?.03:0)-s*.1,-.72+s*.1);
+  let px=.48,py=-.46-(agachado?.03:0)-s*.1-cambioMano*.35,pz=-.72+s*.1, rx=-s*.9, ry=s*.3, rz=0;
+  if(typeof comiendo!=='undefined'&&comiendo>=0){px=.18;py=-.36+Math.abs(Math.sin(comiendo*14))*.05;pz=-.5;rx=.3;ry=.6;}
+  if(typeof arcoCarga!=='undefined'&&arcoCarga>=0){const c=Math.min(1,arcoCarga);px=.2;py=-.3;pz=-.55+c*.12;rz=-.4;ry=.2;
+    if(manoObjeto)manoObjeto.position.x=Math.sin(tiempoJuego*40)*.004*c;}
+  if(typeof faseCamara!=='undefined'&&jugador.suelo){px+=Math.cos(faseCamara)*.012;py+=Math.abs(Math.sin(faseCamara))*.012;}
+  mano.rotation.set(rx,ry,rz);
+  mano.position.set(px,py,pz);
 }
 function balancearMano(){if(balanceo<=.3)balanceo=1;}
 
