@@ -352,8 +352,7 @@ function manejarClics(dt){
       if(comiendo>=1.6){terminarComer();comiendo=puedeComer()&&clicDer?0:-1;}}
   }
   if(arcoCarga>=0)arcoCarga+=dt;
-  const uso=comiendo>=0?comiendo/1.6:arcoCarga>=0?Math.min(1,arcoCarga):-1;
-  elUso.classList.toggle('oculto',uso<0); if(uso>=0)elUso.firstChild.style.width=(uso*100)+'%';
+  elUso.classList.add('oculto');  // como en el original: sin barra al comer ni al tensar el arco
   $('cargaAtaque').firstChild.style.width=(cargaAtaque()*100)+'%';
   $('cargaAtaque').style.visibility=cargaAtaque()<1?'visible':'hidden';
   if(clicIzq){
@@ -413,7 +412,7 @@ function bucle(ahora){
   const ce=Math.cos(jugador.yaw),se=Math.sin(jugador.yaw);
   camara.position.set(jugador.pos.x+ce*efectoCam.x,jugador.pos.y+(agachado?1.32:1.62)+efectoCam.y,jugador.pos.z-se*efectoCam.x);
   camara.rotation.set(jugador.pitch,jugador.yaw,efectoCam.rz);
-  camara.fov+=(((jugador.corriendo&&estado==='jugando')?84:75)-camara.fov)*Math.min(1,dt*8); camara.updateProjectionMatrix();
+  camara.fov+=(((jugador.corriendo&&estado==='jugando')?84:arcoCarga>=0?75-12*Math.min(1,arcoCarga):75)-camara.fov)*Math.min(1,dt*8);  // el arco acerca la vista al tensarlo camara.updateProjectionMatrix();
   oyente=camara.position;
   actualizarApuntado();
   if(estado==='jugando')manejarClics(dt);else{grietas.visible=false;$('barraUso').classList.add('oculto');}

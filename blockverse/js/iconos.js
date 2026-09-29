@@ -4,31 +4,140 @@
    ========================================================= */
 const PALO=[124,90,50];
 const sombra=(c,f)=>c.map(v=>v*f);
-function dibujarHerramienta(it){
-  const h=it.herr,m=MATS[h.mat].col,osc=sombra(m,.72),cla=sombra(m,1.18);
-  return lienzo16(it.clave.length*97+h.mat,({P,linea,elipse})=>{
-    if(h.tipo==='pico'){linea(2,13,10,5,PALO);
-      const pts=[[3,3],[5,2],[9,2],[11,3],[12,4],[13,6],[13,10],[12,12]];
-      for(let i=0;i<pts.length-1;i++)linea(pts[i][0]-1,pts[i][1]+1,pts[i+1][0]-1,pts[i+1][1]+1,osc);
-      for(let i=0;i<pts.length-1;i++)linea(pts[i][0],pts[i][1],pts[i+1][0],pts[i+1][1],m);}
-    else if(h.tipo==='hacha'){
-      for(let y=1;y<=7;y++){const xa=Math.max(6,9-y),xb=Math.min(12,14-y);for(let x=xa;x<=xb;x++)P(x,y,x===xa?cla:(x===xb?osc:m));}
-      linea(2,13,12,3,PALO);}
-    else if(h.tipo==='pala'){linea(2,13,9,6,PALO);elipse(11.5,4.5,2.9,2.9,m,10);P(10,3,cla);}
-    else if(h.tipo==='lanza'){linea(1,14,10,5,PALO);linea(2,14,10,6,sombra(PALO,.75));
-      for(let k=0;k<4;k++){linea(10-k,4+k,14-k,1+k,k<2?cla:m);} linea(11,5,14,2,osc);P(14,1,cla);P(9,5,osc);P(10,6,osc);}
-    else if(h.tipo==='azada'){linea(2,13,11,4,PALO);linea(8,2,12,2,m);linea(8,3,10,3,osc);P(12,3,m);}
-    else{linea(6,9,13,2,m);linea(6,8,12,2,cla);linea(3,8,7,12,osc);linea(2,13,4,11,PALO);}
-  });
+// Dibuja una plantilla de 16 filas: cada letra es un color; con espejo se completa la mitad derecha
+function plantilla(P,filas,cols,espejo){
+  filas.forEach((f,y)=>{for(let x=0;x<f.length;x++){const c=cols[f[x]];if(!c)continue;P(x,y,c);if(espejo)P(15-x,y,cols[f[x]==='l'?'m':f[x]]||c);}});
 }
+const PALO_OSC=[84,60,32];
+const PL_ESPADA=[
+"................",
+"............llm.",
+"...........lmmd.",
+"..........lmmd..",
+".........lmmd...",
+"........lmmd....",
+".......lmmd.....",
+"..g...lmmd......",
+"..gg.lmmd.......",
+"...ggmmd........",
+"....ggd.........",
+"...hHgg.........",
+"..hH..gg........",
+".hH.............",
+"pp..............",
+"pp.............."];
+const PL_PICO=[
+"................",
+"....dmmmmmd.....",
+"..dmllllllmmd...",
+".dml.....hHdmd..",
+".md.....hH...md.",
+".d.....hH.....d.",
+"......hH........",
+".....hH.........",
+"....hH..........",
+"...hH...........",
+"..hH............",
+".hH.............",
+"hH..............",
+"................",
+"................",
+"................"];
+const PL_HACHA=[
+"................",
+".....dmmmd......",
+"....dmlllmd.....",
+"...dmlllllmd....",
+"...mllllmhHd....",
+"...mlllmhHmd....",
+"...dmlmhHmd.....",
+"....dmhHdd......",
+"......hH........",
+".....hH.........",
+"....hH..........",
+"...hH...........",
+"..hH............",
+".hH.............",
+"hH..............",
+"................"];
+const PL_PALA=[
+"................",
+"..........dmmd..",
+".........dmllmd.",
+".........mllmmd.",
+"..........mmmd..",
+".........hHdd...",
+"........hH......",
+".......hH.......",
+"......hH........",
+".....hH.........",
+"....hH..........",
+"...hH...........",
+"..hH............",
+".hH.............",
+"................",
+"................"];
+const PL_AZADA=[
+"................",
+"......dmmmd.....",
+".....dmllmmhH...",
+"......dd..hH....",
+"..........hH....",
+".........hH.....",
+"........hH......",
+".......hH.......",
+"......hH........",
+".....hH.........",
+"....hH..........",
+"...hH...........",
+"..hH............",
+".hH.............",
+"................",
+"................"];
+const PL_LANZA=[
+"................",
+"............dml.",
+"...........dmlm.",
+"..........dmlmd.",
+"...........hmd..",
+"..........hH....",
+".........hH.....",
+"........hH......",
+".......hH.......",
+"......hH........",
+".....hH.........",
+"....hH..........",
+"...hH...........",
+"..hH............",
+".hH.............",
+"................"];
+function dibujarHerramienta(it){
+  const h=it.herr,m=MATS[h.mat].col,osc=sombra(m,.66),cla=sombra(m,1.22);
+  const pl={espada:PL_ESPADA,pico:PL_PICO,hacha:PL_HACHA,pala:PL_PALA,azada:PL_AZADA,lanza:PL_LANZA}[h.tipo]||PL_ESPADA;
+  const guarda=h.mat===0?[104,74,40]:sombra(m,.55);
+  return lienzo16(it.clave.length*97+h.mat,({P})=>plantilla(P,pl,{m,l:cla,d:osc,h:PALO,H:PALO_OSC,g:guarda,p:sombra(m,.8)}));
+}
+const PL_ARM=[
+ ["","","....dmmm","...dmlll","..dmlmmm","..mlmmmm","..mld...","..mld...","..mm....","..dd....","","","","","",""],
+ ["","",".dmmd...",".mlmmd..",".mlmmmmm",".dlmllmm","..dmlmmm","...mlmmm","...mlmmm","...mlmmm","...mlmmm","...dmmmm","...ddddd","","",""],
+ ["","","...dmmmm","...mllll","...mlmmm","...mlmd.","...mlm..","...mlm..","...mlm..","...mlm..","...mlm..","...mlm..","...ddd..","","",""],
+ ["","","","","","","..dmmd..","..mllm..","..mlmm..","..mlmm..",".dmlmm..",".mllmmd.",".mlmmmd.",".dddddd.","",""]];
 function dibujarArmadura(it){
-  const a=it.armadura,m=ARM_MATS[a.mat].col,osc=sombra(m,.7),cla=sombra(m,1.2);
-  return lienzo16(400+a.pieza*10+a.mat,({P,rect})=>{
-    if(a.pieza===0){rect(3,4,12,6,m);rect(3,7,4,10,m);rect(11,7,12,10,m);rect(4,4,11,4,cla);rect(3,10,4,10,osc);rect(11,10,12,10,osc);}
-    else if(a.pieza===1){rect(2,3,5,6,m);rect(10,3,13,6,m);rect(4,5,11,13,m);rect(6,3,9,4,[0,0,0]);for(let y=3;y<=4;y++)for(let x=6;x<=9;x++)P(x,y,null);
-      rect(4,13,11,13,osc);rect(7,6,8,12,cla);}
-    else if(a.pieza===2){rect(4,3,11,5,m);rect(4,6,6,13,m);rect(9,6,11,13,m);rect(4,3,11,3,cla);rect(4,13,6,13,osc);rect(9,13,11,13,osc);}
-    else{rect(3,8,6,12,m);rect(9,8,12,12,m);rect(2,11,6,13,m);rect(9,11,13,13,m);rect(3,8,6,8,cla);rect(9,8,12,8,cla);}
+  const a=it.armadura,m=ARM_MATS[a.mat].col,osc=sombra(m,.7),cla=sombra(m,1.22);
+  return lienzo16(400+a.pieza*10+a.mat,({P})=>plantilla(P,PL_ARM[a.pieza],{m,l:cla,d:osc},true));
+}
+const PL_POCION=["","......gg","......gw","......gw",".....gLL","....gLLL","...gLwLL","..gLwLLL","..gLLLLL","..gLLLLL","..gLLLLL","...gLLLL","....gggg","","",""];
+const PL_POCION_ARROJ=["","......gg","......gw",".....gww","....gLLL","...gLLLL","..gLwLLL",".gLwLLLL",".gLLLLLL",".gLLLLLL","..gLLLLL","...ggggg","","","",""];
+// Arco con la cuerda tensada según la fase (0 en reposo, 1-3 cargando con la flecha)
+function dibujarArco(fase){
+  return lienzo16(225+fase*7,({P,linea})=>{
+    const S1=[3,2],S2=[13,12],C=[15-fase*.4,0+fase*.3];
+    const q=(t)=>[(1-t)*(1-t)*S1[0]+2*(1-t)*t*C[0]+t*t*S2[0],(1-t)*(1-t)*S1[1]+2*(1-t)*t*C[1]+t*t*S2[1]];
+    const tir=[8-fase*1.3,7+fase*1.3];
+    linea(S1[0],S1[1],Math.round(tir[0]),Math.round(tir[1]),[222,222,222]); linea(Math.round(tir[0]),Math.round(tir[1]),S2[0],S2[1],[222,222,222]);
+    if(fase>0){const [x0,y0]=tir.map(Math.round);linea(x0,y0,x0+7,y0-7,[150,112,68]);P(x0+7,y0-7,[190,190,200]);P(x0+8,y0-8,[220,220,230]);P(x0+7,y0-8,[160,160,170]);P(x0+8,y0-7,[160,160,170]);
+      P(x0,y0,[240,240,240]);P(x0-1,y0,[240,240,240]);P(x0,y0+1,[240,240,240]);}
+    for(let k=0;k<=24;k++){const t=k/24,[x,y]=q(t);P(x,y,t>.4&&t<.6?[90,62,34]:[140,98,54]);const [x2,y2]=q(Math.min(1,t+.02));P(x2+1,y2,[112,78,42]);}
   });
 }
 function polvo(P,rnd,col,col2){for(let i=0;i<34;i++){const a=rnd()*Math.PI*2,d=Math.sqrt(rnd())*5;P(8+Math.cos(a)*d*1.1,10+Math.sin(a)*d*.55-(5-d)*.4,rnd()<.3?col2:col);}}
@@ -65,7 +174,6 @@ function dibujarItem(id){
       case I.pluma: linea(3,13,12,3,[220,220,220]); for(let k=0;k<7;k++){P(6+k,8-k+1,[250,250,250]);P(5+k,8-k,[235,235,235]);} break;
       case I.hueso: linea(4,11,11,4,[236,230,214]); P(3,12,[236,230,214]);P(3,10,[236,230,214]);P(12,5,[236,230,214]);P(12,3,[236,230,214]); break;
       case I.flecha: linea(3,12,12,3,[140,110,70]); linea(11,2,13,4,[180,180,190]); P(13,2,[180,180,190]); linea(2,11,2,13,[240,240,240]); linea(2,13,4,13,[240,240,240]); break;
-      case I.arco: for(let t=0;t<=20;t++){const a=-Math.PI/4+t/20*Math.PI;P(7+Math.cos(a+Math.PI/2)*-6+2,8-Math.sin(a+Math.PI/2)*6+ -1,[124,90,50]);} linea(3,3,12,12,[230,230,230]); break;
       case I.cubo: case I.cuboAgua: case I.cuboLava:
         for(let y=4;y<=13;y++){const a=Math.floor((y-4)/4);for(let x=3+a;x<=12-a;x++)P(x,y,[170,170,176]);} rect(3,4,12,4,[210,210,214]);
         if(id!==I.cubo)rect(4,5,11,6,id===I.cuboAgua?[50,90,220]:[240,120,20]); break;
@@ -94,10 +202,10 @@ function dibujarItem(id){
       case I.papel: for(let y=3;y<=12;y++)for(let x=4+(y%3===0?1:0);x<=12;x++)P(x,y,[240,240,236]); break;
       case I.libro: rect(4,3,11,12,[110,60,30]); rect(11,4,12,12,[240,240,236]); rect(5,4,6,11,[140,80,40]); break;
       case 500: case 501: case 502: case 503: case 504: case 505: case 506: case 507: case 510: case 511: case 512: case 513: case 514:{
-        const it=ITEMS[id], col=it.pocion?[(it.pocion.color>>16)&255,(it.pocion.color>>8)&255,it.pocion.color&255]:id===501?[60,100,230]:id===502?[80,110,220]:null;
-        rect(7,2,8,4,[200,220,230]); rect(6,1,9,1,[140,100,60]);
-        for(let y=5;y<=13;y++){const w=y<7?2:y<12?4:3;for(let x=8-w;x<8+w;x++)P(x,y,col&&y>6?col:[210,230,240]);}
-        if(it.pocion&&it.pocion.arrojadiza){P(5,6,[230,230,230]);P(10,6,[230,230,230]);}P(6,8,[255,255,255]);break;}
+        const it=ITEMS[id], col=it.pocion?[(it.pocion.color>>16)&255,(it.pocion.color>>8)&255,it.pocion.color&255]:id===501||id===502?[56,92,220]:[196,214,232];
+        plantilla(P,it.pocion&&it.pocion.arrojadiza?PL_POCION_ARROJ:PL_POCION,{g:[212,224,240],w:[250,252,255],L:col},true);
+        if(id===500)for(let y=4;y<=11;y++)for(let x=4;x<=11;x++)if((x+y)%5===0)P(x,y,[236,244,252]);
+        break;}
       case 515: for(let k=0;k<4;k++)elipse(5+k*2,9+(k%2)*2,1.8,1.8,[170,30,30],10); break;
       case 516: polvo(P,rnd,[248,248,248],[220,220,230]); break;
       case 517: for(let y=4;y<=12;y++){const w=Math.floor((y-3)*.8);for(let x=8-w;x<=7+w;x++)P(x,y,y>=11?[240,200,60]:y>=10?[255,240,150]:[230,120,60]);} P(7,7,[255,230,90]); break;
@@ -158,6 +266,8 @@ function dibujarItem(id){
   });
 }
 const LIENZOS=[], ICONOS=[];
+// Fotogramas del arco tensándose (se usan en la mano)
+const ARCO_FASES=[1,2,3].map(dibujarArco);
 ITEMS.forEach((it,id)=>{
   if(!it)return;
   const bq=BLOQUES[id];
@@ -169,6 +279,7 @@ ITEMS.forEach((it,id)=>{
     else LIENZOS[id]=lienzoTile(bq.lado);}
   else if(it.coloca==='puerta'){const c=document.createElement('canvas');c.width=c.height=16;const x=c.getContext('2d');
     x.drawImage(atlasIconos,(T.doorTop%ATW)*TS,Math.floor(T.doorTop/ATW)*TS,TS,TS,4,0,8,8);x.drawImage(atlasIconos,(T.doorBottom%ATW)*TS,Math.floor(T.doorBottom/ATW)*TS,TS,TS,4,8,8,8);LIENZOS[id]=c;}
+  else if(id===I.arco)LIENZOS[id]=dibujarArco(0);
   else LIENZOS[id]=dibujarItem(id);
   ICONOS[id]=LIENZOS[id].toDataURL();
 });

@@ -235,6 +235,12 @@ button:disabled{opacity:.5;cursor:not-allowed;}
 .mundo small.tipo{color:#a0c8a0;}
 .vacioMundos{color:#8a8a8a;padding:20px;text-align:center;}
 .pantallaPausa{width:min(400px,100%);}
+
+/* Paleta del creativo como en el original: solo iconos en ranuras, el nombre aparece al pasar el ratón */
+#rejillaPaleta{grid-template-columns:repeat(auto-fill,minmax(44px,1fr));gap:2px;}
+#rejillaPaleta .celda{aspect-ratio:1;display:flex;align-items:center;justify-content:center;padding:0;}
+#rejillaPaleta .celda span{display:none;}
+#rejillaPaleta .celda img{width:32px;height:32px;margin:0;}
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;500;600;700&display=swap">
@@ -411,6 +417,7 @@ button:disabled{opacity:.5;cursor:not-allowed;}
 <script src="js/vibrante.js"></script>
 <script src="js/oneblock.js"></script>
 <script src="js/v26.js"></script>
+<script src="js/animaciones.js"></script>
 <script src="js/main.js"></script>
 <script src="js/menus.js"></script>
 <script src="js/packs.js"></script>

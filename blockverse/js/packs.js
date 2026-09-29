@@ -99,6 +99,47 @@ const ITEM_MC={palo:'stick',carbon:'coal',hierroBruto:'raw_iron',lingoteHierro:'
  for(const a of ['cuero','hierro','oro','diamante'])ITEM_MC['armaduraCaballo_'+a]=A[a]+'_horse_armor';
  COLORES16.forEach(([c])=>{if(COLOR_MC[c])ITEM_MC['tinte_'+c]=COLOR_MC[c]+'_dye';});}
 
+// Nombres antiguos (Java 1.12 y anteriores) y de Bedrock, que usan carpetas «blocks» e «items»
+const TEX_ANTIGUO={grassTop:'grass_top',grassSide:'grass_side',logSide:'log_oak',logTop:'log_oak_top',leaves:'leaves_oak',planks:'planks_oak',
+  brick:'brick',snowSide:'grass_side_snowed',furnaceFront:'furnace_front_off',wool:'wool_colored_white',tallGrass:'tallgrass',flowerY:'flower_dandelion',
+  flowerR:'flower_rose',wheat:'wheat_stage_7',farmland:'farmland_wet',sandstoneSide:'sandstone_normal',quartzOre:'quartz_ore',netherBrick:'nether_brick',
+  netherPortal:'portal',stoneBricks:'stonebrick',mossyStoneBricks:'stonebrick_mossy',sapling:'sapling_oak',sugarCane:'reeds',spawner:'mob_spawner',
+  birchSide:'log_birch',birchTop:'log_birch_top',spruceSide:'log_spruce',spruceTop:'log_spruce_top',
+  jungleSide:'log_jungle',jungleTop:'log_jungle_top',acaciaSide:'log_acacia',acaciaTop:'log_acacia_top',spruceLeaves:'leaves_spruce',birchSapling:'sapling_birch',
+  spruceSapling:'sapling_spruce',jungleSapling:'sapling_jungle',acaciaSapling:'sapling_acacia',deadBush:'deadbush',orchid:'flower_blue_orchid',
+  daisy:'flower_oxeye_daisy',mushRed:'mushroom_red',mushBrown:'mushroom_brown',jackFace:'pumpkin_face_on',lilyPad:'waterlily',mossyCobble:'cobblestone_mossy',
+  doorTop:'door_wood_upper',doorBottom:'door_wood_lower',pathTop:'grass_path_top',pathSide:'grass_path_side',granite:'stone_granite',diorite:'stone_diorite',
+  andesite:'stone_andesite',polishedGranite:'stone_granite_smooth',polishedDiorite:'stone_diorite_smooth',polishedAndesite:'stone_andesite_smooth',
+  smoothStone:'stone_slab_top',crackedBricks:'stonebrick_cracked',chiseledStone:'stonebrick_carved',cutSandstone:'sandstone_smooth',
+  lampOff:'redstone_lamp_off',redTorchOn:'redstone_torch_on',pistonTop:'piston_top_normal',
+  railCurve:'rail_normal_turned',rail:'rail_normal',railPowered:'rail_golden',railPoweredOn:'rail_golden_powered',endBricks:'end_bricks',
+  wart:'nether_wart_stage_2',fire:'fire_layer_0',terracotta:'hardened_clay',birchPlanks:'planks_birch',sprucePlanks:'planks_spruce',junglePlanks:'planks_jungle',acaciaPlanks:'planks_acacia',
+  darkOakLog:'log_big_oak',darkOakTop:'log_big_oak_top',darkOakPlanks:'planks_big_oak',darkOakLeaves:'leaves_big_oak',darkOakSapling:'sapling_roofed_oak',
+  mushBlockRed:'mushroom_block_skin_red',mushBlockBrown:'mushroom_block_skin_brown',mushStem:'mushroom_block_skin_stem',packedIce:'ice_packed',
+  sunflower:'double_plant_sunflower_front',endFrameSide:'endframe_side',endFrameTop:'endframe_top',endFrameTopEye:'endframe_top',
+  prismarine:'prismarine_rough',darkPrismarine:'prismarine_dark',wetSponge:'sponge_wet',cobweb:'web'};
+const COLOR_ANTIGUO={white:'white',orange:'orange',magenta:'magenta',light_blue:'light_blue',yellow:'yellow',lime:'lime',pink:'pink',gray:'gray',light_gray:'silver',
+  cyan:'cyan',purple:'purple',blue:'blue',brown:'brown',green:'green',red:'red',black:'black'};
+COLORES16.forEach(([c])=>{const m=COLOR_MC[c];if(!m)return;const v=COLOR_ANTIGUO[m];
+  TEX_ANTIGUO['lana_'+c]='wool_colored_'+v;TEX_ANTIGUO['hormigon_'+c]='concrete_'+v;TEX_ANTIGUO['vidrio_'+c]='glass_'+v;});
+[['terr0','orange'],['terr1','yellow'],['terr2','red'],['terr3','brown'],['terr4','white'],['terr5','silver']].forEach(([t,c])=>TEX_ANTIGUO[t]='hardened_clay_stained_'+c);
+const ITEM_ANTIGUO={cerdoCrudo:'porkchop_raw',cerdoAsado:'porkchop_cooked',resCruda:'beef_raw',filete:'beef_cooked',
+  polloCrudo:'chicken_raw',polloAsado:'chicken_cooked',corderoCrudo:'mutton_raw',corderoAsado:'mutton_cooked',harinaHueso:'dye_powder_white',cubo:'bucket_empty',
+  cuboAgua:'bucket_water',cuboLava:'bucket_lava',semillas:'seeds_wheat',libro:'book_normal',rodajaSandia:'melon',melonBrillante:'speckled_melon',
+  vagoneta:'minecart_normal',barco:'boat_oak',cohete:'fireworks',bolaSlime:'slimeball',redstone:'redstone_dust',manzanaDorada:'apple_golden',
+  frasco:'potion_bottle_empty',libroEncantado:'book_enchanted',frutaReventada:'chorus_fruit_popped',puerta:'door_wood',arco:'bow_standby',lapis:'dye_powder_blue'};
+{const H={pico:'pickaxe',hacha:'axe',pala:'shovel',espada:'sword',azada:'hoe'}, M={madera:'wood',piedra:'stone',hierro:'iron',oro:'gold',diamante:'diamond'};
+ for(const h in H)for(const m in M)ITEM_ANTIGUO[h+'_'+m]=M[m]+'_'+H[h];
+ const P={casco:'helmet',pechera:'chestplate',pantalones:'leggings',botas:'boots'}, A={cuero:'leather',oro:'gold',hierro:'iron',diamante:'diamond'};
+ for(const p in P)for(const a in A)ITEM_ANTIGUO[p+'_'+a]=A[a]+'_'+P[p];}
+// Versión de Minecraft según el pack_format de pack.mcmeta
+function versionPack(f){
+  const T=[[1,'1.6–1.8'],[2,'1.9–1.10'],[3,'1.11–1.12'],[4,'1.13–1.14'],[5,'1.15–1.16.1'],[6,'1.16.2–1.16.5'],[7,'1.17'],[8,'1.18'],[9,'1.19–1.19.2'],
+    [12,'1.19.3'],[13,'1.19.4'],[15,'1.20–1.20.1'],[18,'1.20.2'],[22,'1.20.3–1.20.4'],[32,'1.20.5–1.20.6'],[34,'1.21–1.21.1'],[42,'1.21.2–1.21.3'],
+    [46,'1.21.4'],[55,'1.21.5'],[63,'1.21.6'],[64,'1.21.7–1.21.8'],[69,'1.21.9–1.21.10'],[75,'1.21.11'],[80,'26.x']];
+  let v=T[0][1]; for(const [n,t] of T)if(f>=n)v=t; return v;
+}
+
 // Qué baldosas se tiñen con el color del bioma (en el atlas original tienen píxeles con alfa 250)
 const TINTADA=new Uint8Array(NT);
 (function(){const d=atlas.getContext('2d').getImageData(0,0,atlas.width,atlas.height).data;
@@ -151,22 +192,35 @@ async function aplicarPack(buf,nombre){
   const z=await leerZip(buf), nombres=Object.keys(z.files);
   const meta=nombres.find(n=>/(^|\/)pack\.mcmeta$/.test(n)), pref=meta?meta.slice(0,-'pack.mcmeta'.length):(nombres.find(n=>n.includes('assets/minecraft/'))||'').split('assets/minecraft/')[0];
   const base=pref+'assets/minecraft/textures/';
-  const ruta=(tipo,n)=>[base+tipo+'/'+n+'.png',base+tipo+'s/'+n+'.png'].find(p=>z.files[p]);
+  // Formato: Java moderno (1.13+), Java antiguo (1.12 o anterior, nombres distintos) o Bedrock (.mcpack sin carpeta assets)
+  const manif=nombres.find(n=>/(^|\/)manifest\.json$/.test(n));
+  const bedrock=!!manif&&!meta&&!nombres.some(n=>n.includes('assets/minecraft/'));
+  const prefB=bedrock?manif.slice(0,-'manifest.json'.length):pref;
+  let formato=0; try{if(meta)formato=+(JSON.parse(new TextDecoder().decode(await z.leer(meta))).pack.pack_format)||0;}catch(e){}
+  const antiguo=bedrock||(formato>0&&formato<4);
+  const dirs=tipo=>bedrock?[prefB+'textures/'+tipo+'s/']:[base+tipo+'/',base+tipo+'s/'];
+  const ruta=(tipo,...ns)=>{for(const n of ns){if(!n)continue;for(const d of dirs(tipo)){const p=d+n+'.png';if(z.files[p])return p;}}return null;};
+  const nomBloque=t=>antiguo?[TEX_ANTIGUO[t],TEX_MC[t]]:[TEX_MC[t],TEX_ANTIGUO[t]];
+  const nomItem=c=>antiguo?[ITEM_ANTIGUO[c],ITEM_MC[c]]:[ITEM_MC[c],ITEM_ANTIGUO[c]];
+  const omitidas=nombres.filter(n=>/\.tga$/i.test(n)).length;
   const imagen=async p=>{const d=await z.leer(p);if(!d)return null;return await createImageBitmap(new Blob([d],{type:'image/png'}));};
   let desc='',icono=null;
   try{if(meta)desc=textoMcmeta(JSON.parse(new TextDecoder().decode(await z.leer(meta))));}catch(e){}
-  try{const pi=z.files[pref+'pack.png']&&await z.leer(pref+'pack.png');if(pi){const b=await createImageBitmap(new Blob([pi],{type:'image/png'}));const c=lienzoPack(64);const x=c.getContext('2d');x.imageSmoothingEnabled=false;x.drawImage(b,0,0,64,64);icono=c.toDataURL();}}catch(e){}
+  try{if(bedrock){const mj=JSON.parse(new TextDecoder().decode(await z.leer(manif)).replace(/^\uFEFF/,''));desc=(mj.header&&(mj.header.name+(mj.header.description?' · '+mj.header.description:'')))||'';desc=desc.replace(/§./g,'');}}catch(e){}
+  const iconoP=bedrock?prefB+'pack_icon.png':pref+'pack.png';
+  try{const pi=z.files[iconoP]&&await z.leer(iconoP);if(pi){const b=await createImageBitmap(new Blob([pi],{type:'image/png'}));const c=lienzoPack(64);const x=c.getContext('2d');x.imageSmoothingEnabled=false;x.drawImage(b,0,0,64,64);icono=c.toDataURL();}}catch(e){}
   // Texturas de bloques
   const imgs={}; let S=16;
-  for(const tile in TEX_MC){if(T[tile]===undefined)continue;const p=ruta('block',TEX_MC[tile]);if(!p)continue;
+  for(const tile of new Set([...Object.keys(TEX_MC),...Object.keys(TEX_ANTIGUO)])){if(T[tile]===undefined)continue;const p=ruta('block',...nomBloque(tile));if(!p)continue;
     try{const im=await imagen(p);if(im){imgs[tile]=im;S=Math.max(S,Math.min(64,im.width));}}catch(e){}}
-  let overlay=null,ojo=null; try{const p=ruta('block','grass_block_side_overlay');if(p)overlay=await imagen(p);}catch(e){}
-  try{const p=ruta('block','end_portal_frame_eye');if(p)ojo=await imagen(p);}catch(e){}
+  let overlay=null,ojo=null; try{const p=ruta('block','grass_block_side_overlay','grass_side_overlay');if(p)overlay=await imagen(p);}catch(e){}
+  try{const p=ruta('block','end_portal_frame_eye','endframe_eye');if(p)ojo=await imagen(p);}catch(e){}
+  if(bedrock){try{const p=ruta('block','grass_side_carried');if(p){imgs.grassSide=await imagen(p);overlay=null;}}catch(e){}}
   // Vuelve al atlas original y encima pone las del paquete
   const ctxA=atlas.getContext('2d'); ctxA.clearRect(0,0,atlas.width,atlas.height); ctxA.drawImage(atlasOriginal,0,0);
   const hd=S>16?lienzoPack(ATW*S,ATH*S):null, ctxH=hd&&hd.getContext('2d');
   if(hd){ctxH.imageSmoothingEnabled=false;ctxH.drawImage(atlas,0,0,hd.width,hd.height);}
-  const pegar=(tile,sz,ctx)=>{const t=T[tile],d=texturaFinal(tile,imgs[tile],tile==='grassSide'?overlay:null,sz);
+  const pegar=(tile,sz,ctx)=>{const t=T[tile],d=texturaFinal(tile,imgs[tile],tile==='grassSide'&&!bedrock?overlay:null,sz);
     if(tile==='endFrameTopEye'&&ojo){const o=cuadro(ojo,sz,true);for(let i=0;i<d.data.length;i+=4)if(o.data[i+3]>=128){d.data[i]=o.data[i];d.data[i+1]=o.data[i+1];d.data[i+2]=o.data[i+2];d.data[i+3]=255;}}
     ctx.putImageData(d,(t%ATW)*sz,Math.floor(t/ATW)*sz);};
   for(const tile in imgs){pegar(tile,TS,ctxA);if(hd)pegar(tile,S,ctxH);}
@@ -176,21 +230,25 @@ async function aplicarPack(buf,nombre){
   for(let id=0;id<ITEMS.length;id++)if(LIENZOS_ORIG[id]){LIENZOS[id]=LIENZOS_ORIG[id];ICONOS[id]=LIENZOS[id].toDataURL();}
   regenerarIconos();
   let nItems=0;
-  for(let id=0;id<ITEMS.length;id++){const it=ITEMS[id];if(!it||it.bloque)continue;const mc=ITEM_MC[it.clave];if(!mc)continue;
-    const p=ruta('item',mc);if(!p)continue;
+  for(let id=0;id<ITEMS.length;id++){const it=ITEMS[id];if(!it||it.bloque)continue;const ns=nomItem(it.clave);if(!ns[0]&&!ns[1])continue;
+    const p=ruta('item',...ns);if(!p)continue;
     try{const im=await imagen(p);if(!im)continue;const c=lienzoPack(16),x=c.getContext('2d');x.putImageData(cuadro(im,16,true),0,0);
       if(/^(casco|pechera|pantalones|botas)_cuero$|^armaduraCaballo_cuero$/.test(it.clave)){  // el cuero es gris en Minecraft y se tiñe de marrón
         const d=x.getImageData(0,0,16,16);for(let i=0;i<d.data.length;i+=4){d.data[i]*=.63;d.data[i+1]*=.4;d.data[i+2]*=.25;}x.putImageData(d,0,0);}
       LIENZOS[id]=c;ICONOS[id]=c.toDataURL();nItems++;}catch(e){}}
+  // Fotogramas del arco tensándose
+  for(let f=0;f<3;f++){try{const p=ruta('item','bow_pulling_'+f);if(p){const im=await imagen(p);const c=lienzoPack(16);c.getContext('2d').putImageData(cuadro(im,16,true),0,0);LIENZOS[9901+f]=c;}}catch(e){}}
   for(const k in geoExtr)delete geoExtr[k]; for(const k in matSprites)delete matSprites[k];
   manoId=-1; actualizarHUD(); if(ui)refrescarUI();
-  packActivo={nombre,desc,icono,bloques:Object.keys(imgs).length,objetos:nItems,resolucion:S};
+  const version=bedrock?'Bedrock':formato?'Java '+versionPack(formato):'Java';
+  packActivo={nombre,desc,icono,bloques:Object.keys(imgs).length,objetos:nItems,resolucion:S,version,formato,omitidas};
   return packActivo;
 }
 function quitarPack(){
   const ctxA=atlas.getContext('2d'); ctxA.clearRect(0,0,atlas.width,atlas.height); ctxA.drawImage(atlasOriginal,0,0);
   texAtlas.image=atlas; texAtlas.needsUpdate=true; reconstruirAtlasIconos();
   for(let id=0;id<ITEMS.length;id++)if(LIENZOS_ORIG[id]){LIENZOS[id]=LIENZOS_ORIG[id];ICONOS[id]=LIENZOS[id].toDataURL();}
+  ARCO_FASES.forEach((c,i)=>{LIENZOS[9901+i]=c;});
   regenerarIconos(); packActivo=null;
 }
 
@@ -239,7 +297,17 @@ actualizarFinal=function(dt){_actualizarFinalMods(dt);for(const f of MOD_ACTUALI
 function leerMods(){try{const l=JSON.parse(localStorage.getItem('blockverse-mods')||'[]');return Array.isArray(l)?l:[];}catch(e){return [];}}
 function guardarMods(l){try{localStorage.setItem('blockverse-mods',JSON.stringify(l));}catch(e){mostrarMensaje('No cabe el mod en el almacenamiento del navegador.');}}
 const errorMod={};
-function ejecutarMod(m){try{new Function('Blockverse',m.codigo)(Blockverse);errorMod[m.nombre]=null;}catch(e){errorMod[m.nombre]=e.message;}}
+// Versiones: un mod puede pedir una versión mínima con «// @blockverse 26.1» o Blockverse.requiere('26.1')
+const cmpVersion=(a,b)=>{const x=String(a).split('.').map(Number),y=String(b).split('.').map(Number);for(let i=0;i<Math.max(x.length,y.length);i++){const d=(x[i]||0)-(y[i]||0);if(d)return d;}return 0;};
+Blockverse.api=1;
+Blockverse.requiere=v=>{if(cmpVersion(v,Blockverse.version)>0)throw new Error('Este mod necesita Blockverse '+v+' o posterior (tienes '+Blockverse.version+').');};
+// Nombres en inglés de la API, por comodidad
+Blockverse.addCommand=Blockverse.comando; Blockverse.addRecipe=Blockverse.receta; Blockverse.onBlockBreak=Blockverse.alRomperBloque; Blockverse.onTick=Blockverse.alActualizar; Blockverse.give=Blockverse.darObjeto;
+function ejecutarMod(m){
+  const req=(m.codigo.match(/@blockverse\s+([\d.]+)/)||[])[1];
+  if(req&&cmpVersion(req,Blockverse.version)>0){errorMod[m.nombre]='necesita Blockverse '+req+' o posterior (tienes '+Blockverse.version+')';return;}
+  try{new Function('Blockverse',m.codigo)(Blockverse);errorMod[m.nombre]=null;}catch(e){errorMod[m.nombre]=e.message;}
+}
 for(const m of leerMods())if(m.activo)ejecutarMod(m);
 const MOD_EJEMPLO=`// Mod de ejemplo para Blockverse
 // /dia hace de día, /kit da herramientas de piedra y romper hojas a veces suelta manzanas.
@@ -255,10 +323,10 @@ Blockverse.alRomperBloque((x, y, z, bloque) => { if (bloque === 'hojas' && Math.
 <div id="pantallaPacks" class="capa oculto"><div class="tarjeta pantallaMC">
   <h2>Paquetes de recursos</h2>
   <div id="infoPack" class="cajaPack"></div>
-  <input id="archivoPack" type="file" accept=".zip,application/zip" class="oculto">
-  <button id="btnCargarPack">Elegir paquete (.zip)…</button>
+  <input id="archivoPack" type="file" accept=".zip,.mcpack,application/zip" class="oculto">
+  <button id="btnCargarPack">Elegir paquete (.zip o .mcpack)…</button>
   <button id="btnQuitarPack" class="secundario">Quitar paquete</button>
-  <div class="ayuda">Usa paquetes de Minecraft Java Edition (con la carpeta assets/minecraft/textures). Se cambian los bloques y los objetos; los paquetes HD se usan hasta 64 píxeles.</div>
+  <div class="ayuda">Sirven paquetes de Java de cualquier versión (de la 1.6 a la 1.21 y 26.x, con los nombres antiguos o nuevos de las texturas) y de Bedrock (.mcpack, texturas .png). Se cambian los bloques y los objetos; los paquetes HD se usan hasta 64 píxeles.</div>
   <button id="btnListoPacks" class="secundario">Listo</button>
 </div></div>
 <div id="pantallaMods" class="capa oculto"><div class="tarjeta pantallaMC">
@@ -290,7 +358,7 @@ Blockverse.alRomperBloque((x, y, z, bloque) => { if (bloque === 'hojas' && Math.
   document.getElementById('archivoPack').onchange=async e=>{
     const f=e.target.files[0]; e.target.value=''; if(!f)return;
     const info=document.getElementById('infoPack'); info.textContent='Cargando '+f.name+'…';
-    try{const buf=await f.arrayBuffer();await aplicarPack(buf,f.name.replace(/\.zip$/i,''));
+    try{const buf=await f.arrayBuffer();await aplicarPack(buf,f.name.replace(/\.(zip|mcpack)$/i,''));
       try{await guardarPackIDB(packActivo.nombre,buf);}catch(err){}
     }catch(err){info.textContent='No se pudo cargar: '+err.message;return;}
     pintarPacks();
@@ -313,7 +381,7 @@ function pintarPacks(){
   const img=document.createElement('img'); img.alt='';
   const t=document.createElement('div'), n=document.createElement('b'), s=document.createElement('small'), s2=document.createElement('small');
   if(packActivo){img.src=packActivo.icono||ICONOS[B.cesped];n.textContent=packActivo.nombre;s.textContent=packActivo.desc||'';
-    s2.textContent=`${packActivo.bloques} texturas de bloques y ${packActivo.objetos} de objetos · ${packActivo.resolucion}×${packActivo.resolucion}`;}
+    s2.textContent=`${packActivo.version||'Java'}${packActivo.formato?' (formato '+packActivo.formato+')':''} · ${packActivo.bloques} texturas de bloques y ${packActivo.objetos} de objetos · ${packActivo.resolucion}×${packActivo.resolucion}`+(packActivo.omitidas?` · ${packActivo.omitidas} en formato .tga no admitido`:'');}
   else{img.src=ICONOS[B.cesped];n.textContent='Predeterminado';s.textContent='Las texturas propias de Blockverse.';}
   t.append(n,s,s2); info.append(img,t);
   document.getElementById('btnQuitarPack').disabled=!packActivo;
