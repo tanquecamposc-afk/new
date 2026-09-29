@@ -209,15 +209,23 @@ let guardado=null, temporizadorGuardado=0;
 function cargarPartida(){
   try{const s=JSON.parse(localStorage.getItem(CLAVE_GUARDADO)||'null');if(s&&s.semilla)guardado=s;}catch(e){guardado=null;}
 }
+// Cada mundo se guarda en su propia clave; sin mundo abierto (pantalla de título) no se guarda nada
+let mundoId=null;
 function guardarPartida(){
   clearTimeout(temporizadorGuardado);
-  temporizadorGuardado=setTimeout(()=>{try{
+  temporizadorGuardado=setTimeout(guardarYa,300);
+}
+function guardarYa(){
+  clearTimeout(temporizadorGuardado);
+  if(!mundoId)return;
+  try{
     const j=jugador;
-    localStorage.setItem(CLAVE_GUARDADO,JSON.stringify({semilla,modo,dim:dim.clave,
+    localStorage.setItem('blockverse-mundo-'+mundoId,JSON.stringify({semilla,modo,dim:dim.clave,
       ediciones:{superficie:DIMS.superficie.ediciones,nether:DIMS.nether.ediciones,end:DIMS.end.ediciones},
       hornos,cofres,mundoEstado,inv,tiempoDia,lloviendo,tormenta,climaT,
       j:{pos:[j.pos.x,j.pos.y,j.pos.z,j.yaw,j.pitch,j.vuela],salud,hambre,saturacion,aire,xp,efectos,spawnMundo,spawnCama}}));
-  }catch(e){}},300);
+    if(typeof actualizarIndiceMundo==='function')actualizarIndiceMundo();
+  }catch(e){}
 }
 function aplicarGuardado(s){
   semilla=s.semilla; modo=s.modo||'supervivencia';
@@ -268,7 +276,7 @@ btnNuevo.onclick=()=>{
 function nuevoMundo(){
   quitarTodasLasMallas(dim); for(const d of Object.values(DIMS)){d.chunks.clear();d.ediciones={};}
   chunksSucios.clear(); limpiarMobs(); limpiarEntidades(); limpiarSimulacion(); quitarDragon();
-  semilla=1+Math.floor(Math.random()*1e6); hornos={}; cofres={}; mundoEstado={dragonMuerto:false,cristalesRotos:[],fin:false};
+  semilla=window.semillaElegida||1+Math.floor(Math.random()*1e6); window.semillaElegida=0; hornos={}; cofres={}; mundoEstado={dragonMuerto:false,cristalesRotos:[],fin:false};
   dim=DIMS.superficie; spawnMundo=null; spawnCama=null;
   inv=new Array(40).fill(null); modo=selModo.value; if(!supervivencia())darKitCreativo();
   salud=20;hambre=20;saturacion=5;agotamiento=0;aire=15;xp={nivel:0,puntos:0};efectos={};fuegoJ=0;
@@ -370,9 +378,8 @@ function manejarClics(dt){
 }
 
 /* ---------- Inicio ---------- */
-cargarPartida();
-if(guardado){aplicarGuardado(guardado);$('btnJugar').textContent='Continuar';}
-else{semilla=1+Math.floor(Math.random()*1e6);aparecer();if(!supervivencia())darKitCreativo();}
+// Al arrancar se genera un mundo de fondo para la pantalla de título (no se guarda)
+semilla=1+Math.floor(Math.random()*1e6);aparecer();
 selModo.value=modo;
 calcularOffsets();
 gestionarChunks(250,jugador.pos.x,jugador.pos.z);

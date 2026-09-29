@@ -188,6 +188,16 @@ function actualizarOneBlock(dt){
   const b=getBloqueSiCargado(OB.x,OB.y,OB.z); if(b<0)return;
   if(b===0||esLiquido(b)){obRegenerando=true;try{regenerarOB(ob);}finally{obRegenerando=false;}}
   sostenerJugadorOB();
+  caidaVacioOB();
+}
+// En One Block caer de la isla mata al instante, también en creativo (sin esperar al daño de caída)
+function caidaVacioOB(){
+  if(estado!=='jugando'||jugador.montura)return;
+  const p=jugador.pos; if(p.y>=OB.y-6)return;
+  const x=Math.floor(p.x),z=Math.floor(p.z),y0=Math.floor(p.y);
+  for(let y=y0;y>=Math.max(0,y0-64);y--)if(SOLIDO[getBloque(x,y,z)])return;  // hay algo construido debajo
+  jugador.vuela=false; jugador.vel.set(0,0,0);
+  if(salud>0)danarJugador(1e6,'vacio',null);
 }
 const _actualizarFinalOB=actualizarFinal;
 actualizarFinal=function(dt){_actualizarFinalOB(dt);actualizarOneBlock(dt);};

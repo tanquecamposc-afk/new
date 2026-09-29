@@ -209,6 +209,32 @@ select,input[type=text]{font-family:var(--pixel); border-radius:0; background:#0
 #tip{position:fixed; z-index:40; pointer-events:none; background:rgba(16,0,16,.94); color:#fff; padding:6px 9px;
   border:2px solid #2a0a5e; box-shadow:inset 0 0 0 2px #25015b, 0 0 0 1px #100010; font:15px/1.35 var(--pixel); white-space:pre; max-width:320px;}
 #tip .t1{color:#fff;} #tip .t2{color:#a8a8a8;} #tip .enc{color:#a8a0ff;}
+
+/* Pantallas del menú al estilo del original */
+.pantallaTitulo{position:relative;}
+.splash{position:absolute;right:12px;top:50px;color:#ffff55;font:16px var(--pixel,sans-serif);text-shadow:2px 2px 0 #3f3f00;transform:rotate(-14deg);
+  animation:latidoSplash .5s ease-in-out infinite alternate;pointer-events:none;white-space:nowrap;}
+@keyframes latidoSplash{from{transform:rotate(-14deg) scale(1)}to{transform:rotate(-14deg) scale(1.08)}}
+@media (prefers-reduced-motion: reduce){.splash{animation:none;}}
+.version{margin-top:14px;font-size:12px;color:#9a9a9a;text-align:left;}
+#subMenu::after{content:none !important;}
+.pantallaMC{width:min(560px,100%);text-align:center;}
+#menu .tarjeta,#pantallaMundos .tarjeta,#pantallaCrear .tarjeta,#pantallaOpciones .tarjeta,#pausa .tarjeta{background:rgba(24,24,28,.8);color:#e8e8e8;border:2px solid #000;
+  box-shadow:inset 2px 2px 0 rgba(255,255,255,.12),inset -2px -2px 0 rgba(0,0,0,.5),0 20px 50px rgba(0,0,0,.55);}
+.pantallaMC h2{font:600 20px var(--pixel,sans-serif);color:#fff;text-shadow:2px 2px 0 #3f3f3f;margin-bottom:12px;}
+.pantallaMC input[type=text]{width:100%;margin:4px 0 8px;padding:8px;}
+.etiqueta{display:block;text-align:left;color:#a8a8a8;font-size:13px;margin-top:10px;}
+.ayuda{color:#a8a8a8;font-size:12px;margin:4px 0 2px;min-height:15px;}
+.filaBotones{display:flex;gap:8px;} .filaBotones button{flex:1;}
+button:disabled{opacity:.5;cursor:not-allowed;}
+#listaMundos{height:min(300px,42vh);overflow:auto;background:rgba(0,0,0,.45);border:2px solid #000;padding:4px;text-align:left;}
+.mundo{display:flex;gap:10px;align-items:center;padding:6px 8px;border:2px solid transparent;cursor:pointer;}
+.mundo:hover{background:rgba(255,255,255,.06);} .mundo.sel{border-color:#c0c0c0;background:rgba(255,255,255,.08);}
+.mundo .miniatura{width:44px;height:44px;flex:none;image-rendering:pixelated;border:1px solid #000;}
+.mundo b{display:block;color:#fff;font-weight:500;} .mundo small{display:block;color:#8a8a8a;font-size:12px;line-height:1.35;}
+.mundo small.tipo{color:#a0c8a0;}
+.vacioMundos{color:#8a8a8a;padding:20px;text-align:center;}
+.pantallaPausa{width:min(400px,100%);}
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;500;600;700&display=swap">
@@ -237,15 +263,57 @@ select,input[type=text]{font-family:var(--pixel); border-radius:0; background:#0
 <div id="velo" class="oculto"></div>
 
 <div id="menu" class="capa">
-  <div class="tarjeta">
+  <div class="tarjeta pantallaTitulo">
     <div class="titulo">BLOCKVERSE</div>
+    <div class="splash" id="splash">¡Ahora con One Block!</div>
     <div class="sub" id="subMenu">Sobrevive, explora el Nether y derrota al Ender Dragon.</div>
-    <button id="btnJugar">Jugar</button>
-    <button id="btnNuevo" class="secundario">Nuevo mundo</button>
-    <button id="btnOneBlock" class="secundario" title="Empieza sobre un solo bloque en el vacío que se regenera al romperlo">One Block</button>
-    <div class="sub" style="margin:6px 0 0;font-size:12px">One Block: un solo bloque en el vacío que cambia cada vez que lo rompes.</div>
-    <div class="opcion"><label for="selModo">Modo de juego</label>
-      <select id="selModo"><option value="supervivencia">Supervivencia</option><option value="creativo">Creativo</option></select></div>
+    <button id="btnJugar">Un jugador</button>
+    <button id="btnOpcionesTitulo" class="secundario">Opciones…</button>
+    <div class="version">Blockverse · Edición 1.21.11</div>
+    <div class="oculto">
+      <button id="btnNuevo">Nuevo mundo</button><button id="btnOneBlock">One Block</button>
+      <select id="selModo"><option value="supervivencia">Supervivencia</option><option value="creativo">Creativo</option></select>
+    </div>
+  </div>
+</div>
+
+<div id="pantallaMundos" class="capa oculto">
+  <div class="tarjeta pantallaMC">
+    <h2>Seleccionar mundo</h2>
+    <input id="buscarMundo" type="text" placeholder="Buscar mundos…" autocomplete="off">
+    <div id="listaMundos"></div>
+    <div class="filaBotones">
+      <button id="btnJugarMundo" disabled>Jugar el mundo seleccionado</button>
+      <button id="btnCrearMundo" class="secundario">Crear nuevo mundo</button>
+    </div>
+    <div class="filaBotones">
+      <button id="btnBorrarMundo" class="secundario" disabled>Borrar</button>
+      <button id="btnCancelarMundos" class="secundario">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<div id="pantallaCrear" class="capa oculto">
+  <div class="tarjeta pantallaMC">
+    <h2>Crear nuevo mundo</h2>
+    <label class="etiqueta" for="nombreMundo">Nombre del mundo</label>
+    <input id="nombreMundo" type="text" maxlength="32" autocomplete="off" value="Nuevo mundo">
+    <button id="btnModoMundo" class="secundario">Modo de juego: Supervivencia</button>
+    <div class="ayuda" id="ayudaModo">Busca recursos, fabrica, gana niveles, vida y hambre.</div>
+    <button id="btnTipoMundo" class="secundario">Tipo de mundo: Normal</button>
+    <div class="ayuda" id="ayudaTipo">Un mundo infinito con biomas, cuevas y estructuras.</div>
+    <label class="etiqueta" for="semillaMundo">Semilla para el generador de mundos</label>
+    <input id="semillaMundo" type="text" maxlength="40" autocomplete="off" placeholder="Déjalo vacío para una semilla aleatoria">
+    <div class="filaBotones">
+      <button id="btnConfirmarCrear">Crear nuevo mundo</button>
+      <button id="btnCancelarCrear" class="secundario">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<div id="pantallaOpciones" class="capa oculto">
+  <div class="tarjeta pantallaMC">
+    <h2>Opciones</h2>
     <div class="opcion"><label for="selDistancia">Distancia de visión</label>
       <select id="selDistancia"><option value="4">Corta</option><option value="6" selected>Media</option><option value="8">Lejana</option></select></div>
     <div class="controles">
@@ -259,9 +327,20 @@ select,input[type=text]{font-family:var(--pixel); border-radius:0; background:#0
       <b>E</b><span>Inventario y fabricación</span>
       <b>Q</b><span>Tirar objeto (con Shift, la pila entera)</span>
       <b>T o /</b><span>Comandos (/help)</span>
-      <b>F3</b><span>Información de depuración</span>
+      <b>F3 / F5</b><span>Depuración / tercera persona</span>
       <b>Esc</b><span>Pausa</span>
     </div>
+    <button id="btnListoOpciones">Listo</button>
+  </div>
+</div>
+
+<div id="pausa" class="capa oculto">
+  <div class="tarjeta pantallaMC pantallaPausa">
+    <h2>Menú del juego</h2>
+    <button id="btnVolverJuego">Volver al juego</button>
+    <button id="btnOpcionesPausa" class="secundario">Opciones…</button>
+    <button id="btnSalirTitulo" class="secundario">Guardar y salir al título</button>
+    <div class="ayuda" id="infoPausa"></div>
   </div>
 </div>
 
@@ -291,6 +370,7 @@ select,input[type=text]{font-family:var(--pixel); border-radius:0; background:#0
     <div class="titulo">¡Has muerto!</div>
     <div class="sub" id="textoMuerte"></div>
     <button id="btnReaparecer">Reaparecer</button>
+    <button id="btnMuerteTitulo" class="secundario">Pantalla de título</button>
   </div>
 </div>
 
@@ -330,6 +410,7 @@ select,input[type=text]{font-family:var(--pixel); border-radius:0; background:#0
 <script src="js/mejoras.js"></script>
 <script src="js/oneblock.js"></script>
 <script src="js/main.js"></script>
+<script src="js/menus.js"></script>
 <script src="js/tactil.js"></script>
 </body>
 </html>
