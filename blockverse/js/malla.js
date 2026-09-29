@@ -65,6 +65,7 @@ function rellenarRelleno(ch,y0,y1){
 }
 // Devuelve [r,g,b,modo] para un vértice. modo: 0 nada, 1 máscara, 2 total, 3 agua animada, 4 lava, 5 portal; +10 se mece
 const BLANCO=[1,1,1,0];
+const ES_HOJA=new Uint8Array(4096); for(let i=0;i<4096;i++)if(esHojas(i))ES_HOJA[i]=1;
 function tinteVertice(b,vx,vz,out){
   const t=TINTE[b];
   if(!t){out[0]=out[1]=out[2]=1;out[3]=esLava(b)?4:(b===B.portalNether?5:b===B.portalEnd?6:0);return out;}
@@ -150,7 +151,7 @@ function construirGeometria(ch){
             if(!OPACO[bb]){const l=L[i+vt.ob];ss+=l>>4;sb+=l&15;cnt++;}
             if(!OPACO[bc]&&!(s1&&s2)){const l=L[i+vt.oc];ss+=l>>4;sb+=l&15;cnt++;}
             O.l.push(ss/cnt/15,sb/cnt/15,f.sombra*NIVEL_AO[ao[k]]);
-            tinteVertice(b,x+c[0],z+c[2],tn); O.t.push(tn[0],tn[1],tn[2],tn[3]);
+            tinteVertice(b,x+c[0],z+c[2],tn); O.t.push(tn[0],tn[1],tn[2],tn[3]+(ES_HOJA[b]?20:0));
           }
           if(ao[0]+ao[3]>ao[1]+ao[2])O.i.push(n0,n0+1,n0+3,n0,n0+3,n0+2);
           else O.i.push(n0,n0+1,n0+2,n0+2,n0+1,n0+3);

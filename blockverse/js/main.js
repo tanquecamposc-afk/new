@@ -92,7 +92,7 @@ function ejecutarComando(t){
   const [cmd,...a]=t.trim().replace(/^\//,'').split(/\s+/);
   const ok=m=>escribirChat(m);
   switch((cmd||'').toLowerCase()){
-    case 'help':ok('Comandos: /gamemode survival|creative · /time set day|night|<0-24000> · /tp x y z · /give objeto [cantidad] · /kill · /weather clear|rain|thunder · /xp n · /locate stronghold|fortress · /seed · /effect clear · /spawnpoint · /summon criatura');break;
+    case 'help':ok('Comandos: /gamemode survival|creative · /time set day|night|<0-24000> · /tp x y z · /give objeto [cantidad] · /kill · /weather clear|rain|thunder · /xp n · /locate stronghold|fortress · /seed · /effect clear · /spawnpoint · /summon criatura · /oneblock');break;
     case 'gamemode':case 'gm':{const m=(a[0]||'').toLowerCase();
       if(['s','0','survival','supervivencia'].includes(m))modo='supervivencia';else if(['c','1','creative','creativo'].includes(m))modo='creativo';else{ok('Modo desconocido.');break;}
       selModo.value=modo;if(!supervivencia())darKitCreativo();actualizarHUD();ok('Modo: '+(supervivencia()?'Supervivencia':'Creativo'));break;}
@@ -108,6 +108,9 @@ function ejecutarComando(t){
     case 'weather':lloviendo=['rain','thunder','lluvia','tormenta'].includes(a[0]);tormenta=['thunder','tormenta'].includes(a[0]);climaT=600;ok(tormenta?'Se acerca una tormenta.':lloviendo?'Empieza a llover.':'El cielo se despeja.');break;
     case 'xp':ganarXP(parseInt(a[0]||'0',10));ok('Experiencia añadida.');break;
     case 'seed':ok('Semilla: '+semilla);break;
+    case 'oneblock':{const ob=mundoEstado.oneBlock;if(!ob){ok('Este mundo no es One Block. Pulsa "One Block" en el menú para empezar uno.');break;}
+      ok(`One Block · ${ob.n} bloques rotos · Fase ${ob.fase+1}: ${FASES_OB[ob.fase].nombre}`);
+      ok(FASES_OB.map((F,i)=>`${i<ob.fase?'✔':i===ob.fase?'▶':'·'} ${i+1}. ${F.nombre} (${F.n})`).join('\n'));break;}
     case 'effect':efectos={};ok('Efectos eliminados.');break;
     case 'spawnpoint':spawnCama=null;spawnMundo=[jugador.pos.x,jugador.pos.z];ok('Punto de aparición fijado.');break;
     case 'locate':{

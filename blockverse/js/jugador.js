@@ -294,7 +294,7 @@ function actualizarApuntado(){
   camara.getWorldDirection(dirVista);
   const alcance=supervivencia()?4.5:5;
   apuntado=lanzarRayo(camara.position,dirVista,alcance);
-  apuntadoEnt=null; let mejor=Math.min(3.2,apuntado?apuntado.t:Infinity);
+  apuntadoEnt=null; const pl=enMano(), lanza=pl&&ITEMS[pl.id].herr&&ITEMS[pl.id].herr.tipo==='lanza'; let mejor=Math.min(lanza?4.6:3.2,apuntado?apuntado.t:Infinity);
   for(const m of mobs){
     if(m===jugador.montura)continue;
     const t=rayoCaja(camara.position,dirVista,{x:m.pos.x-m.ancho,y:m.pos.y,z:m.pos.z-m.ancho},{x:m.pos.x+m.ancho,y:m.pos.y+m.alto,z:m.pos.z+m.ancho});
@@ -394,6 +394,9 @@ function atacar(){
   if(critico){dano*=1.5;sonar('critico');}
   if(efectos.fuerza)dano+=3; if(efectos.debilidad)dano=Math.max(0,dano-4);
   if(h&&h.tipo==='maza')dano+=impactoMaza(apuntadoEnt.mob||null);
+  if(h&&h.tipo==='lanza'&&carga>.5){  // carga: el golpe crece con la velocidad (a caballo, mucho más)
+    const mv=jugador.montura?jugador.montura.vel:jugador.vel, v=Math.hypot(mv.x,mv.z);
+    if(v>3){dano+=v*(jugador.montura?.9:.5);sonar('critico');emitirParticulas(apuntadoEnt.mob?apuntadoEnt.mob.pos.x:jugador.pos.x,jugador.pos.y+1.2,apuntadoEnt.mob?apuntadoEnt.mob.pos.z:jugador.pos.z,0xffe0a0,8,2.5,.4,0);}}
   if(!supervivencia()&&h&&h.tipo==='espada')dano=Math.max(dano,1);
   agotamiento+=.1;
   if(apuntadoEnt.dragon){dragon.herir(dano,'jugador');gastarObjetoEnMano(h&&h.tipo==='espada'?1:2);return true;}

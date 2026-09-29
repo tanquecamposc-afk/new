@@ -15,6 +15,8 @@ function dibujarHerramienta(it){
       for(let y=1;y<=7;y++){const xa=Math.max(6,9-y),xb=Math.min(12,14-y);for(let x=xa;x<=xb;x++)P(x,y,x===xa?cla:(x===xb?osc:m));}
       linea(2,13,12,3,PALO);}
     else if(h.tipo==='pala'){linea(2,13,9,6,PALO);elipse(11.5,4.5,2.9,2.9,m,10);P(10,3,cla);}
+    else if(h.tipo==='lanza'){linea(1,14,10,5,PALO);linea(2,14,10,6,sombra(PALO,.75));
+      for(let k=0;k<4;k++){linea(10-k,4+k,14-k,1+k,k<2?cla:m);} linea(11,5,14,2,osc);P(14,1,cla);P(9,5,osc);P(10,6,osc);}
     else if(h.tipo==='azada'){linea(2,13,11,4,PALO);linea(8,2,12,2,m);linea(8,3,10,3,osc);P(12,3,m);}
     else{linea(6,9,13,2,m);linea(6,8,12,2,cla);linea(3,8,7,12,osc);linea(2,13,4,11,PALO);}
   });
@@ -142,6 +144,8 @@ function dibujarItem(id){
           P(x,y,borde?[150,156,162]:(x===7||x===8)?[176,182,188]:((x+y)%4===0?[120,84,48]:[140,98,56]));}} P(7,6,[210,214,220]);P(8,6,[210,214,220]); break;
       case 598: for(let x=3;x<=12;x++)for(let y=6;y<=9;y++)P(x,y,y===6?[128,78,40]:[104,62,30]); for(let y=4;y<=6;y++){P(4,y,[92,54,26]);P(5,y,[92,54,26]);}
         for(let y=10;y<=13;y++){P(6,y,[70,44,22]);P(10,y,[70,44,22]);} P(6,14,[170,170,178]);P(10,14,[170,170,178]); break;
+      case 607: case 608: case 609: case 610:{const c=ITEMS[id].bardaCaballo.col,o=sombra(c,.7);
+        rect(3,5,12,9,c); rect(2,6,2,8,o); rect(4,10,5,13,o); rect(10,10,11,13,o); rect(11,3,13,6,c); rect(12,2,13,2,o); rect(4,5,12,5,sombra(c,1.15)); break;}
       case 541: elipse(5,6,3,3,[230,160,70],8); for(let x=7;x<=13;x++)P(x,9,[230,160,70]); P(12,10,[230,160,70]); P(10,10,[230,160,70]); P(5,6,[60,40,20]); break;
       default:
         if(it.tinte!==undefined){const c=COLORES16[it.tinte][3];elipse(8,9,4.5,4,c,16);P(6,7,c.map(v=>Math.min(255,v+60)));linea(6,4,9,4,[200,200,200]);P(10,5,[200,200,200]);}

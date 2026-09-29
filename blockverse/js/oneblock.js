@@ -70,7 +70,7 @@ function nuevoOneBlock(){
   mundoEstado.oneBlock={n:0,fase:0,portal:false};
   jugador.pos.set(OB.x+.5,OB.y+1.01,OB.z+.5); jugador.maxY=jugador.pos.y;
   guardarPartida();
-  setTimeout(()=>mostrarMensaje('One Block: rompe el bloque y verás qué aparece. ¡No te caigas!'),600);
+  setTimeout(()=>tituloOB('ONE BLOCK','Rompe el bloque','#ffe060',3.5),400);
 }
 
 /* ---------- Regenerar el bloque mágico ---------- */
@@ -79,13 +79,23 @@ function regenerarOB(ob){
   ob.n++;
   const f=faseOB(ob.n), F=FASES_OB[f];
   if(f!==ob.fase){
-    ob.fase=f; sonar('nivel'); mostrarMensaje(`¡Nueva fase: ${F.nombre}!`);
+    ob.fase=f; sonar('nivel'); tituloOB(`Fase ${f+1}`,F.nombre,F.col);
     emitirParticulas(OB.x+.5,OB.y+1.2,OB.z+.5,0xffe060,24,4,1.2,2);
+    emitirParticulas(OB.x+.5,OB.y+1.2,OB.z+.5,new THREE.Color(F.col),24,5,1.4,1);
     if(F.nombre==='El End'&&!ob.portal){ob.portal=true;construirPortalOB();}
   }
   const {x,y,z}=OB;
-  const cofre=ob.n===F.n+10||(ob.n>5&&Math.random()<.025);
-  if(cofre){
+  const raro=ob.n>20&&Math.random()<.006;
+  const cofre=raro||ob.n===F.n+10||(ob.n>5&&Math.random()<.025);
+  if(raro){  // cofre raro: botín de la fase siguiente y un tesoro extra
+    const Fs=FASES_OB[Math.min(FASES_OB.length-1,f+1)];
+    delete cofres[claveCont(x,y,z)];
+    setBloque(x,y,z,B.cofre); registrarCofre(DIMS.superficie,x,y,z,Fs.botin);
+    const c=cofres[claveCont(x,y,z)];
+    if(c)for(const [id,n] of [[I.diamante,azar(2,4)],[I.manzanaDorada,1],[546,1],[I.esmeralda,azar(3,8)]]){const i=c.findIndex(q=>!q);if(i>=0){c[i]=crearPila(id,n);if(id===546)c[i].enc=libroAleatorio(Math.random);}}
+    sonar('nivel',OB); tituloOB('','¡Cofre raro!','#ffd84a',1.8);
+    emitirParticulas(x+.5,y+1,z+.5,0xffd84a,30,4,1.5,1);
+  }else if(cofre){
     delete cofres[claveCont(x,y,z)];
     setBloque(x,y,z,B.cofre);
     registrarCofre(DIMS.superficie,x,y,z,F.botin);
@@ -112,21 +122,41 @@ function construirPortalOB(){
   setTimeout(()=>mostrarMensaje('Ha aparecido un portal del End: llénalo de ojos de ender.'),2500);
 }
 
-/* ---------- Marcador en pantalla ---------- */
+/* ---------- Barra de jefe con la fase y títulos grandes ---------- */
 const hudOB=document.createElement('div');
 hudOB.id='hudOneBlock'; hudOB.className='oculto';
-hudOB.style.cssText='position:fixed;left:10px;top:10px;min-width:190px;padding:8px 10px;background:rgba(0,0,0,.55);border:2px solid #000;'+
-  'box-shadow:inset 2px 2px 0 rgba(255,255,255,.12),inset -2px -2px 0 rgba(0,0,0,.6);font:14px/1.3 var(--pixel,sans-serif);color:#fff;pointer-events:none;text-shadow:1px 1px 0 #000;';
-hudOB.innerHTML='<div style="color:#ffe060;font-weight:700">ONE BLOCK</div><div id="obFase"></div>'+
-  '<div style="height:8px;background:#222;border:1px solid #000;margin-top:4px"><i id="obBarra" style="display:block;height:100%;width:0"></i></div><div id="obCuenta" style="font-size:12px;color:#ccc;margin-top:2px"></div>';
+hudOB.style.cssText='position:fixed;left:50%;top:8px;transform:translateX(-50%);width:min(440px,calc(100vw - 32px));text-align:center;pointer-events:none;'+
+  'font:15px/1.2 var(--pixel,sans-serif);color:#fff;text-shadow:2px 2px 0 #3f3f3f;transition:top .3s;';
+hudOB.innerHTML='<div id="obFase"></div><div style="position:relative;height:10px;margin-top:3px;background:#2a2a2a;border:2px solid #000;box-shadow:inset 0 1px 0 rgba(255,255,255,.15)">'+
+  '<i id="obBarra" style="display:block;height:100%;width:0;transition:width .25s"></i>'+
+  '<b style="position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent 0 calc(10% - 2px),rgba(0,0,0,.45) calc(10% - 2px) 10%)"></b></div>'+
+  '<div id="obCuenta" style="font-size:12px;color:#ddd;margin-top:2px"></div>';
 document.body.appendChild(hudOB);
+const tituloEl=document.createElement('div');
+tituloEl.style.cssText='position:fixed;left:0;right:0;top:24%;text-align:center;pointer-events:none;opacity:0;transition:opacity .5s;font-family:var(--pixel,sans-serif);text-shadow:3px 3px 0 #2a2a2a;padding:0 16px;';
+tituloEl.innerHTML='<div id="obTitulo" style="font-size:22px;color:#fff"></div><div id="obSub" style="font-size:52px;font-weight:700"></div>';
+document.body.appendChild(tituloEl);
+let tituloT=0;
+function tituloOB(arriba,grande,col,seg=3){
+  document.getElementById('obTitulo').textContent=arriba; const g=document.getElementById('obSub'); g.textContent=grande; g.style.color=col||'#fff';
+  tituloEl.style.opacity=1; tituloT=seg;
+}
 let obHudT=0;
 function actualizarHudOB(ob){
   const f=ob.fase, F=FASES_OB[f], sig=FASES_OB[f+1];
-  document.getElementById('obFase').textContent=`Fase ${f+1}: ${F.nombre}`;
-  const barra=document.getElementById('obBarra'); barra.style.background=F.col;
+  document.getElementById('obFase').innerHTML=`<span style="color:${F.col}">■</span> One Block · Fase ${f+1}: ${F.nombre}`;
+  const barra=document.getElementById('obBarra'); barra.style.background=`linear-gradient(180deg,${F.col},${F.col} 50%,rgba(0,0,0,.25) 50%),${F.col}`;
   barra.style.width=(sig?Math.min(100,(ob.n-F.n)/(sig.n-F.n)*100):100)+'%';
-  document.getElementById('obCuenta').textContent=sig?`${ob.n-F.n} / ${sig.n-F.n} bloques · total ${ob.n}`:`Bloques rotos: ${ob.n}`;
+  document.getElementById('obCuenta').textContent=sig?`${ob.n-F.n} / ${sig.n-F.n} bloques · siguiente: ${sig.nombre}`:`Bloques rotos: ${ob.n}`;
+  const jefe=document.getElementById('jefe'); hudOB.style.top=jefe&&!jefe.classList.contains('oculto')?'52px':'8px';
+}
+// Destellos alrededor del bloque mágico
+let chispaT=0;
+function chispasOB(dt,ob){
+  chispaT-=dt; if(chispaT>0)return; chispaT=.18;
+  const F=FASES_OB[ob.fase], c=new THREE.Color(F.col), k=Math.floor(Math.random()*4), t=Math.random();
+  const px=OB.x+(k===0?-.05:k===1?1.05:t), pz=OB.z+(k===2?-.05:k===3?1.05:t);
+  emitirParticulas(px,OB.y+.2+Math.random()*.8,pz,Math.random()<.3?0xffffff:c,1,.25,1.3,-1.2);
 }
 
 // El bloque reaparece en el mismo instante en que se rompe, para no caer por el hueco
@@ -152,6 +182,8 @@ function actualizarOneBlock(dt){
   hudOB.classList.toggle('oculto',!ob||estado==='menu');
   if(!ob)return;
   obHudT-=dt; if(obHudT<=0){obHudT=.2;actualizarHudOB(ob);}
+  if(tituloT>0){tituloT-=dt;if(tituloT<=0)tituloEl.style.opacity=0;}
+  if(estado==='jugando'&&dim===DIMS.superficie)chispasOB(dt,ob);
   if(dim!==DIMS.superficie)return;
   const b=getBloqueSiCargado(OB.x,OB.y,OB.z); if(b<0)return;
   if(b===0||esLiquido(b)){obRegenerando=true;try{regenerarOB(ob);}finally{obRegenerando=false;}}

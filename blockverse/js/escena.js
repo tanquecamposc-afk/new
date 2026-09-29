@@ -21,19 +21,23 @@ texAtlas.magFilter=THREE.NearestFilter; texAtlas.minFilter=THREE.NearestFilter; 
 const VS_BLOQUES=`
 attribute vec3 luz; attribute vec4 tinte;
 uniform float uTiempo;
-varying vec2 vUv; varying vec3 vLuz; varying vec4 vTinte;
+varying vec2 vUv; varying vec3 vLuz; varying vec4 vTinte; varying vec3 vWPos;
 #include <fog_pars_vertex>
 void main(){
   vUv=uv; vLuz=luz; vTinte=vec4(tinte.rgb,mod(tinte.w,10.0));
   vec3 p=position;
-  if(tinte.w>9.5){ vec3 w=p+vec3(modelMatrix[3][0],0.0,modelMatrix[3][2]);
+  vec3 w=p+vec3(modelMatrix[3][0],modelMatrix[3][1],modelMatrix[3][2]);
+  if(tinte.w>19.5){ // hojas: vaivén suave con el viento
+    p.x+=sin(uTiempo*1.3+w.x*.9+w.y*.6)*.035; p.z+=cos(uTiempo*1.1+w.z*.8+w.y*.5)*.035; p.y+=sin(uTiempo*1.7+w.x+w.z)*.015; }
+  else if(tinte.w>9.5){
     p.x+=sin(uTiempo*1.8+w.x*.7+w.z*.5)*.06; p.z+=cos(uTiempo*1.4+w.x*.4+w.z*.8)*.06; }
+  vWPos=(modelMatrix*vec4(p,1.0)).xyz;
   vec4 mvPosition=modelViewMatrix*vec4(p,1.0); gl_Position=projectionMatrix*mvPosition;
 #include <fog_vertex>
 }`;
 const FS_BLOQUES=`
-uniform sampler2D mapa; uniform vec3 uColSol; uniform float uDia; uniform float uAmb; uniform float uAlpha; uniform float uOpac; uniform float uTiempo; uniform vec2 uAtlas;
-varying vec2 vUv; varying vec3 vLuz; varying vec4 vTinte;
+uniform sampler2D mapa; uniform vec3 uColSol; uniform vec3 uSolDir; uniform vec3 uReflejo; uniform float uDia; uniform float uAmb; uniform float uAlpha; uniform float uOpac; uniform float uTiempo; uniform vec2 uAtlas;
+varying vec2 vUv; varying vec3 vLuz; varying vec4 vTinte; varying vec3 vWPos;
 #include <fog_pars_fragment>
 float curva(float l){ return l<0.01 ? 0.0 : pow(0.8,(1.0-l)*15.0); }
 void main(){
@@ -52,17 +56,31 @@ void main(){
   if(m>.5&&m<1.5){ if(t.a>.97&&t.a<.995) col*=vTinte.rgb; }
   else if(m>1.5&&m<3.5) col*=vTinte.rgb;
   float s=curva(vLuz.r)*uDia; float b=curva(vLuz.g);
+  b*=0.95+0.05*sin(uTiempo*7.0+vWPos.x*2.3+vWPos.z*1.7)*step(0.3,vLuz.g);  // parpadeo de antorchas
   vec3 l=max(vec3(s)*uColSol,vec3(b,b*0.92,b*0.78));
   l=pow(max(l,vec3(uAmb)),vec3(0.72));
   if(m>3.5&&m<4.5) l=vec3(1.0);
-  gl_FragColor=vec4(col*l*vLuz.b,t.a*uOpac);
+  vec4 salida=vec4(col*l*vLuz.b,t.a*uOpac);
+  if(m>2.5&&m<3.5){  // agua: reflejo del cielo según el ángulo y brillo del sol
+    vec3 n=normalize(cross(dFdx(vWPos),dFdy(vWPos))); if(n.y<0.0)n=-n;
+    float dist=length(cameraPosition-vWPos), ola=1.0-smoothstep(12.0,48.0,dist);
+    if(n.y>0.9)n=normalize(vec3((sin(vWPos.x*1.7+uTiempo*1.3)*.06+sin(vWPos.z*2.9-uTiempo*1.7)*.04)*ola,1.0,(cos(vWPos.z*1.9+uTiempo*1.1)*.06+cos(vWPos.x*2.6+uTiempo)*.04)*ola));
+    vec3 v=normalize(cameraPosition-vWPos);
+    float fres=pow(1.0-clamp(dot(n,v),0.0,1.0),3.0)*curva(vLuz.r);
+    salida.rgb=mix(salida.rgb,uReflejo*max(uDia,.15),fres*.65);
+    float spec=pow(max(dot(reflect(-v,n),uSolDir),0.0),mix(24.0,90.0,ola))*s*mix(.35,1.0,ola);
+    salida.rgb+=vec3(1.0,.93,.78)*spec*1.4;
+    salida.a=clamp(salida.a+fres*.35+spec,0.0,1.0);
+  }
+  gl_FragColor=salida;
   #include <fog_fragment>
 }`;
 function materialBloques(transparente){
   const m=new THREE.ShaderMaterial({
-    uniforms:THREE.UniformsUtils.merge([THREE.UniformsLib.fog,{mapa:{value:null},uDia:{value:1},uAmb:{value:.02},uAlpha:{value:transparente?.02:.5},uOpac:{value:1},uColSol:{value:new THREE.Vector3(1,1,1)},uTiempo:{value:0},uAtlas:{value:new THREE.Vector2(ATW,ATH)}}]),
+    uniforms:THREE.UniformsUtils.merge([THREE.UniformsLib.fog,{mapa:{value:null},uDia:{value:1},uAmb:{value:.02},uAlpha:{value:transparente?.02:.5},uOpac:{value:1},uColSol:{value:new THREE.Vector3(1,1,1)},uSolDir:{value:new THREE.Vector3(0,1,0)},uReflejo:{value:new THREE.Color(0x8ecbff)},uTiempo:{value:0},uAtlas:{value:new THREE.Vector2(ATW,ATH)}}]),
     vertexShader:VS_BLOQUES, fragmentShader:FS_BLOQUES, fog:true, transparent:transparente, depthWrite:!transparente,
     side:transparente?THREE.DoubleSide:THREE.FrontSide});
+  m.extensions={derivatives:true};
   m.uniforms.mapa.value=texAtlas;
   return m;
 }

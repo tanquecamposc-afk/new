@@ -60,7 +60,9 @@ function mejorarCielo(sup,ojo,oscuro){
     _colSol.lerp(_tv.set(1,.8,.62),ocaso*.75).lerp(_tv.set(.62,.72,1),(1-fDia)*.85);
     luzAmb.color.setRGB(_colSol.x,_colSol.y,_colSol.z);
   }else luzAmb.color.setRGB(1,1,1);
-  for(const m of [matOpaco,matTrans])m.uniforms.uColSol.value.copy(_colSol);
+  for(const m of [matOpaco,matTrans]){const u=m.uniforms;u.uColSol.value.copy(_colSol);u.uTiempo.value=tiempoJuego;
+    if(sup){const a=tiempoDia*Math.PI*2,sd=Math.sin(a)>-.05?1:-1;u.uSolDir.value.set(Math.cos(a)*350*sd,Math.sin(a)*350*sd,40*sd).normalize();}
+    u.uReflejo.value.copy(cielo).lerp(_tc.setRGB(1,1,1),.12);}
 }
 
 /* ---------- Nubes en 3D (bloques de 8x4x8 con caras sombreadas) ---------- */
@@ -168,6 +170,11 @@ MODELOS_EXTRA.caballo=({g,pon,parte,cuadrupedo,extra,opc})=>{
   for(const x of [-.34,.34]){const e=parte(.03,.4,.06,0x3a2a1a);e.position.set(x,1.22,-.02);silla.add(e);
     const est=parte(.08,.06,.1,0xa0a0a8);est.position.set(x,1.0,-.02);silla.add(est);}
   silla.visible=!!opc.silla; g.add(silla); extra.silla=silla;
+  // Armadura (barda): cubre lomo, cuello y cabeza; se colorea al ponerla
+  const barda=new THREE.Group();
+  for(const [w,h,d,x,y,z,rx] of [[.7,.34,1.2,0,1.3,0,0],[.72,.3,.3,0,1.1,.56,0],[.4,.62,.46,0,1.6,.62,.55],[.36,.2,.56,0,2.06,.9,0]]){
+    const q=parte(w,h,d,0xcccccc,false,null);q.position.set(x,y,z);q.rotation.x=rx;barda.add(q);}
+  barda.visible=false; g.add(barda); extra.barda=barda;
 };
 IA_EXTRA.caballo=(m,dt)=>{
   if(m===jugador.montura){
@@ -228,6 +235,25 @@ crearMob=function(tipo,x,y,z,opc={}){
   return _crearMobBase(tipo,x,y,z,opc);
 };
 
+function pintarBarda(m){
+  const b=m.extra.barda; if(!b)return;
+  b.visible=!!m.barda; if(!m.barda)return;
+  const [r,g,bb]=ITEMS[m.barda].bardaCaballo.col, c=new THREE.Color(r/255,g/255,bb/255);
+  b.traverse(o=>{if(o.isMesh){o.material.color.copy(c);o.userData.base=c.clone();}});
+}
+// La armadura reduce el daño que recibe el caballo
+const _herirMobBase=herirMob;
+herirMob=function(m,d,dir,fuente,empuje){
+  if(m&&m.tipo==='caballo'&&m.barda)d*=1-Math.min(20,ITEMS[m.barda].bardaCaballo.def)*.04;
+  return _herirMobBase(m,d,dir,fuente,empuje);
+};
+// Al morir suelta la silla y la armadura
+const _alMorirMejoras=alMorirMob;
+alMorirMob=function(m){
+  if(m.tipo==='caballo'){if(m.silla)soltarItem(crearPila(598),m.pos.x,m.pos.y+1,m.pos.z,true);if(m.barda)soltarItem(crearPila(m.barda),m.pos.x,m.pos.y+1,m.pos.z,true);}
+  return _alMorirMejoras(m);
+};
+
 /* ---------- Clic derecho: caballos y setas gigantes ---------- */
 function usarDerechoMejoras(p,id,it){
   const m=apuntadoEnt&&apuntadoEnt.mob;
@@ -236,6 +262,11 @@ function usarDerechoMejoras(p,id,it){
       if(!m.domado){mostrarMensaje('Primero tienes que domar al caballo: móntalo varias veces.');return true;}
       if(!m.silla){m.silla=true;m.extra.silla.visible=true;consumirEnMano();sonar('poner',m.pos);balancearMano();}
       return true;
+    }
+    if(it&&it.bardaCaballo){
+      if(!m.domado){mostrarMensaje('Primero tienes que domar al caballo.');return true;}
+      if(m.barda&&supervivencia())soltarItem(crearPila(m.barda),m.pos.x,m.pos.y+1,m.pos.z,true);
+      m.barda=id; consumirEnMano(); sonar('poner',m.pos); balancearMano(); pintarBarda(m); return true;
     }
     if(!m.domado&&[I.manzana,I.trigo,I.azucar||516,I.pan].includes(id)){
       m.temple=Math.min(95,(m.temple||0)+(id===I.pan?6:3)); m.vida=Math.min(m.def.vida,m.vida+2);

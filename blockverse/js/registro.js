@@ -436,6 +436,12 @@ const HERRS=[
 ];
 HERRS.forEach((h,ti)=>MATS.forEach((m,k)=>item(300+ti*10+k,h.tipo+'_'+m.n,`${h.nom} de ${m.n}`,
   {max:1,dur:m.dur,tipoHerr:h.tipo,ignifugo:m.ignifugo,herr:{tipo:h.tipo,nivel:m.nivel,vel:m.vel,dano:h.dano[k],cad:h.cad[k],mat:k,enc:m.enc}})));
+// Lanzas: más alcance y golpe de carga que crece con la velocidad (a pie o a caballo)
+MATS.forEach((m,k)=>item(600+k,'lanza_'+m.n,`Lanza de ${m.n}`,{max:1,dur:m.dur,tipoHerr:'lanza',ignifugo:m.ignifugo,
+  herr:{tipo:'lanza',nivel:0,vel:1,dano:[3,4,5,3,6,7,4][k],cad:1.1,mat:k,enc:m.enc}}));
+// Armaduras de caballo
+[['cuero',3,[150,94,56]],['hierro',5,[210,210,214]],['oro',7,[250,210,60]],['diamante',11,[84,220,214]]].forEach(([n,d,c],k)=>
+  item(607+k,'armaduraCaballo_'+n,`Armadura de caballo de ${n}`,{max:1,bardaCaballo:{def:d,col:c}}));
 const ARM_MATS=[
   {n:'cuero',mult:5,def:[1,3,2,1],dureza:0,enc:15,col:[150,94,56]},
   {n:'oro',mult:7,def:[2,5,3,1],dureza:0,enc:25,col:[250,214,70]},
@@ -580,6 +586,8 @@ recetaSin([I.lingoteOro],I.pepitaOro,9);
 [I.cuero,I.lingoteOro,I.lingoteHierro,I.diamante].forEach((m,k)=>{const c={M:m};
   receta(['MMM','M.M'],c,400+k); receta(['M.M','MMM','MMM'],c,410+k);
   receta(['MMM','M.M','M.M'],c,420+k); receta(['M.M','M.M'],c,430+k);});
+[B.tablones,B.roca,I.lingoteHierro,I.lingoteOro,I.diamante,535,I.lingoteCobre].forEach((m,k)=>{if(m)receta(['..M','.S.','S..'],{M:m,S:I.palo},600+k);});
+[I.cuero,I.lingoteHierro,I.lingoteOro,I.diamante].forEach((m,k)=>receta(['M.M','MMM','M.M'],{M:m},607+k));
 // 1.19 / 1.20
 recetaSin([B.troncoCerezo],B.tablonesCerezo,4); recetaSin([B.troncoRobleOscuro],B.tablonesRobleOscuro,4);
 receta(['THT','TTT','.T.'],{T:B.tablones,H:I.lingoteHierro},597); receta(['CCC','C.C','.H.'],{C:I.cuero,H:I.lingoteHierro},598); recetaSin([B.girasol],TINTE_ID[4],2); recetaSin([B.troncoMangle],B.tablonesMangle,4);
