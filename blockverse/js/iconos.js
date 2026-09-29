@@ -112,6 +112,16 @@ function dibujarItem(id){
       case I.cuenco: for(let y=7;y<=11;y++){const w=6-Math.floor((y-7)*1.2);for(let x=8-w;x<=7+w;x++)P(x,y,y===7?[150,110,70]:[124,90,52]);} break;
       case I.estofado: for(let y=7;y<=11;y++){const w=6-Math.floor((y-7)*1.2);for(let x=8-w;x<=7+w;x++)P(x,y,y===7?[190,140,90]:[124,90,52]);} rect(4,6,11,7,[170,120,80]); P(6,6,[210,40,40]); P(9,6,[160,120,80]); break;
       case I.rodajaSandia: for(let y=4;y<=12;y++){const w=Math.floor((y-3)*.8);for(let x=8-w;x<=7+w;x++)P(x,y,y>=11?[70,150,50]:y>=10?[230,240,200]:[220,50,60]);} P(7,7,[20,20,20]);P(9,8,[20,20,20]);P(6,9,[20,20,20]); break;
+      case 528: linea(3,13,9,7,[140,100,60]); linea(4,13,9,8,[110,78,44]); rect(9,4,12,7,[200,120,70]); for(let x=8;x<=13;x++)linea(x,1,x+1,4,[240,236,220]); break;
+      case 529: case 530: case 531: case 532:{const c=[[170,90,60],[180,100,64],[160,84,56],[176,96,62]][id-529];
+        for(let y=3;y<=12;y++)for(let x=3+(y%4===0?1:0);x<=12-(y===3?2:0);x++)P(x,y,c);
+        const d=[[50,30,20]]; if(id===529){linea(5,6,10,6,d[0]);linea(6,9,9,9,d[0]);linea(7,5,7,10,d[0]);}
+        else if(id===530){elipse(8,8,2.5,2.5,d[0],0);P(8,8,c);}else if(id===531){linea(5,10,8,5,d[0]);linea(8,5,11,10,d[0]);linea(5,10,11,10,d[0]);}
+        else{elipse(6,7,1,1,d[0],0);elipse(10,7,1,1,d[0],0);linea(5,10,11,10,d[0]);} break;}
+      case 533: rect(3,2,12,13,[50,60,70]); rect(4,3,11,12,[80,88,96]); rect(6,5,9,10,[110,70,60]); P(7,6,[220,120,80]); break;
+      case 534: elipse(8,9,5,4,[92,70,64],16); for(let k=0;k<6;k++)P(5+rnd()*6,6+rnd()*5,[140,110,96]); break;
+      case 535: lingote(P,rect,[82,74,80]); break;
+      case 536: for(let y=3;y<=13;y++){const w=Math.round(3-Math.abs(y-8)*.5);for(let x=8-w;x<=8+w;x++)P(x,y,[20,60+y*6,80+y*6]);} P(8,6,[140,250,255]); break;
       default: elipse(8,8,4,4,[200,0,200],0);
     }
   });

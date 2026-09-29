@@ -102,7 +102,7 @@ function actualizarSoportes(dt){
 const esFrasco=id=>id===500||id===501||id===502||!!(ITEMS[id]&&ITEMS[id].pocion);
 
 /* ---------- Yunque ---------- */
-const MAT_REPARA_HERR=[B.tablones,B.roca,I.lingoteHierro,I.lingoteOro,I.diamante], MAT_REPARA_ARM=[I.cuero,I.lingoteOro,I.lingoteHierro,I.diamante];
+const MAT_REPARA_HERR=[B.tablones,B.roca,I.lingoteHierro,I.lingoteOro,I.diamante,535], MAT_REPARA_ARM=[I.cuero,I.lingoteOro,I.lingoteHierro,I.diamante,535];
 function materialReparacion(id){
   const it=ITEMS[id]; if(it.elitros)return I.cuero;
   if(it.herr)return MAT_REPARA_HERR[it.herr.mat];
@@ -245,7 +245,7 @@ function montar(e){
 function desmontar(){
   const e=jugador.montura; if(!e)return;
   jugador.montura=null; e.jinete=false;
-  const opciones=[[0,e.alto+.05,0],[1.2,0,0],[-1.2,0,0],[0,0,1.2],[0,0,-1.2],[0,1.2,0]];
+  const opciones=e.def?[[1.3,0,0],[-1.3,0,0],[0,0,1.3],[0,0,-1.3],[0,e.alto+.05,0]]:[[0,e.alto+.05,0],[1.2,0,0],[-1.2,0,0],[0,0,1.2],[0,0,-1.2],[0,1.2,0]];
   for(const [dx,dy,dz] of opciones){
     const p={x:e.pos.x+dx,y:e.pos.y+dy+.05,z:e.pos.z+dz};
     if(!choca(p,jugador.ancho,jugador.alto)){jugador.pos.set(p.x,p.y,p.z);break;}
@@ -263,7 +263,7 @@ function golpearVehiculo(e){
 }
 function asientoJinete(e){
   if(jugador.montura!==e)return;
-  const off=e.tipo==='barco'?-.35:-.25;
+  const off=e.tipo==='barco'?-.35:e.tipo==='camello'?(e.sentado?.55:1.15):-.25;
   jugador.pos.set(e.pos.x,e.pos.y+off,e.pos.z); jugador.vel.set(0,0,0); jugador.maxY=jugador.pos.y;
 }
 function dirEntradaCamara(){
@@ -412,7 +412,7 @@ function tieneElitros(){const p=inv[37];return !!(p&&ITEMS[p.id].elitros&&p.dur>
 // Devuelve true si se encarga del movimiento del jugador este fotograma
 function fisicaEspecial(j,dt,entrada){
   if(j.montura){
-    if(j.montura.muerta){j.montura=null;return false;}
+    if(j.montura.muerta||j.montura.muerto){j.montura=null;return false;}
     if(entrada&&(teclas.ShiftLeft||teclas.ShiftRight)){desmontar();return true;}
     asientoJinete(j.montura); j.suelo=true; j.enAgua=false; return true;
   }
@@ -512,6 +512,7 @@ function comprobarAcceso(dt){
 
 /* ---------- Uso con clic derecho (antes que el uso general) ---------- */
 function usarDerechoExtra(p,id,it){
+  if(usarDerechoV120(p,id,it))return true;
   if(!it)return false;
   if(id===500){
     camara.getWorldDirection(dirVista);
@@ -553,6 +554,7 @@ ACT_ENT.cohete=(e,dt)=>{
 let extrasT=0;
 function actualizarExtras(dt){
   actualizarSoportes(dt);
+  actualizarV120(dt);
   comprobarAcceso(dt);
   if(dim===DIMS.end&&mundoEstado.dragonMuerto&&!mundoEstado.acceso)crearAccesoPrincipal();
   hudEfT-=dt; if(hudEfT<=0){hudEfT=.5;pintarEfectos();}

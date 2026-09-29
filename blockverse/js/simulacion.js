@@ -74,8 +74,9 @@ NECESITA_SOPORTE[B.cana]=s=>s===B.cana||s===B.cesped||s===B.tierra||s===B.arena;
 NECESITA_SOPORTE[B.cactus]=s=>s===B.cactus||s===B.arena;
 NECESITA_SOPORTE[B.antorcha]=s=>SOLIDO[s]&&FORMA[s]===0;
 NECESITA_SOPORTE[B.cama]=s=>s!==0&&!esLiquido(s);
-const TIERRAS=s=>s===B.cesped||s===B.tierra||s===B.cultivo||s===B.cespedNevado||s===B.senda;
-[B.broteAbedul,B.broteAbeto,B.broteJungla,B.broteAcacia,B.helecho,B.aciano,B.orquidea,B.margarita].forEach(b=>NECESITA_SOPORTE[b]=TIERRAS);
+const TIERRAS=s=>s===B.cesped||s===B.tierra||s===B.cultivo||s===B.cespedNevado||s===B.senda||s===B.barro;
+[B.broteAbedul,B.broteAbeto,B.broteJungla,B.broteAcacia,B.helecho,B.aciano,B.orquidea,B.margarita,B.broteCerezo,B.propagulo,B.petalos].forEach(b=>NECESITA_SOPORTE[b]=TIERRAS);
+NECESITA_SOPORTE[B.vetaSculk]=s=>SOLIDO[s]&&OPACO[s];
 [B.champinonRojo,B.champinonMarron].forEach(b=>NECESITA_SOPORTE[b]=s=>SOLIDO[s]&&OPACO[s]);
 NECESITA_SOPORTE[B.arbustoSeco]=s=>s===B.arena||s===B.arenaRoja||s===B.tierra||(s>=B.terracota&&s<=B.terracota5);
 NECESITA_SOPORTE[B.cactus]=s=>s===B.cactus||s===B.arena||s===B.arenaRoja;
@@ -109,6 +110,8 @@ function notificarCambio(x,y,z,anterior,nuevo){
     if(k>=0&&(def.piston||def.cabezaPiston))comprobarPiston(px,py,pz);
   }
   avisarRedstone(x,y,z,anterior,nuevo);
+  if((nuevo===B.sensorSculk&&anterior!==B.sensorSculkOn)||nuevo===B.chillador)registrarSculk(x,y,z);
+  if(anterior!==B.sensorSculk&&anterior!==B.sensorSculkOn&&!esLiquido(anterior)&&!esLiquido(nuevo))registrarVibracion(x+.5,y+.5,z+.5,'bloque');
   if((anterior===B.obsidiana||anterior===B.portalNether)&&nuevo!==B.portalNether)romperPortal(x,y,z);
   if(esTronco(anterior)&&!nuevo)programarHojas(x,y,z);
 }
@@ -222,7 +225,7 @@ function aguaCerca(x,y,z){
   for(let dx=-4;dx<=4;dx++)for(let dz=-4;dz<=4;dz++)if(esAgua(getBloqueSiCargado(x+dx,y,z+dz)))return true;
   return false;
 }
-const TIPO_BROTE={88:'roble',102:'abedul',103:'abeto',104:'jungla',105:'acacia'};
+const TIPO_BROTE={88:'roble',102:'abedul',103:'abeto',104:'jungla',105:'acacia',1297:'cerezo',1304:'mangle'};
 const esBrote=id=>TIPO_BROTE[id]!==undefined;
 function crecerArbol(x,y,z){
   const id=getBloque(x,y,z), tipo=TIPO_BROTE[id]||'roble';

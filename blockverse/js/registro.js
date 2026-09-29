@@ -208,6 +208,37 @@ bloque(1279,'varaEnd','Vara del End','endRod',{forma:'cajas',cajas:[[.44,0,.44,.
 bloque(1280,'portalAcceso','Portal de acceso del End','endGateway',{forma:'portal',dureza:Infinity,luz:15,resistencia:3600000});
 bloque(1281,'plantaCoro','Planta coro','chorusPlant',{forma:'cajas',cajas:[[.19,0,.19,.81,1,.81]],dureza:.4,herr:'hacha',suelta:()=>prob(.5)?[[519,1]]:[],opaco:false});
 bloque(1282,'florCoro','Flor coro','chorusFlower',{dureza:.4,herr:'hacha'});
+/* ---------- 1.19 "The Wild": Deep Dark y manglares ---------- */
+bloque(1284,'sculk','Sculk','sculk',{dureza:.2,herr:'azada',suelta:0,xp:[1,1],resistencia:.2});
+bloque(1285,'vetaSculk','Veta de sculk','sculkVein',{forma:'cajas',cajas:[[0,0,0,1,.0625,1]],solido:false,opaco:false,reemplazable:true,dureza:.2,herr:'azada',suelta:0});
+bloque(1286,'sensorSculk','Sensor de sculk',tx('sculkSensorTop','sculk','sculkSensorSide'),{forma:'cajas',cajas:[[0,0,0,1,.5,1]],opaco:false,dureza:1.5,herr:'azada',luz:1,suelta:0,xp:[5,5],redstone:'sensor'});
+bloque(1287,'sensorSculkOn','Sensor de sculk',tx('sculkSensorOn','sculk','sculkSensorSide'),{forma:'cajas',cajas:[[0,0,0,1,.5,1]],opaco:false,dureza:1.5,herr:'azada',luz:6,suelta:0,redstone:'sensor',on:true});
+bloque(1288,'chillador','Chillador de sculk',tx('sculkShriekerTop','sculk','sculkShriekerSide'),{forma:'cajas',cajas:[[0,0,0,1,.5,1]],opaco:false,dureza:3,herr:'azada',suelta:0,xp:[5,5]});
+bloque(1289,'catalizador','Catalizador de sculk',tx('sculkCatalystTop','sculk','sculkCatalystSide'),{dureza:3,herr:'azada',luz:6,suelta:0,xp:[5,5]});
+bloque(1290,'ladrillosPizarra','Ladrillos de pizarra profunda','deepslateBricks',{dureza:3.5,herr:'pico',nivel:1,resistencia:6});
+bloque(1291,'baldosasPizarra','Baldosas de pizarra profunda','deepslateTiles',{dureza:3.5,herr:'pico',nivel:1,resistencia:6});
+bloque(1292,'pizarraReforzada','Pizarra profunda reforzada',tx('reinforcedTop','reinforcedTop','reinforcedSide'),{dureza:55,suelta:0,resistencia:1200});
+bloque(1293,'farolAlmas','Farol de almas','soulLantern',{forma:'cajas',cajas:[[.3,0,.3,.7,.6,.7]],opaco:false,dureza:3.5,herr:'pico',luz:10});
+/* ---------- 1.20 "Trails & Tales": cerezos y arqueología ---------- */
+bloque(1294,'troncoCerezo','Tronco de cerezo',tx('cherryTop','cherryTop','cherryLog'),{dureza:2,herr:'hacha',inflamable:true,resistencia:2});
+bloque(1295,'hojasCerezo','Hojas de cerezo','cherryLeaves',Object.assign({suelta:sueltaHojas(1297,false)},propHojas));
+bloque(1296,'tablonesCerezo','Tablones de cerezo','cherryPlanks',{dureza:2,herr:'hacha',inflamable:true,resistencia:3});
+bloque(1297,'broteCerezo','Brote de cerezo','cherrySapling',{forma:'cruz',dureza:0});
+bloque(1298,'petalos','Pétalos rosas','pinkPetals',{forma:'cajas',cajas:[[0,0,0,1,.0625,1]],solido:false,opaco:false,reemplazable:true,dureza:0,inflamable:true});
+bloque(1299,'troncoMangle','Tronco de mangle',tx('mangroveTop','mangroveTop','mangroveLog'),{dureza:2,herr:'hacha',inflamable:true,resistencia:2});
+bloque(1300,'hojasMangle','Hojas de mangle','mangroveLeaves',Object.assign({tinte:'follaje',suelta:sueltaHojas(1304,false)},propHojas));
+bloque(1301,'raicesMangle','Raíces de mangle','mangroveRoots',{trans:true,opaco:false,opacidadLuz:1,dureza:.7,herr:'hacha',inflamable:true,resistencia:.7});
+bloque(1302,'barro','Barro','mud',{dureza:.5,herr:'pala',resistencia:.5});
+bloque(1303,'tablonesMangle','Tablones de mangle','mangrovePlanks',{dureza:2,herr:'hacha',inflamable:true,resistencia:3});
+bloque(1304,'propagulo','Propágulo de mangle','propagule',{forma:'cruz',dureza:0});
+bloque(1305,'ladrillosBarro','Ladrillos de barro','mudBricks',{dureza:1.5,herr:'pico',nivel:1,resistencia:3});
+bloque(1306,'arenaSospechosa','Arena sospechosa','suspiciousSand',{dureza:.25,herr:'pala',gravedad:true,suelta:0,sospechoso:'arena',resistencia:.25});
+bloque(1307,'gravaSospechosa','Grava sospechosa','suspiciousGravel',{dureza:.25,herr:'pala',gravedad:true,suelta:0,sospechoso:'grava',resistencia:.25});
+bloque(1308,'vasija','Vasija decorada','decoratedPot',{forma:'cajas',cajas:[[.12,0,.12,.88,.9,.88]],opaco:false,dureza:0,suelta:()=>prob(.4)?[[529+Math.floor(Math.random()*4),1]]:[[250,azar(2,4)]]});
+/* ---------- Netherite y herrería ---------- */
+bloque(1309,'restosAncestrales','Restos ancestrales',tx('ancientDebrisTop','ancientDebrisTop','ancientDebrisSide'),{dureza:30,herr:'pico',nivel:4,resistencia:1200});
+bloque(1310,'bloqueNetherite','Bloque de netherite','netheriteBlock',{dureza:50,herr:'pico',nivel:4,resistencia:1200});
+bloque(1311,'mesaHerreria','Mesa de herrería',tx('smithingTop','planks','smithingSide'),{dureza:2.5,herr:'hacha',inter:'herreria',inflamable:true});
 const NB=BLOQUES.length;
 const SOLIDO=new Uint8Array(NB), OPACO=new Uint8Array(NB), TRANS=new Uint8Array(NB), LUZB=new Uint8Array(NB),
       OPAC_LUZ=new Uint8Array(NB), OCLUYE=new Uint8Array(NB), FORMA=new Uint8Array(NB), REEMPL=new Uint8Array(NB);
@@ -217,7 +248,7 @@ const TINTE=new Uint8Array(NB), TREPA=new Uint8Array(NB);
 BLOQUES.forEach((b,i)=>{if(!b)return;SOLIDO[i]=b.solido?1:0;OPACO[i]=b.opaco?1:0;TRANS[i]=b.trans?1:0;LUZB[i]=b.luz;
   OPAC_LUZ[i]=b.opacidadLuz;OCLUYE[i]=(b.forma==='cubo'&&!b.sinSombra)?1:0;FORMA[i]=FORMAS[b.forma];REEMPL[i]=b.reemplazable?1:0;
   TINTE[i]=TINTES[b.tinte]||0;TREPA[i]=b.trepable?1:0;});
-const esTronco=id=>id===4||(id>=94&&id<=97), esHojas=id=>id===5||(id>=98&&id<=101), esPuerta=id=>id>=149&&id<=164;
+const esTronco=id=>id===4||(id>=94&&id<=97)||id===1294||id===1299, esHojas=id=>id===5||(id>=98&&id<=101)||id===1295||id===1300, esPuerta=id=>id>=149&&id<=164;
 // Cajas de colisión (coordenadas dentro del bloque)
 function cajasColision(id){
   const b=BLOQUES[id];
@@ -233,7 +264,7 @@ const nivelLiquido=id=>BLOQUES[id].nivelL;
    Registro de objetos
    ========================================================= */
 const ITEMS=[], I={};
-const esVariante=i=>(i>=130&&i<=132)||(i>=134&&i<=136)||(i>=138&&i<=140)||(i>=146&&i<=148)||(i>=149&&i<=168)||(i>=1192&&i<=1212)||i===1283||i===1216||i===1218||i===1220||i===1223||(i>=1224&&i<=1259&&i!==1227&&i!==1245)||(i>=1261&&i<=1269)||(i>=1271&&i<=1273);
+const esVariante=i=>(i>=130&&i<=132)||(i>=134&&i<=136)||(i>=138&&i<=140)||(i>=146&&i<=148)||(i>=149&&i<=168)||(i>=1192&&i<=1212)||i===1283||i===1216||i===1218||i===1220||i===1223||(i>=1224&&i<=1259&&i!==1227&&i!==1245)||(i>=1261&&i<=1269)||(i>=1271&&i<=1273)||i===1287;
 BLOQUES.forEach((b,i)=>{if(b&&!b.liquido&&b.forma!=='portal'&&i!==86&&!(i>=41&&i<=48)&&!esVariante(i))ITEMS[i]={nombre:b.nombre,bloque:true,max:64,clave:b.clave};});
 function item(id,clave,nombre,props){ITEMS[id]=Object.assign({nombre,max:64,clave},props);I[clave]=id;}
 item(200,'palo','Palo'); item(201,'carbon','Carbón'); item(202,'hierroBruto','Hierro en bruto'); item(203,'lingoteHierro','Lingote de hierro');
@@ -270,6 +301,13 @@ item(520,'vagoneta','Vagoneta',{max:1,coloca:'vagoneta'}); item(521,'barco','Bar
 item(522,'elitros','Élitros',{max:1,dur:432,tipoHerr:'armadura',armadura:{pieza:1,def:0,dureza:0,mat:0,enc:1},elitros:true});
 item(523,'cohete','Cohete de fuegos artificiales'); item(525,'bolaSlime','Bola de slime'); item(526,'frutaReventada','Fruta coro reventada');
 item(527,'hierroGolem','Pepita de hierro');
+// 1.19 / 1.20
+item(528,'pincel','Pincel',{max:1,dur:64,tipoHerr:'pincel'});
+item(529,'fragArquero','Fragmento de cerámica: arquero'); item(530,'fragProsperidad','Fragmento de cerámica: prosperidad');
+item(531,'fragPeligro','Fragmento de cerámica: peligro'); item(532,'fragAmigo','Fragmento de cerámica: amigo');
+item(533,'plantillaNetherite','Plantilla de mejora de netherite');
+item(534,'chatarraNetherite','Chatarra de netherite',{ignifugo:true}); item(535,'lingoteNetherite','Lingote de netherite',{ignifugo:true});
+item(536,'fragmentoEco','Fragmento de eco');
 
 const MATS=[
   {n:'madera',nivel:1,vel:2,dur:59,enc:15,col:[176,138,82]},
@@ -277,25 +315,27 @@ const MATS=[
   {n:'hierro',nivel:3,vel:6,dur:250,enc:14,col:[226,226,226]},
   {n:'oro',nivel:1,vel:12,dur:32,enc:22,col:[250,214,70]},
   {n:'diamante',nivel:4,vel:8,dur:1561,enc:10,col:[84,232,222]},
+  {n:'netherite',nivel:4,vel:9,dur:2031,enc:15,col:[88,80,86],ignifugo:true},
 ];
 const HERRS=[
-  {tipo:'pico',nom:'Pico',dano:[2,3,4,2,5],cad:[1.2,1.2,1.2,1.2,1.2]},
-  {tipo:'hacha',nom:'Hacha',dano:[7,9,9,7,9],cad:[.8,.8,.9,1,1]},
-  {tipo:'pala',nom:'Pala',dano:[2.5,3.5,4.5,2.5,5.5],cad:[1,1,1,1,1]},
-  {tipo:'espada',nom:'Espada',dano:[4,5,6,4,7],cad:[1.6,1.6,1.6,1.6,1.6]},
-  {tipo:'azada',nom:'Azada',dano:[1,1,1,1,1],cad:[1,2,3,1,4]},
+  {tipo:'pico',nom:'Pico',dano:[2,3,4,2,5,6],cad:[1.2,1.2,1.2,1.2,1.2,1.2]},
+  {tipo:'hacha',nom:'Hacha',dano:[7,9,9,7,9,10],cad:[.8,.8,.9,1,1,1]},
+  {tipo:'pala',nom:'Pala',dano:[2.5,3.5,4.5,2.5,5.5,6.5],cad:[1,1,1,1,1,1]},
+  {tipo:'espada',nom:'Espada',dano:[4,5,6,4,7,8],cad:[1.6,1.6,1.6,1.6,1.6,1.6]},
+  {tipo:'azada',nom:'Azada',dano:[1,1,1,1,1,1],cad:[1,2,3,1,4,4]},
 ];
 HERRS.forEach((h,ti)=>MATS.forEach((m,k)=>item(300+ti*10+k,h.tipo+'_'+m.n,`${h.nom} de ${m.n}`,
-  {max:1,dur:m.dur,tipoHerr:h.tipo,herr:{tipo:h.tipo,nivel:m.nivel,vel:m.vel,dano:h.dano[k],cad:h.cad[k],mat:k,enc:m.enc}})));
+  {max:1,dur:m.dur,tipoHerr:h.tipo,ignifugo:m.ignifugo,herr:{tipo:h.tipo,nivel:m.nivel,vel:m.vel,dano:h.dano[k],cad:h.cad[k],mat:k,enc:m.enc}})));
 const ARM_MATS=[
   {n:'cuero',mult:5,def:[1,3,2,1],dureza:0,enc:15,col:[150,94,56]},
   {n:'oro',mult:7,def:[2,5,3,1],dureza:0,enc:25,col:[250,214,70]},
   {n:'hierro',mult:15,def:[2,6,5,2],dureza:0,enc:9,col:[216,216,216]},
   {n:'diamante',mult:33,def:[3,8,6,3],dureza:2,enc:10,col:[84,232,222]},
+  {n:'netherite',mult:37,def:[3,8,6,3],dureza:3,enc:15,col:[88,80,86],ignifugo:true},
 ];
 const PIEZAS=[{n:'casco',nom:'Casco',dur:11},{n:'pechera',nom:'Pechera',dur:16},{n:'pantalones',nom:'Pantalones',dur:15},{n:'botas',nom:'Botas',dur:13}];
 PIEZAS.forEach((p,pi)=>ARM_MATS.forEach((m,k)=>item(400+pi*10+k,p.n+'_'+m.n,`${p.nom} de ${m.n}`,
-  {max:1,dur:p.dur*m.mult,tipoHerr:'armadura',armadura:{pieza:pi,def:m.def[pi],dureza:m.dureza,mat:k,enc:m.enc}})));
+  {max:1,dur:p.dur*m.mult,tipoHerr:'armadura',ignifugo:m.ignifugo,armadura:{pieza:pi,def:m.def[pi],dureza:m.dureza,mat:k,enc:m.enc}})));
 const maxPila=id=>ITEMS[id]?ITEMS[id].max:64;
 function crearPila(id,n=1){const it=ITEMS[id];return it&&it.dur?{id,n:1,dur:it.dur}:{id,n};}
 const mismaPila=(a,b)=>a&&b&&a.id===b.id&&maxPila(a.id)>1&&!a.enc&&!b.enc;
@@ -406,8 +446,27 @@ recetaSin([I.lingoteOro],I.pepitaOro,9);
 [I.cuero,I.lingoteOro,I.lingoteHierro,I.diamante].forEach((m,k)=>{const c={M:m};
   receta(['MMM','M.M'],c,400+k); receta(['M.M','MMM','MMM'],c,410+k);
   receta(['MMM','M.M','M.M'],c,420+k); receta(['M.M','M.M'],c,430+k);});
+// 1.19 / 1.20
+recetaSin([B.troncoCerezo],B.tablonesCerezo,4); recetaSin([B.troncoMangle],B.tablonesMangle,4);
+recetaSin([534,534,534,534,I.lingoteOro,I.lingoteOro,I.lingoteOro,I.lingoteOro],535);
+receta(['MMM','MMM','MMM'],{M:535},B.bloqueNetherite); recetaSin([B.bloqueNetherite],535,9);
+receta(['II','PP','PP'],{I:I.lingoteHierro,P:B.tablones},B.mesaHerreria);
+receta(['F','C','S'],{F:I.pluma,C:I.lingoteCobre,S:I.palo},528);
+receta(['DTD','DND','DDD'],{D:I.diamante,T:533,N:B.netherrack},533,2);
+receta(['PP','PP'],{P:B.pizarra},B.ladrillosPizarra,4); receta(['PP','PP'],{P:B.ladrillosPizarra},B.baldosasPizarra,4);
+receta(['BB','BB'],{B:B.barro},B.ladrillosBarro,4);
+receta(['.L.','L.L','.L.'],{L:I.ladrillo},B.vasija);
+receta(['.I.','IAI','.I.'],{I:I.lingoteHierro,A:B.arenaAlmas},B.farolAlmas);
+receta(['EEE','ECE','EEE'],{E:536,C:I.lingoteCobre},B.catalizador);
+// Los tablones de cerezo y mangle sirven en todas las recetas de madera
+const EQUIV_RECETA={[B.tablonesCerezo]:B.tablones,[B.tablonesMangle]:B.tablones,[B.troncoCerezo]:B.tronco,[B.troncoMangle]:B.tronco};
 
 function buscarReceta(grid,w){
+  const exacta=buscarRecetaExacta(grid,w);
+  if(exacta||!grid.some(v=>EQUIV_RECETA[v]))return exacta;
+  return buscarRecetaExacta(grid.map(v=>EQUIV_RECETA[v]||v),w);
+}
+function buscarRecetaExacta(grid,w){
   const ids=grid.filter(Boolean);
   if(!ids.length)return null;
   const orden=ids.slice().sort((a,b)=>a-b);
@@ -434,10 +493,13 @@ const FUNDIR={
   [B.roca]:B.piedra,[B.arena]:B.vidrio,[B.arenaRoja]:B.vidrio,[B.tronco]:I.carbon,[B.troncoAbedul]:I.carbon,[B.troncoAbeto]:I.carbon,[B.troncoJungla]:I.carbon,[B.troncoAcacia]:I.carbon,
   [251]:250,[B.arcilla]:B.terracota,[519]:526,[B.piedraNegra]:B.piedraNegra,
   [I.cerdoCrudo]:I.cerdoAsado,[I.resCruda]:I.filete,[I.polloCrudo]:I.polloAsado,[I.corderoCrudo]:I.corderoAsado,
+  [B.restosAncestrales]:534,[B.troncoCerezo]:I.carbon,[B.troncoMangle]:I.carbon,
 };
+[B.restosAncestrales,B.bloqueNetherite].forEach(id=>ITEMS[id].ignifugo=true);
 const COMBUSTIBLE={1178:15,1179:15,[I.carbon]:80,[B.bloqueCarbon]:800,[I.cuboLava]:1000,[I.varaBlaze]:120,[B.tablones]:15,[B.tronco]:15,
   94:15,95:15,96:15,97:15,[B.valla]:15,133:15,142:7.5,255:10,145:15,[B.estanteria]:15,252:5,
-  [I.palo]:5,[B.mesa]:15,[B.cofre]:15,[B.brote]:5,[B.lana]:5,[I.arco]:15,[B.heno]:5,300:10,310:10,320:10,330:10,340:10};
+  [I.palo]:5,[B.mesa]:15,[B.cofre]:15,[B.brote]:5,[B.lana]:5,[I.arco]:15,[B.heno]:5,300:10,310:10,320:10,330:10,340:10,
+  [B.troncoCerezo]:15,[B.troncoMangle]:15,[B.tablonesCerezo]:15,[B.tablonesMangle]:15,[B.raicesMangle]:15,[B.mesaHerreria]:15};
 const TIEMPO_FUNDIR=10;
 
 /* ---------- Fermentación de pociones ---------- */

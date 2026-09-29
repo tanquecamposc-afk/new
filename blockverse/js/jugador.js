@@ -287,6 +287,7 @@ function actualizarApuntado(){
   apuntado=lanzarRayo(camara.position,dirVista,alcance);
   apuntadoEnt=null; let mejor=Math.min(3.2,apuntado?apuntado.t:Infinity);
   for(const m of mobs){
+    if(m===jugador.montura)continue;
     const t=rayoCaja(camara.position,dirVista,{x:m.pos.x-m.ancho,y:m.pos.y,z:m.pos.z-m.ancho},{x:m.pos.x+m.ancho,y:m.pos.y+m.alto,z:m.pos.z+m.ancho});
     if(t!==null&&t<mejor){mejor=t;apuntadoEnt={mob:m};}
   }

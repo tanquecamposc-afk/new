@@ -49,7 +49,8 @@ let _fusionT=0;
 function actualizarItem(e,dt){
   e.edad+=dt;
   const aqui=fisicaSimple(e,dt);
-  if(esLava(aqui)||aqui===B.fuego){e.muerta=true;emitirParticulas(e.pos.x,e.pos.y,e.pos.z,0x444444,4,1,.5,-2);return;}
+  if(ITEMS[e.pila.id].ignifugo){if(esLava(aqui)){e.vel.y=Math.min(3,e.vel.y+40*dt);}}
+  else if(esLava(aqui)||aqui===B.fuego){e.muerta=true;emitirParticulas(e.pos.x,e.pos.y,e.pos.z,0x444444,4,1,.5,-2);return;}
   e.malla.position.set(e.pos.x,e.pos.y+.18+Math.sin(e.edad*3)*.05,e.pos.z);
   e.malla.rotation&&(e.malla.rotation.y=e.edad*1.6);
   if(e.edad%0.5<dt)e.malla.material.color.setScalar(brilloEn(e.pos.x,e.pos.y+.3,e.pos.z));

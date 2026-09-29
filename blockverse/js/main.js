@@ -111,7 +111,9 @@ function ejecutarComando(t){
     case 'effect':efectos={};ok('Efectos eliminados.');break;
     case 'spawnpoint':spawnCama=null;spawnMundo=[jugador.pos.x,jugador.pos.z];ok('Punto de aparición fijado.');break;
     case 'locate':{
-      if((a[0]||'').startsWith('str')){const f=posFortaleza();ok(`Fortaleza cerca de X ${f.x}, Z ${f.z} (bajo tierra, Y ${f.y-OY}).`);}
+      const lv=localizarV120((a[0]||'').toLowerCase());
+      if(lv)ok(lv);
+      else if((a[0]||'').startsWith('str')){const f=posFortaleza();ok(`Fortaleza cerca de X ${f.x}, Z ${f.z} (bajo tierra, Y ${f.y-OY}).`);}
       else{const fs=fortalezasCerca(jugador.pos.x,jugador.pos.z).sort((p,q)=>Math.hypot(p.x-jugador.pos.x,p.z-jugador.pos.z)-Math.hypot(q.x-jugador.pos.x,q.z-jugador.pos.z));
         ok(fs.length?`Fortaleza del Nether cerca de X ${fs[0].x}, Z ${fs[0].z} (coordenadas del Nether).`:'No hay fortalezas cerca.');}
       break;}
@@ -165,8 +167,12 @@ function actualizarCielo(dt){
   const ojo=getBloque(Math.floor(c.x),Math.floor(c.y),Math.floor(c.z));
   if(esAgua(ojo)){cielo.setHex(0x14306a);escena.fog.near=.5;escena.fog.far=14;}
   else if(esLava(ojo)){cielo.setHex(0xc04010);escena.fog.near=0;escena.fog.far=1.5;}
+  // Efecto de oscuridad (Warden y chilladores): la visión late
+  let oscuro=0;
+  if(efectos.oscuridad){oscuro=.55+.45*Math.sin(tiempoJuego*2.2);cielo.lerp(tmpC.setRGB(0,0,0),.9);
+    escena.fog.near=1;escena.fog.far=Math.min(escena.fog.far,5+(1-oscuro)*14);uDia*=1-oscuro*.8;}
   escena.fog.color.copy(cielo);
-  for(const m of [matOpaco,matTrans]){m.uniforms.uDia.value=uDia;m.uniforms.uAmb.value=dim.amb;}
+  for(const m of [matOpaco,matTrans]){m.uniforms.uDia.value=uDia;m.uniforms.uAmb.value=dim.amb*(1-oscuro*.8);}
   matTrans.uniforms.uTiempo.value=tiempoJuego;
   // Lluvia
   const llueveAqui=sup&&lloviendo&&!OPACO[getBloque(Math.floor(c.x),Math.min(CY-1,Math.floor(c.y)+6),Math.floor(c.z))];

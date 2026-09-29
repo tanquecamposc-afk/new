@@ -329,6 +329,52 @@ function tile(nombre,gen){T[nombre]=_genTiles.length;_genTiles.push(gen);}
   tile('chorusPlant',(p,r)=>{const s=S();cada((x,y)=>{const k=n(r,14)+(pn(x,y,4,s)-.5)*20;p(x,y,94+k,58+k,94+k);});});
   tile('chorusFlower',(p,r)=>cada((x,y)=>{const k=n(r,14);const borde=x<2||y<2||x>13||y>13;p(x,y,(borde?150:196)+k,(borde?110:160)+k,(borde?150:200)+k);}));
   tile('ironGolemTile',(p,r)=>cada((x,y)=>p(x,y,200,200,196)));
+  /* ---- 1.19: Deep Dark ---- */
+  const sculkBase=(p,r,s=S())=>cada((x,y)=>{const v=pn(x,y,4,s),w=pn(x,y,8,s+1);let k=n(r,10);
+    if(w>.72&&r()<.7)return p(x,y,40+k,190+k,200+k);
+    p(x,y,10+v*16+k*.4,30+v*24+k,38+v*26+k);});
+  tile('sculk',sculkBase);
+  tile('sculkVein',planta((p,r)=>{const s=S();cada((x,y)=>{const v=pn(x,y,4,s);if(v>.55)p(x,y,14+n(r,10),48+n(r,14),56+n(r,14));if(v>.72&&r()<.3)p(x,y,50,200,210);});}));
+  tile('sculkSensorTop',(p,r)=>{sculkBase(p,r);cada((x,y)=>{const d=Math.max(Math.abs(x-7.5),Math.abs(y-7.5));if(d<4)p(x,y,20,70+n(r,20),80+n(r,20));if(d<2)p(x,y,30,120,130);});});
+  tile('sculkSensorSide',(p,r)=>{sculkBase(p,r);cada((x,y)=>{if(y<5){p(x,y,0,0,0,0);}else if(y<7)p(x,y,20,90,100);});});
+  tile('sculkSensorOn',(p,r)=>{sculkBase(p,r);cada((x,y)=>{const d=Math.max(Math.abs(x-7.5),Math.abs(y-7.5));if(d<4)p(x,y,60,230,240);if(d<2)p(x,y,200,255,255);});});
+  tile('sculkShriekerTop',(p,r)=>{sculkBase(p,r);cada((x,y)=>{const d=Math.hypot(x-7.5,y-7.5);if(d<5.5&&d>3)p(x,y,220,220,200);if(d<=3)p(x,y,20,40,44);});});
+  tile('sculkShriekerSide',(p,r)=>{sculkBase(p,r);cada((x,y)=>{if(y<8&&(x%5===1||x%5===2))p(x,y,215,212,190+n(r,10));});});
+  tile('sculkCatalystTop',(p,r)=>{sculkBase(p,r);cada((x,y)=>{const d=Math.hypot(x-7.5,y-7.5);if(d<3)p(x,y,120,240,250);});});
+  tile('sculkCatalystSide',(p,r)=>cada((x,y)=>{const k=n(r,10);if(y<5)return p(x,y,14+k,44+k,52+k);const hueso=(x%4===1)||(y%5===2);p(x,y,(hueso?210:180)+k,(hueso?205:172)+k,(hueso?184:150)+k);}));
+  tile('deepslateBricks',(p,r)=>ladrillos(p,r,[78,78,84],[44,44,48],4,8));
+  tile('deepslateTiles',(p,r)=>ladrillos(p,r,[60,60,66],[34,34,38],4,4));
+  tile('reinforcedTop',(p,r)=>cada((x,y)=>{const k=n(r,8);const d=Math.max(Math.abs(x-7.5),Math.abs(y-7.5));p(x,y,(d>6?60:d>3?96:40)+k,(d>6?64:d>3?100:48)+k,(d>6?60:d>3?96:50)+k);}));
+  tile('reinforcedSide',(p,r)=>cada((x,y)=>{const k=n(r,8);const b=x<2||x>13;p(x,y,(b?150:58)+k,(b?144:60)+k,(b?120:64)+k);}));
+  tile('soulLantern',planta((p,r)=>{for(let y=4;y<=13;y++)for(let x=4;x<=11;x++){const borde=x===4||x===11||y===4||y===13;p(x,y,borde?50:90,borde?56:220,borde?66:230);}
+    for(let y=1;y<=3;y++){p(7,y,60,60,70);p(8,y,60,60,70);}}));
+  /* ---- 1.20: cerezos ---- */
+  tile('cherryLog',corteza([60,34,44],[40,22,30],false)); tile('cherryTop',anillos([222,162,160],[60,34,44]));
+  tile('cherryLeaves',(p,r)=>{const s=S();cada((x,y)=>{if(r()<.18)return p(x,y,0,0,0,0);const v=pn(x,y,8,s);const k=n(r,24);
+    p(x,y,236+k*.3,160+v*50+k,196+v*30+k);});});
+  tile('cherryPlanks',(p,r)=>tablones(p,r,[226,178,172]));
+  tile('cherrySapling',planta((p,r)=>{tallo(p,7,9,15,[80,44,52]);for(let k=0;k<22;k++){const a=r()*6.28,d=r()*4;p(7.5+Math.cos(a)*d,6+Math.sin(a)*d*.8,240,170+n(r,40),200);}}));
+  tile('pinkPetals',planta((p,r)=>{for(let k=0;k<9;k++){const cx=2+r()*12,cy=2+r()*12;for(const [a,b] of [[0,0],[1,0],[0,1],[-1,0],[0,-1]])p(cx+a,cy+b,240,150+n(r,40),190,255);p(cx,cy,250,220,120);}}));
+  /* ---- 1.19: manglar ---- */
+  tile('mangroveLog',corteza([84,38,34],[58,26,24],false)); tile('mangroveTop',anillos([116,50,44],[84,38,34]));
+  tile('mangroveLeaves',hojas(.14));
+  tile('mangroveRoots',planta((p,r)=>{for(let k=0;k<5;k++){let x=r()*16;for(let y=0;y<16;y++){x+=r()<.3?(r()<.5?-1:1):0;p(clamp(x,0,15),y,88,58,40);p(clamp(x+1,0,15),y,70,44,30);}}
+    for(let y=0;y<16;y+=5)for(let x=0;x<16;x++)if(r()<.7)p(x,y,90,60,40);}));
+  tile('mud',(p,r)=>{const s=S();cada((x,y)=>{const k=n(r,10)+(pn(x,y,4,s)-.5)*14;p(x,y,62+k,56+k,56+k);});});
+  tile('mudBricks',(p,r)=>ladrillos(p,r,[150,112,80],[110,82,58],4,8));
+  tile('mangrovePlanks',(p,r)=>tablones(p,r,[120,52,48]));
+  tile('propagule',planta((p,r)=>{for(let y=2;y<=14;y++){p(7,y,110,160,60);p(8,y,90,140,50);}for(let x=4;x<=11;x++)p(x,3,80,160,60);p(7,15,200,200,100);}));
+  /* ---- 1.20: arqueología ---- */
+  tile('suspiciousSand',(p,r)=>{const s=S();cada((x,y)=>{const k=n(r,14)+(pn(x,y,8,s)-.5)*16;p(x,y,220+k,206+k,160+k);});cada((x,y)=>{if(pn(x,y,4,s+9)>.7&&r()<.5)p(x,y,190,170,120);});});
+  tile('suspiciousGravel',(p,r)=>cada((x,y)=>{const k=n(r,40);const b=hash2(Math.floor(x/3),Math.floor(y/3),5)<.4;p(x,y,(b?110:140)+k,(b?104:132)+k,(b?100:128)+k);if(r()<.05)p(x,y,190,160,120);}));
+  tile('decoratedPot',(p,r)=>cada((x,y)=>{const k=n(r,8);const f=(y===0||y===15)?.7:1;const deco=(x+y)%6===0&&y>2&&y<13;p(x,y,(deco?90:170)*f+k,(deco?50:90)*f+k,(deco?40:60)*f+k);}));
+  /* ---- 1.16: netherite y herrería ---- */
+  tile('ancientDebrisSide',(p,r)=>cada((x,y)=>{const k=n(r,14);const a=Math.floor(pn(x,y,4,7)*4);const col=[[86,62,56],[108,78,70],[70,50,46],[130,98,86]][a];
+    if(Math.abs(Math.sin(x*1.3+y*.4))<.12)return p(x,y,150+k,120+k,100+k);p(x,y,col[0]+k,col[1]+k,col[2]+k);}));
+  tile('ancientDebrisTop',(p,r)=>cada((x,y)=>{const k=n(r,14);const d=Math.hypot(x-7.5,y-7.5);const a=Math.floor(d)%3;p(x,y,[92,66,60][a]+k,[70,50,44][a]+k,[66,46,40][a]+k);}));
+  tile('netheriteBlock',bloqueMetal([70,64,68]));
+  tile('smithingTop',(p,r)=>cada((x,y)=>{const k=n(r,8);const b=x<1||y<1||x>14||y>14;p(x,y,(b?40:60)+k,(b?40:58)+k,(b?48:66)+k);}));
+  tile('smithingSide',(p,r)=>{tablones(p,r,[120,86,60]);cada((x,y)=>{if(y<4)p(x,y,60+n(r,8),58+n(r,8),66+n(r,8));if(y>=4&&y<6)p(x,y,190,70,60);});});
   tile('pathSide',(p,r)=>{tierra(p,r);cada((x,y)=>{if(y<2){const k=n(r,12);p(x,y,148+k,122+k,66+k);}});});
 })();
 
@@ -345,7 +391,7 @@ const atlas=document.createElement('canvas'); atlas.width=TS*ATW; atlas.height=T
   ctx.putImageData(img,0,0);
 })();
 // Atlas para iconos, objetos sueltos y partículas: el tinte ya aplicado
-const TINTE_ICONO={grassTop:[.57,.74,.35],grassSide:[.57,.74,.35],tallGrass:[.57,.74,.35],fern:[.52,.72,.36],leaves:[.47,.67,.18],spruceLeaves:[.38,.6,.38]};
+const TINTE_ICONO={grassTop:[.57,.74,.35],grassSide:[.57,.74,.35],tallGrass:[.57,.74,.35],fern:[.52,.72,.36],leaves:[.47,.67,.18],spruceLeaves:[.38,.6,.38],mangroveLeaves:[.55,.69,.15]};
 const atlasIconos=document.createElement('canvas'); atlasIconos.width=atlas.width; atlasIconos.height=atlas.height;
 (function(){
   const ctx=atlasIconos.getContext('2d'); ctx.drawImage(atlas,0,0);

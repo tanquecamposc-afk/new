@@ -11,7 +11,7 @@ const esCable=id=>id>=B.cable0&&id<=B.cable0+15;
 const potenciaCable=id=>id-B.cable0;
 function esFuente(id){
   const b=BLOQUES[id]; if(!b||!b.redstone)return false;
-  return id===B.bloqueRedstone||id===B.antorchaR||((b.redstone==='palanca'||b.redstone==='boton'||b.redstone==='placa')&&b.on);
+  return id===B.bloqueRedstone||id===B.antorchaR||((b.redstone==='palanca'||b.redstone==='boton'||b.redstone==='placa'||b.redstone==='sensor')&&b.on);
 }
 const colaRS=new Map(); let rsT=0;
 function avisarRedstone(x,y,z,anterior,nuevo){

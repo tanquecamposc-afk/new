@@ -157,6 +157,9 @@ function modeloMob(tipo,opc={}){
       pon(parte(.5,.2,.05,0x444444),-.9,3.1,2.01); pon(parte(.5,.2,.05,0x444444),.9,3.1,2.01); pon(parte(.8,.4,.05,0x444444),0,2.2,2.01);
       for(let i=0;i<9;i++){const p=pon(parte(.3,1.2+(i%3)*.5,.3,0xe8e8e8,true),(i%3-1)*1.2,.6,(Math.floor(i/3)-1)*1.2);p.userData.s=i%2?1:-1;piernas.push(p);}
       break;
+    default:
+      if(typeof MODELOS_EXTRA!=='undefined'&&MODELOS_EXTRA[tipo])MODELOS_EXTRA[tipo]({g,pon,parte,ojos,cuadrupedo,humanoide,piernas,brazos,extra,opc});
+      break;
     case 'blaze':
       extra.cabeza=pon(parte(.5,.5,.5,0xf0c030),0,1.45,0); ojos(1.47,.26,.12,0x3a2000);
       extra.varas=[];for(let i=0;i<12;i++){const r=parte(.12,.5,.12,0xf09a20);g.add(r);extra.varas.push(r);}
@@ -212,6 +215,7 @@ function matarMob(m,fuente){
   }
   if(m.def.ia==='cubo'&&m.tam>0){const n=azar(2,4);for(let k=0;k<n;k++)crearMob(m.tipo,m.pos.x+(Math.random()-.5),m.pos.y+.3,m.pos.z+(Math.random()-.5),{tam:m.tam-1});}
   m.muerto=true;
+  if(typeof alMorirMob==='function')alMorirMob(m);
   const i=mobs.indexOf(m); if(i>=0)mobs.splice(i,1);
   m.grupo.traverse(o=>{if(o.isMesh&&o.material.emissive)o.material.emissive.setRGB(.55,0,0);});
   cadaveres.push({m,t:0,lado:Math.random()<.5?1:-1});
@@ -326,6 +330,8 @@ function actualizarMob(m,dt){
         else{herirMob(obj,azar(7,21),{x:ox/(d||1),z:oz/(d||1)},'golem');obj.vel.y=9;}}}
     else{const ox=m.origen.x-m.pos.x,oz=m.origen.z-m.pos.z;m.t-=dt;
       if(m.t<=0){m.t=3+Math.random()*6;if(Math.hypot(ox,oz)>16){m.mover=true;m.yawObj=Math.atan2(ox,oz);}else{m.mover=Math.random()<.4;m.yawObj=Math.random()*Math.PI*2;}}}
+  }else if(IA_EXTRA[def.ia]){
+    if(IA_EXTRA[def.ia](m,dt,{dx,dz,dy,dist,dist3,persigue,eye,ojoJ})===false)return;
   }else if(def.ia==='aldeano'){
     let zombi=null,dz2=8;
     for(const o of mobs)if(o.tipo==='zombi'){const d=o.pos.distanceTo(m.pos);if(d<dz2){dz2=d;zombi=o;}}
@@ -464,6 +470,7 @@ function intentoAparicion(){
       return;
     }
   }
+  if(dim===DIMS.superficie&&aparicionExtra(x,z))return;
   if(dim===DIMS.superficie){
     const pasivos=contar(m=>m.def.tipo==='pasivo'&&m.tipo!=='aldeano'), hostiles=contar(m=>m.def.tipo!=='pasivo');
     if(Math.random()<.08&&pasivos<10){
@@ -475,7 +482,7 @@ function intentoAparicion(){
     }
     if(hostiles>=20)return;
     const y=buscarSuelo(x,clamp(Math.floor(j.y+(Math.random()-.4)*40),6,CY-4),z,20,3);
-    if(y<0)return;
+    if(y<0||(y<OY&&esDeepDark(x,z)))return;
     const l=luzEn(x,y,z), cieloEf=(l>>4)-Math.round((1-factorCielo)*11/0.8);
     if((l&15)>0||Math.max(0,cieloEf)>7)return;
     if(Math.hypot(x-j.x,y-j.y,z-j.z)<24)return;
@@ -537,5 +544,6 @@ function actualizarGeneradores(dt){
 function despawnMobs(){
   const j=jugador.pos;
   for(const m of mobs.slice()){const d=m.pos.distanceTo(j);
+    if(m===jugador.montura||m.domado)continue;
     if((m.def.tipo==='hostil'&&d>80)||d>(m.tipo==='aldeano'||m.tipo==='golem'?110:140))quitarMob(m);}
 }
