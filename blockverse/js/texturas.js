@@ -28,13 +28,26 @@ function tile(nombre,gen){T[nombre]=_genTiles.length;_genTiles.push(gen);}
   const netherrack=(p,r,s=S())=>cada((x,y)=>{const b=pn(x,y,8,s)*30;let k=n(r,24)+b-15;if(r()<.1)k-=25;
     p(x,y,114+k,44+k*.5,42+k*.45);});
   // Mineral: grupos de píxeles con borde oscuro y brillo
+  // Mineral al estilo del original: vetas de formas irregulares con borde oscuro abajo a la derecha,
+  // canto iluminado arriba a la izquierda y algún destello
+  const FORMAS_MENA=[[[0,0],[1,0],[0,1],[1,1]],[[0,0],[1,0],[2,0],[0,1],[1,1]],[[1,0],[0,1],[1,1],[2,1],[1,2]],
+    [[0,0],[1,0],[1,1],[2,1],[2,2]],[[0,0],[0,1],[1,1],[1,2],[2,1]],[[0,0],[1,0],[2,0],[1,1],[2,1],[1,2]],[[0,1],[1,0],[1,1],[2,0],[2,1]]];
   const mena=(base,col,osc,brillo)=>(p,r)=>{base(p,r);
-    const grupos=4+Math.floor(r()*2);
-    for(let k=0;k<grupos;k++){const cx=2+Math.floor(r()*11), cy=2+Math.floor(r()*11);
-      const pix=[[0,0],[1,0],[0,1],[1,1],[-1,0],[0,-1],[2,1],[1,2]].filter(()=>r()<.72);
-      for(const [a,b] of pix)p(cx+a,cy+b,...osc);
-      for(const [a,b] of pix)if(r()<.8)p(cx+a,cy+b-(r()<.3?0:0),col[0]+n(r,24),col[1]+n(r,24),col[2]+n(r,24));
-      p(cx,cy,...brillo);}};
+    const usados=[], nv=5+Math.floor(r()*2);
+    for(let k=0;k<nv;k++){
+      let cx=0,cy=0,t=0;
+      do{cx=1+Math.floor(r()*12);cy=1+Math.floor(r()*12);t++;}while(t<30&&usados.some(([a,b])=>Math.abs(a-cx)<4&&Math.abs(b-cy)<4));
+      usados.push([cx,cy]);
+      const f=FORMAS_MENA[Math.floor(r()*FORMAS_MENA.length)], en=new Set(f.map(([a,b])=>(cx+a)+','+(cy+b)));
+      const esta=(x,y)=>en.has(x+','+y);
+      for(const [a,b] of f){const x=cx+a,y=cy+b;
+        for(const [dx,dy] of [[1,0],[0,1],[1,1]])if(!esta(x+dx,y+dy))p(x+dx,y+dy,osc[0]*.85,osc[1]*.85,osc[2]*.85);}
+      const chispa=Math.floor(r()*f.length);
+      f.forEach(([a,b],i)=>{const x=cx+a,y=cy+b, k2=n(r,16), canto=!esta(x,y-1)||!esta(x-1,y);
+        if(i===chispa)p(x,y,...brillo);
+        else if(canto)p(x,y,(col[0]+brillo[0])/2+k2,(col[1]+brillo[1])/2+k2,(col[2]+brillo[2])/2+k2);
+        else p(x,y,col[0]+k2,col[1]+k2,col[2]+k2);});
+    }};
   const tablones=(p,r,col=[168,133,84],s=S())=>cada((x,y)=>{
     const tabla=Math.floor(y/4), off=(tabla*5)%16;
     let k=n(r,8)+(pn(x+off,tabla*4,4,s+tabla)-.5)*22;

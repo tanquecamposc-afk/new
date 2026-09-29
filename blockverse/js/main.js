@@ -242,7 +242,7 @@ function aplicarGuardado(s){
   if(!spawnMundo){const p=jugador.pos.clone();aparecer();jugador.pos.copy(p);}
   if(dim===DIMS.end&&!mundoEstado.dragonMuerto){crearCristales();crearDragon();}
 }
-function darKitCreativo(){[B.cesped,B.tierra,B.piedra,B.roca,B.tablones,B.tronco,B.vidrio,B.antorcha,B.mesa].forEach((id,i)=>{if(!inv[i])inv[i]=crearPila(id,64);});}
+function darKitCreativo(){}  // como en el original: el creativo empieza con el inventario vacío (todo está en la paleta)
 
 /* ---------- Estados ---------- */
 const elMenu=$('menu'), selModo=$('selModo'), selDist=$('selDistancia');
