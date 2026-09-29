@@ -192,6 +192,7 @@ function actualizarMano(id,brillo,dt,agachado){
     if(id<=0)mano.add(brazo);
     else if(esCuboItem(id)){manoObjeto=new THREE.Mesh(geoCuboItem(id,.3),new THREE.MeshBasicMaterial({map:texIconos,alphaTest:.5}));
       manoObjeto.rotation.set(.1,.7,0);mano.add(manoObjeto);}
+    else if(id===540){manoObjeto=modeloMaza();manoObjeto.scale.setScalar(1.25);manoObjeto.rotation.set(-.35,-.6,.25);manoObjeto.position.set(0,.1,0);mano.add(manoObjeto);}
     else if(LIENZOS[id]&&LIENZOS[id].width===16){
       const herr=esHerramientaMano(id);
       manoObjeto=new THREE.Mesh(geoExtruida(id,herr?.44:.38),matExtruido());
@@ -203,7 +204,7 @@ function actualizarMano(id,brillo,dt,agachado){
       manoObjeto.rotation.set(0,-.9,.3);manoObjeto.position.set(0,.08,0);mano.add(manoObjeto);}
   }
   const m=manoObjeto||brazo, b=clamp(brillo,.15,1);
-  if(manoObjeto)m.material.color.setScalar(b);else brazo.material.color.setRGB(.85*b,.64*b,.48*b);
+  if(manoObjeto){if(m.material)m.material.color.setScalar(b);}else brazo.material.color.setRGB(.85*b,.64*b,.48*b);
   balanceo=Math.max(0,balanceo-dt*3.4); cambioMano=Math.max(0,cambioMano-dt*5);
   // Golpe en arco como en el original: el brazo baja, gira y vuelve
   const t=1-balanceo, sw=balanceo>0?Math.sin(Math.sqrt(t)*Math.PI):0, sw2=balanceo>0?Math.sin(t*Math.PI):0;

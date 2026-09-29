@@ -323,5 +323,6 @@ function actualizarRecientes(dt){
   corazonT-=dt; if(corazonT<=0){corazonT=1;actualizarCorazones();}
   actualizarFantasmas(dt);
   actualizarCompleto(dt);
+  actualizarFinal(dt);
   particulasAmbiente(dt);
 }

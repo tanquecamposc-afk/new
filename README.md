@@ -103,6 +103,8 @@ Abre `blockverse/index.html` en un navegador moderno (necesita internet para car
 - **Inventario completo:** tintes de 16 colores (de flores y mezclas), lana, hormigón, vidrio tintado y alfombras de todos los colores, piedra lisa, rocas pulidas, pizarra adoquinada y pulida, ladrillos agrietados y cincelados, arenisca cortada, cuarzo, ladrillos del Nether, bloques de lapislázuli y esmeralda, tablones de todas las maderas, escaleras y losas nuevas, farol, barril y telaraña. El modo creativo tiene pestañas por categoría y huevos generadores de todas las criaturas.
 - **Encantamientos:** 32 en total, entre ellos castigo, perdición de los artrópodos, filo arrasador, reparación, todas las protecciones, espinas, afinidad y agilidad acuática, paso helado, velocidad de alma, sigilo, retroceso, densidad y ráfaga de viento para la maza y las maldiciones de ligamiento y desaparición. La mesa de encantamientos crea **libros encantados** y el yunque los aplica.
 - **Estructuras:** minas abandonadas con raíles, soportes, telarañas y cofres; iglús, templos de la jungla, cabañas de bruja, puestos de avanzada con **saqueadores** y barcos naufragados, con su propio botín.
+- **Más criaturas y estructuras:** la **bruja** vive en su cabaña y en los pantanos de noche, lanza pociones de veneno, lentitud, debilidad y daño y se cura bebiendo; **monumentos oceánicos** de prismarina con faroles marinos, esponjas y oro en el núcleo, protegidos por **guardianes** con láser y tres **guardianes ancianos** que causan fatiga minera; las **ciudades del End** ahora tienen casa, torre con puente y torre secundaria, sala con tejado piramidal, **shulkers** que te hacen levitar y **barcos del End** con los **élitros** expuestos en la bodega.
+- **Animaciones:** los cofres abren y cierran la tapa y las puertas giran sobre su bisagra. Vista en **tercera persona (F5)** con el modelo del jugador, que muestra los élitros plegados o abiertos al planear. La **maza** tiene su propio modelo 3D.
 - **Aspecto renovado:** interfaz al estilo clásico (paneles biselados, ranuras hundidas, botones de piedra, letra pixelada y descripciones emergentes), iconos con relieve, armas y objetos en 3D (en la mano y en el suelo), golpe en arco y balanceo de la mano, objetos que vuelan hacia ti al recogerlos, criaturas con textura, ojos, sombra, respiración, balanceo al caminar y que miran a su alrededor.
 - **Controles táctiles:** joystick, arrastrar para mirar, tocar para usar/colocar, mantener para romper y botones para saltar, agacharse, atacar, tirar e inventario.
 - **Otros:** dinamita y explosiones, camas (dormir y punto de reaparición; en el Nether y el End explotan), perlas de ender, comandos y modo creativo con vuelo.
@@ -123,6 +125,7 @@ Abre `blockverse/index.html` en un navegador moderno (necesita internet para car
 | `Q` / `Shift+Q` | Tirar uno / toda la pila |
 | `T` o `/` | Comandos (`/help`, `/gamemode`, `/time`, `/weather thunder`, `/give`, `/tp`, `/locate` (`fortress`, `stronghold`, `ancient`, `trial`, `cerezo`, `manglar`), `/summon warden`…) |
 | `F3` | Información de depuración |
+| `F5` | Cambiar entre primera y tercera persona |
 | `Esc` | Pausa |
 
 ## Cómo llegar al final
@@ -137,4 +140,4 @@ Abre `blockverse/index.html` en un navegador moderno (necesita internet para car
 
 ## Qué no incluye
 
-Multijugador (necesitaría un servidor), caballos, sniffers, adornos de armadura, repetidores y comparadores de redstone. A partir de 2026 Mojang numera las versiones por año (26.1…); aquí se incluye hasta la 1.21.9.
+Multijugador (necesitaría un servidor), caballos, sniffers, adornos de armadura, repetidores y comparadores de redstone, ruinas oceánicas y delfines. A partir de 2026 Mojang numera las versiones por año (26.1…); aquí se incluye hasta la 1.21.9.

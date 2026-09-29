@@ -447,6 +447,16 @@ function tile(nombre,gen){T[nombre]=_genTiles.length;_genTiles.push(gen);}
   tile('cobweb',planta((p,r)=>{for(let a=0;a<8;a++){const t=a/8*Math.PI*2;for(let d=0;d<8;d++)p(7.5+Math.cos(t)*d,7.5+Math.sin(t)*d,230,230,236,200);}
     for(const R of [3,5.5,7.5])for(let a=0;a<40;a++){const t=a/40*Math.PI*2;p(7.5+Math.cos(t)*R,7.5+Math.sin(t)*R,220,220,226,180);}}));
   tile('enchantedBook',(p,r)=>cada((x,y)=>p(x,y,100,50,140)));
+  /* ---- Monumento oceánico ---- */
+  tile('prismarine',(p,r)=>{const s=S();cada((x,y)=>{const v=pn(x,y,4,s),w=pn(x,y,8,s+1);const k=n(r,10);p(x,y,70+v*30+k,140+w*40+k,130+v*30+k);});});
+  tile('prismarineBricks',(p,r)=>ladrillos(p,r,[100,170,150],[60,110,100],4,8));
+  tile('darkPrismarine',(p,r)=>cada((x,y)=>{const k=n(r,10);const b=x%8===0||y%8===0;p(x,y,(b?30:50)+k,(b?60:88)+k,(b?50:74)+k);}));
+  tile('seaLantern',(p,r)=>cada((x,y)=>{const k=n(r,8);const b=x<2||y<2||x>13||y>13;const c=Math.hypot(x-7.5,y-7.5)<3.5;p(x,y,b?150+k:c?250:210+k,b?200+k:c?255:235+k,b?190+k:c?250:230+k);}));
+  tile('sponge',(p,r)=>cada((x,y)=>{const k=n(r,14);const hueco=hash2(x>>1,y>>1,31)<.25;p(x,y,(hueco?170:214)+k,(hueco?160:204)+k,(hueco?60:80)+k);}));
+  tile('wetSponge',(p,r)=>cada((x,y)=>{const k=n(r,14);const hueco=hash2(x>>1,y>>1,31)<.25;p(x,y,(hueco?120:170)+k,(hueco?130:170)+k,(hueco?40:60)+k);}));
+  /* ---- End: cabeza de dragón y cofre abierto ---- */
+  tile('dragonHead',(p,r)=>cada((x,y)=>{const k=n(r,10);const ojo=(y===5||y===6)&&(x===4||x===11);p(x,y,ojo?200:30+k,ojo?60:24+k,ojo?220:36+k);}));
+  tile('vacio',(p,r)=>cada((x,y)=>p(x,y,0,0,0,0)));
   tile('pathSide',(p,r)=>{tierra(p,r);cada((x,y)=>{if(y<2){const k=n(r,12);p(x,y,148+k,122+k,66+k);}});});
 })();
 

@@ -36,7 +36,7 @@ bloque(14,'menaHierro','Mena de hierro','ironOre',{dureza:3,herr:'pico',nivel:2,
 bloque(15,'menaDiamante','Mena de diamante','diamondOre',{dureza:3,herr:'pico',nivel:3,suelta:sueltaOre(204,1,1),xp:[3,7]});
 bloque(16,'mesa','Mesa de trabajo',tx('craftTop','planks','craftSide'),{dureza:2.5,herr:'hacha',inter:'mesa',inflamable:true});
 bloque(17,'horno','Horno',tx('furnaceTop','furnaceTop','furnaceFront'),{dureza:3.5,herr:'pico',nivel:1,inter:'horno',resistencia:3.5});
-bloque(18,'cofre','Cofre',tx('chestTop','chestTop','chestSide'),{dureza:2.5,herr:'hacha',inter:'cofre'});
+bloque(18,'cofre','Cofre',tx('chestTop','chestTop','chestSide'),{forma:'cajas',cajas:[[.0625,0,.0625,.9375,.875,.9375]],opaco:false,dureza:2.5,herr:'hacha',inter:'cofre'});
 bloque(19,'grava','Grava','gravel',{dureza:.6,herr:'pala',gravedad:true,resistencia:.6,
   suelta:ctx=>[[prob(ctx.fortuna?[.1,.14,.25,1][ctx.fortuna]:.1)?218:19,1]]});
 bloque(20,'pizarra','Pizarra profunda',tx('deepslateTop','deepslateTop','deepslate'),{dureza:3,herr:'pico',nivel:1,resistencia:6});
@@ -309,6 +309,16 @@ bloque(1423,'telarana','Telaraña','cobweb',{forma:'cruz',dureza:4,herr:'espada'
   for(let f=0;f<4;f++)bloque(base+f,cl+(f||''),nom,t,{forma:'cajas',cajas:cajasEscalera(f),dureza:2,herr:h,nivel:h==='pico'?1:0,opaco:false,orienta:'escalera',base,resistencia:6,suelta:base,inflamable:h==='hacha'});
   bloque(1448+i,cl.replace('escalera','losa'),nom.replace('Escaleras','Losa'),t,{forma:'cajas',cajas:[[0,0,0,1,.5,1]],dureza:2,herr:h,nivel:h==='pico'?1:0,opaco:false,resistencia:6,inflamable:h==='hacha'});
 });
+/* ---------- Monumento oceánico, End y animaciones ---------- */
+bloque(1454,'prismarina','Prismarina','prismarine',{dureza:1.5,herr:'pico',nivel:1,resistencia:6});
+bloque(1455,'ladrillosPrismarina','Ladrillos de prismarina','prismarineBricks',{dureza:1.5,herr:'pico',nivel:1,resistencia:6});
+bloque(1456,'prismarinaOscura','Prismarina oscura','darkPrismarine',{dureza:1.5,herr:'pico',nivel:1,resistencia:6});
+bloque(1457,'farolMarino','Farol marino','seaLantern',{dureza:.3,luz:15,suelta:()=>[[548,azar(2,3)]],resistencia:.3});
+bloque(1458,'esponja','Esponja','sponge',{dureza:.6,herr:'azada',resistencia:.6});
+bloque(1459,'esponjaMojada','Esponja mojada','wetSponge',{dureza:.6,herr:'azada',resistencia:.6});
+bloque(1460,'cabezaDragon','Cabeza de dragón','dragonHead',{forma:'cajas',cajas:[[.2,0,.2,.8,.5,.8]],opaco:false,dureza:1});
+bloque(1461,'cofreAbierto','Cofre',tx('chestTop','chestTop','chestSide'),{forma:'cajas',cajas:[[.0625,0,.0625,.9375,.625,.9375]],opaco:false,dureza:2.5,herr:'hacha',inter:'cofre',suelta:18});
+bloque(1462,'puertaAnim','Puerta','vacio',{forma:'cruz',solido:false,opaco:false,dureza:3,suelta:0});
 bloque(1339,'brotePalido','Brote de roble pálido','paleSapling',{forma:'cruz',dureza:0});
 const NB=BLOQUES.length;
 const SOLIDO=new Uint8Array(NB), OPACO=new Uint8Array(NB), TRANS=new Uint8Array(NB), LUZB=new Uint8Array(NB),
@@ -335,7 +345,7 @@ const nivelLiquido=id=>BLOQUES[id].nivelL;
    Registro de objetos
    ========================================================= */
 const ITEMS=[], I={};
-const esVariante=i=>(i>=130&&i<=132)||(i>=134&&i<=136)||(i>=138&&i<=140)||(i>=146&&i<=148)||(i>=149&&i<=168)||(i>=1192&&i<=1212)||i===1283||i===1216||i===1218||i===1220||i===1223||(i>=1224&&i<=1259&&i!==1227&&i!==1245)||(i>=1261&&i<=1269)||(i>=1271&&i<=1273)||i===1287||i===1317||i===1319||i===1328||i===1330||(i>=1424&&i<=1447&&(i-1424)%4!==0);
+const esVariante=i=>(i>=130&&i<=132)||(i>=134&&i<=136)||(i>=138&&i<=140)||(i>=146&&i<=148)||(i>=149&&i<=168)||(i>=1192&&i<=1212)||i===1283||i===1216||i===1218||i===1220||i===1223||(i>=1224&&i<=1259&&i!==1227&&i!==1245)||(i>=1261&&i<=1269)||(i>=1271&&i<=1273)||i===1287||i===1317||i===1319||i===1328||i===1330||(i>=1424&&i<=1447&&(i-1424)%4!==0)||i===1461||i===1462;
 BLOQUES.forEach((b,i)=>{if(b&&!b.liquido&&b.forma!=='portal'&&i!==86&&!(i>=41&&i<=48)&&!esVariante(i))ITEMS[i]={nombre:b.nombre,bloque:true,max:64,clave:b.clave};});
 function item(id,clave,nombre,props){ITEMS[id]=Object.assign({nombre,max:64,clave},props);I[clave]=id;}
 item(200,'palo','Palo'); item(201,'carbon','Carbón'); item(202,'hierroBruto','Hierro en bruto'); item(203,'lingoteHierro','Lingote de hierro');
@@ -387,6 +397,7 @@ item(541,'llavePrueba','Llave de prueba');
 item(542,'saquito','Saquito',{max:1,saquito:true}); item(543,'grumoResina','Grumo de resina'); item(544,'ladrilloResina','Ladrillo de resina');
 item(545,'arnes','Arnés',{max:1});
 item(546,'libroEncantado','Libro encantado',{max:1});
+item(547,'fragmentoPrismarina','Fragmento de prismarina'); item(548,'cristalPrismarina','Cristales de prismarina'); item(549,'caparazonShulker','Caparazón de shulker');
 const TINTE_ID=[]; COLORES16.forEach(([cl,m],k)=>{item(550+k,'tinte_'+cl,'Tinte '+m,{tinte:k});TINTE_ID[k]=550+k;});
 // Huevos de aparición (modo creativo)
 const HUEVOS={cerdo:[0xf0a0a0,0xd06060],vaca:[0x4a3222,0xa8a8a8],oveja:[0xe8e8e8,0xffb0b0],gallina:[0xf0f0f0,0xd02020],zombi:[0x00a8a8,0x6a9a4a],
@@ -588,6 +599,8 @@ receta(['C','L'],{C:I.cuerda,L:I.cuero},542);
    receta(['LL'],{L:LANA_COLOR[k]},ALFOMBRA[k],3);
  });}
 receta(['SS'],{S:B.losaPiedra},B.piedraLisa);
+receta(['PP','PP'],{P:547},B.prismarina); receta(['PPP','PPP','PPP'],{P:547},B.ladrillosPrismarina);
+receta(['PPP','PTP','PPP'],{P:547,T:TINTE_ID[15]},B.prismarinaOscura); receta(['PCP','CCC','PCP'],{P:547,C:548},B.farolMarino);
 receta(['GG','GG'],{G:B.granito},B.granitoPulido,4); receta(['GG','GG'],{G:B.diorita},B.dioritaPulida,4); receta(['GG','GG'],{G:B.andesita},B.andesitaPulida,4);
 receta(['GG','GG'],{G:B.pizarraAdoquinada},B.pizarraPulida,4); receta(['GG','GG'],{G:B.pizarraPulida},B.ladrillosPizarra,4);
 receta(['S','S'],{S:B.losaLadrillos},B.piedraCincelada); receta(['SS','SS'],{S:B.arenisca},B.areniscaCortada,4);
@@ -645,7 +658,7 @@ const FUNDIR={
   [B.roca]:B.piedra,[B.arena]:B.vidrio,[B.arenaRoja]:B.vidrio,[B.tronco]:I.carbon,[B.troncoAbedul]:I.carbon,[B.troncoAbeto]:I.carbon,[B.troncoJungla]:I.carbon,[B.troncoAcacia]:I.carbon,
   [251]:250,[B.arcilla]:B.terracota,[519]:526,[B.piedraNegra]:B.piedraNegra,
   [I.cerdoCrudo]:I.cerdoAsado,[I.resCruda]:I.filete,[I.polloCrudo]:I.polloAsado,[I.corderoCrudo]:I.corderoAsado,
-  [B.restosAncestrales]:534,[B.cactus]:TINTE_ID[13],[B.pizarraAdoquinada]:B.pizarra,[B.ladrillosPiedra]:B.ladrillosAgrietados,[B.arena+0]:B.vidrio,[543]:544,[B.troncoPalido]:I.carbon,[B.troncoCerezo]:I.carbon,[B.troncoMangle]:I.carbon,
+  [B.restosAncestrales]:534,[B.esponjaMojada]:B.esponja,[B.cactus]:TINTE_ID[13],[B.pizarraAdoquinada]:B.pizarra,[B.ladrillosPiedra]:B.ladrillosAgrietados,[B.arena+0]:B.vidrio,[543]:544,[B.troncoPalido]:I.carbon,[B.troncoCerezo]:I.carbon,[B.troncoMangle]:I.carbon,
 };
 [B.restosAncestrales,B.bloqueNetherite].forEach(id=>ITEMS[id].ignifugo=true);
 const COMBUSTIBLE={1178:15,1179:15,[I.carbon]:80,[B.bloqueCarbon]:800,[I.cuboLava]:1000,[I.varaBlaze]:120,[B.tablones]:15,[B.tronco]:15,

@@ -62,7 +62,7 @@ function setBloque(x,y,z,id,opc={}){
   ch.datos[i]=id;
   if(id&&y>ch.ymax)ch.ymax=y; if(id&&y<ch.ymin)ch.ymin=y;
   if(id===B.generador)ch.generadores.push([lx,y,lz]);
-  if(anterior===B.horno||anterior===B.cofre)vaciarContenedor(x,y,z);
+  if((anterior===B.horno||anterior===B.cofre||anterior===B.cofreAbierto)&&id!==B.cofre&&id!==B.cofreAbierto)vaciarContenedor(x,y,z);
   const k=claveChunk(cx,cz); (dim.ediciones[k]||(dim.ediciones[k]={}))[lx+','+y+','+lz]=id;
   marcarSucioPos(x,z);
   if(ch.luz)actualizarLuz(x,y,z);
@@ -938,7 +938,7 @@ function generarIslaExterior(datos,x,z,wx,wz){
 }
 // Ciudades del End: una por región de 96x96 bloques en las islas exteriores
 function ciudadesCerca(cx,cz){
-  const res=[],R=96,x0=Math.floor((cx*CX-40)/R),x1=Math.floor((cx*CX+CX+40)/R),z0=Math.floor((cz*CZ-40)/R),z1=Math.floor((cz*CZ+CZ+40)/R);
+  const res=[],R=96,x0=Math.floor((cx*CX-60)/R),x1=Math.floor((cx*CX+CX+60)/R),z0=Math.floor((cz*CZ-60)/R),z1=Math.floor((cz*CZ+CZ+60)/R);
   for(let rx=x0;rx<=x1;rx++)for(let rz=z0;rz<=z1;rz++){
     const h=hash2(rx,rz,semilla+555); if(h>.55)continue;
     const x=rx*R+16+Math.floor(hash2(rx,rz,semilla+556)*64), z=rz*R+16+Math.floor(hash2(rx,rz,semilla+557)*64);
@@ -948,6 +948,11 @@ function ciudadesCerca(cx,cz){
   }
   return res;
 }
+// Datos de la ciudad que se usan también al jugar (barco, shulkers)
+function datosCiudadEnd(c){
+  const t=c.y+4+c.alto, barco=hash2(c.x,c.z,semilla+559)<.65;
+  return {t,barco,bx:c.x-26,by:t+8,bz:c.z};
+}
 function construirCiudadEnd(ch){
   const bx=ch.cx*CX,bz=ch.cz*CZ;
   for(const c of ciudadesCerca(ch.cx,ch.cz)){
@@ -955,30 +960,81 @@ function construirCiudadEnd(ch){
       if(b===B.cofre)registrarCofre(DIMS.end,x,y,z,'ciudadEnd');};
     const caja=(x0,y0,z0,x1,y1,z1,borde,dentro)=>{for(let x=x0;x<=x1;x++)for(let y=y0;y<=y1;y++)for(let z=z0;z<=z1;z++){
       const b=(x===x0||x===x1||z===z0||z===z1||y===y0||y===y1);pon(x,y,z,b?borde:dentro);}};
-    // Cimientos
-    for(let x=c.x-4;x<=c.x+4;x++)for(let z=c.z-4;z<=c.z+4;z++)for(let y=c.y-6;y<c.y;y++)pon(x,y,z,B.ladrillosEnd);
-    // Torre
-    const r=3;
-    caja(c.x-r,c.y,c.z-r,c.x+r,c.y+c.alto,c.z+r,B.purpur,0);
-    for(let y=c.y;y<=c.y+c.alto;y++){pon(c.x-r,y,c.z-r,B.pilarPurpur);pon(c.x+r,y,c.z-r,B.pilarPurpur);pon(c.x-r,y,c.z+r,B.pilarPurpur);pon(c.x+r,y,c.z+r,B.pilarPurpur);}
-    // Puerta y escalera interior
-    pon(c.x,c.y+1,c.z-r,0);pon(c.x,c.y+2,c.z-r,0);
-    for(let y=c.y+1;y<c.y+c.alto;y++)pon(c.x+r-1,y,c.z,146);
-    for(let y=c.y+4;y<c.y+c.alto;y+=5){for(let x=c.x-r+1;x<c.x+r;x++)for(let z=c.z-r+1;z<c.z+r;z++)if(x!==c.x+r-1||z!==c.z)pon(x,y,z,B.purpur);
-      pon(c.x-r,y+2,c.z,B.vidrio);pon(c.x+r,y+2,c.z,B.vidrio);pon(c.x,y+2,c.z+r,B.vidrio);}
-    // Sala superior con el botín
-    const t=c.y+c.alto;
+    const VM=VIDRIO_COLOR[10], D=datosCiudadEnd(c), t=D.t;
+    const esquinas=(x0,z0,x1,z1,y0,y1,b)=>{for(let y=y0;y<=y1;y++)for(const [x,z] of [[x0,z0],[x1,z0],[x0,z1],[x1,z1]])pon(x,y,z,b);};
+    const varas=(x0,z0,x1,z1,y)=>{for(const [x,z,dx,dz] of [[x0,z0,-1,-1],[x1,z0,1,-1],[x0,z1,-1,1],[x1,z1,1,1]]){pon(x+dx,y,z,B.varaEnd);pon(x,y,z+dz,B.varaEnd);}};
+    // Cimientos escalonados
+    for(let x=c.x-7;x<=c.x+7;x++)for(let z=c.z-7;z<=c.z+7;z++){const d=Math.max(Math.abs(x-c.x),Math.abs(z-c.z));
+      for(let y=c.y-6;y<c.y;y++)if(d<=7-Math.max(0,c.y-1-y))pon(x,y,z,B.ladrillosEnd);}
+    // Casa de la base
+    caja(c.x-5,c.y,c.z-5,c.x+5,c.y+4,c.z+5,B.purpur,0);
+    esquinas(c.x-5,c.z-5,c.x+5,c.z+5,c.y,c.y+4,B.pilarPurpur);
+    for(let x=c.x-4;x<=c.x+4;x++)for(let z=c.z-4;z<=c.z+4;z++)pon(x,c.y,z,((x+z)&1)?B.ladrillosEnd:B.purpur);
+    for(const dx of [-2,2])for(const dz of [-5,5]){pon(c.x+dx,c.y+2,c.z+dz,VM);pon(c.x+dx,c.y+3,c.z+dz,VM);}
+    for(let y=c.y+1;y<=c.y+3;y++){pon(c.x,y,c.z-5,0);pon(c.x-1,y,c.z-5,0);}
+    varas(c.x-5,c.z-5,c.x+5,c.z+5,c.y+4);
+    // Torre principal
+    const r=3, y0=c.y+4;
+    caja(c.x-r,y0,c.z-r,c.x+r,t,c.z+r,B.purpur,0);
+    esquinas(c.x-r,c.z-r,c.x+r,c.z+r,y0,t,B.pilarPurpur);
+    for(let y=y0;y<t;y++)pon(c.x+r-1,y,c.z,146);
+    for(let y=y0+5;y<t;y+=5){
+      for(let x=c.x-r+1;x<c.x+r;x++)for(let z=c.z-r+1;z<c.z+r;z++)if(x!==c.x+r-1||z!==c.z)pon(x,y,z,B.purpur);
+      for(const [x,z] of [[c.x-r,c.z],[c.x,c.z+r],[c.x,c.z-r]]){pon(x,y+2,z,VM);pon(x,y+3,z,VM);}
+      varas(c.x-r,c.z-r,c.x+r,c.z+r,y);
+    }
+    // Rama con puente y torre secundaria
+    const ym=y0+5*Math.max(1,Math.floor(c.alto/10));
+    for(let x=c.x+r;x<=c.x+r+9;x++)for(let z=c.z-1;z<=c.z+1;z++){pon(x,ym,z,B.purpur);if(Math.abs(z-c.z)===1)pon(x,ym+1,z,B.ladrillosEnd);}
+    for(let y=ym+1;y<=ym+2;y++)pon(c.x+r,y,c.z,0);
+    const sx=c.x+r+12;
+    caja(sx-2,ym-6,c.z-2,sx+2,ym+6,c.z+2,B.purpur,0);
+    esquinas(sx-2,c.z-2,sx+2,c.z+2,ym-6,ym+6,B.pilarPurpur);
+    for(let y=ym+1;y<=ym+2;y++)pon(sx-2,y,c.z,0);
+    for(let x=sx-1;x<=sx+1;x++)for(let z=c.z-1;z<=c.z+1;z++)pon(x,ym,z,B.purpur);
+    pon(sx,ym+1,c.z+1,B.cofre); pon(sx+1,ym+1,c.z-1,B.varaEnd);
+    for(let y=ym+7;y<=ym+9;y++)pon(sx,y,c.z,y===ym+9?B.varaEnd:B.pilarPurpur);
+    varas(sx-2,c.z-2,sx+2,c.z+2,ym+6);
+    // Sala superior con ventanas y tejado piramidal
     caja(c.x-5,t,c.z-5,c.x+5,t+6,c.z+5,B.purpur,0);
-    for(let x=c.x-4;x<=c.x+4;x++)for(let z=c.z-4;z<=c.z+4;z++)pon(x,t,z,B.ladrillosEnd);
+    for(let x=c.x-4;x<=c.x+4;x++)for(let z=c.z-4;z<=c.z+4;z++)pon(x,t,z,(Math.abs(x-c.x)+Math.abs(z-c.z))%3===0?B.purpur:B.ladrillosEnd);
     pon(c.x+r-1,t,c.z,0);
+    for(let k=-3;k<=3;k++)for(const [x,z] of [[c.x+k,c.z-5],[c.x+k,c.z+5],[c.x-5,c.z+k],[c.x+5,c.z+k]]){pon(x,t+3,z,VM);if(Math.abs(k)<=1)pon(x,t+4,z,VM);}
+    esquinas(c.x-5,c.z-5,c.x+5,c.z+5,t,t+6,B.pilarPurpur);
+    for(let L=0;L<=5;L++)for(let x=c.x-5+L;x<=c.x+5-L;x++)for(let z=c.z-5+L;z<=c.z+5-L;z++)
+      if(x===c.x-5+L||x===c.x+5-L||z===c.z-5+L||z===c.z+5-L)pon(x,t+7+L,z,B.purpur);
+    for(let y=t+13;y<=t+15;y++)pon(c.x,y,c.z,B.varaEnd);
     for(const [dx,dz] of [[-4,-4],[4,-4],[-4,4],[4,4]])pon(c.x+dx,t+1,c.z+dz,B.varaEnd);
     pon(c.x-2,t+1,c.z+4,B.cofre);pon(c.x+2,t+1,c.z+4,B.cofre);
-    pon(c.x,t+4,c.z-5,B.vidrio);pon(c.x-1,t+4,c.z-5,B.vidrio);pon(c.x+1,t+4,c.z-5,B.vidrio);
-    // Soporte de los élitros
-    pon(c.x,t+1,c.z,B.obsidiana);pon(c.x,t+2,c.z,B.cofre);
-    const k=DIMS.end.clave+':'+clavePos(c.x,t+2,c.z);
-    if(!cofres[k]){const cf=new Array(27).fill(null);cf[13]=crearPila(I.elitros);cf[4]=crearPila(I.cohete,8);cofres[k]=cf;}
-    for(let x=c.x-5;x<=c.x+5;x+=10)for(let y=t+1;y<=t+6;y++)for(const z of [c.z-5,c.z+5])pon(x,y,z,B.pilarPurpur);
+    if(!D.barco){ // sin barco: los élitros esperan en la sala superior
+      pon(c.x,t+1,c.z,B.obsidiana);pon(c.x,t+2,c.z,B.cofre);
+      const k=DIMS.end.clave+':'+clavePos(c.x,t+2,c.z);
+      if(!cofres[k]){const cf=new Array(27).fill(null);cf[13]=crearPila(I.elitros);cf[4]=crearPila(I.cohete,8);cofres[k]=cf;}
+    }
+    // Barco del End flotando junto a la ciudad
+    if(D.barco){
+      const X0=D.bx-10, Y=D.by, Z=D.bz;
+      for(let u=0;u<=21;u++){
+        const w=u<3?1:u>17?Math.max(0,21-u):3, x=X0+u;
+        for(let v=-w;v<=w;v++){
+          pon(x,Y,Z+v,B.purpur);
+          if(Math.abs(v)===w){pon(x,Y+1,Z+v,B.purpur);if(u%3===0)pon(x,Y+2,Z+v,B.varaEnd);}
+          else pon(x,Y+1,Z+v,0);
+          if(Math.abs(v)<w&&u>2&&u<18){pon(x,Y-1,Z+v,B.purpur);if(Math.abs(v)<w-1)pon(x,Y-2,Z+v,B.obsidiana);}
+        }
+      }
+      // Camarote bajo cubierta
+      for(let x=X0+6;x<=X0+14;x++)for(let z=Z-2;z<=Z+2;z++)for(let y=Y-3;y<=Y-1;y++){
+        const borde=x===X0+6||x===X0+14||Math.abs(z-Z)===2||y===Y-3;pon(x,y,z,borde?B.ladrillosEnd:0);}
+      pon(X0+10,Y,Z,0); for(let y=Y-2;y<=Y;y++)pon(X0+10,y,Z+1,145+1);
+      pon(X0+8,Y-2,Z-1,B.cofre); pon(X0+12,Y-2,Z-1,B.cofre); pon(X0+7,Y-2,Z+1,B.varaEnd); pon(X0+13,Y-2,Z+1,B.varaEnd);
+      // Mástil y velas
+      for(let y=Y+1;y<=Y+12;y++)pon(X0+10,y,Z,B.pilarPurpur);
+      for(let y=Y+5;y<=Y+10;y++)for(let v=-3;v<=3;v++)if(v)pon(X0+10,y,Z+v,LANA_COLOR[15]);
+      for(let y=Y+1;y<=Y+4;y++)pon(X0+17,y,Z,B.pilarPurpur);
+      for(let y=Y+2;y<=Y+4;y++)for(let v=-2;v<=2;v++)if(v)pon(X0+17,y,Z+v,LANA_COLOR[15]);
+      pon(X0+21,Y+1,Z,B.cabezaDragon);
+    }
   }
 }
 

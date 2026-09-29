@@ -78,7 +78,7 @@ function fisicaJugador(dt,entrada){
   if(puedeCorrer&&teclas.KeyR)j.corriendo=true;
   let rapidez=j.vuela?(j.corriendo?21:11):j.corriendo?5.6:4.3;
   if(j.agachado)rapidez=1.3*(1+.45*nivelEnc(inv[38],'sigilo'));
-  if(efectos.rapidez)rapidez*=1.2;
+  if(efectos.rapidez)rapidez*=1.2; if(efectos.lentitud)rapidez*=.7;
   if(comiendo>=0||arcoCarga>=0)rapidez*=.35;
   if(j.enAgua&&!j.vuela)rapidez*=.5+.5*nivelEnc(inv[39],'agilidadAcuatica')/3; if(j.enLava)rapidez*=.3;
   {const bajo=getBloque(Math.floor(j.pos.x),Math.floor(j.pos.y-.2),Math.floor(j.pos.z)),va=nivelEnc(inv[39],'velocidadAlmas');
@@ -104,6 +104,7 @@ function fisicaJugador(dt,entrada){
     if(entrada&&teclas.Space&&j.suelo){j.vel.y=8.9;if(sup)agotamiento+=j.corriendo?.2:.05;
       if(j.corriendo){j.vel.x+=Math.sin(j.yaw)*-1.8;j.vel.z+=Math.cos(j.yaw)*-1.8;}}
   }
+  if(efectos.levitacion&&!j.vuela&&!j.montura)j.vel.y=Math.max(j.vel.y,1.8);
   j.enEscalera=!j.vuela&&enEscalera(j);
   if(j.enEscalera){
     j.vel.x=clamp(j.vel.x,-2.2,2.2);j.vel.z=clamp(j.vel.z,-2.2,2.2);
@@ -328,6 +329,7 @@ function tiempoRomper(b,pila){
   if(h&&h.tipo==='espada'&&b!==B.hojas)vel=b===B.telarana?15:1;
   const puede=puedeCosechar(b,pila);
   if(jugador.ojosAgua&&!nivelEnc(inv[36],'afinidadAcuatica'))vel/=5;
+  if(efectos.fatigaMinera)vel/=10;
   if(!jugador.suelo&&!jugador.vuela&&!jugador.enAgua)vel/=5;
   const porTick=vel/def.dureza/(puede?30:100);
   if(porTick>1)return 0;
@@ -390,7 +392,7 @@ function atacar(){
   if(obj&&obj.tipo==='arana')dano+=2.5*nivelEnc(p,'perdicion')*carga;
   const critico=carga>.9&&!jugador.suelo&&jugador.vel.y<0&&!jugador.enAgua&&!jugador.vuela;
   if(critico){dano*=1.5;sonar('critico');}
-  if(efectos.fuerza)dano+=3;
+  if(efectos.fuerza)dano+=3; if(efectos.debilidad)dano=Math.max(0,dano-4);
   if(h&&h.tipo==='maza')dano+=impactoMaza(apuntadoEnt.mob||null);
   if(!supervivencia()&&h&&h.tipo==='espada')dano=Math.max(dano,1);
   agotamiento+=.1;
@@ -462,6 +464,7 @@ function colocarBloque(id){
   if(esRiel(real))colocarRiel(x,y,z);
   if(real===B.calabaza||real===B.linternaCalabaza)comprobarGolem(x,y,z);
   if(real===B.ghastSeco)registrarFantasma(x,y,z);
+  if(real===B.esponja)absorberAgua(x,y,z);
   sonar('poner',{x,y,z},1); pasoSonido(real,1);
   balancearMano();
   return true;

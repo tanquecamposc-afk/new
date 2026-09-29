@@ -37,7 +37,7 @@ function muslo(elipse,linea,P,c){elipse(9,7,4.5,4,c,12);linea(5,10,3,13,[236,230
 function dibujarItem(id){
   const it=ITEMS[id];
   if(it.herr&&!it.iconoPropio)return dibujarHerramienta(it);
-  if(it.armadura)return dibujarArmadura(it);
+  if(it.armadura&&!it.elitros)return dibujarArmadura(it);
   return lienzo16(id*31,({P,linea,elipse,rect,rnd})=>{
     switch(id){
       case I.palo: linea(4,12,12,4,PALO); linea(4,11,11,4,[156,116,66]); break;
@@ -105,7 +105,10 @@ function dibujarItem(id){
       case 525: elipse(8,8.5,4.5,4,[110,200,90],10); P(6,7,[180,255,160]); break;
       case 520: rect(2,7,13,12,[110,110,116]); rect(3,8,12,11,[60,60,64]); P(4,13,[40,40,40]);P(11,13,[40,40,40]); break;
       case 521: for(let y=8;y<=12;y++){const w=y<12?6:5;for(let x=8-w;x<8+w;x++)P(x,y,y===8?[190,150,90]:[150,110,60]);} break;
-      case 522: for(let y=2;y<=14;y++){const w=Math.floor((y-1)*.5);P(7-w,y,[150,150,170]);P(8+w,y,[150,150,170]);for(let x=7-w+1;x<8+w;x++)if(x<7||x>8)P(x,y,[120,120,145]);} break;
+      case 522: // élitros: dos alas membranosas grises con nervios
+        for(const s of [-1,1])for(let y=1;y<=14;y++){const ancho=Math.round(1+Math.min(y,9)*.55-(y>11?(y-11)*.9:0));
+          for(let k=0;k<ancho;k++){const x=s<0?6-k:9+k;const nervio=k===Math.floor(ancho*.5)||y%4===0;P(x,y,nervio?[112,112,140]:k===ancho-1?[190,192,210]:[152,154,178]);}}
+        linea(7,1,7,6,[90,90,110]); linea(8,1,8,6,[90,90,110]); break;
       case 523: linea(7,14,7,4,[180,40,40]); rect(6,4,8,8,[200,50,50]); P(7,3,[240,240,240]); linea(7,14,7,15,[120,90,50]); break;
       case I.ladrillo: for(let y=6;y<=10;y++)for(let x=3;x<=12;x++)P(x,y,y===6?[200,110,90]:y===10?[120,50,40]:[170,76,58]); break;
       case I.bolaArcilla: elipse(8,8.5,4.5,4,[160,168,182],12); break;
@@ -128,7 +131,13 @@ function dibujarItem(id){
       case 545: rect(3,5,12,10,[150,94,56]); rect(4,6,11,9,[120,70,40]); rect(6,4,9,5,[180,200,220]); rect(2,7,3,8,[200,200,210]); rect(12,7,13,8,[200,200,210]); break;
       case 538: elipse(8,8,5,5,[190,230,240],10); elipse(8,8,3,3,[120,190,220],8); linea(5,8,11,8,[240,255,255]); P(8,5,[240,255,255]); break;
       case 539: linea(4,12,12,4,[210,240,250]); linea(5,12,12,5,[140,190,220]); break;
-      case 540: linea(3,13,10,6,[120,90,60]); linea(4,13,10,7,[90,64,40]); rect(9,2,14,7,[110,112,122]); rect(10,3,13,6,[150,154,166]); P(14,2,[200,204,214]); break;
+      case 540: // maza: mango de vara de breeze y cabeza pesada con pinchos
+        linea(2,14,8,8,[120,170,210]); linea(3,14,8,9,[80,120,160]); P(2,13,[60,60,70]);P(3,13,[60,60,70]);
+        rect(8,3,13,8,[70,72,80]); rect(9,4,12,7,[110,114,124]); rect(9,4,10,5,[160,164,176]);
+        for(const [x,y] of [[7,5],[11,2],[14,5],[11,9],[7,3],[14,8],[7,8],[14,2]])P(x,y,[190,194,204]); P(10,5,[120,200,230]); break;
+      case 547: for(let k=0;k<3;k++){const x=4+k*3,y=5+(k%2)*3;for(let q=0;q<3;q++)P(x+q,y+2-q,[110,190,170]);P(x,y+2,[70,140,130]);} break;
+      case 548: for(const [x,y] of [[5,6],[8,4],[10,8],[6,10],[9,11]]){P(x,y,[220,240,230]);P(x+1,y,[180,230,220]);P(x,y+1,[160,220,210]);} break;
+      case 549: for(let y=4;y<=12;y++){const w=Math.round(5-Math.abs(y-8)*.4);for(let x=8-w;x<=8+w;x++)P(x,y,y<8?[160,100,160]:[130,80,130]);} linea(3,8,13,8,[90,50,90]); break;
       case 541: elipse(5,6,3,3,[230,160,70],8); for(let x=7;x<=13;x++)P(x,9,[230,160,70]); P(12,10,[230,160,70]); P(10,10,[230,160,70]); P(5,6,[60,40,20]); break;
       default:
         if(it.tinte!==undefined){const c=COLORES16[it.tinte][3];elipse(8,9,4.5,4,c,16);P(6,7,c.map(v=>Math.min(255,v+60)));linea(6,4,9,4,[200,200,200]);P(10,5,[200,200,200]);}

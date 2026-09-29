@@ -52,6 +52,7 @@ function generarV120(ch,info){
   }
   construirCiudadesAntiguas(ch);
   construirCamarasPrueba(ch);
+  construirMonumentos(ch);
   registrarCorazones(ch);
   // ---- Superficie: pozos, pirámides y ruinas ----
   const centro=info[8*CX+8], hC=centro.h;
@@ -379,6 +380,7 @@ const IA_EXTRA={
 };
 function def_dano(m){return m.def.dano;}
 function aparicionExtra(x,z){
+  if(aparicionFinal(x,z))return true;
   if(aparicionCompleto(x,z))return true;
   if(Math.random()>.05)return false;
   const bio=infoColumna(x,z).bioma;
