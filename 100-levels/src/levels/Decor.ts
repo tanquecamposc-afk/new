@@ -35,9 +35,11 @@ function windowsTexture() {
   return winTex;
 }
 
-export function cityBackdrop(b: Builder, center: THREE.Vector3, rIn: number, rOut: number, count: number, tint = 0xffffff) {
+export function cityBackdrop(b: Builder, center: THREE.Vector3, rIn: number, rOut: number, count: number, tint = 0xffffff, day = false) {
   const geo = cachedGeo('bldg', () => new THREE.BoxGeometry(1, 1, 1).translate(0, 0.5, 0));
-  const m = mat('bldgMat' + tint, { color: 0x1a1e28, roughness: 0.6, metalness: 0.4, emissive: tint, emissiveIntensity: 1.3 });
+  const m = day
+    ? mat('bldgDay', { color: 0x6f86a6, roughness: 0.3, metalness: 0.55, emissive: 0xcfe4ff, emissiveIntensity: 0.12 })
+    : mat('bldgMat' + tint, { color: 0x1a1e28, roughness: 0.6, metalness: 0.4, emissive: tint, emissiveIntensity: 1.3 });
   m.emissiveMap = windowsTexture();
   const items: { pos: THREE.Vector3; scale: THREE.Vector3 }[] = [];
   for (let i = 0; i < count; i++) {
@@ -47,6 +49,7 @@ export function cityBackdrop(b: Builder, center: THREE.Vector3, rIn: number, rOu
     items.push({ pos: new THREE.Vector3(center.x + Math.cos(a) * r, center.y - 40, center.z + Math.sin(a) * r), scale: new THREE.Vector3(w, h + 40, d) });
   }
   b.instanced(geo, m, items, false);
+  if (day) return;
   // Rooftop beacons
   const beacons = items.filter((_, i) => i % 3 === 0).map((it) => ({ pos: it.pos.clone().setY(it.pos.y + it.scale.y + 1), scale: new THREE.Vector3(0.6, 0.6, 0.6) }));
   b.instanced(cachedGeo('beaconSph', () => new THREE.SphereGeometry(1, 8, 6)), glowMat(0xff3040, 4), beacons, false);

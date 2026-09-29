@@ -6,7 +6,7 @@ import type { Session, LevelLogic } from '../Session';
 import { Builder } from '../Builder';
 import { Course, SegKind, voidGlow } from './parkourKit';
 import { cityBackdrop } from '../Decor';
-import { M, glowMat, mat, cachedGeo } from '../../gfx/Materials';
+import { M, glowMat, mat, cachedGeo, PARKOUR_PALETTE } from '../../gfx/Materials';
 import { BreakableWall } from '../../entities/Pickups';
 import { LaunchPad } from '../../entities/Platforms';
 
@@ -37,13 +37,17 @@ export function buildParkour(s: Session, variant: string, opts: ParkourOpts = {}
   const plan = opts.plan ? { segs: opts.plan, diff: PLANS[variant]?.diff ?? 0.5 } : PLANS[variant] ?? PLANS.basics;
   const diff = Math.min(1, plan.diff + (opts.diffBoost ?? 0) + (s.diff.id === 'normal' ? 0 : s.diff.id === 'hard' ? 0.1 : 0.2));
   const retroMat = opts.retro ? mat('retroBrick', { tex: 'brick', color: 0xc86a30, roughness: 1, flatShading: true }) : null;
-  const course = new Course(b, new THREE.Vector3(0, 20, 0), diff, retroMat ?? M.concrete(), opts.retro ? 0xffe066 : 0x34d4ff);
+  const course = new Course(b, new THREE.Vector3(0, 20, 0), diff, retroMat ?? M.pkWhite(), opts.retro ? 0xffe066 : 0xffffff);
+  if (!opts.retro) {
+    course.palette = PARKOUR_PALETTE.map((f) => f());
+    course.padMat = M.pkWhite();
+  }
   course.hints = s.meta.num <= 3;
   if (opts.onPad) course.onPad = (c) => opts.onPad!(c, b);
 
   // Start rooftop
   course.plat(0, 0, 0, 12, 12);
-  b.box(new THREE.Vector3(0, 20 - 6, 0), new THREE.Vector3(10, 10, 10), M.darkConcrete(), { collide: false });
+  b.box(new THREE.Vector3(0, 20 - 6, 0), new THREE.Vector3(10, 10, 10), M.concrete(), { collide: false });
   course.advance(6);
   if (s.meta.num === 1) {
     course.hint('WASD to move · Mouse to look · SPACE to jump', -3);
@@ -52,6 +56,7 @@ export function buildParkour(s: Session, variant: string, opts: ParkourOpts = {}
   plan.segs.forEach(([k, n], i) => {
     if (i > 0) course.pad(6, 7, i % 2 === 0);
     if (s.meta.num === 1 && i === 1) course.hint('Hold SHIFT to sprint · Q = Air Dash in mid-air', 0);
+    if (s.meta.num === 1 && i === 2) course.hint('Run into ledges to vault & climb · CTRL while sprinting = slide', 0);
     if (s.meta.num <= 3 && k === 'lasers') course.hint('Jump over low lasers · Crouch (CTRL) under high ones', 0);
     course.seg(k, n);
     if (i === midSecret) placeSecret(s, b, course);
@@ -119,14 +124,14 @@ function placeSecret(s: Session, b: Builder, c: Course) {
 
 function decorateCity(b: Builder, end: THREE.Vector3, s: Session) {
   const mid = end.clone().multiplyScalar(0.5);
-  cityBackdrop(b, mid.clone().setY(0), 90, 260, 90);
-  voidGlow(b, mid.clone().setY(-5), 600, 0x3050ff);
-  // Neon billboards
+  cityBackdrop(b, mid.clone().setY(0), 90, 260, 70, 0xffffff, true);
+  voidGlow(b, mid.clone().setY(-5), 600, 0x8ab8ff);
+  // Coloured billboards
   for (let i = 0; i < 6; i++) {
     const a = b.rng.range(0, Math.PI * 2);
     const p = mid.clone().add(new THREE.Vector3(Math.cos(a) * 70, b.rng.range(15, 35), Math.sin(a) * 70));
-    const colors = [0xff2d9a, 0x34d4ff, 0xffd23d, 0x3dffa2];
-    const m = new THREE.Mesh(new THREE.PlaneGeometry(12, 5), glowMat(colors[i % 4], 1.6));
+    const colors = [0xff5a3d, 0x2ec4c9, 0xffcf3d, 0x4a7cf0];
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(12, 5), glowMat(colors[i % 4], 0.9));
     m.position.copy(p);
     m.lookAt(mid.clone().setY(p.y));
     b.deco(m);

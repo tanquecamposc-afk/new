@@ -38,7 +38,7 @@ export function buildChaos(s: Session, variant: string): LevelLogic {
           s.enemiesTotal++;
         },
       });
-      return { ...logic, theme: 'chaos', music: 'chaos', combat: true, abilityMode: 'weapon', objective: 'Fight your way across the sky course' };
+      return { ...logic, theme: 'chaos', music: 'chaos', combat: true, parkour: true, abilityMode: 'weapon', objective: 'Fight your way across the sky course' };
     }
     case 'puzzle_time': {
       const logic = buildPuzzleWorld(s, 'mixed');

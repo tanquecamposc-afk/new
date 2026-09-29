@@ -20,6 +20,9 @@ export class Course {
   /** Difficulty scalar 0..1 */
   diff: number;
   platMat: THREE.Material;
+  /** Optional colour palette: each segment gets the next material, pads use padMat. */
+  palette: THREE.Material[] | null = null;
+  padMat: THREE.Material | null = null;
   trimColor: number;
   segCount = 0;
   hints = true;
@@ -79,13 +82,14 @@ export class Course {
 
   /** Landing / checkpoint pad of length L; cursor ends at its far edge. */
   pad(L = 8, W = 8, checkpoint = false) {
-    this.plat(0, 0, L / 2, W, L);
+    this.plat(0, 0, L / 2, W, L, this.padMat ?? this.platMat);
     this.onPad?.(this.P(0, 0.05, L / 2));
     if (checkpoint) this.b.checkpoint(this.P(W / 2 - 1.2, 0, L / 2), this.yaw);
     this.advance(L);
   }
 
   seg(kind: SegKind, n = 3) {
+    if (this.palette) this.platMat = this.palette[this.segCount % this.palette.length];
     this.segCount++;
     const d = this.diff;
     const b = this.b;

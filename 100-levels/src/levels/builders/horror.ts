@@ -115,7 +115,7 @@ export class Wardrobe extends Entity {
       if (Input.isDown('forward') || Input.isDown('back') || Input.isDown('left') || Input.isDown('right')) {
         // Walking cancels hiding
       }
-    } else if (this.session.rig.distance < 2) this.session.rig.distance = 4.8;
+    } else if (this.session.rig.distance < 2) this.session.rig.distance = 4.1;
   }
   dispose() {
     this.session.removeInteractable(this.it);
@@ -610,7 +610,7 @@ export function buildWatcher(s: Session): LevelLogic {
       b.box(new THREE.Vector3(x - W / 4, 0.6, z - 0.2), new THREE.Vector3(W / 2 - 1.2, 1.2, 1.2), M.darkRock());
     } else {
       const gateC = new THREE.Vector3(x, 1.8, z);
-      const gate = b.box(gateC, new THREE.Vector3(W, 3.6, 0.4), mat('gate', { tex: 'metal', color: 0x3a3028, roughness: 0.7, metalness: 0.7 }), { tile: 1 });
+      const gate = b.box(gateC, new THREE.Vector3(W, 3.6, 0.4), mat('gate', { tex: 'metal', color: 0x3a3028, roughness: 0.7, metalness: 0.7 }), { tile: 1, dynamic: true });
       const it: Interactable = s.addInteractable({
         pos: gateC.clone().setY(1).add(new THREE.Vector3(0, 0, -0.8)), radius: 6, prompt: 'Force the gate', enabled: true, hold: 1.3,
         onInteract: () => {

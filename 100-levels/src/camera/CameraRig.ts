@@ -22,10 +22,19 @@ export interface Shot {
 
 export class CameraRig {
   yaw = 0;
-  pitch = 0.32;
-  distance = 4.8;
-  private zoom = 4.8;
-  private curDist = 4.8;
+  pitch = 0.24;
+  distance = 4.1;
+  private zoom = 4.1;
+  private curDist = 4.1;
+  /** Collision-limited distance: snaps in when blocked, eases back out. */
+  private colDist = 4.1;
+  /** Seconds since the player last moved the mouse (auto-align kicks in after a moment). */
+  private idleLook = 10;
+  private lastTarget = new THREE.Vector3();
+  private targetVel = new THREE.Vector3();
+  /** Auto-rotate behind the direction of travel (follow mode). */
+  autoAlign = true;
+  defaultPitch = 0.24;
   pivot = new THREE.Vector3();
   private pivotInit = false;
   private trauma = 0;
@@ -57,10 +66,14 @@ export class CameraRig {
 
   reset(target: THREE.Vector3, yaw: number) {
     this.yaw = yaw;
-    this.pitch = 0.3;
+    this.pitch = this.defaultPitch;
     this.pivot.copy(target);
+    this.lastTarget.copy(target);
+    this.targetVel.set(0, 0, 0);
     this.pivotInit = true;
     this.curDist = this.distance;
+    this.colDist = this.distance;
+    this.zoom = this.distance;
     this.trauma = 0;
     this.shots = [];
   }
@@ -129,8 +142,10 @@ export class CameraRig {
     }
 
     // ── Input
+    this.idleLook += rawDt;
     if (allowInput && this.mode !== 'vehicle') {
       const s = 0.0024 * this.sensitivity * (this.mode === 'aim' ? 0.55 : 1);
+      if (Input.mouseDX || Input.mouseDY) this.idleLook = 0;
       this.yaw -= Input.mouseDX * s;
       this.pitch += Input.mouseDY * s * (this.invertY ? -1 : 1);
       this.pitch = clamp(this.pitch, this.minPitch, this.maxPitch);
@@ -139,8 +154,16 @@ export class CameraRig {
 
     if (!this.pivotInit) {
       this.pivot.copy(target);
+      this.lastTarget.copy(target);
       this.pivotInit = true;
     }
+    // Target velocity (for auto-align), smoothed; teleports are ignored
+    if (dt > 0) {
+      const v = new THREE.Vector3().subVectors(target, this.lastTarget).divideScalar(dt);
+      if (v.lengthSq() < 40 * 40) this.targetVel.lerp(v, Math.min(1, dt * 10));
+      else this.targetVel.set(0, 0, 0);
+    }
+    this.lastTarget.copy(target);
 
     if (this.mode === 'vehicle') {
       // Chase cam: follow vehicle heading, pull back with speed
@@ -152,10 +175,25 @@ export class CameraRig {
       const d = 6.5 + Math.min(4, this.vehicleSpeed * 0.06);
       this.curDist = damp(this.curDist, d, 4, dt);
     } else {
-      // Camera lag: horizontal follows faster than vertical (softens jumps)
-      this.pivot.x = damp(this.pivot.x, target.x, 12, dt);
-      this.pivot.z = damp(this.pivot.z, target.z, 12, dt);
-      this.pivot.y = damp(this.pivot.y, target.y, 7, dt);
+      // Tight horizontal follow (character stays centred), softer vertical so
+      // jumps don't bob the whole view — but never let it lag more than ~1m.
+      this.pivot.x = damp(this.pivot.x, target.x, 28, rawDt);
+      this.pivot.z = damp(this.pivot.z, target.z, 28, rawDt);
+      this.pivot.y = damp(this.pivot.y, target.y, target.y < this.pivot.y ? 14 : 9, rawDt);
+      this.pivot.y = clamp(this.pivot.y, target.y - 1, target.y + 1);
+      // Auto-align behind the direction of travel when the mouse is idle
+      const hs = Math.hypot(this.targetVel.x, this.targetVel.z);
+      if (this.autoAlign && this.mode === 'follow' && !this.frameTarget && allowInput && this.idleLook > 0.6 && hs > 2.5) {
+        const travel = Math.atan2(this.targetVel.x, this.targetVel.z);
+        let d = travel - this.yaw;
+        d = Math.atan2(Math.sin(d), Math.cos(d));
+        // Don't swing round when running towards the camera
+        if (Math.abs(d) < 2.1) {
+          const rate = 1.8 * Math.min(1, hs / 8) * Math.min(1, (this.idleLook - 0.6) * 2);
+          this.yaw = dampAngle(this.yaw, travel, rate, rawDt);
+          this.pitch = damp(this.pitch, this.defaultPitch, rate * 0.6, rawDt);
+        }
+      }
       this.zoomOffsetCur = damp(this.zoomOffsetCur, this.zoomOffset, 4, rawDt);
       let want = this.mode === 'aim' ? 1.9 : this.distance + this.zoomOffsetCur;
       if (this.frameTarget && this.mode === 'follow') {
@@ -173,16 +211,18 @@ export class CameraRig {
     const off = new THREE.Vector3(-Math.sin(this.yaw) * cp, sp, -Math.cos(this.yaw) * cp);
     const right = this.right();
     const piv = this.pivot.clone().addScaledVector(right, this.shoulder);
-    let dist = this.curDist;
-    // Wall collision: pull the camera in front of obstacles
+    let allowed = this.curDist;
+    // Wall collision: snap in front of obstacles, ease back out when clear
     if (this.physics) {
-      const hit = this.physics.raycast(piv, off, dist + 0.3, (c) => c.blocksSight !== false && c.tag !== 'noCam');
-      if (hit) dist = Math.max(0.6, hit.dist - 0.3);
+      const hit = this.physics.raycast(piv, off, allowed + 0.3, (c) => c.blocksSight !== false && c.tag !== 'noCam');
+      if (hit) allowed = Math.max(0.6, hit.dist - 0.3);
     }
-    this.curDist = Math.min(this.curDist, dist + 0.8);
+    this.colDist = allowed < this.colDist ? allowed : damp(this.colDist, allowed, 5, rawDt);
+    const dist = Math.min(this.colDist, allowed);
     cam.position.copy(piv).addScaledVector(off, dist);
     this.lookAt.copy(piv);
-    if (this.mode === 'vehicle') this.lookAt.y += 0.6;
+    // Look slightly above the head: the runner sits in the lower third and the course ahead is visible
+    this.lookAt.y += this.mode === 'vehicle' ? 0.6 : this.mode === 'follow' ? 0.35 : 0;
     cam.lookAt(this.lookAt);
 
     // FOV kick (sprint / boost / aim)

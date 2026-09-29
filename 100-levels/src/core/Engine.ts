@@ -37,10 +37,15 @@ export class Engine {
   fps = 60;
   onFps: ((fps: number) => void) | null = null;
   quality: Quality = 'high';
+  /** Dynamic resolution: fraction of the quality's max pixel ratio (auto-tuned to hold frame rate). */
+  private resScale = 1;
+  private resCheckT = 0;
+  private frameTimes: number[] = [];
+  autoRes = true;
 
   constructor(private container: HTMLElement) {
     this.renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: 'high-performance', stencil: false });
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.75));
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.25));
     this.renderer.setSize(container.clientWidth, container.clientHeight);
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFShadowMap;
@@ -58,7 +63,7 @@ export class Engine {
     pmrem.dispose();
 
     this.camera = new THREE.PerspectiveCamera(60, container.clientWidth / container.clientHeight, 0.1, 900);
-    this.post = new PostFX(this.renderer, this.scene, this.camera, 4);
+    this.post = new PostFX(this.renderer, this.scene, this.camera, 2);
     window.addEventListener('resize', this.onResize);
     Input.attach(this.renderer.domElement);
     this.onResize();
@@ -66,11 +71,52 @@ export class Engine {
 
   setQuality(q: Quality) {
     this.quality = q;
-    const pr = Math.min(window.devicePixelRatio, q === 'high' ? 1.75 : q === 'medium' ? 1.25 : 0.9);
-    this.renderer.setPixelRatio(pr);
+    this.resScale = 1;
+    this.frameTimes.length = 0;
+    this.applyPixelRatio();
     this.renderer.shadowMap.enabled = q !== 'low';
     this.post.bloom.enabled = q !== 'low';
+    this.post.setSamples(q === 'high' ? 4 : q === 'medium' ? 2 : 0);
     this.onResize();
+  }
+
+  private get maxPixelRatio() {
+    const q = this.quality;
+    return Math.min(window.devicePixelRatio || 1, q === 'high' ? 1.5 : q === 'medium' ? 1.1 : 0.85);
+  }
+
+  private applyPixelRatio() {
+    const pr = Math.max(0.5, this.maxPixelRatio * this.resScale);
+    if (Math.abs(this.renderer.getPixelRatio() - pr) > 0.01) {
+      this.renderer.setPixelRatio(pr);
+      return true;
+    }
+    return false;
+  }
+
+  /**
+   * Dynamic resolution: when frames take too long the internal resolution drops
+   * (down to 55%); when there's headroom it climbs back. Keeps the game fluid on
+   * weak GPUs without the player touching settings.
+   */
+  private tuneResolution(realDt: number) {
+    if (!this.autoRes) return;
+    this.frameTimes.push(realDt);
+    this.resCheckT += realDt;
+    if (this.resCheckT < 1) return;
+    this.resCheckT = 0;
+    const ft = this.frameTimes.slice().sort((a, b) => a - b);
+    this.frameTimes.length = 0;
+    if (ft.length < 10) return;
+    // 80th percentile frame time: ignores single hitches (GC, loading)
+    const p80 = ft[Math.floor(ft.length * 0.8)];
+    let next = this.resScale;
+    if (p80 > 1 / 45) next = Math.max(0.55, this.resScale - (p80 > 1 / 30 ? 0.15 : 0.08));
+    else if (p80 < 1 / 57 && this.resScale < 1) next = Math.min(1, this.resScale + 0.05);
+    if (next !== this.resScale) {
+      this.resScale = next;
+      if (this.applyPixelRatio()) this.onResize();
+    }
   }
 
   setScene(scene: THREE.Scene, camera: THREE.PerspectiveCamera) {
@@ -120,9 +166,11 @@ export class Engine {
     const loop = (now: number) => {
       if (!this.running) return;
       this.raf = requestAnimationFrame(loop);
-      const rawDt = Math.min(0.05, (now - this.last) / 1000);
+      const realDt = (now - this.last) / 1000;
+      const rawDt = Math.min(0.05, realDt);
       this.last = now;
       this.frame(rawDt);
+      if (document.visibilityState === 'visible' && realDt < 0.25) this.tuneResolution(realDt);
     };
     this.raf = requestAnimationFrame(loop);
   }

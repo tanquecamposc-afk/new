@@ -56,6 +56,8 @@ export class Player {
   controlEnabled = true;
   /** When false the player can't attack (puzzle/parkour worlds allow it though). */
   combatEnabled = true;
+  /** Ledge climbing from a jump (parkour courses). Low vaults work everywhere. */
+  climbEnabled = false;
   abilityMode: AbilityMode = 'weapon';
   gravityScale = 1;
   speedMul = 1;
@@ -69,6 +71,11 @@ export class Player {
   private dodgeT = 0;
   private dodgeDir = new THREE.Vector3();
   private airDashT = 0;
+  /** Parkour moves: slide, mantle/vault, landing roll. */
+  private slideT = 0;
+  private slideDir = new THREE.Vector3();
+  private mantle: { from: THREE.Vector3; to: THREE.Vector3; t: number; dur: number; exit: THREE.Vector3 } | null = null;
+  private mantleCd = 0;
   private attackT = 0;
   private comboIdx = 0;
   private comboWindow = 0;
@@ -142,6 +149,8 @@ export class Player {
     this.vel.set(0, 0, 0);
     this.yaw = yaw;
     this.lastYaw = yaw;
+    this.mantle = null;
+    this.slideT = 0;
     this.model.root.position.copy(p);
     this.model.root.rotation.y = yaw;
   }
@@ -157,6 +166,12 @@ export class Player {
   }
   get isDodging() {
     return this.dodgeT > 0;
+  }
+  get isSliding() {
+    return this.slideT > 0;
+  }
+  get isMantling() {
+    return this.mantle !== null;
   }
   get isAttacking() {
     return this.attackT > 0;
@@ -270,8 +285,12 @@ export class Player {
     const wishLen = Math.min(1, wish.length());
     if (wishLen > 0.01) wish.normalize();
 
+    // Slide: crouch while running fast keeps (and boosts) momentum
+    if (playing && this.grounded && this.slideT <= 0 && this.dodgeT <= 0 && !this.mantle && Input.wasPressed('crouch') && this.speed2d > 5.5 && !this.aiming) {
+      this.startSlide();
+    }
     // Crouch (hold)
-    const wantCrouch = playing && Input.isDown('crouch') && this.grounded;
+    const wantCrouch = (playing && Input.isDown('crouch') && this.grounded) || this.slideT > 0;
     if (wantCrouch !== this.crouching) {
       if (wantCrouch) {
         this.crouching = true;
@@ -282,17 +301,18 @@ export class Player {
       }
     }
 
-    // Sprint
-    this.sprinting = playing && Input.isDown('sprint') && wishLen > 0.3 && !this.crouching && this.stamina > 1 && !this.aiming;
-    if (this.sprinting) {
-      this.stamina = Math.max(0, this.stamina - 16 * dt);
-      this.staminaDelay = 0.7;
+    // Sprint (air sprint keeps the fast pose/FOV; stamina only drains on the ground)
+    this.sprinting = playing && Input.isDown('sprint') && wishLen > 0.3 && (!this.crouching || this.slideT > 0) && this.stamina > 1 && !this.aiming;
+    if (this.sprinting && this.grounded) {
+      this.stamina = Math.max(0, this.stamina - 12 * dt);
+      this.staminaDelay = 0.6;
     }
 
     // Timers
-    this.coyote = this.grounded ? 0.12 : Math.max(0, this.coyote - dt);
+    this.coyote = this.grounded ? 0.14 : Math.max(0, this.coyote - dt);
     this.jumpBuffer = Math.max(0, this.jumpBuffer - dt);
-    if (playing && Input.wasPressed('jump')) this.jumpBuffer = 0.13;
+    this.mantleCd = Math.max(0, this.mantleCd - dt);
+    if (playing && Input.wasPressed('jump')) this.jumpBuffer = 0.15;
     this.comboWindow = Math.max(0, this.comboWindow - dt);
     if (this.comboWindow <= 0 && this.attackT <= 0) this.comboIdx = 0;
 
@@ -317,39 +337,85 @@ export class Player {
     if (playing) this.handleInteract(dt);
     else this.currentInteract = null;
 
-    // ── Horizontal movement
-    let maxSpeed = (this.crouching ? 2.5 : this.sprinting ? 8.6 : 5.4) * this.speedMul;
+    // ── Mantle / vault in progress: scripted arc onto the ledge, no physics
+    if (this.mantle) {
+      this.updateMantle(dt);
+      this.afterMove(dt, wish, wishLen);
+      return;
+    }
+
+    // ── Horizontal movement (snappy: high ground accel, momentum kept in the air)
+    let maxSpeed = (this.crouching ? 2.6 : this.sprinting ? 9.4 : 6.4) * this.speedMul;
     if (this.attackT > 0) maxSpeed *= 0.3;
-    if (this.aiming) maxSpeed = Math.min(maxSpeed, 2.6);
+    if (this.aiming) maxSpeed = Math.min(maxSpeed, 2.8);
     const friction = this.ground?.friction ?? 1;
     const desired = wish.clone().multiplyScalar(maxSpeed * wishLen);
+    const hv = new THREE.Vector3(this.vel.x, 0, this.vel.z);
     if (this.dodgeT > 0) {
       this.dodgeT -= dt;
       const k = Math.max(0, this.dodgeT / 0.5);
-      this.vel.x = this.dodgeDir.x * (5 + 10 * k);
-      this.vel.z = this.dodgeDir.z * (5 + 10 * k);
+      const base = Math.max(5, Math.min(9, this.speed2d));
+      this.vel.x = this.dodgeDir.x * (base + 8 * k);
+      this.vel.z = this.dodgeDir.z * (base + 8 * k);
     } else if (this.airDashT > 0) {
       this.airDashT -= dt;
+    } else if (this.slideT > 0) {
+      // Slide: slow decay, light steering
+      this.slideT -= dt;
+      const sp = Math.max(0, hv.length() - 7 * dt * (friction < 1 ? 0.3 : 1));
+      if (wishLen > 0.1) this.slideDir.lerp(wish, Math.min(1, dt * 2.5)).normalize();
+      this.vel.x = this.slideDir.x * sp;
+      this.vel.z = this.slideDir.z * sp;
+      if (this.slideT <= 0 || sp < 3 || !this.grounded) this.endSlide();
+      else if (rand() < 0.5) s.particles.emit('dust', this.pos, { count: 1, velSpread: 1 });
     } else {
-      const hv = new THREE.Vector3(this.vel.x, 0, this.vel.z);
-      const accelerating = desired.lengthSq() > hv.lengthSq() * 0.9;
-      let accel = this.grounded ? (accelerating ? 48 : 34) : 13;
-      if (this.grounded && friction < 1) accel *= friction;
-      const diff = desired.sub(hv);
-      const dl = diff.length();
-      const step = accel * dt;
-      if (dl > step) diff.multiplyScalar(step / dl);
-      this.vel.x += diff.x;
-      this.vel.z += diff.z;
+      const hl = hv.length();
+      if (this.grounded) {
+        // Turning keeps speed (redirect velocity towards the input), then accelerate
+        if (wishLen > 0.1 && hl > 1) {
+          const cur = Math.atan2(hv.x, hv.z);
+          const nd = dampAngle(cur, Math.atan2(wish.x, wish.z), 16 * Math.min(1, friction * 1.2), dt);
+          this.vel.x = Math.sin(nd) * hl;
+          this.vel.z = Math.cos(nd) * hl;
+          hv.set(this.vel.x, 0, this.vel.z);
+        }
+        const accelerating = desired.lengthSq() > hv.lengthSq() * 0.95;
+        let accel = accelerating ? 62 : wishLen > 0.05 ? 30 : 46;
+        if (friction < 1) accel *= friction;
+        const diff = desired.sub(hv);
+        const dl = diff.length();
+        const step = accel * dt;
+        if (dl > step) diff.multiplyScalar(step / dl);
+        this.vel.x += diff.x;
+        this.vel.z += diff.z;
+      } else if (wishLen > 0.05) {
+        // Air control: steer freely but never brake below current momentum
+        const target = Math.max(maxSpeed, hl);
+        const want = wish.clone().multiplyScalar(target * wishLen);
+        const diff = want.sub(hv);
+        const dl = diff.length();
+        const step = 26 * dt;
+        if (dl > step) diff.multiplyScalar(step / dl);
+        this.vel.x += diff.x;
+        this.vel.z += diff.z;
+        const nl = Math.hypot(this.vel.x, this.vel.z);
+        if (nl > target) {
+          this.vel.x *= target / nl;
+          this.vel.z *= target / nl;
+        }
+      }
     }
 
     // ── Vertical
-    if (this.jumpBuffer > 0 && this.coyote > 0 && !this.crouching && this.dodgeT <= 0 && playing) this.jump();
+    if (this.jumpBuffer > 0 && this.coyote > 0 && (!this.crouching || this.slideT > 0) && this.dodgeT <= 0 && playing) {
+      if (this.slideT > 0) this.endSlide();
+      if (!this.crouching) this.jump();
+    }
     if (!Input.isDown('jump') && this.vel.y > 3 && !this.jumpCut && !this.grounded) {
       this.vel.y *= 0.55;
       this.jumpCut = true;
     }
-    const g = s.physics.gravity * this.gravityScale * (this.vel.y < 0 ? 1.3 : 1);
+    const g = s.physics.gravity * this.gravityScale * (this.vel.y < 0 ? 1.35 : 1);
     if (this.airDashT <= 0) this.vel.y += g * dt;
     this.vel.y = Math.max(this.vel.y, -42);
 
@@ -361,14 +427,20 @@ export class Player {
     );
     this.externalVel.set(0, 0, 0);
     const vyBefore = this.vel.y;
+    const speedBefore = Math.hypot(this.vel.x, this.vel.z);
     const r = s.physics.moveCharacter(this.pos, this.half, move, this.grounded ? 0.45 : 0.2, this.moveRes);
     this.grounded = r.grounded && this.vel.y <= 0.1;
     this.ground = r.ground;
     if (r.grounded && this.vel.y < 0) this.vel.y = 0;
     if (r.hitCeiling && this.vel.y > 0) this.vel.y = 0;
     if (r.hitWall) {
-      // Kill velocity into the wall so we slide along it
       const n = r.wallNormal;
+      // Vault low obstacles / climb ledges when running or jumping into them
+      if (playing && wishLen > 0.3 && this.tryMantle(n, wish, speedBefore)) {
+        this.afterMove(dt, wish, wishLen);
+        return;
+      }
+      // Kill velocity into the wall so we slide along it
       const into = this.vel.x * n.x + this.vel.z * n.z;
       if (into < 0) {
         this.vel.x -= n.x * into;
@@ -379,6 +451,11 @@ export class Player {
     // Landing
     if (this.grounded && !this.wasGrounded) {
       const impact = -vyBefore;
+      if (impact > 13 && this.speed2d > 4 && wishLen > 0.3 && this.dodgeT <= 0 && this.attackT <= 0 && !this.dead && playing) {
+        // Parkour roll: absorbs big drops without losing momentum
+        this.anim.play('dodge', 1.35);
+        Audio.play('dodge', { vol: 0.6 });
+      }
       if (impact > 5) {
         this.anim.land(impact);
         Audio.play('land', { vol: Math.min(1, impact / 20) });
@@ -394,15 +471,26 @@ export class Player {
     // Kill plane
     if (this.pos.y < s.killY && !this.dead) s.playerFell();
 
+    this.afterMove(dt, wish, wishLen);
+  }
+
+  /** Facing, model, animation and cosmetic effects (runs after movement or a mantle step). */
+  private afterMove(dt: number, wish: THREE.Vector3, wishLen: number) {
+    const s = this.s;
     // ── Facing
-    const hv = new THREE.Vector3(this.vel.x, 0, this.vel.z);
-    this.speed2d = hv.length();
-    if (this.aiming || (this.attackT > 0 && this.weapon.kind !== 'melee')) {
+    this.speed2d = this.mantle ? this.mantle.exit.length() : Math.hypot(this.vel.x, this.vel.z);
+    if (this.mantle) {
+      this.yaw = dampAngle(this.yaw, Math.atan2(this.mantle.exit.x, this.mantle.exit.z), 20, dt);
+    } else if (this.slideT > 0) {
+      this.yaw = dampAngle(this.yaw, Math.atan2(this.slideDir.x, this.slideDir.z), 14, dt);
+    } else if (this.aiming || (this.attackT > 0 && this.weapon.kind !== 'melee')) {
       this.yaw = dampAngle(this.yaw, s.rig.yaw, 20, dt);
     } else if (this.lockYaw !== null && this.attackT > 0) {
       this.yaw = dampAngle(this.yaw, this.lockYaw, 18, dt);
     } else if (this.speed2d > 0.5 && this.dodgeT <= 0 && wishLen > 0.05) {
-      this.yaw = dampAngle(this.yaw, Math.atan2(wish.x, wish.z), 13, dt);
+      // Face the direction of travel on the ground (reads the momentum), input in the air
+      const dir = this.grounded ? Math.atan2(this.vel.x, this.vel.z) : Math.atan2(wish.x, wish.z);
+      this.yaw = dampAngle(this.yaw, dir, 18, dt);
     }
     this.turnRate = clamp(wrapAngle(this.yaw - this.lastYaw) / Math.max(dt, 1e-3) / 6, -1, 1);
     this.lastYaw = this.yaw;
@@ -412,7 +500,7 @@ export class Player {
     this.model.root.rotation.y = this.yaw;
     this.anim.update(dt, {
       speed: this.speed2d,
-      grounded: this.grounded,
+      grounded: this.grounded || this.mantle !== null,
       vy: this.vel.y,
       crouch: this.crouching,
       sprint: this.sprinting,
@@ -423,6 +511,10 @@ export class Player {
     if (this.hidden) this.model.root.visible = false;
     else this.model.root.visible = true;
 
+    // Weapons only in hand where combat is possible (free hands for parkour)
+    const armed = this.combatEnabled || this.forceAim;
+    this.model.weaponR.visible = armed;
+    this.model.weaponL.visible = armed;
     // Weapon trail only during swings
     if (this.weaponTrail) this.weaponTrail.enabled = this.attackT > 0 && this.weapon.kind === 'melee';
 
@@ -448,11 +540,98 @@ export class Player {
     const ring = this.model.weaponR.children[0]?.userData?.spin as THREE.Object3D | undefined;
     if (ring) ring.rotation.z += dt * 3;
 
-    // Sprint FOV + motion effect
-    s.rig.fovKick = this.sprinting ? 6 : this.airDashT > 0 ? 10 : 0;
-    s.post.motionTarget = this.sprinting ? 0.35 : this.airDashT > 0 ? 0.8 : s.post.motionTarget * 0.9;
+    // Speed FOV (scales with actual speed, so it reads momentum rather than the key)
+    const fast = Math.max(0, Math.min(1, (this.speed2d - 6) / 4));
+    s.rig.fovKick = this.airDashT > 0 ? 10 : this.slideT > 0 ? 8 : fast * 7;
+    s.post.motionTarget = this.airDashT > 0 ? 0.6 : 0;
 
     this.stepT += dt;
+  }
+
+  // ── Parkour moves ─────────────────────────────────────────────────────────
+  private startSlide() {
+    const hv = new THREE.Vector3(this.vel.x, 0, this.vel.z);
+    const sp = hv.length();
+    this.slideDir.copy(hv).normalize();
+    const boost = Math.min(12, sp + 2.2);
+    this.vel.x = this.slideDir.x * boost;
+    this.vel.z = this.slideDir.z * boost;
+    this.slideT = 0.8;
+    this.crouching = true;
+    this.half.copy(CROUCH);
+    this.anim.play('slide', 1);
+    Audio.play('dodge', { pitch: 0.8, vol: 0.7 });
+    this.s.particles.emit('dust', this.pos, { count: 8, velSpread: 2 });
+  }
+
+  private endSlide() {
+    this.slideT = 0;
+    if (this.anim.actionName === 'slide') this.anim.release('slide');
+    if (!this.s.physics.blocked(this.pos.x, this.pos.y + 0.02, this.pos.z, STAND)) {
+      this.crouching = false;
+      this.half.copy(STAND);
+    }
+  }
+
+  /**
+   * Look for a ledge in front of a wall we just ran/jumped into. Low obstacles are
+   * vaulted at full speed, higher ledges (up to ~2m) are climbed with a quick mantle.
+   */
+  private tryMantle(n: THREE.Vector3, wish: THREE.Vector3, speed: number): boolean {
+    if (this.mantleCd > 0 || this.crouching || this.dodgeT > 0 || this.attackT > 0 || this.aiming || this.vel.y > 7) return false;
+    const into = -(wish.x * n.x + wish.z * n.z);
+    if (into < 0.55) return false;
+    const ph = this.s.physics;
+    const dir = new THREE.Vector3(-n.x, 0, -n.z).normalize();
+    if (!this.grounded && !this.climbEnabled) return false;
+    const reach = this.grounded ? 1.35 : 2.05;
+    const probe = this.pos.clone().addScaledVector(dir, this.half.x + 0.4);
+    probe.y += reach + 0.25;
+    const ok = (c: { tag?: string; solid?: boolean; oneWay?: boolean }) =>
+      c.solid !== false && c.tag !== 'crate' && c.tag !== 'door' && c.tag !== 'mirror' && c.tag !== 'bound';
+    if (ph.blocked(probe.x, probe.y - 0.1, probe.z, new THREE.Vector3(0.05, 0.05, 0.05))) return false;
+    const hit = ph.raycast(probe, new THREE.Vector3(0, -1, 0), reach + 0.25, ok);
+    if (!hit || hit.normal.y < 0.5) return false;
+    const h = hit.point.y - this.pos.y;
+    if (h < 0.4 || h > reach) return false;
+    const to = new THREE.Vector3(probe.x, hit.point.y + 0.01, probe.z).addScaledVector(dir, 0.15);
+    if (ph.blocked(to.x, to.y + 0.02, to.z, STAND)) return false;
+    // Headroom over the lip so we don't clip through a ceiling
+    if (ph.blocked(this.pos.x, hit.point.y + 0.05, this.pos.z, new THREE.Vector3(0.25, STAND.y, 0.25))) return false;
+    const vault = h < 1.25 && speed > 4;
+    const exitSpeed = vault ? Math.max(5, speed * 0.95) : Math.min(speed, 3.5);
+    this.mantle = {
+      from: this.pos.clone(),
+      to,
+      t: 0,
+      dur: vault ? 0.2 + h * 0.08 : 0.3 + h * 0.1,
+      exit: dir.clone().multiplyScalar(exitSpeed),
+    };
+    this.vel.set(0, 0, 0);
+    this.slideT = 0;
+    this.anim.play(vault ? 'vault' : 'climb', vault ? 1.2 : 1);
+    Audio.play('jump', { pitch: 0.8, vol: 0.6, throttle: 0.05 });
+    return true;
+  }
+
+  private updateMantle(dt: number) {
+    const m = this.mantle!;
+    m.t += dt;
+    const k = Math.min(1, m.t / m.dur);
+    // Rise first, then move over the lip
+    const ky = 1 - (1 - Math.min(1, k * 1.6)) ** 2;
+    const kx = k < 0.35 ? k * 0.3 : 0.105 + ((k - 0.35) / 0.65) * 0.895;
+    this.pos.set(m.from.x + (m.to.x - m.from.x) * kx, m.from.y + (m.to.y - m.from.y) * ky, m.from.z + (m.to.z - m.from.z) * kx);
+    if (k >= 1) {
+      this.pos.copy(m.to);
+      this.vel.set(m.exit.x, 0, m.exit.z);
+      this.mantle = null;
+      this.mantleCd = 0.25;
+      this.grounded = true;
+      this.wasGrounded = true;
+      this.coyote = 0.14;
+      this.s.physics.depenetrate(this.pos, this.half);
+    }
   }
 
   // ── Combat ────────────────────────────────────────────────────────────────

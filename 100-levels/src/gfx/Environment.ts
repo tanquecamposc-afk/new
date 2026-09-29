@@ -36,11 +36,11 @@ const base: EnvTheme = {
 const t = (o: Partial<EnvTheme>): EnvTheme => ({ ...base, ...o });
 
 export const THEMES: Record<string, EnvTheme> = {
+  // Sunny rooftops: clear blue sky, warm sun, crisp shadows (Parkour-Race look)
   city: t({
-    skyTop: 0x0b1030, skyHorizon: 0xff7a50, skyBottom: 0x201828, sunColor: 0xffb080, sunIntensity: 2.4, sunDir: [-0.6, 0.35, 0.4],
-    hemiSky: 0x8090ff, hemiGround: 0x302030, hemiIntensity: 0.8, fogColor: 0x6a4a60, fogDensity: 0.006, envIntensity: 0.6, stars: 0.3,
-    grade: { bloom: 0.7, tint: 0xfff0f4 },
-    ambient: [{ preset: 'dust', rate: 8, radius: 25, height: [0, 10], opts: { size: [0.12, 0.12], life: [3, 6], velSpread: 0.3, up: 0.1, alpha: 0.35, color: 0xffd0c0, gravity: 0 } }],
+    skyTop: 0x2a78e0, skyHorizon: 0xcfe6ff, skyBottom: 0x8aa8c8, sunColor: 0xfff2dc, sunIntensity: 3.1, sunDir: [0.45, 0.75, -0.35],
+    hemiSky: 0xcfe4ff, hemiGround: 0x6a6258, hemiIntensity: 0.9, fogColor: 0xa8cdf0, fogDensity: 0.0019, envIntensity: 0.55, stars: 0, clouds: 0.75,
+    grade: { bloom: 0.3, tint: 0xfffcf6, sat: 1.12, contrast: 1.04, vignette: 0.22 },
   }),
   temple: t({
     skyTop: 0x100828, skyHorizon: 0x7a4ac0, skyBottom: 0x1a1030, sunColor: 0xd8c0ff, sunIntensity: 2, sunDir: [0.3, 0.7, -0.5],
@@ -50,7 +50,7 @@ export const THEMES: Record<string, EnvTheme> = {
   }),
   arena: t({
     skyTop: 0x2a1410, skyHorizon: 0xff8a40, skyBottom: 0x301810, sunColor: 0xffa060, sunIntensity: 3, sunDir: [0.7, 0.4, 0.2],
-    hemiSky: 0xffc090, hemiGround: 0x402010, hemiIntensity: 0.6, fogColor: 0x8a4a30, fogDensity: 0.008, envIntensity: 0.5, clouds: 0.7,
+    hemiSky: 0xffc090, hemiGround: 0x402010, hemiIntensity: 0.8, fogColor: 0x8a4a30, fogDensity: 0.008, envIntensity: 0.5, clouds: 0.7,
     grade: { bloom: 0.6, tint: 0xfff0e0, contrast: 1.12 },
     ambient: [{ preset: 'embers', rate: 12, radius: 25, height: [0, 6] }],
   }),
@@ -176,7 +176,7 @@ export const THEMES: Record<string, EnvTheme> = {
     ambient: [{ preset: 'magic', rate: 20, radius: 30, height: [0, 14], opts: { color: 0xff40a0, color2: 0x4020ff } }],
   }),
   final: t({
-    skyTop: 0x05020a, skyHorizon: 0xffb040, skyBottom: 0x020104, sunColor: 0xffe0a0, sunIntensity: 2.6, sunDir: [0, 0.8, 0.6],
+    skyTop: 0x05020a, skyHorizon: 0xffb040, skyBottom: 0x020104, sunColor: 0xffe0a0, sunIntensity: 2.6, sunDir: [0.3, 0.8, -0.55],
     hemiSky: 0xffd080, hemiGround: 0x100810, hemiIntensity: 0.6, fogColor: 0x2a1a20, fogDensity: 0.008, envIntensity: 0.8, stars: 1, clouds: 0.5,
     grade: { bloom: 1, bloomThreshold: 0.75, tint: 0xfff8f0, contrast: 1.1 },
     ambient: [{ preset: 'magic', rate: 16, radius: 30, height: [0, 14], opts: { color: 0xffe080, color2: 0xff6020, size: [0.2, 0.02], life: [2, 4], velSpread: 0.3, up: 0.6, gravity: 0 } }],
@@ -193,6 +193,11 @@ export const THEMES: Record<string, EnvTheme> = {
     ambient: [{ preset: 'magic', rate: 14, radius: 18, height: [0, 10], opts: { color: 0xffc94d, color2: 0xff6030, size: [0.18, 0.02], life: [2, 5], velSpread: 0.3, up: 0.5, gravity: 0 } }],
   }),
 };
+
+// Boss arenas face +z (player looks at the boss): put their sun behind the camera so both fighters are front-lit
+for (const [k, th] of Object.entries(THEMES)) {
+  if (k.startsWith('boss_') || k === 'arena') th.sunDir = [th.sunDir[0], th.sunDir[1], -Math.abs(th.sunDir[2])];
+}
 
 const SKY_VERT = /* glsl */ `
 varying vec3 vDir;
@@ -227,7 +232,10 @@ void main() {
     vec2 uv = d.xz / (y + 0.15) * 1.6 + vec2(uTime * 0.01, 0.0);
     float c = n2(uv) * 0.5 + n2(uv * 2.1) * 0.25 + n2(uv * 4.3) * 0.125;
     c = smoothstep(0.45, 0.85, c) * uClouds * smoothstep(0.02, 0.25, y);
-    col = mix(col, uHorizon * 0.6 + uSun * 0.12, c * 0.55);
+    // Daytime skies get white fluffy clouds, dark skies keep tinted haze
+    float day = smoothstep(0.08, 0.3, dot(uTop, vec3(0.2126, 0.7152, 0.0722)));
+    vec3 cc = mix(uHorizon * 0.6 + uSun * 0.12, vec3(1.0) * (0.92 + 0.08 * n2(uv * 3.0)), day);
+    col = mix(col, cc, c * mix(0.55, 0.85, day));
   }
   gl_FragColor = vec4(col, 1.0);
 }`;
@@ -274,9 +282,39 @@ export class Environment {
 
     this.hemi = new THREE.HemisphereLight(0xffffff, 0x444444, 0.6);
     this.group.add(this.hemi);
+
+    // Camera-side fill light (no shadows): keeps the player's visible side readable when back-lit
+    this.fill = new THREE.DirectionalLight(0xffffff, 0.4);
+    this.group.add(this.fill, this.fill.target);
+  }
+  readonly fill: THREE.DirectionalLight;
+
+  private skyEnv: THREE.WebGLRenderTarget | null = null;
+
+  /**
+   * Image-based lighting from this theme's own sky (gradient + softened sun),
+   * so reflections match the world and there are no studio-light hot spots.
+   */
+  private buildSkyEnv(renderer: THREE.WebGLRenderer): THREE.Texture {
+    const scene = new THREE.Scene();
+    const m = this.skyMat.clone();
+    m.uniforms = THREE.UniformsUtils.clone(this.skyMat.uniforms);
+    m.uniforms.uStars.value = 0;
+    (m.uniforms.uSun.value as THREE.Color).multiplyScalar(0.2);
+    // Soft minimum fill so night / indoor worlds still read (characters never turn into silhouettes)
+    m.fragmentShader = m.fragmentShader.replace('gl_FragColor = vec4(col, 1.0);', 'gl_FragColor = vec4(max(col, uHorizon * 0.45 + vec3(0.1)), 1.0);');
+    const geo = new THREE.SphereGeometry(50, 32, 16);
+    scene.add(new THREE.Mesh(geo, m));
+    const pm = new THREE.PMREMGenerator(renderer);
+    this.skyEnv?.dispose();
+    this.skyEnv = pm.fromScene(scene, 0.03, 0.1, 100);
+    pm.dispose();
+    geo.dispose();
+    m.dispose();
+    return this.skyEnv.texture;
   }
 
-  apply(scene: THREE.Scene, theme: EnvTheme, envMap: THREE.Texture, darknessBoost = 0) {
+  apply(scene: THREE.Scene, theme: EnvTheme, envMap: THREE.Texture, darknessBoost = 0, renderer?: THREE.WebGLRenderer) {
     this.theme = theme;
     const u = this.skyMat.uniforms;
     (u.uTop.value as THREE.Color).set(theme.skyTop);
@@ -292,10 +330,13 @@ export class Environment {
     this.hemi.color.set(theme.hemiSky);
     this.hemi.groundColor.set(theme.hemiGround);
     this.hemi.intensity = theme.hemiIntensity * (1 - darknessBoost * 0.7);
+    // Dark/horror themes get only a whisper of fill to preserve the mood
+    this.fill.color.set(theme.hemiSky).lerp(new THREE.Color(0xffffff), 0.75);
+    this.fill.intensity = (theme.fogDensity > 0.03 ? 0.12 : 0.55) * (1 - darknessBoost * 0.7);
     scene.fog = new THREE.FogExp2(theme.fogColor, theme.fogDensity * (1 + darknessBoost * 3));
     scene.background = new THREE.Color(theme.fogColor);
-    scene.environment = envMap;
-    scene.environmentIntensity = theme.envIntensity * (1 - darknessBoost * 0.6);
+    scene.environment = renderer ? this.buildSkyEnv(renderer) : envMap;
+    scene.environmentIntensity = theme.envIntensity * (renderer ? 1.4 : 1) * (1 - darknessBoost * 0.6);
     this.emitters = (theme.ambient ?? []).map((a) => new AmbientEmitter(this.particles, a.preset, a.rate, a.radius, a.height, a.opts));
   }
 
@@ -311,6 +352,8 @@ export class Environment {
     const fx = Math.round(focus.x / snap) * snap, fz = Math.round(focus.z / snap) * snap;
     this.sun.target.position.set(fx, focus.y, fz);
     this.sun.position.set(fx + this.sunOffset.x, focus.y + this.sunOffset.y, fz + this.sunOffset.z);
+    this.fill.target.position.copy(focus);
+    this.fill.position.set(camPos.x, camPos.y + 3, camPos.z);
     for (const e of this.emitters) e.update(dt, camPos);
   }
 
@@ -318,5 +361,7 @@ export class Environment {
     this.sky.geometry.dispose();
     this.skyMat.dispose();
     this.sun.shadow.map?.dispose();
+    this.skyEnv?.dispose();
+    this.skyEnv = null;
   }
 }

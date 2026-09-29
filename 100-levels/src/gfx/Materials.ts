@@ -42,7 +42,7 @@ export function mat(key: string, o: MatOpts = {}): THREE.MeshStandardMaterial {
     const t = getTex(o.tex);
     m.map = t.map;
     m.bumpMap = t.bump;
-    m.bumpScale = o.bumpScale ?? 1.2;
+    m.bumpScale = o.bumpScale ?? 0.6;
     if (o.emissiveMap && t.emissive) m.emissiveMap = t.emissive;
   }
   if (o.emissive !== undefined) {
@@ -131,8 +131,8 @@ export const M = {
   darkMetal: () => mat('dmetal', { tex: 'metal', roughness: 0.4, metalness: 0.8, color: 0x3a404c }),
   tech: (c: THREE.ColorRepresentation = 0x3ad4ff) => mat('tech', { tex: 'tech', roughness: 0.45, metalness: 0.6, color: 0x9098a8, emissive: c, emissiveIntensity: 1.6, emissiveMap: true }),
   hex: (c: THREE.ColorRepresentation = 0xb48cff) => mat('hex', { tex: 'hex', roughness: 0.4, metalness: 0.5, color: 0xb0b0c8, emissive: c, emissiveIntensity: 1.2, emissiveMap: true }),
-  marble: () => mat('marble', { tex: 'marble', roughness: 0.5, metalness: 0.05, color: 0xb8b4c0 }),
-  darkMarble: () => mat('dmarble', { tex: 'marble', roughness: 0.42, metalness: 0.1, color: 0x3c3450 }),
+  marble: () => mat('marble', { tex: 'marble', roughness: 0.6, metalness: 0.05, color: 0xb8b4c0 }),
+  darkMarble: () => mat('dmarble', { tex: 'marble', roughness: 0.62, metalness: 0.05, color: 0x3c3450 }),
   sand: () => mat('sand', { tex: 'sand', roughness: 0.95, color: 0xd8c098 }),
   rock: () => mat('rock', { tex: 'rock', roughness: 0.95, color: 0x8a8278 }),
   darkRock: () => mat('drock', { tex: 'rock', roughness: 0.95, color: 0x3a3430 }),
@@ -147,4 +147,13 @@ export const M = {
   wallpaper: () => mat('wallpaper', { tex: 'wallpaper', roughness: 0.9, color: 0xa08880 }),
   tiles: () => mat('tiles', { tex: 'tiles', roughness: 0.5, metalness: 0.05, color: 0xb0b4bc }),
   grid: () => mat('grid', { tex: 'grid', roughness: 0.5, color: 0xb0b8c4 }),
+  /** Clean, bright parkour blocks (readable course, Parkour-Race style). */
+  pkWhite: () => mat('pkWhite', { tex: 'tiles', roughness: 0.55, color: 0xe4e8ee, bumpScale: 0.25 }),
+  pkOrange: () => mat('pkOrange', { tex: 'tiles', roughness: 0.5, color: 0xff8a3d, bumpScale: 0.25 }),
+  pkTeal: () => mat('pkTeal', { tex: 'tiles', roughness: 0.5, color: 0x2ec4c9, bumpScale: 0.25 }),
+  pkBlue: () => mat('pkBlue', { tex: 'tiles', roughness: 0.5, color: 0x4a7cf0, bumpScale: 0.25 }),
+  pkYellow: () => mat('pkYellow', { tex: 'tiles', roughness: 0.5, color: 0xffcf3d, bumpScale: 0.25 }),
 };
+
+/** Rotating palette for parkour segments. */
+export const PARKOUR_PALETTE = [M.pkOrange, M.pkTeal, M.pkYellow, M.pkBlue];

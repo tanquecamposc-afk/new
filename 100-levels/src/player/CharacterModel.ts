@@ -121,6 +121,8 @@ export class CharacterModel {
     const chest = this.j('chest', spine, 0, 0.22, 0);
     const neck = this.j('neck', chest, 0, 0.3, 0);
     const head = this.j('head', neck, 0, 0.08, 0);
+    // Slightly heroic proportions: a touch bigger head reads better at game-camera distance
+    head.scale.setScalar(1.1);
 
     // Pelvis + belt
     this.mesh(rbox(0.32 * bulk, 0.2, 0.2), m.suit2, hips, 0, 0.02, 0);
@@ -148,8 +150,9 @@ export class CharacterModel {
       this.mesh(capsule(0.05 * bulk, 0.19 * ls), m.suit, el);
       this.mesh(rbox(0.11 * bulk, 0.08, 0.11 * bulk), m.suit2, el, 0, -0.2 * ls, 0); // glove cuff
       const hd = this.j(`hd${L}` as JointName, el, 0, -0.3 * ls, 0);
-      this.mesh(rbox(0.07, 0.1, 0.09), m.skin, hd, 0, -0.04, 0);
-      this.mesh(sphere(0.025), m.skin, hd, -side * 0.0, -0.03, 0.05);
+      // Rounded hand: palm + thumb
+      this.mesh(sphere(0.05), m.skin, hd, 0, -0.045, 0.005, 0.8, 1.05, 0.95);
+      this.mesh(sphere(0.022), m.skin, hd, side * 0.03, -0.03, 0.035);
       return hd;
     };
     const hdL = armSide(1);

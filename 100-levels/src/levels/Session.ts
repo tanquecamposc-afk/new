@@ -49,6 +49,8 @@ export interface LevelLogic {
   /** Extra data included in the result (race win, accuracy...). */
   result?(): { raceWon?: boolean; accuracy?: number; bossDefeated?: string };
   dispose?(): void;
+  /** Parkour course: ledge climbing from jumps is allowed. */
+  parkour?: boolean;
   /** Hide the player's model (vehicle / first-person-ish modes). */
   hidePlayer?: boolean;
   /** Boss music intensity follows boss phase. */
@@ -173,7 +175,7 @@ export class Session {
     progress(0.55, 'Lighting the scene');
     await tick();
     const theme = THEMES[this.logic.theme] ?? THEMES.city;
-    this.env.apply(this.scene, theme, this.engine.envMap, this.diff.darkness);
+    this.env.apply(this.scene, theme, this.engine.envMap, this.diff.darkness, this.engine.renderer);
     this.engine.renderer.toneMappingExposure = theme.exposure;
     this.post.resetTransient();
     this.post.setGrade(theme.grade);
@@ -184,6 +186,7 @@ export class Session {
     this.timeLimit = this.logic.timeLimit ? Math.round(this.logic.timeLimit * this.diff.timeLimit) : null;
     this.player.abilityMode = this.logic.abilityMode;
     this.player.combatEnabled = this.logic.combat !== false;
+    this.player.climbEnabled = this.logic.abilityMode === 'airdash' || this.logic.parkour === true;
     this.player.spawn(this.logic.spawn, this.logic.spawnYaw);
     if (this.logic.hidePlayer) this.player.model.root.visible = false;
     this.checkpoint.copy(this.logic.spawn);

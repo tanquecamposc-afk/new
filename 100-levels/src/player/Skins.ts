@@ -26,7 +26,7 @@ export interface SkinDef {
 }
 
 export const SKINS: Record<string, SkinDef> = {
-  skin_runner: { suit: 0x2a6fdb, suit2: 0x1a1f2c, skin: 0xe0b090, accent: 0x40e0ff, accentGlow: 1.6, metal: 0.1, rough: 0.6, head: 'hair', hair: 0x2a1a10 },
+  skin_runner: { suit: 0x2f7de0, suit2: 0x2a2f3c, skin: 0xe0b090, accent: 0xff7a2a, accentGlow: 0.25, metal: 0.05, rough: 0.7, head: 'hair', hair: 0x2a1a10 },
   skin_knight: { suit: 0xb8c0cc, suit2: 0x4a3a2a, skin: 0xd8a888, accent: 0xd02020, accentGlow: 0.3, metal: 0.9, rough: 0.25, head: 'helmet', cape: 0x9a1020, shoulderPads: true },
   skin_ninja: { suit: 0x1a1a22, suit2: 0x2a2a36, skin: 0xd8a888, accent: 0xff2040, accentGlow: 0.8, metal: 0.05, rough: 0.85, head: 'mask', scarf: 0xc01830 },
   skin_explorer: { suit: 0x8a6a40, suit2: 0x4a5a30, skin: 0xd8a080, accent: 0xe0c070, accentGlow: 0, metal: 0.05, rough: 0.85, head: 'hat', hair: 0x4a2a10, backpack: true },

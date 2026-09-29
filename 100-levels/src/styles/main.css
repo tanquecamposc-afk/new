@@ -287,7 +287,7 @@ input { font-family: inherit; }
 .hud-pill {
   display: flex; align-items: center; gap: 8px; padding: 6px 14px; border-radius: 10px;
   background: rgba(5, 6, 14, .55); border: 1px solid rgba(255,255,255,.12);
-  font-weight: 700; font-size: 16px; text-shadow: 0 1px 4px #000; backdrop-filter: blur(4px);
+  font-weight: 700; font-size: 16px; text-shadow: 0 1px 4px #000;
 }
 .hud-pill.warn { border-color: #ff4d5e; color: #ffb0b8; animation: pulse .8s infinite; }
 .hud-obj {
@@ -435,3 +435,6 @@ input { font-family: inherit; }
   .world-item { min-width: 140px; }
   .hud-obj { top: 120px; }
 }
+
+/* Performance: never blur the live 3D canvas behind in-game UI */
+.hud, .hud * { backdrop-filter: none !important; }

@@ -4,6 +4,7 @@
 import * as THREE from 'three';
 import type { Session } from './Session';
 import { RNG } from '../core/math';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { boxGeo, glowMat } from '../gfx/Materials';
 import { makeCollider, Collider } from '../physics/Physics';
 import { Entity } from '../entities/Entity';
@@ -19,6 +20,8 @@ export interface BoxOpts {
   oneWay?: boolean;
   blocksSight?: boolean;
   rotY?: number;
+  /** Mesh is changed at runtime (hidden, moved…): keep it out of the static merge. */
+  dynamic?: boolean;
 }
 
 export class Builder {
@@ -43,6 +46,7 @@ export class Builder {
     mesh.receiveShadow = true;
     mesh.matrixAutoUpdate = false;
     mesh.updateMatrix();
+    if (o.dynamic) mesh.userData.dynamic = true;
     this.staticGroup.add(mesh);
     let col: Collider | null = null;
     if (o.collide !== false) {
@@ -162,5 +166,42 @@ export class Builder {
 
   finalize() {
     this.coins.finalize();
+    this.mergeStatic();
+  }
+
+  /**
+   * Merge every static box that shares a material into a single mesh. Levels are
+   * built from hundreds of boxes; merging cuts draw calls (and shadow-pass draw
+   * calls) by an order of magnitude.
+   */
+  mergeStatic() {
+    const groups = new Map<string, THREE.Mesh[]>();
+    for (const c of this.staticGroup.children) {
+      if (!(c instanceof THREE.Mesh) || c.userData.dynamic || c.userData.merged) continue;
+      const m = c.material as THREE.Material;
+      if (Array.isArray(c.material) || m.transparent) continue;
+      const key = m.uuid + (c.castShadow ? 's' : 'n');
+      let g = groups.get(key);
+      if (!g) groups.set(key, (g = []));
+      g.push(c);
+    }
+    for (const meshes of groups.values()) {
+      if (meshes.length < 2) continue;
+      const geos = meshes.map((m) => {
+        const g = m.geometry.index ? m.geometry.toNonIndexed() : m.geometry.clone();
+        g.applyMatrix4(m.matrix);
+        return g;
+      });
+      const merged = mergeGeometries(geos, false);
+      geos.forEach((g) => g.dispose());
+      if (!merged) continue;
+      const out = new THREE.Mesh(merged, meshes[0].material);
+      out.castShadow = meshes[0].castShadow;
+      out.receiveShadow = true;
+      out.matrixAutoUpdate = false;
+      out.userData.merged = true;
+      for (const m of meshes) this.staticGroup.remove(m);
+      this.staticGroup.add(out);
+    }
   }
 }

@@ -48,14 +48,17 @@ const FinalShader = {
       vec2 dir = uv - 0.5;
       float d = length(dir);
       float ca = uCA * (0.4 + d * 2.0);
-      vec3 col;
-      col.r = texture2D(tDiffuse, uv + dir * ca).r;
-      col.g = texture2D(tDiffuse, uv).g;
-      col.b = texture2D(tDiffuse, uv - dir * ca).b;
-      if (uMotion > 0.002) {
+      vec3 col = texture2D(tDiffuse, uv).rgb;
+      // Chromatic aberration only while it's actually visible (hits / impacts)
+      if (uCA > 0.0006) {
+        col.r = texture2D(tDiffuse, uv + dir * ca).r;
+        col.b = texture2D(tDiffuse, uv - dir * ca).b;
+      }
+      // Cheap 4-tap radial blur, only at the screen edges and only when requested
+      if (uMotion > 0.02 && d > 0.2) {
         vec3 acc = col;
-        for (int i = 1; i < 8; i++) acc += texture2D(tDiffuse, uv - dir * uMotion * float(i) * 0.014).rgb;
-        col = mix(col, acc / 8.0, smoothstep(0.08, 0.5, d));
+        for (int i = 1; i < 4; i++) acc += texture2D(tDiffuse, uv - dir * uMotion * float(i) * 0.02).rgb;
+        col = mix(col, acc / 4.0, smoothstep(0.2, 0.6, d));
       }
       float l = dot(col, vec3(0.2126, 0.7152, 0.0722));
       col = mix(vec3(l), col, uSat);
@@ -68,6 +71,25 @@ const FinalShader = {
       col = mix(col, uFlashColor, clamp(uFlash, 0.0, 1.0));
       if (uLetterbox > 0.0 && (vUv.y < uLetterbox || vUv.y > 1.0 - uLetterbox)) col = vec3(0.0);
       gl_FragColor = vec4(col, 1.0);
+    }`,
+};
+
+/** Clamps HDR highlights so specular hot-spots can't flood the bloom (and the screen) with white. */
+const ClampShader = {
+  uniforms: { tDiffuse: { value: null }, uMax: { value: 2.4 } },
+  vertexShader: /* glsl */ `
+    varying vec2 vUv;
+    void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
+  fragmentShader: /* glsl */ `
+    uniform sampler2D tDiffuse;
+    uniform float uMax;
+    varying vec2 vUv;
+    void main() {
+      vec4 c = texture2D(tDiffuse, vUv);
+      float m = max(c.r, max(c.g, c.b));
+      // Scale (not per-channel clip) so hue is preserved
+      if (m > uMax) c.rgb *= uMax / m;
+      gl_FragColor = c;
     }`,
 };
 
@@ -85,8 +107,8 @@ export interface Grade {
 }
 
 export const DEFAULT_GRADE: Grade = {
-  sat: 1.08, contrast: 1.06, bright: 1, tint: 0xffffff, vignette: 0.4, grain: 0.02,
-  bloom: 0.55, bloomThreshold: 0.85, bloomRadius: 0.45, ca: 0.0015,
+  sat: 1.1, contrast: 1.05, bright: 1, tint: 0xffffff, vignette: 0.3, grain: 0,
+  bloom: 0.55, bloomThreshold: 0.85, bloomRadius: 0.45, ca: 0,
 };
 
 export class PostFX {
@@ -121,6 +143,7 @@ export class PostFX {
     this.output = new OutputPass();
     this.composer.addPass(this.renderPass);
     this.composer.addPass(this.bokeh);
+    this.composer.addPass(new ShaderPass(ClampShader));
     this.composer.addPass(this.bloom);
     this.composer.addPass(this.final);
     this.composer.addPass(this.output);
@@ -163,6 +186,17 @@ export class PostFX {
 
   hit(amount = 1) {
     this.hitCA = Math.min(0.02, this.hitCA + 0.008 * amount);
+  }
+
+  /** MSAA samples of the HDR scene target (0 on low quality). */
+  setSamples(n: number) {
+    const c = this.composer as unknown as { renderTarget1: THREE.WebGLRenderTarget; renderTarget2: THREE.WebGLRenderTarget };
+    for (const rt of [c.renderTarget1, c.renderTarget2]) {
+      if (rt.samples !== n) {
+        rt.samples = n;
+        rt.dispose();
+      }
+    }
   }
 
   setDOF(on: boolean, focus = 8, aperture = 0.004) {

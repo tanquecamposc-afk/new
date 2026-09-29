@@ -22,7 +22,8 @@ npm run preview    # sirve el build
 | Ratón | Girar la cámara (clic en el juego para capturarlo) |
 | Espacio | Saltar (en coche: boost) |
 | Shift | Correr (en coche: derrape) |
-| Ctrl / C | Agacharse |
+| Ctrl / C | Agacharse · mientras corres: **deslizarse** |
+| (automático) | Correr o saltar contra un borde: **saltar la valla / trepar** |
 | F | Esquivar (rodar, con invulnerabilidad breve) |
 | Clic izq. / clic der. | Ataque (combo) / ataque pesado · con arco o bastón: apuntar |
 | Q | Habilidad (cambia según el mundo: air dash, pulso revelador, destello, lanzar piedra, habilidad del arma) |
@@ -33,6 +34,14 @@ npm run preview    # sirve el build
 | Esc | Pausa |
 
 En tablets se activan controles táctiles (también se pueden forzar en Ajustes).
+
+La cámara se coloca sola detrás del personaje cuando corres sin mover el ratón.
+
+## Rendimiento
+
+- **Resolución dinámica**: si los FPS bajan de ~45, la resolución interna baja automáticamente (hasta 55 %) y vuelve a subir cuando hay margen.
+- Calidad LOW / MEDIUM / HIGH en Ajustes (MSAA, sombras, bloom, resolución máxima).
+- La geometría estática de cada nivel se fusiona por material para reducir las llamadas de dibujo.
 
 ## Mundos
 

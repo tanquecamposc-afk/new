@@ -229,6 +229,31 @@ const ACTIONS: Record<string, ActionDef> = {
       { t: 1, p: { shR: [-2.6, 0, -0.6], elR: [-1.0, 0, 0], chest: [-0.2, 0.6, 0], hipY: -0.08, thL: [-0.5, 0, 0], knL: [0.5, 0, 0] } },
     ],
   },
+  slide: {
+    dur: 0.18, hold: true, fadeIn: 0.05, fadeOut: 0.15,
+    keys: [
+      { t: 0, p: { hipY: -0.3, pitch: -0.15, thL: [-1.0, 0, 0.1], knL: [0.6, 0, 0], thR: [-0.5, 0, -0.1], knR: [1.4, 0, 0] } },
+      { t: 1, p: { hipY: -0.55, pitch: -0.32, thL: [-1.45, 0, 0.12], knL: [0.15, 0, 0], ftL: [0.3, 0, 0], thR: [-0.55, 0, -0.12], knR: [1.7, 0, 0], shL: [-0.9, 0, 0.9], elL: [-0.3, 0, 0], shR: [0.35, 0, -0.55], elR: [-0.2, 0, 0], chest: [0.12, 0, 0], head: [0.35, 0, 0] } },
+    ],
+  },
+  vault: {
+    dur: 0.34, fadeIn: 0.03, fadeOut: 0.1,
+    keys: [
+      { t: 0, p: { shL: [-1.4, 0, 0.2], thL: [-1.0, 0, 0.2], knL: [1.2, 0, 0] } },
+      { t: 0.3, p: { shL: [-1.1, 0, 0.35], elL: [-0.15, 0, 0], shR: [-0.6, 0, -0.9], thL: [-1.6, 0, 0.45], knL: [1.5, 0, 0], thR: [-1.25, 0, -0.5], knR: [1.1, 0, 0], chest: [0.3, 0.35, 0.1], hipY: 0.06 } },
+      { t: 0.7, p: { shL: [-0.4, 0, 0.7], shR: [-0.5, 0, -1.0], thL: [-1.0, 0, 0.55], knL: [0.6, 0, 0], thR: [-1.45, 0, -0.3], knR: [1.3, 0, 0], chest: [0.12, 0.2, 0] } },
+      { t: 1, p: {} },
+    ],
+  },
+  climb: {
+    dur: 0.42, fadeIn: 0.03, fadeOut: 0.12,
+    keys: [
+      { t: 0, p: { shL: [-2.8, 0, 0.2], shR: [-2.8, 0, -0.2], elL: [-0.3, 0, 0], elR: [-0.3, 0, 0], thL: [-0.4, 0, 0], knL: [0.6, 0, 0], hipY: -0.1 } },
+      { t: 0.45, p: { shL: [-1.4, 0, 0.4], shR: [-1.4, 0, -0.4], elL: [-1.6, 0, 0], elR: [-1.6, 0, 0], thL: [-1.8, 0, 0], knL: [2.0, 0, 0], thR: [-0.3, 0, 0], knR: [0.8, 0, 0], chest: [0.5, 0, 0] } },
+      { t: 0.8, p: { shL: [-0.3, 0, 0.3], shR: [-0.3, 0, -0.3], elL: [-0.4, 0, 0], elR: [-0.4, 0, 0], thL: [-1.2, 0, 0], knL: [1.2, 0, 0], chest: [0.4, 0, 0], hipY: -0.2 } },
+      { t: 1, p: {} },
+    ],
+  },
   land: {
     dur: 0.3, fadeIn: 0.02,
     keys: [
@@ -341,6 +366,7 @@ export class Animator {
   private landDip = 0;
   private landVel = 0;
   private lean = 0;
+  private fwdLean = 0;
   /** Speed of joint smoothing (higher = snappier). */
   smoothing = 22;
   /** Footstep callback (for audio / dust). */
@@ -571,12 +597,12 @@ export class Animator {
         const k = sp / 3;
         w.idle = 1 - k;
         w.walk = k;
-      } else if (sp < 6.2) {
-        const k = (sp - 3) / 3.2;
+      } else if (sp < 7) {
+        const k = Math.min(1, (sp - 3) / 2.6);
         w.walk = 1 - k;
         w.run = k;
       } else {
-        const k = Math.min(1, (sp - 6.2) / 2);
+        const k = Math.min(1, (sp - 7) / 2);
         w.run = 1 - k;
         w.sprint = k;
       }
@@ -593,7 +619,7 @@ export class Animator {
     }
 
     // Phase advance: stride length depends on gait
-    const stride = (prm.crouch ? 0.9 : sp > 6 ? 2.6 : sp > 3 ? 2.2 : 1.5) * (prm.stride ?? 1);
+    const stride = (prm.crouch ? 0.9 : sp > 7 ? 2.9 : sp > 3 ? 2.3 : 1.5) * (prm.stride ?? 1);
     if (prm.grounded) this.phase += (sp / stride) * Math.PI * dt;
     // Footstep detection
     const stepPh = Math.floor(this.phase / Math.PI);
@@ -617,6 +643,10 @@ export class Animator {
     const ci = JI.chest * 3;
     this.target[ci + 2] += -this.lean * 0.25;
     this.target[JI.hips * 3 + 2] += -this.lean * 0.12;
+    // Whole-body forward lean that grows with running speed
+    const fwd = prm.grounded && !prm.crouch && !prm.drive && !prm.aim ? Math.min(1, sp / 9.5) * 0.16 : 0;
+    this.fwdLean += (fwd - this.fwdLean) * dampT(8, dt);
+    this.target[X_PITCH] += this.fwdLean;
 
     // Previous action fade (cross-fade between actions)
     if (this.prevAction) {
