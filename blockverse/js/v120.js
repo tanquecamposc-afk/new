@@ -59,7 +59,7 @@ function generarV120(ch,info){
   const pozo=centro.bioma===BIOMA.desierto&&hash2(cx,cz,s+960)<.01;
   if(pozo)for(const [x,z] of [[7,7],[9,9],[7,9],[9,7]])if(hash2(bx+x,bz+z,s+961)<.6)datos[idx(x,hC-1,z)]=B.arenaSospechosa;
   if(!pozo&&centro.bioma===BIOMA.desierto&&hash2(cx,cz,s+9800)<.006&&hC>NIVEL_MAR+1)piramide(datos,hC,bx,bz);
-  if([BIOMA.taiga,BIOMA.jungla,BIOMA.bosque,BIOMA.abedul,BIOMA.cerezo].includes(centro.bioma)&&hash2(cx,cz,s+9700)<.007&&hC>NIVEL_MAR+1)
+  if([BIOMA.taiga,BIOMA.jungla,BIOMA.bosque,BIOMA.abedul,BIOMA.cerezo,BIOMA.bosqueOscuro,BIOMA.taigaNevada].includes(centro.bioma)&&hash2(cx,cz,s+9700)<.007&&hC>NIVEL_MAR+1)
     ruinasSendero(datos,info,hC,bx,bz);
   estructurasCompleto(ch,info);
 }
@@ -487,7 +487,9 @@ function localizarV120(q){
     const l=ciudadesAntiguasCerca(j.x-3000,j.z-3000,j.x+3000,j.z+3000).sort((a,b)=>Math.hypot(a.x-j.x,a.z-j.z)-Math.hypot(b.x-j.x,b.z-j.z));
     return l.length?`Ciudad antigua cerca de X ${l[0].x}, Z ${l[0].z} (Y ${l[0].y-OY}).`:'No hay ciudades antiguas cerca.';
   }
-  const biomas={pale:BIOMA.jardinPalido,palido:BIOMA.jardinPalido,cherry:BIOMA.cerezo,cerezo:BIOMA.cerezo,mangrove:BIOMA.manglar,manglar:BIOMA.manglar,desierto:BIOMA.desierto,desert:BIOMA.desierto};
+  const biomas={pale:BIOMA.jardinPalido,palido:BIOMA.jardinPalido,cherry:BIOMA.cerezo,cerezo:BIOMA.cerezo,mangrove:BIOMA.manglar,manglar:BIOMA.manglar,desierto:BIOMA.desierto,desert:BIOMA.desierto,
+    oscuro:BIOMA.bosqueOscuro,dark:BIOMA.bosqueOscuro,prado:BIOMA.prado,meadow:BIOMA.prado,picos:BIOMA.picosNevados,peaks:BIOMA.picosNevados,
+    nevada:BIOMA.taigaNevada,snowy:BIOMA.taigaNevada,calido:BIOMA.oceanoCalido,warm:BIOMA.oceanoCalido,helado:BIOMA.oceanoHelado,frozen:BIOMA.oceanoHelado};
   const clave=Object.keys(biomas).find(k=>q.startsWith(k.slice(0,4)));
   if(clave){
     const obj=biomas[clave];

@@ -354,6 +354,18 @@ function tile(nombre,gen){T[nombre]=_genTiles.length;_genTiles.push(gen);}
     p(x,y,236+k*.3,160+v*50+k,196+v*30+k);});});
   tile('cherryPlanks',(p,r)=>tablones(p,r,[226,178,172]));
   tile('cherrySapling',planta((p,r)=>{tallo(p,7,9,15,[80,44,52]);for(let k=0;k<22;k++){const a=r()*6.28,d=r()*4;p(7.5+Math.cos(a)*d,6+Math.sin(a)*d*.8,240,170+n(r,40),200);}}));
+  // Roble oscuro, setas gigantes, hielo compacto y girasol
+  tile('darkOakLog',corteza([66,50,30],[42,30,18],false)); tile('darkOakTop',anillos([98,74,46],[60,44,26]));
+  tile('darkOakLeaves',hojas(.1));
+  tile('darkOakPlanks',(p,r)=>tablones(p,r,[74,50,26]));
+  tile('darkOakSapling',planta((p,r)=>{tallo(p,7,9,15,[60,44,26]);for(let k=0;k<26;k++){const a=r()*6.28,d=r()*4.2;p(7.5+Math.cos(a)*d,6+Math.sin(a)*d*.8,40+n(r,20),92+n(r,30),30);}}));
+  tile('mushBlockRed',(p,r)=>{const s=S();cada((x,y)=>{const k=n(r,12)+(pn(x,y,4,s)-.5)*14;p(x,y,186+k,34+k*.4,30+k*.4);});
+    for(const [cx,cy,rr] of [[4,4,2],[11,3,1.6],[12,11,2.2],[4,12,1.5],[8,8,1.2]])cada((x,y)=>{if(Math.hypot(x-cx,y-cy)<=rr){const k=n(r,10);p(x,y,236+k,232+k,226+k);}});});
+  tile('mushBlockBrown',(p,r)=>{const s=S();cada((x,y)=>{const k=n(r,12)+(pn(x,y,4,s)-.5)*16;p(x,y,150+k,112+k*.9,82+k*.8);});});
+  tile('mushStem',(p,r)=>{const s=S();cada((x,y)=>{const k=n(r,10)+(pn(x*.5,y*2,8,s)-.5)*14;p(x,y,214+k,208+k,196+k);});});
+  tile('packedIce',(p,r)=>{const s=S();cada((x,y)=>{const k=n(r,8)+(pn(x,y,4,s)-.5)*18;const g=pn(x,y,8,s+1)>.7?14:0;p(x,y,150+k+g,184+k+g,236+k*.5);});});
+  tile('sunflower',planta((p,r)=>{tallo(p,7,7,15,[70,140,40]);tallo(p,8,8,15,[60,124,36]);p(5,12,70,150,40);p(6,11,70,150,40);p(10,13,70,150,40);p(9,12,70,150,40);
+    for(let y=0;y<8;y++)for(let x=3;x<13;x++){const d=Math.hypot(x-7.5,y-3.5);if(d<2.2)p(x,y,110+n(r,20),70+n(r,14),20);else if(d<4.4&&r()>.1)p(x,y,250,200+n(r,30),30);}}));
   tile('pinkPetals',planta((p,r)=>{for(let k=0;k<9;k++){const cx=2+r()*12,cy=2+r()*12;for(const [a,b] of [[0,0],[1,0],[0,1],[-1,0],[0,-1]])p(cx+a,cy+b,240,150+n(r,40),190,255);p(cx,cy,250,220,120);}}));
   /* ---- 1.19: manglar ---- */
   tile('mangroveLog',corteza([84,38,34],[58,26,24],false)); tile('mangroveTop',anillos([116,50,44],[84,38,34]));

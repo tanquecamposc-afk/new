@@ -89,7 +89,7 @@ function monumentoEn(rx,rz){
   if(hash2(rx,rz,semilla+9800)<.6){
     const x=rx*R_MON+60+Math.floor(hash2(rx,rz,semilla+9801)*(R_MON-120)), z=rz*R_MON+60+Math.floor(hash2(rx,rz,semilla+9802)*(R_MON-120));
     let ok=true, hmin=999;
-    for(const [dx,dz] of [[0,0],[-18,-18],[18,-18],[-18,18],[18,18]]){const inf=infoColumna(x+dx,z+dz);if(inf.bioma!==BIOMA.oceano||inf.h>NIVEL_MAR-12)ok=false;hmin=Math.min(hmin,inf.h);}
+    for(const [dx,dz] of [[0,0],[-18,-18],[18,-18],[-18,18],[18,18]]){const inf=infoColumna(x+dx,z+dz);if(!esOceano(inf.bioma)||inf.h>NIVEL_MAR-12)ok=false;hmin=Math.min(hmin,inf.h);}
     if(ok){const F=Math.max(hmin+1,NIVEL_MAR-24);res={x,z,F,H:NIVEL_MAR-2-F,clave:'mon:'+x+','+z};}
   }
   _monCache.set(k,res); return res;

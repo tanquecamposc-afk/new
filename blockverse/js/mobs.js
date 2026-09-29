@@ -511,7 +511,7 @@ function intentoAparicion(){
       let y=CY-1;while(y>0&&!getBloque(x,y,z))y--;
       if(getBloque(x,y,z)!==B.cesped||(luzEn(x,y+1,z)>>4)<9)return;
       const tipo=elegirPeso([['cerdo',25],['vaca',20],['oveja',25],['gallina',20]]);
-      const bv=infoColumna(x,z).bioma, variante=[BIOMA.desierto,BIOMA.sabana,BIOMA.jungla,BIOMA.badlands,BIOMA.manglar].includes(bv)?'calida':[BIOMA.nevado,BIOMA.taiga,BIOMA.montana].includes(bv)?'fria':undefined;
+      const bv=infoColumna(x,z).bioma, variante=[BIOMA.desierto,BIOMA.sabana,BIOMA.jungla,BIOMA.badlands,BIOMA.manglar].includes(bv)?'calida':[BIOMA.nevado,BIOMA.taiga,BIOMA.montana,BIOMA.taigaNevada,BIOMA.picosNevados].includes(bv)?'fria':undefined;
       const n=azar(2,4);for(let k=0;k<n;k++){const ox=x+azar(-2,2),oz=z+azar(-2,2),oy=buscarSuelo(ox,y+3,oz,6,2);if(oy>0&&getBloque(ox,oy-1,oz)===B.cesped)crearMob(tipo,ox+.5,oy,oz+.5,{variante});}
       return;
     }

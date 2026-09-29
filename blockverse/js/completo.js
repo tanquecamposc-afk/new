@@ -147,7 +147,7 @@ function estructurasCompleto(ch,info){
     for(let y=t;y<=t+2;y++)P(7,y,5,0);
   }
   // Barco naufragado
-  else if((bio===BIOMA.playa||bio===BIOMA.oceano)&&hash2(cx,cz,s+9930)<.012&&hC<=NIVEL_MAR+1&&hC>NIVEL_MAR-14){
+  else if((bio===BIOMA.playa||esOceano(bio))&&hash2(cx,cz,s+9930)<.012&&hC<=NIVEL_MAR+1&&hC>NIVEL_MAR-14){
     const y0=hC+1, roto=hash2(cx,cz,s+9931)<.5, madera=[B.tablones,B.tablonesAbeto,B.tablonesJungla][Math.floor(hash2(cx,cz,s+9932)*3)];
     for(let x=1;x<=14;x++){const f=Math.min(x-1,14-x), ancho=Math.min(3,1+Math.floor(f/1.5));
       for(let z=8-ancho;z<=8+ancho;z++){

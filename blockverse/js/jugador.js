@@ -79,7 +79,7 @@ function fisicaJugador(dt,entrada){
   let rapidez=j.vuela?(j.corriendo?21:11):j.corriendo?5.6:4.3;
   if(j.agachado)rapidez=1.3*(1+.45*nivelEnc(inv[38],'sigilo'));
   if(efectos.rapidez)rapidez*=1.2; if(efectos.lentitud)rapidez*=.7;
-  if(comiendo>=0||arcoCarga>=0)rapidez*=.35;
+  if(comiendo>=0||arcoCarga>=0||(typeof escudoArriba!=='undefined'&&escudoArriba))rapidez*=.35;
   if(j.enAgua&&!j.vuela)rapidez*=.5+.5*nivelEnc(inv[39],'agilidadAcuatica')/3; if(j.enLava)rapidez*=.3;
   {const bajo=getBloque(Math.floor(j.pos.x),Math.floor(j.pos.y-.2),Math.floor(j.pos.z)),va=nivelEnc(inv[39],'velocidadAlmas');
    if(bajo===B.arenaAlmas||bajo===B.sueloAlmas)rapidez*=va?1+.3*va:(bajo===B.arenaAlmas?.45:1);}
@@ -133,11 +133,11 @@ function fisicaJugador(dt,entrada){
 function aparecer(){
   if(!spawnMundo){
     let x=8.5,z=8.5;
-    for(let r=0;r<2000;r+=8){const inf=infoColumna(Math.floor(x+r),Math.floor(z));if(inf.h>NIVEL_MAR+1&&inf.bioma!==BIOMA.montana){x+=r;break;}}
+    for(let r=0;r<2000;r+=8){const inf=infoColumna(Math.floor(x+r),Math.floor(z));if(inf.h>NIVEL_MAR+1&&inf.h<NIVEL_MAR+40&&inf.bioma!==BIOMA.montana&&inf.bioma!==BIOMA.picosNevados){x+=r;break;}}
     spawnMundo=[x,z];
   }
   let [x,z]=spawnMundo, y;
-  y=CY-1; while(y>0&&(!SOLIDO[getBloque(Math.floor(x),y,Math.floor(z))]||getBloque(Math.floor(x),y,Math.floor(z))===B.hojas))y--;
+  y=CY-1; while(y>0&&(!SOLIDO[getBloque(Math.floor(x),y,Math.floor(z))]||esHojas(getBloque(Math.floor(x),y,Math.floor(z)))))y--;
   jugador.pos.set(x,y+1.01,z); jugador.vel.set(0,0,0); jugador.maxY=jugador.pos.y;
 }
 

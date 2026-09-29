@@ -153,9 +153,7 @@ function actualizarCielo(dt){
     sol3d.position.set(c.x+dx*350,c.y+dy*350,c.z+40); sol3d.lookAt(c);
     luna3d.position.set(c.x-dx*350,c.y-dy*350,c.z-40); luna3d.lookAt(c);
     estrellas.position.copy(c); estrellas.material.opacity=clamp(-sol*3,0,1)*(lloviendo?0:1);
-    nubes.material.color.setScalar(.25+.75*luzDia*(lloviendo?.6:1));
-    nubes.position.x=c.x; nubes.position.z=c.z;
-    texNubes.offset.set((c.x+tiempoJuego*1.5)/(64*4),-(c.z)/(64*4));
+    actualizarNubes(c,.25+.75*luzDia*(lloviendo?.6:1),dt);
     escena.fog.near=radio*CX*.55; escena.fog.far=radio*CX;
   }else{
     sol=0; factorCielo=0;
@@ -173,13 +171,14 @@ function actualizarCielo(dt){
   if(efectos.oscuridad){oscuro=.55+.45*Math.sin(tiempoJuego*2.2);cielo.lerp(tmpC.setRGB(0,0,0),.9);
     escena.fog.near=1;escena.fog.far=Math.min(escena.fog.far,5+(1-oscuro)*14);uDia*=1-oscuro*.8;}
   escena.fog.color.copy(cielo);
+  mejorarCielo(sup,ojo,oscuro);
   for(const m of [matOpaco,matTrans]){m.uniforms.uDia.value=uDia;m.uniforms.uAmb.value=dim.amb*(1-oscuro*.8);}
   matTrans.uniforms.uTiempo.value=tiempoJuego;
   // Lluvia
   const llueveAqui=sup&&lloviendo&&!OPACO[getBloque(Math.floor(c.x),Math.min(CY-1,Math.floor(c.y)+6),Math.floor(c.z))];
   lluvia.visible=llueveAqui;
   if(llueveAqui){
-    const bio=biomaEnJugador(), nieva=bio===BIOMA.nevado||(bio===BIOMA.montana&&c.y>OY+90), seco=bio===BIOMA.desierto||bio===BIOMA.badlands||bio===BIOMA.sabana;
+    const bio=biomaEnJugador(), nieva=esBiomaFrio(bio)||(bio===BIOMA.montana&&c.y>OY+90), seco=bio===BIOMA.desierto||bio===BIOMA.badlands||bio===BIOMA.sabana;
     lluvia.visible=!seco;
     lluvia.material.color.setHex(nieva?0xffffff:0x9fb6d8); lluvia.material.opacity=nieva?.9:.55;
     const pos=lluvia.geometry.attributes.position, vel=nieva?3:22, largo=nieva?.08:.7;

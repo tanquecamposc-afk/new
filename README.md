@@ -105,6 +105,9 @@ Abre `blockverse/index.html` en un navegador moderno (necesita internet para car
 - **Estructuras:** minas abandonadas con raíles, soportes, telarañas y cofres; iglús, templos de la jungla, cabañas de bruja, puestos de avanzada con **saqueadores** y barcos naufragados, con su propio botín.
 - **Más criaturas y estructuras:** la **bruja** vive en su cabaña y en los pantanos de noche, lanza pociones de veneno, lentitud, debilidad y daño y se cura bebiendo; **monumentos oceánicos** de prismarina con faroles marinos, esponjas y oro en el núcleo, protegidos por **guardianes** con láser y tres **guardianes ancianos** que causan fatiga minera; las **ciudades del End** ahora tienen casa, torre con puente y torre secundaria, sala con tejado piramidal, **shulkers** que te hacen levitar y **barcos del End** con los **élitros** expuestos en la bodega.
 - **Animaciones:** los cofres abren y cierran la tapa y las puertas giran sobre su bisagra. Vista en **tercera persona (F5)** con el modelo del jugador, que muestra los élitros plegados o abiertos al planear. La **maza** tiene su propio modelo 3D.
+- **Biomas nuevos y mejor repartidos:** **bosque oscuro** (robles oscuros de tronco doble que forman un techo de hojas y **setas gigantes**), **taiga nevada** con nieve sobre los árboles, **prados** llenos de flores en las laderas, **picos nevados** con hielo compacto, **océano cálido** de agua turquesa, **océano helado** con placas de hielo e **icebergs**, y **girasoles** en las llanuras. Las proporciones de cada bioma se parecen más a las del original: abundan llanuras y bosques, los badlands y el jardín pálido son raros, y las costas bajan poco a poco hasta **playas de arena** en lugar de acabar en acantilados.
+- **Cielo nuevo:** degradado del horizonte al cénit, halo alrededor del sol, **atardeceres y amaneceres** anaranjados del lado del sol, nubes en 3D con caras sombreadas que se funden con el horizonte, sol y luna con resplandor, y luz de color según la hora (cálida al atardecer y azulada de noche).
+- **Caballos y escudo:** los **caballos** aparecen en manadas en llanuras, sabanas y prados, con siete pelajes y velocidad y salto distintos. Para domarlos hay que montarlos varias veces hasta que dejan de encabritarse (las manzanas, el trigo, el azúcar y el pan ayudan). Con una **silla de montar** se dirigen y saltan con Espacio. El **escudo** bloquea golpes y flechas de frente mientras mantienes el clic derecho, pero te ralentiza y se desgasta. La **harina de hueso** convierte los champiñones en setas gigantes.
 - **Aspecto renovado:** interfaz al estilo clásico (paneles biselados, ranuras hundidas, botones de piedra, letra pixelada y descripciones emergentes), iconos con relieve, armas y objetos en 3D (en la mano y en el suelo), golpe en arco y balanceo de la mano, objetos que vuelan hacia ti al recogerlos, criaturas con textura, ojos, sombra, respiración, balanceo al caminar y que miran a su alrededor.
 - **Controles táctiles:** joystick, arrastrar para mirar, tocar para usar/colocar, mantener para romper y botones para saltar, agacharse, atacar, tirar e inventario.
 - **Otros:** dinamita y explosiones, camas (dormir y punto de reaparición; en el Nether y el End explotan), perlas de ender, comandos y modo creativo con vuelo.
@@ -117,13 +120,13 @@ Abre `blockverse/index.html` en un navegador moderno (necesita internet para car
 | `Espacio` | Saltar y nadar (creativo: doble toque para volar) |
 | `Shift` | Agacharse (no te caes de los bordes) / bajar volando / bajarse de un vehículo |
 | Clic izquierdo (mantener) | Minar / atacar |
-| Clic derecho | Colocar, usar, comer y beber, tensar el arco, abrir mesas, hornos, cofres, soportes y yunques, accionar palancas y botones, subirse a barcos y vagonetas |
+| Clic derecho | Colocar, usar, comer y beber, tensar el arco, abrir mesas, hornos, cofres, soportes y yunques, accionar palancas y botones, subirse a barcos, vagonetas y caballos, cubrirse con el escudo (mantener) |
 | `Espacio` en el aire | Con élitros puestos: planear (clic derecho con un cohete para impulsarte) |
 | Clic central | Creativo: copiar el bloque apuntado |
 | `1`–`9` o rueda | Elegir objeto |
 | `E` | Inventario |
 | `Q` / `Shift+Q` | Tirar uno / toda la pila |
-| `T` o `/` | Comandos (`/help`, `/gamemode`, `/time`, `/weather thunder`, `/give`, `/tp`, `/locate` (`fortress`, `stronghold`, `ancient`, `trial`, `cerezo`, `manglar`), `/summon warden`…) |
+| `T` o `/` | Comandos (`/help`, `/gamemode`, `/time`, `/weather thunder`, `/give`, `/tp`, `/locate` (`fortress`, `stronghold`, `ancient`, `trial`, `cerezo`, `manglar`, `oscuro`, `prado`, `picos`, `helado`…), `/summon warden`…) |
 | `F3` | Información de depuración |
 | `F5` | Cambiar entre primera y tercera persona |
 | `Esc` | Pausa |

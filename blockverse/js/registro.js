@@ -319,6 +319,16 @@ bloque(1459,'esponjaMojada','Esponja mojada','wetSponge',{dureza:.6,herr:'azada'
 bloque(1460,'cabezaDragon','Cabeza de dragón','dragonHead',{forma:'cajas',cajas:[[.2,0,.2,.8,.5,.8]],opaco:false,dureza:1});
 bloque(1461,'cofreAbierto','Cofre',tx('chestTop','chestTop','chestSide'),{forma:'cajas',cajas:[[.0625,0,.0625,.9375,.625,.9375]],opaco:false,dureza:2.5,herr:'hacha',inter:'cofre',suelta:18});
 bloque(1462,'puertaAnim','Puerta','vacio',{forma:'cruz',solido:false,opaco:false,dureza:3,suelta:0});
+// Bosque oscuro: roble oscuro y setas gigantes
+bloque(1463,'troncoRobleOscuro','Tronco de roble oscuro',tx('darkOakTop','darkOakTop','darkOakLog'),{dureza:2,herr:'hacha',inflamable:true,resistencia:2});
+bloque(1464,'hojasRobleOscuro','Hojas de roble oscuro','darkOakLeaves',Object.assign({suelta:sueltaHojas(1466,true)},propHojas,{tinte:'follaje'}));
+bloque(1465,'tablonesRobleOscuro','Tablones de roble oscuro','darkOakPlanks',{dureza:2,herr:'hacha',inflamable:true,resistencia:3});
+bloque(1466,'broteRobleOscuro','Brote de roble oscuro','darkOakSapling',{forma:'cruz',dureza:0});
+bloque(1467,'setaRojaGigante','Bloque de champiñón rojo','mushBlockRed',{dureza:.2,herr:'hacha',suelta:ctx=>prob(.2)?[[111,azar(1,2)]]:[],resistencia:.2});
+bloque(1468,'setaMarronGigante','Bloque de champiñón marrón','mushBlockBrown',{dureza:.2,herr:'hacha',suelta:ctx=>prob(.2)?[[112,azar(1,2)]]:[],resistencia:.2});
+bloque(1469,'talloSeta','Tallo de champiñón','mushStem',{dureza:.2,herr:'hacha',resistencia:.2});
+bloque(1470,'hieloCompacto','Hielo compacto','packedIce',{dureza:.5,herr:'pico',suelta:0,resistencia:.5});
+bloque(1471,'girasol','Girasol','sunflower',{forma:'cruz',dureza:0});
 bloque(1339,'brotePalido','Brote de roble pálido','paleSapling',{forma:'cruz',dureza:0});
 const NB=BLOQUES.length;
 const SOLIDO=new Uint8Array(NB), OPACO=new Uint8Array(NB), TRANS=new Uint8Array(NB), LUZB=new Uint8Array(NB),
@@ -329,7 +339,7 @@ const TINTE=new Uint8Array(NB), TREPA=new Uint8Array(NB);
 BLOQUES.forEach((b,i)=>{if(!b)return;SOLIDO[i]=b.solido?1:0;OPACO[i]=b.opaco?1:0;TRANS[i]=b.trans?1:0;LUZB[i]=b.luz;
   OPAC_LUZ[i]=b.opacidadLuz;OCLUYE[i]=(b.forma==='cubo'&&!b.sinSombra)?1:0;FORMA[i]=FORMAS[b.forma];REEMPL[i]=b.reemplazable?1:0;
   TINTE[i]=TINTES[b.tinte]||0;TREPA[i]=b.trepable?1:0;});
-const esTronco=id=>id===4||(id>=94&&id<=97)||id===1294||id===1299||id===1321, esHojas=id=>id===5||(id>=98&&id<=101)||id===1295||id===1300||id===1322, esPuerta=id=>id>=149&&id<=164;
+const esTronco=id=>id===4||(id>=94&&id<=97)||id===1294||id===1299||id===1321||id===1463, esHojas=id=>id===5||(id>=98&&id<=101)||id===1295||id===1300||id===1322||id===1464, esPuerta=id=>id>=149&&id<=164;
 // Cajas de colisión (coordenadas dentro del bloque)
 function cajasColision(id){
   const b=BLOQUES[id];
@@ -398,13 +408,14 @@ item(542,'saquito','Saquito',{max:1,saquito:true}); item(543,'grumoResina','Grum
 item(545,'arnes','Arnés',{max:1});
 item(546,'libroEncantado','Libro encantado',{max:1});
 item(547,'fragmentoPrismarina','Fragmento de prismarina'); item(548,'cristalPrismarina','Cristales de prismarina'); item(549,'caparazonShulker','Caparazón de shulker');
+item(597,'escudo','Escudo',{max:1,dur:336,escudo:true}); item(598,'silla','Silla de montar',{max:1});
 const TINTE_ID=[]; COLORES16.forEach(([cl,m],k)=>{item(550+k,'tinte_'+cl,'Tinte '+m,{tinte:k});TINTE_ID[k]=550+k;});
 // Huevos de aparición (modo creativo)
 const HUEVOS={cerdo:[0xf0a0a0,0xd06060],vaca:[0x4a3222,0xa8a8a8],oveja:[0xe8e8e8,0xffb0b0],gallina:[0xf0f0f0,0xd02020],zombi:[0x00a8a8,0x6a9a4a],
   esqueleto:[0xc0c0c0,0x4a4a4a],creeper:[0x0da70b,0x111111],arana:[0x342c26,0xa80e0e],enderman:[0x161616,0x000000],aldeano:[0x563c33,0xbd8b72],
   slime:[0x51a03e,0x7ebf6e],golem:[0xdbcfa3,0x74a332],camello:[0xfcc369,0xcb9337],rana:[0xd07444,0xffc77c],warden:[0x0f4649,0x39d6e0],
   breeze:[0xaf94df,0x9166df],creaking:[0x5f5f5f,0xfc7812],ghastFeliz:[0xf9f9f9,0xbcbcbc],golemCobre:[0xd8844e,0x40e0d0],
-  piglin:[0xea9393,0x4c7129],saqueador:[0x532f36,0x959b9b],hoglin:[0xc66e55,0x5f6464],blaze:[0xf6b201,0xfff87e],ghast:[0xf9f9f9,0xbcbcbc]};
+  piglin:[0xea9393,0x4c7129],saqueador:[0x532f36,0x959b9b],hoglin:[0xc66e55,0x5f6464],blaze:[0xf6b201,0xfff87e],ghast:[0xf9f9f9,0xbcbcbc],caballo:[0xc09e7d,0xeee500]};
 Object.keys(HUEVOS).forEach((t,k)=>item(570+k,'huevo_'+t,'Huevo generador de '+t,{huevo:t}));
 
 const MATS=[
@@ -570,7 +581,8 @@ recetaSin([I.lingoteOro],I.pepitaOro,9);
   receta(['MMM','M.M'],c,400+k); receta(['M.M','MMM','MMM'],c,410+k);
   receta(['MMM','M.M','M.M'],c,420+k); receta(['M.M','M.M'],c,430+k);});
 // 1.19 / 1.20
-recetaSin([B.troncoCerezo],B.tablonesCerezo,4); recetaSin([B.troncoMangle],B.tablonesMangle,4);
+recetaSin([B.troncoCerezo],B.tablonesCerezo,4); recetaSin([B.troncoRobleOscuro],B.tablonesRobleOscuro,4);
+receta(['THT','TTT','.T.'],{T:B.tablones,H:I.lingoteHierro},597); receta(['CCC','C.C','.H.'],{C:I.cuero,H:I.lingoteHierro},598); recetaSin([B.girasol],TINTE_ID[4],2); recetaSin([B.troncoMangle],B.tablonesMangle,4);
 recetaSin([534,534,534,534,I.lingoteOro,I.lingoteOro,I.lingoteOro,I.lingoteOro],535);
 receta(['MMM','MMM','MMM'],{M:535},B.bloqueNetherite); recetaSin([B.bloqueNetherite],535,9);
 receta(['II','PP','PP'],{I:I.lingoteHierro,P:B.tablones},B.mesaHerreria);
@@ -624,7 +636,7 @@ receta(['CCC','C.C','CCC'],{C:I.lingoteCobre},B.cofreCobre);
 receta(['TT','TT'],{T:B.toba},B.ladrillosToba,4); receta(['CC','CC'],{C:I.lingoteCobre},B.cobreCortado);
 receta(['.C.','CVC','.R.'],{C:B.cobreCortado,V:I.varaBlaze,R:I.redstone},B.bombillaCobre,4);
 // Los tablones de cerezo y mangle sirven en todas las recetas de madera
-const EQUIV_RECETA={[B.tablonesAbedul]:B.tablones,[B.tablonesAbeto]:B.tablones,[B.tablonesJungla]:B.tablones,[B.tablonesAcacia]:B.tablones,[B.barril]:B.cofre,[B.tablonesPalidos]:B.tablones,[B.troncoPalido]:B.tronco,[B.cofreCobre]:B.cofre,[B.tablonesCerezo]:B.tablones,[B.tablonesMangle]:B.tablones,[B.troncoCerezo]:B.tronco,[B.troncoMangle]:B.tronco};
+const EQUIV_RECETA={[B.tablonesAbedul]:B.tablones,[B.tablonesAbeto]:B.tablones,[B.tablonesJungla]:B.tablones,[B.tablonesAcacia]:B.tablones,[B.barril]:B.cofre,[B.tablonesPalidos]:B.tablones,[B.troncoPalido]:B.tronco,[B.cofreCobre]:B.cofre,[B.tablonesCerezo]:B.tablones,[B.tablonesRobleOscuro]:B.tablones,[B.troncoRobleOscuro]:B.tronco,[B.tablonesMangle]:B.tablones,[B.troncoCerezo]:B.tronco,[B.troncoMangle]:B.tronco};
 
 function buscarReceta(grid,w){
   const exacta=buscarRecetaExacta(grid,w);
@@ -658,13 +670,13 @@ const FUNDIR={
   [B.roca]:B.piedra,[B.arena]:B.vidrio,[B.arenaRoja]:B.vidrio,[B.tronco]:I.carbon,[B.troncoAbedul]:I.carbon,[B.troncoAbeto]:I.carbon,[B.troncoJungla]:I.carbon,[B.troncoAcacia]:I.carbon,
   [251]:250,[B.arcilla]:B.terracota,[519]:526,[B.piedraNegra]:B.piedraNegra,
   [I.cerdoCrudo]:I.cerdoAsado,[I.resCruda]:I.filete,[I.polloCrudo]:I.polloAsado,[I.corderoCrudo]:I.corderoAsado,
-  [B.restosAncestrales]:534,[B.esponjaMojada]:B.esponja,[B.cactus]:TINTE_ID[13],[B.pizarraAdoquinada]:B.pizarra,[B.ladrillosPiedra]:B.ladrillosAgrietados,[B.arena+0]:B.vidrio,[543]:544,[B.troncoPalido]:I.carbon,[B.troncoCerezo]:I.carbon,[B.troncoMangle]:I.carbon,
+  [B.restosAncestrales]:534,[B.esponjaMojada]:B.esponja,[B.cactus]:TINTE_ID[13],[B.pizarraAdoquinada]:B.pizarra,[B.ladrillosPiedra]:B.ladrillosAgrietados,[B.arena+0]:B.vidrio,[543]:544,[B.troncoPalido]:I.carbon,[B.troncoCerezo]:I.carbon,[B.troncoRobleOscuro]:I.carbon,[B.troncoMangle]:I.carbon,
 };
 [B.restosAncestrales,B.bloqueNetherite].forEach(id=>ITEMS[id].ignifugo=true);
 const COMBUSTIBLE={1178:15,1179:15,[I.carbon]:80,[B.bloqueCarbon]:800,[I.cuboLava]:1000,[I.varaBlaze]:120,[B.tablones]:15,[B.tronco]:15,
   94:15,95:15,96:15,97:15,[B.valla]:15,133:15,142:7.5,255:10,145:15,[B.estanteria]:15,252:5,
   [I.palo]:5,[B.mesa]:15,[B.cofre]:15,[B.brote]:5,[B.lana]:5,[I.arco]:15,[B.heno]:5,300:10,310:10,320:10,330:10,340:10,
-  [B.troncoCerezo]:15,[B.troncoMangle]:15,[B.tablonesCerezo]:15,[B.tablonesMangle]:15,[B.raicesMangle]:15,[B.mesaHerreria]:15};
+  [B.troncoCerezo]:15,[B.troncoRobleOscuro]:15,[B.tablonesRobleOscuro]:15,[B.troncoMangle]:15,[B.tablonesCerezo]:15,[B.tablonesMangle]:15,[B.raicesMangle]:15,[B.mesaHerreria]:15};
 const TIEMPO_FUNDIR=10;
 
 /* ---------- Fermentación de pociones ---------- */

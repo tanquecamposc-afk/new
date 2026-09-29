@@ -32,7 +32,7 @@ void main(){
 #include <fog_vertex>
 }`;
 const FS_BLOQUES=`
-uniform sampler2D mapa; uniform float uDia; uniform float uAmb; uniform float uAlpha; uniform float uOpac; uniform float uTiempo; uniform vec2 uAtlas;
+uniform sampler2D mapa; uniform vec3 uColSol; uniform float uDia; uniform float uAmb; uniform float uAlpha; uniform float uOpac; uniform float uTiempo; uniform vec2 uAtlas;
 varying vec2 vUv; varying vec3 vLuz; varying vec4 vTinte;
 #include <fog_pars_fragment>
 float curva(float l){ return l<0.01 ? 0.0 : pow(0.8,(1.0-l)*15.0); }
@@ -52,7 +52,7 @@ void main(){
   if(m>.5&&m<1.5){ if(t.a>.97&&t.a<.995) col*=vTinte.rgb; }
   else if(m>1.5&&m<3.5) col*=vTinte.rgb;
   float s=curva(vLuz.r)*uDia; float b=curva(vLuz.g);
-  vec3 l=max(vec3(s),vec3(b,b*0.92,b*0.78));
+  vec3 l=max(vec3(s)*uColSol,vec3(b,b*0.92,b*0.78));
   l=pow(max(l,vec3(uAmb)),vec3(0.72));
   if(m>3.5&&m<4.5) l=vec3(1.0);
   gl_FragColor=vec4(col*l*vLuz.b,t.a*uOpac);
@@ -60,7 +60,7 @@ void main(){
 }`;
 function materialBloques(transparente){
   const m=new THREE.ShaderMaterial({
-    uniforms:THREE.UniformsUtils.merge([THREE.UniformsLib.fog,{mapa:{value:null},uDia:{value:1},uAmb:{value:.02},uAlpha:{value:transparente?.02:.5},uOpac:{value:1},uTiempo:{value:0},uAtlas:{value:new THREE.Vector2(ATW,ATH)}}]),
+    uniforms:THREE.UniformsUtils.merge([THREE.UniformsLib.fog,{mapa:{value:null},uDia:{value:1},uAmb:{value:.02},uAlpha:{value:transparente?.02:.5},uOpac:{value:1},uColSol:{value:new THREE.Vector3(1,1,1)},uTiempo:{value:0},uAtlas:{value:new THREE.Vector2(ATW,ATH)}}]),
     vertexShader:VS_BLOQUES, fragmentShader:FS_BLOQUES, fog:true, transparent:transparente, depthWrite:!transparente,
     side:transparente?THREE.DoubleSide:THREE.FrontSide});
   m.uniforms.mapa.value=texAtlas;
@@ -87,9 +87,7 @@ const nubesCanvas=document.createElement('canvas');nubesCanvas.width=nubesCanvas
 const texNubes=new THREE.CanvasTexture(nubesCanvas);
 texNubes.magFilter=THREE.NearestFilter;texNubes.minFilter=THREE.NearestFilter;
 texNubes.wrapS=texNubes.wrapT=THREE.RepeatWrapping;texNubes.repeat.set(12,12);
-const nubes=new THREE.Mesh(new THREE.PlaneGeometry(64*12*4,64*12*4),
-  new THREE.MeshBasicMaterial({map:texNubes,transparent:true,opacity:.85,fog:false,depthWrite:false,side:THREE.DoubleSide}));
-nubes.rotation.x=-Math.PI/2; nubes.position.y=OY+128+4; escena.add(nubes);
+const nubes=new THREE.Group(); nubes.position.y=OY+128+4; escena.add(nubes);
 
 /* ---------- Sol, luna y estrellas ---------- */
 function texAstro(fn){const c=document.createElement('canvas');c.width=c.height=16;fn(c.getContext('2d'));
@@ -192,6 +190,7 @@ function actualizarMano(id,brillo,dt,agachado){
     if(id<=0)mano.add(brazo);
     else if(esCuboItem(id)){manoObjeto=new THREE.Mesh(geoCuboItem(id,.3),new THREE.MeshBasicMaterial({map:texIconos,alphaTest:.5}));
       manoObjeto.rotation.set(.1,.7,0);mano.add(manoObjeto);}
+    else if(id===597){manoObjeto=modeloEscudo();manoObjeto.scale.setScalar(.7);manoObjeto.rotation.set(0,-.45,0);manoObjeto.position.set(-.02,.02,0);mano.add(manoObjeto);}
     else if(id===540){manoObjeto=modeloMaza();manoObjeto.scale.setScalar(1.25);manoObjeto.rotation.set(-.35,-.6,.25);manoObjeto.position.set(0,.1,0);mano.add(manoObjeto);}
     else if(LIENZOS[id]&&LIENZOS[id].width===16){
       const herr=esHerramientaMano(id);
@@ -218,6 +217,7 @@ function actualizarMano(id,brillo,dt,agachado){
   if(typeof comiendo!=='undefined'&&comiendo>=0){px=.18;py=-.36+Math.abs(Math.sin(comiendo*14))*.05;pz=-.5;rx=.3;ry=.6;}
   if(typeof arcoCarga!=='undefined'&&arcoCarga>=0){const c=Math.min(1,arcoCarga);px=.2;py=-.3;pz=-.55+c*.12;rz=-.4;ry=.2;
     if(manoObjeto)manoObjeto.position.x=Math.sin(tiempoJuego*40)*.004*c;}
+  if(typeof escudoArriba!=='undefined'&&escudoArriba){px=.2;py=-.36;pz=-.6;rx=0;ry=.25;rz=0;}
   if(typeof faseCamara!=='undefined'&&jugador.suelo){px+=Math.cos(faseCamara)*.012;py+=Math.abs(Math.sin(faseCamara))*.012;}
   mano.rotation.set(rx,ry,rz);
   mano.position.set(px,py,pz);
