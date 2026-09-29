@@ -13,6 +13,7 @@ function soltarItem(pila,x,y,z,esparcir,vel){
   if(!pila||pila.n<=0)return;
   let malla;
   if(esCuboItem(pila.id))malla=new THREE.Mesh(geoCuboItem(pila.id),matItemBloque.clone());
+  else if(LIENZOS[pila.id]&&LIENZOS[pila.id].width===16)malla=new THREE.Mesh(geoExtruida(pila.id,.4),matExtruido());
   else{malla=new THREE.Sprite(matSprite(pila.id).clone());malla.scale.set(.42,.42,.42);}
   const v=vel||new THREE.Vector3(esparcir?(Math.random()-.5)*4:0,esparcir?3+Math.random()*2:2,esparcir?(Math.random()-.5)*4:0);
   agregarEnt({tipo:'item',pila:{...pila},pos:new THREE.Vector3(x,y,z),vel:v,edad:0,malla,propio:true,espera:vel?1.5:.4});
@@ -47,6 +48,8 @@ function fisicaSimple(e,dt,grav=18,rebote=0){
 }
 let _fusionT=0;
 function actualizarItem(e,dt){
+  if(e.recogiendo!==undefined){e.recogiendo-=dt;const obj=new THREE.Vector3(jugador.pos.x,jugador.pos.y+.9,jugador.pos.z);
+    e.pos.lerp(obj,Math.min(1,dt*18));e.malla.position.copy(e.pos);e.malla.scale.multiplyScalar(Math.pow(.2,dt));if(e.recogiendo<=0)e.muerta=true;return;}
   e.edad+=dt;
   const aqui=fisicaSimple(e,dt);
   if(ITEMS[e.pila.id].ignifugo){if(esLava(aqui)){e.vel.y=Math.min(3,e.vel.y+40*dt);}}
@@ -58,14 +61,14 @@ function actualizarItem(e,dt){
     const d=Math.hypot(e.pos.x-jugador.pos.x,e.pos.y-(jugador.pos.y+.8),e.pos.z-jugador.pos.z);
     if(d<1.7){
       const resto=insertarInv(e.pila);
-      if(!resto){e.muerta=true;sonar('recoger');return;}
+      if(!resto){e.recogiendo=.18;sonar('recoger');return;}
       e.pila=resto;
     }
   }
   if(e.edad>300||e.pos.y<-40)e.muerta=true;
 }
 function fusionarItems(){
-  const lista=entidades.filter(e=>e.tipo==='item'&&!e.muerta&&e.suelo);
+  const lista=entidades.filter(e=>e.tipo==='item'&&!e.muerta&&e.suelo&&e.recogiendo===undefined);
   for(let i=0;i<lista.length;i++){const a=lista[i];if(a.muerta)continue;
     for(let j=i+1;j<lista.length;j++){const b=lista[j];
       if(b.muerta||!mismaPila(a.pila,b.pila)||a.pos.distanceTo(b.pos)>1.2)continue;
@@ -77,7 +80,7 @@ function actualizarXP(e,dt){
   if(d<8&&e.edad>.5&&estado!=='muerto'){const dir=obj.clone().sub(e.pos).normalize();e.vel.addScaledVector(dir,dt*(20-d*2));e.vel.multiplyScalar(Math.pow(.2,dt));}
   if(d<8&&e.edad>.5)e.pos.addScaledVector(e.vel,dt);else fisicaSimple(e,dt,10);
   e.malla.position.copy(e.pos);
-  if(d<1&&e.edad>.5&&estado!=='muerto'){e.muerta=true;ganarXP(e.valor);sonar('xp',null,.6);}
+  if(d<1&&e.edad>.5&&estado!=='muerto'){e.muerta=true;ganarXP(repararConXP(e.valor));sonar('xp',null,.6);}
   if(e.edad>300)e.muerta=true;
 }
 

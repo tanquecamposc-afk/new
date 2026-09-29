@@ -34,6 +34,12 @@ const azar=(a,b)=>a+Math.floor(Math.random()*(b-a+1));
 const prob=p=>Math.random()<p;
 function triangular(v,a,b){if(v<a||v>b)return 0;const m=(a+b)/2;return 1-Math.abs(v-m)/(m-a||1);}
 const clavePos=(x,y,z)=>x+','+y+','+z;
+// Los 16 colores de tinte: clave, masculino, femenino y color
+const COLORES16=[['blanco','blanco','blanca',[234,236,236]],['naranja','naranja','naranja',[240,118,20]],['magenta','magenta','magenta',[190,70,180]],
+  ['azulClaro','azul claro','azul claro',[58,176,218]],['amarillo','amarillo','amarilla',[248,198,40]],['lima','lima','lima',[112,186,26]],
+  ['rosa','rosa','rosa',[236,140,170]],['gris','gris','gris',[62,68,72]],['grisClaro','gris claro','gris claro',[142,142,136]],
+  ['cian','cian','cian',[22,138,146]],['morado','morado','morada',[122,42,172]],['azul','azul','azul',[52,58,158]],
+  ['marron','marrón','marrón',[114,72,40]],['verde','verde','verde',[84,108,28]],['rojo','rojo','roja',[160,38,34]],['negro','negro','negra',[22,22,26]]];
 
 /* =========================================================
    Sonido (WebAudio, todo sintetizado)

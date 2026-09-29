@@ -77,11 +77,13 @@ function fisicaJugador(dt,entrada){
   if(!puedeCorrer)j.corriendo=false;
   if(puedeCorrer&&teclas.KeyR)j.corriendo=true;
   let rapidez=j.vuela?(j.corriendo?21:11):j.corriendo?5.6:4.3;
-  if(j.agachado)rapidez=1.3;
+  if(j.agachado)rapidez=1.3*(1+.45*nivelEnc(inv[38],'sigilo'));
   if(efectos.rapidez)rapidez*=1.2;
   if(comiendo>=0||arcoCarga>=0)rapidez*=.35;
-  if(j.enAgua&&!j.vuela)rapidez*=.5; if(j.enLava)rapidez*=.3;
-  if(getBloque(Math.floor(j.pos.x),Math.floor(j.pos.y-.2),Math.floor(j.pos.z))===B.arenaAlmas)rapidez*=.45;
+  if(j.enAgua&&!j.vuela)rapidez*=.5+.5*nivelEnc(inv[39],'agilidadAcuatica')/3; if(j.enLava)rapidez*=.3;
+  {const bajo=getBloque(Math.floor(j.pos.x),Math.floor(j.pos.y-.2),Math.floor(j.pos.z)),va=nivelEnc(inv[39],'velocidadAlmas');
+   if(bajo===B.arenaAlmas||bajo===B.sueloAlmas)rapidez*=va?1+.3*va:(bajo===B.arenaAlmas?.45:1);}
+  if(bCuerpo===B.telarana||bPies===B.telarana){rapidez*=.15;j.telarana=true;}else j.telarana=false;
   let fx=0,fz=0;
   if(entrada){if(teclas.KeyW)fz-=1; if(teclas.KeyS)fz+=1; if(teclas.KeyA)fx-=1; if(teclas.KeyD)fx+=1;}
   const len=Math.hypot(fx,fz)||1; fx/=len; fz/=len;
@@ -109,6 +111,7 @@ function fisicaJugador(dt,entrada){
     if(j.agachado&&j.vel.y<0)j.vel.y=0;
     if(entrada&&(teclas.Space||(j.chocoH&&(teclas.KeyW||teclas.KeyA||teclas.KeyS||teclas.KeyD))))j.vel.y=2.4;
   }
+  if(j.telarana){j.vel.y=clamp(j.vel.y,-1.2,1.2);j.maxY=j.pos.y;}
   const x0=j.pos.x,z0=j.pos.z;
   pasoFisico(j,dt);
   if(j.suelo&&j.vuela)j.vuela=false;
@@ -157,7 +160,11 @@ function danarJugador(n,tipo,dir){
     desgastarArmadura(n);
   }
   if(tipo!=='vacio'&&tipo!=='hambre'){
-    let epf=0;for(let i=36;i<40;i++)epf+=nivelEnc(inv[i],'proteccion');
+    let epf=0;for(let i=36;i<40;i++){epf+=nivelEnc(inv[i],'proteccion');
+      if(tipo==='fuego'||tipo==='lava')epf+=2*nivelEnc(inv[i],'protFuego');
+      if(tipo==='explosion')epf+=2*nivelEnc(inv[i],'protExplosion');
+      if(tipo==='flecha')epf+=2*nivelEnc(inv[i],'protProyectiles');}
+    if(tipo==='mob')aplicarEspinas();
     if(tipo==='caida')epf+=nivelEnc(inv[39],'caidaPluma')*3;
     d*=1-Math.min(20,epf)*.04;
   }
@@ -225,7 +232,7 @@ function gastarNiveles(n){xp.nivel=Math.max(0,xp.nivel-n);xp.puntos=0;actualizar
 function morir(causa){
   estado='muerto'; if(ui)cerrarUI(); soltarControles();
   const {x,y,z}=jugador.pos;
-  inv.forEach(p=>{if(p)soltarItem(p,x,y+1,z,true);}); inv=new Array(40).fill(null);
+  inv.forEach(p=>{if(p&&!nivelEnc(p,'desaparicion'))soltarItem(p,x,y+1,z,true);}); inv=new Array(40).fill(null);
   soltarXP(Math.min(100,xp.nivel*7),x,y,z); xp={nivel:0,puntos:0};
   efectos={}; fuegoJ=0;
   const textos={caida:'Caíste desde muy alto.',mob:'Una criatura acabó contigo.',flecha:'Te dispararon una flecha.',hambre:'Moriste de hambre.',
@@ -318,9 +325,9 @@ function tiempoRomper(b,pila){
   let vel=1;
   const correcta=h&&(def.herr===h.tipo||(h.tipo==='espada'&&(b===B.hojas)));
   if(correcta){vel=h.vel;const ef=nivelEnc(pila,'eficiencia');if(ef)vel+=ef*ef+1;}
-  if(h&&h.tipo==='espada'&&b!==B.hojas)vel=1;
+  if(h&&h.tipo==='espada'&&b!==B.hojas)vel=b===B.telarana?15:1;
   const puede=puedeCosechar(b,pila);
-  if(jugador.ojosAgua)vel/=5;
+  if(jugador.ojosAgua&&!nivelEnc(inv[36],'afinidadAcuatica'))vel/=5;
   if(!jugador.suelo&&!jugador.vuela&&!jugador.enAgua)vel/=5;
   const porTick=vel/def.dureza/(puede?30:100);
   if(porTick>1)return 0;
@@ -378,6 +385,9 @@ function atacar(){
   const p=enMano(), h=p&&ITEMS[p.id].herr;
   let dano=(h?h.dano:1)*(.2+.8*carga*carga);
   const filo=nivelEnc(p,'filo'); if(filo)dano+=(.5*filo+.5)*carga;
+  const obj=apuntadoEnt.mob;
+  if(obj&&NO_MUERTOS.has(obj.tipo))dano+=2.5*nivelEnc(p,'castigo')*carga;
+  if(obj&&obj.tipo==='arana')dano+=2.5*nivelEnc(p,'perdicion')*carga;
   const critico=carga>.9&&!jugador.suelo&&jugador.vel.y<0&&!jugador.enAgua&&!jugador.vuela;
   if(critico){dano*=1.5;sonar('critico');}
   if(efectos.fuerza)dano+=3;
@@ -389,6 +399,7 @@ function atacar(){
   const dx=m.pos.x-jugador.pos.x, dz=m.pos.z-jugador.pos.z, l=Math.hypot(dx,dz)||1;
   const emp=nivelEnc(p,'retroceso')+(jugador.corriendo&&carga>.9?1:0);
   herirMob(m,dano,{x:dx/l*(carga>.5?1:.4),z:dz/l*(carga>.5?1:.4)},'jugador',emp);
+  if(h&&h.tipo==='espada'&&carga>.9&&jugador.suelo&&!jugador.corriendo&&!critico)ataqueBarrido(m,dano,nivelEnc(p,'barrido'));
   if(critico)emitirParticulas(m.pos.x,m.pos.y+m.alto*.7,m.pos.z,0xffffff,8,2,.5,-2);
   const fuego=nivelEnc(p,'aspectoIgneo'); if(fuego)m.fuego=Math.max(m.fuego,4*fuego);
   if(jugador.corriendo&&carga>.9)jugador.corriendo=false;
@@ -499,7 +510,7 @@ function soltarArco(){
   camara.getWorldDirection(dirVista);
   const poder=nivelEnc(p,'poder');
   dispararFlecha(camara.position.clone().addScaledVector(dirVista,.4),dirVista.clone(),55*f,
-    {dueno:'jugador',critico:f>=1,dano:1+(poder?.25*(poder+1):0),fuego:!!nivelEnc(p,'llama'),recogible:supervivencia()&&!inf});
+    {dueno:'jugador',retroceso:nivelEnc(p,'impacto'),critico:f>=1,dano:1+(poder?.25*(poder+1):0),fuego:!!nivelEnc(p,'llama'),recogible:supervivencia()&&!inf});
   sonar('arco');
   if(supervivencia()){if(!inf){const s=inv[idxFlecha];if(--s.n<=0)inv[idxFlecha]=null;}gastarObjetoEnMano(1);}
   actualizarHUD();

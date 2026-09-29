@@ -152,13 +152,39 @@ function matSprite(id){
   return matSprites[id]=new THREE.SpriteMaterial({map:t,alphaTest:.5});
 }
 const esCuboItem=id=>ITEMS[id]&&ITEMS[id].bloque&&(FORMA[id]===0||FORMA[id]===1);
+// Objeto en 3D: cada píxel del icono se convierte en un bloquecito con grosor
+const geoExtr={};
+function geoExtruida(id,tam=.42){
+  const k=id+':'+tam; if(geoExtr[k])return geoExtr[k];
+  const c=LIENZOS[id], w=c.width, h=c.height, d=c.getContext('2d').getImageData(0,0,w,h).data;
+  const pos=[],col=[], px=tam/w, gz=tam/16/2;
+  const op=(x,y)=>x>=0&&y>=0&&x<w&&y<h&&d[(y*w+x)*4+3]>100;
+  const quad=(a,b,c2,e,r,g,bb)=>{pos.push(...a,...b,...c2,...a,...c2,...e);for(let i=0;i<6;i++)col.push(r,g,bb);};
+  for(let y=0;y<h;y++)for(let x=0;x<w;x++){
+    if(!op(x,y))continue;
+    const i=(y*w+x)*4, r=d[i]/255, g=d[i+1]/255, b=d[i+2]/255;
+    const x0=-tam/2+x*px, x1=x0+px, y1=tam/2-y*px, y0=y1-px;
+    quad([x0,y0,gz],[x1,y0,gz],[x1,y1,gz],[x0,y1,gz],r,g,b);
+    quad([x1,y0,-gz],[x0,y0,-gz],[x0,y1,-gz],[x1,y1,-gz],r*.78,g*.78,b*.78);
+    if(!op(x-1,y))quad([x0,y0,-gz],[x0,y0,gz],[x0,y1,gz],[x0,y1,-gz],r*.66,g*.66,b*.66);
+    if(!op(x+1,y))quad([x1,y0,gz],[x1,y0,-gz],[x1,y1,-gz],[x1,y1,gz],r*.66,g*.66,b*.66);
+    if(!op(x,y-1))quad([x0,y1,gz],[x1,y1,gz],[x1,y1,-gz],[x0,y1,-gz],r*.9,g*.9,b*.9);
+    if(!op(x,y+1))quad([x0,y0,-gz],[x1,y0,-gz],[x1,y0,gz],[x0,y0,gz],r*.55,g*.55,b*.55);
+  }
+  const geo=new THREE.BufferGeometry();
+  geo.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));
+  geo.setAttribute('color',new THREE.Float32BufferAttribute(col,3));
+  return geoExtr[k]=geo;
+}
+const matExtruido=()=>new THREE.MeshBasicMaterial({vertexColors:true,side:THREE.DoubleSide});
+const esHerramientaMano=id=>{const it=ITEMS[id];return !!(it&&(it.herr||it.tipoHerr==='arco'||it.tipoHerr==='mechero'||it.tipoHerr==='pincel'));};
 
 /* ---------- Mano / objeto sostenido ---------- */
 const mano=new THREE.Group(); camara.add(mano);
 mano.position.set(.48,-.46,-.72);
 const brazo=new THREE.Mesh(new THREE.BoxGeometry(.18,.18,.6),new THREE.MeshBasicMaterial({color:0xd8a47a}));
 brazo.position.set(.05,-.05,.15); brazo.rotation.set(.2,-.2,0);
-let manoObjeto=null, manoId=-1, balanceo=0, cambioMano=0;
+let manoObjeto=null, manoId=-1, balanceo=0, cambioMano=0, yawMano=0, pitchMano=0, swayX=0, swayY=0;
 function actualizarMano(id,brillo,dt,agachado){
   if(id!==manoId){
     manoId=id; cambioMano=1; if(manoObjeto){mano.remove(manoObjeto);manoObjeto=null;}
@@ -166,15 +192,28 @@ function actualizarMano(id,brillo,dt,agachado){
     if(id<=0)mano.add(brazo);
     else if(esCuboItem(id)){manoObjeto=new THREE.Mesh(geoCuboItem(id,.3),new THREE.MeshBasicMaterial({map:texIconos,alphaTest:.5}));
       manoObjeto.rotation.set(.1,.7,0);mano.add(manoObjeto);}
+    else if(LIENZOS[id]&&LIENZOS[id].width===16){
+      const herr=esHerramientaMano(id);
+      manoObjeto=new THREE.Mesh(geoExtruida(id,herr?.44:.38),matExtruido());
+      if(herr){manoObjeto.rotation.set(.12,-1.3,.42);manoObjeto.position.set(.04,.12,.02);}
+      else{manoObjeto.rotation.set(0,-.9,.3);manoObjeto.position.set(0,.08,0);}
+      mano.add(manoObjeto);}
     else{const t=new THREE.CanvasTexture(LIENZOS[id]);t.magFilter=t.minFilter=THREE.NearestFilter;
       manoObjeto=new THREE.Mesh(new THREE.PlaneGeometry(.42,.42),new THREE.MeshBasicMaterial({map:t,alphaTest:.5,side:THREE.DoubleSide}));
       manoObjeto.rotation.set(0,-.9,.3);manoObjeto.position.set(0,.08,0);mano.add(manoObjeto);}
   }
   const m=manoObjeto||brazo, b=clamp(brillo,.15,1);
   if(manoObjeto)m.material.color.setScalar(b);else brazo.material.color.setRGB(.85*b,.64*b,.48*b);
-  balanceo=Math.max(0,balanceo-dt*4); cambioMano=Math.max(0,cambioMano-dt*5);
-  const s=Math.sin(balanceo*Math.PI);
-  let px=.48,py=-.46-(agachado?.03:0)-s*.1-cambioMano*.35,pz=-.72+s*.1, rx=-s*.9, ry=s*.3, rz=0;
+  balanceo=Math.max(0,balanceo-dt*3.4); cambioMano=Math.max(0,cambioMano-dt*5);
+  // Golpe en arco como en el original: el brazo baja, gira y vuelve
+  const t=1-balanceo, sw=balanceo>0?Math.sin(Math.sqrt(t)*Math.PI):0, sw2=balanceo>0?Math.sin(t*Math.PI):0;
+  const recarga=(typeof cargaAtaque==='function'&&esHerramientaMano(id))?(1-cargaAtaque())*.14:0;
+  // Balanceo al girar la cámara
+  const dYaw=((jugador.yaw-yawMano+Math.PI*3)%(Math.PI*2))-Math.PI, dPitch=jugador.pitch-pitchMano;
+  yawMano=jugador.yaw; pitchMano=jugador.pitch;
+  swayX+=(clamp(dYaw*2.2,-.12,.12)-swayX)*Math.min(1,dt*8); swayY+=(clamp(-dPitch*2.2,-.1,.1)-swayY)*Math.min(1,dt*8);
+  let px=.48-sw*.26+swayX,py=-.46-(agachado?.03:0)+sw2*.14-sw*.12-cambioMano*.35-recarga+swayY+Math.sin(tiempoJuego*1.6)*.005,pz=-.72-sw*.16,
+    rx=-sw*1.15+sw2*.25+Math.sin(tiempoJuego*1.1)*.01, ry=sw*.55, rz=-sw2*.3;
   if(typeof comiendo!=='undefined'&&comiendo>=0){px=.18;py=-.36+Math.abs(Math.sin(comiendo*14))*.05;pz=-.5;rx=.3;ry=.6;}
   if(typeof arcoCarga!=='undefined'&&arcoCarga>=0){const c=Math.min(1,arcoCarga);px=.2;py=-.3;pz=-.55+c*.12;rz=-.4;ry=.2;
     if(manoObjeto)manoObjeto.position.x=Math.sin(tiempoJuego*40)*.004*c;}

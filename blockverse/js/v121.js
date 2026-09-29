@@ -194,8 +194,9 @@ function estallidoViento(p,ch,e){
 function impactoMaza(objetivo){
   const j=jugador, caida=j.maxY-j.pos.y;
   if(caida<=1.5||j.suelo||j.vel.y>=0)return 0;
-  const extra=4*Math.min(3,caida)+2*clamp(caida-3,0,5)+Math.max(0,caida-8);
-  j.maxY=j.pos.y; j.vel.y=Math.max(j.vel.y,4); j.alturaViento=undefined;
+  const p=enMano();
+  const extra=4*Math.min(3,caida)+2*clamp(caida-3,0,5)+Math.max(0,caida-8)+.5*caida*nivelEnc(p,'densidad');
+  j.maxY=j.pos.y; j.vel.y=Math.max(j.vel.y,4+nivelEnc(p,'rafaga')*5); j.alturaViento=undefined;
   sonar('maza',j.pos,1);
   const c=objetivo?objetivo.pos:j.pos;
   emitirParticulas(c.x,c.y+.2,c.z,0x8a7a6a,30,5,.6,8);

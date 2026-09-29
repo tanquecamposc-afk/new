@@ -111,21 +111,22 @@ function materialReparacion(id){
 }
 function resultadoYunque(a,b){
   if(!a||!b)return null;
-  const it=ITEMS[a.id]; if(!it.dur)return null;
+  const it=ITEMS[a.id]; if(!it.dur&&a.id!==546)return null;
   const out={...a,enc:a.enc?{...a.enc}:undefined};
-  if(b.id===materialReparacion(a.id)){
+  if(it.dur&&b.id===materialReparacion(a.id)){
     if(a.dur>=it.dur)return null;
     const q=Math.max(1,Math.floor(it.dur/4)), n=Math.min(b.n,Math.ceil((it.dur-a.dur)/q));
     out.dur=Math.min(it.dur,a.dur+q*n);
     return {pila:out,coste:n+(a.enc?Object.keys(a.enc).length:0),usa:n};
   }
-  if(b.id!==a.id)return null;
+  if(b.id!==a.id&&b.id!==546)return null;
   let coste=0;
-  if(a.dur<it.dur){out.dur=Math.min(it.dur,a.dur+b.dur+Math.floor(it.dur*.12));coste+=2;}
+  if(it.dur&&b.id===a.id&&a.dur<it.dur){out.dur=Math.min(it.dur,a.dur+b.dur+Math.floor(it.dur*.12));coste+=2;}
   if(b.enc){
     out.enc=out.enc||{};
     for(const k in b.enc){
-      if(Object.keys(out.enc).some(o=>o!==k&&(ENCANTOS[o].excluye===k||ENCANTOS[k].excluye===o)))continue;
+      if(Object.keys(out.enc).some(o=>o!==k&&conflictoEnc(o,k)))continue;
+      if(a.id!==546&&!ENCANTOS[k].para.some(c=>categoriasItem(a.id).includes(c)))continue;
       const act=out.enc[k]||0, nv=act===b.enc[k]?Math.min(ENCANTOS[k].max,act+1):Math.max(act,b.enc[k]);
       if(nv!==act){out.enc[k]=nv;coste+=nv*2;}
     }
@@ -169,7 +170,7 @@ const UI_EXTRA={
     construir(titulo,fila){
       titulo('YUNQUE');
       const z=fila(), y=ui.yunque;
-      crearSlot(z,refObj(y,'a',{max:1,acepta:p=>!!ITEMS[p.id].dur,shift:aJugador}));
+      crearSlot(z,refObj(y,'a',{max:1,acepta:p=>!!ITEMS[p.id].dur||p.id===546,shift:aJugador}));
       const mas=document.createElement('div');mas.className='flecha';mas.textContent='+';z.appendChild(mas);
       crearSlot(z,refObj(y,'b',{shift:aJugador}));
       const fl=document.createElement('div');fl.className='flecha';fl.textContent='➜';z.appendChild(fl);
@@ -189,7 +190,7 @@ const UI_EXTRA={
       const caro=r.coste>=40&&supervivencia(), falta=xp.nivel<r.coste&&supervivencia();
       c.textContent=caro?'¡Demasiado caro!':`Coste de encantamiento: ${r.coste}`; c.style.color=caro||falta?'#ff6060':'#80ff80';
     },
-    shift(p){const y=ui.yunque;if(!y.a&&ITEMS[p.id].dur){y.a=p;return null;}return insertarEn(y,'b',p);},
+    shift(p){const y=ui.yunque;if(!y.a&&(ITEMS[p.id].dur||p.id===546)){y.a=p;return null;}return insertarEn(y,'b',p);},
     cerrar(u,devolver){devolver(u.yunque.a);devolver(u.yunque.b);},
   },
 };

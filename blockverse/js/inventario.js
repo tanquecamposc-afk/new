@@ -55,6 +55,7 @@ function crearSlot(cont,ref,grande,fondo){
   cont.appendChild(el); refsUI.push({el,ref}); return el;
 }
 function clicSlot(ref,boton,shift){
+  if(ref.armadura&&nivelEnc(ref.get(),'ligamiento')&&supervivencia()){sonar('rompeHerr',null,.3);return;}
   if(ref.tipo==='normal'&&clicSaquito(ref,boton))return;
   if(ref.tipo==='resultado')return clicResultado(shift);
   const s=ref.get();
@@ -117,7 +118,7 @@ function construirUI(){
     titulo('INVENTARIO');
     const z=fila();
     const arm=document.createElement('div');arm.className='columnaArm';
-    ['casco','pechera','pantalones','botas'].forEach((n,k)=>crearSlot(arm,refArr(inv,36+k,{acepta:p=>ITEMS[p.id].armadura&&ITEMS[p.id].armadura.pieza===k,max:1,shift:shiftJugador(36+k)}),false,n));
+    ['casco','pechera','pantalones','botas'].forEach((n,k)=>crearSlot(arm,refArr(inv,36+k,{armadura:true,acepta:p=>ITEMS[p.id].armadura&&ITEMS[p.id].armadura.pieza===k,max:1,shift:shiftJugador(36+k)}),false,n));
     const perfil=document.createElement('div');perfil.className='perfil';
     perfil.innerHTML=`<div>Nivel <b>${xp.nivel}</b></div><div>Armadura <b>${armaduraTotal().def}</b></div>`;
     z.append(arm,perfil);
@@ -204,12 +205,12 @@ function opcionesEncantar(p){
 function generarEncantos(id,coste,r){
   const cats=categoriasItem(id), e=encantabilidad(id);
   let poder=coste+1+Math.floor(r()*(e/4+1))+Math.floor(r()*(e/4+1));
-  const posibles=Object.keys(ENCANTOS).filter(k=>ENCANTOS[k].para.some(c=>cats.includes(c)));
+  const posibles=Object.keys(ENCANTOS).filter(k=>!ENCANTOS[k].tesoro&&!ENCANTOS[k].maldicion&&(cats.includes('libro')||ENCANTOS[k].para.some(c=>cats.includes(c))));
   const res={};
   if(!posibles.length)return res;
   let intentos=0;
   do{
-    const lista=posibles.filter(k=>!res[k]&&!Object.keys(res).some(o=>ENCANTOS[o].excluye===k||ENCANTOS[k].excluye===o));
+    const lista=posibles.filter(k=>!res[k]&&!Object.keys(res).some(o=>conflictoEnc(o,k)));
     if(!lista.length)break;
     const k=lista[Math.floor(r()*lista.length)], def=ENCANTOS[k];
     res[k]=clamp(Math.ceil(poder/(30/def.max)),1,def.max);
@@ -229,7 +230,7 @@ function pintarOpcionesEnc(){
     b.disabled=!puede;
     b.innerHTML=`<span>${k?ENCANTOS[k].nombre+' '+ROMANOS[o.enc[k]]+(Object.keys(o.enc).length>1?' …':''):'—'}</span><em>Nivel ${o.coste} · ${o.lapis} lapislázuli</em>`;
     b.onmousedown=e=>{e.preventDefault();e.stopPropagation();if(!puede||!k)return;
-      p.enc=o.enc; if(supervivencia()){ui.enc.lapis.n-=o.lapis;if(ui.enc.lapis.n<=0)ui.enc.lapis=null;gastarNiveles(o.niveles);}
+      p.enc=o.enc; if(p.id===248)p.id=546; if(supervivencia()){ui.enc.lapis.n-=o.lapis;if(ui.enc.lapis.n<=0)ui.enc.lapis=null;gastarNiveles(o.niveles);}
       semillaEnc=Math.floor(Math.random()*1e9); sonar('encantar'); refrescarUI();};
     cont.appendChild(b);
   });
@@ -287,13 +288,14 @@ function cerrarUI(){
 /* ---------- Paleta del modo creativo ---------- */
 const rejillaPaleta=document.getElementById('rejillaPaleta');
 const celdasPaleta=[];
-ITEMS.forEach((it,i)=>{if(!it)return;const d=document.createElement('div');d.className='celda';d.dataset.tip=it.nombre;
+ITEMS.forEach((it,i)=>{if(!it)return;const d=document.createElement('div');d.className='celda';d.dataset.id=i;d.dataset.tip=it.nombre;
   d.innerHTML=`<img src="${ICONOS[i]}" alt=""><span>${it.nombre}</span>`;
   d.onmousedown=e=>{e.preventDefault();const p=crearPila(i,e.button===2?1:maxPila(i));
     if(e.shiftKey){insertarInv(p);sonar('recoger');}else{inv[ranura]=p;actualizarHUD();cerrarUI();}};
   d.oncontextmenu=e=>e.preventDefault();
   rejillaPaleta.appendChild(d);celdasPaleta.push([d,it.nombre.toLowerCase()]);});
-function filtrarPaleta(t){t=t.toLowerCase().trim();for(const [d,n] of celdasPaleta)d.classList.toggle('oculto',!!t&&!n.includes(t));}
+let pestanaPaleta='todo';
+function filtrarPaleta(t){t=(t??document.getElementById('buscarPaleta').value).toLowerCase().trim();for(const [d,n] of celdasPaleta)d.classList.toggle('oculto',(!!t&&!n.includes(t))||(!t&&pestanaPaleta!=='todo'&&d.dataset.cat!==pestanaPaleta));}
 document.getElementById('buscarPaleta').addEventListener('input',e=>filtrarPaleta(e.target.value));
 document.getElementById('buscarPaleta').addEventListener('keydown',e=>{e.stopPropagation();if(e.code==='Escape')cerrarUI();});
 document.getElementById('btnCerrarPaleta').onclick=cerrarUI;

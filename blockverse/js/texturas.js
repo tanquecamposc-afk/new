@@ -418,6 +418,35 @@ function tile(nombre,gen){T[nombre]=_genTiles.length;_genTiles.push(gen);}
   tile('copperChestSide',(p,r)=>cada((x,y)=>{const k=n(r,10);const b=x===0||y===0||x===15||y===15||y===5;const cerr=x>=7&&x<=8&&y>=4&&y<=7;
     p(x,y,cerr?90:(b?150:204)+k,cerr?200:(b?80:112)+k,cerr?160:(b?50:70)+k);}));
   tile('paleSapling',planta((p,r)=>{tallo(p,7,8,15,[150,140,130]);for(let k=0;k<20;k++){const a=r()*6.28,d=r()*4;p(7.5+Math.cos(a)*d,6+Math.sin(a)*d*.8,170,176,160);}}));
+  /* ---- Bloques de colores (16 tintes) ---- */
+  COLORES16.forEach(([clave,,,c])=>{
+    tile('lana_'+clave,(p,r)=>{const s=S();cada((x,y)=>{const k=n(r,12)+(pn(x,y,8,s)-.5)*14+(((x+y*3)%4===0)?-10:0);p(x,y,c[0]+k,c[1]+k,c[2]+k);});});
+    tile('hormigon_'+clave,(p,r)=>cada((x,y)=>{const k=n(r,5);p(x,y,c[0]*.92+k,c[1]*.92+k,c[2]*.92+k);}));
+    tile('vidrio_'+clave,(p,r)=>cada((x,y)=>{const borde=x===0||y===0||x===15||y===15;const brillo=(x-y===4||x-y===5)&&x>2&&x<12;
+      p(x,y,c[0]*(borde?.8:1)+(brillo?50:0),c[1]*(borde?.8:1)+(brillo?50:0),c[2]*(borde?.8:1)+(brillo?50:0),borde?235:brillo?190:120);}));
+  });
+  /* ---- Piedras, maderas y bloques decorativos ---- */
+  tile('smoothStone',(p,r)=>cada((x,y)=>{const k=n(r,6);const b=x===0||y===0||x===15||y===15;p(x,y,(b?140:160)+k,(b?140:160)+k,(b?142:162)+k);}));
+  const pulido=(c)=>(p,r)=>{const s=S();cada((x,y)=>{const k=n(r,8)+(pn(x,y,4,s)-.5)*10;const b=x===0||y===0||x===15||y===15;const l=x===1||y===1;
+    p(x,y,c[0]*(b?.78:l?1.12:1)+k,c[1]*(b?.78:l?1.12:1)+k,c[2]*(b?.78:l?1.12:1)+k);});};
+  tile('polishedGranite',pulido([160,110,90])); tile('polishedDiorite',pulido([200,200,202])); tile('polishedAndesite',pulido([134,136,136]));
+  tile('polishedDeepslate',pulido([72,72,78])); tile('cobbledDeepslate',(p,r)=>{const s=S();cada((x,y)=>{const v=hash2(Math.floor((x+(y>>2&1)*2)/4),Math.floor(y/4),9);const k=n(r,10);
+    const borde=(x+(y>>2&1)*2)%4===0||y%4===0;p(x,y,(borde?46:62+v*24)+k,(borde?46:62+v*24)+k,(borde?52:70+v*24)+k);});});
+  tile('crackedBricks',(p,r)=>{ladrillos(p,r,[122,122,122],[82,82,82],8,8);for(let k=0;k<3;k++){let x=r()*16,y=r()*16;for(let q=0;q<9;q++){p(x,y,50,50,52);x+=r()<.5?1:-1;y+=r()<.6?1:0;}}});
+  tile('chiseledStone',(p,r)=>cada((x,y)=>{const k=n(r,8);const d=Math.max(Math.abs(x-7.5),Math.abs(y-7.5));p(x,y,(d>6.5?100:d>5?140:d>2.5?120:150)+k,(d>6.5?100:d>5?140:d>2.5?120:150)+k,(d>6.5?100:d>5?140:d>2.5?120:152)+k);}));
+  tile('cutSandstone',(p,r)=>cada((x,y)=>{const k=n(r,8);const b=y===0||y===15||y===7;p(x,y,(b?200:222)+k,(b?186:206)+k,(b?140:160)+k);}));
+  tile('quartz',pulido([236,230,222])); tile('quartzPillar',(p,r)=>cada((x,y)=>{const k=n(r,6);const b=x%5===0;p(x,y,(b?210:238)+k,(b?204:232)+k,(b?196:224)+k);}));
+  tile('netherBricks',(p,r)=>ladrillos(p,r,[70,34,40],[36,16,20],4,8));
+  tile('lapisBlock',bloqueMetal([40,70,170])); tile('emeraldBlock',bloqueMetal([60,200,110]));
+  tile('birchPlanks',(p,r)=>tablones(p,r,[214,196,140])); tile('sprucePlanks',(p,r)=>tablones(p,r,[118,86,52]));
+  tile('junglePlanks',(p,r)=>tablones(p,r,[170,122,86])); tile('acaciaPlanks',(p,r)=>tablones(p,r,[176,94,52]));
+  tile('lantern',planta((p,r)=>{for(let y=4;y<=13;y++)for(let x=4;x<=11;x++){const borde=x===4||x===11||y===4||y===13;p(x,y,borde?54:255,borde?56:200,borde?66:90);}
+    for(let y=1;y<=3;y++){p(7,y,60,60,70);p(8,y,60,60,70);}}));
+  tile('barrelTop',(p,r)=>{tablones(p,r,[140,100,60]);cada((x,y)=>{if(x<2||y<2||x>13||y>13)p(x,y,80,60,40);if(x>=6&&x<=9&&y>=6&&y<=9)p(x,y,50,36,24);});});
+  tile('barrelSide',(p,r)=>{tablones(p,r,[140,100,60]);cada((x,y)=>{if(y===2||y===13)p(x,y,70,70,74);});});
+  tile('cobweb',planta((p,r)=>{for(let a=0;a<8;a++){const t=a/8*Math.PI*2;for(let d=0;d<8;d++)p(7.5+Math.cos(t)*d,7.5+Math.sin(t)*d,230,230,236,200);}
+    for(const R of [3,5.5,7.5])for(let a=0;a<40;a++){const t=a/40*Math.PI*2;p(7.5+Math.cos(t)*R,7.5+Math.sin(t)*R,220,220,226,180);}}));
+  tile('enchantedBook',(p,r)=>cada((x,y)=>p(x,y,100,50,140)));
   tile('pathSide',(p,r)=>{tierra(p,r);cada((x,y)=>{if(y<2){const k=n(r,12);p(x,y,148+k,122+k,66+k);}});});
 })();
 

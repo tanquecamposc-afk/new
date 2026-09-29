@@ -444,6 +444,7 @@ function actualizarMob(m,dt){
   if(m.suelo&&m.piernas.length===2&&sp>.3)m.grupo.position.y+=Math.abs(Math.sin(m.fase))*.05;
   if(def.ia==='ghast'||m.tipo==='blaze')m.grupo.position.y+=Math.sin(tiempoJuego*2+m.origen.x)*.1;
   m.grupo.rotation.y=m.yaw;
+  animarMobExtra(m,dt,sp,dist3);
   // Color: luz del entorno, destello rojo al recibir daño y blanco al explotar
   m.luzT-=dt;
   if(m.luzT<=0||m.flash>0||m.mecha>0){

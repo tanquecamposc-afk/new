@@ -307,6 +307,7 @@ function particulasAmbiente(dt){
 
 /* ---------- Clic derecho ---------- */
 function usarDerechoRecientes(p,id,it){
+  if(usarDerechoCompleto(p,id,it))return true;
   const m=apuntadoEnt&&apuntadoEnt.mob;
   if(m&&m.tipo==='ghastFeliz'){
     if(id===545&&!m.arnes){m.arnes=true;m.domado=true;consumirEnMano();sonar('poner',m.pos);mostrarMensaje('Arnés colocado: clic derecho para montar');return true;}
@@ -321,5 +322,6 @@ let corazonT=0;
 function actualizarRecientes(dt){
   corazonT-=dt; if(corazonT<=0){corazonT=1;actualizarCorazones();}
   actualizarFantasmas(dt);
+  actualizarCompleto(dt);
   particulasAmbiente(dt);
 }

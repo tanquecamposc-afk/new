@@ -60,6 +60,7 @@ function generarV120(ch,info){
   if(!pozo&&centro.bioma===BIOMA.desierto&&hash2(cx,cz,s+9800)<.006&&hC>NIVEL_MAR+1)piramide(datos,hC,bx,bz);
   if([BIOMA.taiga,BIOMA.jungla,BIOMA.bosque,BIOMA.abedul,BIOMA.cerezo].includes(centro.bioma)&&hash2(cx,cz,s+9700)<.007&&hC>NIVEL_MAR+1)
     ruinasSendero(datos,info,hC,bx,bz);
+  estructurasCompleto(ch,info);
 }
 function piramide(datos,hC,bx,bz){
   const P=(x,y,z,b)=>{if(y>0&&y<CY)datos[idx(x,y,z)]=b;};
@@ -378,6 +379,7 @@ const IA_EXTRA={
 };
 function def_dano(m){return m.def.dano;}
 function aparicionExtra(x,z){
+  if(aparicionCompleto(x,z))return true;
   if(Math.random()>.05)return false;
   const bio=infoColumna(x,z).bioma;
   let y=CY-1; while(y>0&&!getBloque(x,y,z))y--;

@@ -113,6 +113,13 @@ function generarBotin(tipo,rnd){
       [344,1,1,3],[423,1,1,3],[314,1,1,3],[304,1,1,3],[433,1,1,3],[I.cohete||523,2,6,6],[I.perlaEnder,1,2,4]],
     fortalezaNether:[[I.diamante,1,3,5],[I.lingoteHierro,1,5,5],[I.lingoteOro,1,3,15],[330+3,1,1,5],[410+1,1,1,5],[I.mechero,1,1,5],
       [B.obsidiana,2,4,2],[I.polvoBlaze,1,3,6],[I.cuerda,2,6,6],[533,1,1,6],[534,1,1,2]],
+    mina:[[I.pan,1,3,15],[I.lingoteHierro,1,5,10],[I.lingoteOro,1,3,5],[I.redstone,4,9,5],[I.lapis,4,9,5],[I.diamante,1,2,3],[I.carbon,3,8,10],
+      [I.semillas,2,4,10],[B.riel,4,8,8],[B.riel10,1,4,1],[546,1,1,10],[I.manzanaDorada,1,1,2]],
+    iglu:[[I.manzana,1,3,15],[I.carbon,1,4,15],[I.pepitaOro,1,3,10],[I.trigo,2,3,10],[B.piedra,1,1,5],[I.manzanaDorada,1,1,1],[546,1,1,4]],
+    templo:[[I.hueso,4,6,20],[I.carnePodrida,3,7,16],[I.lingoteHierro,1,5,15],[I.lingoteOro,2,7,15],[I.esmeralda,1,3,10],[I.diamante,1,3,3],[546,1,1,6],[I.flecha,4,12,8]],
+    bruja:[[I.ojoArana,1,3,15],[I.polvoLuminoso,1,4,10],[I.azucar||516,1,4,10],[I.redstone,1,4,10],[I.frasco||500,1,3,10],[I.verrugaNether||515,1,3,6],[546,1,1,3]],
+    puesto:[[I.trigo,3,5,15],[I.flecha,4,12,10],[I.lingoteHierro,1,3,8],[B.tronco,2,3,10],[I.papel,1,3,8],[546,1,1,5],[I.esmeralda,1,2,6]],
+    naufragio:[[I.esmeralda,1,5,15],[I.lingoteHierro,1,5,15],[I.lingoteOro,1,5,10],[I.pan,1,3,10],[I.papel,1,5,10],[I.carbon,2,8,10],[I.diamante,1,1,2],[546,1,1,4],[I.brujula||I.papel,1,1,0]],
     piramide:[[I.hueso,4,6,25],[I.carnePodrida,3,7,16],[I.polvora,1,8,10],[B.arena,1,8,10],[I.cuerda,1,8,10],[I.lingoteHierro,1,5,15],
       [I.lingoteOro,2,7,15],[I.esmeralda,1,3,15],[I.diamante,1,3,5],[I.manzanaDorada,1,1,6],[I.libro,1,1,5],[304,1,1,2],[403,1,1,2]],
     ciudadAntigua:[[I.manzanaDorada,1,2,6],[536,1,3,12],[B.sensorSculk,1,3,10],[B.catalizador,1,2,5],[I.hueso,1,15,20],[I.harinaHueso,1,15,10],
@@ -124,6 +131,7 @@ function generarBotin(tipo,rnd){
     let r=rnd()*total,t=tablas[0];
     for(const e of tablas){r-=e[3];if(r<=0){t=e;break;}}
     const p=crearPila(t[0],t[1]+Math.floor(rnd()*(t[2]-t[1]+1)));
+    if(p.id===546)p.enc=libroAleatorio(rnd);
     cofre[Math.floor(rnd()*27)]=p;
   }
   return cofre;
