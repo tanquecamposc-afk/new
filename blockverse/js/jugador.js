@@ -70,6 +70,7 @@ function fisicaJugador(dt,entrada){
   const bCuerpo=getBloque(Math.floor(j.pos.x),Math.floor(j.pos.y+.8),Math.floor(j.pos.z));
   const bOjos=getBloque(Math.floor(j.pos.x),Math.floor(j.pos.y+1.62),Math.floor(j.pos.z));
   j.enAgua=esAgua(bPies)||esAgua(bCuerpo); j.enLava=esLava(bPies)||esLava(bCuerpo); j.ojosAgua=esAgua(bOjos);
+  if(fisicaEspecial(j,dt,entrada))return;
   const shift=entrada&&(teclas.ShiftLeft||teclas.ShiftRight);
   j.agachado=shift&&!j.vuela&&!j.enAgua;
   const puedeCorrer=entrada&&teclas.KeyW&&!j.agachado&&!(sup&&hambre<=6);
@@ -77,6 +78,7 @@ function fisicaJugador(dt,entrada){
   if(puedeCorrer&&teclas.KeyR)j.corriendo=true;
   let rapidez=j.vuela?(j.corriendo?21:11):j.corriendo?5.6:4.3;
   if(j.agachado)rapidez=1.3;
+  if(efectos.rapidez)rapidez*=1.2;
   if(comiendo>=0||arcoCarga>=0)rapidez*=.35;
   if(j.enAgua&&!j.vuela)rapidez*=.5; if(j.enLava)rapidez*=.3;
   if(getBloque(Math.floor(j.pos.x),Math.floor(j.pos.y-.2),Math.floor(j.pos.z))===B.arenaAlmas)rapidez*=.45;
@@ -145,6 +147,7 @@ function desgastarArmadura(dano){
 function danarJugador(n,tipo,dir){
   if(estado==='muerto'||n<=0)return;
   if(!supervivencia()&&tipo!=='vacio')return;
+  if(efectos.resistenciaFuego&&(tipo==='fuego'||tipo==='lava'))return;
   if(invuln>0&&tipo!=='vacio'){if(n<=ultimoDano)return;n-=ultimoDano;}
   let d=n;
   if(['mob','flecha','explosion','magia2'].includes(tipo)){
@@ -288,9 +291,10 @@ function actualizarApuntado(){
     if(t!==null&&t<mejor){mejor=t;apuntadoEnt={mob:m};}
   }
   for(const e of entidades){
-    if(e.muerta||(e.tipo!=='cristal'&&e.tipo!=='bolaGhast'))continue;
+    if(e.muerta||(e.tipo!=='cristal'&&e.tipo!=='bolaGhast'&&!e.vehiculo)||e===jugador.montura)continue;
     const r=e.tipo==='cristal'?1:.6;
-    const t=rayoCaja(camara.position,dirVista,{x:e.pos.x-r,y:e.pos.y-r,z:e.pos.z-r},{x:e.pos.x+r,y:e.pos.y+r,z:e.pos.z+r});
+    const t=e.vehiculo?rayoCaja(camara.position,dirVista,{x:e.pos.x-e.ancho,y:e.pos.y,z:e.pos.z-e.ancho},{x:e.pos.x+e.ancho,y:e.pos.y+e.alto,z:e.pos.z+e.ancho})
+      :rayoCaja(camara.position,dirVista,{x:e.pos.x-r,y:e.pos.y-r,z:e.pos.z-r},{x:e.pos.x+r,y:e.pos.y+r,z:e.pos.z+r});
     if(t!==null&&t<Math.max(mejor,e.tipo==='cristal'?6:3.2)){mejor=t;apuntadoEnt={ent:e};}
   }
   if(dragon&&!dragon.muerto){
@@ -366,6 +370,7 @@ function atacar(){
     const e=apuntadoEnt.ent;
     if(e.tipo==='cristal')romperCristal(e);
     else if(e.tipo==='bolaGhast'){e.vel.multiplyScalar(-1.2);e.dueno='jugador';e.duenoMob=null;}
+    else if(e.vehiculo)golpearVehiculo(e);
     return true;
   }
   const p=enMano(), h=p&&ITEMS[p.id].herr;
@@ -373,6 +378,7 @@ function atacar(){
   const filo=nivelEnc(p,'filo'); if(filo)dano+=(.5*filo+.5)*carga;
   const critico=carga>.9&&!jugador.suelo&&jugador.vel.y<0&&!jugador.enAgua&&!jugador.vuela;
   if(critico){dano*=1.5;sonar('critico');}
+  if(efectos.fuerza)dano+=3;
   if(!supervivencia()&&h&&h.tipo==='espada')dano=Math.max(dano,1);
   agotamiento+=.1;
   if(apuntadoEnt.dragon){dragon.herir(dano,'jugador');gastarObjetoEnMano(h&&h.tipo==='espada'?1:2);return true;}
@@ -424,6 +430,8 @@ function colocarBloque(id){
   const def=BLOQUES[id];
   let real=id;
   if(def.orienta==='escalera')real=def.base+facingJugador();
+  else if(def.piston){camara.getWorldDirection(dirVista);const a=[Math.abs(dirVista.x),Math.abs(dirVista.y),Math.abs(dirVista.z)];
+    const eje=a[0]>=a[1]&&a[0]>=a[2]?0:a[1]>=a[2]?1:2;real=(def.piston.peg?1242:1224)+eje*2+(dirVista.getComponent(eje)>0?0:1);}
   else if(def.orienta==='pared'||id===B.antorcha){
     const n=apuntado.n;
     if(n[1]!==0){if(id!==B.antorcha)return false;}
@@ -437,6 +445,8 @@ function colocarBloque(id){
   if(real===id&&!puedeColocarEn(id,x,y,z))return false;
   if(cubreEntidad(real,x,y,z))return false;
   setBloque(x,y,z,real);
+  if(esRiel(real))colocarRiel(x,y,z);
+  if(real===B.calabaza||real===B.linternaCalabaza)comprobarGolem(x,y,z);
   sonar('poner',{x,y,z},1); pasoSonido(real,1);
   balancearMano();
   return true;
@@ -461,10 +471,12 @@ function alternarPuerta(x,y,z){
 }
 function consumirEnMano(n=1){if(!supervivencia())return;const p=enMano();if(p&&(p.n-=n)<=0)inv[ranura]=null;actualizarHUD();}
 let comiendo=-1, arcoCarga=-1, cdUso=0;
-function puedeComer(){const p=enMano();if(!p)return false;const it=ITEMS[p.id];return !!it.comida&&(hambre<20||it.siempre||!supervivencia());}
+function puedeComer(){const p=enMano();if(!p)return false;const it=ITEMS[p.id];return !!it.bebida||(!!it.comida&&(hambre<20||it.siempre||!supervivencia()));}
 function terminarComer(){
   const p=enMano(); if(!p)return;
   const it=ITEMS[p.id];
+  if(it.bebida){beberPila(it);return;}
+  if(it.teletransporta)teletransporteCoro();
   hambre=Math.min(20,hambre+it.comida[0]); saturacion=Math.min(hambre,saturacion+it.comida[1]);
   if(it.efecto&&prob(it.efecto[2]||1)){const [nombre,seg]=it.efecto;efectos[nombre]={t:seg,n:it.id===I.manzanaDorada?2:1};}
   consumirEnMano(); if(it.devuelve&&supervivencia()){const r=insertarInv(crearPila(it.devuelve));if(r)soltarItem(r,jugador.pos.x,jugador.pos.y+1,jugador.pos.z,false);}
@@ -491,6 +503,7 @@ function soltarArco(){
 function usarDerecho(){
   cdUso=.25;
   const p=enMano(), id=p?p.id:0, it=id?ITEMS[id]:null;
+  if(apuntadoEnt&&apuntadoEnt.ent&&apuntadoEnt.ent.vehiculo){montar(apuntadoEnt.ent);return;}
   // Criaturas: alimentar para criar
   if(apuntadoEnt&&apuntadoEnt.mob){
     const m=apuntadoEnt.mob;
@@ -501,14 +514,16 @@ function usarDerecho(){
   if(apuntado&&!apuntadoEnt&&!jugador.agachado){
     const b=apuntado.b, inter=BLOQUES[b].inter;
     if(esPuerta(b)){alternarPuerta(apuntado.x,apuntado.y,apuntado.z);balancearMano();return;}
+    if(BLOQUES[b].redstone&&usarRedstone(apuntado.x,apuntado.y,apuntado.z,b)){balancearMano();return;}
     if(inter==='cama'){dormir(apuntado);return;}
     if(inter){abrirUI(inter,apuntado);return;}
     if(b===B.tnt&&(id===I.mechero)){setBloque(apuntado.x,apuntado.y,apuntado.z,0);activarTNT(apuntado.x,apuntado.y,apuntado.z);gastarObjetoEnMano();return;}
     if(b===B.marcoEnd&&id===I.ojoEnder){setBloque(apuntado.x,apuntado.y,apuntado.z,B.marcoEndOjo);consumirEnMano();sonar('portal',null,.5);
       comprobarPortalEnd(apuntado.x,apuntado.y,apuntado.z);return;}
   }
+  if(usarDerechoExtra(p,id,it))return;
   if(!it)return;
-  if(it.comida&&puedeComer()){comiendo=0;return;}
+  if((it.comida||it.bebida)&&puedeComer()){comiendo=0;return;}
   if(id===I.arco){if(!supervivencia()||inv.some((s,i)=>s&&s.id===I.flecha&&i<36)||nivelEnc(p,'infinidad'))arcoCarga=0;return;}
   if(it.armadura){const slot=36+it.armadura.pieza;const prev=inv[slot];inv[slot]=p;inv[ranura]=prev;sonar('poner');actualizarHUD();return;}
   if(id===I.perlaEnder){if(supervivencia()){lanzarDesdeJugador('perla',28);consumirEnMano();}else lanzarDesdeJugador('perla',28);cdUso=1;return;}
@@ -688,6 +703,7 @@ function construirPortal(tx,tz,d){
 }
 function cambiarDimension(nueva,x,y,z,sinPlataforma){
   if(ui)cerrarUI();
+  jugador.montura=null; jugador.planeando=false; colaRS.clear();
   guardarPartida();
   quitarTodasLasMallas(dim); dim.chunks.clear(); chunksSucios.clear();
   limpiarMobs(); limpiarEntidades(); limpiarSimulacion(); quitarDragon();

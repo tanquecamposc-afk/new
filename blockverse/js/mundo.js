@@ -30,7 +30,7 @@ function getBloqueSiCargado(x,y,z){
 }
 
 function generarChunk(d,cx,cz){
-  const datos=new Uint8Array(CX*CY*CZ);
+  const datos=new Uint16Array(CX*CY*CZ);
   const ch={cx,cz,dim:d,datos,luz:null,malla:null,mallaT:null,sucio:false,ymin:0,ymax:CY-1,generadores:[]};
   if(d===DIMS.superficie)generarSuperficie(ch);
   else if(d===DIMS.nether)generarNether(ch);
@@ -108,6 +108,8 @@ function generarBotin(tipo,rnd){
     aldea:[[I.pan,1,4,15],[I.manzana,1,5,15],[I.trigo,2,7,10],[I.semillas,2,5,10],[I.esmeralda,1,4,6],[I.lingoteHierro,1,3,5],[B.antorcha,1,8,8],[I.cuero,1,3,6]],
     herreria:[[I.lingoteHierro,1,5,15],[I.pan,1,3,15],[I.manzana,1,3,15],[B.obsidiana,3,7,5],[302,1,1,5],[332,1,1,5],[412,1,1,5],[I.diamante,1,3,3],[I.lingoteOro,1,3,5]],
     portalRuinas:[[B.obsidiana,1,2,20],[I.pedernal,1,4,10],[I.mechero,1,1,10],[I.pepitaOro,4,24,15],[I.lingoteOro,2,8,5],[I.manzanaDorada,1,1,4],[333,1,1,5],[403,1,1,3],[I.carneAsada||I.cerdoAsado,1,3,8]],
+    ciudadEnd:[[I.diamante,2,7,5],[I.lingoteHierro,4,8,10],[I.lingoteOro,2,7,15],[I.esmeralda,2,6,2],[I.hierroBruto?I.lingoteHierro:I.lingoteHierro,1,1,0],
+      [344,1,1,3],[424,1,1,3],[314,1,1,3],[304,1,1,3],[434,1,1,3],[I.cohete||523,2,6,6],[I.perlaEnder,1,2,4]],
     fortalezaNether:[[I.diamante,1,3,5],[I.lingoteHierro,1,5,5],[I.lingoteOro,1,3,15],[330+3,1,1,5],[410+1,1,1,5],[I.mechero,1,1,5],
       [B.obsidiana,2,4,2],[I.polvoBlaze,1,3,6],[I.cuerda,2,6,6]],
   }[tipo];
@@ -657,14 +659,24 @@ function estructurasSuperficie(ch,info,r){
    Generación del Nether
    ========================================================= */
 const _rejN=new Float32Array(5*5*GNY);
+const BN={desierto:0,carmesi:1,distorsionado:2,valle:3,deltas:4};
+const NOMBRES_BIOMA_NETHER=['Desiertos del Nether','Bosque carmesí','Bosque distorsionado','Valle de almas','Deltas de basalto'];
+const NIEBLA_NETHER=[0x3a100a,0x4a0808,0x0e2a30,0x1a2a36,0x3a3440];
+function biomaNether(x,z){
+  const s=semilla+7100, v1=fbm(x*.009,z*.009,s,3), v2=fbm(x*.009,z*.009,s+1,3);
+  if(v1>.57)return BN.carmesi; if(v1<.43)return BN.distorsionado;
+  if(v2>.57)return BN.valle; if(v2<.43)return BN.deltas;
+  return BN.desierto;
+}
 function generarNether(ch){
   const {datos,cx,cz}=ch, bx=cx*CX, bz=cz*CZ, s=semilla+7000;
   for(let gx=0;gx<5;gx++)for(let gz=0;gz<5;gz++)for(let gy=0;gy<GNY;gy++){
     const x=bx+gx*GR,z=bz+gz*GR,y=gy*GR;
     _rejN[(gy*5+gz)*5+gx]=valueNoise3(x/26,y/16,z/26,s)*.7+valueNoise3(x/9,y/9,z/9,s+1)*.3;
   }
+  ch.biomaN=new Uint8Array(256);
   for(let z=0;z<CZ;z++)for(let x=0;x<CX;x++){
-    const wx=bx+x,wz=bz+z;
+    const wx=bx+x,wz=bz+z, bio=biomaNether(wx,wz); ch.biomaN[z*CX+x]=bio;
     const almas=fbm(wx*.04,wz*.04,s+5,2)>.6;
     for(let y=OY;y<CY;y++){
       let id=0;
@@ -675,13 +687,54 @@ function generarNether(ch){
         const d=muestraRejilla(_rejN,x,y,z)+Math.max(0,.24-t)*3+Math.max(0,t-.8)*3;
         if(d>.6){
           id=B.netherrack;
-          if(almas&&y<OY+45)id=B.arenaAlmas;
-          else{const r=hash3(wx,y,wz,s+4);
+          const r=hash3(wx,y,wz,s+4);
+          if(bio===BN.deltas)id=r<.45?B.basalto:r<.9?B.piedraNegra:B.netherrack;
+          else if(bio===BN.valle&&y<OY+60)id=r<.5?B.arenaAlmas:B.sueloAlmas;
+          else if(almas&&y<OY+45&&bio===BN.desierto)id=B.arenaAlmas;
+          if(id===B.netherrack||id===B.piedraNegra){
             if(hash3(wx>>1,y>>1,wz>>1,s+6)<.03&&r<.6)id=B.menaCuarzo;
             else if(hash3(wx>>1,y>>1,wz>>1,s+7)<.012&&r<.5)id=B.menaOroNether;}
-        }else if(y<=OY+31)id=B.lava;
+        }else if(y<=OY+31)id=bio===BN.deltas&&hash3(wx,y,wz,s+9)<.3&&y===OY+31?B.bloqueMagma:B.lava;
       }
       if(id)datos[idx(x,y,z)]=id;
+    }
+  }
+  // Superficies y vegetación de cada bioma
+  const r=mulberry32(Math.floor(hash2(cx,cz,s+50)*4294967296));
+  const hongoGigante=(x,y,z,dist)=>{
+    const alto=4+Math.floor(r()*5), tallo=dist?B.talloDistorsionado:B.talloCarmesi, verr=dist?B.verrugaDistBloque:B.verrugaBloque;
+    const set=(X,Y,Z,id,solo)=>{if(X<0||Z<0||X>=CX||Z>=CZ||Y>=CY-5)return;const i=idx(X,Y,Z);if(solo&&datos[i])return;datos[i]=id;};
+    for(let k=1;k<=alto;k++)set(x,y+k,z,tallo,false);
+    const rad=2+Math.floor(r()*2);
+    for(let dy=-2;dy<=1;dy++)for(let dx=-rad;dx<=rad;dx++)for(let dz=-rad;dz<=rad;dz++){
+      const borde=Math.abs(dx)===rad||Math.abs(dz)===rad;
+      if(dy===1&&(Math.abs(dx)>rad-1||Math.abs(dz)>rad-1))continue;
+      if(dy<1&&!borde)continue;
+      if(dy<0&&r()<.4)continue;
+      set(x+dx,y+alto+dy,z+dz,r()<.08?B.luzHongo:verr,true);
+    }
+  };
+  for(let z=0;z<CZ;z++)for(let x=0;x<CX;x++){
+    const bio=ch.biomaN[z*CX+x];
+    for(let y=OY+6;y<CY-8;y++){
+      const i=idx(x,y,z), abajo=datos[idx(x,y-1,z)];
+      if(datos[i]||!abajo||esLiquido(abajo)||abajo===B.lecho)continue;
+      // superficie
+      if(bio===BN.carmesi&&abajo===B.netherrack)datos[idx(x,y-1,z)]=B.nilioCarmesi;
+      if(bio===BN.distorsionado&&abajo===B.netherrack)datos[idx(x,y-1,z)]=B.nilioDistorsionado;
+      const rr=r();
+      if(bio===BN.carmesi||bio===BN.distorsionado){
+        const dist=bio===BN.distorsionado;
+        if(rr<.012&&x>2&&x<13&&z>2&&z<13)hongoGigante(x,y-1,z,dist);
+        else if(rr<.12)datos[i]=dist?B.raicesDist:B.raicesCarmesi;
+        else if(rr<.16)datos[i]=dist?B.hongoDist:B.hongoCarmesi;
+      }else if(bio===BN.deltas){
+        if(rr<.03){const h=2+Math.floor(r()*5);for(let k=0;k<h&&!datos[idx(x,y+k,z)];k++)datos[idx(x,y+k,z)]=B.basalto;}
+        else if(rr<.12&&abajo!==B.lava)datos[idx(x,y-1,z)]=B.bloqueMagma;
+      }else if(bio===BN.valle){
+        if(rr<.006){const h=3+Math.floor(r()*4);for(let k=0;k<h&&!datos[idx(x,y+k,z)];k++)datos[idx(x,y+k,z)]=B.bloqueHueso;}
+        else if(rr<.02&&(abajo===B.arenaAlmas||abajo===B.sueloAlmas))datos[i]=B.fuegoAlmas;
+      }else if(rr<.004&&abajo===B.netherrack)datos[i]=B.fuego;
     }
   }
   // Piedra luminosa colgando del techo
@@ -713,7 +766,7 @@ function bloqueFortalezaNether(x,y,z,f){
   const enX=Math.abs(rz)<=2&&Math.abs(rx)<=L, enZ=Math.abs(rx)<=2&&Math.abs(rz)<=L;
   const plaza=Math.abs(rx)<=7&&Math.abs(rz)<=7;
   if(!(enX||enZ||plaza))return -1;
-  if(ry===0)return B.ladrilloNether;
+  if(ry===0)return (plaza&&rx<=-4&&rx>=-6&&rz>=4&&rz<=6)?B.arenaAlmas:B.ladrilloNether;
   if(ry<0){
     const pilar=(enX&&Math.abs(rz)<=1&&((rx%8)+8)%8===0)||(enZ&&Math.abs(rx)<=1&&((rz%8)+8)%8===0)||(plaza&&Math.abs(rx)===7&&Math.abs(rz)===7);
     return pilar&&ry>-60?B.ladrilloNether:-1;
@@ -725,6 +778,7 @@ function bloqueFortalezaNether(x,y,z,f){
     if(borde&&!abertura)return ry<=2?B.ladrilloNether:0;
     if(ry===1&&rx===0&&rz===0)return B.generador;
     if(ry===1&&rx===5&&rz===5)return B.cofre;
+    if(ry===1&&rx<=-4&&rx>=-6&&rz>=4&&rz<=6)return B.verruga0+Math.floor(hash3(x,y,z,semilla)*4);
     if(ry===5)return B.ladrilloNether;
     return 0;
   }
@@ -776,11 +830,84 @@ function generarEnd(ch){
       if(r>=2.5)datos[idx(x,EPY+1,z)]=B.lecho;
       if(wx===0&&wz===0)for(let y=EPY+1;y<=EPY+4;y++)datos[idx(x,y,z)]=B.lecho;
     }
+    if(d>600)generarIslaExterior(datos,x,z,wx,wz);
     // Plataforma de obsidiana de llegada
     if(Math.abs(wx-100)<=2&&Math.abs(wz)<=2){
       datos[idx(x,OY+48,z)]=B.obsidiana;
       for(let y=OY+49;y<=OY+51;y++)datos[idx(x,y,z)]=0;
     }
+  }
+  if(Math.hypot(bx+8,bz+8)>620)construirCiudadEnd(ch);
+}
+
+/* ---------- Islas exteriores del End ---------- */
+function salidaAcceso(){const a=(semilla%628)/100;return [Math.round(Math.cos(a)*1000),Math.round(Math.sin(a)*1000)];}
+function columnaEnd(wx,wz){
+  const s=semilla+9100;
+  let m=fbm(wx*.011,wz*.011,s,3)*1.25-.62+fbm(wx*.04,wz*.04,s+3,2)*.12;
+  const [px,pz]=salidaAcceso(), dp=Math.hypot(wx-px,wz-pz);
+  if(dp<24)m=Math.max(m,.28*(1-dp/24)+.05);
+  if(m<=0)return null;
+  const top=END_TOP-4+Math.round(m*14+fbm(wx*.06,wz*.06,s+5,2)*2);
+  return {top,bot:top-Math.round(3+m*55),m};
+}
+function generarIslaExterior(datos,x,z,wx,wz){
+  const c=columnaEnd(wx,wz); if(!c)return;
+  for(let y=Math.max(1,c.bot);y<=c.top;y++)datos[idx(x,y,z)]=B.piedraEnd;
+  // Plantas coro
+  if(c.m>.08&&hash2(wx,wz,semilla+77)<.004){
+    const r=mulberry32(Math.floor(hash2(wx,wz,semilla+78)*1e9));
+    const alto=3+Math.floor(r()*5);
+    for(let y=1;y<=alto;y++)datos[idx(x,c.top+y,z)]=B.plantaCoro;
+    datos[idx(x,c.top+alto+1,z)]=B.florCoro;
+    for(let k=0;k<3;k++){if(r()<.5)continue;const [dx,dz]=DIRF[Math.floor(r()*4)];const nx=x+dx,nz=z+dz;if(nx<0||nx>=CX||nz<0||nz>=CZ)continue;
+      const y0=c.top+2+Math.floor(r()*(alto-1));const l=1+Math.floor(r()*3);
+      for(let y=y0;y<y0+l;y++)datos[idx(nx,y,nz)]=B.plantaCoro;datos[idx(nx,y0+l,nz)]=B.florCoro;}
+  }
+}
+// Ciudades del End: una por región de 96x96 bloques en las islas exteriores
+function ciudadesCerca(cx,cz){
+  const res=[],R=96,x0=Math.floor((cx*CX-40)/R),x1=Math.floor((cx*CX+CX+40)/R),z0=Math.floor((cz*CZ-40)/R),z1=Math.floor((cz*CZ+CZ+40)/R);
+  for(let rx=x0;rx<=x1;rx++)for(let rz=z0;rz<=z1;rz++){
+    const h=hash2(rx,rz,semilla+555); if(h>.55)continue;
+    const x=rx*R+16+Math.floor(hash2(rx,rz,semilla+556)*64), z=rz*R+16+Math.floor(hash2(rx,rz,semilla+557)*64);
+    if(Math.hypot(x,z)<750)continue;
+    const c=columnaEnd(x,z); if(!c||c.m<.1)continue;
+    res.push({x,z,y:c.top+1,alto:14+Math.floor(hash2(rx,rz,semilla+558)*14),rnd:mulberry32(Math.floor(h*1e9))});
+  }
+  return res;
+}
+function construirCiudadEnd(ch){
+  const bx=ch.cx*CX,bz=ch.cz*CZ;
+  for(const c of ciudadesCerca(ch.cx,ch.cz)){
+    const pon=(x,y,z,b)=>{const lx=x-bx,lz=z-bz;if(lx<0||lx>=CX||lz<0||lz>=CZ||y<1||y>=CY)return;ch.datos[idx(lx,y,lz)]=b;
+      if(b===B.cofre)registrarCofre(DIMS.end,x,y,z,'ciudadEnd');};
+    const caja=(x0,y0,z0,x1,y1,z1,borde,dentro)=>{for(let x=x0;x<=x1;x++)for(let y=y0;y<=y1;y++)for(let z=z0;z<=z1;z++){
+      const b=(x===x0||x===x1||z===z0||z===z1||y===y0||y===y1);pon(x,y,z,b?borde:dentro);}};
+    // Cimientos
+    for(let x=c.x-4;x<=c.x+4;x++)for(let z=c.z-4;z<=c.z+4;z++)for(let y=c.y-6;y<c.y;y++)pon(x,y,z,B.ladrillosEnd);
+    // Torre
+    const r=3;
+    caja(c.x-r,c.y,c.z-r,c.x+r,c.y+c.alto,c.z+r,B.purpur,0);
+    for(let y=c.y;y<=c.y+c.alto;y++){pon(c.x-r,y,c.z-r,B.pilarPurpur);pon(c.x+r,y,c.z-r,B.pilarPurpur);pon(c.x-r,y,c.z+r,B.pilarPurpur);pon(c.x+r,y,c.z+r,B.pilarPurpur);}
+    // Puerta y escalera interior
+    pon(c.x,c.y+1,c.z-r,0);pon(c.x,c.y+2,c.z-r,0);
+    for(let y=c.y+1;y<c.y+c.alto;y++)pon(c.x+r-1,y,c.z,146);
+    for(let y=c.y+4;y<c.y+c.alto;y+=5){for(let x=c.x-r+1;x<c.x+r;x++)for(let z=c.z-r+1;z<c.z+r;z++)if(x!==c.x+r-1||z!==c.z)pon(x,y,z,B.purpur);
+      pon(c.x-r,y+2,c.z,B.vidrio);pon(c.x+r,y+2,c.z,B.vidrio);pon(c.x,y+2,c.z+r,B.vidrio);}
+    // Sala superior con el botín
+    const t=c.y+c.alto;
+    caja(c.x-5,t,c.z-5,c.x+5,t+6,c.z+5,B.purpur,0);
+    for(let x=c.x-4;x<=c.x+4;x++)for(let z=c.z-4;z<=c.z+4;z++)pon(x,t,z,B.ladrillosEnd);
+    pon(c.x+r-1,t,c.z,0);
+    for(const [dx,dz] of [[-4,-4],[4,-4],[-4,4],[4,4]])pon(c.x+dx,t+1,c.z+dz,B.varaEnd);
+    pon(c.x-2,t+1,c.z+4,B.cofre);pon(c.x+2,t+1,c.z+4,B.cofre);
+    pon(c.x,t+4,c.z-5,B.vidrio);pon(c.x-1,t+4,c.z-5,B.vidrio);pon(c.x+1,t+4,c.z-5,B.vidrio);
+    // Soporte de los élitros
+    pon(c.x,t+1,c.z,B.obsidiana);pon(c.x,t+2,c.z,B.cofre);
+    const k=DIMS.end.clave+':'+clavePos(c.x,t+2,c.z);
+    if(!cofres[k]){const cf=new Array(27).fill(null);cf[13]=crearPila(I.elitros);cf[4]=crearPila(I.cohete,8);cofres[k]=cf;}
+    for(let x=c.x-5;x<=c.x+5;x+=10)for(let y=t+1;y<=t+6;y++)for(const z of [c.z-5,c.z+5])pon(x,y,z,B.pilarPurpur);
   }
 }
 

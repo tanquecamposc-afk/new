@@ -81,6 +81,13 @@ NECESITA_SOPORTE[B.arbustoSeco]=s=>s===B.arena||s===B.arenaRoja||s===B.tierra||(
 NECESITA_SOPORTE[B.cactus]=s=>s===B.cactus||s===B.arena||s===B.arenaRoja;
 NECESITA_SOPORTE[B.cana]=s=>s===B.cana||s===B.cesped||s===B.tierra||s===B.arena||s===B.arenaRoja;
 NECESITA_SOPORTE[B.nenufar]=s=>s===B.agua||s===B.hielo;
+for(let e=0;e<4;e++)NECESITA_SOPORTE[B.verruga0+e]=s=>s===B.arenaAlmas;
+const SUELO_NETHER=s=>s===B.nilioCarmesi||s===B.nilioDistorsionado||s===B.netherrack||s===B.sueloAlmas||s===B.arenaAlmas||TIERRAS(s);
+[B.raicesCarmesi,B.raicesDist,B.hongoCarmesi,B.hongoDist].forEach(b=>NECESITA_SOPORTE[b]=SUELO_NETHER);
+NECESITA_SOPORTE[B.fuegoAlmas]=s=>s===B.arenaAlmas||s===B.sueloAlmas;
+[...Array(16).keys()].forEach(q=>NECESITA_SOPORTE[B.cable0+q]=s=>SOLIDO[s]&&OPACO[s]);
+[B.antorchaR,B.antorchaROff,B.palanca,B.palancaOn,B.boton,B.botonOn,B.placa,B.placaOn].forEach(b=>NECESITA_SOPORTE[b]=s=>SOLIDO[s]&&(OPACO[s]||FORMA[s]===6));
+for(let i=1260;i<=1273;i++)NECESITA_SOPORTE[i]=s=>SOLIDO[s]&&OPACO[s];
 NECESITA_SOPORTE[B.capaNieve]=s=>SOLIDO[s]&&(OPACO[s]||esHojas(s));
 function notificarCambio(x,y,z,anterior,nuevo){
   for(let k=-1;k<6;k++){
@@ -99,7 +106,9 @@ function notificarCambio(x,y,z,anterior,nuevo){
       if(!bo||!bo.puerta||bo.puerta.m===pu.m)romperBloqueNatural(px,py,pz);
       else if(!pu.m&&!SOLIDO[getBloque(px,py-1,pz)])romperBloqueNatural(px,py,pz);}
     if(id===B.fuego&&k>=0&&dy===1&&!SOLIDO[getBloque(px,py-1,pz)])setBloque(px,py,pz,0);
+    if(k>=0&&(def.piston||def.cabezaPiston))comprobarPiston(px,py,pz);
   }
+  avisarRedstone(x,y,z,anterior,nuevo);
   if((anterior===B.obsidiana||anterior===B.portalNether)&&nuevo!==B.portalNether)romperPortal(x,y,z);
   if(esTronco(anterior)&&!nuevo)programarHojas(x,y,z);
 }
@@ -181,6 +190,8 @@ function tickBloque(x,y,z,id){
   if(id>=B.trigo0&&id<B.trigo0+7){
     const suelo=getBloque(x,y-1,z);
     if(luzCieloBloque(x,y,z)>=9&&prob(suelo===B.cultivo&&aguaCerca(x,y-1,z)?.2:.1))setBloque(x,y,z,id+1);
+  }else if(id>=B.verruga0&&id<B.verruga0+3){
+    if(prob(.08))setBloque(x,y,z,id+1);
   }else if(esBrote(id)){
     if(luzCieloBloque(x,y,z)>=9&&prob(.12))crecerArbol(x,y,z);
   }else if(id===B.cana||id===B.cactus){

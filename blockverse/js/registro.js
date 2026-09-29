@@ -7,6 +7,7 @@ function bloque(id,clave,nombre,tex,props={}){
   const t=typeof tex==='string'?{arriba:T[tex],abajo:T[tex],lado:T[tex]}:{arriba:T[tex.arriba],abajo:T[tex.abajo],lado:T[tex.lado]};
   const forma=props.forma||'cubo';
   const cubo=forma==='cubo'||forma==='losa'||forma==='cajas'||forma==='conecta';
+  if(forma==='cable'||forma==='riel')props=Object.assign({solido:false,reemplazable:false},props);
   const def=Object.assign({id,clave,nombre,forma,solido:cubo,opaco:cubo&&!props.trans&&forma==='cubo',trans:false,luz:0,
     dureza:1,herr:null,nivel:0,altura:forma==='losa'?.5625:1,resistencia:null,reemplazable:!cubo,inflamable:false},t,props);
   if(def.resistencia===null)def.resistencia=def.dureza===Infinity?3600000:def.dureza*3;
@@ -146,10 +147,71 @@ bloque(173,'granito','Granito','granite',{dureza:1.5,herr:'pico',nivel:1,resiste
 bloque(174,'diorita','Diorita','diorite',{dureza:1.5,herr:'pico',nivel:1,resistencia:6});
 bloque(175,'andesita','Andesita','andesite',{dureza:1.5,herr:'pico',nivel:1,resistencia:6});
 bloque(172,'estanteria','Librería',tx('planks','planks','bookshelf'),{dureza:1.5,herr:'hacha',inflamable:true,suelta:()=>[[248,3]],resistencia:1.5});
+/* ---------- Nether: biomas ---------- */
+bloque(1176,'nilioCarmesi','Nilio carmesí',tx('crimsonNylium','netherrack','crimsonNyliumSide'),{dureza:.4,herr:'pico',nivel:1,suelta:69,resistencia:.4});
+bloque(1177,'nilioDistorsionado','Nilio distorsionado',tx('warpedNylium','netherrack','warpedNyliumSide'),{dureza:.4,herr:'pico',nivel:1,suelta:69,resistencia:.4});
+bloque(1178,'talloCarmesi','Tallo carmesí',tx('crimsonStemTop','crimsonStemTop','crimsonStem'),{dureza:2,herr:'hacha',resistencia:2});
+bloque(1179,'talloDistorsionado','Tallo distorsionado',tx('warpedStemTop','warpedStemTop','warpedStem'),{dureza:2,herr:'hacha',resistencia:2});
+bloque(1180,'verrugaBloque','Bloque de verruga del Nether','netherWartBlock',{dureza:1,herr:'azada',resistencia:1});
+bloque(1181,'verrugaDistBloque','Bloque de verruga distorsionada','warpedWartBlock',{dureza:1,herr:'azada',resistencia:1});
+bloque(1182,'luzHongo','Luz de hongo','shroomlight',{dureza:1,herr:'azada',luz:15,resistencia:1});
+bloque(1183,'raicesCarmesi','Raíces carmesí','crimsonRoots',{forma:'cruz',dureza:0});
+bloque(1184,'raicesDist','Raíces distorsionadas','warpedRoots',{forma:'cruz',dureza:0});
+bloque(1185,'hongoCarmesi','Hongo carmesí','crimsonFungus',{forma:'cruz',dureza:0});
+bloque(1186,'hongoDist','Hongo distorsionado','warpedFungus',{forma:'cruz',dureza:0});
+bloque(1187,'sueloAlmas','Tierra de almas','soulSoil',{dureza:.5,herr:'pala',resistencia:.5});
+bloque(1188,'bloqueHueso','Bloque de hueso',tx('boneTop','boneTop','boneSide'),{dureza:2,herr:'pico',nivel:1,resistencia:2});
+bloque(1189,'basalto','Basalto',tx('basaltTop','basaltTop','basaltSide'),{dureza:1.25,herr:'pico',nivel:1,resistencia:4.2});
+bloque(1190,'piedraNegra','Piedra negra','blackstone',{dureza:1.5,herr:'pico',nivel:1,resistencia:6});
+bloque(1191,'bloqueMagma','Bloque de magma','magma',{dureza:.5,herr:'pico',nivel:1,luz:3,quema:true,resistencia:.5});
+for(let e=0;e<4;e++)bloque(1192+e,'verruga'+e,'Verruga del Nether','wart'+e,{forma:'cruz',dureza:0,suelta:e===3?()=>[[515,azar(2,4)]]:()=>[[515,1]]});
+bloque(1196,'fuegoAlmas','Fuego de almas','soulFire',{forma:'cruz',dureza:0,luz:10,suelta:0});
+/* ---------- Redstone ---------- */
+for(let q=0;q<16;q++)bloque(1197+q,'cable'+q,'Polvo de redstone','redstoneDust',{forma:'cable',dureza:0,suelta:214,potencia:q,redstone:'cable'});
+bloque(1213,'antorchaR','Antorcha de redstone','redTorchOn',{forma:'antorcha',dureza:0,luz:7,suelta:1213,redstone:'antorcha'});
+bloque(1283,'antorchaROff','Antorcha de redstone','redTorchOff',{forma:'antorcha',dureza:0,suelta:1213,redstone:'antorcha'});
+bloque(1215,'palanca','Palanca','lever',{forma:'cajas',cajas:[[.3,0,.25,.7,.19,.75],[.46,.19,.3,.54,.7,.42]],solido:false,opaco:false,dureza:.5,suelta:1215,redstone:'palanca',reemplazable:false});
+bloque(1216,'palancaOn','Palanca','lever',{forma:'cajas',cajas:[[.3,0,.25,.7,.19,.75],[.46,.19,.58,.54,.7,.7]],solido:false,opaco:false,dureza:.5,suelta:1215,redstone:'palanca',on:true,reemplazable:false});
+bloque(1217,'boton','Botón de piedra','stone',{forma:'cajas',cajas:[[.31,0,.37,.69,.12,.63]],solido:false,opaco:false,dureza:.5,suelta:1217,redstone:'boton',reemplazable:false});
+bloque(1218,'botonOn','Botón de piedra','stone',{forma:'cajas',cajas:[[.31,0,.37,.69,.05,.63]],solido:false,opaco:false,dureza:.5,suelta:1217,redstone:'boton',on:true,reemplazable:false});
+bloque(1219,'placa','Placa de presión de piedra','pressurePlate',{forma:'cajas',cajas:[[.06,0,.06,.94,.06,.94]],solido:false,opaco:false,dureza:.5,suelta:1219,redstone:'placa',reemplazable:false});
+bloque(1220,'placaOn','Placa de presión de piedra','pressurePlate',{forma:'cajas',cajas:[[.06,0,.06,.94,.03,.94]],solido:false,opaco:false,dureza:.5,suelta:1219,redstone:'placa',on:true,reemplazable:false});
+bloque(1221,'bloqueRedstone','Bloque de redstone','redstoneBlock',{dureza:5,herr:'pico',nivel:1,redstone:'fuente',resistencia:6});
+bloque(1222,'lampara','Lámpara de redstone','lampOff',{dureza:.3,redstone:'lampara'});
+bloque(1223,'lamparaOn','Lámpara de redstone','lampOn',{dureza:.3,luz:15,suelta:1222,redstone:'lampara'});
+// Pistones: dirección 0..5 = -x,+x,-y,+y,-z,+z (orden de las caras)
+const OPUESTA=[1,0,3,2,5,4], VEC6=[[-1,0,0],[1,0,0],[0,-1,0],[0,1,0],[0,0,-1],[0,0,1]];
+function cajaHacia(d,desde,hasta){const c=[0,0,0,1,1,1],eje=d>>1,pos=d&1;
+  if(pos){c[eje]=desde;c[eje+3]=hasta;}else{c[eje]=1-hasta;c[eje+3]=1-desde;}return c;}
+for(const peg of [0,1]){
+  const base=1224+peg*18, nom=peg?'Pistón pegajoso':'Pistón', cara=peg?'pistonTopSticky':'pistonTop';
+  for(let d=0;d<6;d++){
+    const tc=[0,0,0,0,0,0].map((_,k)=>k===d?T[cara]:k===OPUESTA[d]?T.pistonBottom:T.pistonSide);
+    bloque(base+d,(peg?'pistonP':'piston')+d,nom,'pistonSide',{texCaras:tc,dureza:1.5,herr:'pico',suelta:base+3,piston:{d,peg,ext:false},redstone:'piston',resistencia:1.5});
+    const tcx=tc.slice(); tcx[d]=T.pistonBottom;
+    bloque(base+6+d,(peg?'pistonPExt':'pistonExt')+d,nom,'pistonSide',{forma:'cajas',cajas:[cajaHacia(d,0,.75)],texCaras:tcx,dureza:1.5,herr:'pico',opaco:false,suelta:base+3,piston:{d,peg,ext:true},redstone:'piston',resistencia:1.5});
+    bloque(base+12+d,(peg?'cabezaP':'cabeza')+d,nom,cara,{forma:'cajas',cajas:[cajaHacia(OPUESTA[d],.75,1),cajaHacia(OPUESTA[d],-.25,.75).map((v,k)=>{const e=d>>1;return (k%3===e)?v:(k<3?.375:.625);})],dureza:1.5,opaco:false,suelta:0,cabezaPiston:{d,peg},resistencia:1.5});
+  }
+}
+// Raíles: salidas en direcciones DIRF (0 N, 1 E, 2 S, 3 O)
+const RIELES={1260:[0,2],1261:[1,3],1262:[0,1],1263:[1,2],1264:[2,3],1265:[3,0],1266:[0,2,0],1267:[1,3,1],1268:[2,0,2],1269:[3,1,3],1270:[0,2],1271:[1,3],1272:[0,2],1273:[1,3]};
+for(const id in RIELES){const i=+id,prop=i>=1270;
+  bloque(i,'riel'+(i-1260||''),prop?'Raíl propulsor':'Raíl',prop?(i>=1272?'railPoweredOn':'railPowered'):(i>=1262&&i<=1265?'railCurve':'rail'),
+    {forma:'riel',solido:false,opaco:false,dureza:.7,herr:'pico',suelta:prop?1270:1260,riel:RIELES[id],sube:RIELES[id][2],propulsor:prop,encendido:i>=1272,redstone:prop?'propulsor':undefined});}
+/* ---------- Pociones, yunque y End ---------- */
+bloque(1274,'soporte','Soporte para pociones','brewingBase',{forma:'cajas',cajas:[[.1,0,.1,.9,.12,.9],[.44,.12,.44,.56,.88,.56]],dureza:.5,herr:'pico',inter:'pociones',luz:1,opaco:false});
+bloque(1275,'yunque','Yunque','anvil',{forma:'cajas',cajas:[[.12,0,.12,.88,.25,.88],[.3,.25,.3,.7,.6,.7],[0,.6,.2,1,1,.8]],dureza:5,herr:'pico',nivel:1,gravedad:true,inter:'yunque',opaco:false,resistencia:1200});
+bloque(1276,'purpur','Bloque de púrpur','purpur',{dureza:1.5,herr:'pico',nivel:1,resistencia:6});
+bloque(1277,'pilarPurpur','Pilar de púrpur','purpurPillar',{dureza:1.5,herr:'pico',nivel:1,resistencia:6});
+bloque(1278,'ladrillosEnd','Ladrillos de piedra del End','endBricks',{dureza:3,herr:'pico',nivel:1,resistencia:9});
+bloque(1279,'varaEnd','Vara del End','endRod',{forma:'cajas',cajas:[[.44,0,.44,.56,1,.56]],dureza:0,luz:14,opaco:false});
+bloque(1280,'portalAcceso','Portal de acceso del End','endGateway',{forma:'portal',dureza:Infinity,luz:15,resistencia:3600000});
+bloque(1281,'plantaCoro','Planta coro','chorusPlant',{forma:'cajas',cajas:[[.19,0,.19,.81,1,.81]],dureza:.4,herr:'hacha',suelta:()=>prob(.5)?[[519,1]]:[],opaco:false});
+bloque(1282,'florCoro','Flor coro','chorusFlower',{dureza:.4,herr:'hacha'});
 const NB=BLOQUES.length;
 const SOLIDO=new Uint8Array(NB), OPACO=new Uint8Array(NB), TRANS=new Uint8Array(NB), LUZB=new Uint8Array(NB),
       OPAC_LUZ=new Uint8Array(NB), OCLUYE=new Uint8Array(NB), FORMA=new Uint8Array(NB), REEMPL=new Uint8Array(NB);
-const FORMAS={cubo:0,losa:1,cruz:2,antorcha:3,liquido:4,portal:5,cajas:6,conecta:7};
+const FORMAS={cubo:0,losa:1,cruz:2,antorcha:3,liquido:4,portal:5,cajas:6,conecta:7,cable:8,riel:9};
 const TINTES={pasto:1,follaje:2,abedul:3,abeto:4,agua:5};
 const TINTE=new Uint8Array(NB), TREPA=new Uint8Array(NB);
 BLOQUES.forEach((b,i)=>{if(!b)return;SOLIDO[i]=b.solido?1:0;OPACO[i]=b.opaco?1:0;TRANS[i]=b.trans?1:0;LUZB[i]=b.luz;
@@ -171,7 +233,7 @@ const nivelLiquido=id=>BLOQUES[id].nivelL;
    Registro de objetos
    ========================================================= */
 const ITEMS=[], I={};
-const esVariante=i=>(i>=130&&i<=132)||(i>=134&&i<=136)||(i>=138&&i<=140)||(i>=146&&i<=148)||(i>=149&&i<=168);
+const esVariante=i=>(i>=130&&i<=132)||(i>=134&&i<=136)||(i>=138&&i<=140)||(i>=146&&i<=148)||(i>=149&&i<=168)||(i>=1192&&i<=1212)||i===1283||i===1216||i===1218||i===1220||i===1223||(i>=1224&&i<=1259&&i!==1227&&i!==1245)||(i>=1261&&i<=1269)||(i>=1271&&i<=1273);
 BLOQUES.forEach((b,i)=>{if(b&&!b.liquido&&b.forma!=='portal'&&i!==86&&!(i>=41&&i<=48)&&!esVariante(i))ITEMS[i]={nombre:b.nombre,bloque:true,max:64,clave:b.clave};});
 function item(id,clave,nombre,props){ITEMS[id]=Object.assign({nombre,max:64,clave},props);I[clave]=id;}
 item(200,'palo','Palo'); item(201,'carbon','Carbón'); item(202,'hierroBruto','Hierro en bruto'); item(203,'lingoteHierro','Lingote de hierro');
@@ -179,7 +241,7 @@ item(204,'diamante','Diamante'); item(205,'manzana','Manzana',{comida:[4,2.4]});
 item(206,'cerdoCrudo','Chuleta de cerdo cruda',{comida:[3,1.8]}); item(207,'cerdoAsado','Chuleta de cerdo cocinada',{comida:[8,12.8]});
 item(208,'carnePodrida','Carne podrida',{comida:[4,.8],efecto:['hambre',30,.8]});
 item(209,'oroBruto','Oro en bruto'); item(210,'lingoteOro','Lingote de oro'); item(211,'pepitaOro','Pepita de oro');
-item(212,'cobreBruto','Cobre en bruto'); item(213,'lingoteCobre','Lingote de cobre'); item(214,'redstone','Polvo de redstone');
+item(212,'cobreBruto','Cobre en bruto'); item(213,'lingoteCobre','Lingote de cobre'); item(214,'redstone','Polvo de redstone',{coloca:'cable'});
 item(215,'lapis','Lapislázuli'); item(216,'esmeralda','Esmeralda'); item(217,'cuarzo','Cuarzo del Nether'); item(218,'pedernal','Pedernal');
 item(219,'cuerda','Cuerda'); item(220,'pluma','Pluma'); item(221,'polvora','Pólvora'); item(222,'hueso','Hueso'); item(223,'harinaHueso','Polvo de hueso');
 item(224,'flecha','Flecha'); item(225,'arco','Arco',{max:1,dur:384,tipoHerr:'arco'});
@@ -196,6 +258,18 @@ item(249,'ojoArana','Ojo de araña',{comida:[2,3.2],efecto:['veneno',4,1]});
 item(250,'ladrillo','Ladrillo'); item(251,'bolaArcilla','Bola de arcilla'); item(252,'cuenco','Cuenco');
 item(253,'estofado','Estofado de champiñones',{comida:[6,7.2],max:1,devuelve:252}); item(254,'rodajaSandia','Rodaja de sandía',{comida:[2,1.2]});
 item(255,'puerta','Puerta de roble',{coloca:'puerta'});
+item(500,'frasco','Frasco de vidrio'); item(501,'frascoAgua','Frasco de agua',{max:1,bebida:true});
+item(502,'pocionRara','Poción rara',{max:1,bebida:true});
+const POCIONES=[['curacion','Poción de curación',0xf82423],['fuerza','Poción de fuerza',0x932423],['rapidez','Poción de rapidez',0x7cafc6],
+  ['regeneracion','Poción de regeneración',0xcd5cab],['resistenciaFuego','Poción de resistencia al fuego',0xe49a3a]];
+POCIONES.forEach(([ef,nom,col],k)=>{item(503+k,'pocion_'+ef,nom,{max:1,bebida:true,pocion:{efecto:ef,color:col}});
+  item(510+k,'arrojadiza_'+ef,nom.replace('Poción','Poción arrojadiza'),{max:1,pocion:{efecto:ef,color:col,arrojadiza:true}});});
+item(515,'verrugaNether','Verruga del Nether',{coloca:'verruga'}); item(516,'azucar','Azúcar'); item(517,'melonBrillante','Rodaja de sandía reluciente');
+item(518,'cremaMagma','Crema de magma'); item(519,'frutaCoro','Fruta coro',{comida:[4,2.4],siempre:true,teletransporta:true});
+item(520,'vagoneta','Vagoneta',{max:1,coloca:'vagoneta'}); item(521,'barco','Barco de roble',{max:1,coloca:'barco'});
+item(522,'elitros','Élitros',{max:1,dur:432,tipoHerr:'armadura',armadura:{pieza:1,def:0,dureza:0,mat:0,enc:1},elitros:true});
+item(523,'cohete','Cohete de fuegos artificiales'); item(525,'bolaSlime','Bola de slime'); item(526,'frutaReventada','Fruta coro reventada');
+item(527,'hierroGolem','Pepita de hierro');
 
 const MATS=[
   {n:'madera',nivel:1,vel:2,dur:59,enc:15,col:[176,138,82]},
@@ -273,6 +347,30 @@ receta(['LL','LL'],{L:250},B.ladrillos);
 receta(['BB','BB'],{B:251},B.arcilla);
 receta(['PPP','LLL','PPP'],{P:B.tablones,L:248},B.estanteria);
 receta(['RRR','RRR','RRR'],{R:254},B.sandia);
+receta(['G.G','.G.'],{G:B.vidrio},500,3);
+recetaSin([B.cana],516);
+receta(['NNN','NRN','NNN'],{N:I.pepitaOro,R:254},517);
+recetaSin([I.polvoBlaze,525],518);
+receta(['.V.','RRR'],{V:I.varaBlaze,R:B.roca},B.soporte);
+receta(['BBB','.I.','III'],{B:B.bloqueHierro,I:I.lingoteHierro},B.yunque);
+receta(['R','S'],{R:I.redstone,S:I.palo},B.antorchaR);
+receta(['S','C'],{S:I.palo,C:B.roca},B.palanca);
+recetaSin([B.piedra],B.boton);
+receta(['SS'],{S:B.piedra},B.placa);
+receta(['RRR','RRR','RRR'],{R:I.redstone},B.bloqueRedstone); recetaSin([B.bloqueRedstone],I.redstone,9);
+receta(['.R.','RGR','.R.'],{R:I.redstone,G:B.piedraLuminosa},B.lampara);
+receta(['PPP','CIC','CRC'],{P:B.tablones,C:B.roca,I:I.lingoteHierro,R:I.redstone},B.piston3);
+recetaSin([525,B.piston3],B.pistonP3);
+receta(['I.I','ISI','I.I'],{I:I.lingoteHierro,S:I.palo},B.riel,16);
+receta(['G.G','GSG','GRG'],{G:I.lingoteOro,S:I.palo,R:I.redstone},B.riel10,6);
+receta(['I.I','III'],{I:I.lingoteHierro},520);
+receta(['P.P','PPP'],{P:B.tablones},521);
+recetaSin([I.papel,I.polvora],523,3);
+receta(['FF','FF'],{F:526},B.purpur,4);
+receta(['P','P'],{P:B.purpur},B.pilarPurpur);
+receta(['B','F'],{B:I.varaBlaze,F:526},B.varaEnd,4);
+receta(['SS','SS'],{S:B.piedraEnd},B.ladrillosEnd,4);
+
 receta(['P','P'],{P:B.tablones},I.palo,4);
 receta(['PP','PP'],{P:B.tablones},B.mesa);
 receta(['PPP','P.P','PPP'],{P:B.tablones},B.cofre);
@@ -334,10 +432,20 @@ const FUNDIR={
   [B.menaCarbon]:I.carbon,[B.menaLapis]:I.lapis,[B.menaRedstone]:I.redstone,[B.menaEsmeralda]:I.esmeralda,[B.menaCuarzo]:I.cuarzo,
   [B.pHierro]:I.lingoteHierro,[B.pOro]:I.lingoteOro,[B.pCobre]:I.lingoteCobre,[B.pDiamante]:I.diamante,
   [B.roca]:B.piedra,[B.arena]:B.vidrio,[B.arenaRoja]:B.vidrio,[B.tronco]:I.carbon,[B.troncoAbedul]:I.carbon,[B.troncoAbeto]:I.carbon,[B.troncoJungla]:I.carbon,[B.troncoAcacia]:I.carbon,
-  [251]:250,[B.arcilla]:B.terracota,
+  [251]:250,[B.arcilla]:B.terracota,[519]:526,[B.piedraNegra]:B.piedraNegra,
   [I.cerdoCrudo]:I.cerdoAsado,[I.resCruda]:I.filete,[I.polloCrudo]:I.polloAsado,[I.corderoCrudo]:I.corderoAsado,
 };
-const COMBUSTIBLE={[I.carbon]:80,[B.bloqueCarbon]:800,[I.cuboLava]:1000,[I.varaBlaze]:120,[B.tablones]:15,[B.tronco]:15,
+const COMBUSTIBLE={1178:15,1179:15,[I.carbon]:80,[B.bloqueCarbon]:800,[I.cuboLava]:1000,[I.varaBlaze]:120,[B.tablones]:15,[B.tronco]:15,
   94:15,95:15,96:15,97:15,[B.valla]:15,133:15,142:7.5,255:10,145:15,[B.estanteria]:15,252:5,
   [I.palo]:5,[B.mesa]:15,[B.cofre]:15,[B.brote]:5,[B.lana]:5,[I.arco]:15,[B.heno]:5,300:10,310:10,320:10,330:10,340:10};
 const TIEMPO_FUNDIR=10;
+
+/* ---------- Fermentación de pociones ---------- */
+function resultadoFermentar(base,ing){
+  if(base===501&&ing===515)return 502;
+  if(base===502){const t={516:505,517:503,[I.polvoBlaze]:504,[I.lagrimaGhast]:506,518:507}[ing];if(t)return t;}
+  if(base>=503&&base<=507&&ing===I.polvora)return base+7;
+  return 0;
+}
+const DURACION_POCION={curacion:0,fuerza:180,rapidez:180,regeneracion:45,resistenciaFuego:180};
+const NOMBRE_EFECTO={fuerza:'Fuerza',rapidez:'Rapidez',regeneracion:'Regeneración',resistenciaFuego:'Resistencia al fuego',veneno:'Veneno',hambre:'Hambre'};

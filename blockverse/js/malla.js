@@ -30,12 +30,13 @@ const UV_CARA=[(x,y,z)=>[z,y],(x,y,z)=>[1-z,y],(x,y,z)=>[x,1-z],(x,y,z)=>[1-x,z]
 const NIVEL_AO=[.5,.68,.84,1];
 const EPS=0.0007;
 const UVT=[];for(let t=0;t<NT;t++){const q=uvTile(t);UVT.push([q.u0,q.u1,q.v0,q.v1]);}
+const T_CURVA=T.railCurve;
 function alturaLiquido(id,arriba){
   if(esLiquido(arriba)&&(esAgua(arriba)===esAgua(id)))return 1;
   const l=nivelLiquido(id);
   return l===0?14/16:Math.max(1.5/16,(8-l)/8*14/16);
 }
-let _pb=new Uint8Array(PS*(CY+2)), _pl=new Uint8Array(PS*(CY+2)), _pbio=new Uint8Array(PS);
+let _pb=new Uint16Array(PS*(CY+2)), _pl=new Uint8Array(PS*(CY+2)), _pbio=new Uint8Array(PS);
 const _tintes=[new Float32Array(17*17*3),new Float32Array(17*17*3),new Float32Array(17*17*3)];
 function rellenarRelleno(ch,y0,y1){
   const d=ch.dim, H=y1-y0+3;
@@ -106,7 +107,7 @@ function construirGeometria(ch){
       const enBorde=(f.k===0&&bx0===0)||(f.k===1&&bx1===1)||(f.k===2&&by0===0)||(f.k===3&&by1===1)||(f.k===4&&bz0===0)||(f.k===5&&bz1===1);
       const n=P[i+f.offN];
       if(enBorde&&OPACO[n])continue;
-      const q=UVT[def[f.ld]], l=enBorde?Math.max(L[i+f.offN]>>4,L[i]>>4)<<4|Math.max(L[i+f.offN]&15,L[i]&15):L[i];
+      const q=UVT[def.texCaras?def.texCaras[f.k]:def[f.ld]], l=enBorde?Math.max(L[i+f.offN]>>4,L[i]>>4)<<4|Math.max(L[i+f.offN]&15,L[i]&15):L[i];
       const LL=luzDe(l,f.sombra);
       const v=[],u=[];
       for(const c of f.c){
@@ -133,7 +134,7 @@ function construirGeometria(ch){
             if(OPACO[n])continue;
             if(n===b&&(TRANS[b]||forma===1))continue;
           }
-          const q=UVT[def[f.ld]];
+          const q=UVT[def.texCaras?def.texCaras[f.k]:def[f.ld]];
           const oOpaco=OPACO[n], base=oOpaco?L[i]:L[i+f.offN];
           const n0=O.p.length/3;
           for(let k=0;k<4;k++){
@@ -201,6 +202,25 @@ function construirGeometria(ch){
       }else if(forma===6){
         const tint=TINTE[b]?tinteVertice(b,x,z,[0,0,0,0]):null;
         for(const cj of def.cajas)caja(O,b,def,x,y,z,i,cj,tint);
+      }else if(forma===8){ // polvo de redstone
+        const q=UVT[def.lado], l=L[i], LL=luzDe(Math.max(l&240,l&15|(def.potencia>0?Math.min(15,4+def.potencia/2)|0:0)),1);
+        const c=[.25+.75*def.potencia/15,.03+.1*def.potencia/15,.02,2], T=[c,c,c,c];
+        const h=y+.02;
+        quad(O,[[x,h,z+1],[x+1,h,z+1],[x,h,z],[x+1,h,z]],[[q[0],q[2]],[q[1],q[2]],[q[0],q[3]],[q[1],q[3]]],[LL,LL,LL,LL],T);
+      }else if(forma===9){ // raíles
+        const q=UVT[def.lado], l=L[i], LL=luzDe(l,1), T=[BLANCO,BLANCO,BLANCO,BLANCO];
+        const [a1,a2]=def.riel, sube=def.sube;
+        // rotación de la textura: recta N-S sin girar; E-O 90º; curvas según las salidas
+        let rot=0;
+        if(a1===1&&a2===3||a1===3&&a2===1)rot=1;
+        if(def.lado===T_CURVA){const par=[a1,a2].sort().join('');rot={'12':0,'01':1,'03':2,'23':3}[par];}
+        const esq=[[0,0],[1,0],[1,1],[0,1]];
+        const uvRot=k=>{const [u,v]=esq[(k+rot)%4];return [q[0]+(q[1]-q[0])*u,q[3]-(q[3]-q[2])*v];};
+        const hs=[.03,.03,.03,.03];
+        if(sube!==undefined){const alt={0:[1,1,0,0],1:[0,1,1,0],2:[0,0,1,1],3:[1,0,0,1]}[sube];for(let k=0;k<4;k++)hs[k]=.03+alt[k];}
+        const P4=[[x,y+hs[0],z],[x+1,y+hs[1],z],[x+1,y+hs[2],z+1],[x,y+hs[3],z+1]];
+        quad(O,[P4[3],P4[2],P4[0],P4[1]],[uvRot(3),uvRot(2),uvRot(0),uvRot(1)],[LL,LL,LL,LL],T);
+        quad(O,[P4[0],P4[1],P4[3],P4[2]],[uvRot(0),uvRot(1),uvRot(3),uvRot(2)],[LL,LL,LL,LL],T);
       }else if(forma===7){
         for(const cj of cajasConecta(b,P,i))caja(O,b,def,x,y,z,i,cj,null);
       }

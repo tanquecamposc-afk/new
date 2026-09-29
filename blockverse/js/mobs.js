@@ -25,13 +25,21 @@ const DEF_MOB={
   piglin:{vida:20,ancho:.3,alto:1.95,vel:2.3,tipo:'neutral',ia:'melee',dano:8,xp:[5,5],sonido:'piglin',inmuneFuego:true,
     suelta:b=>[[I.carnePodrida,azar(0,1+b)],[I.pepitaOro,azar(0,1+b)],[330+3,prob(.08)?1:0]]},
   aldeano:{vida:20,ancho:.3,alto:1.95,vel:1.3,tipo:'pasivo',ia:'aldeano',xp:[0,0],sonido:'aldeano',suelta:()=>[]},
+  hoglin:{vida:40,ancho:.7,alto:1.4,vel:2.4,tipo:'hostil',ia:'melee',dano:6,xp:[5,5],sonido:'cerdo',inmuneFuego:true,
+    suelta:b=>[[I.cerdoCrudo,azar(2,4+b)],[I.cuero,azar(0,1+b)]]},
+  slime:{vida:16,ancho:.5,alto:1,vel:2,tipo:'hostil',ia:'cubo',dano:[0,2,4],xp:[1,4],sonido:'slime',
+    suelta:b=>[[525,azar(0,2+b)]]},
+  cuboMagma:{vida:16,ancho:.5,alto:1,vel:2.2,tipo:'hostil',ia:'cubo',dano:[3,4,6],xp:[1,4],sonido:'slime',inmuneFuego:true,
+    suelta:b=>[[518,prob(.25+b*.1)?1:0]]},
+  golem:{vida:100,ancho:.7,alto:2.7,vel:1.6,tipo:'neutral',ia:'golem',dano:15,xp:[0,0],sonido:'golem',
+    suelta:b=>[[I.lingoteHierro,azar(3,5)],[B.florRoja,azar(0,2)]]},
   ghast:{vida:10,ancho:2,alto:4,vel:2,tipo:'hostil',ia:'ghast',vuela:true,xp:[5,5],sonido:'ghast',inmuneFuego:true,
     suelta:b=>[[I.lagrimaGhast,azar(0,1+b)],[I.polvora,azar(0,2+b)]]},
   blaze:{vida:20,ancho:.3,alto:1.8,vel:2.3,tipo:'hostil',ia:'blaze',vuela:true,xp:[10,10],sonido:'blaze',inmuneFuego:true,odiaAgua:true,
     suelta:b=>[[I.varaBlaze,azar(0,1+b)]]},
 };
 const NOMBRE_MOB={cerdo:'Cerdo',vaca:'Vaca',oveja:'Oveja',gallina:'Gallina',zombi:'Zombi',esqueleto:'Esqueleto',creeper:'Creeper',
-  arana:'Araña',enderman:'Enderman',aldeano:'Aldeano',piglin:'Piglin zombificado',ghast:'Ghast',blaze:'Blaze'};
+  arana:'Araña',enderman:'Enderman',aldeano:'Aldeano',hoglin:'Hoglin',slime:'Slime',cuboMagma:'Cubo de magma',golem:'Gólem de hierro',piglin:'Piglin zombificado',ghast:'Ghast',blaze:'Blaze'};
 const COCINADO={[I.cerdoCrudo]:I.cerdoAsado,[I.resCruda]:I.filete,[I.corderoCrudo]:I.corderoAsado,[I.polloCrudo]:I.polloAsado};
 
 /* ---------- Modelos ---------- */
@@ -112,6 +120,26 @@ function modeloMob(tipo,opc={}){
       humanoide(0xe8a0a0,0x9a6a50,0x6a4a30,0xe8a0a0); pon(parte(.3,.2,.08,0xd88888),0,1.66,.27); ojos(1.82,.26,.13,0x111111);
       pon(parte(.15,.22,.15,0x6aa84a),-.18,1.9,.2);
       extra.espada=pon(parte(.06,.7,.06,0xf0d040),.38,1.0,.4); break;
+    case 'hoglin':
+      cuadrupedo(.3,.45,.6,0x8a5a44,.3);
+      pon(parte(1.2,.95,1.6,0xb07860),0,1.05,0); extra.cabeza=pon(parte(.9,.75,.8,0xb07860),0,1.05,1.1);
+      pon(parte(.6,.3,.08,0x9a6450),0,.9,1.52); pon(parte(.1,.35,.1,0xf0f0e0),-.35,.95,1.5); pon(parte(.1,.35,.1,0xf0f0e0),.35,.95,1.5);
+      pon(parte(.3,.3,.9,0xd8c090),0,1.6,.1); ojos(1.2,1.51,.25); break;
+    case 'slime': case 'cuboMagma':{
+      const t=[.5,1,2][opc.tam??1], magma=tipo==='cuboMagma';
+      const cuerpo=parte(t,t,t,magma?0x5a1a0a:0x6cc050); if(!magma){cuerpo.material.transparent=true;cuerpo.material.opacity=.72;}
+      pon(cuerpo,0,t/2,0); extra.cuerpo=cuerpo;
+      if(magma){for(let k=0;k<3;k++)pon(parte(t*1.01,t*.08,t*1.01,0xff8a20),0,t*(.25+k*.25),0);}
+      else pon(parte(t*.55,t*.55,t*.55,0x4a9a38),0,t/2,0);
+      pon(parte(t*.16,t*.16,.02,magma?0xffd040:0x1a3a10),-t*.2,t*.62,t/2+.011); pon(parte(t*.16,t*.16,.02,magma?0xffd040:0x1a3a10),t*.2,t*.62,t/2+.011);
+      if(!magma)pon(parte(t*.1,t*.06,.02,0x1a3a10),0,t*.35,t/2+.011);
+      break;}
+    case 'golem':
+      [-1,1].forEach(s=>{const p=pon(parte(.42,1.05,.42,0xc8c6bc,true),s*.26,1.05,0);p.userData.s=s;piernas.push(p);});
+      pon(parte(1.1,.85,.7,0xd8d6cc),0,1.7,0); pon(parte(.7,.35,.5,0xd0cec4),0,1.1,0);
+      extra.cabeza=pon(parte(.5,.6,.5,0xd8d6cc),0,2.42,.05); pon(parte(.14,.3,.12,0xc0beb4),0,2.3,.34); ojos(2.5,.31,.12,0x8a1010,.08);
+      [-1,1].forEach(s=>{const b=pon(parte(.36,1.6,.36,0xd8d6cc,true),s*.74,2.1,0);b.userData.s=s;brazos.push(b);});
+      pon(parte(.3,.5,.05,0x4a8a2a),.25,1.7,.36); pon(parte(.2,.4,.05,0x4a8a2a),-.3,1.9,.36); break;
     case 'aldeano':{
       const pr=PROFESIONES[opc.profesion||'granjero'];
       [-1,1].forEach(s=>{const p=pon(parte(.22,.7,.22,0x5a3a26,true),s*.12,.7,0);p.userData.s=s;piernas.push(p);});
@@ -143,6 +171,7 @@ function crearMob(tipo,x,y,z,opc={}){
     huir:0,flash:0,cd:Math.random(),fuego:0,fuegoT:0,inv:0,suelo:false,chocoH:false,sonidoT:4+Math.random()*10,luzT:0,
     vuela:!!def.vuela,enfadado:0,mecha:0,amor:0,bebe:opc.bebe?300:0,origen:new THREE.Vector3(x,y,z),ataqueT:0,rafaga:0,generador:opc.generador,golpeT:0,profesion:opc.profesion,ofertas:opc.ofertas};
   if(m.bebe)m.grupo.scale.setScalar(.5),m.ancho*=.5,m.alto*=.5;
+  if(def.ia==='cubo'){const t=[.5,1,2][opc.tam??1];m.tam=opc.tam??1;m.ancho=t/2*.98;m.alto=t;m.vida=[1,4,16][m.tam];}
   escena.add(m.grupo); mobs.push(m); return m;
 }
 function quitarMob(m){
@@ -173,7 +202,7 @@ function herirMob(m,d,dir,fuente,empuje=0){
 }
 function matarMob(m,fuente){
   const botin=fuente==='jugador'?nivelEnc(enMano(),'botin'):0;
-  if(!m.bebe){
+  if(!m.bebe&&!(m.def.ia==='cubo'&&m.tam>0)){
     for(const [id,n] of m.def.suelta(botin)){
       if(n<=0)continue;
       const real=m.fuego>0&&COCINADO[id]?COCINADO[id]:id;
@@ -181,6 +210,7 @@ function matarMob(m,fuente){
     }
     if(fuente==='jugador'||tiempoJuego-(m.ultimoGolpeJugador||-99)<5)soltarXP(azar(m.def.xp[0],m.def.xp[1]),m.pos.x,m.pos.y,m.pos.z);
   }
+  if(m.def.ia==='cubo'&&m.tam>0){const n=azar(2,4);for(let k=0;k<n;k++)crearMob(m.tipo,m.pos.x+(Math.random()-.5),m.pos.y+.3,m.pos.z+(Math.random()-.5),{tam:m.tam-1});}
   m.muerto=true;
   const i=mobs.indexOf(m); if(i>=0)mobs.splice(i,1);
   m.grupo.traverse(o=>{if(o.isMesh&&o.material.emissive)o.material.emissive.setRGB(.55,0,0);});
@@ -277,6 +307,25 @@ function actualizarMob(m,dt){
     if(m.rafaga>0&&m.cd<=0){m.rafaga--;m.cd=.35;sonar('blaze',m.pos,.6);
       const dir=new THREE.Vector3(dx+(Math.random()-.5)*dist*.1,dy+1-m.alto*.8,dz+(Math.random()-.5)*dist*.1).normalize();
       dispararBola('bolaFuego',eye.clone().addScaledVector(dir,.6),dir,16,{dueno:'mob',duenoMob:m});}
+  }else if(def.ia==='cubo'){
+    m.mover=false;
+    if(m.suelo){m.vel.x*=.5;m.vel.z*=.5;
+      if(m.cd<=0){m.cd=.8+Math.random()*1.4;
+        let ang=Math.random()*Math.PI*2;if(persigue)ang=Math.atan2(dx,dz);
+        m.yawObj=ang;const f=persigue?3.4:1.6;m.vel.x=Math.sin(ang)*f;m.vel.z=Math.cos(ang)*f;m.vel.y=5+m.tam*1.2;sonar('slime',m.pos,.5);}}
+    const dano=def.dano[m.tam];
+    if(persigue&&dano>0&&dist<m.ancho+.55&&Math.abs(dy)<m.alto&&(m.ataqueT-=0)<=0&&m.golpeT<=0){m.golpeT=1;danarJugador(dano,'mob',{x:dx/(dist||1),z:dz/(dist||1)});}
+  }else if(def.ia==='golem'){
+    let obj=null,dmin=18;
+    if(m.enfadado>0&&objetivoValido())obj={pos:jugador.pos,jugador:true};
+    else for(const o of mobs)if(o.def.tipo==='hostil'){const d=o.pos.distanceTo(m.pos);if(d<dmin){dmin=d;obj=o;}}
+    if(obj){const ox=obj.pos.x-m.pos.x,oz=obj.pos.z-m.pos.z,d=Math.hypot(ox,oz);
+      mover(m,d>1.6?ox:0,d>1.6?oz:0,def.vel*1.3);if(d<=1.6)m.yawObj=Math.atan2(ox,oz);
+      if(d<2.2&&m.cd<=0){m.cd=1.2;m.golpeT=.35;sonar('golpe',m.pos);
+        if(obj.jugador){danarJugador(azar(7,21),'mob',{x:ox/(d||1),z:oz/(d||1)});jugador.vel.y=9;}
+        else{herirMob(obj,azar(7,21),{x:ox/(d||1),z:oz/(d||1)},'golem');obj.vel.y=9;}}}
+    else{const ox=m.origen.x-m.pos.x,oz=m.origen.z-m.pos.z;m.t-=dt;
+      if(m.t<=0){m.t=3+Math.random()*6;if(Math.hypot(ox,oz)>16){m.mover=true;m.yawObj=Math.atan2(ox,oz);}else{m.mover=Math.random()<.4;m.yawObj=Math.random()*Math.PI*2;}}}
   }else if(def.ia==='aldeano'){
     let zombi=null,dz2=8;
     for(const o of mobs)if(o.tipo==='zombi'){const d=o.pos.distanceTo(m.pos);if(d<dz2){dz2=d;zombi=o;}}
@@ -351,6 +400,7 @@ function actualizarMob(m,dt){
   if(m.extra.varas){m.extra.varas.forEach((r,i)=>{const ang=tiempoJuego*(i<4?2:i<8?-1.5:1.2)+i*Math.PI/2,rad=i<4?.7:i<8?.55:.4,h=i<4?1.2:i<8?.8:.4;
     r.position.set(Math.cos(ang)*rad,h+Math.sin(tiempoJuego*3+i)*.1,Math.sin(ang)*rad);});}
   if(m.tipo==='creeper'){const s=1+m.mecha*.12;m.grupo.scale.set(s,1+m.mecha*.05,s);}
+  if(def.ia==='cubo'){const sq=m.suelo?1-Math.min(.25,Math.max(0,m.cd-.6)*.2):1.15;m.grupo.scale.set(2-sq,sq,2-sq);}
   m.grupo.position.copy(m.pos);
   if(m.suelo&&m.piernas.length===2&&sp>.3)m.grupo.position.y+=Math.abs(Math.sin(m.fase))*.05;
   if(def.ia==='ghast'||m.tipo==='blaze')m.grupo.position.y+=Math.sin(tiempoJuego*2+m.origen.x)*.1;
@@ -407,6 +457,7 @@ function intentoAparicion(){
       const ch=chunkSiExiste(Math.floor(x/CX),Math.floor(z/CZ)); if(!ch||!ch.malla)continue;
       let y=CY-1;while(y>0&&(!SOLIDO[getBloque(x,y,z)]||esHojas(getBloque(x,y,z))))y--;
       if(getBloque(x,y+1,z)&&!REEMPL[getBloque(x,y+1,z)])continue;
+      if(al.edificios.length>=3&&contar(m=>m.tipo==='golem'&&Math.hypot(m.pos.x-al.x,m.pos.z-al.z)<60)<1&&Math.random()<.3){const g=crearMob('golem',x+.5,y+1,z+.5);g.origen.set(al.x,y+1,al.z);return;}
       const prof=Object.keys(PROFESIONES)[Math.floor(Math.random()*4)];
       const m=crearMob('aldeano',x+.5,y+1,z+.5,{profesion:prof,ofertas:ofertasProfesion(prof,Math.random)});
       m.origen.set(al.x,y+1,al.z);
@@ -428,11 +479,23 @@ function intentoAparicion(){
     const l=luzEn(x,y,z), cieloEf=(l>>4)-Math.round((1-factorCielo)*11/0.8);
     if((l&15)>0||Math.max(0,cieloEf)>7)return;
     if(Math.hypot(x-j.x,y-j.y,z-j.z)<24)return;
-    const tipo=elegirPeso([['zombi',95],['esqueleto',100],['creeper',100],['arana',100],['enderman',10]]);
+    const bioSp=infoColumna(x,z).bioma;
+    const pesos=[['zombi',95],['esqueleto',100],['creeper',100],['arana',100],['enderman',10]];
+    if(bioSp===BIOMA.pantano||y<OY+40)pesos.push(['slime',bioSp===BIOMA.pantano?80:30]);
+    const tipo=elegirPeso(pesos);
+    if(tipo==='slime'){crearMob('slime',x+.5,y,z+.5,{tam:azar(0,2)});return;}
     if(tipo==='enderman'&&getBloque(x,y+2,z))return;
     crearMob(tipo,x+.5,y,z+.5);
   }else if(dim===DIMS.nether){
     if(mobs.length>=18)return;
+    const bn=biomaNether(x,z);
+    if(bn!==BN.desierto&&Math.random()<.7){
+      const y2=buscarSuelo(x,clamp(Math.floor(j.y+(Math.random()-.4)*40),OY+6,CY-8),z,24,3); if(y2<0)return;
+      const tipo=bn===BN.carmesi?(Math.random()<.6?'hoglin':'piglin'):bn===BN.distorsionado?'enderman':bn===BN.valle?(Math.random()<.7?'esqueleto':'ghast'):(Math.random()<.8?'cuboMagma':'ghast');
+      if(tipo==='ghast'){if(contar(m=>m.tipo==='ghast')<3)crearMob('ghast',x+.5,y2+6,z+.5);return;}
+      if(contar(m=>m.tipo===tipo)>=8)return;
+      crearMob(tipo,x+.5,y2,z+.5,{tam:azar(0,2)});return;
+    }
     const y=buscarSuelo(x,clamp(Math.floor(j.y+(Math.random()-.4)*40),OY+6,CY-8),z,24,3); if(y<0)return;
     const enFort=fortalezasCerca(x,z).some(f=>Math.abs(x-f.x)<50&&Math.abs(z-f.z)<50&&Math.abs(y-f.y)<12);
     if(enFort&&contar(m=>m.tipo==='blaze')<6&&prob(.5)){crearMob('blaze',x+.5,y+.5,z+.5);return;}
@@ -474,5 +537,5 @@ function actualizarGeneradores(dt){
 function despawnMobs(){
   const j=jugador.pos;
   for(const m of mobs.slice()){const d=m.pos.distanceTo(j);
-    if((m.def.tipo!=='pasivo'&&d>80)||d>(m.tipo==='aldeano'?110:140))quitarMob(m);}
+    if((m.def.tipo==='hostil'&&d>80)||d>(m.tipo==='aldeano'||m.tipo==='golem'?110:140))quitarMob(m);}
 }

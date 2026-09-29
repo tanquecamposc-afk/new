@@ -64,7 +64,7 @@ Todos los efectos de sonido se generan en tiempo real con WebAudio (sin archivos
 
 Juego de bloques en 3D inspirado en Minecraft, hecho desde cero con **Three.js**. Todas las texturas, iconos y sonidos se generan por código. Tiene dos modos (Supervivencia y Creativo) y la progresión completa: del primer tronco al **Ender Dragon**.
 
-Abre `blockverse/index.html` en un navegador moderno de escritorio (necesita internet para cargar Three.js desde cdnjs). Se juega con teclado y ratón y el mundo se guarda solo en el navegador.
+Abre `blockverse/index.html` en un navegador moderno (necesita internet para cargar Three.js desde cdnjs). Se juega con teclado y ratón o con controles táctiles en el móvil, y el mundo se guarda solo en el navegador.
 
 ## Qué incluye
 
@@ -89,6 +89,14 @@ Abre `blockverse/index.html` en un navegador moderno de escritorio (necesita int
 - **Estructuras:** mazmorras con generador y cofres, fortaleza con el portal del End y fortalezas del Nether con generadores de blazes.
 - **El Nether:** portal de obsidiana (mínimo 4×5) encendido con mechero, coordenadas ×8, lava, piedra luminosa, cuarzo y arena de almas.
 - **El End:** ojos de ender que guían a la fortaleza, 12 marcos, la isla con pilares de obsidiana, cristales que curan al dragón, el **Ender Dragon** y el portal de salida con el huevo.
+- **Biomas del Nether:** desiertos de almas, bosques carmesí y distorsionado (hongos gigantes, nilio, luz de hongo), deltas de basalto y páramos, con hoglins, cubos de magma y verrugas del Nether que crecen en arena de almas.
+- **Redstone:** polvo que pierde fuerza por bloque y sube/baja escalones, antorchas inversoras, palancas, botones, placas de presión, bloques de redstone, lámparas, puertas y dinamita que reaccionan, pistones normales y pegajosos (empujan hasta 12 bloques).
+- **Pociones:** frascos que se llenan de agua, soporte para pociones con polvo de blaze como combustible y pociones de curación, fuerza, rapidez, regeneración y resistencia al fuego, bebibles o arrojadizas (con pólvora).
+- **Yunque:** repara con el material o combinando dos objetos iguales y une sus encantamientos (coste en niveles, «¡Demasiado caro!» a partir de 40).
+- **Vehículos:** barcos que navegan y vagonetas sobre raíles que se conectan solos (rectos, curvas y rampas); los raíles propulsores aceleran con redstone y frenan sin ella.
+- **Gólems de hierro:** aparecen en las aldeas o se construyen con 4 bloques de hierro en T y una calabaza.
+- **End exterior:** tras vencer al dragón aparece un portal de acceso que lleva a las islas exteriores, con plantas coro (su fruta teletransporta) y ciudades del End de púrpur con **élitros** y cohetes en su botín. Los élitros planean con la física de Minecraft y los cohetes te impulsan.
+- **Controles táctiles:** joystick, arrastrar para mirar, tocar para usar/colocar, mantener para romper y botones para saltar, agacharse, atacar, tirar e inventario.
 - **Otros:** dinamita y explosiones, camas (dormir y punto de reaparición; en el Nether y el End explotan), perlas de ender, comandos y modo creativo con vuelo.
 
 ## Controles
@@ -97,9 +105,10 @@ Abre `blockverse/index.html` en un navegador moderno de escritorio (necesita int
 |---|---|
 | `WASD` | Moverse (doble toque de `W` o mantener `R`: correr) |
 | `Espacio` | Saltar y nadar (creativo: doble toque para volar) |
-| `Shift` | Agacharse (no te caes de los bordes) / bajar volando |
+| `Shift` | Agacharse (no te caes de los bordes) / bajar volando / bajarse de un vehículo |
 | Clic izquierdo (mantener) | Minar / atacar |
-| Clic derecho | Colocar, usar, comer, tensar el arco, abrir mesas, hornos y cofres |
+| Clic derecho | Colocar, usar, comer y beber, tensar el arco, abrir mesas, hornos, cofres, soportes y yunques, accionar palancas y botones, subirse a barcos y vagonetas |
+| `Espacio` en el aire | Con élitros puestos: planear (clic derecho con un cohete para impulsarte) |
 | Clic central | Creativo: copiar el bloque apuntado |
 | `1`–`9` o rueda | Elegir objeto |
 | `E` | Inventario |
@@ -116,8 +125,8 @@ Abre `blockverse/index.html` en un navegador moderno de escritorio (necesita int
 4. En el Nether busca una fortaleza (`/locate fortress` ayuda) y consigue varas de blaze. Caza endermen para las perlas.
 5. Fabrica ojos de ender (polvo de blaze + perla). Lánzalos en la Superficie: te guían a la fortaleza.
 6. Llena los 12 marcos del portal del End, entra y destruye los cristales de los pilares con flechas.
-7. Derrota al Ender Dragon y entra en el portal de salida.
+7. Derrota al Ender Dragon. Entra en el portal de salida para ver los créditos o busca el portal de acceso flotante para viajar a las islas exteriores, donde las ciudades del End guardan los élitros.
 
-## Qué no incluye (todavía)
+## Qué no incluye
 
-Circuitos de redstone, pociones y destilación, yunque, barcos, vagonetas y caballos, gólems de hierro, biomas del Nether, islas exteriores del End, élitros, multijugador y controles táctiles.
+Multijugador (necesitaría un servidor), caballos, repetidores y comparadores de redstone.

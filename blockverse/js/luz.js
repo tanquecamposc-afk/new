@@ -6,7 +6,7 @@
    luego se actualiza de forma incremental al cambiar bloques.
    ========================================================= */
 const MARGEN=8, RW=CX+2*MARGEN, RD=CZ+2*MARGEN, RCOL=RW*RD;
-const _reg=new Uint8Array(RCOL*CY), _cielo=new Uint8Array(RCOL*CY), _bloq=new Uint8Array(RCOL*CY);
+const _reg=new Uint16Array(RCOL*CY), _cielo=new Uint8Array(RCOL*CY), _bloq=new Uint8Array(RCOL*CY);
 const _topes=new Int16Array(RCOL);
 const _cola=new Int32Array(RCOL*CY);
 

@@ -159,4 +159,5 @@ function activarPortalSalida(){
     if(r<2.5&&!(x===0&&z===0))setBloque(x,EPY+1,z,B.portalEnd);
   }
   setBloque(0,EPY+5,0,B.huevoDragon);
+  crearAccesoPrincipal();
 }

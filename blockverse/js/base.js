@@ -83,6 +83,7 @@ const SND={
   cueva:v=>{tonoSnd(90+Math.random()*60,40,3,'sine',.07*v);tonoSnd(140,70,2.5,'triangle',.04*v,.4);},
   burbuja:v=>tonoSnd(500+Math.random()*400,1200,.08,'sine',.03*v),
   lluvia:v=>ruidoSnd(.6,2400,.035*v,'highpass'),
+  slime:v=>ruidoSnd(.15,500,.15*v,'bandpass'), golem:v=>tonoSnd(90,60,.4,'square',.05*v),
   aldeano:v=>{tonoSnd(220,170,.25,'sawtooth',.05*v);tonoSnd(260,200,.2,'sawtooth',.04*v,.2);},
 };
 function sonar(nombre,pos,vol=1){

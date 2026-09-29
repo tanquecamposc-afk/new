@@ -91,6 +91,22 @@ function dibujarItem(id){
       case I.cuero: rect(4,4,11,12,[150,94,56]); rect(3,6,3,10,[150,94,56]); rect(12,6,12,10,[150,94,56]); rect(5,5,10,5,[180,120,70]); break;
       case I.papel: for(let y=3;y<=12;y++)for(let x=4+(y%3===0?1:0);x<=12;x++)P(x,y,[240,240,236]); break;
       case I.libro: rect(4,3,11,12,[110,60,30]); rect(11,4,12,12,[240,240,236]); rect(5,4,6,11,[140,80,40]); break;
+      case 500: case 501: case 502: case 503: case 504: case 505: case 506: case 507: case 510: case 511: case 512: case 513: case 514:{
+        const it=ITEMS[id], col=it.pocion?[(it.pocion.color>>16)&255,(it.pocion.color>>8)&255,it.pocion.color&255]:id===501?[60,100,230]:id===502?[80,110,220]:null;
+        rect(7,2,8,4,[200,220,230]); rect(6,1,9,1,[140,100,60]);
+        for(let y=5;y<=13;y++){const w=y<7?2:y<12?4:3;for(let x=8-w;x<8+w;x++)P(x,y,col&&y>6?col:[210,230,240]);}
+        if(it.pocion&&it.pocion.arrojadiza){P(5,6,[230,230,230]);P(10,6,[230,230,230]);}P(6,8,[255,255,255]);break;}
+      case 515: for(let k=0;k<4;k++)elipse(5+k*2,9+(k%2)*2,1.8,1.8,[170,30,30],10); break;
+      case 516: polvo(P,rnd,[248,248,248],[220,220,230]); break;
+      case 517: for(let y=4;y<=12;y++){const w=Math.floor((y-3)*.8);for(let x=8-w;x<=7+w;x++)P(x,y,y>=11?[240,200,60]:y>=10?[255,240,150]:[230,120,60]);} P(7,7,[255,230,90]); break;
+      case 518: elipse(8,9,4.5,3.5,[230,120,30],12); P(7,8,[255,220,80]); P(9,10,[255,200,60]); break;
+      case 519: elipse(8,9,4.5,4.5,[140,90,150],14); P(6,7,[200,160,210]); break;
+      case 526: elipse(8,9,4.5,4.5,[190,140,190],10); P(6,7,[230,200,235]); break;
+      case 525: elipse(8,8.5,4.5,4,[110,200,90],10); P(6,7,[180,255,160]); break;
+      case 520: rect(2,7,13,12,[110,110,116]); rect(3,8,12,11,[60,60,64]); P(4,13,[40,40,40]);P(11,13,[40,40,40]); break;
+      case 521: for(let y=8;y<=12;y++){const w=y<12?6:5;for(let x=8-w;x<8+w;x++)P(x,y,y===8?[190,150,90]:[150,110,60]);} break;
+      case 522: for(let y=2;y<=14;y++){const w=Math.floor((y-1)*.5);P(7-w,y,[150,150,170]);P(8+w,y,[150,150,170]);for(let x=7-w+1;x<8+w;x++)if(x<7||x>8)P(x,y,[120,120,145]);} break;
+      case 523: linea(7,14,7,4,[180,40,40]); rect(6,4,8,8,[200,50,50]); P(7,3,[240,240,240]); linea(7,14,7,15,[120,90,50]); break;
       case I.ladrillo: for(let y=6;y<=10;y++)for(let x=3;x<=12;x++)P(x,y,y===6?[200,110,90]:y===10?[120,50,40]:[170,76,58]); break;
       case I.bolaArcilla: elipse(8,8.5,4.5,4,[160,168,182],12); break;
       case I.cuenco: for(let y=7;y<=11;y++){const w=6-Math.floor((y-7)*1.2);for(let x=8-w;x<=7+w;x++)P(x,y,y===7?[150,110,70]:[124,90,52]);} break;
@@ -105,7 +121,8 @@ ITEMS.forEach((it,id)=>{
   if(!it)return;
   const bq=BLOQUES[id];
   if(it.bloque){const f=FORMA[id];
-    if(f===0||f===1)LIENZOS[id]=iconoCubo(bq.arriba,bq.lado,f===1?bq.altura:1);
+    if(bq.texCaras)LIENZOS[id]=iconoCubo(bq.texCaras[3],bq.texCaras[1]);
+    else if(f===0||f===1)LIENZOS[id]=iconoCubo(bq.arriba,bq.lado,f===1?bq.altura:1);
     else if(f===6&&!bq.trepable&&id!==B.nenufar){const alto=Math.max(...bq.cajas.map(c=>c[4]));LIENZOS[id]=iconoCubo(bq.arriba,bq.lado,alto);}
     else if(id===B.valla)LIENZOS[id]=lienzo16(id,({rect})=>{rect(3,2,5,15,[168,133,84]);rect(10,2,12,15,[168,133,84]);rect(5,5,10,6,[150,118,72]);rect(5,10,10,11,[150,118,72]);});
     else LIENZOS[id]=lienzoTile(bq.lado);}

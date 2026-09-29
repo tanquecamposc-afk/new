@@ -97,6 +97,7 @@ function shiftJugador(i){
       if(p.id===I.lapis){p=insertarEn(ui.enc,'lapis',p);if(!p)return null;}
       else if(encantabilidad(p.id)&&!ui.enc.item&&!p.enc){ui.enc.item=p;return null;}
     }
+    if(UI_EXTRA[ui.tipo]&&UI_EXTRA[ui.tipo].shift&&i<36){p=UI_EXTRA[ui.tipo].shift(p);if(!p)return null;}
     const a=ITEMS[p.id].armadura;
     if(a&&!inv[36+a.pieza]&&i<36){inv[36+a.pieza]=p;return null;}
     if(i>=36)return insertar(p,inv,IDX_INV);
@@ -147,6 +148,7 @@ function construirUI(){
     const m=ui.aldeano;
     titulo((PROFESIONES[m.profesion]||{nombre:'Aldeano'}).nombre.toUpperCase());
     const lista=document.createElement('div');lista.className='ofertas';lista.id='ofertas';elSup.appendChild(lista);
+  }else if(UI_EXTRA[ui.tipo]){UI_EXTRA[ui.tipo].construir(titulo,fila);
   }else if(ui.tipo==='encantar'){
     titulo('MESA DE ENCANTAMIENTOS');
     const z=fila();
@@ -173,6 +175,7 @@ function refrescarUI(){
     document.getElementById('barFundir').style.width=(h.prog/TIEMPO_FUNDIR*100)+'%';}
   if(ui.tipo==='encantar')pintarOpcionesEnc();
   if(ui.tipo==='comercio')pintarOfertas();
+  if(UI_EXTRA[ui.tipo]&&UI_EXTRA[ui.tipo].refrescar)UI_EXTRA[ui.tipo].refrescar();
   actualizarHUD();
 }
 document.addEventListener('mousemove',e=>{if(estado==='ui'){elCursor.style.left=e.clientX+'px';elCursor.style.top=e.clientY+'px';}});
@@ -259,6 +262,7 @@ function abrirUI(tipo,pos,extra){
   else if(tipo==='horno')ui.horno=obtenerHorno(ui.clave);
   else if(tipo==='cofre')ui.cofre=obtenerCofre(ui.clave);
   else if(tipo==='encantar')ui.enc={item:null,lapis:null};
+  else if(UI_EXTRA[tipo])UI_EXTRA[tipo].abrir(ui);
   estado='ui'; soltarControles();
   if(tipo==='paleta'){elPaleta.classList.remove('oculto');const b=document.getElementById('buscarPaleta');b.value='';filtrarPaleta('');setTimeout(()=>b.focus(),50);}
   else{construirUI();elUI.classList.remove('oculto');}
@@ -269,6 +273,7 @@ function cerrarUI(){
   const devolver=p=>{if(!p)return;const r=insertar(p,inv,IDX_INV);if(r)soltarItem(r,jugador.pos.x,jugador.pos.y+1.2,jugador.pos.z,true);};
   if(ui.craft)ui.craft.forEach(devolver);
   if(ui.enc){devolver(ui.enc.item);devolver(ui.enc.lapis);}
+  if(UI_EXTRA[ui.tipo]&&UI_EXTRA[ui.tipo].cerrar)UI_EXTRA[ui.tipo].cerrar(ui,devolver);
   devolver(cursor); cursor=null;
   ui=null; elUI.classList.add('oculto'); elPaleta.classList.add('oculto'); elCursor.classList.add('oculto');
   actualizarHUD(); guardarPartida();

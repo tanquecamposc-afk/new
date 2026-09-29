@@ -127,7 +127,7 @@ elChatIn.addEventListener('keydown',e=>{
 });
 
 /* ---------- Cielo, clima y niebla ---------- */
-const tmpC=new THREE.Color();
+const tmpC=new THREE.Color(), colorNether=new THREE.Color(0x3a100a);
 function actualizarCielo(dt){
   const c=camara.position;
   const sup=dim===DIMS.superficie;
@@ -156,7 +156,8 @@ function actualizarCielo(dt){
     escena.fog.near=radio*CX*.55; escena.fog.far=radio*CX;
   }else{
     sol=0; factorCielo=0;
-    cielo.setHex(dim.niebla);
+    if(dim===DIMS.nether){colorNether.lerp(tmpC.setHex(NIEBLA_NETHER[biomaNether(Math.floor(c.x),Math.floor(c.z))]),Math.min(1,dt*1.5));cielo.copy(colorNether);}
+    else cielo.setHex(dim.niebla);
     escena.fog.near=dim===DIMS.nether?8:radio*CX*.5; escena.fog.far=dim===DIMS.nether?radio*CX*.8:radio*CX*1.2;
     cieloEnd.position.copy(c);
   }
@@ -385,7 +386,7 @@ function bucle(ahora){
     actualizarDragon(dt); actualizarCadaveres(dt);
     actualizarPasos(dt); actualizarClimaEfectos(dt); actualizarAmbiente(dt); comprobarSalpicadura();
     actualizarEntidades(dt);
-    actualizarHornos(dt);
+    actualizarHornos(dt); procesarRedstone(dt); actualizarPlacas(dt); actualizarExtras(dt);
     if(ui&&ui.horno){hornoUIT-=dt;if(hornoUIT<=0){hornoUIT=.2;refrescarUI();}}
     procesarLiquidos(); procesarHojas(); ticksAleatorios(dt,jugador.pos.x,jugador.pos.z);
     guardadoT+=dt; if(guardadoT>10){guardadoT=0;guardarPartida();}
@@ -409,7 +410,7 @@ function bucle(ahora){
   if(fpsT>=.5){fps=Math.round(fpsN/fpsT);fpsN=0;fpsT=0;
     if(infoVisible){
       const p=jugador.pos, l=luzEn(Math.floor(p.x),Math.floor(p.y+.5),Math.floor(p.z));
-      const bio=dim===DIMS.superficie?NOMBRES_BIOMA[infoColumna(Math.floor(p.x),Math.floor(p.z)).bioma]:'—';
+      const bio=dim===DIMS.superficie?NOMBRES_BIOMA[infoColumna(Math.floor(p.x),Math.floor(p.z)).bioma]:dim===DIMS.nether?NOMBRES_BIOMA_NETHER[biomaNether(Math.floor(p.x),Math.floor(p.z))]:'—';
       elInfo.textContent=`Blockverse  ${fps} FPS\nXYZ: ${p.x.toFixed(1)} / ${(p.y-OY).toFixed(1)} / ${p.z.toFixed(1)}\n`+
         `Dimensión: ${dim.nombre} · Bioma: ${bio}\nLuz: cielo ${l>>4}, bloque ${l&15}\n`+
         `${supervivencia()?'Supervivencia':'Creativo'}${jugador.vuela?' (vuelo)':''} · ${textoHora()}${lloviendo&&dim===DIMS.superficie?' · lluvia':''}\n`+
