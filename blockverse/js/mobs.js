@@ -565,7 +565,7 @@ function actualizarGeneradores(dt){
       t-=dt; if(Math.random()<dt*8)emitirParticulas(x+.5,y+.5,z+.5,0xff6020,1,.4,.4,-1);
       if(t<=0){
         t=10+Math.random()*30;
-        const tipo=dim===DIMS.nether?'blaze':['zombi','esqueleto','arana'][Math.floor(hash3(x,y,z,semilla)*3)];
+        const hg=hash3(x,y,z,semilla), tipo=dim===DIMS.nether?'blaze':hg<.5?'zombi':hg<.75?'esqueleto':'arana';  // 50 % / 25 % / 25 % como en Java
         if(contar(m=>m.tipo===tipo&&m.pos.distanceTo(new THREE.Vector3(x,y,z))<9)<6){
           const n=azar(1,4);
           for(let q=0;q<n;q++){const ox=x+azar(-3,3),oz=z+azar(-3,3),oy=buscarSuelo(ox,y+2,oz,5,2);

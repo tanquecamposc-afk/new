@@ -743,16 +743,19 @@ function estructurasSuperficie(ch,info,r){
   }
   // Mazmorra
   if(hash2(cx,cz,s+900)<.035){
-    const cy=18+Math.floor(hash2(cx,cz,s+901)*50), oz=bz+8;
-    for(let z=3;z<=13;z++)for(let x=3;x<=13;x++)for(let y=cy;y<=cy+5;y++){
+    // Tamaño variable como en Java: 7 o 9 bloques de interior en cada eje, y 1 o 2 cofres en paredes al azar
+    const cy=18+Math.floor(hash2(cx,cz,s+901)*50), hx=hash2(cx,cz,s+903)<.5?4:5, hz=hash2(cx,cz,s+904)<.5?4:5;
+    for(let z=8-hz;z<=8+hz;z++)for(let x=8-hx;x<=8+hx;x++)for(let y=cy;y<=cy+5;y++){
       const rx=x-8,rz=z-8,ry=y-cy,i=idx(x,y,z);
-      const borde=Math.abs(rx)===5||Math.abs(rz)===5||ry===0||ry===5;
+      const borde=Math.abs(rx)===hx||Math.abs(rz)===hz||ry===0||ry===5;
       if(borde){if(datos[i])datos[i]=ry===0&&hash3(x,y,z,s+44)<.5?B.rocaMusgo:B.roca;}
       else datos[i]=0;
     }
     datos[idx(8,cy+1,8)]=B.generador;
-    datos[idx(4,cy+1,8)]=B.cofre; registrarCofre(DIMS.superficie,bx+4,cy+1,oz,'mazmorra');
-    if(hash2(cx,cz,s+902)<.5){datos[idx(12,cy+1,8)]=B.cofre;registrarCofre(DIMS.superficie,bx+12,cy+1,oz,'mazmorra');}
+    const huecos=[];for(let x=9-hx;x<=7+hx;x++){huecos.push([x,8-hz+1],[x,8+hz-1]);}for(let z=10-hz;z<=6+hz;z++){huecos.push([8-hx+1,z],[8+hx-1,z]);}
+    const ncof=hash2(cx,cz,s+902)<.5?2:1;
+    for(let k=0;k<ncof;k++){const [x,z]=huecos[Math.floor(hash2(cx+k*7,cz,s+905)*huecos.length)];
+      if(datos[idx(x,cy+1,z)]===B.cofre)continue;datos[idx(x,cy+1,z)]=B.cofre;registrarCofre(DIMS.superficie,bx+x,cy+1,bz+z,'mazmorra');}
   }
   const centro=info[8*CX+8], hC=centro.h;
   // Portal en ruinas
