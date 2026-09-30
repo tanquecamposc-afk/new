@@ -42,6 +42,7 @@ pausar=function(){
   estado='menu'; soltarControles(); mostrarPantalla('pausa');
   if(document.pointerLockElement)try{document.exitPointerLock();}catch(e){}
   $('infoPausa').textContent=metaMundo?`${metaMundo.nombre} · ${modo==='creativo'?'Creativo':'Supervivencia'}${mundoEstado.oneBlock?' · One Block':''}`:'';
+  if(typeof capturarMiniatura==='function')capturarMiniatura();
   guardarYa();
 };
 document.addEventListener('keydown',e=>{
@@ -71,7 +72,8 @@ function pintarLista(){
   for(const w of l){
     const d=document.createElement('div'); d.className='mundo'+(w.id===mundoSel?' sel':'');
     const img=document.createElement('img'); img.className='miniatura'; img.alt='';
-    img.src=ICONOS[w.tipo==='oneblock'?B.cofre:B.cesped]||'';
+    let mini=null; try{mini=localStorage.getItem('blockverse-mini-'+w.id);}catch(e){}
+    img.src=mini||ICONOS[w.tipo==='oneblock'?B.cofre:B.cesped]||'';
     const t=document.createElement('div');
     const nombre=document.createElement('b'); nombre.textContent=w.nombre||'Mundo';
     const f=document.createElement('small'); f.textContent=`Última partida: ${fechaCorta(w.jugado)}`;
@@ -93,7 +95,7 @@ $('btnBorrarMundo').onclick=()=>{
   if(!mundoSel)return;
   const b=$('btnBorrarMundo');
   if(!confirmarBorrar){confirmarBorrar=1;b.textContent='¿Seguro? Pulsa otra vez';return;}
-  try{localStorage.removeItem('blockverse-mundo-'+mundoSel);}catch(e){}
+  try{localStorage.removeItem('blockverse-mundo-'+mundoSel);localStorage.removeItem('blockverse-mini-'+mundoSel);}catch(e){}
   escribirIndice(leerIndice().filter(w=>w.id!==mundoSel));
   mundoSel=null; confirmarBorrar=0; b.textContent='Borrar'; pintarLista();
 };
@@ -108,10 +110,9 @@ function abrirMundo(id){
   limpiarMundoActual();
   mundoId=id; metaMundo=Object.assign({},leerIndice().find(w=>w.id===id)||{id,nombre:'Mundo'});
   aplicarGuardado(s); selModo.value=modo; guardado=true;
-  gestionarChunks(150,jugador.pos.x,jugador.pos.z); actualizarHUD();
-  if(salud<=0){ocultarPantallas();estado='muerto';mostrarHud(true);$('muerte').classList.remove('oculto');}
-  else empezar();
-  actualizarIndiceMundo();
+  actualizarHUD(); actualizarIndiceMundo();
+  const fin=()=>{if(salud<=0){ocultarPantallas();estado='muerto';mostrarHud(true);$('muerte').classList.remove('oculto');}else empezar();};
+  if(typeof cargarTerreno==='function')cargarTerreno(fin);else{gestionarChunks(150,jugador.pos.x,jugador.pos.z);fin();}
 }
 
 /* ---------- Crear nuevo mundo ---------- */
@@ -141,8 +142,9 @@ $('btnConfirmarCrear').onclick=()=>{
   window.semillaElegida=semillaDeTexto($('semillaMundo').value);
   selModo.value=modoCrear;
   mundoId='m'+Date.now().toString(36); metaMundo={id:mundoId,nombre,creado:Date.now()};
-  if(tipoCrear==='oneblock')nuevoOneBlock(); else nuevoMundo();
-  guardarYa(); empezar();
+  const generar=()=>{if(tipoCrear==='oneblock')nuevoOneBlock(); else nuevoMundo(); guardarYa();};
+  if(typeof cargarTerreno==='function'){mostrarCarga('Generando el mundo');setTimeout(()=>{generar();cargarTerreno(empezar);},40);}
+  else{generar();empezar();}
 };
 $('nombreMundo').addEventListener('keydown',e=>{if(e.key==='Enter')$('btnConfirmarCrear').click();});
 
@@ -154,6 +156,7 @@ $('btnListoOpciones').onclick=()=>mostrarPantalla(opcionesDesde);
 
 /* ---------- Pausa y salir al título ---------- */
 function salirAlTitulo(){
+  if(typeof capturarMiniatura==='function'&&estado!=='muerto')capturarMiniatura();
   guardarYa(); mundoId=null; metaMundo=null;
   estado='menu'; soltarControles(); if(ui)cerrarUI();
   $('muerte').classList.add('oculto'); mostrarHud(false); mostrarPantalla('menu');

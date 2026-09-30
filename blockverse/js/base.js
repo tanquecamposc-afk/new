@@ -94,7 +94,7 @@ const SND={
 };
 function sonar(nombre,pos,vol=1){
   if(!actx)return;
-  let v=vol;
+  let v=vol*(window.VOLUMEN??1);
   if(pos){const d=Math.hypot(pos.x-oyente.x,pos.y-oyente.y,pos.z-oyente.z);v*=clamp(1-d/24,0,1);}
   if(v>.01&&SND[nombre])SND[nombre](v);
 }

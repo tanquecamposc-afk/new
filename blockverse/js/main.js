@@ -175,7 +175,7 @@ function actualizarCielo(dt){
     escena.fog.near=1;escena.fog.far=Math.min(escena.fog.far,5+(1-oscuro)*14);uDia*=1-oscuro*.8;}
   escena.fog.color.copy(cielo);
   mejorarCielo(sup,ojo,oscuro);
-  for(const m of [matOpaco,matTrans]){m.uniforms.uDia.value=uDia;m.uniforms.uAmb.value=dim.amb*(1-oscuro*.8);}
+  for(const m of [matOpaco,matTrans]){m.uniforms.uDia.value=uDia;const br=window.BRILLO??.5; m.uniforms.uAmb.value=dim.amb*(1-oscuro*.8)*(br<.5?.3+br*1.4:1)+Math.max(0,br-.5)*.3;}
   matTrans.uniforms.uTiempo.value=tiempoJuego;
   // Lluvia
   const llueveAqui=sup&&lloviendo&&!OPACO[getBloque(Math.floor(c.x),Math.min(CY-1,Math.floor(c.y)+6),Math.floor(c.z))];
@@ -314,7 +314,7 @@ document.addEventListener('keyup',e=>{teclas[e.code]=false;if(e.code==='KeyW')ju
 window.addEventListener('blur',soltarControles);
 document.addEventListener('mousemove',e=>{
   if(document.pointerLockElement!==lienzo||estado!=='jugando')return;
-  jugador.yaw-=e.movementX*0.0022; jugador.pitch-=e.movementY*0.0022;
+  jugador.yaw-=e.movementX*0.0022*(window.SENSIB||1); jugador.pitch-=e.movementY*0.0022*(window.SENSIB||1);
   jugador.pitch=Math.max(-Math.PI/2+.001,Math.min(Math.PI/2-.001,jugador.pitch));
 });
 document.addEventListener('mousedown',e=>{
@@ -410,9 +410,9 @@ function bucle(ahora){
   gestionarChunks(estado==='menu'?20:7,jugador.pos.x,jugador.pos.z);
   const agachado=jugador.agachado;
   const ce=Math.cos(jugador.yaw),se=Math.sin(jugador.yaw);
-  camara.position.set(jugador.pos.x+ce*efectoCam.x,jugador.pos.y+(agachado?1.32:1.62)+efectoCam.y,jugador.pos.z-se*efectoCam.x);
+  camara.position.set(jugador.pos.x+ce*efectoCam.x,jugador.pos.y+(typeof alturaOjos==='function'?alturaOjos(agachado,dt):(agachado?1.32:1.62))+efectoCam.y,jugador.pos.z-se*efectoCam.x);
   camara.rotation.set(jugador.pitch,jugador.yaw,efectoCam.rz);
-  camara.fov+=(((jugador.corriendo&&estado==='jugando')?84:arcoCarga>=0?75-12*Math.min(1,arcoCarga):75)-camara.fov)*Math.min(1,dt*8);  // el arco acerca la vista al tensarlo camara.updateProjectionMatrix();
+  const fovB=window.FOV_BASE||75; camara.fov+=(((jugador.corriendo&&estado==='jugando')?fovB+9:arcoCarga>=0?fovB-12*Math.min(1,arcoCarga):fovB)-camara.fov)*Math.min(1,dt*8);  // el arco acerca la vista al tensarlo camara.updateProjectionMatrix();
   oyente=camara.position;
   actualizarApuntado();
   if(estado==='jugando')manejarClics(dt);else{grietas.visible=false;$('barraUso').classList.add('oculto');}

@@ -37,7 +37,7 @@ function actualizarPasos(dt){
       if(!b)b=getBloque(Math.floor(j.pos.x),Math.floor(j.pos.y-.6),Math.floor(j.pos.z));
       if(!j.agachado)pasoSonido(b,j.corriendo?.9:.65);}
   }else faseCamara+=(Math.round(faseCamara/Math.PI)*Math.PI-faseCamara)*Math.min(1,dt*8);
-  const amp=j.suelo&&!j.vuela?Math.min(1,vh/4.3):0;
+  const amp=j.suelo&&!j.vuela&&window.MOV_CAMARA!==false?Math.min(1,vh/4.3):0;
   efectoCam.y=-Math.abs(Math.sin(faseCamara))*.07*amp;
   efectoCam.x=Math.cos(faseCamara)*.035*amp;
   sacudida=Math.max(0,sacudida-dt*3);
