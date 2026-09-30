@@ -113,11 +113,11 @@ function pasoReflejo(){
   if(rtRefl.width!==w||rtRefl.height!==h)rtRefl.setSize(w,h);
   camRefl.copy(camara); camRefl.position.y=2*aguaY-cy;
   camRefl.rotation.set(-camara.rotation.x,camara.rotation.y,-camara.rotation.z,'YXZ'); camRefl.updateMatrixWorld(true);
-  const manoV=mano.visible; mano.visible=false;
+  const manoV=mano.visible; mano.visible=false; const mano2V=typeof mano2!=='undefined'&&mano2.visible; if(typeof mano2!=='undefined')mano2.visible=false;
   mats.forEach(m=>m.uniforms.uClipY.value=aguaY+.06);
   planoRefl.constant=-(aguaY+.06); renderer.clippingPlanes=[planoRefl];
   renderer.setRenderTarget(rtRefl); renderer.render(escena,camRefl);
-  renderer.clippingPlanes=[]; mano.visible=manoV;
+  renderer.clippingPlanes=[]; mano.visible=manoV; if(typeof mano2!=='undefined')mano2.visible=mano2V;
   mats.forEach(m=>{m.uniforms.uClipY.value=-1e5;m.uniforms.uReflTex.value=rtRefl.texture;m.uniforms.uAguaY.value=aguaY;m.uniforms.uUsaReflejo.value=1;
     m.uniforms.uReflMat.value.multiplyMatrices(camRefl.projectionMatrix,camRefl.matrixWorldInverse);});
 }

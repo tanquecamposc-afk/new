@@ -272,7 +272,7 @@ function explosion(x,y,z,potencia,opc={}){
     const imp=1-d/alcance, dano=Math.floor(((imp*imp+imp)/2)*7*alcance+1);
     const l=d||1; fn(dano,{x:(cx-x)/l*imp,y:(cy-y)/l*imp,z:(cz-z)/l*imp});
   };
-  if(opc.fuente!=='jugador'||true)danarEnt(jugador.pos,jugador.alto,(dano,dir)=>{danarJugador(dano,'explosion',null);
+  if(opc.fuente!=='jugador'||true)danarEnt(jugador.pos,jugador.alto,(dano,dir)=>{const lh=Math.hypot(dir.x,dir.z)||1;danarJugador(dano,'explosion',{x:dir.x/lh,z:dir.z/lh});
     jugador.vel.x+=dir.x*10;jugador.vel.y+=dir.y*8+2;jugador.vel.z+=dir.z*10;});
   for(const m of mobs.slice())if(m!==opc.fuente)danarEnt(m.pos,m.alto,(dano,dir)=>{herirMob(m,dano,{x:dir.x,z:dir.z},'explosion');
     m.vel.y+=dir.y*6+2;});

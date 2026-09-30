@@ -70,7 +70,7 @@ actualizarModeloJugador=function(dt){
   if(arcoCarga>=0){p.brazoD.rotation.x=-1.45;p.brazoI.rotation.x=-1.45;p.brazoI.rotation.y=.5;p.brazoD.rotation.y=.1;}
   else{p.brazoI.rotation.y=0;p.brazoD.rotation.y=0;}
   if(comiendo>=0){p.brazoD.rotation.x=-1.2+Math.sin(tiempoJuego*16)*.12;p.cabeza.rotation.x=.15+Math.sin(tiempoJuego*16)*.08;}
-  if(typeof escudoArriba!=='undefined'&&escudoArriba){p.brazoD.rotation.x=-.9;p.brazoD.rotation.y=-.5;}
+  if(typeof escudoArriba!=='undefined'&&escudoArriba){if(typeof escudoEnSecundaria==='function'&&escudoEnSecundaria()){p.brazoI.rotation.x=-.9;p.brazoI.rotation.y=.5;}else{p.brazoD.rotation.x=-.9;p.brazoD.rotation.y=-.5;}}
   // Nadar: el cuerpo se tumba en el agua al nadar rápido
   if(j.enAgua&&j.corriendo&&!j.montura&&!j.planeando){
     M.g.rotation.x=Math.PI/2-.3+j.pitch*.4; M.g.position.y+=.4;

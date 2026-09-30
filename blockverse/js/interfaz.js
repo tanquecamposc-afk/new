@@ -217,12 +217,12 @@ document.addEventListener('keydown',e=>{if(e.code==='Escape'&&!$('pantallaContro
 
 /* ---------- Miniaturas de los mundos ---------- */
 function capturarImagen(escala){
-  const vis=mano.visible; mano.visible=false;
+  const vis=mano.visible; mano.visible=false; const vis2=typeof mano2!=='undefined'&&mano2.visible; if(typeof mano2!=='undefined')mano2.visible=false;
   if(typeof renderizarFinal==='function')renderizarFinal();else renderer.render(escena,camara);
   const src=renderer.domElement, c=document.createElement('canvas');
   if(escala===1){c.width=src.width;c.height=src.height;c.getContext('2d').drawImage(src,0,0);}
   else{const s=Math.min(src.width,src.height);c.width=c.height=escala;c.getContext('2d').drawImage(src,(src.width-s)/2,(src.height-s)/2,s,s,0,0,escala,escala);}
-  mano.visible=vis; return c;
+  mano.visible=vis; if(typeof mano2!=='undefined')mano2.visible=vis2; return c;
 }
 function capturarMiniatura(){
   if(!mundoId||dim!==DIMS.superficie&&dim!==DIMS.nether&&dim!==DIMS.end)return;

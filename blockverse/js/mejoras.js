@@ -137,7 +137,7 @@ function actualizarEscudo(dt){
 }
 const _danarBase=danarJugador;
 danarJugador=function(n,tipo,dir){
-  if(escudoArriba&&dir&&(tipo==='mob'||tipo==='flecha')&&estado!=='muerto'){
+  if(escudoArriba&&dir&&(tipo==='mob'||tipo==='flecha'||tipo==='explosion')&&estado!=='muerto'){
     const fx=-Math.sin(jugador.yaw), fz=-Math.cos(jugador.yaw);
     if(fx*dir.x+fz*dir.z<-.2){
       sonar('escudo'); balancearMano();

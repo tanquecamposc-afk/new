@@ -4,7 +4,7 @@ Guía completa para llevar el juego a un proyecto de Lovable sin perder nada.
 
 ## 1. Lo que tienes que saber antes
 
-- **Blockverse no es una app de React.** Es un juego en HTML y JavaScript "clásico": un `index.html` que carga 45 archivos `.js` en orden con etiquetas `<script>`, sin compilar y sin `npm`. Lovable, en cambio, crea proyectos con **Vite + React + TypeScript + Tailwind**.
+- **Blockverse no es una app de React.** Es un juego en HTML y JavaScript "clásico": un `index.html` que carga 46 archivos `.js` en orden con etiquetas `<script>`, sin compilar y sin `npm`. Lovable, en cambio, crea proyectos con **Vite + React + TypeScript + Tailwind**.
 - **La forma segura de pasarlo** es meter el juego tal cual dentro de la carpeta `public/` del proyecto de Lovable y mostrarlo desde React. Lo que hay en `public/` se sirve sin tocar, así que el juego funciona igual que ahora.
 - **No le pidas a Lovable que "reescriba" el juego en React.** Son más de 14 000 líneas y casi 1 MB de código; la IA de Lovable lo rompería. Úsala para lo que rodea al juego (página de inicio, diseño, etc.), no para el juego en sí.
 - **Lovable no importa repositorios existentes directamente.** Hay que crear el proyecto en Lovable, conectarlo a GitHub y copiar los archivos a ese repositorio nuevo (pasos abajo).
@@ -16,7 +16,7 @@ Todo está en el repositorio `tanquecamposc-afk/new`, rama `claude/intelligent-d
 ```
 blockverse/
 ├── index.html        ← la página del juego (27 KB: estilos + pantallas + lista de scripts)
-├── js/               ← 45 archivos .js (1076 KB en total)
+├── js/               ← 46 archivos .js (1088 KB en total)
 └── mods/ejemplo.js   ← mod de ejemplo (opcional)
 ```
 
@@ -99,7 +99,7 @@ Pulsa **Publish** en Lovable. El juego quedará en `https://tu-proyecto.lovable.
 ## 4. Cosas que no debes tocar (o el juego se rompe)
 
 1. **El orden de los scripts en `index.html`.** Cada archivo amplía los anteriores (reasigna funciones como `actualizarFinal`, `crearMob`, `herirMob`, `setBloque`…). El orden correcto es:
-   `three.min.js` → `base` → `texturas` → `registro` → `mundo` → `luz` → `escena` → `iconos` → `malla` → `simulacion` → `redstone` → `entidades` → `mobs` → `dragon` → `jugador` → `inventario` → `efectos` → `extras` → `v120` → `v121` → `recientes` → `completo` → `final` → `mejoras` → `vibrante` → `oneblock` → `v26` → `animaciones` → `encantamientos` → `criaturas` → `main` → `menus` → `packs` → `tactil` → `interfaz` → `ambiente` → `sombreado` → `interfaz2` → `objetos27` → `criaturas2` → `estructuras27` → `biomas27` → `cultivos` → `sonidos` → `aldeanos` → `bloques28`.
+   `three.min.js` → `base` → `texturas` → `registro` → `mundo` → `luz` → `escena` → `iconos` → `malla` → `simulacion` → `redstone` → `entidades` → `mobs` → `dragon` → `jugador` → `inventario` → `efectos` → `extras` → `v120` → `v121` → `recientes` → `completo` → `final` → `mejoras` → `vibrante` → `oneblock` → `v26` → `animaciones` → `encantamientos` → `criaturas` → `main` → `menus` → `packs` → `tactil` → `interfaz` → `ambiente` → `sombreado` → `interfaz2` → `objetos27` → `criaturas2` → `estructuras27` → `biomas27` → `cultivos` → `sonidos` → `aldeanos` → `bloques28` → `manos28`.
 2. **No los conviertas en módulos (`type="module"`) ni los importes desde React.** Comparten variables globales; como módulos dejan de verse entre sí.
 3. **No dejes que Lovable "limpie" o "refactorice" la carpeta `public/blockverse`.** Si le pides cambios al juego, dile explícitamente que solo edite el archivo concreto y que no toque el orden de los scripts.
 4. **Los números de los bloques y objetos (IDs) no se pueden cambiar**, porque los mundos guardados los usan. Los bloques van del 1 al 1618 y los objetos del 200 al 711.
@@ -161,4 +161,4 @@ Juego de bloques en 3D al estilo de Minecraft, en español, que funciona en el n
 
 ## 8. Resumen corto (para pegar en Lovable como contexto)
 
-> Este proyecto contiene un juego de navegador ya terminado llamado Blockverse (estilo Minecraft), escrito en JavaScript sin compilar y con Three.js r128 cargado desde CDN. El juego vive completo en `public/blockverse/` (index.html + 45 scripts en `js/`). La app de React solo debe mostrarlo a pantalla completa en un iframe con `src="/blockverse/index.html"` y `allow="fullscreen; pointer-lock; autoplay"`. No modifiques, reordenes, conviertas a módulos ni refactorices nada dentro de `public/blockverse/`, salvo que te lo pida archivo por archivo.
+> Este proyecto contiene un juego de navegador ya terminado llamado Blockverse (estilo Minecraft), escrito en JavaScript sin compilar y con Three.js r128 cargado desde CDN. El juego vive completo en `public/blockverse/` (index.html + 46 scripts en `js/`). La app de React solo debe mostrarlo a pantalla completa en un iframe con `src="/blockverse/index.html"` y `allow="fullscreen; pointer-lock; autoplay"`. No modifiques, reordenes, conviertas a módulos ni refactorices nada dentro de `public/blockverse/`, salvo que te lo pida archivo por archivo.

@@ -270,7 +270,7 @@ function actualizarMano(id,brillo,dt,agachado){
   if(typeof comiendo!=='undefined'&&comiendo>=0){px=.18;py=-.36+Math.abs(Math.sin(comiendo*14))*.05;pz=-.5;rx=.3;ry=.6;}
   if(typeof arcoCarga!=='undefined'&&arcoCarga>=0){const c=Math.min(1,arcoCarga);px=.2;py=-.3;pz=-.55+c*.12;rz=-.4;ry=.2;
     if(manoObjeto)manoObjeto.position.x=Math.sin(tiempoJuego*40)*.004*c;}
-  if(typeof escudoArriba!=='undefined'&&escudoArriba){px=.2;py=-.36;pz=-.6;rx=0;ry=.25;rz=0;}
+  if(typeof escudoArriba!=='undefined'&&escudoArriba&&!(typeof escudoEnSecundaria==='function'&&escudoEnSecundaria())){px=.2;py=-.36;pz=-.6;rx=0;ry=.25;rz=0;}
   if(typeof faseCamara!=='undefined'&&jugador.suelo){px+=Math.cos(faseCamara)*.012;py+=Math.abs(Math.sin(faseCamara))*.012;}
   mano.rotation.set(rx,ry,rz);
   mano.position.set(px,py,pz);

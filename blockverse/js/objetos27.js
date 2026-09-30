@@ -22,7 +22,7 @@ elTotem.style.cssText='position:fixed;left:50%;top:45%;width:128px;height:128px;
 document.body.appendChild(elTotem);
 const _morirObj=morir;
 morir=function(causa){
-  const i=[ranura,...Array.from({length:9},(_,k)=>k)].find(k=>inv[k]&&inv[k].id===658);
+  const i=[40,ranura,...Array.from({length:9},(_,k)=>k)].find(k=>inv[k]&&inv[k].id===658);
   if(i!==undefined&&causa!=='vacio'&&supervivencia()){
     inv[i]=null; salud=1; efectos.regeneracion={t:45,n:2}; efectos.absorcion={t:5,n:2,puntos:4}; efectos.resistenciaFuego={t:40,n:1};
     sonar('totem'); actualizarHUD();

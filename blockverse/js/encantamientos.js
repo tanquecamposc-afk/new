@@ -422,7 +422,7 @@ function mojado(){
 function usarDerechoEnc(p,id){
   if(id===611){
     if(p.cargada){dispararBallesta(p);cdUso=.25;return true;}
-    if(!supervivencia()||inv.some((s,i)=>s&&s.id===I.flecha&&i<36))ballestaCarga=0;
+    if(!supervivencia()||inv.some((s,i)=>s&&s.id===I.flecha&&i<36)||(inv[40]&&inv[40].id===I.flecha))ballestaCarga=0;
     return true;
   }
   if(id===612){
@@ -451,7 +451,7 @@ function dispararBallesta(p){
 }
 function cargarBallesta(p){
   if(supervivencia()){
-    const i=inv.findIndex((s,k)=>s&&s.id===I.flecha&&k<36);
+    const i=inv[40]&&inv[40].id===I.flecha?40:inv.findIndex((s,k)=>s&&s.id===I.flecha&&k<36);
     if(i<0)return false;
     if(--inv[i].n<=0)inv[i]=null;
   }else p.flechaInfinita=true;

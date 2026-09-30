@@ -510,7 +510,7 @@ function soltarArco(){
   const p=enMano(); if(!p||p.id!==I.arco)return;
   if(carga<.1)return;
   const inf=nivelEnc(p,'infinidad');
-  const idxFlecha=inv.findIndex((s,i)=>s&&s.id===I.flecha&&i<36);
+  const idxFlecha=inv[40]&&inv[40].id===I.flecha?40:inv.findIndex((s,i)=>s&&s.id===I.flecha&&i<36);
   if(supervivencia()&&idxFlecha<0)return;
   const f=(carga*carga+carga*2)/3;
   camara.getWorldDirection(dirVista);
@@ -545,7 +545,7 @@ function usarDerecho(){
   if(usarDerechoExtra(p,id,it))return;
   if(!it)return;
   if((it.comida||it.bebida)&&puedeComer()){comiendo=0;return;}
-  if(id===I.arco){if(!supervivencia()||inv.some((s,i)=>s&&s.id===I.flecha&&i<36)||nivelEnc(p,'infinidad'))arcoCarga=0;return;}
+  if(id===I.arco){if(!supervivencia()||inv.some((s,i)=>s&&s.id===I.flecha&&i<36)||(inv[40]&&inv[40].id===I.flecha)||nivelEnc(p,'infinidad'))arcoCarga=0;return;}
   if(it.armadura){const slot=36+it.armadura.pieza;const prev=inv[slot];inv[slot]=p;inv[ranura]=prev;sonar('poner');actualizarHUD();return;}
   if(id===I.perlaEnder){if(supervivencia()){lanzarDesdeJugador('perla',28);consumirEnMano();}else lanzarDesdeJugador('perla',28);cdUso=1;return;}
   if(id===I.ojoEnder){if(dim===DIMS.superficie){lanzarDesdeJugador('ojo',0);consumirEnMano();sonar('portal',null,.3);}return;}

@@ -310,7 +310,7 @@ document.addEventListener('keydown',e=>{
     const ahora=performance.now();
     if(!e.repeat&&!supervivencia()){if(ahora-ultimoEspacio<280){jugador.vuela=!jugador.vuela;jugador.vel.y=0;}ultimoEspacio=ahora;}}
   if(e.code==='KeyW'&&!e.repeat){const ahora=performance.now();if(ahora-ultimaW<300&&!(supervivencia()&&hambre<=6))jugador.corriendo=true;ultimaW=ahora;}
-  if(e.code==='KeyF'&&!e.repeat&&!supervivencia()){jugador.vuela=!jugador.vuela;jugador.vel.y=0;}
+  if(e.code==='KeyF'&&!e.repeat&&typeof intercambiarManos==='function')intercambiarManos();
   if(e.code==='KeyQ'&&!e.repeat)tirarEnMano(e.shiftKey);
   if(/^Digit[1-9]$/.test(e.code)){ranura=+e.code.slice(5)-1;comiendo=-1;arcoCarga=-1;actualizarHUD();}
 });
