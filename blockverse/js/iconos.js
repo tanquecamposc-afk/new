@@ -128,6 +128,14 @@ function dibujarArmadura(it){
 }
 const PL_POCION=["","......gg","......gw","......gw",".....gLL","....gLLL","...gLwLL","..gLwLLL","..gLLLLL","..gLLLLL","..gLLLLL","...gLLLL","....gggg","","",""];
 const PL_POCION_ARROJ=["","......gg","......gw",".....gww","....gLLL","...gLLLL","..gLwLLL",".gLwLLLL",".gLLLLLL",".gLLLLLL","..gLLLLL","...ggggg","","","",""];
+// Ballesta: culata, arco de madera y cuerda; cargada lleva la flecha puesta
+function dibujarBallesta(P,linea,cargada){
+  linea(3,13,11,5,[104,74,40]); linea(4,13,11,6,[80,56,30]);
+  linea(5,4,13,12,[120,86,50]); linea(6,4,13,11,[150,110,64]); P(5,4,[90,90,96]); P(13,12,[90,90,96]);
+  if(cargada){linea(6,6,11,11,[222,222,222]); linea(4,12,11,5,[140,104,62]); P(11,4,[200,200,210]); P(12,4,[170,170,180]); P(11,3,[170,170,180]);}
+  else{linea(7,5,12,10,[222,222,222]);}
+  P(3,13,[90,90,96]); P(2,14,[90,90,96]);
+}
 // Arco con la cuerda tensada según la fase (0 en reposo, 1-3 cargando con la flecha)
 function dibujarArco(fase){
   return lienzo16(225+fase*7,({P,linea})=>{
@@ -254,6 +262,18 @@ function dibujarItem(id){
         for(let y=10;y<=13;y++){P(6,y,[70,44,22]);P(10,y,[70,44,22]);} P(6,14,[170,170,178]);P(10,14,[170,170,178]); break;
       case 607: case 608: case 609: case 610:{const c=ITEMS[id].bardaCaballo.col,o=sombra(c,.7);
         rect(3,5,12,9,c); rect(2,6,2,8,o); rect(4,10,5,13,o); rect(10,10,11,13,o); rect(11,3,13,6,c); rect(12,2,13,2,o); rect(4,5,12,5,sombra(c,1.15)); break;}
+      case 611: dibujarBallesta(P,linea,false); break;
+      case 612: // tridente: tres puntas de prismarina y mango largo
+        linea(2,14,11,5,[70,110,100]); linea(3,14,11,6,[50,84,76]);
+        linea(10,2,13,5,[120,200,180]); linea(11,6,14,9,[120,200,180]); linea(9,3,12,6,[150,226,206]); P(13,1,[180,240,224]); P(14,2,[150,226,206]);
+        P(9,1,[120,200,180]); P(15,7,[120,200,180]); P(10,2,[180,240,224]); P(14,8,[180,240,224]); break;
+      case 613: linea(2,14,12,2,[118,82,44]); linea(3,14,12,3,[90,62,32]); linea(13,2,13,12,[220,220,220]); P(13,13,[160,160,170]); P(12,13,[160,160,170]); P(12,12,[200,40,40]); break;
+      case 614: case 615:{const c=id===614?[170,140,100]:[150,110,70]; for(let x=3;x<=11;x++){const w=Math.round(2.4*Math.sin((x-2)/10*Math.PI));for(let y=8-w;y<=8+w;y++)P(x,y,y<8?sombra(c,1.15):c);}
+        for(const [x,y] of [[12,6],[13,5],[12,10],[13,11],[12,8]])P(x,y,sombra(c,.8)); P(5,7,[30,30,30]); break;}
+      case 616: case 617:{const c=id===616?[190,80,70]:[160,90,60]; for(let x=3;x<=11;x++){const w=Math.round(2.6*Math.sin((x-2)/10*Math.PI));for(let y=8-w;y<=8+w;y++)P(x,y,y<8?[90,110,120]:c);}
+        for(const [x,y] of [[12,6],[13,5],[12,10],[13,11],[12,8]])P(x,y,[80,90,100]); P(5,7,[20,20,20]); break;}
+      case 618: for(let x=4;x<=11;x++){const w=Math.round(3*Math.sin((x-3)/9*Math.PI));for(let y=8-w;y<=8+w;y++)P(x,y,(x+y)%4<2?[240,120,40]:[250,240,230]);} P(12,6,[240,120,40]);P(12,10,[240,120,40]);P(6,7,[20,20,20]); break;
+      case 619: elipse(8,8.5,4.5,4.5,[220,200,80],10); for(const [x,y] of [[3,5],[13,5],[3,12],[13,12],[8,3],[8,14],[2,8],[14,8]])P(x,y,[230,230,200]); P(6,7,[20,20,20]);P(10,7,[20,20,20]); break;
       case 541: elipse(5,6,3,3,[230,160,70],8); for(let x=7;x<=13;x++)P(x,9,[230,160,70]); P(12,10,[230,160,70]); P(10,10,[230,160,70]); P(5,6,[60,40,20]); break;
       default:
         if(it.tinte!==undefined){const c=COLORES16[it.tinte][3];elipse(8,9,4.5,4,c,16);P(6,7,c.map(v=>Math.min(255,v+60)));linea(6,4,9,4,[200,200,200]);P(10,5,[200,200,200]);}
@@ -268,6 +288,7 @@ function dibujarItem(id){
 const LIENZOS=[], ICONOS=[];
 // Fotogramas del arco tensándose (se usan en la mano)
 const ARCO_FASES=[1,2,3].map(dibujarArco);
+const ICONO_BALLESTA_CARGADA=lienzo16(6111,({P,linea})=>dibujarBallesta(P,linea,true));
 ITEMS.forEach((it,id)=>{
   if(!it)return;
   const bq=BLOQUES[id];

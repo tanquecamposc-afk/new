@@ -329,6 +329,7 @@ bloque(1468,'setaMarronGigante','Bloque de champiñón marrón','mushBlockBrown'
 bloque(1469,'talloSeta','Tallo de champiñón','mushStem',{dureza:.2,herr:'hacha',resistencia:.2});
 bloque(1470,'hieloCompacto','Hielo compacto','packedIce',{dureza:.5,herr:'pico',suelta:0,resistencia:.5});
 bloque(1471,'girasol','Girasol','sunflower',{forma:'cruz',dureza:0});
+bloque(1472,'afiladora','Afiladora',tx('grindstoneTop','grindstonePivot','grindstoneSide'),{forma:'cajas',cajas:[[.25,.2,.12,.75,.9,.88],[0,0,.34,.25,.62,.66],[.75,0,.34,1,.62,.66]],opaco:false,dureza:2,herr:'pico',inter:'afiladora',resistencia:6});
 bloque(1339,'brotePalido','Brote de roble pálido','paleSapling',{forma:'cruz',dureza:0});
 const NB=BLOQUES.length;
 const SOLIDO=new Uint8Array(NB), OPACO=new Uint8Array(NB), TRANS=new Uint8Array(NB), LUZB=new Uint8Array(NB),
@@ -408,7 +409,13 @@ item(542,'saquito','Saquito',{max:1,saquito:true}); item(543,'grumoResina','Grum
 item(545,'arnes','Arnés',{max:1});
 item(546,'libroEncantado','Libro encantado',{max:1});
 item(547,'fragmentoPrismarina','Fragmento de prismarina'); item(548,'cristalPrismarina','Cristales de prismarina'); item(549,'caparazonShulker','Caparazón de shulker');
-item(597,'escudo','Escudo',{max:1,dur:336,escudo:true}); item(598,'silla','Silla de montar',{max:1});
+item(597,'escudo','Escudo',{max:1,dur:336,escudo:true,tipoHerr:'escudo'});
+item(611,'ballesta','Ballesta',{max:1,dur:465,tipoHerr:'ballesta'});
+item(612,'tridente','Tridente',{max:1,dur:250,tipoHerr:'tridente',iconoPropio:true,herr:{tipo:'tridente',nivel:0,vel:1,dano:9,cad:1.1,mat:2,enc:1}});
+item(613,'canaPescar','Caña de pescar',{max:1,dur:64,tipoHerr:'cana'});
+item(614,'bacalaoCrudo','Bacalao crudo',{comida:[2,.4]}); item(615,'bacalaoCocinado','Bacalao cocinado',{comida:[5,6]});
+item(616,'salmonCrudo','Salmón crudo',{comida:[2,.4]}); item(617,'salmonCocinado','Salmón cocinado',{comida:[6,9.6]});
+item(618,'pezTropical','Pez tropical',{comida:[1,.2]}); item(619,'pezGlobo','Pez globo',{comida:[1,.2],efecto:['veneno',60,1]}); item(598,'silla','Silla de montar',{max:1});
 const TINTE_ID=[]; COLORES16.forEach(([cl,m],k)=>{item(550+k,'tinte_'+cl,'Tinte '+m,{tinte:k});TINTE_ID[k]=550+k;});
 // Huevos de aparición (modo creativo)
 const HUEVOS={cerdo:[0xf0a0a0,0xd06060],vaca:[0x4a3222,0xa8a8a8],oveja:[0xe8e8e8,0xffb0b0],gallina:[0xf0f0f0,0xd02020],zombi:[0x00a8a8,0x6a9a4a],
@@ -505,7 +512,7 @@ function categoriasItem(id){
   if(it.tipoHerr)return [it.tipoHerr];
   return [];
 }
-function encantabilidad(id){const it=ITEMS[id];if(id===248)return 1;return it.herr?it.herr.enc:it.armadura?it.armadura.enc:it.tipoHerr==='arco'?1:0;}
+function encantabilidad(id){const it=ITEMS[id];if(id===248)return 1;return it.herr?it.herr.enc:it.armadura?it.armadura.enc:['arco','ballesta','cana'].includes(it.tipoHerr)?1:0;}
 
 /* =========================================================
    Recetas
@@ -590,6 +597,8 @@ recetaSin([I.lingoteOro],I.pepitaOro,9);
 [I.cuero,I.lingoteHierro,I.lingoteOro,I.diamante].forEach((m,k)=>receta(['M.M','MMM','M.M'],{M:m},607+k));
 // 1.19 / 1.20
 recetaSin([B.troncoCerezo],B.tablonesCerezo,4); recetaSin([B.troncoRobleOscuro],B.tablonesRobleOscuro,4);
+receta(['SHS','CFC','.S.'],{S:I.palo,H:I.lingoteHierro,C:I.cuerda,F:I.lingoteHierro},611); receta(['..S','.SC','S.C'],{S:I.palo,C:I.cuerda},613);
+receta(['SLS','T.T'],{S:I.palo,L:143,T:B.tablones},B.afiladora);
 receta(['THT','TTT','.T.'],{T:B.tablones,H:I.lingoteHierro},597); receta(['CCC','C.C','.H.'],{C:I.cuero,H:I.lingoteHierro},598); recetaSin([B.girasol],TINTE_ID[4],2); recetaSin([B.troncoMangle],B.tablonesMangle,4);
 recetaSin([534,534,534,534,I.lingoteOro,I.lingoteOro,I.lingoteOro,I.lingoteOro],535);
 receta(['MMM','MMM','MMM'],{M:535},B.bloqueNetherite); recetaSin([B.bloqueNetherite],535,9);
@@ -670,7 +679,7 @@ function buscarRecetaExacta(grid,w){
   }
   return null;
 }
-const FUNDIR={
+const FUNDIR={614:615,616:617,
   [I.hierroBruto]:I.lingoteHierro,[I.oroBruto]:I.lingoteOro,[I.cobreBruto]:I.lingoteCobre,
   [B.menaHierro]:I.lingoteHierro,[B.menaOro]:I.lingoteOro,[B.menaCobre]:I.lingoteCobre,[B.menaDiamante]:I.diamante,
   [B.menaCarbon]:I.carbon,[B.menaLapis]:I.lapis,[B.menaRedstone]:I.redstone,[B.menaEsmeralda]:I.esmeralda,[B.menaCuarzo]:I.cuarzo,

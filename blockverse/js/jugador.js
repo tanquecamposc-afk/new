@@ -79,7 +79,7 @@ function fisicaJugador(dt,entrada){
   let rapidez=j.vuela?(j.corriendo?21:11):j.corriendo?5.6:4.3;
   if(j.agachado)rapidez=1.3*(1+.45*nivelEnc(inv[38],'sigilo'));
   if(efectos.rapidez)rapidez*=1.2; if(efectos.lentitud)rapidez*=.7;
-  if(comiendo>=0||arcoCarga>=0||(typeof escudoArriba!=='undefined'&&escudoArriba))rapidez*=.35;
+  if(comiendo>=0||arcoCarga>=0||(typeof ballestaCarga!=='undefined'&&(ballestaCarga>=0||tridenteCarga>=0))||(typeof escudoArriba!=='undefined'&&escudoArriba))rapidez*=.35;
   if(j.enAgua&&!j.vuela)rapidez*=.5+.5*nivelEnc(inv[39],'agilidadAcuatica')/3; if(j.enLava)rapidez*=.3;
   {const bajo=getBloque(Math.floor(j.pos.x),Math.floor(j.pos.y-.2),Math.floor(j.pos.z)),va=nivelEnc(inv[39],'velocidadAlmas');
    if(bajo===B.arenaAlmas||bajo===B.sueloAlmas)rapidez*=va?1+.3*va:(bajo===B.arenaAlmas?.45:1);}

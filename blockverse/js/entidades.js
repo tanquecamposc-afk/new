@@ -116,7 +116,7 @@ function trazarProyectil(e,dt,radio){
       if(estado!=='muerto'&&e.dueno!=='jugador'&&Math.abs(e.pos.x-pj.x)<.3+radio&&Math.abs(e.pos.z-pj.z)<.3+radio&&e.pos.y>pj.y-radio&&e.pos.y<pj.y+1.8+radio)return {jugador:true};
     }
     for(const m of mobs){
-      if(m===e.duenoMob||m.muerto)continue;
+      if(m===e.duenoMob||m.muerto||(e.ignorar&&e.ignorar.includes(m)))continue;
       if(Math.abs(e.pos.x-m.pos.x)<m.ancho+radio&&Math.abs(e.pos.z-m.pos.z)<m.ancho+radio&&e.pos.y>m.pos.y-radio&&e.pos.y<m.pos.y+m.alto+radio)return {mob:m};
     }
     if(dragon&&!dragon.muerto&&e.dueno==='jugador'&&dragon.golpeado(e.pos,radio))return {dragon:true};
@@ -152,6 +152,7 @@ function actualizarFlecha(e,dt){
     if(choque.mob.tipo==='enderman'){teletransportarMob(choque.mob);e.muerta=false;e.vel.multiplyScalar(-.1);return;}
     herirMob(choque.mob,dano,dir,e.dueno==='jugador'?'jugador':'flecha',e.retroceso||0);
     if(e.fuego)choque.mob.fuego=Math.max(choque.mob.fuego,5);
+    if(e.perfora>0){e.perfora--;e.muerta=false;(e.ignorar=e.ignorar||[]).push(choque.mob);}  // Perforación: atraviesa criaturas
   }
   else if(choque.dragon)dragon.herir(dano,'flecha');
   else if(choque.cristal)romperCristal(choque.cristal);

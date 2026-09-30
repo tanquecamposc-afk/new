@@ -482,6 +482,10 @@ function tile(nombre,gen){T[nombre]=_genTiles.length;_genTiles.push(gen);}
   /* ---- End: cabeza de dragón y cofre abierto ---- */
   tile('dragonHead',(p,r)=>cada((x,y)=>{const k=n(r,10);const ojo=(y===5||y===6)&&(x===4||x===11);p(x,y,ojo?200:30+k,ojo?60:24+k,ojo?220:36+k);}));
   tile('vacio',(p,r)=>cada((x,y)=>p(x,y,0,0,0,0)));
+  tile('grindstoneSide',(p,r)=>{const s=S();cada((x,y)=>{const d=Math.hypot(x-7.5,y-7.5),k=n(r,10)+(pn(x,y,4,s)-.5)*14;
+    if(d<=7.4)p(x,y,(d>6.4?104:140)+k,(d>6.4?104:140)+k,(d>6.4?108:144)+k);else p(x,y,0,0,0,0);});});
+  tile('grindstoneTop',(p,r)=>{const s=S();cada((x,y)=>{const k=n(r,10)+(pn(x,y,4,s)-.5)*16;p(x,y,134+k,134+k,138+k);});});
+  tile('grindstonePivot',(p,r)=>tablones(p,r,[150,112,70]));
   tile('pathSide',(p,r)=>{tierra(p,r);cada((x,y)=>{if(y<2){const k=n(r,12);p(x,y,148+k,122+k,66+k);}});});
 })();
 
