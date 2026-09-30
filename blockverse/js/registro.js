@@ -331,6 +331,71 @@ bloque(1470,'hieloCompacto','Hielo compacto','packedIce',{dureza:.5,herr:'pico',
 bloque(1471,'girasol','Girasol','sunflower',{forma:'cruz',dureza:0});
 bloque(1472,'afiladora','Afiladora',tx('grindstoneTop','grindstonePivot','grindstoneSide'),{forma:'cajas',cajas:[[.25,.2,.12,.75,.9,.88],[0,0,.34,.25,.62,.66],[.75,0,.34,1,.62,.66]],opaco:false,dureza:2,herr:'pico',inter:'afiladora',resistencia:6});
 bloque(1339,'brotePalido','Brote de roble pálido','paleSapling',{forma:'cruz',dureza:0});
+/* ---------- Edición 27: bloques que faltaban ---------- */
+COLORES16.forEach(([cl,m,f],k)=>{
+  bloque(1480+k,'terracota_'+cl,'Terracota '+f,'terracota_'+cl,{dureza:1.25,herr:'pico',nivel:1,resistencia:4.2});
+  bloque(1496+k,'esmaltada_'+cl,'Terracota esmaltada '+f,'esmaltada_'+cl,{dureza:1.4,herr:'pico',nivel:1,resistencia:1.4});
+  bloque(1512+k,'polvoHormigon_'+cl,'Hormigón en polvo '+m,'polvoHormigon_'+cl,{dureza:.5,herr:'pala',gravedad:true,resistencia:.5});
+  bloque(1528+k,'vela_'+cl,'Vela '+f,'vela_'+cl,{forma:'cajas',cajas:[[7/16,0,7/16,9/16,6/16,9/16]],opaco:false,dureza:.1,luz:3,resistencia:.1});
+});
+bloque(1544,'vela','Vela','vela_natural',{forma:'cajas',cajas:[[7/16,0,7/16,9/16,6/16,9/16]],opaco:false,dureza:.1,luz:3,resistencia:.1});
+bloque(1545,'bloqueAmatista','Bloque de amatista','amethystBlock',{dureza:1.5,herr:'pico',resistencia:1.5});
+bloque(1546,'amatistaBrotante','Amatista brotante','buddingAmethyst',{dureza:1.5,herr:'pico',suelta:0,resistencia:1.5});
+bloque(1547,'racimoAmatista','Racimo de amatista','amethystCluster',{forma:'cruz',dureza:1.5,herr:'pico',luz:5,suelta:()=>[[661,4]],resistencia:1.5});
+bloque(1548,'broteAmatistaGrande','Brote de amatista grande','amethystBudL',{forma:'cruz',dureza:1.5,luz:4,suelta:0});
+bloque(1549,'broteAmatistaMediano','Brote de amatista mediano','amethystBudM',{forma:'cruz',dureza:1.5,luz:2,suelta:0});
+bloque(1550,'broteAmatistaPequeno','Brote de amatista pequeño','amethystBudS',{forma:'cruz',dureza:1.5,luz:1,suelta:0});
+bloque(1551,'calcita','Calcita','calcite',{dureza:.75,herr:'pico',nivel:1,resistencia:.75});
+bloque(1552,'basaltoLiso','Basalto liso','smoothBasalt',{dureza:1.25,herr:'pico',nivel:1,resistencia:4.2});
+bloque(1553,'bloqueEspeleotema','Bloque de espeleotema','dripstoneBlock',{dureza:1.5,herr:'pico',nivel:1,resistencia:1});
+bloque(1554,'espeleotema','Espeleotema puntiagudo','pointedDripstone',{forma:'cruz',dureza:1.5,herr:'pico',resistencia:3});
+['tubo','cerebro','burbuja','fuego','cuerno'].forEach((t,k)=>{
+  bloque(1555+k,'bloqueCoral_'+t,'Bloque de coral de '+t,'coralBlock_'+k,{dureza:1.5,herr:'pico',nivel:1,resistencia:6});
+  bloque(1560+k,'bloqueCoralMuerto_'+t,'Bloque de coral de '+t+' muerto','coralDead',{dureza:1.5,herr:'pico',nivel:1,resistencia:6});
+  bloque(1565+k,'coral_'+t,'Coral de '+t,'coral_'+k,{forma:'cruz',dureza:0});
+  bloque(1570+k,'abanicoCoral_'+t,'Abanico de coral de '+t,'coralFan_'+k,{forma:'cruz',dureza:0});
+});
+bloque(1575,'bloqueCobre','Bloque de cobre','copperBlock',{dureza:3,herr:'pico',nivel:2,resistencia:6});
+bloque(1576,'cobreExpuesto','Cobre expuesto','copperExposed',{dureza:3,herr:'pico',nivel:2,resistencia:6});
+bloque(1577,'cobreErosionado','Cobre erosionado','copperWeathered',{dureza:3,herr:'pico',nivel:2,resistencia:6});
+bloque(1578,'cobreOxidado','Cobre oxidado','copperOxidized',{dureza:3,herr:'pico',nivel:2,resistencia:6});
+bloque(1579,'cobreCortadoExpuesto','Cobre cortado expuesto','copperExposedCut',{dureza:3,herr:'pico',nivel:2,resistencia:6});
+bloque(1580,'cobreCortadoErosionado','Cobre cortado erosionado','copperWeatheredCut',{dureza:3,herr:'pico',nivel:2,resistencia:6});
+bloque(1581,'cobreCortadoOxidado','Cobre cortado oxidado','copperOxidizedCut',{dureza:3,herr:'pico',nivel:2,resistencia:6});
+bloque(1582,'panalAbejas','Nido de abejas',tx('beeNestTop','beeNestTop','beeNestFront'),{dureza:.3,herr:'hacha',inflamable:true,resistencia:.3});
+bloque(1583,'colmena','Colmena',tx('beehiveTop','beehiveTop','beehiveFront'),{dureza:.6,herr:'hacha',inflamable:true,resistencia:.6});
+bloque(1584,'bloqueMiel','Bloque de miel','honeyBlock',{dureza:0,opaco:false,trans:true,resistencia:0});
+bloque(1585,'bloquePanal','Bloque de panal','honeycombBlock',{dureza:.6,resistencia:.6});
+bloque(1586,'campana','Campana','bell',{forma:'cajas',cajas:[[.25,.2,.25,.75,.85,.75],[.19,.2,.19,.81,.35,.81]],opaco:false,dureza:5,herr:'pico',resistencia:5});
+bloque(1587,'cadena','Cadena','chain',{forma:'cajas',cajas:[[7/16,0,7/16,9/16,1,9/16]],opaco:false,dureza:5,herr:'pico',resistencia:6});
+bloque(1588,'fogata','Fogata','campfireFire',{forma:'cruz',dureza:2,herr:'hacha',luz:15,suelta:()=>[[I.carbon,2]],resistencia:2});
+bloque(1589,'fogataAlmas','Fogata de almas','soulCampfireFire',{forma:'cruz',dureza:2,herr:'hacha',luz:10,suelta:()=>[[B.arenaAlmas,1]],resistencia:2});
+bloque(1590,'diana','Diana',tx('targetTop','targetTop','targetSide'),{dureza:.5,herr:'azada',resistencia:.5});
+bloque(1591,'magnetita','Magnetita',tx('lodestoneTop','lodestoneTop','lodestoneSide'),{dureza:3.5,herr:'pico',resistencia:3.5});
+bloque(1592,'anclaReaparicion','Ancla de reaparición',tx('anchorTop','anchorSide','anchorSide'),{dureza:50,herr:'pico',nivel:4,resistencia:1200});
+bloque(1593,'andamio','Andamio',tx('scaffoldTop','scaffoldTop','scaffoldSide'),{forma:'cajas',cajas:[[0,0,0,1,1,1]],solido:false,opaco:false,trepable:true,dureza:0,resistencia:0});
+bloque(1594,'bambu','Bambú','bamboo',{forma:'cajas',cajas:[[6/16,0,6/16,10/16,1,10/16]],opaco:false,dureza:1,herr:'hacha',resistencia:1});
+bloque(1595,'alga','Alga','kelp',{forma:'cruz',dureza:0});
+bloque(1596,'pastoMarino','Pasto marino','seagrass',{forma:'cruz',dureza:0,suelta:0});
+bloque(1597,'pepinoMar','Pepino de mar','seaPickle',{forma:'cruz',dureza:0,luz:6});
+bloque(1598,'azalea','Azalea',tx('azaleaTop','planks','azaleaSide'),{forma:'cajas',cajas:[[0,.5,0,1,1,1],[.4,0,.4,.6,.5,.6]],opaco:false,dureza:0,tinte:'follaje'});
+bloque(1599,'azaleaFlorida','Azalea florida',tx('azaleaFlower','planks','azaleaSide'),{forma:'cajas',cajas:[[0,.5,0,1,1,1],[.4,0,.4,.6,.5,.6]],opaco:false,dureza:0,tinte:'follaje'});
+bloque(1600,'hojasAzalea','Hojas de azalea','azaleaTop',{dureza:.2,herr:'azada',trans:true,opaco:false,opacidadLuz:1,inflamable:true,resistencia:.2,tinte:'follaje'});
+bloque(1601,'hojasAzaleaFlorida','Hojas de azalea florida','azaleaFlower',{dureza:.2,herr:'azada',trans:true,opaco:false,opacidadLuz:1,inflamable:true,resistencia:.2,tinte:'follaje'});
+bloque(1602,'floresEsporas','Flor de esporas','sporeBlossom',{forma:'cruz',dureza:0});
+bloque(1603,'raicesColgantes','Raíces colgantes','hangingRoots',{forma:'cruz',dureza:0});
+bloque(1604,'hieloAzul','Hielo azul','blueIce',{dureza:2.8,herr:'pico',suelta:0,resistencia:2.8});
+bloque(1605,'nievePolvo','Nieve en polvo','powderSnow',{solido:false,dureza:.25,suelta:0,resistencia:.25});
+bloque(1606,'mesaCartografia','Mesa de cartografía',tx('cartoTop','planks','cartoSide'),{dureza:2.5,herr:'hacha',inflamable:true});
+bloque(1607,'telar','Telar',tx('loomTop','planks','loomSide'),{dureza:2.5,herr:'hacha',inflamable:true});
+bloque(1608,'ahumador','Ahumador',tx('smokerTop','smokerTop','smokerFront'),{dureza:3.5,herr:'pico',inter:'horno',resistencia:3.5});
+bloque(1609,'altoHorno','Alto horno',tx('blastTop','blastTop','blastFront'),{dureza:3.5,herr:'pico',inter:'horno',resistencia:3.5});
+bloque(1610,'compostador','Compostador',tx('composterTop','planks','composterSide'),{dureza:.6,herr:'hacha',inflamable:true});
+bloque(1611,'cortapiedras','Cortapiedras',tx('stonecutterTop','stonecutterTop','stonecutterSide'),{forma:'cajas',cajas:[[0,0,0,1,9/16,1]],opaco:false,dureza:3.5,herr:'pico'});
+bloque(1612,'atril','Atril',tx('lecternTop','planks','lecternSide'),{forma:'cajas',cajas:[[.25,0,.25,.75,.8,.75],[0,0,0,1,.12,1],[0,.8,0,1,.95,1]],opaco:false,dureza:2.5,herr:'hacha',inflamable:true});
+bloque(1613,'mesaFlechas','Mesa de flechas',tx('fletchTop','planks','fletchSide'),{dureza:2.5,herr:'hacha',inflamable:true});
+bloque(1614,'caldero','Caldero',tx('cauldronTop','cauldronTop','cauldronSide'),{forma:'cajas',cajas:[[0,0,0,1,1,1]],opaco:false,dureza:2,herr:'pico'});
+bloque(1615,'tocadiscos','Tocadiscos',tx('jukeboxTop','jukeboxSide','jukeboxSide'),{dureza:2,herr:'hacha',inflamable:true});
 const NB=BLOQUES.length;
 const SOLIDO=new Uint8Array(NB), OPACO=new Uint8Array(NB), TRANS=new Uint8Array(NB), LUZB=new Uint8Array(NB),
       OPAC_LUZ=new Uint8Array(NB), OCLUYE=new Uint8Array(NB), FORMA=new Uint8Array(NB), REEMPL=new Uint8Array(NB);
@@ -428,10 +493,34 @@ Object.keys(HUEVOS).forEach((t,k)=>item(570+k,'huevo_'+t,'Huevo generador de '+t
 item(620,'conejoCrudo','Conejo crudo',{comida:[3,1.8]}); item(621,'conejoCocinado','Conejo cocinado',{comida:[5,6]});
 item(622,'pataConejo','Pata de conejo'); item(623,'pielConejo','Piel de conejo'); item(624,'bolsaTinta','Bolsa de tinta');
 item(625,'cuernoCabra','Cuerno de cabra',{max:1});
+// Edición 27: comida, herramientas y objetos que faltaban
+item(640,'zanahoria','Zanahoria',{comida:[3,3.6]}); item(641,'patata','Patata',{comida:[1,.6]}); item(642,'patataAsada','Patata asada',{comida:[5,6]});
+item(643,'patataVenenosa','Patata venenosa',{comida:[2,1.2],efecto:['veneno',5,.6]}); item(644,'remolacha','Remolacha',{comida:[1,1.2]});
+item(645,'sopaRemolacha','Sopa de remolacha',{max:1,comida:[6,7.2],devuelve:252}); item(646,'bayasDulces','Bayas dulces',{comida:[2,.4]});
+item(647,'bayasBrillantes','Bayas brillantes',{comida:[2,.4]}); item(648,'galleta','Galleta',{comida:[2,.4]});
+item(649,'pastelCalabaza','Pastel de calabaza',{comida:[8,4.8]}); item(650,'zanahoriaDorada','Zanahoria dorada',{comida:[6,14.4]});
+item(651,'botellaMiel','Botella de miel',{max:16,comida:[6,1.2],devuelve:500,siempre:true}); item(652,'estofadoConejo','Estofado de conejo',{max:1,comida:[10,12],devuelve:252});
+item(653,'brujula','Brújula',{max:1}); item(654,'reloj','Reloj',{max:1}); item(655,'mapa','Mapa',{max:1});
+item(656,'etiqueta','Etiqueta'); item(657,'rienda','Rienda'); item(658,'totem','Tótem de la inmortalidad',{max:1});
+item(659,'catalejo','Catalejo',{max:1}); item(660,'panal','Panal'); item(661,'fragmentoAmatista','Fragmento de amatista');
+item(662,'caparazonNautilo','Caparazón de nautilo'); item(663,'corazonMar','Corazón del mar'); item(664,'escamaTortuga','Escama de tortuga');
+item(665,'membranaPhantom','Membrana de phantom'); item(666,'bolaNieve','Bola de nieve',{max:16}); item(667,'tintaBrillante','Bolsa de tinta brillante');
+['13','cat','blocks','chirp','far','mall','mellohi','stal'].forEach((d,k)=>item(668+k,'disco_'+d,'Disco de música ('+d+')',{max:1,disco:k}));
+item(676,'flechaEspectral','Flecha espectral'); item(677,'huevo','Huevo',{max:16});
 const HUEVOS2={lobo:[0xd7d3d3,0xceaf96,'lobo'],gato:[0xefc88e,0x957256,'gato'],zorro:[0xd5b69f,0xcc6920,'zorro'],conejo:[0x995f40,0x734831,'conejo'],
   calamar:[0x223b4d,0x708899,'calamar'],murcielago:[0x4c3e30,0x0f0f0f,'murciélago'],cabra:[0xa5947c,0x55493e,'cabra'],osoPolar:[0xf2f2f2,0x959590,'oso polar'],
   ahogado:[0x8ff1d7,0x799c65,'ahogado'],vindicador:[0x959b9b,0x275e61,'vindicador']};
 Object.keys(HUEVOS2).forEach((t,k)=>{HUEVOS[t]=HUEVOS2[t].slice(0,2);item(630+k,'huevo_'+t,'Huevo generador de '+HUEVOS2[t][2],{huevo:t});});
+const HUEVOS3={ajolote:[0xfbc1e3,0xa62d74,'ajolote'],abeja:[0xedc343,0x43241b,'abeja'],loro:[0x0da70b,0xff0000,'loro'],panda:[0xe7e7e7,0x1b1b22,'panda'],
+  llama:[0xc09e7d,0x995f40,'llama'],tortuga:[0xe7e7e7,0x00afaf,'tortuga'],delfin:[0x223b4d,0xf9f9f9,'delfín'],bacalao:[0xc1a76a,0xe5c48b,'bacalao'],
+  salmon:[0xa00f10,0x0e8474,'salmón'],pezTropical:[0xef6915,0xfff9ef,'pez tropical'],pezGlobo:[0xf6b201,0x37c3f2,'pez globo'],champinaca:[0xa00f10,0xb7b7b7,'champiñaca'],
+  ocelote:[0xefde7d,0x564434,'ocelote'],strider:[0x9c3436,0x4d494d,'strider'],sniffer:[0x871e09,0x25ab70,'sniffer'],armadillo:[0xad716d,0x824848,'armadillo'],
+  calamarBrillante:[0x095656,0x85f1bc,'calamar brillante'],burro:[0x534539,0x867566,'burro'],mula:[0x1b0200,0x51331d,'mula'],esqueletoErrante:[0x617677,0xdde5e5,'esqueleto errante'],
+  momia:[0x797061,0xe6cc94,'momia'],esqueletoWither:[0x141414,0x474d4d,'esqueleto wither'],piglinBruto:[0x592a10,0xf9f3a4,'piglin bruto'],evocador:[0x959b9b,0x1e1c1a,'evocador'],
+  vex:[0x7a90a4,0xe8edf1,'vex'],devastador:[0x757470,0x5b5049,'devastador'],phantom:[0x43518a,0x88ff00,'phantom'],lepisma:[0x6e6e6e,0x303030,'lepisma'],
+  endermita:[0x161616,0x6e6e6e,'endermita'],golemNieve:[0xd9f2f2,0x81a4a4,'gólem de nieve'],allay:[0x00daff,0x00adff,'allay'],aldeanoZombi:[0x563c33,0x799c65,'aldeano zombi']};
+Object.keys(HUEVOS3).forEach((t,k)=>{HUEVOS[t]=HUEVOS3[t].slice(0,2);item(680+k,'huevo_'+t,'Huevo generador de '+HUEVOS3[t][2],{huevo:t});});
+item(678,'escamaArmadillo','Escama de armadillo');
 
 const MATS=[
   {n:'madera',nivel:1,vel:2,dur:59,enc:15,col:[176,138,82]},
@@ -660,7 +749,24 @@ receta(['CCC','C.C','CCC'],{C:I.lingoteCobre},B.cofreCobre);
  const a={M:I.lingoteCobre};receta(['MMM','M.M'],a,405);receta(['M.M','MMM','MMM'],a,415);receta(['MMM','M.M','M.M'],a,425);receta(['M.M','M.M'],a,435);} recetaSin([539],538,4);
 receta(['TT','TT'],{T:B.toba},B.ladrillosToba,4); receta(['CC','CC'],{C:I.lingoteCobre},B.cobreCortado);
 receta(['.C.','CVC','.R.'],{C:B.cobreCortado,V:I.varaBlaze,R:I.redstone},B.bombillaCobre,4);
-receta(['PP','PP'],{P:623},I.cuero); recetaSin([624],TINTE_ID[COLORES16.findIndex(c=>c[0]==='negro')]||I.cuero);
+receta(['PP','PP'],{P:623},I.cuero);
+// Recetas de la edición 27
+COLORES16.forEach((c,k)=>{receta(['TTT','TDT','TTT'],{T:B.terracota,D:TINTE_ID[k]},1480+k,8);
+  recetaSin([TINTE_ID[k],B.arena,B.arena,B.arena,B.arena,B.grava,B.grava,B.grava,B.grava],1512+k,8); recetaSin([1544,TINTE_ID[k]],1528+k);});
+receta(['C','P'],{C:I.cuerda,P:660},1544); receta(['AA','AA'],{A:661},1545);
+receta(['LLL','LLL','LLL'],{L:I.lingoteCobre},1575); receta(['PPP','HHH','PPP'],{P:B.tablones,H:660},1583);
+recetaSin([651,651,651,651],1584); receta(['HH','HH'],{H:660},1585); receta(['L','L','L'],{L:I.lingoteHierro},1587);
+receta(['.P.','PCP','TTT'],{P:I.palo,C:I.carbon,T:B.tronco},1588); receta(['.R.','RHR','.R.'],{R:I.redstone,H:B.heno},1590);
+receta(['BCB','B.B','B.B'],{B:1594,C:I.cuerda},1593,6); receta(['PPP','PDP','PPP'],{P:B.tablones,D:I.diamante},1615);
+receta(['.T.','THT','.T.'],{T:B.tronco,H:B.horno},1608); receta(['HHH','HOH','PPP'],{H:I.lingoteHierro,O:B.horno,P:B.piedraLisa},1609);
+receta(['T.T','T.T','TTT'],{T:B.tablones},1610); receta(['.H.','PPP'],{H:I.lingoteHierro,P:B.piedra},1611);
+receta(['PPP','.E.','.P.'],{P:B.tablones,E:B.estanteria},1612); receta(['FF','TT','TT'],{F:I.pedernal,T:B.tablones},1613);
+receta(['H.H','H.H','HHH'],{H:I.lingoteHierro},1614); receta(['PP','TT','TT'],{P:I.papel,T:B.tablones},1606); receta(['CC','TT'],{C:I.cuerda,T:B.tablones},1607);
+receta(['TAT'],{T:I.trigo,A:I.azucar||516},648,8); recetaSin([B.calabaza,I.azucar||516,677],649); receta(['PPP','PZP','PPP'],{P:I.pepitaOro,Z:640},650);
+recetaSin([644,644,644,644,644,644,252],645); recetaSin([621,640,642,B.champinonMarron,252],652);
+receta(['.H.','HRH','.H.'],{H:I.lingoteHierro,R:I.redstone},653); receta(['.O.','ORO','.O.'],{O:I.lingoteOro,R:I.redstone},654);
+receta(['PPP','PBP','PPP'],{P:I.papel,B:653},655); receta(['CC.','CB.','..C'],{C:I.cuerda,B:525},657,2); receta(['A','C','C'],{A:661,C:I.lingoteCobre},659);
+receta(['.P.','PFP','.P.'],{P:I.polvoLuminoso,F:I.flecha},676,2); recetaSin([624],TINTE_ID[COLORES16.findIndex(c=>c[0]==='negro')]||I.cuero);
 // Los tablones de cerezo y mangle sirven en todas las recetas de madera
 const EQUIV_RECETA={[B.tablonesAbedul]:B.tablones,[B.tablonesAbeto]:B.tablones,[B.tablonesJungla]:B.tablones,[B.tablonesAcacia]:B.tablones,[B.barril]:B.cofre,[B.tablonesPalidos]:B.tablones,[B.troncoPalido]:B.tronco,[B.cofreCobre]:B.cofre,[B.tablonesCerezo]:B.tablones,[B.tablonesRobleOscuro]:B.tablones,[B.troncoRobleOscuro]:B.tronco,[B.tablonesMangle]:B.tablones,[B.troncoCerezo]:B.tronco,[B.troncoMangle]:B.tronco};
 
@@ -688,7 +794,7 @@ function buscarRecetaExacta(grid,w){
   }
   return null;
 }
-const FUNDIR={614:615,616:617,620:621,
+const FUNDIR={614:615,616:617,620:621,641:642,1480:1496,1481:1497,1482:1498,1483:1499,1484:1500,1485:1501,1486:1502,1487:1503,1488:1504,1489:1505,1490:1506,1491:1507,1492:1508,1493:1509,1494:1510,1495:1511,
   [I.hierroBruto]:I.lingoteHierro,[I.oroBruto]:I.lingoteOro,[I.cobreBruto]:I.lingoteCobre,
   [B.menaHierro]:I.lingoteHierro,[B.menaOro]:I.lingoteOro,[B.menaCobre]:I.lingoteCobre,[B.menaDiamante]:I.diamante,
   [B.menaCarbon]:I.carbon,[B.menaLapis]:I.lapis,[B.menaRedstone]:I.redstone,[B.menaEsmeralda]:I.esmeralda,[B.menaCuarzo]:I.cuarzo,

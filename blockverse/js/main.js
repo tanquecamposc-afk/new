@@ -412,7 +412,7 @@ function bucle(ahora){
   const ce=Math.cos(jugador.yaw),se=Math.sin(jugador.yaw);
   camara.position.set(jugador.pos.x+ce*efectoCam.x,jugador.pos.y+(typeof alturaOjos==='function'?alturaOjos(agachado,dt):(agachado?1.32:1.62))+efectoCam.y,jugador.pos.z-se*efectoCam.x);
   camara.rotation.set(jugador.pitch,jugador.yaw,efectoCam.rz);
-  const fovB=window.FOV_BASE||75; camara.fov+=(((jugador.corriendo&&estado==='jugando')?fovB+9:arcoCarga>=0?fovB-12*Math.min(1,arcoCarga):fovB)-camara.fov)*Math.min(1,dt*8);  // el arco acerca la vista al tensarlo camara.updateProjectionMatrix();
+  const fovB=window.FOV_ZOOM||window.FOV_BASE||75; camara.fov+=(((jugador.corriendo&&estado==='jugando')?fovB+9:arcoCarga>=0?fovB-12*Math.min(1,arcoCarga):fovB)-camara.fov)*Math.min(1,dt*8);  // el arco acerca la vista al tensarlo camara.updateProjectionMatrix();
   oyente=camara.position;
   actualizarApuntado();
   if(estado==='jugando')manejarClics(dt);else{grietas.visible=false;$('barraUso').classList.add('oculto');}
