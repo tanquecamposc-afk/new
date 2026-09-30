@@ -218,7 +218,7 @@ document.addEventListener('keydown',e=>{if(e.code==='Escape'&&!$('pantallaContro
 /* ---------- Miniaturas de los mundos ---------- */
 function capturarImagen(escala){
   const vis=mano.visible; mano.visible=false;
-  renderer.render(escena,camara);
+  if(typeof renderizarFinal==='function')renderizarFinal();else renderer.render(escena,camara);
   const src=renderer.domElement, c=document.createElement('canvas');
   if(escala===1){c.width=src.width;c.height=src.height;c.getContext('2d').drawImage(src,0,0);}
   else{const s=Math.min(src.width,src.height);c.width=c.height=escala;c.getContext('2d').drawImage(src,(src.width-s)/2,(src.height-s)/2,s,s,0,0,escala,escala);}

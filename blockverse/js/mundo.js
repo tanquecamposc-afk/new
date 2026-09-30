@@ -862,6 +862,20 @@ function generarNether(ch){
         if(!datos[idx(X,Y,Z)])datos[idx(X,Y,Z)]=B.piedraLuminosa;}
     }
   }
+  // Cascadas de lava que caen del techo
+  for(let k=0;k<2;k++){
+    if(hash2(cx*7+k,cz,s+80)>.28)continue;
+    const x=1+Math.floor(hash2(cx,cz*5+k,s+81)*14),z=1+Math.floor(hash2(cx+k,cz,s+82)*14);
+    for(let y=CY-7;y>OY+40;y--){
+      const i=idx(x,y,z);
+      if(datos[i]||datos[idx(x,y+1,z)]!==B.netherrack)continue;
+      let fondo=y; while(fondo>OY+6&&!datos[idx(x,fondo-1,z)])fondo--;
+      if(y-fondo<6)break;
+      datos[idx(x,y+1,z)]=B.lava;
+      for(let yy=y;yy>=fondo;yy--)datos[idx(x,yy,z)]=B.lava+1;
+      break;
+    }
+  }
   estructurasNether(ch);
   // Ghasts secos en el valle de almas (1.21.6)
   if(hash2(cx,cz,s+70)<.12){const x=2+Math.floor(hash2(cx,cz,s+71)*12),z=2+Math.floor(hash2(cx,cz,s+72)*12);

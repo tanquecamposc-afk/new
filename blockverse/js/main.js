@@ -422,7 +422,7 @@ function bucle(ahora){
   $('fuegoVista').style.opacity=fuegoJ>0?.9:0;
   mano.visible=!vistaTercera; actualizarModeloJugador(dt); aplicarCamaraTercera();
   if(typeof pasoSombras==='function')pasoSombras();
-  renderer.render(escena,camara);
+  if(typeof renderizarFinal==='function')renderizarFinal();else renderer.render(escena,camara);
   fpsN++; fpsT+=dt;
   if(fpsT>=.5){fps=Math.round(fpsN/fpsT);fpsN=0;fpsT=0;
     if(infoVisible){
