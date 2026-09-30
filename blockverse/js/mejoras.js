@@ -20,7 +20,9 @@ const cupula=new THREE.Mesh(new THREE.SphereGeometry(450,32,16),new THREE.Shader
     vec3 d=normalize(vDir); float y=d.y;
     vec3 col=mix(uHor,uCen,pow(clamp(y,0.0,1.0),0.55));
     float s=max(dot(d,uSol),0.0), banda=exp(-abs(y-0.03)*4.5);
-    col=mix(col,uOcaso,clamp(uOcasoF*(pow(s,4.0)*0.85+0.16)*banda,0.0,1.0));
+    vec3 oc=mix(vec3(0.80,0.46,0.74),uOcaso,clamp(pow(s,2.0)*1.4,0.0,1.0));   // rosa y morado lejos del sol, dorado cerca
+    col=mix(col,oc,clamp(uOcasoF*(pow(s,3.0)*0.8+0.34)*(banda*0.75+0.25*clamp(1.0-y*1.6,0.0,1.0)),0.0,1.0));
+    col=mix(col,vec3(0.42,0.36,0.62),uOcasoF*0.35*clamp(y*1.5,0.0,1.0));
     col+=vec3(1.0,0.86,0.62)*uSolF*(pow(s,90.0)*0.7+pow(s,12.0)*0.16);
     gl_FragColor=vec4(col,1.0);
   }`,

@@ -39,6 +39,7 @@ void main(){
 const FS_BLOQUES=`
 uniform sampler2D mapa; uniform sampler2D uMapaSombra; uniform float uVibrante; uniform float uTexelSombra; uniform vec3 uNieblaSol; uniform vec3 uCieloAmb;
 uniform vec3 uColSol; uniform vec3 uSolDir; uniform vec3 uReflejo; uniform float uDia; uniform float uAmb; uniform float uAlpha; uniform float uOpac; uniform float uTiempo; uniform vec2 uAtlas;
+uniform sampler2D uReflTex; uniform mat4 uReflMat; uniform float uUsaReflejo; uniform float uAguaY; uniform float uClipY;
 varying vec2 vUv; varying vec3 vLuz; varying vec4 vTinte; varying vec3 vWPos; varying vec4 vSombra; varying float vMece;
 #include <packing>
 #include <fog_pars_fragment>
@@ -55,6 +56,7 @@ float sombraSol(float ndl){
   return mix(1.0,suma*0.25,borde);
 }
 void main(){
+  if(vWPos.y<uClipY)discard;
   vec2 uv=vUv; float m=vTinte.w;
   if(m>2.5){
     vec2 celda=floor(vUv*uAtlas), loc=fract(vUv*uAtlas);
@@ -90,6 +92,11 @@ void main(){
     vec3 v=normalize(cameraPosition-vWPos);
     float fres=pow(1.0-clamp(dot(n,v),0.0,1.0),3.0)*curva(vLuz.r);
     salida.rgb=mix(salida.rgb,uReflejo*max(uDia,.15),fres*.65);
+    if(uUsaReflejo>0.5&&n.y>0.5&&abs(vWPos.y-uAguaY)<0.4){  // reflejo real del paisaje
+      vec4 rc=uReflMat*vec4(vWPos,1.0); vec2 ruv=rc.xy/rc.w*0.5+0.5+n.xz*0.035*ola;
+      if(ruv.x>0.0&&ruv.x<1.0&&ruv.y>0.0&&ruv.y<1.0){vec3 refl=texture2D(uReflTex,ruv).rgb;
+        salida.rgb=mix(salida.rgb,refl,clamp(0.35+fres*0.6,0.0,0.88)*uUsaReflejo); salida.a=max(salida.a,0.82);}
+    }
     float spec=pow(max(dot(reflect(-v,n),uSolDir),0.0),mix(24.0,90.0,ola))*s*mix(.35,1.0,ola);
     salida.rgb+=vec3(1.0,.93,.78)*spec*1.4;
     salida.a=clamp(salida.a+fres*.35+spec,0.0,1.0);
@@ -105,7 +112,7 @@ void main(){
 }`;
 function materialBloques(transparente){
   const m=new THREE.ShaderMaterial({
-    uniforms:THREE.UniformsUtils.merge([THREE.UniformsLib.fog,{mapa:{value:null},uDia:{value:1},uAmb:{value:.02},uAlpha:{value:transparente?.02:.5},uOpac:{value:1},uColSol:{value:new THREE.Vector3(1,1,1)},uMapaSombra:{value:null},uSombraMat:{value:new THREE.Matrix4()},uVibrante:{value:0},uTexelSombra:{value:1/2048},uNieblaSol:{value:new THREE.Color(0,0,0)},uCieloAmb:{value:new THREE.Vector3(.85,.92,1.08)},uSolDir:{value:new THREE.Vector3(0,1,0)},uReflejo:{value:new THREE.Color(0x8ecbff)},uTiempo:{value:0},uAtlas:{value:new THREE.Vector2(ATW,ATH)}}]),
+    uniforms:THREE.UniformsUtils.merge([THREE.UniformsLib.fog,{mapa:{value:null},uDia:{value:1},uAmb:{value:.02},uAlpha:{value:transparente?.02:.5},uOpac:{value:1},uColSol:{value:new THREE.Vector3(1,1,1)},uMapaSombra:{value:null},uSombraMat:{value:new THREE.Matrix4()},uVibrante:{value:0},uTexelSombra:{value:1/2048},uNieblaSol:{value:new THREE.Color(0,0,0)},uCieloAmb:{value:new THREE.Vector3(.85,.92,1.08)},uSolDir:{value:new THREE.Vector3(0,1,0)},uReflejo:{value:new THREE.Color(0x8ecbff)},uTiempo:{value:0},uAtlas:{value:new THREE.Vector2(ATW,ATH)},uReflTex:{value:null},uReflMat:{value:new THREE.Matrix4()},uUsaReflejo:{value:0},uAguaY:{value:0},uClipY:{value:-1e5}}]),
     vertexShader:VS_BLOQUES, fragmentShader:FS_BLOQUES, fog:true, transparent:transparente, depthWrite:!transparente,
     side:transparente?THREE.DoubleSide:THREE.FrontSide});
   m.extensions={derivatives:true};

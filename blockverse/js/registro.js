@@ -66,8 +66,8 @@ bloque(49,'cultivo','Tierra de cultivo',tx('farmland','dirt','dirt'),{dureza:.6,
 bloque(50,'cactus','Cactus',tx('cactusTop','cactusTop','cactusSide'),{dureza:.4,trans:true,opaco:false,resistencia:.4});
 bloque(51,'hielo','Hielo','ice',{dureza:.5,herr:'pico',opaco:false,trans:true,opacidadLuz:2,suelta:0,resbala:true,resistencia:.5});
 bloque(52,'arenisca','Arenisca',tx('sandstoneTop','sandstoneTop','sandstoneSide'),{dureza:.8,herr:'pico',nivel:1,resistencia:.8});
-bloque(53,'agua','Agua','water',{forma:'liquido',dureza:Infinity,opacidadLuz:2,liquido:'agua',nivelL:0,tinte:'agua'});
-for(let k=1;k<=7;k++)bloque(53+k,'agua'+k,'Agua','water',{forma:'liquido',dureza:Infinity,opacidadLuz:2,liquido:'agua',nivelL:k,tinte:'agua'});
+bloque(53,'agua','Agua','water',{forma:'liquido',dureza:Infinity,opacidadLuz:1,liquido:'agua',nivelL:0,tinte:'agua'});
+for(let k=1;k<=7;k++)bloque(53+k,'agua'+k,'Agua','water',{forma:'liquido',dureza:Infinity,opacidadLuz:1,liquido:'agua',nivelL:k,tinte:'agua'});
 bloque(61,'lava','Lava','lava',{forma:'liquido',dureza:Infinity,luz:15,liquido:'lava',nivelL:0});
 for(let k=1;k<=7;k++)bloque(61+k,'lava'+k,'Lava','lava',{forma:'liquido',dureza:Infinity,luz:15,liquido:'lava',nivelL:k});
 bloque(69,'netherrack','Netherrack','netherrack',{dureza:.4,herr:'pico',nivel:1,resistencia:.4,eterno:true});
@@ -396,6 +396,9 @@ bloque(1612,'atril','Atril',tx('lecternTop','planks','lecternSide'),{forma:'caja
 bloque(1613,'mesaFlechas','Mesa de flechas',tx('fletchTop','planks','fletchSide'),{dureza:2.5,herr:'hacha',inflamable:true});
 bloque(1614,'caldero','Caldero',tx('cauldronTop','cauldronTop','cauldronSide'),{forma:'cajas',cajas:[[0,0,0,1,1,1]],opaco:false,dureza:2,herr:'pico'});
 bloque(1615,'tocadiscos','Tocadiscos',tx('jukeboxTop','jukeboxSide','jukeboxSide'),{dureza:2,herr:'hacha',inflamable:true});
+bloque(1616,'micelio','Micelio',tx('mycelium','dirt','myceliumSide'),{dureza:.6,herr:'pala',suelta:()=>[[B.tierra,1]],resistencia:.6});
+bloque(1617,'podzol','Podzol',tx('podzol','dirt','podzolSide'),{dureza:.5,herr:'pala',suelta:()=>[[B.tierra,1]],resistencia:.5});
+bloque(1618,'bloqueMusgo','Bloque de musgo','mossBlock',{dureza:.1,herr:'azada',resistencia:.1});
 const NB=BLOQUES.length;
 const SOLIDO=new Uint8Array(NB), OPACO=new Uint8Array(NB), TRANS=new Uint8Array(NB), LUZB=new Uint8Array(NB),
       OPAC_LUZ=new Uint8Array(NB), OCLUYE=new Uint8Array(NB), FORMA=new Uint8Array(NB), REEMPL=new Uint8Array(NB);
@@ -405,6 +408,8 @@ const TINTE=new Uint8Array(NB), TREPA=new Uint8Array(NB);
 BLOQUES.forEach((b,i)=>{if(!b)return;SOLIDO[i]=b.solido?1:0;OPACO[i]=b.opaco?1:0;TRANS[i]=b.trans?1:0;LUZB[i]=b.luz;
   OPAC_LUZ[i]=b.opacidadLuz;OCLUYE[i]=(b.forma==='cubo'&&!b.sinSombra)?1:0;FORMA[i]=FORMAS[b.forma];REEMPL[i]=b.reemplazable?1:0;
   TINTE[i]=TINTES[b.tinte]||0;TREPA[i]=b.trepable?1:0;});
+const ACUATICO=new Uint8Array(NB);
+for(const k of ['alga','pastoMarino','pepinoMar','coral_tubo','coral_cerebro','coral_burbuja','coral_fuego','coral_cuerno','abanicoCoral_tubo','abanicoCoral_cerebro','abanicoCoral_burbuja','abanicoCoral_fuego','abanicoCoral_cuerno'])if(B[k])ACUATICO[B[k]]=1;
 const esTronco=id=>id===4||(id>=94&&id<=97)||id===1294||id===1299||id===1321||id===1463, esHojas=id=>id===5||(id>=98&&id<=101)||id===1295||id===1300||id===1322||id===1464, esPuerta=id=>id>=149&&id<=164;
 // Cajas de colisión (coordenadas dentro del bloque)
 function cajasColision(id){

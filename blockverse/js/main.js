@@ -167,7 +167,10 @@ function actualizarCielo(dt){
   }
   // Bajo el agua o la lava
   const ojo=getBloque(Math.floor(c.x),Math.floor(c.y),Math.floor(c.z));
-  if(esAgua(ojo)){cielo.setHex(0x14306a);escena.fog.near=.5;escena.fog.far=14;}
+  if(esAgua(ojo)||ACUATICO[ojo]){const bo=sup?biomaEnJugador():-1, calida=bo===BIOMA.oceanoCalido, hel=bo===BIOMA.oceanoHelado||bo===BIOMA.rio&&false;
+    const luzAgua=sup?.35+.65*clamp(factorCielo,0,1):.35;
+    cielo.setHex(calida?0x1f7fa8:hel?0x1c2f7a:0x1a4a90).multiplyScalar(luzAgua);
+    escena.fog.near=calida?2:.5;escena.fog.far=(calida?34:hel?12:20)*(1+(window.nivelEnc?nivelEnc(inv[39],'agilidadAcuatica')*0:0));}
   else if(esLava(ojo)){cielo.setHex(0xc04010);escena.fog.near=0;escena.fog.far=1.5;}
   // Efecto de oscuridad (Warden y chilladores): la visión late
   let oscuro=0;
@@ -175,7 +178,8 @@ function actualizarCielo(dt){
     escena.fog.near=1;escena.fog.far=Math.min(escena.fog.far,5+(1-oscuro)*14);uDia*=1-oscuro*.8;}
   escena.fog.color.copy(cielo);
   mejorarCielo(sup,ojo,oscuro);
-  for(const m of [matOpaco,matTrans]){m.uniforms.uDia.value=uDia;const br=window.BRILLO??.5; m.uniforms.uAmb.value=dim.amb*(1-oscuro*.8)*(br<.5?.3+br*1.4:1)+Math.max(0,br-.5)*.3;}
+  const bajoAgua=(esAgua(ojo)||ACUATICO[ojo])&&sup?(.18+.3*clamp(factorCielo,0,1)):0;
+  for(const m of [matOpaco,matTrans]){m.uniforms.uDia.value=uDia;const br=window.BRILLO??.5; m.uniforms.uAmb.value=Math.max(bajoAgua,dim.amb*(1-oscuro*.8)*(br<.5?.3+br*1.4:1)+Math.max(0,br-.5)*.3);}
   matTrans.uniforms.uTiempo.value=tiempoJuego;
   // Lluvia
   const llueveAqui=sup&&lloviendo&&!OPACO[getBloque(Math.floor(c.x),Math.min(CY-1,Math.floor(c.y)+6),Math.floor(c.z))];

@@ -145,10 +145,12 @@ function registrarCofre(d,x,y,z,tipo){
    Generación de la Superficie
    ========================================================= */
 const BIOMA={oceano:0,playa:1,llanura:2,bosque:3,desierto:4,nevado:5,montana:6,taiga:7,abedul:8,jungla:9,sabana:10,pantano:11,badlands:12,rio:13,cerezo:14,manglar:15,jardinPalido:16,
-  bosqueOscuro:17,taigaNevada:18,prado:19,picosNevados:20,oceanoCalido:21,oceanoHelado:22};
-const esOceano=b=>b===0||b===21||b===22, esBiomaFrio=b=>b===5||b===18||b===20||b===22;
+  bosqueOscuro:17,taigaNevada:18,prado:19,picosNevados:20,oceanoCalido:21,oceanoHelado:22,
+  champinones:23,bosqueFlores:24,espigasHielo:25,junglaBambu:26,badlandsErosionados:27,taigaGigante:28,oceanoProfundo:29,picosPiedra:30,llanuraGirasoles:31};
+const esOceano=b=>b===0||b===21||b===22||b===29, esBiomaFrio=b=>b===5||b===18||b===20||b===22||b===25, esBadlands=b=>b===12||b===27;
 const NOMBRES_BIOMA=['Océano','Playa','Llanura','Bosque','Desierto','Tundra nevada','Montañas','Taiga','Bosque de abedules','Jungla','Sabana','Pantano','Badlands','Río','Arboleda de cerezos','Manglar','Jardín pálido',
-  'Bosque oscuro','Taiga nevada','Prado','Picos nevados','Océano cálido','Océano helado'];
+  'Bosque oscuro','Taiga nevada','Prado','Picos nevados','Océano cálido','Océano helado',
+  'Campos de champiñones','Bosque de flores','Espigas de hielo','Jungla de bambú','Badlands erosionados','Taiga de árboles gigantes','Océano profundo','Picos pedregosos','Llanura de girasoles'];
 const hex3=h=>[(h>>16&255)/255,(h>>8&255)/255,(h&255)/255];
 // Colores de cada bioma: césped, follaje y agua
 const COLOR_BIOMA=[
@@ -156,7 +158,9 @@ const COLOR_BIOMA=[
   [0xbfb755,0xaea42a,0x32a598],[0x80b497,0x60a17b,0x3d57d6],[0x8ab689,0x6da36b,0x3f76e4],[0x86b783,0x68a464,0x3d57d6],
   [0x88bb67,0x6ba941,0x3f76e4],[0x59c93c,0x30bb0b,0x45adf2],[0xbfb755,0xaea42a,0x3f76e4],[0x6a7039,0x6a7039,0x617b64],
   [0x90814d,0x9e814d,0x3f76e4],[0x91bd59,0x77ab2f,0x3f76e4],[0xb6db61,0xb6db61,0x5db7ef],[0x6a7039,0x8db127,0x3a7a6a],[0x778272,0x878d76,0x76889d],
-  [0x507a32,0x3f8f24,0x3f76e4],[0x80b497,0x60a17b,0x3d57d6],[0x83bb6d,0x63a948,0x0e6ecf],[0x80b497,0x60a17b,0x3d57d6],[0x8eb971,0x71a74d,0x43c8e8],[0x80b497,0x60a17b,0x3938c9]].map(c=>c.map(hex3));
+  [0x507a32,0x3f8f24,0x3f76e4],[0x80b497,0x60a17b,0x3d57d6],[0x83bb6d,0x63a948,0x0e6ecf],[0x80b497,0x60a17b,0x3d57d6],[0x8eb971,0x71a74d,0x43c8e8],[0x80b497,0x60a17b,0x3938c9],
+  [0x55c93f,0x2bbb0f,0x3f76e4],[0x79c05a,0x59ae30,0x3f76e4],[0x80b497,0x60a17b,0x3938c9],[0x59c93c,0x30bb0b,0x45adf2],[0x90814d,0x9e814d,0x3f76e4],
+  [0x86b87f,0x68a55f,0x3d57d6],[0x8eb971,0x71a74d,0x3d57d6],[0x9abe4b,0x82ac1e,0x3f76e4],[0x91bd59,0x77ab2f,0x3f76e4]].map(c=>c.map(hex3));
 const COLOR_ABEDUL=hex3(0x80a755), COLOR_ABETO=hex3(0x619961);
 function infoColumna(x,z){
   const s=semilla;
@@ -173,31 +177,33 @@ function infoColumna(x,z){
   // Bioma según temperatura y humedad (proporciones parecidas a las del original)
   let bioma;
   const tierra=h>=NIVEL_MAR-1;
-  if(!tierra)bioma=temp<.33?BIOMA.oceanoHelado:temp>.64?BIOMA.oceanoCalido:BIOMA.oceano;
+  const isla=fbm(x*.0028,z*.0028,s+2100,2);
+  if(!tierra&&c>.3&&isla>.73&&temp>.35&&temp<.64){h=NIVEL_MAR+1+Math.min(7,(isla-.73)*120);bioma=BIOMA.champinones;}
+  else if(!tierra)bioma=temp<.33?BIOMA.oceanoHelado:temp>.64?BIOMA.oceanoCalido:c<.33?BIOMA.oceanoProfundo:BIOMA.oceano;
   else if(c<.452&&montes<.3&&h<NIVEL_MAR+3.5)bioma=temp<.33?BIOMA.nevado:BIOMA.playa;
-  else if(montes>.45&&h>150)bioma=temp<.45?BIOMA.picosNevados:BIOMA.montana;
-  else if(temp<.33)bioma=hum>.5?BIOMA.taigaNevada:BIOMA.nevado;
-  else if(temp<.405)bioma=montes>.28&&h>NIVEL_MAR+24&&hum<.46?BIOMA.prado:BIOMA.taiga;
+  else if(montes>.45&&h>150)bioma=temp<.45?BIOMA.picosNevados:temp>.58&&h>162?BIOMA.picosPiedra:BIOMA.montana;
+  else if(temp<.33)bioma=hum>.5?BIOMA.taigaNevada:rara>.63?BIOMA.espigasHielo:BIOMA.nevado;
+  else if(temp<.405)bioma=montes>.28&&h>NIVEL_MAR+24&&hum<.46?BIOMA.prado:hum>.47&&rara>.52?BIOMA.taigaGigante:BIOMA.taiga;
   else if(temp<.6){
     if(montes>.18&&hum<.5&&h>NIVEL_MAR+12&&rara<.47)bioma=BIOMA.cerezo;
     else if(montes>.22&&h>NIVEL_MAR+20&&rara>.53)bioma=BIOMA.prado;
     else if(hum>.67)bioma=BIOMA.pantano;
     else if(hum>.55)bioma=rara>.64&&montes<.15?BIOMA.jardinPalido:rara>.49?BIOMA.bosqueOscuro:BIOMA.bosque;
-    else if(hum>.48)bioma=BIOMA.bosque;
+    else if(hum>.48)bioma=rara<.36?BIOMA.bosqueFlores:BIOMA.bosque;
     else if(hum>.44)bioma=BIOMA.abedul;
-    else bioma=BIOMA.llanura;
+    else bioma=rara>.62?BIOMA.llanuraGirasoles:BIOMA.llanura;
   }else if(temp<.67){
-    if(hum>.64&&montes<.1)bioma=BIOMA.manglar;else if(hum>.55)bioma=BIOMA.jungla;else bioma=BIOMA.sabana;
+    if(hum>.64&&montes<.1)bioma=BIOMA.manglar;else if(hum>.55)bioma=rara<.38?BIOMA.junglaBambu:BIOMA.jungla;else bioma=BIOMA.sabana;
   }else{
-    if(hum>.6)bioma=BIOMA.jungla;else if(rara>.6||(montes>.2&&rara>.5))bioma=BIOMA.badlands;else bioma=BIOMA.desierto;
+    if(hum>.6)bioma=BIOMA.jungla;else if(rara>.6||(montes>.2&&rara>.5))bioma=rara>.68?BIOMA.badlandsErosionados:BIOMA.badlands;else bioma=BIOMA.desierto;
   }
   if(bioma===BIOMA.pantano)h=NIVEL_MAR+(h-NIVEL_MAR)*.22-.4;
   if(bioma===BIOMA.manglar)h=NIVEL_MAR+(h-NIVEL_MAR)*.15-.9;
   if(bioma===BIOMA.desierto)h=NIVEL_MAR+1+(h-NIVEL_MAR-1)*.7;
-  if(bioma===BIOMA.badlands){h+=montes*18+colinas*6;const t=Math.floor(h/5)*5;h=t+Math.min(5,(h-t)*2.5);}
+  if(esBadlands(bioma)){h+=montes*18+colinas*6;const t=Math.floor(h/5)*5;h=t+Math.min(5,(h-t)*2.5);}
   // Ríos
   const rio=Math.abs(fbm(x*.0035,z*.0035,s+70,3)-.5);
-  if(tierra&&bioma!==BIOMA.montana&&bioma!==BIOMA.picosNevados&&rio<.022&&h<160){
+  if(tierra&&bioma!==BIOMA.montana&&bioma!==BIOMA.picosNevados&&bioma!==BIOMA.picosPiedra&&bioma!==BIOMA.champinones&&rio<.022&&h<160){
     const f=1-rio/.022;
     h=h-(h-(NIVEL_MAR-3))*Math.min(1,f*2.2);
     if(h<NIVEL_MAR)bioma=BIOMA.rio;
@@ -388,7 +394,8 @@ const ARBOLES_BIOMA=[
   null,null,[.003,r=>r<.15?'robleGrande':'roble'],[.05,r=>r<.2?'abedul':r<.3?'robleGrande':'roble'],null,[.004,()=>'abeto'],[.006,()=>'abeto'],
   [.045,()=>'abeto'],[.05,r=>r<.08?'roble':'abedul'],[.1,r=>r<.45?'arbusto':r<.55?'robleGrande':'jungla'],[.006,()=>'acacia'],[.014,()=>'pantano'],null,null,
   [.012,()=>'cerezo'],[.075,()=>'mangle'],[.06,()=>'palido'],
-  [.1,r=>r<.05?'setaRoja':r<.1?'setaMarron':r<.82?'robleOscuro':r<.95?'roble':'abedul'],[.035,()=>'abeto'],[.0012,r=>r<.6?'roble':'abedul'],null,null,null];
+  [.1,r=>r<.05?'setaRoja':r<.1?'setaMarron':r<.82?'robleOscuro':r<.95?'roble':'abedul'],[.035,()=>'abeto'],[.0012,r=>r<.6?'roble':'abedul'],null,null,null,
+  [.012,r=>r<.5?'setaRoja':'setaMarron'],[.03,r=>r<.3?'abedul':r<.4?'robleGrande':'roble'],null,[.02,r=>r<.7?'arbusto':'jungla'],null,[.075,()=>'abeto'],null,null,[.0015,()=>'roble']];
 
 /* ---------- Superficie ---------- */
 function generarSuperficie(ch){
@@ -413,24 +420,29 @@ function generarSuperficie(ch){
       else if(esCuevaLocal(x,y,z,h,agua))id=y<=10?B.lava:0;
       else if(y===h){
         if(bioma===BIOMA.desierto||bioma===BIOMA.playa)id=B.arena;
-        else if(bioma===BIOMA.badlands)id=B.arenaRoja;
+        else if(esBadlands(bioma))id=B.arenaRoja;
         else if(bioma===BIOMA.manglar)id=h>NIVEL_MAR&&hash2(wx,wz,s+34)<.35?B.cesped:B.barro;
         else if(bioma===BIOMA.jardinPalido&&!agua)id=hash2(wx,wz,s+35)<.4?B.musgoPalido:B.cesped;
         else if(agua&&bioma===BIOMA.oceanoCalido)id=B.arena;
         else if(agua)id=bioma===BIOMA.rio?(hash2(wx,wz,s+31)<.2?B.arcilla:hash2(wx,wz,s+32)<.5?B.arena:B.grava):(h<NIVEL_MAR-8?B.grava:B.arena);
         else if(bioma===BIOMA.montana)id=h>172?B.bloqueNieve:h>158?B.piedra:B.cesped;
         else if(bioma===BIOMA.picosNevados)id=hash2(wx,wz,s+38)<.1?B.hieloCompacto:B.bloqueNieve;
+        else if(bioma===BIOMA.champinones)id=B.micelio;
+        else if(bioma===BIOMA.espigasHielo)id=B.bloqueNieve;
+        else if(bioma===BIOMA.picosPiedra)id=hash2(wx,wz,s+39)<.25?B.calcita:B.piedra;
+        else if((bioma===BIOMA.taigaGigante&&hash2(wx,wz,s+40)<.6)||(bioma===BIOMA.junglaBambu&&hash2(wx,wz,s+41)<.35))id=B.podzol;
         else if(frio)id=B.cespedNevado;
         else id=B.cesped;
       }else if(y>h-4){
         if(bioma===BIOMA.desierto)id=y>h-3?B.arena:B.arenisca;
-        else if(bioma===BIOMA.badlands)id=B.terracota;
+        else if(esBadlands(bioma))id=B.terracota;
         else if(bioma===BIOMA.manglar)id=B.barro;
         else if(bioma===BIOMA.playa||agua)id=B.arena;
         else if(bioma===BIOMA.montana&&h>158)id=B.piedra;
         else if(bioma===BIOMA.picosNevados)id=y>h-2?B.bloqueNieve:B.piedra;
+        else if(bioma===BIOMA.picosPiedra)id=B.piedra;
         else id=B.tierra;
-      }else if(bioma===BIOMA.badlands&&y>h-18&&y>NIVEL_MAR-4){
+      }else if(esBadlands(bioma)&&y>h-18&&y>NIVEL_MAR-4){
         const banda=Math.floor(hash2(Math.floor(y/2),7,s+33)*8);id=banda<6?B.terracota0+banda:B.terracota;
       }else{
         const pizarra=y<OY||(y<OY+8&&hash3(wx,y,wz,s+6)<(OY+8-y)/8);

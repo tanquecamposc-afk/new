@@ -76,8 +76,8 @@ function calcularGrado(){
   if(dim===DIMS.nether){g.bloom=.9;g.umbral=.58;g.sat=1.08;g.con=1.12;g.tinte.set(1.02,.98,.97);g.calor=1;g.vineta=.5;return;}
   if(dim===DIMS.end){g.bloom=.6;g.umbral=.62;g.sat=1.15;g.con=1.08;g.tinte.set(1.02,.95,1.12);g.vineta=.5;return;}
   const dia=clamp((sol+.1)/.4,0,1), ocaso=clamp(1-Math.abs(sol)/.28,0,1)*(lloviendo?.2:1);
-  g.bloom=.3+ocaso*.35+(1-dia)*.35; g.umbral=.84-(1-dia)*.3-ocaso*.08; g.sat=1.08+ocaso*.12-(lloviendo?.15:0); g.con=1.06;
-  g.tinte.set(1,1,1).lerp(_v3.set(.86,.93,1.16),(1-dia)*.8).lerp(_v3.set(1.16,1.0,.82),ocaso*.8);
+  g.bloom=.28+ocaso*.16+(1-dia)*.35; g.umbral=.84-(1-dia)*.3-ocaso*.08; g.sat=1.08+ocaso*.12-(lloviendo?.15:0); g.con=1.06;
+  g.tinte.set(1,1,1).lerp(_v3.set(.86,.93,1.16),(1-dia)*.8).lerp(_v3.set(1.14,.97,.95),ocaso*.8);
   if(lloviendo)g.tinte.lerp(_v3.set(.95,.98,1.02),.5);
   // Bajo tierra y en cuevas: más resplandor para las antorchas y la lava
   let cielo=15; try{cielo=luzEn(Math.floor(c.x),Math.floor(c.y),Math.floor(c.z))>>4;}catch(e){}
@@ -88,13 +88,47 @@ function suavizarGrado(dt){
   for(const p of ['bloom','umbral','sat','con','calor','expo','vineta'])a[p]+=(o[p]-a[p])*k;
   a.tinte.lerp(o.tinte,k);
 }
+/* ---------- Reflejos del agua: el paisaje se dibuja reflejado en una textura ---------- */
+if(OPC.reflejos===undefined)OPC.reflejos=true;
+const rtRefl=new THREE.WebGLRenderTarget(4,4,{minFilter:THREE.LinearFilter,magFilter:THREE.LinearFilter,format:THREE.RGBAFormat});
+const camRefl=new THREE.PerspectiveCamera(), planoRefl=new THREE.Plane(new THREE.Vector3(0,1,0),0), _pvRefl=new THREE.Matrix4();
+let aguaY=NIVEL_MAR+.875, aguaBuscarT=0;
+function buscarAgua(){
+  const c=camara.position;
+  for(const [dx,dz] of [[0,0],[6,0],[-6,0],[0,6],[0,-6],[12,12],[-12,12],[12,-12],[-12,-12]]){
+    const x=Math.floor(c.x+dx),z=Math.floor(c.z+dz);
+    for(let y=Math.floor(c.y);y>Math.floor(c.y)-64&&y>1;y--){const b=getBloqueSiCargado(x,y,z);if(b<0)break;
+      if(b&&!esAgua(b)&&OPACO[b])break;
+      if(esAgua(b)&&!esAgua(getBloque(x,y+1,z))){aguaY=y+alturaLiquido(b,0);return;}}
+  }
+}
+function pasoReflejo(){
+  const mats=[matOpaco,matTrans];
+  mats.forEach(m=>m.uniforms.uUsaReflejo.value=0);
+  if(!OPC.reflejos||dim!==DIMS.superficie)return;
+  aguaBuscarT-=1; if(aguaBuscarT<=0){aguaBuscarT=20;buscarAgua();}
+  const cy=camara.position.y;
+  if(cy<aguaY+.05||cy-aguaY>80)return;
+  const w=Math.max(1,PP.rtEscena.width>>1), h=Math.max(1,PP.rtEscena.height>>1);
+  if(rtRefl.width!==w||rtRefl.height!==h)rtRefl.setSize(w,h);
+  camRefl.copy(camara); camRefl.position.y=2*aguaY-cy;
+  camRefl.rotation.set(-camara.rotation.x,camara.rotation.y,-camara.rotation.z,'YXZ'); camRefl.updateMatrixWorld(true);
+  const manoV=mano.visible; mano.visible=false;
+  mats.forEach(m=>m.uniforms.uClipY.value=aguaY+.06);
+  planoRefl.constant=-(aguaY+.06); renderer.clippingPlanes=[planoRefl];
+  renderer.setRenderTarget(rtRefl); renderer.render(escena,camRefl);
+  renderer.clippingPlanes=[]; mano.visible=manoV;
+  mats.forEach(m=>{m.uniforms.uClipY.value=-1e5;m.uniforms.uReflTex.value=rtRefl.texture;m.uniforms.uAguaY.value=aguaY;m.uniforms.uUsaReflejo.value=1;
+    m.uniforms.uReflMat.value.multiplyMatrices(camRefl.projectionMatrix,camRefl.matrixWorldInverse);});
+}
 const _solPant=new THREE.Vector3();
 let rayosAct=0, ultimoRender=performance.now();
 function renderizarFinal(){
-  if(!OPC.shaders){renderer.setRenderTarget(null);renderer.render(escena,camara);return;}
+  if(!OPC.shaders){matOpaco.uniforms.uUsaReflejo.value=matTrans.uniforms.uUsaReflejo.value=0;renderer.setRenderTarget(null);renderer.render(escena,camara);return;}
   const ahora=performance.now(), dt=Math.min(.1,(ahora-ultimoRender)/1000); ultimoRender=ahora;
   calcularGrado(); suavizarGrado(dt);
   PP.ajustar();
+  pasoReflejo();
   renderer.setRenderTarget(PP.rtEscena); renderer.render(escena,camara);
   const g=gradoAct, w=PP.rtA.width, h=PP.rtA.height;
   PP.matBri.uniforms.t.value=PP.rtEscena.texture; PP.matBri.uniforms.uUmbral.value=g.umbral; PP.pase(PP.matBri,PP.rtBri);
@@ -184,4 +218,5 @@ actualizarFinal=function(dt){
   const b=botonOpc(()=>OPC.shaders,()=>{OPC.shaders=!OPC.shaders;},v=>'Shaders: '+(v?'Sí':'No'));
   b.dataset.tip='Resplandor, rayos de sol, color cinematográfico y calor en el Nether';
   rej.insertBefore(b,rej.firstChild.nextSibling.nextSibling);
+  const b2=botonOpc(()=>OPC.reflejos,()=>{OPC.reflejos=!OPC.reflejos;},v=>'Reflejos del agua: '+(v?'Sí':'No'));b2.dataset.tip='El agua refleja el paisaje (necesita los shaders)';rej.insertBefore(b2,b.nextSibling);
 })();

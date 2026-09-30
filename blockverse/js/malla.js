@@ -192,6 +192,7 @@ function construirGeometria(ch){
           const n=P[i+f.offN];
           if(OPACO[n])continue;
           if(liquido&&esLiquido(n)&&esAgua(n)===esAgua(b))continue;
+          if(liquido&&ACUATICO[n]&&esAgua(b))continue;
           if(!liquido&&n===b)continue;
           if(liquido&&f.dir[1]<0&&SOLIDO[n])continue;
           const ln=L[i+f.offN], s=Math.max(ln>>4,lp>>4), bl=Math.max(ln&15,lp&15);

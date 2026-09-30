@@ -32,6 +32,16 @@ function tile(nombre,gen){T[nombre]=_genTiles.length;_genTiles.push(gen);}
   // canto iluminado arriba a la izquierda y algún destello
   const FORMAS_MENA=[[[0,0],[1,0],[0,1],[1,1]],[[0,0],[1,0],[2,0],[0,1],[1,1]],[[1,0],[0,1],[1,1],[2,1],[1,2]],
     [[0,0],[1,0],[1,1],[2,1],[2,2]],[[0,0],[0,1],[1,1],[1,2],[2,1]],[[0,0],[1,0],[2,0],[1,1],[2,1],[1,2]],[[0,1],[1,0],[1,1],[2,0],[2,1]]];
+  // Estilos especiales: gemas en rombo (diamante, esmeralda), polvo (redstone) y vetas alargadas (cuarzo)
+  const menaEspecial=(estilo,base,col,osc,brillo)=>(p,r)=>{base(p,r);
+    const c=(v,k)=>[v[0]+k,v[1]+k,v[2]+k];
+    if(estilo==='polvo'){for(let k=0;k<16;k++){const x=1+Math.floor(r()*14),y=1+Math.floor(r()*14);p(x,y,...c(col,n(r,20)));if(r()<.5)p(x+1,y,...c(col,-10));p(x+1,y+1,...osc);if(r()<.2)p(x,y,...brillo);}return;}
+    if(estilo==='veta'){for(let k=0;k<6;k++){const x0=1+Math.floor(r()*11),y0=2+Math.floor(r()*12),l=3+Math.floor(r()*3),d=r()<.5?1:-1;
+      for(let i=0;i<l;i++){const x=x0+i,y=y0+Math.round(i*d*.5);p(x,y,...c(col,n(r,12)));p(x,y+1,...osc);if(i===1)p(x,y,...brillo);}}return;}
+    // gema: rombos de 3x3 con canto claro y sombra
+    const usados=[];for(let k=0;k<5;k++){let cx,cy,t=0;do{cx=2+Math.floor(r()*11);cy=2+Math.floor(r()*11);t++;}while(t<30&&usados.some(([a,b])=>Math.abs(a-cx)<4&&Math.abs(b-cy)<4));usados.push([cx,cy]);
+      for(const [dx,dy] of [[0,-1],[-1,0],[0,0],[1,0],[0,1]])p(cx+dx,cy+dy,...c(col,n(r,14)));
+      p(cx,cy-1,...brillo);p(cx-1,cy,...c(brillo,-30));p(cx+1,cy+1,...osc);p(cx,cy+2,...osc);p(cx+2,cy,...osc);}};
   const mena=(base,col,osc,brillo)=>(p,r)=>{base(p,r);
     const usados=[], nv=5+Math.floor(r()*2);
     for(let k=0;k<nv;k++){
@@ -110,19 +120,19 @@ function tile(nombre,gen){T[nombre]=_genTiles.length;_genTiles.push(gen);}
   tile('coalOre',mena(piedra,[34,34,38],[20,20,22],[78,78,84]));
   tile('ironOre',mena(piedra,[218,172,132],[150,112,84],[244,212,180]));
   tile('goldOre',mena(piedra,[252,212,48],[190,130,20],[255,250,170]));
-  tile('diamondOre',mena(piedra,[80,226,214],[20,120,110],[210,255,252]));
-  tile('redstoneOre',mena(piedra,[210,20,20],[110,0,0],[255,110,110]));
+  tile('diamondOre',menaEspecial('gema',piedra,[80,226,214],[20,120,110],[210,255,252]));
+  tile('redstoneOre',menaEspecial('polvo',piedra,[210,20,20],[110,0,0],[255,110,110]));
   tile('lapisOre',mena(piedra,[34,64,196],[14,30,110],[90,130,245]));
-  tile('emeraldOre',mena(piedra,[36,206,96],[10,110,44],[160,255,190]));
+  tile('emeraldOre',menaEspecial('gema',piedra,[36,206,96],[10,110,44],[160,255,190]));
   tile('copperOre',mena(piedra,[222,128,74],[140,70,40],[120,210,170]));
   tile('deepslate',pizarra);
   tile('deepslateTop',(p,r)=>{const s=S();cada((x,y)=>{const k=n(r,12)+(pn(x,y,4,s)-.5)*14;const d=Math.max(Math.abs(x-7.5),Math.abs(y-7.5));p(x,y,76+k-(d>6?10:0),76+k-(d>6?10:0),84+k);});});
   tile('dsCoal',mena(pizarra,[28,28,32],[14,14,16],[66,66,72]));
   tile('dsIron',mena(pizarra,[206,162,124],[130,98,72],[236,204,172]));
   tile('dsGold',mena(pizarra,[246,206,50],[170,120,20],[255,245,160]));
-  tile('dsRedstone',mena(pizarra,[196,20,20],[100,0,0],[255,96,96]));
+  tile('dsRedstone',menaEspecial('polvo',pizarra,[196,20,20],[100,0,0],[255,96,96]));
   tile('dsLapis',mena(pizarra,[34,64,196],[14,30,110],[90,130,245]));
-  tile('dsDiamond',mena(pizarra,[80,226,214],[20,120,110],[210,255,252]));
+  tile('dsDiamond',menaEspecial('gema',pizarra,[80,226,214],[20,120,110],[210,255,252]));
   tile('dsCopper',mena(pizarra,[210,118,70],[130,66,38],[120,210,170]));
   tile('gravel',(p,r)=>{const pts=[];for(let i=0;i<22;i++)pts.push([r()*TS,r()*TS,r()]);
     cada((x,y)=>{let d1=1e9,id=0,d2=1e9;for(const q of pts)for(let ox=-1;ox<=1;ox++)for(let oy=-1;oy<=1;oy++){const dd=Math.hypot(x+.5-(q[0]+ox*TS),y+.5-(q[1]+oy*TS));if(dd<d1){d2=d1;d1=dd;id=q[2];}else if(dd<d2)d2=dd;}
@@ -184,7 +194,7 @@ function tile(nombre,gen){T[nombre]=_genTiles.length;_genTiles.push(gen);}
     const cara=((x%8===2||x%8===5)&&y%8===3)||(y%8===5&&x%8>=2&&x%8<=5);p(x,y,(cara?56:90)+k,(cara?40:68)+k,(cara?30:52)+k);});});
   tile('glowstone',(p,r)=>{const s=S();cada((x,y)=>{const v=pn(x,y,4,s);const k=n(r,24);const borde=pn(x,y,8,s+1)>.66;
     p(x,y,(borde?150:200+v*55)+k*.3,(borde?96:150+v*90)+k*.4,(borde?50:70+v*70)+k*.3);});});
-  tile('quartzOre',mena(netherrack,[236,228,218],[180,160,150],[255,255,255]));
+  tile('quartzOre',menaEspecial('veta',netherrack,[236,228,218],[180,160,150],[255,255,255]));
   tile('netherBrick',(p,r)=>ladrillos(p,r,[60,26,32],[28,12,16],4,8));
   tile('netherPortal',(p,r)=>cada((x,y)=>{const v=Math.sin(x*.9+Math.cos(y*.7)*2)*.5+.5;const w=Math.sin((x+y)*.5)*.5+.5;p(x,y,90+v*90,20+w*30,170+v*80,200);}));
   tile('netherGoldOre',mena(netherrack,[252,204,48],[170,110,20],[255,244,150]));
@@ -582,6 +592,11 @@ function tile(nombre,gen){T[nombre]=_genTiles.length;_genTiles.push(gen);}
   tile('jukeboxTop',(p,r)=>{tablones(p,r,[120,80,56]);cada((x,y)=>{if(y===7||y===8)p(x,y,30,24,20);});});
   tile('jukeboxSide',(p,r)=>{tablones(p,r,[120,80,56]);cada((x,y)=>{if(x<2||x>13||y<2||y>13)p(x,y,80,54,36);});});
   tile('mudBrickDark',(p,r)=>ladrillos(p,r,[140,110,90],[90,70,56]));
+  tile('mycelium',(p,r)=>{const s=S();cada((x,y)=>{const k=n(r,14)+(pn(x,y,8,s)-.5)*16;const m=r()<.12;p(x,y,(m?150:112)+k,(m?130:92)+k,(m?150:108)+k);});});
+  tile('myceliumSide',(p,r)=>{tierra(p,r);cada((x,y)=>{if(y<3||(y===3&&r()<.5)){const k=n(r,12);p(x,y,112+k,92+k,108+k);}});});
+  tile('podzol',(p,r)=>{const s=S();cada((x,y)=>{const k=n(r,16)+(pn(x,y,8,s)-.5)*18;const hoja=r()<.2;p(x,y,(hoja?120:92)+k,(hoja?80:62)+k,(hoja?40:28)+k);});});
+  tile('podzolSide',(p,r)=>{tierra(p,r);cada((x,y)=>{if(y<3||(y===3&&r()<.5)){const k=n(r,12);p(x,y,92+k,62+k,28+k);}});});
+  tile('mossBlock',(p,r)=>{const s=S();cada((x,y)=>{const k=n(r,16)+(pn(x,y,4,s)-.5)*24;p(x,y,86+k,120+k,40+k);});});
   tile('pathSide',(p,r)=>{tierra(p,r);cada((x,y)=>{if(y<2){const k=n(r,12);p(x,y,148+k,122+k,66+k);}});});
 })();
 

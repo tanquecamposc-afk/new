@@ -69,7 +69,7 @@ function fisicaJugador(dt,entrada){
   const bPies=getBloque(Math.floor(j.pos.x),Math.floor(j.pos.y+.1),Math.floor(j.pos.z));
   const bCuerpo=getBloque(Math.floor(j.pos.x),Math.floor(j.pos.y+.8),Math.floor(j.pos.z));
   const bOjos=getBloque(Math.floor(j.pos.x),Math.floor(j.pos.y+1.62),Math.floor(j.pos.z));
-  j.enAgua=esAgua(bPies)||esAgua(bCuerpo); j.enLava=esLava(bPies)||esLava(bCuerpo); j.ojosAgua=esAgua(bOjos);
+  j.enAgua=esAgua(bPies)||esAgua(bCuerpo)||ACUATICO[bPies]===1||ACUATICO[bCuerpo]===1; j.enLava=esLava(bPies)||esLava(bCuerpo); j.ojosAgua=esAgua(bOjos);
   if(fisicaEspecial(j,dt,entrada))return;
   const shift=entrada&&(teclas.ShiftLeft||teclas.ShiftRight);
   j.agachado=shift&&!j.vuela&&!j.enAgua;
