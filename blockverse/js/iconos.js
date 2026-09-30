@@ -347,10 +347,81 @@ const DIBUJOS_OBJETOS={
   653:({Q})=>{const T=tonosMat([150,150,158]),F=tonosMat([236,236,230]),R=tonosMat([220,40,40]);solidoT(Q,enElipse(8,8,6,6),T);solidoT(Q,enElipse(8,8,4.2,4.2),F);Q(9,6,'m',R);Q(10,5,'l',R);Q(7,9,'d',tonosMat([60,60,70]));Q(6,10,'d',tonosMat([60,60,70]));},
   654:({Q})=>{const T=tonosMat([240,200,60]),F=tonosMat([120,170,230]);solidoT(Q,enElipse(8,8,6,6),T);solidoT(Q,enElipse(8,8,4.2,4.2),F);for(let x=5;x<=11;x++)Q(x,x<8?9:9,'m',tonosMat([60,110,40]));Q(8,5,'w',tonosMat([250,240,150]));},
 };
+/* ---------- Armaduras, pociones, tintes, huevos y más objetos al estilo original ---------- */
+const MASCARA_ARM=[
+  (x,y)=>y>=3&&y<=10&&x>=3&&x<=12&&!(y===3&&(x<5||x>10))&&!(y>=7&&x>=5&&x<=10),                                   // casco
+  (x,y)=>y>=2&&y<=13&&((y<=4&&x>=1&&x<=14&&!(y<=3&&x>=6&&x<=9))||(y>=5&&y<=8&&(x<=2&&x>=1||x>=13&&x<=14))||(y>=5&&x>=3&&x<=12)),  // pechera
+  (x,y)=>y>=2&&y<=13&&x>=3&&x<=12&&(y<=5||x<=6||x>=9),                                                              // pantalones
+  (x,y)=>y>=7&&y<=13&&((x>=2&&x<=5&&y<=10)||(x>=1&&x<=6&&y>=11)||(x>=10&&x<=13&&y<=10)||(x>=9&&x<=14&&y>=11)),     // botas
+];
+function armaduraT(Q,pieza,c){const T=tonosMat(c),m=MASCARA_ARM[pieza];
+  solidoT(Q,m,T,(x,y)=>pieza===1?(x===5&&y>=6&&y<=11):pieza===2?((x===4||x===10)&&y>=6&&y<=11):false);
+  if(pieza===1)for(let x=4;x<=11;x++)if(m(x,5))Q(x,5,'d',T);   // costura del cuello
+}
+function frascoT(Q,liquido,arrojadiza){ // frasco redondo con tapón, vidrio claro y líquido con brillo
+  const V=tonosMat([214,226,240]),L=liquido?tonosMat(liquido):null,C=tonosMat([150,108,62]);
+  Q(7,1,'l',C);Q(8,1,'m',C);
+  const cuello=arrojadiza?[[6,2],[7,2],[8,2],[9,2],[6,3],[9,3],[5,4],[10,4]]:[[7,2],[8,2],[7,3],[8,3],[7,4],[8,4]];
+  for(const [x,y] of cuello)Q(x,y,'l',V);
+  const dentro=(x,y)=>((x+.5-8)/(arrojadiza?5.8:5.2))**2+((y+.5-9.8)/(arrojadiza?4.6:5))**2<=1;
+  for(let y=4;y<16;y++)for(let x=0;x<16;x++){if(!dentro(x,y))continue;const borde=!dentro(x-1,y)||!dentro(x+1,y)||!dentro(x,y-1)||!dentro(x,y+1);
+    if(borde)Q(x,y,x<8?'l':'m',V);else if(L&&y>=7)Q(x,y,(x===5&&y===9)||(x===6&&y===8)?'w':y===7?'l':x>10||y>12?'d':'m',L);else Q(x,y,(x+y)%6===0?'w':'l',V);}
+}
+function tinteT(Q,c){const T=tonosMat(c);solidoT(Q,(x,y)=>enElipse(8,9.5,4.8,4.2)(x,y)||enElipse(7,5.5,2.4,2)(x,y),T);}
+function huevoT(Q,a,b){const T=tonosMat(a),M=tonosMat(b),dentro=enElipse(8,8.8,4.6,6);solidoT(Q,dentro,T);
+  for(const [x,y] of [[6,5],[9,6],[10,7],[5,9],[8,10],[11,11],[6,12],[7,12]])if(dentro(x,y))Q(x,y,(x+y)%3?'m':'l',M);}
+function pezT(Q,cuerpo,vientre,aleta){const T=tonosMat(cuerpo),V=tonosMat(vientre),A=tonosMat(aleta);const d=enElipse(7,8,5.4,3);
+  solidoT(Q,d,T);for(let x=3;x<=11;x++)if(d(x,10))Q(x,10,'l',V);for(const [x,y] of [[12,6],[13,5],[12,10],[13,11],[12,8],[13,8],[14,7],[14,9]])Q(x,y,'m',A);Q(4,7,'d',tonosMat([20,20,20]));}
+Object.assign(DIBUJOS_OBJETOS,{
+  249:({Q})=>{const T=tonosMat([160,34,44]);solidoT(Q,enElipse(8,8,4.6,4.6),T);for(const [x,y] of [[6,7],[9,7],[7,9],[8,6]])Q(x,y,'d',tonosMat([60,0,10]));},
+  252:({Q})=>{const T=tonosMat([150,108,62]);solidoT(Q,(x,y)=>y>=7&&y<=12&&Math.abs(x+.5-8)<=6.2-(y-7)*.6,T);for(let x=3;x<=12;x++)Q(x,7,'d',T);},
+  253:({Q})=>{const T=tonosMat([150,108,62]),S=tonosMat([196,150,110]);solidoT(Q,(x,y)=>y>=7&&y<=12&&Math.abs(x+.5-8)<=6.2-(y-7)*.6,T);for(let x=3;x<=12;x++)Q(x,7,x%3?'l':'m',S);Q(6,6,'l',tonosMat([200,40,40]));Q(10,6,'l',tonosMat([180,130,90]));},
+  645:({Q})=>{const T=tonosMat([150,108,62]),S=tonosMat([160,36,56]);solidoT(Q,(x,y)=>y>=7&&y<=12&&Math.abs(x+.5-8)<=6.2-(y-7)*.6,T);for(let x=3;x<=12;x++)Q(x,7,x%3?'l':'m',S);},
+  652:({Q})=>{const T=tonosMat([150,108,62]),S=tonosMat([170,110,60]);solidoT(Q,(x,y)=>y>=7&&y<=12&&Math.abs(x+.5-8)<=6.2-(y-7)*.6,T);for(let x=3;x<=12;x++)Q(x,7,x%3?'l':'m',S);Q(6,6,'l',tonosMat([240,140,30]));Q(9,6,'l',tonosMat([200,160,90]));},
+  254:({Q})=>{const R=tonosMat([222,54,50]),V=tonosMat([80,150,40]),N=tonosMat([30,20,20]);for(let y=4;y<=12;y++){const w=Math.round((y-3)*.75);for(let x=8-w;x<=7+w;x++)Q(x,y,y===12?'m':'l',y>=11?V:R);}
+    for(const [x,y] of [[6,8],[9,8],[8,10],[5,10],[10,10]])Q(x,y,'m',N);},
+  517:({Q})=>{const R=tonosMat([250,200,80]),V=tonosMat([200,170,40]);for(let y=4;y<=12;y++){const w=Math.round((y-3)*.75);for(let x=8-w;x<=7+w;x++)Q(x,y,(x+y)%5===0?'w':'l',y>=11?V:R);}},
+  650:({Q})=>{const T=tonosMat([250,200,60]),V=tonosMat([70,160,40]);solidoT(Q,(x,y)=>{const [a,b]=ejeMango(x,y,7.5,8.5);return a>-6.5&&a<4.5&&Math.abs(b)<=.6+(a+6.5)*.22;},T,(x,y)=>(x+y)%4===0&&x>5);for(const [x,y] of [[11,4],[12,3],[12,2],[13,4],[13,5],[11,2],[14,5]])Q(x,y,'l',V);},
+  234:({Q})=>{const T=tonosMat([200,236,240]);solidoT(Q,(x,y)=>enElipse(8,10,3.4,3.4)(x,y)||(y>=3&&y<=8&&Math.abs(x+.5-8)<=(y-2)*.5),T);},
+  518:({Q})=>{const T=tonosMat([214,110,30]),M=tonosMat([250,210,80]);solidoT(Q,enElipse(8,8.5,5.2,4.8),T);for(const [x,y] of [[6,6],[9,7],[7,9],[10,10]])Q(x,y,'l',M);},
+  515:({Q})=>{const T=tonosMat([172,30,36]);for(const [cx,cy] of [[5.5,10],[8.5,8.5],[11,10.5],[7.5,12]])solidoT(Q,enElipse(cx,cy,1.9,1.9),T);Q(8,5,'d',tonosMat([90,60,30]));Q(8,6,'d',tonosMat([90,60,30]));},
+  519:({Q})=>{const T=tonosMat([150,110,160]);solidoT(Q,(x,y)=>enElipse(8,8.5,4.6,4.6)(x,y)&&!((x+y)%5===0&&Math.hypot(x-8,y-8.5)>3.4),T);},
+  547:({Q})=>{const T=tonosMat([100,168,152]);solidoT(Q,(x,y)=>{const [a,b]=ejeMango(x,y,8,8);return Math.abs(a)<=5.5&&Math.abs(b)<=1.8-Math.max(0,Math.abs(a)-3)*.5;},T);},
+  548:({Q})=>{const T=tonosMat([210,236,226]);for(const [cx,cy] of [[6,7],[10,6],[8,11]])solidoT(Q,(x,y)=>Math.abs(x+.5-cx)+Math.abs(y+.5-cy)<=2.2,T);},
+  549:({Q})=>{const T=tonosMat([150,100,150]);solidoT(Q,(x,y)=>y>=4&&y<=12&&x>=2&&x<=13&&!(y===4&&(x<4||x>11)),T);for(let x=3;x<=12;x++)Q(x,8,'d',T);},
+  663:({Q})=>{const T=tonosMat([40,120,190]),C=tonosMat([120,220,250]);solidoT(Q,enElipse(8,8,5.2,5.2),T);solidoT(Q,enElipse(8,8,2.6,2.6),C);},
+  664:({Q})=>{const T=tonosMat([80,170,70]);solidoT(Q,(x,y)=>Math.abs(x+.5-8)/5+Math.abs(y+.5-8)/5.6<=1,T);for(let y=4;y<=12;y++)Q(8,y,'d',T);},
+  665:({Q})=>{const T=tonosMat([180,170,150]);solidoT(Q,(x,y)=>y>=4&&y<=12&&x>=2&&x<=13&&y<=4+Math.abs(x-7.5)*.9+4,T);},
+  624:({Q})=>{const T=tonosMat([36,34,46]);solidoT(Q,enElipse(8,9.5,4.6,4.4),T);for(const [x,y] of [[7,3],[8,3],[7,4],[8,4]])Q(x,y,'m',T);},
+  622:({Q})=>{const T=tonosMat([200,170,130]);solidoT(Q,(x,y)=>enElipse(8,10,3.6,3.4)(x,y)||(x>=7&&x<=9&&y>=3&&y<=8),T);},
+  623:({Q})=>{const T=tonosMat([196,150,108]);solidoT(Q,(x,y)=>x>=3&&x<=12&&y>=4&&y<=12&&!((x<=3||x>=12)&&(y<=4||y>=12)),T,(x,y)=>(x*5+y*7)%13===0);},
+  614:({Q})=>pezT(Q,[176,140,96],[220,200,170],[140,110,70]), 615:({Q})=>pezT(Q,[200,150,90],[236,210,170],[160,120,70]),
+  616:({Q})=>pezT(Q,[200,80,70],[230,160,140],[120,60,50]), 617:({Q})=>pezT(Q,[190,110,70],[230,170,130],[140,80,50]),
+  618:({Q})=>{pezT(Q,[240,130,40],[250,240,230],[240,130,40]);const B=tonosMat([250,250,250]);for(let y=6;y<=10;y++)Q(8,y,'l',B);},
+  619:({Q})=>{const T=tonosMat([230,200,60]);solidoT(Q,enElipse(8,8,5,5),T);for(const [x,y] of [[3,4],[12,4],[2,9],[13,9],[5,13],[10,13],[8,2]])Q(x,y,'l',tonosMat([240,230,190]));Q(6,7,'d',tonosMat([20,20,20]));},
+  656:({Q})=>{const T=tonosMat([226,210,170]),H=tonosMat([150,150,158]);solidoT(Q,(x,y)=>x>=3&&x<=13&&y>=6&&y<=11&&!(x===3&&(y===6||y===11)),T);Q(4,8,'d',H);Q(4,9,'d',H);for(let i=0;i<4;i++)Q(2-0+i*0,5-i,'m',H);},
+  657:({Q})=>{const T=tonosMat([150,108,62]);for(let t=0;t<=40;t++){const a=t/40*Math.PI*1.6;Q(8+Math.cos(a)*5*(1-t/80),8+Math.sin(a)*5*(1-t/80),t%4?'l':'m',T);}Q(12,12,'d',tonosMat([150,150,158]));},
+  598:({Q})=>{const T=tonosMat([128,78,40]),M=tonosMat([160,160,168]);solidoT(Q,(x,y)=>y>=5&&y<=9&&x>=3&&x<=12,T);for(let y=4;y<=6;y++){Q(4,y,'m',T);Q(5,y,'m',T);}for(let y=10;y<=13;y++){Q(6,y,'d',T);Q(10,y,'d',T);}Q(6,14,'l',M);Q(10,14,'l',M);},
+  655:({Q})=>{const T=tonosMat([226,210,160]),V=tonosMat([90,150,70]),A=tonosMat([80,120,200]);solidoT(Q,(x,y)=>x>=2&&x<=13&&y>=2&&y<=13,T);
+    for(let y=4;y<=11;y++)for(let x=4;x<=11;x++){const n=Math.sin(x*.9)+Math.cos(y*.8);Q(x,y,'m',n>.4?V:n<-.6?A:T);}},
+  658:({Q})=>{const T=tonosMat([236,200,70]),V=tonosMat([60,170,90]);solidoT(Q,(x,y)=>(x>=5&&x<=10&&y>=2&&y<=13)||(y>=6&&y<=8&&x>=2&&x<=13),T);Q(6,4,'m',V);Q(9,4,'m',V);for(let x=6;x<=9;x++)Q(x,10,'d',T);},
+  646:({Q})=>{const T=tonosMat([200,40,50]),V=tonosMat([60,130,40]);for(const [cx,cy] of [[6,10],[10,9],[8,12]])solidoT(Q,enElipse(cx,cy,1.9,1.9),T);Q(8,5,'m',V);Q(7,6,'m',V);Q(9,6,'m',V);Q(8,7,'d',V);},
+  647:({Q})=>{const T=tonosMat([250,190,60]),V=tonosMat([60,130,40]);for(const [cx,cy] of [[6,10],[10,9],[8,12]])solidoT(Q,enElipse(cx,cy,1.9,1.9),T);Q(8,5,'m',V);Q(7,6,'m',V);Q(9,6,'m',V);Q(8,7,'d',V);},
+  651:({Q})=>frascoT(Q,[240,170,40],false), 500:({Q})=>frascoT(Q,null,false), 501:({Q})=>frascoT(Q,[56,92,220],false), 502:({Q})=>frascoT(Q,[56,92,220],false),
+  649:({Q})=>{const T=tonosMat([214,150,70]),R=tonosMat([240,150,40]);solidoT(Q,(x,y)=>y>=5&&y<=12&&x>=2+Math.max(0,8-y)&&x<=13,T);for(let x=4;x<=12;x++)Q(x,6,'l',R);},
+  676:({Q})=>{const Pd=tonosMat([240,210,80]),F=tonosMat([240,220,120]);for(let i=0;i<9;i++)Q(3+i,12-i,i%2?'l':'m',PALO_T);Q(12,3,'m',Pd);Q(13,2,'l',Pd);Q(14,1,'w',Pd);Q(12,2,'l',Pd);Q(13,3,'d',Pd);Q(2,13,'m',F);Q(1,14,'l',F);Q(1,12,'w',F);Q(2,12,'l',F);Q(3,14,'d',F);},
+  523:({Q})=>{const T=tonosMat([200,60,60]),P2=tonosMat([240,240,236]);solidoT(Q,(x,y)=>{const [a,b]=ejeMango(x,y,9,7);return a>-3&&a<5&&Math.abs(b)<=1.8;},T);Q(12,3,'l',P2);Q(13,2,'w',P2);for(let i=0;i<5;i++)Q(2+i,13-i,'m',PALO_T);},
+  546:({Q})=>{const T=tonosMat([100,46,120]),Pg=tonosMat([240,236,220]),G=tonosMat([230,190,250]);solidoT(Q,(x,y)=>x>=3&&x<=12&&y>=2&&y<=13,T);for(let y=3;y<=13;y++){Q(12,y,'l',Pg);Q(13,y,'m',Pg);}for(let x=4;x<=12;x++)Q(x,13,'l',Pg);for(const [x,y] of [[6,5],[9,7],[5,9],[8,10],[10,4]])Q(x,y,'w',G);},
+});
 function dibujarItem(id){
   const it=ITEMS[id];
   if(DIBUJOS_ARMAS[id])return sprite16(DIBUJOS_ARMAS[id]);
   if(DIBUJOS_OBJETOS[id])return sprite16(DIBUJOS_OBJETOS[id]);
+  // Armaduras, pociones, tintes y huevos generadores con el estilo nuevo
+  if(it.armadura&&!it.elitros)return sprite16(({Q})=>armaduraT(Q,it.armadura.pieza,ARM_MATS[it.armadura.mat].col));
+  if(it.pocion){const c=it.pocion.color;return sprite16(({Q})=>frascoT(Q,[(c>>16)&255,(c>>8)&255,c&255],!!it.pocion.arrojadiza));}
+  if(it.tinte!==undefined&&COLORES16[it.tinte])return sprite16(({Q})=>tinteT(Q,COLORES16[it.tinte][3]));
+  if(it.huevo&&typeof HUEVOS!=='undefined'&&HUEVOS[it.huevo]){const [a,b]=HUEVOS[it.huevo].map(h=>[(h>>16)&255,(h>>8)&255,h&255]);return sprite16(({Q})=>huevoT(Q,a,b));}
   if(it.herr&&!it.iconoPropio)return dibujarHerramienta(it);
   if(it.armadura&&!it.elitros)return dibujarArmadura(it);
   return lienzo16(id*31,({P,linea,elipse,rect,rnd})=>{
