@@ -565,7 +565,11 @@ fisicaEspecial=function(j,dt,entrada){
 
 /* ---------- Caña de pescar ---------- */
 const matLinea=new THREE.LineBasicMaterial({color:0x222222});
+// Avisos de la pesca en la barra de mensajes (con qué hacer en cada momento)
+let avisoCanaVisto=false;
+function avisoPesca(t){if(typeof mostrarMensaje==='function')mostrarMensaje(t);}
 function lanzarCana(p){
+  if(!avisoCanaVisto){avisoCanaVisto=true;avisoPesca('Lanza el corcho al agua y espera: cuando se hunda, clic derecho para recoger');}
   camara.getWorldDirection(dirVista);
   const g=new THREE.Group();
   const a=new THREE.Mesh(new THREE.BoxGeometry(.12,.08,.12),new THREE.MeshBasicMaterial({color:0xd02020}));a.position.y=.04;g.add(a);
@@ -602,11 +606,13 @@ function recogerCana(p){
     const m=e.enganchado; m.vel.x+=dx*.8; m.vel.z+=dz*.8; m.vel.y+=Math.min(8,3+Math.hypot(dx,dz)*.25); gasto=5;
   }else if(e.estado==='agua'&&e.picando>0){
     const pila=botinPesca(e.suerte), T=.9;
+    avisoPesca('Has pescado: '+(typeof nombrePila==='function'?nombrePila(pila):ITEMS[pila.id].nombre));
     soltarItem(pila,e.pos.x,e.pos.y+.4,e.pos.z,false,new THREE.Vector3(dx/T,dy/T+10*T,dz/T));
     soltarXP(azar(1,6),j.pos.x,j.pos.y+.5,j.pos.z);
     emitirParticulas(e.pos.x,e.pos.y+.1,e.pos.z,0x9ad8ff,10,2,.5,8); sonar('chapoteo',e.pos,.7);
     gasto=1;
-  }else if(e.estado==='suelo')gasto=2;
+  }else if(e.estado==='suelo'){gasto=2;avisoPesca('Para pescar, lanza el corcho al agua');}
+  else if(e.estado==='agua'&&e.acercando>0)avisoPesca('¡Demasiado pronto! Espera a que se hunda el corcho');
   quitarBoya(); sonar('recogerCana');
   if(gasto&&supervivencia())gastarObjetoEnMano(gasto);
 }
@@ -639,7 +645,7 @@ function actualizarBoya(e,dt){
       e.acercando-=dt;
       const a=e.angulo, d=Math.max(0,e.acercando)*1.6;
       if(Math.random()<.6)emitirParticulas(e.pos.x+Math.sin(a)*d,e.superficie+.05,e.pos.z+Math.cos(a)*d,0xdfeeff,1,.4,.4,0);
-      if(e.acercando<=0){e.picando=.9+Math.random()*.9;sonar('pica',e.pos);
+      if(e.acercando<=0){e.picando=1.6+Math.random()*1.2;sonar('pica',e.pos,1.4);avisoPesca('¡Ha picado! Clic derecho para recoger');
         emitirParticulas(e.pos.x,e.superficie+.05,e.pos.z,0xffffff,8,1.6,.5,6);}
     }else{
       e.espera-=dt;

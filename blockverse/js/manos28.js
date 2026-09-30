@@ -25,9 +25,12 @@ function intercambiarManos(){
 }
 
 /* ---------- Escudo en la mano secundaria ---------- */
+// La principal «tiene uso» si el clic derecho ya hace algo con ella: comer, beber, tensar, lanzar o colocar el bloque
+const USO_PRINCIPAL=new Set(['arco','ballesta','tridente','cana','cubo','escudo']);
 const usoPrincipal=p=>{if(!p)return false;const it=ITEMS[p.id];if(!it)return false;
-  if(it.herr)return !(it.herr.tipo==='espada'||it.herr.tipo==='pico');
-  return true;};
+  if(it.comida||it.bebida||it.pocion||USO_PRINCIPAL.has(it.tipoHerr))return true;
+  if(it.bloque)return !!(apuntado&&!apuntadoEnt);
+  return p.id===I.perlaEnder||p.id===I.ojoEnder||p.id===I.cubo||p.id===I.cuboAgua||p.id===I.cuboLava;};
 function escudoEnSecundaria(){const s=secundaria();return !!(s&&s.id===597)&&!(enMano()&&enMano().id===597)&&!usoPrincipal(enMano());}
 const _escudoEnManoM2=escudoEnMano;
 escudoEnMano=function(){return _escudoEnManoM2()||escudoEnSecundaria();};
@@ -89,7 +92,10 @@ actualizarHUD=function(){
   const s=secundaria();
   elMano2.style.visibility=s?'visible':'hidden';
   elMano2.innerHTML=s&&typeof htmlPila==='function'?htmlPila(s):'';
+  // Primera vez que llevas un escudo: cómo se usa
+  if(!avisoEscudo&&estado==='jugando'&&((s&&s.id===597)||(enMano()&&enMano().id===597))){avisoEscudo=true;mostrarMensaje('Mantén pulsado el clic derecho para cubrirte con el escudo');}
 };
+let avisoEscudo=false;
 {const st=document.createElement('style');st.textContent=`
 #barra{position:relative}
 #mano2{position:absolute;width:44px;height:44px;bottom:2px;left:calc(50% - 262px);background:rgba(0,0,0,.42);border:2px solid #111;

@@ -133,7 +133,7 @@ function escudoEnMano(){const p=enMano();return !!(p&&p.id===597);}
 function actualizarEscudo(dt){
   const quiere=escudoEnMano()&&clicDer&&estado==='jugando'&&comiendo<0&&arcoCarga<0;
   escudoT=quiere?escudoT+dt:0;
-  escudoArriba=escudoT>.2;
+  escudoArriba=escudoT>.1;
 }
 const _danarBase=danarJugador;
 danarJugador=function(n,tipo,dir){
