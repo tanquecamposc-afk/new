@@ -19,14 +19,24 @@ function tile(nombre,gen){T[nombre]=_genTiles.length;_genTiles.push(gen);}
   const semi={v:1};
   const S=()=>semi.v++*97;
   // ---- materiales base ----
-  const piedra=(p,r,s=S())=>cada((x,y)=>{const b=pn(x,y,4,s)*22+pn(x,y,8,s+1)*14;let k=n(r,10)+b-18;
-    if(pn(x,y,8,s+2)>.78)k-=16;p(x,y,128+k,128+k,130+k);});
-  const tierra=(p,r,s=S())=>cada((x,y)=>{const b=pn(x,y,8,s)*20;let k=n(r,16)+b-10;if(r()<.07)k-=22;if(r()<.04)k+=18;
-    p(x,y,134+k,95+k*.9,66+k*.8);});
-  const pizarra=(p,r,s=S())=>cada((x,y)=>{const b=pn(x,y,4,s)*14;let k=n(r,10)+b;if((x*3+Math.floor(y/2)*5)%11===0)k-=14;
-    if(y%5===0&&r()<.4)k-=8;p(x,y,70+k,70+k,78+k);});
-  const netherrack=(p,r,s=S())=>cada((x,y)=>{const b=pn(x,y,8,s)*30;let k=n(r,24)+b-15;if(r()<.1)k-=25;
-    p(x,y,114+k,44+k*.5,42+k*.45);});
+  // Ruido periódico con distinta escala en x e y (vetas horizontales o verticales), azar por píxel y tonos
+  const pn2=(x,y,cx,cy,s)=>{const gx=x*cx/16,gy=y*cy/16,x0=Math.floor(gx),y0=Math.floor(gy),fx=smooth(gx-x0),fy=smooth(gy-y0),mx=v=>((v%cx)+cx)%cx,my=v=>((v%cy)+cy)%cy;
+    const a=hash2(mx(x0),my(y0),s),b=hash2(mx(x0+1),my(y0),s),c=hash2(mx(x0),my(y0+1),s),d=hash2(mx(x0+1),my(y0+1),s);
+    const ab=a+(b-a)*fx;return ab+((c+(d-c)*fx)-ab)*fy;};
+  const hp=(x,y,s)=>hash2(((x%16)+16)%16,((y%16)+16)%16,s);
+  const tono=(c,f)=>[c[0]*f,c[1]*f,c[2]*f];
+  // Paleta escalonada: pocos tonos bien definidos, como las texturas originales de 16x16
+  const escala=(v,umbrales,cols)=>{for(let i=0;i<umbrales.length;i++)if(v<umbrales[i])return cols[i];return cols[cols.length-1];};
+  // ---- materiales base ----
+  const piedra=(p,r,s=S())=>cada((x,y)=>{const v=pn2(x,y,8,4,s)*.5+pn2(x,y,16,8,s+1)*.3+hp(x,y,s+2)*.2;
+    const c=escala(v,[.3,.42,.62,.76],[108,118,127,136,145]);p(x,y,c,c,c+1);});
+  const tierra=(p,r,s=S())=>cada((x,y)=>{const v=pn2(x,y,8,8,s)*.55+hp(x,y,s+1)*.45,h=hp(x,y,s+3);
+    let c=escala(v,[.33,.66],[[118,84,58],[134,96,67],[146,106,74]]);
+    if(h<.07)c=[92,64,43];else if(h>.955)c=[176,128,90];p(x,y,...c);});
+  const pizarra=(p,r,s=S())=>cada((x,y)=>{const v=pn2(x,y,4,16,s)*.6+hp(x,y,s+1)*.4;
+    const c=escala(v,[.3,.5,.75],[56,66,76,86]);p(x,y,c,c,c+6);});
+  const netherrack=(p,r,s=S())=>cada((x,y)=>{const v=pn2(x,y,8,8,s)*.45+hp(x,y,s+1)*.55;
+    p(x,y,...escala(v,[.22,.45,.72,.9],[[74,26,27],[97,38,38],[112,48,47],[128,58,56],[146,78,74]]));});
   // Mineral: grupos de píxeles con borde oscuro y brillo
   // Mineral al estilo del original: vetas de formas irregulares con borde oscuro abajo a la derecha,
   // canto iluminado arriba a la izquierda y algún destello
@@ -58,33 +68,43 @@ function tile(nombre,gen){T[nombre]=_genTiles.length;_genTiles.push(gen);}
         else if(canto)p(x,y,(col[0]+brillo[0])/2+k2,(col[1]+brillo[1])/2+k2,(col[2]+brillo[2])/2+k2);
         else p(x,y,col[0]+k2,col[1]+k2,col[2]+k2);});
     }};
-  const tablones=(p,r,col=[168,133,84],s=S())=>cada((x,y)=>{
-    const tabla=Math.floor(y/4), off=(tabla*5)%16;
-    let k=n(r,8)+(pn(x+off,tabla*4,4,s+tabla)-.5)*22;
-    if(y%4===3)k-=34; if(y%4===0)k+=6;
-    if(((x+off)%16)===15)k-=26;
-    if(((x*7+tabla*3)%13)===0&&y%4===1)k-=10;
-    p(x,y,col[0]+k,col[1]+k*.9,col[2]+k*.8);});
+  // Tablones: cuatro tablas de 4 píxeles con junta oscura, una unión por tabla y vetas horizontales
+  const tablones=(p,r,col=[162,130,78],s=S())=>{const L=tono(col,1.1),D=tono(col,.9),G=tono(col,.8),J=tono(col,.6),cortes=[5,12,2,9];
+    cada((x,y)=>{const t=y>>2,fy=y&3;let c;
+      if(fy===3)c=J;
+      else if(x===cortes[t])c=fy===0?G:J;
+      else{const g=pn2(x,y,4,16,s+t*7),h=hp(x,y,s+9);c=g>.7?G:g<.22?L:h<.1?D:col;if(fy===0&&c===col&&h>.7)c=L;}
+      p(x,y,c[0],c[1],c[2]);});};
+  // Corteza: surcos verticales largos; la del abedul es blanca con marcas negras horizontales
   const corteza=(col,oscuro,rayas)=>(p,r,s=S())=>cada((x,y)=>{
-    const surco=pn(x*2,y*.5,8,s)>.62||x%4===0&&pn(x,y,8,s+1)>.4;
-    let k=n(r,12)+(pn(x,y,8,s+2)-.5)*16;
-    if(rayas){const raya=(y%5===Math.floor(pn(x,0,4,s+3)*5))&&r()<.7;if(raya)return p(x,y,40+k,40+k,40+k);}
-    if(surco)p(x,y,oscuro[0]+k,oscuro[1]+k,oscuro[2]+k);else p(x,y,col[0]+k,col[1]+k,col[2]+k);});
-  const anillos=(corte,borde)=>(p,r)=>cada((x,y)=>{const d=Math.hypot(x-7.5,y-7.5);const e=Math.max(Math.abs(x-7.5),Math.abs(y-7.5));const k=n(r,10);
-    if(e>6.6)return p(x,y,borde[0]+k,borde[1]+k,borde[2]+k);
-    const anillo=Math.floor(d*1.1)%2;const f=anillo?.86:1;p(x,y,corte[0]*f+k,corte[1]*f+k,corte[2]*f+k);});
-  const ladrillos=(p,r,col,mortero,alto=4,ancho=8)=>cada((x,y)=>{const fila=Math.floor(y/alto),off=(fila%2)*(ancho/2);const k=n(r,14)+(hash2(Math.floor((x+off)/ancho),fila,7)-.5)*24;
-    if(y%alto===alto-1||(x+off)%ancho===ancho-1)p(x,y,mortero[0]+k*.3,mortero[1]+k*.3,mortero[2]+k*.3);
-    else{const lx=(x+off)%ancho,ly=y%alto;const b=(lx===0||ly===0)?10:0;p(x,y,col[0]+k+b,col[1]+k+b,col[2]+k+b);}});
-  const bloqueMetal=(col,s=S())=>(p,r)=>cada((x,y)=>{const borde=x===0||y===0||x===15||y===15;const bis=x===1||y===1;
-    const k=n(r,6)+(pn(x,y,4,s)-.5)*10;const f=borde?.66:bis?1.12:1;p(x,y,col[0]*f+k,col[1]*f+k,col[2]*f+k);});
+    if(rayas){const v=hp(x,y,s)*.35+pn2(x,y,8,8,s+1)*.65;let c=v<.35?tono(col,.88):v>.75?tono(col,1.04):col;
+      const m=pn2(x,y,4,16,s+2);if(m>.74)c=[44,44,40];else if(m>.68)c=tono(oscuro,.8);return p(x,y,...c);}
+    const v=pn2(x,y,16,2,s)*.7+hp(x,y,s+1)*.3;
+    p(x,y,...(v<.3?tono(oscuro,.88):v<.44?oscuro:v>.78?tono(col,1.12):col));});
+  // Corte del tronco: borde de corteza y anillos casi cuadrados
+  const anillos=(corte,borde)=>(p,r)=>cada((x,y)=>{const dx=Math.abs(x-7.5),dy=Math.abs(y-7.5),e=Math.max(dx,dy);
+    if(e>6.6)return p(x,y,...tono(borde,hp(x,y,51)<.35?.82:1));
+    const d=e*.7+Math.hypot(dx,dy)*.3,a=Math.floor(d/1.5);
+    p(x,y,...tono(corte,d<1?.8:a%2?.86:hp(x,y,52)<.12?.93:1));});
+  // Ladrillos: cada pieza con su tono, canto claro arriba a la izquierda y sombra abajo
+  const ladrillos=(p,r,col,mortero,alto=4,ancho=8)=>cada((x,y)=>{const fila=Math.floor(y/alto),off=(fila%2)*(ancho>>1),nb=Math.max(1,16/ancho|0);
+    const bid=Math.floor((x+off)/ancho)%nb,lx=(x+off)%ancho,ly=y%alto,h=hp(x,y,71);
+    if(ly===alto-1||lx===ancho-1)return p(x,y,...tono(mortero,h<.3?.9:1));
+    let f=1+(hash2(bid,fila,7)-.5)*.18;
+    if(ly===0||lx===0)f+=.1;else if(ly===alto-2||lx===ancho-2)f-=.08;
+    if(h<.12)f-=.08;else if(h>.93)f+=.07;
+    p(x,y,...tono(col,f));});
+  // Bloques de metal y gemas: bisel claro arriba a la izquierda, sombra abajo a la derecha y paneles
+  const bloqueMetal=(col,s=S())=>(p,r)=>cada((x,y)=>{const h=hp(x,y,s);let f=1;
+    if(x===15||y===15)f=.7;else if(x===0||y===0)f=1.18;else if(x===14||y===14)f=.86;else if(x===1||y===1)f=1.08;
+    else{if(y%5===2&&x>2&&x<13)f=.92;else if(y%5===3&&x>2&&x<13)f=1.05;if(h<.08)f-=.05;}
+    p(x,y,...tono(col,f));});
   const planta=(dibujar)=>(p,r)=>{cada((x,y)=>p(x,y,0,0,0,0));dibujar(p,r);};
   const tallo=(p,x0,y0,y1,col,a=255)=>{for(let y=y0;y<=y1;y++)p(x0,y,...col,a);};
-  const hojas=(densidad,s=S())=>(p,r)=>cada((x,y)=>{
-    const g=pn(x,y,8,s)*50+n(r,40);
-    if(r()<densidad)return p(x,y,0,0,0,0);
-    const v=clamp(165+g,70,240);
-    const brillo=r()<.08?30:0;p(x,y,v+brillo,v+brillo,v+brillo,TINTE_A);});
+  // Hojas: racimos de cuatro tonos con huecos, como las hojas «bonitas» del original
+  const hojas=(densidad,s=S())=>(p,r)=>cada((x,y)=>{const h=hp(x,y,s),v=pn2(x,y,8,8,s+1)*.6+hp(x,y,s+2)*.4;
+    if(h<densidad)return p(x,y,0,0,0,0);
+    const c=escala(v,[.3,.55,.8],[112,146,174,204]);p(x,y,c,c,c,TINTE_A);});
   const florSimple=(petalo,centro,alto=8)=>planta((p,r)=>{
     tallo(p,7,16-alto,15,[70,140,40]); p(6,13,60,150,40); p(8,12,60,150,40); p(5,12,50,130,35);
     const cy=16-alto-1;
@@ -608,6 +628,119 @@ function tile(nombre,gen){T[nombre]=_genTiles.length;_genTiles.push(gen);}
     if(e>=2)for(let k=0;k<(e===3?9:4);k++)p(3+Math.floor(r()*10),16-t+Math.floor(r()*(t-2)),200,20+n(r,20),40);}));
   tile('farmlandWet',(p,r)=>cada((x,y)=>{const k=n(r,10);const surco=y%4===0||y%4===1&&r()<.3;p(x,y,(surco?40:60)+k,(surco?24:36)+k,(surco?14:22)+k);}));
   tile('pathSide',(p,r)=>{tierra(p,r);cada((x,y)=>{if(y<2){const k=n(r,12);p(x,y,148+k,122+k,66+k);}});});
+  /* =========================================================
+     Retexturizado al estilo de la edición Java: paletas de
+     pocos tonos, piezas con canto claro y sombra, y patrones
+     reconocibles (adoquín, ladrillos, lana tejida, arenisca por
+     capas, purpur en baldosas...). Sustituye a las baldosas
+     anteriores con el mismo nombre.
+     ========================================================= */
+  const re=(nom,gen)=>{if(T[nom]!==undefined)_genTiles[T[nom]]=gen;};
+  // Celdas de Voronoi periódicas (adoquín, grava, pizarra empedrada)
+  const celdas=(nsem,s)=>{const pts=[];for(let i=0;i<nsem;i++)pts.push([hash2(i,1,s)*16,hash2(i,2,s)*16]);const info=new Int16Array(256);
+    for(let y=0;y<16;y++)for(let x=0;x<16;x++){let d1=1e9,id=0;for(let i=0;i<nsem;i++){let dx=Math.abs(x+.5-pts[i][0]),dy=Math.abs(y+.5-pts[i][1]);dx=Math.min(dx,16-dx);dy=Math.min(dy,16-dy);const d=dx*dx+dy*dy;if(d<d1){d1=d;id=i;}}info[y*16+x]=id;}
+    return (x,y)=>info[(((y%16)+16)%16)*16+(((x%16)+16)%16)];};
+  // Piedras con junta: borde oscuro abajo/derecha, luz arriba/izquierda y tono propio por piedra
+  const empedrado=(nsem,s,junta,tonos,luz=1.16,sombra=.84)=>(p,r)=>{const C=celdas(nsem,s);cada((x,y)=>{const id=C(x,y);
+    if(C(x+1,y)!==id||C(x,y+1)!==id)return p(x,y,...junta);
+    let c=tonos[hash2(id,3,s)*tonos.length|0];const h=hp(x,y,s+5);
+    if(C(x-1,y)!==id||C(x,y-1)!==id)c=tono(c,luz);else if(C(x+2,y)!==id||C(x,y+2)!==id)c=tono(c,sombra);else if(h<.12)c=tono(c,.92);else if(h>.92)c=tono(c,1.06);
+    p(x,y,...c);});};
+  re('cobble',empedrado(11,501,[74,74,76],[[122,122,122],[136,136,136],[112,112,112],[150,150,150],[128,128,128]]));
+  re('mossyCobble',(p,r)=>{_genTiles[T.cobble](p,r);const s=S();cada((x,y)=>{const v=pn2(x,y,8,8,s)*.7+hp(x,y,s+1)*.3;
+    if(v>.56)p(x,y,...escala(v,[.64,.74],[[84,104,54],[98,122,62],[112,138,70]]));});});
+  re('cobbledDeepslate',empedrado(14,503,[36,36,40],[[76,76,82],[86,86,92],[66,66,72],[96,96,102]]));
+  re('gravel',(p,r)=>{const C=celdas(22,507);cada((x,y)=>{const id=C(x,y);const tonos=[[131,127,126],[106,101,100],[156,150,149],[122,112,108],[144,138,136],[92,88,88]];
+    let c=tonos[hash2(id,3,507)*tonos.length|0];if(C(x+1,y)!==id&&C(x,y+1)!==id)c=[70,66,66];else if(C(x+1,y)!==id||C(x,y+1)!==id)c=tono(c,.8);else if(C(x-1,y)!==id||C(x,y-1)!==id)c=tono(c,1.12);
+    p(x,y,...c);});});
+  // Superficie
+  re('grassTop',(p,r)=>{const s=S();cada((x,y)=>{const v=pn2(x,y,8,8,s)*.5+hp(x,y,s+1)*.5;const c=escala(v,[.26,.5,.78],[150,176,198,222]);p(x,y,c,c,c,TINTE_A);});});
+  re('grassSide',(p,r)=>{tierra(p,r);const s=S();for(let x=0;x<TS;x++){const h=3+(hp(x,0,s)<.5?0:1)+(hp(x,1,s)<.3?1:0)+(hp(x,2,s)<.12?1:0);
+    for(let y=0;y<h;y++){const v=hp(x,y,s+3);const c=y===h-1?150:escala(v,[.3,.65],[168,192,214]);p(x,y,c,c,c,TINTE_A);}}});
+  re('sand',(p,r)=>{const s=S();cada((x,y)=>{const v=pn2(x,y,8,8,s)*.4+hp(x,y,s+1)*.6;p(x,y,...escala(v,[.12,.4,.8,.95],[[196,186,132],[212,202,150],[219,211,160],[226,219,172],[234,228,186]]));});});
+  re('redSand',(p,r)=>{const s=S();cada((x,y)=>{const v=pn2(x,y,8,8,s)*.4+hp(x,y,s+1)*.6;p(x,y,...escala(v,[.12,.4,.8,.95],[[160,80,26],[181,93,32],[190,102,33],[200,112,40],[210,126,52]]));});});
+  re('snow',(p,r)=>{const s=S();cada((x,y)=>{const v=pn2(x,y,8,8,s)*.5+hp(x,y,s+1)*.5;p(x,y,...escala(v,[.18,.8],[[226,236,238],[242,250,250],[250,255,255]]));});});
+  re('clay',(p,r)=>{const s=S();cada((x,y)=>{const v=pn2(x,y,8,8,s)*.5+hp(x,y,s+1)*.5;p(x,y,...escala(v,[.2,.45,.8],[[144,150,162],[156,162,175],[162,168,181],[174,180,192]]));});});
+  // Piedras naturales moteadas
+  const moteado=(tonos,umb,sc=8)=>(p,r)=>{const s=S();cada((x,y)=>{const v=pn2(x,y,sc,sc,s)*.6+hp(x,y,s+1)*.4;p(x,y,...escala(v,umb,tonos));});};
+  re('granite',moteado([[128,86,70],[149,103,85],[160,114,98],[176,126,108],[190,140,124]],[.25,.5,.7,.86]));
+  re('diorite',moteado([[120,120,122],[160,160,162],[188,188,190],[210,210,212],[230,230,232]],[.18,.36,.62,.84]));
+  re('andesite',moteado([[108,108,110],[124,124,126],[136,136,136],[150,150,150],[162,162,164]],[.2,.42,.68,.86]));
+  re('tuff',moteado([[92,94,86],[106,108,100],[114,116,106],[126,128,118],[98,90,82]],[.2,.45,.75,.92]));
+  re('bedrock',moteado([[34,34,34],[54,54,54],[86,86,86],[112,112,112],[140,140,140]],[.22,.44,.66,.86],4));
+  re('obsidian',(p,r)=>{const s=S();cada((x,y)=>{const v=pn2(x,y,8,8,s)*.6+hp(x,y,s+1)*.4,e=pn2(x+y,y,8,16,s+2);
+    let c=escala(v,[.3,.7],[[8,6,14],[16,11,26],[26,18,40]]);if(e>.72)c=e>.82?[62,42,90]:[42,26,64];p(x,y,...c);});});
+  // Ladrillos de piedra (y variantes) al estilo original
+  const ladrPiedra=(p,r,s)=>cada((x,y)=>{const fila=y>>3,lx=(x+(fila?4:0))%8,ly=y&7,v=pn2(x,y,8,8,s)*.6+hp(x,y,s+1)*.4;
+    if(ly===7||lx===7)return p(x,y,86,86,88);
+    let c=escala(v,[.3,.66],[112,122,132]);if(ly===0||lx===0)c+=14;else if(ly===6||lx===6)c-=12;p(x,y,c,c,c+1);});
+  re('stoneBricks',(p,r)=>ladrPiedra(p,r,S()));
+  re('mossyStoneBricks',(p,r)=>{ladrPiedra(p,r,S());const s=S();cada((x,y)=>{const v=pn2(x,y,8,8,s)*.7+hp(x,y,s+1)*.3;
+    if(v>.58||(y>=6&&y<=8&&v>.46))p(x,y,...escala(v,[.66,.76],[[80,100,52],[96,120,60],[112,138,70]]));});});
+  re('crackedBricks',(p,r)=>{ladrPiedra(p,r,S());const s=S();for(let k=0;k<4;k++){let x=hash2(k,1,s)*16|0,y=hash2(k,2,s)*16|0;for(let q=0;q<8;q++){p(x,y,60,60,62);p(x+1,y,98,98,100);x+=hash2(k,q,s+1)<.5?1:-1;y+=1;}}});
+  // Ladrillos de arcilla, del Nether, de barro, del End y de prismarina
+  re('brick',(p,r)=>ladrillos(p,r,[146,84,68],[168,158,150],4,8));
+  re('netherBrick',(p,r)=>ladrillos(p,r,[50,25,30],[22,11,14],4,8));
+  re('netherBricks',(p,r)=>ladrillos(p,r,[50,25,30],[22,11,14],4,8));
+  re('mudBricks',(p,r)=>ladrillos(p,r,[140,106,78],[102,76,56],4,8));
+  re('endBricks',(p,r)=>ladrillos(p,r,[220,224,162],[178,180,128],4,8));
+  re('prismarineBricks',(p,r)=>ladrillos(p,r,[100,170,150],[62,104,96],4,8));
+  re('deepslateBricks',(p,r)=>ladrillos(p,r,[76,76,82],[40,40,44],4,8));
+  re('deepslateTiles',(p,r)=>ladrillos(p,r,[58,58,64],[30,30,34],4,4));
+  re('tuffBricks',(p,r)=>ladrillos(p,r,[110,114,102],[68,70,62],4,8));
+  // Vidrio: marco claro con reflejos en diagonal
+  re('glass',(p,r)=>cada((x,y)=>{const borde=x===0||y===0||x===15||y===15;
+    if(borde)return p(x,y,...((x*7+y*3)%5===0?[168,204,214]:[214,238,244]));
+    const raya=(x+y===7&&x>=2&&x<=5)||(x+y===8&&x>=3&&x<=4)||(x+y===19&&x>=9&&x<=12)||(x+y===20&&x>=10&&x<=11)||(x===1&&y===1)||(x===14&&y===14);
+    if(raya)p(x,y,236,248,250);else if((x===1||y===1)&&(x+y)%4===0)p(x,y,200,226,232);else p(x,y,0,0,0,0);}));
+  // Arenisca por capas
+  const arenisca=(base,lado)=>(p,r)=>{const s=S();cada((x,y)=>{const h=hp(x,y,s),g=pn2(x,y,4,16,s+1);let f;
+    if(!lado)f=escala(pn2(x,y,8,8,s+2)*.5+h*.5,[.15,.8],[.94,1,1.04]);
+    else if(y<3)f=h<.3?.95:h>.8?1.05:1;else if(y===3)f=.9;else if(y<12)f=g>.76?.96:1;else if(y===12)f=.86;else f=(y%2?.92:.97)+(h-.5)*.06;
+    p(x,y,...tono(base,f));});};
+  re('sandstoneSide',arenisca([218,206,160],true)); re('sandstoneTop',arenisca([220,208,162],false));
+  re('cutSandstone',(p,r)=>{const s=S();cada((x,y)=>{const h=hp(x,y,s);let f=(y===0||y===8)?1.04:(y===7||y===15)?.88:h<.1?.96:1;p(x,y,...tono([218,206,160],f));});});
+  // Cuarzo, purpur, piedra del End, prismarina y piedra lisa
+  re('quartz',(p,r)=>{const s=S();cada((x,y)=>{const v=hp(x,y,s)*.5+pn2(x,y,8,8,s+1)*.5;p(x,y,...escala(v,[.15,.85],[[226,220,212],[236,230,223],[242,238,232]]));});});
+  re('quartzPillar',(p,r)=>{const s=S();cada((x,y)=>{const h=hp(x,y,s);let f=(x===0||x===8)?1.03:(x===7||x===15)?.9:(x%4===2)?.97:1;if(h<.08)f-=.03;p(x,y,...tono([236,230,223],f));});});
+  re('purpur',(p,r)=>{const s=S();cada((x,y)=>{const lx=x&7,ly=y&7,h=hp(x,y,s);let f=escala(pn2(x,y,8,8,s+1)*.5+h*.5,[.25,.75],[.94,1,1.05]);
+    if(lx===7||ly===7)f=.8;else if(lx===0||ly===0)f=1.12;else if(lx===6||ly===6)f=.9;p(x,y,...tono([169,125,169],f));});});
+  re('purpurPillar',(p,r)=>{const s=S();cada((x,y)=>{const h=hp(x,y,s);let f=(x===0||x===15)?.82:(x===1)?1.1:(x===14)?.9:(x%5===3?.94:1);if(h<.1)f-=.04;p(x,y,...tono([171,128,171],f));});});
+  re('endStone',(p,r)=>{const s=S();cada((x,y)=>{const v=pn2(x,y,8,8,s)*.5+hp(x,y,s+1)*.5,h=hp(x,y,s+2);
+    let c=escala(v,[.22,.62,.86],[[204,208,146],[219,222,158],[228,230,168],[236,238,182]]);if(h<.05)c=[176,180,122];p(x,y,...c);});});
+  re('prismarine',(p,r)=>{const s=S();cada((x,y)=>{const v=hp(x>>1,y>>1,s)*.6+pn2(x,y,4,4,s+1)*.4;
+    p(x,y,...escala(v,[.2,.4,.6,.8],[[78,120,125],[88,139,133],[99,156,151],[116,173,160],[104,144,160]]));});});
+  re('darkPrismarine',(p,r)=>{const s=S();cada((x,y)=>{const h=hp(x,y,s);const b=(x&7)===0||(y&7)===0;const c=b?[38,68,56]:h<.15?[46,82,68]:h>.9?[64,106,88]:[52,92,76];p(x,y,...c);});});
+  re('smoothStone',(p,r)=>{const s=S();cada((x,y)=>{const h=hp(x,y,s);const b=y===0||y===15||x===0||x===15;const c=b?(y===15||x===15?124:144):h<.1?152:h>.92?164:158;p(x,y,c,c,c);});});
+  // Metales y gemas
+  re('ironBlock',bloqueMetal([220,220,220])); re('goldBlock',bloqueMetal([246,208,62])); re('diamondBlock',bloqueMetal([100,228,220]));
+  re('emeraldBlock',bloqueMetal([56,196,100])); re('lapisBlock',bloqueMetal([34,66,160])); re('coalBlock',bloqueMetal([30,30,34]));
+  // Nether
+  re('soulSand',(p,r)=>{const s=S();cada((x,y)=>{const v=pn2(x,y,8,8,s)*.6+hp(x,y,s+1)*.4;let c=escala(v,[.3,.6,.85],[[62,46,36],[82,62,50],[96,74,60],[110,86,70]]);
+    const cara=[[4,4],[5,4],[10,4],[11,4],[6,9],[7,10],[8,10],[9,9]].some(([a,b])=>(x===a&&y===b));if(cara)c=[44,32,26];p(x,y,...c);});});
+  re('glowstone',(p,r)=>{const C=celdas(12,511);cada((x,y)=>{const id=C(x,y),h=hash2(id,3,511);let c=escala(h,[.3,.6,.85],[[172,120,60],[216,166,92],[246,210,130],[255,238,176]]);
+    if(C(x+1,y)!==id||C(x,y+1)!==id)c=[122,80,40];p(x,y,...c);});});
+  re('blackstone',moteado([[26,22,28],[36,30,38],[44,38,46],[56,50,58]],[.25,.6,.85]));
+  // Madera: colores de cada tipo como en el original
+  re('planks',(p,r)=>tablones(p,r,[162,130,78]));
+  re('birchPlanks',(p,r)=>tablones(p,r,[196,178,122])); re('sprucePlanks',(p,r)=>tablones(p,r,[115,85,49]));
+  re('junglePlanks',(p,r)=>tablones(p,r,[160,115,81])); re('acaciaPlanks',(p,r)=>tablones(p,r,[168,90,50]));
+  re('darkOakPlanks',(p,r)=>tablones(p,r,[67,43,21])); re('mangrovePlanks',(p,r)=>tablones(p,r,[117,54,48]));
+  re('cherryPlanks',(p,r)=>tablones(p,r,[226,178,172])); re('palePlanks',(p,r)=>tablones(p,r,[228,218,210]));
+  re('logSide',corteza([109,85,50],[76,59,34])); re('logTop',anillos([176,140,88],[109,85,50]));
+  re('birchSide',corteza([216,215,210],[180,178,170],true)); re('birchTop',anillos([196,178,122],[216,215,210]));
+  re('spruceSide',corteza([58,38,17],[40,26,12])); re('spruceTop',anillos([115,85,49],[58,38,17]));
+  re('jungleSide',corteza([85,68,25],[62,48,18])); re('jungleTop',anillos([160,115,81],[85,68,25]));
+  re('acaciaSide',corteza([103,96,86],[76,70,62])); re('acaciaTop',anillos([168,90,50],[103,96,86]));
+  re('bookshelf',(p,r)=>{tablones(p,r);const cols=[[140,40,40],[40,66,140],[46,110,56],[150,112,40],[104,56,120],[120,80,50]];
+    for(const y0 of [1,9]){let x=1;while(x<15){const w=hash2(x,y0,91)<.7?1:2,c=cols[hash2(x,y0,92)*cols.length|0],alto=5+(hash2(x,y0,93)<.4?1:0);
+      for(let k=0;k<w&&x<15;k++,x++)for(let y=y0+6-alto;y<y0+6;y++)p(x,y,...tono(c,k===0?1.1:.9));if(hash2(x,y0,94)<.25)x++;}
+      for(let x2=0;x2<16;x2++){p(x2,y0-1,...tono([162,130,78],.8));p(x2,y0+6,...tono([162,130,78],.62));}}});
+  // Lana tejida, hormigón liso y terracota mate (los 16 colores)
+  COLORES16.forEach(([clave,,,c])=>{
+    re('lana_'+clave,(p,r)=>{const s=S();cada((x,y)=>{const d=((x+y*2)%4+4)%4,h=hp(x,y,s);let f=[1.05,1,.94,.99][d]+(pn2(x,y,4,4,s+1)-.5)*.08;if(h<.08)f-=.06;p(x,y,...tono(c,f));});});
+    re('hormigon_'+clave,(p,r)=>{const s=S();cada((x,y)=>{const h=hp(x,y,s);const f=h<.06?.88:h>.96?.95:.92;p(x,y,...tono(c,f));});});
+  });
 })();
 
 const NT=_genTiles.length, ATH=Math.ceil(NT/ATW);
@@ -668,17 +801,10 @@ function iconoCubo(arriba,lado,alto=1){
   const cara=(t,m,osc,recorte)=>{x.setTransform(...m);
     x.drawImage(atlasIconos,(t%ATW)*TS,Math.floor(t/ATW)*TS+(recorte?TS*(1-alto):0),TS,recorte?TS*alto:TS,0,0,TS,recorte?TS*alto:TS);
     if(osc){x.globalCompositeOperation='source-atop';x.fillStyle=`rgba(0,0,0,${osc})`;x.fillRect(0,0,TS,TS);x.globalCompositeOperation='source-over';}};
-  cara(lado,[1.25,.625,0,1.5,4,12+dy],.22,true);
-  cara(lado,[1.25,-.625,0,1.5,24,22+dy],.38,true);
+  // Sombreado del inventario original: arriba a plena luz, cara izquierda al 80 % y derecha al 60 %
+  cara(lado,[1.25,.625,0,1.5,4,12+dy],.2,true);
+  cara(lado,[1.25,-.625,0,1.5,24,22+dy],.4,true);
   cara(arriba,[1.25,-.625,1.25,.625,4,12+dy],0,false);
-  // Aristas iluminadas y contorno suave
   x.setTransform(1,0,0,1,0,0);
-  x.strokeStyle='rgba(255,255,255,.28)';x.lineWidth=1;x.beginPath();
-  x.moveTo(4,12+dy);x.lineTo(24,22+dy);x.lineTo(44,12+dy);x.moveTo(24,22+dy);x.lineTo(24,46);x.stroke();
-  const d=x.getImageData(0,0,48,48),o=new Uint8ClampedArray(d.data);
-  for(let yy=0;yy<48;yy++)for(let xx=0;xx<48;xx++){const k=(yy*48+xx)*4;if(d.data[k+3])continue;
-    for(const [a,b] of [[1,0],[-1,0],[0,1],[0,-1]]){const X=xx+a,Y=yy+b;if(X<0||Y<0||X>=48||Y>=48)continue;
-      if(d.data[(Y*48+X)*4+3]>200){o[k]=20;o[k+1]=16;o[k+2]=14;o[k+3]=150;break;}}}
-  x.putImageData(new ImageData(o,48,48),0,0);
   return c;
 }
