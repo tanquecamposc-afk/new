@@ -748,6 +748,42 @@ function tile(nombre,gen){T[nombre]=_genTiles.length;_genTiles.push(gen);}
     re('lana_'+clave,(p,r)=>{const s=S();cada((x,y)=>{const d=((x+y*2)%4+4)%4,h=hp(x,y,s);let f=[1.05,1,.94,.99][d]+(pn2(x,y,4,4,s+1)-.5)*.08;if(h<.08)f-=.06;p(x,y,...tono(c,f));});});
     re('hormigon_'+clave,(p,r)=>{const s=S();cada((x,y)=>{const h=hp(x,y,s);const f=h<.06?.88:h>.96?.95:.92;p(x,y,...tono(c,f));});});
   });
+  /* ---- Bloques útiles y de cultivo al estilo del original ---- */
+  const C_TAB=[162,130,78];
+  re('craftTop',(p,r)=>{tablones(p,r,[178,142,88]);cada((x,y)=>{const borde=x===0||y===0||x===15||y===15,linea=x===5||x===10||y===5||y===10;
+    if(borde)p(x,y,...tono(C_TAB,.55));else if(linea)p(x,y,...tono(C_TAB,(x===5||x===10)&&(y===5||y===10)?.5:.68));else if(x===1||y===1)p(x,y,...tono(C_TAB,1.12));});});
+  re('craftSide',(p,r)=>{tablones(p,r);cada((x,y)=>{if(y<3)p(x,y,...tono([178,142,88],y===2?.6:1.05));if(x===0||x===15)p(x,y,...tono(C_TAB,.58));});
+    // Sierra a la izquierda y martillo a la derecha
+    for(let y=5;y<=12;y++){const w=Math.max(1,Math.round(3-(y-5)*.25));for(let x=2;x<2+w;x++)p(x,y,...(x===2?[200,200,206]:[150,150,158]));if(y%2)p(2+w,y,120,120,128);}
+    for(let y=3;y<=5;y++){p(2,y,110,74,40);p(3,y,90,60,30);}
+    for(let y=6;y<=13;y++){p(11,y,122,86,46);p(12,y,94,64,34);}
+    for(let x=9;x<=14;x++){p(x,4,168,168,176);p(x,5,120,120,128);}});
+  const hornoBase=(p,r)=>{piedra(p,r);cada((x,y)=>{if(x===0||y===0)p(x,y,150,150,152);else if(x===15||y===15)p(x,y,84,84,86);});};
+  re('furnaceTop',(p,r)=>{hornoBase(p,r);cada((x,y)=>{if(x>=3&&x<=12&&y>=3&&y<=12&&(x===3||y===3||x===12||y===12))p(x,y,98,98,100);});});
+  re('furnaceFront',(p,r)=>{hornoBase(p,r);cada((x,y)=>{
+    if(y>=2&&y<=5&&x>=3&&x<=12)p(x,y,(y===2?150:120)+(x%3?0:-12),(y===2?150:120)+(x%3?0:-12),(y===2?152:122)+(x%3?0:-12));   // repisa
+    if(x>=3&&x<=12&&y>=8&&y<=13){const marco=x===3||x===12||y===8||y===13;p(x,y,...(marco?[64,64,66]:(y===12||y===11)&&x%2?[80,80,82]:[24,22,22]));}});});
+  const calabaza=(p,r,cara)=>{const s=S();cada((x,y)=>{const gajo=[0,4,8,12].includes(x),v=hp(x,y,s);
+    let c=gajo?[196,98,14]:x%4===1?[236,146,32]:[224,128,22];if(v<.08)c=tono(c,.92);if(y===0||y===15)c=tono(c,.86);p(x,y,...c);});
+    if(cara){const L=[255,220,90],O=[250,176,40];
+      for(const [x,y] of [[3,5],[4,5],[5,5],[4,6],[10,5],[11,5],[12,5],[11,6]])p(x,y,...L);
+      for(let x=3;x<=12;x++){p(x,10,...O);if(x%3!==1)p(x,11,...L);}p(3,9,...O);p(12,9,...O);}};
+  re('pumpkinSide',(p,r)=>calabaza(p,r,false)); re('jackFace',(p,r)=>calabaza(p,r,true));
+  re('pumpkinTop',(p,r)=>{const s=S();cada((x,y)=>{const d=Math.hypot(x-7.5,y-7.5),a=Math.atan2(y-7.5,x-7.5),g=Math.abs(Math.sin(a*4))<.2;
+    let c=g?[200,100,16]:[228,132,24];if(hp(x,y,s)<.08)c=tono(c,.92);if(d<1.8)c=[96,70,30];else if(d<2.6)c=[140,110,40];p(x,y,...c);});});
+  re('melonSide',(p,r)=>{const s=S();cada((x,y)=>{const f=(x+Math.round(Math.sin(y*.8)*1.2)+16)%5,v=hp(x,y,s);
+    let c=f===0?[176,196,60]:f===1?[140,176,48]:[94,146,30];if(v<.08)c=tono(c,.9);p(x,y,...c);});});
+  re('melonTop',(p,r)=>{const s=S();cada((x,y)=>{const d=Math.hypot(x-7.5,y-7.5),a=Math.atan2(y-7.5,x-7.5),f=Math.abs(Math.sin(a*5+d*.3));
+    let c=f<.25?[170,192,58]:[98,148,32];if(d<1.5)c=[120,90,40];if(hp(x,y,s)<.07)c=tono(c,.9);p(x,y,...c);});});
+  re('haySide',(p,r)=>{const s=S();cada((x,y)=>{const v=hp(x,y,s),linea=(x+Math.floor(hp(x,0,s+1)*3))%3===0;
+    let c=linea?[176,146,36]:v<.3?[206,176,52]:[222,194,70];if(y===3||y===4||y===11||y===12)c=y%2?[150,50,30]:[176,72,40];p(x,y,...c);});});
+  re('hayTop',(p,r)=>{const s=S();cada((x,y)=>{const v=hp(x,y,s),d=Math.max(Math.abs(x-7.5),Math.abs(y-7.5));
+    let c=v<.25?[176,146,36]:v<.6?[206,176,52]:[226,198,74];if(d>6.5)c=tono(c,.8);p(x,y,...c);});});
+  re('cactusSide',(p,r)=>{const s=S();cada((x,y)=>{const borde=x===0||x===15,raya=x===4||x===11,v=hp(x,y,s);
+    let c=borde?[34,74,24]:raya?[62,112,40]:v<.2?[76,132,48]:[88,148,56];p(x,y,...c);});
+    for(const [x,y] of [[2,3],[7,6],[13,2],[5,11],[10,13],[13,9],[2,14]]){p(x,y,236,236,210);p(x,y+1,40,60,30);}});
+  re('cactusTop',(p,r)=>{const s=S();cada((x,y)=>{const d=Math.max(Math.abs(x-7.5),Math.abs(y-7.5)),v=hp(x,y,s);
+    let c=d>6.6?[34,74,24]:d>5.5?[70,124,44]:v<.2?[98,160,62]:[110,172,70];if(Math.abs(x-7.5)<1&&Math.abs(y-7.5)<1)c=[140,190,90];p(x,y,...c);});});
 })();
 
 const NT=_genTiles.length, ATH=Math.ceil(NT/ATW);
