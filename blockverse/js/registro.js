@@ -424,6 +424,14 @@ const HUEVOS={cerdo:[0xf0a0a0,0xd06060],vaca:[0x4a3222,0xa8a8a8],oveja:[0xe8e8e8
   breeze:[0xaf94df,0x9166df],creaking:[0x5f5f5f,0xfc7812],ghastFeliz:[0xf9f9f9,0xbcbcbc],golemCobre:[0xd8844e,0x40e0d0],
   piglin:[0xea9393,0x4c7129],saqueador:[0x532f36,0x959b9b],hoglin:[0xc66e55,0x5f6464],blaze:[0xf6b201,0xfff87e],ghast:[0xf9f9f9,0xbcbcbc],caballo:[0xc09e7d,0xeee500]};
 Object.keys(HUEVOS).forEach((t,k)=>item(570+k,'huevo_'+t,'Huevo generador de '+t,{huevo:t}));
+// Criaturas nuevas: carne de conejo, tinta y cuerno de cabra; sus huevos van en otro rango
+item(620,'conejoCrudo','Conejo crudo',{comida:[3,1.8]}); item(621,'conejoCocinado','Conejo cocinado',{comida:[5,6]});
+item(622,'pataConejo','Pata de conejo'); item(623,'pielConejo','Piel de conejo'); item(624,'bolsaTinta','Bolsa de tinta');
+item(625,'cuernoCabra','Cuerno de cabra',{max:1});
+const HUEVOS2={lobo:[0xd7d3d3,0xceaf96,'lobo'],gato:[0xefc88e,0x957256,'gato'],zorro:[0xd5b69f,0xcc6920,'zorro'],conejo:[0x995f40,0x734831,'conejo'],
+  calamar:[0x223b4d,0x708899,'calamar'],murcielago:[0x4c3e30,0x0f0f0f,'murciélago'],cabra:[0xa5947c,0x55493e,'cabra'],osoPolar:[0xf2f2f2,0x959590,'oso polar'],
+  ahogado:[0x8ff1d7,0x799c65,'ahogado'],vindicador:[0x959b9b,0x275e61,'vindicador']};
+Object.keys(HUEVOS2).forEach((t,k)=>{HUEVOS[t]=HUEVOS2[t].slice(0,2);item(630+k,'huevo_'+t,'Huevo generador de '+HUEVOS2[t][2],{huevo:t});});
 
 const MATS=[
   {n:'madera',nivel:1,vel:2,dur:59,enc:15,col:[176,138,82]},
@@ -652,6 +660,7 @@ receta(['CCC','C.C','CCC'],{C:I.lingoteCobre},B.cofreCobre);
  const a={M:I.lingoteCobre};receta(['MMM','M.M'],a,405);receta(['M.M','MMM','MMM'],a,415);receta(['MMM','M.M','M.M'],a,425);receta(['M.M','M.M'],a,435);} recetaSin([539],538,4);
 receta(['TT','TT'],{T:B.toba},B.ladrillosToba,4); receta(['CC','CC'],{C:I.lingoteCobre},B.cobreCortado);
 receta(['.C.','CVC','.R.'],{C:B.cobreCortado,V:I.varaBlaze,R:I.redstone},B.bombillaCobre,4);
+receta(['PP','PP'],{P:623},I.cuero); recetaSin([624],TINTE_ID[COLORES16.findIndex(c=>c[0]==='negro')]||I.cuero);
 // Los tablones de cerezo y mangle sirven en todas las recetas de madera
 const EQUIV_RECETA={[B.tablonesAbedul]:B.tablones,[B.tablonesAbeto]:B.tablones,[B.tablonesJungla]:B.tablones,[B.tablonesAcacia]:B.tablones,[B.barril]:B.cofre,[B.tablonesPalidos]:B.tablones,[B.troncoPalido]:B.tronco,[B.cofreCobre]:B.cofre,[B.tablonesCerezo]:B.tablones,[B.tablonesRobleOscuro]:B.tablones,[B.troncoRobleOscuro]:B.tronco,[B.tablonesMangle]:B.tablones,[B.troncoCerezo]:B.tronco,[B.troncoMangle]:B.tronco};
 
@@ -679,7 +688,7 @@ function buscarRecetaExacta(grid,w){
   }
   return null;
 }
-const FUNDIR={614:615,616:617,
+const FUNDIR={614:615,616:617,620:621,
   [I.hierroBruto]:I.lingoteHierro,[I.oroBruto]:I.lingoteOro,[I.cobreBruto]:I.lingoteCobre,
   [B.menaHierro]:I.lingoteHierro,[B.menaOro]:I.lingoteOro,[B.menaCobre]:I.lingoteCobre,[B.menaDiamante]:I.diamante,
   [B.menaCarbon]:I.carbon,[B.menaLapis]:I.lapis,[B.menaRedstone]:I.redstone,[B.menaEsmeralda]:I.esmeralda,[B.menaCuarzo]:I.cuarzo,

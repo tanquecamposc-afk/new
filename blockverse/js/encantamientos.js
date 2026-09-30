@@ -720,7 +720,7 @@ herirMob=function(m,d,dir,fuente,empuje){
   if(m&&d>0){
     const p=golpeCuerpo?enMano():null;
     if(p&&p.id===612&&MOBS_ACUATICOS.has(m.tipo))d+=2.5*nivelEnc(p,'empalamiento');
-    let arm=ARMADURA_MOB[m.tipo]||0;
+    let arm=m.armadura!==undefined?m.armadura:ARMADURA_MOB[m.tipo]||0;
     if(p&&ITEMS[p.id].herr&&ITEMS[p.id].herr.tipo==='maza')arm*=Math.max(0,1-.15*nivelEnc(p,'brecha'));
     if(arm>0)d*=1-Math.min(20,Math.max(arm/5,arm-d/2))/25;
   }

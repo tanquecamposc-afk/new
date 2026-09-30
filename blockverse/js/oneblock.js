@@ -4,48 +4,83 @@
    vacío. Cada vez que lo rompes aparece otro, siguiendo
    fases cada vez más avanzadas (llanuras, subterráneo,
    tundra, jungla, océano, desierto, cavernas profundas,
-   Nether, ciudad antigua y el End), con cofres de botín y
-   criaturas. Al llegar al End se construye su portal.
+   Nether, ciudad antigua y el End, además de cerezos, pantano,
+   setas, montañas y mazmorra), con cofres de botín, bloques
+   raros, hitos cada 100 bloques y criaturas. Al llegar al End se construye su portal.
    ========================================================= */
 const OB={x:0,y:NIVEL_MAR+10,z:0};
 const FASES_OB=[
-  {nombre:'Llanuras',n:0,col:'#6fc04a',botin:'aldea',mobs:['cerdo','vaca','oveja','gallina'],
+  {nombre:'Llanuras',n:0,col:'#6fc04a',botin:'aldea',mobs:['cerdo','vaca','oveja','gallina','conejo'],
     bloques:[['cesped',30],['tierra',20],['tronco',18],['hojas',8],['piedra',8],['arena',5],['arcilla',3],['calabaza',2],['sandia',2]],
+    raros:[['heno',1],['bloqueCarbon',1]],
     extra:()=>[[I.cuboAgua,1],[88,2],[I.semillas,4],[I.harinaHueso,3]]},
-  {nombre:'Subterráneo',n:80,col:'#8a8a8a',botin:'mina',mobs:['zombi','esqueleto','arana'],
+  {nombre:'Subterráneo',n:80,col:'#8a8a8a',botin:'mina',mobs:['zombi','esqueleto','arana','murcielago'],
     bloques:[['piedra',30],['roca',14],['grava',8],['andesita',6],['granito',6],['diorita',6],['menaCarbon',12],['menaHierro',9],['menaCobre',6],['menaOro',2],['tierra',4]],
+    raros:[['bloqueHierro',1],['cofreCobre',1]],
     extra:()=>[[I.cuboLava,1],[B.antorcha,8]]},
-  {nombre:'Tundra helada',n:200,col:'#bfe4ff',botin:'iglu',mobs:['oveja','zombi','esqueleto'],
+  {nombre:'Tundra helada',n:180,col:'#bfe4ff',botin:'iglu',mobs:['oveja','zorro','lobo','conejo','osoPolar'],
     bloques:[['bloqueNieve',18],['hielo',14],['hieloCompacto',12],['cespedNevado',14],['troncoAbeto',16],['hojasAbeto',6],['piedra',10],['menaLapis',4]],
-    extra:()=>[[103,2],[I.pan,4]]},
-  {nombre:'Jungla',n:330,col:'#2fa82a',botin:'templo',mobs:['gallina','creeper','arana'],
-    bloques:[['troncoJungla',22],['hojasJungla',12],['cesped',16],['tierra',10],['sandia',6],['troncoRobleOscuro',10],['troncoCerezo',8],['barro',6],['troncoMangle',6]],
+    raros:[['bloqueLapis',1]],
+    extra:()=>[[103,2],[I.pan,4],[I.hueso,6]]},
+  {nombre:'Bosque de cerezos',n:280,col:'#f4a6c8',botin:'aldea',mobs:['conejo','oveja','cerdo','lobo'],
+    bloques:[['troncoCerezo',22],['hojasCerezo',12],['cesped',18],['tierra',10],['troncoAbedul',10],['hojasAbedul',5],['petalos',4],['tablonesCerezo',4],['arcilla',4]],
+    raros:[['bloqueEsmeralda',1]],
+    extra:()=>[[B.broteCerezo||88,2],[I.manzana,4],[I.harinaHueso,6]]},
+  {nombre:'Jungla',n:380,col:'#2fa82a',botin:'templo',mobs:['gallina','creeper','arana','gato'],
+    bloques:[['troncoJungla',22],['hojasJungla',12],['cesped',16],['tierra',10],['sandia',6],['troncoRobleOscuro',10],['troncoAcacia',8],['musgoPalido',2]],
+    raros:[['bloqueOro',1]],
     extra:()=>[[104,2],[1466,2],[1297,1]]},
-  {nombre:'Océano',n:460,col:'#3a8ad8',botin:'naufragio',mobs:['zombi','bruja'],
+  {nombre:'Pantano',n:480,col:'#5a7a3a',botin:'bruja',mobs:['rana','slime','bruja','ahogado'],
+    bloques:[['barro',20],['troncoMangle',16],['raicesMangle',10],['hojasMangle',8],['arcilla',12],['cesped',10],['tierra',10],['ladrillosBarro',4],['setaMarronGigante',3]],
+    raros:[['bloqueResina',1]],
+    extra:()=>[[B.propagulo||88,2],[I.bolaSlime||525,4],[I.cuboAgua,1]]},
+  {nombre:'Océano',n:580,col:'#3a8ad8',botin:'naufragio',mobs:['ahogado','calamar','guardian'],
     bloques:[['arena',24],['arcilla',14],['grava',12],['prismarina',14],['ladrillosPrismarina',6],['prismarinaOscura',4],['farolMarino',3],['esponja',2]],
-    extra:()=>[[I.cuboAgua,1],[I.esmeralda,3]]},
-  {nombre:'Desierto',n:600,col:'#e0c870',botin:'piramide',mobs:['camello','zombi','esqueleto'],
-    bloques:[['arena',24],['arenisca',18],['arenaRoja',14],['terracota',14],['grava',6],['menaOro',4],['arcilla',4]],
-    extra:()=>[[B.cactus,2],[B.cana,3]]},
-  {nombre:'Cavernas profundas',n:760,col:'#4a4a58',botin:'mazmorra',mobs:['creeper','esqueleto','enderman','slime'],
+    raros:[['esponjaMojada',1],['farolMarino',1]],
+    extra:()=>[[I.cuboAgua,1],[I.esmeralda,3],[613,1]]},
+  {nombre:'Pradera de setas',n:680,col:'#b07ab0',botin:'aldea',mobs:['vaca','conejo'],
+    bloques:[['setaRojaGigante',18],['setaMarronGigante',18],['talloSeta',12],['tierra',22],['cesped',10]],
+    raros:[['luzHongo',2]],
+    extra:()=>[[B.champinonRojo,3],[B.champinonMarron,3],[252,4]]},
+  {nombre:'Desierto',n:760,col:'#e0c870',botin:'piramide',mobs:['camello','zombi','esqueleto','conejo'],
+    bloques:[['arena',24],['arenisca',18],['arenaRoja',14],['terracota',14],['grava',6],['menaOro',4],['arcilla',4],['arenaSospechosa',3]],
+    raros:[['bloqueOro',1],['tnt',1]],
+    extra:()=>[[B.cactus,2],[B.cana,3],[528,1]]},
+  {nombre:'Montañas',n:860,col:'#9aa4b0',botin:'mina',mobs:['cabra','oveja','lobo'],
+    bloques:[['piedra',26],['granito',10],['andesita',10],['bloqueNieve',10],['hieloCompacto',8],['menaEsmeralda',6],['menaHierro',10],['menaCobre',8],['toba',6],['cespedNevado',6]],
+    raros:[['bloqueEsmeralda',1],['bloqueHierro',1]],
+    extra:()=>[[I.esmeralda,6],[B.antorcha,8]]},
+  {nombre:'Cavernas profundas',n:960,col:'#4a4a58',botin:'mazmorra',mobs:['creeper','esqueleto','enderman','slime','murcielago'],
     bloques:[['pizarra',28],['pHierro',10],['pOro',6],['pRedstone',8],['pDiamante',3],['menaLapis',5],['obsidiana',6],['toba',8],['menaEsmeralda',2]],
+    raros:[['bloqueDiamante',1],['bloqueRedstone',2]],
     extra:()=>[[I.diamante,2],[I.cuboAgua,1]]},
-  {nombre:'Nether',n:940,col:'#b03a2a',botin:'fortalezaNether',mobs:['piglin','cuboMagma','blaze'],
+  {nombre:'Mazmorra',n:1080,col:'#6a6a5a',botin:'mazmorra',mobs:['zombi','esqueleto','arana','vindicador'],
+    bloques:[['roca',24],['rocaMusgo',18],['ladrillosPiedra',10],['ladrillosMusgo',10],['ladrillosAgrietados',8],['bloqueHueso',5],['menaHierro',6],['menaOro',3],['telarana',3]],
+    raros:[['bloqueOro',1],['bloqueDiamante',1]],
+    extra:()=>[[I.manzanaDorada,1],[I.silla||598,1],[546,1]]},
+  {nombre:'Nether',n:1200,col:'#b03a2a',botin:'fortalezaNether',mobs:['piglin','cuboMagma','blaze','hoglin'],
     bloques:[['netherrack',30],['arenaAlmas',12],['sueloAlmas',8],['basalto',10],['piedraNegra',10],['menaCuarzo',10],['menaOroNether',8],['piedraLuminosa',6],['bloqueMagma',5],['nilioCarmesi',5],['talloCarmesi',6],['restosAncestrales',1]],
+    raros:[['restosAncestrales',1],['bloqueCuarzo',2]],
     extra:()=>[[B.obsidiana,10],[I.mechero,1]]},
-  {nombre:'Ciudad antigua',n:1140,col:'#0f5a60',botin:'ciudadAntigua',mobs:['esqueleto','zombi'],
+  {nombre:'Ciudad antigua',n:1400,col:'#0f5a60',botin:'ciudadAntigua',mobs:['esqueleto','zombi'],
     bloques:[['sculk',26],['pizarra',20],['sensorSculk',8],['catalizador',3],['pDiamante',4],['toba',6],['piedraNegra',6]],
+    raros:[['chillador',1]],
     extra:()=>[[I.perlaEnder,4],[I.polvoBlaze,4]]},
-  {nombre:'El End',n:1300,col:'#c8b8f0',botin:'ciudadEnd',mobs:['enderman','shulker'],
+  {nombre:'El End',n:1560,col:'#c8b8f0',botin:'ciudadEnd',mobs:['enderman','shulker'],
     bloques:[['piedraEnd',40],['purpur',14],['ladrillosEnd',12],['obsidiana',10]],
+    raros:[['plantaCoro',1]],
     extra:()=>[[I.ojoEnder,4],[I.perlaEnder,2]]},
-  {nombre:'Infinito',n:1500,col:'#ffd84a',botin:'fortaleza',mobs:['cerdo','vaca','zombi','creeper','enderman'],bloques:null,
+  {nombre:'Infinito',n:1760,col:'#ffd84a',botin:'fortaleza',mobs:['cerdo','vaca','zombi','creeper','enderman','lobo','zorro','cabra'],bloques:null,
     extra:()=>[[I.diamante,3],[I.manzanaDorada,1]]},
 ];
 // Bloques de cada fase como ids (se ignoran los que no existan); la fase final mezcla todas
 FASES_OB.forEach(F=>{if(F.bloques)F.ids=F.bloques.filter(([k])=>B[k]).map(([k,p])=>[B[k],p]);});
 FASES_OB[FASES_OB.length-1].ids=FASES_OB.slice(0,-1).flatMap(F=>F.ids);
-FASES_OB.forEach(F=>{F.total=F.ids.reduce((a,e)=>a+e[1],0);F.mobs=F.mobs.filter(t=>DEF_MOB[t]);});
+FASES_OB.forEach(F=>{F.ids=F.ids.filter(e=>e[1]>0);F.total=F.ids.reduce((a,e)=>a+e[1],0);
+  F.idsRaros=(F.raros||[]).filter(([k])=>B[k]).map(([k,p])=>[B[k],p]);});
+FASES_OB[FASES_OB.length-1].idsRaros=FASES_OB.slice(0,-1).flatMap(F=>F.idsRaros);
+// Las criaturas se filtran al usarlas (algunas se definen en archivos posteriores)
+const mobsFaseOB=F=>F.mobs.filter(t=>DEF_MOB[t]);
 
 let obPendiente=false;
 const esOneBlock=()=>obPendiente||!!(typeof mundoEstado!=='undefined'&&mundoEstado&&mundoEstado.oneBlock);
@@ -102,12 +137,24 @@ function regenerarOB(ob){
     if(ob.n===F.n+10){const c=cofres[claveCont(x,y,z)];
       if(c)for(const [id,n] of F.extra()){if(!ITEMS[id])continue;const i=c.findIndex(s=>!s);if(i>=0)c[i]=crearPila(id,n);}}
     sonar('cofreAbrir',OB,.7);
+  }else if(F.idsRaros.length&&Math.random()<.012){  // bloque raro de la fase
+    const [id]=F.idsRaros[Math.floor(Math.random()*F.idsRaros.length)];
+    setBloque(x,y,z,id); sonar('xp',OB); emitirParticulas(x+.5,y+.8,z+.5,0xfff080,14,2.5,.8,-1);
   }else setBloque(x,y,z,elegirBloqueOB(F));
+  // Hitos: cada 100 bloques, experiencia y un premio
+  if(ob.n%100===0){
+    tituloOB(`¡${ob.n} bloques!`,'Hito alcanzado','#7fe03a',2.2); sonar('nivel');
+    soltarXP(10+Math.floor(ob.n/50),x+.5,y+1.5,z+.5);
+    const premios=[[I.diamante,1],[I.esmeralda,4],[I.lingoteHierro,6],[I.lingoteOro,4],[I.manzanaDorada,1],[I.pan,8],[B.antorcha,16],[I.flecha,16]];
+    const [pid,pn]=premios[Math.floor(Math.random()*premios.length)];
+    soltarItem(crearPila(pid,pn),x+.5,y+1.5,z+.5,true);
+  }
   // Los objetos que había en el hueco suben encima del bloque nuevo
   for(const e of entidades)if(e.tipo==='item'&&!e.muerta&&Math.abs(e.pos.x-x-.5)<1&&Math.abs(e.pos.z-z-.5)<1&&e.pos.y>y-1.5&&e.pos.y<y+1.05){e.pos.y=y+1.1;e.vel.y=0;}
   emitirParticulas(x+.5,y+.5,z+.5,new THREE.Color(F.col),6,1.5,.5,4);
-  if(!cofre&&F.mobs.length&&ob.n>8&&Math.random()<.045&&mobs.length<40){
-    const t=F.mobs[Math.floor(Math.random()*F.mobs.length)];
+  const lm=mobsFaseOB(F);
+  if(!cofre&&lm.length&&ob.n>8&&Math.random()<.045&&mobs.length<40){
+    const t=lm[Math.floor(Math.random()*lm.length)];
     crearMob(t,x+.5,y+1.05,z+.5,{tam:t==='slime'||t==='cuboMagma'?0:undefined});
   }
 }

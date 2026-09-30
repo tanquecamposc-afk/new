@@ -40,7 +40,7 @@ const DEF_MOB={
 };
 const NOMBRE_MOB={cerdo:'Cerdo',vaca:'Vaca',oveja:'Oveja',gallina:'Gallina',zombi:'Zombi',esqueleto:'Esqueleto',creeper:'Creeper',
   arana:'Araña',enderman:'Enderman',aldeano:'Aldeano',hoglin:'Hoglin',slime:'Slime',cuboMagma:'Cubo de magma',golem:'Gólem de hierro',piglin:'Piglin zombificado',ghast:'Ghast',blaze:'Blaze'};
-const COCINADO={[I.cerdoCrudo]:I.cerdoAsado,[I.resCruda]:I.filete,[I.corderoCrudo]:I.corderoAsado,[I.polloCrudo]:I.polloAsado};
+const COCINADO={620:621,[I.cerdoCrudo]:I.cerdoAsado,[I.resCruda]:I.filete,[I.corderoCrudo]:I.corderoAsado,[I.polloCrudo]:I.polloAsado};
 
 /* ---------- Modelos ---------- */
 // Texturas en escala de grises que se multiplican por el color de cada pieza: dan relieve pixelado
