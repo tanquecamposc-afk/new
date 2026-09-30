@@ -111,11 +111,70 @@ const PL_LANZA=[
 "..hH............",
 ".hH.............",
 "................"];
+/* ---------- Herramientas y armas al estilo del original ----------
+   Sprites de 16x16 con contorno de 1 píxel del tono más oscuro de cada pieza
+   (el metal con su color, el palo marrón), cuatro tonos por material y el
+   mango en diagonal de abajo a la izquierda hacia arriba a la derecha. */
+const PALO_T={l:[150,114,62],m:[124,92,50],d:[94,70,36],o:[42,29,14]};
+const mezclaCol=(a,b,t)=>a.map((v,i)=>v*(1-t)+b[i]*t);
+function tonosMat(c){const lum=(c[0]+c[1]+c[2])/3;
+  return {w:mezclaCol(c,[255,255,255],lum>150?.5:.35),l:mezclaCol(sombra(c,1.12),[255,255,255],.12),m:c,d:sombra(c,.74),o:lum<100?sombra(c,.42):sombra(c,.3)};}
+function sprite16(fn){
+  const G=new Array(256).fill(null), OL=new Array(256).fill(null);
+  const P=(x,y,c,o)=>{x=Math.round(x);y=Math.round(y);if(x>=0&&y>=0&&x<16&&y<16&&c){G[y*16+x]=c;OL[y*16+x]=o;}};
+  // Pinta con una paleta: P(x,y,'l',T) usa el tono l de T y su contorno
+  const Q=(x,y,k,T)=>P(x,y,T[k],T.o);
+  const palo=(x0,y0,n)=>{for(let i=0;i<n;i++)Q(x0+i,y0-i,i%3===1?'l':i%3===2?'d':'m',PALO_T);};
+  fn({P,Q,palo});
+  const c=document.createElement('canvas');c.width=c.height=16;const ctx=c.getContext('2d'),img=ctx.createImageData(16,16);
+  for(let y=0;y<16;y++)for(let x=0;x<16;x++){const i=y*16+x;let col=G[i];
+    if(!col){let mejor=null,lm=1e9;for(const [a,b] of [[0,-1],[-1,0],[1,0],[0,1]]){const X=x+a,Y=y+b;if(X<0||Y<0||X>15||Y>15)continue;const o=OL[Y*16+X];
+        if(G[Y*16+X]&&o){const l=o[0]+o[1]+o[2];if(l<lm){lm=l;mejor=o;}}}col=mejor;}
+    if(col){img.data[i*4]=clamp(col[0],0,255);img.data[i*4+1]=clamp(col[1],0,255);img.data[i*4+2]=clamp(col[2],0,255);img.data[i*4+3]=255;}}
+  ctx.putImageData(img,0,0);return c;
+}
+// Rota coordenadas al eje del mango: a a lo largo (hacia arriba a la derecha), b de través
+const ejeMango=(x,y,cx,cy)=>[((x-cx)-(y-cy))/Math.SQRT2,((x-cx)+(y-cy))/Math.SQRT2];
 function dibujarHerramienta(it){
-  const h=it.herr,m=MATS[h.mat].col,osc=sombra(m,.66),cla=sombra(m,1.22);
-  const pl={espada:PL_ESPADA,pico:PL_PICO,hacha:PL_HACHA,pala:PL_PALA,azada:PL_AZADA,lanza:PL_LANZA}[h.tipo]||PL_ESPADA;
-  const guarda=h.mat===0?[104,74,40]:sombra(m,.55);
-  return lienzo16(it.clave.length*97+h.mat,({P})=>plantilla(P,pl,{m,l:cla,d:osc,h:PALO,H:PALO_OSC,g:guarda,p:sombra(m,.8)}));
+  const h=it.herr, T=tonosMat(MATS[h.mat].col), madera=h.mat===0;
+  return sprite16(({P,Q,palo})=>{
+    if(h.tipo==='espada'){
+      // Hoja en diagonal con filo claro, lomo oscuro y punta brillante
+      for(let t=0;t<9;t++){const cx=13-t,cy=2+t;Q(cx,cy,t<2?'w':t%4===1?'w':'l',T);Q(cx+1,cy,t>5?'d':'m',T);Q(cx+1,cy+1,t===8?'d':'d',T);}
+      Q(14,1,'w',T);Q(15,1,'m',T);Q(14,2,'m',T);
+      const G=madera?PALO_T:tonosMat(sombra(MATS[h.mat].col,h.mat===2?.62:.7));
+      for(const [x,y,k] of [[2,8,'m'],[3,9,'l'],[4,10,'m'],[5,11,'m'],[6,12,'d'],[7,13,'d']])Q(x,y,k,G);
+      Q(4,11,'d',G);
+      palo(3,12,2); Q(1,14,'m',T);Q(2,14,'d',T);Q(1,13,'l',T);Q(2,13,'m',PALO_T);
+    }else if(h.tipo==='pico'){
+      palo(1,14,11);
+      // Cabeza en arco (Bézier) de dos píxeles de grosor: canto claro por fuera y sombra por dentro
+      const B=(t)=>[(1-t)*(1-t)*1.5+2*(1-t)*t*14.5+t*t*14.5,(1-t)*(1-t)*1.5+2*(1-t)*t*1.5+t*t*14.5];
+      for(let k=0;k<=40;k++){const t=k/40,[x,y]=B(t),[nx,ny]=[1-x+ (x<1?0:0),14-y];const L=Math.hypot(nx,ny)||1,px=Math.round(x),py=Math.round(y);
+        const punta=t<.08||t>.92,centro=t>.25&&t<.75;Q(px,py,punta?'m':centro&&t>.4&&t<.6?'w':'l',T);
+        if(!punta)Q(Math.round(x+nx/L),Math.round(y+ny/L),centro?'m':'d',T);if(centro)Q(Math.round(x+2*nx/L),Math.round(y+2*ny/L),'d',T);}
+      Q(11,4,'m',PALO_T);
+    }else if(h.tipo==='hacha'){
+      palo(1,14,11);
+      // Cabeza: bloque ancho a la izquierda de la punta del mango, con el filo claro a la izquierda
+      const filas=[[1,6,9],[2,5,10],[3,4,11],[4,4,10],[5,4,9],[6,5,8],[7,6,7]];
+      for(const [y,x0,x1] of filas)for(let x=x0;x<=x1;x++){const k=x===x0?(y>=3&&y<=5?'w':'l'):y===1||x===x0+1?'l':x===x1||y===7?'d':'m';Q(x,y,k,T);}
+    }else if(h.tipo==='pala'){
+      palo(1,14,9);
+      for(let y=0;y<16;y++)for(let x=0;x<16;x++){const [a,b]=ejeMango(x,y,11.5,4.5);
+        if((a/3.8)**2+(b/2.7)**2<=1){const k=b<-1.2?'l':b>1.1?'d':a>2.2&&b<0?'w':'m';Q(x,y,k,T);}}
+      Q(9,6,'d',PALO_T);
+    }else if(h.tipo==='azada'){
+      palo(1,14,11);
+      for(let x=7;x<=12;x++){Q(x,2,x===12?'m':'l',T);Q(x,3,x>=11?'d':'m',T);}
+      Q(6,3,'l',T);Q(6,4,'m',T);Q(7,4,'d',T);Q(13,3,'d',T);Q(12,1,'w',T);Q(8,2,'w',T);
+    }else{ // lanza
+      palo(0,15,12);
+      for(let y=0;y<16;y++)for(let x=0;x<16;x++){const [a,b]=ejeMango(x,y,13,2.6);
+        if(Math.abs(a)/3.2+Math.abs(b)/1.6<=1&&a>-3){Q(x,y,b<-.3?'l':b>.4?'d':a>1?'w':'m',T);}}
+      Q(11,4,'d',tonosMat([150,150,156]));
+    }
+  });
 }
 const PL_ARM=[
  ["","","....dmmm","...dmlll","..dmlmmm","..mlmmmm","..mld...","..mld...","..mm....","..dd....","","","","","",""],
@@ -153,8 +212,37 @@ function lingote(P,rect,c){rect(4,6,11,6,sombra(c,1.15));rect(3,7,12,9,c);rect(3
 function gema(P,c,c2){for(let y=0;y<16;y++)for(let x=0;x<16;x++)if(Math.abs(x+.5-8)/6+Math.abs(y+.5-8)/6.5<=1)P(x,y,y<8?c:c2);P(6,5,[240,255,255]);P(7,4,[240,255,255]);}
 function carne(elipse,linea,P,c,c2,hueso){elipse(8.5,8,6,4.2,c,14);linea(5,7,12,9,c2);if(hueso){P(2,10,[236,230,214]);P(1,11,[236,230,214]);P(2,12,[236,230,214]);}}
 function muslo(elipse,linea,P,c){elipse(9,7,4.5,4,c,12);linea(5,10,3,13,[236,230,214]);P(2,13,[236,230,214]);P(3,14,[236,230,214]);}
+// Armas y utensilios dibujados con el mismo estilo que las herramientas
+const DIBUJOS_ARMAS={
+  224:({Q})=>{ // flecha: punta de pedernal, astil y plumas
+    const Pd=tonosMat([150,150,158]),F=tonosMat([232,232,232]);
+    for(let i=0;i<9;i++)Q(3+i,12-i,i%2?'l':'m',PALO_T);
+    Q(12,3,'m',Pd);Q(13,2,'l',Pd);Q(14,1,'w',Pd);Q(12,2,'l',Pd);Q(13,3,'d',Pd);Q(11,2,'w',Pd);Q(13,4,'d',Pd);
+    Q(2,13,'m',F);Q(1,14,'l',F);Q(1,12,'w',F);Q(2,12,'l',F);Q(3,14,'d',F);Q(3,13,'m',F);Q(1,13,'m',F);Q(2,14,'d',F);},
+  612:({Q})=>{ // tridente: mango de prismarina y tres puntas
+    const M=tonosMat([74,120,108]),H=tonosMat([120,200,180]);
+    for(let i=0;i<10;i++)Q(1+i,14-i,i%2?'l':'m',M);
+    for(const [x,y] of [[8,3],[9,4],[10,5],[11,6],[12,7]])Q(x,y,'m',H);
+    for(const [x,y,k] of [[9,2,'l'],[10,1,'w'],[13,6,'l'],[14,5,'w'],[11,4,'m'],[12,3,'l'],[13,2,'l'],[14,1,'w']])Q(x,y,k,H);
+    Q(9,3,'d',H);Q(12,6,'d',H);},
+  613:({Q,P})=>{ // caña de pescar: vara curvada, sedal y anzuelo
+    const pts=[[1,14],[2,13],[3,12],[4,11],[5,10],[6,9],[7,8],[8,7],[9,6],[10,5],[11,4],[12,3],[13,2]];
+    pts.forEach(([x,y],i)=>Q(x,y,i%3===1?'l':i%3===2?'d':'m',PALO_T));
+    for(let y=3;y<=11;y++)P(14,y,[228,228,228],[90,90,90]);
+    const G=tonosMat([160,160,170]);Q(14,12,'m',G);Q(13,13,'l',G);Q(12,12,'d',G);},
+  540:({Q})=>{ // maza: mango de vara de breeze y cabeza pesada con pinchos
+    const V=tonosMat([150,196,226]),Mz=tonosMat([92,94,104]);
+    for(let i=0;i<7;i++)Q(1+i,14-i,i%2?'l':'m',V);
+    for(let y=3;y<=8;y++)for(let x=8;x<=13;x++)Q(x,y,x===8||y===3?'l':x===13||y===8?'d':(x+y)%3===0?'w':'m',Mz);
+    for(const [x,y] of [[7,2],[14,2],[14,9],[10,1],[15,5],[11,10]])Q(x,y,'w',Mz);Q(10,5,'w',V);Q(11,6,'l',V);},
+  229:({Q})=>{ // mechero: anillo de acero y pedernal
+    const A=tonosMat([160,160,168]),Pd=tonosMat([60,60,66]);
+    for(const [x,y,k] of [[3,4,'l'],[4,3,'w'],[5,3,'l'],[6,3,'m'],[7,4,'m'],[8,5,'d'],[8,6,'d'],[2,5,'l'],[2,6,'m'],[2,7,'m'],[3,8,'d'],[4,9,'d'],[5,9,'d']])Q(x,y,k,A);
+    for(let y=8;y<=13;y++)for(let x=8;x<=13;x++)if(Math.abs(x-10.5)+Math.abs(y-10.5)<=3.2)Q(x,y,x+y<20?'l':x+y>22?'d':'m',Pd);},
+};
 function dibujarItem(id){
   const it=ITEMS[id];
+  if(DIBUJOS_ARMAS[id])return sprite16(DIBUJOS_ARMAS[id]);
   if(it.herr&&!it.iconoPropio)return dibujarHerramienta(it);
   if(it.armadura&&!it.elitros)return dibujarArmadura(it);
   return lienzo16(id*31,({P,linea,elipse,rect,rnd})=>{

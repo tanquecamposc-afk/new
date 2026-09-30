@@ -93,7 +93,7 @@ function clicResultado(shift){
 }
 function shiftJugador(i){
   return p=>{
-    if(ui.tipo==='cofre')return insertar(p,ui.cofre,rango(0,27));
+    if(ui.tipo==='cofre')return insertar(p,ui.cofre,rango(0,ui.cofre.length));
     if(ui.tipo==='horno'){
       if(FUNDIR[p.id]!==undefined){p=insertarEn(ui.horno,'entrada',p);if(!p)return null;}
       else if(COMBUSTIBLE[p.id]){p=insertarEn(ui.horno,'combustible',p);if(!p)return null;}
@@ -146,7 +146,7 @@ function construirUI(){
     z.append(col,pr);
     crearSlot(z,refObj(h,'salida',{tipo:'salida',shift:p=>{soltarXPHorno(h);return aJugador(p);},alTomar:()=>soltarXPHorno(h)}),true);
   }else if(ui.tipo==='cofre'){
-    titulo('COFRE');
+    titulo(ui.cofre.length>27?'COFRE GRANDE':'COFRE');
     const g=document.createElement('div');g.className='rejillaSlots';elSup.appendChild(g);
     ui.cofre.forEach((_,i)=>crearSlot(g,refArr(ui.cofre,i,{shift:aJugador})));
   }else if(ui.tipo==='comercio'){
@@ -257,6 +257,8 @@ function pintarOfertas(){
   }
 }
 /* ---------- Abrir y cerrar ---------- */
+// Contenido que muestra la pantalla del cofre (los cofres dobles lo amplían a 54 huecos)
+function obtenerCofreUI(pos,k){return obtenerCofre(k);}
 function abrirUI(tipo,pos,extra){
   if(estado!=='jugando')return;
   ui={tipo};
@@ -265,7 +267,7 @@ function abrirUI(tipo,pos,extra){
   if(tipo==='inv'){ui.w=2;ui.craft=new Array(4).fill(null);}
   else if(tipo==='mesa'){ui.w=3;ui.craft=new Array(9).fill(null);}
   else if(tipo==='horno')ui.horno=obtenerHorno(ui.clave);
-  else if(tipo==='cofre')ui.cofre=obtenerCofre(ui.clave);
+  else if(tipo==='cofre')ui.cofre=obtenerCofreUI(pos,ui.clave);
   else if(tipo==='encantar')ui.enc={item:null,lapis:null};
   else if(UI_EXTRA[tipo])UI_EXTRA[tipo].abrir(ui);
   estado='ui'; soltarControles();

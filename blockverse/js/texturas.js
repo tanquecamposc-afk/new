@@ -176,6 +176,13 @@ function tile(nombre,gen){T[nombre]=_genTiles.length;_genTiles.push(gen);}
   tile('chestTop',(p,r)=>{tablones(p,r,[164,112,52]);cada((x,y)=>{const b=x===0||y===0||x===15||y===15;if(b)p(x,y,74,46,20);});});
   tile('chestSide',(p,r)=>{tablones(p,r,[164,112,52]);cada((x,y)=>{const b=x===0||y===0||x===15||y===15||y===5||y===6;
     if(b)p(x,y,74,46,20);if(x>=7&&x<=8&&y>=4&&y<=8){const c=(x===7&&y>4&&y<8)?214:128;p(x,y,c,c,c+6);}});});
+  // Mitades del cofre doble: sin borde en la unión y con medio cerrojo en ella; caras de los extremos sin cerrojo
+  const ladoCofre=(sinIzq,sinDer,cerrojo)=>(p,r)=>{tablones(p,r,[164,112,52]);cada((x,y)=>{
+    const b=(x===0&&!sinIzq)||(x===15&&!sinDer)||y===0||y===15||y===5||y===6;if(b)p(x,y,74,46,20);
+    if(cerrojo!==undefined&&x===cerrojo&&y>=4&&y<=8){const c=y>4&&y<8?(cerrojo===0?128:214):128;p(x,y,c,c,c+6);}});};
+  tile('chestSideL',ladoCofre(true,false,0)); tile('chestSideR',ladoCofre(false,true,15)); tile('chestSideEnd',ladoCofre(false,false));
+  const tapaCofre=(sin)=>(p,r)=>{tablones(p,r,[164,112,52]);cada((x,y)=>{const b=(x===0&&sin!=='L')||(x===15&&sin!=='R')||(y===0&&sin!=='U')||(y===15&&sin!=='D');if(b)p(x,y,74,46,20);});};
+  for(const k of ['L','R','U','D'])tile('chestTop'+k,tapaCofre(k));
   tile('torch',planta((p,r)=>{tallo(p,7,6,15,[128,92,52]);tallo(p,8,6,15,[98,70,38]);
     p(7,5,255,190,70);p(8,5,255,160,40);p(7,4,255,230,120);p(8,4,255,210,90);p(7,3,255,252,210);p(8,3,255,236,150);p(7,2,255,255,230);}));
   tile('bedTop',(p,r)=>cada((x,y)=>{const k=n(r,8);if(y<5)p(x,y,236+k,236+k,240+k);else{const f=(x+y)%4===0?.9:1;p(x,y,(176+k)*f,(30+k*.5)*f,(34+k*.5)*f);}

@@ -409,6 +409,18 @@ for(let e=0;e<4;e++){
 bloque(1631,'talloSandia','Tallo de sandía','stem',{forma:'cruz',dureza:0,suelta:()=>[[712,azar(0,2)]]});
 bloque(1632,'talloCalabaza','Tallo de calabaza','stem',{forma:'cruz',dureza:0,suelta:()=>[[713,azar(0,2)]]});
 bloque(1637,'cultivoHumedo','Tierra de cultivo húmeda',tx('farmlandWet','dirt','dirt'),{dureza:.6,herr:'pala',suelta:2,altura:.9375});
+// Cofres dobles: cada mitad se alarga hacia su pareja (+x, -x, +z, -z); cerrados y con la tapa abierta
+const CAJAS_COFRE_DOBLE=[[.0625,0,.0625,1,.875,.9375],[0,0,.0625,.9375,.875,.9375],[.0625,0,.0625,.9375,.875,1],[.0625,0,0,.9375,.875,.9375]];
+// Caras [-x,+x,-y,+y,-z,+z]: los lados largos llevan medio cerrojo en la unión y la tapa no tiene borde allí
+const CARAS_COFRE_DOBLE=[
+  ['chestSideEnd','chestSideEnd','chestTopR','chestTopL','chestSideL','chestSideR'],
+  ['chestSideEnd','chestSideEnd','chestTopL','chestTopR','chestSideR','chestSideL'],
+  ['chestSideR','chestSideL','chestTopD','chestTopU','chestSideEnd','chestSideEnd'],
+  ['chestSideL','chestSideR','chestTopU','chestTopD','chestSideEnd','chestSideEnd']];
+CAJAS_COFRE_DOBLE.forEach((c,d)=>{const tc=CARAS_COFRE_DOBLE[d].map(n=>T[n]);
+  bloque(1638+d,'cofreDoble'+d,'Cofre',tx('chestTop','chestTop','chestSide'),{forma:'cajas',cajas:[c],texCaras:tc,opaco:false,dureza:2.5,herr:'hacha',inter:'cofre',suelta:18});
+  bloque(1642+d,'cofreDobleAbierto'+d,'Cofre',tx('chestTop','chestTop','chestSide'),{forma:'cajas',cajas:[[c[0],0,c[2],c[3],.625,c[5]]],texCaras:tc,opaco:false,dureza:2.5,herr:'hacha',inter:'cofre',suelta:18});
+});
 const NB=BLOQUES.length;
 const SOLIDO=new Uint8Array(NB), OPACO=new Uint8Array(NB), TRANS=new Uint8Array(NB), LUZB=new Uint8Array(NB),
       OPAC_LUZ=new Uint8Array(NB), OCLUYE=new Uint8Array(NB), FORMA=new Uint8Array(NB), REEMPL=new Uint8Array(NB);
@@ -436,7 +448,7 @@ const nivelLiquido=id=>BLOQUES[id].nivelL;
    Registro de objetos
    ========================================================= */
 const ITEMS=[], I={};
-const esVariante=i=>(i>=130&&i<=132)||(i>=134&&i<=136)||(i>=138&&i<=140)||(i>=146&&i<=148)||(i>=149&&i<=168)||(i>=1192&&i<=1212)||i===1283||i===1216||i===1218||i===1220||i===1223||(i>=1224&&i<=1259&&i!==1227&&i!==1245)||(i>=1261&&i<=1269)||(i>=1271&&i<=1273)||i===1287||i===1317||i===1319||i===1328||i===1330||(i>=1424&&i<=1447&&(i-1424)%4!==0)||i===1461||i===1462||(i>=1619&&i<=1637);
+const esVariante=i=>(i>=130&&i<=132)||(i>=134&&i<=136)||(i>=138&&i<=140)||(i>=146&&i<=148)||(i>=149&&i<=168)||(i>=1192&&i<=1212)||i===1283||i===1216||i===1218||i===1220||i===1223||(i>=1224&&i<=1259&&i!==1227&&i!==1245)||(i>=1261&&i<=1269)||(i>=1271&&i<=1273)||i===1287||i===1317||i===1319||i===1328||i===1330||(i>=1424&&i<=1447&&(i-1424)%4!==0)||i===1461||i===1462||(i>=1619&&i<=1645);
 BLOQUES.forEach((b,i)=>{if(b&&!b.liquido&&b.forma!=='portal'&&i!==86&&!(i>=41&&i<=48)&&!esVariante(i))ITEMS[i]={nombre:b.nombre,bloque:true,max:64,clave:b.clave};});
 function item(id,clave,nombre,props){ITEMS[id]=Object.assign({nombre,max:64,clave},props);I[clave]=id;}
 item(200,'palo','Palo'); item(201,'carbon','Carbón'); item(202,'hierroBruto','Hierro en bruto'); item(203,'lingoteHierro','Lingote de hierro');

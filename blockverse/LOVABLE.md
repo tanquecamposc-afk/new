@@ -16,7 +16,7 @@ Todo está en el repositorio `tanquecamposc-afk/new`, rama `claude/intelligent-d
 ```
 blockverse/
 ├── index.html        ← la página del juego (27 KB: estilos + pantallas + lista de scripts)
-├── js/               ← 45 archivos .js (1060 KB en total)
+├── js/               ← 45 archivos .js (1076 KB en total)
 └── mods/ejemplo.js   ← mod de ejemplo (opcional)
 ```
 

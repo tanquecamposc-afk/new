@@ -62,7 +62,7 @@ function setBloque(x,y,z,id,opc={}){
   ch.datos[i]=id;
   if(id&&y>ch.ymax)ch.ymax=y; if(id&&y<ch.ymin)ch.ymin=y;
   if(id===B.generador)ch.generadores.push([lx,y,lz]);
-  if((anterior===B.horno||anterior===B.cofre||anterior===B.cofreAbierto)&&id!==B.cofre&&id!==B.cofreAbierto)vaciarContenedor(x,y,z);
+  if((anterior===B.horno||esBloqueCofre(anterior))&&!esBloqueCofre(id))vaciarContenedor(x,y,z);
   const k=claveChunk(cx,cz); (dim.ediciones[k]||(dim.ediciones[k]={}))[lx+','+y+','+lz]=id;
   marcarSucioPos(x,z);
   if(ch.luz)actualizarLuz(x,y,z);
@@ -71,6 +71,8 @@ function setBloque(x,y,z,id,opc={}){
 
 /* ---------- Contenedores ---------- */
 function obtenerHorno(k){return hornos[k]||(hornos[k]={entrada:null,combustible:null,salida:null,quema:0,quemaMax:0,prog:0});}
+// Cofre sencillo, con la tapa abierta o cualquiera de las mitades de un cofre doble
+function esBloqueCofre(id){return id===B.cofre||id===B.cofreAbierto||(id>=1638&&id<=1645);}
 function obtenerCofre(k){return cofres[k]||(cofres[k]=new Array(27).fill(null));}
 function vaciarContenedor(x,y,z){
   const k=claveCont(x,y,z), pilas=[];
