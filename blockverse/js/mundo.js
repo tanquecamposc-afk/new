@@ -651,7 +651,7 @@ function construirEdificio(e,estilo,set,alt,cofre){
       const borde=x===x0||x===x1||z===z0||z===z1;
       if(borde){set(x,y,z,M.esquina===B.arenisca?B.arenisca:B.tronco);continue;}
       if(x===mid){set(x,y,z,B.agua);continue;}
-      set(x,y,z,B.cultivo); set(x,y+1,z,B.trigo0+Math.floor(r()*8));
+      set(x,y,z,B.cultivo); {const t=(x*7+z*3)%9;const cult=B.zanahorias0!==undefined&&t>5?[B.zanahorias0,B.patatas0,B.remolachas0][t-6]:null;set(x,y+1,z,cult?cult+Math.floor(r()*4):B.trigo0+Math.floor(r()*8));}
     }
     return;
   }

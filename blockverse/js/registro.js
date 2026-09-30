@@ -399,6 +399,16 @@ bloque(1615,'tocadiscos','Tocadiscos',tx('jukeboxTop','jukeboxSide','jukeboxSide
 bloque(1616,'micelio','Micelio',tx('mycelium','dirt','myceliumSide'),{dureza:.6,herr:'pala',suelta:()=>[[B.tierra,1]],resistencia:.6});
 bloque(1617,'podzol','Podzol',tx('podzol','dirt','podzolSide'),{dureza:.5,herr:'pala',suelta:()=>[[B.tierra,1]],resistencia:.5});
 bloque(1618,'bloqueMusgo','Bloque de musgo','mossBlock',{dureza:.1,herr:'azada',resistencia:.1});
+// Cultivos de la edición 28
+for(let e=0;e<4;e++){
+  bloque(1619+e,'zanahorias'+e,'Zanahorias','carrots'+e,{forma:'cruz',dureza:0,cultivo:true,suelta:e===3?()=>[[640,azar(2,5)]]:()=>[[640,1]]});
+  bloque(1623+e,'patatas'+e,'Patatas','potatoes'+e,{forma:'cruz',dureza:0,cultivo:true,suelta:e===3?()=>[[641,azar(2,5)],[643,prob(.02)?1:0]]:()=>[[641,1]]});
+  bloque(1627+e,'remolachas'+e,'Remolachas','beetroots'+e,{forma:'cruz',dureza:0,cultivo:true,suelta:e===3?()=>[[644,1],[679,azar(1,3)]]:()=>[[679,1]]});
+  bloque(1633+e,'arbustoBayas'+e,'Arbusto de bayas dulces','berryBush'+e,{forma:'cruz',dureza:0,suelta:e>=2?()=>[[646,azar(1,e===3?3:2)]]:()=>[[646,1]]});
+}
+bloque(1631,'talloSandia','Tallo de sandía','stem',{forma:'cruz',dureza:0,suelta:()=>[[712,azar(0,2)]]});
+bloque(1632,'talloCalabaza','Tallo de calabaza','stem',{forma:'cruz',dureza:0,suelta:()=>[[713,azar(0,2)]]});
+bloque(1637,'cultivoHumedo','Tierra de cultivo húmeda',tx('farmlandWet','dirt','dirt'),{dureza:.6,herr:'pala',suelta:2,altura:.9375});
 const NB=BLOQUES.length;
 const SOLIDO=new Uint8Array(NB), OPACO=new Uint8Array(NB), TRANS=new Uint8Array(NB), LUZB=new Uint8Array(NB),
       OPAC_LUZ=new Uint8Array(NB), OCLUYE=new Uint8Array(NB), FORMA=new Uint8Array(NB), REEMPL=new Uint8Array(NB);
@@ -426,7 +436,7 @@ const nivelLiquido=id=>BLOQUES[id].nivelL;
    Registro de objetos
    ========================================================= */
 const ITEMS=[], I={};
-const esVariante=i=>(i>=130&&i<=132)||(i>=134&&i<=136)||(i>=138&&i<=140)||(i>=146&&i<=148)||(i>=149&&i<=168)||(i>=1192&&i<=1212)||i===1283||i===1216||i===1218||i===1220||i===1223||(i>=1224&&i<=1259&&i!==1227&&i!==1245)||(i>=1261&&i<=1269)||(i>=1271&&i<=1273)||i===1287||i===1317||i===1319||i===1328||i===1330||(i>=1424&&i<=1447&&(i-1424)%4!==0)||i===1461||i===1462;
+const esVariante=i=>(i>=130&&i<=132)||(i>=134&&i<=136)||(i>=138&&i<=140)||(i>=146&&i<=148)||(i>=149&&i<=168)||(i>=1192&&i<=1212)||i===1283||i===1216||i===1218||i===1220||i===1223||(i>=1224&&i<=1259&&i!==1227&&i!==1245)||(i>=1261&&i<=1269)||(i>=1271&&i<=1273)||i===1287||i===1317||i===1319||i===1328||i===1330||(i>=1424&&i<=1447&&(i-1424)%4!==0)||i===1461||i===1462||(i>=1619&&i<=1637);
 BLOQUES.forEach((b,i)=>{if(b&&!b.liquido&&b.forma!=='portal'&&i!==86&&!(i>=41&&i<=48)&&!esVariante(i))ITEMS[i]={nombre:b.nombre,bloque:true,max:64,clave:b.clave};});
 function item(id,clave,nombre,props){ITEMS[id]=Object.assign({nombre,max:64,clave},props);I[clave]=id;}
 item(200,'palo','Palo'); item(201,'carbon','Carbón'); item(202,'hierroBruto','Hierro en bruto'); item(203,'lingoteHierro','Lingote de hierro');
@@ -511,6 +521,7 @@ item(659,'catalejo','Catalejo',{max:1}); item(660,'panal','Panal'); item(661,'fr
 item(662,'caparazonNautilo','Caparazón de nautilo'); item(663,'corazonMar','Corazón del mar'); item(664,'escamaTortuga','Escama de tortuga');
 item(665,'membranaPhantom','Membrana de phantom'); item(666,'bolaNieve','Bola de nieve',{max:16}); item(667,'tintaBrillante','Bolsa de tinta brillante');
 ['13','cat','blocks','chirp','far','mall','mellohi','stal'].forEach((d,k)=>item(668+k,'disco_'+d,'Disco de música ('+d+')',{max:1,disco:k}));
+item(679,'semillasRemolacha','Semillas de remolacha'); item(712,'semillasSandia','Semillas de sandía'); item(713,'semillasCalabaza','Semillas de calabaza');
 item(676,'flechaEspectral','Flecha espectral'); item(677,'huevo','Huevo',{max:16});
 const HUEVOS2={lobo:[0xd7d3d3,0xceaf96,'lobo'],gato:[0xefc88e,0x957256,'gato'],zorro:[0xd5b69f,0xcc6920,'zorro'],conejo:[0x995f40,0x734831,'conejo'],
   calamar:[0x223b4d,0x708899,'calamar'],murcielago:[0x4c3e30,0x0f0f0f,'murciélago'],cabra:[0xa5947c,0x55493e,'cabra'],osoPolar:[0xf2f2f2,0x959590,'oso polar'],
@@ -754,7 +765,7 @@ receta(['CCC','C.C','CCC'],{C:I.lingoteCobre},B.cofreCobre);
  const a={M:I.lingoteCobre};receta(['MMM','M.M'],a,405);receta(['M.M','MMM','MMM'],a,415);receta(['MMM','M.M','M.M'],a,425);receta(['M.M','M.M'],a,435);} recetaSin([539],538,4);
 receta(['TT','TT'],{T:B.toba},B.ladrillosToba,4); receta(['CC','CC'],{C:I.lingoteCobre},B.cobreCortado);
 receta(['.C.','CVC','.R.'],{C:B.cobreCortado,V:I.varaBlaze,R:I.redstone},B.bombillaCobre,4);
-receta(['PP','PP'],{P:623},I.cuero);
+receta(['PP','PP'],{P:623},I.cuero); recetaSin([254],712); recetaSin([B.calabaza],713,4);
 // Recetas de la edición 27
 COLORES16.forEach((c,k)=>{receta(['TTT','TDT','TTT'],{T:B.terracota,D:TINTE_ID[k]},1480+k,8);
   recetaSin([TINTE_ID[k],B.arena,B.arena,B.arena,B.arena,B.grava,B.grava,B.grava,B.grava],1512+k,8); recetaSin([1544,TINTE_ID[k]],1528+k);});

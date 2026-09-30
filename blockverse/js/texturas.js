@@ -597,6 +597,16 @@ function tile(nombre,gen){T[nombre]=_genTiles.length;_genTiles.push(gen);}
   tile('podzol',(p,r)=>{const s=S();cada((x,y)=>{const k=n(r,16)+(pn(x,y,8,s)-.5)*18;const hoja=r()<.2;p(x,y,(hoja?120:92)+k,(hoja?80:62)+k,(hoja?40:28)+k);});});
   tile('podzolSide',(p,r)=>{tierra(p,r);cada((x,y)=>{if(y<3||(y===3&&r()<.5)){const k=n(r,12);p(x,y,92+k,62+k,28+k);}});});
   tile('mossBlock',(p,r)=>{const s=S();cada((x,y)=>{const k=n(r,16)+(pn(x,y,4,s)-.5)*24;p(x,y,86+k,120+k,40+k);});});
+  /* ---- Cultivos (edición 28) ---- */
+  const brotes=(e,max,colHoja,fruto)=>planta((p,r)=>{const alto=2+Math.round(e/max*8);
+    for(let c=0;c<4;c++){const x0=2+c*4;for(let y=15;y>15-alto;y--){const k=n(r,16);p(x0,y,colHoja[0]+k,colHoja[1]+k,colHoja[2]+k);if(y<15-alto+3){p(x0-1,y,colHoja[0]*.85+k,colHoja[1]*.85+k,colHoja[2]*.85+k);p(x0+1,y+1,colHoja[0]*.9,colHoja[1]*.9,colHoja[2]*.9);}}
+      if(fruto&&e===max){p(x0,15,...fruto);p(x0+1,15,...fruto);p(x0,14,...fruto.map(v=>v*.85));}}});
+  for(let e=0;e<4;e++){tile('carrots'+e,brotes(e,3,[70,160,40],[240,140,30]));tile('potatoes'+e,brotes(e,3,[80,150,50],[200,170,90]));tile('beetroots'+e,brotes(e,3,[70,130,50],[170,30,50]));}
+  tile('stem',planta((p,r)=>{for(let y=4;y<16;y++){const x=7+Math.round(Math.sin(y*.6));p(x,y,90,170,40);if(y%4===0){p(x+1,y,80,150,40);p(x+2,y-1,80,150,40);}}}));
+  tile('stemRipe',planta((p,r)=>{for(let y=4;y<16;y++){const x=7+Math.round(Math.sin(y*.6));p(x,y,150,120,40);if(y%4===0){p(x+1,y,140,110,40);p(x+2,y-1,140,110,40);}}}));
+  for(let e=0;e<4;e++)tile('berryBush'+e,planta((p,r)=>{const t=4+e*3;for(let k=0;k<16+e*14;k++){const x=Math.floor(8+(r()-.5)*t*1.4),y=15-Math.floor(r()*t);p(x,y,40+n(r,20),90+n(r,30),40,255);}
+    if(e>=2)for(let k=0;k<(e===3?9:4);k++)p(3+Math.floor(r()*10),16-t+Math.floor(r()*(t-2)),200,20+n(r,20),40);}));
+  tile('farmlandWet',(p,r)=>cada((x,y)=>{const k=n(r,10);const surco=y%4===0||y%4===1&&r()<.3;p(x,y,(surco?40:60)+k,(surco?24:36)+k,(surco?14:22)+k);}));
   tile('pathSide',(p,r)=>{tierra(p,r);cada((x,y)=>{if(y<2){const k=n(r,12);p(x,y,148+k,122+k,66+k);}});});
 })();
 
