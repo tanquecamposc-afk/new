@@ -256,6 +256,14 @@ En **Opciones → Calidad gráfica**: Baja, Media, Alta y Ultra. Ajusta la resol
 - La **F sola** sigue cambiando el objeto de mano (ahora al soltarla).
 - **Correr con Ctrl** (como en el original). Mientras juegas, los atajos del navegador con Ctrl quedan bloqueados; en pantalla completa también Ctrl+W, y si el navegador intenta cerrar la pestaña, pregunta antes.
 
+## Objetos en la mano en tercera persona (F5)
+
+- Las **herramientas y armas** se agarran por el mango con la punta hacia delante y arriba, como en el original (antes se veían tumbadas, como una raya).
+- **Comida, cubos, antorchas y otros objetos** van de pie en el puño, más pequeños; los **bloques**, como un cubito girado.
+- La **lanza y el tridente** se sujetan como lanzas, el **arco** de lado, y el **escudo** y la **maza** con su modelo 3D.
+- La **mano secundaria** también se ve (por ejemplo, el escudo en la izquierda) y el objeto principal va en la mano **derecha**.
+- Los objetos reciben la **luz del entorno** (ya no brillan de noche) y los **encantados** brillan en morado.
+
 ## Multijugador (base)
 
 Botón **Multijugador** en el menú. El anfitrión comparte su mundo (semilla y cambios) y se sincronizan los jugadores (se ven con su nombre y se animan al andar), los bloques que se ponen y rompen y el chat. `/nombre <tu nombre>` cambia tu nombre y `/jugadores` dice quién está.

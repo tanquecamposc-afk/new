@@ -527,8 +527,9 @@ function aplicarSkinJugador(){
     mesh.geometry.dispose(); mesh.geometry=pieza(nom,w,h,d,null,piv); mesh.material=mats.base;
     const c=new THREE.Mesh(pieza(capa,w+ex,h+ex,d+ex,null,piv),mats.capa); if(piv)c.position.y=ex/2; mesh.add(c);};
   vestir(p.torso,'cuerpo','chaqueta',.5,.75,.26);
-  vestir(p.brazoI,'brazoD','mangaD',aw,.75,.25,true); p.brazoI.position.x=-(.25+aw/2);
-  vestir(p.brazoD,'brazoI','mangaI',aw,.75,.25,true); p.brazoD.position.x=.25+aw/2;
+  // El brazo principal (el del objeto) es el derecho, como en el original
+  vestir(p.brazoD,'brazoD','mangaD',aw,.75,.25,true); p.brazoD.position.x=-(.25+aw/2);
+  vestir(p.brazoI,'brazoI','mangaI',aw,.75,.25,true); p.brazoI.position.x=.25+aw/2;
   vestir(p.piernaI,'piernaD','pantD',.25,.75,.25,true); vestir(p.piernaD,'piernaI','pantI',.25,.75,.25,true);
   for(const ch of p.cabeza.children.slice())if(ch.isMesh)p.cabeza.remove(ch);
   const cab=new THREE.Mesh(pieza('cabeza',.5,.5,.5),mats.base); cab.position.y=.25; p.cabeza.add(cab);
