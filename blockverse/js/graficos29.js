@@ -9,10 +9,13 @@
      hojas no pierden su color. Filtrado anisótropo para que
      el suelo se vea nítido en ángulos rasantes.
    ========================================================= */
-if(OPC.calidad===undefined)OPC.calidad=('ontouchstart' in window&&navigator.maxTouchPoints>0)?1:2;
+// Sin tarjeta gráfica (renderizado por software) o en móvil se empieza en Media; con GPU, en Alta
+function gpuPorSoftware(){try{const gl=renderer.getContext(),ext=gl.getExtension('WEBGL_debug_renderer_info');
+  const r=ext?gl.getParameter(ext.UNMASKED_RENDERER_WEBGL):gl.getParameter(gl.RENDERER);return /swiftshader|llvmpipe|software|basic render/i.test(String(r));}catch(e){return false;}}
+if(OPC.calidad===undefined)OPC.calidad=(('ontouchstart' in window&&navigator.maxTouchPoints>0)||gpuPorSoftware())?1:2;
 const CALIDADES=[
   {n:'Baja',escala:.75,msaa:0,aniso:1},
-  {n:'Media',escala:1,msaa:0,aniso:4},
+  {n:'Media',escala:1,msaa:0,aniso:2},
   {n:'Alta',escala:1,msaa:4,aniso:8},
   {n:'Ultra',escala:1.5,msaa:4,aniso:16},
 ];
