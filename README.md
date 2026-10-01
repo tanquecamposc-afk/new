@@ -281,6 +281,18 @@ En **Opciones → Calidad gráfica**: Baja, Media, Alta y Ultra. Ajusta la resol
 - La **mano secundaria** también se ve (por ejemplo, el escudo en la izquierda) y el objeto principal va en la mano **derecha**.
 - Los objetos reciben la **luz del entorno** (ya no brillan de noche) y los **encantados** brillan en morado.
 
+## Modo espectador
+
+- Al quedar **eliminado en Bed Wars** (o con `/gamemode espectador` en cualquier mundo) ya no juegas: **vuelas atravesando bloques** y **no puedes pegar**, romper, poner, usar, abrir el inventario ni recoger nada. Los mobs y los bots te ignoran y los demás jugadores no te ven.
+- **Mira a cada jugador:** clic izquierdo/derecho para pasar al siguiente o al anterior (bots y jugadores en red), **1–9** para elegir de la lista y **Mayús** para volver a volar libre. Lo ves desde sus ojos (o en tercera persona con F5) y un panel muestra su nombre, equipo, vida y lo que lleva en la mano. La **rueda** cambia la velocidad de vuelo.
+
+## Opciones, paquetes de recursos y mods
+
+- **Opciones ordenadas** como en el original: Gráficos y rendimiento, Música y sonidos, Controles y cámara, Interfaz, Skins, Paquetes de recursos y Mods. Caben en pantallas bajas (Chromebook) y se pueden desplazar.
+- Nuevo: **Tamaño de la interfaz** (80 % a 130 %).
+- Arreglado: **«Nubes: No»** ya quita las nubes y el botón **Multijugador** repetido (y apagado) de la pantalla de título.
+- **Paquetes de recursos y mods:** además del botón, puedes **arrastrar** el archivo (.zip/.mcpack, .js o una skin .png) a la ventana del juego. Los mods se pueden **escribir o pegar** directamente. Si el navegador no deja guardar, siguen funcionando mientras juegas; si la página no deja ejecutar código con `new Function`, el mod se carga de otra forma, y si nada funciona te dice que descargues el juego (`blockverse-un-archivo.html`) para usarlos.
+
 ## Mesas de trabajo, fabricación y hornos
 
 - **Números de las pilas nítidos:** se dibujan con una fuente de píxeles propia (como la del original) a la resolución real de la pantalla, sin bordes borrosos.
