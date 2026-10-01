@@ -231,6 +231,14 @@ En **Opciones → Calidad gráfica**: Baja, Media, Alta y Ultra. Ajusta la resol
 - **Ovejas de colores naturales** (blanca, gris, negra, marrón y rosa muy rara). Se **tiñen** con clic derecho y un tinte, y se **esquilan** con las **tijeras** nuevas (2 lingotes de hierro en diagonal): sueltan 1–3 de lana de su color y les vuelve a crecer al comer hierba.
 - **Skins del jugador** con el formato 64×64 del original (capa base y capa exterior): Steve, Alex (brazos finos), Exploradora, Caballero, Ninja, Sudadera y Astronauta, o **sube tu propio PNG** (64×64 o el antiguo 64×32) en **Skins…** del menú o de la pausa. Se ve en tercera persona (F5), en el brazo en primera persona, en el muñeco del inventario y la ven los demás jugadores en el multijugador. Los bots de Bed Wars llevan una skin del color de su equipo.
 
+## Rendimiento (más FPS)
+
+- **Sombras en caché:** el mapa de sombras del sol (2048×2048) ya no se redibuja en cada fotograma, solo cuando cambia el terreno, el sol avanza un poco o te alejas un par de bloques. Era lo que más costaba; con la cámara quieta el juego va unas 2,5 veces más rápido.
+- **No se dibuja lo que tapa la niebla:** los chunks, criaturas y entidades que quedan del todo dentro de la niebla se saltan (en la vista y en el reflejo del agua).
+- **Reflejo del agua** a un tercio de la resolución.
+- **Resolución dinámica:** si los FPS bajan de 50 se reduce la resolución de dibujo (hasta el 60 %) y se recupera cuando hay margen.
+- En **Opciones**: «Resolución dinámica», «Mostrar FPS» (contador arriba a la derecha) y «No dibujar tras la niebla». Para aún más FPS: Calidad gráfica Baja, Gráficos Rápidos o menos distancia de renderizado.
+
 ## Multijugador (base)
 
 Botón **Multijugador** en el menú. El anfitrión comparte su mundo (semilla y cambios) y se sincronizan los jugadores (se ven con su nombre y se animan al andar), los bloques que se ponen y rompen y el chat. `/nombre <tu nombre>` cambia tu nombre y `/jugadores` dice quién está.
