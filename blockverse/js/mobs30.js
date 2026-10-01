@@ -178,6 +178,7 @@ function modeloSkin30(s,{g,piernas,brazos,extra}){
   [['brazoD','mangaD',-1],['brazoI','mangaI',1]].forEach(([a,b,sx])=>{
     const p=con(piezaSkin30(a,aw,.75,.25,fino,M.base,true),piezaSkin30(b,aw+ex,.75+ex,.25+ex,fino,M.capa,true));
     p.children[0].position.y=ex/2; p.position.set(sx*(.25+aw/2),1.5,0); p.userData.s=sx; g.add(p); brazos.push(p);});
+  g.userData.partes={cabeza:cab,torso:cu,piernas,brazos,fino};
   return M;
 }
 

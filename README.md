@@ -233,6 +233,14 @@ Conéctate antes en **Multijugador** y que el anfitrión pulse **Bed Wars → ¡
 ## Calidad gráfica
 En **Opciones → Calidad gráfica**: Baja, Media, Alta y Ultra. Ajusta la resolución de dibujo (Ultra hace supermuestreo ×1,5), el antialiasing **MSAA 4×** (con los shaders) y el **filtrado anisótropo** (hasta 16×). Si el ordenador no tiene tarjeta gráfica (o es un móvil), empieza en Media. Las texturas de los bloques usan ahora **mipmaps** hechos a medida (conservan la transparencia y el tinte de hojas y césped), así que el terreno lejano se ve nítido y sin parpadeo ni muaré. Además, la cara de arriba de césped, tierra, arena, grava, piedra, nieve, netherrack y otros suelos se **gira al azar** en cada bloque, como en el original, para que no se note la repetición.
 
+## Combate
+
+- **Golpe crítico** como en el original: **salta y golpea mientras caes** con la barra de ataque cargada (espada, hacha o lo que lleves) para hacer **×1,5 de daño**. Ahora se nota: estrellas de crítico (azules si el arma está encantada), sonido, cabeceo de cámara y número de daño dorado con ✦. También funciona contra otros jugadores en Bed Wars en red.
+- **Indicador de ataque** con forma de espada bajo la mira: se va llenando mientras se recarga el golpe y se ilumina cuando está listo y tienes a alguien al alcance.
+- **Números de daño** flotantes sobre el enemigo (se pueden quitar en Opciones).
+- Los **bots de Bed Wars** también saltan para dar críticos.
+- **Se ve el equipo del enemigo:** armadura con textura (cuero del color del equipo, cobre, hierro, oro, diamante y netherite) y el **objeto que lleva en la mano**, en los bots de Bed Wars, en los demás jugadores en red, en los zombis con armadura y en tu propio personaje (F5).
+
 ## Mobs, animales y skins
 
 - **Texturas pixeladas cara a cara** en los mobs principales, como las hojas de textura del original: cerdos con hocico y orejas, vacas con manchas, ubre y morro (y la champiñaca roja), ovejas con lana esponjosa, gallinas con cresta y barbilla, zombis, momias y aldeanos zombi, esqueletos con costillas y calavera, el camuflaje y la cara del creeper, arañas peludas, endermans, aldeanos con uniceja y sombrero según su oficio, el gólem de hierro agrietado y con enredaderas, y lobos.
