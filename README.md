@@ -308,6 +308,20 @@ En **Opciones → Calidad gráfica**: Baja, Media, Alta y Ultra. Ajusta la resol
 - **Ahumador:** solo comida, el doble de rápido. **Alto horno:** solo minerales, metales y armaduras, el doble de rápido.
 - Arreglado: romper un ahumador o un alto horno ahora suelta lo que tenga dentro.
 
+## Salir de Bed Wars
+
+- **Guardar y salir al título**, **Abandonar Bed Wars** y **Salir al menú** (al acabar) cierran la partida del todo, sin recargar la página: se quitan los bots, tenderos, carteles, hologramas, el marcador y los avisos, se vacía el inventario de la partida y se vuelve al título con un mundo de fondo nuevo.
+- Un mundo normal ya no hereda las reglas de Bed Wars (límite de construcción, espectador…), y una partida nueva limpia lo que quedara de la anterior.
+- Al morir ya no salen dos letreros de «Reapareces en» a la vez.
+
+## Sonidos mejorados
+
+- **Mezcla nueva:** compresor para que nada sature, eco según el sitio (mucho en cuevas, algo en el Nether y el End, poco al aire libre) y sonido apagado **bajo el agua**.
+- **Sonido 3D:** lo que suena a tu izquierda se oye por la izquierda, y lo lejano suena más bajo y apagado.
+- **Voces nuevas** para las criaturas (zombis, cerdos, vacas, ovejas, gallinas, aldeanos, endermans, ghasts, blazes, esqueletos, arañas, slimes, lobos, gatos, zorros, golems…), con quejidos al herirlas y sonidos al morir que cambian según su tamaño.
+- Golpes, **críticos**, daño, explosiones y truenos más contundentes; al romper bloques se oyen caer los trocitos. Cada sonido varía un poco de tono para no repetirse.
+- La música de piano tiene su propio canal con eco suave.
+
 ## Cómo jugar con amigos (multijugador fácil)
 
 Solo hace falta internet y un código de 5 letras. No necesitas instalar nada ni tener servidor.
