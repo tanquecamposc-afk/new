@@ -229,6 +229,8 @@ Botón **Bed Wars** en el menú principal (o `/bedwars [1-4]` en el chat).
 
 - **Recursos compartidos:** si un compañero (bot o jugador en red) coge hierro u oro del generador de tu equipo y tú estás en la base, a ti también te llega lo mismo, como en Hypixel.
 
+- **Salir de una partida** («Guardar y salir al título», «Abandonar Bed Wars» o «Salir al menú» al terminar) la cierra del todo, sin recargar la página: se quitan bots, carteles, hologramas y el marcador, se acaban las reglas de Bed Wars y el modo espectador, y vuelves al título. Antes, al salir con «Guardar y salir al título» la partida seguía activa por debajo y estropeaba los mundos normales.
+
 ### Bed Wars en red
 Conéctate antes en **Multijugador** y que el anfitrión pulse **Bed Wars → ¡Jugar!**: cada jugador conectado ocupa el sitio de un bot en un equipo (en Solos, un equipo cada uno; en Dúos, Tríos o Cuartetos se van llenando). El anfitrión simula los bots, lleva el reloj, las camas, las eliminaciones y decide quién gana; se comparten los bloques, los golpes entre jugadores y a los bots, las camas rotas, las muertes y las explosiones (quien la provoca rompe los bloques y los demás ven el efecto y reciben el daño). Quien entra con la partida empezada la ve como espectador.
 
