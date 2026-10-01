@@ -35,3 +35,23 @@ window.addEventListener('keyup',e=>{
   if(!fUsada){if(typeof intercambiarManos==='function'){intercambiarManos();fCambio=true;}fSoltadaT=performance.now();}
 },true);
 window.addEventListener('blur',()=>{fAbajo=false;});
+
+/* ---------- Correr con Ctrl ----------
+   Ctrl + W cierra la pestaña en Chrome. Para que no pase:
+   - Mientras juegas se bloquean los atajos del navegador con Ctrl (Ctrl+S, Ctrl+D…).
+   - En pantalla completa se bloquea el teclado (Keyboard Lock) y Ctrl+W ya no cierra.
+   - Si aun así el navegador intenta cerrar la pestaña, pregunta antes de salir. */
+window.addEventListener('keydown',e=>{
+  if(estado!=='jugando')return;
+  if(e.ctrlKey&&!/^F\d+$/.test(e.code))e.preventDefault();
+},true);
+function bloquearTeclado(){
+  try{if(document.fullscreenElement&&navigator.keyboard&&navigator.keyboard.lock)
+    navigator.keyboard.lock(['KeyW','KeyA','KeyS','KeyD','KeyQ','KeyE','KeyR','KeyT','KeyN','Space']).catch(()=>{});}catch(e){}
+}
+document.addEventListener('fullscreenchange',()=>{if(document.fullscreenElement)bloquearTeclado();else{try{navigator.keyboard&&navigator.keyboard.unlock&&navigator.keyboard.unlock();}catch(e){}}});
+window.addEventListener('beforeunload',e=>{
+  if(estado!=='jugando'&&estado!=='ui')return;
+  try{if(typeof guardarPartida==='function')guardarPartida();}catch(err){}
+  e.preventDefault(); e.returnValue='';
+});

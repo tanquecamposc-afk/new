@@ -75,7 +75,7 @@ function fisicaJugador(dt,entrada){
   j.agachado=shift&&!j.vuela&&!j.enAgua;
   const puedeCorrer=entrada&&teclas.KeyW&&!j.agachado&&!(sup&&hambre<=6);
   if(!puedeCorrer)j.corriendo=false;
-  if(puedeCorrer&&teclas.KeyR)j.corriendo=true;
+  if(puedeCorrer&&(teclas.KeyR||teclas.ControlLeft||teclas.ControlRight))j.corriendo=true;
   let rapidez=j.vuela?(j.corriendo?21:11):j.corriendo?5.6:4.3;
   if(j.agachado)rapidez=1.3*(1+.45*nivelEnc(inv[38],'sigilo'));
   if(efectos.rapidez)rapidez*=1+.2*(efectos.rapidez.n||1); if(efectos.lentitud)rapidez*=.7;

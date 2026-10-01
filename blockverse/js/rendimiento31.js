@@ -8,8 +8,9 @@
      dibujan (ni en la vista ni en el reflejo del agua).
    - Los mobs y entidades más allá de la niebla no se dibujan.
    - Reflejo del agua a un tercio de resolución.
-   - Resolución dinámica: si los FPS bajan de 50 se reduce un
-     poco la resolución de dibujo, y vuelve a subir cuando hay
+   - Resolución dinámica: si los FPS bajan de 48 se reduce un
+     poco la resolución de la imagen interna (sin tocar el
+     lienzo, así no parpadea), y vuelve a subir cuando hay
      margen. Se puede desactivar en Opciones.
    - Contador de FPS opcional en pantalla.
    ========================================================= */
@@ -118,14 +119,18 @@ pasoReflejo=function(){
 /* ---------- Resolución dinámica ---------- */
 if(OPC.resDinamica===undefined)OPC.resDinamica=true;
 if(OPC.cullNiebla===undefined)OPC.cullNiebla=true;
-let escalaDin=1, _fpsVent=[], _resT=0, _ultFrame=performance.now(), fpsMedio=60;
-const _aplicarCalidad31=aplicarCalidad;
-aplicarCalidad=function(){
-  _aplicarCalidad31();
-  if(!OPC.resDinamica)escalaDin=1;
-  if(escalaDin!==1){const C=CALIDADES[OPC.calidad]||CALIDADES[2];
-    renderer.setPixelRatio(Math.min(3,Math.max(.4,(devicePixelRatio||1)*C.escala*escalaDin)));
-    renderer.setSize(innerWidth,innerHeight);}
+let escalaDin=1, _fpsVent=[], _resT=0, _ultFrame=performance.now(), fpsMedio=60, _bajos=0, _altos=0;
+// La escala solo cambia el tamaño de la imagen interna de los shaders: el lienzo no se
+// redimensiona nunca, así que no hay fotogramas en negro al cambiarla
+PP.ajustar=function(){
+  renderer.getDrawingBufferSize(PP.tam);
+  const k=OPC.resDinamica?escalaDin:1;
+  const w=Math.max(1,Math.round(PP.tam.x*k)), h=Math.max(1,Math.round(PP.tam.y*k));
+  if(PP.rtEscena.width!==w||PP.rtEscena.height!==h){
+    PP.rtEscena.setSize(w,h);
+    const w4=Math.max(1,Math.floor(w/4)),h4=Math.max(1,Math.floor(h/4));
+    for(const r of [PP.rtBri,PP.rtA,PP.rtB,PP.rtRay])r.setSize(w4,h4);
+  }
 };
 function ajustarResolucion(){
   const ahora=performance.now(), dt=ahora-_ultFrame; _ultFrame=ahora;
@@ -135,11 +140,11 @@ function ajustarResolucion(){
   if(!_fpsVent.length)return;
   const orden=[..._fpsVent].sort((a,b)=>a-b), med=orden[Math.floor(orden.length/2)];
   fpsMedio=1000/med; _fpsVent.length=0;
-  if(!OPC.resDinamica||estado!=='jugando'){if(escalaDin!==1&&!OPC.resDinamica){escalaDin=1;aplicarCalidad();}return;}
-  let nueva=escalaDin;
-  if(fpsMedio<50&&escalaDin>.6)nueva=Math.max(.6,escalaDin-(fpsMedio<30?.15:.1));
-  else if(fpsMedio>57&&escalaDin<1)nueva=Math.min(1,escalaDin+.05);
-  if(nueva!==escalaDin){escalaDin=+nueva.toFixed(2);aplicarCalidad();}
+  if(!OPC.resDinamica||!OPC.shaders||estado!=='jugando'){_bajos=_altos=0;if(!OPC.resDinamica)escalaDin=1;return;}
+  // Solo cambia si la tendencia se mantiene (evita subir y bajar sin parar)
+  if(fpsMedio<48){_bajos++;_altos=0;}else if(fpsMedio>57){_altos++;_bajos=0;}else{_bajos=_altos=0;}
+  if(_bajos>=2&&escalaDin>.6){escalaDin=+Math.max(.6,escalaDin-(fpsMedio<30?.15:.1)).toFixed(2);_bajos=0;}
+  else if(_altos>=3&&escalaDin<1){escalaDin=+Math.min(1,escalaDin+.05).toFixed(2);_altos=0;}
 }
 
 /* ---------- Contador de FPS ---------- */

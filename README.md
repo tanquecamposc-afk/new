@@ -164,7 +164,7 @@ Abre `blockverse/index.html` en un navegador moderno (necesita internet para car
 
 | Tecla / acción | Efecto |
 |---|---|
-| `WASD` | Moverse (doble toque de `W` o mantener `R`: correr) |
+| `WASD` | Moverse (doble toque de `W`, o mantener `R` o `Ctrl`: correr) |
 | `Espacio` | Saltar y nadar (creativo: doble toque para volar) |
 | `Shift` | Agacharse (no te caes de los bordes) / bajar volando / bajarse de un vehículo |
 | Clic izquierdo (mantener) | Minar / atacar |
@@ -236,7 +236,7 @@ En **Opciones → Calidad gráfica**: Baja, Media, Alta y Ultra. Ajusta la resol
 - **Sombras en caché:** el mapa de sombras del sol (2048×2048) ya no se redibuja en cada fotograma, solo cuando cambia el terreno, el sol avanza un poco o te alejas un par de bloques. Era lo que más costaba; con la cámara quieta el juego va unas 2,5 veces más rápido.
 - **No se dibuja lo que tapa la niebla:** los chunks, criaturas y entidades que quedan del todo dentro de la niebla se saltan (en la vista y en el reflejo del agua).
 - **Reflejo del agua** a un tercio de la resolución.
-- **Resolución dinámica:** si los FPS bajan de 50 se reduce la resolución de dibujo (hasta el 60 %) y se recupera cuando hay margen.
+- **Resolución dinámica:** si los FPS bajan de 48 de forma sostenida se reduce la resolución de la imagen interna (hasta el 60 %) y se recupera cuando hay margen. El lienzo no se redimensiona, así que la pantalla ya no parpadea en negro.
 - En **Opciones**: «Resolución dinámica», «Mostrar FPS» (contador arriba a la derecha) y «No dibujar tras la niebla». Para aún más FPS: Calidad gráfica Baja, Gráficos Rápidos o menos distancia de renderizado.
 
 ## Animaciones de espadas y herramientas
@@ -254,6 +254,7 @@ En **Opciones → Calidad gráfica**: Baja, Media, Alta y Ultra. Ajusta la resol
 
 - **F + 5** = F5 (tercera persona) y **F + 3** = F3 (información de depuración). Puedes mantener F y pulsar el número, o pulsar F y justo después el número.
 - La **F sola** sigue cambiando el objeto de mano (ahora al soltarla).
+- **Correr con Ctrl** (como en el original). Mientras juegas, los atajos del navegador con Ctrl quedan bloqueados; en pantalla completa también Ctrl+W, y si el navegador intenta cerrar la pestaña, pregunta antes.
 
 ## Multijugador (base)
 
