@@ -218,6 +218,15 @@ Botón **Bed Wars** en el menú principal (o `/bedwars [1-4]` en el chat).
 - **Chat de colores** (CAMA DESTRUIDA, ¡ELIMINACIÓN FINAL!, EQUIPO ELIMINADO y nombres con el color del equipo), «+1 baja» / «¡BAJA FINAL!» con sonido, título grande al morir con la cuenta atrás y **marcador como el original** (fecha, siguiente evento, equipos y www.blockverse.net).
 - **Niveles con estrellas [N✫]** y estadísticas guardadas: victorias, partidas, bajas, bajas finales, camas, FKDR y racha. Al acabar recibes **XP de Bed Wars** (con barra de progreso y subida de nivel) y, si ganas, **fuegos artificiales**.
 
+### Tienda de Bed Wars (al estilo de Hypixel)
+
+- **Cuadrícula de objetos** con iconos, **pestañas con iconos** y tu dinero (hierro, oro, diamantes y esmeraldas) siempre a la vista.
+- Cada objeto muestra su **precio con el icono de la moneda**: en rojo si no te llega, con ✔ si ya lo tienes, y el nivel actual del pico y del hacha. Al pasar el ratón: descripción, coste y si puedes comprarlo, con colores.
+- **Clic:** comprar · **Mayús+clic:** comprar varias veces (hasta 64, por ejemplo 64 de lana de golpe) · **Clic derecho:** añadir o quitar de **Compra rápida** (se guarda).
+- Destello verde al comprar y rojo (con temblor) si no te alcanza.
+- Nuevo: **Tijeras permanentes** (20 hierro), que cortan la lana al instante y no se pierden al morir.
+- **Mejoras del equipo** en cuadrícula con sus niveles (puntos verdes) y la **cola de trampas** con sus iconos.
+
 ### Bed Wars en red
 Conéctate antes en **Multijugador** y que el anfitrión pulse **Bed Wars → ¡Jugar!**: cada jugador conectado ocupa el sitio de un bot en un equipo (en Solos, un equipo cada uno; en Dúos, Tríos o Cuartetos se van llenando). El anfitrión simula los bots, lleva el reloj, las camas, las eliminaciones y decide quién gana; se comparten los bloques, los golpes entre jugadores y a los bots, las camas rotas, las muertes y las explosiones (quien la provoca rompe los bloques y los demás ven el efecto y reciben el daño). Quien entra con la partida empezada la ve como espectador.
 
