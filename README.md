@@ -239,6 +239,17 @@ En **Opciones → Calidad gráfica**: Baja, Media, Alta y Ultra. Ajusta la resol
 - **Resolución dinámica:** si los FPS bajan de 50 se reduce la resolución de dibujo (hasta el 60 %) y se recupera cuando hay margen.
 - En **Opciones**: «Resolución dinámica», «Mostrar FPS» (contador arriba a la derecha) y «No dibujar tras la niebla». Para aún más FPS: Calidad gráfica Baja, Gráficos Rápidos o menos distancia de renderizado.
 
+## Animaciones de espadas y herramientas
+
+- **Cada herramienta tiene su golpe**, con preparación, impacto y recuperación suaves:
+  - **Espada:** tajos que alternan de derecha a izquierda y de revés si encadenas golpes, con una **estela** que sigue al filo (ancha en el ataque de barrido y dorada en los críticos).
+  - **Hacha:** hachazo de arriba abajo con estela vertical. **Maza:** mazazo cargado.
+  - **Pico y azada:** pican. **Pala:** palea. **Lanza y tridente:** estocada. **Mano vacía:** puñetazo. **Usar o colocar:** un gesto corto.
+- Al **picar un bloque** el golpe se repite en bucle sin saltos.
+- La **cámara cabecea** un poco al impactar: más con el hacha, la maza y los críticos.
+- Si atacas antes de que se recargue el golpe, el movimiento es más corto y flojo.
+- En **tercera persona** el brazo hace el mismo golpe y el torso gira con él.
+
 ## Multijugador (base)
 
 Botón **Multijugador** en el menú. El anfitrión comparte su mundo (semilla y cambios) y se sincronizan los jugadores (se ven con su nombre y se animan al andar), los bloques que se ponen y rompen y el chat. `/nombre <tu nombre>` cambia tu nombre y `/jugadores` dice quién está.
