@@ -411,6 +411,8 @@ Object.assign(DIBUJOS_OBJETOS,{
   649:({Q})=>{const T=tonosMat([214,150,70]),R=tonosMat([240,150,40]);solidoT(Q,(x,y)=>y>=5&&y<=12&&x>=2+Math.max(0,8-y)&&x<=13,T);for(let x=4;x<=12;x++)Q(x,6,'l',R);},
   676:({Q})=>{const Pd=tonosMat([240,210,80]),F=tonosMat([240,220,120]);for(let i=0;i<9;i++)Q(3+i,12-i,i%2?'l':'m',PALO_T);Q(12,3,'m',Pd);Q(13,2,'l',Pd);Q(14,1,'w',Pd);Q(12,2,'l',Pd);Q(13,3,'d',Pd);Q(2,13,'m',F);Q(1,14,'l',F);Q(1,12,'w',F);Q(2,12,'l',F);Q(3,14,'d',F);},
   523:({Q})=>{const T=tonosMat([200,60,60]),P2=tonosMat([240,240,236]);solidoT(Q,(x,y)=>{const [a,b]=ejeMango(x,y,9,7);return a>-3&&a<5&&Math.abs(b)<=1.8;},T);Q(12,3,'l',P2);Q(13,2,'w',P2);for(let i=0;i<5;i++)Q(2+i,13-i,'m',PALO_T);},
+  714:({Q})=>{esferaT(Q,[230,90,30],8,8,5);const N=tonosMat([60,40,30]);for(const [x,y] of [[6,6],[9,9],[10,6],[6,10]])Q(x,y,'m',N);Q(7,5,'w',tonosMat([255,220,120]));},
+  715:({Q})=>{const T=tonosMat([236,236,236]),L=tonosMat([210,60,60]);solidoT(Q,enElipse(8,8.8,4.3,5.6),T);for(const [x,y] of [[6,8],[7,9],[8,8],[9,9],[10,8]])Q(x,y,'m',L);},
   546:({Q})=>{const T=tonosMat([100,46,120]),Pg=tonosMat([240,236,220]),G=tonosMat([230,190,250]);solidoT(Q,(x,y)=>x>=3&&x<=12&&y>=2&&y<=13,T);for(let y=3;y<=13;y++){Q(12,y,'l',Pg);Q(13,y,'m',Pg);}for(let x=4;x<=12;x++)Q(x,13,'l',Pg);for(const [x,y] of [[6,5],[9,7],[5,9],[8,10],[10,4]])Q(x,y,'w',G);},
 });
 function dibujarItem(id){

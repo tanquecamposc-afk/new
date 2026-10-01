@@ -533,7 +533,7 @@ item(659,'catalejo','Catalejo',{max:1}); item(660,'panal','Panal'); item(661,'fr
 item(662,'caparazonNautilo','Caparazón de nautilo'); item(663,'corazonMar','Corazón del mar'); item(664,'escamaTortuga','Escama de tortuga');
 item(665,'membranaPhantom','Membrana de phantom'); item(666,'bolaNieve','Bola de nieve',{max:16}); item(667,'tintaBrillante','Bolsa de tinta brillante');
 ['13','cat','blocks','chirp','far','mall','mellohi','stal'].forEach((d,k)=>item(668+k,'disco_'+d,'Disco de música ('+d+')',{max:1,disco:k}));
-item(679,'semillasRemolacha','Semillas de remolacha'); item(712,'semillasSandia','Semillas de sandía'); item(713,'semillasCalabaza','Semillas de calabaza');
+item(679,'semillasRemolacha','Semillas de remolacha'); item(714,'bolaFuegoBW','Bola de fuego',{max:64}); item(715,'huevoPuente','Huevo puente',{max:16}); item(712,'semillasSandia','Semillas de sandía'); item(713,'semillasCalabaza','Semillas de calabaza');
 item(676,'flechaEspectral','Flecha espectral'); item(677,'huevo','Huevo',{max:16});
 const HUEVOS2={lobo:[0xd7d3d3,0xceaf96,'lobo'],gato:[0xefc88e,0x957256,'gato'],zorro:[0xd5b69f,0xcc6920,'zorro'],conejo:[0x995f40,0x734831,'conejo'],
   calamar:[0x223b4d,0x708899,'calamar'],murcielago:[0x4c3e30,0x0f0f0f,'murciélago'],cabra:[0xa5947c,0x55493e,'cabra'],osoPolar:[0xf2f2f2,0x959590,'oso polar'],

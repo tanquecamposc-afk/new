@@ -192,3 +192,25 @@ Abre `blockverse/index.html` en un navegador moderno (necesita internet para car
 ## Qué no incluye
 
 Multijugador (necesitaría un servidor), caballos, sniffers, adornos de armadura, repetidores y comparadores de redstone, ruinas oceánicas y delfines. A partir de 2026 Mojang numera las versiones por año (26.1…); aquí se incluye hasta la 1.21.9.
+
+## Bed Wars
+
+Botón **Bed Wars** en el menú principal (o `/bedwars [1-4]` en el chat).
+
+- **Mapa:** cuatro equipos (Rojo, Azul, Verde y Amarillo) en islas flotantes con su cama, su generador, la TIENDA y las MEJORAS; cuatro islas de diamante y un centro con dos generadores de esmeraldas. Debajo, el vacío.
+- **Modos:** Solos, Dúos, Tríos y Cuartetos (tus compañeros y los rivales los controlan bots) y tres dificultades de bots.
+- **Generadores:** hierro cada ~1 s (hasta 48) y oro cada 6 s (hasta 12) en cada isla; diamantes cada 30/23/15 s y esmeraldas cada 65/50/35 s según la fase, con un cartel que muestra el nivel y la cuenta atrás.
+- **Tienda de objetos** (con el precio en hierro, oro o esmeraldas como en el original): lana de tu color, terracota, vidrio a prueba de explosiones, piedra del End, escaleras, tablones, obsidiana; espadas de piedra, hierro y diamante y el palo de empuje; armadura permanente de cota, hierro y diamante; picos y hachas que se mejoran por niveles; flechas y arcos (normal, Poder I y Poder I + Impacto I); pociones de Rapidez II, Supersalto V e Invisibilidad; manzana dorada, bola de fuego, dinamita que se enciende sola, perla de ender, cubo de agua, huevo puente (va dejando un puente de lana) y esponjas.
+- **Mejoras del equipo** (con diamantes): Espadas afiladas, Armadura reforzada I-IV, Minero frenético I-II, Forja I-IV (la III da esmeraldas en tu isla) y Fuente de curación; y una cola de hasta 3 **trampas** (¡Es una trampa!, Contraofensiva, Alarma y Fatiga minera) que saltan cuando un enemigo pisa tu isla.
+- **Reglas:** solo se pueden romper los bloques que ponen los jugadores; tu propia cama no se puede romper; las explosiones no rompen el mapa ni el vidrio ni la obsidiana. Mientras tu cama siga en pie reapareces a los 5 s (conservas la armadura comprada, el pico y el hacha bajan un nivel); sin cama, la muerte es **definitiva** y pasas a espectador. Si te matan, tus recursos son para quien te mató.
+- **Fases:** Diamante II (5:00), Esmeralda II (10:00), Diamante III (15:00), Esmeralda III (20:00), Camas destruidas (25:00) y Fin de la partida (30:00).
+- **Bots:** recogen recursos, compran lana, espadas, armadura y mejoras, patrullan su cama, tienden puentes de lana hasta otras islas, rompen las defensas y la cama enemiga, y pelean contigo y entre ellos.
+- **Marcador** a la derecha con el siguiente evento, el estado de cada equipo (✔ cama en pie, número de vivos o ✘) y tus bajas, bajas finales y camas rotas; pantalla de victoria o derrota con estadísticas y «Jugar otra vez».
+
+## Multijugador (base)
+
+Botón **Multijugador** en el menú. El anfitrión comparte su mundo (semilla y cambios) y se sincronizan los jugadores (se ven con su nombre y se animan al andar), los bloques que se ponen y rompen y el chat. `/nombre <tu nombre>` cambia tu nombre y `/jugadores` dice quién está.
+
+- **En este ordenador:** «Crear sala» da un código; en otra pestaña, «Unirse» con ese código.
+- **Por internet sin servidor (WebRTC):** el anfitrión crea una invitación y la envía; el invitado la pega, pulsa «Responder» y devuelve su código; el anfitrión lo pega y pulsa «Conectar».
+- **Con servidor:** `servidor/servidor-multijugador.js` es un servidor de retransmisión por salas (Node + `ws`: `npm install ws && node servidor-multijugador.js`). En el juego se escribe su dirección (`wss://…`) y el nombre de la sala.

@@ -78,7 +78,7 @@ function fisicaJugador(dt,entrada){
   if(puedeCorrer&&teclas.KeyR)j.corriendo=true;
   let rapidez=j.vuela?(j.corriendo?21:11):j.corriendo?5.6:4.3;
   if(j.agachado)rapidez=1.3*(1+.45*nivelEnc(inv[38],'sigilo'));
-  if(efectos.rapidez)rapidez*=1.2; if(efectos.lentitud)rapidez*=.7;
+  if(efectos.rapidez)rapidez*=1+.2*(efectos.rapidez.n||1); if(efectos.lentitud)rapidez*=.7;
   if(comiendo>=0||arcoCarga>=0||(typeof ballestaCarga!=='undefined'&&(ballestaCarga>=0||tridenteCarga>=0))||(typeof escudoArriba!=='undefined'&&escudoArriba))rapidez*=.35;
   if(j.enAgua&&!j.vuela)rapidez*=.5+.5*nivelEnc(inv[39],'agilidadAcuatica')/3; if(j.enLava)rapidez*=.3;
   {const bajo=getBloque(Math.floor(j.pos.x),Math.floor(j.pos.y-.2),Math.floor(j.pos.z)),va=nivelEnc(inv[39],'velocidadAlmas');
@@ -101,7 +101,7 @@ function fisicaJugador(dt,entrada){
     j.vel.y*=Math.pow(j.enLava?.2:.5,dt);
   }else{
     j.vel.y-=32*dt; if(j.vel.y<-78)j.vel.y=-78;
-    if(entrada&&teclas.Space&&j.suelo){j.vel.y=8.9;if(sup)agotamiento+=j.corriendo?.2:.05;
+    if(entrada&&teclas.Space&&j.suelo){j.vel.y=8.9+(efectos.salto?(efectos.salto.n||1)*1.3:0);if(sup)agotamiento+=j.corriendo?.2:.05;
       if(j.corriendo){j.vel.x+=Math.sin(j.yaw)*-1.8;j.vel.z+=Math.cos(j.yaw)*-1.8;}}
   }
   if(efectos.levitacion&&!j.vuela&&!j.montura)j.vel.y=Math.max(j.vel.y,1.8);
@@ -330,6 +330,7 @@ function tiempoRomper(b,pila){
   const puede=puedeCosechar(b,pila);
   if(jugador.ojosAgua&&!nivelEnc(inv[36],'afinidadAcuatica'))vel/=5;
   if(efectos.fatigaMinera)vel/=10;
+  if(efectos.prisa)vel*=1+.2*(efectos.prisa.n||1);
   if(!jugador.suelo&&!jugador.vuela&&!jugador.enAgua)vel/=5;
   const porTick=vel/def.dureza/(puede?30:100);
   if(porTick>1)return 0;
