@@ -224,6 +224,13 @@ Conéctate antes en **Multijugador** y que el anfitrión pulse **Bed Wars → ¡
 ## Calidad gráfica
 En **Opciones → Calidad gráfica**: Baja, Media, Alta y Ultra. Ajusta la resolución de dibujo (Ultra hace supermuestreo ×1,5), el antialiasing **MSAA 4×** (con los shaders) y el **filtrado anisótropo** (hasta 16×). Si el ordenador no tiene tarjeta gráfica (o es un móvil), empieza en Media. Las texturas de los bloques usan ahora **mipmaps** hechos a medida (conservan la transparencia y el tinte de hojas y césped), así que el terreno lejano se ve nítido y sin parpadeo ni muaré. Además, la cara de arriba de césped, tierra, arena, grava, piedra, nieve, netherrack y otros suelos se **gira al azar** en cada bloque, como en el original, para que no se note la repetición.
 
+## Mobs, animales y skins
+
+- **Texturas pixeladas cara a cara** en los mobs principales, como las hojas de textura del original: cerdos con hocico y orejas, vacas con manchas, ubre y morro (y la champiñaca roja), ovejas con lana esponjosa, gallinas con cresta y barbilla, zombis, momias y aldeanos zombi, esqueletos con costillas y calavera, el camuflaje y la cara del creeper, arañas peludas, endermans, aldeanos con uniceja y sombrero según su oficio, el gólem de hierro agrietado y con enredaderas, y lobos.
+- **Ojos que brillan** en la oscuridad (arañas y endermans), **parpadeo**, colas que se mueven, cabeceo al andar, gallinas que adelantan la cabeza, zombis que tambalean los brazos y **crías con la cabeza grande**. Los ojos, hocicos y sombreros de todos los mobs giran ahora junto con la cabeza.
+- **Ovejas de colores naturales** (blanca, gris, negra, marrón y rosa muy rara). Se **tiñen** con clic derecho y un tinte, y se **esquilan** con las **tijeras** nuevas (2 lingotes de hierro en diagonal): sueltan 1–3 de lana de su color y les vuelve a crecer al comer hierba.
+- **Skins del jugador** con el formato 64×64 del original (capa base y capa exterior): Steve, Alex (brazos finos), Exploradora, Caballero, Ninja, Sudadera y Astronauta, o **sube tu propio PNG** (64×64 o el antiguo 64×32) en **Skins…** del menú o de la pausa. Se ve en tercera persona (F5), en el brazo en primera persona, en el muñeco del inventario y la ven los demás jugadores en el multijugador. Los bots de Bed Wars llevan una skin del color de su equipo.
+
 ## Multijugador (base)
 
 Botón **Multijugador** en el menú. El anfitrión comparte su mundo (semilla y cambios) y se sincronizan los jugadores (se ven con su nombre y se animan al andar), los bloques que se ponen y rompen y el chat. `/nombre <tu nombre>` cambia tu nombre y `/jugadores` dice quién está.

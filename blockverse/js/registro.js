@@ -540,7 +540,7 @@ item(662,'caparazonNautilo','Caparazón de nautilo'); item(663,'corazonMar','Cor
 item(665,'membranaPhantom','Membrana de phantom'); item(666,'bolaNieve','Bola de nieve',{max:16}); item(667,'tintaBrillante','Bolsa de tinta brillante');
 ['13','cat','blocks','chirp','far','mall','mellohi','stal'].forEach((d,k)=>item(668+k,'disco_'+d,'Disco de música ('+d+')',{max:1,disco:k}));
 item(679,'semillasRemolacha','Semillas de remolacha'); item(714,'bolaFuegoBW','Bola de fuego',{max:64}); item(715,'huevoPuente','Huevo puente',{max:16});
-item(716,'torreCompacta','Torre compacta',{max:16}); item(717,'defensorSuenos','Defensor de los sueños',{max:4}); item(718,'lecheMagica','Leche mágica',{max:16}); item(719,'chinche','Chinche',{max:16}); item(712,'semillasSandia','Semillas de sandía'); item(713,'semillasCalabaza','Semillas de calabaza');
+item(716,'torreCompacta','Torre compacta',{max:16}); item(717,'defensorSuenos','Defensor de los sueños',{max:4}); item(718,'lecheMagica','Leche mágica',{max:16}); item(719,'chinche','Chinche',{max:16}); item(720,'tijeras','Tijeras',{max:1,dur:238}); item(712,'semillasSandia','Semillas de sandía'); item(713,'semillasCalabaza','Semillas de calabaza');
 item(676,'flechaEspectral','Flecha espectral'); item(677,'huevo','Huevo',{max:16});
 const HUEVOS2={lobo:[0xd7d3d3,0xceaf96,'lobo'],gato:[0xefc88e,0x957256,'gato'],zorro:[0xd5b69f,0xcc6920,'zorro'],conejo:[0x995f40,0x734831,'conejo'],
   calamar:[0x223b4d,0x708899,'calamar'],murcielago:[0x4c3e30,0x0f0f0f,'murciélago'],cabra:[0xa5947c,0x55493e,'cabra'],osoPolar:[0xf2f2f2,0x959590,'oso polar'],
@@ -708,6 +708,7 @@ receta(['.SC','S.C','.SC'],{S:I.palo,C:I.cuerda},I.arco);
 receta(['P','S','F'],{P:I.pedernal,S:I.palo,F:I.pluma},I.flecha,4);
 receta(['I.I','.I.'],{I:I.lingoteHierro},I.cubo);
 recetaSin([I.lingoteHierro,I.pedernal],I.mechero);
+receta(['.H','H.'],{H:I.lingoteHierro},720);
 receta(['TTT'],{T:I.trigo},I.pan);
 receta(['TTT','TTT','TTT'],{T:I.trigo},B.heno);
 recetaSin([B.heno],I.trigo,9);
