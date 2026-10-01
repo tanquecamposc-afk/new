@@ -421,6 +421,12 @@ CAJAS_COFRE_DOBLE.forEach((c,d)=>{const tc=CARAS_COFRE_DOBLE[d].map(n=>T[n]);
   bloque(1638+d,'cofreDoble'+d,'Cofre',tx('chestTop','chestTop','chestSide'),{forma:'cajas',cajas:[c],texCaras:tc,opaco:false,dureza:2.5,herr:'hacha',inter:'cofre',suelta:18});
   bloque(1642+d,'cofreDobleAbierto'+d,'Cofre',tx('chestTop','chestTop','chestSide'),{forma:'cajas',cajas:[[c[0],0,c[2],c[3],.625,c[5]]],texCaras:tc,opaco:false,dureza:2.5,herr:'hacha',inter:'cofre',suelta:18});
 });
+// Camas de Bed Wars (cabecera y pies) de los 8 colores de equipo
+const COLORES_CAMA_BW=['rojo','azul','lima','amarillo','cian','blanco','rosa','gris'];
+COLORES_CAMA_BW.forEach((c,i)=>{
+  bloque(1646+i*2,'camaBW_'+c+'_cab','Cama',tx('camaCab_'+c,'planks','camaLado_'+c),{forma:'losa',dureza:.2,opaco:false,inflamable:true,camaBW:c});
+  bloque(1647+i*2,'camaBW_'+c+'_pie','Cama',tx('camaPie_'+c,'planks','camaLado_'+c),{forma:'losa',dureza:.2,opaco:false,inflamable:true,camaBW:c});
+});
 const NB=BLOQUES.length;
 const SOLIDO=new Uint8Array(NB), OPACO=new Uint8Array(NB), TRANS=new Uint8Array(NB), LUZB=new Uint8Array(NB),
       OPAC_LUZ=new Uint8Array(NB), OCLUYE=new Uint8Array(NB), FORMA=new Uint8Array(NB), REEMPL=new Uint8Array(NB);
@@ -448,7 +454,7 @@ const nivelLiquido=id=>BLOQUES[id].nivelL;
    Registro de objetos
    ========================================================= */
 const ITEMS=[], I={};
-const esVariante=i=>(i>=130&&i<=132)||(i>=134&&i<=136)||(i>=138&&i<=140)||(i>=146&&i<=148)||(i>=149&&i<=168)||(i>=1192&&i<=1212)||i===1283||i===1216||i===1218||i===1220||i===1223||(i>=1224&&i<=1259&&i!==1227&&i!==1245)||(i>=1261&&i<=1269)||(i>=1271&&i<=1273)||i===1287||i===1317||i===1319||i===1328||i===1330||(i>=1424&&i<=1447&&(i-1424)%4!==0)||i===1461||i===1462||(i>=1619&&i<=1645);
+const esVariante=i=>(i>=130&&i<=132)||(i>=134&&i<=136)||(i>=138&&i<=140)||(i>=146&&i<=148)||(i>=149&&i<=168)||(i>=1192&&i<=1212)||i===1283||i===1216||i===1218||i===1220||i===1223||(i>=1224&&i<=1259&&i!==1227&&i!==1245)||(i>=1261&&i<=1269)||(i>=1271&&i<=1273)||i===1287||i===1317||i===1319||i===1328||i===1330||(i>=1424&&i<=1447&&(i-1424)%4!==0)||i===1461||i===1462||(i>=1619&&i<=1661);
 BLOQUES.forEach((b,i)=>{if(b&&!b.liquido&&b.forma!=='portal'&&i!==86&&!(i>=41&&i<=48)&&!esVariante(i))ITEMS[i]={nombre:b.nombre,bloque:true,max:64,clave:b.clave};});
 function item(id,clave,nombre,props){ITEMS[id]=Object.assign({nombre,max:64,clave},props);I[clave]=id;}
 item(200,'palo','Palo'); item(201,'carbon','Carbón'); item(202,'hierroBruto','Hierro en bruto'); item(203,'lingoteHierro','Lingote de hierro');
@@ -533,7 +539,8 @@ item(659,'catalejo','Catalejo',{max:1}); item(660,'panal','Panal'); item(661,'fr
 item(662,'caparazonNautilo','Caparazón de nautilo'); item(663,'corazonMar','Corazón del mar'); item(664,'escamaTortuga','Escama de tortuga');
 item(665,'membranaPhantom','Membrana de phantom'); item(666,'bolaNieve','Bola de nieve',{max:16}); item(667,'tintaBrillante','Bolsa de tinta brillante');
 ['13','cat','blocks','chirp','far','mall','mellohi','stal'].forEach((d,k)=>item(668+k,'disco_'+d,'Disco de música ('+d+')',{max:1,disco:k}));
-item(679,'semillasRemolacha','Semillas de remolacha'); item(714,'bolaFuegoBW','Bola de fuego',{max:64}); item(715,'huevoPuente','Huevo puente',{max:16}); item(712,'semillasSandia','Semillas de sandía'); item(713,'semillasCalabaza','Semillas de calabaza');
+item(679,'semillasRemolacha','Semillas de remolacha'); item(714,'bolaFuegoBW','Bola de fuego',{max:64}); item(715,'huevoPuente','Huevo puente',{max:16});
+item(716,'torreCompacta','Torre compacta',{max:16}); item(717,'defensorSuenos','Defensor de los sueños',{max:4}); item(718,'lecheMagica','Leche mágica',{max:16}); item(719,'chinche','Chinche',{max:16}); item(712,'semillasSandia','Semillas de sandía'); item(713,'semillasCalabaza','Semillas de calabaza');
 item(676,'flechaEspectral','Flecha espectral'); item(677,'huevo','Huevo',{max:16});
 const HUEVOS2={lobo:[0xd7d3d3,0xceaf96,'lobo'],gato:[0xefc88e,0x957256,'gato'],zorro:[0xd5b69f,0xcc6920,'zorro'],conejo:[0x995f40,0x734831,'conejo'],
   calamar:[0x223b4d,0x708899,'calamar'],murcielago:[0x4c3e30,0x0f0f0f,'murciélago'],cabra:[0xa5947c,0x55493e,'cabra'],osoPolar:[0xf2f2f2,0x959590,'oso polar'],

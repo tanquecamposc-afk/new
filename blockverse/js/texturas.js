@@ -187,6 +187,15 @@ function tile(nombre,gen){T[nombre]=_genTiles.length;_genTiles.push(gen);}
     p(7,5,255,190,70);p(8,5,255,160,40);p(7,4,255,230,120);p(8,4,255,210,90);p(7,3,255,252,210);p(8,3,255,236,150);p(7,2,255,255,230);}));
   tile('bedTop',(p,r)=>cada((x,y)=>{const k=n(r,8);if(y<5)p(x,y,236+k,236+k,240+k);else{const f=(x+y)%4===0?.9:1;p(x,y,(176+k)*f,(30+k*.5)*f,(34+k*.5)*f);}
     if(x===0||x===15)p(x,y,140+k,110+k,70+k);}));
+  // Camas de Bed Wars con el color de cada equipo: cabecera con almohada, pies con la manta doblada y el lateral con patas
+  for(const [cl,,,cc] of COLORES16.filter(c=>['rojo','azul','lima','amarillo','cian','blanco','rosa','gris'].includes(c[0]))){
+    const tela=(x,y,f=1)=>{const v=((x+y)%4===0?.9:1)*f;return [cc[0]*v,cc[1]*v,cc[2]*v];};
+    tile('camaCab_'+cl,(p,r)=>cada((x,y)=>{const k=n(r,6);if(x===0||x===15)return p(x,y,140+k,110+k,70+k);
+      if(y>=2&&y<=6&&x>=2&&x<=13)return p(x,y,236+k-(y===6?20:0),236+k-(y===6?20:0),240+k-(y===6?20:0));p(x,y,...tela(x,y).map(v=>v+k));}));
+    tile('camaPie_'+cl,(p,r)=>cada((x,y)=>{const k=n(r,6);if(x===0||x===15)return p(x,y,140+k,110+k,70+k);p(x,y,...tela(x,y,y===12?.75:y===11?1.12:1).map(v=>v+k));}));
+    tile('camaLado_'+cl,(p,r)=>cada((x,y)=>{const k=n(r,6);
+      if(y<7)p(x,y,0,0,0,0);else if(y<11)p(x,y,...tela(x,y,y===7?1.1:1).map(v=>v+k));else if(y<13)p(x,y,150+k,116+k,70+k);else if(x<3||x>12)p(x,y,120+k,90+k,55+k);else p(x,y,0,0,0,0);}));
+  }
   tile('bedSide',(p,r)=>cada((x,y)=>{const k=n(r,8);
     if(y<7)p(x,y,0,0,0,0);else if(y<11)p(x,y,176+k,30+k*.5,34+k*.5);else if(y<13)p(x,y,150+k,116+k,70+k);
     else if(x<3||x>12)p(x,y,120+k,90+k,55+k);else p(x,y,0,0,0,0);}));

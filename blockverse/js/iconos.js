@@ -413,6 +413,10 @@ Object.assign(DIBUJOS_OBJETOS,{
   523:({Q})=>{const T=tonosMat([200,60,60]),P2=tonosMat([240,240,236]);solidoT(Q,(x,y)=>{const [a,b]=ejeMango(x,y,9,7);return a>-3&&a<5&&Math.abs(b)<=1.8;},T);Q(12,3,'l',P2);Q(13,2,'w',P2);for(let i=0;i<5;i++)Q(2+i,13-i,'m',PALO_T);},
   714:({Q})=>{esferaT(Q,[230,90,30],8,8,5);const N=tonosMat([60,40,30]);for(const [x,y] of [[6,6],[9,9],[10,6],[6,10]])Q(x,y,'m',N);Q(7,5,'w',tonosMat([255,220,120]));},
   715:({Q})=>{const T=tonosMat([236,236,236]),L=tonosMat([210,60,60]);solidoT(Q,enElipse(8,8.8,4.3,5.6),T);for(const [x,y] of [[6,8],[7,9],[8,8],[9,9],[10,8]])Q(x,y,'m',L);},
+  716:({Q})=>{const L=tonosMat([200,60,60]),E=PALO_T;solidoT(Q,(x,y)=>x>=3&&x<=12&&y>=2&&y<=14&&!(x>=5&&x<=10&&y>=4),L);for(let y=4;y<=14;y+=2){Q(7,y,'l',E);Q(8,y,'l',E);}for(let y=3;y<=14;y++){Q(6,y,'d',E);Q(9,y,'d',E);}},
+  717:({Q})=>{const T=tonosMat([214,206,196]),V=tonosMat([90,150,60]);solidoT(Q,(x,y)=>(x>=5&&x<=10&&y>=2&&y<=6)||(x>=3&&x<=12&&y>=7&&y<=11)||((x>=4&&x<=6||x>=9&&x<=11)&&y>=12&&y<=14),T);Q(6,4,'d',tonosMat([180,30,30]));Q(9,4,'d',tonosMat([180,30,30]));for(const [x,y] of [[4,8],[11,9],[7,10]])Q(x,y,'m',V);},
+  718:({Q})=>{const T=tonosMat([240,240,240]),C=tonosMat([150,150,158]);for(let y=4;y<=13;y++){const w=y<6?3:5;for(let x=8-w;x<8+w;x++)Q(x,y,y<6?'m':x===8-w?'l':x===8+w-1?'d':'w',y<6?C:T);}Q(7,3,'d',C);Q(8,3,'d',C);for(const [x,y] of [[6,8],[9,10],[7,11]])Q(x,y,'m',tonosMat([150,120,220]));},
+  719:({Q})=>{esferaT(Q,[236,244,248]);for(const [x,y] of [[6,7],[9,8],[7,10]])Q(x,y,'d',tonosMat([120,120,130]));},
   546:({Q})=>{const T=tonosMat([100,46,120]),Pg=tonosMat([240,236,220]),G=tonosMat([230,190,250]);solidoT(Q,(x,y)=>x>=3&&x<=12&&y>=2&&y<=13,T);for(let y=3;y<=13;y++){Q(12,y,'l',Pg);Q(13,y,'m',Pg);}for(let x=4;x<=12;x++)Q(x,13,'l',Pg);for(const [x,y] of [[6,5],[9,7],[5,9],[8,10],[10,4]])Q(x,y,'w',G);},
 });
 function dibujarItem(id){

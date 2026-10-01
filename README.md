@@ -207,6 +207,17 @@ Botón **Bed Wars** en el menú principal (o `/bedwars [1-4]` en el chat).
 - **Bots:** recogen recursos, compran lana, espadas, armadura y mejoras, patrullan su cama, tienden puentes de lana hasta otras islas, rompen las defensas y la cama enemiga, y pelean contigo y entre ellos.
 - **Marcador** a la derecha con el siguiente evento, el estado de cada equipo (✔ cama en pie, número de vivos o ✘) y tus bajas, bajas finales y camas rotas; pantalla de victoria o derrota con estadísticas y «Jugar otra vez».
 
+### Bed Wars 2.0 (al estilo de Hypixel)
+- **Modos como en el original:** Solos y Dúos con **8 equipos** (Rojo, Azul, Verde, Amarillo, Aguamarina, Blanco, Rosa y Gris) y Tríos, Cuartetos o 4×1 con 4 equipos.
+- **Cuatro mapas** con su ambiente y su hora del día: **Jardín** (robles y flores), **Invierno** (nieve, hielo y abetos), **Infierno** (netherrack, hongos carmesí y piedra luminosa al atardecer) y **Desierto** (arena, arenisca y cactus), o uno al azar.
+- **Islas decoradas:** plataforma de aparición con la lana del equipo, **cama de dos bloques de su color** sobre terracota, generador de hierro vallado, casetas con techo para la TIENDA y las MEJORAS, cofre del equipo, farolas y árboles. Islas de diamante con rocas y un centro de dos alturas con un faro y 2 o 4 generadores de esmeraldas.
+- **Sala de espera** de cristal sobre el centro con cuenta atrás («Empieza en 5…») y bocina al empezar.
+- **Bloques de diamante y esmeralda girando** sobre sus generadores, con un holograma de tres líneas (tipo, nivel y «Aparece en N s»).
+- **Compra rápida** como primera pestaña de la tienda y objetos nuevos: **torre compacta** (se monta sola una torre de lana con escalera y almenas), **chinche** (lanzas una bola de nieve y sale una lepisma que pelea por ti 15 s), **defensor de los sueños** (un gólem de hierro de tu equipo durante 4 minutos) y **leche mágica** (30 s sin trampas).
+- **Bots con nombre de jugador** (xXProGamerXx, SrPuentes, CapitanCama…) que hablan en el chat («gg», «ez», «¡cama rota! 😈», «lag»…), **cubren su cama con lana y terracota** al empezar, lanzan **bolas de fuego** contra las defensas y empujan más fuerte hacia el vacío.
+- **Chat de colores** (CAMA DESTRUIDA, ¡ELIMINACIÓN FINAL!, EQUIPO ELIMINADO y nombres con el color del equipo), «+1 baja» / «¡BAJA FINAL!» con sonido, título grande al morir con la cuenta atrás y **marcador como el original** (fecha, siguiente evento, equipos y www.blockverse.net).
+- **Niveles con estrellas [N✫]** y estadísticas guardadas: victorias, partidas, bajas, bajas finales, camas, FKDR y racha. Al acabar recibes **XP de Bed Wars** (con barra de progreso y subida de nivel) y, si ganas, **fuegos artificiales**.
+
 ### Bed Wars en red
 Conéctate antes en **Multijugador** y que el anfitrión pulse **Bed Wars → ¡Jugar!**: cada jugador conectado ocupa el sitio de un bot en un equipo (en Solos, un equipo cada uno; en Dúos, Tríos o Cuartetos se van llenando). El anfitrión simula los bots, lleva el reloj, las camas, las eliminaciones y decide quién gana; se comparten los bloques, los golpes entre jugadores y a los bots, las camas rotas, las muertes y las explosiones (quien la provoca rompe los bloques y los demás ven el efecto y reciben el daño). Quien entra con la partida empezada la ve como espectador.
 

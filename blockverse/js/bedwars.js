@@ -323,7 +323,7 @@ usarDerecho=function(){
     if(BW.yo.espectador)return;
     const m=apuntadoEnt&&apuntadoEnt.mob;
     if(m&&m.bwTienda){if(m.bwEquipo!==BW.yo.equipo&&m.bwTienda==='mejoras'){mostrarMensaje('Solo puedes usar las mejoras de tu equipo');return;}abrirUI(m.bwTienda==='mejoras'?'mejorasBW':'tiendaBW');return;}
-    if(apuntado&&!apuntadoEnt&&apuntado.b===B.cama&&!enMano()){return;}
+    if(apuntado&&!apuntadoEnt&&esCamaBW(apuntado.b)&&!enMano()){return;}
     const p=enMano();
     if(p&&p.id===714){usarBolaFuego();return;}
     if(p&&p.id===715){lanzarHuevoPuente();return;}
@@ -368,14 +368,18 @@ colocarBloque=function(id){
     if(id===B.tnt){setBloque(q[0],q[1],q[2],0);activarTNT(q[0],q[1],q[2],3);BW.colocados.delete(clBW(q[0],q[1],q[2]));}}
   return ok;
 };
-function camaDe(x,y,z){return BW.camas.find(c=>c.x===x&&c.y===y&&c.z===z);}
+// Camas de uno o dos bloques (cabecera y pies)
+function esCamaBW(b){return b===B.cama||!!(BLOQUES[b]&&BLOQUES[b].camaBW);}
+function camaDe(x,y,z){return BW.camas.find(c=>c.y===y&&((c.x===x&&c.z===z)||(c.x2===x&&c.z2===z)));}
+function quitarCamaBW(c){for(const [x,z] of [[c.x,c.z],[c.x2??c.x,c.z2??c.z]])if(esCamaBW(getBloque(x,c.y,z)))_setBloqueBW(x,c.y,z,0);}
 const _romperApuntadoBW=romperApuntado;
 romperApuntado=function(){
   if(!(BW&&BW.activo)||!apuntado)return _romperApuntadoBW();
   if(BW.yo.espectador)return;
   const {x,y,z,b}=apuntado;
-  if(b===B.cama){const c=camaDe(x,y,z);if(c){if(c.equipo===BW.yo.equipo){mostrarMensaje('¡No puedes romper tu propia cama!');return;}
-    setBloque(x,y,z,0);romperCamaBW(c.equipo,'Tú');BW.yo.camas++;return;}}
+  if(esCamaBW(b)){const c=camaDe(x,y,z);if(c){if(c.equipo===BW.yo.equipo){mostrarMensaje('¡No puedes romper tu propia cama!');return;}
+    if(typeof RED!=='undefined'&&RED.conectado){enviarRed({t:'bloque',x:c.x,y:c.y,z:c.z,b:0});if(c.x2!=null)enviarRed({t:'bloque',x:c.x2,y:c.y,z:c.z2,b:0});}
+    quitarCamaBW(c);romperCamaBW(c.equipo,'Tú');BW.yo.camas++;return;}}
   if(!BW.colocados.has(clBW(x,y,z))){if(tiempoJuego-avisoMapaT>2){avisoMapaT=tiempoJuego;mostrarMensaje('Solo puedes romper bloques puestos por los jugadores');}return;}
   BW.colocados.delete(clBW(x,y,z));
   return _romperApuntadoBW();
@@ -398,7 +402,7 @@ function romperCamaBW(equipo,quien,desdeRed){
   sonar('camaRota');
   if(equipo===BW.yo.equipo)tituloBW('¡CAMA DESTRUIDA!','Ya no reaparecerás','#ff5555',3);
   else mostrarAvisoBW(`Cama ${E.nombre} destruida`,E.col);
-  const c=BW.camas.find(c=>c.equipo===equipo);if(c&&getBloque(c.x,c.y,c.z)===B.cama)_setBloqueBW(c.x,c.y,c.z,0);
+  const c=BW.camas.find(c=>c.equipo===equipo);if(c)quitarCamaBW(c);
   comprobarFinBW();
 }
 function mostrarAvisoBW(t,col){let a=document.getElementById('bwAviso');if(!a){a=document.createElement('div');a.id='bwAviso';document.body.appendChild(a);}
@@ -556,7 +560,7 @@ IA_EXTRA.botBW=(m,dt)=>{
       b.minarT+=dt;
       if(b.minarT>1.6/b.nivel){b.minarT=0;
         let roto=false;for(const [ax,ay,az] of [[0,1,0],[1,0,0],[-1,0,0],[0,0,1],[0,0,-1]]){const x=c.x+ax,y=c.y+ay,z=c.z+az;if(BW.colocados.has(clBW(x,y,z))&&getBloque(x,y,z)){BW.colocados.delete(clBW(x,y,z));bwSet(x,y,z,0);roto=true;break;}}
-        if(!roto&&getBloque(c.x,c.y,c.z)===B.cama){_setBloqueBW(c.x,c.y,c.z,0);romperCamaBW(oq.id,b.nombre);b.estado='recolectar';b.t=20;}}
+        if(!roto&&esCamaBW(getBloque(c.x,c.y,c.z))){quitarCamaBW(c);romperCamaBW(oq.id,b.nombre);b.estado='recolectar';b.t=20;}}
     }
     if(b.t<=0){b.estado='recolectar';b.t=20;}
   }
@@ -607,7 +611,7 @@ function terminarBW(ganador){
 }
 function actualizarBW(dt){
   if(!BW||!BW.activo||BW.fin)return;
-  BW.t+=dt; tiempoDia=.25; hambre=20; saturacion=5;
+  BW.t+=dt; tiempoDia=BW.hora??.25; hambre=20; saturacion=5;
   // Eventos de la partida
   const ev=EVENTOS_BW[BW.ev];
   if(ev&&BW.t>=ev[0]){BW.ev++;sonar('eventoBW');mostrarAvisoBW(ev[1],'#ff5');escribirChat('» '+ev[1]);

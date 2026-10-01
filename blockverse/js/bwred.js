@@ -15,11 +15,11 @@ iniciarBedwars=function(opc={}){
     const ids=[...RED.pares.keys()];
     const porEquipo=clamp(opc.porEquipo||1,1,4), plazas=[];
     for(let k=1;k<porEquipo;k++)plazas.push(0);
-    for(let k=0;k<porEquipo;k++)for(const e of [1,2,3])plazas.push(e);
+    for(let k=0;k<porEquipo;k++)for(let e=1;e<EQUIPOS_BW.length;e++)plazas.push(e);
     plazas.sort((a,b)=>porEquipo===1?a-b:0);
     const remotos={};ids.forEach((id,i)=>{remotos[id]=i<plazas.length?plazas[i]:null;});
     _iniciarBedwarsRed(Object.assign({},opc,{remotos}));
-    enviarRed({t:'bwInicio',porEquipo,dificultad:opc.dificultad||'normal',remotos});
+    enviarRed({t:'bwInicio',porEquipo,dificultad:opc.dificultad||'normal',remotos,equipos:EQUIPOS_BW.length,tema:opc.tema});
     for(const [id,eq] of Object.entries(remotos)){const r=RED.remotos.get(id);if(r){r.equipo=eq;r.bwVivo=eq!=null;}}
     return;
   }
@@ -37,7 +37,7 @@ recibirRed=function(texto){
       const eq=m.remotos[RED.id];
       if(BW&&BW.activo){BW.activo=false;}
       document.getElementById('bwFin')?.remove();
-      iniciarBedwars({porEquipo:m.porEquipo,dificultad:m.dificultad,cliente:true,equipo:eq===undefined?null:eq,remotos:m.remotos});
+      iniciarBedwars({porEquipo:m.porEquipo,dificultad:m.dificultad,cliente:true,equipo:eq===undefined?null:eq,remotos:m.remotos,equipos:m.equipos,tema:m.tema});
       for(const [id,e] of Object.entries(m.remotos)){const r=RED.remotos.get(id);if(r){r.equipo=e;r.bwVivo=e!=null;}}
       empezar();escribirChat(eq==null?'La partida ya estaba llena: miras como espectador':`Juegas en el equipo ${EQUIPOS_BW[eq].nombre}`);
       break;}
@@ -156,7 +156,7 @@ const _recibirRedHola=recibirRed;
 recibirRed=function(texto){
   _recibirRedHola(texto);
   let m;try{m=JSON.parse(texto);}catch(e){return;}
-  if(m&&m.t==='hola'&&m.de!==RED.id&&RED.rol==='anfitrion'&&BW&&BW.activo&&!BW.cliente)enviarRed({t:'bwInicio',porEquipo:BW.porEquipo,dificultad:BW.dificultad,remotos:Object.assign({},BW.remotos,{[m.de]:null})});
+  if(m&&m.t==='hola'&&m.de!==RED.id&&RED.rol==='anfitrion'&&BW&&BW.activo&&!BW.cliente)enviarRed({t:'bwInicio',porEquipo:BW.porEquipo,dificultad:BW.dificultad,remotos:Object.assign({},BW.remotos,{[m.de]:null}),equipos:EQUIPOS_BW.length,tema:BW.tema});
 };
 // Aviso en la pantalla de Bed Wars si hay jugadores conectados
 setInterval(()=>{const c=document.getElementById('pantallaBedwars');if(!c||c.classList.contains('oculto'))return;
