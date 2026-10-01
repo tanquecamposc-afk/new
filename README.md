@@ -207,6 +207,12 @@ Botón **Bed Wars** en el menú principal (o `/bedwars [1-4]` en el chat).
 - **Bots:** recogen recursos, compran lana, espadas, armadura y mejoras, patrullan su cama, tienden puentes de lana hasta otras islas, rompen las defensas y la cama enemiga, y pelean contigo y entre ellos.
 - **Marcador** a la derecha con el siguiente evento, el estado de cada equipo (✔ cama en pie, número de vivos o ✘) y tus bajas, bajas finales y camas rotas; pantalla de victoria o derrota con estadísticas y «Jugar otra vez».
 
+### Bed Wars en red
+Conéctate antes en **Multijugador** y que el anfitrión pulse **Bed Wars → ¡Jugar!**: cada jugador conectado ocupa el sitio de un bot en un equipo (en Solos, un equipo cada uno; en Dúos, Tríos o Cuartetos se van llenando). El anfitrión simula los bots, lleva el reloj, las camas, las eliminaciones y decide quién gana; se comparten los bloques, los golpes entre jugadores y a los bots, las camas rotas, las muertes y las explosiones (quien la provoca rompe los bloques y los demás ven el efecto y reciben el daño). Quien entra con la partida empezada la ve como espectador.
+
+## Calidad gráfica
+En **Opciones → Calidad gráfica**: Baja, Media, Alta y Ultra. Ajusta la resolución de dibujo (Ultra hace supermuestreo ×1,5), el antialiasing **MSAA 4×** (con los shaders) y el **filtrado anisótropo** (hasta 16×). Las texturas de los bloques usan ahora **mipmaps** hechos a medida (conservan la transparencia y el tinte de hojas y césped), así que el terreno lejano se ve nítido y sin parpadeo ni muaré. Además, la cara de arriba de césped, tierra, arena, grava, piedra, nieve, netherrack y otros suelos se **gira al azar** en cada bloque, como en el original, para que no se note la repetición.
+
 ## Multijugador (base)
 
 Botón **Multijugador** en el menú. El anfitrión comparte su mundo (semilla y cambios) y se sincronizan los jugadores (se ven con su nombre y se animan al andar), los bloques que se ponen y rompen y el chat. `/nombre <tu nombre>` cambia tu nombre y `/jugadores` dice quién está.

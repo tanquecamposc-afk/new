@@ -16,7 +16,9 @@ if(OPC.shaders===undefined)OPC.shaders=!('ontouchstart' in window&&navigator.max
 
 const PP=(()=>{
   const opcRT={minFilter:THREE.LinearFilter,magFilter:THREE.LinearFilter,format:THREE.RGBAFormat,depthBuffer:false,stencilBuffer:false};
-  const rtEscena=new THREE.WebGLRenderTarget(4,4,{minFilter:THREE.LinearFilter,magFilter:THREE.LinearFilter,format:THREE.RGBAFormat});
+  // Con WebGL2 la escena se dibuja con antialiasing MSAA (las muestras las fija la calidad gráfica)
+  const rtEscena=(renderer.capabilities.isWebGL2&&THREE.WebGLMultisampleRenderTarget)?new THREE.WebGLMultisampleRenderTarget(4,4,{minFilter:THREE.LinearFilter,magFilter:THREE.LinearFilter,format:THREE.RGBAFormat}):new THREE.WebGLRenderTarget(4,4,{minFilter:THREE.LinearFilter,magFilter:THREE.LinearFilter,format:THREE.RGBAFormat});
+  if(rtEscena.isWebGLMultisampleRenderTarget)rtEscena.samples=0;
   const rtBri=new THREE.WebGLRenderTarget(4,4,opcRT), rtA=new THREE.WebGLRenderTarget(4,4,opcRT), rtB=new THREE.WebGLRenderTarget(4,4,opcRT), rtRay=new THREE.WebGLRenderTarget(4,4,opcRT);
   const camPP=new THREE.OrthographicCamera(-1,1,1,-1,0,1), escPP=new THREE.Scene();
   const quad=new THREE.Mesh(new THREE.PlaneGeometry(2,2),null); quad.frustumCulled=false; escPP.add(quad);

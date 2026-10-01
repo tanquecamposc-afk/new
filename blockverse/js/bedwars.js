@@ -95,13 +95,14 @@ IA_EXTRA.tenderoBW=(m,dt,{dx,dz})=>{m.mover=false;m.vel.x=m.vel.z=0;m.yawObj=Mat
 
 /* ---------- Inicio de la partida ---------- */
 function iniciarBedwars(opc={}){
-  const porEquipo=clamp(opc.porEquipo||1,1,4), dificultad=opc.dificultad||'normal';
+  const porEquipo=clamp(opc.porEquipo||1,1,4), dificultad=opc.dificultad||'normal', miEquipo=opc.equipo??0, remotos=opc.remotos||{};
   MAPA_BW=construirMapaBW();
   mundoId=null; metaMundo=null; selModo.value='supervivencia';
   bwPendiente=true;
   BW={activo:true,t:0,ev:0,porEquipo,dificultad,colocados:new Set(),gens:MAPA_BW.gens,camas:MAPA_BW.camas,
     equipos:EQUIPOS_BW.map(E=>({id:E.id,cama:true,vivos:porEquipo,mejoras:{filo:0,prot:0,prisa:0,forja:0,curacion:0},trampas:[],trampaT:0})),
-    yo:{equipo:0,vivo:true,espera:0,armadura:0,pico:0,hacha:0,bajas:0,finales:0,camas:0,muertes:0,espectador:false,ultimoGolpe:null},
+    cliente:!!opc.cliente,remotos,botId:0,
+    yo:{equipo:miEquipo,vivo:opc.equipo!==null,espera:0,armadura:0,pico:0,hacha:0,bajas:0,finales:0,camas:0,muertes:0,espectador:false,ultimoGolpe:null},
     bots:[],tenderos:[],carteles:[],fin:false,avisoT:0};
   try{nuevoMundo();}finally{bwPendiente=false;}
   spawnMundo=null; aparecer();
@@ -110,9 +111,14 @@ function iniciarBedwars(opc={}){
   for(const t of MAPA_BW.tiendas){const m=crearMob('tenderoBW',t.x,BW_Y+1,t.z,{mejoras:t.tipo==='mejoras'});m.domado=true;m.bwTienda=t.tipo;m.bwEquipo=t.equipo;BW.tenderos.push(m);
     const s=cartelTexto(t.tipo==='mejoras'?'MEJORAS':'TIENDA',t.tipo==='mejoras'?'#8cf':'#fd5');s.scale.multiplyScalar(.8);s.position.set(t.x,BW_Y+3.3,t.z);escena.add(s);BW.carteles.push(s);}
   // Bots: en tu equipo (si juegas en grupo) y en los demás
-  for(const E of EQUIPOS_BW)for(let k=0;k<porEquipo;k++){if(E.id===0&&k===0)continue;crearBotBW(E.id,k,dificultad);}
+  // Los huecos de cada equipo los ocupan: tú, los jugadores conectados y, el resto, bots (en red solo el anfitrión tiene bots)
+  const ocupados=EQUIPOS_BW.map(E=>Object.values(remotos).filter(q=>q===E.id).length+(E.id===miEquipo&&opc.equipo!==null?1:0));
+  if(!opc.cliente)for(const E of EQUIPOS_BW)for(let k=ocupados[E.id];k<porEquipo;k++)crearBotBW(E.id,k,dificultad);
+  if(opc.equipo===null){BW.yo.vivo=false;}
   kitBW(true);
-  jugador.vuela=false; jugador.yaw=Math.atan2(-EQUIPOS_BW[0].isla[0],-EQUIPOS_BW[0].isla[1])+Math.PI; jugador.pitch=-.1;
+  const Eyo=EQUIPOS_BW[miEquipo]||EQUIPOS_BW[0];jugador.pos.set(Eyo.isla[0]+.5,BW_Y+1.01,Eyo.isla[1]+.5);jugador.vel.set(0,0,0);
+  jugador.vuela=false; jugador.yaw=Math.atan2(-Eyo.isla[0],-Eyo.isla[1])+Math.PI; jugador.pitch=-.1;
+  if(opc.equipo===null)setTimeout(hacerEspectador,100);
   salud=20;hambre=20;
   mostrarMarcadorBW(true);
   setTimeout(()=>{tituloBW('BED WARS','¡Protege tu cama!','#ff5555',3.5);escribirChat('§ Bed Wars: destruye las camas enemigas y protege la tuya. Compra en la TIENDA con hierro, oro, diamantes y esmeraldas.');},300);
@@ -121,7 +127,7 @@ function iniciarBedwars(opc={}){
 function crearBotBW(equipo,k,dificultad){
   const E=EQUIPOS_BW[equipo],[cx,cz]=E.isla;
   const m=crearMob('botBW',cx+.5+(k-1)*1.2,BW_Y+1.01,cz+.5,{color:E.hex});
-  m.domado=true;
+  m.domado=true; m.bwId=++BW.botId;
   const nivel={facil:.7,normal:1,dificil:1.3}[dificultad]||1;
   m.bw={equipo,k,nivel,rol:k%2===0?'atacante':'defensor',estado:'recolectar',t:20+Math.random()*25,res:{h:0,o:0,d:0,e:0},espada:0,armadura:0,lana:16,
     objetivo:null,minarT:0,golpeT:0,nombre:`Bot ${E.nombre}${BW.porEquipo>1?' '+(k+1):''}`};
@@ -244,6 +250,7 @@ UI_EXTRA.tiendaBW={
   abrir(u){},
   construir(titulo){
     titulo('TIENDA DE OBJETOS');
+    if(!BW||!BW.activo)return;
     const caja=document.createElement('div');caja.className='tiendaBW';elSup.appendChild(caja);
     const tabs=document.createElement('div');tabs.className='tabsBW';caja.appendChild(tabs);
     TIENDA_BW.forEach(([nom],i)=>{const b=document.createElement('button');b.textContent=nom;b.className=i===pestanaBW?'activa':'';b.onmousedown=e=>{e.preventDefault();pestanaBW=i;construirUI();};tabs.appendChild(b);});
@@ -279,6 +286,7 @@ UI_EXTRA.mejorasBW={
   abrir(u){},
   construir(titulo){
     titulo('MEJORAS DEL EQUIPO');
+    if(!BW||!BW.activo)return;
     const eq=BW.equipos[BW.yo.equipo];
     const caja=document.createElement('div');caja.className='tiendaBW';elSup.appendChild(caja);
     const lista=document.createElement('div');lista.className='listaBW';caja.appendChild(lista);
@@ -344,6 +352,8 @@ ACT_ENT.huevoPuente=(e,dt)=>{
 const _abrirUIBW=abrirUI;
 abrirUI=function(tipo,pos,extra){if(BW&&BW.activo&&tipo==='cama')return;return _abrirUIBW(tipo,pos,extra);};
 
+// Cambia un bloque y, si hay partida en red, se lo cuenta a los demás
+function bwSet(x,y,z,b){setBloque(x,y,z,b);if(typeof RED!=='undefined'&&RED.conectado)enviarRed({t:'bloque',x,y,z,b});}
 /* ---------- Construir y romper ---------- */
 let avisoMapaT=0;
 const _colocarBloqueBW=colocarBloque;
@@ -380,8 +390,9 @@ setBloque=function(x,y,z,id,opc){
     if(!BW.colocados.has(k)||b===B.obsidiana||/^vidrio_/.test(BLOQUES[b].clave))return;BW.colocados.delete(k);}
   return _setBloqueBW(x,y,z,id,opc);
 };
-function romperCamaBW(equipo,quien){
+function romperCamaBW(equipo,quien,desdeRed){
   const eq=BW.equipos[equipo];if(!eq.cama)return;eq.cama=false;
+  if(!desdeRed&&typeof RED!=='undefined'&&RED.conectado)enviarRed({t:'bwCama',equipo,quien:quien==='Tú'?RED.nombre:quien});
   const E=EQUIPOS_BW[equipo];
   escribirChat(`CAMA DESTRUIDA > ¡La cama del equipo ${E.nombre} ha sido destruida por ${quien}!`);
   sonar('camaRota');
@@ -404,14 +415,16 @@ const _morirBW=morir;
 morir=function(causa){
   if(!(BW&&BW.activo))return _morirBW(causa);
   if(estado==='muerto')return;
-  const yo=BW.yo, eq=BW.equipos[yo.equipo], g=yo.ultimoGolpe&&tiempoJuego-yo.ultimoGolpe.t<12?yo.ultimoGolpe.m:null;
+  const yo=BW.yo, eq=BW.equipos[yo.equipo], g=yo.ultimoGolpe&&tiempoJuego-yo.ultimoGolpe.t<12&&yo.ultimoGolpe.m?yo.ultimoGolpe.m:null;
   yo.muertes++;
   // Los recursos van para quien te mató
   if(g&&!g.muerto){const r=g.bw.res;r.h+=contarInv(I.lingoteHierro);r.o+=contarInv(I.lingoteOro);r.d+=contarInv(I.diamante);r.e+=contarInv(I.esmeralda);}
   const final=!eq.cama;
-  escribirChat(`${g?g.bw.nombre+' te ha eliminado':causa==='vacio'?'Has caído al vacío':'Has muerto'}${final?'. ¡ELIMINACIÓN FINAL!':''}`);
+  const nomRemoto=!g&&yo.ultimoGolpe&&tiempoJuego-yo.ultimoGolpe.t<12?yo.ultimoGolpe.nombre:null;
+  escribirChat(`${g?g.bw.nombre+' te ha eliminado':nomRemoto?nomRemoto+' te ha eliminado':causa==='vacio'?'Has caído al vacío':'Has muerto'}${final?'. ¡ELIMINACIÓN FINAL!':''}`);
   if(ui)cerrarUI(); soltarControles(); efectos={}; fuegoJ=0;
-  if(final){yo.vivo=false;eq.vivos=Math.max(0,eq.vivos-1);hacerEspectador();comprobarFinBW();return;}
+  if(typeof RED!=='undefined'&&RED.conectado)enviarRed({t:'bwMuerte',equipo:yo.equipo,final,nombre:RED.nombre,por:g?g.bw.nombre:(yo.ultimoGolpe&&yo.ultimoGolpe.nombre)||null});
+  if(final){yo.vivo=false;if(!BW.cliente)eq.vivos=Math.max(0,eq.vivos-1);hacerEspectador();comprobarFinBW();return;}
   estado='muerto'; yo.espera=5; inv=new Array(41).fill(null); actualizarHUD();
   jugador.pos.set(0.5,BW_Y+30,0.5); jugador.vel.set(0,0,0);
   mostrarAvisoBW('¡HAS MUERTO!','#f55');
@@ -469,6 +482,7 @@ function enemigosDe(m){
   const res=[], b=m.bw;
   if(BW.yo.vivo&&!BW.yo.espectador&&estado!=='muerto'&&b.equipo!==BW.yo.equipo&&!(efectos.invisibilidad&&!BW.equipos[b.equipo].trampas.includes('alarma')))res.push({jugador:true,pos:jugador.pos});
   for(const o of BW.bots)if(o!==m&&!o.muerto&&o.bw.equipo!==b.equipo)res.push({m:o,pos:o.pos});
+  if(typeof RED!=='undefined'&&RED.conectado)for(const [id,r] of RED.remotos)if(r.equipo!=null&&r.equipo!==b.equipo&&r.bwVivo&&!r.esBot)res.push({remoto:id,pos:r.obj});
   return res;
 }
 function moverBot(m,tx,tz,vel,puente){
@@ -479,7 +493,7 @@ function moverBot(m,tx,tz,vel,puente){
   if(m.suelo&&!getBloque(nx,ny,nz)&&!getBloque(Math.floor(m.pos.x+ux*.4),ny,Math.floor(m.pos.z+uz*.4))){
     if(!puente||m.bw.lana<=0){m.mover=false;if(m.bw.lana<=0&&m.bw.estado==='atacar'){m.bw.estado='recolectar';m.bw.t=15;}return d;}
     if((m.bw.colocarT=(m.bw.colocarT||0)-1/60)<=0){m.bw.colocarT=.18/m.bw.nivel;
-      const L=B['lana_'+EQUIPOS_BW[m.bw.equipo].lana];setBloque(nx,ny,nz,L);BW.colocados.add(clBW(nx,ny,nz));m.bw.lana--;}
+      const L=B['lana_'+EQUIPOS_BW[m.bw.equipo].lana];bwSet(nx,ny,nz,L);BW.colocados.add(clBW(nx,ny,nz));m.bw.lana--;}
     mover(m,ux,uz,vel*.35);return d;
   }
   mover(m,ux,uz,vel);
@@ -517,7 +531,8 @@ IA_EXTRA.botBW=(m,dt)=>{
     if(d<2.6&&b.golpeT<=0&&Math.abs(obj.pos.y-m.pos.y)<2){
       b.golpeT=(.75+Math.random()*.4)/b.nivel; m.golpeT=.35;
       const dano=DANO_ESPADA_BW[b.espada]+(eq.mejoras.filo?1.25:0), dx=obj.pos.x-m.pos.x, dz=obj.pos.z-m.pos.z, l=Math.hypot(dx,dz)||1;
-      if(obj.jugador){BW.yo.ultimoGolpe={m,t:tiempoJuego};danarJugador(dano,'mob',{x:dx/l,z:dz/l});jugador.vel.x+=dx/l*4;jugador.vel.z+=dz/l*4;jugador.vel.y=Math.max(jugador.vel.y,4);}
+      if(obj.remoto){enviarRed({t:'bwGolpe',a:obj.remoto,dano,dx:dx/l,dz:dz/l,por:b.nombre});}
+      else if(obj.jugador){BW.yo.ultimoGolpe={m,t:tiempoJuego};danarJugador(dano,'mob',{x:dx/l,z:dz/l});jugador.vel.x+=dx/l*4;jugador.vel.z+=dz/l*4;jugador.vel.y=Math.max(jugador.vel.y,4);}
       else{obj.m.bw.ultimoGolpe={m,t:tiempoJuego};herirMob(obj.m,dano,{x:dx/l,z:dz/l},'botBW');}
     }
     return;
@@ -540,7 +555,7 @@ IA_EXTRA.botBW=(m,dt)=>{
       // Romper lo que proteja la cama y luego la cama
       b.minarT+=dt;
       if(b.minarT>1.6/b.nivel){b.minarT=0;
-        let roto=false;for(const [ax,ay,az] of [[0,1,0],[1,0,0],[-1,0,0],[0,0,1],[0,0,-1]]){const x=c.x+ax,y=c.y+ay,z=c.z+az;if(BW.colocados.has(clBW(x,y,z))&&getBloque(x,y,z)){BW.colocados.delete(clBW(x,y,z));setBloque(x,y,z,0);roto=true;break;}}
+        let roto=false;for(const [ax,ay,az] of [[0,1,0],[1,0,0],[-1,0,0],[0,0,1],[0,0,-1]]){const x=c.x+ax,y=c.y+ay,z=c.z+az;if(BW.colocados.has(clBW(x,y,z))&&getBloque(x,y,z)){BW.colocados.delete(clBW(x,y,z));bwSet(x,y,z,0);roto=true;break;}}
         if(!roto&&getBloque(c.x,c.y,c.z)===B.cama){_setBloqueBW(c.x,c.y,c.z,0);romperCamaBW(oq.id,b.nombre);b.estado='recolectar';b.t=20;}}
     }
     if(b.t<=0){b.estado='recolectar';b.t=20;}
@@ -570,7 +585,7 @@ function actualizarTrampas(dt){
 
 /* ---------- Tiempo, eventos y fin de la partida ---------- */
 function comprobarFinBW(){
-  if(BW.fin)return;
+  if(BW.fin||BW.cliente)return;
   const vivos=BW.equipos.filter(q=>q.cama||q.vivos>0||(q.id===BW.yo.equipo&&BW.yo.vivo));
   if(vivos.length<=1)terminarBW(vivos[0]?vivos[0].id:null);
 }

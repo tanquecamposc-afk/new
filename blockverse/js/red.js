@@ -12,7 +12,7 @@
    El anfitrión manda su mundo (semilla y cambios) al entrar.
    ========================================================= */
 const RED={conectado:false,rol:null,id:Math.random().toString(36).slice(2,8),nombre:'Jugador',sala:null,
-  transporte:null,remotos:new Map(),aplicando:false,enviadoT:0,pc:null,canal:null,ws:null};
+  transporte:null,remotos:new Map(),pares:new Map(),aplicando:false,enviadoT:0,pc:null,canal:null,ws:null};
 try{RED.nombre=localStorage.getItem('blockverse-nombre')||('Jugador'+Math.floor(Math.random()*900+100));}catch(e){}
 const VERSION_RED=1;
 
@@ -31,6 +31,7 @@ function recibirRed(texto){
   if(!m||m.de===RED.id)return;
   if(RED.sala&&m.sala&&m.sala!==RED.sala)return;
   RED.conectado=true;
+  if(m.t==='adios')RED.pares.delete(m.de);else if(!RED.pares.has(m.de)||m.nombre)RED.pares.set(m.de,m.nombre||RED.pares.get(m.de)||'Jugador');
   switch(m.t){
     case 'hola':
       RED.conectado=true;
@@ -130,7 +131,7 @@ function conectarServidor(url,sala,rol){
 function desconectarRed(){
   if(RED.conectado)enviarRed({t:'adios',nombre:RED.nombre});
   try{RED.bc&&RED.bc.close();}catch(e){} try{RED.canal&&RED.canal.close();}catch(e){} try{RED.pc&&RED.pc.close();}catch(e){} try{RED.ws&&RED.ws.close();}catch(e){}
-  RED.bc=RED.canal=RED.pc=RED.ws=null; RED.conectado=false; RED.mundoRecibido=false;
+  RED.bc=RED.canal=RED.pc=RED.ws=null; RED.conectado=false; RED.mundoRecibido=false; RED.pares.clear();
   for(const id of [...RED.remotos.keys()])quitarRemoto(id);
 }
 addEventListener('beforeunload',()=>{if(RED.conectado)enviarRed({t:'adios',nombre:RED.nombre});});

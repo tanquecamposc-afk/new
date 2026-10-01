@@ -17,6 +17,9 @@ const CARAS=[
   {dir:[0,0, 1],sombra:.68,ld:'lado', c:[[0,0,1,0,0],[1,0,1,1,0],[0,1,1,0,1],[1,1,1,1,1]]},
 ];
 const PASO=[1,PS,PW]; // x, y, z
+// Bloques cuya cara de arriba (y de abajo) se gira al azar en cada posición, como en el original, para que no se note la repetición
+const ROTAR_CARA=new Uint8Array(BLOQUES.length);
+for(const k of ['cesped','tierra','arena','arenaRoja','grava','piedra','bloqueNieve','nieve','netherrack','piedraEnd','arcilla','sueloAlmas','arenaAlmas','micelio','podzol','barro','lecho','pizarra','toba','cespedNevado','tierraGruesa','hielo','bloqueMusgo','arenaSospechosa','gravaSospechosa'])if(B[k])ROTAR_CARA[B[k]]=1;
 CARAS.forEach((f,k)=>{
   f.k=k;
   f.offN=f.dir[0]*PASO[0]+f.dir[1]*PASO[1]+f.dir[2]*PASO[2];
@@ -136,13 +139,15 @@ function construirGeometria(ch){
             if(n===b&&(TRANS[b]||forma===1))continue;
           }
           const q=UVT[def.texCaras?def.texCaras[f.k]:def[f.ld]];
+          const rot=(f.k>=2&&f.k<=3&&ROTAR_CARA[b])?(hash2(ch.cx*CX+x+y*31,ch.cz*CZ+z,77)*4|0):0;
           const oOpaco=OPACO[n], base=oOpaco?L[i]:L[i+f.offN];
           const n0=O.p.length/3;
           for(let k=0;k<4;k++){
             const vt=f.vert[k], c=vt.c;
             O.p.push(x+c[0],y+c[1]*alto,z+c[2]);
-            const vv=(f.dir[1]===0&&forma===1)?(c[4]?q[2]+(q[3]-q[2])*alto:q[2]):(c[4]?q[3]:q[2]);
-            O.u.push(c[3]?q[1]-EPS:q[0]+EPS, c[4]?vv-EPS:vv+EPS);
+            let cu=c[3],cv=c[4];if(rot===1){cu=c[4];cv=1-c[3];}else if(rot===2){cu=1-c[3];cv=1-c[4];}else if(rot===3){cu=1-c[4];cv=c[3];}
+            const vv=(f.dir[1]===0&&forma===1)?(cv?q[2]+(q[3]-q[2])*alto:q[2]):(cv?q[3]:q[2]);
+            O.u.push(cu?q[1]-EPS:q[0]+EPS, cv?vv-EPS:vv+EPS);
             const ba=P[i+vt.oa],bb=P[i+vt.ob],bc=P[i+vt.oc];
             const s1=OCLUYE[ba],s2=OCLUYE[bb],s3=OCLUYE[bc];
             ao[k]=(s1&&s2)?0:3-(s1+s2+s3);

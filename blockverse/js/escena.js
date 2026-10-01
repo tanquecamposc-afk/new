@@ -66,10 +66,10 @@ void main(){
     else loc=fract(loc+vec2(uTiempo*.01,uTiempo*.02));
     uv=(celda+clamp(loc,.03,.97))/uAtlas;
   }
-  vec4 t=texture2D(mapa,uv);
+  vec4 t=m>2.5?texture2D(mapa,uv,-16.0):texture2D(mapa,uv);  // las texturas animadas se leen sin mipmap (evita costuras)
   if(t.a<uAlpha) discard;
   vec3 col=t.rgb;
-  if(m>.5&&m<1.5){ if(t.a>.97&&t.a<.995) col*=vTinte.rgb; }
+  if(m>.5&&m<1.5){ if(t.a<.993) col*=vTinte.rgb; }  // tinte en los píxeles marcados con alfa 250 (también tras el filtrado anisótropo)
   else if(m>1.5&&m<3.5) col*=vTinte.rgb;
   float s=curva(vLuz.r)*uDia; float b=curva(vLuz.g);
   b*=0.95+0.05*sin(uTiempo*7.0+vWPos.x*2.3+vWPos.z*1.7)*step(0.3,vLuz.g);  // parpadeo de antorchas
