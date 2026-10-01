@@ -615,6 +615,12 @@ function tile(nombre,gen){T[nombre]=_genTiles.length;_genTiles.push(gen);}
   tile('blastTop',(p,r)=>{piedra(p,r);cada((x,y)=>{if(Math.hypot(x-7.5,y-7.5)<3)p(x,y,40,40,44);});});
   tile('blastSide',bloqueMetal([150,150,156]));
   tile('blastFront',(p,r)=>{bloqueMetal([150,150,156])(p,r);cada((x,y)=>{if(y>=6&&y<=11&&x>=4&&x<=11)p(x,y,y%2?40:70,40,46);});});
+  // Fuego dentro de la boca de los hornos encendidos
+  const fuegoHorno=(p,x0,x1,y0,y1)=>{for(let y=y0;y<=y1;y++)for(let x=x0;x<=x1;x++){const h=(y-y0)/Math.max(1,y1-y0), o=Math.sin(x*1.9)*.25+Math.sin(x*.7+1)*.2;
+    const t=h+o*.6;p(x,y,...(t>.85?[255,240,150]:t>.6?[255,196,60]:t>.35?[240,120,30]:t>.12?[170,50,20]:[60,24,16]));}};
+  tile('smokerFrontOn',(p,r)=>{tablones(p,r,[100,76,50]);cada((x,y)=>{if(y<4){const k=n(r,8);p(x,y,90+k,90+k,92+k);}});fuegoHorno(p,4,11,7,11);});
+  tile('blastFrontOn',(p,r)=>{bloqueMetal([150,150,156])(p,r);fuegoHorno(p,4,11,6,11);});
+  tile('furnaceFrontOn',(p,r)=>{cada((x,y)=>p(x,y,120,120,122));fuegoHorno(p,4,11,9,12);});
   tile('composterSide',(p,r)=>{tablones(p,r,[160,110,60]);cada((x,y)=>{if(x<2||x>13)p(x,y,110,76,40);});});
   tile('composterTop',(p,r)=>cada((x,y)=>{const b=x<2||y<2||x>13||y>13,k=n(r,12);p(x,y,b?140+k:80+k,b?96+k:70+k,b?54+k:40+k);}));
   tile('stonecutterTop',(p,r)=>{piedra(p,r);cada((x,y)=>{if(y===7||y===8)p(x,y,200,200,210);});});
@@ -772,6 +778,10 @@ function tile(nombre,gen){T[nombre]=_genTiles.length;_genTiles.push(gen);}
   re('furnaceFront',(p,r)=>{hornoBase(p,r);cada((x,y)=>{
     if(y>=2&&y<=5&&x>=3&&x<=12)p(x,y,(y===2?150:120)+(x%3?0:-12),(y===2?150:120)+(x%3?0:-12),(y===2?152:122)+(x%3?0:-12));   // repisa
     if(x>=3&&x<=12&&y>=8&&y<=13){const marco=x===3||x===12||y===8||y===13;p(x,y,...(marco?[64,64,66]:(y===12||y===11)&&x%2?[80,80,82]:[24,22,22]));}});});
+  re('furnaceFrontOn',(p,r)=>{hornoBase(p,r);cada((x,y)=>{
+    if(y>=2&&y<=5&&x>=3&&x<=12)p(x,y,(y===2?150:120)+(x%3?0:-12),(y===2?150:120)+(x%3?0:-12),(y===2?152:122)+(x%3?0:-12));
+    if(x>=3&&x<=12&&y>=8&&y<=13){const marco=x===3||x===12||y===8||y===13;if(marco)p(x,y,64,60,58);}});
+    fuegoHorno(p,4,11,9,12);});
   const calabaza=(p,r,cara)=>{const s=S();cada((x,y)=>{const gajo=[0,4,8,12].includes(x),v=hp(x,y,s);
     let c=gajo?[196,98,14]:x%4===1?[236,146,32]:[224,128,22];if(v<.08)c=tono(c,.92);if(y===0||y===15)c=tono(c,.86);p(x,y,...c);});
     if(cara){const L=[255,220,90],O=[250,176,40];

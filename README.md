@@ -264,10 +264,22 @@ En **Opciones → Calidad gráfica**: Baja, Media, Alta y Ultra. Ajusta la resol
 - La **mano secundaria** también se ve (por ejemplo, el escudo en la izquierda) y el objeto principal va en la mano **derecha**.
 - Los objetos reciben la **luz del entorno** (ya no brillan de noche) y los **encantados** brillan en morado.
 
+## Mesas de trabajo, fabricación y hornos
+
+- **Números de las pilas nítidos:** se dibujan con una fuente de píxeles propia (como la del original) a la resolución real de la pantalla, sin bordes borrosos.
+- **Libro de recetas** junto al inventario y la mesa de trabajo: muestra lo que puedes fabricar con lo que llevas (o todas las recetas, con buscador). **Clic** coloca los ingredientes; **Mayús+clic** coloca para fabricar todo lo posible.
+- **Arrastrar** una pila por varias casillas la reparte a partes iguales (con clic derecho, una en cada una) y **doble clic** junta todas las del mismo tipo.
+- Sonido al fabricar.
+- **Horno** con la llama y la flecha de progreso del original. Los hornos **se encienden** mientras queman: se ve el fuego dentro, **dan luz** y echan humo y chispas.
+- **Ahumador:** solo comida, el doble de rápido. **Alto horno:** solo minerales, metales y armaduras, el doble de rápido.
+- Arreglado: romper un ahumador o un alto horno ahora suelta lo que tenga dentro.
+
 ## Multijugador (base)
 
-Botón **Multijugador** en el menú. El anfitrión comparte su mundo (semilla y cambios) y se sincronizan los jugadores (se ven con su nombre y se animan al andar), los bloques que se ponen y rompen y el chat. `/nombre <tu nombre>` cambia tu nombre y `/jugadores` dice quién está.
+Botón **Multijugador** en el menú, o **Abrir a multijugador** en la pausa para compartir el mundo en el que estás (normal o **One Block**). El anfitrión comparte su mundo (semilla y cambios) y se sincronizan los jugadores (se ven con su nombre y se animan al andar), los bloques que se ponen y rompen y el chat. `/nombre <tu nombre>` cambia tu nombre y `/jugadores` dice quién está.
 
+- **One Block en multijugador:** el invitado recibe la isla y el progreso del anfitrión; cuando cualquiera rompe el bloque mágico, el anfitrión decide el siguiente y se lo manda a todos (con el contenido de los cofres y el portal del End).
+- **Cofres compartidos** (al cerrarlos y mientras están abiertos) y **hora del día** sincronizada con la del anfitrión.
 - **En este ordenador:** «Crear sala» da un código; en otra pestaña, «Unirse» con ese código.
 - **Por internet sin servidor (WebRTC):** el anfitrión crea una invitación y la envía; el invitado la pega, pulsa «Responder» y devuelve su código; el anfitrión lo pega y pulsa «Conectar».
 - **Con servidor:** `servidor/servidor-multijugador.js` es un servidor de retransmisión por salas (Node + `ws`: `npm install ws && node servidor-multijugador.js`). En el juego se escribe su dirección (`wss://…`) y el nombre de la sala.

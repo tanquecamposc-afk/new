@@ -390,6 +390,10 @@ bloque(1606,'mesaCartografia','Mesa de cartografía',tx('cartoTop','planks','car
 bloque(1607,'telar','Telar',tx('loomTop','planks','loomSide'),{dureza:2.5,herr:'hacha',inflamable:true});
 bloque(1608,'ahumador','Ahumador',tx('smokerTop','smokerTop','smokerFront'),{dureza:3.5,herr:'pico',inter:'horno',resistencia:3.5});
 bloque(1609,'altoHorno','Alto horno',tx('blastTop','blastTop','blastFront'),{dureza:3.5,herr:'pico',inter:'horno',resistencia:3.5});
+// Hornos encendidos: dan luz y se ven con el fuego dentro (vuelven a apagarse solos)
+bloque(1662,'hornoEncendido','Horno',tx('furnaceTop','furnaceTop','furnaceFrontOn'),{dureza:3.5,herr:'pico',nivel:1,inter:'horno',resistencia:3.5,luz:13,suelta:17});
+bloque(1663,'ahumadorEncendido','Ahumador',tx('smokerTop','smokerTop','smokerFrontOn'),{dureza:3.5,herr:'pico',inter:'horno',resistencia:3.5,luz:13,suelta:1608});
+bloque(1664,'altoHornoEncendido','Alto horno',tx('blastTop','blastTop','blastFrontOn'),{dureza:3.5,herr:'pico',inter:'horno',resistencia:3.5,luz:13,suelta:1609});
 bloque(1610,'compostador','Compostador',tx('composterTop','planks','composterSide'),{dureza:.6,herr:'hacha',inflamable:true});
 bloque(1611,'cortapiedras','Cortapiedras',tx('stonecutterTop','stonecutterTop','stonecutterSide'),{forma:'cajas',cajas:[[0,0,0,1,9/16,1]],opaco:false,dureza:3.5,herr:'pico'});
 bloque(1612,'atril','Atril',tx('lecternTop','planks','lecternSide'),{forma:'cajas',cajas:[[.25,0,.25,.75,.8,.75],[0,0,0,1,.12,1],[0,.8,0,1,.95,1]],opaco:false,dureza:2.5,herr:'hacha',inflamable:true});
@@ -454,7 +458,7 @@ const nivelLiquido=id=>BLOQUES[id].nivelL;
    Registro de objetos
    ========================================================= */
 const ITEMS=[], I={};
-const esVariante=i=>(i>=130&&i<=132)||(i>=134&&i<=136)||(i>=138&&i<=140)||(i>=146&&i<=148)||(i>=149&&i<=168)||(i>=1192&&i<=1212)||i===1283||i===1216||i===1218||i===1220||i===1223||(i>=1224&&i<=1259&&i!==1227&&i!==1245)||(i>=1261&&i<=1269)||(i>=1271&&i<=1273)||i===1287||i===1317||i===1319||i===1328||i===1330||(i>=1424&&i<=1447&&(i-1424)%4!==0)||i===1461||i===1462||(i>=1619&&i<=1661);
+const esVariante=i=>(i>=130&&i<=132)||(i>=134&&i<=136)||(i>=138&&i<=140)||(i>=146&&i<=148)||(i>=149&&i<=168)||(i>=1192&&i<=1212)||i===1283||i===1216||i===1218||i===1220||i===1223||(i>=1224&&i<=1259&&i!==1227&&i!==1245)||(i>=1261&&i<=1269)||(i>=1271&&i<=1273)||i===1287||i===1317||i===1319||i===1328||i===1330||(i>=1424&&i<=1447&&(i-1424)%4!==0)||i===1461||i===1462||(i>=1619&&i<=1664);
 BLOQUES.forEach((b,i)=>{if(b&&!b.liquido&&b.forma!=='portal'&&i!==86&&!(i>=41&&i<=48)&&!esVariante(i))ITEMS[i]={nombre:b.nombre,bloque:true,max:64,clave:b.clave};});
 function item(id,clave,nombre,props){ITEMS[id]=Object.assign({nombre,max:64,clave},props);I[clave]=id;}
 item(200,'palo','Palo'); item(201,'carbon','Carbón'); item(202,'hierroBruto','Hierro en bruto'); item(203,'lingoteHierro','Lingote de hierro');
