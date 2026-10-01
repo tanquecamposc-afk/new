@@ -24,6 +24,7 @@ function enviarRed(msg){
     if(RED.transporte==='local'&&RED.bc)RED.bc.postMessage(s);
     else if(RED.transporte==='webrtc'&&RED.canal&&RED.canal.readyState==='open')RED.canal.send(s);
     else if(RED.transporte==='servidor'&&RED.ws&&RED.ws.readyState===1)RED.ws.send(JSON.stringify({sala:RED.sala,datos:s}));
+    else if(RED.transporte==='peer'&&RED.conns)for(const c of RED.conns)if(c.open)try{c.send(s);}catch(e){}
   }catch(e){}
 }
 function recibirRed(texto){

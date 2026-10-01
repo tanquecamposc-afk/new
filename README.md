@@ -227,6 +227,8 @@ Botón **Bed Wars** en el menú principal (o `/bedwars [1-4]` en el chat).
 - Nuevo: **Tijeras permanentes** (20 hierro), que cortan la lana al instante y no se pierden al morir.
 - **Mejoras del equipo** en cuadrícula con sus niveles (puntos verdes) y la **cola de trampas** con sus iconos.
 
+- **Recursos compartidos:** si un compañero (bot o jugador en red) coge hierro u oro del generador de tu equipo y tú estás en la base, a ti también te llega lo mismo, como en Hypixel.
+
 ### Bed Wars en red
 Conéctate antes en **Multijugador** y que el anfitrión pulse **Bed Wars → ¡Jugar!**: cada jugador conectado ocupa el sitio de un bot en un equipo (en Solos, un equipo cada uno; en Dúos, Tríos o Cuartetos se van llenando). El anfitrión simula los bots, lleva el reloj, las camas, las eliminaciones y decide quién gana; se comparten los bloques, los golpes entre jugadores y a los bots, las camas rotas, las muertes y las explosiones (quien la provoca rompe los bloques y los demás ven el efecto y reciben el daño). Quien entra con la partida empezada la ve como espectador.
 
@@ -271,6 +273,7 @@ En **Opciones → Calidad gráfica**: Baja, Media, Alta y Ultra. Ajusta la resol
 
 - **F + 5** = F5 (tercera persona) y **F + 3** = F3 (información de depuración). Puedes mantener F y pulsar el número, o pulsar F y justo después el número.
 - La **F sola** sigue cambiando el objeto de mano (ahora al soltarla).
+- **Arreglado el salto sin parar:** si una tecla se suelta sin que el juego se entere (por ejemplo, con Ctrl+Espacio, que en Chromebook cambia el idioma del teclado), ahora se suelta sola.
 - **Correr con Ctrl** (como en el original). Mientras juegas, los atajos del navegador con Ctrl quedan bloqueados; en pantalla completa también Ctrl+W, y si el navegador intenta cerrar la pestaña, pregunta antes.
 
 ## Objetos en la mano en tercera persona (F5)
@@ -302,6 +305,20 @@ En **Opciones → Calidad gráfica**: Baja, Media, Alta y Ultra. Ajusta la resol
 - **Horno** con la llama y la flecha de progreso del original. Los hornos **se encienden** mientras queman: se ve el fuego dentro, **dan luz** y echan humo y chispas.
 - **Ahumador:** solo comida, el doble de rápido. **Alto horno:** solo minerales, metales y armaduras, el doble de rápido.
 - Arreglado: romper un ahumador o un alto horno ahora suelta lo que tenga dentro.
+
+## Cómo jugar con amigos (multijugador fácil)
+
+Solo hace falta internet y un código de 5 letras. No necesitas instalar nada ni tener servidor.
+
+1. **Uno crea la partida (el anfitrión).** Entra en **Multijugador** (en el menú principal) o, si ya está jugando, en **Pausa → Abrir a multijugador**, y pulsa **Crear partida**. Le sale un código, por ejemplo **K7Q2M** (con el botón **Copiar** lo copia). Se juega en el mundo del anfitrión: uno normal, One Block, o Bed Wars si lo empieza después.
+2. **Le pasa el código** a sus amigos (por mensaje o en voz) y pulsa **Jugar**.
+3. **Cada amigo** abre el juego, entra en **Multijugador**, escribe el código y pulsa **Unirse**. Entra solo al mundo del anfitrión. Pueden unirse varios a la vez.
+
+- En el chat, `/codigo` vuelve a mostrar el código de la partida, y `/jugadores` dice quién está.
+- **Bed Wars en equipo:** cuando estéis todos, el anfitrión entra en **Bed Wars** y pulsa **¡Jugar!**; a cada amigo le toca un equipo.
+- **Si no conecta:** algunas redes (colegio, trabajo) bloquean las conexiones entre jugadores. Probad con los datos del móvil o en otra red. Si la página publicada no deja conectar, descarga el juego (`blockverse-un-archivo.html`) y ábrelo en el navegador.
+- Cómo funciona: los navegadores se conectan directamente entre sí (WebRTC, con la librería PeerJS incluida en `js/lib`). El servidor público y gratuito de PeerJS solo sirve para que se encuentren con el código. El anfitrión reenvía los mensajes entre todos los invitados.
+- Las formas antiguas (otra pestaña, códigos largos de WebRTC y servidor propio) siguen en **Otras formas de conectar (avanzado)**.
 
 ## Multijugador (base)
 
