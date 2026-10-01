@@ -250,6 +250,11 @@ En **Opciones → Calidad gráfica**: Baja, Media, Alta y Ultra. Ajusta la resol
 - Si atacas antes de que se recargue el golpe, el movimiento es más corto y flojo.
 - En **tercera persona** el brazo hace el mismo golpe y el torso gira con él.
 
+## Chromebook y teclados sin teclas F
+
+- **F + 5** = F5 (tercera persona) y **F + 3** = F3 (información de depuración). Puedes mantener F y pulsar el número, o pulsar F y justo después el número.
+- La **F sola** sigue cambiando el objeto de mano (ahora al soltarla).
+
 ## Multijugador (base)
 
 Botón **Multijugador** en el menú. El anfitrión comparte su mundo (semilla y cambios) y se sincronizan los jugadores (se ven con su nombre y se animan al andar), los bloques que se ponen y rompen y el chat. `/nombre <tu nombre>` cambia tu nombre y `/jugadores` dice quién está.
