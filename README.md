@@ -311,15 +311,29 @@ En **Opciones → Calidad gráfica**: Baja, Media, Alta y Ultra. Ajusta la resol
 ## Bed Wars: kits, monedas, marcador y combate
 
 - **Monedas:** se ganan jugando Bed Wars (baja +5, baja final +15, cama rota +30, partida +15, victoria +100). Al conseguirlas sale un aviso y al terminar se ve el total.
-- **Kits:** en el menú de Bed Wars, botón **Kits…**. Se compran con monedas y el equipado se aplica al empezar y al reaparecer:
-  - **Constructor** (150): 24 de lana extra.
-  - **Saltarín** (150): salto mejorado.
-  - **Minero** (200): pico gratis y Prisa.
-  - **Arquero** (300): arco y 6 flechas.
-  - **Velocista** (300): Rapidez.
-  - **Médico** (350): te curas medio corazón cada 3 s.
-  - **Guerrero** (400): espada de piedra.
-  - **Tanque** (450): pantalones y botas de cobre.
+- **Kits (estilo Bed Wars de Roblox):** en el menú de Bed Wars, botón **Kits…**. Hay 18 kits en cuatro rarezas. Se compran con monedas y el equipado se aplica al empezar y al reaparecer. Durante la partida, abajo a la izquierda se ve tu kit y su estado (furia, recarga, etc.).
+  - **Comunes:**
+    - **Constructor** (150): 24 de lana y +2 cada 10 s.
+    - **Saltarín** (150): doble salto.
+    - **Velocista** (200): Rapidez.
+    - **Minero** (200): pico gratis y Prisa.
+  - **Raros:**
+    - **Arquero** (300): arco con Poder I y flechas que se recargan.
+    - **Médico** (350): te curas a ti y a tus compañeros.
+    - **Guerrero** (350): espada de piedra.
+    - **Tanque** (400): cobre y 15 % menos de daño.
+    - **Cazarrecompensas** (400): 8 de hierro y 3 de oro por baja.
+  - **Épicos:**
+    - **Bárbaro** (600): la espada sube con las bajas.
+    - **Segador** (600): las almas curan y dan velocidad.
+    - **Escarcha** (650): los golpes congelan.
+    - **Piro** (650): los golpes queman.
+    - **Planeador** (550): planea con Espacio.
+    - **Vampiro** (700): robo de vida.
+  - **Legendarios:**
+    - **Ejecutor** (900): triple de daño a enemigos con poca vida.
+    - **Ninja** (900): **G** para una embestida invulnerable.
+    - **Martillo** (1000): **G** para saltar y golpear el suelo.
 - **Marcador lateral nuevo:** el próximo evento con su barra de progreso, los equipos en filas con su color (cama ✔, jugadores vivos o ✘), tu equipo resaltado, tus bajas, finales y camas, las monedas ganadas en la partida y tu kit.
 - **Minerales:** salen del generador con un pequeño salto y un brillo de su color, y se apilan en un solo montón que se ve más grande cuantos más hay. Los diamantes y esmeraldas suenan al aparecer.
 - **Combate:** al recibir un golpe la cámara solo se inclina un poco, sin temblar, y los golpes de los bots ya no te lanzan tan lejos.

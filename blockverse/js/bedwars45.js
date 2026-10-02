@@ -78,7 +78,7 @@ actualizarFinal=function(dt){
   // Efectos que dura toda la partida según el kit
   if(estado!=='jugando'||!yo.vivo||yo.espectador)return;
   const k=kitActual45().id;
-  const ef={velocista:'rapidez',saltarin:'salto',minero:'prisa'}[k];
+  const ef=Object.assign(Object.create(null),{velocista:'rapidez',saltarin:'salto',minero:'prisa'})[k];
   if(ef&&(!efectos[ef]||efectos[ef].t<1))efectos[ef]={t:2,n:1};
   if(k==='medico'){curaKit45+=dt;if(curaKit45>=3){curaKit45=0;if(salud<20){salud=Math.min(20,salud+1);actualizarHUD();}}}
 };
