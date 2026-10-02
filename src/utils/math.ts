@@ -36,3 +36,18 @@ export function eulerToQuat(ex: number, ey: number, ez: number): Quat {
     w: c1 * c2 * c3 - s1 * s2 * s3,
   };
 }
+
+/** Multiplica cuaterniones a·b (aplica b y luego a). */
+export function mulQuat(a: Quat, b: Quat): Quat {
+  return {
+    w: a.w * b.w - a.x * b.x - a.y * b.y - a.z * b.z,
+    x: a.w * b.x + a.x * b.w + a.y * b.z - a.z * b.y,
+    y: a.w * b.y - a.x * b.z + a.y * b.w + a.z * b.x,
+    z: a.w * b.z + a.x * b.y - a.y * b.x + a.z * b.w,
+  };
+}
+
+export const axisAngle = (x: number, y: number, z: number, angle: number): Quat => {
+  const s = Math.sin(angle / 2);
+  return { x: x * s, y: y * s, z: z * s, w: Math.cos(angle / 2) };
+};

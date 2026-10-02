@@ -11,6 +11,11 @@
 | Puntuación y clasificación | `src/game/scoring/score.test.ts` |
 | Cámara | `src/game/camera/CameraRig.test.ts` |
 | Persistencia y validación de ajustes | `src/persistence/PersistenceService.test.ts` |
+| Cursos: datos válidos, reposo estable, completables por el bot de prueba | `src/game/courses/courses.test.ts` |
+| Molino, barreras, agua, arena, acelerador, rampa | `src/game/obstacles/mechanics.test.ts` |
+
+El bot (`src/game/testing/solver.ts`) es exclusivamente de testing: prueba un abanico de
+tiros con el predictor y avanza por la guía del curso. Nunca participa en partidas.
 
 Además, cada fase se verifica en Chromium real con Playwright (escritorio y móvil táctil):
 cargar, apuntar, comprobar la predicción contra el tiro real, disparar, embocar, resumen,

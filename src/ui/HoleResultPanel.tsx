@@ -4,10 +4,11 @@ import { formatTime } from '@/utils/format';
 interface Props {
   result: HoleSummary;
   onReplay: () => void;
+  onNext: (() => void) | null;
 }
 
 /** Resumen del hoyo: resultado, golpes, tiempo, desglose de puntuación y tiros. */
-export function HoleResultPanel({ result, onReplay }: Props) {
+export function HoleResultPanel({ result, onReplay, onNext }: Props) {
   const { score } = result;
   return (
     <div className="pointer-events-auto absolute inset-0 z-20 flex items-center justify-center bg-ink/40 p-3">
@@ -52,12 +53,22 @@ export function HoleResultPanel({ result, onReplay }: Props) {
         </table>
         {result.penalties > 0 && <div className="mt-1 text-xs font-bold text-danger">Incluye {result.penalties} golpe(s) de penalización</div>}
 
-        <button
-          onClick={onReplay}
-          className="mt-5 rounded-2xl bg-sun px-6 py-3 text-xl font-black text-ink shadow-[0_5px_0_#b8901a] active:translate-y-1 active:shadow-none"
-        >
-          Jugar otra vez
-        </button>
+        <div className="mt-5 flex flex-wrap justify-center gap-3">
+          <button
+            onClick={onReplay}
+            className={`rounded-2xl px-6 py-3 text-xl font-black active:translate-y-1 active:shadow-none ${onNext ? 'bg-white/90 text-ink shadow-[0_5px_0_#9aa7c0]' : 'bg-sun text-ink shadow-[0_5px_0_#b8901a]'}`}
+          >
+            Jugar otra vez
+          </button>
+          {onNext && (
+            <button
+              onClick={onNext}
+              className="rounded-2xl bg-sun px-6 py-3 text-xl font-black text-ink shadow-[0_5px_0_#b8901a] active:translate-y-1 active:shadow-none"
+            >
+              Siguiente hoyo →
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );

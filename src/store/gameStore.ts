@@ -35,6 +35,7 @@ export interface HudState {
   holed: boolean;
   /** Tiempo restante del límite del hoyo (ms) o null si no hay límite. */
   remainingMs: number | null;
+  timeLimitMs: number | null;
   overview: boolean;
   result: HoleSummary | null;
   lastEvent: { text: string; tone: 'info' | 'good' | 'bad'; id: number } | null;
@@ -77,6 +78,7 @@ export const initialHud: HudState = {
   power: 0,
   holed: false,
   remainingMs: null,
+  timeLimitMs: null,
   overview: false,
   result: null,
   lastEvent: null,

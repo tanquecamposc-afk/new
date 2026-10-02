@@ -56,3 +56,79 @@ export function applyWorldPlanarUV(geometry: THREE.BufferGeometry, matrix: THREE
   }
   geometry.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
 }
+
+/** Chevrones para zonas aceleradoras (apuntan hacia +V de la textura). */
+export function createChevronTexture(): THREE.CanvasTexture {
+  const c = document.createElement('canvas');
+  c.width = c.height = 64;
+  const g = c.getContext('2d')!;
+  g.fillStyle = '#ff8a2a';
+  g.fillRect(0, 0, 64, 64);
+  g.strokeStyle = '#ffe08a';
+  g.lineWidth = 9;
+  g.lineJoin = 'round';
+  g.beginPath();
+  g.moveTo(12, 44);
+  g.lineTo(32, 22);
+  g.lineTo(52, 44);
+  g.stroke();
+  const t = new THREE.CanvasTexture(c);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
+
+/** Arena: base clara con grano. */
+export function createSandTexture(): THREE.CanvasTexture {
+  const size = 128;
+  const c = document.createElement('canvas');
+  c.width = c.height = size;
+  const g = c.getContext('2d')!;
+  g.fillStyle = '#e8cf8a';
+  g.fillRect(0, 0, size, size);
+  let seed = 99;
+  const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+  for (let i = 0; i < 1400; i++) {
+    g.fillStyle = rnd() > 0.5 ? 'rgba(160,120,60,0.25)' : 'rgba(255,250,230,0.35)';
+    g.fillRect(rnd() * size, rnd() * size, 1.5, 1.5);
+  }
+  const t = new THREE.CanvasTexture(c);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
+
+/** Ondas suaves para el agua (se desplaza en el tiempo). */
+export function createWaterTexture(): THREE.CanvasTexture {
+  const size = 128;
+  const c = document.createElement('canvas');
+  c.width = c.height = size;
+  const g = c.getContext('2d')!;
+  g.fillStyle = '#3fa7e0';
+  g.fillRect(0, 0, size, size);
+  g.strokeStyle = 'rgba(255,255,255,0.35)';
+  g.lineWidth = 2;
+  for (let i = 0; i < 9; i++) {
+    const y = (i / 9) * size + 6;
+    g.beginPath();
+    for (let x = 0; x <= size; x += 4) g.lineTo(x, y + Math.sin((x / size) * Math.PI * 4 + i) * 3);
+    g.stroke();
+  }
+  const t = new THREE.CanvasTexture(c);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
+
+/** UV planar en un marco orientado (para que los chevrones apunten en la dirección del acelerador). */
+export function applyOrientedPlanarUV(geometry: THREE.BufferGeometry, matrix: THREE.Matrix4, dir: { x: number; z: number }, scale: number): void {
+  const pos = geometry.getAttribute('position');
+  const uv = new Float32Array(pos.count * 2);
+  const v = new THREE.Vector3();
+  for (let i = 0; i < pos.count; i++) {
+    v.fromBufferAttribute(pos, i).applyMatrix4(matrix);
+    uv[i * 2] = (v.x * -dir.z + v.z * dir.x) * scale;
+    uv[i * 2 + 1] = (v.x * dir.x + v.z * dir.z) * scale;
+  }
+  geometry.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+}

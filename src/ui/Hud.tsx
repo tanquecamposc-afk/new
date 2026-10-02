@@ -9,7 +9,11 @@ import { SettingsPanel } from './SettingsPanel';
 interface Props {
   onReset: () => void;
   onReplay: () => void;
+  onNext: (() => void) | null;
   onToggleOverview: () => void;
+  holes: { id: string; name: string; par: number }[];
+  holeIndex: number;
+  onSelectHole: (index: number) => void;
 }
 
 const HINTS: Record<string, string> = {
@@ -18,9 +22,10 @@ const HINTS: Record<string, string> = {
   BALL_MOVING: 'Bola en movimiento…',
 };
 
-export function Hud({ onReset, onReplay, onToggleOverview }: Props) {
+export function Hud({ onReset, onReplay, onNext, onToggleOverview, holes, holeIndex, onSelectHole }: Props) {
   const hud = useGameStore((s) => s.hud);
   const [settings, setSettings] = useState(false);
+  const [picker, setPicker] = useState(false);
   const danger = hud.power >= PhysicsConfig.shot.dangerPower;
   const warn = hud.remainingMs !== null && hud.remainingMs <= GameConfig.timeWarningSec * 1000 && !hud.holed;
 
@@ -28,17 +33,23 @@ export function Hud({ onReset, onReplay, onToggleOverview }: Props) {
     <div className="pointer-events-none absolute inset-0 z-10 select-none">
       {/* Barra superior: hoyo, golpes y tiempo */}
       <div className="flex items-start justify-between gap-2 p-3 sm:p-4">
-        <div className="rounded-2xl bg-ink/70 px-4 py-2 backdrop-blur-sm">
-          <div className="text-xs font-bold uppercase tracking-wider text-white/70">Hoyo</div>
+        <button
+          onClick={() => setPicker((v) => !v)}
+          className="pointer-events-auto rounded-2xl bg-ink/70 px-4 py-2 text-left backdrop-blur-sm"
+          aria-label="Elegir hoyo"
+        >
+          <div className="text-xs font-bold uppercase tracking-wider text-white/70">
+            Hoyo {holeIndex + 1}/{holes.length} ▾
+          </div>
           <div className="text-lg font-black leading-tight sm:text-xl">{hud.courseName}</div>
           <div className="text-sm font-bold text-sun">Par {hud.par}</div>
-        </div>
+        </button>
         <div className="flex gap-2">
           <Stat label="Golpes" value={String(hud.shots)} sub={hud.penalties ? `+${hud.penalties} pen.` : undefined} />
           <Stat
             label={warn ? 'Quedan' : 'Tiempo'}
             value={warn ? formatTime(hud.remainingMs!) : formatTime(hud.timeMs)}
-            sub={!warn && hud.remainingMs !== null ? `límite ${formatTime(GameConfig.holeTimeLimitSec! * 1000)}` : undefined}
+            sub={!warn && hud.timeLimitMs !== null ? `límite ${formatTime(hud.timeLimitMs)}` : undefined}
             alert={warn}
           />
         </div>
@@ -93,7 +104,26 @@ export function Hud({ onReset, onReplay, onToggleOverview }: Props) {
         </div>
       )}
 
-      {hud.result && <HoleResultPanel result={hud.result} onReplay={onReplay} />}
+      {picker && (
+        <div className="pointer-events-auto absolute left-3 top-28 z-20 w-64 rounded-2xl border-2 border-white/30 bg-ink/95 p-2 shadow-2xl sm:left-4">
+          {holes.map((h, i) => (
+            <button
+              key={h.id}
+              onClick={() => {
+                setPicker(false);
+                onSelectHole(i);
+              }}
+              className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-left font-bold ${i === holeIndex ? 'bg-sun text-ink' : 'hover:bg-white/10'}`}
+            >
+              <span>
+                {i + 1}. {h.name}
+              </span>
+              <span className="text-xs opacity-70">Par {h.par}</span>
+            </button>
+          ))}
+        </div>
+      )}
+      {hud.result && <HoleResultPanel result={hud.result} onReplay={onReplay} onNext={onNext} />}
       {settings && <SettingsPanel onClose={() => setSettings(false)} />}
     </div>
   );

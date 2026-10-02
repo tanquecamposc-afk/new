@@ -18,7 +18,7 @@ describe('máquina de estados del jugador', () => {
     expect(m.state).toBe('BALL_MOVING');
   });
   it('force lanza error ante transiciones imposibles', () => {
-    expect(() => createPlayerStateMachine().force('BALL_MOVING')).toThrow();
+    expect(() => createPlayerStateMachine().force('BALL_STOPPED')).toThrow();
   });
   it('notifica cambios', () => {
     const m = createPlayerStateMachine();

@@ -13,6 +13,7 @@ import { AimView } from '@/game/render/AimView';
 import { BallView } from '@/game/render/BallView';
 import { CourseView } from '@/game/render/CourseView';
 import { HoleEffect } from '@/game/render/HoleEffect';
+import { ObstacleView } from '@/game/render/ObstacleView';
 import { SceneRenderer } from '@/game/render/SceneRenderer';
 import { TrajectoryView } from '@/game/render/TrajectoryView';
 import { calculateScore, holeResultName } from '@/game/scoring/score';
@@ -55,6 +56,7 @@ export class GameEngine {
   private aim!: AimView;
   private trajectory!: TrajectoryView;
   private holeFx!: HoleEffect;
+  private obstacleView!: ObstacleView;
   private readonly audio = new AudioService();
   private rig = new CameraRig();
   private input!: InputController;
@@ -100,6 +102,8 @@ export class GameEngine {
     this.aim = new AimView();
     this.trajectory = new TrajectoryView();
     this.holeFx = new HoleEffect();
+    this.obstacleView = new ObstacleView(course.obstacles);
+    this.view.scene.add(this.obstacleView.group);
     this.view.scene.add(this.ballView.mesh, this.aim.group, this.trajectory.group, this.holeFx.group);
 
     const spawn = course.spawnPoints[0]!;
@@ -140,6 +144,7 @@ export class GameEngine {
       timeMs: 0,
       holed: false,
       remainingMs: this.sim.remainingMs(LOCAL_PLAYER_ID),
+      timeLimitMs: this.sim.timeLimitSec === null ? null : this.sim.timeLimitSec * 1000,
       overview: false,
       result: null,
       playerState: 'IDLE',
@@ -251,6 +256,8 @@ export class GameEngine {
       this.trajectory.hide();
     }
     this.trajectory.update(dt, this.elapsed);
+    // Mismo instante que la bola interpolada (entre el paso anterior y el actual).
+    this.obstacleView.update((this.sim.tick - 1 + this.loop.alpha) * this.sim.dt);
     this.holeFx.update(dt);
 
     const hole = this.opts.course.hole.position;
@@ -306,7 +313,7 @@ export class GameEngine {
       Math.abs(prev.power - shot.power) > TrajectoryConfig.minPowerDelta ||
       Math.abs(Math.atan2(prev.direction.x, prev.direction.z) - Math.atan2(shot.direction.x, shot.direction.z)) > TrajectoryConfig.minAngleDelta;
     if (changed && now - this.predicted.at >= TrajectoryConfig.minIntervalMs) {
-      this.predictor.begin(origin, shot);
+      this.predictor.begin(origin, shot, undefined, this.sim.tick);
       this.predicted = { shot: { direction: { ...shot.direction }, power: shot.power }, at: now, mode };
     }
     const pending = this.predictor.partial()?.framesPending ?? 0;
@@ -463,6 +470,7 @@ export class GameEngine {
     this.aim?.dispose();
     this.trajectory?.dispose();
     this.holeFx?.dispose();
+    this.obstacleView?.dispose();
     this.audio.dispose();
     this.view?.dispose();
     this.predictor?.dispose();

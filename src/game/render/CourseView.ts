@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { PhysicsConfig } from '@/config/physics';
 import { SURFACES } from '@/config/surfaces';
 import type { BlockDef, CourseData, DecorationDef } from '@/game/courses/types';
-import { applyWorldPlanarUV, createStripeTexture } from './textures';
+import { applyOrientedPlanarUV, applyWorldPlanarUV, createChevronTexture, createSandTexture, createStripeTexture, createWaterTexture } from './textures';
 
 const STRIPE_SCALE = 0.25;
 
@@ -13,13 +13,25 @@ export class CourseView {
   private flagCloth: THREE.Mesh;
   private flagLift = 0;
   private disposables: { dispose(): void }[] = [];
+  private animated: THREE.Texture[] = [];
+  private boosterTex: THREE.Texture | null = null;
+  private waterTex: THREE.Texture | null = null;
 
   constructor(private readonly course: CourseData) {
     const greenTex = this.track(createStripeTexture('#4cc35a', '#45b553'));
     const roughTex = this.track(createStripeTexture('#69b84c', '#64b048', 6));
 
+    this.boosterTex = this.track(createChevronTexture());
+    this.waterTex = this.track(createWaterTexture());
+    this.animated.push(this.boosterTex, this.waterTex);
     const mats: Record<string, THREE.Material> = {
       green: this.track(new THREE.MeshStandardMaterial({ map: greenTex, roughness: 0.92 })),
+      sand: this.track(new THREE.MeshStandardMaterial({ map: this.track(createSandTexture()), roughness: 1 })),
+      booster: this.track(new THREE.MeshStandardMaterial({ map: this.boosterTex, roughness: 0.6, emissive: 0x552000 })),
+      water: this.track(
+        new THREE.MeshStandardMaterial({ map: this.waterTex, roughness: 0.15, metalness: 0.1, transparent: true, opacity: 0.82, depthWrite: false }),
+      ),
+      wood: this.track(new THREE.MeshStandardMaterial({ color: 0xc98f5a, roughness: 0.8 })),
       rough: this.track(new THREE.MeshStandardMaterial({ map: roughTex, roughness: 1 })),
       wall: this.track(new THREE.MeshStandardMaterial({ color: SURFACES.wall.color, roughness: 0.55 })),
     };
@@ -30,6 +42,8 @@ export class CourseView {
     for (const b of course.outOfBounds) this.addBlock(b, matFor(b), false);
     for (const b of course.walls) this.addWall(b, matFor(b));
     for (const d of course.decorations) this.addDecoration(d);
+    for (const o of course.obstacles) if (o.kind === 'windmill') this.addWindmillRoof(o.hub.x, o.hub.z - 1);
+    for (const b of course.surfaces) if (b.surface === 'water') this.addPondBed(b);
     this.addCup();
     const { flag, cloth } = this.createFlag();
     this.flag = flag;
@@ -42,14 +56,16 @@ export class CourseView {
   }
 
   private blockMatrix(b: BlockDef): THREE.Matrix4 {
-    const q = new THREE.Quaternion().setFromEuler(new THREE.Euler(b.rotation?.x ?? 0, b.rotation?.y ?? 0, b.rotation?.z ?? 0));
+    const q = b.quat
+      ? new THREE.Quaternion(b.quat.x, b.quat.y, b.quat.z, b.quat.w)
+      : new THREE.Quaternion().setFromEuler(new THREE.Euler(b.rotation?.x ?? 0, b.rotation?.y ?? 0, b.rotation?.z ?? 0));
     return new THREE.Matrix4().compose(new THREE.Vector3(b.center.x, b.center.y, b.center.z), q, new THREE.Vector3(1, 1, 1));
   }
 
   private containsHole(b: BlockDef): boolean {
     const h = this.course.hole.position;
     const r = b.rotation;
-    if (r && (r.x || r.y || r.z)) return false;
+    if (b.quat || (r && (r.x || r.y || r.z))) return false;
     const top = b.center.y + b.size.y / 2;
     return Math.abs(top - h.y) < 1e-3 && Math.abs(h.x - b.center.x) < b.size.x / 2 && Math.abs(h.z - b.center.z) < b.size.z / 2;
   }
@@ -57,14 +73,39 @@ export class CourseView {
   private addBlock(b: BlockDef, mat: THREE.Material, receiveOnly: boolean): void {
     const m = this.blockMatrix(b);
     const geo = this.containsHole(b) ? this.holedBlockGeometry(b) : new THREE.BoxGeometry(b.size.x, b.size.y, b.size.z);
-    applyWorldPlanarUV(geo, m, STRIPE_SCALE);
+    if (b.boost) applyOrientedPlanarUV(geo, m, b.boost.direction, 1.2);
+    else applyWorldPlanarUV(geo, m, b.surface === 'water' ? 0.18 : STRIPE_SCALE);
     const mesh = new THREE.Mesh(this.track(geo), mat);
     mesh.applyMatrix4(m);
     mesh.receiveShadow = true;
-    mesh.castShadow = !receiveOnly;
+    mesh.castShadow = !receiveOnly && b.surface !== 'water';
+    if (b.surface === 'water') mesh.renderOrder = 2;
     mesh.matrixAutoUpdate = false;
     mesh.updateMatrix();
     this.group.add(mesh);
+  }
+
+  /** Fondo del estanque visible a través del agua. */
+  private addPondBed(b: BlockDef): void {
+    const bed = new THREE.Mesh(
+      this.track(new THREE.BoxGeometry(b.size.x, 0.1, b.size.z)),
+      this.track(new THREE.MeshStandardMaterial({ color: 0x1f5d7a, roughness: 1 })),
+    );
+    bed.position.set(b.center.x, b.center.y + b.size.y / 2 - 0.45, b.center.z);
+    bed.receiveShadow = true;
+    this.group.add(bed);
+  }
+
+  /** Tejado decorativo del molino (sin colisión: queda por encima del juego). */
+  private addWindmillRoof(x: number, z: number): void {
+    const roof = new THREE.Mesh(
+      this.track(new THREE.ConeGeometry(2.4, 1.4, 4)),
+      this.track(new THREE.MeshStandardMaterial({ color: 0xb8433a, roughness: 0.7, flatShading: true })),
+    );
+    roof.rotation.y = Math.PI / 4;
+    roof.position.set(x, 2.4 + 0.7, z);
+    roof.castShadow = true;
+    this.group.add(roof);
   }
 
   /** Bloque con un agujero cilíndrico real en la geometría visual para la copa. */
@@ -196,6 +237,11 @@ export class CourseView {
 
   /** Animación del banderín: ondea y se levanta cuando la bola se acerca (para no taparla). */
   update(time: number, dt: number, ballDistanceToHole: number): void {
+    if (this.boosterTex) this.boosterTex.offset.y = -time * 1.6;
+    if (this.waterTex) {
+      this.waterTex.offset.x = Math.sin(time * 0.3) * 0.08;
+      this.waterTex.offset.y = time * 0.04;
+    }
     const target = ballDistanceToHole < 2.4 ? 1 : 0;
     this.flagLift += (target - this.flagLift) * Math.min(1, dt * 4);
     this.flag.position.y = this.course.hole.position.y + this.flagLift * 1.4;

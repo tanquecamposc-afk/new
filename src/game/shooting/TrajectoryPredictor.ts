@@ -35,6 +35,7 @@ interface PredictionJob {
   outcome: PredictedOutcome;
   distance: number;
   step: number;
+  startTick: number;
   maxSteps: number;
   computeMs: number;
   /** Número de llamadas a advance() (frames) que lleva la predicción. */
@@ -63,13 +64,16 @@ export class TrajectoryPredictor {
   private job: PredictionJob | null = null;
 
   /** Predicción completa síncrona (tests, servidor). */
-  predict(origin: Vec3, shot: ShotInput, maxTime: number = TrajectoryConfig.maxTime): TrajectoryPrediction {
-    this.begin(origin, shot, maxTime);
+  predict(origin: Vec3, shot: ShotInput, maxTime: number = TrajectoryConfig.maxTime, startTick = 0): TrajectoryPrediction {
+    this.begin(origin, shot, maxTime, startTick);
     return this.advance(Infinity)!;
   }
 
-  /** Inicia una predicción incremental (descarta la anterior). */
-  begin(origin: Vec3, shot: ShotInput, maxTime: number = TrajectoryConfig.maxTime): void {
+  /**
+   * Inicia una predicción incremental (descarta la anterior). `startTick` es el
+   * tick actual de la simulación: los obstáculos se colocan donde estarán.
+   */
+  begin(origin: Vec3, shot: ShotInput, maxTime: number = TrajectoryConfig.maxTime, startTick = 0): void {
     // Bola nueva en cada predicción: elimina la caché de contactos (warm-start)
     // del tiro anterior, que hacía que dos predicciones iguales divergieran.
     this.ball.dispose();
@@ -83,6 +87,7 @@ export class TrajectoryPredictor {
       distance: 0,
       step: 0,
       maxSteps: Math.ceil(maxTime / PhysicsConfig.fixedTimestep),
+      startTick,
       computeMs: 0,
       frames: 0,
     };
@@ -110,12 +115,14 @@ export class TrajectoryPredictor {
     while (!done) {
       job.step++;
       ball.preStep(dt, hole);
+      this.physics.obstacles?.setTarget((job.startTick + job.step) * dt);
       this.physics.step(this.queue);
       let bounced = false;
       this.queue.drainCollisionEvents((h1, h2, started) => {
         if (!started) return;
         const other = h1 === ball.collider.handle ? h2 : h2 === ball.collider.handle ? h1 : null;
-        if (other !== null && this.physics.getInfo(other)?.role === 'wall') bounced = true;
+        const role = other !== null ? this.physics.getInfo(other)?.role : undefined;
+        if (role === 'wall' || role === 'obstacle') bounced = true;
       });
       const result = ball.postStep(dt, hole, killY);
       const a = ball.prevPosition;

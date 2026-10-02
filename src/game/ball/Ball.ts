@@ -7,11 +7,12 @@ import type { Collider, RigidBody } from '@dimforge/rapier3d-compat';
 
 export type BallPhase = 'rest' | 'moving' | 'captured' | 'in_hole' | 'hazard';
 
-export type BallStepOutcome = 'stopped' | 'holed' | 'water' | 'out_of_bounds' | 'timeout' | null;
+export type BallStepOutcome = 'stopped' | 'holed' | 'water' | 'out_of_bounds' | 'timeout' | 'disturbed' | null;
 
 export interface GroundContact {
   surface: SurfaceId;
   role: string;
+  boost?: { direction: { x: number; z: number }; accel: number; maxSpeed: number };
   normal: Vec3;
   distance: number;
 }
@@ -120,6 +121,7 @@ export class Ball {
       const s = SURFACES[this.ground.surface];
       this.applyRollingResistance(s.rollingResistance * dt);
       if (s.accelerationModifier !== 0) this.applySpeedModifier(1 + s.accelerationModifier * dt);
+      if (this.ground.boost) this.applyBoost(this.ground.boost, dt);
     }
     this.checkHoleCapture(hole, dt);
   }
@@ -146,6 +148,16 @@ export class Ball {
     if (this.phase === 'in_hole') {
       // Deja que termine de caer y luego la duerme en el fondo de la copa.
       if (this.speed < 0.05) this.body.sleep();
+      return null;
+    }
+    if (this.phase === 'rest') {
+      // Un obstáculo (o una bola) ha empujado a la bola parada.
+      if (Math.hypot(v.x, v.y, v.z) > this.cfg.stop.linearThreshold * 3) {
+        this.phase = 'moving';
+        this.settleTimer = 0;
+        this.movingTime = 0;
+        return 'disturbed';
+      }
       return null;
     }
     if (this.phase !== 'moving') return null;
@@ -189,7 +201,7 @@ export class Ball {
     if (!hit) return null;
     const info = this.physics.getInfo(hit.collider);
     if (!info) return null;
-    return { surface: info.surface, role: info.role, normal: { x: hit.normal.x, y: hit.normal.y, z: hit.normal.z }, distance: hit.timeOfImpact };
+    return { surface: info.surface, role: info.role, boost: info.boost, normal: { x: hit.normal.x, y: hit.normal.y, z: hit.normal.z }, distance: hit.timeOfImpact };
   }
 
   /** Resistencia a la rodadura: reduce la velocidad lineal y angular en la misma proporción. */
@@ -198,6 +210,24 @@ export class Ball {
     const speed = Math.hypot(v.x, v.y, v.z);
     if (speed <= 1e-6) return;
     this.applySpeedModifier(Math.max(0, speed - deltaV) / speed);
+  }
+
+  /**
+   * Acelerador: suma velocidad en la dirección de la zona (aceleración
+   * controlada y acotada, nunca teletransporte). La rodadura se ajusta para
+   * que la bola no derrape.
+   */
+  private applyBoost(boost: NonNullable<GroundContact['boost']>, dt: number): void {
+    const v = this.body.linvel();
+    const along = v.x * boost.direction.x + v.z * boost.direction.z;
+    if (along >= boost.maxSpeed) return;
+    const dv = Math.min(boost.accel * dt, boost.maxSpeed - along);
+    const nx = v.x + boost.direction.x * dv;
+    const nz = v.z + boost.direction.z * dv;
+    this.body.setLinvel({ x: nx, y: v.y, z: nz }, true);
+    const r = this.cfg.ball.radius;
+    // ω = (up × v) / r para una esfera que rueda sin deslizar.
+    this.body.setAngvel({ x: nz / r, y: 0, z: -nx / r }, true);
   }
 
   private applySpeedModifier(scale: number): void {

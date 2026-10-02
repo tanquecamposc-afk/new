@@ -18,13 +18,14 @@ export const FLOOR_GROUPS = groups(Group.FLOOR, ALL);
 export const WALL_GROUPS = groups(Group.WALL, ALL);
 export const OOB_GROUPS = groups(Group.OUT_OF_BOUNDS, ALL);
 export const CUP_GROUPS = groups(Group.CUP, Group.BALL);
+export const OBSTACLE_GROUPS = groups(Group.OBSTACLE, Group.BALL);
 
 /** Bola en juego. Las bolas no chocan entre sí en práctica local (se activará en multiplayer). */
 export const ballGroups = (collideWithBalls: boolean) =>
   groups(Group.BALL, Group.FLOOR | Group.WALL | Group.OBSTACLE | Group.OUT_OF_BOUNDS | Group.CUP | (collideWithBalls ? Group.BALL : 0));
 
 /** Bola cayendo en la copa: ignora el green para atravesar la boca del hoyo. */
-export const BALL_IN_CUP_GROUPS = groups(Group.BALL, Group.CUP | Group.WALL);
+export const BALL_IN_CUP_GROUPS = groups(Group.BALL, Group.CUP | Group.WALL | Group.OBSTACLE);
 
 /** Grupos para el rayo de detección de suelo. */
 export const GROUND_QUERY_GROUPS = groups(0xffff, Group.FLOOR | Group.OUT_OF_BOUNDS | Group.OBSTACLE);

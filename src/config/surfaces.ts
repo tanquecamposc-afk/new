@@ -19,7 +19,7 @@ export interface SurfaceConfig {
   color: number;
 }
 
-export type SurfaceId = 'green' | 'fringe' | 'sand' | 'wall' | 'wood' | 'stone' | 'water' | 'rough';
+export type SurfaceId = 'green' | 'fringe' | 'sand' | 'wall' | 'wood' | 'stone' | 'water' | 'rough' | 'booster' | 'bumper';
 
 export const SURFACES: Record<SurfaceId, SurfaceConfig> = {
   green: { friction: 0.8, restitution: 0.1, rollingResistance: 1.45, accelerationModifier: 0, stopThreshold: 1, hazardType: 'none', color: 0x4cc35a },
@@ -30,5 +30,9 @@ export const SURFACES: Record<SurfaceId, SurfaceConfig> = {
   stone: { friction: 0.5, restitution: 0.4, rollingResistance: 1.5, accelerationModifier: 0, stopThreshold: 1, hazardType: 'none', color: 0x9aa3ad },
   /** Terreno fuera del recorrido: tocarlo es "fuera de límites". */
   rough: { friction: 0.9, restitution: 0.15, rollingResistance: 6, accelerationModifier: 0, stopThreshold: 1, hazardType: 'out_of_bounds', color: 0x6dbb4f },
+  /** Acelerador: la dirección y la fuerza van en el bloque (BlockDef.boost). */
+  booster: { friction: 0.7, restitution: 0.1, rollingResistance: 0.6, accelerationModifier: 0, stopThreshold: 1, hazardType: 'none', color: 0xff8a2a },
+  /** Bumper: rebote vivo (restitución alta). */
+  bumper: { friction: 0.2, restitution: 1.05, rollingResistance: 0, accelerationModifier: 0, stopThreshold: 1, hazardType: 'none', color: 0xff4f8b },
   water: { friction: 0, restitution: 0, rollingResistance: 0, accelerationModifier: 0, stopThreshold: 1, hazardType: 'water', color: 0x3fa7e0 },
 };

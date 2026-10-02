@@ -58,7 +58,14 @@ Ver [architecture.md](./architecture.md). Resumen:
 | Ajustes persistentes (sensibilidad, trayectoria, volúmenes, invertir eje) | ✅ Phase 2 |
 | PersistenceService (versionado, validación, recuperación de datos corruptos) | ✅ Phase 2 |
 | Resumen del hoyo con desglose de puntuación y tabla de tiros | ✅ Phase 2 |
-| Superficies arena/agua, pendientes, molinos, barreras móviles, 6 cursos | ⏳ Phase 3 |
+| 6 cursos de prueba definidos por datos + validador (`validateCourse`) | ✅ Phase 3 |
+| Superficies: green, arena, agua (hazard), acelerador, bumper | ✅ Phase 3 |
+| Rampas en cualquier dirección y pendientes (la bola vuelve si no sube) | ✅ Phase 3 |
+| Obstáculos dinámicos deterministas: molino, barreras móviles, spinner; bumpers | ✅ Phase 3 |
+| Bola empujada por un obstáculo estando parada (sin consumir tiro) | ✅ Phase 3 |
+| Predicción con obstáculos en movimiento (según el tick actual) | ✅ Phase 3 |
+| Selector de hoyo y "Siguiente hoyo" (práctica local) | ✅ Phase 3 |
+| Bot de prueba (sólo tests) que completa los 6 cursos con física real | ✅ Phase 3 |
 | Menús, lobby, cuenta atrás, resultados, espectador | ⏳ Phase 4 |
 | Multijugador real (servidor autoritativo, salas, reconexión, anti-cheat) | ⏳ Phase 5 |
 | Perfil, progresión, moneda, tienda, inventario, cosméticos | ⏳ Phase 6 |
@@ -96,10 +103,11 @@ Implementado y verificado: 61 tests + E2E en Chromium (predicción = tiro real c
 0,000 m, vista general, ajustes guardados y recuperados tras recargar, hoyo con confeti,
 resumen con puntuación, tiro táctil en móvil).
 
-### Phase 3 — Cursos + superficies + hazards + paredes + rampas + obstáculos dinámicos
-Seis cursos de prueba (BASIC, WALL BOUNCE, RAMPS, WINDMILL, MOVING BARRIERS, HAZARDS),
-arena/agua, rampas y aceleradores, molinos y barreras cinemáticas deterministas
-(función del tick de simulación → sincronizables).
+### Phase 3 — Cursos + superficies + hazards + paredes + rampas + obstáculos dinámicos ✅
+Seis cursos (Primer Green, Carambola, Las Colinas, El Molino, Hora Punta, El Lago).
+Obstáculos como cuerpos cinemáticos cuya pose es función pura del tiempo de simulación
+(`obstaclePose`), compartida por física, render y predictor. Verificado: 88 tests (incluye
+un bot de prueba que completa los 6 hoyos) + E2E en Chromium recorriendo los 6 hoyos.
 
 ### Phase 4 — Bucle de juego + lobby + menús + HUD + resultados + espectador
 ### Phase 5 — Multijugador real (WebSocket/Colyseus, servidor autoritativo con la misma `Simulation`)

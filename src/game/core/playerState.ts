@@ -16,8 +16,9 @@ export type PlayerState =
  * y a AIMING sólo se llega desde IDLE: nunca con la bola en movimiento.
  */
 export const PLAYER_TRANSITIONS: Record<PlayerState, readonly PlayerState[]> = {
-  IDLE: ['AIMING', 'FINISHED', 'DISCONNECTED'],
-  AIMING: ['IDLE', 'SHOOTING', 'FINISHED', 'DISCONNECTED'],
+  // IDLE/AIMING → BALL_MOVING: un obstáculo empuja la bola parada (sin consumir tiro).
+  IDLE: ['AIMING', 'BALL_MOVING', 'FINISHED', 'DISCONNECTED'],
+  AIMING: ['IDLE', 'SHOOTING', 'BALL_MOVING', 'FINISHED', 'DISCONNECTED'],
   SHOOTING: ['BALL_MOVING', 'DISCONNECTED'],
   BALL_MOVING: ['BALL_STOPPED', 'FINISHED', 'DISCONNECTED'],
   BALL_STOPPED: ['IDLE', 'FINISHED', 'DISCONNECTED'],

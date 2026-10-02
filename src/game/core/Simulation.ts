@@ -184,6 +184,8 @@ export class Simulation {
   step(): void {
     const hole = this.course.hole.position;
     for (const p of this.players.values()) p.ball.preStep(this.dt, hole);
+    // Obstáculos: pose objetivo al final de este paso (función pura del tick).
+    this.physics.obstacles?.setTarget((this.tick + 1) * this.dt);
     this.physics.step(this.eventQueue);
     this.tick++;
     this.drainCollisions();
@@ -206,13 +208,18 @@ export class Simulation {
 
   /** Tiempo restante (ms) o null si no hay límite. */
   remainingMs(id: string): number | null {
-    const limit = GameConfig.holeTimeLimitSec;
+    const limit = this.timeLimitSec;
     if (limit === null) return null;
     return Math.max(0, limit * 1000 - this.elapsedMs(id));
   }
 
+  /** Límite del hoyo: el del curso o, si no tiene, el general. */
+  get timeLimitSec(): number | null {
+    return this.course.timeLimitSec ?? GameConfig.holeTimeLimitSec;
+  }
+
   private isOutOfTime(p: PlayerRuntime): boolean {
-    const limit = GameConfig.holeTimeLimitSec;
+    const limit = this.timeLimitSec;
     return limit !== null && (this.tick - p.startTick) * this.dt >= limit;
   }
 
@@ -251,15 +258,20 @@ export class Simulation {
       const other = this.ballByCollider.has(h1) && this.ballByCollider.has(h2);
       const otherHandle = this.ballByCollider.get(h1) === p ? h2 : h1;
       const info = this.physics.getInfo(otherHandle);
-      if (!other && info?.role !== 'wall') return;
+      if (!other && info?.role !== 'wall' && info?.role !== 'obstacle') return;
       const rec = p.shots.at(-1);
       if (rec && rec.result === 'pending') rec.bounces++;
-      this.events.emit('BALL_HIT', { playerId: p.id, speed: p.ball.speed, kind: other ? 'ball' : 'wall' });
+      const kind = other ? 'ball' : info?.role === 'obstacle' ? 'obstacle' : 'wall';
+      this.events.emit('BALL_HIT', { playerId: p.id, speed: p.ball.speed, kind });
     });
   }
 
   private handleOutcome(p: PlayerRuntime, outcome: NonNullable<BallStepOutcome>): void {
     switch (outcome) {
+      case 'disturbed':
+        // Empujada por un obstáculo estando parada: se mueve sin consumir tiro.
+        if (p.fsm.state === 'IDLE' || p.fsm.state === 'AIMING') p.fsm.force('BALL_MOVING');
+        break;
       case 'stopped':
       case 'timeout':
         p.lastRest = copyVec(p.ball.position);

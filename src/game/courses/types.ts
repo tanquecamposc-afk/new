@@ -1,5 +1,6 @@
 import type { SurfaceId } from '@/config/surfaces';
-import type { Vec3 } from '@/utils/math';
+import type { ObstacleDef } from '@/game/obstacles/types';
+import type { Quat, Vec3 } from '@/utils/math';
 
 /**
  * Bloque orientado (caja). Todo el campo se describe con bloques:
@@ -10,9 +11,13 @@ export interface BlockDef {
   center: Vec3;
   /** Tamaño completo (ancho X, alto Y, largo Z). */
   size: Vec3;
-  /** Rotación Euler XYZ en radianes (rampas, paredes en diagonal). */
+  /** Rotación Euler XYZ en radianes (paredes en diagonal). */
   rotation?: Vec3;
+  /** Rotación como cuaternión (tiene prioridad sobre `rotation`; rampas en cualquier dirección). */
+  quat?: Quat;
   surface: SurfaceId;
+  /** Zona aceleradora: aceleración (m/s²) en una dirección del plano XZ mientras la bola la toca. */
+  boost?: { direction: { x: number; z: number }; accel: number; maxSpeed: number };
 }
 
 export interface HoleDef {
@@ -44,6 +49,8 @@ export interface CourseData {
   /** Superficies jugables (green, arena, rampas...). */
   surfaces: BlockDef[];
   walls: BlockDef[];
+  /** Obstáculos dinámicos y bumpers (estado determinista en función del tiempo). */
+  obstacles: ObstacleDef[];
   /** Terreno fuera del recorrido (colisiona y cuenta como fuera de límites). */
   outOfBounds: BlockDef[];
   boundaries: {
@@ -55,4 +62,11 @@ export interface CourseData {
   };
   decorations: DecorationDef[];
   lighting: CourseLighting;
+  /** Límite de tiempo propio del hoyo (s); si falta se usa GameConfig. */
+  timeLimitSec?: number;
+  /**
+   * Ruta orientativa tee → hoyo. La usan la cámara/vista general y los bots
+   * de prueba (sólo testing). No afecta a la física.
+   */
+  guide: Vec3[];
 }

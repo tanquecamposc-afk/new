@@ -2,15 +2,18 @@ import { PhysicsConfig } from '@/config/physics';
 import { SURFACES, type SurfaceId } from '@/config/surfaces';
 import type { BlockDef, CourseData } from '@/game/courses/types';
 import { eulerToQuat } from '@/utils/math';
+import { ObstacleSystem } from '@/game/obstacles/ObstacleSystem';
 import type { Collider, World } from '@dimforge/rapier3d-compat';
 import { CUP_GROUPS, FLOOR_GROUPS, OOB_GROUPS, WALL_GROUPS } from './collisionGroups';
 import type { Rapier } from './rapier';
 
-export type ColliderRole = 'floor' | 'wall' | 'out_of_bounds' | 'cup';
+export type ColliderRole = 'floor' | 'wall' | 'out_of_bounds' | 'cup' | 'obstacle';
 
 export interface ColliderInfo {
   role: ColliderRole;
   surface: SurfaceId;
+  boost?: BlockDef['boost'];
+  obstacleId?: string;
 }
 
 /**
@@ -20,6 +23,7 @@ export interface ColliderInfo {
 export class PhysicsWorld {
   readonly world: World;
   private info = new Map<number, ColliderInfo>();
+  obstacles: ObstacleSystem | null = null;
 
   constructor(
     readonly R: Rapier,
@@ -38,6 +42,7 @@ export class PhysicsWorld {
     for (const b of course.walls) this.addBlock(b, 'wall', WALL_GROUPS);
     for (const b of course.outOfBounds) this.addBlock(b, 'out_of_bounds', OOB_GROUPS);
     this.addCup(course);
+    this.obstacles = new ObstacleSystem(this, course.obstacles);
     // Paso de calentamiento: el primer step de un mundo nuevo inicializa estructuras
     // internas (broad-phase) y produce resultados distintos a los siguientes. Darlo
     // aquí hace que simulación, predictor y servidor partan del mismo estado.
@@ -52,11 +57,16 @@ export class PhysicsWorld {
       .setRestitution(s.restitution)
       .setRestitutionCombineRule(this.R.CoefficientCombineRule.Max)
       .setCollisionGroups(collisionGroups);
-    if (b.rotation) desc.setRotation(eulerToQuat(b.rotation.x, b.rotation.y, b.rotation.z));
+    if (b.quat) desc.setRotation(b.quat);
+    else if (b.rotation) desc.setRotation(eulerToQuat(b.rotation.x, b.rotation.y, b.rotation.z));
     if (role === 'wall') desc.setActiveEvents(this.R.ActiveEvents.COLLISION_EVENTS);
     const c = this.world.createCollider(desc);
-    this.info.set(c.handle, { role, surface: b.surface });
+    this.info.set(c.handle, { role, surface: b.surface, boost: b.boost });
     return c;
+  }
+
+  registerCollider(c: Collider, info: ColliderInfo): void {
+    this.info.set(c.handle, info);
   }
 
   /** Fondo de la copa: sólo colisiona con bolas ya capturadas. */
