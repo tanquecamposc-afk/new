@@ -4,6 +4,7 @@ import { SURFACES } from '@/config/surfaces';
 import type { BlockDef, CourseData, DecorationDef } from '@/game/courses/types';
 import { GRAPHICS_PRESETS, type GraphicsPreset } from '@/config/graphics';
 import { createContactAO } from './GroundShading';
+import { mergeStaticMeshes } from './mergeStatic';
 import { createWaterMaterial } from './WaterMaterial';
 import { applyOrientedPlanarUV, applyWorldPlanarUV, createChevronTexture, createSandTexture, createStripeTexture, createWaterTexture } from './textures';
 
@@ -16,6 +17,7 @@ export class CourseView {
   private flagCloth: THREE.Mesh;
   private flagLift = 0;
   private disposables: { dispose(): void }[] = [];
+  private decoMats = new Map<number, THREE.MeshStandardMaterial>();
   private animated: THREE.Texture[] = [];
   private boosterTex: THREE.Texture | null = null;
   private waterTex: THREE.Texture | null = null;
@@ -64,7 +66,13 @@ export class CourseView {
     const { flag, cloth } = this.createFlag();
     this.flag = flag;
     this.flagCloth = cloth;
+    // Todo lo estático (suelos, paredes, decoración, copa) en pocas mallas.
+    const res = mergeStaticMeshes(this.group, new Set([this.flag]));
+    for (const g of res.geometries) this.disposables.push(g);
+    this.mergeStats = { merged: res.merged, produced: res.produced };
   }
+
+  mergeStats = { merged: 0, produced: 0 };
 
   private track<T extends { dispose(): void }>(o: T): T {
     this.disposables.push(o);
@@ -214,7 +222,9 @@ export class CourseView {
   private addDecoration(d: DecorationDef): void {
     const s = d.scale ?? 1;
     const g = new THREE.Group();
-    const leaf = (color: number) => this.track(new THREE.MeshStandardMaterial({ color, roughness: 0.9, flatShading: true }));
+    // Materiales compartidos por color: permiten fusionar toda la decoración.
+    const leaf = (color: number) =>
+      this.decoMats.get(color) ?? this.decoMats.set(color, this.track(new THREE.MeshStandardMaterial({ color, roughness: 0.9, flatShading: true }))).get(color)!;
     switch (d.kind) {
       case 'tree': {
         const trunk = new THREE.Mesh(this.track(new THREE.CylinderGeometry(0.16, 0.22, 1.2, 7)), leaf(0x8a5a35));

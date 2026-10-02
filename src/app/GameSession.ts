@@ -558,6 +558,7 @@ class GameSession {
   resetBall = () => this.engine?.resetBall();
   toggleOverview = () => this.engine?.toggleOverview();
   spectateNext = (dir: 1 | -1) => this.engine?.spectateNext(dir);
+  rotateCamera = (yaw: number) => this.engine?.rotateCamera(yaw);
   setPaused = (p: boolean) => this.engine?.setPaused(p);
 
   /** Tras un error: volver al menú con el estado limpio. */

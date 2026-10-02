@@ -66,6 +66,18 @@ export function ballTexture(pattern: SkinPattern, color: number, accent: number)
   return t;
 }
 
+/**
+ * Las texturas cacheadas se comparten entre hoyos. Cada WebGLRenderer que las
+ * usa les añade un escuchador de "dispose" que lo referencia: si no se liberan
+ * al destruir el motor, mantienen vivo el renderer anterior (y todo su hoyo).
+ * Llamar a dispose() quita esos escuchadores; Three.js las vuelve a subir a la
+ * GPU si se usan de nuevo.
+ */
+export function releaseSharedTextures(): void {
+  for (const t of cache.values()) t.dispose();
+  radial?.dispose();
+}
+
 /** Textura radial suave (halos, sombras de contacto, partículas). */
 let radial: THREE.CanvasTexture | null = null;
 export function radialTexture(): THREE.CanvasTexture {

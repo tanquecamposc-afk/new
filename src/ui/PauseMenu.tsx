@@ -20,6 +20,14 @@ export function PauseMenu({ onClose, canPause }: { onClose: () => void; canPause
           <GameButton variant="secondary" onClick={() => setPanel('help')}>
             ❓ Ayuda
           </GameButton>
+          {document.fullscreenEnabled && (
+            <GameButton
+              variant="secondary"
+              onClick={() => (document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen()).catch(() => undefined)}
+            >
+              ⛶ Pantalla completa
+            </GameButton>
+          )}
           {panel === 'confirm' ? (
             <div className="rounded-2xl bg-danger/20 p-2 text-center">
               <p className="mb-2 text-sm font-bold">¿Salir de la partida? Perderás el progreso.</p>

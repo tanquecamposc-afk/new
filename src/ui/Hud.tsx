@@ -20,6 +20,7 @@ export function Hud() {
   const appState = useGameStore((s) => s.appState);
   const [menu, setMenu] = useState(false);
   const canPause = match?.mode === 'local';
+  const [touch] = useState(() => typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches);
 
   const openMenu = () => {
     setMenu(true);
@@ -49,7 +50,10 @@ export function Hud() {
   const total = match.live.length;
 
   return (
-    <div className="pointer-events-none absolute inset-0 z-10 select-none">
+    <div
+      className="pointer-events-none absolute inset-0 z-10 select-none"
+      style={{ paddingTop: 'env(safe-area-inset-top)', paddingLeft: 'env(safe-area-inset-left)', paddingBottom: 'env(safe-area-inset-bottom)' }}
+    >
       {/* Barra superior */}
       <div className="flex items-start justify-between gap-2 p-3 sm:p-4">
         <div className="min-w-0 rounded-2xl bg-ink/70 px-3 py-2 backdrop-blur-sm sm:px-4">
@@ -72,13 +76,23 @@ export function Hud() {
       </div>
 
       {/* Botones laterales */}
-      <div className="absolute right-3 top-28 flex flex-col gap-2 sm:right-4">
+      <div className="absolute right-3 top-28 flex flex-col gap-2 sm:right-4" style={{ marginRight: 'env(safe-area-inset-right)' }}>
         <IconButton label={canPause ? 'Pausa (Esc)' : 'Menú (Esc)'} onClick={openMenu}>
           ⏸
         </IconButton>
         <IconButton label={hud.overview ? 'Volver a la bola (V)' : 'Vista general (V)'} onClick={() => session.toggleOverview()} active={hud.overview}>
           {hud.overview ? '⛳' : '🗺'}
         </IconButton>
+        {touch && (
+          <>
+            <IconButton label="Girar cámara a la izquierda" onClick={() => session.rotateCamera(0.35)}>
+              ⟲
+            </IconButton>
+            <IconButton label="Girar cámara a la derecha" onClick={() => session.rotateCamera(-0.35)}>
+              ⟳
+            </IconButton>
+          </>
+        )}
       </div>
 
       {/* Clasificación en vivo */}

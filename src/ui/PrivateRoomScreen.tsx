@@ -19,8 +19,9 @@ export function PrivateRoomScreen() {
   };
 
   return (
-    <div className="absolute inset-0 z-20 flex items-center justify-center p-4">
+    <div className="absolute inset-0 z-20 overflow-y-auto">
       <MenuBackdrop />
+      <div className="relative flex min-h-full items-center justify-center p-4">
       <Panel className="animate-pop relative w-full max-w-sm">
         <h2 className="mb-4 text-center text-3xl font-black">Sala privada</h2>
         <GameButton className="w-full text-lg" disabled={busy} onClick={() => run(null)}>
@@ -57,6 +58,7 @@ export function PrivateRoomScreen() {
           ← Volver
         </GameButton>
       </Panel>
+      </div>
     </div>
   );
 }

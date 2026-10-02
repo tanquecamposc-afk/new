@@ -42,7 +42,7 @@ export function Badge({ children, tone = 'info' }: { children: ReactNode; tone?:
 /** Fondo de las pantallas de menú: cielo, colinas y un green estilizado (CSS/SVG, sin assets). */
 export function MenuBackdrop() {
   return (
-    <div className="absolute inset-0 overflow-hidden bg-gradient-to-b from-sky-400 via-sky-300 to-emerald-400">
+    <div className="fixed inset-0 overflow-hidden bg-gradient-to-b from-sky-400 via-sky-300 to-emerald-400">
       <svg className="absolute bottom-0 h-1/2 w-full" viewBox="0 0 1200 400" preserveAspectRatio="none" aria-hidden>
         <path d="M0 250 Q 200 150 420 230 T 820 210 T 1200 230 V400 H0Z" fill="#5cc45f" />
         <path d="M0 300 Q 300 230 600 290 T 1200 280 V400 H0Z" fill="#46b04f" />

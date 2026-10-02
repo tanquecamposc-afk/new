@@ -1,3 +1,4 @@
+import { readDeviceInfo, recommendQuality } from '@/config/deviceProfile';
 import type { QualityPreset } from '@/config/graphics';
 import type { TrajectoryMode } from '@/config/trajectory';
 import { sanitizeName } from '@/multiplayer/Room';
@@ -12,7 +13,8 @@ export interface Settings {
   musicVolume: number;
   invertCameraY: boolean;
   playerName: string;
-  quality: QualityPreset;
+  /** 'auto' = según el dispositivo (recomendado). */
+  quality: QualityPreset | 'auto';
   /** Bots de práctica por defecto en la sala local. */
   practiceBots: number;
 }
@@ -28,11 +30,11 @@ export const defaultSettings = (): Settings => ({
   musicVolume: 0.5,
   invertCameraY: false,
   playerName: 'Jugador',
-  quality: 'high',
+  quality: 'auto',
   practiceBots: 3,
 });
 
-export const QUALITY_PRESETS = ['low', 'medium', 'high', 'ultra'] as const;
+export const QUALITY_PRESETS = ['auto', 'low', 'medium', 'high', 'ultra'] as const;
 
 export const TRAJECTORY_MODES = ['off', 'short', 'full'] as const;
 
@@ -51,4 +53,13 @@ export function validateSettings(raw: unknown): Settings | null {
     quality: oneOf(raw.quality, QUALITY_PRESETS, d.quality),
     practiceBots: Math.round(num(raw.practiceBots, 0, 7, d.practiceBots)),
   };
+}
+
+let detected: { quality: QualityPreset; reason: string } | null = null;
+
+/** Calidad efectiva: la elegida o, en 'auto', la recomendada para este dispositivo. */
+export function effectiveQuality(q: Settings['quality']): { quality: QualityPreset; reason: string; auto: boolean } {
+  if (q !== 'auto') return { quality: q, reason: 'elegida por el jugador', auto: false };
+  detected ??= recommendQuality(readDeviceInfo());
+  return { ...detected, auto: true };
 }

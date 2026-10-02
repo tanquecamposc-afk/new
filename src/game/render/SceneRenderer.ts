@@ -174,9 +174,40 @@ export class SceneRenderer {
     return this.preset.shadowMode === 'dynamic';
   }
 
+  private size = { w: 1, h: 1 };
+  /** Escala de resolución dinámica (1 = resolución completa del preset). */
+  resolutionScale = 1;
+
   resize(width: number, height: number): void {
+    this.size = { w: width, h: height };
     this.renderer.setSize(width, height, false);
   }
+
+  /** Resolución dinámica: cambia los píxeles renderizados sin tocar el tamaño en pantalla. */
+  setResolutionScale(scale: number): void {
+    this.resolutionScale = Math.min(1, Math.max(0.5, scale));
+    const base = Math.min(window.devicePixelRatio || 1, this.preset.pixelRatioCap);
+    this.renderer.setPixelRatio(Math.max(0.5, base * this.resolutionScale));
+    this.renderer.setSize(this.size.w, this.size.h, false);
+  }
+
+  /** Se llama si el navegador pierde el contexto WebGL (driver, memoria de GPU). */
+  onContextLost(cb: () => void): void {
+    this.contextLostCb = cb;
+    if (this.listening) return;
+    this.listening = true;
+    this.canvas.addEventListener('webglcontextlost', this.handleContextLost);
+  }
+
+  private readonly handleContextLost = (e: Event): void => {
+    e.preventDefault();
+    // La pérdida provocada por dispose() (liberar el contexto) no es un error.
+    if (!this.disposed) this.contextLostCb?.();
+  };
+
+  private contextLostCb: (() => void) | null = null;
+  private listening = false;
+  private disposed = false;
 
   render(camera: THREE.Camera): void {
     this.sky.position.x = camera.position.x;
@@ -190,7 +221,13 @@ export class SceneRenderer {
   }
 
   dispose(): void {
+    this.disposed = true;
     this.disposables.forEach((d) => d.dispose());
     this.renderer.dispose();
+    // Liberar el contexto: cada hoyo crea un canvas nuevo y el navegador limita los contextos vivos.
+    this.renderer.forceContextLoss();
+    // El canvas puede sobrevivir al motor (React/DOM desprendido): no debe retenerlo.
+    this.canvas.removeEventListener('webglcontextlost', this.handleContextLost);
+    this.contextLostCb = null;
   }
 }

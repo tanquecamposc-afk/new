@@ -92,7 +92,12 @@ Ver [architecture.md](./architecture.md). Resumen:
 | Agua con shader (ondas, fresnel, brillo del sol, espuma) | ✅ Phase 7 |
 | Partículas (1 draw call): polvo, impactos, salpicadura, arena, nube, acelerador, fuegos | ✅ Phase 7 |
 | Música generativa y efectos nuevos (agua, arena, madera, acelerador, UI, victoria, nivel, compra) | ✅ Phase 7 |
-| Presets de calidad completos, optimización Chromebook | ⏳ Phase 8 |
+| Fusión de mallas estáticas (draw calls en alta 62 → 36) | ✅ Phase 8 |
+| Calidad automática por dispositivo (GPU, núcleos, memoria, Chromebook, móvil) | ✅ Phase 8 |
+| Resolución dinámica según el frame time | ✅ Phase 8 |
+| Rapier cargado bajo demanda; gzip y caché inmutable en el servidor | ✅ Phase 8 |
+| Pérdida de contexto WebGL controlada; sin fugas de memoria entre hoyos | ✅ Phase 8 |
+| UI responsive (móvil vertical/horizontal, tablet, Chromebook), giro de cámara táctil, pantalla completa | ✅ Phase 8 |
 | QA, seguridad, documentación completa, build de producción | ⏳ Phase 9 |
 
 ## 4. Errores encontrados y corregidos (Phase 1)
@@ -150,7 +155,17 @@ persistentes tras recargar. 137 tests.
 ### Phase 7 — Pulido gráfico + agua + VFX + partículas + audio ✅
 Verificado en Chromium con calidad alta, media y baja (Lago y Molino), sin errores ni avisos.
 Todo el audio y las texturas se generan en tiempo real: cero descargas adicionales.
-### Phase 8 — Optimización + móvil + tablet + Chromebook + ajustes gráficos
-Incluye migrar a `@dimforge/rapier3d` (WASM como fichero aparte, no base64) para reducir
-el bundle (~1,7 MB gzip actualmente).
+### Phase 8 — Optimización + móvil + tablet + Chromebook + ajustes gráficos ✅
+Ver [performance.md](./performance.md). Verificado en Chromium: 30 hoyos seguidos con heap
+estable (16–19 MB) y recursos GPU constantes; menús, sala y HUD sin desbordes en cuatro
+dispositivos; tiro táctil. 141 tests.
+
+Errores corregidos: los motores de cada hoyo quedaban retenidos por el listener
+`webglcontextlost` del canvas desprendido (fuga ~0,3 MB/hoyo); `forceContextLoss()` en
+`dispose` disparaba la pantalla de error de contexto perdido; la fusión de mallas no
+reducía nada porque cada adorno tenía su propio material.
+
+Decisión: Rapier sigue con el paquete `-compat` (WASM en base64, ~1,7 MB gzip) pero se
+carga bajo demanda tras el menú, así que no retrasa la primera pantalla. Migrar al paquete
+con WASM separado requiere un plugin de Vite adicional y no mejora el tiempo de juego.
 ### Phase 9 — QA + bugs + seguridad + casos límite + documentación + build de producción

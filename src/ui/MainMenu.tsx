@@ -15,9 +15,11 @@ export function MainMenu() {
   const profile = useProfile((s) => s.profile);
   const lvl = levelFromXp(profile.xp);
   return (
-    <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-8 p-4">
+    <div className="absolute inset-0 z-20 overflow-y-auto">
       <MenuBackdrop />
-      <h1 className="text-outline animate-pop relative text-center text-6xl font-black tracking-tight sm:text-8xl">
+      {/* En pantallas bajas (móvil horizontal) el contenido se compacta y se puede desplazar. */}
+      <div className="relative flex min-h-full flex-col items-center justify-center gap-8 p-4 pt-16 [@media(max-height:500px)]:gap-3 [@media(max-height:500px)]:pt-14">
+      <h1 className="text-outline animate-pop relative text-center text-6xl font-black tracking-tight sm:text-8xl [@media(max-height:500px)]:text-4xl">
         Minigolf <span className="text-sun">Party</span>
       </h1>
       <div className="relative flex w-full max-w-xs flex-col gap-3">
@@ -53,7 +55,7 @@ export function MainMenu() {
       </div>
       <button
         onClick={() => setPanel('profile')}
-        className="pointer-events-auto absolute right-3 top-3 flex items-center gap-2 rounded-2xl bg-ink/75 px-3 py-2 font-black"
+        className="pointer-events-auto absolute right-3 top-3 z-10 flex items-center gap-2 rounded-2xl bg-ink/75 px-3 py-2 font-black"
         aria-label="Abrir perfil"
       >
         <BallSwatch equipped={profile.equipped} size={28} />
@@ -68,6 +70,7 @@ export function MainMenu() {
       {(panel === 'shop' || panel === 'inventory') && (
         <CosmeticsScreen mode={panel} onClose={() => setPanel('none')} onSwitch={() => setPanel(panel === 'shop' ? 'inventory' : 'shop')} />
       )}
+      </div>
     </div>
   );
 }

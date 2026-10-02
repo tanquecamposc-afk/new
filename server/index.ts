@@ -5,7 +5,8 @@
  *   npm run server          (desarrollo, junto a `npm run dev`)
  *   npm run start           (producción: build + servidor)
  */
-import { createReadStream, existsSync, statSync } from 'node:fs';
+import { existsSync, readFileSync, statSync } from 'node:fs';
+import { gzipSync } from 'node:zlib';
 import { createServer } from 'node:http';
 import { extname, join, normalize, resolve } from 'node:path';
 import { WebSocketServer } from 'ws';
@@ -23,6 +24,15 @@ const TYPES: Record<string, string> = {
   '.wasm': 'application/wasm',
   '.json': 'application/json',
 };
+
+const COMPRESSIBLE = /text|javascript|json|svg|wasm/;
+const gzCache = new Map<string, Buffer>();
+/** Comprime una vez y guarda en memoria (Rapier: 4,3 MB → 1,7 MB). */
+function gzipped(file: string): Buffer {
+  let b = gzCache.get(file);
+  if (!b) gzCache.set(file, (b = gzipSync(readFileSync(file), { level: 9 })));
+  return b;
+}
 
 const game = new GameServer({ log: (...a) => console.log(...a) });
 
@@ -44,8 +54,13 @@ const http = createServer((req, res) => {
     return;
   }
   if (!existsSync(file) || statSync(file).isDirectory()) file = join(DIST, 'index.html');
-  res.writeHead(200, { 'content-type': TYPES[extname(file)] ?? 'application/octet-stream' });
-  createReadStream(file).pipe(res);
+  const type = TYPES[extname(file)] ?? 'application/octet-stream';
+  // Los assets con hash no cambian nunca: caché de un año. index.html, siempre fresco.
+  const cache = file.includes(`${DIST}/assets/`) ? 'public, max-age=31536000, immutable' : 'no-cache';
+  const gzip = /\bgzip\b/.test(String(req.headers['accept-encoding'] ?? '')) && COMPRESSIBLE.test(type);
+  const body = gzip ? gzipped(file) : readFileSync(file);
+  res.writeHead(200, { 'content-type': type, 'cache-control': cache, ...(gzip ? { 'content-encoding': 'gzip', vary: 'accept-encoding' } : {}) });
+  res.end(body);
 });
 
 const wss = new WebSocketServer({ server: http, path: '/ws', maxPayload: NetworkConfig.maxMessageBytes * 2 });

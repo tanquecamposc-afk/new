@@ -4,6 +4,7 @@ import { GameEngine } from '@/game/GameEngine';
 import type { CourseData } from '@/game/courses/types';
 import type { MatchPlayer } from '@/match/types';
 import type { OnlineLink } from '@/multiplayer/OnlineLink';
+import { effectiveQuality } from '@/settings/settings';
 import { useSettings } from '@/settings/settingsStore';
 import { useGameStore } from '@/store/gameStore';
 
@@ -31,7 +32,7 @@ export function GameCanvas({ course, players, localId, allowPause, online }: Pro
       players,
       localPlayerId: localId,
       allowPause,
-      quality: useSettings.getState().quality,
+      quality: effectiveQuality(useSettings.getState().quality).quality,
       onProgress: (p, m) => !cancelled && setLoading(p, m),
       onStart: () => session.onHoleStarted(),
       onLocalFinished: () => session.onLocalFinished(),

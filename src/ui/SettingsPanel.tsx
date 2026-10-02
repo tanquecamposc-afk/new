@@ -1,3 +1,4 @@
+import { effectiveQuality } from '@/settings/settings';
 import { useSettings } from '@/settings/settingsStore';
 import type { QualityPreset } from '@/config/graphics';
 import type { TrajectoryMode } from '@/config/trajectory';
@@ -6,7 +7,8 @@ interface Props {
   onClose: () => void;
 }
 
-const QUALITY: { id: QualityPreset; label: string }[] = [
+const QUALITY: { id: QualityPreset | 'auto'; label: string }[] = [
+  { id: 'auto', label: 'Auto' },
   { id: 'low', label: 'Baja' },
   { id: 'medium', label: 'Media' },
   { id: 'high', label: 'Alta' },
@@ -22,6 +24,7 @@ const TRAJ: { id: TrajectoryMode; label: string }[] = [
 /** Ajustes de partida. Se guardan al instante (PersistenceService). */
 export function SettingsPanel({ onClose }: Props) {
   const s = useSettings();
+  const eff = effectiveQuality(s.quality);
   return (
     <div className="pointer-events-auto absolute inset-0 z-40 flex items-center justify-center bg-ink/50 p-4" onClick={onClose}>
       <div
@@ -56,7 +59,7 @@ export function SettingsPanel({ onClose }: Props) {
 
         <div className="mb-4">
           <div className="mb-1 text-sm font-bold text-white/80">Calidad gráfica <span className="text-xs text-white/50">(se aplica en el próximo hoyo)</span></div>
-          <div className="grid grid-cols-4 gap-2">
+          <div className="grid grid-cols-5 gap-1.5">
             {QUALITY.map((q) => (
               <button
                 key={q.id}
@@ -67,6 +70,11 @@ export function SettingsPanel({ onClose }: Props) {
               </button>
             ))}
           </div>
+          {s.quality === 'auto' && (
+            <p className="mt-1 text-xs font-bold text-white/60">
+              Detectada: {QUALITY.find((x) => x.id === eff.quality)?.label} ({eff.reason}). La resolución se ajusta sola si bajan los FPS.
+            </p>
+          )}
         </div>
 
         <Slider label="Volumen general" value={s.masterVolume} min={0} max={1} step={0.05} format={pct} onChange={(v) => s.set({ masterVolume: v })} />

@@ -19,6 +19,7 @@
 | Bots de práctica (reglas, no tiran antes del GO) | `src/game/bots/PracticeBot.test.ts` |
 | Servidor: salas, partida, anti-trampas, latencia, reconexión, abandono | `server/GameServer.test.ts` |
 | Perfil, moneda, tienda, inventario, recompensas, niveles, cosméticos | `src/profile/ProfileService.test.ts` |
+| Detección de calidad por dispositivo | `src/config/deviceProfile.test.ts` |
 | Protocolo, reloj e interpolación | `src/multiplayer/protocol.test.ts`, `src/multiplayer/net.test.ts` |
 
 El bot (`src/game/testing/solver.ts`) es exclusivamente de testing: prueba un abanico de
@@ -27,3 +28,11 @@ tiros con el predictor y avanza por la guía del curso. Nunca participa en parti
 Además, cada fase se verifica en Chromium real con Playwright (escritorio y móvil táctil):
 cargar, apuntar, comprobar la predicción contra el tiro real, disparar, embocar, resumen,
 ajustes y recarga. Con `VITE_ENABLE_DEBUG=true` el motor se expone en `window.__minigolf`.
+
+Pruebas de rendimiento (Phase 8, Playwright contra `vite preview`):
+- **Fugas:** 30 hoyos seguidos forzando `gc()`; se mide el heap JS y las geometrías/texturas
+  de `renderer.info.memory`, y con `Runtime.queryObjects` (CDP) se cuenta cuántas instancias
+  de `GameEngine`, `Simulation`, `WebGLRenderer`, etc. siguen vivas (esperado: 1–2).
+- **Draw calls:** un frame aislado por calidad (`renderer.info.render.calls`).
+- **Responsive:** móvil vertical/horizontal, tablet y Chromebook; se comprueba que ningún
+  control queda fuera del viewport en menú, sala y HUD y que el tiro táctil funciona.

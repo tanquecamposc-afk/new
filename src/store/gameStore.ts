@@ -87,6 +87,9 @@ export interface DebugStats {
   colliders: number;
   memoryMb: number | null;
   predictionMs: number;
+  resolution: number;
+  latencyMs: number | null;
+  quality: string;
 }
 
 interface GameStore {
@@ -139,7 +142,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   hud: initialHud,
   match: null,
   lobby: null,
-  debug: { fps: 0, frameMs: 0, drawCalls: 0, triangles: 0, bodies: 0, colliders: 0, memoryMb: null, predictionMs: 0 },
+  debug: { fps: 0, frameMs: 0, drawCalls: 0, triangles: 0, bodies: 0, colliders: 0, memoryMb: null, predictionMs: 0, resolution: 1, latencyMs: null, quality: '' },
   showDebug: false,
   connection: 'idle',
   notice: null,

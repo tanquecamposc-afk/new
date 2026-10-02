@@ -6,6 +6,7 @@ import type { QualityPreset } from '@/config/graphics';
 import { PhysicsConfig } from '@/config/physics';
 import { TrajectoryConfig } from '@/config/trajectory';
 import { BotDriver, PracticeBot } from '@/game/bots/PracticeBot';
+import { releaseSharedTextures } from '@/cosmetics/ballTextures';
 import { DEFAULT_EQUIPPED, resolveLook } from '@/cosmetics/catalog';
 import { CameraRig } from '@/game/camera/CameraRig';
 import { FixedStepAccumulator } from '@/game/core/FixedStepLoop';
@@ -127,6 +128,9 @@ export class GameEngine {
   private unsubs: (() => void)[] = [];
   private fps = { frames: 0, acc: 0, value: 0, frameMs: 0, predictionMs: 0 };
   private hudAcc = 0;
+  /** Resolución dinámica: tiempos entre frames recientes (ms). */
+  private frameTimes: number[] = [];
+  private resolutionCheckAt = 0;
   private eventId = 0;
   /** Online: la bola propia se dibuja desde el servidor hasta resincronizar (reconexión). */
   private followServer = false;
@@ -148,6 +152,10 @@ export class GameEngine {
     const { canvas, container, course, onProgress, players } = this.opts;
     onProgress?.(0.15, 'Preparando gráficos 3D…');
     this.view = new SceneRenderer(canvas, this.opts.quality);
+    this.view.onContextLost(() => {
+      this.running = false;
+      useGameStore.getState().setError('La tarjeta gráfica ha reiniciado el juego (contexto WebGL perdido). Vuelve al menú para continuar.');
+    });
     onProgress?.(0.35, 'Cargando motor de física…');
     this.sim = await Simulation.create(course, false);
     this.predictor = await TrajectoryPredictor.create(course);
@@ -603,6 +611,23 @@ export class GameEngine {
       this.publishLive();
     }
     this.measure(dt, performance.now() - t0);
+    this.adaptResolution(dt);
+  }
+
+  /**
+   * Resolución dinámica: si el frame medio supera ~25 ms (40 FPS) baja la
+   * resolución un 15 %; si va holgado (< 17 ms) la recupera poco a poco.
+   */
+  private adaptResolution(dt: number): void {
+    this.frameTimes.push(dt * 1000);
+    if (this.frameTimes.length > 90) this.frameTimes.shift();
+    if (this.elapsed < this.resolutionCheckAt || this.frameTimes.length < 60) return;
+    this.resolutionCheckAt = this.elapsed + 2;
+    const sorted = [...this.frameTimes].sort((a, b) => a - b);
+    const p50 = sorted[Math.floor(sorted.length / 2)]!;
+    const cur = this.view.resolutionScale;
+    if (p50 > 25 && cur > 0.5) this.view.setResolutionScale(cur * 0.85);
+    else if (p50 < 17 && cur < 1) this.view.setResolutionScale(cur * 1.1);
   }
 
   private updatePhase(dt: number): void {
@@ -833,6 +858,9 @@ export class GameEngine {
           colliders: this.sim.physics.colliderCount,
           memoryMb: mem ? Math.round(mem.usedJSHeapSize / 1048576) : null,
           predictionMs: Math.round(f.predictionMs * 100) / 100,
+          resolution: Math.round(this.view.resolutionScale * 100) / 100,
+          latencyMs: this.opts.online ? this.opts.online.latencyMs : null,
+          quality: this.opts.quality ?? 'high',
         });
       }
     }
@@ -889,6 +917,11 @@ export class GameEngine {
     if (this.phase !== 'playing' || this.paused) return;
     this.onAimCancel();
     if (this.sim.resetBall(this.localId)) this.opts.online?.sendReset();
+  }
+
+  /** Botones de cámara en pantallas táctiles. */
+  rotateCamera(yaw: number): void {
+    this.rig.rotate(yaw, 0);
   }
 
   toggleOverview(): void {
@@ -950,6 +983,9 @@ export class GameEngine {
     this.obstacleView?.dispose();
     this.fx?.dispose();
     for (const b of this.blobs.values()) b.dispose();
+    // Recursos compartidos entre hoyos: soltar las referencias de este renderer.
+    releaseSharedTextures();
+    BlobShadow.releaseShared();
     this.view?.dispose();
     this.predictor?.dispose();
     this.botPredictor?.dispose();

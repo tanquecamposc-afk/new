@@ -15,7 +15,9 @@ export function DebugPanel() {
     ['Colliders', d.colliders],
     ['Predicción (total)', `${d.predictionMs} ms`],
     ['Memoria', d.memoryMb === null ? 'n/d' : `${d.memoryMb} MB`],
-    ['Red', 'local (sin servidor)'],
+    ['Calidad', d.quality],
+    ['Resolución', `${Math.round(d.resolution * 100)} %`],
+    ['Red', d.latencyMs === null ? 'local (sin servidor)' : `${d.latencyMs} ms RTT`],
     ['Estado', state],
   ];
   return (

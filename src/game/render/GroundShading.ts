@@ -61,6 +61,11 @@ export class BlobShadow {
   private static geo: THREE.PlaneGeometry | null = null;
   private readonly mat: THREE.MeshBasicMaterial;
 
+  /** Ver releaseSharedTextures: la geometría compartida también retiene renderers. */
+  static releaseShared(): void {
+    BlobShadow.geo?.dispose();
+  }
+
   constructor(opacity = 0.45) {
     BlobShadow.geo ??= new THREE.PlaneGeometry(0.42, 0.42).rotateX(-Math.PI / 2);
     this.mat = new THREE.MeshBasicMaterial({ map: radialTexture(), color: 0x000000, transparent: true, opacity, depthWrite: false });
