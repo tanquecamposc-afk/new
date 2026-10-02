@@ -42,21 +42,10 @@ function iconoKit45(k){
   for(const c of k.ico){const id=idClave(c)||(I[c]||0);if(id&&ICONOS[id])return ICONOS[id];}
   const id=idClave('espada_madera');return ICONOS[id]||'';
 }
-const _kitBW45=kitBW;
-kitBW=function(inicio){
-  const k=kitActual45().id, yo=BW&&BW.yo;
-  if(yo){if(k==='minero')yo.pico=Math.max(yo.pico,1);if(k==='tanque')yo.armadura=Math.max(yo.armadura,1);}
-  _kitBW45(inicio);
-  if(!yo||yo.espectador)return;
-  if(k==='guerrero'&&inv[0]&&inv[0].id===idClave('espada_madera'))inv[0]=crearPila(idClave('espada_piedra'));
-  if(k==='constructor')darBW(lanaYo(),24);
-  if(k==='arquero'){darBW(I.arco,1);darBW(I.flecha,6);}
-  actualizarHUD();
-};
+// La lógica de cada kit (objetos, efectos y niveles) está en kits46.js
 
 /* ---------- Monedas durante la partida ---------- */
 const PREMIO45={bajas:5,finales:15,camas:30,base:15,victoria:100};
-let curaKit45=0;
 function avisoMonedas45(n,motivo){
   const d=document.createElement('div');d.className='aviso45';
   d.innerHTML=`+${n} <span class="moneda45"></span> <span style="opacity:.8">${motivo}</span>`;
@@ -75,12 +64,6 @@ actualizarFinal=function(dt){
     if(d>0){const n=d*PREMIO45[k];c.ganadas+=n;sumarMonedas45(n);avisoMonedas45(n,motivo);}
     c[k]=yo[k];
   }
-  // Efectos que dura toda la partida según el kit
-  if(estado!=='jugando'||!yo.vivo||yo.espectador)return;
-  const k=kitActual45().id;
-  const ef=Object.assign(Object.create(null),{velocista:'rapidez',saltarin:'salto',minero:'prisa'})[k];
-  if(ef&&(!efectos[ef]||efectos[ef].t<1))efectos[ef]={t:2,n:1};
-  if(k==='medico'){curaKit45+=dt;if(curaKit45>=3){curaKit45=0;if(salud<20){salud=Math.min(20,salud+1);actualizarHUD();}}}
 };
 
 /* ---------- Recompensas al terminar ---------- */

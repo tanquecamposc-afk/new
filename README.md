@@ -311,29 +311,33 @@ En **Opciones → Calidad gráfica**: Baja, Media, Alta y Ultra. Ajusta la resol
 ## Bed Wars: kits, monedas, marcador y combate
 
 - **Monedas:** se ganan jugando Bed Wars (baja +5, baja final +15, cama rota +30, partida +15, victoria +100). Al conseguirlas sale un aviso y al terminar se ve el total.
-- **Kits (estilo Bed Wars de Roblox):** en el menú de Bed Wars, botón **Kits…**. Hay 18 kits en cuatro rarezas. Se compran con monedas y el equipado se aplica al empezar y al reaparecer. Durante la partida, abajo a la izquierda se ve tu kit y su estado (furia, recarga, etc.).
+- **Kits (estilo Bed Wars de Roblox):** en el menú de Bed Wars, botón **Kits…**. Hay 18 kits en cuatro rarezas. Se compran con monedas y el equipado se aplica al empezar y al reaparecer.
+  - **Niveles:** cada kit comprado se mejora hasta el **nivel 3** (★★★). La tarjeta muestra lo que da el siguiente nivel.
+  - **Gratis hoy:** cada día rotan 3 kits que puedes probar sin comprar.
+  - **Bots con kit:** los bots llevan Tanque, Piro, Escarcha o Vampiro, y se ve debajo de su nombre.
+  - **En partida:** abajo a la izquierda se ve tu kit, su nivel y su estado (furia, recarga, saltos…).
   - **Comunes:**
-    - **Constructor** (150): 24 de lana y +2 cada 10 s.
-    - **Saltarín** (150): doble salto.
-    - **Velocista** (200): Rapidez.
-    - **Minero** (200): pico gratis y Prisa.
+    - **Constructor**: lana inicial y +2 cada pocos segundos.
+    - **Saltarín**: doble salto (triple en nivel 3).
+    - **Velocista**: Rapidez (y Salto).
+    - **Minero**: pico gratis y Prisa.
   - **Raros:**
-    - **Arquero** (300): arco con Poder I y flechas que se recargan.
-    - **Médico** (350): te curas a ti y a tus compañeros.
-    - **Guerrero** (350): espada de piedra.
-    - **Tanque** (400): cobre y 15 % menos de daño.
-    - **Cazarrecompensas** (400): 8 de hierro y 3 de oro por baja.
+    - **Arquero**: arco con Poder y flechas que se recargan.
+    - **Médico**: te curas a ti y a tus compañeros.
+    - **Guerrero**: espada de piedra (de hierro en nivel 3).
+    - **Tanque**: cobre y menos daño.
+    - **Cazarrecompensas**: hierro y oro por baja.
   - **Épicos:**
-    - **Bárbaro** (600): la espada sube con las bajas.
-    - **Segador** (600): las almas curan y dan velocidad.
-    - **Escarcha** (650): los golpes congelan.
-    - **Piro** (650): los golpes queman.
-    - **Planeador** (550): planea con Espacio.
-    - **Vampiro** (700): robo de vida.
+    - **Bárbaro**: la espada sube con las bajas.
+    - **Segador**: las almas curan y dan velocidad.
+    - **Escarcha**: los golpes congelan.
+    - **Piro**: los golpes queman.
+    - **Planeador**: planea con Espacio.
+    - **Vampiro**: robo de vida.
   - **Legendarios:**
-    - **Ejecutor** (900): triple de daño a enemigos con poca vida.
-    - **Ninja** (900): **G** para una embestida invulnerable.
-    - **Martillo** (1000): **G** para saltar y golpear el suelo.
+    - **Ejecutor**: triple de daño a enemigos con poca vida.
+    - **Ninja**: **G** para una embestida invulnerable.
+    - **Martillo**: **G** para saltar y golpear el suelo.
 - **Marcador lateral nuevo:** el próximo evento con su barra de progreso, los equipos en filas con su color (cama ✔, jugadores vivos o ✘), tu equipo resaltado, tus bajas, finales y camas, las monedas ganadas en la partida y tu kit.
 - **Minerales:** salen del generador con un pequeño salto y un brillo de su color, y se apilan en un solo montón que se ve más grande cuantos más hay. Los diamantes y esmeraldas suenan al aparecer.
 - **Combate:** al recibir un golpe la cámara solo se inclina un poco, sin temblar, y los golpes de los bots ya no te lanzan tan lejos.
