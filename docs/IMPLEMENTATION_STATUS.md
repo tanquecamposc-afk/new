@@ -86,7 +86,12 @@ Ver [architecture.md](./architecture.md). Resumen:
 | XP, niveles y recompensas por partida (idempotentes) + pantalla de recompensas | ✅ Phase 6 |
 | CurrencyService y tienda con transacciones idempotentes | ✅ Phase 6 |
 | Inventario y cosméticos (bolas, colores, estelas, efectos) visibles en juego y online | ✅ Phase 6 |
-| Agua con shader, VFX, partículas, audio | ⏳ Phase 7 |
+| Cielo con shader (degradado + sol), nubes y montañas lejanas | ✅ Phase 7 |
+| Iluminación: hemisférica + sol + relleno; sombras dinámicas / estáticas precalculadas / ninguna según calidad | ✅ Phase 7 |
+| AO de contacto horneado junto a las paredes y sombras blob bajo las bolas | ✅ Phase 7 |
+| Agua con shader (ondas, fresnel, brillo del sol, espuma) | ✅ Phase 7 |
+| Partículas (1 draw call): polvo, impactos, salpicadura, arena, nube, acelerador, fuegos | ✅ Phase 7 |
+| Música generativa y efectos nuevos (agua, arena, madera, acelerador, UI, victoria, nivel, compra) | ✅ Phase 7 |
 | Presets de calidad completos, optimización Chromebook | ⏳ Phase 8 |
 | QA, seguridad, documentación completa, build de producción | ⏳ Phase 9 |
 
@@ -142,7 +147,9 @@ anticipado y abandono desde el menú. 15 tests de servidor + tests de protocolo/
 Ver [cosmetics.md](./cosmetics.md). Verificado en Chromium: comprar (doble clic cobra una vez),
 equipar, la bola equipada en partida, recompensas tras una partida, perfil e historial
 persistentes tras recargar. 137 tests.
-### Phase 7 — Pulido gráfico + agua + VFX + partículas + audio
+### Phase 7 — Pulido gráfico + agua + VFX + partículas + audio ✅
+Verificado en Chromium con calidad alta, media y baja (Lago y Molino), sin errores ni avisos.
+Todo el audio y las texturas se generan en tiempo real: cero descargas adicionales.
 ### Phase 8 — Optimización + móvil + tablet + Chromebook + ajustes gráficos
 Incluye migrar a `@dimforge/rapier3d` (WASM como fichero aparte, no base64) para reducir
 el bundle (~1,7 MB gzip actualmente).

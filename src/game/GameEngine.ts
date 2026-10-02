@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { AudioService } from '@/audio/AudioService';
+import { audio } from '@/audio';
 import { CameraConfig } from '@/config/camera';
 import { AppEnv, GameConfig } from '@/config/game';
 import type { QualityPreset } from '@/config/graphics';
@@ -16,6 +16,8 @@ import { AimView } from '@/game/render/AimView';
 import { BallView } from '@/game/render/BallView';
 import { CourseView } from '@/game/render/CourseView';
 import { HoleEffect } from '@/game/render/HoleEffect';
+import { BlobShadow } from '@/game/render/GroundShading';
+import { Particles } from '@/game/render/Particles';
 import { NameLabel } from '@/game/render/NameLabel';
 import { ObstacleView } from '@/game/render/ObstacleView';
 import { SceneRenderer } from '@/game/render/SceneRenderer';
@@ -96,7 +98,11 @@ export class GameEngine {
   private trajectory!: TrajectoryView;
   private holeFx!: HoleEffect;
   private obstacleView!: ObstacleView;
-  private readonly audio = new AudioService();
+  private readonly audio = audio;
+  private fx!: Particles;
+  private blobs = new Map<string, BlobShadow>();
+  private lastSurface = new Map<string, string | null>();
+  private boostFxAcc = 0;
   private rig = new CameraRig();
   private input!: InputController;
   private loop = new FixedStepAccumulator(PhysicsConfig.fixedTimestep, PhysicsConfig.maxSubSteps);
@@ -155,7 +161,7 @@ export class GameEngine {
     }
     if (this.disposed) return;
     onProgress?.(0.7, `Construyendo «${course.name}»…`);
-    this.courseView = new CourseView(course);
+    this.courseView = new CourseView(course, this.view.preset);
     this.view.scene.add(this.courseView.group);
     this.view.configureForCourse(course);
 
@@ -164,7 +170,15 @@ export class GameEngine {
       // Online: cada jugador tiene su propio mundo; aquí sólo se simula la bola propia.
       if (!online || p.id === this.localId) this.sim.addPlayer(p.id, p.name);
       const look = resolveLook(p.cosmetics ?? DEFAULT_EQUIPPED, p.color);
-      const ball = new BallView(look, p.id !== this.localId, this.opts.quality === 'low' ? 'low' : 'high');
+      const ghost = p.id !== this.localId;
+      const ball = new BallView(look, ghost, this.view.preset.cosmeticFx ? 'high' : 'low');
+      // Sombra real sólo con sombras dinámicas; si no (o bola fantasma), sombra blob.
+      ball.mesh.castShadow = this.view.dynamicShadows && !ghost;
+      if (!ball.mesh.castShadow) {
+        const blob = new BlobShadow(ghost ? 0.3 : 0.45);
+        this.blobs.set(p.id, blob);
+        this.view.scene.add(blob.mesh);
+      }
       if (p.id !== this.localId) ball.mesh.castShadow = false;
       const label = p.id === this.localId ? null : new NameLabel(p.name, look.color, p.isBot);
       this.view.scene.add(ball.mesh, ball.worldGroup);
@@ -174,7 +188,9 @@ export class GameEngine {
     this.aim = new AimView();
     this.trajectory = new TrajectoryView();
     this.holeFx = new HoleEffect();
-    this.obstacleView = new ObstacleView(course.obstacles);
+    this.obstacleView = new ObstacleView(course.obstacles, this.view.dynamicShadows);
+    this.fx = new Particles(this.view.preset.particles);
+    this.view.scene.add(this.fx.points);
     this.view.scene.add(this.obstacleView.group, this.aim.group, this.trajectory.group, this.holeFx.group);
 
     const spawn = course.spawnPoints[0]!;
@@ -197,12 +213,6 @@ export class GameEngine {
       cycleSpectate: (dir) => this.spectateNext(dir),
     });
 
-    const applyVolumes = () => {
-      const s = useSettings.getState();
-      this.audio.setVolumes(s.masterVolume, s.sfxVolume, s.musicVolume);
-    };
-    applyVolumes();
-    this.unsubs.push(useSettings.subscribe(applyVolumes));
 
     this.resizeObserver = new ResizeObserver(() => this.resize());
     this.resizeObserver.observe(container);
@@ -225,13 +235,19 @@ export class GameEngine {
       lastEvent: null,
     });
     this.publishLive();
+    // Modo de sombras "static": el mapa se calcula una vez con la escena ya montada.
+    this.view.bakeStaticShadows();
     // Gancho de depuración/QA automatizado: sólo con VITE_ENABLE_DEBUG=true.
     if (AppEnv.debugEnabled) (window as unknown as { __minigolf?: GameEngine }).__minigolf = this;
     if (online) {
       this.followServer = true;
       online.onSnapshot = (self) => this.onServerSnapshot(self);
       online.onEvent = (e) => this.onServerEvent(e);
-      online.onShot = (m) => m.playerId === this.spectateTarget && this.audio.hit(m.power);
+      online.onShot = (m) => {
+        const pos = this.visuals.get(m.playerId)?.ball.mesh.position;
+        if (pos) this.fx.dust({ x: pos.x, y: pos.y - PhysicsConfig.ball.radius, z: pos.z }, 0.6 + m.power);
+        if (m.playerId === this.spectateTarget) this.audio.hit(m.power);
+      };
       online.onShotAck = (a) => {
         if (a.ok) return;
         // Tiro rechazado por el servidor: se deshace la predicción.
@@ -253,9 +269,21 @@ export class GameEngine {
       ev.on('PLAYER_STATE_CHANGED', ({ playerId, to }) => {
         if (local(playerId)) useGameStore.getState().patchHud({ playerState: to as never });
       }),
-      ev.on('SHOT_STARTED', ({ playerId, power }) => audible(playerId) && this.audio.hit(power)),
-      ev.on('BALL_HIT', ({ playerId, speed }) => audible(playerId) && this.audio.bounce(speed)),
-      ev.on('BALL_IN_HOLE', ({ playerId }) => {
+      ev.on('SHOT_STARTED', ({ playerId, power, origin }) => {
+        this.fx.dust({ x: origin.x, y: origin.y - PhysicsConfig.ball.radius, z: origin.z }, 0.6 + power);
+        if (audible(playerId)) this.audio.hit(power);
+      }),
+      ev.on('BALL_HIT', ({ playerId, speed, kind }) => {
+        const pos = this.visuals.get(playerId)?.ball.mesh.position;
+        if (pos) this.fx.impact(pos, speed, kind === 'obstacle');
+        if (!audible(playerId)) return;
+        if (kind === 'obstacle') this.audio.knock(speed);
+        else this.audio.bounce(speed);
+      }),
+      ev.on('BALL_IN_HOLE', ({ playerId, shots }) => {
+        const hp = this.opts.course.hole.position;
+        this.fx.ring(hp, 0xffffff, 1.4, 0.6);
+        if (shots === 1 && local(playerId)) this.fx.fireworks(hp);
         if (audible(playerId)) {
           this.audio.hole();
           this.holeFx.trigger(this.opts.course.hole.position, this.celebrationColors(playerId));
@@ -282,12 +310,14 @@ export class GameEngine {
         this.audio.hazard();
         toast('¡Se acabó el tiempo!', 'bad');
       }),
-      ev.on('BALL_OUT_OF_BOUNDS', ({ playerId }) => {
+      ev.on('BALL_OUT_OF_BOUNDS', ({ playerId, position }) => {
+        this.fx.poof(position);
         if (audible(playerId)) this.audio.hazard();
         if (local(playerId)) toast(`¡Fuera del campo! +${GameConfig.hazardPenaltyShots} golpe`, 'bad');
       }),
-      ev.on('BALL_IN_WATER', ({ playerId }) => {
-        if (audible(playerId)) this.audio.hazard();
+      ev.on('BALL_IN_WATER', ({ playerId, position }) => {
+        this.fx.splash(position);
+        if (audible(playerId)) this.audio.splash();
         if (local(playerId)) toast(`¡Al agua! +${GameConfig.hazardPenaltyShots} golpe`, 'bad');
       }),
       ev.on('SHOT_FINISHED', ({ playerId }) => {
@@ -387,8 +417,16 @@ export class GameEngine {
         this.holeFx.trigger(this.opts.course.hole.position, this.celebrationColors(e.playerId));
       }
       if (v) useGameStore.getState().patchHud({ lastEvent: { text: `${v.player.name} ha embocado`, tone: 'info', id: ++this.eventId } });
-    } else if ((e.kind === 'water' || e.kind === 'out_of_bounds') && watched) {
-      this.audio.hazard();
+    } else if (e.kind === 'water' || e.kind === 'out_of_bounds') {
+      const pos = v?.ball.mesh.position;
+      if (pos) {
+        if (e.kind === 'water') this.fx.splash(pos);
+        else this.fx.poof(pos);
+      }
+      if (watched) {
+        if (e.kind === 'water') this.audio.splash();
+        else this.audio.hazard();
+      }
     } else if (e.kind === 'finished') {
       this.publishLive();
       if (watched) this.spectateAt = this.elapsed + GameConfig.spectateDelaySec;
@@ -545,6 +583,12 @@ export class GameEngine {
     // Mismo instante que las bolas interpoladas (entre el paso anterior y el actual).
     this.obstacleView.update((this.sim.tick - 1 + alpha) * this.sim.dt);
     this.holeFx.update(dt);
+    this.updateSurfaceFx(dt);
+    this.fx.update(dt);
+    for (const [id, blob] of this.blobs) {
+      const b = this.visuals.get(id)!.ball.mesh.position;
+      blob.place(b, b.y - PhysicsConfig.ball.radius, !this.info(id).inHole);
+    }
 
     const focusBall = this.visuals.get(this.spectateTarget ?? this.localId)!.ball.mesh.position;
     const hole = this.opts.course.hole.position;
@@ -593,6 +637,27 @@ export class GameEngine {
         this.opts.onHoleEnd?.(this.collectResults());
       }
     }
+  }
+
+  /** Efectos al cambiar de superficie (arena, acelerador) para las bolas simuladas aquí. */
+  private updateSurfaceFx(dt: number): void {
+    this.boostFxAcc += dt;
+    for (const p of this.sim.players.values()) {
+      const surf = p.ball.isMoving ? (p.ball.ground?.surface ?? null) : null;
+      const prev = this.lastSurface.get(p.id) ?? null;
+      const pos = this.visuals.get(p.id)!.ball.mesh.position;
+      const audible = p.id === this.localId || p.id === this.spectateTarget;
+      if (surf !== prev) {
+        if (surf === 'sand' && p.ball.speed > 0.8) {
+          this.fx.sand(pos);
+          if (audible) this.audio.sand();
+        }
+        if (surf === 'booster' && audible) this.audio.whoosh();
+        this.lastSurface.set(p.id, surf);
+      }
+      if (surf === 'booster' && this.boostFxAcc > 0.06) this.fx.boost(pos);
+    }
+    if (this.boostFxAcc > 0.06) this.boostFxAcc = 0;
   }
 
   private updateSpectateTimers(): void {
@@ -845,6 +910,7 @@ export class GameEngine {
     this.viewport = { w, h };
     this.view.resize(w, h);
     this.rig.setAspect(w / h);
+    this.fx?.setViewportHeight(h);
   }
 
   /** Acceso de solo lectura para tests/depuración. */
@@ -882,7 +948,8 @@ export class GameEngine {
     this.trajectory?.dispose();
     this.holeFx?.dispose();
     this.obstacleView?.dispose();
-    this.audio.dispose();
+    this.fx?.dispose();
+    for (const b of this.blobs.values()) b.dispose();
     this.view?.dispose();
     this.predictor?.dispose();
     this.botPredictor?.dispose();

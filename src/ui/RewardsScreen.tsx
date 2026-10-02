@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { audio } from '@/audio';
 import { session } from '@/app/GameSession';
 import { useProfile } from '@/profile/profileStore';
 import { levelFromXp } from '@/progression/levels';
@@ -12,8 +13,10 @@ export function RewardsScreen() {
   const [shown, setShown] = useState(0);
   useEffect(() => {
     const t = setTimeout(() => setShown(1), 300);
+    if (grant && grant.levelAfter > grant.levelBefore) setTimeout(() => audio.levelUp(), 500);
+    else setTimeout(() => audio.coin(), 400);
     return () => clearTimeout(t);
-  }, []);
+  }, [grant]);
   if (!grant) return null;
   const { rewards } = grant;
   const leveled = grant.levelAfter > grant.levelBefore;

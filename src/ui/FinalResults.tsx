@@ -1,3 +1,5 @@
+import { useEffect } from 'react';
+import { audio } from '@/audio';
 import { session } from '@/app/GameSession';
 import { useGameStore } from '@/store/gameStore';
 import { formatTime } from '@/utils/format';
@@ -9,6 +11,10 @@ const MEDALS = ['🥇', '🥈', '🥉'];
 export function FinalResults() {
   const match = useGameStore((s) => s.match);
   const standings = match?.standings;
+  const myPos = standings?.find((s) => s.playerId === session.localPlayerId)?.position;
+  useEffect(() => {
+    if (myPos === 1 && (standings?.length ?? 0) > 1) audio.victory();
+  }, [myPos, standings?.length]);
   if (!match || !standings) return null;
   const me = standings.find((s) => s.playerId === session.localPlayerId);
   const podium = standings.slice(0, 3);

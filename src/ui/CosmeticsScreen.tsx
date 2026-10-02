@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react';
+import { audio } from '@/audio';
 import { CATEGORY_INFO, COSMETICS, DEFAULT_EQUIPPED, RARITY_INFO, type CosmeticCategory, type CosmeticItem } from '@/cosmetics/catalog';
 import { profileService, useProfile } from '@/profile/profileStore';
 import { levelFromXp } from '@/progression/levels';
@@ -36,6 +37,7 @@ export function CosmeticsScreen({ mode, onClose, onSwitch }: { mode: 'shop' | 'i
     busy.current.add(item.id);
     const r = profileService.purchase(item.id, `buy:${item.id}:${p.transactions.length}`);
     setMsg(r.ok ? { text: `¡${item.name} es tuyo!`, tone: 'good' } : { text: ERRORS[r.error] ?? 'No se pudo comprar.', tone: 'bad' });
+    if (r.ok) audio.coin();
     setTimeout(() => busy.current.delete(item.id), 400);
   };
 

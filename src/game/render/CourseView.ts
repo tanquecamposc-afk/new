@@ -2,6 +2,9 @@ import * as THREE from 'three';
 import { PhysicsConfig } from '@/config/physics';
 import { SURFACES } from '@/config/surfaces';
 import type { BlockDef, CourseData, DecorationDef } from '@/game/courses/types';
+import { GRAPHICS_PRESETS, type GraphicsPreset } from '@/config/graphics';
+import { createContactAO } from './GroundShading';
+import { createWaterMaterial } from './WaterMaterial';
 import { applyOrientedPlanarUV, applyWorldPlanarUV, createChevronTexture, createSandTexture, createStripeTexture, createWaterTexture } from './textures';
 
 const STRIPE_SCALE = 0.25;
@@ -17,7 +20,12 @@ export class CourseView {
   private boosterTex: THREE.Texture | null = null;
   private waterTex: THREE.Texture | null = null;
 
-  constructor(private readonly course: CourseData) {
+  private water: THREE.ShaderMaterial[] = [];
+
+  constructor(
+    private readonly course: CourseData,
+    private readonly preset: GraphicsPreset = GRAPHICS_PRESETS.high,
+  ) {
     const greenTex = this.track(createStripeTexture('#4cc35a', '#45b553'));
     const roughTex = this.track(createStripeTexture('#69b84c', '#64b048', 6));
 
@@ -38,7 +46,15 @@ export class CourseView {
     const matFor = (b: BlockDef) =>
       mats[b.surface] ?? (mats[b.surface] = this.track(new THREE.MeshStandardMaterial({ color: SURFACES[b.surface].color, roughness: 0.8 })));
 
-    for (const b of course.surfaces) this.addBlock(b, matFor(b), true);
+    for (const b of course.surfaces) {
+      if (b.surface === 'water' && this.preset.waterShader) this.addWaterSurface(b);
+      else this.addBlock(b, matFor(b), true);
+    }
+    const ao = createContactAO(course.walls);
+    if (ao) {
+      this.group.add(ao.mesh);
+      this.disposables.push(ao);
+    }
     for (const b of course.outOfBounds) this.addBlock(b, matFor(b), false);
     for (const b of course.walls) this.addWall(b, matFor(b));
     for (const d of course.decorations) this.addDecoration(d);
@@ -82,6 +98,18 @@ export class CourseView {
     if (b.surface === 'water') mesh.renderOrder = 2;
     mesh.matrixAutoUpdate = false;
     mesh.updateMatrix();
+    this.group.add(mesh);
+  }
+
+  /** Superficie del agua con shader animado (la física usa el bloque del curso). */
+  private addWaterSurface(b: BlockDef): void {
+    const mat = this.track(createWaterMaterial({ x: b.size.x, z: b.size.z }));
+    mat.uniforms.sunDir!.value.set(this.course.lighting.sunDirection.x, this.course.lighting.sunDirection.y, this.course.lighting.sunDirection.z).normalize();
+    this.water.push(mat);
+    const geo = this.track(new THREE.PlaneGeometry(b.size.x, b.size.z).rotateX(-Math.PI / 2));
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.position.set(b.center.x, b.center.y + b.size.y / 2, b.center.z);
+    mesh.renderOrder = 2;
     this.group.add(mesh);
   }
 
@@ -237,6 +265,7 @@ export class CourseView {
 
   /** Animación del banderín: ondea y se levanta cuando la bola se acerca (para no taparla). */
   update(time: number, dt: number, ballDistanceToHole: number): void {
+    for (const w of this.water) w.uniforms.time!.value = time;
     if (this.boosterTex) this.boosterTex.offset.y = -time * 1.6;
     if (this.waterTex) {
       this.waterTex.offset.x = Math.sin(time * 0.3) * 0.08;

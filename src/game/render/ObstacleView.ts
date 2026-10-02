@@ -11,7 +11,8 @@ export class ObstacleView {
   private items: { def: ObstacleDef; obj: THREE.Object3D }[] = [];
   private disposables: { dispose(): void }[] = [];
 
-  constructor(defs: readonly ObstacleDef[]) {
+  /** `castShadows`: sólo con sombras dinámicas (en modo estático el mapa no se recalcula). */
+  constructor(defs: readonly ObstacleDef[], private readonly castShadows = true) {
     const wood = this.track(new THREE.MeshStandardMaterial({ color: 0xf6efe2, roughness: 0.6 }));
     const accent = this.track(new THREE.MeshStandardMaterial({ color: 0xe8483f, roughness: 0.55 }));
     const slider = this.track(new THREE.MeshStandardMaterial({ color: 0xffb020, roughness: 0.5 }));
@@ -58,6 +59,7 @@ export class ObstacleView {
       this.group.add(g);
       this.items.push({ def, obj: g });
     }
+    if (!this.castShadows) this.group.traverse((o) => (o.castShadow = false));
     this.update(0);
   }
 

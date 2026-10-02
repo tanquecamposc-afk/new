@@ -14,6 +14,8 @@ import { ConnectionOverlay } from '@/ui/ConnectionOverlay';
 import { PrivateRoomScreen } from '@/ui/PrivateRoomScreen';
 import { RewardsScreen } from '@/ui/RewardsScreen';
 import { isWebGLAvailable } from '@/utils/webgl';
+import { audio } from '@/audio';
+import { useSettings } from '@/settings/settingsStore';
 import { session } from './GameSession';
 
 const IN_MATCH = new Set(['COUNTDOWN', 'PLAYING', 'FINISHED', 'SPECTATING', 'HOLE_RESULTS']);
@@ -29,6 +31,31 @@ export function App() {
   useEffect(() => {
     void session.boot(webgl);
   }, [webgl]);
+
+  // Audio global: desbloqueo con el primer gesto, clic en botones y volúmenes de los ajustes.
+  useEffect(() => {
+    const apply = () => {
+      const s = useSettings.getState();
+      audio.setVolumes(s.masterVolume, s.sfxVolume, s.musicVolume);
+    };
+    apply();
+    const off = useSettings.subscribe(apply);
+    const onDown = (e: Event) => {
+      audio.unlock();
+      if ((e.target as HTMLElement | null)?.closest?.('button')) audio.click();
+    };
+    window.addEventListener('pointerdown', onDown, true);
+    window.addEventListener('keydown', () => audio.unlock(), { once: true });
+    return () => {
+      off();
+      window.removeEventListener('pointerdown', onDown, true);
+    };
+  }, []);
+
+  const inMatchState = IN_MATCH.has(appState);
+  useEffect(() => {
+    audio.setMusicMood(inMatchState ? 'game' : 'menu');
+  }, [inMatchState]);
 
   const inMatch = IN_MATCH.has(appState);
   // holeIndex en las dependencias del render: session.currentHole cambia al avanzar de hoyo.
