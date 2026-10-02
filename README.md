@@ -308,6 +308,28 @@ En **Opciones → Calidad gráfica**: Baja, Media, Alta y Ultra. Ajusta la resol
 - **Ahumador:** solo comida, el doble de rápido. **Alto horno:** solo minerales, metales y armaduras, el doble de rápido.
 - Arreglado: romper un ahumador o un alto horno ahora suelta lo que tenga dentro.
 
+## Biomas sin errores
+
+- **Campos de champiñones:** los champiñones gigantes salían a trozos (solo el sombrero, flotando y sin tronco). Ahora salen completos: rojos con cúpula y marrones con sombrero plano, sobre su tallo. Las islas suben poco a poco desde el mar, con playa.
+- **Taiga de árboles gigantes:** muchos árboles salían cortados por el mismo fallo. Ahora salen enteros.
+- **Pantanos, manglares, desiertos y badlands:** el terreno ya no cambia de altura de golpe en el borde del bioma (antes había paredes verticales de decenas de bloques). Ahora hay pendientes.
+- **Ríos:** se hacen menos profundos al subir a la montaña, en vez de cortarse de golpe dejando paredes.
+- **Bosques carmesí y distorsionado (Nether):** había un solo hongo gigante por chunk. Ahora hay unas 5 veces más, solo donde hay sitio encima, así que no atraviesan el techo de la cueva.
+
+## Shaders que afectan a todo
+
+- **Sombras del sol para todo:** criaturas, jugadores, bots, objetos tirados y la tapa de los cofres proyectan sombra sobre el suelo, y se oscurecen al pasar a la sombra de un árbol o un techo. Tu personaje proyecta sombra aunque juegues en primera persona. Con sombras reales desaparecen los círculos negros bajo las criaturas.
+- **La mano y lo que llevas** también se oscurecen en la sombra.
+- **Luz del sol que sigue la hora:** la luz de las criaturas viene del sol o de la luna y tiene su color (dorada al atardecer, azulada de noche).
+- **Luz dinámica:** una antorcha, un farol, lava o cualquier bloque que dé luz en tu mano ilumina el terreno y las criaturas a tu alrededor.
+
+## Todas las opciones funcionan
+
+- Se probaron una por una las 19 opciones (distancia, campo de visión, calidad, resolución dinámica, FPS, niebla, shaders, reflejos, brillo, partículas, nubes, animación de chunks, gráficos vibrantes, música, volumen, sensibilidad, movimiento de cámara, tamaño de la interfaz y números de daño) y que se guardan al recargar.
+- **Brillo:** ahora funciona como en el original. «Brillante» levanta mucho las zonas oscuras y «Oscuro» las hunde, en el terreno y también en las criaturas, los objetos y la mano.
+- **Música:** al quitarla se calla al momento, aunque esté sonando una pieza.
+- **Sensibilidad:** también se aplica a los controles táctiles.
+
 ## Cofres menos cuadrados
 
 - Los cofres tienen las esquinas biseladas, la tapa sobresale un poco del cuerpo y la parte de arriba está redondeada con un escalón. Vale para cofres sencillos, dobles y para la tapa animada al abrirlos.

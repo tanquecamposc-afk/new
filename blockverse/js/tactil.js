@@ -69,7 +69,7 @@ const TACTIL=(window.matchMedia&&matchMedia('(pointer:coarse)').matches)||('onto
       if(t.identifier===joyId){moverJoy(t);continue;}
       const m=miradas.get(t.identifier); if(!m)continue;
       const dx=t.clientX-m.x, dy=t.clientY-m.y; m.x=t.clientX; m.y=t.clientY; m.mov+=Math.abs(dx)+Math.abs(dy);
-      if(estado==='jugando'){jugador.yaw-=dx*.006;jugador.pitch=clamp(jugador.pitch-dy*.006,-Math.PI/2+.001,Math.PI/2-.001);}
+      if(estado==='jugando'){const sb=window.SENSIB||1;jugador.yaw-=dx*.006*sb;jugador.pitch=clamp(jugador.pitch-dy*.006*sb,-Math.PI/2+.001,Math.PI/2-.001);}
     }
     e.preventDefault();
   },{passive:false});

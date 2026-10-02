@@ -180,7 +180,11 @@ function infoColumna(x,z){
   let bioma;
   const tierra=h>=NIVEL_MAR-1;
   const isla=fbm(x*.0028,z*.0028,s+2100,2);
-  if(!tierra&&c>.3&&isla>.73&&temp>.35&&temp<.64){h=NIVEL_MAR+1+Math.min(7,(isla-.73)*120);bioma=BIOMA.champinones;}
+  // Islas de champiñones: suben poco a poco desde el fondo del mar (con playa, sin paredes bajo el agua)
+  const ssC=(a,b,v)=>smooth(clamp((v-a)/(b-a),0,1));
+  const kIsla=tierra?0:ssC(.3,.32,c)*ssC(.35,.37,temp)*(1-ssC(.62,.64,temp))*ssC(.715,.745,isla);
+  if(kIsla>0)h=lerp(h,NIVEL_MAR+1+Math.min(7,Math.max(0,isla-.73)*120),kIsla);
+  if(kIsla>0&&h>=NIVEL_MAR-.5)bioma=BIOMA.champinones;
   else if(!tierra)bioma=temp<.33?BIOMA.oceanoHelado:temp>.64?BIOMA.oceanoCalido:c<.33?BIOMA.oceanoProfundo:BIOMA.oceano;
   else if(c<.452&&montes<.3&&h<NIVEL_MAR+3.5)bioma=temp<.33?BIOMA.nevado:BIOMA.playa;
   else if(montes>.45&&h>150)bioma=temp<.45?BIOMA.picosNevados:temp>.58&&h>162?BIOMA.picosPiedra:BIOMA.montana;
@@ -199,16 +203,26 @@ function infoColumna(x,z){
   }else{
     if(hum>.6)bioma=BIOMA.jungla;else if(rara>.6||(montes>.2&&rara>.5))bioma=rara>.68?BIOMA.badlandsErosionados:BIOMA.badlands;else bioma=BIOMA.desierto;
   }
-  if(bioma===BIOMA.pantano)h=NIVEL_MAR+(h-NIVEL_MAR)*.22-.4;
-  if(bioma===BIOMA.manglar)h=NIVEL_MAR+(h-NIVEL_MAR)*.15-.9;
-  if(bioma===BIOMA.desierto)h=NIVEL_MAR+1+(h-NIVEL_MAR-1)*.7;
-  if(esBadlands(bioma)){h+=montes*18+colinas*6;const t=Math.floor(h/5)*5;h=t+Math.min(5,(h-t)*2.5);}
+  // Alturas propias de cada bioma, con transición gradual en sus bordes (antes había paredes verticales)
+  if(tierra){
+    const sinMonte=1-ssC(.3,.45,montes);
+    const templada=ssC(.405,.425,temp)*(1-ssC(.58,.6,temp)), calida=ssC(.6,.62,temp)*(1-ssC(.65,.67,temp)), arida=ssC(.67,.69,temp);
+    const fP=ssC(.655,.69,hum)*templada*sinMonte;                       // pantano: llano y encharcado
+    const fM=ssC(.625,.66,hum)*calida*(1-ssC(.07,.1,montes))*sinMonte;  // manglar: aún más bajo
+    const seco=(1-ssC(.57,.6,hum))*arida;
+    const fB=seco*Math.max(ssC(.58,.62,rara),ssC(.48,.52,rara)*ssC(.18,.22,montes))*(1-ssC(.4,.5,montes));  // badlands: mesetas
+    const fD=seco*(1-fB)*sinMonte;                                      // desierto: dunas más bajas
+    if(fP>0)h=lerp(h,NIVEL_MAR+(h-NIVEL_MAR)*.22-.4,fP);
+    if(fM>0)h=lerp(h,NIVEL_MAR+(h-NIVEL_MAR)*.15-.9,fM);
+    if(fD>0)h=lerp(h,NIVEL_MAR+1+(h-NIVEL_MAR-1)*.7,fD);
+    if(fB>0){let hb=h+montes*18+colinas*6;const t=Math.floor(hb/5)*5;hb=t+Math.min(5,(hb-t)*2.5);h=lerp(h,hb,fB);}
+  }
   // Ríos
   const rio=Math.abs(fbm(x*.0035,z*.0035,s+70,3)-.5);
-  if(tierra&&bioma!==BIOMA.montana&&bioma!==BIOMA.picosNevados&&bioma!==BIOMA.picosPiedra&&bioma!==BIOMA.champinones&&rio<.022&&h<160){
-    const f=1-rio/.022;
-    h=h-(h-(NIVEL_MAR-3))*Math.min(1,f*2.2);
-    if(h<NIVEL_MAR)bioma=BIOMA.rio;
+  // Los ríos se hacen menos profundos al subir a la montaña (antes se cortaban de golpe y dejaban paredes)
+  if(tierra&&bioma!==BIOMA.champinones&&rio<.022){
+    const f=1-rio/.022, sube=1-ssC(136,164,h);
+    if(sube>0){h=h-(h-(NIVEL_MAR-3))*Math.min(1,f*2.2)*sube;if(h<NIVEL_MAR)bioma=BIOMA.rio;}
   }
   h=Math.round(clamp(h,70,188));
   return {h,bioma,montes,temp};
@@ -466,7 +480,7 @@ function generarSuperficie(ch){
     const inf=dentro?info[(wz-bz)*CX+wx-bx]:infoColumna(wx,wz);
     const def=ARBOLES_BIOMA[inf.bioma]; if(!def||rh>=def[0])continue;
     const {h}=inf, mangle=inf.bioma===BIOMA.manglar; if(h<=NIVEL_MAR-(mangle?3:0))continue;
-    if(dentro){const sup=datos[idx(wx-bx,h,wz-bz)];if(sup!==B.cesped&&sup!==B.cespedNevado&&sup!==B.tierra&&sup!==B.barro&&sup!==B.musgoPalido)continue;}
+    if(dentro){const sup=datos[idx(wx-bx,h,wz-bz)];if(sup!==B.cesped&&sup!==B.cespedNevado&&sup!==B.tierra&&sup!==B.barro&&sup!==B.musgoPalido&&sup!==B.micelio&&sup!==B.podzol)continue;}
     const r=mulberry32(Math.floor(hash2(wx,wz,s+778)*4294967296));
     ponerArbolTipo(poner,def[1](r()),wx,h,wz,r);
     if(dentro&&!mangle)datos[idx(wx-bx,h,wz-bz)]=B.tierra;
@@ -856,9 +870,12 @@ function generarNether(ch){
       const rr=r();
       if(bio===BN.carmesi||bio===BN.distorsionado){
         const dist=bio===BN.distorsionado;
-        if(rr<.012&&x>2&&x<13&&z>2&&z<13)hongoGigante(x,y-1,z,dist);
-        else if(rr<.12)datos[i]=dist?B.raicesDist:B.raicesCarmesi;
-        else if(rr<.16)datos[i]=dist?B.hongoDist:B.hongoCarmesi;
+        // Hongos gigantes donde hay sitio encima (bosques densos como en el original, sin atravesar el techo)
+        let libre=x>2&&x<13&&z>2&&z<13&&rr<.065;
+        for(let k=0;libre&&k<11;k++)if(y+k>=CY-6||datos[idx(x,y+k,z)])libre=false;
+        if(libre)hongoGigante(x,y-1,z,dist);
+        else if(rr<.15)datos[i]=dist?B.raicesDist:B.raicesCarmesi;
+        else if(rr<.2)datos[i]=dist?B.hongoDist:B.hongoCarmesi;
       }else if(bio===BN.deltas){
         if(rr<.03){const h=2+Math.floor(r()*5);for(let k=0;k<h&&!datos[idx(x,y+k,z)];k++)datos[idx(x,y+k,z)]=B.basalto;}
         else if(rr<.12&&abajo!==B.lava)datos[idx(x,y-1,z)]=B.bloqueMagma;
