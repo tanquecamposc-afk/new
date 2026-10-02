@@ -136,12 +136,15 @@ export class Simulation {
     return p.shots.length + p.penalties;
   }
 
-  /** Arranca el hoyo para todos a la vez (mismo tick = mismo cronómetro). */
-  startHole(): void {
+  /**
+   * Arranca el hoyo para todos a la vez (mismo tick = mismo cronómetro).
+   * `atTick`: tick oficial de inicio (cliente que se incorpora tarde).
+   */
+  startHole(atTick: number = this.tick): void {
     if (this.started) return;
     this.started = true;
     for (const p of this.players.values()) {
-      p.startTick = this.tick;
+      p.startTick = atTick;
       p.lastShotTick = -Infinity;
     }
   }
@@ -196,6 +199,60 @@ export class Simulation {
     p.fsm.force('BALL_MOVING');
     this.events.emit('SHOT_STARTED', { playerId: id, shotIndex: record.index, power: record.power, direction: { x: shot.direction.x, y: 0, z: shot.direction.z }, origin: record.origin });
     return { ok: true, record };
+  }
+
+  /**
+   * Tiro con compensación de latencia: aplica el tiro en `atTick` (pasado
+   * reciente, cuando el jugador soltó) y re-simula hasta el tick actual. Es
+   * exacto porque cada jugador tiene su propio mundo físico (las bolas no
+   * chocan entre sí) y los obstáculos son función pura del tick.
+   */
+  shootAtTick(id: string, shot: ShotInput, atTick: number): ReturnType<Simulation['shoot']> {
+    const p = this.getPlayer(id);
+    const now = this.tick;
+    const from = Math.floor(atTick);
+    if (from >= now || p.ball.isMoving || p.hazardReturnTick !== null || from < p.lastShotTick) return this.shoot(id, shot);
+    this.tick = from;
+    this.physics.obstacles?.teleport(from * this.dt);
+    const r = this.shoot(id, shot);
+    while (this.tick < now) this.step();
+    if (!r.ok) this.physics.obstacles?.teleport(now * this.dt);
+    return r;
+  }
+
+  /** Alinea el reloj de la simulación con el del servidor (bolas en reposo). */
+  syncTick(tick: number): void {
+    this.tick = Math.max(0, Math.floor(tick));
+    this.physics.obstacles?.teleport(this.tick * this.dt);
+  }
+
+  /**
+   * Corrección autoritativa (cliente online): coloca la bola donde dice el
+   * servidor y ajusta el estado del jugador. Sólo se usa cuando la predicción
+   * local diverge.
+   */
+  resyncPlayer(id: string, s: { position: Vec3; finished: boolean; completed: boolean; holed: boolean }): void {
+    const p = this.getPlayer(id);
+    const pending = p.shots.at(-1);
+    if (pending && pending.result === 'pending') this.finishShot(p, s.holed ? 'hole' : 'rest');
+    p.hazardReturnTick = null;
+    if (s.finished) {
+      if (s.holed) p.ball.placeInCup(this.course.hole.position);
+      else p.ball.placeAt(s.position);
+      p.holed = s.holed;
+      p.completed = s.completed;
+      if (p.finishTick === null) p.finishTick = this.tick;
+      if (p.fsm.state === 'SHOOTING') p.fsm.force('BALL_MOVING');
+      if (p.fsm.state !== 'FINISHED') p.fsm.force('FINISHED');
+      return;
+    }
+    p.ball.placeAt(s.position);
+    p.lastRest = copyVec(s.position);
+    p.holed = false;
+    p.completed = false;
+    p.finishTick = null;
+    if (p.fsm.state === 'FINISHED') p.fsm.force('IDLE');
+    else if (p.fsm.state !== 'AIMING') this.toIdle(p);
   }
 
   /** Reinicio manual: devuelve la bola a la última posición de reposo, sin penalización. */

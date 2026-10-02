@@ -24,6 +24,9 @@ import { computeShotFromScreenDrag, maxDragPixels, type ShotInput } from '@/game
 import { TrajectoryPredictor, truncateAtBounce, type TrajectoryPrediction } from '@/game/shooting/TrajectoryPredictor';
 import { compareLive } from '@/match/liveRanking';
 import type { MatchPlayer } from '@/match/types';
+import type { OnlineLink } from '@/multiplayer/OnlineLink';
+import type { PlayerNetState } from '@/multiplayer/protocol';
+import { NetworkConfig } from '@/config/network';
 import { useSettings } from '@/settings/settingsStore';
 import { useGameStore, type HoleSummary, type LiveRow } from '@/store/gameStore';
 import type { Vec3 } from '@/utils/math';
@@ -46,8 +49,15 @@ export interface EngineOptions {
   onStart?: () => void;
   onLocalFinished?: () => void;
   onSpectate?: () => void;
-  /** Todos han terminado: resultados del hoyo (una sola vez). */
+  /** Todos han terminado: resultados del hoyo (una sola vez). Sólo partidas locales. */
   onHoleEnd?: (results: PlayerHoleOutcome[]) => void;
+  /** Online: el servidor corrigió una "embocada" predicha que no fue tal. */
+  onLocalUnfinished?: () => void;
+  /**
+   * Partida online: el servidor es la autoridad. La simulación local sólo
+   * contiene la bola propia (predicción); las demás se interpolan.
+   */
+  online?: OnlineLink;
 }
 
 const RESULT_LABEL: Record<string, string> = {
@@ -111,6 +121,9 @@ export class GameEngine {
   private fps = { frames: 0, acc: 0, value: 0, frameMs: 0, predictionMs: 0 };
   private hudAcc = 0;
   private eventId = 0;
+  /** Online: la bola propia se dibuja desde el servidor hasta resincronizar (reconexión). */
+  private followServer = false;
+  private mismatchSince: number | null = null;
 
   private constructor(private readonly opts: EngineOptions) {}
 
@@ -145,8 +158,10 @@ export class GameEngine {
     this.view.scene.add(this.courseView.group);
     this.view.configureForCourse(course);
 
+    const online = this.opts.online;
     for (const p of players) {
-      this.sim.addPlayer(p.id, p.name);
+      // Online: cada jugador tiene su propio mundo; aquí sólo se simula la bola propia.
+      if (!online || p.id === this.localId) this.sim.addPlayer(p.id, p.name);
       const ball = new BallView(p.color, p.id !== this.localId);
       if (p.id !== this.localId) ball.mesh.castShadow = false;
       const label = p.id === this.localId ? null : new NameLabel(p.name, p.color, p.isBot);
@@ -210,6 +225,19 @@ export class GameEngine {
     this.publishLive();
     // Gancho de depuración/QA automatizado: sólo con VITE_ENABLE_DEBUG=true.
     if (AppEnv.debugEnabled) (window as unknown as { __minigolf?: GameEngine }).__minigolf = this;
+    if (online) {
+      this.followServer = true;
+      online.onSnapshot = (self) => this.onServerSnapshot(self);
+      online.onEvent = (e) => this.onServerEvent(e);
+      online.onShot = (m) => m.playerId === this.spectateTarget && this.audio.hit(m.power);
+      online.onShotAck = (a) => {
+        if (a.ok) return;
+        // Tiro rechazado por el servidor: se deshace la predicción.
+        const self = online.states.get(this.localId);
+        if (self && !self.finished) this.sim.resyncPlayer(this.localId, { position: { x: self.x, y: self.y, z: self.z }, finished: false, completed: false, holed: false });
+      };
+      if (online.hole) online.sendHoleReady(online.hole.index);
+    }
     onProgress?.(1, '¡Listo!');
   }
 
@@ -240,14 +268,12 @@ export class GameEngine {
         this.publishLive();
         if (local(playerId)) {
           this.publishHud();
-          useGameStore.getState().patchHud({ result: this.buildSummary() });
-          this.opts.onLocalFinished?.();
-          if (!this.sim.allFinished) this.spectateAt = this.elapsed + GameConfig.spectateDelaySec;
+          this.handleLocalFinished();
         } else if (playerId === this.spectateTarget) {
           // El jugador observado terminó: pasar al siguiente tras un momento.
           this.spectateAt = this.elapsed + GameConfig.spectateDelaySec;
         }
-        if (this.sim.allFinished && this.holeEndAt === null) this.holeEndAt = this.elapsed + GameConfig.holeEndDelaySec;
+        if (!this.opts.online && this.sim.allFinished && this.holeEndAt === null) this.holeEndAt = this.elapsed + GameConfig.holeEndDelaySec;
       }),
       ev.on('TIME_UP', ({ playerId }) => {
         if (!local(playerId)) return;
@@ -267,6 +293,144 @@ export class GameEngine {
         this.publishLive();
       }),
     );
+  }
+
+  private handleLocalFinished(): void {
+    useGameStore.getState().patchHud({ result: this.buildSummary() });
+    this.opts.onLocalFinished?.();
+    if (!this.everyoneFinished()) this.spectateAt = this.elapsed + GameConfig.spectateDelaySec;
+  }
+
+  /** Datos de un jugador: simulación local o, para rivales online, el servidor. */
+  private info(id: string): { strokes: number; finished: boolean; completed: boolean; timeMs: number; inHole: boolean } {
+    const online = this.opts.online;
+    if (online && id !== this.localId) {
+      const st = online.states.get(id);
+      return st
+        ? { strokes: st.strokes, finished: st.finished, completed: st.completed, timeMs: st.timeMs, inHole: st.phase === 'in_hole' }
+        : { strokes: 0, finished: false, completed: false, timeMs: 0, inHole: false };
+    }
+    const p = this.sim.getPlayer(id);
+    const st = online?.states.get(id);
+    return {
+      // Tras reconectar, la simulación local no conoce los golpes previos: manda el servidor.
+      strokes: Math.max(this.sim.strokes(id), st?.strokes ?? 0),
+      finished: p.finishTick !== null,
+      completed: p.completed,
+      timeMs: this.sim.elapsedMs(id),
+      inHole: p.ball.phase === 'in_hole',
+    };
+  }
+
+  private everyoneFinished(): boolean {
+    return this.opts.players.every((p) => this.info(p.id).finished);
+  }
+
+  // ---------------- Online ----------------
+
+  /**
+   * Reconciliación de la bola propia con el estado autoritativo. Se tolera el
+   * desfase temporal de la red (la predicción va por delante) y sólo se corrige
+   * si la diferencia persiste con la bola parada.
+   */
+  private onServerSnapshot(self: PlayerNetState | undefined): void {
+    if (!self) return;
+    const p = this.sim.getPlayer(this.localId);
+    const pos = { x: self.x, y: self.y, z: self.z };
+    const resync = () => this.sim.resyncPlayer(this.localId, { position: pos, finished: self.finished, completed: self.completed, holed: self.holed });
+    if (this.followServer) {
+      if (self.finished || self.phase === 'rest') {
+        const wasFinished = p.finishTick !== null;
+        resync();
+        this.followServer = false;
+        if (self.finished && !wasFinished) this.handleLocalFinished();
+      }
+      return;
+    }
+    const localFinished = p.finishTick !== null;
+    const off = Math.hypot(p.ball.position.x - pos.x, p.ball.position.z - pos.z);
+    const mismatch =
+      self.finished !== localFinished || (!self.finished && self.phase === 'rest' && p.ball.phase === 'rest' && off > NetworkConfig.correctionThreshold);
+    if (!mismatch) {
+      this.mismatchSince = null;
+      return;
+    }
+    if (p.ball.isMoving || (!self.finished && self.phase !== 'rest')) return;
+    this.mismatchSince ??= this.elapsed;
+    if (this.elapsed - this.mismatchSince < 0.6) return;
+    this.mismatchSince = null;
+    resync();
+    if (self.finished && !localFinished) this.handleLocalFinished();
+    if (!self.finished && localFinished) {
+      this.spectateTarget = null;
+      this.spectateAt = null;
+      useGameStore.getState().patchHud({ holed: false, result: null });
+      this.opts.onLocalUnfinished?.();
+    }
+  }
+
+  private onServerEvent(e: { kind: string; playerId: string }): void {
+    if (e.playerId === this.localId) return;
+    const v = this.visuals.get(e.playerId);
+    const watched = e.playerId === this.spectateTarget;
+    if (e.kind === 'holed') {
+      if (watched) {
+        this.audio.hole();
+        this.holeFx.trigger(this.opts.course.hole.position);
+      }
+      if (v) useGameStore.getState().patchHud({ lastEvent: { text: `${v.player.name} ha embocado`, tone: 'info', id: ++this.eventId } });
+    } else if ((e.kind === 'water' || e.kind === 'out_of_bounds') && watched) {
+      this.audio.hazard();
+    } else if (e.kind === 'finished') {
+      this.publishLive();
+      if (watched) this.spectateAt = this.elapsed + GameConfig.spectateDelaySec;
+    }
+  }
+
+  /** Online: el reloj de la simulación sigue al del servidor; la cuenta atrás termina en su goTick. */
+  private onlineTick(): number {
+    const link = this.opts.online!;
+    const h = link.hole;
+    const store = useGameStore.getState();
+    const est = link.estimatedTick();
+    if (!h) return 1;
+    if (h.goTick === null) {
+      if (this.phase !== 'ready') this.phase = 'ready';
+    } else if (est < h.goTick) {
+      if (this.phase === 'ready') {
+        this.phase = 'countdown';
+        store.patchMatch({ phase: 'countdown' });
+      }
+      const shown = Math.max(1, Math.ceil(((h.goTick - est) * this.sim.dt)));
+      if (shown !== this.lastCountdownShown) {
+        this.lastCountdownShown = shown;
+        this.audio.countdown(false);
+        store.patchMatch({ countdown: shown });
+      }
+    } else if (this.phase === 'ready' || this.phase === 'countdown') {
+      this.phase = 'playing';
+      const late = est - h.goTick > 1 / this.sim.dt; // incorporación tardía: sin "GO"
+      if (!late) {
+        this.audio.countdown(true);
+        store.patchMatch({ countdown: 'GO' });
+        this.goShownUntil = this.elapsed + 0.8;
+      }
+      store.patchMatch({ phase: 'playing' });
+      this.opts.onStart?.();
+    }
+
+    const target = Math.floor(est);
+    const local = this.sim.getPlayer(this.localId);
+    // Muy por detrás (reconexión, pestaña en segundo plano): saltar al tick actual.
+    if (target - this.sim.tick > 240 && !local.ball.isMoving) this.sim.syncTick(target);
+    let n = 0;
+    while (this.sim.tick < target && n < 16) {
+      if (!this.sim.started && h.goTick !== null && this.sim.tick >= h.goTick) this.sim.startHole(h.goTick);
+      this.sim.step();
+      n++;
+    }
+    if (!this.sim.started && h.goTick !== null && this.sim.tick >= h.goTick) this.sim.startHole(h.goTick);
+    return Math.min(1, Math.max(0, est - (this.sim.tick - 1)));
   }
 
   private buildSummary(): HoleSummary {
@@ -327,14 +491,28 @@ export class GameEngine {
     const t0 = performance.now();
     this.elapsed += dt;
     this.input.update(dt);
-    if (!this.paused) {
+    const online = this.opts.online;
+    let alpha = this.loop.alpha;
+    if (online) {
+      alpha = this.onlineTick();
+      this.updateSpectateTimers();
+    } else if (!this.paused) {
       this.updatePhase(dt);
       const steps = this.loop.advance(dt);
       for (let i = 0; i < steps; i++) this.sim.step();
       if (this.botDriver && this.phase === 'playing') this.botDriver.update(this.sim, GameConfig.botBudgetMs, performance.now());
+      alpha = this.loop.alpha;
     }
 
-    for (const [id, v] of this.visuals) v.ball.update(this.sim.getPlayer(id).ball, this.loop.alpha);
+    const renderTick = online?.renderTick() ?? 0;
+    for (const [id, v] of this.visuals) {
+      if (online && (id !== this.localId || this.followServer)) {
+        const s = online.buffers.get(id)?.sample(renderTick);
+        if (s) v.ball.setPose(s.x, s.y, s.z, s.qx, s.qy, s.qz, s.qw);
+      } else {
+        v.ball.update(this.sim.getPlayer(id).ball, alpha);
+      }
+    }
     const local = this.sim.getPlayer(this.localId);
     const mine = this.visuals.get(this.localId)!.ball.mesh.position;
     const localPlaying = local.fsm.state !== 'FINISHED';
@@ -344,7 +522,7 @@ export class GameEngine {
       v.label.sprite.position.set(b.x, b.y + 0.55, b.z);
       // Etiquetas ocultas si tapan tu bola mientras juegas.
       const crowding = localPlaying && Math.hypot(b.x - mine.x, b.z - mine.z) < 0.9;
-      v.label.sprite.visible = this.sim.getPlayer(id).ball.phase !== 'in_hole' && !crowding;
+      v.label.sprite.visible = !this.info(id).inHole && !crowding;
     }
     const aiming = !!this.currentShot && local.fsm.state === 'AIMING';
     if (aiming) {
@@ -356,7 +534,7 @@ export class GameEngine {
     }
     this.trajectory.update(dt, this.elapsed);
     // Mismo instante que las bolas interpoladas (entre el paso anterior y el actual).
-    this.obstacleView.update((this.sim.tick - 1 + this.loop.alpha) * this.sim.dt);
+    this.obstacleView.update((this.sim.tick - 1 + alpha) * this.sim.dt);
     this.holeFx.update(dt);
 
     const focusBall = this.visuals.get(this.spectateTarget ?? this.localId)!.ball.mesh.position;
@@ -398,19 +576,27 @@ export class GameEngine {
         this.goShownUntil = 0;
         store.patchMatch({ countdown: null });
       }
-      if (this.spectateAt !== null && this.elapsed >= this.spectateAt) {
-        this.spectateAt = null;
-        if (!this.sim.allFinished) {
-          const wasSpectating = this.spectateTarget !== null;
-          this.spectateNext(1);
-          if (!wasSpectating && this.spectateTarget) this.opts.onSpectate?.();
-        }
-      }
+      this.updateSpectateTimers();
       if (this.holeEndAt !== null && this.elapsed >= this.holeEndAt) {
         this.phase = 'ended';
         this.spectateTarget = null;
         store.patchMatch({ phase: 'ended', spectate: null });
         this.opts.onHoleEnd?.(this.collectResults());
+      }
+    }
+  }
+
+  private updateSpectateTimers(): void {
+    if (this.goShownUntil && this.elapsed >= this.goShownUntil) {
+      this.goShownUntil = 0;
+      useGameStore.getState().patchMatch({ countdown: null });
+    }
+    if (this.spectateAt !== null && this.elapsed >= this.spectateAt) {
+      this.spectateAt = null;
+      if (!this.everyoneFinished()) {
+        const wasSpectating = this.spectateTarget !== null;
+        this.spectateNext(1);
+        if (!wasSpectating && this.spectateTarget) this.opts.onSpectate?.();
       }
     }
   }
@@ -428,7 +614,7 @@ export class GameEngine {
   spectateNext(dir: 1 | -1): void {
     const local = this.sim.getPlayer(this.localId);
     if (local.fsm.state !== 'FINISHED') return;
-    const active = this.opts.players.filter((p) => p.id !== this.localId && this.sim.getPlayer(p.id).finishTick === null).map((p) => p.id);
+    const active = this.opts.players.filter((p) => p.id !== this.localId && !this.info(p.id).finished).map((p) => p.id);
     if (!active.length) {
       this.spectateTarget = null;
     } else {
@@ -446,17 +632,17 @@ export class GameEngine {
    */
   private liveRows(): LiveRow[] {
     const rows = this.opts.players.map((pl) => {
-      const p = this.sim.getPlayer(pl.id);
+      const i = this.info(pl.id);
       return {
         id: pl.id,
         name: pl.name,
         color: pl.color,
         isBot: pl.isBot,
         isLocal: pl.id === this.localId,
-        strokes: this.sim.strokes(pl.id),
-        finished: p.finishTick !== null,
-        completed: p.completed,
-        timeMs: this.sim.elapsedMs(pl.id),
+        strokes: i.strokes,
+        finished: i.finished,
+        completed: i.completed,
+        timeMs: i.timeMs,
         position: 0,
       };
     });
@@ -543,9 +729,10 @@ export class GameEngine {
   private publishHud(): void {
     const s = useGameStore.getState();
     const p = this.sim.getPlayer(this.localId);
+    const st = this.opts.online?.states.get(this.localId);
     s.patchHud({
-      shots: this.sim.strokes(this.localId),
-      penalties: p.penalties,
+      shots: this.info(this.localId).strokes,
+      penalties: Math.max(p.penalties, st?.penalties ?? 0),
       timeMs: this.sim.elapsedMs(this.localId),
       remainingMs: this.sim.remainingMs(this.localId),
       overview: this.rig.isOverview,
@@ -578,7 +765,7 @@ export class GameEngine {
   }
 
   private canAim(): boolean {
-    if (this.paused || this.phase !== 'playing') return false;
+    if (this.paused || this.phase !== 'playing' || this.followServer) return false;
     const s = this.sim.getPlayer(this.localId).fsm.state;
     return s === 'IDLE' || s === 'AIMING';
   }
@@ -605,6 +792,8 @@ export class GameEngine {
     }
     const r = this.sim.shoot(this.localId, shot);
     if (!r.ok) this.sim.cancelAim(this.localId);
+    // Online: la predicción local ya está en marcha; el servidor valida y aplica en el mismo tick.
+    else this.opts.online?.sendShot(shot, r.record.tick);
     this.publishHud();
   }
 
@@ -625,7 +814,7 @@ export class GameEngine {
   resetBall(): void {
     if (this.phase !== 'playing' || this.paused) return;
     this.onAimCancel();
-    this.sim.resetBall(this.localId);
+    if (this.sim.resetBall(this.localId)) this.opts.online?.sendReset();
   }
 
   toggleOverview(): void {
@@ -672,6 +861,7 @@ export class GameEngine {
     this.running = false;
     cancelAnimationFrame(this.raf);
     this.unsubs.forEach((u) => u());
+    this.opts.online?.detachEngine();
     this.resizeObserver?.disconnect();
     this.input?.dispose();
     this.courseView?.dispose();

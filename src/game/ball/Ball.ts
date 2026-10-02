@@ -107,6 +107,14 @@ export class Ball {
     this.velocity.x = this.velocity.y = this.velocity.z = 0;
   }
 
+  /** Coloca la bola ya embocada en el fondo de la copa (resincronización con el servidor). */
+  placeInCup(hole: Vec3): void {
+    const p = { x: hole.x, y: hole.y - this.cfg.hole.depth + this.cfg.ball.radius, z: hole.z };
+    this.placeAt(p);
+    this.collider.setCollisionGroups(BALL_IN_CUP_GROUPS);
+    this.phase = 'in_hole';
+  }
+
   /** Lógica previa al paso de Rapier: suelo, rodadura y captura en la copa. */
   preStep(dt: number, hole: Vec3): void {
     if (this.phase !== 'moving' && this.phase !== 'captured') return;

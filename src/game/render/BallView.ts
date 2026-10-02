@@ -35,6 +35,12 @@ export class BallView {
     this.mesh.quaternion.set(q.x, q.y, q.z, q.w);
   }
 
+  /** Pose directa (bolas remotas interpoladas desde snapshots). */
+  setPose(x: number, y: number, z: number, qx: number, qy: number, qz: number, qw: number): void {
+    this.mesh.position.set(x, y, z);
+    this.mesh.quaternion.set(qx, qy, qz, qw);
+  }
+
   dispose(): void {
     this.geo.dispose();
     this.mat.dispose();

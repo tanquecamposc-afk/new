@@ -8,6 +8,13 @@ export default defineConfig({
   resolve: {
     alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
   },
+  server: {
+    // En desarrollo, /ws se redirige al servidor de juego (npm run server).
+    proxy: { '/ws': { target: 'ws://localhost:2567', ws: true } },
+  },
+  preview: {
+    proxy: { '/ws': { target: 'ws://localhost:2567', ws: true } },
+  },
   build: {
     target: 'es2022',
     // Rapier-compat incluye el WASM en base64 (~1,7 MB gzip). Ver docs/performance.md.

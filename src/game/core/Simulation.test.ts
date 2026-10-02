@@ -189,3 +189,54 @@ describe('Simulation — Phase 2', () => {
     sim.dispose();
   });
 });
+
+describe('Simulation — red (Phase 5)', () => {
+  it('shootAtTick: tirar en el pasado da el mismo resultado que haber tirado en ese tick', async () => {
+    const { course04 } = await import('@/game/courses/course04');
+    const shot = { direction: { x: 0, z: -1 }, power: 0.62 };
+    // Referencia: tiro en el tick 200.
+    const a = await Simulation.create(course04);
+    const pa = a.addPlayer('p', 'P');
+    while (a.tick < 200) a.step();
+    a.shoot('p', shot);
+    while (a.tick < 2400) a.step();
+    // Con latencia: el servidor recibe el tiro en el tick 215 y lo aplica en el 200.
+    const b = await Simulation.create(course04);
+    const pb = b.addPlayer('p', 'P');
+    while (b.tick < 215) b.step();
+    expect(b.shootAtTick('p', shot, 200).ok).toBe(true);
+    expect(b.tick).toBe(215);
+    while (b.tick < 2400) b.step();
+    expect(Math.hypot(pa.ball.position.x - pb.ball.position.x, pa.ball.position.z - pb.ball.position.z)).toBeLessThan(0.05);
+    expect(pb.shots[0]!.tick).toBe(200);
+    a.dispose();
+    b.dispose();
+  });
+
+  it('resyncPlayer corrige posición y estado (en reposo y embocado)', async () => {
+    const sim = await Simulation.create(course01);
+    const p = sim.addPlayer('p', 'P');
+    sim.resyncPlayer('p', { position: { x: 1, y: PhysicsConfig.ball.radius, z: 2 }, finished: false, completed: false, holed: false });
+    expect(p.ball.position).toMatchObject({ x: 1, z: 2 });
+    expect(p.fsm.state).toBe('IDLE');
+    sim.resyncPlayer('p', { position: { x: 0, y: 0, z: -8 }, finished: true, completed: true, holed: true });
+    expect(p.fsm.state).toBe('FINISHED');
+    for (let i = 0; i < 120; i++) sim.step();
+    expect(p.ball.position.y).toBeLessThan(0);
+    // El servidor dice que en realidad no embocó: vuelve a jugar.
+    sim.resyncPlayer('p', { position: { x: 0, y: PhysicsConfig.ball.radius, z: -6 }, finished: false, completed: false, holed: false });
+    expect(p.fsm.state).toBe('IDLE');
+    for (let i = 0; i < 60; i++) sim.step();
+    expect(p.ball.position.y).toBeCloseTo(PhysicsConfig.ball.radius, 1);
+    sim.dispose();
+  });
+
+  it('syncTick alinea el reloj y los obstáculos', async () => {
+    const sim = await Simulation.create(course01);
+    sim.syncTick(5000);
+    expect(sim.tick).toBe(5000);
+    sim.step();
+    expect(sim.tick).toBe(5001);
+    sim.dispose();
+  });
+});

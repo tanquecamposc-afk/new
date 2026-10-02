@@ -5,9 +5,8 @@ import { GameButton, MenuBackdrop } from './kit';
 import { SettingsPanel } from './SettingsPanel';
 
 /**
- * Menú principal. Sólo muestra opciones que funcionan de verdad: el juego
- * online (Partida rápida / Sala privada), perfil y tienda se añaden en las
- * fases de multijugador y progresión.
+ * Menú principal. Sólo muestra opciones que funcionan de verdad (perfil y
+ * tienda llegan con la progresión, Phase 6).
  */
 export function MainMenu() {
   const [panel, setPanel] = useState<'none' | 'settings' | 'help'>('none');
@@ -18,10 +17,16 @@ export function MainMenu() {
         Minigolf <span className="text-sun">Party</span>
       </h1>
       <div className="relative flex w-full max-w-xs flex-col gap-3">
-        <GameButton className="py-4 text-2xl" onClick={() => session.openLocalLobby()}>
-          ⛳ Jugar
+        <GameButton className="py-4 text-2xl" onClick={() => void session.quickPlay()}>
+          ⚡ Partida rápida
         </GameButton>
-        <p className="text-outline -mt-1 text-center text-sm font-bold">Partida local · hasta 6 hoyos · bots de práctica opcionales</p>
+        <GameButton variant="secondary" className="text-lg" onClick={() => session.openPrivateRoomScreen()}>
+          🔒 Sala privada
+        </GameButton>
+        <GameButton variant="secondary" onClick={() => session.openLocalLobby()}>
+          ⛳ Práctica local
+        </GameButton>
+        <p className="text-outline -mt-1 text-center text-xs font-bold">Online hasta 20 jugadores · Práctica sin conexión con bots opcionales</p>
         <GameButton variant="secondary" onClick={() => setPanel('settings')}>
           ⚙ Ajustes
         </GameButton>

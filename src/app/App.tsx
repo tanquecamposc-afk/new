@@ -10,6 +10,8 @@ import { Hud } from '@/ui/Hud';
 import { Lobby } from '@/ui/Lobby';
 import { LoadingScreen } from '@/ui/LoadingScreen';
 import { MainMenu } from '@/ui/MainMenu';
+import { ConnectionOverlay } from '@/ui/ConnectionOverlay';
+import { PrivateRoomScreen } from '@/ui/PrivateRoomScreen';
 import { isWebGLAvailable } from '@/utils/webgl';
 import { session } from './GameSession';
 
@@ -34,7 +36,9 @@ export function App() {
 
   return (
     <div className="relative h-full w-full overflow-hidden">
-      {hole && <GameCanvas key={hole.key} course={hole.course} players={hole.players} localId={hole.localId} allowPause={hole.allowPause} />}
+      {hole && (
+        <GameCanvas key={hole.key} course={hole.course} players={hole.players} localId={hole.localId} allowPause={hole.allowPause} online={hole.online} />
+      )}
       {inMatch && matchPhase === 'loading' && <LoadingScreen compact />}
       {inMatch && appState !== 'HOLE_RESULTS' && <Hud />}
       {inMatch && <CountdownOverlay />}
@@ -42,9 +46,12 @@ export function App() {
 
       {(appState === 'BOOT' || appState === 'LOADING') && <LoadingScreen />}
       {appState === 'MAIN_MENU' && <MainMenu />}
+      {(appState === 'QUICK_PLAY' || appState === 'MATCHMAKING') && <LoadingScreen compact />}
+      {appState === 'PRIVATE_ROOM' && <PrivateRoomScreen />}
       {appState === 'LOBBY' && <Lobby />}
       {appState === 'RESULTS' && <FinalResults />}
       {appState === 'ERROR' && error && <ErrorScreen message={error} onRetry={webgl ? () => session.recover() : () => location.reload()} />}
+      <ConnectionOverlay />
       <DebugPanel />
     </div>
   );

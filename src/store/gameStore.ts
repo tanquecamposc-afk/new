@@ -98,6 +98,8 @@ interface GameStore {
   lobby: RoomState | null;
   debug: DebugStats;
   showDebug: boolean;
+  /** Estado de la conexión con el servidor (partidas online). */
+  connection: 'idle' | 'connecting' | 'connected' | 'reconnecting' | 'closed';
   /** Transición validada por la tabla de estados. Devuelve false si no está permitida. */
   transition: (to: AppState) => boolean;
   setLoading: (progress: number, message: string) => void;
@@ -137,6 +139,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   lobby: null,
   debug: { fps: 0, frameMs: 0, drawCalls: 0, triangles: 0, bodies: 0, colliders: 0, memoryMb: null, predictionMs: 0 },
   showDebug: false,
+  connection: 'idle',
   transition: (to) => {
     const from = get().appState;
     if (from === to) return true;

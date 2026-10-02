@@ -3,6 +3,7 @@ import { session } from '@/app/GameSession';
 import { GameEngine } from '@/game/GameEngine';
 import type { CourseData } from '@/game/courses/types';
 import type { MatchPlayer } from '@/match/types';
+import type { OnlineLink } from '@/multiplayer/OnlineLink';
 import { useSettings } from '@/settings/settingsStore';
 import { useGameStore } from '@/store/gameStore';
 
@@ -11,10 +12,11 @@ interface Props {
   players: MatchPlayer[];
   localId: string;
   allowPause: boolean;
+  online: OnlineLink | null;
 }
 
 /** Monta el motor de un hoyo sobre un canvas. Un solo motor y un solo bucle por montaje (seguro con StrictMode). */
-export function GameCanvas({ course, players, localId, allowPause }: Props) {
+export function GameCanvas({ course, players, localId, allowPause, online }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -35,6 +37,8 @@ export function GameCanvas({ course, players, localId, allowPause }: Props) {
       onLocalFinished: () => session.onLocalFinished(),
       onSpectate: () => session.onSpectate(),
       onHoleEnd: (r) => session.onHoleEnd(r),
+      onLocalUnfinished: () => session.onLocalUnfinished(),
+      online: online ?? undefined,
     })
       .then((e) => {
         if (cancelled) {
@@ -55,7 +59,7 @@ export function GameCanvas({ course, players, localId, allowPause }: Props) {
       if (engine) session.onEngineDisposed(engine);
       engine?.dispose();
     };
-  }, [course, players, localId, allowPause]);
+  }, [course, players, localId, allowPause, online]);
 
   return (
     <div ref={containerRef} className="absolute inset-0">

@@ -19,6 +19,8 @@ export interface RoomState {
   /** Hoyos seleccionados para la partida. */
   courseIds: string[];
   status: 'open' | 'starting' | 'in_match';
+  /** Partida rápida: hora de servidor (ms) a la que empezará sola, o null. */
+  autoStartAt?: number | null;
 }
 
 export type RoomError = 'room_full' | 'invalid_name' | 'not_host' | 'not_all_ready' | 'unknown_player' | 'no_courses' | 'match_in_progress';
