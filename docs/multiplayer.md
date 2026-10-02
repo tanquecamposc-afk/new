@@ -5,8 +5,8 @@ cliente (TypeScript compartido). Elegido en lugar de Colyseus porque la física 
 determinista: no hace falta sincronizar esquemas de estado, basta con eventos + snapshots.
 
 ```bash
-npm run server   # servidor en :2567 (ws en /ws)
-npm run dev      # cliente; Vite redirige /ws al servidor
+npm run dev      # servidor (:2567, ws en /ws) + cliente Vite (:5173) a la vez
+npm run server   # sólo el servidor
 npm start        # producción: build + servidor que sirve también dist/
 ```
 

@@ -24,6 +24,7 @@ const IN_MATCH = new Set(['COUNTDOWN', 'PLAYING', 'FINISHED', 'SPECTATING', 'HOL
 export function App() {
   const appState = useGameStore((s) => s.appState);
   const error = useGameStore((s) => s.error);
+  const errorOnline = useGameStore((s) => s.errorOnline);
   const matchPhase = useGameStore((s) => s.match?.phase);
   const holeIndex = useGameStore((s) => s.match?.holeIndex);
   const [webgl] = useState(isWebGLAvailable);
@@ -79,7 +80,7 @@ export function App() {
       {appState === 'LOBBY' && <Lobby />}
       {appState === 'RESULTS' && <FinalResults />}
       {appState === 'REWARDS' && <RewardsScreen />}
-      {appState === 'ERROR' && error && <ErrorScreen message={error} onRetry={webgl ? () => session.recover() : () => location.reload()} />}
+      {appState === 'ERROR' && error && <ErrorScreen message={error} onRetry={webgl ? () => session.recover() : () => location.reload()} onPractice={webgl && errorOnline ? () => session.recoverToPractice() : undefined} />}
       <ConnectionOverlay />
       <DebugPanel />
     </div>

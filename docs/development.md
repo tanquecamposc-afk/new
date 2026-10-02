@@ -2,18 +2,19 @@
 
 ```bash
 npm install
-npm run dev       # servidor de desarrollo
+npm run dev       # desarrollo: Vite (:5173) + servidor de juego (:2567) a la vez
 npm test          # tests (Vitest, Rapier corre en Node)
 npm run lint      # oxlint (src + server)
 npm run check     # typecheck + lint + tests (lo mismo que debería pasar CI)
 npm run build     # typecheck + build de producción
-npm run preview   # sirve dist/
-npm run server    # servidor de juego (multijugador) en :2567
+npm run dev:client  # sólo Vite (sin servidor: los modos online darán error)
+npm run preview   # sirve dist/ con el servidor de juego en :2567
+npm run server    # sólo el servidor de juego (multijugador) en :2567
 npm start         # build + servidor que sirve el juego y el WebSocket en el mismo puerto
 ```
 
-Para jugar online en desarrollo: `npm run server` en una terminal y `npm run dev` en otra
-(Vite redirige `/ws` al servidor).
+`npm run dev` lanza el servidor y Vite juntos (`scripts/dev.mjs`); Vite redirige `/ws` al
+servidor. Si el servidor no está disponible, la pantalla de error ofrece *Jugar práctica local*.
 
 Variables de entorno: copia `.env.example` a `.env.local`. `VITE_ENABLE_DEBUG=true` activa el
 panel de rendimiento (F3 o `). `window.__minigolf` (motor para QA automatizado) se expone en

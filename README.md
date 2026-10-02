@@ -15,14 +15,18 @@ npm install
 npm start        # compila y arranca el servidor: http://localhost:2567
 ```
 
-Desarrollo con recarga en caliente: `npm run server` en una terminal y `npm run dev` en otra.
+Desarrollo con recarga en caliente: `npm run dev` (arranca a la vez la página en
+http://localhost:5173 y el servidor de juego). **Partida rápida y Sala privada necesitan el
+servidor**; si sólo abres los archivos de `dist/` o otro servidor estático, juega en
+*Práctica local*.
 
 | Script | Qué hace |
 |---|---|
-| `npm run dev` | Cliente de desarrollo (Vite) |
-| `npm run server` | Servidor de juego (WebSocket) en :2567 |
+| `npm run dev` | Desarrollo: Vite (:5173) + servidor de juego (:2567) juntos |
+| `npm run dev:client` | Sólo la página de desarrollo (sin servidor: sólo práctica local) |
+| `npm run server` | Sólo el servidor de juego (WebSocket) en :2567 |
 | `npm run build` | Typecheck + build de producción en `dist/` |
-| `npm run preview` | Sirve `dist/` (sólo práctica local) |
+| `npm run preview` | Sirve el `dist/` ya compilado con el servidor de juego en :2567 |
 | `npm start` | Build + servidor que sirve juego y WebSocket en el mismo puerto |
 | `npm test` | 162 tests (física, cursos, partidas, servidor, seguridad, tienda…) |
 | `npm run lint` | oxlint |

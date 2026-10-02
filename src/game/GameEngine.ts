@@ -247,23 +247,8 @@ export class GameEngine {
     this.view.bakeStaticShadows();
     // Gancho de QA automatizado: sólo en desarrollo o con VITE_EXPOSE_ENGINE=true.
     if (AppEnv.exposeEngine) (window as unknown as { __minigolf?: GameEngine }).__minigolf = this;
-    if (online) {
-      this.followServer = true;
-      online.onSnapshot = (self) => this.onServerSnapshot(self);
-      online.onEvent = (e) => this.onServerEvent(e);
-      online.onShot = (m) => {
-        const pos = this.visuals.get(m.playerId)?.ball.mesh.position;
-        if (pos) this.fx.dust({ x: pos.x, y: pos.y - PhysicsConfig.ball.radius, z: pos.z }, 0.6 + m.power);
-        if (m.playerId === this.spectateTarget) this.audio.hit(m.power);
-      };
-      online.onShotAck = (a) => {
-        if (a.ok) return;
-        // Tiro rechazado por el servidor: se deshace la predicción.
-        const self = online.states.get(this.localId);
-        if (self && !self.finished) this.sim.resyncPlayer(this.localId, { position: { x: self.x, y: self.y, z: self.z }, finished: false, completed: false, holed: false });
-      };
-      if (online.hole) online.sendHoleReady(online.hole.index);
-    }
+    // Online: los manejadores se instalan en start(), que sólo ejecuta el motor activo.
+    if (online) this.followServer = true;
     onProgress?.(1, '¡Listo!');
   }
 
@@ -514,9 +499,29 @@ export class GameEngine {
     };
   }
 
+  /** Conecta este motor a la red: sólo el motor que llega a start() (nunca uno descartado). */
+  private attachOnline(online: OnlineLink): void {
+    online.attachEngine(this);
+    online.onSnapshot = (self) => this.onServerSnapshot(self);
+    online.onEvent = (e) => this.onServerEvent(e);
+    online.onShot = (m) => {
+      const pos = this.visuals.get(m.playerId)?.ball.mesh.position;
+      if (pos) this.fx.dust({ x: pos.x, y: pos.y - PhysicsConfig.ball.radius, z: pos.z }, 0.6 + m.power);
+      if (m.playerId === this.spectateTarget) this.audio.hit(m.power);
+    };
+    online.onShotAck = (a) => {
+      if (a.ok) return;
+      // Tiro rechazado por el servidor: se deshace la predicción.
+      const self = online.states.get(this.localId);
+      if (self && !self.finished) this.sim.resyncPlayer(this.localId, { position: { x: self.x, y: self.y, z: self.z }, finished: false, completed: false, holed: false });
+    };
+    if (online.hole) online.sendHoleReady(online.hole.index);
+  }
+
   start(): void {
     if (this.running || this.disposed) return;
     this.running = true;
+    if (this.opts.online) this.attachOnline(this.opts.online);
     this.lastTime = performance.now();
     const frame = (now: number) => {
       if (!this.running) return;
@@ -973,7 +978,7 @@ export class GameEngine {
     this.running = false;
     cancelAnimationFrame(this.raf);
     this.unsubs.forEach((u) => u());
-    this.opts.online?.detachEngine();
+    this.opts.online?.detachEngine(this);
     this.resizeObserver?.disconnect();
     this.input?.dispose();
     this.courseView?.dispose();

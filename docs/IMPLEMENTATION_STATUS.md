@@ -184,6 +184,16 @@ Errores corregidos:
   antes del GO se alcanza al servidor paso a paso (determinista: 0,0000 m de diferencia),
   después hasta 40 pasos por frame, y no se puede apuntar hasta que el hoyo ha empezado.
   Verificado 5/5.
+- **"No se pudo conectar" al jugar online con `npm run dev`:** el script sólo arrancaba la
+  página, no el servidor de juego. Ahora `npm run dev` arranca ambos, `npm run preview`
+  usa el servidor real, y si aun así no hay servidor, el error explica el motivo y ofrece
+  *Jugar práctica local* con un botón.
+- **"La tarjeta gráfica ha reiniciado el juego" en desarrollo:** con el doble montaje de
+  React (StrictMode) el motor descartado liberaba el contexto WebGL del mismo `<canvas>`
+  que usaba el motor activo. Ahora cada montaje crea su propio canvas.
+- **Online en desarrollo, bola congelada:** el motor descartado borraba los manejadores de
+  red del motor activo al desecharse. Ahora sólo el motor que arranca (`start()`) se
+  conecta a la red y cada uno sólo puede desconectar los suyos.
 - **Caída del servidor** con una URL mal codificada (`/%E0%A4%A`): `decodeURIComponent`
   lanzaba fuera de cualquier `try` → 400.
 - **Path traversal por prefijo:** `startsWith(dist)` aceptaba carpetas hermanas como

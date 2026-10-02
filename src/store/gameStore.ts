@@ -96,6 +96,8 @@ interface GameStore {
   appState: AppState;
   loading: { progress: number; message: string };
   error: string | null;
+  /** El error vino de la conexión online: se ofrece jugar en práctica local. */
+  errorOnline: boolean;
   hud: HudState;
   match: MatchView | null;
   lobby: RoomState | null;
@@ -139,6 +141,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   appState: 'BOOT',
   loading: { progress: 0, message: 'Iniciando…' },
   error: null,
+  errorOnline: false,
   hud: initialHud,
   match: null,
   lobby: null,
@@ -157,7 +160,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     return true;
   },
   setLoading: (progress, message) => set({ loading: { progress, message } }),
-  setError: (error) => set({ error, appState: 'ERROR' }),
+  setError: (error) => set({ error, errorOnline: false, appState: 'ERROR' }),
   patchHud: (patch) => set((s) => ({ hud: { ...s.hud, ...patch } })),
   patchMatch: (patch) => set((s) => (s.match ? { match: { ...s.match, ...patch } } : {})),
   setMatch: (match) => set({ match }),

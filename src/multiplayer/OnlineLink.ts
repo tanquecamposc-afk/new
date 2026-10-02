@@ -94,7 +94,22 @@ export class OnlineLink {
     this.net.send({ t: 'next_ready' });
   }
 
-  detachEngine(): void {
+  /** Motor que instaló los manejadores actuales. */
+  private owner: object | null = null;
+
+  /** El motor del hoyo actual se registra como dueño de los manejadores. */
+  attachEngine(owner: object): void {
+    this.owner = owner;
+  }
+
+  /**
+   * Quita los manejadores sólo si pertenecen a `owner`. Un motor descartado (doble
+   * montaje de React en desarrollo, hoyo que se desmonta tarde) no puede dejar sin
+   * snapshots al motor activo.
+   */
+  detachEngine(owner?: object): void {
+    if (owner && this.owner !== owner) return;
+    this.owner = null;
     this.onSnapshot = this.onEvent = this.onShot = this.onShotAck = null;
   }
 

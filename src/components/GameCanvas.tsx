@@ -16,18 +16,26 @@ interface Props {
   online: OnlineLink | null;
 }
 
-/** Monta el motor de un hoyo sobre un canvas. Un solo motor y un solo bucle por montaje (seguro con StrictMode). */
+/**
+ * Monta el motor de un hoyo. Un solo motor y un solo bucle por montaje (seguro con
+ * StrictMode). Cada montaje crea su propio <canvas>: al desmontar, el motor libera su
+ * contexto WebGL (forceContextLoss) y, si el canvas se reutilizara, el siguiente motor
+ * recibiría ese "contexto perdido" (pasaba en `npm run dev` por el doble montaje).
+ */
 export function GameCanvas({ course, players, localId, allowPause, online }: Props) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    const container = containerRef.current!;
+    const canvas = document.createElement('canvas');
+    canvas.className = 'block h-full w-full';
+    container.prepend(canvas);
     let engine: GameEngine | null = null;
     let cancelled = false;
     const { setLoading, setError } = useGameStore.getState();
     GameEngine.create({
-      canvas: canvasRef.current!,
-      container: containerRef.current!,
+      canvas,
+      container,
       course,
       players,
       localPlayerId: localId,
@@ -59,12 +67,11 @@ export function GameCanvas({ course, players, localId, allowPause, online }: Pro
       cancelled = true;
       if (engine) session.onEngineDisposed(engine);
       engine?.dispose();
+      canvas.remove();
     };
   }, [course, players, localId, allowPause, online]);
 
   return (
-    <div ref={containerRef} className="absolute inset-0">
-      <canvas ref={canvasRef} className="block h-full w-full" />
-    </div>
+    <div ref={containerRef} className="absolute inset-0" />
   );
 }

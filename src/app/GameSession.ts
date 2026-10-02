@@ -140,7 +140,7 @@ class GameSession {
     try {
       await this.connectOnline({ t: 'quick_play' });
     } catch {
-      this.failOnline('No se pudo conectar con el servidor de juego. Inténtalo de nuevo más tarde.');
+      this.failOnline(SERVER_UNAVAILABLE);
     }
   }
 
@@ -150,7 +150,7 @@ class GameSession {
       await this.connectOnline(code ? { t: 'join_room', code } : { t: 'create_room' });
       return null;
     } catch (e) {
-      const msg = e instanceof Error && e.message !== 'connect_failed' && e.message !== 'timeout' ? e.message : 'No se pudo conectar con el servidor de juego.';
+      const msg = e instanceof Error && e.message !== 'connect_failed' && e.message !== 'timeout' ? e.message : SERVER_UNAVAILABLE;
       this.disconnectOnline();
       return msg;
     }
@@ -346,6 +346,7 @@ class GameSession {
     clearResume();
     useGameStore.setState({ error: null });
     this.store.setError(message);
+    useGameStore.setState({ errorOnline: true });
   }
 
   private disconnectOnline(): void {
@@ -565,10 +566,19 @@ class GameSession {
 
   /** Tras un error: volver al menú con el estado limpio. */
   recover(): void {
-    useGameStore.setState({ error: null, appState: 'ERROR' });
+    useGameStore.setState({ error: null, errorOnline: false, appState: 'ERROR' });
     this.exitToMenu();
   }
+
+  /** Tras un error de conexión: volver al menú y abrir directamente la práctica local. */
+  recoverToPractice(): void {
+    this.recover();
+    this.openLocalLobby();
+  }
 }
+
+const SERVER_UNAVAILABLE =
+  'No se pudo conectar con el servidor de juego. Las partidas online necesitan el servidor encendido (npm start). Mientras tanto puedes jugar en Práctica local.';
 
 function writeResume() {
   try {
