@@ -111,6 +111,16 @@ export class AudioService {
     this.tone(330, 0.4, 0.2, 'sawtooth', 0.05, 110);
   }
 
+  /** Cuenta atrás: pitido corto (3, 2, 1) y uno largo y agudo para GO. */
+  countdown(isGo: boolean): void {
+    if (isGo) {
+      this.tone(1046.5, 0.45, 0.3, 'square');
+      this.tone(1318.5, 0.45, 0.18, 'triangle', 0.02);
+    } else {
+      this.tone(659.25, 0.16, 0.25, 'square');
+    }
+  }
+
   ui(): void {
     this.tone(880, 0.05, 0.12, 'square');
   }

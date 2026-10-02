@@ -1,4 +1,6 @@
+import type { QualityPreset } from '@/config/graphics';
 import type { TrajectoryMode } from '@/config/trajectory';
+import { sanitizeName } from '@/multiplayer/Room';
 import { bool, isRecord, num, oneOf } from '@/persistence/PersistenceService';
 
 export interface Settings {
@@ -9,6 +11,10 @@ export interface Settings {
   sfxVolume: number;
   musicVolume: number;
   invertCameraY: boolean;
+  playerName: string;
+  quality: QualityPreset;
+  /** Bots de práctica por defecto en la sala local. */
+  practiceBots: number;
 }
 
 export const SETTINGS_KEY = 'settings';
@@ -21,7 +27,12 @@ export const defaultSettings = (): Settings => ({
   sfxVolume: 0.9,
   musicVolume: 0.5,
   invertCameraY: false,
+  playerName: 'Jugador',
+  quality: 'high',
+  practiceBots: 3,
 });
+
+export const QUALITY_PRESETS = ['low', 'medium', 'high', 'ultra'] as const;
 
 export const TRAJECTORY_MODES = ['off', 'short', 'full'] as const;
 
@@ -36,5 +47,8 @@ export function validateSettings(raw: unknown): Settings | null {
     sfxVolume: num(raw.sfxVolume, 0, 1, d.sfxVolume),
     musicVolume: num(raw.musicVolume, 0, 1, d.musicVolume),
     invertCameraY: bool(raw.invertCameraY, d.invertCameraY),
+    playerName: typeof raw.playerName === 'string' && sanitizeName(raw.playerName) ? sanitizeName(raw.playerName)! : d.playerName,
+    quality: oneOf(raw.quality, QUALITY_PRESETS, d.quality),
+    practiceBots: Math.round(num(raw.practiceBots, 0, 7, d.practiceBots)),
   };
 }

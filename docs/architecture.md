@@ -5,11 +5,21 @@ src/
   app/           App raíz (flujo de pantallas)
   components/    Componentes React que montan el motor (GameCanvas)
   ui/            HUD, carga, error, panel debug
+  app/           App raíz y GameSession (orquestador del flujo, fuera de React)
+  match/         MatchController (hoyos, resultados, clasificación), clasificación en vivo
+  multiplayer/   Contrato Room + LocalRoom (Phase 5 añade la sala de red)
+  settings/      Ajustes persistentes
+  persistence/   PersistenceService
+  audio/         AudioService (WebAudio sintetizado)
   config/        Configuración central: Physics, Surfaces, Camera, Input, Game, Graphics
   store/         Estado de UI (Zustand)
   utils/         Matemáticas, formato, detección WebGL
   game/
     core/        Simulation, EventBus, eventos, máquinas de estado, bucle de paso fijo
+    obstacles/   Obstáculos: definiciones, poses deterministas, sistema físico
+    bots/        Bots de práctica (sólo modo local) y guía de recorrido
+    scoring/     Puntuación configurable
+    testing/     Bot de prueba para tests (nunca en partidas)
     physics/     Carga de Rapier, PhysicsWorld (colliders desde datos), grupos de colisión
     ball/        Ball: rodadura, parada, captura en copa, hazards
     shooting/    Conversión arrastre → tiro y validación (cliente + futuro servidor)
@@ -43,3 +53,24 @@ simulación con HUD, y conectará audio, VFX, red y progresión sin dependencias
 **Estados.** `StateMachine` con tabla explícita de transiciones; las transiciones inválidas
 se rechazan. Jugador: `IDLE → AIMING → SHOOTING → BALL_MOVING → BALL_STOPPED → IDLE`,
 `FINISHED`, `SPECTATING`, `DISCONNECTED`, `RECONNECTED`. Aplicación: `BOOT → LOADING → …`.
+
+## Flujo de la aplicación
+
+`GameSession` (src/app/GameSession.ts) conduce el flujo y todas las transiciones pasan por
+`APP_TRANSITIONS` (src/game/core/appState.ts):
+
+```
+BOOT → LOADING → MAIN_MENU → LOBBY → COUNTDOWN → PLAYING → FINISHED → SPECTATING
+     → HOLE_RESULTS → (COUNTDOWN del siguiente hoyo | RESULTS) → LOBBY | MAIN_MENU
+```
+
+- **Sala:** `Room` es el contrato del lobby; `LocalRoom` lo implementa sin servidor. La sala de
+  red de Phase 5 implementará la misma interfaz, así que la UI no cambia.
+- **Partida:** `MatchController` registra resultados (idempotente) y calcula clasificaciones;
+  no depende de red ni de render (en Phase 5 se ejecuta en el servidor).
+- **Hoyo:** un `GameEngine` por hoyo. Todos empiezan en el mismo tick tras la cuenta atrás
+  (`Simulation.startHole`). Las bolas no chocan entre sí; las rivales se ven semitransparentes.
+- **Espectador:** al terminar, la cámara sigue a quien sigue jugando (Tab / botones ◀ ▶).
+- **Bots de práctica:** sólo en partidas locales, siempre etiquetados como BOT. Juegan con la
+  misma física y reglas, eligiendo el tiro con el predictor (presupuesto de CPU por frame) y
+  con error según su nivel. Sirven para probar lobby, espectador y clasificación sin servidor.

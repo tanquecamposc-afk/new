@@ -17,6 +17,8 @@ export interface InputHandlers {
   toggleOverview(): void;
   /** Primer gesto del usuario: desbloquea el audio. */
   userGesture(): void;
+  /** Espectador: cambiar de jugador observado. */
+  cycleSpectate(dir: 1 | -1): void;
 }
 
 type Mode = 'none' | 'pending-aim' | 'aiming' | 'orbit';
@@ -158,11 +160,16 @@ export class InputController {
       case 'KeyV':
         this.h.toggleOverview();
         break;
+      case 'Tab':
+        e.preventDefault();
+        this.h.cycleSpectate(e.shiftKey ? -1 : 1);
+        break;
       case 'KeyR':
         this.h.resetBall();
         break;
       case 'Escape':
         if (this.mode === 'aiming' || this.mode === 'pending-aim') {
+          e.preventDefault(); // consumido: no debe abrir también el menú de pausa
           this.h.aimCancel();
           this.mode = 'none';
         }

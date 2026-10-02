@@ -58,6 +58,11 @@ export class Simulation {
   readonly players = new Map<string, PlayerRuntime>();
   readonly dt = PhysicsConfig.fixedTimestep;
   tick = 0;
+  /**
+   * El hoyo empieza al terminar la cuenta atrás (startHole). Antes, la física
+   * corre (obstáculos en movimiento) pero nadie puede tirar ni corre el tiempo.
+   */
+  started = false;
   private eventQueue: EventQueue;
   private ballByCollider = new Map<number, PlayerRuntime>();
 
@@ -68,11 +73,24 @@ export class Simulation {
     this.eventQueue = new physics.R.EventQueue(true);
   }
 
-  static async create(course: CourseData): Promise<Simulation> {
+  /**
+   * `autoStart` (por defecto) arranca el hoyo de inmediato: práctica y tests.
+   * Las partidas lo arrancan tras la cuenta atrás con startHole().
+   */
+  static async create(course: CourseData, autoStart = true): Promise<Simulation> {
     const R = await loadRapier();
     const physics = new PhysicsWorld(R);
     physics.buildCourse(course);
-    return new Simulation(physics, course);
+    const sim = new Simulation(physics, course);
+    sim.started = autoStart;
+    return sim;
+  }
+
+  /** ¿Han terminado todos los jugadores (embocando o no)? */
+  get allFinished(): boolean {
+    if (this.players.size === 0) return false;
+    for (const p of this.players.values()) if (p.finishTick === null) return false;
+    return true;
   }
 
   get timeSeconds(): number {
@@ -118,14 +136,26 @@ export class Simulation {
     return p.shots.length + p.penalties;
   }
 
+  /** Arranca el hoyo para todos a la vez (mismo tick = mismo cronómetro). */
+  startHole(): void {
+    if (this.started) return;
+    this.started = true;
+    for (const p of this.players.values()) {
+      p.startTick = this.tick;
+      p.lastShotTick = -Infinity;
+    }
+  }
+
   /** Tiempo en el hoyo (ms) — corriendo o final. Basado en ticks: determinista. */
   elapsedMs(id: string): number {
+    if (!this.started) return 0;
     const p = this.getPlayer(id);
     const end = p.finishTick ?? this.tick;
     return Math.round((end - p.startTick) * this.dt * 1000);
   }
 
   beginAim(id: string): boolean {
+    if (!this.started) return false;
     return this.getPlayer(id).fsm.transition('AIMING');
   }
 
@@ -136,6 +166,7 @@ export class Simulation {
 
   shoot(id: string, shot: ShotInput): { ok: true; record: ShotRecord } | { ok: false; reason: ShotRejection } {
     const p = this.getPlayer(id);
+    if (!this.started) return { ok: false, reason: 'invalid_state' };
     const v = validateShot(shot, {
       state: p.fsm.state,
       ballMoving: p.ball.isMoving,
@@ -219,6 +250,7 @@ export class Simulation {
   }
 
   private isOutOfTime(p: PlayerRuntime): boolean {
+    if (!this.started) return false;
     const limit = this.timeLimitSec;
     return limit !== null && (this.tick - p.startTick) * this.dt >= limit;
   }

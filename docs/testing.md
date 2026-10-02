@@ -13,6 +13,10 @@
 | Persistencia y validación de ajustes | `src/persistence/PersistenceService.test.ts` |
 | Cursos: datos válidos, reposo estable, completables por el bot de prueba | `src/game/courses/courses.test.ts` |
 | Molino, barreras, agua, arena, acelerador, rampa | `src/game/obstacles/mechanics.test.ts` |
+| Partida de varios hoyos y clasificación | `src/match/MatchController.test.ts` |
+| Clasificación en vivo | `src/match/liveRanking.test.ts` |
+| Sala local (listo, host, máximo 20, nombres) | `src/multiplayer/LocalRoom.test.ts` |
+| Bots de práctica (reglas, no tiran antes del GO) | `src/game/bots/PracticeBot.test.ts` |
 
 El bot (`src/game/testing/solver.ts`) es exclusivamente de testing: prueba un abanico de
 tiros con el predictor y avanza por la guía del curso. Nunca participa en partidas.

@@ -30,6 +30,12 @@ describe('máquina de estados del jugador', () => {
 });
 
 describe('máquina de estados de la app', () => {
+  it('recorre el flujo completo de una partida', () => {
+    const m = createAppStateMachine();
+    const flow = ['LOADING', 'MAIN_MENU', 'LOBBY', 'COUNTDOWN', 'PLAYING', 'FINISHED', 'SPECTATING', 'HOLE_RESULTS', 'COUNTDOWN', 'PLAYING', 'HOLE_RESULTS', 'RESULTS', 'REWARDS', 'MAIN_MENU'] as const;
+    for (const s of flow) expect(m.transition(s)).toBe(true);
+  });
+
   it('BOOT → LOADING → MAIN_MENU, sin saltos imposibles', () => {
     const m = createAppStateMachine();
     expect(m.transition('PLAYING')).toBe(false);

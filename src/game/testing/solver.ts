@@ -4,34 +4,9 @@
  * TrajectoryPredictor y se queda con el que más avanza por la guía del curso.
  */
 import type { Simulation } from '@/game/core/Simulation';
-import type { CourseData } from '@/game/courses/types';
 import type { ShotInput } from '@/game/shooting/shot';
 import type { TrajectoryPredictor } from '@/game/shooting/TrajectoryPredictor';
-import type { Vec3 } from '@/utils/math';
-
-/** Distancia restante por la guía desde p (proyección sobre la polilínea). */
-export function guideCost(course: CourseData, p: Vec3): number {
-  const g = course.guide;
-  let best = Infinity;
-  let tail = 0;
-  const lens: number[] = [];
-  for (let i = 0; i < g.length - 1; i++) lens.push(Math.hypot(g[i + 1]!.x - g[i]!.x, g[i + 1]!.z - g[i]!.z));
-  for (let i = g.length - 2; i >= 0; i--) {
-    const a = g[i]!;
-    const b = g[i + 1]!;
-    const abx = b.x - a.x;
-    const abz = b.z - a.z;
-    const l2 = abx * abx + abz * abz || 1;
-    const t = Math.max(0, Math.min(1, ((p.x - a.x) * abx + (p.z - a.z) * abz) / l2));
-    const px = a.x + abx * t;
-    const pz = a.z + abz * t;
-    const off = Math.hypot(p.x - px, p.z - pz);
-    const cost = off * 1.5 + (1 - t) * lens[i]! + tail;
-    best = Math.min(best, cost);
-    tail += lens[i]!;
-  }
-  return best;
-}
+import { guideCost } from '@/game/bots/guide';
 
 export function chooseShot(sim: Simulation, predictor: TrajectoryPredictor, playerId: string, dirs = 48, powers = 10): ShotInput {
   const course = sim.course;

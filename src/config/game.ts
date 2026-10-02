@@ -10,6 +10,18 @@ export const GameConfig = {
   holeTimeLimitSec: 120 as number | null,
   /** Segundos finales en los que el HUD avisa del límite. */
   timeWarningSec: 20,
+  /** Cuenta atrás antes de cada hoyo (s). */
+  countdownSec: 3,
+  /** Espera tras embocar antes de pasar a modo espectador (s). */
+  spectateDelaySec: 1.6,
+  /** Espera tras terminar todos antes de mostrar los resultados del hoyo (s). */
+  holeEndDelaySec: 2,
+  /** Pasar al siguiente hoyo automáticamente tras los resultados (s). */
+  autoNextHoleSec: 12,
+  /** Bots de práctica: máximo en sala local (coste de CPU del predictor). */
+  maxPracticeBots: 7,
+  /** Presupuesto de CPU por frame para los bots (ms). */
+  botBudgetMs: 2.5,
 } as const;
 
 export const AppEnv = {

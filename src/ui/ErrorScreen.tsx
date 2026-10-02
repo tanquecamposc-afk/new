@@ -13,7 +13,7 @@ export function ErrorScreen({ message, onRetry }: Props) {
           onClick={onRetry}
           className="rounded-2xl bg-sun px-6 py-3 text-xl font-black text-ink shadow-[0_5px_0_#b8901a] active:translate-y-1 active:shadow-none"
         >
-          Reintentar
+          Volver al menú
         </button>
       </div>
     </div>

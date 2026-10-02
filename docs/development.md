@@ -21,4 +21,6 @@ panel de rendimiento (F3 o `) y expone `window.__minigolf` para QA automatizado.
 | Zoom | Rueda, +/− | Pellizcar |
 | Reiniciar bola | R o botón | Botón |
 | Vista general | V o botón 🗺 | Botón 🗺 |
+| Pausa / menú | Esc o botón ⏸ | Botón ⏸ |
+| Espectador: cambiar jugador | Tab / Mayús+Tab | Botones ◀ ▶ |
 | Ajustes | Botón ⚙ | Botón ⚙ |

@@ -1,67 +1,50 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { GameCanvas } from '@/components/GameCanvas';
-import type { GameEngine } from '@/game/GameEngine';
-import { COURSES } from '@/game/courses';
 import { useGameStore } from '@/store/gameStore';
+import { CountdownOverlay } from '@/ui/CountdownOverlay';
 import { DebugPanel } from '@/ui/DebugPanel';
 import { ErrorScreen } from '@/ui/ErrorScreen';
+import { FinalResults } from '@/ui/FinalResults';
+import { HoleResultsScreen } from '@/ui/HoleResultsScreen';
 import { Hud } from '@/ui/Hud';
+import { Lobby } from '@/ui/Lobby';
 import { LoadingScreen } from '@/ui/LoadingScreen';
+import { MainMenu } from '@/ui/MainMenu';
 import { isWebGLAvailable } from '@/utils/webgl';
+import { session } from './GameSession';
 
-/**
- * Práctica local: arranca directamente en un hoyo y permite cambiar de hoyo.
- * El menú principal, lobby y multijugador llegan en fases posteriores.
- */
+const IN_MATCH = new Set(['COUNTDOWN', 'PLAYING', 'FINISHED', 'SPECTATING', 'HOLE_RESULTS']);
+
+/** Raíz: cada estado de la máquina de la aplicación tiene su pantalla. */
 export function App() {
   const appState = useGameStore((s) => s.appState);
   const error = useGameStore((s) => s.error);
-  const [session, setSession] = useState(0);
-  const engineRef = useRef<GameEngine | null>(null);
+  const matchPhase = useGameStore((s) => s.match?.phase);
+  const holeIndex = useGameStore((s) => s.match?.holeIndex);
   const [webgl] = useState(isWebGLAvailable);
 
   useEffect(() => {
-    if (!webgl) useGameStore.getState().setError('Tu navegador no soporta WebGL. Prueba con Chrome actualizado o activa la aceleración por hardware.');
+    void session.boot(webgl);
   }, [webgl]);
 
-  const onEngine = useCallback((e: GameEngine | null) => {
-    engineRef.current = e;
-  }, []);
-
-  const [holeIndex, setHoleIndex] = useState(0);
-
-  const restart = useCallback(() => {
-    useGameStore.setState({ error: null, appState: 'BOOT' });
-    setSession((n) => n + 1);
-  }, []);
-
-  const selectHole = useCallback(
-    (i: number) => {
-      setHoleIndex(Math.max(0, Math.min(COURSES.length - 1, i)));
-      restart();
-    },
-    [restart],
-  );
-
-  const course = COURSES[holeIndex]!;
-  const holes = COURSES.map((c) => ({ id: c.id, name: c.name, par: c.par }));
+  const inMatch = IN_MATCH.has(appState);
+  // holeIndex en las dependencias del render: session.currentHole cambia al avanzar de hoyo.
+  void holeIndex;
+  const hole = inMatch ? session.currentHole : null;
 
   return (
-    <div className="relative h-full w-full">
-      {webgl && <GameCanvas key={session} course={course} playerName="Jugador" onEngine={onEngine} />}
-      {appState === 'PLAYING' && (
-        <Hud
-          onReset={() => engineRef.current?.resetBall()}
-          onReplay={restart}
-          onNext={holeIndex < COURSES.length - 1 ? () => selectHole(holeIndex + 1) : null}
-          onToggleOverview={() => engineRef.current?.toggleOverview()}
-          holes={holes}
-          holeIndex={holeIndex}
-          onSelectHole={selectHole}
-        />
-      )}
+    <div className="relative h-full w-full overflow-hidden">
+      {hole && <GameCanvas key={hole.key} course={hole.course} players={hole.players} localId={hole.localId} allowPause={hole.allowPause} />}
+      {inMatch && matchPhase === 'loading' && <LoadingScreen compact />}
+      {inMatch && appState !== 'HOLE_RESULTS' && <Hud />}
+      {inMatch && <CountdownOverlay />}
+      {appState === 'HOLE_RESULTS' && <HoleResultsScreen />}
+
       {(appState === 'BOOT' || appState === 'LOADING') && <LoadingScreen />}
-      {appState === 'ERROR' && error && <ErrorScreen message={error} onRetry={webgl ? restart : () => location.reload()} />}
+      {appState === 'MAIN_MENU' && <MainMenu />}
+      {appState === 'LOBBY' && <Lobby />}
+      {appState === 'RESULTS' && <FinalResults />}
+      {appState === 'ERROR' && error && <ErrorScreen message={error} onRetry={webgl ? () => session.recover() : () => location.reload()} />}
       <DebugPanel />
     </div>
   );

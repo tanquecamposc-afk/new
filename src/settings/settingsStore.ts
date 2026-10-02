@@ -24,6 +24,6 @@ export const useSettings = create<SettingsStore>((set, get) => ({
 }));
 
 function pick(s: SettingsStore): Settings {
-  const { aimSensitivity, trajectory, masterVolume, sfxVolume, musicVolume, invertCameraY } = s;
-  return { aimSensitivity, trajectory, masterVolume, sfxVolume, musicVolume, invertCameraY };
+  const { aimSensitivity, trajectory, masterVolume, sfxVolume, musicVolume, invertCameraY, playerName, quality, practiceBots } = s;
+  return { aimSensitivity, trajectory, masterVolume, sfxVolume, musicVolume, invertCameraY, playerName, quality, practiceBots };
 }

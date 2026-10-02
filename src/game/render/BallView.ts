@@ -9,10 +9,14 @@ export class BallView {
   private readonly geo: THREE.SphereGeometry;
   private readonly mat: THREE.MeshStandardMaterial;
 
-  constructor(color = 0xffffff) {
+  /**
+   * `ghost`: bola de otro jugador. Las bolas no chocan entre sí, así que las
+   * rivales se dibujan semitransparentes y la propia siempre se ve.
+   */
+  constructor(color = 0xffffff, ghost = false) {
     const r = PhysicsConfig.ball.radius;
-    this.geo = new THREE.SphereGeometry(r, 28, 20);
-    this.mat = new THREE.MeshStandardMaterial({ color, roughness: 0.32, metalness: 0.02 });
+    this.geo = new THREE.SphereGeometry(r, ghost ? 18 : 28, ghost ? 12 : 20);
+    this.mat = new THREE.MeshStandardMaterial({ color, roughness: 0.32, metalness: 0.02, transparent: ghost, opacity: ghost ? 0.6 : 1 });
     this.mesh = new THREE.Mesh(this.geo, this.mat);
     this.mesh.castShadow = true;
     // Franja oscura para que se perciba el giro de la bola al rodar.

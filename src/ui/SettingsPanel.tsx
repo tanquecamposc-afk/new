@@ -1,9 +1,17 @@
 import { useSettings } from '@/settings/settingsStore';
+import type { QualityPreset } from '@/config/graphics';
 import type { TrajectoryMode } from '@/config/trajectory';
 
 interface Props {
   onClose: () => void;
 }
+
+const QUALITY: { id: QualityPreset; label: string }[] = [
+  { id: 'low', label: 'Baja' },
+  { id: 'medium', label: 'Media' },
+  { id: 'high', label: 'Alta' },
+  { id: 'ultra', label: 'Ultra' },
+];
 
 const TRAJ: { id: TrajectoryMode; label: string }[] = [
   { id: 'full', label: 'Completa' },
@@ -15,7 +23,7 @@ const TRAJ: { id: TrajectoryMode; label: string }[] = [
 export function SettingsPanel({ onClose }: Props) {
   const s = useSettings();
   return (
-    <div className="pointer-events-auto absolute inset-0 z-30 flex items-center justify-center bg-ink/50 p-4" onClick={onClose}>
+    <div className="pointer-events-auto absolute inset-0 z-40 flex items-center justify-center bg-ink/50 p-4" onClick={onClose}>
       <div
         role="dialog"
         aria-label="Ajustes"
@@ -41,6 +49,21 @@ export function SettingsPanel({ onClose }: Props) {
                 className={`rounded-xl px-2 py-2 text-sm font-black ${s.trajectory === t.id ? 'bg-sun text-ink' : 'bg-white/10'}`}
               >
                 {t.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="mb-4">
+          <div className="mb-1 text-sm font-bold text-white/80">Calidad gráfica <span className="text-xs text-white/50">(se aplica en el próximo hoyo)</span></div>
+          <div className="grid grid-cols-4 gap-2">
+            {QUALITY.map((q) => (
+              <button
+                key={q.id}
+                onClick={() => s.set({ quality: q.id })}
+                className={`rounded-xl px-2 py-2 text-sm font-black ${s.quality === q.id ? 'bg-sun text-ink' : 'bg-white/10'}`}
+              >
+                {q.label}
               </button>
             ))}
           </div>

@@ -66,7 +66,15 @@ Ver [architecture.md](./architecture.md). Resumen:
 | Predicción con obstáculos en movimiento (según el tick actual) | ✅ Phase 3 |
 | Selector de hoyo y "Siguiente hoyo" (práctica local) | ✅ Phase 3 |
 | Bot de prueba (sólo tests) que completa los 6 cursos con física real | ✅ Phase 3 |
-| Menús, lobby, cuenta atrás, resultados, espectador | ⏳ Phase 4 |
+| Máquina de estados de la app con transiciones validadas (BOOT → … → RESULTS) | ✅ Phase 4 |
+| Menú principal, ayuda, ajustes (incl. calidad gráfica y nombre) | ✅ Phase 4 |
+| Sala (`Room`) + `LocalRoom`: jugadores, host, listo, conexión, hasta 20, hoyos | ✅ Phase 4 |
+| Partida de varios hoyos (`MatchController`): resultados idempotentes y clasificación | ✅ Phase 4 |
+| Cuenta atrás 3-2-1-GO (animación + sonido); nadie tira ni corre el tiempo antes | ✅ Phase 4 |
+| HUD: posición, clasificación en vivo, jugadores en juego, pausa/menú | ✅ Phase 4 |
+| Modo espectador (cambiar jugador, nombre, golpes, posición, vista general) | ✅ Phase 4 |
+| Resultados por hoyo (auto-avance) y resultados finales con podio | ✅ Phase 4 |
+| Bots de práctica (sólo modo local, etiquetados) con la misma física y reglas | ✅ Phase 4 |
 | Multijugador real (servidor autoritativo, salas, reconexión, anti-cheat) | ⏳ Phase 5 |
 | Perfil, progresión, moneda, tienda, inventario, cosméticos | ⏳ Phase 6 |
 | Agua con shader, VFX, partículas, audio | ⏳ Phase 7 |
@@ -109,7 +117,13 @@ Obstáculos como cuerpos cinemáticos cuya pose es función pura del tiempo de s
 (`obstaclePose`), compartida por física, render y predictor. Verificado: 88 tests (incluye
 un bot de prueba que completa los 6 hoyos) + E2E en Chromium recorriendo los 6 hoyos.
 
-### Phase 4 — Bucle de juego + lobby + menús + HUD + resultados + espectador
+### Phase 4 — Bucle de juego + lobby + menús + HUD + resultados + espectador ✅
+Flujo completo verificado en Chromium: menú → sala con 3 bots → cuenta atrás → hoyo 1 →
+espectador → resultados del hoyo → hoyo 2 → resultados finales → jugar otra vez → menú.
+Pausa (sólo local) congela la simulación. 103 tests.
+
+Nota: Partida rápida, Sala privada, Perfil y Tienda no aparecen todavía en el menú: se
+añadirán cuando funcionen de verdad (Phases 5 y 6), sin botones falsos.
 ### Phase 5 — Multijugador real (WebSocket/Colyseus, servidor autoritativo con la misma `Simulation`)
 ### Phase 6 — Perfil + progresión + moneda + tienda + inventario + cosméticos
 ### Phase 7 — Pulido gráfico + agua + VFX + partículas + audio
