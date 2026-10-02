@@ -9,6 +9,6 @@
 - Si `localStorage` no está disponible (modo privado, bloqueado) se usa memoria: el juego
   funciona igual, sin guardar entre sesiones.
 
-Datos guardados actualmente: ajustes (`settings`). En Phase 6 se añaden perfil, moneda,
-inventario, XP y estadísticas con el mismo mecanismo, y un backend remoto detrás de la
-misma interfaz.
+Datos guardados: ajustes (`settings`) y perfil (`profile`: moneda, inventario, equipados,
+XP, estadísticas, historial y transacciones recientes para idempotencia). Un backend de
+cuentas podría sincronizar el perfil detrás de `ProfileService` sin cambiar la UI.

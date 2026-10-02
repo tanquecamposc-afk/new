@@ -3,6 +3,7 @@
  * validación estricta de todo lo que llega del cliente: el servidor nunca
  * confía en datos sin validar.
  */
+import { sanitizeEquipped, type Equipped } from '@/cosmetics/catalog';
 import type { ConnectionState } from '@/match/types';
 import type { Standing } from '@/match/MatchController';
 import type { RoomState } from './Room';
@@ -12,7 +13,7 @@ export const PROTOCOL_VERSION = 1;
 // ---------- Cliente → servidor ----------
 
 export type ClientMessage =
-  | { t: 'hello'; v: number; name: string; token?: string }
+  | { t: 'hello'; v: number; name: string; token?: string; cosmetics?: Equipped }
   | { t: 'quick_play' }
   | { t: 'create_room' }
   | { t: 'join_room'; code: string }
@@ -75,7 +76,7 @@ export type ServerMessage =
   | { t: 'error'; code: string; message: string }
   | { t: 'room'; room: RoomState }
   | { t: 'left_room' }
-  | { t: 'match_start'; holes: string[]; players: { id: string; name: string; color: number }[] }
+  | { t: 'match_start'; holes: string[]; players: { id: string; name: string; color: number; cosmetics?: Equipped }[] }
   | { t: 'hole'; hole: HoleInfo }
   | { t: 'snap'; tick: number; time: number; players: PlayerNetState[] }
   | { t: 'shot'; playerId: string; shotId: number; tick: number; power: number }
@@ -113,7 +114,7 @@ export function parseClientMessage(raw: string): ClientMessage | null {
   switch (m.t) {
     case 'hello':
       return finite(m.v) && str(m.name, 64) && (m.token === undefined || str(m.token, 128))
-        ? { t: 'hello', v: m.v, name: m.name, token: m.token as string | undefined }
+        ? { t: 'hello', v: m.v, name: m.name, token: m.token as string | undefined, cosmetics: isObj(m.cosmetics) ? sanitizeEquipped(m.cosmetics) : undefined }
         : null;
     case 'quick_play':
     case 'create_room':

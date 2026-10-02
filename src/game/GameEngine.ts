@@ -6,6 +6,7 @@ import type { QualityPreset } from '@/config/graphics';
 import { PhysicsConfig } from '@/config/physics';
 import { TrajectoryConfig } from '@/config/trajectory';
 import { BotDriver, PracticeBot } from '@/game/bots/PracticeBot';
+import { DEFAULT_EQUIPPED, resolveLook } from '@/cosmetics/catalog';
 import { CameraRig } from '@/game/camera/CameraRig';
 import { FixedStepAccumulator } from '@/game/core/FixedStepLoop';
 import { Simulation } from '@/game/core/Simulation';
@@ -162,10 +163,11 @@ export class GameEngine {
     for (const p of players) {
       // Online: cada jugador tiene su propio mundo; aquí sólo se simula la bola propia.
       if (!online || p.id === this.localId) this.sim.addPlayer(p.id, p.name);
-      const ball = new BallView(p.color, p.id !== this.localId);
+      const look = resolveLook(p.cosmetics ?? DEFAULT_EQUIPPED, p.color);
+      const ball = new BallView(look, p.id !== this.localId, this.opts.quality === 'low' ? 'low' : 'high');
       if (p.id !== this.localId) ball.mesh.castShadow = false;
-      const label = p.id === this.localId ? null : new NameLabel(p.name, p.color, p.isBot);
-      this.view.scene.add(ball.mesh);
+      const label = p.id === this.localId ? null : new NameLabel(p.name, look.color, p.isBot);
+      this.view.scene.add(ball.mesh, ball.worldGroup);
       if (label) this.view.scene.add(label.sprite);
       this.visuals.set(p.id, { player: p, ball, label });
     }
@@ -256,7 +258,7 @@ export class GameEngine {
       ev.on('BALL_IN_HOLE', ({ playerId }) => {
         if (audible(playerId)) {
           this.audio.hole();
-          this.holeFx.trigger(this.opts.course.hole.position);
+          this.holeFx.trigger(this.opts.course.hole.position, this.celebrationColors(playerId));
         }
         if (local(playerId)) useGameStore.getState().patchHud({ holed: true });
         else {
@@ -293,6 +295,12 @@ export class GameEngine {
         this.publishLive();
       }),
     );
+  }
+
+  /** Efecto cosmético "Confeti dorado": cambia la paleta de la celebración. */
+  private celebrationColors(playerId: string): number[] | undefined {
+    const look = this.visuals.get(playerId)?.ball.look;
+    return look?.effect === 'gold_confetti' ? [0xffcf3f, 0xffe48a, 0xfff6d5, 0xd4a017] : undefined;
   }
 
   private handleLocalFinished(): void {
@@ -376,7 +384,7 @@ export class GameEngine {
     if (e.kind === 'holed') {
       if (watched) {
         this.audio.hole();
-        this.holeFx.trigger(this.opts.course.hole.position);
+        this.holeFx.trigger(this.opts.course.hole.position, this.celebrationColors(e.playerId));
       }
       if (v) useGameStore.getState().patchHud({ lastEvent: { text: `${v.player.name} ha embocado`, tone: 'info', id: ++this.eventId } });
     } else if ((e.kind === 'water' || e.kind === 'out_of_bounds') && watched) {
@@ -513,6 +521,7 @@ export class GameEngine {
         v.ball.update(this.sim.getPlayer(id).ball, alpha);
       }
     }
+    for (const v of this.visuals.values()) v.ball.tick(dt, this.rig.camera);
     const local = this.sim.getPlayer(this.localId);
     const mine = this.visuals.get(this.localId)!.ball.mesh.position;
     const localPlaying = local.fsm.state !== 'FINISHED';

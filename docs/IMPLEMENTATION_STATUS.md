@@ -82,7 +82,10 @@ Ver [architecture.md](./architecture.md). Resumen:
 | Compensación de latencia (un mundo físico por jugador) | ✅ Phase 5 |
 | Reconexión (también recargando la página) y abandono | ✅ Phase 5 |
 | Anti-trampas básico y límite de mensajes | ✅ Phase 5 |
-| Perfil, progresión, moneda, tienda, inventario, cosméticos | ⏳ Phase 6 |
+| Perfil (nombre, nivel, XP, monedas, estadísticas, historial) | ✅ Phase 6 |
+| XP, niveles y recompensas por partida (idempotentes) + pantalla de recompensas | ✅ Phase 6 |
+| CurrencyService y tienda con transacciones idempotentes | ✅ Phase 6 |
+| Inventario y cosméticos (bolas, colores, estelas, efectos) visibles en juego y online | ✅ Phase 6 |
 | Agua con shader, VFX, partículas, audio | ⏳ Phase 7 |
 | Presets de calidad completos, optimización Chromebook | ⏳ Phase 8 |
 | QA, seguridad, documentación completa, build de producción | ⏳ Phase 9 |
@@ -128,14 +131,17 @@ Flujo completo verificado en Chromium: menú → sala con 3 bots → cuenta atr�
 espectador → resultados del hoyo → hoyo 2 → resultados finales → jugar otra vez → menú.
 Pausa (sólo local) congela la simulación. 103 tests.
 
-Nota: Perfil y Tienda se añadirán al menú en Phase 6, cuando funcionen de verdad.
+
 ### Phase 5 — Multijugador real ✅
 Ver [multiplayer.md](./multiplayer.md). Verificado con el servidor real y dos navegadores:
 sala privada con código, selección de hoyos del host, cuenta atrás común, cada uno ve la
 bola del otro, predicción = servidor (0,0000 m), recarga de página en mitad del hoyo con
 reanudación, resultados idénticos en ambos, jugar otra vez; partida rápida con inicio
 anticipado y abandono desde el menú. 15 tests de servidor + tests de protocolo/red.
-### Phase 6 — Perfil + progresión + moneda + tienda + inventario + cosméticos
+### Phase 6 — Perfil + progresión + moneda + tienda + inventario + cosméticos ✅
+Ver [cosmetics.md](./cosmetics.md). Verificado en Chromium: comprar (doble clic cobra una vez),
+equipar, la bola equipada en partida, recompensas tras una partida, perfil e historial
+persistentes tras recargar. 137 tests.
 ### Phase 7 — Pulido gráfico + agua + VFX + partículas + audio
 ### Phase 8 — Optimización + móvil + tablet + Chromebook + ajustes gráficos
 Incluye migrar a `@dimforge/rapier3d` (WASM como fichero aparte, no base64) para reducir

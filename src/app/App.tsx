@@ -12,6 +12,7 @@ import { LoadingScreen } from '@/ui/LoadingScreen';
 import { MainMenu } from '@/ui/MainMenu';
 import { ConnectionOverlay } from '@/ui/ConnectionOverlay';
 import { PrivateRoomScreen } from '@/ui/PrivateRoomScreen';
+import { RewardsScreen } from '@/ui/RewardsScreen';
 import { isWebGLAvailable } from '@/utils/webgl';
 import { session } from './GameSession';
 
@@ -50,6 +51,7 @@ export function App() {
       {appState === 'PRIVATE_ROOM' && <PrivateRoomScreen />}
       {appState === 'LOBBY' && <Lobby />}
       {appState === 'RESULTS' && <FinalResults />}
+      {appState === 'REWARDS' && <RewardsScreen />}
       {appState === 'ERROR' && error && <ErrorScreen message={error} onRetry={webgl ? () => session.recover() : () => location.reload()} />}
       <ConnectionOverlay />
       <DebugPanel />

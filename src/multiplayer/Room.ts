@@ -1,3 +1,4 @@
+import type { Equipped } from '@/cosmetics/catalog';
 import type { ConnectionState } from '@/match/types';
 
 export interface RoomPlayer {
@@ -8,6 +9,7 @@ export interface RoomPlayer {
   isBot: boolean;
   ready: boolean;
   connection: ConnectionState;
+  cosmetics?: Equipped;
 }
 
 export interface RoomState {

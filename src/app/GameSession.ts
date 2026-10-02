@@ -12,6 +12,9 @@ import { NetworkRoom } from '@/multiplayer/NetworkRoom';
 import { OnlineLink } from '@/multiplayer/OnlineLink';
 import type { NetHoleResult, ServerMessage } from '@/multiplayer/protocol';
 import type { Room } from '@/multiplayer/Room';
+import { DEFAULT_EQUIPPED, resolveLook } from '@/cosmetics/catalog';
+import { profileService } from '@/profile/profileStore';
+import type { RewardGrant } from '@/profile/ProfileService';
 import { useSettings } from '@/settings/settingsStore';
 import { initialHud, useGameStore, type HoleResultRow, type LiveRow } from '@/store/gameStore';
 
@@ -87,7 +90,7 @@ class GameSession {
 
   openLocalLobby(): void {
     const settings = useSettings.getState();
-    const room = new LocalRoom(settings.playerName, COURSES.map((c) => c.id), settings.practiceBots);
+    const room = new LocalRoom(settings.playerName, COURSES.map((c) => c.id), settings.practiceBots, profileService.equipped);
     this.attachRoom(room);
     this.store.transition('LOBBY');
   }
@@ -112,6 +115,7 @@ class GameSession {
     if (r?.ok) {
       const clean = name.replace(/\s+/g, ' ').trim();
       useSettings.getState().set({ playerName: clean });
+      profileService.setUsername(clean);
     }
     return r;
   }
@@ -166,7 +170,7 @@ class GameSession {
         if (!this.net) {
           this.net = new NetClient(resolveWsUrl());
           this.bindNet(this.net);
-          const welcome = await this.net.connect(useSettings.getState().playerName);
+          const welcome = await this.net.connect(useSettings.getState().playerName, profileService.equipped);
           if (!welcome.resumed && !request) throw new Error('No hay partida que reanudar.');
         }
         const net = this.net;
@@ -225,12 +229,13 @@ class GameSession {
     );
   }
 
-  private onMatchStart(holeIds: string[], players: { id: string; name: string; color: number }[]): void {
+  private onMatchStart(holeIds: string[], players: { id: string; name: string; color: number; cosmetics?: import('@/cosmetics/catalog').Equipped }[]): void {
     const holes = holeIds.map((id) => getCourse(id)).filter((c): c is CourseData => !!c);
     const same = this.onlineHoles.length && holes.map((h) => h.id).join() === this.onlineHoles.map((h) => h.id).join() && this.store.match;
     if (same) return; // reconexión dentro de la misma partida
     this.onlineHoles = holes;
-    this.onlinePlayers = players.map((p) => ({ ...p, isBot: false }));
+    this.onlinePlayers = players.map((p) => ({ ...p, isBot: false, color: resolveLook(p.cosmetics ?? DEFAULT_EQUIPPED, p.color).color }));
+    this.matchId = null;
     this.onlineHoleIndex = -1;
     this.link?.dispose();
     this.link = new OnlineLink(this.net!, this.net!.playerId!);
@@ -255,6 +260,8 @@ class GameSession {
 
   private onNetHole(h: import('@/multiplayer/protocol').HoleInfo): void {
     if (!this.link) return;
+    // Id estable de la partida (mismo tras reconectar): recompensas una sola vez.
+    if (h.index === 0 && !this.matchId) this.matchId = `net-${h.t0}-${this.net?.playerId}`;
     this.link.setHole(h);
     if (h.index !== this.onlineHoleIndex) {
       this.onlineHoleIndex = h.index;
@@ -296,7 +303,35 @@ class GameSession {
 
   private onNetMatchEnd(standings: Standing[]): void {
     this.store.patchMatch({ standings });
+    this.grantRewards(standings, this.onlineHoles.length);
     this.store.transition('RESULTS');
+  }
+
+  // =================== Progresión ===================
+
+  private matchId: string | null = null;
+  lastRewards: RewardGrant | null = null;
+
+  /** Entrega XP, monedas y estadísticas de la partida (idempotente por matchId). */
+  private grantRewards(standings: Standing[], holeCount: number): void {
+    const me = standings.find((s) => s.playerId === this.localPlayerId);
+    if (!me || !this.matchId) return;
+    const mode = this.store.match?.mode ?? 'local';
+    this.lastRewards = profileService.grantMatchRewards(this.matchId, {
+      mode,
+      position: me.position,
+      players: standings.length,
+      totalScore: me.totalScore,
+      holesPlayed: holeCount,
+      holesCompleted: me.holesCompleted,
+      holeInOnes: me.perHole.filter((h) => h === 1).length,
+      strokes: me.totalStrokes,
+      timeMs: me.totalTimeMs,
+    });
+  }
+
+  showRewards(): void {
+    this.store.transition('REWARDS');
   }
 
   get nextRequested(): boolean {
@@ -351,10 +386,13 @@ class GameSession {
     const players: MatchPlayer[] = st.players.map((p, i) => ({
       id: p.id,
       name: p.name,
-      color: p.color,
+      // El color visible (UI, etiquetas) es el de la bola equipada.
+      color: resolveLook(p.cosmetics ?? DEFAULT_EQUIPPED, p.color).color,
       isBot: p.isBot,
       botSkill: p.isBot ? 0.55 + ((i * 37) % 40) / 100 : undefined,
+      cosmetics: p.cosmetics,
     }));
+    this.matchId = `local-${Date.now().toString(36)}-${this.matchSeq + 1}`;
     this.controller = new MatchController(holes, players);
     this.matchSeq++;
     this.store.setMatch({
@@ -480,12 +518,16 @@ class GameSession {
       return;
     }
     if (!this.controller) return;
-    this.store.patchMatch({ standings: this.controller.standings() });
+    const standings = this.controller.standings();
+    this.store.patchMatch({ standings });
+    this.grantRewards(standings, this.controller.holes.length);
     this.store.transition('RESULTS');
   }
 
   playAgain(): void {
     if (this.room instanceof LocalRoom) this.room.reopen();
+    this.matchId = null;
+    this.lastRewards = null;
     this.controller = null;
     this.nextSent = false;
     this.onlineHoles = [];
@@ -495,6 +537,8 @@ class GameSession {
   }
 
   exitToMenu(): void {
+    this.matchId = null;
+    this.lastRewards = null;
     this.unsubRoom?.();
     this.unsubRoom = null;
     this.room?.leave();

@@ -5,6 +5,7 @@ import { Simulation } from '@/game/core/Simulation';
 import { COURSES, getCourse } from '@/game/courses';
 import type { CourseData } from '@/game/courses/types';
 import { MatchController } from '@/match/MatchController';
+import type { Equipped } from '@/cosmetics/catalog';
 import { BALL_COLORS, MAX_PLAYERS, type ConnectionState } from '@/match/types';
 import type { HoleInfo, PlayerNetState, ServerMessage } from '@/multiplayer/protocol';
 import { sanitizeName, type RoomState } from '@/multiplayer/Room';
@@ -16,6 +17,7 @@ const ticks = (sec: number) => Math.round(sec / PhysicsConfig.fixedTimestep);
 export interface MemberLink {
   readonly id: string;
   name: string;
+  readonly cosmetics?: Equipped;
   send(msg: ServerMessage): void;
   readonly connected: boolean;
 }
@@ -178,7 +180,7 @@ export class ServerRoom {
     this.broadcast({ t: 'conn', playerId: link.id, state: 'connected' });
     link.send({ t: 'room', room: this.roomState() });
     if (this.match) {
-      link.send({ t: 'match_start', holes: this.match.holes.map((h) => h.id), players: this.match.players.map((p) => ({ id: p.id, name: p.name, color: p.color })) });
+      link.send({ t: 'match_start', holes: this.match.holes.map((h) => h.id), players: this.match.players.map((p) => ({ id: p.id, name: p.name, color: p.color, cosmetics: p.cosmetics })) });
       if (this.holePhase === 'results') {
         const results = this.match.holeResults(this.holeIndex);
         link.send({ t: 'hole_end', hole: this.holeIndex, results: results.map((r) => ({ ...r })), standings: this.match.standings() });
@@ -200,12 +202,12 @@ export class ServerRoom {
     if (this.building) return;
     this.building = true;
     const holes = this.courseIds.map((id) => getCourse(id)).filter((c): c is CourseData => !!c);
-    const players = [...this.members.values()].map((m) => ({ id: m.link.id, name: m.link.name, color: m.color, isBot: false }));
+    const players = [...this.members.values()].map((m) => ({ id: m.link.id, name: m.link.name, color: m.color, isBot: false, cosmetics: m.link.cosmetics }));
     this.match = new MatchController(holes, players);
     this.status = 'in_match';
     this.autoStartAt = null;
     this.broadcastRoom();
-    this.broadcast({ t: 'match_start', holes: holes.map((h) => h.id), players: players.map(({ id, name, color }) => ({ id, name, color })) });
+    this.broadcast({ t: 'match_start', holes: holes.map((h) => h.id), players: players.map(({ id, name, color, cosmetics }) => ({ id, name, color, cosmetics })) });
     this.holeIndex = 0;
     await this.loadHole();
     this.building = false;
@@ -460,6 +462,7 @@ export class ServerRoom {
         isBot: false,
         ready: m.ready,
         connection: m.left ? 'disconnected' : m.conn,
+        cosmetics: m.link.cosmetics,
       })),
       autoStartAt: this.autoStartAt,
     };

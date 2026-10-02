@@ -1,5 +1,6 @@
 import { randomBytes, randomInt } from 'node:crypto';
 import { NetworkConfig } from '@/config/network';
+import { sanitizeEquipped, type Equipped } from '@/cosmetics/catalog';
 import { MAX_PLAYERS } from '@/match/types';
 import { normalizeRoomCode, parseClientMessage, PROTOCOL_VERSION, ROOM_CODE_ALPHABET, ROOM_CODE_LENGTH, ROOM_CODE_RE, type ServerMessage } from '@/multiplayer/protocol';
 import { sanitizeName } from '@/multiplayer/Room';
@@ -15,6 +16,7 @@ export interface SocketLike {
 const OPEN = 1;
 
 interface Session extends MemberLink {
+  cosmetics: Equipped;
   token: string;
   socket: SocketLike | null;
   roomId: string | null;
@@ -67,7 +69,7 @@ export class GameServer {
           socket.close(4000, 'version');
           return;
         }
-        session = this.hello(socket, msg.name, msg.token);
+        session = this.hello(socket, msg.name, msg.token, msg.cosmetics);
         return;
       }
       if (!this.rateOk(session)) return;
@@ -86,13 +88,14 @@ export class GameServer {
     return { onMessage, onClose };
   }
 
-  private hello(socket: SocketLike, rawName: string, token?: string): Session {
+  private hello(socket: SocketLike, rawName: string, token?: string, cosmetics?: Equipped): Session {
     const existing = token ? this.byToken.get(token) : undefined;
     if (existing) {
       // Reconexión: el socket anterior (si sigue abierto) se cierra.
       if (existing.socket && existing.socket !== socket) existing.socket.close(4001, 'replaced');
       existing.socket = socket;
       existing.lastSeen = this.now();
+      if (cosmetics) existing.cosmetics = sanitizeEquipped(cosmetics);
       const room = existing.roomId ? this.rooms.get(existing.roomId) : undefined;
       const resumed = !!room?.hasMember(existing.id);
       existing.send({ t: 'welcome', playerId: existing.id, token: existing.token, serverTime: this.now(), resumed });
@@ -106,6 +109,8 @@ export class GameServer {
       id,
       name: sanitizeName(rawName) ?? `Jugador ${this.seq}`,
       token: randomBytes(18).toString('base64url'),
+      // Sólo visuales: se validan contra el catálogo. (Sin cuentas aún, el servidor no puede verificar la propiedad.)
+      cosmetics: sanitizeEquipped(cosmetics),
       socket,
       roomId: null,
       msgWindowStart: this.now(),

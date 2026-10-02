@@ -1,4 +1,5 @@
 import { NetworkConfig } from '@/config/network';
+import type { Equipped } from '@/cosmetics/catalog';
 import { ClockSync, wallNow } from './clock';
 import { PROTOCOL_VERSION, type ClientMessage, type ServerMessage } from './protocol';
 
@@ -42,12 +43,14 @@ export class NetClient {
   private attempts = 0;
   private closedByUser = false;
   private name = 'Jugador';
+  private cosmetics: Equipped | undefined;
 
   constructor(private readonly url: string) {}
 
   /** Conecta y espera al `welcome`. Rechaza si el servidor no responde. */
-  connect(name: string): Promise<Extract<ServerMessage, { t: 'welcome' }>> {
+  connect(name: string, cosmetics?: Equipped): Promise<Extract<ServerMessage, { t: 'welcome' }>> {
     this.name = name;
+    this.cosmetics = cosmetics;
     this.closedByUser = false;
     this.setStatus('connecting');
     return new Promise((resolve, reject) => {
@@ -81,7 +84,7 @@ export class NetClient {
     let opened = false;
     ws.onopen = () => {
       opened = true;
-      this.sendNow({ t: 'hello', v: PROTOCOL_VERSION, name: this.name, token: sessionToken.get() });
+      this.sendNow({ t: 'hello', v: PROTOCOL_VERSION, name: this.name, token: sessionToken.get(), cosmetics: this.cosmetics });
     };
     ws.onmessage = (ev) => {
       let m: ServerMessage;

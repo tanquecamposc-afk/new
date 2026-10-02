@@ -1,3 +1,4 @@
+import type { Equipped } from '@/cosmetics/catalog';
 import { BALL_COLORS, MAX_PLAYERS } from '@/match/types';
 import { sanitizeName, type Room, type RoomPlayer, type RoomResult, type RoomState } from './Room';
 
@@ -13,7 +14,7 @@ export class LocalRoom implements Room {
   private state: RoomState;
   private listeners = new Set<(s: RoomState) => void>();
 
-  constructor(playerName: string, courseIds: string[], botCount = 0) {
+  constructor(playerName: string, courseIds: string[], botCount = 0, cosmetics?: Equipped) {
     this.state = {
       code: null,
       mode: 'local',
@@ -21,7 +22,7 @@ export class LocalRoom implements Room {
       courseIds,
       status: 'open',
       players: [
-        { id: this.localPlayerId, name: sanitizeName(playerName) ?? 'Jugador', color: BALL_COLORS[0], isHost: true, isBot: false, ready: false, connection: 'local' },
+        { id: this.localPlayerId, name: sanitizeName(playerName) ?? 'Jugador', color: BALL_COLORS[0], isHost: true, isBot: false, ready: false, connection: 'local', cosmetics },
       ],
     };
     this.setBotCount(botCount);

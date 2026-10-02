@@ -81,13 +81,25 @@ export function FinalResults() {
               </tbody>
             </table>
           </div>
-          <div className="mt-5 flex flex-wrap justify-center gap-3">
+          {session.lastRewards && (
+            <p className="mt-4 text-center text-lg font-black">
+              <span className="text-grass">+{session.lastRewards.rewards.xp} XP</span> ·{' '}
+              <span className="text-sun">+{session.lastRewards.rewards.coins + session.lastRewards.levelUpCoins} 🪙</span>
+            </p>
+          )}
+          <div className="mt-4 flex flex-wrap justify-center gap-3">
             <GameButton variant="secondary" onClick={() => session.exitToMenu()}>
               Menú principal
             </GameButton>
-            <GameButton className="text-lg" onClick={() => session.playAgain()}>
-              Jugar otra vez
-            </GameButton>
+            {session.lastRewards ? (
+              <GameButton className="text-lg" onClick={() => session.showRewards()}>
+                Continuar → recompensas
+              </GameButton>
+            ) : (
+              <GameButton className="text-lg" onClick={() => session.playAgain()}>
+                Jugar otra vez
+              </GameButton>
+            )}
           </div>
         </Panel>
       </div>

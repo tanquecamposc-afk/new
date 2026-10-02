@@ -42,7 +42,11 @@ export class HoleEffect {
     this.group.add(this.confetti, this.ring);
   }
 
-  trigger(at: Vec3): void {
+  trigger(at: Vec3, palette?: number[]): void {
+    const c = new THREE.Color();
+    const colors = palette ?? COLORS;
+    for (let i = 0; i < this.maxParticles; i++) this.confetti.setColorAt(i, c.setHex(colors[i % colors.length]!));
+    if (this.confetti.instanceColor) this.confetti.instanceColor.needsUpdate = true;
     this.ring.position.set(at.x, at.y + 0.02, at.z);
     this.ring.visible = true;
     this.ringTime = 0;
