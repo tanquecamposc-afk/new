@@ -308,6 +308,22 @@ En **Opciones → Calidad gráfica**: Baja, Media, Alta y Ultra. Ajusta la resol
 - **Ahumador:** solo comida, el doble de rápido. **Alto horno:** solo minerales, metales y armaduras, el doble de rápido.
 - Arreglado: romper un ahumador o un alto horno ahora suelta lo que tenga dentro.
 
+## Bed Wars: kits, monedas, marcador y combate
+
+- **Monedas:** se ganan jugando Bed Wars (baja +5, baja final +15, cama rota +30, partida +15, victoria +100). Al conseguirlas sale un aviso y al terminar se ve el total.
+- **Kits:** en el menú de Bed Wars, botón **Kits…**. Se compran con monedas y el equipado se aplica al empezar y al reaparecer:
+  - **Constructor** (150): 24 de lana extra.
+  - **Saltarín** (150): salto mejorado.
+  - **Minero** (200): pico gratis y Prisa.
+  - **Arquero** (300): arco y 6 flechas.
+  - **Velocista** (300): Rapidez.
+  - **Médico** (350): te curas medio corazón cada 3 s.
+  - **Guerrero** (400): espada de piedra.
+  - **Tanque** (450): pantalones y botas de cobre.
+- **Marcador lateral nuevo:** el próximo evento con su barra de progreso, los equipos en filas con su color (cama ✔, jugadores vivos o ✘), tu equipo resaltado, tus bajas, finales y camas, las monedas ganadas en la partida y tu kit.
+- **Minerales:** salen del generador con un pequeño salto y un brillo de su color, y se apilan en un solo montón que se ve más grande cuantos más hay. Los diamantes y esmeraldas suenan al aparecer.
+- **Combate:** al recibir un golpe la cámara solo se inclina un poco, sin temblar, y los golpes de los bots ya no te lanzan tan lejos.
+
 ## Salir de Bed Wars
 
 - **Guardar y salir al título**, **Abandonar Bed Wars** y **Salir al menú** (al acabar) cierran la partida del todo, sin recargar la página: se quitan los bots, tenderos, carteles, hologramas, el marcador y los avisos, se vacía el inventario de la partida y se vuelve al título con un mundo de fondo nuevo.
