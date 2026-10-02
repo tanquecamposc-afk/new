@@ -314,6 +314,7 @@ En **Opciones → Calidad gráfica**: Baja, Media, Alta y Ultra. Ajusta la resol
 - **Reflejo del agua más barato:** se reutiliza si la cámara está quieta y solo dibuja el terreno cercano.
 - **Sombras del sol:** ya no se redibujan por chunks que quedan fuera de su alcance.
 - **Sin rayas oscuras entre bloques:** al mirar el suelo en ángulo se mezclaban píxeles negros de las texturas vecinas del atlas. Ahora no.
+- **Más luz de antorchas y bloques que iluminan:** la luz de antorchas, faroles, lava, piedra luminosa y fuego cae más suave y es más intensa: alumbra más lejos y más fuerte (de noche, la zona iluminada es unas dos veces más clara), también en las criaturas y la mano.
 - **Mesa de trabajo:** tapa con rejilla 3x3 tallada y bordes en relieve, frente con sierra y martillo, y lados con escuadra y formón.
 
 ## Biomas sin errores

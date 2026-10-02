@@ -92,3 +92,20 @@ if(typeof prepararAtlas==='function'){
   };
   prepararAtlas();
 }
+
+/* ---------- Más luz de antorchas y de todo lo que ilumina ----------
+   La luz de los bloques (antorchas, faroles, lava, piedra luminosa, fuego…) caía muy
+   rápido con la distancia. Ahora cae más suave y es algo más intensa: alumbra más
+   lejos y más fuerte, en el terreno, las criaturas, los objetos y la mano. */
+for(const m of [matOpaco,matTrans]){
+  const a='float b=curva(vLuz.g);';
+  if(!m.fragmentShader.includes(a)||m.userData.luz51)continue;
+  m.fragmentShader='float curvaB51(float l){return l<0.01?0.0:min(1.0,pow(0.88,(1.0-l)*15.0)*1.2);}\n'+m.fragmentShader.replace(a,'float b=curvaB51(vLuz.g);');
+  m.userData.luz51=true;m.needsUpdate=true;
+}
+const _brilloEn51=brilloEn;
+brilloEn=function(x,y,z){
+  const b=_brilloEn51(x,y,z);
+  const bl=luzEn(Math.floor(x),Math.floor(y),Math.floor(z))&15;
+  return bl>0?Math.max(b,Math.pow(Math.min(1,Math.pow(.88,15-bl)*1.2),.72)):b;
+};
