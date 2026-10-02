@@ -93,7 +93,9 @@ function cajasConecta(b,P,i){
   }
   return c;
 }
-function construirGeometria(ch){
+// Se puede construir de una vez o por partes (cada 6 capas se pausa: ver rendimiento50.js)
+function construirGeometria(ch){const g=construirGeometriaPasos(ch);let r=g.next();while(!r.done)r=g.next();return r.value;}
+function* construirGeometriaPasos(ch){
   asegurarLuz(ch);
   const y0=Math.max(0,ch.ymin-1), y1=Math.min(CY-1,ch.ymax+1);
   rellenarRelleno(ch,y0,y1);
@@ -125,6 +127,7 @@ function construirGeometria(ch){
     }
   };
   for(let y=y0;y<=y1;y++){
+    if(y>y0&&(y-y0)%6===0)yield;
     const py=y-y0+1;
     for(let z=0;z<CZ;z++)for(let x=0;x<CX;x++){
       const i=(py*PW+z+1)*PW+x+1, b=P[i]; if(!b)continue;

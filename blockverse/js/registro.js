@@ -421,6 +421,8 @@ const CARAS_COFRE_DOBLE=[
   ['chestSideEnd','chestSideEnd','chestTopL','chestTopR','chestSideR','chestSideL'],
   ['chestSideR','chestSideL','chestTopD','chestTopU','chestSideEnd','chestSideEnd'],
   ['chestSideL','chestSideR','chestTopU','chestTopD','chestSideEnd','chestSideEnd']];
+// Mesa de trabajo: frente con sierra y martillo, lados con escuadra y formón
+BLOQUES[B.mesa].texCaras=['craftSide','craftSide','planks','craftTop','craftFront','craftFront'].map(n=>T[n]);
 CAJAS_COFRE_DOBLE.forEach((c,d)=>{const tc=CARAS_COFRE_DOBLE[d].map(n=>T[n]);
   bloque(1638+d,'cofreDoble'+d,'Cofre',tx('chestTop','chestTop','chestSide'),{forma:'cajas',cajas:[c],texCaras:tc,opaco:false,dureza:2.5,herr:'hacha',inter:'cofre',suelta:18});
   bloque(1642+d,'cofreDobleAbierto'+d,'Cofre',tx('chestTop','chestTop','chestSide'),{forma:'cajas',cajas:[[c[0],0,c[2],c[3],.625,c[5]]],texCaras:tc,opaco:false,dureza:2.5,herr:'hacha',inter:'cofre',suelta:18});

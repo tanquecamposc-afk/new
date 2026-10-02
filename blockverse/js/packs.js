@@ -37,7 +37,7 @@ const TEX_MC={grassTop:'grass_block_top',grassSide:'grass_block_side',dirt:'dirt
   goldOre:'gold_ore',diamondOre:'diamond_ore',redstoneOre:'redstone_ore',lapisOre:'lapis_ore',emeraldOre:'emerald_ore',copperOre:'copper_ore',deepslate:'deepslate',
   deepslateTop:'deepslate_top',dsCoal:'deepslate_coal_ore',dsIron:'deepslate_iron_ore',dsGold:'deepslate_gold_ore',dsRedstone:'deepslate_redstone_ore',
   dsLapis:'deepslate_lapis_ore',dsDiamond:'deepslate_diamond_ore',dsCopper:'deepslate_copper_ore',gravel:'gravel',obsidian:'obsidian',craftTop:'crafting_table_top',
-  craftSide:'crafting_table_front',furnaceFront:'furnace_front',furnaceFrontOn:'furnace_front_on',smokerFrontOn:'smoker_front_on',blastFrontOn:'blast_furnace_front_on',furnaceTop:'furnace_top',torch:'torch',tntSide:'tnt_side',tntTop:'tnt_top',wool:'white_wool',
+  craftSide:'crafting_table_side',craftFront:'crafting_table_front',furnaceFront:'furnace_front',furnaceFrontOn:'furnace_front_on',smokerFrontOn:'smoker_front_on',blastFrontOn:'blast_furnace_front_on',furnaceTop:'furnace_top',torch:'torch',tntSide:'tnt_side',tntTop:'tnt_top',wool:'white_wool',
   tallGrass:'short_grass',flowerY:'dandelion',flowerR:'poppy',wheat:'wheat_stage7',farmland:'farmland_moist',cactusSide:'cactus_side',cactusTop:'cactus_top',ice:'ice',
   sandstoneSide:'sandstone',sandstoneTop:'sandstone_top',water:'water_still',lava:'lava_still',netherrack:'netherrack',soulSand:'soul_sand',glowstone:'glowstone',
   quartzOre:'nether_quartz_ore',netherBrick:'nether_bricks',netherPortal:'nether_portal',netherGoldOre:'nether_gold_ore',endStone:'end_stone',

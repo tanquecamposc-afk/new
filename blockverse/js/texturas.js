@@ -161,6 +161,7 @@ function tile(nombre,gen){T[nombre]=_genTiles.length;_genTiles.push(gen);}
   tile('craftTop',(p,r)=>{tablones(p,r);cada((x,y)=>{const k=n(r,10);
     if(x===0||y===0||x===15||y===15)p(x,y,92+k,66+k,38+k);else if(x===1||y===1||x===14||y===14)p(x,y,120+k,90+k,54+k);
     else if((x===5||x===10)||(y===5||y===10))p(x,y,110+k,82+k,50+k);});});
+  tile('craftFront',(p,r)=>{tablones(p,r);});
   tile('craftSide',(p,r)=>{tablones(p,r);cada((x,y)=>{const k=n(r,8);
     if(y<3||x===0||x===15)p(x,y,96+k,70+k,42+k);
     if(y>=6&&y<=8&&x>=2&&x<=6)p(x,y,(y===6?180:150)+k,(y===6?180:150)+k,(y===6?186:156)+k);
@@ -765,14 +766,35 @@ function tile(nombre,gen){T[nombre]=_genTiles.length;_genTiles.push(gen);}
   });
   /* ---- Bloques útiles y de cultivo al estilo del original ---- */
   const C_TAB=[162,130,78];
-  re('craftTop',(p,r)=>{tablones(p,r,[178,142,88]);cada((x,y)=>{const borde=x===0||y===0||x===15||y===15,linea=x===5||x===10||y===5||y===10;
-    if(borde)p(x,y,...tono(C_TAB,.55));else if(linea)p(x,y,...tono(C_TAB,(x===5||x===10)&&(y===5||y===10)?.5:.68));else if(x===1||y===1)p(x,y,...tono(C_TAB,1.12));});});
-  re('craftSide',(p,r)=>{tablones(p,r);cada((x,y)=>{if(y<3)p(x,y,...tono([178,142,88],y===2?.6:1.05));if(x===0||x===15)p(x,y,...tono(C_TAB,.58));});
-    // Sierra a la izquierda y martillo a la derecha
-    for(let y=5;y<=12;y++){const w=Math.max(1,Math.round(3-(y-5)*.25));for(let x=2;x<2+w;x++)p(x,y,...(x===2?[200,200,206]:[150,150,158]));if(y%2)p(2+w,y,120,120,128);}
-    for(let y=3;y<=5;y++){p(2,y,110,74,40);p(3,y,90,60,30);}
-    for(let y=6;y<=13;y++){p(11,y,122,86,46);p(12,y,94,64,34);}
-    for(let x=9;x<=14;x++){p(x,4,168,168,176);p(x,5,120,120,128);}});
+  // Mesa de trabajo: tapa con rejilla 3x3 tallada, frente con sierra y martillo, lados con escuadra y formón
+  const C_MESA=[182,146,92];
+  re('craftTop',(p,r)=>{tablones(p,r,C_MESA);cada((x,y)=>{
+    const ext=x===0||y===0||x===15||y===15, int=x===1||y===1||x===14||y===14;
+    const surco=(x===5||x===10)&&y>1&&y<14||(y===5||y===10)&&x>1&&x<14;
+    const luz=(x===6||x===11)&&y>1&&y<14&&y!==5&&y!==10||(y===6||y===11)&&x>1&&x<14&&x!==5&&x!==10;
+    if(ext)p(x,y,...tono(C_TAB,(x===0||y===0)?.78:.6));
+    else if(int)p(x,y,...tono(C_MESA,(x===1||y===1)?1.18:.84));
+    else if(surco)p(x,y,...tono(C_TAB,(x===5||x===10)&&(y===5||y===10)?.5:.62));
+    else if(luz)p(x,y,...tono(C_MESA,1.12));});});
+  const ladoMesa=(p,r)=>{tablones(p,r);cada((x,y)=>{
+    if(y===0)p(x,y,...tono(C_MESA,1.18));else if(y===1)p(x,y,...tono(C_MESA,1.04));else if(y===2)p(x,y,...tono(C_TAB,.55));
+    else if(x===0)p(x,y,...tono(C_TAB,.74));else if(x===15)p(x,y,...tono(C_TAB,.56));
+    else if(y===15)p(x,y,...tono(C_TAB,.6));});};
+  re('craftFront',(p,r)=>{ladoMesa(p,r);
+    // Sierra: hoja de metal con dientes y mango de madera
+    for(let y=5;y<=12;y++){const w=Math.max(2,Math.round(4-(y-5)*.35));for(let x=2;x<2+w;x++)p(x,y,...(x===2?[214,214,222]:x===1+w?[136,136,146]:[176,176,186]));p(2+w,y,...(y%2?[110,110,120]:[150,150,160]));}
+    for(let y=3;y<=5;y++){p(2,y,118,78,42);p(3,y,96,62,32);p(4,y,118,78,42);}p(3,4,70,44,22);
+    // Martillo: mango y cabeza de hierro con brillo
+    for(let y=6;y<=13;y++){p(11,y,128,90,48);p(12,y,98,66,34);}
+    for(let x=9;x<=14;x++){p(x,4,190,190,198);p(x,5,130,130,140);}p(9,4,150,150,158);p(14,5,104,104,112);});
+  re('craftSide',(p,r)=>{ladoMesa(p,r);
+    // Escuadra de carpintero (L de metal)
+    for(let y=4;y<=12;y++){p(3,y,196,196,204);p(4,y,140,140,150);}
+    for(let x=3;x<=9;x++){p(x,12,196,196,204);p(x,13,132,132,142);}
+    for(let y=5;y<=11;y+=2)p(4,y,96,96,104);
+    // Formón colgado de un clavo
+    p(12,3,70,70,76);for(let y=4;y<=8;y++){p(12,y,122,84,44);p(13,y,94,62,30);}
+    for(let y=9;y<=12;y++){p(12,y,186,186,194);p(13,y,126,126,134);}p(12,13,214,214,222);});
   const hornoBase=(p,r)=>{piedra(p,r);cada((x,y)=>{if(x===0||y===0)p(x,y,150,150,152);else if(x===15||y===15)p(x,y,84,84,86);});};
   re('furnaceTop',(p,r)=>{hornoBase(p,r);cada((x,y)=>{if(x>=3&&x<=12&&y>=3&&y<=12&&(x===3||y===3||x===12||y===12))p(x,y,98,98,100);});});
   re('furnaceFront',(p,r)=>{hornoBase(p,r);cada((x,y)=>{

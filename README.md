@@ -308,6 +308,14 @@ En **Opciones → Calidad gráfica**: Baja, Media, Alta y Ultra. Ajusta la resol
 - **Ahumador:** solo comida, el doble de rápido. **Alto horno:** solo minerales, metales y armaduras, el doble de rápido.
 - Arreglado: romper un ahumador o un alto horno ahora suelta lo que tenga dentro.
 
+## FPS estables, sin rayas entre bloques y mesa de trabajo nueva
+
+- **Sin bajones al cargar terreno:** antes, al llegar a una zona nueva, un solo fotograma podía generar muchos chunks, calcular su luz y armar su malla de golpe (hasta 400 ms, bajones a 20 FPS). Ahora ese trabajo se reparte en pasos pequeños, del más cercano al más lejano, y armar una malla se hace por partes. En las pruebas el peor fotograma bajó de 444 ms a 18 ms.
+- **Reflejo del agua más barato:** se reutiliza si la cámara está quieta y solo dibuja el terreno cercano.
+- **Sombras del sol:** ya no se redibujan por chunks que quedan fuera de su alcance.
+- **Sin rayas oscuras entre bloques:** al mirar el suelo en ángulo se mezclaban píxeles negros de las texturas vecinas del atlas. Ahora no.
+- **Mesa de trabajo:** tapa con rejilla 3x3 tallada y bordes en relieve, frente con sierra y martillo, y lados con escuadra y formón.
+
 ## Biomas sin errores
 
 - **Campos de champiñones:** los champiñones gigantes salían a trozos (solo el sombrero, flotando y sin tronco). Ahora salen completos: rojos con cúpula y marrones con sombrero plano, sobre su tallo. Las islas suben poco a poco desde el mar, con playa.
