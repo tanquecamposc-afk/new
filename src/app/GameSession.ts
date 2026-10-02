@@ -212,6 +212,9 @@ class GameSession {
       }
     });
     on('left_room', () => undefined);
+    on('error', (m) => {
+      if (m.code !== 'rate_limited') useGameStore.setState({ notice: { text: m.message, id: Date.now() } });
+    });
     this.netOffs.push(
       net.onStatus((s) => {
         useGameStore.setState({ connection: s });

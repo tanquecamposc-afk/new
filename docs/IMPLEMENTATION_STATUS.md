@@ -75,7 +75,13 @@ Ver [architecture.md](./architecture.md). Resumen:
 | Modo espectador (cambiar jugador, nombre, golpes, posición, vista general) | ✅ Phase 4 |
 | Resultados por hoyo (auto-avance) y resultados finales con podio | ✅ Phase 4 |
 | Bots de práctica (sólo modo local, etiquetados) con la misma física y reglas | ✅ Phase 4 |
-| Multijugador real (servidor autoritativo, salas, reconexión, anti-cheat) | ⏳ Phase 5 |
+| Servidor autoritativo (Node + WebSocket) con la misma simulación | ✅ Phase 5 |
+| Partida rápida (matchmaking) y salas privadas con código | ✅ Phase 5 |
+| Sincronización: reloj, ticks, snapshots, cuenta atrás común | ✅ Phase 5 |
+| Interpolación de bolas remotas, predicción y corrección de la propia | ✅ Phase 5 |
+| Compensación de latencia (un mundo físico por jugador) | ✅ Phase 5 |
+| Reconexión (también recargando la página) y abandono | ✅ Phase 5 |
+| Anti-trampas básico y límite de mensajes | ✅ Phase 5 |
 | Perfil, progresión, moneda, tienda, inventario, cosméticos | ⏳ Phase 6 |
 | Agua con shader, VFX, partículas, audio | ⏳ Phase 7 |
 | Presets de calidad completos, optimización Chromebook | ⏳ Phase 8 |
@@ -122,9 +128,13 @@ Flujo completo verificado en Chromium: menú → sala con 3 bots → cuenta atr�
 espectador → resultados del hoyo → hoyo 2 → resultados finales → jugar otra vez → menú.
 Pausa (sólo local) congela la simulación. 103 tests.
 
-Nota: Partida rápida, Sala privada, Perfil y Tienda no aparecen todavía en el menú: se
-añadirán cuando funcionen de verdad (Phases 5 y 6), sin botones falsos.
-### Phase 5 — Multijugador real (WebSocket/Colyseus, servidor autoritativo con la misma `Simulation`)
+Nota: Perfil y Tienda se añadirán al menú en Phase 6, cuando funcionen de verdad.
+### Phase 5 — Multijugador real ✅
+Ver [multiplayer.md](./multiplayer.md). Verificado con el servidor real y dos navegadores:
+sala privada con código, selección de hoyos del host, cuenta atrás común, cada uno ve la
+bola del otro, predicción = servidor (0,0000 m), recarga de página en mitad del hoyo con
+reanudación, resultados idénticos en ambos, jugar otra vez; partida rápida con inicio
+anticipado y abandono desde el menú. 15 tests de servidor + tests de protocolo/red.
 ### Phase 6 — Perfil + progresión + moneda + tienda + inventario + cosméticos
 ### Phase 7 — Pulido gráfico + agua + VFX + partículas + audio
 ### Phase 8 — Optimización + móvil + tablet + Chromebook + ajustes gráficos

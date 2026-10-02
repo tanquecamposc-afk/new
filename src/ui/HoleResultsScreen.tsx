@@ -17,12 +17,15 @@ export function HoleResultsScreen() {
     const t = setInterval(() => setLeft((v) => v - 1), 1000);
     return () => clearInterval(t);
   }, []);
+  const online = session.isOnline;
+  const [waiting, setWaiting] = useState(false);
   useEffect(() => {
-    if (left <= 0) {
+    // En local la pantalla avanza sola; en online lo decide el servidor.
+    if (left <= 0 && !online) {
       if (last) session.showFinalResults();
       else session.nextHole();
     }
-  }, [left, last]);
+  }, [left, last, online]);
 
   if (!match?.holeResults) return null;
   return (
@@ -66,8 +69,16 @@ export function HoleResultsScreen() {
           <GameButton variant="ghost" onClick={() => session.exitToMenu()}>
             Salir
           </GameButton>
-          <GameButton className="text-lg" onClick={() => (last ? session.showFinalResults() : session.nextHole())}>
-            {last ? 'Ver resultados finales' : 'Siguiente hoyo →'} ({Math.max(0, left)})
+          <GameButton
+            className="text-lg"
+            disabled={waiting}
+            onClick={() => {
+              if (online) setWaiting(true);
+              if (last) session.showFinalResults();
+              else session.nextHole();
+            }}
+          >
+            {waiting ? 'Esperando a los demás…' : last ? 'Ver resultados finales' : 'Siguiente hoyo →'} ({Math.max(0, left)})
           </GameButton>
         </div>
       </Panel>

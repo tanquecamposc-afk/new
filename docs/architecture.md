@@ -7,7 +7,8 @@ src/
   ui/            HUD, carga, error, panel debug
   app/           App raíz y GameSession (orquestador del flujo, fuera de React)
   match/         MatchController (hoyos, resultados, clasificación), clasificación en vivo
-  multiplayer/   Contrato Room + LocalRoom (Phase 5 añade la sala de red)
+  multiplayer/   Room, LocalRoom, NetworkRoom, protocolo, NetClient, OnlineLink, interpolación
+server/          Servidor autoritativo (GameServer, ServerRoom)
   settings/      Ajustes persistentes
   persistence/   PersistenceService
   audio/         AudioService (WebAudio sintetizado)

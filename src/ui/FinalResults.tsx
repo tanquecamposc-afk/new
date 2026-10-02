@@ -10,7 +10,7 @@ export function FinalResults() {
   const match = useGameStore((s) => s.match);
   const standings = match?.standings;
   if (!match || !standings) return null;
-  const me = standings.find((s) => s.playerId === 'local');
+  const me = standings.find((s) => s.playerId === session.localPlayerId);
   const podium = standings.slice(0, 3);
   return (
     <div className="absolute inset-0 z-20 overflow-y-auto p-3 sm:p-6">
@@ -59,7 +59,7 @@ export function FinalResults() {
               </thead>
               <tbody className="tabular-nums">
                 {standings.map((s) => (
-                  <tr key={s.playerId} className={`border-t border-white/10 ${s.playerId === 'local' ? 'bg-white/10 font-black' : ''}`}>
+                  <tr key={s.playerId} className={`border-t border-white/10 ${s.playerId === session.localPlayerId ? 'bg-white/10 font-black' : ''}`}>
                     <td className="py-1.5 pl-1 text-left">{s.position}</td>
                     <td className="text-left">
                       <span className="flex items-center gap-2">

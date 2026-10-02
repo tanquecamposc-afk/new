@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { session } from '@/app/GameSession';
 import { GameConfig } from '@/config/game';
 import { COURSES } from '@/game/courses';
@@ -9,9 +9,33 @@ const CONNECTION: Record<string, string> = { local: 'Local', connected: 'Conecta
 
 export function Lobby() {
   const lobby = useGameStore((s) => s.lobby);
+  const notice = useGameStore((s) => s.notice);
   const [error, setError] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+  const [now, setNow] = useState(() => session.serverNow());
+  useEffect(() => {
+    const t = setInterval(() => setNow(session.serverNow()), 500);
+    return () => clearInterval(t);
+  }, []);
+  useEffect(() => {
+    if (notice) setError(notice.text);
+  }, [notice]);
   if (!lobby) return null;
-  const me = lobby.players.find((p) => p.id === 'local')!;
+  const me = lobby.players.find((p) => p.id === session.localPlayerId);
+  if (!me) return null;
+  const online = lobby.mode !== 'local';
+  const canEditCourses = lobby.mode === 'local' || (lobby.mode === 'private' && me.isHost);
+  const autoIn = lobby.mode === 'quick' && lobby.autoStartAt ? Math.max(0, Math.ceil((lobby.autoStartAt - now) / 1000)) : null;
+  const copyCode = async () => {
+    if (!lobby.code) return;
+    try {
+      await navigator.clipboard.writeText(lobby.code);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      setError('No se pudo copiar: apunta el código a mano.');
+    }
+  };
   const bots = lobby.players.filter((p) => p.isBot).length;
   const allReady = lobby.players.every((p) => p.ready);
   const selected = new Set(lobby.courseIds);
@@ -35,9 +59,28 @@ export function Lobby() {
           <div className="mb-3 flex items-center justify-between">
             <h2 className="text-3xl font-black">Sala</h2>
             <span className="text-sm font-bold text-white/70">
-              {lobby.mode === 'local' ? 'Práctica local' : lobby.code ? `Código ${lobby.code}` : 'Pública'} · {lobby.players.length}/{lobby.maxPlayers} jugadores
+              {lobby.mode === 'local' ? 'Práctica local' : lobby.mode === 'private' ? 'Sala privada' : 'Partida rápida'} · {lobby.players.length}/{lobby.maxPlayers}{' '}
+              jugadores
             </span>
           </div>
+          {lobby.code && (
+            <div className="mb-3 flex items-center justify-between gap-3 rounded-2xl bg-white/10 px-4 py-2">
+              <div>
+                <div className="text-xs font-bold uppercase tracking-widest text-white/60">Código de la sala</div>
+                <div className="font-mono text-3xl font-black tracking-[0.3em] text-sun" data-testid="room-code">
+                  {lobby.code}
+                </div>
+              </div>
+              <GameButton variant="secondary" className="px-3 py-2 text-sm" onClick={copyCode}>
+                {copied ? '✓ Copiado' : '📋 Copiar'}
+              </GameButton>
+            </div>
+          )}
+          {autoIn !== null && (
+            <p className="mb-3 rounded-xl bg-sun/20 px-3 py-2 text-sm font-bold">
+              La partida empieza sola en {autoIn} s (o antes si todos estáis listos y sois al menos 2).
+            </p>
+          )}
           <ul className="flex flex-col gap-1.5" aria-label="Jugadores">
             {lobby.players.map((p) => (
               <li key={p.id} className={`flex items-center gap-3 rounded-xl px-3 py-2 ${p.id === me.id ? 'bg-white/15' : 'bg-white/5'}`}>
@@ -94,11 +137,19 @@ export function Lobby() {
           )}
 
           <div>
-            <div className="mb-1 text-sm font-bold text-white/80">Hoyos ({lobby.courseIds.length})</div>
+            <div className="mb-1 text-sm font-bold text-white/80">
+              Hoyos ({lobby.courseIds.length}){!canEditCourses && <span className="ml-1 text-xs text-white/50">· los elige el host</span>}
+            </div>
             <div className="grid grid-cols-1 gap-1.5">
               {COURSES.map((c, i) => (
                 <label key={c.id} className="flex cursor-pointer items-center gap-2 rounded-xl bg-white/5 px-3 py-1.5 font-bold hover:bg-white/10">
-                  <input type="checkbox" className="h-4 w-4 accent-[#ffcf3f]" checked={selected.has(c.id)} onChange={() => toggleCourse(c.id)} />
+                  <input
+                    type="checkbox"
+                    className="h-4 w-4 accent-[#ffcf3f]"
+                    checked={selected.has(c.id)}
+                    disabled={!canEditCourses}
+                    onChange={() => toggleCourse(c.id)}
+                  />
                   <span className="flex-1">
                     {i + 1}. {c.name}
                   </span>
@@ -119,11 +170,13 @@ export function Lobby() {
             <GameButton variant={me.ready ? 'ghost' : 'secondary'} onClick={() => session.setReady(!me.ready)}>
               {me.ready ? '✓ Listo (quitar)' : '¡Estoy listo!'}
             </GameButton>
-            <GameButton className="py-4 text-xl" onClick={start} disabled={!allReady || !me.isHost}>
-              {allReady ? '▶ Empezar partida' : 'Esperando a que todos estén listos'}
-            </GameButton>
+            {lobby.mode !== 'quick' && (
+              <GameButton className="py-4 text-xl" onClick={start} disabled={!allReady || !me.isHost}>
+                {!me.isHost ? 'El host empezará la partida' : allReady ? '▶ Empezar partida' : 'Esperando a que todos estén listos'}
+              </GameButton>
+            )}
             <GameButton variant="ghost" onClick={() => session.exitToMenu()}>
-              ← Volver al menú
+              {online ? '← Salir de la sala' : '← Volver al menú'}
             </GameButton>
           </div>
         </Panel>

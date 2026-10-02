@@ -109,6 +109,15 @@ describe('GameServer — salas', () => {
     expect(room.autoStartAt).toBeGreaterThan(0);
   });
 
+  it('no repite nombres dentro de una sala', () => {
+    const { client } = harness();
+    const a = client('Ana');
+    const b = client('Ana');
+    a.send({ t: 'create_room' });
+    b.send({ t: 'join_room', code: a.last('room')!.room.code! });
+    expect(b.last('room')!.room.players.map((p) => p.name)).toEqual(['Ana', 'Ana 2']);
+  });
+
   it('sala privada: código visible, unirse, códigos inválidos o inexistentes', () => {
     const { client } = harness();
     const a = client('Ana');

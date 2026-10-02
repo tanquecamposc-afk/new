@@ -82,6 +82,7 @@ export class ServerRoom {
     if (this.members.size >= MAX_PLAYERS) return { ok: false, code: 'room_full' };
     const used = new Set([...this.members.values()].map((m) => m.color));
     const color = BALL_COLORS.find((c) => !used.has(c)) ?? BALL_COLORS[0];
+    link.name = this.uniqueName(link.name, link.id);
     this.members.set(link.id, { link, color, ready: false, conn: 'connected', disconnectedAt: null, left: false });
     if (!this.hostId) this.hostId = link.id;
     if (this.mode === 'quick' && this.autoStartAt === null) this.autoStartAt = this.now() + NetworkConfig.quickPlayLobbySec * 1000;
@@ -114,11 +115,21 @@ export class ServerRoom {
     this.broadcastRoom();
   }
 
+  /** Evita nombres repetidos en la sala ("Ana" → "Ana 2"). */
+  private uniqueName(name: string, selfId: string): string {
+    const taken = new Set([...this.members.values()].filter((m) => m.link.id !== selfId).map((m) => m.link.name.toLowerCase()));
+    if (!taken.has(name.toLowerCase())) return name;
+    for (let i = 2; ; i++) {
+      const candidate = `${name.slice(0, 13)} ${i}`;
+      if (!taken.has(candidate.toLowerCase())) return candidate;
+    }
+  }
+
   setName(id: string, raw: string): boolean {
     const m = this.members.get(id);
     const name = sanitizeName(raw);
     if (!m || !name || this.status !== 'open') return false;
-    m.link.name = name;
+    m.link.name = this.uniqueName(name, id);
     this.broadcastRoom();
     return true;
   }

@@ -7,8 +7,10 @@ Implementación, geometría y assets 100 % propios.
 
 ```bash
 npm install
-npm run dev
+npm start        # compila y arranca el servidor: http://localhost:2567
 ```
+
+Desarrollo: `npm run server` + `npm run dev`. Multijugador: [docs/multiplayer.md](docs/multiplayer.md).
 
 Estado y hoja de ruta: [docs/IMPLEMENTATION_STATUS.md](docs/IMPLEMENTATION_STATUS.md) ·
 Arquitectura: [docs/architecture.md](docs/architecture.md) ·

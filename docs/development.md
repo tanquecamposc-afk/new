@@ -6,7 +6,12 @@ npm run dev       # servidor de desarrollo
 npm test          # tests (Vitest, Rapier corre en Node)
 npm run build     # typecheck + build de producción
 npm run preview   # sirve dist/
+npm run server    # servidor de juego (multijugador) en :2567
+npm start         # build + servidor que sirve el juego y el WebSocket en el mismo puerto
 ```
+
+Para jugar online en desarrollo: `npm run server` en una terminal y `npm run dev` en otra
+(Vite redirige `/ws` al servidor).
 
 Variables de entorno: copia `.env.example` a `.env.local`. `VITE_ENABLE_DEBUG=true` activa el
 panel de rendimiento (F3 o `) y expone `window.__minigolf` para QA automatizado.

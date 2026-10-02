@@ -17,6 +17,8 @@
 | Clasificación en vivo | `src/match/liveRanking.test.ts` |
 | Sala local (listo, host, máximo 20, nombres) | `src/multiplayer/LocalRoom.test.ts` |
 | Bots de práctica (reglas, no tiran antes del GO) | `src/game/bots/PracticeBot.test.ts` |
+| Servidor: salas, partida, anti-trampas, latencia, reconexión, abandono | `server/GameServer.test.ts` |
+| Protocolo, reloj e interpolación | `src/multiplayer/protocol.test.ts`, `src/multiplayer/net.test.ts` |
 
 El bot (`src/game/testing/solver.ts`) es exclusivamente de testing: prueba un abanico de
 tiros con el predictor y avanza por la guía del curso. Nunca participa en partidas.
