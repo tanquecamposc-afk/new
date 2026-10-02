@@ -1,0 +1,40 @@
+import * as THREE from 'three';
+import { PhysicsConfig } from '@/config/physics';
+import type { Ball } from '@/game/ball/Ball';
+
+/** Representación visual de una bola: interpola entre pasos físicos. */
+export class BallView {
+  readonly mesh: THREE.Mesh;
+  private readonly marker: THREE.Mesh;
+  private readonly geo: THREE.SphereGeometry;
+  private readonly mat: THREE.MeshStandardMaterial;
+
+  constructor(color = 0xffffff) {
+    const r = PhysicsConfig.ball.radius;
+    this.geo = new THREE.SphereGeometry(r, 28, 20);
+    this.mat = new THREE.MeshStandardMaterial({ color, roughness: 0.32, metalness: 0.02 });
+    this.mesh = new THREE.Mesh(this.geo, this.mat);
+    this.mesh.castShadow = true;
+    // Franja oscura para que se perciba el giro de la bola al rodar.
+    this.marker = new THREE.Mesh(
+      new THREE.TorusGeometry(r * 1.001, r * 0.08, 6, 28),
+      new THREE.MeshStandardMaterial({ color: 0x2b6cff, roughness: 0.5 }),
+    );
+    this.mesh.add(this.marker);
+  }
+
+  update(ball: Ball, alpha: number): void {
+    const a = ball.prevPosition;
+    const b = ball.position;
+    this.mesh.position.set(a.x + (b.x - a.x) * alpha, a.y + (b.y - a.y) * alpha, a.z + (b.z - a.z) * alpha);
+    const q = ball.body.rotation();
+    this.mesh.quaternion.set(q.x, q.y, q.z, q.w);
+  }
+
+  dispose(): void {
+    this.geo.dispose();
+    this.mat.dispose();
+    this.marker.geometry.dispose();
+    (this.marker.material as THREE.Material).dispose();
+  }
+}
