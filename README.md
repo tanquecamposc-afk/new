@@ -308,6 +308,10 @@ En **Opciones → Calidad gráfica**: Baja, Media, Alta y Ultra. Ajusta la resol
 - **Ahumador:** solo comida, el doble de rápido. **Alto horno:** solo minerales, metales y armaduras, el doble de rápido.
 - Arreglado: romper un ahumador o un alto horno ahora suelta lo que tenga dentro.
 
+## Cofres menos cuadrados
+
+- Los cofres tienen las esquinas biseladas, la tapa sobresale un poco del cuerpo y la parte de arriba está redondeada con un escalón. Vale para cofres sencillos, dobles y para la tapa animada al abrirlos.
+
 ## Bed Wars: kits, monedas, marcador y combate
 
 - **Monedas:** se ganan jugando Bed Wars (baja +5, baja final +15, cama rota +30, partida +15, victoria +100). Al conseguirlas sale un aviso y al terminar se ve el total.
