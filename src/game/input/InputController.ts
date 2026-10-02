@@ -14,6 +14,9 @@ export interface InputHandlers {
   zoomCamera(factor: number): void;
   resetBall(): void;
   toggleDebug(): void;
+  toggleOverview(): void;
+  /** Primer gesto del usuario: desbloquea el audio. */
+  userGesture(): void;
 }
 
 type Mode = 'none' | 'pending-aim' | 'aiming' | 'orbit';
@@ -63,6 +66,7 @@ export class InputController {
   }
 
   private onDown = (e: PointerEvent) => {
+    this.h.userGesture();
     const p = this.local(e);
     this.pointers.set(e.pointerId, p);
     this.el.setPointerCapture?.(e.pointerId);
@@ -149,7 +153,11 @@ export class InputController {
   private onKeyDown = (e: KeyboardEvent) => {
     if ((e.target as HTMLElement | null)?.closest?.('input, textarea')) return;
     this.keys.add(e.code);
+    this.h.userGesture();
     switch (e.code) {
+      case 'KeyV':
+        this.h.toggleOverview();
+        break;
       case 'KeyR':
         this.h.resetBall();
         break;

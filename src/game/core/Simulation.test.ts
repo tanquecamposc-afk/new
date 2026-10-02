@@ -156,3 +156,36 @@ describe('Simulation (course01)', () => {
     sim.dispose();
   });
 });
+
+describe('Simulation — Phase 2', () => {
+  it('registra estadísticas del tiro (distancia, velocidad, rebotes)', async () => {
+    const sim = await Simulation.create(course01);
+    const p = sim.addPlayer('p1', 'Test');
+    sim.shoot('p1', { direction: { x: 1, z: 0 }, power: 0.5 });
+    runUntilSettled(sim, 'p1');
+    const rec = p.shots[0]!;
+    expect(rec.bounces).toBeGreaterThan(0);
+    expect(rec.distance).toBeGreaterThan(1);
+    expect(rec.maxSpeed).toBeGreaterThan(3);
+    expect(rec.durationMs).toBeGreaterThan(0);
+    sim.dispose();
+  });
+
+  it('al agotar el tiempo el hoyo termina sin completar', async () => {
+    const { GameConfig } = await import('@/config/game');
+    const sim = await Simulation.create(course01);
+    const p = sim.addPlayer('p1', 'Test');
+    let timeUp = 0;
+    let finished: { completed: boolean } | null = null;
+    sim.events.on('TIME_UP', () => timeUp++);
+    sim.events.on('PLAYER_FINISHED', (e) => (finished = e));
+    const limitSteps = Math.ceil(GameConfig.holeTimeLimitSec! / sim.dt) + 2;
+    for (let i = 0; i < limitSteps; i++) sim.step();
+    expect(timeUp).toBe(1);
+    expect(finished).toMatchObject({ completed: false });
+    expect(p.fsm.state).toBe('FINISHED');
+    expect(sim.remainingMs('p1')).toBe(0);
+    expect(sim.shoot('p1', { direction: { x: 0, z: -1 }, power: 0.5 }).ok).toBe(false);
+    sim.dispose();
+  });
+});

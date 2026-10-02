@@ -1,6 +1,27 @@
 import { create } from 'zustand';
 import type { AppState } from '@/game/core/appState';
 import type { PlayerState } from '@/game/core/playerState';
+import type { ScoreBreakdown } from '@/game/scoring/score';
+
+export interface ShotSummary {
+  index: number;
+  power: number;
+  distance: number;
+  bounces: number;
+  result: string;
+}
+
+/** Resumen del hoyo terminado (embocado o no). */
+export interface HoleSummary {
+  completed: boolean;
+  title: string;
+  strokes: number;
+  penalties: number;
+  par: number;
+  timeMs: number;
+  score: ScoreBreakdown;
+  shots: ShotSummary[];
+}
 
 export interface HudState {
   courseName: string;
@@ -12,6 +33,10 @@ export interface HudState {
   aiming: boolean;
   power: number;
   holed: boolean;
+  /** Tiempo restante del límite del hoyo (ms) o null si no hay límite. */
+  remainingMs: number | null;
+  overview: boolean;
+  result: HoleSummary | null;
   lastEvent: { text: string; tone: 'info' | 'good' | 'bad'; id: number } | null;
 }
 
@@ -23,6 +48,7 @@ export interface DebugStats {
   bodies: number;
   colliders: number;
   memoryMb: number | null;
+  predictionMs: number;
 }
 
 interface GameStore {
@@ -50,6 +76,9 @@ export const initialHud: HudState = {
   aiming: false,
   power: 0,
   holed: false,
+  remainingMs: null,
+  overview: false,
+  result: null,
   lastEvent: null,
 };
 
@@ -59,7 +88,7 @@ export const useGameStore = create<GameStore>((set) => ({
   loading: { progress: 0, message: 'Iniciando…' },
   error: null,
   hud: initialHud,
-  debug: { fps: 0, frameMs: 0, drawCalls: 0, triangles: 0, bodies: 0, colliders: 0, memoryMb: null },
+  debug: { fps: 0, frameMs: 0, drawCalls: 0, triangles: 0, bodies: 0, colliders: 0, memoryMb: null, predictionMs: 0 },
   showDebug: false,
   setAppState: (appState) => set({ appState }),
   setLoading: (progress, message) => set({ loading: { progress, message } }),

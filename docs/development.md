@@ -11,7 +11,7 @@ npm run preview   # sirve dist/
 Variables de entorno: copia `.env.example` a `.env.local`. `VITE_ENABLE_DEBUG=true` activa el
 panel de rendimiento (F3 o `) y expone `window.__minigolf` para QA automatizado.
 
-## Controles (Phase 1)
+## Controles
 
 | Acción | Ratón / teclado | Táctil |
 |---|---|---|
@@ -20,3 +20,5 @@ panel de rendimiento (F3 o `) y expone `window.__minigolf` para QA automatizado.
 | Rotar cámara | Botón derecho + arrastrar, Q/E, flechas | Dos dedos |
 | Zoom | Rueda, +/− | Pellizcar |
 | Reiniciar bola | R o botón | Botón |
+| Vista general | V o botón 🗺 | Botón 🗺 |
+| Ajustes | Botón ⚙ | Botón ⚙ |

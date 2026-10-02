@@ -13,6 +13,7 @@ npm run dev
 Estado y hoja de ruta: [docs/IMPLEMENTATION_STATUS.md](docs/IMPLEMENTATION_STATUS.md) ·
 Arquitectura: [docs/architecture.md](docs/architecture.md) ·
 Física: [docs/physics.md](docs/physics.md) ·
+Puntuación: [docs/scoring.md](docs/scoring.md) ·
 Desarrollo y controles: [docs/development.md](docs/development.md)
 
 > El tower defense anterior (*NEXO*) se conserva en `public/legacy/nexo-tower-defense.html`.

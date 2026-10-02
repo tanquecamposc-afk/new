@@ -13,6 +13,7 @@ export function DebugPanel() {
     ['Triángulos', d.triangles],
     ['Cuerpos', d.bodies],
     ['Colliders', d.colliders],
+    ['Predicción (total)', `${d.predictionMs} ms`],
     ['Memoria', d.memoryMb === null ? 'n/d' : `${d.memoryMb} MB`],
     ['Red', 'local (sin servidor)'],
     ['Estado', state],

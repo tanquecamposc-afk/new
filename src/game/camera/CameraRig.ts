@@ -16,6 +16,8 @@ export class CameraRig {
   private target = new THREE.Vector3();
   private aspect = 1;
   private minY = -Infinity;
+  private bounds: { min: Vec3; max: Vec3 } | null = null;
+  private overview: { center: Vec3; distance: number; saved: { pitch: number; distance: number } } | null = null;
 
   constructor() {
     this.camera = new THREE.PerspectiveCamera(CameraConfig.fov, 1, CameraConfig.near, CameraConfig.far);
@@ -38,16 +40,49 @@ export class CameraRig {
     this.apply();
   }
 
+  /** Límites del curso: el foco nunca sale de ellos (más un margen). */
+  setBounds(min: Vec3, max: Vec3): void {
+    this.bounds = { min, max };
+  }
+
+  get isOverview(): boolean {
+    return this.overview !== null;
+  }
+
+  /** Vista general del curso completo; al salir se recupera la vista anterior. */
+  setOverview(on: boolean): void {
+    if (on === this.isOverview) return;
+    if (on) {
+      if (!this.bounds) return;
+      const { min, max } = this.bounds;
+      const center = { x: (min.x + max.x) / 2, y: (min.y + max.y) / 2, z: (min.z + max.z) / 2 };
+      const radius = Math.hypot(max.x - min.x, max.z - min.z) / 2;
+      const halfFov = (CameraConfig.fov * Math.PI) / 360;
+      const fitAspect = Math.min(1, this.aspect);
+      const distance = ((radius / Math.tan(halfFov)) * CameraConfig.overviewPadding) / Math.max(0.5, fitAspect);
+      this.overview = { center, distance, saved: { pitch: this.pitch, distance: this.distance } };
+      this.pitch = CameraConfig.overviewPitch;
+      this.distance = distance;
+    } else {
+      const saved = this.overview!.saved;
+      this.overview = null;
+      this.pitch = saved.pitch;
+      this.distance = saved.distance;
+    }
+  }
+
   rotate(dYaw: number, dPitch: number): void {
     this.yaw += dYaw;
     this.pitch = clamp(this.pitch + dPitch, CameraConfig.minPitch, CameraConfig.maxPitch);
   }
 
   zoom(factor: number): void {
-    this.distance = clamp(this.distance * factor, CameraConfig.minDistance, CameraConfig.maxDistance);
+    const max = this.overview ? this.overview.distance * 1.6 : CameraConfig.maxDistance;
+    this.distance = clamp(this.distance * factor, CameraConfig.minDistance, max);
   }
 
-  update(dt: number, focus: Vec3): void {
+  update(dt: number, rawFocus: Vec3): void {
+    const focus = this.overview ? this.overview.center : this.clampToBounds(rawFocus);
     const k = CameraConfig.followSharpness;
     this.target.set(damp(this.target.x, focus.x, k, dt), damp(this.target.y, focus.y, k, dt), damp(this.target.z, focus.z, k, dt));
     const o = CameraConfig.orbitSharpness;
@@ -55,6 +90,13 @@ export class CameraRig {
     this.cur.pitch = damp(this.cur.pitch, this.pitch, o, dt);
     this.cur.distance = damp(this.cur.distance, this.distance, o * 0.6, dt);
     this.apply();
+  }
+
+  private clampToBounds(p: Vec3): Vec3 {
+    if (!this.bounds) return p;
+    const m = CameraConfig.boundsMargin;
+    const { min, max } = this.bounds;
+    return { x: clamp(p.x, min.x - m, max.x + m), y: p.y, z: clamp(p.z, min.z - m, max.z + m) };
   }
 
   private apply(): void {

@@ -34,3 +34,22 @@ Gravedad, contactos, fricción (que hace *rodar* a la bola: gira de verdad), res
 | 50 % | ~6,2 m | 2,9 s |
 
 (Medido con `maxSpeed` 13; actualmente 14.)
+
+## Determinismo
+
+La simulación avanza en ticks fijos y no depende del render. Detalles importantes:
+
+- **Paso de calentamiento:** el primer `step` de un mundo Rapier nuevo inicializa estructuras
+  internas y produce un resultado distinto a los siguientes. `PhysicsWorld.buildCourse` da
+  ese paso antes de añadir bolas, así la simulación del juego, el predictor y el futuro
+  servidor parten del mismo estado.
+- **Predictor:** crea una bola nueva en cada predicción (sin caché de contactos del tiro
+  anterior). Precisión medida frente al tiro real: < 1–2 cm (test de regresión con rebote).
+
+## Trayectoria predictiva
+
+`TrajectoryPredictor` ejecuta la **misma** clase `Ball` en un mundo Rapier auxiliar con los
+colliders estáticos del curso (no es una curva aproximada). Es incremental: `begin()` +
+`advance(budgetMs)` cada frame; mientras calcula, se dibuja el tramo ya simulado.
+Modos (ajustes): completa (rebotes + punto de llegada), corta (hasta el primer rebote) o
+sin guía. Parámetros en `src/config/trajectory.ts`.

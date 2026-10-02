@@ -38,6 +38,10 @@ export class PhysicsWorld {
     for (const b of course.walls) this.addBlock(b, 'wall', WALL_GROUPS);
     for (const b of course.outOfBounds) this.addBlock(b, 'out_of_bounds', OOB_GROUPS);
     this.addCup(course);
+    // Paso de calentamiento: el primer step de un mundo nuevo inicializa estructuras
+    // internas (broad-phase) y produce resultados distintos a los siguientes. Darlo
+    // aquí hace que simulación, predictor y servidor partan del mismo estado.
+    this.world.step();
   }
 
   private addBlock(b: BlockDef, role: ColliderRole, collisionGroups: number): Collider {

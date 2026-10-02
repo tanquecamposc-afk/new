@@ -6,3 +6,6 @@ export { InputConfig } from './input';
 export { GameConfig, AppEnv } from './game';
 export { GRAPHICS_PRESETS, GraphicsConfig } from './graphics';
 export type { QualityPreset, GraphicsPreset } from './graphics';
+export { TrajectoryConfig } from './trajectory';
+export type { TrajectoryMode } from './trajectory';
+export { ScoreConfig } from './scoring';

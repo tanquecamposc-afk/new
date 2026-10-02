@@ -6,6 +6,10 @@ export const GameConfig = {
   hazardPenaltyShots: 1,
   /** Pausa (s) antes de devolver la bola tras un hazard. */
   hazardResetDelay: 0.9,
+  /** Límite de tiempo por hoyo (s). null = sin límite. Valor de tuning propio. */
+  holeTimeLimitSec: 120 as number | null,
+  /** Segundos finales en los que el HUD avisa del límite. */
+  timeWarningSec: 20,
 } as const;
 
 export const AppEnv = {

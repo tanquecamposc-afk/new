@@ -10,7 +10,8 @@ export interface GameEvents {
   BALL_IN_HOLE: { playerId: string; shots: number; timeMs: number };
   BALL_RESET: { playerId: string; position: Vec3; reason: 'manual' | 'hazard' };
   PLAYER_STATE_CHANGED: { playerId: string; from: string; to: string };
-  PLAYER_FINISHED: { playerId: string; shots: number; timeMs: number };
+  PLAYER_FINISHED: { playerId: string; shots: number; timeMs: number; completed: boolean };
+  TIME_UP: { playerId: string };
 }
 
 export type ShotResultKind = 'rest' | 'hole' | 'water' | 'out_of_bounds' | 'timeout';

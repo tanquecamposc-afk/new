@@ -20,4 +20,14 @@ export const CameraConfig = {
   zoomStep: 1.12,
   /** En pantallas estrechas se aleja la cámara para ver más campo. */
   portraitDistanceFactor: 1.35,
+  /** Al apuntar, el foco se adelanta hacia el destino previsto (fracción y máximo en m). */
+  aimLookAhead: 0.35,
+  maxLookAhead: 3.5,
+  /** Margen (m) alrededor de los límites del curso en el que puede moverse el foco. */
+  boundsMargin: 1.5,
+  /** Vista general: inclinación y margen de encuadre. */
+  overviewPitch: 1.12,
+  overviewPadding: 1.25,
+  /** Giro automático (rad/s) alrededor del hoyo tras terminar. */
+  finishedOrbitSpeed: 0.18,
 } as const;

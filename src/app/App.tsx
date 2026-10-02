@@ -38,7 +38,9 @@ export function App() {
   return (
     <div className="relative h-full w-full">
       {webgl && <GameCanvas key={session} course={course} playerName="Jugador" onEngine={onEngine} />}
-      {appState === 'PLAYING' && <Hud onReset={() => engineRef.current?.resetBall()} onReplay={restart} />}
+      {appState === 'PLAYING' && (
+        <Hud onReset={() => engineRef.current?.resetBall()} onReplay={restart} onToggleOverview={() => engineRef.current?.toggleOverview()} />
+      )}
       {(appState === 'BOOT' || appState === 'LOADING') && <LoadingScreen />}
       {appState === 'ERROR' && error && <ErrorScreen message={error} onRetry={webgl ? restart : () => location.reload()} />}
       <DebugPanel />

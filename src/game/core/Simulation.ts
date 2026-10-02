@@ -22,6 +22,11 @@ export interface ShotRecord {
   result: ShotResultKind | 'pending';
   restPosition: Vec3 | null;
   durationMs: number;
+  /** Rebotes contra paredes/obstáculos/bolas durante el tiro. */
+  bounces: number;
+  /** Distancia recorrida (m). */
+  distance: number;
+  maxSpeed: number;
 }
 
 export interface PlayerRuntime {
@@ -36,6 +41,8 @@ export interface PlayerRuntime {
   startTick: number;
   finishTick: number | null;
   holed: boolean;
+  /** true si terminó embocando; false si se agotó el límite de golpes o de tiempo. */
+  completed: boolean;
   lastShotTick: number;
   /** Tick en el que la bola vuelve tras un hazard. */
   hazardReturnTick: number | null;
@@ -89,6 +96,7 @@ export class Simulation {
       startTick: this.tick,
       finishTick: null,
       holed: false,
+      completed: false,
       lastShotTick: -Infinity,
       hazardReturnTick: null,
     };
@@ -147,6 +155,9 @@ export class Simulation {
       result: 'pending',
       restPosition: null,
       durationMs: 0,
+      bounces: 0,
+      distance: 0,
+      maxSpeed: 0,
     };
     p.shots.push(record);
     p.lastShotTick = this.tick;
@@ -178,7 +189,12 @@ export class Simulation {
     this.drainCollisions();
     for (const p of this.players.values()) {
       const outcome = p.ball.postStep(this.dt, hole, this.course.boundaries.killY);
+      this.trackShotStats(p);
       if (outcome) this.handleOutcome(p, outcome);
+      if (p.finishTick === null && p.ball.phase !== 'captured' && this.isOutOfTime(p)) {
+        this.timeUp(p);
+        continue;
+      }
       if (p.hazardReturnTick !== null && this.tick >= p.hazardReturnTick) {
         p.hazardReturnTick = null;
         p.ball.placeAt(p.lastRest);
@@ -186,6 +202,45 @@ export class Simulation {
         this.afterShotSettled(p);
       }
     }
+  }
+
+  /** Tiempo restante (ms) o null si no hay límite. */
+  remainingMs(id: string): number | null {
+    const limit = GameConfig.holeTimeLimitSec;
+    if (limit === null) return null;
+    return Math.max(0, limit * 1000 - this.elapsedMs(id));
+  }
+
+  private isOutOfTime(p: PlayerRuntime): boolean {
+    const limit = GameConfig.holeTimeLimitSec;
+    return limit !== null && (this.tick - p.startTick) * this.dt >= limit;
+  }
+
+  /** Se agotó el tiempo: el hoyo termina sin completar, esté donde esté la bola. */
+  private timeUp(p: PlayerRuntime): void {
+    p.hazardReturnTick = null;
+    if (p.ball.phase === 'moving' || p.ball.phase === 'hazard') {
+      p.ball.placeAt(p.ball.phase === 'hazard' ? p.lastRest : p.ball.position);
+    }
+    this.finishShot(p, 'timeout');
+    this.events.emit('TIME_UP', { playerId: p.id });
+    this.finishPlayer(p, false);
+  }
+
+  private finishPlayer(p: PlayerRuntime, completed: boolean): void {
+    p.finishTick = this.tick;
+    p.completed = completed;
+    p.fsm.force('FINISHED');
+    this.events.emit('PLAYER_FINISHED', { playerId: p.id, shots: this.strokes(p.id), timeMs: this.elapsedMs(p.id), completed });
+  }
+
+  private trackShotStats(p: PlayerRuntime): void {
+    const rec = p.shots.at(-1);
+    if (!rec || rec.result !== 'pending') return;
+    const a = p.ball.prevPosition;
+    const b = p.ball.position;
+    rec.distance += Math.hypot(b.x - a.x, b.y - a.y, b.z - a.z);
+    rec.maxSpeed = Math.max(rec.maxSpeed, p.ball.speed);
   }
 
   private drainCollisions(): void {
@@ -197,6 +252,8 @@ export class Simulation {
       const otherHandle = this.ballByCollider.get(h1) === p ? h2 : h1;
       const info = this.physics.getInfo(otherHandle);
       if (!other && info?.role !== 'wall') return;
+      const rec = p.shots.at(-1);
+      if (rec && rec.result === 'pending') rec.bounces++;
       this.events.emit('BALL_HIT', { playerId: p.id, speed: p.ball.speed, kind: other ? 'ball' : 'wall' });
     });
   }
@@ -212,11 +269,9 @@ export class Simulation {
       case 'holed': {
         this.finishShot(p, 'hole');
         p.holed = true;
-        p.finishTick = this.tick;
-        p.fsm.force('FINISHED');
-        const payload = { playerId: p.id, shots: this.strokes(p.id), timeMs: this.elapsedMs(p.id) };
-        this.events.emit('BALL_IN_HOLE', payload);
-        this.events.emit('PLAYER_FINISHED', payload);
+        p.hazardReturnTick = null;
+        this.events.emit('BALL_IN_HOLE', { playerId: p.id, shots: this.strokes(p.id), timeMs: this.tick === p.startTick ? 0 : Math.round((this.tick - p.startTick) * this.dt * 1000) });
+        this.finishPlayer(p, true);
         break;
       }
       case 'water':
@@ -244,9 +299,7 @@ export class Simulation {
   private afterShotSettled(p: PlayerRuntime): void {
     if (p.fsm.state === 'BALL_MOVING') p.fsm.force('BALL_STOPPED');
     if (this.strokes(p.id) >= GameConfig.maxShotsPerHole) {
-      p.finishTick = this.tick;
-      p.fsm.force('FINISHED');
-      this.events.emit('PLAYER_FINISHED', { playerId: p.id, shots: this.strokes(p.id), timeMs: this.elapsedMs(p.id) });
+      this.finishPlayer(p, false);
       return;
     }
     this.toIdle(p);

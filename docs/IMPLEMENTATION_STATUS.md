@@ -49,8 +49,15 @@ Ver [architecture.md](./architecture.md). Resumen:
 | Cámara de seguimiento: suavizado, rotación, zoom, modo vertical | ✅ Phase 1 (básica) |
 | Registro de tiros (posición, dirección, potencia, resultado) y temporizador | ✅ Phase 1 |
 | HUD básico, carga, errores (WebGL no disponible), panel debug (F3) | ✅ Phase 1 |
-| Trayectoria predictiva | ⏳ Phase 2 |
-| Puntuación configurable (`calculateScore`) | ⏳ Phase 2 |
+| Trayectoria predictiva (misma física, rebotes, punto de llegada, incremental) | ✅ Phase 2 |
+| Puntuación configurable (`calculateScore`) + ranking (`compareResults`) | ✅ Phase 2 |
+| Límite de tiempo por hoyo, aviso en HUD, fin sin completar | ✅ Phase 2 |
+| Estadísticas por tiro (distancia, rebotes, velocidad máx., duración) | ✅ Phase 2 |
+| Efecto de hoyo (onda + confeti) y sonido (golpe, rebote, hoyo, hazard) | ✅ Phase 2 |
+| Cámara: límites del curso, vista general (V), foco adelantado al apuntar, órbita al terminar | ✅ Phase 2 |
+| Ajustes persistentes (sensibilidad, trayectoria, volúmenes, invertir eje) | ✅ Phase 2 |
+| PersistenceService (versionado, validación, recuperación de datos corruptos) | ✅ Phase 2 |
+| Resumen del hoyo con desglose de puntuación y tabla de tiros | ✅ Phase 2 |
 | Superficies arena/agua, pendientes, molinos, barreras móviles, 6 cursos | ⏳ Phase 3 |
 | Menús, lobby, cuenta atrás, resultados, espectador | ⏳ Phase 4 |
 | Multijugador real (servidor autoritativo, salas, reconexión, anti-cheat) | ⏳ Phase 5 |
@@ -66,6 +73,17 @@ Ver [architecture.md](./architecture.md). Resumen:
 - `PCFSoftShadowMap` ya no existe en Three r186 → `PCFShadowMap`.
 - TypeScript 7 eliminó `baseUrl` → alias `@/*` con ruta relativa.
 
+## 4b. Errores encontrados y corregidos (Phase 2)
+
+- **No determinismo del primer paso de Rapier:** el primer `world.step()` de un mundo nuevo
+  daba resultados distintos a los siguientes (hasta 1 m de diferencia tras un rebote).
+  Solución: paso de calentamiento en `PhysicsWorld.buildCourse`. Test de regresión añadido.
+- **Caché de contactos en el predictor:** se recrea la bola en cada predicción.
+- **Predicción demasiado cara para un frame** (10–25 ms medidos): ahora es incremental con
+  presupuesto por frame (3 ms, adaptativo hasta 8 ms) y se dibuja progresivamente.
+- **Línea de trayectoria desfasada** con frames lentos (una predicción nueva reiniciaba la
+  anterior antes de terminar): resuelto con el dibujo progresivo y el presupuesto adaptativo.
+
 ## 5. Fases
 
 ### Phase 1 — Foundation + Three.js + React + escena + física + bola ✅
@@ -73,10 +91,10 @@ Implementado y verificado (ver arriba). Pruebas: 33 tests unitarios/integración
 prueba E2E en Chromium (escritorio 1280×720 y móvil táctil 390×844): cargar, apuntar,
 disparar, rodar, detenerse, embocar en 3 golpes, pantalla de hoyo.
 
-### Phase 2 — Disparo + apuntado + trayectoria + cámara + hoyo + tiempo + tiros
-Trayectoria predictiva con rebotes (simulación ligera en un mundo Rapier auxiliar),
-sensibilidad configurable en ajustes, animación/efecto del hoyo, `calculateScore`
-configurable, cámara con límites del curso y vista general.
+### Phase 2 — Disparo + apuntado + trayectoria + cámara + hoyo + tiempo + tiros ✅
+Implementado y verificado: 61 tests + E2E en Chromium (predicción = tiro real con error
+0,000 m, vista general, ajustes guardados y recuperados tras recargar, hoyo con confeti,
+resumen con puntuación, tiro táctil en móvil).
 
 ### Phase 3 — Cursos + superficies + hazards + paredes + rampas + obstáculos dinámicos
 Seis cursos de prueba (BASIC, WALL BOUNCE, RAMPS, WINDMILL, MOVING BARRIERS, HAZARDS),
