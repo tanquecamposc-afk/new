@@ -186,6 +186,10 @@ describe('Simulation — Phase 2', () => {
     expect(p.fsm.state).toBe('FINISHED');
     expect(sim.remainingMs('p1')).toBe(0);
     expect(sim.shoot('p1', { direction: { x: 0, z: -1 }, power: 0.5 }).ok).toBe(false);
+    // Caso límite (Phase 9): tras terminar, el reset manual tampoco mueve la bola.
+    const before = { ...p.ball.position };
+    expect(sim.resetBall('p1')).toBe(false);
+    expect(p.ball.position).toEqual(before);
     sim.dispose();
   });
 });

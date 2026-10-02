@@ -26,11 +26,24 @@ export const NetworkConfig = {
   /** Límite de mensajes por segundo y tamaño máximo por mensaje (anti-abuso). */
   maxMessagesPerSec: 40,
   maxMessageBytes: 4096,
+  /** Servidor: conexiones simultáneas totales y por IP (anti-abuso). */
+  maxConnections: 2000,
+  maxConnectionsPerIp: 12,
+  /** Servidor: sin `hello` en este tiempo se cierra la conexión (ms). */
+  helloTimeoutMs: 10_000,
+  /** Servidor: ping de transporte; sin respuesta en un intervalo, la conexión se da por muerta (ms). */
+  heartbeatMs: 15_000,
+  /** Servidor: mensajes inválidos tolerados antes de cerrar la conexión. */
+  maxBadMessages: 20,
   /** Reintentos de reconexión del cliente (backoff exponencial). */
   reconnectAttempts: 6,
   reconnectBaseDelayMs: 600,
   /** Corrección: distancia (m) a partir de la cual se corrige la bola local. */
   correctionThreshold: 0.04,
+  /** Cliente: pasos de simulación máximos por frame para alcanzar al servidor (40 = 1/3 s, cubre ~6 FPS). */
+  maxStepsPerFrame: 40,
+  /** Cliente: retraso (ticks) a partir del cual se salta al tick del servidor con la bola en reposo. */
+  maxCatchUpTicks: 240,
   defaultPort: 2567,
 } as const;
 

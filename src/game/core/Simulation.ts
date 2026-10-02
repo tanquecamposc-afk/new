@@ -258,7 +258,8 @@ export class Simulation {
   /** Reinicio manual: devuelve la bola a la última posición de reposo, sin penalización. */
   resetBall(id: string): boolean {
     const p = this.getPlayer(id);
-    if (p.holed || p.ball.phase === 'captured') return false;
+    // Un jugador que ya terminó (hoyo, tiempo o golpes agotados) no puede mover su bola.
+    if (p.holed || p.finishTick !== null || p.ball.phase === 'captured') return false;
     const pending = p.shots.at(-1);
     if (pending && pending.result === 'pending') this.finishShot(p, 'rest');
     p.ball.placeAt(p.lastRest);

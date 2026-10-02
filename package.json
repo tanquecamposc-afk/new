@@ -10,6 +10,8 @@
     "typecheck": "tsc -b",
     "test": "vitest run",
     "test:watch": "vitest",
+    "lint": "oxlint src server",
+    "check": "tsc -b && oxlint src server && vitest run",
     "server": "tsx server/index.ts",
     "start": "npm run build && tsx server/index.ts"
   },
@@ -29,6 +31,7 @@
     "@types/three": "^0.186.0",
     "@types/ws": "^8.18.2",
     "@vitejs/plugin-react": "^6.1.1",
+    "oxlint": "^1.86.0",
     "tailwindcss": "^4.3.3",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2",

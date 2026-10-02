@@ -17,9 +17,12 @@ export function Lobby() {
     const t = setInterval(() => setNow(session.serverNow()), 500);
     return () => clearInterval(t);
   }, []);
-  useEffect(() => {
+  // Un aviso nuevo del servidor sustituye al error local (ajuste de estado durante el render).
+  const [lastNotice, setLastNotice] = useState(notice);
+  if (notice !== lastNotice) {
+    setLastNotice(notice);
     if (notice) setError(notice.text);
-  }, [notice]);
+  }
   if (!lobby) return null;
   const me = lobby.players.find((p) => p.id === session.localPlayerId);
   if (!me) return null;

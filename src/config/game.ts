@@ -26,6 +26,12 @@ export const GameConfig = {
 
 export const AppEnv = {
   env: (import.meta.env?.VITE_APP_ENV as string | undefined) ?? 'development',
+  /** Panel de rendimiento F3 (inofensivo: sólo lectura). */
   debugEnabled: (import.meta.env?.VITE_ENABLE_DEBUG ?? 'true') === 'true',
+  /**
+   * Expone el motor en `window.__minigolf` para QA automatizado. Por defecto sólo
+   * en desarrollo: en producción permitiría manipular la partida desde la consola.
+   */
+  exposeEngine: (import.meta.env?.VITE_EXPOSE_ENGINE ?? (import.meta.env?.DEV ? 'true' : 'false')) === 'true',
   serverUrl: (import.meta.env?.VITE_SERVER_URL as string | undefined) ?? '',
 };

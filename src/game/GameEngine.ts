@@ -245,8 +245,8 @@ export class GameEngine {
     this.publishLive();
     // Modo de sombras "static": el mapa se calcula una vez con la escena ya montada.
     this.view.bakeStaticShadows();
-    // Gancho de depuración/QA automatizado: sólo con VITE_ENABLE_DEBUG=true.
-    if (AppEnv.debugEnabled) (window as unknown as { __minigolf?: GameEngine }).__minigolf = this;
+    // Gancho de QA automatizado: sólo en desarrollo o con VITE_EXPOSE_ENGINE=true.
+    if (AppEnv.exposeEngine) (window as unknown as { __minigolf?: GameEngine }).__minigolf = this;
     if (online) {
       this.followServer = true;
       online.onSnapshot = (self) => this.onServerSnapshot(self);
@@ -476,9 +476,13 @@ export class GameEngine {
     const target = Math.floor(est);
     const local = this.sim.getPlayer(this.localId);
     // Muy por detrás (reconexión, pestaña en segundo plano): saltar al tick actual.
-    if (target - this.sim.tick > 240 && !local.ball.isMoving) this.sim.syncTick(target);
+    if (target - this.sim.tick > NetworkConfig.maxCatchUpTicks && !local.ball.isMoving) this.sim.syncTick(target);
+    // Antes del GO se alcanza al servidor paso a paso sin límite práctico (una bola en
+    // reposo: barato y determinista). Si no, en un equipo lento el hoyo local empezaba
+    // tarde y el primer tiro se ignoraba.
+    const maxSteps = this.sim.started ? NetworkConfig.maxStepsPerFrame : NetworkConfig.maxCatchUpTicks;
     let n = 0;
-    while (this.sim.tick < target && n < 16) {
+    while (this.sim.tick < target && n < maxSteps) {
       if (!this.sim.started && h.goTick !== null && this.sim.tick >= h.goTick) this.sim.startHole(h.goTick);
       this.sim.step();
       n++;
@@ -867,7 +871,7 @@ export class GameEngine {
   }
 
   private canAim(): boolean {
-    if (this.paused || this.phase !== 'playing' || this.followServer) return false;
+    if (this.paused || this.phase !== 'playing' || this.followServer || !this.sim.started) return false;
     const s = this.sim.getPlayer(this.localId).fsm.state;
     return s === 'IDLE' || s === 'AIMING';
   }

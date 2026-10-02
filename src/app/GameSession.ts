@@ -217,6 +217,8 @@ class GameSession {
     });
     on('left_room', () => undefined);
     on('error', (m) => {
+      // La sala se cerró por un fallo del servidor: volver al menú con el aviso.
+      if (m.code === 'server_error') return this.failOnline(m.message);
       if (m.code !== 'rate_limited') useGameStore.setState({ notice: { text: m.message, id: Date.now() } });
     });
     this.netOffs.push(

@@ -481,6 +481,13 @@ export class ServerRoom {
     this.sims.clear();
   }
 
+  /** Cierre forzoso (error interno): avisa a los jugadores y los devuelve al menú. */
+  abort(code: string): void {
+    this.broadcast({ t: 'error', code, message: 'La sala se cerró por un error del servidor.' });
+    this.broadcast({ t: 'left_room' });
+    this.dispose();
+  }
+
   dispose(): void {
     this.holeGen++;
     this.disposeSims();

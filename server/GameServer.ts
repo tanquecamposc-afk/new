@@ -51,19 +51,22 @@ export class GameServer {
   }
 
   /** Nueva conexión. Devuelve los manejadores que el transporte debe llamar. */
-  connect(socket: SocketLike): { onMessage: (raw: string) => void; onClose: () => void } {
+  connect(socket: SocketLike): { onMessage: (raw: string) => void; onClose: () => void; identified: () => boolean } {
     let session: Session | null = null;
+    let bad = 0;
     const sendRaw = (m: ServerMessage) => socket.readyState === OPEN && socket.send(JSON.stringify(m));
+    /** Mensajes basura repetidos (o antes de identificarse) cierran la conexión. */
+    const strike = (): void => {
+      if (++bad === 1) sendRaw({ t: 'error', code: 'bad_message', message: 'Mensaje no válido.' });
+      if (bad >= NetworkConfig.maxBadMessages || !session) socket.close(4004, 'bad_message');
+    };
 
     const onMessage = (raw: string) => {
-      if (raw.length > NetworkConfig.maxMessageBytes) return;
+      if (raw.length > NetworkConfig.maxMessageBytes) return strike();
       const msg = parseClientMessage(raw);
-      if (!msg) {
-        sendRaw({ t: 'error', code: 'bad_message', message: 'Mensaje no válido.' });
-        return;
-      }
+      if (!msg) return strike();
       if (!session) {
-        if (msg.t !== 'hello') return;
+        if (msg.t !== 'hello') return strike();
         if (msg.v !== PROTOCOL_VERSION) {
           sendRaw({ t: 'error', code: 'version', message: 'Versión del juego desactualizada: recarga la página.' });
           socket.close(4000, 'version');
@@ -85,7 +88,7 @@ export class GameServer {
       if (room && !room.hasMember(session.id)) session.roomId = null;
       if (!session.roomId) this.forget(session);
     };
-    return { onMessage, onClose };
+    return { onMessage, onClose, identified: () => session !== null };
   }
 
   private hello(socket: SocketLike, rawName: string, token?: string, cosmetics?: Equipped): Session {
@@ -261,7 +264,16 @@ export class GameServer {
 
   /** Avanza todas las salas. Llamar con frecuencia (≥ 60 Hz). */
   update(): void {
-    for (const r of [...this.rooms.values()]) r.update();
+    for (const r of [...this.rooms.values()]) {
+      try {
+        r.update();
+      } catch (e) {
+        // Un fallo en una sala no puede detener las demás: se cierra sólo esa.
+        this.log(`[server] error en sala ${r.id}, se cierra`, e);
+        r.abort('server_error');
+        this.removeRoom(r);
+      }
+    }
   }
 
   get stats() {

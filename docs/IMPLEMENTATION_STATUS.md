@@ -98,7 +98,9 @@ Ver [architecture.md](./architecture.md). Resumen:
 | Rapier cargado bajo demanda; gzip y caché inmutable en el servidor | ✅ Phase 8 |
 | Pérdida de contexto WebGL controlada; sin fugas de memoria entre hoyos | ✅ Phase 8 |
 | UI responsive (móvil vertical/horizontal, tablet, Chromebook), giro de cámara táctil, pantalla completa | ✅ Phase 8 |
-| QA, seguridad, documentación completa, build de producción | ⏳ Phase 9 |
+| Servidor endurecido: CSP y cabeceras, límites de conexión, latido, timeout de `hello`, aislamiento de salas | ✅ Phase 9 |
+| Lint (oxlint), `npm run check`, tests de seguridad y casos límite | ✅ Phase 9 |
+| Documentación de seguridad y despliegue; build de producción verificado | ✅ Phase 9 |
 
 ## 4. Errores encontrados y corregidos (Phase 1)
 
@@ -168,4 +170,51 @@ reducía nada porque cada adorno tenía su propio material.
 Decisión: Rapier sigue con el paquete `-compat` (WASM en base64, ~1,7 MB gzip) pero se
 carga bajo demanda tras el menú, así que no retrasa la primera pantalla. Migrar al paquete
 con WASM separado requiere un plugin de Vite adicional y no mejora el tiempo de juego.
-### Phase 9 — QA + bugs + seguridad + casos límite + documentación + build de producción
+### Phase 9 — QA + bugs + seguridad + casos límite + documentación + build de producción ✅
+Ver [security.md](./security.md), [deployment.md](./deployment.md) y [testing.md](./testing.md).
+QA final contra `npm start` (build de producción, CSP activa): flujo local completo,
+multijugador con dos navegadores, tienda/perfil, gráficos, 4 pantallas y casos límite.
+162 tests.
+
+Errores corregidos:
+- **Primer tiro ignorado online en equipos lentos:** la simulación local avanzaba como
+  máximo 16 pasos por frame; con pocos FPS se quedaba por detrás del servidor y, al llegar
+  el GO, la interfaz permitía apuntar pero el hoyo local aún no había empezado, así que el
+  arrastre se perdía sin aviso (2 de 3 partidas en la prueba con dos navegadores). Ahora
+  antes del GO se alcanza al servidor paso a paso (determinista: 0,0000 m de diferencia),
+  después hasta 40 pasos por frame, y no se puede apuntar hasta que el hoyo ha empezado.
+  Verificado 5/5.
+- **Caída del servidor** con una URL mal codificada (`/%E0%A4%A`): `decodeURIComponent`
+  lanzaba fuera de cualquier `try` → 400.
+- **Path traversal por prefijo:** `startsWith(dist)` aceptaba carpetas hermanas como
+  `dist-otro/` → el prefijo incluye el separador.
+- **Pantalla en blanco tras recompilar** con el servidor en marcha: el gzip de
+  `index.html` se cacheaba para siempre → la caché se invalida por mtime y tamaño.
+- **Motor expuesto en producción** (`window.__minigolf`, permitía alterar la partida local
+  desde la consola) → sólo en desarrollo o con `VITE_EXPOSE_ENGINE=true`.
+- **Conexiones fantasma:** un socket medio abierto (móvil sin cobertura) seguía contando
+  como conectado y podía bloquear el lobby → latido de transporte cada 15 s.
+- Conexiones sin `hello` o enviando basura ocupaban plaza indefinidamente → cierre.
+- Una excepción en una sala detenía el bucle de todas → se cierra sólo esa sala.
+- El reset manual movía la bola de un jugador que ya había terminado → rechazado.
+- Un asset con hash inexistente devolvía `index.html` como JavaScript → 404.
+- `Lobby`: `setState` dentro de un efecto (render en cascada) → ajuste durante el render.
+
+## 6. Resultado final
+
+| | |
+|---|---|
+| Modos | Partida rápida online, sala privada con código, práctica local con bots opcionales |
+| Jugadores | Hasta 20 por sala, todos a la vez en el mismo hoyo |
+| Hoyos | 6 cursos (rampas, agua, arena, aceleradores, bumpers, molino, barreras, spinner) |
+| Física | Rapier a 120 Hz, determinista, la misma en cliente, servidor y tests |
+| Online | Servidor autoritativo, compensación de latencia, reconexión, interpolación |
+| Progresión | Perfil, XP, niveles, monedas, tienda, inventario, cosméticos visuales |
+| Gráficos | 4 calidades + automática, sombras, agua, partículas, resolución dinámica |
+| Audio | Música y efectos sintetizados (sin ficheros) |
+| Dispositivos | Escritorio, Chromebook, tablet y móvil (táctil) |
+| Calidad | 162 tests, typecheck estricto, lint, 0 vulnerabilidades en dependencias |
+
+Limitaciones conocidas: sin cuentas de usuario (el perfil vive en el navegador y el
+servidor no verifica la propiedad de cosméticos); las salas viven en memoria de un único
+proceso; el rendimiento real en GPU se midió sólo con renderizado por software.

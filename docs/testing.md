@@ -19,6 +19,7 @@
 | Bots de práctica (reglas, no tiran antes del GO) | `src/game/bots/PracticeBot.test.ts` |
 | Servidor: salas, partida, anti-trampas, latencia, reconexión, abandono | `server/GameServer.test.ts` |
 | Perfil, moneda, tienda, inventario, recompensas, niveles, cosméticos | `src/profile/ProfileService.test.ts` |
+| Seguridad: estáticos, path traversal, mensajes hostiles, aislamiento de salas | `server/security.test.ts` |
 | Detección de calidad por dispositivo | `src/config/deviceProfile.test.ts` |
 | Protocolo, reloj e interpolación | `src/multiplayer/protocol.test.ts`, `src/multiplayer/net.test.ts` |
 
@@ -27,7 +28,8 @@ tiros con el predictor y avanza por la guía del curso. Nunca participa en parti
 
 Además, cada fase se verifica en Chromium real con Playwright (escritorio y móvil táctil):
 cargar, apuntar, comprobar la predicción contra el tiro real, disparar, embocar, resumen,
-ajustes y recarga. Con `VITE_ENABLE_DEBUG=true` el motor se expone en `window.__minigolf`.
+ajustes y recarga. El motor se expone en `window.__minigolf` en `npm run dev` o compilando con
+`VITE_EXPOSE_ENGINE=true` (nunca en producción).
 
 Pruebas de rendimiento (Phase 8, Playwright contra `vite preview`):
 - **Fugas:** 30 hoyos seguidos forzando `gc()`; se mide el heap JS y las geometrías/texturas
@@ -36,3 +38,14 @@ Pruebas de rendimiento (Phase 8, Playwright contra `vite preview`):
 - **Draw calls:** un frame aislado por calidad (`renderer.info.render.calls`).
 - **Responsive:** móvil vertical/horizontal, tablet y Chromebook; se comprueba que ningún
   control queda fuera del viewport en menú, sala y HUD y que el tiro táctil funciona.
+
+QA final (Phase 9, contra `npm start` con el build de producción y la CSP activa):
+- Flujo local completo: menú → sala con bots → cuenta atrás → pausa (simulación congelada)
+  → 2 hoyos → espectador → resultados → recompensas → jugar otra vez → menú; y en móvil.
+- Multijugador con dos navegadores: sala privada, recarga a mitad del hoyo, desconexión,
+  resultados idénticos, volver a la sala.
+- Tienda, inventario, perfil e historial tras recargar; gráficos en 3 calidades; 4 tamaños
+  de pantalla.
+- Casos límite: `localStorage` corrupto, servidor caído (mensaje claro y práctica local
+  operativa), 13.ª conexión desde la misma IP (429), basura antes de `hello` (4004), sin
+  `hello` (4003 a los 10 s), mensaje de 20 KB (1009) con el servidor intacto.

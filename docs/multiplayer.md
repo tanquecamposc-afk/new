@@ -71,3 +71,9 @@ acotada, puntuación calculada sólo en el servidor.
 ## Mensajes
 
 Ver `src/multiplayer/protocol.ts` (tipos compartidos y validadores).
+
+## Alcance del reloj en equipos lentos (Phase 9)
+
+El cliente simula hasta `NetworkConfig.maxStepsPerFrame` (40) pasos por frame para seguir
+al servidor; antes del GO, hasta `maxCatchUpTicks` (240) para que el hoyo empiece en el
+mismo tick que en el servidor. Con más retraso y la bola en reposo, salta al tick actual.
