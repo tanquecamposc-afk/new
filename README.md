@@ -337,6 +337,41 @@ Dos modos inspirados en los spin-off del original, con botón propio en el menú
 - **Enemigos:** los portales generan piglins y piglins brutos que van a por la aldea, tus golems y tú. Cada 150 s llega un **asalto**.
 - **Fin de la partida:** también puedes golpear los portales tú mismo con clic. Ganas al destruir los 3 y pierdes si la aldea cae. Si mueres, reapareces en la aldea.
 
+### Mejoras gráficas y correcciones de los dos modos
+- **Mazmorras con tres ambientaciones** que se turnan por nivel, cada una con sus enemigos y su jefe:
+  - **Catacumbas:** piedra y musgo. Jefe: el Rey Vindicador.
+  - **Cripta:** pizarra, hueso y faroles de almas. Jefe: el Nigromante.
+  - **Fortaleza del Nether:** ladrillo del Nether, basalto y magma. Jefe: el Señor de la Forja.
+- **Salas más trabajadas:**
+  - Formas variadas: cuadradas, redondas y en cruz.
+  - Suelo con dibujo, almenas, pilares con faroles, estanterías, barriles y telarañas.
+  - Las paredes del lado de la cámara son bajas, así el héroe siempre se ve.
+  - Bajo la mazmorra hay un abismo oscuro y se ve polvo o brasas en el aire.
+- **Salas secretas de tesoro**, y puertas que se cierran con vallas mientras quedan enemigos. Las salas grandes traen una segunda oleada.
+- **Combate con más sensación:**
+  - Combo de 3 golpes, y el tercero es un giro.
+  - Arco de corte visible y flechas que vuelan.
+  - Números de daño y barras de vida sobre los enemigos.
+  - Enemigos de **élite** (morados, más fuertes, dan premio).
+  - Esmeraldas que vuelan hacia ti.
+- **Equipo visible:** el arma (piedra, hierro y luego diamante) y la armadura (cuero, hierro y luego diamante) cambian según tus mejoras.
+- **Interfaz:**
+  - Cámara suave con **zoom con la rueda**.
+  - **Minimapa** con salas, cofres, enemigos y salida.
+  - Barra de acciones con las recargas en círculo.
+- **Leyendas:**
+  - **Aldea de verdad:** plaza con pozo, casas con ventanas, tejado y chimenea, caminos con faroles y huertos. Se quitan los árboles de la zona.
+  - **Portales piglin** con torres, terreno corrompido alrededor y barra de vida encima.
+  - Se ven los **ayudantes** volando al recoger.
+  - **Brújula** al portal más cercano y vista previa de dónde construyes.
+  - **6 – Mejorar golems** con el oro: hasta 3 niveles de más vida y daño.
+- **Correcciones:**
+  - Los piglins ya dan oro al morir.
+  - Los enemigos de los modos ya no llenan el inventario.
+  - Los avisos pequeños salen en una tira y no tapan la pantalla.
+  - El cofre ya no bloquea la entrada de los pasillos.
+  - Al cambiar de un modo a otro ya no queda el panel del anterior.
+
 ## FPS estables, sin rayas entre bloques y mesa de trabajo nueva
 
 - **Sin bajones al cargar terreno:** antes, al llegar a una zona nueva, un solo fotograma podía generar muchos chunks, calcular su luz y armar su malla de golpe (hasta 400 ms, bajones a 20 FPS). Ahora ese trabajo se reparte en pasos pequeños, del más cercano al más lejano, y armar una malla se hace por partes. En las pruebas el peor fotograma bajó de 444 ms a 18 ms.
