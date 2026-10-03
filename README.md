@@ -308,6 +308,35 @@ En **Opciones → Calidad gráfica**: Baja, Media, Alta y Ultra. Ajusta la resol
 - **Ahumador:** solo comida, el doble de rápido. **Alto horno:** solo minerales, metales y armaduras, el doble de rápido.
 - Arreglado: romper un ahumador o un alto horno ahora suelta lo que tenga dentro.
 
+## Modos nuevos: Mazmorras y Leyendas
+
+Dos modos inspirados en los spin-off del original, con botón propio en el menú principal.
+
+### Mazmorras (acción y rol)
+- **Vista y controles:** cámara desde arriba. Te mueves con WASD; **clic izquierdo o J** usa la espada (golpe en arco, 20 % de críticos), **clic derecho o K** dispara el arco (apunta solo al enemigo más cercano) y **Espacio** hace una esquiva rápida sin recibir daño.
+- **Niveles:** salas y pasillos de piedra generados al azar. Al entrar en cada sala aparece una oleada de enemigos (zombis, esqueletos, arañas y, más adelante, vindicadores).
+- **Cofres:** dan esmeraldas, mejoras de **ataque** y **defensa**, **artefactos**, pociones y flechas.
+- **Artefactos (teclas 1-3, con recarga):**
+  - Cuerno de explosión
+  - Botas de velocidad
+  - Flecha de fuegos artificiales
+  - Tótem de regeneración
+- **Pociones:** **E** bebe una poción de curación.
+- **Vidas y jefe:** tienes 3 vidas por nivel. En la última sala está el jefe, el **Archi-ilusor**, con su barra de vida. Al vencerlo aparece la plataforma verde que lleva al siguiente nivel, que es más difícil. Conservas tu equipo.
+
+### Leyendas (acción y estrategia)
+- **Objetivo:** protege la **aldea** (su corazón es el bloque de oro de la fuente) y destruye los **3 portales piglin** que hay a unos 70 bloques.
+- **G – ayudantes:** recogen la madera y la piedra de alrededor.
+- **1-5 – construir delante de ti:**
+  - Generador de golems de piedra (cuerpo a cuerpo)
+  - Generador de golems de tablas (a distancia)
+  - Torre de flechas
+  - Muro
+  - Reparar la aldea
+- **Órdenes a los golems:** **R** ¡al ataque! (van a por el portal más cercano) y **F** seguidme.
+- **Enemigos:** los portales generan piglins y piglins brutos que van a por la aldea, tus golems y tú. Cada 150 s llega un **asalto**.
+- **Fin de la partida:** también puedes golpear los portales tú mismo con clic. Ganas al destruir los 3 y pierdes si la aldea cae. Si mueres, reapareces en la aldea.
+
 ## FPS estables, sin rayas entre bloques y mesa de trabajo nueva
 
 - **Sin bajones al cargar terreno:** antes, al llegar a una zona nueva, un solo fotograma podía generar muchos chunks, calcular su luz y armar su malla de golpe (hasta 400 ms, bajones a 20 FPS). Ahora ese trabajo se reparte en pasos pequeños, del más cercano al más lejano, y armar una malla se hace por partes. En las pruebas el peor fotograma bajó de 444 ms a 18 ms.
