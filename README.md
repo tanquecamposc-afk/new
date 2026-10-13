@@ -57,3 +57,32 @@ Cada torre puede **mejorarse** (⬆), **venderse** (70% de reembolso) y cambiar 
 ## 🔊 Sonido
 
 Todos los efectos de sonido se generan en tiempo real con WebAudio (sin archivos de audio). Botón 🔊 para silenciar.
+
+---
+
+# TORMENTA: Battle Royale 🌀
+
+Un **battle royale en 3D** para el navegador, inspirado en el género (saltar de un vehículo, saquear, construir y sobrevivir a la tormenta). Todo es original: nombre, personajes, mapa y lugares. Está en `tormenta/index.html` y usa Three.js desde CDN.
+
+## ▶ Cómo jugar
+
+Abre `tormenta/index.html` en un navegador moderno (con conexión a internet para cargar Three.js). Elige atuendo, pulsa **JUGAR** y haz clic para capturar el ratón.
+
+- **25 jugadores** (tú + 24 bots con IA que saquean, construyen coberturas, se curan y pelean entre ellos).
+- **Dirigible**: pulsa `Espacio` para saltar, cae en picado y planea hasta donde quieras aterrizar.
+- **Botín** con 5 rarezas (Común → Legendario): pistola, subfusil, rifle de asalto, escopeta y francotirador; vendas, botiquines, mini escudos y pociones de escudo; munición y materiales. Abre **cofres dorados** dentro de las casas.
+- **Recolección** con el pico: árboles → madera, rocas → piedra, coches y casas → metal/madera.
+- **Construcción** en cuadrícula: muros, suelos y rampas de madera, piedra o metal (cada material tiene distinta resistencia). Las piezas bloquean balas y se pueden destruir.
+- **Tormenta** que se cierra en 6 fases, con daño creciente.
+- Mapa con 7 zonas: Villa Ladrillo, Puerto Óxido, Granja Girasol, Cima Ventosa, Plaza Central, Bosque Susurro y Lago Sereno.
+
+## ⌨ Controles
+
+| Tecla | Acción |
+|---|---|
+| `W A S D` · `Espacio` · `Shift` | Moverse · saltar · correr |
+| Ratón · clic izq. · clic der. | Apuntar · disparar/construir · mira (zoom) |
+| `1`–`6` / rueda | Cambiar de objeto (1 = pico) |
+| `Z` / `X` / `C` | Construir muro / suelo / rampa (10 de material) |
+| `Q` · `G` | Entrar/salir del modo construcción · cambiar material |
+| `E` · `R` | Abrir cofre / recoger · recargar |
