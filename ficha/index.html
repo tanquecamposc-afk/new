@@ -7,284 +7,465 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700&family=Figtree:wght@400;500;600;700&display=swap">
-<style>
-  /* Ficha de juego: título, galería con tarjetas al lado y debajo enlaces a la izquierda con panel de datos a la derecha. */
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700&family=Figtree:wght@400;500;600;700&family=Roboto:wght@400;500;700&display=swap">
+<style id="pageCss">
+  /* Ficha de juego: título, galería con tarjetas al lado, y debajo enlaces a la izquierda con el panel de datos a la derecha. */
   :root {
     --bg: #ffffff;
-    --card: #f2f3f5;
-    --line: #dfe1e5;
-    --fg: #1f2125;
+    --card: #f1f3f4;
+    --line: #dadce0;
+    --fg: #202124;
     --muted: #5f6368;
-    --link: #1f4fcc;
+    --link: #1a3fbd;
     --accent: #7a3cff;
-    --display: "Bricolage Grotesque", "Arial Black", system-ui, sans-serif;
     --body: "Figtree", Arial, system-ui, sans-serif;
+    --title: var(--body);
   }
   @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
-    --bg: #17181b; --card: #24262b; --line: #3a3d44; --fg: #e8e9ec; --muted: #a4a8b0; --link: #94b6ff; --accent: #b08cff; color-scheme: dark;
+    --bg: #1b1c1f; --card: #28292d; --line: #3c4043; --fg: #e8eaed; --muted: #9aa0a6; --link: #9cb8ff; color-scheme: dark;
   } }
-  :root[data-theme="dark"] {
-    --bg: #17181b; --card: #24262b; --line: #3a3d44; --fg: #e8e9ec; --muted: #a4a8b0; --link: #94b6ff; --accent: #b08cff; color-scheme: dark;
-  }
+  :root[data-theme="dark"] { --bg: #1b1c1f; --card: #28292d; --line: #3c4043; --fg: #e8eaed; --muted: #9aa0a6; --link: #9cb8ff; color-scheme: dark; }
+  .pg[data-mode="light"] { --bg: #ffffff; --card: #f1f3f4; --line: #dadce0; --fg: #202124; --muted: #5f6368; color-scheme: light; }
+  .pg[data-mode="dark"] { --bg: #1b1c1f; --card: #28292d; --line: #3c4043; --fg: #e8eaed; --muted: #9aa0a6; color-scheme: dark; }
   * { box-sizing: border-box; }
   [hidden] { display: none !important; }
-  body { margin: 0; background: var(--bg); color: var(--fg); font: 14px/1.5 var(--body); }
-  a { color: var(--link); text-decoration: none; }
-  a:hover { text-decoration: underline; }
-  a:focus-visible, button:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
-  button { font: inherit; color: inherit; }
-  .page { max-width: 1060px; margin: 0 auto; padding-block: 24px 56px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  html, body { margin: 0; background: var(--bg); }
+  .pg { background: var(--bg); color: var(--fg); font: 14px/1.5 var(--body); min-height: 100vh; }
+  .pg a { color: var(--link); text-decoration: none; }
+  .pg a:hover { text-decoration: underline; }
+  .pg a:focus-visible, .pg button:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
+  .pg button { font: inherit; color: inherit; }
+  .wrap { max-width: 1040px; margin: 0 auto; padding-block: 22px 56px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
 
-  /* Cabecera */
-  .head { display: flex; align-items: flex-start; gap: 6px; }
-  h1 { font: 700 30px/1.1 var(--display); margin: 0; letter-spacing: -.01em; }
-  .kind { color: var(--muted); font-size: 13px; margin-top: 4px; display: flex; align-items: center; gap: 6px; }
-  .menu { position: relative; }
-  .dots { background: none; border: 0; cursor: pointer; width: 26px; height: 26px; border-radius: 50%; color: var(--muted); font-size: 18px; line-height: 1; }
+  h1 { font: 500 26px/1.15 var(--title); margin: 0; }
+  .kind { color: var(--muted); font-size: 13px; margin-top: 3px; display: flex; align-items: center; gap: 4px; position: relative; }
+  .dots { background: none; border: 0; cursor: pointer; width: 24px; height: 24px; border-radius: 50%; color: var(--muted); font-size: 16px; line-height: 1; padding: 0; }
   .dots:hover { background: var(--card); }
-  .pop { position: absolute; left: 0; top: 30px; background: var(--bg); border: 1px solid var(--line); border-radius: 12px; padding: 6px; min-width: 220px; box-shadow: 0 8px 24px rgba(0,0,0,.14); z-index: 5; display: flex; flex-direction: column; }
-  .pop a, .pop button { text-align: left; background: none; border: 0; padding: 8px 12px; border-radius: 8px; cursor: pointer; color: var(--fg); font-size: 14px; }
-  .pop a:hover, .pop button:hover { background: var(--card); text-decoration: none; }
+  .pop { position: absolute; left: 80px; top: 26px; background: var(--bg); border: 1px solid var(--line); border-radius: 12px; padding: 6px; min-width: 200px; box-shadow: 0 8px 24px rgba(0,0,0,.16); z-index: 5; display: flex; flex-direction: column; }
+  .pop a { padding: 8px 12px; border-radius: 8px; color: var(--fg) !important; }
+  .pop a:hover { background: var(--card); text-decoration: none; }
 
-  /* Fila superior */
-  .hero { display: grid; grid-template-columns: minmax(0, 2.25fr) minmax(0, 1.05fr) minmax(0, 1.05fr); gap: 12px; margin-top: 16px; }
-  .gallery { display: grid; grid-template-columns: 1.1fr 1fr; grid-template-rows: 1fr 1fr; gap: 2px; border-radius: 18px; overflow: hidden; min-height: 232px; position: relative; }
-  .gallery button { padding: 0; border: 0; background: var(--card); cursor: zoom-in; position: relative; overflow: hidden; }
+  .hero { display: grid; grid-template-columns: minmax(0, 2.15fr) minmax(0, 1fr) minmax(0, 1fr); gap: 14px; margin-top: 18px; height: 236px; }
+  .gallery { display: grid; grid-template-columns: 1.12fr 1fr; grid-template-rows: 1fr 1fr; gap: 2px; border-radius: 16px; overflow: hidden; }
+  .gallery button { padding: 0; border: 0; background: var(--card); cursor: zoom-in; position: relative; overflow: hidden; min-height: 0; }
   .gallery button:first-child { grid-row: span 2; }
   .gallery img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .3s; }
   .gallery button:hover img { transform: scale(1.04); }
-  .more { position: absolute; right: 8px; bottom: 8px; background: rgba(0,0,0,.6); color: #fff; border-radius: 8px; width: 28px; height: 28px; display: grid; place-items: center; pointer-events: none; }
-  .more svg { width: 16px; height: 16px; }
+  .more { position: absolute; right: 8px; bottom: 8px; background: rgba(0,0,0,.6); color: #fff; border-radius: 7px; width: 26px; height: 26px; display: grid; place-items: center; }
+  .more svg { width: 15px; height: 15px; }
 
-  .news { background: var(--card); border-radius: 18px; overflow: hidden; display: flex; flex-direction: column; color: var(--fg); }
-  .news:hover { text-decoration: none; }
+  .news { background: var(--card); border-radius: 16px; overflow: hidden; display: flex; flex-direction: column; color: var(--fg) !important; min-height: 0; }
+  .news:hover { text-decoration: none !important; }
   .news:hover h3 { text-decoration: underline; }
-  .news img { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; display: block; }
-  .news .in { padding: 10px 14px 12px; display: flex; flex-direction: column; gap: 4px; flex: 1; }
+  .news img { width: 100%; height: 44%; object-fit: cover; display: block; flex: none; }
+  .news .in { padding: 8px 12px 10px; display: flex; flex-direction: column; gap: 3px; flex: 1; min-height: 0; }
   .src { display: flex; align-items: center; gap: 6px; font-size: 12px; }
-  .src i { width: 16px; height: 16px; border-radius: 50%; background: var(--accent); display: grid; place-items: center; color: #fff; font: 700 9px var(--body); font-style: normal; }
-  .news h3 { margin: 0; font: 600 14px/1.35 var(--body); }
-  .news p { margin: 0; color: var(--muted); font-size: 12px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-  .news time { color: var(--muted); font-size: 12px; margin-top: auto; }
+  .src i { width: 16px; height: 16px; border-radius: 50%; background: var(--accent); display: grid; place-items: center; color: #fff; font: 700 9px var(--body); font-style: normal; flex: none; }
+  .news h3 { margin: 0; font: 500 13px/1.3 var(--body); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .news p { margin: 0; color: var(--muted); font-size: 11px; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .news time { color: var(--muted); font-size: 11px; margin-top: auto; }
 
-  .side { display: grid; grid-template-rows: auto 1fr; gap: 12px; min-width: 0; }
-  .facts { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-  .fact { background: var(--card); border-radius: 16px; padding: 12px 14px; font-size: 13px; display: flex; flex-direction: column; gap: 8px; min-height: 110px; border: 0; text-align: left; }
-  .fact strong { font-weight: 600; display: flex; justify-content: space-between; align-items: center; gap: 6px; }
-  .fact .chev { transition: transform .2s; color: var(--muted); }
+  .side { display: grid; grid-template-rows: 1fr 1fr; gap: 14px; min-width: 0; min-height: 0; }
+  .facts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; min-height: 0; }
+  .fact { background: var(--card); border-radius: 14px; padding: 10px 12px; font-size: 12px; display: flex; flex-direction: column; gap: 4px; border: 0; text-align: left; min-height: 0; overflow: hidden; }
+  .fact strong { font-weight: 500; font-size: 13px; display: flex; justify-content: space-between; align-items: center; gap: 4px; }
+  .fact .chev { color: var(--muted); transition: transform .2s; font-size: 11px; }
   .fact[aria-expanded="true"] .chev { transform: rotate(180deg); }
-  .fact .val { color: var(--fg); }
+  .fact .val { color: var(--fg); line-height: 1.35; }
   .fact .date { margin-top: auto; }
   button.fact { cursor: pointer; }
-  .avatars { display: flex; gap: 6px; margin-top: auto; }
-  .avatars span { width: 34px; height: 30px; border-radius: 8px; display: grid; place-items: center; font: 700 12px var(--display); color: #fff; }
-  .devs { font-size: 12px; color: var(--muted); }
-  .play { position: relative; display: block; border-radius: 16px; overflow: hidden; min-height: 124px; border: 2px solid transparent; }
-  .play:hover { border-color: var(--accent); }
+  .tiles { display: flex; gap: 6px; margin-top: auto; }
+  .tiles span { width: 32px; height: 26px; border-radius: 6px; display: grid; place-items: center; font: 700 10px var(--body); color: #fff; background: var(--accent); }
+  .tiles span:nth-child(2) { background: #c96442; }
+  .tiles span:nth-child(3) { background: #2d8a6e; }
+  .play { position: relative; display: block; border-radius: 14px; overflow: hidden; border: 2px solid transparent; min-height: 0; }
+  .play:hover { border-color: #3fbf6a; }
   .play img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-  .play .top { position: absolute; left: 8px; top: 8px; background: rgba(0,0,0,.62); color: #fff; font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 999px; display: flex; gap: 5px; align-items: center; }
-  .play .top b { width: 8px; height: 8px; border-radius: 50%; background: #ff5a4a; }
-  .play .btm { position: absolute; left: 8px; right: 8px; bottom: 8px; display: flex; justify-content: space-between; }
-  .play .btm span { background: rgba(0,0,0,.72); color: #fff; font-size: 12px; font-weight: 700; padding: 3px 9px; border-radius: 999px; }
+  .play .top { position: absolute; left: 7px; top: 7px; background: rgba(0,0,0,.65); color: #fff; font-size: 11px; font-weight: 500; padding: 2px 8px; border-radius: 999px; display: flex; gap: 5px; align-items: center; max-width: calc(100% - 14px); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .play .top b { width: 8px; height: 8px; border-radius: 50%; background: #ff4b3e; flex: none; }
+  .play .btm { position: absolute; left: 7px; right: 7px; bottom: 7px; display: flex; justify-content: space-between; gap: 6px; }
+  .play .btm span { background: rgba(0,0,0,.75); color: #fff; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 6px; white-space: nowrap; }
   .play .btm span:first-child::before { content: "▶ "; }
 
-  /* Parte inferior */
-  .cols { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); gap: 36px; margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--line); }
-  .results { display: flex; flex-direction: column; gap: 26px; min-width: 0; }
+  .cols { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 34px; margin-top: 20px; padding-top: 18px; border-top: 1px solid var(--line); }
+  .results { display: flex; flex-direction: column; gap: 24px; min-width: 0; }
   .site { display: flex; align-items: center; gap: 10px; font-size: 13px; }
-  .fav { width: 28px; height: 28px; border-radius: 50%; border: 1px solid var(--line); display: grid; place-items: center; font: 700 11px var(--display); flex: none; color: #fff; }
+  .fav { width: 26px; height: 26px; border-radius: 50%; border: 1px solid var(--line); display: grid; place-items: center; font: 700 10px var(--body); flex: none; color: #fff; background: var(--accent); }
   .site small { display: block; color: var(--muted); font-size: 12px; overflow-wrap: anywhere; line-height: 1.3; }
-  .res h2 { margin: 5px 0 2px; font: 400 20px/1.3 var(--body); }
+  .site .dots { margin-left: 2px; width: 20px; height: 20px; font-size: 13px; }
+  .res h2 { margin: 4px 0 2px; font: 400 20px/1.3 var(--body); }
   .res p { margin: 0; color: var(--muted); max-width: 62ch; }
-  .res p b { color: var(--fg); font-weight: 600; }
-  .sub { display: flex; flex-wrap: wrap; gap: 6px 18px; margin-top: 6px; font-size: 14px; }
 
-  .about h2 { font: 600 18px var(--body); margin: 0 0 6px; }
+  .about h2 { font: 500 17px var(--body); margin: 0 0 6px; }
   .about p { margin: 0 0 12px; }
-  .linkbtn { background: none; border: 0; padding: 0; color: var(--link); cursor: pointer; }
-  .table { background: var(--card); border-radius: 14px; overflow: hidden; }
-  .row { display: grid; grid-template-columns: 112px 1fr; gap: 12px; padding: 11px 14px; border-bottom: 1px solid var(--bg); font-size: 13px; }
+  .linkbtn { background: none; border: 0; padding: 0; color: var(--link) !important; cursor: pointer; }
+  .table { background: var(--card); border-radius: 12px; overflow: hidden; margin: 0; }
+  .row { display: grid; grid-template-columns: 108px 1fr; gap: 12px; padding: 10px 14px; border-bottom: 2px solid var(--bg); font-size: 13px; }
   .row:last-child { border-bottom: 0; }
-  .row dt { color: var(--muted); font-weight: 600; margin: 0; }
-  .row dd { margin: 0; }
-  .row dd a { color: var(--fg); text-decoration: underline dotted; text-underline-offset: 3px; }
+  .row dt { color: var(--muted); margin: 0; }
+  .row dd { margin: 0; text-decoration: underline dotted; text-underline-offset: 3px; text-decoration-color: var(--muted); }
 
-  #zoom { position: fixed; inset: 0; background: rgba(8,8,12,.88); display: grid; place-items: center; z-index: 20; padding: 24px; }
-  #zoom figure { margin: 0; max-width: min(1000px, 100%); display: flex; flex-direction: column; gap: 10px; }
-  #zoom img { width: 100%; border-radius: 12px; }
-  #zoom figcaption { color: #e8e8ee; text-align: center; }
-  #zoom .nav { display: flex; justify-content: center; gap: 10px; }
-  #zoom .nav button { background: #ffffff22; color: #fff; border: 0; border-radius: 999px; padding: 6px 16px; cursor: pointer; }
-  #toast { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--fg); color: var(--bg); padding: 8px 16px; border-radius: 999px; font-weight: 600; z-index: 30; }
+  .zoom { position: fixed; inset: 0; background: rgba(8,8,12,.88); display: grid; place-items: center; z-index: 40; padding: 24px; }
+  .zoom figure { margin: 0; max-width: min(1000px, 100%); display: flex; flex-direction: column; gap: 10px; }
+  .zoom img { width: 100%; border-radius: 12px; }
+  .zoom figcaption { color: #e8e8ee; text-align: center; }
+  .zoom .nav { display: flex; justify-content: center; gap: 10px; }
+  .zoom .nav button { background: #ffffff22; color: #fff; border: 0; border-radius: 999px; padding: 6px 16px; cursor: pointer; }
 
-  @media (max-width: 880px) {
-    .hero { grid-template-columns: 1fr 1fr; }
-    .gallery { grid-column: 1 / -1; }
+  @media (max-width: 860px) {
+    .hero { grid-template-columns: 1fr 1fr; height: auto; }
+    .gallery { grid-column: 1 / -1; height: 240px; }
+    .news, .side { height: 240px; }
     .cols { grid-template-columns: 1fr; }
   }
-  @media (max-width: 540px) {
+  @media (max-width: 520px) {
     .hero { grid-template-columns: 1fr; }
-    .gallery { min-height: 200px; }
-    .row { grid-template-columns: 96px 1fr; }
+    .gallery { height: 210px; }
+    .news { height: 260px; }
+    .row { grid-template-columns: 92px 1fr; }
   }
   @media (prefers-reduced-motion: reduce) { .gallery img, .fact .chev { transition: none; } }
 </style>
+<style>
+  /* Panel de personalización (no se incluye en el código exportado) */
+  .fab { position: fixed; right: max(16px, env(safe-area-inset-right, 0px)); bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 30; background: var(--accent); color: #fff; border: 0; border-radius: 999px; padding: 12px 20px; font: 700 14px var(--body); box-shadow: 0 6px 20px rgba(0,0,0,.25); cursor: pointer; display: flex; gap: 8px; align-items: center; }
+  .fab svg { width: 16px; height: 16px; }
+  .editor { position: fixed; top: 0; right: 0; bottom: 0; width: min(420px, 100%); background: var(--bg); color: var(--fg); border-left: 1px solid var(--line); z-index: 35; display: flex; flex-direction: column; box-shadow: -10px 0 30px rgba(0,0,0,.18); font: 14px/1.4 var(--body); }
+  .ed-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: calc(14px + env(safe-area-inset-top, 0px)) 18px 12px; border-bottom: 1px solid var(--line); }
+  .ed-head h2 { margin: 0; font: 700 18px var(--body); }
+  .ed-body { overflow-y: auto; padding: 6px 18px 18px; flex: 1; }
+  .ed-foot { display: flex; gap: 8px; flex-wrap: wrap; padding: 12px 18px calc(12px + env(safe-area-inset-bottom, 0px)); border-top: 1px solid var(--line); }
+  .ed-body details { border-bottom: 1px solid var(--line); padding-block: 4px; }
+  .ed-body summary { cursor: pointer; font-weight: 700; padding: 10px 0; list-style: none; display: flex; justify-content: space-between; }
+  .ed-body summary::after { content: "+"; color: var(--muted); }
+  .ed-body details[open] summary::after { content: "–"; }
+  .fld { display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px; }
+  .fld label { font-size: 12px; font-weight: 600; color: var(--muted); }
+  .fld input[type=text], .fld input[type=url], .fld input[type=date], .fld textarea, .fld select { font: 14px var(--body); color: var(--fg); background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; width: 100%; }
+  .fld textarea { resize: vertical; min-height: 64px; }
+  .fld input[type=color] { width: 54px; height: 34px; border: 1px solid var(--line); border-radius: 8px; background: var(--card); padding: 2px; }
+  .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .imgfld { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .imgfld img { width: 76px; height: 44px; object-fit: cover; border-radius: 6px; background: var(--card); flex: none; }
+  .imgfld .lbl { font-size: 12px; font-weight: 600; color: var(--muted); flex: 1; min-width: 0; }
+  .ebtn { background: var(--card); border: 1px solid var(--line); color: var(--fg); border-radius: 8px; padding: 7px 12px; font: 600 13px var(--body); cursor: pointer; }
+  .ebtn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .ebtn.danger { color: #d0342c; }
+  .item { background: var(--card); border-radius: 10px; padding: 10px; margin-bottom: 10px; }
+  .item .fld input, .item .fld textarea { background: var(--bg); }
+  .item-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 12px; font-weight: 700; color: var(--muted); }
+  .code { position: fixed; inset: 0; background: rgba(0,0,0,.6); z-index: 45; display: grid; place-items: center; padding: 16px; }
+  .code-box { background: var(--bg); color: var(--fg); border-radius: 14px; width: min(760px, 100%); max-height: 90%; display: flex; flex-direction: column; gap: 10px; padding: 16px; font: 14px var(--body); }
+  .code-box h2 { margin: 0; font: 700 18px var(--body); }
+  .code-box textarea { flex: 1; min-height: 320px; font: 12px/1.45 ui-monospace, Menlo, Consolas, monospace; background: var(--card); color: var(--fg); border: 1px solid var(--line); border-radius: 8px; padding: 10px; resize: none; }
+  .code-box .row2 { display: flex; gap: 8px; justify-content: space-between; align-items: center; flex-wrap: wrap; }
+  .toast { position: fixed; left: 50%; bottom: calc(76px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--fg); color: var(--bg); padding: 8px 16px; border-radius: 999px; font: 600 14px var(--body); z-index: 50; }
+</style>
 </head>
 <body>
-<div class="page">
+<div id="app"></div>
 
-  <div class="head">
-    <div>
-      <h1>Tormenta</h1>
-      <div class="kind">Juego en línea
-        <span class="menu">
-          <button class="dots" id="dotsBtn" aria-label="Más opciones" aria-expanded="false">⋮</button>
-          <span class="pop" id="pop" hidden>
-            <a href="https://claude.ai/artifact/GLHXEPJ9A84rSFsZv6zuMX" target="_blank" rel="noopener">Abrir el juego</a>
-            <button id="copyBtn">Copiar enlace del juego</button>
-            <a href="https://github.com/tanquecamposc-afk/new/tree/claude/nifty-euler-3yezql/tormenta" target="_blank" rel="noopener">Ver el código</a>
-          </span>
-        </span>
-      </div>
-    </div>
+<button class="fab" id="editBtn" aria-controls="editor"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M14 6l4 4"/></svg>Personalizar</button>
+
+<aside class="editor" id="editor" hidden aria-label="Personalizar la ficha">
+  <div class="ed-head"><h2>Personalizar</h2><button class="ebtn" id="closeEd">Cerrar</button></div>
+  <div class="ed-body" id="edBody"></div>
+  <div class="ed-foot">
+    <button class="ebtn primary" id="exportBtn">Copiar código</button>
+    <button class="ebtn danger" id="resetBtn">Restablecer</button>
   </div>
+</aside>
 
+<div class="code" id="codeModal" hidden role="dialog" aria-label="Código de tu ficha">
+  <div class="code-box">
+    <h2>Código de tu ficha</h2>
+    <div>Es un solo archivo HTML con tus textos, colores e imágenes dentro. Guárdalo como <b>index.html</b> y ábrelo con el navegador.</div>
+    <textarea id="codeText" readonly></textarea>
+    <div class="row2"><span id="codeSize"></span><span style="display:flex;gap:8px"><button class="ebtn" id="selectCode">Seleccionar todo</button><button class="ebtn primary" id="copyCode">Copiar</button><button class="ebtn" id="closeCode">Cerrar</button></span></div>
+  </div>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script id="viewerJs">
+// Interacciones de la ficha: visor de imágenes, botones que despliegan y "hace X días"
+(function () {
+  function shots() { return Array.prototype.slice.call(document.querySelectorAll('.gallery img')); }
+  var idx = 0;
+  function show(i) {
+    var s = shots(); if (!s.length) return;
+    idx = (i + s.length) % s.length;
+    var z = document.querySelector('.zoom');
+    z.querySelector('img').src = s[idx].src;
+    z.querySelector('img').alt = s[idx].alt;
+    z.querySelector('figcaption').textContent = s[idx].alt + ' (' + (idx + 1) + '/' + s.length + ')';
+    z.hidden = false;
+  }
+  document.addEventListener('click', function (e) {
+    var g = e.target.closest('.gallery button');
+    if (g) { show(+g.dataset.i); return; }
+    var z = e.target.closest('.zoom');
+    if (z) {
+      var act = e.target.closest('[data-nav]');
+      if (act) { var n = act.dataset.nav; if (n === 'close') z.hidden = true; else show(idx + (n === 'next' ? 1 : -1)); }
+      else if (e.target === z) z.hidden = true;
+      return;
+    }
+    var t = e.target.closest('[data-toggle]');
+    if (t) {
+      var el = document.getElementById(t.dataset.toggle);
+      var open = el.hidden; el.hidden = !open;
+      t.setAttribute('aria-expanded', open);
+      if (t.dataset.open) t.textContent = open ? t.dataset.close : t.dataset.open;
+      e.stopPropagation(); return;
+    }
+    var pop = document.getElementById('pop');
+    if (pop && !e.target.closest('.pop')) pop.hidden = true;
+  });
+  document.addEventListener('keydown', function (e) {
+    var z = document.querySelector('.zoom');
+    if (!z || z.hidden) return;
+    if (e.key === 'Escape') z.hidden = true;
+    if (e.key === 'ArrowRight') show(idx + 1);
+    if (e.key === 'ArrowLeft') show(idx - 1);
+  });
+  window.fichaAgo = function () {
+    document.querySelectorAll('[data-ago]').forEach(function (t) {
+      var d = new Date(t.getAttribute('datetime'));
+      var days = Math.floor((Date.now() - d) / 864e5);
+      if (isNaN(days)) return;
+      if (days >= 0 && days < 31) t.textContent = days === 0 ? 'Hoy' : days === 1 ? 'Hace 1 día' : 'Hace ' + days + ' días';
+      else t.textContent = d.toLocaleDateString('es', { day: 'numeric', month: 'short', year: 'numeric' });
+    });
+  };
+  window.fichaAgo();
+})();
+</script>
+
+<script>
+// ---------- Contenido por defecto: Tormenta ----------
+const PLAY = 'https://claude.ai/artifact/GLHXEPJ9A84rSFsZv6zuMX';
+const REPO = 'https://github.com/tanquecamposc-afk/new/blob/claude/nifty-euler-3yezql/';
+const DEFAULT = {
+  mode: 'auto', font: 'figtree', titleFont: 'body', accent: '#7a3cff', link: '#1a3fbd',
+  title: 'Tormenta', kind: 'Juego en línea', menuUrl: PLAY,
+  gallery: [
+    { src: 'img/isla.jpg', alt: 'Vista aérea de la isla con casas, bosques y el lago' },
+    { src: 'img/dirigible.jpg', alt: 'El dirigible cruza la isla antes del salto' },
+    { src: 'img/combate.jpg', alt: 'Combate con rifle de asalto contra un rival' },
+  ],
+  news: { img: 'img/construccion.jpg', src: 'Notas del proyecto', title: 'Tormenta ya se puede jugar en el navegador sin instalar nada', text: 'La primera versión trae dirigible, 24 rivales, cofres, construcción con tres materiales y una tormenta que se cierra en seis fases.', date: '2026-10-13', url: 'https://github.com/tanquecamposc-afk/new/commits/claude/nifty-euler-3yezql' },
+  fact1: { label: 'Desarrolladores', value: 'Tú y Claude', more: 'Diseño e ideas: tú. Código: Claude.', tiles: 'TÚ, C' },
+  fact2: { label: 'Lanzamiento inicial', value: '13 de octubre de 2026' },
+  play: { img: 'img/dirigible.jpg', top: 'claude.ai · Artefacto', left: 'Jugar', right: 'Gratis', url: PLAY },
+  results: [
+    { fav: 'C', site: 'Claude', show: 'https://claude.ai › artifact › tormenta', title: 'Tormenta | Juega gratis en tu navegador', url: PLAY, text: 'Salta del dirigible y sé el último en pie. 25 jugadores, botín por rarezas y construcción de muros, suelos y rampas.' },
+    { fav: 'GH', site: 'GitHub', show: 'https://github.com › tanquecamposc-afk › new › tormenta', title: 'tormenta/index.html · Código del juego', url: REPO + 'tormenta/index.html', text: 'Un solo archivo HTML con Three.js: isla, física, inteligencia de los bots, tormenta y menú.' },
+    { fav: 'R', site: 'Rampazo 1v1', show: 'https://claude.ai › artifact › rampazo', title: 'Rampazo 1v1 | Duelo de construcción del mismo creador', url: 'https://claude.ai/artifact/9bKQBvyb1BdUQbU41d3q2U', text: 'Si te gusta construir en Tormenta, en Rampazo peleas uno contra uno con muros, rampas, conos y edición de muros.' },
+  ],
+  about: {
+    text: 'Tormenta es un videojuego de disparos y supervivencia de 2026 para el navegador. Veinticinco jugadores saltan desde un dirigible sobre una isla, buscan armas en casas y cofres y construyen para cubrirse',
+    more: ', mientras una tormenta reduce la zona segura cada pocos minutos. Gana el último jugador que queda con vida.',
+    table: [['Desarrolladores', 'Tú, Claude'], ['Lanzamiento inicial', '13 de octubre de 2026'], ['Plataformas', 'Navegador de escritorio'], ['Jugadores', '25 por partida (tú y 24 bots)'], ['Género', 'Battle royale, disparos en tercera persona'], ['Motor', 'Three.js 0.160']],
+  },
+};
+const FONTS = { figtree: "'Figtree', Arial, system-ui, sans-serif", roboto: "'Roboto', Arial, system-ui, sans-serif", arial: 'Arial, Helvetica, sans-serif' };
+const KEY = 'ficha-personalizada';
+const clone = o => JSON.parse(JSON.stringify(o));
+let S = clone(DEFAULT);
+try { const saved = JSON.parse(localStorage.getItem(KEY) || 'null'); if (saved) S = Object.assign(clone(DEFAULT), saved); } catch (e) { /* sin almacenamiento */ }
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const ext = u => esc(u || '#');
+
+// ---------- Dibujar la ficha a partir del estado ----------
+function pageHtml(s) {
+  const tiles = s.fact1.tiles.split(',').map(t => t.trim()).filter(Boolean).slice(0, 3);
+  const titleFont = s.titleFont === 'display' ? "'Bricolage Grotesque', 'Arial Black', sans-serif" : 'var(--body)';
+  return `<div class="pg" data-mode="${s.mode}" style="--accent:${esc(s.accent)};--link:${esc(s.link)};--body:${FONTS[s.font] || FONTS.figtree};--title:${titleFont}">
+<div class="wrap">
+  <h1>${esc(s.title)}</h1>
+  <div class="kind">${esc(s.kind)} <button class="dots" data-toggle="pop" aria-label="Más opciones">⋮</button>
+    <span class="pop" id="pop" hidden><a href="${ext(s.menuUrl)}" target="_blank" rel="noopener">Abrir enlace principal</a></span></div>
   <section class="hero">
-    <div class="gallery" id="gallery">
-      <button data-i="0"><img src="img/isla.jpg" alt="Vista aérea de la isla con casas, bosques y el lago"></button>
-      <button data-i="1"><img src="img/dirigible.jpg" alt="El dirigible cruza la isla antes del salto"></button>
-      <button data-i="2"><img src="img/combate.jpg" alt="Combate con rifle de asalto contra un rival"><span class="more"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="M21 16l-5-5-8 8"/></svg></span></button>
-    </div>
-
-    <a class="news" href="https://github.com/tanquecamposc-afk/new/commits/claude/nifty-euler-3yezql" target="_blank" rel="noopener">
-      <img src="img/construccion.jpg" alt="Fuerte de madera, piedra y metal construido en la isla">
-      <div class="in">
-        <span class="src"><i>T</i>Notas del proyecto</span>
-        <h3>Tormenta ya se puede jugar en el navegador sin instalar nada</h3>
-        <p>La primera versión trae dirigible, 24 rivales, cofres, construcción con tres materiales y una tormenta que se cierra en seis fases.</p>
-        <time datetime="2026-10-13" data-ago>13 oct 2026</time>
-      </div>
+    <div class="gallery">${s.gallery.map((g, i) => `<button data-i="${i}"><img src="${esc(g.src)}" alt="${esc(g.alt)}">${i === 2 ? '<span class="more"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="M21 16l-5-5-8 8"/></svg></span>' : ''}</button>`).join('')}</div>
+    <a class="news" href="${ext(s.news.url)}" target="_blank" rel="noopener">
+      <img src="${esc(s.news.img)}" alt="">
+      <div class="in"><span class="src"><i>${esc((s.news.src || '?')[0].toUpperCase())}</i>${esc(s.news.src)}</span><h3>${esc(s.news.title)}</h3><p>${esc(s.news.text)}</p><time datetime="${esc(s.news.date)}" data-ago>${esc(s.news.date)}</time></div>
     </a>
-
     <div class="side">
       <div class="facts">
-        <button class="fact" id="devBtn" aria-expanded="false" aria-controls="devList">
-          <strong>Desarrolladores <span class="chev">▾</span></strong>
-          <span class="val">Tú y Claude</span>
-          <span class="devs" id="devList" hidden>Diseño e ideas: tú. Código: Claude.</span>
-          <span class="avatars"><span style="background:#7a3cff">TÚ</span><span style="background:#c96442">C</span></span>
-        </button>
-        <div class="fact">
-          <strong>Lanzamiento inicial</strong>
-          <span class="val date">13 de octubre de 2026</span>
-        </div>
+        <button class="fact" data-toggle="factMore" aria-expanded="false"><strong>${esc(s.fact1.label)} <span class="chev">▼</span></strong><span class="val">${esc(s.fact1.value)}</span><span class="val" id="factMore" hidden style="color:var(--muted)">${esc(s.fact1.more)}</span><span class="tiles">${tiles.map(t => `<span>${esc(t)}</span>`).join('')}</span></button>
+        <div class="fact"><strong>${esc(s.fact2.label)}</strong><span class="val date">${esc(s.fact2.value)}</span></div>
       </div>
-      <a class="play" href="https://claude.ai/artifact/GLHXEPJ9A84rSFsZv6zuMX" target="_blank" rel="noopener">
-        <img src="img/dirigible.jpg" alt="">
-        <span class="top"><b></b>claude.ai · Artefacto</span>
-        <span class="btm"><span>Jugar</span><span>Gratis</span></span>
-      </a>
+      <a class="play" href="${ext(s.play.url)}" target="_blank" rel="noopener"><img src="${esc(s.play.img)}" alt=""><span class="top"><b></b>${esc(s.play.top)}</span><span class="btm"><span>${esc(s.play.left)}</span><span>${esc(s.play.right)}</span></span></a>
     </div>
   </section>
-
   <section class="cols">
-    <div class="results">
+    <div class="results">${s.results.map(r => `
       <article class="res">
-        <div class="site"><span class="fav" style="background:#c96442">C</span><div>Claude<small>https://claude.ai › artifact › tormenta</small></div></div>
-        <h2><a href="https://claude.ai/artifact/GLHXEPJ9A84rSFsZv6zuMX" target="_blank" rel="noopener">Tormenta | Juega gratis en tu navegador</a></h2>
-        <p><b>Salta del dirigible y sé el último en pie.</b> 25 jugadores, botín por rarezas y construcción de muros, suelos y rampas.</p>
-      </article>
-      <article class="res">
-        <div class="site"><span class="fav" style="background:#24292f">GH</span><div>GitHub<small>https://github.com › tanquecamposc-afk › new › tormenta</small></div></div>
-        <h2><a href="https://github.com/tanquecamposc-afk/new/blob/claude/nifty-euler-3yezql/tormenta/index.html" target="_blank" rel="noopener">tormenta/index.html · Código del juego</a></h2>
-        <p>Un solo archivo HTML con Three.js: isla, física, inteligencia de los bots, tormenta y menú.</p>
-        <div class="sub"><a href="https://github.com/tanquecamposc-afk/new/blob/claude/nifty-euler-3yezql/README.md" target="_blank" rel="noopener">Controles</a><a href="https://github.com/tanquecamposc-afk/new/commits/claude/nifty-euler-3yezql" target="_blank" rel="noopener">Historial de cambios</a></div>
-      </article>
-      <article class="res">
-        <div class="site"><span class="fav" style="background:#ff6a3d">R</span><div>Rampazo 1v1<small>https://claude.ai › artifact › rampazo</small></div></div>
-        <h2><a href="https://claude.ai/artifact/9bKQBvyb1BdUQbU41d3q2U" target="_blank" rel="noopener">Rampazo 1v1 | Duelo de construcción del mismo creador</a></h2>
-        <p>Si te gusta construir en Tormenta, en Rampazo peleas uno contra uno con muros, rampas, conos y edición de muros.</p>
-      </article>
-    </div>
-
+        <div class="site"><span class="fav">${esc(r.fav)}</span><div>${esc(r.site)}<small>${esc(r.show)}</small></div><button class="dots" aria-label="Más" tabindex="-1">⋮</button></div>
+        <h2><a href="${ext(r.url)}" target="_blank" rel="noopener">${esc(r.title)}</a></h2>
+        <p>${esc(r.text)}</p>
+      </article>`).join('')}</div>
     <aside class="about">
       <h2>Acerca de</h2>
-      <p>Tormenta es un videojuego de disparos y supervivencia de 2026 para el navegador. Veinticinco jugadores saltan desde un dirigible sobre una isla, buscan armas en casas y cofres y construyen para cubrirse<span id="moreText" hidden>, mientras una tormenta reduce la zona segura cada pocos minutos. Gana el último jugador que queda con vida. Todo el mundo, los personajes y los sonidos se generan con código, sin archivos externos</span>… <button class="linkbtn" id="moreBtn" aria-expanded="false">Leer más</button></p>
-      <dl class="table">
-        <div class="row"><dt>Desarrolladores</dt><dd>Tú, <a href="https://claude.ai" target="_blank" rel="noopener">Claude</a></dd></div>
-        <div class="row"><dt>Lanzamiento inicial</dt><dd>13 de octubre de 2026</dd></div>
-        <div class="row"><dt>Plataformas</dt><dd>Navegador de escritorio<span id="platMore" hidden>: Chrome, Edge, Firefox y Safari con WebGL</span> · <button class="linkbtn" id="platBtn" aria-expanded="false">Ver más</button></dd></div>
-        <div class="row"><dt>Jugadores</dt><dd>25 por partida (tú y 24 bots)</dd></div>
-        <div class="row"><dt>Género</dt><dd>Battle royale, disparos en tercera persona</dd></div>
-        <div class="row"><dt>Motor</dt><dd>Three.js 0.160</dd></div>
-      </dl>
+      <p>${esc(s.about.text)}${s.about.more ? `<span id="aboutMore" hidden>${esc(s.about.more)}</span>… <button class="linkbtn" data-toggle="aboutMore" data-open="Leer más" data-close="Leer menos" aria-expanded="false">Leer más</button>` : ''}</p>
+      <dl class="table">${s.about.table.map(([k, v]) => `<div class="row"><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl>
     </aside>
   </section>
 </div>
-
-<div id="zoom" hidden role="dialog" aria-label="Imagen ampliada">
-  <figure>
-    <img id="zoomImg" alt="">
-    <figcaption id="zoomCap"></figcaption>
-    <div class="nav"><button id="prevBtn">‹ Anterior</button><button id="closeBtn">Cerrar</button><button id="nextBtn">Siguiente ›</button></div>
-  </figure>
-</div>
-<div id="toast" hidden></div>
-
-<script>
-const $ = id => document.getElementById(id);
-const shots = [...document.querySelectorAll('#gallery img')];
-let idx = 0;
-
-// galería con visor
-function show(i) {
-  idx = (i + shots.length) % shots.length;
-  $('zoomImg').src = shots[idx].src;
-  $('zoomImg').alt = shots[idx].alt;
-  $('zoomCap').textContent = `${shots[idx].alt} (${idx + 1}/${shots.length})`;
-  $('zoom').hidden = false;
+<div class="zoom" hidden role="dialog" aria-label="Imagen ampliada"><figure><img alt=""><figcaption></figcaption><div class="nav"><button data-nav="prev">‹ Anterior</button><button data-nav="close">Cerrar</button><button data-nav="next">Siguiente ›</button></div></figure></div>
+</div>`;
 }
-document.querySelectorAll('#gallery button').forEach(b => b.onclick = () => show(+b.dataset.i));
-$('prevBtn').onclick = e => { e.stopPropagation(); show(idx - 1); };
-$('nextBtn').onclick = e => { e.stopPropagation(); show(idx + 1); };
-$('closeBtn').onclick = () => { $('zoom').hidden = true; };
-$('zoom').onclick = e => { if (e.target === $('zoom')) $('zoom').hidden = true; };
-document.addEventListener('keydown', e => {
-  if ($('zoom').hidden) { if (e.key === 'Escape') $('pop').hidden = true; return; }
-  if (e.key === 'Escape') $('zoom').hidden = true;
-  if (e.key === 'ArrowRight') show(idx + 1);
-  if (e.key === 'ArrowLeft') show(idx - 1);
+let saveFail = false;
+function render() {
+  $('app').innerHTML = pageHtml(S);
+  document.title = S.title || 'Ficha';
+  window.fichaAgo();
+  try { localStorage.setItem(KEY, JSON.stringify(S)); saveFail = false; }
+  catch (e) { if (!saveFail) toast('No se pudo guardar en este navegador: las imágenes son muy pesadas'); saveFail = true; }
+}
+
+// ---------- Panel de personalización ----------
+const get = path => path.split('.').reduce((o, k) => o[k], S);
+const set = (path, v) => { const ks = path.split('.'); const last = ks.pop(); ks.reduce((o, k) => o[k], S)[last] = v; };
+let timer = 0;
+const later = () => { clearTimeout(timer); timer = setTimeout(render, 60); };
+const fld = (label, path, type = 'text') => {
+  const id = 'f_' + path.replace(/\W/g, '_');
+  if (type === 'area') return `<div class="fld"><label for="${id}">${label}</label><textarea id="${id}" data-path="${path}">${esc(get(path))}</textarea></div>`;
+  return `<div class="fld"><label for="${id}">${label}</label><input id="${id}" type="${type}" data-path="${path}" value="${esc(get(path))}"></div>`;
+};
+const imgFld = (label, path) => `<div class="imgfld"><img src="${esc(get(path))}" alt=""><span class="lbl">${label}</span><label class="ebtn">Cambiar<input type="file" accept="image/*" data-img="${path}" hidden></label></div>`;
+
+function buildEditor() {
+  $('edBody').innerHTML = `
+  <details open><summary>Apariencia</summary>
+    <div class="pair">
+      <div class="fld"><label for="f_mode">Tema</label><select id="f_mode" data-path="mode"><option value="auto">Automático</option><option value="light">Claro</option><option value="dark">Oscuro</option></select></div>
+      <div class="fld"><label for="f_font">Letra</label><select id="f_font" data-path="font"><option value="figtree">Figtree</option><option value="roboto">Roboto</option><option value="arial">Arial</option></select></div>
+    </div>
+    <div class="pair">
+      <div class="fld"><label for="f_titleFont">Letra del título</label><select id="f_titleFont" data-path="titleFont"><option value="body">Igual que el texto</option><option value="display">Llamativa</option></select></div>
+      <div class="pair"><div class="fld"><label for="f_accent">Color</label><input id="f_accent" type="color" data-path="accent" value="${esc(S.accent)}"></div><div class="fld"><label for="f_link">Enlaces</label><input id="f_link" type="color" data-path="link" value="${esc(S.link)}"></div></div>
+    </div>
+  </details>
+  <details open><summary>Título</summary>${fld('Nombre', 'title')}${fld('Tipo (debajo del nombre)', 'kind')}${fld('Enlace del menú ⋮', 'menuUrl', 'url')}</details>
+  <details><summary>Galería</summary>${S.gallery.map((g, i) => imgFld(i === 0 ? 'Imagen grande' : `Imagen pequeña ${i}`, `gallery.${i}.src`) + fld('Descripción', `gallery.${i}.alt`)).join('')}</details>
+  <details><summary>Noticia</summary>${imgFld('Imagen', 'news.img')}${fld('Fuente', 'news.src')}${fld('Titular', 'news.title')}${fld('Texto', 'news.text', 'area')}<div class="pair">${fld('Fecha', 'news.date', 'date')}${fld('Enlace', 'news.url', 'url')}</div></details>
+  <details><summary>Datos y botón de jugar</summary>
+    <div class="pair">${fld('Dato 1: título', 'fact1.label')}${fld('Dato 1: valor', 'fact1.value')}</div>
+    ${fld('Dato 1: texto al desplegar', 'fact1.more')}${fld('Dato 1: iniciales (separadas por comas)', 'fact1.tiles')}
+    <div class="pair">${fld('Dato 2: título', 'fact2.label')}${fld('Dato 2: valor', 'fact2.value')}</div>
+    ${imgFld('Imagen del botón', 'play.img')}${fld('Etiqueta de arriba', 'play.top')}<div class="pair">${fld('Texto del botón', 'play.left')}${fld('Texto de la derecha', 'play.right')}</div>${fld('Enlace', 'play.url', 'url')}
+  </details>
+  <details><summary>Resultados (${S.results.length})</summary>${S.results.map((r, i) => `<div class="item"><div class="item-head">Resultado ${i + 1}<span><button class="ebtn" data-move="${i}" ${i === 0 ? 'disabled' : ''}>Subir</button> <button class="ebtn danger" data-delres="${i}">Quitar</button></span></div>
+    <div class="pair">${fld('Sitio', `results.${i}.site`)}${fld('Icono (1-2 letras)', `results.${i}.fav`)}</div>${fld('Dirección que se muestra', `results.${i}.show`)}${fld('Título', `results.${i}.title`)}${fld('Enlace', `results.${i}.url`, 'url')}${fld('Descripción', `results.${i}.text`, 'area')}</div>`).join('')}
+    <button class="ebtn" id="addRes">Añadir resultado</button></details>
+  <details><summary>Acerca de</summary>${fld('Texto', 'about.text', 'area')}${fld('Texto oculto de "Leer más" (vacío para quitarlo)', 'about.more', 'area')}
+    ${S.about.table.map((r, i) => `<div class="item"><div class="item-head">Fila ${i + 1}<button class="ebtn danger" data-delrow="${i}">Quitar</button></div><div class="pair">${fld('Dato', `about.table.${i}.0`)}${fld('Valor', `about.table.${i}.1`)}</div></div>`).join('')}
+    <button class="ebtn" id="addRow">Añadir fila</button></details>`;
+  for (const k of ['mode', 'font', 'titleFont']) $('f_' + k).value = S[k];
+}
+$('edBody').addEventListener('input', e => {
+  const p = e.target.dataset.path;
+  if (p) { set(p, e.target.value); later(); }
 });
-
-// botones que despliegan texto
-function toggle(btn, target, openLabel, closeLabel) {
-  btn.onclick = () => {
-    const open = target.hidden;
-    target.hidden = !open;
-    btn.setAttribute('aria-expanded', open);
-    if (openLabel) btn.textContent = open ? closeLabel : openLabel;
-  };
+$('edBody').addEventListener('change', e => {
+  const p = e.target.dataset.img;
+  if (!p || !e.target.files[0]) return;
+  shrink(e.target.files[0]).then(url => { set(p, url); render(); buildEditor(); reopen(p); toast('Imagen cambiada'); }).catch(() => toast('No se pudo leer esa imagen'));
+});
+$('edBody').addEventListener('click', e => {
+  const t = e.target;
+  if (t.id === 'addRes') { S.results.push({ fav: 'N', site: 'Nuevo sitio', show: 'https://ejemplo.com', title: 'Título del resultado', url: 'https://ejemplo.com', text: 'Descripción del resultado.' }); }
+  else if (t.id === 'addRow') { S.about.table.push(['Dato', 'Valor']); }
+  else if (t.dataset.delres) { S.results.splice(+t.dataset.delres, 1); }
+  else if (t.dataset.move) { const i = +t.dataset.move; [S.results[i - 1], S.results[i]] = [S.results[i], S.results[i - 1]]; }
+  else if (t.dataset.delrow) { S.about.table.splice(+t.dataset.delrow, 1); }
+  else return;
+  const open = [...$('edBody').querySelectorAll('details')].map(d => d.open);
+  render(); buildEditor();
+  $('edBody').querySelectorAll('details').forEach((d, i) => d.open = open[i]);
+});
+function reopen(path) { const el = $('edBody').querySelector(`[data-img="${path}"]`); if (el) el.closest('details').open = true; }
+// reduce las imágenes subidas para que quepan en el navegador
+function shrink(file) {
+  return new Promise((ok, fail) => {
+    const r = new FileReader();
+    r.onerror = fail;
+    r.onload = () => {
+      const im = new Image();
+      im.onerror = fail;
+      im.onload = () => {
+        const k = Math.min(1, 960 / Math.max(im.width, im.height));
+        const c = document.createElement('canvas'); c.width = Math.round(im.width * k); c.height = Math.round(im.height * k);
+        c.getContext('2d').drawImage(im, 0, 0, c.width, c.height);
+        ok(c.toDataURL('image/jpeg', 0.8));
+      };
+      im.src = r.result;
+    };
+    r.readAsDataURL(file);
+  });
 }
-toggle($('moreBtn'), $('moreText'), 'Leer más', 'Leer menos');
-toggle($('platBtn'), $('platMore'), 'Ver más', 'Ver menos');
-toggle($('devBtn'), $('devList'));
-
-// menú de los tres puntos
-$('dotsBtn').onclick = e => { e.stopPropagation(); const open = $('pop').hidden; $('pop').hidden = !open; $('dotsBtn').setAttribute('aria-expanded', open); };
-document.addEventListener('click', e => { if (!e.target.closest('.menu')) $('pop').hidden = true; });
-function toast(text) { $('toast').textContent = text; $('toast').hidden = false; clearTimeout(toast.t); toast.t = setTimeout(() => $('toast').hidden = true, 1800); }
-$('copyBtn').onclick = () => {
-  const url = 'https://claude.ai/artifact/GLHXEPJ9A84rSFsZv6zuMX';
-  $('pop').hidden = true;
-  navigator.clipboard?.writeText(url).then(() => toast('Enlace copiado'), () => toast(url));
+$('editBtn').onclick = () => { buildEditor(); $('editor').hidden = false; $('editBtn').hidden = true; };
+$('closeEd').onclick = () => { $('editor').hidden = true; $('editBtn').hidden = false; };
+let resetArmed = false;
+$('resetBtn').onclick = () => {
+  if (!resetArmed) { resetArmed = true; $('resetBtn').textContent = '¿Seguro? Pulsa otra vez'; setTimeout(() => { resetArmed = false; $('resetBtn').textContent = 'Restablecer'; }, 3000); return; }
+  resetArmed = false; $('resetBtn').textContent = 'Restablecer';
+  S = clone(DEFAULT); render(); buildEditor(); toast('Ficha restablecida');
 };
 
-// "hace X" en la noticia
-document.querySelectorAll('[data-ago]').forEach(t => {
-  const days = Math.floor((Date.now() - new Date(t.getAttribute('datetime'))) / 864e5);
-  if (days >= 0 && days < 31) t.textContent = days === 0 ? 'Hoy' : days === 1 ? 'Hace 1 día' : `Hace ${days} días`;
-});
+// ---------- Exportar el código ----------
+function toDataUrl(src) {
+  if (src.startsWith('data:')) return Promise.resolve(src);
+  return new Promise(ok => {
+    const im = new Image();
+    im.onload = () => { const c = document.createElement('canvas'); c.width = im.naturalWidth; c.height = im.naturalHeight; c.getContext('2d').drawImage(im, 0, 0); try { ok(c.toDataURL('image/jpeg', 0.82)); } catch (e) { ok(src); } };
+    im.onerror = () => ok(src);
+    im.src = src;
+  });
+}
+async function exportCode() {
+  const s = clone(S);
+  const paths = ['news.img', 'play.img', ...s.gallery.map((_, i) => `gallery.${i}.src`)];
+  for (const p of paths) {
+    const ks = p.split('.'); const last = ks.pop(); const o = ks.reduce((a, k) => a[k], s);
+    o[last] = await toDataUrl(o[last]);
+  }
+  const fonts = document.querySelector('link[href*="fonts.googleapis"]').outerHTML;
+  const html = `<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${esc(s.title)}</title>
+${fonts}
+<style>${$('pageCss').textContent}</style>
+</head>
+<body>
+${pageHtml(s)}
+<script>${$('viewerJs').textContent}<\/script>
+</body>
+</html>`;
+  $('codeText').value = html;
+  const leftover = paths.map(p => p.split('.').reduce((a, k) => a[k], s)).filter(v => !v.startsWith('data:')).length;
+  $('codeSize').textContent = `${Math.round(html.length / 1024)} KB` + (leftover ? ` · ${leftover} imágenes quedaron como archivos de la carpeta img: guárdalas junto al index.html` : ' · imágenes incluidas');
+  $('codeModal').hidden = false;
+}
+$('exportBtn').onclick = () => { $('exportBtn').textContent = 'Preparando…'; exportCode().finally(() => { $('exportBtn').textContent = 'Copiar código'; }); };
+$('selectCode').onclick = () => { $('codeText').focus(); $('codeText').select(); };
+$('copyCode').onclick = () => {
+  const txt = $('codeText').value;
+  if (navigator.clipboard) navigator.clipboard.writeText(txt).then(() => toast('Código copiado'), () => { $('codeText').select(); toast('Selecciónalo y copia con Ctrl+C'); });
+  else { $('codeText').select(); toast('Selecciónalo y copia con Ctrl+C'); }
+};
+$('closeCode').onclick = () => { $('codeModal').hidden = true; };
+function toast(t) { $('toast').textContent = t; $('toast').hidden = false; clearTimeout(toast.t); toast.t = setTimeout(() => $('toast').hidden = true, 2200); }
+
+render();
 </script>
 </body>
 </html>
