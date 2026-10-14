@@ -96,4 +96,8 @@ Duelo de construcción **1 contra 1** contra un rival robótico, en 3D y en el n
 - **Modos:** Duelo (arena abierta, gana quien llegue a 5 rondas), Box fight (empiezas encerrado en una caja de metal) y Práctica (materiales infinitos y un maniquí).
 - **Rival con 4 dificultades** (Fácil, Normal, Difícil, Pro): se cubre con muros y rampas cuando le das, sube en rampa si tienes la altura, se encierra para beber escudo y rompe tus construcciones a balazos.
 - **Equipo fijo por ronda:** escopeta, rifle de asalto, subfusil, francotirador y 4 mini escudos. 100 de vida + 100 de escudo y 500/300/200 de madera, piedra y metal.
-- **Controles:** `WASD` moverse, `Espacio` saltar, `Shift` correr, clic izq. disparar/construir, clic der. apuntar, `1`–`5` armas, `Q` muro, `Z` suelo, `C` rampa, `F` modo construcción, `G` material, `R` recargar.
+- **Construcción completa:** muro, suelo, rampa y cono. Las piezas nacen débiles y se refuerzan en un segundo. Los muros propios se **editan** con `E` (muro → puerta → ventana).
+- **Pico** para romper construcciones, **agacharse** con `X` (más precisión) y menú de **pausa** con `Esc`.
+- **Ajustes:** sensibilidad, campo de visión, calidad gráfica (Baja/Media/Alta), bordes de construcción y contador de FPS. Se guardan en tu navegador.
+- **Gráficos:** cielo con degradado, nubes, destello al disparar, piezas que tiemblan al recibir daño y vida de la pieza a la que apuntas.
+- **Controles:** `WASD` moverse, `Espacio` saltar, `Shift` correr, `X` agacharse, clic izq. disparar/construir, clic der. apuntar, `1`–`6` pico/armas/escudo, `Q` muro, `Z` suelo, `C` rampa, `V` cono, `E` editar, `F` modo construcción, `G` material, `R` recargar, `Esc` pausa.
