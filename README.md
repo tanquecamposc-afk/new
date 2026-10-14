@@ -101,3 +101,9 @@ Duelo de construcción **1 contra 1** contra un rival robótico, en 3D y en el n
 - **Ajustes:** sensibilidad, campo de visión, calidad gráfica (Baja/Media/Alta), bordes de construcción y contador de FPS. Se guardan en tu navegador.
 - **Gráficos:** cielo con degradado, nubes, destello al disparar, piezas que tiemblan al recibir daño y vida de la pieza a la que apuntas.
 - **Controles:** `WASD` moverse, `Espacio` saltar, `Shift` correr, `X` agacharse, clic izq. disparar/construir, clic der. apuntar, `1`–`6` pico/armas/escudo, `Q` muro, `Z` suelo, `C` rampa, `V` cono, `E` editar, `F` modo construcción, `G` material, `R` recargar, `Esc` pausa.
+
+---
+
+# Lupa 🔍
+
+Página de resultados de búsqueda propia (`lupa/index.html`) que muestra los juegos de este repositorio con ficha, galería de capturas reales, resultados enlazados y panel "Acerca de". Busca solo entre NEXO, Tormenta y Rampazo 1v1, y tiene pestañas de Imágenes y Novedades (sacadas de los commits).
