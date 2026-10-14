@@ -1,0 +1,290 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Tormenta</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700&family=Figtree:wght@400;500;600;700&display=swap">
+<style>
+  /* Ficha de juego: título, galería con tarjetas al lado y debajo enlaces a la izquierda con panel de datos a la derecha. */
+  :root {
+    --bg: #ffffff;
+    --card: #f2f3f5;
+    --line: #dfe1e5;
+    --fg: #1f2125;
+    --muted: #5f6368;
+    --link: #1f4fcc;
+    --accent: #7a3cff;
+    --display: "Bricolage Grotesque", "Arial Black", system-ui, sans-serif;
+    --body: "Figtree", Arial, system-ui, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+    --bg: #17181b; --card: #24262b; --line: #3a3d44; --fg: #e8e9ec; --muted: #a4a8b0; --link: #94b6ff; --accent: #b08cff; color-scheme: dark;
+  } }
+  :root[data-theme="dark"] {
+    --bg: #17181b; --card: #24262b; --line: #3a3d44; --fg: #e8e9ec; --muted: #a4a8b0; --link: #94b6ff; --accent: #b08cff; color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 14px/1.5 var(--body); }
+  a { color: var(--link); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  a:focus-visible, button:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
+  button { font: inherit; color: inherit; }
+  .page { max-width: 1060px; margin: 0 auto; padding-block: 24px 56px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+
+  /* Cabecera */
+  .head { display: flex; align-items: flex-start; gap: 6px; }
+  h1 { font: 700 30px/1.1 var(--display); margin: 0; letter-spacing: -.01em; }
+  .kind { color: var(--muted); font-size: 13px; margin-top: 4px; display: flex; align-items: center; gap: 6px; }
+  .menu { position: relative; }
+  .dots { background: none; border: 0; cursor: pointer; width: 26px; height: 26px; border-radius: 50%; color: var(--muted); font-size: 18px; line-height: 1; }
+  .dots:hover { background: var(--card); }
+  .pop { position: absolute; left: 0; top: 30px; background: var(--bg); border: 1px solid var(--line); border-radius: 12px; padding: 6px; min-width: 220px; box-shadow: 0 8px 24px rgba(0,0,0,.14); z-index: 5; display: flex; flex-direction: column; }
+  .pop a, .pop button { text-align: left; background: none; border: 0; padding: 8px 12px; border-radius: 8px; cursor: pointer; color: var(--fg); font-size: 14px; }
+  .pop a:hover, .pop button:hover { background: var(--card); text-decoration: none; }
+
+  /* Fila superior */
+  .hero { display: grid; grid-template-columns: minmax(0, 2.25fr) minmax(0, 1.05fr) minmax(0, 1.05fr); gap: 12px; margin-top: 16px; }
+  .gallery { display: grid; grid-template-columns: 1.1fr 1fr; grid-template-rows: 1fr 1fr; gap: 2px; border-radius: 18px; overflow: hidden; min-height: 232px; position: relative; }
+  .gallery button { padding: 0; border: 0; background: var(--card); cursor: zoom-in; position: relative; overflow: hidden; }
+  .gallery button:first-child { grid-row: span 2; }
+  .gallery img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .3s; }
+  .gallery button:hover img { transform: scale(1.04); }
+  .more { position: absolute; right: 8px; bottom: 8px; background: rgba(0,0,0,.6); color: #fff; border-radius: 8px; width: 28px; height: 28px; display: grid; place-items: center; pointer-events: none; }
+  .more svg { width: 16px; height: 16px; }
+
+  .news { background: var(--card); border-radius: 18px; overflow: hidden; display: flex; flex-direction: column; color: var(--fg); }
+  .news:hover { text-decoration: none; }
+  .news:hover h3 { text-decoration: underline; }
+  .news img { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; display: block; }
+  .news .in { padding: 10px 14px 12px; display: flex; flex-direction: column; gap: 4px; flex: 1; }
+  .src { display: flex; align-items: center; gap: 6px; font-size: 12px; }
+  .src i { width: 16px; height: 16px; border-radius: 50%; background: var(--accent); display: grid; place-items: center; color: #fff; font: 700 9px var(--body); font-style: normal; }
+  .news h3 { margin: 0; font: 600 14px/1.35 var(--body); }
+  .news p { margin: 0; color: var(--muted); font-size: 12px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .news time { color: var(--muted); font-size: 12px; margin-top: auto; }
+
+  .side { display: grid; grid-template-rows: auto 1fr; gap: 12px; min-width: 0; }
+  .facts { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .fact { background: var(--card); border-radius: 16px; padding: 12px 14px; font-size: 13px; display: flex; flex-direction: column; gap: 8px; min-height: 110px; border: 0; text-align: left; }
+  .fact strong { font-weight: 600; display: flex; justify-content: space-between; align-items: center; gap: 6px; }
+  .fact .chev { transition: transform .2s; color: var(--muted); }
+  .fact[aria-expanded="true"] .chev { transform: rotate(180deg); }
+  .fact .val { color: var(--fg); }
+  .fact .date { margin-top: auto; }
+  button.fact { cursor: pointer; }
+  .avatars { display: flex; gap: 6px; margin-top: auto; }
+  .avatars span { width: 34px; height: 30px; border-radius: 8px; display: grid; place-items: center; font: 700 12px var(--display); color: #fff; }
+  .devs { font-size: 12px; color: var(--muted); }
+  .play { position: relative; display: block; border-radius: 16px; overflow: hidden; min-height: 124px; border: 2px solid transparent; }
+  .play:hover { border-color: var(--accent); }
+  .play img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .play .top { position: absolute; left: 8px; top: 8px; background: rgba(0,0,0,.62); color: #fff; font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 999px; display: flex; gap: 5px; align-items: center; }
+  .play .top b { width: 8px; height: 8px; border-radius: 50%; background: #ff5a4a; }
+  .play .btm { position: absolute; left: 8px; right: 8px; bottom: 8px; display: flex; justify-content: space-between; }
+  .play .btm span { background: rgba(0,0,0,.72); color: #fff; font-size: 12px; font-weight: 700; padding: 3px 9px; border-radius: 999px; }
+  .play .btm span:first-child::before { content: "▶ "; }
+
+  /* Parte inferior */
+  .cols { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); gap: 36px; margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--line); }
+  .results { display: flex; flex-direction: column; gap: 26px; min-width: 0; }
+  .site { display: flex; align-items: center; gap: 10px; font-size: 13px; }
+  .fav { width: 28px; height: 28px; border-radius: 50%; border: 1px solid var(--line); display: grid; place-items: center; font: 700 11px var(--display); flex: none; color: #fff; }
+  .site small { display: block; color: var(--muted); font-size: 12px; overflow-wrap: anywhere; line-height: 1.3; }
+  .res h2 { margin: 5px 0 2px; font: 400 20px/1.3 var(--body); }
+  .res p { margin: 0; color: var(--muted); max-width: 62ch; }
+  .res p b { color: var(--fg); font-weight: 600; }
+  .sub { display: flex; flex-wrap: wrap; gap: 6px 18px; margin-top: 6px; font-size: 14px; }
+
+  .about h2 { font: 600 18px var(--body); margin: 0 0 6px; }
+  .about p { margin: 0 0 12px; }
+  .linkbtn { background: none; border: 0; padding: 0; color: var(--link); cursor: pointer; }
+  .table { background: var(--card); border-radius: 14px; overflow: hidden; }
+  .row { display: grid; grid-template-columns: 112px 1fr; gap: 12px; padding: 11px 14px; border-bottom: 1px solid var(--bg); font-size: 13px; }
+  .row:last-child { border-bottom: 0; }
+  .row dt { color: var(--muted); font-weight: 600; margin: 0; }
+  .row dd { margin: 0; }
+  .row dd a { color: var(--fg); text-decoration: underline dotted; text-underline-offset: 3px; }
+
+  #zoom { position: fixed; inset: 0; background: rgba(8,8,12,.88); display: grid; place-items: center; z-index: 20; padding: 24px; }
+  #zoom figure { margin: 0; max-width: min(1000px, 100%); display: flex; flex-direction: column; gap: 10px; }
+  #zoom img { width: 100%; border-radius: 12px; }
+  #zoom figcaption { color: #e8e8ee; text-align: center; }
+  #zoom .nav { display: flex; justify-content: center; gap: 10px; }
+  #zoom .nav button { background: #ffffff22; color: #fff; border: 0; border-radius: 999px; padding: 6px 16px; cursor: pointer; }
+  #toast { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--fg); color: var(--bg); padding: 8px 16px; border-radius: 999px; font-weight: 600; z-index: 30; }
+
+  @media (max-width: 880px) {
+    .hero { grid-template-columns: 1fr 1fr; }
+    .gallery { grid-column: 1 / -1; }
+    .cols { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 540px) {
+    .hero { grid-template-columns: 1fr; }
+    .gallery { min-height: 200px; }
+    .row { grid-template-columns: 96px 1fr; }
+  }
+  @media (prefers-reduced-motion: reduce) { .gallery img, .fact .chev { transition: none; } }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="head">
+    <div>
+      <h1>Tormenta</h1>
+      <div class="kind">Juego en línea
+        <span class="menu">
+          <button class="dots" id="dotsBtn" aria-label="Más opciones" aria-expanded="false">⋮</button>
+          <span class="pop" id="pop" hidden>
+            <a href="https://claude.ai/artifact/GLHXEPJ9A84rSFsZv6zuMX" target="_blank" rel="noopener">Abrir el juego</a>
+            <button id="copyBtn">Copiar enlace del juego</button>
+            <a href="https://github.com/tanquecamposc-afk/new/tree/claude/nifty-euler-3yezql/tormenta" target="_blank" rel="noopener">Ver el código</a>
+          </span>
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <section class="hero">
+    <div class="gallery" id="gallery">
+      <button data-i="0"><img src="img/isla.jpg" alt="Vista aérea de la isla con casas, bosques y el lago"></button>
+      <button data-i="1"><img src="img/dirigible.jpg" alt="El dirigible cruza la isla antes del salto"></button>
+      <button data-i="2"><img src="img/combate.jpg" alt="Combate con rifle de asalto contra un rival"><span class="more"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="M21 16l-5-5-8 8"/></svg></span></button>
+    </div>
+
+    <a class="news" href="https://github.com/tanquecamposc-afk/new/commits/claude/nifty-euler-3yezql" target="_blank" rel="noopener">
+      <img src="img/construccion.jpg" alt="Fuerte de madera, piedra y metal construido en la isla">
+      <div class="in">
+        <span class="src"><i>T</i>Notas del proyecto</span>
+        <h3>Tormenta ya se puede jugar en el navegador sin instalar nada</h3>
+        <p>La primera versión trae dirigible, 24 rivales, cofres, construcción con tres materiales y una tormenta que se cierra en seis fases.</p>
+        <time datetime="2026-10-13" data-ago>13 oct 2026</time>
+      </div>
+    </a>
+
+    <div class="side">
+      <div class="facts">
+        <button class="fact" id="devBtn" aria-expanded="false" aria-controls="devList">
+          <strong>Desarrolladores <span class="chev">▾</span></strong>
+          <span class="val">Tú y Claude</span>
+          <span class="devs" id="devList" hidden>Diseño e ideas: tú. Código: Claude.</span>
+          <span class="avatars"><span style="background:#7a3cff">TÚ</span><span style="background:#c96442">C</span></span>
+        </button>
+        <div class="fact">
+          <strong>Lanzamiento inicial</strong>
+          <span class="val date">13 de octubre de 2026</span>
+        </div>
+      </div>
+      <a class="play" href="https://claude.ai/artifact/GLHXEPJ9A84rSFsZv6zuMX" target="_blank" rel="noopener">
+        <img src="img/dirigible.jpg" alt="">
+        <span class="top"><b></b>claude.ai · Artefacto</span>
+        <span class="btm"><span>Jugar</span><span>Gratis</span></span>
+      </a>
+    </div>
+  </section>
+
+  <section class="cols">
+    <div class="results">
+      <article class="res">
+        <div class="site"><span class="fav" style="background:#c96442">C</span><div>Claude<small>https://claude.ai › artifact › tormenta</small></div></div>
+        <h2><a href="https://claude.ai/artifact/GLHXEPJ9A84rSFsZv6zuMX" target="_blank" rel="noopener">Tormenta | Juega gratis en tu navegador</a></h2>
+        <p><b>Salta del dirigible y sé el último en pie.</b> 25 jugadores, botín por rarezas y construcción de muros, suelos y rampas.</p>
+      </article>
+      <article class="res">
+        <div class="site"><span class="fav" style="background:#24292f">GH</span><div>GitHub<small>https://github.com › tanquecamposc-afk › new › tormenta</small></div></div>
+        <h2><a href="https://github.com/tanquecamposc-afk/new/blob/claude/nifty-euler-3yezql/tormenta/index.html" target="_blank" rel="noopener">tormenta/index.html · Código del juego</a></h2>
+        <p>Un solo archivo HTML con Three.js: isla, física, inteligencia de los bots, tormenta y menú.</p>
+        <div class="sub"><a href="https://github.com/tanquecamposc-afk/new/blob/claude/nifty-euler-3yezql/README.md" target="_blank" rel="noopener">Controles</a><a href="https://github.com/tanquecamposc-afk/new/commits/claude/nifty-euler-3yezql" target="_blank" rel="noopener">Historial de cambios</a></div>
+      </article>
+      <article class="res">
+        <div class="site"><span class="fav" style="background:#ff6a3d">R</span><div>Rampazo 1v1<small>https://claude.ai › artifact › rampazo</small></div></div>
+        <h2><a href="https://claude.ai/artifact/9bKQBvyb1BdUQbU41d3q2U" target="_blank" rel="noopener">Rampazo 1v1 | Duelo de construcción del mismo creador</a></h2>
+        <p>Si te gusta construir en Tormenta, en Rampazo peleas uno contra uno con muros, rampas, conos y edición de muros.</p>
+      </article>
+    </div>
+
+    <aside class="about">
+      <h2>Acerca de</h2>
+      <p>Tormenta es un videojuego de disparos y supervivencia de 2026 para el navegador. Veinticinco jugadores saltan desde un dirigible sobre una isla, buscan armas en casas y cofres y construyen para cubrirse<span id="moreText" hidden>, mientras una tormenta reduce la zona segura cada pocos minutos. Gana el último jugador que queda con vida. Todo el mundo, los personajes y los sonidos se generan con código, sin archivos externos</span>… <button class="linkbtn" id="moreBtn" aria-expanded="false">Leer más</button></p>
+      <dl class="table">
+        <div class="row"><dt>Desarrolladores</dt><dd>Tú, <a href="https://claude.ai" target="_blank" rel="noopener">Claude</a></dd></div>
+        <div class="row"><dt>Lanzamiento inicial</dt><dd>13 de octubre de 2026</dd></div>
+        <div class="row"><dt>Plataformas</dt><dd>Navegador de escritorio<span id="platMore" hidden>: Chrome, Edge, Firefox y Safari con WebGL</span> · <button class="linkbtn" id="platBtn" aria-expanded="false">Ver más</button></dd></div>
+        <div class="row"><dt>Jugadores</dt><dd>25 por partida (tú y 24 bots)</dd></div>
+        <div class="row"><dt>Género</dt><dd>Battle royale, disparos en tercera persona</dd></div>
+        <div class="row"><dt>Motor</dt><dd>Three.js 0.160</dd></div>
+      </dl>
+    </aside>
+  </section>
+</div>
+
+<div id="zoom" hidden role="dialog" aria-label="Imagen ampliada">
+  <figure>
+    <img id="zoomImg" alt="">
+    <figcaption id="zoomCap"></figcaption>
+    <div class="nav"><button id="prevBtn">‹ Anterior</button><button id="closeBtn">Cerrar</button><button id="nextBtn">Siguiente ›</button></div>
+  </figure>
+</div>
+<div id="toast" hidden></div>
+
+<script>
+const $ = id => document.getElementById(id);
+const shots = [...document.querySelectorAll('#gallery img')];
+let idx = 0;
+
+// galería con visor
+function show(i) {
+  idx = (i + shots.length) % shots.length;
+  $('zoomImg').src = shots[idx].src;
+  $('zoomImg').alt = shots[idx].alt;
+  $('zoomCap').textContent = `${shots[idx].alt} (${idx + 1}/${shots.length})`;
+  $('zoom').hidden = false;
+}
+document.querySelectorAll('#gallery button').forEach(b => b.onclick = () => show(+b.dataset.i));
+$('prevBtn').onclick = e => { e.stopPropagation(); show(idx - 1); };
+$('nextBtn').onclick = e => { e.stopPropagation(); show(idx + 1); };
+$('closeBtn').onclick = () => { $('zoom').hidden = true; };
+$('zoom').onclick = e => { if (e.target === $('zoom')) $('zoom').hidden = true; };
+document.addEventListener('keydown', e => {
+  if ($('zoom').hidden) { if (e.key === 'Escape') $('pop').hidden = true; return; }
+  if (e.key === 'Escape') $('zoom').hidden = true;
+  if (e.key === 'ArrowRight') show(idx + 1);
+  if (e.key === 'ArrowLeft') show(idx - 1);
+});
+
+// botones que despliegan texto
+function toggle(btn, target, openLabel, closeLabel) {
+  btn.onclick = () => {
+    const open = target.hidden;
+    target.hidden = !open;
+    btn.setAttribute('aria-expanded', open);
+    if (openLabel) btn.textContent = open ? closeLabel : openLabel;
+  };
+}
+toggle($('moreBtn'), $('moreText'), 'Leer más', 'Leer menos');
+toggle($('platBtn'), $('platMore'), 'Ver más', 'Ver menos');
+toggle($('devBtn'), $('devList'));
+
+// menú de los tres puntos
+$('dotsBtn').onclick = e => { e.stopPropagation(); const open = $('pop').hidden; $('pop').hidden = !open; $('dotsBtn').setAttribute('aria-expanded', open); };
+document.addEventListener('click', e => { if (!e.target.closest('.menu')) $('pop').hidden = true; });
+function toast(text) { $('toast').textContent = text; $('toast').hidden = false; clearTimeout(toast.t); toast.t = setTimeout(() => $('toast').hidden = true, 1800); }
+$('copyBtn').onclick = () => {
+  const url = 'https://claude.ai/artifact/GLHXEPJ9A84rSFsZv6zuMX';
+  $('pop').hidden = true;
+  navigator.clipboard?.writeText(url).then(() => toast('Enlace copiado'), () => toast(url));
+};
+
+// "hace X" en la noticia
+document.querySelectorAll('[data-ago]').forEach(t => {
+  const days = Math.floor((Date.now() - new Date(t.getAttribute('datetime'))) / 864e5);
+  if (days >= 0 && days < 31) t.textContent = days === 0 ? 'Hoy' : days === 1 ? 'Hace 1 día' : `Hace ${days} días`;
+});
+</script>
+</body>
+</html>

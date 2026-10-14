@@ -107,3 +107,9 @@ Duelo de construcción **1 contra 1** contra un rival robótico, en 3D y en el n
 # Lupa 🔍
 
 Página de resultados de búsqueda propia (`lupa/index.html`) que muestra los juegos de este repositorio con ficha, galería de capturas reales, resultados enlazados y panel "Acerca de". Busca solo entre NEXO, Tormenta y Rampazo 1v1, y tiene pestañas de Imágenes y Novedades (sacadas de los commits).
+
+---
+
+# Ficha de Tormenta 🌀
+
+Página de presentación del juego Tormenta en `ficha/index.html`, con las capturas en `ficha/img/`. Tiene galería con visor, tarjeta de novedades, datos del juego, botón para jugar, enlaces y panel "Acerca de" desplegable.
