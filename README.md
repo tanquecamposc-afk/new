@@ -100,7 +100,11 @@ Duelo de construcción **1 contra 1** contra un rival robótico, en 3D y en el n
 - **Pico** para romper construcciones, **agacharse** con `X` (más precisión) y menú de **pausa** con `Esc`.
 - **Ajustes:** sensibilidad, campo de visión, calidad gráfica (Baja/Media/Alta), bordes de construcción y contador de FPS. Se guardan en tu navegador.
 - **Gráficos:** cielo con degradado, nubes, destello al disparar, piezas que tiemblan al recibir daño y vida de la pieza a la que apuntas.
-- **Controles:** `WASD` moverse, `Espacio` saltar, `Shift` correr, `X` agacharse, clic izq. disparar/construir, clic der. apuntar, `1`–`6` pico/armas/escudo, `Q` muro, `Z` suelo, `C` rampa, `V` cono, `E` editar, `F` modo construcción, `G` material, `R` recargar, `Esc` pausa.
+- **Ajustes completos:** todas las teclas se pueden reasignar; sensibilidad general, al apuntar y con mira telescópica; invertir eje; mira personalizable (estilo, color, tamaño, separación, grosor, borde); calidad, campo de visión, editar al soltar, retraso de construcción, recarga automática y más.
+- **Construcción por mira:** muros, suelos y conos aparecen donde apuntas.
+- **Edición por casillas:** muros de 3×3 y suelos de 2×2 (clic y arrastrar para marcar), rampas que giran, restablecer con `T` o clic derecho.
+- **Taquilla:** 7 personajes originales, colores, cabeza, espalda y cara a elegir, con vista 3D que se gira arrastrando. Baile con `B`.
+- **Controles por defecto:** `WASD` moverse, `Espacio` saltar, `Shift` correr, `X` agacharse, `1`–`6` pico/armas/escudo, `Q` muro, `Z` suelo, `C` rampa, `V` cono, `E` editar, `T` restablecer edición, `F` modo construcción, `G` material, `R` recargar, `B` bailar, `Esc` pausa.
 
 ---
 
