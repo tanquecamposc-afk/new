@@ -1,6 +1,6 @@
 # RAMPAZO 1v1 — información del juego
 
-Duelo de construcción 1 contra 1 en 3D, para el navegador. Todo el juego está en un solo archivo: `index.html` (unas 1.850 líneas, 111 KB). Usa la librería 3D **Three.js 0.160**, que se carga desde internet al abrir el archivo.
+Duelo de construcción 1 contra 1 en 3D, para el navegador. Todo el juego está en un solo archivo: `index.html` (unas 2.010 líneas, 118 KB). Usa la librería 3D **Three.js 0.160**, que se carga desde internet al abrir el archivo.
 
 Personajes, nombres, arena y sonidos son originales. Los sonidos se generan con código y no hay imágenes externas.
 
@@ -33,6 +33,7 @@ Personajes, nombres, arena y sonidos son originales. Los sonidos se generan con 
 - **Vida y escudo:** 100 + 100.
 - **Materiales:** 500 de madera, 300 de piedra y 200 de metal. Cada pieza cuesta 10.
 - **Piezas:** cada casilla mide 5 × 5 metros. Resistencia: madera 150, piedra 300 y metal 500. Nacen débiles y se refuerzan en un segundo.
+- **Soporte:** una pieza aguanta si toca el suelo o está unida a algo que lo toca. Si rompes la base, todo lo que queda en el aire tiembla y se cae.
 
 ---
 
@@ -57,8 +58,8 @@ Personajes, nombres, arena y sonidos son originales. Los sonidos se generan con 
 | `Esc` | Pausa |
 
 ### Cómo se edita
-1. Apunta a una pieza tuya (muro, suelo o rampa) y pulsa `E`.
-2. Aparece una cuadrícula: **3×3 en muros** y **2×2 en suelos**. Haz clic o arrastra para marcar las casillas que quieres quitar.
+1. Apunta a cualquier pieza (muro, suelo, rampa o cono, tuya o del rival) y pulsa `E`.
+2. Aparece una cuadrícula: **3×3 en muros** y **2×2 en suelos y conos**. Haz clic o arrastra para marcar las casillas que quieres quitar.
 3. Pulsa `E` otra vez para confirmar. Si activas "Editar al soltar", se confirma al soltar `E`.
 4. En las **rampas**, cada clic las gira hacia otro lado.
 5. **Clic derecho** borra la selección. **`T`** devuelve la pieza a su forma original.
@@ -91,9 +92,9 @@ Los ajustes y tu personaje se guardan en el navegador (`localStorage`).
 | 1 – 245 | HTML y CSS | Menús, HUD (vida, inventario, materiales, mira), pantallas de pausa, ajustes, taquilla y fin |
 | 248 | CONSTANTES | Tamaño de celda (5 m), armas, materiales, personajes, dificultades y modos |
 | 302 | ESCENA | Render, cielo, nubes, luces, suelo con cuadrícula y gradas |
-| 382 | COLISIONES | Piezas de construcción: crear, edición por casillas, destruir |
+| 382 | COLISIONES | Piezas de construcción: crear, edición por casillas, destruir, derrumbe de lo que queda sin apoyo |
 | 547 | FÍSICA | Gravedad, rampas y conos, choques con muros, caída |
-| 608 | PERSONAJES | Modelo 3D por bloques, accesorios, animaciones y baile |
+| 608 | PERSONAJES | Modelo 3D redondeado (cápsulas y esferas), accesorios, animaciones y baile |
 | 723 | ENTIDADES | Jugador y rival, equipo de cada ronda |
 | 758 | EFECTOS Y SONIDO | Chispas, trazadoras, números de daño, sonidos sintetizados |
 | 835 | DISPAROS Y DAÑO | Disparos por rayos, disparos a la cabeza, daño a piezas |

@@ -405,6 +405,8 @@ for (const [x, z, w, d] of [[0, -A, A * 2, 0.5], [0, A, A * 2, 0.5], [-A, 0, 0.5
 const pieces = new Map();
 const slopes = new Set();      // rampas y conos: superficies inclinadas
 const growing = new Set(), shaking = new Set();
+const collapsing = new Map();   // pieza -> segundos que le quedan antes de caer
+let supportDirty = false;
 const GEO = {
   wallZ: new THREE.BoxGeometry(S, H, T), wallX: new THREE.BoxGeometry(T, H, S),
   floor: new THREE.BoxGeometry(S, 0.2, S), ramp: new THREE.BoxGeometry(S, 0.2, S * Math.SQRT2),
@@ -432,6 +434,21 @@ function edgesFor(geo) { let e = edgeCache.get(geo); if (!e) { e = new THREE.Edg
 const WT = S / 3;
 const KIND_NAME = { wall: 'Muro', floor: 'Suelo', ramp: 'Rampa', cone: 'Cono' };
 const floorQGeo = new THREE.BoxGeometry(S / 2, 0.2, S / 2);
+// un cuarto de cono: dos caras inclinadas y dos cortes verticales hacia el centro
+const coneQGeo = [0, 1, 2, 3].map(q => {
+  const sx = q % 2 ? 1 : -1, sz = q >> 1 ? 1 : -1, t = CONE_H / 2, b = -CONE_H / 2, h = S / 2;
+  const O = [0, t, 0], Ex = [sx * h, b, 0], Ez = [0, b, sz * h], C = [sx * h, b, sz * h], M0 = [0, b, 0];
+  const tris = [O, Ex, C, O, C, Ez, O, M0, Ex, O, Ez, M0];
+  const pos = [], uv = [];
+  for (const v of tris) { pos.push(...v); uv.push(v[0] / S + 0.5, v[2] / S + 0.5); }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+  g.computeVertexNormals();
+  return g;
+});
+const PIECE_MAT_DS = {};
+for (const k in MATS) { PIECE_MAT_DS[k] = PIECE_MAT[k].clone(); PIECE_MAT_DS[k].side = THREE.DoubleSide; }
 const rectGeoCache = new Map();
 function rectGeo(ax, w, h) {
   const k = ax + w.toFixed(2) + ':' + h.toFixed(2);
@@ -456,8 +473,8 @@ function pieceTransform(kind, s) {
   return { geo: GEO.ramp, x: s.cx * S + S / 2, y: s.l * H + H / 2, z: s.cz * S + S / 2, rx: -Math.PI / 4, ry };
 }
 function inArena(tr) { return Math.abs(tr.x) < A && Math.abs(tr.z) < A; }
-function addPart(p, geo, x, y, z, rx = 0, ry = 0) {
-  const mesh = new THREE.Mesh(geo, PIECE_MAT[p.mat]);
+function addPart(p, geo, x, y, z, rx = 0, ry = 0, mat = PIECE_MAT[p.mat]) {
+  const mesh = new THREE.Mesh(geo, mat);
   mesh.position.set(x, y, z); mesh.rotation.order = 'YXZ'; mesh.rotation.set(rx, ry, 0);
   mesh.castShadow = true; mesh.receiveShadow = true;
   mesh.userData.piece = p;
@@ -500,6 +517,8 @@ function buildParts(p) {
       const b = { minX: tr.x + lx - S / 4, maxX: tr.x + lx + S / 4, minY: tr.y - 0.1, maxY: tr.y + 0.1, minZ: tr.z + lz - S / 4, maxZ: tr.z + lz + S / 4 };
       p.boxes.push(b); boxes.add(b);
     }
+  } else if (p.kind === 'cone' && p.mask) {
+    for (let q = 0; q < 4; q++) if (!(p.mask & (1 << q))) addPart(p, coneQGeo[q], 0, 0, 0, 0, 0, PIECE_MAT_DS[p.mat]);
   } else {
     addPart(p, tr.geo, 0, 0, 0, tr.rx, tr.ry);
     if (p.kind === 'floor') {
@@ -521,7 +540,7 @@ function makePiece(kind, s, mat, owner = null) {
   // como en los juegos de construcción, la pieza nace débil y se refuerza en ~1 s
   const p = { key, kind, s, mat, hp: hp * 0.35, maxHp: hp, grow: 1.1, group, meshes: [], boxes: [], slope: null, tr, mask: 0, owner, shake: 0 };
   buildParts(p);
-  if (kind === 'ramp' || kind === 'cone') { p.slope = { type: kind, cx: s.cx, cz: s.cz, l: s.l, d: s.d }; slopes.add(p.slope); }
+  if (kind === 'ramp' || kind === 'cone') { p.slope = { type: kind, cx: s.cx, cz: s.cz, l: s.l, d: s.d, mask: 0 }; slopes.add(p.slope); }
   pieces.set(key, p);
   growing.add(p);
   return p;
@@ -533,6 +552,12 @@ function updatePieces(dt) {
     const sc = p.group.scale.x;
     if (sc < 1) p.group.scale.setScalar(Math.min(1, sc + dt * 5));
     if (p.grow <= 0) { p.group.scale.setScalar(1); growing.delete(p); }
+  }
+  if (supportDirty) checkSupport();
+  for (const [p, t] of collapsing) {
+    const nt = t - dt;
+    if (nt <= 0) { collapsing.delete(p); destroyPiece(p); }
+    else { collapsing.set(p, nt); p.shake = Math.max(p.shake, 0.1); shaking.add(p); }
   }
   for (const p of shaking) {
     p.shake -= dt;
@@ -548,9 +573,37 @@ function destroyPiece(p, quiet = false) {
   for (const m of p.meshes) { removeFrom(hittables, m); removeFrom(solidMeshes, m); }
   for (const b of p.boxes) boxes.delete(b);
   if (p.slope) slopes.delete(p.slope);
-  if (!quiet) { burst(p.group.position, MATS[p.mat].color, 14); sfx('break', p.group.position); }
+  collapsing.delete(p);
+  if (!quiet) { burst(p.group.position, MATS[p.mat].color, 14); sfx('break', p.group.position); supportDirty = true; }
 }
-function clearPieces() { for (const p of [...pieces.values()]) destroyPiece(p, true); }
+function clearPieces() { for (const p of [...pieces.values()]) destroyPiece(p, true); collapsing.clear(); supportDirty = false; }
+// caja que ocupa la pieza (para saber qué toca a qué)
+function pieceBounds(p) {
+  const s = p.s, y0 = s.l * H;
+  if (p.kind === 'wall') return s.ax === 'z'
+    ? [s.i * S, s.j * S - T / 2, y0, (s.i + 1) * S, s.j * S + T / 2, y0 + H]
+    : [s.i * S - T / 2, s.j * S, y0, s.i * S + T / 2, (s.j + 1) * S, y0 + H];
+  const top = p.kind === 'floor' ? y0 : p.kind === 'cone' ? y0 + CONE_H : y0 + H;
+  return [s.cx * S, s.cz * S, y0, (s.cx + 1) * S, (s.cz + 1) * S, top];
+}
+// una pieza aguanta si toca el suelo o está unida (aunque sea por otras) a algo que lo toca
+function checkSupport() {
+  supportDirty = false;
+  const list = [...pieces.values()].filter(p => !collapsing.has(p));
+  const bb = list.map(pieceBounds), n = list.length, e = 0.25;
+  const held = new Uint8Array(n), queue = [];
+  for (let i = 0; i < n; i++) if (list[i].s.l === 0) { held[i] = 1; queue.push(i); }
+  while (queue.length) {
+    const a = bb[queue.pop()];
+    for (let j = 0; j < n; j++) {
+      if (held[j]) continue;
+      const b = bb[j];
+      if (a[0] - e <= b[3] && b[0] - e <= a[3] && a[1] - e <= b[4] && b[1] - e <= a[4] && a[2] - e <= b[5] && b[2] - e <= a[5]) { held[j] = 1; queue.push(j); }
+    }
+  }
+  let k = 0;
+  for (let i = 0; i < n; i++) if (!held[i]) collapsing.set(list[i], 0.25 + 0.08 * (k++ % 8) + list[i].s.l * 0.05);
+}
 
 // ============================================================
 //  FÍSICA
@@ -558,7 +611,10 @@ function clearPieces() { for (const p of [...pieces.values()]) destroyPiece(p, t
 function slopeHeight(r, x, z) {
   const lx = (x - r.cx * S) / S, lz = (z - r.cz * S) / S;
   if (lx < 0 || lx > 1 || lz < 0 || lz > 1) return -Infinity;
-  if (r.type === 'cone') return r.l * H + 0.15 + CONE_H * (1 - 2 * Math.max(Math.abs(lx - 0.5), Math.abs(lz - 0.5)));
+  if (r.type === 'cone') {
+    if (r.mask && (r.mask & (1 << ((lz >= 0.5 ? 2 : 0) + (lx >= 0.5 ? 1 : 0))))) return -Infinity;
+    return r.l * H + 0.15 + CONE_H * (1 - 2 * Math.max(Math.abs(lx - 0.5), Math.abs(lz - 0.5)));
+  }
   return r.l * H + [lx, lz, 1 - lx, 1 - lz][r.d] * H + 0.12;
 }
 function supportHeight(x, z, y) {
@@ -622,13 +678,23 @@ function moveStep(e, dt) {
 //  PERSONAJES
 // ============================================================
 const boxG = (w, h, d) => new THREE.BoxGeometry(w, h, d);
+// modelo de formas redondeadas: cápsulas, esferas y cilindros
+const capG = (r, len, sx = 1, sz = 1) => { const g = new THREE.CapsuleGeometry(r, len, 5, 14); g.scale(sx, 1, sz); return g; };
+const sphG = (r, sx = 1, sy = 1, sz = 1, th = Math.PI) => { const g = new THREE.SphereGeometry(r, 22, 14, 0, Math.PI * 2, 0, th); g.scale(sx, sy, sz); return g; };
 const charGeo = {
-  torso: boxG(0.72, 0.8, 0.42), belt: boxG(0.74, 0.08, 0.44), emblem: boxG(0.18, 0.18, 0.03), hips: boxG(0.66, 0.26, 0.4),
-  leg: boxG(0.27, 0.62, 0.3), shoe: boxG(0.29, 0.12, 0.38), arm: boxG(0.21, 0.6, 0.22), hand: boxG(0.18, 0.16, 0.18),
-  head: boxG(0.5, 0.5, 0.5), visor: boxG(0.42, 0.15, 0.06), eye: boxG(0.08, 0.1, 0.03), brow: boxG(0.12, 0.03, 0.03), hair: boxG(0.52, 0.1, 0.52),
-  pack: boxG(0.5, 0.56, 0.22), cap: boxG(0.54, 0.14, 0.54), brim: boxG(0.5, 0.04, 0.24), beanie: boxG(0.56, 0.26, 0.56), pom: boxG(0.14, 0.14, 0.14),
-  helm: boxG(0.6, 0.3, 0.6), crest: boxG(0.08, 0.28, 0.5), stick: boxG(0.04, 0.4, 0.04), ball: boxG(0.11, 0.11, 0.11),
-  band: boxG(0.6, 0.06, 0.12), cup: boxG(0.1, 0.22, 0.2), wing: boxG(0.04, 0.55, 0.62), tank: new THREE.CylinderGeometry(0.1, 0.1, 0.55, 10),
+  torso: capG(0.3, 0.26, 1.15, 0.7), belt: (() => { const g = new THREE.CylinderGeometry(0.355, 0.355, 0.08, 20); g.scale(1, 1, 0.66); return g; })(),
+  emblem: new THREE.CylinderGeometry(0.085, 0.085, 0.03, 16).rotateX(Math.PI / 2), hips: sphG(0.34, 1, 0.55, 0.66),
+  leg: capG(0.13, 0.36), shoe: sphG(0.15, 1, 0.55, 1.4), arm: capG(0.1, 0.4), hand: sphG(0.1),
+  head: sphG(0.28, 1, 1.05, 1), neck: new THREE.CylinderGeometry(0.1, 0.12, 0.14, 12),
+  visor: new THREE.SphereGeometry(0.292, 24, 6, Math.PI * 1.5 - 0.95, 1.9, 1.3, 0.34),
+  eye: sphG(0.048, 1, 1.35, 0.7), brow: new THREE.CapsuleGeometry(0.016, 0.08, 2, 6).rotateZ(Math.PI / 2),
+  hair: sphG(0.3, 1, 1.05, 1, Math.PI * 0.42),
+  pack: capG(0.2, 0.18, 1, 0.55), cap: sphG(0.305, 1, 0.95, 1, Math.PI / 2), brim: (() => { const g = new THREE.CylinderGeometry(0.22, 0.22, 0.03, 18); g.scale(1, 1, 0.75); return g; })(),
+  beanie: sphG(0.31, 1, 1.2, 1, Math.PI * 0.56), pom: sphG(0.08),
+  helm: sphG(0.34, 1, 1, 1, Math.PI * 0.6), crest: new THREE.CylinderGeometry(0.28, 0.28, 0.07, 18, 1, false, 0, Math.PI).rotateZ(Math.PI / 2),
+  stick: new THREE.CylinderGeometry(0.02, 0.02, 0.4, 6), ball: sphG(0.06),
+  band: new THREE.TorusGeometry(0.31, 0.03, 8, 22, Math.PI), cup: new THREE.CylinderGeometry(0.1, 0.1, 0.08, 16).rotateZ(Math.PI / 2),
+  wing: sphG(0.33, 0.12, 0.85, 1), tank: capG(0.1, 0.34),
 };
 const gunMats = RARITY.map(r => new THREE.MeshLambertMaterial({ color: new THREE.Color(r.color).multiplyScalar(0.75) }));
 const darkMat = lam(0x2a2a30);
@@ -642,34 +708,35 @@ function makeCharacter(sk) {
   const add = (geo, mat, x, y, z, parent = g) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); m.castShadow = true; parent.add(m); return m; };
   const torso = add(charGeo.torso, M.shirt, 0, 1.12, 0);
   add(charGeo.belt, darkMat, 0, 0.8, 0);
-  add(charGeo.emblem, M.acc, 0.16, 1.32, -0.22);
-  const hips = add(charGeo.hips, M.pants, 0, 0.7, 0);
+  add(charGeo.emblem, M.acc, 0.14, 1.3, -0.205);
+  const hips = add(charGeo.hips, M.pants, 0, 0.72, 0);
+  add(charGeo.neck, M.skin, 0, 1.53, 0);
   const head = add(charGeo.head, M.skin, 0, 1.78, 0); head.userData.head = true;
   const heads = [head];
   // cara
   if (sk.face === 'ojos') {
-    for (const x of [-0.11, 0.11]) { add(charGeo.eye, darkMat, x, 1.8, -0.255); add(charGeo.brow, M.hair, x, 1.9, -0.255); }
-  } else add(charGeo.visor, M.glow, 0, 1.82, -0.27);
+    for (const x of [-0.1, 0.1]) { add(charGeo.eye, darkMat, x, 1.8, -0.25); add(charGeo.brow, M.hair, x, 1.89, -0.235); }
+  } else add(charGeo.visor, M.glow, 0, 1.78, 0);
   // cabeza
   const H2 = (geo, mat, x, y, z) => { const m = add(geo, mat, x, y, z); m.userData.head = true; heads.push(m); return m; };
   switch (sk.hat) {
-    case 'gorra': H2(charGeo.cap, M.acc, 0, 2.08, 0); H2(charGeo.brim, M.acc, 0, 2.03, -0.34); break;
-    case 'gorro': H2(charGeo.beanie, M.acc, 0, 2.1, 0); H2(charGeo.pom, M.shirt, 0, 2.29, 0); break;
-    case 'casco': H2(charGeo.helm, M.pants, 0, 2.0, 0.02); break;
-    case 'cresta': H2(charGeo.helm, M.pants, 0, 2.0, 0.02); H2(charGeo.crest, M.acc, 0, 2.28, 0.02); break;
-    case 'antena': H2(charGeo.hair, M.hair, 0, 2.06, 0); H2(charGeo.stick, darkMat, 0.12, 2.3, 0.05); H2(charGeo.ball, M.glow, 0.12, 2.52, 0.05); break;
-    case 'auriculares': H2(charGeo.hair, M.hair, 0, 2.06, 0); H2(charGeo.band, M.acc, 0, 2.1, 0); for (const x of [-0.3, 0.3]) H2(charGeo.cup, M.acc, x, 1.84, 0); break;
-    default: H2(charGeo.hair, M.hair, 0, 2.06, 0);
+    case 'gorra': H2(charGeo.cap, M.acc, 0, 1.82, 0); H2(charGeo.brim, M.acc, 0, 1.84, -0.3); break;
+    case 'gorro': H2(charGeo.beanie, M.acc, 0, 1.76, 0); H2(charGeo.pom, M.shirt, 0, 2.15, 0); break;
+    case 'casco': H2(charGeo.helm, M.pants, 0, 1.76, 0.01); break;
+    case 'cresta': H2(charGeo.helm, M.pants, 0, 1.76, 0.01); H2(charGeo.crest, M.acc, 0, 2.02, 0.01); break;
+    case 'antena': H2(charGeo.hair, M.hair, 0, 1.79, 0.01); H2(charGeo.stick, darkMat, 0.12, 2.2, 0.04); H2(charGeo.ball, M.glow, 0.12, 2.42, 0.04); break;
+    case 'auriculares': H2(charGeo.hair, M.hair, 0, 1.79, 0.01); H2(charGeo.band, M.acc, 0, 1.8, 0); for (const x of [-0.3, 0.3]) H2(charGeo.cup, M.acc, x, 1.8, 0); break;
+    default: H2(charGeo.hair, M.hair, 0, 1.79, 0.01);
   }
   // espalda
-  if (sk.pack === 'mochila') add(charGeo.pack, M.acc, 0, 1.15, 0.32);
+  if (sk.pack === 'mochila') add(charGeo.pack, M.acc, 0, 1.15, 0.3);
   else if (sk.pack === 'tanque') { for (const x of [-0.13, 0.13]) add(charGeo.tank, M.acc, x, 1.16, 0.3); }
   else if (sk.pack === 'alas') { for (const x of [-1, 1]) { const w = add(charGeo.wing, M.glow, x * 0.22, 1.28, 0.42); w.rotation.y = x * 0.6; w.rotation.z = x * 0.25; } }
   const pivot = (x, y) => { const p = new THREE.Object3D(); p.position.set(x, y, 0); g.add(p); return p; };
   const legL = pivot(-0.17, 0.62), legR = pivot(0.17, 0.62);
   const ll = add(charGeo.leg, M.pants, 0, -0.31, 0, legL), lr = add(charGeo.leg, M.pants, 0, -0.31, 0, legR);
-  add(charGeo.shoe, darkMat, 0, -0.58, -0.04, legL); add(charGeo.shoe, darkMat, 0, -0.58, -0.04, legR);
-  const armL = pivot(-0.47, 1.46), armR = pivot(0.47, 1.46);
+  add(charGeo.shoe, darkMat, 0, -0.58, -0.05, legL); add(charGeo.shoe, darkMat, 0, -0.58, -0.05, legR);
+  const armL = pivot(-0.45, 1.44), armR = pivot(0.45, 1.44);
   const al = add(charGeo.arm, M.shirt, 0, -0.28, 0, armL), ar = add(charGeo.arm, M.shirt, 0, -0.28, 0, armR);
   add(charGeo.hand, M.skin, 0, -0.62, 0, armL); add(charGeo.hand, M.skin, 0, -0.62, 0, armR);
   const hand = new THREE.Object3D(); hand.position.set(0, -0.62, 0); armR.add(hand);
@@ -1385,6 +1452,7 @@ const tileGeoWall = new THREE.PlaneGeometry(WT - 0.1, WT - 0.1), tileGeoFloor = 
 const tileMat = (c, o) => new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: o, depthTest: false, side: THREE.DoubleSide });
 const TILE_ON = tileMat(0x3de0ff, 0.62), TILE_OFF = tileMat(0xffffff, 0.12), TILE_HOVER = tileMat(0xfff3a0, 0.42), TILE_ON_HOVER = tileMat(0x9ff4ff, 0.8);
 const TILE_LINE = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.85, depthTest: false });
+const editBaseY = p => p.kind === 'cone' ? p.tr.y - CONE_H / 2 : p.tr.y;
 function buildEditOverlay() {
   editGroup.clear();
   const p = editing.p, tr = p.tr;
@@ -1398,7 +1466,7 @@ function buildEditOverlay() {
     } else {
       m = new THREE.Mesh(tileGeoFloor, TILE_OFF);
       m.rotation.x = -Math.PI / 2;
-      m.position.set(tr.x + ((i % 2) - 0.5) * S / 2, tr.y + 0.13, tr.z + ((i >> 1) - 0.5) * S / 2);
+      m.position.set(tr.x + ((i % 2) - 0.5) * S / 2, editBaseY(p) + 0.13, tr.z + ((i >> 1) - 0.5) * S / 2);
     }
     m.renderOrder = 20; m.userData.tile = i;
     const ln = new THREE.LineSegments(edgesFor(m.geometry), TILE_LINE); ln.renderOrder = 21; m.add(ln);
@@ -1411,7 +1479,7 @@ function tileUnderAim() {
   camera.getWorldDirection(_d);
   _ray.set(camera.position, _d);
   if (p.kind === 'wall') _plane.set(p.s.ax === 'z' ? new THREE.Vector3(0, 0, 1) : new THREE.Vector3(1, 0, 0), p.s.ax === 'z' ? -tr.z : -tr.x);
-  else _plane.set(new THREE.Vector3(0, 1, 0), -tr.y);
+  else _plane.set(new THREE.Vector3(0, 1, 0), -editBaseY(p));
   if (!_ray.intersectPlane(_plane, _hitP)) return -1;
   if (_hitP.distanceTo(camera.position) > 16) return -1;
   if (p.kind === 'wall') {
@@ -1426,10 +1494,9 @@ function tileUnderAim() {
 function startEdit() {
   const p = aimedPiece(S * 1.8);
   if (!p) { flashHint('Apunta a una pieza cercana para editarla'); return; }
-  if (p.owner !== player) { flashHint('Solo puedes editar tus propias piezas'); return; }
-  if (p.kind === 'cone') { flashHint('Los conos no se editan'); return; }
   player.building = false;
-  const total = p.kind === 'wall' ? 9 : p.kind === 'floor' ? 4 : 0;
+  if (collapsing.has(p)) { flashHint('Esa pieza se está cayendo'); return; }
+  const total = p.kind === 'wall' ? 9 : p.kind === 'ramp' ? 0 : 4;
   const sel = new Set();
   for (let i = 0; i < total; i++) if (p.mask & (1 << i)) sel.add(i);
   editing = { p, sel, total, d: p.s.d, paint: null, hover: -1 };
@@ -1468,7 +1535,7 @@ function confirmEdit() {
   } else {
     if (editing.sel.size >= editing.total) { flashHint('Deja al menos una casilla'); return; }
     let mask = 0; for (const i of editing.sel) mask |= 1 << i;
-    if (mask !== p.mask) { p.mask = mask; buildParts(p); sfx('edit'); }
+    if (mask !== p.mask) { p.mask = mask; if (p.slope) p.slope.mask = mask; buildParts(p); sfx('edit'); }
   }
   cancelEdit();
 }
@@ -1481,7 +1548,7 @@ function cancelEdit() {
 function resetEdit() {
   if (editing) { editing.sel.clear(); editing.d = editing.p.s.d; return; }
   const p = aimedPiece(S * 1.8);
-  if (p && p.owner === player && p.mask) { p.mask = 0; buildParts(p); sfx('edit'); }
+  if (p && p.mask) { p.mask = 0; if (p.slope) p.slope.mask = 0; buildParts(p); sfx('edit'); }
 }
 
 function playerPrimary(first) {
@@ -1731,7 +1798,7 @@ function updateHud(dt) {
     aimInfoT = 0.1;
     const pc = e.alive ? aimedPiece(25) : null;
     if (pc) {
-      const own = pc.owner === player && pc.kind !== 'cone' && !editing;
+      const own = !editing && !collapsing.has(pc);
       hudSet($('aimInfo'), 'html', `${MATS[pc.mat].name} · ${KIND_NAME[pc.kind]}${pc.mask ? ' editado' : ''} ${Math.max(0, Math.round(pc.hp))}/${pc.maxHp}${own ? ` · <span style="color:var(--cyan)">${keyName(BK('edit'))} editar</span>` : ''}<div class="hpb"><i style="width:${Math.round(100 * Math.max(0, pc.hp) / pc.maxHp)}%"></i></div>`);
     } else hudSet($('aimInfo'), 'html', '');
   }
@@ -1938,7 +2005,7 @@ $('menuBtn').onclick = () => { $('end').classList.add('hide'); $('start').classL
 requestAnimationFrame(frame);
 
 // para pruebas automatizadas
-window.__duel = { hurt: (who, n) => damage(who === 'bot' ? bot : player, n, who === 'bot' ? player : bot, 'rifle'), get player() { return player; }, startEdit, confirmEdit, editClick, get editing() { return editing; }, aimTarget, settings, openSettings, get preview() { return previewEnt; }, pause: pauseGame, resume: resumeGame, applySettings, get bot() { return bot; }, score, pieces, get state() { return gameState; }, get live() { return roundLive; }, fire: () => playerPrimary(true), build: k => tryBuild(player, k), setMode: (m, d) => { mode = m; diff = d; } };
+window.__duel = { hurt: (who, n) => damage(who === 'bot' ? bot : player, n, who === 'bot' ? player : bot, 'rifle'), get player() { return player; }, startEdit, confirmEdit, editClick, get editing() { return editing; }, aimTarget, settings, openSettings, get preview() { return previewEnt; }, pause: pauseGame, resume: resumeGame, applySettings, get bot() { return bot; }, score, pieces, get state() { return gameState; }, get live() { return roundLive; }, fire: () => playerPrimary(true), build: k => tryBuild(player, k), makePiece, destroyPiece, slopes, get collapsing() { return collapsing; }, setMode: (m, d) => { mode = m; diff = d; } };
 </script>
 </body>
 </html>
