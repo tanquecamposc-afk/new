@@ -32,7 +32,7 @@ Personajes, nombres, arena y sonidos son originales. Los sonidos se generan con 
 - **Armas:** pico, escopeta (legendaria), rifle de asalto (épico), subfusil (raro) y francotirador (épico), más 4 mini escudos (+25 de escudo cada uno).
 - **Vida y escudo:** 100 + 100.
 - **Materiales:** 500 de madera, 300 de piedra y 200 de metal. Cada pieza cuesta 10.
-- **Resistencia de las piezas:** madera 150, piedra 300 y metal 500. Nacen débiles y se refuerzan en un segundo.
+- **Piezas:** cada casilla mide 5 × 5 metros. Resistencia: madera 150, piedra 300 y metal 500. Nacen débiles y se refuerzan en un segundo.
 
 ---
 
@@ -73,7 +73,7 @@ Personajes, nombres, arena y sonidos son originales. Los sonidos se generan con 
 | Ratón | Sensibilidad general, al apuntar y con mira telescópica; invertir eje vertical |
 | Mira | Estilo (cruz, cruz y punto, punto, círculo, en T), color, tamaño, separación, grosor, borde |
 | Gráficos | Calidad (automática, baja, media o alta), campo de visión, bordes de piezas, contador de FPS |
-| Juego | Editar al soltar, retraso al construir seguido, recarga automática, números de daño, vida del rival |
+| Juego | Distancia de la cámara, hombro izquierdo o derecho, editar al soltar, retraso al construir seguido, recarga automática, números de daño, vida del rival |
 
 Los ajustes y tu personaje se guardan en el navegador (`localStorage`).
 
@@ -89,7 +89,7 @@ Los ajustes y tu personaje se guardan en el navegador (`localStorage`).
 | Líneas aprox. | Sección | Qué hace |
 |---|---|---|
 | 1 – 245 | HTML y CSS | Menús, HUD (vida, inventario, materiales, mira), pantallas de pausa, ajustes, taquilla y fin |
-| 248 | CONSTANTES | Tamaño de celda (4 m), armas, materiales, personajes, dificultades y modos |
+| 248 | CONSTANTES | Tamaño de celda (5 m), armas, materiales, personajes, dificultades y modos |
 | 302 | ESCENA | Render, cielo, nubes, luces, suelo con cuadrícula y gradas |
 | 382 | COLISIONES | Piezas de construcción: crear, edición por casillas, destruir |
 | 547 | FÍSICA | Gravedad, rampas y conos, choques con muros, caída |
