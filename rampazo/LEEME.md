@@ -72,7 +72,7 @@ Personajes, nombres, arena y sonidos son originales. Los sonidos se generan con 
 | Controles | Reasignar todas las teclas. Si una tecla ya estaba usada, se intercambia |
 | Ratón | Sensibilidad general, al apuntar y con mira telescópica; invertir eje vertical |
 | Mira | Estilo (cruz, cruz y punto, punto, círculo, en T), color, tamaño, separación, grosor, borde |
-| Gráficos | Calidad (baja/media/alta), campo de visión, bordes de piezas, contador de FPS |
+| Gráficos | Calidad (automática, baja, media o alta), campo de visión, bordes de piezas, contador de FPS |
 | Juego | Editar al soltar, retraso al construir seguido, recarga automática, números de daño, vida del rival |
 
 Los ajustes y tu personaje se guardan en el navegador (`localStorage`).
