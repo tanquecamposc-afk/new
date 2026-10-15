@@ -254,8 +254,8 @@ document.getElementById('loading').style.display = 'none';
 // ============================================================
 //  CONSTANTES
 // ============================================================
-const S = 4, H = 4, T = 0.25;      // celda, altura de piso, grosor de muro
-const A = 52;                      // la arena va de -A a A
+const S = 5, H = 5, T = 0.3;       // celda, altura de piso, grosor de muro (piezas grandes)
+const A = 60;                      // la arena va de -A a A (12 casillas por lado)
 const G = 24, STEP = 0.6;
 const WIN_ROUNDS = 5;
 const CONE_H = 1.6;                // altura del cono
@@ -474,13 +474,13 @@ function buildParts(p) {
   const tr = p.tr;
   if (p.kind === 'wall') {
     const rects = [];
-    if (!p.mask) rects.push([-2, 2, 0, 4]);
+    if (!p.mask) rects.push([-S / 2, S / 2, 0, H]);
     else for (let r = 0; r < 3; r++) {
       for (let c = 0; c < 3; c++) {
         if (p.mask & (1 << (r * 3 + c))) continue;
         let c2 = c;
         while (c2 + 1 < 3 && !(p.mask & (1 << (r * 3 + c2 + 1)))) c2++;
-        rects.push([-2 + c * WT, -2 + (c2 + 1) * WT, r * WT, (r + 1) * WT]);
+        rects.push([-S / 2 + c * WT, -S / 2 + (c2 + 1) * WT, r * WT, (r + 1) * WT]);
         c = c2;
       }
     }
@@ -966,24 +966,25 @@ function buildSpec(e, kind, yaw = e.yaw) {
   }
   if (kind === 'wall') {
     const l = Math.max(0, Math.floor((py + 1) / H) + (look > 0.55 ? 1 : 0));
-    const ahx = Math.floor((px + fx * 2) / S), ahz = Math.floor((pz + fz * 2) / S);
+    const ahx = Math.floor((px + fx * S * 0.5) / S), ahz = Math.floor((pz + fz * S * 0.5) / S);
     if (d === 0 || d === 2) return { ax: 'x', i: d === 0 ? cx + 1 : cx, j: ahz, l };
     return { ax: 'z', i: ahx, j: d === 1 ? cz + 1 : cz, l };
   }
   if (kind === 'floor' || kind === 'cone') {
     const l = Math.max(0, Math.floor((py + 0.3) / H) + (look > 0.3 ? 1 : 0));
     if (look < -0.6) return { cx, cz, l };
-    return { cx: Math.floor((px + fx * 3) / S), cz: Math.floor((pz + fz * 3) / S), l };
+    return { cx: Math.floor((px + fx * S * 0.75) / S), cz: Math.floor((pz + fz * S * 0.75) / S), l };
   }
-  const l = Math.max(0, Math.floor((py + 2.2) / H));
-  return { cx: Math.floor((px + fx * 2.2) / S), cz: Math.floor((pz + fz * 2.2) / S), l, d };
+  const ah = S * 0.55;
+  const l = Math.max(0, Math.floor((py + ah) / H));
+  return { cx: Math.floor((px + fx * ah) / S), cz: Math.floor((pz + fz * ah) / S), l, d };
 }
 const _ad = new THREE.Vector3();
 function aimTarget() {
   camera.getWorldDirection(_ad);
   const eye = player.pos.clone().setY(player.pos.y + 1.5);
   const camDist = camera.position.distanceTo(eye);
-  const reach = 6.5;
+  const reach = S * 1.6;
   raycaster.set(camera.position, _ad); raycaster.near = Math.max(0, camDist - 0.3); raycaster.far = camDist + reach;
   const h = raycaster.intersectObjects(solidMeshes, false)[0];
   raycaster.near = 0;
@@ -991,7 +992,8 @@ function aimTarget() {
   if (_ad.y < -0.01) { const tg = -camera.position.y / _ad.y; if (tg > 0 && tg < dist) dist = tg; }
   const t = camera.position.clone().addScaledVector(_ad, dist);
   const dx = t.x - player.pos.x, dz = t.z - player.pos.z, hd = Math.hypot(dx, dz);
-  if (hd > 5.5) { t.x = player.pos.x + dx / hd * 5.5; t.z = player.pos.z + dz / hd * 5.5; }
+  const maxH = S * 1.4;
+  if (hd > maxH) { t.x = player.pos.x + dx / hd * maxH; t.z = player.pos.z + dz / hd * maxH; }
   return t;
 }
 function tryBuild(e, kind, yaw) {
@@ -1012,13 +1014,20 @@ function tryBuild(e, kind, yaw) {
 const ghostMat = new THREE.MeshBasicMaterial({ color: 0x3de0ff, transparent: true, opacity: 0.35, depthWrite: false });
 const ghostBad = new THREE.MeshBasicMaterial({ color: 0xff4f6d, transparent: true, opacity: 0.3, depthWrite: false });
 const ghost = new THREE.Mesh(GEO.wallZ, ghostMat);
+const ghostLineMat = new THREE.LineBasicMaterial({ color: 0xbff6ff, transparent: true, opacity: 0.9, depthWrite: false });
+const ghostEdges = new THREE.LineSegments(edgesFor(GEO.wallZ), ghostLineMat);
+ghost.add(ghostEdges); ghost.renderOrder = 5;
 ghost.rotation.order = 'YXZ'; ghost.visible = false; scene.add(ghost);
 function updateGhost() {
-  if (editing && editing.p.kind === 'ramp') { const tr = pieceTransform('ramp', { ...editing.p.s, d: editing.d }); ghost.geometry = tr.geo; ghost.position.set(tr.x, tr.y, tr.z); ghost.rotation.set(tr.rx, tr.ry, 0); ghost.material = ghostMat; ghost.visible = true; return; }
+  if (editing && editing.p.kind === 'ramp') { const tr = pieceTransform('ramp', { ...editing.p.s, d: editing.d }); ghost.geometry = tr.geo; ghostEdges.geometry = edgesFor(tr.geo); ghost.position.set(tr.x, tr.y, tr.z); ghost.rotation.set(tr.rx, tr.ry, 0); ghost.material = ghostMat; ghost.visible = true; return; }
   if (!player || !player.alive || !player.building || gameState !== 'play') { ghost.visible = false; return; }
   const s = buildSpec(player, buildKind), tr = pieceTransform(buildKind, s);
   ghost.geometry = tr.geo; ghost.position.set(tr.x, tr.y, tr.z); ghost.rotation.set(tr.rx, tr.ry, 0);
-  ghost.material = pieces.has(pieceKey(buildKind, s)) || !inArena(tr) || ['wood', 'stone', 'metal'].every(m => player.mats[m] < 10) ? ghostBad : ghostMat;
+  const bad = pieces.has(pieceKey(buildKind, s)) || !inArena(tr) || ['wood', 'stone', 'metal'].every(m => player.mats[m] < 10);
+  ghost.material = bad ? ghostBad : ghostMat;
+  if (ghostEdges.geometry !== edgesFor(tr.geo)) ghostEdges.geometry = edgesFor(tr.geo);
+  ghostLineMat.color.setHex(bad ? 0xffb3c0 : 0xbff6ff);
+  ghostMat.opacity = 0.3 + Math.sin(performance.now() / 160) * 0.08;
   ghost.visible = true;
 }
 // encierra a una entidad en su celda (box fight y "boxear" del bot)
@@ -1184,7 +1193,7 @@ const BIND_GROUPS = [
   ['Construcción', { wall: 'Muro', floor: 'Suelo', ramp: 'Rampa', cone: 'Cono', buildToggle: 'Modo construcción', material: 'Cambiar material', edit: 'Editar', resetEdit: 'Restablecer edición' }],
   ['Otros', { emote: 'Baile' }],
 ];
-const DEFAULT_SETTINGS = { sens: 1, adsSens: 1, scopeSens: 1, invertY: false, fov: 80, quality: 'auto', edges: true, fps: false, editOnRelease: false, buildDelay: 0.1, autoReload: true, dmgNums: true, enemyBar: true,
+const DEFAULT_SETTINGS = { sens: 1, adsSens: 1, scopeSens: 1, invertY: false, fov: 80, quality: 'auto', edges: true, fps: false, editOnRelease: false, buildDelay: 0.1, autoReload: true, dmgNums: true, enemyBar: true, camDist: 1, camLeft: false,
   cross: { style: 'cruz', color: '#ffffff', size: 24, gap: 4, thick: 2, outline: true } };
 const settings = JSON.parse(JSON.stringify(DEFAULT_SETTINGS));
 settings.binds = { ...DEFAULT_BINDS };
@@ -1374,14 +1383,15 @@ let editing = null;   // { p, sel: Set, total, d, paint, hover }
 const editGroup = new THREE.Group(); scene.add(editGroup);
 const tileGeoWall = new THREE.PlaneGeometry(WT - 0.1, WT - 0.1), tileGeoFloor = new THREE.PlaneGeometry(S / 2 - 0.12, S / 2 - 0.12);
 const tileMat = (c, o) => new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: o, depthTest: false, side: THREE.DoubleSide });
-const TILE_ON = tileMat(0x3de0ff, 0.6), TILE_OFF = tileMat(0xffffff, 0.16), TILE_HOVER = tileMat(0xffffff, 0.38), TILE_ON_HOVER = tileMat(0x8ff0ff, 0.75);
+const TILE_ON = tileMat(0x3de0ff, 0.62), TILE_OFF = tileMat(0xffffff, 0.12), TILE_HOVER = tileMat(0xfff3a0, 0.42), TILE_ON_HOVER = tileMat(0x9ff4ff, 0.8);
+const TILE_LINE = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.85, depthTest: false });
 function buildEditOverlay() {
   editGroup.clear();
   const p = editing.p, tr = p.tr;
   for (let i = 0; i < editing.total; i++) {
     let m;
     if (p.kind === 'wall') {
-      const c = i % 3, r = Math.floor(i / 3), u = -2 + (c + 0.5) * WT, v = (r + 0.5) * WT - H / 2;
+      const c = i % 3, r = Math.floor(i / 3), u = -S / 2 + (c + 0.5) * WT, v = (r + 0.5) * WT - H / 2;
       m = new THREE.Mesh(tileGeoWall, TILE_OFF);
       if (p.s.ax === 'z') m.position.set(tr.x + u, tr.y + v, tr.z);
       else { m.position.set(tr.x, tr.y + v, tr.z + u); m.rotation.y = Math.PI / 2; }
@@ -1391,6 +1401,7 @@ function buildEditOverlay() {
       m.position.set(tr.x + ((i % 2) - 0.5) * S / 2, tr.y + 0.13, tr.z + ((i >> 1) - 0.5) * S / 2);
     }
     m.renderOrder = 20; m.userData.tile = i;
+    const ln = new THREE.LineSegments(edgesFor(m.geometry), TILE_LINE); ln.renderOrder = 21; m.add(ln);
     editGroup.add(m);
   }
 }
@@ -1404,7 +1415,7 @@ function tileUnderAim() {
   if (!_ray.intersectPlane(_plane, _hitP)) return -1;
   if (_hitP.distanceTo(camera.position) > 16) return -1;
   if (p.kind === 'wall') {
-    const u = (p.s.ax === 'z' ? _hitP.x - tr.x : _hitP.z - tr.z) + 2, v = _hitP.y - (tr.y - H / 2);
+    const u = (p.s.ax === 'z' ? _hitP.x - tr.x : _hitP.z - tr.z) + S / 2, v = _hitP.y - (tr.y - H / 2);
     if (u < 0 || u >= S || v < 0 || v >= H) return -1;
     return Math.floor(v / WT) * 3 + Math.floor(u / WT);
   }
@@ -1413,7 +1424,7 @@ function tileUnderAim() {
   return Math.floor(lz / (S / 2)) * 2 + Math.floor(lx / (S / 2));
 }
 function startEdit() {
-  const p = aimedPiece(7);
+  const p = aimedPiece(S * 1.8);
   if (!p) { flashHint('Apunta a una pieza cercana para editarla'); return; }
   if (p.owner !== player) { flashHint('Solo puedes editar tus propias piezas'); return; }
   if (p.kind === 'cone') { flashHint('Los conos no se editan'); return; }
@@ -1439,7 +1450,7 @@ function editClick() {
 function updateEdit() {
   if (!editing) return;
   const p = editing.p;
-  if (!pieces.has(p.key) || !player.alive || player.pos.distanceTo(p.group.position) > 11) { cancelEdit(); return; }
+  if (!pieces.has(p.key) || !player.alive || player.pos.distanceTo(p.group.position) > S * 2.8) { cancelEdit(); return; }
   if (p.kind === 'ramp') return;
   const t = tileUnderAim();
   editing.hover = t;
@@ -1469,7 +1480,7 @@ function cancelEdit() {
 }
 function resetEdit() {
   if (editing) { editing.sel.clear(); editing.d = editing.p.s.d; return; }
-  const p = aimedPiece(7);
+  const p = aimedPiece(S * 1.8);
   if (p && p.owner === player && p.mask) { p.mask = 0; buildParts(p); sfx('edit'); }
 }
 
@@ -1546,19 +1557,34 @@ function updatePlayer(dt) {
 const camQ = new THREE.Quaternion(), camE = new THREE.Euler(0, 0, 0, 'YXZ');
 let camY = 1.65;
 const _camT = new THREE.Vector3(), _camO = new THREE.Vector3(), _camD = new THREE.Vector3();
+const camOffCur = new THREE.Vector3(0.85, 0.45, 4.2), _camWant = new THREE.Vector3();
+let camFollowY = null, camDistCur = 4;
 function updateCamera(dt) {
   const e = player;
   camY += ((e.crouch ? 1.15 : 1.65) - camY) * Math.min(1, dt * 12);
-  const target = _camT.set(e.pos.x, e.pos.y + camY, e.pos.z);
+  // la altura de la cámara sigue al jugador con suavidad (rampas, saltos, caídas)
+  if (camFollowY === null || Math.abs(e.pos.y - camFollowY) > 6) camFollowY = e.pos.y;
+  camFollowY += (e.pos.y - camFollowY) * Math.min(1, dt * 16);
+  const target = _camT.set(e.pos.x, camFollowY + camY, e.pos.z);
   const it = e.inv[e.cur];
   const ads = aiming && e.alive && it && it.kind === 'weapon' && !e.building;
-  const offset = ads ? _camO.set(0.65, 0.25, 1.9) : e.emoteT > 0 ? _camO.set(0, 0.6, 4.6) : _camO.set(0.8, 0.35, 3.8);
+  const side = settings.camLeft ? -1 : 1, k = settings.camDist;
+  // posiciones de cámara: apuntando, bailando, construyendo/editando y normal
+  if (ads) _camWant.set(0.7 * side, 0.3, 2.1);
+  else if (e.emoteT > 0) _camWant.set(0, 0.7, 5 * k);
+  else if (e.building || editing) _camWant.set(1.0 * side, 0.9 * k, 5.4 * k);
+  else _camWant.set(0.85 * side, 0.45 * k, 4.2 * k);
+  camOffCur.lerp(_camWant, Math.min(1, dt * (ads ? 16 : 9)));
+  const offset = _camO.copy(camOffCur);
   camE.set(e.pitch, e.yaw, 0); camQ.setFromEuler(camE);
   offset.applyQuaternion(camQ);
   const len = offset.length(), dir = _camD.copy(offset).divideScalar(len);
   raycaster.set(target, dir); raycaster.near = 0; raycaster.far = len;
   const h = raycaster.intersectObjects(solidMeshes, false)[0];
-  const dist = h ? Math.max(0.4, h.distance - 0.25) : len;
+  const want = h ? Math.max(0.4, h.distance - 0.3) : len;
+  // se acerca al instante si choca con una pared y se aleja despacio para no dar tirones
+  camDistCur = want < camDistCur ? want : camDistCur + (want - camDistCur) * Math.min(1, dt * 6);
+  const dist = camDistCur;
   camera.position.copy(target).addScaledVector(dir, dist);
   camera.quaternion.copy(camQ);
   const sprint = keys[BK('sprint')] && Math.hypot(e.vel.x, e.vel.z) > 6.8;
@@ -1869,7 +1895,7 @@ function renderSettings() {
   } else if (setTab === 'graficos') {
     h = `<div class="set"><label>Calidad</label><div class="chips" id="qualChips"></div></div>` + rng('Campo de visión', 'fov', 60, 110, 1, 'deg') + chk('Bordes en las construcciones', 'edges') + chk('Mostrar FPS', 'fps');
   } else {
-    h = chk('Editar al soltar la tecla de editar (si no, se confirma pulsándola otra vez)', 'editOnRelease') + rng('Retraso al construir manteniendo el clic', 'buildDelay', 0.03, 0.3, 0.01, 's')
+    h = rng('Distancia de la cámara', 'camDist', 0.7, 1.6, 0.05, 'x') + chk('Cámara sobre el hombro izquierdo', 'camLeft') + chk('Editar al soltar la tecla de editar (si no, se confirma pulsándola otra vez)', 'editOnRelease') + rng('Retraso al construir manteniendo el clic', 'buildDelay', 0.03, 0.3, 0.01, 's')
       + chk('Recargar automáticamente', 'autoReload') + chk('Mostrar números de daño', 'dmgNums') + chk('Mostrar la vida del rival arriba', 'enemyBar');
   }
   $('setBody').innerHTML = h;
@@ -1894,7 +1920,7 @@ $('setBody').addEventListener('input', ev => {
   if (out) out.textContent = FMT[el.dataset.fmt](v);
   applySettings();
 });
-const TAB_KEYS = { raton: ['sens', 'adsSens', 'scopeSens', 'invertY'], graficos: ['quality', 'fov', 'edges', 'fps'], juego: ['editOnRelease', 'buildDelay', 'autoReload', 'dmgNums', 'enemyBar'] };
+const TAB_KEYS = { raton: ['sens', 'adsSens', 'scopeSens', 'invertY'], graficos: ['quality', 'fov', 'edges', 'fps'], juego: ['camDist', 'camLeft', 'editOnRelease', 'buildDelay', 'autoReload', 'dmgNums', 'enemyBar'] };
 $('setReset').onclick = () => {
   if (setTab === 'controles') settings.binds = { ...DEFAULT_BINDS };
   else if (setTab === 'mira') settings.cross = { ...DEFAULT_SETTINGS.cross };
