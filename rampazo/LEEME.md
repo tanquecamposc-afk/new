@@ -1,8 +1,16 @@
 # RAMPAZO 1v1 — información del juego
 
-Duelo de construcción 1 contra 1 en 3D, para el navegador. Todo el juego está en un solo archivo: `index.html` (unas 2.170 líneas, 127 KB). Usa la librería 3D **Three.js 0.160**, que se carga desde internet al abrir el archivo.
+Duelo de construcción 1 contra 1 en 3D, para el navegador. Todo el juego está en un solo archivo: `index.html` (unas 2.400 líneas, 146 KB). Usa la librería 3D **Three.js 0.160**, que se carga desde internet al abrir el archivo.
 
 Personajes, nombres, arena y sonidos son originales. Los sonidos se generan con código y no hay imágenes externas.
+
+### Aspecto visual
+- **Estilo dibujo animado:** personajes y armas usan sombreado por bandas de luz.
+- **Isla:** césped con la cuadrícula de construcción, cielo azul, nubes redondas, y árboles, rocas, colinas y montañas alrededor de la arena.
+- **Personajes:** chaqueta con cuello, cremallera, correa y hombreras; cinturón con hebilla y bolsillos; rodilleras, botas, guantes, y ojos grandes con brillo. El pelo tiene mechones de punta.
+- **Armas:** cada una tiene su propio modelo, con detalles del color de su rareza: escopeta con corredera, rifle con cargador y culata, subfusil compacto, francotirador con mira, pico, mini escudo y holograma de construcción.
+- **Inventario:** casillas con el fondo del color de la rareza y la silueta del objeto, y el nombre y la rareza del arma encima. La vida y el escudo llevan icono y número, los materiales tienen icono, y la barra de construcción muestra muro, suelo, rampa y cono.
+- **Menú:** pedestal iluminado con tu personaje, logotipo y botones nuevos.
 
 ---
 
@@ -85,7 +93,7 @@ Personajes, nombres, arena y sonidos son originales. Los sonidos se generan con 
 | Controles | Reasignar todas las teclas. Si una tecla ya estaba usada, se intercambia |
 | Ratón | Sensibilidad general, al apuntar y con mira telescópica; invertir eje vertical |
 | Mira | Estilo (cruz, cruz y punto, punto, círculo, en T), color, tamaño, separación, grosor, borde |
-| Gráficos | Calidad (automática, baja, media o alta), campo de visión, bordes de piezas, contador de FPS |
+| Gráficos | Calidad (automática, baja, media o alta), campo de visión, bordes de piezas, contador de FPS. La automática baja la resolución, luego las sombras y por último oculta los árboles si el equipo va lento. La baja va sin sombras ni árboles |
 | Juego | Distancia de la cámara, hombro izquierdo o derecho, editar al soltar, retraso al construir seguido, recarga automática, números de daño, vida del rival |
 
 Los ajustes y tu personaje se guardan en el navegador (`localStorage`).
@@ -106,7 +114,7 @@ Los ajustes y tu personaje se guardan en el navegador (`localStorage`).
 | 302 | ESCENA | Render, cielo, nubes, luces, suelo con cuadrícula y gradas |
 | 382 | COLISIONES | Piezas de construcción: crear, edición por casillas, destruir, derrumbe de lo que queda sin apoyo |
 | 547 | FÍSICA | Gravedad, rampas y conos, choques con muros, caída |
-| 608 | PERSONAJES | Modelo 3D redondeado (cápsulas y esferas), accesorios, animaciones y baile |
+| 608 | PERSONAJES | Modelo 3D redondeado con ropa y cara detalladas, armas modeladas, accesorios, animaciones y baile |
 | 723 | ENTIDADES | Jugador y rival, equipo de cada ronda |
 | 758 | EFECTOS Y SONIDO | Chispas, trazadoras, números de daño, sonidos sintetizados |
 | 835 | DISPAROS Y DAÑO | Disparos por rayos, disparos a la cabeza, daño a piezas |
