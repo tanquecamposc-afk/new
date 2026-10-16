@@ -406,7 +406,9 @@ const pieces = new Map();
 const slopes = new Set();      // rampas y conos: superficies inclinadas
 const growing = new Set(), shaking = new Set();
 const collapsing = new Map();   // pieza -> segundos que le quedan antes de caer
+const debris = new Set();       // piezas que ya se han soltado y caen
 let supportDirty = false;
+const breakPos = new THREE.Vector3();
 const GEO = {
   wallZ: new THREE.BoxGeometry(S, H, T), wallX: new THREE.BoxGeometry(T, H, S),
   floor: new THREE.BoxGeometry(S, 0.2, S), ramp: new THREE.BoxGeometry(S, 0.2, S * Math.SQRT2),
@@ -514,7 +516,7 @@ function buildParts(p) {
       if (p.mask & (1 << q)) continue;
       const lx = ((q % 2) - 0.5) * S / 2, lz = ((q >> 1) - 0.5) * S / 2;
       addPart(p, floorQGeo, lx, 0, lz);
-      const b = { minX: tr.x + lx - S / 4, maxX: tr.x + lx + S / 4, minY: tr.y - 0.1, maxY: tr.y + 0.1, minZ: tr.z + lz - S / 4, maxZ: tr.z + lz + S / 4 };
+      const b = { minX: tr.x + lx - S / 4, maxX: tr.x + lx + S / 4, minY: tr.y - 0.1, maxY: tr.y + 0.1, minZ: tr.z + lz - S / 4, maxZ: tr.z + lz + S / 4, thin: true };
       p.boxes.push(b); boxes.add(b);
     }
   } else if (p.kind === 'cone' && p.mask) {
@@ -522,7 +524,7 @@ function buildParts(p) {
   } else {
     addPart(p, tr.geo, 0, 0, 0, tr.rx, tr.ry);
     if (p.kind === 'floor') {
-      const b = { minX: tr.x - S / 2, maxX: tr.x + S / 2, minY: tr.y - 0.1, maxY: tr.y + 0.1, minZ: tr.z - S / 2, maxZ: tr.z + S / 2 };
+      const b = { minX: tr.x - S / 2, maxX: tr.x + S / 2, minY: tr.y - 0.1, maxY: tr.y + 0.1, minZ: tr.z - S / 2, maxZ: tr.z + S / 2, thin: true };
       p.boxes.push(b); boxes.add(b);
     }
   }
@@ -556,8 +558,17 @@ function updatePieces(dt) {
   if (supportDirty) checkSupport();
   for (const [p, t] of collapsing) {
     const nt = t - dt;
-    if (nt <= 0) { collapsing.delete(p); destroyPiece(p); }
+    if (nt <= 0) { collapsing.delete(p); dropPiece(p); }
     else { collapsing.set(p, nt); p.shake = Math.max(p.shake, 0.1); shaking.add(p); }
+  }
+  for (const d of debris) {
+    d.t += dt; d.vy -= G * dt;
+    d.g.position.y += d.vy * dt; d.g.position.x += d.vx * dt; d.g.position.z += d.vz * dt;
+    d.g.rotation.x += d.rx * dt; d.g.rotation.z += d.rz * dt;
+    if (d.t > 0.75 || d.g.position.y < -3) {
+      scene.remove(d.g); debris.delete(d);
+      burst(d.g.position.clone().setY(Math.max(0.3, d.g.position.y)), MATS[d.mat].color, 8);
+    }
   }
   for (const p of shaking) {
     p.shake -= dt;
@@ -574,9 +585,30 @@ function destroyPiece(p, quiet = false) {
   for (const b of p.boxes) boxes.delete(b);
   if (p.slope) slopes.delete(p.slope);
   collapsing.delete(p);
-  if (!quiet) { burst(p.group.position, MATS[p.mat].color, 14); sfx('break', p.group.position); supportDirty = true; }
+  if (!quiet) { burst(p.group.position, MATS[p.mat].color, 14); sfx('break', p.group.position); supportDirty = true; breakPos.copy(p.group.position); }
 }
-function clearPieces() { for (const p of [...pieces.values()]) destroyPiece(p, true); collapsing.clear(); supportDirty = false; }
+// la pieza deja de ser sólida y cae girando, como un trozo de estructura que se suelta
+function dropPiece(p) {
+  destroyPiece(p, true);
+  p.group.position.set(p.tr.x, p.tr.y, p.tr.z);
+  scene.add(p.group);
+  debris.add({ g: p.group, mat: p.mat, t: 0, vy: 1.5, vx: rand(-1, 1), vz: rand(-1, 1), rx: rand(-2, 2), rz: rand(-2, 2) });
+  sfx('break', p.group.position);
+}
+function clearPieces() {
+  for (const p of [...pieces.values()]) destroyPiece(p, true);
+  collapsing.clear(); supportDirty = false;
+  for (const d of debris) scene.remove(d.g);
+  debris.clear();
+}
+const touches = (a, b, e = 0.25) => a[0] - e <= b[3] && b[0] - e <= a[3] && a[1] - e <= b[4] && b[1] - e <= a[4] && a[2] - e <= b[5] && b[2] - e <= a[5];
+// para colocar una pieza tiene que tocar el suelo o algo ya construido (no se construye flotando)
+function hasSupport(kind, s) {
+  if (s.l === 0) return true;
+  const a = pieceBounds({ kind, s });
+  for (const q of pieces.values()) if (!collapsing.has(q) && touches(a, pieceBounds(q))) return true;
+  return false;
+}
 // caja que ocupa la pieza (para saber qué toca a qué)
 function pieceBounds(p) {
   const s = p.s, y0 = s.l * H;
@@ -598,11 +630,16 @@ function checkSupport() {
     for (let j = 0; j < n; j++) {
       if (held[j]) continue;
       const b = bb[j];
-      if (a[0] - e <= b[3] && b[0] - e <= a[3] && a[1] - e <= b[4] && b[1] - e <= a[4] && a[2] - e <= b[5] && b[2] - e <= a[5]) { held[j] = 1; queue.push(j); }
+      if (touches(a, b, e)) { held[j] = 1; queue.push(j); }
     }
   }
   let k = 0;
-  for (let i = 0; i < n; i++) if (!held[i]) collapsing.set(list[i], 0.25 + 0.08 * (k++ % 8) + list[i].s.l * 0.05);
+  // se cae en cascada: primero lo más cercano a donde se rompió
+  for (let i = 0; i < n; i++) if (!held[i]) {
+    const b = bb[i], cx = (b[0] + b[3]) / 2, cy = (b[2] + b[5]) / 2, cz = (b[1] + b[4]) / 2;
+    const dist = Math.hypot(cx - breakPos.x, cy - breakPos.y, cz - breakPos.z);
+    collapsing.set(list[i], 0.18 + dist / S * 0.09 + (k++ % 3) * 0.02);
+  }
 }
 
 // ============================================================
@@ -626,12 +663,14 @@ function supportHeight(x, z, y) {
   for (const r of slopes) { const h = slopeHeight(r, x, z); if (h <= y + STEP && h > best) best = h; }
   return best;
 }
-function resolveHorizontal(e) {
+function resolveHorizontal(e, ox, oz) {
   let blocked = false;
   const r = e.radius;
   for (let iter = 0; iter < 2; iter++) {
     for (const b of boxes) {
       if (b.maxY <= e.pos.y + STEP - 0.05 || b.minY >= e.pos.y + e.height) continue;
+      // un suelo que aparece encima de ti no te teletransporta: se resuelve en vertical
+      if (b.thin && ox > b.minX - r && ox < b.maxX + r && oz > b.minZ - r && oz < b.maxZ + r) continue;
       const px = e.pos.x, pz = e.pos.z;
       if (px < b.minX - r || px > b.maxX + r || pz < b.minZ - r || pz > b.maxZ + r) continue;
       const cx = clamp(px, b.minX, b.maxX), cz = clamp(pz, b.minZ, b.maxZ);
@@ -653,17 +692,47 @@ function moveEntity(e, dt) {
   const n = Math.min(5, Math.max(1, Math.ceil(dt / 0.0085)));
   for (let i = 0; i < n; i++) moveStep(e, dt / n);
 }
+// parte de abajo más baja de una caja que queda sobre la cabeza
+function ceilingAt(x, z, y, top) {
+  let c = Infinity;
+  for (const b of boxes) {
+    if (b.minY < y + STEP || b.minY > top || b.minY >= c) continue;
+    if (x > b.minX - 0.2 && x < b.maxX + 0.2 && z > b.minZ - 0.2 && z < b.maxZ + 0.2) c = b.minY;
+  }
+  return c;
+}
+// ¿la parte de abajo de una rampa o cono atraviesa el cuerpo en (x, z)?
+function slopeBlocks(e, x, z) {
+  for (const r of slopes) { const h = slopeHeight(r, x, z); if (h > e.pos.y + STEP && h < e.pos.y + e.height - 0.1) return true; }
+  return false;
+}
 function moveStep(e, dt) {
-  const oldY = e.pos.y;
+  const oldY = e.pos.y, ox = e.pos.x, oz = e.pos.z;
+  const wasIn = slopeBlocks(e, ox, oz);
   e.pos.x += e.vel.x * dt; e.pos.z += e.vel.z * dt;
-  e.blocked = resolveHorizontal(e);
-  const ground = supportHeight(e.pos.x, e.pos.z, oldY);
+  e.blocked = resolveHorizontal(e, ox, oz);
+  // las rampas también son sólidas por debajo y por los lados (si no estabas ya dentro)
+  if (!wasIn && slopeBlocks(e, e.pos.x, e.pos.z)) {
+    const nx = e.pos.x, nz = e.pos.z;
+    e.pos.z = oz;
+    if (slopeBlocks(e, e.pos.x, e.pos.z)) { e.pos.x = ox; e.pos.z = nz; if (slopeBlocks(e, e.pos.x, e.pos.z)) e.pos.z = oz; }
+    e.blocked = true;
+  }
+  let ground = supportHeight(e.pos.x, e.pos.z, oldY);
   e.vel.y -= G * dt;
   let ny = oldY + e.vel.y * dt;
+  const top = Math.max(ny, oldY) + e.height;
+  let ceil = ceilingAt(e.pos.x, e.pos.z, oldY, top);
+  if (ceil - e.height < ground - 1e-3 && (e.pos.x !== ox || e.pos.z !== oz)) {
+    e.pos.x = ox; e.pos.z = oz; e.blocked = true;
+    ground = supportHeight(ox, oz, oldY); ceil = ceilingAt(ox, oz, oldY, top);
+  }
+  // techo: cajas y la cara de abajo de rampas y conos
+  if (ny > ceil - e.height) { ny = ceil - e.height; if (e.vel.y > 0) e.vel.y = 0; }
   if (e.vel.y > 0) {
-    for (const b of boxes) {
-      if (b.minY < oldY + e.height - 0.05 || b.minY > ny + e.height) continue;
-      if (e.pos.x > b.minX - 0.2 && e.pos.x < b.maxX + 0.2 && e.pos.z > b.minZ - 0.2 && e.pos.z < b.maxZ + 0.2) { ny = b.minY - e.height; e.vel.y = 0; }
+    for (const r of slopes) {
+      const h = slopeHeight(r, e.pos.x, e.pos.z) - 0.25;
+      if (h > oldY + e.height - 0.1 && h < ny + e.height) { ny = h - e.height; e.vel.y = 0; }
     }
   }
   if (ny <= ground) {
@@ -698,6 +767,7 @@ const charGeo = {
 };
 const gunMats = RARITY.map(r => new THREE.MeshLambertMaterial({ color: new THREE.Color(r.color).multiplyScalar(0.75) }));
 const darkMat = lam(0x2a2a30);
+const SHARED_MATS = new Set([darkMat, ...gunMats]), SHARED_GEOS = new Set(Object.values(charGeo));
 function makeCharacter(sk) {
   const g = new THREE.Group();
   const M = {
@@ -743,11 +813,20 @@ function makeCharacter(sk) {
   scene.add(g);
   return { group: g, parts: [torso, hips, ...heads, ll, lr, al, ar], legL, legR, armL, armR, hand, gun: null, gunKey: '' };
 }
+// libera geometrías y materiales propios de un modelo (los compartidos se quedan)
+function disposeTree(g) {
+  g.traverse(o => {
+    if (!o.isMesh) return;
+    if (!SHARED_GEOS.has(o.geometry)) o.geometry.dispose();
+    if (!SHARED_MATS.has(o.material)) o.material.dispose();
+  });
+}
+function disposeCharacter(ch) { scene.remove(ch.group); disposeTree(ch.group); }
 function setHeldModel(ch, item) {
   const key = item ? (item.kind === 'weapon' ? item.id + item.rarity : item.kind) : 'none';
   if (ch.gunKey === key) return;
   ch.gunKey = key;
-  if (ch.gun) ch.hand.remove(ch.gun);
+  if (ch.gun) { ch.hand.remove(ch.gun); disposeTree(ch.gun); }
   ch.gun = null;
   if (!item || item.kind === 'build') return;
   const g = new THREE.Group();
@@ -1071,6 +1150,7 @@ function tryBuild(e, kind, yaw) {
     if (e.isPlayer) refreshHotbar();
   }
   const s = kind.spec || buildSpec(e, kind, yaw);
+  if (!hasSupport(kind.kind || kind, s)) return false;
   const p = makePiece(kind.kind || kind, s, e.buildMat, e);
   if (!p) return false;
   if (!(mode === 'practice' && e.isPlayer)) e.mats[e.buildMat] -= 10;
@@ -1090,7 +1170,7 @@ function updateGhost() {
   if (!player || !player.alive || !player.building || gameState !== 'play') { ghost.visible = false; return; }
   const s = buildSpec(player, buildKind), tr = pieceTransform(buildKind, s);
   ghost.geometry = tr.geo; ghost.position.set(tr.x, tr.y, tr.z); ghost.rotation.set(tr.rx, tr.ry, 0);
-  const bad = pieces.has(pieceKey(buildKind, s)) || !inArena(tr) || ['wood', 'stone', 'metal'].every(m => player.mats[m] < 10);
+  const bad = pieces.has(pieceKey(buildKind, s)) || !inArena(tr) || ['wood', 'stone', 'metal'].every(m => player.mats[m] < 10) || !hasSupport(buildKind, s);
   ghost.material = bad ? ghostBad : ghostMat;
   if (ghostEdges.geometry !== edgesFor(tr.geo)) ghostEdges.geometry = edgesFor(tr.geo);
   ghostLineMat.color.setHex(bad ? 0xffb3c0 : 0xbff6ff);
@@ -1130,7 +1210,7 @@ function axisYaw(dx, dz) {
 }
 function updateBot(b, dt) {
   b.fireCd -= dt; b.bloom = Math.max(0, b.bloom - dt * 0.08); b.recoil = Math.max(0, b.recoil - dt * 1.2);
-  if (b.reloadT > 0) { b.reloadT -= dt; if (b.reloadT <= 0) b.inv[b.cur].mag = WEAPONS[b.inv[b.cur].id].mag; }
+  if (b.reloadT > 0) { b.reloadT -= dt; if (b.reloadT <= 0) { const w = b.inv[b.reloadSlot ?? b.cur]; if (w && w.kind === 'weapon') w.mag = WEAPONS[w.id].mag; } }
   const ai = b.ai, D = DIFF[diff], t = player;
   let mx = 0, mz = 0, speed = 6;
   if (!roundLive || !t.alive) { b.vel.x *= 0.8; b.vel.z *= 0.8; moveEntity(b, dt); return; }
@@ -1154,7 +1234,7 @@ function updateBot(b, dt) {
       const total = b.hp + b.shield;
       const heal = b.inv[5];
       if (total < 80 && heal && heal.count > 0 && now > ai.boxCd && b.shield < 75 && Math.random() < D.build) {
-        if (boxAround(b, null, D.build > 0.6) >= 2) { ai.mode = 'box'; ai.modeT = now; ai.boxCd = now + 14; b.useT = 2; b.cur = 5; }
+        if (boxAround(b, null, D.build > 0.6) >= 2) { ai.mode = 'box'; ai.modeT = now; ai.boxCd = now + 14; b.reloadT = 0; b.useT = 2; b.cur = 5; }
       } else if (dy > 2.5 && dist < 40 && Math.random() < D.rush * 0.6 && ai.mode !== 'rush') { ai.mode = 'rush'; ai.modeT = now; ai.rushYaw = axisYaw(dx, dz); }
       else if (ai.mode === 'rush' && (dy < 0.5 || now - ai.modeT > 5)) ai.mode = 'fight';
     }
@@ -1189,7 +1269,11 @@ function updateBot(b, dt) {
     mx = -Math.sin(ry); mz = -Math.cos(ry); speed = 6.4;
     ai.rampT -= dt; ai.wallT -= dt;
     if (ai.rampT <= 0) { tryBuild(b, 'ramp', ry); ai.rampT = 0.26; }
-    if (ai.wallT <= 0 && D.build > 0.5) { tryBuild(b, 'wall', ry); ai.wallT = 0.9; }
+    if (ai.wallT <= 0 && D.build > 0.5) {
+      const rs = buildSpec(b, 'ramp', ry);
+      const ws = (rs.d === 0 || rs.d === 2) ? { ax: 'x', i: rs.cx + (rs.d === 0 ? 1 : 0), j: rs.cz, l: rs.l } : { ax: 'z', i: rs.cx, j: rs.cz + (rs.d === 1 ? 1 : 0), l: rs.l };
+      tryBuild(b, { kind: 'wall', spec: ws }); ai.wallT = 0.9;
+    }
   } else {
     const ideal = it.id === 'shotgun' ? 5 : it.id === 'sniper' ? 50 : it.id === 'smg' ? 12 : 22;
     const fwd = dist > ideal + 4 ? 1 : dist < ideal - 4 ? -0.6 : 0;
@@ -1211,7 +1295,8 @@ function updateBot(b, dt) {
     if (!ai.visible && now - ai.lastSeen > 1.5) { mx = dx / dist; mz = dz / dist; speed = 6.4; }
   }
   // disparar: al jugador si lo ve, o a su última posición para romper muros
-  const aimAt = ai.visible ? t.pos : (now - ai.lastSeen < 3 && dist < 35 ? ai.lastPos : null);
+  if (ai.visible) ai.breakOut = false;
+  const aimAt = ai.visible ? t.pos : (now - ai.lastSeen < 3 && (dist < 35 || ai.breakOut) ? ai.lastPos : null);
   if (aimAt && ai.reactT <= 0 && it.kind === 'weapon' && b.reloadT <= 0 && b.fireCd <= 0) {
     const w = WEAPONS[it.id];
     if (it.mag <= 0) { b.reloadT = w.reload; }
@@ -1234,7 +1319,7 @@ function updateBot(b, dt) {
   if (b.blocked && b.onGround) {
     ai.stuck += dt;
     if (ai.stuck > 0.25) b.vel.y = 8.2;
-    if (ai.stuck > 1.5) { ai.lastPos.copy(b.pos).add(new THREE.Vector3(mx * 3, 0, mz * 3)); ai.lastSeen = now; ai.stuck = 0; }
+    if (ai.stuck > 1.5) { ai.lastPos.copy(b.pos).add(new THREE.Vector3(mx * 3, 0, mz * 3)); ai.lastSeen = now; ai.stuck = 0; ai.breakOut = true; }
   } else ai.stuck = Math.max(0, ai.stuck - dt);
   const acc = b.onGround ? 10 : 3;
   b.vel.x += (mx * speed - b.vel.x) * Math.min(1, dt * acc);
@@ -1260,7 +1345,7 @@ const BIND_GROUPS = [
   ['Construcción', { wall: 'Muro', floor: 'Suelo', ramp: 'Rampa', cone: 'Cono', buildToggle: 'Modo construcción', material: 'Cambiar material', edit: 'Editar', resetEdit: 'Restablecer edición' }],
   ['Otros', { emote: 'Baile' }],
 ];
-const DEFAULT_SETTINGS = { sens: 1, adsSens: 1, scopeSens: 1, invertY: false, fov: 80, quality: 'auto', edges: true, fps: false, editOnRelease: false, buildDelay: 0.1, autoReload: true, dmgNums: true, enemyBar: true, camDist: 1, camLeft: false,
+const DEFAULT_SETTINGS = { sens: 1, adsSens: 1, scopeSens: 1, invertY: false, fov: 80, quality: 'auto', edges: true, fps: false, editOnRelease: true, buildDelay: 0.1, autoReload: true, dmgNums: true, enemyBar: true, camDist: 1, camLeft: false,
   cross: { style: 'cruz', color: '#ffffff', size: 24, gap: 4, thick: 2, outline: true } };
 const settings = JSON.parse(JSON.stringify(DEFAULT_SETTINGS));
 settings.binds = { ...DEFAULT_BINDS };
@@ -1340,6 +1425,7 @@ function startReload(e) {
   const it = e.inv[e.cur];
   if (!it || it.kind !== 'weapon' || e.reloadT > 0 || it.mag >= WEAPONS[it.id].mag) return;
   e.reloadT = e.reloadMax = WEAPONS[it.id].reload * (1 - it.rarity * 0.05);
+  e.reloadSlot = e.cur;
   sfx('reload');
 }
 function startEmote(e) {
@@ -1367,11 +1453,11 @@ addEventListener('keydown', ev => {
   if (!player.alive) return;
   const act = Object.keys(settings.binds).find(a => settings.binds[a] === ev.code);
   if (!act) return;
-  if (act.startsWith('slot')) { cancelEdit(); selectSlot(+act.slice(4) - 1); }
-  else if (act === 'wall' || act === 'floor' || act === 'ramp' || act === 'cone') { cancelEdit(); enterBuild(act); }
+  if (act.startsWith('slot')) { finishEdit(); selectSlot(+act.slice(4) - 1); }
+  else if (act === 'wall' || act === 'floor' || act === 'ramp' || act === 'cone') { finishEdit(); enterBuild(act); }
   else if (act === 'edit') { if (editing) { if (!settings.editOnRelease) confirmEdit(); } else startEdit(); }
   else if (act === 'resetEdit') resetEdit();
-  else if (act === 'buildToggle') { cancelEdit(); if (player.building) { player.building = false; refreshHotbar(); } else enterBuild(); }
+  else if (act === 'buildToggle') { finishEdit(); if (player.building) { player.building = false; refreshHotbar(); } else enterBuild(); }
   else if (act === 'material') { const o = ['wood', 'stone', 'metal']; player.buildMat = o[(o.indexOf(player.buildMat) + 1) % 3]; refreshHotbar(); }
   else if (act === 'reload') startReload(player);
   else if (act === 'emote') startEmote(player);
@@ -1388,10 +1474,11 @@ function assignBind(act, code) {
 }
 function requestLock() {
   if (freeLook) return;
+  if (!canvas.requestPointerLock) { freeLook = true; return; }   // navegador sin bloqueo de ratón
   try {
     let r = canvas.requestPointerLock({ unadjustedMovement: true });
-    if (r && r.catch) r.catch(() => { try { const r2 = canvas.requestPointerLock(); if (r2 && r2.catch) r2.catch(() => { freeLook = true; }); } catch (e2) { freeLook = true; } });
-  } catch (err) { freeLook = true; }
+    if (r && r.catch) r.catch(() => { try { const r2 = canvas.requestPointerLock(); if (r2 && r2.catch) r2.catch(() => { /* se reintenta con el próximo clic */ }); } catch (e2) { /* ídem */ } });
+  } catch (err) { /* se reintenta con el próximo clic */ }
 }
 canvas.addEventListener('mousedown', ev => {
   if (gameState !== 'play') return;
@@ -1405,12 +1492,12 @@ canvas.addEventListener('mousedown', ev => {
   if (ev.button === 0) { mouseDown = true; playerPrimary(true); }
   if (ev.button === 2) aiming = true;
 });
-addEventListener('mouseup', ev => { if (ev.button === 0) { mouseDown = false; if (editing) editing.paint = null; } if (ev.button === 2) aiming = false; });
+addEventListener('mouseup', ev => { if (ev.button === 0) { mouseDown = false; editRelease(); } if (ev.button === 2) aiming = false; });
 addEventListener('contextmenu', ev => ev.preventDefault());
 addEventListener('wheel', ev => {
   if (gameState !== 'play' || !player.alive) return;
   const dir = ev.deltaY > 0 ? 1 : -1;
-  cancelEdit(); selectSlot((player.cur + dir + 6) % 6);
+  finishEdit(); selectSlot((player.cur + dir + 6) % 6);
 }, { passive: true });
 addEventListener('mousemove', ev => {
   if (gameState !== 'play' || !(locked || freeLook)) return;
@@ -1426,7 +1513,7 @@ document.addEventListener('pointerlockchange', () => {
   locked = document.pointerLockElement === canvas;
   if (!locked) { mouseDown = false; aiming = false; if (gameState === 'play' && !freeLook) pauseGame(); }
 });
-document.addEventListener('pointerlockerror', () => { freeLook = true; });
+document.addEventListener('pointerlockerror', () => { if (gameState === 'play') flashHint('Haz clic en la pantalla para capturar el ratón'); });
 function pauseGame() {
   cancelEdit();
   gameState = 'pause'; mouseDown = false; aiming = false;
@@ -1446,7 +1533,15 @@ function aimedPiece(maxDist = 7) {
   return hit && hit.object.userData.piece ? hit.object.userData.piece : null;
 }
 // ---------- edición por casillas ----------
-let editing = null;   // { p, sel: Set, total, d, paint, hover }
+let editing = null;   // { p, sel: Set, total, d, paint, hover, tiles, path, t0 }
+const EDIT_RANGE = S * 1.5;   // distancia máxima para editar (desde el cuerpo hasta la pieza)
+// distancia del jugador al punto más cercano de la pieza
+function pieceDist(e, p) {
+  const b = pieceBounds(p), x = e.pos.x, y = e.pos.y + 1, z = e.pos.z;
+  return Math.hypot(Math.max(b[0] - x, 0, x - b[3]), Math.max(b[2] - y, 0, y - b[5]), Math.max(b[1] - z, 0, z - b[4]));
+}
+const rampTileGeo = new THREE.PlaneGeometry(S / 2 - 0.12, S * Math.SQRT2 / 2 - 0.12).rotateX(-Math.PI / 2);
+const editFrame = new THREE.Object3D(); editFrame.rotation.order = 'YXZ';
 const editGroup = new THREE.Group(); scene.add(editGroup);
 const tileGeoWall = new THREE.PlaneGeometry(WT - 0.1, WT - 0.1), tileGeoFloor = new THREE.PlaneGeometry(S / 2 - 0.12, S / 2 - 0.12);
 const tileMat = (c, o) => new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: o, depthTest: false, side: THREE.DoubleSide });
@@ -1456,6 +1551,22 @@ const editBaseY = p => p.kind === 'cone' ? p.tr.y - CONE_H / 2 : p.tr.y;
 function buildEditOverlay() {
   editGroup.clear();
   const p = editing.p, tr = p.tr;
+  editing.tiles = [];
+  if (p.kind === 'ramp') {
+    // casillas sobre la superficie de la rampa; arrastrar marca hacia dónde sube
+    editFrame.position.set(tr.x, tr.y, tr.z); editFrame.rotation.set(tr.rx, tr.ry, 0); editFrame.clear();
+    editGroup.add(editFrame);
+    for (let i = 0; i < 4; i++) {
+      const m = new THREE.Mesh(rampTileGeo, TILE_OFF);
+      m.position.set(((i % 2) - 0.5) * S / 2, 0.14, ((i >> 1) - 0.5) * S * Math.SQRT2 / 2);
+      m.renderOrder = 20; m.userData.tile = i;
+      const ln = new THREE.LineSegments(edgesFor(rampTileGeo), TILE_LINE); ln.renderOrder = 21; m.add(ln);
+      editFrame.add(m); editing.tiles.push(m);
+    }
+    editFrame.updateMatrixWorld(true);
+    editing.centers = editing.tiles.map(m => m.getWorldPosition(new THREE.Vector3()));
+    return;
+  }
   for (let i = 0; i < editing.total; i++) {
     let m;
     if (p.kind === 'wall') {
@@ -1470,59 +1581,100 @@ function buildEditOverlay() {
     }
     m.renderOrder = 20; m.userData.tile = i;
     const ln = new THREE.LineSegments(edgesFor(m.geometry), TILE_LINE); ln.renderOrder = 21; m.add(ln);
-    editGroup.add(m);
+    editGroup.add(m); editing.tiles.push(m);
   }
 }
-const _ray = new THREE.Ray(), _plane = new THREE.Plane(), _hitP = new THREE.Vector3();
+const _ray = new THREE.Ray(), _plane = new THREE.Plane(), _hitP = new THREE.Vector3(), _rn = new THREE.Vector3();
+const EDIT_MARGIN = 0.9;
 function tileUnderAim() {
   const p = editing.p, tr = p.tr;
   camera.getWorldDirection(_d);
   _ray.set(camera.position, _d);
-  if (p.kind === 'wall') _plane.set(p.s.ax === 'z' ? new THREE.Vector3(0, 0, 1) : new THREE.Vector3(1, 0, 0), p.s.ax === 'z' ? -tr.z : -tr.x);
-  else _plane.set(new THREE.Vector3(0, 1, 0), -editBaseY(p));
+  const M = EDIT_MARGIN;
+  if (p.kind === 'ramp') {
+    _plane.setFromNormalAndCoplanarPoint(_rn.set(0, 1, 0).applyQuaternion(editFrame.quaternion), editFrame.position);
+    if (!_ray.intersectPlane(_plane, _hitP) || _hitP.distanceTo(camera.position) > 24) return -1;
+    const l = editFrame.worldToLocal(_hitP);
+    if (Math.abs(l.x) > S / 2 + M || Math.abs(l.z) > S * Math.SQRT2 / 2 + M) return -1;
+    return (l.z >= 0 ? 2 : 0) + (l.x >= 0 ? 1 : 0);
+  }
+  if (p.kind === 'wall') _plane.set(p.s.ax === 'z' ? _rn.set(0, 0, 1) : _rn.set(1, 0, 0), p.s.ax === 'z' ? -tr.z : -tr.x);
+  else _plane.set(_rn.set(0, 1, 0), -editBaseY(p));
   if (!_ray.intersectPlane(_plane, _hitP)) return -1;
-  if (_hitP.distanceTo(camera.position) > 16) return -1;
+  if (_hitP.distanceTo(camera.position) > 24) return -1;
+  // si apuntas un poco fuera de la cuadrícula se elige la casilla del borde (ediciones rápidas)
   if (p.kind === 'wall') {
     const u = (p.s.ax === 'z' ? _hitP.x - tr.x : _hitP.z - tr.z) + S / 2, v = _hitP.y - (tr.y - H / 2);
-    if (u < 0 || u >= S || v < 0 || v >= H) return -1;
-    return Math.floor(v / WT) * 3 + Math.floor(u / WT);
+    if (u < -M || u > S + M || v < -M || v > H + M) return -1;
+    return clamp(Math.floor(v / WT), 0, 2) * 3 + clamp(Math.floor(u / WT), 0, 2);
   }
   const lx = _hitP.x - (tr.x - S / 2), lz = _hitP.z - (tr.z - S / 2);
-  if (lx < 0 || lx >= S || lz < 0 || lz >= S) return -1;
-  return Math.floor(lz / (S / 2)) * 2 + Math.floor(lx / (S / 2));
+  if (lx < -M || lx > S + M || lz < -M || lz > S + M) return -1;
+  return clamp(Math.floor(lz / (S / 2)), 0, 1) * 2 + clamp(Math.floor(lx / (S / 2)), 0, 1);
 }
 function startEdit() {
-  const p = aimedPiece(S * 1.8);
-  if (!p) { flashHint('Apunta a una pieza cercana para editarla'); return; }
-  player.building = false;
+  const p = aimedPiece(30);
+  if (!p) { flashHint('Apunta a una pieza para editarla'); return; }
+  if (!roundLive) return;
+  if (p.owner && p.owner !== player) { flashHint('No puedes editar construcciones del rival'); return; }
   if (collapsing.has(p)) { flashHint('Esa pieza se está cayendo'); return; }
-  const total = p.kind === 'wall' ? 9 : p.kind === 'ramp' ? 0 : 4;
+  if (pieceDist(player, p) > EDIT_RANGE) { flashHint(`Demasiado lejos para editar (máx. ${EDIT_RANGE.toFixed(1)} m)`); return; }
+  player.building = false;
+  const total = p.kind === 'wall' ? 9 : 4;
   const sel = new Set();
-  for (let i = 0; i < total; i++) if (p.mask & (1 << i)) sel.add(i);
-  editing = { p, sel, total, d: p.s.d, paint: null, hover: -1 };
+  if (p.kind !== 'ramp') for (let i = 0; i < total; i++) if (p.mask & (1 << i)) sel.add(i);
+  editing = { p, sel, total, d: p.s.d, paint: null, hover: -1, tiles: [], path: [], t0: performance.now() };
   buildEditOverlay();
+  // si ya tenías el clic pulsado al entrar, la casilla de la mira se marca al instante
+  if (mouseDown && p.kind !== 'ramp') editClick();
   $('editHint').textContent = p.kind === 'ramp'
-    ? `Editando rampa · clic para girarla · ${settings.editOnRelease ? 'suelta ' + keyName(BK('edit')) : keyName(BK('edit'))} para confirmar`
+    ? `Editando rampa · arrastra hacia donde quieres que suba (clic = girar) · ${settings.editOnRelease ? 'suelta ' + keyName(BK('edit')) : keyName(BK('edit'))} para confirmar`
     : `Editando · clic y arrastra para marcar casillas · ${settings.editOnRelease ? 'suelta ' + keyName(BK('edit')) : keyName(BK('edit'))} para confirmar · clic der. restablecer`;
   $('editHint').classList.remove('hide');
   refreshHotbar(); sfx('edit');
 }
 function editClick() {
-  if (editing.p.kind === 'ramp') { editing.d = (editing.d + 1) % 4; sfx('edit'); return; }
+  if (editing.p.kind === 'ramp') {
+    const t = tileUnderAim();
+    editing.path = t >= 0 ? [t] : []; editing.paint = true; editing.rampD0 = editing.d;
+    return;
+  }
   const t = tileUnderAim();
   if (t < 0) return;
   editing.paint = !editing.sel.has(t);
   if (editing.paint) editing.sel.add(t); else editing.sel.delete(t);
 }
+// al soltar el clic sobre una rampa sin arrastrar, la rampa gira
+function editRelease() {
+  if (!editing) return;
+  if (editing.p.kind === 'ramp' && editing.paint && editing.path.length <= 1) { editing.d = (editing.d + 1) % 4; sfx('edit'); }
+  editing.paint = null;
+  if (editing.p.kind === 'ramp') editing.path = [];
+}
 function updateEdit() {
   if (!editing) return;
   const p = editing.p;
-  if (!pieces.has(p.key) || !player.alive || player.pos.distanceTo(p.group.position) > S * 2.8) { cancelEdit(); return; }
-  if (p.kind === 'ramp') return;
+  if (!pieces.has(p.key) || collapsing.has(p) || !player.alive || pieceDist(player, p) > EDIT_RANGE + 1.5) { cancelEdit(); return; }
   const t = tileUnderAim();
   editing.hover = t;
+  if (p.kind === 'ramp') {
+    const path = editing.path;
+    if (mouseDown && editing.paint && t >= 0 && path[path.length - 1] !== t) {
+      if (!path.length) path.push(t);
+      else {
+        path.push(t);
+        const a = editing.centers[path[0]], b = editing.centers[t], dx = b.x - a.x, dz = b.z - a.z;
+        editing.d = Math.abs(dx) > Math.abs(dz) ? (dx > 0 ? 0 : 2) : (dz > 0 ? 1 : 3);
+      }
+    }
+    for (const m of editing.tiles) {
+      const on = path.includes(m.userData.tile), hv = m.userData.tile === t;
+      m.material = on ? (hv ? TILE_ON_HOVER : TILE_ON) : (hv ? TILE_HOVER : TILE_OFF);
+    }
+    return;
+  }
   if (mouseDown && editing.paint !== null && t >= 0) { if (editing.paint) editing.sel.add(t); else editing.sel.delete(t); }
-  for (const m of editGroup.children) {
+  for (const m of editing.tiles) {
     const on = editing.sel.has(m.userData.tile), hv = m.userData.tile === t;
     m.material = on ? (hv ? TILE_ON_HOVER : TILE_ON) : (hv ? TILE_HOVER : TILE_OFF);
   }
@@ -1530,25 +1682,33 @@ function updateEdit() {
 function confirmEdit() {
   if (!editing) return;
   const p = editing.p;
+  let changed = false;
   if (p.kind === 'ramp') {
-    if (editing.d !== p.s.d) { p.s.d = editing.d; p.slope.d = editing.d; p.tr = pieceTransform('ramp', p.s); buildParts(p); sfx('edit'); }
+    if (editing.d !== p.s.d) { p.s.d = editing.d; p.slope.d = editing.d; p.tr = pieceTransform('ramp', p.s); p.group.position.set(p.tr.x, p.tr.y, p.tr.z); buildParts(p); changed = true; }
   } else {
     if (editing.sel.size >= editing.total) { flashHint('Deja al menos una casilla'); return; }
     let mask = 0; for (const i of editing.sel) mask |= 1 << i;
-    if (mask !== p.mask) { p.mask = mask; if (p.slope) p.slope.mask = mask; buildParts(p); sfx('edit'); }
+    if (mask !== p.mask) { p.mask = mask; if (p.slope) p.slope.mask = mask; buildParts(p); changed = true; }
+  }
+  if (changed) {
+    sfx('edit'); stats.edits = (stats.edits || 0) + 1;
+    // en práctica se muestra cuánto tardaste en editar, para entrenar ediciones rápidas
+    if (mode === 'practice') flashHint(`Edición en ${((performance.now() - editing.t0) / 1000).toFixed(2)} s`);
   }
   cancelEdit();
 }
+// al cambiar a construir o a un arma con una edición abierta, se confirma (encadenar ediciones es más rápido)
+function finishEdit() { if (editing) { confirmEdit(); cancelEdit(); } }
 function cancelEdit() {
   if (!editing) return;
-  editing = null; editGroup.clear(); mouseDown = false;
+  editing = null; editGroup.clear(); editFrame.clear();
   $('editHint').classList.add('hide');
   if (player) refreshHotbar();
 }
 function resetEdit() {
-  if (editing) { editing.sel.clear(); editing.d = editing.p.s.d; return; }
-  const p = aimedPiece(S * 1.8);
-  if (p && p.mask) { p.mask = 0; if (p.slope) p.slope.mask = 0; buildParts(p); sfx('edit'); }
+  if (editing) { editing.sel.clear(); editing.d = editing.p.s.d; editing.path = []; return; }
+  const p = aimedPiece(30);
+  if (p && p.mask && (!p.owner || p.owner === player) && pieceDist(player, p) <= EDIT_RANGE) { p.mask = 0; if (p.slope) p.slope.mask = 0; buildParts(p); sfx('edit'); }
 }
 
 function playerPrimary(first) {
@@ -1613,7 +1773,7 @@ function updatePlayer(dt) {
   if (mouseDown && (locked || freeLook) && !editing) playerPrimary(false);
   if (e.reloadT > 0) {
     e.reloadT -= dt;
-    if (e.reloadT <= 0) { const it = e.inv[e.cur]; if (it.kind === 'weapon') it.mag = WEAPONS[it.id].mag; sfx('reload'); refreshHotbar(); }
+    if (e.reloadT <= 0) { const it = e.inv[e.reloadSlot ?? e.cur]; if (it && it.kind === 'weapon') it.mag = WEAPONS[it.id].mag; sfx('reload'); refreshHotbar(); }
   }
   const it = e.inv[e.cur];
   if (e.useT > 0) {
@@ -1725,6 +1885,7 @@ function updateScore() {
   $('scGoal').textContent = mode === 'practice' ? 'sin límite' : `a ${WIN_ROUNDS}`;
 }
 function endMatch() {
+  cancelEdit(); ghost.visible = false; if (player) player.building = false;
   gameState = 'end';
   try { document.exitPointerLock(); } catch (err) { /* sin bloqueo */ }
   const win = score.me > score.bot;
@@ -1798,8 +1959,8 @@ function updateHud(dt) {
     aimInfoT = 0.1;
     const pc = e.alive ? aimedPiece(25) : null;
     if (pc) {
-      const own = !editing && !collapsing.has(pc);
-      hudSet($('aimInfo'), 'html', `${MATS[pc.mat].name} · ${KIND_NAME[pc.kind]}${pc.mask ? ' editado' : ''} ${Math.max(0, Math.round(pc.hp))}/${pc.maxHp}${own ? ` · <span style="color:var(--cyan)">${keyName(BK('edit'))} editar</span>` : ''}<div class="hpb"><i style="width:${Math.round(100 * Math.max(0, pc.hp) / pc.maxHp)}%"></i></div>`);
+      const own = !editing && !collapsing.has(pc) && (!pc.owner || pc.owner === player), near = own && pieceDist(e, pc) <= EDIT_RANGE;
+      hudSet($('aimInfo'), 'html', `${MATS[pc.mat].name} · ${KIND_NAME[pc.kind]}${pc.mask ? ' editado' : ''} ${Math.max(0, Math.round(pc.hp))}/${pc.maxHp}${own ? (near ? ` · <span style="color:var(--cyan)">${keyName(BK('edit'))} editar</span>` : ' · <span style="opacity:.6">lejos para editar</span>') : ''}<div class="hpb"><i style="width:${Math.round(100 * Math.max(0, pc.hp) / pc.maxHp)}%"></i></div>`);
     } else hudSet($('aimInfo'), 'html', '');
   }
   const pg = $('progress');
@@ -1891,7 +2052,7 @@ try { const c = JSON.parse(localStorage.getItem('rampazo-personaje') || 'null');
 let previewEnt = null, dragYaw = false;
 function rebuildPreview() {
   const yaw = previewEnt ? previewEnt.yaw : Math.PI, emote = previewEnt ? previewEnt.emoteT : 0;
-  if (previewEnt) scene.remove(previewEnt.ch.group);
+  if (previewEnt) disposeCharacter(previewEnt.ch);
   previewEnt = { ch: makeCharacter(charCfg), pos: new THREE.Vector3(), vel: new THREE.Vector3(), yaw, pitch: 0, onGround: true, walkT: 0, inv: [{ kind: 'pickaxe' }], cur: 0, building: false, crouch: false, emoteT: emote, swingT: 0 };
   $('charName').textContent = charCfg.name;
   $('charSw').style.background = charCfg.shirt;
@@ -1923,16 +2084,17 @@ rebuildPreview();
 
 function startMatch() {
   initAudio();
-  if (player) { unbindParts(player); scene.remove(player.ch.group); }
+  if (player) { unbindParts(player); disposeCharacter(player.ch); }
   player = makeEntity('Tú', charCfg, true);
-  if (bot) { unbindParts(bot); scene.remove(bot.ch.group); }
+  if (bot) { unbindParts(bot); disposeCharacter(bot.ch); }
   const rival = { ...pick(PRESETS.filter(pr => pr.name !== charCfg.name)) };
   bot = makeEntity('RX-1', rival, false);
   bot.name = mode === 'practice' ? 'Maniquí' : `RX-${{ facil: 1, normal: 2, dificil: 3, pro: 9 }[diff]}`;
   $('enemyName').textContent = `${bot.name} · ${mode === 'practice' ? 'práctica' : DIFF[diff].name}`;
   $('scBotName').textContent = bot.name;
   score.me = 0; score.bot = 0; score.round = 1;
-  stats = { dmg: 0, built: 0, shots: 0, hits: 0 };
+  roundEndT = 0; countdown = 0; roundLive = false;
+  stats = { dmg: 0, built: 0, shots: 0, hits: 0, edits: 0 };
   gameState = 'play';
   startRound();
   $('start').classList.add('hide'); $('end').classList.add('hide'); $('hud').classList.remove('hide');
@@ -1998,14 +2160,14 @@ $('setDone').onclick = () => { capture = null; $('settings').classList.add('hide
 $('menuSetBtn').onclick = () => openSettings('start');
 $('pauseSetBtn').onclick = () => openSettings('pause');
 $('resumeBtn').onclick = resumeGame;
-$('quitBtn').onclick = () => { cancelEdit(); $('pause').classList.add('hide'); $('hud').classList.add('hide'); $('start').classList.remove('hide'); gameState = 'menu'; clearPieces(); };
+$('quitBtn').onclick = () => { cancelEdit(); roundEndT = 0; countdown = 0; roundLive = false; ghost.visible = false; $('pause').classList.add('hide'); $('hud').classList.add('hide'); $('start').classList.remove('hide'); gameState = 'menu'; clearPieces(); };
 applySettings();
 $('rematchBtn').onclick = startMatch;
 $('menuBtn').onclick = () => { $('end').classList.add('hide'); $('start').classList.remove('hide'); clearPieces(); };
 requestAnimationFrame(frame);
 
 // para pruebas automatizadas
-window.__duel = { hurt: (who, n) => damage(who === 'bot' ? bot : player, n, who === 'bot' ? player : bot, 'rifle'), get player() { return player; }, startEdit, confirmEdit, editClick, get editing() { return editing; }, aimTarget, settings, openSettings, get preview() { return previewEnt; }, pause: pauseGame, resume: resumeGame, applySettings, get bot() { return bot; }, score, pieces, get state() { return gameState; }, get live() { return roundLive; }, fire: () => playerPrimary(true), build: k => tryBuild(player, k), makePiece, destroyPiece, slopes, get collapsing() { return collapsing; }, setMode: (m, d) => { mode = m; diff = d; } };
+window.__duel = { hurt: (who, n) => damage(who === 'bot' ? bot : player, n, who === 'bot' ? player : bot, 'rifle'), get player() { return player; }, startEdit, confirmEdit, editClick, get editing() { return editing; }, aimTarget, settings, openSettings, get preview() { return previewEnt; }, pause: pauseGame, resume: resumeGame, applySettings, get bot() { return bot; }, score, pieces, get state() { return gameState; }, get live() { return roundLive; }, fire: () => playerPrimary(true), build: k => tryBuild(player, k), makePiece, destroyPiece, slopes, get collapsing() { return collapsing; }, get debris() { return debris; }, moveEntity, hasSupport, EDIT_RANGE, pieceDist, setMode: (m, d) => { mode = m; diff = d; } };
 </script>
 </body>
 </html>

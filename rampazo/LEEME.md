@@ -1,6 +1,6 @@
 # RAMPAZO 1v1 — información del juego
 
-Duelo de construcción 1 contra 1 en 3D, para el navegador. Todo el juego está en un solo archivo: `index.html` (unas 2.010 líneas, 118 KB). Usa la librería 3D **Three.js 0.160**, que se carga desde internet al abrir el archivo.
+Duelo de construcción 1 contra 1 en 3D, para el navegador. Todo el juego está en un solo archivo: `index.html` (unas 2.170 líneas, 127 KB). Usa la librería 3D **Three.js 0.160**, que se carga desde internet al abrir el archivo.
 
 Personajes, nombres, arena y sonidos son originales. Los sonidos se generan con código y no hay imágenes externas.
 
@@ -33,7 +33,11 @@ Personajes, nombres, arena y sonidos son originales. Los sonidos se generan con 
 - **Vida y escudo:** 100 + 100.
 - **Materiales:** 500 de madera, 300 de piedra y 200 de metal. Cada pieza cuesta 10.
 - **Piezas:** cada casilla mide 5 × 5 metros. Resistencia: madera 150, piedra 300 y metal 500. Nacen débiles y se refuerzan en un segundo.
-- **Soporte:** una pieza aguanta si toca el suelo o está unida a algo que lo toca. Si rompes la base, todo lo que queda en el aire tiembla y se cae.
+- **Física de las construcciones:**
+  - Para colocar una pieza tiene que tocar el suelo o algo ya construido. No se construye flotando, y la vista fantasma se pone roja.
+  - Una pieza aguanta si está unida, aunque sea a través de otras, a algo que toca el suelo. Si rompes la base, lo que queda en el aire se cae en cascada: primero lo más cercano a la rotura, y cada pieza cae girando.
+  - Las rampas son sólidas por los lados y por debajo, y los suelos hacen de techo: no se atraviesan subiendo por una rampa.
+  - Si una pieza aparece encima de ti, no te empuja lejos.
 
 ---
 
@@ -58,11 +62,19 @@ Personajes, nombres, arena y sonidos son originales. Los sonidos se generan con 
 | `Esc` | Pausa |
 
 ### Cómo se edita
-1. Apunta a cualquier pieza (muro, suelo, rampa o cono, tuya o del rival) y pulsa `E`.
-2. Aparece una cuadrícula: **3×3 en muros** y **2×2 en suelos y conos**. Haz clic o arrastra para marcar las casillas que quieres quitar.
+1. Apunta a una pieza tuya (muro, suelo, rampa o cono) a **7,5 m o menos** y pulsa `E`. Si está más lejos, el aviso dice "lejos para editar". Las piezas del rival no se editan.
+2. Aparece una cuadrícula: **3×3 en muros** y **2×2 en suelos, conos y rampas**. Haz clic o arrastra para marcar las casillas que quieres quitar.
 3. Pulsa `E` otra vez para confirmar. Si activas "Editar al soltar", se confirma al soltar `E`.
-4. En las **rampas**, cada clic las gira hacia otro lado.
+4. En las **rampas**, arrastra sobre las casillas en la dirección en la que quieres que suba. Un clic sin arrastrar la gira.
 5. **Clic derecho** borra la selección. **`T`** devuelve la pieza a su forma original.
+6. Si te alejas más de 9 m mientras editas, la edición se cancela.
+
+### Ediciones dobles y triples
+- **Editar al soltar** viene activado: mantén `E`, marca y suelta. Se desactiva en Ajustes → Juego.
+- Si ya tienes el clic pulsado al pulsar `E`, la casilla de la mira se marca al instante.
+- Si apuntas un poco fuera de la cuadrícula, se marca la casilla del borde.
+- Si con una edición abierta pulsas una tecla de construir o de arma, la edición se confirma. Así se encadenan editar, construir y volver a editar.
+- En el modo **Práctica** se muestra cuánto tardó cada edición, para entrenar.
 
 ---
 
