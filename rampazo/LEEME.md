@@ -1,6 +1,6 @@
 # RAMPAZO 1v1 — información del juego
 
-Duelo de construcción 1 contra 1 en 3D, para el navegador. Todo el juego está en un solo archivo: `index.html` (unas 2.400 líneas, 146 KB). Usa la librería 3D **Three.js 0.160**, que se carga desde internet al abrir el archivo.
+Duelo de construcción 1 contra 1 en 3D, para el navegador. Todo el juego está en un solo archivo: `index.html` (unas 2.580 líneas, 157 KB). Usa la librería 3D **Three.js 0.160**, que se carga desde internet al abrir el archivo.
 
 Personajes, nombres, arena y sonidos son originales. Los sonidos se generan con código y no hay imágenes externas.
 
@@ -27,14 +27,22 @@ Personajes, nombres, arena y sonidos son originales. Los sonidos se generan con 
 | Duelo | Arena abierta. Gana quien llegue primero a 5 rondas |
 | Box fight | Cada uno empieza encerrado en una caja de metal |
 | Práctica | Materiales infinitos y un maniquí que se mueve de lado a lado |
+| Reto de edición | Delante aparece una pieza (muro, suelo o cono) con casillas rojas. Quítalas lo más rápido que puedas: son 10 ediciones contrarreloj y se guarda tu récord. Si quitas casillas de más, la pieza se reinicia |
 
 ### Dificultades del rival
 | Dificultad | Cómo juega |
 |---|---|
 | Fácil | Apunta mal y casi no construye |
-| Normal | Se cubre con muros cuando le das |
+| Normal | Se cubre con muros cuando le das y se asoma abriendo una ranura en su muro |
 | Difícil | Sube en rampa si tienes la altura y se encierra para curarse |
 | Pro | Construye sin parar y apunta mejor |
+
+### Combate
+- **Disparos:** destello en el cañón, temblor de cámara al disparar (más fuerte con escopeta y francotirador) y al recibir daño, y marcas de bala en las piezas.
+- **Escudo roto:** cuando le rompes el escudo al rival suena un aviso y sale el texto "ESCUDO ROTO".
+- **Eliminación:** el personaje eliminado gira, sube y se deshace en cubos.
+- **Registro de eliminaciones:** arriba a la derecha dice quién eliminó a quién, con qué arma y si fue a la cabeza.
+- **Rival listo:** desde Normal, si está detrás de un muro suyo, abre una ranura para asomarse, dispara y la vuelve a cerrar. Lo hace sobre todo en Box fight.
 
 ### Equipo de cada ronda
 - **Armas:** pico, escopeta (legendaria), rifle de asalto (épico), subfusil (raro) y francotirador (épico), más 4 mini escudos (+25 de escudo cada uno).

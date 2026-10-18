@@ -83,6 +83,9 @@
   #banner { position: absolute; top: 30%; left: 50%; transform: translate(-50%,-50%); font-family: var(--display); font-size: clamp(30px, 6vw, 64px); text-shadow: 0 4px 0 var(--ink), 0 0 30px rgba(0,0,0,.5); opacity: 0; transition: opacity .25s; white-space: nowrap; color: var(--sun); }
   #sub { position: absolute; top: calc(30% + 46px); left: 50%; transform: translateX(-50%); font-size: 20px; font-weight: 800; text-shadow: 0 2px 3px #000; opacity: 0; transition: opacity .25s; white-space: nowrap; }
   #nums { position: absolute; inset: 0; }
+  #feed { position: absolute; right: max(16px, env(safe-area-inset-right, 0px)); top: calc(16px + env(safe-area-inset-top, 0px)); display: flex; flex-direction: column; gap: 4px; align-items: flex-end; max-width: 46vw; }
+  #feed .kf { background: rgba(10,12,22,.68); border-left: 3px solid var(--sun); padding: 4px 10px; border-radius: 6px; font-weight: 700; font-size: 14px; text-shadow: 0 1px 2px #000; animation: kfIn .25s ease-out; }
+  @keyframes kfIn { from { transform: translateX(30px); opacity: 0; } }
   #nums div { position: absolute; font-family: var(--display); font-size: 22px; text-shadow: 0 2px 0 var(--ink); transform: translate(-50%,-50%); white-space: nowrap; }
   /* vida y escudo: placas con icono, barra con brillo y número */
   #bars { position: absolute; left: max(20px, env(safe-area-inset-left, 0px)); bottom: calc(22px + env(safe-area-inset-bottom, 0px)); width: 330px; display: flex; flex-direction: column; gap: 6px; }
@@ -186,6 +189,7 @@
   <div id="fps" hidden></div>
   <div id="score"><div class="me">TÚ <b id="scMe">0</b></div><div class="mid"><span id="scRound">Ronda 1</span><span id="scGoal">a 5</span></div><div class="bot"><b id="scBot">0</b> <span id="scBotName">RIVAL</span></div></div>
   <div id="enemyBar"><span id="enemyName">Rival</span><div class="eb"><i id="ebShield" style="background:var(--shield)"></i><i id="ebHp" style="background:var(--danger)"></i></div></div>
+  <div id="feed"></div>
   <div id="banner"></div>
   <div id="sub"></div>
   <div id="hint" class="hide"></div>
@@ -259,6 +263,7 @@
     <div><b id="stDmg">0</b>Daño infligido</div>
     <div><b id="stAcc">0%</b>Precisión</div>
     <div><b id="stBuilt">0</b>Piezas construidas</div>
+    <div><b id="stEdits">0</b>Ediciones</div>
   </div>
   <div class="row">
     <button class="btn" id="rematchBtn">REVANCHA</button>
@@ -317,7 +322,9 @@ const MODES = {
   duel:     { name: 'Duelo',    desc: 'Arena abierta, al mejor de 9' },
   box:      { name: 'Box fight', desc: 'Empiezas encerrado en una caja de metal' },
   practice: { name: 'Práctica', desc: 'Materiales infinitos, rival quieto' },
+  edits:    { name: 'Reto de edición', desc: '10 ediciones contrarreloj' },
 };
+const training = () => mode === 'practice' || mode === 'edits';
 
 const rand = (a, b) => a + Math.random() * (b - a);
 const pick = arr => arr[Math.floor(Math.random() * arr.length)];
@@ -1099,7 +1106,7 @@ function makeEntity(name, skin, isPlayer) {
     inv: [], cur: 0, mats: { wood: 0, stone: 0, metal: 0 }, buildMat: 'wood',
     fireCd: 0, reloadT: 0, reloadMax: 1, useT: 0, useMax: 1, bloom: 0, recoil: 0, building: false, swingT: 0, crouch: false, emoteT: 0,
   };
-  e.ch = makeCharacter(skin);
+  e.ch = makeCharacter(skin); e.skin = skin;
   bindParts(e);
   return e;
 }
@@ -1115,12 +1122,13 @@ function loadout(e) {
     { kind: 'heal', count: 4 },
   ];
   e.cur = 2;
-  const inf = mode === 'practice' && e.isPlayer;
+  const inf = training() && e.isPlayer;
   e.mats = inf ? { wood: 999, stone: 999, metal: 999 } : { wood: 500, stone: 300, metal: 200 };
   e.buildMat = 'wood';
   e.hp = 100; e.shield = 100; e.alive = true;
   e.fireCd = 0; e.reloadT = 0; e.useT = 0; e.bloom = 0; e.building = false; e.swingT = 0; e.crouch = false; e.height = 1.9; e.emoteT = 0;
   e.vel.set(0, 0, 0);
+  e.dieT = 0; e.ch.group.scale.set(1, 1, 1); e.ch.group.visible = true;
 }
 
 // ============================================================
@@ -1155,6 +1163,39 @@ function tracer(a, b, color = 0xfff2a0) {
   t.line.material.color.setHex(color); t.line.visible = true; t.life = 0.07;
   if (!tracers.includes(t)) tracers.push(t);
 }
+// destello del cañón: una estrella brillante que dura un instante
+const flashTex = (() => {
+  const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d');
+  const gr = g.createRadialGradient(32, 32, 0, 32, 32, 32); gr.addColorStop(0, 'rgba(255,255,230,1)'); gr.addColorStop(0.3, 'rgba(255,200,90,.9)'); gr.addColorStop(1, 'rgba(255,120,30,0)');
+  g.fillStyle = gr; g.beginPath();
+  for (let i = 0; i < 16; i++) { const a = i / 16 * Math.PI * 2, r = i % 2 ? 12 : 32; g.lineTo(32 + Math.cos(a) * r, 32 + Math.sin(a) * r); }
+  g.fill(); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
+})();
+const muzzleFx = [0, 1].map(() => { const m = new THREE.Mesh(new THREE.PlaneGeometry(0.7, 0.7), new THREE.MeshBasicMaterial({ map: flashTex, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false })); m.visible = false; scene.add(m); return { m, life: 0 }; });
+let muzzleIdx = 0;
+function showMuzzle(pos, big) {
+  const f = muzzleFx[muzzleIdx = (muzzleIdx + 1) % muzzleFx.length];
+  f.m.position.copy(pos); f.m.quaternion.copy(camera.quaternion); f.m.rotateZ(rand(0, Math.PI));
+  f.m.scale.setScalar(big ? 1.5 : 1); f.m.visible = true; f.life = 0.05;
+}
+// marcas de impacto en las piezas (se pegan a la pieza y desaparecen con ella)
+const decalMat = new THREE.MeshBasicMaterial({ color: 0x1a1410, transparent: true, opacity: 0.7, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2 });
+const decalGeo = new THREE.CircleGeometry(0.08, 8);
+const decals = []; let decalIdx = 0;
+const _dn = new THREE.Vector3();
+function addDecal(hit) {
+  if (!hit.face) return;
+  let d = decals[decalIdx];
+  if (!d) { d = new THREE.Mesh(decalGeo, decalMat); decals[decalIdx] = d; }
+  decalIdx = (decalIdx + 1) % 60;
+  if (d.parent) d.parent.remove(d);
+  _dn.copy(hit.face.normal).transformDirection(hit.object.matrixWorld);
+  d.position.copy(hit.point).addScaledVector(_dn, 0.02);
+  d.lookAt(_dn.add(d.position));
+  d.scale.setScalar(rand(0.8, 1.3));
+  hit.object.attach(d);
+}
+let camShake = 0;
 function dmgNumber(pos, text, color) {
   if (!settings.dmgNums) return;
   const el = document.createElement('div'); el.textContent = text; el.style.color = color;
@@ -1167,6 +1208,9 @@ function updateFx(dt) {
     if (f.life <= 0) { scene.remove(f.m); fxList.splice(i, 1); }
   }
   flashT -= dt; if (flashT <= 0) flash.intensity = 0;
+  for (const f of muzzleFx) if (f.life > 0) { f.life -= dt; if (f.life <= 0) f.m.visible = false; }
+  for (const k of killFeed) { k.life -= dt; if (k.life <= 0) k.el.remove(); }
+  for (let i = killFeed.length - 1; i >= 0; i--) if (killFeed[i].life <= 0) killFeed.splice(i, 1);
   for (let i = tracers.length - 1; i >= 0; i--) {
     const t = tracers[i]; t.life -= dt; t.line.material.opacity = t.life / 0.07;
     if (t.life <= 0) { t.line.visible = false; tracers.splice(i, 1); }
@@ -1213,6 +1257,8 @@ function sfx(type, pos) {
     case 'heal': tone(500, 800, 0.2, 0.12); break;
     case 'edit': tone(700, 1100, 0.07, 0.12, 'triangle'); break;
     case 'pick': noise(0.1, 1200, 0.3); tone(500, 200, 0.06, 0.2, 'triangle'); break;
+    case 'shield': noise(0.25, 6000, 0.3); tone(1800, 600, 0.25, 0.18, 'triangle'); tone(2400, 900, 0.18, 0.1); break;
+    case 'elim': tone(880, 440, 0.25, 0.22, 'square'); tone(660, 220, 0.45, 0.18, 'triangle'); noise(0.3, 2500, 0.2); break;
   }
 }
 
@@ -1235,6 +1281,8 @@ function damage(e, amount, attacker, wid, head = false) {
   amount = Math.round(amount);
   const toShield = Math.min(e.shield, amount);
   e.shield -= toShield; e.hp -= amount - toShield;
+  if (toShield > 0 && e.shield <= 0) { sfx('shield', e.isPlayer ? null : e.pos); burst(e.pos.clone().setY(e.pos.y + 1.2), 0x6cc4ff, 14); if (attacker === player) dmgNumber(e.pos.clone().setY(e.pos.y + 2.7), 'ESCUDO ROTO', '#6cc4ff'); }
+  if (e === player) camShake = Math.min(0.3, camShake + amount / 220);
   if (attacker === player && e !== player) {
     stats.dmg += amount;
     dmgNumber(e.pos.clone().setY(e.pos.y + 2.2), String(amount), head ? '#ffd23a' : toShield > 0 ? '#7fd4ff' : '#ffffff');
@@ -1242,15 +1290,34 @@ function damage(e, amount, attacker, wid, head = false) {
   }
   if (e === player) { dmgFlash = Math.min(1, dmgFlash + amount / 40); e.useT = 0; }
   if (e === bot) { bot.ai.hurtT = now; }
-  if (e.hp <= 0) kill(e);
+  if (e.hp <= 0) kill(e, attacker, wid, head);
 }
-function kill(e) {
+// registro de eliminaciones (arriba a la derecha)
+const killFeed = [];
+function addFeed(html) {
+  const el = document.createElement('div'); el.className = 'kf'; el.innerHTML = html;
+  $('feed').prepend(el); killFeed.push({ el, life: 6 });
+  while (killFeed.length > 4) killFeed.shift().el.remove();
+}
+function kill(e, attacker, wid, head) {
   e.alive = false; e.hp = 0;
   unbindParts(e);
-  e.ch.group.rotation.x = -Math.PI / 2;
-  e.ch.group.position.y = e.pos.y + 0.3;
+  // eliminación: el personaje gira, sube y se deshace en cubos de su color
+  e.dieT = 0.9;
   burst(e.pos.clone().setY(e.pos.y + 1), 0x7fd4ff, 26);
+  burst(e.pos.clone().setY(e.pos.y + 1.3), new THREE.Color(e.skin ? e.skin.accent : '#ffd23a').getHex(), 18);
+  sfx('elim', e.isPlayer ? null : e.pos);
+  const wname = wid && WEAPONS[wid] ? WEAPONS[wid].name : wid === 'pickaxe' ? 'Pico' : 'caída';
+  const who = attacker ? attacker.name : 'La gravedad';
+  addFeed(`<b style="color:${attacker === player ? 'var(--sun)' : 'var(--hot)'}">${who}</b> eliminó a <b>${e.name}</b> · ${wname}${head ? ' <span style="color:var(--sun)">(cabeza)</span>' : ''}`);
   endRound(e === player ? bot : player);
+}
+function updateDeath(e, dt) {
+  if (!(e.dieT > 0)) return;
+  e.dieT -= dt;
+  const g = e.ch.group, k = Math.max(0.001, e.dieT / 0.9);
+  g.scale.set(k, k, k); g.position.y += dt * 1.6; g.rotation.y += dt * 9;
+  if (Math.random() < dt * 20) burst(g.position.clone().setY(g.position.y + 1), 0x7fd4ff, 2);
 }
 function fireWeapon(e, it, origin, dirBase, minDist, muzzle) {
   const w = WEAPONS[it.id];
@@ -1259,6 +1326,8 @@ function fireWeapon(e, it, origin, dirBase, minDist, muzzle) {
   if (Math.hypot(e.vel.x, e.vel.z) > 1) spread *= 1.35;
   if (e.crouch) spread *= 0.75;
   flash.position.copy(muzzle); flash.intensity = it.id === 'shotgun' || it.id === 'sniper' ? 40 : 22; flashT = 0.05;
+  showMuzzle(muzzle, it.id === 'shotgun' || it.id === 'sniper');
+  if (e.isPlayer) camShake = Math.max(camShake, { shotgun: 0.12, sniper: 0.16, rifle: 0.035, smg: 0.025 }[it.id]);
   if (!e.onGround) spread *= 1.5;
   const base = w.dmg * RARITY[it.rarity].mult;
   let hitEnt = false;
@@ -1293,6 +1362,7 @@ function applyHit(hit, dmg, attacker, wid) {
     p.shake = 0.12; shaking.add(p);
     if (attacker === player) dmgNumber(hit.point, String(Math.round(d)), '#cfcfe0');
     burst(hit.point, MATS[p.mat].color, 3);
+    addDecal(hit);
     if (p.hp <= 0) destroyPiece(p);
   }
   return false;
@@ -1362,7 +1432,7 @@ function tryBuild(e, kind, yaw) {
   if (!hasSupport(kind.kind || kind, s)) return false;
   const p = makePiece(kind.kind || kind, s, e.buildMat, e);
   if (!p) return false;
-  if (!(mode === 'practice' && e.isPlayer)) e.mats[e.buildMat] -= 10;
+  if (!(training() && e.isPlayer)) e.mats[e.buildMat] -= 10;
   if (e === player) stats.built++;
   sfx('build', e.isPlayer ? null : p.group.position);
   return true;
@@ -1417,7 +1487,77 @@ function axisYaw(dx, dz) {
   if (Math.abs(dx) > Math.abs(dz)) return dx > 0 ? -Math.PI / 2 : Math.PI / 2;
   return dz > 0 ? Math.PI : 0;
 }
+// ---------- reto de edición: marca las casillas rojas lo más rápido posible ----------
+const EDIT_GOAL = 10;
+const editCh = { n: 0, t: 0, piece: null, target: 0, running: false, restartT: 0, best: null, splitT: 0 };
+try { editCh.best = +localStorage.getItem('rampazo-reto') || null; } catch (err) { /* sin almacenamiento */ }
+const targetGroup = new THREE.Group(); scene.add(targetGroup);
+const TARGET_MAT = new THREE.MeshBasicMaterial({ color: 0xff4f6d, transparent: true, opacity: 0.6, depthTest: false, depthWrite: false, side: THREE.DoubleSide });
+const WALL_PATTERNS = [[4], [1, 4], [6, 7, 8], [0, 3, 6], [2, 5, 8], [3, 4, 5], [0, 1, 2], [1, 4, 7], [0, 2], [3, 5], [4, 7], [0, 1, 3, 4], [1, 2, 4, 5], [0, 6], [6, 8], [1, 7]];
+const QUAD_PATTERNS = [[0], [1], [2], [3], [0, 1], [2, 3], [0, 2], [1, 3], [0, 3], [1, 2], [0, 1, 2], [1, 2, 3]];
+function resetEditChallenge() {
+  targetGroup.clear();
+  Object.assign(editCh, { n: 0, t: 0, piece: null, target: 0, running: false, restartT: 0 });
+}
+function spawnEditTarget() {
+  if (editCh.piece) destroyPiece(editCh.piece, true);
+  targetGroup.clear();
+  const kind = pick(['wall', 'wall', 'floor', 'cone']);
+  const p = makePiece(kind, kind === 'wall' ? { ax: 'z', i: 0, j: 0, l: 0 } : { cx: 0, cz: -1, l: 0 }, pick(['wood', 'stone', 'metal']), player);
+  if (!p) return;
+  editCh.piece = p;
+  const pat = pick(kind === 'wall' ? WALL_PATTERNS : QUAD_PATTERNS);
+  editCh.target = pat.reduce((m, i) => m | (1 << i), 0);
+  const tr = p.tr;
+  for (const i of pat) {
+    let m;
+    if (kind === 'wall') {
+      const c = i % 3, r = Math.floor(i / 3);
+      m = new THREE.Mesh(tileGeoWall, TARGET_MAT);
+      m.position.set(tr.x - S / 2 + (c + 0.5) * WT, tr.y + (r + 0.5) * WT - H / 2, tr.z + 0.2);
+    } else {
+      m = new THREE.Mesh(tileGeoFloor, TARGET_MAT); m.rotation.x = -Math.PI / 2;
+      m.position.set(tr.x + ((i % 2) - 0.5) * S / 2, editBaseY(p) + 0.16, tr.z + ((i >> 1) - 0.5) * S / 2);
+    }
+    m.renderOrder = 15; targetGroup.add(m);
+  }
+  editCh.splitT = editCh.t;
+}
+function checkEditTarget(p) {
+  if (!editCh.running || p !== editCh.piece) return;
+  if (p.mask !== editCh.target) {
+    flashHint('No coincide: quita solo las casillas rojas');
+    p.mask = 0; if (p.slope) p.slope.mask = 0; buildParts(p);
+    return;
+  }
+  editCh.n++; sfx('win');
+  const split = editCh.t - editCh.splitT;
+  if (editCh.n >= EDIT_GOAL) {
+    editCh.running = false; targetGroup.clear();
+    const t = editCh.t, rec = !editCh.best || t < editCh.best;
+    if (rec) { editCh.best = t; try { localStorage.setItem('rampazo-reto', String(t)); } catch (err) { /* sin almacenamiento */ } }
+    banner(rec ? '¡NUEVO RÉCORD!' : '¡RETO COMPLETADO!', `${EDIT_GOAL} ediciones en ${t.toFixed(2)} s · récord ${editCh.best.toFixed(2)} s`, 3.2);
+    editCh.restartT = 3.4;
+  } else { flashHint(`¡Bien! ${split.toFixed(2)} s`); spawnEditTarget(); }
+  updateScore();
+}
+function updateEditChallenge(dt) {
+  targetGroup.visible = mode === 'edits';
+  if (mode !== 'edits') return;
+  bot.ch.group.visible = false;
+  if (!roundLive) return;
+  if (editCh.restartT > 0) {
+    editCh.restartT -= dt;
+    if (editCh.restartT <= 0) { if (editCh.piece) destroyPiece(editCh.piece, true); resetEditChallenge(); updateScore(); }
+    return;
+  }
+  if (!editCh.running) { editCh.running = true; editCh.n = 0; editCh.t = 0; spawnEditTarget(); updateScore(); banner('¡A EDITAR!', 'Quita solo las casillas rojas de cada pieza', 1.6); sfx('go'); }
+  editCh.t += dt;
+  if (!editCh.piece || !pieces.has(editCh.piece.key)) spawnEditTarget();
+  hudSet($('scGoal'), 'text', editCh.t.toFixed(1) + ' s');
+}
 function updateBot(b, dt) {
+  if (mode === 'edits') { b.vel.set(0, 0, 0); return; }
   b.fireCd -= dt; b.bloom = Math.max(0, b.bloom - dt * 0.08); b.recoil = Math.max(0, b.recoil - dt * 1.2);
   if (b.reloadT > 0) { b.reloadT -= dt; if (b.reloadT <= 0) { const w = b.inv[b.reloadSlot ?? b.cur]; if (w && w.kind === 'weapon') w.mag = WEAPONS[w.id].mag; } }
   const ai = b.ai, D = DIFF[diff], t = player;
@@ -1472,6 +1612,22 @@ function updateBot(b, dt) {
     moveEntity(b, dt);
     return;
   }
+  // asomarse: abre una ranura en su propio muro hacia el jugador, dispara y la vuelve a cerrar
+  if (ai.peek) {
+    const p = ai.peek.p;
+    if (!pieces.has(p.key) || now > ai.peek.until) {
+      if (pieces.has(p.key)) { p.mask = 0; buildParts(p); sfx('edit', p.group.position); }
+      ai.peek = null; ai.peekCd = now + rand(1.2, 2.6);
+    }
+  } else if (ai.mode === 'fight' && !ai.visible && D.build >= 0.5 && now > (ai.peekCd || 0) && b.onGround) {
+    const cx = Math.floor(b.pos.x / S), cz = Math.floor(b.pos.z / S), l = Math.max(0, Math.floor((b.pos.y + 1) / H));
+    const key = Math.abs(dx) > Math.abs(dz) ? `w:x:${dx > 0 ? cx + 1 : cx}:${cz}:${l}` : `w:z:${cx}:${dz > 0 ? cz + 1 : cz}:${l}`;
+    const p = pieces.get(key);
+    if (p && p.owner === b && !p.mask && !collapsing.has(p)) {
+      p.mask = (1 << 1) | (1 << 4); buildParts(p); sfx('edit', p.group.position);
+      ai.peek = { p, until: now + rand(1.3, 2.2) }; ai.think = 0; ai.reactT = Math.min(ai.reactT, D.react * 0.6);
+    } else ai.peekCd = now + 0.6;
+  }
   if (ai.mode === 'rush') {
     // subir en rampa hacia el jugador
     const ry = ai.rushYaw;
@@ -1491,7 +1647,7 @@ function updateBot(b, dt) {
     const fx = dx / dist, fz = dz / dist;
     mx = fx * fwd - fz * ai.strafe; mz = fz * fwd + fx * ai.strafe;
     speed = 5.6;
-    if (b.onGround && Math.random() < dt * 0.6) b.vel.y = 8.2;
+    if (b.onGround && !ai.peek && Math.random() < dt * 0.6) b.vel.y = 8.2;
     // reaccionar al daño: muro (+ rampa) hacia el jugador
     if (now - ai.hurtT < 0.5 && now > ai.buildCd && Math.random() < D.build) {
       ai.buildCd = now + rand(1, 2.4) / D.build;
@@ -1530,6 +1686,7 @@ function updateBot(b, dt) {
     if (ai.stuck > 0.25) b.vel.y = 8.2;
     if (ai.stuck > 1.5) { ai.lastPos.copy(b.pos).add(new THREE.Vector3(mx * 3, 0, mz * 3)); ai.lastSeen = now; ai.stuck = 0; ai.breakOut = true; }
   } else ai.stuck = Math.max(0, ai.stuck - dt);
+  if (ai.peek) { mx = 0; mz = 0; }
   const acc = b.onGround ? 10 : 3;
   b.vel.x += (mx * speed - b.vel.x) * Math.min(1, dt * acc);
   b.vel.z += (mz * speed - b.vel.z) * Math.min(1, dt * acc);
@@ -1904,6 +2061,7 @@ function confirmEdit() {
     sfx('edit'); stats.edits = (stats.edits || 0) + 1;
     // en práctica se muestra cuánto tardaste en editar, para entrenar ediciones rápidas
     if (mode === 'practice') flashHint(`Edición en ${((performance.now() - editing.t0) / 1000).toFixed(2)} s`);
+    if (mode === 'edits') { cancelEdit(); checkEditTarget(p); return; }
   }
   cancelEdit();
 }
@@ -1961,7 +2119,7 @@ function updatePlayer(dt) {
   e.crouch = !!keys[BK('crouch')] && e.alive && roundLive;
   e.height = e.crouch ? 1.35 : 1.9;
   e.bloom = Math.max(0, e.bloom - dt * 0.08); e.recoil = Math.max(0, e.recoil - dt * 1.2);
-  if (mode === 'practice') { e.mats.wood = e.mats.stone = e.mats.metal = 999; }
+  if (training()) { e.mats.wood = e.mats.stone = e.mats.metal = 999; }
   let mx = 0, mz = 0;
   if (e.alive && roundLive) {
     const fx = -Math.sin(e.yaw), fz = -Math.cos(e.yaw), rx = Math.cos(e.yaw), rz = -Math.sin(e.yaw);
@@ -2024,6 +2182,12 @@ function updateCamera(dt) {
   const dist = camDistCur;
   camera.position.copy(target).addScaledVector(dir, dist);
   camera.quaternion.copy(camQ);
+  // temblor al disparar o recibir daño
+  if (camShake > 0.002) {
+    camera.position.x += rand(-1, 1) * camShake * 0.5; camera.position.y += rand(-1, 1) * camShake * 0.5;
+    camera.rotateZ(rand(-1, 1) * camShake * 0.08); camera.rotateX(camShake * 0.05);
+    camShake *= Math.exp(-dt * 12);
+  } else camShake = 0;
   const sprint = keys[BK('sprint')] && Math.hypot(e.vel.x, e.vel.z) > 6.8;
   const fov = ads ? WEAPONS[it.id].zoom : settings.fov + (sprint ? 6 : 0);
   camera.fov += (fov - camera.fov) * Math.min(1, dt * 14);
@@ -2043,6 +2207,7 @@ let countdown = 0, roundEndT = 0, lastCount = 0;
 function spawnPositions() {
   if (mode === 'box') return [[-3, 0], [2, 0]];
   if (mode === 'practice') return [[-2, 0], [3, 0]];
+  if (mode === 'edits') return [[0, 0], [11, 11]];
   return [[-8, pick([-1, 0, 1])], [7, pick([-1, 0, 1])]];
 }
 function startRound() {
@@ -2059,8 +2224,10 @@ function startRound() {
   bot.yaw = Math.PI / 2;
   bot.ai = newAI();
   if (mode === 'box') { boxAround(player, 'metal'); boxAround(bot, 'metal'); }
+  resetEditChallenge();
+  if (mode === 'edits') { player.yaw = 0; unbindParts(bot); }
   roundLive = false;
-  countdown = mode === 'practice' ? 0.01 : 3.2; lastCount = 4;
+  countdown = training() ? 0.01 : 3.2; lastCount = 4;
   refreshHotbar();
   updateScore();
 }
@@ -2082,8 +2249,8 @@ function updateRounds(dt) {
   if (countdown > 0) {
     countdown -= dt;
     const c = Math.ceil(countdown);
-    if (c !== lastCount && c > 0 && mode !== 'practice') { lastCount = c; banner(String(c), score.round === 1 ? `Primero en ganar ${WIN_ROUNDS} rondas` : '', 1); sfx('count'); }
-    if (countdown <= 0) { roundLive = true; if (mode !== 'practice') { banner('¡YA!', '', 0.8); sfx('go'); } bot.ai.engageT = now; }
+    if (c !== lastCount && c > 0 && !training()) { lastCount = c; banner(String(c), score.round === 1 ? `Primero en ganar ${WIN_ROUNDS} rondas` : '', 1); sfx('count'); }
+    if (countdown <= 0) { roundLive = true; if (!training()) { banner('¡YA!', '', 0.8); sfx('go'); } bot.ai.engageT = now; }
   }
   // roundEndT > 0: pausa antes de la siguiente ronda · roundEndT < 0: pausa antes del final de la partida
   if (roundEndT > 0) { roundEndT -= dt; if (roundEndT <= 0) { roundEndT = 0; score.round++; startRound(); } }
@@ -2091,6 +2258,11 @@ function updateRounds(dt) {
 }
 function updateScore() {
   $('scMe').textContent = score.me; $('scBot').textContent = score.bot;
+  if (mode === 'edits') {
+    $('scMe').textContent = `${editCh.n}/${EDIT_GOAL}`; $('scBot').textContent = editCh.best ? editCh.best.toFixed(1) + ' s' : '—';
+    $('scBotName').textContent = 'RÉCORD'; $('scRound').textContent = 'Reto de edición'; return;
+  }
+  $('scBotName').textContent = bot.name;
   $('scRound').textContent = mode === 'practice' ? 'Práctica' : `Ronda ${score.round}`;
   $('scGoal').textContent = mode === 'practice' ? 'sin límite' : `a ${WIN_ROUNDS}`;
 }
@@ -2106,6 +2278,7 @@ function endMatch() {
   $('stDmg').textContent = stats.dmg;
   $('stAcc').textContent = (stats.shots ? Math.round(100 * stats.hits / stats.shots) : 0) + '%';
   $('stBuilt').textContent = stats.built;
+  $('stEdits').textContent = stats.edits || 0;
   $('hud').classList.add('hide');
   $('end').classList.remove('hide');
 }
@@ -2176,7 +2349,7 @@ function updateHud(dt) {
   hudSet(hudEls.sbI, 'width', e.shield + '%'); hudSet(hudEls.sbS, 'html', `${Math.ceil(e.shield)}<small> /100</small>`);
   hudSet(hudEls.hbI, 'width', Math.max(0, e.hp) + '%'); hudSet(hudEls.hbS, 'html', `${Math.max(0, Math.ceil(e.hp))}<small> /100</small>`);
   hudSet($('ebShield'), 'width', (bot.shield / 2) + '%'); hudSet($('ebHp'), 'width', (Math.max(0, bot.hp) / 2) + '%');
-  for (const [m, n] of hudEls.mats) hudSet(n, 'text', mode === 'practice' ? '∞' : String(e.mats[m]));
+  for (const [m, n] of hudEls.mats) hudSet(n, 'text', training() ? '∞' : String(e.mats[m]));
   const it = e.inv[e.cur];
   let mag, res;
   if (e.building) { mag = MATS[e.buildMat].name; res = `10 por pieza · ${keyName(BK('material'))} cambia`; }
@@ -2256,10 +2429,11 @@ function frame(t) {
   now += dt;
   updateRounds(dt);
   updatePlayer(dt);
+  updateEditChallenge(dt);
   if (bot.alive) updateBot(bot, dt);
   else if (mode === 'practice' && roundEndT <= 0 && !roundLive) startRound();
-  for (const e of [player, bot]) if (e.alive) animateCharacter(e, dt);
-  lobbyStage.visible = false;
+  for (const e of [player, bot]) { if (e.alive) animateCharacter(e, dt); else updateDeath(e, dt); }
+  lobbyStage.visible = false; previewEnt.ch.group.visible = false;
   updatePieces(dt);
   updateEdit();
   updateGhost();
@@ -2325,6 +2499,7 @@ function startMatch() {
   bot = makeEntity('RX-1', rival, false);
   bot.name = mode === 'practice' ? 'Maniquí' : `RX-${{ facil: 1, normal: 2, dificil: 3, pro: 9 }[diff]}`;
   $('enemyName').textContent = `${bot.name} · ${mode === 'practice' ? 'práctica' : DIFF[diff].name}`;
+  $('enemyBar').style.visibility = mode === 'edits' ? 'hidden' : '';
   $('scBotName').textContent = bot.name;
   score.me = 0; score.bot = 0; score.round = 1;
   roundEndT = 0; countdown = 0; roundLive = false;
@@ -2401,7 +2576,7 @@ $('menuBtn').onclick = () => { $('end').classList.add('hide'); $('start').classL
 requestAnimationFrame(frame);
 
 // para pruebas automatizadas
-window.__duel = { hurt: (who, n) => damage(who === 'bot' ? bot : player, n, who === 'bot' ? player : bot, 'rifle'), get player() { return player; }, startEdit, confirmEdit, editClick, get editing() { return editing; }, aimTarget, settings, openSettings, get preview() { return previewEnt; }, pause: pauseGame, resume: resumeGame, applySettings, get bot() { return bot; }, score, pieces, get state() { return gameState; }, get live() { return roundLive; }, fire: () => playerPrimary(true), build: k => tryBuild(player, k), makePiece, destroyPiece, slopes, get collapsing() { return collapsing; }, get debris() { return debris; }, moveEntity, hasSupport, EDIT_RANGE, pieceDist, setMode: (m, d) => { mode = m; diff = d; } };
+window.__duel = { get editCh() { return editCh; }, hurt: (who, n) => damage(who === 'bot' ? bot : player, n, who === 'bot' ? player : bot, 'rifle'), get player() { return player; }, startEdit, confirmEdit, editClick, get editing() { return editing; }, aimTarget, settings, openSettings, get preview() { return previewEnt; }, pause: pauseGame, resume: resumeGame, applySettings, get bot() { return bot; }, score, pieces, get state() { return gameState; }, get live() { return roundLive; }, fire: () => playerPrimary(true), build: k => tryBuild(player, k), makePiece, destroyPiece, slopes, get collapsing() { return collapsing; }, get debris() { return debris; }, moveEntity, hasSupport, EDIT_RANGE, pieceDist, setMode: (m, d) => { mode = m; diff = d; } };
 </script>
 </body>
 </html>
