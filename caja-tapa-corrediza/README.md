@@ -22,9 +22,12 @@ Posición = distancia desde la esquina de la caja (Regla en la esquina 0,0).
 
 | Paso | Figura | Tipo | Tamaño X × Y × Z | Posición X, Y, Z |
 |---|---|---|---|---|
-| 6 | Placa de la tapa | Sólido | 69 × 43 × 2 | 0, 1, 21 |
-| 7 | Relieve para empujar | Sólido | 3 × 25 × 1,5 | 4, 10, 23 |
+| 6 | Placa de la tapa | Sólido | 69 × 43 × **1,5** | 0; 1; 21,25 |
+| 7 | Relieve para empujar | Sólido | 3 × 25 × 1,5 | 4; 10; 22,75 |
 | — | **Agrupar 6 + 7 → tapa** | | | |
+
+Tapa de 1,5 mm en ranura de 2 mm = 0,25 mm de juego arriba y abajo
+(con 2 mm no quedaba juego y la tapa se trababa).
 
 Holguras: ranura de 44 mm de ancho y tapa de 43 mm = **0,5 mm por lado**;
 ranura hasta 69,5 mm y tapa de 69 mm = 0,5 mm al fondo.

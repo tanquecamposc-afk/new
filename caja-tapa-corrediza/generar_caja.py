@@ -23,14 +23,14 @@ cuerpo = B.difference([cuerpo, caja(-1, 0.5, 21, 70.5, 44, 2)])
 # Paso 5: abertura delantera para meter la tapa con su relieve
 cuerpo = B.difference([cuerpo, caja(-1, 2, 21, 3.5, 41, 5)])
 
-# Paso 6-7: tapa 69 x 43 x 2 + relieve para empujar
-tapa = B.union([caja(0, 1, 21, 69, 43, 2), caja(4, 10, 23, 3, 25, 1.5)])
+# Paso 6-7: tapa 69 x 43 x 1.5 (0.25 mm de juego arriba y abajo) + relieve
+tapa = B.union([caja(0, 1, 21.25, 69, 43, 1.5), caja(4, 10, 22.75, 3, 25, 1.5)])
+tapa.apply_translation([0, 0, -21.25])  # apoyada en z = 0 para imprimir
 
 out = os.path.join(os.path.dirname(os.path.abspath(__file__)), "salida")
 cuerpo.export(os.path.join(out, "caja_cuerpo.stl"))
-tapa_imp = tapa.copy()
-tapa_imp.apply_translation([0, 0, -21])
-tapa_imp.export(os.path.join(out, "caja_tapa.stl"))
+tapa.export(os.path.join(out, "caja_tapa.stl"))
+tapa.apply_translation([0, 0, 21.25])
 trimesh.util.concatenate([cuerpo, tapa]).export(os.path.join(out, "caja_ensamblada.stl"))
 for n, m in (("cuerpo", cuerpo), ("tapa", tapa)):
     print(n, m.is_watertight, m.extents.round(2), round(m.volume / 1000, 2), "cm3")
