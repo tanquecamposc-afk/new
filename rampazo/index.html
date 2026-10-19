@@ -145,6 +145,37 @@
   #toasts div.lvl b { color: var(--sun); }
   @keyframes tIn { from { opacity: 0; transform: translateY(-8px); } }
   @keyframes tOut { to { opacity: 0; transform: translateY(-8px); } }
+  /* información bajo el minimapa: tiempo, jugadores vivos y eliminaciones */
+  #miniInfo { position: absolute; right: max(16px, env(safe-area-inset-right, 0px)); top: calc(204px + env(safe-area-inset-top, 0px)); width: 180px; display: flex; justify-content: space-between; gap: 4px; }
+  #miniInfo span { flex: 1; display: flex; align-items: center; justify-content: center; gap: 4px; background: rgba(10,12,30,.62); border-radius: 8px; padding: 3px 4px; font-weight: 800; font-size: 14px; font-variant-numeric: tabular-nums; text-shadow: 0 1px 2px #000; }
+  #miniInfo svg { width: 15px; height: 15px; flex: none; }
+  #miniInfo span.storm { color: #e2c4ff; }
+  /* aviso grande de eliminación en el centro */
+  #elimCall { position: absolute; left: 50%; top: 55%; transform: translateX(-50%); text-align: center; opacity: 0; pointer-events: none; white-space: nowrap; }
+  #elimCall b { display: flex; align-items: center; justify-content: center; gap: 10px; font: 400 clamp(22px, 3.4vw, 38px) var(--display); color: #fff; text-shadow: 0 3px 0 rgba(0,0,0,.55), 0 0 22px rgba(0,0,0,.4); }
+  #elimCall b svg { width: 1.1em; height: 1.1em; }
+  #elimCall small { display: block; font-weight: 800; font-size: 15px; color: var(--sun); letter-spacing: .12em; text-transform: uppercase; text-shadow: 0 1px 3px #000; }
+  #elimCall.bad b { color: #ff6a7d; }
+  #elimCall.show { animation: callIn 2.2s ease-out forwards; }
+  @keyframes callIn { 0% { opacity: 0; transform: translateX(-50%) scale(1.6); } 10% { opacity: 1; transform: translateX(-50%) scale(1); } 80% { opacity: 1; } 100% { opacity: 0; transform: translateX(-50%) translateY(-10px); } }
+  /* modo espectador */
+  #specBar { position: absolute; left: 50%; bottom: calc(200px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: rgba(10,12,30,.78); border: 1px solid rgba(255,255,255,.2); border-radius: 999px; padding: 6px 18px; font-weight: 800; font-size: 15px; white-space: nowrap; }
+  #specBar em { font-style: normal; color: var(--hot); }
+  /* pantalla final: puesto, rayos y confeti */
+  #end .rays { position: fixed; left: 50%; top: 22%; width: 220vmax; height: 220vmax; margin: -110vmax 0 0 -110vmax; background: repeating-conic-gradient(from 0deg, rgba(255,210,58,.13) 0 9deg, transparent 9deg 18deg); animation: spin 40s linear infinite; z-index: -1; display: none; }
+  #end.win .rays { display: block; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  #endPlace { font: 400 clamp(30px, 5vw, 54px) var(--display); color: #2a1c00; background: linear-gradient(180deg, #fff27a, #ffb21e); border-radius: 14px; padding: 2px 18px; box-shadow: 0 6px 0 #c77a00; transform: rotate(-3deg); }
+  #end:not(.win) #endPlace { background: linear-gradient(180deg, #e8ecf8, #9aa4c0); box-shadow: 0 6px 0 #5a6276; color: var(--ink); }
+  .confetti { position: fixed; top: -20px; width: 10px; height: 16px; border-radius: 2px; z-index: -1; animation: fall linear forwards; }
+  @keyframes fall { to { transform: translateY(110vh) rotate(720deg); } }
+  /* misiones en el vestíbulo */
+  .lobbyq { background: rgba(8,14,40,.78); border: 2px solid rgba(255,255,255,.16); border-radius: 12px; padding: 10px 12px; width: 300px; display: flex; flex-direction: column; gap: 7px; cursor: pointer; }
+  .lobbyq h4 { margin: 0; font: 800 12px var(--body); letter-spacing: .14em; text-transform: uppercase; color: var(--dim); display: flex; justify-content: space-between; }
+  .lobbyq h4 b { color: var(--sun); }
+  .lobbyq div { font-weight: 700; font-size: 13px; }
+  .lobbyq .xpbar { width: 100%; height: 6px; margin-top: 3px; }
+  .lobbyq .done { opacity: .55; text-decoration: line-through; }
   /* zona que se cierra */
   #zonefx { position: absolute; inset: 0; box-shadow: inset 0 0 140px rgba(150,60,255,.85); background: rgba(120,40,220,.12); opacity: 0; transition: opacity .3s; }
   #zoneInfo { position: absolute; left: 50%; top: calc(64px + env(safe-area-inset-top, 0px)); transform: translateX(-50%); font-weight: 800; font-size: 14px; background: rgba(60,20,110,.75); border: 1px solid rgba(200,150,255,.5); padding: 3px 12px; border-radius: 999px; white-space: nowrap; }
@@ -161,6 +192,7 @@
     .navb { padding: 18px 8px; letter-spacing: .06em; font-size: 13px; }
     .leftcol { position: static; padding: 76px 16px 0; width: auto; overflow: visible; }
     .playbox { position: static; align-items: stretch; padding: 16px; }
+    .lobbyq { width: auto; }
     #locker { background: linear-gradient(transparent 0 30%, rgba(16,19,31,.95) 46%); align-items: center; justify-content: flex-end; padding-right: max(16px, env(safe-area-inset-right, 0px)); }
     #locker .panel { max-height: 62vh; }
   }
@@ -194,7 +226,7 @@
   #sub { position: absolute; top: calc(30% + 46px); left: 50%; transform: translateX(-50%); font-size: 20px; font-weight: 800; text-shadow: 0 2px 3px #000; opacity: 0; transition: opacity .25s; white-space: nowrap; }
   #nums { position: absolute; inset: 0; }
   #minimap { position: absolute; right: max(16px, env(safe-area-inset-right, 0px)); top: calc(16px + env(safe-area-inset-top, 0px)); width: 180px; height: 180px; border-radius: 14px; border: 3px solid rgba(255,255,255,.55); box-shadow: 0 6px 18px rgba(0,0,0,.35); background: rgba(20,40,30,.5); }
-  #feed { position: absolute; right: max(16px, env(safe-area-inset-right, 0px)); top: calc(210px + env(safe-area-inset-top, 0px)); display: flex; flex-direction: column; gap: 4px; align-items: flex-end; max-width: 46vw; }
+  #feed { position: absolute; right: max(16px, env(safe-area-inset-right, 0px)); top: calc(240px + env(safe-area-inset-top, 0px)); display: flex; flex-direction: column; gap: 4px; align-items: flex-end; max-width: 46vw; }
   #feed .kf { background: rgba(10,12,22,.68); border-left: 3px solid var(--sun); padding: 4px 10px; border-radius: 6px; font-weight: 700; font-size: 14px; text-shadow: 0 1px 2px #000; animation: kfIn .25s ease-out; }
   @keyframes kfIn { from { transform: translateX(30px); opacity: 0; } }
   #nums div { position: absolute; font-family: var(--display); font-size: 22px; text-shadow: 0 2px 0 var(--ink); transform: translate(-50%,-50%); white-space: nowrap; }
@@ -260,7 +292,7 @@
   .btn:active { transform: skewX(-8deg) translateY(4px); box-shadow: 0 2px 0 var(--hot); }
   .keys { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 4px 18px; text-align: left; font-size: 14px; font-weight: 500; color: var(--dim); max-width: 640px; width: 100%; }
   .keys kbd { background: var(--paper); color: var(--ink); border-radius: 3px; padding: 0 5px; font: 800 12px var(--body); }
-  #end .big { font-family: var(--display); font-size: clamp(44px, 9vw, 100px); transform: rotate(-3deg); }
+  #end .big { font-family: var(--display); font-size: clamp(40px, 7vw, 84px); line-height: 1; transform: rotate(-3deg); }
   #end .stats { display: flex; gap: 28px; font-size: 16px; font-weight: 700; color: var(--dim); flex-wrap: wrap; justify-content: center; }
   #end .stats b { display: block; font-family: var(--display); font-weight: 400; font-size: 34px; color: var(--sun); font-variant-numeric: tabular-nums; }
   .row { display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; }
@@ -277,17 +309,23 @@
   .set input[type=range] { width: 100%; accent-color: var(--sun); }
   .check { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 15px; cursor: pointer; }
   .check input { width: 18px; height: 18px; accent-color: var(--sun); }
-  @media (max-width: 700px) { #minimap { width: 110px; height: 110px; } #feed { top: calc(136px + env(safe-area-inset-top, 0px)); } #bars { width: 190px; } .slot, #buildbar div { width: 50px; height: 50px; } .slot svg { width: 40px; } #buildbar div svg { width: 28px; } #mats div { width: 52px; font-size: 14px; } #mats { bottom: calc(86px + env(safe-area-inset-bottom, 0px)); } #itemName { bottom: calc(80px + env(safe-area-inset-bottom, 0px)); font-size: 15px; } #score { font-size: 16px; } }
+  @media (max-width: 700px) { #minimap { width: 110px; height: 110px; } #miniInfo { top: calc(132px + env(safe-area-inset-top, 0px)); width: 150px; } #miniInfo span { font-size: 12px; } #feed { top: calc(166px + env(safe-area-inset-top, 0px)); } #specBar { bottom: calc(120px + env(safe-area-inset-bottom, 0px)); font-size: 13px; } #bars { width: 190px; } .slot, #buildbar div { width: 50px; height: 50px; } .slot svg { width: 40px; } #buildbar div svg { width: 28px; } #mats div { width: 52px; font-size: 14px; } #mats { bottom: calc(86px + env(safe-area-inset-bottom, 0px)); } #itemName { bottom: calc(80px + env(safe-area-inset-bottom, 0px)); font-size: 15px; } #score { font-size: 16px; } }
   @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
 </head>
 <body>
 <canvas id="game"></canvas>
 <div id="vignette"></div>
-<div id="loading" style="position:fixed;inset:0;z-index:50;display:flex;flex-direction:column;gap:10px;align-items:center;justify-content:center;background:#10131f;color:#f4f1ff;font:800 20px system-ui,sans-serif;text-align:center;padding:16px">
-  <div>Cargando el motor 3D…</div><div id="loadErr" style="font-weight:500;font-size:15px;opacity:.75"></div>
+<div id="loading" style="position:fixed;inset:0;z-index:50;display:flex;flex-direction:column;gap:14px;align-items:center;justify-content:center;background:radial-gradient(ellipse at 50% 35%,#2b4fb8 0,#13235e 45%,#070b22 100%);color:#f4f1ff;font:800 18px system-ui,sans-serif;text-align:center;padding:16px">
+  <div style="font:400 clamp(44px,10vw,96px) Bungee,Impact,system-ui;line-height:.9;color:#ffd23a;text-shadow:0 6px 0 #c77a00,0 12px 30px rgba(0,0,0,.5);transform:rotate(-3deg)">RAMPAZO<div style="font-size:.42em;color:#3de0ff;text-shadow:0 4px 0 #0a5a8a">1v1</div></div>
+  <div style="width:min(320px,80vw);height:10px;border-radius:5px;background:rgba(255,255,255,.15);overflow:hidden"><div style="height:100%;width:40%;border-radius:5px;background:linear-gradient(90deg,#3de0ff,#8a7bff);animation:ldbar 1.1s ease-in-out infinite alternate"></div></div>
+  <div>Cargando la isla…</div>
+  <div id="loadTip" style="font-weight:600;font-size:15px;opacity:.85;max-width:520px"></div>
+  <div id="loadErr" style="font-weight:500;font-size:15px;opacity:.75"></div>
+  <style>@keyframes ldbar{from{transform:translateX(-100%)}to{transform:translateX(250%)}}</style>
 </div>
 <script>
+  (function () { var tips = ['Consejo: la madera se construye rápido; el metal tarda más pero aguanta mucho más.', 'Consejo: mantén Espacio frente a un borde para trepar encima.', 'Consejo: en «Zona que cierra», el daño fuera del anillo ignora el escudo.', 'Consejo: las misiones diarias dan 500 de experiencia para el pase.', 'Consejo: si vas corriendo y te agachas, te deslizas.', 'Consejo: en Clasificatoria nunca bajas del rango que ya alcanzaste.']; var t = document.getElementById('loadTip'); if (t) t.textContent = tips[Math.floor(Math.random() * tips.length)]; })();
   setTimeout(function () { var e = document.getElementById('loadErr'); if (e && document.getElementById('loading').style.display !== 'none') e.textContent = 'Está tardando más de lo normal. Revisa tu conexión a internet y recarga la página.'; }, 12000);
 </script>
 <div id="hud" class="hide">
@@ -307,6 +345,9 @@
   <div id="enemyBar"><span id="enemyName">Rival</span><div class="eb"><i id="ebShield" style="background:var(--shield)"></i><i id="ebHp" style="background:var(--danger)"></i></div></div>
   <canvas id="minimap" width="180" height="180"></canvas>
   <div id="zoneInfo" class="hide"></div>
+  <div id="miniInfo"><span id="miTime"></span><span id="miAlive"></span><span id="miElims"></span></div>
+  <div id="elimCall"></div>
+  <div id="specBar" class="hide"></div>
   <div id="feed"></div>
   <div id="banner"></div>
   <div id="sub"></div>
@@ -383,6 +424,7 @@
     <details class="ctrl"><summary>Controles</summary><div class="keys" id="keysHelp"></div></details>
   </div>
   <div class="playbox" data-pg="play">
+    <div class="lobbyq" id="lobbyQ" title="Ver el pase de temporada"></div>
     <div class="pmode" id="playMode"></div>
     <button class="btn big" id="playBtn">¡A PELEAR!</button>
   </div>
@@ -390,6 +432,8 @@
 
 <div id="toasts"></div>
 <div id="end" class="screen hide">
+  <div class="rays"></div>
+  <div id="endPlace">#1</div>
   <div class="big" id="endTitle"></div>
   <div class="tag" id="endSub"></div>
   <div class="stats">
@@ -469,6 +513,7 @@ const MODES = {
   ranked:   { name: 'Clasificatoria',  cat: 'Competitivo',  rounds: 3, desc: 'Gana puntos de rango. El rival se ajusta a tu nivel' },
   box:      { name: 'Box fight',       cat: 'Clásico',      rounds: 5, desc: 'Empezáis encerrados en cajas de metal, cara a cara' },
   zone:     { name: 'Zona que cierra', cat: 'Arcade',       rounds: 3, desc: 'Un anillo de energía se cierra cada ronda: fuera duele' },
+  respawn:  { name: 'Reaparición',     cat: 'Arcade',       rounds: 7, desc: 'Reapareces a los 3 s y las construcciones se quedan. Primero a 7 eliminaciones' },
   nobuild:  { name: 'Sin construir',   cat: 'Arcade',       rounds: 3, desc: 'Prohibido construir. Usa las coberturas del mapa' },
   practice: { name: 'Práctica',        cat: 'Entrenamiento', desc: 'Materiales infinitos y un maniquí que se mueve' },
   edits:    { name: 'Reto de edición', cat: 'Entrenamiento', desc: '10 ediciones contrarreloj. Bate tu récord' },
@@ -479,6 +524,7 @@ const MODE_ICON = {
   box: '<svg viewBox="0 0 32 32"><path d="M16 3l12 6v14l-12 6-12-6V9z" fill="#9cb6cf" stroke="#fff" stroke-width="2"/><path d="M4 9l12 6 12-6M16 15v14" stroke="#3a4a5e" stroke-width="2" fill="none"/></svg>',
   zone: '<svg viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="12" stroke="#b77bff" stroke-width="3" stroke-dasharray="4 3"/><circle cx="16" cy="16" r="5" fill="#b77bff"/></svg>',
   nobuild: '<svg viewBox="0 0 32 32"><rect x="7" y="9" width="18" height="14" rx="2" fill="#d29a5a" stroke="#fff" stroke-width="2"/><path d="M5 5l22 22" stroke="#ff4f6d" stroke-width="3.5" stroke-linecap="round"/></svg>',
+  respawn: '<svg viewBox="0 0 32 32" fill="none" stroke="#ff8a3d" stroke-width="2.8" stroke-linecap="round"><path d="M25 12a10 10 0 1 0 1 7"/><path d="M26 5v7h-7"/></svg>',
   practice: '<svg viewBox="0 0 32 32" fill="none" stroke="#6cf08a" stroke-width="2.6"><circle cx="16" cy="16" r="11"/><circle cx="16" cy="16" r="6"/><circle cx="16" cy="16" r="1.5" fill="#6cf08a"/></svg>',
   edits: '<svg viewBox="0 0 32 32"><rect x="5" y="5" width="22" height="22" rx="3" fill="none" stroke="#3de0ff" stroke-width="2.4"/><rect x="9" y="9" width="6" height="6" fill="#ff4f6d"/><rect x="17" y="17" width="6" height="6" fill="#ff4f6d"/></svg>',
 };
@@ -1152,6 +1198,7 @@ function resolveHorizontal(e, ox, oz) {
   }
   return blocked;
 }
+const _land = new THREE.Vector3();
 function moveEntity(e, dt) {
   // subpasos de ~1/120 s: movimiento suave y sin atravesar piezas aunque bajen los FPS
   const n = Math.min(5, Math.max(1, Math.ceil(dt / 0.0085)));
@@ -1201,7 +1248,9 @@ function moveStep(e, dt) {
     }
   }
   if (ny <= ground) {
-    if (e.vel.y < -22 && !e.onGround) damage(e, Math.round((-e.vel.y - 22) * 6), null, null);
+    if (e.vel.y < -22 && !e.onGround) damage(e, Math.round((-e.vel.y - 22) * 6), null, null, false, true);
+    // polvo al aterrizar de un salto alto
+    if (e.vel.y < -12 && !e.onGround && e.ch) burst(_land.set(e.pos.x, ground + 0.1, e.pos.z), 0xd8d0b8, 8);
     ny = ground; e.vel.y = 0; e.onGround = true;
   } else if (e.onGround && e.vel.y <= 0 && ny - ground < 0.45) { ny = ground; e.vel.y = 0; }
   else e.onGround = false;
@@ -1722,10 +1771,11 @@ function castRay(origin, dir, far, ignore, minDist = 0) {
   }
   return null;
 }
-function damage(e, amount, attacker, wid, head = false) {
+function damage(e, amount, attacker, wid, head = false, bypass = false) {
   if (!e.alive || amount <= 0 || !roundLive) return;
   amount = Math.round(amount);
-  const toShield = Math.min(e.shield, amount);
+  // el daño de la tormenta y de las caídas no pasa por el escudo
+  const toShield = bypass ? 0 : Math.min(e.shield, amount);
   e.shield -= toShield; e.hp -= amount - toShield;
   if (toShield > 0 && e.shield <= 0) { sfx('shield', e.isPlayer ? null : e.pos); burst(e.pos.clone().setY(e.pos.y + 1.2), 0x6cc4ff, 14); if (attacker === player) dmgNumber(e.pos.clone().setY(e.pos.y + 2.7), 'ESCUDO ROTO', '#6cc4ff'); }
   if (e === player) { camShake = Math.min(0.3, camShake + amount / 220); if (attacker && attacker !== player) showDamageDir(attacker.pos); }
@@ -1755,8 +1805,18 @@ function kill(e, attacker, wid, head) {
   sfx('elim', e.isPlayer ? null : e.pos);
   const wname = wid && WEAPONS[wid] ? WEAPONS[wid].name : wid === 'pickaxe' ? 'Pico' : wid === 'zone' ? 'fuera de la zona' : 'caída';
   const who = attacker ? attacker.name : wid === 'zone' ? 'La zona' : 'La gravedad';
-  if (attacker === player && e !== player) onElim(wid, head);
-  addFeed(`<b style="color:${attacker === player ? 'var(--sun)' : 'var(--hot)'}">${who}</b> eliminó a <b>${e.name}</b> · ${wname}${head ? ' <span style="color:var(--sun)">(cabeza)</span>' : ''}`);
+  if (attacker === player && e !== player) { onElim(wid, head); stats.kills = (stats.kills || 0) + 1; }
+  if (mode !== 'edits' && (e === player || attacker === player)) {
+    const call = $('elimCall'), skull = '<svg viewBox="0 0 24 24"><path d="M12 2C6.5 2 3 5.6 3 10.2c0 2.6 1.2 4.4 3 5.5V19a1 1 0 0 0 1 1h2v-2h2v2h2v-2h2v2h2a1 1 0 0 0 1-1v-3.3c1.8-1.1 3-2.9 3-5.5C21 5.6 17.5 2 12 2zM8.5 13.5a2 2 0 1 1 0-4 2 2 0 0 1 0 4zm7 0a2 2 0 1 1 0-4 2 2 0 0 1 0 4z" fill="currentColor"/></svg>';
+    if (e === player) call.innerHTML = `<b>${skull} ${attacker ? 'TE ELIMINÓ ' + attacker.name.toUpperCase() : wid === 'zone' ? 'TE ATRAPÓ LA ZONA' : 'TE CAÍSTE'}</b><small>${wname}</small>`;
+    else call.innerHTML = `<b>${skull} ELIMINASTE A ${e.name.toUpperCase()}</b><small>${wname}${head ? ' · a la cabeza' : ''} · ${stats.kills} ${stats.kills === 1 ? 'eliminación' : 'eliminaciones'}</small>`;
+    call.className = e === player ? 'bad' : '';
+    void call.offsetWidth; call.classList.add('show');
+  }
+  const hs = head ? ' <span style="color:var(--sun)">(cabeza)</span>' : '';
+  if (attacker === player) addFeed(`<b style="color:var(--sun)">Eliminaste</b> a <b>${e.name}</b> · ${wname}${hs}`);
+  else if (e === player) addFeed(`<b style="color:var(--hot)">${who}</b> te eliminó · ${wname}${hs}`);
+  else addFeed(`<b style="color:var(--hot)">${who}</b> eliminó a <b>${e.name}</b> · ${wname}${hs}`);
   endRound(e === player ? bot : player);
 }
 function updateDeath(e, dt) {
@@ -2722,7 +2782,16 @@ let lastScoped = false;
 let countdown = 0, roundEndT = 0, lastCount = 0;
 // anillo de energía: tarda 8 s en empezar a cerrarse y 40 s en llegar a su tamaño final; fuera de él quita vida
 const zone = { on: false, cx: 0, cz: 0, r: 0, r0: 72, r1: 9, t: 0 };
-const zoneMesh = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 70, 72, 1, true), new THREE.MeshBasicMaterial({ color: 0x9b4dff, transparent: true, opacity: 0.35, side: THREE.DoubleSide, depthWrite: false, toneMapped: false }));
+// pared de tormenta: franjas y nubes moradas que se mueven (textura dibujada aquí, sin imágenes)
+const stormTex = (() => {
+  const c = document.createElement('canvas'); c.width = 256; c.height = 256; const g = c.getContext('2d');
+  const gr = g.createLinearGradient(0, 0, 0, 256); gr.addColorStop(0, '#5a1aa0'); gr.addColorStop(0.5, '#9b4dff'); gr.addColorStop(1, '#6a2ac0');
+  g.fillStyle = gr; g.fillRect(0, 0, 256, 256);
+  for (let i = 0; i < 70; i++) { g.fillStyle = `rgba(${200 + Math.random() * 55},${150 + Math.random() * 80},255,${0.08 + Math.random() * 0.22})`; const x = Math.random() * 256, w = 2 + Math.random() * 14; g.fillRect(x, 0, w, 256); g.fillRect(x - 256, 0, w, 256); }
+  for (let i = 0; i < 40; i++) { g.fillStyle = `rgba(40,0,80,${0.1 + Math.random() * 0.2})`; g.beginPath(); g.ellipse(Math.random() * 256, Math.random() * 256, 20 + Math.random() * 40, 8 + Math.random() * 16, 0, 0, 7); g.fill(); }
+  const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(10, 1.5); t.colorSpace = THREE.SRGBColorSpace; return t;
+})();
+const zoneMesh = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 70, 72, 1, true), new THREE.MeshBasicMaterial({ map: stormTex, color: 0xe0c8ff, transparent: true, opacity: 0.5, side: THREE.DoubleSide, depthWrite: false, toneMapped: false }));
 zoneMesh.position.y = 20; zoneMesh.visible = false; zoneMesh.renderOrder = 4; scene.add(zoneMesh);
 function startZone() {
   zone.on = mode === 'zone'; zoneMesh.visible = zone.on; $('zoneInfo').classList.toggle('hide', !zone.on);
@@ -2738,7 +2807,8 @@ function updateZone(dt) {
   const k = clamp((zone.t - 8) / 40, 0, 1), ease = k * k * (3 - 2 * k);
   zone.r = zone.r0 + (zone.r1 - zone.r0) * ease;
   zoneMesh.position.set(zone.cx, 20, zone.cz); zoneMesh.scale.set(zone.r, 1, zone.r);
-  zoneMesh.material.opacity = 0.32 + Math.sin(performance.now() / 300) * 0.06;
+  zoneMesh.material.opacity = 0.46 + Math.sin(performance.now() / 300) * 0.06;
+  stormTex.offset.x += dt * 0.015; stormTex.offset.y -= dt * 0.05;
   const out = player.alive && outOfZone(player);
   hudSet($('zonefx'), 'opacity', out && roundLive ? '1' : '0');
   const z = $('zoneInfo');
@@ -2748,7 +2818,7 @@ function updateZone(dt) {
   for (const e of [player, bot]) {
     if (!e.alive || !outOfZone(e)) { e.zoneT = 0; continue; }
     e.zoneT = (e.zoneT || 0) + dt;
-    if (e.zoneT >= 0.5) { e.zoneT -= 0.5; damage(e, 4 + 4 * k, null, 'zone'); if (e === player) sfx('hit'); }
+    if (e.zoneT >= 0.5) { e.zoneT -= 0.5; damage(e, 4 + 4 * k, null, 'zone', false, true); if (e === player) sfx('hit'); }
   }
 }
 // sin construir: coberturas de piedra y madera repartidas por el mapa
@@ -2788,6 +2858,7 @@ function startRound() {
   bot.ai = newAI();
   if (mode === 'box') { boxAround(player, 'metal'); boxAround(bot, 'metal'); }
   if (mode === 'nobuild') spawnCover();
+  respawnQ.length = 0; roundTime = 0;
   startZone();
   resetEditChallenge();
   if (mode === 'edits') { player.yaw = 0; unbindParts(bot); }
@@ -2796,9 +2867,35 @@ function startRound() {
   refreshHotbar();
   updateScore();
 }
+// reaparición: el eliminado vuelve a los 3 s en un sitio lejos del rival; las construcciones se quedan
+const respawnQ = [];
+function respawn(e) {
+  e.emoteT = 0;
+  const o = e === player ? bot : player;
+  let best = null, bd = -1;
+  for (let n = 0; n < 8; n++) {
+    const x = (Math.floor(rand(-10, 10)) + 0.5) * S, z = (Math.floor(rand(-10, 10)) + 0.5) * S, d = Math.hypot(x - o.pos.x, z - o.pos.z);
+    if (d > bd) { bd = d; best = [x, z]; }
+  }
+  loadout(e); bindParts(e); e.ch.group.rotation.set(0, 0, 0);
+  e.pos.set(best[0], 7, best[1]); e.vel.set(0, 0, 0);
+  if (e === bot) { bot.ai = newAI(); bot.ai.engageT = now; } else { refreshHotbar(); banner('¡DE VUELTA!', 'Caes desde el cielo', 1.2); }
+  burst(e.pos.clone(), 0x3de0ff, 24); sfx('go');
+}
 function endRound(winner) {
   if (!roundLive) return;
+  if (mode === 'respawn') {
+    if (winner === player) score.me++; else score.bot++;
+    updateScore();
+    if (winner === player) { gainXP(75, 'Punto'); quest('rounds'); }
+    if (score.me < winRounds() && score.bot < winRounds()) { respawnQ.push({ e: winner === player ? bot : player, t: 3 }); return; }
+  }
   roundLive = false;
+  if (mode === 'respawn') {
+    if (winner === player) { player.emoteT = 2.6; banner('¡GANASTE!', `Primero en llegar a ${winRounds()} eliminaciones`, 2.6); sfx('win'); }
+    else { banner('PARTIDA PERDIDA', `${bot.name} llegó antes a ${winRounds()}`, 2.6); sfx('lose'); bot.emoteT = 2.6; }
+    roundEndT = -2.8; return;
+  }
   if (mode === 'practice') {
     if (winner === player) { banner('¡Bien ahí!', 'El maniquí reaparece', 1.6); sfx('win'); }
     roundEndT = 1.8; return;
@@ -2812,11 +2909,14 @@ function endRound(winner) {
   else { banner('RONDA PERDIDA', `Al rival le quedaban ${Math.round(bot.hp + bot.shield)} de vida`, 2.6); sfx('lose'); bot.emoteT = 2.6; }
   roundEndT = over ? -2.8 : 2.8;
 }
+let roundTime = 0;
 function updateRounds(dt) {
+  if (roundLive) roundTime += dt;
+  for (let i = respawnQ.length - 1; i >= 0; i--) { const r = respawnQ[i]; r.t -= dt; if (r.t <= 0) { respawnQ.splice(i, 1); if (roundLive) respawn(r.e); } }
   if (countdown > 0) {
     countdown -= dt;
     const c = Math.ceil(countdown);
-    if (c !== lastCount && c > 0 && !training()) { lastCount = c; banner(String(c), score.round === 1 ? (mode === 'zone' ? `Quédate dentro del anillo · primero a ${winRounds()}` : mode === 'nobuild' ? `Sin construir · primero a ${winRounds()}` : `Primero en ganar ${winRounds()} rondas`) : '', 1); sfx('count'); }
+    if (c !== lastCount && c > 0 && !training()) { lastCount = c; banner(String(c), score.round === 1 ? (mode === 'zone' ? `Quédate dentro del anillo · primero a ${winRounds()}` : mode === 'nobuild' ? `Sin construir · primero a ${winRounds()}` : mode === 'respawn' ? `Reapareces al caer · primero a ${winRounds()}` : `Primero en ganar ${winRounds()} rondas`) : '', 1); sfx('count'); }
     if (countdown <= 0) { roundLive = true; if (!training()) { banner('¡YA!', '', 0.8); sfx('go'); } bot.ai.engageT = now; }
   }
   // roundEndT > 0: pausa antes de la siguiente ronda · roundEndT < 0: pausa antes del final de la partida
@@ -2833,6 +2933,7 @@ function updateScore() {
   $('scRound').textContent = mode === 'practice' ? 'Práctica' : `Ronda ${score.round}`;
   $('scGoal').textContent = mode === 'practice' ? 'sin límite' : `a ${winRounds()}`;
   if (mode === 'ranked') $('scRound').textContent = `Clasif. · R${score.round}`;
+  if (mode === 'respawn') $('scRound').textContent = 'Reaparición';
 }
 // ---------- recompensas al terminar ----------
 function onElim(wid, head) {
@@ -2906,7 +3007,16 @@ function endMatch() {
   gameState = 'end';
   try { document.exitPointerLock(); } catch (err) { /* sin bloqueo */ }
   const win = score.me > score.bot;
-  $('endTitle').textContent = win ? '¡VICTORIA!' : 'DERROTA';
+  $('endTitle').textContent = win ? '¡REY DEL RAMPAZO!' : 'DERROTA';
+  $('endPlace').textContent = win ? '#1' : '#2';
+  $('end').classList.toggle('win', win);
+  document.querySelectorAll('#end .confetti').forEach(c => c.remove());
+  if (win) for (let i = 0; i < 46; i++) {
+    const c = document.createElement('i'); c.className = 'confetti';
+    c.style.left = (Math.random() * 100) + '%'; c.style.background = pick(['#ffd23a', '#3de0ff', '#ff4fd0', '#6cf08a', '#ff8a3d', '#ffffff']);
+    c.style.animationDuration = rand(2.4, 4.6).toFixed(2) + 's'; c.style.animationDelay = rand(0, 1.2).toFixed(2) + 's';
+    $('end').appendChild(c);
+  }
   $('endTitle').style.color = win ? 'var(--sun)' : 'var(--danger)';
   $('endSub').textContent = `${MODES[mode].name} · ` + (win ? `Le ganaste a ${bot.name} (${DIFF[effDiff()].name}).` : `${bot.name} (${DIFF[effDiff()].name}) se llevó el duelo. Pide la revancha.`);
   matchRewards(win);
@@ -3048,9 +3158,26 @@ function drawMinimap(dt) {
     g.restore();
   }
 }
+const MI_SVG = {
+  time: '<svg viewBox="0 0 16 16"><circle cx="8" cy="9" r="6" fill="none" stroke="#fff" stroke-width="1.8"/><path d="M8 5.5V9l2.5 1.5M6 1.5h4" stroke="#fff" stroke-width="1.8" stroke-linecap="round" fill="none"/></svg>',
+  storm: '<svg viewBox="0 0 16 16"><path d="M4 11a3 3 0 0 1 .3-6A4 4 0 0 1 12 6a2.5 2.5 0 0 1 0 5z" fill="#c49aff"/><path d="M8 11l-1.5 3h2L7 16" stroke="#fff" stroke-width="1.3" fill="none"/></svg>',
+  alive: '<svg viewBox="0 0 16 16"><circle cx="8" cy="5" r="3" fill="#fff"/><path d="M2.5 15c0-3.3 2.5-5.5 5.5-5.5s5.5 2.2 5.5 5.5z" fill="#fff"/></svg>',
+  elims: '<svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6" fill="none" stroke="#ffd23a" stroke-width="1.8"/><path d="M8 1v4M8 11v4M1 8h4M11 8h4" stroke="#ffd23a" stroke-width="1.8"/></svg>',
+};
+const mmss = t => `${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(2, '0')}`;
 function updateHud(dt) {
   drawMinimap(dt);
   const e = player;
+  // fila bajo el minimapa
+  const zt = zone.on ? (zone.t < 8 ? 8 - zone.t : Math.max(0, 48 - zone.t)) : roundTime;
+  hudSet($('miTime'), 'html', (zone.on ? MI_SVG.storm : MI_SVG.time) + mmss(zt));
+  $('miTime').classList.toggle('storm', zone.on);
+  hudSet($('miAlive'), 'html', MI_SVG.alive + (mode === 'edits' ? 1 : (player.alive ? 1 : 0) + (bot.alive ? 1 : 0)));
+  hudSet($('miElims'), 'html', MI_SVG.elims + (stats.kills || 0));
+  // espectador
+  const spec = !player.alive && mode !== 'edits' && gameState === 'play';
+  $('specBar').classList.toggle('hide', !spec);
+  if (spec) { const rq = respawnQ.find(r => r.e === player); hudSet($('specBar'), 'html', bot.alive ? `Espectando a <em>${bot.name}</em> · ${rq ? 'reapareces en ' + Math.ceil(rq.t) + ' s' : 'siguiente ronda en breve'}` : 'Siguiente ronda en breve'); }
   if (!hudEls) hudEls = {
     sbI: document.querySelector('#shieldBar i'), sbS: document.querySelector('#shieldBar span'), hbI: document.querySelector('#hpBar i'), hbS: document.querySelector('#hpBar span'),
     mats: [...document.querySelectorAll('#mats div')].map(d => { const n = d.querySelector('.n'); n.id = 'mat_' + d.dataset.m; return [d.dataset.m, n]; }),
@@ -3235,7 +3362,7 @@ function startMatch() {
   $('scBotName').textContent = bot.name;
   score.me = 0; score.bot = 0; score.round = 1;
   roundEndT = 0; countdown = 0; roundLive = false;
-  stats = { dmg: 0, built: 0, shots: 0, hits: 0, edits: 0 };
+  stats = { dmg: 0, built: 0, shots: 0, hits: 0, edits: 0, kills: 0 };
   gameState = 'play';
   startRound();
   $('start').classList.add('hide'); $('end').classList.add('hide'); $('hud').classList.remove('hide');
@@ -3249,6 +3376,10 @@ function rewardIcon(r) {
   if (r.type === 'hat') return '<svg viewBox="0 0 64 64"><path d="M12 40c0-14 9-24 20-24s20 10 20 24z" fill="#ffd23a" stroke="#fff" stroke-width="2.5"/><rect x="8" y="38" width="48" height="8" rx="4" fill="#ff8a3d" stroke="#fff" stroke-width="2"/></svg>';
   if (r.type === 'pack') return '<svg viewBox="0 0 64 64"><rect x="16" y="14" width="32" height="40" rx="9" fill="#8a7bff" stroke="#fff" stroke-width="2.5"/><rect x="22" y="34" width="20" height="12" rx="3" fill="#5a4bd0" stroke="#fff" stroke-width="2"/><path d="M24 14c0-6 16-6 16 0" fill="none" stroke="#fff" stroke-width="3"/></svg>';
   return '<svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="22" fill="#d8a07a" stroke="#fff" stroke-width="2.5"/><rect x="14" y="24" width="36" height="10" rx="5" fill="#1a1a2a"/><path d="M24 44q8 6 16 0" fill="none" stroke="#3a2a2a" stroke-width="3" stroke-linecap="round"/></svg>';
+}
+function renderLobbyQuests() {
+  const d = ensureDaily(), done = d.list.filter(q => q.done).length;
+  $('lobbyQ').innerHTML = `<h4>Misiones de hoy <b>${done}/3</b></h4>` + d.list.map(q => `<div class="${q.done ? 'done' : ''}">${QUESTS[q.id].name}<div class="xpbar"><i style="width:${(q.p / QUESTS[q.id].n * 100).toFixed(1)}%"></i></div></div>`).join('');
 }
 function renderPlCard() {
   const li = levelInfo();
@@ -3298,11 +3429,13 @@ function showPage(pg) {
   $('careerPage').classList.toggle('hide', pg !== 'career');
   if (pg === 'pass') renderPass();
   if (pg === 'career') renderCareer();
-  if (pg === 'play') renderModes();
+  if (pg === 'play') { renderModes(); renderLobbyQuests(); }
   renderPlCard();
 }
 document.querySelectorAll('.topnav [data-page]').forEach(b => b.onclick = () => showPage(b.dataset.page));
 $('plCard').onclick = () => showPage('pass');
+$('lobbyQ').onclick = () => showPage('pass');
+renderLobbyQuests();
 renderPlCard();
 let settingsFrom = 'start', setTab = 'controles';
 const SET_TABS = { controles: 'Controles', raton: 'Ratón', mira: 'Mira', graficos: 'Gráficos', juego: 'Juego' };

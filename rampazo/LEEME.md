@@ -1,6 +1,6 @@
 # RAMPAZO 1v1 — información del juego
 
-Duelo de construcción 1 contra 1 en 3D, para el navegador. Todo el juego está en un solo archivo: `index.html` (unas 3.376 líneas. 219 KB). Usa la librería 3D **Three.js 0.160**, que se carga desde internet al abrir el archivo.
+Duelo de construcción 1 contra 1 en 3D, para el navegador. Todo el juego está en un solo archivo: `index.html` (unas 3.509 líneas, 231 KB). Usa la librería 3D **Three.js 0.160**, que se carga desde internet al abrir el archivo.
 
 Personajes, nombres, arena y sonidos son originales. Los sonidos se generan con código y no hay imágenes externas.
 
@@ -24,7 +24,13 @@ Personajes, nombres, arena y sonidos son originales. Los sonidos se generan con 
 - **Armas:** un modelo distinto para cada una, con detalles del color de su rareza.
 - **Inventario y menú:** casillas con fondo del color de la rareza, iconos de vida, escudo, materiales y construcción, y un pedestal iluminado en el menú.
 - **Menú principal:** barra de arriba con Jugar, Pase, Clasificatoria, Taquilla y Ajustes, y una tarjeta con tu nivel, título y rango. Los modos se eligen en tarjetas con icono, categoría y descripción.
-- **Minimapa:** arriba a la derecha. Muestra las piezas por material, tu flecha, el rival cuando lo ves y el anillo de la zona.
+- **Minimapa:** arriba a la derecha. Muestra las piezas por material, tu flecha, el rival cuando lo ves y el anillo de la zona. Debajo hay una fila con el tiempo de la ronda (o el de la zona), los jugadores vivos y tus eliminaciones.
+- **Pantalla de carga:** logo, barra animada y un consejo al azar.
+- **Avisos de eliminación:** al eliminar al rival sale en grande "ELIMINASTE A …" con el arma y tu cuenta de eliminaciones; si te eliminan, "TE ELIMINÓ …".
+- **Pantalla final:** puesto (#1 o #2). Si ganas sale "¡REY DEL RAMPAZO!" con rayos que giran y confeti.
+- **Vestíbulo:** las misiones de hoy aparecen junto al botón de jugar.
+- **Tormenta:** la pared de la zona es una cortina morada con franjas y nubes que se mueven.
+- **Polvo:** al caer desde un salto alto se levanta polvo.
 
 ---
 
@@ -42,6 +48,7 @@ Personajes, nombres, arena y sonidos son originales. Los sonidos se generan con 
 | Clasificatoria | Competitivo | Al mejor de 5 rondas (gana quien llegue a 3). Ganas o pierdes puntos de rango y el rival se ajusta a tu rango (ver abajo) |
 | Box fight | Clásico | Cada uno empieza encerrado en una caja de metal. Primero a 5 |
 | Zona que cierra | Arcade | Un anillo de energía morado empieza a cerrarse a los 8 s y tarda 40 s en quedar pequeño. Fuera del anillo pierdes vida cada medio segundo (más cuanto más cerrado está). El rival también vuelve al anillo. Primero a 3 |
+| Reaparición | Arcade | Cuando te eliminan, reapareces a los 3 s cayendo desde el cielo en un sitio lejos del rival, y las construcciones se quedan. Gana quien llegue antes a 7 eliminaciones |
 | Sin construir | Arcade | No se puede construir. El mapa trae muros de piedra y madera repartidos para cubrirse. Primero a 3 |
 | Práctica | Entrenamiento | Materiales infinitos y un maniquí que se mueve de lado a lado |
 | Reto de edición | Entrenamiento | Delante aparece una pieza (muro, suelo o cono) con casillas rojas. Quítalas lo más rápido que puedas: son 10 ediciones contrarreloj y se guarda tu récord. Si quitas casillas de más, la pieza se reinicia |
@@ -90,7 +97,8 @@ Personajes, nombres, arena y sonidos son originales. Los sonidos se generan con 
 - **Escudo roto:** cuando le rompes el escudo al rival suena un aviso y sale el texto "ESCUDO ROTO".
 - **Eliminación:** el personaje eliminado gira, sube y se deshace en cubos.
 - **Registro de eliminaciones:** arriba a la derecha dice quién eliminó a quién, con qué arma y si fue a la cabeza.
-- **Espectador:** cuando te eliminan, la cámara sigue al rival y gira a su alrededor hasta la siguiente ronda.
+- **Espectador:** cuando te eliminan, la cámara sigue al rival y gira a su alrededor; abajo se lee "Espectando a …" y cuánto falta para volver.
+- **Escudo:** el daño de la tormenta y el de las caídas no pasa por el escudo, va directo a la vida (como en el género).
 - **Baile de victoria:** al ganar una ronda tu personaje baila.
 - **Rival listo:** desde Normal, si está detrás de un muro suyo, abre una ranura para asomarse, dispara y la vuelve a cerrar. Lo hace sobre todo en Box fight.
 
@@ -213,7 +221,11 @@ Los ajustes, tu personaje y tu progreso (nivel, rango, misiones) se guardan en e
 | HUD | Minimapa arriba a la derecha, vida y escudo abajo a la izquierda | Igual |
 | Clasificatoria | Rangos Bronce → Diamante con divisiones I–III y tres rangos únicos arriba; puntos por resultado | 8 rangos propios con PR, protección de rango y rival según tu rango |
 | Pase de temporada | Niveles con recompensas, experiencia por jugar y misiones diarias | 30 niveles gratis, XP por partida y 3 misiones diarias |
-| Menú | Barra superior con Jugar, Pase, Taquilla… | Igual, con tarjeta de nivel y rango |
+| Menú | Barra superior con Jugar, Pase, Taquilla… | Igual, con tarjeta de nivel y rango y misiones en el vestíbulo |
+| Debajo del minimapa | Tiempo de la tormenta, jugadores vivos y eliminaciones | Igual |
+| Daño de tormenta y caídas | Ignora el escudo | Igual |
+| Modos | Battle royale, sin construir, con reaparición, clasificatoria, creativo | Duelo, Clasificatoria, Box fight, Zona que cierra, Reaparición, Sin construir, Práctica y Reto de edición |
+| Estilo visual | Colores vivos y siluetas gruesas para ver bien a los rivales | Colores saturados, personajes redondeados y luz suave |
 | Iluminación | Luz global y cielo realista | Mapeo de tonos de cine, luz ambiental del cielo y sombras suaves |
 
 Fuentes consultadas:
@@ -224,5 +236,8 @@ Fuentes consultadas:
 - Menú: [Dexerto](https://www.dexerto.com/fortnite/fortnite-finally-gets-long-awaited-ui-revamp-2329726)
 - Clasificatoria: [esports.gg](https://esports.gg/guides/fortnite/fortnite-ranks/), [esports.net](https://www.esports.net/wiki/guides/fortnite-ranks/), [GGRecon](https://cms.ggrecon.com/guides/fortnite-ranked/)
 - Pase de temporada: [esports.gg](https://esports.gg/news/fortnite/how-fortnite-battle-pass-works/)
+- Estilo visual: [PSU](https://www.psu.com/news/the-secret-genius-of-fortnites-art-style/), [Kotaku](https://kotaku.com/why-the-gears-of-war-people-decided-to-make-fortnite-le-5940662), [charla GDC en Game Developer](https://gamedeveloper.com/art/video-developing-the-stylized-art-of-i-fortnite-i-)
+- HUD y tormenta: [Gfinity](https://www.gfinityesports.com/fortnite/fortnite-beginners-guide-2021-tips-and-tricks-you-need-to-know-when-starting-out-pc-switch-xbox-one-series-s-x-ps4-ps5/), [FortniteHUD](https://github.com/RobMeade/FortniteHUD), [ayuda de Epic](https://www.epicgames.com/help/fortnite-battle-royale-c-202300000001636/gameplay-c-202300000001721/hud-a202300000011110)
+- Modos: [Dot Esports](https://dotesports.com/fortnite/news/all-fortnite-game-modes-explained), [WallStreetMojo](https://www.wallstreetmojo.com/fortnite-game-modes-guide)
 
 Todo lo de Rampazo (nombres de rangos, personajes, recompensas, iconos y sonidos) es original; solo se toma la idea general de cómo funcionan estos sistemas.
