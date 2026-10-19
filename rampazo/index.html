@@ -762,14 +762,14 @@ function updatePieces(dt) {
   }
 }
 function destroyPiece(p, quiet = false) {
-  if (!pieces.has(p.key)) return;
+  if (pieces.get(p.key) !== p) return;
   pieces.delete(p.key); growing.delete(p); shaking.delete(p);
   scene.remove(p.group);
   for (const m of p.meshes) { removeFrom(hittables, m); removeFrom(solidMeshes, m); }
   for (const b of p.boxes) boxes.delete(b);
   if (p.slope) slopes.delete(p.slope);
   collapsing.delete(p);
-  if (!quiet) { burst(p.group.position, MATS[p.mat].color, 14); sfx('break', p.group.position); supportDirty = true; breakPos.copy(p.group.position); }
+  if (!quiet) { burst(p.group.position, MATS[p.mat].color, 14); sfx('break_' + p.mat, p.group.position); supportDirty = true; breakPos.copy(p.group.position); }
 }
 // la pieza deja de ser sólida y cae girando, como un trozo de estructura que se suelta
 function dropPiece(p) {
@@ -777,7 +777,7 @@ function dropPiece(p) {
   p.group.position.set(p.tr.x, p.tr.y, p.tr.z);
   scene.add(p.group);
   debris.add({ g: p.group, mat: p.mat, t: 0, vy: 1.5, vx: rand(-1, 1), vz: rand(-1, 1), rx: rand(-2, 2), rz: rand(-2, 2) });
-  sfx('break', p.group.position);
+  sfx('break_' + p.mat, p.group.position);
 }
 function clearPieces() {
   for (const p of [...pieces.values()]) destroyPiece(p, true);
@@ -1038,7 +1038,7 @@ function heldTemplate(key, item) {
   return g;
 }
 function makeCharacter(sk) {
-  const g = new THREE.Group();
+  const g = new THREE.Group(); g.rotation.order = 'YXZ';
   const M = {
     shirt: lam(sk.shirt), pants: lam(sk.pants), skin: lam(sk.skin), acc: lam(sk.accent),
     glow: toon({ color: sk.accent, emissive: sk.accent, emissiveIntensity: 0.6 }),
@@ -1163,6 +1163,12 @@ function setHeldModel(ch, item) {
   if (liteMats) applyLite(g);
   ch.gun = g; ch.hand.add(g);
 }
+function footsteps(e, dt) {
+  const sp = Math.hypot(e.vel.x, e.vel.z);
+  if (!e.onGround || sp < 2 || e.slideT > 0) { e.stepT = 0.15; return; }
+  e.stepT = (e.stepT || 0) - dt * sp / 6.4;
+  if (e.stepT <= 0) { e.stepT = e.crouch ? 0.55 : 0.36; sfx(e.pos.y > 0.3 ? 'stepb' : 'step', e.isPlayer ? null : e.pos); }
+}
 function animateCharacter(e, dt) {
   const ch = e.ch;
   ch.group.position.copy(e.pos);
@@ -1180,10 +1186,17 @@ function animateCharacter(e, dt) {
     setHeldModel(ch, null);
     return;
   }
+  if (e.slideT > 0) {
+    ch.group.rotation.x = 0.4; ch.group.position.y -= 0.25;
+    ch.legL.rotation.set(1.35, 0, 0.1); ch.legR.rotation.set(1.05, 0, -0.1);
+    ch.armL.rotation.set(-0.4, 0, -0.9);
+    if (Math.random() < dt * 30) burst(e.pos.clone().setY(e.pos.y + 0.1), 0x8fc86a, 1);
+  }
   const sp = Math.hypot(e.vel.x, e.vel.z);
   e.walkT += dt * sp * 1.6;
   const sw = e.onGround ? Math.sin(e.walkT) * Math.min(1, sp / 5) * 0.7 : 0.4;
-  if (e.onGround) { ch.legL.rotation.set(sw, 0, 0); ch.legR.rotation.set(-sw, 0, 0); }
+  if (e.slideT > 0) { /* piernas ya colocadas */ }
+  else if (e.onGround) { ch.legL.rotation.set(sw, 0, 0); ch.legR.rotation.set(-sw, 0, 0); }
   else { ch.legL.rotation.set(-0.7, 0, 0); ch.legR.rotation.set(0.35, 0, 0); }
   const item = e.inv[e.cur];
   if (e.building) { ch.armL.rotation.set(-sw * 0.6, 0, 0); ch.armR.rotation.set(sw * 0.6 + 0.8, 0, 0); }
@@ -1230,7 +1243,7 @@ function loadout(e) {
   e.mats = inf ? { wood: 999, stone: 999, metal: 999 } : { wood: 500, stone: 300, metal: 200 };
   e.buildMat = 'wood';
   e.hp = 100; e.shield = 100; e.alive = true;
-  e.fireCd = 0; e.reloadT = 0; e.useT = 0; e.bloom = 0; e.building = false; e.swingT = 0; e.crouch = false; e.height = 1.9; e.emoteT = 0;
+  e.fireCd = 0; e.reloadT = 0; e.useT = 0; e.bloom = 0; e.building = false; e.swingT = 0; e.crouch = false; e.height = 1.9; e.emoteT = 0; e.slideT = 0;
   e.vel.set(0, 0, 0);
   e.dieT = 0; e.ch.group.scale.set(1, 1, 1); e.ch.group.visible = true;
 }
@@ -1298,6 +1311,8 @@ function addDecal(hit) {
   d.lookAt(_dn.add(d.position));
   d.scale.setScalar(rand(0.8, 1.3));
   hit.object.attach(d);
+  const pc = hit.object.userData.piece;
+  if (pc && growing.has(pc)) d.scale.multiplyScalar(pc.group.scale.x);
 }
 let camShake = 0;
 function dmgNumber(pos, text, color) {
@@ -1328,11 +1343,13 @@ function updateFx(dt) {
     if (n.life <= 0) { n.el.remove(); nums.splice(i, 1); }
   }
 }
-let AC = null, noiseBuf = null;
+let AC = null, noiseBuf = null, master = null;
+const _sd = new THREE.Vector3(), _sr = new THREE.Vector3();
 function initAudio() {
   if (AC) { if (AC.state === 'suspended') AC.resume(); return; }
   try {
     AC = new (window.AudioContext || window.webkitAudioContext)();
+    master = AC.createGain(); master.gain.value = settings.volume; master.connect(AC.destination);
     noiseBuf = AC.createBuffer(1, AC.sampleRate * 0.5, AC.sampleRate);
     const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
   } catch (err) { AC = null; }
@@ -1340,8 +1357,17 @@ function initAudio() {
 function sfx(type, pos) {
   if (!AC) return;
   let vol = 1;
-  if (pos && player) { vol = clamp(1 - pos.distanceTo(player.pos) / 120, 0.15, 1); }
-  const t = AC.currentTime, out = AC.createGain(); out.connect(AC.destination);
+  let pan = 0;
+  if (pos && player) {
+    vol = clamp(1 - pos.distanceTo(player.pos) / 120, 0.15, 1);
+    // se oye por el lado de donde viene (respecto a la cámara)
+    _sr.set(1, 0, 0).applyQuaternion(camera.quaternion);
+    _sd.copy(pos).sub(camera.position); const dl = _sd.length();
+    if (dl > 0.5) pan = clamp(_sd.dot(_sr) / dl, -1, 1) * 0.85;
+  }
+  const t = AC.currentTime, out = AC.createGain();
+  if (pan && AC.createStereoPanner) { const pn = AC.createStereoPanner(); pn.pan.value = pan; out.connect(pn); pn.connect(master); }
+  else out.connect(master);
   const noise = (dur, freq, gain) => { const s = AC.createBufferSource(); s.buffer = noiseBuf; const f = AC.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = freq; const g = AC.createGain(); g.gain.setValueAtTime(gain * vol, t); g.gain.exponentialRampToValueAtTime(0.001, t + dur); s.connect(f); f.connect(g); g.connect(out); s.start(t); s.stop(t + dur); };
   const tone = (f0, f1, dur, gain, type = 'sine') => { const o = AC.createOscillator(); o.type = type; o.frequency.setValueAtTime(f0, t); o.frequency.exponentialRampToValueAtTime(f1, t + dur); const g = AC.createGain(); g.gain.setValueAtTime(gain * vol, t); g.gain.exponentialRampToValueAtTime(0.001, t + dur); o.connect(g); g.connect(out); o.start(t); o.stop(t + dur); };
   switch (type) {
@@ -1351,8 +1377,15 @@ function sfx(type, pos) {
     case 'sniper': noise(0.6, 1800, 0.7); tone(180, 30, 0.35, 0.4, 'sawtooth'); break;
     case 'hit': tone(1400, 900, 0.06, 0.15, 'square'); break;
     case 'head': tone(2000, 1600, 0.12, 0.2, 'triangle'); break;
-    case 'build': tone(180, 90, 0.1, 0.3); noise(0.06, 800, 0.15); break;
-    case 'break': noise(0.4, 900, 0.5); break;
+    case 'build': case 'build_wood': tone(180, 90, 0.1, 0.3); noise(0.06, 800, 0.15); break;
+    case 'build_stone': tone(120, 60, 0.14, 0.35); noise(0.1, 500, 0.25); break;
+    case 'build_metal': tone(320, 300, 0.25, 0.12, 'triangle'); tone(640, 600, 0.2, 0.06); noise(0.05, 3000, 0.12); break;
+    case 'break': case 'break_wood': noise(0.4, 900, 0.5); tone(140, 60, 0.15, 0.2); break;
+    case 'break_stone': noise(0.55, 600, 0.6); tone(90, 40, 0.25, 0.3); break;
+    case 'break_metal': noise(0.35, 2600, 0.45); tone(500, 200, 0.3, 0.15, 'triangle'); break;
+    case 'step': noise(0.06, 700, 0.12); break;
+    case 'stepb': noise(0.07, 1100, 0.14); tone(160, 120, 0.05, 0.06); break;
+    case 'slide': noise(0.5, 1500, 0.25); break;
     case 'reload': tone(900, 600, 0.05, 0.1, 'square'); break;
     case 'count': tone(600, 600, 0.15, 0.2, 'square'); break;
     case 'go': tone(900, 1400, 0.3, 0.25, 'square'); break;
@@ -1462,6 +1495,7 @@ function applyHit(hit, dmg, attacker, wid) {
   }
   if (o.piece) {
     const p = o.piece, d = dmg * (WEAPONS[wid] || PICKAXE).build;
+    if (mode === 'edits' && p === editCh.piece) { burst(hit.point, MATS[p.mat].color, 2); return false; }
     p.hp -= d;
     p.shake = 0.12; shaking.add(p);
     if (attacker === player) dmgNumber(hit.point, String(Math.round(d)), '#cfcfe0');
@@ -1538,7 +1572,7 @@ function tryBuild(e, kind, yaw) {
   if (!p) return false;
   if (!(training() && e.isPlayer)) e.mats[e.buildMat] -= 10;
   if (e === player) stats.built++;
-  sfx('build', e.isPlayer ? null : p.group.position);
+  sfx('build_' + p.mat, e.isPlayer ? null : p.group.position);
   return true;
 }
 const ghostMat = new THREE.MeshBasicMaterial({ color: 0x3de0ff, transparent: true, opacity: 0.35, depthWrite: false });
@@ -1607,8 +1641,10 @@ function spawnEditTarget() {
   if (editCh.piece) destroyPiece(editCh.piece, true);
   targetGroup.clear();
   const kind = pick(['wall', 'wall', 'floor', 'cone']);
-  const p = makePiece(kind, kind === 'wall' ? { ax: 'z', i: 0, j: 0, l: 0 } : { cx: 0, cz: -1, l: 0 }, pick(['wood', 'stone', 'metal']), player);
-  if (!p) return;
+  const spec = kind === 'wall' ? { ax: 'z', i: 0, j: 0, l: 0 } : { cx: 0, cz: -1, l: 0 };
+  const occ = pieces.get(pieceKey(kind, spec)); if (occ) destroyPiece(occ, true);
+  const p = makePiece(kind, spec, pick(['wood', 'stone', 'metal']), player);
+  if (!p) { editCh.piece = null; return; }
   editCh.piece = p;
   const pat = pick(kind === 'wall' ? WALL_PATTERNS : QUAD_PATTERNS);
   editCh.target = pat.reduce((m, i) => m | (1 << i), 0);
@@ -1657,7 +1693,7 @@ function updateEditChallenge(dt) {
   }
   if (!editCh.running) { editCh.running = true; editCh.n = 0; editCh.t = 0; spawnEditTarget(); updateScore(); banner('¡A EDITAR!', 'Quita solo las casillas rojas de cada pieza', 1.6); sfx('go'); }
   editCh.t += dt;
-  if (!editCh.piece || !pieces.has(editCh.piece.key)) spawnEditTarget();
+  if (!editCh.piece || pieces.get(editCh.piece.key) !== editCh.piece) spawnEditTarget();
   hudSet($('scGoal'), 'text', editCh.t.toFixed(1) + ' s');
 }
 function updateBot(b, dt) {
@@ -1701,6 +1737,7 @@ function updateBot(b, dt) {
     if (want !== b.cur && b.fireCd < 0.25) { b.cur = want; b.fireCd = Math.max(b.fireCd, 0.25); }
   }
   const it = b.inv[b.cur];
+  if (ai.peek && ai.mode !== 'fight') { const p = ai.peek.p; if (pieces.get(p.key) === p) { p.mask = 0; buildParts(p); } ai.peek = null; }
   if (ai.mode === 'box') {
     // curarse dentro de la caja
     b.vel.x *= 0.7; b.vel.z *= 0.7;
@@ -1719,8 +1756,9 @@ function updateBot(b, dt) {
   // asomarse: abre una ranura en su propio muro hacia el jugador, dispara y la vuelve a cerrar
   if (ai.peek) {
     const p = ai.peek.p;
-    if (!pieces.has(p.key) || now > ai.peek.until) {
-      if (pieces.has(p.key)) { p.mask = 0; buildParts(p); sfx('edit', p.group.position); }
+    const alive = pieces.get(p.key) === p;
+    if (!alive || now > ai.peek.until) {
+      if (alive) { p.mask = 0; buildParts(p); sfx('edit', p.group.position); }
       ai.peek = null; ai.peekCd = now + rand(1.2, 2.6);
     }
   } else if (ai.mode === 'fight' && !ai.visible && D.build >= 0.5 && now > (ai.peekCd || 0) && b.onGround) {
@@ -1779,7 +1817,7 @@ function updateBot(b, dt) {
       const ad = o.distanceTo(aimPt);
       aimPt.x += rand(-1, 1) * err * ad; aimPt.y += rand(-1, 1) * err * ad * 0.6; aimPt.z += rand(-1, 1) * err * ad;
       const dir = aimPt.sub(o).normalize();
-      const muzzle = new THREE.Vector3(); b.ch.hand.getWorldPosition(muzzle);
+      const muzzle = new THREE.Vector3(); b.ch.hand.getWorldPosition(muzzle); muzzle.addScaledVector(dir, w.len);
       fireWeapon(b, it, o, dir, 0, muzzle);
       if (it.mag <= 0) b.reloadT = w.reload;
     }
@@ -1815,7 +1853,7 @@ const BIND_GROUPS = [
   ['Construcción', { wall: 'Muro', floor: 'Suelo', ramp: 'Rampa', cone: 'Cono', buildToggle: 'Modo construcción', material: 'Cambiar material', edit: 'Editar', resetEdit: 'Restablecer edición' }],
   ['Otros', { emote: 'Baile' }],
 ];
-const DEFAULT_SETTINGS = { sens: 1, adsSens: 1, scopeSens: 1, invertY: false, fov: 80, quality: 'auto', edges: false, fps: false, editOnRelease: true, buildDelay: 0.1, autoReload: true, dmgNums: true, enemyBar: true, camDist: 1, camLeft: false,
+const DEFAULT_SETTINGS = { sens: 1, adsSens: 1, scopeSens: 1, invertY: false, fov: 80, quality: 'auto', edges: false, fps: false, editOnRelease: true, buildDelay: 0.1, autoReload: true, dmgNums: true, enemyBar: true, camDist: 1, camLeft: false, volume: 0.8,
   cross: { style: 'cruz', color: '#ffffff', size: 24, gap: 4, thick: 2, outline: true } };
 const settings = JSON.parse(JSON.stringify(DEFAULT_SETTINGS));
 settings.binds = { ...DEFAULT_BINDS };
@@ -1860,7 +1898,7 @@ function renderBindLabels() {
   $('buildbar').innerHTML = [['wall', 'Muro'], ['floor', 'Suelo'], ['ramp', 'Rampa'], ['cone', 'Cono']].map(([k, n]) => `<div data-k="${k}" title="${n}"><span>${keyName(BK(k))}</span>${BUILD_SVG[k]}</div>`).join('') + `<div class="tip">${keyName(BK('edit'))} · Editar</div><div class="tip">${keyName(BK('material'))} · Material</div>`;
   const kb = a => `<kbd>${keyName(BK(a))}</kbd>`;
   $('keysHelp').innerHTML = `<div>${kb('forward')}${kb('left')}${kb('back')}${kb('right')} moverse · ${kb('jump')} saltar</div>
-    <div>${kb('sprint')} correr · ${kb('crouch')} agacharse · ${kb('reload')} recargar</div>
+    <div>${kb('sprint')} correr · ${kb('crouch')} agacharse (corriendo: deslizarse) · ${kb('reload')} recargar</div>
     <div>Clic izq. disparar / construir · clic der. apuntar</div>
     <div>${kb('slot1')}–${kb('slot6')} o rueda: pico, armas y escudo</div>
     <div>${kb('wall')} muro · ${kb('floor')} suelo · ${kb('ramp')} rampa · ${kb('cone')} cono</div>
@@ -1878,6 +1916,7 @@ function applySettings() {
   const size = q === 'alta' ? 2048 : 1024;
   if (sun.shadow.mapSize.x !== size) { sun.shadow.mapSize.set(size, size); if (sun.shadow.map) { sun.shadow.map.dispose(); sun.shadow.map = null; } }
   EDGE_MAT.visible = settings.edges;
+  if (master) master.gain.value = settings.volume;
   $('fps').hidden = !settings.fps;
   $('enemyBar').classList.toggle('hide', !settings.enemyBar);
   drawCrosshair();
@@ -2126,7 +2165,7 @@ function editRelease() {
 function updateEdit() {
   if (!editing) return;
   const p = editing.p;
-  if (!pieces.has(p.key) || collapsing.has(p) || !player.alive || pieceDist(player, p) > EDIT_RANGE + 1.5) { cancelEdit(); return; }
+  if (pieces.get(p.key) !== p || collapsing.has(p) || !player.alive || pieceDist(player, p) > EDIT_RANGE + 1.5) { cancelEdit(); return; }
   const t = tileUnderAim();
   editing.hover = t;
   if (p.kind === 'ramp') {
@@ -2196,7 +2235,7 @@ function playerPrimary(first) {
     const chest = e.pos.clone().setY(e.pos.y + 1.4);
     const camDist = camera.position.distanceTo(chest);
     const hit = castRay(camera.position, dir, camDist + 3.4, e, Math.max(0, camDist - 0.5));
-    if (hit && hit.point.distanceTo(chest) < 3.5) { applyHit(hit, hit.object.userData.ent ? 20 : 60, e, 'pick'); sfx('pick'); }
+    if (hit && hit.point.distanceTo(chest) < 3.5) { applyHit(hit, hit.object.userData.ent ? 20 : 60, e, 'pickaxe'); sfx('pick'); }
     return;
   }
   if (it.kind === 'weapon') {
@@ -2221,8 +2260,14 @@ function playerPrimary(first) {
 function updatePlayer(dt) {
   const e = player;
   e.fireCd -= dt; buildRepeat -= dt; e.swingT -= dt;
-  e.crouch = !!keys[BK('crouch')] && e.alive && roundLive;
-  e.height = e.crouch ? 1.35 : 1.9;
+  const crouchKey = !!keys[BK('crouch')] && e.alive && roundLive;
+  // deslizarse: si vas corriendo y te agachas, sales disparado y te deslizas por el suelo
+  const hs0 = Math.hypot(e.vel.x, e.vel.z);
+  if (crouchKey && !e.crouchPrev && e.onGround && hs0 > 6.6 && !(e.slideT > 0)) { e.slideT = 0.8; const k = 11.5 / hs0; e.vel.x *= k; e.vel.z *= k; sfx('slide'); }
+  e.crouchPrev = crouchKey;
+  if (e.slideT > 0) { e.slideT -= dt; if (!crouchKey || Math.hypot(e.vel.x, e.vel.z) < 4) e.slideT = 0; }
+  e.crouch = crouchKey;
+  e.height = e.slideT > 0 ? 1.15 : e.crouch ? 1.35 : 1.9;
   e.bloom = Math.max(0, e.bloom - dt * 0.08); e.recoil = Math.max(0, e.recoil - dt * 1.2);
   if (training()) { e.mats.wood = e.mats.stone = e.mats.metal = 999; }
   let mx = 0, mz = 0;
@@ -2237,10 +2282,15 @@ function updatePlayer(dt) {
   if (aiming) speed = 4.4;
   if (e.useT > 0) speed = Math.min(speed, 3.5);
   if (e.crouch) speed = Math.min(speed, 3.4);
-  const acc = e.onGround ? 14 : 4;
-  e.vel.x += (mx * speed - e.vel.x) * Math.min(1, dt * acc);
-  e.vel.z += (mz * speed - e.vel.z) * Math.min(1, dt * acc);
-  if (keys[BK('jump')] && e.onGround && e.alive && roundLive) { e.vel.y = 8.2; e.onGround = false; e.emoteT = 0; }
+  if (e.slideT > 0 && e.onGround) {
+    // durante el deslizamiento se frena poco a poco y apenas se puede girar
+    const f = Math.exp(-dt * 1.5); e.vel.x = e.vel.x * f + mx * dt * 5; e.vel.z = e.vel.z * f + mz * dt * 5;
+  } else {
+    const acc = e.onGround ? 14 : 4;
+    e.vel.x += (mx * speed - e.vel.x) * Math.min(1, dt * acc);
+    e.vel.z += (mz * speed - e.vel.z) * Math.min(1, dt * acc);
+  }
+  if (keys[BK('jump')] && e.onGround && e.alive && roundLive) { e.vel.y = 8.2; e.onGround = false; e.emoteT = 0; e.slideT = 0; }
   if (e.alive) moveEntity(e, dt);
   if (!e.alive || !roundLive) return;
   if (mouseDown && (locked || freeLook) && !editing) playerPrimary(false);
@@ -2538,7 +2588,7 @@ function frame(t) {
   updateEditChallenge(dt);
   if (bot.alive) updateBot(bot, dt);
   else if (mode === 'practice' && roundEndT <= 0 && !roundLive) startRound();
-  for (const e of [player, bot]) { if (e.alive) animateCharacter(e, dt); else updateDeath(e, dt); }
+  for (const e of [player, bot]) { if (e.alive) { animateCharacter(e, dt); if (roundLive && !(e === bot && mode === 'edits')) footsteps(e, dt); } else updateDeath(e, dt); }
   lobbyStage.visible = false; previewEnt.ch.group.visible = false;
   updatePieces(dt);
   updateEdit();
@@ -2620,7 +2670,7 @@ let settingsFrom = 'start', setTab = 'controles';
 const SET_TABS = { controles: 'Controles', raton: 'Ratón', mira: 'Mira', graficos: 'Gráficos', juego: 'Juego' };
 const getPath = path => path.split('.').reduce((o, k) => o[k], settings);
 const setPath = (path, v) => { const ks = path.split('.'); const last = ks.pop(); ks.reduce((o, k) => o[k], settings)[last] = v; };
-const FMT = { x: v => Number(v).toFixed(2) + '×', deg: v => v + '°', px: v => v + ' px', s: v => Number(v).toFixed(2) + ' s' };
+const FMT = { pct: v => Math.round(v * 100) + ' %', x: v => Number(v).toFixed(2) + '×', deg: v => v + '°', px: v => v + ' px', s: v => Number(v).toFixed(2) + ' s' };
 const rng = (label, path, min, max, step, fmt) => `<div class="set"><label for="s_${path}">${label} <output data-out="${path}">${FMT[fmt](getPath(path))}</output></label><input type="range" id="s_${path}" data-set="${path}" data-fmt="${fmt}" min="${min}" max="${max}" step="${step}" value="${getPath(path)}"></div>`;
 const chk = (label, path) => `<label class="check"><input type="checkbox" data-set="${path}" ${getPath(path) ? 'checked' : ''}> ${label}</label>`;
 function renderSettings() {
@@ -2639,7 +2689,7 @@ function renderSettings() {
   } else if (setTab === 'graficos') {
     h = `<div class="set"><label>Calidad</label><div class="chips" id="qualChips"></div></div>` + rng('Campo de visión', 'fov', 60, 110, 1, 'deg') + chk('Bordes en las construcciones', 'edges') + chk('Mostrar FPS', 'fps');
   } else {
-    h = rng('Distancia de la cámara', 'camDist', 0.7, 1.6, 0.05, 'x') + chk('Cámara sobre el hombro izquierdo', 'camLeft') + chk('Editar al soltar la tecla de editar (si no, se confirma pulsándola otra vez)', 'editOnRelease') + rng('Retraso al construir manteniendo el clic', 'buildDelay', 0.03, 0.3, 0.01, 's')
+    h = rng('Volumen', 'volume', 0, 1, 0.05, 'pct') + rng('Distancia de la cámara', 'camDist', 0.7, 1.6, 0.05, 'x') + chk('Cámara sobre el hombro izquierdo', 'camLeft') + chk('Editar al soltar la tecla de editar (si no, se confirma pulsándola otra vez)', 'editOnRelease') + rng('Retraso al construir manteniendo el clic', 'buildDelay', 0.03, 0.3, 0.01, 's')
       + chk('Recargar automáticamente', 'autoReload') + chk('Mostrar números de daño', 'dmgNums') + chk('Mostrar la vida del rival arriba', 'enemyBar');
   }
   $('setBody').innerHTML = h;
@@ -2664,7 +2714,7 @@ $('setBody').addEventListener('input', ev => {
   if (out) out.textContent = FMT[el.dataset.fmt](v);
   applySettings();
 });
-const TAB_KEYS = { raton: ['sens', 'adsSens', 'scopeSens', 'invertY'], graficos: ['quality', 'fov', 'edges', 'fps'], juego: ['camDist', 'camLeft', 'editOnRelease', 'buildDelay', 'autoReload', 'dmgNums', 'enemyBar'] };
+const TAB_KEYS = { raton: ['sens', 'adsSens', 'scopeSens', 'invertY'], graficos: ['quality', 'fov', 'edges', 'fps'], juego: ['volume', 'camDist', 'camLeft', 'editOnRelease', 'buildDelay', 'autoReload', 'dmgNums', 'enemyBar'] };
 $('setReset').onclick = () => {
   if (setTab === 'controles') settings.binds = { ...DEFAULT_BINDS };
   else if (setTab === 'mira') settings.cross = { ...DEFAULT_SETTINGS.cross };

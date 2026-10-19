@@ -1,6 +1,6 @@
 # RAMPAZO 1v1 — información del juego
 
-Duelo de construcción 1 contra 1 en 3D, para el navegador. Todo el juego está en un solo archivo: `index.html` (unas 2.680 líneas, 164 KB). Usa la librería 3D **Three.js 0.160**, que se carga desde internet al abrir el archivo.
+Duelo de construcción 1 contra 1 en 3D, para el navegador. Todo el juego está en un solo archivo: `index.html` (unas 2.730 líneas, 168 KB). Usa la librería 3D **Three.js 0.160**, que se carga desde internet al abrir el archivo.
 
 Personajes, nombres, arena y sonidos son originales. Los sonidos se generan con código y no hay imágenes externas.
 
@@ -56,6 +56,12 @@ Personajes, nombres, arena y sonidos son originales. Los sonidos se generan con 
 - **Registro de eliminaciones:** arriba a la derecha dice quién eliminó a quién, con qué arma y si fue a la cabeza.
 - **Rival listo:** desde Normal, si está detrás de un muro suyo, abre una ranura para asomarse, dispara y la vuelve a cerrar. Lo hace sobre todo en Box fight.
 
+### Sonido
+- **Dirección:** los disparos, las construcciones y los pasos del rival se oyen por el lado de donde vienen.
+- **Pasos:** cambian según si pisas césped o piezas.
+- **Por material:** madera, piedra y metal suenan distinto al construir y al romperse.
+- **Volumen:** se cambia en Ajustes → Juego.
+
 ### Equipo de cada ronda
 - **Armas:** pico, escopeta (legendaria), rifle de asalto (épico), subfusil (raro) y francotirador (épico), más 4 mini escudos (+25 de escudo cada uno).
 - **Vida y escudo:** 100 + 100.
@@ -76,7 +82,7 @@ Personajes, nombres, arena y sonidos son originales. Los sonidos se generan con 
 | `W` `A` `S` `D` | Moverse |
 | `Espacio` | Saltar |
 | `Shift` | Correr |
-| `X` | Agacharse (más precisión) |
+| `X` | Agacharse (más precisión). Si vas corriendo, te deslizas por el suelo; puedes saltar en mitad del deslizamiento |
 | `1` – `6` / rueda | Pico, escopeta, rifle, subfusil, francotirador, mini escudo |
 | Clic izquierdo | Disparar / construir (mantener = construir seguido) |
 | Clic derecho | Apuntar (con el francotirador, mira telescópica) |
@@ -114,7 +120,7 @@ Personajes, nombres, arena y sonidos son originales. Los sonidos se generan con 
 | Ratón | Sensibilidad general, al apuntar y con mira telescópica; invertir eje vertical |
 | Mira | Estilo (cruz, cruz y punto, punto, círculo, en T), color, tamaño, separación, grosor, borde |
 | Gráficos | Calidad (automática, baja, media o alta), campo de visión, bordes de piezas y contador de FPS. Si el equipo va lento, la automática baja primero la resolución, luego quita las sombras, después oculta los árboles y por último usa materiales simples. La baja va sin sombras ni árboles y con materiales simples |
-| Juego | Distancia de la cámara, hombro izquierdo o derecho, editar al soltar, retraso al construir seguido, recarga automática, números de daño, vida del rival |
+| Juego | Volumen, distancia de la cámara, hombro izquierdo o derecho, editar al soltar, retraso al construir seguido, recarga automática, números de daño, vida del rival |
 
 Los ajustes y tu personaje se guardan en el navegador (`localStorage`).
 
