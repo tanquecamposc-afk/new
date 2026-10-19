@@ -51,6 +51,9 @@ Personajes, nombres, arena y sonidos son originales. Los sonidos se generan con 
 
 ### Combate
 - **Disparos:** destello en el cañón, temblor de cámara al disparar (más fuerte con escopeta y francotirador) y al recibir daño, y marcas de bala en las piezas.
+- **Indicador de daño:** cuando te disparan, sale un arco rojo alrededor de la mira que apunta hacia el rival.
+- **Poca vida:** con menos de 35 de vida, los bordes de la pantalla laten en rojo y se oye un latido.
+- **Animaciones:** al cambiar de arma, el arma sube desde abajo; al recargar, se inclina hacia un lado.
 - **Escudo roto:** cuando le rompes el escudo al rival suena un aviso y sale el texto "ESCUDO ROTO".
 - **Eliminación:** el personaje eliminado gira, sube y se deshace en cubos.
 - **Registro de eliminaciones:** arriba a la derecha dice quién eliminó a quién, con qué arma y si fue a la cabeza.
@@ -61,6 +64,7 @@ Personajes, nombres, arena y sonidos son originales. Los sonidos se generan con 
 - **Pasos:** cambian según si pisas césped o piezas.
 - **Por material:** madera, piedra y metal suenan distinto al construir y al romperse.
 - **Volumen:** se cambia en Ajustes → Juego.
+- **Ver los sonidos:** opción en Ajustes → Juego. Muestra iconos alrededor de la mira en la dirección de los pasos, disparos y construcciones del rival.
 
 ### Equipo de cada ronda
 - **Armas:** pico, escopeta (legendaria), rifle de asalto (épico), subfusil (raro) y francotirador (épico), más 4 mini escudos (+25 de escudo cada uno).
