@@ -1,16 +1,28 @@
 # RAMPAZO 1v1 — información del juego
 
-Duelo de construcción 1 contra 1 en 3D, para el navegador. Todo el juego está en un solo archivo: `index.html` (unas 2.580 líneas, 157 KB). Usa la librería 3D **Three.js 0.160**, que se carga desde internet al abrir el archivo.
+Duelo de construcción 1 contra 1 en 3D, para el navegador. Todo el juego está en un solo archivo: `index.html` (unas 2.680 líneas, 164 KB). Usa la librería 3D **Three.js 0.160**, que se carga desde internet al abrir el archivo.
 
 Personajes, nombres, arena y sonidos son originales. Los sonidos se generan con código y no hay imágenes externas.
 
 ### Aspecto visual
-- **Estilo dibujo animado:** personajes y armas usan sombreado por bandas de luz.
-- **Isla:** césped con la cuadrícula de construcción, cielo azul, nubes redondas, y árboles, rocas, colinas y montañas alrededor de la arena.
-- **Personajes:** chaqueta con cuello, cremallera, correa y hombreras; cinturón con hebilla y bolsillos; rodilleras, botas, guantes, y ojos grandes con brillo. El pelo tiene mechones de punta.
-- **Armas:** cada una tiene su propio modelo, con detalles del color de su rareza: escopeta con corredera, rifle con cargador y culata, subfusil compacto, francotirador con mira, pico, mini escudo y holograma de construcción.
-- **Inventario:** casillas con el fondo del color de la rareza y la silueta del objeto, y el nombre y la rareza del arma encima. La vida y el escudo llevan icono y número, los materiales tienen icono, y la barra de construcción muestra muro, suelo, rampa y cono.
-- **Menú:** pedestal iluminado con tu personaje, logotipo y botones nuevos.
+- **Luz:**
+  - Mapeo de tonos de cine.
+  - Sol bajo que da sombras largas y suaves.
+  - Iluminación ambiental calculada a partir del cielo.
+  - Una viñeta suave en los bordes de la pantalla.
+- **Materiales físicos:** la tela, la piel, el plástico y el metal de personajes y armas reaccionan a la luz, y el metal refleja el cielo.
+- **Piezas:**
+  - Madera de tablones con veta, piedra de ladrillos irregulares y metal de chapa ondulada con remaches.
+  - Todas llevan marco y tornillos en las esquinas.
+  - Ya no tienen bordes negros (se pueden volver a activar en Ajustes → Gráficos).
+- **Isla:**
+  - Césped con manchas y briznas de varios tonos.
+  - Árboles redondos y pinos, rocas y colinas.
+  - Una playa y el mar alrededor, con montañas a lo lejos.
+  - Cielo con sol, halo y bruma en el horizonte.
+- **Personajes:** chaqueta con cuello, cremallera y hombreras; cinturón; rodilleras, botas y guantes; y ojos con brillo.
+- **Armas:** un modelo distinto para cada una, con detalles del color de su rareza.
+- **Inventario y menú:** casillas con fondo del color de la rareza, iconos de vida, escudo, materiales y construcción, y un pedestal iluminado en el menú.
 
 ---
 
@@ -101,7 +113,7 @@ Personajes, nombres, arena y sonidos son originales. Los sonidos se generan con 
 | Controles | Reasignar todas las teclas. Si una tecla ya estaba usada, se intercambia |
 | Ratón | Sensibilidad general, al apuntar y con mira telescópica; invertir eje vertical |
 | Mira | Estilo (cruz, cruz y punto, punto, círculo, en T), color, tamaño, separación, grosor, borde |
-| Gráficos | Calidad (automática, baja, media o alta), campo de visión, bordes de piezas, contador de FPS. La automática baja la resolución, luego las sombras y por último oculta los árboles si el equipo va lento. La baja va sin sombras ni árboles |
+| Gráficos | Calidad (automática, baja, media o alta), campo de visión, bordes de piezas y contador de FPS. Si el equipo va lento, la automática baja primero la resolución, luego quita las sombras, después oculta los árboles y por último usa materiales simples. La baja va sin sombras ni árboles y con materiales simples |
 | Juego | Distancia de la cámara, hombro izquierdo o derecho, editar al soltar, retraso al construir seguido, recarga automática, números de daño, vida del rival |
 
 Los ajustes y tu personaje se guardan en el navegador (`localStorage`).
