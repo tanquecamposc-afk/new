@@ -1880,6 +1880,9 @@ try {
   const sv = JSON.parse(localStorage.getItem('rampazo-ajustes') || '{}');
   Object.assign(settings, sv);
   settings.binds = { ...DEFAULT_BINDS, ...(sv.binds || {}) };
+  for (const a of Object.keys(DEFAULT_BINDS)) if (!(sv.binds && a in sv.binds)) {
+    if (Object.keys(settings.binds).some(b => b !== a && settings.binds[b] === settings.binds[a])) settings.binds[a] = '';
+  }
   settings.cross = { ...DEFAULT_SETTINGS.cross, ...(sv.cross || {}) };
 } catch (err) { /* sin almacenamiento */ }
 const BK = a => settings.binds[a];
@@ -1975,7 +1978,7 @@ addEventListener('keydown', ev => {
     if (ev.code !== 'Escape') assignBind(capture, ev.code);
     capture = null; renderSettings(); return;
   }
-  if (ev.code === 'Escape' && gameState === 'play' && freeLook) { pauseGame(); return; }
+  if (ev.code === 'Escape' && gameState === 'play' && (freeLook || !locked)) { pauseGame(); return; }
   if (gameState !== 'play') return;
   if (ev.code === 'Space' || ev.code === 'Tab' || ev.code.startsWith('Arrow') || ev.code.startsWith('Control')) ev.preventDefault();
   if (keys[ev.code]) return;
@@ -2024,8 +2027,11 @@ canvas.addEventListener('mousedown', ev => {
 });
 addEventListener('mouseup', ev => { if (ev.button === 0) { mouseDown = false; editRelease(); } if (ev.button === 2) aiming = false; });
 addEventListener('contextmenu', ev => ev.preventDefault());
+let lastWheel = 0;
 addEventListener('wheel', ev => {
-  if (gameState !== 'play' || !player.alive) return;
+  if (gameState !== 'play' || !player.alive || Math.abs(ev.deltaY) < 1) return;
+  if (performance.now() - lastWheel < 70) return;
+  lastWheel = performance.now();
   const dir = ev.deltaY > 0 ? 1 : -1;
   finishEdit(); selectSlot((player.cur + dir + 6) % 6);
 }, { passive: true });
@@ -2297,8 +2303,9 @@ function updatePlayer(dt) {
     const ml = Math.hypot(mx, mz); if (ml > 0) { mx /= ml; mz /= ml; }
   }
   if ((mx || mz || mouseDown) && e.emoteT > 0) e.emoteT = 0;
-  let speed = keys[BK('sprint')] && !aiming ? 7.6 : 6.4;
-  if (aiming) speed = 4.4;
+  const cur = e.inv[e.cur], adsOK = aiming && cur && cur.kind === 'weapon' && !e.building && !editing;
+  let speed = keys[BK('sprint')] && !adsOK ? 7.6 : 6.4;
+  if (adsOK) speed = 4.4;
   if (e.useT > 0) speed = Math.min(speed, 3.5);
   if (e.crouch) speed = Math.min(speed, 3.4);
   if (e.slideT > 0 && e.onGround) {
@@ -2336,7 +2343,7 @@ function updateCamera(dt) {
   camFollowY += (e.pos.y - camFollowY) * Math.min(1, dt * 16);
   const target = _camT.set(e.pos.x, camFollowY + camY, e.pos.z);
   const it = e.inv[e.cur];
-  const ads = aiming && e.alive && it && it.kind === 'weapon' && !e.building;
+  const ads = aiming && e.alive && it && it.kind === 'weapon' && !e.building && !editing;
   const side = settings.camLeft ? -1 : 1, k = settings.camDist;
   // posiciones de cámara: apuntando, bailando, construyendo/editando y normal
   if (ads) _camWant.set(0.7 * side, 0.3, 2.1);
@@ -2412,6 +2419,7 @@ function endRound(winner) {
     if (winner === player) { banner('¡Bien ahí!', 'El maniquí reaparece', 1.6); sfx('win'); }
     roundEndT = 1.8; return;
   }
+  if (mode === 'edits') { banner('¡CUIDADO!', 'Te caíste: el reto vuelve a empezar', 1.6); roundEndT = 1.8; return; }
   if (winner === player) score.me++; else score.bot++;
   updateScore();
   const over = score.me >= WIN_ROUNDS || score.bot >= WIN_ROUNDS;
@@ -2790,10 +2798,10 @@ $('setDone').onclick = () => { capture = null; $('settings').classList.add('hide
 $('menuSetBtn').onclick = () => openSettings('start');
 $('pauseSetBtn').onclick = () => openSettings('pause');
 $('resumeBtn').onclick = resumeGame;
-$('quitBtn').onclick = () => { cancelEdit(); roundEndT = 0; countdown = 0; roundLive = false; ghost.visible = false; $('pause').classList.add('hide'); $('hud').classList.add('hide'); $('start').classList.remove('hide'); gameState = 'menu'; clearPieces(); };
+$('quitBtn').onclick = () => { cancelEdit(); roundEndT = 0; countdown = 0; roundLive = false; ghost.visible = false; $('pause').classList.add('hide'); $('hud').classList.add('hide'); $('start').classList.remove('hide'); gameState = 'menu'; clearPieces(); resetEditChallenge(); };
 applySettings();
 $('rematchBtn').onclick = startMatch;
-$('menuBtn').onclick = () => { $('end').classList.add('hide'); $('start').classList.remove('hide'); clearPieces(); };
+$('menuBtn').onclick = () => { $('end').classList.add('hide'); $('start').classList.remove('hide'); gameState = 'menu'; clearPieces(); resetEditChallenge(); };
 requestAnimationFrame(frame);
 
 // para pruebas automatizadas
