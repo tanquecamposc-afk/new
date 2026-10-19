@@ -1,6 +1,6 @@
 # RAMPAZO 1v1 — información del juego
 
-Duelo de construcción 1 contra 1 en 3D, para el navegador. Todo el juego está en un solo archivo: `index.html` (unas 3.563 líneas, 236 KB). Usa la librería 3D **Three.js 0.160**, que se carga desde internet al abrir el archivo.
+Duelo de construcción 1 contra 1 en 3D, para el navegador. Todo el juego está en un solo archivo: `index.html` (unas 3.703 líneas, 250 KB). Usa la librería 3D **Three.js 0.160**, que se carga desde internet al abrir el archivo.
 
 Personajes, nombres, arena y sonidos son originales. Los sonidos se generan con código y no hay imágenes externas.
 
@@ -58,12 +58,20 @@ Personajes, nombres, arena y sonidos son originales. Los sonidos se generan con 
 | Reto de edición | Entrenamiento | Delante aparece una pieza (muro, suelo o cono) con casillas rojas. Quítalas lo más rápido que puedas: son 10 ediciones contrarreloj y se guarda tu récord. Si quitas casillas de más, la pieza se reinicia |
 
 ### Clasificatoria (rangos)
-- **8 rangos:** Bronce, Plata, Oro, Platino y Diamante (cada uno con divisiones I, II y III), y después Élite, Campeón y Leyenda. Cada uno tiene su escudo de color.
-- **Puntos de rango (PR):** cada división son 100 PR. Ganar da entre 12 y 40 PR, más si ganas con margen. Perder quita menos si conseguiste alguna ronda. Cuanto más alto el rango, menos se gana y más se pierde.
-- **Protección de rango:** puedes perder puntos, pero nunca bajas del rango que ya alcanzaste.
-- **Rival según tu rango:** Bronce juega en Fácil, Plata y Oro en Normal, Platino y Diamante en Difícil, y de Élite en adelante en Pro.
-- **Pestaña Clasificatoria:** tu escudo, la barra hasta la siguiente división, la escalera de rangos y tu carrera (partidas, victorias, % de victorias, eliminaciones, racha, mejor rango y récord de edición).
-- Al terminar una clasificatoria se ve cuántos PR ganaste o perdiste, y si ascendiste.
+- **Dos colas con rango propio:** Construcción y Sin construir. En esta última no se puede construir y el mapa trae coberturas. Se cambia en la pestaña Clasificatoria.
+- **Partidas de colocación:** las 3 primeras de cada cola mueven muchos puntos. Mientras tanto sale "Sin rango" con un escudo gris con interrogación, y al terminar la tercera se revela tu rango inicial con una animación.
+- **Búsqueda de rival:** al jugar sale "Buscando rival…" con un contador (se puede cancelar). Después aparece una pantalla VS con tu tarjeta y la del rival: un nombre original y un rango parecido al tuyo (una división arriba o abajo).
+- **Rival según su rango:** cuanto más alto es su rango, mejor apunta, antes reacciona y más construye. La dificultad sube poco a poco entre Bronce y Leyenda, no a saltos.
+- **8 rangos:** Bronce, Plata, Oro, Platino y Diamante (con divisiones I, II y III), y después Élite, Campeón y Leyenda. Cada división son 100 puntos de rango (PR).
+- **Puntos:**
+  - Ganar da entre 12 y 50 PR según el margen.
+  - Ganarle a un rival de rango más alto da más puntos, y perder contra él quita menos.
+  - Con 2 o más victorias seguidas hay un bonus de racha de hasta +15 PR.
+  - Perder quita menos si conseguiste rondas.
+- **Protección de rango:** puedes perder puntos, pero nunca bajas del rango que ya alcanzaste. Abandonar una partida cuenta como derrota.
+- **Recompensas de rango:** títulos (Competidor, Platino puro, De élite, Leyenda viva) y personajes (Trofeo al llegar a Oro, Cristal a Diamante y Campeón a Campeón). Los títulos se equipan desde la pestaña Clasificatoria.
+- **Ceremonia de ascenso:** al subir de división o conocer tu rango inicial sale una pantalla con el escudo nuevo y las recompensas.
+- **Pestaña Clasificatoria:** las dos colas, tu escudo y la barra hasta la siguiente división, la escalera de rangos, las 10 últimas partidas (resultado, rival, rango y PR), las estadísticas de la cola y las recompensas.
 
 ### Pase de temporada
 - **30 niveles** con una recompensa en cada uno. Todas son gratis.
@@ -223,7 +231,7 @@ Los ajustes, tu personaje y tu progreso (nivel, rango, misiones) se guardan en e
 | Materiales | Madera rápida y débil, piedra intermedia, metal lento y resistente | Igual: 90→150 en 4 s, 100→300 en 11,5 s, 110→500 en 24,5 s, con plano azul mientras se construye |
 | Movimiento | Correr, deslizarse y trepar a bordes | Correr, deslizarse y trepar obstáculos de hasta 3,6 m |
 | HUD | Minimapa arriba a la derecha, vida y escudo abajo a la izquierda | Igual |
-| Clasificatoria | Rangos Bronce → Diamante con divisiones I–III y tres rangos únicos arriba; puntos por resultado | 8 rangos propios con PR, protección de rango y rival según tu rango |
+| Clasificatoria | Rangos Bronce → Diamante con divisiones I–III y tres rangos únicos arriba; puntos por resultado; rango aparte con y sin construcción; búsqueda de rival de tu nivel | 8 rangos propios con PR, dos colas (Construcción y Sin construir), colocación, búsqueda de rival con pantalla VS, rachas, protección de rango y recompensas |
 | Pase de temporada | Niveles con recompensas, experiencia por jugar y misiones diarias | 30 niveles gratis, XP por partida y 3 misiones diarias |
 | Menú | Barra superior con Jugar, Pase, Taquilla… | Igual, con tarjeta de nivel y rango y misiones en el vestíbulo |
 | Debajo del minimapa | Tiempo de la tormenta, jugadores vivos y eliminaciones | Igual |
