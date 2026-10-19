@@ -1,6 +1,6 @@
 # RAMPAZO 1v1 — información del juego
 
-Duelo de construcción 1 contra 1 en 3D, para el navegador. Todo el juego está en un solo archivo: `index.html` (unas 3.520 líneas, 232 KB). Usa la librería 3D **Three.js 0.160**, que se carga desde internet al abrir el archivo.
+Duelo de construcción 1 contra 1 en 3D, para el navegador. Todo el juego está en un solo archivo: `index.html` (unas 3.563 líneas, 236 KB). Usa la librería 3D **Three.js 0.160**, que se carga desde internet al abrir el archivo.
 
 Personajes, nombres, arena y sonidos son originales. Los sonidos se generan con código y no hay imágenes externas.
 
@@ -20,7 +20,11 @@ Personajes, nombres, arena y sonidos son originales. Los sonidos se generan con 
   - Árboles redondos y pinos, rocas y colinas.
   - Una playa y el mar alrededor, con montañas a lo lejos.
   - Cielo con sol, halo y bruma en el horizonte.
-- **Personajes:** chaqueta con cuello, cremallera y hombreras; cinturón; rodilleras, botas y guantes; y ojos con brillo.
+- **Personajes:**
+  - Proporciones de héroe: piernas más largas, torso en V con pecho marcado y la cabeza más proporcionada respecto al cuerpo.
+  - Articulaciones: rodillas y codos que se doblan al andar, saltar, agacharse, deslizarse, bailar y recargar.
+  - La cabeza sigue la mirada (sube y baja al apuntar) y el cuerpo respira cuando está quieto.
+  - Chaqueta con capucha, cuello, cremallera y hombreras; cinturón; rodilleras, botas y guantes con pulgar; y ojos con brillo.
 - **Armas:** un modelo distinto para cada una, con detalles del color de su rareza.
 - **Inventario y menú:** casillas con fondo del color de la rareza, iconos de vida, escudo, materiales y construcción, y un pedestal iluminado en el menú.
 - **Menú principal:** barra de arriba con Jugar, Pase, Clasificatoria, Taquilla y Ajustes, y una tarjeta con tu nivel, título y rango. Los modos se eligen en tarjetas con icono, categoría y descripción.

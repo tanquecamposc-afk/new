@@ -1268,8 +1268,10 @@ const boxG = (w, h, d) => new THREE.BoxGeometry(w, h, d);
 const capG = (r, len, sx = 1, sz = 1) => { const g = new THREE.CapsuleGeometry(r, len, 5, 14); g.scale(sx, 1, sz); return g; };
 const sphG = (r, sx = 1, sy = 1, sz = 1, th = Math.PI) => { const g = new THREE.SphereGeometry(r, 22, 14, 0, Math.PI * 2, 0, th); g.scale(sx, sy, sz); return g; };
 const charGeo = {
-  torso: capG(0.3, 0.26, 1.15, 0.7), belt: (() => { const g = new THREE.CylinderGeometry(0.355, 0.355, 0.08, 20); g.scale(1, 1, 0.66); return g; })(),
-  emblem: new THREE.CylinderGeometry(0.085, 0.085, 0.03, 16).rotateX(Math.PI / 2), hips: sphG(0.34, 1, 0.55, 0.66),
+  torso: capG(0.25, 0.2, 1.24, 0.72), chest: sphG(0.2, 1.3, 0.75, 0.55), hood: sphG(0.19, 1.2, 0.7, 0.8),
+  thigh: capG(0.12, 0.22), shin: capG(0.1, 0.2), upper: capG(0.088, 0.2), fore: capG(0.078, 0.17),
+  glove: sphG(0.085, 1, 1.15, 0.95), thumb: sphG(0.034, 1, 1.3, 1), waist: new THREE.TorusGeometry(0.27, 0.045, 8, 22).rotateX(Math.PI / 2), belt: (() => { const g = new THREE.CylinderGeometry(0.355, 0.355, 0.08, 20); g.scale(1, 1, 0.66); return g; })(),
+  emblem: new THREE.CylinderGeometry(0.085, 0.085, 0.03, 16).rotateX(Math.PI / 2), hips: sphG(0.31, 1, 0.5, 0.66),
   leg: capG(0.13, 0.36), shoe: sphG(0.15, 1, 0.55, 1.4), arm: capG(0.1, 0.4), hand: sphG(0.1),
   head: sphG(0.28, 1, 1.05, 1), neck: new THREE.CylinderGeometry(0.1, 0.12, 0.14, 12),
   visor: new THREE.SphereGeometry(0.292, 24, 6, Math.PI * 1.5 - 0.95, 1.9, 1.3, 0.34),
@@ -1386,20 +1388,25 @@ function makeCharacter(sk) {
     glove: lam(new THREE.Color(sk.pants).multiplyScalar(0.6)), sole: lam(0xeeeef4),
     white: lam(0xffffff), iris: lam(new THREE.Color(sk.accent).multiplyScalar(0.45)),
   };
-  const BIG = new Set([charGeo.torso, charGeo.head, charGeo.hips, charGeo.leg, charGeo.arm, charGeo.pack, charGeo.hair, charGeo.cap, charGeo.beanie, charGeo.helm]);
+  const BIG = new Set([charGeo.torso, charGeo.head, charGeo.hips, charGeo.thigh, charGeo.shin, charGeo.upper, charGeo.fore, charGeo.pack, charGeo.hair, charGeo.cap, charGeo.beanie, charGeo.helm]);
   const add = (geo, mat, x, y, z, parent = g) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); m.castShadow = BIG.has(geo); parent.add(m); return m; };
-  const torso = add(charGeo.torso, M.shirt, 0, 1.12, 0);
-  // chaqueta: cuello, cremallera, correa cruzada y hombreras
-  add(charGeo.collar, M.acc, 0, 1.5, 0);
-  add(charGeo.zip, darkMat, 0, 1.16, -0.212);
-  const st = add(charGeo.strap, M.pants, 0.02, 1.14, -0.2); st.rotation.z = 0.55;
-  add(charGeo.emblem, M.acc, -0.15, 1.3, -0.205);
-  for (const x of [-0.37, 0.37]) add(charGeo.pad, M.acc, x, 1.47, 0);
-  add(charGeo.belt, darkMat, 0, 0.8, 0);
-  add(charGeo.buckle, M.acc, 0, 0.8, -0.24);
-  for (const x of [-0.26, 0.26]) add(charGeo.pouch, M.glove, x, 0.78, -0.17);
-  const hips = add(charGeo.hips, M.pants, 0, 0.72, 0);
-  add(charGeo.neck, M.skin, 0, 1.53, 0);
+  // proporciones de héroe: piernas largas, torso en V y cabeza más pequeña respecto al cuerpo
+  const torso = add(charGeo.torso, M.shirt, 0, 1.27, 0);
+  add(charGeo.chest, M.shirt, 0, 1.42, -0.06);
+  add(charGeo.waist, M.shirt, 0, 1.03, 0);
+  // chaqueta: capucha, cuello, cremallera, correa cruzada y hombreras
+  add(charGeo.hood, M.shirt, 0, 1.6, 0.13);
+  add(charGeo.collar, M.acc, 0, 1.6, 0);
+  add(charGeo.zip, darkMat, 0, 1.3, -0.19);
+  const st = add(charGeo.strap, M.pants, 0.02, 1.28, -0.19); st.rotation.z = 0.55;
+  add(charGeo.emblem, M.acc, -0.14, 1.44, -0.165);
+  for (const x of [-0.36, 0.36]) add(charGeo.pad, M.acc, x, 1.56, 0);
+  add(charGeo.belt, darkMat, 0, 0.97, 0);
+  add(charGeo.buckle, M.acc, 0, 0.97, -0.24);
+  for (const x of [-0.25, 0.25]) add(charGeo.pouch, M.glove, x, 0.94, -0.17);
+  const hips = add(charGeo.hips, M.pants, 0, 0.9, 0);
+  add(charGeo.neck, M.skin, 0, 1.66, 0);
+  const headStart = g.children.length;
   const head = add(charGeo.head, M.skin, 0, 1.78, 0); head.userData.head = true;
   const heads = [head];
   // cara: ojos grandes con brillo, cejas, nariz y sonrisa
@@ -1441,28 +1448,42 @@ function makeCharacter(sk) {
       }
     }
   }
+  const headG = new THREE.Group(); headG.position.set(0, 1.87, 0); headG.scale.setScalar(0.85); g.add(headG);
+  for (const c of g.children.slice(headStart, -1)) { c.position.y -= 1.78; headG.add(c); }
   // espalda
+  const backStart = g.children.length;
   if (sk.pack === 'mochila') { add(charGeo.pack, M.acc, 0, 1.15, 0.3); add(charGeo.flap, M.glove, 0, 1.36, 0.3); add(charGeo.packPocket, M.glove, 0, 1.0, 0.42); }
   else if (sk.pack === 'tanque') { for (const x of [-0.13, 0.13]) add(charGeo.tank, M.acc, x, 1.16, 0.3); }
   else if (sk.pack === 'alas') { for (const x of [-1, 1]) { const w = add(charGeo.wing, M.glow, x * 0.22, 1.28, 0.42); w.rotation.y = x * 0.6; w.rotation.z = x * 0.25; } }
   else if (sk.pack === 'capa') { const c = add(charGeo.cape, M.acc, 0, 1.0, 0.32); c.rotation.x = 0.16; }
   else if (sk.pack === 'cohete') { for (const x of [-0.13, 0.13]) { add(charGeo.jet, M.pants, x, 1.18, 0.32); add(charGeo.flame, M.glow, x, 0.92, 0.32); } }
-  const pivot = (x, y) => { const p = new THREE.Object3D(); p.position.set(x, y, 0); g.add(p); return p; };
-  const legL = pivot(-0.17, 0.62), legR = pivot(0.17, 0.62);
-  const ll = add(charGeo.leg, M.pants, 0, -0.31, 0, legL), lr = add(charGeo.leg, M.pants, 0, -0.31, 0, legR);
-  for (const lg of [legL, legR]) {
-    add(charGeo.knee, M.acc, 0, -0.3, -0.115, lg);
-    add(charGeo.boot, darkMat, 0, -0.5, 0, lg);
-    add(charGeo.shoe, M.sole, 0, -0.6, -0.05, lg);
+  for (const c of g.children.slice(backStart)) { c.position.y += 0.15; c.position.z -= 0.04; }
+  const pivot = (x, y, parent = g) => { const p = new THREE.Object3D(); p.position.set(x, y, 0); parent.add(p); return p; };
+  // piernas con rodilla: muslo (cadera) + espinilla (rodilla) + bota
+  const legL = pivot(-0.15, 0.86), legR = pivot(0.15, 0.86);
+  const shinL = pivot(0, -0.41, legL), shinR = pivot(0, -0.41, legR);
+  const ll = add(charGeo.thigh, M.pants, 0, -0.19, 0, legL), lr = add(charGeo.thigh, M.pants, 0, -0.19, 0, legR);
+  const sl = add(charGeo.shin, M.pants, 0, -0.15, 0, shinL), sr = add(charGeo.shin, M.pants, 0, -0.15, 0, shinR);
+  for (const sh of [shinL, shinR]) {
+    add(charGeo.knee, M.acc, 0, 0, -0.1, sh);
+    add(charGeo.boot, darkMat, 0, -0.32, 0, sh);
+    add(charGeo.shoe, M.sole, 0, -0.41, -0.05, sh);
   }
-  const armL = pivot(-0.45, 1.44), armR = pivot(0.45, 1.44);
-  const al = add(charGeo.arm, M.shirt, 0, -0.28, 0, armL), ar = add(charGeo.arm, M.shirt, 0, -0.28, 0, armR);
-  for (const am of [armL, armR]) { add(charGeo.hand, M.glove, 0, -0.62, 0, am); add(charGeo.cuff, M.acc, 0, -0.52, 0, am); }
-  const hand = new THREE.Object3D(); hand.position.set(0, -0.62, 0); armR.add(hand);
-  const parts = [torso, hips, ...heads, ll, lr, al, ar];
+  // brazos con codo: brazo (hombro) + antebrazo (codo) + guante con pulgar
+  const armL = pivot(-0.42, 1.54), armR = pivot(0.42, 1.54);
+  const foreL = pivot(0, -0.36, armL), foreR = pivot(0, -0.36, armR);
+  const al = add(charGeo.upper, M.shirt, 0, -0.17, 0, armL), ar = add(charGeo.upper, M.shirt, 0, -0.17, 0, armR);
+  const fl = add(charGeo.fore, M.shirt, 0, -0.13, 0, foreL), fr = add(charGeo.fore, M.shirt, 0, -0.13, 0, foreR);
+  for (const [fa, sx] of [[foreL, 1], [foreR, -1]]) {
+    add(charGeo.cuff, M.acc, 0, -0.24, 0, fa);
+    add(charGeo.glove, M.glove, 0, -0.33, 0, fa);
+    add(charGeo.thumb, M.glove, sx * 0.06, -0.3, -0.045, fa);
+  }
+  const hand = new THREE.Object3D(); hand.position.set(0, -0.33, 0); foreR.add(hand);
+  const parts = [torso, hips, ...heads, ll, lr, sl, sr, al, ar, fl, fr];
   // los detalles que no reciben disparos se funden en una malla por material: misma pinta, muchas menos llamadas de dibujo
   const keep = new Set(parts);
-  for (const box of [g, legL, legR, armL, armR]) {
+  for (const box of [g, headG, legL, legR, shinL, shinR, armL, armR, foreL, foreR]) {
     const byMat = new Map();
     for (const c of box.children) if (c.isMesh && !keep.has(c)) { if (!byMat.has(c.material)) byMat.set(c.material, []); byMat.get(c.material).push(c); }
     for (const [mat, list] of byMat) {
@@ -1475,7 +1496,7 @@ function makeCharacter(sk) {
   }
   if (liteMats) applyLite(g);
   scene.add(g);
-  return { group: g, parts, legL, legR, armL, armR, hand, gun: null, gunKey: '' };
+  return { group: g, parts, legL, legR, armL, armR, shinL, shinR, foreL, foreR, headG, hand, gun: null, gunKey: '' };
 }
 // une varias mallas (con su posición y giro) en una sola geometría
 function mergeMeshes(list) {
@@ -1528,7 +1549,13 @@ function animateCharacter(e, dt) {
   if (!(e.reloadT > 0)) ch.hand.rotation.set(0, 0, 0);
   ch.group.position.copy(e.pos);
   ch.group.rotation.set(0, e.yaw, 0);
-  ch.group.scale.y += ((e.crouch ? 0.74 : 1) - ch.group.scale.y) * Math.min(1, dt * 14);
+  ch.group.scale.y += ((e.crouch ? 0.8 : 1) - ch.group.scale.y) * Math.min(1, dt * 14);
+  if (e.crouch && e.onGround) ch.group.position.y -= 0.06;   // con las rodillas dobladas los pies siguen en el suelo
+  // articulaciones en reposo: rodillas y codos un poco doblados, la cabeza sigue la mirada
+  const tt = performance.now() / 1000, breath = Math.sin(tt * 2.2 + (e.isPlayer ? 0 : 1.3));
+  ch.shinL.rotation.set(-0.06, 0, 0); ch.shinR.rotation.set(-0.06, 0, 0);
+  ch.foreL.rotation.set(0.28, 0, 0); ch.foreR.rotation.set(0.28, 0, 0);
+  ch.headG.rotation.set(clamp(e.pitch || 0, -0.7, 0.7) * 0.5 + breath * 0.015, 0, 0);
   // baile
   if (e.emoteT > 0) {
     e.emoteT -= dt;
@@ -1537,36 +1564,52 @@ function animateCharacter(e, dt) {
     ch.group.rotation.y += Math.sin(t * 0.25) * 0.5;
     ch.armL.rotation.set(Math.sin(t) * 0.4, 0, -2.3 - Math.sin(t) * 0.5);
     ch.armR.rotation.set(-Math.sin(t) * 0.4, 0, 2.3 - Math.sin(t) * 0.5);
-    ch.legL.rotation.set(Math.max(0, Math.sin(t)) * 0.6, 0, 0); ch.legR.rotation.set(Math.max(0, -Math.sin(t)) * 0.6, 0, 0);
+    ch.legL.rotation.set(Math.max(0, Math.sin(t)) * 0.8, 0, 0); ch.legR.rotation.set(Math.max(0, -Math.sin(t)) * 0.8, 0, 0);
+    ch.shinL.rotation.set(-Math.max(0, Math.sin(t)) * 1.1, 0, 0); ch.shinR.rotation.set(-Math.max(0, -Math.sin(t)) * 1.1, 0, 0);
+    ch.foreL.rotation.set(0.9 + Math.sin(t) * 0.4, 0, 0); ch.foreR.rotation.set(0.9 - Math.sin(t) * 0.4, 0, 0);
+    ch.headG.rotation.set(Math.sin(t) * 0.15, 0, Math.sin(t * 0.5) * 0.12);
     setHeldModel(ch, null);
     return;
   }
   if (e.slideT > 0) {
     ch.group.rotation.x = 0.4; ch.group.position.y -= 0.25;
     ch.legL.rotation.set(1.35, 0, 0.1); ch.legR.rotation.set(1.05, 0, -0.1);
-    ch.armL.rotation.set(-0.4, 0, -0.9);
+    ch.shinL.rotation.set(-0.15, 0, 0); ch.shinR.rotation.set(-0.45, 0, 0);
+    ch.armL.rotation.set(-0.4, 0, -0.9); ch.foreL.rotation.set(0.2, 0, 0);
     if (Math.random() < dt * 30) burst(e.pos.clone().setY(e.pos.y + 0.1), 0x8fc86a, 1);
   }
   const sp = Math.hypot(e.vel.x, e.vel.z);
   e.walkT += dt * sp * 1.6;
   const sw = e.onGround ? Math.sin(e.walkT) * Math.min(1, sp / 5) * 0.7 : 0.4;
+  const amp = Math.min(1, sp / 5);
   if (e.slideT > 0) { /* piernas ya colocadas */ }
-  else if (e.onGround) { ch.legL.rotation.set(sw, 0, 0); ch.legR.rotation.set(-sw, 0, 0); }
-  else { ch.legL.rotation.set(-0.7, 0, 0); ch.legR.rotation.set(0.35, 0, 0); }
+  else if (e.onGround) {
+    // al andar la rodilla se dobla cuando la pierna pasa por debajo del cuerpo
+    ch.legL.rotation.set(sw + (e.crouch ? 0.45 : 0), 0, 0); ch.legR.rotation.set(-sw + (e.crouch ? 0.45 : 0), 0, 0);
+    ch.shinL.rotation.set(-0.06 - Math.max(0, -Math.cos(e.walkT)) * 1.1 * amp - (e.crouch ? 0.8 : 0), 0, 0);
+    ch.shinR.rotation.set(-0.06 - Math.max(0, Math.cos(e.walkT)) * 1.1 * amp - (e.crouch ? 0.8 : 0), 0, 0);
+  } else {
+    // en el aire: una rodilla arriba y la otra pierna estirada hacia atrás
+    ch.legL.rotation.set(0.75, 0, 0); ch.shinL.rotation.set(-1.15, 0, 0);
+    ch.legR.rotation.set(-0.3, 0, 0); ch.shinR.rotation.set(-0.55, 0, 0);
+  }
   const item = e.inv[e.cur];
-  if (e.building) { ch.armL.rotation.set(-sw * 0.6, 0, 0); ch.armR.rotation.set(sw * 0.6 + 0.8, 0, 0); }
+  const idle = e.onGround && sp < 0.5 ? breath * 0.035 : 0;
+  if (e.building) { ch.armL.rotation.set(-sw * 0.6, 0, -0.1 - idle); ch.armR.rotation.set(sw * 0.6 + 0.8, 0, 0); ch.foreR.rotation.set(0.45, 0, 0); }
   else if (item && item.kind === 'pickaxe') {
     const swing = e.swingT > 0 ? Math.sin((1 - e.swingT / 0.42) * Math.PI) : 0;
     ch.armR.rotation.set(0.5 + swing * 1.7 + (e.pitch || 0) * 0.5, 0, 0);
-    ch.armL.rotation.set(-sw * 0.6, 0, 0);
+    ch.foreR.rotation.set(0.35 + swing * 0.5, 0, 0);
+    ch.armL.rotation.set(-sw * 0.6, 0, -0.1 - idle);
   } else if (item && item.kind === 'weapon') {
     // al sacar el arma se levanta desde abajo; al recargar se inclina hacia un lado
     const swap = e.swapT > 0 ? e.swapT / 0.22 : 0;
     const aimX = Math.PI / 2 + (e.pitch || 0) + (e.recoil || 0) - swap * 1.1;
-    ch.armR.rotation.set(aimX, 0, 0);
-    ch.armL.rotation.set(e.reloadT > 0 ? 1.0 : aimX, 0, e.reloadT > 0 ? 0.3 : 0.55);
+    ch.armR.rotation.set(aimX, 0, 0); ch.foreR.rotation.set(0, 0, 0);
+    ch.armL.rotation.set(e.reloadT > 0 ? 1.0 : aimX - 0.12, 0, e.reloadT > 0 ? 0.3 : 0.62);
+    ch.foreL.rotation.set(e.reloadT > 0 ? 0.9 : 0.3, 0, 0);
     ch.hand.rotation.set(0, e.reloadT > 0 ? 0.5 + Math.sin(performance.now() / 120) * 0.15 : 0, e.reloadT > 0 ? 0.6 : 0);
-  } else { ch.armR.rotation.set(1.0, 0, 0); ch.armL.rotation.set(-sw * 0.6, 0, 0); }
+  } else { ch.armR.rotation.set(0.8, 0, 0); ch.foreR.rotation.set(0.6, 0, 0); ch.armL.rotation.set(-sw * 0.6, 0, -0.1 - idle); }
   setHeldModel(ch, e.building ? { kind: 'build' } : item);
 }
 
