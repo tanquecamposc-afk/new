@@ -48,18 +48,119 @@
   #xprev { width: 130px; height: 130px; border-radius: 12px; background: linear-gradient(135deg, #6f8296, #c9b9a5); flex: none; }
   .set input[type=text] { font: 600 15px var(--body); color: var(--ink); background: var(--paper); border: 0; border-radius: 6px; padding: 7px 10px; }
   .set input[type=color] { width: 60px; height: 34px; border: 0; background: none; padding: 0; }
-  #start { align-items: flex-start; text-align: left; background: linear-gradient(90deg, rgba(12,22,58,.94) 0 44%, rgba(20,60,140,.3) 72%, rgba(20,60,140,0)); padding-left: max(6vw, 16px); }
+  #start { display: block; text-align: left; padding: 0; background: linear-gradient(90deg, rgba(10,20,56,.92) 0 36%, rgba(20,60,140,.25) 62%, rgba(20,60,140,0)); }
   #start .group { align-items: flex-start; }
   #start .chips { justify-content: flex-start; }
-  #start .keys { max-width: 560px; }
+  .topnav { position: absolute; left: 0; right: 0; top: 0; height: 60px; display: flex; align-items: center; gap: 6px; padding: 0 max(16px, 3vw); background: linear-gradient(180deg, rgba(6,12,36,.92), rgba(6,12,36,.55)); border-bottom: 1px solid rgba(255,255,255,.12); }
+  .topnav .brand { font-family: var(--display); font-size: 22px; margin-right: 18px; color: #fff; white-space: nowrap; }
+  .topnav .brand b { font-weight: 400; color: var(--cyan); }
+  .navb { position: relative; background: none; border: 0; color: rgba(255,255,255,.75); font: 800 15px var(--body); letter-spacing: .14em; text-transform: uppercase; padding: 18px 14px; cursor: pointer; white-space: nowrap; }
+  .navb:hover { color: #fff; }
+  .navb.sel { color: #fff; }
+  .navb.sel::after { content: ""; position: absolute; left: 10px; right: 10px; bottom: 8px; height: 4px; border-radius: 2px; background: var(--sun); }
+  .navb i { display: inline-block; width: 11px; height: 11px; border-radius: 3px; margin-right: 6px; vertical-align: 0; }
+  .leftcol { position: absolute; left: max(4vw, 16px); top: 78px; bottom: 20px; width: min(560px, calc(100vw - 32px)); display: flex; flex-direction: column; gap: 14px; overflow-y: auto; padding-right: 6px; }
+  .leftcol .logo { font-size: clamp(44px, 7vw, 92px); align-self: flex-start; }
+  .ctrl summary { cursor: pointer; font: 800 13px var(--body); letter-spacing: .14em; text-transform: uppercase; color: var(--dim); }
+  .ctrl .keys { margin-top: 8px; }
+  .playbox { position: absolute; right: max(4vw, 16px); bottom: max(32px, env(safe-area-inset-bottom, 0px)); display: flex; flex-direction: column; align-items: flex-end; gap: 10px; }
+  .pmode { background: rgba(8,14,40,.75); border: 2px solid rgba(255,255,255,.2); border-radius: 10px; padding: 8px 14px; font-weight: 800; text-align: right; }
+  .pmode small { display: block; color: var(--dim); font-weight: 700; font-size: 12px; letter-spacing: .12em; text-transform: uppercase; }
+  .btn.big { font-size: 34px; padding: 16px 64px; }
   #locker { background: linear-gradient(90deg, transparent 0 42%, rgba(12,22,58,.9) 62%); align-items: flex-end; padding-right: max(4vw, 16px); }
   #locker .panel { width: min(440px, 100%); max-height: 92vh; overflow-y: auto; }
   .swatches { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
   .swatches label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; font-weight: 800; color: var(--dim); }
   .swatches input { width: 100%; height: 36px; border: 0; background: none; padding: 0; cursor: pointer; }
   #charBtn i { width: 14px; height: 14px; }
+  /* tarjetas de modo */
+  #start .group:has(#modes) { align-self: stretch; }
+  #modes { width: 100%; display: grid; grid-template-columns: repeat(auto-fill, minmax(245px, 1fr)); gap: 8px; }
+  .mcard { display: flex; gap: 12px; align-items: center; text-align: left; padding: 10px 12px; border-radius: 12px; }
+  .mcard .mic { flex: none; width: 42px; height: 42px; display: grid; place-items: center; border-radius: 10px; background: rgba(0,0,0,.28); }
+  .mcard .mic svg { width: 32px; height: 32px; }
+  .mcard em { display: block; font-style: normal; font-size: 10px; letter-spacing: .16em; text-transform: uppercase; color: var(--cyan); }
+  .mcard.sel em { color: #fff3b0; }
+  .chip.locked { opacity: .55; cursor: not-allowed; filter: grayscale(.6); }
+  .chip.locked small { color: #ffd23a; }
+  /* tarjeta del jugador en la barra de arriba */
+  .plcard { margin-left: auto; display: flex; align-items: center; gap: 10px; background: rgba(0,0,0,.3); border: 1px solid rgba(255,255,255,.15); border-radius: 12px; padding: 4px 12px 4px 6px; cursor: pointer; }
+  .plcard .lv { width: 38px; height: 38px; border-radius: 9px; display: grid; place-items: center; font: 400 18px var(--display); color: #2a1c00; background: linear-gradient(180deg, #fff27a, #ffb21e); box-shadow: inset 0 -3px 0 rgba(0,0,0,.2); }
+  .plcard b { display: block; font-size: 14px; line-height: 1.1; }
+  .plcard small { display: block; font-size: 11px; font-weight: 700; color: var(--cyan); letter-spacing: .08em; }
+  .xpbar { height: 6px; border-radius: 3px; background: rgba(255,255,255,.15); overflow: hidden; width: 110px; margin-top: 3px; }
+  .xpbar i { display: block; height: 100%; background: linear-gradient(90deg, #3de0ff, #8a7bff); transition: width .8s ease-out; }
+  /* páginas del menú: pase y clasificatoria */
+  .page { position: absolute; left: max(3vw, 16px); right: max(3vw, 16px); top: 74px; bottom: 18px; overflow-y: auto; background: linear-gradient(180deg, rgba(14,22,60,.94), rgba(8,12,34,.96)); border: 1px solid rgba(140,190,255,.25); border-radius: 16px; padding: 18px 22px; display: flex; flex-direction: column; gap: 16px; }
+  .page h2 { margin: 0; font-family: var(--display); font-weight: 400; font-size: 30px; color: var(--sun); }
+  .page h3 { margin: 0; font: 800 13px var(--body); letter-spacing: .14em; text-transform: uppercase; color: var(--dim); }
+  .phead { display: flex; gap: 18px; align-items: center; flex-wrap: wrap; }
+  .phead .big-lv { width: 74px; height: 74px; border-radius: 16px; display: grid; place-items: center; font: 400 36px var(--display); color: #2a1c00; background: linear-gradient(180deg, #fff27a, #ffb21e); box-shadow: 0 6px 0 #c77a00; }
+  .phead .grow { flex: 1 1 260px; min-width: 0; }
+  .phead .xpbar { width: 100%; height: 12px; border-radius: 6px; margin-top: 6px; }
+  .pcols { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 18px; align-items: start; }
+  .tiers { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 10px; }
+  .tier { position: relative; border-radius: 12px; padding: 10px 8px 8px; text-align: center; background: linear-gradient(180deg, rgba(60,80,170,.45), rgba(20,26,70,.7)); border: 2px solid rgba(255,255,255,.14); font-size: 12px; font-weight: 800; min-height: 132px; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .tier .n { position: absolute; left: 7px; top: 5px; font: 400 15px var(--display); color: var(--dim); }
+  .tier svg { width: 58px; height: 58px; margin-top: 8px; }
+  .tier small { display: block; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--dim); }
+  .tier.got { border-color: rgba(108,240,138,.6); background: linear-gradient(180deg, rgba(60,150,110,.45), rgba(16,40,40,.7)); }
+  .tier.got::after { content: "✓"; position: absolute; right: 7px; top: 3px; color: #6cf08a; font-size: 16px; }
+  .tier.next { border-color: var(--sun); box-shadow: 0 0 18px rgba(255,210,58,.35); }
+  .tier.lock svg { opacity: .55; filter: grayscale(.7); }
+  .tier.title-eq { outline: 3px solid var(--cyan); }
+  .tier button { margin-top: auto; border: 0; border-radius: 6px; padding: 3px 8px; font: 800 11px var(--body); cursor: pointer; background: var(--cyan); color: var(--ink); }
+  .quests { display: flex; flex-direction: column; gap: 10px; }
+  .quest { background: rgba(0,0,0,.28); border-radius: 10px; padding: 10px 12px; font-weight: 700; font-size: 14px; }
+  .quest .xpbar { width: 100%; height: 8px; margin-top: 6px; }
+  .quest small { float: right; color: var(--sun); }
+  .quest.done { opacity: .6; }
+  .quest.done small { color: #6cf08a; }
+  .rk-main { display: flex; gap: 22px; align-items: center; flex-wrap: wrap; }
+  .rk-main .grow { flex: 1 1 260px; min-width: 0; }
+  .rk-name { font: 400 38px var(--display); line-height: 1; }
+  .rk-main .xpbar { width: 100%; height: 12px; border-radius: 6px; margin-top: 8px; }
+  .ladder { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; }
+  .ladder div { text-align: center; padding: 8px 4px; border-radius: 10px; background: rgba(0,0,0,.25); font-size: 12px; font-weight: 800; border: 2px solid transparent; }
+  .ladder div.cur { border-color: var(--sun); background: rgba(255,210,58,.14); }
+  .ladder div.dim { opacity: .45; }
+  .pstats { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; }
+  .pstats div { background: rgba(0,0,0,.28); border-radius: 10px; padding: 10px; font-size: 12px; font-weight: 700; color: var(--dim); letter-spacing: .06em; text-transform: uppercase; }
+  .pstats b { display: block; font: 400 26px var(--display); color: var(--sun); letter-spacing: 0; text-transform: none; }
+  .rules { font-size: 14px; color: var(--dim); line-height: 1.5; margin: 0; padding-left: 18px; }
+  /* final de partida: experiencia y rango */
+  #endProg { display: flex; gap: 16px; flex-wrap: wrap; justify-content: center; width: min(820px, 100%); }
+  #endProg .panel { width: auto; flex: 1 1 300px; gap: 8px; }
+  #endProg .row2 { display: flex; justify-content: space-between; font-weight: 700; font-size: 14px; color: var(--dim); }
+  #endProg .row2 b { color: #fff; }
+  #endProg .xpbar { width: 100%; height: 10px; border-radius: 5px; }
+  #endProg .lvup { color: var(--sun); font-weight: 800; font-size: 14px; }
+  #endProg .rkline { display: flex; gap: 14px; align-items: center; }
+  #endProg .delta { font: 400 28px var(--display); }
+  /* avisos de experiencia */
+  #toasts { position: fixed; left: 50%; top: 92px; transform: translateX(-50%); z-index: 30; display: flex; flex-direction: column; align-items: center; gap: 4px; pointer-events: none; }
+  #toasts div { background: rgba(10,12,30,.82); border: 1px solid rgba(61,224,255,.5); color: #fff; padding: 4px 14px; border-radius: 999px; font-weight: 800; font-size: 14px; animation: tIn .25s ease-out, tOut .4s ease-in 2s forwards; white-space: nowrap; }
+  #toasts div b { color: var(--cyan); }
+  #toasts div.lvl { border-color: var(--sun); font-size: 17px; }
+  #toasts div.lvl b { color: var(--sun); }
+  @keyframes tIn { from { opacity: 0; transform: translateY(-8px); } }
+  @keyframes tOut { to { opacity: 0; transform: translateY(-8px); } }
+  /* zona que se cierra */
+  #zonefx { position: absolute; inset: 0; box-shadow: inset 0 0 140px rgba(150,60,255,.85); background: rgba(120,40,220,.12); opacity: 0; transition: opacity .3s; }
+  #zoneInfo { position: absolute; left: 50%; top: calc(64px + env(safe-area-inset-top, 0px)); transform: translateX(-50%); font-weight: 800; font-size: 14px; background: rgba(60,20,110,.75); border: 1px solid rgba(200,150,255,.5); padding: 3px 12px; border-radius: 999px; white-space: nowrap; }
+  #zoneInfo.out { background: rgba(160,30,200,.85); color: #fff; }
+  @media (max-width: 900px) { .pcols { grid-template-columns: 1fr; } }
   @media (max-width: 760px) {
-    #start { background: rgba(16,19,31,.86); }
+    .plcard .grow2 { display: none; }
+    .topnav { overflow-x: auto; scrollbar-width: none; }
+    .topnav::-webkit-scrollbar { display: none; }
+    .plcard { margin-left: 6px; flex: none; }
+    .page { position: static; margin: 70px 12px 16px; padding: 14px; }
+    #start { background: rgba(10,20,56,.88); overflow-y: auto; }
+    .topnav .brand { display: none; }
+    .navb { padding: 18px 8px; letter-spacing: .06em; font-size: 13px; }
+    .leftcol { position: static; padding: 76px 16px 0; width: auto; overflow: visible; }
+    .playbox { position: static; align-items: stretch; padding: 16px; }
     #locker { background: linear-gradient(transparent 0 30%, rgba(16,19,31,.95) 46%); align-items: center; justify-content: flex-end; padding-right: max(16px, env(safe-area-inset-right, 0px)); }
     #locker .panel { max-height: 62vh; }
   }
@@ -92,7 +193,8 @@
   #banner { position: absolute; top: 30%; left: 50%; transform: translate(-50%,-50%); font-family: var(--display); font-size: clamp(30px, 6vw, 64px); text-shadow: 0 4px 0 var(--ink), 0 0 30px rgba(0,0,0,.5); opacity: 0; transition: opacity .25s; white-space: nowrap; color: var(--sun); }
   #sub { position: absolute; top: calc(30% + 46px); left: 50%; transform: translateX(-50%); font-size: 20px; font-weight: 800; text-shadow: 0 2px 3px #000; opacity: 0; transition: opacity .25s; white-space: nowrap; }
   #nums { position: absolute; inset: 0; }
-  #feed { position: absolute; right: max(16px, env(safe-area-inset-right, 0px)); top: calc(16px + env(safe-area-inset-top, 0px)); display: flex; flex-direction: column; gap: 4px; align-items: flex-end; max-width: 46vw; }
+  #minimap { position: absolute; right: max(16px, env(safe-area-inset-right, 0px)); top: calc(16px + env(safe-area-inset-top, 0px)); width: 180px; height: 180px; border-radius: 14px; border: 3px solid rgba(255,255,255,.55); box-shadow: 0 6px 18px rgba(0,0,0,.35); background: rgba(20,40,30,.5); }
+  #feed { position: absolute; right: max(16px, env(safe-area-inset-right, 0px)); top: calc(210px + env(safe-area-inset-top, 0px)); display: flex; flex-direction: column; gap: 4px; align-items: flex-end; max-width: 46vw; }
   #feed .kf { background: rgba(10,12,22,.68); border-left: 3px solid var(--sun); padding: 4px 10px; border-radius: 6px; font-weight: 700; font-size: 14px; text-shadow: 0 1px 2px #000; animation: kfIn .25s ease-out; }
   @keyframes kfIn { from { transform: translateX(30px); opacity: 0; } }
   #nums div { position: absolute; font-family: var(--display); font-size: 22px; text-shadow: 0 2px 0 var(--ink); transform: translate(-50%,-50%); white-space: nowrap; }
@@ -175,7 +277,7 @@
   .set input[type=range] { width: 100%; accent-color: var(--sun); }
   .check { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 15px; cursor: pointer; }
   .check input { width: 18px; height: 18px; accent-color: var(--sun); }
-  @media (max-width: 700px) { #bars { width: 190px; } .slot, #buildbar div { width: 50px; height: 50px; } .slot svg { width: 40px; } #buildbar div svg { width: 28px; } #mats div { width: 52px; font-size: 14px; } #mats { bottom: calc(86px + env(safe-area-inset-bottom, 0px)); } #itemName { bottom: calc(80px + env(safe-area-inset-bottom, 0px)); font-size: 15px; } #score { font-size: 16px; } }
+  @media (max-width: 700px) { #minimap { width: 110px; height: 110px; } #feed { top: calc(136px + env(safe-area-inset-top, 0px)); } #bars { width: 190px; } .slot, #buildbar div { width: 50px; height: 50px; } .slot svg { width: 40px; } #buildbar div svg { width: 28px; } #mats div { width: 52px; font-size: 14px; } #mats { bottom: calc(86px + env(safe-area-inset-bottom, 0px)); } #itemName { bottom: calc(80px + env(safe-area-inset-bottom, 0px)); font-size: 15px; } #score { font-size: 16px; } }
   @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
 </head>
@@ -190,6 +292,7 @@
 </script>
 <div id="hud" class="hide">
   <div id="dmgfx"></div>
+  <div id="zonefx"></div>
   <div id="lowhp"></div>
   <div id="dmgDir"><i></i><i></i><i></i><i></i></div>
   <div id="sndViz"></div>
@@ -202,6 +305,8 @@
   <div id="fps" hidden></div>
   <div id="score"><div class="me">TÚ <b id="scMe">0</b></div><div class="mid"><span id="scRound">Ronda 1</span><span id="scGoal">a 5</span></div><div class="bot"><b id="scBot">0</b> <span id="scBotName">RIVAL</span></div></div>
   <div id="enemyBar"><span id="enemyName">Rival</span><div class="eb"><i id="ebShield" style="background:var(--shield)"></i><i id="ebHp" style="background:var(--danger)"></i></div></div>
+  <canvas id="minimap" width="180" height="180"></canvas>
+  <div id="zoneInfo" class="hide"></div>
   <div id="feed"></div>
   <div id="banner"></div>
   <div id="sub"></div>
@@ -259,15 +364,31 @@
 </div>
 
 <div id="start" class="screen">
-  <div class="logo">RAMPAZO<small>1v1</small></div>
-  <div class="tag">Duelo de construcción contra un rival robótico. Levanta muros, sube por rampas y gana la altura antes que él.</div>
-  <div class="group"><span>Modo</span><div class="chips" id="modes"></div></div>
-  <div class="group"><span>Rival</span><div class="chips" id="diffs"></div></div>
-  <div class="group"><span>Tu personaje</span><button class="chip" id="charBtn"><i id="charSw"></i><span id="charName"></span> · Taquilla</button></div>
-  <div class="row"><button class="btn" id="playBtn">¡A PELEAR!</button><button class="btn alt" id="menuSetBtn">AJUSTES</button></div>
-  <div class="keys" id="keysHelp"></div>
+  <nav class="topnav">
+    <span class="brand">RAMPAZO <b>1v1</b></span>
+    <button class="navb sel" type="button" data-page="play">Jugar</button>
+    <button class="navb" type="button" data-page="pass">Pase</button>
+    <button class="navb" type="button" data-page="career">Clasificatoria</button>
+    <button class="navb" id="charBtn" type="button"><i id="charSw"></i>Taquilla · <span id="charName"></span></button>
+    <button class="navb" id="menuSetBtn" type="button">Ajustes</button>
+    <div class="plcard" id="plCard" title="Ver el pase de temporada"><div class="lv" id="plLv">1</div><div class="grow2"><b id="plName"></b><small id="plTitle"></small><div class="xpbar"><i id="plXp"></i></div></div></div>
+  </nav>
+  <section class="page hide" id="passPage"></section>
+  <section class="page hide" id="careerPage"></section>
+  <div class="leftcol" data-pg="play">
+    <div class="logo">RAMPAZO<small>1v1</small></div>
+    <div class="tag">Duelo de construcción contra un rival robótico. Levanta muros, sube por rampas y gana la altura antes que él.</div>
+    <div class="group"><span>Modo</span><div class="chips" id="modes"></div></div>
+    <div class="group" id="diffGroup"><span>Rival</span><div class="chips" id="diffs"></div></div>
+    <details class="ctrl"><summary>Controles</summary><div class="keys" id="keysHelp"></div></details>
+  </div>
+  <div class="playbox" data-pg="play">
+    <div class="pmode" id="playMode"></div>
+    <button class="btn big" id="playBtn">¡A PELEAR!</button>
+  </div>
 </div>
 
+<div id="toasts"></div>
 <div id="end" class="screen hide">
   <div class="big" id="endTitle"></div>
   <div class="tag" id="endSub"></div>
@@ -278,6 +399,7 @@
     <div><b id="stBuilt">0</b>Piezas construidas</div>
     <div><b id="stEdits">0</b>Ediciones</div>
   </div>
+  <div id="endProg"></div>
   <div class="row">
     <button class="btn" id="rematchBtn">REVANCHA</button>
     <button class="btn alt" id="menuBtn">MENÚ</button>
@@ -294,7 +416,7 @@ document.getElementById('loading').style.display = 'none';
 const S = 5, H = 5, T = 0.3;       // celda, altura de piso, grosor de muro (piezas grandes)
 const A = 60;                      // la arena va de -A a A (12 casillas por lado)
 const G = 24, STEP = 0.6;
-const WIN_ROUNDS = 5;
+const winRounds = () => MODES[mode].rounds || 0;
 const CONE_H = 1.6;                // altura del cono
 const PICKAXE = { name: 'Pico', head: 1, build: 1 };
 
@@ -311,7 +433,12 @@ const WEAPONS = {
   smg:     { name: 'Subfusil',        dmg: 17, pellets: 1,  rate: 0.075, mag: 30, spread: 0.032, ads: 0.02, bloom: 0.003, range: 90,  reload: 2.0, zoom: 55, auto: true,  len: 0.6,  head: 1.5, build: 1.1 },
   sniper:  { name: 'Francotirador',   dmg: 105, pellets: 1, rate: 1.4,  mag: 1,  spread: 0.07,  ads: 0,     bloom: 0,     range: 500, reload: 2.4, zoom: 18, auto: false, len: 1.1,  head: 2.0, build: 1 },
 };
-const MATS = { wood: { name: 'Madera', hp: 150, color: 0xd29a5a }, stone: { name: 'Piedra', hp: 300, color: 0xa3a3ad }, metal: { name: 'Metal', hp: 500, color: 0x7f9ab3 } };
+// vida inicial y tiempo hasta la vida máxima: la madera sube rápido, el metal aguanta más pero tarda
+const MATS = {
+  wood:  { name: 'Madera', hp: 150, start: 90,  build: 4,    color: 0xd29a5a },
+  stone: { name: 'Piedra', hp: 300, start: 100, build: 11.5, color: 0xa3a3ad },
+  metal: { name: 'Metal',  hp: 500, start: 110, build: 24.5, color: 0x7f9ab3 },
+};
 // personajes originales del juego (todo se puede cambiar en la taquilla)
 const PRESETS = [
   { name: 'Chispa',     shirt: '#ffb22e', pants: '#2b2f4a', skin: '#d8a07a', accent: '#ff6a3d', hat: 'gorra',       pack: 'mochila', face: 'visor' },
@@ -321,10 +448,16 @@ const PRESETS = [
   { name: 'Brasa',      shirt: '#d8402e', pants: '#2a1a1a', skin: '#c88a64', accent: '#ffd23a', hat: 'cresta',      pack: 'mochila', face: 'ojos' },
   { name: 'Coral',      shirt: '#ff7fa8', pants: '#3a2a5a', skin: '#f0c8a0', accent: '#3de0ff', hat: 'ninguno',     pack: 'alas',    face: 'ojos' },
   { name: 'Tuerca',     shirt: '#9aa4b8', pants: '#3a3a52', skin: '#c8d0dc', accent: '#ff2a2a', hat: 'antena',      pack: 'tanque',  face: 'visor' },
+  // personajes del pase de temporada
+  { name: 'Neón',       shirt: '#1a1a2e', pants: '#0e0e1a', skin: '#c89a78', accent: '#39ff9a', hat: 'auriculares', pack: 'cohete',  face: 'gafas' },
+  { name: 'Obsidiana',  shirt: '#22222c', pants: '#111118', skin: '#6a4a3a', accent: '#9a6aff', hat: 'cuernos',     pack: 'capa',    face: 'visor' },
+  { name: 'Aurora',     shirt: '#6affd8', pants: '#3a2a8a', skin: '#f2d0b0', accent: '#ff7af0', hat: 'halo',        pack: 'alas',    face: 'ojos' },
+  { name: 'Lava',       shirt: '#ff5a1a', pants: '#2a0a0a', skin: '#b87a5a', accent: '#ffe23a', hat: 'cuernos',     pack: 'cohete',  face: 'mascara' },
+  { name: 'Dorado',     shirt: '#ffcc33', pants: '#8a5a00', skin: '#e8c088', accent: '#fff6c0', hat: 'corona',      pack: 'capa',    face: 'gafas' },
 ];
-const HATS = { ninguno: { name: 'Pelo' }, gorra: { name: 'Gorra' }, gorro: { name: 'Gorro' }, casco: { name: 'Casco' }, cresta: { name: 'Cresta' }, antena: { name: 'Antena' }, auriculares: { name: 'Auriculares' } };
-const PACKS = { mochila: { name: 'Mochila' }, alas: { name: 'Alas' }, tanque: { name: 'Tanques' }, ninguna: { name: 'Nada' } };
-const FACES = { visor: { name: 'Visor' }, ojos: { name: 'Ojos' } };
+const HATS = { ninguno: { name: 'Pelo' }, gorra: { name: 'Gorra' }, gorro: { name: 'Gorro' }, casco: { name: 'Casco' }, cresta: { name: 'Cresta' }, antena: { name: 'Antena' }, auriculares: { name: 'Auriculares' }, orejas: { name: 'Orejas' }, cuernos: { name: 'Cuernos' }, halo: { name: 'Halo' }, corona: { name: 'Corona' } };
+const PACKS = { mochila: { name: 'Mochila' }, alas: { name: 'Alas' }, tanque: { name: 'Tanques' }, capa: { name: 'Capa' }, cohete: { name: 'Propulsor' }, ninguna: { name: 'Nada' } };
+const FACES = { visor: { name: 'Visor' }, ojos: { name: 'Ojos' }, gafas: { name: 'Gafas de sol' }, mascara: { name: 'Pañuelo' } };
 const DIFF = {
   facil:   { name: 'Fácil',   desc: 'Apunta mal y casi no construye', err: 0.10,  react: 0.85, build: 0.25, fire: 1.9,  rush: 0.25 },
   normal:  { name: 'Normal',  desc: 'Se cubre cuando le das',          err: 0.065, react: 0.5,  build: 0.5,  fire: 1.45, rush: 0.55 },
@@ -332,12 +465,138 @@ const DIFF = {
   pro:     { name: 'Pro',     desc: 'Construye sin parar',             err: 0.028, react: 0.18, build: 0.95, fire: 1.0,  rush: 1 },
 };
 const MODES = {
-  duel:     { name: 'Duelo',    desc: 'Arena abierta, al mejor de 9' },
-  box:      { name: 'Box fight', desc: 'Empiezas encerrado en una caja de metal' },
-  practice: { name: 'Práctica', desc: 'Materiales infinitos, rival quieto' },
-  edits:    { name: 'Reto de edición', desc: '10 ediciones contrarreloj' },
+  duel:     { name: 'Duelo',           cat: 'Clásico',      rounds: 5, desc: 'Arena abierta. Gana quien llegue antes a 5 rondas' },
+  ranked:   { name: 'Clasificatoria',  cat: 'Competitivo',  rounds: 3, desc: 'Gana puntos de rango. El rival se ajusta a tu nivel' },
+  box:      { name: 'Box fight',       cat: 'Clásico',      rounds: 5, desc: 'Empezáis encerrados en cajas de metal, cara a cara' },
+  zone:     { name: 'Zona que cierra', cat: 'Arcade',       rounds: 3, desc: 'Un anillo de energía se cierra cada ronda: fuera duele' },
+  nobuild:  { name: 'Sin construir',   cat: 'Arcade',       rounds: 3, desc: 'Prohibido construir. Usa las coberturas del mapa' },
+  practice: { name: 'Práctica',        cat: 'Entrenamiento', desc: 'Materiales infinitos y un maniquí que se mueve' },
+  edits:    { name: 'Reto de edición', cat: 'Entrenamiento', desc: '10 ediciones contrarreloj. Bate tu récord' },
+};
+// iconos propios de cada modo
+const MODE_ICON = {
+  duel: '<svg viewBox="0 0 32 32" fill="none" stroke="#ffd23a" stroke-width="2.6" stroke-linecap="round"><path d="M5 5l15 15M27 5L12 20M9 23l-4 4M23 23l4 4M7 19l6 6M25 19l-6 6"/></svg>',
+  box: '<svg viewBox="0 0 32 32"><path d="M16 3l12 6v14l-12 6-12-6V9z" fill="#9cb6cf" stroke="#fff" stroke-width="2"/><path d="M4 9l12 6 12-6M16 15v14" stroke="#3a4a5e" stroke-width="2" fill="none"/></svg>',
+  zone: '<svg viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="12" stroke="#b77bff" stroke-width="3" stroke-dasharray="4 3"/><circle cx="16" cy="16" r="5" fill="#b77bff"/></svg>',
+  nobuild: '<svg viewBox="0 0 32 32"><rect x="7" y="9" width="18" height="14" rx="2" fill="#d29a5a" stroke="#fff" stroke-width="2"/><path d="M5 5l22 22" stroke="#ff4f6d" stroke-width="3.5" stroke-linecap="round"/></svg>',
+  practice: '<svg viewBox="0 0 32 32" fill="none" stroke="#6cf08a" stroke-width="2.6"><circle cx="16" cy="16" r="11"/><circle cx="16" cy="16" r="6"/><circle cx="16" cy="16" r="1.5" fill="#6cf08a"/></svg>',
+  edits: '<svg viewBox="0 0 32 32"><rect x="5" y="5" width="22" height="22" rx="3" fill="none" stroke="#3de0ff" stroke-width="2.4"/><rect x="9" y="9" width="6" height="6" fill="#ff4f6d"/><rect x="17" y="17" width="6" height="6" fill="#ff4f6d"/></svg>',
 };
 const training = () => mode === 'practice' || mode === 'edits';
+// en clasificatoria el rival depende de tu rango; en el resto, de lo que elijas
+const effDiff = () => mode === 'ranked' ? rankDiff() : diff;
+let curD = null;
+
+// ---------- rangos de la clasificatoria ----------
+// 8 rangos: los 5 primeros tienen 3 divisiones; los 3 últimos son únicos. Cada división son 100 puntos de rango (PR)
+const RANKS = [
+  { name: 'Bronce',   col: '#d08a52', dark: '#6a3a18', div: 3 },
+  { name: 'Plata',    col: '#cfd8e2', dark: '#5a6676', div: 3 },
+  { name: 'Oro',      col: '#ffd23a', dark: '#9a6a00', div: 3 },
+  { name: 'Platino',  col: '#5ff0d8', dark: '#1a6a66', div: 3 },
+  { name: 'Diamante', col: '#7ab4ff', dark: '#2a3a9a', div: 3 },
+  { name: 'Élite',    col: '#c27bff', dark: '#4a1a8a', div: 1 },
+  { name: 'Campeón',  col: '#ff7a3d', dark: '#8a2a0a', div: 1 },
+  { name: 'Leyenda',  col: '#ff4f9a', dark: '#6a0a4a', div: 1 },
+];
+const TIERS = [];
+RANKS.forEach((r, ri) => { for (let d = 1; d <= r.div; d++) TIERS.push({ r: ri, d, label: r.div > 1 ? `${r.name} ${['I', 'II', 'III'][d - 1]}` : r.name }); });
+const tierOf = rp => Math.min(TIERS.length - 1, Math.floor(rp / 100));
+function rankDiff() { const t = tierOf(profile.rp); return t <= 2 ? 'facil' : t <= 8 ? 'normal' : t <= 14 ? 'dificil' : 'pro'; }
+let badgeN = 0;
+function rankBadge(ti, size = 64) {
+  const t = TIERS[ti], r = RANKS[t.r], gid = `rg${t.r}_${++badgeN}`;
+  let inner = '';
+  if (r.div > 1) for (let i = 0; i < t.d; i++) { const y = 40 - i * 8 + (t.d - 1) * 4; inner += `<path d="M20 ${y - 4}l12 7 12-7" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>`; }
+  else inner = `<path d="M32 18l4.2 8.6 9.5 1.4-6.9 6.7 1.6 9.4L32 39.6l-8.4 4.5 1.6-9.4-6.9-6.7 9.5-1.4z" fill="#fff"/>`;
+  return `<svg width="${size}" height="${size}" viewBox="0 0 64 64" aria-label="${t.label}"><defs><linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff"/><stop offset=".22" stop-color="${r.col}"/><stop offset="1" stop-color="${r.dark}"/></linearGradient></defs><path d="M32 3l25 10v19c0 14-10 23-25 29C17 55 7 46 7 32V13z" fill="url(#${gid})" stroke="#fff" stroke-width="2.5"/>${inner}</svg>`;
+}
+
+// ---------- pase de temporada: 30 niveles, todas las recompensas gratis ----------
+const PASS_MAX = 30;
+const xpNeed = l => 600 + l * 60;     // experiencia para pasar del nivel l al l+1
+const PASS = [
+  { lv: 1, type: 'title', key: 'Novato' },
+  { lv: 2, type: 'skin', key: 'Brasa' }, { lv: 3, type: 'hat', key: 'cresta' }, { lv: 4, type: 'title', key: 'Constructor' },
+  { lv: 5, type: 'pack', key: 'tanque' }, { lv: 6, type: 'hat', key: 'auriculares' }, { lv: 7, type: 'face', key: 'gafas' },
+  { lv: 8, type: 'skin', key: 'Coral' }, { lv: 9, type: 'title', key: 'Editor veloz' }, { lv: 10, type: 'pack', key: 'alas' },
+  { lv: 11, type: 'hat', key: 'antena' }, { lv: 12, type: 'skin', key: 'Tuerca' }, { lv: 13, type: 'hat', key: 'orejas' },
+  { lv: 14, type: 'title', key: 'Rey de la rampa' }, { lv: 15, type: 'pack', key: 'capa' }, { lv: 16, type: 'skin', key: 'Neón' },
+  { lv: 17, type: 'hat', key: 'cuernos' }, { lv: 18, type: 'title', key: 'Muro humano' }, { lv: 19, type: 'face', key: 'mascara' },
+  { lv: 20, type: 'skin', key: 'Obsidiana' }, { lv: 21, type: 'hat', key: 'halo' }, { lv: 22, type: 'pack', key: 'cohete' },
+  { lv: 23, type: 'title', key: 'Imparable' }, { lv: 24, type: 'skin', key: 'Aurora' }, { lv: 25, type: 'hat', key: 'corona' },
+  { lv: 26, type: 'title', key: 'Ojo de halcón' }, { lv: 27, type: 'skin', key: 'Lava' }, { lv: 28, type: 'title', key: 'Sin miedo' },
+  { lv: 29, type: 'title', key: 'Maestro del edit' }, { lv: 30, type: 'skin', key: 'Dorado' },
+];
+const UNLOCK = { hat: {}, pack: {}, face: {}, skin: {}, title: {} };
+for (const r of PASS) UNLOCK[r.type][r.key] = r.lv;
+const TYPE_NAME = { hat: 'Cabeza', pack: 'Espalda', face: 'Cara', skin: 'Personaje', title: 'Título' };
+
+// ---------- misiones diarias ----------
+const QUESTS = {
+  elim:    { name: 'Elimina al rival 5 veces', n: 5 },
+  rounds:  { name: 'Gana 4 rondas', n: 4 },
+  build:   { name: 'Construye 80 piezas', n: 80 },
+  edits:   { name: 'Haz 25 ediciones', n: 25 },
+  dmg:     { name: 'Inflige 1500 de daño', n: 1500 },
+  head:    { name: 'Elimina con un disparo a la cabeza 2 veces', n: 2 },
+  shotgun: { name: 'Elimina 3 veces con la escopeta', n: 3 },
+  ranked:  { name: 'Gana una partida clasificatoria', n: 1 },
+  zone:    { name: 'Termina una partida de Zona que cierra', n: 1 },
+  boxwin:  { name: 'Gana una partida de Box fight', n: 1 },
+};
+const QUEST_XP = 500;
+const today = () => { const d = new Date(); return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`; };
+
+const PROFILE_DEF = { xp: 0, rp: 0, best: 0, matches: 0, wins: 0, kills: 0, rMatches: 0, rWins: 0, streak: 0, title: 'Novato', daily: null, firstWin: '' };
+let profile = { ...PROFILE_DEF };
+try { profile = { ...PROFILE_DEF, ...JSON.parse(localStorage.getItem('rampazo-perfil') || '{}') }; } catch (err) { /* sin almacenamiento */ }
+function saveProfile() { try { localStorage.setItem('rampazo-perfil', JSON.stringify(profile)); } catch (err) { /* sin almacenamiento */ } }
+function levelInfo(xp = profile.xp) {
+  let l = 1;
+  while (l < PASS_MAX && xp >= xpNeed(l)) { xp -= xpNeed(l); l++; }
+  return l >= PASS_MAX ? { l: PASS_MAX, cur: 1, need: 1, max: true } : { l, cur: xp, need: xpNeed(l), max: false };
+}
+const lockLv = (type, key) => { const lv = UNLOCK[type][key]; return lv && levelInfo().l < lv ? lv : 0; };
+function ensureDaily() {
+  if (profile.daily && profile.daily.date === today()) return profile.daily;
+  // tres misiones distintas cada día, elegidas a partir de la fecha
+  let h = 0; for (const c of today()) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+  const ids = Object.keys(QUESTS), list = [];
+  while (list.length < 3) { h = (h * 1103515245 + 12345) >>> 0; const id = ids[h % ids.length]; if (!list.some(q => q.id === id)) list.push({ id, p: 0, done: false }); }
+  profile.daily = { date: today(), list };
+  return profile.daily;
+}
+let sessionXP = [], quietXP = false;
+function toast(html, cls = '') {
+  const el = document.createElement('div'); el.innerHTML = html; if (cls) el.className = cls;
+  $('toasts').appendChild(el); setTimeout(() => el.remove(), 2500);
+  while ($('toasts').children.length > 4) $('toasts').firstChild.remove();
+}
+const rewardName = r => r.type === 'title' ? `Título «${r.key}»` : r.type === 'skin' ? `Personaje ${r.key}` : ({ hat: HATS, pack: PACKS, face: FACES }[r.type][r.key] || {}).name || r.key;
+function gainXP(n, why) {
+  n = Math.round(n); if (n <= 0) return;
+  const before = levelInfo().l;
+  profile.xp += n;
+  sessionXP.push([why, n]);
+  if (!quietXP) toast(`<b>+${n} XP</b> · ${why}`);
+  const after = levelInfo().l;
+  for (let l = before + 1; l <= after; l++) {
+    const r = PASS.find(x => x.lv === l);
+    sessionXP.push(['lvl', l, r]);
+    if (!quietXP) toast(`<b>¡NIVEL ${l}!</b>${r ? ' · Desbloqueado: ' + rewardName(r) : ''}`, 'lvl');
+    sfx('win');
+  }
+  saveProfile();
+}
+function quest(id, n = 1) {
+  if (!(n > 0)) return;
+  const q = ensureDaily().list.find(x => x.id === id);
+  if (!q || q.done) return;
+  q.p = Math.min(QUESTS[id].n, q.p + n);
+  if (q.p >= QUESTS[id].n) { q.done = true; toast(`<b>Misión completada</b> · ${QUESTS[id].name}`, 'lvl'); gainXP(QUEST_XP, 'Misión diaria'); }
+  saveProfile();
+}
 
 const rand = (a, b) => a + Math.random() * (b - a);
 const pick = arr => arr[Math.floor(Math.random() * arr.length)];
@@ -670,8 +929,15 @@ function pieceTransform(kind, s) {
   return { geo: GEO.ramp, x: s.cx * S + S / 2, y: s.l * H + H / 2, z: s.cz * S + S / 2, rx: -Math.PI / 4, ry };
 }
 function inArena(tr) { return Math.abs(tr.x) < A && Math.abs(tr.z) < A; }
+const BP_MAT = new THREE.MeshBasicMaterial({ color: 0x4fd8ff, transparent: true, opacity: 0.45, depthWrite: false, blending: THREE.AdditiveBlending });
+function endBlueprint(p) {
+  if (!p.bpMat) return;
+  for (const m of p.meshes) for (const c of [...m.children]) if (c.userData.bp) m.remove(c);
+  p.bpMat.dispose(); p.bpMat = null;
+}
 function addPart(p, geo, x, y, z, rx = 0, ry = 0, mat = PIECE_MAT[p.mat]) {
   const mesh = new THREE.Mesh(geo, liteMats ? liteOf(mat) : mat);
+  if (p.bpMat) { const b = new THREE.Mesh(geo, p.bpMat); b.scale.setScalar(1.01); b.userData.bp = true; b.renderOrder = 3; mesh.add(b); }
   mesh.position.set(x, y, z); mesh.rotation.order = 'YXZ'; mesh.rotation.set(rx, ry, 0);
   mesh.castShadow = true; mesh.receiveShadow = true;
   mesh.userData.piece = p;
@@ -735,7 +1001,9 @@ function makePiece(kind, s, mat, owner = null) {
   scene.add(group);
   const hp = MATS[mat].hp;
   // como en los juegos de construcción, la pieza nace débil y se refuerza en ~1 s
-  const p = { key, kind, s, mat, hp: hp * 0.35, maxHp: hp, grow: 1.1, group, meshes: [], boxes: [], slope: null, tr, mask: 0, owner, shake: 0 };
+  const p = { key, kind, s, mat, hp: MATS[mat].start, maxHp: hp, grow: MATS[mat].build, group, meshes: [], boxes: [], slope: null, tr, mask: 0, owner, shake: 0 };
+  // plano de obra: una capa azul transparente que se desvanece mientras la pieza se refuerza
+  p.bpMat = BP_MAT.clone();
   buildParts(p);
   if (kind === 'ramp' || kind === 'cone') { p.slope = { type: kind, cx: s.cx, cz: s.cz, l: s.l, d: s.d, mask: 0 }; slopes.add(p.slope); }
   pieces.set(key, p);
@@ -745,10 +1013,12 @@ function makePiece(kind, s, mat, owner = null) {
 function updatePieces(dt) {
   for (const p of growing) {
     p.grow -= dt;
-    p.hp = Math.min(p.maxHp, p.hp + p.maxHp * 0.65 * dt / 1.1);
+    const M = MATS[p.mat];
+    p.hp = Math.min(p.maxHp, p.hp + (p.maxHp - M.start) * dt / M.build);
     const sc = p.group.scale.x;
     if (sc < 1) p.group.scale.setScalar(Math.min(1, sc + dt * 5));
-    if (p.grow <= 0) { p.group.scale.setScalar(1); growing.delete(p); }
+    if (p.bpMat) p.bpMat.opacity = 0.45 * Math.max(0, p.grow / M.build);
+    if (p.grow <= 0 || p.hp >= p.maxHp) { p.group.scale.setScalar(1); growing.delete(p); endBlueprint(p); }
   }
   if (supportDirty) checkSupport();
   for (const [p, t] of collapsing) {
@@ -774,7 +1044,7 @@ function updatePieces(dt) {
 }
 function destroyPiece(p, quiet = false) {
   if (pieces.get(p.key) !== p) return;
-  pieces.delete(p.key); growing.delete(p); shaking.delete(p);
+  pieces.delete(p.key); growing.delete(p); shaking.delete(p); endBlueprint(p);
   scene.remove(p.group);
   for (const m of p.meshes) { removeFrom(hittables, m); removeFrom(solidMeshes, m); }
   for (const b of p.boxes) boxes.delete(b);
@@ -959,6 +1229,13 @@ const charGeo = {
   stick: new THREE.CylinderGeometry(0.02, 0.02, 0.4, 6), ball: sphG(0.06),
   band: new THREE.TorusGeometry(0.31, 0.03, 8, 22, Math.PI), cup: new THREE.CylinderGeometry(0.1, 0.1, 0.08, 16).rotateZ(Math.PI / 2),
   wing: sphG(0.33, 0.12, 0.85, 1), tank: capG(0.1, 0.34),
+  // recompensas del pase
+  ear: new THREE.ConeGeometry(0.1, 0.22, 4), horn: new THREE.ConeGeometry(0.06, 0.3, 10),
+  halo: new THREE.TorusGeometry(0.24, 0.03, 8, 28).rotateX(Math.PI / 2),
+  crown: new THREE.CylinderGeometry(0.25, 0.22, 0.14, 16, 1, true), crownTip: new THREE.ConeGeometry(0.045, 0.12, 6), gem: sphG(0.04),
+  lens: new THREE.CylinderGeometry(0.085, 0.085, 0.03, 16).rotateX(Math.PI / 2), bridge: boxG(0.08, 0.025, 0.02),
+  scarf: (() => { const g = new THREE.SphereGeometry(0.29, 20, 6, Math.PI * 1.5 - 1.3, 2.6, 1.75, 0.55); g.scale(1, 1.05, 1); return g; })(),
+  cape: boxG(0.7, 1.05, 0.04), jet: new THREE.CylinderGeometry(0.09, 0.07, 0.36, 12), flame: new THREE.ConeGeometry(0.07, 0.22, 10).rotateX(Math.PI),
   // detalles: cara, ropa y equipo
   sclera: sphG(0.072, 1, 1.25, 0.5), iris: sphG(0.044, 1, 1.25, 0.5), shine: sphG(0.014), nose: sphG(0.038, 1, 0.9, 1),
   mouth: new THREE.TorusGeometry(0.05, 0.012, 6, 12, Math.PI).rotateZ(Math.PI), spike: new THREE.ConeGeometry(0.09, 0.26, 6),
@@ -1083,6 +1360,13 @@ function makeCharacter(sk) {
     }
     add(charGeo.nose, M.skin, 0, 1.76, -0.292);
     add(charGeo.mouth, darkMat, 0, 1.69, -0.272);
+  } else if (sk.face === 'gafas') {
+    for (const x of [-0.105, 0.105]) add(charGeo.lens, darkMat, x, 1.82, -0.268);
+    add(charGeo.bridge, darkMat, 0, 1.83, -0.28);
+    add(charGeo.nose, M.skin, 0, 1.75, -0.292); add(charGeo.mouth, darkMat, 0, 1.68, -0.272);
+  } else if (sk.face === 'mascara') {
+    for (const x of [-0.105, 0.105]) { add(charGeo.sclera, M.white, x, 1.84, -0.255); add(charGeo.iris, M.iris, x * 0.96, 1.835, -0.274); }
+    add(charGeo.scarf, M.acc, 0, 1.78, 0);
   } else { add(charGeo.visor, M.glow, 0, 1.78, 0); add(charGeo.mouth, darkMat, 0, 1.66, -0.265); }
   // cabeza
   const H2 = (geo, mat, x, y, z) => { const m = add(geo, mat, x, y, z); m.userData.head = true; heads.push(m); return m; };
@@ -1093,6 +1377,10 @@ function makeCharacter(sk) {
     case 'cresta': H2(charGeo.helm, M.pants, 0, 1.76, 0.01); H2(charGeo.crest, M.acc, 0, 2.02, 0.01); break;
     case 'antena': H2(charGeo.hair, M.hair, 0, 1.79, 0.01); H2(charGeo.stick, darkMat, 0.12, 2.2, 0.04); H2(charGeo.ball, M.glow, 0.12, 2.42, 0.04); break;
     case 'auriculares': H2(charGeo.hair, M.hair, 0, 1.79, 0.01); H2(charGeo.band, M.acc, 0, 1.8, 0); for (const x of [-0.3, 0.3]) H2(charGeo.cup, M.acc, x, 1.8, 0); break;
+    case 'orejas': H2(charGeo.hair, M.hair, 0, 1.79, 0.01); for (const x of [-1, 1]) { const e = H2(charGeo.ear, M.hair, x * 0.17, 2.1, 0.02); e.rotation.z = -x * 0.35; } break;
+    case 'cuernos': H2(charGeo.hair, M.hair, 0, 1.79, 0.01); for (const x of [-1, 1]) { const e = H2(charGeo.horn, M.acc, x * 0.2, 2.08, -0.02); e.rotation.z = -x * 0.5; e.rotation.x = -0.2; } break;
+    case 'halo': H2(charGeo.hair, M.hair, 0, 1.79, 0.01); add(charGeo.halo, M.glow, 0, 2.28, 0); break;
+    case 'corona': H2(charGeo.hair, M.hair, 0, 1.79, 0.01); H2(charGeo.crown, M.acc, 0, 2.07, 0.01); for (let i = 0; i < 6; i++) { const a = i / 6 * Math.PI * 2; H2(charGeo.crownTip, M.acc, Math.sin(a) * 0.235, 2.19, Math.cos(a) * 0.235); } add(charGeo.gem, M.glow, 0, 2.08, -0.25); break;
     default: {
       // pelo con mechones de punta
       H2(charGeo.hair, M.hair, 0, 1.79, 0.01);
@@ -1105,6 +1393,8 @@ function makeCharacter(sk) {
   if (sk.pack === 'mochila') { add(charGeo.pack, M.acc, 0, 1.15, 0.3); add(charGeo.flap, M.glove, 0, 1.36, 0.3); add(charGeo.packPocket, M.glove, 0, 1.0, 0.42); }
   else if (sk.pack === 'tanque') { for (const x of [-0.13, 0.13]) add(charGeo.tank, M.acc, x, 1.16, 0.3); }
   else if (sk.pack === 'alas') { for (const x of [-1, 1]) { const w = add(charGeo.wing, M.glow, x * 0.22, 1.28, 0.42); w.rotation.y = x * 0.6; w.rotation.z = x * 0.25; } }
+  else if (sk.pack === 'capa') { const c = add(charGeo.cape, M.acc, 0, 1.0, 0.32); c.rotation.x = 0.16; }
+  else if (sk.pack === 'cohete') { for (const x of [-0.13, 0.13]) { add(charGeo.jet, M.pants, x, 1.18, 0.32); add(charGeo.flame, M.glow, x, 0.92, 0.32); } }
   const pivot = (x, y) => { const p = new THREE.Object3D(); p.position.set(x, y, 0); g.add(p); return p; };
   const legL = pivot(-0.17, 0.62), legR = pivot(0.17, 0.62);
   const ll = add(charGeo.leg, M.pants, 0, -0.31, 0, legL), lr = add(charGeo.leg, M.pants, 0, -0.31, 0, legR);
@@ -1259,7 +1549,7 @@ function loadout(e) {
   e.mats = inf ? { wood: 999, stone: 999, metal: 999 } : { wood: 500, stone: 300, metal: 200 };
   e.buildMat = 'wood';
   e.hp = 100; e.shield = 100; e.alive = true;
-  e.fireCd = 0; e.reloadT = 0; e.useT = 0; e.bloom = 0; e.building = false; e.swingT = 0; e.crouch = false; e.height = 1.9; e.emoteT = 0; e.slideT = 0;
+  e.fireCd = 0; e.reloadT = 0; e.useT = 0; e.bloom = 0; e.building = false; e.swingT = 0; e.crouch = false; e.height = 1.9; e.emoteT = 0; e.slideT = 0; e.mantle = null;
   e.vel.set(0, 0, 0);
   e.dieT = 0; e.ch.group.scale.set(1, 1, 1); e.ch.group.visible = true;
 }
@@ -1463,8 +1753,9 @@ function kill(e, attacker, wid, head) {
   burst(e.pos.clone().setY(e.pos.y + 1), 0x7fd4ff, 26);
   burst(e.pos.clone().setY(e.pos.y + 1.3), new THREE.Color(e.skin ? e.skin.accent : '#ffd23a').getHex(), 18);
   sfx('elim', e.isPlayer ? null : e.pos);
-  const wname = wid && WEAPONS[wid] ? WEAPONS[wid].name : wid === 'pickaxe' ? 'Pico' : 'caída';
-  const who = attacker ? attacker.name : 'La gravedad';
+  const wname = wid && WEAPONS[wid] ? WEAPONS[wid].name : wid === 'pickaxe' ? 'Pico' : wid === 'zone' ? 'fuera de la zona' : 'caída';
+  const who = attacker ? attacker.name : wid === 'zone' ? 'La zona' : 'La gravedad';
+  if (attacker === player && e !== player) onElim(wid, head);
   addFeed(`<b style="color:${attacker === player ? 'var(--sun)' : 'var(--hot)'}">${who}</b> eliminó a <b>${e.name}</b> · ${wname}${head ? ' <span style="color:var(--sun)">(cabeza)</span>' : ''}`);
   endRound(e === player ? bot : player);
 }
@@ -1579,6 +1870,7 @@ function aimTarget() {
   return t;
 }
 function tryBuild(e, kind, yaw) {
+  if (mode === 'nobuild') { if (e.isPlayer) flashHint('En «Sin construir» no se puede construir'); return false; }
   if (e.mats[e.buildMat] < 10) {
     const alt = ['wood', 'stone', 'metal'].find(m => e.mats[m] >= 10);
     if (!alt) return false;
@@ -1603,7 +1895,7 @@ ghost.add(ghostEdges); ghost.renderOrder = 5;
 ghost.rotation.order = 'YXZ'; ghost.visible = false; scene.add(ghost);
 function updateGhost() {
   if (editing && editing.p.kind === 'ramp') { const tr = pieceTransform('ramp', { ...editing.p.s, d: editing.d }); ghost.geometry = tr.geo; ghostEdges.geometry = edgesFor(tr.geo); ghost.position.set(tr.x, tr.y, tr.z); ghost.rotation.set(tr.rx, tr.ry, 0); ghost.material = ghostMat; ghost.visible = true; return; }
-  if (!player || !player.alive || !player.building || gameState !== 'play') { ghost.visible = false; return; }
+  if (!player || !player.alive || !player.building || gameState !== 'play' || mode === 'nobuild') { ghost.visible = false; return; }
   const s = buildSpec(player, buildKind), tr = pieceTransform(buildKind, s);
   ghost.geometry = tr.geo; ghost.position.set(tr.x, tr.y, tr.z); ghost.rotation.set(tr.rx, tr.ry, 0);
   const bad = pieces.has(pieceKey(buildKind, s)) || !inArena(tr) || ['wood', 'stone', 'metal'].every(m => player.mats[m] < 10) || !hasSupport(buildKind, s);
@@ -1623,7 +1915,7 @@ function boxAround(e, mat, roof = false) {
   if (roof) specs.push({ kind: Math.random() < 0.5 ? 'cone' : 'floor', spec: { cx, cz, l: l + 1 } });
   let n = 0;
   for (const sp of specs) {
-    if (mat) { if (makePiece(sp.kind, sp.spec, mat, e)) n++; }
+    if (mat) { const p = makePiece(sp.kind, sp.spec, mat, e); if (p) { n++; p.hp = p.maxHp; p.grow = 0; p.group.scale.setScalar(1); } }
     else if (tryBuild(e, sp)) n++;
   }
   return n;
@@ -1696,6 +1988,7 @@ function checkEditTarget(p) {
     const t = editCh.t, rec = !editCh.best || t < editCh.best;
     if (rec) { editCh.best = t; try { localStorage.setItem('rampazo-reto', String(t)); } catch (err) { /* sin almacenamiento */ } }
     banner(rec ? '¡NUEVO RÉCORD!' : '¡RETO COMPLETADO!', `${EDIT_GOAL} ediciones en ${t.toFixed(2)} s · récord ${editCh.best.toFixed(2)} s`, 3.2);
+    gainXP(200, 'Reto de edición'); if (rec) gainXP(100, 'Nuevo récord'); flushQuests();
     editCh.restartT = 3.4;
   } else { flashHint(`¡Bien! ${split.toFixed(2)} s`); spawnEditTarget(); }
   updateScore();
@@ -1719,7 +2012,7 @@ function updateBot(b, dt) {
   if (mode === 'edits') { b.vel.set(0, 0, 0); return; }
   b.fireCd -= dt; b.bloom = Math.max(0, b.bloom - dt * 0.08); b.recoil = Math.max(0, b.recoil - dt * 1.2);
   if (b.reloadT > 0) { b.reloadT -= dt; if (b.reloadT <= 0) { const w = b.inv[b.reloadSlot ?? b.cur]; if (w && w.kind === 'weapon') w.mag = WEAPONS[w.id].mag; } }
-  const ai = b.ai, D = DIFF[diff], t = player;
+  const ai = b.ai, D = curD, t = player;
   let mx = 0, mz = 0, speed = 6;
   if (!roundLive || !t.alive) { b.vel.x *= 0.8; b.vel.z *= 0.8; moveEntity(b, dt); return; }
   const dx = t.pos.x - b.pos.x, dz = t.pos.z - b.pos.z, dist = Math.hypot(dx, dz) || 0.01, dy = t.pos.y - b.pos.y;
@@ -1848,6 +2141,11 @@ function updateBot(b, dt) {
     if (ai.stuck > 1.5) { ai.lastPos.copy(b.pos).add(new THREE.Vector3(mx * 3, 0, mz * 3)); ai.lastSeen = now; ai.stuck = 0; ai.breakOut = true; }
   } else ai.stuck = Math.max(0, ai.stuck - dt);
   if (ai.peek) { mx = 0; mz = 0; }
+  if (zone.on && Math.hypot(b.pos.x - zone.cx, b.pos.z - zone.cz) > zone.r - 4) {
+    const zx = zone.cx - b.pos.x, zz = zone.cz - b.pos.z, zl = Math.hypot(zx, zz) || 1;
+    mx = zx / zl; mz = zz / zl; speed = 6.4;
+    if (ai.peek) { const p = ai.peek.p; if (pieces.get(p.key) === p) { p.mask = 0; buildParts(p); } ai.peek = null; }
+  }
   const acc = b.onGround ? 10 : 3;
   b.vel.x += (mx * speed - b.vel.x) * Math.min(1, dt * acc);
   b.vel.z += (mz * speed - b.vel.z) * Math.min(1, dt * acc);
@@ -2282,6 +2580,29 @@ function playerPrimary(first) {
     e.useT = e.useMax = 2;
   }
 }
+function tryMantle(e, mx, mz) {
+  let dx = mx, dz = mz;
+  if (!dx && !dz) { dx = -Math.sin(e.yaw); dz = -Math.cos(e.yaw); }
+  const l = Math.hypot(dx, dz); dx /= l; dz /= l;
+  // altura de lo que tenemos delante
+  let top = -Infinity;
+  for (const b of boxes) {
+    if (b.minY > e.pos.y + e.height || b.maxY <= e.pos.y + STEP) continue;
+    const px = e.pos.x + dx * 0.7, pz = e.pos.z + dz * 0.7;
+    if (px > b.minX - 0.3 && px < b.maxX + 0.3 && pz > b.minZ - 0.3 && pz < b.maxZ + 0.3) top = Math.max(top, b.maxY);
+  }
+  if (!(top - e.pos.y > 0.6 && top - e.pos.y < 3.6)) return;
+  // aterrizaje: al otro lado del obstáculo, sin paredes ni techo en medio
+  const ax = e.pos.x + dx * 1.5, az = e.pos.z + dz * 1.5;
+  const ty = supportHeight(ax, az, top);
+  for (const b of boxes) {
+    if (b.maxY <= ty + STEP || b.minY >= ty + e.height) continue;
+    if (ax > b.minX - e.radius && ax < b.maxX + e.radius && az > b.minZ - e.radius && az < b.maxZ + e.radius) return;
+  }
+  if (ceilingAt(e.pos.x, e.pos.z, e.pos.y, top + 2.2) < top + 2.0) return;
+  e.mantle = { t: 0, x0: e.pos.x, y0: e.pos.y, z0: e.pos.z, x1: ax, y1: ty, z1: az, top };
+  e.slideT = 0; sfx('slide');
+}
 function updatePlayer(dt) {
   const e = player;
   e.fireCd -= dt; buildRepeat -= dt; e.swingT -= dt;
@@ -2316,8 +2637,18 @@ function updatePlayer(dt) {
     e.vel.x += (mx * speed - e.vel.x) * Math.min(1, dt * acc);
     e.vel.z += (mz * speed - e.vel.z) * Math.min(1, dt * acc);
   }
-  if (keys[BK('jump')] && e.onGround && e.alive && roundLive) { e.vel.y = 8.2; e.onGround = false; e.emoteT = 0; e.slideT = 0; }
-  if (e.alive) moveEntity(e, dt);
+  if (keys[BK('jump')] && e.onGround && e.alive && roundLive && !e.mantle) { e.vel.y = 8.2; e.onGround = false; e.emoteT = 0; e.slideT = 0; }
+  // escalar: con salto pulsado contra algo bajo, el personaje se impulsa y pasa por encima
+  if (e.mantle) {
+    const m = e.mantle; m.t += dt / 0.38;
+    const k = Math.min(1, m.t);
+    e.pos.set(m.x0 + (m.x1 - m.x0) * k, m.y0 + (m.y1 - m.y0) * k + Math.sin(Math.PI * k) * (m.top + 0.3 - Math.max(m.y0, m.y1)), m.z0 + (m.z1 - m.z0) * k);
+    e.vel.set(0, 0, 0);
+    if (k >= 1) { e.mantle = null; e.onGround = true; }
+  } else if (e.alive) {
+    moveEntity(e, dt);
+    if (keys[BK('jump')] && e.blocked && roundLive) tryMantle(e, mx, mz);
+  }
   if (!e.alive || !roundLive) return;
   if (mouseDown && (locked || freeLook) && !editing) playerPrimary(false);
   if (e.reloadT > 0) {
@@ -2335,8 +2666,12 @@ let camY = 1.65;
 const _camT = new THREE.Vector3(), _camO = new THREE.Vector3(), _camD = new THREE.Vector3();
 const camOffCur = new THREE.Vector3(0.85, 0.45, 4.2), _camWant = new THREE.Vector3();
 let camFollowY = null, camDistCur = 4;
+let specYaw = 0;
 function updateCamera(dt) {
-  const e = player;
+  // si te eliminan, la cámara gira despacio alrededor del rival (como un espectador)
+  const spec = !player.alive && bot && bot.alive && mode !== 'edits';
+  const e = spec ? bot : player;
+  if (spec) specYaw += dt * 0.45; else specYaw = player.yaw;
   camY += ((e.crouch ? 1.15 : 1.65) - camY) * Math.min(1, dt * 12);
   // la altura de la cámara sigue al jugador con suavidad (rampas, saltos, caídas)
   if (camFollowY === null || Math.abs(e.pos.y - camFollowY) > 6) camFollowY = e.pos.y;
@@ -2352,7 +2687,7 @@ function updateCamera(dt) {
   else _camWant.set(0.85 * side, 0.45 * k, 4.2 * k);
   camOffCur.lerp(_camWant, Math.min(1, dt * (ads ? 16 : 9)));
   const offset = _camO.copy(camOffCur);
-  camE.set(e.pitch, e.yaw, 0); camQ.setFromEuler(camE);
+  camE.set(spec ? -0.22 : e.pitch, spec ? specYaw : e.yaw, 0); camQ.setFromEuler(camE);
   offset.applyQuaternion(camQ);
   const len = offset.length(), dir = _camD.copy(offset).divideScalar(len);
   raycaster.set(target, dir); raycaster.near = 0; raycaster.far = len;
@@ -2385,6 +2720,53 @@ let lastScoped = false;
 //  RONDAS
 // ============================================================
 let countdown = 0, roundEndT = 0, lastCount = 0;
+// anillo de energía: tarda 8 s en empezar a cerrarse y 40 s en llegar a su tamaño final; fuera de él quita vida
+const zone = { on: false, cx: 0, cz: 0, r: 0, r0: 72, r1: 9, t: 0 };
+const zoneMesh = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 70, 72, 1, true), new THREE.MeshBasicMaterial({ color: 0x9b4dff, transparent: true, opacity: 0.35, side: THREE.DoubleSide, depthWrite: false, toneMapped: false }));
+zoneMesh.position.y = 20; zoneMesh.visible = false; zoneMesh.renderOrder = 4; scene.add(zoneMesh);
+function startZone() {
+  zone.on = mode === 'zone'; zoneMesh.visible = zone.on; $('zoneInfo').classList.toggle('hide', !zone.on);
+  if (!zone.on) { hudSet($('zonefx'), 'opacity', '0'); return; }
+  zone.cx = (Math.floor(rand(-3, 3)) + 0.5) * S; zone.cz = (Math.floor(rand(-3, 3)) + 0.5) * S;
+  zone.t = 0; zone.r = zone.r0;
+  for (const e of [player, bot]) e.zoneT = 0;
+}
+const outOfZone = e => Math.hypot(e.pos.x - zone.cx, e.pos.z - zone.cz) > zone.r;
+function updateZone(dt) {
+  if (!zone.on) return;
+  if (roundLive) zone.t += dt;
+  const k = clamp((zone.t - 8) / 40, 0, 1), ease = k * k * (3 - 2 * k);
+  zone.r = zone.r0 + (zone.r1 - zone.r0) * ease;
+  zoneMesh.position.set(zone.cx, 20, zone.cz); zoneMesh.scale.set(zone.r, 1, zone.r);
+  zoneMesh.material.opacity = 0.32 + Math.sin(performance.now() / 300) * 0.06;
+  const out = player.alive && outOfZone(player);
+  hudSet($('zonefx'), 'opacity', out && roundLive ? '1' : '0');
+  const z = $('zoneInfo');
+  z.classList.toggle('out', out);
+  hudSet(z, 'text', out ? '¡Estás fuera de la zona! Vuelve al anillo' : zone.t < 8 ? `La zona empieza a cerrarse en ${Math.ceil(8 - zone.t)} s` : k < 1 ? 'La zona se está cerrando' : 'Zona cerrada del todo');
+  if (!roundLive) return;
+  for (const e of [player, bot]) {
+    if (!e.alive || !outOfZone(e)) { e.zoneT = 0; continue; }
+    e.zoneT = (e.zoneT || 0) + dt;
+    if (e.zoneT >= 0.5) { e.zoneT -= 0.5; damage(e, 4 + 4 * k, null, 'zone'); if (e === player) sfx('hit'); }
+  }
+}
+// sin construir: coberturas de piedra y madera repartidas por el mapa
+function spawnCover() {
+  const cells = [];
+  for (let n = 0; n < 60 && cells.length < 16; n++) {
+    const i = Math.floor(rand(-9, 9)), j = Math.floor(rand(-6, 6));
+    if (Math.abs(i + 8) < 2 && Math.abs(j) < 2 || Math.abs(i - 7) < 2 && Math.abs(j) < 2) continue;
+    if (cells.some(c => Math.abs(c[0] - i) + Math.abs(c[1] - j) < 2)) continue;
+    cells.push([i, j]);
+  }
+  for (const [i, j] of cells) {
+    const mat = Math.random() < 0.6 ? 'stone' : 'wood';
+    const specs = [{ ax: Math.random() < 0.5 ? 'x' : 'z', i, j, l: 0 }];
+    if (Math.random() < 0.45) specs.push(specs[0].ax === 'x' ? { ax: 'z', i, j, l: 0 } : { ax: 'x', i, j, l: 0 });
+    for (const sp of specs) { const p = makePiece('wall', sp, mat, null); if (p) { p.hp = p.maxHp; p.grow = 0; p.group.scale.setScalar(1); } }
+  }
+}
 function spawnPositions() {
   if (mode === 'box') return [[-3, 0], [2, 0]];
   if (mode === 'practice') return [[-2, 0], [3, 0]];
@@ -2405,6 +2787,8 @@ function startRound() {
   bot.yaw = Math.PI / 2;
   bot.ai = newAI();
   if (mode === 'box') { boxAround(player, 'metal'); boxAround(bot, 'metal'); }
+  if (mode === 'nobuild') spawnCover();
+  startZone();
   resetEditChallenge();
   if (mode === 'edits') { player.yaw = 0; unbindParts(bot); }
   roundLive = false;
@@ -2422,8 +2806,9 @@ function endRound(winner) {
   if (mode === 'edits') { banner('¡CUIDADO!', 'Te caíste: el reto vuelve a empezar', 1.6); roundEndT = 1.8; return; }
   if (winner === player) score.me++; else score.bot++;
   updateScore();
-  const over = score.me >= WIN_ROUNDS || score.bot >= WIN_ROUNDS;
-  if (winner === player) { banner('¡RONDA TUYA!', `${bot.name} cae con ${Math.max(0, Math.round(player.hp + player.shield))} de vida restante tuya`, 2.6); sfx('win'); }
+  const over = score.me >= winRounds() || score.bot >= winRounds();
+  if (winner === player) { gainXP(75, 'Ronda ganada'); quest('rounds'); }
+  if (winner === player) { player.emoteT = 2.6; banner('¡RONDA TUYA!', `${bot.name} cae con ${Math.max(0, Math.round(player.hp + player.shield))} de vida restante tuya`, 2.6); sfx('win'); }
   else { banner('RONDA PERDIDA', `Al rival le quedaban ${Math.round(bot.hp + bot.shield)} de vida`, 2.6); sfx('lose'); bot.emoteT = 2.6; }
   roundEndT = over ? -2.8 : 2.8;
 }
@@ -2431,7 +2816,7 @@ function updateRounds(dt) {
   if (countdown > 0) {
     countdown -= dt;
     const c = Math.ceil(countdown);
-    if (c !== lastCount && c > 0 && !training()) { lastCount = c; banner(String(c), score.round === 1 ? `Primero en ganar ${WIN_ROUNDS} rondas` : '', 1); sfx('count'); }
+    if (c !== lastCount && c > 0 && !training()) { lastCount = c; banner(String(c), score.round === 1 ? (mode === 'zone' ? `Quédate dentro del anillo · primero a ${winRounds()}` : mode === 'nobuild' ? `Sin construir · primero a ${winRounds()}` : `Primero en ganar ${winRounds()} rondas`) : '', 1); sfx('count'); }
     if (countdown <= 0) { roundLive = true; if (!training()) { banner('¡YA!', '', 0.8); sfx('go'); } bot.ai.engageT = now; }
   }
   // roundEndT > 0: pausa antes de la siguiente ronda · roundEndT < 0: pausa antes del final de la partida
@@ -2446,7 +2831,75 @@ function updateScore() {
   }
   $('scBotName').textContent = bot.name;
   $('scRound').textContent = mode === 'practice' ? 'Práctica' : `Ronda ${score.round}`;
-  $('scGoal').textContent = mode === 'practice' ? 'sin límite' : `a ${WIN_ROUNDS}`;
+  $('scGoal').textContent = mode === 'practice' ? 'sin límite' : `a ${winRounds()}`;
+  if (mode === 'ranked') $('scRound').textContent = `Clasif. · R${score.round}`;
+}
+// ---------- recompensas al terminar ----------
+function onElim(wid, head) {
+  if (mode === 'edits') return;
+  if (mode === 'practice') { gainXP(15, 'Maniquí eliminado'); return; }
+  profile.kills++;
+  gainXP(100, 'Eliminación'); quest('elim');
+  if (head) { gainXP(25, 'Disparo a la cabeza'); quest('head'); }
+  if (wid === 'shotgun') quest('shotgun');
+}
+// construcciones, ediciones y daño cuentan para las misiones (lo que se ha hecho desde la última vez)
+function flushQuests() {
+  if (!stats) return;
+  quest('build', stats.built - (stats.qb || 0)); stats.qb = stats.built;
+  quest('edits', (stats.edits || 0) - (stats.qe || 0)); stats.qe = stats.edits || 0;
+  if (!training()) { quest('dmg', stats.dmg - (stats.qd || 0)); stats.qd = stats.dmg; }
+}
+function rankedResult(win) {
+  const before = profile.rp, ti = tierOf(before), floor = TIERS.findIndex(t => t.r === TIERS[ti].r) * 100;
+  const d = win ? Math.max(12, Math.round(36 - ti * 1.1 + (score.me - score.bot) * 4)) : -Math.max(8, Math.round(12 + ti * 0.9 - score.me * 3));
+  profile.rp = Math.max(floor, before + d);   // protección: no bajas del rango que ya tienes
+  profile.best = Math.max(profile.best, tierOf(profile.rp));
+  profile.rMatches++; if (win) profile.rWins++;
+  return { before, after: profile.rp, d: profile.rp - before };
+}
+function matchRewards(win) {
+  flushQuests();
+  quietXP = true;
+  profile.matches++;
+  profile.streak = win ? profile.streak + 1 : 0;
+  if (win) profile.wins++;
+  gainXP(200, 'Partida terminada');
+  if (win) gainXP(300, 'Victoria');
+  if (win && profile.firstWin !== today()) { profile.firstWin = today(); gainXP(400, 'Primera victoria del día'); }
+  if (stats.built) gainXP(Math.min(stats.built, 100) * 2, 'Construcción');
+  if (stats.edits) gainXP(Math.min(stats.edits, 60) * 4, 'Ediciones');
+  if (stats.dmg) gainXP(stats.dmg / 10, 'Daño infligido');
+  if (profile.streak >= 2 && win) gainXP(50 * Math.min(profile.streak, 5), `Racha de ${profile.streak} victorias`);
+  quietXP = false;
+  if (mode === 'zone') quest('zone');
+  if (win && mode === 'box') quest('boxwin');
+  let rk = null;
+  if (mode === 'ranked') { rk = rankedResult(win); if (win) quest('ranked'); }
+  saveProfile();
+  // resumen
+  const sum = {};
+  let total = 0;
+  const lvls = [];
+  for (const x of sessionXP) { if (x[0] === 'lvl') { lvls.push(x); continue; } sum[x[0]] = (sum[x[0]] || 0) + x[1]; total += x[1]; }
+  const li = levelInfo(), lvBefore = levelInfo(profile.xp - total);
+  let h = `<div class="panel"><h2>+${total} XP</h2>${Object.entries(sum).map(([k, v]) => `<div class="row2">${k}<b>+${v}</b></div>`).join('')}
+    <div class="row2" style="margin-top:6px">Nivel ${li.l} del pase<b>${li.max ? 'completo' : `${li.cur} / ${li.need} XP`}</b></div><div class="xpbar"><i id="endXpBar" style="width:${li.l > lvBefore.l ? 0 : (lvBefore.cur / lvBefore.need * 100).toFixed(1)}%"></i></div>
+    ${lvls.map(([, l, r]) => `<div class="lvup">¡Nivel ${l}!${r ? ' Desbloqueado: ' + rewardName(r) : ''}</div>`).join('')}</div>`;
+  if (rk) {
+    const t0 = tierOf(rk.before), t1 = tierOf(rk.after), up = t1 > t0, r = RANKS[TIERS[t1].r];
+    h += `<div class="panel"><h2>Clasificatoria</h2><div class="rkline">${rankBadge(t1, 72)}<div style="flex:1"><div style="font:400 26px var(--display);color:${r.col}">${TIERS[t1].label}</div>
+      <div class="delta" style="color:${rk.d >= 0 ? '#6cf08a' : '#ff6a7d'}">${rk.d >= 0 ? '+' : ''}${rk.d} PR</div></div></div>
+      <div class="xpbar"><i id="endRkBar" style="width:${up ? 0 : (rk.before % 100)}%"></i></div>
+      <div class="row2">${t1 === TIERS.length - 1 ? `${rk.after - 1700} PR de Leyenda` : `${rk.after % 100} / 100 PR para ${TIERS[t1 + 1].label}`}</div>
+      ${up ? `<div class="lvup">¡ASCENSO! Ahora eres ${TIERS[t1].label}</div>` : rk.d < 0 && rk.after === rk.before ? '<div class="row2">Protección de rango: no bajas de tu rango actual</div>' : ''}</div>`;
+  }
+  $('endProg').innerHTML = h;
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    const xb = $('endXpBar'); if (xb) xb.style.width = (li.max ? 100 : li.cur / li.need * 100).toFixed(1) + '%';
+    const rb = $('endRkBar'); if (rb && rk) rb.style.width = (tierOf(rk.after) === TIERS.length - 1 ? 100 : rk.after % 100) + '%';
+  }));
+  sessionXP = [];
 }
 function endMatch() {
   cancelEdit(); ghost.visible = false; if (player) player.building = false;
@@ -2455,7 +2908,8 @@ function endMatch() {
   const win = score.me > score.bot;
   $('endTitle').textContent = win ? '¡VICTORIA!' : 'DERROTA';
   $('endTitle').style.color = win ? 'var(--sun)' : 'var(--danger)';
-  $('endSub').textContent = win ? `Le ganaste a ${bot.name} en dificultad ${DIFF[diff].name}.` : `${bot.name} (${DIFF[diff].name}) se llevó el duelo. Pide la revancha.`;
+  $('endSub').textContent = `${MODES[mode].name} · ` + (win ? `Le ganaste a ${bot.name} (${DIFF[effDiff()].name}).` : `${bot.name} (${DIFF[effDiff()].name}) se llevó el duelo. Pide la revancha.`);
+  matchRewards(win);
   $('stScore').textContent = `${score.me}–${score.bot}`;
   $('stDmg').textContent = stats.dmg;
   $('stAcc').textContent = (stats.shots ? Math.round(100 * stats.hits / stats.shots) : 0) + '%';
@@ -2562,7 +3016,40 @@ function hudSet(el, prop, v) {
   hudCache.set(key, v);
   if (prop === 'text') el.textContent = v; else if (prop === 'html') el.innerHTML = v; else el.style[prop] = v;
 }
+// minimapa: arena vista desde arriba con las piezas, tú (flecha) y el rival si lo estás viendo
+let miniT = 0;
+const MINI_COL = { wood: '#e0a866', stone: '#c4c4cc', metal: '#9cb6cf' };
+function drawMinimap(dt) {
+  miniT -= dt; if (miniT > 0) return; miniT = 0.1;
+  const cv = $('minimap'), g = cv.getContext('2d'), N = cv.width, k = N / (A * 2);
+  const X = x => (x + A) * k, Z = z => (z + A) * k;
+  g.clearRect(0, 0, N, N);
+  g.fillStyle = '#3f7d3a'; g.fillRect(0, 0, N, N);
+  g.strokeStyle = 'rgba(255,255,255,.12)'; g.lineWidth = 1;
+  for (let i = -A; i <= A; i += S * 2) { g.beginPath(); g.moveTo(X(i), 0); g.lineTo(X(i), N); g.moveTo(0, Z(i)); g.lineTo(N, Z(i)); g.stroke(); }
+  for (const p of pieces.values()) {
+    const b = pieceBounds(p);
+    g.fillStyle = MINI_COL[p.mat];
+    g.globalAlpha = p.kind === 'wall' ? 1 : 0.55;
+    const w = Math.max(1.6, (b[3] - b[0]) * k), h = Math.max(1.6, (b[4] - b[1]) * k);
+    g.fillRect(X(b[0]), Z(b[1]), w, h);
+  }
+  g.globalAlpha = 1;
+  if (zone.on) {
+    g.save(); g.fillStyle = 'rgba(140,60,230,.45)'; g.beginPath(); g.rect(0, 0, N, N); g.arc(X(zone.cx), Z(zone.cz), zone.r * k, 0, Math.PI * 2, true); g.fill('evenodd');
+    g.strokeStyle = '#d6b0ff'; g.lineWidth = 2; g.beginPath(); g.arc(X(zone.cx), Z(zone.cz), zone.r * k, 0, Math.PI * 2); g.stroke(); g.restore();
+  }
+  const seeBot = bot && bot.alive && mode !== 'edits' && (mode === 'practice' || (bot.ai && bot.ai.visible));
+  if (seeBot) { g.fillStyle = '#ff4f6d'; g.beginPath(); g.arc(X(bot.pos.x), Z(bot.pos.z), 4.5, 0, 7); g.fill(); g.strokeStyle = '#fff'; g.lineWidth = 1.5; g.stroke(); }
+  if (player) {
+    g.save(); g.translate(X(player.pos.x), Z(player.pos.z)); g.rotate(-player.yaw);
+    g.fillStyle = '#ffd23a'; g.strokeStyle = '#1a1a1a'; g.lineWidth = 1.5;
+    g.beginPath(); g.moveTo(0, -8); g.lineTo(6, 6); g.lineTo(0, 3); g.lineTo(-6, 6); g.closePath(); g.fill(); g.stroke();
+    g.restore();
+  }
+}
 function updateHud(dt) {
+  drawMinimap(dt);
   const e = player;
   if (!hudEls) hudEls = {
     sbI: document.querySelector('#shieldBar i'), sbS: document.querySelector('#shieldBar span'), hbI: document.querySelector('#hpBar i'), hbS: document.querySelector('#hpBar span'),
@@ -2657,6 +3144,7 @@ function frame(t) {
   }
   now += dt;
   updateRounds(dt);
+  updateZone(dt);
   updatePlayer(dt);
   updateEditChallenge(dt);
   if (bot.alive) updateBot(bot, dt);
@@ -2675,17 +3163,27 @@ function frame(t) {
 // ============================================================
 //  MENÚ
 // ============================================================
-function chips(id, entries, get, set, swatch) {
+function chips(id, entries, get, set, swatch, lock) {
   const el = $(id);
-  el.innerHTML = entries.map(([k, v]) => `<button class="chip${get() === k ? ' sel' : ''}" data-k="${k}">${swatch ? `<i style="background:${swatch(v)}"></i>` : ''}${v.name}${v.desc ? `<small>${v.desc}</small>` : ''}</button>`).join('');
-  el.querySelectorAll('.chip').forEach(c => c.onclick = () => { set(c.dataset.k); chips(id, entries, get, set, swatch); });
+  el.innerHTML = entries.map(([k, v]) => { const lv = lock ? lock(k, v) : 0; return `<button class="chip${get() === k ? ' sel' : ''}${lv ? ' locked' : ''}" data-k="${k}"${lv ? ` title="Se desbloquea en el nivel ${lv} del pase"` : ''}>${swatch ? `<i style="background:${swatch(v)}"></i>` : ''}${v.name}${lv ? `<small>Nivel ${lv} del pase</small>` : v.desc ? `<small>${v.desc}</small>` : ''}</button>`; }).join('');
+  el.querySelectorAll('.chip').forEach(c => c.onclick = () => { if (c.classList.contains('locked')) { sfx('lose'); return; } set(c.dataset.k); chips(id, entries, get, set, swatch, lock); });
 }
-chips('modes', Object.entries(MODES), () => mode, v => { mode = v; });
-chips('diffs', Object.entries(DIFF), () => diff, v => { diff = v; });
+function renderModes() {
+  $('modes').innerHTML = Object.entries(MODES).map(([k, m]) => `<button class="chip mcard${mode === k ? ' sel' : ''}" data-k="${k}"><span class="mic">${k === 'ranked' ? rankBadge(tierOf(profile.rp), 38) : MODE_ICON[k]}</span><span><em>${m.cat}${k === 'ranked' ? ' · ' + TIERS[tierOf(profile.rp)].label : ''}</em>${m.name}<small>${m.desc}</small></span></button>`).join('');
+  $('modes').querySelectorAll('.chip').forEach(c => c.onclick = () => { mode = c.dataset.k; renderModes(); });
+  $('diffGroup').style.display = mode === 'ranked' || training() ? 'none' : '';
+  const m = MODES[mode];
+  $('playMode').innerHTML = `<small>${m.cat}</small>${m.name} · ${mode === 'ranked' ? TIERS[tierOf(profile.rp)].label : training() ? 'sin presión' : 'rival ' + DIFF[diff].name}`;
+}
+renderModes();
+chips('diffs', Object.entries(DIFF), () => diff, v => { diff = v; renderModes(); });
 
 // ---------- taquilla ----------
 let charCfg = { ...PRESETS[0] };
 try { const c = JSON.parse(localStorage.getItem('rampazo-personaje') || 'null'); if (c) charCfg = { ...PRESETS[0], ...c }; } catch (err) { /* sin almacenamiento */ }
+if (!HATS[charCfg.hat] || lockLv('hat', charCfg.hat)) charCfg.hat = 'gorra';
+if (!PACKS[charCfg.pack] || lockLv('pack', charCfg.pack)) charCfg.pack = 'mochila';
+if (!FACES[charCfg.face] || lockLv('face', charCfg.face)) charCfg.face = 'visor';
 let previewEnt = null, dragYaw = false;
 function rebuildPreview() {
   const yaw = previewEnt ? previewEnt.yaw : Math.PI, emote = previewEnt ? previewEnt.emoteT : 0;
@@ -2693,13 +3191,14 @@ function rebuildPreview() {
   previewEnt = { ch: makeCharacter(charCfg), pos: new THREE.Vector3(), vel: new THREE.Vector3(), yaw, pitch: 0, onGround: true, walkT: 0, inv: [{ kind: 'pickaxe' }], cur: 0, building: false, crouch: false, emoteT: emote, swingT: 0 };
   $('charName').textContent = charCfg.name;
   $('charSw').style.background = charCfg.shirt;
+  renderPlCard();
   try { localStorage.setItem('rampazo-personaje', JSON.stringify(charCfg)); } catch (err) { /* sin almacenamiento */ }
 }
 function renderLocker() {
-  chips('presetChips', PRESETS.map((pr, i) => [String(i), pr]), () => String(PRESETS.findIndex(pr => pr.name === charCfg.name)), v => { charCfg = { ...PRESETS[+v] }; rebuildPreview(); renderLocker(); }, pr => pr.shirt);
-  chips('hatChips', Object.entries(HATS), () => charCfg.hat, v => { charCfg.hat = v; rebuildPreview(); });
-  chips('packChips', Object.entries(PACKS), () => charCfg.pack, v => { charCfg.pack = v; rebuildPreview(); });
-  chips('faceChips', Object.entries(FACES), () => charCfg.face, v => { charCfg.face = v; rebuildPreview(); });
+  chips('presetChips', PRESETS.map((pr, i) => [String(i), pr]), () => String(PRESETS.findIndex(pr => pr.name === charCfg.name)), v => { charCfg = { ...PRESETS[+v] }; rebuildPreview(); renderLocker(); }, pr => pr.shirt, (k, pr) => lockLv('skin', pr.name));
+  chips('hatChips', Object.entries(HATS), () => charCfg.hat, v => { charCfg.hat = v; rebuildPreview(); }, null, k => lockLv('hat', k));
+  chips('packChips', Object.entries(PACKS), () => charCfg.pack, v => { charCfg.pack = v; rebuildPreview(); }, null, k => lockLv('pack', k));
+  chips('faceChips', Object.entries(FACES), () => charCfg.face, v => { charCfg.face = v; rebuildPreview(); }, null, k => lockLv('face', k));
   $('lkName').value = charCfg.name;
   for (const el of document.querySelectorAll('#locker [data-c]')) el.value = charCfg[el.dataset.c];
 }
@@ -2708,7 +3207,8 @@ $('lkName').oninput = ev => { charCfg.name = ev.target.value.trim() || 'Sin nomb
 $('lkDance').onclick = () => { previewEnt.emoteT = 2.6; };
 $('lkRandom').onclick = () => {
   const rc = () => '#' + new THREE.Color().setHSL(Math.random(), 0.55 + Math.random() * 0.3, 0.35 + Math.random() * 0.3).getHexString();
-  charCfg = { ...charCfg, shirt: rc(), pants: rc(), accent: rc(), hat: pick(Object.keys(HATS)), pack: pick(Object.keys(PACKS)), face: pick(Object.keys(FACES)) };
+  const free = (obj, type) => pick(Object.keys(obj).filter(k => !lockLv(type, k)));
+  charCfg = { ...charCfg, shirt: rc(), pants: rc(), accent: rc(), hat: free(HATS, 'hat'), pack: free(PACKS, 'pack'), face: free(FACES, 'face') };
   rebuildPreview(); renderLocker();
 };
 $('charBtn').onclick = () => { $('start').classList.add('hide'); $('locker').classList.remove('hide'); gameState = 'locker'; renderLocker(); };
@@ -2726,8 +3226,11 @@ function startMatch() {
   if (bot) { unbindParts(bot); disposeCharacter(bot.ch); }
   const rival = { ...pick(PRESETS.filter(pr => pr.name !== charCfg.name)) };
   bot = makeEntity('RX-1', rival, false);
-  bot.name = mode === 'practice' ? 'Maniquí' : `RX-${{ facil: 1, normal: 2, dificil: 3, pro: 9 }[diff]}`;
-  $('enemyName').textContent = `${bot.name} · ${mode === 'practice' ? 'práctica' : DIFF[diff].name}`;
+  const dd = effDiff();
+  curD = mode === 'nobuild' ? { ...DIFF[dd], build: 0, rush: 0 } : DIFF[dd];
+  bot.name = mode === 'practice' ? 'Maniquí' : `RX-${{ facil: 1, normal: 2, dificil: 3, pro: 9 }[dd]}`;
+  $('enemyName').textContent = `${bot.name} · ${mode === 'practice' ? 'práctica' : mode === 'ranked' ? TIERS[tierOf(profile.rp)].label : DIFF[dd].name}`;
+  sessionXP = []; ensureDaily();
   $('enemyBar').style.visibility = mode === 'edits' ? 'hidden' : '';
   $('scBotName').textContent = bot.name;
   score.me = 0; score.bot = 0; score.round = 1;
@@ -2739,6 +3242,68 @@ function startMatch() {
   requestLock();
 }
 $('playBtn').onclick = startMatch;
+// iconos de las recompensas
+function rewardIcon(r) {
+  if (r.type === 'skin') { const pr = PRESETS.find(p => p.name === r.key); return `<svg viewBox="0 0 64 64"><circle cx="32" cy="18" r="11" fill="${pr.skin}" stroke="#fff" stroke-width="2"/><path d="M14 58c0-16 8-26 18-26s18 10 18 26z" fill="${pr.shirt}" stroke="#fff" stroke-width="2"/><rect x="22" y="40" width="20" height="4" rx="2" fill="${pr.accent}"/></svg>`; }
+  if (r.type === 'title') return '<svg viewBox="0 0 64 64"><path d="M10 14h44v26l-22 14-22-14z" fill="#3de0ff" stroke="#fff" stroke-width="2.5"/><path d="M20 26h24M20 34h16" stroke="#0a1a3a" stroke-width="4" stroke-linecap="round"/></svg>';
+  if (r.type === 'hat') return '<svg viewBox="0 0 64 64"><path d="M12 40c0-14 9-24 20-24s20 10 20 24z" fill="#ffd23a" stroke="#fff" stroke-width="2.5"/><rect x="8" y="38" width="48" height="8" rx="4" fill="#ff8a3d" stroke="#fff" stroke-width="2"/></svg>';
+  if (r.type === 'pack') return '<svg viewBox="0 0 64 64"><rect x="16" y="14" width="32" height="40" rx="9" fill="#8a7bff" stroke="#fff" stroke-width="2.5"/><rect x="22" y="34" width="20" height="12" rx="3" fill="#5a4bd0" stroke="#fff" stroke-width="2"/><path d="M24 14c0-6 16-6 16 0" fill="none" stroke="#fff" stroke-width="3"/></svg>';
+  return '<svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="22" fill="#d8a07a" stroke="#fff" stroke-width="2.5"/><rect x="14" y="24" width="36" height="10" rx="5" fill="#1a1a2a"/><path d="M24 44q8 6 16 0" fill="none" stroke="#3a2a2a" stroke-width="3" stroke-linecap="round"/></svg>';
+}
+function renderPlCard() {
+  const li = levelInfo();
+  $('plLv').textContent = li.l;
+  $('plName').textContent = charCfg.name;
+  $('plTitle').textContent = `${profile.title} · ${TIERS[tierOf(profile.rp)].label}`;
+  $('plXp').style.width = (li.max ? 100 : li.cur / li.need * 100).toFixed(1) + '%';
+}
+function renderPass() {
+  const li = levelInfo(), daily = ensureDaily();
+  $('passPage').innerHTML = `<div class="phead"><div class="big-lv">${li.l}</div><div class="grow"><h2>Pase de temporada · Temporada 1</h2>
+      <div class="tag" style="font-size:14px">Gana experiencia jugando: eliminaciones, rondas, victorias, construcciones, ediciones y misiones diarias. Las ${PASS.length} recompensas son gratis.</div>
+      <div class="xpbar"><i style="width:${(li.max ? 100 : li.cur / li.need * 100).toFixed(1)}%"></i></div>
+      <div class="row2" style="font-weight:700;font-size:13px;color:var(--dim);margin-top:4px">${li.max ? '¡Pase completado!' : `${li.cur} / ${li.need} XP para el nivel ${li.l + 1}`} · ${profile.xp} XP en total</div></div></div>
+    <div class="pcols"><div><h3>Recompensas</h3><div class="tiers" style="margin-top:8px">${PASS.map(r => {
+      const got = li.l >= r.lv, eq = r.type === 'title' && profile.title === r.key;
+      return `<div class="tier ${got ? 'got' : li.l + 1 === r.lv ? 'next' : 'lock'}${eq ? ' title-eq' : ''}"><span class="n">${r.lv}</span>${rewardIcon(r)}<small>${TYPE_NAME[r.type]}</small>${r.type === 'title' ? '«' + r.key + '»' : r.type === 'skin' ? r.key : rewardName(r)}${r.type === 'title' && got && !eq ? `<button data-title="${r.key}">Usar título</button>` : ''}</div>`;
+    }).join('')}</div></div>
+    <div><h3>Misiones de hoy</h3><div class="quests" style="margin-top:8px">${daily.list.map(q => `<div class="quest${q.done ? ' done' : ''}">${QUESTS[q.id].name}<small>${q.done ? 'Hecha' : '+' + QUEST_XP + ' XP'}</small><div class="xpbar"><i style="width:${(q.p / QUESTS[q.id].n * 100).toFixed(1)}%"></i></div><div style="font-size:12px;color:var(--dim);margin-top:3px">${q.p} / ${QUESTS[q.id].n}</div></div>`).join('')}</div>
+    <h3 style="margin-top:16px">Cómo se gana experiencia</h3><ul class="rules"><li>Eliminación: 100 XP (+25 a la cabeza)</li><li>Ronda ganada: 75 XP</li><li>Partida terminada: 200 XP · victoria +300</li><li>Primera victoria del día: +400 XP</li><li>Racha de victorias: hasta +250 XP</li><li>Construir, editar y hacer daño también suma</li><li>Reto de edición completado: 200 XP</li></ul></div></div>`;
+  $('passPage').querySelectorAll('[data-title]').forEach(b => b.onclick = () => { profile.title = b.dataset.title; saveProfile(); renderPass(); renderPlCard(); });
+}
+function renderCareer() {
+  const ti = tierOf(profile.rp), t = TIERS[ti], r = RANKS[t.r], last = ti === TIERS.length - 1;
+  const pct = (a, b) => b ? Math.round(100 * a / b) + '%' : '—';
+  $('careerPage').innerHTML = `<div class="rk-main">${rankBadge(ti, 120)}<div class="grow"><h3>Clasificatoria · Temporada 1</h3><div class="rk-name" style="color:${r.col}">${t.label}</div>
+      <div class="xpbar"><i style="width:${last ? 100 : profile.rp % 100}%"></i></div>
+      <div style="font-weight:700;font-size:14px;color:var(--dim);margin-top:6px">${last ? `${profile.rp - 1700} PR de Leyenda` : `${profile.rp % 100} / 100 PR para ${TIERS[ti + 1].label}`} · Rival de tu nivel: ${DIFF[rankDiff()].name}</div></div>
+      <button class="btn" id="rkPlay">JUGAR CLASIFICATORIA</button></div>
+    <h3>Rangos</h3><div class="ladder">${RANKS.map((rr, ri) => { const first = TIERS.findIndex(x => x.r === ri); return `<div class="${t.r === ri ? 'cur' : first > ti ? 'dim' : ''}">${rankBadge(first, 54)}<br>${rr.name}${rr.div > 1 ? ' I–III' : ''}</div>`; }).join('')}</div>
+    <h3>Tu carrera</h3><div class="pstats">
+      <div><b>${profile.matches}</b>Partidas</div><div><b>${profile.wins}</b>Victorias</div><div><b>${pct(profile.wins, profile.matches)}</b>% de victorias</div>
+      <div><b>${profile.kills}</b>Eliminaciones</div><div><b>${profile.rMatches}</b>Clasificatorias</div><div><b>${pct(profile.rWins, profile.rMatches)}</b>% en clasificatoria</div>
+      <div><b>${profile.streak}</b>Racha actual</div><div><b style="font-size:20px">${TIERS[profile.best].label}</b>Mejor rango</div><div><b>${editCh.best ? editCh.best.toFixed(2) + ' s' : '—'}</b>Récord de edición</div></div>
+    <h3>Cómo funciona</h3><ul class="rules">
+      <li>Hay 8 rangos: Bronce, Plata, Oro, Platino y Diamante (con divisiones I, II y III), y después Élite, Campeón y Leyenda.</li>
+      <li>Cada división son 100 puntos de rango (PR). Las partidas son al mejor de 5 rondas (gana quien llegue a 3).</li>
+      <li>Ganar da entre 12 y 40 PR (más si ganas con margen); perder quita menos si conseguiste rondas. Cuanto más alto el rango, menos se gana y más se pierde.</li>
+      <li>Protección de rango: puedes perder puntos, pero nunca bajas del rango que ya alcanzaste.</li>
+      <li>El rival se adapta: Bronce juega en Fácil, Plata y Oro en Normal, Platino y Diamante en Difícil, y de Élite en adelante en Pro.</li></ul>`;
+  $('rkPlay').onclick = () => { mode = 'ranked'; renderModes(); showPage('play'); startMatch(); };
+}
+function showPage(pg) {
+  document.querySelectorAll('.topnav [data-page]').forEach(b => b.classList.toggle('sel', b.dataset.page === pg));
+  document.querySelectorAll('#start [data-pg]').forEach(el => el.classList.toggle('hide', pg !== 'play'));
+  $('passPage').classList.toggle('hide', pg !== 'pass');
+  $('careerPage').classList.toggle('hide', pg !== 'career');
+  if (pg === 'pass') renderPass();
+  if (pg === 'career') renderCareer();
+  if (pg === 'play') renderModes();
+  renderPlCard();
+}
+document.querySelectorAll('.topnav [data-page]').forEach(b => b.onclick = () => showPage(b.dataset.page));
+$('plCard').onclick = () => showPage('pass');
+renderPlCard();
 let settingsFrom = 'start', setTab = 'controles';
 const SET_TABS = { controles: 'Controles', raton: 'Ratón', mira: 'Mira', graficos: 'Gráficos', juego: 'Juego' };
 const getPath = path => path.split('.').reduce((o, k) => o[k], settings);
@@ -2798,14 +3363,14 @@ $('setDone').onclick = () => { capture = null; $('settings').classList.add('hide
 $('menuSetBtn').onclick = () => openSettings('start');
 $('pauseSetBtn').onclick = () => openSettings('pause');
 $('resumeBtn').onclick = resumeGame;
-$('quitBtn').onclick = () => { cancelEdit(); roundEndT = 0; countdown = 0; roundLive = false; ghost.visible = false; $('pause').classList.add('hide'); $('hud').classList.add('hide'); $('start').classList.remove('hide'); gameState = 'menu'; clearPieces(); resetEditChallenge(); };
+$('quitBtn').onclick = () => { flushQuests(); saveProfile(); zone.on = false; zoneMesh.visible = false; showPage('play'); cancelEdit(); roundEndT = 0; countdown = 0; roundLive = false; ghost.visible = false; $('pause').classList.add('hide'); $('hud').classList.add('hide'); $('start').classList.remove('hide'); gameState = 'menu'; clearPieces(); resetEditChallenge(); };
 applySettings();
 $('rematchBtn').onclick = startMatch;
-$('menuBtn').onclick = () => { $('end').classList.add('hide'); $('start').classList.remove('hide'); gameState = 'menu'; clearPieces(); resetEditChallenge(); };
+$('menuBtn').onclick = () => { zone.on = false; zoneMesh.visible = false; showPage('play'); $('end').classList.add('hide'); $('start').classList.remove('hide'); gameState = 'menu'; clearPieces(); resetEditChallenge(); };
 requestAnimationFrame(frame);
 
 // para pruebas automatizadas
-window.__duel = { get editCh() { return editCh; }, hurt: (who, n) => damage(who === 'bot' ? bot : player, n, who === 'bot' ? player : bot, 'rifle'), get player() { return player; }, startEdit, confirmEdit, editClick, get editing() { return editing; }, aimTarget, settings, openSettings, get preview() { return previewEnt; }, pause: pauseGame, resume: resumeGame, applySettings, get bot() { return bot; }, score, pieces, get state() { return gameState; }, get live() { return roundLive; }, fire: () => playerPrimary(true), build: k => tryBuild(player, k), makePiece, destroyPiece, slopes, get collapsing() { return collapsing; }, get debris() { return debris; }, moveEntity, hasSupport, EDIT_RANGE, pieceDist, setMode: (m, d) => { mode = m; diff = d; } };
+window.__duel = { get editCh() { return editCh; }, hurt: (who, n) => damage(who === 'bot' ? bot : player, n, who === 'bot' ? player : bot, 'rifle'), get player() { return player; }, startEdit, confirmEdit, editClick, get editing() { return editing; }, aimTarget, settings, openSettings, get preview() { return previewEnt; }, pause: pauseGame, resume: resumeGame, applySettings, get bot() { return bot; }, score, pieces, get state() { return gameState; }, get live() { return roundLive; }, fire: () => playerPrimary(true), build: k => tryBuild(player, k), makePiece, destroyPiece, slopes, get collapsing() { return collapsing; }, get debris() { return debris; }, moveEntity, hasSupport, EDIT_RANGE, pieceDist, setMode: (m, d) => { mode = m; diff = d; }, get profile() { return profile; }, gainXP, showPage, zone, endMatch, levelInfo, tierOf };
 </script>
 </body>
 </html>

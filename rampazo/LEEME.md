@@ -1,6 +1,6 @@
 # RAMPAZO 1v1 — información del juego
 
-Duelo de construcción 1 contra 1 en 3D, para el navegador. Todo el juego está en un solo archivo: `index.html` (unas 2.810 líneas, 173 KB). Usa la librería 3D **Three.js 0.160**, que se carga desde internet al abrir el archivo.
+Duelo de construcción 1 contra 1 en 3D, para el navegador. Todo el juego está en un solo archivo: `index.html` (unas 3.376 líneas. 219 KB). Usa la librería 3D **Three.js 0.160**, que se carga desde internet al abrir el archivo.
 
 Personajes, nombres, arena y sonidos son originales. Los sonidos se generan con código y no hay imágenes externas.
 
@@ -23,6 +23,8 @@ Personajes, nombres, arena y sonidos son originales. Los sonidos se generan con 
 - **Personajes:** chaqueta con cuello, cremallera y hombreras; cinturón; rodilleras, botas y guantes; y ojos con brillo.
 - **Armas:** un modelo distinto para cada una, con detalles del color de su rareza.
 - **Inventario y menú:** casillas con fondo del color de la rareza, iconos de vida, escudo, materiales y construcción, y un pedestal iluminado en el menú.
+- **Menú principal:** barra de arriba con Jugar, Pase, Clasificatoria, Taquilla y Ajustes, y una tarjeta con tu nivel, título y rango. Los modos se eligen en tarjetas con icono, categoría y descripción.
+- **Minimapa:** arriba a la derecha. Muestra las piezas por material, tu flecha, el rival cuando lo ves y el anillo de la zona.
 
 ---
 
@@ -34,12 +36,39 @@ Personajes, nombres, arena y sonidos son originales. Los sonidos se generan con 
 4. Haz clic en la pantalla para capturar el ratón. Con `Esc` pausas.
 
 ### Modos
-| Modo | Qué es |
-|---|---|
-| Duelo | Arena abierta. Gana quien llegue primero a 5 rondas |
-| Box fight | Cada uno empieza encerrado en una caja de metal |
-| Práctica | Materiales infinitos y un maniquí que se mueve de lado a lado |
-| Reto de edición | Delante aparece una pieza (muro, suelo o cono) con casillas rojas. Quítalas lo más rápido que puedas: son 10 ediciones contrarreloj y se guarda tu récord. Si quitas casillas de más, la pieza se reinicia |
+| Modo | Categoría | Qué es |
+|---|---|---|
+| Duelo | Clásico | Arena abierta. Gana quien llegue primero a 5 rondas |
+| Clasificatoria | Competitivo | Al mejor de 5 rondas (gana quien llegue a 3). Ganas o pierdes puntos de rango y el rival se ajusta a tu rango (ver abajo) |
+| Box fight | Clásico | Cada uno empieza encerrado en una caja de metal. Primero a 5 |
+| Zona que cierra | Arcade | Un anillo de energía morado empieza a cerrarse a los 8 s y tarda 40 s en quedar pequeño. Fuera del anillo pierdes vida cada medio segundo (más cuanto más cerrado está). El rival también vuelve al anillo. Primero a 3 |
+| Sin construir | Arcade | No se puede construir. El mapa trae muros de piedra y madera repartidos para cubrirse. Primero a 3 |
+| Práctica | Entrenamiento | Materiales infinitos y un maniquí que se mueve de lado a lado |
+| Reto de edición | Entrenamiento | Delante aparece una pieza (muro, suelo o cono) con casillas rojas. Quítalas lo más rápido que puedas: son 10 ediciones contrarreloj y se guarda tu récord. Si quitas casillas de más, la pieza se reinicia |
+
+### Clasificatoria (rangos)
+- **8 rangos:** Bronce, Plata, Oro, Platino y Diamante (cada uno con divisiones I, II y III), y después Élite, Campeón y Leyenda. Cada uno tiene su escudo de color.
+- **Puntos de rango (PR):** cada división son 100 PR. Ganar da entre 12 y 40 PR, más si ganas con margen. Perder quita menos si conseguiste alguna ronda. Cuanto más alto el rango, menos se gana y más se pierde.
+- **Protección de rango:** puedes perder puntos, pero nunca bajas del rango que ya alcanzaste.
+- **Rival según tu rango:** Bronce juega en Fácil, Plata y Oro en Normal, Platino y Diamante en Difícil, y de Élite en adelante en Pro.
+- **Pestaña Clasificatoria:** tu escudo, la barra hasta la siguiente división, la escalera de rangos y tu carrera (partidas, victorias, % de victorias, eliminaciones, racha, mejor rango y récord de edición).
+- Al terminar una clasificatoria se ve cuántos PR ganaste o perdiste, y si ascendiste.
+
+### Pase de temporada
+- **30 niveles** con una recompensa en cada uno. Todas son gratis.
+- **Recompensas:** personajes nuevos (Brasa, Coral, Tuerca, Neón, Obsidiana, Aurora, Lava y Dorado), cabezas (cresta, auriculares, antena, orejas, cuernos, halo y corona), espaldas (tanques, alas, capa y propulsor), caras (gafas de sol y pañuelo) y títulos que se muestran en tu tarjeta (Constructor, Editor veloz, Rey de la rampa…).
+- Lo que aún no tienes sale bloqueado en la Taquilla con el nivel que lo desbloquea.
+- **Cómo se gana experiencia (XP):**
+  - Eliminación: 100 (+25 si es a la cabeza).
+  - Ronda ganada: 75.
+  - Partida terminada: 200, y la victoria +300.
+  - Primera victoria del día: +400.
+  - Racha de victorias: hasta +250.
+  - Construir, editar y hacer daño también suman al final de la partida.
+  - Reto de edición completado: 200 (+100 si es récord).
+- **Misiones diarias:** cada día salen 3 misiones (por ejemplo "Construye 80 piezas" o "Elimina 3 veces con la escopeta"). Cada una da 500 XP.
+- Al subir de nivel sale un aviso con lo desbloqueado. Al final de cada partida se ve el desglose de XP y la barra de nivel.
+- Tu nivel, experiencia, rango y estadísticas se guardan en este navegador.
 
 ### Dificultades del rival
 | Dificultad | Cómo juega |
@@ -49,6 +78,10 @@ Personajes, nombres, arena y sonidos son originales. Los sonidos se generan con 
 | Difícil | Sube en rampa si tienes la altura y se encierra para curarse |
 | Pro | Construye sin parar y apunta mejor |
 
+### Movimiento
+- **Trepar:** si mantienes `Espacio` frente a un obstáculo de entre 0,6 y 3,6 m (un muro bajo, una rampa, una caja), el personaje se agarra al borde y sube encima.
+- **Deslizarse:** corriendo, pulsa agacharse.
+
 ### Combate
 - **Disparos:** destello en el cañón, temblor de cámara al disparar (más fuerte con escopeta y francotirador) y al recibir daño, y marcas de bala en las piezas.
 - **Indicador de daño:** cuando te disparan, sale un arco rojo alrededor de la mira que apunta hacia el rival.
@@ -57,6 +90,8 @@ Personajes, nombres, arena y sonidos son originales. Los sonidos se generan con 
 - **Escudo roto:** cuando le rompes el escudo al rival suena un aviso y sale el texto "ESCUDO ROTO".
 - **Eliminación:** el personaje eliminado gira, sube y se deshace en cubos.
 - **Registro de eliminaciones:** arriba a la derecha dice quién eliminó a quién, con qué arma y si fue a la cabeza.
+- **Espectador:** cuando te eliminan, la cámara sigue al rival y gira a su alrededor hasta la siguiente ronda.
+- **Baile de victoria:** al ganar una ronda tu personaje baila.
 - **Rival listo:** desde Normal, si está detrás de un muro suyo, abre una ranura para asomarse, dispara y la vuelve a cerrar. Lo hace sobre todo en Box fight.
 
 ### Sonido
@@ -70,7 +105,8 @@ Personajes, nombres, arena y sonidos son originales. Los sonidos se generan con 
 - **Armas:** pico, escopeta (legendaria), rifle de asalto (épico), subfusil (raro) y francotirador (épico), más 4 mini escudos (+25 de escudo cada uno).
 - **Vida y escudo:** 100 + 100.
 - **Materiales:** 500 de madera, 300 de piedra y 200 de metal. Cada pieza cuesta 10.
-- **Piezas:** cada casilla mide 5 × 5 metros. Resistencia: madera 150, piedra 300 y metal 500. Nacen débiles y se refuerzan en un segundo.
+- **Piezas:** cada casilla mide 5 × 5 metros. Resistencia final: madera 150, piedra 300 y metal 500.
+- **Tiempo de construcción:** cada pieza nace con poca vida y se va llenando mientras se ve como un plano azul brillante. La madera es la más rápida (nace con 90 y tarda 4 s), la piedra tarda 11,5 s (nace con 100) y el metal 24,5 s (nace con 110). Por eso la madera es buena para construir rápido y el metal aguanta más cuando ya está terminado.
 - **Física de las construcciones:**
   - Para colocar una pieza tiene que tocar el suelo o algo ya construido. No se construye flotando, y la vista fantasma se pone roja.
   - Una pieza aguanta si está unida, aunque sea a través de otras, a algo que toca el suelo. Si rompes la base, lo que queda en el aire se cae en cascada: primero lo más cercano a la rotura, y cada pieza cae girando.
@@ -124,13 +160,14 @@ Personajes, nombres, arena y sonidos son originales. Los sonidos se generan con 
 | Ratón | Sensibilidad general, al apuntar y con mira telescópica; invertir eje vertical |
 | Mira | Estilo (cruz, cruz y punto, punto, círculo, en T), color, tamaño, separación, grosor, borde |
 | Gráficos | Calidad (automática, baja, media o alta), campo de visión, bordes de piezas y contador de FPS. Si el equipo va lento, la automática baja primero la resolución, luego quita las sombras, después oculta los árboles y por último usa materiales simples. La baja va sin sombras ni árboles y con materiales simples |
-| Juego | Volumen, distancia de la cámara, hombro izquierdo o derecho, editar al soltar, retraso al construir seguido, recarga automática, números de daño, vida del rival |
+| Juego | Volumen, distancia de la cámara, hombro izquierdo o derecho, editar al soltar, retraso al construir seguido, recarga automática, números de daño, vida del rival, ver los sonidos |
 
-Los ajustes y tu personaje se guardan en el navegador (`localStorage`).
+Los ajustes, tu personaje y tu progreso (nivel, rango, misiones) se guardan en el navegador (`localStorage`).
 
 ## Taquilla
-- **Personajes:** 7 originales (Chispa, Glaciar, Musgo, Medianoche, Brasa, Coral y Tuerca).
-- **Qué se cambia:** nombre, colores (camiseta, pantalón, piel y detalles), cabeza (pelo, gorra, gorro, casco, cresta, antena, auriculares), espalda (mochila, alas, tanques, nada) y cara (visor u ojos).
+- **Personajes:** 12 originales. Chispa, Glaciar, Musgo y Medianoche vienen desde el principio; Brasa, Coral, Tuerca, Neón, Obsidiana, Aurora, Lava y Dorado se desbloquean con el pase.
+- **Qué se cambia:** nombre, colores (camiseta, pantalón, piel y detalles), cabeza (pelo, gorra, gorro, casco, cresta, antena, auriculares, orejas, cuernos, halo, corona), espalda (mochila, alas, tanques, capa, propulsor, nada) y cara (visor, ojos, gafas de sol, pañuelo).
+- Las piezas que aún no tienes salen bloqueadas con el nivel del pase que las desbloquea.
 - **Vista previa:** el personaje se gira arrastrando, y el botón "Probar baile" muestra el baile.
 
 ---
@@ -157,9 +194,35 @@ Los ajustes y tu personaje se guardan en el navegador (`localStorage`).
 | 1716 | MENÚ | Taquilla, pantalla de ajustes y botones |
 
 ### Cambios fáciles
-- **Rondas para ganar:** `const WIN_ROUNDS = 5;`
+- **Rondas para ganar:** el campo `rounds` de cada modo en `MODES`.
+- **Rangos, pase y misiones:** los objetos `RANKS`, `PASS` y `QUESTS`. La experiencia por nivel está en `xpNeed`.
 - **Daño, cargador o cadencia de cada arma:** el objeto `WEAPONS`.
 - **Resistencia de los materiales:** el objeto `MATS`.
 - **Puntería y comportamiento del rival:** el objeto `DIFF`, donde `err` es el error de puntería, `react` el tiempo de reacción, `build` las ganas de construir y `fire` lo lento que dispara.
 - **Materiales al empezar:** la función `loadout`.
 - **Nuevo personaje:** añade una línea a `PRESETS`.
+
+---
+
+## Investigación: qué tiene un juego de construcción tipo battle royale y qué tiene Rampazo
+
+| Elemento | Cómo suele funcionar en el género | En Rampazo |
+|---|---|---|
+| Materiales | Madera rápida y débil, piedra intermedia, metal lento y resistente | Igual: 90→150 en 4 s, 100→300 en 11,5 s, 110→500 en 24,5 s, con plano azul mientras se construye |
+| Movimiento | Correr, deslizarse y trepar a bordes | Correr, deslizarse y trepar obstáculos de hasta 3,6 m |
+| HUD | Minimapa arriba a la derecha, vida y escudo abajo a la izquierda | Igual |
+| Clasificatoria | Rangos Bronce → Diamante con divisiones I–III y tres rangos únicos arriba; puntos por resultado | 8 rangos propios con PR, protección de rango y rival según tu rango |
+| Pase de temporada | Niveles con recompensas, experiencia por jugar y misiones diarias | 30 niveles gratis, XP por partida y 3 misiones diarias |
+| Menú | Barra superior con Jugar, Pase, Taquilla… | Igual, con tarjeta de nivel y rango |
+| Iluminación | Luz global y cielo realista | Mapeo de tonos de cine, luz ambiental del cielo y sombras suaves |
+
+Fuentes consultadas:
+- Materiales y tiempos de construcción: [Gfinity](https://www.gfinityesports.com/fortnite/how-to-build-in-fortnite-keybinds-tips-templates/), [PCGamesN](https://www.pcgamesn.com/fortnite/fortnite-building-buffs), [ComicBook](https://comicbook.com/gaming/news/fortnite-building-materials-nerf/?nb=1)
+- Movimiento: [GGRecon](https://www.ggrecon.com/guides/fortnite-how-to-tactical-sprint-and-mantle/), [documentación de Epic](https://dev.epicgames.com/documentation/fortnite/player-movements-in-fortnite-creative)
+- HUD: [Gfinity](https://www.gfinityesports.com/fortnite/fortnite-beginners-guide-2021-tips-and-tricks-you-need-to-know-when-starting-out-pc-switch-xbox-one-series-s-x-ps4-ps5/)
+- Iluminación: [Unreal Engine](https://www.unrealengine.com/en-US/tech-blog/lumen-brings-real-time-global-illumination-to-fortnite-battle-royale-chapter-4)
+- Menú: [Dexerto](https://www.dexerto.com/fortnite/fortnite-finally-gets-long-awaited-ui-revamp-2329726)
+- Clasificatoria: [esports.gg](https://esports.gg/guides/fortnite/fortnite-ranks/), [esports.net](https://www.esports.net/wiki/guides/fortnite-ranks/), [GGRecon](https://cms.ggrecon.com/guides/fortnite-ranked/)
+- Pase de temporada: [esports.gg](https://esports.gg/news/fortnite/how-fortnite-battle-pass-works/)
+
+Todo lo de Rampazo (nombres de rangos, personajes, recompensas, iconos y sonidos) es original; solo se toma la idea general de cómo funcionan estos sistemas.
