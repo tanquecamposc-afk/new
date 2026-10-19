@@ -67,6 +67,8 @@
   .pmode { background: rgba(8,14,40,.75); border: 2px solid rgba(255,255,255,.2); border-radius: 10px; padding: 8px 14px; font-weight: 800; text-align: right; }
   .pmode small { display: block; color: var(--dim); font-weight: 700; font-size: 12px; letter-spacing: .12em; text-transform: uppercase; }
   .btn.big { font-size: 34px; padding: 16px 64px; }
+  .touchnote { display: none; max-width: 320px; font-weight: 700; font-size: 13px; color: var(--dim); text-align: right; }
+  @media (hover: none) and (pointer: coarse) { .touchnote { display: block; } }
   #locker { background: linear-gradient(90deg, transparent 0 42%, rgba(12,22,58,.9) 62%); align-items: flex-end; padding-right: max(4vw, 16px); }
   #locker .panel { width: min(440px, 100%); max-height: 92vh; overflow-y: auto; }
   .swatches { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
@@ -427,6 +429,7 @@
     <div class="lobbyq" id="lobbyQ" title="Ver el pase de temporada"></div>
     <div class="pmode" id="playMode"></div>
     <button class="btn big" id="playBtn">¡A PELEAR!</button>
+    <div class="touchnote">Se juega con teclado y ratón (en celular puedes ver el menú, el pase y la taquilla).</div>
   </div>
 </div>
 
@@ -609,7 +612,7 @@ function ensureDaily() {
   // tres misiones distintas cada día, elegidas a partir de la fecha
   let h = 0; for (const c of today()) h = (h * 31 + c.charCodeAt(0)) >>> 0;
   const ids = Object.keys(QUESTS), list = [];
-  while (list.length < 3) { h = (h * 1103515245 + 12345) >>> 0; const id = ids[h % ids.length]; if (!list.some(q => q.id === id)) list.push({ id, p: 0, done: false }); }
+  while (list.length < 3) { h = (Math.imul(h, 1103515245) + 12345) >>> 0; const id = ids[(h >>> 16) % ids.length]; if (!list.some(q => q.id === id)) list.push({ id, p: 0, done: false }); }
   profile.daily = { date: today(), list };
   return profile.daily;
 }
@@ -2738,7 +2741,7 @@ function updateCamera(dt) {
   camFollowY += (e.pos.y - camFollowY) * Math.min(1, dt * 16);
   const target = _camT.set(e.pos.x, camFollowY + camY, e.pos.z);
   const it = e.inv[e.cur];
-  const ads = aiming && e.alive && it && it.kind === 'weapon' && !e.building && !editing;
+  const ads = !spec && aiming && e.alive && it && it.kind === 'weapon' && !e.building && !editing;
   const side = settings.camLeft ? -1 : 1, k = settings.camDist;
   // posiciones de cámara: apuntando, bailando, construyendo/editando y normal
   if (ads) _camWant.set(0.7 * side, 0.3, 2.1);
@@ -2781,7 +2784,7 @@ let lastScoped = false;
 // ============================================================
 let countdown = 0, roundEndT = 0, lastCount = 0;
 // anillo de energía: tarda 8 s en empezar a cerrarse y 40 s en llegar a su tamaño final; fuera de él quita vida
-const zone = { on: false, cx: 0, cz: 0, r: 0, r0: 72, r1: 9, t: 0 };
+const zone = { on: false, cx: 0, cz: 0, r: 0, r0: 100, r1: 9, t: 0 };
 // pared de tormenta: franjas y nubes moradas que se mueven (textura dibujada aquí, sin imágenes)
 const stormTex = (() => {
   const c = document.createElement('canvas'); c.width = 256; c.height = 256; const g = c.getContext('2d');
@@ -2816,7 +2819,7 @@ function updateZone(dt) {
   hudSet(z, 'text', out ? '¡Estás fuera de la zona! Vuelve al anillo' : zone.t < 8 ? `La zona empieza a cerrarse en ${Math.ceil(8 - zone.t)} s` : k < 1 ? 'La zona se está cerrando' : 'Zona cerrada del todo');
   if (!roundLive) return;
   for (const e of [player, bot]) {
-    if (!e.alive || !outOfZone(e)) { e.zoneT = 0; continue; }
+    if (!e.alive || !outOfZone(e) || zone.t < 8) { e.zoneT = 0; continue; }
     e.zoneT = (e.zoneT || 0) + dt;
     if (e.zoneT >= 0.5) { e.zoneT -= 0.5; damage(e, 4 + 4 * k, null, 'zone', false, true); if (e === player) sfx('hit'); }
   }
@@ -2878,12 +2881,17 @@ function respawn(e) {
     if (d > bd) { bd = d; best = [x, z]; }
   }
   loadout(e); bindParts(e); e.ch.group.rotation.set(0, 0, 0);
-  e.pos.set(best[0], 7, best[1]); e.vel.set(0, 0, 0);
+  if (mode === 'practice') { const [c] = e === bot ? [spawnPositions()[1]] : [spawnPositions()[0]]; best = [c[0] * S + S / 2, c[1] * S + S / 2]; }
+  e.pos.set(best[0], mode === 'practice' ? 0.5 : 7, best[1]); e.vel.set(0, 0, 0);
   if (e === bot) { bot.ai = newAI(); bot.ai.engageT = now; } else { refreshHotbar(); banner('¡DE VUELTA!', 'Caes desde el cielo', 1.2); }
   burst(e.pos.clone(), 0x3de0ff, 24); sfx('go');
 }
 function endRound(winner) {
   if (!roundLive) return;
+  if (mode === 'practice') {
+    if (winner === player) { banner('¡Bien ahí!', 'El maniquí reaparece', 1.6); sfx('win'); }
+    respawnQ.push({ e: winner === player ? bot : player, t: 1.8 }); return;
+  }
   if (mode === 'respawn') {
     if (winner === player) score.me++; else score.bot++;
     updateScore();
@@ -2895,10 +2903,6 @@ function endRound(winner) {
     if (winner === player) { player.emoteT = 2.6; banner('¡GANASTE!', `Primero en llegar a ${winRounds()} eliminaciones`, 2.6); sfx('win'); }
     else { banner('PARTIDA PERDIDA', `${bot.name} llegó antes a ${winRounds()}`, 2.6); sfx('lose'); bot.emoteT = 2.6; }
     roundEndT = -2.8; return;
-  }
-  if (mode === 'practice') {
-    if (winner === player) { banner('¡Bien ahí!', 'El maniquí reaparece', 1.6); sfx('win'); }
-    roundEndT = 1.8; return;
   }
   if (mode === 'edits') { banner('¡CUIDADO!', 'Te caíste: el reto vuelve a empezar', 1.6); roundEndT = 1.8; return; }
   if (winner === player) score.me++; else score.bot++;
@@ -2924,6 +2928,7 @@ function updateRounds(dt) {
   else if (roundEndT < 0) { roundEndT += dt; if (roundEndT >= 0) { roundEndT = 0; endMatch(); } }
 }
 function updateScore() {
+  hudCache.delete('scGoaltext');
   $('scMe').textContent = score.me; $('scBot').textContent = score.bot;
   if (mode === 'edits') {
     $('scMe').textContent = `${editCh.n}/${EDIT_GOAL}`; $('scBot').textContent = editCh.best ? editCh.best.toFixed(1) + ' s' : '—';
@@ -2957,7 +2962,7 @@ function rankedResult(win) {
   profile.rp = Math.max(floor, before + d);   // protección: no bajas del rango que ya tienes
   profile.best = Math.max(profile.best, tierOf(profile.rp));
   profile.rMatches++; if (win) profile.rWins++;
-  return { before, after: profile.rp, d: profile.rp - before };
+  return { before, after: profile.rp, d: profile.rp - before, raw: d, floor };
 }
 function matchRewards(win) {
   flushQuests();
@@ -2990,10 +2995,10 @@ function matchRewards(win) {
   if (rk) {
     const t0 = tierOf(rk.before), t1 = tierOf(rk.after), up = t1 > t0, r = RANKS[TIERS[t1].r];
     h += `<div class="panel"><h2>Clasificatoria</h2><div class="rkline">${rankBadge(t1, 72)}<div style="flex:1"><div style="font:400 26px var(--display);color:${r.col}">${TIERS[t1].label}</div>
-      <div class="delta" style="color:${rk.d >= 0 ? '#6cf08a' : '#ff6a7d'}">${rk.d >= 0 ? '+' : ''}${rk.d} PR</div></div></div>
-      <div class="xpbar"><i id="endRkBar" style="width:${up ? 0 : (rk.before % 100)}%"></i></div>
+      <div class="delta" style="color:${rk.d > 0 ? '#6cf08a' : rk.d < 0 ? '#ff6a7d' : 'var(--dim)'}">${rk.d > 0 ? '+' : ''}${rk.d} PR</div></div></div>
+      <div class="xpbar"><i id="endRkBar" style="width:${up ? 0 : t1 < t0 ? (rk.after % 100) : (rk.before % 100)}%"></i></div>
       <div class="row2">${t1 === TIERS.length - 1 ? `${rk.after - 1700} PR de Leyenda` : `${rk.after % 100} / 100 PR para ${TIERS[t1 + 1].label}`}</div>
-      ${up ? `<div class="lvup">¡ASCENSO! Ahora eres ${TIERS[t1].label}</div>` : rk.d < 0 && rk.after === rk.before ? '<div class="row2">Protección de rango: no bajas de tu rango actual</div>' : ''}</div>`;
+      ${up ? `<div class="lvup">¡ASCENSO! Ahora eres ${TIERS[t1].label}</div>` : rk.raw < 0 && rk.after === rk.floor ? '<div class="row2">Protección de rango: no bajas de tu rango actual</div>' : ''}</div>`;
   }
   $('endProg').innerHTML = h;
   requestAnimationFrame(() => requestAnimationFrame(() => {
@@ -3308,9 +3313,12 @@ chips('diffs', Object.entries(DIFF), () => diff, v => { diff = v; renderModes();
 // ---------- taquilla ----------
 let charCfg = { ...PRESETS[0] };
 try { const c = JSON.parse(localStorage.getItem('rampazo-personaje') || 'null'); if (c) charCfg = { ...PRESETS[0], ...c }; } catch (err) { /* sin almacenamiento */ }
-if (!HATS[charCfg.hat] || lockLv('hat', charCfg.hat)) charCfg.hat = 'gorra';
-if (!PACKS[charCfg.pack] || lockLv('pack', charCfg.pack)) charCfg.pack = 'mochila';
-if (!FACES[charCfg.face] || lockLv('face', charCfg.face)) charCfg.face = 'visor';
+function freeParts() {
+  if (!HATS[charCfg.hat] || lockLv('hat', charCfg.hat)) charCfg.hat = 'gorra';
+  if (!PACKS[charCfg.pack] || lockLv('pack', charCfg.pack)) charCfg.pack = 'mochila';
+  if (!FACES[charCfg.face] || lockLv('face', charCfg.face)) charCfg.face = 'visor';
+}
+freeParts();
 let previewEnt = null, dragYaw = false;
 function rebuildPreview() {
   const yaw = previewEnt ? previewEnt.yaw : Math.PI, emote = previewEnt ? previewEnt.emoteT : 0;
@@ -3322,7 +3330,7 @@ function rebuildPreview() {
   try { localStorage.setItem('rampazo-personaje', JSON.stringify(charCfg)); } catch (err) { /* sin almacenamiento */ }
 }
 function renderLocker() {
-  chips('presetChips', PRESETS.map((pr, i) => [String(i), pr]), () => String(PRESETS.findIndex(pr => pr.name === charCfg.name)), v => { charCfg = { ...PRESETS[+v] }; rebuildPreview(); renderLocker(); }, pr => pr.shirt, (k, pr) => lockLv('skin', pr.name));
+  chips('presetChips', PRESETS.map((pr, i) => [String(i), pr]), () => String(PRESETS.findIndex(pr => pr.name === charCfg.name)), v => { charCfg = { ...PRESETS[+v] }; freeParts(); rebuildPreview(); renderLocker(); }, pr => pr.shirt, (k, pr) => lockLv('skin', pr.name));
   chips('hatChips', Object.entries(HATS), () => charCfg.hat, v => { charCfg.hat = v; rebuildPreview(); }, null, k => lockLv('hat', k));
   chips('packChips', Object.entries(PACKS), () => charCfg.pack, v => { charCfg.pack = v; rebuildPreview(); }, null, k => lockLv('pack', k));
   chips('faceChips', Object.entries(FACES), () => charCfg.face, v => { charCfg.face = v; rebuildPreview(); }, null, k => lockLv('face', k));
@@ -3417,7 +3425,7 @@ function renderCareer() {
     <h3>Cómo funciona</h3><ul class="rules">
       <li>Hay 8 rangos: Bronce, Plata, Oro, Platino y Diamante (con divisiones I, II y III), y después Élite, Campeón y Leyenda.</li>
       <li>Cada división son 100 puntos de rango (PR). Las partidas son al mejor de 5 rondas (gana quien llegue a 3).</li>
-      <li>Ganar da entre 12 y 40 PR (más si ganas con margen); perder quita menos si conseguiste rondas. Cuanto más alto el rango, menos se gana y más se pierde.</li>
+      <li>Ganar da entre 12 y 48 PR (más si ganas con margen); perder quita menos si conseguiste rondas. Cuanto más alto el rango, menos se gana y más se pierde.</li>
       <li>Protección de rango: puedes perder puntos, pero nunca bajas del rango que ya alcanzaste.</li>
       <li>El rival se adapta: Bronce juega en Fácil, Plata y Oro en Normal, Platino y Diamante en Difícil, y de Élite en adelante en Pro.</li></ul>`;
   $('rkPlay').onclick = () => { mode = 'ranked'; renderModes(); showPage('play'); startMatch(); };
@@ -3496,7 +3504,10 @@ $('setDone').onclick = () => { capture = null; $('settings').classList.add('hide
 $('menuSetBtn').onclick = () => openSettings('start');
 $('pauseSetBtn').onclick = () => openSettings('pause');
 $('resumeBtn').onclick = resumeGame;
-$('quitBtn').onclick = () => { flushQuests(); saveProfile(); zone.on = false; zoneMesh.visible = false; showPage('play'); cancelEdit(); roundEndT = 0; countdown = 0; roundLive = false; ghost.visible = false; $('pause').classList.add('hide'); $('hud').classList.add('hide'); $('start').classList.remove('hide'); gameState = 'menu'; clearPieces(); resetEditChallenge(); };
+$('quitBtn').onclick = () => {
+  // abandonar una clasificatoria a medias cuenta como derrota
+  if (mode === 'ranked' && (roundLive || countdown > 0 || roundEndT > 0)) { const rk = rankedResult(false); profile.matches++; profile.streak = 0; toast(`<b>${rk.d} PR</b> · Abandonar una clasificatoria cuenta como derrota`, 'lvl'); }
+  flushQuests(); saveProfile(); zone.on = false; zoneMesh.visible = false; showPage('play'); cancelEdit(); roundEndT = 0; countdown = 0; roundLive = false; ghost.visible = false; $('pause').classList.add('hide'); $('hud').classList.add('hide'); $('start').classList.remove('hide'); gameState = 'menu'; clearPieces(); resetEditChallenge(); };
 applySettings();
 $('rematchBtn').onclick = startMatch;
 $('menuBtn').onclick = () => { zone.on = false; zoneMesh.visible = false; showPage('play'); $('end').classList.add('hide'); $('start').classList.remove('hide'); gameState = 'menu'; clearPieces(); resetEditChallenge(); };
