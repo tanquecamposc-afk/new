@@ -8,6 +8,9 @@
 	  destello al recibir daño y brillo al morir.
 	· Los cristales del End: núcleo rosa con dos marcos que giran y el haz
 	  que cura al dragón.
+	· Bed Wars: cada mapa tiene su ambiente y su hora fija (nunca se juega de noche):
+	  Jardín soleado, Invierno con bruma fría, Infierno al atardecer rojo y Desierto
+	  con calima dorada.
 ]]
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -18,6 +21,7 @@ local Comp = ReplicatedStorage:WaitForChild("Blockverse")
 local Config = require(Comp:WaitForChild("Config"))
 local Generador = require(Comp:WaitForChild("Generador"))
 local Dimensiones = require(Comp:WaitForChild("Dimensiones"))
+local Arenas = require(Comp:WaitForChild("Arenas"))
 
 local BS = Config.BLOQUE
 local jugador = Players.LocalPlayer
@@ -73,6 +77,31 @@ local function aplicar(dim, biomaN)
 	end
 	if nubes then
 		nubes.Enabled = false
+	end
+	-- Mapas de Bed Wars: {color de la bruma, densidad, ambiente, nubes}
+	local AMBIENTE_BW = {
+		bw_jardin = { Color3.fromRGB(199, 214, 235), 0.28, Color3.fromRGB(140, 140, 150), true },
+		bw_invierno = { Color3.fromRGB(205, 225, 245), 0.4, Color3.fromRGB(150, 165, 190), true },
+		bw_infierno = { Color3.fromRGB(255, 120, 80), 0.42, Color3.fromRGB(160, 95, 80), false },
+		bw_desierto = { Color3.fromRGB(240, 205, 150), 0.38, Color3.fromRGB(165, 145, 120), true },
+	}
+	local A = AMBIENTE_BW[dim]
+	if A then
+		if nubes then
+			nubes.Enabled = A[4]
+		end
+		Lighting.Ambient = A[3]:Lerp(Color3.new(0, 0, 0), 0.35)
+		Lighting.OutdoorAmbient = A[3]
+		Lighting.Brightness = original and original.Brightness or 2
+		Lighting.GlobalShadows = original == nil or original.GlobalShadows
+		if atm then
+			atm.Density = A[2]
+			atm.Color = A[1]
+			atm.Decay = A[1]:Lerp(Color3.new(0.4, 0.4, 0.45), 0.4)
+			atm.Haze = 1.4
+			atm.Glare = dim == "bw_desierto" and 0.6 or 0.2
+		end
+		return
 	end
 	if dim == "nether" then
 		local col = hex(Dimensiones.NIEBLA_NETHER[(biomaN or 0) + 1] or 0x3a100a)
@@ -281,6 +310,10 @@ function DV.iniciar()
 		local root = ch and ch:FindFirstChild("HumanoidRootPart")
 		if root then
 			local dim = DV.dimensionEn(root.Position)
+			local tema = jugador:GetAttribute("TemaBW")
+			if tema and Arenas.TEMAS_BW[tema] then
+				dim = "bw_" .. tema
+			end
 			if dim == "superficie" and not original then
 				-- todavía no se cambió nada
 			elseif dim ~= actual or dim == "nether" then
@@ -304,6 +337,9 @@ function DV.iniciar()
 				Lighting.ClockTime = 0
 			elseif dim == "end" then
 				Lighting.ClockTime = 0
+			elseif tema and Arenas.TEMAS_BW[tema] then
+				-- La hora del mapa (en el web, 0.25 es mediodía)
+				Lighting.ClockTime = 6 + Arenas.TEMAS_BW[tema].hora * 24
 			end
 		end
 		-- Dragones

@@ -115,6 +115,8 @@ Con **Rojo**, `default.project.json` monta el mismo árbol desde `src/`.
   - **Efectos de baja final** que se compran: fuegos artificiales, corazones, rayo, alma en pena y confeti.
   - Etiqueta de equipo y nivel encima de cada jugador, compañeros resaltados, registro de bajas arriba a la derecha y pantalla final con MVP, monedas, nivel, misiones y «Jugar otra vez».
   - Muerte súbita: el vacío sube poco a poco.
+  - Cada mapa tiene su ambiente y su hora (Jardín soleado, Invierno con bruma fría, Infierno al atardecer rojo, Desierto con calima): nunca se juega de noche.
+  - Bots más listos: rodean los obstáculos, sacan lana de reserva si se quedan sin ella lejos de casa y, cuando llegan a una cama, van a por ella en vez de perseguir a cualquiera.
   - Espectadores: botón «Mirar a otro» para seguir a los que siguen vivos.
 - **Mazmorras** (`modos52.js` y `modos53.js`), una para cada jugador:
   - Tres ambientaciones: Catacumbas, Cripta y Fortaleza del Nether.
@@ -127,6 +129,8 @@ Con **Rojo**, `default.project.json` monta el mismo árbol desde `src/`.
   - Ayudantes que recogen madera y piedra.
   - Generadores de golems, torres de flechas, muros, reparar la aldea y mejorar golems.
   - Órdenes a los golems, piglins que atacan y asaltos cada cierto tiempo.
+- **Números de daño** que saltan al golpear (amarillos con «!» en los críticos).
+- **Guardado seguro:** la partida se guarda al salir y cada 2 minutos, con los encantamientos. Si el DataStore falla al entrar, no se guarda nada para no pisar lo que había.
 - **Día y noche** de 20 minutos, cielo, nubes, niebla, brillo e iluminación *Future*.
 - **Multijugador:**
   - El servidor manda.
@@ -216,6 +220,7 @@ Para ser claros, esto **no es igual** que en el juego web:
     - Supervivencia: los bloques llegan a todos, cofre compartido, sin golpes entre jugadores, objetos al morir y guardado al salir.
     - Bed Wars con 3 y 4 jugadores: votación, compra de kits y efectos (y que se guarden), equipos, golpes, escudo de cama, trampolín, momentos de caos y cofre del cielo, baja final con efecto, espectador, irse a mitad, victoria con recompensas, «Jugar otra vez» e inventario devuelto.
     - Mazmorras y Leyendas: cada jugador tiene la suya.
+  - `probar_bw.sh`: una partida entera de Bed Wars con cuatro jugadores con kits y bots: momentos de caos, minas, torretas, trampolín, habilidades, invisibilidad, bots que tienden puentes y rompen camas, muerte súbita y final. Tiene que salir «BED WARS LARGA BIEN».
   - `probar_arenas.sh`: genera los 8 mapas de Bed Wars, varias mazmorras y una isla de Leyendas. Tiene que salir «ARENAS BIEN».
   - `capturar.sh`: saca imágenes de lo que dibuja el cliente en Bed Wars, Mazmorras y Leyendas (mallas con texturas, criaturas y carteles) y de la interfaz (tienda, paneles, barra del jefe). Así se revisa cómo se ve sin abrir Roblox Studio. Usa `herramientas/vista/` (Python con numpy y Pillow).
 

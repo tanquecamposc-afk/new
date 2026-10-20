@@ -350,6 +350,12 @@ volcarGui("menu")
 -- Elegir supervivencia primero (como hace el jugador)
 Interfaz.alElegirModo("supervivencia")
 pasos(5)
+-- El mundo normal alrededor del jugador
+do
+	local rp = root.Position / B
+	volcar("sup_mundo", rp.X, rp.Y, rp.Z, 60, F.Vector3.new(rp.X - 14, rp.Y + 9, rp.Z - 14), F.Vector3.new(rp.X + 12, rp.Y - 3, rp.Z + 12), 70)
+	volcarGui("sup_hud")
+end
 
 -- BED WARS
 local BWm = srv.BedWars._resultado

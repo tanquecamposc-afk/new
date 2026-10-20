@@ -865,6 +865,52 @@ local function espectar(ch)
 end
 Interfaz.alMenu = aplicarCamara
 
+-- Números de daño que saltan al golpear (amarillos y con «!» si es crítico)
+local numerosVivos = 0
+local function numeroDano(pos, dano, critico)
+	if numerosVivos > 12 then
+		return
+	end
+	numerosVivos += 1
+	local ancla = Instance.new("Part")
+	ancla.Anchored = true
+	ancla.CanCollide = false
+	ancla.CanQuery = false
+	ancla.CanTouch = false
+	ancla.Transparency = 1
+	ancla.Size = Vector3.new(0.2, 0.2, 0.2)
+	ancla.Position = pos + Vector3.new((math.random() - 0.5) * 0.6 * BS, 0.4 * BS, (math.random() - 0.5) * 0.6 * BS)
+	ancla.Parent = workspace
+	local g = Instance.new("BillboardGui")
+	g.Size = UDim2.fromOffset(80, 30)
+	g.AlwaysOnTop = true
+	g.LightInfluence = 0
+	g.MaxDistance = 60 * BS
+	g.Parent = ancla
+	local l = Instance.new("TextLabel")
+	l.BackgroundTransparency = 1
+	l.Size = UDim2.fromScale(1, 1)
+	l.Font = Enum.Font.GothamBlack
+	l.TextScaled = true
+	l.Text = ("%g%s"):format(math.floor(dano * 10 + 0.5) / 10, critico and "!" or "")
+	l.TextColor3 = critico and Color3.fromRGB(255, 220, 60) or Color3.fromRGB(255, 255, 255)
+	l.TextStrokeTransparency = 0.2
+	l.Parent = g
+	task.spawn(function()
+		local t0 = os.clock()
+		local p0 = ancla.Position
+		while os.clock() - t0 < 0.7 and ancla.Parent do
+			local e = (os.clock() - t0) / 0.7
+			ancla.Position = p0 + Vector3.new(0, e * 1.2 * BS, 0)
+			l.TextTransparency = math.max(0, e * 1.6 - 0.6)
+			l.TextStrokeTransparency = math.max(0.2, e * 1.6 - 0.6)
+			task.wait()
+		end
+		ancla:Destroy()
+		numerosVivos -= 1
+	end)
+end
+
 Estado.OnClientEvent:Connect(function(tipo, a, b, c)
 	if tipo == "jugador" then
 		local modoAntes = est.modo
@@ -921,6 +967,9 @@ Estado.OnClientEvent:Connect(function(tipo, a, b, c)
 		sonido("golpe", a, b and 1 or 1)
 		if c then
 			emitir(a, { Color3.fromRGB(255, 255, 255), Color3.fromRGB(200, 200, 255) }, 10, 3, 0.07, 4)
+		end
+		if typeof(a) == "Vector3" and type(b) == "number" and b > 0 then
+			numeroDano(a, b, c == true)
 		end
 	elseif tipo == "explosion" then
 		sonido("explosion", a)

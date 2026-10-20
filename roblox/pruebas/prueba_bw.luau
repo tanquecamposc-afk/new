@@ -217,6 +217,15 @@ end
 enviar(jug[4], "modoCmd", "habilidad")
 pasos(40)
 ok(P.jug[jug[4]].habilidadT ~= nil, "la habilidad del Martillo no se usó")
+-- Invisibilidad (kit Fantasma, poción): usarla dos veces seguidas no la deja para siempre
+BWm.invisible(jug[2], 1)
+BWm.invisible(jug[2], 2)
+pasos(15)
+ok(datos[jug[2]].cabeza.Transparency == 1, "la invisibilidad no esconde la cabeza")
+for _ = 1, 30 do
+	F.paso(0.1)
+end
+ok(datos[jug[2]].cabeza.Transparency == 0, "tras la invisibilidad el jugador sigue invisible")
 -- 7 minutos de partida con dos momentos de caos como mínimo
 local caos = {}
 P.caosT = 30

@@ -365,6 +365,11 @@ function BW.etiquetaJugador(plr, J)
 	if not cab or not J.equipo then
 		return
 	end
+	-- Sin el nombre de Roblox encima de la cabeza: ya está la etiqueta del equipo
+	local hum = ch:FindFirstChildOfClass("Humanoid")
+	if hum then
+		hum.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
+	end
 	local E = P.eqs[J.equipo].E
 	local g = cartel(cab, ("[%s] %s %s"):format(E.letra, plr.Name, Perfil.etiqueta(J.perfil)), E.col, 0.9)
 	g.Size = UDim2.fromOffset(220, 22)
@@ -877,6 +882,9 @@ local function empezar()
 	end
 	P.tema = mejor
 	P.arena = Arenas.bw(P.n, P.tema)
+	for plr in P.jug do
+		plr:SetAttribute("TemaBW", P.tema)
+	end
 	local a = P.arena
 	limpiarArena(a, {})
 	for k, E in a.equiposInfo do
@@ -1796,19 +1804,38 @@ function BW.invisible(plr, seg)
 	if not ch then
 		return
 	end
+	-- Si ya era invisible solo se alarga: lo de antes se guarda una sola vez
+	local hasta = os.clock() + seg
+	ch:SetAttribute("InvisibleHasta", math.max(ch:GetAttribute("InvisibleHasta") or 0, hasta))
+	if ch:GetAttribute("Invisible") then
+		return
+	end
+	ch:SetAttribute("Invisible", true)
 	local antes = {}
 	for _, o in ch:GetDescendants() do
 		if (o:IsA("BasePart") or o:IsA("Decal")) and o.Name ~= "HumanoidRootPart" then
 			antes[o] = o.Transparency
 			o.Transparency = 1
+		elseif o:IsA("BillboardGui") then
+			-- La etiqueta con el nombre también se esconde
+			antes[o] = o.Enabled
+			o.Enabled = false
 		end
 	end
-	task.delay(seg, function()
-		for o, t in antes do
+	task.spawn(function()
+		while ch.Parent and os.clock() < (ch:GetAttribute("InvisibleHasta") or 0) do
+			task.wait(0.2)
+		end
+		for o, v in antes do
 			if o.Parent then
-				o.Transparency = t
+				if o:IsA("BillboardGui") then
+					o.Enabled = v
+				else
+					o.Transparency = v
+				end
 			end
 		end
+		ch:SetAttribute("Invisible", nil)
 	end)
 end
 
@@ -2253,6 +2280,7 @@ function BW.unirse(plr)
 	s.bw = true
 	plr:SetAttribute("Modo", "supervivencia")
 	plr:SetAttribute("BedWars", true)
+	plr:SetAttribute("TemaBW", P.tema)
 	if P.fase ~= "sala" then
 		J.espectador = true
 		J.vivo = false
@@ -2292,6 +2320,7 @@ function BW.salir(plr, fin)
 	plr:SetAttribute("EquipoBW", nil)
 	plr:SetAttribute("ColorBW", nil)
 	plr:SetAttribute("EspectadorBW", nil)
+	plr:SetAttribute("TemaBW", nil)
 	ctx.Estado:FireClient(plr, "panel", nil)
 	ctx.Estado:FireClient(plr, "kitBW", nil)
 	ctx.Estado:FireClient(plr, "espectar", nil)
