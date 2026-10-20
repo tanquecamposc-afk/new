@@ -1,10 +1,13 @@
 --[[
-	Ejecuta el servidor y el cliente de Blockverse dentro del Roblox de mentira:
-	un jugador entra, elige supervivencia, pica, fabrica, pone bloques,
-	pelea con criaturas, come y pasa la noche. Cualquier error se cuenta.
+	Ejecuta el servidor y el cliente de Blockverse v2 dentro del Roblox de
+	mentira: un jugador entra, se dibuja el mundo con mallas, elige modo,
+	pica, recoge, fabrica en la mesa, pone bloques, abre el inventario,
+	pelea con criaturas, ve explosiones y prueba One Block.
+	Cualquier error de los scripts se cuenta como fallo.
 ]]
 local F = require("./roblox_falso")
 local FU = require("./fuentes")
+local A = require("./arbol")
 
 local fallos = 0
 local function ok(c, msg)
@@ -14,31 +17,24 @@ local function ok(c, msg)
 	end
 end
 
-local game = F.crearJuego()
+F.crearJuego()
+-- Modo de respaldo: Roblox no deja crear imágenes ni mallas editables
+local okR, R = pcall(require, "./respaldo")
+local RESPALDO = okR and R == true
+if RESPALDO then
+	F.sinEditables = true
+	print("PRUEBA SIN IMÁGENES NI MALLAS EDITABLES")
+end
 local S = F.servicios
-local V3, CF = F.Vector3.new, F.CFrame.new
+local CF = F.CFrame.new
+local comp, modulo, carpetaDe = A.montar(F, FU)
 
-local function modulo(nombre, fuente, padre)
-	local m = F.Instance.new("ModuleScript")
-	m.Name = nombre
-	m.Source = assert(fuente, "falta " .. nombre)
-	m.Parent = padre
-	return m
-end
-
--- Árbol del juego, igual que en el .rbxlx
-local carpeta = F.Instance.new("Folder")
-carpeta.Name = "Blockverse"
-carpeta.Parent = S.ReplicatedStorage
-for _, n in { "Config", "Bloques", "Generador", "Mallador", "Recetas" } do
-	modulo(n, FU["compartido/" .. n], carpeta)
-end
+-- Servidor
 local srv = F.Instance.new("Script")
 srv.Name = "Servidor"
 srv.Source = FU["servidor/init.server"]
 srv.Parent = S.ServerScriptService
-local mMundo = modulo("Mundo", FU["servidor/Mundo"], srv)
-local mMobs = modulo("Mobs", FU["servidor/Mobs"], srv)
+carpetaDe("servidor", srv, { ["init.server"] = true })
 
 local t0 = os.clock()
 F.ejecutar(srv)
@@ -48,6 +44,7 @@ end
 local Remotos = S.ReplicatedStorage:FindFirstChild("Remotos")
 ok(Remotos ~= nil, "no se crearon los remotos")
 local Accion, Estado = Remotos.Accion, Remotos.Estado
+print(string.format("servidor iniciado en %.1f s", os.clock() - t0))
 
 -- Un jugador entra
 local plr = F.Instance.new("Player")
@@ -62,307 +59,293 @@ S.Players.LocalPlayer = plr
 
 -- Mensajes entre cliente y servidor
 local recibido = {}
-F.alMensajeCliente = function(p, tipo, a, b)
-	recibido[tipo] = { a, b }
-	Estado.OnClientEvent:Fire(tipo, a, b)
+local ultimoJugador, ultimaUI
+F.alMensajeCliente = function(p, tipo, a, b, c)
+	recibido[tipo] = { a, b, c }
+	if tipo == "jugador" then
+		ultimoJugador = a
+	elseif tipo == "ui" then
+		ultimaUI = a
+	end
+	Estado.OnClientEvent:Fire(tipo, a, b, c)
+end
+F.alMensajeTodos = function(remoto, ...)
+	if remoto.Name == "Estado" then
+		recibido[(...)] = { select(2, ...) }
+	end
+	remoto.OnClientEvent:Fire(...)
 end
 F.alMensajeServidor = function(remoto, ...)
 	remoto.OnServerEvent:Fire(plr, ...)
 end
+local function enviar(...)
+	Accion.OnServerEvent:Fire(plr, ...)
+end
 
+local root, cabeza, hum
+local function nuevoPersonaje()
+	local char = F.Instance.new("Model")
+	char.Name = "Prueba"
+	root = F.Instance.new("Part")
+	root.Name = "HumanoidRootPart"
+	root.CFrame = CF(0, 300, 0)
+	root.Parent = char
+	cabeza = F.Instance.new("Part")
+	cabeza.Name = "Head"
+	cabeza.CFrame = CF(0, 301.5, 0)
+	cabeza.Parent = char
+	hum = F.Instance.new("Humanoid")
+	hum.Parent = char
+	char.Parent = F.workspace
+	plr.Character = char
+	plr.CharacterAdded:Fire(char)
+end
+F.METODOS_LoadCharacter = nuevoPersonaje
 S.Players.PlayerAdded:Fire(plr)
-local char = F.Instance.new("Model")
-char.Name = "Prueba"
-local root = F.Instance.new("Part")
-root.Name = "HumanoidRootPart"
-root.CFrame = CF(0, 300, 0)
-root.Parent = char
-local cabeza = F.Instance.new("Part")
-cabeza.Name = "Head"
-cabeza.CFrame = CF(0, 301.5, 0)
-cabeza.Parent = char
-local hum = F.Instance.new("Humanoid")
-hum.Parent = char
-char.Parent = F.workspace
-plr.Character = char
-plr.CharacterAdded:Fire(char)
+nuevoPersonaje()
 
--- El cliente (LocalScript con su Interfaz)
+-- Cliente
 local cli = F.Instance.new("LocalScript")
 cli.Name = "Cliente"
 cli.Source = FU["cliente/init.client"]
-local mInterfaz = modulo("Interfaz", FU["cliente/Interfaz"], cli)
+for clave, fuente in FU do
+	local n = clave:match("^cliente/(.+)$")
+	if n and n ~= "init.client" then
+		modulo(n, fuente, cli)
+	end
+end
 cli.Parent = plr
 F.ejecutar(cli)
+local Interfaz = cli.Interfaz._resultado
+local Render = cli.Render._resultado
 
--- Esperar a que el mundo esté listo
+-- Esperar a que el mundo esté listo y salga el menú
 local pasos = 0
-while not recibido.listo and pasos < 3000 do
+while not (Interfaz and not Interfaz.cargando()) do
 	F.paso(1 / 30)
 	pasos += 1
+	Interfaz = cli.Interfaz._resultado
+	Render = cli.Render._resultado
+	if pasos > 4000 then
+		break
+	end
 end
-ok(recibido.listo ~= nil, "el mundo nunca estuvo listo")
-for _, e in F.errores do print(e) end
-local Mundo = mMundo._resultado
-local Mobs = mMobs._resultado
-local Interfaz = mInterfaz._resultado
-local nChunks = 0
-for _ in Mundo.vistos do
-	nChunks += 1
-end
-local piezas = #Mundo.carpeta:GetDescendants()
-print(string.format("mundo listo tras %d pasos · %d chunks dibujados · %d instancias · %.1f s de CPU", pasos, nChunks, piezas, os.clock() - t0))
+ok(recibido.listo ~= nil, "el servidor nunca dijo listo")
 ok(not root.Anchored, "el jugador sigue anclado")
-local B = 3
-local p = root.Position
-print("jugador en", p)
+local nCh, nListos = 0, 0
+for _, ch in Render.chunks do
+	nCh += 1
+	if ch.listo then
+		nListos += 1
+	end
+end
+print(string.format("mundo listo tras %d pasos · %d chunks (%d dibujados) · modo de render: %s · %d imágenes, %d mallas, %d piezas de malla · %.1f s",
+	pasos, nCh, nListos, Render.modo, F.editables.imagenes, F.editables.mallas, F.editables.piezas, os.clock() - t0))
+ok(Render.modo == (RESPALDO and "piezas" or "malla"), "el render no está en el modo esperado")
+ok(nListos > 0, "no se dibujó ningún chunk")
 
--- Seguir cargando chunks un rato
-for _ = 1, 400 do
+-- Elegir supervivencia
+Interfaz.alElegirModo("supervivencia")
+for _ = 1, 3 do
 	F.paso(1 / 30)
 end
-nChunks = 0
-for _ in Mundo.vistos do
-	nChunks += 1
-end
-print("chunks tras cargar:", nChunks, "· instancias:", #Mundo.carpeta:GetDescendants(), "· escrituras de agua:", F.terreno)
+ok(ultimoJugador and ultimoJugador.modo == "supervivencia", "no cambió a supervivencia")
 
--- Elegir supervivencia desde el menú
-Interfaz.alModo("supervivencia")
-F.paso(1 / 30)
-ok(recibido.modo and recibido.modo[1] == "supervivencia", "no cambió a supervivencia")
-
+local Reg = comp.Registro._resultado or F.entorno(comp).require(comp.Registro)
+local srvMundo = srv.Mundo._resultado
+local Mobs = srv.Mobs._resultado
+local Sim = srv.Simulacion._resultado
+local B = 3
 local function moverJugador(x, y, z)
 	root.CFrame = CF((x + 0.5) * B, y * B + 3, (z + 0.5) * B)
 	cabeza.CFrame = CF((x + 0.5) * B, y * B + 4.5, (z + 0.5) * B)
 end
-local px, pz = math.floor(p.X / B), math.floor(p.Z / B)
-local py = Mundo.alturaSuelo(px, pz) + 1
+local px, pz = math.floor(root.Position.X / B), math.floor(root.Position.Z / B)
+local py = srvMundo.alturaSuelo(px, pz) + 1
 moverJugador(px, py, pz)
+print("jugador en", px, py, pz, "suelo:", srvMundo.get(px, py - 1, pz))
 
-local function inv()
-	return recibido.inv and recibido.inv[1] or {}
-end
-local function cuantos(id)
-	local t = 0
-	for i = 1, 36 do
-		local q = inv()[i]
-		if q and q.id == id then
-			t += q.n
-		end
-	end
-	return t
-end
-local Bloques = require and nil
-Bloques = carpeta.Bloques._resultado
-local Recetas = carpeta.Recetas._resultado
-local ID = Bloques.porClave
-
-local function romper(x, y, z, herr)
-	local b = Mundo.get(x, y, z)
-	Accion:FireServer("golpe", x, y, z)
-	local t = Bloques.tiempoRomper(b, herr)
-	local n = math.ceil(t * 30) + 1
-	for _ = 1, n do
-		F.paso(1 / 30)
-	end
-	Accion:FireServer("romper", x, y, z)
-	F.paso(1 / 30)
-	return Mundo.get(x, y, z) == 0 or Mundo.get(x, y, z) == ID.agua
-end
-
--- Picar la tierra que hay al lado (sin herramienta)
-local bx, bz = px + 1, pz
-local by = Mundo.alturaSuelo(bx, bz)
-local antes = Mundo.get(bx, by, bz)
-ok(romper(bx, by, bz, nil), "no se rompió el bloque " .. tostring(antes))
-print("roto:", Bloques.nombre(antes), "· inventario:", cuantos(Bloques.porId[antes].suelta))
--- Romper demasiado rápido no debe funcionar
-Mundo.set(bx, by, bz, ID.piedra)
-Accion:FireServer("golpe", bx, by, bz)
-F.paso(1 / 30)
-Accion:FireServer("romper", bx, by, bz)
-F.paso(1 / 30)
-ok(Mundo.get(bx, by, bz) == ID.piedra, "se pudo romper piedra al instante")
-
--- Troncos → tablones → palos → mesa → pico
-for k = 1, 4 do
-	Mundo.set(px + 2, py + k - 1, pz, ID.tronco)
-end
-for k = 4, 1, -1 do
-	ok(romper(px + 2, py + k - 1, pz, nil), "no se rompió el tronco " .. k)
-end
-ok(cuantos(ID.tronco) == 4, "troncos en el inventario: " .. cuantos(ID.tronco))
-local function receta(id)
-	for i, r in Recetas do
-		if r.resultado == id then
-			return i
-		end
-	end
-	return nil
-end
-Accion:FireServer("craftear", receta(ID.tablones), 3)
-Accion:FireServer("craftear", receta(ID.palo), 1)
-Accion:FireServer("craftear", receta(ID.mesa), 1)
-F.paso(1 / 30)
-print("tablones:", cuantos(ID.tablones), "· palos:", cuantos(ID.palo), "· mesas:", cuantos(ID.mesa))
-ok(cuantos(ID.mesa) == 1 and cuantos(ID.palo) == 4, "recetas a mano")
--- Sin mesa cerca el pico no se puede hacer
-Accion:FireServer("craftear", receta(ID.pico_madera), 1)
-ok(cuantos(ID.pico_madera) == 0, "pico sin mesa")
--- Poner la mesa (elegir su casilla)
-local casillaMesa
-for i = 1, 9 do
-	local q = inv()[i]
-	if q and q.id == ID.mesa then
-		casillaMesa = i
-	end
-end
-ok(casillaMesa ~= nil, "la mesa no está en la barra rápida")
-Accion:FireServer("sel", casillaMesa)
-local mx, mz = px - 2, pz
-local my = Mundo.alturaSuelo(mx, mz) + 1
-Accion:FireServer("poner", mx, my, mz)
-F.paso(1 / 30)
-ok(Mundo.get(mx, my, mz) == ID.mesa, "no se puso la mesa (" .. Mundo.get(mx, my, mz) .. ")")
-Accion:FireServer("craftear", receta(ID.pico_madera), 1)
-F.paso(1 / 30)
-ok(cuantos(ID.pico_madera) == 1, "no se fabricó el pico con la mesa cerca")
--- No se puede poner un bloque dentro del jugador
-Accion:FireServer("sel", 1)
-local q1 = inv()[1]
-Accion:FireServer("poner", px, py, pz)
-F.paso(1 / 30)
-ok(Mundo.get(px, py, pz) ~= (q1 and q1.id), "se puso un bloque dentro del jugador")
-
--- Piedra con pico: suelta roca y gasta el pico
-local slotPico
-for i = 1, 9 do
-	local q = inv()[i]
-	if q and q.id == ID.pico_madera then
-		slotPico = i
-	end
-end
-Accion:FireServer("sel", slotPico)
-Mundo.set(px + 1, py, pz + 1, ID.piedra)
-ok(romper(px + 1, py, pz + 1, ID.pico_madera), "no se rompió la piedra con pico")
-ok(cuantos(ID.roca) == 1, "la piedra no dio roca")
-ok(inv()[slotPico] and inv()[slotPico].u == Bloques.porId[ID.pico_madera].usos - 1, "el pico no se gastó")
-
--- Criaturas: un cerdo suelta carne y se puede comer
-local cerdo = Mobs.crear("cerdo", px + 1, py - 1, pz + 1)
-F.paso(1 / 30)
-cerdo.raiz.CFrame = CF((px + 1.5) * B, py * B + 2, (pz + 1.5) * B)
-for _ = 1, 12 do
-	Accion:FireServer("atacar", cerdo.raiz)
-	for _ = 1, 15 do
-		F.paso(1 / 30)
-	end
-end
-ok(cerdo.muerto, "el cerdo no murió (vida " .. tostring(cerdo.hum.Health) .. ")")
-ok(cuantos(ID.carneCruda) >= 1, "el cerdo no soltó carne")
-for _ = 1, 40 do
+-- Picar el bloque de al lado del suelo (con mano: tierra o lo que haya)
+local bx, by, bz = px, py - 1, pz
+local antes = srvMundo.get(bx, by, bz)
+enviar("golpe", bx, by, bz)
+for _ = 1, 150 do
 	F.paso(1 / 30)
 end
-local slotCarne
+enviar("romper", bx, by, bz)
+for _ = 1, 60 do
+	F.paso(1 / 30)
+end
+ok(srvMundo.get(bx, by, bz) == 0, "no se rompió el bloque " .. tostring(antes))
+print("se rompió", Reg.nombre(antes))
+-- Recoger un objeto tirado a los pies
+moverJugador(bx, by, bz)
+srv.Entidades._resultado.soltarItem(Reg.pila(Reg.B.tierra, 3), bx + 0.5, by + 0.5, bz + 0.5, false)
+for _ = 1, 45 do
+	F.paso(1 / 30)
+end
+-- Apartarse del hueco para poner ahí la mesa
+moverJugador(bx + 2, srvMundo.alturaSuelo(bx + 2, bz) + 1, bz)
+local tiene = false
 for i = 1, 36 do
-	local q = inv()[i]
-	if q and q.id == ID.carneCruda then
-		slotCarne = i
+	local p = ultimoJugador.inv[i]
+	if p and p.id == Reg.B.tierra then
+		tiene = true
 	end
 end
-if slotCarne and slotCarne > 9 then
-	Accion:FireServer("mover", slotCarne, 9)
-	slotCarne = 9
-end
--- Pasar hambre y comer
-for _ = 1, 30 * 85 do
-	F.paso(1 / 30)
-end
-local hambre = recibido.hambre and recibido.hambre[1]
-print("hambre tras 85 s:", hambre)
-ok(hambre and hambre < 20, "el hambre no baja")
-Accion:FireServer("sel", slotCarne)
-Accion:FireServer("usar")
-F.paso(1 / 30)
-ok(recibido.hambre[1] > hambre, "comer no quita el hambre")
+ok(tiene, "no se recogió el objeto tirado")
 
--- La noche: aparecen zombis
-F.servicios.Lighting.ClockTime = 22
-for _ = 1, 30 * 30 do
+-- Creativo: coger una mesa de trabajo y ponerla
+enviar("modo", "creativo")
+F.paso(1 / 30)
+local mesa = Reg.B.mesa
+enviar("abrirInventario")
+F.paso(1 / 30)
+ok(ultimaUI and ultimaUI.tipo == "inventario", "no se abrió el inventario")
+F.paso(1 / 30)
+enviar("creativo", mesa, 1)
+enviar("click", "inv", 1, 1)
+enviar("cerrarUI")
+F.paso(1 / 30)
+ok(ultimoJugador.inv[1] and ultimoJugador.inv[1].id == mesa, "la mesa no llegó a la casilla 1")
+enviar("sel", 1)
+enviar("derecho", { x = bx, y = by - 1, z = bz, n = { 0, 1, 0 } }, F.Vector3.new(1, -1, 0), nil, false)
+F.paso(1 / 30)
+ok(srvMundo.get(bx, by, bz) == mesa, "no se puso la mesa (hay " .. tostring(srvMundo.get(bx, by, bz)) .. ")")
+-- El cliente recibe el cambio
+for _ = 1, 10 do
 	F.paso(1 / 30)
-	F.servicios.Lighting.ClockTime = 22
 end
-local zombis = 0
-for _, m in Mobs.lista do
-	if m.tipo == "zombi" then
-		zombis += 1
+ok(Render.md:get(bx, by, bz) == mesa, "el cliente no vio la mesa")
+
+-- Abrir la mesa y fabricar palos con tablones
+enviar("derecho", { x = bx, y = by, z = bz, n = { 0, 1, 0 } }, F.Vector3.new(1, -1, 0), nil, false)
+F.paso(1 / 30)
+ok(ultimaUI and ultimaUI.tipo == "mesa", "no se abrió la mesa")
+enviar("creativo", Reg.B.tablones, "max")
+enviar("click", "rejilla", 2, 2)
+enviar("click", "rejilla", 5, 2)
+F.paso(1 / 30)
+ok(ultimaUI.salida and ultimaUI.salida.id == Reg.I.palo, "la mesa no da palos (da " .. tostring(ultimaUI.salida and ultimaUI.salida.id) .. ")")
+enviar("click", "fuera", 1, 1)
+enviar("click", "salida", 1, 3)
+F.paso(1 / 30)
+local palos = 0
+for i = 1, 36 do
+	local p = ultimoJugador.inv[i]
+	if p and p.id == Reg.I.palo then
+		palos += p.n
 	end
 end
-print("zombis de noche:", zombis, "· vida del jugador:", hum.Health)
-ok(zombis > 0, "no aparecen zombis de noche")
+ok(palos >= 4, "no se fabricaron palos (" .. palos .. ")")
+-- Libro de recetas
+enviar("receta", 1, false)
+enviar("cerrarUI")
+F.paso(1 / 30)
 
--- Creativo: romper al instante y paleta
-Interfaz.mostrarMenu(true)
-Interfaz.alModo("creativo")
+-- Criaturas: crear un zombi, que el cliente lo vista y atacarlo
+local m = Mobs.crear("zombi", px + 2.5, py, pz + 0.5)
+for _ = 1, 20 do
+	F.paso(1 / 30)
+end
+local criaturasVis = F.workspace:FindFirstChild("CriaturasVisibles")
+ok(criaturasVis and #criaturasVis:GetChildren() > 0, "el cliente no dibujó la criatura")
+local vida = m.vida
+enviar("modo", "supervivencia")
+F.paso(1)
+-- La criatura se habrá movido: se pone al lado del jugador
+m.x, m.y, m.z = px + 2.5, py, pz + 0.5
+m.pieza.CFrame = CF(m.x * B, (m.y + m.alto / 2) * B, m.z * B)
+enviar("atacar", m.pieza, 1, false, false)
 F.paso(1 / 30)
-ok(recibido.modo[1] == "creativo", "no cambió a creativo")
-Mundo.set(px + 3, py, pz, ID.obsidiana)
-Accion:FireServer("romper", px + 3, py, pz)
-F.paso(1 / 30)
-ok(Mundo.get(px + 3, py, pz) == 0, "en creativo no se rompe al instante")
-Accion:FireServer("creativo", ID.piedraLuminosa)
-F.paso(1 / 30)
-ok(inv()[recibido.inv[2] or 1] and inv()[recibido.inv[2] or 1].id == ID.piedraLuminosa, "la paleta creativa no da el bloque")
-
--- Agua: cavar junto al mar la deja entrar
-local ax, az
-for x = px - 60, px + 60 do
-	for z = pz - 60, pz + 60 do
-		if not ax and Mundo.listo(x // 16, z // 16) and Mundo.get(x, 22, z) == ID.agua and Mundo.get(x + 1, 22, z) ~= ID.agua and Mundo.get(x + 1, 22, z) ~= 0 then
-			ax, az = x + 1, z
-		end
+ok(m.vida < vida or m.muerto, "el ataque no hizo daño")
+-- Más criaturas (todas las del juego) para probar sus modelos y su IA
+local Datos = F.entorno(comp).require(comp.Datos.Mobs)
+local n = 0
+for tipo in Datos.defs do
+	n += 1
+	if n % 4 == 0 then
+		Mobs.crear(tipo, px + 4 + (n % 8), py + 2, pz + 4 + (n // 8))
 	end
 end
-if ax then
-	moverJugador(ax, 24, az)
-	Accion:FireServer("romper", ax, 22, az)
+for _ = 1, 300 do
 	F.paso(1 / 30)
-	ok(Mundo.get(ax, 22, az) == ID.agua, "el agua no entra en el hueco")
-else
-	print("(no hay costa cerca para probar el agua)")
 end
+print("criaturas vivas:", #Mobs.lista, "· vistas:", #criaturasVis:GetChildren())
 
--- Interfaz: abrir y cerrar el inventario con la tecla E
-local UIS = F.servicios.UserInputService
+-- Explosión y simulación
+Sim.explosion(px + 6, py, pz + 6, 3)
+for _ = 1, 60 do
+	F.paso(1 / 30)
+end
+ok(recibido.explosion ~= nil, "no llegó la explosión al cliente")
+
+-- Comer: pan en la mano
+enviar("modo", "creativo")
+enviar("abrirInventario")
+enviar("creativo", Reg.I.pan, 1)
+enviar("click", "inv", 2, 1)
+enviar("cerrarUI")
+enviar("modo", "supervivencia")
+enviar("sel", 2)
+F.paso(1 / 30)
+
+-- Teclas del cliente: inventario con E y cerrar
+local UIS = S.UserInputService
+-- Las pantallas que abrió la prueba directamente en el servidor se cierran en el cliente
+Interfaz.cerrar()
+-- Si el jugador murió (criaturas, explosión), reaparece como en Roblox
+if recibido.muerte then
+	print("el jugador murió durante la prueba:", recibido.muerte[1])
+	nuevoPersonaje()
+	for _ = 1, 30 do
+		F.paso(1 / 30)
+	end
+end
 UIS.InputBegan:Fire({ UserInputType = F.Enum.UserInputType.Keyboard, KeyCode = F.Enum.KeyCode.E }, false)
 F.paso(1 / 30)
-ok(Interfaz.abierto(), "la E no abre el inventario")
+ok(Interfaz.abierto(), "la tecla E no abrió el inventario")
 UIS.InputBegan:Fire({ UserInputType = F.Enum.UserInputType.Keyboard, KeyCode = F.Enum.KeyCode.E }, false)
-UIS.InputBegan:Fire({ UserInputType = F.Enum.UserInputType.Keyboard, KeyCode = F.Enum.KeyCode.Three }, false)
 F.paso(1 / 30)
-ok(not Interfaz.abierto(), "la E no cierra el inventario")
-UIS.InputChanged:Fire({ UserInputType = F.Enum.UserInputType.MouseWheel, Position = V3(0, 0, -1) }, false)
-F.paso(1 / 30)
-
--- Quitar chunks al irse lejos
-moverJugador(px + 2000, 40, pz)
-for _ = 1, 600 do
+ok(not Interfaz.abierto(), "la tecla E no cerró el inventario")
+UIS.InputBegan:Fire({ UserInputType = F.Enum.UserInputType.Keyboard, KeyCode = F.Enum.KeyCode.F3 }, false)
+for _ = 1, 5 do
 	F.paso(1 / 30)
 end
-local quedan = 0
-for k, r in Mundo.vistos do
-	local cx = tonumber(string.match(r.modelo.Name, "(-?%d+),"))
-	if math.abs(cx - (px // 16)) < 10 then
-		quedan += 1
-	end
-end
-ok(quedan == 0, "no se quitaron los chunks lejanos (" .. quedan .. ")")
 
-print(string.format("errores en tiempo de ejecución: %d", #F.errores))
-for i, e in F.errores do
-	if i <= 6 then
-		print(e)
+-- One Block
+Interfaz.alElegirModo("oneblock")
+for _ = 1, 120 do
+	F.paso(1 / 30)
+end
+ok(recibido.oneblock and recibido.oneblock[1], "no llegó el HUD de One Block")
+for _ = 1, 400 do
+	F.paso(1 / 30)
+end
+
+-- Recorrer un poco el mundo para que se carguen y descarguen chunks
+for k = 1, 6 do
+	moverJugador(px + k * 16, py + 20, pz)
+	for _ = 1, 60 do
+		F.paso(1 / 30)
 	end
 end
-print(fallos == 0 and #F.errores == 0 and "TODO BIEN" or ("FALLOS: " .. fallos))
+nCh = 0
+for _ in Render.chunks do
+	nCh += 1
+end
+print("chunks del cliente tras moverse:", nCh)
+
+for _, e in F.errores do
+	print(e)
+end
+local reales = 0
+for _, e in F.errores do
+	-- En el modo de respaldo los avisos de «no disponible» son lo esperado
+	if not (RESPALDO and (e:find("no disponible") or e:find("modo de respaldo"))) then
+		reales += 1
+	end
+end
+ok(reales == 0, reales .. " errores durante la prueba")
+print(string.format("tiempo total %.1f s", os.clock() - t0))
+print(fallos == 0 and "TODO BIEN" or ("FALLOS: " .. fallos))

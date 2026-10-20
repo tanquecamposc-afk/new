@@ -26,10 +26,14 @@ def item(clase, nombre, props='', hijos='', fuente=None):
     return '<Item class="%s" referent="%s"><Properties>%s</Properties>%s</Item>\n' % (clase, nuevo_ref(), p, hijos)
 
 def modulos(carpeta, excluir=()):
+    """ModuleScripts de una carpeta; las subcarpetas (como Datos) se vuelven Folder."""
     xml = ''
     for n in sorted(os.listdir(os.path.join(SRC, carpeta))):
-        if n.endswith('.luau') and n not in excluir:
-            xml += item('ModuleScript', n[:-5], fuente=leer(os.path.join(carpeta, n)))
+        ruta = os.path.join(carpeta, n)
+        if os.path.isdir(os.path.join(SRC, ruta)):
+            xml += item('Folder', n, hijos=modulos(ruta))
+        elif n.endswith('.luau') and n not in excluir:
+            xml += item('ModuleScript', n[:-5], fuente=leer(ruta))
     return xml
 
 partes = []
@@ -53,4 +57,4 @@ xml = ('<roblox xmlns:xmime="http://www.w3.org/2005/05/xmlmime" '
        + ''.join(partes) + '</roblox>\n')
 with open(salida, 'w', encoding='utf-8') as f:
     f.write(xml)
-print('Creado', salida, len(xml) // 1024, 'KB')
+print('Creado', salida, len(xml.encode('utf-8')) // 1024, 'KB')

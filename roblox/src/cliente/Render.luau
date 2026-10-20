@@ -842,10 +842,12 @@ local function quitarChunk(k)
 end
 
 local function centroCamara()
-	local cam = workspace.CurrentCamera
-	local p = cam and cam.Focus.Position or Vector3.zero
+	local p
 	if Render.foco then
 		p = Render.foco()
+	else
+		local cam = workspace.CurrentCamera
+		p = cam and cam.Focus.Position or Vector3.zero
 	end
 	return floor(p.X / BS / CX), floor(p.Z / BS / CZ)
 end

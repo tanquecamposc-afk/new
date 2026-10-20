@@ -486,9 +486,15 @@ La carpeta [`roblox/`](roblox/) tiene Blockverse reescrito en **Luau** para Robl
 - El código fuente está en `src/`.
 - Las instrucciones están en [`roblox/README.md`](roblox/README.md).
 
+La versión 2 usa los datos del propio juego web:
+- Las mismas texturas, iconos y modelos de criaturas.
+- Los 656 bloques, 774 objetos y 382 recetas.
+- Un generador de terreno idéntico: la misma semilla da el mismo mundo.
+
 Incluye:
-- Mundo infinito con biomas, cuevas y menas.
-- Agua en la que se puede nadar.
-- Inventario con recetas y herramientas.
-- Supervivencia con hambre, creativo con vuelo, zombis de noche y animales.
+- Supervivencia, creativo y One Block.
+- Inventario, mesa de trabajo, horno, cofres y libro de recetas.
+- 79 criaturas animadas con su IA.
 - Multijugador y controles para móvil.
+
+Todavía faltan Bed Wars, Mazmorras, Leyendas, el Nether y el End, las estructuras, el encantamiento, el yunque, el soporte de pociones, el comercio y la lógica de redstone. El detalle está en su README.

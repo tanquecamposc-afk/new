@@ -410,7 +410,7 @@ end
 
 local function guardar(plr)
 	local s = st(plr)
-	if not s or not almacen or s.modo == "creativo" or Modos.activo() then
+	if not s or not almacen or s.modo == "creativo" or s.ob or Modos.activo() then
 		return
 	end
 	pcall(function()
@@ -470,6 +470,7 @@ local function colocar(plr, char)
 	plr:SetAttribute("EsperaX", nil)
 	plr:SetAttribute("EsperaZ", nil)
 	Estado:FireClient(plr, "listo")
+	enviarJugador(plr)
 end
 
 local function alMorir(plr)
@@ -1703,6 +1704,11 @@ function acciones.click(plr, s, zona, i, boton)
 			end)
 			h.entrada, h.combustible = t[1] or false, t[2] or false
 		end
+	elseif zona == "borrar" then
+		-- Papelera del inventario creativo
+		if not supervivencia(s) then
+			s.cursor = false
+		end
 	elseif zona == "fuera" then
 		-- Tirar lo del cursor
 		if s.cursor then
@@ -1808,6 +1814,19 @@ function acciones.creativo(plr, s, id, cantidad)
 	end
 	local pila = Registro.pila(id, cantidad == "max" and Registro.maxPila(id) or 1)
 	s.cursor = pila
+	enviarUI(plr)
+end
+
+-- Vaciar todo el inventario (creativo, mayúsculas + papelera)
+function acciones.vaciarCreativo(plr, s)
+	if supervivencia(s) then
+		return
+	end
+	for i = 1, Inv.TAM do
+		s.inv[i] = false
+	end
+	s.cursor = false
+	enviarJugador(plr)
 	enviarUI(plr)
 end
 
