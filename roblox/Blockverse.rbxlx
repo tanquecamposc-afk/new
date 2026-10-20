@@ -9554,10 +9554,38 @@ local function nuevoEstado()
 	}
 end
 
+-- Ajustes del jugador (sensibilidad, campo de visión…): se guardan aparte y solo con valores válidos
+local AJUSTES = {
+	sensibilidad = { "number", 0.2, 3 }, fov = { "number", 50, 110 }, volumen = { "number", 0, 100 },
+	fovCorrer = { "boolean" }, balanceo = { "boolean" }, numeros = { "boolean" },
+}
+local function limpiarAjustes(a)
+	if type(a) ~= "table" then
+		return nil
+	end
+	local r = {}
+	for k, A in AJUSTES do
+		local v = a[k]
+		if type(v) == A[1] then
+			r[k] = A[1] == "number" and math.clamp(v, A[2], A[3]) or v
+		end
+	end
+	return r
+end
+
 local function cargar(plr)
 	local s = nuevoEstado()
 	estados[plr] = s
 	if almacen then
+		task.spawn(function()
+			local ok, a = pcall(function()
+				return almacen:GetAsync("a_" .. plr.UserId)
+			end)
+			a = ok and limpiarAjustes(a)
+			if a and plr.Parent then
+				Estado:FireClient(plr, "ajustes", a)
+			end
+		end)
 		local ok, g = pcall(function()
 			return almacen:GetAsync("u_" .. plr.UserId)
 		end)
@@ -10946,6 +10974,23 @@ function acciones.modoCmd(plr, s, cmd, arg)
 	if type(cmd) == "string" then
 		Modos.comando(plr, cmd, type(arg) == "number" and arg or nil)
 	end
+end
+
+function acciones.ajustes(plr, s, a)
+	a = limpiarAjustes(a)
+	if not a or not almacen then
+		return
+	end
+	s.ajustesN = (s.ajustesN or 0) + 1
+	local yo = s.ajustesN
+	-- Se guarda unos segundos después del último cambio (el DataStore no admite muchas escrituras seguidas)
+	task.delay(4, function()
+		if s.ajustesN == yo then
+			pcall(function()
+				almacen:SetAsync("a_" .. plr.UserId, a)
+			end)
+		end
+	end)
 end
 
 function acciones.comerciar(plr, s, i)
@@ -19487,6 +19532,8 @@ function Mobs.herir(m, d, dir, fuente, empuje, plr)
 	m.vida -= d
 	m.inv = fuente == "fuego" and 0 or 0.5
 	m.pieza:SetAttribute("golpe", tiempo)
+	-- El cliente enseña una barra de vida un momento
+	m.pieza:SetAttribute("vida", math.clamp(m.vida / math.max(1, m.vidaMax or 1), 0, 1))
 	if dir then
 		local k = 7 + (empuje or 0) * 5
 		m.vx += dir.x * k
@@ -19499,6 +19546,17 @@ function Mobs.herir(m, d, dir, fuente, empuje, plr)
 	if fuente == "jugador" or fuente == "flechaJugador" then
 		m.ultimoGolpeJugador = tiempo
 		m.atacante = plr
+		-- Los enemigos de la misma clase que estén cerca acuden a ayudar
+		if def.tipo == "hostil" and not m.control and plr then
+			m.memoria = 10
+			for _, o in Mobs.lista do
+				if o ~= m and not o.muerto and not o.control and o.tipo == m.tipo and math.abs(o.x - m.x) + math.abs(o.z - m.z) < 14 then
+					o.enfadado = math.max(o.enfadado, 10)
+					o.atacante = plr
+					o.memoria = 10
+				end
+			end
+		end
 		if def.tipo == "neutral" then
 			m.enfadado = 30
 			if m.tipo == "piglin" then
@@ -19529,6 +19587,62 @@ local function moverHacia(m, dx, dz, vel)
 		m.velObj = vel
 	else
 		m.mover = false
+	end
+end
+
+-- ¿Es peligroso dar un paso hacia (ux, uz)? Lava delante o una caída de más de 3 bloques
+local function peligroDelante(md, m, ux, uz)
+	local x, z = math.floor(m.x + ux * 0.9), math.floor(m.z + uz * 0.9)
+	local y = math.floor(m.y + 0.1)
+	for dy = 0, -1, -1 do
+		if esLava(md:getSiCargado(x, y + dy, z)) then
+			return true
+		end
+	end
+	for dy = 1, 4 do
+		local b = md:getSiCargado(x, y - dy, z)
+		if b < 0 or (b ~= 0 and (SOLIDO[b] or esAgua(b))) then
+			return false
+		end
+	end
+	return true
+end
+
+-- Movimiento a pie con cabeza: no se tira por un precipicio ni a la lava, y si se atasca contra
+-- un muro alto lo rodea por un lado
+local function andarConCuidado(md, m, dt, dy)
+	if not m.mover then
+		return
+	end
+	if m.rodeo then
+		m.rodeo.t -= dt
+		m.yawObj += math.rad(75) * m.rodeo.lado
+		if m.rodeo.t <= 0 then
+			m.rodeo = nil
+		end
+	end
+	m.atascoT = (m.atascoT or 0) + dt
+	if m.atascoT > 0.8 then
+		m.atascoT = 0
+		local p = m.atascoPos
+		if p and not m.rodeo and (m.x - p[1]) ^ 2 + (m.z - p[2]) ^ 2 < 0.09 then
+			m.rodeo = { lado = math.random() < 0.5 and -1 or 1, t = 1 + math.random() * 0.6 }
+		end
+		m.atascoPos = { m.x, m.z }
+	end
+	-- Si el objetivo está bastante más abajo, bajar es lo que quiere
+	if m.suelo and (dy or 0) > -3 then
+		local ux, uz = math.sin(m.yawObj), math.cos(m.yawObj)
+		if peligroDelante(md, m, ux, uz) then
+			for _, a in { 1.2, -1.2, 2.2, -2.2 } do
+				local nx, nz = math.sin(m.yawObj + a), math.cos(m.yawObj + a)
+				if not peligroDelante(md, m, nx, nz) then
+					m.yawObj += a
+					return
+				end
+			end
+			m.mover = false
+		end
 	end
 end
 
@@ -19600,6 +19714,18 @@ local function actualizarMob(m, dt, jugadores)
 	end
 	persigue = hostil and j ~= nil
 	local ex, ey, ez = m.x, m.y + m.alto * 0.85, m.z
+	-- Solo persigue lo que ve (o lo que tiene muy cerca o le ha pegado); se acuerda unos segundos
+	if persigue then
+		m.visionT = (m.visionT or 0) - dt
+		if m.visionT <= 0 then
+			m.visionT = 0.4
+			if dist3 < 4 or m.enfadado > 0 or lineaVision(ex, ey, ez, j.x, j.y + 1.5, j.z) then
+				m.memoria = math.max(m.memoria or 0, 6)
+			end
+		end
+		m.memoria = (m.memoria or 0) - dt
+		persigue = m.memoria > 0
+	end
 	if persigue and ia == "arquero" then
 		m.yawObj = math.atan2(dx, dz)
 		if dist < 6 then
@@ -19607,10 +19733,17 @@ local function actualizarMob(m, dt, jugadores)
 		elseif dist > 12 then
 			moverHacia(m, dx, dz, def.vel)
 		else
+			-- Se mueve de lado y cambia de dirección de vez en cuando
+			m.ladoT = (m.ladoT or 0) - dt
+			if m.ladoT <= 0 then
+				m.ladoT = 1.5 + math.random() * 2.5
+				m.lado = -(m.lado or 1)
+			end
 			m.mover = true
-			m.yawObj += math.pi / 2
+			m.yawObj += math.pi / 2 * m.lado
 			m.velObj = def.vel * 0.5
 		end
+		andarConCuidado(md, m, dt, dy)
 		if m.cd <= 0 and dist3 < 16 and lineaVision(ex, ey, ez, j.x, j.y + 1.5, j.z) then
 			m.cd = 1.5 + math.random()
 			local dir = Vector3.new(dx, dy + 1.1 - m.alto * 0.85 + dist * 0.12, dz).Unit
@@ -19620,6 +19753,7 @@ local function actualizarMob(m, dt, jugadores)
 		end
 	elseif persigue and ia == "creeper" then
 		moverHacia(m, dx, dz, def.vel)
+		andarConCuidado(md, m, dt, dy)
 		local cerca = dist3 < 3 and lineaVision(ex, ey, ez, j.x, j.y + 1.5, j.z)
 		if cerca or (m.mecha > 0 and dist3 < 7) then
 			m.mecha += dt
@@ -19848,6 +19982,9 @@ local function actualizarMob(m, dt, jugadores)
 		end
 	elseif persigue and (def.dano or 0) > 0 then -- cuerpo a cuerpo
 		moverHacia(m, dx, dz, def.vel * ((m.enfadado > 0 and m.tipo == "enderman") and 1.4 or 1))
+		if not def.trepa then
+			andarConCuidado(md, m, dt, dy)
+		end
 		if def.trepa and m.chocoH then
 			m.vy = math.max(m.vy, 3)
 		end
@@ -22667,7 +22804,7 @@ return Sim
 ]]></ProtectedString></Properties></Item>
 </Item>
 </Item>
-<Item class="StarterPlayer" referent="RBX0000003D"><Properties><string name="Name">StarterPlayer</string><float name="CharacterWalkSpeed">14</float><bool name="CharacterUseJumpPower">false</bool><float name="CharacterJumpHeight">4.6</float></Properties><Item class="StarterPlayerScripts" referent="RBX0000003B"><Properties><string name="Name">StarterPlayerScripts</string></Properties><Item class="LocalScript" referent="RBX00000039"><Properties><string name="Name">Cliente</string><bool name="Disabled">false</bool><ProtectedString name="Source"><![CDATA[--[[
+<Item class="StarterPlayer" referent="RBX0000003E"><Properties><string name="Name">StarterPlayer</string><float name="CharacterWalkSpeed">14</float><bool name="CharacterUseJumpPower">false</bool><float name="CharacterJumpHeight">4.6</float></Properties><Item class="StarterPlayerScripts" referent="RBX0000003C"><Properties><string name="Name">StarterPlayerScripts</string></Properties><Item class="LocalScript" referent="RBX0000003A"><Properties><string name="Name">Cliente</string><bool name="Disabled">false</bool><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Script del cliente
 	· Genera y dibuja el mundo en este equipo (la misma semilla que el
 	  servidor) y aplica los cambios que llegan.
@@ -22756,7 +22893,7 @@ local function sonido(nombre, pos, tono)
 	end
 	local snd = Instance.new("Sound")
 	snd.SoundId = s[1]
-	snd.Volume = s[2]
+	snd.Volume = s[2] * (Interfaz.ajustes.volumen or 100) / 100
 	snd.PlaybackSpeed = (tono or 1) * s[3] * (0.92 + math.random() * 0.16)
 	if pos then
 		local a = Instance.new("Attachment")
@@ -23188,6 +23325,7 @@ Interfaz.alCerrar = function()
 end
 
 Interfaz.alElegirModo = function(m)
+	Interfaz.enJuego = true
 	if m == "oneblock" then
 		enviar("modoJuego", "oneblock")
 		enviar("modo", "supervivencia")
@@ -23537,7 +23675,7 @@ Interfaz.alMenu = aplicarCamara
 -- Números de daño que saltan al golpear (amarillos y con «!» si es crítico)
 local numerosVivos = 0
 local function numeroDano(pos, dano, critico)
-	if numerosVivos > 12 then
+	if numerosVivos > 12 or not Interfaz.ajustes.numeros then
 		return
 	end
 	numerosVivos += 1
@@ -23579,6 +23717,113 @@ local function numeroDano(pos, dano, critico)
 		numerosVivos -= 1
 	end)
 end
+
+------------------------------------------------------------------
+-- Ajustes del jugador y cámara
+------------------------------------------------------------------
+local ajustes = Interfaz.ajustes
+local function aplicarAjustes()
+	UserInputService.MouseDeltaSensitivity = ajustes.sensibilidad
+end
+local envioAjustes = 0
+Interfaz.alCambiarAjuste = function()
+	aplicarAjustes()
+	-- Se guardan en el servidor (un poco después, por si se pulsan varias veces seguidas)
+	envioAjustes += 1
+	local yo = envioAjustes
+	task.delay(1, function()
+		if yo == envioAjustes then
+			enviar("ajustes", ajustes)
+		end
+	end)
+end
+aplicarAjustes()
+
+-- Tercera persona con ratón (PC): la cámara gira con el ratón sin mantener el clic derecho,
+-- el personaje mira hacia donde apunta la cámara y la cámara no se mete dentro de los bloques.
+-- En móvil se usa la cámara normal de Roblox.
+local camYaw, camPitch = 0, -0.3
+local camPropia = false
+local function puedeCamaraPropia()
+	return UserInputService.MouseEnabled and not (UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled)
+end
+RunService:BindToRenderStep("CamaraBlockverse", Enum.RenderPriority.Camera.Value + 1, function(dt)
+	local cam = workspace.CurrentCamera
+	if not cam then
+		return
+	end
+	local ch = jugador.Character
+	local root = ch and ch:FindFirstChild("HumanoidRootPart")
+	local hum = ch and ch:FindFirstChildOfClass("Humanoid")
+	local cab = ch and ch:FindFirstChild("Head")
+	local quiero = tercera and not espectando and puedeCamaraPropia() and root and hum and cab and hum.Health > 0
+	if not quiero then
+		if camPropia then
+			camPropia = false
+			cam.CameraType = Enum.CameraType.Custom
+			if hum then
+				hum.AutoRotate = true
+			end
+		end
+	else
+		if not camPropia then
+			camPropia = true
+			cam.CameraType = Enum.CameraType.Scriptable
+			local look = cam.CFrame.LookVector
+			camYaw = math.atan2(-look.X, -look.Z)
+			camPitch = math.clamp(math.asin(math.clamp(look.Y, -1, 1)), -1.3, 1.2)
+		end
+		local libre = Interfaz.abierto() or Interfaz.menuVisible()
+		if libre then
+			UserInputService.MouseBehavior = Enum.MouseBehavior.Default
+		else
+			UserInputService.MouseBehavior = Enum.MouseBehavior.LockCenter
+			local d = UserInputService:GetMouseDelta()
+			camYaw -= d.X * 0.0045
+			camPitch = math.clamp(camPitch - d.Y * 0.0045, -1.3, 1.2)
+			hum.AutoRotate = false
+			root.CFrame = CFrame.new(root.Position) * CFrame.Angles(0, camYaw, 0)
+		end
+		local giro = CFrame.Angles(0, camYaw, 0) * CFrame.Angles(camPitch, 0, 0)
+		local foco = cab.Position + Vector3.new(0, 0.25 * BS, 0) + giro.RightVector * 0.35 * BS
+		local atras = -giro.LookVector
+		local dist = 4.6
+		local r = Rayo.lanzar(md, foco, atras, dist)
+		if r and r.t then
+			dist = math.max(0.4, r.t - 0.3)
+		end
+		cam.CFrame = CFrame.new(foco + atras * dist * BS) * giro
+	end
+	-- Campo de visión: el de los ajustes, un poco más abierto al correr (suave)
+	local objetivoFov = ajustes.fov
+	if ajustes.fovCorrer and corriendo and hum and hum.MoveDirection.Magnitude > 0.1 then
+		objetivoFov *= 1.12
+	end
+	local fov = cam.FieldOfView or 70
+	cam.FieldOfView = fov + (objetivoFov - fov) * math.min(1, dt * 10)
+end)
+
+------------------------------------------------------------------
+-- Modelos 3D: la mano en primera persona y el objeto en la mano de los personajes
+------------------------------------------------------------------
+local Modelos3D = require(script:WaitForChild("Modelos3D"))
+if Modelos3D.disponible() then
+	Interfaz.mano3D = true
+	Modelos3D.iniciarMano({
+		enMano = function()
+			return (enMano())
+		end,
+		visible = Interfaz.manoVisible,
+		balanceo = Interfaz.balanceoMano,
+		conBalanceo = function()
+			return Interfaz.ajustes.balanceo
+		end,
+	})
+	aplicarCamara()
+end
+Modelos3D.iniciarPersonajes(function()
+	return tercera
+end)
 
 Estado.OnClientEvent:Connect(function(tipo, a, b, c)
 	if tipo == "jugador" then
@@ -23714,6 +23959,17 @@ Estado.OnClientEvent:Connect(function(tipo, a, b, c)
 	elseif tipo == "menu" then
 		Interfaz.menu(true)
 		aplicarCamara()
+	elseif tipo == "ajustes" then
+		-- Los ajustes guardados llegan al entrar
+		if type(a) == "table" then
+			for k, v in a do
+				if Interfaz.ajustes[k] ~= nil and type(v) == type(Interfaz.ajustes[k]) then
+					Interfaz.ajustes[k] = v
+				end
+			end
+			aplicarAjustes()
+			Interfaz.pintarAjustes()
+		end
 	elseif tipo == "feed" then
 		Interfaz.feed(a and a.t, a and a.c)
 	elseif tipo == "finBW" then
@@ -24492,7 +24748,8 @@ return DV
 <Item class="ModuleScript" referent="RBX00000032"><Properties><string name="Name">EntidadesVista</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Entidades (cliente)
 	Dibuja lo que hay en workspace.Entidades como en el juego web:
-	· Objetos tirados: su icono girando y flotando (dos si es un montón).
+	· Objetos tirados: su modelo 3D (cubito con texturas o el objeto con volumen)
+	  girando y flotando, dos si es un montón; sin mallas, su icono.
 	· Orbes de experiencia: bolitas verdes y amarillas que brillan.
 	· Flechas con plumas y bolas de fuego encendidas.
 	Todo sigue con suavidad a la pieza del servidor.
@@ -24502,7 +24759,9 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Comp = ReplicatedStorage:WaitForChild("Blockverse")
 local Config = require(Comp:WaitForChild("Config"))
+local Registro = require(Comp:WaitForChild("Registro"))
 local Iconos = require(script.Parent:WaitForChild("Iconos"))
+local Modelos3D = require(script.Parent:WaitForChild("Modelos3D"))
 
 local BS = Config.BLOQUE
 local EntidadesVista = {}
@@ -24570,7 +24829,10 @@ local function nueva(p)
 			end
 		end
 		actualizar()
-		v.con = { p:GetAttributeChangedSignal("n"):Connect(actualizar), p:GetAttributeChangedSignal("id"):Connect(actualizar) }
+		v.con = { p:GetAttributeChangedSignal("n"):Connect(actualizar), p:GetAttributeChangedSignal("id"):Connect(function()
+			actualizar()
+			v.modeloId = nil
+		end) }
 		v.tipo = "item"
 	elseif p.Name == "Orbe" then
 		local valor = p:GetAttribute("valor") or 1
@@ -24633,6 +24895,9 @@ local function quitar(p)
 	if v.ancla then
 		v.ancla:Destroy()
 	end
+	v.pedido = (v.pedido or 0) + 1
+	Modelos3D.quitar(v.modelo)
+	Modelos3D.quitar(v.modelo2)
 	if v.vis then
 		v.vis:Destroy()
 	end
@@ -24655,7 +24920,38 @@ function EntidadesVista.iniciar()
 			end
 			v.pos = v.pos and v.pos:Lerp(p.Position, a) or p.Position
 			if v.tipo == "item" then
-				v.ancla.Position = v.pos + Vector3.new(0, (0.25 + math.sin(tiempo * 2.5 + v.fase) * 0.08) * BS, 0)
+				local alto = v.pos + Vector3.new(0, (0.25 + math.sin(tiempo * 2.5 + v.fase) * 0.08) * BS, 0)
+				v.ancla.Position = alto
+				-- Modelo 3D: se pide una vez por objeto (la primera vez de cada uno tarda un poco)
+				local id = p:GetAttribute("id")
+				if v.modeloId ~= id and Modelos3D.disponible() then
+					v.modeloId = id
+					v.pedido = (v.pedido or 0) + 1
+					local yo = v.pedido
+					Modelos3D.quitar(v.modelo)
+					Modelos3D.quitar(v.modelo2)
+					v.modelo, v.modelo2 = nil, nil
+					task.spawn(function()
+						local esc = Registro.bloques[id] and 0.25 or 0.45
+						local m = Modelos3D.crear(id, esc)
+						local m2 = m and Modelos3D.crear(id, esc)
+						if m and v.pedido == yo and vistas[p] then
+							v.modelo, v.modelo2 = m, m2
+							m.m.Parent = carpeta
+							m2.m.Parent = carpeta
+							v.bb.Enabled = false
+						else
+							Modelos3D.quitar(m)
+							Modelos3D.quitar(m2)
+						end
+					end)
+				end
+				if v.modelo then
+					local giro = CFrame.new(alto) * CFrame.Angles(0, tiempo * 1.6 + v.fase, 0)
+					Modelos3D.colocar(v.modelo, giro)
+					local varios = (p:GetAttribute("n") or 1) > 1
+					Modelos3D.colocar(v.modelo2, varios and giro * CFrame.new(0.12 * BS, 0.08 * BS, 0.1 * BS) or CFrame.new(0, -1e4, 0))
+				end
 			elseif v.tipo == "orbe" then
 				local c = 0.5 + math.sin(tiempo * 6 + v.fase) * 0.5
 				v.vis.Color = Color3.fromRGB(150 + c * 105, 255, 40 + c * 40)
@@ -24701,6 +24997,7 @@ local POR_FILA = HOJA // CEL -- 21
 local POR_HOJA = POR_FILA * POR_FILA
 
 local hojas = {} -- índice -> EditableImage
+local pxIconos, indiceIconos -- píxeles originales (para los modelos 3D de los objetos)
 local sitio = {} -- id -> {hoja, x, y}
 local colorMedio = {} -- id -> Color3
 local listo = false
@@ -24713,6 +25010,7 @@ function Iconos.preparar()
 	listo = true
 	local Datos = require(Comp.Datos:WaitForChild("Iconos"))
 	local px = Codec.leer(Datos.datos, Datos.tam)
+	pxIconos, indiceIconos = px, Datos.indice
 	local ids = {}
 	for id in Datos.indice do
 		table.insert(ids, id)
@@ -24755,6 +25053,22 @@ function Iconos.preparar()
 		hojas[h] = Imagenes.crear(HOJA, HOJA, buf)
 		task.wait()
 	end
+end
+
+-- Píxeles RGBA del icono de `id`: buffer, desplazamiento, ancho y alto (o nil)
+function Iconos.pixeles(id)
+	if not indiceIconos then
+		return nil
+	end
+	local e = indiceIconos[id]
+	if not e then
+		local o = Registro.objetos[id]
+		e = o and o.icono and indiceIconos[o.icono]
+	end
+	if not e then
+		return nil
+	end
+	return pxIconos, e[1], e[2], e[3]
 end
 
 function Iconos.color(id)
@@ -25872,31 +26186,215 @@ local cursorN = texto({ Size = UDim2.new(1, 0, 0, 16), Position = UDim2.new(0, 2
 ------------------------------------------------------------------
 -- Menú de inicio, carga y muerte
 ------------------------------------------------------------------
-local menu = nuevo("Frame", { Name = "Menu", BackgroundColor3 = Color3.fromRGB(10, 14, 24), BackgroundTransparency = 0.25, BorderSizePixel = 0,
+local function idDe(k)
+	return Registro.B[k] or Registro.I[k]
+end
+-- Menú principal: el mundo se ve desenfocado detrás
+local menu = nuevo("Frame", { Name = "Menu", BackgroundColor3 = Color3.fromRGB(8, 12, 22), BackgroundTransparency = 0.35, BorderSizePixel = 0,
 	Size = UDim2.fromScale(1, 1), Visible = false, ZIndex = 10 }, gui)
-nuevo("UIGradient", { Rotation = 90, Color = ColorSequence.new(Color3.fromRGB(40, 70, 120), Color3.fromRGB(10, 14, 24)) }, menu)
-nuevo("TextButton", { BackgroundTransparency = 1, Size = UDim2.fromScale(1, 1), Text = "", Modal = true, ZIndex = 10 }, menu)
-texto({ AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.fromScale(0.5, 0.1), Size = UDim2.fromOffset(700, 90), Text = "BLOCKVERSE", Font = FUENTE_N,
-	TextSize = 84, TextColor3 = Color3.fromRGB(255, 255, 255), TextStrokeTransparency = 0, TextStrokeColor3 = Color3.fromRGB(40, 40, 40), ZIndex = 11 }, menu)
-texto({ AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.fromScale(0.5, 0.1), Size = UDim2.fromOffset(700, 30), Text = "edición Roblox",
-	TextColor3 = Color3.fromRGB(255, 255, 80), TextSize = 20, ZIndex = 11, Rotation = -8 }, menu).Position = UDim2.new(0.5, 230, 0.1, 80)
-local menuCaja = nuevo("Frame", { BackgroundTransparency = 1, AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.fromScale(0.5, 0.27), Size = UDim2.fromOffset(380, 540), ZIndex = 11 }, menu)
-nuevo("UIListLayout", { Padding = UDim.new(0, 8), HorizontalAlignment = Enum.HorizontalAlignment.Center }, menuCaja)
-local function opcionMenu(txt, sub, modo)
-	local b = boton(txt, { Size = UDim2.fromOffset(380, 52), TextSize = 21, ZIndex = 12 }, menuCaja, function()
-		Interfaz.alElegirModo(modo)
+nuevo("UIGradient", { Rotation = 90, Color = ColorSequence.new(Color3.fromRGB(60, 90, 140), Color3.fromRGB(8, 12, 22)),
+	Transparency = NumberSequence.new(0.35, 0) }, menu)
+nuevo("TextButton", { BackgroundTransparency = 1, Size = UDim2.fromScale(1, 1), Text = "", Modal = true, ZIndex = 10, AutoButtonColor = false }, menu)
+local desenfoque = Instance.new("BlurEffect")
+desenfoque.Name = "DesenfoqueMenu"
+desenfoque.Size = 0
+desenfoque.Parent = game:GetService("Lighting")
+-- Título con sombra y la frase amarilla que late (como en Minecraft)
+texto({ AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 5, 0.06, 5), Size = UDim2.fromOffset(700, 90), Text = "BLOCKVERSE", Font = FUENTE_N,
+	TextSize = 84, TextColor3 = Color3.fromRGB(30, 30, 40), TextStrokeTransparency = 1, TextTransparency = 0.3, ZIndex = 11 }, menu)
+texto({ AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.fromScale(0.5, 0.06), Size = UDim2.fromOffset(700, 90), Text = "BLOCKVERSE", Font = FUENTE_N,
+	TextSize = 84, TextColor3 = Color3.fromRGB(255, 255, 255), TextStrokeTransparency = 0, TextStrokeColor3 = Color3.fromRGB(40, 40, 40), ZIndex = 12 }, menu)
+local FRASES = { "¡Edición Roblox!", "¡Ahora con kits!", "¡Cuidado con los creepers!", "¡Protege tu cama!", "¡Hecho bloque a bloque!",
+	"¡Con Mazmorras y Leyendas!", "¡Los bots ya tienden puentes!", "¡Dale a la G!" }
+local frase = texto({ AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(0.5, 250, 0.06, 88), Size = UDim2.fromOffset(320, 30),
+	Text = FRASES[math.random(1, #FRASES)], TextColor3 = Color3.fromRGB(255, 255, 80), TextSize = 20, Font = FUENTE_N, ZIndex = 13, Rotation = -12,
+	TextStrokeColor3 = Color3.fromRGB(60, 60, 0), TextStrokeTransparency = 0 }, menu)
+local fraseEscala = nuevo("UIScale", {}, frase)
+
+-- Tarjetas de los modos: icono, nombre y una línea de explicación
+local menuCaja = nuevo("Frame", { BackgroundTransparency = 1, AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.fromScale(0.5, 0.25), Size = UDim2.fromOffset(568, 250), ZIndex = 11 }, menu)
+nuevo("UIGridLayout", { CellSize = UDim2.fromOffset(278, 74), CellPadding = UDim2.fromOffset(12, 12), HorizontalAlignment = Enum.HorizontalAlignment.Center,
+	SortOrder = Enum.SortOrder.LayoutOrder }, menuCaja)
+local iconosMenu = {} -- se vuelven a poner al abrir el menú (al principio aún no están cargados)
+local function tarjeta(padre, txt, sub, icono, orden, alClic, tam)
+	local b = nuevo("TextButton", { Text = "", AutoButtonColor = false, BackgroundColor3 = Color3.fromRGB(52, 54, 62), BackgroundTransparency = 0.08,
+		BorderSizePixel = 0, LayoutOrder = orden, ZIndex = 12, Size = tam or UDim2.fromOffset(278, 74) }, padre)
+	nuevo("UICorner", { CornerRadius = UDim.new(0, 6) }, b)
+	local borde = nuevo("UIStroke", { Color = Color3.fromRGB(20, 20, 24), Thickness = 2, ApplyStrokeMode = Enum.ApplyStrokeMode.Border }, b)
+	local esc = nuevo("UIScale", {}, b)
+	local hay = icono ~= nil
+	if hay then
+		local fondoIc = nuevo("Frame", { BackgroundColor3 = Color3.fromRGB(30, 31, 36), BorderSizePixel = 0, Position = UDim2.fromOffset(10, 10),
+			Size = UDim2.new(0, 54, 1, -20), ZIndex = 13 }, b)
+		nuevo("UICorner", { CornerRadius = UDim.new(0, 4) }, fondoIc)
+		local ic = nuevo("ImageLabel", { BackgroundTransparency = 1, AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5),
+			Size = UDim2.fromOffset(40, 40), ResampleMode = Enum.ResamplerMode.Pixelated, ZIndex = 14 }, fondoIc)
+		Iconos.poner(ic, icono)
+		iconosMenu[ic] = icono
+	end
+	local x = hay and 76 or 12
+	texto({ Position = UDim2.fromOffset(x, sub and 12 or 0), Size = UDim2.new(1, -x - 8, 0, sub and 24 or 1), Text = txt, TextSize = 20, Font = FUENTE_N,
+		TextXAlignment = hay and Enum.TextXAlignment.Left or Enum.TextXAlignment.Center, ZIndex = 13 }, b).Size = sub and UDim2.new(1, -x - 8, 0, 24) or UDim2.new(1, -x - 8, 1, 0)
+	if sub then
+		texto({ Position = UDim2.fromOffset(x, 38), Size = UDim2.new(1, -x - 10, 0, 28), Text = sub, TextSize = 11, TextWrapped = true, Font = FUENTE,
+			TextColor3 = Color3.fromRGB(200, 205, 215), TextStrokeTransparency = 1, TextXAlignment = Enum.TextXAlignment.Left,
+			TextYAlignment = Enum.TextYAlignment.Top, ZIndex = 13 }, b)
+	end
+	b.MouseEnter:Connect(function()
+		b.BackgroundColor3 = Color3.fromRGB(78, 82, 96)
+		borde.Color = Color3.fromRGB(255, 220, 80)
+		esc.Scale = 1.03
 	end)
-	texto({ Position = UDim2.new(0, 0, 1, -16), Size = UDim2.new(1, 0, 0, 14), Text = sub, TextSize = 11, TextTransparency = 0.25, ZIndex = 13 }, b)
+	b.MouseLeave:Connect(function()
+		b.BackgroundColor3 = Color3.fromRGB(52, 54, 62)
+		borde.Color = Color3.fromRGB(20, 20, 24)
+		esc.Scale = 1
+	end)
+	b.Activated:Connect(alClic)
 	return b
 end
-opcionMenu("Supervivencia", "Recoge recursos, fabrica y sobrevive a la noche", "supervivencia")
-opcionMenu("Creativo", "Todos los bloques y objetos, vuelo y sin daño", "creativo")
-opcionMenu("One Block", "Empieza en un solo bloque que se regenera", "oneblock")
-opcionMenu("Bed Wars", "Equipos en islas: protege tu cama y rompe las demás", "bedwars")
-opcionMenu("Mazmorras", "Salas con enemigos, botín, artefactos y un jefe", "mazmorras")
-opcionMenu("Leyendas", "Defiende la aldea, construye y manda a tus golems", "leyendas")
-texto({ Size = UDim2.fromOffset(560, 100), Text = "WASD moverse · Espacio saltar · Ctrl correr · Mayús agacharse\nClic izq. picar / atacar · Clic der. usar / poner\n1-9 y rueda: barra · E inventario · Q tirar · F volar (creativo)\nV tercera persona · F3 información · M este menú · Esc cerrar · G habilidad (Bed Wars)",
-	TextSize = 13, TextWrapped = true, TextColor3 = Color3.fromRGB(220, 220, 220), ZIndex = 12 }, menuCaja)
+local function opcionMenu(txt, sub, modo, icono, orden)
+	return tarjeta(menuCaja, txt, sub, idDe(icono), orden, function()
+		Interfaz.enJuego = true
+		Interfaz.alElegirModo(modo)
+	end)
+end
+opcionMenu("Supervivencia", "Recoge recursos, fabrica y sobrevive a la noche", "supervivencia", "pico_hierro", 1)
+opcionMenu("Creativo", "Todos los bloques y objetos, vuelo y sin daño", "creativo", "cesped", 2)
+opcionMenu("One Block", "Empieza en un solo bloque que se regenera", "oneblock", "tierra", 3)
+opcionMenu("Bed Wars", "Equipos en islas: protege tu cama y rompe las demás", "bedwars", "cama", 4)
+opcionMenu("Mazmorras", "Salas con enemigos, botín, artefactos y un jefe", "mazmorras", "espada_diamante", 5)
+opcionMenu("Leyendas", "Defiende la aldea, construye y manda a tus golems", "leyendas", "escudo", 6)
+-- Fila de abajo: ajustes, controles y volver al juego
+local filaMenu = nuevo("Frame", { BackgroundTransparency = 1, AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0.25, 266),
+	Size = UDim2.fromOffset(568, 46), ZIndex = 11 }, menu)
+nuevo("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 12), HorizontalAlignment = Enum.HorizontalAlignment.Center,
+	SortOrder = Enum.SortOrder.LayoutOrder }, filaMenu)
+local abrirAjustes, abrirControles -- se definen más abajo
+tarjeta(filaMenu, "Ajustes", nil, nil, 1, function()
+	abrirAjustes()
+end, UDim2.fromOffset(176, 46))
+tarjeta(filaMenu, "Controles", nil, nil, 2, function()
+	abrirControles()
+end, UDim2.fromOffset(176, 46))
+local botonVolver = tarjeta(filaMenu, "Volver al juego", nil, nil, 3, function()
+	Interfaz.menu(false)
+	if Interfaz.alMenu then
+		Interfaz.alMenu()
+	end
+end, UDim2.fromOffset(192, 46))
+botonVolver.Visible = false
+texto({ AnchorPoint = Vector2.new(0, 1), Position = UDim2.new(0, 14, 1, -10), Size = UDim2.fromOffset(400, 18), Text = "Blockverse · edición Roblox",
+	TextSize = 13, TextXAlignment = Enum.TextXAlignment.Left, TextTransparency = 0.3, ZIndex = 11 }, menu)
+texto({ AnchorPoint = Vector2.new(1, 1), Position = UDim2.new(1, -14, 1, -10), Size = UDim2.fromOffset(420, 18), Text = "M abre este menú en cualquier momento",
+	TextSize = 13, TextXAlignment = Enum.TextXAlignment.Right, TextTransparency = 0.3, ZIndex = 11 }, menu)
+
+-- Ventana sencilla (ajustes, controles) por encima del menú
+local function ventana(nombre, titulo, alto)
+	local fondo = nuevo("TextButton", { Name = nombre, Text = "", AutoButtonColor = false, Modal = true, BackgroundColor3 = Color3.new(0, 0, 0),
+		BackgroundTransparency = 0.45, BorderSizePixel = 0, Size = UDim2.fromScale(1, 1), Visible = false, ZIndex = 20 }, gui)
+	local caja = nuevo("Frame", { BackgroundColor3 = Color3.fromRGB(36, 38, 46), BorderSizePixel = 0, AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.fromOffset(470, alto), ZIndex = 21 }, fondo)
+	nuevo("UICorner", { CornerRadius = UDim.new(0, 8) }, caja)
+	nuevo("UIStroke", { Color = Color3.fromRGB(255, 220, 80), Thickness = 2 }, caja)
+	texto({ Position = UDim2.fromOffset(0, 12), Size = UDim2.new(1, 0, 0, 30), Text = titulo, Font = FUENTE_N, TextSize = 24, ZIndex = 22 }, caja)
+	local lista = nuevo("Frame", { BackgroundTransparency = 1, Position = UDim2.fromOffset(20, 54), Size = UDim2.new(1, -40, 1, -120), ZIndex = 22 }, caja)
+	nuevo("UIListLayout", { Padding = UDim.new(0, 6), SortOrder = Enum.SortOrder.LayoutOrder }, lista)
+	local listo = tarjeta(caja, "Listo", nil, nil, 0, function()
+		fondo.Visible = false
+	end, UDim2.fromOffset(160, 42))
+	listo.AnchorPoint = Vector2.new(0.5, 1)
+	listo.Position = UDim2.new(0.5, 0, 1, -14)
+	return fondo, lista
+end
+
+-- Ajustes: valores que guarda el cliente (y el servidor en el DataStore)
+Interfaz.ajustes = { sensibilidad = 1, fov = 70, fovCorrer = true, balanceo = true, numeros = true, volumen = 100 }
+Interfaz.alCambiarAjuste = function(clave, valor) end
+local AJUSTES = {
+	{ k = "sensibilidad", n = "Sensibilidad del ratón", min = 0.2, max = 3, paso = 0.1, fmt = function(v) return ("%.1fx"):format(v) end },
+	{ k = "fov", n = "Campo de visión", min = 50, max = 110, paso = 5, fmt = function(v) return ("%d°"):format(v) end },
+	{ k = "volumen", n = "Volumen", min = 0, max = 100, paso = 10, fmt = function(v) return ("%d %%"):format(v) end },
+	{ k = "fovCorrer", n = "Efecto de velocidad al correr" },
+	{ k = "balanceo", n = "Balanceo de la mano" },
+	{ k = "numeros", n = "Números de daño" },
+}
+local ventanaAjustes, listaAjustes = ventana("Ajustes", "AJUSTES", 400)
+local valoresAj = {}
+local function pintarAjustes()
+	for _, A in AJUSTES do
+		local v = Interfaz.ajustes[A.k]
+		local l = valoresAj[A.k]
+		if l then
+			if A.fmt then
+				l.Text = A.fmt(v)
+			else
+				l.Text = v and "Sí" or "No"
+				l.TextColor3 = v and Color3.fromRGB(120, 255, 120) or Color3.fromRGB(255, 120, 120)
+			end
+		end
+	end
+end
+Interfaz.pintarAjustes = pintarAjustes
+for i, A in AJUSTES do
+	local fila = nuevo("Frame", { BackgroundColor3 = Color3.fromRGB(28, 29, 35), BorderSizePixel = 0, Size = UDim2.new(1, 0, 0, 38), LayoutOrder = i, ZIndex = 22 }, listaAjustes)
+	nuevo("UICorner", { CornerRadius = UDim.new(0, 4) }, fila)
+	texto({ Position = UDim2.fromOffset(12, 0), Size = UDim2.new(1, -170, 1, 0), Text = A.n, TextSize = 15, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 23 }, fila)
+	local function cambiar(dir)
+		local v = Interfaz.ajustes[A.k]
+		if A.fmt then
+			v = math.clamp(math.floor((v + dir * A.paso) / A.paso + 0.5) * A.paso, A.min, A.max)
+		else
+			v = not v
+		end
+		Interfaz.ajustes[A.k] = v
+		pintarAjustes()
+		Interfaz.alCambiarAjuste(A.k, v)
+	end
+	if A.fmt then
+		local menos = tarjeta(fila, "−", nil, nil, 0, function() cambiar(-1) end, UDim2.fromOffset(32, 30))
+		menos.Position = UDim2.new(1, -152, 0, 4)
+		valoresAj[A.k] = texto({ Position = UDim2.new(1, -116, 0, 0), Size = UDim2.fromOffset(76, 38), Text = "", TextSize = 15, Font = FUENTE_N, ZIndex = 23 }, fila)
+		local mas = tarjeta(fila, "+", nil, nil, 0, function() cambiar(1) end, UDim2.fromOffset(32, 30))
+		mas.Position = UDim2.new(1, -38, 0, 4)
+	else
+		local b = tarjeta(fila, "", nil, nil, 0, function() cambiar(0) end, UDim2.fromOffset(76, 30))
+		b.Position = UDim2.new(1, -82, 0, 4)
+		valoresAj[A.k] = texto({ Size = UDim2.fromScale(1, 1), Text = "", TextSize = 15, Font = FUENTE_N, ZIndex = 14 }, b)
+	end
+end
+pintarAjustes()
+abrirAjustes = function()
+	pintarAjustes()
+	ventanaAjustes.Visible = true
+end
+Interfaz.abrirAjustes = abrirAjustes
+
+-- Controles
+local ventanaControles, listaControles = ventana("Controles", "CONTROLES", 520)
+local CONTROLES = {
+	{ "WASD", "Moverse" }, { "Espacio", "Saltar (doble: volar en creativo)" }, { "Ctrl / Mayús", "Correr / agacharse" },
+	{ "Clic izquierdo", "Picar y atacar" }, { "Clic derecho", "Usar, poner, comer, tensar el arco" }, { "1-9 y rueda", "Elegir objeto" },
+	{ "E", "Inventario" }, { "Q", "Tirar (Ctrl: toda la pila)" }, { "V", "Primera o tercera persona" }, { "F", "Volar (creativo)" },
+	{ "G", "Habilidad del kit (Bed Wars)" }, { "M", "Este menú" }, { "F3", "Información" },
+}
+for i, c in CONTROLES do
+	local fila = nuevo("Frame", { BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, 26), LayoutOrder = i, ZIndex = 22 }, listaControles)
+	local tecla = nuevo("Frame", { BackgroundColor3 = Color3.fromRGB(70, 72, 84), BorderSizePixel = 0, Size = UDim2.fromOffset(130, 24), ZIndex = 22 }, fila)
+	nuevo("UICorner", { CornerRadius = UDim.new(0, 4) }, tecla)
+	texto({ Size = UDim2.fromScale(1, 1), Text = c[1], TextSize = 13, Font = FUENTE_N, ZIndex = 23 }, tecla)
+	texto({ Position = UDim2.fromOffset(142, 0), Size = UDim2.new(1, -142, 1, 0), Text = c[2], TextSize = 14, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 23 }, fila)
+end
+abrirControles = function()
+	ventanaControles.Visible = true
+end
+
+-- La frase amarilla late
+RunService.RenderStepped:Connect(function()
+	if menu.Visible then
+		fraseEscala.Scale = 1 + math.abs(math.sin(os.clock() * 4)) * 0.08
+	end
+end)
 
 local carga = nuevo("Frame", { Name = "Carga", BackgroundColor3 = Color3.fromRGB(40, 28, 20), BorderSizePixel = 0, Size = UDim2.fromScale(1, 1), Visible = true, ZIndex = 15 }, gui)
 local cargaT = texto({ AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.45), Size = UDim2.fromOffset(600, 30), Text = "Cargando Blockverse…", TextSize = 22, ZIndex = 16 }, carga)
@@ -26292,7 +26790,7 @@ function Interfaz.abierto()
 end
 
 function Interfaz.menuVisible()
-	return menu.Visible or carga.Visible or muerte.Visible
+	return menu.Visible or carga.Visible or muerte.Visible or ventanaAjustes.Visible or ventanaControles.Visible
 end
 
 ------------------------------------------------------------------
@@ -26653,6 +27151,19 @@ end
 
 function Interfaz.menu(si)
 	menu.Visible = si
+	if si then
+		for ic, id in iconosMenu do
+			Iconos.poner(ic, id)
+		end
+	end
+	-- Debajo del menú no se ve la barra ni los corazones, y el mundo se desenfoca
+	hud.Visible = not si
+	desenfoque.Size = si and 14 or 0
+	botonVolver.Visible = si and Interfaz.enJuego == true
+	if not si then
+		ventanaAjustes.Visible = false
+		ventanaControles.Visible = false
+	end
 end
 
 function Interfaz.carga(f, t)
@@ -26708,8 +27219,17 @@ function Interfaz.balancear()
 	balanceo = 1
 end
 
+local manoVisible = false
 function Interfaz.mostrarMano(si)
-	mano.Visible = si
+	manoVisible = si
+	-- Con la mano 3D (Modelos3D) la de dibujo no hace falta
+	mano.Visible = si and not Interfaz.mano3D
+end
+function Interfaz.manoVisible()
+	return manoVisible and not Interfaz.menuVisible() and not Interfaz.abierto()
+end
+function Interfaz.balanceoMano()
+	return balanceo
 end
 
 function Interfaz.mostrarMira(si)
@@ -26793,7 +27313,7 @@ function Interfaz.iniciar()
 		local ch = jugador.Character
 		local hum = ch and ch:FindFirstChildOfClass("Humanoid")
 		local andar = hum and hum.MoveDirection.Magnitude > 0.1 and 1 or 0
-		local bob = math.sin(t * 9) * 6 * andar
+		local bob = math.sin(t * 9) * 6 * andar * (Interfaz.ajustes.balanceo and 1 or 0)
 		local giro = math.sin(balanceo * math.pi) * 40
 		mano.Position = UDim2.new(1, -40 - giro, 1, 30 + bob + math.sin(balanceo * math.pi) * 30)
 		mano.Rotation = -giro * 0.5
@@ -27069,6 +27589,8 @@ return Luz
 	· Destello rojo al recibir daño, parpadeo blanco del creeper al ir a
 	  explotar (y se hincha), slimes que se aplastan al saltar, criaturas
 	  en llamas, caída de lado al morir y crías a la mitad de tamaño.
+	· Barra de vida encima durante unos segundos después de cada golpe y
+	  nube de humo al desaparecer tras morir (como en Minecraft).
 	Si no se pueden crear mallas editables, se usa una caja del color medio.
 ]]
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -27426,6 +27948,7 @@ local function nuevaVista(pieza)
 	v.conexiones = {
 		pieza:GetAttributeChangedSignal("golpe"):Connect(function()
 			v.flash = 0.35
+			v.barraT = 3
 		end),
 		pieza:GetAttributeChangedSignal("ataca"):Connect(function()
 			v.golpeT = 0.35
@@ -27467,6 +27990,34 @@ local function nuevaVista(pieza)
 		t.Parent = g
 		g.Parent = modelo
 	end
+	-- Barra de vida (se ve unos segundos tras cada golpe)
+	if def.tipo ~= "pasivo" or tipo == "golem" then
+		local g = Instance.new("BillboardGui")
+		g.Name = "BarraVida"
+		g.Size = UDim2.fromOffset(60, 7)
+		-- Más arriba si lleva nombre (élites, jefes, bots de Bed Wars)
+		local conNombre = etiqueta or pieza:FindFirstChildOfClass("BillboardGui")
+		g.StudsOffset = Vector3.new(0, pieza.Size.Y / 2 + (conNombre and 1.3 or 0.45) * BS, 0)
+		g.MaxDistance = 32 * BS
+		g.LightInfluence = 0
+		g.AlwaysOnTop = true
+		g.Enabled = false
+		g.Adornee = pieza
+		local fondo = Instance.new("Frame")
+		fondo.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+		fondo.BackgroundTransparency = 0.25
+		fondo.BorderSizePixel = 0
+		fondo.Size = UDim2.fromScale(1, 1)
+		fondo.Parent = g
+		local barra = Instance.new("Frame")
+		barra.BorderSizePixel = 0
+		barra.Position = UDim2.fromOffset(1, 1)
+		barra.Size = UDim2.new(1, -2, 1, -2)
+		barra.BackgroundColor3 = Color3.fromRGB(90, 220, 90)
+		barra.Parent = fondo
+		g.Parent = modelo
+		v.barra, v.barraF = g, barra
+	end
 	vistas[pieza] = v
 	return v
 end
@@ -27479,6 +28030,10 @@ local function quitarVista(pieza)
 	vistas[pieza] = nil
 	for _, c in v.conexiones do
 		c:Disconnect()
+	end
+	-- Al desaparecer después de morir: nube de humo
+	if v.muerteT > 0 and MobsVista.alParticulas and not v.lejos then
+		MobsVista.alParticulas(v.pos, Color3.fromRGB(225, 225, 225), 18)
 	end
 	v.modelo:Destroy()
 end
@@ -27541,7 +28096,20 @@ local function animar(v, dt)
 			local rel = ((math.atan2(d.X, d.Z) - yaw + math.pi * 3) % (math.pi * 2)) - math.pi
 			ry = math.clamp(rel, -1.1, 1.1)
 			rx = math.clamp(-math.atan2(d.Y - (v.def.alto or 1) * 0.4, dist), -0.6, 0.6)
+			v.mirando = true
+		else
+			v.mirando = false
 		end
+	end
+	-- Sin nadie cerca, mira a su alrededor de vez en cuando
+	if not v.mirando and not muerto then
+		v.curiosoT = (v.curiosoT or 0) - dt
+		if v.curiosoT <= 0 then
+			v.curiosoT = 2 + math.random() * 4
+			v.curiosoY = math.random() < 0.35 and 0 or (math.random() - 0.5) * 1.6
+			v.curiosoX = (math.random() - 0.6) * 0.5
+		end
+		ry, rx = v.curiosoY or 0, v.curiosoX or 0
 	end
 	v.cabY += (ry - v.cabY) * math.min(1, dt * 6)
 	v.cabX += (rx - v.cabX) * math.min(1, dt * 6)
@@ -27568,7 +28136,9 @@ local function animar(v, dt)
 				if tipo == "gallina" then
 					rot = CFrame.Angles(0, 0, g.s * (sp > 0.1 and 0 or math.sin(tiempo * 30) * 0.6))
 				else
-					rot = CFrame.Angles((brazosArriba and -math.pi / 2 or 0) + amp * 0.3 * g.s - golpe, 0, 0)
+					-- En reposo los brazos se mecen un poco (como al respirar)
+					local respira = math.sin(tiempo * 1.6 + g.s) * 0.05
+					rot = CFrame.Angles((brazosArriba and -math.pi / 2 or 0) + amp * 0.3 * g.s - golpe + respira, 0, respira * g.s)
 				end
 			elseif g.tipo == "cabeza" and tipo ~= "ghast" and tipo ~= "blaze" then
 				rot = CFrame.Angles(v.cabX, v.cabY, 0)
@@ -27591,6 +28161,16 @@ local function animar(v, dt)
 	elseif v.caja then
 		v.caja.Size = pieza.Size
 		v.caja.CFrame = base * CFrame.new(0, alto / 2, 0)
+	end
+	-- Barra de vida: verde, amarilla o roja según lo que le quede
+	if v.barra then
+		v.barraT = math.max(0, (v.barraT or 0) - dt)
+		local f = pieza:GetAttribute("vida") or 1
+		v.barra.Enabled = v.barraT > 0 and not muerto and f < 1
+		if v.barra.Enabled then
+			v.barraF.Size = UDim2.new(math.clamp(f, 0, 1), -2, 1, -2)
+			v.barraF.BackgroundColor3 = f > 0.6 and Color3.fromRGB(90, 220, 90) or (f > 0.3 and Color3.fromRGB(240, 200, 60) or Color3.fromRGB(230, 60, 50))
+		end
 	end
 	-- Destello rojo al recibir daño y blanco del creeper
 	v.flash = math.max(0, v.flash - dt)
@@ -27675,7 +28255,409 @@ end
 
 return MobsVista
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX00000038"><Properties><string name="Name">Render</string><ProtectedString name="Source"><![CDATA[--!native
+<Item class="ModuleScript" referent="RBX00000038"><Properties><string name="Name">Modelos3D</string><ProtectedString name="Source"><![CDATA[--[[
+	Blockverse para Roblox · Modelos 3D de los objetos (cliente)
+	· Los bloques son cubos (o losas, o sus cajas) con las mismas texturas del mundo.
+	· Los demás objetos (espadas, picos, comida, flores…) se hacen con los píxeles de
+	  su icono con un píxel de grosor, como en Minecraft.
+	· La mano en primera persona: el brazo con el objeto en 3D, que se balancea al
+	  golpear y al usar, se mueve al andar y baja y sube al cambiar de objeto.
+	· El objeto que lleva cada jugador en la mano se ve en su personaje.
+	Si Roblox no deja crear mallas editables, no se hace nada y el juego usa los iconos.
+]]
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local AssetService = game:GetService("AssetService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local Comp = ReplicatedStorage:WaitForChild("Blockverse")
+local Config = require(Comp:WaitForChild("Config"))
+local Registro = require(Comp:WaitForChild("Registro"))
+local Imagenes = require(script.Parent:WaitForChild("Imagenes"))
+local Iconos = require(script.Parent:WaitForChild("Iconos"))
+local Render = require(script.Parent:WaitForChild("Render"))
+
+local BS = Config.BLOQUE
+local BL = Registro.bloques
+local jugador = Players.LocalPlayer
+
+local Modelos = {}
+
+------------------------------------------------------------------
+-- Objetos con volumen a partir de los píxeles del icono
+------------------------------------------------------------------
+local function mallaExtruida(id)
+	local px, ofs, w, h = Iconos.pixeles(id)
+	-- Los iconos de 48 px son cubos dibujados en perspectiva: esos no sirven
+	if not px or w > 32 or h > 32 then
+		return nil
+	end
+	local buf = buffer.create(w * h * 4)
+	buffer.copy(buf, 0, px, ofs, w * h * 4)
+	local img = Imagenes.crear(w, h, buf)
+	if not img then
+		return nil
+	end
+	local ok, em = pcall(function()
+		return AssetService:CreateEditableMesh()
+	end)
+	if not ok or not em then
+		return nil
+	end
+	local function opaco(x, y)
+		if x < 0 or y < 0 or x >= w or y >= h then
+			return false
+		end
+		return buffer.readu8(buf, (y * w + x) * 4 + 3) > 100
+	end
+	local s = BS / 16 -- un píxel del icono = 1/16 de bloque
+	-- Roblox estira la malla al tamaño de la pieza: se centra en los píxeles que se ven
+	local minX, minY, maxX, maxY = w, h, -1, -1
+	for y = 0, h - 1 do
+		for x = 0, w - 1 do
+			if buffer.readu8(buf, (y * w + x) * 4 + 3) > 100 then
+				minX, minY = math.min(minX, x), math.min(minY, y)
+				maxX, maxY = math.max(maxX, x), math.max(maxY, y)
+			end
+		end
+	end
+	if maxX < 0 then
+		return nil
+	end
+	local cxp, cyp = (minX + maxX + 1) / 2, (minY + maxY + 1) / 2
+	local normales, colores = {}, {}
+	local function normalId(n)
+		local k = n.X * 9 + n.Y * 3 + n.Z
+		if not normales[k] then
+			normales[k] = em:AddNormal(n)
+		end
+		return normales[k]
+	end
+	-- Las caras de lado un poco más oscuras, como la luz del mundo
+	local function colorId(luz)
+		if not colores[luz] then
+			colores[luz] = em:AddColor(Color3.new(luz, luz, luz), 1)
+		end
+		return colores[luz]
+	end
+	-- Cuadrilátero con las esquinas en orden; se gira para que mire hacia `n`
+	local function cara(p1, p2, p3, p4, n, uv, luz)
+		local a, b, c, d = em:AddVertex(p1), em:AddVertex(p2), em:AddVertex(p3), em:AddVertex(p4)
+		local t1, t2
+		if (p2 - p1):Cross(p3 - p1):Dot(n) > 0 then
+			t1, t2 = { a, b, c }, { a, c, d }
+		else
+			t1, t2 = { a, c, b }, { a, d, c }
+		end
+		local ni, ci = normalId(n), colorId(luz)
+		for _, tri in { t1, t2 } do
+			local f = em:AddTriangle(tri[1], tri[2], tri[3])
+			em:SetFaceUVs(f, { uv, uv, uv })
+			em:SetFaceNormals(f, { ni, ni, ni })
+			em:SetFaceColors(f, { ci, ci, ci })
+		end
+	end
+	local V = Vector3.new
+	local z0, z1 = -s / 2, s / 2
+	local hay = false
+	local ok2 = pcall(function()
+		for y = 0, h - 1 do
+			for x = 0, w - 1 do
+				if opaco(x, y) then
+					hay = true
+					local uv = em:AddUV(Vector2.new((x + 0.5) / w, (y + 0.5) / h))
+					local x0, x1 = (x - cxp) * s, (x + 1 - cxp) * s
+					local y1, y0 = (cyp - y) * s, (cyp - y - 1) * s
+					cara(V(x0, y0, z1), V(x1, y0, z1), V(x1, y1, z1), V(x0, y1, z1), V(0, 0, 1), uv, 1)
+					cara(V(x0, y0, z0), V(x1, y0, z0), V(x1, y1, z0), V(x0, y1, z0), V(0, 0, -1), uv, 0.85)
+					if not opaco(x - 1, y) then
+						cara(V(x0, y0, z0), V(x0, y0, z1), V(x0, y1, z1), V(x0, y1, z0), V(-1, 0, 0), uv, 0.75)
+					end
+					if not opaco(x + 1, y) then
+						cara(V(x1, y0, z0), V(x1, y0, z1), V(x1, y1, z1), V(x1, y1, z0), V(1, 0, 0), uv, 0.75)
+					end
+					if not opaco(x, y - 1) then
+						cara(V(x0, y1, z0), V(x1, y1, z0), V(x1, y1, z1), V(x0, y1, z1), V(0, 1, 0), uv, 0.95)
+					end
+					if not opaco(x, y + 1) then
+						cara(V(x0, y0, z0), V(x1, y0, z0), V(x1, y0, z1), V(x0, y0, z1), V(0, -1, 0), uv, 0.6)
+					end
+				end
+			end
+		end
+	end)
+	if not ok2 or not hay then
+		em:Destroy()
+		return nil
+	end
+	local parte
+	local ok3 = pcall(function()
+		parte = AssetService:CreateMeshPartAsync(Content.fromObject(em), { CollisionFidelity = Enum.CollisionFidelity.Box })
+	end)
+	if not ok3 or not parte then
+		em:Destroy()
+		return nil
+	end
+	parte.Anchored = true
+	parte.CanCollide = false
+	parte.CanQuery = false
+	parte.CanTouch = false
+	parte.CastShadow = false
+	parte.Material = Enum.Material.SmoothPlastic
+	parte.Color = Color3.new(1, 1, 1)
+	parte.Size = Vector3.new((maxX - minX + 1) * s, (maxY - minY + 1) * s, s)
+	parte.CFrame = CFrame.new()
+	Imagenes.enMalla(parte, img)
+	local m = Instance.new("Model")
+	m.Name = "Objeto" .. id
+	parte.Parent = m
+	m.WorldPivot = CFrame.new()
+	return m
+end
+
+------------------------------------------------------------------
+-- Crear y colocar
+------------------------------------------------------------------
+local plantillas = {} -- id -> Model | false
+local haciendo = {}
+
+-- Devuelve {m = Model, tipo = "bloque" | "objeto", partes = {{parte, desplazamiento}}} o nil.
+-- La primera vez de cada objeto espera a que Roblox cree la malla.
+function Modelos.crear(id, escala)
+	if not id or id == 0 or not Modelos.disponible() then
+		return nil
+	end
+	while haciendo[id] do
+		task.wait()
+	end
+	local p = plantillas[id]
+	if p == nil then
+		haciendo[id] = true
+		local ok, m = pcall(function()
+			local bloque = BL[id] and Render.modeloBloque(id)
+			if bloque then
+				bloque:SetAttribute("tipo", "bloque")
+				return bloque
+			end
+			local o = mallaExtruida(id)
+			if o then
+				o:SetAttribute("tipo", "objeto")
+			end
+			return o
+		end)
+		p = ok and m or false
+		plantillas[id] = p
+		haciendo[id] = nil
+	end
+	if not p then
+		return nil
+	end
+	local m = p:Clone()
+	local inst = { m = m, tipo = p:GetAttribute("tipo"), partes = {} }
+	escala = escala or 1
+	for _, parte in m:GetChildren() do
+		if parte:IsA("BasePart") then
+			local cf = parte.CFrame
+			parte.Size *= escala
+			table.insert(inst.partes, { parte, CFrame.new(cf.Position * escala) * cf.Rotation })
+		end
+	end
+	return inst
+end
+
+function Modelos.colocar(inst, cf)
+	if not inst then
+		return
+	end
+	for _, pd in inst.partes do
+		pd[1].CFrame = cf * pd[2]
+	end
+end
+
+function Modelos.quitar(inst)
+	if inst then
+		inst.m:Destroy()
+	end
+end
+
+function Modelos.disponible()
+	return Render.modo == "malla" and Imagenes.disponible
+end
+
+------------------------------------------------------------------
+-- La mano en primera persona
+------------------------------------------------------------------
+-- opc = {enMano = fn() -> id, visible = fn() -> bool, balanceo = fn() -> 0..1, conBalanceo = fn() -> bool}
+function Modelos.iniciarMano(opc)
+	local carpeta = Instance.new("Folder")
+	carpeta.Name = "ManoPrimeraPersona"
+	local brazo = Instance.new("Part")
+	brazo.Name = "Brazo"
+	brazo.Anchored = true
+	brazo.CanCollide = false
+	brazo.CanQuery = false
+	brazo.CanTouch = false
+	brazo.CastShadow = false
+	brazo.Material = Enum.Material.SmoothPlastic
+	brazo.Size = Vector3.new(0.42, 0.42, 1.5)
+	brazo.Color = Color3.fromRGB(234, 184, 146)
+	brazo.Parent = carpeta
+	local manga = brazo:Clone()
+	manga.Name = "Manga"
+	manga.Size = Vector3.new(0.46, 0.46, 0.7)
+	manga.Color = Color3.fromRGB(0, 160, 170)
+	manga.Parent = carpeta
+	local actual, sostenido = nil, nil
+	local pedido = 0
+	local cambioT, t = 0, 0
+	local function colorPiel()
+		local ch = jugador.Character
+		local bc = ch and ch:FindFirstChildOfClass("BodyColors")
+		if bc then
+			brazo.Color = bc.RightArmColor3
+			manga.Color = bc.TorsoColor3
+		end
+	end
+	jugador.CharacterAdded:Connect(function()
+		task.wait(1)
+		colorPiel()
+	end)
+	colorPiel()
+	RunService:BindToRenderStep("ManoBlockverse", Enum.RenderPriority.Camera.Value + 2, function(dt)
+		local cam = workspace.CurrentCamera
+		if not cam then
+			return
+		end
+		if carpeta.Parent ~= cam then
+			carpeta.Parent = cam
+		end
+		local visible = opc.visible()
+		local id = visible and opc.enMano() or nil
+		-- Cambio de objeto: baja la mano y sube con el nuevo
+		if id ~= actual then
+			actual = id
+			cambioT = 0.25
+			pedido += 1
+			local yo = pedido
+			if sostenido then
+				Modelos.quitar(sostenido)
+				sostenido = nil
+			end
+			if id then
+				task.spawn(function()
+					local inst = Modelos.crear(id, BL[id] and 0.24 or 0.36)
+					if inst and yo == pedido then
+						sostenido = inst
+						inst.m.Parent = carpeta
+					elseif inst then
+						Modelos.quitar(inst)
+					end
+				end)
+			end
+		end
+		if not visible then
+			brazo.Transparency, manga.Transparency = 1, 1
+			if sostenido then
+				Modelos.colocar(sostenido, CFrame.new(0, -1e4, 0))
+			end
+			return
+		end
+		brazo.Transparency, manga.Transparency = 0, 0
+		cambioT = math.max(0, cambioT - dt)
+		local b = opc.balanceo()
+		local golpe = math.sin(b * math.pi)
+		local golpe2 = math.sin(math.sqrt(b) * math.pi)
+		-- Al andar se mueve un poco
+		local ch = jugador.Character
+		local hum = ch and ch:FindFirstChildOfClass("Humanoid")
+		local andar = hum and hum.MoveDirection.Magnitude > 0.1 and opc.conBalanceo()
+		if andar then
+			t += dt
+		end
+		local bx = andar and math.sin(t * 9) * 0.06 or 0
+		local by = andar and -math.abs(math.cos(t * 9)) * 0.06 or 0
+		local baja = cambioT / 0.25 * 0.9
+		local base = cam.CFrame
+			* CFrame.new(1.2 + bx - golpe2 * 0.3, -1.15 + by - baja + golpe2 * 0.25 - golpe * 0.2, -1.9 - golpe * 0.35)
+			* CFrame.Angles(math.rad(14) - golpe * 0.9, math.rad(-10) + golpe2 * 0.35, math.rad(-6))
+		brazo.CFrame = base * CFrame.new(0, 0, 0.55)
+		manga.CFrame = base * CFrame.new(0, 0, 1.05)
+		if sostenido then
+			local giro
+			if sostenido.tipo == "bloque" then
+				giro = CFrame.new(-0.05, 0.4, -0.55) * CFrame.Angles(0, math.rad(45), 0)
+			else
+				-- El objeto plano visto de lado, con la punta hacia arriba y hacia delante
+				giro = CFrame.new(-0.2, 0.55, -0.55) * CFrame.Angles(math.rad(-15), math.rad(-35), 0) * CFrame.Angles(0, 0, math.rad(40))
+			end
+			Modelos.colocar(sostenido, base * giro)
+		end
+	end)
+end
+
+------------------------------------------------------------------
+-- El objeto en la mano de cada personaje (lo que lleva en la barra)
+------------------------------------------------------------------
+-- esTercera = fn() -> bool (el propio jugador solo se ve en tercera persona)
+function Modelos.iniciarPersonajes(esTercera)
+	local carpeta = Instance.new("Folder")
+	carpeta.Name = "ObjetosEnLaMano"
+	carpeta.Parent = workspace
+	local porJugador = {} -- plr -> {id, inst, pedido}
+	RunService.RenderStepped:Connect(function()
+		for _, plr in Players:GetPlayers() do
+			local d = porJugador[plr]
+			if not d then
+				d = { pedido = 0 }
+				porJugador[plr] = d
+			end
+			local ch = plr.Character
+			local mano = ch and (ch:FindFirstChild("RightHand") or ch:FindFirstChild("Right Arm"))
+			local hum = ch and ch:FindFirstChildOfClass("Humanoid")
+			local id = plr:GetAttribute("EnMano")
+			if not mano or not hum or hum.Health <= 0 or (plr == jugador and not esTercera()) or (ch and ch:GetAttribute("Invisible")) then
+				id = nil
+			end
+			if id ~= d.id then
+				d.id = id
+				d.pedido += 1
+				local yo = d.pedido
+				if d.inst then
+					Modelos.quitar(d.inst)
+					d.inst = nil
+				end
+				if id then
+					task.spawn(function()
+						local inst = Modelos.crear(id, BL[id] and 0.28 or 0.5)
+						if inst and d.pedido == yo then
+							d.inst = inst
+							inst.m.Parent = carpeta
+						elseif inst then
+							Modelos.quitar(inst)
+						end
+					end)
+				end
+			end
+			if d.inst and mano then
+				-- R15 (RightHand) o R6 (Right Arm): el objeto en el puño, hacia delante
+				local agarre = mano.Name == "RightHand" and CFrame.new(0, -0.15, -0.35) or CFrame.new(0, -1, -0.35)
+				local giro = d.inst.tipo == "bloque" and CFrame.Angles(0, math.rad(45), 0)
+					or (CFrame.Angles(0, math.rad(90), 0) * CFrame.Angles(0, 0, math.rad(-45)) * CFrame.new(0.35, 0.35, 0))
+				Modelos.colocar(d.inst, mano.CFrame * agarre * giro)
+			end
+		end
+		for plr, d in porJugador do
+			if not plr.Parent then
+				Modelos.quitar(d.inst)
+				porJugador[plr] = nil
+			end
+		end
+	end)
+end
+
+return Modelos
+]]></ProtectedString></Properties></Item>
+<Item class="ModuleScript" referent="RBX00000039"><Properties><string name="Name">Render</string><ProtectedString name="Source"><![CDATA[--!native
 --!optimize 2
 --[[
 	Blockverse para Roblox · Render del mundo (cliente)
@@ -28726,11 +29708,102 @@ function Render.atlas(a)
 	return atlas[a]
 end
 
+------------------------------------------------------------------
+-- Modelo suelto de un bloque (en la mano, tirado en el suelo…): cubo, losa o
+-- cajas con las mismas texturas que el mundo, centrado en (0, 0, 0) y de 1 bloque.
+-- Devuelve un Model (una pieza por atlas) o nil si el bloque no tiene esa forma.
+------------------------------------------------------------------
+local plantillasBloque = {}
+local haciendo = {}
+function Render.modeloBloque(id)
+	if Render.modo ~= "malla" then
+		return nil
+	end
+	local def = BL[id]
+	if not def or not def.tex then
+		return nil
+	end
+	local p = plantillasBloque[id]
+	if p == nil then
+		while haciendo[id] do
+			task.wait()
+		end
+		p = plantillasBloque[id]
+	end
+	if p == nil then
+		haciendo[id] = true
+		p = false
+		local f = FORMA[id]
+		local cajas
+		if f == 0 then
+			cajas = { { 0, 0, 0, 1, 1, 1 } }
+		elseif f == 1 then
+			cajas = { { 0, 0, 0, 1, def.altura or 0.5, 1 } }
+		elseif f == 6 then
+			cajas = def.cajas
+		elseif f == 7 then
+			cajas = { { 0.375, 0, 0.375, 0.625, 1, 0.625 } }
+		end
+		if cajas then
+			-- La hierba y las hojas con el verde de las llanuras
+			local tt = BLANCO
+			local tn = TINTE[id]
+			if tn == "abedul" then
+				tt = Biomas.abedul
+			elseif tn == "abeto" then
+				tt = Biomas.abeto
+			elseif tn then
+				local col = Biomas.colores[2] or Biomas.colores[1]
+				tt = col and col[tn == "pasto" and 1 or (tn == "follaje" and 2 or 3)] or BLANCO
+			end
+			local listas = {}
+			for _, cj in cajas do
+				for _, fc in CARAS do
+					local k = fc.k
+					local L, u = listaPara(listas, def.tex[k])
+					if L then
+						local col = colorDe(fc.sombra * 1.1, u.gris and tt or BLANCO)
+						local pp, uv, cc = {}, {}, {}
+						for i, c in fc.c do
+							local px = c[1] == 1 and cj[4] or cj[1]
+							local py = c[2] == 1 and cj[5] or cj[2]
+							local pz = c[3] == 1 and cj[6] or cj[3]
+							pp[i] = Vector3.new((px - 0.5) * BS, (py - 0.5) * BS, (pz - 0.5) * BS)
+							local uu, vv = UV_CARA[k](px, py, pz)
+							uv[i] = cajaUV(u, math.clamp(uu, 0.01, 0.99), math.clamp(vv, 0.01, 0.99))
+							cc[i] = col
+						end
+						quad(L, pp, uv, cc, fc.normal)
+					end
+				end
+			end
+			local m = Instance.new("Model")
+			m.Name = "Bloque" .. id
+			local n = 0
+			for a, L in listas do
+				local parte = crearMalla(L, atlas[a], Vector3.zero)
+				if parte then
+					parte.CastShadow = false
+					parte.Parent = m
+					n += 1
+				end
+			end
+			if n > 0 then
+				m.WorldPivot = CFrame.new()
+				p = m
+			end
+		end
+		plantillasBloque[id] = p
+		haciendo[id] = nil
+	end
+	return p and p:Clone() or nil
+end
+
 return Render
 ]]></ProtectedString></Properties></Item>
 </Item>
 </Item>
-<Item class="StarterCharacterScripts" referent="RBX0000003C"><Properties><string name="Name">StarterCharacterScripts</string></Properties><Item class="Script" referent="RBX0000003A"><Properties><string name="Name">Health</string><bool name="Disabled">false</bool><ProtectedString name="Source"><![CDATA[--[[
+<Item class="StarterCharacterScripts" referent="RBX0000003D"><Properties><string name="Name">StarterCharacterScripts</string></Properties><Item class="Script" referent="RBX0000003B"><Properties><string name="Name">Health</string><bool name="Disabled">false</bool><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox
 	Este script vacío reemplaza al «Health» de Roblox, que cura sola a la
 	persona. En Blockverse la vida se recupera con el hambre llena.
