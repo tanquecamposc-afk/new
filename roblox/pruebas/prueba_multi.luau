@@ -268,6 +268,50 @@ personaje(beto)
 pasos(30)
 print("supervivencia: Beto murió y Ana recogió", cuenta(ana, Reg.I.diamante) - diamAna, "diamantes")
 
+-- Enemigos: no persiguen a través de una pared, no se tiran por un borde, se avisan entre ellos
+mover(ana, 0, sy + 1, 8)
+mover(beto, -3, sy + 1, -3)
+for z = -4, 20 do
+	for y = sy + 1, sy + 5 do
+		Mundo.set(5, y, z, Reg.B.piedra)
+	end
+end
+pasos(3)
+local c1 = Mobs.crear("creeper", 12.5, sy + 1, 8.5)
+ok(c1 ~= nil, "no se pudo crear un creeper de prueba")
+if c1 then
+	pasos(60)
+	ok(c1.pieza:GetAttribute("persigue") ~= true, "el creeper persigue a Ana a través de una pared")
+	for z = -4, 20 do
+		for y = sy + 1, sy + 5 do
+			Mundo.set(5, y, z, 0)
+		end
+	end
+	pasos(45)
+	ok(c1.pieza:GetAttribute("persigue") == true, "el creeper no persigue a Ana cuando la ve")
+	Mobs.quitar(c1)
+end
+-- Borde: Beto al otro lado de un hueco; el creeper se para en el borde
+mover(ana, -3, sy + 1, 18)
+mover(beto, 27, sy + 1, 8)
+local c2 = Mobs.crear("creeper", 17.5, sy + 1, 8.5)
+if c2 then
+	pasos(150)
+	ok(c2.x < 21.2 and c2.y > sy - 1, ("el creeper se tiró por el borde (x=%.1f y=%.1f)"):format(c2.x, c2.y))
+	Mobs.quitar(c2)
+end
+-- Golpear a uno avisa a los de su clase que estén cerca; la vida llega al cliente
+local c3 = Mobs.crear("creeper", 2.5, sy + 1, 2.5)
+local c4 = Mobs.crear("creeper", 5.5, sy + 1, 3.5)
+if c3 and c4 then
+	Mobs.herir(c3, 2, nil, "jugador", 0, ana)
+	ok(c4.atacante == ana and c4.enfadado > 0, "los enemigos cercanos no acuden al golpear a uno")
+	local f = c3.pieza:GetAttribute("vida")
+	ok(f and f < 1 and f > 0, "la vida del enemigo no llega al cliente para la barra")
+	Mobs.quitar(c3)
+	Mobs.quitar(c4)
+end
+pasos(3)
 -- Guardar al salir y recuperar al volver
 local diamAntes = cuenta(ana, Reg.I.diamante)
 sale(ana)

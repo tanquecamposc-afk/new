@@ -293,6 +293,8 @@ function Mobs.herir(m, d, dir, fuente, empuje, plr)
 	m.vida -= d
 	m.inv = fuente == "fuego" and 0 or 0.5
 	m.pieza:SetAttribute("golpe", tiempo)
+	-- El cliente enseña una barra de vida un momento
+	m.pieza:SetAttribute("vida", math.clamp(m.vida / math.max(1, m.vidaMax or 1), 0, 1))
 	if dir then
 		local k = 7 + (empuje or 0) * 5
 		m.vx += dir.x * k
@@ -305,6 +307,17 @@ function Mobs.herir(m, d, dir, fuente, empuje, plr)
 	if fuente == "jugador" or fuente == "flechaJugador" then
 		m.ultimoGolpeJugador = tiempo
 		m.atacante = plr
+		-- Los enemigos de la misma clase que estén cerca acuden a ayudar
+		if def.tipo == "hostil" and not m.control and plr then
+			m.memoria = 10
+			for _, o in Mobs.lista do
+				if o ~= m and not o.muerto and not o.control and o.tipo == m.tipo and math.abs(o.x - m.x) + math.abs(o.z - m.z) < 14 then
+					o.enfadado = math.max(o.enfadado, 10)
+					o.atacante = plr
+					o.memoria = 10
+				end
+			end
+		end
 		if def.tipo == "neutral" then
 			m.enfadado = 30
 			if m.tipo == "piglin" then
@@ -335,6 +348,62 @@ local function moverHacia(m, dx, dz, vel)
 		m.velObj = vel
 	else
 		m.mover = false
+	end
+end
+
+-- ¿Es peligroso dar un paso hacia (ux, uz)? Lava delante o una caída de más de 3 bloques
+local function peligroDelante(md, m, ux, uz)
+	local x, z = math.floor(m.x + ux * 0.9), math.floor(m.z + uz * 0.9)
+	local y = math.floor(m.y + 0.1)
+	for dy = 0, -1, -1 do
+		if esLava(md:getSiCargado(x, y + dy, z)) then
+			return true
+		end
+	end
+	for dy = 1, 4 do
+		local b = md:getSiCargado(x, y - dy, z)
+		if b < 0 or (b ~= 0 and (SOLIDO[b] or esAgua(b))) then
+			return false
+		end
+	end
+	return true
+end
+
+-- Movimiento a pie con cabeza: no se tira por un precipicio ni a la lava, y si se atasca contra
+-- un muro alto lo rodea por un lado
+local function andarConCuidado(md, m, dt, dy)
+	if not m.mover then
+		return
+	end
+	if m.rodeo then
+		m.rodeo.t -= dt
+		m.yawObj += math.rad(75) * m.rodeo.lado
+		if m.rodeo.t <= 0 then
+			m.rodeo = nil
+		end
+	end
+	m.atascoT = (m.atascoT or 0) + dt
+	if m.atascoT > 0.8 then
+		m.atascoT = 0
+		local p = m.atascoPos
+		if p and not m.rodeo and (m.x - p[1]) ^ 2 + (m.z - p[2]) ^ 2 < 0.09 then
+			m.rodeo = { lado = math.random() < 0.5 and -1 or 1, t = 1 + math.random() * 0.6 }
+		end
+		m.atascoPos = { m.x, m.z }
+	end
+	-- Si el objetivo está bastante más abajo, bajar es lo que quiere
+	if m.suelo and (dy or 0) > -3 then
+		local ux, uz = math.sin(m.yawObj), math.cos(m.yawObj)
+		if peligroDelante(md, m, ux, uz) then
+			for _, a in { 1.2, -1.2, 2.2, -2.2 } do
+				local nx, nz = math.sin(m.yawObj + a), math.cos(m.yawObj + a)
+				if not peligroDelante(md, m, nx, nz) then
+					m.yawObj += a
+					return
+				end
+			end
+			m.mover = false
+		end
 	end
 end
 
@@ -406,6 +475,18 @@ local function actualizarMob(m, dt, jugadores)
 	end
 	persigue = hostil and j ~= nil
 	local ex, ey, ez = m.x, m.y + m.alto * 0.85, m.z
+	-- Solo persigue lo que ve (o lo que tiene muy cerca o le ha pegado); se acuerda unos segundos
+	if persigue then
+		m.visionT = (m.visionT or 0) - dt
+		if m.visionT <= 0 then
+			m.visionT = 0.4
+			if dist3 < 4 or m.enfadado > 0 or lineaVision(ex, ey, ez, j.x, j.y + 1.5, j.z) then
+				m.memoria = math.max(m.memoria or 0, 6)
+			end
+		end
+		m.memoria = (m.memoria or 0) - dt
+		persigue = m.memoria > 0
+	end
 	if persigue and ia == "arquero" then
 		m.yawObj = math.atan2(dx, dz)
 		if dist < 6 then
@@ -413,10 +494,17 @@ local function actualizarMob(m, dt, jugadores)
 		elseif dist > 12 then
 			moverHacia(m, dx, dz, def.vel)
 		else
+			-- Se mueve de lado y cambia de dirección de vez en cuando
+			m.ladoT = (m.ladoT or 0) - dt
+			if m.ladoT <= 0 then
+				m.ladoT = 1.5 + math.random() * 2.5
+				m.lado = -(m.lado or 1)
+			end
 			m.mover = true
-			m.yawObj += math.pi / 2
+			m.yawObj += math.pi / 2 * m.lado
 			m.velObj = def.vel * 0.5
 		end
+		andarConCuidado(md, m, dt, dy)
 		if m.cd <= 0 and dist3 < 16 and lineaVision(ex, ey, ez, j.x, j.y + 1.5, j.z) then
 			m.cd = 1.5 + math.random()
 			local dir = Vector3.new(dx, dy + 1.1 - m.alto * 0.85 + dist * 0.12, dz).Unit
@@ -426,6 +514,7 @@ local function actualizarMob(m, dt, jugadores)
 		end
 	elseif persigue and ia == "creeper" then
 		moverHacia(m, dx, dz, def.vel)
+		andarConCuidado(md, m, dt, dy)
 		local cerca = dist3 < 3 and lineaVision(ex, ey, ez, j.x, j.y + 1.5, j.z)
 		if cerca or (m.mecha > 0 and dist3 < 7) then
 			m.mecha += dt
@@ -654,6 +743,9 @@ local function actualizarMob(m, dt, jugadores)
 		end
 	elseif persigue and (def.dano or 0) > 0 then -- cuerpo a cuerpo
 		moverHacia(m, dx, dz, def.vel * ((m.enfadado > 0 and m.tipo == "enderman") and 1.4 or 1))
+		if not def.trepa then
+			andarConCuidado(md, m, dt, dy)
+		end
 		if def.trepa and m.chocoH then
 			m.vy = math.max(m.vy, 3)
 		end

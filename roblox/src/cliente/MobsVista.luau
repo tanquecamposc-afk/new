@@ -8,6 +8,8 @@
 	· Destello rojo al recibir daño, parpadeo blanco del creeper al ir a
 	  explotar (y se hincha), slimes que se aplastan al saltar, criaturas
 	  en llamas, caída de lado al morir y crías a la mitad de tamaño.
+	· Barra de vida encima durante unos segundos después de cada golpe y
+	  nube de humo al desaparecer tras morir (como en Minecraft).
 	Si no se pueden crear mallas editables, se usa una caja del color medio.
 ]]
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -365,6 +367,7 @@ local function nuevaVista(pieza)
 	v.conexiones = {
 		pieza:GetAttributeChangedSignal("golpe"):Connect(function()
 			v.flash = 0.35
+			v.barraT = 3
 		end),
 		pieza:GetAttributeChangedSignal("ataca"):Connect(function()
 			v.golpeT = 0.35
@@ -406,6 +409,34 @@ local function nuevaVista(pieza)
 		t.Parent = g
 		g.Parent = modelo
 	end
+	-- Barra de vida (se ve unos segundos tras cada golpe)
+	if def.tipo ~= "pasivo" or tipo == "golem" then
+		local g = Instance.new("BillboardGui")
+		g.Name = "BarraVida"
+		g.Size = UDim2.fromOffset(60, 7)
+		-- Más arriba si lleva nombre (élites, jefes, bots de Bed Wars)
+		local conNombre = etiqueta or pieza:FindFirstChildOfClass("BillboardGui")
+		g.StudsOffset = Vector3.new(0, pieza.Size.Y / 2 + (conNombre and 1.3 or 0.45) * BS, 0)
+		g.MaxDistance = 32 * BS
+		g.LightInfluence = 0
+		g.AlwaysOnTop = true
+		g.Enabled = false
+		g.Adornee = pieza
+		local fondo = Instance.new("Frame")
+		fondo.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+		fondo.BackgroundTransparency = 0.25
+		fondo.BorderSizePixel = 0
+		fondo.Size = UDim2.fromScale(1, 1)
+		fondo.Parent = g
+		local barra = Instance.new("Frame")
+		barra.BorderSizePixel = 0
+		barra.Position = UDim2.fromOffset(1, 1)
+		barra.Size = UDim2.new(1, -2, 1, -2)
+		barra.BackgroundColor3 = Color3.fromRGB(90, 220, 90)
+		barra.Parent = fondo
+		g.Parent = modelo
+		v.barra, v.barraF = g, barra
+	end
 	vistas[pieza] = v
 	return v
 end
@@ -418,6 +449,10 @@ local function quitarVista(pieza)
 	vistas[pieza] = nil
 	for _, c in v.conexiones do
 		c:Disconnect()
+	end
+	-- Al desaparecer después de morir: nube de humo
+	if v.muerteT > 0 and MobsVista.alParticulas and not v.lejos then
+		MobsVista.alParticulas(v.pos, Color3.fromRGB(225, 225, 225), 18)
 	end
 	v.modelo:Destroy()
 end
@@ -530,6 +565,16 @@ local function animar(v, dt)
 	elseif v.caja then
 		v.caja.Size = pieza.Size
 		v.caja.CFrame = base * CFrame.new(0, alto / 2, 0)
+	end
+	-- Barra de vida: verde, amarilla o roja según lo que le quede
+	if v.barra then
+		v.barraT = math.max(0, (v.barraT or 0) - dt)
+		local f = pieza:GetAttribute("vida") or 1
+		v.barra.Enabled = v.barraT > 0 and not muerto and f < 1
+		if v.barra.Enabled then
+			v.barraF.Size = UDim2.new(math.clamp(f, 0, 1), -2, 1, -2)
+			v.barraF.BackgroundColor3 = f > 0.6 and Color3.fromRGB(90, 220, 90) or (f > 0.3 and Color3.fromRGB(240, 200, 60) or Color3.fromRGB(230, 60, 50))
+		end
 	end
 	-- Destello rojo al recibir daño y blanco del creeper
 	v.flash = math.max(0, v.flash - dt)
