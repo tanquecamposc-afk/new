@@ -752,6 +752,8 @@ if R then
 	pasos(5)
 	ok(R.jefe ~= nil, "no apareció el jefe")
 	ok(recibido.jefe and recibido.jefe[1], "no llegó la barra del jefe")
+	-- Apartarse del centro: ahí sale la plataforma al siguiente nivel
+	moverJugador(sj.x + 4, MZ_Y + 1, sj.z)
 	for _ = 1, 4 do
 		for _, m in table.clone(R.enemigos) do
 			Mobs.matar(m, "jugador", plr)
