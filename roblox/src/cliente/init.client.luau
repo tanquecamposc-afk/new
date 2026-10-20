@@ -28,6 +28,8 @@ local Iconos = require(script:WaitForChild("Iconos"))
 local Render = require(script:WaitForChild("Render"))
 local MobsVista = require(script:WaitForChild("MobsVista"))
 local EntidadesVista = require(script:WaitForChild("EntidadesVista"))
+local DimensionVista = require(script:WaitForChild("DimensionVista"))
+local Generador = require(Comp:WaitForChild("Generador"))
 local Imagenes = require(script:WaitForChild("Imagenes"))
 
 local remotos = ReplicatedStorage:WaitForChild("Remotos")
@@ -183,6 +185,8 @@ EntidadesVista.iniciar()
 Interfaz.carga(0.5, "Generando el mundo…")
 local md = MundoDatos.new(semilla)
 est.md = md
+DimensionVista.md = md
+DimensionVista.iniciar()
 -- Los chunks se cargan alrededor del personaje (también en tercera persona)
 Render.foco = function()
 	local ch = jugador.Character
@@ -403,6 +407,14 @@ local function usar(inicio)
 			return
 		end
 	end
+	-- Cohete mientras se planea con élitros
+	if id == Registro.I.cohete and est.planeando then
+		if inicio then
+			est.coheteT = 1.5
+			enviar("cohete")
+		end
+		return
+	end
 	-- Arco
 	if id == Registro.I.arco then
 		if inicio and not arcoDesde then
@@ -569,6 +581,9 @@ UserInputService.InputBegan:Connect(function(input, procesado)
 				ponerVuelo(not volando)
 			end
 			ultimoEspacio = os.clock()
+		end
+		if k == Enum.KeyCode.Space and not bloqueado then
+			est.pedirPlaneo = true
 		end
 	end
 end)
@@ -748,6 +763,13 @@ Estado.OnClientEvent:Connect(function(tipo, a, b, c)
 		ponerVuelo(false)
 	elseif tipo == "listo" then
 		listoServidor = true
+	elseif tipo == "viaje" then
+		-- Cambio de dimensión o portal: pantalla de carga hasta que se vea el sitio
+		est.viajando = true
+		Interfaz.cerrar()
+		Interfaz.carga(0.5, a and ("Entrando en " .. a .. "…") or "Viajando…")
+	elseif tipo == "jefe" then
+		Interfaz.jefe(a)
 	end
 end)
 
@@ -804,6 +826,12 @@ RunService.RenderStepped:Connect(function(dt)
 		elseif root then
 			Interfaz.carga(listoServidor and 0.85 or 0.65, listoServidor and "Dibujando el mundo…" or "Generando el mundo…")
 		end
+	end
+
+	-- Fin de un viaje entre dimensiones
+	if est.viajando and root and not root.Anchored and Render.listoEn(root.Position) then
+		est.viajando = false
+		Interfaz.carga(nil)
 	end
 
 	-- Partículas
@@ -913,6 +941,93 @@ RunService.RenderStepped:Connect(function(dt)
 		Interfaz.uso(nil)
 	end
 
+	-- Planear con élitros (fisicaEspecial del juego web)
+	if hum and root then
+		local pecho = est.inv[38]
+		local tiene = pecho and pecho.id == Registro.I.elitros and (pecho.dur or 2) > 1
+		local pies = root.Position / BS
+		local bAgua = md:getSiCargado(math.floor(pies.X), math.floor(pies.Y - 1), math.floor(pies.Z))
+		local enAgua = bAgua > 0 and Registro.esLiquido(bAgua)
+		local enAire = hum.FloorMaterial == Enum.Material.Air
+		if est.pedirPlaneo then
+			est.pedirPlaneo = false
+			if not est.planeando and tiene and enAire and not volando and not enAgua and root.AssemblyLinearVelocity.Y < 0 then
+				est.planeando = true
+				est.acumPlaneo = 0
+				est.velPlaneo = root.AssemblyLinearVelocity / BS / 20
+				est.fuerzaPlaneo = Instance.new("BodyVelocity")
+				est.fuerzaPlaneo.MaxForce = Vector3.new(1e7, 1e7, 1e7)
+				est.fuerzaPlaneo.P = 6000
+				est.fuerzaPlaneo.Velocity = root.AssemblyLinearVelocity
+				est.fuerzaPlaneo.Parent = root
+				est.planeoT = 0
+			end
+		end
+		if est.planeando then
+			if not tiene or not enAire or enAgua or volando or not est.fuerzaPlaneo or not est.fuerzaPlaneo.Parent then
+				est.planeando = false
+				if est.fuerzaPlaneo then
+					est.fuerzaPlaneo:Destroy()
+					est.fuerzaPlaneo = nil
+				end
+			else
+				local cam = workspace.CurrentCamera
+				local look = cam.CFrame.LookVector
+				local pitch = math.asin(math.clamp(look.Y, -1, 1))
+				local cp = math.cos(pitch)
+				local h = math.sqrt(look.X ^ 2 + look.Z ^ 2)
+				local lx, ly, lz = (h > 0 and look.X / h or 0) * cp, math.sin(pitch), (h > 0 and look.Z / h or 0) * cp
+				local f = -pitch
+				local v = est.velPlaneo
+				local vx, vy, vz = v.X, v.Y, v.Z
+				est.acumPlaneo += dt
+				est.coheteT = math.max(0, (est.coheteT or 0) - dt)
+				while est.acumPlaneo >= 0.05 do
+					est.acumPlaneo -= 0.05
+					local d = math.sqrt(lx * lx + lz * lz)
+					local d1 = math.sqrt(vx * vx + vz * vz)
+					local f1 = math.cos(f) ^ 2
+					vy += -0.08 + f1 * 0.06
+					if vy < 0 and d > 0 then
+						local d5 = vy * -0.1 * f1
+						vx += lx * d5 / d
+						vy += d5
+						vz += lz * d5 / d
+					end
+					if f < 0 and d > 0 then
+						local d9 = d1 * -math.sin(f) * 0.04
+						vx += -lx * d9 / d
+						vy += d9 * 3.2
+						vz += -lz * d9 / d
+					end
+					if d > 0 then
+						vx += (lx / d * d1 - vx) * 0.1
+						vz += (lz / d * d1 - vz) * 0.1
+					end
+					vx *= 0.99
+					vy *= 0.98
+					vz *= 0.99
+					if est.coheteT > 0 then
+						vx += lx * 0.1 + (lx * 1.5 - vx) * 0.5
+						vy += ly * 0.1 + (ly * 1.5 - vy) * 0.5
+						vz += lz * 0.1 + (lz * 1.5 - vz) * 0.5
+					end
+				end
+				est.velPlaneo = Vector3.new(vx, vy, vz)
+				est.fuerzaPlaneo.Velocity = est.velPlaneo * 20 * BS
+				if est.coheteT > 0 and math.random() < dt * 30 then
+					emitir(root.Position - Vector3.new(0, 1, 0), { Color3.fromRGB(255, 224, 112), Color3.fromRGB(255, 128, 48) }, 1, 0.8, 0.08, 0)
+				end
+				-- Desgaste de los élitros (1 por segundo en supervivencia)
+				est.planeoT += dt
+				if est.planeoT >= 1 then
+					est.planeoT = 0
+					enviar("planeo")
+				end
+			end
+		end
+	end
+
 	-- Vuelo
 	if volando and vueloFuerza and hum then
 		local subir = UserInputService:IsKeyDown(Enum.KeyCode.Space) or hum.Jump
@@ -974,7 +1089,11 @@ RunService.RenderStepped:Connect(function(dt)
 		local x, y, z = math.floor(p.X), math.floor(p.Y - 1.5), math.floor(p.Z)
 		local bio = md:getSiCargado(x, 0, z) >= 0 and md:bioma(x, z) or -1
 		local Bi = require(Comp.Datos:WaitForChild("Biomas"))
-		Interfaz.info(("Blockverse para Roblox\nXYZ: %d / %d / %d\nChunk: %d, %d\nBioma: %s\nHora: %.1f\nFPS: %d · Render: %s\nSemilla: %d")
-			:format(x, y, z, x // 16, z // 16, Bi.nombres and Bi.nombres[bio + 1] or tostring(bio), Lighting.ClockTime, fps, Render.modo, semilla))
+		local Dm = require(Comp:WaitForChild("Dimensiones"))
+		local dim, zl = Generador.dimensionBloque(z)
+		local nomBio = bio >= 120 and "El End" or bio >= 100 and (Dm.NOMBRES_BIOMA_NETHER[bio - 99] or "Nether") or (Bi.nombres and Bi.nombres[bio + 1] or tostring(bio))
+		local nomDim = ({ superficie = "Superficie", nether = "El Nether", ["end"] = "El End", vacio = "One Block" })[dim] or dim
+		Interfaz.info(("Blockverse para Roblox\nDimensión: %s\nXYZ: %d / %d / %d\nChunk: %d, %d\nBioma: %s\nHora: %.1f\nFPS: %d · Render: %s\nSemilla: %d")
+			:format(nomDim, x, y, zl, x // 16, zl // 16, nomBio, Lighting.ClockTime, fps, Render.modo, semilla))
 	end
 end)

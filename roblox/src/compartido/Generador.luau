@@ -13,6 +13,7 @@ local Registro = require(script.Parent.Registro)
 local Ruido = require(script.Parent.Ruido)
 local Biomas = require(script.Parent.Datos.Biomas)
 local Estructuras = require(script.Parent.Estructuras)
+local Dimensiones = require(script.Parent.Dimensiones)
 
 local hash2, hash3, mulberry32 = Ruido.hash2, Ruido.hash3, Ruido.mulberry32
 local valueNoise, valueNoise3, fbm, smooth = Ruido.valueNoise, Ruido.valueNoise3, Ruido.fbm, Ruido.smooth
@@ -745,16 +746,66 @@ local PASTO = { [2] = 0.25, [3] = 0.1, [8] = 0.1, [9] = 0.3, [10] = 0.3, [11] = 
 local FLOR = { [2] = 0.03, [3] = 0.015, [8] = 0.02, [11] = 0.02, [9] = 0.01 }
 
 -- Zona vacía (islas de One Block): todo aire
+-- Zonas del mapa de Roblox (en chunks a lo largo de Z):
+-- · cz >= 600: el Nether (su chunk 0 está en cz = 800)
+-- · -600 >= cz > -760: vacío (islas de One Block)
+-- · cz <= -760: el End (su chunk 0 está en cz = -900)
+-- · el resto: la Superficie
 Generador.ZONA_VACIA_CZ = -600
+Generador.NETHER_DESDE, Generador.NETHER_CZ = 600, 800
+Generador.END_HASTA, Generador.END_CZ = -760, -900
+function Generador.dimensionDe(cz)
+	if cz >= Generador.NETHER_DESDE then
+		return "nether", Generador.NETHER_CZ
+	elseif cz <= Generador.END_HASTA then
+		return "end", Generador.END_CZ
+	elseif cz <= Generador.ZONA_VACIA_CZ then
+		return "vacio", 0
+	end
+	return "superficie", 0
+end
+-- Dimensión de un bloque (x, z) del mapa de Roblox y su z dentro de esa dimensión
+function Generador.dimensionBloque(z)
+	local d, off = Generador.dimensionDe(z // CZ)
+	return d, z - off * CZ
+end
 function Generador.esZonaVacia(cx, cz)
-	return cz <= Generador.ZONA_VACIA_CZ
+	return Generador.dimensionDe(cz) == "vacio"
+end
+-- ¿Le da la luz del cielo? (no en el Nether ni en el End)
+function Generador.conCielo(cz)
+	local d = Generador.dimensionDe(cz)
+	return d == "superficie" or d == "vacio"
+end
+
+-- Genera un chunk del Nether o del End (coordenadas de esa dimensión)
+function Generador:llenarDim(dim, datos, cx, cz)
+	if dim == "nether" then
+		local bn, cofres = Dimensiones.generarNether(datos, cx, cz, self.semilla)
+		local bio = buffer.create(256)
+		for i = 0, 255 do
+			buffer.writeu8(bio, i, 100 + buffer.readu8(bn, i))
+		end
+		return bio, cofres
+	end
+	local cofres = Dimensiones.generarEnd(datos, cx, cz, self.semilla)
+	local bio = buffer.create(256)
+	buffer.fill(bio, 0, 120)
+	return bio, cofres
 end
 
 function Generador:llenar(datos, cx, cz, ceder)
-	if Generador.esZonaVacia(cx, cz) then
+	local dim, off = Generador.dimensionDe(cz)
+	if dim == "vacio" then
 		local bio = buffer.create(256)
 		buffer.fill(bio, 0, 2)
 		return bio
+	elseif dim ~= "superficie" then
+		local bio, cofres = self:llenarDim(dim, datos, cx, cz - off)
+		for _, c in cofres do
+			c[3] += off * CZ
+		end
+		return bio, cofres
 	end
 	local s = self.semilla
 	local bx, bz = cx * CX, cz * CZ

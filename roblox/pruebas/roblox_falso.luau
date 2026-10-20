@@ -313,7 +313,7 @@ Inst.__newindex = function(o, k, v)
 		return
 	end
 	if k == "CFrame" then assert(type(v) == "table" and v._cf, "CFrame inválido en " .. o._p.ClassName) end
-	if (k == "Color" and o._p.ClassName ~= "UIGradient") or k == "Color3" or k == "BackgroundColor3" or k == "TextColor3" then assert(type(v) == "table" and v._color, k .. " inválido") end
+	if (k == "Color" and o._p.ClassName ~= "UIGradient" and o._p.ClassName ~= "Beam" and o._p.ClassName ~= "ParticleEmitter") or k == "Color3" or k == "BackgroundColor3" or k == "TextColor3" then assert(type(v) == "table" and v._color, k .. " inválido") end
 	if k == "Size" and (o._p.ClassName == "Part" or o._p.ClassName == "MeshPart") then assert(getmetatable(v) == V3, "Size de Part debe ser Vector3") end
 	if k == "Health" and type(v) == "number" then
 		local antes = o._p.Health or 100

@@ -48,6 +48,8 @@ local Inv = require(script.Inventario)
 local Cont = require(script.Contenedores)
 local Modos = require(script.Modos)
 local Habitantes = require(script.Habitantes)
+local Dimension = require(script.Dimension)
+local Generador = require(Comp.Generador)
 
 local BS = Config.BLOQUE
 local BL, OB = Registro.bloques, Registro.objetos
@@ -479,6 +481,42 @@ local function colocar(plr, char)
 	enviarJugador(plr)
 end
 
+-- Lleva al jugador a (x, y, z) en bloques (pies); prepara las colisiones antes
+local function teletransportar(plr, x, y, z, titulo)
+	local h, root = humanoide(plr)
+	if not root then
+		return
+	end
+	local s = st(plr)
+	if s and s.ui then
+		s.ui = nil
+	end
+	root.Anchored = true
+	Estado:FireClient(plr, "viaje", titulo)
+	local cx, cz = math.floor(x) // CX, math.floor(z) // CZ
+	for dx = -1, 1 do
+		for dz = -1, 1 do
+			Mundo.asegurarFisica(cx + dx, cz + dz)
+			task.wait()
+		end
+	end
+	if not root.Parent then
+		return
+	end
+	root.Parent:PivotTo(CFrame.new(x * BS, y * BS + 3.2, z * BS))
+	root.AssemblyLinearVelocity = Vector3.zero
+	plr:SetAttribute("Dimension", Generador.dimensionBloque(math.floor(z)))
+	task.delay(0.4, function()
+		if root.Parent then
+			root.Anchored = false
+		end
+	end)
+	if titulo then
+		Estado:FireClient(plr, "titulo", "", titulo, "#ffffff")
+	end
+	local _ = h
+end
+
 local function alMorir(plr)
 	local s = st(plr)
 	if not s then
@@ -813,6 +851,10 @@ end
 Entidades.alImpacto = function(e, modo)
 	local opc = e.opc
 	if modo == "buscar" then
+		-- El dragón y los cristales del End
+		if (e.tipo == "flecha" or e.tipo == "tridente") and Dimension.golpeProyectil(e.x, e.y, e.z, opc.dano) then
+			return true
+		end
 		-- Criaturas
 		for _, m in Mobs.lista do
 			if not m.muerto and m ~= opc.dueno and e.x > m.x - m.ancho - 0.1 and e.x < m.x + m.ancho + 0.1 and e.y > m.y and e.y < m.y + m.alto
@@ -1193,6 +1235,16 @@ function acciones.derecho(plr, s, obj, dir, mobParte, agachado)
 			aviso(plr, "Esta mesa estará disponible en una próxima versión")
 			return
 		end
+		if b == B.marcoEnd and id == I.ojoEnder then
+			Mundo.set(x, y, z, B.marcoEndOjo)
+			consumirEnMano(s)
+			enviarJugador(plr)
+			if Dimension.comprobarPortalEnd(x, y, z) then
+				Estado:FireAllClients("sonido", "portal", Vector3.new(x + 0.5, y + 0.5, z + 0.5) * BS)
+				aviso(plr, "El portal del End se ha activado.")
+			end
+			return
+		end
 		if b == B.boveda and id == 541 then
 			if Habitantes.abrirBoveda(x, y, z) then
 				consumirEnMano(s)
@@ -1307,7 +1359,12 @@ function acciones.derecho(plr, s, obj, dir, mobParte, agachado)
 		if act ~= 0 and not esLiquido(act) then
 			soltarBloque(act, tx, ty, tz, nil, plr)
 		end
-		Mundo.set(tx, ty, tz, id == I.cuboAgua and B.agua or B.lava)
+		if id == I.cuboAgua and Dimension.de(tz) == "nether" then
+			-- En el Nether el agua se evapora
+			Estado:FireAllClients("particulas", Vector3.new(tx + 0.5, ty + 0.5, tz + 0.5) * BS, 0xdddddd)
+		else
+			Mundo.set(tx, ty, tz, id == I.cuboAgua and B.agua or B.lava)
+		end
 		if supervivencia(s) then
 			s.inv[s.sel] = Registro.pila(I.cubo, 1)
 		end
@@ -1317,6 +1374,13 @@ function acciones.derecho(plr, s, obj, dir, mobParte, agachado)
 	if id == I.mechero and x then
 		local tx, ty, tz = x + n[1], y + n[2], z + n[3]
 		if Mundo.get(tx, ty, tz) ~= 0 then
+			return
+		end
+		-- ¿Enciende un portal del Nether?
+		if b == B.obsidiana and Dimension.encender(tx, ty, tz) then
+			Estado:FireAllClients("sonido", "portal", Vector3.new(tx + 0.5, ty + 0.5, tz + 0.5) * BS)
+			gastarEnMano(plr, s, 1)
+			enviarJugador(plr)
 			return
 		end
 		if SOLIDO[Mundo.get(tx, ty - 1, tz)] then
@@ -1480,6 +1544,27 @@ end
 -- Ataque a una criatura (carga = 0..1 según el tiempo desde el último golpe)
 function acciones.atacar(plr, s, parte, carga, cayendo, corriendo)
 	if typeof(parte) ~= "Instance" then
+		return
+	end
+	-- El dragón y los cristales del End
+	if parte.Name == "CristalEnd" then
+		Dimension.romperCristal(parte:GetAttribute("Cristal"))
+		return
+	end
+	if Dimension.esDragon(parte) then
+		local p = s.inv[s.sel]
+		local hh = p and OB[p.id] and OB[p.id].herr
+		local cad = hh and hh.cad or 4
+		local c = math.clamp((os.clock() - s.ultimoAtaque) * cad, 0, 1)
+		s.ultimoAtaque = os.clock()
+		local dano = (hh and hh.dano or 1) * (0.2 + 0.8 * c * c) + (s.efectos.fuerza and 3 or 0)
+		if Dimension.herirDragon(dano, "jugador") then
+			Estado:FireClient(plr, "golpeMob", parte.Position, dano, false)
+		end
+		if hh then
+			gastarEnMano(plr, s, 1)
+		end
+		enviarJugador(plr)
 		return
 	end
 	local m = Mobs.desdeParte(parte)
@@ -1930,6 +2015,27 @@ function acciones.correr(plr, s, si)
 	end
 end
 
+-- Planear con élitros gasta 1 de durabilidad por segundo
+function acciones.planeo(plr, s)
+	local p = s.inv[38]
+	if supervivencia(s) and p and p.id == I.elitros and p.dur and p.dur > 1 then
+		p.dur -= 1
+		if p.dur <= 1 then
+			aviso(plr, "Tus élitros están rotos.")
+		end
+		enviarJugador(plr)
+	end
+end
+
+-- Usar un cohete mientras se planea
+function acciones.cohete(plr, s)
+	local p = s.inv[s.sel]
+	if p and p.id == I.cohete then
+		consumirEnMano(s)
+		enviarJugador(plr)
+	end
+end
+
 function acciones.modoJuego(plr, s, nombre)
 	Modos.pedir(plr, nombre)
 end
@@ -2113,6 +2219,12 @@ end)
 ------------------------------------------------------------------
 -- Modos de juego (One Block…)
 ------------------------------------------------------------------
+Dimension.iniciar({
+	teletransportar = teletransportar, Estado = Estado, estados = estados, ganarXP = ganarXP, danar = danar, aviso = aviso,
+	explosion = function(x, y, z, p)
+		Sim.explosion(x, y, z, p)
+	end,
+})
 Modos.iniciar({
 	Mundo = Mundo, Mobs = Mobs, Entidades = Entidades, estados = estados, enviarJugador = enviarJugador, aviso = aviso,
 	Estado = Estado, colocar = colocar, Inv = Inv,

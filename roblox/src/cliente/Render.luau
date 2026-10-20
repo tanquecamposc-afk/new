@@ -23,6 +23,7 @@ local Config = require(Comp:WaitForChild("Config"))
 local Registro = require(Comp:WaitForChild("Registro"))
 local MundoDatos = require(Comp:WaitForChild("MundoDatos"))
 local Codec = require(Comp:WaitForChild("Codec"))
+local Generador = require(Comp:WaitForChild("Generador"))
 local Texturas = require(Comp:WaitForChild("Datos"):WaitForChild("Texturas"))
 local Biomas = require(Comp.Datos:WaitForChild("Biomas"))
 local Luz = require(script.Parent:WaitForChild("Luz"))
@@ -165,8 +166,11 @@ local CURVA = {}
 for l = 0, 15 do
 	CURVA[l] = l <= 0 and 0 or 0.8 ^ (15 - l)
 end
+-- Luz mínima de cada dimensión (dim.amb del juego web: el Nether y el End no están a oscuras)
+local AMB = 0.03
+local AMB_DIM = { superficie = 0.03, vacio = 0.03, nether = 0.28, ["end"] = 0.48 }
 local function brillo(cielo, bloque)
-	local v = math.max(CURVA[math.clamp(floor(cielo + 0.5), 0, 15)], CURVA[math.clamp(floor(bloque + 0.5), 0, 15)], 0.03)
+	local v = math.max(CURVA[math.clamp(floor(cielo + 0.5), 0, 15)], CURVA[math.clamp(floor(bloque + 0.5), 0, 15)], AMB)
 	return v ^ 0.72
 end
 
@@ -748,6 +752,7 @@ local function quitarSeccion(sec)
 end
 
 local function construirSeccion(ch, v, sy)
+	AMB = AMB_DIM[Generador.dimensionDe(ch.cz)] or 0.03
 	local origen = Vector3.new(ch.cx * CX * BS, sy * SEC * BS, ch.cz * CZ * BS)
 	local nueva = { partes = {}, mallas = {} }
 	if Render.modo == "malla" then
@@ -799,7 +804,7 @@ local function construirChunk(ch)
 			md:obtener(ch.cx + dcx, ch.cz + dcz, ceder)
 		end
 	end
-	ch.luz = Luz.calcular(md, ch.cx, ch.cz, true, ceder)
+	ch.luz = Luz.calcular(md, ch.cx, ch.cz, Generador.conCielo(ch.cz), ceder)
 	local v = prepararVecinos(md, ch.cx, ch.cz, ch.luz)
 	local ym = Luz.ymaxDe(md:obtener(ch.cx, ch.cz))
 	for sy = 0, NSEC - 1 do
@@ -820,7 +825,7 @@ end
 local function rehacerSecciones(ch)
 	local sucias = ch.seccionesSucias
 	ch.seccionesSucias = {}
-	ch.luz = Luz.calcular(md, ch.cx, ch.cz, true, ceder)
+	ch.luz = Luz.calcular(md, ch.cx, ch.cz, Generador.conCielo(ch.cz), ceder)
 	local v = prepararVecinos(md, ch.cx, ch.cz, ch.luz)
 	for sy in sucias do
 		if sy >= 0 and sy < NSEC then

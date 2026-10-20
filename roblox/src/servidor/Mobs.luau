@@ -19,6 +19,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Comp = ReplicatedStorage:WaitForChild("Blockverse")
 local Config = require(Comp.Config)
 local Registro = require(Comp.Registro)
+local Generador = require(Comp.Generador)
 local Fisica = require(Comp.Fisica)
 local Rayo = require(Comp.Rayo)
 local DatosMobs = require(Comp.Datos.Mobs)
@@ -860,6 +861,10 @@ local function intentoAparicion(jugadores)
 	local x, z = math.floor(j.x + math.cos(ang) * d), math.floor(j.z + math.sin(ang) * d)
 	local md = Mundo.md
 	if md:getSiCargado(x, 100, z) < 0 then
+		return
+	end
+	-- En el Nether y el End aparecen otras criaturas (Dimension.luau)
+	if Generador.dimensionBloque(z) ~= "superficie" then
 		return
 	end
 	local pasivos = contar(function(m)

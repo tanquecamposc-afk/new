@@ -1076,6 +1076,7 @@ function Interfaz.titulo(t, sub, col)
 end
 
 function Interfaz.oneblock(d)
+	obActivo = d ~= nil
 	if not d then
 		jefe.Visible = false
 		return
@@ -1092,6 +1093,23 @@ function Interfaz.oneblock(d)
 		jefeF.Size = UDim2.fromScale(1, 1)
 		jefeSig.Text = "¡Última fase!"
 	end
+end
+
+-- Barra de un jefe (el Ender Dragon): d = {nombre, f (0-1), col} o nil
+local obActivo = false
+function Interfaz.jefe(d)
+	if not d then
+		if not obActivo then
+			jefe.Visible = false
+		end
+		return
+	end
+	jefe.Visible = true
+	jefeT.Text = d.nombre or ""
+	local ok, c = pcall(Color3.fromHex, d.col or "#d050ff")
+	jefeF.BackgroundColor3 = ok and c or Color3.fromRGB(208, 80, 255)
+	jefeF.Size = UDim2.fromScale(math.clamp(d.f or 0, 0, 1), 1)
+	jefeSig.Text = ""
 end
 
 function Interfaz.muerte(t)

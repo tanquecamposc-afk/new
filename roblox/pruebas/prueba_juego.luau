@@ -317,6 +317,118 @@ for _ = 1, 5 do
 	F.paso(1 / 30)
 end
 
+-- Portal del Nether: marco de obsidiana de 4 × 5 junto al jugador, encendido con el mechero
+do
+	local Gen = comp.Generador._resultado
+	local px2, pz2 = math.floor(root.Position.X / B), math.floor(root.Position.Z / B)
+	local fy = srvMundo.alturaSuelo(px2 + 3, pz2) + 1
+	local x0, z0 = px2 + 3, pz2
+	moverJugador(px2, srvMundo.alturaSuelo(px2, pz2) + 1, pz2)
+	for a = 0, 3 do
+		for h = 0, 4 do
+			local marco = a == 0 or a == 3 or h == 0 or h == 4
+			srvMundo.set(x0 + a, fy + h, z0, marco and Reg.B.obsidiana or 0)
+		end
+	end
+	enviar("modo", "creativo")
+	enviar("abrirInventario")
+	enviar("creativo", Reg.I.mechero, 1)
+	enviar("click", "inv", 3, 1)
+	enviar("cerrarUI")
+	enviar("sel", 3)
+	F.paso(1 / 30)
+	enviar("derecho", { x = x0 + 1, y = fy, z = z0, n = { 0, 1, 0 } }, F.Vector3.new(1, 0, 0), nil, false)
+	F.paso(1 / 30)
+	if srvMundo.get(x0 + 1, fy + 1, z0) ~= Reg.B.portalNether then
+		print("DEBUG portal", ultimoJugador.inv[3] and ultimoJugador.inv[3].id, Reg.I.mechero, ultimoJugador.sel, ultimoJugador.modo,
+			srvMundo.get(x0 + 1, fy, z0), srvMundo.get(x0 + 1, fy + 1, z0), root.Position / B, x0, fy, z0, hum.Health)
+	end
+	ok(srvMundo.get(x0 + 1, fy + 1, z0) == Reg.B.portalNether, "no se encendió el portal del Nether")
+	-- Entrar en el portal
+	moverJugador(x0 + 1, fy + 1, z0)
+	for _ = 1, 120 do
+		F.paso(1 / 30)
+		if Gen.dimensionBloque(math.floor(root.Position.Z / B)) == "nether" then
+			break
+		end
+	end
+	local dimN = Gen.dimensionBloque(math.floor(root.Position.Z / B))
+	ok(dimN == "nether", "el portal no llevó al Nether (" .. tostring(dimN) .. ")")
+	print("en el Nether:", root.Position / B)
+	for _ = 1, 90 do
+		F.paso(1 / 30)
+	end
+	-- Ir al End por un portal del End
+	local Dim = srv.Dimension._resultado
+	local ex, ez = x0, z0 - 8
+	local ey = srvMundo.alturaSuelo(ex, ez) + 1
+	for a = -1, 1 do
+		for b = -1, 1 do
+			srvMundo.set(ex + a, ey, ez + b, Reg.B.portalEnd)
+		end
+	end
+	-- Primero sale del portal del Nether (si no, el portal no vuelve a llevarle)
+	moverJugador(ex + 3, ey + 2, ez)
+	for _ = 1, 5 do
+		F.paso(1 / 30)
+	end
+	moverJugador(ex, ey, ez)
+	for _ = 1, 120 do
+		F.paso(1 / 30)
+		if Gen.dimensionBloque(math.floor(root.Position.Z / B)) == "end" then
+			break
+		end
+	end
+	ok(Gen.dimensionBloque(math.floor(root.Position.Z / B)) == "end", "el portal no llevó al End")
+	for _ = 1, 90 do
+		F.paso(1 / 30)
+	end
+	local criat = F.workspace:FindFirstChild("Criaturas")
+	local dragonP = criat and criat:FindFirstChild("EnderDragon")
+	ok(dragonP ~= nil, "no apareció el Ender Dragon")
+	local nCris = 0
+	for _, c in criat:GetChildren() do
+		if c.Name == "CristalEnd" then
+			nCris += 1
+		end
+	end
+	print("dragón:", dragonP ~= nil, "· cristales:", nCris)
+	ok(nCris == 10, "no aparecieron los 10 cristales")
+	enviar("modo", "supervivencia")
+	F.paso(1)
+	if dragonP then
+		local c1 = criat:FindFirstChild("CristalEnd")
+		enviar("atacar", c1, 1, false, false)
+		F.paso(1 / 30)
+		ok(c1.Parent == nil, "no se rompió el cristal")
+		F.paso(1)
+		enviar("atacar", dragonP, 1, false, false)
+		F.paso(1 / 30)
+		ok(Dim.estado.vidaDragon < 200, "el ataque no dañó al dragón")
+		-- Matar al dragón para ver el portal de salida
+		for _ = 1, 400 do
+			Dim.herirDragon(10, "jugador")
+			F.paso(0.1)
+			if Dim.estado.dragonMuerto then
+				break
+			end
+		end
+		ok(Dim.estado.dragonMuerto, "el dragón no murió")
+		ok(srvMundo.get(1, Gen.OY + 63 + 1, Gen.END_CZ * 16) == Reg.B.portalEnd, "no se abrió el portal de salida")
+	end
+	for _ = 1, 60 do
+		F.paso(1 / 30)
+	end
+	print("vuelta de las dimensiones; criaturas:", #Mobs.lista)
+	if recibido.muerte then
+		nuevoPersonaje()
+		recibido.muerte = nil
+		for _ = 1, 30 do
+			F.paso(1 / 30)
+		end
+	end
+end
+
 -- One Block
 Interfaz.alElegirModo("oneblock")
 for _ = 1, 120 do
