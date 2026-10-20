@@ -1,0 +1,3504 @@
+<roblox xmlns:xmime="http://www.w3.org/2005/05/xmlmime" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.roblox.com/roblox.xsd" version="4">
+<Item class="Workspace" referent="RBX00000001"><Properties><string name="Name">Workspace</string><bool name="StreamingEnabled">false</bool><float name="FallenPartsDestroyHeight">-500</float></Properties></Item>
+<Item class="Lighting" referent="RBX00000002"><Properties><string name="Name">Lighting</string><token name="Technology">4</token><bool name="GlobalShadows">true</bool></Properties></Item>
+<Item class="ReplicatedStorage" referent="RBX00000009"><Properties><string name="Name">ReplicatedStorage</string></Properties><Item class="Folder" referent="RBX00000008"><Properties><string name="Name">Blockverse</string></Properties><Item class="ModuleScript" referent="RBX00000003"><Properties><string name="Name">Bloques</string><ProtectedString name="Source"><![CDATA[--[[
+	Blockverse para Roblox · Bloques y objetos
+	Cada bloque tiene un color y un material de Roblox, su dureza,
+	la herramienta que lo rompe mejor y lo que suelta.
+	Los objetos (palos, herramientas, comida…) usan ids desde 100.
+]]
+local Bloques = {}
+
+Bloques.porId = {} -- id -> definición
+Bloques.porClave = {} -- clave -> id
+Bloques.lista = {} -- todos los bloques, en orden (para el modo creativo)
+Bloques.objetos = {} -- todos los objetos que no son bloques
+
+local function rgb(r, g, b)
+	return { r, g, b }
+end
+
+local function bloque(id, clave, nombre, d)
+	d.id = id
+	d.clave = clave
+	d.nombre = nombre
+	d.esBloque = true
+	d.forma = d.forma or "cubo"
+	if d.solido == nil then
+		d.solido = d.forma == "cubo"
+	end
+	d.dureza = d.dureza or 1
+	if d.suelta == nil then
+		d.suelta = id
+	end
+	Bloques.porId[id] = d
+	Bloques.porClave[clave] = id
+	table.insert(Bloques.lista, d)
+	return id
+end
+
+local function objeto(id, clave, nombre, d)
+	d.id = id
+	d.clave = clave
+	d.nombre = nombre
+	d.esBloque = false
+	Bloques.porId[id] = d
+	Bloques.porClave[clave] = id
+	table.insert(Bloques.objetos, d)
+	return id
+end
+
+------------------------------------------------------------------
+-- Bloques
+------------------------------------------------------------------
+local TIERRA = rgb(134, 96, 67)
+
+bloque(1, "cesped", "Bloque de césped", {
+	color = TIERRA, material = "Ground", dureza = 0.9, herr = "pala", suelta = 2,
+	capa = { color = rgb(98, 168, 58), material = "Grass" },
+})
+bloque(2, "tierra", "Tierra", { color = TIERRA, material = "Ground", dureza = 0.75, herr = "pala" })
+bloque(3, "piedra", "Piedra", { color = rgb(128, 128, 128), material = "Slate", dureza = 2.2, herr = "pico", nivel = 1, suelta = 4 })
+bloque(4, "roca", "Roca", { color = rgb(112, 112, 112), material = "Cobblestone", dureza = 2.5, herr = "pico", nivel = 1 })
+bloque(5, "tronco", "Tronco de roble", {
+	color = rgb(104, 78, 46), material = "Wood", dureza = 2.4, herr = "hacha",
+	capa = { color = rgb(170, 136, 86), material = "WoodPlanks" }, capaArriba = true,
+})
+bloque(6, "tablones", "Tablones", { color = rgb(178, 140, 84), material = "WoodPlanks", dureza = 2, herr = "hacha" })
+bloque(7, "hojas", "Hojas de roble", {
+	color = rgb(62, 128, 42), material = "LeafyGrass", dureza = 0.3, herr = "hacha",
+	transparente = true, suelta = 0, extra = { id = 104, prob = 0.08 },
+})
+bloque(8, "arena", "Arena", { color = rgb(220, 208, 160), material = "Sand", dureza = 0.75, herr = "pala" })
+bloque(9, "grava", "Grava", { color = rgb(136, 128, 126), material = "Pebble", dureza = 0.9, herr = "pala" })
+bloque(10, "vidrio", "Vidrio", {
+	color = rgb(205, 232, 242), material = "Glass", dureza = 0.45, transparente = true, transp = 0.55,
+})
+bloque(11, "menaCarbon", "Mena de carbón", { color = rgb(92, 92, 96), material = "Slate", dureza = 3, herr = "pico", nivel = 1, suelta = 101, veta = rgb(30, 30, 30) })
+bloque(12, "menaHierro", "Mena de hierro", { color = rgb(128, 120, 116), material = "Slate", dureza = 3.2, herr = "pico", nivel = 2, veta = rgb(214, 170, 140) })
+bloque(13, "menaOro", "Mena de oro", { color = rgb(128, 124, 112), material = "Slate", dureza = 3.2, herr = "pico", nivel = 3, veta = rgb(250, 214, 70) })
+bloque(14, "menaDiamante", "Mena de diamante", { color = rgb(120, 128, 132), material = "Slate", dureza = 3.5, herr = "pico", nivel = 3, suelta = 106, veta = rgb(90, 230, 225) })
+bloque(15, "lecho", "Lecho de roca", { color = rgb(42, 42, 44), material = "Basalt", dureza = -1 })
+bloque(16, "nieve", "Nieve", { color = rgb(242, 247, 252), material = "Snow", dureza = 0.5, herr = "pala" })
+bloque(17, "cespedNevado", "Césped nevado", {
+	color = TIERRA, material = "Ground", dureza = 0.9, herr = "pala", suelta = 2,
+	capa = { color = rgb(240, 246, 252), material = "Snow" },
+})
+bloque(18, "cactus", "Cactus", { color = rgb(78, 140, 58), material = "Grass", dureza = 0.6, transparente = true, ancho = 0.85 })
+bloque(19, "mesa", "Mesa de trabajo", {
+	color = rgb(150, 104, 60), material = "WoodPlanks", dureza = 2.5, herr = "hacha",
+	capa = { color = rgb(120, 80, 46), material = "Wood" }, capaArriba = true,
+})
+bloque(20, "horno", "Horno", {
+	color = rgb(96, 96, 98), material = "Cobblestone", dureza = 3.5, herr = "pico", nivel = 1,
+	capa = { color = rgb(70, 70, 72), material = "Slate" }, capaArriba = true,
+})
+bloque(21, "antorcha", "Antorcha", {
+	color = rgb(120, 86, 50), material = "Wood", forma = "antorcha", dureza = 0,
+	luz = { brillo = 2.2, rango = 18, color = rgb(255, 196, 120) },
+})
+bloque(22, "ladrillos", "Ladrillos", { color = rgb(150, 76, 60), material = "Brick", dureza = 2.5, herr = "pico", nivel = 1 })
+bloque(23, "lana", "Lana", { color = rgb(236, 236, 236), material = "Fabric", dureza = 0.8 })
+bloque(24, "obsidiana", "Obsidiana", { color = rgb(26, 16, 38), material = "Basalt", dureza = 25, herr = "pico", nivel = 4 })
+bloque(25, "hielo", "Hielo", { color = rgb(150, 196, 255), material = "Ice", dureza = 0.6, herr = "pico", transparente = true, transp = 0.2 })
+bloque(26, "arenisca", "Arenisca", { color = rgb(216, 200, 150), material = "Sandstone", dureza = 1.2, herr = "pico", nivel = 1 })
+bloque(27, "piedraLuminosa", "Piedra luminosa", {
+	color = rgb(255, 214, 120), material = "Neon", dureza = 0.4, luz = { brillo = 1.6, rango = 20, color = rgb(255, 220, 150) },
+})
+bloque(28, "ladrillosPiedra", "Ladrillos de piedra", { color = rgb(122, 122, 124), material = "Pavement", dureza = 2, herr = "pico", nivel = 1 })
+bloque(29, "florRoja", "Amapola", { color = rgb(214, 40, 36), material = "SmoothPlastic", forma = "flor", dureza = 0 })
+bloque(30, "florAmarilla", "Diente de león", { color = rgb(244, 216, 40), material = "SmoothPlastic", forma = "flor", dureza = 0 })
+bloque(31, "hierba", "Hierba alta", { color = rgb(92, 150, 52), material = "Grass", forma = "cruz", dureza = 0, suelta = 0, extra = { id = 109, prob = 0.15 } })
+bloque(32, "agua", "Agua", { color = rgb(40, 90, 200), material = "Water", forma = "agua", dureza = -1, suelta = 0, transparente = true })
+bloque(33, "troncoAbeto", "Tronco de abeto", {
+	color = rgb(66, 48, 32), material = "Wood", dureza = 2.4, herr = "hacha",
+	capa = { color = rgb(120, 92, 60), material = "WoodPlanks" }, capaArriba = true,
+})
+bloque(34, "hojasAbeto", "Hojas de abeto", {
+	color = rgb(44, 92, 56), material = "LeafyGrass", dureza = 0.3, herr = "hacha", transparente = true, suelta = 0,
+})
+bloque(35, "calabaza", "Calabaza", { color = rgb(220, 128, 30), material = "SmoothPlastic", dureza = 1, herr = "hacha" })
+bloque(36, "musgo", "Roca musgosa", { color = rgb(96, 116, 88), material = "Cobblestone", dureza = 2.5, herr = "pico", nivel = 1 })
+
+------------------------------------------------------------------
+-- Objetos
+------------------------------------------------------------------
+objeto(100, "palo", "Palo", { icono = "🥢" })
+objeto(101, "carbon", "Carbón", { icono = "⚫" })
+objeto(102, "lingoteHierro", "Lingote de hierro", { icono = "🔩" })
+objeto(103, "lingoteOro", "Lingote de oro", { icono = "🟨" })
+objeto(104, "manzana", "Manzana", { icono = "🍎", comida = 4 })
+objeto(105, "carneCruda", "Carne cruda", { icono = "🥩", comida = 3 })
+objeto(106, "diamante", "Diamante", { icono = "💎" })
+objeto(107, "carneCocida", "Filete", { icono = "🍖", comida = 8 })
+objeto(108, "pan", "Pan", { icono = "🍞", comida = 5 })
+objeto(109, "trigo", "Trigo", { icono = "🌾" })
+
+-- Herramientas: 4 materiales × 4 tipos
+Bloques.NIVELES = {
+	{ clave = "madera", nombre = "de madera", nivel = 1, vel = 2, usos = 60, color = rgb(178, 140, 84), mat = 6 },
+	{ clave = "piedra", nombre = "de piedra", nivel = 2, vel = 4, usos = 132, color = rgb(128, 128, 128), mat = 4 },
+	{ clave = "hierro", nombre = "de hierro", nivel = 3, vel = 6, usos = 250, color = rgb(220, 220, 220), mat = 102 },
+	{ clave = "diamante", nombre = "de diamante", nivel = 4, vel = 8, usos = 1561, color = rgb(90, 230, 225), mat = 106 },
+}
+Bloques.TIPOS_HERR = {
+	{ clave = "pico", nombre = "Pico", icono = "⛏️", dano = 2 },
+	{ clave = "hacha", nombre = "Hacha", icono = "🪓", dano = 3 },
+	{ clave = "pala", nombre = "Pala", icono = "🥄", dano = 1.5 },
+	{ clave = "espada", nombre = "Espada", icono = "🗡️", dano = 4 },
+}
+do
+	local id = 110
+	for _, t in Bloques.TIPOS_HERR do
+		for _, n in Bloques.NIVELES do
+			objeto(id, t.clave .. "_" .. n.clave, t.nombre .. " " .. n.nombre, {
+				icono = t.icono,
+				fondo = n.color,
+				herr = t.clave,
+				nivel = n.nivel,
+				vel = n.vel,
+				usos = n.usos,
+				dano = t.dano + n.nivel,
+				material = n.mat,
+				maxPila = 1,
+			})
+			id += 1
+		end
+	end
+end
+
+------------------------------------------------------------------
+-- Consultas
+------------------------------------------------------------------
+Bloques.AIRE = 0
+Bloques.AGUA = Bloques.porClave.agua
+
+-- ¿Se ve a través de este bloque? (para decidir qué caras dibujar)
+local TRANSP = {}
+local SOLIDO = {}
+for id, d in Bloques.porId do
+	if d.esBloque then
+		TRANSP[id] = d.transparente == true or d.forma ~= "cubo" or d.ancho ~= nil
+		SOLIDO[id] = d.solido
+	end
+end
+TRANSP[0] = true
+SOLIDO[0] = false
+Bloques.TRANSP = TRANSP
+Bloques.SOLIDO = SOLIDO
+
+function Bloques.nombre(id)
+	local d = Bloques.porId[id]
+	return d and d.nombre or "?"
+end
+
+function Bloques.maxPila(id)
+	local d = Bloques.porId[id]
+	return (d and d.maxPila) or 64
+end
+
+-- Segundos para romper el bloque `b` con el objeto `herrId` en la mano
+function Bloques.tiempoRomper(b, herrId)
+	local d = Bloques.porId[b]
+	if not d or d.dureza < 0 then
+		return math.huge
+	end
+	if d.dureza == 0 then
+		return 0.05
+	end
+	local h = herrId and Bloques.porId[herrId]
+	local vel = 1
+	if h and h.herr and h.herr == d.herr then
+		vel = h.vel
+	end
+	local puede = Bloques.puedeRecoger(b, herrId)
+	return d.dureza * (puede and 1.5 or 5) / vel
+end
+
+-- ¿Suelta algo al romperlo con esta herramienta? (la piedra y las menas necesitan pico)
+function Bloques.puedeRecoger(b, herrId)
+	local d = Bloques.porId[b]
+	if not d or not d.nivel then
+		return true
+	end
+	local h = herrId and Bloques.porId[herrId]
+	return h ~= nil and h.herr == "pico" and h.nivel >= d.nivel
+end
+
+return Bloques
+]]></ProtectedString></Properties></Item>
+<Item class="ModuleScript" referent="RBX00000004"><Properties><string name="Name">Config</string><ProtectedString name="Source"><![CDATA[--[[
+	Blockverse para Roblox · Ajustes generales
+	Cambia estos números para ajustar el juego.
+]]
+local Config = {
+	BLOQUE = 3, -- tamaño de un bloque en studs
+	CHUNK = 16, -- un chunk mide 16 x 16 bloques
+	ALTO = 80, -- altura del mundo en bloques
+	NIVEL_MAR = 22,
+
+	RADIO = 4, -- chunks visibles alrededor de cada jugador (bájalo a 3 si va lento en móvil)
+	ALCANCE = 6, -- distancia máxima para romper o poner bloques (en bloques)
+
+	DIA_SEGUNDOS = 1200, -- un día completo dura 20 minutos, como en el original
+	CUEVAS = true,
+
+	MAX_ZOMBIS = 10,
+	MAX_ANIMALES = 12,
+
+	HAMBRE_CADA = 40, -- segundos para perder un punto de hambre
+	PILA = 64,
+}
+
+return Config
+]]></ProtectedString></Properties></Item>
+<Item class="ModuleScript" referent="RBX00000005"><Properties><string name="Name">Generador</string><ProtectedString name="Source"><![CDATA[--[[
+	Blockverse para Roblox · Generador del mundo
+	Crea el terreno de cada chunk con ruido: llanuras, bosques,
+	desiertos, nieve y montañas, cuevas, menas, árboles, cactus,
+	flores, lagos y mares. Siempre da lo mismo con la misma semilla.
+	Los datos de un chunk son un buffer de 16 × 16 × ALTO bytes:
+	índice = (y * 16 + z) * 16 + x
+]]
+local Config = require(script.Parent.Config)
+local Bloques = require(script.Parent.Bloques)
+
+local C, ALTO, MAR = Config.CHUNK, Config.ALTO, Config.NIVEL_MAR
+local ID = Bloques.porClave
+
+local Generador = {}
+Generador.__index = Generador
+
+local function idx(x, y, z)
+	return (y * C + z) * C + x
+end
+Generador.idx = idx
+
+-- Número pseudoaleatorio fijo para cada posición (0 a 1)
+local function hash(x, y, z, s)
+	local h = (x * 73856093) % 4294967296
+	h = bit32.bxor(h, (y * 19349663) % 4294967296)
+	h = bit32.bxor(h, (z * 83492791) % 4294967296)
+	h = bit32.bxor(h, s)
+	h = bit32.bxor(h, bit32.rshift(h, 13))
+	h = (h * 1664525 + 1013904223) % 4294967296
+	h = bit32.bxor(h, bit32.rshift(h, 16))
+	h = (h * 1664525 + 1013904223) % 4294967296
+	return h / 4294967296
+end
+Generador.hash = hash
+
+function Generador.new(semilla)
+	local self = setmetatable({}, Generador)
+	self.semilla = semilla % 1000000
+	self.s32 = (semilla * 2654435761) % 4294967296
+	-- Desplazamientos del ruido según la semilla
+	local r = self.semilla
+	self.o1 = (r % 997) * 3.17 + 0.5
+	self.o2 = (r % 773) * 2.71 + 0.5
+	self.o3 = (r % 541) * 1.93 + 0.5
+	return self
+end
+
+-- Datos de una columna: altura del suelo y bioma
+function Generador:columna(x, z)
+	local o1, o2, o3 = self.o1, self.o2, self.o3
+	local cont = math.noise(x / 190 + o1, z / 190 - o1, o3)
+	local mont = math.noise(x / 95 - o2, z / 95 + o2, o1)
+	local det = math.noise(x / 26 + o3, z / 26 + o3, o2)
+	local temp = math.noise(x / 300 + o2, z / 300 + o1, 7.7)
+	local hum = math.noise(x / 260 - o3, z / 260 + o2, 3.3)
+
+	local h = 26 + cont * 26 + det * 4
+	if mont > 0.12 then
+		h += (mont - 0.12) * (mont - 0.12) * 260
+	end
+	h = math.clamp(math.floor(h), 4, ALTO - 12)
+
+	local bioma
+	if h >= 44 then
+		bioma = "montana"
+	elseif h <= MAR + 1 then
+		bioma = temp < -0.3 and "nieve" or "playa"
+	elseif temp > 0.12 and hum < 0.05 then
+		bioma = "desierto"
+	elseif temp < -0.28 then
+		bioma = "nieve"
+	elseif hum > 0.12 then
+		bioma = "bosque"
+	else
+		bioma = "llanura"
+	end
+	return h, bioma
+end
+
+local function esCueva(self, x, y, z)
+	local a = math.noise(x / 17 + self.o1, y / 13, z / 17 - self.o2)
+	if math.abs(a) > 0.085 then
+		return false
+	end
+	local b = math.noise(x / 21 - self.o3, y / 15 + 40, z / 21 + self.o1)
+	return math.abs(b) < 0.085
+end
+
+local function mena(self, x, y, z)
+	-- Las menas salen en grupitos: se decide por celdas de 2 × 2 × 2
+	local cx, cy, cz = x // 2, y // 2, z // 2
+	local g = hash(cx, cy, cz, self.s32)
+	local p = hash(x, y, z, self.s32 + 17)
+	if p > 0.62 then
+		return nil
+	end
+	if y < 12 and g < 0.003 then
+		return ID.menaDiamante
+	elseif y < 22 and g < 0.012 then
+		return ID.menaOro
+	elseif y < 42 and g < 0.035 then
+		return ID.menaHierro
+	elseif y < 55 and g < 0.06 then
+		return ID.menaCarbon
+	end
+	return nil
+end
+
+-- Rellena el buffer `datos` con el chunk (cx, cz)
+function Generador:llenar(datos, cx, cz)
+	local x0, z0 = cx * C, cz * C
+	local alturas, biomas = table.create(C * C), table.create(C * C)
+	for lz = 0, C - 1 do
+		for lx = 0, C - 1 do
+			local wx, wz = x0 + lx, z0 + lz
+			local h, bioma = self:columna(wx, wz)
+			alturas[lz * C + lx + 1] = h
+			biomas[lz * C + lx + 1] = bioma
+
+			local arriba, debajo
+			if bioma == "desierto" then
+				arriba, debajo = ID.arena, ID.arenisca
+			elseif bioma == "playa" then
+				arriba, debajo = (h < MAR - 2) and ID.grava or ID.arena, ID.arena
+			elseif bioma == "nieve" then
+				arriba, debajo = ID.cespedNevado, ID.tierra
+			elseif bioma == "montana" then
+				arriba, debajo = (h >= 52) and ID.nieve or ID.piedra, ID.piedra
+			else
+				arriba, debajo = ID.cesped, ID.tierra
+			end
+			if h < MAR and arriba == ID.cesped then
+				arriba = ID.tierra
+			end
+			if h < MAR and arriba == ID.cespedNevado then
+				arriba = ID.grava
+			end
+
+			for y = 0, h do
+				local b
+				if y == 0 or (y <= 2 and hash(wx, y, wz, self.s32) < 0.5) then
+					b = ID.lecho
+				elseif y == h then
+					b = arriba
+				elseif y >= h - 3 then
+					b = debajo
+				else
+					b = mena(self, wx, y, wz) or ID.piedra
+				end
+				-- Cuevas (no debajo del agua ni muy cerca de la superficie)
+				if Config.CUEVAS and y >= 4 and y <= h - 4 and b ~= ID.lecho and esCueva(self, wx, y, wz) then
+					b = 0
+				end
+				buffer.writeu8(datos, idx(lx, y, lz), b)
+			end
+			-- Agua hasta el nivel del mar
+			if h < MAR then
+				for y = h + 1, MAR do
+					local b = ID.agua
+					if y == MAR and bioma == "nieve" then
+						b = ID.hielo
+					end
+					buffer.writeu8(datos, idx(lx, y, lz), b)
+				end
+			end
+		end
+	end
+
+	-- Decoración: árboles, cactus, flores (solo si cabe dentro del chunk)
+	local s = self.s32 + 991
+	for lz = 0, C - 1 do
+		for lx = 0, C - 1 do
+			local wx, wz = x0 + lx, z0 + lz
+			local h = alturas[lz * C + lx + 1]
+			local bioma = biomas[lz * C + lx + 1]
+			local suelo = buffer.readu8(datos, idx(lx, h, lz))
+			local r = hash(wx, 7, wz, s)
+			local dentro = lx >= 2 and lx <= C - 3 and lz >= 2 and lz <= C - 3 and h + 10 < ALTO
+			if (suelo == ID.cesped or suelo == ID.cespedNevado) and h >= MAR then
+				local pArbol = (bioma == "bosque" and 0.045) or (bioma == "nieve" and 0.025) or (bioma == "llanura" and 0.005) or 0
+				if dentro and r < pArbol then
+					if bioma == "nieve" or (bioma == "bosque" and hash(wx, 3, wz, s) < 0.25) then
+						self:abeto(datos, lx, h + 1, lz, wx, wz)
+					else
+						self:roble(datos, lx, h + 1, lz, wx, wz)
+					end
+					buffer.writeu8(datos, idx(lx, h, lz), ID.tierra)
+				elseif suelo == ID.cesped and buffer.readu8(datos, idx(lx, h + 1, lz)) == 0 then
+					local f = hash(wx, 11, wz, s)
+					if f < 0.012 then
+						buffer.writeu8(datos, idx(lx, h + 1, lz), ID.florRoja)
+					elseif f < 0.024 then
+						buffer.writeu8(datos, idx(lx, h + 1, lz), ID.florAmarilla)
+					elseif f < 0.07 and bioma ~= "bosque" then
+						buffer.writeu8(datos, idx(lx, h + 1, lz), ID.hierba)
+					elseif f > 0.9985 then
+						buffer.writeu8(datos, idx(lx, h + 1, lz), ID.calabaza)
+					end
+				end
+			elseif bioma == "desierto" and suelo == ID.arena and r < 0.006 and h + 4 < ALTO then
+				local alto = 1 + math.floor(hash(wx, 5, wz, s) * 3)
+				for k = 1, alto do
+					buffer.writeu8(datos, idx(lx, h + k, lz), ID.cactus)
+				end
+			end
+		end
+	end
+end
+
+local function ponSiAire(datos, x, y, z, b)
+	if x < 0 or x >= C or z < 0 or z >= C or y < 0 or y >= ALTO then
+		return
+	end
+	local i = idx(x, y, z)
+	local a = buffer.readu8(datos, i)
+	if a == 0 or a == ID.hierba or a == ID.florRoja or a == ID.florAmarilla then
+		buffer.writeu8(datos, i, b)
+	end
+end
+
+function Generador:roble(datos, x, y, z, wx, wz)
+	local alto = 4 + math.floor(hash(wx, 1, wz, self.s32) * 3)
+	local top = y + alto - 1
+	for dy = -2, 1 do
+		local r = (dy <= -1) and 2 or 1
+		for dx = -r, r do
+			for dz = -r, r do
+				local esquina = math.abs(dx) == r and math.abs(dz) == r
+				if not esquina or (dy <= -1 and hash(wx + dx, top + dy, wz + dz, self.s32) < 0.5) then
+					ponSiAire(datos, x + dx, top + dy, z + dz, ID.hojas)
+				end
+			end
+		end
+	end
+	for k = 0, alto - 1 do
+		buffer.writeu8(datos, idx(x, y + k, z), ID.tronco)
+	end
+end
+
+function Generador:abeto(datos, x, y, z, wx, wz)
+	local alto = 6 + math.floor(hash(wx, 2, wz, self.s32) * 3)
+	local top = y + alto
+	ponSiAire(datos, x, top, z, ID.hojasAbeto)
+	for dy = 1, alto - 2 do
+		local r = (dy % 2 == 1) and 1 or math.min(2, 1 + dy // 3)
+		for dx = -r, r do
+			for dz = -r, r do
+				if math.abs(dx) + math.abs(dz) <= r + 1 and not (math.abs(dx) == r and math.abs(dz) == r and r > 1) then
+					ponSiAire(datos, x + dx, top - dy, z + dz, ID.hojasAbeto)
+				end
+			end
+		end
+	end
+	for k = 0, alto - 1 do
+		buffer.writeu8(datos, idx(x, y + k, z), ID.troncoAbeto)
+	end
+end
+
+-- Altura del suelo según el generador (sin cambios de los jugadores)
+function Generador:altura(x, z)
+	local h = self:columna(x, z)
+	return h
+end
+
+return Generador
+]]></ProtectedString></Properties></Item>
+<Item class="ModuleScript" referent="RBX00000006"><Properties><string name="Name">Mallador</string><ProtectedString name="Source"><![CDATA[--[[
+	Blockverse para Roblox · Mallador
+	Decide qué piezas (Parts) hacen falta para dibujar una capa
+	(una altura `y`) de un chunk:
+	· Solo se dibujan los bloques que tienen alguna cara a la vista.
+	· Los bloques iguales y pegados se juntan en rectángulos grandes,
+	  así hay muchas menos piezas y el juego va más fluido.
+	· Antorchas, flores y hierba se devuelven aparte (tienen otra forma).
+	`get(x, y, z)` debe devolver el id del bloque en coordenadas del mundo.
+]]
+local Config = require(script.Parent.Config)
+local Bloques = require(script.Parent.Bloques)
+
+local C, ALTO = Config.CHUNK, Config.ALTO
+local TRANSP = Bloques.TRANSP
+local DEF = Bloques.porId
+
+local Mallador = {}
+
+local function visible(get, b, x, y, z)
+	local function mira(n)
+		return n == 0 or (TRANSP[n] and n ~= b)
+	end
+	if y + 1 >= ALTO or mira(get(x, y + 1, z)) then
+		return true
+	end
+	if y > 0 and mira(get(x, y - 1, z)) then
+		return true
+	end
+	return mira(get(x + 1, y, z)) or mira(get(x - 1, y, z)) or mira(get(x, y, z + 1)) or mira(get(x, y, z - 1))
+end
+Mallador.visible = visible
+
+-- Devuelve: cajas = { {b, x0, z0, ancho, largo}, ... }, especiales = { {b, x, z}, ... }
+-- (x0, z0, x, z en coordenadas locales del chunk)
+function Mallador.capa(get, cx, cz, y)
+	local x0, z0 = cx * C, cz * C
+	local mascara = table.create(C * C, 0)
+	local especiales = {}
+	local hay = false
+	for lz = 0, C - 1 do
+		for lx = 0, C - 1 do
+			local b = get(x0 + lx, y, z0 + lz)
+			if b ~= 0 then
+				local d = DEF[b]
+				if d and d.forma == "cubo" then
+					if visible(get, b, x0 + lx, y, z0 + lz) then
+						mascara[lz * C + lx + 1] = b
+						hay = true
+					end
+				elseif d and d.forma ~= "agua" then
+					table.insert(especiales, { b, lx, lz })
+				end
+			end
+		end
+	end
+	local cajas = {}
+	if not hay then
+		return cajas, especiales
+	end
+	-- Rectángulos voraces: se alarga en x y luego en z
+	for lz = 0, C - 1 do
+		local lx = 0
+		while lx < C do
+			local b = mascara[lz * C + lx + 1]
+			if b == 0 then
+				lx += 1
+				continue
+			end
+			local ancho = 1
+			while lx + ancho < C and mascara[lz * C + lx + ancho + 1] == b do
+				ancho += 1
+			end
+			local largo = 1
+			local sigue = true
+			-- Los bloques más estrechos (cactus) no se juntan
+			if DEF[b].ancho then
+				ancho = 1
+				sigue = false
+			end
+			while sigue and lz + largo < C do
+				for k = 0, ancho - 1 do
+					if mascara[(lz + largo) * C + lx + k + 1] ~= b then
+						sigue = false
+						break
+					end
+				end
+				if sigue then
+					largo += 1
+				end
+			end
+			for dz = 0, largo - 1 do
+				for k = 0, ancho - 1 do
+					mascara[(lz + dz) * C + lx + k + 1] = 0
+				end
+			end
+			table.insert(cajas, { b, lx, lz, ancho, largo })
+			lx += ancho
+		end
+	end
+	return cajas, especiales
+end
+
+return Mallador
+]]></ProtectedString></Properties></Item>
+<Item class="ModuleScript" referent="RBX00000007"><Properties><string name="Name">Recetas</string><ProtectedString name="Source"><![CDATA[--[[
+	Blockverse para Roblox · Recetas
+	En vez de la cuadrícula 3 × 3 se usa un libro de recetas: si tienes
+	los ingredientes, pulsas «Crear». Algunas recetas necesitan una mesa
+	de trabajo o un horno cerca (a 5 bloques o menos).
+]]
+local Bloques = require(script.Parent.Bloques)
+local ID = Bloques.porClave
+
+local Recetas = {}
+
+local function receta(resultado, n, ingredientes, donde)
+	table.insert(Recetas, { resultado = resultado, n = n, ingredientes = ingredientes, donde = donde })
+end
+
+-- A mano
+receta(ID.tablones, 4, { [ID.tronco] = 1 })
+receta(ID.tablones, 4, { [ID.troncoAbeto] = 1 })
+receta(ID.palo, 4, { [ID.tablones] = 2 })
+receta(ID.mesa, 1, { [ID.tablones] = 4 })
+receta(ID.antorcha, 4, { [ID.palo] = 1, [ID.carbon] = 1 })
+
+-- Herramientas (mesa de trabajo)
+for _, n in Bloques.NIVELES do
+	local m = n.mat
+	receta(ID["pico_" .. n.clave], 1, { [m] = 3, [ID.palo] = 2 }, "mesa")
+	receta(ID["hacha_" .. n.clave], 1, { [m] = 3, [ID.palo] = 2 }, "mesa")
+	receta(ID["pala_" .. n.clave], 1, { [m] = 1, [ID.palo] = 2 }, "mesa")
+	receta(ID["espada_" .. n.clave], 1, { [m] = 2, [ID.palo] = 1 }, "mesa")
+end
+
+-- Bloques (mesa de trabajo)
+receta(ID.horno, 1, { [ID.roca] = 8 }, "mesa")
+receta(ID.ladrillosPiedra, 4, { [ID.piedra] = 4 }, "mesa")
+receta(ID.arenisca, 1, { [ID.arena] = 4 }, "mesa")
+receta(ID.musgo, 1, { [ID.roca] = 1, [ID.hojas] = 1 }, "mesa")
+receta(ID.pan, 1, { [ID.trigo] = 3 }, "mesa")
+receta(ID.piedraLuminosa, 1, { [ID.antorcha] = 4, [ID.vidrio] = 1 }, "mesa")
+
+-- Horno
+receta(ID.vidrio, 1, { [ID.arena] = 1 }, "horno")
+receta(ID.piedra, 1, { [ID.roca] = 1 }, "horno")
+receta(ID.lingoteHierro, 1, { [ID.menaHierro] = 1 }, "horno")
+receta(ID.lingoteOro, 1, { [ID.menaOro] = 1 }, "horno")
+receta(ID.carneCocida, 1, { [ID.carneCruda] = 1 }, "horno")
+receta(ID.ladrillos, 1, { [ID.grava] = 2, [ID.arena] = 2 }, "horno")
+receta(ID.carbon, 1, { [ID.tronco] = 1 }, "horno")
+
+for i, r in Recetas do
+	assert(r.resultado, "receta " .. i .. " sin resultado")
+	for id in r.ingredientes do
+		assert(Bloques.porId[id], "receta " .. i .. ": ingrediente desconocido " .. tostring(id))
+	end
+end
+
+return Recetas
+]]></ProtectedString></Properties></Item>
+</Item>
+</Item>
+<Item class="ServerScriptService" referent="RBX0000000D"><Properties><string name="Name">ServerScriptService</string></Properties><Item class="Script" referent="RBX0000000C"><Properties><string name="Name">Servidor</string><bool name="Disabled">false</bool><ProtectedString name="Source"><![CDATA[--[[
+	Blockverse para Roblox · Script principal del servidor
+	· Genera el mundo alrededor de los jugadores.
+	· Inventario, romper y poner bloques, recetas, comida y hambre.
+	· Daño por caída, día y noche, iluminación y guardado del inventario.
+]]
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Lighting = game:GetService("Lighting")
+local RunService = game:GetService("RunService")
+local DataStoreService = game:GetService("DataStoreService")
+
+local Comp = ReplicatedStorage:WaitForChild("Blockverse")
+local Config = require(Comp.Config)
+local Bloques = require(Comp.Bloques)
+local Recetas = require(Comp.Recetas)
+local Mundo = require(script.Mundo)
+local Mobs = require(script.Mobs)
+
+local B, C = Config.BLOQUE, Config.CHUNK
+local DEF = Bloques.porId
+local ID = Bloques.porClave
+local SOLIDO = Bloques.SOLIDO
+
+------------------------------------------------------------------
+-- Comunicación con los jugadores
+------------------------------------------------------------------
+local remotos = Instance.new("Folder")
+remotos.Name = "Remotos"
+local Accion = Instance.new("RemoteEvent")
+Accion.Name = "Accion"
+Accion.Parent = remotos
+local Estado = Instance.new("RemoteEvent")
+Estado.Name = "Estado"
+Estado.Parent = remotos
+remotos.Parent = ReplicatedStorage
+
+------------------------------------------------------------------
+-- Iluminación, cielo y ciclo de día y noche
+------------------------------------------------------------------
+local function iluminacion()
+	Lighting.Brightness = 2.4
+	Lighting.EnvironmentDiffuseScale = 1
+	Lighting.EnvironmentSpecularScale = 0.5
+	Lighting.GlobalShadows = true
+	Lighting.Ambient = Color3.fromRGB(38, 40, 50)
+	Lighting.OutdoorAmbient = Color3.fromRGB(128, 128, 140)
+	Lighting.ClockTime = 8
+	Lighting.GeographicLatitude = 25
+	Lighting.ShadowSoftness = 0.25
+	for _, c in Lighting:GetChildren() do
+		if c:IsA("PostEffect") or c:IsA("Atmosphere") or c:IsA("Sky") then
+			c:Destroy()
+		end
+	end
+	local atm = Instance.new("Atmosphere")
+	atm.Density = 0.32
+	atm.Offset = 0.12
+	atm.Color = Color3.fromRGB(199, 214, 235)
+	atm.Decay = Color3.fromRGB(110, 120, 140)
+	atm.Glare = 0.35
+	atm.Haze = 1.3
+	atm.Parent = Lighting
+	local sky = Instance.new("Sky")
+	sky.StarCount = 3000
+	sky.SunAngularSize = 14
+	sky.MoonAngularSize = 9
+	sky.Parent = Lighting
+	local bloom = Instance.new("BloomEffect")
+	bloom.Intensity = 0.55
+	bloom.Size = 26
+	bloom.Threshold = 1.5
+	bloom.Parent = Lighting
+	local rayos = Instance.new("SunRaysEffect")
+	rayos.Intensity = 0.06
+	rayos.Spread = 0.8
+	rayos.Parent = Lighting
+	local cc = Instance.new("ColorCorrectionEffect")
+	cc.Saturation = 0.12
+	cc.Contrast = 0.06
+	cc.Parent = Lighting
+	local nubes = workspace.Terrain:FindFirstChildOfClass("Clouds") or Instance.new("Clouds")
+	nubes.Cover = 0.55
+	nubes.Density = 0.7
+	nubes.Parent = workspace.Terrain
+	workspace.Terrain.WaterColor = Color3.fromRGB(40, 100, 190)
+	workspace.Terrain.WaterTransparency = 0.6
+	workspace.Terrain.WaterReflectance = 0.4
+	workspace.Terrain.WaterWaveSize = 0.08
+end
+iluminacion()
+
+RunService.Heartbeat:Connect(function(dt)
+	Lighting.ClockTime = (Lighting.ClockTime + dt * 24 / Config.DIA_SEGUNDOS) % 24
+end)
+
+------------------------------------------------------------------
+-- Mundo y punto de aparición
+------------------------------------------------------------------
+local semilla = Random.new():NextInteger(1, 999999)
+Mundo.iniciar(semilla)
+print("[Blockverse] Semilla del mundo:", semilla)
+
+local spawnX, spawnZ = 0, 0
+do
+	-- Busca tierra firme cerca del centro (en espiral)
+	local hecho = false
+	for r = 0, 600, 8 do
+		local pasos = math.max(1, r // 4)
+		for k = 0, pasos - 1 do
+			local a = k / pasos * math.pi * 2
+			local x, z = math.floor(math.cos(a) * r), math.floor(math.sin(a) * r)
+			local h, bioma = Mundo.gen:columna(x, z)
+			if h > Config.NIVEL_MAR + 1 and bioma ~= "montana" and bioma ~= "desierto" then
+				spawnX, spawnZ = x, z
+				hecho = true
+				break
+			end
+		end
+		if hecho then
+			break
+		end
+	end
+end
+
+------------------------------------------------------------------
+-- Estado de cada jugador
+------------------------------------------------------------------
+local estados = {}
+local almacen
+pcall(function()
+	almacen = DataStoreService:GetDataStore("Blockverse_v1")
+end)
+
+local function nuevoInv()
+	local inv = table.create(36, false)
+	return inv
+end
+
+local function st(plr)
+	return estados[plr]
+end
+
+local function enviarInv(plr)
+	local s = st(plr)
+	if s then
+		Estado:FireClient(plr, "inv", s.inv, s.sel)
+	end
+end
+
+local function aviso(plr, texto)
+	Estado:FireClient(plr, "aviso", texto)
+end
+
+-- Añade objetos al inventario. Devuelve lo que no cupo.
+local function dar(plr, id, n)
+	local s = st(plr)
+	if not s or n <= 0 then
+		return n
+	end
+	local inv = s.inv
+	local max = Bloques.maxPila(id)
+	local d = DEF[id]
+	for i = 1, 36 do
+		local p = inv[i]
+		if p and p.id == id and p.n < max then
+			local k = math.min(max - p.n, n)
+			p.n += k
+			n -= k
+			if n <= 0 then
+				break
+			end
+		end
+	end
+	for i = 1, 36 do
+		if n <= 0 then
+			break
+		end
+		if not inv[i] then
+			local k = math.min(max, n)
+			inv[i] = { id = id, n = k, u = d and d.usos or nil }
+			n -= k
+		end
+	end
+	enviarInv(plr)
+	return n
+end
+
+local function contar(s, id)
+	local t = 0
+	for i = 1, 36 do
+		local p = s.inv[i]
+		if p and p.id == id then
+			t += p.n
+		end
+	end
+	return t
+end
+
+local function quitar(s, id, n)
+	for i = 36, 1, -1 do
+		local p = s.inv[i]
+		if p and p.id == id then
+			local k = math.min(p.n, n)
+			p.n -= k
+			n -= k
+			if p.n <= 0 then
+				s.inv[i] = false
+			end
+			if n <= 0 then
+				return
+			end
+		end
+	end
+end
+
+local function cargar(plr)
+	local s = { inv = nuevoInv(), sel = 1, hambre = 20, hambreT = 0, danoT = 0, curaT = 0, modo = nil, cdAtaque = 0 }
+	estados[plr] = s
+	if almacen then
+		local ok, guardado = pcall(function()
+			return almacen:GetAsync("u_" .. plr.UserId)
+		end)
+		if ok and type(guardado) == "table" and type(guardado.inv) == "table" then
+			for i = 1, 36 do
+				local p = guardado.inv[i]
+				if type(p) == "table" and DEF[p.id] and type(p.n) == "number" then
+					s.inv[i] = { id = p.id, n = math.clamp(p.n, 1, Bloques.maxPila(p.id)), u = p.u }
+				end
+			end
+			s.hambre = tonumber(guardado.hambre) or 20
+		end
+	end
+end
+
+local function guardar(plr)
+	local s = st(plr)
+	if not s or not almacen or s.modo ~= "supervivencia" then
+		return
+	end
+	pcall(function()
+		almacen:SetAsync("u_" .. plr.UserId, { inv = s.inv, hambre = s.hambre })
+	end)
+end
+
+------------------------------------------------------------------
+-- Aparecer en el mundo
+------------------------------------------------------------------
+local function puntoAparicion()
+	return spawnX + math.random(-2, 2), spawnZ + math.random(-2, 2)
+end
+
+local function colocar(plr, char)
+	local root = char:WaitForChild("HumanoidRootPart", 10)
+	local hum = char:WaitForChild("Humanoid", 10)
+	if not root or not hum then
+		return
+	end
+	hum.MaxHealth = 20
+	hum.Health = 20
+	-- Salto de un bloque y medio y paso parecido al original
+	hum.UseJumpPower = false
+	hum.JumpHeight = 4.6
+	hum.WalkSpeed = 14
+	root.Anchored = true
+	local x, z = puntoAparicion()
+	plr:SetAttribute("EsperaX", x)
+	plr:SetAttribute("EsperaZ", z)
+	local cx, cz = x // C, z // C
+	while not Mundo.listo(cx, cz) do
+		task.wait(0.2)
+		if not char.Parent then
+			return
+		end
+	end
+	local y = Mundo.alturaSuelo(x, z)
+	char:PivotTo(CFrame.new((x + 0.5) * B, (y + 1) * B + 3.2, (z + 0.5) * B))
+	root.Anchored = false
+	plr:SetAttribute("EsperaX", nil)
+	plr:SetAttribute("EsperaZ", nil)
+	Estado:FireClient(plr, "listo")
+end
+
+Players.PlayerAdded:Connect(function(plr)
+	cargar(plr)
+	plr.CharacterAdded:Connect(function(char)
+		local s = st(plr)
+		if s and s.muerto then
+			s.muerto = false
+			s.hambre = 20
+			Estado:FireClient(plr, "hambre", 20)
+		end
+		task.spawn(colocar, plr, char)
+		local hum = char:WaitForChild("Humanoid", 10)
+		if hum then
+			hum.Died:Connect(function()
+				local s2 = st(plr)
+				if s2 then
+					s2.muerto = true
+				end
+			end)
+		end
+	end)
+	task.defer(function()
+		enviarInv(plr)
+		local s = st(plr)
+		if s then
+			Estado:FireClient(plr, "hambre", s.hambre)
+		end
+	end)
+end)
+
+Players.PlayerRemoving:Connect(function(plr)
+	guardar(plr)
+	estados[plr] = nil
+end)
+
+game:BindToClose(function()
+	for _, plr in Players:GetPlayers() do
+		guardar(plr)
+	end
+end)
+
+------------------------------------------------------------------
+-- Cargar chunks alrededor de los jugadores
+------------------------------------------------------------------
+local function posicionBloques(plr)
+	local ex, ez = plr:GetAttribute("EsperaX"), plr:GetAttribute("EsperaZ")
+	if ex then
+		return ex, ez
+	end
+	local ch = plr.Character
+	local r = ch and ch:FindFirstChild("HumanoidRootPart")
+	if r then
+		return math.floor(r.Position.X / B), math.floor(r.Position.Z / B)
+	end
+	return spawnX, spawnZ
+end
+
+task.spawn(function()
+	local R = Config.RADIO
+	while true do
+		local quiero = {}
+		local centros = {}
+		for _, plr in Players:GetPlayers() do
+			local x, z = posicionBloques(plr)
+			table.insert(centros, { x // C, z // C })
+		end
+		if #centros == 0 then
+			table.insert(centros, { spawnX // C, spawnZ // C })
+		end
+		local mejor, mejorD = nil, math.huge
+		for _, c in centros do
+			for dx = -R, R do
+				for dz = -R, R do
+					local d = dx * dx + dz * dz
+					if d <= R * R + 1 then
+						local cx, cz = c[1] + dx, c[2] + dz
+						quiero[Mundo.clave(cx, cz)] = true
+						if not Mundo.vistos[Mundo.clave(cx, cz)] and d < mejorD then
+							mejor, mejorD = { cx, cz }, d
+						end
+					end
+				end
+			end
+		end
+		-- Quitar los chunks que ya nadie tiene cerca
+		for k, r in Mundo.vistos do
+			if not quiero[k] then
+				local nombre = r.modelo.Name
+				local cx, cz = string.match(nombre, "(-?%d+),(-?%d+)")
+				cx, cz = tonumber(cx), tonumber(cz)
+				local lejos = true
+				for _, c in centros do
+					if math.max(math.abs(cx - c[1]), math.abs(cz - c[2])) <= R + 2 then
+						lejos = false
+					end
+				end
+				if lejos then
+					Mundo.quitar(cx, cz)
+				end
+			end
+		end
+		if mejor then
+			Mundo.construir(mejor[1], mejor[2])
+			task.wait()
+		else
+			task.wait(0.3)
+		end
+	end
+end)
+
+------------------------------------------------------------------
+-- Acciones de los jugadores
+------------------------------------------------------------------
+local function cabeza(plr)
+	local ch = plr.Character
+	local h = ch and ch:FindFirstChild("Head")
+	return h and h.Position
+end
+
+local function alAlcance(plr, x, y, z)
+	local p = cabeza(plr)
+	if not p then
+		return false
+	end
+	local centro = Vector3.new((x + 0.5) * B, (y + 0.5) * B, (z + 0.5) * B)
+	return (centro - p).Magnitude <= (Config.ALCANCE + 1.5) * B
+end
+
+local function esEntero(v)
+	return type(v) == "number" and v == math.floor(v) and math.abs(v) < 1e6
+end
+
+-- ¿El bloque (x,y,z) se mete dentro de algún personaje?
+local function chocaConPersonaje(x, y, z)
+	local min = Vector3.new(x * B, y * B, z * B)
+	local max = min + Vector3.new(B, B, B)
+	for _, plr in Players:GetPlayers() do
+		local ch = plr.Character
+		local r = ch and ch:FindFirstChild("HumanoidRootPart")
+		if r then
+			local p = r.Position
+			local a = p - Vector3.new(1, 3, 1)
+			local b = p + Vector3.new(1, 2.6, 1)
+			if a.X < max.X and b.X > min.X and a.Y < max.Y and b.Y > min.Y and a.Z < max.Z and b.Z > min.Z then
+				return true
+			end
+		end
+	end
+	for _, m in Mobs.lista do
+		local p = m.raiz.Position
+		local s = m.raiz.Size / 2
+		if p.X - s.X < max.X and p.X + s.X > min.X and p.Y - s.Y - m.hum.HipHeight < max.Y and p.Y + s.Y > min.Y and p.Z - s.Z < max.Z and p.Z + s.Z > min.Z then
+			return true
+		end
+	end
+	return false
+end
+
+local function gastarHerramienta(plr, s)
+	local mano = s.inv[s.sel]
+	if mano and mano.u then
+		mano.u -= 1
+		if mano.u <= 0 then
+			aviso(plr, "¡Se rompió: " .. Bloques.nombre(mano.id) .. "!")
+			s.inv[s.sel] = false
+		end
+	end
+end
+
+local acciones = {}
+
+function acciones.golpe(plr, s, x, y, z)
+	if esEntero(x) and esEntero(y) and esEntero(z) then
+		s.golpe = { x = x, y = y, z = z, t = os.clock() }
+	end
+end
+
+function acciones.romper(plr, s, x, y, z)
+	if not (esEntero(x) and esEntero(y) and esEntero(z)) or not alAlcance(plr, x, y, z) then
+		return
+	end
+	local b = Mundo.get(x, y, z)
+	local d = DEF[b]
+	if b == 0 or not d or d.dureza < 0 then
+		return
+	end
+	local creativo = s.modo == "creativo"
+	local mano = s.inv[s.sel]
+	local herrId = mano and mano.id or nil
+	if not creativo then
+		local t = Bloques.tiempoRomper(b, herrId)
+		local g = s.golpe
+		if not g or g.x ~= x or g.y ~= y or g.z ~= z or os.clock() - g.t < t * 0.7 - 0.2 then
+			return
+		end
+	end
+	s.golpe = nil
+	Mundo.set(x, y, z, 0)
+	if not creativo then
+		if d.suelta ~= 0 and Bloques.puedeRecoger(b, herrId) then
+			dar(plr, d.suelta, 1)
+		end
+		if d.extra and math.random() < d.extra.prob then
+			dar(plr, d.extra.id, 1)
+		end
+		if d.dureza > 0 and herrId and DEF[herrId].herr then
+			gastarHerramienta(plr, s)
+		end
+	end
+	-- Lo que estaba apoyado encima (antorchas, flores, hierba, cactus) se cae
+	local yy = y + 1
+	while true do
+		local a = Mundo.get(x, yy, z)
+		local da = DEF[a]
+		if a == 0 or not da or not (da.forma == "antorcha" or da.forma == "flor" or da.forma == "cruz" or a == ID.cactus) then
+			break
+		end
+		Mundo.set(x, yy, z, 0)
+		if not creativo and da.suelta ~= 0 then
+			dar(plr, da.suelta, 1)
+		end
+		yy += 1
+	end
+	Mundo.inundar(x, y, z)
+	enviarInv(plr)
+end
+
+function acciones.poner(plr, s, x, y, z)
+	if not (esEntero(x) and esEntero(y) and esEntero(z)) or y < 0 or y >= Config.ALTO or not alAlcance(plr, x, y, z) then
+		return
+	end
+	local mano = s.inv[s.sel]
+	local d = mano and DEF[mano.id]
+	if not d or not d.esBloque or d.forma == "agua" then
+		return
+	end
+	local actual = Mundo.get(x, y, z)
+	if actual ~= 0 and actual ~= ID.agua and actual ~= ID.hierba then
+		return
+	end
+	-- Tiene que tocar otro bloque
+	local apoyo = false
+	for _, o in { { 1, 0, 0 }, { -1, 0, 0 }, { 0, 1, 0 }, { 0, -1, 0 }, { 0, 0, 1 }, { 0, 0, -1 } } do
+		local n = Mundo.get(x + o[1], y + o[2], z + o[3])
+		if n ~= 0 and n ~= ID.agua then
+			apoyo = true
+			break
+		end
+	end
+	if not apoyo then
+		return
+	end
+	if d.forma ~= "cubo" and not SOLIDO[Mundo.get(x, y - 1, z)] then
+		return
+	end
+	if SOLIDO[mano.id] and chocaConPersonaje(x, y, z) then
+		return
+	end
+	Mundo.set(x, y, z, mano.id)
+	if s.modo ~= "creativo" then
+		mano.n -= 1
+		if mano.n <= 0 then
+			s.inv[s.sel] = false
+		end
+	end
+	enviarInv(plr)
+end
+
+function acciones.sel(plr, s, i)
+	if esEntero(i) and i >= 1 and i <= 9 then
+		s.sel = i
+	end
+end
+
+function acciones.mover(plr, s, a, b)
+	if not (esEntero(a) and esEntero(b)) or a < 1 or a > 36 or b < 1 or b > 36 or a == b then
+		return
+	end
+	local pa, pb = s.inv[a], s.inv[b]
+	if pa and pb and pa.id == pb.id and not pa.u then
+		local max = Bloques.maxPila(pa.id)
+		local k = math.min(max - pb.n, pa.n)
+		pb.n += k
+		pa.n -= k
+		if pa.n <= 0 then
+			s.inv[a] = false
+		end
+	else
+		s.inv[a], s.inv[b] = pb, pa
+	end
+	enviarInv(plr)
+end
+
+function acciones.tirar(plr, s, a)
+	if esEntero(a) and a >= 1 and a <= 36 then
+		s.inv[a] = false
+		enviarInv(plr)
+	end
+end
+
+local function cerca(plr)
+	local ch = plr.Character
+	local r = ch and ch:FindFirstChild("HumanoidRootPart")
+	if not r then
+		return { mesa = false, horno = false }
+	end
+	return { mesa = Mundo.hayCerca(r.Position, ID.mesa, 5), horno = Mundo.hayCerca(r.Position, ID.horno, 5) }
+end
+
+function acciones.abrirInv(plr, s)
+	Estado:FireClient(plr, "cerca", cerca(plr))
+end
+
+function acciones.craftear(plr, s, i, veces)
+	local r = esEntero(i) and Recetas[i]
+	if not r then
+		return
+	end
+	veces = (esEntero(veces) and math.clamp(veces, 1, 64)) or 1
+	if r.donde then
+		local c = cerca(plr)
+		if not c[r.donde] then
+			aviso(plr, r.donde == "mesa" and "Necesitas una mesa de trabajo cerca" or "Necesitas un horno cerca")
+			return
+		end
+	end
+	local hechos = 0
+	for _ = 1, veces do
+		for id, n in r.ingredientes do
+			if contar(s, id) < n then
+				if hechos == 0 then
+					aviso(plr, "Te faltan materiales")
+				end
+				enviarInv(plr)
+				return
+			end
+		end
+		for id, n in r.ingredientes do
+			quitar(s, id, n)
+		end
+		local sobra = dar(plr, r.resultado, r.n)
+		hechos += 1
+		if sobra > 0 then
+			aviso(plr, "Inventario lleno")
+			break
+		end
+	end
+	enviarInv(plr)
+end
+
+function acciones.usar(plr, s)
+	local mano = s.inv[s.sel]
+	local d = mano and DEF[mano.id]
+	if d and d.comida and s.hambre < 20 then
+		s.hambre = math.min(20, s.hambre + d.comida)
+		mano.n -= 1
+		if mano.n <= 0 then
+			s.inv[s.sel] = false
+		end
+		Estado:FireClient(plr, "hambre", s.hambre)
+		enviarInv(plr)
+	end
+end
+
+function acciones.atacar(plr, s, parte)
+	if typeof(parte) ~= "Instance" or os.clock() < s.cdAtaque then
+		return
+	end
+	local m = Mobs.desdeParte(parte)
+	local p = cabeza(plr)
+	if not m or not p or (m.raiz.Position - p).Magnitude > 5.5 * B then
+		return
+	end
+	s.cdAtaque = os.clock() + 0.4
+	local mano = s.inv[s.sel]
+	local d = mano and DEF[mano.id]
+	local dano = (d and d.dano) or 1
+	Mobs.golpear(m, plr, dano)
+	if d and d.herr == "espada" then
+		gastarHerramienta(plr, s)
+		enviarInv(plr)
+	end
+end
+
+-- El cliente avisa al caer desde alto (en bloques)
+function acciones.caida(plr, s, n)
+	if s.modo ~= "supervivencia" or type(n) ~= "number" or n ~= n or n <= 3.5 then
+		return
+	end
+	local h = plr.Character and plr.Character:FindFirstChildOfClass("Humanoid")
+	if h then
+		h:TakeDamage(math.floor(math.min(n, 60) - 3))
+		aviso(plr, "¡Ay! Caída de " .. math.floor(n) .. " bloques")
+	end
+end
+
+function acciones.modo(plr, s, m)
+	if m ~= "creativo" and m ~= "supervivencia" then
+		return
+	end
+	if s.modo == m then
+		return
+	end
+	if s.modo == "supervivencia" then
+		guardar(plr)
+	end
+	s.modo = m
+	if m == "creativo" then
+		s.invSuperv = s.inv
+		s.inv = nuevoInv()
+		for i, id in { ID.cesped, ID.piedra, ID.tablones, ID.tronco, ID.vidrio, ID.ladrillos, ID.antorcha, ID.piedraLuminosa, ID.lana } do
+			s.inv[i] = { id = id, n = 64 }
+		end
+		s.hambre = 20
+		Estado:FireClient(plr, "hambre", 20)
+	elseif s.invSuperv then
+		s.inv = s.invSuperv
+		s.invSuperv = nil
+	end
+	local h = plr.Character and plr.Character:FindFirstChildOfClass("Humanoid")
+	if h then
+		h.Health = h.MaxHealth
+	end
+	Estado:FireClient(plr, "modo", m)
+	enviarInv(plr)
+end
+
+function acciones.creativo(plr, s, id)
+	if s.modo ~= "creativo" or not esEntero(id) or not DEF[id] then
+		return
+	end
+	s.inv[s.sel] = { id = id, n = Bloques.maxPila(id), u = DEF[id].usos }
+	enviarInv(plr)
+end
+
+Accion.OnServerEvent:Connect(function(plr, tipo, ...)
+	local s = st(plr)
+	local f = type(tipo) == "string" and acciones[tipo]
+	if s and f then
+		local ok, err = pcall(f, plr, s, ...)
+		if not ok then
+			warn("[Blockverse] Error en " .. tipo .. ": " .. tostring(err))
+		end
+	end
+end)
+
+------------------------------------------------------------------
+-- Criaturas
+------------------------------------------------------------------
+Mobs.alSoltar = function(plr, id, n)
+	if estados[plr] and estados[plr].modo == "supervivencia" then
+		dar(plr, id, n)
+		aviso(plr, "+" .. n .. " " .. Bloques.nombre(id))
+	end
+end
+Mobs.alEmpujar = function(plr, v)
+	local s = st(plr)
+	if s and s.modo == "supervivencia" then
+		Estado:FireClient(plr, "empuje", v)
+	end
+end
+Mobs.iniciar()
+
+------------------------------------------------------------------
+-- Hambre, curación y vacío
+------------------------------------------------------------------
+task.spawn(function()
+	while true do
+		task.wait(1)
+		for plr, s in estados do
+			local ch = plr.Character
+			local h = ch and ch:FindFirstChildOfClass("Humanoid")
+			if h and h.Health > 0 and s.modo == "supervivencia" then
+				s.hambreT += 1
+				if s.hambreT >= Config.HAMBRE_CADA and s.hambre > 0 then
+					s.hambreT = 0
+					s.hambre -= 1
+					Estado:FireClient(plr, "hambre", s.hambre)
+				end
+				if s.hambre <= 0 then
+					s.danoT += 1
+					if s.danoT >= 4 then
+						s.danoT = 0
+						if h.Health > 1 then
+							h:TakeDamage(1)
+						end
+					end
+				elseif s.hambre >= 18 and h.Health < h.MaxHealth then
+					s.curaT += 1
+					if s.curaT >= 3 then
+						s.curaT = 0
+						h.Health = math.min(h.MaxHealth, h.Health + 1)
+						s.hambreT += 6
+					end
+				end
+			end
+		end
+	end
+end)
+
+RunService.Heartbeat:Connect(function()
+	for plr, s in estados do
+		local ch = plr.Character
+		local r = ch and ch:FindFirstChild("HumanoidRootPart")
+		local h = ch and ch:FindFirstChildOfClass("Humanoid")
+		if r and h and h.Health > 0 and not r.Anchored and r.Position.Y < -40 then
+			local x, z = puntoAparicion()
+			ch:PivotTo(CFrame.new((x + 0.5) * B, (Mundo.alturaSuelo(x, z) + 1) * B + 3.2, (z + 0.5) * B))
+			if s.modo == "supervivencia" then
+				h:TakeDamage(6)
+			end
+		end
+	end
+end)
+]]></ProtectedString></Properties><Item class="ModuleScript" referent="RBX0000000A"><Properties><string name="Name">Mobs</string><ProtectedString name="Source"><![CDATA[--[[
+	Blockverse para Roblox · Criaturas (servidor)
+	· Zombis: salen de noche, persiguen al jugador y se queman al sol.
+	· Cerdos, vacas y ovejas: pasean de día y huyen si les pegas.
+	Los modelos se arman con piezas (estilo cúbico) y las patas se
+	mueven al caminar.
+]]
+local Players = game:GetService("Players")
+local Lighting = game:GetService("Lighting")
+local RunService = game:GetService("RunService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local Comp = ReplicatedStorage:WaitForChild("Blockverse")
+local Config = require(Comp.Config)
+local Bloques = require(Comp.Bloques)
+local Mundo = require(script.Parent.Mundo)
+
+local B = Config.BLOQUE
+local ID = Bloques.porClave
+
+local Mobs = {}
+local lista = {}
+Mobs.lista = lista
+Mobs.alSoltar = nil -- function(jugador, id, n): lo pone el script principal
+Mobs.alEmpujar = nil -- function(jugador, vector)
+
+local carpeta = Instance.new("Folder")
+carpeta.Name = "Criaturas"
+carpeta.Parent = workspace
+
+local function rgb(r, g, b)
+	return Color3.fromRGB(r, g, b)
+end
+
+local TIPOS = {
+	zombi = { nombre = "Zombi", vida = 20, vel = 9, dano = 3, hostil = true, bipedo = true,
+		piel = rgb(98, 150, 86), camisa = rgb(0, 160, 168), pantalon = rgb(58, 60, 150) },
+	cerdo = { nombre = "Cerdo", vida = 10, vel = 7, cuerpo = rgb(240, 162, 160), cabeza = rgb(244, 172, 170),
+		hocico = rgb(222, 120, 130), suelta = { ID.carneCruda, 1, 3 }, tam = Vector3.new(2.2, 1.8, 3) },
+	vaca = { nombre = "Vaca", vida = 10, vel = 7, cuerpo = rgb(74, 52, 36), cabeza = rgb(80, 58, 40),
+		mancha = rgb(236, 236, 236), hocico = rgb(200, 170, 160), suelta = { ID.carneCruda, 1, 3 }, tam = Vector3.new(2.4, 2.2, 3.4) },
+	oveja = { nombre = "Oveja", vida = 8, vel = 7, cuerpo = rgb(236, 236, 236), cabeza = rgb(214, 190, 170),
+		suelta = { ID.lana, 1, 2 }, tam = Vector3.new(2.4, 2.2, 3.2) },
+}
+Mobs.TIPOS = TIPOS
+
+local function pieza(modelo, nombre, tam, col, mat)
+	local p = Instance.new("Part")
+	p.Name = nombre
+	p.Size = tam
+	p.Color = col
+	p.Material = mat or Enum.Material.SmoothPlastic
+	p.TopSurface = Enum.SurfaceType.Smooth
+	p.BottomSurface = Enum.SurfaceType.Smooth
+	p.CanCollide = false
+	p.Massless = true
+	p.Parent = modelo
+	return p
+end
+
+local function soldar(raiz, p, offset)
+	p.CFrame = raiz.CFrame * offset
+	local w = Instance.new("WeldConstraint")
+	w.Part0 = raiz
+	w.Part1 = p
+	w.Parent = p
+end
+
+-- Pata o brazo que se balancea (Motor6D desde la raíz)
+local function articulacion(raiz, p, pivote, largo)
+	local m = Instance.new("Motor6D")
+	m.Part0 = raiz
+	m.Part1 = p
+	m.C0 = pivote
+	m.C1 = CFrame.new(0, largo / 2, 0)
+	m.Parent = raiz
+	return m
+end
+
+local function crearModelo(tipo, pos)
+	local T = TIPOS[tipo]
+	local modelo = Instance.new("Model")
+	modelo.Name = T.nombre
+	modelo:SetAttribute("Mob", tipo)
+	local raiz = pieza(modelo, "HumanoidRootPart", Vector3.new(2, 2, 1), Color3.new(), nil)
+	raiz.Transparency = 1
+	raiz.Massless = false
+	raiz.CanCollide = true -- la raíz choca con las paredes
+	local motores = {}
+	local alto -- altura de las patas (HipHeight)
+	if T.bipedo then
+		raiz.Size = Vector3.new(2, 2.4, 1.1)
+		alto = 2.4
+		raiz.CFrame = CFrame.new(pos + Vector3.new(0, alto + 1.2, 0))
+		local torso = pieza(modelo, "Torso", Vector3.new(2, 2.4, 1.1), T.camisa)
+		soldar(raiz, torso, CFrame.new())
+		local cabeza = pieza(modelo, "Head", Vector3.new(1.7, 1.7, 1.7), T.piel)
+		soldar(raiz, cabeza, CFrame.new(0, 2.05, 0))
+		for _, s in { -1, 1 } do
+			local ojo = pieza(modelo, "Ojo", Vector3.new(0.34, 0.22, 0.05), rgb(20, 30, 20))
+			soldar(raiz, ojo, CFrame.new(0.4 * s, 2.15, -0.86))
+		end
+		for i, s in { -1, 1 } do
+			local pierna = pieza(modelo, "Pierna" .. i, Vector3.new(0.95, alto, 1.05), T.pantalon)
+			motores["p" .. i] = articulacion(raiz, pierna, CFrame.new(0.5 * s, -1.2, 0), alto)
+			local brazo = pieza(modelo, "Brazo" .. i, Vector3.new(0.85, 2.3, 0.85), T.piel)
+			-- Brazos estirados hacia delante (como en el original)
+			motores["b" .. i] = articulacion(raiz, brazo, CFrame.new(1.43 * s, 1.0, 0) * CFrame.Angles(math.rad(90), 0, 0), 2.3)
+		end
+	else
+		local tam = T.tam
+		alto = 1.3
+		raiz.Size = tam
+		raiz.CFrame = CFrame.new(pos + Vector3.new(0, alto + tam.Y / 2 + 0.2, 0))
+		local cuerpo = pieza(modelo, "Cuerpo", tam, T.cuerpo, tipo == "oveja" and Enum.Material.Fabric or nil)
+		soldar(raiz, cuerpo, CFrame.new())
+		local cabeza = pieza(modelo, "Head", Vector3.new(1.6, 1.6, 1.4), T.cabeza)
+		soldar(raiz, cabeza, CFrame.new(0, tam.Y * 0.3, -tam.Z / 2 - 0.5))
+		if T.hocico then
+			local h = pieza(modelo, "Hocico", Vector3.new(0.9, 0.6, 0.3), T.hocico)
+			soldar(raiz, h, CFrame.new(0, tam.Y * 0.3 - 0.3, -tam.Z / 2 - 1.3))
+		end
+		if T.mancha then
+			local m = pieza(modelo, "Mancha", Vector3.new(tam.X + 0.04, 1, 1.2), T.mancha)
+			soldar(raiz, m, CFrame.new(0, 0.3, 0.4))
+			for _, s in { -1, 1 } do
+				local c = pieza(modelo, "Cuerno", Vector3.new(0.25, 0.5, 0.25), rgb(230, 225, 210))
+				soldar(raiz, c, CFrame.new(0.65 * s, tam.Y * 0.3 + 0.95, -tam.Z / 2 - 0.4))
+			end
+		end
+		for _, s in { -1, 1 } do
+			local ojo = pieza(modelo, "Ojo", Vector3.new(0.25, 0.25, 0.05), rgb(20, 20, 20))
+			soldar(raiz, ojo, CFrame.new(0.45 * s, tam.Y * 0.3 + 0.2, -tam.Z / 2 - 1.22))
+		end
+		local i = 0
+		for _, sx in { -1, 1 } do
+			for _, sz in { -1, 1 } do
+				i += 1
+				local pata = pieza(modelo, "Pata" .. i, Vector3.new(0.75, alto, 0.75), tipo == "oveja" and T.cabeza or T.cuerpo)
+				motores["p" .. i] = articulacion(raiz, pata, CFrame.new(sx * (tam.X / 2 - 0.4), -tam.Y / 2, sz * (tam.Z / 2 - 0.45)), alto)
+			end
+		end
+	end
+	local hum = Instance.new("Humanoid")
+	hum.RigType = Enum.HumanoidRigType.R15
+	hum.HipHeight = alto
+	hum.MaxHealth = T.vida
+	hum.Health = T.vida
+	hum.WalkSpeed = T.vel
+	hum.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
+	hum.BreakJointsOnDeath = false
+	hum.Parent = modelo
+	modelo.PrimaryPart = raiz
+	modelo.Parent = carpeta
+	pcall(function()
+		raiz:SetNetworkOwner(nil)
+	end)
+	return modelo, hum, raiz, motores
+end
+
+local function jugadorMasCerca(pos, maxDist)
+	local mejor, dm = nil, maxDist
+	for _, plr in Players:GetPlayers() do
+		local ch = plr.Character
+		local r = ch and ch:FindFirstChild("HumanoidRootPart")
+		local h = ch and ch:FindFirstChildOfClass("Humanoid")
+		if r and h and h.Health > 0 and not r.Anchored then
+			local d = (r.Position - pos).Magnitude
+			if d < dm then
+				mejor, dm = plr, d
+			end
+		end
+	end
+	return mejor, dm
+end
+
+function Mobs.crear(tipo, x, y, z)
+	local pos = Vector3.new((x + 0.5) * B, (y + 1) * B, (z + 0.5) * B)
+	local modelo, hum, raiz, motores = crearModelo(tipo, pos)
+	local m = {
+		tipo = tipo, T = TIPOS[tipo], modelo = modelo, hum = hum, raiz = raiz, motores = motores,
+		fase = 0, cd = 0, pensar = 0, huir = 0, quema = 0, ultimo = nil, atasco = 0,
+	}
+	hum.Died:Connect(function()
+		Mobs.morir(m)
+	end)
+	table.insert(lista, m)
+	return m
+end
+
+function Mobs.morir(m)
+	if m.muerto then
+		return
+	end
+	m.muerto = true
+	local s = m.T.suelta
+	if s and m.ultimo and Mobs.alSoltar then
+		Mobs.alSoltar(m.ultimo, s[1], math.random(s[2], s[3]))
+	end
+	-- Se cae de lado y desaparece con humo
+	local raiz = m.raiz
+	if raiz and raiz.Parent then
+		raiz.Anchored = true
+		local cf = raiz.CFrame
+		for i = 1, 8 do
+			task.delay(i * 0.04, function()
+				if raiz.Parent then
+					raiz.CFrame = cf * CFrame.Angles(0, 0, math.rad(i * 11))
+				end
+			end)
+		end
+		local humo = Instance.new("Smoke")
+		humo.Size = 2
+		humo.RiseVelocity = 3
+		humo.Color = Color3.fromRGB(230, 230, 230)
+		humo.Parent = raiz
+	end
+	task.delay(0.9, function()
+		m.modelo:Destroy()
+	end)
+	local i = table.find(lista, m)
+	if i then
+		table.remove(lista, i)
+	end
+end
+
+-- Un jugador le pega a una criatura
+function Mobs.golpear(m, plr, dano)
+	if m.muerto then
+		return
+	end
+	m.ultimo = plr
+	m.hum:TakeDamage(dano)
+	local ch = plr.Character
+	local r = ch and ch:FindFirstChild("HumanoidRootPart")
+	if r and m.raiz.Parent then
+		local dir = (m.raiz.Position - r.Position) * Vector3.new(1, 0, 1)
+		if dir.Magnitude > 0.01 then
+			m.raiz.AssemblyLinearVelocity = dir.Unit * 26 + Vector3.new(0, 18, 0)
+		end
+	end
+	if not m.T.hostil then
+		m.huir = 4
+	end
+	-- Destello rojo
+	local h = Instance.new("Highlight")
+	h.FillColor = Color3.fromRGB(255, 40, 40)
+	h.FillTransparency = 0.35
+	h.OutlineTransparency = 1
+	h.Parent = m.modelo
+	task.delay(0.25, function()
+		h:Destroy()
+	end)
+end
+
+function Mobs.desdeParte(p)
+	for _, m in lista do
+		if p:IsDescendantOf(m.modelo) then
+			return m
+		end
+	end
+	return nil
+end
+
+local function esDeNoche()
+	local t = Lighting.ClockTime
+	return t < 6 or t > 18.3
+end
+Mobs.esDeNoche = esDeNoche
+
+-- Hace saltar a la criatura si tiene un bloque delante
+local function obstaculo(m)
+	local r = m.raiz
+	local dir = m.hum.MoveDirection
+	if dir.Magnitude < 0.1 then
+		return false
+	end
+	local params = RaycastParams.new()
+	params.FilterType = Enum.RaycastFilterType.Include
+	params.FilterDescendantsInstances = { Mundo.carpeta }
+	local pie = r.Position - Vector3.new(0, m.hum.HipHeight + r.Size.Y / 2 - 0.8, 0)
+	return workspace:Raycast(pie, dir.Unit * (r.Size.Z / 2 + 1.6), params) ~= nil
+end
+
+local function actualizar(m, dt)
+	local r = m.raiz
+	if not r.Parent or m.muerto then
+		return
+	end
+	local pos = r.Position
+	-- Patas
+	local mov = m.hum.MoveDirection.Magnitude > 0.1 and 1 or 0
+	m.fase += dt * 9 * mov
+	local a = math.sin(m.fase) * 0.7 * mov
+	for k, mo in m.motores do
+		local base = mo:GetAttribute("base")
+		if not base then
+			mo:SetAttribute("base", mo.C0)
+			base = mo.C0
+		end
+		local signo = (k == "p1" or k == "p4" or k == "b2") and 1 or -1
+		if k:sub(1, 1) == "b" then
+			mo.C0 = base * CFrame.Angles(a * 0.25 * signo, 0, 0)
+		else
+			mo.C0 = base * CFrame.Angles(a * signo, 0, 0)
+		end
+	end
+	m.cd -= dt
+	m.pensar -= dt
+	m.huir -= dt
+	if m.pensar > 0 then
+		return
+	end
+	m.pensar = 0.25
+	if obstaculo(m) then
+		m.hum.Jump = true
+	end
+	local T = m.T
+	if T.hostil then
+		local plr, d = jugadorMasCerca(pos, 16 * B)
+		if plr then
+			local pr = plr.Character.HumanoidRootPart
+			m.hum:MoveTo(pr.Position)
+			if d < 4.2 and m.cd <= 0 then
+				m.cd = 1
+				local h = plr.Character:FindFirstChildOfClass("Humanoid")
+				if h then
+					h:TakeDamage(T.dano)
+					if Mobs.alEmpujar then
+						local dir = (pr.Position - pos) * Vector3.new(1, 0, 1)
+						Mobs.alEmpujar(plr, (dir.Magnitude > 0.01 and dir.Unit or Vector3.zero) * 30 + Vector3.new(0, 20, 0))
+					end
+				end
+			end
+		elseif math.random() < 0.15 then
+			m.hum:MoveTo(pos + Vector3.new(math.random(-20, 20), 0, math.random(-20, 20)))
+		end
+		-- Al sol se queman
+		m.quema -= 0.25
+		if not esDeNoche() and m.quema <= 0 then
+			m.quema = 1
+			local x, y, z = math.floor(pos.X / B), math.floor(pos.Y / B), math.floor(pos.Z / B)
+			if Mundo.alCielo(x, y + 1, z) then
+				if not r:FindFirstChildOfClass("Fire") then
+					local f = Instance.new("Fire")
+					f.Size = 3
+					f.Parent = r
+				end
+				m.hum:TakeDamage(2)
+			end
+		end
+	else
+		if m.huir > 0 then
+			local plr = jugadorMasCerca(pos, 30 * B)
+			if plr then
+				local dir = (pos - plr.Character.HumanoidRootPart.Position) * Vector3.new(1, 0, 1)
+				if dir.Magnitude > 0.01 then
+					m.hum:MoveTo(pos + dir.Unit * 12)
+				end
+			end
+			m.hum.WalkSpeed = T.vel * 1.8
+		else
+			m.hum.WalkSpeed = T.vel
+			if math.random() < 0.06 then
+				m.hum:MoveTo(pos + Vector3.new(math.random(-18, 18), 0, math.random(-18, 18)))
+			end
+		end
+	end
+end
+
+-- Aparecen criaturas cerca de los jugadores
+local function generar()
+	local zombis, animales = 0, 0
+	for _, m in lista do
+		if m.T.hostil then
+			zombis += 1
+		else
+			animales += 1
+		end
+	end
+	for _, plr in Players:GetPlayers() do
+		local ch = plr.Character
+		local r = ch and ch:FindFirstChild("HumanoidRootPart")
+		if r and not r.Anchored then
+			local a = math.random() * math.pi * 2
+			local dist = math.random(12, 26)
+			local x = math.floor(r.Position.X / B + math.cos(a) * dist)
+			local z = math.floor(r.Position.Z / B + math.sin(a) * dist)
+			if Mundo.listo(x // Config.CHUNK, z // Config.CHUNK) then
+				local y = Mundo.alturaSuelo(x, z)
+				local suelo = Mundo.get(x, y, z)
+				local libre = Mundo.get(x, y + 1, z) == 0 and Mundo.get(x, y + 2, z) == 0
+				if libre and y > Config.NIVEL_MAR then
+					if esDeNoche() and zombis < Config.MAX_ZOMBIS then
+						Mobs.crear("zombi", x, y, z)
+						zombis += 1
+					elseif not esDeNoche() and animales < Config.MAX_ANIMALES and suelo == ID.cesped and math.random() < 0.5 then
+						local t = ({ "cerdo", "vaca", "oveja" })[math.random(1, 3)]
+						for _ = 1, math.random(1, 3) do
+							Mobs.crear(t, x + math.random(-1, 1), y, z + math.random(-1, 1))
+							animales += 1
+						end
+					end
+				end
+			end
+		end
+	end
+	-- Quitar las que quedan muy lejos o se caen del mundo
+	local lejos = (Config.RADIO + 1) * Config.CHUNK * B
+	for i = #lista, 1, -1 do
+		local m = lista[i]
+		local p = m.raiz.Position
+		local _, d = jugadorMasCerca(p, math.huge)
+		if p.Y < -20 or (d and d > lejos) or (not d) then
+			m.muerto = true
+			m.modelo:Destroy()
+			table.remove(lista, i)
+		end
+	end
+end
+
+function Mobs.iniciar()
+	RunService.Heartbeat:Connect(function(dt)
+		for i = #lista, 1, -1 do
+			local m = lista[i]
+			if m then
+				actualizar(m, dt)
+			end
+		end
+	end)
+	task.spawn(function()
+		while true do
+			task.wait(2)
+			pcall(generar)
+		end
+	end)
+end
+
+return Mobs
+]]></ProtectedString></Properties></Item>
+<Item class="ModuleScript" referent="RBX0000000B"><Properties><string name="Name">Mundo</string><ProtectedString name="Source"><![CDATA[--[[
+	Blockverse para Roblox · Mundo (servidor)
+	Guarda los bloques de cada chunk y crea las piezas que se ven.
+	· Los datos se generan al acercarse un jugador y se quedan en memoria
+	  (así los cambios de los jugadores no se pierden).
+	· Las piezas se crean por capas y se reparten en varios fotogramas.
+	· El agua es agua de Roblox (Terrain), así se puede nadar.
+]]
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local Comp = ReplicatedStorage:WaitForChild("Blockverse")
+local Config = require(Comp.Config)
+local Bloques = require(Comp.Bloques)
+local Generador = require(Comp.Generador)
+local Mallador = require(Comp.Mallador)
+
+local B, C, ALTO = Config.BLOQUE, Config.CHUNK, Config.ALTO
+local DEF = Bloques.porId
+local TRANSP = Bloques.TRANSP
+local SOLIDO = Bloques.SOLIDO
+local ID = Bloques.porClave
+local idx = Generador.idx
+local hash = Generador.hash
+
+local Mundo = {}
+local datos = {} -- clave numérica -> buffer
+local vistos = {} -- clave -> chunk dibujado
+Mundo.vistos = vistos
+local gen
+
+local carpeta = Instance.new("Folder")
+carpeta.Name = "Mundo"
+carpeta.Parent = workspace
+Mundo.carpeta = carpeta
+
+local function clave(cx, cz)
+	return (cx + 32768) * 65536 + (cz + 32768)
+end
+Mundo.clave = clave
+
+function Mundo.iniciar(semilla)
+	gen = Generador.new(semilla)
+	Mundo.gen = gen
+end
+
+function Mundo.datos(cx, cz)
+	local k = clave(cx, cz)
+	local d = datos[k]
+	if not d then
+		d = buffer.create(C * C * ALTO)
+		gen:llenar(d, cx, cz)
+		datos[k] = d
+	end
+	return d
+end
+
+-- Bloque en coordenadas del mundo (con caché del último chunk consultado)
+local ucx, ucz, ubuf = math.huge, math.huge, buffer.create(0)
+function Mundo.get(x, y, z)
+	if y < 0 then
+		return ID.lecho
+	end
+	if y >= ALTO then
+		return 0
+	end
+	local cx, cz = x // C, z // C
+	if cx ~= ucx or cz ~= ucz then
+		ucx, ucz, ubuf = cx, cz, Mundo.datos(cx, cz)
+	end
+	return buffer.readu8(ubuf, idx(x - cx * C, y, z - cz * C))
+end
+local get = Mundo.get
+
+-- Altura del bloque sólido más alto de una columna (sin contar hojas)
+function Mundo.alturaSuelo(x, z)
+	for y = ALTO - 1, 0, -1 do
+		local b = get(x, y, z)
+		if b ~= 0 and SOLIDO[b] and b ~= ID.hojas and b ~= ID.hojasAbeto then
+			return y
+		end
+	end
+	return 0
+end
+
+-- ¿Le da el cielo a esta posición? (para los zombis al sol)
+function Mundo.alCielo(x, y, z)
+	for yy = y, ALTO - 1 do
+		local b = get(x, yy, z)
+		if b ~= 0 and not TRANSP[b] then
+			return false
+		end
+	end
+	return true
+end
+
+------------------------------------------------------------------
+-- Piezas
+------------------------------------------------------------------
+local MATS = {}
+local function material(nombre)
+	local m = MATS[nombre]
+	if m == nil then
+		local ok, v = pcall(function()
+			return (Enum.Material :: any)[nombre]
+		end)
+		m = ok and v or Enum.Material.SmoothPlastic
+		MATS[nombre] = m
+	end
+	return m
+end
+local COLS = {}
+local function color(t)
+	local c = COLS[t]
+	if not c then
+		c = Color3.fromRGB(t[1], t[2], t[3])
+		COLS[t] = c
+	end
+	return c
+end
+Mundo.color = color
+Mundo.material = material
+
+local function parte(tam, cf, col, mat, b, padre)
+	local p = Instance.new("Part")
+	p.Anchored = true
+	p.TopSurface = Enum.SurfaceType.Smooth
+	p.BottomSurface = Enum.SurfaceType.Smooth
+	p.Size = tam
+	p.CFrame = cf
+	p.Color = col
+	p.Material = mat
+	p:SetAttribute("b", b)
+	p.Parent = padre
+	return p
+end
+
+local function luz(p, l)
+	local L = Instance.new("PointLight")
+	L.Brightness = l.brillo
+	L.Range = l.rango
+	L.Color = color(l.color)
+	L.Shadows = true
+	L.Parent = p
+end
+
+local function construirCapa(r, cx, cz, y)
+	local viejas = r.capas[y]
+	if viejas then
+		for _, p in viejas do
+			p:Destroy()
+		end
+		r.capas[y] = nil
+	end
+	local cajas, esp = Mallador.capa(get, cx, cz, y)
+	if #cajas == 0 and #esp == 0 then
+		return
+	end
+	local lista = {}
+	local bx, bz = cx * C, cz * C
+	local yc = (y + 0.5) * B
+	for _, c in cajas do
+		local b, lx, lz, w, l = c[1], c[2], c[3], c[4], c[5]
+		local d = DEF[b]
+		local an = d.ancho or 1
+		local centro = CFrame.new((bx + lx + w / 2) * B, yc, (bz + lz + l / 2) * B)
+		local p = parte(Vector3.new(w * B * an, B, l * B * an), centro, color(d.color), material(d.material), b, r.modelo)
+		if d.transp then
+			p.Transparency = d.transp
+			p.CastShadow = false
+		end
+		if d.luz then
+			luz(p, d.luz)
+		end
+		table.insert(lista, p)
+		-- Capa de arriba (césped, nieve, anillos del tronco, tapa de la mesa)
+		if d.capa then
+			local tapada = false
+			if d.capaArriba then
+				for dz = 0, l - 1 do
+					for dx = 0, w - 1 do
+						local a = get(bx + lx + dx, y + 1, bz + lz + dz)
+						if not TRANSP[a] then
+							tapada = true
+							break
+						end
+					end
+					if tapada then
+						break
+					end
+				end
+			end
+			if not tapada then
+				local alto = d.capaArriba and 0.12 or 0.55
+				local q = parte(
+					Vector3.new(w * B + 0.06, alto, l * B + 0.06),
+					centro + Vector3.new(0, B / 2 - alto / 2 + 0.03, 0),
+					color(d.capa.color),
+					material(d.capa.material),
+					b,
+					r.modelo
+				)
+				if d.capaArriba then
+					q.Size = Vector3.new(w * B - 0.5, alto, l * B - 0.5)
+				end
+				table.insert(lista, q)
+			end
+		end
+		-- Vetas de las menas: barras finas que asoman por las caras
+		if d.veta then
+			local vc = color(d.veta)
+			for dz = 0, l - 1 do
+				for dx = 0, w - 1 do
+					local x, z = bx + lx + dx, bz + lz + dz
+					local cb = Vector3.new((x + 0.5) * B, yc, (z + 0.5) * B)
+					for eje = 1, 3 do
+						local u = (hash(x, y, z, eje * 31) - 0.5) * 1.7
+						local v = (hash(x, y, z, eje * 57) - 0.5) * 1.7
+						local tam, off
+						if eje == 1 then
+							tam, off = Vector3.new(B + 0.06, 0.62, 0.62), Vector3.new(0, u, v)
+						elseif eje == 2 then
+							tam, off = Vector3.new(0.62, B + 0.06, 0.62), Vector3.new(u, 0, v)
+						else
+							tam, off = Vector3.new(0.62, 0.62, B + 0.06), Vector3.new(u, v, 0)
+						end
+						local q = parte(tam, CFrame.new(cb + off), vc, Enum.Material.SmoothPlastic, b, r.modelo)
+						q.CanCollide = false
+						q.CastShadow = false
+						table.insert(lista, q)
+					end
+				end
+			end
+		end
+	end
+	-- Antorchas, flores y hierba
+	for _, e in esp do
+		local b, lx, lz = e[1], e[2], e[3]
+		local d = DEF[b]
+		local base = Vector3.new((bx + lx + 0.5) * B, y * B, (bz + lz + 0.5) * B)
+		if d.forma == "antorcha" then
+			local palo = parte(Vector3.new(0.36, 1.6, 0.36), CFrame.new(base + Vector3.new(0, 0.8, 0)), color(d.color), material(d.material), b, r.modelo)
+			local cabeza = parte(Vector3.new(0.48, 0.48, 0.48), CFrame.new(base + Vector3.new(0, 1.8, 0)), Color3.fromRGB(255, 200, 90), Enum.Material.Neon, b, r.modelo)
+			palo.CanCollide = false
+			cabeza.CanCollide = false
+			luz(cabeza, d.luz)
+			local f = Instance.new("Fire")
+			f.Size = 2
+			f.Heat = 4
+			f.Color = Color3.fromRGB(255, 150, 40)
+			f.SecondaryColor = Color3.fromRGB(255, 230, 120)
+			f.Parent = cabeza
+			table.insert(lista, palo)
+			table.insert(lista, cabeza)
+		elseif d.forma == "flor" then
+			local tallo = parte(Vector3.new(0.2, 1.3, 0.2), CFrame.new(base + Vector3.new(0, 0.65, 0)), Color3.fromRGB(70, 140, 50), Enum.Material.Grass, b, r.modelo)
+			local flor = parte(Vector3.new(0.75, 0.45, 0.75), CFrame.new(base + Vector3.new(0, 1.45, 0)) * CFrame.Angles(0, math.rad(45), 0), color(d.color), material(d.material), b, r.modelo)
+			tallo.CanCollide = false
+			flor.CanCollide = false
+			tallo.CastShadow = false
+			table.insert(lista, tallo)
+			table.insert(lista, flor)
+		else -- hierba en cruz
+			for k = 0, 1 do
+				local h = parte(
+					Vector3.new(2.3, 1.7, 0.08),
+					CFrame.new(base + Vector3.new(0, 0.85, 0)) * CFrame.Angles(0, math.rad(45 + 90 * k), 0),
+					color(d.color),
+					material(d.material),
+					b,
+					r.modelo
+				)
+				h.CanCollide = false
+				h.CastShadow = false
+				table.insert(lista, h)
+			end
+		end
+	end
+	r.capas[y] = lista
+end
+
+-- Agua de Roblox (Terrain) en celdas de 4 studs: cada celda es agua si el
+-- bloque que hay en su centro es agua
+local function agua(cx, cz, llenar)
+	local T = workspace.Terrain
+	local NV = C * B // 4
+	local vyMax = math.ceil((Config.NIVEL_MAR + 2) * B / 4)
+	local x0, z0 = cx * C * B, cz * C * B
+	local region = Region3.new(Vector3.new(x0, 0, z0), Vector3.new(x0 + C * B, vyMax * 4, z0 + C * B))
+	local mats, occ = table.create(NV), table.create(NV)
+	local hay = false
+	for ix = 1, NV do
+		local mx, ox = table.create(vyMax), table.create(vyMax)
+		mats[ix], occ[ix] = mx, ox
+		for iy = 1, vyMax do
+			local my, oy = table.create(NV), table.create(NV)
+			mx[iy], ox[iy] = my, oy
+			for iz = 1, NV do
+				local m, o = Enum.Material.Air, 0
+				if llenar then
+					local bx = math.floor((x0 + (ix - 0.5) * 4) / B)
+					local by = math.floor(((iy - 0.5) * 4) / B)
+					local bz = math.floor((z0 + (iz - 0.5) * 4) / B)
+					if get(bx, by, bz) == ID.agua then
+						m, o = Enum.Material.Water, 1
+						hay = true
+					end
+				end
+				my[iz], oy[iz] = m, o
+			end
+		end
+	end
+	if hay or not llenar then
+		T:WriteVoxels(region, 4, mats, occ)
+	end
+end
+
+------------------------------------------------------------------
+-- Chunks dibujados
+------------------------------------------------------------------
+function Mundo.listo(cx, cz)
+	local r = vistos[clave(cx, cz)]
+	return r ~= nil and r.listo
+end
+
+-- Dibuja un chunk entero (repartido en varios fotogramas)
+function Mundo.construir(cx, cz)
+	local k = clave(cx, cz)
+	if vistos[k] then
+		return
+	end
+	for dx = -1, 1 do
+		for dz = -1, 1 do
+			Mundo.datos(cx + dx, cz + dz)
+		end
+	end
+	local modelo = Instance.new("Folder")
+	modelo.Name = cx .. "," .. cz
+	local r = { modelo = modelo, capas = {}, listo = false, sucias = {} }
+	vistos[k] = r
+	-- La parte más alta del chunk (para no recorrer el aire de arriba)
+	local d = datos[k]
+	local tope = 0
+	for i = C * C * ALTO - 1, 0, -1 do
+		if buffer.readu8(d, i) ~= 0 then
+			tope = i // (C * C) + 1
+			break
+		end
+	end
+	local t = os.clock()
+	for y = 0, math.min(ALTO - 1, tope) do
+		construirCapa(r, cx, cz, y)
+		if os.clock() - t > 0.005 then
+			task.wait()
+			if r.quitado then
+				modelo:Destroy()
+				return
+			end
+			t = os.clock()
+		end
+	end
+	agua(cx, cz, true)
+	modelo.Parent = carpeta
+	r.listo = true
+	for y in r.sucias do
+		construirCapa(r, cx, cz, y)
+	end
+	r.sucias = {}
+end
+
+function Mundo.quitar(cx, cz)
+	local k = clave(cx, cz)
+	local r = vistos[k]
+	if not r then
+		return
+	end
+	r.quitado = true
+	vistos[k] = nil
+	r.modelo:Destroy()
+	if r.listo then
+		agua(cx, cz, false)
+	end
+end
+
+------------------------------------------------------------------
+-- Cambiar un bloque
+------------------------------------------------------------------
+local function rehacer(cx, cz, y)
+	if y < 0 or y >= ALTO then
+		return
+	end
+	local r = vistos[clave(cx, cz)]
+	if not r then
+		return
+	end
+	if r.listo then
+		construirCapa(r, cx, cz, y)
+	else
+		r.sucias[y] = true
+	end
+end
+
+function Mundo.set(x, y, z, b)
+	if y < 0 or y >= ALTO then
+		return
+	end
+	local cx, cz = x // C, z // C
+	local lx, lz = x - cx * C, z - cz * C
+	local viejo = get(x, y, z)
+	buffer.writeu8(Mundo.datos(cx, cz), idx(lx, y, lz), b)
+	-- Un bloque sólido encima del césped lo convierte en tierra
+	if b ~= 0 and SOLIDO[b] and y > 0 then
+		local abajo = get(x, y - 1, z)
+		if abajo == ID.cesped or abajo == ID.cespedNevado then
+			buffer.writeu8(Mundo.datos(cx, cz), idx(lx, y - 1, lz), ID.tierra)
+		end
+	end
+	rehacer(cx, cz, y)
+	rehacer(cx, cz, y - 1)
+	rehacer(cx, cz, y + 1)
+	if lx == 0 then
+		rehacer(cx - 1, cz, y)
+	elseif lx == C - 1 then
+		rehacer(cx + 1, cz, y)
+	end
+	if lz == 0 then
+		rehacer(cx, cz - 1, y)
+	elseif lz == C - 1 then
+		rehacer(cx, cz + 1, y)
+	end
+	-- Si cambia el agua, se rehace el agua del chunk
+	if viejo == ID.agua or b == ID.agua then
+		local r = vistos[clave(cx, cz)]
+		if r and r.listo then
+			agua(cx, cz, true)
+		end
+	end
+end
+
+-- Al quitar un bloque junto al agua, el agua entra en el hueco
+function Mundo.inundar(x, y, z)
+	if get(x, y, z) ~= 0 then
+		return
+	end
+	for _, o in { { 1, 0, 0 }, { -1, 0, 0 }, { 0, 0, 1 }, { 0, 0, -1 }, { 0, 1, 0 } } do
+		if get(x + o[1], y + o[2], z + o[3]) == ID.agua then
+			Mundo.set(x, y, z, ID.agua)
+			return
+		end
+	end
+end
+
+-- ¿Hay un bloque de este tipo cerca? (para las recetas que piden mesa u horno)
+function Mundo.hayCerca(pos, id, radio)
+	local x0, y0, z0 = math.floor(pos.X / B), math.floor(pos.Y / B), math.floor(pos.Z / B)
+	for y = y0 - radio, y0 + radio do
+		for x = x0 - radio, x0 + radio do
+			for z = z0 - radio, z0 + radio do
+				if get(x, y, z) == id then
+					return true
+				end
+			end
+		end
+	end
+	return false
+end
+
+return Mundo
+]]></ProtectedString></Properties></Item>
+</Item>
+</Item>
+<Item class="StarterPlayer" referent="RBX00000013"><Properties><string name="Name">StarterPlayer</string><float name="CharacterWalkSpeed">14</float><bool name="CharacterUseJumpPower">false</bool><float name="CharacterJumpHeight">4.6</float></Properties><Item class="StarterPlayerScripts" referent="RBX00000011"><Properties><string name="Name">StarterPlayerScripts</string></Properties><Item class="LocalScript" referent="RBX0000000F"><Properties><string name="Name">Cliente</string><bool name="Disabled">false</bool><ProtectedString name="Source"><![CDATA[--[[
+	Blockverse para Roblox · Script del cliente
+	Cámara en primera persona, apuntar a bloques y criaturas, picar
+	(con el tiempo de cada bloque y herramienta), poner bloques, comer,
+	elegir objeto, correr, volar en creativo y efectos al romper.
+]]
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local StarterGui = game:GetService("StarterGui")
+local SoundService = game:GetService("SoundService")
+local Debris = game:GetService("Debris")
+
+local Comp = ReplicatedStorage:WaitForChild("Blockverse")
+local Config = require(Comp.Config)
+local Bloques = require(Comp.Bloques)
+local Interfaz = require(script:WaitForChild("Interfaz"))
+
+local remotos = ReplicatedStorage:WaitForChild("Remotos")
+local Accion = remotos:WaitForChild("Accion")
+local Estado = remotos:WaitForChild("Estado")
+
+local B = Config.BLOQUE
+local DEF = Bloques.porId
+local jugador = Players.LocalPlayer
+
+pcall(function()
+	StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Health, false)
+	StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Backpack, false)
+end)
+
+local est = { inv = table.create(36, false), sel = 1, modo = nil, listo = false }
+local tercera = false
+local volando = false
+local vueloFuerza = nil
+
+local function enviar(...)
+	Accion:FireServer(...)
+end
+Interfaz.alAccion = enviar
+
+------------------------------------------------------------------
+-- Sonidos (sonidos que ya trae Roblox)
+------------------------------------------------------------------
+local function sonido(id, vol, tono)
+	local s = Instance.new("Sound")
+	s.SoundId = id
+	s.Volume = vol or 0.5
+	s.PlaybackSpeed = tono or 1
+	s.Parent = SoundService
+	s:Play()
+	Debris:AddItem(s, 3)
+end
+local SND_ROMPER = "rbxasset://sounds/action_footsteps_plastic.mp3"
+local SND_PONER = "rbxasset://sounds/clickfast.wav"
+local SND_GOLPE = "rbxasset://sounds/swordslash.wav"
+
+------------------------------------------------------------------
+-- Cámara
+------------------------------------------------------------------
+local function aplicarCamara()
+	local abierto = Interfaz.abierto() or Interfaz.menuVisible()
+	if tercera then
+		jugador.CameraMode = Enum.CameraMode.Classic
+		jugador.CameraMinZoomDistance = 12
+		jugador.CameraMaxZoomDistance = 12
+	else
+		jugador.CameraMode = Enum.CameraMode.LockFirstPerson
+		jugador.CameraMinZoomDistance = 0.5
+		jugador.CameraMaxZoomDistance = 0.5
+	end
+	Interfaz.mostrarMano(not tercera and not abierto)
+end
+aplicarCamara()
+
+------------------------------------------------------------------
+-- Selección del bloque al que se apunta
+------------------------------------------------------------------
+local marco = Instance.new("Part")
+marco.Name = "Seleccion"
+marco.Anchored = true
+marco.CanCollide = false
+marco.CanQuery = false
+marco.CanTouch = false
+marco.Transparency = 1
+marco.Size = Vector3.new(B + 0.06, B + 0.06, B + 0.06)
+local caja = Instance.new("SelectionBox")
+caja.Adornee = marco
+caja.LineThickness = 0.04
+caja.Color3 = Color3.fromRGB(20, 20, 20)
+caja.Transparency = 0.35
+caja.SurfaceColor3 = Color3.fromRGB(10, 10, 10)
+caja.SurfaceTransparency = 1
+caja.Parent = marco
+marco.Parent = workspace.CurrentCamera or workspace
+
+local params = RaycastParams.new()
+params.FilterType = Enum.RaycastFilterType.Include
+local function actualizarFiltro()
+	local lista = {}
+	for _, n in { "Mundo", "Criaturas" } do
+		local f = workspace:FindFirstChild(n)
+		if f then
+			table.insert(lista, f)
+		end
+	end
+	params.FilterDescendantsInstances = lista
+end
+actualizarFiltro()
+workspace.ChildAdded:Connect(actualizarFiltro)
+
+local objetivo = nil -- { tipo = "bloque", x, y, z, b, nx, ny, nz } o { tipo = "mob", parte }
+local function apuntar()
+	local cam = workspace.CurrentCamera
+	local ch = jugador.Character
+	local cabeza = ch and ch:FindFirstChild("Head")
+	if not cam or not cabeza then
+		return nil
+	end
+	local v = cam.ViewportSize
+	local rayo = cam:ViewportPointToRay(v.X / 2, v.Y / 2)
+	local extra = (cam.CFrame.Position - cabeza.Position).Magnitude
+	local r = workspace:Raycast(rayo.Origin, rayo.Direction * (Config.ALCANCE * B + extra), params)
+	if not r then
+		return nil
+	end
+	local criaturas = workspace:FindFirstChild("Criaturas")
+	if criaturas and r.Instance:IsDescendantOf(criaturas) then
+		return { tipo = "mob", parte = r.Instance }
+	end
+	local p = r.Position - r.Normal * 0.05
+	local x, y, z = math.floor(p.X / B), math.floor(p.Y / B), math.floor(p.Z / B)
+	local b = r.Instance:GetAttribute("b") or 0
+	local n = r.Normal
+	local nx, ny, nz = math.round(n.X), math.round(n.Y), math.round(n.Z)
+	-- Las plantas se apuntan como su propio hueco
+	local d = DEF[b]
+	if d and d.forma ~= "cubo" then
+		nx, ny, nz = 0, 0, 0
+	end
+	return { tipo = "bloque", x = x, y = y, z = z, b = b, nx = nx, ny = ny, nz = nz }
+end
+
+------------------------------------------------------------------
+-- Picar, atacar, poner y comer
+------------------------------------------------------------------
+local picando = false
+local progreso = 0
+local actual = nil -- bloque que se está picando
+local espera = 0
+local esperaPoner = 0
+local poniendo = false
+local alturaCaida = nil
+local ultimaY = nil
+
+local function enMano()
+	local p = est.inv[est.sel]
+	return p and p.id or nil
+end
+
+local function trozos(x, y, z, b)
+	local d = DEF[b]
+	if not d then
+		return
+	end
+	local col = Color3.fromRGB(d.color[1], d.color[2], d.color[3])
+	local centro = Vector3.new((x + 0.5) * B, (y + 0.5) * B, (z + 0.5) * B)
+	for _ = 1, 8 do
+		local t = Instance.new("Part")
+		t.Size = Vector3.new(0.4, 0.4, 0.4)
+		t.Color = col
+		t.Material = Enum.Material.SmoothPlastic
+		t.CanCollide = false
+		t.CanQuery = false
+		t.CanTouch = false
+		t.CFrame = CFrame.new(centro + Vector3.new(math.random() - 0.5, math.random() - 0.5, math.random() - 0.5) * 2)
+		t.Parent = workspace
+		t.AssemblyLinearVelocity = Vector3.new(math.random() * 16 - 8, math.random() * 14 + 4, math.random() * 16 - 8)
+		Debris:AddItem(t, 0.7)
+	end
+end
+
+local function atacar()
+	if objetivo and objetivo.tipo == "mob" then
+		enviar("atacar", objetivo.parte)
+		Interfaz.balancear()
+		sonido(SND_GOLPE, 0.4, 0.9 + math.random() * 0.2)
+	end
+end
+
+local function accionDerecha()
+	local id = enMano()
+	local d = id and DEF[id]
+	if d and d.comida then
+		enviar("usar")
+		Interfaz.balancear()
+		return
+	end
+	if d and d.esBloque and objetivo and objetivo.tipo == "bloque" then
+		local o = objetivo
+		local tx, ty, tz = o.x + o.nx, o.y + o.ny, o.z + o.nz
+		if o.nx == 0 and o.ny == 0 and o.nz == 0 and DEF[o.b] and DEF[o.b].clave ~= "hierba" then
+			ty += 1
+		end
+		enviar("poner", tx, ty, tz)
+		Interfaz.balancear()
+		sonido(SND_PONER, 0.35, 0.8)
+	end
+end
+
+------------------------------------------------------------------
+-- Vuelo (modo creativo)
+------------------------------------------------------------------
+local function ponerVuelo(si)
+	volando = si and est.modo == "creativo"
+	local ch = jugador.Character
+	local root = ch and ch:FindFirstChild("HumanoidRootPart")
+	if vueloFuerza then
+		vueloFuerza:Destroy()
+		vueloFuerza = nil
+	end
+	if volando and root then
+		vueloFuerza = Instance.new("BodyVelocity")
+		vueloFuerza.MaxForce = Vector3.new(1e6, 1e6, 1e6)
+		vueloFuerza.Velocity = Vector3.zero
+		vueloFuerza.Parent = root
+	end
+	Interfaz.aviso(volando and "Volando: Espacio sube, Ctrl o C baja" or "Ya no vuelas")
+end
+
+------------------------------------------------------------------
+-- Entrada
+------------------------------------------------------------------
+local function elegir(i)
+	est.sel = i
+	Interfaz.seleccion(i)
+	enviar("sel", i)
+	progreso = 0
+end
+Interfaz.alSeleccionar = elegir
+
+Interfaz.alModo = function(m)
+	enviar("modo", m)
+	Interfaz.mostrarMenu(false)
+	aplicarCamara()
+end
+
+UserInputService.InputBegan:Connect(function(input, procesado)
+	local t = input.UserInputType
+	if t == Enum.UserInputType.MouseButton1 and not procesado then
+		if Interfaz.abierto() or Interfaz.menuVisible() then
+			return
+		end
+		picando = true
+		atacar()
+	elseif t == Enum.UserInputType.MouseButton2 and not procesado then
+		if Interfaz.abierto() or Interfaz.menuVisible() then
+			return
+		end
+		poniendo = true
+		esperaPoner = 0.25
+		accionDerecha()
+	elseif t == Enum.UserInputType.Keyboard and not procesado then
+		local k = input.KeyCode
+		local n = k.Value - Enum.KeyCode.One.Value + 1
+		if n >= 1 and n <= 9 then
+			elegir(n)
+		elseif k == Enum.KeyCode.E then
+			if not Interfaz.menuVisible() then
+				Interfaz.alternarInventario()
+				aplicarCamara()
+			end
+		elseif k == Enum.KeyCode.V then
+			tercera = not tercera
+			aplicarCamara()
+		elseif k == Enum.KeyCode.F then
+			if est.modo == "creativo" then
+				ponerVuelo(not volando)
+			end
+		elseif k == Enum.KeyCode.LeftShift then
+			local h = jugador.Character and jugador.Character:FindFirstChildOfClass("Humanoid")
+			if h then
+				h.WalkSpeed = 21
+			end
+		elseif k == Enum.KeyCode.Escape and Interfaz.abierto() then
+			Interfaz.alternarInventario(false)
+			aplicarCamara()
+		end
+	end
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+	local t = input.UserInputType
+	if t == Enum.UserInputType.MouseButton1 then
+		picando = false
+	elseif t == Enum.UserInputType.MouseButton2 then
+		poniendo = false
+	elseif input.KeyCode == Enum.KeyCode.LeftShift then
+		local h = jugador.Character and jugador.Character:FindFirstChildOfClass("Humanoid")
+		if h then
+			h.WalkSpeed = 14
+		end
+	end
+end)
+
+UserInputService.InputChanged:Connect(function(input, procesado)
+	if input.UserInputType == Enum.UserInputType.MouseWheel and not procesado and not Interfaz.abierto() then
+		local d = input.Position.Z > 0 and -1 or 1
+		elegir((est.sel - 1 + d) % 9 + 1)
+	end
+end)
+
+Interfaz.botonesMovil(function(si)
+	picando = si
+	if si then
+		atacar()
+	end
+end, function()
+	accionDerecha()
+end, function()
+	Interfaz.alternarInventario()
+	aplicarCamara()
+end, function()
+	ponerVuelo(not volando)
+end)
+
+------------------------------------------------------------------
+-- Mensajes del servidor
+------------------------------------------------------------------
+Estado.OnClientEvent:Connect(function(tipo, a, b)
+	if tipo == "inv" then
+		est.inv = a
+		est.sel = b or est.sel
+		Interfaz.inventario(a, est.sel)
+	elseif tipo == "hambre" then
+		Interfaz.hambre(a)
+	elseif tipo == "aviso" then
+		Interfaz.aviso(a)
+	elseif tipo == "listo" then
+		est.listo = true
+		alturaCaida = nil
+		Interfaz.mundoListo(true)
+	elseif tipo == "cerca" then
+		Interfaz.cerca(a)
+	elseif tipo == "modo" then
+		est.modo = a
+		Interfaz.modo(a)
+		if Interfaz.botonVolar then
+			Interfaz.botonVolar.Visible = a == "creativo"
+		end
+		if a ~= "creativo" and volando then
+			ponerVuelo(false)
+		end
+		Interfaz.aviso(a == "creativo" and "Modo creativo" or "Modo supervivencia")
+	elseif tipo == "empuje" then
+		local root = jugador.Character and jugador.Character:FindFirstChild("HumanoidRootPart")
+		if root then
+			root.AssemblyLinearVelocity += a
+		end
+	end
+end)
+
+------------------------------------------------------------------
+-- Personaje
+------------------------------------------------------------------
+local function alPersonaje(ch)
+	local hum = ch:WaitForChild("Humanoid")
+	local antes = hum.Health
+	Interfaz.vida(hum.Health, hum.MaxHealth)
+	hum.HealthChanged:Connect(function(h)
+		if h < antes then
+			Interfaz.dano()
+		end
+		antes = h
+		Interfaz.vida(h, hum.MaxHealth)
+	end)
+	volando = false
+	vueloFuerza = nil
+	aplicarCamara()
+end
+if jugador.Character then
+	task.spawn(alPersonaje, jugador.Character)
+end
+jugador.CharacterAdded:Connect(alPersonaje)
+
+------------------------------------------------------------------
+-- Bucle de cada fotograma
+------------------------------------------------------------------
+RunService.RenderStepped:Connect(function(dt)
+	local abierto = Interfaz.abierto() or Interfaz.menuVisible()
+	if abierto then
+		objetivo = nil
+		picando = false
+		poniendo = false
+	else
+		objetivo = apuntar()
+	end
+
+	-- Marco del bloque apuntado
+	if objetivo and objetivo.tipo == "bloque" then
+		marco.CFrame = CFrame.new((objetivo.x + 0.5) * B, (objetivo.y + 0.5) * B, (objetivo.z + 0.5) * B)
+		caja.Visible = true
+	else
+		caja.Visible = false
+	end
+
+	-- Picar
+	espera -= dt
+	if picando and objetivo and objetivo.tipo == "bloque" and espera <= 0 then
+		local o = objetivo
+		if not actual or actual.x ~= o.x or actual.y ~= o.y or actual.z ~= o.z then
+			actual = { x = o.x, y = o.y, z = o.z, b = o.b }
+			progreso = 0
+			enviar("golpe", o.x, o.y, o.z)
+		end
+		local t = est.modo == "creativo" and 0 or Bloques.tiempoRomper(o.b, enMano())
+		if t == math.huge then
+			progreso = 0
+		else
+			progreso += dt / math.max(t, 0.001)
+			if math.floor(progreso * 4) ~= math.floor((progreso - dt / math.max(t, 0.001)) * 4) then
+				Interfaz.balancear()
+			end
+			if progreso >= 1 then
+				enviar("romper", o.x, o.y, o.z)
+				trozos(o.x, o.y, o.z, o.b)
+				sonido(SND_ROMPER, 0.6, 0.7 + math.random() * 0.3)
+				progreso = 0
+				actual = nil
+				espera = est.modo == "creativo" and 0.18 or 0.12
+			end
+		end
+	elseif not picando then
+		progreso = 0
+		actual = nil
+	end
+	Interfaz.progreso(progreso)
+	caja.SurfaceTransparency = progreso > 0 and (1 - progreso * 0.55) or 1
+
+	-- Poner manteniendo el botón
+	if poniendo then
+		esperaPoner -= dt
+		if esperaPoner <= 0 then
+			esperaPoner = 0.22
+			accionDerecha()
+		end
+	end
+
+	-- Vuelo
+	local ch = jugador.Character
+	local hum = ch and ch:FindFirstChildOfClass("Humanoid")
+	if volando and vueloFuerza and hum then
+		local subir = UserInputService:IsKeyDown(Enum.KeyCode.Space) or hum.Jump
+		local bajar = UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) or UserInputService:IsKeyDown(Enum.KeyCode.C)
+		vueloFuerza.Velocity = hum.MoveDirection * 42 + Vector3.new(0, (subir and 30 or 0) - (bajar and 30 or 0), 0)
+	end
+
+	-- Daño por caída: se mide la altura desde la que se cae
+	if hum and ch:FindFirstChild("HumanoidRootPart") then
+		local y = ch.HumanoidRootPart.Position.Y
+		local estadoH = hum:GetState()
+		-- Un salto brusco de posición es un teletransporte (aparecer), no una caída
+		local teletransporte = ultimaY and math.abs(y - ultimaY) > 15
+		ultimaY = y
+		if teletransporte or ch.HumanoidRootPart.Anchored or volando or estadoH == Enum.HumanoidStateType.Swimming or est.modo ~= "supervivencia" then
+			alturaCaida = nil
+		elseif estadoH == Enum.HumanoidStateType.Freefall or estadoH == Enum.HumanoidStateType.Jumping then
+			alturaCaida = math.max(alturaCaida or y, y)
+		elseif alturaCaida then
+			local bloques = (alturaCaida - y) / B
+			alturaCaida = nil
+			if bloques > 3.5 then
+				enviar("caida", bloques)
+			end
+		end
+	end
+
+	-- ¿La cámara está bajo el agua?
+	local cam = workspace.CurrentCamera
+	if cam then
+		local p = cam.CFrame.Position
+		local ok, mats = pcall(function()
+			local r = Region3.new(p - Vector3.new(2, 2, 2), p + Vector3.new(2, 2, 2)):ExpandToGrid(4)
+			return workspace.Terrain:ReadVoxels(r, 4)
+		end)
+		local agua = false
+		if ok and mats and mats[1] and mats[1][1] and mats[1][1][1] then
+			agua = mats[1][1][1] == Enum.Material.Water
+		end
+		Interfaz.agua(agua)
+	end
+end)
+
+Interfaz.mostrarMenu(true)
+Interfaz.hambre(20)
+Interfaz.vida(20, 20)
+]]></ProtectedString></Properties><Item class="ModuleScript" referent="RBX0000000E"><Properties><string name="Name">Interfaz</string><ProtectedString name="Source"><![CDATA[--[[
+	Blockverse para Roblox · Interfaz (cliente)
+	Barra rápida, corazones y hambre, punto de mira, inventario con
+	libro de recetas, paleta del modo creativo, menú de inicio, avisos,
+	el objeto en la mano y los botones para móvil.
+]]
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
+
+local Comp = ReplicatedStorage:WaitForChild("Blockverse")
+local Bloques = require(Comp.Bloques)
+local Recetas = require(Comp.Recetas)
+
+local DEF = Bloques.porId
+local jugador = Players.LocalPlayer
+
+local Interfaz = {}
+Interfaz.alAccion = function(...) end -- lo pone el script del cliente
+Interfaz.alModo = function(m) end
+Interfaz.alSeleccionar = function(i) end
+
+local estado = { inv = table.create(36, false), sel = 1, cerca = { mesa = false, horno = false }, modo = nil }
+
+------------------------------------------------------------------
+-- Utilidades
+------------------------------------------------------------------
+local FUENTE = Enum.Font.GothamBold
+local FUENTE_TIT = Enum.Font.Arcade
+
+local function crear(clase, props, padre)
+	local o = Instance.new(clase)
+	for k, v in props do
+		(o :: any)[k] = v
+	end
+	o.Parent = padre
+	return o
+end
+
+local function esquinas(o, r)
+	crear("UICorner", { CornerRadius = UDim.new(0, r or 8) }, o)
+	return o
+end
+
+local function borde(o, col, grosor, transp)
+	crear("UIStroke", { Color = col or Color3.new(1, 1, 1), Thickness = grosor or 1, Transparency = transp or 0.7, ApplyStrokeMode = Enum.ApplyStrokeMode.Border }, o)
+	return o
+end
+
+local function rgb(t)
+	return Color3.fromRGB(t[1], t[2], t[3])
+end
+
+local MATS = {}
+local function material(nombre)
+	if MATS[nombre] == nil then
+		local ok, v = pcall(function()
+			return (Enum.Material :: any)[nombre]
+		end)
+		MATS[nombre] = ok and v or Enum.Material.SmoothPlastic
+	end
+	return MATS[nombre]
+end
+
+local ICONO_ESPECIAL = { antorcha = "🔥", florRoja = "🌹", florAmarilla = "🌼", hierba = "🌿", agua = "💧" }
+
+-- Dibuja el icono de un objeto dentro de `marco` (bloque en 3D o emoji)
+local function icono(marco, id)
+	marco:ClearAllChildren()
+	if not id then
+		return
+	end
+	local d = DEF[id]
+	if not d then
+		return
+	end
+	if d.esBloque and d.forma == "cubo" then
+		local vp = crear("ViewportFrame", {
+			Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1,
+			Ambient = Color3.fromRGB(170, 170, 170), LightColor = Color3.fromRGB(255, 255, 255),
+			LightDirection = Vector3.new(-1, -2, -0.6),
+		}, marco)
+		local p = crear("Part", { Anchored = true, Size = Vector3.new(2, 2, 2), Color = rgb(d.color), Material = material(d.material), CFrame = CFrame.new() }, vp)
+		if d.transp then
+			p.Transparency = d.transp * 0.6
+		end
+		if d.capa then
+			crear("Part", {
+				Anchored = true, Size = d.capaArriba and Vector3.new(1.7, 0.08, 1.7) or Vector3.new(2.04, 0.4, 2.04),
+				Color = rgb(d.capa.color), Material = material(d.capa.material),
+				CFrame = CFrame.new(0, d.capaArriba and 1.02 or 0.82, 0),
+			}, vp)
+		end
+		if d.veta then
+			for k, off in { Vector3.new(0.5, 0.4, -1.0), Vector3.new(-0.4, -0.3, -1.0), Vector3.new(1.0, 0.2, 0.4), Vector3.new(1.0, -0.5, -0.4), Vector3.new(-0.3, 1.0, 0.3) } do
+				crear("Part", { Anchored = true, Size = Vector3.new(0.45, 0.45, 0.45), Color = rgb(d.veta), CFrame = CFrame.new(off), Name = "Veta" .. k }, vp)
+			end
+		end
+		local cam = crear("Camera", { FieldOfView = 30 }, vp)
+		cam.CFrame = CFrame.lookAt(Vector3.new(5.2, 4.2, -5.2), Vector3.zero)
+		vp.CurrentCamera = cam
+	else
+		local txt = d.icono or ICONO_ESPECIAL[d.clave] or "❔"
+		crear("TextLabel", {
+			Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, Text = txt, TextScaled = true,
+			Font = Enum.Font.SourceSans, TextColor3 = Color3.new(1, 1, 1),
+		}, marco)
+		if d.fondo then
+			esquinas(crear("Frame", {
+				Size = UDim2.new(0.7, 0, 0, 4), Position = UDim2.new(0.15, 0, 1, -3),
+				BackgroundColor3 = rgb(d.fondo), BorderSizePixel = 0,
+			}, marco), 2)
+		end
+	end
+end
+Interfaz.icono = icono
+
+------------------------------------------------------------------
+-- Pantalla
+------------------------------------------------------------------
+local gui = crear("ScreenGui", { Name = "Blockverse", ResetOnSpawn = false, IgnoreGuiInset = true, ZIndexBehavior = Enum.ZIndexBehavior.Sibling }, jugador:WaitForChild("PlayerGui"))
+local escala = crear("UIScale", { Scale = 1 }, gui)
+local function ajustarEscala()
+	local cam = workspace.CurrentCamera
+	if cam then
+		local v = cam.ViewportSize
+		escala.Scale = math.clamp(math.min(v.X / 1100, v.Y / 680), 0.55, 1.25)
+	end
+end
+ajustarEscala()
+workspace:GetPropertyChangedSignal("CurrentCamera"):Connect(ajustarEscala)
+if workspace.CurrentCamera then
+	workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(ajustarEscala)
+end
+
+-- Punto de mira
+local mira = crear("Frame", { Size = UDim2.fromOffset(22, 22), Position = UDim2.fromScale(0.5, 0.5), AnchorPoint = Vector2.new(0.5, 0.5), BackgroundTransparency = 1 }, gui)
+crear("Frame", { Size = UDim2.fromOffset(2, 22), Position = UDim2.fromOffset(10, 0), BackgroundColor3 = Color3.new(1, 1, 1), BorderSizePixel = 0, BackgroundTransparency = 0.15 }, mira)
+crear("Frame", { Size = UDim2.fromOffset(22, 2), Position = UDim2.fromOffset(0, 10), BackgroundColor3 = Color3.new(1, 1, 1), BorderSizePixel = 0, BackgroundTransparency = 0.15 }, mira)
+local barraRomper = esquinas(crear("Frame", { Size = UDim2.fromOffset(60, 5), Position = UDim2.new(0.5, 0, 0.5, 22), AnchorPoint = Vector2.new(0.5, 0), BackgroundColor3 = Color3.fromRGB(20, 20, 20), BackgroundTransparency = 0.4, Visible = false }, gui), 3)
+local barraRomperRel = esquinas(crear("Frame", { Size = UDim2.fromScale(0, 1), BackgroundColor3 = Color3.fromRGB(255, 255, 255), BorderSizePixel = 0 }, barraRomper), 3)
+
+function Interfaz.progreso(f)
+	barraRomper.Visible = f > 0
+	barraRomperRel.Size = UDim2.fromScale(math.clamp(f, 0, 1), 1)
+end
+
+-- Fondo rojo al recibir daño y azul bajo el agua
+local destello = crear("Frame", { Size = UDim2.fromScale(1, 1), BackgroundColor3 = Color3.fromRGB(200, 0, 0), BackgroundTransparency = 1, BorderSizePixel = 0, ZIndex = 0 }, gui)
+local bajoAgua = crear("Frame", { Size = UDim2.fromScale(1, 1), BackgroundColor3 = Color3.fromRGB(20, 60, 160), BackgroundTransparency = 1, BorderSizePixel = 0, ZIndex = 0 }, gui)
+function Interfaz.dano()
+	destello.BackgroundTransparency = 0.6
+	TweenService:Create(destello, TweenInfo.new(0.45), { BackgroundTransparency = 1 }):Play()
+end
+function Interfaz.agua(si)
+	bajoAgua.BackgroundTransparency = si and 0.55 or 1
+end
+
+------------------------------------------------------------------
+-- Barra rápida, vida y hambre
+------------------------------------------------------------------
+local abajo = crear("Frame", { Size = UDim2.fromOffset(9 * 58 + 8 * 4, 120), Position = UDim2.new(0.5, 0, 1, -10), AnchorPoint = Vector2.new(0.5, 1), BackgroundTransparency = 1 }, gui)
+local barra = crear("Frame", { Size = UDim2.new(1, 0, 0, 58), Position = UDim2.new(0, 0, 1, 0), AnchorPoint = Vector2.new(0, 1), BackgroundTransparency = 1 }, abajo)
+crear("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 4), HorizontalAlignment = Enum.HorizontalAlignment.Center }, barra)
+
+local function nuevaRanura(padre, tam)
+	local r = esquinas(crear("TextButton", {
+		Size = UDim2.fromOffset(tam, tam), BackgroundColor3 = Color3.fromRGB(28, 30, 40), BackgroundTransparency = 0.25,
+		AutoButtonColor = false, Text = "",
+	}, padre), 7)
+	local st = borde(r, Color3.new(1, 1, 1), 1.5, 0.75)
+	local ic = crear("Frame", { Size = UDim2.new(1, -12, 1, -12), Position = UDim2.fromOffset(6, 6), BackgroundTransparency = 1 }, r)
+	local n = crear("TextLabel", {
+		Size = UDim2.new(1, -6, 0, 16), Position = UDim2.new(0, 0, 1, -18), BackgroundTransparency = 1, Text = "",
+		Font = FUENTE, TextSize = 15, TextXAlignment = Enum.TextXAlignment.Right, TextColor3 = Color3.new(1, 1, 1),
+		TextStrokeTransparency = 0.3, ZIndex = 3,
+	}, r)
+	local uso = esquinas(crear("Frame", { Size = UDim2.new(0.8, 0, 0, 3), Position = UDim2.new(0.1, 0, 1, -5), BackgroundColor3 = Color3.fromRGB(90, 230, 90), BorderSizePixel = 0, Visible = false, ZIndex = 3 }, r), 2)
+	return { boton = r, borde = st, icono = ic, n = n, uso = uso, id = nil }
+end
+
+local function pintarRanura(R, p)
+	local id = p and p.id or nil
+	if R.id ~= id then
+		R.id = id
+		icono(R.icono, id)
+	end
+	R.n.Text = (p and p.n > 1) and tostring(p.n) or ""
+	local d = id and DEF[id]
+	if p and p.u and d and d.usos then
+		R.uso.Visible = p.u < d.usos
+		local f = p.u / d.usos
+		R.uso.Size = UDim2.new(0.8 * f, 0, 0, 3)
+		R.uso.BackgroundColor3 = Color3.fromHSV(f * 0.33, 0.9, 0.9)
+	else
+		R.uso.Visible = false
+	end
+end
+
+local ranurasBarra = {}
+for i = 1, 9 do
+	local R = nuevaRanura(barra, 58)
+	R.boton.LayoutOrder = i
+	crear("TextLabel", { Size = UDim2.fromOffset(14, 14), Position = UDim2.fromOffset(4, 2), BackgroundTransparency = 1, Text = tostring(i), Font = FUENTE, TextSize = 11, TextColor3 = Color3.fromRGB(200, 200, 200), TextTransparency = 0.3, ZIndex = 3 }, R.boton)
+	R.boton.MouseButton1Click:Connect(function()
+		Interfaz.alSeleccionar(i)
+	end)
+	ranurasBarra[i] = R
+end
+
+local filaVida = crear("Frame", { Size = UDim2.new(0.5, -6, 0, 22), Position = UDim2.new(0, 0, 1, -64), AnchorPoint = Vector2.new(0, 1), BackgroundTransparency = 1 }, abajo)
+local filaHambre = crear("Frame", { Size = UDim2.new(0.5, -6, 0, 22), Position = UDim2.new(1, 0, 1, -64), AnchorPoint = Vector2.new(1, 1), BackgroundTransparency = 1 }, abajo)
+crear("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 1) }, filaVida)
+crear("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 1), HorizontalAlignment = Enum.HorizontalAlignment.Right }, filaHambre)
+local corazones, muslos = {}, {}
+for i = 1, 10 do
+	corazones[i] = crear("TextLabel", { Size = UDim2.fromOffset(25, 22), BackgroundTransparency = 1, Text = "♥", Font = Enum.Font.GothamBlack, TextSize = 24, TextColor3 = Color3.fromRGB(230, 40, 50), TextStrokeTransparency = 0.4, LayoutOrder = i }, filaVida)
+	muslos[i] = crear("TextLabel", { Size = UDim2.fromOffset(25, 22), BackgroundTransparency = 1, Text = "🍗", Font = Enum.Font.SourceSans, TextSize = 19, LayoutOrder = 11 - i }, filaHambre)
+end
+local nombreObjeto = crear("TextLabel", { Size = UDim2.new(1, 0, 0, 24), Position = UDim2.new(0, 0, 1, -92), AnchorPoint = Vector2.new(0, 1), BackgroundTransparency = 1, Text = "", Font = FUENTE, TextSize = 18, TextColor3 = Color3.new(1, 1, 1), TextStrokeTransparency = 0.3, TextTransparency = 1 }, abajo)
+
+function Interfaz.vida(h, max)
+	local v = h / max * 20
+	for i = 1, 10 do
+		local c = corazones[i]
+		if v >= i * 2 then
+			c.TextColor3 = Color3.fromRGB(230, 40, 50)
+			c.TextTransparency = 0
+		elseif v >= i * 2 - 1 then
+			c.TextColor3 = Color3.fromRGB(240, 120, 130)
+			c.TextTransparency = 0
+		else
+			c.TextColor3 = Color3.fromRGB(40, 40, 46)
+			c.TextTransparency = 0.2
+		end
+	end
+end
+
+function Interfaz.hambre(n)
+	for i = 1, 10 do
+		local m = muslos[i]
+		m.TextTransparency = (n >= i * 2) and 0 or (n >= i * 2 - 1) and 0.45 or 0.85
+	end
+end
+
+function Interfaz.modo(m)
+	estado.modo = m
+	filaVida.Visible = m ~= "creativo"
+	filaHambre.Visible = m ~= "creativo"
+end
+
+------------------------------------------------------------------
+-- Objeto en la mano (abajo a la derecha)
+------------------------------------------------------------------
+local mano = crear("Frame", { Size = UDim2.fromOffset(170, 170), Position = UDim2.new(1, -40, 1, 20), AnchorPoint = Vector2.new(1, 1), BackgroundTransparency = 1, ZIndex = 0 }, gui)
+local manoIcono = crear("Frame", { Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, Rotation = -12 }, mano)
+local balanceo = 0
+function Interfaz.balancear()
+	balanceo = 1
+end
+RunService.RenderStepped:Connect(function(dt)
+	balanceo = math.max(0, balanceo - dt * 4)
+	local t = os.clock()
+	local hum = jugador.Character and jugador.Character:FindFirstChildOfClass("Humanoid")
+	local anda = hum and hum.MoveDirection.Magnitude > 0.1 and 1 or 0
+	local b = math.sin(balanceo * math.pi)
+	manoIcono.Position = UDim2.fromOffset(math.sin(t * 7) * 6 * anda - b * 50, math.abs(math.cos(t * 7)) * 6 * anda + b * 30)
+	manoIcono.Rotation = -12 - b * 35
+end)
+function Interfaz.mostrarMano(si)
+	mano.Visible = si
+end
+
+------------------------------------------------------------------
+-- Avisos
+------------------------------------------------------------------
+local avisos = crear("Frame", { Size = UDim2.fromOffset(380, 300), Position = UDim2.new(0, 14, 0.5, 0), AnchorPoint = Vector2.new(0, 0.5), BackgroundTransparency = 1 }, gui)
+crear("UIListLayout", { Padding = UDim.new(0, 4), VerticalAlignment = Enum.VerticalAlignment.Bottom }, avisos)
+function Interfaz.aviso(texto)
+	local a = esquinas(crear("TextLabel", {
+		Size = UDim2.new(0, 0, 0, 30), AutomaticSize = Enum.AutomaticSize.X, BackgroundColor3 = Color3.fromRGB(16, 18, 26), BackgroundTransparency = 0.25,
+		Text = "  " .. texto .. "  ", Font = FUENTE, TextSize = 16, TextColor3 = Color3.new(1, 1, 1),
+	}, avisos), 6)
+	task.delay(3, function()
+		TweenService:Create(a, TweenInfo.new(0.4), { BackgroundTransparency = 1, TextTransparency = 1 }):Play()
+		task.wait(0.45)
+		a:Destroy()
+	end)
+	local hijos = {}
+	for _, c in avisos:GetChildren() do
+		if c:IsA("TextLabel") then
+			table.insert(hijos, c)
+		end
+	end
+	if #hijos > 6 then
+		hijos[1]:Destroy()
+	end
+end
+
+------------------------------------------------------------------
+-- Inventario y recetas
+------------------------------------------------------------------
+local panel = esquinas(crear("Frame", {
+	Size = UDim2.fromOffset(980, 520), Position = UDim2.fromScale(0.5, 0.5), AnchorPoint = Vector2.new(0.5, 0.5),
+	BackgroundColor3 = Color3.fromRGB(22, 24, 34), BackgroundTransparency = 0.06, Visible = false, ZIndex = 5,
+}, gui), 14)
+borde(panel, Color3.fromRGB(255, 255, 255), 1.5, 0.8)
+-- Un botón «Modal» libera el ratón mientras el inventario está abierto
+crear("TextButton", { Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, Text = "", Modal = true, AutoButtonColor = false, ZIndex = 4 }, panel)
+crear("TextLabel", { Size = UDim2.new(0, 400, 0, 34), Position = UDim2.fromOffset(20, 12), BackgroundTransparency = 1, Text = "INVENTARIO", Font = FUENTE_TIT, TextSize = 26, TextXAlignment = Enum.TextXAlignment.Left, TextColor3 = Color3.fromRGB(255, 216, 74), ZIndex = 6 }, panel)
+local cerrar = esquinas(crear("TextButton", { Size = UDim2.fromOffset(36, 36), Position = UDim2.new(1, -14, 0, 12), AnchorPoint = Vector2.new(1, 0), BackgroundColor3 = Color3.fromRGB(60, 30, 36), Text = "✕", Font = FUENTE, TextSize = 20, TextColor3 = Color3.new(1, 1, 1), ZIndex = 6 }, panel), 8)
+
+local rejilla = crear("Frame", { Size = UDim2.fromOffset(9 * 50 + 8 * 4, 4 * 50 + 3 * 4 + 14), Position = UDim2.fromOffset(20, 60), BackgroundTransparency = 1, ZIndex = 6 }, panel)
+local ranurasInv = {}
+for i = 1, 36 do
+	local R = nuevaRanura(rejilla, 50)
+	local fila = (i <= 9) and 3 or (i - 10) // 9
+	local col = (i <= 9) and (i - 1) or (i - 10) % 9
+	R.boton.Position = UDim2.fromOffset(col * 54, fila * 54 + (fila == 3 and 14 or 0))
+	R.boton.ZIndex = 6
+	for _, c in R.boton:GetDescendants() do
+		if c:IsA("GuiObject") then
+			c.ZIndex = 7
+		end
+	end
+	ranurasInv[i] = R
+end
+local textoAyuda = crear("TextLabel", {
+	Size = UDim2.fromOffset(9 * 54, 70), Position = UDim2.fromOffset(20, 60 + 4 * 54 + 22), BackgroundTransparency = 1, TextWrapped = true,
+	Text = "Toca una casilla y luego otra para moverla. Arriba: mochila · Abajo: barra rápida.\n🛠 = necesita mesa de trabajo cerca · 🔥 = necesita horno cerca",
+	Font = Enum.Font.Gotham, TextSize = 13, TextColor3 = Color3.fromRGB(170, 176, 196), TextXAlignment = Enum.TextXAlignment.Left, TextYAlignment = Enum.TextYAlignment.Top, ZIndex = 6,
+}, panel)
+local tirar = esquinas(crear("TextButton", { Size = UDim2.fromOffset(150, 34), Position = UDim2.fromOffset(20, 60 + 4 * 54 + 96), BackgroundColor3 = Color3.fromRGB(90, 40, 44), Text = "🗑  Tirar lo elegido", Font = FUENTE, TextSize = 14, TextColor3 = Color3.new(1, 1, 1), ZIndex = 6, Visible = false }, panel), 8)
+
+local derecha = crear("Frame", { Size = UDim2.new(0, 440, 1, -72), Position = UDim2.new(1, -20, 0, 60), AnchorPoint = Vector2.new(1, 0), BackgroundTransparency = 1, ZIndex = 6 }, panel)
+local tituloDer = crear("TextLabel", { Size = UDim2.new(1, 0, 0, 24), BackgroundTransparency = 1, Text = "RECETAS", Font = FUENTE, TextSize = 17, TextXAlignment = Enum.TextXAlignment.Left, TextColor3 = Color3.fromRGB(220, 224, 240), ZIndex = 6 }, derecha)
+local lista = crear("ScrollingFrame", { Size = UDim2.new(1, 0, 1, -30), Position = UDim2.fromOffset(0, 30), BackgroundTransparency = 1, ScrollBarThickness = 6, CanvasSize = UDim2.new(), AutomaticCanvasSize = Enum.AutomaticSize.Y, BorderSizePixel = 0, ZIndex = 6 }, derecha)
+crear("UIListLayout", { Padding = UDim.new(0, 5), SortOrder = Enum.SortOrder.LayoutOrder }, lista)
+local paleta = crear("ScrollingFrame", { Size = UDim2.new(1, 0, 1, -30), Position = UDim2.fromOffset(0, 30), BackgroundTransparency = 1, ScrollBarThickness = 6, CanvasSize = UDim2.new(), AutomaticCanvasSize = Enum.AutomaticSize.Y, BorderSizePixel = 0, Visible = false, ZIndex = 6 }, derecha)
+crear("UIGridLayout", { CellSize = UDim2.fromOffset(50, 50), CellPadding = UDim2.fromOffset(4, 4) }, paleta)
+
+local elegida = nil
+local function marcar()
+	for i, R in ranurasInv do
+		R.borde.Transparency = (elegida == i) and 0 or 0.75
+		R.borde.Color = (elegida == i) and Color3.fromRGB(255, 216, 74) or Color3.new(1, 1, 1)
+	end
+	tirar.Visible = elegida ~= nil
+end
+for i, R in ranurasInv do
+	R.boton.MouseButton1Click:Connect(function()
+		if elegida == nil then
+			if estado.inv[i] then
+				elegida = i
+			end
+		else
+			if elegida ~= i then
+				Interfaz.alAccion("mover", elegida, i)
+			end
+			elegida = nil
+		end
+		marcar()
+	end)
+end
+tirar.MouseButton1Click:Connect(function()
+	if elegida then
+		Interfaz.alAccion("tirar", elegida)
+		elegida = nil
+		marcar()
+	end
+end)
+
+local function contar(id)
+	local t = 0
+	for i = 1, 36 do
+		local p = estado.inv[i]
+		if p and p.id == id then
+			t += p.n
+		end
+	end
+	return t
+end
+
+local filasReceta = {}
+for i, r in Recetas do
+	local fila = esquinas(crear("Frame", { Size = UDim2.new(1, -10, 0, 52), BackgroundColor3 = Color3.fromRGB(34, 37, 52), LayoutOrder = i, ZIndex = 6 }, lista), 8)
+	local ic = crear("Frame", { Size = UDim2.fromOffset(40, 40), Position = UDim2.fromOffset(6, 6), BackgroundTransparency = 1, ZIndex = 7 }, fila)
+	icono(ic, r.resultado)
+	for _, c in ic:GetDescendants() do
+		if c:IsA("GuiObject") then
+			c.ZIndex = 7
+		end
+	end
+	local partes = {}
+	for id, n in r.ingredientes do
+		table.insert(partes, n .. " " .. Bloques.nombre(id))
+	end
+	local donde = r.donde == "mesa" and "🛠 " or r.donde == "horno" and "🔥 " or ""
+	crear("TextLabel", { Size = UDim2.new(1, -150, 0, 22), Position = UDim2.fromOffset(54, 4), BackgroundTransparency = 1, Text = donde .. Bloques.nombre(r.resultado) .. (r.n > 1 and (" ×" .. r.n) or ""), Font = FUENTE, TextSize = 15, TextXAlignment = Enum.TextXAlignment.Left, TextColor3 = Color3.new(1, 1, 1), ZIndex = 7, TextTruncate = Enum.TextTruncate.AtEnd }, fila)
+	crear("TextLabel", { Size = UDim2.new(1, -150, 0, 20), Position = UDim2.fromOffset(54, 26), BackgroundTransparency = 1, Text = table.concat(partes, " · "), Font = Enum.Font.Gotham, TextSize = 12, TextXAlignment = Enum.TextXAlignment.Left, TextColor3 = Color3.fromRGB(170, 176, 196), ZIndex = 7, TextTruncate = Enum.TextTruncate.AtEnd }, fila)
+	local b1 = esquinas(crear("TextButton", { Size = UDim2.fromOffset(56, 32), Position = UDim2.new(1, -72, 0.5, 0), AnchorPoint = Vector2.new(0.5, 0.5), Text = "Crear", Font = FUENTE, TextSize = 13, TextColor3 = Color3.new(1, 1, 1), ZIndex = 7 }, fila), 6)
+	local b5 = esquinas(crear("TextButton", { Size = UDim2.fromOffset(40, 32), Position = UDim2.new(1, -24, 0.5, 0), AnchorPoint = Vector2.new(0.5, 0.5), Text = "×5", Font = FUENTE, TextSize = 13, TextColor3 = Color3.new(1, 1, 1), ZIndex = 7 }, fila), 6)
+	b1.MouseButton1Click:Connect(function()
+		Interfaz.alAccion("craftear", i, 1)
+	end)
+	b5.MouseButton1Click:Connect(function()
+		Interfaz.alAccion("craftear", i, 5)
+	end)
+	filasReceta[i] = { fila = fila, b1 = b1, b5 = b5, r = r }
+end
+
+local function pintarRecetas()
+	for _, F in filasReceta do
+		local r = F.r
+		local veces = math.huge
+		for id, n in r.ingredientes do
+			veces = math.min(veces, contar(id) // n)
+		end
+		local lugar = not r.donde or estado.cerca[r.donde]
+		local puede = veces >= 1 and lugar
+		F.b1.BackgroundColor3 = puede and Color3.fromRGB(60, 160, 80) or Color3.fromRGB(70, 72, 84)
+		F.b5.BackgroundColor3 = (puede and veces >= 5) and Color3.fromRGB(60, 140, 160) or Color3.fromRGB(70, 72, 84)
+		F.fila.BackgroundColor3 = puede and Color3.fromRGB(40, 50, 58) or Color3.fromRGB(34, 37, 52)
+		-- Las que se pueden hacer van primero
+		F.fila.LayoutOrder = (puede and 0 or (veces >= 1 and 1000 or 2000)) + table.find(Recetas, r)
+	end
+end
+
+-- Paleta del modo creativo
+for _, d in Bloques.lista do
+	if d.forma ~= "agua" then
+		local R = nuevaRanura(paleta, 50)
+		pintarRanura(R, { id = d.id, n = 1 })
+		R.boton.MouseButton1Click:Connect(function()
+			Interfaz.alAccion("creativo", d.id)
+		end)
+	end
+end
+for _, d in Bloques.objetos do
+	local R = nuevaRanura(paleta, 50)
+	pintarRanura(R, { id = d.id, n = 1 })
+	R.boton.MouseButton1Click:Connect(function()
+		Interfaz.alAccion("creativo", d.id)
+	end)
+end
+for _, c in paleta:GetDescendants() do
+	if c:IsA("GuiObject") then
+		c.ZIndex = 7
+	end
+end
+
+function Interfaz.inventario(inv, sel)
+	estado.inv = inv
+	estado.sel = sel or estado.sel
+	for i = 1, 9 do
+		pintarRanura(ranurasBarra[i], inv[i])
+	end
+	for i = 1, 36 do
+		pintarRanura(ranurasInv[i], inv[i])
+	end
+	Interfaz.seleccion(estado.sel, true)
+	if panel.Visible then
+		pintarRecetas()
+	end
+end
+
+function Interfaz.seleccion(i, callado)
+	estado.sel = i
+	for k, R in ranurasBarra do
+		R.borde.Transparency = (k == i) and 0 or 0.75
+		R.borde.Thickness = (k == i) and 3 or 1.5
+		R.boton.BackgroundTransparency = (k == i) and 0.05 or 0.25
+	end
+	local p = estado.inv[i]
+	icono(manoIcono, p and p.id or nil)
+	if not callado then
+		nombreObjeto.Text = p and Bloques.nombre(p.id) or ""
+		nombreObjeto.TextTransparency = 0
+		nombreObjeto:SetAttribute("t", os.clock())
+		task.delay(1.6, function()
+			if os.clock() - (nombreObjeto:GetAttribute("t") or 0) >= 1.5 then
+				TweenService:Create(nombreObjeto, TweenInfo.new(0.4), { TextTransparency = 1 }):Play()
+			end
+		end)
+	end
+end
+
+function Interfaz.cerca(c)
+	estado.cerca = c
+	if panel.Visible then
+		pintarRecetas()
+	end
+end
+
+function Interfaz.abierto()
+	return panel.Visible
+end
+
+function Interfaz.alternarInventario(forzar)
+	local ver = forzar
+	if ver == nil then
+		ver = not panel.Visible
+	end
+	panel.Visible = ver
+	elegida = nil
+	marcar()
+	local creativo = estado.modo == "creativo"
+	paleta.Visible = creativo
+	lista.Visible = not creativo
+	tituloDer.Text = creativo and "TODOS LOS BLOQUES Y OBJETOS (se ponen en la casilla elegida)" or "RECETAS"
+	textoAyuda.Visible = true
+	if ver then
+		Interfaz.alAccion("abrirInv")
+		pintarRecetas()
+	end
+	mira.Visible = not ver
+end
+cerrar.MouseButton1Click:Connect(function()
+	Interfaz.alternarInventario(false)
+end)
+
+------------------------------------------------------------------
+-- Menú de inicio
+------------------------------------------------------------------
+local menu = crear("Frame", { Size = UDim2.fromScale(1, 1), BackgroundColor3 = Color3.fromRGB(12, 14, 22), BackgroundTransparency = 0.15, ZIndex = 20 }, gui)
+crear("UIGradient", { Color = ColorSequence.new(Color3.fromRGB(40, 70, 40), Color3.fromRGB(12, 14, 22)), Rotation = 90 }, menu)
+crear("TextButton", { Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, Text = "", Modal = true, AutoButtonColor = false, ZIndex = 20 }, menu)
+local caja = crear("Frame", { Size = UDim2.fromOffset(560, 470), Position = UDim2.fromScale(0.5, 0.5), AnchorPoint = Vector2.new(0.5, 0.5), BackgroundTransparency = 1, ZIndex = 21 }, menu)
+crear("TextLabel", { Size = UDim2.new(1, 0, 0, 80), BackgroundTransparency = 1, Text = "BLOCKVERSE", Font = FUENTE_TIT, TextSize = 72, TextColor3 = Color3.fromRGB(255, 216, 74), TextStrokeColor3 = Color3.fromRGB(60, 40, 0), TextStrokeTransparency = 0, ZIndex = 21 }, caja)
+crear("TextLabel", { Size = UDim2.new(1, 0, 0, 24), Position = UDim2.fromOffset(0, 82), BackgroundTransparency = 1, Text = "Construye, explora y sobrevive", Font = Enum.Font.Gotham, TextSize = 18, TextColor3 = Color3.fromRGB(210, 220, 230), ZIndex = 21 }, caja)
+local cargando = crear("TextLabel", { Size = UDim2.new(1, 0, 0, 22), Position = UDim2.fromOffset(0, 116), BackgroundTransparency = 1, Text = "Generando el mundo…", Font = FUENTE, TextSize = 15, TextColor3 = Color3.fromRGB(150, 230, 150), ZIndex = 21 }, caja)
+
+local function botonMenu(texto, sub, y, col, fn)
+	local b = esquinas(crear("TextButton", { Size = UDim2.new(1, -80, 0, 66), Position = UDim2.fromOffset(40, y), BackgroundColor3 = col, Text = "", AutoButtonColor = true, ZIndex = 22 }, caja), 12)
+	borde(b, Color3.new(1, 1, 1), 2, 0.6)
+	crear("TextLabel", { Size = UDim2.new(1, 0, 0, 32), Position = UDim2.fromOffset(0, 8), BackgroundTransparency = 1, Text = texto, Font = FUENTE, TextSize = 24, TextColor3 = Color3.new(1, 1, 1), ZIndex = 23 }, b)
+	crear("TextLabel", { Size = UDim2.new(1, 0, 0, 18), Position = UDim2.fromOffset(0, 40), BackgroundTransparency = 1, Text = sub, Font = Enum.Font.Gotham, TextSize = 13, TextColor3 = Color3.fromRGB(230, 236, 240), ZIndex = 23 }, b)
+	b.MouseButton1Click:Connect(fn)
+	return b
+end
+botonMenu("Supervivencia", "Consigue recursos, fabrica herramientas y sobrevive a la noche", 158, Color3.fromRGB(60, 140, 70), function()
+	Interfaz.alModo("supervivencia")
+end)
+botonMenu("Creativo", "Todos los bloques, sin daño y puedes volar (F)", 236, Color3.fromRGB(60, 110, 170), function()
+	Interfaz.alModo("creativo")
+end)
+local controles = UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled
+	and "Mantén ⛏ para picar · ✋ para poner o comer · 🎒 inventario"
+	or "Clic izq.: picar / atacar · Clic dcho.: poner / comer · 1-9 o rueda: elegir\nE: inventario · V: cámara · Shift: correr · F: volar (creativo)"
+crear("TextLabel", { Size = UDim2.new(1, 0, 0, 60), Position = UDim2.fromOffset(0, 320), BackgroundTransparency = 1, Text = controles, TextWrapped = true, Font = Enum.Font.Gotham, TextSize = 14, TextColor3 = Color3.fromRGB(190, 196, 214), ZIndex = 21 }, caja)
+
+function Interfaz.mostrarMenu(si)
+	menu.Visible = si
+	mira.Visible = not si
+end
+function Interfaz.menuVisible()
+	return menu.Visible
+end
+function Interfaz.mundoListo(si)
+	cargando.Text = si and "¡Mundo listo! Elige un modo" or "Generando el mundo…"
+end
+
+-- Botón de menú (arriba a la derecha) para cambiar de modo
+local botonPausa = esquinas(crear("TextButton", { Size = UDim2.fromOffset(44, 44), Position = UDim2.new(1, -14, 0, 60), AnchorPoint = Vector2.new(1, 0), BackgroundColor3 = Color3.fromRGB(22, 24, 34), BackgroundTransparency = 0.3, Text = "☰", Font = FUENTE, TextSize = 22, TextColor3 = Color3.new(1, 1, 1) }, gui), 10)
+botonPausa.MouseButton1Click:Connect(function()
+	Interfaz.alternarInventario(false)
+	Interfaz.mostrarMenu(true)
+end)
+
+------------------------------------------------------------------
+-- Botones táctiles
+------------------------------------------------------------------
+function Interfaz.botonesMovil(alPicar, alPoner, alInventario, alVolar)
+	if not UserInputService.TouchEnabled then
+		return
+	end
+	local function boton(txt, pos, tam)
+		local b = esquinas(crear("TextButton", { Size = UDim2.fromOffset(tam, tam), Position = pos, AnchorPoint = Vector2.new(1, 1), BackgroundColor3 = Color3.fromRGB(20, 22, 32), BackgroundTransparency = 0.35, Text = txt, TextSize = tam * 0.45, Font = Enum.Font.SourceSans, TextColor3 = Color3.new(1, 1, 1), AutoButtonColor = true }, gui), tam // 2)
+		borde(b, Color3.new(1, 1, 1), 2, 0.6)
+		return b
+	end
+	local picar = boton("⛏️", UDim2.new(1, -150, 1, -200), 78)
+	local poner = boton("✋", UDim2.new(1, -240, 1, -130), 64)
+	local inv = boton("🎒", UDim2.new(1, -14, 0, 112), 50)
+	local volar = boton("🕊️", UDim2.new(1, -14, 0, 168), 50)
+	picar.MouseButton1Down:Connect(function()
+		alPicar(true)
+	end)
+	picar.MouseButton1Up:Connect(function()
+		alPicar(false)
+	end)
+	picar.MouseLeave:Connect(function()
+		alPicar(false)
+	end)
+	poner.MouseButton1Click:Connect(alPoner)
+	inv.MouseButton1Click:Connect(alInventario)
+	volar.MouseButton1Click:Connect(alVolar)
+	Interfaz.botonVolar = volar
+	volar.Visible = false
+end
+
+return Interfaz
+]]></ProtectedString></Properties></Item>
+</Item>
+</Item>
+<Item class="StarterCharacterScripts" referent="RBX00000012"><Properties><string name="Name">StarterCharacterScripts</string></Properties><Item class="Script" referent="RBX00000010"><Properties><string name="Name">Health</string><bool name="Disabled">false</bool><ProtectedString name="Source"><![CDATA[--[[
+	Blockverse para Roblox
+	Este script vacío reemplaza al «Health» de Roblox, que cura sola a la
+	persona. En Blockverse la vida se recupera con el hambre llena.
+]]
+]]></ProtectedString></Properties></Item>
+</Item>
+</Item>
+</roblox>

@@ -478,3 +478,17 @@ Botón **Multijugador** en el menú, o **Abrir a multijugador** en la pausa para
 - **En este ordenador:** «Crear sala» da un código; en otra pestaña, «Unirse» con ese código.
 - **Por internet sin servidor (WebRTC):** el anfitrión crea una invitación y la envía; el invitado la pega, pulsa «Responder» y devuelve su código; el anfitrión lo pega y pulsa «Conectar».
 - **Con servidor:** `servidor/servidor-multijugador.js` es un servidor de retransmisión por salas (Node + `ws`: `npm install ws && node servidor-multijugador.js`). En el juego se escribe su dirección (`wss://…`) y el nombre de la sala.
+
+## Versión para Roblox
+
+La carpeta [`roblox/`](roblox/) tiene Blockverse reescrito en **Luau** para Roblox:
+- `Blockverse.rbxlx` se abre directamente en Roblox Studio.
+- El código fuente está en `src/`.
+- Las instrucciones están en [`roblox/README.md`](roblox/README.md).
+
+Incluye:
+- Mundo infinito con biomas, cuevas y menas.
+- Agua en la que se puede nadar.
+- Inventario con recetas y herramientas.
+- Supervivencia con hambre, creativo con vuelo, zombis de noche y animales.
+- Multijugador y controles para móvil.

@@ -1,0 +1,26 @@
+{
+  "name": "Blockverse",
+  "tree": {
+    "$className": "DataModel",
+    "ReplicatedStorage": {
+      "Blockverse": { "$path": "src/compartido" }
+    },
+    "ServerScriptService": {
+      "Servidor": { "$path": "src/servidor" }
+    },
+    "StarterPlayer": {
+      "StarterPlayerScripts": {
+        "Cliente": { "$path": "src/cliente" }
+      },
+      "StarterCharacterScripts": {
+        "Health": { "$path": "src/personaje/Health.server.luau" }
+      }
+    },
+    "Workspace": {
+      "$properties": { "StreamingEnabled": false }
+    },
+    "Lighting": {
+      "$properties": { "Technology": "Future" }
+    }
+  }
+}
