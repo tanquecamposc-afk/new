@@ -1189,6 +1189,11 @@ function Arenas.borrar(id)
 	end
 end
 
+-- Servidor: crea la carpeta donde se anuncian las arenas (antes de que la busquen los clientes)
+function Arenas.prepararServidor()
+	carpetaActivas(true)
+end
+
 -- Cliente: lee las arenas que anuncia el servidor
 local function leer(v)
 	if Arenas.buscar(v.Name) then

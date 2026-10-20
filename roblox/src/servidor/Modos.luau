@@ -443,6 +443,7 @@ end
 
 function Modos.iniciar(c)
 	ctx = c
+	require(Comp.Arenas).prepararServidor()
 	BW.iniciar(c)
 	MZ.iniciar(c)
 	LY.iniciar(c)

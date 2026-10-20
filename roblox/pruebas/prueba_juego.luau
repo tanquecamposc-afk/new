@@ -615,7 +615,7 @@ if P and J and J.equipo then
 	end
 	moverJugador(math.floor(tendero.x) + 1, BW_Y + 1, math.floor(tendero.z))
 	pasos(2)
-	enviar("derecho", nil, Vector3.new(-1, 0, 0), tendero.pieza, false)
+	enviar("derecho", nil, F.Vector3.new(-1, 0, 0), tendero.pieza, false)
 	pasos(2)
 	ok(ultimaUI and ultimaUI.extra and ultimaUI.extra.sub == "tienda" and #ultimaUI.extra.ofertas > 0, "no se abrió la tienda de Bed Wars")
 	enviar("comprar", 1, 1)
@@ -637,7 +637,7 @@ if P and J and J.equipo then
 	local ix, iz = E.isla[1], E.isla[2]
 	moverJugador(ix, BW_Y + 1, iz)
 	pasos(2)
-	enviar("derecho", { x = ix + 1, y = BW_Y, z = iz + 1, n = { 0, 1, 0 } }, Vector3.new(0, -1, 0), nil, false)
+	enviar("derecho", { x = ix + 1, y = BW_Y, z = iz + 1, n = { 0, 1, 0 } }, F.Vector3.new(0, -1, 0), nil, false)
 	pasos(2)
 	ok(srvMundo.get(ix + 1, BW_Y + 1, iz + 1) == E.lanaId, "no se pudo poner lana")
 	enviar("golpe", ix + 1, BW_Y + 1, iz + 1)
@@ -669,13 +669,13 @@ if P and J and J.equipo then
 	-- Los bots juegan un rato
 	local antesBots = {}
 	for _, m in P.bots do
-		antesBots[m] = Vector3.new(m.x, m.y, m.z)
+		antesBots[m] = F.Vector3.new(m.x, m.y, m.z)
 	end
 	moverJugador(ix, BW_Y + 1, iz)
 	pasos(300)
 	local movidos = 0
 	for m, a in antesBots do
-		if (Vector3.new(m.x, m.y, m.z) - a).Magnitude > 1 then
+		if (F.Vector3.new(m.x, m.y, m.z) - a).Magnitude > 1 then
 			movidos += 1
 		end
 	end
@@ -743,7 +743,7 @@ if R then
 	-- Artefacto: el cuerno de explosión
 	moverJugador(s2.x, MZ_Y + 1, s2.z)
 	enviar("sel", 4)
-	enviar("derecho", nil, Vector3.new(1, 0, 0), nil, false)
+	enviar("derecho", nil, F.Vector3.new(1, 0, 0), nil, false)
 	pasos(2)
 	ok(R.cd.cuerno ~= nil, "no se usó el cuerno")
 	-- El jefe: al vencerlo aparece la plataforma al nivel 2
