@@ -162,6 +162,32 @@ local function moverJugador(x, y, z)
 	cabeza.CFrame = CF((x + 0.5) * B, y * B + 4.5, (z + 0.5) * B)
 end
 local px, pz = math.floor(root.Position.X / B), math.floor(root.Position.Z / B)
+-- El sitio de aparición es al azar: se busca cerca un trozo de suelo llano (sin troncos, hojas ni agua)
+-- para que la prueba no dependa de caer encima de un árbol
+do
+	local function bueno(x, z)
+		local y = srvMundo.alturaSuelo(x, z)
+		local n = Reg.nombre(srvMundo.get(x, y, z)) or ""
+		local libre = srvMundo.get(x, y + 1, z) == 0 and srvMundo.get(x, y + 2, z) == 0
+		return libre and not (n:find("Tronco") or n:find("Hojas") or n:find("Agua") or n:find("Lava")), y
+	end
+	local encontrado = false
+	for r = 0, 12 do
+		for dx = -r, r do
+			for dz = -r, r do
+				if not encontrado and math.max(math.abs(dx), math.abs(dz)) == r then
+					local x, z = px + dx, pz + dz
+					local b1, y1 = bueno(x, z)
+					local b2, y2 = bueno(x + 2, z)
+					local b3, y3 = bueno(x + 1, z)
+					if b1 and b2 and b3 and y1 == y2 and y1 == y3 then
+						px, pz, encontrado = x, z, true
+					end
+				end
+			end
+		end
+	end
+end
 local py = srvMundo.alturaSuelo(px, pz) + 1
 moverJugador(px, py, pz)
 print("jugador en", px, py, pz, "suelo:", srvMundo.get(px, py - 1, pz))
