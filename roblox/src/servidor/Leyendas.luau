@@ -216,6 +216,11 @@ local function crearCriatura(L, tipo, x, y, z)
 	m.vida, m.vidaMax = d.vida, d.vida
 	m.domado = true
 	m.ly = L
+	-- Tamaños de las variantes del web
+	local escala = ({ golemPiedraLY = 0.62, golemTablaLY = 0.55, piglinBrutoLY = 1.25 })[tipo]
+	if escala then
+		ctx.Mobs.escalar(m, escala)
+	end
 	if esGolem(m) then
 		if L.mejora > 0 then
 			m.vida *= 1.3 ^ L.mejora

@@ -99,7 +99,7 @@ local function matriz(m)
 	return cf, Vector3.new(sx, sy, sz)
 end
 
-local function crearMalla(o, escala, conUV)
+local function crearMalla(o, escala, conUV, tinte)
 	local nv = buffer.readu16(geo, o)
 	local ni = buffer.readu16(geo, o + 2)
 	local pP = o + 4
@@ -128,6 +128,8 @@ local function crearMalla(o, escala, conUV)
 				uvs[i] = em:AddUV(Vector2.new(u, 1 - v))
 			end
 		end
+		-- Las variantes tiñen la textura con el color de los vértices
+		local ic = tinte and em:AddColor(tinte, 1)
 		for k = 0, ni - 3, 3 do
 			local a = buffer.readu16(geo, pI + k * 2) + 1
 			local b = buffer.readu16(geo, pI + k * 2 + 2) + 1
@@ -135,6 +137,9 @@ local function crearMalla(o, escala, conUV)
 			local f = em:AddTriangle(ids[a], ids[b], ids[c])
 			if conUV then
 				em:SetFaceUVs(f, { uvs[a], uvs[b], uvs[c] })
+			end
+			if ic then
+				em:SetFaceColors(f, { ic, ic, ic })
 			end
 		end
 	end)
@@ -155,6 +160,61 @@ local function crearMalla(o, escala, conUV)
 	return parte, centro
 end
 
+-- Variantes que reutilizan el modelo de otra criatura y se recolorean (VARIANTES de criaturas2.js y modos52.js).
+-- color(c) recibe el color de cada parte (blanco en las partes con textura, que se tiñen)
+local function hex(n)
+	return Color3.fromRGB(n // 65536, (n // 256) % 256, n % 256)
+end
+local function escalaColor(c, f, tinte, k)
+	if tinte then
+		c = c:Lerp(tinte, k)
+	end
+	return Color3.new(math.min(1, c.R * f), math.min(1, c.G * f), math.min(1, c.B * f))
+end
+local function igual(c, n)
+	local h = hex(n)
+	return math.abs(c.R - h.R) + math.abs(c.G - h.G) + math.abs(c.B - h.B) < 0.02
+end
+local function gris(c)
+	local g = (c.R + c.G + c.B) / 3
+	return g
+end
+local VARIANTES = {
+	esqueletoErrante = { base = "esqueleto", color = function(c) return escalaColor(c, 0.95, hex(0x8aa0a4), 0.35) end },
+	momia = { base = "zombi", color = function(c) return escalaColor(c, 1, hex(0xc0a878), 0.55) end },
+	aldeanoZombi = { base = "zombi", color = function(c) return escalaColor(c, 0.95, hex(0x7a5a3a), 0.3) end },
+	esqueletoWither = { base = "esqueleto", color = function(c) return escalaColor(c, 0.18) end },
+	piglinBruto = { base = "piglin", color = function(c)
+		if igual(c, 0x9a6a50) then
+			return hex(0x2a2a2a)
+		elseif igual(c, 0x6a4a30) then
+			return hex(0x1a1a1a)
+		end
+		return c
+	end },
+	champinaca = { base = "vaca", color = function(c) return escalaColor(c, 1, hex(0xa01818), 0.55) end },
+	calamarBrillante = { base = "calamar", color = function(c) return escalaColor(c, 1.6, hex(0x2aa8a8), 0.8) end },
+	burro = { base = "caballo", color = function(c) return escalaColor(c, 1, hex(0x8a8a90), 0.6) end },
+	mula = { base = "caballo", color = function(c) return escalaColor(c, 0.8, hex(0x4a2e1a), 0.5) end },
+	evocador = { base = "vindicador", color = function(c)
+		if igual(c, 0x2a3a3c) or igual(c, 0x1f2d2f) then
+			return hex(0x1c1c22)
+		end
+		return c
+	end },
+	golemPiedraLY = { base = "golem", color = function(c)
+		local g = gris(c)
+		return Color3.new(g * 0.9, g * 0.9, g * 0.95)
+	end },
+	golemTablaLY = { base = "golem", color = function(c)
+		local g = gris(c)
+		return Color3.new(math.min(1, g * 1.1), g * 0.82, g * 0.5)
+	end },
+	piglinLY = { base = "piglin" },
+	piglinBrutoLY = { base = "piglin", color = function(c) return escalaColor(c, 0.8) end },
+}
+MobsVista.VARIANTES = VARIANTES
+
 local plantillas = {} -- tipo -> {grupos = {{tipo, i, s, cf, piezas = {{parte, centro}}}}} o false
 local creando = {}
 
@@ -166,7 +226,8 @@ local function plantilla(tipo)
 		return nil
 	end
 	creando[tipo] = true
-	local modelo = Datos.modelos[tipo]
+	local V = not Datos.modelos[tipo] and VARIANTES[tipo] or nil
+	local modelo = Datos.modelos[tipo] or (V and Datos.modelos[V.base])
 	if not modelo then
 		plantillas[tipo] = false
 		return nil
@@ -179,7 +240,8 @@ local function plantilla(tipo)
 		for _, ml in g.mallas do
 			local parte, centro
 			if MobsVista.disponible then
-				parte, centro = crearMalla(ml.o, esc, ml.t ~= nil)
+				local tinte = (V and V.color and ml.t) and V.color(Color3.new(1, 1, 1)) or nil
+				parte, centro = crearMalla(ml.o, esc, ml.t ~= nil, tinte)
 				if not parte then
 					MobsVista.disponible = false
 				end
@@ -199,6 +261,9 @@ local function plantilla(tipo)
 					end
 				else
 					parte.Color = colorHex(ml.col or 0xffffff)
+					if V and V.color then
+						parte.Color = V.color(parte.Color)
+					end
 				end
 				if ml.emis and ml.emis > 0 then
 					parte.Material = Enum.Material.Neon
@@ -263,6 +328,12 @@ local function nuevaVista(pieza)
 		pieza = pieza, tipo = tipo, def = def, fase = 0, golpeT = 0, flash = 0, muerteT = 0,
 		cf = pieza.CFrame, pos = pieza.Position, cabY = 0, cabX = 0, salto = 0, anterior = pieza.Position,
 	}
+	-- Las variantes se animan y miden como su criatura base
+	local V = not Datos.modelos[tipo] and VARIANTES[tipo]
+	if V then
+		v.tipoAnim = V.base
+		v.altoModelo = Datos.defs[V.base] and Datos.defs[V.base].alto
+	end
 	local modelo = Instance.new("Model")
 	modelo.Name = tipo
 	v.modelo = modelo
@@ -313,6 +384,28 @@ local function nuevaVista(pieza)
 	if def.tipo == "hostil" or tipo == "golem" then
 		v.sonidoT = 4 + math.random() * 8
 	end
+	-- Nombre encima (jefes y élites de las Mazmorras); los bots de Bed Wars ya traen su cartel del servidor
+	local etiqueta = pieza:GetAttribute("Etiqueta")
+	if etiqueta and not pieza:FindFirstChildOfClass("BillboardGui") then
+		local g = Instance.new("BillboardGui")
+		g.Name = "Etiqueta"
+		g.Size = UDim2.fromOffset(180, 24)
+		g.StudsOffset = Vector3.new(0, pieza.Size.Y / 2 + 0.6 * BS, 0)
+		g.MaxDistance = 50 * BS
+		g.LightInfluence = 0
+		g.Adornee = pieza
+		local t = Instance.new("TextLabel")
+		t.BackgroundTransparency = 0.55
+		t.BackgroundColor3 = Color3.new(0, 0, 0)
+		t.BorderSizePixel = 0
+		t.Size = UDim2.fromScale(1, 1)
+		t.Font = Enum.Font.Code
+		t.TextScaled = true
+		t.Text = etiqueta
+		t.TextColor3 = etiqueta == "Élite" and Color3.fromRGB(200, 120, 255) or Color3.fromRGB(255, 90, 90)
+		t.Parent = g
+		g.Parent = modelo
+	end
 	vistas[pieza] = v
 	return v
 end
@@ -350,12 +443,12 @@ local function animar(v, dt)
 	local amp = math.sin(v.fase) * math.min(1, sp) * 0.7
 	v.golpeT = math.max(0, v.golpeT - dt)
 	local golpe = math.sin(math.min(1, v.golpeT / 0.35) * math.pi) * 0.9
-	local tipo = v.tipo
+	local tipo = v.tipoAnim or v.tipo
 	local persigue = pieza:GetAttribute("persigue") == true
 	local brazosArriba = tipo == "zombi" or tipo == "ahogado" or tipo == "husk" or tipo == "zombiAldeano"
 		or (tipo == "esqueleto" and persigue) or ((tipo == "piglin" or tipo == "enderman") and persigue)
 	-- Escala: crías, slimes de varios tamaños
-	local altoDef = (v.def.alto or 1) * BS
+	local altoDef = (v.altoModelo or v.def.alto or 1) * BS
 	local esc = math.max(0.2, pieza.Size.Y / math.max(altoDef, 0.01))
 	if pieza:GetAttribute("bebe") then
 		esc = 0.5
@@ -503,7 +596,7 @@ function MobsVista.iniciar()
 		for pieza, v in vistas do
 			if not pieza.Parent then
 				quitarVista(pieza)
-			elseif (pieza.Position - cpos).Magnitude < 260 then
+			elseif (pieza.Position - cpos).Magnitude < 400 then
 				animar(v, dt)
 				v.lejos = false
 			elseif not v.lejos then

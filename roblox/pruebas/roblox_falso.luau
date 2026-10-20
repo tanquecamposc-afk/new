@@ -440,6 +440,11 @@ end
 function METODOS:WritePixelsBuffer(pos, tam, buf)
 	assert(type(buf) == "buffer", "WritePixelsBuffer necesita un buffer")
 	assert(buffer.len(buf) == tam.X * tam.Y * 4, "WritePixelsBuffer: tamaño del buffer incorrecto")
+	-- Para las capturas: se guardan los píxeles
+	if F.grabar then
+		self._p._pix = buf
+		self._p._tam = tam
+	end
 end
 function METODOS:CreateEditableMesh()
 	if F.sinEditables then error("EditableMesh no disponible") end
@@ -449,18 +454,29 @@ function METODOS:CreateEditableMesh()
 	return o
 end
 local function contador(self) self._p._n = (self._p._n or 0) + 1; return self._p._n end
-METODOS.AddVertex = function(self, p) assert(getmetatable(p) == V3, "AddVertex necesita Vector3"); return contador(self) end
-METODOS.AddUV = function(self, uv) assert(type(uv) == "table" and uv.X, "AddUV necesita Vector2"); return contador(self) end
-METODOS.AddColor = function(self, c, a) assert(type(c) == "table" and c._color, "AddColor necesita Color3"); return contador(self) end
+-- Con F.grabar se guarda la geometría para poder dibujarla (capturas de pantalla)
+local function guarda(self, k, id, v)
+	if F.grabar then
+		local t = self._p[k]
+		if not t then t = {}; self._p[k] = t end
+		t[id] = v
+	end
+	return id
+end
+METODOS.AddVertex = function(self, p) assert(getmetatable(p) == V3, "AddVertex necesita Vector3"); return guarda(self, "_v", contador(self), p) end
+METODOS.AddUV = function(self, uv) assert(type(uv) == "table" and uv.X, "AddUV necesita Vector2"); return guarda(self, "_uv", contador(self), uv) end
+METODOS.AddColor = function(self, c, a) assert(type(c) == "table" and c._color, "AddColor necesita Color3"); return guarda(self, "_c", contador(self), c) end
 METODOS.AddNormal = function(self, n) assert(getmetatable(n) == V3, "AddNormal necesita Vector3"); return contador(self) end
-METODOS.AddTriangle = function(self, a, b, c) assert(a and b and c and a ~= b and b ~= c, "AddTriangle con vértices repetidos"); return contador(self) end
-METODOS.SetFaceUVs = function(self, f, t) assert(#t == 3) end
-METODOS.SetFaceColors = function(self, f, t) assert(#t == 3) end
+METODOS.AddTriangle = function(self, a, b, c) assert(a and b and c and a ~= b and b ~= c, "AddTriangle con vértices repetidos"); return guarda(self, "_t", contador(self), { a, b, c }) end
+METODOS.SetFaceUVs = function(self, f, t) assert(#t == 3); guarda(self, "_fuv", f, t) end
+METODOS.SetFaceColors = function(self, f, t) assert(#t == 3); guarda(self, "_fc", f, t) end
 METODOS.SetFaceNormals = function(self, f, t) assert(#t == 3) end
 function METODOS:CreateMeshPartAsync(contenido)
 	assert(type(contenido) == "table" and contenido.objeto, "CreateMeshPartAsync necesita Content")
 	F.editables.piezas += 1
-	return nuevaInstancia("MeshPart")
+	local mp = nuevaInstancia("MeshPart")
+	if F.grabar then mp._p._em = contenido.objeto end
+	return mp
 end
 function METODOS:GetPivot() return self._p.CFrame or F.CFrame.new(0, 0, 0) end
 

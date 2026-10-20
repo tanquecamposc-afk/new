@@ -167,6 +167,15 @@ function Mobs.crear(tipo, x, y, z, opc)
 	return m
 end
 
+-- Cambia el tamaño de una criatura (jefes, élites, variantes más pequeñas…); el cliente escala el modelo igual
+function Mobs.escalar(m, f)
+	m.alto *= f
+	m.ancho *= f
+	if m.pieza then
+		m.pieza.Size = Vector3.new(math.max(0.4, m.ancho * 2 * BS), math.max(0.4, m.alto * BS), math.max(0.4, m.ancho * 2 * BS))
+	end
+end
+
 function Mobs.quitar(m)
 	if m.quitado then
 		return

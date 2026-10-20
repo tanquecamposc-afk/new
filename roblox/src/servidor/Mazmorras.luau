@@ -137,6 +137,7 @@ local function enemigo(R, tipo, x, z, elite)
 		m.vida *= 2.2
 		m.vidaMax = m.vida
 		d.dano = (d.dano or 3) * 1.4
+		ctx.Mobs.escalar(m, 1.18)
 		m.pieza:SetAttribute("Etiqueta", "Élite")
 	end
 	m.alMorir = function(mm)
@@ -190,6 +191,7 @@ local function activarSala(R, s)
 			j.def.dano = 5 + R.nivel
 			j.def.vel = (j.def.vel or 2.4) * 1.1
 			j.jefe = true
+			ctx.Mobs.escalar(j, 1.7)
 			j.pieza:SetAttribute("Etiqueta", T.jefeN)
 			R.jefe = j
 		end
