@@ -54,6 +54,20 @@ local function mallaExtruida(id)
 		return buffer.readu8(buf, (y * w + x) * 4 + 3) > 100
 	end
 	local s = BS / 16 -- un píxel del icono = 1/16 de bloque
+	-- Roblox estira la malla al tamaño de la pieza: se centra en los píxeles que se ven
+	local minX, minY, maxX, maxY = w, h, -1, -1
+	for y = 0, h - 1 do
+		for x = 0, w - 1 do
+			if buffer.readu8(buf, (y * w + x) * 4 + 3) > 100 then
+				minX, minY = math.min(minX, x), math.min(minY, y)
+				maxX, maxY = math.max(maxX, x), math.max(maxY, y)
+			end
+		end
+	end
+	if maxX < 0 then
+		return nil
+	end
+	local cxp, cyp = (minX + maxX + 1) / 2, (minY + maxY + 1) / 2
 	local normales, colores = {}, {}
 	local function normalId(n)
 		local k = n.X * 9 + n.Y * 3 + n.Z
@@ -95,8 +109,8 @@ local function mallaExtruida(id)
 				if opaco(x, y) then
 					hay = true
 					local uv = em:AddUV(Vector2.new((x + 0.5) / w, (y + 0.5) / h))
-					local x0, x1 = (x - w / 2) * s, (x + 1 - w / 2) * s
-					local y1, y0 = (h / 2 - y) * s, (h / 2 - y - 1) * s
+					local x0, x1 = (x - cxp) * s, (x + 1 - cxp) * s
+					local y1, y0 = (cyp - y) * s, (cyp - y - 1) * s
 					cara(V(x0, y0, z1), V(x1, y0, z1), V(x1, y1, z1), V(x0, y1, z1), V(0, 0, 1), uv, 1)
 					cara(V(x0, y0, z0), V(x1, y0, z0), V(x1, y1, z0), V(x0, y1, z0), V(0, 0, -1), uv, 0.85)
 					if not opaco(x - 1, y) then
@@ -134,7 +148,7 @@ local function mallaExtruida(id)
 	parte.CastShadow = false
 	parte.Material = Enum.Material.SmoothPlastic
 	parte.Color = Color3.new(1, 1, 1)
-	parte.Size = Vector3.new(w * s, h * s, s)
+	parte.Size = Vector3.new((maxX - minX + 1) * s, (maxY - minY + 1) * s, s)
 	parte.CFrame = CFrame.new()
 	Imagenes.enMalla(parte, img)
 	local m = Instance.new("Model")
@@ -274,7 +288,7 @@ function Modelos.iniciarMano(opc)
 			end
 			if id then
 				task.spawn(function()
-					local inst = Modelos.crear(id, BL[id] and 0.3 or 0.52)
+					local inst = Modelos.crear(id, BL[id] and 0.24 or 0.36)
 					if inst and yo == pedido then
 						sostenido = inst
 						inst.m.Parent = carpeta
@@ -317,7 +331,7 @@ function Modelos.iniciarMano(opc)
 				giro = CFrame.new(-0.05, 0.4, -0.55) * CFrame.Angles(0, math.rad(45), 0)
 			else
 				-- El objeto plano visto de lado, con la punta hacia arriba y hacia delante
-				giro = CFrame.new(-0.1, 0.55, -0.45) * CFrame.Angles(0, math.rad(-80), 0) * CFrame.Angles(0, 0, math.rad(-20))
+				giro = CFrame.new(-0.2, 0.55, -0.55) * CFrame.Angles(math.rad(-15), math.rad(-35), 0) * CFrame.Angles(0, 0, math.rad(40))
 			end
 			Modelos.colocar(sostenido, base * giro)
 		end

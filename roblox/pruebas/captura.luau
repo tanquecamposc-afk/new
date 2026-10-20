@@ -382,16 +382,27 @@ do
 	end
 	Interfaz.alSeleccionar(1)
 	pasos(90)
-	local suma, n = F.Vector3.new(0, 0, 0), 0
-	for _, e in F.workspace.Entidades:GetChildren() do
-		suma += e.Position / B
-		n += 1
-	end
+	-- La mano: desde los ojos, mirando al frente
 	local rp = root.Position / B
-	local mira = n > 0 and suma / n or rp + F.Vector3.new(2, -1, 0)
 	local ojo = rp + F.Vector3.new(0, 1.6, 0)
-	print(("objetos tirados: %d · en mira %.1f %.1f %.1f"):format(n, mira.X, mira.Y, mira.Z))
-	volcar("objetos3d", mira.X, mira.Y, mira.Z, 12, ojo, mira, 70)
+	volcar("mano3d", ojo.X, ojo.Y, ojo.Z, 3, ojo, ojo + F.Vector3.new(4, -0.6, 0), 70)
+	Interfaz.alSeleccionar(2)
+	pasos(40)
+	volcar("mano3d_bloque", ojo.X, ojo.Y, ojo.Z, 3, ojo, ojo + F.Vector3.new(4, -0.6, 0), 70)
+	Interfaz.alSeleccionar(1)
+	pasos(10)
+	-- Los objetos tirados, de cerca
+	local e1
+	for _, e in F.workspace.Entidades:GetChildren() do
+		if e.Name == "Item" then
+			e1 = e1 or e
+		end
+	end
+	if e1 then
+		local q = e1.Position / B
+		print(("objeto tirado en %.1f %.1f %.1f"):format(q.X, q.Y, q.Z))
+		volcar("suelo3d", q.X, q.Y, q.Z, 4, q + F.Vector3.new(1.4, 1.1, 1.4), q + F.Vector3.new(0, 0.2, 0), 70)
+	end
 	enviar("modo", "supervivencia")
 	pasos(3)
 end

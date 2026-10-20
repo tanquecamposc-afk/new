@@ -129,6 +129,12 @@ Con **Rojo**, `default.project.json` monta el mismo árbol desde `src/`.
   - Ayudantes que recogen madera y piedra.
   - Generadores de golems, torres de flechas, muros, reparar la aldea y mejorar golems.
   - Órdenes a los golems, piglins que atacan y asaltos cada cierto tiempo.
+- **Modelos 3D de los objetos** (`Modelos3D`): los bloques son cubitos (o losas) con las mismas texturas del mundo y los demás objetos se hacen con los píxeles de su icono con volumen, como en Minecraft. Se ven:
+  - en la mano en primera persona, con el brazo, que se balancea al golpear, se mueve al andar y baja y sube al cambiar de objeto;
+  - en el suelo, girando (dos si es un montón);
+  - en la mano de cada jugador (y en la tuya en tercera persona).
+  Si Roblox no deja crear mallas editables se usan los iconos de antes.
+- **Criaturas con más vida:** cuando no hay nadie cerca miran a su alrededor y en reposo los brazos se mecen un poco.
 - **Menú principal nuevo:** tarjetas con icono para cada modo, el mundo desenfocado detrás, frase amarilla que late, y botones de Ajustes, Controles y «Volver al juego».
 - **Ajustes que se guardan:** sensibilidad del ratón, campo de visión, efecto de velocidad al correr, balanceo de la mano, números de daño y volumen.
 - **Cámara en tercera persona (V) mejorada:** gira con el ratón sin mantener el clic derecho, el personaje mira hacia donde apuntas y la cámara no atraviesa los bloques.
@@ -203,7 +209,7 @@ Para ser claros, esto **no es igual** que en el juego web:
   - Script principal: controles, cámara, picar y usar, efectos y sonidos.
   - `Render`: mallas con texturas, con un modo de respaldo hecho con piezas.
   - `Luz`.
-  - `Interfaz`, `Iconos`.
+  - `Interfaz`, `Iconos`, `Modelos3D` (objetos en 3D: mano, suelo y personajes).
   - `MobsVista`, `EntidadesVista`.
   - `Imagenes`.
 - `src/personaje/Health`: quita la curación automática de Roblox.
