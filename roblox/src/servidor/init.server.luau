@@ -574,6 +574,7 @@ local function alMorir(plr)
 		ahogo = "Te ahogaste.", explosion = "Volaste por los aires.", cactus = "Te pinchaste hasta morir.", veneno = "El veneno pudo contigo.",
 		jugador = "Otro jugador acabó contigo.",
 	}
+	enviarJugador(plr)
 	Estado:FireClient(plr, "muerte", (textos[s.ultimaCausa or ""] or "Has muerto.") .. ((supervivencia(s) and not modoInv) and " Tus objetos quedaron donde caíste." or ""))
 	s.efectos = {}
 	s.fuego = 0
@@ -1027,6 +1028,12 @@ function acciones.romper(plr, s, x, y, z)
 	end
 	if Cont.esCofre(b) or Cont.esHorno(b) then
 		Cont.vaciar(x, y, z)
+		-- A quien lo tuviera abierto se le cierra la pantalla
+		for otro, so in estados do
+			if so.ui and (so.ui.tipo == "cofre" or so.ui.tipo == "horno") and so.ui.x == x and so.ui.y == y and so.ui.z == z then
+				Estado:FireClient(otro, "cerrarUI")
+			end
+		end
 	end
 	Mundo.set(x, y, z, 0)
 	if not creativo then
@@ -1231,7 +1238,7 @@ function acciones.derecho(plr, s, obj, dir, mobParte, agachado)
 		end
 	end
 	-- Objetos especiales de los modos (bola de fuego, huevo puente, artefactos…)
-	if Modos.usarObjeto(plr, s, p, dir) then
+	if Modos.usarObjeto(plr, s, p, dir, obj) then
 		return
 	end
 	local x, y, z, n
@@ -1662,6 +1669,7 @@ function acciones.atacar(plr, s, parte, carga, cayendo, corriendo)
 		if cayendo == true and carga > 0.9 then
 			dano *= 1.5
 		end
+		dano = Modos.golpePvp(plr, otro, dano)
 		local pp = piesDe(plr)
 		local dx, dz = po.X - pp.X, po.Z - pp.Z
 		local l = math.sqrt(dx * dx + dz * dz)
@@ -1880,6 +1888,19 @@ local function moverRapido(plr, s, zona, i)
 	end
 end
 
+-- Si otros jugadores tienen abierto el mismo cofre u horno, ven el cambio al momento
+local function refrescarOtros(plr, s)
+	local u = s.ui
+	if not u or (u.tipo ~= "cofre" and u.tipo ~= "horno") then
+		return
+	end
+	for otro, so in estados do
+		if otro ~= plr and so.ui and so.ui.tipo == u.tipo and so.ui.x == u.x and so.ui.y == u.y and so.ui.z == u.z then
+			enviarUI(otro)
+		end
+	end
+end
+
 function acciones.click(plr, s, zona, i, boton)
 	if type(zona) ~= "string" or not esEntero(i) or not esEntero(boton) then
 		return
@@ -1910,6 +1931,7 @@ function acciones.click(plr, s, zona, i, boton)
 		end
 		enviarJugador(plr)
 		enviarUI(plr)
+		refrescarOtros(plr, s)
 		return
 	end
 	if zona == "mesa" or zona == "mesaSalida" then
@@ -1987,6 +2009,7 @@ function acciones.click(plr, s, zona, i, boton)
 	end
 	enviarJugador(plr)
 	enviarUI(plr)
+	refrescarOtros(plr, s)
 end
 
 -- Libro de recetas: rellena la rejilla con los ingredientes de una receta

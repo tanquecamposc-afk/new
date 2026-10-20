@@ -9,6 +9,16 @@
 	chinche y leche mágica), eventos de la partida y bots que recogen,
 	compran, tienden puentes, protegen su cama, rompen las ajenas y pelean.
 	Mientras tu cama siga en pie reapareces a los 5 segundos.
+	Novedades de la versión de Roblox:
+	· Kits con niveles (KitsBW) y progreso guardado (PerfilBW): monedas, nivel con
+	  estrellas, estadísticas, misiones diarias y efectos de baja final.
+	· Votación de mapa en la sala, etiquetas de equipo encima de los jugadores y
+	  compañeros resaltados, registro de bajas y pantalla final con recompensas.
+	· Momentos de caos: lluvia de meteoritos, fiebre del oro, gravedad baja y el
+	  cofre del cielo, que cae en el centro con botín raro.
+	· Rachas de bajas (En racha, Imparable, Leyenda) y «cortarrachas».
+	· Objetos nuevos: globo salvavidas, escudo de cama, trampolín, mina terrestre y
+	  torreta de nieve. En la muerte súbita, además, el vacío sube.
 ]]
 local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -18,6 +28,8 @@ local Config = require(Comp.Config)
 local Registro = require(Comp.Registro)
 local Arenas = require(Comp.Arenas)
 local Cont = require(script.Parent.Contenedores)
+local Perfil = require(script.Parent.PerfilBW)
+local Kits = require(script.Parent.KitsBW)
 
 local BS = Config.BLOQUE
 local B, I, OB, BL = Registro.B, Registro.I, Registro.objetos, Registro.bloques
@@ -60,12 +72,13 @@ end
 ------------------------------------------------------------------
 -- Mensajes a los jugadores de la partida
 ------------------------------------------------------------------
-local function chat(texto)
+-- Registro de la partida (arriba a la derecha en el cliente): bajas, camas, eventos…
+local function chat(texto, col)
 	if not P then
 		return
 	end
 	for plr in P.jug do
-		ctx.aviso(plr, texto)
+		ctx.Estado:FireClient(plr, "feed", { t = texto, c = col or "#ffffff" })
 	end
 end
 local function tituloA(plr, a, g, col)
@@ -200,12 +213,19 @@ local TIENDA = {
 		{ n = "Defensor de los sueños (gólem)", id = 717, c = 1, p = { MH, 120 }, d = "Invoca un gólem de hierro que defiende tu base." },
 		{ n = "Leche mágica (sin trampas 30 s)", id = 718, c = 1, p = { MO, 4 }, d = "Durante 30 s no activas las trampas enemigas." },
 	} },
+	{ "Novedades", 900, {
+		{ n = "Globo salvavidas", id = 900, c = 1, p = { ME, 1 }, d = "Si caes al vacío, se infla solo y te devuelve a tu isla." },
+		{ n = "Escudo de cama (45 s)", id = 901, c = 1, p = { ME, 2 }, d = "Úsalo junto a tu cama: nadie puede romperla durante 45 s." },
+		{ n = "Trampolín", id = 902, c = 1, p = { MH, 12 }, d = "Ponlo en el suelo: al pisarlo sales disparado hacia arriba." },
+		{ n = "Mina terrestre", id = 903, c = 1, p = { MO, 4 }, d = "Explota cuando un enemigo la pisa." },
+		{ n = "Torreta de nieve (60 s)", id = 904, c = 1, p = { ME, 1 }, d = "Una torreta que empuja a los enemigos que se acercan." },
+	} },
 }
 do
 	local rapida = {}
 	for _, nombre in { "Lana", "Espada de piedra", "Armadura de cota (permanente)", "Pico (mejora)", "Tablones de roble", "Piedra del End", "Manzana dorada",
 		"Bola de fuego", "Dinamita (se enciende sola)", "Flechas", "Arco", "Torre compacta", "Perla de ender", "Espada de hierro",
-		"Armadura de hierro (permanente)", "Huevo puente" } do
+		"Armadura de hierro (permanente)", "Huevo puente", "Globo salvavidas" } do
 		for _, t in TIENDA do
 			for _, o in t[3] do
 				if o.n == nombre then
@@ -321,13 +341,33 @@ local function kit(plr)
 	s.inv[39] = pilaDe(idc("pantalones_" .. mat), 1, { ligamiento = 1 })
 	s.inv[40] = pilaDe(idc("botas_" .. mat), 1, { ligamiento = 1 })
 	local eq = P.eqs[J.equipo]
+	J.lana = lanaDe(J)
+	Kits.alEquipar(plr, s, J)
+	if J.pico > 0 and not s.inv[2] then
+		s.inv[2] = pilaDe(idc(PICO_BW[J.pico]), 1, { eficiencia = math.min(3, J.pico) })
+	end
 	aplicarProt(s, eq.mejoras.prot)
 	if eq.mejoras.filo > 0 then
 		aplicarFilo(s)
 	end
 	s.sel = 1
 	s.hambre, s.saturacion = 20, 5
+	BW.etiquetaJugador(plr, J)
 	ctx.enviarJugador(plr)
+end
+
+-- Etiqueta encima de la cabeza con el equipo, el nombre y el nivel; el cliente resalta a los compañeros
+function BW.etiquetaJugador(plr, J)
+	local ch = plr.Character
+	local cab = ch and ch:FindFirstChild("Head")
+	plr:SetAttribute("EquipoBW", J.equipo)
+	plr:SetAttribute("ColorBW", J.equipo and P.eqs[J.equipo].E.col or nil)
+	if not cab or not J.equipo then
+		return
+	end
+	local E = P.eqs[J.equipo].E
+	local g = cartel(cab, ("[%s] %s %s"):format(E.letra, plr.Name, Perfil.etiqueta(J.perfil)), E.col, 0.9)
+	g.Size = UDim2.fromOffset(220, 22)
 end
 
 local function comprar(plr, s, o)
@@ -396,6 +436,8 @@ local function comprar(plr, s, o)
 		end
 	end
 	ctx.aviso(plr, "Has comprado: " .. o.n)
+	J.compras = (J.compras or 0) + 1
+	BW.misiones(plr, "compras", 1)
 end
 
 -- Datos de la pantalla de la tienda (UI "extra", sub "tienda")
@@ -473,6 +515,7 @@ local function comprarMejora(plr, s, i)
 			return
 		end
 		eq.mejoras[M.k] += 1
+		BW.misiones(plr, "mejoras", 1)
 		ctx.Estado:FireClient(plr, "sonido", "xp")
 		-- Las mejoras son para todo el equipo
 		for o, Jo in P.jug do
@@ -501,6 +544,7 @@ local function comprarMejora(plr, s, i)
 		table.insert(eq.trampas, T.k)
 		ctx.Estado:FireClient(plr, "sonido", "xp")
 		ctx.aviso(plr, "Trampa preparada: " .. T.n)
+		BW.misiones(plr, "mejoras", 1)
 	end
 end
 
@@ -579,7 +623,11 @@ local function romperCama(k, quien)
 	eq.cama = false
 	quitarCama(P.camas[k])
 	local E = eq.E
-	chat(("CAMA DESTRUIDA > ¡La cama del equipo %s ha sido destruida por %s!"):format(E.nombre, quien))
+	chat(("CAMA DESTRUIDA > ¡La cama del equipo %s ha sido destruida por %s!"):format(E.nombre, quien), E.col)
+	if eq.escudo then
+		eq.escudo:Destroy()
+		eq.escudo = nil
+	end
 	sonidoTodos("explosion")
 	for plr, J in P.jug do
 		if J.equipo == k then
@@ -610,14 +658,16 @@ local function crearBot(k, slot, datos)
 		P.nombresBots[k .. ":" .. slot] = nombre
 	end
 	m.bw = { equipo = k, slot = slot, nivel = nivel, rol = slot % 2 == 1 and "atacante" or "defensor", estado = "recolectar", t = 20 + math.random() * 25,
-		res = { h = 0, o = 0, d = 0, e = 0 }, espada = 0, armadura = 0, lana = 16, objetivo = nil, minarT = 0, golpeT = 0, nombre = nombre }
+		res = { h = 0, o = 0, d = 0, e = 0 }, espada = 0, armadura = 0, lana = 16, objetivo = nil, minarT = 0, golpeT = 0, nombre = nombre,
+		kit = Kits.KITS_BOT[math.random(1, #Kits.KITS_BOT)] }
 	if datos then
 		for kk, v in datos do
 			m.bw[kk] = v
 		end
 	end
+	local kitBot = Kits.POR_ID[m.bw.kit]
 	m.pieza:SetAttribute("Etiqueta", ("[%s] %s"):format(E.letra, nombre))
-	cartel(m.pieza, ("[%s] %s"):format(E.letra, nombre), E.col, 1.3)
+	cartel(m.pieza, ("[%s] %s · %s"):format(E.letra, nombre, kitBot and kitBot.n or ""), E.col, 1.3)
 	m.control = BW.iaBot
 	m.alHerir = BW.herirBot
 	m.alMorir = BW.muerteBot
@@ -690,11 +740,76 @@ local function limpiarArena(a, colocados)
 end
 
 local function nuevoJugador(plr, s)
+	local perfil = Perfil.de(plr)
+	local kitId = Kits.disponible(perfil, perfil.kit) and perfil.kit or "ninguno"
 	return {
 		equipo = nil, vivo = true, espectador = false, armadura = 0, pico = 0, hacha = 0, tijeras = false,
-		bajas = 0, finales = 0, camas = 0, muertes = 0, ultimoGolpe = nil,
+		bajas = 0, finales = 0, camas = 0, muertes = 0, ultimoGolpe = nil, racha = 0, mejorRacha = 0, compras = 0,
+		perfil = perfil, kit = kitId, kitV = Kits.valores(kitId, Kits.nivelDe(perfil, kitId)),
 		guardado = { inv = s.inv, xp = s.xp, modo = s.modo, cama = s.cama },
 	}
+end
+
+-- Una baja hecha por un jugador: estadísticas, rachas, kit, misiones y efecto de baja final
+local RACHAS = { [3] = { "¡EN RACHA!", "#ffaa00", "rapidez" }, [5] = { "¡IMPARABLE!", "#ff5555", "resistencia" }, [7] = { "¡LEYENDA!", "#ff55ff", "fuerza" } }
+function BW.registrarBaja(plr, final, pos, victima)
+	local J = P and P.jug[plr]
+	if not J then
+		return
+	end
+	local s = ctx.estados[plr]
+	if final then
+		J.finales += 1
+		BW.misiones(plr, "finales", 1)
+	else
+		J.bajas += 1
+	end
+	BW.misiones(plr, "bajas", 1)
+	J.racha += 1
+	J.mejorRacha = math.max(J.mejorRacha, J.racha)
+	tituloA(plr, "", final and "¡BAJA FINAL!" or "+1 baja", final and "#55ffff" or "#ffffff")
+	ctx.Estado:FireClient(plr, "sonido", "xp")
+	local R = RACHAS[J.racha]
+	if R and s then
+		s.efectos[R[3]] = { t = 12, n = 1 }
+		tituloA(plr, R[1], ("%d bajas seguidas"):format(J.racha), R[2])
+		local E = P.eqs[J.equipo].E
+		chat(("%s %s está %s (%d seguidas)"):format(E.letra, plr.Name, R[1]:lower():gsub("¡", ""):gsub("!", ""), J.racha), R[2])
+	end
+	if s then
+		Kits.alMatar(plr, s, J, final)
+	end
+	-- Efecto de baja final (cosmético comprado con monedas)
+	if final and pos then
+		local ef = J.perfil.efecto
+		if ef and ef ~= "ninguno" then
+			for o in P.jug do
+				ctx.Estado:FireClient(o, "efectoBaja", ef, pos * BS)
+			end
+		end
+	end
+	ctx.enviarJugador(plr)
+	local _ = victima
+end
+
+-- Al morir un jugador con racha: el que lo mata es un «cortarrachas»
+local function cortarRacha(Jv, asesino)
+	if Jv.racha >= 3 and asesino and P.jug[asesino] then
+		Perfil.de(asesino).monedas += 25
+		tituloA(asesino, "¡CORTARRACHAS!", "+25 monedas", "#ffd84a")
+	end
+	Jv.racha = 0
+end
+
+-- Misiones diarias: avisa al completar una
+function BW.misiones(plr, clave, n)
+	if not plr or not plr.Parent then
+		return
+	end
+	for _, m in Perfil.progreso(plr, clave, n) do
+		tituloA(plr, "¡Misión completada!", ("%s · +%d monedas"):format(m.texto, m.premio), "#ffd84a")
+		ctx.Estado:FireClient(plr, "sonido", "nivel")
+	end
 end
 
 local function quitarMobs()
@@ -730,6 +845,7 @@ local function crearPartida(dificultad)
 		fase = "sala", lobby = LOBBY, t = 0, ev = 1, fin = false, tema = tema, n = 8, porEquipo = 1, dificultad = dificultad or "normal",
 		arena = Arenas.bw(8, tema), jug = {}, eqs = {}, camas = {}, bots = {}, tenderos = {}, aliados = {}, gens = {}, colocados = {},
 		cola = {}, huevos = {}, nombresBots = {}, nombresUsados = {}, avisoT = 0, mensajeT = 0,
+		votos = {}, minas = {}, multGen = 1, caosT = 180, caos = nil, vacio = BW_VACIO, cofreCielo = nil,
 	}
 	if anterior then
 		limpiarArena(anterior.arena, anterior.colocados)
@@ -751,9 +867,16 @@ local function empezar()
 		P.n = 4
 		P.porEquipo = math.min(4, math.ceil(n / 4))
 	end
-	if P.n ~= 8 then
-		P.arena = Arenas.bw(P.n, P.tema)
+	-- El mapa más votado (si nadie vota, el de la sala)
+	local cuenta, mejor, max = {}, P.tema, 0
+	for _, t in P.votos do
+		cuenta[t] = (cuenta[t] or 0) + 1
+		if cuenta[t] > max then
+			mejor, max = t, cuenta[t]
+		end
 	end
+	P.tema = mejor
+	P.arena = Arenas.bw(P.n, P.tema)
 	local a = P.arena
 	limpiarArena(a, {})
 	for k, E in a.equiposInfo do
@@ -825,6 +948,7 @@ local function empezar()
 			kit(plr)
 			task.spawn(ctx.teletransportar, plr, E.isla[1] + 0.5, BW_Y + 1, E.isla[2] + 0.5)
 			tituloA(plr, "¡A JUGAR!", "Eres del equipo " .. E.nombre .. ": protege tu cama", E.col)
+			ctx.Estado:FireClient(plr, "kitBW", { id = J.kit, v = J.kitV, act = Kits.POR_ID[J.kit] and Kits.POR_ID[J.kit].act or false })
 		else
 			J.espectador = true
 			J.vivo = false
@@ -866,8 +990,15 @@ local function actualizarGens(dt)
 			local eq = P.eqs[g.equipo]
 			if eq.cama or eq.vivos > 0 then
 				local f = eq.mejoras.forja
-				local mult = MULT_FORJA[f + 1]
-				g.tH += dt * mult
+				local mult = MULT_FORJA[f + 1] * P.multGen
+				-- Kit Imán: el generador de su equipo da más hierro
+				local iman = 0
+				for _, Jo in P.jug do
+					if Jo.equipo == g.equipo and Jo.kit == "iman" and Jo.vivo and not Jo.espectador then
+						iman = math.max(iman, Jo.kitV.extra or 0)
+					end
+				end
+				g.tH += dt * mult * (1 + iman / 100)
 				g.tO += dt * mult
 				if g.tH >= 1.1 then
 					g.tH = 0
@@ -888,7 +1019,7 @@ local function actualizarGens(dt)
 		else
 			local dia = g.tipo == "diamante"
 			local intervalo = dia and ({ 30, 23, 15 })[nd + 1] or ({ 65, 50, 35 })[ne + 1]
-			g.t += dt
+			g.t += dt * P.multGen
 			if g.t >= intervalo then
 				g.t = 0
 				soltarGen(g, dia and I.diamante or I.esmeralda, dia and 4 or 2)
@@ -1066,6 +1197,9 @@ function BW.iaBot(m, dt)
 	b.t -= dt
 	b.golpeT -= dt
 	local vel = m.def.vel or 4.3
+	if m.congelado and os.clock() < m.congelado then
+		vel *= 0.5
+	end
 	local casa = { x = E.isla[1] + 0.5, z = E.isla[2] + 0.5 }
 	if math.sqrt((m.x - casa.x) ^ 2 + (m.z - casa.z) ^ 2) < 7 then
 		comprasBot(m)
@@ -1106,6 +1240,16 @@ function BW.iaBot(m, dt)
 				end
 				-- Los golpes de los bots empujan más (el clásico «combo» hacia el vacío)
 				ctx.danar(obj.plr, dano, "mob", { x = dx / l * 1.4, z = dz / l * 1.4 })
+				local so = ctx.estados[obj.plr]
+				if so and b.kit == "piro" then
+					so.fuego = math.max(so.fuego or 0, 3)
+				elseif so and b.kit == "escarcha" then
+					so.efectos.lentitud = { t = 2, n = 3 }
+					ctx.enviarJugador(obj.plr)
+				end
+				if b.kit == "vampiro" then
+					m.vida = math.min(m.vidaMax, m.vida + dano * 0.25)
+				end
 			elseif obj.m then
 				obj.m.bw.ultimoGolpe = { m = m, t = ahora() }
 				ctx.Mobs.herir(obj.m, dano, { x = dx / l, z = dz / l }, "botBW")
@@ -1178,7 +1322,8 @@ function BW.iaBot(m, dt)
 						break
 					end
 				end
-				if not roto and esCama(ctx.Mundo.get(c.x, c.y, c.z)) then
+				local protegida = oq.escudoHasta and P.t < oq.escudoHasta
+				if not roto and not protegida and esCama(ctx.Mundo.get(c.x, c.y, c.z)) then
 					romperCama(b.objetivo, b.nombre)
 					hablaBot(m, "cama", 0.7)
 					b.estado = "recolectar"
@@ -1208,6 +1353,12 @@ function BW.herirBot(m, d, fuente, plr)
 		if fuente == "jugador" and P.eqs[J.equipo].mejoras.filo > 0 then
 			d += 1.25
 		end
+		if fuente == "jugador" then
+			d = Kits.alGolpear(plr, J, { m = m }, d, m.vida, m.vidaMax)
+		end
+	end
+	if b.kit == "tanque" then
+		d *= 0.8
 	end
 	if fuente == "aliadoBW" and m.ultimoAliado then
 		b.ultimoGolpe = { plr = m.ultimoAliado, t = ahora() }
@@ -1229,19 +1380,12 @@ function BW.muerteBot(m, causa)
 	if porJugador then
 		local J = P.jug[porJugador]
 		if J then
-			if final then
-				J.finales += 1
-			else
-				J.bajas += 1
-			end
 			for _, par in { { "h", I.lingoteHierro }, { "o", I.lingoteOro }, { "d", I.diamante }, { "e", I.esmeralda } } do
 				if b.res[par[1]] > 0 then
 					ctx.darOSoltar(porJugador, Registro.pila(par[2], math.min(64, b.res[par[1]])))
 				end
 			end
-			ctx.Estado:FireClient(porJugador, "sonido", "xp")
-			tituloA(porJugador, "", final and "¡BAJA FINAL!" or "+1 baja", final and "#55ffff" or "#ffffff")
-			ctx.enviarJugador(porJugador)
+			BW.registrarBaja(porJugador, final, Vector3.new(m.x, m.y, m.z), nil)
 		end
 	elseif asesino then
 		asesino.bw.res.h += b.res.h
@@ -1249,7 +1393,7 @@ function BW.muerteBot(m, causa)
 		hablaBot(asesino, "mata", 0.5)
 	end
 	local por = causa == "vacio" and "cayó al vacío" or (porJugador and ("fue eliminado por " .. porJugador.Name) or (asesino and ("fue eliminado por " .. asesino.bw.nombre) or "murió"))
-	chat(b.nombre .. " " .. por .. (final and ". ¡ELIMINACIÓN FINAL!" or ""))
+	chat(b.nombre .. " " .. por .. (final and ". ¡ELIMINACIÓN FINAL!" or ""), final and "#55ffff" or "#cccccc")
 	hablaBot(m, "muere", 0.25)
 	local i = table.find(P.bots, m)
 	if i then
@@ -1260,7 +1404,7 @@ function BW.muerteBot(m, causa)
 		comprobarFin()
 		return
 	end
-	local datos = { espada = math.max(0, b.espada - 1), armadura = b.armadura, rol = b.rol, estado = "recolectar", t = 8 + math.random() * 10 }
+	local datos = { espada = math.max(0, b.espada - 1), armadura = b.armadura, rol = b.rol, estado = "recolectar", t = 8 + math.random() * 10, kit = b.kit }
 	local partida = P
 	task.delay(5, function()
 		if P == partida and not P.fin and P.fase == "juego" then
@@ -1411,7 +1555,98 @@ local function lanzarHuevo(plr, dir)
 end
 
 -- Clic derecho con un objeto de Bed Wars en la mano
-function BW.usarObjeto(plr, s, p, dir)
+-- Torreta de nieve: un gólem de nieve quieto que empuja a los enemigos cercanos
+local function ponerTorreta(plr, x, y, z, seg)
+	local J = P.jug[plr]
+	local m = ctx.Mobs.crear(ctx.Mobs.DEF.golemNieve and "golemNieve" or "golem", x + 0.5, y, z + 0.5)
+	if not m then
+		return
+	end
+	m.domado = true
+	m.bwAliado = J.equipo
+	m.bwVida = seg
+	local E = P.eqs[J.equipo].E
+	cartel(m.pieza, ("Torreta (%s)"):format(E.nombre), E.col, 1.4)
+	m.alHerir = function(mm, d, fuente, quien)
+		if quien and P and P.jug[quien] and P.jug[quien].equipo == mm.bwAliado then
+			return 0
+		end
+		return d
+	end
+	m.control = function(mm, dt)
+		mm.mover = false
+		mm.vx, mm.vz = 0, 0
+		mm.bwVida -= dt
+		if not P or P.fin or mm.bwVida <= 0 then
+			ctx.Mobs.quitar(mm)
+			return
+		end
+		mm.cdT = (mm.cdT or 0) - dt
+		if mm.cdT > 0 then
+			return
+		end
+		local yo = Vector3.new(mm.x, mm.y, mm.z)
+		for _, e in BW.enemigosCerca(nil, { equipo = mm.bwAliado }, yo, 8) do
+			mm.cdT = 1.5
+			mm.yawObj = math.atan2(e.x - mm.x, e.z - mm.z)
+			mm.pieza:SetAttribute("dispara", os.clock())
+			local dx, dz = e.x - mm.x, e.z - mm.z
+			local l = math.max(0.1, math.sqrt(dx * dx + dz * dz))
+			local dir = { x = dx / l * 2.2, z = dz / l * 2.2 }
+			if e.plr then
+				ctx.danar(e.plr, 1, "mob", dir)
+			elseif e.m then
+				ctx.Mobs.herir(e.m, 1, dir, "aliadoBW")
+			end
+			for o in P.jug do
+				ctx.Estado:FireClient(o, "particulas", Vector3.new(e.x, e.y + 1, e.z) * BS, 0xf0f8ff)
+			end
+			break
+		end
+	end
+	table.insert(P.aliados, m)
+end
+
+-- Enemigos de un equipo cerca de un punto (jugadores y bots): {plr|m, x, y, z}
+function BW.enemigosCerca(plr, J, pos, radio)
+	local res = {}
+	if not P then
+		return res
+	end
+	for o, Jo in P.jug do
+		if o ~= plr and Jo.vivo and not Jo.espectador and Jo.equipo and Jo.equipo ~= J.equipo then
+			local p = jugadorVivo(o)
+			if p and (p - pos).Magnitude < radio then
+				table.insert(res, { plr = o, x = p.X, y = p.Y, z = p.Z })
+			end
+		end
+	end
+	for _, m in P.bots do
+		if not m.muerto and m.bw.equipo ~= J.equipo and (Vector3.new(m.x, m.y, m.z) - pos).Magnitude < radio then
+			table.insert(res, { m = m, x = m.x, y = m.y, z = m.z })
+		end
+	end
+	return res
+end
+
+-- Bloque donde se pondría algo (el apuntado + la cara), si está libre
+local function sitioApuntado(obj)
+	if type(obj) ~= "table" or type(obj.n) ~= "table" then
+		return nil
+	end
+	local x, y, z = tonumber(obj.x), tonumber(obj.y), tonumber(obj.z)
+	if not (x and y and z) or x % 1 ~= 0 or y % 1 ~= 0 or z % 1 ~= 0 then
+		return nil
+	end
+	local n = { math.clamp(tonumber(obj.n[1]) or 0, -1, 1), math.clamp(tonumber(obj.n[2]) or 0, -1, 1), math.clamp(tonumber(obj.n[3]) or 0, -1, 1) }
+	local px, py, pz = x + n[1], y + n[2], z + n[3]
+	if ctx.Mundo.get(px, py, pz) ~= 0 or not Registro.SOLIDO[ctx.Mundo.get(px, py - 1, pz)] then
+		return nil
+	end
+	return px, py, pz
+end
+
+function BW.usarObjeto(plr, s, p, dir, obj)
 	local J = P and P.jug[plr]
 	if not J or not p then
 		return false
@@ -1457,6 +1692,58 @@ function BW.usarObjeto(plr, s, p, dir)
 		return true
 	elseif id == 719 then
 		invocarAliado(plr, ctx.Mobs.DEF.lepisma and "lepisma" or "arana", pos.X + dir.X * 3, pos.Y, pos.Z + dir.Z * 3, 15, "Chinche")
+		gastar()
+		return true
+	elseif id == I.escudoCamaBW then
+		local eq = P.eqs[J.equipo]
+		local c = P.camas[J.equipo]
+		if not eq.cama then
+			ctx.aviso(plr, "Ya no tienes cama que proteger")
+		elseif (Vector3.new(c.x + 0.5, c.y, c.z + 0.5) - pos).Magnitude > 7 then
+			ctx.aviso(plr, "Acércate a tu cama para ponerle el escudo")
+		else
+			eq.escudoHasta = P.t + 45
+			if eq.escudo then
+				eq.escudo:Destroy()
+			end
+			local b = Instance.new("Part")
+			b.Name = "EscudoCamaBW"
+			b.Shape = Enum.PartType.Ball
+			b.Anchored = true
+			b.CanCollide = false
+			b.CanQuery = false
+			b.Material = Enum.Material.ForceField
+			b.Color = Color3.fromHex(eq.E.col)
+			b.Transparency = 0.3
+			b.Size = Vector3.new(4.5, 4.5, 4.5) * BS
+			b.Position = Vector3.new((c.x + c.x2) / 2 + 0.5, c.y + 0.5, (c.z + c.z2) / 2 + 0.5) * BS
+			b.Parent = workspace
+			eq.escudo = b
+			chat(("%s ha puesto un escudo en la cama del equipo %s (45 s)"):format(plr.Name, eq.E.nombre), eq.E.col)
+			ctx.Estado:FireClient(plr, "sonido", "nivel")
+			gastar()
+		end
+		return true
+	elseif id == I.trampolinBW or id == I.minaBW or id == I.torretaBW then
+		local x, y, z = sitioApuntado(obj)
+		if not x then
+			ctx.aviso(plr, "Apunta al suelo para ponerlo")
+			return true
+		end
+		if not BW.puedePoner(plr, x, y, z, B.heno) then
+			return true
+		end
+		if id == I.trampolinBW then
+			ponBloque(x, y, z, B.heno)
+			P.trampolines = P.trampolines or {}
+			P.trampolines[clave(x, y, z)] = true
+		elseif id == I.minaBW then
+			ponBloque(x, y, z, B.placa)
+			table.insert(P.minas, { x = x, y = y, z = z, equipo = J.equipo, dueno = plr })
+		else
+			ponerTorreta(plr, x, y, z, J.kit == "ingeniero" and J.kitV.dura or 60)
+		end
+		ctx.Estado:FireClient(plr, "sonido", "poner")
 		gastar()
 		return true
 	end
@@ -1602,26 +1889,305 @@ function terminar(ganador)
 	P.fase = "fin"
 	local E = ganador and P.eqs[ganador].E
 	sonidoTodos("nivel")
+	-- MVP: el que más ha aportado (bajas finales y camas pesan más)
+	local mvp, mvpP = nil, -1
+	for plr, J in P.jug do
+		local pts = J.bajas + J.finales * 2 + J.camas * 3
+		if J.equipo and not J.espectador and pts > mvpP then
+			mvp, mvpP = plr, pts
+		end
+	end
 	for plr, J in P.jug do
 		local gano = ganador ~= nil and J.equipo == ganador
+		local jugo = J.equipo ~= nil and not J.espectador
 		tituloA(plr, gano and "¡VICTORIA!" or "FIN DE LA PARTIDA", E and ("Gana el equipo " .. E.nombre) or "Empate", gano and "#ffff55" or "#ff5555")
-		ctx.aviso(plr, ("Bajas: %d · Bajas finales: %d · Camas rotas: %d · Muertes: %d · Tiempo: %s"):format(J.bajas, J.finales, J.camas, J.muertes, fmt(P.t)))
 		local xp = 10 + J.bajas * 5 + J.finales * 10 + J.camas * 20 + (gano and 50 or 0)
-		ctx.aviso(plr, ("Recompensa: +%d de experiencia"):format(xp))
 		J.premioXP = xp
+		local perfil = J.perfil
+		local nivelAntes = Perfil.nivel(perfil.xp)
+		local mon = 0
+		local hechas = {}
+		if jugo then
+			mon = 10 + J.bajas * 5 + J.finales * 10 + J.camas * 25 + (gano and 100 or 0) + (plr == mvp and mvpP > 0 and 25 or 0)
+			perfil.monedas += mon
+			perfil.xp += xp
+			perfil.partidas += 1
+			perfil.bajas += J.bajas
+			perfil.finales += J.finales
+			perfil.camas += J.camas
+			perfil.muertes += J.muertes
+			if gano then
+				perfil.victorias += 1
+				perfil.racha += 1
+				perfil.mejorRacha = math.max(perfil.mejorRacha, perfil.racha)
+			else
+				perfil.racha = 0
+			end
+			for _, m in Perfil.progreso(plr, "partidas", 1) do
+				table.insert(hechas, m.texto .. " (+" .. m.premio .. ")")
+			end
+			if gano then
+				for _, m in Perfil.progreso(plr, "victorias", 1) do
+					table.insert(hechas, m.texto .. " (+" .. m.premio .. ")")
+				end
+			end
+			Perfil.guardar(plr)
+		end
+		local nivel = Perfil.nivel(perfil.xp)
+		ctx.Estado:FireClient(plr, "finBW", {
+			gano = gano, jugo = jugo, ganador = E and E.nombre or nil, colGanador = E and E.col or "#aaaaaa",
+			bajas = J.bajas, finales = J.finales, camas = J.camas, muertes = J.muertes, tiempo = fmt(P.t), mejorRacha = J.mejorRacha,
+			mvp = mvp and mvp.Name or nil, soyMvp = plr == mvp, monedas = mon, totalMonedas = perfil.monedas, xp = xp,
+			nivel = nivel, subeNivel = nivel > nivelAntes, progresoNivel = (perfil.xp % 500) / 500, misiones = hechas, racha = perfil.racha,
+		})
+		if jugo then
+			ctx.aviso(plr, ("Recompensa: +%d monedas · +%d de experiencia"):format(mon, xp))
+		end
+	end
+	if mvp and mvpP > 0 then
+		chat(("MVP de la partida: %s (%d puntos)"):format(mvp.Name, mvpP), "#ffd84a")
 	end
 	local partida = P
 	task.delay(10, function()
 		if P ~= partida then
 			return
 		end
-		for plr in table.clone(P.jug) do
+		local otraVez = {}
+		for plr, J in table.clone(P.jug) do
+			if J.otraVez then
+				table.insert(otraVez, plr)
+			end
 			BW.salir(plr, true)
 		end
-		quitarMobs()
-		BW.anterior = { arena = P.arena, colocados = P.colocados }
-		P = nil
+		if P then
+			quitarMobs()
+			BW.anterior = { arena = P.arena, colocados = P.colocados }
+			P = nil
+		end
+		for _, plr in otraVez do
+			if plr.Parent and not BW.en(plr) then
+				BW.unirse(plr)
+			end
+		end
 	end)
+end
+
+------------------------------------------------------------------
+-- Kits y efectos de baja final: se compran con monedas (las del perfil guardado)
+------------------------------------------------------------------
+local EFECTOS = {
+	{ id = "ninguno", n = "Sin efecto", p = 0, ico = "espada_madera", d = "No pasa nada especial al eliminar a alguien." },
+	{ id = "fuegos", n = "Fuegos artificiales", p = 200, ico = "cohete", d = "Estallan fuegos artificiales de colores donde cae tu víctima." },
+	{ id = "corazones", n = "Corazones", p = 250, ico = "corazonMar", d = "Una lluvia de corazones rosas: eliminar con cariño." },
+	{ id = "rayo", n = "Rayo", p = 300, ico = "tridente", d = "Cae un rayo del cielo sobre tu víctima." },
+	{ id = "fantasma", n = "Alma en pena", p = 350, ico = "pluma", d = "El alma de tu víctima sube flotando al cielo." },
+	{ id = "confeti", n = "Confeti", p = 400, ico = "polvora", d = "¡Fiesta! Una explosión de confeti y un sonido de victoria." },
+}
+BW.EFECTOS = EFECTOS
+BW.EFECTOS_N = {}
+for _, e in EFECTOS do
+	BW.EFECTOS_N[e.id] = e.n
+	e.icono = idc(e.ico) or I.esmeralda
+end
+local ROM_KIT = { "I", "II", "III" }
+
+local function datosKits(plr, s)
+	local perfil = Perfil.de(plr)
+	local tab = s.ui.tab or 1
+	local d = { sub = "tienda", nombre = tab == 1 and "KITS" or "EFECTOS DE BAJA FINAL", pestana = tab, ofertas = {},
+		pestanas = { { nombre = "Kits", icono = idc("espada_hierro") }, { nombre = "Efectos de baja final", icono = idc("cohete") } },
+		monedas = { { idc("pepitaOro") or I.lingoteOro, perfil.monedas } } }
+	if tab == 1 then
+		local gratis = Kits.gratisHoy()
+		for _, k in Kits.LISTA do
+			local nv = perfil.kits[k.id]
+			local equipado = perfil.kit == k.id
+			local esGratis = table.find(gratis, k.id) ~= nil
+			local R = Kits.RAREZAS[k.r]
+			local txt, puede, tiene = "", true, false
+			if nv then
+				if not equipado then
+					txt = "Clic: equipar"
+				elseif nv >= 3 or k.p == 0 then
+					txt, tiene = "✔ Equipado", true
+				else
+					local c = Kits.costeMejora(k.id, nv)
+					txt = ("Mejorar a %s · %d monedas"):format(ROM_KIT[nv + 1], c)
+					puede = perfil.monedas >= c
+				end
+			elseif esGratis and not equipado then
+				txt = "¡Gratis hoy! Clic: probar"
+			else
+				txt = (equipado and "Probando · " or "") .. ("Comprar · %d monedas"):format(k.p)
+				puede = perfil.monedas >= k.p
+			end
+			local nombre = k.n .. (nv and k.p > 0 and (" " .. ROM_KIT[nv]) or "") .. (k.nuevo and " ★NUEVO" or "")
+			table.insert(d.ofertas, { id = k.icono, n = 1, nombre = nombre, precioTxt = txt, puede = puede, tiene = tiene, tieneTxt = txt,
+				desc = ("%s · %s%s: %s"):format(k.n, R[1], k.act and " · con habilidad (G)" or "", Kits.descripcion(k.id, nv or 1)) })
+		end
+		d.pie = "Kits gratis hoy: " .. table.concat((function()
+			local t = {}
+			for _, id in gratis do
+				table.insert(t, Kits.POR_ID[id].n)
+			end
+			return t
+		end)(), ", ")
+	else
+		for _, e in EFECTOS do
+			local tiene = perfil.efectos[e.id] == true
+			local equipado = perfil.efecto == e.id
+			table.insert(d.ofertas, { id = e.icono, n = 1, nombre = e.n,
+				precioTxt = tiene and "Clic: equipar" or ("Comprar · %d monedas"):format(e.p), puede = tiene or perfil.monedas >= e.p,
+				tiene = equipado, tieneTxt = "✔ Equipado", desc = e.d })
+		end
+		d.pie = "Se ven cuando consigues una baja final"
+	end
+	return d
+end
+
+-- El kit nuevo se usa en la sala (si la partida ya empezó, en la siguiente)
+local function equiparKit(plr, id)
+	local perfil = Perfil.de(plr)
+	perfil.kit = id
+	local J = P and P.jug[plr]
+	if J and P.fase == "sala" then
+		J.kit = id
+		J.kitV = Kits.valores(id, Kits.nivelDe(perfil, id))
+	elseif J then
+		ctx.aviso(plr, "Tendrás el kit nuevo en la próxima partida")
+	end
+end
+
+local function comprarKit(plr, s, i)
+	local perfil = Perfil.de(plr)
+	local tab = s.ui.tab or 1
+	local function falta()
+		ctx.Estado:FireClient(plr, "sonido", "rompeHerr")
+		ctx.aviso(plr, "Te faltan monedas: juega partidas y completa misiones para ganar más")
+	end
+	if tab == 1 then
+		local k = Kits.LISTA[i]
+		if not k then
+			return
+		end
+		local nv = perfil.kits[k.id]
+		local equipado = perfil.kit == k.id
+		if nv then
+			if not equipado then
+				equiparKit(plr, k.id)
+				ctx.aviso(plr, "Kit equipado: " .. k.n)
+			elseif nv < 3 and k.p > 0 then
+				local c = Kits.costeMejora(k.id, nv)
+				if perfil.monedas < c then
+					falta()
+					return
+				end
+				perfil.monedas -= c
+				perfil.kits[k.id] = nv + 1
+				equiparKit(plr, k.id)
+				tituloA(plr, "", ("%s mejorado a nivel %s"):format(k.n, ROM_KIT[nv + 1]), "#ffd84a")
+			end
+		elseif table.find(Kits.gratisHoy(), k.id) and not equipado then
+			equiparKit(plr, k.id)
+			ctx.aviso(plr, "Pruebas gratis el kit " .. k.n .. " (solo hoy). Clic otra vez para comprarlo.")
+		else
+			if perfil.monedas < k.p then
+				falta()
+				return
+			end
+			perfil.monedas -= k.p
+			perfil.kits[k.id] = 1
+			equiparKit(plr, k.id)
+			tituloA(plr, "¡KIT NUEVO!", k.n, Kits.RAREZAS[k.r][2])
+		end
+	else
+		local e = EFECTOS[i]
+		if not e then
+			return
+		end
+		if not perfil.efectos[e.id] then
+			if perfil.monedas < e.p then
+				falta()
+				return
+			end
+			perfil.monedas -= e.p
+			perfil.efectos[e.id] = true
+		end
+		perfil.efecto = e.id
+		ctx.aviso(plr, "Efecto de baja final: " .. e.n)
+	end
+	ctx.Estado:FireClient(plr, "sonido", "xp")
+	Perfil.guardar(plr)
+end
+
+local function abrirKits(plr, s, tab)
+	s.ui = {
+		tipo = "extra", sub = "tienda", tab = tab or 1, datos = datosKits, comprar = comprarKit,
+		pestana = function(_, so, i)
+			if i == 1 or i == 2 then
+				so.ui.tab = i
+			end
+		end,
+	}
+	ctx.enviarUI(plr)
+end
+
+-- Espectadores: la cámara sigue a un jugador vivo (o a un bot)
+local function espectar(plr, J)
+	local lista = {}
+	for o, Jo in P.jug do
+		if o ~= plr and Jo.vivo and not Jo.espectador and o.Character then
+			table.insert(lista, o)
+		end
+	end
+	if #lista == 0 then
+		ctx.Estado:FireClient(plr, "espectar", nil)
+		ctx.aviso(plr, "No hay nadie a quien mirar")
+		return
+	end
+	table.sort(lista, function(a, b)
+		return a.Name < b.Name
+	end)
+	local i = table.find(lista, J.mirando) or 0
+	J.mirando = lista[i % #lista + 1]
+	ctx.Estado:FireClient(plr, "espectar", J.mirando.Character)
+	ctx.aviso(plr, "Miras a " .. J.mirando.Name)
+end
+
+function BW.comando(plr, cmd, arg)
+	local J = P and P.jug[plr]
+	local s = ctx.estados[plr]
+	if not J or not s then
+		return
+	end
+	if cmd == "votar" and P.fase == "sala" and type(arg) == "number" then
+		local t = Arenas.ORDEN_TEMAS_BW[math.floor(arg)]
+		if t then
+			P.votos[plr] = t
+			ctx.aviso(plr, "Has votado por " .. Arenas.TEMAS_BW[t].nombre)
+		end
+	elseif cmd == "kits" then
+		abrirKits(plr, s, 1)
+	elseif cmd == "efectos" then
+		abrirKits(plr, s, 2)
+	elseif cmd == "habilidad" then
+		if P.fase == "juego" and J.vivo and not J.espectador and jugadorVivo(plr) then
+			local msg = Kits.habilidad(plr, s, J)
+			if msg then
+				ctx.aviso(plr, msg)
+			end
+		end
+	elseif cmd == "espectar" then
+		if J.espectador or not J.vivo or P.fase ~= "juego" then
+			espectar(plr, J)
+		end
+	elseif cmd == "otraVez" and P.fin then
+		-- Al cerrar la partida vuelve a entrar en la siguiente
+		J.otraVez = true
+	elseif cmd == "dejarEspectar" then
+		J.mirando = nil
+		ctx.Estado:FireClient(plr, "espectar", nil)
+	end
 end
 
 ------------------------------------------------------------------
@@ -1655,6 +2221,9 @@ function BW.unirse(plr)
 	local sala = P.arena.sala
 	task.spawn(ctx.teletransportar, plr, sala.x, sala.y, sala.z, "Bed Wars")
 	tituloA(plr, "BED WARS", P.fase == "sala" and "Esperando jugadores…" or "Partida en curso", "#ff5555")
+	if P.fase == "sala" then
+		ctx.aviso(plr, "Vota el mapa y elige tu kit en el panel de la derecha")
+	end
 	ctx.enviarJugador(plr)
 end
 
@@ -1680,14 +2249,17 @@ function BW.salir(plr, fin)
 		plr:SetAttribute("Modo", s.modo)
 	end
 	plr:SetAttribute("BedWars", nil)
+	plr:SetAttribute("EquipoBW", nil)
+	plr:SetAttribute("ColorBW", nil)
+	plr:SetAttribute("EspectadorBW", nil)
 	ctx.Estado:FireClient(plr, "panel", nil)
+	ctx.Estado:FireClient(plr, "kitBW", nil)
+	ctx.Estado:FireClient(plr, "espectar", nil)
+	Perfil.guardar(plr)
 	if J.premioXP and ctx.ganarXP then
 		ctx.ganarXP(plr, J.premioXP)
 	end
 	if plr.Parent then
-		if fin then
-			ctx.Estado:FireClient(plr, "menu", true)
-		end
 		plr:LoadCharacter()
 	elseif ctx.guardar then
 		ctx.guardar(plr)
@@ -1777,21 +2349,15 @@ function BW.alMorir(plr)
 		hablaBot(g.m, "mata", 0.5)
 	elseif g and g.plr then
 		por = g.plr.Name .. " eliminó a " .. plr.Name
-		local Jk = P.jug[g.plr]
-		if Jk then
-			if final then
-				Jk.finales += 1
-			else
-				Jk.bajas += 1
-			end
-			tituloA(g.plr, "", final and "¡BAJA FINAL!" or "+1 baja", final and "#55ffff" or "#ffffff")
-		end
+		local pos = jugadorVivo(plr) or (s and s.ultimaPos and s.ultimaPos / BS)
+		BW.registrarBaja(g.plr, final, pos, plr)
 	elseif s and s.ultimaCausa == "vacio" then
 		por = plr.Name .. " cayó al vacío"
 	else
 		por = plr.Name .. " murió"
 	end
-	chat(por .. (final and ". ¡ELIMINACIÓN FINAL!" or ""))
+	chat(por .. (final and ". ¡ELIMINACIÓN FINAL!" or ""), final and "#55ffff" or "#ffffff")
+	cortarRacha(J, g and g.plr)
 	J.ultimoGolpe = nil
 	if final then
 		J.vivo = false
@@ -1818,7 +2384,17 @@ function BW.modDano(plr, n, tipo)
 	if prot > 0 then
 		n *= 1 - 0.12 * prot
 	end
-	return n
+	return Kits.modDanoRecibido(J, n)
+end
+
+-- Golpe entre jugadores: efectos de los kits (devuelve el daño final)
+function BW.golpePvp(a, b, dano)
+	local Ja = P and P.jug[a]
+	if not Ja then
+		return dano
+	end
+	local h = b.Character and b.Character:FindFirstChildOfClass("Humanoid")
+	return Kits.alGolpear(a, Ja, { plr = b }, dano, h and h.Health or 20, h and h.MaxHealth or 20)
 end
 
 -- ¿Puede «a» herir al jugador «b»? (nil = el modo no opina)
@@ -1854,8 +2430,13 @@ function BW.puedeRomper(plr, x, y, z, b)
 				ctx.aviso(plr, "¡No puedes romper tu propia cama!")
 				return false
 			end
+			if P.eqs[k].escudoHasta and P.t < P.eqs[k].escudoHasta then
+				ctx.aviso(plr, "¡Esa cama tiene un escudo! Espera a que se acabe")
+				return false
+			end
 			J.camas += 1
 			romperCama(k, plr.Name)
+			BW.misiones(plr, "camas", 1)
 			return false
 		end
 	end
@@ -1941,25 +2522,275 @@ end
 ------------------------------------------------------------------
 -- Bucle
 ------------------------------------------------------------------
-local function panel(plr, J)
-	local L = {}
-	local function linea(t, c)
-		table.insert(L, { t = t, c = c })
+------------------------------------------------------------------
+-- Momentos de caos (cada 2,5-3,5 minutos)
+------------------------------------------------------------------
+local CAOS = {
+	{ k = "meteoritos", n = "Lluvia de meteoritos", d = "¡Cuidado con lo que cae del cielo!", seg = 25, col = "#ff7733" },
+	{ k = "oro", n = "Fiebre del oro", d = "Los generadores van al doble de rápido", seg = 45, col = "#ffd84a" },
+	{ k = "gravedad", n = "Gravedad baja", d = "Todos saltan mucho más alto", seg = 30, col = "#88ddff" },
+	{ k = "cofre", n = "Cofre del cielo", d = "Ha caído un cofre con botín raro en el centro", seg = 0, col = "#ff77dd" },
+}
+BW.CAOS = CAOS
+
+local function botinCofreCielo()
+	local c = table.create(27, false)
+	local opciones = {
+		{ I.diamante, 4 }, { I.esmeralda, 3 }, { idc("espada_diamante"), 1 }, { I.manzanaDorada, 2 }, { I.perlaEnder, 2 },
+		{ 714, 3 }, { I.globoBW, 1 }, { I.escudoCamaBW, 1 }, { I.torretaBW, 1 }, { 716, 1 }, { B.obsidiana, 8 },
+	}
+	for i = #opciones, 2, -1 do
+		local j = math.random(1, i)
+		opciones[i], opciones[j] = opciones[j], opciones[i]
 	end
+	for k = 1, 6 do
+		local o = opciones[k]
+		if o[1] then
+			c[k * 4 - 2] = Registro.pila(o[1], o[2])
+		end
+	end
+	return c
+end
+
+local function empezarCaos(C)
+	P.caos = { k = C.k, fin = P.t + C.seg, C = C }
+	sonidoTodos("nivel")
+	tituloTodos(C.n:upper(), C.d, C.col)
+	chat("☄ " .. C.n .. ": " .. C.d, C.col)
+	if C.k == "oro" then
+		P.multGen = 2
+	elseif C.k == "cofre" then
+		-- Cae un cofre en lo alto del centro (con un bloque de luz que baja del cielo)
+		local cx, cz = P.arena.centro.x + 3, P.arena.centro.z
+		local y = BW_Y + 4
+		local caja = Instance.new("Part")
+		caja.Name = "CofreCieloBW"
+		caja.Anchored = true
+		caja.CanCollide = false
+		caja.CanQuery = false
+		caja.Material = Enum.Material.Neon
+		caja.Color = Color3.fromRGB(255, 120, 220)
+		caja.Size = Vector3.new(1, 1, 1) * BS
+		caja.Position = Vector3.new(cx + 0.5, y + 40, cz + 0.5) * BS
+		caja.Parent = workspace
+		local partida = P
+		task.spawn(function()
+			for k = 1, 40 do
+				caja.Position = Vector3.new(cx + 0.5, y + 40 - k, cz + 0.5) * BS
+				task.wait(0.05)
+			end
+			caja:Destroy()
+			if P ~= partida or P.fin then
+				return
+			end
+			ctx.Mundo.set(cx, y, cz, B.cofre)
+			P.colocados[clave(cx, y, cz)] = true
+			Cont.cofres[Cont.clave(cx, y, cz)] = botinCofreCielo()
+			P.cofreCielo = { x = cx, y = y, z = cz, abierto = false }
+			for o in P.jug do
+				ctx.Estado:FireClient(o, "explosion", Vector3.new(cx + 0.5, y + 0.5, cz + 0.5) * BS, 0.5)
+			end
+		end)
+	end
+end
+
+local function terminarCaos()
+	local c = P.caos
+	P.caos = nil
+	if c.k == "oro" then
+		P.multGen = 1
+	end
+end
+
+local function actualizarCaos(dt)
+	-- Aviso 10 s antes y comienzo
+	P.caosT -= dt
+	if not P.caos and P.caosT <= 10 and not P.caosAvisado then
+		P.caosAvisado = CAOS[math.random(1, #CAOS)]
+		chat(("En 10 s: %s"):format(P.caosAvisado.n), P.caosAvisado.col)
+	end
+	if not P.caos and P.caosT <= 0 and P.caosAvisado then
+		empezarCaos(P.caosAvisado)
+		P.caosAvisado = nil
+		P.caosT = 150 + math.random() * 60
+	end
+	local c = P.caos
+	if c then
+		if c.k == "meteoritos" then
+			P.meteoT = (P.meteoT or 0) - dt
+			if P.meteoT <= 0 then
+				P.meteoT = 1.2
+				-- Sobre una isla de un equipo vivo o sobre el centro
+				local destinos = { P.arena.centro }
+				for _, q in P.eqs do
+					if q.cama or q.vivos > 0 then
+						table.insert(destinos, { x = q.E.isla[1], z = q.E.isla[2] })
+					end
+				end
+				local d = destinos[math.random(1, #destinos)]
+				local x, z = d.x + (math.random() - 0.5) * 14, d.z + (math.random() - 0.5) * 14
+				ctx.Entidades.disparar("bolaGhast", x, BW_Y + 38, z, Vector3.new((math.random() - 0.5) * 0.2, -1, (math.random() - 0.5) * 0.2).Unit, 16, {})
+			end
+		elseif c.k == "gravedad" then
+			for plr, J in P.jug do
+				local so = ctx.estados[plr]
+				if so and J.vivo and not J.espectador then
+					so.efectos.salto = { t = 2, n = 4 }
+				end
+			end
+		end
+		if c.fin and P.t >= c.fin and c.k ~= "cofre" then
+			terminarCaos()
+			chat("Se acabó: " .. c.C.n, "#aaaaaa")
+		elseif c.k == "cofre" then
+			-- El primero que lo abre se lleva la misión
+			local cc = P.cofreCielo
+			if cc and not cc.abierto then
+				for plr, J in P.jug do
+					local so = ctx.estados[plr]
+					if so and so.ui and so.ui.tipo == "cofre" and so.ui.x == cc.x and so.ui.y == cc.y and so.ui.z == cc.z then
+						cc.abierto = true
+						chat(("%s ha abierto el cofre del cielo"):format(plr.Name), J.equipo and P.eqs[J.equipo].E.col or "#ff77dd")
+						BW.misiones(plr, "cofres", 1)
+						terminarCaos()
+						break
+					end
+				end
+			end
+			if P.caos and P.t > (c.inicio or P.t) + 120 then
+				terminarCaos()
+			end
+			c.inicio = c.inicio or P.t
+		end
+	end
+end
+
+-- Objetos y kits que funcionan solos: globo salvavidas, trampolines, minas, escudos y kits
+local function actualizarObjetos(dt)
+	for plr, J in P.jug do
+		local s = ctx.estados[plr]
+		local pos, h, r
+		if J.vivo and not J.espectador and s then
+			pos = jugadorVivo(plr)
+			h = plr.Character and plr.Character:FindFirstChildOfClass("Humanoid")
+			r = plr.Character and plr.Character:FindFirstChild("HumanoidRootPart")
+		end
+		if pos and h and r and not r.Anchored then
+			Kits.tick(plr, s, J, dt)
+			-- Globo salvavidas: al caer por debajo de las islas te lleva a casa
+			if pos.Y < BW_Y - 10 and contarInv(s, I.globoBW) > 0 and not J.globoT then
+				quitarInv(s, I.globoBW, 1)
+				J.globoT = true
+				local E = P.eqs[J.equipo].E
+				tituloA(plr, "", "¡Globo salvavidas!", "#88ddff")
+				chat(("%s se ha salvado con un globo"):format(plr.Name), E.col)
+				task.spawn(function()
+					ctx.teletransportar(plr, E.isla[1] + 0.5, BW_Y + 1, E.isla[2] + 0.5)
+					J.globoT = nil
+				end)
+				ctx.enviarJugador(plr)
+			end
+			-- Trampolín bajo los pies
+			local bx, by, bz = math.floor(pos.X), math.floor(pos.Y - 0.1), math.floor(pos.Z)
+			if P.trampolines and P.trampolines[clave(bx, by, bz)] and (J.trampT or 0) < os.clock() then
+				if ctx.Mundo.get(bx, by, bz) == B.heno then
+					J.trampT = os.clock() + 0.8
+					ctx.Estado:FireClient(plr, "impulso", "trampolin", 22)
+				else
+					P.trampolines[clave(bx, by, bz)] = nil
+				end
+			end
+		end
+	end
+	-- Minas: explotan si las pisa un enemigo
+	for i = #P.minas, 1, -1 do
+		local mi = P.minas[i]
+		if ctx.Mundo.get(mi.x, mi.y, mi.z) ~= B.placa then
+			table.remove(P.minas, i)
+		else
+			local enemigos = BW.enemigosCerca(nil, { equipo = mi.equipo }, Vector3.new(mi.x + 0.5, mi.y, mi.z + 0.5), 1.1)
+			if #enemigos > 0 then
+				table.remove(P.minas, i)
+				ponBloque(mi.x, mi.y, mi.z, 0)
+				for _, e in enemigos do
+					if e.plr then
+						local Je = P.jug[e.plr]
+						if Je then
+							Je.ultimoGolpe = { plr = mi.dueno, t = ahora() }
+						end
+						ctx.danar(e.plr, 6, "explosion", { x = 0, z = 0 })
+						ctx.Estado:FireClient(e.plr, "impulso", "salto", 14)
+					elseif e.m then
+						e.m.bw.ultimoGolpe = { plr = mi.dueno, t = ahora() }
+						ctx.Mobs.herir(e.m, 6, { x = 0, z = 0 }, "explosion")
+						e.m.vy = 12
+					end
+				end
+				for o in P.jug do
+					ctx.Estado:FireClient(o, "explosion", Vector3.new(mi.x + 0.5, mi.y + 0.5, mi.z + 0.5) * BS, 1.5)
+				end
+			end
+		end
+	end
+	-- Escudos de cama que se acaban
+	for _, q in P.eqs do
+		if q.escudo and (not q.escudoHasta or P.t >= q.escudoHasta) then
+			q.escudo:Destroy()
+			q.escudo = nil
+			chat(("El escudo de la cama del equipo %s se ha acabado"):format(q.E.nombre), q.E.col)
+		end
+	end
+	-- Muerte súbita: el vacío sube poco a poco
+	if P.ev > 5 then
+		P.vacio = math.min(BW_Y - 4, P.vacio + dt * 0.12)
+	end
+end
+
+local function panel(plr, J)
+	local L, Bt = {}, {}
+	local function linea(t, c)
+		table.insert(L, { t = t, c = c or "#ffffff" })
+	end
+	local perfil = J.perfil
+	local nivel = Perfil.nivel(perfil.xp)
+	local kitD = Kits.POR_ID[J.kit] or Kits.POR_ID.ninguno
 	if P.fase == "sala" then
 		local n = 0
 		for _ in P.jug do
 			n += 1
 		end
 		linea(("Empieza en %d"):format(math.ceil(P.lobby)), "#55ff55")
-		linea("Mapa: " .. Arenas.TEMAS_BW[P.tema].nombre, "#55ff55")
-		linea(("Jugadores: %d (el resto, bots)"):format(n), "#ffffff")
+		linea(("Jugadores: %d (el resto, bots)"):format(n))
+		linea(("Nivel %d✫ · %d/500 xp"):format(nivel, perfil.xp % 500), Perfil.colorNivel(nivel))
+		linea(("Monedas: %d"):format(perfil.monedas), "#ffd84a")
+		linea(("Victorias: %d · Racha: %d"):format(perfil.victorias, perfil.racha), "#aaaaaa")
+		linea("")
+		linea("Misiones de hoy:", "#ffd84a")
+		for _, m in Perfil.misiones(plr) do
+			linea(m.hecha and ("✔ " .. m.texto) or ("· %s (%d/%d) +%d"):format(m.texto, m.progreso, m.meta, m.premio), m.hecha and "#55ff55" or "#dddddd")
+		end
+		-- Votación de mapa
+		local cuenta = {}
+		for _, t in P.votos do
+			cuenta[t] = (cuenta[t] or 0) + 1
+		end
+		for i, t in Arenas.ORDEN_TEMAS_BW do
+			local c = cuenta[t] or 0
+			table.insert(Bt, { t = Arenas.TEMAS_BW[t].nombre, sub = ("%d %s"):format(c, c == 1 and "voto" or "votos"), cmd = "votar", arg = i, activo = P.votos[plr] == t })
+		end
+		table.insert(Bt, { t = "Kits", sub = ("%s · %s"):format(kitD.n, Kits.RAREZAS[kitD.r][1]), cmd = "kits" })
+		table.insert(Bt, { t = "Efectos", sub = (BW.EFECTOS_N[perfil.efecto] or "Sin efecto"), cmd = "efectos" })
 	else
 		local ev = BW.EVENTOS[P.ev]
 		if ev then
-			linea(("%s en %s"):format(ev[2], fmt(ev[1] - P.t)), "#ffffff")
+			linea(("%s en %s"):format(ev[2], fmt(ev[1] - P.t)))
 		end
-		linea("", "#ffffff")
+		if P.caos then
+			linea("☄ " .. P.caos.C.n .. (P.caos.k ~= "cofre" and (" · " .. fmt(math.max(0, P.caos.fin - P.t))) or ""), P.caos.C.col)
+		elseif P.caosAvisado then
+			linea(("☄ %s en %d s"):format(P.caosAvisado.n, math.ceil(math.max(0, P.caosT))), P.caosAvisado.C and P.caosAvisado.C.col or P.caosAvisado.col)
+		end
+		linea("")
 		for k, q in P.eqs do
 			local est
 			if q.cama then
@@ -1971,12 +2802,24 @@ local function panel(plr, J)
 			end
 			linea(("%s %s: %s%s"):format(q.E.letra, q.E.nombre, est, J.equipo == k and "  TÚ" or ""), q.E.col)
 		end
-		linea("", "#ffffff")
-		linea(("Bajas: %d"):format(J.bajas), "#ffffff")
-		linea(("Bajas finales: %d"):format(J.finales), "#ffffff")
-		linea(("Camas rotas: %d"):format(J.camas), "#ffffff")
+		linea("")
+		linea(("Bajas: %d · Finales: %d"):format(J.bajas, J.finales))
+		linea(("Camas rotas: %d"):format(J.camas))
+		if J.racha >= 2 then
+			linea(("Racha: %d seguidas"):format(J.racha), "#ffaa00")
+		end
+		if J.kit ~= "ninguno" then
+			linea("Kit: " .. kitD.n, Kits.RAREZAS[kitD.r][2])
+		end
+		if kitD.act and J.vivo and not J.espectador then
+			local falta = (J.habilidadT or 0) - os.clock()
+			table.insert(Bt, { t = "Habilidad (G)", sub = falta > 0 and ("Lista en %d s"):format(math.ceil(falta)) or "¡Lista!", cmd = "habilidad", activo = falta <= 0 })
+		end
+		if J.espectador or not J.vivo then
+			table.insert(Bt, { t = "Mirar a otro", sub = J.mirando and J.mirando.Parent and ("Miras a " .. J.mirando.Name) or "Cámara de espectador", cmd = "espectar" })
+		end
 	end
-	ctx.Estado:FireClient(plr, "panel", { titulo = "BED WARS", lineas = L })
+	ctx.Estado:FireClient(plr, "panel", { titulo = "BED WARS", lineas = L, botones = Bt })
 end
 
 local function actualizar(dt)
@@ -1995,7 +2838,7 @@ local function actualizar(dt)
 		if h and r and h.Health > 0 and not r.Anchored then
 			local y = (r.Position.Y - h.HipHeight - r.Size.Y / 2) / BS
 			if P.fase == "juego" and J.vivo and not J.espectador then
-				if y < BW_VACIO then
+				if y < P.vacio and not J.globoT then
 					if s then
 						s.ultimaCausa = "vacio"
 					end
@@ -2037,6 +2880,7 @@ local function actualizar(dt)
 						romperCama(k, "el tiempo")
 					end
 				end
+				chat("MUERTE SÚBITA > ¡El vacío empieza a subir!", "#ff5555")
 			elseif ev[2] == "Fin de la partida" then
 				local v = {}
 				for k, q in P.eqs do
@@ -2053,6 +2897,8 @@ local function actualizar(dt)
 		end
 		actualizarGens(dt)
 		actualizarTrampas(dt)
+		actualizarCaos(dt)
+		actualizarObjetos(dt)
 		-- Bloques que se colocan poco a poco (defensas de los bots y torres compactas)
 		for i = #P.cola, 1, -1 do
 			local q = P.cola[i]
@@ -2100,6 +2946,18 @@ end
 
 function BW.iniciar(c)
 	ctx = c
+	Kits.iniciar({
+		estados = c.estados, danar = c.danar, Mobs = c.Mobs, Entidades = c.Entidades, Estado = c.Estado, aviso = c.aviso,
+		darOSoltar = c.darOSoltar, enviarJugador = c.enviarJugador, pies = jugadorVivo,
+		jugador = function(p)
+			return P and P.jug[p]
+		end,
+		enemigosCerca = BW.enemigosCerca, invisible = BW.invisible,
+	})
+	-- Después de que Modos lo saque de la partida, se guarda el perfil y se olvida
+	game:GetService("Players").PlayerRemoving:Connect(function(plr)
+		task.defer(Perfil.olvidar, plr)
+	end)
 	RunService.Heartbeat:Connect(function(dt)
 		local ok, err = pcall(actualizar, math.min(dt, 0.1))
 		if not ok then

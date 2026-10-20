@@ -574,6 +574,9 @@ UserInputService.InputBegan:Connect(function(input, procesado)
 		if leyendas and n >= 1 and n <= 6 then
 			-- Leyendas: 1-6 construyen (como en el web)
 			enviar("modoCmd", "construir", n)
+		elseif k == Enum.KeyCode.G and jugador:GetAttribute("BedWars") == true and not Interfaz.menuVisible() and not Interfaz.abierto() then
+			-- Bed Wars: habilidad del kit
+			enviar("modoCmd", "habilidad")
 		elseif leyendas and (k == Enum.KeyCode.G or k == Enum.KeyCode.R or (k == Enum.KeyCode.F and not creativo())) then
 			enviar("modoCmd", k == Enum.KeyCode.G and "cosechar" or (k == Enum.KeyCode.R and "atacar" or "seguir"))
 		elseif k == Enum.KeyCode.M and not Interfaz.abierto() then
@@ -676,6 +679,185 @@ Interfaz.botonesMovil({
 -- Mensajes del servidor
 ------------------------------------------------------------------
 local listoServidor = false
+------------------------------------------------------------------
+-- Bed Wars: kits que se notan al moverse, habilidad, espectador, compañeros y efectos
+------------------------------------------------------------------
+local kitBW = nil -- {id, v, act}
+local saltosExtra = 0
+local espectando = nil
+
+-- Los impulsos vienen en bloques/s con la gravedad del juego web (32 bloques/s²)
+local function vRoblox(v)
+	return v * math.sqrt(workspace.Gravity * BS / 32)
+end
+
+local function impulso(tipo, fuerza)
+	local ch = jugador.Character
+	local root = ch and ch:FindFirstChild("HumanoidRootPart")
+	local hum = ch and ch:FindFirstChildOfClass("Humanoid")
+	if not root or not hum then
+		return
+	end
+	if tipo == "embestida" then
+		local cam = workspace.CurrentCamera
+		local mira = cam and cam.CFrame.LookVector or root.CFrame.LookVector
+		local dir = Vector3.new(mira.X, 0, mira.Z)
+		dir = dir.Magnitude > 0.01 and dir.Unit or root.CFrame.LookVector
+		hum:ChangeState(Enum.HumanoidStateType.Jumping)
+		sonido("arco", root.Position, 1.6)
+		task.spawn(function()
+			local t0 = os.clock()
+			while os.clock() - t0 < 0.25 and root.Parent do
+				root.AssemblyLinearVelocity = dir * fuerza * BS + Vector3.new(0, 4 * BS, 0)
+				emitir(root.Position, Color3.fromRGB(200, 200, 255), 2, 1, 0.1, 0)
+				task.wait()
+			end
+		end)
+	else
+		hum:ChangeState(Enum.HumanoidStateType.Jumping)
+		local v = root.AssemblyLinearVelocity
+		root.AssemblyLinearVelocity = Vector3.new(v.X, vRoblox(fuerza), v.Z)
+		emitir(root.Position - Vector3.new(0, 2.5 * BS / 3, 0), Color3.fromRGB(230, 230, 230), 10, 3, 0.1, 4)
+	end
+end
+
+-- Doble salto (Saltarín): Espacio otra vez en el aire
+UserInputService.JumpRequest:Connect(function()
+	if not kitBW or kitBW.id ~= "saltarin" then
+		return
+	end
+	local ch = jugador.Character
+	local root = ch and ch:FindFirstChild("HumanoidRootPart")
+	local hum = ch and ch:FindFirstChildOfClass("Humanoid")
+	if not root or not hum or hum.Health <= 0 or hum.FloorMaterial ~= Enum.Material.Air then
+		return
+	end
+	if saltosExtra > 0 and root.AssemblyLinearVelocity.Y < vRoblox(4) then
+		saltosExtra -= 1
+		local v = root.AssemblyLinearVelocity
+		root.AssemblyLinearVelocity = Vector3.new(v.X, math.sqrt(2 * workspace.Gravity * 1.3 * BS), v.Z)
+		emitir(root.Position - Vector3.new(0, BS * 0.8, 0), Color3.fromRGB(255, 255, 255), 8, 2, 0.1, 2)
+		sonido("paso", root.Position, 1.4)
+	end
+end)
+
+-- Cada fotograma: recarga del doble salto, planear, compañeros resaltados y cámara de espectador
+local tCompas = 0
+RunService.Heartbeat:Connect(function(dt)
+	local ch = jugador.Character
+	local root = ch and ch:FindFirstChild("HumanoidRootPart")
+	local hum = ch and ch:FindFirstChildOfClass("Humanoid")
+	if kitBW and root and hum and hum.Health > 0 then
+		if hum.FloorMaterial ~= Enum.Material.Air then
+			saltosExtra = kitBW.v and kitBW.v.extra or 1
+		end
+		if kitBW.id == "planeador" and hum.FloorMaterial == Enum.Material.Air and (UserInputService:IsKeyDown(Enum.KeyCode.Space) or hum.Jump) then
+			local v = root.AssemblyLinearVelocity
+			local max = -(kitBW.v and kitBW.v.caida or 2) * BS
+			if v.Y < max then
+				root.AssemblyLinearVelocity = Vector3.new(v.X, max, v.Z)
+			end
+		end
+	end
+	tCompas -= dt
+	if tCompas <= 0 then
+		tCompas = 0.5
+		local mio = jugador:GetAttribute("EquipoBW")
+		for _, otro in Players:GetPlayers() do
+			local och = otro.Character
+			if otro ~= jugador and och then
+				local hl = och:FindFirstChild("CompaneroBW")
+				local es = mio ~= nil and otro:GetAttribute("EquipoBW") == mio
+				if es and not hl then
+					hl = Instance.new("Highlight")
+					hl.Name = "CompaneroBW"
+					hl.FillTransparency = 1
+					hl.OutlineTransparency = 0.1
+					hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+					local ok, c = pcall(Color3.fromHex, otro:GetAttribute("ColorBW") or "#ffffff")
+					hl.OutlineColor = ok and c or Color3.new(1, 1, 1)
+					hl.Parent = och
+				elseif not es and hl then
+					hl:Destroy()
+				end
+			end
+		end
+	end
+	-- Si el jugador al que miramos ya no está, la cámara vuelve
+	if espectando and not espectando.Parent then
+		espectando = nil
+		local h = jugador.Character and jugador.Character:FindFirstChildOfClass("Humanoid")
+		if workspace.CurrentCamera and h then
+			workspace.CurrentCamera.CameraSubject = h
+		end
+		aplicarCamara()
+	end
+end)
+
+local function colorHex(n)
+	return Color3.fromRGB(n // 65536, (n // 256) % 256, n % 256)
+end
+local function efectoBaja(tipo, pos)
+	if tipo == "fuegos" then
+		sonido("explosion", pos, 1.8)
+		for k = 0, 2 do
+			task.delay(k * 0.25, function()
+				local p = pos + Vector3.new((math.random() - 0.5) * 2, 3 + k, (math.random() - 0.5) * 2) * BS
+				emitir(p, { colorHex(0xff5555), colorHex(0x55ff55), colorHex(0x5599ff), colorHex(0xffff55) }, 30, 8, 0.12, 1)
+			end)
+		end
+	elseif tipo == "corazones" then
+		sonido("xp", pos, 0.8)
+		emitir(pos + Vector3.new(0, BS, 0), { colorHex(0xff6fae), colorHex(0xff2e7a) }, 30, 2, 0.18, -3)
+	elseif tipo == "rayo" then
+		sonido("explosion", pos, 0.6)
+		local r = Instance.new("Part")
+		r.Anchored = true
+		r.CanCollide = false
+		r.CanQuery = false
+		r.Material = Enum.Material.Neon
+		r.Color = Color3.fromRGB(200, 220, 255)
+		r.Size = Vector3.new(0.4 * BS, 40 * BS, 0.4 * BS)
+		r.CFrame = CFrame.new(pos + Vector3.new(0, 20 * BS, 0))
+		r.Parent = workspace
+		local l = Instance.new("PointLight")
+		l.Brightness = 6
+		l.Range = 20 * BS
+		l.Parent = r
+		emitir(pos, colorHex(0xddeeff), 25, 6, 0.1, 6)
+		task.delay(0.35, function()
+			r:Destroy()
+		end)
+	elseif tipo == "fantasma" then
+		sonido("dano", pos, 0.6)
+		emitir(pos + Vector3.new(0, BS, 0), { colorHex(0xffffff), colorHex(0xbbccff) }, 35, 1.2, 0.2, -4)
+	elseif tipo == "confeti" then
+		sonido("nivel", pos, 1.2)
+		emitir(pos + Vector3.new(0, 2 * BS, 0), { colorHex(0xff5555), colorHex(0xffd84a), colorHex(0x55ff55), colorHex(0x55aaff), colorHex(0xff77dd) }, 60, 7, 0.1, 5)
+	end
+end
+
+local function espectar(ch)
+	local cam = workspace.CurrentCamera
+	local h = ch and ch:FindFirstChildOfClass("Humanoid")
+	if h and cam then
+		espectando = ch
+		jugador.CameraMode = Enum.CameraMode.Classic
+		jugador.CameraMinZoomDistance = 12
+		jugador.CameraMaxZoomDistance = 30
+		cam.CameraSubject = h
+		Interfaz.mostrarMano(false)
+	else
+		espectando = nil
+		local mio = jugador.Character and jugador.Character:FindFirstChildOfClass("Humanoid")
+		if cam and mio then
+			cam.CameraSubject = mio
+		end
+		aplicarCamara()
+	end
+end
+Interfaz.alMenu = aplicarCamara
+
 Estado.OnClientEvent:Connect(function(tipo, a, b, c)
 	if tipo == "jugador" then
 		local modoAntes = est.modo
@@ -799,9 +981,46 @@ Estado.OnClientEvent:Connect(function(tipo, a, b, c)
 		Interfaz.jefe(a)
 	elseif tipo == "panel" then
 		Interfaz.panel(a)
+	elseif tipo == "cerrarUI" then
+		-- El servidor cierra la pantalla (alguien rompió el cofre que tenías abierto)
+		if Interfaz.abierto() then
+			Interfaz.cerrar()
+		end
 	elseif tipo == "menu" then
 		Interfaz.menu(true)
 		aplicarCamara()
+	elseif tipo == "feed" then
+		Interfaz.feed(a and a.t, a and a.c)
+	elseif tipo == "finBW" then
+		Interfaz.finBW(a)
+		if a then
+			sonido(a.gano and "nivel" or "dano")
+			if a.gano then
+				local root = jugador.Character and jugador.Character:FindFirstChild("HumanoidRootPart")
+				if root then
+					efectoBaja("confeti", root.Position)
+				end
+			end
+		end
+	elseif tipo == "kitBW" then
+		kitBW = a
+		saltosExtra = 0
+		Interfaz.botonHabilidad(a ~= nil and a.act == true, function()
+			enviar("modoCmd", "habilidad")
+		end)
+	elseif tipo == "impulso" then
+		impulso(a, b or 10)
+	elseif tipo == "habilidad" then
+		local root = jugador.Character and jugador.Character:FindFirstChild("HumanoidRootPart")
+		if root then
+			emitir(root.Position, Color3.fromRGB(255, 220, 80), 14, 4, 0.1, 2)
+		end
+	elseif tipo == "efectoBaja" then
+		if typeof(b) == "Vector3" then
+			efectoBaja(a, b)
+		end
+	elseif tipo == "espectar" then
+		espectar(a)
 	end
 end)
 

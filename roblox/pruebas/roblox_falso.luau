@@ -385,15 +385,31 @@ function METODOS:ChangeState() end
 function METODOS:Play() end
 function METODOS:Stop() end
 function METODOS:ApplyImpulse() end
-function METODOS:FireClient(plr, ...) table.insert(F.mensajesCliente, { plr, ... }); if F.alMensajeCliente then F.alMensajeCliente(plr, ...) end end
-function METODOS:FireAllClients(...) table.insert(F.mensajesTodos, { self, ... }); if F.alMensajeTodos then F.alMensajeTodos(self, ...) end end
+-- Como en Roblox, lo que viaja por la red llega copiado (las tablas no se comparten entre servidor y cliente)
+local function copiaRed(v, vistos)
+	if type(v) ~= "table" or getmetatable(v) ~= nil then return v end
+	vistos = vistos or {}
+	if vistos[v] then return vistos[v] end
+	local t = {}
+	vistos[v] = t
+	for k, x in v do t[copiaRed(k, vistos)] = copiaRed(x, vistos) end
+	return t
+end
+local function copiaArgs(...)
+	local n = select("#", ...)
+	local t = { ... }
+	for i = 1, n do t[i] = copiaRed(t[i]) end
+	return table.unpack(t, 1, n)
+end
+function METODOS:FireClient(plr, ...) table.insert(F.mensajesCliente, { plr, ... }); if F.alMensajeCliente then F.alMensajeCliente(plr, copiaArgs(...)) end end
+function METODOS:FireAllClients(...) table.insert(F.mensajesTodos, { self, ... }); if F.alMensajeTodos then F.alMensajeTodos(self, copiaArgs(...)) end end
 function METODOS:InvokeServer(...)
 	local f = self._p.OnServerInvoke
 	assert(f, "InvokeServer sin OnServerInvoke")
 	return f(F.jugadores[1], ...)
 end
 function METODOS:GetAttributeChangedSignal() return senal() end
-function METODOS:LoadCharacter() if F.METODOS_LoadCharacter then F.METODOS_LoadCharacter() end end
+function METODOS:LoadCharacter() if F.METODOS_LoadCharacter then F.METODOS_LoadCharacter(self) end end
 function METODOS:FireServer(...) table.insert(F.mensajesServidor, { ... }); if F.alMensajeServidor then F.alMensajeServidor(self, ...) end end
 function METODOS:FillBlock() F.terreno += 1 end
 function METODOS:WriteVoxels(region, res, mats, occ)
@@ -411,7 +427,24 @@ function METODOS:GetPlayerFromCharacter(ch)
 	return nil
 end
 function METODOS:GetService(n) return F.servicios[n] or error("Servicio desconocido: " .. n) end
-function METODOS:GetDataStore() error("Hay que publicar el lugar para usar DataStore") end
+-- DataStore: solo si la prueba lo pide (F.conDataStore), en memoria y copiando los datos como Roblox
+F.almacenes = {}
+local function copiaProfunda(v)
+	if type(v) ~= "table" then return v end
+	local t = {}
+	for k, x in v do t[k] = copiaProfunda(x) end
+	return t
+end
+function METODOS:GetDataStore(nombre)
+	if not F.conDataStore then error("Hay que publicar el lugar para usar DataStore") end
+	F.almacenes[nombre] = F.almacenes[nombre] or {}
+	local datos = F.almacenes[nombre]
+	return {
+		GetAsync = function(_, k) return copiaProfunda(datos[k]) end,
+		SetAsync = function(_, k, v) datos[k] = copiaProfunda(v) end,
+		UpdateAsync = function(_, k, f) local n = f(copiaProfunda(datos[k])); if n ~= nil then datos[k] = copiaProfunda(n) end; return n end,
+	}
+end
 function METODOS:BindToClose() end
 function METODOS:SetCoreGuiEnabled() end
 function METODOS:AddItem() end
@@ -554,7 +587,19 @@ function F.entorno(scriptInst)
 	env.NumberSequenceKeypoint = F.NumberSequenceKeypoint
 	env.Content = F.Content
 	env.RaycastParams = { new = function() return {} end }
-	env.Random = { new = function() return { NextInteger = function(_, a, b) return math.random(a, b) end, NextNumber = function() return math.random() end } end }
+	-- Random con semilla da siempre la misma serie (como en Roblox); sin semilla, al azar
+	env.Random = { new = function(semilla)
+		if semilla == nil then
+			return { NextInteger = function(_, a, b) return math.random(a, b) end, NextNumber = function() return math.random() end }
+		end
+		local x = math.floor(math.abs(semilla)) % 2147483647
+		if x == 0 then x = 1 end
+		local function sig()
+			x = (x * 48271) % 2147483647
+			return x / 2147483647
+		end
+		return { NextInteger = function(_, a, b) return a + math.floor(sig() * (b - a + 1)) end, NextNumber = function(_, a, b) local r = sig(); return a and (a + r * (b - a)) or r end }
+	end }
 	env.task = F.task
 	env.warn = function(...) print("WARN", ...); table.insert(F.errores, table.concat({ ... }, " ")) end
 	env.typeof = function(v)

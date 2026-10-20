@@ -67,6 +67,13 @@ function Iconos.preparar()
 		n = math.max(n, 1)
 		colorMedio[id] = Color3.fromRGB(r / n, g / n, b / n)
 	end
+	-- Objetos propios de Roblox (Bed Wars): usan el icono de otro objeto
+	for id, o in Registro.objetos do
+		if o.icono and sitio[o.icono] and not sitio[id] then
+			sitio[id] = sitio[o.icono]
+			colorMedio[id] = colorMedio[o.icono]
+		end
+	end
 	for h, buf in buffers do
 		hojas[h] = Imagenes.crear(HOJA, HOJA, buf)
 		task.wait()

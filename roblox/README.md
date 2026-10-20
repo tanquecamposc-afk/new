@@ -104,6 +104,18 @@ Con **Rojo**, `default.project.json` monta el mismo árbol desde `src/`.
   - Eventos de la partida y marcador lateral.
   - Bots que recogen, compran, tienden puentes, protegen su cama, rompen las ajenas y pelean.
   - Solo se rompen los bloques puestos por los jugadores. Sin cama no se reaparece.
+- **Novedades de Bed Wars en la versión de Roblox:**
+  - **Progreso guardado** (DataStore): monedas, experiencia con nivel en estrellas `[N✫]`, estadísticas y racha de victorias.
+  - **22 kits** con rareza (común, raro, épico y legendario) y tres niveles que se mejoran con monedas. Tres kits gratis cada día. Los legendarios (Ninja, Martillo y Fantasma) tienen una habilidad con la tecla G. Kits nuevos: Ingeniero (torretas de nieve), Imán (atrae los minerales) y Fantasma (invisible un rato). Los bots también llevan kit.
+  - **Misiones diarias:** tres al día, con premio en monedas.
+  - **Votación de mapa** en la sala y botones para kits y efectos en el panel.
+  - **Momentos de caos** durante la partida: lluvia de meteoritos, fiebre del oro (generadores al doble), gravedad baja y el **cofre del cielo**, que cae en el centro con botín raro.
+  - **Rachas de bajas** (En racha, Imparable, Leyenda) con efectos, y premio por cortar la racha de otro.
+  - **Objetos nuevos** en la pestaña «Novedades»: globo salvavidas (te salva del vacío), escudo de cama (45 s), trampolín, mina terrestre y torreta de nieve.
+  - **Efectos de baja final** que se compran: fuegos artificiales, corazones, rayo, alma en pena y confeti.
+  - Etiqueta de equipo y nivel encima de cada jugador, compañeros resaltados, registro de bajas arriba a la derecha y pantalla final con MVP, monedas, nivel, misiones y «Jugar otra vez».
+  - Muerte súbita: el vacío sube poco a poco.
+  - Espectadores: botón «Mirar a otro» para seguir a los que siguen vivos.
 - **Mazmorras** (`modos52.js` y `modos53.js`), una para cada jugador:
   - Tres ambientaciones: Catacumbas, Cripta y Fortaleza del Nether.
   - Salas cuadradas, redondas y en cruz, y salas secretas de tesoro.
@@ -145,6 +157,7 @@ Con **Rojo**, `default.project.json` monta el mismo árbol desde `src/`.
 | Leyendas: recoger / ¡al ataque! / seguidme | G / R / F |
 | Leyendas: construir | 1–6 (o los botones del panel) |
 | Mazmorras: usar un artefacto | Clic derecho con él en la mano |
+| Bed Wars: habilidad del kit | G (o el botón táctil) |
 
 ## Lo que es distinto del web
 
@@ -152,7 +165,7 @@ Para ser claros, esto **no es igual** que en el juego web:
 - **Sonidos:** se usan los sonidos que trae Roblox, no los sintetizados del web.
 - **Mazmorras:** la cámara es la normal de Roblox, no la cenital del web. Por eso todas las paredes son altas. El ataque y la esquiva son los normales del juego (sin combo de tres golpes ni voltereta). Los artefactos son objetos de la barra que se usan con clic derecho.
 - **Leyendas:** se juega en una isla generada aparte, no en un mundo nuevo entero. La isla tiene hierba, árboles y rocas para recoger.
-- **Bed Wars:** el cielo no cambia según el mapa. Las estadísticas con estrellas y los fuegos artificiales del final no están. No hay salas por separado: hay una partida a la vez para todo el servidor, y quien llega a mitad la ve desde la sala.
+- **Bed Wars:** el cielo no cambia según el mapa. No hay salas por separado: hay una partida a la vez para todo el servidor, y quien llega a mitad la ve desde la sala.
 
 ## Archivos
 
@@ -177,6 +190,7 @@ Para ser claros, esto **no es igual** que en el juego web:
   - `Inventario`, `Contenedores` (cofres y hornos), `Habitantes` (generadores de criaturas y habitantes de las estructuras).
   - `Dimension` (portales, el Nether, el End y el Ender Dragon), `Redstone`, `Mesas` (mesas y comercio).
   - `Modos` (One Block, y reparte el trabajo de los demás modos), `BedWars`, `Mazmorras`, `Leyendas`.
+  - `PerfilBW` (progreso guardado de Bed Wars y misiones diarias) y `KitsBW` (kits, niveles y habilidades).
 - `src/cliente/` → `StarterPlayerScripts.Cliente`
   - Script principal: controles, cámara, picar y usar, efectos y sonidos.
   - `Render`: mallas con texturas, con un modo de respaldo hecho con piezas.
@@ -198,6 +212,10 @@ Para ser claros, esto **no es igual** que en el juego web:
     - Bed Wars (tienda, generadores, camas, bots, muerte y reaparición), Mazmorras (salas, puertas, cofres, artefactos y jefe) y Leyendas (construir, golems, piglins y portales).
   - `probar_respaldo.sh`: lo mismo, pero sin mallas ni imágenes editables.
   - `probar_estructuras.sh`: compara chunks con estructuras, del Nether y del End, y el botín de los cofres, con el juego web. Tiene que salir «ESTRUCTURAS IDENTICAS AL WEB».
+  - `probar_multi.sh`: varios jugadores a la vez en el servidor. Tiene que salir «MULTIJUGADOR BIEN». En la prueba:
+    - Supervivencia: los bloques llegan a todos, cofre compartido, sin golpes entre jugadores, objetos al morir y guardado al salir.
+    - Bed Wars con 3 y 4 jugadores: votación, compra de kits y efectos (y que se guarden), equipos, golpes, escudo de cama, trampolín, momentos de caos y cofre del cielo, baja final con efecto, espectador, irse a mitad, victoria con recompensas, «Jugar otra vez» e inventario devuelto.
+    - Mazmorras y Leyendas: cada jugador tiene la suya.
   - `probar_arenas.sh`: genera los 8 mapas de Bed Wars, varias mazmorras y una isla de Leyendas. Tiene que salir «ARENAS BIEN».
   - `capturar.sh`: saca imágenes de lo que dibuja el cliente en Bed Wars, Mazmorras y Leyendas (mallas con texturas, criaturas y carteles) y de la interfaz (tienda, paneles, barra del jefe). Así se revisa cómo se ve sin abrir Roblox Studio. Usa `herramientas/vista/` (Python con numpy y Pillow).
 

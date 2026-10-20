@@ -15,6 +15,21 @@ Registro.objetos = OB
 Registro.B = CL.B
 Registro.I = CL.I
 
+-- Objetos propios de la versión de Roblox (Bed Wars); usan el icono de otro objeto
+local EXTRA = {
+	[900] = { nombre = "Globo salvavidas", max = 4, clave = "globoBW", icono = 220 },
+	[901] = { nombre = "Escudo de cama", max = 1, clave = "escudoCamaBW", icono = 597 },
+	[902] = { nombre = "Trampolín", max = 8, clave = "trampolinBW", icono = CL.B.heno },
+	[903] = { nombre = "Mina terrestre", max = 8, clave = "minaBW", icono = 1219 },
+	[904] = { nombre = "Torreta de nieve", max = 4, clave = "torretaBW", icono = 114 },
+}
+for id, o in EXTRA do
+	if not OB[id] then
+		OB[id] = o
+		CL.I[o.clave] = id
+	end
+end
+
 local B = CL.B
 local SOLIDO, OPACO, REEMPL, TRANS, LUZ, FORMA, TINTE, OCLUYE, LIQUIDO = {}, {}, {}, {}, {}, {}, {}, {}, {}
 local FORMAS = { cubo = 0, losa = 1, cruz = 2, antorcha = 3, liquido = 4, portal = 5, cajas = 6, conecta = 7, cable = 8, riel = 9 }

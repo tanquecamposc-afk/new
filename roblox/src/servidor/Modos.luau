@@ -323,6 +323,9 @@ end
 function Modos.extraDanoPvp(a)
 	return BW.extraDanoPvp(a)
 end
+function Modos.golpePvp(a, b, dano)
+	return BW.golpePvp(a, b, dano)
+end
 
 function Modos.puedeRomper(plr, x, y, z, b)
 	if BW.en(plr) or BW.enArena(x, y, z) then
@@ -365,8 +368,8 @@ function Modos.puedeExplotar(x, y, z, id)
 end
 
 -- Clic derecho con un objeto en la mano (objetos de Bed Wars, artefactos de las Mazmorras)
-function Modos.usarObjeto(plr, s, p, dir)
-	return BW.usarObjeto(plr, s, p, dir) or MZ.usarObjeto(plr, s, p, dir)
+function Modos.usarObjeto(plr, s, p, dir, obj)
+	return BW.usarObjeto(plr, s, p, dir, obj) or MZ.usarObjeto(plr, s, p, dir)
 end
 
 -- Clic derecho sobre una criatura (tenderos de Bed Wars)
@@ -376,7 +379,11 @@ end
 
 -- Órdenes de Leyendas (teclas o botones del panel)
 function Modos.comando(plr, cmd, arg)
-	LY.comando(plr, cmd, arg)
+	if BW.en(plr) then
+		BW.comando(plr, cmd, arg)
+	else
+		LY.comando(plr, cmd, arg)
+	end
 end
 
 local function salirDeTodo(plr, s)

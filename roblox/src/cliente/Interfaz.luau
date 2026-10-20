@@ -743,7 +743,7 @@ local function pintarExtra(d)
 			end
 			texto({ Position = UDim2.fromOffset(44, 3), Size = UDim2.fromOffset(160, 26), Text = o.nombre or "", TextSize = 11, TextWrapped = true,
 				TextXAlignment = Enum.TextXAlignment.Left, TextYAlignment = Enum.TextYAlignment.Top, ZIndex = 8 }, b)
-			local precio = o.tiene and "✔ Ya lo tienes" or (o.precioTxt or ((o.precio and o.precio[2] or 0) .. " " .. Registro.nombre(o.precio and o.precio[1] or 0)))
+			local precio = o.tiene and (o.tieneTxt or "✔ Ya lo tienes") or (o.precioTxt or ((o.precio and o.precio[2] or 0) .. " " .. Registro.nombre(o.precio and o.precio[1] or 0)))
 			local colP = o.tiene and Color3.fromRGB(120, 255, 120) or (o.puede and Color3.fromRGB(255, 230, 120) or Color3.fromRGB(255, 110, 110))
 			texto({ Position = UDim2.fromOffset(44, 28), Size = UDim2.fromOffset(160, 14), Text = precio, TextSize = 11, TextColor3 = colP,
 				TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 8 }, b)
@@ -1439,6 +1439,131 @@ function Interfaz.panel(d)
 				TextXAlignment = Enum.TextXAlignment.Left, TextColor3 = bt.activo and Color3.fromRGB(200, 255, 200) or Color3.fromRGB(255, 160, 160) }, b)
 		end
 	end
+end
+
+-- Registro de bajas de Bed Wars (arriba a la derecha): cada línea se borra sola a los 6 s
+local feed = nuevo("Frame", { Name = "RegistroBajas", BackgroundTransparency = 1, AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -10, 0, 60),
+	Size = UDim2.fromOffset(330, 140) }, hud)
+nuevo("UIListLayout", { Padding = UDim.new(0, 2), SortOrder = Enum.SortOrder.LayoutOrder, HorizontalAlignment = Enum.HorizontalAlignment.Right }, feed)
+local feedN = 0
+function Interfaz.feed(t, col)
+	if not t then
+		for _, h in feed:GetChildren() do
+			if h:IsA("GuiObject") then
+				h:Destroy()
+			end
+		end
+		return
+	end
+	feedN += 1
+	local ok, c = pcall(Color3.fromHex, col or "#ffffff")
+	local l = texto({ Size = UDim2.fromOffset(330, 18), AutomaticSize = Enum.AutomaticSize.X, Text = "  " .. t .. "  ", TextSize = 13, BackgroundTransparency = 0.55,
+		BackgroundColor3 = Color3.new(0, 0, 0), TextColor3 = ok and c or Color3.new(1, 1, 1), TextXAlignment = Enum.TextXAlignment.Right, LayoutOrder = feedN }, feed)
+	local lineas = {}
+	for _, h in feed:GetChildren() do
+		if h:IsA("GuiObject") then
+			table.insert(lineas, h)
+		end
+	end
+	table.sort(lineas, function(a, b)
+		return a.LayoutOrder < b.LayoutOrder
+	end)
+	for i = 1, #lineas - 6 do
+		lineas[i]:Destroy()
+	end
+	task.delay(6, function()
+		if l.Parent then
+			TweenService:Create(l, TweenInfo.new(0.5), { TextTransparency = 1, TextStrokeTransparency = 1, BackgroundTransparency = 1 }):Play()
+			task.delay(0.6, function()
+				l:Destroy()
+			end)
+		end
+	end)
+end
+
+-- Pantalla final de Bed Wars: resultado, estadísticas, MVP, monedas, nivel y misiones
+local fin = nuevo("Frame", { Name = "FinBW", BackgroundColor3 = Color3.fromRGB(8, 10, 18), BackgroundTransparency = 0.2, BorderSizePixel = 0,
+	AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.fromOffset(440, 380), Visible = false, ZIndex = 20 }, gui)
+nuevo("UICorner", { CornerRadius = UDim.new(0, 10) }, fin)
+local finBorde = nuevo("UIStroke", { Color = Color3.fromRGB(255, 220, 80), Thickness = 3 }, fin)
+local finT = texto({ Position = UDim2.fromOffset(0, 14), Size = UDim2.new(1, 0, 0, 44), Text = "", Font = FUENTE_N, TextSize = 38, ZIndex = 21 }, fin)
+local finSub = texto({ Position = UDim2.fromOffset(0, 58), Size = UDim2.new(1, 0, 0, 20), Text = "", TextSize = 15, ZIndex = 21 }, fin)
+local finStats = texto({ Position = UDim2.fromOffset(20, 88), Size = UDim2.new(1, -40, 0, 92), Text = "", TextSize = 14, Font = Enum.Font.Code, TextWrapped = true,
+	TextXAlignment = Enum.TextXAlignment.Left, TextYAlignment = Enum.TextYAlignment.Top, ZIndex = 21 }, fin)
+local finPremio = texto({ Position = UDim2.fromOffset(20, 182), Size = UDim2.new(1, -40, 0, 22), Text = "", TextSize = 17, TextColor3 = Color3.fromRGB(255, 216, 74),
+	TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 21 }, fin)
+local finNivelT = texto({ Position = UDim2.fromOffset(20, 206), Size = UDim2.new(1, -40, 0, 18), Text = "", TextSize = 13, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 21 }, fin)
+local finNivelB = nuevo("Frame", { BackgroundColor3 = Color3.fromRGB(30, 30, 40), BorderSizePixel = 0, Position = UDim2.fromOffset(20, 226), Size = UDim2.new(1, -40, 0, 8), ZIndex = 21 }, fin)
+local finNivelF = nuevo("Frame", { BackgroundColor3 = Color3.fromRGB(110, 200, 255), BorderSizePixel = 0, Size = UDim2.fromScale(0, 1), ZIndex = 22 }, finNivelB)
+local finMis = texto({ Position = UDim2.fromOffset(20, 242), Size = UDim2.new(1, -40, 0, 56), Text = "", TextSize = 12, TextWrapped = true, TextColor3 = Color3.fromRGB(150, 255, 150),
+	TextXAlignment = Enum.TextXAlignment.Left, TextYAlignment = Enum.TextYAlignment.Top, ZIndex = 21 }, fin)
+local finHilo = 0
+boton("Jugar otra vez", { Position = UDim2.new(0, 20, 1, -62), Size = UDim2.new(0.5, -26, 0, 44), TextSize = 17, ZIndex = 22,
+	BackgroundColor3 = Color3.fromRGB(70, 140, 70) }, fin, function()
+	fin.Visible = false
+	Interfaz.enviar("modoCmd", "otraVez")
+	Interfaz.aviso("Entrarás en la siguiente partida de Bed Wars")
+end)
+boton("Volver al menú", { Position = UDim2.new(0.5, 6, 1, -62), Size = UDim2.new(0.5, -26, 0, 44), TextSize = 17, ZIndex = 22 }, fin, function()
+	fin.Visible = false
+	Interfaz.menu(true)
+	if Interfaz.alMenu then
+		Interfaz.alMenu()
+	end
+end)
+function Interfaz.finBW(d)
+	finHilo += 1
+	if not d then
+		fin.Visible = false
+		return
+	end
+	local yo = finHilo
+	local ok, c = pcall(Color3.fromHex, d.colGanador or "#aaaaaa")
+	finT.Text = d.gano and "¡VICTORIA!" or (d.ganador and "DERROTA" or "EMPATE")
+	finT.TextColor3 = d.gano and Color3.fromRGB(255, 230, 80) or Color3.fromRGB(255, 90, 90)
+	finBorde.Color = d.gano and Color3.fromRGB(255, 220, 80) or Color3.fromRGB(120, 120, 140)
+	finSub.Text = d.ganador and ("Gana el equipo " .. d.ganador) or "Nadie gana esta vez"
+	finSub.TextColor3 = ok and c or Color3.new(1, 1, 1)
+	finStats.Text = ("Bajas: %d    Bajas finales: %d\nCamas rotas: %d    Muertes: %d\nMejor racha: %d    Tiempo: %s\nMVP: %s"):format(d.bajas or 0, d.finales or 0,
+		d.camas or 0, d.muertes or 0, d.mejorRacha or 0, d.tiempo or "", d.mvp and (d.mvp .. (d.soyMvp and "  (¡tú!)" or "")) or "nadie")
+	if d.jugo then
+		finPremio.Text = ("+%d monedas · +%d xp   (tienes %d)"):format(d.monedas or 0, d.xp or 0, d.totalMonedas or 0)
+		finNivelT.Text = ("Nivel %d✫%s%s"):format(d.nivel or 1, d.subeNivel and "  ¡SUBES DE NIVEL!" or "", (d.racha or 0) >= 2 and ("  · %d victorias seguidas"):format(d.racha) or "")
+		finNivelF.Size = UDim2.fromScale(0, 1)
+		TweenService:Create(finNivelF, TweenInfo.new(1.2, Enum.EasingStyle.Quad), { Size = UDim2.fromScale(math.clamp(d.progresoNivel or 0, 0, 1), 1) }):Play()
+	else
+		finPremio.Text = "Has mirado la partida: juega la siguiente para ganar monedas"
+		finNivelT.Text = ""
+	end
+	finNivelB.Visible = d.jugo == true
+	finMis.Text = d.misiones and #d.misiones > 0 and ("Misiones completadas:\n· " .. table.concat(d.misiones, "\n· ")) or ""
+	fin.Visible = true
+	task.delay(20, function()
+		if yo == finHilo then
+			fin.Visible = false
+		end
+	end)
+end
+
+-- Botón táctil de la habilidad del kit (Bed Wars)
+local botonHab
+function Interfaz.botonHabilidad(si, alPulsar)
+	if not UserInputService.TouchEnabled then
+		return
+	end
+	if not botonHab then
+		botonHab = nuevo("TextButton", { Text = "G", Font = FUENTE_N, TextSize = 24, TextColor3 = Color3.fromRGB(255, 220, 80), BackgroundColor3 = Color3.new(0, 0, 0),
+			BackgroundTransparency = 0.4, Size = UDim2.fromOffset(60, 60), AnchorPoint = Vector2.new(1, 1), Position = UDim2.new(1, -240, 1, -170), AutoButtonColor = true }, hud)
+		nuevo("UICorner", { CornerRadius = UDim.new(1, 0) }, botonHab)
+		nuevo("UIStroke", { Color = Color3.fromRGB(255, 220, 80), Thickness = 2 }, botonHab)
+		botonHab.Activated:Connect(function()
+			if botonHab:GetAttribute("activo") and alPulsar then
+				alPulsar()
+			end
+		end)
+	end
+	botonHab.Visible = si
+	botonHab:SetAttribute("activo", si)
 end
 
 -- Barra de un jefe (el Ender Dragon): d = {nombre, f (0-1), col} o nil
