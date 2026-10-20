@@ -262,7 +262,7 @@ local EVENTOS = {
 	CharacterAdded = true, Heartbeat = true, RenderStepped = true, Stepped = true, ChildAdded = true, ChildRemoved = true,
 	InputBegan = true, InputEnded = true, InputChanged = true, MouseButton1Click = true, MouseButton1Down = true,
 	MouseButton1Up = true, MouseLeave = true, MouseEnter = true, Activated = true, Touched = true, StateChanged = true,
-	TouchTap = true, Completed = true, MouseButton2Click = true, Jumping = true,
+	TouchTap = true, Completed = true, MouseButton2Click = true, Jumping = true, JumpRequest = true,
 }
 local DEFECTO = {
 	Health = 100, MaxHealth = 100, Anchored = false, CanCollide = true, Transparency = 0, Massless = false,
