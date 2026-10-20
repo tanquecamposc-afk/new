@@ -47,6 +47,7 @@ local Mobs = require(script.Mobs)
 local Inv = require(script.Inventario)
 local Cont = require(script.Contenedores)
 local Modos = require(script.Modos)
+local Habitantes = require(script.Habitantes)
 
 local BS = Config.BLOQUE
 local BL, OB = Registro.bloques, Registro.objetos
@@ -121,12 +122,17 @@ end)
 ------------------------------------------------------------------
 local semilla = Random.new():NextInteger(1, 999999)
 Mundo.iniciar(semilla)
+Cont.md = Mundo.md
 workspace:SetAttribute("Semilla", semilla)
 print("[Blockverse] Semilla del mundo:", semilla)
 Sim.iniciar()
 Entidades.iniciar()
 Cont.iniciar()
 Mobs.iniciar()
+Habitantes.iniciar()
+Habitantes.alSonido = function(nombre, x, y, z)
+	Estado:FireAllClients("sonido", nombre, Vector3.new(x + 0.5, y + 0.5, z + 0.5) * Config.BLOQUE)
+end
 
 local NIVEL_MAR = 126
 local spawnX, spawnZ = 0, 0
@@ -1185,6 +1191,13 @@ function acciones.derecho(plr, s, obj, dir, mobParte, agachado)
 		end
 		if inter then
 			aviso(plr, "Esta mesa estará disponible en una próxima versión")
+			return
+		end
+		if b == B.boveda and id == 541 then
+			if Habitantes.abrirBoveda(x, y, z) then
+				consumirEnMano(s)
+				enviarJugador(plr)
+			end
 			return
 		end
 		if b == B.tnt and id == I.mechero then

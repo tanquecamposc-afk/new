@@ -256,8 +256,12 @@ F.paso(1)
 -- La criatura se habrá movido: se pone al lado del jugador
 m.x, m.y, m.z = px + 2.5, py, pz + 0.5
 m.pieza.CFrame = CF(m.x * B, (m.y + m.alto / 2) * B, m.z * B)
+local antesAtaque = { m.vida, m.inv, m.muerto, Mobs.desdeParte(m.pieza) ~= nil, hum.Health }
 enviar("atacar", m.pieza, 1, false, false)
 F.paso(1 / 30)
+if not (m.vida < vida or m.muerto) then
+	print("DEBUG ataque", table.unpack(antesAtaque))
+end
 ok(m.vida < vida or m.muerto, "el ataque no hizo daño")
 -- Más criaturas (todas las del juego) para probar sus modelos y su IA
 local Datos = F.entorno(comp).require(comp.Datos.Mobs)

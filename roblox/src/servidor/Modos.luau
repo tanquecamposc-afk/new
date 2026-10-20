@@ -14,7 +14,7 @@ local Comp = ReplicatedStorage:WaitForChild("Blockverse")
 local Config = require(Comp.Config)
 local Registro = require(Comp.Registro)
 local Generador = require(Comp.Generador)
-local Botin = require(script.Parent.Botin)
+local Botin = require(Comp.Botin)
 local Cont = require(script.Parent.Contenedores)
 
 local BS = Config.BLOQUE

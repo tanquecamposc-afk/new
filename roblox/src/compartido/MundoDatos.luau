@@ -48,9 +48,9 @@ function MundoDatos:obtener(cx, cz, ceder)
 		return d
 	end
 	d = buffer.create(TAM)
-	local biomas
+	local biomas, cofres
 	if not self.vacio then
-		biomas = self.gen:llenar(d, cx, cz, ceder)
+		biomas, cofres = self.gen:llenar(d, cx, cz, ceder)
 	else
 		biomas = buffer.create(256)
 	end
@@ -69,6 +69,27 @@ function MundoDatos:obtener(cx, cz, ceder)
 	end
 	self.datos[k] = d
 	self.biomas[k] = biomas
+	-- Generadores de criaturas (mazmorras, fortaleza y cámaras de prueba)
+	if self.buscarGeneradores then
+		local lista = nil
+		local G1, G2, G3 = self.buscarGeneradores[1], self.buscarGeneradores[2], self.buscarGeneradores[3]
+		for i = 0, TAM // 2 - 1 do
+			local b = buffer.readu16(d, i * 2)
+			if b == G1 or b == G2 or b == G3 then
+				lista = lista or {}
+				table.insert(lista, { cx * CX + i % CX, i // (CX * CZ), cz * CZ + (i // CX) % CZ })
+			end
+		end
+		self.generadores = self.generadores or {}
+		self.generadores[k] = lista
+	end
+	if cofres and #cofres > 0 then
+		-- Cofres de las estructuras: {x, y, z, tipo} para darles botín al abrirlos
+		self.cofresGen = self.cofresGen or {}
+		for _, c in cofres do
+			self.cofresGen[c[1] .. "," .. c[2] .. "," .. c[3]] = c[4]
+		end
+	end
 	return d
 end
 

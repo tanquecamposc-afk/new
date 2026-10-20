@@ -12,6 +12,7 @@ local Comp = ReplicatedStorage:WaitForChild("Blockverse")
 local Registro = require(Comp.Registro)
 local Crafteo = require(Comp.Crafteo)
 local Entidades = require(script.Parent.Entidades)
+local Botin = require(Comp.Botin)
 
 local BL = Registro.bloques
 local Cont = {}
@@ -34,11 +35,20 @@ function Cont.esHorno(id)
 	return d ~= nil and d.inter == "horno"
 end
 
+-- md: datos del mundo (para saber si el cofre es de una estructura y darle su botín)
+Cont.md = nil
 function Cont.cofre(x, y, z)
 	local k = clave(x, y, z)
 	local c = Cont.cofres[k]
 	if not c then
-		c = table.create(27, false)
+		local md = Cont.md
+		local tipo = md and md.cofresGen and md.cofresGen[k]
+		if tipo then
+			md.cofresGen[k] = nil
+			c = Botin.generar(tipo, x, y, z, md.semilla)
+		else
+			c = table.create(27, false)
+		end
 		Cont.cofres[k] = c
 	end
 	return c
@@ -58,6 +68,9 @@ end
 function Cont.vaciar(x, y, z)
 	local k = clave(x, y, z)
 	local c = Cont.cofres[k]
+	if not c and Cont.md and Cont.md.cofresGen and Cont.md.cofresGen[k] then
+		c = Cont.cofre(x, y, z)
+	end
 	if c then
 		for _, p in c do
 			if p then

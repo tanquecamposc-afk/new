@@ -12,6 +12,7 @@
 local Registro = require(script.Parent.Registro)
 local Ruido = require(script.Parent.Ruido)
 local Biomas = require(script.Parent.Datos.Biomas)
+local Estructuras = require(script.Parent.Estructuras)
 
 local hash2, hash3, mulberry32 = Ruido.hash2, Ruido.hash3, Ruido.mulberry32
 local valueNoise, valueNoise3, fbm, smooth = Ruido.valueNoise, Ruido.valueNoise3, Ruido.fbm, Ruido.smooth
@@ -1082,7 +1083,12 @@ function Generador:llenar(datos, cx, cz, ceder)
 			until true
 		end
 	end
-	return biomasCh
+	if ceder then
+		ceder()
+	end
+	-- Estructuras, decoración de biomas y desgaste (lo mismo que añade el juego web)
+	local cofres = Estructuras.superficie(self, datos, cx, cz, info, biomasCh)
+	return biomasCh, cofres
 end
 
 -- Altura del terreno sin cambios de los jugadores

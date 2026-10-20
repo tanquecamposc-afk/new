@@ -217,6 +217,9 @@ local function teletransportar(m)
 end
 
 function Mobs.matar(m, fuente, plr)
+	if Mobs.alMorirExtra and not m.muerto then
+		pcall(Mobs.alMorirExtra, m)
+	end
 	if m.muerto then
 		return
 	end
@@ -842,6 +845,10 @@ local function contar(f)
 	end
 	return n
 end
+
+Mobs.buscarSuelo = buscarSuelo
+Mobs.contar = contar
+Mobs.hayLuzCerca = hayLuzCerca
 
 local function intentoAparicion(jugadores)
 	if #jugadores == 0 then
