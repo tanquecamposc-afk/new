@@ -756,6 +756,7 @@ if R then
 		for _, m in table.clone(R.enemigos) do
 			Mobs.matar(m, "jugador", plr)
 		end
+		hum.Health = 20
 		pasos(5)
 	end
 	ok(R.salida ~= nil, "no apareció la salida al vencer al jefe")

@@ -126,7 +126,7 @@ local function emitir(pos, color, n, vel, tam, grav)
 		p.Material = Enum.Material.SmoothPlastic
 		p.Size = Vector3.new(t, t, t)
 		local c = color
-		if typeof(c) == "table" then
+		if typeof(c) == "table" and #c > 0 then
 			c = c[math.random(1, #c)]
 		end
 		local h, s, v = c:ToHSV()
