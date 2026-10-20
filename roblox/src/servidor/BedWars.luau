@@ -425,6 +425,7 @@ local function datosTienda(plr, s)
 			nombre ..= nv > 0 and (" · nivel " .. nv) or ""
 		end
 		table.insert(d.ofertas, { id = id, n = math.max(1, o.c), nombre = nombre, precio = { I[precio[1]], precio[2] },
+			precioTxt = precio[2] .. " " .. NOMBRE_MONEDA[precio[1]],
 			puede = contarInv(s, I[precio[1]]) >= precio[2], tiene = tiene and true or false, desc = o.d })
 	end
 	d.pie = "Clic: comprar · Mayús + clic: comprar varias veces"
@@ -443,12 +444,13 @@ local function datosMejoras(plr, s)
 		local max = nv >= #M.precios
 		local coste = max and 0 or M.precios[nv + 1]
 		table.insert(d.ofertas, { id = M.icono, n = 1, nombre = M.n .. (#M.precios > 1 and (" " .. ROMANO[math.min(nv + 1, #M.precios)]) or ""),
-			precio = { I.diamante, coste }, puede = not max and dia >= coste, tiene = max, desc = M.d })
+			precio = { I.diamante, coste }, precioTxt = coste .. (coste == 1 and " diamante" or " diamantes"), puede = not max and dia >= coste, tiene = max, desc = M.d })
 	end
 	local coste = 2 ^ #eq.trampas
 	for _, T in TRAMPAS do
-		table.insert(d.ofertas, { id = T.icono, n = 1, nombre = "Trampa: " .. T.n, precio = { I.diamante, coste }, puede = #eq.trampas < 3 and dia >= coste,
-			tiene = #eq.trampas >= 3, desc = T.d })
+		table.insert(d.ofertas, { id = T.icono, n = 1, nombre = "Trampa: " .. T.n, precio = { I.diamante, coste },
+			precioTxt = #eq.trampas >= 3 and "Cola llena" or (coste .. (coste == 1 and " diamante" or " diamantes")), puede = #eq.trampas < 3 and dia >= coste,
+			tiene = false, desc = T.d })
 	end
 	d.pie = ("Trampas en cola: %d/3 · la siguiente cuesta %d diamante(s)"):format(#eq.trampas, coste)
 	return d

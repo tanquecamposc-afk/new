@@ -26,12 +26,12 @@ local ctx
 local partidas = {} -- plr -> estado de su partida
 
 local CONSTRUCCIONES = {
-	{ n = "Generador de golems de piedra", m = 5, p = 15 },
-	{ n = "Generador de golems de tablas", m = 15, p = 5 },
-	{ n = "Torre de flechas", m = 10, p = 10 },
-	{ n = "Muro", m = 0, p = 6 },
-	{ n = "Reparar la aldea", m = 8, p = 8 },
-	{ n = "Mejorar golems", m = 0, p = 0, oro = 8 },
+	{ n = "Generador de golems de piedra", corto = "Golems de piedra", m = 5, p = 15 },
+	{ n = "Generador de golems de tablas", corto = "Golems de tablas", m = 15, p = 5 },
+	{ n = "Torre de flechas", corto = "Torre de flechas", m = 10, p = 10 },
+	{ n = "Muro", corto = "Muro", m = 0, p = 6 },
+	{ n = "Reparar la aldea", corto = "Reparar la aldea", m = 8, p = 8 },
+	{ n = "Mejorar golems", corto = "Mejorar golems", m = 0, p = 0, oro = 8 },
 }
 LY.CONSTRUCCIONES = CONSTRUCCIONES
 
@@ -568,9 +568,19 @@ local function panel(L)
 	linea(("Asalto en %d s"):format(math.ceil(L.raidT)), "#ff9966")
 	local botones = {}
 	for k, C in CONSTRUCCIONES do
-		local coste = C.oro and (C.oro .. " oro") or (((C.m > 0) and (C.m .. " madera ") or "") .. ((C.p > 0) and (C.p .. " piedra") or ""))
+		local partes = {}
+		if C.oro then
+			table.insert(partes, C.oro .. " oro")
+		end
+		if C.m > 0 then
+			table.insert(partes, C.m .. " madera")
+		end
+		if C.p > 0 then
+			table.insert(partes, C.p .. " piedra")
+		end
+		local coste = table.concat(partes, ", ")
 		local puede = C.oro and L.oro >= C.oro or (not C.oro and L.madera >= C.m and L.piedra >= C.p)
-		table.insert(botones, { t = ("%d · %s (%s)"):format(k, C.n, coste), cmd = "construir", arg = k, activo = puede })
+		table.insert(botones, { t = ("%d · %s"):format(k, C.corto), sub = coste, cmd = "construir", arg = k, activo = puede })
 	end
 	table.insert(botones, { t = "G · Ayudantes: recoger", cmd = "cosechar", activo = L.cdG <= 0 })
 	table.insert(botones, { t = "R · ¡Al ataque!", cmd = "atacar", activo = true })

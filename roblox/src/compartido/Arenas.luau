@@ -893,8 +893,15 @@ local function construirLY(a)
 				end
 			end
 		end
-		-- Tejado a cuatro aguas con alero
+		-- Tejado a cuatro aguas con alero (con la fila de encima de las paredes llena, para que no quede un hueco)
 		local teja = K("tablonesAbeto", "tablonesRobleOscuro", "tablones")
+		for p = -3, 3 do
+			for q = -3, 3 do
+				if math.max(abs(p), abs(q)) == 3 then
+					pon(X + p, Y + 5, Z + q, teja)
+				end
+			end
+		end
 		for i = 0, 4 do
 			local h = 4 - i
 			for p = -h, h do

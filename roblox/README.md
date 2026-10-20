@@ -153,7 +153,6 @@ Para ser claros, esto **no es igual** que en el juego web:
 - **Mazmorras:** la cámara es la normal de Roblox, no la cenital del web. Por eso todas las paredes son altas. El ataque y la esquiva son los normales del juego (sin combo de tres golpes ni voltereta). Los artefactos son objetos de la barra que se usan con clic derecho.
 - **Leyendas:** se juega en una isla generada aparte, no en un mundo nuevo entero. La isla tiene hierba, árboles y rocas para recoger.
 - **Bed Wars:** el cielo no cambia según el mapa. Las estadísticas con estrellas y los fuegos artificiales del final no están. No hay salas por separado: hay una partida a la vez para todo el servidor, y quien llega a mitad la ve desde la sala.
-- Los jefes y las élites no se ven más grandes. Llevan su nombre encima.
 
 ## Archivos
 
@@ -200,6 +199,7 @@ Para ser claros, esto **no es igual** que en el juego web:
   - `probar_respaldo.sh`: lo mismo, pero sin mallas ni imágenes editables.
   - `probar_estructuras.sh`: compara chunks con estructuras, del Nether y del End, y el botín de los cofres, con el juego web. Tiene que salir «ESTRUCTURAS IDENTICAS AL WEB».
   - `probar_arenas.sh`: genera los 8 mapas de Bed Wars, varias mazmorras y una isla de Leyendas. Tiene que salir «ARENAS BIEN».
+  - `capturar.sh`: saca imágenes de lo que dibuja el cliente en Bed Wars, Mazmorras y Leyendas (mallas con texturas, criaturas y carteles) y de la interfaz (tienda, paneles, barra del jefe). Así se revisa cómo se ve sin abrir Roblox Studio. Usa `herramientas/vista/` (Python con numpy y Pillow).
 
 ## Rendimiento
 

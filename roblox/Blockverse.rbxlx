@@ -896,8 +896,15 @@ local function construirLY(a)
 				end
 			end
 		end
-		-- Tejado a cuatro aguas con alero
+		-- Tejado a cuatro aguas con alero (con la fila de encima de las paredes llena, para que no quede un hueco)
 		local teja = K("tablonesAbeto", "tablonesRobleOscuro", "tablones")
+		for p = -3, 3 do
+			for q = -3, 3 do
+				if math.max(abs(p), abs(q)) == 3 then
+					pon(X + p, Y + 5, Z + q, teja)
+				end
+			end
+		end
 		for i = 0, 4 do
 			local h = 4 - i
 			for p = -h, h do
@@ -11961,6 +11968,7 @@ local function datosTienda(plr, s)
 			nombre ..= nv > 0 and (" · nivel " .. nv) or ""
 		end
 		table.insert(d.ofertas, { id = id, n = math.max(1, o.c), nombre = nombre, precio = { I[precio[1]], precio[2] },
+			precioTxt = precio[2] .. " " .. NOMBRE_MONEDA[precio[1]],
 			puede = contarInv(s, I[precio[1]]) >= precio[2], tiene = tiene and true or false, desc = o.d })
 	end
 	d.pie = "Clic: comprar · Mayús + clic: comprar varias veces"
@@ -11979,12 +11987,13 @@ local function datosMejoras(plr, s)
 		local max = nv >= #M.precios
 		local coste = max and 0 or M.precios[nv + 1]
 		table.insert(d.ofertas, { id = M.icono, n = 1, nombre = M.n .. (#M.precios > 1 and (" " .. ROMANO[math.min(nv + 1, #M.precios)]) or ""),
-			precio = { I.diamante, coste }, puede = not max and dia >= coste, tiene = max, desc = M.d })
+			precio = { I.diamante, coste }, precioTxt = coste .. (coste == 1 and " diamante" or " diamantes"), puede = not max and dia >= coste, tiene = max, desc = M.d })
 	end
 	local coste = 2 ^ #eq.trampas
 	for _, T in TRAMPAS do
-		table.insert(d.ofertas, { id = T.icono, n = 1, nombre = "Trampa: " .. T.n, precio = { I.diamante, coste }, puede = #eq.trampas < 3 and dia >= coste,
-			tiene = #eq.trampas >= 3, desc = T.d })
+		table.insert(d.ofertas, { id = T.icono, n = 1, nombre = "Trampa: " .. T.n, precio = { I.diamante, coste },
+			precioTxt = #eq.trampas >= 3 and "Cola llena" or (coste .. (coste == 1 and " diamante" or " diamantes")), puede = #eq.trampas < 3 and dia >= coste,
+			tiene = false, desc = T.d })
 	end
 	d.pie = ("Trampas en cola: %d/3 · la siguiente cuesta %d diamante(s)"):format(#eq.trampas, coste)
 	return d
@@ -15585,12 +15594,12 @@ local ctx
 local partidas = {} -- plr -> estado de su partida
 
 local CONSTRUCCIONES = {
-	{ n = "Generador de golems de piedra", m = 5, p = 15 },
-	{ n = "Generador de golems de tablas", m = 15, p = 5 },
-	{ n = "Torre de flechas", m = 10, p = 10 },
-	{ n = "Muro", m = 0, p = 6 },
-	{ n = "Reparar la aldea", m = 8, p = 8 },
-	{ n = "Mejorar golems", m = 0, p = 0, oro = 8 },
+	{ n = "Generador de golems de piedra", corto = "Golems de piedra", m = 5, p = 15 },
+	{ n = "Generador de golems de tablas", corto = "Golems de tablas", m = 15, p = 5 },
+	{ n = "Torre de flechas", corto = "Torre de flechas", m = 10, p = 10 },
+	{ n = "Muro", corto = "Muro", m = 0, p = 6 },
+	{ n = "Reparar la aldea", corto = "Reparar la aldea", m = 8, p = 8 },
+	{ n = "Mejorar golems", corto = "Mejorar golems", m = 0, p = 0, oro = 8 },
 }
 LY.CONSTRUCCIONES = CONSTRUCCIONES
 
@@ -15775,6 +15784,11 @@ local function crearCriatura(L, tipo, x, y, z)
 	m.vida, m.vidaMax = d.vida, d.vida
 	m.domado = true
 	m.ly = L
+	-- Tamaños de las variantes del web
+	local escala = ({ golemPiedraLY = 0.62, golemTablaLY = 0.55, piglinBrutoLY = 1.25 })[tipo]
+	if escala then
+		ctx.Mobs.escalar(m, escala)
+	end
 	if esGolem(m) then
 		if L.mejora > 0 then
 			m.vida *= 1.3 ^ L.mejora
@@ -16122,9 +16136,19 @@ local function panel(L)
 	linea(("Asalto en %d s"):format(math.ceil(L.raidT)), "#ff9966")
 	local botones = {}
 	for k, C in CONSTRUCCIONES do
-		local coste = C.oro and (C.oro .. " oro") or (((C.m > 0) and (C.m .. " madera ") or "") .. ((C.p > 0) and (C.p .. " piedra") or ""))
+		local partes = {}
+		if C.oro then
+			table.insert(partes, C.oro .. " oro")
+		end
+		if C.m > 0 then
+			table.insert(partes, C.m .. " madera")
+		end
+		if C.p > 0 then
+			table.insert(partes, C.p .. " piedra")
+		end
+		local coste = table.concat(partes, ", ")
 		local puede = C.oro and L.oro >= C.oro or (not C.oro and L.madera >= C.m and L.piedra >= C.p)
-		table.insert(botones, { t = ("%d · %s (%s)"):format(k, C.n, coste), cmd = "construir", arg = k, activo = puede })
+		table.insert(botones, { t = ("%d · %s"):format(k, C.corto), sub = coste, cmd = "construir", arg = k, activo = puede })
 	end
 	table.insert(botones, { t = "G · Ayudantes: recoger", cmd = "cosechar", activo = L.cdG <= 0 })
 	table.insert(botones, { t = "R · ¡Al ataque!", cmd = "atacar", activo = true })
@@ -16440,6 +16464,7 @@ local function enemigo(R, tipo, x, z, elite)
 		m.vida *= 2.2
 		m.vidaMax = m.vida
 		d.dano = (d.dano or 3) * 1.4
+		ctx.Mobs.escalar(m, 1.18)
 		m.pieza:SetAttribute("Etiqueta", "Élite")
 	end
 	m.alMorir = function(mm)
@@ -16493,6 +16518,7 @@ local function activarSala(R, s)
 			j.def.dano = 5 + R.nivel
 			j.def.vel = (j.def.vel or 2.4) * 1.1
 			j.jefe = true
+			ctx.Mobs.escalar(j, 1.7)
 			j.pieza:SetAttribute("Etiqueta", T.jefeN)
 			R.jefe = j
 		end
@@ -17945,6 +17971,15 @@ function Mobs.crear(tipo, x, y, z, opc)
 		Mobs.alCrearAldeano(m, opc)
 	end
 	return m
+end
+
+-- Cambia el tamaño de una criatura (jefes, élites, variantes más pequeñas…); el cliente escala el modelo igual
+function Mobs.escalar(m, f)
+	m.alto *= f
+	m.ancho *= f
+	if m.pieza then
+		m.pieza.Size = Vector3.new(math.max(0.4, m.ancho * 2 * BS), math.max(0.4, m.alto * BS), math.max(0.4, m.ancho * 2 * BS))
+	end
 end
 
 function Mobs.quitar(m)
@@ -23441,10 +23476,10 @@ local jefeSig = texto({ Position = UDim2.fromOffset(0, 30), Size = UDim2.new(1, 
 
 -- Panel lateral de los modos (marcador de Bed Wars, Mazmorras, Leyendas)
 local lateral = nuevo("Frame", { Name = "PanelModo", BackgroundColor3 = Color3.new(0, 0, 0), BackgroundTransparency = 0.5, BorderSizePixel = 0,
-	AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -10, 0.45, 0), Size = UDim2.fromOffset(250, 60), AutomaticSize = Enum.AutomaticSize.Y, Visible = false }, hud)
+	AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -10, 0.45, 0), Size = UDim2.fromOffset(270, 60), AutomaticSize = Enum.AutomaticSize.Y, Visible = false }, hud)
 nuevo("UICorner", { CornerRadius = UDim.new(0, 6) }, lateral)
 nuevo("UIPadding", { PaddingLeft = UDim.new(0, 10), PaddingRight = UDim.new(0, 10), PaddingTop = UDim.new(0, 6), PaddingBottom = UDim.new(0, 8) }, lateral)
-nuevo("UIListLayout", { Padding = UDim.new(0, 1), SortOrder = Enum.SortOrder.LayoutOrder }, lateral)
+nuevo("UIListLayout", { Padding = UDim.new(0, 2), SortOrder = Enum.SortOrder.LayoutOrder }, lateral)
 
 -- Efectos en pantalla
 local flash = nuevo("ImageLabel", { BackgroundTransparency = 1, Size = UDim2.fromScale(1, 1), Image = "", ImageTransparency = 1, ZIndex = 0 }, hud)
@@ -23503,13 +23538,13 @@ end
 -- Inventario del jugador (mochila 10-36 y barra 1-9) dentro de un panel
 local ANCHO = 9 * (S + 2) + 26
 local function bloqueInventario(p, y)
-	cabecera(p, "Inventario", y)
+	local cab = cabecera(p, "Inventario", y)
 	local cas = rejilla(p, "inv", 10, 27, 9, 14, y + 24)
 	local barraP = rejilla(p, "inv", 1, 9, 9, 14, y + 24 + 3 * (S + 2) + 8)
 	for i, b in barraP do
 		cas[i] = b
 	end
-	return cas, y + 24 + 4 * (S + 2) + 8
+	return cas, y + 24 + 4 * (S + 2) + 8, cab
 end
 
 local function flecha(p, x, y)
@@ -23640,7 +23675,8 @@ do
 	local p = panel({ Name = "Extra", Size = UDim2.fromOffset(ANCHO + 60, alto), AnchorPoint = Vector2.new(0.5, 0.5), Visible = false, ZIndex = 6 }, contenedor)
 	extra.titulo = cabecera(p, "")
 	extra.zona = nuevo("Frame", { BackgroundTransparency = 1, Position = UDim2.fromOffset(14, 32), Size = UDim2.new(1, -28, 0, 170) }, p)
-	local cas = bloqueInventario(p, 32 + 170 + 6)
+	local cas, _, cab = bloqueInventario(p, 32 + 170 + 6)
+	extra.cas, extra.cabInv = cas, cab
 	extra.panel = p
 	pantallas.extra = { panel = p, cas = cas }
 end
@@ -23651,6 +23687,13 @@ local function construirExtra(d)
 	extra.sub = d.sub
 	extra.slots, extra.salida, extra.opciones, extra.ofertas = {}, nil, {}, {}
 	extra.texto, extra.barras = nil, {}
+	-- La tienda usa todo el panel (el dinero ya se ve arriba); las demás pantallas muestran el inventario
+	local tienda = d.sub == "tienda"
+	for _, b in extra.cas do
+		b.Visible = not tienda
+	end
+	extra.cabInv.Visible = not tienda
+	z.Size = UDim2.new(1, -28, 0, tienda and 170 + 4 * (S + 2) + 30 or 170)
 	local function casilla(i, x, y, rotulo)
 		local b = ranura(z, "mesa", i)
 		b.Position = UDim2.fromOffset(x, y)
@@ -23714,16 +23757,17 @@ local function construirExtra(d)
 		end
 	elseif d.sub == "tienda" then
 		-- Tienda de Bed Wars: pestañas con icono, tu dinero, cuadrícula de ofertas y una línea de ayuda
-		extra.tabs = nuevo("Frame", { BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, 30) }, z)
+		local alto = 170 + 4 * (S + 2) + 30
+		extra.tabs = nuevo("Frame", { BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, 28) }, z)
 		nuevo("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 3) }, extra.tabs)
-		extra.monedas = nuevo("Frame", { BackgroundTransparency = 1, AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, 0, 0, 0), Size = UDim2.fromOffset(190, 30) }, z)
-		nuevo("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, HorizontalAlignment = Enum.HorizontalAlignment.Right, Padding = UDim.new(0, 2) }, extra.monedas)
-		local lista = nuevo("ScrollingFrame", { BackgroundColor3 = Color3.fromHex("8b8b8b"), BorderSizePixel = 0, Position = UDim2.fromOffset(0, 34), Size = UDim2.new(1, 0, 0, 116),
+		extra.monedas = nuevo("Frame", { BackgroundTransparency = 1, AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, 0, 0, 0), Size = UDim2.fromOffset(176, 28) }, z)
+		nuevo("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, HorizontalAlignment = Enum.HorizontalAlignment.Right, Padding = UDim.new(0, 0) }, extra.monedas)
+		local lista = nuevo("ScrollingFrame", { BackgroundColor3 = Color3.fromHex("8b8b8b"), BorderSizePixel = 0, Position = UDim2.fromOffset(0, 32), Size = UDim2.new(1, 0, 0, alto - 58),
 			ScrollBarThickness = 6, CanvasSize = UDim2.new(), AutomaticCanvasSize = Enum.AutomaticSize.Y }, z)
-		nuevo("UIGridLayout", { CellSize = UDim2.fromOffset(140, 46), CellPadding = UDim2.fromOffset(3, 3), SortOrder = Enum.SortOrder.LayoutOrder }, lista)
+		nuevo("UIGridLayout", { CellSize = UDim2.fromOffset(210, 44), CellPadding = UDim2.fromOffset(3, 3), SortOrder = Enum.SortOrder.LayoutOrder }, lista)
 		nuevo("UIPadding", { PaddingLeft = UDim.new(0, 3), PaddingTop = UDim.new(0, 3) }, lista)
 		extra.lista = lista
-		aviso(0, 150, 436)
+		aviso(0, alto - 22, 436)
 		extra.texto.Size = UDim2.fromOffset(436, 20)
 		extra.texto.TextSize = 12
 	elseif d.sub == "aldeano" then
@@ -23788,11 +23832,11 @@ local function pintarExtra(d)
 			end
 		end
 		for i, t in d.pestanas or {} do
-			local b = boton("", { Size = UDim2.fromOffset(30, 30), LayoutOrder = i, ZIndex = 7,
+			local b = boton("", { Size = UDim2.fromOffset(28, 28), LayoutOrder = i, ZIndex = 7,
 				BackgroundColor3 = i == d.pestana and Color3.fromHex("c0a040") or Color3.fromHex("6f6f6f") }, extra.tabs, function()
 				Interfaz.enviar("pestana", i)
 			end)
-			local ic = nuevo("ImageLabel", { BackgroundTransparency = 1, Size = UDim2.fromOffset(24, 24), Position = UDim2.fromOffset(3, 3),
+			local ic = nuevo("ImageLabel", { BackgroundTransparency = 1, Size = UDim2.fromOffset(22, 22), Position = UDim2.fromOffset(3, 3),
 				ResampleMode = Enum.ResamplerMode.Pixelated, ZIndex = 8 }, b)
 			Iconos.poner(ic, t.icono)
 			b.MouseEnter:Connect(function()
@@ -23805,11 +23849,11 @@ local function pintarExtra(d)
 			end
 		end
 		for i, mo in d.monedas or {} do
-			local f = nuevo("Frame", { BackgroundTransparency = 1, Size = UDim2.fromOffset(46, 30), LayoutOrder = i }, extra.monedas)
-			local ic = nuevo("ImageLabel", { BackgroundTransparency = 1, Size = UDim2.fromOffset(22, 22), Position = UDim2.fromOffset(0, 4),
+			local f = nuevo("Frame", { BackgroundTransparency = 1, Size = UDim2.fromOffset(44, 28), LayoutOrder = i }, extra.monedas)
+			local ic = nuevo("ImageLabel", { BackgroundTransparency = 1, Size = UDim2.fromOffset(20, 20), Position = UDim2.fromOffset(0, 4),
 				ResampleMode = Enum.ResamplerMode.Pixelated, ZIndex = 8 }, f)
 			Iconos.poner(ic, mo[1])
-			texto({ Position = UDim2.fromOffset(22, 4), Size = UDim2.fromOffset(24, 22), Text = tostring(mo[2]), TextSize = 13, Font = FUENTE_N,
+			texto({ Position = UDim2.fromOffset(21, 4), Size = UDim2.fromOffset(23, 20), Text = tostring(mo[2]), TextSize = 13, Font = FUENTE_N,
 				TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 8 }, f)
 		end
 		local lista = extra.lista
@@ -23820,7 +23864,7 @@ local function pintarExtra(d)
 		end
 		for i, o in d.ofertas or {} do
 			local fondoC = o.tiene and Color3.fromHex("4f7a4f") or (o.puede and Color3.fromHex("727272") or Color3.fromHex("5a4a4a"))
-			local b = boton("", { Size = UDim2.fromOffset(140, 46), BackgroundColor3 = fondoC, ZIndex = 7, LayoutOrder = i }, lista, function()
+			local b = boton("", { Size = UDim2.fromOffset(210, 44), BackgroundColor3 = fondoC, ZIndex = 7, LayoutOrder = i }, lista, function()
 				Interfaz.enviar("comprar", i, shift() and 8 or 1)
 			end)
 			b.TextTransparency = 1
@@ -23831,11 +23875,11 @@ local function pintarExtra(d)
 				texto({ Size = UDim2.new(1, 0, 0, 14), Position = UDim2.new(0, 0, 1, -12), Text = tostring(o.n), TextSize = 13, Font = FUENTE_N,
 					TextXAlignment = Enum.TextXAlignment.Right, ZIndex = 9 }, ic)
 			end
-			texto({ Position = UDim2.fromOffset(42, 3), Size = UDim2.fromOffset(94, 24), Text = o.nombre or "", TextSize = 10, TextWrapped = true,
+			texto({ Position = UDim2.fromOffset(44, 3), Size = UDim2.fromOffset(160, 26), Text = o.nombre or "", TextSize = 11, TextWrapped = true,
 				TextXAlignment = Enum.TextXAlignment.Left, TextYAlignment = Enum.TextYAlignment.Top, ZIndex = 8 }, b)
-			local precio = o.tiene and "✔" or ((o.precio and o.precio[2] or 0) .. " " .. Registro.nombre(o.precio and o.precio[1] or 0))
+			local precio = o.tiene and "✔ Ya lo tienes" or (o.precioTxt or ((o.precio and o.precio[2] or 0) .. " " .. Registro.nombre(o.precio and o.precio[1] or 0)))
 			local colP = o.tiene and Color3.fromRGB(120, 255, 120) or (o.puede and Color3.fromRGB(255, 230, 120) or Color3.fromRGB(255, 110, 110))
-			texto({ Position = UDim2.fromOffset(42, 28), Size = UDim2.fromOffset(94, 15), Text = precio, TextSize = 10, TextColor3 = colP,
+			texto({ Position = UDim2.fromOffset(44, 28), Size = UDim2.fromOffset(160, 14), Text = precio, TextSize = 11, TextColor3 = colP,
 				TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 8 }, b)
 			b.MouseEnter:Connect(function()
 				extra.texto.Text = o.desc or o.nombre or ""
@@ -24506,16 +24550,28 @@ function Interfaz.panel(d)
 	end
 	texto({ Size = UDim2.new(1, 0, 0, 22), Text = d.titulo or "", Font = FUENTE_N, TextSize = 17, TextColor3 = color(d.col, "#ffff55"), LayoutOrder = o() }, lateral)
 	for _, l in d.lineas or {} do
-		texto({ Size = UDim2.new(1, 0, 0, l.t == "" and 8 or 17), Text = l.t or "", TextSize = 13, Font = Enum.Font.Code, TextColor3 = color(l.c, "#ffffff"),
-			TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, LayoutOrder = o() }, lateral)
+		-- Las líneas largas pasan a la siguiente sin pisar a las de abajo
+		texto({ Size = UDim2.new(1, 0, 0, l.t == "" and 8 or 16), AutomaticSize = l.t ~= "" and Enum.AutomaticSize.Y or Enum.AutomaticSize.None, Text = l.t or "",
+			TextSize = 13, Font = Enum.Font.Code, TextColor3 = color(l.c, "#ffffff"), TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true,
+			LayoutOrder = o() }, lateral)
+	end
+	if d.botones and #d.botones > 0 then
+		nuevo("Frame", { BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, 4), LayoutOrder = o() }, lateral)
 	end
 	for _, bt in d.botones or {} do
-		local b = boton(bt.t or "", { Size = UDim2.new(1, 0, 0, 24), TextSize = 12, LayoutOrder = o(),
+		-- Botón con el nombre y, debajo y más pequeño, lo que cuesta
+		local b = boton(bt.sub and "" or (bt.t or ""), { Size = UDim2.new(1, 0, 0, bt.sub and 34 or 22), TextSize = 12, LayoutOrder = o(),
 			BackgroundColor3 = bt.activo and Color3.fromHex("4f6f4f") or Color3.fromHex("555555"), TextXAlignment = Enum.TextXAlignment.Left }, lateral, function()
 			Interfaz.enviar("modoCmd", bt.cmd, bt.arg)
 		end)
 		b.TextTransparency = bt.activo and 0 or 0.4
-		nuevo("UIPadding", { PaddingLeft = UDim.new(0, 6) }, b)
+		nuevo("UIPadding", { PaddingLeft = UDim.new(0, 6), PaddingRight = UDim.new(0, 4) }, b)
+		if bt.sub then
+			texto({ Position = UDim2.fromOffset(0, 3), Size = UDim2.new(1, 0, 0, 15), Text = bt.t or "", TextSize = 12, TextXAlignment = Enum.TextXAlignment.Left,
+				TextTransparency = bt.activo and 0 or 0.4 }, b)
+			texto({ Position = UDim2.fromOffset(0, 18), Size = UDim2.new(1, 0, 0, 13), Text = bt.sub, TextSize = 10, Font = Enum.Font.Code,
+				TextXAlignment = Enum.TextXAlignment.Left, TextColor3 = bt.activo and Color3.fromRGB(200, 255, 200) or Color3.fromRGB(255, 160, 160) }, b)
+		end
 	end
 end
 
@@ -25054,7 +25110,7 @@ local function matriz(m)
 	return cf, Vector3.new(sx, sy, sz)
 end
 
-local function crearMalla(o, escala, conUV)
+local function crearMalla(o, escala, conUV, tinte)
 	local nv = buffer.readu16(geo, o)
 	local ni = buffer.readu16(geo, o + 2)
 	local pP = o + 4
@@ -25083,6 +25139,8 @@ local function crearMalla(o, escala, conUV)
 				uvs[i] = em:AddUV(Vector2.new(u, 1 - v))
 			end
 		end
+		-- Las variantes tiñen la textura con el color de los vértices
+		local ic = tinte and em:AddColor(tinte, 1)
 		for k = 0, ni - 3, 3 do
 			local a = buffer.readu16(geo, pI + k * 2) + 1
 			local b = buffer.readu16(geo, pI + k * 2 + 2) + 1
@@ -25090,6 +25148,9 @@ local function crearMalla(o, escala, conUV)
 			local f = em:AddTriangle(ids[a], ids[b], ids[c])
 			if conUV then
 				em:SetFaceUVs(f, { uvs[a], uvs[b], uvs[c] })
+			end
+			if ic then
+				em:SetFaceColors(f, { ic, ic, ic })
 			end
 		end
 	end)
@@ -25110,6 +25171,61 @@ local function crearMalla(o, escala, conUV)
 	return parte, centro
 end
 
+-- Variantes que reutilizan el modelo de otra criatura y se recolorean (VARIANTES de criaturas2.js y modos52.js).
+-- color(c) recibe el color de cada parte (blanco en las partes con textura, que se tiñen)
+local function hex(n)
+	return Color3.fromRGB(n // 65536, (n // 256) % 256, n % 256)
+end
+local function escalaColor(c, f, tinte, k)
+	if tinte then
+		c = c:Lerp(tinte, k)
+	end
+	return Color3.new(math.min(1, c.R * f), math.min(1, c.G * f), math.min(1, c.B * f))
+end
+local function igual(c, n)
+	local h = hex(n)
+	return math.abs(c.R - h.R) + math.abs(c.G - h.G) + math.abs(c.B - h.B) < 0.02
+end
+local function gris(c)
+	local g = (c.R + c.G + c.B) / 3
+	return g
+end
+local VARIANTES = {
+	esqueletoErrante = { base = "esqueleto", color = function(c) return escalaColor(c, 0.95, hex(0x8aa0a4), 0.35) end },
+	momia = { base = "zombi", color = function(c) return escalaColor(c, 1, hex(0xc0a878), 0.55) end },
+	aldeanoZombi = { base = "zombi", color = function(c) return escalaColor(c, 0.95, hex(0x7a5a3a), 0.3) end },
+	esqueletoWither = { base = "esqueleto", color = function(c) return escalaColor(c, 0.18) end },
+	piglinBruto = { base = "piglin", color = function(c)
+		if igual(c, 0x9a6a50) then
+			return hex(0x2a2a2a)
+		elseif igual(c, 0x6a4a30) then
+			return hex(0x1a1a1a)
+		end
+		return c
+	end },
+	champinaca = { base = "vaca", color = function(c) return escalaColor(c, 1, hex(0xa01818), 0.55) end },
+	calamarBrillante = { base = "calamar", color = function(c) return escalaColor(c, 1.6, hex(0x2aa8a8), 0.8) end },
+	burro = { base = "caballo", color = function(c) return escalaColor(c, 1, hex(0x8a8a90), 0.6) end },
+	mula = { base = "caballo", color = function(c) return escalaColor(c, 0.8, hex(0x4a2e1a), 0.5) end },
+	evocador = { base = "vindicador", color = function(c)
+		if igual(c, 0x2a3a3c) or igual(c, 0x1f2d2f) then
+			return hex(0x1c1c22)
+		end
+		return c
+	end },
+	golemPiedraLY = { base = "golem", color = function(c)
+		local g = gris(c)
+		return Color3.new(g * 0.9, g * 0.9, g * 0.95)
+	end },
+	golemTablaLY = { base = "golem", color = function(c)
+		local g = gris(c)
+		return Color3.new(math.min(1, g * 1.1), g * 0.82, g * 0.5)
+	end },
+	piglinLY = { base = "piglin" },
+	piglinBrutoLY = { base = "piglin", color = function(c) return escalaColor(c, 0.8) end },
+}
+MobsVista.VARIANTES = VARIANTES
+
 local plantillas = {} -- tipo -> {grupos = {{tipo, i, s, cf, piezas = {{parte, centro}}}}} o false
 local creando = {}
 
@@ -25121,7 +25237,8 @@ local function plantilla(tipo)
 		return nil
 	end
 	creando[tipo] = true
-	local modelo = Datos.modelos[tipo]
+	local V = not Datos.modelos[tipo] and VARIANTES[tipo] or nil
+	local modelo = Datos.modelos[tipo] or (V and Datos.modelos[V.base])
 	if not modelo then
 		plantillas[tipo] = false
 		return nil
@@ -25134,7 +25251,8 @@ local function plantilla(tipo)
 		for _, ml in g.mallas do
 			local parte, centro
 			if MobsVista.disponible then
-				parte, centro = crearMalla(ml.o, esc, ml.t ~= nil)
+				local tinte = (V and V.color and ml.t) and V.color(Color3.new(1, 1, 1)) or nil
+				parte, centro = crearMalla(ml.o, esc, ml.t ~= nil, tinte)
 				if not parte then
 					MobsVista.disponible = false
 				end
@@ -25154,6 +25272,9 @@ local function plantilla(tipo)
 					end
 				else
 					parte.Color = colorHex(ml.col or 0xffffff)
+					if V and V.color then
+						parte.Color = V.color(parte.Color)
+					end
 				end
 				if ml.emis and ml.emis > 0 then
 					parte.Material = Enum.Material.Neon
@@ -25218,6 +25339,12 @@ local function nuevaVista(pieza)
 		pieza = pieza, tipo = tipo, def = def, fase = 0, golpeT = 0, flash = 0, muerteT = 0,
 		cf = pieza.CFrame, pos = pieza.Position, cabY = 0, cabX = 0, salto = 0, anterior = pieza.Position,
 	}
+	-- Las variantes se animan y miden como su criatura base
+	local V = not Datos.modelos[tipo] and VARIANTES[tipo]
+	if V then
+		v.tipoAnim = V.base
+		v.altoModelo = Datos.defs[V.base] and Datos.defs[V.base].alto
+	end
 	local modelo = Instance.new("Model")
 	modelo.Name = tipo
 	v.modelo = modelo
@@ -25268,6 +25395,28 @@ local function nuevaVista(pieza)
 	if def.tipo == "hostil" or tipo == "golem" then
 		v.sonidoT = 4 + math.random() * 8
 	end
+	-- Nombre encima (jefes y élites de las Mazmorras); los bots de Bed Wars ya traen su cartel del servidor
+	local etiqueta = pieza:GetAttribute("Etiqueta")
+	if etiqueta and not pieza:FindFirstChildOfClass("BillboardGui") then
+		local g = Instance.new("BillboardGui")
+		g.Name = "Etiqueta"
+		g.Size = UDim2.fromOffset(180, 24)
+		g.StudsOffset = Vector3.new(0, pieza.Size.Y / 2 + 0.6 * BS, 0)
+		g.MaxDistance = 50 * BS
+		g.LightInfluence = 0
+		g.Adornee = pieza
+		local t = Instance.new("TextLabel")
+		t.BackgroundTransparency = 0.55
+		t.BackgroundColor3 = Color3.new(0, 0, 0)
+		t.BorderSizePixel = 0
+		t.Size = UDim2.fromScale(1, 1)
+		t.Font = Enum.Font.Code
+		t.TextScaled = true
+		t.Text = etiqueta
+		t.TextColor3 = etiqueta == "Élite" and Color3.fromRGB(200, 120, 255) or Color3.fromRGB(255, 90, 90)
+		t.Parent = g
+		g.Parent = modelo
+	end
 	vistas[pieza] = v
 	return v
 end
@@ -25305,12 +25454,12 @@ local function animar(v, dt)
 	local amp = math.sin(v.fase) * math.min(1, sp) * 0.7
 	v.golpeT = math.max(0, v.golpeT - dt)
 	local golpe = math.sin(math.min(1, v.golpeT / 0.35) * math.pi) * 0.9
-	local tipo = v.tipo
+	local tipo = v.tipoAnim or v.tipo
 	local persigue = pieza:GetAttribute("persigue") == true
 	local brazosArriba = tipo == "zombi" or tipo == "ahogado" or tipo == "husk" or tipo == "zombiAldeano"
 		or (tipo == "esqueleto" and persigue) or ((tipo == "piglin" or tipo == "enderman") and persigue)
 	-- Escala: crías, slimes de varios tamaños
-	local altoDef = (v.def.alto or 1) * BS
+	local altoDef = (v.altoModelo or v.def.alto or 1) * BS
 	local esc = math.max(0.2, pieza.Size.Y / math.max(altoDef, 0.01))
 	if pieza:GetAttribute("bebe") then
 		esc = 0.5
@@ -25458,7 +25607,7 @@ function MobsVista.iniciar()
 		for pieza, v in vistas do
 			if not pieza.Parent then
 				quitarVista(pieza)
-			elseif (pieza.Position - cpos).Magnitude < 260 then
+			elseif (pieza.Position - cpos).Magnitude < 400 then
 				animar(v, dt)
 				v.lejos = false
 			elseif not v.lejos then

@@ -415,7 +415,16 @@ function METODOS:GetDataStore() error("Hay que publicar el lugar para usar DataS
 function METODOS:BindToClose() end
 function METODOS:SetCoreGuiEnabled() end
 function METODOS:AddItem() end
-function METODOS:Create() return { Play = function() end } end
+-- Las animaciones (TweenService) acaban al instante: se aplica el estado final al darle a Play
+function METODOS:Create(o, info, props)
+	return { Play = function()
+		if type(o) == "table" and type(props) == "table" then
+			for k, v in props do
+				pcall(function() o[k] = v end)
+			end
+		end
+	end, Cancel = function() end, Completed = senal() }
+end
 function METODOS:IsKeyDown() return false end
 function METODOS:GetMouseLocation() return { X = 0, Y = 0 } end
 function METODOS:Clone()

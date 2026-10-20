@@ -1,10 +1,8 @@
 --[[
-	Ejecuta el servidor y el cliente de Blockverse v2 dentro del Roblox de
-	mentira: un jugador entra, se dibuja el mundo con mallas, elige modo,
-	pica, recoge, fabrica en la mesa, pone bloques, abre el inventario,
-	pelea con criaturas, ve explosiones y prueba One Block, Bed Wars,
-	Mazmorras y Leyendas.
-	Cualquier error de los scripts se cuenta como fallo.
+	Capturas: ejecuta el servidor y el cliente en el Roblox de mentira, entra en
+	Bed Wars, Mazmorras y Leyendas y vuelca lo que dibuja el cliente (mallas con
+	textura, piezas, carteles y la interfaz) para dibujarlo con
+	herramientas/vista/render.py y gui.py. Se usa con pruebas/capturar.sh.
 ]]
 local F = require("./roblox_falso")
 local FU = require("./fuentes")
@@ -359,13 +357,11 @@ Interfaz.alElegirModo("bedwars")
 pasos(60)
 local P = BWm._partida()
 local sala = P.arena.sala
-print("DIAG inicio", P.tema, P.arena.id, P.arena.ox, sala.x)
 esperarDibujo(sala.x, sala.y, sala.z)
 volcar("bw_sala", sala.x, sala.y, sala.z, 40, F.Vector3.new(sala.x + 5.4, sala.y + 3.2, sala.z + 5.4), F.Vector3.new(sala.x - 30, sala.y - 30, sala.z - 30), 70)
 BWm._empezarYa()
 pasos(90)
 local J = P.jug[plr]
-print("DIAG empezado", BWm._partida() == P, P.arena.id, P.arena.ox, P.arena.centro.x, P.eqs[J.equipo].E.isla[1], #P.bots)
 local E = P.eqs[J.equipo].E
 local ix, iz = E.isla[1], E.isla[2]
 moverJugador(ix, Arenas.BW_Y + 1, iz)
@@ -387,14 +383,6 @@ for _, m in P.tenderos do
 	end
 end
 volcar("bw_tienda", ix, Y, iz, 30, F.Vector3.new(tendero.x + 3.5, Y + 2.6, tendero.z + 3.5), F.Vector3.new(tendero.x, Y + 1.4, tendero.z), 60)
--- Diagnóstico: dónde están los bots y si el cliente los viste
-local MV = cli.MobsVista._resultado
-for _, m in P.bots do
-	local v = MV.lista()[m.pieza]
-	local pp = v and v.grupos and v.grupos[1] and v.grupos[1].piezas[1] and v.grupos[1].piezas[1].parte
-	print(string.format("BOT %s %.1f %.1f %.1f muerto=%s vista=%s grupos=%s parte=%s", m.bw.nombre, m.x, m.y, m.z, tostring(m.muerto), tostring(v ~= nil),
-		tostring(v and v.grupos and #v.grupos), pp and tostring(pp._p.CFrame and pp._p.CFrame.Position) or "-"))
-end
 volcarGui("bw_hud")
 moverJugador(math.floor(tendero.x) + 1, Y + 1, math.floor(tendero.z))
 pasos(2)

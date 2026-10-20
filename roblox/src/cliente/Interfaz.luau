@@ -342,10 +342,10 @@ local jefeSig = texto({ Position = UDim2.fromOffset(0, 30), Size = UDim2.new(1, 
 
 -- Panel lateral de los modos (marcador de Bed Wars, Mazmorras, Leyendas)
 local lateral = nuevo("Frame", { Name = "PanelModo", BackgroundColor3 = Color3.new(0, 0, 0), BackgroundTransparency = 0.5, BorderSizePixel = 0,
-	AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -10, 0.45, 0), Size = UDim2.fromOffset(250, 60), AutomaticSize = Enum.AutomaticSize.Y, Visible = false }, hud)
+	AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -10, 0.45, 0), Size = UDim2.fromOffset(270, 60), AutomaticSize = Enum.AutomaticSize.Y, Visible = false }, hud)
 nuevo("UICorner", { CornerRadius = UDim.new(0, 6) }, lateral)
 nuevo("UIPadding", { PaddingLeft = UDim.new(0, 10), PaddingRight = UDim.new(0, 10), PaddingTop = UDim.new(0, 6), PaddingBottom = UDim.new(0, 8) }, lateral)
-nuevo("UIListLayout", { Padding = UDim.new(0, 1), SortOrder = Enum.SortOrder.LayoutOrder }, lateral)
+nuevo("UIListLayout", { Padding = UDim.new(0, 2), SortOrder = Enum.SortOrder.LayoutOrder }, lateral)
 
 -- Efectos en pantalla
 local flash = nuevo("ImageLabel", { BackgroundTransparency = 1, Size = UDim2.fromScale(1, 1), Image = "", ImageTransparency = 1, ZIndex = 0 }, hud)
@@ -404,13 +404,13 @@ end
 -- Inventario del jugador (mochila 10-36 y barra 1-9) dentro de un panel
 local ANCHO = 9 * (S + 2) + 26
 local function bloqueInventario(p, y)
-	cabecera(p, "Inventario", y)
+	local cab = cabecera(p, "Inventario", y)
 	local cas = rejilla(p, "inv", 10, 27, 9, 14, y + 24)
 	local barraP = rejilla(p, "inv", 1, 9, 9, 14, y + 24 + 3 * (S + 2) + 8)
 	for i, b in barraP do
 		cas[i] = b
 	end
-	return cas, y + 24 + 4 * (S + 2) + 8
+	return cas, y + 24 + 4 * (S + 2) + 8, cab
 end
 
 local function flecha(p, x, y)
@@ -541,7 +541,8 @@ do
 	local p = panel({ Name = "Extra", Size = UDim2.fromOffset(ANCHO + 60, alto), AnchorPoint = Vector2.new(0.5, 0.5), Visible = false, ZIndex = 6 }, contenedor)
 	extra.titulo = cabecera(p, "")
 	extra.zona = nuevo("Frame", { BackgroundTransparency = 1, Position = UDim2.fromOffset(14, 32), Size = UDim2.new(1, -28, 0, 170) }, p)
-	local cas = bloqueInventario(p, 32 + 170 + 6)
+	local cas, _, cab = bloqueInventario(p, 32 + 170 + 6)
+	extra.cas, extra.cabInv = cas, cab
 	extra.panel = p
 	pantallas.extra = { panel = p, cas = cas }
 end
@@ -552,6 +553,13 @@ local function construirExtra(d)
 	extra.sub = d.sub
 	extra.slots, extra.salida, extra.opciones, extra.ofertas = {}, nil, {}, {}
 	extra.texto, extra.barras = nil, {}
+	-- La tienda usa todo el panel (el dinero ya se ve arriba); las demás pantallas muestran el inventario
+	local tienda = d.sub == "tienda"
+	for _, b in extra.cas do
+		b.Visible = not tienda
+	end
+	extra.cabInv.Visible = not tienda
+	z.Size = UDim2.new(1, -28, 0, tienda and 170 + 4 * (S + 2) + 30 or 170)
 	local function casilla(i, x, y, rotulo)
 		local b = ranura(z, "mesa", i)
 		b.Position = UDim2.fromOffset(x, y)
@@ -615,16 +623,17 @@ local function construirExtra(d)
 		end
 	elseif d.sub == "tienda" then
 		-- Tienda de Bed Wars: pestañas con icono, tu dinero, cuadrícula de ofertas y una línea de ayuda
-		extra.tabs = nuevo("Frame", { BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, 30) }, z)
+		local alto = 170 + 4 * (S + 2) + 30
+		extra.tabs = nuevo("Frame", { BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, 28) }, z)
 		nuevo("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 3) }, extra.tabs)
-		extra.monedas = nuevo("Frame", { BackgroundTransparency = 1, AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, 0, 0, 0), Size = UDim2.fromOffset(190, 30) }, z)
-		nuevo("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, HorizontalAlignment = Enum.HorizontalAlignment.Right, Padding = UDim.new(0, 2) }, extra.monedas)
-		local lista = nuevo("ScrollingFrame", { BackgroundColor3 = Color3.fromHex("8b8b8b"), BorderSizePixel = 0, Position = UDim2.fromOffset(0, 34), Size = UDim2.new(1, 0, 0, 116),
+		extra.monedas = nuevo("Frame", { BackgroundTransparency = 1, AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, 0, 0, 0), Size = UDim2.fromOffset(176, 28) }, z)
+		nuevo("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, HorizontalAlignment = Enum.HorizontalAlignment.Right, Padding = UDim.new(0, 0) }, extra.monedas)
+		local lista = nuevo("ScrollingFrame", { BackgroundColor3 = Color3.fromHex("8b8b8b"), BorderSizePixel = 0, Position = UDim2.fromOffset(0, 32), Size = UDim2.new(1, 0, 0, alto - 58),
 			ScrollBarThickness = 6, CanvasSize = UDim2.new(), AutomaticCanvasSize = Enum.AutomaticSize.Y }, z)
-		nuevo("UIGridLayout", { CellSize = UDim2.fromOffset(140, 46), CellPadding = UDim2.fromOffset(3, 3), SortOrder = Enum.SortOrder.LayoutOrder }, lista)
+		nuevo("UIGridLayout", { CellSize = UDim2.fromOffset(210, 44), CellPadding = UDim2.fromOffset(3, 3), SortOrder = Enum.SortOrder.LayoutOrder }, lista)
 		nuevo("UIPadding", { PaddingLeft = UDim.new(0, 3), PaddingTop = UDim.new(0, 3) }, lista)
 		extra.lista = lista
-		aviso(0, 150, 436)
+		aviso(0, alto - 22, 436)
 		extra.texto.Size = UDim2.fromOffset(436, 20)
 		extra.texto.TextSize = 12
 	elseif d.sub == "aldeano" then
@@ -689,11 +698,11 @@ local function pintarExtra(d)
 			end
 		end
 		for i, t in d.pestanas or {} do
-			local b = boton("", { Size = UDim2.fromOffset(30, 30), LayoutOrder = i, ZIndex = 7,
+			local b = boton("", { Size = UDim2.fromOffset(28, 28), LayoutOrder = i, ZIndex = 7,
 				BackgroundColor3 = i == d.pestana and Color3.fromHex("c0a040") or Color3.fromHex("6f6f6f") }, extra.tabs, function()
 				Interfaz.enviar("pestana", i)
 			end)
-			local ic = nuevo("ImageLabel", { BackgroundTransparency = 1, Size = UDim2.fromOffset(24, 24), Position = UDim2.fromOffset(3, 3),
+			local ic = nuevo("ImageLabel", { BackgroundTransparency = 1, Size = UDim2.fromOffset(22, 22), Position = UDim2.fromOffset(3, 3),
 				ResampleMode = Enum.ResamplerMode.Pixelated, ZIndex = 8 }, b)
 			Iconos.poner(ic, t.icono)
 			b.MouseEnter:Connect(function()
@@ -706,11 +715,11 @@ local function pintarExtra(d)
 			end
 		end
 		for i, mo in d.monedas or {} do
-			local f = nuevo("Frame", { BackgroundTransparency = 1, Size = UDim2.fromOffset(46, 30), LayoutOrder = i }, extra.monedas)
-			local ic = nuevo("ImageLabel", { BackgroundTransparency = 1, Size = UDim2.fromOffset(22, 22), Position = UDim2.fromOffset(0, 4),
+			local f = nuevo("Frame", { BackgroundTransparency = 1, Size = UDim2.fromOffset(44, 28), LayoutOrder = i }, extra.monedas)
+			local ic = nuevo("ImageLabel", { BackgroundTransparency = 1, Size = UDim2.fromOffset(20, 20), Position = UDim2.fromOffset(0, 4),
 				ResampleMode = Enum.ResamplerMode.Pixelated, ZIndex = 8 }, f)
 			Iconos.poner(ic, mo[1])
-			texto({ Position = UDim2.fromOffset(22, 4), Size = UDim2.fromOffset(24, 22), Text = tostring(mo[2]), TextSize = 13, Font = FUENTE_N,
+			texto({ Position = UDim2.fromOffset(21, 4), Size = UDim2.fromOffset(23, 20), Text = tostring(mo[2]), TextSize = 13, Font = FUENTE_N,
 				TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 8 }, f)
 		end
 		local lista = extra.lista
@@ -721,7 +730,7 @@ local function pintarExtra(d)
 		end
 		for i, o in d.ofertas or {} do
 			local fondoC = o.tiene and Color3.fromHex("4f7a4f") or (o.puede and Color3.fromHex("727272") or Color3.fromHex("5a4a4a"))
-			local b = boton("", { Size = UDim2.fromOffset(140, 46), BackgroundColor3 = fondoC, ZIndex = 7, LayoutOrder = i }, lista, function()
+			local b = boton("", { Size = UDim2.fromOffset(210, 44), BackgroundColor3 = fondoC, ZIndex = 7, LayoutOrder = i }, lista, function()
 				Interfaz.enviar("comprar", i, shift() and 8 or 1)
 			end)
 			b.TextTransparency = 1
@@ -732,11 +741,11 @@ local function pintarExtra(d)
 				texto({ Size = UDim2.new(1, 0, 0, 14), Position = UDim2.new(0, 0, 1, -12), Text = tostring(o.n), TextSize = 13, Font = FUENTE_N,
 					TextXAlignment = Enum.TextXAlignment.Right, ZIndex = 9 }, ic)
 			end
-			texto({ Position = UDim2.fromOffset(42, 3), Size = UDim2.fromOffset(94, 24), Text = o.nombre or "", TextSize = 10, TextWrapped = true,
+			texto({ Position = UDim2.fromOffset(44, 3), Size = UDim2.fromOffset(160, 26), Text = o.nombre or "", TextSize = 11, TextWrapped = true,
 				TextXAlignment = Enum.TextXAlignment.Left, TextYAlignment = Enum.TextYAlignment.Top, ZIndex = 8 }, b)
-			local precio = o.tiene and "✔" or ((o.precio and o.precio[2] or 0) .. " " .. Registro.nombre(o.precio and o.precio[1] or 0))
+			local precio = o.tiene and "✔ Ya lo tienes" or (o.precioTxt or ((o.precio and o.precio[2] or 0) .. " " .. Registro.nombre(o.precio and o.precio[1] or 0)))
 			local colP = o.tiene and Color3.fromRGB(120, 255, 120) or (o.puede and Color3.fromRGB(255, 230, 120) or Color3.fromRGB(255, 110, 110))
-			texto({ Position = UDim2.fromOffset(42, 28), Size = UDim2.fromOffset(94, 15), Text = precio, TextSize = 10, TextColor3 = colP,
+			texto({ Position = UDim2.fromOffset(44, 28), Size = UDim2.fromOffset(160, 14), Text = precio, TextSize = 11, TextColor3 = colP,
 				TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 8 }, b)
 			b.MouseEnter:Connect(function()
 				extra.texto.Text = o.desc or o.nombre or ""
@@ -1407,16 +1416,28 @@ function Interfaz.panel(d)
 	end
 	texto({ Size = UDim2.new(1, 0, 0, 22), Text = d.titulo or "", Font = FUENTE_N, TextSize = 17, TextColor3 = color(d.col, "#ffff55"), LayoutOrder = o() }, lateral)
 	for _, l in d.lineas or {} do
-		texto({ Size = UDim2.new(1, 0, 0, l.t == "" and 8 or 17), Text = l.t or "", TextSize = 13, Font = Enum.Font.Code, TextColor3 = color(l.c, "#ffffff"),
-			TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, LayoutOrder = o() }, lateral)
+		-- Las líneas largas pasan a la siguiente sin pisar a las de abajo
+		texto({ Size = UDim2.new(1, 0, 0, l.t == "" and 8 or 16), AutomaticSize = l.t ~= "" and Enum.AutomaticSize.Y or Enum.AutomaticSize.None, Text = l.t or "",
+			TextSize = 13, Font = Enum.Font.Code, TextColor3 = color(l.c, "#ffffff"), TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true,
+			LayoutOrder = o() }, lateral)
+	end
+	if d.botones and #d.botones > 0 then
+		nuevo("Frame", { BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, 4), LayoutOrder = o() }, lateral)
 	end
 	for _, bt in d.botones or {} do
-		local b = boton(bt.t or "", { Size = UDim2.new(1, 0, 0, 24), TextSize = 12, LayoutOrder = o(),
+		-- Botón con el nombre y, debajo y más pequeño, lo que cuesta
+		local b = boton(bt.sub and "" or (bt.t or ""), { Size = UDim2.new(1, 0, 0, bt.sub and 34 or 22), TextSize = 12, LayoutOrder = o(),
 			BackgroundColor3 = bt.activo and Color3.fromHex("4f6f4f") or Color3.fromHex("555555"), TextXAlignment = Enum.TextXAlignment.Left }, lateral, function()
 			Interfaz.enviar("modoCmd", bt.cmd, bt.arg)
 		end)
 		b.TextTransparency = bt.activo and 0 or 0.4
-		nuevo("UIPadding", { PaddingLeft = UDim.new(0, 6) }, b)
+		nuevo("UIPadding", { PaddingLeft = UDim.new(0, 6), PaddingRight = UDim.new(0, 4) }, b)
+		if bt.sub then
+			texto({ Position = UDim2.fromOffset(0, 3), Size = UDim2.new(1, 0, 0, 15), Text = bt.t or "", TextSize = 12, TextXAlignment = Enum.TextXAlignment.Left,
+				TextTransparency = bt.activo and 0 or 0.4 }, b)
+			texto({ Position = UDim2.fromOffset(0, 18), Size = UDim2.new(1, 0, 0, 13), Text = bt.sub, TextSize = 10, Font = Enum.Font.Code,
+				TextXAlignment = Enum.TextXAlignment.Left, TextColor3 = bt.activo and Color3.fromRGB(200, 255, 200) or Color3.fromRGB(255, 160, 160) }, b)
+		end
 	end
 end
 
