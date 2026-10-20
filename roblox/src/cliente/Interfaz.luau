@@ -24,11 +24,13 @@ local Comp = ReplicatedStorage:WaitForChild("Blockverse")
 local Registro = require(Comp:WaitForChild("Registro"))
 local Crafteo = require(Comp:WaitForChild("Crafteo"))
 local Iconos = require(script.Parent:WaitForChild("Iconos"))
+local Enc = require(Comp:WaitForChild("Encantamientos"))
 
 local OB, BL = Registro.objetos, Registro.bloques
 local jugador = Players.LocalPlayer
 
 local Interfaz = {}
+local obActivo = false -- la barra de arriba la usa One Block
 Interfaz.enviar = function(...) end
 Interfaz.alSeleccionar = function(i) end
 Interfaz.alElegirModo = function(m) end
@@ -152,7 +154,8 @@ local function ranura(padre, zona, i, tam)
 		b.BackgroundColor3 = C.hover
 		local id = b:GetAttribute("id")
 		if id and tooltip then
-			tooltip.Text = Registro.nombre(id)
+			local extra = b:GetAttribute("enc")
+			tooltip.Text = Registro.nombre(id) .. (extra and extra ~= "" and ("\n" .. extra) or "")
 			tooltip.Visible = true
 		end
 	end)
@@ -179,12 +182,35 @@ local function ranura(padre, zona, i, tam)
 end
 
 -- Muestra una pila en una casilla
+-- Texto de los encantamientos de una pila
+local function textoEnc(p)
+	if not p or not p.enc then
+		return nil
+	end
+	local t = {}
+	for k, l in p.enc do
+		table.insert(t, Enc.nombre(k, l))
+	end
+	table.sort(t)
+	return table.concat(t, "\n")
+end
+Interfaz.textoEnc = textoEnc
+
 local function pintar(b, p)
 	local ic = b.Icono
+	local brillo = b:FindFirstChild("Brillo")
+	if p and p.enc and not brillo then
+		brillo = nuevo("Frame", { Name = "Brillo", BackgroundColor3 = Color3.fromRGB(170, 90, 255), BackgroundTransparency = 0.72, BorderSizePixel = 0,
+			Size = UDim2.new(1, -6, 1, -6), Position = UDim2.fromOffset(3, 3), ZIndex = 2 }, b)
+	end
+	if brillo then
+		brillo.Visible = p ~= nil and p ~= false and p.enc ~= nil
+	end
 	if p then
 		Iconos.poner(ic, p.id)
 		b.N.Text = p.n > 1 and tostring(p.n) or ""
 		b:SetAttribute("id", p.id)
+		b:SetAttribute("enc", textoEnc(p))
 		local o = OB[p.id]
 		if p.dur and o and o.dur and p.dur < o.dur then
 			local f = math.clamp(p.dur / o.dur, 0, 1)
@@ -198,6 +224,7 @@ local function pintar(b, p)
 		Iconos.poner(ic, nil)
 		b.N.Text = ""
 		b:SetAttribute("id", nil)
+		b:SetAttribute("enc", nil)
 		b.Dur.Visible = false
 	end
 end
@@ -498,6 +525,180 @@ do
 	end)
 	paleta.panel, paleta.lista, paleta.busca, paleta.pest = p, lista, busca, pest
 	pantallas.creativo = { panel = p, cas = cas, extra = arm }
+end
+
+-- Mesas (encantar, yunque, afiladora, herrería, pociones) y comercio con aldeanos
+local extra = {}
+do
+	local alto = 40 + 170 + 4 * (S + 2) + 40
+	local p = panel({ Name = "Extra", Size = UDim2.fromOffset(ANCHO + 60, alto), AnchorPoint = Vector2.new(0.5, 0.5), Visible = false, ZIndex = 6 }, contenedor)
+	extra.titulo = cabecera(p, "")
+	extra.zona = nuevo("Frame", { BackgroundTransparency = 1, Position = UDim2.fromOffset(14, 32), Size = UDim2.new(1, -28, 0, 170) }, p)
+	local cas = bloqueInventario(p, 32 + 170 + 6)
+	extra.panel = p
+	pantallas.extra = { panel = p, cas = cas }
+end
+
+local function construirExtra(d)
+	local z = extra.zona
+	z:ClearAllChildren()
+	extra.sub = d.sub
+	extra.slots, extra.salida, extra.opciones, extra.ofertas = {}, nil, {}, {}
+	extra.texto, extra.barras = nil, {}
+	local function casilla(i, x, y, rotulo)
+		local b = ranura(z, "mesa", i)
+		b.Position = UDim2.fromOffset(x, y)
+		if rotulo then
+			texto({ Name = "Fondo", Size = UDim2.fromScale(1, 1), Text = rotulo, TextSize = 8, TextColor3 = Color3.fromRGB(60, 60, 60),
+				TextStrokeTransparency = 1, TextTransparency = 0.4, ZIndex = 1 }, b)
+		end
+		extra.slots[i] = b
+		return b
+	end
+	local function salida(x, y)
+		local b = ranura(z, "mesaSalida", 1, S + 8)
+		b.Position = UDim2.fromOffset(x, y)
+		extra.salida = b
+	end
+	local function aviso(x, y, w)
+		extra.texto = texto({ Position = UDim2.fromOffset(x, y), Size = UDim2.fromOffset(w or 320, 40), Text = "", TextColor3 = C.texto, TextStrokeTransparency = 1,
+			TextSize = 13, TextWrapped = true, TextXAlignment = Enum.TextXAlignment.Left }, z)
+	end
+	local function barra(x, y, w, h, col)
+		local f = nuevo("Frame", { BackgroundColor3 = Color3.fromHex("555555"), BorderSizePixel = 0, Position = UDim2.fromOffset(x, y), Size = UDim2.fromOffset(w, h) }, z)
+		local fi = nuevo("Frame", { BackgroundColor3 = col, BorderSizePixel = 0, Size = UDim2.fromScale(0, 1) }, f)
+		table.insert(extra.barras, fi)
+		return fi
+	end
+	if d.sub == "encantar" then
+		casilla(1, 10, 40, "Objeto")
+		casilla(2, 10 + S + 6, 40, "Lapis")
+		for i = 1, 3 do
+			local b = boton("", { Size = UDim2.fromOffset(300, 40), Position = UDim2.fromOffset(110, 2 + (i - 1) * 46), TextSize = 13,
+				BackgroundColor3 = Color3.fromHex("6a4a9a"), ZIndex = 7, TextXAlignment = Enum.TextXAlignment.Left }, z, function()
+				Interfaz.enviar("encantar", i)
+			end)
+			nuevo("UIPadding", { PaddingLeft = UDim.new(0, 10) }, b)
+			extra.opciones[i] = b
+		end
+		aviso(10, 150, 400)
+	elseif d.sub == "yunque" or d.sub == "afiladora" then
+		casilla(1, 40, 50)
+		casilla(2, 40 + S + 30, 50)
+		texto({ Position = UDim2.fromOffset(40 + 2 * S + 40, 50), Size = UDim2.fromOffset(40, S), Text = "➜", TextColor3 = Color3.fromHex("6a6a6a"),
+			TextStrokeTransparency = 1, TextSize = 30 }, z)
+		salida(40 + 2 * S + 90, 46)
+		aviso(40, 110, 400)
+	elseif d.sub == "herreria" then
+		casilla(1, 30, 50, "Plantilla")
+		casilla(2, 30 + S + 8, 50, "Objeto")
+		casilla(3, 30 + 2 * (S + 8), 50, "Lingote")
+		texto({ Position = UDim2.fromOffset(30 + 3 * (S + 8), 50), Size = UDim2.fromOffset(40, S), Text = "➜", TextColor3 = Color3.fromHex("6a6a6a"),
+			TextStrokeTransparency = 1, TextSize = 30 }, z)
+		salida(30 + 3 * (S + 8) + 50, 46)
+		aviso(30, 110, 420)
+		extra.texto.Text = "Plantilla de mejora + herramienta o armadura de diamante + lingote de netherite"
+	elseif d.sub == "pociones" then
+		casilla(5, 20, 10, "Blaze")
+		barra(20, 10 + S + 6, S, 6, Color3.fromRGB(255, 160, 40))
+		casilla(4, 180, 10, "Ingred.")
+		barra(180 + S + 8, 20, 8, 70, Color3.fromRGB(255, 255, 255))
+		for i = 1, 3 do
+			casilla(i, 120 + (i - 1) * (S + 20), 100, "Frasco")
+		end
+	elseif d.sub == "aldeano" then
+		extra.nivel = barra(0, 4, 300, 6, Color3.fromRGB(96, 224, 96))
+		local lista = nuevo("ScrollingFrame", { BackgroundTransparency = 1, BorderSizePixel = 0, Position = UDim2.fromOffset(0, 16), Size = UDim2.new(1, 0, 1, -16),
+			ScrollBarThickness = 6, CanvasSize = UDim2.new(), AutomaticCanvasSize = Enum.AutomaticSize.Y }, z)
+		nuevo("UIListLayout", { Padding = UDim.new(0, 4) }, lista)
+		extra.lista = lista
+	end
+end
+
+local function pintarExtra(d)
+	if not d then
+		return
+	end
+	if extra.sub ~= d.sub then
+		construirExtra(d)
+	end
+	extra.titulo.Text = d.nombre or ""
+	for i, b in extra.slots do
+		pintar(b, d.slots and d.slots[i] or nil)
+	end
+	if extra.salida then
+		pintar(extra.salida, d.salida or nil)
+	end
+	if d.sub == "encantar" then
+		local nivel = Interfaz.est.xp and Interfaz.est.xp.nivel or 0
+		for i, b in extra.opciones do
+			local o = d.opciones and d.opciones[i]
+			if o then
+				b.Text = ("%s   · nivel %d · %d lapislázuli"):format(o.pista or "", o.coste, o.lapis)
+				local puede = Interfaz.est.modo == "creativo" or (nivel >= o.coste and d.slots[2] and d.slots[2].n >= o.lapis)
+				b.TextTransparency = puede and 0 or 0.5
+				b.Visible = true
+			else
+				b.Text = ""
+				b.Visible = d.opciones ~= nil and i <= 3
+				b.TextTransparency = 0.5
+			end
+		end
+		if extra.texto then
+			extra.texto.Text = d.opciones and ("Librerías alrededor: " .. (d.librerias or 0) .. " (pon hasta 15 a dos bloques de la mesa)")
+				or "Coloca una herramienta, arma, armadura o libro, y lapislázuli."
+		end
+	elseif d.sub == "yunque" and extra.texto then
+		extra.texto.Text = d.coste and ("Coste: " .. d.coste .. " niveles de experiencia") or "Pon el objeto y el material, otro igual o un libro encantado."
+		extra.texto.TextColor3 = (d.coste and Interfaz.est.modo ~= "creativo" and (Interfaz.est.xp.nivel or 0) < d.coste) and Color3.fromRGB(200, 40, 40) or C.texto
+	elseif d.sub == "afiladora" and extra.texto then
+		extra.texto.Text = d.salida and "Quita los encantamientos (no las maldiciones) y devuelve experiencia, o une dos objetos iguales."
+			or "Pon un objeto encantado o dos objetos iguales dañados."
+	elseif d.sub == "pociones" then
+		if extra.barras[1] then
+			extra.barras[1].Size = UDim2.fromScale(math.clamp(d.comb or 0, 0, 1), 1)
+		end
+		if extra.barras[2] then
+			extra.barras[2].Size = UDim2.fromScale(1, math.clamp(d.prog or 0, 0, 1))
+		end
+	elseif d.sub == "aldeano" then
+		if extra.nivel then
+			extra.nivel.Size = UDim2.fromScale(math.clamp(d.xpNivel or 0, 0, 1), 1)
+		end
+		local lista = extra.lista
+		for _, h in lista:GetChildren() do
+			if h:IsA("GuiObject") then
+				h:Destroy()
+			end
+		end
+		for i, o in d.ofertas or {} do
+			local b = boton("", { Size = UDim2.new(1, -10, 0, S + 6), BackgroundColor3 = Color3.fromHex("727272"), ZIndex = 7, LayoutOrder = i }, lista, function()
+				Interfaz.enviar("comerciar", i)
+			end)
+			b.TextTransparency = 1
+			local x = 6
+			local function icono(id, n)
+				local c = nuevo("ImageLabel", { BackgroundTransparency = 1, Size = UDim2.fromOffset(S - 6, S - 6), Position = UDim2.fromOffset(x, 6),
+					ResampleMode = Enum.ResamplerMode.Pixelated, ZIndex = 8 }, b)
+				Iconos.poner(c, id)
+				if n > 1 then
+					texto({ Size = UDim2.new(1, 0, 0, 14), Position = UDim2.new(0, 0, 1, -12), Text = tostring(n), TextSize = 13, Font = FUENTE_N,
+						TextXAlignment = Enum.TextXAlignment.Right, ZIndex = 9 }, c)
+				end
+				x += S
+			end
+			icono(o.costo[1], o.costo[2])
+			if o.costo2 then
+				icono(o.costo2[1], o.costo2[2])
+			end
+			texto({ Position = UDim2.fromOffset(x, 6), Size = UDim2.fromOffset(30, S - 6), Text = "➜", TextSize = 22, ZIndex = 8 }, b)
+			x += 30
+			icono(o.da[1], o.da[2])
+			texto({ Position = UDim2.fromOffset(x + 6, 6), Size = UDim2.new(1, -x - 12, 0, S - 6), Text = o.agotada and "Agotado" or (o.nombre or Registro.nombre(o.da[1])),
+				TextSize = 13, TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, ZIndex = 8,
+				TextColor3 = o.agotada and Color3.fromRGB(255, 120, 120) or Color3.new(1, 1, 1) }, b)
+		end
+	end
 end
 
 -- Libro de recetas (al lado del inventario o la mesa)
@@ -859,6 +1060,9 @@ local function pintarPantalla()
 			pintar(b, d.cofre[i])
 		end
 	end
+	if abierta == "extra" then
+		pintarExtra(d.extra)
+	end
 	if abierta == "horno" and d.horno then
 		local h = d.horno
 		pintar(P.ent, h.entrada or nil)
@@ -1096,7 +1300,6 @@ function Interfaz.oneblock(d)
 end
 
 -- Barra de un jefe (el Ender Dragon): d = {nombre, f (0-1), col} o nil
-local obActivo = false
 function Interfaz.jefe(d)
 	if not d then
 		if not obActivo then

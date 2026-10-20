@@ -161,6 +161,9 @@ function Mobs.crear(tipo, x, y, z, opc)
 	p.Parent = carpeta
 	m.pieza = p
 	table.insert(Mobs.lista, m)
+	if tipo == "aldeano" and Mobs.alCrearAldeano then
+		Mobs.alCrearAldeano(m, opc)
+	end
 	return m
 end
 

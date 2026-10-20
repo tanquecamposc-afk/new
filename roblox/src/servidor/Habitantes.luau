@@ -210,6 +210,43 @@ local function aparicionEstructuras(j, s)
 			end
 		end
 	end
+	-- Aldeanos y gólems en las aldeas (mobs.js)
+	if math.random() < 0.5 then
+		for _, al in Estructuras.aldeasCerca(gen, j.x, j.z) do
+			if math.sqrt((al.x - j.x) ^ 2 + (al.z - j.z) ^ 2) > 90 then
+				continue
+			end
+			local cap = math.min(10, #al.edificios + 2)
+			if Mobs.contar(function(m)
+				return m.tipo == "aldeano" and math.sqrt((m.x - al.x) ^ 2 + (m.z - al.z) ^ 2) < 60
+			end) >= cap then
+				continue
+			end
+			local e = al.edificios[math.random(1, math.max(1, #al.edificios))] or { x0 = al.x + 2, z0 = al.z + 2, w = 1, p = 1, puerta = 0 }
+			local d = Registro.DIRF[(e.puerta or 0) + 1]
+			local ex = floor(e.x0 + e.w / 2) + d[1] * (floor(math.max(e.w, e.p) / 2) + 2)
+			local ez = floor(e.z0 + e.p / 2) + d[2] * (floor(math.max(e.w, e.p) / 2) + 2)
+			if md:getSiCargado(ex, 100, ez) < 0 then
+				continue
+			end
+			local y = 191
+			while y > 0 and (not Registro.SOLIDO[md:get(ex, y, ez)] or Registro.esHojas(md:get(ex, y, ez))) do
+				y -= 1
+			end
+			local arriba = md:get(ex, y + 1, ez)
+			if arriba ~= 0 and not Registro.REEMPL[arriba] then
+				continue
+			end
+			if #al.edificios >= 3 and Mobs.contar(function(m)
+				return m.tipo == "golem" and math.sqrt((m.x - al.x) ^ 2 + (m.z - al.z) ^ 2) < 60
+			end) < 1 and math.random() < 0.3 then
+				Mobs.crear("golem", ex + 0.5, y + 1, ez + 0.5)
+				return
+			end
+			Mobs.crear("aldeano", ex + 0.5, y + 1, ez + 0.5)
+			return
+		end
+	end
 	-- Puestos de saqueadores
 	local pcx, pcz = floor(j.x / CX), floor(j.z / CZ)
 	for a = -3, 3 do

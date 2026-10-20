@@ -49,6 +49,8 @@ local Cont = require(script.Contenedores)
 local Modos = require(script.Modos)
 local Habitantes = require(script.Habitantes)
 local Dimension = require(script.Dimension)
+local Redstone = require(script.Redstone)
+local Mesas = require(script.Mesas)
 local Generador = require(Comp.Generador)
 
 local BS = Config.BLOQUE
@@ -235,6 +237,8 @@ local function enviarUI(plr)
 			quema = hh.quemaMax > 0 and hh.quema / hh.quemaMax or 0, prog = hh.prog / Crafteo.TIEMPO_FUNDIR, tipo = hh.tipo }
 	elseif ui.tipo == "cofre" then
 		datos.cofre = Cont.cofre(ui.x, ui.y, ui.z)
+	elseif ui.tipo == "extra" then
+		datos.extra = Mesas.datos(plr, s)
 	end
 	Estado:FireClient(plr, "ui", datos)
 end
@@ -479,6 +483,14 @@ local function colocar(plr, char)
 	plr:SetAttribute("EsperaZ", nil)
 	Estado:FireClient(plr, "listo")
 	enviarJugador(plr)
+end
+
+-- Dinamita encendida: explota a los 4 segundos
+local function activarTNT(x, y, z)
+	Estado:FireAllClients("tnt", Vector3.new(x + 0.5, y + 0.5, z + 0.5) * BS)
+	task.delay(4, function()
+		Sim.explosion(x + 0.5, y + 0.5, z + 0.5, 4)
+	end)
 end
 
 -- Lleva al jugador a (x, y, z) en bloques (pies); prepara las colisiones antes
@@ -1047,6 +1059,13 @@ local function colocarBloque(plr, s, id, x, y, z, n, dir)
 			real = id == B.antorcha and 165 + f or def.base + f
 		end
 	end
+	-- Pistones: miran hacia donde mira el jugador (como en jugador.js)
+	if def.piston then
+		local a = { math.abs(dir.X), math.abs(dir.Y), math.abs(dir.Z) }
+		local eje = (a[1] >= a[2] and a[1] >= a[3]) and 0 or (a[2] >= a[3] and 1 or 2)
+		local comp = ({ dir.X, dir.Y, dir.Z })[eje + 1]
+		real = ((def.piston.peg and def.piston.peg ~= 0) and 1242 or 1224) + eje * 2 + (comp > 0 and 0 or 1)
+	end
 	-- Plantas y cosas que necesitan apoyo
 	if real == id and (def.forma == "cruz" or def.forma == "antorcha") and not SOLIDO[Mundo.get(x, y - 1, z)] and id ~= B.nenufar then
 		return false
@@ -1061,6 +1080,9 @@ local function colocarBloque(plr, s, id, x, y, z, n, dir)
 		soltarBloque(actual, x, y, z, nil, plr)
 	end
 	Mundo.set(x, y, z, real)
+	if Redstone.esRiel(real) then
+		Redstone.colocarRiel(x, y, z, facing(dir))
+	end
 	if real == B.calabaza or real == B.linternaCalabaza then
 		-- Gólem de hierro o de nieve
 		local abajo, abajo2 = Mundo.get(x, y - 1, z), Mundo.get(x, y - 2, z)
@@ -1151,6 +1173,13 @@ function acciones.derecho(plr, s, obj, dir, mobParte, agachado)
 	if typeof(mobParte) == "Instance" then
 		local m = Mobs.desdeParte(mobParte)
 		local pp = piesDe(plr)
+		if m and pp and math.abs(m.x - pp.X) + math.abs(m.z - pp.Z) < 8 and m.tipo == "aldeano" and m.ofertas and #m.ofertas > 0
+			and not agachado then
+			-- Comerciar
+			Mesas.abrir(plr, s, "aldeano", nil, nil, nil, m)
+			enviarUI(plr)
+			return
+		end
 		if m and pp and math.abs(m.x - pp.X) + math.abs(m.z - pp.Z) < 8 then
 			if m.def.comida == id and m.bebe <= 0 and m.amor <= 0 then
 				m.amor = 30
@@ -1188,6 +1217,9 @@ function acciones.derecho(plr, s, obj, dir, mobParte, agachado)
 	if x and not agachado then
 		local def = BL[b]
 		local inter = def and def.inter
+		if def and def.redstone and Redstone.usar(x, y, z, b) then
+			return
+		end
 		if esPuerta(b) then
 			alternarPuerta(x, y, z)
 			Estado:FireClient(plr, "sonido", "puerta")
@@ -1231,8 +1263,12 @@ function acciones.derecho(plr, s, obj, dir, mobParte, agachado)
 			Estado:FireAllClients("cofreAbierto", Vector3.new(x, y, z), true)
 			return
 		end
+		if inter == "encantar" or inter == "yunque" or inter == "afiladora" or inter == "herreria" or inter == "pociones" then
+			Mesas.abrir(plr, s, inter, x, y, z)
+			enviarUI(plr)
+			return
+		end
 		if inter then
-			aviso(plr, "Esta mesa estará disponible en una próxima versión")
 			return
 		end
 		if b == B.marcoEnd and id == I.ojoEnder then
@@ -1254,10 +1290,7 @@ function acciones.derecho(plr, s, obj, dir, mobParte, agachado)
 		end
 		if b == B.tnt and id == I.mechero then
 			Mundo.set(x, y, z, 0)
-			Estado:FireAllClients("tnt", Vector3.new(x + 0.5, y + 0.5, z + 0.5) * BS)
-			task.delay(4, function()
-				Sim.explosion(x + 0.5, y + 0.5, z + 0.5, 4)
-			end)
+			activarTNT(x, y, z)
 			gastarEnMano(plr, s, 1)
 			enviarJugador(plr)
 			return
@@ -1608,6 +1641,7 @@ end
 -- Inventario e interfaz
 ------------------------------------------------------------------
 local function cerrarUI(plr, s)
+	Mesas.cerrar(plr, s)
 	-- Lo que quedó en la rejilla y el cursor vuelve al inventario
 	for k = 1, 9 do
 		if s.rejilla[k] then
@@ -1624,6 +1658,22 @@ local function cerrarUI(plr, s)
 	end
 	s.ui = nil
 	enviarJugador(plr)
+end
+
+function acciones.encantar(plr, s, i)
+	if esEntero(i) then
+		Mesas.encantar(plr, s, i)
+		enviarJugador(plr)
+		enviarUI(plr)
+	end
+end
+
+function acciones.comerciar(plr, s, i)
+	if esEntero(i) then
+		Mesas.comerciar(plr, s, i)
+		enviarJugador(plr)
+		enviarUI(plr)
+	end
 end
 
 function acciones.abrirInventario(plr, s)
@@ -1647,7 +1697,9 @@ local function moverRapido(plr, s, zona, i)
 		inv[i] = false
 		local sobra = p.n
 		local o = OB[p.id]
-		if ui and ui.tipo == "cofre" then
+		if ui and ui.tipo == "extra" and ui.sub ~= "aldeano" then
+			sobra = Mesas.meterRapido(s, p)
+		elseif ui and ui.tipo == "cofre" then
 			sobra = Inv.meter(Cont.cofre(ui.x, ui.y, ui.z), p, 1, 27)
 		elseif ui and ui.tipo == "horno" then
 			local h = Cont.horno(ui.x, ui.y, ui.z)
@@ -1758,7 +1810,9 @@ function acciones.click(plr, s, zona, i, boton)
 		enviarUI(plr)
 		return
 	end
-	if zona == "inv" and i >= 1 and i <= Inv.TAM then
+	if zona == "mesa" or zona == "mesaSalida" then
+		Mesas.clic(plr, s, zona, i, boton)
+	elseif zona == "inv" and i >= 1 and i <= Inv.TAM then
 		Inv.clic(s, s.inv, i, boton, Inv.acepta)
 	elseif zona == "rejilla" then
 		local w = ui.tipo == "mesa" and 3 or 2
@@ -2219,6 +2273,29 @@ end)
 ------------------------------------------------------------------
 -- Modos de juego (One Block…)
 ------------------------------------------------------------------
+Mesas.iniciar({
+	mobs = Mobs, aviso = aviso, supervivencia = supervivencia, darOSoltar = darOSoltar,
+	sonido = function(nombre, x, y, z)
+		Estado:FireAllClients("sonido", nombre, Vector3.new(x + 0.5, y + 0.5, z + 0.5) * BS)
+	end,
+})
+Mobs.alCrearAldeano = Mesas.prepararAldeano
+Mesas.alCambiar = function(k)
+	for plr, so in estados do
+		if so.ui and so.ui.tipo == "extra" and so.ui.sub == "pociones" and Cont.clave(so.ui.x, so.ui.y, so.ui.z) == k then
+			enviarUI(plr)
+		end
+	end
+end
+Redstone.iniciar({
+	activarTNT = activarTNT,
+	sonido = function(nombre, x, y, z)
+		Estado:FireAllClients("sonido", nombre, Vector3.new(x + 0.5, y + 0.5, z + 0.5) * BS)
+	end,
+	soltarBloque = function(b, x, y, z)
+		soltarBloque(b, x, y, z, nil, nil)
+	end,
+})
 Dimension.iniciar({
 	teletransportar = teletransportar, Estado = Estado, estados = estados, ganarXP = ganarXP, danar = danar, aviso = aviso,
 	explosion = function(x, y, z, p)

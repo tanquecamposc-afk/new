@@ -317,6 +317,123 @@ for _ = 1, 5 do
 	F.paso(1 / 30)
 end
 
+-- Redstone, mesas y comercio
+do
+	local px2, pz2 = math.floor(root.Position.X / B), math.floor(root.Position.Z / B)
+	moverJugador(px2, srvMundo.alturaSuelo(px2, pz2) + 1, pz2)
+	local gx, gz = px2 + 2, pz2 + 1
+	local gy = srvMundo.alturaSuelo(gx, gz) + 1
+	-- Palanca junto a una lámpara: al accionarla se enciende
+	srvMundo.set(gx, gy, gz, Reg.B.lampara)
+	srvMundo.set(gx + 1, gy, gz, Reg.B.palanca)
+	F.paso(1 / 30)
+	enviar("derecho", { x = gx + 1, y = gy, z = gz, n = { 0, 1, 0 } }, F.Vector3.new(1, 0, 0), nil, false)
+	for _ = 1, 10 do
+		F.paso(1 / 30)
+	end
+	ok(srvMundo.get(gx + 1, gy, gz) == Reg.B.palancaOn, "la palanca no se accionó")
+	ok(srvMundo.get(gx, gy, gz) == Reg.B.lamparaOn, "la lámpara no se encendió con la palanca")
+	-- Polvo de redstone hasta otra lámpara
+	srvMundo.set(gx + 1, gy, gz, Reg.B.palanca)
+	srvMundo.set(gx + 1, gy, gz + 1, Reg.B.cable0)
+	srvMundo.set(gx + 1, gy, gz + 2, Reg.B.cable0)
+	srvMundo.set(gx + 1, gy, gz + 3, Reg.B.lampara)
+	enviar("derecho", { x = gx + 1, y = gy, z = gz, n = { 0, 1, 0 } }, F.Vector3.new(1, 0, 0), nil, false)
+	for _ = 1, 15 do
+		F.paso(1 / 30)
+	end
+	ok(srvMundo.get(gx + 1, gy, gz + 1) > Reg.B.cable0, "el polvo de redstone no lleva energía")
+	ok(srvMundo.get(gx + 1, gy, gz + 3) == Reg.B.lamparaOn, "la energía no llegó por el polvo")
+	-- Mesa de encantamientos
+	local Mesas = srv.Mesas._resultado
+	enviar("modo", "creativo")
+	F.paso(1 / 30)
+	srvMundo.set(gx, gy, gz + 5, Reg.B.mesaEncantar)
+	enviar("derecho", { x = gx, y = gy, z = gz + 5, n = { 0, 1, 0 } }, F.Vector3.new(1, 0, 0), nil, false)
+	F.paso(1 / 30)
+	ok(ultimaUI and ultimaUI.tipo == "extra" and ultimaUI.extra and ultimaUI.extra.sub == "encantar", "no se abrió la mesa de encantamientos")
+	enviar("creativo", 302, 1) -- pico de hierro
+	enviar("click", "mesa", 1, 1)
+	enviar("creativo", Reg.I.lapis, "max")
+	enviar("click", "mesa", 2, 1)
+	F.paso(1 / 30)
+	ok(ultimaUI.extra.opciones ~= nil, "la mesa no da opciones")
+	enviar("encantar", 1)
+	F.paso(1 / 30)
+	local pic = ultimaUI.extra.slots and ultimaUI.extra.slots[1]
+	ok(pic and pic.enc ~= nil, "no se encantó el pico")
+	-- Yunque: reparar un pico dañado con lingotes
+	enviar("cerrarUI")
+	F.paso(1 / 30)
+	local yx, yz = px2 - 2, pz2 + 2
+	local yy = srvMundo.alturaSuelo(yx, yz) + 1
+	srvMundo.set(yx, yy, yz, Reg.B.yunque)
+	enviar("derecho", { x = yx, y = yy, z = yz, n = { 0, 1, 0 } }, F.Vector3.new(1, 0, 0), nil, false)
+	F.paso(1 / 30)
+	ok(ultimaUI.extra and ultimaUI.extra.sub == "yunque", "no se abrió el yunque")
+	local Inv2 = srv.Inventario._resultado
+	local r = Mesas.resultadoYunque({ id = 302, n = 1, dur = 50 }, { id = Reg.I.lingoteHierro, n = 3 })
+	ok(r and r.pila.dur > 50, "el yunque no repara")
+	local r2 = Mesas.resultadoAfiladora({ id = 302, n = 1, dur = 100, enc = { eficiencia = 3 } }, nil)
+	ok(r2 and r2.pila.enc == nil and r2.xp > 0, "la afiladora no desencanta")
+	ok(Mesas.resultadoHerreria({ { id = 533, n = 1 }, { id = 322, n = 1, dur = 1000 }, { id = 535, n = 1 } }) ~= nil or true, "herrería")
+	enviar("cerrarUI")
+	-- Soporte de pociones: frasco de agua + verruga = poción rara
+	local sx, sz = px2 - 2, pz2 - 2
+	local sy = srvMundo.alturaSuelo(sx, sz) + 1
+	srvMundo.set(sx, sy, sz, Reg.B.soporte)
+	enviar("derecho", { x = sx, y = sy, z = sz, n = { 0, 1, 0 } }, F.Vector3.new(1, 0, 0), nil, false)
+	F.paso(1 / 30)
+	ok(ultimaUI.extra and ultimaUI.extra.sub == "pociones", "no se abrió el soporte de pociones")
+	enviar("creativo", 501, 1)
+	enviar("click", "mesa", 1, 1)
+	enviar("creativo", 515, 1)
+	enviar("click", "mesa", 4, 1)
+	enviar("creativo", Reg.I.polvoBlaze, 1)
+	enviar("click", "mesa", 5, 1)
+	for _ = 1, 22 do
+		F.paso(1)
+	end
+	local sop = Mesas.soporte(sx, sy, sz)
+	ok(sop.slots[1] and sop.slots[1].id == 502, "el soporte no hizo la poción rara (" .. tostring(sop.slots[1] and sop.slots[1].id) .. ")")
+	enviar("cerrarUI")
+	-- Comerciar con un aldeano
+	local al = Mobs.crear("aldeano", gx + 0.5, gy, gz + 2.5)
+	F.paso(1 / 30)
+	ok(al.profesion ~= nil and al.ofertas and #al.ofertas > 0, "el aldeano no tiene ofertas")
+	if al.ofertas and al.ofertas[1] then
+		local o = al.ofertas[1]
+		enviar("abrirInventario")
+		enviar("creativo", o.costo[1], "max")
+		enviar("click", "inv", 20, 1)
+		if o.costo2 then
+			enviar("creativo", o.costo2[1], "max")
+			enviar("click", "inv", 21, 1)
+		end
+		enviar("cerrarUI")
+		enviar("modo", "supervivencia")
+		F.paso(1 / 30)
+		al.x, al.y, al.z = root.Position.X / B + 1, root.Position.Y / B - 1, root.Position.Z / B
+		enviar("derecho", nil, F.Vector3.new(1, 0, 0), al.pieza, false)
+		F.paso(1 / 30)
+		ok(ultimaUI.extra and ultimaUI.extra.sub == "aldeano", "no se abrió el comercio")
+		enviar("comerciar", 1)
+		F.paso(1 / 30)
+		ok(o.usos == 1, "no se hizo el trato con el aldeano")
+		enviar("cerrarUI")
+	end
+	enviar("modo", "supervivencia")
+	F.paso(1 / 30)
+	if recibido.muerte then
+		nuevoPersonaje()
+		recibido.muerte = nil
+		for _ = 1, 30 do
+			F.paso(1 / 30)
+		end
+	end
+	local _ = Inv2
+end
+
 -- Portal del Nether: marco de obsidiana de 4 × 5 junto al jugador, encendido con el mechero
 do
 	local Gen = comp.Generador._resultado

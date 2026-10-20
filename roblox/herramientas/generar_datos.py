@@ -154,7 +154,8 @@ print('   tiles', len(orden), 'opacos', len(opacos), 'con alfa', len(alfas), 'at
 # ------------------------------------------------------------------
 CAMPOS = ['clave', 'nombre', 'forma', 'solido', 'opaco', 'trans', 'luz', 'dureza', 'herr', 'nivel', 'altura', 'resistencia', 'reemplazable',
           'inflamable', 'tinte', 'gravedad', 'sinSombra', 'xp', 'inter', 'cajas', 'liquido', 'nivelL', 'orienta', 'base', 'trepable', 'cara',
-          'puerta', 'cultivo', 'conecta', 'colAlta', 'resbala', 'lento', 'telarana', 'camaBW', 'opacidadLuz', 'quema', 'soloArriba', 'eterno']
+          'puerta', 'cultivo', 'conecta', 'colAlta', 'resbala', 'lento', 'telarana', 'camaBW', 'opacidadLuz', 'quema', 'soloArriba', 'eterno',
+          'redstone', 'on', 'piston', 'cabezaPiston', 'propulsor', 'riel', 'encendido', 'potencia']
 salida = {}
 for b in bloques:
     o = {k: b[k] for k in CAMPOS if k in b and b[k] is not None}
