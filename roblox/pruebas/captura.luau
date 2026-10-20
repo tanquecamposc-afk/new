@@ -359,6 +359,16 @@ local P = BWm._partida()
 local sala = P.arena.sala
 esperarDibujo(sala.x, sala.y, sala.z)
 volcar("bw_sala", sala.x, sala.y, sala.z, 40, F.Vector3.new(sala.x + 5.4, sala.y + 3.2, sala.z + 5.4), F.Vector3.new(sala.x - 30, sala.y - 30, sala.z - 30), 70)
+-- Panel de la sala (votación, kits, misiones) y tienda de kits
+enviar("modoCmd", "votar", 2)
+pasos(20)
+volcarGui("bw_salaUI")
+enviar("modoCmd", "kits")
+pasos(5)
+volcarGui("bw_kitsUI")
+enviar("cerrarUI")
+Interfaz.cerrar()
+pasos(3)
 BWm._empezarYa()
 pasos(90)
 local J = P.jug[plr]
@@ -395,6 +405,20 @@ volcarGui("bw_tiendaUI3")
 enviar("cerrarUI")
 Interfaz.cerrar()
 pasos(3)
+-- Pantalla final: los demás equipos se quedan sin cama ni jugadores
+for k, q in P.eqs do
+	if k ~= J.equipo then
+		q.cama = false
+		q.vivos = 0
+	end
+end
+for _, m in table.clone(P.bots) do
+	if m.bw.equipo ~= J.equipo then
+		srv.Mobs._resultado.matar(m, "vacio")
+	end
+end
+pasos(10)
+volcarGui("bw_finUI")
 
 -- MAZMORRAS
 local MZm = srv.Mazmorras._resultado
