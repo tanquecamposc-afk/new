@@ -560,6 +560,7 @@ function F.crearJuego()
 	local cam = nuevaInstancia("Camera")
 	cam._p.Name = "Camera"
 	cam._p.CFrame = F.CFrame.new(0, 80, 0)
+	cam._p.FieldOfView = 70
 	cam.Parent = F.workspace
 	F.workspace._p.CurrentCamera = cam
 	F.servicios.Lighting._p.ClockTime = 8

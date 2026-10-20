@@ -993,7 +993,8 @@ RunService:BindToRenderStep("CamaraBlockverse", Enum.RenderPriority.Camera.Value
 	if ajustes.fovCorrer and corriendo and hum and hum.MoveDirection.Magnitude > 0.1 then
 		objetivoFov *= 1.12
 	end
-	cam.FieldOfView += (objetivoFov - cam.FieldOfView) * math.min(1, dt * 10)
+	local fov = cam.FieldOfView or 70
+	cam.FieldOfView = fov + (objetivoFov - fov) * math.min(1, dt * 10)
 end)
 
 ------------------------------------------------------------------
