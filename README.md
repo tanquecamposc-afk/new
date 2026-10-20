@@ -492,9 +492,11 @@ La versión 2 usa los datos del propio juego web:
 - Un generador de terreno idéntico: la misma semilla da el mismo mundo.
 
 Incluye:
-- Supervivencia, creativo y One Block.
+- Supervivencia, creativo, One Block, Bed Wars (con bots), Mazmorras y Leyendas.
 - Inventario, mesa de trabajo, horno, cofres y libro de recetas.
+- Las estructuras del web, el Nether, el End y el Ender Dragon, con élitros.
+- Redstone, encantamientos, yunque, afiladora, pociones, herrería y comercio con aldeanos.
 - 79 criaturas animadas con su IA.
 - Multijugador y controles para móvil.
 
-Todavía faltan Bed Wars, Mazmorras, Leyendas, el Nether y el End, las estructuras, el encantamiento, el yunque, el soporte de pociones, el comercio y la lógica de redstone. El detalle está en su README.
+Algunas cosas son distintas del web, por ejemplo los sonidos (son los de Roblox) o la cámara de las Mazmorras. El detalle está en su README.

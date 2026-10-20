@@ -525,6 +525,10 @@ end
 
 function Mesas.datos(plr, s)
 	local u = s.ui
+	-- Pantallas de los modos de juego (tiendas de Bed Wars…) traen su propia función
+	if u.datos then
+		return u.datos(plr, s)
+	end
 	local d = { sub = u.sub, nombre = NOMBRES[u.sub] }
 	if u.sub == "aldeano" then
 		local m = u.mob

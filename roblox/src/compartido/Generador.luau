@@ -14,6 +14,7 @@ local Ruido = require(script.Parent.Ruido)
 local Biomas = require(script.Parent.Datos.Biomas)
 local Estructuras = require(script.Parent.Estructuras)
 local Dimensiones = require(script.Parent.Dimensiones)
+local Arenas = require(script.Parent.Arenas)
 
 local hash2, hash3, mulberry32 = Ruido.hash2, Ruido.hash3, Ruido.mulberry32
 local valueNoise, valueNoise3, fbm, smooth = Ruido.valueNoise, Ruido.valueNoise3, Ruido.fbm, Ruido.smooth
@@ -748,7 +749,7 @@ local FLOR = { [2] = 0.03, [3] = 0.015, [8] = 0.02, [11] = 0.02, [9] = 0.01 }
 -- Zona vacía (islas de One Block): todo aire
 -- Zonas del mapa de Roblox (en chunks a lo largo de Z):
 -- · cz >= 600: el Nether (su chunk 0 está en cz = 800)
--- · -600 >= cz > -760: vacío (islas de One Block)
+-- · -600 >= cz > -760: vacío (islas de One Block y arenas de los modos)
 -- · cz <= -760: el End (su chunk 0 está en cz = -900)
 -- · el resto: la Superficie
 Generador.ZONA_VACIA_CZ = -600
@@ -799,6 +800,8 @@ function Generador:llenar(datos, cx, cz, ceder)
 	if dim == "vacio" then
 		local bio = buffer.create(256)
 		buffer.fill(bio, 0, 2)
+		-- Arenas de Bed Wars, Mazmorras y Leyendas
+		Arenas.llenar(datos, cx, cz)
 		return bio
 	elseif dim ~= "superficie" then
 		local bio, cofres = self:llenarDim(dim, datos, cx, cz - off)

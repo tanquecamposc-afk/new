@@ -5,6 +5,8 @@
 	aparece otro según la fase (16 fases, de Llanuras al End e Infinito),
 	con bloques raros, cofres con botín, cofres raros, hitos cada 100
 	bloques y criaturas de cada fase. Caer al vacío mata al instante.
+	Además reparte el trabajo entre los otros modos: BED WARS (BedWars.luau),
+	MAZMORRAS (Mazmorras.luau) y LEYENDAS (Leyendas.luau).
 ]]
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -243,14 +245,31 @@ local function crearIsla(plr)
 end
 
 ------------------------------------------------------------------
--- API para el script principal
+-- API para el script principal (One Block, Bed Wars, Mazmorras y Leyendas)
 ------------------------------------------------------------------
-function Modos.activo()
-	return false
+local BW = require(script.Parent.BedWars)
+local MZ = require(script.Parent.Mazmorras)
+local LY = require(script.Parent.Leyendas)
+Modos.BW, Modos.MZ, Modos.LY = BW, MZ, LY
+
+-- ¿Está el jugador en un modo con sus propias reglas? (no se guarda su inventario ni cambia de modo)
+function Modos.activo(plr)
+	if not plr then
+		return false
+	end
+	local s = ctx and ctx.estados[plr]
+	return (s and s.ob ~= nil) or BW.en(plr) or MZ.en(plr) or LY.en(plr)
 end
 
 function Modos.puntoAparicion(plr)
-	local s = plr and ctx and ctx.estados[plr]
+	if not plr or not ctx then
+		return nil
+	end
+	local m = BW.puntoAparicion(plr) or MZ.puntoAparicion(plr) or LY.puntoAparicion(plr)
+	if m then
+		return m
+	end
+	local s = ctx.estados[plr]
 	if s and s.ob then
 		return { s.ob.x, s.ob.y + 1, s.ob.z }
 	end
@@ -261,22 +280,122 @@ function Modos.mantenerInventario(plr)
 	return false
 end
 
-function Modos.alMorir(plr) end
+-- Qué pasa con el inventario al morir: nil (se suelta), "conservar" o "borrar"
+function Modos.inventarioAlMorir(plr, s)
+	if BW.en(plr) then
+		return BW.inventarioAlMorir(plr, s)
+	elseif MZ.en(plr) or LY.en(plr) then
+		return "conservar"
+	end
+	return nil
+end
+
+function Modos.alMorir(plr)
+	if BW.en(plr) then
+		BW.alMorir(plr)
+	elseif MZ.en(plr) then
+		MZ.alMorir(plr)
+	elseif LY.en(plr) then
+		LY.alMorir(plr)
+	end
+end
+
+function Modos.alAparecer(plr)
+	if BW.en(plr) then
+		BW.alAparecer(plr)
+	end
+end
+
+-- Daño que recibe un jugador (n) según el modo
+function Modos.modDano(plr, n, tipo)
+	if BW.en(plr) then
+		return BW.modDano(plr, n, tipo)
+	elseif MZ.en(plr) then
+		return MZ.modDano(plr, n, tipo)
+	end
+	return n
+end
+
+-- ¿Puede el jugador «a» herir al jugador «b»? (nil = como siempre)
+function Modos.pvp(a, b)
+	return BW.pvp(a, b)
+end
+function Modos.extraDanoPvp(a)
+	return BW.extraDanoPvp(a)
+end
 
 function Modos.puedeRomper(plr, x, y, z, b)
-	-- La roca madre bajo el bloque mágico no se puede romper (como en el original)
+	if BW.en(plr) or BW.enArena(x, y, z) then
+		return BW.puedeRomper(plr, x, y, z, b)
+	elseif MZ.en(plr) then
+		return false
+	elseif LY.en(plr) then
+		return LY.puedeRomper(plr, x, y, z)
+	end
 	return true
 end
 
 function Modos.puedePoner(plr, x, y, z, id)
+	if BW.en(plr) or BW.enArena(x, y, z) then
+		return BW.puedePoner(plr, x, y, z, id)
+	elseif MZ.en(plr) or LY.en(plr) then
+		return false
+	end
 	return true
 end
 
+function Modos.alPoner(plr, x, y, z, id)
+	BW.alPoner(plr, x, y, z, id)
+end
+
 function Modos.alRomper(plr, x, y, z, b)
+	BW.alRomper(plr, x, y, z)
 	local ob = islas[clave(x, y, z)]
 	if ob then
 		regenerar(ob)
 	end
+end
+
+function Modos.golpeBloque(plr, x, y, z)
+	LY.golpeBloque(plr, x, y, z)
+end
+
+function Modos.puedeExplotar(x, y, z, id)
+	return BW.puedeExplotar(x, y, z, id)
+end
+
+-- Clic derecho con un objeto en la mano (objetos de Bed Wars, artefactos de las Mazmorras)
+function Modos.usarObjeto(plr, s, p, dir)
+	return BW.usarObjeto(plr, s, p, dir) or MZ.usarObjeto(plr, s, p, dir)
+end
+
+-- Clic derecho sobre una criatura (tenderos de Bed Wars)
+function Modos.usarMob(plr, s, m)
+	return BW.usarMob(plr, s, m)
+end
+
+-- Órdenes de Leyendas (teclas o botones del panel)
+function Modos.comando(plr, cmd, arg)
+	LY.comando(plr, cmd, arg)
+end
+
+local function salirDeTodo(plr, s)
+	BW.salir(plr)
+	MZ.salir(plr)
+	LY.salir(plr)
+	if s.ob then
+		s.ob = nil
+		plr:SetAttribute("OneBlock", nil)
+		ctx.Estado:FireClient(plr, "oneblock", nil)
+		return true
+	end
+	return false
+end
+
+function Modos.alSalirJugador(plr)
+	BW.salir(plr)
+	MZ.salir(plr)
+	LY.salir(plr)
 end
 
 function Modos.pedir(plr, nombre)
@@ -285,6 +404,9 @@ function Modos.pedir(plr, nombre)
 		return
 	end
 	if nombre == "oneblock" then
+		if BW.en(plr) or MZ.en(plr) or LY.en(plr) then
+			salirDeTodo(plr, s)
+		end
 		if not s.ob then
 			crearIsla(plr)
 		end
@@ -295,16 +417,35 @@ function Modos.pedir(plr, nombre)
 		enviarHud(plr, s.ob)
 		ctx.Estado:FireClient(plr, "titulo", "ONE BLOCK", "Rompe el bloque", "#ffe060")
 		plr:LoadCharacter()
+	elseif nombre == "bedwars" or nombre == "mazmorras" or nombre == "leyendas" then
+		local ya = (nombre == "bedwars" and BW.en(plr)) or (nombre == "mazmorras" and MZ.en(plr)) or (nombre == "leyendas" and LY.en(plr))
+		if ya then
+			return
+		end
+		if salirDeTodo(plr, s) then
+			-- Sale de One Block sin recargar el personaje: el modo nuevo lo lleva a su sitio
+		end
+		if nombre == "bedwars" then
+			BW.unirse(plr)
+		elseif nombre == "mazmorras" then
+			MZ.unirse(plr)
+		else
+			LY.unirse(plr)
+		end
 	elseif nombre == "normal" then
-		s.ob = nil
-		plr:SetAttribute("OneBlock", nil)
-		ctx.Estado:FireClient(plr, "oneblock", nil)
-		plr:LoadCharacter()
+		local estaba = BW.en(plr) or MZ.en(plr) or LY.en(plr)
+		local ob = salirDeTodo(plr, s)
+		if ob and not estaba then
+			plr:LoadCharacter()
+		end
 	end
 end
 
 function Modos.iniciar(c)
 	ctx = c
+	BW.iniciar(c)
+	MZ.iniciar(c)
+	LY.iniciar(c)
 	-- Caer al vacío en One Block mata al instante; el jugador no se queda metido en el bloque
 	RunService.Heartbeat:Connect(function()
 		for _, plr in Players:GetPlayers() do

@@ -34,7 +34,7 @@ Con **Rojo**, `default.project.json` monta el mismo árbol desde `src/`.
   - Losas, plantas en cruz y antorchas en pared.
   - Escaleras, puertas, camas y cofres.
   - Vallas y muros que se conectan.
-  - Raíles, redstone (solo se ve), portales y líquidos.
+  - Raíles, redstone, portales y líquidos.
 - El agua es el agua de Roblox (se puede nadar).
 - Simulación del servidor:
   - El agua y la lava fluyen.
@@ -82,6 +82,39 @@ Con **Rojo**, `default.project.json` monta el mismo árbol desde `src/`.
   - Cada jugador tiene su propia isla con un bloque que se regenera.
   - 16 fases, cofres raros, hitos y criaturas.
   - Barra de progreso arriba.
+- **Estructuras** idénticas a las del web (comprobado chunk a chunk y cofre a cofre):
+  - Aldeas con aldeanos y gólems, templos, pirámides, iglús, cabañas de bruja, puestos de saqueadores, mansiones, monumentos con guardianes, naufragios, ruinas, minas, mazmorras con generadores, fortalezas, ciudades antiguas, cámaras de prueba, geodas y fósiles.
+  - Cofres con el botín del web y generadores de criaturas.
+- **El Nether y el End**, con sus generadores portados del web:
+  - Portales que se encienden con mechero (y el del End con ojos de Ender), viaje 1:8 al Nether, fortalezas y bastiones.
+  - El End con sus islas, ciudades del End y barcos con élitros.
+  - **Ender Dragon** con cristales que lo curan, su barra de vida, el portal de salida y el huevo.
+  - **Élitros** para planear y cohetes.
+- **Redstone** (`redstone.js`): polvo con señal 0-15, antorchas, palancas, botones, placas de presión, lámparas, puertas, TNT, pistones y raíles propulsores.
+- **Mesas:** encantamientos (con librerías), yunque, afiladora, soporte de pociones y mesa de herrería.
+  - El **filo**, el **empuje**, el **poder** y la **protección** cambian el daño de verdad.
+- **Comercio con aldeanos:** 13 profesiones, niveles y libros encantados del bibliotecario.
+- **Bed Wars** (`bedwars.js` y `bedwars2.js`): una partida para todo el servidor.
+  - Sala de espera de cristal con cuenta atrás.
+  - 8 equipos (o 4 si hay más de 8 jugadores), los huecos los ocupan bots.
+  - Cuatro mapas: Jardín, Invierno, Infierno y Desierto.
+  - Camas de dos bloques y generadores de hierro, oro, diamante y esmeralda con sus niveles.
+  - Tienda de objetos con compra rápida, mejoras del equipo y trampas.
+  - Objetos especiales: bola de fuego, huevo puente, torre compacta, defensor de los sueños, chinche y leche mágica.
+  - Eventos de la partida y marcador lateral.
+  - Bots que recogen, compran, tienden puentes, protegen su cama, rompen las ajenas y pelean.
+  - Solo se rompen los bloques puestos por los jugadores. Sin cama no se reaparece.
+- **Mazmorras** (`modos52.js` y `modos53.js`), una para cada jugador:
+  - Tres ambientaciones: Catacumbas, Cripta y Fortaleza del Nether.
+  - Salas cuadradas, redondas y en cruz, y salas secretas de tesoro.
+  - Oleadas de enemigos y élites. Las puertas se cierran hasta limpiar la sala.
+  - Cofres con esmeraldas, mejoras de arma y armadura, artefactos, pociones y flechas.
+  - 3 vidas por nivel y un jefe al final, con su barra de vida.
+- **Leyendas** (`modos52.js` y `modos53.js`), una isla para cada jugador:
+  - Aldea con plaza, casas, caminos y huertos, y tres portales piglin con torres.
+  - Ayudantes que recogen madera y piedra.
+  - Generadores de golems, torres de flechas, muros, reparar la aldea y mejorar golems.
+  - Órdenes a los golems, piglins que atacan y asaltos cada cierto tiempo.
 - **Día y noche** de 20 minutos, cielo, nubes, niebla, brillo e iluminación *Future*.
 - **Multijugador:**
   - El servidor manda.
@@ -108,17 +141,19 @@ Con **Rojo**, `default.project.json` monta el mismo árbol desde `src/`.
 | Coger el bloque apuntado (creativo) | Botón central |
 | Cámara en 1ª / 3ª persona | V |
 | Información | F3 |
+| Menú de modos de juego | M |
+| Leyendas: recoger / ¡al ataque! / seguidme | G / R / F |
+| Leyendas: construir | 1–6 (o los botones del panel) |
+| Mazmorras: usar un artefacto | Clic derecho con él en la mano |
 
-## Lo que todavía no está
+## Lo que es distinto del web
 
-Para ser claros, esto del juego web **aún no está portado**:
-- Los modos **Bed Wars**, **Mazmorras** y **Leyendas**.
-- El **Nether** y el **End**. Los portales se ven, pero no llevan a ningún sitio.
-- Las **estructuras**: aldeas, templos, pirámides, mazmorras, fortalezas, minas, naufragios e iglús. Las tablas de botín ya están, pero el generador todavía no crea estas construcciones.
-- **Mesa de encantamientos, yunque, soporte de pociones y mesa de herrería.** Se pueden poner, pero al usarlas sale un aviso.
-- **Comercio con aldeanos.**
-- **Lógica de redstone:** el polvo y los bloques se ponen y se ven, pero no transmiten señal.
-- Sonidos propios: se usan los sonidos que trae Roblox.
+Para ser claros, esto **no es igual** que en el juego web:
+- **Sonidos:** se usan los sonidos que trae Roblox, no los sintetizados del web.
+- **Mazmorras:** la cámara es la normal de Roblox, no la cenital del web. Por eso todas las paredes son altas. El ataque y la esquiva son los normales del juego (sin combo de tres golpes ni voltereta). Los artefactos son objetos de la barra que se usan con clic derecho.
+- **Leyendas:** se juega en una isla generada aparte, no en un mundo nuevo entero. La isla tiene hierba, árboles y rocas para recoger.
+- **Bed Wars:** el cielo no cambia según el mapa. Las estadísticas con estrellas y los fuegos artificiales del final no están. No hay salas por separado: hay una partida a la vez para todo el servidor, y quien llega a mitad la ve desde la sala.
+- Los jefes y las élites no se ven más grandes. Llevan su nombre encima.
 
 ## Archivos
 
@@ -129,6 +164,9 @@ Para ser claros, esto del juego web **aún no está portado**:
     - Texturas, iconos y criaturas.
   - `Registro`: tablas rápidas de bloques y objetos, tiempo de picado y lo que suelta cada bloque.
   - `Generador`, `Ruido`: el generador del web, idéntico.
+  - `Estructuras`, `Dimensiones`: las estructuras, el Nether y el End del web, idénticos.
+  - `Arenas`: los mapas de Bed Wars, las mazmorras y la isla de Leyendas. Se generan como parte del terreno, así el servidor y los clientes los crean igual sin enviarlos por la red.
+  - `Botin`, `Encantamientos`: tablas de botín y encantamientos del web.
   - `MundoDatos`: chunks de datos y cambios.
   - `Crafteo`, `Rayo`, `Fisica`, `Codec`, `Config`.
 - `src/servidor/` → `ServerScriptService.Servidor`
@@ -137,7 +175,9 @@ Para ser claros, esto del juego web **aún no está portado**:
   - `Simulacion`: líquidos, gravedad, hojas, cultivos y explosiones.
   - `Mobs`: IA de las criaturas.
   - `Entidades`: objetos tirados, experiencia y proyectiles.
-  - `Inventario`, `Contenedores` (cofres y hornos), `Botin`, `Modos` (One Block).
+  - `Inventario`, `Contenedores` (cofres y hornos), `Habitantes` (generadores de criaturas y habitantes de las estructuras).
+  - `Dimension` (portales, el Nether, el End y el Ender Dragon), `Redstone`, `Mesas` (mesas y comercio).
+  - `Modos` (One Block, y reparte el trabajo de los demás modos), `BedWars`, `Mazmorras`, `Leyendas`.
 - `src/cliente/` → `StarterPlayerScripts.Cliente`
   - Script principal: controles, cámara, picar y usar, efectos y sonidos.
   - `Render`: mallas con texturas, con un modo de respaldo hecho con piezas.
@@ -155,7 +195,11 @@ Para ser claros, esto del juego web **aún no está portado**:
     - Se pica, se recoge y se fabrica en la mesa.
     - Se pone un bloque, se ataca a criaturas y hay una explosión.
     - Se abre el inventario y se prueba One Block.
+    - Redstone, mesas, comercio, el Nether, el End y el dragón.
+    - Bed Wars (tienda, generadores, camas, bots, muerte y reaparición), Mazmorras (salas, puertas, cofres, artefactos y jefe) y Leyendas (construir, golems, piglins y portales).
   - `probar_respaldo.sh`: lo mismo, pero sin mallas ni imágenes editables.
+  - `probar_estructuras.sh`: compara chunks con estructuras, del Nether y del End, y el botín de los cofres, con el juego web. Tiene que salir «ESTRUCTURAS IDENTICAS AL WEB».
+  - `probar_arenas.sh`: genera los 8 mapas de Bed Wars, varias mazmorras y una isla de Leyendas. Tiene que salir «ARENAS BIEN».
 
 ## Rendimiento
 

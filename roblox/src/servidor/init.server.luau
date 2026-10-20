@@ -356,6 +356,10 @@ local function danar(plr, n, tipo, dir)
 	if not supervivencia(s) and tipo ~= "vacio" then
 		return
 	end
+	n = Modos.modDano(plr, n, tipo)
+	if n <= 0 then
+		return
+	end
 	if s.efectos.resistenciaFuego and (tipo == "fuego" or tipo == "lava") then
 		return
 	end
@@ -370,6 +374,13 @@ local function danar(plr, n, tipo, dir)
 	if tipo == "mob" or tipo == "flecha" or tipo == "explosion" or tipo == "jugador" then
 		local def, dur = armaduraTotal(s)
 		d = d * (1 - math.min(20, math.max(def / 5, def - d / (2 + dur / 4))) / 25)
+		-- Protección (encantamiento): 4 % menos por nivel, hasta un 80 %
+		local prot = 0
+		for i = 37, 40 do
+			local pz = s.inv[i]
+			prot += pz and pz.enc and (pz.enc.proteccion or 0) or 0
+		end
+		d *= 1 - math.min(20, prot) * 0.04
 		desgastarArmadura(s, n)
 	end
 	if s.efectos.resistencia then
@@ -422,7 +433,7 @@ end
 
 local function guardar(plr)
 	local s = st(plr)
-	if not s or not almacen or s.modo == "creativo" or s.ob or Modos.activo() then
+	if not s or not almacen or s.modo == "creativo" or s.ob or Modos.activo(plr) then
 		return
 	end
 	pcall(function()
@@ -482,6 +493,7 @@ local function colocar(plr, char)
 	plr:SetAttribute("EsperaX", nil)
 	plr:SetAttribute("EsperaZ", nil)
 	Estado:FireClient(plr, "listo")
+	Modos.alAparecer(plr)
 	enviarJugador(plr)
 end
 
@@ -535,7 +547,14 @@ local function alMorir(plr)
 		return
 	end
 	local p = s.ultimaPos
-	if p and supervivencia(s) and not Modos.mantenerInventario(plr) then
+	local modoInv = Modos.inventarioAlMorir(plr, s)
+	if modoInv == "borrar" then
+		for i = 1, Inv.TAM do
+			s.inv[i] = false
+		end
+		s.cursor = false
+	end
+	if p and supervivencia(s) and not modoInv and not Modos.mantenerInventario(plr) then
 		for i = 1, Inv.TAM do
 			if s.inv[i] then
 				Entidades.soltarItem(s.inv[i], p.X, p.Y + 1, p.Z, true)
@@ -555,7 +574,7 @@ local function alMorir(plr)
 		ahogo = "Te ahogaste.", explosion = "Volaste por los aires.", cactus = "Te pinchaste hasta morir.", veneno = "El veneno pudo contigo.",
 		jugador = "Otro jugador acabó contigo.",
 	}
-	Estado:FireClient(plr, "muerte", (textos[s.ultimaCausa or ""] or "Has muerto.") .. (supervivencia(s) and " Tus objetos quedaron donde caíste." or ""))
+	Estado:FireClient(plr, "muerte", (textos[s.ultimaCausa or ""] or "Has muerto.") .. ((supervivencia(s) and not modoInv) and " Tus objetos quedaron donde caíste." or ""))
 	s.efectos = {}
 	s.fuego = 0
 	Modos.alMorir(plr)
@@ -581,6 +600,8 @@ Players.PlayerAdded:Connect(function(plr)
 end)
 
 Players.PlayerRemoving:Connect(function(plr)
+	-- Si estaba en un modo (Bed Wars, Mazmorras, Leyendas), recupera su inventario antes de guardar
+	pcall(Modos.alSalirJugador, plr)
 	local s = st(plr)
 	if s and s.ui then
 		s.ui = nil
@@ -889,7 +910,7 @@ Entidades.alImpacto = function(e, modo)
 		end
 		-- Jugadores
 		for _, plr in Players:GetPlayers() do
-			if plr ~= opc.jugador then
+			if plr ~= opc.jugador and not (opc.jugador and Modos.pvp(opc.jugador, plr) == false) then
 				local p = piesDe(plr)
 				if p and e.x > p.X - 0.4 and e.x < p.X + 0.4 and e.y > p.Y and e.y < p.Y + 1.8 and e.z > p.Z - 0.4 and e.z < p.Z + 0.4 then
 					local l = math.sqrt(e.vx * e.vx + e.vz * e.vz)
@@ -966,6 +987,7 @@ end
 function acciones.golpe(plr, s, x, y, z)
 	if esEntero(x) and esEntero(y) and esEntero(z) then
 		s.golpe = { x = x, y = y, z = z, t = os.clock() }
+		Modos.golpeBloque(plr, x, y, z)
 	end
 end
 
@@ -1080,6 +1102,7 @@ local function colocarBloque(plr, s, id, x, y, z, n, dir)
 		soltarBloque(actual, x, y, z, nil, plr)
 	end
 	Mundo.set(x, y, z, real)
+	Modos.alPoner(plr, x, y, z, real)
 	if Redstone.esRiel(real) then
 		Redstone.colocarRiel(x, y, z, facing(dir))
 	end
@@ -1173,6 +1196,9 @@ function acciones.derecho(plr, s, obj, dir, mobParte, agachado)
 	if typeof(mobParte) == "Instance" then
 		local m = Mobs.desdeParte(mobParte)
 		local pp = piesDe(plr)
+		if m and pp and math.abs(m.x - pp.X) + math.abs(m.z - pp.Z) < 8 and Modos.usarMob(plr, s, m) then
+			return
+		end
 		if m and pp and math.abs(m.x - pp.X) + math.abs(m.z - pp.Z) < 8 and m.tipo == "aldeano" and m.ofertas and #m.ofertas > 0
 			and not agachado then
 			-- Comerciar
@@ -1204,6 +1230,10 @@ function acciones.derecho(plr, s, obj, dir, mobParte, agachado)
 			end
 		end
 	end
+	-- Objetos especiales de los modos (bola de fuego, huevo puente, artefactos…)
+	if Modos.usarObjeto(plr, s, p, dir) then
+		return
+	end
 	local x, y, z, n
 	if type(obj) == "table" and esEntero(obj.x) and esEntero(obj.y) and esEntero(obj.z) and type(obj.n) == "table" then
 		x, y, z = obj.x, obj.y, obj.z
@@ -1224,6 +1254,9 @@ function acciones.derecho(plr, s, obj, dir, mobParte, agachado)
 			alternarPuerta(x, y, z)
 			Estado:FireClient(plr, "sonido", "puerta")
 			return
+		end
+		if inter == "cama" and Modos.activo(plr) then
+			inter = nil
 		end
 		if inter == "cama" then
 			s.cama = { x, y, z }
@@ -1568,6 +1601,11 @@ function acciones.soltarArco(plr, s, dir)
 	dir = dir.Unit
 	local vel = 10 + carga * 32
 	local dano = math.ceil(carga * carga * 6 + 0.5) + (s.efectos.fuerza and 3 or 0)
+	-- Poder (encantamiento): +25 % por nivel y un 25 % más
+	local poder = p.enc and p.enc.poder or 0
+	if poder > 0 then
+		dano = math.ceil(dano * (1 + 0.25 * (poder + 1)))
+	end
 	Entidades.disparar("flecha", e.X / BS + dir.X * 0.5, e.Y / BS + dir.Y * 0.5, e.Z / BS + dir.Z * 0.5, dir, vel,
 		{ jugador = plr, dano = dano, recogible = supervivencia(s) })
 	Estado:FireClient(plr, "sonido", "arco")
@@ -1600,6 +1638,42 @@ function acciones.atacar(plr, s, parte, carga, cayendo, corriendo)
 		enviarJugador(plr)
 		return
 	end
+	-- Otros jugadores: solo donde el modo lo permite (Bed Wars, entre equipos distintos)
+	local otro = parte.Parent and (Players:GetPlayerFromCharacter(parte.Parent) or (parte.Parent.Parent and Players:GetPlayerFromCharacter(parte.Parent.Parent)))
+	if otro then
+		local e, po = ojos(plr), piesDe(otro)
+		if otro == plr or not e or not po or ((po + Vector3.new(0, 0.9, 0)) * BS - e).Magnitude > (Config.ALCANCE + 1.5) * BS then
+			return
+		end
+		if not Modos.pvp(plr, otro) then
+			return
+		end
+		local p = s.inv[s.sel]
+		local hh = p and OB[p.id] and OB[p.id].herr
+		local cad = hh and hh.cad or 4
+		local carga = math.clamp((os.clock() - s.ultimoAtaque) * cad, 0, 1)
+		s.ultimoAtaque = os.clock()
+		local dano = (hh and hh.dano or 1) * (0.2 + 0.8 * carga * carga) + (s.efectos.fuerza and 3 or 0)
+		local filo = (p and p.enc and p.enc.filo or 0)
+		if filo > 0 then
+			dano += (0.5 * filo + 0.5) * carga
+		end
+		dano += Modos.extraDanoPvp(plr) * carga
+		if cayendo == true and carga > 0.9 then
+			dano *= 1.5
+		end
+		local pp = piesDe(plr)
+		local dx, dz = po.X - pp.X, po.Z - pp.Z
+		local l = math.sqrt(dx * dx + dz * dz)
+		local emp = ((corriendo == true and carga > 0.9) and 1.6 or 1) * (1 + (p and p.enc and p.enc.retroceso or 0) * 0.6)
+		danar(otro, dano, "jugador", { x = dx / (l > 0 and l or 1) * emp, z = dz / (l > 0 and l or 1) * emp })
+		Estado:FireClient(plr, "golpeMob", (po + Vector3.new(0, 0.9, 0)) * BS, dano, cayendo == true and carga > 0.9)
+		if hh then
+			gastarEnMano(plr, s, hh.tipo == "espada" and 1 or 2)
+		end
+		enviarJugador(plr)
+		return
+	end
 	local m = Mobs.desdeParte(parte)
 	local e = ojos(plr)
 	if not m or not e then
@@ -1620,6 +1694,11 @@ function acciones.atacar(plr, s, parte, carga, cayendo, corriendo)
 	if s.efectos.fuerza then
 		dano += 3
 	end
+	-- Filo (encantamiento), como en combate38.js
+	local filo = p and p.enc and p.enc.filo or 0
+	if filo > 0 then
+		dano += (0.5 * filo + 0.5) * carga
+	end
 	local critico = cayendo == true and carga > 0.9
 	if critico then
 		dano *= 1.5
@@ -1627,7 +1706,7 @@ function acciones.atacar(plr, s, parte, carga, cayendo, corriendo)
 	local pp = piesDe(plr)
 	local dx, dz = m.x - pp.X, m.z - pp.Z
 	local l = math.sqrt(dx * dx + dz * dz)
-	local emp = (corriendo == true and carga > 0.9) and 1.6 or 1
+	local emp = ((corriendo == true and carga > 0.9) and 1.6 or 1) * (1 + (p and p.enc and p.enc.retroceso or 0) * 0.6)
 	Mobs.herir(m, dano, { x = dx / (l > 0 and l or 1) * emp, z = dz / (l > 0 and l or 1) * emp }, "jugador", 0, plr)
 	Estado:FireClient(plr, "golpeMob", c, dano, critico)
 	if hh then
@@ -1665,6 +1744,29 @@ function acciones.encantar(plr, s, i)
 		Mesas.encantar(plr, s, i)
 		enviarJugador(plr)
 		enviarUI(plr)
+	end
+end
+
+-- Tiendas de los modos (Bed Wars): comprar una oferta (veces = mayúsculas + clic) o cambiar de pestaña
+function acciones.comprar(plr, s, i, veces)
+	if esEntero(i) and s.ui and s.ui.comprar then
+		s.ui.comprar(plr, s, i, esEntero(veces) and veces or 1)
+		enviarJugador(plr)
+		enviarUI(plr)
+	end
+end
+
+function acciones.pestana(plr, s, i)
+	if esEntero(i) and s.ui and s.ui.pestana then
+		s.ui.pestana(plr, s, i)
+		enviarUI(plr)
+	end
+end
+
+-- Órdenes de Leyendas (G, R, F, 1-6 o los botones del panel)
+function acciones.modoCmd(plr, s, cmd, arg)
+	if type(cmd) == "string" then
+		Modos.comando(plr, cmd, type(arg) == "number" and arg or nil)
 	end
 end
 
@@ -2025,7 +2127,7 @@ function acciones.modo(plr, s, m)
 	if m ~= "creativo" and m ~= "supervivencia" then
 		return
 	end
-	if Modos.activo() then
+	if Modos.activo(plr) then
 		return
 	end
 	if s.modo == "supervivencia" and m == "creativo" then
@@ -2304,5 +2406,8 @@ Dimension.iniciar({
 })
 Modos.iniciar({
 	Mundo = Mundo, Mobs = Mobs, Entidades = Entidades, estados = estados, enviarJugador = enviarJugador, aviso = aviso,
-	Estado = Estado, colocar = colocar, Inv = Inv,
+	Estado = Estado, colocar = colocar, Inv = Inv, danar = danar, teletransportar = teletransportar, darOSoltar = darOSoltar,
+	enviarUI = enviarUI, ganarXP = ganarXP, activarTNT = activarTNT, guardar = guardar,
 })
+-- Las explosiones en la arena de Bed Wars solo rompen lo construido
+Sim.puedeExplotar = Modos.puedeExplotar

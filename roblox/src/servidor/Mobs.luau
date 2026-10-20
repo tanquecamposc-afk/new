@@ -224,6 +224,10 @@ function Mobs.matar(m, fuente, plr)
 	if Mobs.alMorirExtra and not m.muerto then
 		pcall(Mobs.alMorirExtra, m)
 	end
+	-- Criaturas de los modos de juego (bots de Bed Wars, enemigos de las Mazmorras…)
+	if m.alMorir and not m.muerto then
+		pcall(m.alMorir, m, fuente)
+	end
 	if m.muerto then
 		return
 	end
@@ -267,6 +271,12 @@ function Mobs.herir(m, d, dir, fuente, empuje, plr)
 	end
 	if m.inv > 0 and fuente ~= "fuego" then
 		return
+	end
+	if m.alHerir then
+		d = m.alHerir(m, d, fuente, plr)
+		if not d or d <= 0 then
+			return
+		end
 	end
 	if def.inmuneFuego and (fuente == "fuego" or fuente == "lava") then
 		return
@@ -357,6 +367,15 @@ local function actualizarMob(m, dt, jugadores)
 		m.amor -= dt
 	end
 	local noche = esDeNoche()
+	local ia = def.ia
+	local persigue = false
+	-- Criaturas controladas por un modo de juego (bots de Bed Wars, Mazmorras, Leyendas…)
+	if m.control then
+		m.control(m, dt, jugadores)
+		if m.muerto then
+			return
+		end
+	else
 	local hostil = def.tipo == "hostil" or (def.tipo == "neutral" and m.enfadado > 0)
 	if def.neutralDia and not noche and not (m.enfadado > 0) then
 		hostil = false
@@ -376,8 +395,7 @@ local function actualizarMob(m, dt, jugadores)
 		dx, dz, dy = j.x - m.x, j.z - m.z, j.y - m.y
 		dist = math.sqrt(dx * dx + dz * dz)
 	end
-	local persigue = hostil and j ~= nil
-	local ia = def.ia
+	persigue = hostil and j ~= nil
 	local ex, ey, ez = m.x, m.y + m.alto * 0.85, m.z
 	if persigue and ia == "arquero" then
 		m.yawObj = math.atan2(dx, dz)
@@ -689,6 +707,8 @@ local function actualizarMob(m, dt, jugadores)
 	if ia == "blaze" and not persigue then
 		m.vy *= 0.5 ^ dt
 		m.mover = false
+	end
+
 	end
 
 	-- Giro y movimiento

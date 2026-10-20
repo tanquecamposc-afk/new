@@ -541,7 +541,7 @@ function Sim.explosion(x, y, z, potencia, opc)
 	end
 	for _, c in romper do
 		local bx, by, bz, id = c[1], c[2], c[3], c[4]
-		if getC(bx, by, bz) == id then
+		if getC(bx, by, bz) == id and (not Sim.puedeExplotar or Sim.puedeExplotar(bx, by, bz, id)) then
 			if id == B.tnt then
 				set(bx, by, bz, 0)
 				task.delay(0.5 + math.random(), function()

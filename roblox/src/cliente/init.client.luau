@@ -30,6 +30,8 @@ local MobsVista = require(script:WaitForChild("MobsVista"))
 local EntidadesVista = require(script:WaitForChild("EntidadesVista"))
 local DimensionVista = require(script:WaitForChild("DimensionVista"))
 local Generador = require(Comp:WaitForChild("Generador"))
+local Arenas = require(Comp:WaitForChild("Arenas"))
+task.spawn(Arenas.escuchar) -- arenas de Mazmorras y Leyendas que anuncia el servidor
 local Imagenes = require(script:WaitForChild("Imagenes"))
 
 local remotos = ReplicatedStorage:WaitForChild("Remotos")
@@ -300,7 +302,17 @@ end
 local filtroMobs = RaycastParams.new()
 filtroMobs.FilterType = Enum.RaycastFilterType.Include
 task.spawn(function()
-	filtroMobs.FilterDescendantsInstances = { workspace:WaitForChild("Criaturas") }
+	local criaturas = workspace:WaitForChild("Criaturas")
+	while true do
+		local lista = { criaturas }
+		for _, o in Players:GetPlayers() do
+			if o ~= jugador and o.Character then
+				table.insert(lista, o.Character)
+			end
+		end
+		filtroMobs.FilterDescendantsInstances = lista
+		task.wait(1)
+	end
 end)
 
 local function ojos()
@@ -463,13 +475,16 @@ local function velocidad()
 	elseif corriendo and (creativo() or est.hambre > 6) then
 		v = 5.6
 	end
-	if est.efectos and est.efectos.rapidez then
-		v *= 1.2
+	local ef = est.efectos or {}
+	if ef.rapidez then
+		v *= 1 + 0.2 * (ef.rapidez.n or 1)
 	end
-	if est.efectos and est.efectos.lentitud then
-		v *= 0.85
+	if ef.lentitud then
+		v *= math.max(0.2, 1 - 0.15 * (ef.lentitud.n or 1))
 	end
 	hum.WalkSpeed = v * BS
+	-- Supersalto: medio bloque más por nivel
+	hum.JumpHeight = (1.25 + (ef.salto and 0.5 * (ef.salto.n or 1) or 0)) * BS + 0.4
 	local cab = ch:FindFirstChild("Humanoid") and hum
 	if cab then
 		hum.CameraOffset = agachado and Vector3.new(0, -0.3 * BS, 0) or Vector3.zero
@@ -507,8 +522,10 @@ Interfaz.alElegirModo = function(m)
 	if m == "oneblock" then
 		enviar("modoJuego", "oneblock")
 		enviar("modo", "supervivencia")
+	elseif m == "bedwars" or m == "mazmorras" or m == "leyendas" then
+		enviar("modoJuego", m)
 	else
-		if jugador:GetAttribute("OneBlock") then
+		if jugador:GetAttribute("OneBlock") or jugador:GetAttribute("BedWars") or jugador:GetAttribute("Mazmorras") or jugador:GetAttribute("Leyendas") then
 			enviar("modoJuego", "normal")
 		end
 		enviar("modo", m)
@@ -553,7 +570,17 @@ UserInputService.InputBegan:Connect(function(input, procesado)
 			return
 		end
 		local n = k.Value - Enum.KeyCode.One.Value + 1
-		if n >= 1 and n <= 9 and not Interfaz.menuVisible() then
+		local leyendas = jugador:GetAttribute("Leyendas") == true and not Interfaz.menuVisible() and not Interfaz.abierto()
+		if leyendas and n >= 1 and n <= 6 then
+			-- Leyendas: 1-6 construyen (como en el web)
+			enviar("modoCmd", "construir", n)
+		elseif leyendas and (k == Enum.KeyCode.G or k == Enum.KeyCode.R or (k == Enum.KeyCode.F and not creativo())) then
+			enviar("modoCmd", k == Enum.KeyCode.G and "cosechar" or (k == Enum.KeyCode.R and "atacar" or "seguir"))
+		elseif k == Enum.KeyCode.M and not Interfaz.abierto() then
+			-- Menú de modos de juego
+			Interfaz.menu(not Interfaz.menuVisible())
+			aplicarCamara()
+		elseif n >= 1 and n <= 9 and not Interfaz.menuVisible() then
 			elegir(n)
 		elseif k == Enum.KeyCode.E then
 			if not Interfaz.menuVisible() then
@@ -770,6 +797,11 @@ Estado.OnClientEvent:Connect(function(tipo, a, b, c)
 		Interfaz.carga(0.5, a and ("Entrando en " .. a .. "…") or "Viajando…")
 	elseif tipo == "jefe" then
 		Interfaz.jefe(a)
+	elseif tipo == "panel" then
+		Interfaz.panel(a)
+	elseif tipo == "menu" then
+		Interfaz.menu(true)
+		aplicarCamara()
 	end
 end)
 

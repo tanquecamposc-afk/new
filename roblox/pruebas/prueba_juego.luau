@@ -2,7 +2,8 @@
 	Ejecuta el servidor y el cliente de Blockverse v2 dentro del Roblox de
 	mentira: un jugador entra, se dibuja el mundo con mallas, elige modo,
 	pica, recoge, fabrica en la mesa, pone bloques, abre el inventario,
-	pelea con criaturas, ve explosiones y prueba One Block.
+	pelea con criaturas, ve explosiones y prueba One Block, Bed Wars,
+	Mazmorras y Leyendas.
 	Cualquier error de los scripts se cuenta como fallo.
 ]]
 local F = require("./roblox_falso")
@@ -555,6 +556,285 @@ ok(recibido.oneblock and recibido.oneblock[1], "no llegó el HUD de One Block")
 for _ = 1, 400 do
 	F.paso(1 / 30)
 end
+
+------------------------------------------------------------------
+-- Bed Wars
+------------------------------------------------------------------
+local BWm = srv.BedWars._resultado
+local ArenasM = F.entorno(comp).require(comp.Arenas)
+local BW_Y = ArenasM.BW_Y
+local function pasos(n)
+	for _ = 1, n do
+		F.paso(1 / 30)
+	end
+end
+local function invTiene(id)
+	local n = 0
+	for i = 1, 41 do
+		local p = ultimoJugador.inv[i]
+		if p and p.id == id then
+			n += p.n
+		end
+	end
+	return n
+end
+Interfaz.alElegirModo("bedwars")
+pasos(60)
+local P = BWm._partida()
+ok(P ~= nil and P.fase == "sala", "no se creó la sala de Bed Wars")
+ok(recibido.panel and recibido.panel[1] and recibido.panel[1].titulo == "BED WARS", "no llegó el marcador de Bed Wars")
+BWm._empezarYa()
+pasos(90)
+P = BWm._partida()
+ok(P and P.fase == "juego", "la partida de Bed Wars no empezó")
+local J = P and P.jug[plr]
+ok(J and J.equipo ~= nil, "el jugador no tiene equipo")
+ok(P and #P.bots == 7, "no salieron los 7 bots (" .. (P and #P.bots or 0) .. ")")
+ok(ultimoJugador.inv[1] and Reg.objetos[ultimoJugador.inv[1].id].clave == "espada_madera", "no se dio el kit de Bed Wars")
+if P and J and J.equipo then
+	local E = P.eqs[J.equipo].E
+	local cama = P.camas[J.equipo]
+	ok(srvMundo.get(cama.x, cama.y, cama.z) == cama.b, "la cama del equipo no está en el mapa")
+	-- Generador: hierro y oro a los pies
+	local gen
+	for _, g in P.gens do
+		if g.tipo == "equipo" and g.equipo == J.equipo then
+			gen = g
+		end
+	end
+	moverJugador(math.floor(gen.x), BW_Y + 1, math.floor(gen.z))
+	pasos(240)
+	local hierro = invTiene(Reg.I.lingoteHierro)
+	ok(hierro >= 4, "el generador no dio hierro (" .. hierro .. ")")
+	-- Tienda: hablar con el tendero y comprar lana
+	local tendero
+	for _, m in P.tenderos do
+		if m.bwEquipo == J.equipo and m.bwTienda == "objetos" then
+			tendero = m
+		end
+	end
+	moverJugador(math.floor(tendero.x) + 1, BW_Y + 1, math.floor(tendero.z))
+	pasos(2)
+	enviar("derecho", nil, Vector3.new(-1, 0, 0), tendero.pieza, false)
+	pasos(2)
+	ok(ultimaUI and ultimaUI.extra and ultimaUI.extra.sub == "tienda" and #ultimaUI.extra.ofertas > 0, "no se abrió la tienda de Bed Wars")
+	enviar("comprar", 1, 1)
+	pasos(2)
+	ok(invTiene(E.lanaId) >= 16, "no se compró la lana")
+	enviar("pestana", 2)
+	pasos(2)
+	ok(ultimaUI.extra.pestana == 2, "no cambió la pestaña de la tienda")
+	enviar("cerrarUI")
+	-- Poner lana junto a la isla y romperla; el mapa no se rompe
+	local ranuraLana
+	for i = 1, 9 do
+		local p = ultimoJugador.inv[i]
+		if p and p.id == E.lanaId then
+			ranuraLana = i
+		end
+	end
+	enviar("sel", ranuraLana)
+	local ix, iz = E.isla[1], E.isla[2]
+	moverJugador(ix, BW_Y + 1, iz)
+	pasos(2)
+	enviar("derecho", { x = ix + 1, y = BW_Y, z = iz + 1, n = { 0, 1, 0 } }, Vector3.new(0, -1, 0), nil, false)
+	pasos(2)
+	ok(srvMundo.get(ix + 1, BW_Y + 1, iz + 1) == E.lanaId, "no se pudo poner lana")
+	enviar("golpe", ix + 1, BW_Y + 1, iz + 1)
+	pasos(30)
+	enviar("romper", ix + 1, BW_Y + 1, iz + 1)
+	pasos(2)
+	ok(srvMundo.get(ix + 1, BW_Y + 1, iz + 1) == 0, "no se pudo romper la lana puesta")
+	local antesMapa = srvMundo.get(ix + 2, BW_Y, iz)
+	enviar("golpe", ix + 2, BW_Y, iz)
+	pasos(90)
+	enviar("romper", ix + 2, BW_Y, iz)
+	pasos(2)
+	ok(srvMundo.get(ix + 2, BW_Y, iz) == antesMapa, "se pudo romper un bloque del mapa")
+	-- Romper la cama de otro equipo
+	local otro = J.equipo % P.n + 1
+	local c2 = P.camas[otro]
+	if P.eqs[otro].cama then
+		moverJugador(c2.x + 1, BW_Y + 1, c2.z)
+		pasos(2)
+		enviar("golpe", c2.x, c2.y, c2.z)
+		pasos(15)
+		enviar("romper", c2.x, c2.y, c2.z)
+		pasos(2)
+		ok(not P.eqs[otro].cama and J.camas == 1, "no se rompió la cama enemiga")
+		ok(srvMundo.get(c2.x, c2.y, c2.z) == 0, "la cama rota sigue en el mapa")
+	end
+	-- Mejoras del equipo con diamantes
+	local so = srv.init and nil
+	-- Los bots juegan un rato
+	local antesBots = {}
+	for _, m in P.bots do
+		antesBots[m] = Vector3.new(m.x, m.y, m.z)
+	end
+	moverJugador(ix, BW_Y + 1, iz)
+	pasos(300)
+	local movidos = 0
+	for m, a in antesBots do
+		if (Vector3.new(m.x, m.y, m.z) - a).Magnitude > 1 then
+			movidos += 1
+		end
+	end
+	ok(movidos > 0, "los bots no se mueven")
+	-- Caer al vacío: muere y reaparece en su isla con el kit
+	moverJugador(ix, BW_Y - 40, iz)
+	pasos(5)
+	ok(recibido.muerte ~= nil, "caer al vacío no mató al jugador")
+	ok(J.muertes == 1, "no se contó la muerte")
+	recibido.muerte = nil
+	nuevoPersonaje()
+	pasos(60)
+	ok(ultimoJugador.inv[1] and Reg.objetos[ultimoJugador.inv[1].id].clave == "espada_madera", "al reaparecer no se dio el kit")
+	local px3, pz3 = root.Position.X / B, root.Position.Z / B
+	ok(math.abs(px3 - ix) < 3 and math.abs(pz3 - iz) < 3, "no reapareció en su isla")
+	print(string.format("Bed Wars: equipo %s · %d bots (%d se movieron) · hierro %d · cama enemiga rota", E.nombre, #P.bots, movidos, hierro))
+end
+-- Salir de Bed Wars: se recupera el inventario de antes
+Interfaz.alElegirModo("supervivencia")
+pasos(30)
+ok(BWm._partida() == nil, "la partida de Bed Wars no se cerró al irse el único jugador")
+ok(plr:GetAttribute("BedWars") == nil, "el jugador sigue marcado en Bed Wars")
+if recibido.muerte then
+	nuevoPersonaje()
+	recibido.muerte = nil
+end
+pasos(30)
+
+------------------------------------------------------------------
+-- Mazmorras
+------------------------------------------------------------------
+local MZm = srv.Mazmorras._resultado
+Interfaz.alElegirModo("mazmorras")
+pasos(60)
+local R = MZm._partida(plr)
+ok(R ~= nil and R.arena ~= nil, "no empezó la mazmorra")
+if R then
+	local MZ_Y = ArenasM.MZ_Y
+	local s1 = R.arena.salas[1]
+	ok(srvMundo.get(s1.x, MZ_Y, s1.z) ~= 0, "el suelo de la mazmorra no está en el mundo")
+	ok(ultimoJugador.inv[1] and Reg.objetos[ultimoJugador.inv[1].id].clave == "espada_hierro", "no se dio la espada de la mazmorra")
+	ok(recibido.panel and recibido.panel[1] and recibido.panel[1].titulo:find("MAZMORRA") ~= nil, "no llegó el panel de la mazmorra")
+	-- Entrar en la segunda sala: aparecen enemigos y se cierran las puertas
+	local s2 = R.arena.salas[2]
+	moverJugador(s2.x, MZ_Y + 1, s2.z)
+	pasos(5)
+	ok(#R.enemigos > 0, "no aparecieron enemigos en la sala")
+	local puerta = s2.puertas[1]
+	ok(puerta and srvMundo.get(puerta[1], MZ_Y + 1, puerta[2]) == Reg.B.valla, "no se cerraron las puertas")
+	for _ = 1, 4 do
+		for _, m in table.clone(R.enemigos) do
+			Mobs.matar(m, "jugador", plr)
+		end
+		pasos(5)
+	end
+	ok(s2.limpia, "la sala no quedó limpia")
+	ok(R.esm > 0, "los enemigos no dieron esmeraldas")
+	ok(puerta and srvMundo.get(puerta[1], MZ_Y + 1, puerta[2]) == 0, "no se abrieron las puertas")
+	if s2.cofre then
+		local antes = R.atk + R.def + R.esm
+		moverJugador(s2.cofre[1], MZ_Y + 1, s2.cofre[3])
+		pasos(5)
+		ok(R.atk + R.def + R.esm > antes, "el cofre no dio botín")
+	end
+	-- Artefacto: el cuerno de explosión
+	moverJugador(s2.x, MZ_Y + 1, s2.z)
+	enviar("sel", 4)
+	enviar("derecho", nil, Vector3.new(1, 0, 0), nil, false)
+	pasos(2)
+	ok(R.cd.cuerno ~= nil, "no se usó el cuerno")
+	-- El jefe: al vencerlo aparece la plataforma al nivel 2
+	local sj = R.arena.salas[#R.arena.salas]
+	moverJugador(sj.x, MZ_Y + 1, sj.z)
+	pasos(5)
+	ok(R.jefe ~= nil, "no apareció el jefe")
+	ok(recibido.jefe and recibido.jefe[1], "no llegó la barra del jefe")
+	for _ = 1, 4 do
+		for _, m in table.clone(R.enemigos) do
+			Mobs.matar(m, "jugador", plr)
+		end
+		pasos(5)
+	end
+	ok(R.salida ~= nil, "no apareció la salida al vencer al jefe")
+	moverJugador(sj.x, MZ_Y + 1, sj.z)
+	pasos(10)
+	ok(R.nivel == 2, "no se bajó al nivel 2")
+	print(string.format("Mazmorras: nivel %d (%s) · %d salas · esmeraldas %d · ataque %d · defensa %d", R.nivel, R.arena.tema.n, #R.arena.salas, R.esm, R.atk, R.def))
+end
+Interfaz.alElegirModo("supervivencia")
+pasos(30)
+ok(MZm._partida(plr) == nil, "no se salió de la mazmorra")
+if recibido.muerte then
+	nuevoPersonaje()
+	recibido.muerte = nil
+end
+
+------------------------------------------------------------------
+-- Leyendas
+------------------------------------------------------------------
+local LYm = srv.Leyendas._resultado
+Interfaz.alElegirModo("leyendas")
+pasos(90)
+local L = LYm._partida(plr)
+ok(L ~= nil, "no empezó Leyendas")
+if L then
+	ok(srvMundo.get(L.aldea.x, L.aldea.y + 1, L.aldea.z) == Reg.B.bloqueOro, "no está el pozo-corazón de la aldea")
+	moverJugador(L.aldea.x, L.aldea.y + 1, L.aldea.z + 5)
+	pasos(5)
+	local m0 = L.madera
+	enviar("modoCmd", "construir", 1)
+	pasos(2)
+	ok(#L.spawners == 1 and L.madera == m0 - 5, "no se construyó el generador de golems")
+	pasos(120)
+	local golems = 0
+	for _, m in Mobs.lista do
+		if m.ly == L and m.tipo == "golemPiedraLY" and not m.muerto then
+			golems += 1
+		end
+	end
+	ok(golems > 0, "el generador no dio golems")
+	enviar("modoCmd", "atacar")
+	pasos(2)
+	ok(L.orden == "atacar", "no se dio la orden de ataque")
+	-- Los portales sueltan piglins
+	pasos(400)
+	local piglins = 0
+	for _, m in Mobs.lista do
+		if m.ly == L and (m.tipo == "piglinLY" or m.tipo == "piglinBrutoLY") and not m.muerto then
+			piglins += 1
+		end
+	end
+	ok(piglins > 0, "los portales no soltaron piglins")
+	-- Golpear un portal
+	local b1 = L.bases[1]
+	local v0 = b1.vida
+	moverJugador(b1.x, b1.y + 1, b1.z + 3)
+	enviar("golpe", b1.x, b1.y + 1, b1.z)
+	pasos(2)
+	ok(b1.vida < v0, "golpear el portal no le quitó vida")
+	-- Recoger con los ayudantes lejos de la aldea
+	moverJugador(L.aldea.x + 45, ArenasM.alturaLY(L.arena, 45, 0) + 1, L.aldea.z)
+	pasos(2)
+	enviar("modoCmd", "cosechar")
+	pasos(2)
+	print(string.format("Leyendas: %d golems · %d piglins · madera %d · piedra %d · portal %d/80", golems, piglins, L.madera, L.piedra, b1.vida))
+	for _, b in L.bases do
+		b.vida = 0
+	end
+	pasos(5)
+	ok(L.fin, "destruir los 3 portales no dio la victoria")
+end
+Interfaz.alElegirModo("supervivencia")
+pasos(30)
+ok(LYm._partida(plr) == nil, "no se salió de Leyendas")
+if recibido.muerte then
+	nuevoPersonaje()
+	recibido.muerte = nil
+end
+pasos(30)
 
 -- Recorrer un poco el mundo para que se carguen y descarguen chunks
 for k = 1, 6 do
