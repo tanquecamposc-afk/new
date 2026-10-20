@@ -1,6 +1,6 @@
 --[[
 	Blockverse para Roblox · Perfil de Bed Wars de cada jugador (se guarda en DataStore)
-	· Monedas, experiencia con nivel y estrellas [N✫], estadísticas, racha de victorias.
+	· Monedas, experiencia con nivel y estrellas [N★], estadísticas, racha de victorias.
 	· Kits comprados con su nivel, kit equipado y efecto de baja final equipado.
 	· Misiones diarias: tres al día, iguales para todo el servidor, con su recompensa.
 	Si el DataStore no está disponible (Studio sin acceso), todo funciona igual en memoria.
@@ -13,6 +13,7 @@ pcall(function()
 	almacen = DataStoreService:GetDataStore("Blockverse_BW_v1")
 end)
 local perfiles = {} -- plr -> perfil
+local sinGuardar = {} -- plr -> true si la carga falló (no se pisa lo guardado)
 
 local function nuevo()
 	return {
@@ -29,7 +30,7 @@ function Perfil.colorNivel(n)
 	return n >= 100 and "#ff55ff" or (n >= 50 and "#55ffff" or (n >= 20 and "#ffaa00" or (n >= 10 and "#ffff55" or "#aaaaaa")))
 end
 function Perfil.etiqueta(p)
-	return ("[%d✫]"):format(Perfil.nivel(p and p.xp or 0))
+	return ("[%d★]"):format(Perfil.nivel(p and p.xp or 0))
 end
 
 ------------------------------------------------------------------
@@ -153,6 +154,9 @@ function Perfil.de(plr)
 			end)
 			if ok then
 				p = limpiar(g)
+			else
+				sinGuardar[plr] = true
+				warn("[Blockverse] No se pudo cargar el perfil de Bed Wars de " .. plr.Name .. ": " .. tostring(g))
 			end
 		end
 		perfiles[plr] = p
@@ -160,19 +164,37 @@ function Perfil.de(plr)
 	return p
 end
 
-function Perfil.guardar(plr)
+local function guardarYa(plr)
 	local p = perfiles[plr]
-	if not p or not almacen or not plr.UserId or plr.UserId <= 0 then
+	if not p or not almacen or sinGuardar[plr] or not plr.UserId or plr.UserId <= 0 then
 		return
 	end
-	pcall(function()
+	local ok, err = pcall(function()
 		almacen:SetAsync("bw_" .. plr.UserId, p)
 	end)
+	if not ok then
+		warn("[Blockverse] No se pudo guardar el perfil de Bed Wars: " .. tostring(err))
+	end
+end
+
+-- Guarda sin parar a quien lo llama (el DataStore tarda)
+function Perfil.guardar(plr)
+	task.spawn(guardarYa, plr)
 end
 
 function Perfil.olvidar(plr)
-	Perfil.guardar(plr)
+	guardarYa(plr)
 	perfiles[plr] = nil
+	sinGuardar[plr] = nil
 end
+
+-- Al cerrar el servidor se guardan todos
+pcall(function()
+	game:BindToClose(function()
+		for plr in perfiles do
+			guardarYa(plr)
+		end
+	end)
+end)
 
 return Perfil

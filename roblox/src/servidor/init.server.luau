@@ -421,19 +421,35 @@ local function cargar(plr)
 				local p = g.inv[i]
 				if type(p) == "table" and (OB[p.id] or BL[p.id]) and type(p.n) == "number" then
 					s.inv[i] = { id = p.id, n = math.clamp(p.n, 1, Registro.maxPila(p.id)), dur = p.dur }
+					-- Encantamientos guardados (nombre -> nivel)
+					if type(p.enc) == "table" then
+						local enc = {}
+						for k, v in p.enc do
+							if type(k) == "string" and type(v) == "number" then
+								enc[k] = math.clamp(math.floor(v), 1, 10)
+							end
+						end
+						if next(enc) then
+							s.inv[i].enc = enc
+						end
+					end
 				end
 			end
 			if type(g.xp) == "table" then
 				s.xp = { nivel = tonumber(g.xp.nivel) or 0, puntos = tonumber(g.xp.puntos) or 0 }
 			end
 			s.hambre = tonumber(g.hambre) or 20
+		elseif not ok then
+			-- Si el DataStore falla no se guarda nada: así no se pisa la partida guardada con un inventario vacío
+			s.sinGuardar = true
+			warn("[Blockverse] No se pudo cargar la partida de " .. plr.Name .. ": " .. tostring(g))
 		end
 	end
 end
 
 local function guardar(plr)
 	local s = st(plr)
-	if not s or not almacen or s.modo == "creativo" or s.ob or Modos.activo(plr) then
+	if not s or not almacen or s.sinGuardar or s.modo == "creativo" or s.ob or Modos.activo(plr) then
 		return
 	end
 	pcall(function()
@@ -614,6 +630,15 @@ end)
 game:BindToClose(function()
 	for _, plr in Players:GetPlayers() do
 		guardar(plr)
+	end
+end)
+-- Guardado automático cada 2 minutos (por si el servidor se cierra de golpe)
+task.spawn(function()
+	while true do
+		task.wait(120)
+		for _, plr in Players:GetPlayers() do
+			task.spawn(guardar, plr)
+		end
 	end
 end)
 

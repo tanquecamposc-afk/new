@@ -1110,20 +1110,55 @@ local function moverBot(m, tx, tz, vel, puente)
 		return d
 	end
 	local ux, uz = dx / d, dz / d
+	-- Atascado contra algo (un árbol, una tienda, un muro): lo rodea por un lado un momento
+	local b = m.bw
+	local dt = b.dt or 1 / 60
+	b.atascoT = (b.atascoT or 0) + dt
+	if b.atascoT >= 0.8 then
+		local mov = b.atascoPos and math.sqrt((m.x - b.atascoPos[1]) ^ 2 + (m.z - b.atascoPos[2]) ^ 2) or 1
+		if mov < 0.35 and not b.rodeo then
+			b.rodeo = { lado = math.random() < 0.5 and -1 or 1, t = 1.2 + math.random() * 0.8 }
+		end
+		b.atascoT = 0
+		b.atascoPos = { m.x, m.z }
+	end
+	if b.rodeo then
+		b.rodeo.t -= dt
+		local a = math.rad(80) * b.rodeo.lado
+		ux, uz = ux * math.cos(a) - uz * math.sin(a), ux * math.sin(a) + uz * math.cos(a)
+		if b.rodeo.t <= 0 then
+			b.rodeo = nil
+		end
+	end
 	m.yawObj = math.atan2(ux, uz)
-	-- Tender puente: si no hay suelo delante, pone lana de su equipo
+	-- Tender puente: si delante no hay suelo (un escalón de bajada no cuenta), pone lana de su equipo
 	local nx, nz, ny = math.floor(m.x + ux * 0.8), math.floor(m.z + uz * 0.8), math.floor(m.y - 0.5)
 	local Mundo = ctx.Mundo
-	if m.suelo and Mundo.get(nx, ny, nz) == 0 and Mundo.get(math.floor(m.x + ux * 0.4), ny, math.floor(m.z + uz * 0.4)) == 0 then
+	local function hueco(x, z)
+		for dy = 0, 3 do
+			if Registro.SOLIDO[Mundo.get(x, ny - dy, z)] then
+				return false
+			end
+		end
+		return true
+	end
+	if m.suelo and hueco(nx, nz) and hueco(math.floor(m.x + ux * 0.4), math.floor(m.z + uz * 0.4)) then
 		if not puente or m.bw.lana <= 0 then
 			m.mover = false
 			if m.bw.lana <= 0 and m.bw.estado == "atacar" then
 				m.bw.estado = "recolectar"
 				m.bw.t = 15
 			end
+			-- Sin lana y lejos de casa: saca la de reserva para poder volver (si no, se quedaría ahí para siempre)
+			b.bordeT = (b.bordeT or 0) + dt
+			if b.bordeT > 4 and b.lana <= 0 then
+				b.lana = 16
+				b.bordeT = 0
+			end
 			return d
 		end
-		m.bw.colocarT = (m.bw.colocarT or 0) - 1 / 60
+		b.bordeT = 0
+		m.bw.colocarT = (m.bw.colocarT or 0) - dt
 		if m.bw.colocarT <= 0 then
 			m.bw.colocarT = 0.18 / m.bw.nivel
 			ponBloque(nx, ny, nz, P.eqs[m.bw.equipo].E.lanaId)
@@ -1187,6 +1222,7 @@ function BW.iaBot(m, dt)
 		return
 	end
 	local b = m.bw
+	b.dt = dt
 	local eq = P.eqs[b.equipo]
 	local E = eq.E
 	if m.y < BW_VACIO then
@@ -1204,8 +1240,12 @@ function BW.iaBot(m, dt)
 	if math.sqrt((m.x - casa.x) ^ 2 + (m.z - casa.z) ^ 2) < 7 then
 		comprasBot(m)
 	end
-	-- ¿Hay enemigos cerca? A pelear
+	-- ¿Hay enemigos cerca? A pelear (si ya está junto a la cama que va a romper, solo se defiende de los que tiene encima)
 	local obj, dmin = nil, b.rol == "defensor" and 11 or 8
+	local camaObj = b.estado == "atacar" and b.objetivo and P.eqs[b.objetivo] and P.eqs[b.objetivo].cama and P.camas[b.objetivo]
+	if camaObj and math.sqrt((camaObj.x + 0.5 - m.x) ^ 2 + (camaObj.z + 0.5 - m.z) ^ 2) < 6 then
+		dmin = 2
+	end
 	local enemigos = enemigosDe(m)
 	for _, e in enemigos do
 		local d = math.sqrt((e.x - m.x) ^ 2 + (e.z - m.z) ^ 2)
@@ -1265,7 +1305,7 @@ function BW.iaBot(m, dt)
 		end
 	end
 	if b.estado == "recolectar" then
-		moverBot(m, gen.x + (b.slot % 2 == 1 and 0.6 or -0.6), gen.z, vel * 0.8, false)
+		moverBot(m, gen.x + (b.slot % 2 == 1 and 0.6 or -0.6), gen.z, vel * 0.8, b.lana > 0)
 		if b.t <= 0 then
 			b.t = 60 + math.random() * 40
 			b.estado = (b.rol == "atacante" or math.random() < 0.35) and "atacar" or "patrulla"
@@ -1890,7 +1930,7 @@ function terminar(ganador)
 	local E = ganador and P.eqs[ganador].E
 	sonidoTodos("nivel")
 	-- MVP: el que más ha aportado (bajas finales y camas pesan más)
-	local mvp, mvpP = nil, -1
+	local mvp, mvpP = nil, 0
 	for plr, J in P.jug do
 		local pts = J.bajas + J.finales * 2 + J.camas * 3
 		if J.equipo and not J.espectador and pts > mvpP then
@@ -1908,7 +1948,7 @@ function terminar(ganador)
 		local mon = 0
 		local hechas = {}
 		if jugo then
-			mon = 10 + J.bajas * 5 + J.finales * 10 + J.camas * 25 + (gano and 100 or 0) + (plr == mvp and mvpP > 0 and 25 or 0)
+			mon = 10 + J.bajas * 5 + J.finales * 10 + J.camas * 25 + (gano and 100 or 0) + (plr == mvp and 25 or 0)
 			perfil.monedas += mon
 			perfil.xp += xp
 			perfil.partidas += 1
@@ -1944,7 +1984,7 @@ function terminar(ganador)
 			ctx.aviso(plr, ("Recompensa: +%d monedas · +%d de experiencia"):format(mon, xp))
 		end
 	end
-	if mvp and mvpP > 0 then
+	if mvp then
 		chat(("MVP de la partida: %s (%d puntos)"):format(mvp.Name, mvpP), "#ffd84a")
 	end
 	local partida = P
@@ -2255,6 +2295,10 @@ function BW.salir(plr, fin)
 	ctx.Estado:FireClient(plr, "panel", nil)
 	ctx.Estado:FireClient(plr, "kitBW", nil)
 	ctx.Estado:FireClient(plr, "espectar", nil)
+	ctx.Estado:FireClient(plr, "feed", nil)
+	if not fin then
+		ctx.Estado:FireClient(plr, "finBW", nil)
+	end
 	Perfil.guardar(plr)
 	if J.premioXP and ctx.ganarXP then
 		ctx.ganarXP(plr, J.premioXP)
@@ -2761,7 +2805,7 @@ local function panel(plr, J)
 		end
 		linea(("Empieza en %d"):format(math.ceil(P.lobby)), "#55ff55")
 		linea(("Jugadores: %d (el resto, bots)"):format(n))
-		linea(("Nivel %d✫ · %d/500 xp"):format(nivel, perfil.xp % 500), Perfil.colorNivel(nivel))
+		linea(("Nivel %d★ · %d/500 xp"):format(nivel, perfil.xp % 500), Perfil.colorNivel(nivel))
 		linea(("Monedas: %d"):format(perfil.monedas), "#ffd84a")
 		linea(("Victorias: %d · Racha: %d"):format(perfil.victorias, perfil.racha), "#aaaaaa")
 		linea("")

@@ -684,6 +684,7 @@ local listoServidor = false
 ------------------------------------------------------------------
 local kitBW = nil -- {id, v, act}
 local saltosExtra = 0
+local saltoAireT = 0 -- JumpRequest se repite al mantener la tecla: entre saltos en el aire hay una pausa
 local espectando = nil
 
 -- Los impulsos vienen en bloques/s con la gravedad del juego web (32 bloques/s²)
@@ -722,8 +723,13 @@ local function impulso(tipo, fuerza)
 end
 
 -- Doble salto (Saltarín): Espacio otra vez en el aire
+local ultimoJR = 0
 UserInputService.JumpRequest:Connect(function()
-	if not kitBW or kitBW.id ~= "saltarin" then
+	-- Mantener Espacio repite el evento cada fotograma: solo cuenta una pulsación nueva
+	local ahoraJR = os.clock()
+	local seguido = ahoraJR - ultimoJR < 0.15
+	ultimoJR = ahoraJR
+	if seguido or not kitBW or kitBW.id ~= "saltarin" then
 		return
 	end
 	local ch = jugador.Character
@@ -732,8 +738,9 @@ UserInputService.JumpRequest:Connect(function()
 	if not root or not hum or hum.Health <= 0 or hum.FloorMaterial ~= Enum.Material.Air then
 		return
 	end
-	if saltosExtra > 0 and root.AssemblyLinearVelocity.Y < vRoblox(4) then
+	if saltosExtra > 0 and root.AssemblyLinearVelocity.Y < vRoblox(4) and os.clock() - saltoAireT > 0.25 then
 		saltosExtra -= 1
+		saltoAireT = os.clock()
 		local v = root.AssemblyLinearVelocity
 		root.AssemblyLinearVelocity = Vector3.new(v.X, math.sqrt(2 * workspace.Gravity * 1.3 * BS), v.Z)
 		emitir(root.Position - Vector3.new(0, BS * 0.8, 0), Color3.fromRGB(255, 255, 255), 8, 2, 0.1, 2)

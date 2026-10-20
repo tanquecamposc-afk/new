@@ -273,9 +273,15 @@ local diamAntes = cuenta(ana, Reg.I.diamante)
 sale(ana)
 local guardado = F.almacenes.Blockverse_v2 and F.almacenes.Blockverse_v2.u_101
 ok(guardado ~= nil, "no se guardó el inventario de Ana al salir")
+-- Una espada encantada guardada vuelve con su encantamiento
+if guardado then
+	guardado.inv[30] = { id = Reg.I.espada_diamante, n = 1, dur = 1500, enc = { filo = 3 } }
+end
 ana = entra("Ana", 101)
 enviar(ana, "modo", "supervivencia")
 pasos(5)
+local esp = inv(ana)[30]
+ok(esp and esp.enc and esp.enc.filo == 3, "la espada encantada pierde el encantamiento al volver")
 ok(cuenta(ana, Reg.I.diamante) == diamAntes, "al volver Ana no recupera su inventario (" .. cuenta(ana, Reg.I.diamante) .. " de " .. diamAntes .. ")")
 
 ------------------------------------------------------------------

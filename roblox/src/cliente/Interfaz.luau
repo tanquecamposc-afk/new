@@ -847,7 +847,7 @@ opcionMenu("One Block", "Empieza en un solo bloque que se regenera", "oneblock")
 opcionMenu("Bed Wars", "Equipos en islas: protege tu cama y rompe las demás", "bedwars")
 opcionMenu("Mazmorras", "Salas con enemigos, botín, artefactos y un jefe", "mazmorras")
 opcionMenu("Leyendas", "Defiende la aldea, construye y manda a tus golems", "leyendas")
-texto({ Size = UDim2.fromOffset(380, 100), Text = "WASD moverse · Espacio saltar · Ctrl correr · Mayús agacharse\nClic izq. picar / atacar · Clic der. usar / poner\n1-9 y rueda: barra · E inventario · Q tirar · F volar (creativo)\nV tercera persona · F3 información · M este menú · Esc cerrar",
+texto({ Size = UDim2.fromOffset(560, 100), Text = "WASD moverse · Espacio saltar · Ctrl correr · Mayús agacharse\nClic izq. picar / atacar · Clic der. usar / poner\n1-9 y rueda: barra · E inventario · Q tirar · F volar (creativo)\nV tercera persona · F3 información · M este menú · Esc cerrar · G habilidad (Bed Wars)",
 	TextSize = 13, TextWrapped = true, TextColor3 = Color3.fromRGB(220, 220, 220), ZIndex = 12 }, menuCaja)
 
 local carga = nuevo("Frame", { Name = "Carga", BackgroundColor3 = Color3.fromRGB(40, 28, 20), BorderSizePixel = 0, Size = UDim2.fromScale(1, 1), Visible = true, ZIndex = 15 }, gui)
@@ -1501,8 +1501,13 @@ local finHilo = 0
 boton("Jugar otra vez", { Position = UDim2.new(0, 20, 1, -62), Size = UDim2.new(0.5, -26, 0, 44), TextSize = 17, ZIndex = 22,
 	BackgroundColor3 = Color3.fromRGB(70, 140, 70) }, fin, function()
 	fin.Visible = false
-	Interfaz.enviar("modoCmd", "otraVez")
-	Interfaz.aviso("Entrarás en la siguiente partida de Bed Wars")
+	if jugador:GetAttribute("BedWars") then
+		Interfaz.enviar("modoCmd", "otraVez")
+		Interfaz.aviso("Entrarás en la siguiente partida de Bed Wars")
+	else
+		-- La partida ya se cerró: se entra en una nueva
+		Interfaz.alElegirModo("bedwars")
+	end
 end)
 boton("Volver al menú", { Position = UDim2.new(0.5, 6, 1, -62), Size = UDim2.new(0.5, -26, 0, 44), TextSize = 17, ZIndex = 22 }, fin, function()
 	fin.Visible = false
@@ -1528,7 +1533,7 @@ function Interfaz.finBW(d)
 		d.camas or 0, d.muertes or 0, d.mejorRacha or 0, d.tiempo or "", d.mvp and (d.mvp .. (d.soyMvp and "  (¡tú!)" or "")) or "nadie")
 	if d.jugo then
 		finPremio.Text = ("+%d monedas · +%d xp   (tienes %d)"):format(d.monedas or 0, d.xp or 0, d.totalMonedas or 0)
-		finNivelT.Text = ("Nivel %d✫%s%s"):format(d.nivel or 1, d.subeNivel and "  ¡SUBES DE NIVEL!" or "", (d.racha or 0) >= 2 and ("  · %d victorias seguidas"):format(d.racha) or "")
+		finNivelT.Text = ("Nivel %d★%s%s"):format(d.nivel or 1, d.subeNivel and "  ¡SUBES DE NIVEL!" or "", (d.racha or 0) >= 2 and ("  · %d victorias seguidas"):format(d.racha) or "")
 		finNivelF.Size = UDim2.fromScale(0, 1)
 		TweenService:Create(finNivelF, TweenInfo.new(1.2, Enum.EasingStyle.Quad), { Size = UDim2.fromScale(math.clamp(d.progresoNivel or 0, 0, 1), 1) }):Play()
 	else
