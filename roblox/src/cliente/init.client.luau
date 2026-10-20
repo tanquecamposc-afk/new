@@ -87,7 +87,7 @@ local function sonido(nombre, pos, tono)
 	end
 	local snd = Instance.new("Sound")
 	snd.SoundId = s[1]
-	snd.Volume = s[2]
+	snd.Volume = s[2] * (Interfaz.ajustes.volumen or 100) / 100
 	snd.PlaybackSpeed = (tono or 1) * s[3] * (0.92 + math.random() * 0.16)
 	if pos then
 		local a = Instance.new("Attachment")
@@ -519,6 +519,7 @@ Interfaz.alCerrar = function()
 end
 
 Interfaz.alElegirModo = function(m)
+	Interfaz.enJuego = true
 	if m == "oneblock" then
 		enviar("modoJuego", "oneblock")
 		enviar("modo", "supervivencia")
@@ -868,7 +869,7 @@ Interfaz.alMenu = aplicarCamara
 -- Números de daño que saltan al golpear (amarillos y con «!» si es crítico)
 local numerosVivos = 0
 local function numeroDano(pos, dano, critico)
-	if numerosVivos > 12 then
+	if numerosVivos > 12 or not Interfaz.ajustes.numeros then
 		return
 	end
 	numerosVivos += 1
@@ -910,6 +911,90 @@ local function numeroDano(pos, dano, critico)
 		numerosVivos -= 1
 	end)
 end
+
+------------------------------------------------------------------
+-- Ajustes del jugador y cámara
+------------------------------------------------------------------
+local ajustes = Interfaz.ajustes
+local function aplicarAjustes()
+	UserInputService.MouseDeltaSensitivity = ajustes.sensibilidad
+end
+local envioAjustes = 0
+Interfaz.alCambiarAjuste = function()
+	aplicarAjustes()
+	-- Se guardan en el servidor (un poco después, por si se pulsan varias veces seguidas)
+	envioAjustes += 1
+	local yo = envioAjustes
+	task.delay(1, function()
+		if yo == envioAjustes then
+			enviar("ajustes", ajustes)
+		end
+	end)
+end
+aplicarAjustes()
+
+-- Tercera persona con ratón (PC): la cámara gira con el ratón sin mantener el clic derecho,
+-- el personaje mira hacia donde apunta la cámara y la cámara no se mete dentro de los bloques.
+-- En móvil se usa la cámara normal de Roblox.
+local camYaw, camPitch = 0, -0.3
+local camPropia = false
+local function puedeCamaraPropia()
+	return UserInputService.MouseEnabled and not (UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled)
+end
+RunService:BindToRenderStep("CamaraBlockverse", Enum.RenderPriority.Camera.Value + 1, function(dt)
+	local cam = workspace.CurrentCamera
+	if not cam then
+		return
+	end
+	local ch = jugador.Character
+	local root = ch and ch:FindFirstChild("HumanoidRootPart")
+	local hum = ch and ch:FindFirstChildOfClass("Humanoid")
+	local cab = ch and ch:FindFirstChild("Head")
+	local quiero = tercera and not espectando and puedeCamaraPropia() and root and hum and cab and hum.Health > 0
+	if not quiero then
+		if camPropia then
+			camPropia = false
+			cam.CameraType = Enum.CameraType.Custom
+			if hum then
+				hum.AutoRotate = true
+			end
+		end
+	else
+		if not camPropia then
+			camPropia = true
+			cam.CameraType = Enum.CameraType.Scriptable
+			local look = cam.CFrame.LookVector
+			camYaw = math.atan2(-look.X, -look.Z)
+			camPitch = math.clamp(math.asin(math.clamp(look.Y, -1, 1)), -1.3, 1.2)
+		end
+		local libre = Interfaz.abierto() or Interfaz.menuVisible()
+		if libre then
+			UserInputService.MouseBehavior = Enum.MouseBehavior.Default
+		else
+			UserInputService.MouseBehavior = Enum.MouseBehavior.LockCenter
+			local d = UserInputService:GetMouseDelta()
+			camYaw -= d.X * 0.0045
+			camPitch = math.clamp(camPitch - d.Y * 0.0045, -1.3, 1.2)
+			hum.AutoRotate = false
+			root.CFrame = CFrame.new(root.Position) * CFrame.Angles(0, camYaw, 0)
+		end
+		local giro = CFrame.Angles(0, camYaw, 0) * CFrame.Angles(camPitch, 0, 0)
+		local foco = cab.Position + Vector3.new(0, 0.25 * BS, 0) + giro.RightVector * 0.35 * BS
+		local atras = -giro.LookVector
+		local dist = 4.6
+		local r = Rayo.lanzar(md, foco, atras, dist)
+		if r and r.t then
+			dist = math.max(0.4, r.t - 0.3)
+		end
+		cam.CFrame = CFrame.new(foco + atras * dist * BS) * giro
+	end
+	-- Campo de visión: el de los ajustes, un poco más abierto al correr (suave)
+	local objetivoFov = ajustes.fov
+	if ajustes.fovCorrer and corriendo and hum and hum.MoveDirection.Magnitude > 0.1 then
+		objetivoFov *= 1.12
+	end
+	cam.FieldOfView += (objetivoFov - cam.FieldOfView) * math.min(1, dt * 10)
+end)
 
 Estado.OnClientEvent:Connect(function(tipo, a, b, c)
 	if tipo == "jugador" then
@@ -1045,6 +1130,17 @@ Estado.OnClientEvent:Connect(function(tipo, a, b, c)
 	elseif tipo == "menu" then
 		Interfaz.menu(true)
 		aplicarCamara()
+	elseif tipo == "ajustes" then
+		-- Los ajustes guardados llegan al entrar
+		if type(a) == "table" then
+			for k, v in a do
+				if Interfaz.ajustes[k] ~= nil and type(v) == type(Interfaz.ajustes[k]) then
+					Interfaz.ajustes[k] = v
+				end
+			end
+			aplicarAjustes()
+			Interfaz.pintarAjustes()
+		end
 	elseif tipo == "feed" then
 		Interfaz.feed(a and a.t, a and a.c)
 	elseif tipo == "finBW" then

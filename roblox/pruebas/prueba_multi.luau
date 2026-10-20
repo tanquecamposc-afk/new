@@ -314,6 +314,11 @@ end
 pasos(3)
 -- Guardar al salir y recuperar al volver
 local diamAntes = cuenta(ana, Reg.I.diamante)
+-- Ajustes: se guardan (sin valores raros) y vuelven al entrar
+enviar(ana, "ajustes", { sensibilidad = 2, fov = 500, numeros = false, truco = "x" })
+pasos(160)
+local aj = F.almacenes.Blockverse_v2 and F.almacenes.Blockverse_v2.a_101
+ok(aj and aj.sensibilidad == 2 and aj.fov == 110 and aj.numeros == false and aj.truco == nil, "los ajustes no se guardan bien")
 sale(ana)
 local guardado = F.almacenes.Blockverse_v2 and F.almacenes.Blockverse_v2.u_101
 ok(guardado ~= nil, "no se guardó el inventario de Ana al salir")
@@ -324,6 +329,8 @@ end
 ana = entra("Ana", 101)
 enviar(ana, "modo", "supervivencia")
 pasos(5)
+local ajV = datos[ana].ultimo.ajustes and datos[ana].ultimo.ajustes[1]
+ok(ajV and ajV.sensibilidad == 2, "los ajustes guardados no llegan al volver")
 local esp = inv(ana)[30]
 ok(esp and esp.enc and esp.enc.filo == 3, "la espada encantada pierde el encantamiento al volver")
 ok(cuenta(ana, Reg.I.diamante) == diamAntes, "al volver Ana no recupera su inventario (" .. cuenta(ana, Reg.I.diamante) .. " de " .. diamAntes .. ")")

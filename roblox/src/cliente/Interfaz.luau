@@ -824,31 +824,213 @@ local cursorN = texto({ Size = UDim2.new(1, 0, 0, 16), Position = UDim2.new(0, 2
 ------------------------------------------------------------------
 -- Menú de inicio, carga y muerte
 ------------------------------------------------------------------
-local menu = nuevo("Frame", { Name = "Menu", BackgroundColor3 = Color3.fromRGB(10, 14, 24), BackgroundTransparency = 0.25, BorderSizePixel = 0,
+local function idDe(k)
+	return Registro.B[k] or Registro.I[k]
+end
+-- Menú principal: el mundo se ve desenfocado detrás
+local menu = nuevo("Frame", { Name = "Menu", BackgroundColor3 = Color3.fromRGB(8, 12, 22), BackgroundTransparency = 0.35, BorderSizePixel = 0,
 	Size = UDim2.fromScale(1, 1), Visible = false, ZIndex = 10 }, gui)
-nuevo("UIGradient", { Rotation = 90, Color = ColorSequence.new(Color3.fromRGB(40, 70, 120), Color3.fromRGB(10, 14, 24)) }, menu)
-nuevo("TextButton", { BackgroundTransparency = 1, Size = UDim2.fromScale(1, 1), Text = "", Modal = true, ZIndex = 10 }, menu)
-texto({ AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.fromScale(0.5, 0.1), Size = UDim2.fromOffset(700, 90), Text = "BLOCKVERSE", Font = FUENTE_N,
-	TextSize = 84, TextColor3 = Color3.fromRGB(255, 255, 255), TextStrokeTransparency = 0, TextStrokeColor3 = Color3.fromRGB(40, 40, 40), ZIndex = 11 }, menu)
-texto({ AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.fromScale(0.5, 0.1), Size = UDim2.fromOffset(700, 30), Text = "edición Roblox",
-	TextColor3 = Color3.fromRGB(255, 255, 80), TextSize = 20, ZIndex = 11, Rotation = -8 }, menu).Position = UDim2.new(0.5, 230, 0.1, 80)
-local menuCaja = nuevo("Frame", { BackgroundTransparency = 1, AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.fromScale(0.5, 0.27), Size = UDim2.fromOffset(380, 540), ZIndex = 11 }, menu)
-nuevo("UIListLayout", { Padding = UDim.new(0, 8), HorizontalAlignment = Enum.HorizontalAlignment.Center }, menuCaja)
-local function opcionMenu(txt, sub, modo)
-	local b = boton(txt, { Size = UDim2.fromOffset(380, 52), TextSize = 21, ZIndex = 12 }, menuCaja, function()
-		Interfaz.alElegirModo(modo)
+nuevo("UIGradient", { Rotation = 90, Color = ColorSequence.new(Color3.fromRGB(60, 90, 140), Color3.fromRGB(8, 12, 22)),
+	Transparency = NumberSequence.new(0.35, 0) }, menu)
+nuevo("TextButton", { BackgroundTransparency = 1, Size = UDim2.fromScale(1, 1), Text = "", Modal = true, ZIndex = 10, AutoButtonColor = false }, menu)
+local desenfoque = Instance.new("BlurEffect")
+desenfoque.Name = "DesenfoqueMenu"
+desenfoque.Size = 0
+desenfoque.Parent = game:GetService("Lighting")
+-- Título con sombra y la frase amarilla que late (como en Minecraft)
+texto({ AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 5, 0.06, 5), Size = UDim2.fromOffset(700, 90), Text = "BLOCKVERSE", Font = FUENTE_N,
+	TextSize = 84, TextColor3 = Color3.fromRGB(30, 30, 40), TextStrokeTransparency = 1, TextTransparency = 0.3, ZIndex = 11 }, menu)
+texto({ AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.fromScale(0.5, 0.06), Size = UDim2.fromOffset(700, 90), Text = "BLOCKVERSE", Font = FUENTE_N,
+	TextSize = 84, TextColor3 = Color3.fromRGB(255, 255, 255), TextStrokeTransparency = 0, TextStrokeColor3 = Color3.fromRGB(40, 40, 40), ZIndex = 12 }, menu)
+local FRASES = { "¡Edición Roblox!", "¡Ahora con kits!", "¡Cuidado con los creepers!", "¡Protege tu cama!", "¡Hecho bloque a bloque!",
+	"¡Con Mazmorras y Leyendas!", "¡Los bots ya tienden puentes!", "¡Dale a la G!" }
+local frase = texto({ AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(0.5, 250, 0.06, 88), Size = UDim2.fromOffset(320, 30),
+	Text = FRASES[math.random(1, #FRASES)], TextColor3 = Color3.fromRGB(255, 255, 80), TextSize = 20, Font = FUENTE_N, ZIndex = 13, Rotation = -12,
+	TextStrokeColor3 = Color3.fromRGB(60, 60, 0), TextStrokeTransparency = 0 }, menu)
+local fraseEscala = nuevo("UIScale", {}, frase)
+
+-- Tarjetas de los modos: icono, nombre y una línea de explicación
+local menuCaja = nuevo("Frame", { BackgroundTransparency = 1, AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.fromScale(0.5, 0.25), Size = UDim2.fromOffset(568, 250), ZIndex = 11 }, menu)
+nuevo("UIGridLayout", { CellSize = UDim2.fromOffset(278, 74), CellPadding = UDim2.fromOffset(12, 12), HorizontalAlignment = Enum.HorizontalAlignment.Center,
+	SortOrder = Enum.SortOrder.LayoutOrder }, menuCaja)
+local function tarjeta(padre, txt, sub, icono, orden, alClic, tam)
+	local b = nuevo("TextButton", { Text = "", AutoButtonColor = false, BackgroundColor3 = Color3.fromRGB(52, 54, 62), BackgroundTransparency = 0.08,
+		BorderSizePixel = 0, LayoutOrder = orden, ZIndex = 12, Size = tam or UDim2.fromOffset(278, 74) }, padre)
+	nuevo("UICorner", { CornerRadius = UDim.new(0, 6) }, b)
+	local borde = nuevo("UIStroke", { Color = Color3.fromRGB(20, 20, 24), Thickness = 2, ApplyStrokeMode = Enum.ApplyStrokeMode.Border }, b)
+	local esc = nuevo("UIScale", {}, b)
+	local hay = icono ~= nil
+	if hay then
+		local fondoIc = nuevo("Frame", { BackgroundColor3 = Color3.fromRGB(30, 31, 36), BorderSizePixel = 0, Position = UDim2.fromOffset(10, 10),
+			Size = UDim2.new(0, 54, 1, -20), ZIndex = 13 }, b)
+		nuevo("UICorner", { CornerRadius = UDim.new(0, 4) }, fondoIc)
+		local ic = nuevo("ImageLabel", { BackgroundTransparency = 1, AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5),
+			Size = UDim2.fromOffset(40, 40), ResampleMode = Enum.ResamplerMode.Pixelated, ZIndex = 14 }, fondoIc)
+		Iconos.poner(ic, icono)
+	end
+	local x = hay and 76 or 12
+	texto({ Position = UDim2.fromOffset(x, sub and 12 or 0), Size = UDim2.new(1, -x - 8, 0, sub and 24 or 1), Text = txt, TextSize = 20, Font = FUENTE_N,
+		TextXAlignment = hay and Enum.TextXAlignment.Left or Enum.TextXAlignment.Center, ZIndex = 13 }, b).Size = sub and UDim2.new(1, -x - 8, 0, 24) or UDim2.new(1, -x - 8, 1, 0)
+	if sub then
+		texto({ Position = UDim2.fromOffset(x, 38), Size = UDim2.new(1, -x - 10, 0, 28), Text = sub, TextSize = 11, TextWrapped = true, Font = FUENTE,
+			TextColor3 = Color3.fromRGB(200, 205, 215), TextStrokeTransparency = 1, TextXAlignment = Enum.TextXAlignment.Left,
+			TextYAlignment = Enum.TextYAlignment.Top, ZIndex = 13 }, b)
+	end
+	b.MouseEnter:Connect(function()
+		b.BackgroundColor3 = Color3.fromRGB(78, 82, 96)
+		borde.Color = Color3.fromRGB(255, 220, 80)
+		esc.Scale = 1.03
 	end)
-	texto({ Position = UDim2.new(0, 0, 1, -16), Size = UDim2.new(1, 0, 0, 14), Text = sub, TextSize = 11, TextTransparency = 0.25, ZIndex = 13 }, b)
+	b.MouseLeave:Connect(function()
+		b.BackgroundColor3 = Color3.fromRGB(52, 54, 62)
+		borde.Color = Color3.fromRGB(20, 20, 24)
+		esc.Scale = 1
+	end)
+	b.Activated:Connect(alClic)
 	return b
 end
-opcionMenu("Supervivencia", "Recoge recursos, fabrica y sobrevive a la noche", "supervivencia")
-opcionMenu("Creativo", "Todos los bloques y objetos, vuelo y sin daño", "creativo")
-opcionMenu("One Block", "Empieza en un solo bloque que se regenera", "oneblock")
-opcionMenu("Bed Wars", "Equipos en islas: protege tu cama y rompe las demás", "bedwars")
-opcionMenu("Mazmorras", "Salas con enemigos, botín, artefactos y un jefe", "mazmorras")
-opcionMenu("Leyendas", "Defiende la aldea, construye y manda a tus golems", "leyendas")
-texto({ Size = UDim2.fromOffset(560, 100), Text = "WASD moverse · Espacio saltar · Ctrl correr · Mayús agacharse\nClic izq. picar / atacar · Clic der. usar / poner\n1-9 y rueda: barra · E inventario · Q tirar · F volar (creativo)\nV tercera persona · F3 información · M este menú · Esc cerrar · G habilidad (Bed Wars)",
-	TextSize = 13, TextWrapped = true, TextColor3 = Color3.fromRGB(220, 220, 220), ZIndex = 12 }, menuCaja)
+local function opcionMenu(txt, sub, modo, icono, orden)
+	return tarjeta(menuCaja, txt, sub, idDe(icono), orden, function()
+		Interfaz.enJuego = true
+		Interfaz.alElegirModo(modo)
+	end)
+end
+opcionMenu("Supervivencia", "Recoge recursos, fabrica y sobrevive a la noche", "supervivencia", "pico_hierro", 1)
+opcionMenu("Creativo", "Todos los bloques y objetos, vuelo y sin daño", "creativo", "cesped", 2)
+opcionMenu("One Block", "Empieza en un solo bloque que se regenera", "oneblock", "tierra", 3)
+opcionMenu("Bed Wars", "Equipos en islas: protege tu cama y rompe las demás", "bedwars", "cama", 4)
+opcionMenu("Mazmorras", "Salas con enemigos, botín, artefactos y un jefe", "mazmorras", "espada_diamante", 5)
+opcionMenu("Leyendas", "Defiende la aldea, construye y manda a tus golems", "leyendas", "escudo", 6)
+-- Fila de abajo: ajustes, controles y volver al juego
+local filaMenu = nuevo("Frame", { BackgroundTransparency = 1, AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0.25, 266),
+	Size = UDim2.fromOffset(568, 46), ZIndex = 11 }, menu)
+nuevo("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 12), HorizontalAlignment = Enum.HorizontalAlignment.Center,
+	SortOrder = Enum.SortOrder.LayoutOrder }, filaMenu)
+local abrirAjustes, abrirControles -- se definen más abajo
+tarjeta(filaMenu, "Ajustes", nil, nil, 1, function()
+	abrirAjustes()
+end, UDim2.fromOffset(176, 46))
+tarjeta(filaMenu, "Controles", nil, nil, 2, function()
+	abrirControles()
+end, UDim2.fromOffset(176, 46))
+local botonVolver = tarjeta(filaMenu, "Volver al juego", nil, nil, 3, function()
+	Interfaz.menu(false)
+	if Interfaz.alMenu then
+		Interfaz.alMenu()
+	end
+end, UDim2.fromOffset(192, 46))
+botonVolver.Visible = false
+texto({ AnchorPoint = Vector2.new(0, 1), Position = UDim2.new(0, 14, 1, -10), Size = UDim2.fromOffset(400, 18), Text = "Blockverse · edición Roblox",
+	TextSize = 13, TextXAlignment = Enum.TextXAlignment.Left, TextTransparency = 0.3, ZIndex = 11 }, menu)
+texto({ AnchorPoint = Vector2.new(1, 1), Position = UDim2.new(1, -14, 1, -10), Size = UDim2.fromOffset(420, 18), Text = "M abre este menú en cualquier momento",
+	TextSize = 13, TextXAlignment = Enum.TextXAlignment.Right, TextTransparency = 0.3, ZIndex = 11 }, menu)
+
+-- Ventana sencilla (ajustes, controles) por encima del menú
+local function ventana(nombre, titulo, alto)
+	local fondo = nuevo("TextButton", { Name = nombre, Text = "", AutoButtonColor = false, Modal = true, BackgroundColor3 = Color3.new(0, 0, 0),
+		BackgroundTransparency = 0.45, BorderSizePixel = 0, Size = UDim2.fromScale(1, 1), Visible = false, ZIndex = 20 }, gui)
+	local caja = nuevo("Frame", { BackgroundColor3 = Color3.fromRGB(36, 38, 46), BorderSizePixel = 0, AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.fromOffset(470, alto), ZIndex = 21 }, fondo)
+	nuevo("UICorner", { CornerRadius = UDim.new(0, 8) }, caja)
+	nuevo("UIStroke", { Color = Color3.fromRGB(255, 220, 80), Thickness = 2 }, caja)
+	texto({ Position = UDim2.fromOffset(0, 12), Size = UDim2.new(1, 0, 0, 30), Text = titulo, Font = FUENTE_N, TextSize = 24, ZIndex = 22 }, caja)
+	local lista = nuevo("Frame", { BackgroundTransparency = 1, Position = UDim2.fromOffset(20, 54), Size = UDim2.new(1, -40, 1, -120), ZIndex = 22 }, caja)
+	nuevo("UIListLayout", { Padding = UDim.new(0, 6), SortOrder = Enum.SortOrder.LayoutOrder }, lista)
+	local listo = tarjeta(caja, "Listo", nil, nil, 0, function()
+		fondo.Visible = false
+	end, UDim2.fromOffset(160, 42))
+	listo.AnchorPoint = Vector2.new(0.5, 1)
+	listo.Position = UDim2.new(0.5, 0, 1, -14)
+	return fondo, lista
+end
+
+-- Ajustes: valores que guarda el cliente (y el servidor en el DataStore)
+Interfaz.ajustes = { sensibilidad = 1, fov = 70, fovCorrer = true, balanceo = true, numeros = true, volumen = 100 }
+Interfaz.alCambiarAjuste = function(clave, valor) end
+local AJUSTES = {
+	{ k = "sensibilidad", n = "Sensibilidad del ratón", min = 0.2, max = 3, paso = 0.1, fmt = function(v) return ("%.1fx"):format(v) end },
+	{ k = "fov", n = "Campo de visión", min = 50, max = 110, paso = 5, fmt = function(v) return ("%d°"):format(v) end },
+	{ k = "volumen", n = "Volumen", min = 0, max = 100, paso = 10, fmt = function(v) return ("%d %%"):format(v) end },
+	{ k = "fovCorrer", n = "Efecto de velocidad al correr" },
+	{ k = "balanceo", n = "Balanceo de la mano" },
+	{ k = "numeros", n = "Números de daño" },
+}
+local ventanaAjustes, listaAjustes = ventana("Ajustes", "AJUSTES", 400)
+local valoresAj = {}
+local function pintarAjustes()
+	for _, A in AJUSTES do
+		local v = Interfaz.ajustes[A.k]
+		local l = valoresAj[A.k]
+		if l then
+			if A.fmt then
+				l.Text = A.fmt(v)
+			else
+				l.Text = v and "Sí" or "No"
+				l.TextColor3 = v and Color3.fromRGB(120, 255, 120) or Color3.fromRGB(255, 120, 120)
+			end
+		end
+	end
+end
+Interfaz.pintarAjustes = pintarAjustes
+for i, A in AJUSTES do
+	local fila = nuevo("Frame", { BackgroundColor3 = Color3.fromRGB(28, 29, 35), BorderSizePixel = 0, Size = UDim2.new(1, 0, 0, 38), LayoutOrder = i, ZIndex = 22 }, listaAjustes)
+	nuevo("UICorner", { CornerRadius = UDim.new(0, 4) }, fila)
+	texto({ Position = UDim2.fromOffset(12, 0), Size = UDim2.new(1, -170, 1, 0), Text = A.n, TextSize = 15, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 23 }, fila)
+	local function cambiar(dir)
+		local v = Interfaz.ajustes[A.k]
+		if A.fmt then
+			v = math.clamp(math.floor((v + dir * A.paso) / A.paso + 0.5) * A.paso, A.min, A.max)
+		else
+			v = not v
+		end
+		Interfaz.ajustes[A.k] = v
+		pintarAjustes()
+		Interfaz.alCambiarAjuste(A.k, v)
+	end
+	if A.fmt then
+		local menos = tarjeta(fila, "−", nil, nil, 0, function() cambiar(-1) end, UDim2.fromOffset(32, 30))
+		menos.Position = UDim2.new(1, -152, 0, 4)
+		valoresAj[A.k] = texto({ Position = UDim2.new(1, -116, 0, 0), Size = UDim2.fromOffset(76, 38), Text = "", TextSize = 15, Font = FUENTE_N, ZIndex = 23 }, fila)
+		local mas = tarjeta(fila, "+", nil, nil, 0, function() cambiar(1) end, UDim2.fromOffset(32, 30))
+		mas.Position = UDim2.new(1, -38, 0, 4)
+	else
+		local b = tarjeta(fila, "", nil, nil, 0, function() cambiar(0) end, UDim2.fromOffset(76, 30))
+		b.Position = UDim2.new(1, -82, 0, 4)
+		valoresAj[A.k] = texto({ Size = UDim2.fromScale(1, 1), Text = "", TextSize = 15, Font = FUENTE_N, ZIndex = 14 }, b)
+	end
+end
+pintarAjustes()
+abrirAjustes = function()
+	pintarAjustes()
+	ventanaAjustes.Visible = true
+end
+Interfaz.abrirAjustes = abrirAjustes
+
+-- Controles
+local ventanaControles, listaControles = ventana("Controles", "CONTROLES", 520)
+local CONTROLES = {
+	{ "WASD", "Moverse" }, { "Espacio", "Saltar (doble: volar en creativo)" }, { "Ctrl / Mayús", "Correr / agacharse" },
+	{ "Clic izquierdo", "Picar y atacar" }, { "Clic derecho", "Usar, poner, comer, tensar el arco" }, { "1-9 y rueda", "Elegir objeto" },
+	{ "E", "Inventario" }, { "Q", "Tirar (Ctrl: toda la pila)" }, { "V", "Primera o tercera persona" }, { "F", "Volar (creativo)" },
+	{ "G", "Habilidad del kit (Bed Wars)" }, { "M", "Este menú" }, { "F3", "Información" },
+}
+for i, c in CONTROLES do
+	local fila = nuevo("Frame", { BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, 26), LayoutOrder = i, ZIndex = 22 }, listaControles)
+	local tecla = nuevo("Frame", { BackgroundColor3 = Color3.fromRGB(70, 72, 84), BorderSizePixel = 0, Size = UDim2.fromOffset(130, 24), ZIndex = 22 }, fila)
+	nuevo("UICorner", { CornerRadius = UDim.new(0, 4) }, tecla)
+	texto({ Size = UDim2.fromScale(1, 1), Text = c[1], TextSize = 13, Font = FUENTE_N, ZIndex = 23 }, tecla)
+	texto({ Position = UDim2.fromOffset(142, 0), Size = UDim2.new(1, -142, 1, 0), Text = c[2], TextSize = 14, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 23 }, fila)
+end
+abrirControles = function()
+	ventanaControles.Visible = true
+end
+
+-- La frase amarilla late
+RunService.RenderStepped:Connect(function()
+	if menu.Visible then
+		fraseEscala.Scale = 1 + math.abs(math.sin(os.clock() * 4)) * 0.08
+	end
+end)
 
 local carga = nuevo("Frame", { Name = "Carga", BackgroundColor3 = Color3.fromRGB(40, 28, 20), BorderSizePixel = 0, Size = UDim2.fromScale(1, 1), Visible = true, ZIndex = 15 }, gui)
 local cargaT = texto({ AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.45), Size = UDim2.fromOffset(600, 30), Text = "Cargando Blockverse…", TextSize = 22, ZIndex = 16 }, carga)
@@ -1244,7 +1426,7 @@ function Interfaz.abierto()
 end
 
 function Interfaz.menuVisible()
-	return menu.Visible or carga.Visible or muerte.Visible
+	return menu.Visible or carga.Visible or muerte.Visible or ventanaAjustes.Visible or ventanaControles.Visible
 end
 
 ------------------------------------------------------------------
@@ -1605,6 +1787,14 @@ end
 
 function Interfaz.menu(si)
 	menu.Visible = si
+	-- Debajo del menú no se ve la barra ni los corazones, y el mundo se desenfoca
+	hud.Visible = not si
+	desenfoque.Size = si and 14 or 0
+	botonVolver.Visible = si and Interfaz.enJuego == true
+	if not si then
+		ventanaAjustes.Visible = false
+		ventanaControles.Visible = false
+	end
 end
 
 function Interfaz.carga(f, t)
@@ -1745,7 +1935,7 @@ function Interfaz.iniciar()
 		local ch = jugador.Character
 		local hum = ch and ch:FindFirstChildOfClass("Humanoid")
 		local andar = hum and hum.MoveDirection.Magnitude > 0.1 and 1 or 0
-		local bob = math.sin(t * 9) * 6 * andar
+		local bob = math.sin(t * 9) * 6 * andar * (Interfaz.ajustes.balanceo and 1 or 0)
 		local giro = math.sin(balanceo * math.pi) * 40
 		mano.Position = UDim2.new(1, -40 - giro, 1, 30 + bob + math.sin(balanceo * math.pi) * 30)
 		mano.Rotation = -giro * 0.5

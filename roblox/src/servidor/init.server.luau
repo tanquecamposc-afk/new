@@ -409,10 +409,38 @@ local function nuevoEstado()
 	}
 end
 
+-- Ajustes del jugador (sensibilidad, campo de visión…): se guardan aparte y solo con valores válidos
+local AJUSTES = {
+	sensibilidad = { "number", 0.2, 3 }, fov = { "number", 50, 110 }, volumen = { "number", 0, 100 },
+	fovCorrer = { "boolean" }, balanceo = { "boolean" }, numeros = { "boolean" },
+}
+local function limpiarAjustes(a)
+	if type(a) ~= "table" then
+		return nil
+	end
+	local r = {}
+	for k, A in AJUSTES do
+		local v = a[k]
+		if type(v) == A[1] then
+			r[k] = A[1] == "number" and math.clamp(v, A[2], A[3]) or v
+		end
+	end
+	return r
+end
+
 local function cargar(plr)
 	local s = nuevoEstado()
 	estados[plr] = s
 	if almacen then
+		task.spawn(function()
+			local ok, a = pcall(function()
+				return almacen:GetAsync("a_" .. plr.UserId)
+			end)
+			a = ok and limpiarAjustes(a)
+			if a and plr.Parent then
+				Estado:FireClient(plr, "ajustes", a)
+			end
+		end)
 		local ok, g = pcall(function()
 			return almacen:GetAsync("u_" .. plr.UserId)
 		end)
@@ -1801,6 +1829,23 @@ function acciones.modoCmd(plr, s, cmd, arg)
 	if type(cmd) == "string" then
 		Modos.comando(plr, cmd, type(arg) == "number" and arg or nil)
 	end
+end
+
+function acciones.ajustes(plr, s, a)
+	a = limpiarAjustes(a)
+	if not a or not almacen then
+		return
+	end
+	s.ajustesN = (s.ajustesN or 0) + 1
+	local yo = s.ajustesN
+	-- Se guarda unos segundos después del último cambio (el DataStore no admite muchas escrituras seguidas)
+	task.delay(4, function()
+		if s.ajustesN == yo then
+			pcall(function()
+				almacen:SetAsync("a_" .. plr.UserId, a)
+			end)
+		end
+	end)
 end
 
 function acciones.comerciar(plr, s, i)

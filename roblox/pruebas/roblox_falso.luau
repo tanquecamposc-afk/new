@@ -459,6 +459,9 @@ function METODOS:Create(o, info, props)
 	end, Cancel = function() end, Completed = senal() }
 end
 function METODOS:IsKeyDown() return false end
+function METODOS:GetMouseDelta() return F.Vector2.new(0, 0) end
+function METODOS:BindToRenderStep(_, _, fn) self.RenderStepped:Connect(fn) end
+function METODOS:UnbindFromRenderStep() end
 function METODOS:GetMouseLocation() return { X = 0, Y = 0 } end
 function METODOS:Clone()
 	local o = nuevaInstancia(self._p.ClassName)
@@ -563,6 +566,7 @@ function F.crearJuego()
 	F.RunService = F.servicios.RunService
 	F.servicios.UserInputService._p.TouchEnabled = false
 	F.servicios.UserInputService._p.KeyboardEnabled = true
+	F.servicios.UserInputService._p.MouseEnabled = true
 	return game
 end
 

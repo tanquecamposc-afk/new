@@ -347,6 +347,12 @@ end
 
 -- El menú de inicio
 volcarGui("menu")
+Interfaz.abrirAjustes()
+pasos(2)
+volcarGui("menu_ajustes")
+Interfaz.menu(false)
+Interfaz.menu(true)
+pasos(2)
 -- Elegir supervivencia primero (como hace el jugador)
 Interfaz.alElegirModo("supervivencia")
 pasos(5)

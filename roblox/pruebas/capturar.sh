@@ -11,7 +11,7 @@ cp pruebas/roblox_falso.luau pruebas/arbol.luau pruebas/captura.luau "$T/"
 "${LUAU:-luau}" "$T/captura.luau" > "$T/volcado.txt"
 cd "$SAL"
 python3 "$OLDPWD/herramientas/vista/render.py" "$T/volcado.txt"
-for n in menu sup_hud bw_salaUI bw_kitsUI bw_hud bw_tiendaUI bw_tiendaUI3 bw_finUI mz_hud mz_jefeUI ly_hud; do
+for n in menu menu_ajustes sup_hud bw_salaUI bw_kitsUI bw_hud bw_tiendaUI bw_tiendaUI3 bw_finUI mz_hud mz_jefeUI ly_hud; do
 	case $n in sup_hud) f=sup_mundo.png;; bw_salaUI|bw_kitsUI) f=bw_sala.png;; bw_hud|bw_finUI) f=bw_isla.png;; bw_tienda*) f=bw_tienda.png;; mz_hud) f=mz_sala.png;; mz_jefeUI) f=mz_jefe.png;; ly_hud) f=ly_aldea.png;; *) f="";; esac
 	python3 "$OLDPWD/herramientas/vista/gui.py" "$T/volcado.txt" $n $f
 done
