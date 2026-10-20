@@ -3,21 +3,18 @@
 	Cambia estos números para ajustar el juego.
 ]]
 local Config = {
-	BLOQUE = 3, -- tamaño de un bloque en studs
-	CHUNK = 16, -- un chunk mide 16 x 16 bloques
-	ALTO = 80, -- altura del mundo en bloques
-	NIVEL_MAR = 22,
+	BLOQUE = 3, -- tamaño de un bloque en studs (el personaje de Roblox mide unos 2 bloques)
 
-	RADIO = 4, -- chunks visibles alrededor de cada jugador (bájalo a 3 si va lento en móvil)
-	ALCANCE = 6, -- distancia máxima para romper o poner bloques (en bloques)
+	RADIO = 5, -- distancia de visión en chunks (bájala a 3 o 4 si va lento en móvil)
+	RADIO_FISICA = 2, -- chunks alrededor de cada jugador con colisiones en el servidor
+	ALCANCE = 5, -- distancia para picar y poner bloques (en bloques), como en el juego web
 
 	DIA_SEGUNDOS = 1200, -- un día completo dura 20 minutos, como en el original
-	CUEVAS = true,
 
-	MAX_ZOMBIS = 10,
-	MAX_ANIMALES = 12,
+	MAX_HOSTILES = 14,
+	MAX_PASIVOS = 12,
+	MAX_ACUATICOS = 6,
 
-	HAMBRE_CADA = 40, -- segundos para perder un punto de hambre
 	PILA = 64,
 }
 

@@ -1,307 +1,227 @@
+--!native
 --[[
 	Blockverse para Roblox · Mundo (servidor)
-	Guarda los bloques de cada chunk y crea las piezas que se ven.
-	· Los datos se generan al acercarse un jugador y se quedan en memoria
-	  (así los cambios de los jugadores no se pierden).
-	· Las piezas se crean por capas y se reparten en varios fotogramas.
+	· Guarda los bloques (MundoDatos) y los cambios de los jugadores.
+	· Crea las colisiones (piezas invisibles fusionadas en cajas grandes)
+	  cerca de los jugadores; lo que se ve lo dibuja cada cliente.
 	· El agua es agua de Roblox (Terrain), así se puede nadar.
+	· Avisa a todos los clientes de cada bloque que cambia.
 ]]
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 
 local Comp = ReplicatedStorage:WaitForChild("Blockverse")
 local Config = require(Comp.Config)
-local Bloques = require(Comp.Bloques)
-local Generador = require(Comp.Generador)
-local Mallador = require(Comp.Mallador)
+local Registro = require(Comp.Registro)
+local MundoDatos = require(Comp.MundoDatos)
 
-local B, C, ALTO = Config.BLOQUE, Config.CHUNK, Config.ALTO
-local DEF = Bloques.porId
-local TRANSP = Bloques.TRANSP
-local SOLIDO = Bloques.SOLIDO
-local ID = Bloques.porClave
-local idx = Generador.idx
-local hash = Generador.hash
+local BS = Config.BLOQUE
+local CX, CZ, CY = MundoDatos.CX, MundoDatos.CZ, MundoDatos.CY
+local SEC = 16
+local NSEC = CY // SEC
+local BL = Registro.bloques
+local SOLIDO, FORMA = Registro.SOLIDO, Registro.FORMA
+local esAgua = Registro.esAgua
 
 local Mundo = {}
-local datos = {} -- clave numérica -> buffer
-local vistos = {} -- clave -> chunk dibujado
-Mundo.vistos = vistos
-local gen
+Mundo.fisica = {} -- clave -> {modelo, secciones = {[sy] = {piezas}}}
 
 local carpeta = Instance.new("Folder")
 carpeta.Name = "Mundo"
 carpeta.Parent = workspace
 Mundo.carpeta = carpeta
 
-local function clave(cx, cz)
-	return (cx + 32768) * 65536 + (cz + 32768)
-end
-Mundo.clave = clave
+local remotos = ReplicatedStorage:WaitForChild("Remotos")
+local RBloques = remotos:WaitForChild("Bloques")
 
-function Mundo.iniciar(semilla)
-	gen = Generador.new(semilla)
-	Mundo.gen = gen
-end
+local cola = {} -- cambios pendientes de enviar
+local alCambiar = {} -- funciones (x, y, z, antes, nuevo)
 
-function Mundo.datos(cx, cz)
-	local k = clave(cx, cz)
-	local d = datos[k]
-	if not d then
-		d = buffer.create(C * C * ALTO)
-		gen:llenar(d, cx, cz)
-		datos[k] = d
-	end
-	return d
+function Mundo.iniciar(semilla, opc)
+	Mundo.md = MundoDatos.new(semilla, opc)
+	Mundo.semilla = semilla
 end
 
--- Bloque en coordenadas del mundo (con caché del último chunk consultado)
-local ucx, ucz, ubuf = math.huge, math.huge, buffer.create(0)
+function Mundo.alCambiar(fn)
+	table.insert(alCambiar, fn)
+end
+
 function Mundo.get(x, y, z)
-	if y < 0 then
-		return ID.lecho
-	end
-	if y >= ALTO then
-		return 0
-	end
-	local cx, cz = x // C, z // C
-	if cx ~= ucx or cz ~= ucz then
-		ucx, ucz, ubuf = cx, cz, Mundo.datos(cx, cz)
-	end
-	return buffer.readu8(ubuf, idx(x - cx * C, y, z - cz * C))
-end
-local get = Mundo.get
-
--- Altura del bloque sólido más alto de una columna (sin contar hojas)
-function Mundo.alturaSuelo(x, z)
-	for y = ALTO - 1, 0, -1 do
-		local b = get(x, y, z)
-		if b ~= 0 and SOLIDO[b] and b ~= ID.hojas and b ~= ID.hojasAbeto then
-			return y
-		end
-	end
-	return 0
+	return Mundo.md:get(x, y, z)
 end
 
--- ¿Le da el cielo a esta posición? (para los zombis al sol)
-function Mundo.alCielo(x, y, z)
-	for yy = y, ALTO - 1 do
-		local b = get(x, yy, z)
-		if b ~= 0 and not TRANSP[b] then
-			return false
-		end
-	end
-	return true
+function Mundo.getSiCargado(x, y, z)
+	return Mundo.md:getSiCargado(x, y, z)
 end
 
 ------------------------------------------------------------------
--- Piezas
+-- Colisiones
 ------------------------------------------------------------------
-local MATS = {}
-local function material(nombre)
-	local m = MATS[nombre]
-	if m == nil then
-		local ok, v = pcall(function()
-			return (Enum.Material :: any)[nombre]
-		end)
-		m = ok and v or Enum.Material.SmoothPlastic
-		MATS[nombre] = m
-	end
-	return m
-end
-local COLS = {}
-local function color(t)
-	local c = COLS[t]
-	if not c then
-		c = Color3.fromRGB(t[1], t[2], t[3])
-		COLS[t] = c
-	end
-	return c
-end
-Mundo.color = color
-Mundo.material = material
-
-local function parte(tam, cf, col, mat, b, padre)
+local function caja(padre, x0, y0, z0, x1, y1, z1)
 	local p = Instance.new("Part")
+	p.Name = "C"
 	p.Anchored = true
-	p.TopSurface = Enum.SurfaceType.Smooth
-	p.BottomSurface = Enum.SurfaceType.Smooth
-	p.Size = tam
-	p.CFrame = cf
-	p.Color = col
-	p.Material = mat
-	p:SetAttribute("b", b)
+	p.CanCollide = true
+	p.CanQuery = true
+	p.CanTouch = false
+	p.CastShadow = false
+	p.Transparency = 1
+	p.Size = Vector3.new((x1 - x0) * BS, (y1 - y0) * BS, (z1 - z0) * BS)
+	p.CFrame = CFrame.new((x0 + x1) / 2 * BS, (y0 + y1) / 2 * BS, (z0 + z1) / 2 * BS)
 	p.Parent = padre
 	return p
 end
 
-local function luz(p, l)
-	local L = Instance.new("PointLight")
-	L.Brightness = l.brillo
-	L.Range = l.rango
-	L.Color = color(l.color)
-	L.Shadows = true
-	L.Parent = p
+-- Cajas de colisión de un bloque que no es un cubo entero
+local function cajasDe(b)
+	local def = BL[b]
+	local f = FORMA[b]
+	if f == 1 then
+		return { { 0, 0, 0, 1, def.altura or 0.5, 1 } }
+	elseif f == 6 then
+		return def.cajas
+	elseif f == 7 then
+		return { { 0, 0, 0, 1, def.colAlta or 1, 1 } }
+	end
+	return nil
 end
 
-local function construirCapa(r, cx, cz, y)
-	local viejas = r.capas[y]
-	if viejas then
-		for _, p in viejas do
-			p:Destroy()
+local function construirSeccion(cx, cz, sy, padre)
+	local md = Mundo.md
+	local d = md:obtener(cx, cz)
+	local y0 = sy * SEC
+	local lleno = table.create(CX * CZ * SEC, false)
+	local piezas = {}
+	local bx, bz = cx * CX, cz * CZ
+	for ly = 0, SEC - 1 do
+		local y = y0 + ly
+		for z = 0, CZ - 1 do
+			for x = 0, CX - 1 do
+				local b = buffer.readu16(d, (x + z * CX + y * CX * CZ) * 2)
+				if b ~= 0 and SOLIDO[b] then
+					if FORMA[b] == 0 then
+						lleno[ly * 256 + z * 16 + x + 1] = true
+					else
+						local cj = cajasDe(b)
+						if cj then
+							for _, c in cj do
+								table.insert(piezas, caja(padre, bx + x + c[1], y + c[2], bz + z + c[3], bx + x + c[4], y + c[5], bz + z + c[6]))
+							end
+						end
+					end
+				end
+			end
 		end
-		r.capas[y] = nil
 	end
-	local cajas, esp = Mallador.capa(get, cx, cz, y)
-	if #cajas == 0 and #esp == 0 then
+	-- Cajas voraces en 3D: x, luego z, luego y
+	local function libre(x, z, ly)
+		return lleno[ly * 256 + z * 16 + x + 1]
+	end
+	for ly = 0, SEC - 1 do
+		for z = 0, CZ - 1 do
+			for x = 0, CX - 1 do
+				if libre(x, z, ly) then
+					local w = 1
+					while x + w < CX and libre(x + w, z, ly) do
+						w += 1
+					end
+					local dz = 1
+					local sigue = true
+					while sigue and z + dz < CZ do
+						for k = 0, w - 1 do
+							if not libre(x + k, z + dz, ly) then
+								sigue = false
+								break
+							end
+						end
+						if sigue then
+							dz += 1
+						end
+					end
+					local h = 1
+					sigue = true
+					while sigue and ly + h < SEC do
+						for kz = 0, dz - 1 do
+							for kx = 0, w - 1 do
+								if not libre(x + kx, z + kz, ly + h) then
+									sigue = false
+									break
+								end
+							end
+							if not sigue then
+								break
+							end
+						end
+						if sigue then
+							h += 1
+						end
+					end
+					for kh = 0, h - 1 do
+						for kz = 0, dz - 1 do
+							for kx = 0, w - 1 do
+								lleno[(ly + kh) * 256 + (z + kz) * 16 + x + kx + 1] = false
+							end
+						end
+					end
+					table.insert(piezas, caja(padre, bx + x, y0 + ly, bz + z, bx + x + w, y0 + ly + h, bz + z + dz))
+				end
+			end
+		end
+	end
+	return piezas
+end
+
+-- Agua de Roblox en celdas de 4 studs: es agua si el bloque del centro de la celda es agua
+local function agua(cx, cz, llenar)
+	local md = Mundo.md
+	local d = md:obtener(cx, cz)
+	local ymin, ymax = CY, -1
+	if llenar then
+		for i = 0, CX * CZ * CY - 1 do
+			local b = buffer.readu16(d, i * 2)
+			if b >= 53 and b <= 60 then
+				local y = i // (CX * CZ)
+				if y < ymin then
+					ymin = y
+				end
+				if y > ymax then
+					ymax = y
+				end
+			end
+		end
+	end
+	local f = Mundo.fisica[MundoDatos.clave(cx, cz)]
+	if f and f.aguaRango then
+		ymin = math.min(ymin, f.aguaRango[1])
+		ymax = math.max(ymax, f.aguaRango[2])
+	end
+	if ymax < 0 then
 		return
 	end
-	local lista = {}
-	local bx, bz = cx * C, cz * C
-	local yc = (y + 0.5) * B
-	for _, c in cajas do
-		local b, lx, lz, w, l = c[1], c[2], c[3], c[4], c[5]
-		local d = DEF[b]
-		local an = d.ancho or 1
-		local centro = CFrame.new((bx + lx + w / 2) * B, yc, (bz + lz + l / 2) * B)
-		local p = parte(Vector3.new(w * B * an, B, l * B * an), centro, color(d.color), material(d.material), b, r.modelo)
-		if d.transp then
-			p.Transparency = d.transp
-			p.CastShadow = false
-		end
-		if d.luz then
-			luz(p, d.luz)
-		end
-		table.insert(lista, p)
-		-- Capa de arriba (césped, nieve, anillos del tronco, tapa de la mesa)
-		if d.capa then
-			local tapada = false
-			if d.capaArriba then
-				for dz = 0, l - 1 do
-					for dx = 0, w - 1 do
-						local a = get(bx + lx + dx, y + 1, bz + lz + dz)
-						if not TRANSP[a] then
-							tapada = true
-							break
-						end
-					end
-					if tapada then
-						break
-					end
-				end
-			end
-			if not tapada then
-				local alto = d.capaArriba and 0.12 or 0.55
-				local q = parte(
-					Vector3.new(w * B + 0.06, alto, l * B + 0.06),
-					centro + Vector3.new(0, B / 2 - alto / 2 + 0.03, 0),
-					color(d.capa.color),
-					material(d.capa.material),
-					b,
-					r.modelo
-				)
-				if d.capaArriba then
-					q.Size = Vector3.new(w * B - 0.5, alto, l * B - 0.5)
-				end
-				table.insert(lista, q)
-			end
-		end
-		-- Vetas de las menas: barras finas que asoman por las caras
-		if d.veta then
-			local vc = color(d.veta)
-			for dz = 0, l - 1 do
-				for dx = 0, w - 1 do
-					local x, z = bx + lx + dx, bz + lz + dz
-					local cb = Vector3.new((x + 0.5) * B, yc, (z + 0.5) * B)
-					for eje = 1, 3 do
-						local u = (hash(x, y, z, eje * 31) - 0.5) * 1.7
-						local v = (hash(x, y, z, eje * 57) - 0.5) * 1.7
-						local tam, off
-						if eje == 1 then
-							tam, off = Vector3.new(B + 0.06, 0.62, 0.62), Vector3.new(0, u, v)
-						elseif eje == 2 then
-							tam, off = Vector3.new(0.62, B + 0.06, 0.62), Vector3.new(u, 0, v)
-						else
-							tam, off = Vector3.new(0.62, 0.62, B + 0.06), Vector3.new(u, v, 0)
-						end
-						local q = parte(tam, CFrame.new(cb + off), vc, Enum.Material.SmoothPlastic, b, r.modelo)
-						q.CanCollide = false
-						q.CastShadow = false
-						table.insert(lista, q)
-					end
-				end
-			end
-		end
-	end
-	-- Antorchas, flores y hierba
-	for _, e in esp do
-		local b, lx, lz = e[1], e[2], e[3]
-		local d = DEF[b]
-		local base = Vector3.new((bx + lx + 0.5) * B, y * B, (bz + lz + 0.5) * B)
-		if d.forma == "antorcha" then
-			local palo = parte(Vector3.new(0.36, 1.6, 0.36), CFrame.new(base + Vector3.new(0, 0.8, 0)), color(d.color), material(d.material), b, r.modelo)
-			local cabeza = parte(Vector3.new(0.48, 0.48, 0.48), CFrame.new(base + Vector3.new(0, 1.8, 0)), Color3.fromRGB(255, 200, 90), Enum.Material.Neon, b, r.modelo)
-			palo.CanCollide = false
-			cabeza.CanCollide = false
-			luz(cabeza, d.luz)
-			local f = Instance.new("Fire")
-			f.Size = 2
-			f.Heat = 4
-			f.Color = Color3.fromRGB(255, 150, 40)
-			f.SecondaryColor = Color3.fromRGB(255, 230, 120)
-			f.Parent = cabeza
-			table.insert(lista, palo)
-			table.insert(lista, cabeza)
-		elseif d.forma == "flor" then
-			local tallo = parte(Vector3.new(0.2, 1.3, 0.2), CFrame.new(base + Vector3.new(0, 0.65, 0)), Color3.fromRGB(70, 140, 50), Enum.Material.Grass, b, r.modelo)
-			local flor = parte(Vector3.new(0.75, 0.45, 0.75), CFrame.new(base + Vector3.new(0, 1.45, 0)) * CFrame.Angles(0, math.rad(45), 0), color(d.color), material(d.material), b, r.modelo)
-			tallo.CanCollide = false
-			flor.CanCollide = false
-			tallo.CastShadow = false
-			table.insert(lista, tallo)
-			table.insert(lista, flor)
-		else -- hierba en cruz
-			for k = 0, 1 do
-				local h = parte(
-					Vector3.new(2.3, 1.7, 0.08),
-					CFrame.new(base + Vector3.new(0, 0.85, 0)) * CFrame.Angles(0, math.rad(45 + 90 * k), 0),
-					color(d.color),
-					material(d.material),
-					b,
-					r.modelo
-				)
-				h.CanCollide = false
-				h.CastShadow = false
-				table.insert(lista, h)
-			end
-		end
-	end
-	r.capas[y] = lista
-end
-
--- Agua de Roblox (Terrain) en celdas de 4 studs: cada celda es agua si el
--- bloque que hay en su centro es agua
-local function agua(cx, cz, llenar)
-	local T = workspace.Terrain
-	local NV = C * B // 4
-	local vyMax = math.ceil((Config.NIVEL_MAR + 2) * B / 4)
-	local x0, z0 = cx * C * B, cz * C * B
-	local region = Region3.new(Vector3.new(x0, 0, z0), Vector3.new(x0 + C * B, vyMax * 4, z0 + C * B))
+	local NV = CX * BS // 4
+	local vy0 = math.floor(ymin * BS / 4)
+	local vy1 = math.ceil((ymax + 1) * BS / 4)
+	local x0, z0 = cx * CX * BS, cz * CZ * BS
+	local region = Region3.new(Vector3.new(x0, vy0 * 4, z0), Vector3.new(x0 + CX * BS, vy1 * 4, z0 + CZ * BS))
 	local mats, occ = table.create(NV), table.create(NV)
 	local hay = false
 	for ix = 1, NV do
-		local mx, ox = table.create(vyMax), table.create(vyMax)
+		local mx, ox = {}, {}
 		mats[ix], occ[ix] = mx, ox
-		for iy = 1, vyMax do
+		for iy = 1, vy1 - vy0 do
 			local my, oy = table.create(NV), table.create(NV)
 			mx[iy], ox[iy] = my, oy
 			for iz = 1, NV do
 				local m, o = Enum.Material.Air, 0
 				if llenar then
-					local bx = math.floor((x0 + (ix - 0.5) * 4) / B)
-					local by = math.floor(((iy - 0.5) * 4) / B)
-					local bz = math.floor((z0 + (iz - 0.5) * 4) / B)
-					if get(bx, by, bz) == ID.agua then
-						m, o = Enum.Material.Water, 1
+					local bx = math.floor((x0 + (ix - 0.5) * 4) / BS)
+					local by = math.floor(((vy0 + iy - 0.5) * 4) / BS)
+					local bz = math.floor((z0 + (iz - 0.5) * 4) / BS)
+					local b = md:get(bx, by, bz)
+					if esAgua(b) then
+						m = Enum.Material.Water
+						local nivel = (BL[b] and BL[b].nivelL) or 0
+						o = nivel == 0 and 1 or math.max(0.2, (8 - nivel) / 8)
 						hay = true
 					end
 				end
@@ -309,153 +229,173 @@ local function agua(cx, cz, llenar)
 			end
 		end
 	end
-	if hay or not llenar then
-		T:WriteVoxels(region, 4, mats, occ)
+	workspace.Terrain:WriteVoxels(region, 4, mats, occ)
+	if f then
+		f.aguaRango = hay and { ymin, ymax } or nil
 	end
 end
 
-------------------------------------------------------------------
--- Chunks dibujados
-------------------------------------------------------------------
-function Mundo.listo(cx, cz)
-	local r = vistos[clave(cx, cz)]
-	return r ~= nil and r.listo
+function Mundo.tieneFisica(cx, cz)
+	return Mundo.fisica[MundoDatos.clave(cx, cz)] ~= nil
 end
 
--- Dibuja un chunk entero (repartido en varios fotogramas)
-function Mundo.construir(cx, cz)
-	local k = clave(cx, cz)
-	if vistos[k] then
+function Mundo.asegurarFisica(cx, cz)
+	local k = MundoDatos.clave(cx, cz)
+	if Mundo.fisica[k] then
 		return
-	end
-	for dx = -1, 1 do
-		for dz = -1, 1 do
-			Mundo.datos(cx + dx, cz + dz)
-		end
 	end
 	local modelo = Instance.new("Folder")
 	modelo.Name = cx .. "," .. cz
-	local r = { modelo = modelo, capas = {}, listo = false, sucias = {} }
-	vistos[k] = r
-	-- La parte más alta del chunk (para no recorrer el aire de arriba)
-	local d = datos[k]
-	local tope = 0
-	for i = C * C * ALTO - 1, 0, -1 do
-		if buffer.readu8(d, i) ~= 0 then
-			tope = i // (C * C) + 1
+	local f = { modelo = modelo, secciones = {} }
+	Mundo.fisica[k] = f
+	local d = Mundo.md:obtener(cx, cz)
+	-- Altura máxima con bloques
+	local ymax = 0
+	for y = CY - 1, 0, -1 do
+		local o = y * CX * CZ * 2
+		local hay = false
+		for i = 0, CX * CZ - 1 do
+			if buffer.readu16(d, o + i * 2) ~= 0 then
+				hay = true
+				break
+			end
+		end
+		if hay then
+			ymax = y
 			break
 		end
 	end
-	local t = os.clock()
-	for y = 0, math.min(ALTO - 1, tope) do
-		construirCapa(r, cx, cz, y)
-		if os.clock() - t > 0.005 then
-			task.wait()
-			if r.quitado then
-				modelo:Destroy()
-				return
-			end
-			t = os.clock()
+	for sy = 0, NSEC - 1 do
+		if sy * SEC <= ymax then
+			f.secciones[sy] = construirSeccion(cx, cz, sy, modelo)
 		end
 	end
-	agua(cx, cz, true)
 	modelo.Parent = carpeta
-	r.listo = true
-	for y in r.sucias do
-		construirCapa(r, cx, cz, y)
-	end
-	r.sucias = {}
+	agua(cx, cz, true)
+	f.lista = true
 end
 
-function Mundo.quitar(cx, cz)
-	local k = clave(cx, cz)
-	local r = vistos[k]
-	if not r then
+function Mundo.quitarFisica(cx, cz)
+	local k = MundoDatos.clave(cx, cz)
+	local f = Mundo.fisica[k]
+	if not f then
 		return
 	end
-	r.quitado = true
-	vistos[k] = nil
-	r.modelo:Destroy()
-	if r.listo then
-		agua(cx, cz, false)
+	Mundo.fisica[k] = nil
+	f.modelo:Destroy()
+	if f.aguaRango then
+		f.aguaRango = nil
+		local x0, z0 = cx * CX * BS, cz * CZ * BS
+		workspace.Terrain:FillBlock(CFrame.new(x0 + CX * BS / 2, CY * BS / 2, z0 + CZ * BS / 2), Vector3.new(CX * BS, CY * BS, CZ * BS), Enum.Material.Air)
 	end
+end
+
+local seccionesSucias = {} -- clave -> {[sy] = true}
+local aguaSucia = {} -- clave -> true
+local function rehacer(cx, cz, sy)
+	if sy < 0 or sy >= NSEC then
+		return
+	end
+	local k = MundoDatos.clave(cx, cz)
+	if not Mundo.fisica[k] then
+		return
+	end
+	seccionesSucias[k] = seccionesSucias[k] or {}
+	seccionesSucias[k][sy] = true
 end
 
 ------------------------------------------------------------------
--- Cambiar un bloque
+-- Cambiar bloques
 ------------------------------------------------------------------
-local function rehacer(cx, cz, y)
-	if y < 0 or y >= ALTO then
-		return
+-- opc.sinAviso: no avisa a la simulación (líquidos, soporte…)
+function Mundo.set(x, y, z, id, opc)
+	if y < 0 or y >= CY then
+		return 0
 	end
-	local r = vistos[clave(cx, cz)]
-	if not r then
-		return
+	local antes = Mundo.md:set(x, y, z, id)
+	if antes == id then
+		return antes
 	end
-	if r.listo then
-		construirCapa(r, cx, cz, y)
-	else
-		r.sucias[y] = true
+	local cx, cz = x // CX, z // CZ
+	local sy = y // SEC
+	rehacer(cx, cz, sy)
+	if esAgua(antes) or esAgua(id) then
+		aguaSucia[MundoDatos.clave(cx, cz)] = true
 	end
-end
-
-function Mundo.set(x, y, z, b)
-	if y < 0 or y >= ALTO then
-		return
-	end
-	local cx, cz = x // C, z // C
-	local lx, lz = x - cx * C, z - cz * C
-	local viejo = get(x, y, z)
-	buffer.writeu8(Mundo.datos(cx, cz), idx(lx, y, lz), b)
-	-- Un bloque sólido encima del césped lo convierte en tierra
-	if b ~= 0 and SOLIDO[b] and y > 0 then
-		local abajo = get(x, y - 1, z)
-		if abajo == ID.cesped or abajo == ID.cespedNevado then
-			buffer.writeu8(Mundo.datos(cx, cz), idx(lx, y - 1, lz), ID.tierra)
+	table.insert(cola, { x, y, z, id })
+	if not (opc and opc.sinAviso) then
+		for _, fn in alCambiar do
+			fn(x, y, z, antes, id)
 		end
 	end
-	rehacer(cx, cz, y)
-	rehacer(cx, cz, y - 1)
-	rehacer(cx, cz, y + 1)
-	if lx == 0 then
-		rehacer(cx - 1, cz, y)
-	elseif lx == C - 1 then
-		rehacer(cx + 1, cz, y)
+	return antes
+end
+
+-- Ediciones de un chunk (para los clientes que lo piden)
+function Mundo.ediciones(cx, cz)
+	return Mundo.md.ediciones[MundoDatos.clave(cx, cz)]
+end
+
+RunService.Heartbeat:Connect(function()
+	-- Colisiones y agua que cambiaron
+	for k, secs in seccionesSucias do
+		local f = Mundo.fisica[k]
+		if f then
+			local cx, cz = MundoDatos.desclave(k)
+			for sy in secs do
+				local viejas = f.secciones[sy]
+				f.secciones[sy] = construirSeccion(cx, cz, sy, f.modelo)
+				if viejas then
+					for _, p in viejas do
+						p:Destroy()
+					end
+				end
+			end
+		end
 	end
-	if lz == 0 then
-		rehacer(cx, cz - 1, y)
-	elseif lz == C - 1 then
-		rehacer(cx, cz + 1, y)
-	end
-	-- Si cambia el agua, se rehace el agua del chunk
-	if viejo == ID.agua or b == ID.agua then
-		local r = vistos[clave(cx, cz)]
-		if r and r.listo then
+	table.clear(seccionesSucias)
+	for k in aguaSucia do
+		if Mundo.fisica[k] then
+			local cx, cz = MundoDatos.desclave(k)
 			agua(cx, cz, true)
 		end
 	end
-end
-
--- Al quitar un bloque junto al agua, el agua entra en el hueco
-function Mundo.inundar(x, y, z)
-	if get(x, y, z) ~= 0 then
-		return
-	end
-	for _, o in { { 1, 0, 0 }, { -1, 0, 0 }, { 0, 0, 1 }, { 0, 0, -1 }, { 0, 1, 0 } } do
-		if get(x + o[1], y + o[2], z + o[3]) == ID.agua then
-			Mundo.set(x, y, z, ID.agua)
-			return
+	table.clear(aguaSucia)
+	-- Enviar los cambios a los jugadores (en lotes)
+	if #cola > 0 then
+		local lote = cola
+		cola = {}
+		local plano = table.create(#lote * 4)
+		for i, c in lote do
+			plano[i * 4 - 3], plano[i * 4 - 2], plano[i * 4 - 1], plano[i * 4] = c[1], c[2], c[3], c[4]
 		end
+		RBloques:FireAllClients(plano)
 	end
+end)
+
+------------------------------------------------------------------
+-- Consultas
+------------------------------------------------------------------
+function Mundo.alturaSuelo(x, z)
+	return Mundo.md:alturaSuelo(x, z)
 end
 
--- ¿Hay un bloque de este tipo cerca? (para las recetas que piden mesa u horno)
-function Mundo.hayCerca(pos, id, radio)
-	local x0, y0, z0 = math.floor(pos.X / B), math.floor(pos.Y / B), math.floor(pos.Z / B)
+function Mundo.alCielo(x, y, z)
+	return Mundo.md:alCielo(x, y, z)
+end
+
+function Mundo.bioma(x, z)
+	return Mundo.md:bioma(x, z)
+end
+
+-- ¿Hay un bloque de esos ids cerca? (mesas de trabajo, hornos…)
+function Mundo.hayCerca(pos, ids, radio)
+	local x0, y0, z0 = math.floor(pos.X / BS), math.floor(pos.Y / BS), math.floor(pos.Z / BS)
 	for y = y0 - radio, y0 + radio do
 		for x = x0 - radio, x0 + radio do
 			for z = z0 - radio, z0 + radio do
-				if get(x, y, z) == id then
+				local b = Mundo.md:getSiCargado(x, y, z)
+				if b > 0 and ids[b] then
 					return true
 				end
 			end
