@@ -9566,19 +9566,35 @@ local function cargar(plr)
 				local p = g.inv[i]
 				if type(p) == "table" and (OB[p.id] or BL[p.id]) and type(p.n) == "number" then
 					s.inv[i] = { id = p.id, n = math.clamp(p.n, 1, Registro.maxPila(p.id)), dur = p.dur }
+					-- Encantamientos guardados (nombre -> nivel)
+					if type(p.enc) == "table" then
+						local enc = {}
+						for k, v in p.enc do
+							if type(k) == "string" and type(v) == "number" then
+								enc[k] = math.clamp(math.floor(v), 1, 10)
+							end
+						end
+						if next(enc) then
+							s.inv[i].enc = enc
+						end
+					end
 				end
 			end
 			if type(g.xp) == "table" then
 				s.xp = { nivel = tonumber(g.xp.nivel) or 0, puntos = tonumber(g.xp.puntos) or 0 }
 			end
 			s.hambre = tonumber(g.hambre) or 20
+		elseif not ok then
+			-- Si el DataStore falla no se guarda nada: así no se pisa la partida guardada con un inventario vacío
+			s.sinGuardar = true
+			warn("[Blockverse] No se pudo cargar la partida de " .. plr.Name .. ": " .. tostring(g))
 		end
 	end
 end
 
 local function guardar(plr)
 	local s = st(plr)
-	if not s or not almacen or s.modo == "creativo" or s.ob or Modos.activo(plr) then
+	if not s or not almacen or s.sinGuardar or s.modo == "creativo" or s.ob or Modos.activo(plr) then
 		return
 	end
 	pcall(function()
@@ -9759,6 +9775,15 @@ end)
 game:BindToClose(function()
 	for _, plr in Players:GetPlayers() do
 		guardar(plr)
+	end
+end)
+-- Guardado automático cada 2 minutos (por si el servidor se cierra de golpe)
+task.spawn(function()
+	while true do
+		task.wait(120)
+		for _, plr in Players:GetPlayers() do
+			task.spawn(guardar, plr)
+		end
 	end
 end)
 
@@ -11946,6 +11971,11 @@ function BW.etiquetaJugador(plr, J)
 	if not cab or not J.equipo then
 		return
 	end
+	-- Sin el nombre de Roblox encima de la cabeza: ya está la etiqueta del equipo
+	local hum = ch:FindFirstChildOfClass("Humanoid")
+	if hum then
+		hum.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
+	end
 	local E = P.eqs[J.equipo].E
 	local g = cartel(cab, ("[%s] %s %s"):format(E.letra, plr.Name, Perfil.etiqueta(J.perfil)), E.col, 0.9)
 	g.Size = UDim2.fromOffset(220, 22)
@@ -12458,6 +12488,9 @@ local function empezar()
 	end
 	P.tema = mejor
 	P.arena = Arenas.bw(P.n, P.tema)
+	for plr in P.jug do
+		plr:SetAttribute("TemaBW", P.tema)
+	end
 	local a = P.arena
 	limpiarArena(a, {})
 	for k, E in a.equiposInfo do
@@ -12691,20 +12724,55 @@ local function moverBot(m, tx, tz, vel, puente)
 		return d
 	end
 	local ux, uz = dx / d, dz / d
+	-- Atascado contra algo (un árbol, una tienda, un muro): lo rodea por un lado un momento
+	local b = m.bw
+	local dt = b.dt or 1 / 60
+	b.atascoT = (b.atascoT or 0) + dt
+	if b.atascoT >= 0.8 then
+		local mov = b.atascoPos and math.sqrt((m.x - b.atascoPos[1]) ^ 2 + (m.z - b.atascoPos[2]) ^ 2) or 1
+		if mov < 0.35 and not b.rodeo then
+			b.rodeo = { lado = math.random() < 0.5 and -1 or 1, t = 1.2 + math.random() * 0.8 }
+		end
+		b.atascoT = 0
+		b.atascoPos = { m.x, m.z }
+	end
+	if b.rodeo then
+		b.rodeo.t -= dt
+		local a = math.rad(80) * b.rodeo.lado
+		ux, uz = ux * math.cos(a) - uz * math.sin(a), ux * math.sin(a) + uz * math.cos(a)
+		if b.rodeo.t <= 0 then
+			b.rodeo = nil
+		end
+	end
 	m.yawObj = math.atan2(ux, uz)
-	-- Tender puente: si no hay suelo delante, pone lana de su equipo
+	-- Tender puente: si delante no hay suelo (un escalón de bajada no cuenta), pone lana de su equipo
 	local nx, nz, ny = math.floor(m.x + ux * 0.8), math.floor(m.z + uz * 0.8), math.floor(m.y - 0.5)
 	local Mundo = ctx.Mundo
-	if m.suelo and Mundo.get(nx, ny, nz) == 0 and Mundo.get(math.floor(m.x + ux * 0.4), ny, math.floor(m.z + uz * 0.4)) == 0 then
+	local function hueco(x, z)
+		for dy = 0, 3 do
+			if Registro.SOLIDO[Mundo.get(x, ny - dy, z)] then
+				return false
+			end
+		end
+		return true
+	end
+	if m.suelo and hueco(nx, nz) and hueco(math.floor(m.x + ux * 0.4), math.floor(m.z + uz * 0.4)) then
 		if not puente or m.bw.lana <= 0 then
 			m.mover = false
 			if m.bw.lana <= 0 and m.bw.estado == "atacar" then
 				m.bw.estado = "recolectar"
 				m.bw.t = 15
 			end
+			-- Sin lana y lejos de casa: saca la de reserva para poder volver (si no, se quedaría ahí para siempre)
+			b.bordeT = (b.bordeT or 0) + dt
+			if b.bordeT > 4 and b.lana <= 0 then
+				b.lana = 16
+				b.bordeT = 0
+			end
 			return d
 		end
-		m.bw.colocarT = (m.bw.colocarT or 0) - 1 / 60
+		b.bordeT = 0
+		m.bw.colocarT = (m.bw.colocarT or 0) - dt
 		if m.bw.colocarT <= 0 then
 			m.bw.colocarT = 0.18 / m.bw.nivel
 			ponBloque(nx, ny, nz, P.eqs[m.bw.equipo].E.lanaId)
@@ -12768,6 +12836,7 @@ function BW.iaBot(m, dt)
 		return
 	end
 	local b = m.bw
+	b.dt = dt
 	local eq = P.eqs[b.equipo]
 	local E = eq.E
 	if m.y < BW_VACIO then
@@ -12785,8 +12854,12 @@ function BW.iaBot(m, dt)
 	if math.sqrt((m.x - casa.x) ^ 2 + (m.z - casa.z) ^ 2) < 7 then
 		comprasBot(m)
 	end
-	-- ¿Hay enemigos cerca? A pelear
+	-- ¿Hay enemigos cerca? A pelear (si ya está junto a la cama que va a romper, solo se defiende de los que tiene encima)
 	local obj, dmin = nil, b.rol == "defensor" and 11 or 8
+	local camaObj = b.estado == "atacar" and b.objetivo and P.eqs[b.objetivo] and P.eqs[b.objetivo].cama and P.camas[b.objetivo]
+	if camaObj and math.sqrt((camaObj.x + 0.5 - m.x) ^ 2 + (camaObj.z + 0.5 - m.z) ^ 2) < 6 then
+		dmin = 2
+	end
 	local enemigos = enemigosDe(m)
 	for _, e in enemigos do
 		local d = math.sqrt((e.x - m.x) ^ 2 + (e.z - m.z) ^ 2)
@@ -12846,7 +12919,7 @@ function BW.iaBot(m, dt)
 		end
 	end
 	if b.estado == "recolectar" then
-		moverBot(m, gen.x + (b.slot % 2 == 1 and 0.6 or -0.6), gen.z, vel * 0.8, false)
+		moverBot(m, gen.x + (b.slot % 2 == 1 and 0.6 or -0.6), gen.z, vel * 0.8, b.lana > 0)
 		if b.t <= 0 then
 			b.t = 60 + math.random() * 40
 			b.estado = (b.rol == "atacante" or math.random() < 0.35) and "atacar" or "patrulla"
@@ -13337,19 +13410,38 @@ function BW.invisible(plr, seg)
 	if not ch then
 		return
 	end
+	-- Si ya era invisible solo se alarga: lo de antes se guarda una sola vez
+	local hasta = os.clock() + seg
+	ch:SetAttribute("InvisibleHasta", math.max(ch:GetAttribute("InvisibleHasta") or 0, hasta))
+	if ch:GetAttribute("Invisible") then
+		return
+	end
+	ch:SetAttribute("Invisible", true)
 	local antes = {}
 	for _, o in ch:GetDescendants() do
 		if (o:IsA("BasePart") or o:IsA("Decal")) and o.Name ~= "HumanoidRootPart" then
 			antes[o] = o.Transparency
 			o.Transparency = 1
+		elseif o:IsA("BillboardGui") then
+			-- La etiqueta con el nombre también se esconde
+			antes[o] = o.Enabled
+			o.Enabled = false
 		end
 	end
-	task.delay(seg, function()
-		for o, t in antes do
+	task.spawn(function()
+		while ch.Parent and os.clock() < (ch:GetAttribute("InvisibleHasta") or 0) do
+			task.wait(0.2)
+		end
+		for o, v in antes do
 			if o.Parent then
-				o.Transparency = t
+				if o:IsA("BillboardGui") then
+					o.Enabled = v
+				else
+					o.Transparency = v
+				end
 			end
 		end
+		ch:SetAttribute("Invisible", nil)
 	end)
 end
 
@@ -13471,7 +13563,7 @@ function terminar(ganador)
 	local E = ganador and P.eqs[ganador].E
 	sonidoTodos("nivel")
 	-- MVP: el que más ha aportado (bajas finales y camas pesan más)
-	local mvp, mvpP = nil, -1
+	local mvp, mvpP = nil, 0
 	for plr, J in P.jug do
 		local pts = J.bajas + J.finales * 2 + J.camas * 3
 		if J.equipo and not J.espectador and pts > mvpP then
@@ -13489,7 +13581,7 @@ function terminar(ganador)
 		local mon = 0
 		local hechas = {}
 		if jugo then
-			mon = 10 + J.bajas * 5 + J.finales * 10 + J.camas * 25 + (gano and 100 or 0) + (plr == mvp and mvpP > 0 and 25 or 0)
+			mon = 10 + J.bajas * 5 + J.finales * 10 + J.camas * 25 + (gano and 100 or 0) + (plr == mvp and 25 or 0)
 			perfil.monedas += mon
 			perfil.xp += xp
 			perfil.partidas += 1
@@ -13525,7 +13617,7 @@ function terminar(ganador)
 			ctx.aviso(plr, ("Recompensa: +%d monedas · +%d de experiencia"):format(mon, xp))
 		end
 	end
-	if mvp and mvpP > 0 then
+	if mvp then
 		chat(("MVP de la partida: %s (%d puntos)"):format(mvp.Name, mvpP), "#ffd84a")
 	end
 	local partida = P
@@ -13794,6 +13886,7 @@ function BW.unirse(plr)
 	s.bw = true
 	plr:SetAttribute("Modo", "supervivencia")
 	plr:SetAttribute("BedWars", true)
+	plr:SetAttribute("TemaBW", P.tema)
 	if P.fase ~= "sala" then
 		J.espectador = true
 		J.vivo = false
@@ -13833,9 +13926,14 @@ function BW.salir(plr, fin)
 	plr:SetAttribute("EquipoBW", nil)
 	plr:SetAttribute("ColorBW", nil)
 	plr:SetAttribute("EspectadorBW", nil)
+	plr:SetAttribute("TemaBW", nil)
 	ctx.Estado:FireClient(plr, "panel", nil)
 	ctx.Estado:FireClient(plr, "kitBW", nil)
 	ctx.Estado:FireClient(plr, "espectar", nil)
+	ctx.Estado:FireClient(plr, "feed", nil)
+	if not fin then
+		ctx.Estado:FireClient(plr, "finBW", nil)
+	end
 	Perfil.guardar(plr)
 	if J.premioXP and ctx.ganarXP then
 		ctx.ganarXP(plr, J.premioXP)
@@ -14342,7 +14440,7 @@ local function panel(plr, J)
 		end
 		linea(("Empieza en %d"):format(math.ceil(P.lobby)), "#55ff55")
 		linea(("Jugadores: %d (el resto, bots)"):format(n))
-		linea(("Nivel %d✫ · %d/500 xp"):format(nivel, perfil.xp % 500), Perfil.colorNivel(nivel))
+		linea(("Nivel %d★ · %d/500 xp"):format(nivel, perfil.xp % 500), Perfil.colorNivel(nivel))
 		linea(("Monedas: %d"):format(perfil.monedas), "#ffd84a")
 		linea(("Victorias: %d · Racha: %d"):format(perfil.victorias, perfil.racha), "#aaaaaa")
 		linea("")
@@ -21078,7 +21176,7 @@ return Mundo
 ]]></ProtectedString></Properties></Item>
 <Item class="ModuleScript" referent="RBX0000002C"><Properties><string name="Name">PerfilBW</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Perfil de Bed Wars de cada jugador (se guarda en DataStore)
-	· Monedas, experiencia con nivel y estrellas [N✫], estadísticas, racha de victorias.
+	· Monedas, experiencia con nivel y estrellas [N★], estadísticas, racha de victorias.
 	· Kits comprados con su nivel, kit equipado y efecto de baja final equipado.
 	· Misiones diarias: tres al día, iguales para todo el servidor, con su recompensa.
 	Si el DataStore no está disponible (Studio sin acceso), todo funciona igual en memoria.
@@ -21091,6 +21189,7 @@ pcall(function()
 	almacen = DataStoreService:GetDataStore("Blockverse_BW_v1")
 end)
 local perfiles = {} -- plr -> perfil
+local sinGuardar = {} -- plr -> true si la carga falló (no se pisa lo guardado)
 
 local function nuevo()
 	return {
@@ -21107,7 +21206,7 @@ function Perfil.colorNivel(n)
 	return n >= 100 and "#ff55ff" or (n >= 50 and "#55ffff" or (n >= 20 and "#ffaa00" or (n >= 10 and "#ffff55" or "#aaaaaa")))
 end
 function Perfil.etiqueta(p)
-	return ("[%d✫]"):format(Perfil.nivel(p and p.xp or 0))
+	return ("[%d★]"):format(Perfil.nivel(p and p.xp or 0))
 end
 
 ------------------------------------------------------------------
@@ -21231,6 +21330,9 @@ function Perfil.de(plr)
 			end)
 			if ok then
 				p = limpiar(g)
+			else
+				sinGuardar[plr] = true
+				warn("[Blockverse] No se pudo cargar el perfil de Bed Wars de " .. plr.Name .. ": " .. tostring(g))
 			end
 		end
 		perfiles[plr] = p
@@ -21238,20 +21340,38 @@ function Perfil.de(plr)
 	return p
 end
 
-function Perfil.guardar(plr)
+local function guardarYa(plr)
 	local p = perfiles[plr]
-	if not p or not almacen or not plr.UserId or plr.UserId <= 0 then
+	if not p or not almacen or sinGuardar[plr] or not plr.UserId or plr.UserId <= 0 then
 		return
 	end
-	pcall(function()
+	local ok, err = pcall(function()
 		almacen:SetAsync("bw_" .. plr.UserId, p)
 	end)
+	if not ok then
+		warn("[Blockverse] No se pudo guardar el perfil de Bed Wars: " .. tostring(err))
+	end
+end
+
+-- Guarda sin parar a quien lo llama (el DataStore tarda)
+function Perfil.guardar(plr)
+	task.spawn(guardarYa, plr)
 end
 
 function Perfil.olvidar(plr)
-	Perfil.guardar(plr)
+	guardarYa(plr)
 	perfiles[plr] = nil
+	sinGuardar[plr] = nil
 end
+
+-- Al cerrar el servidor se guardan todos
+pcall(function()
+	game:BindToClose(function()
+		for plr in perfiles do
+			guardarYa(plr)
+		end
+	end)
+end)
 
 return Perfil
 ]]></ProtectedString></Properties></Item>
@@ -23233,6 +23353,7 @@ local listoServidor = false
 ------------------------------------------------------------------
 local kitBW = nil -- {id, v, act}
 local saltosExtra = 0
+local saltoAireT = 0 -- JumpRequest se repite al mantener la tecla: entre saltos en el aire hay una pausa
 local espectando = nil
 
 -- Los impulsos vienen en bloques/s con la gravedad del juego web (32 bloques/s²)
@@ -23271,8 +23392,13 @@ local function impulso(tipo, fuerza)
 end
 
 -- Doble salto (Saltarín): Espacio otra vez en el aire
+local ultimoJR = 0
 UserInputService.JumpRequest:Connect(function()
-	if not kitBW or kitBW.id ~= "saltarin" then
+	-- Mantener Espacio repite el evento cada fotograma: solo cuenta una pulsación nueva
+	local ahoraJR = os.clock()
+	local seguido = ahoraJR - ultimoJR < 0.15
+	ultimoJR = ahoraJR
+	if seguido or not kitBW or kitBW.id ~= "saltarin" then
 		return
 	end
 	local ch = jugador.Character
@@ -23281,8 +23407,9 @@ UserInputService.JumpRequest:Connect(function()
 	if not root or not hum or hum.Health <= 0 or hum.FloorMaterial ~= Enum.Material.Air then
 		return
 	end
-	if saltosExtra > 0 and root.AssemblyLinearVelocity.Y < vRoblox(4) then
+	if saltosExtra > 0 and root.AssemblyLinearVelocity.Y < vRoblox(4) and os.clock() - saltoAireT > 0.25 then
 		saltosExtra -= 1
+		saltoAireT = os.clock()
 		local v = root.AssemblyLinearVelocity
 		root.AssemblyLinearVelocity = Vector3.new(v.X, math.sqrt(2 * workspace.Gravity * 1.3 * BS), v.Z)
 		emitir(root.Position - Vector3.new(0, BS * 0.8, 0), Color3.fromRGB(255, 255, 255), 8, 2, 0.1, 2)
@@ -23407,6 +23534,52 @@ local function espectar(ch)
 end
 Interfaz.alMenu = aplicarCamara
 
+-- Números de daño que saltan al golpear (amarillos y con «!» si es crítico)
+local numerosVivos = 0
+local function numeroDano(pos, dano, critico)
+	if numerosVivos > 12 then
+		return
+	end
+	numerosVivos += 1
+	local ancla = Instance.new("Part")
+	ancla.Anchored = true
+	ancla.CanCollide = false
+	ancla.CanQuery = false
+	ancla.CanTouch = false
+	ancla.Transparency = 1
+	ancla.Size = Vector3.new(0.2, 0.2, 0.2)
+	ancla.Position = pos + Vector3.new((math.random() - 0.5) * 0.6 * BS, 0.4 * BS, (math.random() - 0.5) * 0.6 * BS)
+	ancla.Parent = workspace
+	local g = Instance.new("BillboardGui")
+	g.Size = UDim2.fromOffset(80, 30)
+	g.AlwaysOnTop = true
+	g.LightInfluence = 0
+	g.MaxDistance = 60 * BS
+	g.Parent = ancla
+	local l = Instance.new("TextLabel")
+	l.BackgroundTransparency = 1
+	l.Size = UDim2.fromScale(1, 1)
+	l.Font = Enum.Font.GothamBlack
+	l.TextScaled = true
+	l.Text = ("%g%s"):format(math.floor(dano * 10 + 0.5) / 10, critico and "!" or "")
+	l.TextColor3 = critico and Color3.fromRGB(255, 220, 60) or Color3.fromRGB(255, 255, 255)
+	l.TextStrokeTransparency = 0.2
+	l.Parent = g
+	task.spawn(function()
+		local t0 = os.clock()
+		local p0 = ancla.Position
+		while os.clock() - t0 < 0.7 and ancla.Parent do
+			local e = (os.clock() - t0) / 0.7
+			ancla.Position = p0 + Vector3.new(0, e * 1.2 * BS, 0)
+			l.TextTransparency = math.max(0, e * 1.6 - 0.6)
+			l.TextStrokeTransparency = math.max(0.2, e * 1.6 - 0.6)
+			task.wait()
+		end
+		ancla:Destroy()
+		numerosVivos -= 1
+	end)
+end
+
 Estado.OnClientEvent:Connect(function(tipo, a, b, c)
 	if tipo == "jugador" then
 		local modoAntes = est.modo
@@ -23463,6 +23636,9 @@ Estado.OnClientEvent:Connect(function(tipo, a, b, c)
 		sonido("golpe", a, b and 1 or 1)
 		if c then
 			emitir(a, { Color3.fromRGB(255, 255, 255), Color3.fromRGB(200, 200, 255) }, 10, 3, 0.07, 4)
+		end
+		if typeof(a) == "Vector3" and type(b) == "number" and b > 0 then
+			numeroDano(a, b, c == true)
 		end
 	elseif tipo == "explosion" then
 		sonido("explosion", a)
@@ -23907,6 +24083,9 @@ end)
 	  destello al recibir daño y brillo al morir.
 	· Los cristales del End: núcleo rosa con dos marcos que giran y el haz
 	  que cura al dragón.
+	· Bed Wars: cada mapa tiene su ambiente y su hora fija (nunca se juega de noche):
+	  Jardín soleado, Invierno con bruma fría, Infierno al atardecer rojo y Desierto
+	  con calima dorada.
 ]]
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -23917,6 +24096,7 @@ local Comp = ReplicatedStorage:WaitForChild("Blockverse")
 local Config = require(Comp:WaitForChild("Config"))
 local Generador = require(Comp:WaitForChild("Generador"))
 local Dimensiones = require(Comp:WaitForChild("Dimensiones"))
+local Arenas = require(Comp:WaitForChild("Arenas"))
 
 local BS = Config.BLOQUE
 local jugador = Players.LocalPlayer
@@ -23972,6 +24152,31 @@ local function aplicar(dim, biomaN)
 	end
 	if nubes then
 		nubes.Enabled = false
+	end
+	-- Mapas de Bed Wars: {color de la bruma, densidad, ambiente, nubes}
+	local AMBIENTE_BW = {
+		bw_jardin = { Color3.fromRGB(199, 214, 235), 0.28, Color3.fromRGB(140, 140, 150), true },
+		bw_invierno = { Color3.fromRGB(205, 225, 245), 0.4, Color3.fromRGB(150, 165, 190), true },
+		bw_infierno = { Color3.fromRGB(255, 120, 80), 0.42, Color3.fromRGB(160, 95, 80), false },
+		bw_desierto = { Color3.fromRGB(240, 205, 150), 0.38, Color3.fromRGB(165, 145, 120), true },
+	}
+	local A = AMBIENTE_BW[dim]
+	if A then
+		if nubes then
+			nubes.Enabled = A[4]
+		end
+		Lighting.Ambient = A[3]:Lerp(Color3.new(0, 0, 0), 0.35)
+		Lighting.OutdoorAmbient = A[3]
+		Lighting.Brightness = original and original.Brightness or 2
+		Lighting.GlobalShadows = original == nil or original.GlobalShadows
+		if atm then
+			atm.Density = A[2]
+			atm.Color = A[1]
+			atm.Decay = A[1]:Lerp(Color3.new(0.4, 0.4, 0.45), 0.4)
+			atm.Haze = 1.4
+			atm.Glare = dim == "bw_desierto" and 0.6 or 0.2
+		end
+		return
 	end
 	if dim == "nether" then
 		local col = hex(Dimensiones.NIEBLA_NETHER[(biomaN or 0) + 1] or 0x3a100a)
@@ -24180,6 +24385,10 @@ function DV.iniciar()
 		local root = ch and ch:FindFirstChild("HumanoidRootPart")
 		if root then
 			local dim = DV.dimensionEn(root.Position)
+			local tema = jugador:GetAttribute("TemaBW")
+			if tema and Arenas.TEMAS_BW[tema] then
+				dim = "bw_" .. tema
+			end
 			if dim == "superficie" and not original then
 				-- todavía no se cambió nada
 			elseif dim ~= actual or dim == "nether" then
@@ -24203,6 +24412,9 @@ function DV.iniciar()
 				Lighting.ClockTime = 0
 			elseif dim == "end" then
 				Lighting.ClockTime = 0
+			elseif tema and Arenas.TEMAS_BW[tema] then
+				-- La hora del mapa (en el web, 0.25 es mediodía)
+				Lighting.ClockTime = 6 + Arenas.TEMAS_BW[tema].hora * 24
 			end
 		end
 		-- Dragones
@@ -25683,7 +25895,7 @@ opcionMenu("One Block", "Empieza en un solo bloque que se regenera", "oneblock")
 opcionMenu("Bed Wars", "Equipos en islas: protege tu cama y rompe las demás", "bedwars")
 opcionMenu("Mazmorras", "Salas con enemigos, botín, artefactos y un jefe", "mazmorras")
 opcionMenu("Leyendas", "Defiende la aldea, construye y manda a tus golems", "leyendas")
-texto({ Size = UDim2.fromOffset(380, 100), Text = "WASD moverse · Espacio saltar · Ctrl correr · Mayús agacharse\nClic izq. picar / atacar · Clic der. usar / poner\n1-9 y rueda: barra · E inventario · Q tirar · F volar (creativo)\nV tercera persona · F3 información · M este menú · Esc cerrar",
+texto({ Size = UDim2.fromOffset(560, 100), Text = "WASD moverse · Espacio saltar · Ctrl correr · Mayús agacharse\nClic izq. picar / atacar · Clic der. usar / poner\n1-9 y rueda: barra · E inventario · Q tirar · F volar (creativo)\nV tercera persona · F3 información · M este menú · Esc cerrar · G habilidad (Bed Wars)",
 	TextSize = 13, TextWrapped = true, TextColor3 = Color3.fromRGB(220, 220, 220), ZIndex = 12 }, menuCaja)
 
 local carga = nuevo("Frame", { Name = "Carga", BackgroundColor3 = Color3.fromRGB(40, 28, 20), BorderSizePixel = 0, Size = UDim2.fromScale(1, 1), Visible = true, ZIndex = 15 }, gui)
@@ -26337,8 +26549,13 @@ local finHilo = 0
 boton("Jugar otra vez", { Position = UDim2.new(0, 20, 1, -62), Size = UDim2.new(0.5, -26, 0, 44), TextSize = 17, ZIndex = 22,
 	BackgroundColor3 = Color3.fromRGB(70, 140, 70) }, fin, function()
 	fin.Visible = false
-	Interfaz.enviar("modoCmd", "otraVez")
-	Interfaz.aviso("Entrarás en la siguiente partida de Bed Wars")
+	if jugador:GetAttribute("BedWars") then
+		Interfaz.enviar("modoCmd", "otraVez")
+		Interfaz.aviso("Entrarás en la siguiente partida de Bed Wars")
+	else
+		-- La partida ya se cerró: se entra en una nueva
+		Interfaz.alElegirModo("bedwars")
+	end
 end)
 boton("Volver al menú", { Position = UDim2.new(0.5, 6, 1, -62), Size = UDim2.new(0.5, -26, 0, 44), TextSize = 17, ZIndex = 22 }, fin, function()
 	fin.Visible = false
@@ -26364,7 +26581,7 @@ function Interfaz.finBW(d)
 		d.camas or 0, d.muertes or 0, d.mejorRacha or 0, d.tiempo or "", d.mvp and (d.mvp .. (d.soyMvp and "  (¡tú!)" or "")) or "nadie")
 	if d.jugo then
 		finPremio.Text = ("+%d monedas · +%d xp   (tienes %d)"):format(d.monedas or 0, d.xp or 0, d.totalMonedas or 0)
-		finNivelT.Text = ("Nivel %d✫%s%s"):format(d.nivel or 1, d.subeNivel and "  ¡SUBES DE NIVEL!" or "", (d.racha or 0) >= 2 and ("  · %d victorias seguidas"):format(d.racha) or "")
+		finNivelT.Text = ("Nivel %d★%s%s"):format(d.nivel or 1, d.subeNivel and "  ¡SUBES DE NIVEL!" or "", (d.racha or 0) >= 2 and ("  · %d victorias seguidas"):format(d.racha) or "")
 		finNivelF.Size = UDim2.fromScale(0, 1)
 		TweenService:Create(finNivelF, TweenInfo.new(1.2, Enum.EasingStyle.Quad), { Size = UDim2.fromScale(math.clamp(d.progresoNivel or 0, 0, 1), 1) }):Play()
 	else
