@@ -26318,7 +26318,7 @@ function Interfaz.feed(t, col)
 end
 
 -- Pantalla final de Bed Wars: resultado, estadísticas, MVP, monedas, nivel y misiones
-local fin = nuevo("Frame", { Name = "FinBW", BackgroundColor3 = Color3.fromRGB(8, 10, 18), BackgroundTransparency = 0.2, BorderSizePixel = 0,
+local fin = nuevo("Frame", { Name = "FinBW", BackgroundColor3 = Color3.fromRGB(8, 10, 18), BackgroundTransparency = 0.06, BorderSizePixel = 0,
 	AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.fromOffset(440, 380), Visible = false, ZIndex = 20 }, gui)
 nuevo("UICorner", { CornerRadius = UDim.new(0, 10) }, fin)
 local finBorde = nuevo("UIStroke", { Color = Color3.fromRGB(255, 220, 80), Thickness = 3 }, fin)
@@ -26372,6 +26372,12 @@ function Interfaz.finBW(d)
 		finNivelT.Text = ""
 	end
 	finNivelB.Visible = d.jugo == true
+	-- El título grande de la partida se quita: la pantalla final ya lo dice
+	tituloHilo += 1
+	for _, l in { titulo, subtitulo } do
+		l.TextTransparency = 1
+		l.TextStrokeTransparency = 1
+	end
 	finMis.Text = d.misiones and #d.misiones > 0 and ("Misiones completadas:\n· " .. table.concat(d.misiones, "\n· ")) or ""
 	fin.Visible = true
 	task.delay(20, function()
