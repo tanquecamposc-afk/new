@@ -515,7 +515,20 @@ local function animar(v, dt)
 			local rel = ((math.atan2(d.X, d.Z) - yaw + math.pi * 3) % (math.pi * 2)) - math.pi
 			ry = math.clamp(rel, -1.1, 1.1)
 			rx = math.clamp(-math.atan2(d.Y - (v.def.alto or 1) * 0.4, dist), -0.6, 0.6)
+			v.mirando = true
+		else
+			v.mirando = false
 		end
+	end
+	-- Sin nadie cerca, mira a su alrededor de vez en cuando
+	if not v.mirando and not muerto then
+		v.curiosoT = (v.curiosoT or 0) - dt
+		if v.curiosoT <= 0 then
+			v.curiosoT = 2 + math.random() * 4
+			v.curiosoY = math.random() < 0.35 and 0 or (math.random() - 0.5) * 1.6
+			v.curiosoX = (math.random() - 0.6) * 0.5
+		end
+		ry, rx = v.curiosoY or 0, v.curiosoX or 0
 	end
 	v.cabY += (ry - v.cabY) * math.min(1, dt * 6)
 	v.cabX += (rx - v.cabX) * math.min(1, dt * 6)
@@ -542,7 +555,9 @@ local function animar(v, dt)
 				if tipo == "gallina" then
 					rot = CFrame.Angles(0, 0, g.s * (sp > 0.1 and 0 or math.sin(tiempo * 30) * 0.6))
 				else
-					rot = CFrame.Angles((brazosArriba and -math.pi / 2 or 0) + amp * 0.3 * g.s - golpe, 0, 0)
+					-- En reposo los brazos se mecen un poco (como al respirar)
+					local respira = math.sin(tiempo * 1.6 + g.s) * 0.05
+					rot = CFrame.Angles((brazosArriba and -math.pi / 2 or 0) + amp * 0.3 * g.s - golpe + respira, 0, respira * g.s)
 				end
 			elseif g.tipo == "cabeza" and tipo ~= "ghast" and tipo ~= "blaze" then
 				rot = CFrame.Angles(v.cabX, v.cabY, 0)

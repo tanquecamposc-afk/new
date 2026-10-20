@@ -853,6 +853,7 @@ local fraseEscala = nuevo("UIScale", {}, frase)
 local menuCaja = nuevo("Frame", { BackgroundTransparency = 1, AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.fromScale(0.5, 0.25), Size = UDim2.fromOffset(568, 250), ZIndex = 11 }, menu)
 nuevo("UIGridLayout", { CellSize = UDim2.fromOffset(278, 74), CellPadding = UDim2.fromOffset(12, 12), HorizontalAlignment = Enum.HorizontalAlignment.Center,
 	SortOrder = Enum.SortOrder.LayoutOrder }, menuCaja)
+local iconosMenu = {} -- se vuelven a poner al abrir el menú (al principio aún no están cargados)
 local function tarjeta(padre, txt, sub, icono, orden, alClic, tam)
 	local b = nuevo("TextButton", { Text = "", AutoButtonColor = false, BackgroundColor3 = Color3.fromRGB(52, 54, 62), BackgroundTransparency = 0.08,
 		BorderSizePixel = 0, LayoutOrder = orden, ZIndex = 12, Size = tam or UDim2.fromOffset(278, 74) }, padre)
@@ -867,6 +868,7 @@ local function tarjeta(padre, txt, sub, icono, orden, alClic, tam)
 		local ic = nuevo("ImageLabel", { BackgroundTransparency = 1, AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5),
 			Size = UDim2.fromOffset(40, 40), ResampleMode = Enum.ResamplerMode.Pixelated, ZIndex = 14 }, fondoIc)
 		Iconos.poner(ic, icono)
+		iconosMenu[ic] = icono
 	end
 	local x = hay and 76 or 12
 	texto({ Position = UDim2.fromOffset(x, sub and 12 or 0), Size = UDim2.new(1, -x - 8, 0, sub and 24 or 1), Text = txt, TextSize = 20, Font = FUENTE_N,
@@ -1787,6 +1789,11 @@ end
 
 function Interfaz.menu(si)
 	menu.Visible = si
+	if si then
+		for ic, id in iconosMenu do
+			Iconos.poner(ic, id)
+		end
+	end
 	-- Debajo del menú no se ve la barra ni los corazones, y el mundo se desenfoca
 	hud.Visible = not si
 	desenfoque.Size = si and 14 or 0
@@ -1850,8 +1857,17 @@ function Interfaz.balancear()
 	balanceo = 1
 end
 
+local manoVisible = false
 function Interfaz.mostrarMano(si)
-	mano.Visible = si
+	manoVisible = si
+	-- Con la mano 3D (Modelos3D) la de dibujo no hace falta
+	mano.Visible = si and not Interfaz.mano3D
+end
+function Interfaz.manoVisible()
+	return manoVisible and not Interfaz.menuVisible() and not Interfaz.abierto()
+end
+function Interfaz.balanceoMano()
+	return balanceo
 end
 
 function Interfaz.mostrarMira(si)

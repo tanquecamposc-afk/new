@@ -362,6 +362,39 @@ do
 	volcar("sup_mundo", rp.X, rp.Y, rp.Z, 60, F.Vector3.new(rp.X - 14, rp.Y + 9, rp.Z - 14), F.Vector3.new(rp.X + 12, rp.Y - 3, rp.Z + 12), 70)
 	volcarGui("sup_hud")
 end
+-- Modelos 3D: una espada en la mano y una espada y un bloque tirados delante
+do
+	enviar("modo", "creativo")
+	pasos(3)
+	enviar("abrirInventario")
+	for i, o in { { Reg.I.espada_diamante, 1 }, { Reg.B.ladrillos or Reg.B.piedra, "max" }, { Reg.I.espada_diamante, 1 } } do
+		enviar("creativo", o[1], o[2])
+		enviar("click", "inv", i, 1)
+	end
+	enviar("cerrarUI")
+	Interfaz.cerrar()
+	pasos(5)
+	for _, i in { 2, 3 } do
+		Interfaz.alSeleccionar(i)
+		pasos(2)
+		enviar("tirar", false)
+		pasos(2)
+	end
+	Interfaz.alSeleccionar(1)
+	pasos(90)
+	local suma, n = F.Vector3.new(0, 0, 0), 0
+	for _, e in F.workspace.Entidades:GetChildren() do
+		suma += e.Position / B
+		n += 1
+	end
+	local rp = root.Position / B
+	local mira = n > 0 and suma / n or rp + F.Vector3.new(2, -1, 0)
+	local ojo = rp + F.Vector3.new(0, 1.6, 0)
+	print(("objetos tirados: %d · en mira %.1f %.1f %.1f"):format(n, mira.X, mira.Y, mira.Z))
+	volcar("objetos3d", mira.X, mira.Y, mira.Z, 12, ojo, mira, 70)
+	enviar("modo", "supervivencia")
+	pasos(3)
+end
 
 -- BED WARS
 local BWm = srv.BedWars._resultado

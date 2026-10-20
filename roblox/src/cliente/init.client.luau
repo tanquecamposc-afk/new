@@ -996,6 +996,28 @@ RunService:BindToRenderStep("CamaraBlockverse", Enum.RenderPriority.Camera.Value
 	cam.FieldOfView += (objetivoFov - cam.FieldOfView) * math.min(1, dt * 10)
 end)
 
+------------------------------------------------------------------
+-- Modelos 3D: la mano en primera persona y el objeto en la mano de los personajes
+------------------------------------------------------------------
+local Modelos3D = require(script:WaitForChild("Modelos3D"))
+if Modelos3D.disponible() then
+	Interfaz.mano3D = true
+	Modelos3D.iniciarMano({
+		enMano = function()
+			return (enMano())
+		end,
+		visible = Interfaz.manoVisible,
+		balanceo = Interfaz.balanceoMano,
+		conBalanceo = function()
+			return Interfaz.ajustes.balanceo
+		end,
+	})
+	aplicarCamara()
+end
+Modelos3D.iniciarPersonajes(function()
+	return tercera
+end)
+
 Estado.OnClientEvent:Connect(function(tipo, a, b, c)
 	if tipo == "jugador" then
 		local modoAntes = est.modo

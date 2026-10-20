@@ -1049,4 +1049,95 @@ function Render.atlas(a)
 	return atlas[a]
 end
 
+------------------------------------------------------------------
+-- Modelo suelto de un bloque (en la mano, tirado en el suelo…): cubo, losa o
+-- cajas con las mismas texturas que el mundo, centrado en (0, 0, 0) y de 1 bloque.
+-- Devuelve un Model (una pieza por atlas) o nil si el bloque no tiene esa forma.
+------------------------------------------------------------------
+local plantillasBloque = {}
+local haciendo = {}
+function Render.modeloBloque(id)
+	if Render.modo ~= "malla" then
+		return nil
+	end
+	local def = BL[id]
+	if not def or not def.tex then
+		return nil
+	end
+	local p = plantillasBloque[id]
+	if p == nil then
+		while haciendo[id] do
+			task.wait()
+		end
+		p = plantillasBloque[id]
+	end
+	if p == nil then
+		haciendo[id] = true
+		p = false
+		local f = FORMA[id]
+		local cajas
+		if f == 0 then
+			cajas = { { 0, 0, 0, 1, 1, 1 } }
+		elseif f == 1 then
+			cajas = { { 0, 0, 0, 1, def.altura or 0.5, 1 } }
+		elseif f == 6 then
+			cajas = def.cajas
+		elseif f == 7 then
+			cajas = { { 0.375, 0, 0.375, 0.625, 1, 0.625 } }
+		end
+		if cajas then
+			-- La hierba y las hojas con el verde de las llanuras
+			local tt = BLANCO
+			local tn = TINTE[id]
+			if tn == "abedul" then
+				tt = Biomas.abedul
+			elseif tn == "abeto" then
+				tt = Biomas.abeto
+			elseif tn then
+				local col = Biomas.colores[2] or Biomas.colores[1]
+				tt = col and col[tn == "pasto" and 1 or (tn == "follaje" and 2 or 3)] or BLANCO
+			end
+			local listas = {}
+			for _, cj in cajas do
+				for _, fc in CARAS do
+					local k = fc.k
+					local L, u = listaPara(listas, def.tex[k])
+					if L then
+						local col = colorDe(fc.sombra * 1.1, u.gris and tt or BLANCO)
+						local pp, uv, cc = {}, {}, {}
+						for i, c in fc.c do
+							local px = c[1] == 1 and cj[4] or cj[1]
+							local py = c[2] == 1 and cj[5] or cj[2]
+							local pz = c[3] == 1 and cj[6] or cj[3]
+							pp[i] = Vector3.new((px - 0.5) * BS, (py - 0.5) * BS, (pz - 0.5) * BS)
+							local uu, vv = UV_CARA[k](px, py, pz)
+							uv[i] = cajaUV(u, math.clamp(uu, 0.01, 0.99), math.clamp(vv, 0.01, 0.99))
+							cc[i] = col
+						end
+						quad(L, pp, uv, cc, fc.normal)
+					end
+				end
+			end
+			local m = Instance.new("Model")
+			m.Name = "Bloque" .. id
+			local n = 0
+			for a, L in listas do
+				local parte = crearMalla(L, atlas[a], Vector3.zero)
+				if parte then
+					parte.CastShadow = false
+					parte.Parent = m
+					n += 1
+				end
+			end
+			if n > 0 then
+				m.WorldPivot = CFrame.new()
+				p = m
+			end
+		end
+		plantillasBloque[id] = p
+		haciendo[id] = nil
+	end
+	return p and p:Clone() or nil
+end
+
 return Render

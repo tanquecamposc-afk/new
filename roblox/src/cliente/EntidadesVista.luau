@@ -1,7 +1,8 @@
 --[[
 	Blockverse para Roblox · Entidades (cliente)
 	Dibuja lo que hay en workspace.Entidades como en el juego web:
-	· Objetos tirados: su icono girando y flotando (dos si es un montón).
+	· Objetos tirados: su modelo 3D (cubito con texturas o el objeto con volumen)
+	  girando y flotando, dos si es un montón; sin mallas, su icono.
 	· Orbes de experiencia: bolitas verdes y amarillas que brillan.
 	· Flechas con plumas y bolas de fuego encendidas.
 	Todo sigue con suavidad a la pieza del servidor.
@@ -11,7 +12,9 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Comp = ReplicatedStorage:WaitForChild("Blockverse")
 local Config = require(Comp:WaitForChild("Config"))
+local Registro = require(Comp:WaitForChild("Registro"))
 local Iconos = require(script.Parent:WaitForChild("Iconos"))
+local Modelos3D = require(script.Parent:WaitForChild("Modelos3D"))
 
 local BS = Config.BLOQUE
 local EntidadesVista = {}
@@ -79,7 +82,10 @@ local function nueva(p)
 			end
 		end
 		actualizar()
-		v.con = { p:GetAttributeChangedSignal("n"):Connect(actualizar), p:GetAttributeChangedSignal("id"):Connect(actualizar) }
+		v.con = { p:GetAttributeChangedSignal("n"):Connect(actualizar), p:GetAttributeChangedSignal("id"):Connect(function()
+			actualizar()
+			v.modeloId = nil
+		end) }
 		v.tipo = "item"
 	elseif p.Name == "Orbe" then
 		local valor = p:GetAttribute("valor") or 1
@@ -142,6 +148,9 @@ local function quitar(p)
 	if v.ancla then
 		v.ancla:Destroy()
 	end
+	v.pedido = (v.pedido or 0) + 1
+	Modelos3D.quitar(v.modelo)
+	Modelos3D.quitar(v.modelo2)
 	if v.vis then
 		v.vis:Destroy()
 	end
@@ -164,7 +173,38 @@ function EntidadesVista.iniciar()
 			end
 			v.pos = v.pos and v.pos:Lerp(p.Position, a) or p.Position
 			if v.tipo == "item" then
-				v.ancla.Position = v.pos + Vector3.new(0, (0.25 + math.sin(tiempo * 2.5 + v.fase) * 0.08) * BS, 0)
+				local alto = v.pos + Vector3.new(0, (0.25 + math.sin(tiempo * 2.5 + v.fase) * 0.08) * BS, 0)
+				v.ancla.Position = alto
+				-- Modelo 3D: se pide una vez por objeto (la primera vez de cada uno tarda un poco)
+				local id = p:GetAttribute("id")
+				if v.modeloId ~= id and Modelos3D.disponible() then
+					v.modeloId = id
+					v.pedido = (v.pedido or 0) + 1
+					local yo = v.pedido
+					Modelos3D.quitar(v.modelo)
+					Modelos3D.quitar(v.modelo2)
+					v.modelo, v.modelo2 = nil, nil
+					task.spawn(function()
+						local esc = Registro.bloques[id] and 0.25 or 0.45
+						local m = Modelos3D.crear(id, esc)
+						local m2 = m and Modelos3D.crear(id, esc)
+						if m and v.pedido == yo and vistas[p] then
+							v.modelo, v.modelo2 = m, m2
+							m.m.Parent = carpeta
+							m2.m.Parent = carpeta
+							v.bb.Enabled = false
+						else
+							Modelos3D.quitar(m)
+							Modelos3D.quitar(m2)
+						end
+					end)
+				end
+				if v.modelo then
+					local giro = CFrame.new(alto) * CFrame.Angles(0, tiempo * 1.6 + v.fase, 0)
+					Modelos3D.colocar(v.modelo, giro)
+					local varios = (p:GetAttribute("n") or 1) > 1
+					Modelos3D.colocar(v.modelo2, varios and giro * CFrame.new(0.12 * BS, 0.08 * BS, 0.1 * BS) or CFrame.new(0, -1e4, 0))
+				end
 			elseif v.tipo == "orbe" then
 				local c = 0.5 + math.sin(tiempo * 6 + v.fase) * 0.5
 				v.vis.Color = Color3.fromRGB(150 + c * 105, 255, 40 + c * 40)

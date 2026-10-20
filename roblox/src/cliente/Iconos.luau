@@ -24,6 +24,7 @@ local POR_FILA = HOJA // CEL -- 21
 local POR_HOJA = POR_FILA * POR_FILA
 
 local hojas = {} -- índice -> EditableImage
+local pxIconos, indiceIconos -- píxeles originales (para los modelos 3D de los objetos)
 local sitio = {} -- id -> {hoja, x, y}
 local colorMedio = {} -- id -> Color3
 local listo = false
@@ -36,6 +37,7 @@ function Iconos.preparar()
 	listo = true
 	local Datos = require(Comp.Datos:WaitForChild("Iconos"))
 	local px = Codec.leer(Datos.datos, Datos.tam)
+	pxIconos, indiceIconos = px, Datos.indice
 	local ids = {}
 	for id in Datos.indice do
 		table.insert(ids, id)
@@ -78,6 +80,22 @@ function Iconos.preparar()
 		hojas[h] = Imagenes.crear(HOJA, HOJA, buf)
 		task.wait()
 	end
+end
+
+-- Píxeles RGBA del icono de `id`: buffer, desplazamiento, ancho y alto (o nil)
+function Iconos.pixeles(id)
+	if not indiceIconos then
+		return nil
+	end
+	local e = indiceIconos[id]
+	if not e then
+		local o = Registro.objetos[id]
+		e = o and o.icono and indiceIconos[o.icono]
+	end
+	if not e then
+		return nil
+	end
+	return pxIconos, e[1], e[2], e[3]
 end
 
 function Iconos.color(id)
