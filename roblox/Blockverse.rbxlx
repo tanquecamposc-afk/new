@@ -9363,7 +9363,10 @@ local function enviarJugador(plr)
 	})
 	local p = s.inv[s.sel]
 	plr:SetAttribute("EnMano", p and p.id or nil)
-	Logros.revisarInventario(plr, s)
+	-- Los logros de «consigue X» solo en el mundo normal (en Bed Wars el hierro sale del generador)
+	if not Modos.enArena(plr) then
+		Logros.revisarInventario(plr, s)
+	end
 end
 
 local function enviarUI(plr)
@@ -21067,6 +21070,11 @@ local LY = require(script.Parent.Leyendas)
 Modos.BW, Modos.MZ, Modos.LY = BW, MZ, LY
 
 -- ¿Está el jugador en un modo con sus propias reglas? (no se guarda su inventario ni cambia de modo)
+-- ¿Está en una partida de Bed Wars, una mazmorra o Leyendas? (One Block no cuenta: es el mundo normal)
+function Modos.enArena(plr)
+	return BW.en(plr) or MZ.en(plr) or LY.en(plr)
+end
+
 function Modos.nivelBW(plr)
 	return BW.nivelJugador(plr)
 end
@@ -27234,7 +27242,9 @@ function Interfaz.pintarObjetivo(enSupervivencia)
 			break
 		end
 	end
-	objetivo.Visible = enSupervivencia == true and siguiente ~= nil
+	Interfaz.quiereObjetivo = enSupervivencia == true and siguiente ~= nil
+	-- Con la información de F3 abierta (que va en la misma esquina) no se enseña
+	objetivo.Visible = Interfaz.quiereObjetivo and not Interfaz.infoVisible()
 	if siguiente then
 		Iconos.poner(objetivoIc, siguiente.icono)
 		objetivoT.Text = "Objetivo: " .. siguiente.guia
@@ -27844,7 +27854,7 @@ function Interfaz.panel(d)
 end
 
 -- Registro de bajas de Bed Wars (arriba a la derecha): cada línea se borra sola a los 6 s
-local feed = nuevo("Frame", { Name = "RegistroBajas", BackgroundTransparency = 1, AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -10, 0, 60),
+local feed = nuevo("Frame", { Name = "RegistroBajas", BackgroundTransparency = 1, AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -10, 0, 86),
 	Size = UDim2.fromOffset(330, 140) }, hud)
 nuevo("UIListLayout", { Padding = UDim.new(0, 2), SortOrder = Enum.SortOrder.LayoutOrder, HorizontalAlignment = Enum.HorizontalAlignment.Right }, feed)
 local feedN = 0
@@ -28099,6 +28109,12 @@ function Interfaz.info(t)
 		info.Text = t
 	else
 		info.Visible = false
+	end
+	if Interfaz.quiereObjetivo ~= nil then
+		local o = hud:FindFirstChild("Objetivo")
+		if o then
+			o.Visible = Interfaz.quiereObjetivo and not info.Visible
+		end
 	end
 end
 
