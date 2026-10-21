@@ -29,6 +29,7 @@ local Render = require(script:WaitForChild("Render"))
 local MobsVista = require(script:WaitForChild("MobsVista"))
 local EntidadesVista = require(script:WaitForChild("EntidadesVista"))
 local TiendaVista = require(script:WaitForChild("TiendaVista"))
+local ProgresoVista = require(script:WaitForChild("ProgresoVista"))
 local ClimaVista = require(script:WaitForChild("ClimaVista"))
 local DimensionVista = require(script:WaitForChild("DimensionVista"))
 local Generador = require(Comp:WaitForChild("Generador"))
@@ -198,6 +199,24 @@ Interfaz.alAbrirTienda = function(pestana)
 	TiendaVista.abrir(pestana)
 end
 TiendaVista.iniciar()
+-- Progreso: Camino de Blockverse, misiones, ruleta, colección y ranking
+ProgresoVista.enviar = enviar
+ProgresoVista.alSonido = function(nombre, tono)
+	sonido(nombre, nil, tono)
+end
+ProgresoVista.alVisible = function(si)
+	Interfaz.progresoVisible = si
+end
+ProgresoVista.enMenu = function()
+	return Interfaz.menuVisible() or Interfaz.abierto() or TiendaVista.visible()
+end
+ProgresoVista.alPendientes = function(n)
+	Interfaz.pendientesProgreso(n)
+end
+Interfaz.alAbrirProgreso = function(pestana)
+	ProgresoVista.abrir(pestana)
+end
+ProgresoVista.iniciar()
 Interfaz.carga(0.5, "Generando el mundo…")
 local md = MundoDatos.new(semilla)
 est.md = md
@@ -614,6 +633,10 @@ UserInputService.InputBegan:Connect(function(input, procesado)
 			TiendaVista.cerrar()
 			return
 		end
+		if k == Enum.KeyCode.Escape and ProgresoVista.visible() then
+			ProgresoVista.cerrar()
+			return
+		end
 		if k == Enum.KeyCode.Escape and Interfaz.abierto() then
 			Interfaz.cerrar()
 			return
@@ -631,6 +654,13 @@ UserInputService.InputBegan:Connect(function(input, procesado)
 			enviar("modoCmd", "habilidad")
 		elseif leyendas and (k == Enum.KeyCode.G or k == Enum.KeyCode.R or (k == Enum.KeyCode.F and not creativo())) then
 			enviar("modoCmd", k == Enum.KeyCode.G and "cosechar" or (k == Enum.KeyCode.R and "atacar" or "seguir"))
+		elseif k == Enum.KeyCode.P and not Interfaz.abierto() and not TiendaVista.visible() then
+			-- Progreso (Camino, misiones, ruleta, colección y ranking)
+			if ProgresoVista.visible() then
+				ProgresoVista.cerrar()
+			else
+				ProgresoVista.abrir(nil)
+			end
 		elseif k == Enum.KeyCode.M and not Interfaz.abierto() then
 			-- Menú de modos de juego
 			Interfaz.menu(not Interfaz.menuVisible())
@@ -1163,6 +1193,12 @@ Estado.OnClientEvent:Connect(function(tipo, a, b, c)
 		Interfaz.oneblock(a)
 	elseif tipo == "sonido" then
 		sonido(a, b)
+	elseif tipo == "progreso" then
+		ProgresoVista.datos(a, b)
+	elseif tipo == "progresoAviso" then
+		ProgresoVista.aviso(a)
+	elseif tipo == "progresoPendientes" then
+		ProgresoVista.pendientes(a)
 	elseif tipo == "tiendaRobux" then
 		TiendaVista.datos(a, b)
 	elseif tipo == "compraHecha" then

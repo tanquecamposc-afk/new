@@ -856,6 +856,63 @@ do
 	ok(#F.pedidos == antes, "ofrece comprar otra vez un pase que ya tienes")
 	print("tienda: monedas, vida extra, saco de recursos, devolución, VIP y efectos bien")
 end
+-- PROGRESO: experiencia de los modos, niveles con recompensa, misiones, ruleta, colección y guardado
+do
+	local Pr = srv.Progreso._resultado
+	local DP = req(comp.DatosProgreso)
+	local p = Pr.de(ana)
+	-- Acabar con un monstruo cuenta (por el mismo camino que en el juego)
+	local t0 = p.total
+	local zm = Mobs.crear("zombi", sx + 4.5, sy + 1, sz + 4.5)
+	if zm then
+		Mobs.herir(zm, 100, nil, "jugador", 0, ana)
+		pasos(2)
+		ok(p.total > t0, "acabar con un monstruo no da experiencia del Camino")
+	end
+	-- Subir de nivel y cobrar la recompensa (una sola vez)
+	Pr.ganarXP(ana, 2000)
+	ok(p.nivel >= 8, "2 000 de experiencia no suben varios niveles (" .. p.nivel .. ")")
+	local pa = PerfilM.de(ana)
+	local m0 = pa.monedas
+	ok(Pr.reclamar(ana, 2) and pa.monedas == m0 + DP.RECOMPENSAS[2].valor, "cobrar el nivel 2 no da sus monedas")
+	ok(not Pr.reclamar(ana, 2), "el nivel 2 se cobra dos veces")
+	ok(not Pr.reclamar(ana, DP.NIVEL_MAX), "se puede cobrar un nivel que aún no tienes")
+	-- Estela: no se puede poner hasta cobrarla; luego sí, y sale en el personaje
+	ok(not Pr.equipar(ana, "estela", "chispas"), "se puede poner una estela sin tenerla")
+	Pr.reclamar(ana, 3)
+	ok(Pr.equipar(ana, "estela", "chispas"), "no se puede poner la estela cobrada")
+	local raiz = datos[ana].root
+	ok(raiz:FindFirstChild("EstelaBlockverse") ~= nil, "la estela no sale en el personaje")
+	Pr.reclamar(ana, 5)
+	ok(Pr.equipar(ana, "titulo", "aventurero") and ana:GetAttribute("Titulo") == "Aventurero", "el título no se pone")
+	-- Misión diaria: se cumple con su evento y se cobra una vez
+	local m = p.dia.m[1]
+	local def
+	for _, d in DP.DIARIAS do
+		if d.id == m.id then
+			def = d
+		end
+	end
+	Pr.evento(ana, def.ev, def.meta)
+	pasos(2)
+	ok(datos[ana].ultimo.progresoAviso ~= nil, "no sale el aviso de misión cumplida")
+	local tot = p.total
+	ok(Pr.cobrarMision(ana, "dia", 1) and p.total > tot, "cobrar la misión no da experiencia")
+	ok(not Pr.cobrarMision(ana, "dia", 1), "una misión se cobra dos veces")
+	-- Ruleta: Ana es VIP, así que tiene 2 giros hoy y luego ninguno
+	ok(Pr.girar(ana) ~= nil and Pr.girar(ana) ~= nil and Pr.girar(ana) == nil, "los giros de la ruleta no son 2 para el VIP")
+	ok(Pr.giros(beto) == 1, "un jugador sin VIP no tiene 1 giro")
+	-- La ventana recibe todo
+	enviar(ana, "pedirProgreso")
+	pasos(2)
+	local dp = datos[ana].ultimo.progreso and datos[ana].ultimo.progreso[1]
+	ok(dp and #dp.camino == DP.NIVEL_MAX and #dp.diarias == 3 and #dp.semanales == 3 and #dp.titulos > 0 and #dp.ranking > 0, "la ventana de progreso no recibe los datos")
+	-- Se guarda
+	pasos(200)
+	local g = F.almacenes.Blockverse_v2 and F.almacenes.Blockverse_v2.p_101
+	ok(g and g.nivel == p.nivel and g.estela == "chispas", "el progreso no se guarda")
+	print("progreso: nivel", p.nivel, "· experiencia", p.total, "· misiones, ruleta, estela y título bien")
+end
 for _, p in { ana, beto, dani } do
 	enviar(p, "modoJuego", "normal")
 end

@@ -449,6 +449,12 @@ function TiendaVista.gracias(d)
 	end)
 end
 
+-- Quita el «¡GRACIAS!» al momento (para las capturas)
+function TiendaVista.ocultarGracias()
+	graciasHilo += 1
+	fiesta.Visible = false
+end
+
 function TiendaVista.iniciar()
 	gui.Parent = jugador:WaitForChild("PlayerGui")
 	cerrar.Activated:Connect(function()
@@ -462,8 +468,17 @@ function TiendaVista.iniciar()
 			local props = Instance.new("TextChatMessageProperties")
 			local fuente = msg.TextSource
 			local plr = fuente and Players:GetPlayerByUserId(fuente.UserId)
-			if plr and plr:GetAttribute("VIP") then
-				props.PrefixText = '<font color="#ffc83a">[VIP]</font> ' .. msg.PrefixText
+			if plr then
+				-- Título del Camino de Blockverse y, delante, la etiqueta VIP
+				local pre = msg.PrefixText
+				local titulo = plr:GetAttribute("Titulo")
+				if titulo then
+					pre = ('<font color="%s">[%s]</font> '):format(plr:GetAttribute("TituloCol") or "#c8c8c8", titulo) .. pre
+				end
+				if plr:GetAttribute("VIP") then
+					pre = '<font color="#ffc83a">[VIP]</font> ' .. pre
+				end
+				props.PrefixText = pre
 			end
 			return props
 		end

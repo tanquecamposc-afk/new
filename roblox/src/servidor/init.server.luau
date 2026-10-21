@@ -53,6 +53,7 @@ local Redstone = require(script.Redstone)
 local Mesas = require(script.Mesas)
 local Logros = require(script.Logros)
 local Tienda = require(script.Tienda)
+local Progreso = require(script.Progreso)
 local Clima = require(script.Clima)
 local Generador = require(Comp.Generador)
 
@@ -1290,6 +1291,7 @@ function acciones.romper(plr, s, x, y, z)
 	end
 	Mundo.set(x, y, z, 0)
 	if not creativo then
+		Progreso.evento(plr, "romper", 1)
 		soltarBloque(b, x, y, z, herrId, plr, mano and mano.enc)
 		if def.dureza > 0 then
 			local h = Registro.herramienta(herrId)
@@ -1798,6 +1800,9 @@ function acciones.derecho(plr, s, obj, dir, mobParte, agachado)
 			tx, ty, tz = r.x, r.y + 1, r.z
 		end
 		if colocarBloque(plr, s, id, tx, ty, tz, n, dir) then
+			if supervivencia(s) then
+				Progreso.evento(plr, "colocar", 1)
+			end
 			consumirEnMano(s)
 			enviarJugador(plr)
 		end
@@ -1818,6 +1823,7 @@ function acciones.terminarComer(plr, s)
 	if o.comida then
 		s.hambre = math.min(20, s.hambre + o.comida[1])
 		s.saturacion = math.min(s.hambre, s.saturacion + (o.comida[2] or 0))
+		Progreso.evento(plr, "comer", 1)
 		if o.efecto and math.random() < (o.efecto[3] or 1) then
 			aplicarEfecto(s, o.efecto[1], o.efecto[2], 1)
 		end
@@ -2062,6 +2068,16 @@ function acciones.modoCmd(plr, s, cmd, arg)
 	end
 	if type(cmd) == "string" then
 		Modos.comando(plr, cmd, type(arg) == "number" and arg or nil)
+	end
+end
+
+function acciones.pedirProgreso(plr)
+	Progreso.enviar(plr)
+end
+
+function acciones.progresoCmd(plr, s, cmd, a, b)
+	if type(cmd) == "string" then
+		Progreso.comando(plr, cmd, a, b)
 	end
 end
 
@@ -2793,8 +2809,14 @@ local ctxModos = {
 	robux = function(clave)
 		return Tienda.disponible(clave)
 	end,
+	-- Lo que cuenta para las misiones y la experiencia del Camino de Blockverse
+	progreso = function(plr, ev, n)
+		Progreso.evento(plr, ev, n)
+	end,
 }
 Modos.iniciar(ctxModos)
+-- Progreso: Camino de Blockverse, misiones, ruleta, colección y ranking
+Progreso.iniciar({ Estado = Estado, almacen = almacen, aviso = aviso, perfilMenu = Modos.perfilMenu })
 -- Tienda con Robux: pases, monedas y cosas de cada modo
 Tienda.iniciar({
 	Estado = Estado, estados = estados, almacen = almacen, darOSoltar = darOSoltar, supervivencia = supervivencia, aviso = aviso,
@@ -2806,6 +2828,9 @@ Clima.iniciar({ Estado = Estado, Mundo = Mundo, Mobs = Mobs, estados = estados, 
 Mobs.alMatar = function(m, _, plr)
 	if plr and m.def.tipo == "hostil" and not m.control then
 		Logros.conseguir(plr, "cazador")
+	end
+	if plr and m.def.tipo == "hostil" and m.tipo ~= "botBW" then
+		Progreso.evento(plr, "monstruo", 1)
 	end
 end
 -- Las explosiones en la arena de Bed Wars solo rompen lo construido

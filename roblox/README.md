@@ -194,17 +194,29 @@ Con **Rojo**, `default.project.json` monta el mismo árbol desde `src/`.
 | Cámara en 1ª / 3ª persona | V |
 | Información | F3 |
 | Menú de modos de juego | M |
+| Progreso (camino, misiones, ruleta, colección, ranking) | P |
 | Leyendas: recoger / ¡al ataque! / seguidme | G / R / F |
 | Leyendas: construir | 1–6 (o los botones del panel) |
 | Mazmorras: usar un artefacto | Clic derecho con él en la mano |
 | Bed Wars: habilidad del kit | G (o el botón táctil) |
+
+## Progreso (tecla P o botón morado del menú)
+
+Todo lo que haces en cualquier modo te hace avanzar. Mientras juegas, a la izquierda sale «★ Progreso (P) · N» cuando tienes cosas por cobrar.
+
+- **Camino de Blockverse**: 50 niveles con experiencia de todos los modos (monstruos, partidas y victorias de Bed Wars, salas y jefes de Mazmorras, portales de Leyendas, fases de One Block…). Cada nivel trae un premio que se cobra a mano (las tarjetas por cobrar laten): monedas, un título o una estela; cada 10 niveles, un premio grande. Al subir de nivel sale «¡NIVEL N!» con confeti.
+- **Misiones**: 3 diarias y 3 semanales que cambian solas (romper bloques, acabar con monstruos, jugar o ganar en Bed Wars, limpiar salas, destruir portales, comer, colocar, pasar de fase…). Al cumplir una sale un aviso arriba; se cobran en la ventana.
+- **Ruleta diaria gratis**: una tira de premios que corre y frena bajo la flecha. Las probabilidades se ven al lado (desde 50 monedas al 35 % hasta 1 000 monedas al 3 %). Un giro al día (dos con VIP).
+- **Colección**: 11 títulos (salen encima de la cabeza, en el chat y en la tarjeta del menú) y 10 estelas (una cola de color al moverte que ven todos: fuego, hielo, arcoíris, galaxia…).
+- **Ranking**: los 10 con más experiencia de todo Blockverse (con OrderedDataStore); tú resaltado.
+- Se guarda en el DataStore (clave `p_<UserId>`).
 
 ## Tienda con Robux
 
 Botón dorado **TIENDA** en el menú principal (también «★ Tienda» en la sala de Bed Wars, «+» junto a las monedas en la ventana de kits y botones dentro de Mazmorras y Leyendas). Pestañas Destacado, Pases, Monedas y Para cada modo; al comprar sale confeti y «¡GRACIAS!».
 
 - **Pases** (para siempre):
-  - **VIP**: +50 % de monedas en Bed Wars, recompensa diaria doble, etiqueta [VIP] en el chat y en la tarjeta, ★ junto al nombre.
+  - **VIP**: +50 % de monedas en Bed Wars, recompensa diaria doble, +25 % de experiencia en el Camino y 2 giros de ruleta al día, etiqueta [VIP] en el chat y en la tarjeta, ★ junto al nombre.
   - **Monedas x2**: el doble de monedas en Bed Wars (con el VIP, x2,5).
   - **Todos los efectos**: los efectos de baja final desbloqueados.
 - **Monedas** (para kits y efectos): 500, 1 200 (+20 %), 3 000 (+50 %) y 7 500 (+88 %, mejor valor).
@@ -282,6 +294,7 @@ Para ser claros, esto **no es igual** que en el juego web:
     - Pantalla de muerte: llegan los objetos soltados, el sitio y el tiempo vivo, y «Te mató un Zombi».
     - Encantamientos: Eficiencia acelera, Fortuna III multiplica los diamantes, Toque de seda da la mena entera y Botín III da más botín.
     - Escudo: para los golpes de delante y no los de la espalda, y los demás ven que te cubres.
+    - Progreso: los monstruos dan experiencia, se sube de nivel y cada premio se cobra una vez, las estelas y títulos solo se ponen si se tienen, misiones que se cumplen y se cobran una vez, ruleta (2 giros con VIP) y guardado.
     - Tienda con Robux: abre la ventana de compra, entrega las monedas una sola vez (y lo apunta), vida extra, saco de recursos, devolución en monedas si ya no sirve, VIP (+50 % y diaria doble) y pase de efectos.
     - Enemigos: no persiguen a través de paredes, no se tiran por los bordes, se avisan entre ellos y mandan su vida para la barra.
     - Logros y clima: se consiguen, salen en la tabla de jugadores y se guardan (y no cuentan dentro de Bed Wars); con lluvia los zombis no arden, en la tormenta es «de noche» y el rayo hace daño.

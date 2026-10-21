@@ -392,6 +392,9 @@ local function golpearBase(L, x, y, z)
 		if b.vida > 0 and math.sqrt((x - b.x) ^ 2 + (z - b.z) ^ 2) < 6.5 then
 			L.ultimoGolpe = t
 			b.vida -= 4
+			if b.vida <= 0 and ctx.progreso then
+				ctx.progreso(L.plr, "portalLY", 1)
+			end
 			ctx.Estado:FireClient(L.plr, "particulas", Vector3.new(b.x + 0.5, b.y + 3, b.z + 0.5) * BS, 0xaa2222)
 			ctx.Estado:FireClient(L.plr, "sonido", "golpe")
 			return true
@@ -735,6 +738,9 @@ local function actualizar(L, dt)
 		titulo(plr, "¡VICTORIA!", "Has destruido los tres portales piglin. ¡La aldea está a salvo!", "#ffd84a")
 		if ctx.logro then
 			ctx.logro(plr, "leyendas")
+		end
+		if ctx.progreso then
+			ctx.progreso(plr, "victoriaLY", 1)
 		end
 		if ctx.ganarXP then
 			ctx.ganarXP(plr, 50)

@@ -224,6 +224,9 @@ def dibujar(n, x, y, w, h, clip):
         ImageDraw.Draw(m).rectangle((clip[0] - ox, clip[1] - oy, clip[2] - ox - 1, clip[3] - oy - 1), fill=255)
         capa.putalpha(Image.fromarray(np.minimum(np.array(capa)[..., 3], np.array(m))))
     # pegar recortando a los bordes del lienzo
+    # Si queda del todo fuera de la pantalla (p. ej. un aviso escondido arriba) no se dibuja
+    if -ox >= capa.width or -oy >= capa.height:
+        return
     lienzo.alpha_composite(capa, (max(0, ox), max(0, oy)), (max(0, -ox), max(0, -oy)))
 
 def colocar(n, x, y, w, h, clip):

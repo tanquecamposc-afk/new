@@ -377,7 +377,33 @@ do
 	TiendaV.gracias({ nombre = "VIP", texto = "¡Ya eres VIP!" })
 	pasos(2)
 	volcarGui("menu_gracias")
+	TiendaV.ocultarGracias()
 	F.studio = false
+end
+-- Progreso: con algo de experiencia y una misión hecha, para que se vea vivo
+do
+	local Pr = srv.Progreso._resultado
+	local PV = cli.ProgresoVista._resultado
+	Pr.ganarXP(plr, 2600)
+	for _ = 1, 10 do
+		Pr.evento(plr, "monstruo", 1)
+		Pr.evento(plr, "comer", 1)
+		Pr.evento(plr, "romper", 12)
+		Pr.evento(plr, "colocar", 6)
+	end
+	Pr.reclamar(plr, 2)
+	Pr.reclamar(plr, 3)
+	Pr.reclamar(plr, 5)
+	Pr.equipar(plr, "titulo", "aventurero")
+	Pr.equipar(plr, "estela", "chispas")
+	pasos(2)
+	for _, t in { "camino", "misiones", "ruleta", "coleccion", "ranking" } do
+		PV.abrir(t)
+		pasos(3)
+		PV.ocultarAvisos()
+		volcarGui("menu_progreso_" .. t)
+	end
+	PV.cerrar()
 end
 Interfaz.menu(false)
 Interfaz.menu(true)

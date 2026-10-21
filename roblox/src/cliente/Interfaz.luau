@@ -1300,8 +1300,12 @@ function Interfaz.perfil(d)
 	perfilNivel.TextColor3 = ok and c or Color3.fromRGB(170, 170, 170)
 	barraNivelF.Size = UDim2.fromScale(math.clamp((d.xp or 0) / 500, 0, 1), 1)
 	perfilMonedas.Text = tostring(d.monedas or 0)
-	perfilVictorias.Text = ("Bed Wars: %d %s · %d %s"):format(d.victorias or 0, d.victorias == 1 and "victoria" or "victorias", d.partidas or 0,
-		d.partidas == 1 and "partida" or "partidas")
+	perfilVictorias.Text = d.titulo and ("%s · Camino nivel %d"):format(d.titulo, d.camino or 1)
+		or ("Bed Wars: %d %s · %d %s"):format(d.victorias or 0, d.victorias == 1 and "victoria" or "victorias", d.partidas or 0, d.partidas == 1 and "partida" or "partidas")
+	if d.tituloCol then
+		local okC, cc = pcall(Color3.fromHex, d.tituloCol)
+		perfilVictorias.TextColor3 = okC and cc or perfilVictorias.TextColor3
+	end
 	diariaLista = d.diaria == true
 	if diariaLista then
 		botonDiaria.BackgroundColor3 = Color3.fromRGB(60, 170, 70)
@@ -1344,6 +1348,44 @@ local botonVolver = tarjeta(filaMenu, "Volver al juego", nil, nil, 4, function()
 	end
 end, UDim2.fromOffset(180, 46))
 botonVolver.Visible = false
+-- Botón morado de PROGRESO (debajo del de la tienda) con el número de cosas por cobrar
+Interfaz.alAbrirProgreso = function(pestana) end
+Interfaz.pendientesProgreso = function(n) end
+do
+	local b = nuevo("TextButton", { Name = "BotonProgreso", AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -16, 0, 92), Size = UDim2.fromOffset(210, 56),
+		BackgroundColor3 = Color3.fromRGB(130, 80, 240), BorderSizePixel = 0, Text = "", AutoButtonColor = false, ZIndex = 12 }, menu)
+	nuevo("UICorner", { CornerRadius = UDim.new(0, 10) }, b)
+	nuevo("UIStroke", { Color = Color3.fromRGB(40, 10, 100), Thickness = 3, ApplyStrokeMode = Enum.ApplyStrokeMode.Border }, b)
+	nuevo("UIGradient", { Rotation = 0, Color = ColorSequence.new(Color3.fromRGB(150, 90, 255), Color3.fromRGB(70, 140, 255)) }, b)
+	local ic = nuevo("ImageLabel", { BackgroundTransparency = 1, Position = UDim2.fromOffset(10, 8), Size = UDim2.fromOffset(40, 40),
+		ResampleMode = Enum.ResamplerMode.Pixelated, ZIndex = 13 }, b)
+	iconosMenu[ic] = idDe("esmeralda")
+	texto({ Position = UDim2.fromOffset(58, 6), Size = UDim2.new(1, -64, 0, 26), Text = "PROGRESO", TextSize = 22, Font = FUENTE_N,
+		TextXAlignment = Enum.TextXAlignment.Left, TextStrokeTransparency = 0.2, ZIndex = 13 }, b)
+	texto({ Position = UDim2.fromOffset(58, 32), Size = UDim2.new(1, -64, 0, 16), Text = "Camino · Misiones · Ruleta", TextSize = 12,
+		TextXAlignment = Enum.TextXAlignment.Left, TextColor3 = Color3.fromRGB(225, 220, 255), TextStrokeTransparency = 1, ZIndex = 13 }, b)
+	local av = nuevo("Frame", { AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, 8, 0, -8), Size = UDim2.fromOffset(26, 26),
+		BackgroundColor3 = Color3.fromRGB(230, 50, 60), BorderSizePixel = 0, Visible = false, ZIndex = 14 }, b)
+	nuevo("UICorner", { CornerRadius = UDim.new(0, 13) }, av)
+	nuevo("UIStroke", { Color = Color3.new(1, 1, 1), Thickness = 2 }, av)
+	local avT = texto({ Size = UDim2.fromScale(1, 1), Text = "", TextSize = 14, Font = FUENTE_N, ZIndex = 15 }, av)
+	local esc = nuevo("UIScale", {}, b)
+	b.MouseEnter:Connect(function()
+		TweenService:Create(esc, TweenInfo.new(0.15, Enum.EasingStyle.Back), { Scale = 1.08 }):Play()
+		Interfaz.alSonido("paso", 1.8)
+	end)
+	b.MouseLeave:Connect(function()
+		TweenService:Create(esc, TweenInfo.new(0.15), { Scale = 1 }):Play()
+	end)
+	b.Activated:Connect(function()
+		Interfaz.alSonido("nivel", 1.6)
+		Interfaz.alAbrirProgreso("camino")
+	end)
+	Interfaz.pendientesProgreso = function(n)
+		av.Visible = n > 0
+		avT.Text = tostring(n)
+	end
+end
 -- Botón dorado de la tienda (arriba a la derecha), que late para que se vea
 Interfaz.alAbrirTienda = function(pestana) end
 do
@@ -1485,7 +1527,7 @@ local CONTROLES = {
 	{ "WASD", "Moverse" }, { "Espacio", "Saltar (doble: volar en creativo)" }, { "Ctrl / Mayús", "Correr / agacharse" },
 	{ "Clic izquierdo", "Picar y atacar" }, { "Clic derecho", "Usar, poner, comer, tensar el arco" }, { "1-9 y rueda", "Elegir objeto" },
 	{ "E", "Inventario" }, { "Q", "Tirar (Ctrl: toda la pila)" }, { "V", "Primera o tercera persona" }, { "F", "Volar (creativo)" },
-	{ "G", "Habilidad del kit (Bed Wars)" }, { "M", "Este menú" }, { "F3", "Información" },
+	{ "G", "Habilidad del kit (Bed Wars)" }, { "P", "Progreso: camino, misiones y ruleta" }, { "M", "Este menú" }, { "F3", "Información" },
 }
 for i, c in CONTROLES do
 	local fila = nuevo("Frame", { BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, 26), LayoutOrder = i, ZIndex = 22 }, listaControles)
@@ -2157,7 +2199,7 @@ end
 
 function Interfaz.menuVisible()
 	return menu.Visible or carga.Visible or muerte.Visible or ventanaAjustes.Visible or ventanaControles.Visible or ventanaLogros.Visible
-		or Interfaz.tiendaVisible == true
+		or Interfaz.tiendaVisible == true or Interfaz.progresoVisible == true
 end
 
 ------------------------------------------------------------------

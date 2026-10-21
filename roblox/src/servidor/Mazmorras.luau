@@ -549,6 +549,9 @@ local function actualizar(R, dt)
 			if ctx.logro then
 				ctx.logro(plr, "mazmorra")
 			end
+			if ctx.progreso then
+				ctx.progreso(plr, "jefeMZ", 1)
+			end
 		end
 	end
 	if not pos or R.fin then
@@ -589,6 +592,9 @@ local function actualizar(R, dt)
 					oleada(R, sa)
 				else
 					sa.limpia = true
+					if ctx.progreso then
+						ctx.progreso(plr, "salaMZ", 1)
+					end
 					if sa.cerrada then
 						sa.cerrada = false
 						cerrarPuertas(sa, false)

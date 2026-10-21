@@ -295,16 +295,23 @@ ok(m.vida < vida or m.muerto, "el ataque no hizo daño")
 -- Más criaturas (todas las del juego) para probar sus modelos y su IA
 local Datos = F.entorno(comp).require(comp.Datos.Mobs)
 local n = 0
+local creadas = {}
 for tipo in Datos.defs do
 	n += 1
 	if n % 4 == 0 then
-		Mobs.crear(tipo, px + 4 + (n % 8), py + 2, pz + 4 + (n // 8))
+		table.insert(creadas, Mobs.crear(tipo, px + 4 + (n % 8), py + 2, pz + 4 + (n // 8)))
 	end
 end
 for _ = 1, 300 do
 	F.paso(1 / 30)
 end
 print("criaturas vivas:", #Mobs.lista, "· vistas:", #criaturasVis:GetChildren())
+-- Se quitan (un ghast o un esqueleto podrían acabar con el jugador antes de lo que viene)
+for _, m in creadas do
+	if m and not m.muerto then
+		Mobs.quitar(m)
+	end
+end
 
 -- Explosión y simulación
 Sim.explosion(px + 6, py, pz + 6, 3)

@@ -150,6 +150,9 @@ local function regenerar(ob)
 	local plr = ob.dueno
 	if f ~= ob.fase then
 		ob.fase = f
+		if plr and ctx.progreso then
+			ctx.progreso(plr, "faseOB", 1)
+		end
 		if plr then
 			ctx.Estado:FireClient(plr, "titulo", "Fase " .. f, F.nombre, F.col)
 			ctx.Estado:FireClient(plr, "sonido", "nivel")

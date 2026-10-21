@@ -807,9 +807,14 @@ local function cortarRacha(Jv, asesino)
 end
 
 -- Misiones diarias: avisa al completar una
+local EVENTO_PROGRESO = { bajas = "bajaBW", camas = "camaBW" }
 function BW.misiones(plr, clave, n)
 	if not plr or not plr.Parent then
 		return
+	end
+	-- También cuentan para las misiones del Camino de Blockverse
+	if EVENTO_PROGRESO[clave] and ctx.progreso then
+		ctx.progreso(plr, EVENTO_PROGRESO[clave], n)
 	end
 	for _, m in Perfil.progreso(plr, clave, n) do
 		tituloA(plr, "¡Misión completada!", ("%s · +%d monedas"):format(m.texto, m.premio), "#ffd84a")
@@ -1978,6 +1983,12 @@ function terminar(ganador)
 			mon = 10 + J.bajas * 5 + J.finales * 10 + J.camas * 25 + (gano and 100 or 0) + (plr == mvp and 25 or 0)
 			-- Pases de la tienda (VIP, Monedas x2)
 			mon = math.floor(mon * Perfil.multMonedas(plr))
+			if ctx.progreso then
+				ctx.progreso(plr, "partidaBW", 1)
+				if gano then
+					ctx.progreso(plr, "victoriaBW", 1)
+				end
+			end
 			perfil.monedas += mon
 			perfil.xp += xp
 			perfil.partidas += 1
@@ -2376,6 +2387,7 @@ function BW.perfilMenu(plr)
 		nivel = Perfil.nivel(p.xp), xp = p.xp % 500, monedas = p.monedas, victorias = p.victorias, partidas = p.partidas,
 		diaria = disponible, racha = racha, premio = premio, colorNivel = Perfil.colorNivel(Perfil.nivel(p.xp)),
 		vip = plr:GetAttribute("VIP") == true, mult = Perfil.multMonedas(plr),
+		camino = plr:GetAttribute("NivelCamino"), titulo = plr:GetAttribute("Titulo"), tituloCol = plr:GetAttribute("TituloCol"),
 	}
 end
 function BW.reclamarDiaria(plr)
