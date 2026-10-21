@@ -352,7 +352,7 @@ do
 	-- Una zona llana a la altura de los pies (suelo de piedra y aire encima), para no depender del terreno
 	local gy = srvMundo.alturaSuelo(px2, pz2) + 1
 	for x = px2 - 3, px2 + 4 do
-		for z = pz2 - 1, pz2 + 7 do
+		for z = pz2 - 3, pz2 + 7 do
 			srvMundo.set(x, gy - 1, z, Reg.B.piedra)
 			for y = gy, gy + 3 do
 				srvMundo.set(x, y, z, 0)
@@ -418,7 +418,7 @@ do
 	enviar("cerrarUI")
 	-- Soporte de pociones: frasco de agua + verruga = poción rara
 	local sx, sz = px2 - 2, pz2 - 2
-	local sy = srvMundo.alturaSuelo(sx, sz) + 1
+	local sy = gy
 	srvMundo.set(sx, sy, sz, Reg.B.soporte)
 	enviar("derecho", { x = sx, y = sy, z = sz, n = { 0, 1, 0 } }, F.Vector3.new(1, 0, 0), nil, false)
 	F.paso(1 / 30)
