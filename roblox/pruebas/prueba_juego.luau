@@ -347,9 +347,18 @@ end
 -- Redstone, mesas y comercio
 do
 	local px2, pz2 = math.floor(root.Position.X / B), math.floor(root.Position.Z / B)
-	moverJugador(px2, srvMundo.alturaSuelo(px2, pz2) + 1, pz2)
+	-- Una zona llana a la altura de los pies (suelo de piedra y aire encima), para no depender del terreno
+	local gy = srvMundo.alturaSuelo(px2, pz2) + 1
+	for x = px2 - 3, px2 + 4 do
+		for z = pz2 - 1, pz2 + 7 do
+			srvMundo.set(x, gy - 1, z, Reg.B.piedra)
+			for y = gy, gy + 3 do
+				srvMundo.set(x, y, z, 0)
+			end
+		end
+	end
+	moverJugador(px2, gy, pz2)
 	local gx, gz = px2 + 2, pz2 + 1
-	local gy = srvMundo.alturaSuelo(gx, gz) + 1
 	-- Palanca junto a una lámpara: al accionarla se enciende
 	srvMundo.set(gx, gy, gz, Reg.B.lampara)
 	srvMundo.set(gx + 1, gy, gz, Reg.B.palanca)
@@ -393,7 +402,7 @@ do
 	enviar("cerrarUI")
 	F.paso(1 / 30)
 	local yx, yz = px2 - 2, pz2 + 2
-	local yy = srvMundo.alturaSuelo(yx, yz) + 1
+	local yy = gy
 	srvMundo.set(yx, yy, yz, Reg.B.yunque)
 	enviar("derecho", { x = yx, y = yy, z = yz, n = { 0, 1, 0 } }, F.Vector3.new(1, 0, 0), nil, false)
 	F.paso(1 / 30)
