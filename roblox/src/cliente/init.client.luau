@@ -891,6 +891,13 @@ local function espectar(ch)
 	end
 end
 Interfaz.alMenu = aplicarCamara
+-- Sonidos y datos de la tarjeta del jugador para el menú
+Interfaz.alSonido = function(nombre, tono)
+	sonido(nombre, nil, tono)
+end
+Interfaz.alAbrirMenu = function()
+	enviar("pedirPerfil")
+end
 
 -- Números de daño que saltan al golpear (amarillos y con «!» si es crítico)
 local numerosVivos = 0
@@ -967,6 +974,7 @@ local camPropia = false
 local function puedeCamaraPropia()
 	return UserInputService.MouseEnabled and not (UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled)
 end
+local panoA, panorama = math.random() * math.pi * 2, false
 RunService:BindToRenderStep("CamaraBlockverse", Enum.RenderPriority.Camera.Value + 1, function(dt)
 	local cam = workspace.CurrentCamera
 	if not cam then
@@ -976,6 +984,20 @@ RunService:BindToRenderStep("CamaraBlockverse", Enum.RenderPriority.Camera.Value
 	local root = ch and ch:FindFirstChild("HumanoidRootPart")
 	local hum = ch and ch:FindFirstChildOfClass("Humanoid")
 	local cab = ch and ch:FindFirstChild("Head")
+	-- Menú del principio: la cámara gira despacio sobre el mundo (como el panorama de Minecraft)
+	if Interfaz.menuPrincipal() and root then
+		panorama = true
+		panoA += dt * 0.07
+		cam.CameraType = Enum.CameraType.Scriptable
+		local centro = root.Position + Vector3.new(0, 7 * BS, 0)
+		cam.CFrame = CFrame.new(centro) * CFrame.Angles(0, panoA, 0) * CFrame.Angles(-0.18, 0, 0)
+		return
+	elseif panorama then
+		panorama = false
+		camPropia = false
+		cam.CameraType = Enum.CameraType.Custom
+		aplicarCamara()
+	end
 	local quiero = tercera and not espectando and puedeCamaraPropia() and root and hum and cab and hum.Health > 0
 	if not quiero then
 		if camPropia then
@@ -1180,6 +1202,8 @@ Estado.OnClientEvent:Connect(function(tipo, a, b, c)
 	elseif tipo == "menu" then
 		Interfaz.menu(true)
 		aplicarCamara()
+	elseif tipo == "perfil" then
+		Interfaz.perfil(a)
 	elseif tipo == "logro" then
 		Interfaz.logro(a)
 		sonido("nivel")

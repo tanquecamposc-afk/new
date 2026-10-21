@@ -420,8 +420,24 @@ enviar(carla, "modoCmd", "votar", 3)
 pasos(20)
 local pan = datos[ana].ultimo.panel and datos[ana].ultimo.panel[1]
 ok(pan and pan.botones and #pan.botones >= 6, "el panel de la sala no tiene votación ni kits")
--- Ana compra el kit Guerrero y un efecto de baja final con monedas
+-- Recompensa diaria del menú: una al día, y más monedas si se cobra varios días seguidos
 local perfilA = PerfilM.de(ana)
+perfilA.monedas = 0
+enviar(ana, "pedirPerfil")
+pasos(2)
+local pf = datos[ana].ultimo.perfil and datos[ana].ultimo.perfil[1]
+ok(pf and pf.diaria == true and pf.premio == 40 and pf.nivel == 1, "la tarjeta del menú no ofrece la recompensa diaria")
+enviar(ana, "recompensaDiaria")
+pasos(2)
+enviar(ana, "recompensaDiaria")
+pasos(2)
+pf = datos[ana].ultimo.perfil and datos[ana].ultimo.perfil[1]
+ok(perfilA.monedas == 40 and pf and pf.diaria == false and pf.monedas == 40, "la recompensa diaria no se cobró una sola vez (" .. perfilA.monedas .. ")")
+perfilA.diario = { dia = os.time() // 86400 - 1, racha = 3 }
+enviar(ana, "recompensaDiaria")
+pasos(2)
+ok(perfilA.monedas == 40 + 85 and perfilA.diario.racha == 4, "la racha de días seguidos no sube el premio (" .. perfilA.monedas .. ")")
+-- Ana compra el kit Guerrero y un efecto de baja final con monedas
 perfilA.monedas = 1000
 enviar(ana, "modoCmd", "kits")
 pasos(2)

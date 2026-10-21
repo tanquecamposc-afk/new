@@ -1854,6 +1854,23 @@ function acciones.pedirLogros(plr)
 	Logros.enviar(plr)
 end
 
+-- Tarjeta del jugador en el menú (nivel, monedas, recompensa diaria)
+function acciones.pedirPerfil(plr)
+	local ok, d = pcall(Modos.perfilMenu, plr)
+	if ok and d then
+		Estado:FireClient(plr, "perfil", d)
+	end
+end
+
+function acciones.recompensaDiaria(plr)
+	local premio, racha = Modos.reclamarDiaria(plr)
+	if premio then
+		Estado:FireClient(plr, "titulo", "¡Recompensa diaria!", ("+%d monedas · %d %s seguido%s"):format(premio, racha, racha == 1 and "día" or "días", racha == 1 and "" or "s"), "#ffd84a")
+		Estado:FireClient(plr, "sonido", "nivel")
+	end
+	acciones.pedirPerfil(plr)
+end
+
 function acciones.ajustes(plr, s, a)
 	a = limpiarAjustes(a)
 	if not a or not almacen then

@@ -19,6 +19,7 @@ local function nuevo()
 	return {
 		monedas = 0, xp = 0, partidas = 0, victorias = 0, bajas = 0, finales = 0, camas = 0, muertes = 0, racha = 0, mejorRacha = 0,
 		kits = { ninguno = 1 }, kit = "ninguno", efectos = { ninguno = true }, efecto = "ninguno", misiones = nil,
+		diario = { dia = -1, racha = 0 },
 	}
 end
 
@@ -102,6 +103,36 @@ function Perfil.progreso(plr, clave, n)
 end
 
 ------------------------------------------------------------------
+-- Recompensa diaria (en el menú): más monedas cuantos más días seguidos, hasta 7
+------------------------------------------------------------------
+local function premioDia(racha)
+	return 40 + 15 * (math.clamp(racha, 1, 7) - 1)
+end
+-- {disponible, racha que tendría hoy, monedas que daría}
+function Perfil.diaria(plr)
+	local p = Perfil.de(plr)
+	local d = dia()
+	local dd = p.diario or { dia = -1, racha = 0 }
+	if dd.dia == d then
+		return false, dd.racha, premioDia(math.min(7, dd.racha + 1))
+	end
+	local racha = dd.dia == d - 1 and math.min(7, dd.racha + 1) or 1
+	return true, racha, premioDia(racha)
+end
+-- Cobra la de hoy; devuelve las monedas y la racha (o nil si ya se cobró)
+function Perfil.reclamarDiaria(plr)
+	local disponible, racha, premio = Perfil.diaria(plr)
+	if not disponible then
+		return nil
+	end
+	local p = Perfil.de(plr)
+	p.diario = { dia = dia(), racha = racha }
+	p.monedas += premio
+	Perfil.guardar(plr)
+	return premio, racha
+end
+
+------------------------------------------------------------------
 -- Cargar y guardar
 ------------------------------------------------------------------
 local function limpiar(g)
@@ -131,6 +162,9 @@ local function limpiar(g)
 	end
 	if type(g.efecto) == "string" then
 		p.efecto = g.efecto
+	end
+	if type(g.diario) == "table" and tonumber(g.diario.dia) and tonumber(g.diario.racha) then
+		p.diario = { dia = math.floor(tonumber(g.diario.dia)), racha = math.clamp(math.floor(tonumber(g.diario.racha)), 0, 7) }
 	end
 	if type(g.misiones) == "table" and type(g.misiones.lista) == "table" and tonumber(g.misiones.dia) then
 		p.misiones = { dia = tonumber(g.misiones.dia), lista = {} }

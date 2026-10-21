@@ -829,7 +829,7 @@ local function idDe(k)
 	return Registro.B[k] or Registro.I[k]
 end
 -- Menú principal: el mundo se ve desenfocado detrás
-local menu = nuevo("Frame", { Name = "Menu", BackgroundColor3 = Color3.fromRGB(8, 12, 22), BackgroundTransparency = 0.35, BorderSizePixel = 0,
+local menu = nuevo("Frame", { Name = "Menu", BackgroundColor3 = Color3.fromRGB(8, 12, 22), BackgroundTransparency = 0.45, BorderSizePixel = 0,
 	Size = UDim2.fromScale(1, 1), Visible = false, ZIndex = 10 }, gui)
 nuevo("UIGradient", { Rotation = 90, Color = ColorSequence.new(Color3.fromRGB(60, 90, 140), Color3.fromRGB(8, 12, 22)),
 	Transparency = NumberSequence.new(0.35, 0) }, menu)
@@ -851,9 +851,10 @@ local frase = texto({ AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(
 local fraseEscala = nuevo("UIScale", {}, frase)
 
 -- Tarjetas de los modos: icono, nombre y una línea de explicación
-local menuCaja = nuevo("Frame", { BackgroundTransparency = 1, AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.fromScale(0.5, 0.25), Size = UDim2.fromOffset(568, 250), ZIndex = 11 }, menu)
-nuevo("UIGridLayout", { CellSize = UDim2.fromOffset(278, 74), CellPadding = UDim2.fromOffset(12, 12), HorizontalAlignment = Enum.HorizontalAlignment.Center,
+local menuCaja = nuevo("Frame", { BackgroundTransparency = 1, AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.fromScale(0.5, 0.25), Size = UDim2.fromOffset(600, 300), ZIndex = 11 }, menu)
+nuevo("UIGridLayout", { CellSize = UDim2.fromOffset(294, 90), CellPadding = UDim2.fromOffset(12, 12), HorizontalAlignment = Enum.HorizontalAlignment.Center,
 	SortOrder = Enum.SortOrder.LayoutOrder }, menuCaja)
+Interfaz.alSonido = function(nombre, tono) end
 local iconosMenu = {} -- se vuelven a poner al abrir el menú (al principio aún no están cargados)
 local function tarjeta(padre, txt, sub, icono, orden, alClic, tam)
 	local b = nuevo("TextButton", { Text = "", AutoButtonColor = false, BackgroundColor3 = Color3.fromRGB(52, 54, 62), BackgroundTransparency = 0.08,
@@ -882,30 +883,220 @@ local function tarjeta(padre, txt, sub, icono, orden, alClic, tam)
 	b.MouseEnter:Connect(function()
 		b.BackgroundColor3 = Color3.fromRGB(78, 82, 96)
 		borde.Color = Color3.fromRGB(255, 220, 80)
-		esc.Scale = 1.03
+		TweenService:Create(esc, TweenInfo.new(0.12, Enum.EasingStyle.Quad), { Scale = 1.04 }):Play()
+		Interfaz.alSonido("paso", 1.8)
 	end)
 	b.MouseLeave:Connect(function()
 		b.BackgroundColor3 = Color3.fromRGB(52, 54, 62)
 		borde.Color = Color3.fromRGB(20, 20, 24)
-		esc.Scale = 1
+		TweenService:Create(esc, TweenInfo.new(0.12, Enum.EasingStyle.Quad), { Scale = 1 }):Play()
 	end)
-	b.Activated:Connect(alClic)
+	b.Activated:Connect(function()
+		Interfaz.alSonido("poner", 1.2)
+		alClic()
+	end)
 	return b
 end
-local function opcionMenu(txt, sub, modo, icono, orden)
-	return tarjeta(menuCaja, txt, sub, idDe(icono), orden, function()
+-- Tarjeta de un modo: con su color, una etiqueta (POPULAR, NUEVO…) y cuántos juegan ahora
+local tarjetasModo = {} -- {boton, escala, jugando, modo}
+local function opcionMenu(txt, sub, modo, icono, orden, color, etiqueta)
+	local oscuro = color:Lerp(Color3.new(0, 0, 0), 0.55)
+	-- El color va en la tarjeta y el degradado solo la oscurece hacia la derecha
+	local b = nuevo("TextButton", { Text = "", AutoButtonColor = false, BackgroundColor3 = color, BorderSizePixel = 0, LayoutOrder = orden, ZIndex = 12 }, menuCaja)
+	nuevo("UICorner", { CornerRadius = UDim.new(0, 8) }, b)
+	local NORMAL = ColorSequence.new(Color3.fromRGB(215, 215, 215), Color3.fromRGB(110, 110, 110))
+	local ENCIMA = ColorSequence.new(Color3.new(1, 1, 1), Color3.fromRGB(160, 160, 160))
+	local degradado = nuevo("UIGradient", { Rotation = 0, Color = NORMAL }, b)
+	local borde = nuevo("UIStroke", { Color = oscuro:Lerp(Color3.new(0, 0, 0), 0.5), Thickness = 2, ApplyStrokeMode = Enum.ApplyStrokeMode.Border }, b)
+	local esc = nuevo("UIScale", {}, b)
+	local fondoIc = nuevo("Frame", { BackgroundColor3 = Color3.new(0, 0, 0), BackgroundTransparency = 0.6, BorderSizePixel = 0, Position = UDim2.fromOffset(10, 10),
+		Size = UDim2.fromOffset(70, 70), ZIndex = 13 }, b)
+	nuevo("UICorner", { CornerRadius = UDim.new(0, 6) }, fondoIc)
+	local ic = nuevo("ImageLabel", { BackgroundTransparency = 1, AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5),
+		Size = UDim2.fromOffset(52, 52), ResampleMode = Enum.ResamplerMode.Pixelated, ZIndex = 14 }, fondoIc)
+	local id = idDe(icono)
+	Iconos.poner(ic, id)
+	iconosMenu[ic] = id
+	texto({ Position = UDim2.fromOffset(92, 8), Size = UDim2.new(1, -100, 0, 26), Text = txt, TextSize = 22, Font = FUENTE_N,
+		TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 13 }, b)
+	texto({ Position = UDim2.fromOffset(92, 36), Size = UDim2.new(1, -100, 0, 30), Text = sub, TextSize = 12, TextWrapped = true, Font = FUENTE,
+		TextColor3 = Color3.fromRGB(235, 238, 245), TextStrokeTransparency = 0.7, TextXAlignment = Enum.TextXAlignment.Left,
+		TextYAlignment = Enum.TextYAlignment.Top, ZIndex = 13 }, b)
+	local jugando = texto({ Position = UDim2.fromOffset(92, 68), Size = UDim2.new(1, -100, 0, 16), Text = "", TextSize = 12, Font = FUENTE_N,
+		TextColor3 = Color3.fromRGB(140, 255, 140), TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 13 }, b)
+	if etiqueta then
+		local cinta = nuevo("Frame", { AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -8, 0, -9), Size = UDim2.fromOffset(etiqueta[3] or 84, 20),
+			BackgroundColor3 = etiqueta[2], BorderSizePixel = 0, ZIndex = 15 }, b)
+		nuevo("UICorner", { CornerRadius = UDim.new(0, 10) }, cinta)
+		nuevo("UIStroke", { Color = Color3.new(0, 0, 0), Thickness = 1.5, Transparency = 0.3 }, cinta)
+		texto({ Size = UDim2.fromScale(1, 1), Text = etiqueta[1], TextSize = 11, Font = FUENTE_N, TextStrokeTransparency = 0.5, ZIndex = 16 }, cinta)
+	end
+	b.MouseEnter:Connect(function()
+		degradado.Color = ENCIMA
+		borde.Color = Color3.new(1, 1, 1)
+		TweenService:Create(esc, TweenInfo.new(0.15, Enum.EasingStyle.Back), { Scale = 1.05 }):Play()
+		Interfaz.alSonido("paso", 1.8)
+	end)
+	b.MouseLeave:Connect(function()
+		degradado.Color = NORMAL
+		borde.Color = oscuro:Lerp(Color3.new(0, 0, 0), 0.5)
+		TweenService:Create(esc, TweenInfo.new(0.15, Enum.EasingStyle.Quad), { Scale = 1 }):Play()
+	end)
+	b.Activated:Connect(function()
+		Interfaz.alSonido("nivel", 1.3)
+		-- Se hunde un momento al pulsar
+		esc.Scale = 0.95
+		TweenService:Create(esc, TweenInfo.new(0.2, Enum.EasingStyle.Back), { Scale = 1 }):Play()
 		Interfaz.enJuego = true
 		Interfaz.alElegirModo(modo)
 	end)
+	table.insert(tarjetasModo, { boton = b, escala = esc, jugando = jugando, modo = modo })
+	return b
 end
-opcionMenu("Supervivencia", "Recoge recursos, fabrica y sobrevive a la noche", "supervivencia", "pico_hierro", 1)
-opcionMenu("Creativo", "Todos los bloques y objetos, vuelo y sin daño", "creativo", "cesped", 2)
-opcionMenu("One Block", "Empieza en un solo bloque que se regenera", "oneblock", "tierra", 3)
-opcionMenu("Bed Wars", "Equipos en islas: protege tu cama y rompe las demás", "bedwars", "cama", 4)
-opcionMenu("Mazmorras", "Salas con enemigos, botín, artefactos y un jefe", "mazmorras", "espada_diamante", 5)
-opcionMenu("Leyendas", "Defiende la aldea, construye y manda a tus golems", "leyendas", "escudo", 6)
+local DORADO, AZUL, VERDE = Color3.fromRGB(240, 175, 30), Color3.fromRGB(50, 140, 240), Color3.fromRGB(60, 190, 90)
+opcionMenu("Supervivencia", "Recoge recursos, fabrica y sobrevive a la noche", "supervivencia", "pico_hierro", 1, Color3.fromRGB(78, 160, 62), { "CLÁSICO", VERDE })
+opcionMenu("Creativo", "Todos los bloques y objetos, vuelo y sin daño", "creativo", "cesped", 2, Color3.fromRGB(58, 140, 222))
+opcionMenu("One Block", "Empieza en un solo bloque que se regenera", "oneblock", "tierra", 3, Color3.fromRGB(160, 112, 62))
+opcionMenu("Bed Wars", "Equipos en islas: protege tu cama y rompe las demás", "bedwars", "cama", 4, Color3.fromRGB(214, 62, 62), { "★ POPULAR", DORADO, 96 })
+opcionMenu("Mazmorras", "Salas con enemigos, botín, artefactos y un jefe", "mazmorras", "espada_diamante", 5, Color3.fromRGB(128, 74, 200))
+opcionMenu("Leyendas", "Defiende la aldea, construye y manda a tus golems", "leyendas", "escudo", 6, Color3.fromRGB(224, 150, 40), { "NUEVO", AZUL, 70 })
+
+-- Cuántos juegan a cada modo ahora mismo (se mira en los atributos de cada jugador)
+local function modoDe(p)
+	if p:GetAttribute("BedWars") then
+		return "bedwars"
+	elseif p:GetAttribute("Mazmorras") then
+		return "mazmorras"
+	elseif p:GetAttribute("Leyendas") then
+		return "leyendas"
+	elseif p:GetAttribute("OneBlock") then
+		return "oneblock"
+	elseif p:GetAttribute("Modo") == "creativo" then
+		return "creativo"
+	end
+	return "supervivencia"
+end
+local function contarJugando()
+	local n = {}
+	for _, p in Players:GetPlayers() do
+		-- Uno mismo, mientras está en el menú del principio, aún no juega a nada
+		if p ~= jugador or Interfaz.enJuego then
+			local m = modoDe(p)
+			n[m] = (n[m] or 0) + 1
+		end
+	end
+	for _, tm in tarjetasModo do
+		local c = n[tm.modo] or 0
+		tm.jugando.Text = c > 0 and ("● %d %s"):format(c, c == 1 and "jugando" or "jugando") or "○ ¡Sé el primero!"
+		tm.jugando.TextColor3 = c > 0 and Color3.fromRGB(140, 255, 140) or Color3.fromRGB(215, 215, 225)
+	end
+end
+
+-- Tarjeta del jugador (arriba a la izquierda): avatar, nombre, nivel, monedas y logros
+local tarjetaJugador = nuevo("Frame", { Name = "TarjetaJugador", BackgroundColor3 = Color3.fromRGB(24, 26, 34), BackgroundTransparency = 0.1, BorderSizePixel = 0,
+	Position = UDim2.fromOffset(16, 16), Size = UDim2.fromOffset(230, 128), ZIndex = 12 }, menu)
+nuevo("UICorner", { CornerRadius = UDim.new(0, 8) }, tarjetaJugador)
+nuevo("UIStroke", { Color = Color3.fromRGB(255, 220, 80), Thickness = 2, Transparency = 0.3 }, tarjetaJugador)
+local avatarFondo = nuevo("Frame", { BackgroundColor3 = Color3.fromRGB(60, 64, 78), BorderSizePixel = 0, Position = UDim2.fromOffset(10, 10), Size = UDim2.fromOffset(64, 64),
+	ZIndex = 13 }, tarjetaJugador)
+nuevo("UICorner", { CornerRadius = UDim.new(1, 0) }, avatarFondo)
+local avatar = nuevo("ImageLabel", { BackgroundTransparency = 1, Size = UDim2.fromScale(1, 1), ZIndex = 14 }, avatarFondo)
+nuevo("UICorner", { CornerRadius = UDim.new(1, 0) }, avatar)
+texto({ Position = UDim2.fromOffset(82, 12), Size = UDim2.fromOffset(140, 20), Text = jugador.DisplayName or jugador.Name, TextSize = 16, Font = FUENTE_N,
+	TextXAlignment = Enum.TextXAlignment.Left, TextTruncate = Enum.TextTruncate.AtEnd, ZIndex = 13 }, tarjetaJugador)
+local perfilNivel = texto({ Position = UDim2.fromOffset(82, 34), Size = UDim2.fromOffset(140, 18), Text = "Nivel 1★", TextSize = 14, Font = FUENTE_N,
+	TextColor3 = Color3.fromRGB(170, 170, 170), TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 13 }, tarjetaJugador)
+local barraNivel = nuevo("Frame", { BackgroundColor3 = Color3.fromRGB(14, 14, 18), BorderSizePixel = 0, Position = UDim2.fromOffset(82, 56), Size = UDim2.fromOffset(136, 8), ZIndex = 13 }, tarjetaJugador)
+nuevo("UICorner", { CornerRadius = UDim.new(1, 0) }, barraNivel)
+local barraNivelF = nuevo("Frame", { BackgroundColor3 = Color3.fromRGB(110, 200, 255), BorderSizePixel = 0, Size = UDim2.fromScale(0, 1), ZIndex = 14 }, barraNivel)
+nuevo("UICorner", { CornerRadius = UDim.new(1, 0) }, barraNivelF)
+local icMonedas = nuevo("ImageLabel", { BackgroundTransparency = 1, Position = UDim2.fromOffset(12, 84), Size = UDim2.fromOffset(18, 18), ResampleMode = Enum.ResamplerMode.Pixelated,
+	ZIndex = 13 }, tarjetaJugador)
+iconosMenu[icMonedas] = idDe("pepitaOro")
+local perfilMonedas = texto({ Position = UDim2.fromOffset(34, 84), Size = UDim2.fromOffset(80, 18), Text = "0", TextSize = 14, Font = FUENTE_N,
+	TextColor3 = Color3.fromRGB(255, 216, 74), TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 13 }, tarjetaJugador)
+local icLogros = nuevo("ImageLabel", { BackgroundTransparency = 1, Position = UDim2.fromOffset(118, 84), Size = UDim2.fromOffset(18, 18), ResampleMode = Enum.ResamplerMode.Pixelated,
+	ZIndex = 13 }, tarjetaJugador)
+iconosMenu[icLogros] = idDe("diamante")
+local perfilLogros = texto({ Position = UDim2.fromOffset(140, 84), Size = UDim2.fromOffset(84, 18), Text = "0/18", TextSize = 14, Font = FUENTE_N,
+	TextColor3 = Color3.fromRGB(130, 230, 255), TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 13 }, tarjetaJugador)
+local perfilVictorias = texto({ Position = UDim2.fromOffset(12, 106), Size = UDim2.fromOffset(210, 16), Text = "", TextSize = 11,
+	TextColor3 = Color3.fromRGB(190, 195, 205), TextStrokeTransparency = 1, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 13 }, tarjetaJugador)
+task.spawn(function()
+	local ok, img = pcall(function()
+		return Players:GetUserThumbnailAsync(jugador.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size150x150)
+	end)
+	if ok and type(img) == "string" then
+		avatar.Image = img
+	end
+end)
+
+-- Recompensa diaria (debajo de la tarjeta)
+local botonDiaria = nuevo("TextButton", { Name = "RecompensaDiaria", Text = "", AutoButtonColor = false, BackgroundColor3 = Color3.fromRGB(60, 170, 70), BorderSizePixel = 0,
+	Position = UDim2.fromOffset(16, 152), Size = UDim2.fromOffset(230, 52), ZIndex = 12 }, menu)
+nuevo("UICorner", { CornerRadius = UDim.new(0, 8) }, botonDiaria)
+local bordeDiaria = nuevo("UIStroke", { Color = Color3.fromRGB(20, 60, 20), Thickness = 2 }, botonDiaria)
+local escDiaria = nuevo("UIScale", {}, botonDiaria)
+local icDiaria = nuevo("ImageLabel", { BackgroundTransparency = 1, Position = UDim2.fromOffset(8, 8), Size = UDim2.fromOffset(36, 36), ResampleMode = Enum.ResamplerMode.Pixelated,
+	ZIndex = 13 }, botonDiaria)
+iconosMenu[icDiaria] = idDe("cofre")
+local diariaT = texto({ Position = UDim2.fromOffset(52, 6), Size = UDim2.fromOffset(172, 20), Text = "Recompensa diaria", TextSize = 15, Font = FUENTE_N,
+	TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 13 }, botonDiaria)
+local diariaSub = texto({ Position = UDim2.fromOffset(52, 27), Size = UDim2.fromOffset(172, 18), Text = "", TextSize = 12, TextXAlignment = Enum.TextXAlignment.Left,
+	TextColor3 = Color3.fromRGB(230, 255, 230), ZIndex = 13 }, botonDiaria)
+local diariaLista = false
+botonDiaria.MouseEnter:Connect(function()
+	if diariaLista then
+		TweenService:Create(escDiaria, TweenInfo.new(0.12, Enum.EasingStyle.Quad), { Scale = 1.05 }):Play()
+	end
+end)
+botonDiaria.MouseLeave:Connect(function()
+	TweenService:Create(escDiaria, TweenInfo.new(0.12, Enum.EasingStyle.Quad), { Scale = 1 }):Play()
+end)
+botonDiaria.Activated:Connect(function()
+	if diariaLista then
+		diariaLista = false
+		Interfaz.alSonido("nivel", 1)
+		Interfaz.enviar("recompensaDiaria")
+	end
+end)
+
+-- Datos del servidor para la tarjeta (nivel, monedas, victorias y recompensa diaria)
+Interfaz.datosPerfil = nil
+function Interfaz.perfil(d)
+	Interfaz.datosPerfil = d
+	if not d then
+		return
+	end
+	perfilNivel.Text = ("Nivel %d★"):format(d.nivel or 1)
+	local ok, c = pcall(Color3.fromHex, d.colorNivel or "#aaaaaa")
+	perfilNivel.TextColor3 = ok and c or Color3.fromRGB(170, 170, 170)
+	barraNivelF.Size = UDim2.fromScale(math.clamp((d.xp or 0) / 500, 0, 1), 1)
+	perfilMonedas.Text = tostring(d.monedas or 0)
+	perfilVictorias.Text = ("Bed Wars: %d %s · %d %s"):format(d.victorias or 0, d.victorias == 1 and "victoria" or "victorias", d.partidas or 0,
+		d.partidas == 1 and "partida" or "partidas")
+	diariaLista = d.diaria == true
+	if diariaLista then
+		botonDiaria.BackgroundColor3 = Color3.fromRGB(60, 170, 70)
+		bordeDiaria.Color = Color3.fromRGB(20, 60, 20)
+		diariaT.Text = "¡Recompensa diaria!"
+		diariaSub.Text = ("+%d monedas · día %d"):format(d.premio or 0, d.racha or 1)
+	else
+		botonDiaria.BackgroundColor3 = Color3.fromRGB(56, 58, 68)
+		bordeDiaria.Color = Color3.fromRGB(20, 20, 24)
+		diariaT.Text = "Recompensa cobrada"
+	end
+end
+local function pintarDiaria()
+	if diariaLista or not Interfaz.datosPerfil then
+		return
+	end
+	local falta = 86400 - os.time() % 86400
+	diariaSub.Text = ("Mañana +%d · en %dh %02dm"):format(Interfaz.datosPerfil.premio or 0, falta // 3600, (falta % 3600) // 60)
+end
+
 -- Fila de abajo: ajustes, controles y volver al juego
-local filaMenu = nuevo("Frame", { BackgroundTransparency = 1, AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0.25, 266),
+local filaMenu = nuevo("Frame", { BackgroundTransparency = 1, AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0.25, 312),
 	Size = UDim2.fromOffset(700, 46), ZIndex = 11 }, menu)
 nuevo("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 12), HorizontalAlignment = Enum.HorizontalAlignment.Center,
 	SortOrder = Enum.SortOrder.LayoutOrder }, filaMenu)
@@ -1068,6 +1259,7 @@ local function pintarLogros()
 	if tituloLogros then
 		tituloLogros.Text = ("LOGROS · %d/%d"):format(hechos, #Interfaz.listaLogros)
 	end
+	perfilLogros.Text = ("%d/%d"):format(hechos, #Interfaz.listaLogros)
 	local tl = botonLogros:FindFirstChildOfClass("TextLabel")
 	if tl and #Interfaz.listaLogros > 0 then
 		tl.Text = ("Logros %d/%d"):format(hechos, #Interfaz.listaLogros)
@@ -1144,9 +1336,21 @@ function Interfaz.logros(lista)
 end
 
 -- La frase amarilla late
-RunService.RenderStepped:Connect(function()
+local refrescoMenu = 0
+RunService.RenderStepped:Connect(function(dt)
 	if menu.Visible then
 		fraseEscala.Scale = 1 + math.abs(math.sin(os.clock() * 4)) * 0.08
+		-- Cada segundo: quién juega a qué y cuánto falta para la recompensa diaria
+		refrescoMenu -= dt
+		if refrescoMenu <= 0 then
+			refrescoMenu = 1
+			contarJugando()
+			pintarDiaria()
+		end
+		-- El botón de la recompensa late cuando se puede cobrar
+		if diariaLista then
+			bordeDiaria.Color = Color3.fromRGB(255, 230, 90):Lerp(Color3.fromRGB(20, 60, 20), (math.sin(os.clock() * 5) + 1) / 2)
+		end
 	end
 end)
 
@@ -1579,6 +1783,11 @@ function Interfaz.abierto()
 	return abierta ~= nil
 end
 
+-- El menú del principio (antes de elegir modo): detrás gira la cámara por el mundo
+function Interfaz.menuPrincipal()
+	return menu.Visible and not Interfaz.enJuego and not carga.Visible
+end
+
 function Interfaz.menuVisible()
 	return menu.Visible or carga.Visible or muerte.Visible or ventanaAjustes.Visible or ventanaControles.Visible or ventanaLogros.Visible
 end
@@ -1942,16 +2151,29 @@ function Interfaz.muerte(t)
 	end
 end
 
+Interfaz.alAbrirMenu = function() end
 function Interfaz.menu(si)
+	local antes = menu.Visible
 	menu.Visible = si
 	if si then
 		for ic, id in iconosMenu do
 			Iconos.poner(ic, id)
 		end
+		if not antes then
+			-- Las tarjetas entran una detrás de otra
+			for i, tm in tarjetasModo do
+				tm.escala.Scale = 0.6
+				task.delay(0.04 * i, function()
+					TweenService:Create(tm.escala, TweenInfo.new(0.35, Enum.EasingStyle.Back), { Scale = 1 }):Play()
+				end)
+			end
+			contarJugando()
+			Interfaz.alAbrirMenu()
+		end
 	end
 	-- Debajo del menú no se ve la barra ni los corazones, y el mundo se desenfoca
 	hud.Visible = not si
-	desenfoque.Size = si and 14 or 0
+	desenfoque.Size = si and 8 or 0
 	botonVolver.Visible = si and Interfaz.enJuego == true
 	if not si then
 		ventanaAjustes.Visible = false

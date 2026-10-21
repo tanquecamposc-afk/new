@@ -258,6 +258,13 @@ function Modos.enArena(plr)
 	return BW.en(plr) or MZ.en(plr) or LY.en(plr)
 end
 
+function Modos.perfilMenu(plr)
+	return BW.perfilMenu(plr)
+end
+function Modos.reclamarDiaria(plr)
+	return BW.reclamarDiaria(plr)
+end
+
 function Modos.nivelBW(plr)
 	return BW.nivelJugador(plr)
 end

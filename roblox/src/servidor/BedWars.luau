@@ -2359,6 +2359,19 @@ function BW.nivelJugador(plr)
 	return Perfil.nivel(Perfil.de(plr).xp)
 end
 
+-- Lo que enseña la tarjeta del jugador en el menú
+function BW.perfilMenu(plr)
+	local p = Perfil.de(plr)
+	local disponible, racha, premio = Perfil.diaria(plr)
+	return {
+		nivel = Perfil.nivel(p.xp), xp = p.xp % 500, monedas = p.monedas, victorias = p.victorias, partidas = p.partidas,
+		diaria = disponible, racha = racha, premio = premio, colorNivel = Perfil.colorNivel(Perfil.nivel(p.xp)),
+	}
+end
+function BW.reclamarDiaria(plr)
+	return Perfil.reclamarDiaria(plr)
+end
+
 function BW.en(plr)
 	return P ~= nil and P.jug[plr] ~= nil
 end
