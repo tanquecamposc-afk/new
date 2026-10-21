@@ -1,7 +1,7 @@
 <roblox xmlns:xmime="http://www.w3.org/2005/05/xmlmime" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.roblox.com/roblox.xsd" version="4">
 <Item class="Workspace" referent="RBX00000001"><Properties><string name="Name">Workspace</string><bool name="StreamingEnabled">false</bool><float name="FallenPartsDestroyHeight">-500</float></Properties></Item>
 <Item class="Lighting" referent="RBX00000002"><Properties><string name="Name">Lighting</string><token name="Technology">4</token><bool name="GlobalShadows">true</bool></Properties></Item>
-<Item class="ReplicatedStorage" referent="RBX00000021"><Properties><string name="Name">ReplicatedStorage</string></Properties><Item class="Folder" referent="RBX00000020"><Properties><string name="Name">Blockverse</string></Properties><Item class="ModuleScript" referent="RBX00000003"><Properties><string name="Name">Arenas</string><ProtectedString name="Source"><![CDATA[--!optimize 2
+<Item class="ReplicatedStorage" referent="RBX00000022"><Properties><string name="Name">ReplicatedStorage</string></Properties><Item class="Folder" referent="RBX00000021"><Properties><string name="Name">Blockverse</string></Properties><Item class="ModuleScript" referent="RBX00000003"><Properties><string name="Name">Arenas</string><ProtectedString name="Source"><![CDATA[--!optimize 2
 --[[
 	Blockverse para Roblox · Arenas de los modos de juego
 	Los mapas de Bed Wars (bedwars2.js), las mazmorras (modos53.js) y la
@@ -3887,7 +3887,223 @@ return {
 }
 ]]></ProtectedString></Properties></Item>
 </Item>
-<Item class="ModuleScript" referent="RBX00000014"><Properties><string name="Name">DatosProgreso</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX00000014"><Properties><string name="Name">DatosEstilo</string><ProtectedString name="Source"><![CDATA[--[[
+	Blockverse para Roblox · Gráficos y personalización (datos compartidos)
+	· SHADERS: estilos de imagen (bloom, rayos de sol, color, desenfoque y viñeta).
+	· CALIDADES: cuántos efectos se usan (para que vaya bien en móviles).
+	· MIRAS y COLORES_MIRA: la mira del centro de la pantalla.
+	· CAPAS, SOMBREROS y MASCOTAS: cosméticos que ven todos. Se desbloquean subiendo el
+	  Camino de Blockverse (nivel) o con el pase VIP.
+	El servidor usa estas listas para comprobar lo que llega del cliente.
+]]
+local D = {}
+
+-- fuerza: bloom (intensidad, tamaño, umbral), rayos (intensidad, apertura), color (brillo, contraste,
+-- saturación, tinte), desenfoque lejano (0 = no), viñeta (0..1), dia = tonos de amanecer y noche
+D.SHADERS = {
+	{ id = "ninguno", n = "Sin shaders", d = "La imagen tal cual, lo más ligero",
+		bloom = { 0, 0, 3 }, rayos = { 0, 0 }, color = { 0, 0, 0, "#ffffff" }, dof = 0, vineta = 0, dia = 0 },
+	{ id = "clasico", n = "Clásico", d = "El de siempre: un poco de brillo y color",
+		bloom = { 0.35, 22, 1.8 }, rayos = { 0.05, 0.7 }, color = { 0, 0.05, 0.15, "#ffffff" }, dof = 0, vineta = 0.15, dia = 0.6 },
+	{ id = "vivido", n = "Vívido", d = "Colores intensos y luz brillante",
+		bloom = { 0.5, 24, 1.4 }, rayos = { 0.1, 0.75 }, color = { 0.02, 0.12, 0.38, "#ffffff" }, dof = 0, vineta = 0.2, dia = 0.8 },
+	{ id = "cinematico", n = "Cinemático", d = "Rayos de sol, desenfoque lejano y tonos cálidos",
+		bloom = { 0.6, 30, 1.2 }, rayos = { 0.18, 0.85 }, color = { 0, 0.18, 0.08, "#fff4e4" }, dof = 0.3, vineta = 0.5, dia = 1 },
+	{ id = "fantasia", n = "Fantasía", d = "Brillo mágico y colores pastel",
+		bloom = { 0.9, 40, 1.0 }, rayos = { 0.22, 0.9 }, color = { 0.03, 0.04, 0.42, "#f6ecff" }, dof = 0.15, vineta = 0.3, dia = 1 },
+	{ id = "invierno", n = "Invierno", d = "Luz fría y limpia",
+		bloom = { 0.45, 26, 1.5 }, rayos = { 0.08, 0.7 }, color = { 0.02, 0.1, 0.0, "#e4f0ff" }, dof = 0.1, vineta = 0.25, dia = 0.5 },
+	{ id = "retro", n = "Retro", d = "Como una foto antigua",
+		bloom = { 0.2, 18, 2 }, rayos = { 0.03, 0.6 }, color = { 0.01, 0.2, -0.35, "#ffe8c4" }, dof = 0, vineta = 0.7, dia = 0.3 },
+	{ id = "noir", n = "Blanco y negro", d = "Cine negro, mucho contraste",
+		bloom = { 0.4, 24, 1.6 }, rayos = { 0.1, 0.8 }, color = { 0, 0.35, -1, "#ffffff" }, dof = 0.1, vineta = 0.8, dia = 0 },
+}
+
+D.CALIDADES = {
+	{ id = "baja", n = "Baja", d = "Para móviles: sin efectos ni partículas", efectos = 0, particulas = 0, sombras = false },
+	{ id = "media", n = "Media", d = "Brillo y color, pocas partículas", efectos = 0.6, particulas = 0.5, sombras = true },
+	{ id = "alta", n = "Alta", d = "Todos los efectos", efectos = 1, particulas = 1, sombras = true },
+	{ id = "ultra", n = "Ultra", d = "Todo y más partículas", efectos = 1, particulas = 1.6, sombras = true },
+}
+
+D.MIRAS = {
+	{ id = "cruz", n = "Cruz" },
+	{ id = "hueco", n = "Cruz con hueco" },
+	{ id = "punto", n = "Punto" },
+	{ id = "circulo", n = "Círculo" },
+	{ id = "grande", n = "Cruz grande" },
+}
+D.COLORES_MIRA = {
+	{ id = "blanco", n = "Blanco", c = "#ffffff" },
+	{ id = "verde", n = "Verde", c = "#60ff70" },
+	{ id = "rojo", n = "Rojo", c = "#ff5050" },
+	{ id = "cian", n = "Cian", c = "#50f0ff" },
+	{ id = "amarillo", n = "Amarillo", c = "#ffe040" },
+	{ id = "rosa", n = "Rosa", c = "#ff70d0" },
+}
+
+------------------------------------------------------------------
+-- Cosméticos (todo hecho con cajas, como los modelos del juego)
+-- Medidas de las capas en fracciones: x de 0 a 1 (izquierda a derecha), y de 0 a 1 (arriba a abajo)
+------------------------------------------------------------------
+D.CAPAS = {
+	{ id = "roja", n = "Capa roja", nivel = 1, base = "#b02424",
+		deco = { { 0, 0.9, 1, 1, "#ffd040" } } },
+	{ id = "explorador", n = "Explorador", nivel = 2, base = "#2856b0",
+		deco = { { 0, 0.3, 1, 0.38, "#f0f0f0" }, { 0, 0.62, 1, 0.7, "#f0f0f0" } } },
+	{ id = "creeper", n = "Creeper", nivel = 6, base = "#4caf50",
+		deco = { { 0.125, 0.15, 0.375, 0.3, "#102010" }, { 0.625, 0.15, 0.875, 0.3, "#102010" }, { 0.375, 0.3, 0.625, 0.5, "#102010" },
+			{ 0.25, 0.38, 0.375, 0.6, "#102010" }, { 0.625, 0.38, 0.75, 0.6, "#102010" } } },
+	{ id = "tablero", n = "Tablero", nivel = 10, base = "#f2f2f2", tablero = { 4, 6, "#202020" } },
+	{ id = "fuego", n = "Fuego", nivel = 14, base = "#d02010",
+		deco = { { 0, 0.55, 1, 0.75, "#ff7a10" }, { 0, 0.75, 1, 1, "#ffd030", true } } },
+	{ id = "ender", n = "Ender", nivel = 20, base = "#141018",
+		deco = { { 0.15, 0.25, 0.4, 0.33, "#e070ff", true }, { 0.6, 0.25, 0.85, 0.33, "#e070ff", true } } },
+	{ id = "diamante", n = "Diamante", nivel = 26, base = "#1a8f9a",
+		deco = { { 0.4, 0.2, 0.6, 0.28, "#bff8ff" }, { 0.3, 0.28, 0.7, 0.4, "#7ff0ff" }, { 0.2, 0.4, 0.8, 0.52, "#4fe0f0" },
+			{ 0.3, 0.52, 0.7, 0.64, "#30c8d8" }, { 0.4, 0.64, 0.6, 0.74, "#20a8b8" } } },
+	{ id = "arcoiris", n = "Arcoíris", nivel = 32, base = "#ff4040", arcoiris = true },
+	{ id = "galaxia", n = "Galaxia", nivel = 40, base = "#120c40", estrellas = true,
+		deco = { { 0, 0.6, 1, 1, "#3a1470" } } },
+	{ id = "dragon", n = "Dragón", nivel = 50, base = "#0c0c10",
+		deco = { { 0, 0, 0.06, 1, "#b040ff", true }, { 0.94, 0, 1, 1, "#b040ff", true }, { 0, 0.94, 1, 1, "#b040ff", true },
+			{ 0.3, 0.3, 0.45, 0.36, "#d070ff", true }, { 0.55, 0.3, 0.7, 0.36, "#d070ff", true } } },
+	{ id = "vip", n = "Capa VIP", vip = true, base = "#e0a010",
+		deco = { { 0, 0, 1, 0.06, "#fff3a0", true }, { 0, 0.94, 1, 1, "#fff3a0", true }, { 0.4, 0.4, 0.6, 0.56, "#fff8d0", true } } },
+}
+
+-- Sombreros: cajas { tamaño (x, y, z), posición (x, y, z), color, neón? } en «cabezas» (1 = lo que mide la cabeza);
+-- y = 0 es la parte de arriba de la cabeza
+D.SOMBREROS = {
+	{ id = "gorra", n = "Gorra roja", nivel = 1, cajas = {
+		{ { 1.06, 0.32, 1.06 }, { 0, 0.02, 0 }, "#c62828" }, { { 1.06, 0.06, 0.5 }, { 0, -0.1, -0.7 }, "#a01818" },
+		{ { 0.2, 0.08, 0.2 }, { 0, 0.21, 0 }, "#ffffff" } } },
+	{ id = "calabaza", n = "Cabeza de calabaza", nivel = 3, cajas = {
+		{ { 1.12, 1.12, 1.12 }, { 0, -0.5, 0 }, "#e07a10" }, { { 0.14, 0.18, 0.1 }, { 0, 0.12, 0 }, "#4a7a20" },
+		{ { 0.22, 0.2, 0.04 }, { -0.22, -0.32, -0.57 }, "#ffd040", true }, { { 0.22, 0.2, 0.04 }, { 0.22, -0.32, -0.57 }, "#ffd040", true },
+		{ { 0.6, 0.14, 0.04 }, { 0, -0.66, -0.57 }, "#ffd040", true } } },
+	{ id = "hierba", n = "Bloque de hierba", nivel = 4, cajas = {
+		{ { 0.7, 0.5, 0.7 }, { 0, 0.25, 0 }, "#8a5a32" }, { { 0.72, 0.2, 0.72 }, { 0, 0.42, 0 }, "#5cb040" } } },
+	{ id = "corona", n = "Corona de oro", nivel = 12, cajas = {
+		{ { 1.06, 0.22, 0.1 }, { 0, 0.1, -0.5 }, "#ffc828" }, { { 1.06, 0.22, 0.1 }, { 0, 0.1, 0.5 }, "#ffc828" },
+		{ { 0.1, 0.22, 1.06 }, { -0.5, 0.1, 0 }, "#ffc828" }, { { 0.1, 0.22, 1.06 }, { 0.5, 0.1, 0 }, "#ffc828" },
+		{ { 0.16, 0.2, 0.1 }, { -0.42, 0.3, -0.5 }, "#ffd84a" }, { { 0.16, 0.26, 0.1 }, { 0, 0.33, -0.5 }, "#ffd84a" },
+		{ { 0.16, 0.2, 0.1 }, { 0.42, 0.3, -0.5 }, "#ffd84a" }, { { 0.16, 0.2, 0.1 }, { -0.42, 0.3, 0.5 }, "#ffd84a" },
+		{ { 0.16, 0.2, 0.1 }, { 0.42, 0.3, 0.5 }, "#ffd84a" }, { { 0.14, 0.1, 0.04 }, { 0, 0.1, -0.56 }, "#ff2040", true } } },
+	{ id = "mago", n = "Sombrero de mago", nivel = 18, cajas = {
+		{ { 1.5, 0.08, 1.5 }, { 0, 0.02, 0 }, "#40208a" }, { { 0.9, 0.3, 0.9 }, { 0, 0.2, 0 }, "#5028a8" },
+		{ { 0.66, 0.3, 0.66 }, { 0.04, 0.5, 0.02 }, "#5028a8" }, { { 0.42, 0.28, 0.42 }, { 0.1, 0.78, 0.05 }, "#5028a8" },
+		{ { 0.2, 0.24, 0.2 }, { 0.18, 1.02, 0.08 }, "#5028a8" }, { { 0.12, 0.12, 0.04 }, { -0.2, 0.25, -0.46 }, "#fff060", true },
+		{ { 0.08, 0.08, 0.04 }, { 0.15, 0.55, -0.34 }, "#fff060", true } } },
+	{ id = "vikingo", n = "Casco vikingo", nivel = 24, cajas = {
+		{ { 1.1, 0.4, 1.1 }, { 0, 0.05, 0 }, "#9aa0a8" }, { { 1.14, 0.08, 1.14 }, { 0, -0.12, 0 }, "#7a6040" },
+		{ { 0.36, 0.16, 0.16 }, { -0.7, 0.12, 0 }, "#f0e8d0" }, { { 0.16, 0.36, 0.16 }, { -0.86, 0.36, 0 }, "#f0e8d0" },
+		{ { 0.36, 0.16, 0.16 }, { 0.7, 0.12, 0 }, "#f0e8d0" }, { { 0.16, 0.36, 0.16 }, { 0.86, 0.36, 0 }, "#f0e8d0" } } },
+	{ id = "diamante", n = "Casco de diamante", nivel = 30, cajas = {
+		{ { 1.12, 0.36, 1.12 }, { 0, 0.04, 0 }, "#4fe0f0" }, { { 0.12, 0.6, 1.12 }, { -0.56, -0.3, 0 }, "#30c8d8" },
+		{ { 0.12, 0.6, 1.12 }, { 0.56, -0.3, 0 }, "#30c8d8" }, { { 1.12, 0.6, 0.12 }, { 0, -0.3, 0.56 }, "#30c8d8" },
+		{ { 0.3, 0.06, 0.04 }, { 0, 0.12, -0.57 }, "#c0ffff", true } } },
+	{ id = "aureola", n = "Aureola", nivel = 36, gira = true, cajas = {
+		{ { 0.9, 0.06, 0.1 }, { 0, 0.45, -0.4 }, "#fff080", true }, { { 0.9, 0.06, 0.1 }, { 0, 0.45, 0.4 }, "#fff080", true },
+		{ { 0.1, 0.06, 0.9 }, { -0.4, 0.45, 0 }, "#fff080", true }, { { 0.1, 0.06, 0.9 }, { 0.4, 0.45, 0 }, "#fff080", true } } },
+	{ id = "tnt", n = "TNT", nivel = 42, cajas = {
+		{ { 0.8, 0.8, 0.8 }, { 0, 0.4, 0 }, "#d02828" }, { { 0.82, 0.26, 0.82 }, { 0, 0.4, 0 }, "#f0f0f0" },
+		{ { 0.06, 0.2, 0.06 }, { 0, 0.9, 0 }, "#303030" }, { { 0.06, 0.06, 0.06 }, { 0, 1.02, 0 }, "#ffb020", true } } },
+	{ id = "ender", n = "Corona del End", nivel = 48, cajas = {
+		{ { 1.06, 0.18, 1.06 }, { 0, 0.08, 0 }, "#1c1424" }, { { 0.14, 0.34, 0.14 }, { -0.42, 0.32, -0.42 }, "#2a1c38" },
+		{ { 0.14, 0.34, 0.14 }, { 0.42, 0.32, -0.42 }, "#2a1c38" }, { { 0.14, 0.34, 0.14 }, { -0.42, 0.32, 0.42 }, "#2a1c38" },
+		{ { 0.14, 0.34, 0.14 }, { 0.42, 0.32, 0.42 }, "#2a1c38" }, { { 0.18, 0.18, 0.18 }, { 0, 0.4, -0.45 }, "#e070ff", true } } },
+	{ id = "copa", n = "Sombrero de copa VIP", vip = true, cajas = {
+		{ { 1.4, 0.08, 1.4 }, { 0, 0.02, 0 }, "#141414" }, { { 0.9, 0.8, 0.9 }, { 0, 0.44, 0 }, "#1c1c1c" },
+		{ { 0.92, 0.14, 0.92 }, { 0, 0.14, 0 }, "#ffc828", true } } },
+}
+
+-- Mascotas: cajas en studs alrededor de su centro, partes que aletean (ala = 1 o -1) o giran
+D.MASCOTAS = {
+	{ id = "slime", n = "Slime", nivel = 3, salta = true, cajas = {
+		{ { 1, 1, 1 }, { 0, 0, 0 }, "#70d060", trans = 0.35 }, { { 0.6, 0.6, 0.6 }, { 0, -0.05, 0 }, "#3a9a30" },
+		{ { 0.16, 0.16, 0.04 }, { -0.22, 0.12, -0.51 }, "#102010" }, { { 0.16, 0.16, 0.04 }, { 0.22, 0.12, -0.51 }, "#102010" } } },
+	{ id = "pollito", n = "Pollito", nivel = 7, cajas = {
+		{ { 0.7, 0.6, 0.8 }, { 0, 0, 0 }, "#ffe050" }, { { 0.5, 0.5, 0.5 }, { 0, 0.45, -0.3 }, "#fff070" },
+		{ { 0.2, 0.12, 0.2 }, { 0, 0.4, -0.62 }, "#ff9020" }, { { 0.08, 0.08, 0.04 }, { -0.14, 0.55, -0.56 }, "#101010" },
+		{ { 0.08, 0.08, 0.04 }, { 0.14, 0.55, -0.56 }, "#101010" }, { { 0.1, 0.4, 0.5 }, { -0.38, 0.02, 0 }, "#f0d040", ala = 1 },
+		{ { 0.1, 0.4, 0.5 }, { 0.38, 0.02, 0 }, "#f0d040", ala = -1 } } },
+	{ id = "creeper", n = "Mini creeper", nivel = 11, cajas = {
+		{ { 0.5, 0.75, 0.3 }, { 0, -0.1, 0 }, "#4caf50" }, { { 0.6, 0.6, 0.6 }, { 0, 0.55, 0 }, "#5cc060" },
+		{ { 0.14, 0.14, 0.04 }, { -0.14, 0.62, -0.31 }, "#102010" }, { { 0.14, 0.14, 0.04 }, { 0.14, 0.62, -0.31 }, "#102010" },
+		{ { 0.12, 0.2, 0.04 }, { 0, 0.46, -0.31 }, "#102010" }, { { 0.5, 0.2, 0.5 }, { 0, -0.55, 0 }, "#3a9a40" } } },
+	{ id = "abeja", n = "Abeja", nivel = 16, cajas = {
+		{ { 0.6, 0.55, 0.85 }, { 0, 0, 0 }, "#ffd030" }, { { 0.62, 0.57, 0.14 }, { 0, 0, 0.05 }, "#302010" },
+		{ { 0.62, 0.57, 0.14 }, { 0, 0, 0.32 }, "#302010" }, { { 0.12, 0.12, 0.04 }, { -0.15, 0.08, -0.43 }, "#101010" },
+		{ { 0.12, 0.12, 0.04 }, { 0.15, 0.08, -0.43 }, "#101010" }, { { 0.5, 0.04, 0.35 }, { -0.4, 0.32, 0 }, "#e8f8ff", ala = 1, trans = 0.4 },
+		{ { 0.5, 0.04, 0.35 }, { 0.4, 0.32, 0 }, "#e8f8ff", ala = -1, trans = 0.4 } } },
+	{ id = "fantasma", n = "Mini ghast", nivel = 22, cajas = {
+		{ { 1, 1, 1 }, { 0, 0, 0 }, "#f4f4f4" }, { { 0.18, 0.1, 0.04 }, { -0.22, 0.12, -0.51 }, "#404040" },
+		{ { 0.18, 0.1, 0.04 }, { 0.22, 0.12, -0.51 }, "#404040" }, { { 0.3, 0.1, 0.04 }, { 0, -0.18, -0.51 }, "#404040" },
+		{ { 0.1, 0.5, 0.1 }, { -0.3, -0.75, -0.2 }, "#e8e8e8", ala = 1 }, { { 0.1, 0.6, 0.1 }, { 0.1, -0.8, 0.2 }, "#e8e8e8", ala = -1 },
+		{ { 0.1, 0.45, 0.1 }, { 0.32, -0.72, -0.25 }, "#e8e8e8", ala = 1 } } },
+	{ id = "golem", n = "Mini gólem", nivel = 28, cajas = {
+		{ { 0.8, 0.6, 0.5 }, { 0, 0, 0 }, "#c8c0b0" }, { { 0.4, 0.42, 0.38 }, { 0, 0.5, -0.05 }, "#d8d0c0" },
+		{ { 0.08, 0.16, 0.08 }, { 0, 0.42, -0.26 }, "#a08070" }, { { 0.06, 0.06, 0.04 }, { -0.1, 0.56, -0.25 }, "#c03030", true },
+		{ { 0.06, 0.06, 0.04 }, { 0.1, 0.56, -0.25 }, "#c03030", true }, { { 0.2, 0.7, 0.2 }, { -0.5, -0.2, 0 }, "#b8b0a0", ala = 1 },
+		{ { 0.2, 0.7, 0.2 }, { 0.5, -0.2, 0 }, "#b8b0a0", ala = -1 }, { { 0.5, 0.35, 0.3 }, { 0, -0.48, 0 }, "#a8a090" } } },
+	{ id = "blaze", n = "Mini blaze", nivel = 34, gira = true, cajas = {
+		{ { 0.6, 0.6, 0.6 }, { 0, 0.2, 0 }, "#ffc020" }, { { 0.12, 0.08, 0.04 }, { -0.13, 0.25, -0.31 }, "#402000" },
+		{ { 0.12, 0.08, 0.04 }, { 0.13, 0.25, -0.31 }, "#402000" }, { { 0.12, 0.5, 0.12 }, { 0.4, -0.35, 0 }, "#ffd040", true, rota = true },
+		{ { 0.12, 0.5, 0.12 }, { -0.4, -0.35, 0 }, "#ffd040", true, rota = true }, { { 0.12, 0.5, 0.12 }, { 0, -0.35, 0.4 }, "#ffd040", true, rota = true },
+		{ { 0.12, 0.5, 0.12 }, { 0, -0.35, -0.4 }, "#ffd040", true, rota = true } } },
+	{ id = "hada", n = "Hada", nivel = 40, luz = "#80d0ff", cajas = {
+		{ { 0.45, 0.6, 0.35 }, { 0, 0, 0 }, "#70c8ff", true }, { { 0.4, 0.4, 0.4 }, { 0, 0.5, 0 }, "#a0e0ff", true },
+		{ { 0.08, 0.08, 0.04 }, { -0.1, 0.52, -0.21 }, "#203060" }, { { 0.08, 0.08, 0.04 }, { 0.1, 0.52, -0.21 }, "#203060" },
+		{ { 0.5, 0.6, 0.04 }, { -0.4, 0.2, 0.2 }, "#e0f4ff", ala = 1, trans = 0.45 }, { { 0.5, 0.6, 0.04 }, { 0.4, 0.2, 0.2 }, "#e0f4ff", ala = -1, trans = 0.45 } } },
+	{ id = "dragon", n = "Mini dragón", nivel = 46, cajas = {
+		{ { 0.5, 0.4, 0.9 }, { 0, 0, 0 }, "#1a1a20" }, { { 0.4, 0.36, 0.5 }, { 0, 0.15, -0.65 }, "#202028" },
+		{ { 0.1, 0.06, 0.04 }, { -0.12, 0.24, -0.91 }, "#d060ff", true }, { { 0.1, 0.06, 0.04 }, { 0.12, 0.24, -0.91 }, "#d060ff", true },
+		{ { 0.16, 0.16, 0.6 }, { 0, 0.05, 0.7 }, "#18181e" }, { { 0.9, 0.04, 0.6 }, { -0.65, 0.15, 0 }, "#2a2a34", ala = 1 },
+		{ { 0.9, 0.04, 0.6 }, { 0.65, 0.15, 0 }, "#2a2a34", ala = -1 } } },
+	{ id = "estrella", n = "Estrella VIP", vip = true, gira = true, luz = "#ffd84a", cajas = {
+		{ { 0.6, 0.6, 0.6 }, { 0, 0, 0 }, "#ffd84a", true }, { { 0.25, 0.25, 0.25 }, { 0, 0.5, 0 }, "#fff3a0", true },
+		{ { 0.25, 0.25, 0.25 }, { 0, -0.5, 0 }, "#fff3a0", true }, { { 0.25, 0.25, 0.25 }, { 0.5, 0, 0 }, "#fff3a0", true },
+		{ { 0.25, 0.25, 0.25 }, { -0.5, 0, 0 }, "#fff3a0", true }, { { 0.12, 0.12, 0.04 }, { -0.12, 0.08, -0.31 }, "#604000" },
+		{ { 0.12, 0.12, 0.04 }, { 0.12, 0.08, -0.31 }, "#604000" } } },
+}
+
+local function indice(lista)
+	local t = {}
+	for i, x in lista do
+		t[x.id] = x
+		x.orden = i
+	end
+	return t
+end
+D.SHADER_ID = indice(D.SHADERS)
+D.CALIDAD_ID = indice(D.CALIDADES)
+D.MIRA_ID = indice(D.MIRAS)
+D.COLOR_MIRA_ID = indice(D.COLORES_MIRA)
+D.CAPA_ID = indice(D.CAPAS)
+D.SOMBRERO_ID = indice(D.SOMBREROS)
+D.MASCOTA_ID = indice(D.MASCOTAS)
+
+D.TIPOS = {
+	capa = { lista = D.CAPAS, id = D.CAPA_ID, n = "Capas" },
+	sombrero = { lista = D.SOMBREROS, id = D.SOMBRERO_ID, n = "Sombreros" },
+	mascota = { lista = D.MASCOTAS, id = D.MASCOTA_ID, n = "Mascotas" },
+}
+
+-- ¿Puede ponérselo? (nivel del Camino y si es VIP)
+function D.puede(cos, nivel, vip)
+	if not cos then
+		return false
+	end
+	if cos.vip then
+		return vip == true
+	end
+	return (nivel or 1) >= (cos.nivel or 1)
+end
+
+return D
+]]></ProtectedString></Properties></Item>
+<Item class="ModuleScript" referent="RBX00000015"><Properties><string name="Name">DatosProgreso</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Datos del progreso (los usan el servidor y la interfaz)
 	· Camino de Blockverse: 50 niveles con experiencia de TODOS los modos. Cada nivel da
 	  algo: monedas, un título o una estela; los múltiplos de 10 dan un premio grande.
@@ -3993,7 +4209,7 @@ D.RULETA = {
 
 return D
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX00000015"><Properties><string name="Name">Dimensiones</string><ProtectedString name="Source"><![CDATA[--!native
+<Item class="ModuleScript" referent="RBX00000016"><Properties><string name="Name">Dimensiones</string><ProtectedString name="Source"><![CDATA[--!native
 --!optimize 2
 --[[
 	Blockverse para Roblox · El Nether y el End
@@ -4958,7 +5174,7 @@ end
 
 return D
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX00000016"><Properties><string name="Name">Encantamientos</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX00000017"><Properties><string name="Name">Encantamientos</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Encantamientos
 	Traducción de encantamientos.js del juego web (como en Java 1.21):
 	peso y rango de poder de cada nivel, encantabilidad de cada objeto,
@@ -5201,7 +5417,7 @@ end
 
 return Enc
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX00000017"><Properties><string name="Name">Estructuras</string><ProtectedString name="Source"><![CDATA[--!native
+<Item class="ModuleScript" referent="RBX00000018"><Properties><string name="Name">Estructuras</string><ProtectedString name="Source"><![CDATA[--!native
 --!optimize 2
 --[[
 	Blockverse para Roblox · Estructuras de la Superficie
@@ -7310,7 +7526,7 @@ end
 
 return E
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX00000018"><Properties><string name="Name">Fisica</string><ProtectedString name="Source"><![CDATA[--!native
+<Item class="ModuleScript" referent="RBX00000019"><Properties><string name="Name">Fisica</string><ProtectedString name="Source"><![CDATA[--!native
 --[[
 	Blockverse para Roblox · Física de entidades
 	Igual que choca/moverEje/pasoFisico de jugador.js: cajas que chocan
@@ -7441,7 +7657,7 @@ end
 
 return Fisica
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX00000019"><Properties><string name="Name">Fuentes</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX0000001A"><Properties><string name="Name">Fuentes</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Las letras del juego (una sola lista para todo)
 	· TITULO: Luckiest Guy, gruesa y alegre, para lo grande (BLOCKVERSE, ¡VICTORIA!, ¡Has muerto!).
 	· CABECERA: Fredoka, redondeada, para títulos de ventanas, botones y nombres.
@@ -7481,7 +7697,7 @@ end
 
 return F
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX0000001A"><Properties><string name="Name">Generador</string><ProtectedString name="Source"><![CDATA[--!native
+<Item class="ModuleScript" referent="RBX0000001B"><Properties><string name="Name">Generador</string><ProtectedString name="Source"><![CDATA[--!native
 --!optimize 2
 --[[
 	Blockverse para Roblox · Generador del mundo
@@ -8636,7 +8852,7 @@ end
 
 return Generador
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX0000001B"><Properties><string name="Name">MundoDatos</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX0000001C"><Properties><string name="Name">MundoDatos</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Datos del mundo
 	Guarda los chunks (16 × 16 × 192 bloques) y los cambios que han hecho
 	los jugadores. Lo usan el servidor y el cliente: los dos generan el
@@ -8843,7 +9059,7 @@ end
 
 return MundoDatos
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX0000001C"><Properties><string name="Name">ProductosRobux</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX0000001D"><Properties><string name="Name">ProductosRobux</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Lo que se puede comprar con Robux
 
 	CÓMO PONERLO EN MARCHA (lo hace el dueño del juego, una sola vez):
@@ -8927,7 +9143,7 @@ end
 
 return P
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX0000001D"><Properties><string name="Name">Rayo</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX0000001E"><Properties><string name="Name">Rayo</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Rayo
 	Recorre los bloques en línea recta (como lanzarRayo del juego web)
 	para saber a qué bloque se apunta y por qué cara. Respeta las formas:
@@ -9075,7 +9291,7 @@ end
 
 return Rayo
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX0000001E"><Properties><string name="Name">Registro</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX0000001F"><Properties><string name="Name">Registro</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Registro
 	Junta los datos exportados del juego web (Datos/*) y prepara tablas
 	rápidas para el resto del juego: qué bloques son sólidos, opacos,
@@ -9270,7 +9486,7 @@ end
 
 return Registro
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX0000001F"><Properties><string name="Name">Ruido</string><ProtectedString name="Source"><![CDATA[--!native
+<Item class="ModuleScript" referent="RBX00000020"><Properties><string name="Name">Ruido</string><ProtectedString name="Source"><![CDATA[--!native
 --!optimize 2
 --[[
 	Blockverse para Roblox · Ruido
@@ -9377,7 +9593,7 @@ return Ruido
 ]]></ProtectedString></Properties></Item>
 </Item>
 </Item>
-<Item class="ServerScriptService" referent="RBX00000037"><Properties><string name="Name">ServerScriptService</string></Properties><Item class="Script" referent="RBX00000036"><Properties><string name="Name">Servidor</string><bool name="Disabled">false</bool><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ServerScriptService" referent="RBX00000038"><Properties><string name="Name">ServerScriptService</string></Properties><Item class="Script" referent="RBX00000037"><Properties><string name="Name">Servidor</string><bool name="Disabled">false</bool><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Script principal del servidor
 	Une todo el juego, con las reglas del juego web:
 	· Mundo (igual al web), simulación, criaturas, entidades, cofres y hornos.
@@ -9419,6 +9635,7 @@ local Registro = require(Comp.Registro)
 local Crafteo = require(Comp.Crafteo)
 local Rayo = require(Comp.Rayo)
 local MundoDatos = require(Comp.MundoDatos)
+local DatosEstilo = require(Comp.DatosEstilo)
 local Mundo = require(script.Mundo)
 local Sim = require(script.Simulacion)
 local Entidades = require(script.Entidades)
@@ -9880,6 +10097,12 @@ end
 local AJUSTES = {
 	sensibilidad = { "number", 0.2, 3 }, fov = { "number", 50, 110 }, volumen = { "number", 0, 100 },
 	fovCorrer = { "boolean" }, balanceo = { "boolean" }, numeros = { "boolean" },
+	-- Gráficos y mira (los textos solo valen si están en su lista)
+	distancia = { "number", 2, 8 }, fuerza = { "number", 0, 150 }, exposicion = { "number", -5, 5 },
+	colorDia = { "boolean" }, vineta = { "boolean" }, profundidad = { "boolean" }, rayosSol = { "boolean" },
+	particulas = { "boolean" }, nubes = { "boolean" },
+	shader = { "string", DatosEstilo.SHADER_ID }, calidad = { "string", DatosEstilo.CALIDAD_ID },
+	mira = { "string", DatosEstilo.MIRA_ID }, colorMira = { "string", DatosEstilo.COLOR_MIRA_ID },
 }
 local function limpiarAjustes(a)
 	if type(a) ~= "table" then
@@ -9888,7 +10111,7 @@ local function limpiarAjustes(a)
 	local r = {}
 	for k, A in AJUSTES do
 		local v = a[k]
-		if type(v) == A[1] then
+		if type(v) == A[1] and (A[1] ~= "string" or A[2][v] ~= nil) then
 			r[k] = A[1] == "number" and math.clamp(v, A[2], A[3]) or v
 		end
 	end
@@ -12221,7 +12444,7 @@ Mobs.alMatar = function(m, _, plr)
 end
 -- Las explosiones en la arena de Bed Wars solo rompen lo construido
 Sim.puedeExplotar = Modos.puedeExplotar
-]]></ProtectedString></Properties><Item class="ModuleScript" referent="RBX00000022"><Properties><string name="Name">BedWars</string><ProtectedString name="Source"><![CDATA[--[[
+]]></ProtectedString></Properties><Item class="ModuleScript" referent="RBX00000023"><Properties><string name="Name">BedWars</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · BED WARS (bedwars.js, bedwars2.js y tiendaBW37.js)
 	Una partida para todo el servidor: sala de espera de cristal con cuenta
 	atrás, 8 equipos (o 4 si hay más de 8 jugadores) en islas flotantes,
@@ -15324,7 +15547,7 @@ end
 
 return BW
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX00000023"><Properties><string name="Name">Clima</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX00000024"><Properties><string name="Name">Clima</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Clima (servidor)
 	· Cielo despejado, lluvia o tormenta, que cambian solos cada pocos minutos.
 	  El estado va en el atributo «Clima» de workspace y cada cliente lo dibuja
@@ -15445,7 +15668,7 @@ end
 
 return Clima
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX00000024"><Properties><string name="Name">Contenedores</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX00000025"><Properties><string name="Name">Contenedores</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Cofres y hornos (servidor)
 	· Cofres, barriles y cofres de cobre: 27 casillas cada uno.
 	· Hornos (y ahumadores / altos hornos): entrada, combustible y salida,
@@ -15617,7 +15840,7 @@ end
 
 return Cont
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX00000025"><Properties><string name="Name">Dimension</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX00000026"><Properties><string name="Name">Dimension</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Dimensiones (servidor)
 	Como jugador.js, dragon.js y extras.js del juego web:
 	· Portales del Nether: marco de obsidiana de 2×3 a 21×21 que se
@@ -16405,7 +16628,7 @@ end
 
 return Dim
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX00000026"><Properties><string name="Name">Entidades</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX00000027"><Properties><string name="Name">Entidades</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Entidades (servidor)
 	Como entidades.js del juego web:
 	· Objetos tirados: saltan al soltarse, caen, se juntan con los iguales
@@ -16746,7 +16969,7 @@ end
 
 return Entidades
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX00000027"><Properties><string name="Name">Habitantes</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX00000028"><Properties><string name="Name">Habitantes</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Habitantes de las estructuras (servidor)
 	Como en el juego web:
 	· Generadores de criaturas de las mazmorras y la fortaleza (zombi 50 %,
@@ -17099,7 +17322,7 @@ end
 
 return H
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX00000028"><Properties><string name="Name">Inventario</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX00000029"><Properties><string name="Name">Inventario</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Inventario (servidor)
 	Casillas como en el juego web:
 	· 1-9 barra rápida, 10-36 mochila, 37-40 armadura (casco, pechera,
@@ -17360,7 +17583,7 @@ end
 
 return Inv
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX00000029"><Properties><string name="Name">KitsBW</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX0000002A"><Properties><string name="Name">KitsBW</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Kits de Bed Wars (kits46.js del juego web y kits nuevos)
 	Cada kit tiene rareza, precio en monedas y tres niveles que mejoran sus números.
 	Cada día hay tres kits gratis para probar. Los legendarios tienen una habilidad
@@ -17754,7 +17977,7 @@ end
 
 return Kits
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX0000002A"><Properties><string name="Name">Leyendas</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX0000002B"><Properties><string name="Name">Leyendas</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · LEYENDAS (modos52.js y modos53.js)
 	Cada jugador defiende su aldea en una isla propia: plaza con el
 	pozo-corazón, casas con aldeanos, caminos con faroles y huertos, y
@@ -18542,7 +18765,7 @@ end
 
 return LY
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX0000002B"><Properties><string name="Name">Logros</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX0000002C"><Properties><string name="Name">Logros</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Logros (como los avances de Minecraft)
 	· 18 logros: los primeros sirven de guía para quien empieza (madera, mesa, pico,
 	  piedra, horno, hierro…) y los demás son retos (diamantes, el Nether, el dragón,
@@ -18763,7 +18986,7 @@ end
 
 return Logros
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX0000002C"><Properties><string name="Name">Mazmorras</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX0000002D"><Properties><string name="Name">Mazmorras</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · MAZMORRAS (modos52.js y modos53.js)
 	Cada jugador baja a su propia mazmorra: salas cuadradas, redondas y en
 	cruz unidas por pasillos, con tres ambientaciones que se turnan por
@@ -19410,7 +19633,7 @@ end
 
 return MZ
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX0000002D"><Properties><string name="Name">Mesas</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX0000002E"><Properties><string name="Name">Mesas</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Mesas y comercio (servidor)
 	Las mesas que faltaban, con las fórmulas del juego web:
 	· Mesa de encantamientos (encantamientos.js): tres opciones según las
@@ -20270,7 +20493,7 @@ end
 
 return Mesas
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX0000002E"><Properties><string name="Name">Mobs</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX0000002F"><Properties><string name="Name">Mobs</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Criaturas (servidor)
 	IA de mobs.js del juego web, para varios jugadores:
 	· Hostiles cuerpo a cuerpo (zombi, araña que salta…), esqueletos que
@@ -21497,7 +21720,7 @@ end
 
 return Mobs
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX0000002F"><Properties><string name="Name">Modos</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX00000030"><Properties><string name="Name">Modos</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Modos de juego (servidor)
 	ONE BLOCK (como oneblock.js del juego web): cada jugador tiene su
 	propia isla de un solo bloque en una zona vacía del mundo. Al romperlo
@@ -22014,7 +22237,7 @@ end
 
 return Modos
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX00000030"><Properties><string name="Name">Mundo</string><ProtectedString name="Source"><![CDATA[--!native
+<Item class="ModuleScript" referent="RBX00000031"><Properties><string name="Name">Mundo</string><ProtectedString name="Source"><![CDATA[--!native
 --[[
 	Blockverse para Roblox · Mundo (servidor)
 	· Guarda los bloques (MundoDatos) y los cambios de los jugadores.
@@ -22422,7 +22645,7 @@ end
 
 return Mundo
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX00000031"><Properties><string name="Name">PerfilBW</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX00000032"><Properties><string name="Name">PerfilBW</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Perfil de Bed Wars de cada jugador (se guarda en DataStore)
 	· Monedas, experiencia con nivel y estrellas [N★], estadísticas, racha de victorias.
 	· Kits comprados con su nivel, kit equipado y efecto de baja final equipado.
@@ -22690,13 +22913,14 @@ end)
 
 return Perfil
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX00000032"><Properties><string name="Name">Progreso</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX00000033"><Properties><string name="Name">Progreso</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Progreso (servidor)
 	· Camino de Blockverse: experiencia de todos los modos (misiones, monstruos, partidas,
 	  salas, portales, fases…), 50 niveles y una recompensa por nivel que se cobra a mano.
 	· Misiones diarias (3) y semanales (3) que cambian solas; al cumplirlas sale un aviso.
 	· Ruleta diaria gratis (2 giros con VIP), con las probabilidades a la vista.
 	· Colección: títulos (encima de la cabeza y en el chat) y estelas (cola de color al moverse).
+	· Personalización: capas, sombreros y mascotas (se desbloquean con el nivel o el VIP).
 	· Ranking: los 10 con más experiencia de todo el juego (OrderedDataStore).
 	Se guarda en el DataStore con la clave p_<UserId>.
 ]]
@@ -22705,6 +22929,7 @@ local DataStoreService = game:GetService("DataStoreService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Comp = ReplicatedStorage:WaitForChild("Blockverse")
 local D = require(Comp.DatosProgreso)
+local DE = require(Comp.DatosEstilo)
 local Perfil = require(script.Parent.PerfilBW)
 
 local Progreso = {}
@@ -22828,7 +23053,7 @@ function Progreso.cargar(plr)
 		end)
 		if ok and type(g) == "table" then
 			for k, v in g do
-				if p[k] ~= nil or k == "estela" then
+				if p[k] ~= nil or k == "estela" or DE.TIPOS[k] then
 					p[k] = v
 				end
 			end
@@ -22865,6 +23090,11 @@ function Progreso.tieneEstela(plr, id)
 	local e = D.ESTELA_ID[id]
 	return e ~= nil and reclamado(de(plr), e.nivel)
 end
+-- Capas, sombreros y mascotas: con llegar al nivel del Camino (o tener VIP) basta
+function Progreso.tieneCosmetico(plr, tipo, id)
+	local T = DE.TIPOS[tipo]
+	return T ~= nil and type(id) == "string" and DE.puede(T.id[id], de(plr).nivel, Progreso.esVIP(plr))
+end
 
 local function secuenciaEstela(e)
 	if e.arcoiris then
@@ -22887,6 +23117,11 @@ function Progreso.aplicar(plr)
 	plr:SetAttribute("Titulo", t.n)
 	plr:SetAttribute("TituloCol", t.col)
 	plr:SetAttribute("NivelCamino", p.nivel)
+	-- Los cosméticos los dibuja cada cliente (Cosmeticos.luau) con estos atributos
+	for tipo, atr in { capa = "Capa", sombrero = "Sombrero", mascota = "Mascota" } do
+		local id = p[tipo]
+		plr:SetAttribute(atr, (id and Progreso.tieneCosmetico(plr, tipo, id)) and id or nil)
+	end
 	local ch = plr.Character
 	if not ch then
 		return
@@ -23102,6 +23337,10 @@ function Progreso.equipar(plr, tipo, id)
 		p.estela = nil
 	elseif tipo == "estela" and type(id) == "string" and Progreso.tieneEstela(plr, id) then
 		p.estela = id
+	elseif DE.TIPOS[tipo] and (id == nil or id == "") then
+		p[tipo] = nil
+	elseif DE.TIPOS[tipo] and Progreso.tieneCosmetico(plr, tipo, id) then
+		p[tipo] = id
 	else
 		return false
 	end
@@ -23240,6 +23479,7 @@ function Progreso.datos(plr)
 		finDia = 86400 - ahora % 86400, finSemana = (7 - ((hoy() + 3) % 7)) * 86400 - ahora % 86400,
 		giros = Progreso.giros(plr), vip = Progreso.esVIP(plr), ruleta = D.RULETA,
 		titulos = titulos, estelas = estelas, ranking = top, pendientes = pendientes(plr),
+		estilo = { capa = p.capa, sombrero = p.sombrero, mascota = p.mascota },
 	}
 end
 
@@ -23295,6 +23535,12 @@ function Progreso.iniciar(c)
 		plr:GetAttributeChangedSignal("BedWars"):Connect(function()
 			Progreso.aplicar(plr)
 		end)
+		-- Al comprar (o perder) el VIP se ponen o se quitan sus cosméticos
+		plr:GetAttributeChangedSignal("VIP"):Connect(function()
+			if datos[plr] then
+				Progreso.aplicar(plr)
+			end
+		end)
 		Progreso.cargar(plr)
 		avisarPendientes(plr)
 	end
@@ -23318,7 +23564,7 @@ end
 
 return Progreso
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX00000033"><Properties><string name="Name">Redstone</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX00000034"><Properties><string name="Name">Redstone</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Redstone (servidor)
 	Traducción de redstone.js del juego web:
 	· El polvo lleva energía (0-15, pierde 1 por bloque, sube y baja
@@ -23997,7 +24243,7 @@ end
 
 return Redstone
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX00000034"><Properties><string name="Name">Simulacion</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX00000035"><Properties><string name="Name">Simulacion</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Simulación del mundo (servidor)
 	Traducción de simulacion.js: líquidos que fluyen (agua y lava,
 	obsidiana y roca al juntarse), arena y grava que caen, plantas y
@@ -24608,7 +24854,7 @@ end
 
 return Sim
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX00000035"><Properties><string name="Name">Tienda</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX00000036"><Properties><string name="Name">Tienda</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Tienda con Robux (servidor)
 	· Pases (VIP, Monedas x2, Todos los efectos): se miran al entrar y al comprarlos.
 	· Productos (monedas y cosas de cada modo): se entregan en ProcessReceipt, que Roblox
@@ -24963,7 +25209,7 @@ return Tienda
 ]]></ProtectedString></Properties></Item>
 </Item>
 </Item>
-<Item class="StarterPlayer" referent="RBX00000049"><Properties><string name="Name">StarterPlayer</string><float name="CharacterWalkSpeed">14</float><bool name="CharacterUseJumpPower">false</bool><float name="CharacterJumpHeight">4.6</float></Properties><Item class="StarterPlayerScripts" referent="RBX00000047"><Properties><string name="Name">StarterPlayerScripts</string></Properties><Item class="LocalScript" referent="RBX00000045"><Properties><string name="Name">Cliente</string><bool name="Disabled">false</bool><ProtectedString name="Source"><![CDATA[--[[
+<Item class="StarterPlayer" referent="RBX0000004D"><Properties><string name="Name">StarterPlayer</string><float name="CharacterWalkSpeed">14</float><bool name="CharacterUseJumpPower">false</bool><float name="CharacterJumpHeight">4.6</float></Properties><Item class="StarterPlayerScripts" referent="RBX0000004B"><Properties><string name="Name">StarterPlayerScripts</string></Properties><Item class="LocalScript" referent="RBX00000049"><Properties><string name="Name">Cliente</string><bool name="Disabled">false</bool><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Script del cliente
 	· Genera y dibuja el mundo en este equipo (la misma semilla que el
 	  servidor) y aplica los cambios que llegan.
@@ -24995,6 +25241,10 @@ local MobsVista = require(script:WaitForChild("MobsVista"))
 local EntidadesVista = require(script:WaitForChild("EntidadesVista"))
 local TiendaVista = require(script:WaitForChild("TiendaVista"))
 local ProgresoVista = require(script:WaitForChild("ProgresoVista"))
+local PersonalizarVista = require(script:WaitForChild("PersonalizarVista"))
+local Cosmeticos = require(script:WaitForChild("Cosmeticos"))
+local Graficos = require(script:WaitForChild("Graficos"))
+local DatosEstilo = require(Comp:WaitForChild("DatosEstilo"))
 local ClimaVista = require(script:WaitForChild("ClimaVista"))
 local DimensionVista = require(script:WaitForChild("DimensionVista"))
 local Generador = require(Comp:WaitForChild("Generador"))
@@ -25182,10 +25432,39 @@ Interfaz.alAbrirProgreso = function(pestana)
 	ProgresoVista.abrir(pestana)
 end
 ProgresoVista.iniciar()
+-- Personalizar: capas, sombreros, mascotas y mira
+PersonalizarVista.enviar = enviar
+PersonalizarVista.alSonido = function(nombre, tono)
+	sonido(nombre, nil, tono)
+end
+PersonalizarVista.alVisible = function(si)
+	Interfaz.personalizarVisible = si
+end
+PersonalizarVista.ajustes = Interfaz.ajustes
+PersonalizarVista.alCambiarAjuste = function(k, v)
+	Interfaz.alCambiarAjuste(k, v)
+end
+PersonalizarVista.alAbrirTienda = function(p)
+	TiendaVista.abrir(p)
+end
+Interfaz.alAbrirPersonalizar = function()
+	PersonalizarVista.abrir("capa")
+end
+PersonalizarVista.iniciar()
+Cosmeticos.iniciar()
 Interfaz.carga(0.5, "Generando el mundo…")
 local md = MundoDatos.new(semilla)
 -- Las sombras redondas buscan el suelo en los datos del mundo
-require(script:WaitForChild("Sombras")).md = md
+local Sombras = require(script:WaitForChild("Sombras"))
+Sombras.md = md
+-- Shaders, colores según la hora, partículas del ambiente y calidad
+Graficos.md = md
+Graficos.ajustes = Interfaz.ajustes
+Graficos.dimension = DimensionVista.actual
+Graficos.alSombras = function(si)
+	Sombras.activo = si
+end
+Graficos.iniciar()
 est.md = md
 DimensionVista.md = md
 DimensionVista.iniciar()
@@ -25238,6 +25517,9 @@ end)
 ------------------------------------------------------------------
 local tercera = false
 ProgresoVista.enTercera = function()
+	return tercera
+end
+Cosmeticos.esTercera = function()
 	return tercera
 end
 local function aplicarCamara()
@@ -25605,6 +25887,10 @@ UserInputService.InputBegan:Connect(function(input, procesado)
 		end
 		if k == Enum.KeyCode.Escape and ProgresoVista.visible() then
 			ProgresoVista.cerrar()
+			return
+		end
+		if k == Enum.KeyCode.Escape and PersonalizarVista.visible() then
+			PersonalizarVista.cerrar()
 			return
 		end
 		if k == Enum.KeyCode.Escape and Interfaz.abierto() then
@@ -25992,6 +26278,10 @@ end
 local ajustes = Interfaz.ajustes
 local function aplicarAjustes()
 	UserInputService.MouseDeltaSensitivity = ajustes.sensibilidad
+	-- Gráficos (distancia de visión, sombras…) y la mira elegida en Personalizar
+	Graficos.aplicar()
+	local cm = DatosEstilo.COLOR_MIRA_ID[ajustes.colorMira] or DatosEstilo.COLORES_MIRA[1]
+	PersonalizarVista.dibujarMira(Interfaz.mira, ajustes.mira, Color3.fromHex(cm.c), 2)
 end
 local envioAjustes = 0
 Interfaz.alCambiarAjuste = function()
@@ -26169,6 +26459,7 @@ Estado.OnClientEvent:Connect(function(tipo, a, b, c)
 		sonido(a, b)
 	elseif tipo == "progreso" then
 		ProgresoVista.datos(a, b)
+		PersonalizarVista.datos(a)
 	elseif tipo == "progresoAviso" then
 		ProgresoVista.aviso(a)
 	elseif tipo == "progresoPendientes" then
@@ -26671,7 +26962,7 @@ RunService.RenderStepped:Connect(function(dt)
 			:format(nomDim, x, y, zl, x // 16, zl // 16, nomBio, Lighting.ClockTime, fps, Render.modo, semilla))
 	end
 end)
-]]></ProtectedString></Properties><Item class="ModuleScript" referent="RBX00000038"><Properties><string name="Name">ClimaVista</string><ProtectedString name="Source"><![CDATA[--[[
+]]></ProtectedString></Properties><Item class="ModuleScript" referent="RBX00000039"><Properties><string name="Name">ClimaVista</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Clima (cliente)
 	· Lluvia: gotas que caen alrededor de la cámara y salpican al llegar al suelo
 	  (no pasan los techos). En los biomas fríos nieva y en los secos (desierto,
@@ -26979,7 +27270,320 @@ end
 
 return ClimaVista
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX00000039"><Properties><string name="Name">DimensionVista</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX0000003A"><Properties><string name="Name">Cosmeticos</string><ProtectedString name="Source"><![CDATA[--[[
+	Blockverse para Roblox · Capas, sombreros y mascotas (cliente)
+	El servidor pone en cada jugador los atributos Capa, Sombrero y Mascota (si los tiene
+	desbloqueados) y cada cliente los dibuja con cajas, como el resto de modelos:
+	· La capa cuelga de los hombros y se levanta al correr y al caer, con un vaivén suave.
+	· El sombrero va en la cabeza (la aureola gira).
+	· La mascota flota al lado del jugador, le sigue con suavidad, aletea y mira hacia donde va.
+	El tuyo no se ve en primera persona (salvo la mascota) y nada se ve si eres invisible.
+	También dibuja las vistas de frente para la ventana de Personalizar.
+]]
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local Comp = ReplicatedStorage:WaitForChild("Blockverse")
+local DE = require(Comp:WaitForChild("DatosEstilo"))
+
+local jugador = Players.LocalPlayer
+local Cos = {}
+Cos.esTercera = function()
+	return false
+end
+
+local carpeta = Instance.new("Folder")
+carpeta.Name = "Cosmeticos"
+
+local function caja(tam, col, neon, trans)
+	local p = Instance.new("Part")
+	p.Anchored = true
+	p.CanCollide = false
+	p.CanQuery = false
+	p.CanTouch = false
+	p.CastShadow = not neon
+	p.Size = tam
+	p.Color = type(col) == "string" and Color3.fromHex(col) or col
+	p.Material = neon and Enum.Material.Neon or Enum.Material.SmoothPlastic
+	p.Transparency = trans or 0
+	p.Parent = carpeta
+	return p
+end
+
+local function quitar(m)
+	if m then
+		for _, x in m.partes do
+			x.p:Destroy()
+		end
+	end
+end
+
+------------------------------------------------------------------
+-- Rectángulos de una capa (en fracciones: x de izquierda a derecha vista desde atrás, y de arriba abajo)
+------------------------------------------------------------------
+function Cos.rectangulosCapa(c)
+	local r = {}
+	if c.tablero then
+		local nx, ny, col2 = c.tablero[1], c.tablero[2], c.tablero[3]
+		for i = 0, nx - 1 do
+			for j = 0, ny - 1 do
+				if (i + j) % 2 == 1 then
+					table.insert(r, { i / nx, j / ny, (i + 1) / nx, (j + 1) / ny, col2 })
+				end
+			end
+		end
+	end
+	if c.arcoiris then
+		for i = 0, 5 do
+			table.insert(r, { 0, i / 6, 1, (i + 1) / 6, Color3.fromHSV(i / 6 * 0.83, 0.75, 1) })
+		end
+	end
+	for _, d in c.deco or {} do
+		table.insert(r, d)
+	end
+	if c.estrellas then
+		local rnd = Random.new(7)
+		for _ = 1, 14 do
+			local x, y = rnd:NextNumber(0.05, 0.9), rnd:NextNumber(0.05, 0.9)
+			table.insert(r, { x, y, x + 0.05, y + 0.035, "#ffffff", true })
+		end
+	end
+	return r
+end
+
+------------------------------------------------------------------
+-- Construir cada cosa (lista de piezas con su sitio relativo)
+------------------------------------------------------------------
+local ANCHO_CAPA, ALTO_CAPA = 2, 3.1
+local function crearCapa(id)
+	local c = DE.CAPA_ID[id]
+	if not c then
+		return nil
+	end
+	local m = { id = id, partes = {}, angulo = 0.15 }
+	local base = caja(Vector3.new(ANCHO_CAPA, ALTO_CAPA, 0.1), c.base)
+	table.insert(m.partes, { p = base, cf = CFrame.new(0, -ALTO_CAPA / 2, 0) })
+	for _, d in Cos.rectangulosCapa(c) do
+		local w, h = ANCHO_CAPA * (d[3] - d[1]), ALTO_CAPA * (d[4] - d[2])
+		local p = caja(Vector3.new(w, h, 0.02), d[5], d[6] == true)
+		local x = -ANCHO_CAPA / 2 + ANCHO_CAPA * (d[1] + d[3]) / 2
+		local y = -ALTO_CAPA * (d[2] + d[4]) / 2
+		table.insert(m.partes, { p = p, cf = CFrame.new(x, y, 0.06) })
+	end
+	return m
+end
+
+local function crearSombrero(id, u)
+	local s = DE.SOMBRERO_ID[id]
+	if not s then
+		return nil
+	end
+	local m = { id = id, partes = {}, gira = s.gira, u = u }
+	for _, b in s.cajas do
+		local p = caja(Vector3.new(b[1][1], b[1][2], b[1][3]) * u, b[3], b[4] == true)
+		table.insert(m.partes, { p = p, cf = CFrame.new(b[2][1] * u, b[2][2] * u, b[2][3] * u) })
+	end
+	return m
+end
+
+local function crearMascota(id)
+	local d = DE.MASCOTA_ID[id]
+	if not d then
+		return nil
+	end
+	local m = { id = id, partes = {}, def = d, t = math.random() * 10 }
+	for _, b in d.cajas do
+		local p = caja(Vector3.new(b[1][1], b[1][2], b[1][3]), b[3], b[4] == true, b.trans)
+		table.insert(m.partes, { p = p, cf = CFrame.new(b[2][1], b[2][2], b[2][3]), ala = b.ala, rota = b.rota })
+		m.tieneRota = m.tieneRota or b.rota == true
+	end
+	if d.luz then
+		local l = Instance.new("PointLight")
+		l.Color = Color3.fromHex(d.luz)
+		l.Range = 8
+		l.Brightness = 1.2
+		l.Parent = m.partes[1].p
+	end
+	return m
+end
+
+local function ocultar(m, si)
+	if m and m.oculto ~= si then
+		m.oculto = si
+		for _, x in m.partes do
+			x.p.LocalTransparencyModifier = si and 1 or 0
+		end
+	end
+end
+
+local function colocar(m, base)
+	for _, x in m.partes do
+		x.p.CFrame = base * x.cf
+	end
+end
+
+------------------------------------------------------------------
+-- Cada fotograma
+------------------------------------------------------------------
+local porJugador = {} -- plr -> {capa, sombrero, mascota}
+
+local function actualizar(plr, d, dt)
+	local ch = plr.Character
+	local raiz = ch and ch:FindFirstChild("HumanoidRootPart")
+	local hum = ch and ch:FindFirstChildOfClass("Humanoid")
+	local vivo = raiz and hum and hum.Health > 0 and not ch:GetAttribute("Invisible")
+	local cam = workspace.CurrentCamera
+	local lejos = not raiz or not cam or (raiz.Position - cam.CFrame.Position).Magnitude > 220
+	local yo = plr == jugador
+	-- ¿Ha cambiado lo que lleva?
+	for _, k in { { "capa", "Capa" }, { "sombrero", "Sombrero" }, { "mascota", "Mascota" } } do
+		local id = plr:GetAttribute(k[2])
+		local m = d[k[1]]
+		local cab = ch and ch:FindFirstChild("Head")
+		local u = cab and math.min(cab.Size.X, cab.Size.Y, cab.Size.Z) * 1.05 or 1.2
+		if (m and m.id) ~= id or (k[1] == "sombrero" and m and math.abs(m.u - u) > 0.01) then
+			quitar(m)
+			d[k[1]] = nil
+			if id then
+				if k[1] == "capa" then
+					d.capa = crearCapa(id)
+				elseif k[1] == "sombrero" then
+					d.sombrero = crearSombrero(id, u)
+				else
+					d.mascota = crearMascota(id)
+				end
+			end
+		end
+	end
+	local t = os.clock()
+	-- Capa: cuelga de la espalda y se levanta con la velocidad
+	if d.capa then
+		local torso = ch and (ch:FindFirstChild("UpperTorso") or ch:FindFirstChild("Torso"))
+		local ver = vivo and torso and not lejos and (not yo or Cos.esTercera())
+		ocultar(d.capa, not ver)
+		if ver then
+			local v = raiz.AssemblyLinearVelocity
+			local atras = torso.CFrame.LookVector
+			local avance = math.max(0, v:Dot(atras))
+			local caer = math.clamp(-v.Y, 0, 40)
+			local objetivo = math.rad(6) + math.rad(math.clamp(avance * 2.4 + caer * 1.2, 0, 70))
+			objetivo += math.sin(t * 7) * math.rad(2.5) * math.clamp(avance / 8, 0, 1)
+			d.capa.angulo += (objetivo - d.capa.angulo) * math.min(1, dt * 8)
+			local s = torso.Size
+			local hombros = torso.CFrame * CFrame.new(0, s.Y / 2 - 0.05, s.Z / 2 + 0.08)
+			colocar(d.capa, hombros * CFrame.Angles(-d.capa.angulo, 0, 0))
+		end
+	end
+	-- Sombrero
+	if d.sombrero then
+		local cab = ch and ch:FindFirstChild("Head")
+		local ver = vivo and cab and not lejos and (not yo or Cos.esTercera())
+		ocultar(d.sombrero, not ver)
+		if ver then
+			local base = cab.CFrame * CFrame.new(0, d.sombrero.u / 2, 0)
+			if d.sombrero.gira then
+				base *= CFrame.new(0, math.sin(t * 2) * 0.05, 0) * CFrame.Angles(0, t * 1.5, 0)
+			end
+			colocar(d.sombrero, base)
+		end
+	end
+	-- Mascota: flota detrás, a la derecha, y te sigue
+	local m = d.mascota
+	if m then
+		ocultar(m, not vivo or lejos)
+		if vivo and not lejos then
+			m.t += dt
+			local destino = (raiz.CFrame * CFrame.new(2.4, 1.3, 2.2)).Position
+			if not m.pos or (m.pos - destino).Magnitude > 40 then
+				m.pos = destino
+				m.giro = 0
+			end
+			local antes = m.pos
+			m.pos = m.pos:Lerp(destino, 1 - math.exp(-dt * 5))
+			local mov = m.pos - antes
+			local mira
+			if Vector3.new(mov.X, 0, mov.Z).Magnitude > 0.02 then
+				mira = math.atan2(-mov.X, -mov.Z)
+			else
+				local lv = raiz.CFrame.LookVector
+				mira = math.atan2(-lv.X, -lv.Z)
+			end
+			local dif = (mira - (m.giro or 0) + math.pi) % (2 * math.pi) - math.pi
+			m.giro = (m.giro or 0) + dif * math.min(1, dt * 6)
+			local bote = m.def.salta and math.abs(math.sin(m.t * 3.5)) * 0.6 or math.sin(m.t * 2.4) * 0.25
+			local giro = m.giro
+			if m.def.gira and not m.tieneRota then
+				giro += m.t * 1.6
+			end
+			local base = CFrame.new(m.pos + Vector3.new(0, bote, 0)) * CFrame.Angles(0, giro, 0)
+			local aleteo = math.sin(m.t * 16) * 0.6
+			for _, x in m.partes do
+				local cf = x.cf
+				if x.ala then
+					-- Gira por la bisagra (a medio camino del cuerpo)
+					local px = cf.Position.X * 0.5
+					cf = CFrame.new(px, cf.Position.Y, cf.Position.Z) * CFrame.Angles(0, 0, x.ala * aleteo) * CFrame.new(px, 0, 0)
+				elseif x.rota then
+					cf = CFrame.Angles(0, m.t * 2.5, 0) * cf
+				end
+				x.p.CFrame = base * cf
+			end
+		end
+	end
+end
+
+function Cos.iniciar()
+	carpeta.Parent = workspace
+	RunService.RenderStepped:Connect(function(dt)
+		for _, plr in Players:GetPlayers() do
+			local d = porJugador[plr]
+			if not d then
+				d = {}
+				porJugador[plr] = d
+			end
+			actualizar(plr, d, dt)
+		end
+		for plr, d in porJugador do
+			if not plr.Parent then
+				quitar(d.capa)
+				quitar(d.sombrero)
+				quitar(d.mascota)
+				porJugador[plr] = nil
+			end
+		end
+	end)
+end
+
+------------------------------------------------------------------
+-- Vista de frente (para las tarjetas de la ventana): cajas como marcos 2D
+------------------------------------------------------------------
+-- cajas: lista {tam, pos, color, neón}; escala: píxeles por unidad; z: capa de la interfaz
+function Cos.dibujarFrente(padre, cajas, escala, z)
+	local orden = {}
+	for _, b in cajas do
+		table.insert(orden, b)
+	end
+	-- Lo de atrás primero (delante es -Z)
+	table.sort(orden, function(a, b)
+		return a[2][3] > b[2][3]
+	end)
+	for _, b in orden do
+		local f = Instance.new("Frame")
+		f.BorderSizePixel = 0
+		f.AnchorPoint = Vector2.new(0.5, 0.5)
+		f.BackgroundColor3 = Color3.fromHex(b[3])
+		f.BackgroundTransparency = b.trans or 0
+		f.Size = UDim2.fromOffset(math.max(2, b[1][1] * escala), math.max(2, b[1][2] * escala))
+		f.Position = UDim2.new(0.5, b[2][1] * escala, 0.5, -b[2][2] * escala)
+		f.ZIndex = z
+		f.Parent = padre
+	end
+end
+
+return Cos
+]]></ProtectedString></Properties></Item>
+<Item class="ModuleScript" referent="RBX0000003B"><Properties><string name="Name">DimensionVista</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · El Nether y el End (cliente)
 	· Ambiente de cada dimensión como en el juego web: niebla roja (del
 	  color de cada bioma del Nether) y sin cielo en el Nether; niebla
@@ -27113,6 +27717,11 @@ local function aplicar(dim, biomaN)
 end
 
 -- Dimensión de una posición en studs
+-- La dimensión en la que está la cámara ahora («superficie», «nether», «end»…)
+function DV.actual()
+	return actual
+end
+
 function DV.dimensionEn(pos)
 	local d = Generador.dimensionBloque(math.floor(pos.Z / BS))
 	return d
@@ -27399,7 +28008,7 @@ end
 
 return DV
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX0000003A"><Properties><string name="Name">EntidadesVista</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX0000003C"><Properties><string name="Name">EntidadesVista</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Entidades (cliente)
 	Dibuja lo que hay en workspace.Entidades como en el juego web:
 	· Objetos tirados: su modelo 3D (cubito con texturas o el objeto con volumen)
@@ -27702,7 +28311,335 @@ end
 
 return EntidadesVista
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX0000003B"><Properties><string name="Name">Iconos</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX0000003D"><Properties><string name="Name">Graficos</string><ProtectedString name="Source"><![CDATA[--[[
+	Blockverse para Roblox · Gráficos y shaders (cliente)
+	· Estilos de imagen («shaders»): Clásico, Vívido, Cinemático, Fantasía, Invierno, Retro,
+	  Blanco y negro o sin nada. Cada uno ajusta el bloom, los rayos de sol, el color, el
+	  desenfoque lejano y la viñeta. La «fuerza» los suaviza o los exagera.
+	· Color según la hora: tonos dorados al amanecer y al atardecer, azulados de noche.
+	· Adaptación de los ojos: en cuevas la imagen se aclara un poco y pierde color,
+	  bajo el agua se ve azul y borroso, y dentro de la lava, naranja.
+	· Partículas del ambiente: motas de polvo de día, luciérnagas de noche, ceniza en el
+	  Nether y chispas moradas en el End.
+	· Calidad (baja, media, alta, ultra) y distancia de visión, para que vaya bien en móviles.
+	Los efectos van en la cámara: solo los ve este jugador y no pisan los del servidor.
+]]
+local RunService = game:GetService("RunService")
+local Lighting = game:GetService("Lighting")
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local Comp = ReplicatedStorage:WaitForChild("Blockverse")
+local Config = require(Comp:WaitForChild("Config"))
+local Registro = require(Comp:WaitForChild("Registro"))
+local DE = require(Comp:WaitForChild("DatosEstilo"))
+
+local BS = Config.BLOQUE
+local jugador = Players.LocalPlayer
+local Graficos = {}
+Graficos.md = nil -- datos del mundo (para saber si estás en una cueva o en el agua)
+Graficos.dimension = function()
+	return "superficie"
+end
+Graficos.ajustes = { shader = "clasico", calidad = "alta", distancia = Config.RADIO, fuerza = 100, exposicion = 0,
+	colorDia = true, vineta = true, profundidad = true, rayosSol = true, particulas = true, nubes = true }
+Graficos.alSombras = function(si) end -- para encender o apagar las sombras redondas
+
+local fx = {} -- los efectos propios (en la cámara)
+local estado = { cueva = 0, agua = 0, lava = 0, t = 0, mirarT = 0 }
+
+local function color(hex)
+	return Color3.fromHex(hex)
+end
+local BLANCO = Color3.new(1, 1, 1)
+local DORADO = Color3.fromRGB(255, 212, 168)
+local NOCHE = Color3.fromRGB(186, 204, 255)
+local AGUA = Color3.fromRGB(90, 150, 255)
+local LAVA = Color3.fromRGB(255, 120, 40)
+
+local function crearEfectos()
+	local cam = workspace.CurrentCamera
+	if not cam then
+		return
+	end
+	if fx.bloom and fx.bloom.Parent == cam then
+		return
+	end
+	fx.bloom = Instance.new("BloomEffect")
+	fx.bloom.Name = "ShaderBloom"
+	fx.rayos = Instance.new("SunRaysEffect")
+	fx.rayos.Name = "ShaderRayos"
+	fx.color = Instance.new("ColorCorrectionEffect")
+	fx.color.Name = "ShaderColor"
+	fx.dof = Instance.new("DepthOfFieldEffect")
+	fx.dof.Name = "ShaderDesenfoque"
+	for _, e in { fx.bloom, fx.rayos, fx.color, fx.dof } do
+		e.Parent = cam
+	end
+	-- Los del servidor (en Lighting) se apagan aquí: los sustituyen estos
+	for _, c in Lighting:GetChildren() do
+		if c:IsA("BloomEffect") or c:IsA("SunRaysEffect") or (c:IsA("ColorCorrectionEffect") and c.Name ~= "Relampago") then
+			c.Enabled = false
+		end
+	end
+end
+
+------------------------------------------------------------------
+-- Viñeta: cuatro degradados negros en los bordes de la pantalla
+------------------------------------------------------------------
+local vineta = {}
+local function crearVineta()
+	local pg = jugador:FindFirstChildOfClass("PlayerGui") or jugador:WaitForChild("PlayerGui", 10)
+	if not pg then
+		return
+	end
+	local g = Instance.new("ScreenGui")
+	g.Name = "Vineta"
+	g.IgnoreGuiInset = true
+	g.ResetOnSpawn = false
+	g.DisplayOrder = -5
+	g.Parent = pg
+	vineta.gui = g
+	-- {posición, tamaño, giro del degradado}
+	for _, b in {
+		{ UDim2.fromScale(0, 0), UDim2.fromScale(0.28, 1), 0 },
+		{ UDim2.fromScale(0.72, 0), UDim2.fromScale(0.28, 1), 180 },
+		{ UDim2.fromScale(0, 0), UDim2.fromScale(1, 0.3), 90 },
+		{ UDim2.fromScale(0, 0.7), UDim2.fromScale(1, 0.3), 270 },
+	} do
+		local f = Instance.new("Frame")
+		f.BackgroundColor3 = Color3.new(0, 0, 0)
+		f.BorderSizePixel = 0
+		f.Position = b[1]
+		f.Size = b[2]
+		f.Parent = g
+		local gr = Instance.new("UIGradient")
+		gr.Rotation = b[3]
+		gr.Parent = f
+		table.insert(vineta, gr)
+	end
+end
+local vinetaActual = -1
+local function ponerVineta(v)
+	v = math.floor(v * 50 + 0.5) / 50
+	if v == vinetaActual or not vineta.gui then
+		return
+	end
+	vinetaActual = v
+	vineta.gui.Enabled = v > 0.01
+	-- Negro en el borde (más o menos) y transparente hacia el centro
+	local seq = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 1 - 0.55 * v),
+		NumberSequenceKeypoint.new(0.45, 1 - 0.12 * v),
+		NumberSequenceKeypoint.new(1, 1),
+	})
+	for _, gr in ipairs(vineta) do
+		gr.Transparency = seq
+	end
+end
+
+------------------------------------------------------------------
+-- Partículas del ambiente alrededor de la cámara
+------------------------------------------------------------------
+local amb = {}
+local TIPOS_PART = {
+	polvo = { col = { "#fff6dc", "#fff6dc" }, tam = 0.12, vel = 0.4, vida = { 4, 7 }, ritmo = 5, luz = 0.2, trans = 0.45, acel = Vector3.new(0, 0.05, 0) },
+	luciernaga = { col = { "#e8ff60", "#80ff40" }, tam = 0.22, vel = 0.8, vida = { 3, 6 }, ritmo = 6, luz = 1, trans = 0.05, parpadeo = true },
+	ceniza = { col = { "#9a8a80", "#ff7030" }, tam = 0.14, vel = 0.6, vida = { 5, 8 }, ritmo = 22, luz = 0.4, trans = 0.2, acel = Vector3.new(0.3, -0.6, 0.2) },
+	ender = { col = { "#e080ff", "#6020a0" }, tam = 0.16, vel = 0.5, vida = { 4, 7 }, ritmo = 12, luz = 1, trans = 0.15, acel = Vector3.new(0, 0.4, 0) },
+	burbuja = { col = { "#e0f4ff", "#a0d8ff" }, tam = 0.15, vel = 0.3, vida = { 2, 4 }, ritmo = 10, luz = 0.3, trans = 0.3, acel = Vector3.new(0, 2.5, 0) },
+}
+local function crearParticulas()
+	local p = Instance.new("Part")
+	p.Name = "ParticulasAmbiente"
+	p.Anchored = true
+	p.CanCollide = false
+	p.CanQuery = false
+	p.CanTouch = false
+	p.Transparency = 1
+	p.Size = Vector3.new(70, 30, 70)
+	p.Parent = workspace
+	amb.parte = p
+	for nombre, T in TIPOS_PART do
+		local e = Instance.new("ParticleEmitter")
+		e.Name = nombre
+		e.Texture = "rbxasset://textures/particles/sparkles_main.dds"
+		e.Color = ColorSequence.new(color(T.col[1]), color(T.col[2]))
+		e.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0), NumberSequenceKeypoint.new(0.15, T.tam), NumberSequenceKeypoint.new(0.85, T.tam), NumberSequenceKeypoint.new(1, 0) })
+		if T.parpadeo then
+			e.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 1), NumberSequenceKeypoint.new(0.2, T.trans), NumberSequenceKeypoint.new(0.35, 0.7),
+				NumberSequenceKeypoint.new(0.5, T.trans), NumberSequenceKeypoint.new(0.7, 0.6), NumberSequenceKeypoint.new(0.85, T.trans), NumberSequenceKeypoint.new(1, 1) })
+		else
+			e.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 1), NumberSequenceKeypoint.new(0.2, T.trans), NumberSequenceKeypoint.new(0.8, T.trans), NumberSequenceKeypoint.new(1, 1) })
+		end
+		e.Lifetime = NumberRange.new(T.vida[1], T.vida[2])
+		e.Speed = NumberRange.new(T.vel * 0.3, T.vel)
+		e.SpreadAngle = Vector2.new(180, 180)
+		e.Acceleration = T.acel or Vector3.zero
+		e.LightEmission = T.luz
+		e.LightInfluence = 1 - T.luz
+		e.RotSpeed = NumberRange.new(-40, 40)
+		e.Rate = 0
+		e.Parent = p
+		amb[nombre] = e
+	end
+end
+
+------------------------------------------------------------------
+-- Lo que se ve cada fotograma
+------------------------------------------------------------------
+local function mult(a, b)
+	return Color3.new(a.R * b.R, a.G * b.G, a.B * b.B)
+end
+local function campana(x, centro, ancho)
+	local d = (x - centro) / ancho
+	return math.exp(-d * d)
+end
+
+-- ¿Qué hay en el sitio de la cámara y encima? (cada pocos fotogramas)
+local function mirarEntorno()
+	local md = Graficos.md
+	local cam = workspace.CurrentCamera
+	if not md or not cam then
+		return 0, 0, 0
+	end
+	local p = cam.CFrame.Position
+	local bx, by, bz = math.floor(p.X / BS), math.floor(p.Y / BS), math.floor(p.Z / BS)
+	local b = md:getSiCargado(bx, by, bz)
+	local agua = (b and b > 0 and Registro.esAgua(b)) and 1 or 0
+	local lava = (b and b > 0 and Registro.esLava(b)) and 1 or 0
+	-- Cueva: techo de bloques opacos encima y poca altura (mira hasta 24 bloques)
+	local techo = 0
+	for y = by + 1, by + 24 do
+		local o = md:getSiCargado(bx, y, bz)
+		if o == nil or o < 0 then
+			break
+		end
+		if o > 0 and Registro.OPACO[o] then
+			techo += 1
+			if techo >= 3 then
+				break
+			end
+		end
+	end
+	local cueva = (techo >= 3 and by < 62) and 1 or 0
+	return cueva, agua, lava
+end
+
+local function paso(dt)
+	local A = Graficos.ajustes
+	local S = DE.SHADER_ID[A.shader] or DE.SHADER_ID.clasico
+	local Q = DE.CALIDAD_ID[A.calidad] or DE.CALIDAD_ID.alta
+	crearEfectos()
+	if not fx.bloom then
+		return
+	end
+	estado.t += dt
+	estado.mirarT -= dt
+	if estado.mirarT <= 0 then
+		estado.mirarT = 0.25
+		estado.objCueva, estado.objAgua, estado.objLava = mirarEntorno()
+	end
+	local k = math.min(1, dt * 2.5) -- los ojos se acostumbran poco a poco
+	estado.cueva += ((estado.objCueva or 0) - estado.cueva) * k * 0.6
+	estado.agua += ((estado.objAgua or 0) - estado.agua) * math.min(1, dt * 10)
+	estado.lava += ((estado.objLava or 0) - estado.lava) * math.min(1, dt * 10)
+
+	local f = (A.fuerza or 100) / 100 * Q.efectos
+	local dim = Graficos.dimension()
+	local sup = dim == "superficie"
+	-- Hora: dorado al salir y ponerse el sol, azul de noche (solo en la superficie)
+	local h = Lighting.ClockTime
+	local dorado, noche = 0, 0
+	if sup and A.colorDia then
+		dorado = math.max(campana(h, 6.6, 1.1), campana(h, 17.6, 1.1)) * S.dia
+		noche = (h < 5.2 or h > 18.8) and 1 or ((h < 6.2 and (6.2 - h)) or (h > 17.8 and (h - 17.8)) or 0)
+		noche = math.clamp(noche, 0, 1) * S.dia
+	end
+	-- Bloom
+	fx.bloom.Enabled = f > 0 and S.bloom[1] > 0
+	fx.bloom.Intensity = S.bloom[1] * f * (1 + dorado * 0.3)
+	fx.bloom.Size = S.bloom[2]
+	fx.bloom.Threshold = S.bloom[3] - estado.agua * 0.4
+	-- Rayos de sol (más fuertes con el sol bajo)
+	fx.rayos.Enabled = A.rayosSol and f > 0 and S.rayos[1] > 0 and sup and estado.cueva < 0.5
+	fx.rayos.Intensity = (S.rayos[1] + dorado * 0.12) * math.min(f, 1.3)
+	fx.rayos.Spread = S.rayos[2]
+	-- Color
+	local cc = S.color
+	local tinte = color(cc[4])
+	tinte = tinte:Lerp(BLANCO, 1 - math.clamp(f, 0, 1))
+	tinte = tinte:Lerp(mult(tinte, DORADO), dorado * 0.55)
+	tinte = tinte:Lerp(mult(tinte, NOCHE), noche * 0.5)
+	tinte = tinte:Lerp(Color3.fromRGB(215, 220, 235), estado.cueva * 0.35)
+	tinte = tinte:Lerp(AGUA, estado.agua * 0.75)
+	tinte = tinte:Lerp(LAVA, estado.lava * 0.85)
+	fx.color.Enabled = true
+	fx.color.TintColor = tinte
+	fx.color.Brightness = cc[1] * f + (A.exposicion or 0) * 0.025 + estado.cueva * 0.06 - noche * 0.02 * f
+	fx.color.Contrast = cc[2] * f + estado.cueva * 0.05 + estado.agua * 0.05
+	fx.color.Saturation = cc[3] * f - estado.cueva * 0.15 + dorado * 0.08 * f - estado.agua * 0.1
+	-- Desenfoque: lo lejano según el estilo, y todo un poco bajo el agua
+	local dof = A.profundidad and S.dof * f or 0
+	fx.dof.Enabled = (dof > 0.01 or estado.agua > 0.05 or estado.lava > 0.05) and Q.efectos > 0
+	fx.dof.FarIntensity = math.max(dof, estado.agua * 0.6, estado.lava * 0.8)
+	fx.dof.FocusDistance = 40 * (1 - estado.agua * 0.9)
+	fx.dof.InFocusRadius = 60 * (1 - estado.agua * 0.85) + 10
+	fx.dof.NearIntensity = estado.agua * 0.3
+	-- Viñeta (más cerrada bajo el agua y en cuevas)
+	ponerVineta(A.vineta and math.clamp(S.vineta * math.min(f, 1.2) + estado.cueva * 0.15 + estado.agua * 0.3, 0, 1) or estado.agua * 0.3)
+	-- Partículas alrededor de la cámara
+	local cam = workspace.CurrentCamera
+	if amb.parte and cam then
+		amb.parte.CFrame = CFrame.new(cam.CFrame.Position)
+		local m = A.particulas and Q.particulas or 0
+		local tipo
+		if estado.agua > 0.5 then
+			tipo = "burbuja"
+		elseif dim == "nether" then
+			tipo = "ceniza"
+		elseif dim == "end" then
+			tipo = "ender"
+		elseif sup and estado.cueva < 0.5 then
+			tipo = noche > 0.5 and "luciernaga" or "polvo"
+		end
+		for nombre, T in TIPOS_PART do
+			local e = amb[nombre]
+			e.Rate = (nombre == tipo) and T.ritmo * m or 0
+		end
+	end
+end
+
+-- Lo que no cambia cada fotograma: distancia de visión, nubes y sombras redondas
+function Graficos.aplicar()
+	local A = Graficos.ajustes
+	local Q = DE.CALIDAD_ID[A.calidad] or DE.CALIDAD_ID.alta
+	Config.RADIO = math.clamp(math.floor(A.distancia or 5), 2, 8)
+	Graficos.alSombras(Q.sombras)
+	estado.mirarT = 0
+end
+
+function Graficos.iniciar()
+	crearEfectos()
+	crearVineta()
+	crearParticulas()
+	Graficos.aplicar()
+	RunService.RenderStepped:Connect(paso)
+	-- Las nubes se pueden quitar (solo en la superficie: el Nether y el End ya las quitan)
+	task.spawn(function()
+		while true do
+			task.wait(0.5)
+			local nubes = workspace.Terrain:FindFirstChildOfClass("Clouds")
+			if nubes and Graficos.dimension() == "superficie" then
+				nubes.Enabled = Graficos.ajustes.nubes ~= false
+			end
+		end
+	end)
+end
+
+return Graficos
+]]></ProtectedString></Properties></Item>
+<Item class="ModuleScript" referent="RBX0000003E"><Properties><string name="Name">Iconos</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Iconos (cliente)
 	· Los 778 iconos del juego web (cubos isométricos de 48 px para los
 	  bloques y dibujos de 16 px para los objetos) en dos hojas de 1024 px.
@@ -27995,7 +28932,7 @@ end
 
 return Iconos
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX0000003C"><Properties><string name="Name">Imagenes</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX0000003F"><Properties><string name="Name">Imagenes</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Imágenes (cliente)
 	Crea imágenes editables (EditableImage) a partir de los píxeles del
 	juego web: atlas de texturas, iconos de objetos, texturas de criaturas
@@ -28091,7 +29028,7 @@ end
 
 return Imagenes
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX0000003D"><Properties><string name="Name">Interfaz</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX00000040"><Properties><string name="Name">Interfaz</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Interfaz (cliente)
 	Con el aspecto del juego web (paneles grises con relieve, casillas
 	hundidas y los iconos del juego):
@@ -28336,6 +29273,7 @@ local hud = nuevo("Frame", { Name = "HUD", BackgroundTransparency = 1, Size = UD
 
 -- Mira
 local mira = nuevo("Frame", { Name = "Mira", BackgroundTransparency = 1, AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.fromOffset(22, 22) }, hud)
+Interfaz.mira = mira -- Personalizar cambia su forma y color
 nuevo("Frame", { BackgroundColor3 = Color3.new(1, 1, 1), BorderSizePixel = 0, Position = UDim2.fromOffset(10, 0), Size = UDim2.fromOffset(2, 22), BackgroundTransparency = 0.15 }, mira)
 nuevo("Frame", { BackgroundColor3 = Color3.new(1, 1, 1), BorderSizePixel = 0, Position = UDim2.fromOffset(0, 10), Size = UDim2.fromOffset(22, 2), BackgroundTransparency = 0.15 }, mira)
 local cargaAtaque = nuevo("Frame", { BackgroundColor3 = Color3.new(0, 0, 0), BackgroundTransparency = 0.5, BorderSizePixel = 0, AnchorPoint = Vector2.new(0.5, 0),
@@ -29434,20 +30372,23 @@ end
 
 -- Fila de abajo: ajustes, controles y volver al juego
 local filaMenu = nuevo("Frame", { BackgroundTransparency = 1, AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0.25, 312),
-	Size = UDim2.fromOffset(700, 46), ZIndex = 11 }, menu)
+	Size = UDim2.fromOffset(900, 46), ZIndex = 11 }, menu)
 nuevo("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 12), HorizontalAlignment = Enum.HorizontalAlignment.Center,
 	SortOrder = Enum.SortOrder.LayoutOrder }, filaMenu)
 local abrirAjustes, abrirControles, abrirLogros -- se definen más abajo
 tarjeta(filaMenu, "Ajustes", nil, nil, 1, function()
 	abrirAjustes()
 end, UDim2.fromOffset(150, 46))
-tarjeta(filaMenu, "Controles", nil, nil, 2, function()
+tarjeta(filaMenu, "Gráficos", nil, nil, 2, function()
+	Interfaz.abrirGraficos()
+end, UDim2.fromOffset(150, 46))
+tarjeta(filaMenu, "Controles", nil, nil, 3, function()
 	abrirControles()
 end, UDim2.fromOffset(150, 46))
-local botonLogros = tarjeta(filaMenu, "Logros", nil, nil, 3, function()
+local botonLogros = tarjeta(filaMenu, "Logros", nil, nil, 4, function()
 	abrirLogros()
 end, UDim2.fromOffset(150, 46))
-local botonVolver = tarjeta(filaMenu, "Volver al juego", nil, nil, 4, function()
+local botonVolver = tarjeta(filaMenu, "Volver al juego", nil, nil, 5, function()
 	Interfaz.menu(false)
 	if Interfaz.alMenu then
 		Interfaz.alMenu()
@@ -29491,6 +30432,34 @@ do
 		av.Visible = n > 0
 		avT.Text = tostring(n)
 	end
+end
+-- Botón turquesa de PERSONALIZAR (capas, sombreros, mascotas y mira)
+Interfaz.alAbrirPersonalizar = function() end
+do
+	local b = nuevo("TextButton", { Name = "BotonPersonalizar", AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -16, 0, 156), Size = UDim2.fromOffset(210, 56),
+		BackgroundColor3 = Color3.fromRGB(40, 200, 190), BorderSizePixel = 0, Text = "", AutoButtonColor = false, ZIndex = 12 }, menu)
+	nuevo("UICorner", { CornerRadius = UDim.new(0, 10) }, b)
+	nuevo("UIStroke", { Color = Color3.fromRGB(10, 70, 80), Thickness = 3, ApplyStrokeMode = Enum.ApplyStrokeMode.Border }, b)
+	nuevo("UIGradient", { Rotation = 0, Color = ColorSequence.new(Color3.fromRGB(60, 220, 200), Color3.fromRGB(60, 120, 230)) }, b)
+	local ic = nuevo("ImageLabel", { BackgroundTransparency = 1, Position = UDim2.fromOffset(10, 8), Size = UDim2.fromOffset(40, 40),
+		ResampleMode = Enum.ResamplerMode.Pixelated, ZIndex = 13 }, b)
+	iconosMenu[ic] = idDe("calabaza") or idDe("lana")
+	texto({ Position = UDim2.fromOffset(58, 6), Size = UDim2.new(1, -64, 0, 26), Text = "PERSONALIZAR", TextSize = 19, Font = FUENTE_N,
+		TextXAlignment = Enum.TextXAlignment.Left, TextStrokeTransparency = 0.2, ZIndex = 13 }, b)
+	texto({ Position = UDim2.fromOffset(58, 32), Size = UDim2.new(1, -64, 0, 16), Text = "Capas, gorros y mascotas", TextSize = 11,
+		TextXAlignment = Enum.TextXAlignment.Left, TextColor3 = Color3.fromRGB(220, 250, 255), TextStrokeTransparency = 1, ZIndex = 13 }, b)
+	local esc = nuevo("UIScale", {}, b)
+	b.MouseEnter:Connect(function()
+		TweenService:Create(esc, TweenInfo.new(0.15, Enum.EasingStyle.Back), { Scale = 1.08 }):Play()
+		Interfaz.alSonido("paso", 1.8)
+	end)
+	b.MouseLeave:Connect(function()
+		TweenService:Create(esc, TweenInfo.new(0.15), { Scale = 1 }):Play()
+	end)
+	b.Activated:Connect(function()
+		Interfaz.alSonido("nivel", 1.5)
+		Interfaz.alAbrirPersonalizar()
+	end)
 end
 -- Botón dorado de la tienda (arriba a la derecha), que late para que se vea
 Interfaz.alAbrirTienda = function(pestana) end
@@ -29566,66 +30535,130 @@ local function ventana(nombre, titulo, alto, desplazable)
 end
 
 -- Ajustes: valores que guarda el cliente (y el servidor en el DataStore)
-Interfaz.ajustes = { sensibilidad = 1, fov = 70, fovCorrer = true, balanceo = true, numeros = true, volumen = 100 }
+Interfaz.ajustes = { sensibilidad = 1, fov = 70, fovCorrer = true, balanceo = true, numeros = true, volumen = 100,
+	-- Gráficos (Graficos.luau) y mira (Personalizar)
+	shader = "clasico", calidad = "alta", distancia = 5, fuerza = 100, exposicion = 0, colorDia = true, vineta = true,
+	profundidad = true, rayosSol = true, particulas = true, nubes = true, mira = "cruz", colorMira = "blanco" }
 Interfaz.alCambiarAjuste = function(clave, valor) end
-local AJUSTES = {
-	{ k = "sensibilidad", n = "Sensibilidad del ratón", min = 0.2, max = 3, paso = 0.1, fmt = function(v) return ("%.1fx"):format(v) end },
-	{ k = "fov", n = "Campo de visión", min = 50, max = 110, paso = 5, fmt = function(v) return ("%d°"):format(v) end },
-	{ k = "volumen", n = "Volumen", min = 0, max = 100, paso = 10, fmt = function(v) return ("%d %%"):format(v) end },
-	{ k = "fovCorrer", n = "Efecto de velocidad al correr" },
-	{ k = "balanceo", n = "Balanceo de la mano" },
-	{ k = "numeros", n = "Números de daño" },
-}
-local ventanaAjustes, listaAjustes = ventana("Ajustes", "AJUSTES", 400)
-local valoresAj = {}
-local function pintarAjustes()
-	for _, A in AJUSTES do
-		local v = Interfaz.ajustes[A.k]
-		local l = valoresAj[A.k]
-		if l then
-			if A.fmt then
-				l.Text = A.fmt(v)
+local abrirGraficos
+do
+	local DE = require(Comp:WaitForChild("DatosEstilo"))
+	-- Filas: número (min, max, paso, fmt), opción (op = lista {id, n}) o sí/no
+	local AJUSTES = {
+		{ k = "sensibilidad", n = "Sensibilidad del ratón", min = 0.2, max = 3, paso = 0.1, fmt = function(v) return ("%.1fx"):format(v) end },
+		{ k = "fov", n = "Campo de visión", min = 50, max = 110, paso = 5, fmt = function(v) return ("%d°"):format(v) end },
+		{ k = "volumen", n = "Volumen", min = 0, max = 100, paso = 10, fmt = function(v) return ("%d %%"):format(v) end },
+		{ k = "fovCorrer", n = "Efecto de velocidad al correr" },
+		{ k = "balanceo", n = "Balanceo de la mano" },
+		{ k = "numeros", n = "Números de daño" },
+	}
+	local GRAFICOS = {
+		{ k = "shader", n = "Shader (estilo de imagen)", op = DE.SHADERS },
+		{ k = "calidad", n = "Calidad", op = DE.CALIDADES },
+		{ k = "distancia", n = "Distancia de visión", min = 2, max = 8, paso = 1, fmt = function(v) return ("%d chunks"):format(v) end },
+		{ k = "fuerza", n = "Fuerza del shader", min = 0, max = 150, paso = 10, fmt = function(v) return ("%d %%"):format(v) end },
+		{ k = "exposicion", n = "Brillo", min = -5, max = 5, paso = 1, fmt = function(v) return ("%+d"):format(v) end },
+		{ k = "colorDia", n = "Colores del amanecer y la noche" },
+		{ k = "rayosSol", n = "Rayos de sol" },
+		{ k = "profundidad", n = "Desenfoque lejano" },
+		{ k = "vineta", n = "Viñeta (bordes oscuros)" },
+		{ k = "particulas", n = "Partículas del ambiente" },
+		{ k = "nubes", n = "Nubes" },
+	}
+	local ventanaAjustes, listaAjustes = ventana("Ajustes", "AJUSTES", 400)
+	local ventanaGraficos, listaGraficos = ventana("Graficos", "GRÁFICOS Y SHADERS", 560, true)
+	Interfaz.ventanaAjustes, Interfaz.ventanaGraficos = ventanaAjustes, ventanaGraficos
+	-- Debajo de la lista: lo que hace el shader y la calidad elegidos
+	local explica = texto({ AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -62), Size = UDim2.new(1, -40, 0, 34), Text = "", TextSize = 13,
+		TextWrapped = true, TextColor3 = Color3.fromRGB(200, 210, 225), TextStrokeTransparency = 1, ZIndex = 23 }, ventanaGraficos:FindFirstChildOfClass("Frame"))
+	listaGraficos.Size = UDim2.new(1, -30, 1, -160)
+	local valoresAj = {}
+	local function textoDe(A, v)
+		if A.op then
+			for _, o in A.op do
+				if o.id == v then
+					return o.n
+				end
+			end
+			return tostring(v)
+		end
+		return A.fmt(v)
+	end
+	local function pintarAjustes()
+		for _, L in { AJUSTES, GRAFICOS } do
+			for _, A in L do
+				local v = Interfaz.ajustes[A.k]
+				local l = valoresAj[A.k]
+				if l then
+					if A.fmt or A.op then
+						l.Text = textoDe(A, v)
+					else
+						l.Text = v and "Sí" or "No"
+						l.TextColor3 = v and Color3.fromRGB(120, 255, 120) or Color3.fromRGB(255, 120, 120)
+					end
+				end
+			end
+		end
+		local S = DE.SHADER_ID[Interfaz.ajustes.shader]
+		local Q = DE.CALIDAD_ID[Interfaz.ajustes.calidad]
+		explica.Text = ("%s: %s.  Calidad %s: %s."):format(S and S.n or "?", S and S.d or "", Q and Q.n or "?", Q and Q.d or "")
+	end
+	Interfaz.pintarAjustes = pintarAjustes
+	local function filas(lista, contenedor)
+		for i, A in lista do
+			local fila = nuevo("Frame", { BackgroundColor3 = Color3.fromRGB(28, 29, 35), BorderSizePixel = 0, Size = UDim2.new(1, 0, 0, 38), LayoutOrder = i, ZIndex = 22 }, contenedor)
+			nuevo("UICorner", { CornerRadius = UDim.new(0, 4) }, fila)
+			local ancho = A.op and 230 or 170
+			texto({ Position = UDim2.fromOffset(12, 0), Size = UDim2.new(1, -ancho, 1, 0), Text = A.n, TextSize = 15, TextXAlignment = Enum.TextXAlignment.Left,
+				TextWrapped = true, ZIndex = 23 }, fila)
+			local function cambiar(dir)
+				local v = Interfaz.ajustes[A.k]
+				if A.op then
+					local i0 = 1
+					for j, o in A.op do
+						if o.id == v then
+							i0 = j
+						end
+					end
+					v = A.op[(i0 - 1 + dir) % #A.op + 1].id
+				elseif A.fmt then
+					v = math.clamp(math.floor((v + dir * A.paso) / A.paso + 0.5) * A.paso, A.min, A.max)
+				else
+					v = not v
+				end
+				Interfaz.ajustes[A.k] = v
+				pintarAjustes()
+				Interfaz.alCambiarAjuste(A.k, v)
+			end
+			if A.fmt or A.op then
+				local hueco = A.op and 140 or 76
+				local menos = tarjeta(fila, A.op and "◀" or "−", nil, nil, 0, function() cambiar(-1) end, UDim2.fromOffset(32, 30))
+				menos.Position = UDim2.new(1, -(hueco + 76), 0, 4)
+				valoresAj[A.k] = texto({ Position = UDim2.new(1, -(hueco + 40), 0, 0), Size = UDim2.fromOffset(hueco, 38), Text = "", TextSize = 15, Font = FUENTE_N,
+					TextColor3 = A.op and Color3.fromRGB(255, 220, 80) or Color3.new(1, 1, 1), ZIndex = 23 }, fila)
+				local mas = tarjeta(fila, A.op and "▶" or "+", nil, nil, 0, function() cambiar(1) end, UDim2.fromOffset(32, 30))
+				mas.Position = UDim2.new(1, -38, 0, 4)
 			else
-				l.Text = v and "Sí" or "No"
-				l.TextColor3 = v and Color3.fromRGB(120, 255, 120) or Color3.fromRGB(255, 120, 120)
+				local b = tarjeta(fila, "", nil, nil, 0, function() cambiar(0) end, UDim2.fromOffset(76, 30))
+				b.Position = UDim2.new(1, -82, 0, 4)
+				valoresAj[A.k] = texto({ Size = UDim2.fromScale(1, 1), Text = "", TextSize = 15, Font = FUENTE_N, ZIndex = 14 }, b)
 			end
 		end
 	end
-end
-Interfaz.pintarAjustes = pintarAjustes
-for i, A in AJUSTES do
-	local fila = nuevo("Frame", { BackgroundColor3 = Color3.fromRGB(28, 29, 35), BorderSizePixel = 0, Size = UDim2.new(1, 0, 0, 38), LayoutOrder = i, ZIndex = 22 }, listaAjustes)
-	nuevo("UICorner", { CornerRadius = UDim.new(0, 4) }, fila)
-	texto({ Position = UDim2.fromOffset(12, 0), Size = UDim2.new(1, -170, 1, 0), Text = A.n, TextSize = 15, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 23 }, fila)
-	local function cambiar(dir)
-		local v = Interfaz.ajustes[A.k]
-		if A.fmt then
-			v = math.clamp(math.floor((v + dir * A.paso) / A.paso + 0.5) * A.paso, A.min, A.max)
-		else
-			v = not v
-		end
-		Interfaz.ajustes[A.k] = v
-		pintarAjustes()
-		Interfaz.alCambiarAjuste(A.k, v)
-	end
-	if A.fmt then
-		local menos = tarjeta(fila, "−", nil, nil, 0, function() cambiar(-1) end, UDim2.fromOffset(32, 30))
-		menos.Position = UDim2.new(1, -152, 0, 4)
-		valoresAj[A.k] = texto({ Position = UDim2.new(1, -116, 0, 0), Size = UDim2.fromOffset(76, 38), Text = "", TextSize = 15, Font = FUENTE_N, ZIndex = 23 }, fila)
-		local mas = tarjeta(fila, "+", nil, nil, 0, function() cambiar(1) end, UDim2.fromOffset(32, 30))
-		mas.Position = UDim2.new(1, -38, 0, 4)
-	else
-		local b = tarjeta(fila, "", nil, nil, 0, function() cambiar(0) end, UDim2.fromOffset(76, 30))
-		b.Position = UDim2.new(1, -82, 0, 4)
-		valoresAj[A.k] = texto({ Size = UDim2.fromScale(1, 1), Text = "", TextSize = 15, Font = FUENTE_N, ZIndex = 14 }, b)
-	end
-end
-pintarAjustes()
-abrirAjustes = function()
+	filas(AJUSTES, listaAjustes)
+	filas(GRAFICOS, listaGraficos)
 	pintarAjustes()
-	ventanaAjustes.Visible = true
+	abrirAjustes = function()
+		pintarAjustes()
+		ventanaAjustes.Visible = true
+	end
+	abrirGraficos = function()
+		pintarAjustes()
+		ventanaGraficos.Visible = true
+	end
 end
 Interfaz.abrirAjustes = abrirAjustes
+Interfaz.abrirGraficos = abrirGraficos
 
 -- Controles
 local ventanaControles, listaControles = ventana("Controles", "CONTROLES", 520)
@@ -30304,8 +31337,8 @@ function Interfaz.menuPrincipal()
 end
 
 function Interfaz.menuVisible()
-	return menu.Visible or carga.Visible or muerte.Visible or ventanaAjustes.Visible or ventanaControles.Visible or ventanaLogros.Visible
-		or Interfaz.tiendaVisible == true or Interfaz.progresoVisible == true
+	return menu.Visible or carga.Visible or muerte.Visible or Interfaz.ventanaAjustes.Visible or Interfaz.ventanaGraficos.Visible or ventanaControles.Visible or ventanaLogros.Visible
+		or Interfaz.tiendaVisible == true or Interfaz.progresoVisible == true or Interfaz.personalizarVisible == true
 end
 
 ------------------------------------------------------------------
@@ -30732,7 +31765,8 @@ function Interfaz.menu(si)
 	desenfoque.Size = si and 8 or 0
 	botonVolver.Visible = si and Interfaz.enJuego == true
 	if not si then
-		ventanaAjustes.Visible = false
+		Interfaz.ventanaAjustes.Visible = false
+		Interfaz.ventanaGraficos.Visible = false
 		ventanaControles.Visible = false
 		ventanaLogros.Visible = false
 	end
@@ -30959,7 +31993,7 @@ end
 
 return Interfaz
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX0000003E"><Properties><string name="Name">Luz</string><ProtectedString name="Source"><![CDATA[--!native
+<Item class="ModuleScript" referent="RBX00000041"><Properties><string name="Name">Luz</string><ProtectedString name="Source"><![CDATA[--!native
 --!optimize 2
 --[[
 	Blockverse para Roblox · Luz (cliente)
@@ -31216,7 +32250,7 @@ end
 
 return Luz
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX0000003F"><Properties><string name="Name">MobsVista</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX00000042"><Properties><string name="Name">MobsVista</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Criaturas (cliente)
 	Viste las piezas invisibles de workspace.Criaturas con los modelos del
 	juego web: la misma geometría y las mismas texturas pintadas (exportadas
@@ -31928,7 +32962,7 @@ end
 
 return MobsVista
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX00000040"><Properties><string name="Name">Modelos3D</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX00000043"><Properties><string name="Name">Modelos3D</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Modelos 3D de los objetos (cliente)
 	· Los bloques son cubos (o losas, o sus cajas) con las mismas texturas del mundo.
 	· Los demás objetos (espadas, picos, comida, flores…) se hacen con los píxeles de
@@ -32458,7 +33492,405 @@ end
 
 return Modelos
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX00000041"><Properties><string name="Name">ProgresoVista</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX00000044"><Properties><string name="Name">PersonalizarVista</string><ProtectedString name="Source"><![CDATA[--[[
+	Blockverse para Roblox · Personalizar (cliente)
+	Ventana con cuatro pestañas: Capas, Sombreros, Mascotas y Mira.
+	· Cada tarjeta enseña el cosmético de frente (dibujado con cajas), su nombre y si está
+	  puesto, si se puede poner o qué nivel del Camino (o VIP) hace falta.
+	· La mira se elige por forma y color y se ve al momento.
+	Lo que eliges lo comprueba y lo guarda el servidor (Progreso); la mira va en los ajustes.
+]]
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local Comp = ReplicatedStorage:WaitForChild("Blockverse")
+local DE = require(Comp:WaitForChild("DatosEstilo"))
+local Cos = require(script.Parent:WaitForChild("Cosmeticos"))
+
+local jugador = Players.LocalPlayer
+local PV = {}
+PV.enviar = function(...) end
+PV.alSonido = function(nombre, tono) end
+PV.alVisible = function(si) end
+PV.ajustes = { mira = "cruz", colorMira = "blanco" }
+PV.alCambiarAjuste = function(k, v) end
+
+local FT = require(Comp:WaitForChild("Fuentes"))
+local FUENTE = FT.TEXTO
+local FUENTE_N = FT.CABECERA
+local TURQUESA = Color3.fromRGB(40, 200, 190)
+local VERDE = Color3.fromRGB(60, 180, 80)
+local ORO = Color3.fromRGB(255, 200, 60)
+local FONDO = Color3.fromRGB(22, 32, 40)
+local TARJETA = Color3.fromRGB(36, 48, 58)
+local GRIS = Color3.fromRGB(70, 74, 88)
+
+local function nuevo(clase, props, padre)
+	local o = Instance.new(clase)
+	for k, v in props do
+		o[k] = v
+	end
+	if padre then
+		o.Parent = padre
+	end
+	return o
+end
+local function texto(props, padre)
+	local t = nuevo("TextLabel", { BackgroundTransparency = 1, Font = FUENTE, TextColor3 = Color3.new(1, 1, 1), TextSize = 16, TextStrokeTransparency = 0.6 }, padre)
+	for k, v in props do
+		t[k] = v
+	end
+	if t.Font == FT.TITULO and t.TextStrokeTransparency < 1 then
+		FT.contorno(t, t.TextStrokeColor3, math.max(2, math.floor(t.TextSize / 16)))
+	end
+	return t
+end
+local function esquina(o, r)
+	nuevo("UICorner", { CornerRadius = UDim.new(0, r or 8) }, o)
+end
+local function limpiar(f)
+	for _, h in f:GetChildren() do
+		if h:IsA("GuiObject") then
+			h:Destroy()
+		end
+	end
+end
+
+------------------------------------------------------------------
+-- Ventana
+------------------------------------------------------------------
+local gui = nuevo("ScreenGui", { Name = "Personalizar", ResetOnSpawn = false, IgnoreGuiInset = true, DisplayOrder = 30, ZIndexBehavior = Enum.ZIndexBehavior.Sibling })
+local velo = nuevo("TextButton", { Name = "Velo", BackgroundColor3 = Color3.new(0, 0, 0), BackgroundTransparency = 0.35, BorderSizePixel = 0, Size = UDim2.fromScale(1, 1),
+	Text = "", AutoButtonColor = false, Modal = true, Visible = false }, gui)
+local ventana = nuevo("Frame", { Name = "Ventana", AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.fromOffset(880, 560),
+	BackgroundColor3 = FONDO, BorderSizePixel = 0 }, velo)
+esquina(ventana, 14)
+nuevo("UIStroke", { Color = TURQUESA, Thickness = 3 }, ventana)
+local escVentana = nuevo("UIScale", {}, ventana)
+local function ajustar()
+	local cam = workspace.CurrentCamera
+	local v = cam and cam.ViewportSize
+	if v and v.X and v.X > 0 then
+		return math.min(1, (v.X - 20) / 880, (v.Y - 20) / 560)
+	end
+	return 1
+end
+
+local cab = nuevo("Frame", { BackgroundColor3 = TURQUESA, BorderSizePixel = 0, Size = UDim2.new(1, 0, 0, 70) }, ventana)
+esquina(cab, 14)
+nuevo("UIGradient", { Rotation = 0, Color = ColorSequence.new(Color3.fromRGB(60, 220, 200), Color3.fromRGB(60, 120, 230)) }, cab)
+nuevo("Frame", { BackgroundColor3 = Color3.fromRGB(50, 150, 215), BorderSizePixel = 0, Position = UDim2.new(0, 0, 1, -14), Size = UDim2.new(1, 0, 0, 14) }, cab)
+texto({ Position = UDim2.fromOffset(22, 8), Size = UDim2.fromOffset(500, 34), Text = "PERSONALIZAR", TextSize = 36, Font = FT.TITULO, TextXAlignment = Enum.TextXAlignment.Left,
+	TextStrokeColor3 = Color3.fromRGB(10, 60, 80), TextStrokeTransparency = 0 }, cab)
+local subT = texto({ Position = UDim2.fromOffset(22, 42), Size = UDim2.fromOffset(620, 18), Text = "", TextSize = 14,
+	TextColor3 = Color3.fromRGB(220, 250, 255), TextStrokeTransparency = 1, TextXAlignment = Enum.TextXAlignment.Left }, cab)
+local cerrar = nuevo("TextButton", { AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -14, 0.5, 0), Size = UDim2.fromOffset(44, 44), BackgroundColor3 = Color3.fromRGB(200, 60, 60),
+	BorderSizePixel = 0, Text = "✕", Font = FUENTE_N, TextSize = 22, TextColor3 = Color3.new(1, 1, 1) }, cab)
+esquina(cerrar, 22)
+
+local PESTANAS = { { "capa", "Capas" }, { "sombrero", "Sombreros" }, { "mascota", "Mascotas" }, { "mira", "Mira" } }
+local filaPest = nuevo("Frame", { BackgroundTransparency = 1, Position = UDim2.fromOffset(20, 80), Size = UDim2.new(1, -40, 0, 38) }, ventana)
+nuevo("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 8) }, filaPest)
+local botonesPest = {}
+local cuerpo = nuevo("ScrollingFrame", { BackgroundTransparency = 1, BorderSizePixel = 0, Position = UDim2.fromOffset(20, 128), Size = UDim2.new(1, -40, 1, -164),
+	ScrollBarThickness = 6, CanvasSize = UDim2.new(), AutomaticCanvasSize = Enum.AutomaticSize.Y }, ventana)
+texto({ AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -8), Size = UDim2.new(1, -40, 0, 20), TextSize = 12,
+	TextColor3 = Color3.fromRGB(160, 175, 185), TextStrokeTransparency = 1,
+	Text = "Todos ven tu capa, tu sombrero y tu mascota. Sube el Camino de Blockverse (tecla P) para desbloquear más." }, ventana)
+
+local datos, pestana = nil, "capa"
+local pintar
+
+for i, p in PESTANAS do
+	local b = nuevo("TextButton", { Size = UDim2.fromOffset(150, 38), BackgroundColor3 = TARJETA, BorderSizePixel = 0, Text = p[2], Font = FUENTE_N,
+		TextSize = 16, TextColor3 = Color3.new(1, 1, 1), LayoutOrder = i, AutoButtonColor = true }, filaPest)
+	esquina(b, 19)
+	b.Activated:Connect(function()
+		pestana = p[1]
+		PV.alSonido("poner", 1.3)
+		pintar()
+	end)
+	botonesPest[p[1]] = b
+end
+
+------------------------------------------------------------------
+-- Dibujos de frente
+------------------------------------------------------------------
+local function dibujoCapa(padre, c, ancho, alto)
+	local base = nuevo("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.fromOffset(ancho, alto),
+		BackgroundColor3 = Color3.fromHex(c.base), BorderSizePixel = 0, ZIndex = 3 }, padre)
+	nuevo("UIStroke", { Color = Color3.new(0, 0, 0), Thickness = 2, Transparency = 0.5 }, base)
+	for _, d in Cos.rectangulosCapa(c) do
+		local col = type(d[5]) == "string" and Color3.fromHex(d[5]) or d[5]
+		nuevo("Frame", { Position = UDim2.fromScale(d[1], d[2]), Size = UDim2.fromScale(d[3] - d[1], d[4] - d[2]), BackgroundColor3 = col,
+			BorderSizePixel = 0, ZIndex = 4 }, base)
+	end
+	-- Los hombros (de dónde cuelga)
+	nuevo("Frame", { AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 0, 2), Size = UDim2.new(1, 8, 0, 6), BackgroundColor3 = Color3.fromRGB(60, 60, 70),
+		BorderSizePixel = 0, ZIndex = 5 }, base)
+end
+
+local function dibujoSombrero(padre, s, escala)
+	local zona = nuevo("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(0.5, 0, 0.5, 14), Size = UDim2.fromOffset(10, 10), BackgroundTransparency = 1, ZIndex = 3 }, padre)
+	-- Una cabeza de muestra debajo
+	local cara = { { { 1, 1, 1 }, { 0, -0.5, 0.6 }, "#e0b088" }, { { 0.14, 0.14, 0.02 }, { -0.2, -0.45, -0.51 }, "#2a3a6a" },
+		{ { 0.14, 0.14, 0.02 }, { 0.2, -0.45, -0.51 }, "#2a3a6a" }, { { 0.3, 0.06, 0.02 }, { 0, -0.75, -0.51 }, "#a06048" } }
+	local todo = {}
+	for _, b in cara do
+		table.insert(todo, b)
+	end
+	for _, b in s.cajas do
+		table.insert(todo, b)
+	end
+	Cos.dibujarFrente(zona, todo, escala, 4)
+end
+
+local function dibujoMascota(padre, m, escala)
+	local zona = nuevo("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.fromOffset(10, 10), BackgroundTransparency = 1, ZIndex = 3 }, padre)
+	Cos.dibujarFrente(zona, m.cajas, escala, 4)
+end
+
+------------------------------------------------------------------
+-- Tarjetas
+------------------------------------------------------------------
+local function tarjeta(padre, orden, color)
+	local f = nuevo("Frame", { BackgroundColor3 = TARJETA, BorderSizePixel = 0, LayoutOrder = orden }, padre)
+	esquina(f, 12)
+	local borde = nuevo("UIStroke", { Color = color, Thickness = 2, ApplyStrokeMode = Enum.ApplyStrokeMode.Border }, f)
+	local esc = nuevo("UIScale", {}, f)
+	f.MouseEnter:Connect(function()
+		TweenService:Create(esc, TweenInfo.new(0.15, Enum.EasingStyle.Back), { Scale = 1.04 }):Play()
+		borde.Color = Color3.new(1, 1, 1)
+		PV.alSonido("paso", 1.8)
+	end)
+	f.MouseLeave:Connect(function()
+		TweenService:Create(esc, TweenInfo.new(0.15), { Scale = 1 }):Play()
+		borde.Color = color
+	end)
+	return f
+end
+
+local function boton(padre, txt, fondo, activo, alPulsar)
+	local b = nuevo("TextButton", { AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -8), Size = UDim2.new(1, -16, 0, 30), BackgroundColor3 = fondo,
+		BorderSizePixel = 0, Text = txt, Font = FUENTE_N, TextSize = 14, TextColor3 = Color3.new(1, 1, 1), TextStrokeTransparency = 0.5, AutoButtonColor = activo, ZIndex = 5 }, padre)
+	esquina(b, 8)
+	if activo then
+		b.Activated:Connect(function()
+			PV.alSonido("poner", 1.2)
+			alPulsar()
+		end)
+	end
+	return b
+end
+
+local function pintarCosmeticos(tipo)
+	local T = DE.TIPOS[tipo]
+	local puesto = datos and datos.estilo and datos.estilo[tipo]
+	local nivel, vip = datos and datos.nivel or 1, datos and datos.vip
+	nuevo("UIGridLayout", { CellSize = UDim2.fromOffset(196, 186), CellPadding = UDim2.fromOffset(10, 10), SortOrder = Enum.SortOrder.LayoutOrder }, cuerpo)
+	-- «Nada»
+	do
+		local f = tarjeta(cuerpo, 0, puesto == nil and VERDE or GRIS)
+		texto({ Position = UDim2.fromOffset(0, 40), Size = UDim2.new(1, 0, 0, 60), Text = "✕", TextSize = 48, Font = FUENTE_N,
+			TextColor3 = Color3.fromRGB(150, 160, 170), ZIndex = 3 }, f)
+		texto({ Position = UDim2.fromOffset(0, 116), Size = UDim2.new(1, 0, 0, 20), Text = "Sin " .. T.n:lower():sub(1, -2), TextSize = 16, Font = FUENTE_N, ZIndex = 3 }, f)
+		if puesto == nil then
+			boton(f, "✔ PUESTO", VERDE, false)
+		else
+			boton(f, "Quitar", Color3.fromRGB(150, 70, 70), true, function()
+				PV.enviar("progresoCmd", "equipar", tipo, "")
+			end)
+		end
+	end
+	for i, c in T.lista do
+		local tiene = DE.puede(c, nivel, vip)
+		local es = puesto == c.id
+		local color = es and VERDE or (c.vip and ORO) or (tiene and TURQUESA) or GRIS
+		local f = tarjeta(cuerpo, i, color)
+		local vista = nuevo("Frame", { Position = UDim2.fromOffset(8, 8), Size = UDim2.new(1, -16, 0, 104), BackgroundColor3 = Color3.fromRGB(26, 34, 42),
+			BorderSizePixel = 0, ClipsDescendants = true, ZIndex = 2 }, f)
+		esquina(vista, 8)
+		if tipo == "capa" then
+			dibujoCapa(vista, c, 56, 86)
+		elseif tipo == "sombrero" then
+			dibujoSombrero(vista, c, 36)
+		else
+			dibujoMascota(vista, c, 46)
+		end
+		if not tiene then
+			-- Candado encima
+			nuevo("Frame", { Size = UDim2.fromScale(1, 1), BackgroundColor3 = Color3.new(0, 0, 0), BackgroundTransparency = 0.45, BorderSizePixel = 0, ZIndex = 6 }, vista)
+			texto({ Size = UDim2.fromScale(1, 1), Text = "🔒", TextSize = 30, ZIndex = 7 }, vista)
+		end
+		if c.vip then
+			local cinta = nuevo("Frame", { AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, 4, 0, -8), Size = UDim2.fromOffset(52, 20),
+				BackgroundColor3 = ORO, BorderSizePixel = 0, ZIndex = 8 }, f)
+			esquina(cinta, 10)
+			texto({ Size = UDim2.fromScale(1, 1), Text = "VIP", TextSize = 12, Font = FUENTE_N, TextColor3 = Color3.fromRGB(80, 40, 0), TextStrokeTransparency = 1, ZIndex = 9 }, cinta)
+		end
+		texto({ Position = UDim2.fromOffset(8, 116), Size = UDim2.new(1, -16, 0, 22), Text = c.n, TextSize = 16, Font = FUENTE_N, TextScaled = false, ZIndex = 3 }, f)
+		if es then
+			boton(f, "✔ PUESTO", VERDE, false)
+		elseif tiene then
+			boton(f, "Ponérmelo", TURQUESA, true, function()
+				PV.enviar("progresoCmd", "equipar", tipo, c.id)
+			end)
+		elseif c.vip then
+			boton(f, "Consíguelo con VIP", Color3.fromRGB(190, 130, 20), true, function()
+				PV.cerrar()
+				PV.alAbrirTienda("pases")
+			end)
+		else
+			boton(f, ("Nivel %d del Camino"):format(c.nivel), GRIS, false)
+		end
+	end
+end
+
+------------------------------------------------------------------
+-- Mira
+------------------------------------------------------------------
+-- Dibuja una mira (para la tarjeta y para el juego)
+function PV.dibujarMira(padre, estilo, col, z)
+	limpiar(padre)
+	local function barra(x, y, w, h)
+		local f = nuevo("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(0.5, x, 0.5, y), Size = UDim2.fromOffset(w, h), BackgroundColor3 = col,
+			BorderSizePixel = 0, BackgroundTransparency = 0.1, ZIndex = z }, padre)
+		nuevo("UIStroke", { Color = Color3.new(0, 0, 0), Thickness = 1, Transparency = 0.6, ApplyStrokeMode = Enum.ApplyStrokeMode.Border }, f)
+		return f
+	end
+	if estilo == "punto" then
+		esquina(barra(0, 0, 6, 6), 3)
+	elseif estilo == "circulo" then
+		local c = nuevo("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.fromOffset(18, 18), BackgroundTransparency = 1, ZIndex = z }, padre)
+		esquina(c, 9)
+		nuevo("UIStroke", { Color = col, Thickness = 2 }, c)
+		esquina(barra(0, 0, 3, 3), 2)
+	elseif estilo == "hueco" then
+		barra(0, -7, 2, 7)
+		barra(0, 7, 2, 7)
+		barra(-7, 0, 7, 2)
+		barra(7, 0, 7, 2)
+	elseif estilo == "grande" then
+		barra(0, 0, 2, 34)
+		barra(0, 0, 34, 2)
+	else
+		barra(0, 0, 2, 22)
+		barra(0, 0, 22, 2)
+	end
+end
+
+local function pintarMira()
+	local lista = nuevo("UIListLayout", { Padding = UDim.new(0, 12), SortOrder = Enum.SortOrder.LayoutOrder }, cuerpo)
+	local _ = lista
+	local col = Color3.fromHex((DE.COLOR_MIRA_ID[PV.ajustes.colorMira] or DE.COLORES_MIRA[1]).c)
+	texto({ Size = UDim2.new(1, 0, 0, 24), Text = "Forma", TextSize = 20, Font = FUENTE_N, TextXAlignment = Enum.TextXAlignment.Left, LayoutOrder = 1 }, cuerpo)
+	local fila = nuevo("Frame", { Size = UDim2.new(1, 0, 0, 130), BackgroundTransparency = 1, LayoutOrder = 2 }, cuerpo)
+	nuevo("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 10), SortOrder = Enum.SortOrder.LayoutOrder }, fila)
+	for i, m in DE.MIRAS do
+		local es = PV.ajustes.mira == m.id
+		local f = tarjeta(fila, i, es and VERDE or GRIS)
+		f.Size = UDim2.fromOffset(156, 126)
+		local vista = nuevo("Frame", { Position = UDim2.fromOffset(8, 8), Size = UDim2.new(1, -16, 0, 64), BackgroundColor3 = Color3.fromRGB(90, 140, 200), BorderSizePixel = 0, ZIndex = 2 }, f)
+		esquina(vista, 8)
+		nuevo("UIGradient", { Rotation = 90, Color = ColorSequence.new(Color3.fromRGB(130, 180, 240), Color3.fromRGB(80, 140, 70)) }, vista)
+		PV.dibujarMira(vista, m.id, col, 3)
+		local b = nuevo("TextButton", { AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -8), Size = UDim2.new(1, -16, 0, 34), BackgroundColor3 = es and VERDE or TARJETA,
+			BorderSizePixel = 0, Text = (es and "✔ " or "") .. m.n, Font = FUENTE_N, TextSize = 14, TextColor3 = Color3.new(1, 1, 1), ZIndex = 4 }, f)
+		esquina(b, 8)
+		b.Activated:Connect(function()
+			PV.alSonido("poner", 1.2)
+			PV.ajustes.mira = m.id
+			PV.alCambiarAjuste("mira", m.id)
+			pintar()
+		end)
+	end
+	texto({ Size = UDim2.new(1, 0, 0, 24), Text = "Color", TextSize = 20, Font = FUENTE_N, TextXAlignment = Enum.TextXAlignment.Left, LayoutOrder = 3 }, cuerpo)
+	local filaC = nuevo("Frame", { Size = UDim2.new(1, 0, 0, 70), BackgroundTransparency = 1, LayoutOrder = 4 }, cuerpo)
+	nuevo("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 10), SortOrder = Enum.SortOrder.LayoutOrder }, filaC)
+	for i, c in DE.COLORES_MIRA do
+		local es = PV.ajustes.colorMira == c.id
+		local b = nuevo("TextButton", { Size = UDim2.fromOffset(124, 60), BackgroundColor3 = TARJETA, BorderSizePixel = 0, Text = "", LayoutOrder = i, AutoButtonColor = true }, filaC)
+		esquina(b, 10)
+		nuevo("UIStroke", { Color = es and Color3.new(1, 1, 1) or GRIS, Thickness = es and 3 or 2, ApplyStrokeMode = Enum.ApplyStrokeMode.Border }, b)
+		local m = nuevo("Frame", { Position = UDim2.fromOffset(10, 15), Size = UDim2.fromOffset(30, 30), BackgroundColor3 = Color3.fromHex(c.c), BorderSizePixel = 0 }, b)
+		esquina(m, 15)
+		texto({ Position = UDim2.fromOffset(46, 0), Size = UDim2.new(1, -50, 1, 0), Text = c.n, TextSize = 15, Font = FUENTE_N, TextXAlignment = Enum.TextXAlignment.Left }, b)
+		b.Activated:Connect(function()
+			PV.alSonido("poner", 1.2)
+			PV.ajustes.colorMira = c.id
+			PV.alCambiarAjuste("colorMira", c.id)
+			pintar()
+		end)
+	end
+end
+
+pintar = function()
+	limpiar(cuerpo)
+	for _, h in cuerpo:GetChildren() do
+		if h:IsA("UIGridLayout") or h:IsA("UIListLayout") then
+			h:Destroy()
+		end
+	end
+	for k, b in botonesPest do
+		b.BackgroundColor3 = k == pestana and TURQUESA or TARJETA
+	end
+	local nivel = datos and datos.nivel or 1
+	subT.Text = ("Nivel %d del Camino%s · %s"):format(nivel, (datos and datos.vip) and " · VIP" or "",
+		pestana == "mira" and "La mira del centro de la pantalla" or "Lo que te pones lo ve todo el mundo")
+	if pestana == "mira" then
+		pintarMira()
+	else
+		pintarCosmeticos(pestana)
+	end
+end
+
+------------------------------------------------------------------
+-- API
+------------------------------------------------------------------
+PV.alAbrirTienda = function(p) end
+
+local function mostrar()
+	escVentana.Scale = ajustar() * 0.85
+	velo.Visible = true
+	PV.alVisible(true)
+	TweenService:Create(escVentana, TweenInfo.new(0.25, Enum.EasingStyle.Back), { Scale = ajustar() }):Play()
+end
+
+function PV.abrir(p)
+	pestana = p or pestana
+	mostrar()
+	pintar()
+	PV.enviar("pedirProgreso")
+end
+
+function PV.cerrar()
+	velo.Visible = false
+	PV.alVisible(false)
+end
+
+function PV.visible()
+	return velo.Visible
+end
+
+function PV.datos(d)
+	datos = d
+	if velo.Visible then
+		pintar()
+	end
+end
+
+function PV.iniciar()
+	gui.Parent = jugador:WaitForChild("PlayerGui")
+	cerrar.Activated:Connect(function()
+		PV.alSonido("poner", 0.9)
+		PV.cerrar()
+	end)
+end
+
+return PV
+]]></ProtectedString></Properties></Item>
+<Item class="ModuleScript" referent="RBX00000045"><Properties><string name="Name">ProgresoVista</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Progreso (cliente)
 	Ventana PROGRESO (tecla P o botón del menú) con cinco pestañas:
 	· Camino: los 50 niveles en fila; lo que ya puedes cobrar brilla.
@@ -33180,7 +34612,7 @@ end
 
 return ProgresoVista
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX00000042"><Properties><string name="Name">Render</string><ProtectedString name="Source"><![CDATA[--!native
+<Item class="ModuleScript" referent="RBX00000046"><Properties><string name="Name">Render</string><ProtectedString name="Source"><![CDATA[--!native
 --!optimize 2
 --[[
 	Blockverse para Roblox · Render del mundo (cliente)
@@ -34334,7 +35766,7 @@ end
 
 return Render
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX00000043"><Properties><string name="Name">Sombras</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX00000047"><Properties><string name="Name">Sombras</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Sombras redondas (como las de Minecraft)
 	Debajo de cada criatura y cada objeto tirado sale una sombra suave en el suelo: se ve
 	también de noche y en las cuevas (donde no hay sombras del sol) y ayuda a saber a qué
@@ -34350,6 +35782,7 @@ local BS = Config.BLOQUE
 local SOLIDO = Registro.SOLIDO
 local Sombras = {}
 Sombras.md = nil -- datos del mundo del cliente (se ponen al cargarlo)
+Sombras.activo = true -- se apagan con la calidad gráfica baja
 
 local carpeta = Instance.new("Folder")
 carpeta.Name = "Sombras"
@@ -34398,7 +35831,7 @@ end
 -- pos: centro de los pies (en studs); ancho: tamaño de la sombra (en studs)
 function Sombras.poner(s, pos, ancho)
 	local bx, by, bz = math.floor(pos.X / BS), math.floor(pos.Y / BS + 0.05), math.floor(pos.Z / BS)
-	local gy = suelo(bx, by, bz)
+	local gy = Sombras.activo and suelo(bx, by, bz)
 	if not gy then
 		s.fuera.Transparency, s.dentro.Transparency = 1, 1
 		return
@@ -34434,7 +35867,7 @@ end
 
 return Sombras
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX00000044"><Properties><string name="Name">TiendaVista</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX00000048"><Properties><string name="Name">TiendaVista</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Tienda con Robux (cliente)
 	· Ventana con cuatro pestañas: Destacado (el VIP en grande y lo mejor de cada cosa),
 	  Pases, Monedas y Modos (lo que se puede comprar dentro de cada modo).
@@ -34934,7 +36367,7 @@ return TiendaVista
 ]]></ProtectedString></Properties></Item>
 </Item>
 </Item>
-<Item class="StarterCharacterScripts" referent="RBX00000048"><Properties><string name="Name">StarterCharacterScripts</string></Properties><Item class="Script" referent="RBX00000046"><Properties><string name="Name">Health</string><bool name="Disabled">false</bool><ProtectedString name="Source"><![CDATA[--[[
+<Item class="StarterCharacterScripts" referent="RBX0000004C"><Properties><string name="Name">StarterCharacterScripts</string></Properties><Item class="Script" referent="RBX0000004A"><Properties><string name="Name">Health</string><bool name="Disabled">false</bool><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox
 	Este script vacío reemplaza al «Health» de Roblox, que cura sola a la
 	persona. En Blockverse la vida se recupera con el hambre llena.

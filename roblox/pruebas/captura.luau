@@ -462,18 +462,6 @@ pasos(5)
 do
 	local rp = root.Position / B
 	volcar("sup_mundo", rp.X, rp.Y, rp.Z, 60, F.Vector3.new(rp.X - 14, rp.Y + 9, rp.Z - 14), F.Vector3.new(rp.X + 12, rp.Y - 3, rp.Z + 12), 70)
-	-- El mismo sitio con cada shader (y uno al atardecer)
-	for _, sh in { "ninguno", "vivido", "cinematico", "fantasia", "invierno", "retro", "noir" } do
-		Interfaz.ajustes.shader = sh
-		volcar("shader_" .. sh, rp.X, rp.Y, rp.Z, 60, F.Vector3.new(rp.X - 14, rp.Y + 9, rp.Z - 14), F.Vector3.new(rp.X + 12, rp.Y - 3, rp.Z + 12), 70)
-	end
-	Interfaz.ajustes.shader = "cinematico"
-	local hora = S.Lighting.ClockTime
-	S.Lighting.ClockTime = 17.6
-	volcar("shader_atardecer", rp.X, rp.Y, rp.Z, 60, F.Vector3.new(rp.X - 14, rp.Y + 9, rp.Z - 14), F.Vector3.new(rp.X + 12, rp.Y - 3, rp.Z + 12), 70)
-	S.Lighting.ClockTime = hora
-	Interfaz.ajustes.shader = "clasico"
-	pasos(2)
 	volcarGui("sup_hud")
 	-- Más pantallas para revisarlas: inventario, aviso de logro, muerte y carga
 	enviar("abrirInventario")
@@ -617,6 +605,13 @@ local l = math.sqrt(dx * dx + dz * dz)
 dx, dz = dx / l, dz / l
 local Y = Arenas.BW_Y
 volcar("bw_isla", ix, Y, iz, 70, F.Vector3.new(ix - dx * 16, Y + 9, iz - dz * 16), F.Vector3.new(ix + dx * 10, Y, iz + dz * 10), 70)
+-- La misma isla con cada shader (siempre sale igual, así se pueden comparar)
+for _, sh in { "ninguno", "vivido", "cinematico", "fantasia", "invierno", "retro", "noir" } do
+	Interfaz.ajustes.shader = sh
+	volcar("shader_" .. sh, ix, Y, iz, 70, F.Vector3.new(ix - dx * 16, Y + 9, iz - dz * 16), F.Vector3.new(ix + dx * 10, Y, iz + dz * 10), 70)
+end
+Interfaz.ajustes.shader = "clasico"
+pasos(2)
 volcar("bw_centro", ix, Y, iz, 90, F.Vector3.new(ix + dx * 8, Y + 12, iz + dz * 8), F.Vector3.new(cx, Y, cz), 70)
 -- Tienda abierta (se dibuja la interfaz aparte)
 local tendero
