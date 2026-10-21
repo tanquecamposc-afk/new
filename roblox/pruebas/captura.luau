@@ -152,6 +152,8 @@ local Reg = F.entorno(comp).require(comp.Registro)
 local Arenas = F.entorno(comp).require(comp.Arenas)
 local srvMundo = srv.Mundo._resultado
 local Mobs = srv.Mobs._resultado
+-- Cielo despejado toda la prueba: en una tormenta salen monstruos de día y atacarían al jugador quieto
+srv.Clima._resultado.poner("despejado", 1e6)
 local B = 3
 local function pasos(n)
 	for _ = 1, n do
