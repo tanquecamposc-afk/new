@@ -906,19 +906,19 @@ opcionMenu("Mazmorras", "Salas con enemigos, botín, artefactos y un jefe", "maz
 opcionMenu("Leyendas", "Defiende la aldea, construye y manda a tus golems", "leyendas", "escudo", 6)
 -- Fila de abajo: ajustes, controles y volver al juego
 local filaMenu = nuevo("Frame", { BackgroundTransparency = 1, AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0.25, 266),
-	Size = UDim2.fromOffset(640, 46), ZIndex = 11 }, menu)
+	Size = UDim2.fromOffset(700, 46), ZIndex = 11 }, menu)
 nuevo("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 12), HorizontalAlignment = Enum.HorizontalAlignment.Center,
 	SortOrder = Enum.SortOrder.LayoutOrder }, filaMenu)
 local abrirAjustes, abrirControles, abrirLogros -- se definen más abajo
 tarjeta(filaMenu, "Ajustes", nil, nil, 1, function()
 	abrirAjustes()
-end, UDim2.fromOffset(136, 46))
+end, UDim2.fromOffset(150, 46))
 tarjeta(filaMenu, "Controles", nil, nil, 2, function()
 	abrirControles()
-end, UDim2.fromOffset(136, 46))
+end, UDim2.fromOffset(150, 46))
 local botonLogros = tarjeta(filaMenu, "Logros", nil, nil, 3, function()
 	abrirLogros()
-end, UDim2.fromOffset(136, 46))
+end, UDim2.fromOffset(150, 46))
 local botonVolver = tarjeta(filaMenu, "Volver al juego", nil, nil, 4, function()
 	Interfaz.menu(false)
 	if Interfaz.alMenu then
