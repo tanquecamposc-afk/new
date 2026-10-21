@@ -140,7 +140,13 @@ Con **Rojo**, `default.project.json` monta el mismo árbol desde `src/`.
   Si Roblox no deja crear mallas editables se usan los iconos de antes.
 - **Criaturas con más vida:** cuando no hay nadie cerca miran a su alrededor y en reposo los brazos se mecen un poco.
 - **Pantalla de carga** con el fondo de tierra de Minecraft, el título, una barra con porcentaje y un consejo al azar; **pantalla de muerte** con la causa, el nivel de experiencia y la cuenta atrás para reaparecer.
-- **Menú principal nuevo:** tarjetas con icono para cada modo, el mundo desenfocado detrás, frase amarilla que late, y botones de Ajustes, Controles y «Volver al juego».
+- **Menú principal interactivo (estilo Roblox):**
+  - Detrás, la cámara gira despacio sobre el mundo (vista panorámica) mientras el menú está abierto.
+  - Tarjeta del jugador con su avatar de Roblox, nivel con estrellas y barra de experiencia, monedas, logros conseguidos y victorias de Bed Wars.
+  - **Recompensa diaria** con racha: 40 monedas el primer día y 15 más por cada día seguido (hasta 130 el 7.º). El botón late cuando está lista y, si no, muestra la cuenta atrás.
+  - Tarjetas de modo de colores con icono, etiquetas («CLÁSICO», «★ POPULAR», «NUEVO») y cuántos jugadores hay en cada modo en ese momento («● 3 jugando» o «¡Sé el primero!»).
+  - Animaciones: las tarjetas entran una tras otra, crecen y se iluminan al pasar el ratón, se aplastan al hacer clic, y cada acción tiene su sonido.
+  - Botones de Ajustes, Controles, Logros y «Volver al juego».
 - **Ajustes que se guardan:** sensibilidad del ratón, campo de visión, efecto de velocidad al correr, balanceo de la mano, números de daño y volumen.
 - **Cámara en tercera persona (V) mejorada:** gira con el ratón sin mantener el clic derecho, el personaje mira hacia donde apuntas y la cámara no atraviesa los bloques.
 - **Enemigos más listos:** solo te persiguen si te ven (y se acuerdan unos segundos), no se tiran por los precipicios ni a la lava, rodean los muros, avisan a los de su clase cuando les pegas y los esqueletos se mueven de lado cambiando de dirección. Al golpearlos sale su barra de vida y al morir desaparecen en una nube de humo.
