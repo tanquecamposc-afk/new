@@ -8829,7 +8829,7 @@ P.PASES = {
 		ventajas = {
 			"+50 % de monedas en Bed Wars",
 			"Recompensa diaria doble",
-			"+25 % de experiencia en el Camino y 2 giros de ruleta al día",
+			"+25 % de experiencia y 2 giros de ruleta al día",
 			"Etiqueta [VIP] dorada en el chat y en tu tarjeta",
 			"Estrella ★ junto a tu nombre en Bed Wars",
 		},
@@ -12156,6 +12156,11 @@ local ctxModos = {
 Modos.iniciar(ctxModos)
 -- Progreso: Camino de Blockverse, misiones, ruleta, colección y ranking
 Progreso.iniciar({ Estado = Estado, almacen = almacen, aviso = aviso, perfilMenu = Modos.perfilMenu })
+Modos.alPerfil = function(plr, d)
+	local p = Progreso.de(plr)
+	d.camino, d.caminoXp, d.caminoMax = p.nivel, p.xp, p.nivel >= Progreso.NIVEL_MAX
+	d.caminoNec = Progreso.xpNivel(p.nivel)
+end
 -- Tienda con Robux: pases, monedas y cosas de cada modo
 Tienda.iniciar({
 	Estado = Estado, estados = estados, almacen = almacen, darOSoltar = darOSoltar, supervivencia = supervivencia, aviso = aviso,
@@ -21710,8 +21715,14 @@ function Modos.enArena(plr)
 	return BW.en(plr) or MZ.en(plr) or LY.en(plr)
 end
 
+-- Lo que sale en la tarjeta del menú (el servidor principal le añade el Camino de Blockverse)
+Modos.alPerfil = nil -- function(plr, datos)
 function Modos.perfilMenu(plr)
-	return BW.perfilMenu(plr)
+	local d = BW.perfilMenu(plr)
+	if Modos.alPerfil then
+		pcall(Modos.alPerfil, plr, d)
+	end
+	return d
 end
 function Modos.reclamarDiaria(plr)
 	return BW.reclamarDiaria(plr)
@@ -22585,6 +22596,12 @@ local function guardarYa(plr)
 	if not ok then
 		warn("[Blockverse] No se pudo guardar el perfil de Bed Wars: " .. tostring(err))
 	end
+	return ok
+end
+
+-- Guarda ya y dice si salió bien (para las compras con Robux: primero se guarda, luego se apunta la compra)
+function Perfil.guardarAhora(plr)
+	return guardarYa(plr) == true
 end
 
 -- ¿Lo que cambie se va a guardar? (no si la carga falló o no hay DataStore)
@@ -22593,12 +22610,25 @@ function Perfil.sePuedeGuardar(plr)
 	return almacen ~= nil and not sinGuardar[plr] and plr.UserId ~= nil and plr.UserId > 0
 end
 
--- Guarda sin parar a quien lo llama (el DataStore tarda)
+-- Guarda sin parar a quien lo llama (el DataStore tarda). Varios cambios seguidos
+-- (cobrar todo el Camino, comprar…) se juntan en un solo guardado a los 6 s,
+-- para no pasar del límite de escrituras de Roblox. Al salir se guarda siempre.
+local pendiente = {}
 function Perfil.guardar(plr)
-	task.spawn(guardarYa, plr)
+	if pendiente[plr] then
+		return
+	end
+	pendiente[plr] = true
+	task.delay(6, function()
+		pendiente[plr] = nil
+		if perfiles[plr] then
+			guardarYa(plr)
+		end
+	end)
 end
 
 function Perfil.olvidar(plr)
+	pendiente[plr] = nil
 	guardarYa(plr)
 	perfiles[plr] = nil
 	sinGuardar[plr] = nil
@@ -22633,6 +22663,8 @@ local D = require(Comp.DatosProgreso)
 local Perfil = require(script.Parent.PerfilBW)
 
 local Progreso = {}
+Progreso.NIVEL_MAX = D.NIVEL_MAX
+Progreso.xpNivel = D.xpNivel
 local ctx -- {Estado, almacen, aviso}
 local datos = {} -- plr -> datos guardados
 local sinGuardar = {}
@@ -22711,7 +22743,10 @@ end
 -- Guardar
 ------------------------------------------------------------------
 local ordenado
-local function guardarYa(plr)
+local ultimoRanking = {} -- plr -> os.clock() de la última vez que se escribió en el ranking
+-- Roblox limita las escrituras por minuto: el progreso se guarda como mucho cada 30 s
+-- y el ranking cada 2 minutos (y siempre al salir)
+local function guardarYa(plr, saliendo)
 	local p = datos[plr]
 	if not p or sinGuardar[plr] or not ctx.almacen or not plr.UserId or plr.UserId <= 0 then
 		return
@@ -22719,7 +22754,8 @@ local function guardarYa(plr)
 	pcall(function()
 		ctx.almacen:SetAsync("p_" .. plr.UserId, p)
 	end)
-	if ordenado then
+	if ordenado and (saliendo or os.clock() - (ultimoRanking[plr] or -1e9) > 120) then
+		ultimoRanking[plr] = os.clock()
 		pcall(function()
 			ordenado:SetAsync(tostring(plr.UserId), p.total)
 		end)
@@ -22731,7 +22767,7 @@ local function guardar(plr)
 		return
 	end
 	pendienteGuardar[plr] = true
-	task.delay(5, function()
+	task.delay(30, function()
 		pendienteGuardar[plr] = nil
 		if datos[plr] then
 			guardarYa(plr)
@@ -23205,7 +23241,7 @@ function Progreso.iniciar(c)
 	pcall(function()
 		ordenado = DataStoreService:GetOrderedDataStore("Blockverse_Ranking")
 	end)
-	Players.PlayerAdded:Connect(function(plr)
+	local function alEntrar(plr)
 		plr.CharacterAdded:Connect(function(ch)
 			ch:WaitForChild("HumanoidRootPart", 10)
 			ch:WaitForChild("Head", 10)
@@ -23216,15 +23252,21 @@ function Progreso.iniciar(c)
 		end)
 		Progreso.cargar(plr)
 		avisarPendientes(plr)
-	end)
+	end
+	Players.PlayerAdded:Connect(alEntrar)
+	-- Los que ya estaban (en Studio a veces el jugador entra antes que este script)
+	for _, plr in Players:GetPlayers() do
+		task.spawn(alEntrar, plr)
+	end
 	Players.PlayerRemoving:Connect(function(plr)
-		guardarYa(plr)
+		guardarYa(plr, true)
 		datos[plr] = nil
 		sinGuardar[plr] = nil
+		ultimoRanking[plr] = nil
 	end)
 	game:BindToClose(function()
 		for plr in datos do
-			guardarYa(plr)
+			guardarYa(plr, true)
 		end
 	end)
 end
@@ -24685,7 +24727,8 @@ local function entregar(plr, x)
 	return true, ("Ya no se podía usar: te damos %d monedas a cambio"):format(x.monedas or 100)
 end
 
-local procesadas = {} -- PurchaseId -> true (en esta sesión del servidor)
+local procesadas = {} -- PurchaseId -> true cuando ya está entregada y apuntada (en este servidor)
+local entregadas = {} -- PurchaseId -> texto, si ya se dio pero aún no se pudo guardar o apuntar
 
 local function procesar(info)
 	local plr = Players:GetPlayerByUserId(info.PlayerId)
@@ -24693,13 +24736,14 @@ local function procesar(info)
 	if not plr or not x then
 		return Enum.ProductPurchaseDecision.NotYetGranted
 	end
-	if procesadas[info.PurchaseId] then
+	local id = info.PurchaseId
+	if procesadas[id] then
 		return Enum.ProductPurchaseDecision.PurchaseGranted
 	end
-	-- ¿Ya se entregó en otra sesión?
 	local almacen = ctx.almacen
-	local clave = "r_" .. tostring(info.PurchaseId)
-	if almacen then
+	local clave = "r_" .. tostring(id)
+	-- ¿Ya se entregó y apuntó en otra sesión?
+	if almacen and not entregadas[id] then
 		local ok, ya = pcall(function()
 			return almacen:GetAsync(clave)
 		end)
@@ -24707,7 +24751,7 @@ local function procesar(info)
 			return Enum.ProductPurchaseDecision.NotYetGranted
 		end
 		if ya then
-			procesadas[info.PurchaseId] = true
+			procesadas[id] = true
 			return Enum.ProductPurchaseDecision.PurchaseGranted
 		end
 	end
@@ -24715,23 +24759,30 @@ local function procesar(info)
 	if not Perfil.sePuedeGuardar(plr) then
 		return Enum.ProductPurchaseDecision.NotYetGranted
 	end
-	local okE, hecho, texto = pcall(entregar, plr, x)
-	if not okE or not hecho then
-		warn("[Blockverse] No se pudo entregar " .. x.clave .. ": " .. tostring(hecho))
+	-- Se entrega una sola vez por compra (aunque Roblox lo reintente si algo falla después)
+	if not entregadas[id] then
+		local okE, hecho, texto = pcall(entregar, plr, x)
+		if not okE or not hecho then
+			warn("[Blockverse] No se pudo entregar " .. x.clave .. ": " .. tostring(hecho))
+			return Enum.ProductPurchaseDecision.NotYetGranted
+		end
+		entregadas[id] = texto or ""
+	end
+	-- Primero se guarda lo entregado y luego se apunta la compra
+	if almacen and not Perfil.guardarAhora(plr) then
 		return Enum.ProductPurchaseDecision.NotYetGranted
 	end
-	Perfil.guardar(plr)
 	if almacen then
 		local okG = pcall(function()
 			almacen:SetAsync(clave, true)
 		end)
 		if not okG then
-			-- Lo intentará otra vez; procesadas evita darlo dos veces en este servidor
-			procesadas[info.PurchaseId] = true
 			return Enum.ProductPurchaseDecision.NotYetGranted
 		end
 	end
-	procesadas[info.PurchaseId] = true
+	procesadas[id] = true
+	local texto = entregadas[id]
+	entregadas[id] = nil
 	ctx.Estado:FireClient(plr, "compraHecha", { nombre = x.nombre, clave = x.clave, texto = texto })
 	ctx.Estado:FireClient(plr, "perfil", ctx.Modos.perfilMenu(plr))
 	ctx.enviarJugador(plr)
@@ -25139,6 +25190,9 @@ end)
 -- Cámara
 ------------------------------------------------------------------
 local tercera = false
+ProgresoVista.enTercera = function()
+	return tercera
+end
 local function aplicarCamara()
 	local abierto = Interfaz.abierto() or Interfaz.menuVisible()
 	if tercera then
@@ -25362,7 +25416,7 @@ local function usar(inicio)
 	-- Escudo (en la mano, o en la otra mano si en esta no hay nada que usar): cubrirse mientras se mantiene
 	local otra = est.inv[41]
 	local interactivo = objetivo and objetivo.tipo == "bloque" and BL[objetivo.b] and BL[objetivo.b].inter and not agachado
-	if id == Registro.I.escudo or (otra and otra.id == Registro.I.escudo and not interactivo and not (o and (o.bloque or o.comida or o.bebida or BL[id]))) then
+	if not interactivo and (id == Registro.I.escudo or (otra and otra.id == Registro.I.escudo and not (o and (o.bloque or o.comida or o.bebida or BL[id])))) then
 		if inicio and not cubriendo then
 			cubriendo = true
 			enviar("cubrir", true)
@@ -29267,12 +29321,19 @@ function Interfaz.perfil(d)
 	if not d then
 		return
 	end
-	perfilNivel.Text = ("%sNivel %d★"):format(d.vip and "[VIP] " or "", d.nivel or 1)
-	local ok, c = pcall(Color3.fromHex, d.colorNivel or "#aaaaaa")
-	perfilNivel.TextColor3 = ok and c or Color3.fromRGB(170, 170, 170)
-	barraNivelF.Size = UDim2.fromScale(math.clamp((d.xp or 0) / 500, 0, 1), 1)
+	-- Arriba, el nivel del Camino de Blockverse (todos los modos) con su barra; abajo, el título y las estrellas de Bed Wars
+	if d.camino then
+		perfilNivel.Text = ("%sNivel %d"):format(d.vip and "[VIP] " or "", d.camino)
+		perfilNivel.TextColor3 = d.vip and Color3.fromRGB(255, 200, 60) or Color3.fromRGB(190, 170, 255)
+		barraNivelF.Size = UDim2.fromScale(d.caminoMax and 1 or math.clamp((d.caminoXp or 0) / math.max(1, d.caminoNec or 1), 0, 1), 1)
+	else
+		perfilNivel.Text = ("%sNivel %d★"):format(d.vip and "[VIP] " or "", d.nivel or 1)
+		local ok, c = pcall(Color3.fromHex, d.colorNivel or "#aaaaaa")
+		perfilNivel.TextColor3 = ok and c or Color3.fromRGB(170, 170, 170)
+		barraNivelF.Size = UDim2.fromScale(math.clamp((d.xp or 0) / 500, 0, 1), 1)
+	end
 	perfilMonedas.Text = tostring(d.monedas or 0)
-	perfilVictorias.Text = d.titulo and ("%s · Camino nivel %d"):format(d.titulo, d.camino or 1)
+	perfilVictorias.Text = d.titulo and ("%s · Bed Wars %d★"):format(d.titulo, d.nivel or 1)
 		or ("Bed Wars: %d %s · %d %s"):format(d.victorias or 0, d.victorias == 1 and "victoria" or "victorias", d.partidas or 0, d.partidas == 1 and "partida" or "partidas")
 	if d.tituloCol then
 		local okC, cc = pcall(Color3.fromHex, d.tituloCol)
@@ -29334,7 +29395,7 @@ do
 	iconosMenu[ic] = idDe("esmeralda")
 	texto({ Position = UDim2.fromOffset(58, 6), Size = UDim2.new(1, -64, 0, 26), Text = "PROGRESO", TextSize = 22, Font = FUENTE_N,
 		TextXAlignment = Enum.TextXAlignment.Left, TextStrokeTransparency = 0.2, ZIndex = 13 }, b)
-	texto({ Position = UDim2.fromOffset(58, 32), Size = UDim2.new(1, -64, 0, 16), Text = "Camino · Misiones · Ruleta", TextSize = 12,
+	texto({ Position = UDim2.fromOffset(58, 32), Size = UDim2.new(1, -64, 0, 16), Text = "Misiones y ruleta", TextSize = 12,
 		TextXAlignment = Enum.TextXAlignment.Left, TextColor3 = Color3.fromRGB(225, 220, 255), TextStrokeTransparency = 1, ZIndex = 13 }, b)
 	local av = nuevo("Frame", { AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, 8, 0, -8), Size = UDim2.fromOffset(26, 26),
 		BackgroundColor3 = Color3.fromRGB(230, 50, 60), BorderSizePixel = 0, Visible = false, ZIndex = 14 }, b)
@@ -29371,7 +29432,7 @@ do
 	iconosMenu[ic] = idDe("bloqueOro")
 	texto({ Position = UDim2.fromOffset(66, 8), Size = UDim2.new(1, -72, 0, 28), Text = "TIENDA", TextSize = 26, Font = FUENTE_N,
 		TextXAlignment = Enum.TextXAlignment.Left, TextStrokeColor3 = Color3.fromRGB(110, 60, 0), TextStrokeTransparency = 0, ZIndex = 13 }, b)
-	texto({ Position = UDim2.fromOffset(66, 36), Size = UDim2.new(1, -72, 0, 18), Text = "VIP · Monedas · Extras", TextSize = 13, Font = FUENTE,
+	texto({ Position = UDim2.fromOffset(66, 36), Size = UDim2.new(1, -72, 0, 18), Text = "VIP y monedas", TextSize = 13, Font = FUENTE,
 		TextXAlignment = Enum.TextXAlignment.Left, TextColor3 = Color3.fromRGB(90, 45, 0), TextStrokeTransparency = 1, ZIndex = 13 }, b)
 	local cinta = nuevo("Frame", { AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, 8, 0, -10), Size = UDim2.fromOffset(62, 20),
 		BackgroundColor3 = Color3.fromRGB(230, 50, 60), BorderSizePixel = 0, ZIndex = 14 }, b)
@@ -32287,6 +32348,9 @@ ProgresoVista.alVisible = function(si) end
 ProgresoVista.enMenu = function()
 	return false
 end
+ProgresoVista.enTercera = function()
+	return false
+end
 
 local FUENTE = Enum.Font.GothamBold
 local FUENTE_N = Enum.Font.GothamBlack
@@ -32609,6 +32673,10 @@ local function pintarRuleta(resultado)
 					girando = true
 					ProgresoVista.alSonido("poner", 1.5)
 					ProgresoVista.enviar("progresoCmd", "girar")
+					-- Por si no llega respuesta, no se queda bloqueado
+					task.delay(8, function()
+						girando = false
+					end)
 				end
 			end)
 	elseif not resultado then
@@ -32832,6 +32900,9 @@ end
 
 function ProgresoVista.datos(d, extra)
 	datos = d
+	if girando and not (extra and extra.ruleta) then
+		girando = false
+	end
 	ProgresoVista.pendientes(d.pendientes or 0)
 	if not velo.Visible then
 		return
@@ -32851,7 +32922,7 @@ end
 -- Avisos mientras juegas
 ------------------------------------------------------------------
 -- Botón con el número de cosas por cobrar (a la izquierda)
-local avisoBoton = nuevo("TextButton", { AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.new(0, 10, 0.5, -40), Size = UDim2.fromOffset(150, 40),
+local avisoBoton = nuevo("TextButton", { AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.new(0, 10, 0.5, -40), Size = UDim2.fromOffset(176, 40),
 	BackgroundColor3 = MORADO, BorderSizePixel = 0, Text = "", AutoButtonColor = true, Visible = false }, gui)
 esquina(avisoBoton, 20)
 nuevo("UIStroke", { Color = Color3.new(1, 1, 1), Thickness = 2, Transparency = 0.4 }, avisoBoton)
@@ -32867,7 +32938,7 @@ function ProgresoVista.pendientes(n)
 		TweenService:Create(avisoEsc, TweenInfo.new(0.4, Enum.EasingStyle.Elastic), { Scale = 1 }):Play()
 	end
 	nPendientes = n
-	avisoT.Text = ("★ Progreso (P) · %d"):format(n)
+	avisoT.Text = ("★  Progreso (P) · %d"):format(n)
 	if ProgresoVista.alPendientes then
 		ProgresoVista.alPendientes(n)
 	end
@@ -32953,6 +33024,12 @@ function ProgresoVista.iniciar()
 	gui.Parent = jugador:WaitForChild("PlayerGui")
 	-- El botón de avisos solo se ve jugando (no en el menú) y si hay algo por cobrar
 	RunService.RenderStepped:Connect(function()
+		local ch = jugador.Character
+		local cab = ch and ch:FindFirstChild("Head")
+		local t = cab and cab:FindFirstChild("TituloJugador")
+		if t then
+			t.Enabled = ProgresoVista.enTercera() and not jugador:GetAttribute("BedWars")
+		end
 		avisoBoton.Visible = nPendientes > 0 and not velo.Visible and not ProgresoVista.enMenu()
 	end)
 end
@@ -34417,7 +34494,9 @@ local function pintarDestacado()
 			TextXAlignment = Enum.TextXAlignment.Left, TextStrokeColor3 = Color3.fromRGB(90, 50, 0), TextStrokeTransparency = 0 }, f)
 		texto({ Position = UDim2.fromOffset(190, 62), Size = UDim2.fromOffset(380, 20), Text = vip.desc or "", TextSize = 14,
 			TextXAlignment = Enum.TextXAlignment.Left, TextColor3 = Color3.fromRGB(255, 235, 180), TextStrokeTransparency = 1 }, f)
-		lista(f, vip, 190, 90, 400)
+		-- El recuadro crece si las ventajas no caben
+		local alto = lista(f, vip, 190, 90, 400, 13)
+		f.Size = UDim2.new(1, 0, 0, math.max(200, 90 + alto + 14))
 		botonCompra(f, vip, UDim2.new(1, -230, 0.5, -30), UDim2.fromOffset(206, 60))
 	end
 	-- Debajo: el mejor paquete de monedas, Monedas x2 y lo que sirve en el modo en que estás
@@ -34449,6 +34528,8 @@ pintar = function()
 		b.TextColor3 = k == pestana and Color3.fromRGB(60, 30, 0) or Color3.new(1, 1, 1)
 	end
 	monedasT.Text = ("%d monedas"):format(datos.monedas or 0)
+	pie.Text = datos.studio and "En Studio: lo que no tiene ID se da gratis al pulsarlo, para probarlo. A los jugadores no les sale hasta que pongas su ID."
+		or "Pagas con Robux a través de Roblox. Las monedas solo sirven dentro de Blockverse."
 	limpiar(cuerpo)
 	cuerpo.CanvasPosition = Vector2.new(0, 0)
 	if pestana == "destacado" then
