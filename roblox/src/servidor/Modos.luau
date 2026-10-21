@@ -253,6 +253,11 @@ local LY = require(script.Parent.Leyendas)
 Modos.BW, Modos.MZ, Modos.LY = BW, MZ, LY
 
 -- ¿Está el jugador en un modo con sus propias reglas? (no se guarda su inventario ni cambia de modo)
+-- ¿Está en una partida de Bed Wars, una mazmorra o Leyendas? (One Block no cuenta: es el mundo normal)
+function Modos.enArena(plr)
+	return BW.en(plr) or MZ.en(plr) or LY.en(plr)
+end
+
 function Modos.nivelBW(plr)
 	return BW.nivelJugador(plr)
 end

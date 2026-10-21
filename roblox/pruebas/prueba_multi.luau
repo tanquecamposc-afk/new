@@ -457,6 +457,14 @@ ok(P.tema == "invierno", "no se juega el mapa más votado (" .. tostring(P.tema)
 ok(Ja.kit == "guerrero" and cuenta(ana, Reg.I.espada_piedra) == 1, "Ana no empezó con la espada del kit Guerrero")
 ok(datos[ana].ultimo.kitBW and datos[ana].ultimo.kitBW[1] and datos[ana].ultimo.kitBW[1].id == "guerrero", "el cliente de Ana no sabe su kit")
 ok(ana:GetAttribute("EquipoBW") == Ja.equipo and ana:GetAttribute("ColorBW") ~= nil, "Ana no tiene el atributo de equipo (para resaltar compañeros)")
+-- En Bed Wars el hierro sale del generador: no da el logro «Edad de hierro»
+do
+	local pa = datos[ana].root.Position / B
+	Entidades.soltarItem(Reg.pila(Reg.I.lingoteHierro, 3), pa.X, pa.Y - 0.5, pa.Z, false)
+	pasos(30)
+	ok(cuenta(ana, Reg.I.lingoteHierro) >= 3, "Ana no recogió el hierro en Bed Wars (la prueba no vale)")
+	ok(not srv.Logros._resultado.tiene(ana, "hierro"), "coger hierro en Bed Wars da el logro de fundirlo")
+end
 for _, m in P.bots do
 	ok(m.bw.kit ~= nil, "un bot no tiene kit")
 end

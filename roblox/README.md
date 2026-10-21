@@ -232,7 +232,9 @@ Para ser claros, esto **no es igual** que en el juego web:
   - `probar_respaldo.sh`: lo mismo, pero sin mallas ni imágenes editables.
   - `probar_estructuras.sh`: compara chunks con estructuras, del Nether y del End, y el botín de los cofres, con el juego web. Tiene que salir «ESTRUCTURAS IDENTICAS AL WEB».
   - `probar_multi.sh`: varios jugadores a la vez en el servidor. Tiene que salir «MULTIJUGADOR BIEN». En la prueba:
-    - Supervivencia: los bloques llegan a todos, cofre compartido, sin golpes entre jugadores, objetos al morir y guardado al salir.
+    - Supervivencia: los bloques llegan a todos, cofre compartido, sin golpes entre jugadores, objetos al morir y guardado al salir (con encantamientos y ajustes).
+    - Enemigos: no persiguen a través de paredes, no se tiran por los bordes, se avisan entre ellos y mandan su vida para la barra.
+    - Logros y clima: se consiguen, salen en la tabla de jugadores y se guardan (y no cuentan dentro de Bed Wars); con lluvia los zombis no arden, en la tormenta es «de noche» y el rayo hace daño.
     - Bed Wars con 3 y 4 jugadores: votación, compra de kits y efectos (y que se guarden), equipos, golpes, escudo de cama, trampolín, momentos de caos y cofre del cielo, baja final con efecto, espectador, irse a mitad, victoria con recompensas, «Jugar otra vez» e inventario devuelto.
     - Mazmorras y Leyendas: cada jugador tiene la suya.
   - `probar_bw.sh`: una partida entera de Bed Wars con cuatro jugadores con kits y bots: momentos de caos, minas, torretas, trampolín, habilidades, invisibilidad, bots que tienden puentes y rompen camas, muerte súbita y final. Tiene que salir «BED WARS LARGA BIEN».

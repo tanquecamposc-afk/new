@@ -218,7 +218,10 @@ local function enviarJugador(plr)
 	})
 	local p = s.inv[s.sel]
 	plr:SetAttribute("EnMano", p and p.id or nil)
-	Logros.revisarInventario(plr, s)
+	-- Los logros de «consigue X» solo en el mundo normal (en Bed Wars el hierro sale del generador)
+	if not Modos.enArena(plr) then
+		Logros.revisarInventario(plr, s)
+	end
 end
 
 local function enviarUI(plr)

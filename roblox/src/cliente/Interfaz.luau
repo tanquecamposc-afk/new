@@ -1129,7 +1129,9 @@ function Interfaz.pintarObjetivo(enSupervivencia)
 			break
 		end
 	end
-	objetivo.Visible = enSupervivencia == true and siguiente ~= nil
+	Interfaz.quiereObjetivo = enSupervivencia == true and siguiente ~= nil
+	-- Con la información de F3 abierta (que va en la misma esquina) no se enseña
+	objetivo.Visible = Interfaz.quiereObjetivo and not Interfaz.infoVisible()
 	if siguiente then
 		Iconos.poner(objetivoIc, siguiente.icono)
 		objetivoT.Text = "Objetivo: " .. siguiente.guia
@@ -1739,7 +1741,7 @@ function Interfaz.panel(d)
 end
 
 -- Registro de bajas de Bed Wars (arriba a la derecha): cada línea se borra sola a los 6 s
-local feed = nuevo("Frame", { Name = "RegistroBajas", BackgroundTransparency = 1, AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -10, 0, 60),
+local feed = nuevo("Frame", { Name = "RegistroBajas", BackgroundTransparency = 1, AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -10, 0, 86),
 	Size = UDim2.fromOffset(330, 140) }, hud)
 nuevo("UIListLayout", { Padding = UDim.new(0, 2), SortOrder = Enum.SortOrder.LayoutOrder, HorizontalAlignment = Enum.HorizontalAlignment.Right }, feed)
 local feedN = 0
@@ -1994,6 +1996,12 @@ function Interfaz.info(t)
 		info.Text = t
 	else
 		info.Visible = false
+	end
+	if Interfaz.quiereObjetivo ~= nil then
+		local o = hud:FindFirstChild("Objetivo")
+		if o then
+			o.Visible = Interfaz.quiereObjetivo and not info.Visible
+		end
 	end
 end
 
