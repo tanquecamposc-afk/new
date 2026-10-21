@@ -18,6 +18,7 @@ local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
 
 local Comp = ReplicatedStorage:WaitForChild("Blockverse")
+local Sombras = require(script.Parent:WaitForChild("Sombras"))
 local Config = require(Comp:WaitForChild("Config"))
 local Codec = require(Comp:WaitForChild("Codec"))
 local Imagenes = require(script.Parent:WaitForChild("Imagenes"))
@@ -327,7 +328,7 @@ local function nuevaVista(pieza)
 		return
 	end
 	local v = {
-		pieza = pieza, tipo = tipo, def = def, fase = 0, golpeT = 0, flash = 0, muerteT = 0, nacerT = 0,
+		pieza = pieza, tipo = tipo, def = def, fase = 0, golpeT = 0, flash = 0, muerteT = 0, nacerT = 0, sombra = Sombras.nueva(),
 		cf = pieza.CFrame, pos = pieza.Position, cabY = 0, cabX = 0, salto = 0, anterior = pieza.Position,
 	}
 	-- Las variantes se animan y miden como su criatura base
@@ -405,7 +406,7 @@ local function nuevaVista(pieza)
 		t.BackgroundColor3 = Color3.new(0, 0, 0)
 		t.BorderSizePixel = 0
 		t.Size = UDim2.fromScale(1, 1)
-		t.Font = Enum.Font.Code
+		t.Font = require(Comp:WaitForChild("Fuentes")).CABECERA
 		t.TextScaled = true
 		t.Text = etiqueta
 		t.TextColor3 = etiqueta == "Élite" and Color3.fromRGB(200, 120, 255) or Color3.fromRGB(255, 90, 90)
@@ -453,6 +454,7 @@ local function quitarVista(pieza)
 	for _, c in v.conexiones do
 		c:Disconnect()
 	end
+	Sombras.quitar(v.sombra)
 	-- Al desaparecer después de morir: nube de humo
 	if v.muerteT > 0 and MobsVista.alParticulas and not v.lejos then
 		MobsVista.alParticulas(v.pos, Color3.fromRGB(225, 225, 225), 18)
@@ -608,6 +610,12 @@ local function animar(v, dt)
 		v.caja.Size = pieza.Size
 		v.caja.CFrame = base * CFrame.new(0, alto / 2, 0)
 	end
+	-- Sombra redonda en el suelo (se va al morir)
+	if muerto then
+		Sombras.ocultar(v.sombra)
+	else
+		Sombras.poner(v.sombra, v.pos - Vector3.new(0, alto / 2, 0), math.max(0.5, (v.def.ancho or 0.4) * 2.6) * BS * esc)
+	end
 	-- Barra de vida: verde, amarilla o roja según lo que le quede
 	if v.barra then
 		v.barraT = math.max(0, (v.barraT or 0) - dt)
@@ -689,6 +697,7 @@ function MobsVista.iniciar()
 			elseif not v.lejos then
 				v.lejos = true
 				v.modelo:PivotTo(CFrame.new(0, -1000, 0))
+				Sombras.ocultar(v.sombra)
 			end
 		end
 	end)

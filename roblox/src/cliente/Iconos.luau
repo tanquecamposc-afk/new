@@ -134,7 +134,7 @@ function Iconos.poner(etiqueta, id)
 		ini.Name = "Iniciales"
 		ini.BackgroundTransparency = 1
 		ini.Size = UDim2.fromScale(1, 1)
-		ini.Font = Enum.Font.GothamBold
+		ini.Font = require(Comp:WaitForChild("Fuentes")).CABECERA
 		ini.TextScaled = true
 		ini.TextColor3 = Color3.new(1, 1, 1)
 		ini.TextStrokeTransparency = 0.3

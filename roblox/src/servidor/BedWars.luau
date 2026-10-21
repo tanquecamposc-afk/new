@@ -130,7 +130,7 @@ local function cartel(pieza, texto, col, alto)
 		t.BackgroundColor3 = Color3.new(0, 0, 0)
 		t.BorderSizePixel = 0
 		t.Size = UDim2.fromScale(1, 1)
-		t.Font = Enum.Font.Code
+		t.Font = require(Comp:WaitForChild("Fuentes")).CABECERA
 		t.TextScaled = true
 		t.TextStrokeTransparency = 0.4
 		t.Parent = g

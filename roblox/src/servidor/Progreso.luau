@@ -213,7 +213,7 @@ function Progreso.aplicar(plr)
 			l.Name = "Texto"
 			l.BackgroundTransparency = 1
 			l.Size = UDim2.fromScale(1, 1)
-			l.Font = Enum.Font.GothamBlack
+			l.Font = require(Comp:WaitForChild("Fuentes")).CABECERA
 			l.TextScaled = true
 			l.TextStrokeTransparency = 0.3
 			l.Parent = g

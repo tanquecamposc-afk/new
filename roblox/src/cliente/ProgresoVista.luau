@@ -31,8 +31,9 @@ ProgresoVista.enTercera = function()
 	return false
 end
 
-local FUENTE = Enum.Font.GothamBold
-local FUENTE_N = Enum.Font.GothamBlack
+local FT = require(Comp:WaitForChild("Fuentes"))
+local FUENTE = FT.TEXTO
+local FUENTE_N = FT.CABECERA
 local MORADO = Color3.fromRGB(150, 90, 255)
 local VERDE = Color3.fromRGB(60, 180, 80)
 local ORO = Color3.fromRGB(255, 200, 60)
@@ -54,6 +55,10 @@ local function texto(props, padre)
 	local t = nuevo("TextLabel", { BackgroundTransparency = 1, Font = FUENTE, TextColor3 = Color3.new(1, 1, 1), TextSize = 16, TextStrokeTransparency = 0.6 }, padre)
 	for k, v in props do
 		t[k] = v
+	end
+	-- Los títulos grandes llevan un contorno grueso y redondeado
+	if t.Font == FT.TITULO and t.TextStrokeTransparency < 1 then
+		FT.contorno(t, t.TextStrokeColor3, math.max(2, math.floor(t.TextSize / 16)))
 	end
 	return t
 end
@@ -119,8 +124,8 @@ nuevo("Frame", { BackgroundColor3 = Color3.fromRGB(80, 100, 240), BorderSizePixe
 local insignia = nuevo("Frame", { Position = UDim2.fromOffset(14, 8), Size = UDim2.fromOffset(60, 60), BackgroundColor3 = ORO, BorderSizePixel = 0 }, cab)
 esquina(insignia, 30)
 nuevo("UIStroke", { Color = Color3.fromRGB(110, 60, 0), Thickness = 3 }, insignia)
-local insigniaT = texto({ Size = UDim2.fromScale(1, 1), Text = "1", TextSize = 28, Font = FUENTE_N, TextColor3 = Color3.fromRGB(80, 40, 0), TextStrokeTransparency = 1 }, insignia)
-texto({ Position = UDim2.fromOffset(86, 8), Size = UDim2.fromOffset(400, 30), Text = "CAMINO DE BLOCKVERSE", TextSize = 24, Font = FUENTE_N,
+local insigniaT = texto({ Size = UDim2.fromScale(1, 1), Text = "1", TextSize = 30, Font = FT.NUMERO, TextColor3 = Color3.fromRGB(80, 40, 0), TextStrokeTransparency = 1 }, insignia)
+texto({ Position = UDim2.fromOffset(86, 8), Size = UDim2.fromOffset(400, 30), Text = "CAMINO DE BLOCKVERSE", TextSize = 28, Font = FT.TITULO,
 	TextXAlignment = Enum.TextXAlignment.Left, TextStrokeTransparency = 0.3 }, cab)
 local barraF = nuevo("Frame", { Position = UDim2.fromOffset(86, 42), Size = UDim2.fromOffset(380, 18), BackgroundColor3 = Color3.fromRGB(20, 20, 40), BorderSizePixel = 0 }, cab)
 esquina(barraF, 9)
@@ -604,7 +609,7 @@ end
 local avisoBoton = nuevo("TextButton", { AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.new(0, 10, 0.5, -40), Size = UDim2.fromOffset(176, 40),
 	BackgroundColor3 = MORADO, BorderSizePixel = 0, Text = "", AutoButtonColor = true, Visible = false }, gui)
 esquina(avisoBoton, 20)
-nuevo("UIStroke", { Color = Color3.new(1, 1, 1), Thickness = 2, Transparency = 0.4 }, avisoBoton)
+nuevo("UIStroke", { Color = Color3.new(1, 1, 1), Thickness = 2, Transparency = 0.4, ApplyStrokeMode = Enum.ApplyStrokeMode.Border }, avisoBoton)
 local avisoT = texto({ Size = UDim2.fromScale(1, 1), Text = "", TextSize = 14, Font = FUENTE_N }, avisoBoton)
 local avisoEsc = nuevo("UIScale", {}, avisoBoton)
 local nPendientes = 0
@@ -646,7 +651,7 @@ end
 
 -- Fiesta en grande (nivel nuevo, premio gordo)
 local fiestaF = nuevo("Frame", { BackgroundTransparency = 1, Size = UDim2.fromScale(1, 1), Visible = false, ZIndex = 20 }, gui)
-local fiestaT = texto({ AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.34), Size = UDim2.fromOffset(800, 80), Text = "", TextSize = 64, Font = FUENTE_N,
+local fiestaT = texto({ AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.34), Size = UDim2.fromOffset(800, 80), Text = "", TextSize = 64, Font = FT.TITULO,
 	TextColor3 = ORO, TextStrokeColor3 = Color3.fromRGB(60, 20, 120), TextStrokeTransparency = 0, ZIndex = 22 }, fiestaF)
 local fiestaEsc = nuevo("UIScale", {}, fiestaT)
 local fiestaS = texto({ AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.44), Size = UDim2.fromOffset(800, 30), Text = "", TextSize = 24, Font = FUENTE_N,

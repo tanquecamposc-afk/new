@@ -211,6 +211,20 @@ Todo lo que haces en cualquier modo te hace avanzar. Mientras juegas, a la izqui
 - **Ranking**: los 10 con más experiencia de todo Blockverse (con OrderedDataStore); tú resaltado.
 - Se guarda en el DataStore (clave `p_<UserId>`).
 
+## Letras y modelos 3D
+
+- **Letras** (todas en `src/compartido/Fuentes.luau`, una sola lista):
+  - Títulos grandes (BLOCKVERSE, ¡Has muerto!, ¡VICTORIA!, TIENDA, CAMINO…): **Luckiest Guy**, con un contorno grueso y redondeado (UIStroke) en vez del borde fino de 1 píxel.
+  - Cabeceras, botones y nombres sobre las cabezas: **Fredoka**.
+  - Frases y descripciones: **Builder Sans** en negrita.
+  - Números (cantidades de la barra, nivel, daño, insignias): **Arcade**, de píxeles.
+  - Si una fuente no existe en tu versión de Roblox, se usa Gotham.
+  - Los bordes de los botones y cajas con texto ya no rodean las letras (`ApplyStrokeMode = Border`).
+- **Modelos 3D**:
+  - Sombras redondas suaves bajo criaturas, objetos tirados y orbes de experiencia (`src/cliente/Sombras.luau`). Se ven también de noche y en cuevas, y se aclaran al alejarse del suelo.
+  - Brillo morado de encantamiento en la mano, en la mano de los demás jugadores y en los objetos encantados tirados en el suelo.
+  - Los objetos tirados y los que llevan los demás proyectan sombra.
+
 ## Tienda con Robux
 
 Botón dorado **TIENDA** en el menú principal (también «★ Tienda» en la sala de Bed Wars, «+» junto a las monedas en la ventana de kits y botones dentro de Mazmorras y Leyendas). Pestañas Destacado, Pases, Monedas y Para cada modo; al comprar sale confeti y «¡GRACIAS!».
@@ -257,6 +271,7 @@ Para ser claros, esto **no es igual** que en el juego web:
   - `Botin`, `Encantamientos`: tablas de botín y encantamientos del web.
   - `MundoDatos`: chunks de datos y cambios.
   - `Crafteo`, `Rayo`, `Fisica`, `Codec`, `Config`.
+  - `Fuentes`: las letras del juego.
 - `src/servidor/` → `ServerScriptService.Servidor`
   - Script principal: jugadores, acciones, vida, hambre y daño.
   - `Mundo`: colisiones y agua.
@@ -272,7 +287,7 @@ Para ser claros, esto **no es igual** que en el juego web:
   - Script principal: controles, cámara, picar y usar, efectos y sonidos.
   - `Render`: mallas con texturas, con un modo de respaldo hecho con piezas.
   - `Luz`.
-  - `Interfaz`, `Iconos`, `Modelos3D` (objetos en 3D: mano, suelo y personajes), `ClimaVista` (lluvia, nieve y rayos).
+  - `Interfaz`, `Iconos`, `Modelos3D` (objetos en 3D: mano, suelo y personajes, con brillo de encantamiento), `Sombras` (sombras redondas), `ClimaVista` (lluvia, nieve y rayos).
   - `MobsVista`, `EntidadesVista`.
   - `Imagenes`.
 - `src/personaje/Health`: quita la curación automática de Roblox.

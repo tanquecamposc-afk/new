@@ -16,6 +16,7 @@ local Config = require(Comp:WaitForChild("Config"))
 local Registro = require(Comp:WaitForChild("Registro"))
 local Iconos = require(script.Parent:WaitForChild("Iconos"))
 local Modelos3D = require(script.Parent:WaitForChild("Modelos3D"))
+local Sombras = require(script.Parent:WaitForChild("Sombras"))
 
 local BS = Config.BLOQUE
 local EntidadesVista = {}
@@ -59,6 +60,9 @@ end
 
 local function nueva(p)
 	local v = { p = p, pos = nil, fase = math.random() * 6.28, nacer = 0 }
+	if p.Name == "Item" or p.Name == "Orbe" then
+		v.sombra = Sombras.nueva()
+	end
 	if p.Name == "Item" then
 		local ancla = pieza(Vector3.new(0.1, 0.1, 0.1), Color3.new(1, 1, 1))
 		ancla.Transparency = 1
@@ -148,6 +152,8 @@ local function quitar(p)
 		return
 	end
 	vistas[p] = nil
+	Sombras.quitar(v.sombra)
+	v.sombra = nil
 	if (v.tipo == "item" or v.tipo == "orbe") and v.pos and not v.lejos then
 		local plr = quienRecoge(p)
 		if plr then
@@ -214,6 +220,12 @@ function EntidadesVista.iniciar()
 						local m2 = m and Modelos3D.crear(id, esc)
 						if m and v.pedido == yo and vistas[p] then
 							v.modelo, v.modelo2 = m, m2
+							-- Proyectan sombra y, si están encantados, brillan
+							local brillo = p:GetAttribute("brillo") == true
+							for _, x in { m, m2 } do
+								Modelos3D.sombra(x, true)
+								Modelos3D.brillo(x, brillo)
+							end
 							m.m.Parent = carpeta
 							m2.m.Parent = carpeta
 							v.bb.Enabled = false
@@ -229,7 +241,11 @@ function EntidadesVista.iniciar()
 					local varios = (p:GetAttribute("n") or 1) > 1
 					Modelos3D.colocar(v.modelo2, varios and giro * CFrame.new(0.12 * BS, 0.08 * BS, 0.1 * BS) or CFrame.new(0, -1e4, 0))
 				end
-			elseif v.tipo == "orbe" then
+			end
+			if v.sombra then
+				Sombras.poner(v.sombra, v.pos, (v.tipo == "orbe" and 0.3 or 0.5) * BS)
+			end
+			if v.tipo == "orbe" then
 				local c = 0.5 + math.sin(tiempo * 6 + v.fase) * 0.5
 				v.vis.Color = Color3.fromRGB(150 + c * 105, 255, 40 + c * 40)
 				v.vis.Position = v.pos + Vector3.new(0, 0.12 * BS, 0)

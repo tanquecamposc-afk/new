@@ -292,7 +292,7 @@ local PROPS = { "Name", "Position", "Size", "AnchorPoint", "Visible", "Backgroun
 	"TextXAlignment", "TextYAlignment", "TextWrapped", "TextScaled", "TextTransparency", "TextStrokeTransparency", "ZIndex", "LayoutOrder", "AutomaticSize",
 	"ImageTransparency", "ImageRectOffset", "ImageRectSize", "ImageColor3", "FillDirection", "Padding", "HorizontalAlignment", "VerticalAlignment",
 	"SortOrder", "CellSize", "CellPadding", "PaddingLeft", "PaddingRight", "PaddingTop", "PaddingBottom", "Color", "Thickness", "CornerRadius", "Scale",
-	"ClipsDescendants", "Enabled", "Rotation", "Font", "Transparency", "CanvasSize" }
+	"ClipsDescendants", "Enabled", "Rotation", "Font", "Transparency", "CanvasSize", "ApplyStrokeMode", "TextStrokeColor3" }
 local function js(v)
 	local t = type(v)
 	if t == "number" then

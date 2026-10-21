@@ -219,6 +219,8 @@ end
 ProgresoVista.iniciar()
 Interfaz.carga(0.5, "Generando el mundo…")
 local md = MundoDatos.new(semilla)
+-- Las sombras redondas buscan el suelo en los datos del mundo
+require(script:WaitForChild("Sombras")).md = md
 est.md = md
 DimensionVista.md = md
 DimensionVista.iniciar()
@@ -998,7 +1000,7 @@ local function numeroDano(pos, dano, critico)
 	local l = Instance.new("TextLabel")
 	l.BackgroundTransparency = 1
 	l.Size = UDim2.fromScale(1, 1)
-	l.Font = Enum.Font.GothamBlack
+	l.Font = require(Comp:WaitForChild("Fuentes")).NUMERO
 	l.TextScaled = true
 	l.Text = ("%g%s"):format(math.floor(dano * 10 + 0.5) / 10, critico and "!" or "")
 	l.TextColor3 = critico and Color3.fromRGB(255, 220, 60) or Color3.fromRGB(255, 255, 255)
@@ -1133,6 +1135,10 @@ if Modelos3D.disponible() then
 		balanceo = Interfaz.balanceoMano,
 		conBalanceo = function()
 			return Interfaz.ajustes.balanceo
+		end,
+		encantado = function()
+			local p = est.inv[est.sel]
+			return p ~= nil and p.enc ~= nil and next(p.enc) ~= nil
 		end,
 		pose = function()
 			return {

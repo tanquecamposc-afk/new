@@ -21,8 +21,9 @@ TiendaVista.enviar = function(...) end
 TiendaVista.alSonido = function(nombre, tono) end
 TiendaVista.alVisible = function(si) end
 
-local FUENTE = Enum.Font.GothamBold
-local FUENTE_N = Enum.Font.GothamBlack
+local FT = require(Comp:WaitForChild("Fuentes"))
+local FUENTE = FT.TEXTO
+local FUENTE_N = FT.CABECERA
 local ORO = Color3.fromRGB(255, 200, 60)
 local VERDE = Color3.fromRGB(60, 180, 80)
 local FONDO = Color3.fromRGB(26, 28, 40)
@@ -44,6 +45,10 @@ local function texto(props, padre)
 	local t = nuevo("TextLabel", { BackgroundTransparency = 1, Font = FUENTE, TextColor3 = Color3.new(1, 1, 1), TextSize = 16, TextStrokeTransparency = 0.6 }, padre)
 	for k, v in props do
 		t[k] = v
+	end
+	-- Los títulos grandes llevan un contorno grueso y redondeado
+	if t.Font == FT.TITULO and t.TextStrokeTransparency < 1 then
+		FT.contorno(t, t.TextStrokeColor3, math.max(2, math.floor(t.TextSize / 16)))
 	end
 	return t
 end
@@ -89,7 +94,7 @@ esquina(cab, 14)
 nuevo("UIGradient", { Rotation = 90, Color = ColorSequence.new(Color3.fromRGB(255, 235, 140), Color3.fromRGB(235, 150, 25)) }, cab)
 nuevo("Frame", { BackgroundColor3 = Color3.fromRGB(235, 150, 25), BorderSizePixel = 0, Position = UDim2.new(0, 0, 1, -14), Size = UDim2.new(1, 0, 0, 14) }, cab)
 local icCab = nuevo("ImageLabel", { BackgroundTransparency = 1, Position = UDim2.fromOffset(16, 9), Size = UDim2.fromOffset(52, 52), ResampleMode = Enum.ResamplerMode.Pixelated }, cab)
-texto({ Position = UDim2.fromOffset(80, 8), Size = UDim2.fromOffset(400, 34), Text = "TIENDA", TextSize = 32, Font = FUENTE_N, TextXAlignment = Enum.TextXAlignment.Left,
+texto({ Position = UDim2.fromOffset(80, 8), Size = UDim2.fromOffset(400, 34), Text = "TIENDA", TextSize = 36, Font = FT.TITULO, TextXAlignment = Enum.TextXAlignment.Left,
 	TextStrokeColor3 = Color3.fromRGB(110, 60, 0), TextStrokeTransparency = 0 }, cab)
 texto({ Position = UDim2.fromOffset(80, 42), Size = UDim2.fromOffset(500, 18), Text = "Consigue ventajas y apoya Blockverse", TextSize = 14,
 	TextColor3 = Color3.fromRGB(90, 45, 0), TextStrokeTransparency = 1, TextXAlignment = Enum.TextXAlignment.Left }, cab)
@@ -298,7 +303,7 @@ local function pintarDestacado()
 		nuevo("UIGradient", { Rotation = 0, Color = ColorSequence.new(Color3.fromRGB(255, 255, 255), Color3.fromRGB(150, 150, 150)) }, f)
 		cinta(f, vip.etiqueta or "★", Color3.fromRGB(230, 50, 60))
 		icono(f, vip.icono, UDim2.fromOffset(24, 30), 140, ORO)
-		texto({ Position = UDim2.fromOffset(188, 18), Size = UDim2.fromOffset(300, 44), Text = "VIP", TextSize = 42, Font = FUENTE_N, TextColor3 = ORO,
+		texto({ Position = UDim2.fromOffset(188, 18), Size = UDim2.fromOffset(300, 44), Text = "VIP", TextSize = 46, Font = FT.TITULO, TextColor3 = ORO,
 			TextXAlignment = Enum.TextXAlignment.Left, TextStrokeColor3 = Color3.fromRGB(90, 50, 0), TextStrokeTransparency = 0 }, f)
 		texto({ Position = UDim2.fromOffset(190, 62), Size = UDim2.fromOffset(380, 20), Text = vip.desc or "", TextSize = 14,
 			TextXAlignment = Enum.TextXAlignment.Left, TextColor3 = Color3.fromRGB(255, 235, 180), TextStrokeTransparency = 1 }, f)
@@ -419,7 +424,7 @@ end
 -- Al comprar: confeti y «¡GRACIAS!»
 local fiesta = nuevo("Frame", { Name = "Gracias", BackgroundTransparency = 1, Size = UDim2.fromScale(1, 1), Visible = false, ZIndex = 20 }, gui)
 local graciasT = texto({ AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.36), Size = UDim2.fromOffset(800, 80), Text = "¡GRACIAS!", TextSize = 72,
-	Font = FUENTE_N, TextColor3 = ORO, TextStrokeColor3 = Color3.fromRGB(90, 50, 0), TextStrokeTransparency = 0, ZIndex = 22 }, fiesta)
+	Font = FT.TITULO, TextColor3 = ORO, TextStrokeColor3 = Color3.fromRGB(90, 50, 0), TextStrokeTransparency = 0, ZIndex = 22 }, fiesta)
 local graciasEsc = nuevo("UIScale", {}, graciasT)
 local graciasSub = texto({ AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.46), Size = UDim2.fromOffset(800, 30), Text = "", TextSize = 24,
 	Font = FUENTE_N, ZIndex = 22, TextStrokeTransparency = 0.3 }, fiesta)

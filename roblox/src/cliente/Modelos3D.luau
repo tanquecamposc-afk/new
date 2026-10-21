@@ -223,6 +223,54 @@ function Modelos.quitar(inst)
 	end
 end
 
+-- Brillo de encantamiento: una capa morada un poco más grande con el material ForceField,
+-- que en Roblox tiene un reflejo que se mueve solo (como el brillo de Minecraft)
+function Modelos.brillo(inst, si)
+	if not inst or (si == true) == (inst.brillo ~= nil) then
+		return
+	end
+	if si then
+		inst.brillo = {}
+		for _, pd in table.clone(inst.partes) do
+			local c = pd[1]:Clone()
+			c.Name = "Brillo"
+			c.Material = Enum.Material.ForceField
+			c.Color = Color3.fromRGB(170, 90, 255)
+			c.Size = pd[1].Size * 1.04
+			c.CastShadow = false
+			for _, h in c:GetChildren() do
+				if not h:IsA("SpecialMesh") then
+					h:Destroy()
+				end
+			end
+			c.Parent = inst.m
+			local e = { c, pd[2] }
+			table.insert(inst.partes, e)
+			table.insert(inst.brillo, e)
+		end
+	else
+		for _, e in inst.brillo do
+			e[1]:Destroy()
+			local i = table.find(inst.partes, e)
+			if i then
+				table.remove(inst.partes, i)
+			end
+		end
+		inst.brillo = nil
+	end
+end
+
+-- Que el modelo proyecte sombra (los objetos tirados sí; la mano en primera persona no)
+function Modelos.sombra(inst, si)
+	if inst then
+		for _, pd in inst.partes do
+			if pd[1].Name ~= "Brillo" then
+				pd[1].CastShadow = si
+			end
+		end
+	end
+end
+
 function Modelos.disponible()
 	return Render.modo == "malla" and Imagenes.disponible
 end
@@ -295,12 +343,17 @@ function Modelos.iniciarMano(opc)
 					local inst = Modelos.crear(id, BL[id] and 0.24 or 0.36)
 					if inst and yo == pedido then
 						sostenido = inst
+						Modelos.brillo(inst, opc.encantado and opc.encantado() or false)
 						inst.m.Parent = carpeta
 					elseif inst then
 						Modelos.quitar(inst)
 					end
 				end)
 			end
+		end
+		-- Si cambia el encantamiento de lo que llevas (yunque, mesa…), cambia el brillo
+		if sostenido and opc.encantado then
+			Modelos.brillo(sostenido, opc.encantado())
 		end
 		if not visible then
 			brazo.Transparency, manga.Transparency = 1, 1
@@ -445,12 +498,16 @@ function Modelos.iniciarPersonajes(esTercera)
 						local inst = Modelos.crear(id, BL[id] and 0.28 or 0.5)
 						if inst and d.pedido == yo then
 							d.inst = inst
+							Modelos.sombra(inst, true)
 							inst.m.Parent = carpeta
 						elseif inst then
 							Modelos.quitar(inst)
 						end
 					end)
 				end
+			end
+			if d.inst then
+				Modelos.brillo(d.inst, plr:GetAttribute("EnManoEnc") == true)
 			end
 			if d.inst and mano then
 				-- R15 (RightHand) o R6 (Right Arm): el objeto en el puño, hacia delante

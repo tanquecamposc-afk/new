@@ -38,13 +38,31 @@ GUIOBJ = {'Frame', 'TextLabel', 'TextButton', 'TextBox', 'ImageLabel', 'ImageBut
 TAM_DEF = {'Frame': [0, 100, 0, 100], 'ScrollingFrame': [0, 100, 0, 100], 'ImageLabel': [0, 100, 0, 100], 'ImageButton': [0, 100, 0, 100],
            'TextLabel': [0, 200, 0, 50], 'TextButton': [0, 200, 0, 50], 'TextBox': [0, 200, 0, 50], 'ViewportFrame': [0, 100, 0, 100]}
 FUENTES = {}
+# Las fuentes de Roblox que usa el juego (Fuentes.luau), con las mismas letras de Google Fonts
+DIR_FUENTES = __import__('os').path.join(__import__('os').path.dirname(__import__('os').path.abspath(__file__)), 'fuentes')
+ARCHIVO_FUENTE = {
+    'LuckiestGuy': ('LuckiestGuy-Regular.ttf', None),
+    'FredokaOne': ('Fredoka.ttf', b'Bold'),
+    'Arcade': ('PressStart2P-Regular.ttf', None),
+}
 def fuente(n, tam):
     tam = max(6, int(round(tam)))
-    mono = n in ('Code', 'RobotoMono')
-    clave = (mono, tam)
+    clave = (n, tam)
     if clave not in FUENTES:
-        ruta = '/usr/share/fonts/truetype/dejavu/' + ('DejaVuSansMono-Bold.ttf' if mono else 'DejaVuSans-Bold.ttf')
-        FUENTES[clave] = ImageFont.truetype(ruta, tam)
+        if n in ARCHIVO_FUENTE:
+            arch, var = ARCHIVO_FUENTE[n]
+            # La de píxeles es más ancha: se dibuja algo más pequeña, como en Roblox
+            f = ImageFont.truetype(DIR_FUENTES + '/' + arch, int(tam * 0.8) if n == 'Arcade' else tam)
+            if var:
+                try:
+                    f.set_variation_by_name(var)
+                except Exception:
+                    pass
+        else:
+            mono = n in ('Code', 'RobotoMono')
+            ruta = '/usr/share/fonts/truetype/dejavu/' + ('DejaVuSansMono-Bold.ttf' if mono else 'DejaVuSans-Bold.ttf')
+            f = ImageFont.truetype(ruta, tam)
+        FUENTES[clave] = f
     return FUENTES[clave]
 
 def g(n, k, d=None):
@@ -170,7 +188,9 @@ def dibujar(n, x, y, w, h, clip):
             d.rectangle([X, Y, X + w - 1, Y + h - 1], fill=fondo_c + (a,))
     st = hijo(n, 'UIStroke')
     texto = n['clase'] in ('TextLabel', 'TextButton', 'TextBox')
-    if st and (not texto or tr < 1):
+    # En un texto, el UIStroke rodea las letras salvo que sea de tipo Border (como en Roblox)
+    st_letras = st is not None and texto and g(st, 'ApplyStrokeMode', 'Contextual') != 'Border'
+    if st and not st_letras:
         t = g(st, 'Thickness', 1)
         sc = col(st, 'Color', (0, 0, 0)) + (int(255 * (1 - g(st, 'Transparency', 0))),)
         if rad > 0:
@@ -209,14 +229,20 @@ def dibujar(n, x, y, w, h, clip):
         ty = Y + (0 if ya == 'Top' else (h - th if ya == 'Bottom' else (h - th) / 2))
         xa = g(n, 'TextXAlignment', 'Center')
         sst = g(n, 'TextStrokeTransparency', 1)
-        stroke_child = st is not None and tr >= 1
+        scol = col(n, 'TextStrokeColor3', (0, 0, 0))
         for l in ls:
             lw = f.getlength(l)
             tx = X if xa == 'Left' else (X + w - lw if xa == 'Right' else X + (w - lw) / 2)
-            if (sst < 1 or stroke_child) and ta > 0:
-                sa = int(255 * (1 - (sst if sst < 1 else 0)) * ta / 255)
+            if st_letras and ta > 0:
+                # Contorno grueso de UIStroke
+                grosor = max(1, int(round(g(st, 'Thickness', 1))))
+                sc = col(st, 'Color', (0, 0, 0))
+                sa = int(255 * (1 - g(st, 'Transparency', 0)) * ta / 255)
+                d.text((tx, ty + (lh - tam) / 2), l, font=f, fill=sc + (sa,), stroke_width=grosor, stroke_fill=sc + (sa,))
+            elif sst < 1 and ta > 0:
+                sa = int(255 * (1 - sst) * ta / 255)
                 for dx, dy in ((-1, 0), (1, 0), (0, -1), (0, 1)):
-                    d.text((tx + dx, ty + dy + (lh - tam) / 2), l, font=f, fill=(0, 0, 0, sa))
+                    d.text((tx + dx, ty + dy + (lh - tam) / 2), l, font=f, fill=scol + (sa,))
             d.text((tx, ty + (lh - tam) / 2), l, font=f, fill=tcol + (ta,))
             ty += lh
     if clip:

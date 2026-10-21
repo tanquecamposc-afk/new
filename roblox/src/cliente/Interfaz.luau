@@ -46,8 +46,10 @@ local C = {
 	slotSombra = Color3.fromHex("373737"), texto = Color3.fromHex("3f3f3f"), xp = Color3.fromHex("80ff20"),
 	hover = Color3.fromHex("a8a8a8"),
 }
-local FUENTE = Enum.Font.GothamBold
-local FUENTE_N = Enum.Font.GothamBlack
+-- Letras del juego (Fuentes.luau): texto claro, cabeceras redondeadas, títulos gruesos y números de píxeles
+local FT = require(Comp:WaitForChild("Fuentes"))
+local FUENTE = FT.TEXTO
+local FUENTE_N = FT.CABECERA
 local S = 40 -- tamaño de una casilla
 
 ------------------------------------------------------------------
@@ -71,6 +73,10 @@ local function texto(props, padre)
 	}, padre)
 	for k, v in props do
 		t[k] = v
+	end
+	-- Los títulos grandes llevan un contorno grueso y redondeado
+	if t.Font == FT.TITULO and t.TextStrokeTransparency < 1 then
+		FT.contorno(t, t.TextStrokeColor3, math.max(2, math.floor(t.TextSize / 16)))
 	end
 	return t
 end
@@ -145,7 +151,7 @@ local function ranura(padre, zona, i, tam)
 		ResampleMode = Enum.ResamplerMode.Pixelated, ImageTransparency = 1, ZIndex = 2,
 	}, b)
 	texto({ Name = "N", Size = UDim2.new(1, -3, 0, 16), Position = UDim2.new(0, 0, 1, -16), TextXAlignment = Enum.TextXAlignment.Right,
-		Font = FUENTE_N, TextSize = 15, Text = "", ZIndex = 3, TextStrokeColor3 = Color3.fromHex("3f3f3f"), TextStrokeTransparency = 0 }, b)
+		Font = FT.NUMERO, TextSize = 15, Text = "", ZIndex = 3, TextStrokeColor3 = Color3.fromHex("3f3f3f"), TextStrokeTransparency = 0 }, b)
 	local dur = nuevo("Frame", { Name = "Dur", BackgroundColor3 = Color3.new(0, 0, 0), BorderSizePixel = 0, Size = UDim2.new(1, -10, 0, 3),
 		Position = UDim2.new(0, 5, 1, -6), Visible = false, ZIndex = 3 }, b)
 	nuevo("Frame", { Name = "F", BackgroundColor3 = Color3.fromRGB(80, 255, 80), BorderSizePixel = 0, Size = UDim2.fromScale(1, 1), ZIndex = 3 }, dur)
@@ -260,7 +266,7 @@ for i = 1, 9 do
 		ResampleMode = Enum.ResamplerMode.Pixelated, ImageTransparency = 1, ZIndex = 2 }, b)
 	nuevo("UIScale", { Name = "Esc" }, icB)
 	texto({ Name = "N", Size = UDim2.new(1, -3, 0, 16), Position = UDim2.new(0, 0, 1, -16), TextXAlignment = Enum.TextXAlignment.Right,
-		Font = FUENTE_N, TextSize = 15, Text = "", ZIndex = 3, TextStrokeColor3 = Color3.fromHex("3f3f3f"), TextStrokeTransparency = 0 }, b)
+		Font = FT.NUMERO, TextSize = 15, Text = "", ZIndex = 3, TextStrokeColor3 = Color3.fromHex("3f3f3f"), TextStrokeTransparency = 0 }, b)
 	local dur = nuevo("Frame", { Name = "Dur", BackgroundColor3 = Color3.new(0, 0, 0), BorderSizePixel = 0, Size = UDim2.new(1, -10, 0, 3),
 		Position = UDim2.new(0, 5, 1, -6), Visible = false, ZIndex = 3 }, b)
 	nuevo("Frame", { Name = "F", BackgroundColor3 = Color3.fromRGB(80, 255, 80), BorderSizePixel = 0, Size = UDim2.fromScale(1, 1), ZIndex = 3 }, dur)
@@ -279,7 +285,7 @@ local barraXP = nuevo("Frame", { BackgroundColor3 = Color3.new(0, 0, 0), Backgro
 nuevo("UIStroke", { Color = Color3.new(0, 0, 0), Thickness = 1, Transparency = 0.2 }, barraXP)
 local xpF = nuevo("Frame", { BackgroundColor3 = C.xp, BorderSizePixel = 0, Size = UDim2.fromScale(0, 1) }, barraXP)
 local nivelXP = texto({ AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 0, -1), Size = UDim2.fromOffset(60, 18), TextColor3 = C.xp,
-	Font = FUENTE_N, TextSize = 15, TextStrokeTransparency = 0, Text = "" }, barraXP)
+	Font = FT.NUMERO, TextSize = 15, TextStrokeTransparency = 0, Text = "" }, barraXP)
 nuevo("UIScale", { Name = "Esc" }, nivelXP)
 
 -- Filas de corazones, comida, armadura y burbujas (10 iconos de 18 px)
@@ -334,7 +340,7 @@ local nombreObj = texto({ AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.ne
 local mensaje = texto({ AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.22), Size = UDim2.new(0.8, 0, 0, 26), TextSize = 19,
 	TextWrapped = true, Text = "", TextTransparency = 1, TextStrokeTransparency = 1 }, hud)
 local titulo = texto({ AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.36), Size = UDim2.new(1, 0, 0, 70), TextSize = 64,
-	Font = FUENTE_N, Text = "", TextTransparency = 1, TextStrokeTransparency = 1 }, hud)
+	Font = FT.TITULO, Text = "", TextTransparency = 1, TextStrokeTransparency = 1 }, hud)
 local subtitulo = texto({ AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.44), Size = UDim2.new(1, 0, 0, 30), TextSize = 24,
 	Text = "", TextTransparency = 1, TextStrokeTransparency = 1 }, hud)
 local jefe = nuevo("Frame", { BackgroundTransparency = 1, AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 12), Size = UDim2.fromOffset(420, 40), Visible = false }, hud)
@@ -515,7 +521,7 @@ do
 		TextColor3 = Color3.new(1, 1, 1), PlaceholderText = "Buscar…", Text = "", Font = FUENTE, TextSize = 14, ClearTextOnFocus = false,
 		TextXAlignment = Enum.TextXAlignment.Left }, p)
 	nuevo("UIPadding", { PaddingLeft = UDim.new(0, 6) }, busca)
-	nuevo("UIStroke", { Color = Color3.fromHex("a0a0a0"), Thickness = 1 }, busca)
+	nuevo("UIStroke", { Color = Color3.fromHex("a0a0a0"), Thickness = 1, ApplyStrokeMode = Enum.ApplyStrokeMode.Border }, busca)
 	local pest = nuevo("Frame", { BackgroundTransparency = 1, Position = UDim2.fromOffset(14, 34), Size = UDim2.new(1, -28, 0, 26) }, p)
 	nuevo("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 4) }, pest)
 	local lista = nuevo("ScrollingFrame", { BackgroundColor3 = Color3.fromHex("8b8b8b"), BorderSizePixel = 0, Position = UDim2.fromOffset(14, 64),
@@ -1043,10 +1049,10 @@ end
 tooltip = texto({ Name = "Tooltip", BackgroundColor3 = Color3.fromRGB(16, 0, 16), BackgroundTransparency = 0.08, AutomaticSize = Enum.AutomaticSize.X,
 	Size = UDim2.fromOffset(0, 24), TextSize = 14, Visible = false, ZIndex = 30, Text = "" }, gui)
 nuevo("UIPadding", { PaddingLeft = UDim.new(0, 6), PaddingRight = UDim.new(0, 6) }, tooltip)
-nuevo("UIStroke", { Color = Color3.fromRGB(40, 0, 110), Thickness = 2 }, tooltip)
+nuevo("UIStroke", { Color = Color3.fromRGB(40, 0, 110), Thickness = 2, ApplyStrokeMode = Enum.ApplyStrokeMode.Border }, tooltip)
 cursorIcono = nuevo("ImageLabel", { Name = "Cursor", BackgroundTransparency = 1, Size = UDim2.fromOffset(S - 4, S - 4), AnchorPoint = Vector2.new(0.5, 0.5),
 	ResampleMode = Enum.ResamplerMode.Pixelated, ImageTransparency = 1, Visible = false, ZIndex = 29 }, gui)
-local cursorN = texto({ Size = UDim2.new(1, 0, 0, 16), Position = UDim2.new(0, 2, 1, -12), TextXAlignment = Enum.TextXAlignment.Right, Font = FUENTE_N,
+local cursorN = texto({ Size = UDim2.new(1, 0, 0, 16), Position = UDim2.new(0, 2, 1, -12), TextXAlignment = Enum.TextXAlignment.Right, Font = FT.NUMERO,
 	TextSize = 15, Text = "", ZIndex = 30, TextStrokeTransparency = 0 }, cursorIcono)
 
 ------------------------------------------------------------------
@@ -1066,9 +1072,9 @@ desenfoque.Name = "DesenfoqueMenu"
 desenfoque.Size = 0
 desenfoque.Parent = game:GetService("Lighting")
 -- Título con sombra y la frase amarilla que late (como en Minecraft)
-texto({ AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 5, 0.06, 5), Size = UDim2.fromOffset(700, 90), Text = "BLOCKVERSE", Font = FUENTE_N,
+texto({ AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 5, 0.06, 5), Size = UDim2.fromOffset(700, 90), Text = "BLOCKVERSE", Font = FT.TITULO,
 	TextSize = 84, TextColor3 = Color3.fromRGB(30, 30, 40), TextStrokeTransparency = 1, TextTransparency = 0.3, ZIndex = 11 }, menu)
-texto({ AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.fromScale(0.5, 0.06), Size = UDim2.fromOffset(700, 90), Text = "BLOCKVERSE", Font = FUENTE_N,
+texto({ AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.fromScale(0.5, 0.06), Size = UDim2.fromOffset(700, 90), Text = "BLOCKVERSE", Font = FT.TITULO,
 	TextSize = 84, TextColor3 = Color3.fromRGB(255, 255, 255), TextStrokeTransparency = 0, TextStrokeColor3 = Color3.fromRGB(40, 40, 40), ZIndex = 12 }, menu)
 local FRASES = { "¡Edición Roblox!", "¡Ahora con kits!", "¡Cuidado con los creepers!", "¡Protege tu cama!", "¡Hecho bloque a bloque!",
 	"¡Con Mazmorras y Leyendas!", "¡Los bots ya tienden puentes!", "¡Dale a la G!" }
@@ -1262,7 +1268,7 @@ end)
 local botonDiaria = nuevo("TextButton", { Name = "RecompensaDiaria", Text = "", AutoButtonColor = false, BackgroundColor3 = Color3.fromRGB(60, 170, 70), BorderSizePixel = 0,
 	Position = UDim2.fromOffset(16, 152), Size = UDim2.fromOffset(230, 52), ZIndex = 12 }, menu)
 nuevo("UICorner", { CornerRadius = UDim.new(0, 8) }, botonDiaria)
-local bordeDiaria = nuevo("UIStroke", { Color = Color3.fromRGB(20, 60, 20), Thickness = 2 }, botonDiaria)
+local bordeDiaria = nuevo("UIStroke", { Color = Color3.fromRGB(20, 60, 20), Thickness = 2, ApplyStrokeMode = Enum.ApplyStrokeMode.Border }, botonDiaria)
 local escDiaria = nuevo("UIScale", {}, botonDiaria)
 local icDiaria = nuevo("ImageLabel", { BackgroundTransparency = 1, Position = UDim2.fromOffset(8, 8), Size = UDim2.fromOffset(36, 36), ResampleMode = Enum.ResamplerMode.Pixelated,
 	ZIndex = 13 }, botonDiaria)
@@ -1680,9 +1686,9 @@ local cargaFondo = nuevo("ImageLabel", { BackgroundTransparency = 1, Size = UDim
 local sombraCarga = nuevo("Frame", { BackgroundColor3 = Color3.new(0, 0, 0), BorderSizePixel = 0, Size = UDim2.fromScale(1, 1), ZIndex = 15 }, carga)
 nuevo("UIGradient", { Rotation = 90, Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.35), NumberSequenceKeypoint.new(0.5, 0.75),
 	NumberSequenceKeypoint.new(1, 0.25) }) }, sombraCarga)
-texto({ AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(0.5, 4, 0.3, 4), Size = UDim2.fromOffset(700, 90), Text = "BLOCKVERSE", Font = FUENTE_N,
+texto({ AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(0.5, 4, 0.3, 4), Size = UDim2.fromOffset(700, 90), Text = "BLOCKVERSE", Font = FT.TITULO,
 	TextSize = 72, TextColor3 = Color3.fromRGB(20, 20, 24), TextStrokeTransparency = 1, TextTransparency = 0.3, ZIndex = 16 }, carga)
-texto({ AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.3), Size = UDim2.fromOffset(700, 90), Text = "BLOCKVERSE", Font = FUENTE_N,
+texto({ AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.3), Size = UDim2.fromOffset(700, 90), Text = "BLOCKVERSE", Font = FT.TITULO,
 	TextSize = 72, TextColor3 = Color3.new(1, 1, 1), TextStrokeTransparency = 0, TextStrokeColor3 = Color3.fromRGB(40, 40, 40), ZIndex = 17 }, carga)
 local cargaT = texto({ AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.47), Size = UDim2.fromOffset(600, 30), Text = "Cargando Blockverse…", TextSize = 22, ZIndex = 17 }, carga)
 local cargaB = nuevo("Frame", { BackgroundColor3 = Color3.fromRGB(18, 18, 20), BorderSizePixel = 0, AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.53),
@@ -1717,9 +1723,9 @@ nuevo("UIGradient", { Rotation = 90, Color = ColorSequence.new(Color3.fromRGB(17
 nuevo("TextButton", { BackgroundTransparency = 1, Size = UDim2.fromScale(1, 1), Text = "", Modal = true, ZIndex = 12, AutoButtonColor = false }, muerte)
 local muerteCaja = nuevo("Frame", { BackgroundTransparency = 1, AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.48), Size = UDim2.fromOffset(620, 420), ZIndex = 13 }, muerte)
 local muerteEsc = nuevo("UIScale", {}, muerteCaja)
-texto({ AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 4, 0, 4), Size = UDim2.new(1, 0, 0, 80), Text = "¡Has muerto!", Font = FUENTE_N, TextSize = 64,
+texto({ AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 4, 0, 4), Size = UDim2.new(1, 0, 0, 80), Text = "¡Has muerto!", Font = FT.TITULO, TextSize = 64,
 	TextColor3 = Color3.fromRGB(40, 0, 0), TextStrokeTransparency = 1, TextTransparency = 0.25, ZIndex = 13 }, muerteCaja)
-texto({ AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.fromScale(0.5, 0), Size = UDim2.new(1, 0, 0, 80), Text = "¡Has muerto!", Font = FUENTE_N, TextSize = 64,
+texto({ AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.fromScale(0.5, 0), Size = UDim2.new(1, 0, 0, 80), Text = "¡Has muerto!", Font = FT.TITULO, TextSize = 64,
 	TextColor3 = Color3.fromRGB(255, 255, 255), TextStrokeColor3 = Color3.fromRGB(90, 0, 0), TextStrokeTransparency = 0, ZIndex = 14 }, muerteCaja)
 -- Tarjeta de la causa: icono + frase
 local causaF = nuevo("Frame", { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 96), Size = UDim2.fromOffset(560, 64),
@@ -2385,7 +2391,7 @@ function Interfaz.panel(d)
 	for _, l in d.lineas or {} do
 		-- Las líneas largas pasan a la siguiente sin pisar a las de abajo
 		texto({ Size = UDim2.new(1, 0, 0, l.t == "" and 8 or 16), AutomaticSize = l.t ~= "" and Enum.AutomaticSize.Y or Enum.AutomaticSize.None, Text = l.t or "",
-			TextSize = 13, Font = Enum.Font.Code, TextColor3 = color(l.c, "#ffffff"), TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true,
+			TextSize = 13, Font = FT.TEXTO, TextColor3 = color(l.c, "#ffffff"), TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true,
 			LayoutOrder = o() }, lateral)
 	end
 	if d.botones and #d.botones > 0 then
@@ -2402,7 +2408,7 @@ function Interfaz.panel(d)
 		if bt.sub then
 			texto({ Position = UDim2.fromOffset(0, 3), Size = UDim2.new(1, 0, 0, 15), Text = bt.t or "", TextSize = 12, TextXAlignment = Enum.TextXAlignment.Left,
 				TextTransparency = bt.activo and 0 or 0.4 }, b)
-			texto({ Position = UDim2.fromOffset(0, 18), Size = UDim2.new(1, 0, 0, 13), Text = bt.sub, TextSize = 10, Font = Enum.Font.Code,
+			texto({ Position = UDim2.fromOffset(0, 18), Size = UDim2.new(1, 0, 0, 13), Text = bt.sub, TextSize = 10, Font = FT.TEXTO,
 				TextXAlignment = Enum.TextXAlignment.Left, TextColor3 = bt.activo and Color3.fromRGB(200, 255, 200) or Color3.fromRGB(255, 160, 160) }, b)
 		end
 	end
@@ -2453,9 +2459,9 @@ local fin = nuevo("Frame", { Name = "FinBW", BackgroundColor3 = Color3.fromRGB(8
 	AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.fromOffset(440, 380), Visible = false, ZIndex = 20 }, gui)
 nuevo("UICorner", { CornerRadius = UDim.new(0, 10) }, fin)
 local finBorde = nuevo("UIStroke", { Color = Color3.fromRGB(255, 220, 80), Thickness = 3 }, fin)
-local finT = texto({ Position = UDim2.fromOffset(0, 14), Size = UDim2.new(1, 0, 0, 44), Text = "", Font = FUENTE_N, TextSize = 38, ZIndex = 21 }, fin)
+local finT = texto({ Position = UDim2.fromOffset(0, 14), Size = UDim2.new(1, 0, 0, 44), Text = "", Font = FT.TITULO, TextSize = 38, ZIndex = 21 }, fin)
 local finSub = texto({ Position = UDim2.fromOffset(0, 58), Size = UDim2.new(1, 0, 0, 20), Text = "", TextSize = 15, ZIndex = 21 }, fin)
-local finStats = texto({ Position = UDim2.fromOffset(20, 88), Size = UDim2.new(1, -40, 0, 92), Text = "", TextSize = 14, Font = Enum.Font.Code, TextWrapped = true,
+local finStats = texto({ Position = UDim2.fromOffset(20, 88), Size = UDim2.new(1, -40, 0, 92), Text = "", TextSize = 14, Font = FT.TEXTO, TextWrapped = true,
 	TextXAlignment = Enum.TextXAlignment.Left, TextYAlignment = Enum.TextYAlignment.Top, ZIndex = 21 }, fin)
 local finPremio = texto({ Position = UDim2.fromOffset(20, 182), Size = UDim2.new(1, -40, 0, 22), Text = "", TextSize = 17, TextColor3 = Color3.fromRGB(255, 216, 74),
 	TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 21 }, fin)
@@ -2533,7 +2539,7 @@ function Interfaz.botonHabilidad(si, alPulsar)
 		botonHab = nuevo("TextButton", { Text = "G", Font = FUENTE_N, TextSize = 24, TextColor3 = Color3.fromRGB(255, 220, 80), BackgroundColor3 = Color3.new(0, 0, 0),
 			BackgroundTransparency = 0.4, Size = UDim2.fromOffset(60, 60), AnchorPoint = Vector2.new(1, 1), Position = UDim2.new(1, -240, 1, -170), AutoButtonColor = true }, hud)
 		nuevo("UICorner", { CornerRadius = UDim.new(1, 0) }, botonHab)
-		nuevo("UIStroke", { Color = Color3.fromRGB(255, 220, 80), Thickness = 2 }, botonHab)
+		nuevo("UIStroke", { Color = Color3.fromRGB(255, 220, 80), Thickness = 2, ApplyStrokeMode = Enum.ApplyStrokeMode.Border }, botonHab)
 		botonHab.Activated:Connect(function()
 			if botonHab:GetAttribute("activo") and alPulsar then
 				alPulsar()
@@ -2752,7 +2758,7 @@ function Interfaz.botonesMovil(cb)
 		local b = nuevo("TextButton", { Text = txt, Font = FUENTE, TextSize = 26, TextColor3 = Color3.new(1, 1, 1), BackgroundColor3 = Color3.new(0, 0, 0),
 			BackgroundTransparency = 0.45, Size = UDim2.fromOffset(64, 64), Position = pos, AutoButtonColor = false }, caja)
 		nuevo("UICorner", { CornerRadius = UDim.new(1, 0) }, b)
-		nuevo("UIStroke", { Color = Color3.new(1, 1, 1), Transparency = 0.5, Thickness = 2 }, b)
+		nuevo("UIStroke", { Color = Color3.new(1, 1, 1), Transparency = 0.5, Thickness = 2, ApplyStrokeMode = Enum.ApplyStrokeMode.Border }, b)
 		b.InputBegan:Connect(function(i)
 			if i.UserInputType == Enum.UserInputType.Touch then
 				inicio()

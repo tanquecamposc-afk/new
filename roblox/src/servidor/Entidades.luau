@@ -78,6 +78,9 @@ function Entidades.soltarItem(pila, x, y, z, aleatorio, vel, espera)
 	local p = crearPieza("Item")
 	p:SetAttribute("id", pila.id)
 	p:SetAttribute("n", pila.n)
+	if pila.enc and next(pila.enc) then
+		p:SetAttribute("brillo", true)
+	end
 	local vx, vy, vz = 0, 4, 0
 	if aleatorio then
 		vx, vy, vz = (math.random() - 0.5) * 4, 3 + math.random() * 2, (math.random() - 0.5) * 4
