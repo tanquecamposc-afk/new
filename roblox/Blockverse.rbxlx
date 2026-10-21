@@ -8990,8 +8990,12 @@ function Registro.tiempoRomper(b, herrId, creativo, opc)
 	if h and h.tipo == "espada" and b ~= B.hojas then
 		vel = (b == B.telarana) and 15 or 1
 	end
+	-- Eficiencia (encantamiento): con la herramienta adecuada suma nivel² + 1
+	if opc and (opc.eficiencia or 0) > 0 and vel > 1 then
+		vel += opc.eficiencia * opc.eficiencia + 1
+	end
 	if opc then
-		if opc.bajoAgua then
+		if opc.bajoAgua and not opc.afinidad then
 			vel /= 5
 		end
 		if opc.enAire then
@@ -9448,6 +9452,11 @@ local function gastarEnMano(plr, s, n)
 	end
 	local o = OB[p.id]
 	if o and o.dur then
+		-- Irrompibilidad: cada uso solo desgasta con probabilidad 1 / (nivel + 1)
+		local irr = p.enc and p.enc.irrompibilidad or 0
+		if irr > 0 and math.random() >= 1 / (irr + 1) then
+			return
+		end
 		p.dur = (p.dur or o.dur) - (n or 1)
 		if p.dur <= 0 then
 			s.inv[s.sel] = false
@@ -9489,7 +9498,8 @@ local function desgastarArmadura(s, n)
 	for i = 37, 40 do
 		local p = s.inv[i]
 		local o = p and OB[p.id]
-		if o and o.armadura and o.dur then
+		local irr = p and p.enc and p.enc.irrompibilidad or 0
+		if o and o.armadura and o.dur and not (irr > 0 and math.random() >= 0.6 + 0.4 / (irr + 1)) then
 			p.dur = (p.dur or o.dur) - math.max(1, math.floor(n / 4))
 			if p.dur <= 0 then
 				s.inv[i] = false
@@ -9498,7 +9508,23 @@ local function desgastarArmadura(s, n)
 	end
 end
 
-local function danar(plr, n, tipo, dir)
+-- Nombre de quien hace daño (criatura, jugador o texto) para la pantalla de muerte
+local function nombreDe(q)
+	if type(q) == "table" and q.def and q.tipo then
+		return Mobs.conArticulo(q.tipo)
+	elseif type(q) == "string" then
+		local n = Mobs.conArticulo(q)
+		return n ~= "una criatura" and n or q
+	elseif q ~= nil then
+		local ok, n = pcall(function()
+			return q.DisplayName or q.Name
+		end)
+		return ok and n or nil
+	end
+	return nil
+end
+
+local function danar(plr, n, tipo, dir, quien)
 	local s = st(plr)
 	local h, root = humanoide(plr)
 	if not s or not h or h.Health <= 0 or n <= 0 then
@@ -9522,6 +9548,29 @@ local function danar(plr, n, tipo, dir)
 		n -= s.ultimoDano
 	end
 	local d = n
+	-- Encantamientos de armadura para daños concretos (puntos: 4 % menos cada uno, hasta 20)
+	local esp = 0
+	for i = 37, 40 do
+		local pz = s.inv[i]
+		local e = pz and pz.enc
+		if e then
+			if tipo == "fuego" or tipo == "lava" then
+				esp += 2 * (e.protFuego or 0)
+			elseif tipo == "explosion" then
+				esp += 2 * (e.protExplosion or 0)
+			elseif tipo == "flecha" then
+				esp += 2 * (e.protProyectiles or 0)
+			elseif tipo == "caida" then
+				esp += 3 * (e.caidaPluma or 0)
+			end
+			if tipo == "caida" or tipo == "fuego" or tipo == "lava" then
+				esp += e.proteccion or 0
+			end
+		end
+	end
+	if esp > 0 then
+		d *= 1 - math.min(20, esp) * 0.04
+	end
 	if tipo == "mob" or tipo == "flecha" or tipo == "explosion" or tipo == "jugador" then
 		local def, dur = armaduraTotal(s)
 		d = d * (1 - math.min(20, math.max(def / 5, def - d / (2 + dur / 4))) / 25)
@@ -9531,7 +9580,7 @@ local function danar(plr, n, tipo, dir)
 			local pz = s.inv[i]
 			prot += pz and pz.enc and (pz.enc.proteccion or 0) or 0
 		end
-		d *= 1 - math.min(20, prot) * 0.04
+		d *= 1 - math.min(20 - math.min(20, esp), prot) * 0.04
 		desgastarArmadura(s, n)
 	end
 	if s.efectos.resistencia then
@@ -9542,8 +9591,12 @@ local function danar(plr, n, tipo, dir)
 	end
 	s.invuln = ahora + 0.5
 	s.agotamiento += 0.1
-	h.Health = math.max(0, h.Health - d)
+	-- La causa se apunta antes de bajar la vida: al llegar a 0 salta Died y la pantalla de muerte la lee
 	s.ultimaCausa = tipo
+	if quien ~= nil then
+		s.ultimoQuien, s.ultimoQuienT = nombreDe(quien), ahora
+	end
+	h.Health = math.max(0, h.Health - d)
 	Estado:FireClient(plr, "dano", dir and Vector3.new(dir.x * 6 * BS / 3, 4.5 * BS / 3, dir.z * 6 * BS / 3) or nil)
 	enviarJugador(plr)
 end
@@ -9749,9 +9802,15 @@ local function alMorir(plr)
 		end
 		s.cursor = false
 	end
+	local soltados, nivelPerdido = 0, 0
 	if p and supervivencia(s) and not modoInv and not Modos.mantenerInventario(plr) then
+		nivelPerdido = s.xp.nivel
 		for i = 1, Inv.TAM do
+			if s.inv[i] and s.inv[i].enc and (s.inv[i].enc.desaparicion or 0) > 0 then
+				s.inv[i] = false
+			end
 			if s.inv[i] then
+				soltados += 1
 				Entidades.soltarItem(s.inv[i], p.X, p.Y + 1, p.Z, true)
 				s.inv[i] = false
 			end
@@ -9769,8 +9828,31 @@ local function alMorir(plr)
 		ahogo = "Te ahogaste.", explosion = "Volaste por los aires.", rayo = "Te alcanzó un rayo.", cactus = "Te pinchaste hasta morir.", veneno = "El veneno pudo contigo.",
 		jugador = "Otro jugador acabó contigo.",
 	}
+	-- Quién fue (si alguien te golpeó hace poco)
+	local causa = s.ultimaCausa or ""
+	local quien = s.ultimoQuien and os.clock() - (s.ultimoQuienT or 0) < 10 and s.ultimoQuien or nil
+	local texto = textos[causa] or "Has muerto."
+	if quien then
+		local CON = {
+			mob = "Te mató %s.", flecha = "%s te disparó una flecha.", explosion = "%s te hizo volar por los aires.",
+			jugador = "Te mató %s.", fuego = "%s te prendió fuego.",
+		}
+		if CON[causa] then
+			texto = CON[causa]:format(quien)
+			texto = texto:sub(1, 1):upper() .. texto:sub(2)
+		elseif causa == "caida" or causa == "vacio" or causa == "lava" or causa == "ahogo" then
+			texto = texto:sub(1, -2) .. " mientras huías de " .. quien .. "."
+		end
+	end
 	enviarJugador(plr)
-	Estado:FireClient(plr, "muerte", (textos[s.ultimaCausa or ""] or "Has muerto.") .. ((supervivencia(s) and not modoInv) and " Tus objetos quedaron donde caíste." or ""))
+	Estado:FireClient(plr, "muerte", {
+		texto = texto, causa = causa, quien = quien,
+		vivo = s.vivoDesde and math.floor(os.clock() - s.vivoDesde) or nil,
+		pos = p and { math.floor(p.X), math.floor(p.Y), math.floor(p.Z) } or nil,
+		soltados = soltados, nivel = nivelPerdido, conservas = not (supervivencia(s) and not modoInv),
+		supervivencia = supervivencia(s) and not Modos.activo(plr),
+	})
+	s.ultimoQuien = nil
 	s.efectos = {}
 	s.fuego = 0
 	Modos.alMorir(plr)
@@ -9791,6 +9873,7 @@ Players.PlayerAdded:Connect(function(plr)
 		local s = st(plr)
 		if s then
 			s.hambre, s.saturacion, s.agotamiento, s.aire = 20, 5, 0, 15
+			s.vivoDesde = os.clock()
 		end
 		task.spawn(colocar, plr, char)
 		local hum = char:WaitForChild("Humanoid", 10)
@@ -9987,13 +10070,45 @@ local function facing(dir)
 end
 
 -- Soltar lo que da un bloque (con experiencia de las menas)
-local function soltarBloque(id, x, y, z, herrId, plr)
+-- Menas a las que afecta Fortuna (y que Toque de seda deja enteras)
+local MENAS = {}
+for _, k in { "menaCarbon", "menaDiamante", "menaEsmeralda", "menaLapis", "menaRedstone", "menaCuarzo", "menaCobre", "menaHierro", "menaOro",
+	"pCarbon", "pHierro", "pOro", "pRedstone", "pLapis", "pDiamante", "pCobre", "menaOroNether" } do
+	if B[k] then
+		MENAS[B[k]] = true
+	end
+end
+-- Bloques que con Toque de seda se recogen tal cual (sin seda sueltan otra cosa o nada)
+local SEDA = {}
+for _, k in { "cesped", "cespedNevado", "piedra", "vidrio", "hielo", "hieloCompacto", "hieloAzul", "estanteria", "micelio", "podzol", "piedraLuminosa",
+	"senda", "bloqueMusgo", "farolMarino", "panel", "pizarra", "nilioCarmesi", "nilioDistorsionado", "sculk", "sensorSculk", "catalizador", "chillador",
+	"sandia", "bloqueAmatista", "telarana" } do
+	if B[k] then
+		SEDA[B[k]] = true
+	end
+end
+
+local function soltarBloque(id, x, y, z, herrId, plr, enc)
 	local s = plr and st(plr)
 	local lista
-	if herrId == I.tijeras and (Registro.esHojas(id) or id == B.hierbaAlta or id == B.helecho or (BL[id] and (BL[id].clave or ""):find("^hojas"))) then
+	local seda = enc and (enc.toqueSeda or 0) > 0 and Registro.puedeRecoger(id, herrId)
+	local fortuna = enc and enc.fortuna or 0
+	local claveB = BL[id] and BL[id].clave or ""
+	if seda and (MENAS[id] or SEDA[id] or Registro.esHojas(id) or claveB:find("^vidrio") ~= nil or claveB:find("^hojas") ~= nil) then
+		lista = { { id, 1 } }
+	elseif herrId == I.tijeras and (Registro.esHojas(id) or id == B.hierbaAlta or id == B.helecho or (BL[id] and (BL[id].clave or ""):find("^hojas"))) then
 		lista = { { id, 1 } }
 	else
 		lista = Registro.sueltaDe(id, herrId)
+		-- Fortuna en las menas: multiplica lo que sueltan (como en Minecraft)
+		if fortuna > 0 and MENAS[id] then
+			local mult = math.max(0, math.random(0, fortuna + 1) - 1) + 1
+			for _, d in lista do
+				if d[1] ~= id then
+					d[2] *= mult
+				end
+			end
+		end
 	end
 	for _, d in lista do
 		if d[2] > 0 and (OB[d[1]] or BL[d[1]]) then
@@ -10001,7 +10116,7 @@ local function soltarBloque(id, x, y, z, herrId, plr)
 		end
 	end
 	local def = BL[id]
-	if def and def.xp and Registro.puedeRecoger(id, herrId) and (not s or supervivencia(s)) then
+	if def and def.xp and not (seda and MENAS[id]) and Registro.puedeRecoger(id, herrId) and (not s or supervivencia(s)) then
 		local v = math.random(def.xp[1] or 0, def.xp[2] or 0)
 		if v > 0 then
 			Entidades.soltarXP(v, x + 0.5, y + 0.5, z + 0.5)
@@ -10038,7 +10153,7 @@ local function danoExplosion(x, y, z, potencia, fuente)
 			local dano, dir = calc(p.X, p.Y, p.Z, 1.8)
 			if dano then
 				local lh = math.sqrt(dir.x * dir.x + dir.z * dir.z)
-				danar(plr, dano, "explosion", { x = dir.x / (lh > 0 and lh or 1), z = dir.z / (lh > 0 and lh or 1) })
+				danar(plr, dano, "explosion", { x = dir.x / (lh > 0 and lh or 1), z = dir.z / (lh > 0 and lh or 1) }, fuente)
 			end
 		end
 	end
@@ -10063,8 +10178,24 @@ Sim.alExplotar = danoExplosion
 Mobs.alExplotar = function(x, y, z, potencia, fuente)
 	Sim.explosion(x, y, z, potencia, { fuente = fuente })
 end
-Mobs.alDanarJugador = function(plr, dano, tipo, dir)
-	danar(plr, dano, tipo, dir)
+Mobs.alDanarJugador = function(plr, dano, tipo, dir, m)
+	danar(plr, dano, tipo, dir, m)
+	local s = st(plr)
+	if s and tipo == "mob" and type(m) == "table" and m.def and not m.muerto then
+		for i = 37, 40 do
+			local pz = s.inv[i]
+			local esp = pz and pz.enc and pz.enc.espinas or 0
+			if esp > 0 and math.random() < 0.15 * esp then
+				Mobs.herir(m, math.random(1, 4), nil, "espinas", 0, plr)
+				break
+			end
+		end
+	end
+end
+Mobs.botinDe = function(plr)
+	local s = st(plr)
+	local p = s and s.inv[s.sel]
+	return p and p.enc and p.enc.botin or 0
 end
 Mobs.esCreativo = function(plr)
 	local s = st(plr)
@@ -10091,6 +10222,28 @@ Entidades.alRecoger = function(plr, pila)
 	return sobra
 end
 Entidades.alXP = function(plr, v)
+	local s = st(plr)
+	if s then
+		local cands = {}
+		for _, i in { s.sel, 37, 38, 39, 40, 41 } do
+			local pz = s.inv[i]
+			local o = pz and OB[pz.id]
+			if pz and pz.enc and (pz.enc.reparacion or 0) > 0 and o and o.dur and (pz.dur or o.dur) < o.dur then
+				table.insert(cands, { pz, o })
+			end
+		end
+		if #cands > 0 then
+			local c = cands[math.random(1, #cands)]
+			local arreglo = math.min(v * 2, c[2].dur - c[1].dur)
+			c[1].dur += arreglo
+			v -= math.ceil(arreglo / 2)
+		end
+	end
+	if v <= 0 then
+		Estado:FireClient(plr, "sonido", "xp")
+		enviarJugador(plr)
+		return
+	end
 	ganarXP(plr, v)
 	Estado:FireClient(plr, "sonido", "xp")
 end
@@ -10112,6 +10265,9 @@ Entidades.alImpacto = function(e, modo)
 					local dano = opc.dano or math.ceil(v / 30 * 6)
 					local l = math.sqrt(e.vx * e.vx + e.vz * e.vz)
 					Mobs.herir(m, dano, { x = e.vx / (l > 0 and l or 1) * 0.5, z = e.vz / (l > 0 and l or 1) * 0.5 }, opc.jugador and "flechaJugador" or "flecha", 0, opc.jugador)
+					if opc.llama and not m.def.inmuneFuego then
+						m.fuego = math.max(m.fuego or 0, 5)
+					end
 				elseif e.tipo == "bolaFuego" then
 					Mobs.herir(m, 5, nil, "fuego")
 					m.fuego = 5
@@ -10131,9 +10287,9 @@ Entidades.alImpacto = function(e, modo)
 					local l = math.sqrt(e.vx * e.vx + e.vz * e.vz)
 					local dir = { x = e.vx / (l > 0 and l or 1), z = e.vz / (l > 0 and l or 1) }
 					if e.tipo == "flecha" then
-						danar(plr, opc.dano or 3, "flecha", dir)
+						danar(plr, opc.dano or 3, "flecha", dir, opc.dueno or opc.jugador)
 					elseif e.tipo == "bolaFuego" then
-						danar(plr, 5, "fuego", dir)
+						danar(plr, 5, "fuego", dir, opc.dueno)
 						local s = st(plr)
 						if s then
 							s.fuego = math.max(s.fuego, 5)
@@ -10226,7 +10382,7 @@ function acciones.romper(plr, s, x, y, z)
 		if def.dureza < 0 then
 			return
 		end
-		local t = Registro.tiempoRomper(b, herrId)
+		local t = Registro.tiempoRomper(b, herrId, false, { eficiencia = mano and mano.enc and mano.enc.eficiencia or 0 })
 		local g = s.golpe
 		if t > 0.05 and (not g or g.x ~= x or g.y ~= y or g.z ~= z or os.clock() - g.t < t * 0.6 - 0.25) then
 			return
@@ -10251,7 +10407,7 @@ function acciones.romper(plr, s, x, y, z)
 	end
 	Mundo.set(x, y, z, 0)
 	if not creativo then
-		soltarBloque(b, x, y, z, herrId, plr)
+		soltarBloque(b, x, y, z, herrId, plr, mano and mano.enc)
 		if def.dureza > 0 then
 			local h = Registro.herramienta(herrId)
 			if h then
@@ -10815,8 +10971,14 @@ function acciones.soltarArco(plr, s, dir)
 	if not p or p.id ~= I.arco then
 		return
 	end
+	local infinita = (p.enc and p.enc.infinidad or 0) > 0
 	if supervivencia(s) then
-		if not Inv.quitar(s.inv, I.flecha, 1) then
+		-- Con Infinidad basta con llevar una flecha: no se gasta
+		if infinita then
+			if Inv.contar(s.inv, I.flecha) <= 0 then
+				return
+			end
+		elseif not Inv.quitar(s.inv, I.flecha, 1) then
 			return
 		end
 		gastarEnMano(plr, s, 1)
@@ -10831,12 +10993,15 @@ function acciones.soltarArco(plr, s, dir)
 		dano = math.ceil(dano * (1 + 0.25 * (poder + 1)))
 	end
 	Entidades.disparar("flecha", e.X / BS + dir.X * 0.5, e.Y / BS + dir.Y * 0.5, e.Z / BS + dir.Z * 0.5, dir, vel,
-		{ jugador = plr, dano = dano, recogible = supervivencia(s) })
+		{ jugador = plr, dano = dano, recogible = supervivencia(s) and not infinita, llama = (p.enc and p.enc.llama or 0) > 0 })
 	Estado:FireClient(plr, "sonido", "arco")
 	enviarJugador(plr)
 end
 
 -- Ataque a una criatura (carga = 0..1 según el tiempo desde el último golpe)
+local NO_MUERTOS = { zombi = true, esqueleto = true, esqueletoErrante = true, momia = true, ahogado = true, aldeanoZombi = true, esqueletoWither = true,
+	phantom = true, wither = true }
+local ARTROPODOS = { arana = true, abeja = true, lepisma = true, endermita = true }
 function acciones.atacar(plr, s, parte, carga, cayendo, corriendo)
 	if typeof(parte) ~= "Instance" then
 		return
@@ -10891,7 +11056,7 @@ function acciones.atacar(plr, s, parte, carga, cayendo, corriendo)
 		local dx, dz = po.X - pp.X, po.Z - pp.Z
 		local l = math.sqrt(dx * dx + dz * dz)
 		local emp = ((corriendo == true and carga > 0.9) and 1.6 or 1) * (1 + (p and p.enc and p.enc.retroceso or 0) * 0.6)
-		danar(otro, dano, "jugador", { x = dx / (l > 0 and l or 1) * emp, z = dz / (l > 0 and l or 1) * emp })
+		danar(otro, dano, "jugador", { x = dx / (l > 0 and l or 1) * emp, z = dz / (l > 0 and l or 1) * emp }, plr)
 		Estado:FireClient(plr, "golpeMob", (po + Vector3.new(0, 0.9, 0)) * BS, dano, cayendo == true and carga > 0.9)
 		if hh then
 			gastarEnMano(plr, s, hh.tipo == "espada" and 1 or 2)
@@ -10923,6 +11088,18 @@ function acciones.atacar(plr, s, parte, carga, cayendo, corriendo)
 	local filo = p and p.enc and p.enc.filo or 0
 	if filo > 0 then
 		dano += (0.5 * filo + 0.5) * carga
+	end
+	local enc = p and p.enc
+	if enc then
+		if (enc.castigo or 0) > 0 and NO_MUERTOS[m.tipo] then
+			dano += 2.5 * enc.castigo * carga
+		end
+		if (enc.perdicion or 0) > 0 and ARTROPODOS[m.tipo] then
+			dano += 2.5 * enc.perdicion * carga
+		end
+		if (enc.aspectoIgneo or 0) > 0 and not m.def.inmuneFuego then
+			m.fuego = math.max(m.fuego or 0, 4 * enc.aspectoIgneo)
+		end
 	end
 	local critico = cayendo == true and carga > 0.9
 	if critico then
@@ -11428,7 +11605,23 @@ function acciones.caida(plr, s, n)
 	if not supervivencia(s) or type(n) ~= "number" or n ~= n or n <= 3.5 then
 		return
 	end
-	danar(plr, math.floor(math.min(n, 100) - 3), "caida")
+	local dano = math.floor(math.min(n, 100) - 3)
+	-- Al caer sobre heno se hace un 20 % del daño, sobre una cama la mitad y en una telaraña nada
+	local p = piesDe(plr)
+	if p then
+		local px, pz = math.floor(p.X), math.floor(p.Z)
+		local abajo, dentro = Mundo.get(px, math.floor(p.Y - 0.05), pz), Mundo.get(px, math.floor(p.Y + 0.1), pz)
+		if dentro == B.telarana or abajo == B.telarana then
+			return
+		elseif abajo == B.heno then
+			dano = math.floor(dano * 0.2)
+		elseif BL[abajo] and ((BL[abajo].clave or ""):find("^cama") or abajo == B.cama) then
+			dano = math.floor(dano * 0.5)
+		end
+	end
+	if dano > 0 then
+		danar(plr, dano, "caida")
+	end
 end
 
 function acciones.salto(plr, s)
@@ -11560,7 +11753,9 @@ RunService.Heartbeat:Connect(function(dt)
 			-- Aire bajo el agua
 			local aireAntes = math.floor(s.aire)
 			if esAgua(bOjos) and supervivencia(s) then
-				s.aire -= dt
+				-- Respiración (casco): el aire dura (nivel + 1) veces más
+				local casco = s.inv[37]
+				s.aire -= dt / (1 + (casco and casco.enc and casco.enc.respiracion or 0))
 				if s.aire <= 0 then
 					s.aire = 0
 					s.aireT -= dt
@@ -13764,11 +13959,12 @@ for _, e in EFECTOS do
 end
 local ROM_KIT = { "I", "II", "III" }
 
+-- Datos para la ventana de kits: cada tarjeta lleva su rareza, nivel, estado y lo que hace el botón
 local function datosKits(plr, s)
 	local perfil = Perfil.de(plr)
 	local tab = s.ui.tab or 1
-	local d = { sub = "tienda", nombre = tab == 1 and "KITS" or "EFECTOS DE BAJA FINAL", pestana = tab, ofertas = {},
-		pestanas = { { nombre = "Kits", icono = idc("espada_hierro") }, { nombre = "Efectos de baja final", icono = idc("cohete") } },
+	local d = { sub = "kits", nombre = tab == 1 and "KITS" or "EFECTOS DE BAJA FINAL", pestana = tab, ofertas = {},
+		pestanas = { { nombre = "Kits", icono = idc("espada_hierro") }, { nombre = "Efectos", icono = idc("cohete") } },
 		monedas = { { idc("pepitaOro") or I.lingoteOro, perfil.monedas } } }
 	if tab == 1 then
 		local gratis = Kits.gratisHoy()
@@ -13777,26 +13973,30 @@ local function datosKits(plr, s)
 			local equipado = perfil.kit == k.id
 			local esGratis = table.find(gratis, k.id) ~= nil
 			local R = Kits.RAREZAS[k.r]
-			local txt, puede, tiene = "", true, false
+			-- estado: equipado | tuyo | gratis | probando | comprar;  accion: lo que pasa al pulsar el botón
+			local estado, accion, precio, puede = "comprar", nil, nil, true
 			if nv then
+				estado = equipado and "equipado" or "tuyo"
 				if not equipado then
-					txt = "Clic: equipar"
-				elseif nv >= 3 or k.p == 0 then
-					txt, tiene = "✔ Equipado", true
-				else
-					local c = Kits.costeMejora(k.id, nv)
-					txt = ("Mejorar a %s · %d monedas"):format(ROM_KIT[nv + 1], c)
-					puede = perfil.monedas >= c
+					accion = "Equipar"
+				elseif nv < 3 and k.p > 0 then
+					precio = Kits.costeMejora(k.id, nv)
+					accion = "Mejorar a " .. ROM_KIT[nv + 1]
+					puede = perfil.monedas >= precio
 				end
 			elseif esGratis and not equipado then
-				txt = "¡Gratis hoy! Clic: probar"
+				estado, accion = "gratis", "Probar gratis"
 			else
-				txt = (equipado and "Probando · " or "") .. ("Comprar · %d monedas"):format(k.p)
+				estado = equipado and "probando" or "comprar"
+				accion, precio = "Comprar", k.p
 				puede = perfil.monedas >= k.p
 			end
-			local nombre = k.n .. (nv and k.p > 0 and (" " .. ROM_KIT[nv]) or "") .. (k.nuevo and " ★NUEVO" or "")
-			table.insert(d.ofertas, { id = k.icono, n = 1, nombre = nombre, precioTxt = txt, puede = puede, tiene = tiene, tieneTxt = txt,
-				desc = ("%s · %s%s: %s"):format(k.n, R[1], k.act and " · con habilidad (G)" or "", Kits.descripcion(k.id, nv or 1)) })
+			local siguiente = nv and nv < 3 and k.p > 0 and Kits.descripcion(k.id, nv + 1) or nil
+			table.insert(d.ofertas, {
+				id = k.icono, nombre = k.n, rareza = R[1], col = R[2], nivel = (k.p > 0 and nv) or 0, maxNivel = k.p > 0 and 3 or 0,
+				estado = estado, accion = accion, precio = precio, puede = puede, habilidad = k.act == true, nuevo = k.nuevo == true,
+				desc = Kits.descripcion(k.id, nv or 1), siguiente = siguiente,
+			})
 		end
 		d.pie = "Kits gratis hoy: " .. table.concat((function()
 			local t = {}
@@ -13809,9 +14009,11 @@ local function datosKits(plr, s)
 		for _, e in EFECTOS do
 			local tiene = perfil.efectos[e.id] == true
 			local equipado = perfil.efecto == e.id
-			table.insert(d.ofertas, { id = e.icono, n = 1, nombre = e.n,
-				precioTxt = tiene and "Clic: equipar" or ("Comprar · %d monedas"):format(e.p), puede = tiene or perfil.monedas >= e.p,
-				tiene = equipado, tieneTxt = "✔ Equipado", desc = e.d })
+			table.insert(d.ofertas, {
+				id = e.icono, nombre = e.n, rareza = e.p == 0 and "Básico" or "Efecto", col = e.p == 0 and "#9aa4b4" or "#ff7ad9", nivel = 0, maxNivel = 0,
+				estado = equipado and "equipado" or (tiene and "tuyo" or "comprar"), accion = (not equipado) and (tiene and "Equipar" or "Comprar") or nil,
+				precio = (not tiene) and e.p or nil, puede = tiene or perfil.monedas >= e.p, desc = e.d,
+			})
 		end
 		d.pie = "Se ven cuando consigues una baja final"
 	end
@@ -13895,7 +14097,7 @@ end
 
 local function abrirKits(plr, s, tab)
 	s.ui = {
-		tipo = "extra", sub = "tienda", tab = tab or 1, datos = datosKits, comprar = comprarKit,
+		tipo = "extra", sub = "kits", tab = tab or 1, datos = datosKits, comprar = comprarKit,
 		pestana = function(_, so, i)
 			if i == 1 or i == 2 then
 				so.ui.tab = i
@@ -19707,6 +19909,28 @@ Mobs.alExplotar = nil -- function(x, y, z, potencia, fuente)
 Mobs.esCreativo = nil -- function(plr) -> bool
 Mobs.alComerciar = nil
 
+-- Nombre de cada criatura para la pantalla de muerte («Te mató un Zombi»)
+local NOMBRES = {
+	zombi = "Zombi", esqueleto = "Esqueleto", creeper = "Creeper", arana = "Araña", enderman = "Enderman", piglin = "Piglin", hoglin = "Hoglin",
+	slime = "Slime", cuboMagma = "Cubo de magma", golem = "Gólem de hierro", ghast = "Ghast", blaze = "Blaze", warden = "Warden", breeze = "Breeze",
+	creaking = "Crujidor", saqueador = "Saqueador", bruja = "Bruja", guardian = "Guardián", guardianAnciano = "Guardián anciano", shulker = "Shulker",
+	vindicador = "Vindicador", ahogado = "Ahogado", lobo = "Lobo", osoPolar = "Oso polar", abeja = "Abeja", panda = "Panda", devastador = "Devastador",
+	phantom = "Phantom", lepisma = "Lepisma", endermita = "Endermita", vex = "Vex", evocador = "Evocador", esqueletoErrante = "Esqueleto errante",
+	momia = "Momia", aldeanoZombi = "Aldeano zombi", esqueletoWither = "Esqueleto wither", piglinBruto = "Piglin bruto", golemPiedraLY = "Gólem de piedra",
+	golemTablaLY = "Gólem de tablones", piglinLY = "Piglin", piglinBrutoLY = "Piglin bruto", dragon = "Ender Dragon", wither = "Wither",
+}
+local FEMENINO = { arana = true, bruja = true, abeja = true, momia = true, lepisma = true, endermita = true }
+function Mobs.nombre(tipo)
+	return NOMBRES[tipo] or "una criatura"
+end
+-- Con artículo: «un Zombi», «una Araña»
+function Mobs.conArticulo(tipo)
+	if not NOMBRES[tipo] then
+		return "una criatura"
+	end
+	return (FEMENINO[tipo] and "una " or "un ") .. NOMBRES[tipo]
+end
+
 local carpeta = Instance.new("Folder")
 carpeta.Name = "Criaturas"
 carpeta.Parent = workspace
@@ -19914,11 +20138,24 @@ function Mobs.matar(m, fuente, plr)
 	end
 	m.muerto = true
 	local def = m.def
+	-- Botín (encantamiento del arma de quien lo mata)
+	local botin = 0
+	if plr and (fuente == "jugador" or fuente == "flechaJugador") and Mobs.botinDe then
+		local ok, n = pcall(Mobs.botinDe, plr)
+		botin = ok and n or 0
+	end
 	if m.bebe <= 0 and not (def.ia == "cubo" and m.tam and m.tam > 0) then
 		for _, s in def.sueltaMuestra or {} do
 			local id, mn, mx, p = s[1], s[2], s[3], s[4]
-			if math.random() < p then
-				local n = math.random(mn, mx)
+			-- Lo raro sale un 1 % más por nivel; lo común suelta hasta «nivel» más
+			local raro = p < 0.1
+			local n = 0
+			if math.random() < p + (raro and 0.01 * botin or 0) then
+				n = math.random(mn, mx) + ((not raro and botin > 0) and math.random(0, botin) or 0)
+			elseif botin > 0 and not raro then
+				n = math.random(0, botin)
+			end
+			do
 				if n > 0 then
 					local real = (m.fuego > 0 and Hornos.cocinado and Hornos.cocinado[id]) or id
 					Entidades.soltarItem(Registro.pila(real, n), m.x, m.y + 0.5, m.z, true)
@@ -20084,10 +20321,10 @@ local IA_PASIVA = { lobo = true, gato = true, zorro = true, conejo = true, cabra
 local IA_VUELA = { murcielago = true, phantom = true, vex = true, allay = true, abeja = true }
 local IA_AGUA = { pez = true, calamar = true, ajolote = true, pezGlobo = true }
 
-local function danarJugador(j, dano, tipo, dx, dz, dist)
+local function danarJugador(j, dano, tipo, dx, dz, dist, m)
 	if Mobs.alDanarJugador then
 		local l = dist and dist > 0 and dist or 1
-		Mobs.alDanarJugador(j.plr, dano, tipo, { x = dx / l, z = dz / l })
+		Mobs.alDanarJugador(j.plr, dano, tipo, { x = dx / l, z = dz / l }, m)
 	end
 end
 
@@ -20181,7 +20418,7 @@ local function actualizarMob(m, dt, jugadores)
 			m.cd = 1.5 + math.random()
 			local dir = Vector3.new(dx, dy + 1.1 - m.alto * 0.85 + dist * 0.12, dz).Unit
 			dir = Vector3.new(dir.X + (math.random() - 0.5) * 0.06, dir.Y, dir.Z + (math.random() - 0.5) * 0.06).Unit
-			Entidades.disparar("flecha", ex + dir.X * 0.6, ey, ez + dir.Z * 0.6, dir, 30, { dueno = m, dano = 1 })
+			Entidades.disparar("flecha", ex + dir.X * 0.6, ey, ez + dir.Z * 0.6, dir, 30, { dueno = m, dano = azar(2, 4) })
 			m.pieza:SetAttribute("dispara", tiempo)
 		end
 	elseif persigue and ia == "creeper" then
@@ -20276,7 +20513,7 @@ local function actualizarMob(m, dt, jugadores)
 		local dano = type(def.dano) == "table" and def.dano[(m.tam or 1) + 1] or (def.dano or 0)
 		if persigue and dano > 0 and dist < m.ancho + 0.55 and math.abs(dy) < m.alto and m.golpeT <= 0 then
 			m.golpeT = 1
-			danarJugador(j, dano, "mob", dx, dz, dist)
+			danarJugador(j, dano, "mob", dx, dz, dist, m)
 		end
 	elseif ia == "golem" then
 		local obj, dmin = nil, 18
@@ -20304,7 +20541,7 @@ local function actualizarMob(m, dt, jugadores)
 				m.golpeT = 0.35
 				m.pieza:SetAttribute("ataca", tiempo)
 				if obj.jugador then
-					danarJugador(obj.jugador, azar(7, 21), "mob", ox, oz, d)
+					danarJugador(obj.jugador, azar(7, 21), "mob", ox, oz, d, m)
 				else
 					Mobs.herir(obj, azar(7, 21), { x = ox / (d > 0 and d or 1), z = oz / (d > 0 and d or 1) }, "golem")
 					obj.vy = 9
@@ -20393,7 +20630,7 @@ local function actualizarMob(m, dt, jugadores)
 			m.yawObj = math.atan2(ox, oz)
 			if l < 1.5 and m.cd <= 0 then
 				m.cd = 1
-				danarJugador(j, def.dano, "mob", ox, oz, l)
+				danarJugador(j, def.dano, "mob", ox, oz, l, m)
 			end
 		else
 			m.t -= dt
@@ -20430,7 +20667,7 @@ local function actualizarMob(m, dt, jugadores)
 			m.cd = 1
 			m.golpeT = 0.35
 			m.pieza:SetAttribute("ataca", tiempo)
-			danarJugador(j, def.dano, "mob", dx, dz, dist)
+			danarJugador(j, def.dano, "mob", dx, dz, dist, m)
 		end
 		if m.tipo == "enderman" and dist > 12 and math.random() < dt * 0.3 then
 			teletransportar(m)
@@ -20781,6 +21018,17 @@ local function intentoAparicion(jugadores)
 		return
 	end
 	Mobs.crear(tipo, x + 0.5, y, z + 0.5)
+	-- Como en Minecraft, a veces salen en grupo (hasta 3 más alrededor, también a oscuras)
+	if tipo ~= "enderman" and tipo ~= "bruja" then
+		local extra = math.min(Config.MAX_HOSTILES - hostiles - 1, math.random() < 0.5 and 0 or azar(1, 3))
+		for _ = 1, extra do
+			local ox, oz = x + azar(-3, 3), z + azar(-3, 3)
+			local oy = buscarSuelo(ox, y + 2, oz, 5, 2)
+			if oy > 0 and not (md:alCielo(ox, oy, oz) and not esDeNoche()) and not hayLuzCerca(ox, oy, oz) then
+				Mobs.crear(tipo, ox + 0.5, oy, oz + 0.5)
+			end
+		end
+	end
 end
 
 ------------------------------------------------------------------
@@ -24665,7 +24913,10 @@ RunService.RenderStepped:Connect(function(dt)
 		local ojosB = ojos()
 		local bajoAgua = ojosB and esAgua(md:get(math.floor(ojosB.X / BS), math.floor(ojosB.Y / BS), math.floor(ojosB.Z / BS)))
 		local enAire = hum and hum.FloorMaterial == Enum.Material.Air and not volando and not bajoAgua
-		local t = Registro.tiempoRomper(o.b, enMano(), creativo(), { bajoAgua = bajoAgua, enAire = enAire })
+		local _, pm = enMano()
+		local casco = est.inv[37]
+		local t = Registro.tiempoRomper(o.b, enMano(), creativo(), { bajoAgua = bajoAgua, enAire = enAire,
+			eficiencia = pm and pm.enc and pm.enc.eficiencia or 0, afinidad = casco and casco.enc and (casco.enc.afinidadAcuatica or 0) > 0 })
 		if t == math.huge then
 			progreso = 0
 		else
@@ -26766,6 +27017,7 @@ do
 	local cas, _, cab = bloqueInventario(p, 32 + 170 + 6)
 	extra.cas, extra.cabInv = cas, cab
 	extra.panel = p
+	extra.tamBase = p.Size
 	pantallas.extra = { panel = p, cas = cas }
 end
 
@@ -26776,12 +27028,14 @@ local function construirExtra(d)
 	extra.slots, extra.salida, extra.opciones, extra.ofertas = {}, nil, {}, {}
 	extra.texto, extra.barras = nil, {}
 	-- La tienda usa todo el panel (el dinero ya se ve arriba); las demás pantallas muestran el inventario
-	local tienda = d.sub == "tienda"
+	local tienda = d.sub == "tienda" or d.sub == "kits"
 	for _, b in extra.cas do
 		b.Visible = not tienda
 	end
 	extra.cabInv.Visible = not tienda
-	z.Size = UDim2.new(1, -28, 0, tienda and 170 + 4 * (S + 2) + 30 or 170)
+	-- La ventana de kits es más grande: tarjetas a la izquierda y el detalle a la derecha
+	extra.panel.Size = d.sub == "kits" and UDim2.fromOffset(800, 500) or extra.tamBase
+	z.Size = d.sub == "kits" and UDim2.new(1, -28, 1, -44) or UDim2.new(1, -28, 0, tienda and 170 + 4 * (S + 2) + 30 or 170)
 	local function casilla(i, x, y, rotulo)
 		local b = ranura(z, "mesa", i)
 		b.Position = UDim2.fromOffset(x, y)
@@ -26858,6 +27112,27 @@ local function construirExtra(d)
 		aviso(0, alto - 22, 436)
 		extra.texto.Size = UDim2.fromOffset(436, 20)
 		extra.texto.TextSize = 12
+	elseif d.sub == "kits" then
+		extra.tabs = nuevo("Frame", { BackgroundTransparency = 1, Size = UDim2.new(0, 400, 0, 30) }, z)
+		nuevo("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 6) }, extra.tabs)
+		extra.monedas = nuevo("Frame", { BackgroundColor3 = Color3.fromRGB(40, 36, 20), BorderSizePixel = 0, AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, 0, 0, 0),
+			Size = UDim2.fromOffset(150, 30) }, z)
+		nuevo("UICorner", { CornerRadius = UDim.new(0, 15) }, extra.monedas)
+		nuevo("UIStroke", { Color = Color3.fromRGB(255, 200, 60), Thickness = 2 }, extra.monedas)
+		local lista = nuevo("ScrollingFrame", { BackgroundColor3 = Color3.fromRGB(34, 36, 44), BorderSizePixel = 0, Position = UDim2.fromOffset(0, 38),
+			Size = UDim2.new(0, 488, 1, -64), ScrollBarThickness = 6, CanvasSize = UDim2.new(), AutomaticCanvasSize = Enum.AutomaticSize.Y, ZIndex = 7 }, z)
+		nuevo("UICorner", { CornerRadius = UDim.new(0, 6) }, lista)
+		nuevo("UIGridLayout", { CellSize = UDim2.fromOffset(112, 128), CellPadding = UDim2.fromOffset(6, 6), SortOrder = Enum.SortOrder.LayoutOrder }, lista)
+		nuevo("UIPadding", { PaddingLeft = UDim.new(0, 6), PaddingTop = UDim.new(0, 8), PaddingBottom = UDim.new(0, 8) }, lista)
+		extra.lista = lista
+		local det = nuevo("Frame", { BackgroundColor3 = Color3.fromRGB(34, 36, 44), BorderSizePixel = 0, Position = UDim2.fromOffset(498, 38), Size = UDim2.new(1, -498, 1, -64),
+			ZIndex = 7 }, z)
+		nuevo("UICorner", { CornerRadius = UDim.new(0, 6) }, det)
+		extra.detalle = det
+		aviso(0, 0, 10)
+		extra.texto.Position = UDim2.new(0, 0, 1, -22)
+		extra.texto.Size = UDim2.new(1, 0, 0, 20)
+		extra.texto.TextSize = 13
 	elseif d.sub == "aldeano" then
 		extra.nivel = barra(0, 4, 300, 6, Color3.fromRGB(96, 224, 96))
 		local lista = nuevo("ScrollingFrame", { BackgroundTransparency = 1, BorderSizePixel = 0, Position = UDim2.fromOffset(0, 16), Size = UDim2.new(1, 0, 1, -16),
@@ -26865,6 +27140,194 @@ local function construirExtra(d)
 		nuevo("UIListLayout", { Padding = UDim.new(0, 4) }, lista)
 		extra.lista = lista
 	end
+end
+
+-- Ventana de kits y efectos de Bed Wars: tarjetas con el color de su rareza y un panel con el detalle
+local ESTADO_KIT = {
+	equipado = { "✔ EQUIPADO", Color3.fromRGB(60, 170, 70) }, tuyo = { "TUYO", Color3.fromRGB(80, 90, 110) },
+	gratis = { "GRATIS HOY", Color3.fromRGB(40, 130, 230) }, probando = { "PROBANDO", Color3.fromRGB(40, 130, 230) },
+}
+-- string.upper no cambia las letras con tilde
+local function mayusculas(t)
+	t = string.upper(t)
+	for de, a in { ["á"] = "Á", ["é"] = "É", ["í"] = "Í", ["ó"] = "Ó", ["ú"] = "Ú", ["ñ"] = "Ñ" } do
+		t = t:gsub(de, a)
+	end
+	return t
+end
+local function estrellas(n, max)
+	return string.rep("★", n) .. string.rep("☆", max - n)
+end
+local function limpiar(f)
+	for _, h in f:GetChildren() do
+		if h:IsA("GuiObject") then
+			h:Destroy()
+		end
+	end
+end
+local pintarKits
+local function pintarDetalleKit(d)
+	local det = extra.detalle
+	limpiar(det)
+	local o = d.ofertas and d.ofertas[extra.selKit or 1]
+	if not o then
+		return
+	end
+	local col = Color3.fromHex(o.col or "#9aa4b4")
+	local caja = nuevo("Frame", { BackgroundColor3 = col:Lerp(Color3.new(0, 0, 0), 0.55), BorderSizePixel = 0, AnchorPoint = Vector2.new(0.5, 0),
+		Position = UDim2.new(0.5, 0, 0, 14), Size = UDim2.fromOffset(100, 100), ZIndex = 8 }, det)
+	nuevo("UICorner", { CornerRadius = UDim.new(0, 10) }, caja)
+	nuevo("UIStroke", { Color = col, Thickness = 3 }, caja)
+	local ic = nuevo("ImageLabel", { BackgroundTransparency = 1, AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.fromOffset(72, 72),
+		ResampleMode = Enum.ResamplerMode.Pixelated, ZIndex = 9 }, caja)
+	Iconos.poner(ic, o.id)
+	texto({ Position = UDim2.fromOffset(8, 122), Size = UDim2.new(1, -16, 0, 30), Text = o.nombre or "", TextSize = 24, Font = FUENTE_N, ZIndex = 8 }, det)
+	local pil = nuevo("Frame", { BackgroundColor3 = col, BorderSizePixel = 0, AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 156),
+		Size = UDim2.fromOffset(120, 20), ZIndex = 8 }, det)
+	nuevo("UICorner", { CornerRadius = UDim.new(0, 10) }, pil)
+	texto({ Size = UDim2.fromScale(1, 1), Text = mayusculas(o.rareza or ""), TextSize = 12, Font = FUENTE_N, TextStrokeTransparency = 0.5, ZIndex = 9 }, pil)
+	local y = 184
+	if (o.maxNivel or 0) > 0 then
+		texto({ Position = UDim2.fromOffset(8, y), Size = UDim2.new(1, -16, 0, 20), Text = "Nivel " .. estrellas(o.nivel or 0, o.maxNivel), TextSize = 16, Font = FUENTE_N,
+			TextColor3 = Color3.fromRGB(255, 210, 70), ZIndex = 8 }, det)
+		y += 24
+	end
+	texto({ Position = UDim2.fromOffset(14, y), Size = UDim2.new(1, -28, 0, 60), Text = o.desc or "", TextSize = 14, TextWrapped = true,
+		TextYAlignment = Enum.TextYAlignment.Top, TextColor3 = Color3.fromRGB(225, 228, 235), TextStrokeTransparency = 1, ZIndex = 8 }, det)
+	y += 62
+	if o.siguiente then
+		texto({ Position = UDim2.fromOffset(14, y), Size = UDim2.new(1, -28, 0, 44), Text = "Siguiente nivel: " .. o.siguiente, TextSize = 12, TextWrapped = true,
+			TextYAlignment = Enum.TextYAlignment.Top, TextColor3 = Color3.fromRGB(130, 230, 130), TextStrokeTransparency = 1, ZIndex = 8 }, det)
+	end
+	if o.habilidad then
+		texto({ Position = UDim2.new(0, 14, 1, -88), Size = UDim2.new(1, -28, 0, 20), Text = "⚡ Habilidad activa: pulsa G en la partida", TextSize = 13,
+			TextColor3 = Color3.fromRGB(150, 200, 255), TextStrokeTransparency = 1, ZIndex = 8 }, det)
+	end
+	-- Botón grande: comprar / equipar / mejorar / probar
+	local txt, fondo = o.accion, Color3.fromRGB(60, 170, 70)
+	if not txt then
+		txt, fondo = (o.estado == "equipado" and (o.maxNivel or 0) > 0 and (o.nivel or 0) >= o.maxNivel) and "✔ Nivel máximo" or "✔ Equipado", Color3.fromRGB(70, 74, 86)
+	elseif o.precio then
+		txt = ("%s · %d monedas"):format(txt, o.precio)
+		fondo = o.puede and Color3.fromRGB(230, 160, 30) or Color3.fromRGB(150, 50, 50)
+	elseif o.estado == "gratis" then
+		fondo = Color3.fromRGB(40, 130, 230)
+	end
+	local b = nuevo("TextButton", { AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -14), Size = UDim2.new(1, -28, 0, 50), BackgroundColor3 = fondo,
+		BorderSizePixel = 0, Text = txt, Font = FUENTE_N, TextSize = 17, TextColor3 = Color3.new(1, 1, 1), TextStrokeTransparency = 0.4, AutoButtonColor = true,
+		ZIndex = 9 }, det)
+	nuevo("UICorner", { CornerRadius = UDim.new(0, 8) }, b)
+	nuevo("UIStroke", { Color = Color3.new(0, 0, 0), Thickness = 2, Transparency = 0.3, ApplyStrokeMode = Enum.ApplyStrokeMode.Border }, b)
+	nuevo("UIGradient", { Rotation = 90, Color = ColorSequence.new(Color3.new(1, 1, 1), Color3.fromRGB(185, 185, 185)) }, b)
+	local esc = nuevo("UIScale", {}, b)
+	if o.accion then
+		b.MouseEnter:Connect(function()
+			TweenService:Create(esc, TweenInfo.new(0.12, Enum.EasingStyle.Back), { Scale = 1.04 }):Play()
+		end)
+		b.MouseLeave:Connect(function()
+			TweenService:Create(esc, TweenInfo.new(0.12), { Scale = 1 }):Play()
+		end)
+		b.Activated:Connect(function()
+			esc.Scale = 0.94
+			TweenService:Create(esc, TweenInfo.new(0.2, Enum.EasingStyle.Back), { Scale = 1 }):Play()
+			Interfaz.enviar("comprar", extra.selKit or 1, 1)
+		end)
+	end
+end
+pintarKits = function(d)
+	-- Pestañas con icono y nombre
+	limpiar(extra.tabs)
+	for i, t in d.pestanas or {} do
+		local activa = i == d.pestana
+		local b = nuevo("TextButton", { Size = UDim2.fromOffset(130, 30), LayoutOrder = i, BorderSizePixel = 0, Text = "", AutoButtonColor = true, ZIndex = 7,
+			BackgroundColor3 = activa and Color3.fromRGB(230, 160, 30) or Color3.fromRGB(70, 74, 86) }, extra.tabs)
+		nuevo("UICorner", { CornerRadius = UDim.new(0, 6) }, b)
+		local ic = nuevo("ImageLabel", { BackgroundTransparency = 1, Size = UDim2.fromOffset(22, 22), Position = UDim2.fromOffset(8, 4),
+			ResampleMode = Enum.ResamplerMode.Pixelated, ZIndex = 8 }, b)
+		Iconos.poner(ic, t.icono)
+		texto({ Position = UDim2.fromOffset(36, 0), Size = UDim2.new(1, -40, 1, 0), Text = t.nombre, TextSize = 15, Font = FUENTE_N,
+			TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 8 }, b)
+		b.Activated:Connect(function()
+			Interfaz.enviar("pestana", i)
+		end)
+	end
+	-- Monedas
+	limpiar(extra.monedas)
+	local mo = d.monedas and d.monedas[1]
+	if mo then
+		local ic = nuevo("ImageLabel", { BackgroundTransparency = 1, Size = UDim2.fromOffset(22, 22), Position = UDim2.fromOffset(10, 4),
+			ResampleMode = Enum.ResamplerMode.Pixelated, ZIndex = 8 }, extra.monedas)
+		Iconos.poner(ic, mo[1])
+		texto({ Position = UDim2.fromOffset(38, 0), Size = UDim2.new(1, -46, 1, 0), Text = tostring(mo[2]) .. " monedas", TextSize = 15, Font = FUENTE_N,
+			TextColor3 = Color3.fromRGB(255, 220, 90), TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 8 }, extra.monedas)
+	end
+	-- Al cambiar de pestaña se elige el que llevas equipado
+	if extra.selTab ~= d.pestana or not (d.ofertas and d.ofertas[extra.selKit or 0]) then
+		extra.selTab = d.pestana
+		extra.selKit = 1
+		for i, o in d.ofertas or {} do
+			if o.estado == "equipado" then
+				extra.selKit = i
+			end
+		end
+	end
+	local lista = extra.lista
+	limpiar(lista)
+	for i, o in d.ofertas or {} do
+		local col = Color3.fromHex(o.col or "#9aa4b4")
+		local sel = i == extra.selKit
+		local b = nuevo("TextButton", { Text = "", AutoButtonColor = false, BorderSizePixel = 0, LayoutOrder = i, ZIndex = 8,
+			BackgroundColor3 = sel and Color3.fromRGB(70, 74, 90) or Color3.fromRGB(50, 53, 64) }, lista)
+		nuevo("UICorner", { CornerRadius = UDim.new(0, 8) }, b)
+		local borde = nuevo("UIStroke", { Color = sel and Color3.fromRGB(255, 230, 90) or col, Thickness = sel and 3 or 2, ApplyStrokeMode = Enum.ApplyStrokeMode.Border }, b)
+		local esc = nuevo("UIScale", {}, b)
+		local franja = nuevo("Frame", { BackgroundColor3 = col, BorderSizePixel = 0, Size = UDim2.new(1, 0, 0, 6), ZIndex = 9 }, b)
+		nuevo("UICorner", { CornerRadius = UDim.new(0, 8) }, franja)
+		local fondoIc = nuevo("Frame", { BackgroundColor3 = col:Lerp(Color3.new(0, 0, 0), 0.6), BorderSizePixel = 0, AnchorPoint = Vector2.new(0.5, 0),
+			Position = UDim2.new(0.5, 0, 0, 14), Size = UDim2.fromOffset(56, 56), ZIndex = 9 }, b)
+		nuevo("UICorner", { CornerRadius = UDim.new(0, 6) }, fondoIc)
+		local ic = nuevo("ImageLabel", { BackgroundTransparency = 1, AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.fromOffset(42, 42),
+			ResampleMode = Enum.ResamplerMode.Pixelated, ZIndex = 10 }, fondoIc)
+		Iconos.poner(ic, o.id)
+		texto({ Position = UDim2.fromOffset(4, 74), Size = UDim2.new(1, -8, 0, 18), Text = o.nombre or "", TextSize = (utf8.len(o.nombre or "") or 0) > 12 and 10 or 13, Font = FUENTE_N, ZIndex = 9 }, b)
+		if (o.maxNivel or 0) > 0 and (o.nivel or 0) > 0 then
+			texto({ Position = UDim2.fromOffset(4, 91), Size = UDim2.new(1, -8, 0, 12), Text = estrellas(o.nivel, o.maxNivel), TextSize = 11,
+				TextColor3 = Color3.fromRGB(255, 210, 70), ZIndex = 9 }, b)
+		end
+		-- Estado abajo: equipado, tuyo, gratis o el precio
+		local e = ESTADO_KIT[o.estado]
+		local pie = nuevo("Frame", { BorderSizePixel = 0, AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -6), Size = UDim2.new(1, -12, 0, 18), ZIndex = 9,
+			BackgroundColor3 = e and e[2] or (o.puede and Color3.fromRGB(120, 90, 20) or Color3.fromRGB(110, 40, 40)) }, b)
+		nuevo("UICorner", { CornerRadius = UDim.new(0, 9) }, pie)
+		texto({ Size = UDim2.fromScale(1, 1), Text = e and e[1] or (o.precio and (o.precio .. " monedas") or ""), TextSize = 11, Font = FUENTE_N, ZIndex = 10,
+			TextColor3 = (e or o.puede) and Color3.new(1, 1, 1) or Color3.fromRGB(255, 170, 170) }, pie)
+		if o.nuevo then
+			local cinta = nuevo("Frame", { BackgroundColor3 = Color3.fromRGB(40, 130, 230), BorderSizePixel = 0, AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, 4, 0, -4),
+				Size = UDim2.fromOffset(46, 16), ZIndex = 11 }, b)
+			nuevo("UICorner", { CornerRadius = UDim.new(0, 8) }, cinta)
+			texto({ Size = UDim2.fromScale(1, 1), Text = "NUEVO", TextSize = 10, Font = FUENTE_N, ZIndex = 12 }, cinta)
+		end
+		b.MouseEnter:Connect(function()
+			TweenService:Create(esc, TweenInfo.new(0.12, Enum.EasingStyle.Back), { Scale = 1.06 }):Play()
+			if not sel then
+				borde.Color = Color3.new(1, 1, 1)
+			end
+			Interfaz.alSonido("paso", 1.8)
+		end)
+		b.MouseLeave:Connect(function()
+			TweenService:Create(esc, TweenInfo.new(0.12), { Scale = 1 }):Play()
+			if not sel then
+				borde.Color = col
+			end
+		end)
+		b.Activated:Connect(function()
+			extra.selKit = i
+			Interfaz.alSonido("poner", 1.3)
+			pintarKits(d)
+		end)
+	end
+	pintarDetalleKit(d)
+	extra.texto.Text = d.pie or ""
 end
 
 local function pintarExtra(d)
@@ -26974,6 +27437,8 @@ local function pintarExtra(d)
 			end)
 		end
 		extra.texto.Text = d.pie or ""
+	elseif d.sub == "kits" then
+		pintarKits(d)
 	elseif d.sub == "aldeano" then
 		if extra.nivel then
 			extra.nivel.Size = UDim2.fromScale(math.clamp(d.xpNivel or 0, 0, 1), 1)
@@ -27609,20 +28074,83 @@ local CONSEJOS = {
 local cargaConsejo = texto({ AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.fromScale(0.5, 0.6), Size = UDim2.fromOffset(640, 40), Text = CONSEJOS[math.random(1, #CONSEJOS)],
 	TextSize = 15, TextWrapped = true, TextColor3 = Color3.fromRGB(205, 205, 205), ZIndex = 17 }, carga)
 
--- Pantalla de muerte: título, causa, nivel y cuenta atrás para reaparecer
-local muerte = nuevo("Frame", { Name = "Muerte", BackgroundColor3 = Color3.fromRGB(130, 0, 0), BackgroundTransparency = 0.3, BorderSizePixel = 0, Size = UDim2.fromScale(1, 1),
+-- Pantalla de muerte: el mundo se oscurece en rojo por los bordes, título que cae con fuerza,
+-- quién o qué te mató (con su icono), cuánto aguantaste, dónde quedaron tus cosas,
+-- un consejo según la causa y una barra que se llena hasta reaparecer
+local muerte = nuevo("Frame", { Name = "Muerte", BackgroundColor3 = Color3.fromRGB(60, 0, 0), BackgroundTransparency = 0.35, BorderSizePixel = 0, Size = UDim2.fromScale(1, 1),
 	Visible = false, ZIndex = 12 }, gui)
-nuevo("UIGradient", { Rotation = 90, Color = ColorSequence.new(Color3.fromRGB(150, 10, 10), Color3.fromRGB(50, 0, 0)),
-	Transparency = NumberSequence.new(0.35, 0.15) }, muerte)
-texto({ AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(0.5, 4, 0.32, 4), Size = UDim2.fromOffset(700, 80), Text = "¡Has muerto!", Font = FUENTE_N, TextSize = 60,
-	TextColor3 = Color3.fromRGB(40, 0, 0), TextStrokeTransparency = 1, TextTransparency = 0.3, ZIndex = 13 }, muerte)
-texto({ AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.32), Size = UDim2.fromOffset(700, 80), Text = "¡Has muerto!", Font = FUENTE_N, TextSize = 60, ZIndex = 14 }, muerte)
-local muerteT = texto({ AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.43), Size = UDim2.fromOffset(700, 50), Text = "", TextSize = 18, TextWrapped = true, ZIndex = 14 }, muerte)
-local muerteNivel = texto({ AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.49), Size = UDim2.fromOffset(600, 24), Text = "", TextSize = 16,
-	TextColor3 = Color3.fromRGB(128, 255, 32), ZIndex = 14 }, muerte)
-local muerteCuenta = texto({ AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.56), Size = UDim2.fromOffset(600, 30), Text = "Reapareciendo…", TextSize = 20,
-	Font = FUENTE_N, TextColor3 = Color3.fromRGB(255, 230, 120), ZIndex = 14 }, muerte)
-local muerteHasta = 0
+nuevo("UIGradient", { Rotation = 90, Color = ColorSequence.new(Color3.fromRGB(170, 20, 20), Color3.fromRGB(40, 0, 0)),
+	Transparency = NumberSequence.new(0.45, 0.05) }, muerte)
+nuevo("TextButton", { BackgroundTransparency = 1, Size = UDim2.fromScale(1, 1), Text = "", Modal = true, ZIndex = 12, AutoButtonColor = false }, muerte)
+local muerteCaja = nuevo("Frame", { BackgroundTransparency = 1, AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.48), Size = UDim2.fromOffset(620, 420), ZIndex = 13 }, muerte)
+local muerteEsc = nuevo("UIScale", {}, muerteCaja)
+texto({ AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 4, 0, 4), Size = UDim2.new(1, 0, 0, 80), Text = "¡Has muerto!", Font = FUENTE_N, TextSize = 64,
+	TextColor3 = Color3.fromRGB(40, 0, 0), TextStrokeTransparency = 1, TextTransparency = 0.25, ZIndex = 13 }, muerteCaja)
+texto({ AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.fromScale(0.5, 0), Size = UDim2.new(1, 0, 0, 80), Text = "¡Has muerto!", Font = FUENTE_N, TextSize = 64,
+	TextColor3 = Color3.fromRGB(255, 255, 255), TextStrokeColor3 = Color3.fromRGB(90, 0, 0), TextStrokeTransparency = 0, ZIndex = 14 }, muerteCaja)
+-- Tarjeta de la causa: icono + frase
+local causaF = nuevo("Frame", { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 96), Size = UDim2.fromOffset(560, 64),
+	BackgroundColor3 = Color3.fromRGB(20, 6, 6), BackgroundTransparency = 0.25, BorderSizePixel = 0, ZIndex = 14 }, muerteCaja)
+nuevo("UICorner", { CornerRadius = UDim.new(0, 8) }, causaF)
+nuevo("UIStroke", { Color = Color3.fromRGB(150, 40, 40), Thickness = 2, ApplyStrokeMode = Enum.ApplyStrokeMode.Border }, causaF)
+local causaIcF = nuevo("Frame", { BackgroundColor3 = Color3.fromRGB(80, 16, 16), BorderSizePixel = 0, Position = UDim2.fromOffset(8, 8), Size = UDim2.fromOffset(48, 48), ZIndex = 15 }, causaF)
+nuevo("UICorner", { CornerRadius = UDim.new(0, 6) }, causaIcF)
+local causaIc = nuevo("ImageLabel", { BackgroundTransparency = 1, AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.fromOffset(36, 36),
+	ResampleMode = Enum.ResamplerMode.Pixelated, ZIndex = 16 }, causaIcF)
+local muerteT = texto({ Position = UDim2.fromOffset(68, 0), Size = UDim2.new(1, -78, 1, 0), Text = "", TextSize = 19, TextWrapped = true, Font = FUENTE_N,
+	TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 15 }, causaF)
+-- Fichas con datos de la vida que acaba de terminar
+local fichasF = nuevo("Frame", { BackgroundTransparency = 1, AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 174), Size = UDim2.fromOffset(560, 70), ZIndex = 14 }, muerteCaja)
+nuevo("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, HorizontalAlignment = Enum.HorizontalAlignment.Center, Padding = UDim.new(0, 10),
+	SortOrder = Enum.SortOrder.LayoutOrder }, fichasF)
+local function ficha(orden, titulo, color)
+	local f = nuevo("Frame", { BackgroundColor3 = Color3.fromRGB(20, 6, 6), BackgroundTransparency = 0.3, BorderSizePixel = 0, LayoutOrder = orden,
+		Size = UDim2.fromOffset(176, 70), ZIndex = 14 }, fichasF)
+	nuevo("UICorner", { CornerRadius = UDim.new(0, 8) }, f)
+	nuevo("UIStroke", { Color = Color3.fromRGB(110, 30, 30), Thickness = 1.5 }, f)
+	texto({ Position = UDim2.fromOffset(0, 8), Size = UDim2.new(1, 0, 0, 16), Text = titulo, TextSize = 12, TextColor3 = Color3.fromRGB(220, 170, 170),
+		TextStrokeTransparency = 1, ZIndex = 15 }, f)
+	local v = texto({ Position = UDim2.fromOffset(4, 26), Size = UDim2.new(1, -8, 0, 36), Text = "", TextSize = 18, Font = FUENTE_N, TextWrapped = true,
+		TextColor3 = color, ZIndex = 15 }, f)
+	return f, v
+end
+local _, fichaVivo = ficha(1, "SOBREVIVISTE", Color3.fromRGB(255, 255, 255))
+local fichaPosF, fichaPos = ficha(2, "MORISTE EN", Color3.fromRGB(140, 210, 255))
+local fichaObjF, fichaObj = ficha(3, "TUS OBJETOS", Color3.fromRGB(255, 220, 110))
+local muerteNivel = texto({ AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 252), Size = UDim2.fromOffset(560, 22), Text = "", TextSize = 15,
+	TextColor3 = Color3.fromRGB(128, 255, 32), ZIndex = 14 }, muerteCaja)
+-- Barra hasta reaparecer
+local muerteBarraF = nuevo("Frame", { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 290), Size = UDim2.fromOffset(420, 34),
+	BackgroundColor3 = Color3.fromRGB(25, 8, 8), BorderSizePixel = 0, ZIndex = 14 }, muerteCaja)
+nuevo("UICorner", { CornerRadius = UDim.new(0, 17) }, muerteBarraF)
+nuevo("UIStroke", { Color = Color3.fromRGB(0, 0, 0), Thickness = 2 }, muerteBarraF)
+local muerteBarra = nuevo("Frame", { BackgroundColor3 = Color3.fromRGB(255, 200, 60), BorderSizePixel = 0, Size = UDim2.fromScale(0, 1), ZIndex = 15 }, muerteBarraF)
+nuevo("UICorner", { CornerRadius = UDim.new(0, 17) }, muerteBarra)
+nuevo("UIGradient", { Rotation = 90, Color = ColorSequence.new(Color3.fromRGB(255, 240, 160), Color3.fromRGB(230, 140, 20)) }, muerteBarra)
+local muerteCuenta = texto({ Size = UDim2.fromScale(1, 1), Text = "Reapareciendo…", TextSize = 17, Font = FUENTE_N, TextColor3 = Color3.new(1, 1, 1),
+	TextStrokeTransparency = 0.2, ZIndex = 16 }, muerteBarraF)
+local muerteConsejo = texto({ AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 340), Size = UDim2.fromOffset(580, 40), Text = "", TextSize = 14,
+	TextWrapped = true, TextColor3 = Color3.fromRGB(230, 200, 200), TextStrokeTransparency = 0.6, ZIndex = 14 }, muerteCaja)
+local muerteHasta, muerteDura = 0, 5
+local ICONO_CAUSA = {
+	mob = "espada_hierro", jugador = "espada_diamante", flecha = "flecha", caida = "pluma", vacio = "perlaEnder", lava = "cuboLava", fuego = "polvora",
+	ahogo = "cuboAgua", explosion = "tnt", rayo = "polvora", cactus = "cactus", veneno = "ojoArana", hambre = "pan",
+}
+local CONSEJO_CAUSA = {
+	mob = "Consejo: pon antorchas para que no aparezcan monstruos y lleva escudo (clic derecho para cubrirte).",
+	jugador = "Consejo: espera a que la espada cargue del todo antes de golpear; los golpes cargados hacen mucho más daño.",
+	flecha = "Consejo: muévete de lado cuando un esqueleto te apunte, o cúbrete con un escudo.",
+	caida = "Consejo: si caes en agua no te haces daño. Agáchate (Shift) para no caerte de los bordes.",
+	vacio = "Consejo: agáchate (Shift) junto al borde para no caerte.",
+	lava = "Consejo: lleva un cubo de agua; si caes a la lava, échala para apagarte.",
+	fuego = "Consejo: métete en agua para apagar el fuego.",
+	ahogo = "Consejo: las burbujas de arriba a la derecha son el aire que te queda. ¡Sube a respirar a tiempo!",
+	explosion = "Consejo: si un creeper sisea, aléjate corriendo: tardará en explotar.",
+	rayo = "Consejo: en las tormentas busca un techo: los rayos caen al aire libre.",
+	cactus = "Consejo: los cactus pinchan al tocarlos; rodéalos.",
+	veneno = "Consejo: la leche quita los efectos de las pociones y el veneno.",
+	hambre = "Consejo: come antes de que se vacíe la barra de comida; la carne cocinada llena mucho más.",
+}
 
 ------------------------------------------------------------------
 -- Estado
@@ -28359,13 +28887,48 @@ function Interfaz.jefe(d)
 	jefeSig.Text = ""
 end
 
+local function duracion(seg)
+	if seg >= 3600 then
+		return ("%d h %02d min"):format(seg // 3600, (seg % 3600) // 60)
+	end
+	return ("%d:%02d"):format(seg // 60, seg % 60)
+end
+-- t: tabla del servidor {texto, causa, quien, vivo, pos, soltados, nivel, conservas} o un texto
 function Interfaz.muerte(t)
 	if t then
-		muerteT.Text = t
-		local nivel = est.xp and est.xp.nivel or 0
-		muerteNivel.Text = nivel > 0 and ("Nivel de experiencia: %d"):format(nivel) or ""
-		muerteHasta = os.clock() + (Players.RespawnTime or 5)
+		local d = type(t) == "table" and t or { texto = tostring(t) }
+		muerteT.Text = d.texto or "Has muerto."
+		local id = idDe(ICONO_CAUSA[d.causa or ""] or "hueso")
+		if id then
+			Iconos.poner(causaIc, id)
+		end
+		fichaVivo.Text = d.vivo and duracion(d.vivo) or "—"
+		fichaPosF.Visible = d.pos ~= nil
+		if d.pos then
+			fichaPos.Text = ("%d, %d, %d"):format(d.pos[1], d.pos[2], d.pos[3])
+		end
+		fichaObjF.Visible = d.soltados ~= nil
+		if d.conservas then
+			fichaObj.Text = "Los conservas"
+		elseif (d.soltados or 0) > 0 then
+			fichaObj.Text = ("%d en el suelo"):format(d.soltados)
+		else
+			fichaObj.Text = "No llevabas nada"
+		end
+		local nivel = d.nivel or (est.xp and est.xp.nivel) or 0
+		muerteNivel.Text = nivel > 0 and (d.conservas and ("Nivel de experiencia: %d"):format(nivel) or ("Has perdido %d niveles de experiencia (quedan orbes donde caíste)"):format(nivel)) or ""
+		local consejos = CONSEJO_CAUSA[d.causa or ""]
+		muerteConsejo.Text = consejos or CONSEJOS[math.random(1, #CONSEJOS)]
+		muerteDura = Players.RespawnTime or 5
+		muerteHasta = os.clock() + muerteDura
+		muerteBarra.Size = UDim2.fromScale(0, 1)
 		muerte.Visible = true
+		-- Entrada: el título cae grande y se asienta; el fondo pasa de rojo vivo a oscuro
+		muerteEsc.Scale = 1.5
+		TweenService:Create(muerteEsc, TweenInfo.new(0.45, Enum.EasingStyle.Back, Enum.EasingDirection.Out), { Scale = 1 }):Play()
+		muerte.BackgroundTransparency = 0.05
+		TweenService:Create(muerte, TweenInfo.new(0.8, Enum.EasingStyle.Quad), { BackgroundTransparency = 0.35 }):Play()
+		Interfaz.alSonido("dano", 0.6)
 		Interfaz.cerrar()
 	else
 		muerte.Visible = false
@@ -28566,6 +29129,7 @@ function Interfaz.iniciar()
 		if muerte.Visible then
 			local s = math.max(0, math.ceil(muerteHasta - os.clock()))
 			muerteCuenta.Text = s > 0 and ("Reapareciendo en %d…"):format(s) or "Reapareciendo…"
+			muerteBarra.Size = UDim2.fromScale(math.clamp(1 - (muerteHasta - os.clock()) / math.max(0.1, muerteDura), 0.06, 1), 1)
 		end
 		-- La mano se balancea al andar y al usar
 		balanceo = math.max(0, balanceo - dt * 4)

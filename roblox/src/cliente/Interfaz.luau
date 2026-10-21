@@ -678,7 +678,7 @@ local ESTADO_KIT = {
 -- string.upper no cambia las letras con tilde
 local function mayusculas(t)
 	t = string.upper(t)
-	for de, a in { á = "Á", é = "É", í = "Í", ó = "Ó", ú = "Ú", ñ = "Ñ" } do
+	for de, a in { ["á"] = "Á", ["é"] = "É", ["í"] = "Í", ["ó"] = "Ó", ["ú"] = "Ú", ["ñ"] = "Ñ" } do
 		t = t:gsub(de, a)
 	end
 	return t

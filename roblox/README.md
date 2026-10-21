@@ -92,6 +92,13 @@ Con **Rojo**, `default.project.json` monta el mismo árbol desde `src/`.
   - **Élitros** para planear y cohetes.
 - **Redstone** (`redstone.js`): polvo con señal 0-15, antorchas, palancas, botones, placas de presión, lámparas, puertas, TNT, pistones y raíles propulsores.
 - **Mesas:** encantamientos (con librerías), yunque, afiladora, soporte de pociones y mesa de herrería.
+- **Encantamientos que funcionan como en Minecraft:**
+  - Herramientas: Eficiencia (pica más rápido), Fortuna (más minerales de las menas), Toque de seda (las menas, el césped, el vidrio… salen enteros) e Irrompibilidad.
+  - Armas: Filo, Castigo (más daño a zombis y esqueletos), Perdición de los artrópodos (arañas…), Aspecto ígneo (prende fuego), Empuje y Botín (más botín y más objetos raros).
+  - Arco: Poder, Llama (flechas de fuego) e Infinidad (no gasta flechas).
+  - Armadura: Protección, Protección contra el fuego, las explosiones y los proyectiles, Caída de pluma, Respiración (aguantas más bajo el agua), Afinidad acuática (picas igual bajo el agua) y Espinas.
+  - Reparación: la experiencia que recoges arregla el objeto. La maldición de desaparición borra el objeto al morir.
+- **Detalles de supervivencia:** caer sobre heno quita el 80 % del daño, sobre una cama la mitad y en una telaraña nada; los monstruos a veces salen en grupo; las flechas de esqueleto hacen 2–4 de daño. Las criaturas, su botín y las menas siguen los valores de Minecraft.
   - El **filo**, el **empuje**, el **poder** y la **protección** cambian el daño de verdad.
 - **Comercio con aldeanos:** 13 profesiones, niveles y libros encantados del bibliotecario.
 - **Bed Wars** (`bedwars.js` y `bedwars2.js`): una partida para todo el servidor.
@@ -106,6 +113,7 @@ Con **Rojo**, `default.project.json` monta el mismo árbol desde `src/`.
   - Solo se rompen los bloques puestos por los jugadores. Sin cama no se reaparece.
 - **Novedades de Bed Wars en la versión de Roblox:**
   - **Progreso guardado** (DataStore): monedas, experiencia con nivel en estrellas `[N✫]`, estadísticas y racha de victorias.
+  - **Ventana de kits** con tarjetas del color de su rareza (estado: equipado, tuyo, gratis hoy o precio, y estrellas de nivel) y un panel con el detalle: descripción, lo que da el siguiente nivel, si tiene habilidad y un botón grande para comprar, equipar, mejorar o probar.
   - **22 kits** con rareza (común, raro, épico y legendario) y tres niveles que se mejoran con monedas. Tres kits gratis cada día. Los legendarios (Ninja, Martillo y Fantasma) tienen una habilidad con la tecla G. Kits nuevos: Ingeniero (torretas de nieve), Imán (atrae los minerales) y Fantasma (invisible un rato). Los bots también llevan kit.
   - **Misiones diarias:** tres al día, con premio en monedas.
   - **Votación de mapa** en la sala y botones para kits y efectos en el panel.
@@ -139,7 +147,7 @@ Con **Rojo**, `default.project.json` monta el mismo árbol desde `src/`.
   - en la mano de cada jugador (y en la tuya en tercera persona).
   Si Roblox no deja crear mallas editables se usan los iconos de antes.
 - **Criaturas con más vida:** cuando no hay nadie cerca miran a su alrededor y en reposo los brazos se mecen un poco.
-- **Pantalla de carga** con el fondo de tierra de Minecraft, el título, una barra con porcentaje y un consejo al azar; **pantalla de muerte** con la causa, el nivel de experiencia y la cuenta atrás para reaparecer.
+- **Pantalla de carga** con el fondo de tierra de Minecraft, el título, una barra con porcentaje y un consejo al azar; **pantalla de muerte** que dice quién o qué te mató («Te mató un Zombi», «Caíste desde muy alto mientras huías de un Creeper»), con su icono, cuánto aguantaste vivo, las coordenadas donde moriste, cuántos objetos quedaron en el suelo, los niveles perdidos, un consejo según la causa y una barra que se llena hasta reaparecer.
 - **Menú principal interactivo (estilo Roblox):**
   - Detrás, la cámara gira despacio sobre el mundo (vista panorámica) mientras el menú está abierto.
   - Tarjeta del jugador con su avatar de Roblox, nivel con estrellas y barra de experiencia, monedas, logros conseguidos y victorias de Bed Wars.
@@ -240,6 +248,8 @@ Para ser claros, esto **no es igual** que en el juego web:
   - `probar_estructuras.sh`: compara chunks con estructuras, del Nether y del End, y el botín de los cofres, con el juego web. Tiene que salir «ESTRUCTURAS IDENTICAS AL WEB».
   - `probar_multi.sh`: varios jugadores a la vez en el servidor. Tiene que salir «MULTIJUGADOR BIEN». En la prueba:
     - Supervivencia: los bloques llegan a todos, cofre compartido, sin golpes entre jugadores, objetos al morir y guardado al salir (con encantamientos y ajustes).
+    - Pantalla de muerte: llegan los objetos soltados, el sitio y el tiempo vivo, y «Te mató un Zombi».
+    - Encantamientos: Eficiencia acelera, Fortuna III multiplica los diamantes, Toque de seda da la mena entera y Botín III da más botín.
     - Enemigos: no persiguen a través de paredes, no se tiran por los bordes, se avisan entre ellos y mandan su vida para la barra.
     - Logros y clima: se consiguen, salen en la tabla de jugadores y se guardan (y no cuentan dentro de Bed Wars); con lluvia los zombis no arden, en la tormenta es «de noche» y el rayo hace daño.
     - Bed Wars con 3 y 4 jugadores: votación, compra de kits y efectos (y que se guarden), equipos, golpes, escudo de cama, trampolín, momentos de caos y cofre del cielo, baja final con efecto, espectador, irse a mitad, victoria con recompensas, «Jugar otra vez» e inventario devuelto.
