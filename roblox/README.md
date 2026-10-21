@@ -139,6 +139,7 @@ Con **Rojo**, `default.project.json` monta el mismo árbol desde `src/`.
   - en la mano de cada jugador (y en la tuya en tercera persona).
   Si Roblox no deja crear mallas editables se usan los iconos de antes.
 - **Criaturas con más vida:** cuando no hay nadie cerca miran a su alrededor y en reposo los brazos se mecen un poco.
+- **Pantalla de carga** con el fondo de tierra de Minecraft, el título, una barra con porcentaje y un consejo al azar; **pantalla de muerte** con la causa, el nivel de experiencia y la cuenta atrás para reaparecer.
 - **Menú principal nuevo:** tarjetas con icono para cada modo, el mundo desenfocado detrás, frase amarilla que late, y botones de Ajustes, Controles y «Volver al juego».
 - **Ajustes que se guardan:** sensibilidad del ratón, campo de visión, efecto de velocidad al correr, balanceo de la mano, números de daño y volumen.
 - **Cámara en tercera persona (V) mejorada:** gira con el ratón sin mantener el clic derecho, el personaje mira hacia donde apuntas y la cámara no atraviesa los bloques.
