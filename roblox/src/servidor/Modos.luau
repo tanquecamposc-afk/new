@@ -253,6 +253,10 @@ local LY = require(script.Parent.Leyendas)
 Modos.BW, Modos.MZ, Modos.LY = BW, MZ, LY
 
 -- ¿Está el jugador en un modo con sus propias reglas? (no se guarda su inventario ni cambia de modo)
+function Modos.nivelBW(plr)
+	return BW.nivelJugador(plr)
+end
+
 function Modos.activo(plr)
 	if not plr then
 		return false

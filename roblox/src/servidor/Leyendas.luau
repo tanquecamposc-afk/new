@@ -713,6 +713,9 @@ local function actualizar(L, dt)
 		L.fin = true
 		ctx.Estado:FireClient(plr, "sonido", "nivel")
 		titulo(plr, "¡VICTORIA!", "Has destruido los tres portales piglin. ¡La aldea está a salvo!", "#ffd84a")
+		if ctx.logro then
+			ctx.logro(plr, "leyendas")
+		end
 		if ctx.ganarXP then
 			ctx.ganarXP(plr, 50)
 		end

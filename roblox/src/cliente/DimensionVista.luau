@@ -285,6 +285,10 @@ end
 -- Bucle
 ------------------------------------------------------------------
 function DV.iniciar()
+	-- El cielo despejado del principio (el clima lo cambia después)
+	if not original then
+		guardarOriginal()
+	end
 	local criaturas = workspace:WaitForChild("Criaturas")
 	local function alAgregar(p)
 		if p.Name == "EnderDragon" then

@@ -51,6 +51,8 @@ local Habitantes = require(script.Habitantes)
 local Dimension = require(script.Dimension)
 local Redstone = require(script.Redstone)
 local Mesas = require(script.Mesas)
+local Logros = require(script.Logros)
+local Clima = require(script.Clima)
 local Generador = require(Comp.Generador)
 
 local BS = Config.BLOQUE
@@ -216,6 +218,7 @@ local function enviarJugador(plr)
 	})
 	local p = s.inv[s.sel]
 	plr:SetAttribute("EnMano", p and p.id or nil)
+	Logros.revisarInventario(plr, s)
 end
 
 local function enviarUI(plr)
@@ -615,7 +618,7 @@ local function alMorir(plr)
 	local textos = {
 		caida = "Caíste desde muy alto.", mob = "Una criatura acabó contigo.", flecha = "Te dispararon una flecha.",
 		hambre = "Moriste de hambre.", vacio = "Caíste al vacío.", lava = "Intentaste nadar en lava.", fuego = "Ardiste hasta morir.",
-		ahogo = "Te ahogaste.", explosion = "Volaste por los aires.", cactus = "Te pinchaste hasta morir.", veneno = "El veneno pudo contigo.",
+		ahogo = "Te ahogaste.", explosion = "Volaste por los aires.", rayo = "Te alcanzó un rayo.", cactus = "Te pinchaste hasta morir.", veneno = "El veneno pudo contigo.",
 		jugador = "Otro jugador acabó contigo.",
 	}
 	enviarJugador(plr)
@@ -625,8 +628,17 @@ local function alMorir(plr)
 	Modos.alMorir(plr)
 end
 
+Logros.iniciar({ estados = estados, Estado = Estado, almacen = almacen })
 Players.PlayerAdded:Connect(function(plr)
 	cargar(plr)
+	-- Logros y tabla de jugadores (nivel de Bed Wars y logros)
+	task.spawn(function()
+		Logros.cargar(plr)
+		local ok, nivel = pcall(Modos.nivelBW, plr)
+		if ok and nivel and plr.Parent then
+			Logros.actualizarTabla(plr, nivel)
+		end
+	end)
 	plr.CharacterAdded:Connect(function(char)
 		local s = st(plr)
 		if s then
@@ -652,6 +664,7 @@ Players.PlayerRemoving:Connect(function(plr)
 		s.ui = nil
 	end
 	guardar(plr)
+	Logros.olvidar(plr)
 	estados[plr] = nil
 end)
 
@@ -1331,8 +1344,11 @@ function acciones.derecho(plr, s, obj, dir, mobParte, agachado)
 				end
 			end
 			Estado:FireClient(plr, "dormir")
+			Logros.conseguir(plr, "cama")
 			task.delay(2.2, function()
+				-- Al despertar es de día y el cielo está despejado
 				Lighting.ClockTime = 6.2
+				Clima.despejar()
 				aviso(plr, "Buenos días. Punto de reaparición guardado.")
 			end)
 			return
@@ -1829,6 +1845,10 @@ function acciones.modoCmd(plr, s, cmd, arg)
 	if type(cmd) == "string" then
 		Modos.comando(plr, cmd, type(arg) == "number" and arg or nil)
 	end
+end
+
+function acciones.pedirLogros(plr)
+	Logros.enviar(plr)
 end
 
 function acciones.ajustes(plr, s, a)
@@ -2492,15 +2512,24 @@ Redstone.iniciar({
 	end,
 })
 Dimension.iniciar({
-	teletransportar = teletransportar, Estado = Estado, estados = estados, ganarXP = ganarXP, danar = danar, aviso = aviso,
+	teletransportar = teletransportar, Estado = Estado, estados = estados, ganarXP = ganarXP, danar = danar, aviso = aviso, logro = Logros.conseguir,
 	explosion = function(x, y, z, p)
 		Sim.explosion(x, y, z, p)
 	end,
 })
 Modos.iniciar({
 	Mundo = Mundo, Mobs = Mobs, Entidades = Entidades, estados = estados, enviarJugador = enviarJugador, aviso = aviso,
+	logro = Logros.conseguir, tablaNivel = Logros.actualizarTabla,
 	Estado = Estado, colocar = colocar, Inv = Inv, danar = danar, teletransportar = teletransportar, darOSoltar = darOSoltar,
 	enviarUI = enviarUI, ganarXP = ganarXP, activarTNT = activarTNT, guardar = guardar,
 })
+-- Clima: lluvia, nieve y tormentas con rayos
+Clima.iniciar({ Estado = Estado, Mundo = Mundo, Mobs = Mobs, estados = estados, danar = danar, activo = Modos.activo })
+-- Logro al acabar con un monstruo (no cuentan los bots ni los aliados de los modos)
+Mobs.alMatar = function(m, _, plr)
+	if plr and m.def.tipo == "hostil" and not m.control then
+		Logros.conseguir(plr, "cazador")
+	end
+end
 -- Las explosiones en la arena de Bed Wars solo rompen lo construido
 Sim.puedeExplotar = Modos.puedeExplotar

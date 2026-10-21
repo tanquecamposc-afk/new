@@ -1999,8 +1999,14 @@ function terminar(ganador)
 				end
 			end
 			Perfil.guardar(plr)
+			if gano and ctx.logro then
+				ctx.logro(plr, "bedwars")
+			end
 		end
 		local nivel = Perfil.nivel(perfil.xp)
+		if ctx.tablaNivel then
+			ctx.tablaNivel(plr, nivel)
+		end
 		ctx.Estado:FireClient(plr, "finBW", {
 			gano = gano, jugo = jugo, ganador = E and E.nombre or nil, colGanador = E and E.col or "#aaaaaa",
 			bajas = J.bajas, finales = J.finales, camas = J.camas, muertes = J.muertes, tiempo = fmt(P.t), mejorRacha = J.mejorRacha,
@@ -2346,6 +2352,11 @@ function BW.salir(plr, fin)
 		BW.anterior = { arena = P.arena, colocados = P.colocados }
 		P = nil
 	end
+end
+
+-- Nivel de Bed Wars (estrellas) para la tabla de jugadores
+function BW.nivelJugador(plr)
+	return Perfil.nivel(Perfil.de(plr).xp)
 end
 
 function BW.en(plr)

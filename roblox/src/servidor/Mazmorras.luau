@@ -527,6 +527,9 @@ local function actualizar(R, dt)
 			ctx.Estado:FireClient(plr, "jefe", nil)
 			ctx.Estado:FireClient(plr, "sonido", "nivel")
 			titulo(plr, "¡JEFE DERROTADO!", "Pisa la plataforma verde para bajar al siguiente nivel", "#7fff7f")
+			if ctx.logro then
+				ctx.logro(plr, "mazmorra")
+			end
 		end
 	end
 	if not pos or R.fin then

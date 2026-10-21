@@ -457,6 +457,9 @@ local function actualizarDragon(dt)
 			Dim.estado.dragonMuerto = true
 			for _, j in js do
 				ctx.ganarXP(j.plr, 12000)
+				if ctx.logro then
+					ctx.logro(j.plr, "dragon")
+				end
 				ctx.aviso(j.plr, "¡Has derrotado al Ender Dragon! Se abrió el portal de salida.")
 			end
 			activarPortalSalida()
@@ -673,6 +676,9 @@ function Dim.iniciar(c)
 			local dim = Dim.de(p.Z)
 			if plr:GetAttribute("Dimension") ~= dim then
 				plr:SetAttribute("Dimension", dim)
+				if ctx.logro and (dim == "nether" or dim == "end") then
+					ctx.logro(plr, dim == "nether" and "nether" or "fin")
+				end
 			end
 			local enNether, enEnd, enAcceso = false, false, false
 			for _, dy in { 0.1, 1, 1.7 } do

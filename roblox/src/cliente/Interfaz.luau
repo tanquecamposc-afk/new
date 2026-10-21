@@ -905,22 +905,25 @@ opcionMenu("Mazmorras", "Salas con enemigos, botín, artefactos y un jefe", "maz
 opcionMenu("Leyendas", "Defiende la aldea, construye y manda a tus golems", "leyendas", "escudo", 6)
 -- Fila de abajo: ajustes, controles y volver al juego
 local filaMenu = nuevo("Frame", { BackgroundTransparency = 1, AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0.25, 266),
-	Size = UDim2.fromOffset(568, 46), ZIndex = 11 }, menu)
+	Size = UDim2.fromOffset(640, 46), ZIndex = 11 }, menu)
 nuevo("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 12), HorizontalAlignment = Enum.HorizontalAlignment.Center,
 	SortOrder = Enum.SortOrder.LayoutOrder }, filaMenu)
-local abrirAjustes, abrirControles -- se definen más abajo
+local abrirAjustes, abrirControles, abrirLogros -- se definen más abajo
 tarjeta(filaMenu, "Ajustes", nil, nil, 1, function()
 	abrirAjustes()
-end, UDim2.fromOffset(176, 46))
+end, UDim2.fromOffset(136, 46))
 tarjeta(filaMenu, "Controles", nil, nil, 2, function()
 	abrirControles()
-end, UDim2.fromOffset(176, 46))
-local botonVolver = tarjeta(filaMenu, "Volver al juego", nil, nil, 3, function()
+end, UDim2.fromOffset(136, 46))
+local botonLogros = tarjeta(filaMenu, "Logros", nil, nil, 3, function()
+	abrirLogros()
+end, UDim2.fromOffset(136, 46))
+local botonVolver = tarjeta(filaMenu, "Volver al juego", nil, nil, 4, function()
 	Interfaz.menu(false)
 	if Interfaz.alMenu then
 		Interfaz.alMenu()
 	end
-end, UDim2.fromOffset(192, 46))
+end, UDim2.fromOffset(180, 46))
 botonVolver.Visible = false
 texto({ AnchorPoint = Vector2.new(0, 1), Position = UDim2.new(0, 14, 1, -10), Size = UDim2.fromOffset(400, 18), Text = "Blockverse · edición Roblox",
 	TextSize = 13, TextXAlignment = Enum.TextXAlignment.Left, TextTransparency = 0.3, ZIndex = 11 }, menu)
@@ -928,7 +931,7 @@ texto({ AnchorPoint = Vector2.new(1, 1), Position = UDim2.new(1, -14, 1, -10), S
 	TextSize = 13, TextXAlignment = Enum.TextXAlignment.Right, TextTransparency = 0.3, ZIndex = 11 }, menu)
 
 -- Ventana sencilla (ajustes, controles) por encima del menú
-local function ventana(nombre, titulo, alto)
+local function ventana(nombre, titulo, alto, desplazable)
 	local fondo = nuevo("TextButton", { Name = nombre, Text = "", AutoButtonColor = false, Modal = true, BackgroundColor3 = Color3.new(0, 0, 0),
 		BackgroundTransparency = 0.45, BorderSizePixel = 0, Size = UDim2.fromScale(1, 1), Visible = false, ZIndex = 20 }, gui)
 	local caja = nuevo("Frame", { BackgroundColor3 = Color3.fromRGB(36, 38, 46), BorderSizePixel = 0, AnchorPoint = Vector2.new(0.5, 0.5),
@@ -936,7 +939,13 @@ local function ventana(nombre, titulo, alto)
 	nuevo("UICorner", { CornerRadius = UDim.new(0, 8) }, caja)
 	nuevo("UIStroke", { Color = Color3.fromRGB(255, 220, 80), Thickness = 2 }, caja)
 	texto({ Position = UDim2.fromOffset(0, 12), Size = UDim2.new(1, 0, 0, 30), Text = titulo, Font = FUENTE_N, TextSize = 24, ZIndex = 22 }, caja)
-	local lista = nuevo("Frame", { BackgroundTransparency = 1, Position = UDim2.fromOffset(20, 54), Size = UDim2.new(1, -40, 1, -120), ZIndex = 22 }, caja)
+	local lista
+	if desplazable then
+		lista = nuevo("ScrollingFrame", { BackgroundTransparency = 1, BorderSizePixel = 0, Position = UDim2.fromOffset(20, 54), Size = UDim2.new(1, -30, 1, -120),
+			ZIndex = 22, ScrollBarThickness = 6, CanvasSize = UDim2.new(), AutomaticCanvasSize = Enum.AutomaticSize.Y }, caja)
+	else
+		lista = nuevo("Frame", { BackgroundTransparency = 1, Position = UDim2.fromOffset(20, 54), Size = UDim2.new(1, -40, 1, -120), ZIndex = 22 }, caja)
+	end
 	nuevo("UIListLayout", { Padding = UDim.new(0, 6), SortOrder = Enum.SortOrder.LayoutOrder }, lista)
 	local listo = tarjeta(caja, "Listo", nil, nil, 0, function()
 		fondo.Visible = false
@@ -1025,6 +1034,110 @@ for i, c in CONTROLES do
 end
 abrirControles = function()
 	ventanaControles.Visible = true
+end
+
+-- Logros: pantalla con todos, aviso al conseguir uno y objetivo para quien empieza
+local ventanaLogros, listaLogros = ventana("Logros", "LOGROS", 560, true)
+local tituloLogros = ventanaLogros:FindFirstChildOfClass("Frame"):FindFirstChildOfClass("TextLabel")
+Interfaz.listaLogros = {}
+local function pintarLogros()
+	for _, h in listaLogros:GetChildren() do
+		if h:IsA("GuiObject") then
+			h:Destroy()
+		end
+	end
+	local hechos = 0
+	for i, L in Interfaz.listaLogros do
+		if L.hecho then
+			hechos += 1
+		end
+		local fila = nuevo("Frame", { BackgroundColor3 = L.hecho and Color3.fromRGB(40, 58, 44) or Color3.fromRGB(28, 29, 35), BorderSizePixel = 0,
+			Size = UDim2.new(1, -8, 0, 46), LayoutOrder = i, ZIndex = 22 }, listaLogros)
+		nuevo("UICorner", { CornerRadius = UDim.new(0, 4) }, fila)
+		local ic = nuevo("ImageLabel", { BackgroundTransparency = 1, Position = UDim2.fromOffset(8, 7), Size = UDim2.fromOffset(32, 32),
+			ResampleMode = Enum.ResamplerMode.Pixelated, ImageTransparency = L.hecho and 0 or 0.55, ZIndex = 23 }, fila)
+		Iconos.poner(ic, L.icono)
+		texto({ Position = UDim2.fromOffset(50, 5), Size = UDim2.new(1, -100, 0, 18), Text = L.n, TextSize = 15, Font = FUENTE_N,
+			TextColor3 = L.hecho and Color3.new(1, 1, 1) or Color3.fromRGB(160, 160, 170), TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 23 }, fila)
+		texto({ Position = UDim2.fromOffset(50, 24), Size = UDim2.new(1, -100, 0, 16), Text = L.d, TextSize = 12, TextStrokeTransparency = 1,
+			TextColor3 = Color3.fromRGB(190, 195, 205), TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 23 }, fila)
+		texto({ AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -12, 0.5, 0), Size = UDim2.fromOffset(40, 24), Text = L.hecho and "✔" or "—",
+			TextSize = 20, Font = FUENTE_N, TextColor3 = L.hecho and Color3.fromRGB(120, 255, 120) or Color3.fromRGB(110, 110, 120), ZIndex = 23 }, fila)
+	end
+	if tituloLogros then
+		tituloLogros.Text = ("LOGROS · %d/%d"):format(hechos, #Interfaz.listaLogros)
+	end
+	local tl = botonLogros:FindFirstChildOfClass("TextLabel")
+	if tl and #Interfaz.listaLogros > 0 then
+		tl.Text = ("Logros %d/%d"):format(hechos, #Interfaz.listaLogros)
+	end
+end
+abrirLogros = function()
+	pintarLogros()
+	ventanaLogros.Visible = true
+end
+Interfaz.abrirLogros = abrirLogros
+
+-- Aviso de logro (arriba a la derecha, entra deslizando)
+local avisoLogro = nuevo("Frame", { Name = "AvisoLogro", BackgroundColor3 = Color3.fromRGB(32, 34, 42), BorderSizePixel = 0, AnchorPoint = Vector2.new(1, 0),
+	Position = UDim2.new(1, 340, 0, 12), Size = UDim2.fromOffset(320, 64), ZIndex = 25 }, gui)
+nuevo("UICorner", { CornerRadius = UDim.new(0, 6) }, avisoLogro)
+nuevo("UIStroke", { Color = Color3.fromRGB(255, 220, 80), Thickness = 2 }, avisoLogro)
+local avisoIc = nuevo("ImageLabel", { BackgroundTransparency = 1, Position = UDim2.fromOffset(12, 12), Size = UDim2.fromOffset(40, 40),
+	ResampleMode = Enum.ResamplerMode.Pixelated, ZIndex = 26 }, avisoLogro)
+texto({ Position = UDim2.fromOffset(62, 9), Size = UDim2.new(1, -70, 0, 18), Text = "¡Logro conseguido!", TextSize = 14, Font = FUENTE_N,
+	TextColor3 = Color3.fromRGB(255, 220, 80), TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 26 }, avisoLogro)
+local avisoNombre = texto({ Position = UDim2.fromOffset(62, 29), Size = UDim2.new(1, -70, 0, 26), Text = "", TextSize = 15, TextWrapped = true,
+	TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 26 }, avisoLogro)
+local colaLogros, mostrandoLogro = {}, false
+local function siguienteLogro()
+	local d = table.remove(colaLogros, 1)
+	if not d then
+		mostrandoLogro = false
+		return
+	end
+	mostrandoLogro = true
+	Iconos.poner(avisoIc, d.icono)
+	avisoNombre.Text = d.n
+	avisoLogro.Position = UDim2.new(1, 340, 0, 12)
+	TweenService:Create(avisoLogro, TweenInfo.new(0.35, Enum.EasingStyle.Quad), { Position = UDim2.new(1, -12, 0, 12) }):Play()
+	task.delay(4, function()
+		TweenService:Create(avisoLogro, TweenInfo.new(0.35, Enum.EasingStyle.Quad), { Position = UDim2.new(1, 340, 0, 12) }):Play()
+		task.delay(0.4, siguienteLogro)
+	end)
+end
+function Interfaz.logro(d)
+	table.insert(colaLogros, d)
+	if not mostrandoLogro then
+		siguienteLogro()
+	end
+end
+
+-- Objetivo (guía para quien empieza en supervivencia): el primer logro de la guía sin hacer
+local objetivo = nuevo("Frame", { Name = "Objetivo", BackgroundColor3 = Color3.new(0, 0, 0), BackgroundTransparency = 0.5, BorderSizePixel = 0,
+	Position = UDim2.fromOffset(12, 12), Size = UDim2.fromOffset(330, 44), Visible = false }, hud)
+nuevo("UICorner", { CornerRadius = UDim.new(0, 6) }, objetivo)
+local objetivoIc = nuevo("ImageLabel", { BackgroundTransparency = 1, Position = UDim2.fromOffset(6, 6), Size = UDim2.fromOffset(32, 32),
+	ResampleMode = Enum.ResamplerMode.Pixelated }, objetivo)
+local objetivoT = texto({ Position = UDim2.fromOffset(46, 3), Size = UDim2.new(1, -52, 1, -6), Text = "", TextSize = 12, TextWrapped = true,
+	TextXAlignment = Enum.TextXAlignment.Left }, objetivo)
+function Interfaz.pintarObjetivo(enSupervivencia)
+	local siguiente
+	for _, L in Interfaz.listaLogros do
+		if L.guia and not L.hecho then
+			siguiente = L
+			break
+		end
+	end
+	objetivo.Visible = enSupervivencia == true and siguiente ~= nil
+	if siguiente then
+		Iconos.poner(objetivoIc, siguiente.icono)
+		objetivoT.Text = "Objetivo: " .. siguiente.guia
+	end
+end
+function Interfaz.logros(lista)
+	Interfaz.listaLogros = lista or {}
+	pintarLogros()
 end
 
 -- La frase amarilla late
@@ -1428,7 +1541,7 @@ function Interfaz.abierto()
 end
 
 function Interfaz.menuVisible()
-	return menu.Visible or carga.Visible or muerte.Visible or ventanaAjustes.Visible or ventanaControles.Visible
+	return menu.Visible or carga.Visible or muerte.Visible or ventanaAjustes.Visible or ventanaControles.Visible or ventanaLogros.Visible
 end
 
 ------------------------------------------------------------------
@@ -1801,6 +1914,7 @@ function Interfaz.menu(si)
 	if not si then
 		ventanaAjustes.Visible = false
 		ventanaControles.Visible = false
+		ventanaLogros.Visible = false
 	end
 end
 

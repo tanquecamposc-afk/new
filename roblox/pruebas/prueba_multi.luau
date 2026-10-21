@@ -73,7 +73,12 @@ F.alMensajeCliente = function(p, tipo, a, b, c)
 	end
 end
 local bloquesEnviados = {}
+local aTodos = {} -- tipo -> último mensaje de Estado enviado a todos
 F.alMensajeTodos = function(remoto, ...)
+	if remoto.Name == "Estado" then
+		local tipo = ...
+		aTodos[tipo] = { select(2, ...) }
+	end
 	if remoto.Name == "Bloques" then
 		local plano = ...
 		for i = 1, #plano, 4 do
@@ -312,6 +317,56 @@ if c3 and c4 then
 	Mobs.quitar(c4)
 end
 pasos(3)
+-- Logros: coger un tronco y acabar con un monstruo; salen en la tabla de jugadores y se guardan
+local Clima = srv.Clima._resultado
+mover(ana, sx, sy + 1, sz)
+pasos(3)
+Entidades.soltarItem(Reg.pila(Reg.B.tronco, 1), sx + 0.5, sy + 1.2, sz + 0.5, false)
+pasos(45)
+local lg = datos[ana].ultimo.logro and datos[ana].ultimo.logro[1]
+ok(lg and lg.id == "madera", "no salió el logro «¡A por madera!» al coger un tronco")
+local zm = Mobs.crear("zombi", sx + 3.5, sy + 1, sz + 0.5)
+if zm then
+	Mobs.herir(zm, 100, nil, "jugador", 0, ana)
+	pasos(3)
+	lg = datos[ana].ultimo.logro and datos[ana].ultimo.logro[1]
+	ok(lg and lg.id == "cazador", "no salió el logro al acabar con un monstruo")
+end
+local ls = ana:FindFirstChild("leaderstats")
+ok(ls and ls:FindFirstChild("Logros") and ls:FindFirstChild("Logros").Value >= 2 and ls:FindFirstChild("Nivel") ~= nil, "la tabla de jugadores no muestra los logros (" .. tostring(ls and ls:FindFirstChild("Logros") and ls:FindFirstChild("Logros").Value) .. ")")
+pasos(120)
+local gl = F.almacenes.Blockverse_v2 and F.almacenes.Blockverse_v2.l_101
+ok(gl and table.find(gl, "madera") and table.find(gl, "cazador"), "los logros no se guardaron")
+-- Clima: con lluvia de día los zombis no arden; en la tormenta es «de noche» y los rayos dañan
+S.Lighting.ClockTime = 12
+Clima.poner("lluvia", 600)
+pasos(3)
+ok(F.workspace:GetAttribute("Clima") == "lluvia", "el clima no llega a los clientes")
+local zr = Mobs.crear("zombi", sx + 6.5, sy + 1, sz + 6.5)
+if zr then
+	zr.control = function(mm)
+		mm.mover = false
+	end
+	pasos(75)
+	ok((zr.fuego or 0) <= 0, "un zombi arde al sol aunque llueve")
+	Clima.poner("despejado", 600)
+	pasos(75)
+	ok((zr.fuego or 0) > 0, "sin lluvia, el zombi no arde al sol (la prueba no vale)")
+	Mobs.quitar(zr)
+end
+Clima.poner("tormenta", 600)
+ok(Mobs.esDeNoche(), "en la tormenta no se puede dormir ni salen monstruos")
+mover(beto, sx + 2, sy + 1, sz + 2)
+pasos(3)
+local vbr = datos[beto].hum.Health
+local pr = datos[beto].root.Position / B
+Clima.rayo(math.floor(pr.X), math.floor(pr.Z))
+pasos(3)
+ok(datos[beto].hum.Health < vbr, "el rayo no hizo daño a Beto")
+ok(aTodos.rayo ~= nil, "los clientes no ven el rayo")
+datos[beto].hum.Health = 20
+Clima.poner("despejado", 600)
+pasos(3)
 -- Guardar al salir y recuperar al volver
 local diamAntes = cuenta(ana, Reg.I.diamante)
 -- Ajustes: se guardan (sin valores raros) y vuelven al entrar
@@ -329,6 +384,14 @@ end
 ana = entra("Ana", 101)
 enviar(ana, "modo", "supervivencia")
 pasos(5)
+local lgs = datos[ana].ultimo.logros and datos[ana].ultimo.logros[1]
+local madera = false
+for _, L in lgs or {} do
+	if L.id == "madera" and L.hecho then
+		madera = true
+	end
+end
+ok(madera, "al volver, Ana no tiene sus logros")
 local ajV = datos[ana].ultimo.ajustes and datos[ana].ultimo.ajustes[1]
 ok(ajV and ajV.sensibilidad == 2, "los ajustes guardados no llegan al volver")
 local esp = inv(ana)[30]

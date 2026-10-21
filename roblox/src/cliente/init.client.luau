@@ -28,6 +28,7 @@ local Iconos = require(script:WaitForChild("Iconos"))
 local Render = require(script:WaitForChild("Render"))
 local MobsVista = require(script:WaitForChild("MobsVista"))
 local EntidadesVista = require(script:WaitForChild("EntidadesVista"))
+local ClimaVista = require(script:WaitForChild("ClimaVista"))
 local DimensionVista = require(script:WaitForChild("DimensionVista"))
 local Generador = require(Comp:WaitForChild("Generador"))
 local Arenas = require(Comp:WaitForChild("Arenas"))
@@ -189,6 +190,13 @@ local md = MundoDatos.new(semilla)
 est.md = md
 DimensionVista.md = md
 DimensionVista.iniciar()
+ClimaVista.alSonido = function(nombre, pos, tono)
+	sonido(nombre, pos, tono)
+end
+ClimaVista.alParticulas = function(pos, color, n)
+	emitir(pos, color, n, 2, 0.08, 6)
+end
+ClimaVista.iniciar(md)
 -- Los chunks se cargan alrededor del personaje (también en tercera persona)
 Render.foco = function()
 	local ch = jugador.Character
@@ -367,6 +375,11 @@ end
 
 local function creativo()
 	return est.modo == "creativo"
+end
+-- En el mundo normal en supervivencia (no en One Block ni en los modos): ahí sale la guía de objetivos
+local function enSupervivenciaNormal()
+	return est.modo == "supervivencia" and not (jugador:GetAttribute("OneBlock") or jugador:GetAttribute("BedWars")
+		or jugador:GetAttribute("Mazmorras") or jugador:GetAttribute("Leyendas"))
 end
 
 local function cadencia()
@@ -1023,6 +1036,7 @@ Estado.OnClientEvent:Connect(function(tipo, a, b, c)
 	if tipo == "jugador" then
 		local modoAntes = est.modo
 		Interfaz.jugador(a)
+		Interfaz.pintarObjetivo(enSupervivenciaNormal())
 		if a.modo ~= modoAntes then
 			if a.modo ~= "creativo" and volando then
 				ponerVuelo(false)
@@ -1153,6 +1167,16 @@ Estado.OnClientEvent:Connect(function(tipo, a, b, c)
 	elseif tipo == "menu" then
 		Interfaz.menu(true)
 		aplicarCamara()
+	elseif tipo == "logro" then
+		Interfaz.logro(a)
+		sonido("nivel")
+	elseif tipo == "logros" then
+		Interfaz.logros(a)
+		Interfaz.pintarObjetivo(enSupervivenciaNormal())
+	elseif tipo == "rayo" then
+		if typeof(a) == "Vector3" then
+			ClimaVista.rayo(a)
+		end
 	elseif tipo == "ajustes" then
 		-- Los ajustes guardados llegan al entrar
 		if type(a) == "table" then
@@ -1198,6 +1222,8 @@ Estado.OnClientEvent:Connect(function(tipo, a, b, c)
 		espectar(a)
 	end
 end)
+-- Los logros (por si el aviso del servidor llegó antes de que el cliente escuchara)
+enviar("pedirLogros")
 
 ------------------------------------------------------------------
 -- Personaje

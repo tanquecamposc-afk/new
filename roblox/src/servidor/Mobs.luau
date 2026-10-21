@@ -51,9 +51,10 @@ local tiempo = 0
 ------------------------------------------------------------------
 -- Utilidades
 ------------------------------------------------------------------
+-- De noche, o en plena tormenta (está tan oscuro que salen monstruos y se puede dormir)
 local function esDeNoche()
 	local t = Lighting.ClockTime
-	return t < 5.6 or t > 18.4
+	return t < 5.6 or t > 18.4 or workspace:GetAttribute("Clima") == "tormenta"
 end
 Mobs.esDeNoche = esDeNoche
 
@@ -239,6 +240,11 @@ function Mobs.matar(m, fuente, plr)
 	end
 	if m.muerto then
 		return
+	end
+	-- Quién lo mató: el que dio el golpe final o el último que le pegó hace poco
+	if Mobs.alMatar then
+		local quien = plr or ((tiempo - (m.ultimoGolpeJugador or -99) < 5) and m.atacante) or nil
+		pcall(Mobs.alMatar, m, fuente, quien)
 	end
 	m.muerto = true
 	local def = m.def
@@ -848,7 +854,8 @@ local function actualizarMob(m, dt, jugadores)
 	m.fuegoT -= dt
 	if m.fuegoT <= 0 then
 		m.fuegoT = 1
-		if def.quemaSol and not noche and not enAgua and expuestoAlCielo(m) then
+		local llueve = (workspace:GetAttribute("Clima") or "despejado") ~= "despejado"
+		if def.quemaSol and not noche and not llueve and not enAgua and expuestoAlCielo(m) then
 			m.fuego = math.max(m.fuego, 8)
 		end
 		if m.fuego > 0 then

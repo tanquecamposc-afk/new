@@ -352,6 +352,11 @@ pasos(2)
 volcarGui("menu_ajustes")
 Interfaz.menu(false)
 Interfaz.menu(true)
+Interfaz.abrirLogros()
+pasos(2)
+volcarGui("menu_logros")
+Interfaz.menu(false)
+Interfaz.menu(true)
 pasos(2)
 -- Elegir supervivencia primero (como hace el jugador)
 Interfaz.alElegirModo("supervivencia")
@@ -361,6 +366,16 @@ do
 	local rp = root.Position / B
 	volcar("sup_mundo", rp.X, rp.Y, rp.Z, 60, F.Vector3.new(rp.X - 14, rp.Y + 9, rp.Z - 14), F.Vector3.new(rp.X + 12, rp.Y - 3, rp.Z + 12), 70)
 	volcarGui("sup_hud")
+	-- Lluvia (el cielo se nubla poco a poco)
+	-- (en un bioma de llanura: en el desierto no llueve)
+	cli.ClimaVista._resultado.biomaForzado = 2
+	srv.Clima._resultado.poner("lluvia", 600)
+	pasos(330)
+	local ojo = root.Position / B + F.Vector3.new(0, 1.6, 0)
+	volcar("sup_lluvia", ojo.X, ojo.Y, ojo.Z, 16, ojo, ojo + F.Vector3.new(8, -1.5, 3), 70)
+	srv.Clima._resultado.poner("despejado", 600)
+	cli.ClimaVista._resultado.biomaForzado = nil
+	pasos(10)
 end
 -- Modelos 3D: una espada en la mano y una espada y un bloque tirados delante
 do

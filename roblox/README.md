@@ -129,6 +129,10 @@ Con **Rojo**, `default.project.json` monta el mismo árbol desde `src/`.
   - Ayudantes que recogen madera y piedra.
   - Generadores de golems, torres de flechas, muros, reparar la aldea y mejorar golems.
   - Órdenes a los golems, piglins que atacan y asaltos cada cierto tiempo.
+- **Logros** (18, como los avances de Minecraft): desde «¡A por madera!» hasta derrotar al Ender Dragon, ganar en Bed Wars, superar una mazmorra o salvar la aldea de Leyendas. Al conseguir uno sale un aviso; en el menú está la pantalla con todos. Se guardan en el DataStore.
+- **Guía para quien empieza:** en supervivencia, arriba a la izquierda sale el siguiente objetivo (pica un árbol, haz una mesa, un pico, un horno…).
+- **Tabla de jugadores de Roblox** con el nivel de Bed Wars y los logros de cada uno.
+- **Clima:** cielo despejado, lluvia o tormenta, que cambian solos. Llueve alrededor del jugador (no pasa los techos), nieva en los biomas fríos y en el desierto, la sabana y las badlands no cae nada. El cielo se nubla poco a poco. En la tormenta caen rayos (con destello y trueno) que hacen daño si te dan; está tan oscuro que salen monstruos y se puede dormir. Con lluvia los zombis no arden al sol. Dormir despeja el cielo.
 - **Modelos 3D de los objetos** (`Modelos3D`): los bloques son cubitos (o losas) con las mismas texturas del mundo y los demás objetos se hacen con los píxeles de su icono con volumen, como en Minecraft. Se ven:
   - en la mano en primera persona, con el brazo, que se balancea al golpear, se mueve al andar y baja y sube al cambiar de objeto;
   - en el suelo, girando (dos si es un montón);
@@ -205,11 +209,12 @@ Para ser claros, esto **no es igual** que en el juego web:
   - `Dimension` (portales, el Nether, el End y el Ender Dragon), `Redstone`, `Mesas` (mesas y comercio).
   - `Modos` (One Block, y reparte el trabajo de los demás modos), `BedWars`, `Mazmorras`, `Leyendas`.
   - `PerfilBW` (progreso guardado de Bed Wars y misiones diarias) y `KitsBW` (kits, niveles y habilidades).
+  - `Logros` (logros, guía y tabla de jugadores) y `Clima` (lluvia, tormentas y rayos).
 - `src/cliente/` → `StarterPlayerScripts.Cliente`
   - Script principal: controles, cámara, picar y usar, efectos y sonidos.
   - `Render`: mallas con texturas, con un modo de respaldo hecho con piezas.
   - `Luz`.
-  - `Interfaz`, `Iconos`, `Modelos3D` (objetos en 3D: mano, suelo y personajes).
+  - `Interfaz`, `Iconos`, `Modelos3D` (objetos en 3D: mano, suelo y personajes), `ClimaVista` (lluvia, nieve y rayos).
   - `MobsVista`, `EntidadesVista`.
   - `Imagenes`.
 - `src/personaje/Health`: quita la curación automática de Roblox.
