@@ -392,6 +392,35 @@ local function danar(plr, n, tipo, dir, quien)
 		return
 	end
 	local ahora = os.clock()
+	-- Escudo levantado: para los golpes, flechas y explosiones que vienen de delante
+	if s.cubriendo and dir and (tipo == "mob" or tipo == "jugador" or tipo == "flecha" or tipo == "explosion") then
+		local i = (s.inv[s.sel] and s.inv[s.sel].id == I.escudo) and s.sel or ((s.inv[41] and s.inv[41].id == I.escudo) and 41 or nil)
+		local cab = plr.Character and plr.Character:FindFirstChild("Head")
+		if i and cab then
+			local look = cab.CFrame.LookVector
+			-- dir es hacia dónde empuja el golpe (del atacante a ti): viene de delante si va contra la mirada
+			if look.X * (dir.x or 0) + look.Z * (dir.z or 0) < -0.2 then
+				local p = s.inv[i]
+				local o = OB[p.id]
+				if supervivencia(s) and o and o.dur and n >= 3 then
+					p.dur = (p.dur or o.dur) - math.floor(n)
+					if p.dur <= 0 then
+						s.inv[i] = false
+						s.cubriendo = false
+						plr:SetAttribute("Cubriendo", false)
+						Estado:FireClient(plr, "sonido", "rompeHerr")
+					end
+				end
+				Estado:FireClient(plr, "sonido", "golpe", nil, 0.6)
+				Estado:FireClient(plr, "bloqueado")
+				if tipo == "jugador" and quien and typeof(quien) == "Instance" then
+					Estado:FireClient(quien, "sonido", "golpe", nil, 0.6)
+				end
+				enviarJugador(plr)
+				return
+			end
+		end
+	end
 	if ahora < s.invuln and tipo ~= "vacio" then
 		if n <= s.ultimoDano then
 			return
@@ -1207,6 +1236,7 @@ function acciones.sel(plr, s, i)
 end
 
 function acciones.golpe(plr, s, x, y, z)
+	plr:SetAttribute("Golpe", os.clock())
 	if esEntero(x) and esEntero(y) and esEntero(z) then
 		s.golpe = { x = x, y = y, z = z, t = os.clock() }
 		Modos.golpeBloque(plr, x, y, z)
@@ -1214,6 +1244,7 @@ function acciones.golpe(plr, s, x, y, z)
 end
 
 function acciones.romper(plr, s, x, y, z)
+	plr:SetAttribute("Golpe", os.clock())
 	if not (esEntero(x) and esEntero(y) and esEntero(z)) or not alAlcance(plr, x, y, z) then
 		return
 	end
@@ -1412,6 +1443,7 @@ end
 -- Clic derecho (usarDerecho de jugador.js)
 -- obj: {x, y, z, n} del bloque apuntado (o nil); dir: dirección de la mirada; mob: pieza de criatura apuntada
 function acciones.derecho(plr, s, obj, dir, mobParte, agachado)
+	plr:SetAttribute("Golpe", os.clock())
 	if typeof(dir) ~= "Vector3" then
 		return
 	end
@@ -1854,6 +1886,7 @@ local NO_MUERTOS = { zombi = true, esqueleto = true, esqueletoErrante = true, mo
 	phantom = true, wither = true }
 local ARTROPODOS = { arana = true, abeja = true, lepisma = true, endermita = true }
 function acciones.atacar(plr, s, parte, carga, cayendo, corriendo)
+	plr:SetAttribute("Golpe", os.clock())
 	if typeof(parte) ~= "Instance" then
 		return
 	end
@@ -2479,6 +2512,12 @@ function acciones.salto(plr, s)
 	if supervivencia(s) then
 		s.agotamiento += s.corriendo and 0.2 or 0.05
 	end
+end
+
+function acciones.cubrir(plr, s, si)
+	local tiene = (s.inv[s.sel] and s.inv[s.sel].id == I.escudo) or (s.inv[41] and s.inv[41].id == I.escudo)
+	s.cubriendo = si == true and tiene and true or false
+	plr:SetAttribute("Cubriendo", s.cubriendo)
 end
 
 function acciones.correr(plr, s, si)

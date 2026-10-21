@@ -420,6 +420,12 @@ function METODOS:ReadVoxels() return { { { F.Enum.Material.Air } } }, { { { 0 } 
 function METODOS:Raycast() return nil end
 function METODOS:ViewportPointToRay() return { Origin = v3(0, 80, 0), Direction = v3(0, -1, 0) } end
 function METODOS:GetPlayers() return table.clone(F.jugadores) end
+function METODOS:GetPlayerByUserId(id)
+	for _, p in F.jugadores do
+		if p.UserId == id then return p end
+	end
+	return nil
+end
 function METODOS:GetPlayerFromCharacter(ch)
 	for _, p in F.jugadores do
 		if ch ~= nil and p.Character == ch then return p end

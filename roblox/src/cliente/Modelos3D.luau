@@ -230,7 +230,8 @@ end
 ------------------------------------------------------------------
 -- La mano en primera persona
 ------------------------------------------------------------------
--- opc = {enMano = fn() -> id, visible = fn() -> bool, balanceo = fn() -> 0..1, conBalanceo = fn() -> bool}
+-- opc = {enMano = fn() -> id, visible = fn() -> bool, balanceo = fn() -> 0..1, conBalanceo = fn() -> bool,
+--        pose = fn() -> {comer = 0..1?, arco = 0..1?, escudo = bool, corriendo = bool, aterriza = 0..1}}
 function Modelos.iniciarMano(opc)
 	local carpeta = Instance.new("Folder")
 	carpeta.Name = "ManoPrimeraPersona"
@@ -253,6 +254,10 @@ function Modelos.iniciarMano(opc)
 	local actual, sostenido = nil, nil
 	local pedido = 0
 	local cambioT, t = 0, 0
+	-- Estado suavizado de cada postura (0 = nada, 1 = del todo)
+	local inX, inY = 0, 0 -- inercia al girar la cámara
+	local ultimoLook = nil
+	local pComer, pArco, pEscudo, pCorrer, tiempo = 0, 0, 0, 0, 0
 	local function colorPiel()
 		local ch = jugador.Character
 		local bc = ch and ch:FindFirstChildOfClass("BodyColors")
@@ -306,22 +311,62 @@ function Modelos.iniciarMano(opc)
 		end
 		brazo.Transparency, manga.Transparency = 0, 0
 		cambioT = math.max(0, cambioT - dt)
+		tiempo += dt
+		local pose = opc.pose and opc.pose() or {}
+		local function hacia(v, obj, vel)
+			return v + (obj - v) * math.min(1, dt * vel)
+		end
+		pComer = hacia(pComer, pose.comer and 1 or 0, 12)
+		pArco = hacia(pArco, pose.arco and 1 or 0, 12)
+		pEscudo = hacia(pEscudo, pose.escudo and 1 or 0, 14)
+		pCorrer = hacia(pCorrer, pose.corriendo and 1 or 0, 6)
+		-- Inercia: al girar la cámara la mano se queda un poco atrás y vuelve sola
+		local look = cam.CFrame.LookVector
+		if ultimoLook then
+			-- Dónde queda la mirada de antes respecto a la de ahora (derecha y arriba)
+			local dx, dy = ultimoLook:Dot(cam.CFrame.RightVector), ultimoLook:Dot(cam.CFrame.UpVector)
+			inX = hacia(inX, math.clamp(dx * 3, -0.22, 0.22), 10)
+			inY = hacia(inY, math.clamp(dy * 3, -0.18, 0.18), 10)
+		end
+		ultimoLook = look
 		local b = opc.balanceo()
-		local golpe = math.sin(b * math.pi)
-		local golpe2 = math.sin(math.sqrt(b) * math.pi)
-		-- Al andar se mueve un poco
+		-- Mientras come, tensa el arco o se cubre no da golpes
+		local quieto = math.max(pComer, pArco, pEscudo)
+		local golpe = math.sin(b * math.pi) * (1 - quieto)
+		local golpe2 = math.sin(math.sqrt(b) * math.pi) * (1 - quieto)
+		-- Al andar se mueve un poco (más al correr)
 		local ch = jugador.Character
 		local hum = ch and ch:FindFirstChildOfClass("Humanoid")
 		local andar = hum and hum.MoveDirection.Magnitude > 0.1 and opc.conBalanceo()
 		if andar then
-			t += dt
+			t += dt * (1 + pCorrer * 0.35)
 		end
-		local bx = andar and math.sin(t * 9) * 0.06 or 0
-		local by = andar and -math.abs(math.cos(t * 9)) * 0.06 or 0
+		local amp = 0.06 * (1 + pCorrer * 0.8)
+		local bx = andar and math.sin(t * 9) * amp or 0
+		local by = andar and -math.abs(math.cos(t * 9)) * amp or 0
 		local baja = cambioT / 0.25 * 0.9
+		-- Aterrizar: la mano baja de golpe y vuelve
+		local at = pose.aterriza or 0
+		by -= at * 0.22
 		local base = cam.CFrame
-			* CFrame.new(1.2 + bx - golpe2 * 0.3, -1.15 + by - baja + golpe2 * 0.25 - golpe * 0.2, -1.9 - golpe * 0.35)
-			* CFrame.Angles(math.rad(14) - golpe * 0.9, math.rad(-10) + golpe2 * 0.35, math.rad(-6))
+			* CFrame.new(inX, inY, 0)
+			* CFrame.new(1.2 + bx - golpe2 * 0.3, -1.15 + by - baja + golpe2 * 0.25 - golpe * 0.2 - pCorrer * 0.08, -1.9 - golpe * 0.35)
+			* CFrame.Angles(math.rad(14) - golpe * 0.9 - pCorrer * 0.12, math.rad(-10) + golpe2 * 0.35 + inX * 0.6, math.rad(-6) - pCorrer * 0.1)
+		-- Comer: el objeto se acerca a la boca y sube y baja deprisa
+		if pComer > 0.01 then
+			local mord = math.abs(math.sin(tiempo * 22)) * 0.07 * pComer
+			base = base:Lerp(cam.CFrame * CFrame.new(0.55, -0.75 + mord, -1.3) * CFrame.Angles(math.rad(25), math.rad(-35), math.rad(-15)), pComer)
+		end
+		-- Arco: se lleva al centro y tiembla un poco cuando está tenso del todo
+		if pArco > 0.01 then
+			local tenso = pose.arco or 0
+			local tiembla = tenso >= 1 and math.sin(tiempo * 40) * 0.008 or 0
+			base = base:Lerp(cam.CFrame * CFrame.new(0.55 + tiembla, -0.8, -1.5 + tenso * 0.15) * CFrame.Angles(math.rad(8), math.rad(-25), math.rad(-25)), pArco)
+		end
+		-- Escudo: se levanta delante, un poco a la izquierda
+		if pEscudo > 0.01 then
+			base = base:Lerp(cam.CFrame * CFrame.new(0.6, -0.75, -1.35) * CFrame.Angles(math.rad(10), math.rad(30), 0), pEscudo)
+		end
 		brazo.CFrame = base * CFrame.new(0, 0, 0.55)
 		-- La manga asoma por abajo de la pantalla, como el brazo de Steve
 		manga.CFrame = base * CFrame.new(0, 0, 0.6)
@@ -332,6 +377,13 @@ function Modelos.iniciarMano(opc)
 			else
 				-- El objeto plano visto de lado, con la punta hacia arriba y hacia delante
 				giro = CFrame.new(-0.2, 0.55, -0.55) * CFrame.Angles(math.rad(-15), math.rad(-35), 0) * CFrame.Angles(0, 0, math.rad(40))
+				-- El arco se pone vertical y el escudo de frente
+				if pArco > 0.01 then
+					giro = giro:Lerp(CFrame.new(-0.25, 0.5, -0.6) * CFrame.Angles(0, math.rad(-80), 0) * CFrame.Angles(0, 0, math.rad(-20)), pArco)
+				end
+				if pEscudo > 0.01 then
+					giro = giro:Lerp(CFrame.new(-0.3, 0.45, -0.45) * CFrame.Angles(0, math.rad(-70), 0), pEscudo)
+				end
 			end
 			Modelos.colocar(sostenido, base * giro)
 		end
@@ -347,14 +399,33 @@ function Modelos.iniciarPersonajes(esTercera)
 	carpeta.Name = "ObjetosEnLaMano"
 	carpeta.Parent = workspace
 	local porJugador = {} -- plr -> {id, inst, pedido}
-	RunService.RenderStepped:Connect(function()
+	RunService.RenderStepped:Connect(function(dt)
 		for _, plr in Players:GetPlayers() do
 			local d = porJugador[plr]
 			if not d then
-				d = { pedido = 0 }
+				d = { pedido = 0, golpeT = 0, escudo = 0 }
 				porJugador[plr] = d
 			end
 			local ch = plr.Character
+			-- Brazo derecho: golpe al pegar, picar o poner, y el escudo levantado (se suma a la animación de Roblox)
+			local hombro = ch and ((ch:FindFirstChild("RightUpperArm") and ch.RightUpperArm:FindFirstChild("RightShoulder"))
+				or (ch:FindFirstChild("Torso") and ch.Torso:FindFirstChild("Right Shoulder")))
+			local g = plr:GetAttribute("Golpe")
+			if g ~= d.ultimoGolpe then
+				if d.ultimoGolpe ~= nil then
+					d.golpeT = 0.3
+				end
+				d.ultimoGolpe = g
+			end
+			d.golpeT = math.max(0, d.golpeT - dt)
+			d.escudo += ((plr:GetAttribute("Cubriendo") and 1 or 0) - d.escudo) * math.min(1, dt * 12)
+			if hombro and hombro:IsA("Motor6D") and (d.golpeT > 0 or d.escudo > 0.01) then
+				local a = math.sin((1 - d.golpeT / 0.3) * math.pi) * (d.golpeT > 0 and 1 or 0)
+				local r6 = hombro.Name == "Right Shoulder"
+				local extra = r6 and CFrame.Angles(0.15 * a, 0, a * 1.7 + d.escudo * 1.2)
+					or CFrame.Angles(a * 1.7 + d.escudo * 1.2, -0.25 * a + d.escudo * 0.5, 0)
+				hombro.Transform = hombro.Transform * extra
+			end
 			local mano = ch and (ch:FindFirstChild("RightHand") or ch:FindFirstChild("Right Arm"))
 			local hum = ch and ch:FindFirstChildOfClass("Humanoid")
 			local id = plr:GetAttribute("EnMano")

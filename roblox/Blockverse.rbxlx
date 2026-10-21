@@ -9541,6 +9541,35 @@ local function danar(plr, n, tipo, dir, quien)
 		return
 	end
 	local ahora = os.clock()
+	-- Escudo levantado: para los golpes, flechas y explosiones que vienen de delante
+	if s.cubriendo and dir and (tipo == "mob" or tipo == "jugador" or tipo == "flecha" or tipo == "explosion") then
+		local i = (s.inv[s.sel] and s.inv[s.sel].id == I.escudo) and s.sel or ((s.inv[41] and s.inv[41].id == I.escudo) and 41 or nil)
+		local cab = plr.Character and plr.Character:FindFirstChild("Head")
+		if i and cab then
+			local look = cab.CFrame.LookVector
+			-- dir es hacia dónde empuja el golpe (del atacante a ti): viene de delante si va contra la mirada
+			if look.X * (dir.x or 0) + look.Z * (dir.z or 0) < -0.2 then
+				local p = s.inv[i]
+				local o = OB[p.id]
+				if supervivencia(s) and o and o.dur and n >= 3 then
+					p.dur = (p.dur or o.dur) - math.floor(n)
+					if p.dur <= 0 then
+						s.inv[i] = false
+						s.cubriendo = false
+						plr:SetAttribute("Cubriendo", false)
+						Estado:FireClient(plr, "sonido", "rompeHerr")
+					end
+				end
+				Estado:FireClient(plr, "sonido", "golpe", nil, 0.6)
+				Estado:FireClient(plr, "bloqueado")
+				if tipo == "jugador" and quien and typeof(quien) == "Instance" then
+					Estado:FireClient(quien, "sonido", "golpe", nil, 0.6)
+				end
+				enviarJugador(plr)
+				return
+			end
+		end
+	end
 	if ahora < s.invuln and tipo ~= "vacio" then
 		if n <= s.ultimoDano then
 			return
@@ -10356,6 +10385,7 @@ function acciones.sel(plr, s, i)
 end
 
 function acciones.golpe(plr, s, x, y, z)
+	plr:SetAttribute("Golpe", os.clock())
 	if esEntero(x) and esEntero(y) and esEntero(z) then
 		s.golpe = { x = x, y = y, z = z, t = os.clock() }
 		Modos.golpeBloque(plr, x, y, z)
@@ -10363,6 +10393,7 @@ function acciones.golpe(plr, s, x, y, z)
 end
 
 function acciones.romper(plr, s, x, y, z)
+	plr:SetAttribute("Golpe", os.clock())
 	if not (esEntero(x) and esEntero(y) and esEntero(z)) or not alAlcance(plr, x, y, z) then
 		return
 	end
@@ -10561,6 +10592,7 @@ end
 -- Clic derecho (usarDerecho de jugador.js)
 -- obj: {x, y, z, n} del bloque apuntado (o nil); dir: dirección de la mirada; mob: pieza de criatura apuntada
 function acciones.derecho(plr, s, obj, dir, mobParte, agachado)
+	plr:SetAttribute("Golpe", os.clock())
 	if typeof(dir) ~= "Vector3" then
 		return
 	end
@@ -11003,6 +11035,7 @@ local NO_MUERTOS = { zombi = true, esqueleto = true, esqueletoErrante = true, mo
 	phantom = true, wither = true }
 local ARTROPODOS = { arana = true, abeja = true, lepisma = true, endermita = true }
 function acciones.atacar(plr, s, parte, carga, cayendo, corriendo)
+	plr:SetAttribute("Golpe", os.clock())
 	if typeof(parte) ~= "Instance" then
 		return
 	end
@@ -11628,6 +11661,12 @@ function acciones.salto(plr, s)
 	if supervivencia(s) then
 		s.agotamiento += s.corriendo and 0.2 or 0.05
 	end
+end
+
+function acciones.cubrir(plr, s, si)
+	local tiene = (s.inv[s.sel] and s.inv[s.sel].id == I.escudo) or (s.inv[41] and s.inv[41].id == I.escudo)
+	s.cubriendo = si == true and tiene and true or false
+	plr:SetAttribute("Cubriendo", s.cubriendo)
 end
 
 function acciones.correr(plr, s, si)
@@ -16248,6 +16287,8 @@ local function actualizarItem(e, dt)
 		if plr and d then
 			local sobra = Entidades.alRecoger(plr, e.pila)
 			if sobra <= 0 then
+				-- Para que los clientes lo vean volar hacia quien lo recoge
+				e.pieza:SetAttribute("Recoge", plr.UserId)
 				quitar(e)
 				return
 			elseif sobra < e.pila.n then
@@ -16273,6 +16314,7 @@ local function actualizarXP(e, dt)
 			e.vz += tz / l * f * dt * 3
 		end
 		if d < 1 and Entidades.alXP then
+			e.pieza:SetAttribute("Recoge", plr.UserId)
 			Entidades.alXP(plr, e.valor)
 			quitar(e)
 			return
@@ -23909,6 +23951,8 @@ local picando, usando = false, false
 local progreso, actual, espera = 0, nil, 0
 local esperaUsar = 0
 local comerDesde, arcoDesde = nil, nil
+local cubriendo = false -- con el escudo levantado
+local aterriza = 0 -- golpe al tocar el suelo (para la mano)
 local ultimoAtaque = 0
 local agachado, corriendo = false, false
 local volando, vueloFuerza = false, nil
@@ -23963,6 +24007,7 @@ local function mirada()
 	return cam and cam.CFrame.LookVector or Vector3.new(0, 0, -1)
 end
 
+local velocidad -- (más abajo) velocidad al andar según se corra, se agache o se cubra
 local function usar(inicio)
 	local id, p = enMano()
 	local o = id and OB[id]
@@ -23990,6 +24035,17 @@ local function usar(inicio)
 		if inicio and not arcoDesde then
 			arcoDesde = os.clock()
 			enviar("derecho", nil, mirada(), nil, agachado)
+		end
+		return
+	end
+	-- Escudo (en la mano, o en la otra mano si en esta no hay nada que usar): cubrirse mientras se mantiene
+	local otra = est.inv[41]
+	local interactivo = objetivo and objetivo.tipo == "bloque" and BL[objetivo.b] and BL[objetivo.b].inter and not agachado
+	if id == Registro.I.escudo or (otra and otra.id == Registro.I.escudo and not interactivo and not (o and (o.bloque or o.comida or o.bebida or BL[id]))) then
+		if inicio and not cubriendo then
+			cubriendo = true
+			enviar("cubrir", true)
+			velocidad()
 		end
 		return
 	end
@@ -24021,14 +24077,14 @@ end
 ------------------------------------------------------------------
 -- Velocidad al andar (correr, agacharse)
 ------------------------------------------------------------------
-local function velocidad()
+function velocidad()
 	local ch = jugador.Character
 	local hum = ch and ch:FindFirstChildOfClass("Humanoid")
 	if not hum then
 		return
 	end
 	local v = 4.3
-	if agachado then
+	if agachado or cubriendo then
 		v = 1.3
 	elseif corriendo and (creativo() or est.hambre > 6) then
 		v = 5.6
@@ -24188,6 +24244,11 @@ UserInputService.InputEnded:Connect(function(input)
 			arcoDesde = nil
 			enviar("soltarArco", mirada())
 		end
+		if cubriendo then
+			cubriendo = false
+			enviar("cubrir", false)
+			velocidad()
+		end
 	elseif input.KeyCode == Enum.KeyCode.LeftShift then
 		agachado = false
 		velocidad()
@@ -24218,6 +24279,11 @@ Interfaz.botonesMovil({
 			if arcoDesde then
 				arcoDesde = nil
 				enviar("soltarArco", mirada())
+			end
+			if cubriendo then
+				cubriendo = false
+				enviar("cubrir", false)
+				velocidad()
 			end
 		end
 	end,
@@ -24598,6 +24664,15 @@ if Modelos3D.disponible() then
 		conBalanceo = function()
 			return Interfaz.ajustes.balanceo
 		end,
+		pose = function()
+			return {
+				comer = comerDesde ~= nil and usando or nil,
+				arco = arcoDesde and math.min(1, os.clock() - arcoDesde) or nil,
+				escudo = cubriendo and est.inv[est.sel] and est.inv[est.sel].id == Registro.I.escudo,
+				corriendo = corriendo and not agachado,
+				aterriza = aterriza,
+			}
+		end,
 	})
 	aplicarCamara()
 end
@@ -24651,6 +24726,9 @@ Estado.OnClientEvent:Connect(function(tipo, a, b, c)
 		Interfaz.oneblock(a)
 	elseif tipo == "sonido" then
 		sonido(a, b)
+	elseif tipo == "bloqueado" then
+		-- El escudo paró un golpe: la mano da un tirón
+		aterriza = math.max(aterriza, 0.35)
 	elseif tipo == "dano" then
 		Interfaz.dano()
 		sonido("dano")
@@ -24720,6 +24798,10 @@ Estado.OnClientEvent:Connect(function(tipo, a, b, c)
 	elseif tipo == "muerte" then
 		Interfaz.muerte(a)
 		picando, usando = false, false
+		if cubriendo then
+			cubriendo = false
+			enviar("cubrir", false)
+		end
 		ponerVuelo(false)
 	elseif tipo == "listo" then
 		listoServidor = true
@@ -24879,6 +24961,10 @@ RunService.RenderStepped:Connect(function(dt)
 	if bloqueado then
 		objetivo = nil
 		picando, usando = false, false
+		if cubriendo then
+			cubriendo = false
+			enviar("cubrir", false)
+		end
 	else
 		objetivo = apuntar()
 	end
@@ -25074,6 +25160,7 @@ RunService.RenderStepped:Connect(function(dt)
 		ponerCorrer(false)
 	end
 
+	aterriza = math.max(0, aterriza - dt * 3.5)
 	-- Daño por caída: altura desde la que se cae (en bloques)
 	if hum and root then
 		local y = root.Position.Y
@@ -25089,6 +25176,9 @@ RunService.RenderStepped:Connect(function(dt)
 		elseif alturaCaida then
 			local bloques = (alturaCaida - y) / BS
 			alturaCaida = nil
+			if bloques > 1.2 then
+				aterriza = math.clamp(bloques / 4, 0.35, 1)
+			end
 			if bloques > 3.5 then
 				enviar("caida", bloques)
 				sonido("caer")
@@ -25865,6 +25955,7 @@ return DV
 	Todo sigue con suavidad a la pieza del servidor.
 ]]
 local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Comp = ReplicatedStorage:WaitForChild("Blockverse")
@@ -25914,13 +26005,13 @@ local function cartel(padre, tam)
 end
 
 local function nueva(p)
-	local v = { p = p, pos = nil, fase = math.random() * 6.28 }
+	local v = { p = p, pos = nil, fase = math.random() * 6.28, nacer = 0 }
 	if p.Name == "Item" then
 		local ancla = pieza(Vector3.new(0.1, 0.1, 0.1), Color3.new(1, 1, 1))
 		ancla.Transparency = 1
 		ancla.Parent = carpeta
 		local bb, img = cartel(ancla, 0.9 * BS / 3 * 1.4)
-		v.ancla, v.bb, v.img = ancla, bb, img
+		v.ancla, v.bb, v.img, v.bbTam = ancla, bb, img, 0.9 * BS / 3 * 1.4
 		local function actualizar()
 			Iconos.poner(img, p:GetAttribute("id"))
 			local n = p:GetAttribute("n") or 1
@@ -25991,12 +26082,32 @@ local function nueva(p)
 	vistas[p] = v
 end
 
+-- Objetos y orbes recogidos: vuelan hasta quien los coge, encogiéndose (como en Minecraft)
+local volando = {} -- {v, desde, hacia (Player), t}
+local function quienRecoge(p)
+	local id = p:GetAttribute("Recoge")
+	return id and Players:GetPlayerByUserId(id) or nil
+end
+
 local function quitar(p)
 	local v = vistas[p]
 	if not v then
 		return
 	end
 	vistas[p] = nil
+	if (v.tipo == "item" or v.tipo == "orbe") and v.pos and not v.lejos then
+		local plr = quienRecoge(p)
+		if plr then
+			if v.con then
+				for _, c in v.con do
+					c:Disconnect()
+				end
+				v.con = nil
+			end
+			table.insert(volando, { v = v, desde = v.pos, hacia = plr, t = 0 })
+			return
+		end
+	end
 	if v.con then
 		for _, c in v.con do
 			c:Disconnect()
@@ -26030,7 +26141,10 @@ function EntidadesVista.iniciar()
 			end
 			v.pos = v.pos and v.pos:Lerp(p.Position, a) or p.Position
 			if v.tipo == "item" then
-				local alto = v.pos + Vector3.new(0, (0.25 + math.sin(tiempo * 2.5 + v.fase) * 0.08) * BS, 0)
+				-- Al caer da un saltito (crece de pequeño) y luego flota subiendo y bajando
+				v.nacer = math.min(1, v.nacer + dt / 0.3)
+				local salto = math.sin(v.nacer * math.pi) * 0.25 * (1 - v.nacer)
+				local alto = v.pos + Vector3.new(0, (0.25 + salto + math.sin(tiempo * 2.5 + v.fase) * 0.08) * BS, 0)
 				v.ancla.Position = alto
 				-- Modelo 3D: se pide una vez por objeto (la primera vez de cada uno tarda un poco)
 				local id = p:GetAttribute("id")
@@ -26074,6 +26188,43 @@ function EntidadesVista.iniciar()
 				v.pluma.CFrame = cf * CFrame.new(0, 0, largo / 2 - v.pluma.Size.Z / 2)
 			elseif v.tipo == "bola" then
 				v.vis.CFrame = CFrame.new(v.pos) * CFrame.Angles(tiempo * 5, tiempo * 3, 0)
+			end
+		end
+		-- Lo recogido vuela hacia el jugador y se encoge
+		local i = 1
+		while i <= #volando do
+			local f = volando[i]
+			f.t += dt / 0.18
+			local r = f.hacia.Character and f.hacia.Character:FindFirstChild("HumanoidRootPart")
+			if f.t >= 1 or not r then
+				local v = f.v
+				if v.ancla then
+					v.ancla:Destroy()
+				end
+				Modelos3D.quitar(v.modelo)
+				Modelos3D.quitar(v.modelo2)
+				if v.vis then
+					v.vis:Destroy()
+				end
+				volando[i] = volando[#volando]
+				volando[#volando] = nil
+			else
+				local e = f.t * f.t
+				local pos = f.desde:Lerp(r.Position + Vector3.new(0, 0.2 * BS, 0), e)
+				local esc = 1 - e * 0.7
+				local v = f.v
+				if v.modelo then
+					Modelos3D.colocar(v.modelo, CFrame.new(pos) * CFrame.Angles(0, tiempo * 8, 0))
+					Modelos3D.colocar(v.modelo2, CFrame.new(0, -1e4, 0))
+				elseif v.ancla then
+					v.ancla.Position = pos
+					v.bb.Size = UDim2.fromScale(esc * (v.bbTam or 1), esc * (v.bbTam or 1))
+				end
+				if v.vis then
+					v.vis.Position = pos
+					v.vis.Size = v.vis.Size * (1 - dt * 3)
+				end
+				i += 1
 			end
 		end
 	end)
@@ -26728,8 +26879,9 @@ nuevo("UIStroke", { Color = C.borde, Thickness = 2 }, barra)
 local barraCas = {}
 for i = 1, 9 do
 	local b = nuevo("ImageButton", { BackgroundTransparency = 1, Size = UDim2.fromOffset(44, 44), Position = UDim2.fromOffset(3 + (i - 1) * 46, 3), ImageTransparency = 1 }, barra)
-	nuevo("ImageLabel", { Name = "Icono", BackgroundTransparency = 1, Size = UDim2.new(1, -8, 1, -8), Position = UDim2.fromOffset(4, 4),
+	local icB = nuevo("ImageLabel", { Name = "Icono", BackgroundTransparency = 1, Size = UDim2.new(1, -8, 1, -8), Position = UDim2.fromOffset(4, 4),
 		ResampleMode = Enum.ResamplerMode.Pixelated, ImageTransparency = 1, ZIndex = 2 }, b)
+	nuevo("UIScale", { Name = "Esc" }, icB)
 	texto({ Name = "N", Size = UDim2.new(1, -3, 0, 16), Position = UDim2.new(0, 0, 1, -16), TextXAlignment = Enum.TextXAlignment.Right,
 		Font = FUENTE_N, TextSize = 15, Text = "", ZIndex = 3, TextStrokeColor3 = Color3.fromHex("3f3f3f"), TextStrokeTransparency = 0 }, b)
 	local dur = nuevo("Frame", { Name = "Dur", BackgroundColor3 = Color3.new(0, 0, 0), BorderSizePixel = 0, Size = UDim2.new(1, -10, 0, 3),
@@ -26751,6 +26903,7 @@ nuevo("UIStroke", { Color = Color3.new(0, 0, 0), Thickness = 1, Transparency = 0
 local xpF = nuevo("Frame", { BackgroundColor3 = C.xp, BorderSizePixel = 0, Size = UDim2.fromScale(0, 1) }, barraXP)
 local nivelXP = texto({ AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 0, -1), Size = UDim2.fromOffset(60, 18), TextColor3 = C.xp,
 	Font = FUENTE_N, TextSize = 15, TextStrokeTransparency = 0, Text = "" }, barraXP)
+nuevo("UIScale", { Name = "Esc" }, nivelXP)
 
 -- Filas de corazones, comida, armadura y burbujas (10 iconos de 18 px)
 local function fila(nombre, pos, derecha)
@@ -26763,6 +26916,7 @@ local function fila(nombre, pos, derecha)
 		local x = derecha and (10 - k) * 19 or (k - 1) * 19
 		local im = nuevo("ImageLabel", { BackgroundTransparency = 1, Size = UDim2.fromOffset(18, 18), Position = UDim2.fromOffset(x, 0),
 			ResampleMode = Enum.ResamplerMode.Pixelated }, f)
+		im:SetAttribute("x", x)
 		texto({ Name = "T", Size = UDim2.fromScale(1, 1), Text = "", TextSize = 14, Visible = false }, im)
 		lista[k] = im
 	end
@@ -27143,191 +27297,193 @@ local function construirExtra(d)
 end
 
 -- Ventana de kits y efectos de Bed Wars: tarjetas con el color de su rareza y un panel con el detalle
-local ESTADO_KIT = {
-	equipado = { "✔ EQUIPADO", Color3.fromRGB(60, 170, 70) }, tuyo = { "TUYO", Color3.fromRGB(80, 90, 110) },
-	gratis = { "GRATIS HOY", Color3.fromRGB(40, 130, 230) }, probando = { "PROBANDO", Color3.fromRGB(40, 130, 230) },
-}
--- string.upper no cambia las letras con tilde
-local function mayusculas(t)
-	t = string.upper(t)
-	for de, a in { ["á"] = "Á", ["é"] = "É", ["í"] = "Í", ["ó"] = "Ó", ["ú"] = "Ú", ["ñ"] = "Ñ" } do
-		t = t:gsub(de, a)
-	end
-	return t
-end
-local function estrellas(n, max)
-	return string.rep("★", n) .. string.rep("☆", max - n)
-end
-local function limpiar(f)
-	for _, h in f:GetChildren() do
-		if h:IsA("GuiObject") then
-			h:Destroy()
-		end
-	end
-end
 local pintarKits
-local function pintarDetalleKit(d)
-	local det = extra.detalle
-	limpiar(det)
-	local o = d.ofertas and d.ofertas[extra.selKit or 1]
-	if not o then
-		return
+do
+	local ESTADO_KIT = {
+		equipado = { "✔ EQUIPADO", Color3.fromRGB(60, 170, 70) }, tuyo = { "TUYO", Color3.fromRGB(80, 90, 110) },
+		gratis = { "GRATIS HOY", Color3.fromRGB(40, 130, 230) }, probando = { "PROBANDO", Color3.fromRGB(40, 130, 230) },
+	}
+	-- string.upper no cambia las letras con tilde
+	local function mayusculas(t)
+		t = string.upper(t)
+		for de, a in { ["á"] = "Á", ["é"] = "É", ["í"] = "Í", ["ó"] = "Ó", ["ú"] = "Ú", ["ñ"] = "Ñ" } do
+			t = t:gsub(de, a)
+		end
+		return t
 	end
-	local col = Color3.fromHex(o.col or "#9aa4b4")
-	local caja = nuevo("Frame", { BackgroundColor3 = col:Lerp(Color3.new(0, 0, 0), 0.55), BorderSizePixel = 0, AnchorPoint = Vector2.new(0.5, 0),
-		Position = UDim2.new(0.5, 0, 0, 14), Size = UDim2.fromOffset(100, 100), ZIndex = 8 }, det)
-	nuevo("UICorner", { CornerRadius = UDim.new(0, 10) }, caja)
-	nuevo("UIStroke", { Color = col, Thickness = 3 }, caja)
-	local ic = nuevo("ImageLabel", { BackgroundTransparency = 1, AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.fromOffset(72, 72),
-		ResampleMode = Enum.ResamplerMode.Pixelated, ZIndex = 9 }, caja)
-	Iconos.poner(ic, o.id)
-	texto({ Position = UDim2.fromOffset(8, 122), Size = UDim2.new(1, -16, 0, 30), Text = o.nombre or "", TextSize = 24, Font = FUENTE_N, ZIndex = 8 }, det)
-	local pil = nuevo("Frame", { BackgroundColor3 = col, BorderSizePixel = 0, AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 156),
-		Size = UDim2.fromOffset(120, 20), ZIndex = 8 }, det)
-	nuevo("UICorner", { CornerRadius = UDim.new(0, 10) }, pil)
-	texto({ Size = UDim2.fromScale(1, 1), Text = mayusculas(o.rareza or ""), TextSize = 12, Font = FUENTE_N, TextStrokeTransparency = 0.5, ZIndex = 9 }, pil)
-	local y = 184
-	if (o.maxNivel or 0) > 0 then
-		texto({ Position = UDim2.fromOffset(8, y), Size = UDim2.new(1, -16, 0, 20), Text = "Nivel " .. estrellas(o.nivel or 0, o.maxNivel), TextSize = 16, Font = FUENTE_N,
-			TextColor3 = Color3.fromRGB(255, 210, 70), ZIndex = 8 }, det)
-		y += 24
+	local function estrellas(n, max)
+		return string.rep("★", n) .. string.rep("☆", max - n)
 	end
-	texto({ Position = UDim2.fromOffset(14, y), Size = UDim2.new(1, -28, 0, 60), Text = o.desc or "", TextSize = 14, TextWrapped = true,
-		TextYAlignment = Enum.TextYAlignment.Top, TextColor3 = Color3.fromRGB(225, 228, 235), TextStrokeTransparency = 1, ZIndex = 8 }, det)
-	y += 62
-	if o.siguiente then
-		texto({ Position = UDim2.fromOffset(14, y), Size = UDim2.new(1, -28, 0, 44), Text = "Siguiente nivel: " .. o.siguiente, TextSize = 12, TextWrapped = true,
-			TextYAlignment = Enum.TextYAlignment.Top, TextColor3 = Color3.fromRGB(130, 230, 130), TextStrokeTransparency = 1, ZIndex = 8 }, det)
-	end
-	if o.habilidad then
-		texto({ Position = UDim2.new(0, 14, 1, -88), Size = UDim2.new(1, -28, 0, 20), Text = "⚡ Habilidad activa: pulsa G en la partida", TextSize = 13,
-			TextColor3 = Color3.fromRGB(150, 200, 255), TextStrokeTransparency = 1, ZIndex = 8 }, det)
-	end
-	-- Botón grande: comprar / equipar / mejorar / probar
-	local txt, fondo = o.accion, Color3.fromRGB(60, 170, 70)
-	if not txt then
-		txt, fondo = (o.estado == "equipado" and (o.maxNivel or 0) > 0 and (o.nivel or 0) >= o.maxNivel) and "✔ Nivel máximo" or "✔ Equipado", Color3.fromRGB(70, 74, 86)
-	elseif o.precio then
-		txt = ("%s · %d monedas"):format(txt, o.precio)
-		fondo = o.puede and Color3.fromRGB(230, 160, 30) or Color3.fromRGB(150, 50, 50)
-	elseif o.estado == "gratis" then
-		fondo = Color3.fromRGB(40, 130, 230)
-	end
-	local b = nuevo("TextButton", { AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -14), Size = UDim2.new(1, -28, 0, 50), BackgroundColor3 = fondo,
-		BorderSizePixel = 0, Text = txt, Font = FUENTE_N, TextSize = 17, TextColor3 = Color3.new(1, 1, 1), TextStrokeTransparency = 0.4, AutoButtonColor = true,
-		ZIndex = 9 }, det)
-	nuevo("UICorner", { CornerRadius = UDim.new(0, 8) }, b)
-	nuevo("UIStroke", { Color = Color3.new(0, 0, 0), Thickness = 2, Transparency = 0.3, ApplyStrokeMode = Enum.ApplyStrokeMode.Border }, b)
-	nuevo("UIGradient", { Rotation = 90, Color = ColorSequence.new(Color3.new(1, 1, 1), Color3.fromRGB(185, 185, 185)) }, b)
-	local esc = nuevo("UIScale", {}, b)
-	if o.accion then
-		b.MouseEnter:Connect(function()
-			TweenService:Create(esc, TweenInfo.new(0.12, Enum.EasingStyle.Back), { Scale = 1.04 }):Play()
-		end)
-		b.MouseLeave:Connect(function()
-			TweenService:Create(esc, TweenInfo.new(0.12), { Scale = 1 }):Play()
-		end)
-		b.Activated:Connect(function()
-			esc.Scale = 0.94
-			TweenService:Create(esc, TweenInfo.new(0.2, Enum.EasingStyle.Back), { Scale = 1 }):Play()
-			Interfaz.enviar("comprar", extra.selKit or 1, 1)
-		end)
-	end
-end
-pintarKits = function(d)
-	-- Pestañas con icono y nombre
-	limpiar(extra.tabs)
-	for i, t in d.pestanas or {} do
-		local activa = i == d.pestana
-		local b = nuevo("TextButton", { Size = UDim2.fromOffset(130, 30), LayoutOrder = i, BorderSizePixel = 0, Text = "", AutoButtonColor = true, ZIndex = 7,
-			BackgroundColor3 = activa and Color3.fromRGB(230, 160, 30) or Color3.fromRGB(70, 74, 86) }, extra.tabs)
-		nuevo("UICorner", { CornerRadius = UDim.new(0, 6) }, b)
-		local ic = nuevo("ImageLabel", { BackgroundTransparency = 1, Size = UDim2.fromOffset(22, 22), Position = UDim2.fromOffset(8, 4),
-			ResampleMode = Enum.ResamplerMode.Pixelated, ZIndex = 8 }, b)
-		Iconos.poner(ic, t.icono)
-		texto({ Position = UDim2.fromOffset(36, 0), Size = UDim2.new(1, -40, 1, 0), Text = t.nombre, TextSize = 15, Font = FUENTE_N,
-			TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 8 }, b)
-		b.Activated:Connect(function()
-			Interfaz.enviar("pestana", i)
-		end)
-	end
-	-- Monedas
-	limpiar(extra.monedas)
-	local mo = d.monedas and d.monedas[1]
-	if mo then
-		local ic = nuevo("ImageLabel", { BackgroundTransparency = 1, Size = UDim2.fromOffset(22, 22), Position = UDim2.fromOffset(10, 4),
-			ResampleMode = Enum.ResamplerMode.Pixelated, ZIndex = 8 }, extra.monedas)
-		Iconos.poner(ic, mo[1])
-		texto({ Position = UDim2.fromOffset(38, 0), Size = UDim2.new(1, -46, 1, 0), Text = tostring(mo[2]) .. " monedas", TextSize = 15, Font = FUENTE_N,
-			TextColor3 = Color3.fromRGB(255, 220, 90), TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 8 }, extra.monedas)
-	end
-	-- Al cambiar de pestaña se elige el que llevas equipado
-	if extra.selTab ~= d.pestana or not (d.ofertas and d.ofertas[extra.selKit or 0]) then
-		extra.selTab = d.pestana
-		extra.selKit = 1
-		for i, o in d.ofertas or {} do
-			if o.estado == "equipado" then
-				extra.selKit = i
+	local function limpiar(f)
+		for _, h in f:GetChildren() do
+			if h:IsA("GuiObject") then
+				h:Destroy()
 			end
 		end
 	end
-	local lista = extra.lista
-	limpiar(lista)
-	for i, o in d.ofertas or {} do
+	local function pintarDetalleKit(d)
+		local det = extra.detalle
+		limpiar(det)
+		local o = d.ofertas and d.ofertas[extra.selKit or 1]
+		if not o then
+			return
+		end
 		local col = Color3.fromHex(o.col or "#9aa4b4")
-		local sel = i == extra.selKit
-		local b = nuevo("TextButton", { Text = "", AutoButtonColor = false, BorderSizePixel = 0, LayoutOrder = i, ZIndex = 8,
-			BackgroundColor3 = sel and Color3.fromRGB(70, 74, 90) or Color3.fromRGB(50, 53, 64) }, lista)
-		nuevo("UICorner", { CornerRadius = UDim.new(0, 8) }, b)
-		local borde = nuevo("UIStroke", { Color = sel and Color3.fromRGB(255, 230, 90) or col, Thickness = sel and 3 or 2, ApplyStrokeMode = Enum.ApplyStrokeMode.Border }, b)
-		local esc = nuevo("UIScale", {}, b)
-		local franja = nuevo("Frame", { BackgroundColor3 = col, BorderSizePixel = 0, Size = UDim2.new(1, 0, 0, 6), ZIndex = 9 }, b)
-		nuevo("UICorner", { CornerRadius = UDim.new(0, 8) }, franja)
-		local fondoIc = nuevo("Frame", { BackgroundColor3 = col:Lerp(Color3.new(0, 0, 0), 0.6), BorderSizePixel = 0, AnchorPoint = Vector2.new(0.5, 0),
-			Position = UDim2.new(0.5, 0, 0, 14), Size = UDim2.fromOffset(56, 56), ZIndex = 9 }, b)
-		nuevo("UICorner", { CornerRadius = UDim.new(0, 6) }, fondoIc)
-		local ic = nuevo("ImageLabel", { BackgroundTransparency = 1, AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.fromOffset(42, 42),
-			ResampleMode = Enum.ResamplerMode.Pixelated, ZIndex = 10 }, fondoIc)
+		local caja = nuevo("Frame", { BackgroundColor3 = col:Lerp(Color3.new(0, 0, 0), 0.55), BorderSizePixel = 0, AnchorPoint = Vector2.new(0.5, 0),
+			Position = UDim2.new(0.5, 0, 0, 14), Size = UDim2.fromOffset(100, 100), ZIndex = 8 }, det)
+		nuevo("UICorner", { CornerRadius = UDim.new(0, 10) }, caja)
+		nuevo("UIStroke", { Color = col, Thickness = 3 }, caja)
+		local ic = nuevo("ImageLabel", { BackgroundTransparency = 1, AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.fromOffset(72, 72),
+			ResampleMode = Enum.ResamplerMode.Pixelated, ZIndex = 9 }, caja)
 		Iconos.poner(ic, o.id)
-		texto({ Position = UDim2.fromOffset(4, 74), Size = UDim2.new(1, -8, 0, 18), Text = o.nombre or "", TextSize = (utf8.len(o.nombre or "") or 0) > 12 and 10 or 13, Font = FUENTE_N, ZIndex = 9 }, b)
-		if (o.maxNivel or 0) > 0 and (o.nivel or 0) > 0 then
-			texto({ Position = UDim2.fromOffset(4, 91), Size = UDim2.new(1, -8, 0, 12), Text = estrellas(o.nivel, o.maxNivel), TextSize = 11,
-				TextColor3 = Color3.fromRGB(255, 210, 70), ZIndex = 9 }, b)
+		texto({ Position = UDim2.fromOffset(8, 122), Size = UDim2.new(1, -16, 0, 30), Text = o.nombre or "", TextSize = 24, Font = FUENTE_N, ZIndex = 8 }, det)
+		local pil = nuevo("Frame", { BackgroundColor3 = col, BorderSizePixel = 0, AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 156),
+			Size = UDim2.fromOffset(120, 20), ZIndex = 8 }, det)
+		nuevo("UICorner", { CornerRadius = UDim.new(0, 10) }, pil)
+		texto({ Size = UDim2.fromScale(1, 1), Text = mayusculas(o.rareza or ""), TextSize = 12, Font = FUENTE_N, TextStrokeTransparency = 0.5, ZIndex = 9 }, pil)
+		local y = 184
+		if (o.maxNivel or 0) > 0 then
+			texto({ Position = UDim2.fromOffset(8, y), Size = UDim2.new(1, -16, 0, 20), Text = "Nivel " .. estrellas(o.nivel or 0, o.maxNivel), TextSize = 16, Font = FUENTE_N,
+				TextColor3 = Color3.fromRGB(255, 210, 70), ZIndex = 8 }, det)
+			y += 24
 		end
-		-- Estado abajo: equipado, tuyo, gratis o el precio
-		local e = ESTADO_KIT[o.estado]
-		local pie = nuevo("Frame", { BorderSizePixel = 0, AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -6), Size = UDim2.new(1, -12, 0, 18), ZIndex = 9,
-			BackgroundColor3 = e and e[2] or (o.puede and Color3.fromRGB(120, 90, 20) or Color3.fromRGB(110, 40, 40)) }, b)
-		nuevo("UICorner", { CornerRadius = UDim.new(0, 9) }, pie)
-		texto({ Size = UDim2.fromScale(1, 1), Text = e and e[1] or (o.precio and (o.precio .. " monedas") or ""), TextSize = 11, Font = FUENTE_N, ZIndex = 10,
-			TextColor3 = (e or o.puede) and Color3.new(1, 1, 1) or Color3.fromRGB(255, 170, 170) }, pie)
-		if o.nuevo then
-			local cinta = nuevo("Frame", { BackgroundColor3 = Color3.fromRGB(40, 130, 230), BorderSizePixel = 0, AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, 4, 0, -4),
-				Size = UDim2.fromOffset(46, 16), ZIndex = 11 }, b)
-			nuevo("UICorner", { CornerRadius = UDim.new(0, 8) }, cinta)
-			texto({ Size = UDim2.fromScale(1, 1), Text = "NUEVO", TextSize = 10, Font = FUENTE_N, ZIndex = 12 }, cinta)
+		texto({ Position = UDim2.fromOffset(14, y), Size = UDim2.new(1, -28, 0, 60), Text = o.desc or "", TextSize = 14, TextWrapped = true,
+			TextYAlignment = Enum.TextYAlignment.Top, TextColor3 = Color3.fromRGB(225, 228, 235), TextStrokeTransparency = 1, ZIndex = 8 }, det)
+		y += 62
+		if o.siguiente then
+			texto({ Position = UDim2.fromOffset(14, y), Size = UDim2.new(1, -28, 0, 44), Text = "Siguiente nivel: " .. o.siguiente, TextSize = 12, TextWrapped = true,
+				TextYAlignment = Enum.TextYAlignment.Top, TextColor3 = Color3.fromRGB(130, 230, 130), TextStrokeTransparency = 1, ZIndex = 8 }, det)
 		end
-		b.MouseEnter:Connect(function()
-			TweenService:Create(esc, TweenInfo.new(0.12, Enum.EasingStyle.Back), { Scale = 1.06 }):Play()
-			if not sel then
-				borde.Color = Color3.new(1, 1, 1)
-			end
-			Interfaz.alSonido("paso", 1.8)
-		end)
-		b.MouseLeave:Connect(function()
-			TweenService:Create(esc, TweenInfo.new(0.12), { Scale = 1 }):Play()
-			if not sel then
-				borde.Color = col
-			end
-		end)
-		b.Activated:Connect(function()
-			extra.selKit = i
-			Interfaz.alSonido("poner", 1.3)
-			pintarKits(d)
-		end)
+		if o.habilidad then
+			texto({ Position = UDim2.new(0, 14, 1, -88), Size = UDim2.new(1, -28, 0, 20), Text = "⚡ Habilidad activa: pulsa G en la partida", TextSize = 13,
+				TextColor3 = Color3.fromRGB(150, 200, 255), TextStrokeTransparency = 1, ZIndex = 8 }, det)
+		end
+		-- Botón grande: comprar / equipar / mejorar / probar
+		local txt, fondo = o.accion, Color3.fromRGB(60, 170, 70)
+		if not txt then
+			txt, fondo = (o.estado == "equipado" and (o.maxNivel or 0) > 0 and (o.nivel or 0) >= o.maxNivel) and "✔ Nivel máximo" or "✔ Equipado", Color3.fromRGB(70, 74, 86)
+		elseif o.precio then
+			txt = ("%s · %d monedas"):format(txt, o.precio)
+			fondo = o.puede and Color3.fromRGB(230, 160, 30) or Color3.fromRGB(150, 50, 50)
+		elseif o.estado == "gratis" then
+			fondo = Color3.fromRGB(40, 130, 230)
+		end
+		local b = nuevo("TextButton", { AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -14), Size = UDim2.new(1, -28, 0, 50), BackgroundColor3 = fondo,
+			BorderSizePixel = 0, Text = txt, Font = FUENTE_N, TextSize = 17, TextColor3 = Color3.new(1, 1, 1), TextStrokeTransparency = 0.4, AutoButtonColor = true,
+			ZIndex = 9 }, det)
+		nuevo("UICorner", { CornerRadius = UDim.new(0, 8) }, b)
+		nuevo("UIStroke", { Color = Color3.new(0, 0, 0), Thickness = 2, Transparency = 0.3, ApplyStrokeMode = Enum.ApplyStrokeMode.Border }, b)
+		nuevo("UIGradient", { Rotation = 90, Color = ColorSequence.new(Color3.new(1, 1, 1), Color3.fromRGB(185, 185, 185)) }, b)
+		local esc = nuevo("UIScale", {}, b)
+		if o.accion then
+			b.MouseEnter:Connect(function()
+				TweenService:Create(esc, TweenInfo.new(0.12, Enum.EasingStyle.Back), { Scale = 1.04 }):Play()
+			end)
+			b.MouseLeave:Connect(function()
+				TweenService:Create(esc, TweenInfo.new(0.12), { Scale = 1 }):Play()
+			end)
+			b.Activated:Connect(function()
+				esc.Scale = 0.94
+				TweenService:Create(esc, TweenInfo.new(0.2, Enum.EasingStyle.Back), { Scale = 1 }):Play()
+				Interfaz.enviar("comprar", extra.selKit or 1, 1)
+			end)
+		end
 	end
-	pintarDetalleKit(d)
-	extra.texto.Text = d.pie or ""
+	pintarKits = function(d)
+		-- Pestañas con icono y nombre
+		limpiar(extra.tabs)
+		for i, t in d.pestanas or {} do
+			local activa = i == d.pestana
+			local b = nuevo("TextButton", { Size = UDim2.fromOffset(130, 30), LayoutOrder = i, BorderSizePixel = 0, Text = "", AutoButtonColor = true, ZIndex = 7,
+				BackgroundColor3 = activa and Color3.fromRGB(230, 160, 30) or Color3.fromRGB(70, 74, 86) }, extra.tabs)
+			nuevo("UICorner", { CornerRadius = UDim.new(0, 6) }, b)
+			local ic = nuevo("ImageLabel", { BackgroundTransparency = 1, Size = UDim2.fromOffset(22, 22), Position = UDim2.fromOffset(8, 4),
+				ResampleMode = Enum.ResamplerMode.Pixelated, ZIndex = 8 }, b)
+			Iconos.poner(ic, t.icono)
+			texto({ Position = UDim2.fromOffset(36, 0), Size = UDim2.new(1, -40, 1, 0), Text = t.nombre, TextSize = 15, Font = FUENTE_N,
+				TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 8 }, b)
+			b.Activated:Connect(function()
+				Interfaz.enviar("pestana", i)
+			end)
+		end
+		-- Monedas
+		limpiar(extra.monedas)
+		local mo = d.monedas and d.monedas[1]
+		if mo then
+			local ic = nuevo("ImageLabel", { BackgroundTransparency = 1, Size = UDim2.fromOffset(22, 22), Position = UDim2.fromOffset(10, 4),
+				ResampleMode = Enum.ResamplerMode.Pixelated, ZIndex = 8 }, extra.monedas)
+			Iconos.poner(ic, mo[1])
+			texto({ Position = UDim2.fromOffset(38, 0), Size = UDim2.new(1, -46, 1, 0), Text = tostring(mo[2]) .. " monedas", TextSize = 15, Font = FUENTE_N,
+				TextColor3 = Color3.fromRGB(255, 220, 90), TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 8 }, extra.monedas)
+		end
+		-- Al cambiar de pestaña se elige el que llevas equipado
+		if extra.selTab ~= d.pestana or not (d.ofertas and d.ofertas[extra.selKit or 0]) then
+			extra.selTab = d.pestana
+			extra.selKit = 1
+			for i, o in d.ofertas or {} do
+				if o.estado == "equipado" then
+					extra.selKit = i
+				end
+			end
+		end
+		local lista = extra.lista
+		limpiar(lista)
+		for i, o in d.ofertas or {} do
+			local col = Color3.fromHex(o.col or "#9aa4b4")
+			local sel = i == extra.selKit
+			local b = nuevo("TextButton", { Text = "", AutoButtonColor = false, BorderSizePixel = 0, LayoutOrder = i, ZIndex = 8,
+				BackgroundColor3 = sel and Color3.fromRGB(70, 74, 90) or Color3.fromRGB(50, 53, 64) }, lista)
+			nuevo("UICorner", { CornerRadius = UDim.new(0, 8) }, b)
+			local borde = nuevo("UIStroke", { Color = sel and Color3.fromRGB(255, 230, 90) or col, Thickness = sel and 3 or 2, ApplyStrokeMode = Enum.ApplyStrokeMode.Border }, b)
+			local esc = nuevo("UIScale", {}, b)
+			local franja = nuevo("Frame", { BackgroundColor3 = col, BorderSizePixel = 0, Size = UDim2.new(1, 0, 0, 6), ZIndex = 9 }, b)
+			nuevo("UICorner", { CornerRadius = UDim.new(0, 8) }, franja)
+			local fondoIc = nuevo("Frame", { BackgroundColor3 = col:Lerp(Color3.new(0, 0, 0), 0.6), BorderSizePixel = 0, AnchorPoint = Vector2.new(0.5, 0),
+				Position = UDim2.new(0.5, 0, 0, 14), Size = UDim2.fromOffset(56, 56), ZIndex = 9 }, b)
+			nuevo("UICorner", { CornerRadius = UDim.new(0, 6) }, fondoIc)
+			local ic = nuevo("ImageLabel", { BackgroundTransparency = 1, AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.fromOffset(42, 42),
+				ResampleMode = Enum.ResamplerMode.Pixelated, ZIndex = 10 }, fondoIc)
+			Iconos.poner(ic, o.id)
+			texto({ Position = UDim2.fromOffset(4, 74), Size = UDim2.new(1, -8, 0, 18), Text = o.nombre or "", TextSize = (utf8.len(o.nombre or "") or 0) > 12 and 10 or 13, Font = FUENTE_N, ZIndex = 9 }, b)
+			if (o.maxNivel or 0) > 0 and (o.nivel or 0) > 0 then
+				texto({ Position = UDim2.fromOffset(4, 91), Size = UDim2.new(1, -8, 0, 12), Text = estrellas(o.nivel, o.maxNivel), TextSize = 11,
+					TextColor3 = Color3.fromRGB(255, 210, 70), ZIndex = 9 }, b)
+			end
+			-- Estado abajo: equipado, tuyo, gratis o el precio
+			local e = ESTADO_KIT[o.estado]
+			local pie = nuevo("Frame", { BorderSizePixel = 0, AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -6), Size = UDim2.new(1, -12, 0, 18), ZIndex = 9,
+				BackgroundColor3 = e and e[2] or (o.puede and Color3.fromRGB(120, 90, 20) or Color3.fromRGB(110, 40, 40)) }, b)
+			nuevo("UICorner", { CornerRadius = UDim.new(0, 9) }, pie)
+			texto({ Size = UDim2.fromScale(1, 1), Text = e and e[1] or (o.precio and (o.precio .. " monedas") or ""), TextSize = 11, Font = FUENTE_N, ZIndex = 10,
+				TextColor3 = (e or o.puede) and Color3.new(1, 1, 1) or Color3.fromRGB(255, 170, 170) }, pie)
+			if o.nuevo then
+				local cinta = nuevo("Frame", { BackgroundColor3 = Color3.fromRGB(40, 130, 230), BorderSizePixel = 0, AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, 4, 0, -4),
+					Size = UDim2.fromOffset(46, 16), ZIndex = 11 }, b)
+				nuevo("UICorner", { CornerRadius = UDim.new(0, 8) }, cinta)
+				texto({ Size = UDim2.fromScale(1, 1), Text = "NUEVO", TextSize = 10, Font = FUENTE_N, ZIndex = 12 }, cinta)
+			end
+			b.MouseEnter:Connect(function()
+				TweenService:Create(esc, TweenInfo.new(0.12, Enum.EasingStyle.Back), { Scale = 1.06 }):Play()
+				if not sel then
+					borde.Color = Color3.new(1, 1, 1)
+				end
+				Interfaz.alSonido("paso", 1.8)
+			end)
+			b.MouseLeave:Connect(function()
+				TweenService:Create(esc, TweenInfo.new(0.12), { Scale = 1 }):Play()
+				if not sel then
+					borde.Color = col
+				end
+			end)
+			b.Activated:Connect(function()
+				extra.selKit = i
+				Interfaz.alSonido("poner", 1.3)
+				pintarKits(d)
+			end)
+		end
+		pintarDetalleKit(d)
+		extra.texto.Text = d.pie or ""
+	end
 end
 
 local function pintarExtra(d)
@@ -28171,6 +28327,7 @@ local function xpNecesaria(n)
 	return n <= 15 and 2 * n + 7 or n <= 30 and 5 * n - 38 or 9 * n - 158
 end
 
+local anim = { sel = nil, xpObj = 0, xpVista = 0, nivel = nil, flash = 0, abierta = nil } -- estado de las animaciones de la interfaz
 local function pintarBarra()
 	for i = 1, 9 do
 		local b = barraCas[i]
@@ -28187,7 +28344,20 @@ local function pintarBarra()
 			b.Dur.Visible = false
 		end
 	end
-	selMarco.Position = UDim2.fromOffset(1 + (est.sel - 1) * 46, 1)
+	-- El marco se desliza hasta la casilla elegida y su objeto da un saltito
+	if anim.sel ~= est.sel then
+		if anim.sel then
+			local esc = barraCas[est.sel].Icono:FindFirstChild("Esc")
+			if esc then
+				esc.Scale = 1.3
+				TweenService:Create(esc, TweenInfo.new(0.25, Enum.EasingStyle.Back), { Scale = 1 }):Play()
+			end
+		else
+			anim.selX = 1 + (est.sel - 1) * 46
+			selMarco.Position = UDim2.fromOffset(anim.selX, 1)
+		end
+		anim.sel = est.sel
+	end
 	local p = est.inv[est.sel]
 	if p then
 		Iconos.poner(manoIcono, p.id)
@@ -28235,7 +28405,19 @@ local function pintarEstado()
 		end
 	end
 	local x = est.xp or { nivel = 0, puntos = 0 }
-	xpF.Size = UDim2.fromScale(math.clamp(x.puntos / xpNecesaria(x.nivel), 0, 1), 1)
+	anim.xpObj = math.clamp(x.puntos / xpNecesaria(x.nivel), 0, 1)
+	if anim.nivel and x.nivel > anim.nivel then
+		-- Sube de nivel: el número crece y la barra vuelve a llenarse desde el principio
+		anim.xpVista = 0
+		local esc = nivelXP:FindFirstChild("Esc")
+		if esc then
+			esc.Scale = 1.8
+			TweenService:Create(esc, TweenInfo.new(0.5, Enum.EasingStyle.Elastic), { Scale = 1 }):Play()
+		end
+	elseif anim.nivel and x.nivel < anim.nivel then
+		anim.xpVista = anim.xpObj
+	end
+	anim.nivel = x.nivel
 	nivelXP.Text = x.nivel > 0 and tostring(x.nivel) or ""
 end
 
@@ -28511,6 +28693,14 @@ function Interfaz.abrir(tipo)
 	end
 	Interfaz.colocarPaneles()
 	pintarPantalla()
+	-- La ventana aparece con un pequeño rebote (solo al abrirla, no al refrescarla)
+	if nombre ~= anim.abierta and pantallas[nombre] then
+		local P = pantallas[nombre]
+		local esc = P.panel:FindFirstChild("EscAbrir") or nuevo("UIScale", { Name = "EscAbrir" }, P.panel)
+		esc.Scale = 0.9
+		TweenService:Create(esc, TweenInfo.new(0.18, Enum.EasingStyle.Back), { Scale = 1 }):Play()
+	end
+	anim.abierta = nombre
 end
 
 function Interfaz.cerrar()
@@ -28657,6 +28847,11 @@ function Interfaz.titulo(t, sub, col)
 	for _, l in { titulo, subtitulo } do
 		l.TextTransparency = 0
 		l.TextStrokeTransparency = 0.2
+	end
+	if t and t ~= "" then
+		local esc = titulo:FindFirstChild("Esc") or nuevo("UIScale", { Name = "Esc" }, titulo)
+		esc.Scale = 1.6
+		TweenService:Create(esc, TweenInfo.new(0.35, Enum.EasingStyle.Back), { Scale = 1 }):Play()
 	end
 	task.delay(2.6, function()
 		if yo == tituloHilo then
@@ -28994,6 +29189,7 @@ function Interfaz.cargando()
 end
 
 function Interfaz.dano()
+	anim.flash = 0.6
 	flashGrad.BackgroundTransparency = 0.25
 	TweenService:Create(flashGrad, TweenInfo.new(0.5), { BackgroundTransparency = 1 }):Play()
 end
@@ -29112,6 +29308,7 @@ function Interfaz.iniciar()
 	pintarBarra()
 	pintarEstado()
 	local t = 0
+	local ultimoTick = -1
 	RunService.RenderStepped:Connect(function(dt)
 		t += dt
 		local m = UserInputService:GetMouseLocation()
@@ -29130,6 +29327,46 @@ function Interfaz.iniciar()
 			local s = math.max(0, math.ceil(muerteHasta - os.clock()))
 			muerteCuenta.Text = s > 0 and ("Reapareciendo en %d…"):format(s) or "Reapareciendo…"
 			muerteBarra.Size = UDim2.fromScale(math.clamp(1 - (muerteHasta - os.clock()) / math.max(0.1, muerteDura), 0.06, 1), 1)
+		end
+		-- Marco de la barra deslizándose y barra de experiencia que se llena poco a poco
+		local objX = 1 + (est.sel - 1) * 46
+		local xm = anim.selX or objX
+		if math.abs(objX - xm) > 0.5 then
+			anim.selX = xm + (objX - xm) * math.min(1, dt * 22)
+			selMarco.Position = UDim2.fromOffset(anim.selX, 1)
+		elseif xm ~= objX then
+			anim.selX = objX
+			selMarco.Position = UDim2.fromOffset(objX, 1)
+		end
+		anim.xpVista += (anim.xpObj - anim.xpVista) * math.min(1, dt * 8)
+		xpF.Size = UDim2.fromScale(anim.xpVista, 1)
+		-- Corazones: tiemblan con poca vida, hacen la ola con regeneración y parpadean al recibir daño
+		anim.flash = math.max(0, anim.flash - dt)
+		local tick = math.floor(t * 20)
+		if tick ~= ultimoTick then
+			ultimoTick = tick
+			local poca = vidaActual / vidaMax <= 0.2
+			local ola = est.efectos and est.efectos.regeneracion and (math.floor(t * 14) % 14) + 1 or nil
+			for k, im in corazones do
+				local y = 0
+				if poca then
+					y = math.random(-2, 1)
+				end
+				if ola == k then
+					y -= 4
+				end
+				im.Position = UDim2.fromOffset(im:GetAttribute("x") or 0, y)
+				if anim.flash > 0 then
+					im.ImageTransparency = (math.floor(anim.flash * 12) % 2 == 0) and 0.55 or 0
+				elseif math.abs(im.ImageTransparency - 0.55) < 0.01 then
+					im.ImageTransparency = 0
+				end
+			end
+			-- La comida tiembla cuando tienes mucha hambre
+			local hambre = est.modo ~= "creativo" and (est.hambre or 20) <= 6
+			for _, im in comidas do
+				im.Position = UDim2.fromOffset(im:GetAttribute("x") or 0, (hambre and math.random() < 0.3) and math.random(-2, 1) or 0)
+			end
 		end
 		-- La mano se balancea al andar y al usar
 		balanceo = math.max(0, balanceo - dt * 4)
@@ -29731,7 +29968,7 @@ local function nuevaVista(pieza)
 		return
 	end
 	local v = {
-		pieza = pieza, tipo = tipo, def = def, fase = 0, golpeT = 0, flash = 0, muerteT = 0,
+		pieza = pieza, tipo = tipo, def = def, fase = 0, golpeT = 0, flash = 0, muerteT = 0, nacerT = 0,
 		cf = pieza.CFrame, pos = pieza.Position, cabY = 0, cabX = 0, salto = 0, anterior = pieza.Position,
 	}
 	-- Las variantes se animan y miden como su criatura base
@@ -29754,6 +29991,9 @@ local function nuevaVista(pieza)
 				table.insert(gv.piezas, { parte = c, centro = pz.centro, tam = pz.parte.Size })
 			end
 			table.insert(v.grupos, gv)
+			if G.tipo == "brazo" then
+				v.tieneBrazos = true
+			end
 		end
 	else
 		v.caja = cajaRespaldo(pieza)
@@ -29895,6 +30135,12 @@ local function animar(v, dt)
 	if pieza:GetAttribute("tam") then
 		esc = pieza.Size.Y / math.max(altoDef, 0.01)
 	end
+	-- Al aparecer crece desde pequeño con un rebote
+	if v.nacerT < 1 then
+		v.nacerT = math.min(1, v.nacerT + dt / 0.35)
+		local t = v.nacerT - 1
+		esc *= 1 + 2.70158 * t * t * t + 1.70158 * t * t
+	end
 	local sx, sy = 1, 1
 	local mecha = pieza:GetAttribute("mecha") or 0
 	if tipo == "creeper" and mecha > 0 then
@@ -29942,9 +30188,25 @@ local function animar(v, dt)
 	if tipo == "ghast" or tipo == "blaze" then
 		base *= CFrame.new(0, math.sin(tiempo * 2) * 0.1 * BS, 0)
 	end
+	local bipedo = v.grupos ~= nil and v.tieneBrazos
 	if muerto then
-		v.muerteT = math.min(1, v.muerteT + dt * 2.5)
-		base *= CFrame.Angles(0, 0, v.muerteT * math.pi / 2)
+		-- Cae de lado (rápido al principio y suave al final) y se hunde un poco
+		v.muerteT = math.min(1, v.muerteT + dt * 1.6)
+		local e = 1 - (1 - v.muerteT) ^ 3
+		base *= CFrame.Angles(0, 0, e * math.pi / 2) * CFrame.new(0, -e * 0.08 * BS, 0)
+	elseif v.grupos and tipo ~= "ghast" and tipo ~= "blaze" and not v.def.vuela then
+		-- Al andar el cuerpo sube y baja con cada paso y se balancea un poco
+		local paso = math.min(1, sp)
+		base *= CFrame.new(0, math.abs(math.sin(v.fase)) * paso * (bipedo and 0.06 or 0.03) * BS * esc, 0)
+			* CFrame.Angles(0, 0, math.sin(v.fase) * paso * (bipedo and 0.05 or 0.02))
+		-- Al recibir un golpe se echa hacia atrás; al atacar se lanza hacia delante
+		if v.flash > 0 then
+			local f = math.sin(v.flash / 0.35 * math.pi)
+			base *= CFrame.Angles(-0.3 * f, 0, 0)
+		end
+		if golpe > 0 then
+			base *= CFrame.new(0, 0, golpe * 0.12 * BS * esc) * CFrame.Angles(golpe * 0.15, 0, 0)
+		end
 	end
 	if v.grupos then
 		for _, g in v.grupos do
@@ -29960,8 +30222,10 @@ local function animar(v, dt)
 					rot = CFrame.Angles(0, 0, g.s * (sp > 0.1 and 0 or math.sin(tiempo * 30) * 0.6))
 				else
 					-- En reposo los brazos se mecen un poco (como al respirar)
+					-- Los brazos van al contrario que las piernas (con los brazos al frente, casi quietos)
 					local respira = math.sin(tiempo * 1.6 + g.s) * 0.05
-					rot = CFrame.Angles((brazosArriba and -math.pi / 2 or 0) + amp * 0.3 * g.s - golpe + respira, 0, respira * g.s)
+					local vaiven = brazosArriba and amp * 0.3 * g.s or -amp * 0.8 * g.s
+					rot = CFrame.Angles((brazosArriba and -math.pi / 2 or 0) + vaiven - golpe * 1.2 + respira, 0, respira * g.s)
 				end
 			elseif g.tipo == "cabeza" and tipo ~= "ghast" and tipo ~= "blaze" then
 				rot = CFrame.Angles(v.cabX, v.cabY, 0)
@@ -30310,7 +30574,8 @@ end
 ------------------------------------------------------------------
 -- La mano en primera persona
 ------------------------------------------------------------------
--- opc = {enMano = fn() -> id, visible = fn() -> bool, balanceo = fn() -> 0..1, conBalanceo = fn() -> bool}
+-- opc = {enMano = fn() -> id, visible = fn() -> bool, balanceo = fn() -> 0..1, conBalanceo = fn() -> bool,
+--        pose = fn() -> {comer = 0..1?, arco = 0..1?, escudo = bool, corriendo = bool, aterriza = 0..1}}
 function Modelos.iniciarMano(opc)
 	local carpeta = Instance.new("Folder")
 	carpeta.Name = "ManoPrimeraPersona"
@@ -30333,6 +30598,10 @@ function Modelos.iniciarMano(opc)
 	local actual, sostenido = nil, nil
 	local pedido = 0
 	local cambioT, t = 0, 0
+	-- Estado suavizado de cada postura (0 = nada, 1 = del todo)
+	local inX, inY = 0, 0 -- inercia al girar la cámara
+	local ultimoLook = nil
+	local pComer, pArco, pEscudo, pCorrer, tiempo = 0, 0, 0, 0, 0
 	local function colorPiel()
 		local ch = jugador.Character
 		local bc = ch and ch:FindFirstChildOfClass("BodyColors")
@@ -30386,22 +30655,62 @@ function Modelos.iniciarMano(opc)
 		end
 		brazo.Transparency, manga.Transparency = 0, 0
 		cambioT = math.max(0, cambioT - dt)
+		tiempo += dt
+		local pose = opc.pose and opc.pose() or {}
+		local function hacia(v, obj, vel)
+			return v + (obj - v) * math.min(1, dt * vel)
+		end
+		pComer = hacia(pComer, pose.comer and 1 or 0, 12)
+		pArco = hacia(pArco, pose.arco and 1 or 0, 12)
+		pEscudo = hacia(pEscudo, pose.escudo and 1 or 0, 14)
+		pCorrer = hacia(pCorrer, pose.corriendo and 1 or 0, 6)
+		-- Inercia: al girar la cámara la mano se queda un poco atrás y vuelve sola
+		local look = cam.CFrame.LookVector
+		if ultimoLook then
+			-- Dónde queda la mirada de antes respecto a la de ahora (derecha y arriba)
+			local dx, dy = ultimoLook:Dot(cam.CFrame.RightVector), ultimoLook:Dot(cam.CFrame.UpVector)
+			inX = hacia(inX, math.clamp(dx * 3, -0.22, 0.22), 10)
+			inY = hacia(inY, math.clamp(dy * 3, -0.18, 0.18), 10)
+		end
+		ultimoLook = look
 		local b = opc.balanceo()
-		local golpe = math.sin(b * math.pi)
-		local golpe2 = math.sin(math.sqrt(b) * math.pi)
-		-- Al andar se mueve un poco
+		-- Mientras come, tensa el arco o se cubre no da golpes
+		local quieto = math.max(pComer, pArco, pEscudo)
+		local golpe = math.sin(b * math.pi) * (1 - quieto)
+		local golpe2 = math.sin(math.sqrt(b) * math.pi) * (1 - quieto)
+		-- Al andar se mueve un poco (más al correr)
 		local ch = jugador.Character
 		local hum = ch and ch:FindFirstChildOfClass("Humanoid")
 		local andar = hum and hum.MoveDirection.Magnitude > 0.1 and opc.conBalanceo()
 		if andar then
-			t += dt
+			t += dt * (1 + pCorrer * 0.35)
 		end
-		local bx = andar and math.sin(t * 9) * 0.06 or 0
-		local by = andar and -math.abs(math.cos(t * 9)) * 0.06 or 0
+		local amp = 0.06 * (1 + pCorrer * 0.8)
+		local bx = andar and math.sin(t * 9) * amp or 0
+		local by = andar and -math.abs(math.cos(t * 9)) * amp or 0
 		local baja = cambioT / 0.25 * 0.9
+		-- Aterrizar: la mano baja de golpe y vuelve
+		local at = pose.aterriza or 0
+		by -= at * 0.22
 		local base = cam.CFrame
-			* CFrame.new(1.2 + bx - golpe2 * 0.3, -1.15 + by - baja + golpe2 * 0.25 - golpe * 0.2, -1.9 - golpe * 0.35)
-			* CFrame.Angles(math.rad(14) - golpe * 0.9, math.rad(-10) + golpe2 * 0.35, math.rad(-6))
+			* CFrame.new(inX, inY, 0)
+			* CFrame.new(1.2 + bx - golpe2 * 0.3, -1.15 + by - baja + golpe2 * 0.25 - golpe * 0.2 - pCorrer * 0.08, -1.9 - golpe * 0.35)
+			* CFrame.Angles(math.rad(14) - golpe * 0.9 - pCorrer * 0.12, math.rad(-10) + golpe2 * 0.35 + inX * 0.6, math.rad(-6) - pCorrer * 0.1)
+		-- Comer: el objeto se acerca a la boca y sube y baja deprisa
+		if pComer > 0.01 then
+			local mord = math.abs(math.sin(tiempo * 22)) * 0.07 * pComer
+			base = base:Lerp(cam.CFrame * CFrame.new(0.55, -0.75 + mord, -1.3) * CFrame.Angles(math.rad(25), math.rad(-35), math.rad(-15)), pComer)
+		end
+		-- Arco: se lleva al centro y tiembla un poco cuando está tenso del todo
+		if pArco > 0.01 then
+			local tenso = pose.arco or 0
+			local tiembla = tenso >= 1 and math.sin(tiempo * 40) * 0.008 or 0
+			base = base:Lerp(cam.CFrame * CFrame.new(0.55 + tiembla, -0.8, -1.5 + tenso * 0.15) * CFrame.Angles(math.rad(8), math.rad(-25), math.rad(-25)), pArco)
+		end
+		-- Escudo: se levanta delante, un poco a la izquierda
+		if pEscudo > 0.01 then
+			base = base:Lerp(cam.CFrame * CFrame.new(0.6, -0.75, -1.35) * CFrame.Angles(math.rad(10), math.rad(30), 0), pEscudo)
+		end
 		brazo.CFrame = base * CFrame.new(0, 0, 0.55)
 		-- La manga asoma por abajo de la pantalla, como el brazo de Steve
 		manga.CFrame = base * CFrame.new(0, 0, 0.6)
@@ -30412,6 +30721,13 @@ function Modelos.iniciarMano(opc)
 			else
 				-- El objeto plano visto de lado, con la punta hacia arriba y hacia delante
 				giro = CFrame.new(-0.2, 0.55, -0.55) * CFrame.Angles(math.rad(-15), math.rad(-35), 0) * CFrame.Angles(0, 0, math.rad(40))
+				-- El arco se pone vertical y el escudo de frente
+				if pArco > 0.01 then
+					giro = giro:Lerp(CFrame.new(-0.25, 0.5, -0.6) * CFrame.Angles(0, math.rad(-80), 0) * CFrame.Angles(0, 0, math.rad(-20)), pArco)
+				end
+				if pEscudo > 0.01 then
+					giro = giro:Lerp(CFrame.new(-0.3, 0.45, -0.45) * CFrame.Angles(0, math.rad(-70), 0), pEscudo)
+				end
 			end
 			Modelos.colocar(sostenido, base * giro)
 		end
@@ -30427,14 +30743,33 @@ function Modelos.iniciarPersonajes(esTercera)
 	carpeta.Name = "ObjetosEnLaMano"
 	carpeta.Parent = workspace
 	local porJugador = {} -- plr -> {id, inst, pedido}
-	RunService.RenderStepped:Connect(function()
+	RunService.RenderStepped:Connect(function(dt)
 		for _, plr in Players:GetPlayers() do
 			local d = porJugador[plr]
 			if not d then
-				d = { pedido = 0 }
+				d = { pedido = 0, golpeT = 0, escudo = 0 }
 				porJugador[plr] = d
 			end
 			local ch = plr.Character
+			-- Brazo derecho: golpe al pegar, picar o poner, y el escudo levantado (se suma a la animación de Roblox)
+			local hombro = ch and ((ch:FindFirstChild("RightUpperArm") and ch.RightUpperArm:FindFirstChild("RightShoulder"))
+				or (ch:FindFirstChild("Torso") and ch.Torso:FindFirstChild("Right Shoulder")))
+			local g = plr:GetAttribute("Golpe")
+			if g ~= d.ultimoGolpe then
+				if d.ultimoGolpe ~= nil then
+					d.golpeT = 0.3
+				end
+				d.ultimoGolpe = g
+			end
+			d.golpeT = math.max(0, d.golpeT - dt)
+			d.escudo += ((plr:GetAttribute("Cubriendo") and 1 or 0) - d.escudo) * math.min(1, dt * 12)
+			if hombro and hombro:IsA("Motor6D") and (d.golpeT > 0 or d.escudo > 0.01) then
+				local a = math.sin((1 - d.golpeT / 0.3) * math.pi) * (d.golpeT > 0 and 1 or 0)
+				local r6 = hombro.Name == "Right Shoulder"
+				local extra = r6 and CFrame.Angles(0.15 * a, 0, a * 1.7 + d.escudo * 1.2)
+					or CFrame.Angles(a * 1.7 + d.escudo * 1.2, -0.25 * a + d.escudo * 0.5, 0)
+				hombro.Transform = hombro.Transform * extra
+			end
 			local mano = ch and (ch:FindFirstChild("RightHand") or ch:FindFirstChild("Right Arm"))
 			local hum = ch and ch:FindFirstChildOfClass("Humanoid")
 			local id = plr:GetAttribute("EnMano")

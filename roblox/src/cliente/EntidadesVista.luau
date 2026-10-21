@@ -8,6 +8,7 @@
 	Todo sigue con suavidad a la pieza del servidor.
 ]]
 local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Comp = ReplicatedStorage:WaitForChild("Blockverse")
@@ -57,13 +58,13 @@ local function cartel(padre, tam)
 end
 
 local function nueva(p)
-	local v = { p = p, pos = nil, fase = math.random() * 6.28 }
+	local v = { p = p, pos = nil, fase = math.random() * 6.28, nacer = 0 }
 	if p.Name == "Item" then
 		local ancla = pieza(Vector3.new(0.1, 0.1, 0.1), Color3.new(1, 1, 1))
 		ancla.Transparency = 1
 		ancla.Parent = carpeta
 		local bb, img = cartel(ancla, 0.9 * BS / 3 * 1.4)
-		v.ancla, v.bb, v.img = ancla, bb, img
+		v.ancla, v.bb, v.img, v.bbTam = ancla, bb, img, 0.9 * BS / 3 * 1.4
 		local function actualizar()
 			Iconos.poner(img, p:GetAttribute("id"))
 			local n = p:GetAttribute("n") or 1
@@ -134,12 +135,32 @@ local function nueva(p)
 	vistas[p] = v
 end
 
+-- Objetos y orbes recogidos: vuelan hasta quien los coge, encogiéndose (como en Minecraft)
+local volando = {} -- {v, desde, hacia (Player), t}
+local function quienRecoge(p)
+	local id = p:GetAttribute("Recoge")
+	return id and Players:GetPlayerByUserId(id) or nil
+end
+
 local function quitar(p)
 	local v = vistas[p]
 	if not v then
 		return
 	end
 	vistas[p] = nil
+	if (v.tipo == "item" or v.tipo == "orbe") and v.pos and not v.lejos then
+		local plr = quienRecoge(p)
+		if plr then
+			if v.con then
+				for _, c in v.con do
+					c:Disconnect()
+				end
+				v.con = nil
+			end
+			table.insert(volando, { v = v, desde = v.pos, hacia = plr, t = 0 })
+			return
+		end
+	end
 	if v.con then
 		for _, c in v.con do
 			c:Disconnect()
@@ -173,7 +194,10 @@ function EntidadesVista.iniciar()
 			end
 			v.pos = v.pos and v.pos:Lerp(p.Position, a) or p.Position
 			if v.tipo == "item" then
-				local alto = v.pos + Vector3.new(0, (0.25 + math.sin(tiempo * 2.5 + v.fase) * 0.08) * BS, 0)
+				-- Al caer da un saltito (crece de pequeño) y luego flota subiendo y bajando
+				v.nacer = math.min(1, v.nacer + dt / 0.3)
+				local salto = math.sin(v.nacer * math.pi) * 0.25 * (1 - v.nacer)
+				local alto = v.pos + Vector3.new(0, (0.25 + salto + math.sin(tiempo * 2.5 + v.fase) * 0.08) * BS, 0)
 				v.ancla.Position = alto
 				-- Modelo 3D: se pide una vez por objeto (la primera vez de cada uno tarda un poco)
 				local id = p:GetAttribute("id")
@@ -217,6 +241,43 @@ function EntidadesVista.iniciar()
 				v.pluma.CFrame = cf * CFrame.new(0, 0, largo / 2 - v.pluma.Size.Z / 2)
 			elseif v.tipo == "bola" then
 				v.vis.CFrame = CFrame.new(v.pos) * CFrame.Angles(tiempo * 5, tiempo * 3, 0)
+			end
+		end
+		-- Lo recogido vuela hacia el jugador y se encoge
+		local i = 1
+		while i <= #volando do
+			local f = volando[i]
+			f.t += dt / 0.18
+			local r = f.hacia.Character and f.hacia.Character:FindFirstChild("HumanoidRootPart")
+			if f.t >= 1 or not r then
+				local v = f.v
+				if v.ancla then
+					v.ancla:Destroy()
+				end
+				Modelos3D.quitar(v.modelo)
+				Modelos3D.quitar(v.modelo2)
+				if v.vis then
+					v.vis:Destroy()
+				end
+				volando[i] = volando[#volando]
+				volando[#volando] = nil
+			else
+				local e = f.t * f.t
+				local pos = f.desde:Lerp(r.Position + Vector3.new(0, 0.2 * BS, 0), e)
+				local esc = 1 - e * 0.7
+				local v = f.v
+				if v.modelo then
+					Modelos3D.colocar(v.modelo, CFrame.new(pos) * CFrame.Angles(0, tiempo * 8, 0))
+					Modelos3D.colocar(v.modelo2, CFrame.new(0, -1e4, 0))
+				elseif v.ancla then
+					v.ancla.Position = pos
+					v.bb.Size = UDim2.fromScale(esc * (v.bbTam or 1), esc * (v.bbTam or 1))
+				end
+				if v.vis then
+					v.vis.Position = pos
+					v.vis.Size = v.vis.Size * (1 - dt * 3)
+				end
+				i += 1
 			end
 		end
 	end)

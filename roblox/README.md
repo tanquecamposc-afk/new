@@ -147,6 +147,13 @@ Con **Rojo**, `default.project.json` monta el mismo árbol desde `src/`.
   - en la mano de cada jugador (y en la tuya en tercera persona).
   Si Roblox no deja crear mallas editables se usan los iconos de antes.
 - **Criaturas con más vida:** cuando no hay nadie cerca miran a su alrededor y en reposo los brazos se mecen un poco.
+- **Animaciones nuevas:**
+  - Criaturas: aparecen creciendo con un rebote, el cuerpo sube y baja con cada paso y se balancea, los brazos van al contrario que las piernas, se echan hacia atrás al recibir un golpe, se lanzan hacia delante al atacar y al morir caen de lado (rápido al principio y suave al final) antes de la nube de humo.
+  - Mano en primera persona: se queda un poco atrás al girar la cámara, baja y se mueve más al correr, da un tirón al aterrizar, se acerca a la boca y muerde al comer, se lleva al centro con el arco (y tiembla cuando está tenso) y levanta el escudo.
+  - Personajes: el brazo derecho da el golpe al pegar, picar o poner bloques y se levanta con el escudo; lo ven todos los jugadores (en tercera persona también el tuyo).
+  - Objetos: al caer dan un saltito y al recogerlos vuelan hacia quien los coge encogiéndose; los orbes de experiencia también.
+  - Interfaz: el marco de la barra se desliza, el objeto elegido da un saltito, la barra de experiencia se llena poco a poco y el número de nivel salta al subir; los corazones parpadean al recibir daño, tiemblan con poca vida y hacen la ola con regeneración; la comida tiembla con mucha hambre; las ventanas se abren con un pequeño rebote y los títulos entran grandes.
+- **Escudo:** con clic derecho (en la mano, o en la otra mano si en esta no hay nada que usar) te cubres: paras los golpes, flechas y explosiones que vienen de delante (no los de la espalda), el escudo se gasta y andas más despacio mientras te cubres.
 - **Pantalla de carga** con el fondo de tierra de Minecraft, el título, una barra con porcentaje y un consejo al azar; **pantalla de muerte** que dice quién o qué te mató («Te mató un Zombi», «Caíste desde muy alto mientras huías de un Creeper»), con su icono, cuánto aguantaste vivo, las coordenadas donde moriste, cuántos objetos quedaron en el suelo, los niveles perdidos, un consejo según la causa y una barra que se llena hasta reaparecer.
 - **Menú principal interactivo (estilo Roblox):**
   - Detrás, la cámara gira despacio sobre el mundo (vista panorámica) mientras el menú está abierto.
@@ -250,6 +257,7 @@ Para ser claros, esto **no es igual** que en el juego web:
     - Supervivencia: los bloques llegan a todos, cofre compartido, sin golpes entre jugadores, objetos al morir y guardado al salir (con encantamientos y ajustes).
     - Pantalla de muerte: llegan los objetos soltados, el sitio y el tiempo vivo, y «Te mató un Zombi».
     - Encantamientos: Eficiencia acelera, Fortuna III multiplica los diamantes, Toque de seda da la mena entera y Botín III da más botín.
+    - Escudo: para los golpes de delante y no los de la espalda, y los demás ven que te cubres.
     - Enemigos: no persiguen a través de paredes, no se tiran por los bordes, se avisan entre ellos y mandan su vida para la barra.
     - Logros y clima: se consiguen, salen en la tabla de jugadores y se guardan (y no cuentan dentro de Bed Wars); con lluvia los zombis no arden, en la tormenta es «de noche» y el rayo hace daño.
     - Bed Wars con 3 y 4 jugadores: votación, compra de kits y efectos (y que se guarden), equipos, golpes, escudo de cama, trampolín, momentos de caos y cofre del cielo, baja final con efecto, espectador, irse a mitad, victoria con recompensas, «Jugar otra vez» e inventario devuelto.

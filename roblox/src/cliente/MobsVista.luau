@@ -327,7 +327,7 @@ local function nuevaVista(pieza)
 		return
 	end
 	local v = {
-		pieza = pieza, tipo = tipo, def = def, fase = 0, golpeT = 0, flash = 0, muerteT = 0,
+		pieza = pieza, tipo = tipo, def = def, fase = 0, golpeT = 0, flash = 0, muerteT = 0, nacerT = 0,
 		cf = pieza.CFrame, pos = pieza.Position, cabY = 0, cabX = 0, salto = 0, anterior = pieza.Position,
 	}
 	-- Las variantes se animan y miden como su criatura base
@@ -350,6 +350,9 @@ local function nuevaVista(pieza)
 				table.insert(gv.piezas, { parte = c, centro = pz.centro, tam = pz.parte.Size })
 			end
 			table.insert(v.grupos, gv)
+			if G.tipo == "brazo" then
+				v.tieneBrazos = true
+			end
 		end
 	else
 		v.caja = cajaRespaldo(pieza)
@@ -491,6 +494,12 @@ local function animar(v, dt)
 	if pieza:GetAttribute("tam") then
 		esc = pieza.Size.Y / math.max(altoDef, 0.01)
 	end
+	-- Al aparecer crece desde pequeño con un rebote
+	if v.nacerT < 1 then
+		v.nacerT = math.min(1, v.nacerT + dt / 0.35)
+		local t = v.nacerT - 1
+		esc *= 1 + 2.70158 * t * t * t + 1.70158 * t * t
+	end
 	local sx, sy = 1, 1
 	local mecha = pieza:GetAttribute("mecha") or 0
 	if tipo == "creeper" and mecha > 0 then
@@ -538,9 +547,25 @@ local function animar(v, dt)
 	if tipo == "ghast" or tipo == "blaze" then
 		base *= CFrame.new(0, math.sin(tiempo * 2) * 0.1 * BS, 0)
 	end
+	local bipedo = v.grupos ~= nil and v.tieneBrazos
 	if muerto then
-		v.muerteT = math.min(1, v.muerteT + dt * 2.5)
-		base *= CFrame.Angles(0, 0, v.muerteT * math.pi / 2)
+		-- Cae de lado (rápido al principio y suave al final) y se hunde un poco
+		v.muerteT = math.min(1, v.muerteT + dt * 1.6)
+		local e = 1 - (1 - v.muerteT) ^ 3
+		base *= CFrame.Angles(0, 0, e * math.pi / 2) * CFrame.new(0, -e * 0.08 * BS, 0)
+	elseif v.grupos and tipo ~= "ghast" and tipo ~= "blaze" and not v.def.vuela then
+		-- Al andar el cuerpo sube y baja con cada paso y se balancea un poco
+		local paso = math.min(1, sp)
+		base *= CFrame.new(0, math.abs(math.sin(v.fase)) * paso * (bipedo and 0.06 or 0.03) * BS * esc, 0)
+			* CFrame.Angles(0, 0, math.sin(v.fase) * paso * (bipedo and 0.05 or 0.02))
+		-- Al recibir un golpe se echa hacia atrás; al atacar se lanza hacia delante
+		if v.flash > 0 then
+			local f = math.sin(v.flash / 0.35 * math.pi)
+			base *= CFrame.Angles(-0.3 * f, 0, 0)
+		end
+		if golpe > 0 then
+			base *= CFrame.new(0, 0, golpe * 0.12 * BS * esc) * CFrame.Angles(golpe * 0.15, 0, 0)
+		end
 	end
 	if v.grupos then
 		for _, g in v.grupos do
@@ -556,8 +581,10 @@ local function animar(v, dt)
 					rot = CFrame.Angles(0, 0, g.s * (sp > 0.1 and 0 or math.sin(tiempo * 30) * 0.6))
 				else
 					-- En reposo los brazos se mecen un poco (como al respirar)
+					-- Los brazos van al contrario que las piernas (con los brazos al frente, casi quietos)
 					local respira = math.sin(tiempo * 1.6 + g.s) * 0.05
-					rot = CFrame.Angles((brazosArriba and -math.pi / 2 or 0) + amp * 0.3 * g.s - golpe + respira, 0, respira * g.s)
+					local vaiven = brazosArriba and amp * 0.3 * g.s or -amp * 0.8 * g.s
+					rot = CFrame.Angles((brazosArriba and -math.pi / 2 or 0) + vaiven - golpe * 1.2 + respira, 0, respira * g.s)
 				end
 			elseif g.tipo == "cabeza" and tipo ~= "ghast" and tipo ~= "blaze" then
 				rot = CFrame.Angles(v.cabX, v.cabY, 0)

@@ -188,6 +188,8 @@ local function actualizarItem(e, dt)
 		if plr and d then
 			local sobra = Entidades.alRecoger(plr, e.pila)
 			if sobra <= 0 then
+				-- Para que los clientes lo vean volar hacia quien lo recoge
+				e.pieza:SetAttribute("Recoge", plr.UserId)
 				quitar(e)
 				return
 			elseif sobra < e.pila.n then
@@ -213,6 +215,7 @@ local function actualizarXP(e, dt)
 			e.vz += tz / l * f * dt * 3
 		end
 		if d < 1 and Entidades.alXP then
+			e.pieza:SetAttribute("Recoge", plr.UserId)
 			Entidades.alXP(plr, e.valor)
 			quitar(e)
 			return

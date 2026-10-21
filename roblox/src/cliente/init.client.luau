@@ -371,6 +371,8 @@ local picando, usando = false, false
 local progreso, actual, espera = 0, nil, 0
 local esperaUsar = 0
 local comerDesde, arcoDesde = nil, nil
+local cubriendo = false -- con el escudo levantado
+local aterriza = 0 -- golpe al tocar el suelo (para la mano)
 local ultimoAtaque = 0
 local agachado, corriendo = false, false
 local volando, vueloFuerza = false, nil
@@ -425,6 +427,7 @@ local function mirada()
 	return cam and cam.CFrame.LookVector or Vector3.new(0, 0, -1)
 end
 
+local velocidad -- (más abajo) velocidad al andar según se corra, se agache o se cubra
 local function usar(inicio)
 	local id, p = enMano()
 	local o = id and OB[id]
@@ -452,6 +455,17 @@ local function usar(inicio)
 		if inicio and not arcoDesde then
 			arcoDesde = os.clock()
 			enviar("derecho", nil, mirada(), nil, agachado)
+		end
+		return
+	end
+	-- Escudo (en la mano, o en la otra mano si en esta no hay nada que usar): cubrirse mientras se mantiene
+	local otra = est.inv[41]
+	local interactivo = objetivo and objetivo.tipo == "bloque" and BL[objetivo.b] and BL[objetivo.b].inter and not agachado
+	if id == Registro.I.escudo or (otra and otra.id == Registro.I.escudo and not interactivo and not (o and (o.bloque or o.comida or o.bebida or BL[id]))) then
+		if inicio and not cubriendo then
+			cubriendo = true
+			enviar("cubrir", true)
+			velocidad()
 		end
 		return
 	end
@@ -483,14 +497,14 @@ end
 ------------------------------------------------------------------
 -- Velocidad al andar (correr, agacharse)
 ------------------------------------------------------------------
-local function velocidad()
+function velocidad()
 	local ch = jugador.Character
 	local hum = ch and ch:FindFirstChildOfClass("Humanoid")
 	if not hum then
 		return
 	end
 	local v = 4.3
-	if agachado then
+	if agachado or cubriendo then
 		v = 1.3
 	elseif corriendo and (creativo() or est.hambre > 6) then
 		v = 5.6
@@ -650,6 +664,11 @@ UserInputService.InputEnded:Connect(function(input)
 			arcoDesde = nil
 			enviar("soltarArco", mirada())
 		end
+		if cubriendo then
+			cubriendo = false
+			enviar("cubrir", false)
+			velocidad()
+		end
 	elseif input.KeyCode == Enum.KeyCode.LeftShift then
 		agachado = false
 		velocidad()
@@ -680,6 +699,11 @@ Interfaz.botonesMovil({
 			if arcoDesde then
 				arcoDesde = nil
 				enviar("soltarArco", mirada())
+			end
+			if cubriendo then
+				cubriendo = false
+				enviar("cubrir", false)
+				velocidad()
 			end
 		end
 	end,
@@ -1060,6 +1084,15 @@ if Modelos3D.disponible() then
 		conBalanceo = function()
 			return Interfaz.ajustes.balanceo
 		end,
+		pose = function()
+			return {
+				comer = comerDesde ~= nil and usando or nil,
+				arco = arcoDesde and math.min(1, os.clock() - arcoDesde) or nil,
+				escudo = cubriendo and est.inv[est.sel] and est.inv[est.sel].id == Registro.I.escudo,
+				corriendo = corriendo and not agachado,
+				aterriza = aterriza,
+			}
+		end,
 	})
 	aplicarCamara()
 end
@@ -1113,6 +1146,9 @@ Estado.OnClientEvent:Connect(function(tipo, a, b, c)
 		Interfaz.oneblock(a)
 	elseif tipo == "sonido" then
 		sonido(a, b)
+	elseif tipo == "bloqueado" then
+		-- El escudo paró un golpe: la mano da un tirón
+		aterriza = math.max(aterriza, 0.35)
 	elseif tipo == "dano" then
 		Interfaz.dano()
 		sonido("dano")
@@ -1182,6 +1218,10 @@ Estado.OnClientEvent:Connect(function(tipo, a, b, c)
 	elseif tipo == "muerte" then
 		Interfaz.muerte(a)
 		picando, usando = false, false
+		if cubriendo then
+			cubriendo = false
+			enviar("cubrir", false)
+		end
 		ponerVuelo(false)
 	elseif tipo == "listo" then
 		listoServidor = true
@@ -1341,6 +1381,10 @@ RunService.RenderStepped:Connect(function(dt)
 	if bloqueado then
 		objetivo = nil
 		picando, usando = false, false
+		if cubriendo then
+			cubriendo = false
+			enviar("cubrir", false)
+		end
 	else
 		objetivo = apuntar()
 	end
@@ -1536,6 +1580,7 @@ RunService.RenderStepped:Connect(function(dt)
 		ponerCorrer(false)
 	end
 
+	aterriza = math.max(0, aterriza - dt * 3.5)
 	-- Daño por caída: altura desde la que se cae (en bloques)
 	if hum and root then
 		local y = root.Position.Y
@@ -1551,6 +1596,9 @@ RunService.RenderStepped:Connect(function(dt)
 		elseif alturaCaida then
 			local bloques = (alturaCaida - y) / BS
 			alturaCaida = nil
+			if bloques > 1.2 then
+				aterriza = math.clamp(bloques / 4, 0.35, 1)
+			end
 			if bloques > 3.5 then
 				enviar("caida", bloques)
 				sonido("caer")

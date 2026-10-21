@@ -383,6 +383,33 @@ if zk then
 	personaje(beto)
 	pasos(30)
 end
+-- Escudo: levantado para los golpes que vienen de delante, no los de detrás
+coger(beto, Reg.I.escudo, 1)
+enviar(beto, "modo", "supervivencia")
+enviar(beto, "sel", 1)
+pasos(3)
+enviar(beto, "cubrir", true)
+pasos(2)
+do
+	local zs = Mobs.crear("zombi", sx + 9.5, sy + 1, sz + 9.5)
+	local cab = datos[beto].cabeza
+	local look = cab.CFrame.LookVector
+	local v0 = datos[beto].hum.Health
+	Mobs.alDanarJugador(beto, 5, "mob", { x = -look.X, z = -look.Z }, zs)
+	pasos(2)
+	ok(datos[beto].hum.Health == v0, "el escudo no para un golpe de delante")
+	ok(beto:GetAttribute("Cubriendo") == true, "los demás no ven que Beto se cubre")
+	pasos(20)
+	Mobs.alDanarJugador(beto, 5, "mob", { x = look.X, z = look.Z }, zs)
+	pasos(2)
+	ok(datos[beto].hum.Health < v0, "el escudo para también los golpes por la espalda")
+	if zs then
+		Mobs.quitar(zs)
+	end
+	enviar(beto, "cubrir", false)
+	datos[beto].hum.Health = 20
+	pasos(2)
+end
 -- Guardar al salir y recuperar al volver
 local diamAntes = cuenta(ana, Reg.I.diamante)
 -- Ajustes: se guardan (sin valores raros) y vuelven al entrar
