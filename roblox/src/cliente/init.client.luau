@@ -210,6 +210,13 @@ end
 Render.iniciar(md, function(lote)
 	return Ediciones:InvokeServer(lote)
 end)
+-- La pantalla de carga con el fondo de tierra de Minecraft
+do
+	local tierra = BL[Registro.B.tierra]
+	if tierra and tierra.tex then
+		Interfaz.fondoCarga(Render.imagenTile(tierra.tex[1]))
+	end
+end
 
 -- Cambios de bloques (lista plana x, y, z, id)
 RBloques.OnClientEvent:Connect(function(plano)
@@ -783,6 +790,12 @@ RunService.Heartbeat:Connect(function(dt)
 	tCompas -= dt
 	if tCompas <= 0 then
 		tCompas = 0.5
+		-- Tu propia etiqueta (Bed Wars) no se ve: en primera persona flotaría delante de la cámara
+		local miCab = jugador.Character and jugador.Character:FindFirstChild("Head")
+		local miCartel = miCab and miCab:FindFirstChild("CartelBW")
+		if miCartel then
+			miCartel.Enabled = false
+		end
 		local mio = jugador:GetAttribute("EquipoBW")
 		for _, otro in Players:GetPlayers() do
 			local och = otro.Character

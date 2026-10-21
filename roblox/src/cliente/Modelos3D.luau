@@ -258,7 +258,6 @@ function Modelos.iniciarMano(opc)
 		local bc = ch and ch:FindFirstChildOfClass("BodyColors")
 		if bc then
 			brazo.Color = bc.RightArmColor3
-			manga.Color = bc.TorsoColor3
 		end
 	end
 	jugador.CharacterAdded:Connect(function()
@@ -324,7 +323,8 @@ function Modelos.iniciarMano(opc)
 			* CFrame.new(1.2 + bx - golpe2 * 0.3, -1.15 + by - baja + golpe2 * 0.25 - golpe * 0.2, -1.9 - golpe * 0.35)
 			* CFrame.Angles(math.rad(14) - golpe * 0.9, math.rad(-10) + golpe2 * 0.35, math.rad(-6))
 		brazo.CFrame = base * CFrame.new(0, 0, 0.55)
-		manga.CFrame = base * CFrame.new(0, 0, 1.05)
+		-- La manga asoma por abajo de la pantalla, como el brazo de Steve
+		manga.CFrame = base * CFrame.new(0, 0, 0.6)
 		if sostenido then
 			local giro
 			if sostenido.tipo == "bloque" then

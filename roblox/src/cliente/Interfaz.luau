@@ -24,6 +24,7 @@ local Comp = ReplicatedStorage:WaitForChild("Blockverse")
 local Registro = require(Comp:WaitForChild("Registro"))
 local Crafteo = require(Comp:WaitForChild("Crafteo"))
 local Iconos = require(script.Parent:WaitForChild("Iconos"))
+local Imagenes = require(script.Parent:WaitForChild("Imagenes"))
 local Enc = require(Comp:WaitForChild("Encantamientos"))
 
 local OB, BL = Registro.objetos, Registro.bloques
@@ -1149,18 +1150,54 @@ RunService.RenderStepped:Connect(function()
 	end
 end)
 
-local carga = nuevo("Frame", { Name = "Carga", BackgroundColor3 = Color3.fromRGB(40, 28, 20), BorderSizePixel = 0, Size = UDim2.fromScale(1, 1), Visible = true, ZIndex = 15 }, gui)
-local cargaT = texto({ AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.45), Size = UDim2.fromOffset(600, 30), Text = "Cargando Blockverse…", TextSize = 22, ZIndex = 16 }, carga)
-local cargaB = nuevo("Frame", { BackgroundColor3 = Color3.fromRGB(20, 20, 20), BorderSizePixel = 0, AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.52),
-	Size = UDim2.fromOffset(360, 10), ZIndex = 16 }, carga)
-local cargaBarra = nuevo("Frame", { BackgroundColor3 = Color3.fromRGB(110, 200, 60), BorderSizePixel = 0, Size = UDim2.fromScale(0, 1), ZIndex = 17 }, cargaB)
+-- Pantalla de carga: fondo de tierra (como en Minecraft), título, barra y un consejo
+local carga = nuevo("Frame", { Name = "Carga", BackgroundColor3 = Color3.fromRGB(34, 24, 17), BorderSizePixel = 0, Size = UDim2.fromScale(1, 1), Visible = true, ZIndex = 15 }, gui)
+local cargaFondo = nuevo("ImageLabel", { BackgroundTransparency = 1, Size = UDim2.fromScale(1, 1), ScaleType = Enum.ScaleType.Tile, TileSize = UDim2.fromOffset(72, 72),
+	ResampleMode = Enum.ResamplerMode.Pixelated, ImageColor3 = Color3.fromRGB(78, 78, 78), ImageTransparency = 1, ZIndex = 15 }, carga)
+local sombraCarga = nuevo("Frame", { BackgroundColor3 = Color3.new(0, 0, 0), BorderSizePixel = 0, Size = UDim2.fromScale(1, 1), ZIndex = 15 }, carga)
+nuevo("UIGradient", { Rotation = 90, Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.35), NumberSequenceKeypoint.new(0.5, 0.75),
+	NumberSequenceKeypoint.new(1, 0.25) }) }, sombraCarga)
+texto({ AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(0.5, 4, 0.3, 4), Size = UDim2.fromOffset(700, 90), Text = "BLOCKVERSE", Font = FUENTE_N,
+	TextSize = 72, TextColor3 = Color3.fromRGB(20, 20, 24), TextStrokeTransparency = 1, TextTransparency = 0.3, ZIndex = 16 }, carga)
+texto({ AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.3), Size = UDim2.fromOffset(700, 90), Text = "BLOCKVERSE", Font = FUENTE_N,
+	TextSize = 72, TextColor3 = Color3.new(1, 1, 1), TextStrokeTransparency = 0, TextStrokeColor3 = Color3.fromRGB(40, 40, 40), ZIndex = 17 }, carga)
+local cargaT = texto({ AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.47), Size = UDim2.fromOffset(600, 30), Text = "Cargando Blockverse…", TextSize = 22, ZIndex = 17 }, carga)
+local cargaB = nuevo("Frame", { BackgroundColor3 = Color3.fromRGB(18, 18, 20), BorderSizePixel = 0, AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.53),
+	Size = UDim2.fromOffset(400, 14), ZIndex = 17 }, carga)
+nuevo("UIStroke", { Color = Color3.fromRGB(0, 0, 0), Thickness = 2 }, cargaB)
+local cargaBarra = nuevo("Frame", { BackgroundColor3 = Color3.fromRGB(110, 200, 60), BorderSizePixel = 0, Size = UDim2.fromScale(0, 1), ZIndex = 18 }, cargaB)
+nuevo("UIGradient", { Rotation = 90, Color = ColorSequence.new(Color3.fromRGB(170, 240, 120), Color3.fromRGB(70, 150, 40)) }, cargaBarra)
+local cargaPct = texto({ AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.new(1, 10, 0.5, 0), Size = UDim2.fromOffset(60, 20), Text = "", TextSize = 14,
+	TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 18 }, cargaB)
+local CONSEJOS = {
+	"Consejo: pica un árbol (mantén el clic izquierdo) para conseguir madera.",
+	"Consejo: con la tecla M abres el menú de modos en cualquier momento.",
+	"Consejo: de noche salen monstruos; duerme en una cama para pasarla.",
+	"Consejo: en Bed Wars, protege tu cama con bloques antes de atacar.",
+	"Consejo: la tecla G usa la habilidad de tu kit en Bed Wars.",
+	"Consejo: en los Ajustes del menú puedes cambiar la sensibilidad del ratón.",
+	"Consejo: con lluvia los zombis no arden al sol.",
+	"Consejo: con la V cambias a la cámara en tercera persona.",
+	"Consejo: el hierro se funde en el horno con carbón o madera.",
+	"Consejo: los diamantes están en lo más hondo de las cuevas.",
+}
+local cargaConsejo = texto({ AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.fromScale(0.5, 0.6), Size = UDim2.fromOffset(640, 40), Text = CONSEJOS[math.random(1, #CONSEJOS)],
+	TextSize = 15, TextWrapped = true, TextColor3 = Color3.fromRGB(205, 205, 205), ZIndex = 17 }, carga)
 
-local muerte = nuevo("Frame", { Name = "Muerte", BackgroundColor3 = Color3.fromRGB(120, 0, 0), BackgroundTransparency = 0.45, BorderSizePixel = 0, Size = UDim2.fromScale(1, 1),
+-- Pantalla de muerte: título, causa, nivel y cuenta atrás para reaparecer
+local muerte = nuevo("Frame", { Name = "Muerte", BackgroundColor3 = Color3.fromRGB(130, 0, 0), BackgroundTransparency = 0.3, BorderSizePixel = 0, Size = UDim2.fromScale(1, 1),
 	Visible = false, ZIndex = 12 }, gui)
-texto({ AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.32), Size = UDim2.fromOffset(600, 70), Text = "¡Has muerto!", Font = FUENTE_N, TextSize = 56, ZIndex = 13 }, muerte)
-local muerteT = texto({ AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.42), Size = UDim2.fromOffset(700, 50), Text = "", TextSize = 18, TextWrapped = true, ZIndex = 13 }, muerte)
-texto({ AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.52), Size = UDim2.fromOffset(600, 30), Text = "Reapareciendo…", TextSize = 18,
-	TextColor3 = Color3.fromRGB(255, 230, 120), ZIndex = 13 }, muerte)
+nuevo("UIGradient", { Rotation = 90, Color = ColorSequence.new(Color3.fromRGB(150, 10, 10), Color3.fromRGB(50, 0, 0)),
+	Transparency = NumberSequence.new(0.35, 0.15) }, muerte)
+texto({ AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(0.5, 4, 0.32, 4), Size = UDim2.fromOffset(700, 80), Text = "¡Has muerto!", Font = FUENTE_N, TextSize = 60,
+	TextColor3 = Color3.fromRGB(40, 0, 0), TextStrokeTransparency = 1, TextTransparency = 0.3, ZIndex = 13 }, muerte)
+texto({ AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.32), Size = UDim2.fromOffset(700, 80), Text = "¡Has muerto!", Font = FUENTE_N, TextSize = 60, ZIndex = 14 }, muerte)
+local muerteT = texto({ AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.43), Size = UDim2.fromOffset(700, 50), Text = "", TextSize = 18, TextWrapped = true, ZIndex = 14 }, muerte)
+local muerteNivel = texto({ AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.49), Size = UDim2.fromOffset(600, 24), Text = "", TextSize = 16,
+	TextColor3 = Color3.fromRGB(128, 255, 32), ZIndex = 14 }, muerte)
+local muerteCuenta = texto({ AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.56), Size = UDim2.fromOffset(600, 30), Text = "Reapareciendo…", TextSize = 20,
+	Font = FUENTE_N, TextColor3 = Color3.fromRGB(255, 230, 120), ZIndex = 14 }, muerte)
+local muerteHasta = 0
 
 ------------------------------------------------------------------
 -- Estado
@@ -1895,6 +1932,9 @@ end
 function Interfaz.muerte(t)
 	if t then
 		muerteT.Text = t
+		local nivel = est.xp and est.xp.nivel or 0
+		muerteNivel.Text = nivel > 0 and ("Nivel de experiencia: %d"):format(nivel) or ""
+		muerteHasta = os.clock() + (Players.RespawnTime or 5)
 		muerte.Visible = true
 		Interfaz.cerrar()
 	else
@@ -1925,10 +1965,21 @@ function Interfaz.carga(f, t)
 		carga.Visible = false
 		return
 	end
+	if not carga.Visible then
+		cargaConsejo.Text = CONSEJOS[math.random(1, #CONSEJOS)]
+	end
 	carga.Visible = true
 	cargaBarra.Size = UDim2.fromScale(math.clamp(f, 0, 1), 1)
+	cargaPct.Text = ("%d %%"):format(math.floor(math.clamp(f, 0, 1) * 100 + 0.5))
 	if t then
 		cargaT.Text = t
+	end
+end
+
+-- El fondo de tierra de la pantalla de carga (cuando ya hay texturas)
+function Interfaz.fondoCarga(img)
+	if img and Imagenes.enEtiqueta(cargaFondo, img) then
+		cargaFondo.ImageTransparency = 0
 	end
 end
 
@@ -2067,6 +2118,11 @@ function Interfaz.iniciar()
 			if not abierta then
 				tooltip.Visible = false
 			end
+		end
+		-- Cuenta atrás de la pantalla de muerte
+		if muerte.Visible then
+			local s = math.max(0, math.ceil(muerteHasta - os.clock()))
+			muerteCuenta.Text = s > 0 and ("Reapareciendo en %d…"):format(s) or "Reapareciendo…"
 		end
 		-- La mano se balancea al andar y al usar
 		balanceo = math.max(0, balanceo - dt * 4)

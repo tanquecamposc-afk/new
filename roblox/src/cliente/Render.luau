@@ -122,6 +122,16 @@ Render.COLOR_TILE = COLOR_TILE
 function Render.tilesPixeles()
 	return tilesPx
 end
+-- Imagen editable de 16 × 16 con la textura `t` (para fondos de la interfaz)
+function Render.imagenTile(t)
+	local m = Texturas.tiles[t]
+	if not m or not tilesPx then
+		return nil
+	end
+	local buf = buffer.create(1024)
+	buffer.copy(buf, 0, tilesPx, m.o * 1024, 1024)
+	return Imagenes.crear(16, 16, buf)
+end
 
 ------------------------------------------------------------------
 -- Caras (igual que CARAS de malla.js)
