@@ -465,7 +465,8 @@ end
 do
 	local Gen = comp.Generador._resultado
 	local px2, pz2 = math.floor(root.Position.X / B), math.floor(root.Position.Z / B)
-	local fy = srvMundo.alturaSuelo(px2 + 3, pz2) + 1
+	-- El marco a la altura del suelo del jugador (al lado puede haber un barranco y quedaría fuera de su alcance)
+	local fy = srvMundo.alturaSuelo(px2, pz2) + 1
 	local x0, z0 = px2 + 3, pz2
 	moverJugador(px2, srvMundo.alturaSuelo(px2, pz2) + 1, pz2)
 	for a = 0, 3 do
