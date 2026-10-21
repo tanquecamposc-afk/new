@@ -143,8 +143,12 @@ function Registro.tiempoRomper(b, herrId, creativo, opc)
 	if h and h.tipo == "espada" and b ~= B.hojas then
 		vel = (b == B.telarana) and 15 or 1
 	end
+	-- Eficiencia (encantamiento): con la herramienta adecuada suma nivel² + 1
+	if opc and (opc.eficiencia or 0) > 0 and vel > 1 then
+		vel += opc.eficiencia * opc.eficiencia + 1
+	end
 	if opc then
-		if opc.bajoAgua then
+		if opc.bajoAgua and not opc.afinidad then
 			vel /= 5
 		end
 		if opc.enAire then

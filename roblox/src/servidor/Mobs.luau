@@ -270,11 +270,24 @@ function Mobs.matar(m, fuente, plr)
 	end
 	m.muerto = true
 	local def = m.def
+	-- Botín (encantamiento del arma de quien lo mata)
+	local botin = 0
+	if plr and (fuente == "jugador" or fuente == "flechaJugador") and Mobs.botinDe then
+		local ok, n = pcall(Mobs.botinDe, plr)
+		botin = ok and n or 0
+	end
 	if m.bebe <= 0 and not (def.ia == "cubo" and m.tam and m.tam > 0) then
 		for _, s in def.sueltaMuestra or {} do
 			local id, mn, mx, p = s[1], s[2], s[3], s[4]
-			if math.random() < p then
-				local n = math.random(mn, mx)
+			-- Lo raro sale un 1 % más por nivel; lo común suelta hasta «nivel» más
+			local raro = p < 0.1
+			local n = 0
+			if math.random() < p + (raro and 0.01 * botin or 0) then
+				n = math.random(mn, mx) + ((not raro and botin > 0) and math.random(0, botin) or 0)
+			elseif botin > 0 and not raro then
+				n = math.random(0, botin)
+			end
+			do
 				if n > 0 then
 					local real = (m.fuego > 0 and Hornos.cocinado and Hornos.cocinado[id]) or id
 					Entidades.soltarItem(Registro.pila(real, n), m.x, m.y + 0.5, m.z, true)
@@ -1137,6 +1150,17 @@ local function intentoAparicion(jugadores)
 		return
 	end
 	Mobs.crear(tipo, x + 0.5, y, z + 0.5)
+	-- Como en Minecraft, a veces salen en grupo (hasta 3 más alrededor, también a oscuras)
+	if tipo ~= "enderman" and tipo ~= "bruja" then
+		local extra = math.min(Config.MAX_HOSTILES - hostiles - 1, math.random() < 0.5 and 0 or azar(1, 3))
+		for _ = 1, extra do
+			local ox, oz = x + azar(-3, 3), z + azar(-3, 3)
+			local oy = buscarSuelo(ox, y + 2, oz, 5, 2)
+			if oy > 0 and not (md:alCielo(ox, oy, oz) and not esDeNoche()) and not hayLuzCerca(ox, oy, oz) then
+				Mobs.crear(tipo, ox + 0.5, oy, oz + 0.5)
+			end
+		end
+	end
 end
 
 ------------------------------------------------------------------

@@ -1375,7 +1375,10 @@ RunService.RenderStepped:Connect(function(dt)
 		local ojosB = ojos()
 		local bajoAgua = ojosB and esAgua(md:get(math.floor(ojosB.X / BS), math.floor(ojosB.Y / BS), math.floor(ojosB.Z / BS)))
 		local enAire = hum and hum.FloorMaterial == Enum.Material.Air and not volando and not bajoAgua
-		local t = Registro.tiempoRomper(o.b, enMano(), creativo(), { bajoAgua = bajoAgua, enAire = enAire })
+		local _, pm = enMano()
+		local casco = est.inv[37]
+		local t = Registro.tiempoRomper(o.b, enMano(), creativo(), { bajoAgua = bajoAgua, enAire = enAire,
+			eficiencia = pm and pm.enc and pm.enc.eficiencia or 0, afinidad = casco and casco.enc and (casco.enc.afinidadAcuatica or 0) > 0 })
 		if t == math.huge then
 			progreso = 0
 		else

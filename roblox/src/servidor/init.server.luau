@@ -303,6 +303,11 @@ local function gastarEnMano(plr, s, n)
 	end
 	local o = OB[p.id]
 	if o and o.dur then
+		-- Irrompibilidad: cada uso solo desgasta con probabilidad 1 / (nivel + 1)
+		local irr = p.enc and p.enc.irrompibilidad or 0
+		if irr > 0 and math.random() >= 1 / (irr + 1) then
+			return
+		end
 		p.dur = (p.dur or o.dur) - (n or 1)
 		if p.dur <= 0 then
 			s.inv[s.sel] = false
@@ -344,7 +349,8 @@ local function desgastarArmadura(s, n)
 	for i = 37, 40 do
 		local p = s.inv[i]
 		local o = p and OB[p.id]
-		if o and o.armadura and o.dur then
+		local irr = p and p.enc and p.enc.irrompibilidad or 0
+		if o and o.armadura and o.dur and not (irr > 0 and math.random() >= 0.6 + 0.4 / (irr + 1)) then
 			p.dur = (p.dur or o.dur) - math.max(1, math.floor(n / 4))
 			if p.dur <= 0 then
 				s.inv[i] = false
@@ -393,6 +399,29 @@ local function danar(plr, n, tipo, dir, quien)
 		n -= s.ultimoDano
 	end
 	local d = n
+	-- Encantamientos de armadura para daños concretos (puntos: 4 % menos cada uno, hasta 20)
+	local esp = 0
+	for i = 37, 40 do
+		local pz = s.inv[i]
+		local e = pz and pz.enc
+		if e then
+			if tipo == "fuego" or tipo == "lava" then
+				esp += 2 * (e.protFuego or 0)
+			elseif tipo == "explosion" then
+				esp += 2 * (e.protExplosion or 0)
+			elseif tipo == "flecha" then
+				esp += 2 * (e.protProyectiles or 0)
+			elseif tipo == "caida" then
+				esp += 3 * (e.caidaPluma or 0)
+			end
+			if tipo == "caida" or tipo == "fuego" or tipo == "lava" then
+				esp += e.proteccion or 0
+			end
+		end
+	end
+	if esp > 0 then
+		d *= 1 - math.min(20, esp) * 0.04
+	end
 	if tipo == "mob" or tipo == "flecha" or tipo == "explosion" or tipo == "jugador" then
 		local def, dur = armaduraTotal(s)
 		d = d * (1 - math.min(20, math.max(def / 5, def - d / (2 + dur / 4))) / 25)
@@ -402,7 +431,7 @@ local function danar(plr, n, tipo, dir, quien)
 			local pz = s.inv[i]
 			prot += pz and pz.enc and (pz.enc.proteccion or 0) or 0
 		end
-		d *= 1 - math.min(20, prot) * 0.04
+		d *= 1 - math.min(20 - math.min(20, esp), prot) * 0.04
 		desgastarArmadura(s, n)
 	end
 	if s.efectos.resistencia then
@@ -628,6 +657,9 @@ local function alMorir(plr)
 	if p and supervivencia(s) and not modoInv and not Modos.mantenerInventario(plr) then
 		nivelPerdido = s.xp.nivel
 		for i = 1, Inv.TAM do
+			if s.inv[i] and s.inv[i].enc and (s.inv[i].enc.desaparicion or 0) > 0 then
+				s.inv[i] = false
+			end
 			if s.inv[i] then
 				soltados += 1
 				Entidades.soltarItem(s.inv[i], p.X, p.Y + 1, p.Z, true)
@@ -889,13 +921,45 @@ local function facing(dir)
 end
 
 -- Soltar lo que da un bloque (con experiencia de las menas)
-local function soltarBloque(id, x, y, z, herrId, plr)
+-- Menas a las que afecta Fortuna (y que Toque de seda deja enteras)
+local MENAS = {}
+for _, k in { "menaCarbon", "menaDiamante", "menaEsmeralda", "menaLapis", "menaRedstone", "menaCuarzo", "menaCobre", "menaHierro", "menaOro",
+	"pCarbon", "pHierro", "pOro", "pRedstone", "pLapis", "pDiamante", "pCobre", "menaOroNether" } do
+	if B[k] then
+		MENAS[B[k]] = true
+	end
+end
+-- Bloques que con Toque de seda se recogen tal cual (sin seda sueltan otra cosa o nada)
+local SEDA = {}
+for _, k in { "cesped", "cespedNevado", "piedra", "vidrio", "hielo", "hieloCompacto", "hieloAzul", "estanteria", "micelio", "podzol", "piedraLuminosa",
+	"senda", "bloqueMusgo", "farolMarino", "panel", "pizarra", "nilioCarmesi", "nilioDistorsionado", "sculk", "sensorSculk", "catalizador", "chillador",
+	"sandia", "bloqueAmatista", "telarana" } do
+	if B[k] then
+		SEDA[B[k]] = true
+	end
+end
+
+local function soltarBloque(id, x, y, z, herrId, plr, enc)
 	local s = plr and st(plr)
 	local lista
-	if herrId == I.tijeras and (Registro.esHojas(id) or id == B.hierbaAlta or id == B.helecho or (BL[id] and (BL[id].clave or ""):find("^hojas"))) then
+	local seda = enc and (enc.toqueSeda or 0) > 0 and Registro.puedeRecoger(id, herrId)
+	local fortuna = enc and enc.fortuna or 0
+	local claveB = BL[id] and BL[id].clave or ""
+	if seda and (MENAS[id] or SEDA[id] or Registro.esHojas(id) or claveB:find("^vidrio") ~= nil or claveB:find("^hojas") ~= nil) then
+		lista = { { id, 1 } }
+	elseif herrId == I.tijeras and (Registro.esHojas(id) or id == B.hierbaAlta or id == B.helecho or (BL[id] and (BL[id].clave or ""):find("^hojas"))) then
 		lista = { { id, 1 } }
 	else
 		lista = Registro.sueltaDe(id, herrId)
+		-- Fortuna en las menas: multiplica lo que sueltan (como en Minecraft)
+		if fortuna > 0 and MENAS[id] then
+			local mult = math.max(0, math.random(0, fortuna + 1) - 1) + 1
+			for _, d in lista do
+				if d[1] ~= id then
+					d[2] *= mult
+				end
+			end
+		end
 	end
 	for _, d in lista do
 		if d[2] > 0 and (OB[d[1]] or BL[d[1]]) then
@@ -903,7 +967,7 @@ local function soltarBloque(id, x, y, z, herrId, plr)
 		end
 	end
 	local def = BL[id]
-	if def and def.xp and Registro.puedeRecoger(id, herrId) and (not s or supervivencia(s)) then
+	if def and def.xp and not (seda and MENAS[id]) and Registro.puedeRecoger(id, herrId) and (not s or supervivencia(s)) then
 		local v = math.random(def.xp[1] or 0, def.xp[2] or 0)
 		if v > 0 then
 			Entidades.soltarXP(v, x + 0.5, y + 0.5, z + 0.5)
@@ -967,6 +1031,22 @@ Mobs.alExplotar = function(x, y, z, potencia, fuente)
 end
 Mobs.alDanarJugador = function(plr, dano, tipo, dir, m)
 	danar(plr, dano, tipo, dir, m)
+	local s = st(plr)
+	if s and tipo == "mob" and type(m) == "table" and m.def and not m.muerto then
+		for i = 37, 40 do
+			local pz = s.inv[i]
+			local esp = pz and pz.enc and pz.enc.espinas or 0
+			if esp > 0 and math.random() < 0.15 * esp then
+				Mobs.herir(m, math.random(1, 4), nil, "espinas", 0, plr)
+				break
+			end
+		end
+	end
+end
+Mobs.botinDe = function(plr)
+	local s = st(plr)
+	local p = s and s.inv[s.sel]
+	return p and p.enc and p.enc.botin or 0
 end
 Mobs.esCreativo = function(plr)
 	local s = st(plr)
@@ -993,6 +1073,28 @@ Entidades.alRecoger = function(plr, pila)
 	return sobra
 end
 Entidades.alXP = function(plr, v)
+	local s = st(plr)
+	if s then
+		local cands = {}
+		for _, i in { s.sel, 37, 38, 39, 40, 41 } do
+			local pz = s.inv[i]
+			local o = pz and OB[pz.id]
+			if pz and pz.enc and (pz.enc.reparacion or 0) > 0 and o and o.dur and (pz.dur or o.dur) < o.dur then
+				table.insert(cands, { pz, o })
+			end
+		end
+		if #cands > 0 then
+			local c = cands[math.random(1, #cands)]
+			local arreglo = math.min(v * 2, c[2].dur - c[1].dur)
+			c[1].dur += arreglo
+			v -= math.ceil(arreglo / 2)
+		end
+	end
+	if v <= 0 then
+		Estado:FireClient(plr, "sonido", "xp")
+		enviarJugador(plr)
+		return
+	end
 	ganarXP(plr, v)
 	Estado:FireClient(plr, "sonido", "xp")
 end
@@ -1014,6 +1116,9 @@ Entidades.alImpacto = function(e, modo)
 					local dano = opc.dano or math.ceil(v / 30 * 6)
 					local l = math.sqrt(e.vx * e.vx + e.vz * e.vz)
 					Mobs.herir(m, dano, { x = e.vx / (l > 0 and l or 1) * 0.5, z = e.vz / (l > 0 and l or 1) * 0.5 }, opc.jugador and "flechaJugador" or "flecha", 0, opc.jugador)
+					if opc.llama and not m.def.inmuneFuego then
+						m.fuego = math.max(m.fuego or 0, 5)
+					end
 				elseif e.tipo == "bolaFuego" then
 					Mobs.herir(m, 5, nil, "fuego")
 					m.fuego = 5
@@ -1128,7 +1233,7 @@ function acciones.romper(plr, s, x, y, z)
 		if def.dureza < 0 then
 			return
 		end
-		local t = Registro.tiempoRomper(b, herrId)
+		local t = Registro.tiempoRomper(b, herrId, false, { eficiencia = mano and mano.enc and mano.enc.eficiencia or 0 })
 		local g = s.golpe
 		if t > 0.05 and (not g or g.x ~= x or g.y ~= y or g.z ~= z or os.clock() - g.t < t * 0.6 - 0.25) then
 			return
@@ -1153,7 +1258,7 @@ function acciones.romper(plr, s, x, y, z)
 	end
 	Mundo.set(x, y, z, 0)
 	if not creativo then
-		soltarBloque(b, x, y, z, herrId, plr)
+		soltarBloque(b, x, y, z, herrId, plr, mano and mano.enc)
 		if def.dureza > 0 then
 			local h = Registro.herramienta(herrId)
 			if h then
@@ -1717,8 +1822,14 @@ function acciones.soltarArco(plr, s, dir)
 	if not p or p.id ~= I.arco then
 		return
 	end
+	local infinita = (p.enc and p.enc.infinidad or 0) > 0
 	if supervivencia(s) then
-		if not Inv.quitar(s.inv, I.flecha, 1) then
+		-- Con Infinidad basta con llevar una flecha: no se gasta
+		if infinita then
+			if Inv.contar(s.inv, I.flecha) <= 0 then
+				return
+			end
+		elseif not Inv.quitar(s.inv, I.flecha, 1) then
 			return
 		end
 		gastarEnMano(plr, s, 1)
@@ -1733,12 +1844,15 @@ function acciones.soltarArco(plr, s, dir)
 		dano = math.ceil(dano * (1 + 0.25 * (poder + 1)))
 	end
 	Entidades.disparar("flecha", e.X / BS + dir.X * 0.5, e.Y / BS + dir.Y * 0.5, e.Z / BS + dir.Z * 0.5, dir, vel,
-		{ jugador = plr, dano = dano, recogible = supervivencia(s) })
+		{ jugador = plr, dano = dano, recogible = supervivencia(s) and not infinita, llama = (p.enc and p.enc.llama or 0) > 0 })
 	Estado:FireClient(plr, "sonido", "arco")
 	enviarJugador(plr)
 end
 
 -- Ataque a una criatura (carga = 0..1 según el tiempo desde el último golpe)
+local NO_MUERTOS = { zombi = true, esqueleto = true, esqueletoErrante = true, momia = true, ahogado = true, aldeanoZombi = true, esqueletoWither = true,
+	phantom = true, wither = true }
+local ARTROPODOS = { arana = true, abeja = true, lepisma = true, endermita = true }
 function acciones.atacar(plr, s, parte, carga, cayendo, corriendo)
 	if typeof(parte) ~= "Instance" then
 		return
@@ -1825,6 +1939,18 @@ function acciones.atacar(plr, s, parte, carga, cayendo, corriendo)
 	local filo = p and p.enc and p.enc.filo or 0
 	if filo > 0 then
 		dano += (0.5 * filo + 0.5) * carga
+	end
+	local enc = p and p.enc
+	if enc then
+		if (enc.castigo or 0) > 0 and NO_MUERTOS[m.tipo] then
+			dano += 2.5 * enc.castigo * carga
+		end
+		if (enc.perdicion or 0) > 0 and ARTROPODOS[m.tipo] then
+			dano += 2.5 * enc.perdicion * carga
+		end
+		if (enc.aspectoIgneo or 0) > 0 and not m.def.inmuneFuego then
+			m.fuego = math.max(m.fuego or 0, 4 * enc.aspectoIgneo)
+		end
 	end
 	local critico = cayendo == true and carga > 0.9
 	if critico then
@@ -2330,7 +2456,23 @@ function acciones.caida(plr, s, n)
 	if not supervivencia(s) or type(n) ~= "number" or n ~= n or n <= 3.5 then
 		return
 	end
-	danar(plr, math.floor(math.min(n, 100) - 3), "caida")
+	local dano = math.floor(math.min(n, 100) - 3)
+	-- Al caer sobre heno se hace un 20 % del daño, sobre una cama la mitad y en una telaraña nada
+	local p = piesDe(plr)
+	if p then
+		local px, pz = math.floor(p.X), math.floor(p.Z)
+		local abajo, dentro = Mundo.get(px, math.floor(p.Y - 0.05), pz), Mundo.get(px, math.floor(p.Y + 0.1), pz)
+		if dentro == B.telarana or abajo == B.telarana then
+			return
+		elseif abajo == B.heno then
+			dano = math.floor(dano * 0.2)
+		elseif BL[abajo] and ((BL[abajo].clave or ""):find("^cama") or abajo == B.cama) then
+			dano = math.floor(dano * 0.5)
+		end
+	end
+	if dano > 0 then
+		danar(plr, dano, "caida")
+	end
 end
 
 function acciones.salto(plr, s)
@@ -2462,7 +2604,9 @@ RunService.Heartbeat:Connect(function(dt)
 			-- Aire bajo el agua
 			local aireAntes = math.floor(s.aire)
 			if esAgua(bOjos) and supervivencia(s) then
-				s.aire -= dt
+				-- Respiración (casco): el aire dura (nivel + 1) veces más
+				local casco = s.inv[37]
+				s.aire -= dt / (1 + (casco and casco.enc and casco.enc.respiracion or 0))
 				if s.aire <= 0 then
 					s.aire = 0
 					s.aireT -= dt

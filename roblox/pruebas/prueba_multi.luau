@@ -394,8 +394,20 @@ sale(ana)
 local guardado = F.almacenes.Blockverse_v2 and F.almacenes.Blockverse_v2.u_101
 ok(guardado ~= nil, "no se guardó el inventario de Ana al salir")
 -- Una espada encantada guardada vuelve con su encantamiento
+local ranEnc = {} -- ranuras de la barra con herramientas encantadas para probar
 if guardado then
 	guardado.inv[30] = { id = Reg.I.espada_diamante, n = 1, dur = 1500, enc = { filo = 3 } }
+	local encs = {
+		{ id = Reg.I.pico_diamante, n = 1, dur = 1561, enc = { fortuna = 3, eficiencia = 5 } },
+		{ id = Reg.I.pico_diamante, n = 1, dur = 1561, enc = { toqueSeda = 1 } },
+		{ id = Reg.I.espada_diamante, n = 1, dur = 1561, enc = { botin = 3 } },
+	}
+	for i = 1, 9 do
+		if not guardado.inv[i] and #encs > 0 then
+			guardado.inv[i] = table.remove(encs, 1)
+			table.insert(ranEnc, i)
+		end
+	end
 end
 ana = entra("Ana", 101)
 enviar(ana, "modo", "supervivencia")
@@ -413,6 +425,64 @@ ok(ajV and ajV.sensibilidad == 2, "los ajustes guardados no llegan al volver")
 local esp = inv(ana)[30]
 ok(esp and esp.enc and esp.enc.filo == 3, "la espada encantada pierde el encantamiento al volver")
 ok(cuenta(ana, Reg.I.diamante) == diamAntes, "al volver Ana no recupera su inventario (" .. cuenta(ana, Reg.I.diamante) .. " de " .. diamAntes .. ")")
+
+-- ENCANTAMIENTOS: Eficiencia, Fortuna, Toque de seda y Botín hacen lo que dicen
+do
+	local t0 = Reg.tiempoRomper(Reg.B.piedra, Reg.I.pico_hierro)
+	local t5 = Reg.tiempoRomper(Reg.B.piedra, Reg.I.pico_hierro, false, { eficiencia = 5 })
+	ok(t5 < t0 * 0.3, ("Eficiencia V no acelera el picado (%.2f s contra %.2f s)"):format(t5, t0))
+	ok(#ranEnc == 3, "no hay sitio en la barra para las herramientas encantadas de prueba")
+	if #ranEnc == 3 then
+		-- De día, sin monstruos y con suelo firme (las pruebas de antes pueden haber roto la plataforma)
+		S.Lighting.ClockTime = 12
+		for _, m in table.clone(Mobs.lista) do
+			Mobs.quitar(m)
+		end
+		for x = sx - 2, sx + 3 do
+			for z = sz - 2, sz + 3 do
+				Mundo.set(x, sy, z, Reg.B.tierra, { sinAviso = true })
+				for y = sy + 1, sy + 3 do
+					Mundo.set(x, y, z, 0, { sinAviso = true })
+				end
+			end
+		end
+		mover(ana, sx, sy + 1, sz)
+		pasos(3)
+		-- Lo que se suelta se apunta en vez de caer al suelo (así no depende de que Ana tenga sitio)
+		local soltarAntes = Entidades.soltarItem
+		local soltado = {}
+		Entidades.soltarItem = function(pila)
+			soltado[pila.id] = (soltado[pila.id] or 0) + pila.n
+		end
+		-- Fortuna III: 12 menas de diamante dan bastante más de 12 diamantes (de media 26)
+		enviar(ana, "sel", ranEnc[1])
+		for _ = 1, 12 do
+			Mundo.set(sx + 1, sy + 1, sz, Reg.B.menaDiamante)
+			romper(ana, sx + 1, sy + 1, sz)
+		end
+		local ganados = soltado[Reg.I.diamante] or 0
+		ok(ganados >= 15, "Fortuna III no multiplica los diamantes (" .. ganados .. " de 12 menas)")
+		print("encantamientos: Fortuna III dio", ganados, "diamantes de 12 menas")
+		-- Toque de seda: la mena sale entera
+		enviar(ana, "sel", ranEnc[2])
+		Mundo.set(sx + 1, sy + 1, sz, Reg.B.menaDiamante)
+		romper(ana, sx + 1, sy + 1, sz)
+		ok(soltado[Reg.B.menaDiamante] == 1, "Toque de seda no recoge la mena entera")
+		-- Botín III: 20 zombis sueltan bastante más carne podrida (sin Botín, unos 21)
+		enviar(ana, "sel", ranEnc[3])
+		pasos(2)
+		for _ = 1, 20 do
+			local z = Mobs.crear("zombi", sx + 0.5, sy + 1, sz + 1.5)
+			if z then
+				Mobs.herir(z, 100, nil, "jugador", 0, ana)
+			end
+		end
+		local carne = soltado[Reg.I.carnePodrida] or 0
+		ok(carne >= 34, "Botín III no da más botín (" .. carne .. " de 20 zombis)")
+		print("encantamientos: Botín III dio", carne, "de carne podrida de 20 zombis")
+		Entidades.soltarItem = soltarAntes
+	end
+end
 
 ------------------------------------------------------------------
 -- BED WARS con varios jugadores
