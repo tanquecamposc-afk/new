@@ -217,6 +217,12 @@ local function guardarYa(plr)
 	if not ok then
 		warn("[Blockverse] No se pudo guardar el perfil de Bed Wars: " .. tostring(err))
 	end
+	return ok
+end
+
+-- Guarda ya y dice si salió bien (para las compras con Robux: primero se guarda, luego se apunta la compra)
+function Perfil.guardarAhora(plr)
+	return guardarYa(plr) == true
 end
 
 -- ¿Lo que cambie se va a guardar? (no si la carga falló o no hay DataStore)
@@ -225,12 +231,25 @@ function Perfil.sePuedeGuardar(plr)
 	return almacen ~= nil and not sinGuardar[plr] and plr.UserId ~= nil and plr.UserId > 0
 end
 
--- Guarda sin parar a quien lo llama (el DataStore tarda)
+-- Guarda sin parar a quien lo llama (el DataStore tarda). Varios cambios seguidos
+-- (cobrar todo el Camino, comprar…) se juntan en un solo guardado a los 6 s,
+-- para no pasar del límite de escrituras de Roblox. Al salir se guarda siempre.
+local pendiente = {}
 function Perfil.guardar(plr)
-	task.spawn(guardarYa, plr)
+	if pendiente[plr] then
+		return
+	end
+	pendiente[plr] = true
+	task.delay(6, function()
+		pendiente[plr] = nil
+		if perfiles[plr] then
+			guardarYa(plr)
+		end
+	end)
 end
 
 function Perfil.olvidar(plr)
+	pendiente[plr] = nil
 	guardarYa(plr)
 	perfiles[plr] = nil
 	sinGuardar[plr] = nil

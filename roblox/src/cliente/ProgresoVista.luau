@@ -27,6 +27,9 @@ ProgresoVista.alVisible = function(si) end
 ProgresoVista.enMenu = function()
 	return false
 end
+ProgresoVista.enTercera = function()
+	return false
+end
 
 local FUENTE = Enum.Font.GothamBold
 local FUENTE_N = Enum.Font.GothamBlack
@@ -349,6 +352,10 @@ local function pintarRuleta(resultado)
 					girando = true
 					ProgresoVista.alSonido("poner", 1.5)
 					ProgresoVista.enviar("progresoCmd", "girar")
+					-- Por si no llega respuesta, no se queda bloqueado
+					task.delay(8, function()
+						girando = false
+					end)
 				end
 			end)
 	elseif not resultado then
@@ -572,6 +579,9 @@ end
 
 function ProgresoVista.datos(d, extra)
 	datos = d
+	if girando and not (extra and extra.ruleta) then
+		girando = false
+	end
 	ProgresoVista.pendientes(d.pendientes or 0)
 	if not velo.Visible then
 		return
@@ -591,7 +601,7 @@ end
 -- Avisos mientras juegas
 ------------------------------------------------------------------
 -- Botón con el número de cosas por cobrar (a la izquierda)
-local avisoBoton = nuevo("TextButton", { AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.new(0, 10, 0.5, -40), Size = UDim2.fromOffset(150, 40),
+local avisoBoton = nuevo("TextButton", { AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.new(0, 10, 0.5, -40), Size = UDim2.fromOffset(176, 40),
 	BackgroundColor3 = MORADO, BorderSizePixel = 0, Text = "", AutoButtonColor = true, Visible = false }, gui)
 esquina(avisoBoton, 20)
 nuevo("UIStroke", { Color = Color3.new(1, 1, 1), Thickness = 2, Transparency = 0.4 }, avisoBoton)
@@ -607,7 +617,7 @@ function ProgresoVista.pendientes(n)
 		TweenService:Create(avisoEsc, TweenInfo.new(0.4, Enum.EasingStyle.Elastic), { Scale = 1 }):Play()
 	end
 	nPendientes = n
-	avisoT.Text = ("★ Progreso (P) · %d"):format(n)
+	avisoT.Text = ("★  Progreso (P) · %d"):format(n)
 	if ProgresoVista.alPendientes then
 		ProgresoVista.alPendientes(n)
 	end
@@ -693,6 +703,12 @@ function ProgresoVista.iniciar()
 	gui.Parent = jugador:WaitForChild("PlayerGui")
 	-- El botón de avisos solo se ve jugando (no en el menú) y si hay algo por cobrar
 	RunService.RenderStepped:Connect(function()
+		local ch = jugador.Character
+		local cab = ch and ch:FindFirstChild("Head")
+		local t = cab and cab:FindFirstChild("TituloJugador")
+		if t then
+			t.Enabled = ProgresoVista.enTercera() and not jugador:GetAttribute("BedWars")
+		end
 		avisoBoton.Visible = nPendientes > 0 and not velo.Visible and not ProgresoVista.enMenu()
 	end)
 end

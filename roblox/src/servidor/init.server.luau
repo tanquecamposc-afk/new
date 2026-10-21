@@ -2817,6 +2817,11 @@ local ctxModos = {
 Modos.iniciar(ctxModos)
 -- Progreso: Camino de Blockverse, misiones, ruleta, colección y ranking
 Progreso.iniciar({ Estado = Estado, almacen = almacen, aviso = aviso, perfilMenu = Modos.perfilMenu })
+Modos.alPerfil = function(plr, d)
+	local p = Progreso.de(plr)
+	d.camino, d.caminoXp, d.caminoMax = p.nivel, p.xp, p.nivel >= Progreso.NIVEL_MAX
+	d.caminoNec = Progreso.xpNivel(p.nivel)
+end
 -- Tienda con Robux: pases, monedas y cosas de cada modo
 Tienda.iniciar({
 	Estado = Estado, estados = estados, almacen = almacen, darOSoltar = darOSoltar, supervivencia = supervivencia, aviso = aviso,

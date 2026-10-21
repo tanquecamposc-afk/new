@@ -16,6 +16,8 @@ local D = require(Comp.DatosProgreso)
 local Perfil = require(script.Parent.PerfilBW)
 
 local Progreso = {}
+Progreso.NIVEL_MAX = D.NIVEL_MAX
+Progreso.xpNivel = D.xpNivel
 local ctx -- {Estado, almacen, aviso}
 local datos = {} -- plr -> datos guardados
 local sinGuardar = {}
@@ -94,7 +96,10 @@ end
 -- Guardar
 ------------------------------------------------------------------
 local ordenado
-local function guardarYa(plr)
+local ultimoRanking = {} -- plr -> os.clock() de la última vez que se escribió en el ranking
+-- Roblox limita las escrituras por minuto: el progreso se guarda como mucho cada 30 s
+-- y el ranking cada 2 minutos (y siempre al salir)
+local function guardarYa(plr, saliendo)
 	local p = datos[plr]
 	if not p or sinGuardar[plr] or not ctx.almacen or not plr.UserId or plr.UserId <= 0 then
 		return
@@ -102,7 +107,8 @@ local function guardarYa(plr)
 	pcall(function()
 		ctx.almacen:SetAsync("p_" .. plr.UserId, p)
 	end)
-	if ordenado then
+	if ordenado and (saliendo or os.clock() - (ultimoRanking[plr] or -1e9) > 120) then
+		ultimoRanking[plr] = os.clock()
 		pcall(function()
 			ordenado:SetAsync(tostring(plr.UserId), p.total)
 		end)
@@ -114,7 +120,7 @@ local function guardar(plr)
 		return
 	end
 	pendienteGuardar[plr] = true
-	task.delay(5, function()
+	task.delay(30, function()
 		pendienteGuardar[plr] = nil
 		if datos[plr] then
 			guardarYa(plr)
@@ -588,7 +594,7 @@ function Progreso.iniciar(c)
 	pcall(function()
 		ordenado = DataStoreService:GetOrderedDataStore("Blockverse_Ranking")
 	end)
-	Players.PlayerAdded:Connect(function(plr)
+	local function alEntrar(plr)
 		plr.CharacterAdded:Connect(function(ch)
 			ch:WaitForChild("HumanoidRootPart", 10)
 			ch:WaitForChild("Head", 10)
@@ -599,15 +605,21 @@ function Progreso.iniciar(c)
 		end)
 		Progreso.cargar(plr)
 		avisarPendientes(plr)
-	end)
+	end
+	Players.PlayerAdded:Connect(alEntrar)
+	-- Los que ya estaban (en Studio a veces el jugador entra antes que este script)
+	for _, plr in Players:GetPlayers() do
+		task.spawn(alEntrar, plr)
+	end
 	Players.PlayerRemoving:Connect(function(plr)
-		guardarYa(plr)
+		guardarYa(plr, true)
 		datos[plr] = nil
 		sinGuardar[plr] = nil
+		ultimoRanking[plr] = nil
 	end)
 	game:BindToClose(function()
 		for plr in datos do
-			guardarYa(plr)
+			guardarYa(plr, true)
 		end
 	end)
 end

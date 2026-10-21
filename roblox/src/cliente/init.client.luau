@@ -270,6 +270,9 @@ end)
 -- Cámara
 ------------------------------------------------------------------
 local tercera = false
+ProgresoVista.enTercera = function()
+	return tercera
+end
 local function aplicarCamara()
 	local abierto = Interfaz.abierto() or Interfaz.menuVisible()
 	if tercera then
@@ -493,7 +496,7 @@ local function usar(inicio)
 	-- Escudo (en la mano, o en la otra mano si en esta no hay nada que usar): cubrirse mientras se mantiene
 	local otra = est.inv[41]
 	local interactivo = objetivo and objetivo.tipo == "bloque" and BL[objetivo.b] and BL[objetivo.b].inter and not agachado
-	if id == Registro.I.escudo or (otra and otra.id == Registro.I.escudo and not interactivo and not (o and (o.bloque or o.comida or o.bebida or BL[id]))) then
+	if not interactivo and (id == Registro.I.escudo or (otra and otra.id == Registro.I.escudo and not (o and (o.bloque or o.comida or o.bebida or BL[id])))) then
 		if inicio and not cubriendo then
 			cubriendo = true
 			enviar("cubrir", true)

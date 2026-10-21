@@ -448,7 +448,11 @@ function METODOS:GetDataStore(nombre)
 	local datos = F.almacenes[nombre]
 	return {
 		GetAsync = function(_, k) return copiaProfunda(datos[k]) end,
-		SetAsync = function(_, k, v) datos[k] = copiaProfunda(v) end,
+		SetAsync = function(_, k, v)
+			-- Una prueba puede hacer que el siguiente guardado falle (F.fallarGuardado = true)
+			if F.fallarGuardado then F.fallarGuardado = false; error("DataStore no disponible") end
+			datos[k] = copiaProfunda(v)
+		end,
 		UpdateAsync = function(_, k, f) local n = f(copiaProfunda(datos[k])); if n ~= nil then datos[k] = copiaProfunda(n) end; return n end,
 	}
 end

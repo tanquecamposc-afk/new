@@ -261,8 +261,14 @@ function Modos.enArena(plr)
 	return BW.en(plr) or MZ.en(plr) or LY.en(plr)
 end
 
+-- Lo que sale en la tarjeta del menú (el servidor principal le añade el Camino de Blockverse)
+Modos.alPerfil = nil -- function(plr, datos)
 function Modos.perfilMenu(plr)
-	return BW.perfilMenu(plr)
+	local d = BW.perfilMenu(plr)
+	if Modos.alPerfil then
+		pcall(Modos.alPerfil, plr, d)
+	end
+	return d
 end
 function Modos.reclamarDiaria(plr)
 	return BW.reclamarDiaria(plr)

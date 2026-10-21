@@ -594,6 +594,7 @@ enviar(ana, "comprar", 2, 1)
 pasos(2)
 ok(perfilA.efectos.fuegos and perfilA.efecto == "fuegos" and perfilA.monedas == 450, "no se compró el efecto de fuegos artificiales")
 enviar(ana, "cerrarUI")
+pasos(30 * 7) -- los guardados del perfil se juntan y salen a los 6 s
 ok(F.almacenes.Blockverse_BW_v1 and F.almacenes.Blockverse_BW_v1.bw_101 and F.almacenes.Blockverse_BW_v1.bw_101.kits.guerrero == 1, "la compra del kit no se guardó")
 BWm._empezarYa()
 pasos(60)
@@ -816,6 +817,19 @@ do
 	pasos(3)
 	ok(F.almacenes.Blockverse_v2 and F.almacenes.Blockverse_v2.r_compra1 == true, "la compra no queda apuntada en el DataStore")
 	ok(datos[ana].ultimo.compraHecha ~= nil, "el cliente no recibe el «¡gracias!» de la compra")
+	-- Si el guardado falla, Roblox reintenta y las monedas no se dan dos veces
+	local m1 = pa.monedas
+	F.fallarGuardado = true
+	r = procesar({ PlayerId = 101, ProductId = 2001, PurchaseId = "compraFallo" })
+	ok(r == DEC.NotYetGranted, "una compra que no se pudo guardar se da por entregada")
+	r = procesar({ PlayerId = 101, ProductId = 2001, PurchaseId = "compraFallo" })
+	ok(r == DEC.PurchaseGranted and pa.monedas == m1 + 500, "al reintentar una compra las monedas se dan dos veces (" .. (pa.monedas - m1) .. ")")
+	-- (el aviso de ese guardado fallido es el que se buscaba: no cuenta como error)
+	for i = #F.errores, 1, -1 do
+		if tostring(F.errores[i]):find("DataStore no disponible") then
+			table.remove(F.errores, i)
+		end
+	end
 	-- Un jugador que no está no recibe nada (Roblox lo reintenta cuando vuelva)
 	ok(procesar({ PlayerId = 999, ProductId = 2002, PurchaseId = "compra2" }) == DEC.NotYetGranted, "entrega compras a jugadores que no están")
 	-- Vida extra dentro de la mazmorra
@@ -907,8 +921,8 @@ do
 	pasos(2)
 	local dp = datos[ana].ultimo.progreso and datos[ana].ultimo.progreso[1]
 	ok(dp and #dp.camino == DP.NIVEL_MAX and #dp.diarias == 3 and #dp.semanales == 3 and #dp.titulos > 0 and #dp.ranking > 0, "la ventana de progreso no recibe los datos")
-	-- Se guarda
-	pasos(200)
+	-- Se guarda (como mucho cada 30 s)
+	pasos(30 * 32)
 	local g = F.almacenes.Blockverse_v2 and F.almacenes.Blockverse_v2.p_101
 	ok(g and g.nivel == p.nivel and g.estela == "chispas", "el progreso no se guarda")
 	print("progreso: nivel", p.nivel, "· experiencia", p.total, "· misiones, ruleta, estela y título bien")

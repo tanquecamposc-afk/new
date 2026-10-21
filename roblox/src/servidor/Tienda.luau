@@ -162,7 +162,8 @@ local function entregar(plr, x)
 	return true, ("Ya no se podía usar: te damos %d monedas a cambio"):format(x.monedas or 100)
 end
 
-local procesadas = {} -- PurchaseId -> true (en esta sesión del servidor)
+local procesadas = {} -- PurchaseId -> true cuando ya está entregada y apuntada (en este servidor)
+local entregadas = {} -- PurchaseId -> texto, si ya se dio pero aún no se pudo guardar o apuntar
 
 local function procesar(info)
 	local plr = Players:GetPlayerByUserId(info.PlayerId)
@@ -170,13 +171,14 @@ local function procesar(info)
 	if not plr or not x then
 		return Enum.ProductPurchaseDecision.NotYetGranted
 	end
-	if procesadas[info.PurchaseId] then
+	local id = info.PurchaseId
+	if procesadas[id] then
 		return Enum.ProductPurchaseDecision.PurchaseGranted
 	end
-	-- ¿Ya se entregó en otra sesión?
 	local almacen = ctx.almacen
-	local clave = "r_" .. tostring(info.PurchaseId)
-	if almacen then
+	local clave = "r_" .. tostring(id)
+	-- ¿Ya se entregó y apuntó en otra sesión?
+	if almacen and not entregadas[id] then
 		local ok, ya = pcall(function()
 			return almacen:GetAsync(clave)
 		end)
@@ -184,7 +186,7 @@ local function procesar(info)
 			return Enum.ProductPurchaseDecision.NotYetGranted
 		end
 		if ya then
-			procesadas[info.PurchaseId] = true
+			procesadas[id] = true
 			return Enum.ProductPurchaseDecision.PurchaseGranted
 		end
 	end
@@ -192,23 +194,30 @@ local function procesar(info)
 	if not Perfil.sePuedeGuardar(plr) then
 		return Enum.ProductPurchaseDecision.NotYetGranted
 	end
-	local okE, hecho, texto = pcall(entregar, plr, x)
-	if not okE or not hecho then
-		warn("[Blockverse] No se pudo entregar " .. x.clave .. ": " .. tostring(hecho))
+	-- Se entrega una sola vez por compra (aunque Roblox lo reintente si algo falla después)
+	if not entregadas[id] then
+		local okE, hecho, texto = pcall(entregar, plr, x)
+		if not okE or not hecho then
+			warn("[Blockverse] No se pudo entregar " .. x.clave .. ": " .. tostring(hecho))
+			return Enum.ProductPurchaseDecision.NotYetGranted
+		end
+		entregadas[id] = texto or ""
+	end
+	-- Primero se guarda lo entregado y luego se apunta la compra
+	if almacen and not Perfil.guardarAhora(plr) then
 		return Enum.ProductPurchaseDecision.NotYetGranted
 	end
-	Perfil.guardar(plr)
 	if almacen then
 		local okG = pcall(function()
 			almacen:SetAsync(clave, true)
 		end)
 		if not okG then
-			-- Lo intentará otra vez; procesadas evita darlo dos veces en este servidor
-			procesadas[info.PurchaseId] = true
 			return Enum.ProductPurchaseDecision.NotYetGranted
 		end
 	end
-	procesadas[info.PurchaseId] = true
+	procesadas[id] = true
+	local texto = entregadas[id]
+	entregadas[id] = nil
 	ctx.Estado:FireClient(plr, "compraHecha", { nombre = x.nombre, clave = x.clave, texto = texto })
 	ctx.Estado:FireClient(plr, "perfil", ctx.Modos.perfilMenu(plr))
 	ctx.enviarJugador(plr)

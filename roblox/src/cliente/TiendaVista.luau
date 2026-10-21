@@ -334,6 +334,8 @@ pintar = function()
 		b.TextColor3 = k == pestana and Color3.fromRGB(60, 30, 0) or Color3.new(1, 1, 1)
 	end
 	monedasT.Text = ("%d monedas"):format(datos.monedas or 0)
+	pie.Text = datos.studio and "En Studio: lo que no tiene ID se da gratis al pulsarlo, para probarlo. A los jugadores no les sale hasta que pongas su ID."
+		or "Pagas con Robux a través de Roblox. Las monedas solo sirven dentro de Blockverse."
 	limpiar(cuerpo)
 	cuerpo.CanvasPosition = Vector2.new(0, 0)
 	if pestana == "destacado" then

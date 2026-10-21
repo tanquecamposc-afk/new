@@ -1295,12 +1295,19 @@ function Interfaz.perfil(d)
 	if not d then
 		return
 	end
-	perfilNivel.Text = ("%sNivel %d★"):format(d.vip and "[VIP] " or "", d.nivel or 1)
-	local ok, c = pcall(Color3.fromHex, d.colorNivel or "#aaaaaa")
-	perfilNivel.TextColor3 = ok and c or Color3.fromRGB(170, 170, 170)
-	barraNivelF.Size = UDim2.fromScale(math.clamp((d.xp or 0) / 500, 0, 1), 1)
+	-- Arriba, el nivel del Camino de Blockverse (todos los modos) con su barra; abajo, el título y las estrellas de Bed Wars
+	if d.camino then
+		perfilNivel.Text = ("%sNivel %d"):format(d.vip and "[VIP] " or "", d.camino)
+		perfilNivel.TextColor3 = d.vip and Color3.fromRGB(255, 200, 60) or Color3.fromRGB(190, 170, 255)
+		barraNivelF.Size = UDim2.fromScale(d.caminoMax and 1 or math.clamp((d.caminoXp or 0) / math.max(1, d.caminoNec or 1), 0, 1), 1)
+	else
+		perfilNivel.Text = ("%sNivel %d★"):format(d.vip and "[VIP] " or "", d.nivel or 1)
+		local ok, c = pcall(Color3.fromHex, d.colorNivel or "#aaaaaa")
+		perfilNivel.TextColor3 = ok and c or Color3.fromRGB(170, 170, 170)
+		barraNivelF.Size = UDim2.fromScale(math.clamp((d.xp or 0) / 500, 0, 1), 1)
+	end
 	perfilMonedas.Text = tostring(d.monedas or 0)
-	perfilVictorias.Text = d.titulo and ("%s · Camino nivel %d"):format(d.titulo, d.camino or 1)
+	perfilVictorias.Text = d.titulo and ("%s · Bed Wars %d★"):format(d.titulo, d.nivel or 1)
 		or ("Bed Wars: %d %s · %d %s"):format(d.victorias or 0, d.victorias == 1 and "victoria" or "victorias", d.partidas or 0, d.partidas == 1 and "partida" or "partidas")
 	if d.tituloCol then
 		local okC, cc = pcall(Color3.fromHex, d.tituloCol)
@@ -1362,7 +1369,7 @@ do
 	iconosMenu[ic] = idDe("esmeralda")
 	texto({ Position = UDim2.fromOffset(58, 6), Size = UDim2.new(1, -64, 0, 26), Text = "PROGRESO", TextSize = 22, Font = FUENTE_N,
 		TextXAlignment = Enum.TextXAlignment.Left, TextStrokeTransparency = 0.2, ZIndex = 13 }, b)
-	texto({ Position = UDim2.fromOffset(58, 32), Size = UDim2.new(1, -64, 0, 16), Text = "Camino · Misiones · Ruleta", TextSize = 12,
+	texto({ Position = UDim2.fromOffset(58, 32), Size = UDim2.new(1, -64, 0, 16), Text = "Misiones y ruleta", TextSize = 12,
 		TextXAlignment = Enum.TextXAlignment.Left, TextColor3 = Color3.fromRGB(225, 220, 255), TextStrokeTransparency = 1, ZIndex = 13 }, b)
 	local av = nuevo("Frame", { AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, 8, 0, -8), Size = UDim2.fromOffset(26, 26),
 		BackgroundColor3 = Color3.fromRGB(230, 50, 60), BorderSizePixel = 0, Visible = false, ZIndex = 14 }, b)
@@ -1399,7 +1406,7 @@ do
 	iconosMenu[ic] = idDe("bloqueOro")
 	texto({ Position = UDim2.fromOffset(66, 8), Size = UDim2.new(1, -72, 0, 28), Text = "TIENDA", TextSize = 26, Font = FUENTE_N,
 		TextXAlignment = Enum.TextXAlignment.Left, TextStrokeColor3 = Color3.fromRGB(110, 60, 0), TextStrokeTransparency = 0, ZIndex = 13 }, b)
-	texto({ Position = UDim2.fromOffset(66, 36), Size = UDim2.new(1, -72, 0, 18), Text = "VIP · Monedas · Extras", TextSize = 13, Font = FUENTE,
+	texto({ Position = UDim2.fromOffset(66, 36), Size = UDim2.new(1, -72, 0, 18), Text = "VIP y monedas", TextSize = 13, Font = FUENTE,
 		TextXAlignment = Enum.TextXAlignment.Left, TextColor3 = Color3.fromRGB(90, 45, 0), TextStrokeTransparency = 1, ZIndex = 13 }, b)
 	local cinta = nuevo("Frame", { AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, 8, 0, -10), Size = UDim2.fromOffset(62, 20),
 		BackgroundColor3 = Color3.fromRGB(230, 50, 60), BorderSizePixel = 0, ZIndex = 14 }, b)

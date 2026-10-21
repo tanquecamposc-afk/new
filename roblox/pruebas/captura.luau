@@ -269,7 +269,7 @@ local function volcar(nombre, cx, cy, cz, radio, cam, mira, fov)
 					nb += 1
 				end
 			end
-		elseif cn == "BillboardGui" and ((o._p.Adornee and o._p.Adornee._p.CFrame) or (o.Parent and o.Parent._p.CFrame)) then
+		elseif cn == "BillboardGui" and o._p.Enabled ~= false and ((o._p.Adornee and o._p.Adornee._p.CFrame) or (o.Parent and o.Parent._p.CFrame)) then
 			local base = (o._p.Adornee and o._p.Adornee._p.CFrame) or o.Parent._p.CFrame
 			local p = base.Position + (o._p.StudsOffset or F.Vector3.new())
 			if math.abs(p.X - c.X) < R and math.abs(p.Z - c.Z) < R then
