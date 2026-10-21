@@ -2064,11 +2064,12 @@ for _, e in EFECTOS do
 end
 local ROM_KIT = { "I", "II", "III" }
 
+-- Datos para la ventana de kits: cada tarjeta lleva su rareza, nivel, estado y lo que hace el botón
 local function datosKits(plr, s)
 	local perfil = Perfil.de(plr)
 	local tab = s.ui.tab or 1
-	local d = { sub = "tienda", nombre = tab == 1 and "KITS" or "EFECTOS DE BAJA FINAL", pestana = tab, ofertas = {},
-		pestanas = { { nombre = "Kits", icono = idc("espada_hierro") }, { nombre = "Efectos de baja final", icono = idc("cohete") } },
+	local d = { sub = "kits", nombre = tab == 1 and "KITS" or "EFECTOS DE BAJA FINAL", pestana = tab, ofertas = {},
+		pestanas = { { nombre = "Kits", icono = idc("espada_hierro") }, { nombre = "Efectos", icono = idc("cohete") } },
 		monedas = { { idc("pepitaOro") or I.lingoteOro, perfil.monedas } } }
 	if tab == 1 then
 		local gratis = Kits.gratisHoy()
@@ -2077,26 +2078,30 @@ local function datosKits(plr, s)
 			local equipado = perfil.kit == k.id
 			local esGratis = table.find(gratis, k.id) ~= nil
 			local R = Kits.RAREZAS[k.r]
-			local txt, puede, tiene = "", true, false
+			-- estado: equipado | tuyo | gratis | probando | comprar;  accion: lo que pasa al pulsar el botón
+			local estado, accion, precio, puede = "comprar", nil, nil, true
 			if nv then
+				estado = equipado and "equipado" or "tuyo"
 				if not equipado then
-					txt = "Clic: equipar"
-				elseif nv >= 3 or k.p == 0 then
-					txt, tiene = "✔ Equipado", true
-				else
-					local c = Kits.costeMejora(k.id, nv)
-					txt = ("Mejorar a %s · %d monedas"):format(ROM_KIT[nv + 1], c)
-					puede = perfil.monedas >= c
+					accion = "Equipar"
+				elseif nv < 3 and k.p > 0 then
+					precio = Kits.costeMejora(k.id, nv)
+					accion = "Mejorar a " .. ROM_KIT[nv + 1]
+					puede = perfil.monedas >= precio
 				end
 			elseif esGratis and not equipado then
-				txt = "¡Gratis hoy! Clic: probar"
+				estado, accion = "gratis", "Probar gratis"
 			else
-				txt = (equipado and "Probando · " or "") .. ("Comprar · %d monedas"):format(k.p)
+				estado = equipado and "probando" or "comprar"
+				accion, precio = "Comprar", k.p
 				puede = perfil.monedas >= k.p
 			end
-			local nombre = k.n .. (nv and k.p > 0 and (" " .. ROM_KIT[nv]) or "") .. (k.nuevo and " ★NUEVO" or "")
-			table.insert(d.ofertas, { id = k.icono, n = 1, nombre = nombre, precioTxt = txt, puede = puede, tiene = tiene, tieneTxt = txt,
-				desc = ("%s · %s%s: %s"):format(k.n, R[1], k.act and " · con habilidad (G)" or "", Kits.descripcion(k.id, nv or 1)) })
+			local siguiente = nv and nv < 3 and k.p > 0 and Kits.descripcion(k.id, nv + 1) or nil
+			table.insert(d.ofertas, {
+				id = k.icono, nombre = k.n, rareza = R[1], col = R[2], nivel = (k.p > 0 and nv) or 0, maxNivel = k.p > 0 and 3 or 0,
+				estado = estado, accion = accion, precio = precio, puede = puede, habilidad = k.act == true, nuevo = k.nuevo == true,
+				desc = Kits.descripcion(k.id, nv or 1), siguiente = siguiente,
+			})
 		end
 		d.pie = "Kits gratis hoy: " .. table.concat((function()
 			local t = {}
@@ -2109,9 +2114,11 @@ local function datosKits(plr, s)
 		for _, e in EFECTOS do
 			local tiene = perfil.efectos[e.id] == true
 			local equipado = perfil.efecto == e.id
-			table.insert(d.ofertas, { id = e.icono, n = 1, nombre = e.n,
-				precioTxt = tiene and "Clic: equipar" or ("Comprar · %d monedas"):format(e.p), puede = tiene or perfil.monedas >= e.p,
-				tiene = equipado, tieneTxt = "✔ Equipado", desc = e.d })
+			table.insert(d.ofertas, {
+				id = e.icono, nombre = e.n, rareza = e.p == 0 and "Básico" or "Efecto", col = e.p == 0 and "#9aa4b4" or "#ff7ad9", nivel = 0, maxNivel = 0,
+				estado = equipado and "equipado" or (tiene and "tuyo" or "comprar"), accion = (not equipado) and (tiene and "Equipar" or "Comprar") or nil,
+				precio = (not tiene) and e.p or nil, puede = tiene or perfil.monedas >= e.p, desc = e.d,
+			})
 		end
 		d.pie = "Se ven cuando consigues una baja final"
 	end
@@ -2195,7 +2202,7 @@ end
 
 local function abrirKits(plr, s, tab)
 	s.ui = {
-		tipo = "extra", sub = "tienda", tab = tab or 1, datos = datosKits, comprar = comprarKit,
+		tipo = "extra", sub = "kits", tab = tab or 1, datos = datosKits, comprar = comprarKit,
 		pestana = function(_, so, i)
 			if i == 1 or i == 2 then
 				so.ui.tab = i

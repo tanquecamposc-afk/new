@@ -378,7 +378,7 @@ do
 	Interfaz.logro({ id = "madera", n = "¡A por madera!", d = "Consigue un tronco", icono = Reg.B.tronco })
 	pasos(5)
 	volcarGui("sup_logro")
-	Interfaz.muerte("Una criatura acabó contigo. Tus objetos quedaron donde caíste.")
+	Interfaz.muerte({ texto = "Te mató un Zombi.", causa = "mob", quien = "un Zombi", vivo = 754, pos = { 128, 71, -42 }, soltados = 14, nivel = 6 })
 	pasos(2)
 	volcarGui("sup_muerte")
 	Interfaz.muerte(nil)

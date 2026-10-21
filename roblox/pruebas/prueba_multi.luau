@@ -265,6 +265,9 @@ pasos(2)
 datos[beto].hum.Health = 0
 pasos(5)
 ok(cuenta(beto, Reg.I.diamante) == 0, "Beto conserva los objetos al morir en supervivencia")
+local dm = datos[beto].ultimo.muerte and datos[beto].ultimo.muerte[1]
+ok(type(dm) == "table" and (dm.soltados or 0) > 0 and dm.pos ~= nil and dm.vivo ~= nil,
+	"la pantalla de muerte no recibe los objetos de Beto, dónde murió ni cuánto vivió")
 local diamAna = cuenta(ana, Reg.I.diamante)
 mover(ana, cx + 1, cy, cz + 3)
 pasos(90)
@@ -367,6 +370,19 @@ ok(aTodos.rayo ~= nil, "los clientes no ven el rayo")
 datos[beto].hum.Health = 20
 Clima.poner("despejado", 600)
 pasos(3)
+-- Muerte por una criatura: el texto dice cuál fue
+personaje(beto)
+pasos(30)
+local zk = Mobs.crear("zombi", sx + 9.5, sy + 1, sz + 9.5)
+if zk then
+	Mobs.alDanarJugador(beto, 100, "mob", { x = 0, z = 0 }, zk)
+	pasos(5)
+	dm = datos[beto].ultimo.muerte and datos[beto].ultimo.muerte[1]
+	ok(type(dm) == "table" and dm.texto == "Te mató un Zombi.", "la muerte por un zombi no lo dice (" .. tostring(dm and dm.texto) .. ")")
+	Mobs.quitar(zk)
+	personaje(beto)
+	pasos(30)
+end
 -- Guardar al salir y recuperar al volver
 local diamAntes = cuenta(ana, Reg.I.diamante)
 -- Ajustes: se guardan (sin valores raros) y vuelven al entrar
@@ -441,7 +457,15 @@ ok(perfilA.monedas == 40 + 85 and perfilA.diario.racha == 4, "la racha de días 
 perfilA.monedas = 1000
 enviar(ana, "modoCmd", "kits")
 pasos(2)
-ok(datos[ana].ui and datos[ana].ui.extra and datos[ana].ui.extra.sub == "tienda" and #datos[ana].ui.extra.ofertas == #KitsM.LISTA, "no se abre la tienda de kits")
+ok(datos[ana].ui and datos[ana].ui.extra and datos[ana].ui.extra.sub == "kits" and #datos[ana].ui.extra.ofertas == #KitsM.LISTA, "no se abre la tienda de kits")
+do
+	local eq = 0
+	for _, o in datos[ana].ui.extra.ofertas do
+		eq += o.estado == "equipado" and 1 or 0
+		ok(o.nombre and o.rareza and o.col and o.desc and o.estado, "a una tarjeta de kit le faltan datos")
+	end
+	ok(eq <= 1, "hay más de un kit equipado a la vez")
+end
 local iGuerrero
 for i, k in KitsM.LISTA do
 	if k.id == "guerrero" then
@@ -455,6 +479,10 @@ if table.find(KitsM.gratisHoy(), "guerrero") then
 end
 pasos(2)
 ok(perfilA.kits.guerrero == 1 and perfilA.kit == "guerrero" and perfilA.monedas == 650, "no se compró el kit Guerrero (" .. perfilA.monedas .. ")")
+do
+	local o = datos[ana].ui.extra.ofertas[iGuerrero]
+	ok(o and o.estado == "equipado" and o.nivel == 1 and o.accion == "Mejorar a II" and o.precio and o.siguiente, "la tarjeta del Guerrero no muestra que está equipado y se puede mejorar")
+end
 enviar(ana, "pestana", 2)
 enviar(ana, "comprar", 2, 1)
 pasos(2)

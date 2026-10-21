@@ -329,7 +329,7 @@ local UIS = S.UserInputService
 Interfaz.cerrar()
 -- Si el jugador murió (criaturas, explosión), reaparece como en Roblox
 if recibido.muerte then
-	print("el jugador murió durante la prueba:", recibido.muerte[1])
+	print("el jugador murió durante la prueba:", type(recibido.muerte[1]) == "table" and recibido.muerte[1].texto or recibido.muerte[1])
 	nuevoPersonaje()
 	for _ = 1, 30 do
 		F.paso(1 / 30)

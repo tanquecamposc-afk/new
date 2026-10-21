@@ -353,7 +353,23 @@ local function desgastarArmadura(s, n)
 	end
 end
 
-local function danar(plr, n, tipo, dir)
+-- Nombre de quien hace daño (criatura, jugador o texto) para la pantalla de muerte
+local function nombreDe(q)
+	if type(q) == "table" and q.def and q.tipo then
+		return Mobs.conArticulo(q.tipo)
+	elseif type(q) == "string" then
+		local n = Mobs.conArticulo(q)
+		return n ~= "una criatura" and n or q
+	elseif q ~= nil then
+		local ok, n = pcall(function()
+			return q.DisplayName or q.Name
+		end)
+		return ok and n or nil
+	end
+	return nil
+end
+
+local function danar(plr, n, tipo, dir, quien)
 	local s = st(plr)
 	local h, root = humanoide(plr)
 	if not s or not h or h.Health <= 0 or n <= 0 then
@@ -397,8 +413,12 @@ local function danar(plr, n, tipo, dir)
 	end
 	s.invuln = ahora + 0.5
 	s.agotamiento += 0.1
-	h.Health = math.max(0, h.Health - d)
+	-- La causa se apunta antes de bajar la vida: al llegar a 0 salta Died y la pantalla de muerte la lee
 	s.ultimaCausa = tipo
+	if quien ~= nil then
+		s.ultimoQuien, s.ultimoQuienT = nombreDe(quien), ahora
+	end
+	h.Health = math.max(0, h.Health - d)
 	Estado:FireClient(plr, "dano", dir and Vector3.new(dir.x * 6 * BS / 3, 4.5 * BS / 3, dir.z * 6 * BS / 3) or nil)
 	enviarJugador(plr)
 end
@@ -604,9 +624,12 @@ local function alMorir(plr)
 		end
 		s.cursor = false
 	end
+	local soltados, nivelPerdido = 0, 0
 	if p and supervivencia(s) and not modoInv and not Modos.mantenerInventario(plr) then
+		nivelPerdido = s.xp.nivel
 		for i = 1, Inv.TAM do
 			if s.inv[i] then
+				soltados += 1
 				Entidades.soltarItem(s.inv[i], p.X, p.Y + 1, p.Z, true)
 				s.inv[i] = false
 			end
@@ -624,8 +647,31 @@ local function alMorir(plr)
 		ahogo = "Te ahogaste.", explosion = "Volaste por los aires.", rayo = "Te alcanzó un rayo.", cactus = "Te pinchaste hasta morir.", veneno = "El veneno pudo contigo.",
 		jugador = "Otro jugador acabó contigo.",
 	}
+	-- Quién fue (si alguien te golpeó hace poco)
+	local causa = s.ultimaCausa or ""
+	local quien = s.ultimoQuien and os.clock() - (s.ultimoQuienT or 0) < 10 and s.ultimoQuien or nil
+	local texto = textos[causa] or "Has muerto."
+	if quien then
+		local CON = {
+			mob = "Te mató %s.", flecha = "%s te disparó una flecha.", explosion = "%s te hizo volar por los aires.",
+			jugador = "Te mató %s.", fuego = "%s te prendió fuego.",
+		}
+		if CON[causa] then
+			texto = CON[causa]:format(quien)
+			texto = texto:sub(1, 1):upper() .. texto:sub(2)
+		elseif causa == "caida" or causa == "vacio" or causa == "lava" or causa == "ahogo" then
+			texto = texto:sub(1, -2) .. " mientras huías de " .. quien .. "."
+		end
+	end
 	enviarJugador(plr)
-	Estado:FireClient(plr, "muerte", (textos[s.ultimaCausa or ""] or "Has muerto.") .. ((supervivencia(s) and not modoInv) and " Tus objetos quedaron donde caíste." or ""))
+	Estado:FireClient(plr, "muerte", {
+		texto = texto, causa = causa, quien = quien,
+		vivo = s.vivoDesde and math.floor(os.clock() - s.vivoDesde) or nil,
+		pos = p and { math.floor(p.X), math.floor(p.Y), math.floor(p.Z) } or nil,
+		soltados = soltados, nivel = nivelPerdido, conservas = not (supervivencia(s) and not modoInv),
+		supervivencia = supervivencia(s) and not Modos.activo(plr),
+	})
+	s.ultimoQuien = nil
 	s.efectos = {}
 	s.fuego = 0
 	Modos.alMorir(plr)
@@ -646,6 +692,7 @@ Players.PlayerAdded:Connect(function(plr)
 		local s = st(plr)
 		if s then
 			s.hambre, s.saturacion, s.agotamiento, s.aire = 20, 5, 0, 15
+			s.vivoDesde = os.clock()
 		end
 		task.spawn(colocar, plr, char)
 		local hum = char:WaitForChild("Humanoid", 10)
@@ -893,7 +940,7 @@ local function danoExplosion(x, y, z, potencia, fuente)
 			local dano, dir = calc(p.X, p.Y, p.Z, 1.8)
 			if dano then
 				local lh = math.sqrt(dir.x * dir.x + dir.z * dir.z)
-				danar(plr, dano, "explosion", { x = dir.x / (lh > 0 and lh or 1), z = dir.z / (lh > 0 and lh or 1) })
+				danar(plr, dano, "explosion", { x = dir.x / (lh > 0 and lh or 1), z = dir.z / (lh > 0 and lh or 1) }, fuente)
 			end
 		end
 	end
@@ -918,8 +965,8 @@ Sim.alExplotar = danoExplosion
 Mobs.alExplotar = function(x, y, z, potencia, fuente)
 	Sim.explosion(x, y, z, potencia, { fuente = fuente })
 end
-Mobs.alDanarJugador = function(plr, dano, tipo, dir)
-	danar(plr, dano, tipo, dir)
+Mobs.alDanarJugador = function(plr, dano, tipo, dir, m)
+	danar(plr, dano, tipo, dir, m)
 end
 Mobs.esCreativo = function(plr)
 	local s = st(plr)
@@ -986,9 +1033,9 @@ Entidades.alImpacto = function(e, modo)
 					local l = math.sqrt(e.vx * e.vx + e.vz * e.vz)
 					local dir = { x = e.vx / (l > 0 and l or 1), z = e.vz / (l > 0 and l or 1) }
 					if e.tipo == "flecha" then
-						danar(plr, opc.dano or 3, "flecha", dir)
+						danar(plr, opc.dano or 3, "flecha", dir, opc.dueno or opc.jugador)
 					elseif e.tipo == "bolaFuego" then
-						danar(plr, 5, "fuego", dir)
+						danar(plr, 5, "fuego", dir, opc.dueno)
 						local s = st(plr)
 						if s then
 							s.fuego = math.max(s.fuego, 5)
@@ -1746,7 +1793,7 @@ function acciones.atacar(plr, s, parte, carga, cayendo, corriendo)
 		local dx, dz = po.X - pp.X, po.Z - pp.Z
 		local l = math.sqrt(dx * dx + dz * dz)
 		local emp = ((corriendo == true and carga > 0.9) and 1.6 or 1) * (1 + (p and p.enc and p.enc.retroceso or 0) * 0.6)
-		danar(otro, dano, "jugador", { x = dx / (l > 0 and l or 1) * emp, z = dz / (l > 0 and l or 1) * emp })
+		danar(otro, dano, "jugador", { x = dx / (l > 0 and l or 1) * emp, z = dz / (l > 0 and l or 1) * emp }, plr)
 		Estado:FireClient(plr, "golpeMob", (po + Vector3.new(0, 0.9, 0)) * BS, dano, cayendo == true and carga > 0.9)
 		if hh then
 			gastarEnMano(plr, s, hh.tipo == "espada" and 1 or 2)

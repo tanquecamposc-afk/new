@@ -545,6 +545,7 @@ do
 	local cas, _, cab = bloqueInventario(p, 32 + 170 + 6)
 	extra.cas, extra.cabInv = cas, cab
 	extra.panel = p
+	extra.tamBase = p.Size
 	pantallas.extra = { panel = p, cas = cas }
 end
 
@@ -555,12 +556,14 @@ local function construirExtra(d)
 	extra.slots, extra.salida, extra.opciones, extra.ofertas = {}, nil, {}, {}
 	extra.texto, extra.barras = nil, {}
 	-- La tienda usa todo el panel (el dinero ya se ve arriba); las demás pantallas muestran el inventario
-	local tienda = d.sub == "tienda"
+	local tienda = d.sub == "tienda" or d.sub == "kits"
 	for _, b in extra.cas do
 		b.Visible = not tienda
 	end
 	extra.cabInv.Visible = not tienda
-	z.Size = UDim2.new(1, -28, 0, tienda and 170 + 4 * (S + 2) + 30 or 170)
+	-- La ventana de kits es más grande: tarjetas a la izquierda y el detalle a la derecha
+	extra.panel.Size = d.sub == "kits" and UDim2.fromOffset(800, 500) or extra.tamBase
+	z.Size = d.sub == "kits" and UDim2.new(1, -28, 1, -44) or UDim2.new(1, -28, 0, tienda and 170 + 4 * (S + 2) + 30 or 170)
 	local function casilla(i, x, y, rotulo)
 		local b = ranura(z, "mesa", i)
 		b.Position = UDim2.fromOffset(x, y)
@@ -637,6 +640,27 @@ local function construirExtra(d)
 		aviso(0, alto - 22, 436)
 		extra.texto.Size = UDim2.fromOffset(436, 20)
 		extra.texto.TextSize = 12
+	elseif d.sub == "kits" then
+		extra.tabs = nuevo("Frame", { BackgroundTransparency = 1, Size = UDim2.new(0, 400, 0, 30) }, z)
+		nuevo("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 6) }, extra.tabs)
+		extra.monedas = nuevo("Frame", { BackgroundColor3 = Color3.fromRGB(40, 36, 20), BorderSizePixel = 0, AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, 0, 0, 0),
+			Size = UDim2.fromOffset(150, 30) }, z)
+		nuevo("UICorner", { CornerRadius = UDim.new(0, 15) }, extra.monedas)
+		nuevo("UIStroke", { Color = Color3.fromRGB(255, 200, 60), Thickness = 2 }, extra.monedas)
+		local lista = nuevo("ScrollingFrame", { BackgroundColor3 = Color3.fromRGB(34, 36, 44), BorderSizePixel = 0, Position = UDim2.fromOffset(0, 38),
+			Size = UDim2.new(0, 488, 1, -64), ScrollBarThickness = 6, CanvasSize = UDim2.new(), AutomaticCanvasSize = Enum.AutomaticSize.Y, ZIndex = 7 }, z)
+		nuevo("UICorner", { CornerRadius = UDim.new(0, 6) }, lista)
+		nuevo("UIGridLayout", { CellSize = UDim2.fromOffset(112, 128), CellPadding = UDim2.fromOffset(6, 6), SortOrder = Enum.SortOrder.LayoutOrder }, lista)
+		nuevo("UIPadding", { PaddingLeft = UDim.new(0, 6), PaddingTop = UDim.new(0, 8), PaddingBottom = UDim.new(0, 8) }, lista)
+		extra.lista = lista
+		local det = nuevo("Frame", { BackgroundColor3 = Color3.fromRGB(34, 36, 44), BorderSizePixel = 0, Position = UDim2.fromOffset(498, 38), Size = UDim2.new(1, -498, 1, -64),
+			ZIndex = 7 }, z)
+		nuevo("UICorner", { CornerRadius = UDim.new(0, 6) }, det)
+		extra.detalle = det
+		aviso(0, 0, 10)
+		extra.texto.Position = UDim2.new(0, 0, 1, -22)
+		extra.texto.Size = UDim2.new(1, 0, 0, 20)
+		extra.texto.TextSize = 13
 	elseif d.sub == "aldeano" then
 		extra.nivel = barra(0, 4, 300, 6, Color3.fromRGB(96, 224, 96))
 		local lista = nuevo("ScrollingFrame", { BackgroundTransparency = 1, BorderSizePixel = 0, Position = UDim2.fromOffset(0, 16), Size = UDim2.new(1, 0, 1, -16),
@@ -644,6 +668,194 @@ local function construirExtra(d)
 		nuevo("UIListLayout", { Padding = UDim.new(0, 4) }, lista)
 		extra.lista = lista
 	end
+end
+
+-- Ventana de kits y efectos de Bed Wars: tarjetas con el color de su rareza y un panel con el detalle
+local ESTADO_KIT = {
+	equipado = { "✔ EQUIPADO", Color3.fromRGB(60, 170, 70) }, tuyo = { "TUYO", Color3.fromRGB(80, 90, 110) },
+	gratis = { "GRATIS HOY", Color3.fromRGB(40, 130, 230) }, probando = { "PROBANDO", Color3.fromRGB(40, 130, 230) },
+}
+-- string.upper no cambia las letras con tilde
+local function mayusculas(t)
+	t = string.upper(t)
+	for de, a in { á = "Á", é = "É", í = "Í", ó = "Ó", ú = "Ú", ñ = "Ñ" } do
+		t = t:gsub(de, a)
+	end
+	return t
+end
+local function estrellas(n, max)
+	return string.rep("★", n) .. string.rep("☆", max - n)
+end
+local function limpiar(f)
+	for _, h in f:GetChildren() do
+		if h:IsA("GuiObject") then
+			h:Destroy()
+		end
+	end
+end
+local pintarKits
+local function pintarDetalleKit(d)
+	local det = extra.detalle
+	limpiar(det)
+	local o = d.ofertas and d.ofertas[extra.selKit or 1]
+	if not o then
+		return
+	end
+	local col = Color3.fromHex(o.col or "#9aa4b4")
+	local caja = nuevo("Frame", { BackgroundColor3 = col:Lerp(Color3.new(0, 0, 0), 0.55), BorderSizePixel = 0, AnchorPoint = Vector2.new(0.5, 0),
+		Position = UDim2.new(0.5, 0, 0, 14), Size = UDim2.fromOffset(100, 100), ZIndex = 8 }, det)
+	nuevo("UICorner", { CornerRadius = UDim.new(0, 10) }, caja)
+	nuevo("UIStroke", { Color = col, Thickness = 3 }, caja)
+	local ic = nuevo("ImageLabel", { BackgroundTransparency = 1, AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.fromOffset(72, 72),
+		ResampleMode = Enum.ResamplerMode.Pixelated, ZIndex = 9 }, caja)
+	Iconos.poner(ic, o.id)
+	texto({ Position = UDim2.fromOffset(8, 122), Size = UDim2.new(1, -16, 0, 30), Text = o.nombre or "", TextSize = 24, Font = FUENTE_N, ZIndex = 8 }, det)
+	local pil = nuevo("Frame", { BackgroundColor3 = col, BorderSizePixel = 0, AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 156),
+		Size = UDim2.fromOffset(120, 20), ZIndex = 8 }, det)
+	nuevo("UICorner", { CornerRadius = UDim.new(0, 10) }, pil)
+	texto({ Size = UDim2.fromScale(1, 1), Text = mayusculas(o.rareza or ""), TextSize = 12, Font = FUENTE_N, TextStrokeTransparency = 0.5, ZIndex = 9 }, pil)
+	local y = 184
+	if (o.maxNivel or 0) > 0 then
+		texto({ Position = UDim2.fromOffset(8, y), Size = UDim2.new(1, -16, 0, 20), Text = "Nivel " .. estrellas(o.nivel or 0, o.maxNivel), TextSize = 16, Font = FUENTE_N,
+			TextColor3 = Color3.fromRGB(255, 210, 70), ZIndex = 8 }, det)
+		y += 24
+	end
+	texto({ Position = UDim2.fromOffset(14, y), Size = UDim2.new(1, -28, 0, 60), Text = o.desc or "", TextSize = 14, TextWrapped = true,
+		TextYAlignment = Enum.TextYAlignment.Top, TextColor3 = Color3.fromRGB(225, 228, 235), TextStrokeTransparency = 1, ZIndex = 8 }, det)
+	y += 62
+	if o.siguiente then
+		texto({ Position = UDim2.fromOffset(14, y), Size = UDim2.new(1, -28, 0, 44), Text = "Siguiente nivel: " .. o.siguiente, TextSize = 12, TextWrapped = true,
+			TextYAlignment = Enum.TextYAlignment.Top, TextColor3 = Color3.fromRGB(130, 230, 130), TextStrokeTransparency = 1, ZIndex = 8 }, det)
+	end
+	if o.habilidad then
+		texto({ Position = UDim2.new(0, 14, 1, -88), Size = UDim2.new(1, -28, 0, 20), Text = "⚡ Habilidad activa: pulsa G en la partida", TextSize = 13,
+			TextColor3 = Color3.fromRGB(150, 200, 255), TextStrokeTransparency = 1, ZIndex = 8 }, det)
+	end
+	-- Botón grande: comprar / equipar / mejorar / probar
+	local txt, fondo = o.accion, Color3.fromRGB(60, 170, 70)
+	if not txt then
+		txt, fondo = (o.estado == "equipado" and (o.maxNivel or 0) > 0 and (o.nivel or 0) >= o.maxNivel) and "✔ Nivel máximo" or "✔ Equipado", Color3.fromRGB(70, 74, 86)
+	elseif o.precio then
+		txt = ("%s · %d monedas"):format(txt, o.precio)
+		fondo = o.puede and Color3.fromRGB(230, 160, 30) or Color3.fromRGB(150, 50, 50)
+	elseif o.estado == "gratis" then
+		fondo = Color3.fromRGB(40, 130, 230)
+	end
+	local b = nuevo("TextButton", { AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -14), Size = UDim2.new(1, -28, 0, 50), BackgroundColor3 = fondo,
+		BorderSizePixel = 0, Text = txt, Font = FUENTE_N, TextSize = 17, TextColor3 = Color3.new(1, 1, 1), TextStrokeTransparency = 0.4, AutoButtonColor = true,
+		ZIndex = 9 }, det)
+	nuevo("UICorner", { CornerRadius = UDim.new(0, 8) }, b)
+	nuevo("UIStroke", { Color = Color3.new(0, 0, 0), Thickness = 2, Transparency = 0.3, ApplyStrokeMode = Enum.ApplyStrokeMode.Border }, b)
+	nuevo("UIGradient", { Rotation = 90, Color = ColorSequence.new(Color3.new(1, 1, 1), Color3.fromRGB(185, 185, 185)) }, b)
+	local esc = nuevo("UIScale", {}, b)
+	if o.accion then
+		b.MouseEnter:Connect(function()
+			TweenService:Create(esc, TweenInfo.new(0.12, Enum.EasingStyle.Back), { Scale = 1.04 }):Play()
+		end)
+		b.MouseLeave:Connect(function()
+			TweenService:Create(esc, TweenInfo.new(0.12), { Scale = 1 }):Play()
+		end)
+		b.Activated:Connect(function()
+			esc.Scale = 0.94
+			TweenService:Create(esc, TweenInfo.new(0.2, Enum.EasingStyle.Back), { Scale = 1 }):Play()
+			Interfaz.enviar("comprar", extra.selKit or 1, 1)
+		end)
+	end
+end
+pintarKits = function(d)
+	-- Pestañas con icono y nombre
+	limpiar(extra.tabs)
+	for i, t in d.pestanas or {} do
+		local activa = i == d.pestana
+		local b = nuevo("TextButton", { Size = UDim2.fromOffset(130, 30), LayoutOrder = i, BorderSizePixel = 0, Text = "", AutoButtonColor = true, ZIndex = 7,
+			BackgroundColor3 = activa and Color3.fromRGB(230, 160, 30) or Color3.fromRGB(70, 74, 86) }, extra.tabs)
+		nuevo("UICorner", { CornerRadius = UDim.new(0, 6) }, b)
+		local ic = nuevo("ImageLabel", { BackgroundTransparency = 1, Size = UDim2.fromOffset(22, 22), Position = UDim2.fromOffset(8, 4),
+			ResampleMode = Enum.ResamplerMode.Pixelated, ZIndex = 8 }, b)
+		Iconos.poner(ic, t.icono)
+		texto({ Position = UDim2.fromOffset(36, 0), Size = UDim2.new(1, -40, 1, 0), Text = t.nombre, TextSize = 15, Font = FUENTE_N,
+			TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 8 }, b)
+		b.Activated:Connect(function()
+			Interfaz.enviar("pestana", i)
+		end)
+	end
+	-- Monedas
+	limpiar(extra.monedas)
+	local mo = d.monedas and d.monedas[1]
+	if mo then
+		local ic = nuevo("ImageLabel", { BackgroundTransparency = 1, Size = UDim2.fromOffset(22, 22), Position = UDim2.fromOffset(10, 4),
+			ResampleMode = Enum.ResamplerMode.Pixelated, ZIndex = 8 }, extra.monedas)
+		Iconos.poner(ic, mo[1])
+		texto({ Position = UDim2.fromOffset(38, 0), Size = UDim2.new(1, -46, 1, 0), Text = tostring(mo[2]) .. " monedas", TextSize = 15, Font = FUENTE_N,
+			TextColor3 = Color3.fromRGB(255, 220, 90), TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 8 }, extra.monedas)
+	end
+	-- Al cambiar de pestaña se elige el que llevas equipado
+	if extra.selTab ~= d.pestana or not (d.ofertas and d.ofertas[extra.selKit or 0]) then
+		extra.selTab = d.pestana
+		extra.selKit = 1
+		for i, o in d.ofertas or {} do
+			if o.estado == "equipado" then
+				extra.selKit = i
+			end
+		end
+	end
+	local lista = extra.lista
+	limpiar(lista)
+	for i, o in d.ofertas or {} do
+		local col = Color3.fromHex(o.col or "#9aa4b4")
+		local sel = i == extra.selKit
+		local b = nuevo("TextButton", { Text = "", AutoButtonColor = false, BorderSizePixel = 0, LayoutOrder = i, ZIndex = 8,
+			BackgroundColor3 = sel and Color3.fromRGB(70, 74, 90) or Color3.fromRGB(50, 53, 64) }, lista)
+		nuevo("UICorner", { CornerRadius = UDim.new(0, 8) }, b)
+		local borde = nuevo("UIStroke", { Color = sel and Color3.fromRGB(255, 230, 90) or col, Thickness = sel and 3 or 2, ApplyStrokeMode = Enum.ApplyStrokeMode.Border }, b)
+		local esc = nuevo("UIScale", {}, b)
+		local franja = nuevo("Frame", { BackgroundColor3 = col, BorderSizePixel = 0, Size = UDim2.new(1, 0, 0, 6), ZIndex = 9 }, b)
+		nuevo("UICorner", { CornerRadius = UDim.new(0, 8) }, franja)
+		local fondoIc = nuevo("Frame", { BackgroundColor3 = col:Lerp(Color3.new(0, 0, 0), 0.6), BorderSizePixel = 0, AnchorPoint = Vector2.new(0.5, 0),
+			Position = UDim2.new(0.5, 0, 0, 14), Size = UDim2.fromOffset(56, 56), ZIndex = 9 }, b)
+		nuevo("UICorner", { CornerRadius = UDim.new(0, 6) }, fondoIc)
+		local ic = nuevo("ImageLabel", { BackgroundTransparency = 1, AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.fromOffset(42, 42),
+			ResampleMode = Enum.ResamplerMode.Pixelated, ZIndex = 10 }, fondoIc)
+		Iconos.poner(ic, o.id)
+		texto({ Position = UDim2.fromOffset(4, 74), Size = UDim2.new(1, -8, 0, 18), Text = o.nombre or "", TextSize = (utf8.len(o.nombre or "") or 0) > 12 and 10 or 13, Font = FUENTE_N, ZIndex = 9 }, b)
+		if (o.maxNivel or 0) > 0 and (o.nivel or 0) > 0 then
+			texto({ Position = UDim2.fromOffset(4, 91), Size = UDim2.new(1, -8, 0, 12), Text = estrellas(o.nivel, o.maxNivel), TextSize = 11,
+				TextColor3 = Color3.fromRGB(255, 210, 70), ZIndex = 9 }, b)
+		end
+		-- Estado abajo: equipado, tuyo, gratis o el precio
+		local e = ESTADO_KIT[o.estado]
+		local pie = nuevo("Frame", { BorderSizePixel = 0, AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -6), Size = UDim2.new(1, -12, 0, 18), ZIndex = 9,
+			BackgroundColor3 = e and e[2] or (o.puede and Color3.fromRGB(120, 90, 20) or Color3.fromRGB(110, 40, 40)) }, b)
+		nuevo("UICorner", { CornerRadius = UDim.new(0, 9) }, pie)
+		texto({ Size = UDim2.fromScale(1, 1), Text = e and e[1] or (o.precio and (o.precio .. " monedas") or ""), TextSize = 11, Font = FUENTE_N, ZIndex = 10,
+			TextColor3 = (e or o.puede) and Color3.new(1, 1, 1) or Color3.fromRGB(255, 170, 170) }, pie)
+		if o.nuevo then
+			local cinta = nuevo("Frame", { BackgroundColor3 = Color3.fromRGB(40, 130, 230), BorderSizePixel = 0, AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, 4, 0, -4),
+				Size = UDim2.fromOffset(46, 16), ZIndex = 11 }, b)
+			nuevo("UICorner", { CornerRadius = UDim.new(0, 8) }, cinta)
+			texto({ Size = UDim2.fromScale(1, 1), Text = "NUEVO", TextSize = 10, Font = FUENTE_N, ZIndex = 12 }, cinta)
+		end
+		b.MouseEnter:Connect(function()
+			TweenService:Create(esc, TweenInfo.new(0.12, Enum.EasingStyle.Back), { Scale = 1.06 }):Play()
+			if not sel then
+				borde.Color = Color3.new(1, 1, 1)
+			end
+			Interfaz.alSonido("paso", 1.8)
+		end)
+		b.MouseLeave:Connect(function()
+			TweenService:Create(esc, TweenInfo.new(0.12), { Scale = 1 }):Play()
+			if not sel then
+				borde.Color = col
+			end
+		end)
+		b.Activated:Connect(function()
+			extra.selKit = i
+			Interfaz.alSonido("poner", 1.3)
+			pintarKits(d)
+		end)
+	end
+	pintarDetalleKit(d)
+	extra.texto.Text = d.pie or ""
 end
 
 local function pintarExtra(d)
@@ -753,6 +965,8 @@ local function pintarExtra(d)
 			end)
 		end
 		extra.texto.Text = d.pie or ""
+	elseif d.sub == "kits" then
+		pintarKits(d)
 	elseif d.sub == "aldeano" then
 		if extra.nivel then
 			extra.nivel.Size = UDim2.fromScale(math.clamp(d.xpNivel or 0, 0, 1), 1)
@@ -1388,20 +1602,83 @@ local CONSEJOS = {
 local cargaConsejo = texto({ AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.fromScale(0.5, 0.6), Size = UDim2.fromOffset(640, 40), Text = CONSEJOS[math.random(1, #CONSEJOS)],
 	TextSize = 15, TextWrapped = true, TextColor3 = Color3.fromRGB(205, 205, 205), ZIndex = 17 }, carga)
 
--- Pantalla de muerte: título, causa, nivel y cuenta atrás para reaparecer
-local muerte = nuevo("Frame", { Name = "Muerte", BackgroundColor3 = Color3.fromRGB(130, 0, 0), BackgroundTransparency = 0.3, BorderSizePixel = 0, Size = UDim2.fromScale(1, 1),
+-- Pantalla de muerte: el mundo se oscurece en rojo por los bordes, título que cae con fuerza,
+-- quién o qué te mató (con su icono), cuánto aguantaste, dónde quedaron tus cosas,
+-- un consejo según la causa y una barra que se llena hasta reaparecer
+local muerte = nuevo("Frame", { Name = "Muerte", BackgroundColor3 = Color3.fromRGB(60, 0, 0), BackgroundTransparency = 0.35, BorderSizePixel = 0, Size = UDim2.fromScale(1, 1),
 	Visible = false, ZIndex = 12 }, gui)
-nuevo("UIGradient", { Rotation = 90, Color = ColorSequence.new(Color3.fromRGB(150, 10, 10), Color3.fromRGB(50, 0, 0)),
-	Transparency = NumberSequence.new(0.35, 0.15) }, muerte)
-texto({ AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(0.5, 4, 0.32, 4), Size = UDim2.fromOffset(700, 80), Text = "¡Has muerto!", Font = FUENTE_N, TextSize = 60,
-	TextColor3 = Color3.fromRGB(40, 0, 0), TextStrokeTransparency = 1, TextTransparency = 0.3, ZIndex = 13 }, muerte)
-texto({ AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.32), Size = UDim2.fromOffset(700, 80), Text = "¡Has muerto!", Font = FUENTE_N, TextSize = 60, ZIndex = 14 }, muerte)
-local muerteT = texto({ AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.43), Size = UDim2.fromOffset(700, 50), Text = "", TextSize = 18, TextWrapped = true, ZIndex = 14 }, muerte)
-local muerteNivel = texto({ AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.49), Size = UDim2.fromOffset(600, 24), Text = "", TextSize = 16,
-	TextColor3 = Color3.fromRGB(128, 255, 32), ZIndex = 14 }, muerte)
-local muerteCuenta = texto({ AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.56), Size = UDim2.fromOffset(600, 30), Text = "Reapareciendo…", TextSize = 20,
-	Font = FUENTE_N, TextColor3 = Color3.fromRGB(255, 230, 120), ZIndex = 14 }, muerte)
-local muerteHasta = 0
+nuevo("UIGradient", { Rotation = 90, Color = ColorSequence.new(Color3.fromRGB(170, 20, 20), Color3.fromRGB(40, 0, 0)),
+	Transparency = NumberSequence.new(0.45, 0.05) }, muerte)
+nuevo("TextButton", { BackgroundTransparency = 1, Size = UDim2.fromScale(1, 1), Text = "", Modal = true, ZIndex = 12, AutoButtonColor = false }, muerte)
+local muerteCaja = nuevo("Frame", { BackgroundTransparency = 1, AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.48), Size = UDim2.fromOffset(620, 420), ZIndex = 13 }, muerte)
+local muerteEsc = nuevo("UIScale", {}, muerteCaja)
+texto({ AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 4, 0, 4), Size = UDim2.new(1, 0, 0, 80), Text = "¡Has muerto!", Font = FUENTE_N, TextSize = 64,
+	TextColor3 = Color3.fromRGB(40, 0, 0), TextStrokeTransparency = 1, TextTransparency = 0.25, ZIndex = 13 }, muerteCaja)
+texto({ AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.fromScale(0.5, 0), Size = UDim2.new(1, 0, 0, 80), Text = "¡Has muerto!", Font = FUENTE_N, TextSize = 64,
+	TextColor3 = Color3.fromRGB(255, 255, 255), TextStrokeColor3 = Color3.fromRGB(90, 0, 0), TextStrokeTransparency = 0, ZIndex = 14 }, muerteCaja)
+-- Tarjeta de la causa: icono + frase
+local causaF = nuevo("Frame", { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 96), Size = UDim2.fromOffset(560, 64),
+	BackgroundColor3 = Color3.fromRGB(20, 6, 6), BackgroundTransparency = 0.25, BorderSizePixel = 0, ZIndex = 14 }, muerteCaja)
+nuevo("UICorner", { CornerRadius = UDim.new(0, 8) }, causaF)
+nuevo("UIStroke", { Color = Color3.fromRGB(150, 40, 40), Thickness = 2, ApplyStrokeMode = Enum.ApplyStrokeMode.Border }, causaF)
+local causaIcF = nuevo("Frame", { BackgroundColor3 = Color3.fromRGB(80, 16, 16), BorderSizePixel = 0, Position = UDim2.fromOffset(8, 8), Size = UDim2.fromOffset(48, 48), ZIndex = 15 }, causaF)
+nuevo("UICorner", { CornerRadius = UDim.new(0, 6) }, causaIcF)
+local causaIc = nuevo("ImageLabel", { BackgroundTransparency = 1, AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.fromOffset(36, 36),
+	ResampleMode = Enum.ResamplerMode.Pixelated, ZIndex = 16 }, causaIcF)
+local muerteT = texto({ Position = UDim2.fromOffset(68, 0), Size = UDim2.new(1, -78, 1, 0), Text = "", TextSize = 19, TextWrapped = true, Font = FUENTE_N,
+	TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 15 }, causaF)
+-- Fichas con datos de la vida que acaba de terminar
+local fichasF = nuevo("Frame", { BackgroundTransparency = 1, AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 174), Size = UDim2.fromOffset(560, 70), ZIndex = 14 }, muerteCaja)
+nuevo("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, HorizontalAlignment = Enum.HorizontalAlignment.Center, Padding = UDim.new(0, 10),
+	SortOrder = Enum.SortOrder.LayoutOrder }, fichasF)
+local function ficha(orden, titulo, color)
+	local f = nuevo("Frame", { BackgroundColor3 = Color3.fromRGB(20, 6, 6), BackgroundTransparency = 0.3, BorderSizePixel = 0, LayoutOrder = orden,
+		Size = UDim2.fromOffset(176, 70), ZIndex = 14 }, fichasF)
+	nuevo("UICorner", { CornerRadius = UDim.new(0, 8) }, f)
+	nuevo("UIStroke", { Color = Color3.fromRGB(110, 30, 30), Thickness = 1.5 }, f)
+	texto({ Position = UDim2.fromOffset(0, 8), Size = UDim2.new(1, 0, 0, 16), Text = titulo, TextSize = 12, TextColor3 = Color3.fromRGB(220, 170, 170),
+		TextStrokeTransparency = 1, ZIndex = 15 }, f)
+	local v = texto({ Position = UDim2.fromOffset(4, 26), Size = UDim2.new(1, -8, 0, 36), Text = "", TextSize = 18, Font = FUENTE_N, TextWrapped = true,
+		TextColor3 = color, ZIndex = 15 }, f)
+	return f, v
+end
+local _, fichaVivo = ficha(1, "SOBREVIVISTE", Color3.fromRGB(255, 255, 255))
+local fichaPosF, fichaPos = ficha(2, "MORISTE EN", Color3.fromRGB(140, 210, 255))
+local fichaObjF, fichaObj = ficha(3, "TUS OBJETOS", Color3.fromRGB(255, 220, 110))
+local muerteNivel = texto({ AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 252), Size = UDim2.fromOffset(560, 22), Text = "", TextSize = 15,
+	TextColor3 = Color3.fromRGB(128, 255, 32), ZIndex = 14 }, muerteCaja)
+-- Barra hasta reaparecer
+local muerteBarraF = nuevo("Frame", { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 290), Size = UDim2.fromOffset(420, 34),
+	BackgroundColor3 = Color3.fromRGB(25, 8, 8), BorderSizePixel = 0, ZIndex = 14 }, muerteCaja)
+nuevo("UICorner", { CornerRadius = UDim.new(0, 17) }, muerteBarraF)
+nuevo("UIStroke", { Color = Color3.fromRGB(0, 0, 0), Thickness = 2 }, muerteBarraF)
+local muerteBarra = nuevo("Frame", { BackgroundColor3 = Color3.fromRGB(255, 200, 60), BorderSizePixel = 0, Size = UDim2.fromScale(0, 1), ZIndex = 15 }, muerteBarraF)
+nuevo("UICorner", { CornerRadius = UDim.new(0, 17) }, muerteBarra)
+nuevo("UIGradient", { Rotation = 90, Color = ColorSequence.new(Color3.fromRGB(255, 240, 160), Color3.fromRGB(230, 140, 20)) }, muerteBarra)
+local muerteCuenta = texto({ Size = UDim2.fromScale(1, 1), Text = "Reapareciendo…", TextSize = 17, Font = FUENTE_N, TextColor3 = Color3.new(1, 1, 1),
+	TextStrokeTransparency = 0.2, ZIndex = 16 }, muerteBarraF)
+local muerteConsejo = texto({ AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 340), Size = UDim2.fromOffset(580, 40), Text = "", TextSize = 14,
+	TextWrapped = true, TextColor3 = Color3.fromRGB(230, 200, 200), TextStrokeTransparency = 0.6, ZIndex = 14 }, muerteCaja)
+local muerteHasta, muerteDura = 0, 5
+local ICONO_CAUSA = {
+	mob = "espada_hierro", jugador = "espada_diamante", flecha = "flecha", caida = "pluma", vacio = "perlaEnder", lava = "cuboLava", fuego = "polvora",
+	ahogo = "cuboAgua", explosion = "tnt", rayo = "polvora", cactus = "cactus", veneno = "ojoArana", hambre = "pan",
+}
+local CONSEJO_CAUSA = {
+	mob = "Consejo: pon antorchas para que no aparezcan monstruos y lleva escudo (clic derecho para cubrirte).",
+	jugador = "Consejo: espera a que la espada cargue del todo antes de golpear; los golpes cargados hacen mucho más daño.",
+	flecha = "Consejo: muévete de lado cuando un esqueleto te apunte, o cúbrete con un escudo.",
+	caida = "Consejo: si caes en agua no te haces daño. Agáchate (Shift) para no caerte de los bordes.",
+	vacio = "Consejo: agáchate (Shift) junto al borde para no caerte.",
+	lava = "Consejo: lleva un cubo de agua; si caes a la lava, échala para apagarte.",
+	fuego = "Consejo: métete en agua para apagar el fuego.",
+	ahogo = "Consejo: las burbujas de arriba a la derecha son el aire que te queda. ¡Sube a respirar a tiempo!",
+	explosion = "Consejo: si un creeper sisea, aléjate corriendo: tardará en explotar.",
+	rayo = "Consejo: en las tormentas busca un techo: los rayos caen al aire libre.",
+	cactus = "Consejo: los cactus pinchan al tocarlos; rodéalos.",
+	veneno = "Consejo: la leche quita los efectos de las pociones y el veneno.",
+	hambre = "Consejo: come antes de que se vacíe la barra de comida; la carne cocinada llena mucho más.",
+}
 
 ------------------------------------------------------------------
 -- Estado
@@ -2138,13 +2415,48 @@ function Interfaz.jefe(d)
 	jefeSig.Text = ""
 end
 
+local function duracion(seg)
+	if seg >= 3600 then
+		return ("%d h %02d min"):format(seg // 3600, (seg % 3600) // 60)
+	end
+	return ("%d:%02d"):format(seg // 60, seg % 60)
+end
+-- t: tabla del servidor {texto, causa, quien, vivo, pos, soltados, nivel, conservas} o un texto
 function Interfaz.muerte(t)
 	if t then
-		muerteT.Text = t
-		local nivel = est.xp and est.xp.nivel or 0
-		muerteNivel.Text = nivel > 0 and ("Nivel de experiencia: %d"):format(nivel) or ""
-		muerteHasta = os.clock() + (Players.RespawnTime or 5)
+		local d = type(t) == "table" and t or { texto = tostring(t) }
+		muerteT.Text = d.texto or "Has muerto."
+		local id = idDe(ICONO_CAUSA[d.causa or ""] or "hueso")
+		if id then
+			Iconos.poner(causaIc, id)
+		end
+		fichaVivo.Text = d.vivo and duracion(d.vivo) or "—"
+		fichaPosF.Visible = d.pos ~= nil
+		if d.pos then
+			fichaPos.Text = ("%d, %d, %d"):format(d.pos[1], d.pos[2], d.pos[3])
+		end
+		fichaObjF.Visible = d.soltados ~= nil
+		if d.conservas then
+			fichaObj.Text = "Los conservas"
+		elseif (d.soltados or 0) > 0 then
+			fichaObj.Text = ("%d en el suelo"):format(d.soltados)
+		else
+			fichaObj.Text = "No llevabas nada"
+		end
+		local nivel = d.nivel or (est.xp and est.xp.nivel) or 0
+		muerteNivel.Text = nivel > 0 and (d.conservas and ("Nivel de experiencia: %d"):format(nivel) or ("Has perdido %d niveles de experiencia (quedan orbes donde caíste)"):format(nivel)) or ""
+		local consejos = CONSEJO_CAUSA[d.causa or ""]
+		muerteConsejo.Text = consejos or CONSEJOS[math.random(1, #CONSEJOS)]
+		muerteDura = Players.RespawnTime or 5
+		muerteHasta = os.clock() + muerteDura
+		muerteBarra.Size = UDim2.fromScale(0, 1)
 		muerte.Visible = true
+		-- Entrada: el título cae grande y se asienta; el fondo pasa de rojo vivo a oscuro
+		muerteEsc.Scale = 1.5
+		TweenService:Create(muerteEsc, TweenInfo.new(0.45, Enum.EasingStyle.Back, Enum.EasingDirection.Out), { Scale = 1 }):Play()
+		muerte.BackgroundTransparency = 0.05
+		TweenService:Create(muerte, TweenInfo.new(0.8, Enum.EasingStyle.Quad), { BackgroundTransparency = 0.35 }):Play()
+		Interfaz.alSonido("dano", 0.6)
 		Interfaz.cerrar()
 	else
 		muerte.Visible = false
@@ -2345,6 +2657,7 @@ function Interfaz.iniciar()
 		if muerte.Visible then
 			local s = math.max(0, math.ceil(muerteHasta - os.clock()))
 			muerteCuenta.Text = s > 0 and ("Reapareciendo en %d…"):format(s) or "Reapareciendo…"
+			muerteBarra.Size = UDim2.fromScale(math.clamp(1 - (muerteHasta - os.clock()) / math.max(0.1, muerteDura), 0.06, 1), 1)
 		end
 		-- La mano se balancea al andar y al usar
 		balanceo = math.max(0, balanceo - dt * 4)

@@ -41,6 +41,28 @@ Mobs.alExplotar = nil -- function(x, y, z, potencia, fuente)
 Mobs.esCreativo = nil -- function(plr) -> bool
 Mobs.alComerciar = nil
 
+-- Nombre de cada criatura para la pantalla de muerte («Te mató un Zombi»)
+local NOMBRES = {
+	zombi = "Zombi", esqueleto = "Esqueleto", creeper = "Creeper", arana = "Araña", enderman = "Enderman", piglin = "Piglin", hoglin = "Hoglin",
+	slime = "Slime", cuboMagma = "Cubo de magma", golem = "Gólem de hierro", ghast = "Ghast", blaze = "Blaze", warden = "Warden", breeze = "Breeze",
+	creaking = "Crujidor", saqueador = "Saqueador", bruja = "Bruja", guardian = "Guardián", guardianAnciano = "Guardián anciano", shulker = "Shulker",
+	vindicador = "Vindicador", ahogado = "Ahogado", lobo = "Lobo", osoPolar = "Oso polar", abeja = "Abeja", panda = "Panda", devastador = "Devastador",
+	phantom = "Phantom", lepisma = "Lepisma", endermita = "Endermita", vex = "Vex", evocador = "Evocador", esqueletoErrante = "Esqueleto errante",
+	momia = "Momia", aldeanoZombi = "Aldeano zombi", esqueletoWither = "Esqueleto wither", piglinBruto = "Piglin bruto", golemPiedraLY = "Gólem de piedra",
+	golemTablaLY = "Gólem de tablones", piglinLY = "Piglin", piglinBrutoLY = "Piglin bruto", dragon = "Ender Dragon", wither = "Wither",
+}
+local FEMENINO = { arana = true, bruja = true, abeja = true, momia = true, lepisma = true, endermita = true }
+function Mobs.nombre(tipo)
+	return NOMBRES[tipo] or "una criatura"
+end
+-- Con artículo: «un Zombi», «una Araña»
+function Mobs.conArticulo(tipo)
+	if not NOMBRES[tipo] then
+		return "una criatura"
+	end
+	return (FEMENINO[tipo] and "una " or "un ") .. NOMBRES[tipo]
+end
+
 local carpeta = Instance.new("Folder")
 carpeta.Name = "Criaturas"
 carpeta.Parent = workspace
@@ -418,10 +440,10 @@ local IA_PASIVA = { lobo = true, gato = true, zorro = true, conejo = true, cabra
 local IA_VUELA = { murcielago = true, phantom = true, vex = true, allay = true, abeja = true }
 local IA_AGUA = { pez = true, calamar = true, ajolote = true, pezGlobo = true }
 
-local function danarJugador(j, dano, tipo, dx, dz, dist)
+local function danarJugador(j, dano, tipo, dx, dz, dist, m)
 	if Mobs.alDanarJugador then
 		local l = dist and dist > 0 and dist or 1
-		Mobs.alDanarJugador(j.plr, dano, tipo, { x = dx / l, z = dz / l })
+		Mobs.alDanarJugador(j.plr, dano, tipo, { x = dx / l, z = dz / l }, m)
 	end
 end
 
@@ -515,7 +537,7 @@ local function actualizarMob(m, dt, jugadores)
 			m.cd = 1.5 + math.random()
 			local dir = Vector3.new(dx, dy + 1.1 - m.alto * 0.85 + dist * 0.12, dz).Unit
 			dir = Vector3.new(dir.X + (math.random() - 0.5) * 0.06, dir.Y, dir.Z + (math.random() - 0.5) * 0.06).Unit
-			Entidades.disparar("flecha", ex + dir.X * 0.6, ey, ez + dir.Z * 0.6, dir, 30, { dueno = m, dano = 1 })
+			Entidades.disparar("flecha", ex + dir.X * 0.6, ey, ez + dir.Z * 0.6, dir, 30, { dueno = m, dano = azar(2, 4) })
 			m.pieza:SetAttribute("dispara", tiempo)
 		end
 	elseif persigue and ia == "creeper" then
@@ -610,7 +632,7 @@ local function actualizarMob(m, dt, jugadores)
 		local dano = type(def.dano) == "table" and def.dano[(m.tam or 1) + 1] or (def.dano or 0)
 		if persigue and dano > 0 and dist < m.ancho + 0.55 and math.abs(dy) < m.alto and m.golpeT <= 0 then
 			m.golpeT = 1
-			danarJugador(j, dano, "mob", dx, dz, dist)
+			danarJugador(j, dano, "mob", dx, dz, dist, m)
 		end
 	elseif ia == "golem" then
 		local obj, dmin = nil, 18
@@ -638,7 +660,7 @@ local function actualizarMob(m, dt, jugadores)
 				m.golpeT = 0.35
 				m.pieza:SetAttribute("ataca", tiempo)
 				if obj.jugador then
-					danarJugador(obj.jugador, azar(7, 21), "mob", ox, oz, d)
+					danarJugador(obj.jugador, azar(7, 21), "mob", ox, oz, d, m)
 				else
 					Mobs.herir(obj, azar(7, 21), { x = ox / (d > 0 and d or 1), z = oz / (d > 0 and d or 1) }, "golem")
 					obj.vy = 9
@@ -727,7 +749,7 @@ local function actualizarMob(m, dt, jugadores)
 			m.yawObj = math.atan2(ox, oz)
 			if l < 1.5 and m.cd <= 0 then
 				m.cd = 1
-				danarJugador(j, def.dano, "mob", ox, oz, l)
+				danarJugador(j, def.dano, "mob", ox, oz, l, m)
 			end
 		else
 			m.t -= dt
@@ -764,7 +786,7 @@ local function actualizarMob(m, dt, jugadores)
 			m.cd = 1
 			m.golpeT = 0.35
 			m.pieza:SetAttribute("ataca", tiempo)
-			danarJugador(j, def.dano, "mob", dx, dz, dist)
+			danarJugador(j, def.dano, "mob", dx, dz, dist, m)
 		end
 		if m.tipo == "enderman" and dist > 12 and math.random() < dt * 0.3 then
 			teletransportar(m)
