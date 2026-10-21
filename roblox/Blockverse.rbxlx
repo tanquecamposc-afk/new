@@ -1,7 +1,7 @@
 <roblox xmlns:xmime="http://www.w3.org/2005/05/xmlmime" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.roblox.com/roblox.xsd" version="4">
 <Item class="Workspace" referent="RBX00000001"><Properties><string name="Name">Workspace</string><bool name="StreamingEnabled">false</bool><float name="FallenPartsDestroyHeight">-500</float></Properties></Item>
 <Item class="Lighting" referent="RBX00000002"><Properties><string name="Name">Lighting</string><token name="Technology">4</token><bool name="GlobalShadows">true</bool></Properties></Item>
-<Item class="ReplicatedStorage" referent="RBX00000020"><Properties><string name="Name">ReplicatedStorage</string></Properties><Item class="Folder" referent="RBX0000001F"><Properties><string name="Name">Blockverse</string></Properties><Item class="ModuleScript" referent="RBX00000003"><Properties><string name="Name">Arenas</string><ProtectedString name="Source"><![CDATA[--!optimize 2
+<Item class="ReplicatedStorage" referent="RBX00000021"><Properties><string name="Name">ReplicatedStorage</string></Properties><Item class="Folder" referent="RBX00000020"><Properties><string name="Name">Blockverse</string></Properties><Item class="ModuleScript" referent="RBX00000003"><Properties><string name="Name">Arenas</string><ProtectedString name="Source"><![CDATA[--!optimize 2
 --[[
 	Blockverse para Roblox · Arenas de los modos de juego
 	Los mapas de Bed Wars (bedwars2.js), las mazmorras (modos53.js) y la
@@ -7441,7 +7441,47 @@ end
 
 return Fisica
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX00000019"><Properties><string name="Name">Generador</string><ProtectedString name="Source"><![CDATA[--!native
+<Item class="ModuleScript" referent="RBX00000019"><Properties><string name="Name">Fuentes</string><ProtectedString name="Source"><![CDATA[--[[
+	Blockverse para Roblox · Las letras del juego (una sola lista para todo)
+	· TITULO: Luckiest Guy, gruesa y alegre, para lo grande (BLOCKVERSE, ¡VICTORIA!, ¡Has muerto!).
+	· CABECERA: Fredoka, redondeada, para títulos de ventanas, botones y nombres.
+	· TEXTO: Builder Sans en negrita (la de Roblox), clara para leer frases y descripciones.
+	· NUMERO: Arcade, de píxeles, para cantidades, niveles y marcadores (aire de Minecraft).
+	Si alguna fuente no existiera en esta versión de Roblox, se usa Gotham, que siempre está.
+]]
+local function fuente(nombre, respaldo)
+	local ok, f = pcall(function()
+		return Enum.Font[nombre]
+	end)
+	if ok and f then
+		return f
+	end
+	return Enum.Font[respaldo]
+end
+
+local F = {
+	TITULO = fuente("LuckiestGuy", "GothamBlack"),
+	CABECERA = fuente("FredokaOne", "GothamBlack"),
+	TEXTO = fuente("BuilderSansBold", "GothamBold"),
+	TEXTO_FUERTE = fuente("BuilderSansExtraBold", "GothamBlack"),
+	NUMERO = fuente("Arcade", "Code"),
+}
+
+-- Contorno grueso y limpio para un texto (mejor que TextStroke, que es de 1 píxel)
+function F.contorno(etiqueta, color, grosor, transparencia)
+	local s = Instance.new("UIStroke")
+	s.Color = color or Color3.new(0, 0, 0)
+	s.Thickness = grosor or 2
+	s.Transparency = transparencia or 0
+	s.LineJoinMode = Enum.LineJoinMode.Round
+	s.Parent = etiqueta
+	etiqueta.TextStrokeTransparency = 1
+	return s
+end
+
+return F
+]]></ProtectedString></Properties></Item>
+<Item class="ModuleScript" referent="RBX0000001A"><Properties><string name="Name">Generador</string><ProtectedString name="Source"><![CDATA[--!native
 --!optimize 2
 --[[
 	Blockverse para Roblox · Generador del mundo
@@ -8596,7 +8636,7 @@ end
 
 return Generador
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX0000001A"><Properties><string name="Name">MundoDatos</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX0000001B"><Properties><string name="Name">MundoDatos</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Datos del mundo
 	Guarda los chunks (16 × 16 × 192 bloques) y los cambios que han hecho
 	los jugadores. Lo usan el servidor y el cliente: los dos generan el
@@ -8803,7 +8843,7 @@ end
 
 return MundoDatos
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX0000001B"><Properties><string name="Name">ProductosRobux</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX0000001C"><Properties><string name="Name">ProductosRobux</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Lo que se puede comprar con Robux
 
 	CÓMO PONERLO EN MARCHA (lo hace el dueño del juego, una sola vez):
@@ -8887,7 +8927,7 @@ end
 
 return P
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX0000001C"><Properties><string name="Name">Rayo</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX0000001D"><Properties><string name="Name">Rayo</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Rayo
 	Recorre los bloques en línea recta (como lanzarRayo del juego web)
 	para saber a qué bloque se apunta y por qué cara. Respeta las formas:
@@ -9035,7 +9075,7 @@ end
 
 return Rayo
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX0000001D"><Properties><string name="Name">Registro</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX0000001E"><Properties><string name="Name">Registro</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Registro
 	Junta los datos exportados del juego web (Datos/*) y prepara tablas
 	rápidas para el resto del juego: qué bloques son sólidos, opacos,
@@ -9230,7 +9270,7 @@ end
 
 return Registro
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX0000001E"><Properties><string name="Name">Ruido</string><ProtectedString name="Source"><![CDATA[--!native
+<Item class="ModuleScript" referent="RBX0000001F"><Properties><string name="Name">Ruido</string><ProtectedString name="Source"><![CDATA[--!native
 --!optimize 2
 --[[
 	Blockverse para Roblox · Ruido
@@ -9337,7 +9377,7 @@ return Ruido
 ]]></ProtectedString></Properties></Item>
 </Item>
 </Item>
-<Item class="ServerScriptService" referent="RBX00000036"><Properties><string name="Name">ServerScriptService</string></Properties><Item class="Script" referent="RBX00000035"><Properties><string name="Name">Servidor</string><bool name="Disabled">false</bool><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ServerScriptService" referent="RBX00000037"><Properties><string name="Name">ServerScriptService</string></Properties><Item class="Script" referent="RBX00000036"><Properties><string name="Name">Servidor</string><bool name="Disabled">false</bool><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Script principal del servidor
 	Une todo el juego, con las reglas del juego web:
 	· Mundo (igual al web), simulación, criaturas, entidades, cofres y hornos.
@@ -9559,6 +9599,8 @@ local function enviarJugador(plr)
 	})
 	local p = s.inv[s.sel]
 	plr:SetAttribute("EnMano", p and p.id or nil)
+	-- Para que los demás vean el brillo si lo que llevas está encantado
+	plr:SetAttribute("EnManoEnc", (p and p.enc and next(p.enc) ~= nil) or nil)
 	-- Los logros de «consigue X» solo en el mundo normal (en Bed Wars el hierro sale del generador)
 	if not Modos.enArena(plr) then
 		Logros.revisarInventario(plr, s)
@@ -12179,7 +12221,7 @@ Mobs.alMatar = function(m, _, plr)
 end
 -- Las explosiones en la arena de Bed Wars solo rompen lo construido
 Sim.puedeExplotar = Modos.puedeExplotar
-]]></ProtectedString></Properties><Item class="ModuleScript" referent="RBX00000021"><Properties><string name="Name">BedWars</string><ProtectedString name="Source"><![CDATA[--[[
+]]></ProtectedString></Properties><Item class="ModuleScript" referent="RBX00000022"><Properties><string name="Name">BedWars</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · BED WARS (bedwars.js, bedwars2.js y tiendaBW37.js)
 	Una partida para todo el servidor: sala de espera de cristal con cuenta
 	atrás, 8 equipos (o 4 si hay más de 8 jugadores) en islas flotantes,
@@ -12311,7 +12353,7 @@ local function cartel(pieza, texto, col, alto)
 		t.BackgroundColor3 = Color3.new(0, 0, 0)
 		t.BorderSizePixel = 0
 		t.Size = UDim2.fromScale(1, 1)
-		t.Font = Enum.Font.Code
+		t.Font = require(Comp:WaitForChild("Fuentes")).CABECERA
 		t.TextScaled = true
 		t.TextStrokeTransparency = 0.4
 		t.Parent = g
@@ -15282,7 +15324,7 @@ end
 
 return BW
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX00000022"><Properties><string name="Name">Clima</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX00000023"><Properties><string name="Name">Clima</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Clima (servidor)
 	· Cielo despejado, lluvia o tormenta, que cambian solos cada pocos minutos.
 	  El estado va en el atributo «Clima» de workspace y cada cliente lo dibuja
@@ -15403,7 +15445,7 @@ end
 
 return Clima
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX00000023"><Properties><string name="Name">Contenedores</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX00000024"><Properties><string name="Name">Contenedores</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Cofres y hornos (servidor)
 	· Cofres, barriles y cofres de cobre: 27 casillas cada uno.
 	· Hornos (y ahumadores / altos hornos): entrada, combustible y salida,
@@ -15575,7 +15617,7 @@ end
 
 return Cont
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX00000024"><Properties><string name="Name">Dimension</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX00000025"><Properties><string name="Name">Dimension</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Dimensiones (servidor)
 	Como jugador.js, dragon.js y extras.js del juego web:
 	· Portales del Nether: marco de obsidiana de 2×3 a 21×21 que se
@@ -16363,7 +16405,7 @@ end
 
 return Dim
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX00000025"><Properties><string name="Name">Entidades</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX00000026"><Properties><string name="Name">Entidades</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Entidades (servidor)
 	Como entidades.js del juego web:
 	· Objetos tirados: saltan al soltarse, caen, se juntan con los iguales
@@ -16443,6 +16485,9 @@ function Entidades.soltarItem(pila, x, y, z, aleatorio, vel, espera)
 	local p = crearPieza("Item")
 	p:SetAttribute("id", pila.id)
 	p:SetAttribute("n", pila.n)
+	if pila.enc and next(pila.enc) then
+		p:SetAttribute("brillo", true)
+	end
 	local vx, vy, vz = 0, 4, 0
 	if aleatorio then
 		vx, vy, vz = (math.random() - 0.5) * 4, 3 + math.random() * 2, (math.random() - 0.5) * 4
@@ -16701,7 +16746,7 @@ end
 
 return Entidades
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX00000026"><Properties><string name="Name">Habitantes</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX00000027"><Properties><string name="Name">Habitantes</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Habitantes de las estructuras (servidor)
 	Como en el juego web:
 	· Generadores de criaturas de las mazmorras y la fortaleza (zombi 50 %,
@@ -17054,7 +17099,7 @@ end
 
 return H
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX00000027"><Properties><string name="Name">Inventario</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX00000028"><Properties><string name="Name">Inventario</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Inventario (servidor)
 	Casillas como en el juego web:
 	· 1-9 barra rápida, 10-36 mochila, 37-40 armadura (casco, pechera,
@@ -17315,7 +17360,7 @@ end
 
 return Inv
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX00000028"><Properties><string name="Name">KitsBW</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX00000029"><Properties><string name="Name">KitsBW</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Kits de Bed Wars (kits46.js del juego web y kits nuevos)
 	Cada kit tiene rareza, precio en monedas y tres niveles que mejoran sus números.
 	Cada día hay tres kits gratis para probar. Los legendarios tienen una habilidad
@@ -17709,7 +17754,7 @@ end
 
 return Kits
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX00000029"><Properties><string name="Name">Leyendas</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX0000002A"><Properties><string name="Name">Leyendas</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · LEYENDAS (modos52.js y modos53.js)
 	Cada jugador defiende su aldea en una isla propia: plaza con el
 	pozo-corazón, casas con aldeanos, caminos con faroles y huertos, y
@@ -18497,7 +18542,7 @@ end
 
 return LY
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX0000002A"><Properties><string name="Name">Logros</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX0000002B"><Properties><string name="Name">Logros</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Logros (como los avances de Minecraft)
 	· 18 logros: los primeros sirven de guía para quien empieza (madera, mesa, pico,
 	  piedra, horno, hierro…) y los demás son retos (diamantes, el Nether, el dragón,
@@ -18718,7 +18763,7 @@ end
 
 return Logros
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX0000002B"><Properties><string name="Name">Mazmorras</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX0000002C"><Properties><string name="Name">Mazmorras</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · MAZMORRAS (modos52.js y modos53.js)
 	Cada jugador baja a su propia mazmorra: salas cuadradas, redondas y en
 	cruz unidas por pasillos, con tres ambientaciones que se turnan por
@@ -19365,7 +19410,7 @@ end
 
 return MZ
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX0000002C"><Properties><string name="Name">Mesas</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX0000002D"><Properties><string name="Name">Mesas</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Mesas y comercio (servidor)
 	Las mesas que faltaban, con las fórmulas del juego web:
 	· Mesa de encantamientos (encantamientos.js): tres opciones según las
@@ -20225,7 +20270,7 @@ end
 
 return Mesas
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX0000002D"><Properties><string name="Name">Mobs</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX0000002E"><Properties><string name="Name">Mobs</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Criaturas (servidor)
 	IA de mobs.js del juego web, para varios jugadores:
 	· Hostiles cuerpo a cuerpo (zombi, araña que salta…), esqueletos que
@@ -21452,7 +21497,7 @@ end
 
 return Mobs
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX0000002E"><Properties><string name="Name">Modos</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX0000002F"><Properties><string name="Name">Modos</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Modos de juego (servidor)
 	ONE BLOCK (como oneblock.js del juego web): cada jugador tiene su
 	propia isla de un solo bloque en una zona vacía del mundo. Al romperlo
@@ -21969,7 +22014,7 @@ end
 
 return Modos
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX0000002F"><Properties><string name="Name">Mundo</string><ProtectedString name="Source"><![CDATA[--!native
+<Item class="ModuleScript" referent="RBX00000030"><Properties><string name="Name">Mundo</string><ProtectedString name="Source"><![CDATA[--!native
 --[[
 	Blockverse para Roblox · Mundo (servidor)
 	· Guarda los bloques (MundoDatos) y los cambios de los jugadores.
@@ -22377,7 +22422,7 @@ end
 
 return Mundo
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX00000030"><Properties><string name="Name">PerfilBW</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX00000031"><Properties><string name="Name">PerfilBW</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Perfil de Bed Wars de cada jugador (se guarda en DataStore)
 	· Monedas, experiencia con nivel y estrellas [N★], estadísticas, racha de victorias.
 	· Kits comprados con su nivel, kit equipado y efecto de baja final equipado.
@@ -22645,7 +22690,7 @@ end)
 
 return Perfil
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX00000031"><Properties><string name="Name">Progreso</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX00000032"><Properties><string name="Name">Progreso</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Progreso (servidor)
 	· Camino de Blockverse: experiencia de todos los modos (misiones, monstruos, partidas,
 	  salas, portales, fases…), 50 niveles y una recompensa por nivel que se cobra a mano.
@@ -22860,7 +22905,7 @@ function Progreso.aplicar(plr)
 			l.Name = "Texto"
 			l.BackgroundTransparency = 1
 			l.Size = UDim2.fromScale(1, 1)
-			l.Font = Enum.Font.GothamBlack
+			l.Font = require(Comp:WaitForChild("Fuentes")).CABECERA
 			l.TextScaled = true
 			l.TextStrokeTransparency = 0.3
 			l.Parent = g
@@ -23273,7 +23318,7 @@ end
 
 return Progreso
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX00000032"><Properties><string name="Name">Redstone</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX00000033"><Properties><string name="Name">Redstone</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Redstone (servidor)
 	Traducción de redstone.js del juego web:
 	· El polvo lleva energía (0-15, pierde 1 por bloque, sube y baja
@@ -23952,7 +23997,7 @@ end
 
 return Redstone
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX00000033"><Properties><string name="Name">Simulacion</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX00000034"><Properties><string name="Name">Simulacion</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Simulación del mundo (servidor)
 	Traducción de simulacion.js: líquidos que fluyen (agua y lava,
 	obsidiana y roca al juntarse), arena y grava que caen, plantas y
@@ -24563,7 +24608,7 @@ end
 
 return Sim
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX00000034"><Properties><string name="Name">Tienda</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX00000035"><Properties><string name="Name">Tienda</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Tienda con Robux (servidor)
 	· Pases (VIP, Monedas x2, Todos los efectos): se miran al entrar y al comprarlos.
 	· Productos (monedas y cosas de cada modo): se entregan en ProcessReceipt, que Roblox
@@ -24918,7 +24963,7 @@ return Tienda
 ]]></ProtectedString></Properties></Item>
 </Item>
 </Item>
-<Item class="StarterPlayer" referent="RBX00000047"><Properties><string name="Name">StarterPlayer</string><float name="CharacterWalkSpeed">14</float><bool name="CharacterUseJumpPower">false</bool><float name="CharacterJumpHeight">4.6</float></Properties><Item class="StarterPlayerScripts" referent="RBX00000045"><Properties><string name="Name">StarterPlayerScripts</string></Properties><Item class="LocalScript" referent="RBX00000043"><Properties><string name="Name">Cliente</string><bool name="Disabled">false</bool><ProtectedString name="Source"><![CDATA[--[[
+<Item class="StarterPlayer" referent="RBX00000049"><Properties><string name="Name">StarterPlayer</string><float name="CharacterWalkSpeed">14</float><bool name="CharacterUseJumpPower">false</bool><float name="CharacterJumpHeight">4.6</float></Properties><Item class="StarterPlayerScripts" referent="RBX00000047"><Properties><string name="Name">StarterPlayerScripts</string></Properties><Item class="LocalScript" referent="RBX00000045"><Properties><string name="Name">Cliente</string><bool name="Disabled">false</bool><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Script del cliente
 	· Genera y dibuja el mundo en este equipo (la misma semilla que el
 	  servidor) y aplica los cambios que llegan.
@@ -25139,6 +25184,8 @@ end
 ProgresoVista.iniciar()
 Interfaz.carga(0.5, "Generando el mundo…")
 local md = MundoDatos.new(semilla)
+-- Las sombras redondas buscan el suelo en los datos del mundo
+require(script:WaitForChild("Sombras")).md = md
 est.md = md
 DimensionVista.md = md
 DimensionVista.iniciar()
@@ -25918,7 +25965,7 @@ local function numeroDano(pos, dano, critico)
 	local l = Instance.new("TextLabel")
 	l.BackgroundTransparency = 1
 	l.Size = UDim2.fromScale(1, 1)
-	l.Font = Enum.Font.GothamBlack
+	l.Font = require(Comp:WaitForChild("Fuentes")).NUMERO
 	l.TextScaled = true
 	l.Text = ("%g%s"):format(math.floor(dano * 10 + 0.5) / 10, critico and "!" or "")
 	l.TextColor3 = critico and Color3.fromRGB(255, 220, 60) or Color3.fromRGB(255, 255, 255)
@@ -26053,6 +26100,10 @@ if Modelos3D.disponible() then
 		balanceo = Interfaz.balanceoMano,
 		conBalanceo = function()
 			return Interfaz.ajustes.balanceo
+		end,
+		encantado = function()
+			local p = est.inv[est.sel]
+			return p ~= nil and p.enc ~= nil and next(p.enc) ~= nil
 		end,
 		pose = function()
 			return {
@@ -26620,7 +26671,7 @@ RunService.RenderStepped:Connect(function(dt)
 			:format(nomDim, x, y, zl, x // 16, zl // 16, nomBio, Lighting.ClockTime, fps, Render.modo, semilla))
 	end
 end)
-]]></ProtectedString></Properties><Item class="ModuleScript" referent="RBX00000037"><Properties><string name="Name">ClimaVista</string><ProtectedString name="Source"><![CDATA[--[[
+]]></ProtectedString></Properties><Item class="ModuleScript" referent="RBX00000038"><Properties><string name="Name">ClimaVista</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Clima (cliente)
 	· Lluvia: gotas que caen alrededor de la cámara y salpican al llegar al suelo
 	  (no pasan los techos). En los biomas fríos nieva y en los secos (desierto,
@@ -26928,7 +26979,7 @@ end
 
 return ClimaVista
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX00000038"><Properties><string name="Name">DimensionVista</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX00000039"><Properties><string name="Name">DimensionVista</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · El Nether y el End (cliente)
 	· Ambiente de cada dimensión como en el juego web: niebla roja (del
 	  color de cada bioma del Nether) y sin cielo en el Nether; niebla
@@ -27348,7 +27399,7 @@ end
 
 return DV
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX00000039"><Properties><string name="Name">EntidadesVista</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX0000003A"><Properties><string name="Name">EntidadesVista</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Entidades (cliente)
 	Dibuja lo que hay en workspace.Entidades como en el juego web:
 	· Objetos tirados: su modelo 3D (cubito con texturas o el objeto con volumen)
@@ -27366,6 +27417,7 @@ local Config = require(Comp:WaitForChild("Config"))
 local Registro = require(Comp:WaitForChild("Registro"))
 local Iconos = require(script.Parent:WaitForChild("Iconos"))
 local Modelos3D = require(script.Parent:WaitForChild("Modelos3D"))
+local Sombras = require(script.Parent:WaitForChild("Sombras"))
 
 local BS = Config.BLOQUE
 local EntidadesVista = {}
@@ -27409,6 +27461,9 @@ end
 
 local function nueva(p)
 	local v = { p = p, pos = nil, fase = math.random() * 6.28, nacer = 0 }
+	if p.Name == "Item" or p.Name == "Orbe" then
+		v.sombra = Sombras.nueva()
+	end
 	if p.Name == "Item" then
 		local ancla = pieza(Vector3.new(0.1, 0.1, 0.1), Color3.new(1, 1, 1))
 		ancla.Transparency = 1
@@ -27498,6 +27553,8 @@ local function quitar(p)
 		return
 	end
 	vistas[p] = nil
+	Sombras.quitar(v.sombra)
+	v.sombra = nil
 	if (v.tipo == "item" or v.tipo == "orbe") and v.pos and not v.lejos then
 		local plr = quienRecoge(p)
 		if plr then
@@ -27564,6 +27621,12 @@ function EntidadesVista.iniciar()
 						local m2 = m and Modelos3D.crear(id, esc)
 						if m and v.pedido == yo and vistas[p] then
 							v.modelo, v.modelo2 = m, m2
+							-- Proyectan sombra y, si están encantados, brillan
+							local brillo = p:GetAttribute("brillo") == true
+							for _, x in { m, m2 } do
+								Modelos3D.sombra(x, true)
+								Modelos3D.brillo(x, brillo)
+							end
 							m.m.Parent = carpeta
 							m2.m.Parent = carpeta
 							v.bb.Enabled = false
@@ -27579,7 +27642,11 @@ function EntidadesVista.iniciar()
 					local varios = (p:GetAttribute("n") or 1) > 1
 					Modelos3D.colocar(v.modelo2, varios and giro * CFrame.new(0.12 * BS, 0.08 * BS, 0.1 * BS) or CFrame.new(0, -1e4, 0))
 				end
-			elseif v.tipo == "orbe" then
+			end
+			if v.sombra then
+				Sombras.poner(v.sombra, v.pos, (v.tipo == "orbe" and 0.3 or 0.5) * BS)
+			end
+			if v.tipo == "orbe" then
 				local c = 0.5 + math.sin(tiempo * 6 + v.fase) * 0.5
 				v.vis.Color = Color3.fromRGB(150 + c * 105, 255, 40 + c * 40)
 				v.vis.Position = v.pos + Vector3.new(0, 0.12 * BS, 0)
@@ -27635,7 +27702,7 @@ end
 
 return EntidadesVista
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX0000003A"><Properties><string name="Name">Iconos</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX0000003B"><Properties><string name="Name">Iconos</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Iconos (cliente)
 	· Los 778 iconos del juego web (cubos isométricos de 48 px para los
 	  bloques y dibujos de 16 px para los objetos) en dos hojas de 1024 px.
@@ -27771,7 +27838,7 @@ function Iconos.poner(etiqueta, id)
 		ini.Name = "Iniciales"
 		ini.BackgroundTransparency = 1
 		ini.Size = UDim2.fromScale(1, 1)
-		ini.Font = Enum.Font.GothamBold
+		ini.Font = require(Comp:WaitForChild("Fuentes")).CABECERA
 		ini.TextScaled = true
 		ini.TextColor3 = Color3.new(1, 1, 1)
 		ini.TextStrokeTransparency = 0.3
@@ -27928,7 +27995,7 @@ end
 
 return Iconos
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX0000003B"><Properties><string name="Name">Imagenes</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX0000003C"><Properties><string name="Name">Imagenes</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Imágenes (cliente)
 	Crea imágenes editables (EditableImage) a partir de los píxeles del
 	juego web: atlas de texturas, iconos de objetos, texturas de criaturas
@@ -28024,7 +28091,7 @@ end
 
 return Imagenes
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX0000003C"><Properties><string name="Name">Interfaz</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX0000003D"><Properties><string name="Name">Interfaz</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Interfaz (cliente)
 	Con el aspecto del juego web (paneles grises con relieve, casillas
 	hundidas y los iconos del juego):
@@ -28072,8 +28139,10 @@ local C = {
 	slotSombra = Color3.fromHex("373737"), texto = Color3.fromHex("3f3f3f"), xp = Color3.fromHex("80ff20"),
 	hover = Color3.fromHex("a8a8a8"),
 }
-local FUENTE = Enum.Font.GothamBold
-local FUENTE_N = Enum.Font.GothamBlack
+-- Letras del juego (Fuentes.luau): texto claro, cabeceras redondeadas, títulos gruesos y números de píxeles
+local FT = require(Comp:WaitForChild("Fuentes"))
+local FUENTE = FT.TEXTO
+local FUENTE_N = FT.CABECERA
 local S = 40 -- tamaño de una casilla
 
 ------------------------------------------------------------------
@@ -28097,6 +28166,10 @@ local function texto(props, padre)
 	}, padre)
 	for k, v in props do
 		t[k] = v
+	end
+	-- Los títulos grandes llevan un contorno grueso y redondeado
+	if t.Font == FT.TITULO and t.TextStrokeTransparency < 1 then
+		FT.contorno(t, t.TextStrokeColor3, math.max(2, math.floor(t.TextSize / 16)))
 	end
 	return t
 end
@@ -28171,7 +28244,7 @@ local function ranura(padre, zona, i, tam)
 		ResampleMode = Enum.ResamplerMode.Pixelated, ImageTransparency = 1, ZIndex = 2,
 	}, b)
 	texto({ Name = "N", Size = UDim2.new(1, -3, 0, 16), Position = UDim2.new(0, 0, 1, -16), TextXAlignment = Enum.TextXAlignment.Right,
-		Font = FUENTE_N, TextSize = 15, Text = "", ZIndex = 3, TextStrokeColor3 = Color3.fromHex("3f3f3f"), TextStrokeTransparency = 0 }, b)
+		Font = FT.NUMERO, TextSize = 15, Text = "", ZIndex = 3, TextStrokeColor3 = Color3.fromHex("3f3f3f"), TextStrokeTransparency = 0 }, b)
 	local dur = nuevo("Frame", { Name = "Dur", BackgroundColor3 = Color3.new(0, 0, 0), BorderSizePixel = 0, Size = UDim2.new(1, -10, 0, 3),
 		Position = UDim2.new(0, 5, 1, -6), Visible = false, ZIndex = 3 }, b)
 	nuevo("Frame", { Name = "F", BackgroundColor3 = Color3.fromRGB(80, 255, 80), BorderSizePixel = 0, Size = UDim2.fromScale(1, 1), ZIndex = 3 }, dur)
@@ -28286,7 +28359,7 @@ for i = 1, 9 do
 		ResampleMode = Enum.ResamplerMode.Pixelated, ImageTransparency = 1, ZIndex = 2 }, b)
 	nuevo("UIScale", { Name = "Esc" }, icB)
 	texto({ Name = "N", Size = UDim2.new(1, -3, 0, 16), Position = UDim2.new(0, 0, 1, -16), TextXAlignment = Enum.TextXAlignment.Right,
-		Font = FUENTE_N, TextSize = 15, Text = "", ZIndex = 3, TextStrokeColor3 = Color3.fromHex("3f3f3f"), TextStrokeTransparency = 0 }, b)
+		Font = FT.NUMERO, TextSize = 15, Text = "", ZIndex = 3, TextStrokeColor3 = Color3.fromHex("3f3f3f"), TextStrokeTransparency = 0 }, b)
 	local dur = nuevo("Frame", { Name = "Dur", BackgroundColor3 = Color3.new(0, 0, 0), BorderSizePixel = 0, Size = UDim2.new(1, -10, 0, 3),
 		Position = UDim2.new(0, 5, 1, -6), Visible = false, ZIndex = 3 }, b)
 	nuevo("Frame", { Name = "F", BackgroundColor3 = Color3.fromRGB(80, 255, 80), BorderSizePixel = 0, Size = UDim2.fromScale(1, 1), ZIndex = 3 }, dur)
@@ -28305,7 +28378,7 @@ local barraXP = nuevo("Frame", { BackgroundColor3 = Color3.new(0, 0, 0), Backgro
 nuevo("UIStroke", { Color = Color3.new(0, 0, 0), Thickness = 1, Transparency = 0.2 }, barraXP)
 local xpF = nuevo("Frame", { BackgroundColor3 = C.xp, BorderSizePixel = 0, Size = UDim2.fromScale(0, 1) }, barraXP)
 local nivelXP = texto({ AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 0, -1), Size = UDim2.fromOffset(60, 18), TextColor3 = C.xp,
-	Font = FUENTE_N, TextSize = 15, TextStrokeTransparency = 0, Text = "" }, barraXP)
+	Font = FT.NUMERO, TextSize = 15, TextStrokeTransparency = 0, Text = "" }, barraXP)
 nuevo("UIScale", { Name = "Esc" }, nivelXP)
 
 -- Filas de corazones, comida, armadura y burbujas (10 iconos de 18 px)
@@ -28360,7 +28433,7 @@ local nombreObj = texto({ AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.ne
 local mensaje = texto({ AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.22), Size = UDim2.new(0.8, 0, 0, 26), TextSize = 19,
 	TextWrapped = true, Text = "", TextTransparency = 1, TextStrokeTransparency = 1 }, hud)
 local titulo = texto({ AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.36), Size = UDim2.new(1, 0, 0, 70), TextSize = 64,
-	Font = FUENTE_N, Text = "", TextTransparency = 1, TextStrokeTransparency = 1 }, hud)
+	Font = FT.TITULO, Text = "", TextTransparency = 1, TextStrokeTransparency = 1 }, hud)
 local subtitulo = texto({ AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.44), Size = UDim2.new(1, 0, 0, 30), TextSize = 24,
 	Text = "", TextTransparency = 1, TextStrokeTransparency = 1 }, hud)
 local jefe = nuevo("Frame", { BackgroundTransparency = 1, AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 12), Size = UDim2.fromOffset(420, 40), Visible = false }, hud)
@@ -28541,7 +28614,7 @@ do
 		TextColor3 = Color3.new(1, 1, 1), PlaceholderText = "Buscar…", Text = "", Font = FUENTE, TextSize = 14, ClearTextOnFocus = false,
 		TextXAlignment = Enum.TextXAlignment.Left }, p)
 	nuevo("UIPadding", { PaddingLeft = UDim.new(0, 6) }, busca)
-	nuevo("UIStroke", { Color = Color3.fromHex("a0a0a0"), Thickness = 1 }, busca)
+	nuevo("UIStroke", { Color = Color3.fromHex("a0a0a0"), Thickness = 1, ApplyStrokeMode = Enum.ApplyStrokeMode.Border }, busca)
 	local pest = nuevo("Frame", { BackgroundTransparency = 1, Position = UDim2.fromOffset(14, 34), Size = UDim2.new(1, -28, 0, 26) }, p)
 	nuevo("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 4) }, pest)
 	local lista = nuevo("ScrollingFrame", { BackgroundColor3 = Color3.fromHex("8b8b8b"), BorderSizePixel = 0, Position = UDim2.fromOffset(14, 64),
@@ -29069,10 +29142,10 @@ end
 tooltip = texto({ Name = "Tooltip", BackgroundColor3 = Color3.fromRGB(16, 0, 16), BackgroundTransparency = 0.08, AutomaticSize = Enum.AutomaticSize.X,
 	Size = UDim2.fromOffset(0, 24), TextSize = 14, Visible = false, ZIndex = 30, Text = "" }, gui)
 nuevo("UIPadding", { PaddingLeft = UDim.new(0, 6), PaddingRight = UDim.new(0, 6) }, tooltip)
-nuevo("UIStroke", { Color = Color3.fromRGB(40, 0, 110), Thickness = 2 }, tooltip)
+nuevo("UIStroke", { Color = Color3.fromRGB(40, 0, 110), Thickness = 2, ApplyStrokeMode = Enum.ApplyStrokeMode.Border }, tooltip)
 cursorIcono = nuevo("ImageLabel", { Name = "Cursor", BackgroundTransparency = 1, Size = UDim2.fromOffset(S - 4, S - 4), AnchorPoint = Vector2.new(0.5, 0.5),
 	ResampleMode = Enum.ResamplerMode.Pixelated, ImageTransparency = 1, Visible = false, ZIndex = 29 }, gui)
-local cursorN = texto({ Size = UDim2.new(1, 0, 0, 16), Position = UDim2.new(0, 2, 1, -12), TextXAlignment = Enum.TextXAlignment.Right, Font = FUENTE_N,
+local cursorN = texto({ Size = UDim2.new(1, 0, 0, 16), Position = UDim2.new(0, 2, 1, -12), TextXAlignment = Enum.TextXAlignment.Right, Font = FT.NUMERO,
 	TextSize = 15, Text = "", ZIndex = 30, TextStrokeTransparency = 0 }, cursorIcono)
 
 ------------------------------------------------------------------
@@ -29092,9 +29165,9 @@ desenfoque.Name = "DesenfoqueMenu"
 desenfoque.Size = 0
 desenfoque.Parent = game:GetService("Lighting")
 -- Título con sombra y la frase amarilla que late (como en Minecraft)
-texto({ AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 5, 0.06, 5), Size = UDim2.fromOffset(700, 90), Text = "BLOCKVERSE", Font = FUENTE_N,
+texto({ AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 5, 0.06, 5), Size = UDim2.fromOffset(700, 90), Text = "BLOCKVERSE", Font = FT.TITULO,
 	TextSize = 84, TextColor3 = Color3.fromRGB(30, 30, 40), TextStrokeTransparency = 1, TextTransparency = 0.3, ZIndex = 11 }, menu)
-texto({ AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.fromScale(0.5, 0.06), Size = UDim2.fromOffset(700, 90), Text = "BLOCKVERSE", Font = FUENTE_N,
+texto({ AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.fromScale(0.5, 0.06), Size = UDim2.fromOffset(700, 90), Text = "BLOCKVERSE", Font = FT.TITULO,
 	TextSize = 84, TextColor3 = Color3.fromRGB(255, 255, 255), TextStrokeTransparency = 0, TextStrokeColor3 = Color3.fromRGB(40, 40, 40), ZIndex = 12 }, menu)
 local FRASES = { "¡Edición Roblox!", "¡Ahora con kits!", "¡Cuidado con los creepers!", "¡Protege tu cama!", "¡Hecho bloque a bloque!",
 	"¡Con Mazmorras y Leyendas!", "¡Los bots ya tienden puentes!", "¡Dale a la G!" }
@@ -29288,7 +29361,7 @@ end)
 local botonDiaria = nuevo("TextButton", { Name = "RecompensaDiaria", Text = "", AutoButtonColor = false, BackgroundColor3 = Color3.fromRGB(60, 170, 70), BorderSizePixel = 0,
 	Position = UDim2.fromOffset(16, 152), Size = UDim2.fromOffset(230, 52), ZIndex = 12 }, menu)
 nuevo("UICorner", { CornerRadius = UDim.new(0, 8) }, botonDiaria)
-local bordeDiaria = nuevo("UIStroke", { Color = Color3.fromRGB(20, 60, 20), Thickness = 2 }, botonDiaria)
+local bordeDiaria = nuevo("UIStroke", { Color = Color3.fromRGB(20, 60, 20), Thickness = 2, ApplyStrokeMode = Enum.ApplyStrokeMode.Border }, botonDiaria)
 local escDiaria = nuevo("UIScale", {}, botonDiaria)
 local icDiaria = nuevo("ImageLabel", { BackgroundTransparency = 1, Position = UDim2.fromOffset(8, 8), Size = UDim2.fromOffset(36, 36), ResampleMode = Enum.ResamplerMode.Pixelated,
 	ZIndex = 13 }, botonDiaria)
@@ -29706,9 +29779,9 @@ local cargaFondo = nuevo("ImageLabel", { BackgroundTransparency = 1, Size = UDim
 local sombraCarga = nuevo("Frame", { BackgroundColor3 = Color3.new(0, 0, 0), BorderSizePixel = 0, Size = UDim2.fromScale(1, 1), ZIndex = 15 }, carga)
 nuevo("UIGradient", { Rotation = 90, Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.35), NumberSequenceKeypoint.new(0.5, 0.75),
 	NumberSequenceKeypoint.new(1, 0.25) }) }, sombraCarga)
-texto({ AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(0.5, 4, 0.3, 4), Size = UDim2.fromOffset(700, 90), Text = "BLOCKVERSE", Font = FUENTE_N,
+texto({ AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(0.5, 4, 0.3, 4), Size = UDim2.fromOffset(700, 90), Text = "BLOCKVERSE", Font = FT.TITULO,
 	TextSize = 72, TextColor3 = Color3.fromRGB(20, 20, 24), TextStrokeTransparency = 1, TextTransparency = 0.3, ZIndex = 16 }, carga)
-texto({ AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.3), Size = UDim2.fromOffset(700, 90), Text = "BLOCKVERSE", Font = FUENTE_N,
+texto({ AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.3), Size = UDim2.fromOffset(700, 90), Text = "BLOCKVERSE", Font = FT.TITULO,
 	TextSize = 72, TextColor3 = Color3.new(1, 1, 1), TextStrokeTransparency = 0, TextStrokeColor3 = Color3.fromRGB(40, 40, 40), ZIndex = 17 }, carga)
 local cargaT = texto({ AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.47), Size = UDim2.fromOffset(600, 30), Text = "Cargando Blockverse…", TextSize = 22, ZIndex = 17 }, carga)
 local cargaB = nuevo("Frame", { BackgroundColor3 = Color3.fromRGB(18, 18, 20), BorderSizePixel = 0, AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.53),
@@ -29743,9 +29816,9 @@ nuevo("UIGradient", { Rotation = 90, Color = ColorSequence.new(Color3.fromRGB(17
 nuevo("TextButton", { BackgroundTransparency = 1, Size = UDim2.fromScale(1, 1), Text = "", Modal = true, ZIndex = 12, AutoButtonColor = false }, muerte)
 local muerteCaja = nuevo("Frame", { BackgroundTransparency = 1, AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.48), Size = UDim2.fromOffset(620, 420), ZIndex = 13 }, muerte)
 local muerteEsc = nuevo("UIScale", {}, muerteCaja)
-texto({ AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 4, 0, 4), Size = UDim2.new(1, 0, 0, 80), Text = "¡Has muerto!", Font = FUENTE_N, TextSize = 64,
+texto({ AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 4, 0, 4), Size = UDim2.new(1, 0, 0, 80), Text = "¡Has muerto!", Font = FT.TITULO, TextSize = 64,
 	TextColor3 = Color3.fromRGB(40, 0, 0), TextStrokeTransparency = 1, TextTransparency = 0.25, ZIndex = 13 }, muerteCaja)
-texto({ AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.fromScale(0.5, 0), Size = UDim2.new(1, 0, 0, 80), Text = "¡Has muerto!", Font = FUENTE_N, TextSize = 64,
+texto({ AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.fromScale(0.5, 0), Size = UDim2.new(1, 0, 0, 80), Text = "¡Has muerto!", Font = FT.TITULO, TextSize = 64,
 	TextColor3 = Color3.fromRGB(255, 255, 255), TextStrokeColor3 = Color3.fromRGB(90, 0, 0), TextStrokeTransparency = 0, ZIndex = 14 }, muerteCaja)
 -- Tarjeta de la causa: icono + frase
 local causaF = nuevo("Frame", { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 96), Size = UDim2.fromOffset(560, 64),
@@ -30411,7 +30484,7 @@ function Interfaz.panel(d)
 	for _, l in d.lineas or {} do
 		-- Las líneas largas pasan a la siguiente sin pisar a las de abajo
 		texto({ Size = UDim2.new(1, 0, 0, l.t == "" and 8 or 16), AutomaticSize = l.t ~= "" and Enum.AutomaticSize.Y or Enum.AutomaticSize.None, Text = l.t or "",
-			TextSize = 13, Font = Enum.Font.Code, TextColor3 = color(l.c, "#ffffff"), TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true,
+			TextSize = 13, Font = FT.TEXTO, TextColor3 = color(l.c, "#ffffff"), TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true,
 			LayoutOrder = o() }, lateral)
 	end
 	if d.botones and #d.botones > 0 then
@@ -30428,7 +30501,7 @@ function Interfaz.panel(d)
 		if bt.sub then
 			texto({ Position = UDim2.fromOffset(0, 3), Size = UDim2.new(1, 0, 0, 15), Text = bt.t or "", TextSize = 12, TextXAlignment = Enum.TextXAlignment.Left,
 				TextTransparency = bt.activo and 0 or 0.4 }, b)
-			texto({ Position = UDim2.fromOffset(0, 18), Size = UDim2.new(1, 0, 0, 13), Text = bt.sub, TextSize = 10, Font = Enum.Font.Code,
+			texto({ Position = UDim2.fromOffset(0, 18), Size = UDim2.new(1, 0, 0, 13), Text = bt.sub, TextSize = 10, Font = FT.TEXTO,
 				TextXAlignment = Enum.TextXAlignment.Left, TextColor3 = bt.activo and Color3.fromRGB(200, 255, 200) or Color3.fromRGB(255, 160, 160) }, b)
 		end
 	end
@@ -30479,9 +30552,9 @@ local fin = nuevo("Frame", { Name = "FinBW", BackgroundColor3 = Color3.fromRGB(8
 	AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.fromOffset(440, 380), Visible = false, ZIndex = 20 }, gui)
 nuevo("UICorner", { CornerRadius = UDim.new(0, 10) }, fin)
 local finBorde = nuevo("UIStroke", { Color = Color3.fromRGB(255, 220, 80), Thickness = 3 }, fin)
-local finT = texto({ Position = UDim2.fromOffset(0, 14), Size = UDim2.new(1, 0, 0, 44), Text = "", Font = FUENTE_N, TextSize = 38, ZIndex = 21 }, fin)
+local finT = texto({ Position = UDim2.fromOffset(0, 14), Size = UDim2.new(1, 0, 0, 44), Text = "", Font = FT.TITULO, TextSize = 38, ZIndex = 21 }, fin)
 local finSub = texto({ Position = UDim2.fromOffset(0, 58), Size = UDim2.new(1, 0, 0, 20), Text = "", TextSize = 15, ZIndex = 21 }, fin)
-local finStats = texto({ Position = UDim2.fromOffset(20, 88), Size = UDim2.new(1, -40, 0, 92), Text = "", TextSize = 14, Font = Enum.Font.Code, TextWrapped = true,
+local finStats = texto({ Position = UDim2.fromOffset(20, 88), Size = UDim2.new(1, -40, 0, 92), Text = "", TextSize = 14, Font = FT.TEXTO, TextWrapped = true,
 	TextXAlignment = Enum.TextXAlignment.Left, TextYAlignment = Enum.TextYAlignment.Top, ZIndex = 21 }, fin)
 local finPremio = texto({ Position = UDim2.fromOffset(20, 182), Size = UDim2.new(1, -40, 0, 22), Text = "", TextSize = 17, TextColor3 = Color3.fromRGB(255, 216, 74),
 	TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 21 }, fin)
@@ -30559,7 +30632,7 @@ function Interfaz.botonHabilidad(si, alPulsar)
 		botonHab = nuevo("TextButton", { Text = "G", Font = FUENTE_N, TextSize = 24, TextColor3 = Color3.fromRGB(255, 220, 80), BackgroundColor3 = Color3.new(0, 0, 0),
 			BackgroundTransparency = 0.4, Size = UDim2.fromOffset(60, 60), AnchorPoint = Vector2.new(1, 1), Position = UDim2.new(1, -240, 1, -170), AutoButtonColor = true }, hud)
 		nuevo("UICorner", { CornerRadius = UDim.new(1, 0) }, botonHab)
-		nuevo("UIStroke", { Color = Color3.fromRGB(255, 220, 80), Thickness = 2 }, botonHab)
+		nuevo("UIStroke", { Color = Color3.fromRGB(255, 220, 80), Thickness = 2, ApplyStrokeMode = Enum.ApplyStrokeMode.Border }, botonHab)
 		botonHab.Activated:Connect(function()
 			if botonHab:GetAttribute("activo") and alPulsar then
 				alPulsar()
@@ -30778,7 +30851,7 @@ function Interfaz.botonesMovil(cb)
 		local b = nuevo("TextButton", { Text = txt, Font = FUENTE, TextSize = 26, TextColor3 = Color3.new(1, 1, 1), BackgroundColor3 = Color3.new(0, 0, 0),
 			BackgroundTransparency = 0.45, Size = UDim2.fromOffset(64, 64), Position = pos, AutoButtonColor = false }, caja)
 		nuevo("UICorner", { CornerRadius = UDim.new(1, 0) }, b)
-		nuevo("UIStroke", { Color = Color3.new(1, 1, 1), Transparency = 0.5, Thickness = 2 }, b)
+		nuevo("UIStroke", { Color = Color3.new(1, 1, 1), Transparency = 0.5, Thickness = 2, ApplyStrokeMode = Enum.ApplyStrokeMode.Border }, b)
 		b.InputBegan:Connect(function(i)
 			if i.UserInputType == Enum.UserInputType.Touch then
 				inicio()
@@ -30886,7 +30959,7 @@ end
 
 return Interfaz
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX0000003D"><Properties><string name="Name">Luz</string><ProtectedString name="Source"><![CDATA[--!native
+<Item class="ModuleScript" referent="RBX0000003E"><Properties><string name="Name">Luz</string><ProtectedString name="Source"><![CDATA[--!native
 --!optimize 2
 --[[
 	Blockverse para Roblox · Luz (cliente)
@@ -31143,7 +31216,7 @@ end
 
 return Luz
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX0000003E"><Properties><string name="Name">MobsVista</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX0000003F"><Properties><string name="Name">MobsVista</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Criaturas (cliente)
 	Viste las piezas invisibles de workspace.Criaturas con los modelos del
 	juego web: la misma geometría y las mismas texturas pintadas (exportadas
@@ -31163,6 +31236,7 @@ local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
 
 local Comp = ReplicatedStorage:WaitForChild("Blockverse")
+local Sombras = require(script.Parent:WaitForChild("Sombras"))
 local Config = require(Comp:WaitForChild("Config"))
 local Codec = require(Comp:WaitForChild("Codec"))
 local Imagenes = require(script.Parent:WaitForChild("Imagenes"))
@@ -31472,7 +31546,7 @@ local function nuevaVista(pieza)
 		return
 	end
 	local v = {
-		pieza = pieza, tipo = tipo, def = def, fase = 0, golpeT = 0, flash = 0, muerteT = 0, nacerT = 0,
+		pieza = pieza, tipo = tipo, def = def, fase = 0, golpeT = 0, flash = 0, muerteT = 0, nacerT = 0, sombra = Sombras.nueva(),
 		cf = pieza.CFrame, pos = pieza.Position, cabY = 0, cabX = 0, salto = 0, anterior = pieza.Position,
 	}
 	-- Las variantes se animan y miden como su criatura base
@@ -31550,7 +31624,7 @@ local function nuevaVista(pieza)
 		t.BackgroundColor3 = Color3.new(0, 0, 0)
 		t.BorderSizePixel = 0
 		t.Size = UDim2.fromScale(1, 1)
-		t.Font = Enum.Font.Code
+		t.Font = require(Comp:WaitForChild("Fuentes")).CABECERA
 		t.TextScaled = true
 		t.Text = etiqueta
 		t.TextColor3 = etiqueta == "Élite" and Color3.fromRGB(200, 120, 255) or Color3.fromRGB(255, 90, 90)
@@ -31598,6 +31672,7 @@ local function quitarVista(pieza)
 	for _, c in v.conexiones do
 		c:Disconnect()
 	end
+	Sombras.quitar(v.sombra)
 	-- Al desaparecer después de morir: nube de humo
 	if v.muerteT > 0 and MobsVista.alParticulas and not v.lejos then
 		MobsVista.alParticulas(v.pos, Color3.fromRGB(225, 225, 225), 18)
@@ -31753,6 +31828,12 @@ local function animar(v, dt)
 		v.caja.Size = pieza.Size
 		v.caja.CFrame = base * CFrame.new(0, alto / 2, 0)
 	end
+	-- Sombra redonda en el suelo (se va al morir)
+	if muerto then
+		Sombras.ocultar(v.sombra)
+	else
+		Sombras.poner(v.sombra, v.pos - Vector3.new(0, alto / 2, 0), math.max(0.5, (v.def.ancho or 0.4) * 2.6) * BS * esc)
+	end
 	-- Barra de vida: verde, amarilla o roja según lo que le quede
 	if v.barra then
 		v.barraT = math.max(0, (v.barraT or 0) - dt)
@@ -31834,6 +31915,7 @@ function MobsVista.iniciar()
 			elseif not v.lejos then
 				v.lejos = true
 				v.modelo:PivotTo(CFrame.new(0, -1000, 0))
+				Sombras.ocultar(v.sombra)
 			end
 		end
 	end)
@@ -31846,7 +31928,7 @@ end
 
 return MobsVista
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX0000003F"><Properties><string name="Name">Modelos3D</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX00000040"><Properties><string name="Name">Modelos3D</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Modelos 3D de los objetos (cliente)
 	· Los bloques son cubos (o losas, o sus cajas) con las mismas texturas del mundo.
 	· Los demás objetos (espadas, picos, comida, flores…) se hacen con los píxeles de
@@ -32071,6 +32153,54 @@ function Modelos.quitar(inst)
 	end
 end
 
+-- Brillo de encantamiento: una capa morada un poco más grande con el material ForceField,
+-- que en Roblox tiene un reflejo que se mueve solo (como el brillo de Minecraft)
+function Modelos.brillo(inst, si)
+	if not inst or (si == true) == (inst.brillo ~= nil) then
+		return
+	end
+	if si then
+		inst.brillo = {}
+		for _, pd in table.clone(inst.partes) do
+			local c = pd[1]:Clone()
+			c.Name = "Brillo"
+			c.Material = Enum.Material.ForceField
+			c.Color = Color3.fromRGB(170, 90, 255)
+			c.Size = pd[1].Size * 1.04
+			c.CastShadow = false
+			for _, h in c:GetChildren() do
+				if not h:IsA("SpecialMesh") then
+					h:Destroy()
+				end
+			end
+			c.Parent = inst.m
+			local e = { c, pd[2] }
+			table.insert(inst.partes, e)
+			table.insert(inst.brillo, e)
+		end
+	else
+		for _, e in inst.brillo do
+			e[1]:Destroy()
+			local i = table.find(inst.partes, e)
+			if i then
+				table.remove(inst.partes, i)
+			end
+		end
+		inst.brillo = nil
+	end
+end
+
+-- Que el modelo proyecte sombra (los objetos tirados sí; la mano en primera persona no)
+function Modelos.sombra(inst, si)
+	if inst then
+		for _, pd in inst.partes do
+			if pd[1].Name ~= "Brillo" then
+				pd[1].CastShadow = si
+			end
+		end
+	end
+end
+
 function Modelos.disponible()
 	return Render.modo == "malla" and Imagenes.disponible
 end
@@ -32143,12 +32273,17 @@ function Modelos.iniciarMano(opc)
 					local inst = Modelos.crear(id, BL[id] and 0.24 or 0.36)
 					if inst and yo == pedido then
 						sostenido = inst
+						Modelos.brillo(inst, opc.encantado and opc.encantado() or false)
 						inst.m.Parent = carpeta
 					elseif inst then
 						Modelos.quitar(inst)
 					end
 				end)
 			end
+		end
+		-- Si cambia el encantamiento de lo que llevas (yunque, mesa…), cambia el brillo
+		if sostenido and opc.encantado then
+			Modelos.brillo(sostenido, opc.encantado())
 		end
 		if not visible then
 			brazo.Transparency, manga.Transparency = 1, 1
@@ -32293,12 +32428,16 @@ function Modelos.iniciarPersonajes(esTercera)
 						local inst = Modelos.crear(id, BL[id] and 0.28 or 0.5)
 						if inst and d.pedido == yo then
 							d.inst = inst
+							Modelos.sombra(inst, true)
 							inst.m.Parent = carpeta
 						elseif inst then
 							Modelos.quitar(inst)
 						end
 					end)
 				end
+			end
+			if d.inst then
+				Modelos.brillo(d.inst, plr:GetAttribute("EnManoEnc") == true)
 			end
 			if d.inst and mano then
 				-- R15 (RightHand) o R6 (Right Arm): el objeto en el puño, hacia delante
@@ -32319,7 +32458,7 @@ end
 
 return Modelos
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX00000040"><Properties><string name="Name">ProgresoVista</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX00000041"><Properties><string name="Name">ProgresoVista</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Progreso (cliente)
 	Ventana PROGRESO (tecla P o botón del menú) con cinco pestañas:
 	· Camino: los 50 niveles en fila; lo que ya puedes cobrar brilla.
@@ -32352,8 +32491,9 @@ ProgresoVista.enTercera = function()
 	return false
 end
 
-local FUENTE = Enum.Font.GothamBold
-local FUENTE_N = Enum.Font.GothamBlack
+local FT = require(Comp:WaitForChild("Fuentes"))
+local FUENTE = FT.TEXTO
+local FUENTE_N = FT.CABECERA
 local MORADO = Color3.fromRGB(150, 90, 255)
 local VERDE = Color3.fromRGB(60, 180, 80)
 local ORO = Color3.fromRGB(255, 200, 60)
@@ -32375,6 +32515,10 @@ local function texto(props, padre)
 	local t = nuevo("TextLabel", { BackgroundTransparency = 1, Font = FUENTE, TextColor3 = Color3.new(1, 1, 1), TextSize = 16, TextStrokeTransparency = 0.6 }, padre)
 	for k, v in props do
 		t[k] = v
+	end
+	-- Los títulos grandes llevan un contorno grueso y redondeado
+	if t.Font == FT.TITULO and t.TextStrokeTransparency < 1 then
+		FT.contorno(t, t.TextStrokeColor3, math.max(2, math.floor(t.TextSize / 16)))
 	end
 	return t
 end
@@ -32440,8 +32584,8 @@ nuevo("Frame", { BackgroundColor3 = Color3.fromRGB(80, 100, 240), BorderSizePixe
 local insignia = nuevo("Frame", { Position = UDim2.fromOffset(14, 8), Size = UDim2.fromOffset(60, 60), BackgroundColor3 = ORO, BorderSizePixel = 0 }, cab)
 esquina(insignia, 30)
 nuevo("UIStroke", { Color = Color3.fromRGB(110, 60, 0), Thickness = 3 }, insignia)
-local insigniaT = texto({ Size = UDim2.fromScale(1, 1), Text = "1", TextSize = 28, Font = FUENTE_N, TextColor3 = Color3.fromRGB(80, 40, 0), TextStrokeTransparency = 1 }, insignia)
-texto({ Position = UDim2.fromOffset(86, 8), Size = UDim2.fromOffset(400, 30), Text = "CAMINO DE BLOCKVERSE", TextSize = 24, Font = FUENTE_N,
+local insigniaT = texto({ Size = UDim2.fromScale(1, 1), Text = "1", TextSize = 30, Font = FT.NUMERO, TextColor3 = Color3.fromRGB(80, 40, 0), TextStrokeTransparency = 1 }, insignia)
+texto({ Position = UDim2.fromOffset(86, 8), Size = UDim2.fromOffset(400, 30), Text = "CAMINO DE BLOCKVERSE", TextSize = 28, Font = FT.TITULO,
 	TextXAlignment = Enum.TextXAlignment.Left, TextStrokeTransparency = 0.3 }, cab)
 local barraF = nuevo("Frame", { Position = UDim2.fromOffset(86, 42), Size = UDim2.fromOffset(380, 18), BackgroundColor3 = Color3.fromRGB(20, 20, 40), BorderSizePixel = 0 }, cab)
 esquina(barraF, 9)
@@ -32925,7 +33069,7 @@ end
 local avisoBoton = nuevo("TextButton", { AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.new(0, 10, 0.5, -40), Size = UDim2.fromOffset(176, 40),
 	BackgroundColor3 = MORADO, BorderSizePixel = 0, Text = "", AutoButtonColor = true, Visible = false }, gui)
 esquina(avisoBoton, 20)
-nuevo("UIStroke", { Color = Color3.new(1, 1, 1), Thickness = 2, Transparency = 0.4 }, avisoBoton)
+nuevo("UIStroke", { Color = Color3.new(1, 1, 1), Thickness = 2, Transparency = 0.4, ApplyStrokeMode = Enum.ApplyStrokeMode.Border }, avisoBoton)
 local avisoT = texto({ Size = UDim2.fromScale(1, 1), Text = "", TextSize = 14, Font = FUENTE_N }, avisoBoton)
 local avisoEsc = nuevo("UIScale", {}, avisoBoton)
 local nPendientes = 0
@@ -32967,7 +33111,7 @@ end
 
 -- Fiesta en grande (nivel nuevo, premio gordo)
 local fiestaF = nuevo("Frame", { BackgroundTransparency = 1, Size = UDim2.fromScale(1, 1), Visible = false, ZIndex = 20 }, gui)
-local fiestaT = texto({ AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.34), Size = UDim2.fromOffset(800, 80), Text = "", TextSize = 64, Font = FUENTE_N,
+local fiestaT = texto({ AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.34), Size = UDim2.fromOffset(800, 80), Text = "", TextSize = 64, Font = FT.TITULO,
 	TextColor3 = ORO, TextStrokeColor3 = Color3.fromRGB(60, 20, 120), TextStrokeTransparency = 0, ZIndex = 22 }, fiestaF)
 local fiestaEsc = nuevo("UIScale", {}, fiestaT)
 local fiestaS = texto({ AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.44), Size = UDim2.fromOffset(800, 30), Text = "", TextSize = 24, Font = FUENTE_N,
@@ -33036,7 +33180,7 @@ end
 
 return ProgresoVista
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX00000041"><Properties><string name="Name">Render</string><ProtectedString name="Source"><![CDATA[--!native
+<Item class="ModuleScript" referent="RBX00000042"><Properties><string name="Name">Render</string><ProtectedString name="Source"><![CDATA[--!native
 --!optimize 2
 --[[
 	Blockverse para Roblox · Render del mundo (cliente)
@@ -34190,7 +34334,107 @@ end
 
 return Render
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX00000042"><Properties><string name="Name">TiendaVista</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX00000043"><Properties><string name="Name">Sombras</string><ProtectedString name="Source"><![CDATA[--[[
+	Blockverse para Roblox · Sombras redondas (como las de Minecraft)
+	Debajo de cada criatura y cada objeto tirado sale una sombra suave en el suelo: se ve
+	también de noche y en las cuevas (donde no hay sombras del sol) y ayuda a saber a qué
+	altura está algo cuando salta o cae. Se hace con dos discos: uno grande y claro y otro
+	pequeño y más oscuro en el centro; cuanto más lejos del suelo, más clara.
+]]
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Comp = ReplicatedStorage:WaitForChild("Blockverse")
+local Config = require(Comp:WaitForChild("Config"))
+local Registro = require(Comp:WaitForChild("Registro"))
+
+local BS = Config.BLOQUE
+local SOLIDO = Registro.SOLIDO
+local Sombras = {}
+Sombras.md = nil -- datos del mundo del cliente (se ponen al cargarlo)
+
+local carpeta = Instance.new("Folder")
+carpeta.Name = "Sombras"
+
+local function disco()
+	local p = Instance.new("Part")
+	p.Anchored = true
+	p.CanCollide = false
+	p.CanQuery = false
+	p.CanTouch = false
+	p.CastShadow = false
+	p.Shape = Enum.PartType.Cylinder
+	p.Material = Enum.Material.SmoothPlastic
+	p.Color = Color3.new(0, 0, 0)
+	p.Transparency = 1
+	p.Size = Vector3.new(0.02, 1, 1)
+	p.Parent = carpeta
+	return p
+end
+
+function Sombras.nueva()
+	if not carpeta.Parent then
+		carpeta.Parent = workspace
+	end
+	return { fuera = disco(), dentro = disco() }
+end
+
+-- Altura (en bloques) del suelo bajo (x, y, z), mirando hasta 6 bloques hacia abajo
+local function suelo(bx, by, bz)
+	local md = Sombras.md
+	if not md then
+		return nil
+	end
+	for y = by, by - 6, -1 do
+		local b = md:getSiCargado(bx, y, bz)
+		if b < 0 then
+			return nil
+		end
+		if b ~= 0 and SOLIDO[b] then
+			return y + 1
+		end
+	end
+	return nil
+end
+
+-- pos: centro de los pies (en studs); ancho: tamaño de la sombra (en studs)
+function Sombras.poner(s, pos, ancho)
+	local bx, by, bz = math.floor(pos.X / BS), math.floor(pos.Y / BS + 0.05), math.floor(pos.Z / BS)
+	local gy = suelo(bx, by, bz)
+	if not gy then
+		s.fuera.Transparency, s.dentro.Transparency = 1, 1
+		return
+	end
+	local alto = math.max(0, pos.Y / BS - gy)
+	local f = math.clamp(1 - alto / 5, 0, 1) -- se aclara al alejarse del suelo
+	if f <= 0 then
+		s.fuera.Transparency, s.dentro.Transparency = 1, 1
+		return
+	end
+	local w = ancho * (0.85 + 0.15 * f)
+	local cf = CFrame.new(pos.X, gy * BS + 0.02, pos.Z) * CFrame.Angles(0, 0, math.pi / 2)
+	s.fuera.Size = Vector3.new(0.02, w, w)
+	s.fuera.CFrame = cf
+	s.fuera.Transparency = 1 - 0.28 * f
+	s.dentro.Size = Vector3.new(0.02, w * 0.6, w * 0.6)
+	s.dentro.CFrame = cf * CFrame.new(0.01, 0, 0)
+	s.dentro.Transparency = 1 - 0.22 * f
+end
+
+function Sombras.ocultar(s)
+	if s then
+		s.fuera.Transparency, s.dentro.Transparency = 1, 1
+	end
+end
+
+function Sombras.quitar(s)
+	if s then
+		s.fuera:Destroy()
+		s.dentro:Destroy()
+	end
+end
+
+return Sombras
+]]></ProtectedString></Properties></Item>
+<Item class="ModuleScript" referent="RBX00000044"><Properties><string name="Name">TiendaVista</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Tienda con Robux (cliente)
 	· Ventana con cuatro pestañas: Destacado (el VIP en grande y lo mejor de cada cosa),
 	  Pases, Monedas y Modos (lo que se puede comprar dentro de cada modo).
@@ -34213,8 +34457,9 @@ TiendaVista.enviar = function(...) end
 TiendaVista.alSonido = function(nombre, tono) end
 TiendaVista.alVisible = function(si) end
 
-local FUENTE = Enum.Font.GothamBold
-local FUENTE_N = Enum.Font.GothamBlack
+local FT = require(Comp:WaitForChild("Fuentes"))
+local FUENTE = FT.TEXTO
+local FUENTE_N = FT.CABECERA
 local ORO = Color3.fromRGB(255, 200, 60)
 local VERDE = Color3.fromRGB(60, 180, 80)
 local FONDO = Color3.fromRGB(26, 28, 40)
@@ -34236,6 +34481,10 @@ local function texto(props, padre)
 	local t = nuevo("TextLabel", { BackgroundTransparency = 1, Font = FUENTE, TextColor3 = Color3.new(1, 1, 1), TextSize = 16, TextStrokeTransparency = 0.6 }, padre)
 	for k, v in props do
 		t[k] = v
+	end
+	-- Los títulos grandes llevan un contorno grueso y redondeado
+	if t.Font == FT.TITULO and t.TextStrokeTransparency < 1 then
+		FT.contorno(t, t.TextStrokeColor3, math.max(2, math.floor(t.TextSize / 16)))
 	end
 	return t
 end
@@ -34281,7 +34530,7 @@ esquina(cab, 14)
 nuevo("UIGradient", { Rotation = 90, Color = ColorSequence.new(Color3.fromRGB(255, 235, 140), Color3.fromRGB(235, 150, 25)) }, cab)
 nuevo("Frame", { BackgroundColor3 = Color3.fromRGB(235, 150, 25), BorderSizePixel = 0, Position = UDim2.new(0, 0, 1, -14), Size = UDim2.new(1, 0, 0, 14) }, cab)
 local icCab = nuevo("ImageLabel", { BackgroundTransparency = 1, Position = UDim2.fromOffset(16, 9), Size = UDim2.fromOffset(52, 52), ResampleMode = Enum.ResamplerMode.Pixelated }, cab)
-texto({ Position = UDim2.fromOffset(80, 8), Size = UDim2.fromOffset(400, 34), Text = "TIENDA", TextSize = 32, Font = FUENTE_N, TextXAlignment = Enum.TextXAlignment.Left,
+texto({ Position = UDim2.fromOffset(80, 8), Size = UDim2.fromOffset(400, 34), Text = "TIENDA", TextSize = 36, Font = FT.TITULO, TextXAlignment = Enum.TextXAlignment.Left,
 	TextStrokeColor3 = Color3.fromRGB(110, 60, 0), TextStrokeTransparency = 0 }, cab)
 texto({ Position = UDim2.fromOffset(80, 42), Size = UDim2.fromOffset(500, 18), Text = "Consigue ventajas y apoya Blockverse", TextSize = 14,
 	TextColor3 = Color3.fromRGB(90, 45, 0), TextStrokeTransparency = 1, TextXAlignment = Enum.TextXAlignment.Left }, cab)
@@ -34490,7 +34739,7 @@ local function pintarDestacado()
 		nuevo("UIGradient", { Rotation = 0, Color = ColorSequence.new(Color3.fromRGB(255, 255, 255), Color3.fromRGB(150, 150, 150)) }, f)
 		cinta(f, vip.etiqueta or "★", Color3.fromRGB(230, 50, 60))
 		icono(f, vip.icono, UDim2.fromOffset(24, 30), 140, ORO)
-		texto({ Position = UDim2.fromOffset(188, 18), Size = UDim2.fromOffset(300, 44), Text = "VIP", TextSize = 42, Font = FUENTE_N, TextColor3 = ORO,
+		texto({ Position = UDim2.fromOffset(188, 18), Size = UDim2.fromOffset(300, 44), Text = "VIP", TextSize = 46, Font = FT.TITULO, TextColor3 = ORO,
 			TextXAlignment = Enum.TextXAlignment.Left, TextStrokeColor3 = Color3.fromRGB(90, 50, 0), TextStrokeTransparency = 0 }, f)
 		texto({ Position = UDim2.fromOffset(190, 62), Size = UDim2.fromOffset(380, 20), Text = vip.desc or "", TextSize = 14,
 			TextXAlignment = Enum.TextXAlignment.Left, TextColor3 = Color3.fromRGB(255, 235, 180), TextStrokeTransparency = 1 }, f)
@@ -34611,7 +34860,7 @@ end
 -- Al comprar: confeti y «¡GRACIAS!»
 local fiesta = nuevo("Frame", { Name = "Gracias", BackgroundTransparency = 1, Size = UDim2.fromScale(1, 1), Visible = false, ZIndex = 20 }, gui)
 local graciasT = texto({ AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.36), Size = UDim2.fromOffset(800, 80), Text = "¡GRACIAS!", TextSize = 72,
-	Font = FUENTE_N, TextColor3 = ORO, TextStrokeColor3 = Color3.fromRGB(90, 50, 0), TextStrokeTransparency = 0, ZIndex = 22 }, fiesta)
+	Font = FT.TITULO, TextColor3 = ORO, TextStrokeColor3 = Color3.fromRGB(90, 50, 0), TextStrokeTransparency = 0, ZIndex = 22 }, fiesta)
 local graciasEsc = nuevo("UIScale", {}, graciasT)
 local graciasSub = texto({ AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.46), Size = UDim2.fromOffset(800, 30), Text = "", TextSize = 24,
 	Font = FUENTE_N, ZIndex = 22, TextStrokeTransparency = 0.3 }, fiesta)
@@ -34685,7 +34934,7 @@ return TiendaVista
 ]]></ProtectedString></Properties></Item>
 </Item>
 </Item>
-<Item class="StarterCharacterScripts" referent="RBX00000046"><Properties><string name="Name">StarterCharacterScripts</string></Properties><Item class="Script" referent="RBX00000044"><Properties><string name="Name">Health</string><bool name="Disabled">false</bool><ProtectedString name="Source"><![CDATA[--[[
+<Item class="StarterCharacterScripts" referent="RBX00000048"><Properties><string name="Name">StarterCharacterScripts</string></Properties><Item class="Script" referent="RBX00000046"><Properties><string name="Name">Health</string><bool name="Disabled">false</bool><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox
 	Este script vacío reemplaza al «Health» de Roblox, que cura sola a la
 	persona. En Blockverse la vida se recupera con el hambre llena.
