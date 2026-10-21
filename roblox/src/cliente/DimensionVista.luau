@@ -132,6 +132,11 @@ local function aplicar(dim, biomaN)
 end
 
 -- Dimensión de una posición en studs
+-- La dimensión en la que está la cámara ahora («superficie», «nether», «end»…)
+function DV.actual()
+	return actual
+end
+
 function DV.dimensionEn(pos)
 	local d = Generador.dimensionBloque(math.floor(pos.Z / BS))
 	return d

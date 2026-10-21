@@ -247,7 +247,11 @@ def dibujar(n, x, y, w, h, clip):
             ty += lh
     if clip:
         m = Image.new('L', capa.size, 0)
-        ImageDraw.Draw(m).rectangle((clip[0] - ox, clip[1] - oy, clip[2] - ox - 1, clip[3] - oy - 1), fill=255)
+        r = (clip[0] - ox, clip[1] - oy, clip[2] - ox - 1, clip[3] - oy - 1)
+        # Del todo fuera del recorte (p. ej. lo de debajo de una lista desplazable): no se ve
+        if r[2] < r[0] or r[3] < r[1]:
+            return
+        ImageDraw.Draw(m).rectangle(r, fill=255)
         capa.putalpha(Image.fromarray(np.minimum(np.array(capa)[..., 3], np.array(m))))
     # pegar recortando a los bordes del lienzo
     # Si queda del todo fuera de la pantalla (p. ej. un aviso escondido arriba) no se dibuja
@@ -304,7 +308,8 @@ def colocar(n, x, y, w, h, clip):
 # Cada ScreenGui: con su UIScale se dibuja en un lienzo virtual y se escala
 base = Image.open(fondo).convert('RGBA').resize((VW, VH)) if fondo else Image.new('RGBA', (VW, VH), (70, 90, 110, 255))
 for sg in [nodos[i] for i in orden if nodos[i]['clase'] == 'ScreenGui' and nodos[i]['padre'] == 0]:
-    if not g(sg, 'Enabled', True):
+    # La viñeta ya la pone render.py en la imagen de fondo (aquí no se entienden sus degradados)
+    if not g(sg, 'Enabled', True) or g(sg, 'Name', '') == 'Vineta':
         continue
     esc = hijo(sg, 'UIScale')
     s = g(esc, 'Scale', 1) if esc else 1

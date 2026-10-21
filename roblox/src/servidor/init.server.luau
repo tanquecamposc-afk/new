@@ -40,6 +40,7 @@ local Registro = require(Comp.Registro)
 local Crafteo = require(Comp.Crafteo)
 local Rayo = require(Comp.Rayo)
 local MundoDatos = require(Comp.MundoDatos)
+local DatosEstilo = require(Comp.DatosEstilo)
 local Mundo = require(script.Mundo)
 local Sim = require(script.Simulacion)
 local Entidades = require(script.Entidades)
@@ -501,6 +502,12 @@ end
 local AJUSTES = {
 	sensibilidad = { "number", 0.2, 3 }, fov = { "number", 50, 110 }, volumen = { "number", 0, 100 },
 	fovCorrer = { "boolean" }, balanceo = { "boolean" }, numeros = { "boolean" },
+	-- Gráficos y mira (los textos solo valen si están en su lista)
+	distancia = { "number", 2, 8 }, fuerza = { "number", 0, 150 }, exposicion = { "number", -5, 5 },
+	colorDia = { "boolean" }, vineta = { "boolean" }, profundidad = { "boolean" }, rayosSol = { "boolean" },
+	particulas = { "boolean" }, nubes = { "boolean" },
+	shader = { "string", DatosEstilo.SHADER_ID }, calidad = { "string", DatosEstilo.CALIDAD_ID },
+	mira = { "string", DatosEstilo.MIRA_ID }, colorMira = { "string", DatosEstilo.COLOR_MIRA_ID },
 }
 local function limpiarAjustes(a)
 	if type(a) ~= "table" then
@@ -509,7 +516,7 @@ local function limpiarAjustes(a)
 	local r = {}
 	for k, A in AJUSTES do
 		local v = a[k]
-		if type(v) == A[1] then
+		if type(v) == A[1] and (A[1] ~= "string" or A[2][v] ~= nil) then
 			r[k] = A[1] == "number" and math.clamp(v, A[2], A[3]) or v
 		end
 	end

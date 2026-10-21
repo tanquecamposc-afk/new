@@ -30,6 +30,10 @@ local MobsVista = require(script:WaitForChild("MobsVista"))
 local EntidadesVista = require(script:WaitForChild("EntidadesVista"))
 local TiendaVista = require(script:WaitForChild("TiendaVista"))
 local ProgresoVista = require(script:WaitForChild("ProgresoVista"))
+local PersonalizarVista = require(script:WaitForChild("PersonalizarVista"))
+local Cosmeticos = require(script:WaitForChild("Cosmeticos"))
+local Graficos = require(script:WaitForChild("Graficos"))
+local DatosEstilo = require(Comp:WaitForChild("DatosEstilo"))
 local ClimaVista = require(script:WaitForChild("ClimaVista"))
 local DimensionVista = require(script:WaitForChild("DimensionVista"))
 local Generador = require(Comp:WaitForChild("Generador"))
@@ -217,10 +221,39 @@ Interfaz.alAbrirProgreso = function(pestana)
 	ProgresoVista.abrir(pestana)
 end
 ProgresoVista.iniciar()
+-- Personalizar: capas, sombreros, mascotas y mira
+PersonalizarVista.enviar = enviar
+PersonalizarVista.alSonido = function(nombre, tono)
+	sonido(nombre, nil, tono)
+end
+PersonalizarVista.alVisible = function(si)
+	Interfaz.personalizarVisible = si
+end
+PersonalizarVista.ajustes = Interfaz.ajustes
+PersonalizarVista.alCambiarAjuste = function(k, v)
+	Interfaz.alCambiarAjuste(k, v)
+end
+PersonalizarVista.alAbrirTienda = function(p)
+	TiendaVista.abrir(p)
+end
+Interfaz.alAbrirPersonalizar = function()
+	PersonalizarVista.abrir("capa")
+end
+PersonalizarVista.iniciar()
+Cosmeticos.iniciar()
 Interfaz.carga(0.5, "Generando el mundo…")
 local md = MundoDatos.new(semilla)
 -- Las sombras redondas buscan el suelo en los datos del mundo
-require(script:WaitForChild("Sombras")).md = md
+local Sombras = require(script:WaitForChild("Sombras"))
+Sombras.md = md
+-- Shaders, colores según la hora, partículas del ambiente y calidad
+Graficos.md = md
+Graficos.ajustes = Interfaz.ajustes
+Graficos.dimension = DimensionVista.actual
+Graficos.alSombras = function(si)
+	Sombras.activo = si
+end
+Graficos.iniciar()
 est.md = md
 DimensionVista.md = md
 DimensionVista.iniciar()
@@ -273,6 +306,9 @@ end)
 ------------------------------------------------------------------
 local tercera = false
 ProgresoVista.enTercera = function()
+	return tercera
+end
+Cosmeticos.esTercera = function()
 	return tercera
 end
 local function aplicarCamara()
@@ -640,6 +676,10 @@ UserInputService.InputBegan:Connect(function(input, procesado)
 		end
 		if k == Enum.KeyCode.Escape and ProgresoVista.visible() then
 			ProgresoVista.cerrar()
+			return
+		end
+		if k == Enum.KeyCode.Escape and PersonalizarVista.visible() then
+			PersonalizarVista.cerrar()
 			return
 		end
 		if k == Enum.KeyCode.Escape and Interfaz.abierto() then
@@ -1027,6 +1067,10 @@ end
 local ajustes = Interfaz.ajustes
 local function aplicarAjustes()
 	UserInputService.MouseDeltaSensitivity = ajustes.sensibilidad
+	-- Gráficos (distancia de visión, sombras…) y la mira elegida en Personalizar
+	Graficos.aplicar()
+	local cm = DatosEstilo.COLOR_MIRA_ID[ajustes.colorMira] or DatosEstilo.COLORES_MIRA[1]
+	PersonalizarVista.dibujarMira(Interfaz.mira, ajustes.mira, Color3.fromHex(cm.c), 2)
 end
 local envioAjustes = 0
 Interfaz.alCambiarAjuste = function()
@@ -1204,6 +1248,7 @@ Estado.OnClientEvent:Connect(function(tipo, a, b, c)
 		sonido(a, b)
 	elseif tipo == "progreso" then
 		ProgresoVista.datos(a, b)
+		PersonalizarVista.datos(a)
 	elseif tipo == "progresoAviso" then
 		ProgresoVista.aviso(a)
 	elseif tipo == "progresoPendientes" then

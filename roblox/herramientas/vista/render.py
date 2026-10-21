@@ -18,6 +18,9 @@ for line in open(sys.argv[1], 'r', errors='replace'):
         cur = {'nombre': p[1], 'cam': np.array(list(map(float, p[2:5]))), 'mira': np.array(list(map(float, p[5:8]))),
                'fov': float(p[8]), 'T': [], 'B': [], 'L': []}
         escenas.append(cur)
+    elif line.startswith('FX ') and cur:
+        # Efectos de la cámara (shaders): brillo contraste saturación tinte(r g b) bloom viñeta
+        cur['fx'] = list(map(float, line.split()[1:]))
     elif line.startswith('T ') and cur:
         cur['T'].append(line.split()[1:])
     elif line.startswith('B ') and cur:
@@ -34,6 +37,27 @@ if len(sys.argv) > 9:
             E['cam'] = np.array(list(map(float, sys.argv[3:6]))); E['mira'] = np.array(list(map(float, sys.argv[6:9])))
             E['fov'] = float(sys.argv[9]); E['nombre'] = sys.argv[10]
     solo = [sys.argv[10]]
+
+def efectos(img, fx):
+    """Imita los efectos de Roblox: ColorCorrection, Bloom y la viñeta del cliente."""
+    from PIL import ImageFilter
+    br, ct, sat, tr, tg, tb, bloom, vin = fx[:8]
+    if bloom > 0:
+        luz = np.clip(img - 0.88, 0, 1) * 4
+        bl = Image.fromarray((np.clip(luz, 0, 1) * 255).astype(np.uint8)).filter(ImageFilter.GaussianBlur(14))
+        img = img + np.asarray(bl).astype(np.float32) / 255 * bloom * 0.3
+    img = img + br
+    img = (img - 0.5) * (1 + ct) + 0.5
+    gris = (img * np.array([0.299, 0.587, 0.114])).sum(axis=2, keepdims=True)
+    img = gris + (img - gris) * (1 + sat)
+    img = img * np.array([tr, tg, tb])
+    if vin > 0:
+        ys, xs = np.mgrid[0:H, 0:W]
+        dx = np.clip(1 - np.minimum(xs, W - 1 - xs) / (W * 0.28), 0, 1)
+        dy = np.clip(1 - np.minimum(ys, H - 1 - ys) / (H * 0.3), 0, 1)
+        borde = np.maximum(dx, dy) ** 1.6
+        img = img * (1 - 0.55 * vin * borde)[..., None]
+    return np.clip(img, 0, 1)
 
 def caja_tris(p):
     c = np.array(list(map(float, p[0:3]))); r = np.array(list(map(float, p[3:12]))).reshape(3, 3)
@@ -127,6 +151,8 @@ for E in escenas:
     fin = np.isfinite(z)
     k = np.clip((z - 150) / 900, 0, 0.55)[..., None]
     img = np.where(fin[..., None], img * (1 - k) + np.array([0.75, 0.84, 0.97]) * k, img)
+    if E.get('fx'):
+        img = efectos(np.clip(img, 0, 1), E['fx'])
     out = Image.fromarray((np.clip(img, 0, 1) * 255).astype(np.uint8))
     d = ImageDraw.Draw(out)
     try:

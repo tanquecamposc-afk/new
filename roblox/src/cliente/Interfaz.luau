@@ -243,6 +243,7 @@ local hud = nuevo("Frame", { Name = "HUD", BackgroundTransparency = 1, Size = UD
 
 -- Mira
 local mira = nuevo("Frame", { Name = "Mira", BackgroundTransparency = 1, AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.fromOffset(22, 22) }, hud)
+Interfaz.mira = mira -- Personalizar cambia su forma y color
 nuevo("Frame", { BackgroundColor3 = Color3.new(1, 1, 1), BorderSizePixel = 0, Position = UDim2.fromOffset(10, 0), Size = UDim2.fromOffset(2, 22), BackgroundTransparency = 0.15 }, mira)
 nuevo("Frame", { BackgroundColor3 = Color3.new(1, 1, 1), BorderSizePixel = 0, Position = UDim2.fromOffset(0, 10), Size = UDim2.fromOffset(22, 2), BackgroundTransparency = 0.15 }, mira)
 local cargaAtaque = nuevo("Frame", { BackgroundColor3 = Color3.new(0, 0, 0), BackgroundTransparency = 0.5, BorderSizePixel = 0, AnchorPoint = Vector2.new(0.5, 0),
@@ -1341,20 +1342,23 @@ end
 
 -- Fila de abajo: ajustes, controles y volver al juego
 local filaMenu = nuevo("Frame", { BackgroundTransparency = 1, AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0.25, 312),
-	Size = UDim2.fromOffset(700, 46), ZIndex = 11 }, menu)
+	Size = UDim2.fromOffset(900, 46), ZIndex = 11 }, menu)
 nuevo("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 12), HorizontalAlignment = Enum.HorizontalAlignment.Center,
 	SortOrder = Enum.SortOrder.LayoutOrder }, filaMenu)
 local abrirAjustes, abrirControles, abrirLogros -- se definen más abajo
 tarjeta(filaMenu, "Ajustes", nil, nil, 1, function()
 	abrirAjustes()
 end, UDim2.fromOffset(150, 46))
-tarjeta(filaMenu, "Controles", nil, nil, 2, function()
+tarjeta(filaMenu, "Gráficos", nil, nil, 2, function()
+	Interfaz.abrirGraficos()
+end, UDim2.fromOffset(150, 46))
+tarjeta(filaMenu, "Controles", nil, nil, 3, function()
 	abrirControles()
 end, UDim2.fromOffset(150, 46))
-local botonLogros = tarjeta(filaMenu, "Logros", nil, nil, 3, function()
+local botonLogros = tarjeta(filaMenu, "Logros", nil, nil, 4, function()
 	abrirLogros()
 end, UDim2.fromOffset(150, 46))
-local botonVolver = tarjeta(filaMenu, "Volver al juego", nil, nil, 4, function()
+local botonVolver = tarjeta(filaMenu, "Volver al juego", nil, nil, 5, function()
 	Interfaz.menu(false)
 	if Interfaz.alMenu then
 		Interfaz.alMenu()
@@ -1398,6 +1402,34 @@ do
 		av.Visible = n > 0
 		avT.Text = tostring(n)
 	end
+end
+-- Botón turquesa de PERSONALIZAR (capas, sombreros, mascotas y mira)
+Interfaz.alAbrirPersonalizar = function() end
+do
+	local b = nuevo("TextButton", { Name = "BotonPersonalizar", AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -16, 0, 156), Size = UDim2.fromOffset(210, 56),
+		BackgroundColor3 = Color3.fromRGB(40, 200, 190), BorderSizePixel = 0, Text = "", AutoButtonColor = false, ZIndex = 12 }, menu)
+	nuevo("UICorner", { CornerRadius = UDim.new(0, 10) }, b)
+	nuevo("UIStroke", { Color = Color3.fromRGB(10, 70, 80), Thickness = 3, ApplyStrokeMode = Enum.ApplyStrokeMode.Border }, b)
+	nuevo("UIGradient", { Rotation = 0, Color = ColorSequence.new(Color3.fromRGB(60, 220, 200), Color3.fromRGB(60, 120, 230)) }, b)
+	local ic = nuevo("ImageLabel", { BackgroundTransparency = 1, Position = UDim2.fromOffset(10, 8), Size = UDim2.fromOffset(40, 40),
+		ResampleMode = Enum.ResamplerMode.Pixelated, ZIndex = 13 }, b)
+	iconosMenu[ic] = idDe("calabaza") or idDe("lana")
+	texto({ Position = UDim2.fromOffset(58, 6), Size = UDim2.new(1, -64, 0, 26), Text = "PERSONALIZAR", TextSize = 19, Font = FUENTE_N,
+		TextXAlignment = Enum.TextXAlignment.Left, TextStrokeTransparency = 0.2, ZIndex = 13 }, b)
+	texto({ Position = UDim2.fromOffset(58, 32), Size = UDim2.new(1, -64, 0, 16), Text = "Capas, gorros y mascotas", TextSize = 11,
+		TextXAlignment = Enum.TextXAlignment.Left, TextColor3 = Color3.fromRGB(220, 250, 255), TextStrokeTransparency = 1, ZIndex = 13 }, b)
+	local esc = nuevo("UIScale", {}, b)
+	b.MouseEnter:Connect(function()
+		TweenService:Create(esc, TweenInfo.new(0.15, Enum.EasingStyle.Back), { Scale = 1.08 }):Play()
+		Interfaz.alSonido("paso", 1.8)
+	end)
+	b.MouseLeave:Connect(function()
+		TweenService:Create(esc, TweenInfo.new(0.15), { Scale = 1 }):Play()
+	end)
+	b.Activated:Connect(function()
+		Interfaz.alSonido("nivel", 1.5)
+		Interfaz.alAbrirPersonalizar()
+	end)
 end
 -- Botón dorado de la tienda (arriba a la derecha), que late para que se vea
 Interfaz.alAbrirTienda = function(pestana) end
@@ -1473,66 +1505,130 @@ local function ventana(nombre, titulo, alto, desplazable)
 end
 
 -- Ajustes: valores que guarda el cliente (y el servidor en el DataStore)
-Interfaz.ajustes = { sensibilidad = 1, fov = 70, fovCorrer = true, balanceo = true, numeros = true, volumen = 100 }
+Interfaz.ajustes = { sensibilidad = 1, fov = 70, fovCorrer = true, balanceo = true, numeros = true, volumen = 100,
+	-- Gráficos (Graficos.luau) y mira (Personalizar)
+	shader = "clasico", calidad = "alta", distancia = 5, fuerza = 100, exposicion = 0, colorDia = true, vineta = true,
+	profundidad = true, rayosSol = true, particulas = true, nubes = true, mira = "cruz", colorMira = "blanco" }
 Interfaz.alCambiarAjuste = function(clave, valor) end
-local AJUSTES = {
-	{ k = "sensibilidad", n = "Sensibilidad del ratón", min = 0.2, max = 3, paso = 0.1, fmt = function(v) return ("%.1fx"):format(v) end },
-	{ k = "fov", n = "Campo de visión", min = 50, max = 110, paso = 5, fmt = function(v) return ("%d°"):format(v) end },
-	{ k = "volumen", n = "Volumen", min = 0, max = 100, paso = 10, fmt = function(v) return ("%d %%"):format(v) end },
-	{ k = "fovCorrer", n = "Efecto de velocidad al correr" },
-	{ k = "balanceo", n = "Balanceo de la mano" },
-	{ k = "numeros", n = "Números de daño" },
-}
-local ventanaAjustes, listaAjustes = ventana("Ajustes", "AJUSTES", 400)
-local valoresAj = {}
-local function pintarAjustes()
-	for _, A in AJUSTES do
-		local v = Interfaz.ajustes[A.k]
-		local l = valoresAj[A.k]
-		if l then
-			if A.fmt then
-				l.Text = A.fmt(v)
+local abrirGraficos
+do
+	local DE = require(Comp:WaitForChild("DatosEstilo"))
+	-- Filas: número (min, max, paso, fmt), opción (op = lista {id, n}) o sí/no
+	local AJUSTES = {
+		{ k = "sensibilidad", n = "Sensibilidad del ratón", min = 0.2, max = 3, paso = 0.1, fmt = function(v) return ("%.1fx"):format(v) end },
+		{ k = "fov", n = "Campo de visión", min = 50, max = 110, paso = 5, fmt = function(v) return ("%d°"):format(v) end },
+		{ k = "volumen", n = "Volumen", min = 0, max = 100, paso = 10, fmt = function(v) return ("%d %%"):format(v) end },
+		{ k = "fovCorrer", n = "Efecto de velocidad al correr" },
+		{ k = "balanceo", n = "Balanceo de la mano" },
+		{ k = "numeros", n = "Números de daño" },
+	}
+	local GRAFICOS = {
+		{ k = "shader", n = "Shader (estilo de imagen)", op = DE.SHADERS },
+		{ k = "calidad", n = "Calidad", op = DE.CALIDADES },
+		{ k = "distancia", n = "Distancia de visión", min = 2, max = 8, paso = 1, fmt = function(v) return ("%d chunks"):format(v) end },
+		{ k = "fuerza", n = "Fuerza del shader", min = 0, max = 150, paso = 10, fmt = function(v) return ("%d %%"):format(v) end },
+		{ k = "exposicion", n = "Brillo", min = -5, max = 5, paso = 1, fmt = function(v) return ("%+d"):format(v) end },
+		{ k = "colorDia", n = "Colores del amanecer y la noche" },
+		{ k = "rayosSol", n = "Rayos de sol" },
+		{ k = "profundidad", n = "Desenfoque lejano" },
+		{ k = "vineta", n = "Viñeta (bordes oscuros)" },
+		{ k = "particulas", n = "Partículas del ambiente" },
+		{ k = "nubes", n = "Nubes" },
+	}
+	local ventanaAjustes, listaAjustes = ventana("Ajustes", "AJUSTES", 400)
+	local ventanaGraficos, listaGraficos = ventana("Graficos", "GRÁFICOS Y SHADERS", 560, true)
+	Interfaz.ventanaAjustes, Interfaz.ventanaGraficos = ventanaAjustes, ventanaGraficos
+	-- Debajo de la lista: lo que hace el shader y la calidad elegidos
+	local explica = texto({ AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -62), Size = UDim2.new(1, -40, 0, 34), Text = "", TextSize = 13,
+		TextWrapped = true, TextColor3 = Color3.fromRGB(200, 210, 225), TextStrokeTransparency = 1, ZIndex = 23 }, ventanaGraficos:FindFirstChildOfClass("Frame"))
+	listaGraficos.Size = UDim2.new(1, -30, 1, -160)
+	local valoresAj = {}
+	local function textoDe(A, v)
+		if A.op then
+			for _, o in A.op do
+				if o.id == v then
+					return o.n
+				end
+			end
+			return tostring(v)
+		end
+		return A.fmt(v)
+	end
+	local function pintarAjustes()
+		for _, L in { AJUSTES, GRAFICOS } do
+			for _, A in L do
+				local v = Interfaz.ajustes[A.k]
+				local l = valoresAj[A.k]
+				if l then
+					if A.fmt or A.op then
+						l.Text = textoDe(A, v)
+					else
+						l.Text = v and "Sí" or "No"
+						l.TextColor3 = v and Color3.fromRGB(120, 255, 120) or Color3.fromRGB(255, 120, 120)
+					end
+				end
+			end
+		end
+		local S = DE.SHADER_ID[Interfaz.ajustes.shader]
+		local Q = DE.CALIDAD_ID[Interfaz.ajustes.calidad]
+		explica.Text = ("%s: %s.  Calidad %s: %s."):format(S and S.n or "?", S and S.d or "", Q and Q.n or "?", Q and Q.d or "")
+	end
+	Interfaz.pintarAjustes = pintarAjustes
+	local function filas(lista, contenedor)
+		for i, A in lista do
+			local fila = nuevo("Frame", { BackgroundColor3 = Color3.fromRGB(28, 29, 35), BorderSizePixel = 0, Size = UDim2.new(1, 0, 0, 38), LayoutOrder = i, ZIndex = 22 }, contenedor)
+			nuevo("UICorner", { CornerRadius = UDim.new(0, 4) }, fila)
+			local ancho = A.op and 230 or 170
+			texto({ Position = UDim2.fromOffset(12, 0), Size = UDim2.new(1, -ancho, 1, 0), Text = A.n, TextSize = 15, TextXAlignment = Enum.TextXAlignment.Left,
+				TextWrapped = true, ZIndex = 23 }, fila)
+			local function cambiar(dir)
+				local v = Interfaz.ajustes[A.k]
+				if A.op then
+					local i0 = 1
+					for j, o in A.op do
+						if o.id == v then
+							i0 = j
+						end
+					end
+					v = A.op[(i0 - 1 + dir) % #A.op + 1].id
+				elseif A.fmt then
+					v = math.clamp(math.floor((v + dir * A.paso) / A.paso + 0.5) * A.paso, A.min, A.max)
+				else
+					v = not v
+				end
+				Interfaz.ajustes[A.k] = v
+				pintarAjustes()
+				Interfaz.alCambiarAjuste(A.k, v)
+			end
+			if A.fmt or A.op then
+				local hueco = A.op and 140 or 76
+				local menos = tarjeta(fila, A.op and "◀" or "−", nil, nil, 0, function() cambiar(-1) end, UDim2.fromOffset(32, 30))
+				menos.Position = UDim2.new(1, -(hueco + 76), 0, 4)
+				valoresAj[A.k] = texto({ Position = UDim2.new(1, -(hueco + 40), 0, 0), Size = UDim2.fromOffset(hueco, 38), Text = "", TextSize = 15, Font = FUENTE_N,
+					TextColor3 = A.op and Color3.fromRGB(255, 220, 80) or Color3.new(1, 1, 1), ZIndex = 23 }, fila)
+				local mas = tarjeta(fila, A.op and "▶" or "+", nil, nil, 0, function() cambiar(1) end, UDim2.fromOffset(32, 30))
+				mas.Position = UDim2.new(1, -38, 0, 4)
 			else
-				l.Text = v and "Sí" or "No"
-				l.TextColor3 = v and Color3.fromRGB(120, 255, 120) or Color3.fromRGB(255, 120, 120)
+				local b = tarjeta(fila, "", nil, nil, 0, function() cambiar(0) end, UDim2.fromOffset(76, 30))
+				b.Position = UDim2.new(1, -82, 0, 4)
+				valoresAj[A.k] = texto({ Size = UDim2.fromScale(1, 1), Text = "", TextSize = 15, Font = FUENTE_N, ZIndex = 14 }, b)
 			end
 		end
 	end
-end
-Interfaz.pintarAjustes = pintarAjustes
-for i, A in AJUSTES do
-	local fila = nuevo("Frame", { BackgroundColor3 = Color3.fromRGB(28, 29, 35), BorderSizePixel = 0, Size = UDim2.new(1, 0, 0, 38), LayoutOrder = i, ZIndex = 22 }, listaAjustes)
-	nuevo("UICorner", { CornerRadius = UDim.new(0, 4) }, fila)
-	texto({ Position = UDim2.fromOffset(12, 0), Size = UDim2.new(1, -170, 1, 0), Text = A.n, TextSize = 15, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 23 }, fila)
-	local function cambiar(dir)
-		local v = Interfaz.ajustes[A.k]
-		if A.fmt then
-			v = math.clamp(math.floor((v + dir * A.paso) / A.paso + 0.5) * A.paso, A.min, A.max)
-		else
-			v = not v
-		end
-		Interfaz.ajustes[A.k] = v
-		pintarAjustes()
-		Interfaz.alCambiarAjuste(A.k, v)
-	end
-	if A.fmt then
-		local menos = tarjeta(fila, "−", nil, nil, 0, function() cambiar(-1) end, UDim2.fromOffset(32, 30))
-		menos.Position = UDim2.new(1, -152, 0, 4)
-		valoresAj[A.k] = texto({ Position = UDim2.new(1, -116, 0, 0), Size = UDim2.fromOffset(76, 38), Text = "", TextSize = 15, Font = FUENTE_N, ZIndex = 23 }, fila)
-		local mas = tarjeta(fila, "+", nil, nil, 0, function() cambiar(1) end, UDim2.fromOffset(32, 30))
-		mas.Position = UDim2.new(1, -38, 0, 4)
-	else
-		local b = tarjeta(fila, "", nil, nil, 0, function() cambiar(0) end, UDim2.fromOffset(76, 30))
-		b.Position = UDim2.new(1, -82, 0, 4)
-		valoresAj[A.k] = texto({ Size = UDim2.fromScale(1, 1), Text = "", TextSize = 15, Font = FUENTE_N, ZIndex = 14 }, b)
-	end
-end
-pintarAjustes()
-abrirAjustes = function()
+	filas(AJUSTES, listaAjustes)
+	filas(GRAFICOS, listaGraficos)
 	pintarAjustes()
-	ventanaAjustes.Visible = true
+	abrirAjustes = function()
+		pintarAjustes()
+		ventanaAjustes.Visible = true
+	end
+	abrirGraficos = function()
+		pintarAjustes()
+		ventanaGraficos.Visible = true
+	end
 end
 Interfaz.abrirAjustes = abrirAjustes
+Interfaz.abrirGraficos = abrirGraficos
 
 -- Controles
 local ventanaControles, listaControles = ventana("Controles", "CONTROLES", 520)
@@ -2211,8 +2307,8 @@ function Interfaz.menuPrincipal()
 end
 
 function Interfaz.menuVisible()
-	return menu.Visible or carga.Visible or muerte.Visible or ventanaAjustes.Visible or ventanaControles.Visible or ventanaLogros.Visible
-		or Interfaz.tiendaVisible == true or Interfaz.progresoVisible == true
+	return menu.Visible or carga.Visible or muerte.Visible or Interfaz.ventanaAjustes.Visible or Interfaz.ventanaGraficos.Visible or ventanaControles.Visible or ventanaLogros.Visible
+		or Interfaz.tiendaVisible == true or Interfaz.progresoVisible == true or Interfaz.personalizarVisible == true
 end
 
 ------------------------------------------------------------------
@@ -2639,7 +2735,8 @@ function Interfaz.menu(si)
 	desenfoque.Size = si and 8 or 0
 	botonVolver.Visible = si and Interfaz.enJuego == true
 	if not si then
-		ventanaAjustes.Visible = false
+		Interfaz.ventanaAjustes.Visible = false
+		Interfaz.ventanaGraficos.Visible = false
 		ventanaControles.Visible = false
 		ventanaLogros.Visible = false
 	end

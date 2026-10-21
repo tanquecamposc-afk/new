@@ -14,6 +14,7 @@ local BS = Config.BLOQUE
 local SOLIDO = Registro.SOLIDO
 local Sombras = {}
 Sombras.md = nil -- datos del mundo del cliente (se ponen al cargarlo)
+Sombras.activo = true -- se apagan con la calidad gráfica baja
 
 local carpeta = Instance.new("Folder")
 carpeta.Name = "Sombras"
@@ -62,7 +63,7 @@ end
 -- pos: centro de los pies (en studs); ancho: tamaño de la sombra (en studs)
 function Sombras.poner(s, pos, ancho)
 	local bx, by, bz = math.floor(pos.X / BS), math.floor(pos.Y / BS + 0.05), math.floor(pos.Z / BS)
-	local gy = suelo(bx, by, bz)
+	local gy = Sombras.activo and suelo(bx, by, bz)
 	if not gy then
 		s.fuera.Transparency, s.dentro.Transparency = 1, 1
 		return

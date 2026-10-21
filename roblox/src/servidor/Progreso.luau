@@ -5,6 +5,7 @@
 	· Misiones diarias (3) y semanales (3) que cambian solas; al cumplirlas sale un aviso.
 	· Ruleta diaria gratis (2 giros con VIP), con las probabilidades a la vista.
 	· Colección: títulos (encima de la cabeza y en el chat) y estelas (cola de color al moverse).
+	· Personalización: capas, sombreros y mascotas (se desbloquean con el nivel o el VIP).
 	· Ranking: los 10 con más experiencia de todo el juego (OrderedDataStore).
 	Se guarda en el DataStore con la clave p_<UserId>.
 ]]
@@ -13,6 +14,7 @@ local DataStoreService = game:GetService("DataStoreService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Comp = ReplicatedStorage:WaitForChild("Blockverse")
 local D = require(Comp.DatosProgreso)
+local DE = require(Comp.DatosEstilo)
 local Perfil = require(script.Parent.PerfilBW)
 
 local Progreso = {}
@@ -136,7 +138,7 @@ function Progreso.cargar(plr)
 		end)
 		if ok and type(g) == "table" then
 			for k, v in g do
-				if p[k] ~= nil or k == "estela" then
+				if p[k] ~= nil or k == "estela" or DE.TIPOS[k] then
 					p[k] = v
 				end
 			end
@@ -173,6 +175,11 @@ function Progreso.tieneEstela(plr, id)
 	local e = D.ESTELA_ID[id]
 	return e ~= nil and reclamado(de(plr), e.nivel)
 end
+-- Capas, sombreros y mascotas: con llegar al nivel del Camino (o tener VIP) basta
+function Progreso.tieneCosmetico(plr, tipo, id)
+	local T = DE.TIPOS[tipo]
+	return T ~= nil and type(id) == "string" and DE.puede(T.id[id], de(plr).nivel, Progreso.esVIP(plr))
+end
 
 local function secuenciaEstela(e)
 	if e.arcoiris then
@@ -195,6 +202,11 @@ function Progreso.aplicar(plr)
 	plr:SetAttribute("Titulo", t.n)
 	plr:SetAttribute("TituloCol", t.col)
 	plr:SetAttribute("NivelCamino", p.nivel)
+	-- Los cosméticos los dibuja cada cliente (Cosmeticos.luau) con estos atributos
+	for tipo, atr in { capa = "Capa", sombrero = "Sombrero", mascota = "Mascota" } do
+		local id = p[tipo]
+		plr:SetAttribute(atr, (id and Progreso.tieneCosmetico(plr, tipo, id)) and id or nil)
+	end
 	local ch = plr.Character
 	if not ch then
 		return
@@ -410,6 +422,10 @@ function Progreso.equipar(plr, tipo, id)
 		p.estela = nil
 	elseif tipo == "estela" and type(id) == "string" and Progreso.tieneEstela(plr, id) then
 		p.estela = id
+	elseif DE.TIPOS[tipo] and (id == nil or id == "") then
+		p[tipo] = nil
+	elseif DE.TIPOS[tipo] and Progreso.tieneCosmetico(plr, tipo, id) then
+		p[tipo] = id
 	else
 		return false
 	end
@@ -548,6 +564,7 @@ function Progreso.datos(plr)
 		finDia = 86400 - ahora % 86400, finSemana = (7 - ((hoy() + 3) % 7)) * 86400 - ahora % 86400,
 		giros = Progreso.giros(plr), vip = Progreso.esVIP(plr), ruleta = D.RULETA,
 		titulos = titulos, estelas = estelas, ranking = top, pendientes = pendientes(plr),
+		estilo = { capa = p.capa, sombrero = p.sombrero, mascota = p.mascota },
 	}
 end
 
@@ -602,6 +619,12 @@ function Progreso.iniciar(c)
 		end)
 		plr:GetAttributeChangedSignal("BedWars"):Connect(function()
 			Progreso.aplicar(plr)
+		end)
+		-- Al comprar (o perder) el VIP se ponen o se quitan sus cosméticos
+		plr:GetAttributeChangedSignal("VIP"):Connect(function()
+			if datos[plr] then
+				Progreso.aplicar(plr)
+			end
 		end)
 		Progreso.cargar(plr)
 		avisarPendientes(plr)

@@ -422,10 +422,12 @@ end
 -- Guardar al salir y recuperar al volver
 local diamAntes = cuenta(ana, Reg.I.diamante)
 -- Ajustes: se guardan (sin valores raros) y vuelven al entrar
-enviar(ana, "ajustes", { sensibilidad = 2, fov = 500, numeros = false, truco = "x" })
+enviar(ana, "ajustes", { sensibilidad = 2, fov = 500, numeros = false, truco = "x", shader = "cinematico", calidad = "inventada", distancia = 40, mira = "punto" })
 pasos(160)
 local aj = F.almacenes.Blockverse_v2 and F.almacenes.Blockverse_v2.a_101
 ok(aj and aj.sensibilidad == 2 and aj.fov == 110 and aj.numeros == false and aj.truco == nil, "los ajustes no se guardan bien")
+-- Gráficos y mira: los textos solo valen si existen y los números se recortan
+ok(aj and aj.shader == "cinematico" and aj.calidad == nil and aj.distancia == 8 and aj.mira == "punto", "los ajustes de gráficos no se comprueban bien")
 sale(ana)
 local guardado = F.almacenes.Blockverse_v2 and F.almacenes.Blockverse_v2.u_101
 ok(guardado ~= nil, "no se guardó el inventario de Ana al salir")
@@ -916,16 +918,33 @@ do
 	-- Ruleta: Ana es VIP, así que tiene 2 giros hoy y luego ninguno
 	ok(Pr.girar(ana) ~= nil and Pr.girar(ana) ~= nil and Pr.girar(ana) == nil, "los giros de la ruleta no son 2 para el VIP")
 	ok(Pr.giros(beto) == 1, "un jugador sin VIP no tiene 1 giro")
+	-- Personalización: capas, sombreros y mascotas según el nivel del Camino (y el VIP)
+	ok(not Pr.equipar(ana, "capa", "dragon"), "se puede poner una capa de nivel 50 sin tenerlo")
+	ok(Pr.equipar(ana, "capa", "creeper") and ana:GetAttribute("Capa") == "creeper", "no se pone la capa del creeper")
+	ok(Pr.equipar(ana, "sombrero", "copa") and ana:GetAttribute("Sombrero") == "copa", "el VIP no puede ponerse el sombrero de copa")
+	ok(not Pr.equipar(beto, "sombrero", "copa"), "sin VIP se puede poner el sombrero de copa")
+	ok(Pr.equipar(ana, "mascota", "slime") and ana:GetAttribute("Mascota") == "slime", "no se pone la mascota")
+	ok(not Pr.equipar(ana, "mascota", "noexiste") and ana:GetAttribute("Mascota") == "slime", "se puede poner una mascota que no existe")
+	ok(Pr.equipar(ana, "mascota", "") and ana:GetAttribute("Mascota") == nil, "no se quita la mascota")
+	Pr.equipar(ana, "mascota", "slime")
+	-- Si pierde el VIP, el sombrero VIP desaparece
+	ana:SetAttribute("VIP", false)
+	pasos(1)
+	ok(ana:GetAttribute("Sombrero") == nil, "el sombrero VIP sigue puesto sin VIP")
+	ana:SetAttribute("VIP", true)
+	pasos(1)
+	ok(ana:GetAttribute("Sombrero") == "copa", "el sombrero VIP no vuelve con el VIP")
 	-- La ventana recibe todo
 	enviar(ana, "pedirProgreso")
 	pasos(2)
 	local dp = datos[ana].ultimo.progreso and datos[ana].ultimo.progreso[1]
 	ok(dp and #dp.camino == DP.NIVEL_MAX and #dp.diarias == 3 and #dp.semanales == 3 and #dp.titulos > 0 and #dp.ranking > 0, "la ventana de progreso no recibe los datos")
+	ok(dp and dp.estilo and dp.estilo.capa == "creeper", "la ventana de personalizar no recibe lo que llevas")
 	-- Se guarda (como mucho cada 30 s)
 	pasos(30 * 32)
 	local g = F.almacenes.Blockverse_v2 and F.almacenes.Blockverse_v2.p_101
-	ok(g and g.nivel == p.nivel and g.estela == "chispas", "el progreso no se guarda")
-	print("progreso: nivel", p.nivel, "· experiencia", p.total, "· misiones, ruleta, estela y título bien")
+	ok(g and g.nivel == p.nivel and g.estela == "chispas" and g.capa == "creeper" and g.mascota == "slime", "el progreso no se guarda")
+	print("progreso: nivel", p.nivel, "· experiencia", p.total, "· misiones, ruleta, estela, título, capa, sombrero y mascota bien")
 end
 for _, p in { ana, beto, dani } do
 	enviar(p, "modoJuego", "normal")

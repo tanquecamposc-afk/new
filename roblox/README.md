@@ -211,6 +211,25 @@ Todo lo que haces en cualquier modo te hace avanzar. Mientras juegas, a la izqui
 - **Ranking**: los 10 con más experiencia de todo Blockverse (con OrderedDataStore); tú resaltado.
 - Se guarda en el DataStore (clave `p_<UserId>`).
 
+## Gráficos y shaders (botón «Gráficos» del menú)
+
+- **8 shaders** (estilos de imagen): Sin shaders, Clásico, Vívido, Cinemático (rayos de sol, desenfoque lejano y tonos cálidos), Fantasía, Invierno, Retro y Blanco y negro. Con «Fuerza del shader» (0–150 %) se suavizan o se exageran.
+- **Color según la hora**: tonos dorados al amanecer y al atardecer (y rayos de sol más fuertes), azulados de noche.
+- **Los ojos se acostumbran**: en las cuevas la imagen se aclara un poco y pierde color; bajo el agua se ve azul, borrosa y con burbujas; dentro de la lava, naranja.
+- **Partículas del ambiente**: motas de polvo de día, luciérnagas de noche, ceniza en el Nether y chispas moradas en el End.
+- **Viñeta** (bordes oscuros), desenfoque lejano, rayos de sol y nubes: cada cosa se puede quitar.
+- **Calidad** (Baja, Media, Alta, Ultra) y **distancia de visión** (2–8 chunks), para que vaya bien en móviles. La calidad baja quita los efectos, las partículas y las sombras redondas.
+- Todo está en `src/cliente/Graficos.luau`. Los efectos van en la cámara: solo los ve cada jugador y no pisan los del servidor. Los ajustes se guardan en el DataStore con los demás.
+
+## Personalizar (botón turquesa del menú)
+
+- **11 capas**: cuelgan de la espalda y se levantan al correr y al caer. Hay roja, explorador, creeper, tablero, fuego, Ender, diamante, arcoíris, galaxia, dragón y la capa VIP.
+- **11 sombreros**: gorra, cabeza de calabaza, bloque de hierba, corona de oro, sombrero de mago, casco vikingo, casco de diamante, aureola (gira), TNT, corona del End y sombrero de copa VIP.
+- **10 mascotas** que flotan a tu lado y te siguen: slime (da saltos), pollito, mini creeper, abeja, mini ghast, mini gólem, mini blaze, hada (con luz), mini dragón (aletea) y la estrella VIP.
+- Se desbloquean subiendo el **Camino de Blockverse** (cada una dice su nivel) o con el **pase VIP**. Si pierdes el VIP, lo VIP se quita solo.
+- Todos los ven: el servidor pone los atributos `Capa`, `Sombrero` y `Mascota` y cada cliente los dibuja con cajas (`src/cliente/Cosmeticos.luau`). Tu capa y tu sombrero no se ven en primera persona, y nada se ve si eres invisible.
+- **Mira**: 5 formas (cruz, cruz con hueco, punto, círculo y cruz grande) y 6 colores.
+
 ## Letras y modelos 3D
 
 - **Letras** (todas en `src/compartido/Fuentes.luau`, una sola lista):
@@ -272,6 +291,7 @@ Para ser claros, esto **no es igual** que en el juego web:
   - `MundoDatos`: chunks de datos y cambios.
   - `Crafteo`, `Rayo`, `Fisica`, `Codec`, `Config`.
   - `Fuentes`: las letras del juego.
+  - `DatosEstilo`: los shaders, las calidades, las miras y los cosméticos (con su nivel).
 - `src/servidor/` → `ServerScriptService.Servidor`
   - Script principal: jugadores, acciones, vida, hambre y daño.
   - `Mundo`: colisiones y agua.
@@ -288,6 +308,7 @@ Para ser claros, esto **no es igual** que en el juego web:
   - `Render`: mallas con texturas, con un modo de respaldo hecho con piezas.
   - `Luz`.
   - `Interfaz`, `Iconos`, `Modelos3D` (objetos en 3D: mano, suelo y personajes, con brillo de encantamiento), `Sombras` (sombras redondas), `ClimaVista` (lluvia, nieve y rayos).
+  - `Graficos` (shaders, partículas y calidad), `Cosmeticos` (capas, sombreros y mascotas) y `PersonalizarVista` (su ventana).
   - `MobsVista`, `EntidadesVista`.
   - `Imagenes`.
 - `src/personaje/Health`: quita la curación automática de Roblox.
@@ -310,6 +331,7 @@ Para ser claros, esto **no es igual** que en el juego web:
     - Encantamientos: Eficiencia acelera, Fortuna III multiplica los diamantes, Toque de seda da la mena entera y Botín III da más botín.
     - Escudo: para los golpes de delante y no los de la espalda, y los demás ven que te cubres.
     - Progreso: los monstruos dan experiencia, se sube de nivel y cada premio se cobra una vez, las estelas y títulos solo se ponen si se tienen, misiones que se cumplen y se cobran una vez, ruleta (2 giros con VIP) y guardado.
+    - Personalizar: capas, sombreros y mascotas solo con su nivel (o VIP), se quitan al perder el VIP y se guardan; los ajustes de gráficos solo aceptan valores válidos.
     - Tienda con Robux: abre la ventana de compra, entrega las monedas una sola vez (y lo apunta), vida extra, saco de recursos, devolución en monedas si ya no sirve, VIP (+50 % y diaria doble) y pase de efectos.
     - Enemigos: no persiguen a través de paredes, no se tiran por los bordes, se avisan entre ellos y mandan su vida para la barra.
     - Logros y clima: se consiguen, salen en la tabla de jugadores y se guardan (y no cuentan dentro de Bed Wars); con lluvia los zombis no arden, en la tormenta es «de noche» y el rayo hace daño.
@@ -317,7 +339,7 @@ Para ser claros, esto **no es igual** que en el juego web:
     - Mazmorras y Leyendas: cada jugador tiene la suya.
   - `probar_bw.sh`: una partida entera de Bed Wars con cuatro jugadores con kits y bots: momentos de caos, minas, torretas, trampolín, habilidades, invisibilidad, bots que tienden puentes y rompen camas, muerte súbita y final. Tiene que salir «BED WARS LARGA BIEN».
   - `probar_arenas.sh`: genera los 8 mapas de Bed Wars, varias mazmorras y una isla de Leyendas. Tiene que salir «ARENAS BIEN».
-  - `capturar.sh`: saca imágenes de lo que dibuja el cliente en Bed Wars, Mazmorras y Leyendas (mallas con texturas, criaturas y carteles) y de la interfaz (tienda, paneles, barra del jefe). Así se revisa cómo se ve sin abrir Roblox Studio. Usa `herramientas/vista/` (Python con numpy y Pillow).
+  - `capturar.sh`: saca imágenes de lo que dibuja el cliente en Bed Wars, Mazmorras y Leyendas (mallas con texturas, criaturas y carteles) y de la interfaz (tienda, paneles, barra del jefe), la misma escena con cada shader y el personaje con capa, sombrero y mascota. Así se revisa cómo se ve sin abrir Roblox Studio. Usa `herramientas/vista/` (Python con numpy y Pillow).
 
 ## Rendimiento
 

@@ -83,6 +83,9 @@ local function enviar(...)
 end
 
 local root, cabeza, hum
+local function char0()
+	return plr.Character
+end
 local function nuevoPersonaje()
 	local char = F.Instance.new("Model")
 	char.Name = "Prueba"
@@ -211,6 +214,26 @@ local function volcar(nombre, cx, cy, cz, radio, cam, mira, fov)
 	pasos(3)
 	F.workspace.CurrentCamera.CFrame = F.CFrame.lookAt(cam * B, mira * B)
 	print(string.format("ESCENA %s %s %s %g", nombre, n3(cam * B), n3(mira * B), fov or 70))
+	-- Los shaders del cliente (en la cámara) para que el dibujo los imite
+	do
+		local camara = F.workspace.CurrentCamera
+		local cc, bl = camara:FindFirstChild("ShaderColor"), camara:FindFirstChild("ShaderBloom")
+		local vg = plr:FindFirstChild("PlayerGui") and plr.PlayerGui:FindFirstChild("Vineta")
+		local v = 0
+		if vg and vg._p.Enabled ~= false then
+			local f = vg:FindFirstChildOfClass("Frame")
+			local g = f and f:FindFirstChildOfClass("UIGradient")
+			local seq = g and g._p.Transparency
+			-- En el Roblox de mentira la secuencia es { {tiempo, valor}, … }
+			local k0 = seq and seq[1] and seq[1][1]
+			v = k0 and (1 - k0[2]) / 0.55 or 0
+		end
+		if cc and cc._p.Enabled ~= false then
+			local t = cc._p.TintColor or F.Color3.new(1, 1, 1)
+			print(string.format("FX %.3f %.3f %.3f %.3f %.3f %.3f %.3f %.3f", cc._p.Brightness or 0, cc._p.Contrast or 0, cc._p.Saturation or 0,
+				t.R, t.G, t.B, (bl and bl._p.Enabled ~= false) and (bl._p.Intensity or 0) or 0, v))
+		end
+	end
 	local c = F.Vector3.new(cx, cy, cz) * B
 	local R = radio * B
 	local nt, nb = 0, 0
@@ -405,6 +428,30 @@ do
 	end
 	PV.cerrar()
 end
+-- Gráficos y shaders
+Interfaz.menu(false)
+Interfaz.menu(true)
+Interfaz.abrirGraficos()
+pasos(2)
+volcarGui("menu_graficos")
+Interfaz.menu(false)
+Interfaz.menu(true)
+-- Personalizar: con nivel 20 (unas cosas desbloqueadas y otras con candado) y algo puesto
+do
+	local Pr = srv.Progreso._resultado
+	local PZ = cli.PersonalizarVista._resultado
+	Pr.de(plr).nivel = 20
+	Pr.equipar(plr, "capa", "creeper")
+	Pr.equipar(plr, "sombrero", "corona")
+	Pr.equipar(plr, "mascota", "abeja")
+	pasos(2)
+	for _, t in { "capa", "sombrero", "mascota", "mira" } do
+		PZ.abrir(t)
+		pasos(3)
+		volcarGui("menu_personalizar_" .. t)
+	end
+	PZ.cerrar()
+end
 Interfaz.menu(false)
 Interfaz.menu(true)
 pasos(2)
@@ -415,6 +462,18 @@ pasos(5)
 do
 	local rp = root.Position / B
 	volcar("sup_mundo", rp.X, rp.Y, rp.Z, 60, F.Vector3.new(rp.X - 14, rp.Y + 9, rp.Z - 14), F.Vector3.new(rp.X + 12, rp.Y - 3, rp.Z + 12), 70)
+	-- El mismo sitio con cada shader (y uno al atardecer)
+	for _, sh in { "ninguno", "vivido", "cinematico", "fantasia", "invierno", "retro", "noir" } do
+		Interfaz.ajustes.shader = sh
+		volcar("shader_" .. sh, rp.X, rp.Y, rp.Z, 60, F.Vector3.new(rp.X - 14, rp.Y + 9, rp.Z - 14), F.Vector3.new(rp.X + 12, rp.Y - 3, rp.Z + 12), 70)
+	end
+	Interfaz.ajustes.shader = "cinematico"
+	local hora = S.Lighting.ClockTime
+	S.Lighting.ClockTime = 17.6
+	volcar("shader_atardecer", rp.X, rp.Y, rp.Z, 60, F.Vector3.new(rp.X - 14, rp.Y + 9, rp.Z - 14), F.Vector3.new(rp.X + 12, rp.Y - 3, rp.Z + 12), 70)
+	S.Lighting.ClockTime = hora
+	Interfaz.ajustes.shader = "clasico"
+	pasos(2)
 	volcarGui("sup_hud")
 	-- Más pantallas para revisarlas: inventario, aviso de logro, muerte y carga
 	enviar("abrirInventario")
@@ -486,6 +545,40 @@ do
 		local q = e1.Position / B
 		print(("objeto tirado en %.1f %.1f %.1f"):format(q.X, q.Y, q.Z))
 		volcar("suelo3d", q.X, q.Y, q.Z, 4, q + F.Vector3.new(1.4, 1.1, 1.4), q + F.Vector3.new(0, 0.2, 0), 70)
+	end
+	-- Personalización en 3D: el personaje con capa, sombrero y mascota (de espaldas y de frente)
+	do
+		local function pieza(nombre, tam, col)
+			local p = char0():FindFirstChild(nombre) or F.Instance.new("Part")
+			p.Name = nombre
+			p.Size = tam
+			p.Color = col
+			p.Parent = char0()
+			return p
+		end
+		local torso = pieza("UpperTorso", F.Vector3.new(2, 1.6, 1), F.Color3.fromRGB(60, 110, 200))
+		local piernas = pieza("Piernas", F.Vector3.new(2, 2, 1), F.Color3.fromRGB(40, 50, 90))
+		cabeza.Size = F.Vector3.new(1.2, 1.2, 1.2)
+		cabeza.Color = F.Color3.fromRGB(230, 180, 140)
+		local function colocarCuerpo()
+			torso.CFrame = root.CFrame * CF(0, 0.6, 0)
+			piernas.CFrame = root.CFrame * CF(0, -1.2, 0)
+			cabeza.CFrame = root.CFrame * CF(0, 2, 0)
+		end
+		-- Como en tercera persona (si no, la capa y el sombrero propios no se dibujan)
+		local Cz = cli.Cosmeticos._resultado
+		local terceraAntes = Cz.esTercera
+		Cz.esTercera = function()
+			return true
+		end
+		colocarCuerpo()
+		pasos(60)
+		colocarCuerpo()
+		local rp2 = root.Position / B
+		volcar("personaje_espalda", rp2.X, rp2.Y, rp2.Z, 4, rp2 + F.Vector3.new(1.6, 0.7, 2.6), rp2 + F.Vector3.new(0, 0.2, 0), 60)
+		colocarCuerpo()
+		volcar("personaje_frente", rp2.X, rp2.Y, rp2.Z, 4, rp2 + F.Vector3.new(1.2, 0.7, -2.8), rp2 + F.Vector3.new(0.3, 0.3, 0), 60)
+		Cz.esTercera = terceraAntes
 	end
 	enviar("modo", "supervivencia")
 	pasos(3)

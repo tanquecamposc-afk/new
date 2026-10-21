@@ -135,6 +135,8 @@ F.UDim2 = {
 F.UDim = { new = function(a, b) return { a, b } end }
 F.Vector2 = { new = function(x, y) return { X = x or 0, Y = y or 0 } end, zero = { X = 0, Y = 0 } }
 F.ColorSequence = { new = function(...) return { ... } end }
+F.ColorSequenceKeypoint = { new = function(...) return { ... } end }
+F.NumberRange = { new = function(a, b) return { Min = a, Max = b or a } end }
 F.TweenInfo = { new = function(...) return { ... } end }
 F.Region3 = {
 	new = function(a, b)
@@ -371,7 +373,14 @@ function METODOS:IsDescendantOf(o)
 	while p do if p == o then return true end p = p._p.Parent end
 	return false
 end
-function METODOS:SetAttribute(k, v) self._attr[k] = v end
+function METODOS:SetAttribute(k, v)
+	local antes = self._attr[k]
+	self._attr[k] = v
+	-- Avisa a quien escuche ese atributo (como en Roblox)
+	local t = rawget(self, "_senalesAtr")
+	local s = t and t[k]
+	if s and antes ~= v then s:Fire() end
+end
 function METODOS:GetAttribute(k) return self._attr[k] end
 function METODOS:GetPropertyChangedSignal() return senal() end
 function METODOS:SetNetworkOwner() end
@@ -409,7 +418,15 @@ function METODOS:InvokeServer(...)
 	assert(f, "InvokeServer sin OnServerInvoke")
 	return f(F.jugadores[1], ...)
 end
-function METODOS:GetAttributeChangedSignal() return senal() end
+function METODOS:GetAttributeChangedSignal(k)
+	local t = rawget(self, "_senalesAtr")
+	if not t then
+		t = {}
+		rawset(self, "_senalesAtr", t)
+	end
+	t[k] = t[k] or senal()
+	return t[k]
+end
 function METODOS:LoadCharacter() if F.METODOS_LoadCharacter then F.METODOS_LoadCharacter(self) end end
 function METODOS:FireServer(...) table.insert(F.mensajesServidor, { ... }); if F.alMensajeServidor then F.alMensajeServidor(self, ...) end end
 function METODOS:FillBlock() F.terreno += 1 end
@@ -612,6 +629,8 @@ function F.entorno(scriptInst)
 	env.TweenInfo = F.TweenInfo
 	env.NumberSequence = F.NumberSequence
 	env.NumberSequenceKeypoint = F.NumberSequenceKeypoint
+	env.NumberRange = F.NumberRange
+	env.ColorSequenceKeypoint = F.ColorSequenceKeypoint
 	env.Content = F.Content
 	env.RaycastParams = { new = function() return {} end }
 	-- Random con semilla da siempre la misma serie (como en Roblox); sin semilla, al azar
