@@ -302,7 +302,9 @@ local function pintarDestacado()
 			TextXAlignment = Enum.TextXAlignment.Left, TextStrokeColor3 = Color3.fromRGB(90, 50, 0), TextStrokeTransparency = 0 }, f)
 		texto({ Position = UDim2.fromOffset(190, 62), Size = UDim2.fromOffset(380, 20), Text = vip.desc or "", TextSize = 14,
 			TextXAlignment = Enum.TextXAlignment.Left, TextColor3 = Color3.fromRGB(255, 235, 180), TextStrokeTransparency = 1 }, f)
-		lista(f, vip, 190, 90, 400)
+		-- El recuadro crece si las ventajas no caben
+		local alto = lista(f, vip, 190, 90, 400, 13)
+		f.Size = UDim2.new(1, 0, 0, math.max(200, 90 + alto + 14))
 		botonCompra(f, vip, UDim2.new(1, -230, 0.5, -30), UDim2.fromOffset(206, 60))
 	end
 	-- Debajo: el mejor paquete de monedas, Monedas x2 y lo que sirve en el modo en que estás

@@ -24,7 +24,7 @@ P.PASES = {
 		ventajas = {
 			"+50 % de monedas en Bed Wars",
 			"Recompensa diaria doble",
-			"+25 % de experiencia en el Camino y 2 giros de ruleta al día",
+			"+25 % de experiencia y 2 giros de ruleta al día",
 			"Etiqueta [VIP] dorada en el chat y en tu tarjeta",
 			"Estrella ★ junto a tu nombre en Bed Wars",
 		},
