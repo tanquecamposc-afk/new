@@ -1,7 +1,7 @@
 <roblox xmlns:xmime="http://www.w3.org/2005/05/xmlmime" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.roblox.com/roblox.xsd" version="4">
 <Item class="Workspace" referent="RBX00000001"><Properties><string name="Name">Workspace</string><bool name="StreamingEnabled">false</bool><float name="FallenPartsDestroyHeight">-500</float></Properties></Item>
 <Item class="Lighting" referent="RBX00000002"><Properties><string name="Name">Lighting</string><token name="Technology">4</token><bool name="GlobalShadows">true</bool></Properties></Item>
-<Item class="ReplicatedStorage" referent="RBX0000001F"><Properties><string name="Name">ReplicatedStorage</string></Properties><Item class="Folder" referent="RBX0000001E"><Properties><string name="Name">Blockverse</string></Properties><Item class="ModuleScript" referent="RBX00000003"><Properties><string name="Name">Arenas</string><ProtectedString name="Source"><![CDATA[--!optimize 2
+<Item class="ReplicatedStorage" referent="RBX00000020"><Properties><string name="Name">ReplicatedStorage</string></Properties><Item class="Folder" referent="RBX0000001F"><Properties><string name="Name">Blockverse</string></Properties><Item class="ModuleScript" referent="RBX00000003"><Properties><string name="Name">Arenas</string><ProtectedString name="Source"><![CDATA[--!optimize 2
 --[[
 	Blockverse para Roblox · Arenas de los modos de juego
 	Los mapas de Bed Wars (bedwars2.js), las mazmorras (modos53.js) y la
@@ -3887,7 +3887,113 @@ return {
 }
 ]]></ProtectedString></Properties></Item>
 </Item>
-<Item class="ModuleScript" referent="RBX00000014"><Properties><string name="Name">Dimensiones</string><ProtectedString name="Source"><![CDATA[--!native
+<Item class="ModuleScript" referent="RBX00000014"><Properties><string name="Name">DatosProgreso</string><ProtectedString name="Source"><![CDATA[--[[
+	Blockverse para Roblox · Datos del progreso (los usan el servidor y la interfaz)
+	· Camino de Blockverse: 50 niveles con experiencia de TODOS los modos. Cada nivel da
+	  algo: monedas, un título o una estela; los múltiplos de 10 dan un premio grande.
+	· Misiones: 3 diarias y 3 semanales, elegidas según el día y la semana.
+	· Ruleta diaria gratis, con las probabilidades a la vista.
+]]
+local D = {}
+
+D.NIVEL_MAX = 50
+-- Experiencia para pasar del nivel n al n + 1
+function D.xpNivel(n)
+	return 100 + 25 * (n - 1)
+end
+
+-- Títulos (salen encima de la cabeza, en el chat y en la tarjeta del menú)
+D.TITULOS = {
+	{ id = "novato", n = "Novato", col = "#c8c8c8", nivel = 1 },
+	{ id = "aventurero", n = "Aventurero", col = "#7fd17f", nivel = 5 },
+	{ id = "minero", n = "Minero", col = "#9ab0c8", nivel = 10 },
+	{ id = "cazador", n = "Cazador", col = "#e08a5a", nivel = 15 },
+	{ id = "constructor", n = "Constructor", col = "#e0c060", nivel = 20 },
+	{ id = "guerrero", n = "Guerrero", col = "#ff6060", nivel = 25 },
+	{ id = "heroe", n = "Héroe", col = "#60b0ff", nivel = 30 },
+	{ id = "leyenda", n = "Leyenda", col = "#ffaa30", nivel = 35 },
+	{ id = "maestro", n = "Maestro", col = "#c080ff", nivel = 40 },
+	{ id = "mitico", n = "Mítico", col = "#ff60c0", nivel = 45 },
+	{ id = "blockverse", n = "★ Blockverse ★", col = "#ffd84a", nivel = 50 },
+}
+
+-- Estelas (una cola de color detrás del personaje al moverse; la ven todos)
+D.ESTELAS = {
+	{ id = "chispas", n = "Chispas verdes", c1 = "#80ff60", c2 = "#20a020", nivel = 3 },
+	{ id = "fuego", n = "Fuego", c1 = "#ffd040", c2 = "#ff3010", nivel = 8 },
+	{ id = "hielo", n = "Hielo", c1 = "#e0ffff", c2 = "#40a0ff", nivel = 13 },
+	{ id = "arcoiris", n = "Arcoíris", c1 = "#ff4040", c2 = "#4040ff", arcoiris = true, nivel = 18 },
+	{ id = "ender", n = "Ender", c1 = "#e080ff", c2 = "#300050", nivel = 23 },
+	{ id = "oro", n = "Oro", c1 = "#fff0a0", c2 = "#d09000", nivel = 28 },
+	{ id = "diamante", n = "Diamante", c1 = "#c0ffff", c2 = "#20c0c0", nivel = 33 },
+	{ id = "galaxia", n = "Galaxia", c1 = "#ff80ff", c2 = "#2020a0", nivel = 38 },
+	{ id = "lava", n = "Lava", c1 = "#ffa020", c2 = "#600000", nivel = 43 },
+	{ id = "estelar", n = "Estelar", c1 = "#ffffff", c2 = "#ffd84a", nivel = 48 },
+}
+
+D.TITULO_ID, D.ESTELA_ID = {}, {}
+for _, t in D.TITULOS do
+	D.TITULO_ID[t.id] = t
+end
+for _, e in D.ESTELAS do
+	D.ESTELA_ID[e.id] = e
+end
+
+-- Recompensa de cada nivel del camino: {tipo = "monedas"|"titulo"|"estela", valor, texto}
+D.RECOMPENSAS = {}
+for n = 1, D.NIVEL_MAX do
+	local r
+	for _, t in D.TITULOS do
+		if t.nivel == n and n > 1 then
+			r = { tipo = "titulo", valor = t.id, texto = "Título: " .. t.n }
+		end
+	end
+	for _, e in D.ESTELAS do
+		if e.nivel == n then
+			r = { tipo = "estela", valor = e.id, texto = "Estela: " .. e.n }
+		end
+	end
+	if not r then
+		local m = n % 10 == 0 and (500 + n * 20) or (40 + n * 8)
+		r = { tipo = "monedas", valor = m, texto = m .. " monedas", grande = n % 10 == 0 }
+	end
+	D.RECOMPENSAS[n] = r
+end
+
+-- Misiones: evento que cuenta, cuántas veces, experiencia y texto
+D.DIARIAS = {
+	{ id = "romper", ev = "romper", meta = 100, xp = 100, t = "Rompe 100 bloques" },
+	{ id = "monstruos", ev = "monstruo", meta = 10, xp = 120, t = "Acaba con 10 monstruos" },
+	{ id = "partidaBW", ev = "partidaBW", meta = 1, xp = 100, t = "Juega una partida de Bed Wars" },
+	{ id = "bajasBW", ev = "bajaBW", meta = 3, xp = 120, t = "Consigue 3 bajas en Bed Wars" },
+	{ id = "salasMZ", ev = "salaMZ", meta = 3, xp = 120, t = "Limpia 3 salas de una mazmorra" },
+	{ id = "portalLY", ev = "portalLY", meta = 1, xp = 130, t = "Destruye un portal en Leyendas" },
+	{ id = "comer", ev = "comer", meta = 5, xp = 80, t = "Come 5 veces" },
+	{ id = "colocar", ev = "colocar", meta = 50, xp = 80, t = "Coloca 50 bloques" },
+	{ id = "faseOB", ev = "faseOB", meta = 1, xp = 110, t = "Pasa de fase en One Block" },
+}
+D.SEMANALES = {
+	{ id = "ganarBW", ev = "victoriaBW", meta = 3, xp = 450, t = "Gana 3 partidas de Bed Wars" },
+	{ id = "jefesMZ", ev = "jefeMZ", meta = 2, xp = 450, t = "Derrota a 2 jefes de mazmorra" },
+	{ id = "romperS", ev = "romper", meta = 1000, xp = 400, t = "Rompe 1 000 bloques" },
+	{ id = "monstruosS", ev = "monstruo", meta = 60, xp = 400, t = "Acaba con 60 monstruos" },
+	{ id = "aldeaLY", ev = "victoriaLY", meta = 1, xp = 500, t = "Salva la aldea en Leyendas" },
+	{ id = "camasBW", ev = "camaBW", meta = 3, xp = 450, t = "Rompe 3 camas en Bed Wars" },
+}
+
+-- Ruleta diaria (gratis). Las probabilidades se enseñan en la ventana
+D.RULETA = {
+	{ tipo = "monedas", valor = 50, p = 35, texto = "50 monedas", ico = "pepitaOro" },
+	{ tipo = "monedas", valor = 100, p = 25, texto = "100 monedas", ico = "pepitaOro" },
+	{ tipo = "xp", valor = 150, p = 20, texto = "150 de experiencia", ico = "esmeralda" },
+	{ tipo = "monedas", valor = 250, p = 10, texto = "250 monedas", ico = "lingoteOro" },
+	{ tipo = "xp", valor = 300, p = 7, texto = "300 de experiencia", ico = "esmeralda" },
+	{ tipo = "monedas", valor = 1000, p = 3, texto = "1 000 monedas", ico = "bloqueDiamante", raro = true },
+}
+
+return D
+]]></ProtectedString></Properties></Item>
+<Item class="ModuleScript" referent="RBX00000015"><Properties><string name="Name">Dimensiones</string><ProtectedString name="Source"><![CDATA[--!native
 --!optimize 2
 --[[
 	Blockverse para Roblox · El Nether y el End
@@ -4852,7 +4958,7 @@ end
 
 return D
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX00000015"><Properties><string name="Name">Encantamientos</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX00000016"><Properties><string name="Name">Encantamientos</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Encantamientos
 	Traducción de encantamientos.js del juego web (como en Java 1.21):
 	peso y rango de poder de cada nivel, encantabilidad de cada objeto,
@@ -5095,7 +5201,7 @@ end
 
 return Enc
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX00000016"><Properties><string name="Name">Estructuras</string><ProtectedString name="Source"><![CDATA[--!native
+<Item class="ModuleScript" referent="RBX00000017"><Properties><string name="Name">Estructuras</string><ProtectedString name="Source"><![CDATA[--!native
 --!optimize 2
 --[[
 	Blockverse para Roblox · Estructuras de la Superficie
@@ -7204,7 +7310,7 @@ end
 
 return E
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX00000017"><Properties><string name="Name">Fisica</string><ProtectedString name="Source"><![CDATA[--!native
+<Item class="ModuleScript" referent="RBX00000018"><Properties><string name="Name">Fisica</string><ProtectedString name="Source"><![CDATA[--!native
 --[[
 	Blockverse para Roblox · Física de entidades
 	Igual que choca/moverEje/pasoFisico de jugador.js: cajas que chocan
@@ -7335,7 +7441,7 @@ end
 
 return Fisica
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX00000018"><Properties><string name="Name">Generador</string><ProtectedString name="Source"><![CDATA[--!native
+<Item class="ModuleScript" referent="RBX00000019"><Properties><string name="Name">Generador</string><ProtectedString name="Source"><![CDATA[--!native
 --!optimize 2
 --[[
 	Blockverse para Roblox · Generador del mundo
@@ -8490,7 +8596,7 @@ end
 
 return Generador
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX00000019"><Properties><string name="Name">MundoDatos</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX0000001A"><Properties><string name="Name">MundoDatos</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Datos del mundo
 	Guarda los chunks (16 × 16 × 192 bloques) y los cambios que han hecho
 	los jugadores. Lo usan el servidor y el cliente: los dos generan el
@@ -8697,7 +8803,7 @@ end
 
 return MundoDatos
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX0000001A"><Properties><string name="Name">ProductosRobux</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX0000001B"><Properties><string name="Name">ProductosRobux</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Lo que se puede comprar con Robux
 
 	CÓMO PONERLO EN MARCHA (lo hace el dueño del juego, una sola vez):
@@ -8723,6 +8829,7 @@ P.PASES = {
 		ventajas = {
 			"+50 % de monedas en Bed Wars",
 			"Recompensa diaria doble",
+			"+25 % de experiencia en el Camino y 2 giros de ruleta al día",
 			"Etiqueta [VIP] dorada en el chat y en tu tarjeta",
 			"Estrella ★ junto a tu nombre en Bed Wars",
 		},
@@ -8780,7 +8887,7 @@ end
 
 return P
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX0000001B"><Properties><string name="Name">Rayo</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX0000001C"><Properties><string name="Name">Rayo</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Rayo
 	Recorre los bloques en línea recta (como lanzarRayo del juego web)
 	para saber a qué bloque se apunta y por qué cara. Respeta las formas:
@@ -8928,7 +9035,7 @@ end
 
 return Rayo
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX0000001C"><Properties><string name="Name">Registro</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX0000001D"><Properties><string name="Name">Registro</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Registro
 	Junta los datos exportados del juego web (Datos/*) y prepara tablas
 	rápidas para el resto del juego: qué bloques son sólidos, opacos,
@@ -9123,7 +9230,7 @@ end
 
 return Registro
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX0000001D"><Properties><string name="Name">Ruido</string><ProtectedString name="Source"><![CDATA[--!native
+<Item class="ModuleScript" referent="RBX0000001E"><Properties><string name="Name">Ruido</string><ProtectedString name="Source"><![CDATA[--!native
 --!optimize 2
 --[[
 	Blockverse para Roblox · Ruido
@@ -9230,7 +9337,7 @@ return Ruido
 ]]></ProtectedString></Properties></Item>
 </Item>
 </Item>
-<Item class="ServerScriptService" referent="RBX00000034"><Properties><string name="Name">ServerScriptService</string></Properties><Item class="Script" referent="RBX00000033"><Properties><string name="Name">Servidor</string><bool name="Disabled">false</bool><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ServerScriptService" referent="RBX00000036"><Properties><string name="Name">ServerScriptService</string></Properties><Item class="Script" referent="RBX00000035"><Properties><string name="Name">Servidor</string><bool name="Disabled">false</bool><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Script principal del servidor
 	Une todo el juego, con las reglas del juego web:
 	· Mundo (igual al web), simulación, criaturas, entidades, cofres y hornos.
@@ -9285,6 +9392,7 @@ local Redstone = require(script.Redstone)
 local Mesas = require(script.Mesas)
 local Logros = require(script.Logros)
 local Tienda = require(script.Tienda)
+local Progreso = require(script.Progreso)
 local Clima = require(script.Clima)
 local Generador = require(Comp.Generador)
 
@@ -10522,6 +10630,7 @@ function acciones.romper(plr, s, x, y, z)
 	end
 	Mundo.set(x, y, z, 0)
 	if not creativo then
+		Progreso.evento(plr, "romper", 1)
 		soltarBloque(b, x, y, z, herrId, plr, mano and mano.enc)
 		if def.dureza > 0 then
 			local h = Registro.herramienta(herrId)
@@ -11030,6 +11139,9 @@ function acciones.derecho(plr, s, obj, dir, mobParte, agachado)
 			tx, ty, tz = r.x, r.y + 1, r.z
 		end
 		if colocarBloque(plr, s, id, tx, ty, tz, n, dir) then
+			if supervivencia(s) then
+				Progreso.evento(plr, "colocar", 1)
+			end
 			consumirEnMano(s)
 			enviarJugador(plr)
 		end
@@ -11050,6 +11162,7 @@ function acciones.terminarComer(plr, s)
 	if o.comida then
 		s.hambre = math.min(20, s.hambre + o.comida[1])
 		s.saturacion = math.min(s.hambre, s.saturacion + (o.comida[2] or 0))
+		Progreso.evento(plr, "comer", 1)
 		if o.efecto and math.random() < (o.efecto[3] or 1) then
 			aplicarEfecto(s, o.efecto[1], o.efecto[2], 1)
 		end
@@ -11294,6 +11407,16 @@ function acciones.modoCmd(plr, s, cmd, arg)
 	end
 	if type(cmd) == "string" then
 		Modos.comando(plr, cmd, type(arg) == "number" and arg or nil)
+	end
+end
+
+function acciones.pedirProgreso(plr)
+	Progreso.enviar(plr)
+end
+
+function acciones.progresoCmd(plr, s, cmd, a, b)
+	if type(cmd) == "string" then
+		Progreso.comando(plr, cmd, a, b)
 	end
 end
 
@@ -12025,8 +12148,14 @@ local ctxModos = {
 	robux = function(clave)
 		return Tienda.disponible(clave)
 	end,
+	-- Lo que cuenta para las misiones y la experiencia del Camino de Blockverse
+	progreso = function(plr, ev, n)
+		Progreso.evento(plr, ev, n)
+	end,
 }
 Modos.iniciar(ctxModos)
+-- Progreso: Camino de Blockverse, misiones, ruleta, colección y ranking
+Progreso.iniciar({ Estado = Estado, almacen = almacen, aviso = aviso, perfilMenu = Modos.perfilMenu })
 -- Tienda con Robux: pases, monedas y cosas de cada modo
 Tienda.iniciar({
 	Estado = Estado, estados = estados, almacen = almacen, darOSoltar = darOSoltar, supervivencia = supervivencia, aviso = aviso,
@@ -12039,10 +12168,13 @@ Mobs.alMatar = function(m, _, plr)
 	if plr and m.def.tipo == "hostil" and not m.control then
 		Logros.conseguir(plr, "cazador")
 	end
+	if plr and m.def.tipo == "hostil" and m.tipo ~= "botBW" then
+		Progreso.evento(plr, "monstruo", 1)
+	end
 end
 -- Las explosiones en la arena de Bed Wars solo rompen lo construido
 Sim.puedeExplotar = Modos.puedeExplotar
-]]></ProtectedString></Properties><Item class="ModuleScript" referent="RBX00000020"><Properties><string name="Name">BedWars</string><ProtectedString name="Source"><![CDATA[--[[
+]]></ProtectedString></Properties><Item class="ModuleScript" referent="RBX00000021"><Properties><string name="Name">BedWars</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · BED WARS (bedwars.js, bedwars2.js y tiendaBW37.js)
 	Una partida para todo el servidor: sala de espera de cristal con cuenta
 	atrás, 8 equipos (o 4 si hay más de 8 jugadores) en islas flotantes,
@@ -12851,9 +12983,14 @@ local function cortarRacha(Jv, asesino)
 end
 
 -- Misiones diarias: avisa al completar una
+local EVENTO_PROGRESO = { bajas = "bajaBW", camas = "camaBW" }
 function BW.misiones(plr, clave, n)
 	if not plr or not plr.Parent then
 		return
+	end
+	-- También cuentan para las misiones del Camino de Blockverse
+	if EVENTO_PROGRESO[clave] and ctx.progreso then
+		ctx.progreso(plr, EVENTO_PROGRESO[clave], n)
 	end
 	for _, m in Perfil.progreso(plr, clave, n) do
 		tituloA(plr, "¡Misión completada!", ("%s · +%d monedas"):format(m.texto, m.premio), "#ffd84a")
@@ -14022,6 +14159,12 @@ function terminar(ganador)
 			mon = 10 + J.bajas * 5 + J.finales * 10 + J.camas * 25 + (gano and 100 or 0) + (plr == mvp and 25 or 0)
 			-- Pases de la tienda (VIP, Monedas x2)
 			mon = math.floor(mon * Perfil.multMonedas(plr))
+			if ctx.progreso then
+				ctx.progreso(plr, "partidaBW", 1)
+				if gano then
+					ctx.progreso(plr, "victoriaBW", 1)
+				end
+			end
 			perfil.monedas += mon
 			perfil.xp += xp
 			perfil.partidas += 1
@@ -14420,6 +14563,7 @@ function BW.perfilMenu(plr)
 		nivel = Perfil.nivel(p.xp), xp = p.xp % 500, monedas = p.monedas, victorias = p.victorias, partidas = p.partidas,
 		diaria = disponible, racha = racha, premio = premio, colorNivel = Perfil.colorNivel(Perfil.nivel(p.xp)),
 		vip = plr:GetAttribute("VIP") == true, mult = Perfil.multMonedas(plr),
+		camino = plr:GetAttribute("NivelCamino"), titulo = plr:GetAttribute("Titulo"), tituloCol = plr:GetAttribute("TituloCol"),
 	}
 end
 function BW.reclamarDiaria(plr)
@@ -15133,7 +15277,7 @@ end
 
 return BW
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX00000021"><Properties><string name="Name">Clima</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX00000022"><Properties><string name="Name">Clima</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Clima (servidor)
 	· Cielo despejado, lluvia o tormenta, que cambian solos cada pocos minutos.
 	  El estado va en el atributo «Clima» de workspace y cada cliente lo dibuja
@@ -15254,7 +15398,7 @@ end
 
 return Clima
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX00000022"><Properties><string name="Name">Contenedores</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX00000023"><Properties><string name="Name">Contenedores</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Cofres y hornos (servidor)
 	· Cofres, barriles y cofres de cobre: 27 casillas cada uno.
 	· Hornos (y ahumadores / altos hornos): entrada, combustible y salida,
@@ -15426,7 +15570,7 @@ end
 
 return Cont
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX00000023"><Properties><string name="Name">Dimension</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX00000024"><Properties><string name="Name">Dimension</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Dimensiones (servidor)
 	Como jugador.js, dragon.js y extras.js del juego web:
 	· Portales del Nether: marco de obsidiana de 2×3 a 21×21 que se
@@ -16214,7 +16358,7 @@ end
 
 return Dim
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX00000024"><Properties><string name="Name">Entidades</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX00000025"><Properties><string name="Name">Entidades</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Entidades (servidor)
 	Como entidades.js del juego web:
 	· Objetos tirados: saltan al soltarse, caen, se juntan con los iguales
@@ -16552,7 +16696,7 @@ end
 
 return Entidades
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX00000025"><Properties><string name="Name">Habitantes</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX00000026"><Properties><string name="Name">Habitantes</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Habitantes de las estructuras (servidor)
 	Como en el juego web:
 	· Generadores de criaturas de las mazmorras y la fortaleza (zombi 50 %,
@@ -16905,7 +17049,7 @@ end
 
 return H
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX00000026"><Properties><string name="Name">Inventario</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX00000027"><Properties><string name="Name">Inventario</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Inventario (servidor)
 	Casillas como en el juego web:
 	· 1-9 barra rápida, 10-36 mochila, 37-40 armadura (casco, pechera,
@@ -17166,7 +17310,7 @@ end
 
 return Inv
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX00000027"><Properties><string name="Name">KitsBW</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX00000028"><Properties><string name="Name">KitsBW</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Kits de Bed Wars (kits46.js del juego web y kits nuevos)
 	Cada kit tiene rareza, precio en monedas y tres niveles que mejoran sus números.
 	Cada día hay tres kits gratis para probar. Los legendarios tienen una habilidad
@@ -17560,7 +17704,7 @@ end
 
 return Kits
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX00000028"><Properties><string name="Name">Leyendas</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX00000029"><Properties><string name="Name">Leyendas</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · LEYENDAS (modos52.js y modos53.js)
 	Cada jugador defiende su aldea en una isla propia: plaza con el
 	pozo-corazón, casas con aldeanos, caminos con faroles y huertos, y
@@ -17954,6 +18098,9 @@ local function golpearBase(L, x, y, z)
 		if b.vida > 0 and math.sqrt((x - b.x) ^ 2 + (z - b.z) ^ 2) < 6.5 then
 			L.ultimoGolpe = t
 			b.vida -= 4
+			if b.vida <= 0 and ctx.progreso then
+				ctx.progreso(L.plr, "portalLY", 1)
+			end
 			ctx.Estado:FireClient(L.plr, "particulas", Vector3.new(b.x + 0.5, b.y + 3, b.z + 0.5) * BS, 0xaa2222)
 			ctx.Estado:FireClient(L.plr, "sonido", "golpe")
 			return true
@@ -18298,6 +18445,9 @@ local function actualizar(L, dt)
 		if ctx.logro then
 			ctx.logro(plr, "leyendas")
 		end
+		if ctx.progreso then
+			ctx.progreso(plr, "victoriaLY", 1)
+		end
 		if ctx.ganarXP then
 			ctx.ganarXP(plr, 50)
 		end
@@ -18342,7 +18492,7 @@ end
 
 return LY
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX00000029"><Properties><string name="Name">Logros</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX0000002A"><Properties><string name="Name">Logros</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Logros (como los avances de Minecraft)
 	· 18 logros: los primeros sirven de guía para quien empieza (madera, mesa, pico,
 	  piedra, horno, hierro…) y los demás son retos (diamantes, el Nether, el dragón,
@@ -18563,7 +18713,7 @@ end
 
 return Logros
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX0000002A"><Properties><string name="Name">Mazmorras</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX0000002B"><Properties><string name="Name">Mazmorras</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · MAZMORRAS (modos52.js y modos53.js)
 	Cada jugador baja a su propia mazmorra: salas cuadradas, redondas y en
 	cruz unidas por pasillos, con tres ambientaciones que se turnan por
@@ -19114,6 +19264,9 @@ local function actualizar(R, dt)
 			if ctx.logro then
 				ctx.logro(plr, "mazmorra")
 			end
+			if ctx.progreso then
+				ctx.progreso(plr, "jefeMZ", 1)
+			end
 		end
 	end
 	if not pos or R.fin then
@@ -19154,6 +19307,9 @@ local function actualizar(R, dt)
 					oleada(R, sa)
 				else
 					sa.limpia = true
+					if ctx.progreso then
+						ctx.progreso(plr, "salaMZ", 1)
+					end
 					if sa.cerrada then
 						sa.cerrada = false
 						cerrarPuertas(sa, false)
@@ -19204,7 +19360,7 @@ end
 
 return MZ
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX0000002B"><Properties><string name="Name">Mesas</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX0000002C"><Properties><string name="Name">Mesas</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Mesas y comercio (servidor)
 	Las mesas que faltaban, con las fórmulas del juego web:
 	· Mesa de encantamientos (encantamientos.js): tres opciones según las
@@ -20064,7 +20220,7 @@ end
 
 return Mesas
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX0000002C"><Properties><string name="Name">Mobs</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX0000002D"><Properties><string name="Name">Mobs</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Criaturas (servidor)
 	IA de mobs.js del juego web, para varios jugadores:
 	· Hostiles cuerpo a cuerpo (zombi, araña que salta…), esqueletos que
@@ -21291,7 +21447,7 @@ end
 
 return Mobs
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX0000002D"><Properties><string name="Name">Modos</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX0000002E"><Properties><string name="Name">Modos</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Modos de juego (servidor)
 	ONE BLOCK (como oneblock.js del juego web): cada jugador tiene su
 	propia isla de un solo bloque en una zona vacía del mundo. Al romperlo
@@ -21443,6 +21599,9 @@ local function regenerar(ob)
 	local plr = ob.dueno
 	if f ~= ob.fase then
 		ob.fase = f
+		if plr and ctx.progreso then
+			ctx.progreso(plr, "faseOB", 1)
+		end
 		if plr then
 			ctx.Estado:FireClient(plr, "titulo", "Fase " .. f, F.nombre, F.col)
 			ctx.Estado:FireClient(plr, "sonido", "nivel")
@@ -21799,7 +21958,7 @@ end
 
 return Modos
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX0000002E"><Properties><string name="Name">Mundo</string><ProtectedString name="Source"><![CDATA[--!native
+<Item class="ModuleScript" referent="RBX0000002F"><Properties><string name="Name">Mundo</string><ProtectedString name="Source"><![CDATA[--!native
 --[[
 	Blockverse para Roblox · Mundo (servidor)
 	· Guarda los bloques (MundoDatos) y los cambios de los jugadores.
@@ -22207,7 +22366,7 @@ end
 
 return Mundo
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX0000002F"><Properties><string name="Name">PerfilBW</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX00000030"><Properties><string name="Name">PerfilBW</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Perfil de Bed Wars de cada jugador (se guarda en DataStore)
 	· Monedas, experiencia con nivel y estrellas [N★], estadísticas, racha de victorias.
 	· Kits comprados con su nivel, kit equipado y efecto de baja final equipado.
@@ -22456,7 +22615,623 @@ end)
 
 return Perfil
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX00000030"><Properties><string name="Name">Redstone</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX00000031"><Properties><string name="Name">Progreso</string><ProtectedString name="Source"><![CDATA[--[[
+	Blockverse para Roblox · Progreso (servidor)
+	· Camino de Blockverse: experiencia de todos los modos (misiones, monstruos, partidas,
+	  salas, portales, fases…), 50 niveles y una recompensa por nivel que se cobra a mano.
+	· Misiones diarias (3) y semanales (3) que cambian solas; al cumplirlas sale un aviso.
+	· Ruleta diaria gratis (2 giros con VIP), con las probabilidades a la vista.
+	· Colección: títulos (encima de la cabeza y en el chat) y estelas (cola de color al moverse).
+	· Ranking: los 10 con más experiencia de todo el juego (OrderedDataStore).
+	Se guarda en el DataStore con la clave p_<UserId>.
+]]
+local Players = game:GetService("Players")
+local DataStoreService = game:GetService("DataStoreService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Comp = ReplicatedStorage:WaitForChild("Blockverse")
+local D = require(Comp.DatosProgreso)
+local Perfil = require(script.Parent.PerfilBW)
+
+local Progreso = {}
+local ctx -- {Estado, almacen, aviso}
+local datos = {} -- plr -> datos guardados
+local sinGuardar = {}
+local ranking = { lista = {}, t = -1e9 }
+local nombres = {} -- UserId -> nombre (para el ranking)
+
+-- Experiencia que da cada cosa al hacerla (además de las misiones)
+local XP_EVENTO = {
+	monstruo = 4, partidaBW = 30, victoriaBW = 60, bajaBW = 8, camaBW = 20, salaMZ = 12, jefeMZ = 60,
+	portalLY = 40, victoriaLY = 100, faseOB = 30, comer = 1,
+}
+
+local function hoy()
+	return os.time() // 86400
+end
+local function semana()
+	return (hoy() + 3) // 7 -- de lunes a domingo
+end
+
+-- Las misiones del día o de la semana salen siempre iguales para todos ese día
+local function elegir(lista, semilla, n)
+	local r = Random.new(semilla)
+	local idx = {}
+	for i = 1, #lista do
+		idx[i] = i
+	end
+	for i = #idx, 2, -1 do
+		local j = r:NextInteger(1, i)
+		idx[i], idx[j] = idx[j], idx[i]
+	end
+	local m = {}
+	for k = 1, math.min(n, #idx) do
+		table.insert(m, { id = lista[idx[k]].id, prog = 0, cobrada = false })
+	end
+	return m
+end
+
+local function nuevo()
+	return {
+		nivel = 1, xp = 0, total = 0, reclamados = {}, titulo = "novato", estela = nil,
+		dia = { id = -1, m = {} }, sem = { id = -1, m = {} }, ruleta = { dia = -1, usos = 0 },
+	}
+end
+
+local function de(plr)
+	local p = datos[plr]
+	if not p then
+		p = nuevo()
+		datos[plr] = p
+	end
+	-- Misiones nuevas cada día y cada semana
+	if p.dia.id ~= hoy() then
+		p.dia = { id = hoy(), m = elegir(D.DIARIAS, hoy() * 7 + 1, 3) }
+	end
+	if p.sem.id ~= semana() then
+		p.sem = { id = semana(), m = elegir(D.SEMANALES, semana() * 13 + 5, 3) }
+	end
+	return p
+end
+Progreso.de = de
+
+local function porId(lista)
+	local t = {}
+	for _, m in lista do
+		t[m.id] = m
+	end
+	return t
+end
+local DIA_ID, SEM_ID = porId(D.DIARIAS), porId(D.SEMANALES)
+
+function Progreso.esVIP(plr)
+	return plr:GetAttribute("VIP") == true
+end
+
+------------------------------------------------------------------
+-- Guardar
+------------------------------------------------------------------
+local ordenado
+local function guardarYa(plr)
+	local p = datos[plr]
+	if not p or sinGuardar[plr] or not ctx.almacen or not plr.UserId or plr.UserId <= 0 then
+		return
+	end
+	pcall(function()
+		ctx.almacen:SetAsync("p_" .. plr.UserId, p)
+	end)
+	if ordenado then
+		pcall(function()
+			ordenado:SetAsync(tostring(plr.UserId), p.total)
+		end)
+	end
+end
+local pendienteGuardar = {}
+local function guardar(plr)
+	if pendienteGuardar[plr] then
+		return
+	end
+	pendienteGuardar[plr] = true
+	task.delay(5, function()
+		pendienteGuardar[plr] = nil
+		if datos[plr] then
+			guardarYa(plr)
+		end
+	end)
+end
+
+function Progreso.cargar(plr)
+	local p = nuevo()
+	if ctx.almacen and plr.UserId and plr.UserId > 0 then
+		local ok, g = pcall(function()
+			return ctx.almacen:GetAsync("p_" .. plr.UserId)
+		end)
+		if ok and type(g) == "table" then
+			for k, v in g do
+				if p[k] ~= nil or k == "estela" then
+					p[k] = v
+				end
+			end
+			p.nivel = math.clamp(tonumber(p.nivel) or 1, 1, D.NIVEL_MAX)
+			p.xp = math.max(0, tonumber(p.xp) or 0)
+			p.total = math.max(0, tonumber(p.total) or 0)
+			if type(p.reclamados) ~= "table" then
+				p.reclamados = {}
+			end
+		elseif not ok then
+			sinGuardar[plr] = true
+		end
+	end
+	datos[plr] = p
+	nombres[plr.UserId] = plr.Name
+	de(plr)
+	Progreso.aplicar(plr)
+end
+
+------------------------------------------------------------------
+-- Lo desbloqueado y lo equipado
+------------------------------------------------------------------
+-- La claves de reclamados se guardan como texto (el DataStore no admite huecos en las listas)
+local function reclamado(p, n)
+	return p.reclamados[tostring(n)] == true
+end
+
+function Progreso.tieneTitulo(plr, id)
+	local t = D.TITULO_ID[id]
+	local p = de(plr)
+	return t ~= nil and (t.nivel <= 1 or reclamado(p, t.nivel))
+end
+function Progreso.tieneEstela(plr, id)
+	local e = D.ESTELA_ID[id]
+	return e ~= nil and reclamado(de(plr), e.nivel)
+end
+
+local function secuenciaEstela(e)
+	if e.arcoiris then
+		local c = {}
+		for i, h in { 0, 0.15, 0.33, 0.5, 0.66, 0.83 } do
+			table.insert(c, ColorSequenceKeypoint.new((i - 1) / 5, Color3.fromHSV(h, 0.8, 1)))
+		end
+		return ColorSequence.new(c)
+	end
+	return ColorSequence.new(Color3.fromHex(e.c1), Color3.fromHex(e.c2))
+end
+
+-- Título encima de la cabeza y estela en el personaje
+function Progreso.aplicar(plr)
+	local p = datos[plr]
+	if not p then
+		return
+	end
+	local t = D.TITULO_ID[p.titulo] or D.TITULOS[1]
+	plr:SetAttribute("Titulo", t.n)
+	plr:SetAttribute("TituloCol", t.col)
+	plr:SetAttribute("NivelCamino", p.nivel)
+	local ch = plr.Character
+	if not ch then
+		return
+	end
+	local cab = ch:FindFirstChild("Head")
+	if cab then
+		local g = cab:FindFirstChild("TituloJugador")
+		if not g then
+			g = Instance.new("BillboardGui")
+			g.Name = "TituloJugador"
+			g.Size = UDim2.fromOffset(180, 20)
+			g.StudsOffset = Vector3.new(0, 2.6, 0)
+			g.MaxDistance = 80
+			g.LightInfluence = 0
+			local l = Instance.new("TextLabel")
+			l.Name = "Texto"
+			l.BackgroundTransparency = 1
+			l.Size = UDim2.fromScale(1, 1)
+			l.Font = Enum.Font.GothamBlack
+			l.TextScaled = true
+			l.TextStrokeTransparency = 0.3
+			l.Parent = g
+			g.Parent = cab
+		end
+		local l = g:FindFirstChild("Texto")
+		if l then
+			l.Text = ("%s · Nv %d"):format(t.n, p.nivel)
+			l.TextColor3 = Color3.fromHex(t.col)
+		end
+		-- En Bed Wars ya está el cartel del equipo
+		g.Enabled = not plr:GetAttribute("BedWars")
+	end
+	local raiz = ch:FindFirstChild("HumanoidRootPart")
+	if raiz then
+		local tr = raiz:FindFirstChild("EstelaBlockverse")
+		local e = p.estela and D.ESTELA_ID[p.estela]
+		if not e or not Progreso.tieneEstela(plr, e.id) then
+			if tr then
+				tr:Destroy()
+			end
+		else
+			if not tr then
+				local a0 = Instance.new("Attachment")
+				a0.Name = "EstelaA"
+				a0.Position = Vector3.new(0, 0.9, 0)
+				a0.Parent = raiz
+				local a1 = Instance.new("Attachment")
+				a1.Name = "EstelaB"
+				a1.Position = Vector3.new(0, -0.9, 0)
+				a1.Parent = raiz
+				tr = Instance.new("Trail")
+				tr.Name = "EstelaBlockverse"
+				tr.Attachment0 = a0
+				tr.Attachment1 = a1
+				tr.Lifetime = 0.45
+				tr.LightEmission = 0.6
+				tr.FaceCamera = true
+				tr.Transparency = NumberSequence.new(0.15, 1)
+				tr.Parent = raiz
+			end
+			pcall(function()
+				tr.Color = secuenciaEstela(e)
+			end)
+		end
+	end
+end
+
+------------------------------------------------------------------
+-- Experiencia, misiones y avisos
+------------------------------------------------------------------
+local function pendientes(plr)
+	local p = de(plr)
+	local n = 0
+	for k = 1, p.nivel do
+		if not reclamado(p, k) and k > 1 then
+			n += 1
+		end
+	end
+	for _, lista in { p.dia.m, p.sem.m } do
+		for _, m in lista do
+			local def = DIA_ID[m.id] or SEM_ID[m.id]
+			if def and m.prog >= def.meta and not m.cobrada then
+				n += 1
+			end
+		end
+	end
+	if Progreso.giros(plr) > 0 then
+		n += 1
+	end
+	return n
+end
+Progreso.pendientes = pendientes
+
+local function avisarPendientes(plr)
+	ctx.Estado:FireClient(plr, "progresoPendientes", pendientes(plr))
+end
+
+function Progreso.ganarXP(plr, n)
+	local p = de(plr)
+	if n <= 0 then
+		return
+	end
+	n = math.floor(n * (Progreso.esVIP(plr) and 1.25 or 1) + 0.5)
+	p.total += n
+	if p.nivel >= D.NIVEL_MAX then
+		return
+	end
+	p.xp += n
+	local subio = false
+	while p.nivel < D.NIVEL_MAX and p.xp >= D.xpNivel(p.nivel) do
+		p.xp -= D.xpNivel(p.nivel)
+		p.nivel += 1
+		subio = true
+	end
+	if p.nivel >= D.NIVEL_MAX then
+		p.xp = 0
+	end
+	if subio then
+		local r = D.RECOMPENSAS[p.nivel]
+		ctx.Estado:FireClient(plr, "progresoAviso", { tipo = "nivel", nivel = p.nivel, texto = r and r.texto or "" })
+		Progreso.aplicar(plr)
+		avisarPendientes(plr)
+	end
+	guardar(plr)
+end
+
+-- Algo que cuenta para las misiones (romper, monstruo, partidaBW…)
+function Progreso.evento(plr, ev, n)
+	if not plr or not plr.Parent or not datos[plr] then
+		return
+	end
+	n = n or 1
+	local p = de(plr)
+	for _, par in { { p.dia.m, DIA_ID }, { p.sem.m, SEM_ID } } do
+		for _, m in par[1] do
+			local def = par[2][m.id]
+			if def and def.ev == ev and m.prog < def.meta then
+				m.prog = math.min(def.meta, m.prog + n)
+				if m.prog >= def.meta then
+					ctx.Estado:FireClient(plr, "progresoAviso", { tipo = "mision", texto = def.t, xp = def.xp })
+					avisarPendientes(plr)
+				end
+				guardar(plr)
+			end
+		end
+	end
+	if XP_EVENTO[ev] then
+		Progreso.ganarXP(plr, XP_EVENTO[ev] * n)
+	end
+end
+
+------------------------------------------------------------------
+-- Acciones del jugador
+------------------------------------------------------------------
+function Progreso.cobrarMision(plr, cual, i)
+	local p = de(plr)
+	local lista = cual == "sem" and p.sem.m or p.dia.m
+	local m = type(i) == "number" and lista[i]
+	local def = m and (cual == "sem" and SEM_ID[m.id] or DIA_ID[m.id])
+	if not def or m.cobrada or m.prog < def.meta then
+		return false
+	end
+	m.cobrada = true
+	Progreso.ganarXP(plr, def.xp)
+	guardar(plr)
+	return true
+end
+
+local function darRecompensa(plr, r)
+	if r.tipo == "monedas" then
+		Perfil.de(plr).monedas += r.valor
+		Perfil.guardar(plr)
+	elseif r.tipo == "xp" then
+		Progreso.ganarXP(plr, r.valor)
+	end
+end
+
+function Progreso.reclamar(plr, n)
+	local p = de(plr)
+	if type(n) ~= "number" or n < 2 or n > p.nivel or reclamado(p, n) then
+		return false
+	end
+	local r = D.RECOMPENSAS[n]
+	p.reclamados[tostring(n)] = true
+	darRecompensa(plr, r)
+	-- Lo nuevo se equipa solo si aún llevabas lo de serie
+	if r.tipo == "titulo" and p.titulo == "novato" then
+		p.titulo = r.valor
+	elseif r.tipo == "estela" and not p.estela then
+		p.estela = r.valor
+	end
+	Progreso.aplicar(plr)
+	guardar(plr)
+	return true
+end
+
+function Progreso.reclamarTodo(plr)
+	local p = de(plr)
+	local n = 0
+	for k = 2, p.nivel do
+		if Progreso.reclamar(plr, k) then
+			n += 1
+		end
+	end
+	return n
+end
+
+function Progreso.equipar(plr, tipo, id)
+	local p = de(plr)
+	if tipo == "titulo" and type(id) == "string" and Progreso.tieneTitulo(plr, id) then
+		p.titulo = id
+	elseif tipo == "estela" and (id == nil or id == "") then
+		p.estela = nil
+	elseif tipo == "estela" and type(id) == "string" and Progreso.tieneEstela(plr, id) then
+		p.estela = id
+	else
+		return false
+	end
+	Progreso.aplicar(plr)
+	guardar(plr)
+	return true
+end
+
+-- Giros de ruleta que quedan hoy (1, o 2 con VIP)
+function Progreso.giros(plr)
+	local p = de(plr)
+	local maxG = Progreso.esVIP(plr) and 2 or 1
+	if p.ruleta.dia ~= hoy() then
+		return maxG
+	end
+	return math.max(0, maxG - (p.ruleta.usos or 0))
+end
+
+function Progreso.girar(plr)
+	if Progreso.giros(plr) <= 0 then
+		return nil
+	end
+	local p = de(plr)
+	if p.ruleta.dia ~= hoy() then
+		p.ruleta = { dia = hoy(), usos = 0 }
+	end
+	p.ruleta.usos += 1
+	local total = 0
+	for _, r in D.RULETA do
+		total += r.p
+	end
+	local x = math.random() * total
+	local elegido = #D.RULETA
+	for i, r in D.RULETA do
+		x -= r.p
+		if x <= 0 then
+			elegido = i
+			break
+		end
+	end
+	darRecompensa(plr, D.RULETA[elegido])
+	guardar(plr)
+	return elegido
+end
+
+------------------------------------------------------------------
+-- Ranking
+------------------------------------------------------------------
+local function actualizarRanking()
+	if not ordenado or os.clock() - ranking.t < 120 then
+		return
+	end
+	ranking.t = os.clock()
+	task.spawn(function()
+		local ok, pagina = pcall(function()
+			return ordenado:GetSortedAsync(false, 10):GetCurrentPage()
+		end)
+		if not ok or type(pagina) ~= "table" then
+			return
+		end
+		local lista = {}
+		for _, e in pagina do
+			local id = tonumber(e.key)
+			if id and not nombres[id] then
+				local okN, n = pcall(function()
+					return Players:GetNameFromUserIdAsync(id)
+				end)
+				nombres[id] = okN and n or ("Jugador " .. tostring(id))
+			end
+			table.insert(lista, { nombre = nombres[id] or "?", total = e.value, id = id })
+		end
+		ranking.lista = lista
+	end)
+end
+
+local function nivelDeTotal(total)
+	local n, resto = 1, total
+	while n < D.NIVEL_MAX and resto >= D.xpNivel(n) do
+		resto -= D.xpNivel(n)
+		n += 1
+	end
+	return n
+end
+
+------------------------------------------------------------------
+-- Todo lo que necesita la ventana
+------------------------------------------------------------------
+function Progreso.datos(plr)
+	local p = de(plr)
+	actualizarRanking()
+	local function misiones(lista, defs)
+		local t = {}
+		for i, m in lista do
+			local d = defs[m.id]
+			if d then
+				table.insert(t, { i = i, t = d.t, prog = m.prog, meta = d.meta, xp = d.xp, cobrada = m.cobrada })
+			end
+		end
+		return t
+	end
+	local camino = {}
+	for n = 1, D.NIVEL_MAX do
+		local r = D.RECOMPENSAS[n]
+		camino[n] = { texto = r.texto, tipo = r.tipo, valor = r.valor, grande = r.grande, cobrado = n == 1 or reclamado(p, n) }
+	end
+	local titulos, estelas = {}, {}
+	for _, t in D.TITULOS do
+		table.insert(titulos, { id = t.id, n = t.n, col = t.col, nivel = t.nivel, tiene = Progreso.tieneTitulo(plr, t.id), puesto = p.titulo == t.id })
+	end
+	for _, e in D.ESTELAS do
+		table.insert(estelas, { id = e.id, n = e.n, c1 = e.c1, c2 = e.c2, nivel = e.nivel, tiene = Progreso.tieneEstela(plr, e.id), puesto = p.estela == e.id })
+	end
+	-- El ranking: los 10 primeros y tú (con los que están en el servidor por si aún no se ha leído)
+	local top = {}
+	for i, r in ranking.lista do
+		table.insert(top, { pos = i, nombre = r.nombre, total = r.total, nivel = nivelDeTotal(r.total), yo = r.id == plr.UserId })
+	end
+	if #top == 0 then
+		local aqui = {}
+		for o, po in datos do
+			table.insert(aqui, { nombre = o.Name, total = po.total, yo = o == plr })
+		end
+		table.sort(aqui, function(a, b)
+			return a.total > b.total
+		end)
+		for i, r in aqui do
+			if i <= 10 then
+				table.insert(top, { pos = i, nombre = r.nombre, total = r.total, nivel = nivelDeTotal(r.total), yo = r.yo })
+			end
+		end
+	end
+	local ahora = os.time()
+	return {
+		nivel = p.nivel, xp = p.xp, xpNec = D.xpNivel(p.nivel), total = p.total, max = D.NIVEL_MAX, camino = camino,
+		diarias = misiones(p.dia.m, DIA_ID), semanales = misiones(p.sem.m, SEM_ID),
+		finDia = 86400 - ahora % 86400, finSemana = (7 - ((hoy() + 3) % 7)) * 86400 - ahora % 86400,
+		giros = Progreso.giros(plr), vip = Progreso.esVIP(plr), ruleta = D.RULETA,
+		titulos = titulos, estelas = estelas, ranking = top, pendientes = pendientes(plr),
+	}
+end
+
+function Progreso.enviar(plr, extra)
+	ctx.Estado:FireClient(plr, "progreso", Progreso.datos(plr), extra)
+end
+
+-- Órdenes de la ventana
+function Progreso.comando(plr, cmd, a, b)
+	if not datos[plr] then
+		return
+	end
+	local extra = nil
+	if cmd == "reclamar" then
+		if Progreso.reclamar(plr, a) then
+			extra = { reclamado = a }
+			ctx.Estado:FireClient(plr, "sonido", "nivel")
+		end
+	elseif cmd == "reclamarTodo" then
+		local n = Progreso.reclamarTodo(plr)
+		if n > 0 then
+			extra = { reclamadoTodo = n }
+			ctx.Estado:FireClient(plr, "sonido", "nivel")
+		end
+	elseif cmd == "cobrar" then
+		if Progreso.cobrarMision(plr, a, b) then
+			ctx.Estado:FireClient(plr, "sonido", "xp")
+		end
+	elseif cmd == "equipar" then
+		Progreso.equipar(plr, a, b)
+	elseif cmd == "girar" then
+		local i = Progreso.girar(plr)
+		if i then
+			extra = { ruleta = i }
+		end
+	end
+	Progreso.enviar(plr, extra)
+	avisarPendientes(plr)
+	ctx.Estado:FireClient(plr, "perfil", ctx.perfilMenu(plr))
+end
+
+function Progreso.iniciar(c)
+	ctx = c
+	pcall(function()
+		ordenado = DataStoreService:GetOrderedDataStore("Blockverse_Ranking")
+	end)
+	Players.PlayerAdded:Connect(function(plr)
+		plr.CharacterAdded:Connect(function(ch)
+			ch:WaitForChild("HumanoidRootPart", 10)
+			ch:WaitForChild("Head", 10)
+			Progreso.aplicar(plr)
+		end)
+		plr:GetAttributeChangedSignal("BedWars"):Connect(function()
+			Progreso.aplicar(plr)
+		end)
+		Progreso.cargar(plr)
+		avisarPendientes(plr)
+	end)
+	Players.PlayerRemoving:Connect(function(plr)
+		guardarYa(plr)
+		datos[plr] = nil
+		sinGuardar[plr] = nil
+	end)
+	game:BindToClose(function()
+		for plr in datos do
+			guardarYa(plr)
+		end
+	end)
+end
+
+return Progreso
+]]></ProtectedString></Properties></Item>
+<Item class="ModuleScript" referent="RBX00000032"><Properties><string name="Name">Redstone</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Redstone (servidor)
 	Traducción de redstone.js del juego web:
 	· El polvo lleva energía (0-15, pierde 1 por bloque, sube y baja
@@ -23135,7 +23910,7 @@ end
 
 return Redstone
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX00000031"><Properties><string name="Name">Simulacion</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX00000033"><Properties><string name="Name">Simulacion</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Simulación del mundo (servidor)
 	Traducción de simulacion.js: líquidos que fluyen (agua y lava,
 	obsidiana y roca al juntarse), arena y grava que caen, plantas y
@@ -23746,7 +24521,7 @@ end
 
 return Sim
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX00000032"><Properties><string name="Name">Tienda</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX00000034"><Properties><string name="Name">Tienda</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Tienda con Robux (servidor)
 	· Pases (VIP, Monedas x2, Todos los efectos): se miran al entrar y al comprarlos.
 	· Productos (monedas y cosas de cada modo): se entregan en ProcessReceipt, que Roblox
@@ -24092,7 +24867,7 @@ return Tienda
 ]]></ProtectedString></Properties></Item>
 </Item>
 </Item>
-<Item class="StarterPlayer" referent="RBX00000044"><Properties><string name="Name">StarterPlayer</string><float name="CharacterWalkSpeed">14</float><bool name="CharacterUseJumpPower">false</bool><float name="CharacterJumpHeight">4.6</float></Properties><Item class="StarterPlayerScripts" referent="RBX00000042"><Properties><string name="Name">StarterPlayerScripts</string></Properties><Item class="LocalScript" referent="RBX00000040"><Properties><string name="Name">Cliente</string><bool name="Disabled">false</bool><ProtectedString name="Source"><![CDATA[--[[
+<Item class="StarterPlayer" referent="RBX00000047"><Properties><string name="Name">StarterPlayer</string><float name="CharacterWalkSpeed">14</float><bool name="CharacterUseJumpPower">false</bool><float name="CharacterJumpHeight">4.6</float></Properties><Item class="StarterPlayerScripts" referent="RBX00000045"><Properties><string name="Name">StarterPlayerScripts</string></Properties><Item class="LocalScript" referent="RBX00000043"><Properties><string name="Name">Cliente</string><bool name="Disabled">false</bool><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Script del cliente
 	· Genera y dibuja el mundo en este equipo (la misma semilla que el
 	  servidor) y aplica los cambios que llegan.
@@ -24123,6 +24898,7 @@ local Render = require(script:WaitForChild("Render"))
 local MobsVista = require(script:WaitForChild("MobsVista"))
 local EntidadesVista = require(script:WaitForChild("EntidadesVista"))
 local TiendaVista = require(script:WaitForChild("TiendaVista"))
+local ProgresoVista = require(script:WaitForChild("ProgresoVista"))
 local ClimaVista = require(script:WaitForChild("ClimaVista"))
 local DimensionVista = require(script:WaitForChild("DimensionVista"))
 local Generador = require(Comp:WaitForChild("Generador"))
@@ -24292,6 +25068,24 @@ Interfaz.alAbrirTienda = function(pestana)
 	TiendaVista.abrir(pestana)
 end
 TiendaVista.iniciar()
+-- Progreso: Camino de Blockverse, misiones, ruleta, colección y ranking
+ProgresoVista.enviar = enviar
+ProgresoVista.alSonido = function(nombre, tono)
+	sonido(nombre, nil, tono)
+end
+ProgresoVista.alVisible = function(si)
+	Interfaz.progresoVisible = si
+end
+ProgresoVista.enMenu = function()
+	return Interfaz.menuVisible() or Interfaz.abierto() or TiendaVista.visible()
+end
+ProgresoVista.alPendientes = function(n)
+	Interfaz.pendientesProgreso(n)
+end
+Interfaz.alAbrirProgreso = function(pestana)
+	ProgresoVista.abrir(pestana)
+end
+ProgresoVista.iniciar()
 Interfaz.carga(0.5, "Generando el mundo…")
 local md = MundoDatos.new(semilla)
 est.md = md
@@ -24708,6 +25502,10 @@ UserInputService.InputBegan:Connect(function(input, procesado)
 			TiendaVista.cerrar()
 			return
 		end
+		if k == Enum.KeyCode.Escape and ProgresoVista.visible() then
+			ProgresoVista.cerrar()
+			return
+		end
 		if k == Enum.KeyCode.Escape and Interfaz.abierto() then
 			Interfaz.cerrar()
 			return
@@ -24725,6 +25523,13 @@ UserInputService.InputBegan:Connect(function(input, procesado)
 			enviar("modoCmd", "habilidad")
 		elseif leyendas and (k == Enum.KeyCode.G or k == Enum.KeyCode.R or (k == Enum.KeyCode.F and not creativo())) then
 			enviar("modoCmd", k == Enum.KeyCode.G and "cosechar" or (k == Enum.KeyCode.R and "atacar" or "seguir"))
+		elseif k == Enum.KeyCode.P and not Interfaz.abierto() and not TiendaVista.visible() then
+			-- Progreso (Camino, misiones, ruleta, colección y ranking)
+			if ProgresoVista.visible() then
+				ProgresoVista.cerrar()
+			else
+				ProgresoVista.abrir(nil)
+			end
 		elseif k == Enum.KeyCode.M and not Interfaz.abierto() then
 			-- Menú de modos de juego
 			Interfaz.menu(not Interfaz.menuVisible())
@@ -25257,6 +26062,12 @@ Estado.OnClientEvent:Connect(function(tipo, a, b, c)
 		Interfaz.oneblock(a)
 	elseif tipo == "sonido" then
 		sonido(a, b)
+	elseif tipo == "progreso" then
+		ProgresoVista.datos(a, b)
+	elseif tipo == "progresoAviso" then
+		ProgresoVista.aviso(a)
+	elseif tipo == "progresoPendientes" then
+		ProgresoVista.pendientes(a)
 	elseif tipo == "tiendaRobux" then
 		TiendaVista.datos(a, b)
 	elseif tipo == "compraHecha" then
@@ -25755,7 +26566,7 @@ RunService.RenderStepped:Connect(function(dt)
 			:format(nomDim, x, y, zl, x // 16, zl // 16, nomBio, Lighting.ClockTime, fps, Render.modo, semilla))
 	end
 end)
-]]></ProtectedString></Properties><Item class="ModuleScript" referent="RBX00000035"><Properties><string name="Name">ClimaVista</string><ProtectedString name="Source"><![CDATA[--[[
+]]></ProtectedString></Properties><Item class="ModuleScript" referent="RBX00000037"><Properties><string name="Name">ClimaVista</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Clima (cliente)
 	· Lluvia: gotas que caen alrededor de la cámara y salpican al llegar al suelo
 	  (no pasan los techos). En los biomas fríos nieva y en los secos (desierto,
@@ -26063,7 +26874,7 @@ end
 
 return ClimaVista
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX00000036"><Properties><string name="Name">DimensionVista</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX00000038"><Properties><string name="Name">DimensionVista</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · El Nether y el End (cliente)
 	· Ambiente de cada dimensión como en el juego web: niebla roja (del
 	  color de cada bioma del Nether) y sin cielo en el Nether; niebla
@@ -26483,7 +27294,7 @@ end
 
 return DV
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX00000037"><Properties><string name="Name">EntidadesVista</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX00000039"><Properties><string name="Name">EntidadesVista</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Entidades (cliente)
 	Dibuja lo que hay en workspace.Entidades como en el juego web:
 	· Objetos tirados: su modelo 3D (cubito con texturas o el objeto con volumen)
@@ -26770,7 +27581,7 @@ end
 
 return EntidadesVista
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX00000038"><Properties><string name="Name">Iconos</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX0000003A"><Properties><string name="Name">Iconos</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Iconos (cliente)
 	· Los 778 iconos del juego web (cubos isométricos de 48 px para los
 	  bloques y dibujos de 16 px para los objetos) en dos hojas de 1024 px.
@@ -27063,7 +27874,7 @@ end
 
 return Iconos
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX00000039"><Properties><string name="Name">Imagenes</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX0000003B"><Properties><string name="Name">Imagenes</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Imágenes (cliente)
 	Crea imágenes editables (EditableImage) a partir de los píxeles del
 	juego web: atlas de texturas, iconos de objetos, texturas de criaturas
@@ -27159,7 +27970,7 @@ end
 
 return Imagenes
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX0000003A"><Properties><string name="Name">Interfaz</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX0000003C"><Properties><string name="Name">Interfaz</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Interfaz (cliente)
 	Con el aspecto del juego web (paneles grises con relieve, casillas
 	hundidas y los iconos del juego):
@@ -28461,8 +29272,12 @@ function Interfaz.perfil(d)
 	perfilNivel.TextColor3 = ok and c or Color3.fromRGB(170, 170, 170)
 	barraNivelF.Size = UDim2.fromScale(math.clamp((d.xp or 0) / 500, 0, 1), 1)
 	perfilMonedas.Text = tostring(d.monedas or 0)
-	perfilVictorias.Text = ("Bed Wars: %d %s · %d %s"):format(d.victorias or 0, d.victorias == 1 and "victoria" or "victorias", d.partidas or 0,
-		d.partidas == 1 and "partida" or "partidas")
+	perfilVictorias.Text = d.titulo and ("%s · Camino nivel %d"):format(d.titulo, d.camino or 1)
+		or ("Bed Wars: %d %s · %d %s"):format(d.victorias or 0, d.victorias == 1 and "victoria" or "victorias", d.partidas or 0, d.partidas == 1 and "partida" or "partidas")
+	if d.tituloCol then
+		local okC, cc = pcall(Color3.fromHex, d.tituloCol)
+		perfilVictorias.TextColor3 = okC and cc or perfilVictorias.TextColor3
+	end
 	diariaLista = d.diaria == true
 	if diariaLista then
 		botonDiaria.BackgroundColor3 = Color3.fromRGB(60, 170, 70)
@@ -28505,6 +29320,44 @@ local botonVolver = tarjeta(filaMenu, "Volver al juego", nil, nil, 4, function()
 	end
 end, UDim2.fromOffset(180, 46))
 botonVolver.Visible = false
+-- Botón morado de PROGRESO (debajo del de la tienda) con el número de cosas por cobrar
+Interfaz.alAbrirProgreso = function(pestana) end
+Interfaz.pendientesProgreso = function(n) end
+do
+	local b = nuevo("TextButton", { Name = "BotonProgreso", AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -16, 0, 92), Size = UDim2.fromOffset(210, 56),
+		BackgroundColor3 = Color3.fromRGB(130, 80, 240), BorderSizePixel = 0, Text = "", AutoButtonColor = false, ZIndex = 12 }, menu)
+	nuevo("UICorner", { CornerRadius = UDim.new(0, 10) }, b)
+	nuevo("UIStroke", { Color = Color3.fromRGB(40, 10, 100), Thickness = 3, ApplyStrokeMode = Enum.ApplyStrokeMode.Border }, b)
+	nuevo("UIGradient", { Rotation = 0, Color = ColorSequence.new(Color3.fromRGB(150, 90, 255), Color3.fromRGB(70, 140, 255)) }, b)
+	local ic = nuevo("ImageLabel", { BackgroundTransparency = 1, Position = UDim2.fromOffset(10, 8), Size = UDim2.fromOffset(40, 40),
+		ResampleMode = Enum.ResamplerMode.Pixelated, ZIndex = 13 }, b)
+	iconosMenu[ic] = idDe("esmeralda")
+	texto({ Position = UDim2.fromOffset(58, 6), Size = UDim2.new(1, -64, 0, 26), Text = "PROGRESO", TextSize = 22, Font = FUENTE_N,
+		TextXAlignment = Enum.TextXAlignment.Left, TextStrokeTransparency = 0.2, ZIndex = 13 }, b)
+	texto({ Position = UDim2.fromOffset(58, 32), Size = UDim2.new(1, -64, 0, 16), Text = "Camino · Misiones · Ruleta", TextSize = 12,
+		TextXAlignment = Enum.TextXAlignment.Left, TextColor3 = Color3.fromRGB(225, 220, 255), TextStrokeTransparency = 1, ZIndex = 13 }, b)
+	local av = nuevo("Frame", { AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, 8, 0, -8), Size = UDim2.fromOffset(26, 26),
+		BackgroundColor3 = Color3.fromRGB(230, 50, 60), BorderSizePixel = 0, Visible = false, ZIndex = 14 }, b)
+	nuevo("UICorner", { CornerRadius = UDim.new(0, 13) }, av)
+	nuevo("UIStroke", { Color = Color3.new(1, 1, 1), Thickness = 2 }, av)
+	local avT = texto({ Size = UDim2.fromScale(1, 1), Text = "", TextSize = 14, Font = FUENTE_N, ZIndex = 15 }, av)
+	local esc = nuevo("UIScale", {}, b)
+	b.MouseEnter:Connect(function()
+		TweenService:Create(esc, TweenInfo.new(0.15, Enum.EasingStyle.Back), { Scale = 1.08 }):Play()
+		Interfaz.alSonido("paso", 1.8)
+	end)
+	b.MouseLeave:Connect(function()
+		TweenService:Create(esc, TweenInfo.new(0.15), { Scale = 1 }):Play()
+	end)
+	b.Activated:Connect(function()
+		Interfaz.alSonido("nivel", 1.6)
+		Interfaz.alAbrirProgreso("camino")
+	end)
+	Interfaz.pendientesProgreso = function(n)
+		av.Visible = n > 0
+		avT.Text = tostring(n)
+	end
+end
 -- Botón dorado de la tienda (arriba a la derecha), que late para que se vea
 Interfaz.alAbrirTienda = function(pestana) end
 do
@@ -28646,7 +29499,7 @@ local CONTROLES = {
 	{ "WASD", "Moverse" }, { "Espacio", "Saltar (doble: volar en creativo)" }, { "Ctrl / Mayús", "Correr / agacharse" },
 	{ "Clic izquierdo", "Picar y atacar" }, { "Clic derecho", "Usar, poner, comer, tensar el arco" }, { "1-9 y rueda", "Elegir objeto" },
 	{ "E", "Inventario" }, { "Q", "Tirar (Ctrl: toda la pila)" }, { "V", "Primera o tercera persona" }, { "F", "Volar (creativo)" },
-	{ "G", "Habilidad del kit (Bed Wars)" }, { "M", "Este menú" }, { "F3", "Información" },
+	{ "G", "Habilidad del kit (Bed Wars)" }, { "P", "Progreso: camino, misiones y ruleta" }, { "M", "Este menú" }, { "F3", "Información" },
 }
 for i, c in CONTROLES do
 	local fila = nuevo("Frame", { BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, 26), LayoutOrder = i, ZIndex = 22 }, listaControles)
@@ -29318,7 +30171,7 @@ end
 
 function Interfaz.menuVisible()
 	return menu.Visible or carga.Visible or muerte.Visible or ventanaAjustes.Visible or ventanaControles.Visible or ventanaLogros.Visible
-		or Interfaz.tiendaVisible == true
+		or Interfaz.tiendaVisible == true or Interfaz.progresoVisible == true
 end
 
 ------------------------------------------------------------------
@@ -29972,7 +30825,7 @@ end
 
 return Interfaz
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX0000003B"><Properties><string name="Name">Luz</string><ProtectedString name="Source"><![CDATA[--!native
+<Item class="ModuleScript" referent="RBX0000003D"><Properties><string name="Name">Luz</string><ProtectedString name="Source"><![CDATA[--!native
 --!optimize 2
 --[[
 	Blockverse para Roblox · Luz (cliente)
@@ -30229,7 +31082,7 @@ end
 
 return Luz
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX0000003C"><Properties><string name="Name">MobsVista</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX0000003E"><Properties><string name="Name">MobsVista</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Criaturas (cliente)
 	Viste las piezas invisibles de workspace.Criaturas con los modelos del
 	juego web: la misma geometría y las mismas texturas pintadas (exportadas
@@ -30932,7 +31785,7 @@ end
 
 return MobsVista
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX0000003D"><Properties><string name="Name">Modelos3D</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX0000003F"><Properties><string name="Name">Modelos3D</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Modelos 3D de los objetos (cliente)
 	· Los bloques son cubos (o losas, o sus cajas) con las mismas texturas del mundo.
 	· Los demás objetos (espadas, picos, comida, flores…) se hacen con los píxeles de
@@ -31405,7 +32258,708 @@ end
 
 return Modelos
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX0000003E"><Properties><string name="Name">Render</string><ProtectedString name="Source"><![CDATA[--!native
+<Item class="ModuleScript" referent="RBX00000040"><Properties><string name="Name">ProgresoVista</string><ProtectedString name="Source"><![CDATA[--[[
+	Blockverse para Roblox · Progreso (cliente)
+	Ventana PROGRESO (tecla P o botón del menú) con cinco pestañas:
+	· Camino: los 50 niveles en fila; lo que ya puedes cobrar brilla.
+	· Misiones: diarias y semanales con su barra y cuánto falta para que cambien.
+	· Ruleta: un giro gratis al día (dos con VIP); la tira de premios se para en lo que toca.
+	  Las probabilidades se ven al lado.
+	· Colección: títulos y estelas; pulsa para ponértelos.
+	· Ranking: los 10 con más experiencia.
+	Además: avisos de misión cumplida y de nivel nuevo, y un botón con el número de cosas
+	por cobrar mientras juegas.
+]]
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local Comp = ReplicatedStorage:WaitForChild("Blockverse")
+local Registro = require(Comp:WaitForChild("Registro"))
+local Iconos = require(script.Parent:WaitForChild("Iconos"))
+
+local jugador = Players.LocalPlayer
+local ProgresoVista = {}
+ProgresoVista.enviar = function(...) end
+ProgresoVista.alSonido = function(nombre, tono) end
+ProgresoVista.alVisible = function(si) end
+ProgresoVista.enMenu = function()
+	return false
+end
+
+local FUENTE = Enum.Font.GothamBold
+local FUENTE_N = Enum.Font.GothamBlack
+local MORADO = Color3.fromRGB(150, 90, 255)
+local VERDE = Color3.fromRGB(60, 180, 80)
+local ORO = Color3.fromRGB(255, 200, 60)
+local FONDO = Color3.fromRGB(24, 24, 38)
+local TARJETA = Color3.fromRGB(40, 40, 60)
+local GRIS = Color3.fromRGB(70, 72, 90)
+
+local function nuevo(clase, props, padre)
+	local o = Instance.new(clase)
+	for k, v in props do
+		o[k] = v
+	end
+	if padre then
+		o.Parent = padre
+	end
+	return o
+end
+local function texto(props, padre)
+	local t = nuevo("TextLabel", { BackgroundTransparency = 1, Font = FUENTE, TextColor3 = Color3.new(1, 1, 1), TextSize = 16, TextStrokeTransparency = 0.6 }, padre)
+	for k, v in props do
+		t[k] = v
+	end
+	return t
+end
+local function esquina(o, r)
+	nuevo("UICorner", { CornerRadius = UDim.new(0, r or 8) }, o)
+end
+local function hex(c, def)
+	local ok, v = pcall(Color3.fromHex, c or "")
+	return ok and v or def
+end
+local function limpiar(f)
+	for _, h in f:GetChildren() do
+		if h:IsA("GuiObject") then
+			h:Destroy()
+		end
+	end
+end
+local function idc(k)
+	return Registro.B[k] or Registro.I[k]
+end
+local function reloj(seg)
+	seg = math.max(0, math.floor(seg or 0))
+	if seg >= 86400 then
+		return ("%dd %02dh"):format(seg // 86400, (seg % 86400) // 3600)
+	end
+	return ("%02d:%02d"):format(seg // 3600, (seg % 3600) // 60)
+end
+local function boton(padre, txt, color, props, alClic)
+	local b = nuevo("TextButton", { BackgroundColor3 = color, BorderSizePixel = 0, Text = txt, Font = FUENTE_N, TextSize = 15, TextColor3 = Color3.new(1, 1, 1),
+		TextStrokeTransparency = 0.5, AutoButtonColor = alClic ~= nil }, padre)
+	for k, v in props do
+		b[k] = v
+	end
+	esquina(b, 8)
+	if alClic then
+		local esc = nuevo("UIScale", {}, b)
+		b.Activated:Connect(function()
+			esc.Scale = 0.92
+			TweenService:Create(esc, TweenInfo.new(0.2, Enum.EasingStyle.Back), { Scale = 1 }):Play()
+			alClic()
+		end)
+	end
+	return b
+end
+
+------------------------------------------------------------------
+-- Ventana
+------------------------------------------------------------------
+local gui = nuevo("ScreenGui", { Name = "Progreso", ResetOnSpawn = false, IgnoreGuiInset = true, DisplayOrder = 29, ZIndexBehavior = Enum.ZIndexBehavior.Sibling })
+local velo = nuevo("TextButton", { BackgroundColor3 = Color3.new(0, 0, 0), BackgroundTransparency = 0.35, BorderSizePixel = 0, Size = UDim2.fromScale(1, 1), Text = "",
+	AutoButtonColor = false, Modal = true, Visible = false }, gui)
+local ventana = nuevo("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.fromOffset(900, 570), BackgroundColor3 = FONDO,
+	BorderSizePixel = 0 }, velo)
+esquina(ventana, 14)
+nuevo("UIStroke", { Color = MORADO, Thickness = 3 }, ventana)
+local escVentana = nuevo("UIScale", {}, ventana)
+
+local cab = nuevo("Frame", { BackgroundColor3 = MORADO, BorderSizePixel = 0, Size = UDim2.new(1, 0, 0, 76) }, ventana)
+esquina(cab, 14)
+nuevo("UIGradient", { Rotation = 0, Color = ColorSequence.new(Color3.fromRGB(110, 60, 230), Color3.fromRGB(60, 140, 255)) }, cab)
+nuevo("Frame", { BackgroundColor3 = Color3.fromRGB(80, 100, 240), BorderSizePixel = 0, Position = UDim2.new(0, 0, 1, -14), Size = UDim2.new(1, 0, 0, 14) }, cab)
+-- Insignia con el nivel
+local insignia = nuevo("Frame", { Position = UDim2.fromOffset(14, 8), Size = UDim2.fromOffset(60, 60), BackgroundColor3 = ORO, BorderSizePixel = 0 }, cab)
+esquina(insignia, 30)
+nuevo("UIStroke", { Color = Color3.fromRGB(110, 60, 0), Thickness = 3 }, insignia)
+local insigniaT = texto({ Size = UDim2.fromScale(1, 1), Text = "1", TextSize = 28, Font = FUENTE_N, TextColor3 = Color3.fromRGB(80, 40, 0), TextStrokeTransparency = 1 }, insignia)
+texto({ Position = UDim2.fromOffset(86, 8), Size = UDim2.fromOffset(400, 30), Text = "CAMINO DE BLOCKVERSE", TextSize = 24, Font = FUENTE_N,
+	TextXAlignment = Enum.TextXAlignment.Left, TextStrokeTransparency = 0.3 }, cab)
+local barraF = nuevo("Frame", { Position = UDim2.fromOffset(86, 42), Size = UDim2.fromOffset(380, 18), BackgroundColor3 = Color3.fromRGB(20, 20, 40), BorderSizePixel = 0 }, cab)
+esquina(barraF, 9)
+local barra = nuevo("Frame", { Size = UDim2.fromScale(0, 1), BackgroundColor3 = Color3.fromRGB(120, 255, 120), BorderSizePixel = 0 }, barraF)
+esquina(barra, 9)
+nuevo("UIGradient", { Rotation = 90, Color = ColorSequence.new(Color3.fromRGB(200, 255, 160), Color3.fromRGB(60, 200, 80)) }, barra)
+local barraT = texto({ Size = UDim2.fromScale(1, 1), Text = "", TextSize = 12, Font = FUENTE_N, TextStrokeTransparency = 0.2 }, barraF)
+local cerrar = boton(cab, "✕", Color3.fromRGB(200, 60, 60), { AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -14, 0.5, 0), Size = UDim2.fromOffset(44, 44), TextSize = 22 },
+	function()
+		ProgresoVista.cerrar()
+	end)
+esquina(cerrar, 22)
+
+local PESTANAS = { { "camino", "Camino" }, { "misiones", "Misiones" }, { "ruleta", "Ruleta" }, { "coleccion", "Colección" }, { "ranking", "Ranking" } }
+local filaPest = nuevo("Frame", { BackgroundTransparency = 1, Position = UDim2.fromOffset(20, 86), Size = UDim2.new(1, -40, 0, 38) }, ventana)
+nuevo("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 8) }, filaPest)
+local botonesPest, avisosPest = {}, {}
+local cuerpo = nuevo("Frame", { BackgroundTransparency = 1, Position = UDim2.fromOffset(20, 134), Size = UDim2.new(1, -40, 1, -150), ClipsDescendants = true }, ventana)
+
+local datos, pestana = nil, "camino"
+local girando = false
+local pintar
+
+for i, p in PESTANAS do
+	local b = boton(filaPest, p[2], TARJETA, { Size = UDim2.fromOffset(150, 38), LayoutOrder = i }, function()
+		pestana = p[1]
+		ProgresoVista.alSonido("poner", 1.3)
+		pintar()
+	end)
+	esquina(b, 19)
+	local av = nuevo("Frame", { AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, 4, 0, -6), Size = UDim2.fromOffset(20, 20),
+		BackgroundColor3 = Color3.fromRGB(230, 50, 60), BorderSizePixel = 0, Visible = false, ZIndex = 3 }, b)
+	esquina(av, 10)
+	local avT = texto({ Size = UDim2.fromScale(1, 1), Text = "!", TextSize = 12, Font = FUENTE_N, ZIndex = 4 }, av)
+	botonesPest[p[1]] = b
+	avisosPest[p[1]] = { av, avT }
+end
+
+------------------------------------------------------------------
+-- Camino
+------------------------------------------------------------------
+local ICONO_TIPO = { monedas = "pepitaOro", titulo = "etiqueta", estela = "polvoBlaze" }
+
+local function pintarCamino()
+	local fila = nuevo("Frame", { BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, 50) }, cuerpo)
+	local porCobrar = 0
+	for n = 2, datos.nivel do
+		if not datos.camino[n].cobrado then
+			porCobrar += 1
+		end
+	end
+	texto({ Size = UDim2.new(1, -230, 1, 0), Text = datos.nivel >= datos.max and "¡Has completado el Camino!" or
+		("Juega a cualquier modo y cumple misiones para subir. Siguiente: %s"):format(datos.camino[math.min(datos.max, datos.nivel + 1)].texto),
+		TextSize = 14, TextWrapped = true, TextXAlignment = Enum.TextXAlignment.Left, TextColor3 = Color3.fromRGB(200, 200, 230), TextStrokeTransparency = 1 }, fila)
+	if porCobrar > 0 then
+		boton(fila, ("¡Cobrar todo (%d)!"):format(porCobrar), VERDE, { AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, 0, 0, 4), Size = UDim2.fromOffset(210, 42), TextSize = 17 },
+			function()
+				ProgresoVista.enviar("progresoCmd", "reclamarTodo")
+			end)
+	end
+	local tira = nuevo("ScrollingFrame", { BackgroundTransparency = 1, BorderSizePixel = 0, Position = UDim2.fromOffset(0, 60), Size = UDim2.new(1, 0, 1, -60),
+		ScrollBarThickness = 8, ScrollingDirection = Enum.ScrollingDirection.X, CanvasSize = UDim2.fromOffset(datos.max * 128 + 20, 0) }, cuerpo)
+	for n = 1, datos.max do
+		local c = datos.camino[n]
+		local alcanzado = n <= datos.nivel
+		local cobrable = alcanzado and not c.cobrado
+		local col = c.grande and ORO or (c.tipo == "titulo" and Color3.fromRGB(120, 200, 255) or (c.tipo == "estela" and Color3.fromRGB(255, 120, 220) or MORADO))
+		local f = nuevo("Frame", { Position = UDim2.fromOffset(10 + (n - 1) * 128, 10), Size = UDim2.fromOffset(118, 300), BorderSizePixel = 0,
+			BackgroundColor3 = alcanzado and TARJETA or Color3.fromRGB(30, 30, 44) }, tira)
+		esquina(f, 10)
+		local borde = nuevo("UIStroke", { Color = cobrable and Color3.fromRGB(120, 255, 120) or (alcanzado and col or GRIS), Thickness = cobrable and 3 or 2 }, f)
+		local cabN = nuevo("Frame", { Size = UDim2.new(1, 0, 0, 30), BackgroundColor3 = alcanzado and col or GRIS, BorderSizePixel = 0 }, f)
+		esquina(cabN, 10)
+		texto({ Size = UDim2.fromScale(1, 1), Text = "NIVEL " .. n, TextSize = 14, Font = FUENTE_N, TextStrokeTransparency = 0.4 }, cabN)
+		-- Icono del premio (las estelas, con sus colores)
+		local caja = nuevo("Frame", { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 44), Size = UDim2.fromOffset(76, 76), BorderSizePixel = 0,
+			BackgroundColor3 = col:Lerp(Color3.new(0, 0, 0), 0.6) }, f)
+		esquina(caja, 10)
+		if c.tipo == "estela" then
+			local e
+			for _, x in datos.estelas do
+				if x.id == c.valor then
+					e = x
+				end
+			end
+			if e then
+				local franja = nuevo("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.fromOffset(60, 18), BorderSizePixel = 0,
+					BackgroundColor3 = Color3.new(1, 1, 1), Rotation = -30 }, caja)
+				esquina(franja, 9)
+				nuevo("UIGradient", { Color = ColorSequence.new(hex(e.c1, Color3.new(1, 1, 1)), hex(e.c2, Color3.new(0, 0, 0))) }, franja)
+				franja.BackgroundColor3 = hex(e.c1, Color3.new(1, 1, 1))
+			end
+		else
+			local im = nuevo("ImageLabel", { BackgroundTransparency = 1, AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.fromOffset(52, 52),
+				ResampleMode = Enum.ResamplerMode.Pixelated, ImageTransparency = alcanzado and 0 or 0.5 }, caja)
+			Iconos.poner(im, idc(c.grande and "bloqueOro" or ICONO_TIPO[c.tipo] or "esmeralda"))
+		end
+		texto({ Position = UDim2.fromOffset(6, 128), Size = UDim2.new(1, -12, 0, 60), Text = c.texto, TextSize = 14, TextWrapped = true, Font = FUENTE_N,
+			TextColor3 = alcanzado and Color3.new(1, 1, 1) or Color3.fromRGB(140, 140, 160) }, f)
+		if n == 1 or c.cobrado then
+			texto({ AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -14), Size = UDim2.new(1, -12, 0, 30), Text = "✔ COBRADO", TextSize = 14, Font = FUENTE_N,
+				TextColor3 = Color3.fromRGB(120, 255, 120) }, f)
+		elseif cobrable then
+			local b = boton(f, "¡COBRAR!", VERDE, { AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -10), Size = UDim2.new(1, -16, 0, 40), TextSize = 16 }, function()
+				ProgresoVista.enviar("progresoCmd", "reclamar", n)
+			end)
+			nuevo("UIGradient", { Rotation = 90, Color = ColorSequence.new(Color3.new(1, 1, 1), Color3.fromRGB(170, 170, 170)) }, b)
+			-- Late para que se vea
+			local esc = nuevo("UIScale", {}, f)
+			task.spawn(function()
+				local t = 0
+				while f.Parent do
+					t += task.wait(0.05)
+					esc.Scale = 1 + math.sin(t * 5) * 0.025
+					borde.Transparency = 0.3 + math.sin(t * 5) * 0.3
+				end
+			end)
+		else
+			texto({ AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -14), Size = UDim2.new(1, -12, 0, 30), Text = "🔒 Nivel " .. n, TextSize = 13,
+				TextColor3 = Color3.fromRGB(140, 140, 160) }, f)
+		end
+	end
+	-- Se ve el nivel actual (o lo primero por cobrar)
+	local primero = datos.nivel
+	for n = 2, datos.nivel do
+		if not datos.camino[n].cobrado then
+			primero = n
+			break
+		end
+	end
+	tira.CanvasPosition = Vector2.new(math.max(0, (primero - 3) * 128), 0)
+end
+
+------------------------------------------------------------------
+-- Misiones
+------------------------------------------------------------------
+local function columnaMisiones(padre, titulo, lista, cual, fin, x)
+	local col = nuevo("Frame", { BackgroundTransparency = 1, Position = UDim2.new(x, x > 0 and 8 or 0, 0, 0), Size = UDim2.new(0.5, -8, 1, 0) }, padre)
+	texto({ Size = UDim2.new(1, 0, 0, 28), Text = titulo, TextSize = 20, Font = FUENTE_N, TextXAlignment = Enum.TextXAlignment.Left }, col)
+	texto({ Position = UDim2.fromOffset(0, 28), Size = UDim2.new(1, 0, 0, 18), Text = "Cambian en " .. reloj(fin), TextSize = 13,
+		TextXAlignment = Enum.TextXAlignment.Left, TextColor3 = Color3.fromRGB(180, 180, 210), TextStrokeTransparency = 1 }, col)
+	for k, m in lista do
+		local hecha = m.prog >= m.meta
+		local f = nuevo("Frame", { Position = UDim2.fromOffset(0, 56 + (k - 1) * 106), Size = UDim2.new(1, 0, 0, 96), BackgroundColor3 = TARJETA, BorderSizePixel = 0 }, col)
+		esquina(f, 10)
+		nuevo("UIStroke", { Color = (hecha and not m.cobrada) and Color3.fromRGB(120, 255, 120) or GRIS, Thickness = 2 }, f)
+		texto({ Position = UDim2.fromOffset(12, 8), Size = UDim2.new(1, -140, 0, 40), Text = m.t, TextSize = 16, Font = FUENTE_N, TextWrapped = true,
+			TextXAlignment = Enum.TextXAlignment.Left, TextYAlignment = Enum.TextYAlignment.Top }, f)
+		texto({ Position = UDim2.fromOffset(12, 48), Size = UDim2.fromOffset(200, 16), Text = ("+%d de experiencia"):format(m.xp), TextSize = 13,
+			TextXAlignment = Enum.TextXAlignment.Left, TextColor3 = Color3.fromRGB(150, 255, 150), TextStrokeTransparency = 1 }, f)
+		local bf = nuevo("Frame", { Position = UDim2.fromOffset(12, 70), Size = UDim2.new(1, -140, 0, 16), BackgroundColor3 = Color3.fromRGB(20, 20, 34), BorderSizePixel = 0 }, f)
+		esquina(bf, 8)
+		local b = nuevo("Frame", { Size = UDim2.fromScale(math.clamp(m.prog / m.meta, 0, 1), 1), BackgroundColor3 = hecha and VERDE or MORADO, BorderSizePixel = 0 }, bf)
+		esquina(b, 8)
+		texto({ Size = UDim2.fromScale(1, 1), Text = ("%d / %d"):format(m.prog, m.meta), TextSize = 11, Font = FUENTE_N, TextStrokeTransparency = 0.3 }, bf)
+		if m.cobrada then
+			texto({ AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -12, 0.5, 0), Size = UDim2.fromOffset(110, 40), Text = "✔ HECHA", TextSize = 15, Font = FUENTE_N,
+				TextColor3 = Color3.fromRGB(120, 255, 120) }, f)
+		elseif hecha then
+			boton(f, "¡Cobrar!", VERDE, { AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -12, 0.5, 0), Size = UDim2.fromOffset(110, 44), TextSize = 16 }, function()
+				ProgresoVista.enviar("progresoCmd", "cobrar", cual, m.i)
+			end)
+		else
+			texto({ AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -12, 0.5, 0), Size = UDim2.fromOffset(110, 40), Text = ("%d %%"):format(math.floor(m.prog / m.meta * 100)),
+				TextSize = 20, Font = FUENTE_N, TextColor3 = Color3.fromRGB(180, 180, 210) }, f)
+		end
+	end
+end
+
+local function pintarMisiones()
+	columnaMisiones(cuerpo, "Diarias", datos.diarias, "dia", datos.finDia, 0)
+	columnaMisiones(cuerpo, "Semanales", datos.semanales, "sem", datos.finSemana, 0.5)
+end
+
+------------------------------------------------------------------
+-- Ruleta (tira de premios que se para bajo la flecha)
+------------------------------------------------------------------
+local ANCHO_P = 112
+local function tarjetaPremio(padre, r, x)
+	local f = nuevo("Frame", { Position = UDim2.fromOffset(x, 10), Size = UDim2.fromOffset(ANCHO_P - 8, 130), BackgroundColor3 = r.raro and Color3.fromRGB(70, 50, 20) or TARJETA,
+		BorderSizePixel = 0 }, padre)
+	esquina(f, 10)
+	nuevo("UIStroke", { Color = r.raro and ORO or (r.tipo == "xp" and Color3.fromRGB(120, 255, 120) or MORADO), Thickness = 2 }, f)
+	local im = nuevo("ImageLabel", { BackgroundTransparency = 1, AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 12), Size = UDim2.fromOffset(56, 56),
+		ResampleMode = Enum.ResamplerMode.Pixelated }, f)
+	Iconos.poner(im, idc(r.ico))
+	texto({ Position = UDim2.fromOffset(4, 74), Size = UDim2.new(1, -8, 0, 50), Text = r.texto, TextSize = 14, Font = FUENTE_N, TextWrapped = true }, f)
+	return f
+end
+
+local function pintarRuleta(resultado)
+	local caja = nuevo("Frame", { Position = UDim2.fromOffset(0, 10), Size = UDim2.fromOffset(560, 150), BackgroundColor3 = Color3.fromRGB(16, 16, 28), BorderSizePixel = 0,
+		ClipsDescendants = true }, cuerpo)
+	esquina(caja, 12)
+	nuevo("UIStroke", { Color = ORO, Thickness = 3 }, caja)
+	local tira = nuevo("Frame", { BackgroundTransparency = 1, Size = UDim2.fromOffset(ANCHO_P * 40, 150) }, caja)
+	-- 40 premios al azar con el peso de cada uno; el 34 es el que toca
+	local total = 0
+	for _, r in datos.ruleta do
+		total += r.p
+	end
+	local function alAzar()
+		local x = math.random() * total
+		for _, r in datos.ruleta do
+			x -= r.p
+			if x <= 0 then
+				return r
+			end
+		end
+		return datos.ruleta[1]
+	end
+	local FINAL = 34
+	for i = 1, 40 do
+		local r = (resultado and i == FINAL) and datos.ruleta[resultado] or alAzar()
+		tarjetaPremio(tira, r, (i - 1) * ANCHO_P + 4)
+	end
+	-- Flecha en el centro
+	local flecha = nuevo("Frame", { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.fromScale(0.5, 0), Size = UDim2.fromOffset(4, 150), BackgroundColor3 = ORO,
+		BorderSizePixel = 0, ZIndex = 5 }, caja)
+	texto({ AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, -8), Size = UDim2.fromOffset(30, 30), Text = "▼", TextSize = 26, TextColor3 = ORO, ZIndex = 6 }, caja)
+	local _ = flecha
+	local mensaje = texto({ Position = UDim2.fromOffset(0, 172), Size = UDim2.fromOffset(560, 40), Text = "", TextSize = 24, Font = FUENTE_N, TextColor3 = ORO }, cuerpo)
+	-- Botón de girar
+	local giros = datos.giros or 0
+	if giros > 0 and not resultado then
+		boton(cuerpo, ("¡GIRAR!  (%d %s)"):format(giros, giros == 1 and "giro" or "giros"), VERDE, { Position = UDim2.fromOffset(150, 226), Size = UDim2.fromOffset(260, 60), TextSize = 24 },
+			function()
+				if not girando then
+					girando = true
+					ProgresoVista.alSonido("poner", 1.5)
+					ProgresoVista.enviar("progresoCmd", "girar")
+				end
+			end)
+	elseif not resultado then
+		boton(cuerpo, "Vuelve mañana · " .. reloj(datos.finDia), GRIS, { Position = UDim2.fromOffset(130, 226), Size = UDim2.fromOffset(300, 60), TextSize = 17 })
+	end
+	if not datos.vip then
+		texto({ Position = UDim2.fromOffset(0, 296), Size = UDim2.fromOffset(560, 20), Text = "Con VIP tienes 2 giros al día", TextSize = 13,
+			TextColor3 = ORO, TextStrokeTransparency = 1 }, cuerpo)
+	end
+	-- Probabilidades
+	local tabla = nuevo("Frame", { Position = UDim2.fromOffset(580, 10), Size = UDim2.new(1, -580, 0, 330), BackgroundColor3 = TARJETA, BorderSizePixel = 0 }, cuerpo)
+	esquina(tabla, 12)
+	texto({ Position = UDim2.fromOffset(12, 8), Size = UDim2.new(1, -24, 0, 26), Text = "Probabilidades", TextSize = 18, Font = FUENTE_N, TextXAlignment = Enum.TextXAlignment.Left }, tabla)
+	for i, r in datos.ruleta do
+		local y = 40 + (i - 1) * 40
+		local im = nuevo("ImageLabel", { BackgroundTransparency = 1, Position = UDim2.fromOffset(12, y), Size = UDim2.fromOffset(30, 30), ResampleMode = Enum.ResamplerMode.Pixelated }, tabla)
+		Iconos.poner(im, idc(r.ico))
+		texto({ Position = UDim2.fromOffset(50, y), Size = UDim2.new(1, -120, 0, 30), Text = r.texto, TextSize = 14, TextXAlignment = Enum.TextXAlignment.Left,
+			TextColor3 = r.raro and ORO or Color3.new(1, 1, 1) }, tabla)
+		texto({ AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -12, 0, y), Size = UDim2.fromOffset(60, 30), Text = ("%d %%"):format(math.floor(r.p / total * 100 + 0.5)),
+			TextSize = 15, Font = FUENTE_N, TextXAlignment = Enum.TextXAlignment.Right }, tabla)
+	end
+	-- Animación: la tira corre y frena hasta dejar el premio bajo la flecha
+	if resultado then
+		local centro = 280
+		local destino = -((FINAL - 1) * ANCHO_P + 4 + (ANCHO_P - 8) / 2 - centro) + math.random(-30, 30)
+		tira.Position = UDim2.fromOffset(0, 0)
+		local tw = TweenService:Create(tira, TweenInfo.new(4.2, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), { Position = UDim2.fromOffset(destino, 0) })
+		-- Un «tic» por cada premio que pasa
+		task.spawn(function()
+			local ultimo = 0
+			local t0 = os.clock()
+			while os.clock() - t0 < 4.2 and tira.Parent do
+				local f = math.clamp((os.clock() - t0) / 4.2, 0, 1)
+				local pos = destino * (1 - (1 - f) ^ 4)
+				local k = math.floor(-pos / ANCHO_P)
+				if k ~= ultimo then
+					ultimo = k
+					ProgresoVista.alSonido("paso", 2)
+				end
+				task.wait(0.03)
+			end
+		end)
+		tw:Play()
+		task.delay(4.3, function()
+			girando = false
+			if tira.Parent then
+				local r = datos.ruleta[resultado]
+				mensaje.Text = "¡Has ganado " .. r.texto .. "!"
+				ProgresoVista.alSonido("nivel", r.raro and 0.8 or 1.2)
+				if r.raro then
+					ProgresoVista.fiesta("¡PREMIO GORDO!", r.texto)
+				end
+				task.delay(1.5, function()
+					if pestana == "ruleta" and velo.Visible and not girando then
+						pintar()
+					end
+				end)
+			end
+		end)
+	end
+end
+
+------------------------------------------------------------------
+-- Colección
+------------------------------------------------------------------
+local function pintarColeccion()
+	texto({ Size = UDim2.new(1, 0, 0, 26), Text = "Títulos", TextSize = 20, Font = FUENTE_N, TextXAlignment = Enum.TextXAlignment.Left }, cuerpo)
+	local g1 = nuevo("Frame", { BackgroundTransparency = 1, Position = UDim2.fromOffset(0, 30), Size = UDim2.new(1, 0, 0, 160) }, cuerpo)
+	nuevo("UIGridLayout", { CellSize = UDim2.fromOffset(158, 46), CellPadding = UDim2.fromOffset(8, 8), SortOrder = Enum.SortOrder.LayoutOrder }, g1)
+	for i, t in datos.titulos do
+		local col = hex(t.col, Color3.new(1, 1, 1))
+		local b = boton(g1, "", t.puesto and Color3.fromRGB(70, 60, 30) or TARJETA, { LayoutOrder = i }, t.tiene and function()
+			ProgresoVista.enviar("progresoCmd", "equipar", "titulo", t.id)
+		end or nil)
+		nuevo("UIStroke", { Color = t.puesto and ORO or (t.tiene and col or GRIS), Thickness = t.puesto and 3 or 2, ApplyStrokeMode = Enum.ApplyStrokeMode.Border }, b)
+		texto({ Size = UDim2.new(1, 0, 0, 26), Position = UDim2.fromOffset(0, 4), Text = t.n, TextSize = 15, Font = FUENTE_N, TextColor3 = t.tiene and col or Color3.fromRGB(110, 110, 130) }, b)
+		texto({ Size = UDim2.new(1, 0, 0, 14), Position = UDim2.fromOffset(0, 28), Text = t.puesto and "PUESTO" or (t.tiene and "Pulsa para ponértelo" or ("🔒 Nivel " .. t.nivel)),
+			TextSize = 10, TextColor3 = t.puesto and ORO or Color3.fromRGB(170, 170, 200), TextStrokeTransparency = 1 }, b)
+	end
+	texto({ Position = UDim2.fromOffset(0, 196), Size = UDim2.new(1, -200, 0, 26), Text = "Estelas (la cola de color al moverte; la ven todos)", TextSize = 20, Font = FUENTE_N,
+		TextXAlignment = Enum.TextXAlignment.Left }, cuerpo)
+	boton(cuerpo, "Quitar estela", GRIS, { AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, 0, 0, 192), Size = UDim2.fromOffset(160, 32), TextSize = 13 }, function()
+		ProgresoVista.enviar("progresoCmd", "equipar", "estela", "")
+	end)
+	local g2 = nuevo("Frame", { BackgroundTransparency = 1, Position = UDim2.fromOffset(0, 230), Size = UDim2.new(1, 0, 0, 160) }, cuerpo)
+	nuevo("UIGridLayout", { CellSize = UDim2.fromOffset(158, 66), CellPadding = UDim2.fromOffset(8, 8), SortOrder = Enum.SortOrder.LayoutOrder }, g2)
+	for i, e in datos.estelas do
+		local c1 = hex(e.c1, Color3.new(1, 1, 1))
+		local b = boton(g2, "", e.puesto and Color3.fromRGB(70, 60, 30) or TARJETA, { LayoutOrder = i }, e.tiene and function()
+			ProgresoVista.enviar("progresoCmd", "equipar", "estela", e.id)
+		end or nil)
+		nuevo("UIStroke", { Color = e.puesto and ORO or (e.tiene and c1 or GRIS), Thickness = e.puesto and 3 or 2, ApplyStrokeMode = Enum.ApplyStrokeMode.Border }, b)
+		local franja = nuevo("Frame", { Position = UDim2.fromOffset(10, 8), Size = UDim2.new(1, -20, 0, 14), BackgroundColor3 = c1, BorderSizePixel = 0,
+			BackgroundTransparency = e.tiene and 0 or 0.6 }, b)
+		esquina(franja, 7)
+		nuevo("UIGradient", { Color = ColorSequence.new(c1, hex(e.c2, Color3.new(0, 0, 0))) }, franja)
+		texto({ Position = UDim2.fromOffset(0, 26), Size = UDim2.new(1, 0, 0, 20), Text = e.n, TextSize = 14, Font = FUENTE_N,
+			TextColor3 = e.tiene and Color3.new(1, 1, 1) or Color3.fromRGB(110, 110, 130) }, b)
+		texto({ Position = UDim2.fromOffset(0, 46), Size = UDim2.new(1, 0, 0, 14), Text = e.puesto and "PUESTA" or (e.tiene and "Pulsa para ponértela" or ("🔒 Nivel " .. e.nivel)),
+			TextSize = 10, TextColor3 = e.puesto and ORO or Color3.fromRGB(170, 170, 200), TextStrokeTransparency = 1 }, b)
+	end
+end
+
+------------------------------------------------------------------
+-- Ranking
+------------------------------------------------------------------
+local MEDALLA = { Color3.fromRGB(255, 205, 60), Color3.fromRGB(200, 210, 225), Color3.fromRGB(210, 140, 80) }
+local function pintarRanking()
+	texto({ Size = UDim2.new(1, 0, 0, 26), Text = "Los 10 con más experiencia de Blockverse", TextSize = 18, Font = FUENTE_N, TextXAlignment = Enum.TextXAlignment.Left }, cuerpo)
+	for i, r in datos.ranking do
+		local f = nuevo("Frame", { Position = UDim2.fromOffset(0, 34 + (i - 1) * 36), Size = UDim2.new(1, 0, 0, 32), BorderSizePixel = 0,
+			BackgroundColor3 = r.yo and Color3.fromRGB(60, 50, 100) or TARJETA }, cuerpo)
+		esquina(f, 8)
+		if r.yo then
+			nuevo("UIStroke", { Color = MORADO, Thickness = 2 }, f)
+		end
+		local pos = nuevo("Frame", { Position = UDim2.fromOffset(6, 3), Size = UDim2.fromOffset(26, 26), BackgroundColor3 = MEDALLA[r.pos] or GRIS, BorderSizePixel = 0 }, f)
+		esquina(pos, 13)
+		texto({ Size = UDim2.fromScale(1, 1), Text = tostring(r.pos), TextSize = 14, Font = FUENTE_N, TextColor3 = r.pos <= 3 and Color3.fromRGB(60, 40, 0) or Color3.new(1, 1, 1),
+			TextStrokeTransparency = 1 }, pos)
+		texto({ Position = UDim2.fromOffset(44, 0), Size = UDim2.new(1, -300, 1, 0), Text = r.nombre .. (r.yo and "  (tú)" or ""), TextSize = 16, Font = FUENTE_N,
+			TextXAlignment = Enum.TextXAlignment.Left }, f)
+		texto({ AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -150, 0, 0), Size = UDim2.fromOffset(100, 32), Text = "Nivel " .. r.nivel, TextSize = 15,
+			TextColor3 = ORO }, f)
+		texto({ AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -12, 0, 0), Size = UDim2.fromOffset(130, 32), Text = r.total .. " xp", TextSize = 14,
+			TextXAlignment = Enum.TextXAlignment.Right, TextColor3 = Color3.fromRGB(180, 180, 210) }, f)
+	end
+end
+
+------------------------------------------------------------------
+-- Pintar, abrir y cerrar
+------------------------------------------------------------------
+pintar = function(resultadoRuleta)
+	if not datos then
+		return
+	end
+	for k, b in botonesPest do
+		b.BackgroundColor3 = k == pestana and MORADO or TARJETA
+	end
+	insigniaT.Text = tostring(datos.nivel)
+	barra.Size = UDim2.fromScale(datos.nivel >= datos.max and 1 or math.clamp(datos.xp / datos.xpNec, 0, 1), 1)
+	barraT.Text = datos.nivel >= datos.max and "¡NIVEL MÁXIMO!" or ("%d / %d xp para el nivel %d"):format(datos.xp, datos.xpNec, datos.nivel + 1)
+	-- Avisos rojos en las pestañas con cosas por cobrar
+	local porCobrar, misionesHechas = 0, 0
+	for n = 2, datos.nivel do
+		if not datos.camino[n].cobrado then
+			porCobrar += 1
+		end
+	end
+	for _, lista in { datos.diarias, datos.semanales } do
+		for _, m in lista do
+			if m.prog >= m.meta and not m.cobrada then
+				misionesHechas += 1
+			end
+		end
+	end
+	local function aviso(k, n)
+		avisosPest[k][1].Visible = n > 0
+		avisosPest[k][2].Text = tostring(n)
+	end
+	aviso("camino", porCobrar)
+	aviso("misiones", misionesHechas)
+	aviso("ruleta", datos.giros or 0)
+	aviso("coleccion", 0)
+	aviso("ranking", 0)
+	limpiar(cuerpo)
+	if pestana == "camino" then
+		pintarCamino()
+	elseif pestana == "misiones" then
+		pintarMisiones()
+	elseif pestana == "ruleta" then
+		pintarRuleta(resultadoRuleta)
+	elseif pestana == "coleccion" then
+		pintarColeccion()
+	else
+		pintarRanking()
+	end
+end
+
+local function ajustar()
+	local cam = workspace.CurrentCamera
+	local v = cam and cam.ViewportSize
+	if v and v.X and v.X > 0 then
+		return math.min(1, (v.X - 20) / 900, (v.Y - 20) / 570)
+	end
+	return 1
+end
+
+local function mostrar()
+	if velo.Visible then
+		return
+	end
+	velo.Visible = true
+	ProgresoVista.alVisible(true)
+	local final = ajustar()
+	escVentana.Scale = final * 0.85
+	TweenService:Create(escVentana, TweenInfo.new(0.25, Enum.EasingStyle.Back), { Scale = final }):Play()
+end
+
+function ProgresoVista.abrir(p)
+	pestana = p or pestana
+	mostrar()
+	if datos then
+		pintar()
+	end
+	ProgresoVista.enviar("pedirProgreso")
+end
+
+function ProgresoVista.cerrar()
+	if girando then
+		return
+	end
+	velo.Visible = false
+	ProgresoVista.alVisible(false)
+end
+
+function ProgresoVista.visible()
+	return velo.Visible
+end
+
+function ProgresoVista.datos(d, extra)
+	datos = d
+	ProgresoVista.pendientes(d.pendientes or 0)
+	if not velo.Visible then
+		return
+	end
+	if extra and extra.ruleta then
+		pestana = "ruleta"
+		pintar(extra.ruleta)
+	elseif not girando then
+		pintar()
+	end
+	if extra and (extra.reclamado or extra.reclamadoTodo) then
+		ProgresoVista.fiesta("¡RECOMPENSA!", extra.reclamadoTodo and (extra.reclamadoTodo .. " recompensas cobradas") or d.camino[extra.reclamado].texto)
+	end
+end
+
+------------------------------------------------------------------
+-- Avisos mientras juegas
+------------------------------------------------------------------
+-- Botón con el número de cosas por cobrar (a la izquierda)
+local avisoBoton = nuevo("TextButton", { AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.new(0, 10, 0.5, -40), Size = UDim2.fromOffset(150, 40),
+	BackgroundColor3 = MORADO, BorderSizePixel = 0, Text = "", AutoButtonColor = true, Visible = false }, gui)
+esquina(avisoBoton, 20)
+nuevo("UIStroke", { Color = Color3.new(1, 1, 1), Thickness = 2, Transparency = 0.4 }, avisoBoton)
+local avisoT = texto({ Size = UDim2.fromScale(1, 1), Text = "", TextSize = 14, Font = FUENTE_N }, avisoBoton)
+local avisoEsc = nuevo("UIScale", {}, avisoBoton)
+local nPendientes = 0
+avisoBoton.Activated:Connect(function()
+	ProgresoVista.abrir(nil)
+end)
+function ProgresoVista.pendientes(n)
+	if n > nPendientes then
+		avisoEsc.Scale = 1.3
+		TweenService:Create(avisoEsc, TweenInfo.new(0.4, Enum.EasingStyle.Elastic), { Scale = 1 }):Play()
+	end
+	nPendientes = n
+	avisoT.Text = ("★ Progreso (P) · %d"):format(n)
+	if ProgresoVista.alPendientes then
+		ProgresoVista.alPendientes(n)
+	end
+end
+
+-- Cartel de misión cumplida (arriba)
+local cartel = nuevo("Frame", { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, -90), Size = UDim2.fromOffset(460, 64), BackgroundColor3 = Color3.fromRGB(30, 60, 30),
+	BorderSizePixel = 0 }, gui)
+esquina(cartel, 12)
+nuevo("UIStroke", { Color = Color3.fromRGB(120, 255, 120), Thickness = 2 }, cartel)
+local cartelT = texto({ Position = UDim2.fromOffset(14, 6), Size = UDim2.new(1, -28, 0, 26), Text = "", TextSize = 18, Font = FUENTE_N, TextXAlignment = Enum.TextXAlignment.Left,
+	TextColor3 = Color3.fromRGB(150, 255, 150) }, cartel)
+local cartelS = texto({ Position = UDim2.fromOffset(14, 34), Size = UDim2.new(1, -28, 0, 22), Text = "", TextSize = 14, TextXAlignment = Enum.TextXAlignment.Left }, cartel)
+local cartelHilo = 0
+local function mostrarCartel(t, sub)
+	cartelHilo += 1
+	local yo = cartelHilo
+	cartelT.Text, cartelS.Text = t, sub
+	TweenService:Create(cartel, TweenInfo.new(0.35, Enum.EasingStyle.Back), { Position = UDim2.new(0.5, 0, 0, 14) }):Play()
+	task.delay(4, function()
+		if yo == cartelHilo then
+			TweenService:Create(cartel, TweenInfo.new(0.3), { Position = UDim2.new(0.5, 0, 0, -90) }):Play()
+		end
+	end)
+end
+
+-- Fiesta en grande (nivel nuevo, premio gordo)
+local fiestaF = nuevo("Frame", { BackgroundTransparency = 1, Size = UDim2.fromScale(1, 1), Visible = false, ZIndex = 20 }, gui)
+local fiestaT = texto({ AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.34), Size = UDim2.fromOffset(800, 80), Text = "", TextSize = 64, Font = FUENTE_N,
+	TextColor3 = ORO, TextStrokeColor3 = Color3.fromRGB(60, 20, 120), TextStrokeTransparency = 0, ZIndex = 22 }, fiestaF)
+local fiestaEsc = nuevo("UIScale", {}, fiestaT)
+local fiestaS = texto({ AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.44), Size = UDim2.fromOffset(800, 30), Text = "", TextSize = 24, Font = FUENTE_N,
+	ZIndex = 22, TextStrokeTransparency = 0.3 }, fiestaF)
+local fiestaHilo = 0
+local COLORES = { Color3.fromRGB(255, 80, 80), Color3.fromRGB(255, 210, 60), Color3.fromRGB(80, 200, 255), Color3.fromRGB(120, 230, 120), Color3.fromRGB(190, 120, 255) }
+function ProgresoVista.fiesta(t, sub)
+	fiestaHilo += 1
+	local yo = fiestaHilo
+	fiestaF.Visible = true
+	fiestaT.Text, fiestaS.Text = t, sub or ""
+	fiestaEsc.Scale = 0.3
+	TweenService:Create(fiestaEsc, TweenInfo.new(0.5, Enum.EasingStyle.Elastic), { Scale = 1 }):Play()
+	for i = 1, 50 do
+		local x0, giro = math.random(), math.random(0, 360)
+		local c = nuevo("Frame", { BackgroundColor3 = COLORES[(i % #COLORES) + 1], BorderSizePixel = 0, Size = UDim2.fromOffset(math.random(8, 14), math.random(14, 22)),
+			Position = UDim2.new(x0, 0, -0.05, -math.random(0, 200)), Rotation = giro, ZIndex = 21 }, fiestaF)
+		local dur = 1.6 + math.random() * 1.2
+		TweenService:Create(c, TweenInfo.new(dur, Enum.EasingStyle.Quad, Enum.EasingDirection.In),
+			{ Position = UDim2.new(x0 + (math.random() - 0.5) * 0.2, 0, 1.1, 0), Rotation = giro + math.random(-540, 540) }):Play()
+		task.delay(dur + 0.1, function()
+			c:Destroy()
+		end)
+	end
+	task.delay(3, function()
+		if yo == fiestaHilo then
+			fiestaF.Visible = false
+		end
+	end)
+end
+
+-- Quita los avisos al momento (para las capturas)
+function ProgresoVista.ocultarAvisos()
+	fiestaHilo += 1
+	cartelHilo += 1
+	fiestaF.Visible = false
+	cartel.Position = UDim2.new(0.5, 0, 0, -90)
+end
+
+function ProgresoVista.aviso(d)
+	if d.tipo == "mision" then
+		mostrarCartel("✔ ¡Misión cumplida!", ("%s · +%d xp · cóbrala con P"):format(d.texto or "", d.xp or 0))
+		ProgresoVista.alSonido("xp", 1)
+	elseif d.tipo == "nivel" then
+		ProgresoVista.fiesta(("¡NIVEL %d!"):format(d.nivel or 0), "Camino de Blockverse · " .. (d.texto or "") .. " (cóbralo con P)")
+		ProgresoVista.alSonido("nivel", 1)
+	end
+	if velo.Visible and not girando then
+		ProgresoVista.enviar("pedirProgreso")
+	end
+end
+
+function ProgresoVista.iniciar()
+	gui.Parent = jugador:WaitForChild("PlayerGui")
+	-- El botón de avisos solo se ve jugando (no en el menú) y si hay algo por cobrar
+	RunService.RenderStepped:Connect(function()
+		avisoBoton.Visible = nPendientes > 0 and not velo.Visible and not ProgresoVista.enMenu()
+	end)
+end
+
+return ProgresoVista
+]]></ProtectedString></Properties></Item>
+<Item class="ModuleScript" referent="RBX00000041"><Properties><string name="Name">Render</string><ProtectedString name="Source"><![CDATA[--!native
 --!optimize 2
 --[[
 	Blockverse para Roblox · Render del mundo (cliente)
@@ -32559,7 +34113,7 @@ end
 
 return Render
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX0000003F"><Properties><string name="Name">TiendaVista</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX00000042"><Properties><string name="Name">TiendaVista</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Tienda con Robux (cliente)
 	· Ventana con cuatro pestañas: Destacado (el VIP en grande y lo mejor de cada cosa),
 	  Pases, Monedas y Modos (lo que se puede comprar dentro de cada modo).
@@ -33010,6 +34564,12 @@ function TiendaVista.gracias(d)
 	end)
 end
 
+-- Quita el «¡GRACIAS!» al momento (para las capturas)
+function TiendaVista.ocultarGracias()
+	graciasHilo += 1
+	fiesta.Visible = false
+end
+
 function TiendaVista.iniciar()
 	gui.Parent = jugador:WaitForChild("PlayerGui")
 	cerrar.Activated:Connect(function()
@@ -33023,8 +34583,17 @@ function TiendaVista.iniciar()
 			local props = Instance.new("TextChatMessageProperties")
 			local fuente = msg.TextSource
 			local plr = fuente and Players:GetPlayerByUserId(fuente.UserId)
-			if plr and plr:GetAttribute("VIP") then
-				props.PrefixText = '<font color="#ffc83a">[VIP]</font> ' .. msg.PrefixText
+			if plr then
+				-- Título del Camino de Blockverse y, delante, la etiqueta VIP
+				local pre = msg.PrefixText
+				local titulo = plr:GetAttribute("Titulo")
+				if titulo then
+					pre = ('<font color="%s">[%s]</font> '):format(plr:GetAttribute("TituloCol") or "#c8c8c8", titulo) .. pre
+				end
+				if plr:GetAttribute("VIP") then
+					pre = '<font color="#ffc83a">[VIP]</font> ' .. pre
+				end
+				props.PrefixText = pre
 			end
 			return props
 		end
@@ -33035,7 +34604,7 @@ return TiendaVista
 ]]></ProtectedString></Properties></Item>
 </Item>
 </Item>
-<Item class="StarterCharacterScripts" referent="RBX00000043"><Properties><string name="Name">StarterCharacterScripts</string></Properties><Item class="Script" referent="RBX00000041"><Properties><string name="Name">Health</string><bool name="Disabled">false</bool><ProtectedString name="Source"><![CDATA[--[[
+<Item class="StarterCharacterScripts" referent="RBX00000046"><Properties><string name="Name">StarterCharacterScripts</string></Properties><Item class="Script" referent="RBX00000044"><Properties><string name="Name">Health</string><bool name="Disabled">false</bool><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox
 	Este script vacío reemplaza al «Health» de Roblox, que cura sola a la
 	persona. En Blockverse la vida se recupera con el hambre llena.
