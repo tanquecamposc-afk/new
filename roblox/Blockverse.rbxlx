@@ -9143,7 +9143,7 @@ return Ruido
 ]]></ProtectedString></Properties></Item>
 </Item>
 </Item>
-<Item class="ServerScriptService" referent="RBX00000030"><Properties><string name="Name">ServerScriptService</string></Properties><Item class="Script" referent="RBX0000002F"><Properties><string name="Name">Servidor</string><bool name="Disabled">false</bool><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ServerScriptService" referent="RBX00000032"><Properties><string name="Name">ServerScriptService</string></Properties><Item class="Script" referent="RBX00000031"><Properties><string name="Name">Servidor</string><bool name="Disabled">false</bool><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Script principal del servidor
 	Une todo el juego, con las reglas del juego web:
 	· Mundo (igual al web), simulación, criaturas, entidades, cofres y hornos.
@@ -9196,6 +9196,8 @@ local Habitantes = require(script.Habitantes)
 local Dimension = require(script.Dimension)
 local Redstone = require(script.Redstone)
 local Mesas = require(script.Mesas)
+local Logros = require(script.Logros)
+local Clima = require(script.Clima)
 local Generador = require(Comp.Generador)
 
 local BS = Config.BLOQUE
@@ -9361,6 +9363,7 @@ local function enviarJugador(plr)
 	})
 	local p = s.inv[s.sel]
 	plr:SetAttribute("EnMano", p and p.id or nil)
+	Logros.revisarInventario(plr, s)
 end
 
 local function enviarUI(plr)
@@ -9760,7 +9763,7 @@ local function alMorir(plr)
 	local textos = {
 		caida = "Caíste desde muy alto.", mob = "Una criatura acabó contigo.", flecha = "Te dispararon una flecha.",
 		hambre = "Moriste de hambre.", vacio = "Caíste al vacío.", lava = "Intentaste nadar en lava.", fuego = "Ardiste hasta morir.",
-		ahogo = "Te ahogaste.", explosion = "Volaste por los aires.", cactus = "Te pinchaste hasta morir.", veneno = "El veneno pudo contigo.",
+		ahogo = "Te ahogaste.", explosion = "Volaste por los aires.", rayo = "Te alcanzó un rayo.", cactus = "Te pinchaste hasta morir.", veneno = "El veneno pudo contigo.",
 		jugador = "Otro jugador acabó contigo.",
 	}
 	enviarJugador(plr)
@@ -9770,8 +9773,17 @@ local function alMorir(plr)
 	Modos.alMorir(plr)
 end
 
+Logros.iniciar({ estados = estados, Estado = Estado, almacen = almacen })
 Players.PlayerAdded:Connect(function(plr)
 	cargar(plr)
+	-- Logros y tabla de jugadores (nivel de Bed Wars y logros)
+	task.spawn(function()
+		Logros.cargar(plr)
+		local ok, nivel = pcall(Modos.nivelBW, plr)
+		if ok and nivel and plr.Parent then
+			Logros.actualizarTabla(plr, nivel)
+		end
+	end)
 	plr.CharacterAdded:Connect(function(char)
 		local s = st(plr)
 		if s then
@@ -9797,6 +9809,7 @@ Players.PlayerRemoving:Connect(function(plr)
 		s.ui = nil
 	end
 	guardar(plr)
+	Logros.olvidar(plr)
 	estados[plr] = nil
 end)
 
@@ -10476,8 +10489,11 @@ function acciones.derecho(plr, s, obj, dir, mobParte, agachado)
 				end
 			end
 			Estado:FireClient(plr, "dormir")
+			Logros.conseguir(plr, "cama")
 			task.delay(2.2, function()
+				-- Al despertar es de día y el cielo está despejado
 				Lighting.ClockTime = 6.2
+				Clima.despejar()
 				aviso(plr, "Buenos días. Punto de reaparición guardado.")
 			end)
 			return
@@ -10974,6 +10990,10 @@ function acciones.modoCmd(plr, s, cmd, arg)
 	if type(cmd) == "string" then
 		Modos.comando(plr, cmd, type(arg) == "number" and arg or nil)
 	end
+end
+
+function acciones.pedirLogros(plr)
+	Logros.enviar(plr)
 end
 
 function acciones.ajustes(plr, s, a)
@@ -11637,16 +11657,25 @@ Redstone.iniciar({
 	end,
 })
 Dimension.iniciar({
-	teletransportar = teletransportar, Estado = Estado, estados = estados, ganarXP = ganarXP, danar = danar, aviso = aviso,
+	teletransportar = teletransportar, Estado = Estado, estados = estados, ganarXP = ganarXP, danar = danar, aviso = aviso, logro = Logros.conseguir,
 	explosion = function(x, y, z, p)
 		Sim.explosion(x, y, z, p)
 	end,
 })
 Modos.iniciar({
 	Mundo = Mundo, Mobs = Mobs, Entidades = Entidades, estados = estados, enviarJugador = enviarJugador, aviso = aviso,
+	logro = Logros.conseguir, tablaNivel = Logros.actualizarTabla,
 	Estado = Estado, colocar = colocar, Inv = Inv, danar = danar, teletransportar = teletransportar, darOSoltar = darOSoltar,
 	enviarUI = enviarUI, ganarXP = ganarXP, activarTNT = activarTNT, guardar = guardar,
 })
+-- Clima: lluvia, nieve y tormentas con rayos
+Clima.iniciar({ Estado = Estado, Mundo = Mundo, Mobs = Mobs, estados = estados, danar = danar, activo = Modos.activo })
+-- Logro al acabar con un monstruo (no cuentan los bots ni los aliados de los modos)
+Mobs.alMatar = function(m, _, plr)
+	if plr and m.def.tipo == "hostil" and not m.control then
+		Logros.conseguir(plr, "cazador")
+	end
+end
 -- Las explosiones en la arena de Bed Wars solo rompen lo construido
 Sim.puedeExplotar = Modos.puedeExplotar
 ]]></ProtectedString></Properties><Item class="ModuleScript" referent="RBX0000001F"><Properties><string name="Name">BedWars</string><ProtectedString name="Source"><![CDATA[--[[
@@ -13650,8 +13679,14 @@ function terminar(ganador)
 				end
 			end
 			Perfil.guardar(plr)
+			if gano and ctx.logro then
+				ctx.logro(plr, "bedwars")
+			end
 		end
 		local nivel = Perfil.nivel(perfil.xp)
+		if ctx.tablaNivel then
+			ctx.tablaNivel(plr, nivel)
+		end
 		ctx.Estado:FireClient(plr, "finBW", {
 			gano = gano, jugo = jugo, ganador = E and E.nombre or nil, colGanador = E and E.col or "#aaaaaa",
 			bajas = J.bajas, finales = J.finales, camas = J.camas, muertes = J.muertes, tiempo = fmt(P.t), mejorRacha = J.mejorRacha,
@@ -13997,6 +14032,11 @@ function BW.salir(plr, fin)
 		BW.anterior = { arena = P.arena, colocados = P.colocados }
 		P = nil
 	end
+end
+
+-- Nivel de Bed Wars (estrellas) para la tabla de jugadores
+function BW.nivelJugador(plr)
+	return Perfil.nivel(Perfil.de(plr).xp)
 end
 
 function BW.en(plr)
@@ -14702,7 +14742,128 @@ end
 
 return BW
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX00000020"><Properties><string name="Name">Contenedores</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX00000020"><Properties><string name="Name">Clima</string><ProtectedString name="Source"><![CDATA[--[[
+	Blockverse para Roblox · Clima (servidor)
+	· Cielo despejado, lluvia o tormenta, que cambian solos cada pocos minutos.
+	  El estado va en el atributo «Clima» de workspace y cada cliente lo dibuja
+	  (lluvia, nieve en los biomas fríos, nada en el desierto).
+	· Con lluvia los zombis y esqueletos no arden al sol; en la tormenta está tan
+	  oscuro que salen monstruos y se puede dormir (como en Minecraft).
+	· En la tormenta caen rayos cerca de los jugadores del mundo normal: si dan a
+	  alguien (jugador o criatura) le hacen daño y lo prenden.
+	· Dormir en una cama despeja el cielo.
+]]
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Comp = ReplicatedStorage:WaitForChild("Blockverse")
+local Config = require(Comp.Config)
+local Generador = require(Comp.Generador)
+
+local BS = Config.BLOQUE
+local Clima = {}
+local ctx -- {Estado, Mundo, Mobs, estados, danar, activo(plr)}
+
+local estado = "despejado"
+local restante = 300 + math.random() * 300
+local rayoT = 6
+
+local function poner(e, seg)
+	estado = e
+	if e == "despejado" then
+		restante = seg or (360 + math.random() * 480)
+	elseif e == "lluvia" then
+		restante = seg or (180 + math.random() * 180)
+	else
+		restante = seg or (120 + math.random() * 120)
+	end
+	workspace:SetAttribute("Clima", e)
+end
+
+function Clima.estado()
+	return estado
+end
+function Clima.lloviendo()
+	return estado ~= "despejado"
+end
+function Clima.tormenta()
+	return estado == "tormenta"
+end
+-- Para las pruebas y para dormir
+function Clima.poner(e, seg)
+	poner(e, seg)
+end
+function Clima.despejar()
+	poner("despejado")
+end
+
+-- Un rayo en (x, z): busca el suelo, avisa a los clientes y daña lo que haya al lado
+local function rayo(x, z)
+	local y = ctx.Mundo.alturaSuelo(x, z) + 1
+	local pos = Vector3.new(x + 0.5, y, z + 0.5)
+	ctx.Estado:FireAllClients("rayo", pos * BS)
+	for _, plr in Players:GetPlayers() do
+		local ch = plr.Character
+		local r = ch and ch:FindFirstChild("HumanoidRootPart")
+		if r and (r.Position / BS - pos).Magnitude < 2.5 then
+			ctx.danar(plr, 5, "rayo")
+			local s = ctx.estados[plr]
+			if s then
+				s.fuego = math.max(s.fuego or 0, 4)
+			end
+		end
+	end
+	for _, m in ctx.Mobs.lista do
+		if not m.muerto and math.abs(m.x - pos.X) < 2.5 and math.abs(m.z - pos.Z) < 2.5 and math.abs(m.y - pos.Y) < 3 then
+			m.fuego = math.max(m.fuego or 0, 4)
+			ctx.Mobs.herir(m, 5, nil, "fuego")
+		end
+	end
+	return pos
+end
+Clima.rayo = rayo
+
+function Clima.iniciar(c)
+	ctx = c
+	workspace:SetAttribute("Clima", estado)
+	RunService.Heartbeat:Connect(function(dt)
+		restante -= dt
+		if restante <= 0 then
+			if estado == "despejado" then
+				poner(math.random() < 0.25 and "tormenta" or "lluvia")
+			else
+				poner("despejado")
+			end
+		end
+		if estado ~= "tormenta" then
+			return
+		end
+		-- Rayos cerca de un jugador del mundo normal (no en los modos de juego)
+		rayoT -= dt
+		if rayoT > 0 then
+			return
+		end
+		rayoT = 5 + math.random() * 10
+		local candidatos = {}
+		for _, plr in Players:GetPlayers() do
+			local r = plr.Character and plr.Character:FindFirstChild("HumanoidRootPart")
+			if r and not ctx.activo(plr) and Generador.dimensionBloque(math.floor(r.Position.Z / BS)) == "superficie" then
+				table.insert(candidatos, r.Position / BS)
+			end
+		end
+		if #candidatos == 0 then
+			return
+		end
+		local p = candidatos[math.random(1, #candidatos)]
+		local a = math.random() * math.pi * 2
+		local d = 8 + math.random() * 22
+		pcall(rayo, math.floor(p.X + math.cos(a) * d), math.floor(p.Z + math.sin(a) * d))
+	end)
+end
+
+return Clima
+]]></ProtectedString></Properties></Item>
+<Item class="ModuleScript" referent="RBX00000021"><Properties><string name="Name">Contenedores</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Cofres y hornos (servidor)
 	· Cofres, barriles y cofres de cobre: 27 casillas cada uno.
 	· Hornos (y ahumadores / altos hornos): entrada, combustible y salida,
@@ -14874,7 +15035,7 @@ end
 
 return Cont
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX00000021"><Properties><string name="Name">Dimension</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX00000022"><Properties><string name="Name">Dimension</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Dimensiones (servidor)
 	Como jugador.js, dragon.js y extras.js del juego web:
 	· Portales del Nether: marco de obsidiana de 2×3 a 21×21 que se
@@ -15333,6 +15494,9 @@ local function actualizarDragon(dt)
 			Dim.estado.dragonMuerto = true
 			for _, j in js do
 				ctx.ganarXP(j.plr, 12000)
+				if ctx.logro then
+					ctx.logro(j.plr, "dragon")
+				end
 				ctx.aviso(j.plr, "¡Has derrotado al Ender Dragon! Se abrió el portal de salida.")
 			end
 			activarPortalSalida()
@@ -15549,6 +15713,9 @@ function Dim.iniciar(c)
 			local dim = Dim.de(p.Z)
 			if plr:GetAttribute("Dimension") ~= dim then
 				plr:SetAttribute("Dimension", dim)
+				if ctx.logro and (dim == "nether" or dim == "end") then
+					ctx.logro(plr, dim == "nether" and "nether" or "fin")
+				end
 			end
 			local enNether, enEnd, enAcceso = false, false, false
 			for _, dy in { 0.1, 1, 1.7 } do
@@ -15656,7 +15823,7 @@ end
 
 return Dim
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX00000022"><Properties><string name="Name">Entidades</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX00000023"><Properties><string name="Name">Entidades</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Entidades (servidor)
 	Como entidades.js del juego web:
 	· Objetos tirados: saltan al soltarse, caen, se juntan con los iguales
@@ -15991,7 +16158,7 @@ end
 
 return Entidades
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX00000023"><Properties><string name="Name">Habitantes</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX00000024"><Properties><string name="Name">Habitantes</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Habitantes de las estructuras (servidor)
 	Como en el juego web:
 	· Generadores de criaturas de las mazmorras y la fortaleza (zombi 50 %,
@@ -16344,7 +16511,7 @@ end
 
 return H
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX00000024"><Properties><string name="Name">Inventario</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX00000025"><Properties><string name="Name">Inventario</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Inventario (servidor)
 	Casillas como en el juego web:
 	· 1-9 barra rápida, 10-36 mochila, 37-40 armadura (casco, pechera,
@@ -16605,7 +16772,7 @@ end
 
 return Inv
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX00000025"><Properties><string name="Name">KitsBW</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX00000026"><Properties><string name="Name">KitsBW</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Kits de Bed Wars (kits46.js del juego web y kits nuevos)
 	Cada kit tiene rareza, precio en monedas y tres niveles que mejoran sus números.
 	Cada día hay tres kits gratis para probar. Los legendarios tienen una habilidad
@@ -16999,7 +17166,7 @@ end
 
 return Kits
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX00000026"><Properties><string name="Name">Leyendas</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX00000027"><Properties><string name="Name">Leyendas</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · LEYENDAS (modos52.js y modos53.js)
 	Cada jugador defiende su aldea en una isla propia: plaza con el
 	pozo-corazón, casas con aldeanos, caminos con faroles y huertos, y
@@ -17714,6 +17881,9 @@ local function actualizar(L, dt)
 		L.fin = true
 		ctx.Estado:FireClient(plr, "sonido", "nivel")
 		titulo(plr, "¡VICTORIA!", "Has destruido los tres portales piglin. ¡La aldea está a salvo!", "#ffd84a")
+		if ctx.logro then
+			ctx.logro(plr, "leyendas")
+		end
 		if ctx.ganarXP then
 			ctx.ganarXP(plr, 50)
 		end
@@ -17758,7 +17928,228 @@ end
 
 return LY
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX00000027"><Properties><string name="Name">Mazmorras</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX00000028"><Properties><string name="Name">Logros</string><ProtectedString name="Source"><![CDATA[--[[
+	Blockverse para Roblox · Logros (como los avances de Minecraft)
+	· 18 logros: los primeros sirven de guía para quien empieza (madera, mesa, pico,
+	  piedra, horno, hierro…) y los demás son retos (diamantes, el Nether, el dragón,
+	  ganar en Bed Wars, superar una mazmorra, salvar la aldea de Leyendas…).
+	· Los de «consigue X» se miran en el inventario; los demás los avisa cada parte
+	  del juego con Logros.conseguir(plr, id).
+	· Se guardan en el DataStore (clave l_<UserId>) y salen en la tabla de jugadores
+	  de Roblox (leaderstats), junto al nivel de Bed Wars.
+	· En creativo no cuentan (ahí se tiene todo sin esfuerzo).
+]]
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Comp = ReplicatedStorage:WaitForChild("Blockverse")
+local Registro = require(Comp.Registro)
+
+local B, I = Registro.B, Registro.I
+local function idc(k)
+	return B[k] or I[k]
+end
+
+local Logros = {}
+local ctx -- {estados, Estado, almacen}
+
+-- tiene = lista de objetos que lo consiguen al tenerlos; guia = pista para el siguiente paso
+local LISTA = {
+	{ id = "madera", n = "¡A por madera!", d = "Consigue un tronco", ico = "tronco", guia = "Pica un árbol (mantén el clic izquierdo) para conseguir un tronco",
+		tiene = { "tronco", "troncoAbedul", "troncoAbeto", "troncoAcacia", "troncoCerezo", "troncoJungla", "troncoMangle", "troncoPalido", "troncoRobleOscuro" } },
+	{ id = "mesa", n = "Manos a la obra", d = "Fabrica una mesa de trabajo", ico = "mesa", guia = "Abre el inventario (E), haz tablones y con 4 tablones una mesa de trabajo", tiene = { "mesa" } },
+	{ id = "pico", n = "Hora de picar", d = "Fabrica un pico", ico = "pico_madera", guia = "Pon la mesa, ábrela y fabrica un pico con tablones y palos",
+		tiene = { "pico_madera", "pico_piedra", "pico_cobre", "pico_hierro", "pico_oro", "pico_diamante", "pico_netherite" } },
+	{ id = "piedra", n = "Edad de piedra", d = "Consigue roca con el pico", ico = "roca", guia = "Pica piedra con el pico para conseguir roca", tiene = { "roca" } },
+	{ id = "horno", n = "Que arda", d = "Fabrica un horno", ico = "horno", guia = "Con 8 rocas en la mesa de trabajo fabrica un horno", tiene = { "horno" } },
+	{ id = "hierro", n = "Edad de hierro", d = "Funde un lingote de hierro", ico = "lingoteHierro", guia = "Busca hierro en las cuevas y fúndelo en el horno con carbón", tiene = { "lingoteHierro" } },
+	{ id = "cama", n = "Dulces sueños", d = "Duerme en una cama", ico = "cama", guia = "Fabrica una cama con lana y tablones y duerme de noche" },
+	{ id = "cazador", n = "Cazador de monstruos", d = "Elimina a un monstruo", ico = "espada_piedra", guia = "Por la noche salen monstruos: elimina uno" },
+	{ id = "pan", n = "Panadero", d = "Consigue pan", ico = "pan", tiene = { "pan" } },
+	{ id = "diamantes", n = "¡Diamantes!", d = "Consigue un diamante", ico = "diamante", tiene = { "diamante" } },
+	{ id = "encantar", n = "Encantador", d = "Encanta un objeto", ico = "libro" },
+	{ id = "obsidiana", n = "Más duro que la piedra", d = "Consigue obsidiana", ico = "obsidiana", tiene = { "obsidiana" } },
+	{ id = "nether", n = "Un viaje infernal", d = "Entra en el Nether", ico = "netherrack" },
+	{ id = "fin", n = "¿El fin?", d = "Entra en el End", ico = "piedraEnd" },
+	{ id = "dragon", n = "Libera el End", d = "Derrota al Ender Dragon", ico = "huevoDragon" },
+	{ id = "bedwars", n = "Campeón de Bed Wars", d = "Gana una partida de Bed Wars", ico = "cama" },
+	{ id = "mazmorra", n = "Explorador de mazmorras", d = "Derrota al jefe de una mazmorra", ico = "espada_diamante" },
+	{ id = "leyendas", n = "Héroe de la aldea", d = "Destruye los tres portales en Leyendas", ico = "escudo" },
+}
+Logros.LISTA = LISTA
+local POR_ID = {}
+local POR_OBJETO = {} -- id del objeto -> lista de logros
+for i, L in LISTA do
+	L.orden = i
+	L.icono = idc(L.ico) or I.esmeralda
+	POR_ID[L.id] = L
+	for _, k in L.tiene or {} do
+		local id = idc(k)
+		if id then
+			POR_OBJETO[id] = POR_OBJETO[id] or {}
+			table.insert(POR_OBJETO[id], L)
+		end
+	end
+end
+Logros.POR_ID = POR_ID
+
+local datos = {} -- plr -> {conseguidos = {id = true}, sinGuardar}
+
+-- Lo que el cliente necesita para la pantalla de logros y la guía
+local function resumen(plr)
+	local d = datos[plr]
+	local lista = {}
+	for _, L in LISTA do
+		table.insert(lista, { id = L.id, n = L.n, d = L.d, icono = L.icono, hecho = d and d.conseguidos[L.id] == true or false, guia = L.guia })
+	end
+	return lista
+end
+
+local function tabla(plr)
+	local ls = plr:FindFirstChild("leaderstats")
+	if not ls then
+		ls = Instance.new("Folder")
+		ls.Name = "leaderstats"
+		ls.Parent = plr
+	end
+	local function valor(nombre)
+		local v = ls:FindFirstChild(nombre)
+		if not v then
+			v = Instance.new("IntValue")
+			v.Name = nombre
+			v.Parent = ls
+		end
+		return v
+	end
+	return valor("Nivel"), valor("Logros")
+end
+
+-- Actualiza la tabla de jugadores (nivel de Bed Wars con estrellas y logros)
+function Logros.actualizarTabla(plr, nivelBW)
+	local vNivel, vLogros = tabla(plr)
+	if nivelBW then
+		vNivel.Value = nivelBW
+	end
+	local n = 0
+	for _ in (datos[plr] and datos[plr].conseguidos or {}) do
+		n += 1
+	end
+	vLogros.Value = n
+end
+
+local function guardar(plr)
+	local d = datos[plr]
+	if not d or d.sinGuardar or not ctx.almacen or not plr.UserId or plr.UserId <= 0 then
+		return
+	end
+	local lista = {}
+	for id in d.conseguidos do
+		table.insert(lista, id)
+	end
+	pcall(function()
+		ctx.almacen:SetAsync("l_" .. plr.UserId, lista)
+	end)
+end
+
+function Logros.cargar(plr)
+	local d = { conseguidos = {} }
+	datos[plr] = d
+	if ctx.almacen and plr.UserId and plr.UserId > 0 then
+		local ok, g = pcall(function()
+			return ctx.almacen:GetAsync("l_" .. plr.UserId)
+		end)
+		if ok and type(g) == "table" then
+			for _, id in g do
+				if type(id) == "string" and POR_ID[id] then
+					d.conseguidos[id] = true
+				end
+			end
+		elseif not ok then
+			d.sinGuardar = true
+		end
+	end
+	Logros.actualizarTabla(plr)
+	if plr.Parent then
+		ctx.Estado:FireClient(plr, "logros", resumen(plr))
+	end
+end
+
+function Logros.enviar(plr)
+	if datos[plr] then
+		ctx.Estado:FireClient(plr, "logros", resumen(plr))
+	end
+end
+
+function Logros.tiene(plr, id)
+	local d = datos[plr]
+	return d ~= nil and d.conseguidos[id] == true
+end
+
+function Logros.conseguir(plr, id)
+	local d = datos[plr]
+	local L = POR_ID[id]
+	if not d or not L or d.conseguidos[id] then
+		return
+	end
+	local s = ctx.estados[plr]
+	if s and s.modo == "creativo" then
+		return
+	end
+	d.conseguidos[id] = true
+	ctx.Estado:FireClient(plr, "logro", { id = id, n = L.n, d = L.d, icono = L.icono })
+	ctx.Estado:FireClient(plr, "logros", resumen(plr))
+	Logros.actualizarTabla(plr)
+	-- Se guarda un poco después (por si llegan varios seguidos)
+	d.guardarN = (d.guardarN or 0) + 1
+	local yo = d.guardarN
+	task.delay(3, function()
+		if d.guardarN == yo and datos[plr] == d then
+			guardar(plr)
+		end
+	end)
+end
+
+-- Mira el inventario: «consigue X» y objetos encantados
+function Logros.revisarInventario(plr, s)
+	local d = datos[plr]
+	if not d or s.modo == "creativo" then
+		return
+	end
+	for i = 1, #s.inv do
+		local p = s.inv[i]
+		if p then
+			local ls = POR_OBJETO[p.id]
+			if ls then
+				for _, L in ls do
+					if not d.conseguidos[L.id] then
+						Logros.conseguir(plr, L.id)
+					end
+				end
+			end
+			if p.enc and next(p.enc) and not d.conseguidos.encantar and p.id ~= I.libroEncantado then
+				Logros.conseguir(plr, "encantar")
+			end
+		end
+	end
+end
+
+function Logros.olvidar(plr)
+	guardar(plr)
+	datos[plr] = nil
+end
+
+function Logros.iniciar(c)
+	ctx = c
+	game:BindToClose(function()
+		for plr in datos do
+			guardar(plr)
+		end
+	end)
+	local _ = Players
+end
+
+return Logros
+]]></ProtectedString></Properties></Item>
+<Item class="ModuleScript" referent="RBX00000029"><Properties><string name="Name">Mazmorras</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · MAZMORRAS (modos52.js y modos53.js)
 	Cada jugador baja a su propia mazmorra: salas cuadradas, redondas y en
 	cruz unidas por pasillos, con tres ambientaciones que se turnan por
@@ -18287,6 +18678,9 @@ local function actualizar(R, dt)
 			ctx.Estado:FireClient(plr, "jefe", nil)
 			ctx.Estado:FireClient(plr, "sonido", "nivel")
 			titulo(plr, "¡JEFE DERROTADO!", "Pisa la plataforma verde para bajar al siguiente nivel", "#7fff7f")
+			if ctx.logro then
+				ctx.logro(plr, "mazmorra")
+			end
 		end
 	end
 	if not pos or R.fin then
@@ -18377,7 +18771,7 @@ end
 
 return MZ
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX00000028"><Properties><string name="Name">Mesas</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX0000002A"><Properties><string name="Name">Mesas</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Mesas y comercio (servidor)
 	Las mesas que faltaban, con las fórmulas del juego web:
 	· Mesa de encantamientos (encantamientos.js): tres opciones según las
@@ -19237,7 +19631,7 @@ end
 
 return Mesas
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX00000029"><Properties><string name="Name">Mobs</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX0000002B"><Properties><string name="Name">Mobs</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Criaturas (servidor)
 	IA de mobs.js del juego web, para varios jugadores:
 	· Hostiles cuerpo a cuerpo (zombi, araña que salta…), esqueletos que
@@ -19290,9 +19684,10 @@ local tiempo = 0
 ------------------------------------------------------------------
 -- Utilidades
 ------------------------------------------------------------------
+-- De noche, o en plena tormenta (está tan oscuro que salen monstruos y se puede dormir)
 local function esDeNoche()
 	local t = Lighting.ClockTime
-	return t < 5.6 or t > 18.4
+	return t < 5.6 or t > 18.4 or workspace:GetAttribute("Clima") == "tormenta"
 end
 Mobs.esDeNoche = esDeNoche
 
@@ -19478,6 +19873,11 @@ function Mobs.matar(m, fuente, plr)
 	end
 	if m.muerto then
 		return
+	end
+	-- Quién lo mató: el que dio el golpe final o el último que le pegó hace poco
+	if Mobs.alMatar then
+		local quien = plr or ((tiempo - (m.ultimoGolpeJugador or -99) < 5) and m.atacante) or nil
+		pcall(Mobs.alMatar, m, fuente, quien)
 	end
 	m.muerto = true
 	local def = m.def
@@ -20087,7 +20487,8 @@ local function actualizarMob(m, dt, jugadores)
 	m.fuegoT -= dt
 	if m.fuegoT <= 0 then
 		m.fuegoT = 1
-		if def.quemaSol and not noche and not enAgua and expuestoAlCielo(m) then
+		local llueve = (workspace:GetAttribute("Clima") or "despejado") ~= "despejado"
+		if def.quemaSol and not noche and not llueve and not enAgua and expuestoAlCielo(m) then
 			m.fuego = math.max(m.fuego, 8)
 		end
 		if m.fuego > 0 then
@@ -20411,7 +20812,7 @@ end
 
 return Mobs
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX0000002A"><Properties><string name="Name">Modos</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX0000002C"><Properties><string name="Name">Modos</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Modos de juego (servidor)
 	ONE BLOCK (como oneblock.js del juego web): cada jugador tiene su
 	propia isla de un solo bloque en una zona vacía del mundo. Al romperlo
@@ -20666,6 +21067,10 @@ local LY = require(script.Parent.Leyendas)
 Modos.BW, Modos.MZ, Modos.LY = BW, MZ, LY
 
 -- ¿Está el jugador en un modo con sus propias reglas? (no se guarda su inventario ni cambia de modo)
+function Modos.nivelBW(plr)
+	return BW.nivelJugador(plr)
+end
+
 function Modos.activo(plr)
 	if not plr then
 		return false
@@ -20903,7 +21308,7 @@ end
 
 return Modos
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX0000002B"><Properties><string name="Name">Mundo</string><ProtectedString name="Source"><![CDATA[--!native
+<Item class="ModuleScript" referent="RBX0000002D"><Properties><string name="Name">Mundo</string><ProtectedString name="Source"><![CDATA[--!native
 --[[
 	Blockverse para Roblox · Mundo (servidor)
 	· Guarda los bloques (MundoDatos) y los cambios de los jugadores.
@@ -21311,7 +21716,7 @@ end
 
 return Mundo
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX0000002C"><Properties><string name="Name">PerfilBW</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX0000002E"><Properties><string name="Name">PerfilBW</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Perfil de Bed Wars de cada jugador (se guarda en DataStore)
 	· Monedas, experiencia con nivel y estrellas [N★], estadísticas, racha de victorias.
 	· Kits comprados con su nivel, kit equipado y efecto de baja final equipado.
@@ -21512,7 +21917,7 @@ end)
 
 return Perfil
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX0000002D"><Properties><string name="Name">Redstone</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX0000002F"><Properties><string name="Name">Redstone</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Redstone (servidor)
 	Traducción de redstone.js del juego web:
 	· El polvo lleva energía (0-15, pierde 1 por bloque, sube y baja
@@ -22191,7 +22596,7 @@ end
 
 return Redstone
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX0000002E"><Properties><string name="Name">Simulacion</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX00000030"><Properties><string name="Name">Simulacion</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Simulación del mundo (servidor)
 	Traducción de simulacion.js: líquidos que fluyen (agua y lava,
 	obsidiana y roca al juntarse), arena y grava que caen, plantas y
@@ -22804,7 +23209,7 @@ return Sim
 ]]></ProtectedString></Properties></Item>
 </Item>
 </Item>
-<Item class="StarterPlayer" referent="RBX0000003E"><Properties><string name="Name">StarterPlayer</string><float name="CharacterWalkSpeed">14</float><bool name="CharacterUseJumpPower">false</bool><float name="CharacterJumpHeight">4.6</float></Properties><Item class="StarterPlayerScripts" referent="RBX0000003C"><Properties><string name="Name">StarterPlayerScripts</string></Properties><Item class="LocalScript" referent="RBX0000003A"><Properties><string name="Name">Cliente</string><bool name="Disabled">false</bool><ProtectedString name="Source"><![CDATA[--[[
+<Item class="StarterPlayer" referent="RBX00000041"><Properties><string name="Name">StarterPlayer</string><float name="CharacterWalkSpeed">14</float><bool name="CharacterUseJumpPower">false</bool><float name="CharacterJumpHeight">4.6</float></Properties><Item class="StarterPlayerScripts" referent="RBX0000003F"><Properties><string name="Name">StarterPlayerScripts</string></Properties><Item class="LocalScript" referent="RBX0000003D"><Properties><string name="Name">Cliente</string><bool name="Disabled">false</bool><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Script del cliente
 	· Genera y dibuja el mundo en este equipo (la misma semilla que el
 	  servidor) y aplica los cambios que llegan.
@@ -22834,6 +23239,7 @@ local Iconos = require(script:WaitForChild("Iconos"))
 local Render = require(script:WaitForChild("Render"))
 local MobsVista = require(script:WaitForChild("MobsVista"))
 local EntidadesVista = require(script:WaitForChild("EntidadesVista"))
+local ClimaVista = require(script:WaitForChild("ClimaVista"))
 local DimensionVista = require(script:WaitForChild("DimensionVista"))
 local Generador = require(Comp:WaitForChild("Generador"))
 local Arenas = require(Comp:WaitForChild("Arenas"))
@@ -22995,6 +23401,13 @@ local md = MundoDatos.new(semilla)
 est.md = md
 DimensionVista.md = md
 DimensionVista.iniciar()
+ClimaVista.alSonido = function(nombre, pos, tono)
+	sonido(nombre, pos, tono)
+end
+ClimaVista.alParticulas = function(pos, color, n)
+	emitir(pos, color, n, 2, 0.08, 6)
+end
+ClimaVista.iniciar(md)
 -- Los chunks se cargan alrededor del personaje (también en tercera persona)
 Render.foco = function()
 	local ch = jugador.Character
@@ -23173,6 +23586,11 @@ end
 
 local function creativo()
 	return est.modo == "creativo"
+end
+-- En el mundo normal en supervivencia (no en One Block ni en los modos): ahí sale la guía de objetivos
+local function enSupervivenciaNormal()
+	return est.modo == "supervivencia" and not (jugador:GetAttribute("OneBlock") or jugador:GetAttribute("BedWars")
+		or jugador:GetAttribute("Mazmorras") or jugador:GetAttribute("Leyendas"))
 end
 
 local function cadencia()
@@ -23829,6 +24247,7 @@ Estado.OnClientEvent:Connect(function(tipo, a, b, c)
 	if tipo == "jugador" then
 		local modoAntes = est.modo
 		Interfaz.jugador(a)
+		Interfaz.pintarObjetivo(enSupervivenciaNormal())
 		if a.modo ~= modoAntes then
 			if a.modo ~= "creativo" and volando then
 				ponerVuelo(false)
@@ -23959,6 +24378,16 @@ Estado.OnClientEvent:Connect(function(tipo, a, b, c)
 	elseif tipo == "menu" then
 		Interfaz.menu(true)
 		aplicarCamara()
+	elseif tipo == "logro" then
+		Interfaz.logro(a)
+		sonido("nivel")
+	elseif tipo == "logros" then
+		Interfaz.logros(a)
+		Interfaz.pintarObjetivo(enSupervivenciaNormal())
+	elseif tipo == "rayo" then
+		if typeof(a) == "Vector3" then
+			ClimaVista.rayo(a)
+		end
 	elseif tipo == "ajustes" then
 		-- Los ajustes guardados llegan al entrar
 		if type(a) == "table" then
@@ -24004,6 +24433,8 @@ Estado.OnClientEvent:Connect(function(tipo, a, b, c)
 		espectar(a)
 	end
 end)
+-- Los logros (por si el aviso del servidor llegó antes de que el cliente escuchara)
+enviar("pedirLogros")
 
 ------------------------------------------------------------------
 -- Personaje
@@ -24329,7 +24760,315 @@ RunService.RenderStepped:Connect(function(dt)
 			:format(nomDim, x, y, zl, x // 16, zl // 16, nomBio, Lighting.ClockTime, fps, Render.modo, semilla))
 	end
 end)
-]]></ProtectedString></Properties><Item class="ModuleScript" referent="RBX00000031"><Properties><string name="Name">DimensionVista</string><ProtectedString name="Source"><![CDATA[--[[
+]]></ProtectedString></Properties><Item class="ModuleScript" referent="RBX00000033"><Properties><string name="Name">ClimaVista</string><ProtectedString name="Source"><![CDATA[--[[
+	Blockverse para Roblox · Clima (cliente)
+	· Lluvia: gotas que caen alrededor de la cámara y salpican al llegar al suelo
+	  (no pasan los techos). En los biomas fríos nieva y en los secos (desierto,
+	  sabana, badlands) no cae nada.
+	· El cielo se nubla y oscurece poco a poco; en la tormenta, más.
+	· Rayos: un relámpago en zigzag, un destello en todo el cielo y el trueno, que
+	  llega más tarde cuanto más lejos cae.
+	Solo en el mundo normal (no en el Nether, el End ni las arenas de los modos).
+]]
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local Lighting = game:GetService("Lighting")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local Comp = ReplicatedStorage:WaitForChild("Blockverse")
+local Config = require(Comp:WaitForChild("Config"))
+local Registro = require(Comp:WaitForChild("Registro"))
+local Generador = require(Comp:WaitForChild("Generador"))
+local Biomas = require(Comp:WaitForChild("Datos"):WaitForChild("Biomas"))
+
+local BS = Config.BLOQUE
+local SOLIDO = Registro.SOLIDO
+local esLiquido = Registro.esLiquido
+local jugador = Players.LocalPlayer
+
+local ClimaVista = {}
+ClimaVista.alSonido = function(nombre, pos, tono) end
+ClimaVista.alParticulas = function(pos, color, n) end
+
+local K = Biomas.claves
+local FRIO = { [K.nevado] = true, [K.taigaNevada] = true, [K.picosNevados] = true, [K.oceanoHelado] = true, [K.espigasHielo] = true }
+local SECO = { [K.desierto] = true, [K.sabana] = true, [K.badlands] = true, [K.badlandsErosionados] = true }
+
+local GOTAS = 220
+local AREA = 11 -- bloques alrededor de la cámara
+
+local carpeta = Instance.new("Folder")
+carpeta.Name = "Clima"
+local gotas = {}
+local intensidad, nubes = 0, 0
+local md
+
+-- Altura (en bloques) a la que se para una gota en la columna x, z: el primer bloque
+-- sólido o líquido por debajo de `desde` (se guarda un rato para no recalcular)
+local techos, techosT = {}, 0
+local function techo(x, z, desde)
+	local k = x * 65536 + z
+	local v = techos[k]
+	if v then
+		return v
+	end
+	v = desde - 40
+	for y = desde, desde - 40, -1 do
+		local b = md:getSiCargado(x, y, z)
+		if b < 0 then
+			v = desde - 40
+			break
+		end
+		if b ~= 0 and (SOLIDO[b] or esLiquido(b) or Registro.OPACO[b]) then
+			v = y + 1
+			break
+		end
+	end
+	techos[k] = v
+	return v
+end
+
+local function nuevaGota()
+	local p = Instance.new("Part")
+	p.Anchored = true
+	p.CanCollide = false
+	p.CanQuery = false
+	p.CanTouch = false
+	p.CastShadow = false
+	p.Material = Enum.Material.SmoothPlastic
+	p.Transparency = 1
+	p.Size = Vector3.new(0.07, 1.1, 0.07)
+	p.Parent = carpeta
+	return { p = p, activa = false }
+end
+
+local function colocarGota(g, cam, nieve, alturaCam)
+	local x = math.floor(cam.X / BS + (math.random() * 2 - 1) * AREA)
+	local z = math.floor(cam.Z / BS + (math.random() * 2 - 1) * AREA)
+	local arriba = alturaCam + 14
+	local suelo = techo(x, z, arriba)
+	if suelo >= arriba then
+		g.activa = false
+		g.p.Transparency = 1
+		return
+	end
+	g.activa = true
+	g.x, g.z = (x + math.random()) * BS, (z + math.random()) * BS
+	g.y = (suelo + math.random() * (arriba - suelo)) * BS
+	g.suelo = suelo * BS
+	g.nieve = nieve
+	g.fase = math.random() * 6.28
+	if nieve then
+		g.p.Size = Vector3.new(0.2, 0.2, 0.2)
+		g.p.Color = Color3.fromRGB(250, 250, 255)
+		g.p.Transparency = 0.1
+		g.v = 5 + math.random() * 3
+	else
+		g.p.Size = Vector3.new(0.07, 1.1, 0.07)
+		g.p.Color = Color3.fromRGB(165, 190, 235)
+		g.p.Transparency = 0.35
+		g.v = 55 + math.random() * 15
+	end
+end
+
+------------------------------------------------------------------
+-- Cielo: se guarda cómo es despejado y se mezcla con el de lluvia
+------------------------------------------------------------------
+local base
+local destello -- ColorCorrection para los relámpagos
+local function guardarBase()
+	local atm = Lighting:FindFirstChildOfClass("Atmosphere")
+	local nb = workspace.Terrain:FindFirstChildOfClass("Clouds")
+	base = {
+		brillo = Lighting.Brightness, exterior = Lighting.OutdoorAmbient,
+		densidad = atm and atm.Density, colorAtm = atm and atm.Color, bruma = atm and atm.Haze,
+		cubierta = nb and nb.Cover, densidadNubes = nb and nb.Density, colorNubes = nb and nb.Color,
+	}
+end
+
+local function aplicarCielo(f, tormenta)
+	if not base then
+		return
+	end
+	local atm = Lighting:FindFirstChildOfClass("Atmosphere")
+	local nb = workspace.Terrain:FindFirstChildOfClass("Clouds")
+	local oscuro = tormenta and 0.55 or 0.35
+	-- (cada propiedad solo si existe: así no falla si Roblox o las pruebas no la tienen)
+	if base.brillo then
+		Lighting.Brightness = base.brillo * (1 - oscuro * f)
+	end
+	if base.exterior then
+		Lighting.OutdoorAmbient = base.exterior:Lerp(Color3.fromRGB(105, 108, 118), f * 0.7)
+	end
+	if atm then
+		if base.densidad then
+			atm.Density = base.densidad + 0.22 * f
+		end
+		if base.colorAtm then
+			atm.Color = base.colorAtm:Lerp(Color3.fromRGB(150, 156, 168), f)
+		end
+		if base.bruma then
+			atm.Haze = base.bruma + 1.4 * f
+		end
+	end
+	if nb then
+		if base.cubierta then
+			nb.Cover = base.cubierta + (0.93 - base.cubierta) * f
+		end
+		if base.densidadNubes then
+			nb.Density = base.densidadNubes + (1 - base.densidadNubes) * f
+		end
+		if base.colorNubes then
+			nb.Color = base.colorNubes:Lerp(tormenta and Color3.fromRGB(80, 84, 92) or Color3.fromRGB(150, 154, 162), f)
+		end
+	end
+end
+
+------------------------------------------------------------------
+-- Rayos
+------------------------------------------------------------------
+function ClimaVista.rayo(pos)
+	local cam = workspace.CurrentCamera
+	-- Solo lo ve quien está en el mundo normal
+	if not cam or jugador:GetAttribute("TemaBW") or Generador.dimensionBloque(math.floor(cam.CFrame.Position.Z / BS)) ~= "superficie" then
+		return
+	end
+	-- Zigzag de piezas brillantes desde el cielo
+	local partes = {}
+	local p = pos + Vector3.new(0, 70 * BS, 0)
+	for _ = 1, 9 do
+		local siguiente = p:Lerp(pos, 1 / 2.2) + Vector3.new((math.random() - 0.5) * 6 * BS, 0, (math.random() - 0.5) * 6 * BS)
+		if (siguiente - pos).Magnitude < 3 * BS then
+			siguiente = pos
+		end
+		local d = siguiente - p
+		local seg = Instance.new("Part")
+		seg.Anchored = true
+		seg.CanCollide = false
+		seg.CanQuery = false
+		seg.CanTouch = false
+		seg.CastShadow = false
+		seg.Material = Enum.Material.Neon
+		seg.Color = Color3.fromRGB(215, 225, 255)
+		seg.Size = Vector3.new(0.35 * BS, 0.35 * BS, math.max(0.1, d.Magnitude))
+		seg.CFrame = CFrame.lookAt(p + d / 2, siguiente)
+		seg.Parent = carpeta
+		table.insert(partes, seg)
+		p = siguiente
+		if p == pos then
+			break
+		end
+	end
+	local luz = Instance.new("PointLight")
+	luz.Range = 40 * BS
+	luz.Brightness = 8
+	luz.Color = Color3.fromRGB(200, 215, 255)
+	luz.Parent = partes[#partes]
+	ClimaVista.alParticulas(pos, Color3.fromRGB(230, 235, 255), 20)
+	-- Destello en todo el cielo
+	if destello then
+		task.spawn(function()
+			for _, b in { 0.45, 0.1, 0.35, 0 } do
+				destello.Brightness = b
+				task.wait(0.07)
+			end
+		end)
+	end
+	task.delay(0.35, function()
+		for _, s in partes do
+			s:Destroy()
+		end
+	end)
+	-- El trueno llega con retraso según la distancia
+	local dist = (cam.CFrame.Position - pos).Magnitude / BS
+	task.delay(math.min(3, dist / 60), function()
+		ClimaVista.alSonido("explosion", nil, 0.35)
+		task.wait(0.4)
+		ClimaVista.alSonido("explosion", nil, 0.25)
+	end)
+end
+
+------------------------------------------------------------------
+-- Bucle
+------------------------------------------------------------------
+function ClimaVista.iniciar(mundoDatos)
+	md = mundoDatos
+	carpeta.Parent = workspace
+	guardarBase()
+	destello = Instance.new("ColorCorrectionEffect")
+	destello.Name = "Relampago"
+	destello.Brightness = 0
+	destello.Parent = Lighting
+	for _ = 1, GOTAS do
+		table.insert(gotas, nuevaGota())
+	end
+	local tiempo = 0
+	local escrito = false
+	RunService.RenderStepped:Connect(function(dt)
+		tiempo += dt
+		local cam = workspace.CurrentCamera
+		if not cam then
+			return
+		end
+		local cpos = cam.CFrame.Position
+		-- Solo en el mundo normal y fuera de las arenas de los modos
+		local enMundo = Generador.dimensionBloque(math.floor(cpos.Z / BS)) == "superficie" and not jugador:GetAttribute("TemaBW")
+		local clima = workspace:GetAttribute("Clima") or "despejado"
+		local objetivo = (clima ~= "despejado" and enMundo) and 1 or 0
+		-- Cambia poco a poco (unos 8 s)
+		intensidad += math.clamp(objetivo - intensidad, -dt / 8, dt / 8)
+		nubes = intensidad
+		if enMundo and (nubes > 0.001 or escrito) then
+			aplicarCielo(nubes, clima == "tormenta")
+			escrito = nubes > 0.001
+		end
+		-- ¿Llueve, nieva o nada aquí?
+		local bx, bz = math.floor(cpos.X / BS), math.floor(cpos.Z / BS)
+		local bio = ClimaVista.biomaForzado or (md and md:bioma(bx, bz))
+		local seco = bio and SECO[bio]
+		local nieve = bio and FRIO[bio]
+		techosT -= dt
+		if techosT <= 0 then
+			techosT = 1.5
+			table.clear(techos)
+		end
+		local activas = (seco or not enMundo) and 0 or math.floor(GOTAS * intensidad * (clima == "tormenta" and 1 or 0.75))
+		local alturaCam = math.floor(cpos.Y / BS)
+		for i, g in gotas do
+			if i > activas then
+				if g.activa then
+					g.activa = false
+					g.p.Transparency = 1
+				end
+			else
+				if not g.activa or g.nieve ~= (nieve == true) or math.abs(g.x / BS - cpos.X / BS) > AREA + 2 or math.abs(g.z / BS - cpos.Z / BS) > AREA + 2 then
+					colocarGota(g, cpos, nieve == true, alturaCam)
+				end
+				if g.activa then
+					g.y -= g.v * dt
+					if g.y <= g.suelo then
+						-- Salpica al llegar (no todas, para no llenar de partículas)
+						if not g.nieve and math.random() < 0.08 then
+							ClimaVista.alParticulas(Vector3.new(g.x, g.suelo + 0.1, g.z), Color3.fromRGB(170, 195, 240), 2)
+						end
+						colocarGota(g, cpos, nieve == true, alturaCam)
+					end
+					if g.activa then
+						local x = g.x
+						if g.nieve then
+							x += math.sin(tiempo * 1.3 + g.fase) * 0.4
+						end
+						g.p.CFrame = CFrame.new(x, g.y, g.z)
+					end
+				end
+			end
+		end
+	end)
+end
+
+return ClimaVista
+]]></ProtectedString></Properties></Item>
+<Item class="ModuleScript" referent="RBX00000034"><Properties><string name="Name">DimensionVista</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · El Nether y el End (cliente)
 	· Ambiente de cada dimensión como en el juego web: niebla roja (del
 	  color de cada bioma del Nether) y sin cielo en el Nether; niebla
@@ -24616,6 +25355,10 @@ end
 -- Bucle
 ------------------------------------------------------------------
 function DV.iniciar()
+	-- El cielo despejado del principio (el clima lo cambia después)
+	if not original then
+		guardarOriginal()
+	end
 	local criaturas = workspace:WaitForChild("Criaturas")
 	local function alAgregar(p)
 		if p.Name == "EnderDragon" then
@@ -24745,7 +25488,7 @@ end
 
 return DV
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX00000032"><Properties><string name="Name">EntidadesVista</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX00000035"><Properties><string name="Name">EntidadesVista</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Entidades (cliente)
 	Dibuja lo que hay en workspace.Entidades como en el juego web:
 	· Objetos tirados: su modelo 3D (cubito con texturas o el objeto con volumen)
@@ -24971,7 +25714,7 @@ end
 
 return EntidadesVista
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX00000033"><Properties><string name="Name">Iconos</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX00000036"><Properties><string name="Name">Iconos</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Iconos (cliente)
 	· Los 778 iconos del juego web (cubos isométricos de 48 px para los
 	  bloques y dibujos de 16 px para los objetos) en dos hojas de 1024 px.
@@ -25264,7 +26007,7 @@ end
 
 return Iconos
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX00000034"><Properties><string name="Name">Imagenes</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX00000037"><Properties><string name="Name">Imagenes</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Imágenes (cliente)
 	Crea imágenes editables (EditableImage) a partir de los píxeles del
 	juego web: atlas de texturas, iconos de objetos, texturas de criaturas
@@ -25360,7 +26103,7 @@ end
 
 return Imagenes
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX00000035"><Properties><string name="Name">Interfaz</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX00000038"><Properties><string name="Name">Interfaz</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Interfaz (cliente)
 	Con el aspecto del juego web (paneles grises con relieve, casillas
 	hundidas y los iconos del juego):
@@ -26267,22 +27010,25 @@ opcionMenu("Mazmorras", "Salas con enemigos, botín, artefactos y un jefe", "maz
 opcionMenu("Leyendas", "Defiende la aldea, construye y manda a tus golems", "leyendas", "escudo", 6)
 -- Fila de abajo: ajustes, controles y volver al juego
 local filaMenu = nuevo("Frame", { BackgroundTransparency = 1, AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0.25, 266),
-	Size = UDim2.fromOffset(568, 46), ZIndex = 11 }, menu)
+	Size = UDim2.fromOffset(640, 46), ZIndex = 11 }, menu)
 nuevo("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 12), HorizontalAlignment = Enum.HorizontalAlignment.Center,
 	SortOrder = Enum.SortOrder.LayoutOrder }, filaMenu)
-local abrirAjustes, abrirControles -- se definen más abajo
+local abrirAjustes, abrirControles, abrirLogros -- se definen más abajo
 tarjeta(filaMenu, "Ajustes", nil, nil, 1, function()
 	abrirAjustes()
-end, UDim2.fromOffset(176, 46))
+end, UDim2.fromOffset(136, 46))
 tarjeta(filaMenu, "Controles", nil, nil, 2, function()
 	abrirControles()
-end, UDim2.fromOffset(176, 46))
-local botonVolver = tarjeta(filaMenu, "Volver al juego", nil, nil, 3, function()
+end, UDim2.fromOffset(136, 46))
+local botonLogros = tarjeta(filaMenu, "Logros", nil, nil, 3, function()
+	abrirLogros()
+end, UDim2.fromOffset(136, 46))
+local botonVolver = tarjeta(filaMenu, "Volver al juego", nil, nil, 4, function()
 	Interfaz.menu(false)
 	if Interfaz.alMenu then
 		Interfaz.alMenu()
 	end
-end, UDim2.fromOffset(192, 46))
+end, UDim2.fromOffset(180, 46))
 botonVolver.Visible = false
 texto({ AnchorPoint = Vector2.new(0, 1), Position = UDim2.new(0, 14, 1, -10), Size = UDim2.fromOffset(400, 18), Text = "Blockverse · edición Roblox",
 	TextSize = 13, TextXAlignment = Enum.TextXAlignment.Left, TextTransparency = 0.3, ZIndex = 11 }, menu)
@@ -26290,7 +27036,7 @@ texto({ AnchorPoint = Vector2.new(1, 1), Position = UDim2.new(1, -14, 1, -10), S
 	TextSize = 13, TextXAlignment = Enum.TextXAlignment.Right, TextTransparency = 0.3, ZIndex = 11 }, menu)
 
 -- Ventana sencilla (ajustes, controles) por encima del menú
-local function ventana(nombre, titulo, alto)
+local function ventana(nombre, titulo, alto, desplazable)
 	local fondo = nuevo("TextButton", { Name = nombre, Text = "", AutoButtonColor = false, Modal = true, BackgroundColor3 = Color3.new(0, 0, 0),
 		BackgroundTransparency = 0.45, BorderSizePixel = 0, Size = UDim2.fromScale(1, 1), Visible = false, ZIndex = 20 }, gui)
 	local caja = nuevo("Frame", { BackgroundColor3 = Color3.fromRGB(36, 38, 46), BorderSizePixel = 0, AnchorPoint = Vector2.new(0.5, 0.5),
@@ -26298,7 +27044,13 @@ local function ventana(nombre, titulo, alto)
 	nuevo("UICorner", { CornerRadius = UDim.new(0, 8) }, caja)
 	nuevo("UIStroke", { Color = Color3.fromRGB(255, 220, 80), Thickness = 2 }, caja)
 	texto({ Position = UDim2.fromOffset(0, 12), Size = UDim2.new(1, 0, 0, 30), Text = titulo, Font = FUENTE_N, TextSize = 24, ZIndex = 22 }, caja)
-	local lista = nuevo("Frame", { BackgroundTransparency = 1, Position = UDim2.fromOffset(20, 54), Size = UDim2.new(1, -40, 1, -120), ZIndex = 22 }, caja)
+	local lista
+	if desplazable then
+		lista = nuevo("ScrollingFrame", { BackgroundTransparency = 1, BorderSizePixel = 0, Position = UDim2.fromOffset(20, 54), Size = UDim2.new(1, -30, 1, -120),
+			ZIndex = 22, ScrollBarThickness = 6, CanvasSize = UDim2.new(), AutomaticCanvasSize = Enum.AutomaticSize.Y }, caja)
+	else
+		lista = nuevo("Frame", { BackgroundTransparency = 1, Position = UDim2.fromOffset(20, 54), Size = UDim2.new(1, -40, 1, -120), ZIndex = 22 }, caja)
+	end
 	nuevo("UIListLayout", { Padding = UDim.new(0, 6), SortOrder = Enum.SortOrder.LayoutOrder }, lista)
 	local listo = tarjeta(caja, "Listo", nil, nil, 0, function()
 		fondo.Visible = false
@@ -26387,6 +27139,110 @@ for i, c in CONTROLES do
 end
 abrirControles = function()
 	ventanaControles.Visible = true
+end
+
+-- Logros: pantalla con todos, aviso al conseguir uno y objetivo para quien empieza
+local ventanaLogros, listaLogros = ventana("Logros", "LOGROS", 560, true)
+local tituloLogros = ventanaLogros:FindFirstChildOfClass("Frame"):FindFirstChildOfClass("TextLabel")
+Interfaz.listaLogros = {}
+local function pintarLogros()
+	for _, h in listaLogros:GetChildren() do
+		if h:IsA("GuiObject") then
+			h:Destroy()
+		end
+	end
+	local hechos = 0
+	for i, L in Interfaz.listaLogros do
+		if L.hecho then
+			hechos += 1
+		end
+		local fila = nuevo("Frame", { BackgroundColor3 = L.hecho and Color3.fromRGB(40, 58, 44) or Color3.fromRGB(28, 29, 35), BorderSizePixel = 0,
+			Size = UDim2.new(1, -8, 0, 46), LayoutOrder = i, ZIndex = 22 }, listaLogros)
+		nuevo("UICorner", { CornerRadius = UDim.new(0, 4) }, fila)
+		local ic = nuevo("ImageLabel", { BackgroundTransparency = 1, Position = UDim2.fromOffset(8, 7), Size = UDim2.fromOffset(32, 32),
+			ResampleMode = Enum.ResamplerMode.Pixelated, ImageTransparency = L.hecho and 0 or 0.55, ZIndex = 23 }, fila)
+		Iconos.poner(ic, L.icono)
+		texto({ Position = UDim2.fromOffset(50, 5), Size = UDim2.new(1, -100, 0, 18), Text = L.n, TextSize = 15, Font = FUENTE_N,
+			TextColor3 = L.hecho and Color3.new(1, 1, 1) or Color3.fromRGB(160, 160, 170), TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 23 }, fila)
+		texto({ Position = UDim2.fromOffset(50, 24), Size = UDim2.new(1, -100, 0, 16), Text = L.d, TextSize = 12, TextStrokeTransparency = 1,
+			TextColor3 = Color3.fromRGB(190, 195, 205), TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 23 }, fila)
+		texto({ AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -12, 0.5, 0), Size = UDim2.fromOffset(40, 24), Text = L.hecho and "✔" or "—",
+			TextSize = 20, Font = FUENTE_N, TextColor3 = L.hecho and Color3.fromRGB(120, 255, 120) or Color3.fromRGB(110, 110, 120), ZIndex = 23 }, fila)
+	end
+	if tituloLogros then
+		tituloLogros.Text = ("LOGROS · %d/%d"):format(hechos, #Interfaz.listaLogros)
+	end
+	local tl = botonLogros:FindFirstChildOfClass("TextLabel")
+	if tl and #Interfaz.listaLogros > 0 then
+		tl.Text = ("Logros %d/%d"):format(hechos, #Interfaz.listaLogros)
+	end
+end
+abrirLogros = function()
+	pintarLogros()
+	ventanaLogros.Visible = true
+end
+Interfaz.abrirLogros = abrirLogros
+
+-- Aviso de logro (arriba a la derecha, entra deslizando)
+local avisoLogro = nuevo("Frame", { Name = "AvisoLogro", BackgroundColor3 = Color3.fromRGB(32, 34, 42), BorderSizePixel = 0, AnchorPoint = Vector2.new(1, 0),
+	Position = UDim2.new(1, 340, 0, 12), Size = UDim2.fromOffset(320, 64), ZIndex = 25 }, gui)
+nuevo("UICorner", { CornerRadius = UDim.new(0, 6) }, avisoLogro)
+nuevo("UIStroke", { Color = Color3.fromRGB(255, 220, 80), Thickness = 2 }, avisoLogro)
+local avisoIc = nuevo("ImageLabel", { BackgroundTransparency = 1, Position = UDim2.fromOffset(12, 12), Size = UDim2.fromOffset(40, 40),
+	ResampleMode = Enum.ResamplerMode.Pixelated, ZIndex = 26 }, avisoLogro)
+texto({ Position = UDim2.fromOffset(62, 9), Size = UDim2.new(1, -70, 0, 18), Text = "¡Logro conseguido!", TextSize = 14, Font = FUENTE_N,
+	TextColor3 = Color3.fromRGB(255, 220, 80), TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 26 }, avisoLogro)
+local avisoNombre = texto({ Position = UDim2.fromOffset(62, 29), Size = UDim2.new(1, -70, 0, 26), Text = "", TextSize = 15, TextWrapped = true,
+	TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 26 }, avisoLogro)
+local colaLogros, mostrandoLogro = {}, false
+local function siguienteLogro()
+	local d = table.remove(colaLogros, 1)
+	if not d then
+		mostrandoLogro = false
+		return
+	end
+	mostrandoLogro = true
+	Iconos.poner(avisoIc, d.icono)
+	avisoNombre.Text = d.n
+	avisoLogro.Position = UDim2.new(1, 340, 0, 12)
+	TweenService:Create(avisoLogro, TweenInfo.new(0.35, Enum.EasingStyle.Quad), { Position = UDim2.new(1, -12, 0, 12) }):Play()
+	task.delay(4, function()
+		TweenService:Create(avisoLogro, TweenInfo.new(0.35, Enum.EasingStyle.Quad), { Position = UDim2.new(1, 340, 0, 12) }):Play()
+		task.delay(0.4, siguienteLogro)
+	end)
+end
+function Interfaz.logro(d)
+	table.insert(colaLogros, d)
+	if not mostrandoLogro then
+		siguienteLogro()
+	end
+end
+
+-- Objetivo (guía para quien empieza en supervivencia): el primer logro de la guía sin hacer
+local objetivo = nuevo("Frame", { Name = "Objetivo", BackgroundColor3 = Color3.new(0, 0, 0), BackgroundTransparency = 0.5, BorderSizePixel = 0,
+	Position = UDim2.fromOffset(12, 12), Size = UDim2.fromOffset(330, 44), Visible = false }, hud)
+nuevo("UICorner", { CornerRadius = UDim.new(0, 6) }, objetivo)
+local objetivoIc = nuevo("ImageLabel", { BackgroundTransparency = 1, Position = UDim2.fromOffset(6, 6), Size = UDim2.fromOffset(32, 32),
+	ResampleMode = Enum.ResamplerMode.Pixelated }, objetivo)
+local objetivoT = texto({ Position = UDim2.fromOffset(46, 3), Size = UDim2.new(1, -52, 1, -6), Text = "", TextSize = 12, TextWrapped = true,
+	TextXAlignment = Enum.TextXAlignment.Left }, objetivo)
+function Interfaz.pintarObjetivo(enSupervivencia)
+	local siguiente
+	for _, L in Interfaz.listaLogros do
+		if L.guia and not L.hecho then
+			siguiente = L
+			break
+		end
+	end
+	objetivo.Visible = enSupervivencia == true and siguiente ~= nil
+	if siguiente then
+		Iconos.poner(objetivoIc, siguiente.icono)
+		objetivoT.Text = "Objetivo: " .. siguiente.guia
+	end
+end
+function Interfaz.logros(lista)
+	Interfaz.listaLogros = lista or {}
+	pintarLogros()
 end
 
 -- La frase amarilla late
@@ -26790,7 +27646,7 @@ function Interfaz.abierto()
 end
 
 function Interfaz.menuVisible()
-	return menu.Visible or carga.Visible or muerte.Visible or ventanaAjustes.Visible or ventanaControles.Visible
+	return menu.Visible or carga.Visible or muerte.Visible or ventanaAjustes.Visible or ventanaControles.Visible or ventanaLogros.Visible
 end
 
 ------------------------------------------------------------------
@@ -27163,6 +28019,7 @@ function Interfaz.menu(si)
 	if not si then
 		ventanaAjustes.Visible = false
 		ventanaControles.Visible = false
+		ventanaLogros.Visible = false
 	end
 end
 
@@ -27322,7 +28179,7 @@ end
 
 return Interfaz
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX00000036"><Properties><string name="Name">Luz</string><ProtectedString name="Source"><![CDATA[--!native
+<Item class="ModuleScript" referent="RBX00000039"><Properties><string name="Name">Luz</string><ProtectedString name="Source"><![CDATA[--!native
 --!optimize 2
 --[[
 	Blockverse para Roblox · Luz (cliente)
@@ -27579,7 +28436,7 @@ end
 
 return Luz
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX00000037"><Properties><string name="Name">MobsVista</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX0000003A"><Properties><string name="Name">MobsVista</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Criaturas (cliente)
 	Viste las piezas invisibles de workspace.Criaturas con los modelos del
 	juego web: la misma geometría y las mismas texturas pintadas (exportadas
@@ -28255,7 +29112,7 @@ end
 
 return MobsVista
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX00000038"><Properties><string name="Name">Modelos3D</string><ProtectedString name="Source"><![CDATA[--[[
+<Item class="ModuleScript" referent="RBX0000003B"><Properties><string name="Name">Modelos3D</string><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox · Modelos 3D de los objetos (cliente)
 	· Los bloques son cubos (o losas, o sus cajas) con las mismas texturas del mundo.
 	· Los demás objetos (espadas, picos, comida, flores…) se hacen con los píxeles de
@@ -28657,7 +29514,7 @@ end
 
 return Modelos
 ]]></ProtectedString></Properties></Item>
-<Item class="ModuleScript" referent="RBX00000039"><Properties><string name="Name">Render</string><ProtectedString name="Source"><![CDATA[--!native
+<Item class="ModuleScript" referent="RBX0000003C"><Properties><string name="Name">Render</string><ProtectedString name="Source"><![CDATA[--!native
 --!optimize 2
 --[[
 	Blockverse para Roblox · Render del mundo (cliente)
@@ -29803,7 +30660,7 @@ return Render
 ]]></ProtectedString></Properties></Item>
 </Item>
 </Item>
-<Item class="StarterCharacterScripts" referent="RBX0000003D"><Properties><string name="Name">StarterCharacterScripts</string></Properties><Item class="Script" referent="RBX0000003B"><Properties><string name="Name">Health</string><bool name="Disabled">false</bool><ProtectedString name="Source"><![CDATA[--[[
+<Item class="StarterCharacterScripts" referent="RBX00000040"><Properties><string name="Name">StarterCharacterScripts</string></Properties><Item class="Script" referent="RBX0000003E"><Properties><string name="Name">Health</string><bool name="Disabled">false</bool><ProtectedString name="Source"><![CDATA[--[[
 	Blockverse para Roblox
 	Este script vacío reemplaza al «Health» de Roblox, que cura sola a la
 	persona. En Blockverse la vida se recupera con el hambre llena.
