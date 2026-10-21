@@ -371,7 +371,7 @@ function BW.etiquetaJugador(plr, J)
 		hum.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
 	end
 	local E = P.eqs[J.equipo].E
-	local g = cartel(cab, ("[%s] %s %s"):format(E.letra, plr.Name, Perfil.etiqueta(J.perfil)), E.col, 0.9)
+	local g = cartel(cab, ("[%s] %s%s %s"):format(E.letra, plr:GetAttribute("VIP") and "★" or "", plr.Name, Perfil.etiqueta(J.perfil)), E.col, 0.9)
 	g.Size = UDim2.fromOffset(220, 22)
 end
 
@@ -1976,6 +1976,8 @@ function terminar(ganador)
 		local hechas = {}
 		if jugo then
 			mon = 10 + J.bajas * 5 + J.finales * 10 + J.camas * 25 + (gano and 100 or 0) + (plr == mvp and 25 or 0)
+			-- Pases de la tienda (VIP, Monedas x2)
+			mon = math.floor(mon * Perfil.multMonedas(plr))
 			perfil.monedas += mon
 			perfil.xp += xp
 			perfil.partidas += 1
@@ -2373,6 +2375,7 @@ function BW.perfilMenu(plr)
 	return {
 		nivel = Perfil.nivel(p.xp), xp = p.xp % 500, monedas = p.monedas, victorias = p.victorias, partidas = p.partidas,
 		diaria = disponible, racha = racha, premio = premio, colorNivel = Perfil.colorNivel(Perfil.nivel(p.xp)),
+		vip = plr:GetAttribute("VIP") == true, mult = Perfil.multMonedas(plr),
 	}
 end
 function BW.reclamarDiaria(plr)
@@ -2866,7 +2869,8 @@ local function panel(plr, J)
 		linea(("Empieza en %d"):format(math.ceil(P.lobby)), "#55ff55")
 		linea(("Jugadores: %d (el resto, bots)"):format(n))
 		linea(("Nivel %d★ · %d/500 xp"):format(nivel, perfil.xp % 500), Perfil.colorNivel(nivel))
-		linea(("Monedas: %d"):format(perfil.monedas), "#ffd84a")
+		local mult = Perfil.multMonedas(plr)
+		linea(("Monedas: %d%s"):format(perfil.monedas, mult > 1 and (" · ganas x%s"):format(tostring(mult)) or ""), "#ffd84a")
 		linea(("Victorias: %d · Racha: %d"):format(perfil.victorias, perfil.racha), "#aaaaaa")
 		linea("")
 		linea("Misiones de hoy:", "#ffd84a")
@@ -2884,6 +2888,9 @@ local function panel(plr, J)
 		end
 		table.insert(Bt, { t = "Kits", sub = ("%s · %s"):format(kitD.n, Kits.RAREZAS[kitD.r][1]), cmd = "kits" })
 		table.insert(Bt, { t = "Efectos", sub = (BW.EFECTOS_N[perfil.efecto] or "Sin efecto"), cmd = "efectos" })
+		if ctx.robux and ctx.robux("monedas1200") then
+			table.insert(Bt, { t = "★ Tienda", sub = mult > 1 and "Pases y monedas" or "VIP: +50 % de monedas", cmd = "tienda", arg = "destacado", activo = true })
+		end
 	else
 		local ev = BW.EVENTOS[P.ev]
 		if ev then

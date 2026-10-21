@@ -357,6 +357,28 @@ Interfaz.menu(true)
 Interfaz.abrirLogros()
 pasos(2)
 volcarGui("menu_logros")
+-- Tienda con Robux (como en Studio: así salen los productos aunque aún no tengan ID)
+do
+	F.studio = true
+	local TiendaV = cli.TiendaVista._resultado
+	TiendaV.abrir("destacado")
+	pasos(3)
+	volcarGui("menu_tienda")
+	TiendaV.abrir("pases")
+	pasos(3)
+	volcarGui("menu_tienda_pases")
+	TiendaV.abrir("monedas")
+	pasos(3)
+	volcarGui("menu_tienda_monedas")
+	TiendaV.abrir("modos")
+	pasos(3)
+	volcarGui("menu_tienda_modos")
+	TiendaV.cerrar()
+	TiendaV.gracias({ nombre = "VIP", texto = "¡Ya eres VIP!" })
+	pasos(2)
+	volcarGui("menu_gracias")
+	F.studio = false
+end
 Interfaz.menu(false)
 Interfaz.menu(true)
 pasos(2)

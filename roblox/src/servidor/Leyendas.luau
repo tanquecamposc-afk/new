@@ -492,6 +492,23 @@ function LY.alMorir(plr)
 	end
 end
 
+-- Saco de recursos (tienda de Robux)
+function LY.puedeRecursos(plr)
+	local L = partidas[plr]
+	return L ~= nil and not L.fin
+end
+function LY.recursos(plr, madera, piedra, oro)
+	local L = partidas[plr]
+	if not L or L.fin then
+		return false
+	end
+	L.madera += madera
+	L.piedra += piedra
+	L.oro += oro
+	titulo(plr, "", ("+%d madera · +%d piedra · +%d oro"):format(madera, piedra, oro), "#ffd84a")
+	return true
+end
+
 -- Órdenes y construcciones (teclas G, R, F y 1-6, o los botones del panel)
 function LY.comando(plr, cmd, arg)
 	local L = partidas[plr]
@@ -585,6 +602,9 @@ local function panel(L)
 	table.insert(botones, { t = "G · Ayudantes: recoger", cmd = "cosechar", activo = L.cdG <= 0 })
 	table.insert(botones, { t = "R · ¡Al ataque!", cmd = "atacar", activo = true })
 	table.insert(botones, { t = "F · Seguidme", cmd = "seguir", activo = true })
+	if ctx.robux and ctx.robux("recursosLY") then
+		table.insert(botones, { t = "★ Saco de recursos", sub = "+40 madera, +40 piedra, +10 oro · Robux", cmd = "robux", arg = "recursosLY", activo = true })
+	end
 	ctx.Estado:FireClient(L.plr, "panel", { titulo = "LEYENDAS", lineas = Ls, botones = botones, modo = "leyendas", col = "#ffd84a" })
 end
 

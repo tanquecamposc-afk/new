@@ -387,6 +387,21 @@ function MZ.alMorir(plr)
 	titulo(plr, "", ("Te quedan %d %s"):format(R.vidas, R.vidas == 1 and "vida" or "vidas"), "#ff8888")
 end
 
+-- Vida extra (tienda de Robux)
+function MZ.puedeVidaExtra(plr)
+	local R = partidas[plr]
+	return R ~= nil and not R.fin
+end
+function MZ.vidaExtra(plr)
+	local R = partidas[plr]
+	if not R or R.fin then
+		return false
+	end
+	R.vidas += 1
+	titulo(plr, "", ("♥ ¡Vida extra! Tienes %d"):format(R.vidas), "#ff8888")
+	return true
+end
+
 -- La defensa reduce el daño
 function MZ.modDano(plr, n, tipo)
 	local R = partidas[plr]
@@ -494,7 +509,11 @@ local function panel(R)
 	end
 	linea(vivos > 0 and ("Enemigos cerca: " .. vivos) or "Explora: cada sala trae enemigos y botín", "#aabbcc")
 	linea("Clic dcho. con un artefacto para usarlo", "#aabbcc")
-	ctx.Estado:FireClient(R.plr, "panel", { titulo = ("MAZMORRA · NIVEL %d"):format(R.nivel), lineas = L, col = R.arena.tema.col })
+	local botones = nil
+	if ctx.robux and ctx.robux("vidaMZ") and not R.fin then
+		botones = { { t = "♥ Vida extra", sub = R.vidas <= 1 and "¡Te queda una! · Robux" or "Una vida más · Robux", cmd = "robux", arg = "vidaMZ", activo = true } }
+	end
+	ctx.Estado:FireClient(R.plr, "panel", { titulo = ("MAZMORRA · NIVEL %d"):format(R.nivel), lineas = L, col = R.arena.tema.col, botones = botones })
 end
 
 local function actualizar(R, dt)

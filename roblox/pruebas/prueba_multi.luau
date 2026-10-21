@@ -34,6 +34,15 @@ srv.Name = "Servidor"
 srv.Source = FU["servidor/init.server"]
 srv.Parent = S.ServerScriptService
 carpetaDe("servidor", srv, { ["init.server"] = true })
+-- IDs de prueba para la tienda de Robux (en el juego real los pone el dueño)
+do
+	local Prod = F.entorno(comp).require(comp.ProductosRobux)
+	local ids = { vip = 1001, monedasX2 = 1002, efectos = 1003, monedas500 = 2001, monedas1200 = 2002, monedas3000 = 2003, monedas7500 = 2004,
+		vidaMZ = 2005, recursosLY = 2006, kitAventurero = 2007 }
+	for k, id in ids do
+		Prod.POR_CLAVE[k].id = id
+	end
+end
 F.ejecutar(srv)
 for _ = 1, 3 do
 	F.paso(1 / 30)
@@ -777,6 +786,75 @@ if Ra and Rb then
 	mover(ana, sa.x, Arenas.MZ_Y + 1, sa.z)
 	pasos(5)
 	ok(#Ra.enemigos > 0 and #Rb.enemigos == 0, "los enemigos de una mazmorra aparecen en la otra")
+end
+-- TIENDA CON ROBUX: ventana de compra, entrega segura (una sola vez), pases y cosas de cada modo
+do
+	local MS = S.MarketplaceService
+	local DEC = F.Enum.ProductPurchaseDecision
+	local procesar = MS.ProcessReceipt
+	ok(type(procesar) == "function", "no hay ProcessReceipt para entregar las compras")
+	-- La tienda llega al cliente con precios y lo que se puede usar
+	enviar(ana, "tiendaRobux")
+	pasos(2)
+	local dt = datos[ana].ultimo.tiendaRobux and datos[ana].ultimo.tiendaRobux[1]
+	ok(dt and #dt.lista == 10, "la tienda no manda los 10 productos (" .. tostring(dt and #dt.lista) .. ")")
+	-- Pulsar comprar abre la ventana de Roblox con el producto correcto
+	local antes = #F.pedidos
+	enviar(ana, "comprarRobux", "monedas1200")
+	ok(#F.pedidos == antes + 1 and F.pedidos[#F.pedidos].id == 2002, "comprar no abre la ventana de compra de Roblox")
+	-- Lo que no se puede usar ahora no se deja comprar (Beto no está en Leyendas)
+	antes = #F.pedidos
+	enviar(beto, "comprarRobux", "recursosLY")
+	ok(#F.pedidos == antes, "deja comprar el saco de recursos fuera de Leyendas")
+	-- Entrega de monedas, y la misma compra repetida no da nada más
+	local pa = PerfilM.de(ana)
+	local m0 = pa.monedas
+	local r = procesar({ PlayerId = 101, ProductId = 2002, PurchaseId = "compra1" })
+	ok(r == DEC.PurchaseGranted and pa.monedas == m0 + 1200, "no se entregan las 1 200 monedas (" .. (pa.monedas - m0) .. ")")
+	r = procesar({ PlayerId = 101, ProductId = 2002, PurchaseId = "compra1" })
+	ok(r == DEC.PurchaseGranted and pa.monedas == m0 + 1200, "una compra repetida se entrega dos veces")
+	pasos(3)
+	ok(F.almacenes.Blockverse_v2 and F.almacenes.Blockverse_v2.r_compra1 == true, "la compra no queda apuntada en el DataStore")
+	ok(datos[ana].ultimo.compraHecha ~= nil, "el cliente no recibe el «¡gracias!» de la compra")
+	-- Un jugador que no está no recibe nada (Roblox lo reintenta cuando vuelva)
+	ok(procesar({ PlayerId = 999, ProductId = 2002, PurchaseId = "compra2" }) == DEC.NotYetGranted, "entrega compras a jugadores que no están")
+	-- Vida extra dentro de la mazmorra
+	local R = MZm._partida(ana)
+	if R then
+		local v0 = R.vidas
+		procesar({ PlayerId = 101, ProductId = 2005, PurchaseId = "compra3" })
+		ok(R.vidas == v0 + 1, "la vida extra no suma una vida en la mazmorra")
+	end
+	-- Saco de recursos dentro de Leyendas
+	local L = LYm._partida(dani)
+	if L then
+		local ma = L.madera
+		procesar({ PlayerId = 104, ProductId = 2006, PurchaseId = "compra4" })
+		ok(L.madera == ma + 40, "el saco de recursos no llega a la aldea de Leyendas")
+	end
+	-- Si ya no se puede usar (Beto no está en Leyendas), se devuelve en monedas
+	local pb = PerfilM.de(beto)
+	local mb = pb.monedas
+	procesar({ PlayerId = 102, ProductId = 2006, PurchaseId = "compra5" })
+	ok(pb.monedas == mb + 200, "una compra que ya no sirve no se devuelve en monedas")
+	-- Pases: VIP (más monedas y diaria doble) y todos los efectos
+	MS.PromptGamePassPurchaseFinished:Fire(ana, 1001, true)
+	MS.PromptGamePassPurchaseFinished:Fire(ana, 1003, true)
+	pasos(3)
+	ok(ana:GetAttribute("VIP") == true, "el pase VIP no se activa")
+	ok(PerfilM.multMonedas(ana) == 1.5, "el VIP no da +50 % de monedas")
+	local _, _, premio = PerfilM.diaria(ana)
+	ok(premio and premio >= 80 and premio % 2 == 0, "el VIP no dobla la recompensa diaria")
+	local todos = true
+	for _, e in BWm.EFECTOS do
+		todos = todos and pa.efectos[e.id] == true
+	end
+	ok(todos, "el pase de efectos no desbloquea todos los efectos")
+	-- Un pase que ya tienes no se vuelve a ofrecer
+	antes = #F.pedidos
+	enviar(ana, "comprarRobux", "vip")
+	ok(#F.pedidos == antes, "ofrece comprar otra vez un pase que ya tienes")
+	print("tienda: monedas, vida extra, saco de recursos, devolución, VIP y efectos bien")
 end
 for _, p in { ana, beto, dani } do
 	enviar(p, "modoJuego", "normal")

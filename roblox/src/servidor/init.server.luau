@@ -52,6 +52,7 @@ local Dimension = require(script.Dimension)
 local Redstone = require(script.Redstone)
 local Mesas = require(script.Mesas)
 local Logros = require(script.Logros)
+local Tienda = require(script.Tienda)
 local Clima = require(script.Clima)
 local Generador = require(Comp.Generador)
 
@@ -2051,9 +2052,25 @@ end
 
 -- Órdenes de Leyendas (G, R, F, 1-6 o los botones del panel)
 function acciones.modoCmd(plr, s, cmd, arg)
+	-- Botones de la tienda de Robux en los paneles de los modos
+	if cmd == "robux" then
+		Tienda.pedir(plr, arg)
+		return
+	elseif cmd == "tienda" then
+		Tienda.enviar(plr, type(arg) == "string" and arg or nil)
+		return
+	end
 	if type(cmd) == "string" then
 		Modos.comando(plr, cmd, type(arg) == "number" and arg or nil)
 	end
+end
+
+function acciones.tiendaRobux(plr, s, pestana)
+	Tienda.enviar(plr, type(pestana) == "string" and pestana or nil)
+end
+
+function acciones.comprarRobux(plr, s, clave)
+	Tienda.pedir(plr, clave)
 end
 
 function acciones.pedirLogros(plr)
@@ -2767,11 +2784,21 @@ Dimension.iniciar({
 		Sim.explosion(x, y, z, p)
 	end,
 })
-Modos.iniciar({
+local ctxModos = {
 	Mundo = Mundo, Mobs = Mobs, Entidades = Entidades, estados = estados, enviarJugador = enviarJugador, aviso = aviso,
 	logro = Logros.conseguir, tablaNivel = Logros.actualizarTabla,
 	Estado = Estado, colocar = colocar, Inv = Inv, danar = danar, teletransportar = teletransportar, darOSoltar = darOSoltar,
 	enviarUI = enviarUI, ganarXP = ganarXP, activarTNT = activarTNT, guardar = guardar,
+	-- ¿Sale este producto de Robux en la tienda? (los paneles de los modos ponen su botón)
+	robux = function(clave)
+		return Tienda.disponible(clave)
+	end,
+}
+Modos.iniciar(ctxModos)
+-- Tienda con Robux: pases, monedas y cosas de cada modo
+Tienda.iniciar({
+	Estado = Estado, estados = estados, almacen = almacen, darOSoltar = darOSoltar, supervivencia = supervivencia, aviso = aviso,
+	enviarJugador = enviarJugador, Modos = Modos, BW = require(script.BedWars), MZ = require(script.Mazmorras), LY = require(script.Leyendas),
 })
 -- Clima: lluvia, nieve y tormentas con rayos
 Clima.iniciar({ Estado = Estado, Mundo = Mundo, Mobs = Mobs, estados = estados, danar = danar, activo = Modos.activo })

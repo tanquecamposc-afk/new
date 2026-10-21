@@ -108,16 +108,24 @@ end
 local function premioDia(racha)
 	return 40 + 15 * (math.clamp(racha, 1, 7) - 1)
 end
+-- La tienda de Robux los cambia (VIP: recompensa doble; pases: más monedas)
+Perfil.multDiaria = function(plr)
+	return 1
+end
+Perfil.multMonedas = function(plr)
+	return 1
+end
 -- {disponible, racha que tendría hoy, monedas que daría}
 function Perfil.diaria(plr)
 	local p = Perfil.de(plr)
 	local d = dia()
 	local dd = p.diario or { dia = -1, racha = 0 }
+	local mult = Perfil.multDiaria(plr)
 	if dd.dia == d then
-		return false, dd.racha, premioDia(math.min(7, dd.racha + 1))
+		return false, dd.racha, premioDia(math.min(7, dd.racha + 1)) * mult
 	end
 	local racha = dd.dia == d - 1 and math.min(7, dd.racha + 1) or 1
-	return true, racha, premioDia(racha)
+	return true, racha, premioDia(racha) * mult
 end
 -- Cobra la de hoy; devuelve las monedas y la racha (o nil si ya se cobró)
 function Perfil.reclamarDiaria(plr)
@@ -209,6 +217,12 @@ local function guardarYa(plr)
 	if not ok then
 		warn("[Blockverse] No se pudo guardar el perfil de Bed Wars: " .. tostring(err))
 	end
+end
+
+-- ¿Lo que cambie se va a guardar? (no si la carga falló o no hay DataStore)
+function Perfil.sePuedeGuardar(plr)
+	Perfil.de(plr)
+	return almacen ~= nil and not sinGuardar[plr] and plr.UserId ~= nil and plr.UserId > 0
 end
 
 -- Guarda sin parar a quien lo llama (el DataStore tarda)

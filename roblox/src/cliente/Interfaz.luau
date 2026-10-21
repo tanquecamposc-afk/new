@@ -792,6 +792,14 @@ do
 			Iconos.poner(ic, mo[1])
 			texto({ Position = UDim2.fromOffset(38, 0), Size = UDim2.new(1, -46, 1, 0), Text = tostring(mo[2]) .. " monedas", TextSize = 15, Font = FUENTE_N,
 				TextColor3 = Color3.fromRGB(255, 220, 90), TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 8 }, extra.monedas)
+			-- «+»: abre la tienda en las monedas
+			local mas = nuevo("TextButton", { AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(0, -6, 0.5, 0), Size = UDim2.fromOffset(30, 30),
+				BackgroundColor3 = Color3.fromRGB(60, 170, 70), BorderSizePixel = 0, Text = "+", Font = FUENTE_N, TextSize = 22,
+				TextColor3 = Color3.new(1, 1, 1), ZIndex = 8 }, extra.monedas)
+			nuevo("UICorner", { CornerRadius = UDim.new(0, 15) }, mas)
+			mas.Activated:Connect(function()
+				Interfaz.alAbrirTienda("monedas")
+			end)
 		end
 		-- Al cambiar de pestaña se elige el que llevas equipado
 		if extra.selTab ~= d.pestana or not (d.ofertas and d.ofertas[extra.selKit or 0]) then
@@ -1287,7 +1295,7 @@ function Interfaz.perfil(d)
 	if not d then
 		return
 	end
-	perfilNivel.Text = ("Nivel %d★"):format(d.nivel or 1)
+	perfilNivel.Text = ("%sNivel %d★"):format(d.vip and "[VIP] " or "", d.nivel or 1)
 	local ok, c = pcall(Color3.fromHex, d.colorNivel or "#aaaaaa")
 	perfilNivel.TextColor3 = ok and c or Color3.fromRGB(170, 170, 170)
 	barraNivelF.Size = UDim2.fromScale(math.clamp((d.xp or 0) / 500, 0, 1), 1)
@@ -1336,6 +1344,49 @@ local botonVolver = tarjeta(filaMenu, "Volver al juego", nil, nil, 4, function()
 	end
 end, UDim2.fromOffset(180, 46))
 botonVolver.Visible = false
+-- Botón dorado de la tienda (arriba a la derecha), que late para que se vea
+Interfaz.alAbrirTienda = function(pestana) end
+do
+	local b = nuevo("TextButton", { Name = "BotonTienda", AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -16, 0, 16), Size = UDim2.fromOffset(210, 64),
+		BackgroundColor3 = Color3.fromRGB(255, 200, 60), BorderSizePixel = 0, Text = "", AutoButtonColor = false, ZIndex = 12 }, menu)
+	nuevo("UICorner", { CornerRadius = UDim.new(0, 10) }, b)
+	nuevo("UIStroke", { Color = Color3.fromRGB(120, 70, 0), Thickness = 3, ApplyStrokeMode = Enum.ApplyStrokeMode.Border }, b)
+	nuevo("UIGradient", { Rotation = 90, Color = ColorSequence.new(Color3.fromRGB(255, 240, 150), Color3.fromRGB(230, 140, 20)) }, b)
+	local ic = nuevo("ImageLabel", { BackgroundTransparency = 1, Position = UDim2.fromOffset(10, 8), Size = UDim2.fromOffset(48, 48),
+		ResampleMode = Enum.ResamplerMode.Pixelated, ZIndex = 13 }, b)
+	iconosMenu[ic] = idDe("bloqueOro")
+	texto({ Position = UDim2.fromOffset(66, 8), Size = UDim2.new(1, -72, 0, 28), Text = "TIENDA", TextSize = 26, Font = FUENTE_N,
+		TextXAlignment = Enum.TextXAlignment.Left, TextStrokeColor3 = Color3.fromRGB(110, 60, 0), TextStrokeTransparency = 0, ZIndex = 13 }, b)
+	texto({ Position = UDim2.fromOffset(66, 36), Size = UDim2.new(1, -72, 0, 18), Text = "VIP · Monedas · Extras", TextSize = 13, Font = FUENTE,
+		TextXAlignment = Enum.TextXAlignment.Left, TextColor3 = Color3.fromRGB(90, 45, 0), TextStrokeTransparency = 1, ZIndex = 13 }, b)
+	local cinta = nuevo("Frame", { AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, 8, 0, -10), Size = UDim2.fromOffset(62, 20),
+		BackgroundColor3 = Color3.fromRGB(230, 50, 60), BorderSizePixel = 0, ZIndex = 14 }, b)
+	nuevo("UICorner", { CornerRadius = UDim.new(0, 10) }, cinta)
+	texto({ Size = UDim2.fromScale(1, 1), Text = "¡NUEVO!", TextSize = 11, Font = FUENTE_N, ZIndex = 15 }, cinta)
+	local esc = nuevo("UIScale", {}, b)
+	local encima = false
+	b.MouseEnter:Connect(function()
+		encima = true
+		TweenService:Create(esc, TweenInfo.new(0.15, Enum.EasingStyle.Back), { Scale = 1.08 }):Play()
+		Interfaz.alSonido("paso", 1.8)
+	end)
+	b.MouseLeave:Connect(function()
+		encima = false
+		TweenService:Create(esc, TweenInfo.new(0.15), { Scale = 1 }):Play()
+	end)
+	b.Activated:Connect(function()
+		Interfaz.alSonido("nivel", 1.4)
+		Interfaz.alAbrirTienda("destacado")
+	end)
+	-- Late suavemente mientras el menú está abierto
+	local t = 0
+	RunService.RenderStepped:Connect(function(dt)
+		t += dt
+		if menu.Visible and not encima then
+			esc.Scale = 1 + math.sin(t * 3) * 0.03
+		end
+	end)
+end
 texto({ AnchorPoint = Vector2.new(0, 1), Position = UDim2.new(0, 14, 1, -10), Size = UDim2.fromOffset(400, 18), Text = "Blockverse · edición Roblox",
 	TextSize = 13, TextXAlignment = Enum.TextXAlignment.Left, TextTransparency = 0.3, ZIndex = 11 }, menu)
 texto({ AnchorPoint = Vector2.new(1, 1), Position = UDim2.new(1, -14, 1, -10), Size = UDim2.fromOffset(420, 18), Text = "M abre este menú en cualquier momento",
@@ -2106,6 +2157,7 @@ end
 
 function Interfaz.menuVisible()
 	return menu.Visible or carga.Visible or muerte.Visible or ventanaAjustes.Visible or ventanaControles.Visible or ventanaLogros.Visible
+		or Interfaz.tiendaVisible == true
 end
 
 ------------------------------------------------------------------

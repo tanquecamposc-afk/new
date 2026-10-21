@@ -28,6 +28,7 @@ local Iconos = require(script:WaitForChild("Iconos"))
 local Render = require(script:WaitForChild("Render"))
 local MobsVista = require(script:WaitForChild("MobsVista"))
 local EntidadesVista = require(script:WaitForChild("EntidadesVista"))
+local TiendaVista = require(script:WaitForChild("TiendaVista"))
 local ClimaVista = require(script:WaitForChild("ClimaVista"))
 local DimensionVista = require(script:WaitForChild("DimensionVista"))
 local Generador = require(Comp:WaitForChild("Generador"))
@@ -185,6 +186,18 @@ Iconos.preparar()
 Interfaz.carga(0.35, "Preparando criaturas…")
 MobsVista.iniciar()
 EntidadesVista.iniciar()
+-- Tienda con Robux
+TiendaVista.enviar = enviar
+TiendaVista.alSonido = function(nombre, tono)
+	sonido(nombre, nil, tono)
+end
+TiendaVista.alVisible = function(si)
+	Interfaz.tiendaVisible = si
+end
+Interfaz.alAbrirTienda = function(pestana)
+	TiendaVista.abrir(pestana)
+end
+TiendaVista.iniciar()
 Interfaz.carga(0.5, "Generando el mundo…")
 local md = MundoDatos.new(semilla)
 est.md = md
@@ -597,6 +610,10 @@ UserInputService.InputBegan:Connect(function(input, procesado)
 		end
 	elseif t == Enum.UserInputType.Keyboard then
 		local k = input.KeyCode
+		if k == Enum.KeyCode.Escape and TiendaVista.visible() then
+			TiendaVista.cerrar()
+			return
+		end
 		if k == Enum.KeyCode.Escape and Interfaz.abierto() then
 			Interfaz.cerrar()
 			return
@@ -1146,6 +1163,13 @@ Estado.OnClientEvent:Connect(function(tipo, a, b, c)
 		Interfaz.oneblock(a)
 	elseif tipo == "sonido" then
 		sonido(a, b)
+	elseif tipo == "tiendaRobux" then
+		TiendaVista.datos(a, b)
+	elseif tipo == "compraHecha" then
+		TiendaVista.gracias(a)
+		if TiendaVista.visible() then
+			enviar("tiendaRobux")
+		end
 	elseif tipo == "bloqueado" then
 		-- El escudo paró un golpe: la mano da un tirón
 		aterriza = math.max(aterriza, 0.35)

@@ -263,6 +263,7 @@ local EVENTOS = {
 	InputBegan = true, InputEnded = true, InputChanged = true, MouseButton1Click = true, MouseButton1Down = true,
 	MouseButton1Up = true, MouseLeave = true, MouseEnter = true, Activated = true, Touched = true, StateChanged = true,
 	TouchTap = true, Completed = true, MouseButton2Click = true, Jumping = true, JumpRequest = true,
+	PromptGamePassPurchaseFinished = true, PromptProductPurchaseFinished = true,
 }
 local DEFECTO = {
 	Health = 100, MaxHealth = 100, Anchored = false, CanCollide = true, Transparency = 0, Massless = false,
@@ -451,6 +452,16 @@ function METODOS:GetDataStore(nombre)
 		UpdateAsync = function(_, k, f) local n = f(copiaProfunda(datos[k])); if n ~= nil then datos[k] = copiaProfunda(n) end; return n end,
 	}
 end
+-- Compras con Robux (MarketplaceService): las ventanas de compra se apuntan en F.pedidos
+-- y F.pases[UserId][id] = true si el jugador tiene ese pase
+F.pedidos = {}
+F.pases = {}
+F.precios = {}
+function METODOS:PromptProductPurchase(plr, id) table.insert(F.pedidos, { plr = plr, id = id, tipo = "producto" }) end
+function METODOS:PromptGamePassPurchase(plr, id) table.insert(F.pedidos, { plr = plr, id = id, tipo = "pase" }) end
+function METODOS:UserOwnsGamePassAsync(uid, id) return F.pases[uid] ~= nil and F.pases[uid][id] == true end
+function METODOS:GetProductInfo(id) return { PriceInRobux = F.precios[id], Name = "Producto " .. tostring(id) } end
+function METODOS:IsStudio() return F.studio == true end
 function METODOS:BindToClose() end
 function METODOS:SetCoreGuiEnabled() end
 function METODOS:AddItem() end
@@ -553,7 +564,8 @@ function F.crearJuego()
 	F.game = game
 	F.servicios = {}
 	for _, n in { "Workspace", "ReplicatedStorage", "ServerScriptService", "Players", "Lighting", "RunService", "DataStoreService",
-		"StarterGui", "SoundService", "Debris", "TweenService", "UserInputService", "StarterPlayer", "AssetService" } do
+		"StarterGui", "SoundService", "Debris", "TweenService", "UserInputService", "StarterPlayer", "AssetService", "MarketplaceService",
+		"TextChatService" } do
 		local s = nuevaInstancia(n)
 		s._p.Name = n
 		s.Parent = game

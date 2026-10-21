@@ -199,6 +199,30 @@ Con **Rojo**, `default.project.json` monta el mismo árbol desde `src/`.
 | Mazmorras: usar un artefacto | Clic derecho con él en la mano |
 | Bed Wars: habilidad del kit | G (o el botón táctil) |
 
+## Tienda con Robux
+
+Botón dorado **TIENDA** en el menú principal (también «★ Tienda» en la sala de Bed Wars, «+» junto a las monedas en la ventana de kits y botones dentro de Mazmorras y Leyendas). Pestañas Destacado, Pases, Monedas y Para cada modo; al comprar sale confeti y «¡GRACIAS!».
+
+- **Pases** (para siempre):
+  - **VIP**: +50 % de monedas en Bed Wars, recompensa diaria doble, etiqueta [VIP] en el chat y en la tarjeta, ★ junto al nombre.
+  - **Monedas x2**: el doble de monedas en Bed Wars (con el VIP, x2,5).
+  - **Todos los efectos**: los efectos de baja final desbloqueados.
+- **Monedas** (para kits y efectos): 500, 1 200 (+20 %), 3 000 (+50 %) y 7 500 (+88 %, mejor valor).
+- **De cada modo**: Vida extra en Mazmorras, Saco de recursos en Leyendas y Kit de aventurero en Supervivencia u One Block. Solo se pueden comprar donde sirven; si al llegar la compra ya no sirve, se devuelve en monedas.
+- **Seguro**: cada compra se apunta en el DataStore y nunca se entrega dos veces; si el perfil no se pudo cargar, se espera y Roblox lo vuelve a intentar.
+- Nada es al azar: siempre sabes exactamente lo que recibes.
+
+### Cómo ponerla en marcha (una vez)
+
+1. Publica el juego (Archivo > Publicar en Roblox).
+2. En create.roblox.com > tu experiencia > **Monetización**:
+   - **Pases**: crea VIP, Monedas x2 y Todos los efectos.
+   - **Productos de desarrollador**: crea los 4 paquetes de monedas, Vida extra, Saco de recursos y Kit de aventurero.
+3. Copia el número (ID) de cada uno y pégalo en `src/compartido/ProductosRobux.luau`, en el `id = 0` que le toca (en Studio: ReplicatedStorage > Blockverse > ProductosRobux).
+4. La tienda enseña el precio que pongas en Roblox.
+
+Mientras un ID sea 0, ese producto no lo ven los jugadores. En Roblox Studio sí sale (marcado «SIN ID») y al pulsarlo se da gratis, para que lo pruebes.
+
 ## Lo que es distinto del web
 
 Para ser claros, esto **no es igual** que en el juego web:
@@ -258,6 +282,7 @@ Para ser claros, esto **no es igual** que en el juego web:
     - Pantalla de muerte: llegan los objetos soltados, el sitio y el tiempo vivo, y «Te mató un Zombi».
     - Encantamientos: Eficiencia acelera, Fortuna III multiplica los diamantes, Toque de seda da la mena entera y Botín III da más botín.
     - Escudo: para los golpes de delante y no los de la espalda, y los demás ven que te cubres.
+    - Tienda con Robux: abre la ventana de compra, entrega las monedas una sola vez (y lo apunta), vida extra, saco de recursos, devolución en monedas si ya no sirve, VIP (+50 % y diaria doble) y pase de efectos.
     - Enemigos: no persiguen a través de paredes, no se tiran por los bordes, se avisan entre ellos y mandan su vida para la barra.
     - Logros y clima: se consiguen, salen en la tabla de jugadores y se guardan (y no cuentan dentro de Bed Wars); con lluvia los zombis no arden, en la tormenta es «de noche» y el rayo hace daño.
     - Bed Wars con 3 y 4 jugadores: votación, compra de kits y efectos (y que se guarden), equipos, golpes, escudo de cama, trampolín, momentos de caos y cofre del cielo, baja final con efecto, espectador, irse a mitad, victoria con recompensas, «Jugar otra vez» e inventario devuelto.
