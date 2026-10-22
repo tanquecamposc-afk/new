@@ -1,5 +1,5 @@
--- Registro de todas las anomalías vivas en el mundo: modelo, estado,
--- etiquetas flotantes y ProximityPrompts según el estado.
+-- Registro de todo lo que vive en el mundo: anomalías (pacientes) y huevos.
+-- Gestiona el modelo, el estado, la etiqueta flotante y los ProximityPrompts.
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Shared = ReplicatedStorage.Shared
@@ -51,53 +51,62 @@ local function ensureLabel(info)
 	local top = info.Model.Root:FindFirstChild("Top")
 	local bb = Instance.new("BillboardGui")
 	bb.Name = "Label"
-	bb.Size = UDim2.fromOffset(220, 84)
-	bb.StudsOffset = Vector3.new(0, 1.6, 0)
-	bb.MaxDistance = 90
+	bb.Size = UDim2.fromOffset(220, 92)
+	bb.StudsOffset = Vector3.new(0, 1.4, 0)
+	bb.MaxDistance = 85
 	bb.LightInfluence = 0
-	bb.AlwaysOnTop = false
 	local list = Instance.new("UIListLayout")
 	list.SortOrder = Enum.SortOrder.LayoutOrder
 	list.VerticalAlignment = Enum.VerticalAlignment.Bottom
 	list.Parent = bb
-	textLabel(bb, "Tag", 1, 18, Enum.Font.GothamBlack, Color3.new(1, 1, 1))
-	textLabel(bb, "Title", 2, 26, Enum.Font.FredokaOne, Color3.new(1, 1, 1))
-	textLabel(bb, "Rarity", 3, 18, Enum.Font.GothamBlack, Color3.new(1, 1, 1))
-	textLabel(bb, "Info", 4, 20, Enum.Font.GothamBold, Color3.fromRGB(120, 255, 150))
+	info.L = {
+		Tag = textLabel(bb, "TagLabel", 1, 20, Enum.Font.GothamBlack, Color3.new(1, 1, 1)),
+		Title = textLabel(bb, "TitleLabel", 2, 26, Enum.Font.FredokaOne, Color3.new(1, 1, 1)),
+		Rarity = textLabel(bb, "RarityLabel", 3, 18, Enum.Font.GothamBlack, Color3.new(1, 1, 1)),
+		Info = textLabel(bb, "InfoLabel", 4, 20, Enum.Font.GothamBold, Color3.fromRGB(120, 255, 150)),
+	}
 	bb.Parent = top
 	info.Label = bb
 	return bb
 end
 
 function Anoms.SetLabel(info, tag, tagColor, infoText, infoColor)
-	local bb = ensureLabel(info)
-	local def = info.Def
-	local rarity = Config.RarityById[def.Rarity]
-	local mut = info.Record.Mut and Config.MutationById[info.Record.Mut]
-	local title = bb:FindFirstChild("Title")
-	local rar = bb:FindFirstChild("Rarity")
-	local tagL = bb:FindFirstChild("Tag")
-	local infoL = bb:FindFirstChild("Info")
-	title.Text = def.Name
-	rar.Text = rarity.Name .. (mut and ("  ✦ " .. mut.Name:upper() .. " x" .. mut.Mult) or "")
-	rar.TextColor3 = mut and mut.Color or rarity.Color
-	tagL.Text = tag or ""
-	tagL.Visible = tag ~= nil
-	tagL.TextColor3 = tagColor or Color3.new(1, 1, 1)
-	infoL.Text = infoText or ""
-	infoL.TextColor3 = infoColor or Color3.fromRGB(120, 255, 150)
+	ensureLabel(info)
+	local L = info.L
+	if info.Kind == "egg" then
+		local egg = Config.EggById[info.Record.Egg]
+		L.Title.Text = egg.Name
+		L.Title.TextColor3 = egg.Order >= 6 and Color3.fromRGB(30, 255, 205) or Color3.new(1, 1, 1)
+		L.Rarity.Text = "🥚 " .. Util.Time(egg.Hatch) .. " de incubación"
+		L.Rarity.TextColor3 = egg.Color:Lerp(Color3.new(1, 1, 1), 0.3)
+	else
+		local def = info.Def
+		local rarity = Config.RarityById[def.Rarity]
+		local mut = info.Record.Mut and Config.MutationById[info.Record.Mut]
+		L.Title.Text = def.Name
+		L.Title.TextColor3 = Color3.new(1, 1, 1)
+		L.Rarity.Text = rarity.Name .. (mut and ("  ✦ " .. mut.Name:upper() .. " x" .. mut.Mult) or "")
+		L.Rarity.TextColor3 = mut and mut.Color or rarity.Color
+	end
+	L.Tag.Text = tag or ""
+	L.Tag.Visible = tag ~= nil
+	L.Tag.TextColor3 = tagColor or Color3.new(1, 1, 1)
+	L.Info.Text = infoText or ""
+	L.Info.Visible = infoText ~= nil
+	L.Info.TextColor3 = infoColor or Color3.fromRGB(120, 255, 150)
 end
 
-function Anoms.Create(record, cframe)
-	local model = Builder.Build(record.Id, record.Mut, { Tell = record.Mimic and record.Tell or nil })
-	model:PivotTo(cframe)
+function Anoms.SetInfoText(info, text, color)
+	ensureLabel(info)
+	info.L.Info.Text = text
+	info.L.Info.Visible = true
+	if color then
+		info.L.Info.TextColor3 = color
+	end
+end
+
+local function register(model, info)
 	model.Parent = folder
-	local info = {
-		Model = model,
-		Record = record,
-		Def = AnomalyData.ById[record.Id],
-		State = "none",
-	}
 	Registry[model] = info
 	model.Destroying:Connect(function()
 		Registry[model] = nil
@@ -105,16 +114,61 @@ function Anoms.Create(record, cframe)
 	return info
 end
 
+function Anoms.Create(record, cframe)
+	local model = Builder.Build(record.Id, record.Mut, { Tell = record.Mimic and record.Tell or nil })
+	model:PivotTo(cframe)
+	return register(model, {
+		Kind = "anomaly",
+		Model = model,
+		Record = record,
+		Def = AnomalyData.ById[record.Id],
+		State = "none",
+	})
+end
+
+-- record = { Egg = id, Result = {Id, Mut, Mimic, Tell}, Remaining = s? }
+function Anoms.CreateEgg(record, cframe)
+	local model = Builder.BuildEgg(record.Egg, { Contaminated = record.Result and record.Result.Mimic })
+	model:PivotTo(cframe)
+	return register(model, {
+		Kind = "egg",
+		Model = model,
+		Record = record,
+		Egg = Config.EggById[record.Egg],
+		State = "none",
+	})
+end
+
+function Anoms.Value(info)
+	if info.Kind == "egg" then
+		return info.Egg.Price
+	end
+	return Util.Value(info.Record)
+end
+
+function Anoms.IsMimic(info)
+	if info.Kind == "egg" then
+		return info.Record.Result and info.Record.Result.Mimic == true
+	end
+	return info.Record.Mimic == true
+end
+
+function Anoms.Name(info)
+	if info.Kind == "egg" then
+		return info.Egg.Name
+	end
+	return Util.DisplayName(info.Record)
+end
+
 local function addPrompt(info, kind, action, hold, key, ownerId)
 	local p = Instance.new("ProximityPrompt")
 	p.Name = kind
 	p.ActionText = action
-	p.ObjectText = Util.DisplayName(info.Record)
+	p.ObjectText = Anoms.Name(info)
 	p.HoldDuration = hold
 	p.KeyboardKeyCode = key or Enum.KeyCode.E
 	p.MaxActivationDistance = 11
 	p.RequiresLineOfSight = false
-	p.Style = Enum.ProximityPromptStyle.Default
 	p:SetAttribute("Kind", kind)
 	if ownerId then
 		p:SetAttribute("OwnerId", ownerId)
@@ -122,14 +176,15 @@ local function addPrompt(info, kind, action, hold, key, ownerId)
 	p.Parent = info.Model.Root:FindFirstChild("PromptAtt")
 	return p
 end
+Anoms.AddPrompt = addPrompt
 
-function Anoms.ClearPrompts(info)
+function Anoms.ClearPrompts(info, onlyKind)
 	local att = info.Model.Root:FindFirstChild("PromptAtt")
 	if not att then
 		return
 	end
 	for _, c in ipairs(att:GetChildren()) do
-		if c:IsA("ProximityPrompt") then
+		if c:IsA("ProximityPrompt") and (not onlyKind or c:GetAttribute("Kind") == onlyKind) then
 			c:Destroy()
 		end
 	end
@@ -142,15 +197,32 @@ function Anoms.SetState(info, state, extra)
 	local rec = info.Record
 	model:SetAttribute("State", state)
 	model:SetAttribute("Owner", info.OwnerId or 0)
-	model:SetAttribute("Walking", state == "conveyor" or state == "walking" or state == "roaming")
+	model:SetAttribute("Walking", state == "walking" or state == "roaming")
+	model:SetAttribute("Condition", nil)
+	model:SetAttribute("Critical", nil)
+
+	if info.Kind == "egg" then
+		local price = info.Egg.Price
+		if state == "market" then
+			addPrompt(info, "Buy", "Comprar " .. Util.Money(price), 0.3)
+			Anoms.SetLabel(info, nil, nil, Util.Money(price), Color3.fromRGB(255, 225, 90))
+		elseif state == "incubating" then
+			addPrompt(info, "Steal", "Robar huevo", Config.StealHold, Enum.KeyCode.E, info.OwnerId)
+			Anoms.SetLabel(info, nil, nil, "🐣 ...", Color3.fromRGB(200, 230, 255))
+		elseif state == "dropped" then
+			addPrompt(info, "Capture", "Recoger", 0.5)
+			Anoms.SetLabel(info, "¡HUEVO TIRADO!", Color3.fromRGB(255, 200, 80), "¡Recógelo!", Color3.fromRGB(255, 200, 90))
+		elseif state == "carried" then
+			Anoms.SetLabel(info, extra and ("✋ " .. extra) or nil, Color3.fromRGB(255, 150, 80), nil)
+		end
+		return
+	end
+
 	local value = Util.Value(rec)
 	local income = Util.Income(rec)
-	if state == "conveyor" then
-		addPrompt(info, "Buy", "Contener " .. Util.Money(value), 0.25)
-		Anoms.SetLabel(info, nil, nil, Util.Money(value) .. "  •  +" .. Util.Money(income) .. "/s", Color3.fromRGB(255, 225, 90))
-	elseif state == "pod" then
+	if state == "bed" then
 		addPrompt(info, "Steal", "Robar", Config.StealHold, Enum.KeyCode.E, info.OwnerId)
-		addPrompt(info, "Sell", "Vender " .. Util.Money(math.floor(value * Config.SellRatio)), 1.2, Enum.KeyCode.F, info.OwnerId)
+		addPrompt(info, "Sell", "Dar de alta " .. Util.Money(math.floor(value * Config.SellRatio)), 1.2, Enum.KeyCode.F, info.OwnerId)
 		Anoms.SetLabel(info, nil, nil, "+" .. Util.Money(income) .. "/s")
 	elseif state == "roaming" then
 		if rec.Mimic and info.Revealed then
@@ -161,7 +233,7 @@ function Anoms.SetState(info, state, extra)
 			Anoms.SetLabel(info, "⚠ ¡FUGADA! ⚠", Color3.fromRGB(255, 80, 80), "¡Captúrala gratis!", Color3.fromRGB(255, 200, 90))
 		end
 	elseif state == "walking" then
-		Anoms.SetLabel(info, extra and ("→ " .. extra) or nil, Color3.fromRGB(160, 220, 255), "+" .. Util.Money(income) .. "/s")
+		Anoms.SetLabel(info, extra and ("🐣 ¡Recién nacida! → " .. extra) or nil, Color3.fromRGB(160, 220, 255), "+" .. Util.Money(income) .. "/s")
 	elseif state == "carried" then
 		Anoms.SetLabel(info, extra and ("✋ " .. extra) or nil, Color3.fromRGB(255, 150, 80), nil)
 	end
@@ -173,7 +245,11 @@ function Anoms.Destroy(info, effect, color)
 	end
 	if info.Model and info.Model.Parent then
 		if effect then
-			ctx.Effect(effect, info.Model.Root.Position + Vector3.new(0, 3, 0), color or Config.RarityById[info.Def.Rarity].Color)
+			local c = color
+			if not c then
+				c = info.Kind == "egg" and info.Egg.Color or Config.RarityById[info.Def.Rarity].Color
+			end
+			ctx.Effect(effect, info.Model.Root.Position + Vector3.new(0, 3, 0), c)
 		end
 		info.Model:Destroy()
 	end

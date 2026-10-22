@@ -573,6 +573,82 @@ function Builder.Build(id, mut, opts)
 	return model
 end
 
+-- Huevos anómalos. opts: { Contaminated = bool, NoFx = bool }
+function Builder.BuildEgg(eggId, opts)
+	opts = opts or {}
+	local egg = Config.EggById[eggId]
+	assert(egg, "Huevo desconocido: " .. tostring(eggId))
+
+	local model = Instance.new("Model")
+	model.Name = egg.Name
+	local root = Instance.new("Part")
+	root.Name = "Root"
+	root.Size = V(1.5, 0.2, 1.5)
+	root.Transparency = 1
+	root.Anchored = true
+	root.CanCollide = false
+	root.CanTouch = false
+	root.CanQuery = false
+	root.CFrame = CFrame.new()
+	root.Parent = model
+	model.PrimaryPart = root
+
+	local b = { model = model, root = root, parts = {}, s = 1, P = egg.Color, S = egg.Spots, E = egg.Spots, h = 4 }
+	local fx = Instance.new("Attachment")
+	fx.Name = "FX"
+	fx.Position = V(0, 2.2, 0)
+	fx.Parent = root
+	b.fx = fx
+
+	local spin = { Type = "rot", Pivot = V(0, 0, 0), Axis = V(0, 1, 0), Speed = 0.7 }
+	make(b, "Shell", BALL, V(2.6, 2.6, 2.6), CF(0, 1.55, 0), "P", SMOOTH, spin)
+	make(b, "Shell", BALL, V(2.1, 2.1, 2.1), CF(0, 2.45, 0), "P", SMOOTH, spin)
+	make(b, "Shell", BALL, V(1.4, 1.4, 1.4), CF(0, 3.05, 0), "P", SMOOTH, spin)
+	local spots = {
+		V(0.9, 1.3, -0.95), V(-1.0, 1.9, -0.6), V(0.3, 2.7, -0.9), V(-0.6, 1.2, 1.0), V(1.0, 2.2, 0.55), V(-0.2, 3.25, 0.5),
+	}
+	for i, p in ipairs(spots) do
+		local d = 0.4 + (i % 3) * 0.12
+		make(b, "Spot", BALL, V(d, d, d), CF(p.X * 0.93, p.Y, p.Z * 0.93), "S", egg.Order >= 4 and NEON or SMOOTH, spin)
+	end
+	make(b, "Band", CYL, V(0.25, 2.66, 2.66), CF(0, 1.75, 0) * UP, "S", NEON, spin)
+	if opts.Contaminated then
+		-- Pista sutil: una vena roja que late
+		make(b, "Vein", BLOCK, V(0.12, 0.9, 0.12), CF(1.15, 2.1, 0.35) * ANG(0, 0, 0.5), C(255, 20, 40), NEON, { Type = "flicker", Speed = 0.9 })
+		make(b, "Vein", BLOCK, V(0.1, 0.6, 0.1), CF(1.2, 1.55, 0.2) * ANG(0, 0, -0.4), C(255, 20, 40), NEON, { Type = "flicker", Speed = 0.9 })
+	end
+	make(b, "GlowRing", CYL, V(0.1, 3.4, 3.4), CF(0, 0.08, 0) * UP, egg.Order >= 6 and egg.Spots or egg.Color, NEON, { Type = "pulse", Speed = 2.5, Amp = 0.12 }, 0.4)
+
+	model:SetAttribute("BobAmp", 0.25)
+	model:SetAttribute("BobSpeed", 1.8)
+	if not opts.NoFx then
+		if egg.Order >= 3 then
+			local light = Instance.new("PointLight")
+			light.Color = egg.Color
+			light.Range = 10
+			light.Brightness = 1.5
+			light.Parent = fx
+		end
+		if egg.Order >= 4 then
+			addEmitter(fx, TEX_SPARK, egg.Color, 6, 0.4, 2)
+		end
+	end
+
+	local promptAtt = Instance.new("Attachment")
+	promptAtt.Name = "PromptAtt"
+	promptAtt.Position = V(0, 2, 0)
+	promptAtt.Parent = root
+	local topAtt = Instance.new("Attachment")
+	topAtt.Name = "Top"
+	topAtt.Position = V(0, 4.2, 0)
+	topAtt.Parent = root
+
+	model:SetAttribute("EggId", eggId)
+	model:SetAttribute("Height", 4)
+	CollectionService:AddTag(model, "Anomaly")
+	return model
+end
+
 -- Silueta negra para el Índice (anomalías no descubiertas)
 function Builder.Silhouette(model)
 	for _, d in ipairs(model:GetDescendants()) do

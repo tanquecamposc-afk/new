@@ -10,7 +10,7 @@ local ctx
 local store
 local profiles = {}
 
-local STORE_NAME = "StealAnAnomaly_v1"
+local STORE_NAME = "StealAnAnomaly_v2"
 local AUTOSAVE = 90
 
 local function default()
@@ -18,13 +18,14 @@ local function default()
 		Cash = Config.StartCash,
 		Rebirths = 0,
 		BaseLevel = 0,
-		Pods = {},
+		Beds = {},
+		Incubators = {},
 		Index = {},
 		Codes = {},
 		Daily = { Last = 0, Streak = 0 },
 		Missions = nil,
 		LastOnline = 0,
-		Stats = { Buys = 0, Steals = 0, Exposed = 0, Captures = 0, Collected = 0 },
+		Stats = { Buys = 0, Steals = 0, Exposed = 0, Captures = 0, Collected = 0, Hatched = 0, Treated = 0 },
 		Tutorial = false,
 		Receipts = {},
 	}
@@ -96,6 +97,9 @@ function Data.Save(player)
 	local p = profiles[player]
 	if not p or not p.CanSave or not store then
 		return
+	end
+	if ctx and ctx.Bases then
+		pcall(ctx.Bases.SnapshotIncubators, player)
 	end
 	p.Data.LastOnline = os.time()
 	local ok, err = pcall(function()

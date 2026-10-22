@@ -172,57 +172,68 @@ def build_map(ws):
     part(m, "Plaza", (490, 0.2, 76), CF(0, 0.1, 0), (68, 62, 80), "Concrete")
     for z in (-38.5, 38.5):
         part(m, "PlazaEdge", (490, 0.3, 1), CF(0, 0.15, z), (120, 70, 200), "Neon", shadow=False)
+    # Línea de guía (franja de "hospital") por el centro de la plaza
+    for z in (-3, 3):
+        part(m, "GuideLine", (480, 0.12, 1.2), CF(0, 0.22, z), (60, 200, 220), "SmoothPlastic", collide=False, query=False)
 
-    # Cinta transportadora
-    part(m, "Conveyor", (468, 1, 16), CF(0, 0.5, 0), (42, 40, 56), "DiamondPlate")
-    for z in (-8.3, 8.3):
-        part(m, "Rail", (468, 0.6, 0.6), CF(0, 1.3, z), (170, 90, 255), "Neon", shadow=False)
-        part(m, "RailBase", (468, 1.4, 1.2), CF(0, 0.7, z * 1.04), (30, 28, 40), "Metal")
-    for x in range(-224, 225, 16):
-        for s in (-1, 1):
-            part(m, "Chevron", (3.2, 0.12, 0.5), CF(x - 1.2, 1.03, s * 1.1) * A(0, s * math.radians(35), 0),
-                 (120, 60, 200), "Neon", transparency=0.35, collide=False, query=False, shadow=False)
+    # ---------------- Mercado de la Grieta (centro)
+    mk = model(m, "Market")
+    part(mk, "MarketFloor", (1.2, 58, 58), CF(0, 0.6, 0) * UP, (52, 40, 78), "Slate", "Cylinder")
+    part(mk, "MarketRing", (1.0, 60, 60), CF(0, 0.45, 0) * UP, (170, 90, 255), "Neon", "Cylinder", shadow=False)
+    part(mk, "MarketInner", (1.3, 30, 30), CF(0, 0.65, 0) * UP, (35, 26, 56), "Marble", "Cylinder")
+    invisible(mk, "MarketCenter", (1, 1, 1), CF(0, 1.3, 0))
+    n = 10
+    for i in range(n):
+        a = i / n * math.tau
+        x, z = math.cos(a) * 19, math.sin(a) * 19
+        ry = math.atan2(-math.cos(a), -math.sin(a))
+        base = CF(x, 0, z, angles(0, ry, 0))
+        part(mk, "PedestalBase", (1.0, 6.2, 6.2), base * CF(0, 1.6, 0) * UP, (40, 32, 60), "Slate", "Cylinder")
+        part(mk, "Pedestal%d" % (i + 1), (4, 2.6, 4), base * CF(0, 3.2, 0), (225, 220, 235), "Marble")
+        part(mk, "PedestalGlow", (4.3, 0.3, 4.3), base * CF(0, 4.35, 0), (190, 110, 255), "Neon", collide=False, shadow=False)
+    for z, yaw in ((30, math.pi), (-30, 0.0)):
+        sb = CF(0, 0, z, angles(0, yaw, 0))
+        for x in (-9, 9):
+            part(mk, "SignPost", (0.8, 11, 0.8), sb * CF(x, 5.5, 0.4), (35, 33, 45), "Metal")
+        part(mk, "MarketSign", (20, 3.6, 0.5), sb * CF(0, 10, 0), (20, 14, 30), "SmoothPlastic")
+        part(mk, "SignGlow", (20.4, 0.3, 0.8), sb * CF(0, 11.95, 0), (190, 110, 255), "Neon", shadow=False)
 
-    invisible(m, "PathStart", (1, 1, 1), CF(-236, 1, 0))
-    invisible(m, "PathEnd", (1, 1, 1), CF(236, 1, 0))
-
-    # La Grieta
+    # La Grieta flotando sobre el mercado
     rift = model(m, "Rift")
-    rx = -248
-    part(rift, "RiftCore", (1.2, 24, 24), CF(rx, 15, 0), (60, 10, 110), "Neon", "Cylinder", collide=False)
-    part(rift, "RiftMid", (1.0, 17, 17), CF(rx + 0.4, 15, 0), (170, 70, 255), "Neon", "Cylinder", collide=False, transparency=0.15)
-    part(rift, "RiftEye", (0.8, 8, 8), CF(rx + 0.8, 15, 0), (235, 210, 255), "Neon", "Cylinder", collide=False)
+    ry_ = 24
+    part(rift, "RiftCore", (1.2, 20, 20), CF(0, ry_, 0), (60, 10, 110), "Neon", "Cylinder", collide=False)
+    part(rift, "RiftMid", (1.4, 14, 14), CF(0, ry_, 0), (170, 70, 255), "Neon", "Cylinder", collide=False, transparency=0.15)
+    part(rift, "RiftEye", (1.6, 6, 6), CF(0, ry_, 0), (235, 210, 255), "Neon", "Cylinder", collide=False)
+    part(rift, "RiftBeam", (ry_ - 10, 3, 3), CF(0, (ry_ - 10) / 2 + 1, 0) * UP, (190, 110, 255), "Neon", "Cylinder",
+         transparency=0.7, collide=False, query=False, shadow=False)
     ring = model(rift, "Ring")
     n = 32
     for i in range(n):
         a = i / n * math.tau
-        part(ring, "Shard", (2.2, 3.4, 1.6), CF(rx, 15 + math.sin(a) * 13.5, math.cos(a) * 13.5) * A(-a, 0, 0),
+        part(ring, "Shard", (2, 3, 1.4), CF(0, ry_ + math.sin(a) * 11.5, math.cos(a) * 11.5) * A(-a, 0, 0),
              (190, 90, 255) if i % 2 == 0 else (60, 255, 220), "Neon", collide=False, shadow=False)
-    for z in (-19, 19):
-        part(rift, "Pillar", (7, 34, 7), CF(rx, 17, z), (40, 36, 52), "Slate")
-        part(rift, "Rune", (7.4, 26, 0.6), CF(rx, 17, z - math.copysign(3.6, z)), (170, 70, 255), "Neon", shadow=False)
-    part(rift, "Arch", (8, 6, 46), CF(rx, 35, 0), (40, 36, 52), "Slate")
-    part(rift, "RiftSign", (0.6, 4, 26), CF(rx + 4.3, 35, 0), (20, 14, 30), "SmoothPlastic")
-    part(rift, "Platform", (22, 1.2, 46), CF(rx + 2, 0.6, 0), (50, 46, 62), "Slate")
-    for i, (w, h) in enumerate([(26, 0.6), (30, 0.3)]):
-        part(rift, "Step", (w, h, 50 + i * 4), CF(rx + 2, h / 2, 0), (60, 55, 72), "Slate")
 
-    # El Vacío (salida)
-    void = model(m, "VoidExit")
-    vx = 248
-    part(void, "VoidCore", (1.2, 18, 18), CF(vx, 11, 0), (25, 0, 12), "Neon", "Cylinder", collide=False)
-    for i in range(24):
-        a = i / 24 * math.tau
-        part(void, "Shard", (1.6, 2.4, 1.2), CF(vx, 11 + math.sin(a) * 10, math.cos(a) * 10) * A(-a, 0, 0),
-             (255, 50, 70), "Neon", collide=False, shadow=False)
-    for z in (-14, 14):
-        part(void, "Pillar", (5, 24, 5), CF(vx, 12, z), (40, 36, 52), "Slate")
-    part(void, "Arch", (6, 4, 34), CF(vx, 25, 0), (40, 36, 52), "Slate")
-    part(void, "VoidSign", (0.6, 3.4, 20), CF(vx - 3.3, 25, 0), (20, 14, 30), "SmoothPlastic")
+    # Ambulancias decorativas
+    for x, yaw in ((-118, 0.3), (118, math.pi - 0.3)):
+        am = model(m, "Ambulance")
+        O = CF(x, 0, 0, angles(0, yaw, 0))
+        part(am, "Body", (7, 6, 14), O * CF(0, 4, 1), (240, 240, 245), "SmoothPlastic")
+        part(am, "Cab", (7, 4.5, 4.5), O * CF(0, 3.25, -8), (240, 240, 245), "SmoothPlastic")
+        part(am, "Windshield", (6.4, 2, 0.3), O * CF(0, 4.3, -10.3), (60, 90, 120), "Glass", transparency=0.3)
+        part(am, "Stripe", (7.1, 1, 18.6), O * CF(0, 3.2, -1.3), (230, 40, 50), "SmoothPlastic")
+        for sx in (-3.6, 3.6):
+            part(am, "CrossV", (0.2, 3, 1), O * CF(sx, 5.2, 2), (230, 40, 50), "SmoothPlastic", collide=False)
+            part(am, "CrossH", (0.2, 1, 3), O * CF(sx, 5.2, 2), (230, 40, 50), "SmoothPlastic", collide=False)
+        part(am, "Siren", (3, 0.6, 1), O * CF(0, 5.8, -8), (60, 120, 255), "Neon", shadow=False)
+        for wx in (-3.3, 3.3):
+            for wz in (-7.5, 5):
+                part(am, "Wheel", (1.2, 2.4, 2.4), O * CF(wx, 1.2, wz), (25, 25, 30), "SmoothPlastic", "Cylinder")
 
     # Farolas
     lamps = model(m, "Lamps")
     for x in range(-200, 201, 40):
+        if abs(x) < 40:
+            continue
         for z in (-13, 13):
             s = 1 if z > 0 else -1
             part(lamps, "LampBase", (1.8, 0.8, 1.8), CF(x, 0.6, z), (35, 33, 45), "Metal")
@@ -276,13 +287,11 @@ def build_map(ws):
             part(deco, "Branch", (0.55, ln, 0.55),
                  CF(x, h * rng.uniform(0.65, 0.95), z) * A(0, ay, 0) * A(0, 0, tilt) * CF(0, ln / 2, 0),
                  (48, 38, 36), "Wood")
-
-    # Cajas de contención junto a la plaza
-    for x in (-110, 0, 110):
+    # Cajas de suministros médicos
+    for x in (-160, -60, 60, 160):
         for z in (-30, 30):
-            part(deco, "Crate", (5, 5, 5), CF(x + 2, 2.6, z) * A(0, rng.uniform(-0.4, 0.4), 0), (90, 80, 60), "WoodPlanks")
-            part(deco, "CrateStripe", (5.1, 0.6, 5.1), CF(x + 2, 3.6, z), (255, 200, 40), "SmoothPlastic", collide=False)
-
+            part(deco, "Crate", (5, 5, 5), CF(x + 2, 2.6, z) * A(0, rng.uniform(-0.4, 0.4), 0), (235, 235, 240), "SmoothPlastic")
+            part(deco, "CrateCross", (5.1, 1, 1.8), CF(x + 2, 2.6, z), (230, 40, 50), "SmoothPlastic", collide=False)
     return m
 
 
@@ -300,20 +309,26 @@ def build_base(parent, index, cx, cz, yaw):
     def P(name, size, local, col, mat="SmoothPlastic", shape="Block", **kw):
         return part(b, name, size, O * local, col, mat, shape, **kw)
 
-    wall = (55, 52, 66)
-    P("Floor", (80, 1, 60), CF(0, 0.5, 0), (60, 56, 72), "Concrete")
-    P("Carpet", (66, 0.1, 30), CF(0, 1.05, 11), darken(color, 0.35), "SmoothPlastic")
+    wall = (236, 238, 242)
+    P("Floor", (80, 1, 60), CF(0, 0.5, 0), (214, 220, 226), "Marble")
+    P("Walkway", (24, 0.1, 60), CF(0, 1.05, 0), darken(color, 0.55), "SmoothPlastic")
     for z in (-29.7, 29.7):
         P("Trim", (80, 0.15, 0.6), CF(0, 1.05, z), color, "Neon", collide=False, shadow=False)
     for x in (-39.7, 39.7):
         P("Trim", (0.6, 0.15, 60), CF(x, 1.05, 0), color, "Neon", collide=False, shadow=False)
 
-    P("WallBack", (80, 14, 2), CF(0, 8, 29), wall, "Metal")
+    P("WallBack", (80, 14, 2), CF(0, 8, 29), wall)
     for x in (-39, 39):
-        P("WallSide", (2, 14, 60), CF(x, 8, 0), wall, "Metal")
+        P("WallSide", (2, 14, 60), CF(x, 8, 0), wall)
     for x in (-26, 26):
-        P("WallFront", (28, 14, 2), CF(x, 8, -29), wall, "Metal")
-    P("Lintel", (24, 4, 2), CF(0, 13, -29), wall, "Metal")
+        P("WallFront", (28, 14, 2), CF(x, 8, -29), wall)
+    P("Lintel", (24, 4, 2), CF(0, 13, -29), wall)
+    # Franja de color tipo hospital
+    P("Band", (80.2, 1.4, 2.2), CF(0, 5, 29), color)
+    for x in (-39, 39):
+        P("Band", (2.2, 1.4, 60.2), CF(x, 5, 0), color)
+    for x in (-26, 26):
+        P("Band", (28.2, 1.4, 2.2), CF(x, 5, -29), color)
     P("WallGlow", (80, 0.5, 2.4), CF(0, 15.25, 29), color, "Neon", shadow=False)
     for x in (-39, 39):
         P("WallGlow", (2.4, 0.5, 60), CF(x, 15.25, 0), color, "Neon", shadow=False)
@@ -321,36 +336,72 @@ def build_base(parent, index, cx, cz, yaw):
         P("WallGlow", (28, 0.5, 2.4), CF(x, 15.25, -29), color, "Neon", shadow=False)
     P("WallGlow", (24, 0.5, 2.4), CF(0, 15.25, -29), color, "Neon", shadow=False)
     for x in (-12.6, 12.6):
-        P("DoorFrame", (1.4, 11, 2.8), CF(x, 6.5, -29), (255, 200, 40), "SmoothPlastic")
-    P("Sign", (22, 3.4, 0.4), CF(0, 13, -30.2), (20, 15, 30), "SmoothPlastic")
+        P("DoorFrame", (1.4, 11, 2.8), CF(x, 6.5, -29), darken(color, 0.8))
+    P("Sign", (22, 3.4, 0.4), CF(0, 13, -30.2), (20, 15, 30))
+    # Cruces de neón
+    for x in (-26, 26):
+        P("CrossSign", (1.4, 4.4, 0.4), CF(x, 10.5, -30.2), (255, 60, 70), "Neon", shadow=False)
+        P("Cross", (4.4, 1.4, 0.4), CF(x, 10.5, -30.2), (255, 60, 70), "Neon", shadow=False)
+    # Luces de sala
+    for x in (-22, 22):
+        P("WardLight", (8, 0.6, 1), CF(x, 12.5, 27.5), (235, 250, 255), "Neon", shadow=False)
+    for x in (-37.5, 37.5):
+        P("WardLight", (1, 0.6, 8), CF(x, 12.5, 6), (235, 250, 255), "Neon", shadow=False)
 
     laser = model(b, "Laser")
     for i in range(5):
         part(laser, "LaserBar", (24, 0.35, 0.35), O * CF(0, 2 + i * 2, -29), (255, 40, 60), "Neon",
              transparency=1, collide=False, query=False, shadow=False)
 
-    P("LockPedestal", (3, 2.4, 3), CF(-30, 2.2, -22), (40, 38, 52), "Metal")
-    P("LockButton", (2.4, 0.6, 2.4), CF(-30, 3.7, -22), (60, 255, 130), "Neon")
-    P("CollectorFrame", (10.4, 0.3, 10.4), CF(28, 1.1, -20), (40, 38, 52), "Metal")
+    P("LockPedestal", (3, 2.4, 3), CF(-16, 2.2, -24), (60, 64, 80), "Metal")
+    P("LockButton", (2.4, 0.6, 2.4), CF(-16, 3.7, -24), (60, 255, 130), "Neon")
+    P("CollectorFrame", (10.4, 0.3, 10.4), CF(28, 1.1, -20), (60, 64, 80), "Metal")
     P("Collector", (9, 0.4, 9), CF(28, 1.3, -20), (60, 255, 130), "Neon")
-    P("SpawnPad", (8, 0.3, 8), CF(0, 1.15, -16), color, "SmoothPlastic")
+    P("Register", (4, 3, 2.5), CF(28, 2.5, -12.5), (240, 240, 245))
+    P("RegisterTop", (3, 0.8, 1.6), CF(28, 4.4, -12.6), (40, 40, 50))
+    P("SpawnPad", (8, 0.3, 8), CF(0, 1.15, -16), color)
+    # Cafetera (recupera cordura)
+    P("Coffee", (2.6, 4.2, 2.2), CF(36.6, 3.1, -6), (45, 40, 50), "Metal")
+    P("CoffeeGlow", (1.6, 0.8, 0.3), CF(36.6, 4.2, -7.15), (255, 160, 80), "Neon", shadow=False)
+    P("Cup", (0.7, 0.8, 0.7), CF(36.6, 1.9, -7.3), (250, 250, 250), collide=False)
+    # Plantas
+    for x, z in ((-36, -26), (36, 25), (-36, 25)):
+        P("Pot", (1.6, 2.2, 2.2), CF(x, 2.0, z) * UP, (190, 110, 70), "SmoothPlastic", "Cylinder")
+        P("Plant", (2.6, 2.6, 2.6), CF(x, 3.9, z), (70, 170, 90), "Grass", "Ball", collide=False)
 
     part(b, "Zone", (80, 30, 60), O * CF(0, 15, 0), (255, 255, 255), transparency=1, collide=False,
          query=False, touch=False, shadow=False)
     part(b, "DoorPoint", (1, 1, 1), O * CF(0, 1, -36), (255, 255, 255), transparency=1, collide=False,
          query=False, touch=False, shadow=False)
 
-    pods = folder(b, "Pods")
-    positions = [(x, 4) for x in (-28, -14, 0, 14, 28)] + [(x, 18) for x in (-28, -14, 0, 14, 28)]
+    # Camas de pacientes
+    beds = folder(b, "Beds")
+    positions = [(x, 2) for x in (-28, -14, 0, 14, 28)] + [(x, 18) for x in (-28, -14, 0, 14, 28)]
     for i, (x, z) in enumerate(positions, start=1):
-        pm = model(pods, "Pod%d" % i)
-        part(pm, "Base", (1, 9, 9), O * CF(x, 1.5, z) * UP, (70, 70, 86), "Metal", "Cylinder")
-        part(pm, "Ring", (0.3, 9.4, 9.4), O * CF(x, 2.1, z) * UP, (120, 200, 255), "Neon", "Cylinder", collide=False, shadow=False)
-        part(pm, "Glass", (11, 8, 8), O * CF(x, 7.5, z) * UP, (150, 210, 255), "Glass", "Cylinder",
-             transparency=0.75, collide=False, query=False, shadow=False)
-        part(pm, "CapRing", (0.3, 9.4, 9.4), O * CF(x, 12.9, z) * UP, color, "Neon", "Cylinder", collide=False, shadow=False)
-        part(pm, "Cap", (1, 9, 9), O * CF(x, 13.5, z) * UP, (70, 70, 86), "Metal", "Cylinder")
-        part(pm, "Anchor", (1, 0.2, 1), O * CF(x, 2.1, z), (255, 255, 255), transparency=1, collide=False,
+        bm = model(beds, "Bed%d" % i)
+        part(bm, "Frame", (6, 1.4, 10), O * CF(x, 1.7, z), (150, 156, 170), "Metal")
+        part(bm, "Mattress", (5.6, 0.8, 9.4), O * CF(x, 2.8, z), (248, 248, 252), "SmoothPlastic")
+        part(bm, "Sheet", (5.7, 0.5, 5.6), O * CF(x, 3.05, z - 1.8), color, "SmoothPlastic")
+        part(bm, "Pillow", (4, 0.6, 1.8), O * CF(x, 3.3, z + 3.6), (255, 255, 255), "SmoothPlastic")
+        part(bm, "Headboard", (6, 3.2, 0.4), O * CF(x, 3.6, z + 5), (120, 126, 140), "Metal")
+        part(bm, "MonitorPole", (0.3, 6, 0.3), O * CF(x + 3.7, 4, z + 4.6), (90, 96, 110), "Metal")
+        part(bm, "Monitor", (3, 2.1, 0.3), O * CF(x + 3.7, 6.9, z + 4.4), (10, 16, 20), "SmoothPlastic", shadow=False)
+        part(bm, "IVPole", (0.15, 6.4, 0.15), O * CF(x - 3.6, 4.2, z + 4.2), (170, 176, 190), "Metal")
+        part(bm, "IVBag", (0.7, 1, 0.3), O * CF(x - 3.6, 6.8, z + 4.2), (150, 220, 255), "Neon", transparency=0.3, collide=False)
+        part(bm, "Anchor", (1, 0.2, 1), O * CF(x, 3.25, z), (255, 255, 255), transparency=1, collide=False,
+             query=False, touch=False, shadow=False)
+
+    # Incubadoras
+    incs = folder(b, "Incubators")
+    for i, (x, z) in enumerate([(-31, -20), (-21, -20), (-31, -10), (-21, -10)], start=1):
+        im = model(incs, "Inc%d" % i)
+        part(im, "Base", (1.4, 5.4, 5.4), O * CF(x, 1.7, z) * UP, (90, 96, 112), "Metal", "Cylinder")
+        part(im, "Ring", (0.3, 5.7, 5.7), O * CF(x, 2.3, z) * UP, color, "Neon", "Cylinder", collide=False, shadow=False)
+        part(im, "Dome", (5.2, 5.2, 5.2), O * CF(x, 4.3, z), (190, 230, 255), "Glass", "Ball",
+             transparency=0.65, collide=False, query=False, shadow=False)
+        part(im, "LampArm", (0.3, 0.3, 2.6), O * CF(x, 7.4, z + 1.2), (90, 96, 112), "Metal")
+        part(im, "HeatLamp", (0.8, 0.8, 0.8), O * CF(x, 7.1, z), (255, 150, 60), "Neon", "Ball", collide=False, shadow=False)
+        part(im, "Anchor", (1, 0.2, 1), O * CF(x, 2.45, z), (255, 255, 255), transparency=1, collide=False,
              query=False, touch=False, shadow=False)
     return b
 
@@ -409,7 +460,7 @@ def build():
     sss = Item("ServerScriptService", "ServerScriptService")
     script(sss, "Script", "Main", "ServerScriptService/Main.server.lua")
     mods = folder(sss, "Modules")
-    for name in ("Data", "Anoms", "Bases", "Progression", "Rift", "Steal", "Cycle"):
+    for name in ("Data", "Anoms", "Bases", "Progression", "Market", "Care", "Steal", "Sanity", "Cycle"):
         script(mods, "ModuleScript", name, "ServerScriptService/Modules/%s.lua" % name)
     roots.append(sss)
 

@@ -1,144 +1,98 @@
-# 👁 Steal an Anomaly — juego para Roblox
+# 👁 Steal an Anomaly: juego para Roblox
 
 ![Miniatura](marketing/thumbnail_1280x720.png)
 
-Juego completo y listo para abrir en **Roblox Studio**: `StealAnAnomaly.rbxlx`.
-Está diseñado siguiendo el informe *Anatomía de la Viralidad en Roblox (2026)*: aplica la **regla 80/20**.
-El 80 % es el bucle ya probado de *Steal an Egg* / *Steal a Brainrot* (comprar, producir, robar y defender).
-El 20‑40 % restante es innovación: **Imitadores** (detección de anomalías al estilo *Animal Hospital*) y un **APAGÓN global cada 5 minutos** (escasez física al estilo *Grow a Garden 2*).
+Juego completo y listo para abrir en **Roblox Studio** (`StealAnAnomaly.rbxlx`).
+Combina los tres fenómenos del informe *Anatomía de la Viralidad en Roblox (2026)* en un bucle propio:
+
+| Viene de… | Qué aporta |
+|---|---|
+| 🥚 **Steal an Egg** | Mercado central con restock global, huevos que cargas a mano y te pueden quitar, incubadoras y eclosión aleatoria |
+| 🏥 **Animal Hospital (Anomaly)** | Tu base es una **clínica**. Atiendes los síntomas de tus pacientes, buscas señales en **fotos Polaroid** y vigilas tu **cordura** en el turno de noche |
+| 🧠 **Steal a Brainrot** | Robar pacientes, ingresos por segundo, láser en la puerta y bate |
 
 ## ▶ Cómo abrirlo
 
-1. Descarga `StealAnAnomaly.rbxlx` y ábrelo con Roblox Studio (*File → Open from File*).
-2. Pulsa **Play**. Todo se genera solo: mapa, anomalías, interfaz y efectos. No hay que subir mallas, imágenes ni animaciones.
-3. Para que se guarde el progreso:
-   - Publica el juego (*File → Publish to Roblox*).
+1. Abre `StealAnAnomaly.rbxlx` con Roblox Studio (*File → Open from File*) y pulsa **Play**. Todo se genera solo: mapa, criaturas, huevos, interfaz, monitores y efectos.
+2. Para que se guarde el progreso:
+   - Publica el juego.
    - Activa *Game Settings → Security → Enable Studio Access to API Services*.
-   - Sin esto, en Studio se juega sin guardar.
-4. En *Game Settings → Places* pon **Max Players = 8**, porque hay 8 bases.
+3. En *Game Settings → Places*, pon **Max Players = 8**.
 
-> Para regenerar el `.rbxlx` después de editar los scripts en `src/`, ejecuta `python3 build_rbxlx.py`.
+> Para regenerar el `.rbxlx` después de editar `src/`, ejecuta `python3 build_rbxlx.py`.
 
-## 🔁 El bucle de juego
+## 🔁 El bucle
 
 ```
- ┌──────────── LA GRIETA (cinta) ─────────────┐
- │  Salen anomalías cada 3 s (rareza+mutación) │
- └───────────────┬─────────────────────────────┘
-                 ▼  Mantén E: "Contener $X"
-        La anomalía camina sola a tu base
-                 ▼
-   Cápsula → genera $/s → pisa el COLECTOR 💰
-                 ▼
-  Compra mejores ▸ Mejora base ▸ ASCIENDE (x1.5 permanente)
-                 ▲
-  ROBA de otras bases 😈  ◂──▸  DEFIENDE con láser 🔒 y bate 🏏
+ 🥚 MERCADO DE LA GRIETA (centro)          restock cada 60 s · GRAN RESTOCK cada 5 min
+        │ mantén E: comprar huevo
+        ▼
+ ✋ Lo cargas sobre la cabeza  ──►  ¡te pueden pegar con el bate y quitártelo!
+        ▼
+ 🐣 INCUBADORA (tiempo según rareza; los huevos tiemblan antes de romperse)
+        ▼   ¡HA NACIDO!  (revelación con confeti; rareza y mutación al azar)
+ 🛏 CAMA DE PACIENTE  ──►  genera $/s mientras esté ESTABLE
+        │   🔥🌀💢🍖 síntomas: mantén R para tratar (combo x5 de propinas)
+        ▼
+ 💰 Pisa la CAJA  ►  mejores huevos  ►  mejora la clínica  ►  ASCIENDE
 ```
 
-**Corto plazo:** comprar la siguiente anomalía, robar una o defenderte.
-**Medio plazo:** las misiones diarias, mejorar la base y sobrevivir al apagón.
-**Largo plazo:** completar el Índice (14 anomalías y 4 mutaciones), Ascender, la racha de 7 días y conseguir **La Entidad ∞** (SECRETA).
+## 🧠 Mecánicas únicas
 
-## 🧠 Mecánicas únicas (el 20 % que lo hace viral)
+### 📸 Cámara Polaroid e Imitadores
+Alrededor del **13 % de los huevos (desde el Raro) están contaminados**: eclosionan un **IMITADOR** que se ve igual que una anomalía real.
 
-### ☠ Imitadores
-Alrededor del 14 % de las anomalías de la Grieta son **Imitadores disfrazados**: se ven igual que una anomalía real (a menudo de las caras).
-Tienen una **pista visual** sutil:
+- Saca una **foto** (tecla 1). La foto se revela poco a poco y, si es un Imitador, muestra **señales**:
+  - 👁 ojos rojos
+  - ⬛ silueta negra
+  - 🙃 imagen invertida
+  - 🫥 sin cabeza
+  - 📺 estática roja
+- Las fotos reales a veces tienen **artefactos inofensivos** (destello de luz, grano, desenfoque). Eso obliga a deducir.
+- **Fotografiar un huevo** muestra su contenido en **rayos X**. Así sabes qué hay dentro antes de comprarlo… o de robarlo.
+- Pulsa **🚨 Reportar**:
+  - Si acertaste, ganas el 60 % de su valor.
+  - Si era real, pagas una **multa** y pierdes cordura.
+- Un Imitador sin descubrir **devora tu paciente más valioso** en el turno de noche.
+- También puedes dejar uno como **cebo**: si te lo roban, devora en la clínica del ladrón.
 
-| Pista | Qué notar |
-|---|---|
-| `redeyes` | Ojos rojos brillantes |
-| `noshadow` | No proyectan sombra y parpadean |
-| `inverted` | Caminan **de espaldas** y sus animaciones van al revés |
-| `flicker` | Partes del cuerpo desaparecen un instante |
-| `wrongcolor` | Color principal invertido |
+Las criaturas también tienen pistas visuales sueltas: ojos rojos, sin sombra, caminan de espaldas, parpadean o tienen el color cambiado.
 
-- El **🔬 Escáner** (tecla 1) revela la verdad. Si es un Imitador, explota y **te pagan el 60 % de su precio**.
-- Si compras uno sin escanearlo, en el siguiente **apagón devora tu anomalía más valiosa** y huye.
-- Venderlo da **$0**.
-- Truco: puedes dejar un Imitador en tu base como **cebo**. Si te lo roban, devora en la base del ladrón. Eso genera clips de “trampa” para TikTok.
+### 🩺 Cuidar pacientes (co‑op)
+- Cada paciente enferma cada 70‑140 s con uno de cuatro síntomas: 🔥 Fiebre, 🌀 Glitch, 💢 Pánico o 🍖 Hambre.
+- Mientras está enfermo **no produce dinero**. Si pasan 60 s sin tratarlo queda **CRÍTICO** y se fuga en el turno de noche.
+- Los monitores de cada cama muestran un **ECG animado** que cambia de color y ritmo según el estado.
+- Tratar da propina, y los tratamientos seguidos suben un **COMBO** hasta x5.
+- **Cualquier jugador puede tratar a tus pacientes** (se lleva media propina): esto empuja el co‑juego que premia el algoritmo.
 
-### ☾ El APAGÓN (cada 5 minutos, 45 s)
-Es el *restock* global y físico que recomienda el informe. Obliga a todo el servidor a converger:
-- El cielo se vuelve rojo, las farolas se apagan y cada jugador lleva una linterna.
-- **Todos los láseres caen**: no se puede cerrar ninguna base.
-- **Surge en la Grieta**: sale una anomalía **Legendaria o mejor**, con triple probabilidad de mutación.
-- **Despiertan los Imitadores** de las bases y quedan sueltos. Atraparlos da recompensa.
-- **Fugas**: algunas anomalías escapan de su cápsula y **cualquiera puede capturarlas gratis**. Si nadie lo hace, vuelven a su dueño 30 s después del amanecer.
+### ☾ Turno de noche (cada 5 min, 50 s)
+- El cielo se vuelve rojo, se apagan las farolas y cada jugador lleva linterna.
+- **Caen todos los láseres**.
+- **GRAN RESTOCK**: todos los pedestales se llenan de huevos mucho mejores, con al menos uno Legendario o mejor.
+- **Los Imitadores despiertan** y devoran.
+- **Los pacientes CRÍTICOS se fugan**, y cualquiera puede capturarlos.
+- 🧠 **Cordura**: baja fuera de tu clínica y cae en picado cerca de Imitadores sueltos.
+  - Al bajar, la pantalla pierde color, aparece una viñeta, se nubla y suenan latidos.
+  - A 0 **te desmayas** (sueltas lo que lleves y despiertas en tu clínica).
+  - Recupérala en tu clínica o con la **☕ cafetera**.
 
 ### 🔒 Defensa
-- **Láser** (botón junto a la puerta): dura 60 s, y más con cada mejora. El dueño lo atraviesa; los demás no.
-- **Bate** (tecla 2): si golpeas a un ladrón, suelta la anomalía y esta vuelve a tu base.
-- Al dueño le llega una **alerta** (sirena y el ladrón resaltado en rojo).
+- **Láser** en la puerta (60 s y más con cada mejora): el dueño lo atraviesa, los demás no.
+- **Bate** (tecla 2): si golpeas a quien carga un huevo o un paciente, lo suelta.
+  - Si era robado, vuelve a su dueño.
+  - Si no, queda tirado y lo recoge el primero que llegue.
+- Alerta de robo con sirena, y el ladrón queda resaltado en rojo.
 
-## 📈 Retención y señales del algoritmo (según el informe)
+## 🥚 Huevos
 
-| Señal (Explore API) | Cómo la ataca el juego |
-|---|---|
-| **qPTR / icono 150×150** | Icono con un solo punto focal, sin texto y en alto contraste (`marketing/icon_512.png`) |
-| **Retención D1 / D7** | Racha diaria de 7 días (el día 7 regala una Épica), misiones diarias y ganancias offline (25 %, máx. 2 h) |
-| **Sesiones de retorno (tope de 60 min/día)** | El apagón cada 5 min y el surge crean el “vuelvo a ver qué sale” |
-| **Co‑Play Days** | **+10 % de dinero por amigo** en el servidor (máx. +50 %) y botón 👥 **Invitar** |
-| **Spend Signal (1–4 % de compradores)** | *Starter Pack* de 25 R$, pases y productos; nada es *pay‑to‑win* puro |
-| **Like ratio > 70 %** | Fricción cero (tutorial con flechas, sin textos largos) y aviso de “Like/Favorito” a los 10 min |
-| **CCU Velocity / Launch Spike** | Códigos rotativos y comandos de *admin abuse* para directos |
-
-## 🛠 Configuración (`src/ReplicatedStorage/Shared/Config.lua`)
-
-Todo el balance está en un solo archivo: precios, tiempos, probabilidad de Imitador, duración del apagón, mutaciones, misiones y costes de Ascenso.
-
-**Monetización:** crea los pases y productos en el Creator Hub y pega sus IDs:
-
-```lua
-Config.GamePasses.VIP.Id = 123456789
-Config.Products.StarterPack.Id = 987654321
-```
-
-| Pase | Efecto |
-|---|---|
-| 👑 VIP | x2 dinero y etiqueta VIP |
-| 🧲 Auto‑Recolector | Cobra solo |
-| 🔬 Escáner PRO | Escanea 2,5 veces más rápido |
-| 👟 Zapatillas Fantasma | +25 % de velocidad |
-
-| Producto | Efecto |
-|---|---|
-| 🎁 Pack Inicial | $5K y una Épica al azar |
-| 💼 Maletín / 🏦 Bóveda | 10 o 60 min de ingresos |
-| 🌑 Provocar Apagón | Fuerza un apagón en todo el servidor (muy viral en directos) |
-
-**Códigos:** `Config.Codes` ya trae `ANOMALIA`, `APAGON`, `LANZAMIENTO` e `IMITADOR`. Rótalos en Discord y TikTok.
-
-**Admins:** añade UserIds en `Config.Admins`. En Studio todos son admin. Comandos de chat:
-
-| Comando | Efecto |
-|---|---|
-| `/apagon` | Fuerza el apagón |
-| `/surge` | Saca una Legendaria+ |
-| `/secreto [mutación]` | Saca La Entidad ∞ |
-| `/lluvia` | 12 anomalías raras seguidas (*admin abuse*) |
-| `/imitador` | Saca un Imitador |
-| `/spawn <id> [mutación]` | Saca una anomalía concreta |
-| `/dinero <n>` | Da dinero |
-
-## 👾 Bestiario
-
-| Anomalía | Rareza | Precio | $/s |
+| Huevo | Precio | Incubación | Contenido |
 |---|---|---|---|
-| Ojo Vigilante | Común | $100 | 2 |
-| Tele Viviente | Común | $250 | 5 |
-| Cubo Hambriento | Común | $550 | 9 |
-| Medusa del Vacío | Raro | $1.6K | 22 |
-| Gato Duplicado | Raro | $3.2K | 40 |
-| Cuello Largo | Raro | $6.5K | 72 |
-| Reloj Sin Tiempo | Épico | $16K | 155 |
-| Árbol Susurrante | Épico | $32K | 270 |
-| Sin Rostro | Épico | $58K | 440 |
-| Skinwalker | Legendario | $160K | 1.05K |
-| Ángel Glitcheado | Legendario | $320K | 1.9K |
-| Luna Sonriente | Mítico | $1.1M | 5.2K |
-| ERROR_404 | Mítico | $2.6M | 11.5K |
-| La Entidad ∞ | SECRETO | $12M | 42K |
+| Común | $100 | 20 s | 85 % Común / 15 % Raro |
+| Raro | $1.5K | 40 s | 75 % Raro / 25 % Épico |
+| Épico | $20K | 80 s | 78 % Épico / 22 % Legendario |
+| Legendario | $150K | 2:20 | 82 % Legendario / 18 % Mítico |
+| Mítico | $1M | 3:40 | 88 % Mítico / 12 % SECRETO |
+| Huevo del Vacío | $8M | 5:00 | 100 % SECRETO (casi solo en el Gran Restock) |
 
 **Mutaciones:**
 
@@ -149,24 +103,62 @@ Config.Products.StarterPack.Id = 987654321
 | Vacío | x5 | 1,5 % |
 | Espectral | x10, arcoíris | 0,5 % |
 
+En el Gran Restock la probabilidad de mutación es doble.
+
+## 👾 Bestiario (14 anomalías)
+
+| Rareza | Anomalías |
+|---|---|
+| Común | Ojo Vigilante · Tele Viviente · Cubo Hambriento |
+| Raro | Medusa del Vacío · Gato Duplicado · Cuello Largo |
+| Épico | Reloj Sin Tiempo · Árbol Susurrante · Sin Rostro |
+| Legendario | Skinwalker · Ángel Glitcheado |
+| Mítico | Luna Sonriente · ERROR_404 |
+| SECRETO | La Entidad ∞ |
+
+## 📈 Retención (según el informe)
+
+| Señal | En el juego |
+|---|---|
+| Restock físico de 5 min (FOMO) | Mini‑restock cada 60 s y **Gran Restock** en el turno de noche: todos corren al centro |
+| D1 / D7 | Racha de 7 días (el día 7 regala un Huevo Épico), 3 misiones diarias, huevos que siguen incubando offline y dinero offline |
+| Co‑Play | +10 % de dinero por amigo (máx. +50 %), tratar pacientes ajenos y botón 👥 Invitar |
+| Metas corto/medio/largo | Próxima eclosión → mejorar la clínica (10 camas, 4 incubadoras) → Índice completo y Ascensos |
+| Spend Signal | Pack Inicial de 25 R$, Eclosión Instantánea, pases (VIP, Auto‑Caja, Cámara PRO, Incubadora Turbo, Zapatillas) |
+| Clips virales | Imitadores devorando, revelación al eclosionar, desmayos por cordura y huevos robados por el camino |
+
+## 🛠 Configuración
+
+Todo el balance está en `src/ReplicatedStorage/Shared/Config.lua`: huevos, probabilidades, tiempos, síntomas, cordura, multas, mejoras y monetización.
+
+Los IDs de pases y productos se pegan en `Config.GamePasses` y `Config.Products`. Con Id = 0 el botón avisa en vez de abrir la compra.
+
+**Códigos:** `ANOMALIA`, `APAGON`, `LANZAMIENTO`, `POLAROID`, `HOSPITAL`.
+
+**Comandos de admin** (en Studio todos son admin):
+
+| Comando | Efecto |
+|---|---|
+| `/apagon` | Fuerza el turno de noche |
+| `/restock` | Gran Restock |
+| `/lluvia` | 6 huevos Legendarios o Míticos |
+| `/secreto` | Huevo del Vacío en el mercado |
+| `/imitador` | Huevo contaminado |
+| `/huevo <id>` | Te da un huevo concreto |
+| `/eclosionar` | Eclosiona tus huevos al instante |
+| `/dinero <n>` | Da dinero |
+
 ## 📂 Estructura
 
 ```
 steal-an-anomaly/
 ├─ StealAnAnomaly.rbxlx          ← ábrelo en Roblox Studio
-├─ build_rbxlx.py                ← genera el mapa + empaqueta los scripts
+├─ build_rbxlx.py                ← genera mapa (mercado + 8 clínicas) y empaqueta scripts
 ├─ marketing/                    ← icono y miniatura
 └─ src/
-   ├─ ReplicatedStorage/Shared/  Config, AnomalyData, AnomalyBuilder, Util
-   ├─ ServerScriptService/       Main + Modules/ (Data, Anoms, Bases, Rift, Steal, Cycle, Progression)
-   └─ StarterPlayerScripts/      ClientMain (UI/efectos/herramientas), AnomalyAnimator
+   ├─ ReplicatedStorage/Shared/  Config, AnomalyData, AnomalyBuilder (criaturas y huevos), Util
+   ├─ ServerScriptService/       Main + Modules/
+   │    Data · Anoms · Bases (clínicas) · Market · Care (síntomas) · Steal (robos, fotos)
+   │    Sanity (cordura) · Cycle (día/noche) · Progression
+   └─ StarterPlayerScripts/      ClientMain (HUD, Polaroid, monitores, efectos), AnomalyAnimator
 ```
-
-## 🚀 Plan de lanzamiento (del informe)
-
-1. **Título:** “Steal an Anomaly 👁” (menos de 50 caracteres e incluye la palabra clave).
-2. **Descripción:** pon el gancho en las 2 primeras líneas. Ejemplo: “¡Roba anomalías, pero cuidado: algunas son IMITADORES que devoran tu base en el APAGÓN!”
-3. **Antes de lanzar:** sube 3‑5 devlogs a TikTok y Shorts (Imitador devorando una base, apagón, robo de una Secreta).
-4. **Anuncios:** 5‑7 días de anuncios patrocinados para llegar a 100‑250 jugadores muy comprometidos. Vigila la conversión y la retención D1/D7.
-5. **Fase Muerta:** es normal tras los anuncios. Si la retención supera la mediana, el algoritmo rescata el juego.
-6. **Mantén la velocidad de CCU:** códigos nuevos, eventos de *admin abuse* en directo y actualizaciones de temporada (Halloween: anomalías nuevas en `AnomalyData.lua`).

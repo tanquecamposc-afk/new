@@ -80,6 +80,14 @@ local function animateModel(entry, dt)
 		global = CFrame.Angles(0, 0, math.sin(t * 7) * 0.07)
 	end
 	global = CFrame.new(0, bob, 0) * global
+	local hatchEnd = model:GetAttribute("HatchEnd")
+	if hatchEnd then
+		local left = hatchEnd - workspace:GetServerTimeNow()
+		if left < 6 then
+			local k = math.clamp(1 - left / 6, 0, 1)
+			global = global * CFrame.Angles(math.sin(clock * 38) * 0.18 * k, 0, math.cos(clock * 31) * 0.18 * k)
+		end
+	end
 	if model:GetAttribute("Glitch") and math.random() < 0.08 then
 		global = CFrame.new((math.random() - 0.5) * 0.5, 0, (math.random() - 0.5) * 0.5) * global
 	end

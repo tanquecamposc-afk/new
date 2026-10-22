@@ -25,7 +25,10 @@ ctx.Remotes = {
 	Knock = remoteEvent("Knock"),
 	Alert = remoteEvent("Alert"),
 	Effect = remoteEvent("Effect"),
-	ScanResult = remoteEvent("ScanResult"),
+	PhotoResult = remoteEvent("PhotoResult"),
+	ReportResult = remoteEvent("ReportResult"),
+	Hatched = remoteEvent("Hatched"),
+	Combo = remoteEvent("Combo"),
 }
 local request = Instance.new("RemoteFunction")
 request.Name = "Request"
@@ -47,7 +50,7 @@ function ctx.Effect(kind, position, color)
 end
 
 -- Módulos ---------------------------------------------------------------
-local ORDER = { "Data", "Anoms", "Bases", "Progression", "Rift", "Steal", "Cycle" }
+local ORDER = { "Data", "Anoms", "Bases", "Progression", "Market", "Care", "Steal", "Sanity", "Cycle" }
 for _, name in ipairs(ORDER) do
 	ctx[name] = require(Modules:WaitForChild(name))
 end
@@ -68,7 +71,11 @@ local function onPlayerAdded(player)
 		ctx.Data.Release(player)
 		return
 	end
-	local ok = ctx.Bases.Assign(player)
+	local offline = 0
+	if data.LastOnline and data.LastOnline > 0 then
+		offline = math.clamp(os.time() - data.LastOnline, 0, 6 * 3600)
+	end
+	local ok = ctx.Bases.Assign(player, offline)
 	if not ok then
 		player:Kick("Este servidor está lleno de anomalías. ¡Prueba otro servidor!")
 		return
@@ -109,13 +116,18 @@ ProximityPromptService.PromptTriggered:Connect(function(prompt, player)
 	if kind == "Lock" then
 		ctx.Bases.Lock(player, model)
 		return
+	elseif kind == "Coffee" then
+		ctx.Sanity.Coffee(player, model)
+		return
 	end
 	local info = model and ctx.Anoms.Registry[model]
 	if not info then
 		return
 	end
 	if kind == "Buy" then
-		ctx.Rift.Buy(player, info)
+		ctx.Market.Buy(player, info)
+	elseif kind == "Treat" then
+		ctx.Care.Treat(player, info)
 	elseif kind == "Steal" then
 		ctx.Steal.StartSteal(player, info)
 	elseif kind == "Sell" then
@@ -129,8 +141,10 @@ end)
 
 -- Herramientas (Escáner y Bate) -----------------------------------------------
 ctx.Remotes.Tool.OnServerEvent:Connect(function(player, action, target)
-	if action == "Scan" then
-		ctx.Steal.Scan(player, target)
+	if action == "Photo" then
+		ctx.Steal.Photo(player, target)
+	elseif action == "Report" then
+		ctx.Steal.Report(player)
 	elseif action == "Swing" then
 		ctx.Steal.Swing(player)
 	end

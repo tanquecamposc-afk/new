@@ -177,16 +177,22 @@ local cycleBar = scaled(new("Frame", {
 	Name = "Cycle",
 	AnchorPoint = Vector2.new(0.5, 0),
 	Position = UDim2.new(0.5, 0, 0, 10),
-	Size = UDim2.fromOffset(400, 66),
+	Size = UDim2.fromOffset(420, 96),
 	BackgroundColor3 = Color3.new(1, 1, 1),
 	Parent = gui,
 }, { corner(16), stroke(T.Dark, 3) }))
 local cycleGrad = gradient(T.Panel2, T.Panel)
 cycleGrad.Parent = cycleBar
-local cycleText = label({ Size = UDim2.new(1, -20, 0, 34), Position = UDim2.fromOffset(10, 6), Font = Enum.Font.FredokaOne, Text = "", Parent = cycleBar })
+local cycleText = label({ Size = UDim2.new(1, -20, 0, 32), Position = UDim2.fromOffset(10, 4), Font = Enum.Font.FredokaOne, Text = "", Parent = cycleBar })
 tstroke(2).Parent = cycleText
-local cycleTrack = new("Frame", { Position = UDim2.new(0, 14, 1, -20), Size = UDim2.new(1, -28, 0, 10), BackgroundColor3 = T.Dark, Parent = cycleBar }, { corner(5) })
-local cycleFill = new("Frame", { Size = UDim2.fromScale(0.5, 1), BackgroundColor3 = T.Gold, Parent = cycleTrack }, { corner(5) })
+local cycleTrack = new("Frame", { Position = UDim2.fromOffset(14, 38), Size = UDim2.new(1, -28, 0, 8), BackgroundColor3 = T.Dark, Parent = cycleBar }, { corner(4) })
+local cycleFill = new("Frame", { Size = UDim2.fromScale(0.5, 1), BackgroundColor3 = T.Gold, Parent = cycleTrack }, { corner(4) })
+local restockText = label({ Size = UDim2.new(0.5, -14, 0, 20), Position = UDim2.fromOffset(14, 52), Text = "", Font = Enum.Font.GothamBlack, TextColor3 = Color3.fromRGB(220, 190, 255), TextXAlignment = Enum.TextXAlignment.Left, Parent = cycleBar })
+tstroke(1.5).Parent = restockText
+local sanityText = label({ AnchorPoint = Vector2.new(1, 0), Size = UDim2.new(0.5, -14, 0, 20), Position = UDim2.new(1, -14, 0, 52), Text = "🧠 Cordura", Font = Enum.Font.GothamBlack, TextColor3 = Color3.fromRGB(190, 230, 255), TextXAlignment = Enum.TextXAlignment.Right, Parent = cycleBar })
+tstroke(1.5).Parent = sanityText
+local sanityTrack = new("Frame", { Position = UDim2.fromOffset(14, 76), Size = UDim2.new(1, -28, 0, 10), BackgroundColor3 = T.Dark, Parent = cycleBar }, { corner(5) })
+local sanityFill = new("Frame", { Size = UDim2.fromScale(1, 1), BackgroundColor3 = Color3.fromRGB(110, 200, 255), Parent = sanityTrack }, { corner(5) })
 
 ---------------------------------------------------------------------------
 -- Panel de dinero (izquierda)
@@ -372,22 +378,56 @@ local banner = scaled(new("Frame", {
 local bannerText = label({ Size = UDim2.new(1, -20, 1, -10), Position = UDim2.fromOffset(10, 5), Font = Enum.Font.FredokaOne, Text = "", Parent = banner })
 tstroke(2).Parent = bannerText
 
-local scanCard = scaled(new("Frame", {
-	AnchorPoint = Vector2.new(0.5, 1),
-	Position = UDim2.new(0.5, 0, 1, -175),
-	Size = UDim2.fromOffset(460, 110),
-	BackgroundColor3 = Color3.new(1, 1, 1),
+-- Foto Polaroid -------------------------------------------------------------
+local polaroid = scaled(new("Frame", {
+	AnchorPoint = Vector2.new(1, 0.5),
+	Position = UDim2.new(1, -24, 0.56, 0),
+	Size = UDim2.fromOffset(300, 410),
+	BackgroundColor3 = Color3.fromRGB(250, 248, 240),
+	Rotation = 3,
 	Visible = false,
+	ZIndex = 4,
 	Parent = gui,
-}, { corner(14), stroke(T.Dark, 3) }))
-local scanGrad = gradient(T.Green, Color3.fromRGB(20, 90, 50))
-scanGrad.Parent = scanCard
-local scanTitle = label({ Size = UDim2.new(1, -20, 0, 40), Position = UDim2.fromOffset(10, 6), Font = Enum.Font.FredokaOne, Text = "", Parent = scanCard })
-tstroke(2.5).Parent = scanTitle
-local scanBody = label({ Size = UDim2.new(1, -20, 0, 26), Position = UDim2.fromOffset(10, 48), Text = "", Parent = scanCard })
-tstroke(2).Parent = scanBody
-local scanLore = label({ Size = UDim2.new(1, -20, 0, 22), Position = UDim2.fromOffset(10, 78), Text = "", Font = Enum.Font.GothamMedium, TextColor3 = Color3.fromRGB(230, 230, 230), Parent = scanCard })
-local scanToken = 0
+}, { corner(6), stroke(Color3.fromRGB(40, 30, 50), 3) }))
+local polaroidPop = new("UIScale", { Name = "Pop", Parent = polaroid })
+local photo = new("ViewportFrame", {
+	Position = UDim2.fromOffset(14, 14),
+	Size = UDim2.new(1, -28, 0, 250),
+	BackgroundColor3 = Color3.fromRGB(18, 14, 26),
+	Ambient = Color3.fromRGB(150, 140, 170),
+	LightColor = Color3.fromRGB(255, 250, 235),
+	LightDirection = Vector3.new(-0.4, -1, 0.7),
+	ZIndex = 5,
+	Parent = polaroid,
+})
+local photoCam = new("Camera", { FieldOfView = 38, Parent = photo })
+photo.CurrentCamera = photoCam
+local photoFx = new("Frame", { Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, ZIndex = 6, Parent = photo })
+local photoDevelop = new("Frame", { Size = UDim2.fromScale(1, 1), BackgroundColor3 = Color3.fromRGB(240, 236, 225), ZIndex = 7, Parent = photo })
+local photoCaption = label({ Position = UDim2.fromOffset(14, 270), Size = UDim2.new(1, -28, 0, 34), Font = Enum.Font.PermanentMarker, Text = "", TextColor3 = Color3.fromRGB(40, 30, 60), ZIndex = 5, Parent = polaroid })
+local photoHint = label({ Position = UDim2.fromOffset(14, 304), Size = UDim2.new(1, -28, 0, 20), Font = Enum.Font.GothamMedium, Text = "¿Ves alguna señal extraña?", TextColor3 = Color3.fromRGB(110, 100, 130), ZIndex = 5, Parent = polaroid })
+local photoToken = 0
+local photoModel
+
+---------------------------------------------------------------------------
+-- Pantalla de cordura (viñeta + color)
+---------------------------------------------------------------------------
+local vignette = new("Frame", { Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, ZIndex = 0, Parent = gui })
+local vignetteEdges = {}
+for i, spec in ipairs({
+	{ UDim2.new(1, 0, 0.35, 0), UDim2.fromScale(0, 0), 90 },
+	{ UDim2.new(1, 0, 0.35, 0), UDim2.fromScale(0, 0.65), -90 },
+	{ UDim2.new(0.3, 0, 1, 0), UDim2.fromScale(0, 0), 0 },
+	{ UDim2.new(0.3, 0, 1, 0), UDim2.fromScale(0.7, 0), 180 },
+}) do
+	local f = new("Frame", { Size = spec[1], Position = spec[2], BackgroundColor3 = Color3.fromRGB(30, 0, 20), BorderSizePixel = 0, Parent = vignette }, {
+		new("UIGradient", { Rotation = spec[3], Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0), NumberSequenceKeypoint.new(1, 1) }) }),
+	})
+	f.BackgroundTransparency = 1
+	vignetteEdges[i] = f
+end
+local sanityCC = new("ColorCorrectionEffect", { Name = "SanityFX", Parent = game:GetService("Lighting") })
+local sanityBlur = new("BlurEffect", { Name = "SanityBlur", Size = 0, Parent = game:GetService("Lighting") })
 
 ---------------------------------------------------------------------------
 -- Menús modales
@@ -624,18 +664,18 @@ pages.Missions = {
 
 -- Mejorar base -----------------------------------------------------------------
 pages.Upgrade = {
-	Title = "🏗 Mejorar base",
+	Title = "🏗 Mejorar clínica",
 	Build = function(root)
 		if not snapshot then
 			return
 		end
 		local c = card(root, { Size = UDim2.new(1, 0, 0, 220), ZIndex = 6 })
-		local t = label({ Position = UDim2.fromOffset(16, 12), Size = UDim2.new(1, -32, 0, 44), Text = ("Cápsulas: %d / %d"):format(snapshot.Unlocked, Config.MaxPods), Font = Enum.Font.FredokaOne, ZIndex = 7, Parent = c })
+		local t = label({ Position = UDim2.fromOffset(16, 12), Size = UDim2.new(1, -32, 0, 44), Text = ("🛏 %d / %d camas   🥚 %d / %d incubadoras"):format(snapshot.Beds, Config.MaxBeds, snapshot.Incubators, Config.MaxIncubators), Font = Enum.Font.FredokaOne, ZIndex = 7, Parent = c })
 		tstroke(3).Parent = t
-		label({ Position = UDim2.fromOffset(16, 64), Size = UDim2.new(1, -32, 0, 28), Text = "Nivel de base: " .. snapshot.BaseLevel, TextColor3 = T.Sub, ZIndex = 7, Parent = c })
-		label({ Position = UDim2.fromOffset(16, 100), Size = UDim2.new(1, -32, 0, 26), Text = "+1 cápsula  •  +" .. Config.LockPerLevel .. "s de láser  •  menos fugas en el apagón", TextColor3 = T.Accent2, ZIndex = 7, Parent = c })
+		label({ Position = UDim2.fromOffset(16, 64), Size = UDim2.new(1, -32, 0, 28), Text = "Nivel de clínica: " .. snapshot.BaseLevel, TextColor3 = T.Sub, ZIndex = 7, Parent = c })
+		label({ Position = UDim2.fromOffset(16, 100), Size = UDim2.new(1, -32, 0, 26), Text = "+1 cama  •  +1 incubadora cada 2 niveles  •  +" .. Config.LockPerLevel .. "s de láser", TextColor3 = T.Accent2, ZIndex = 7, Parent = c })
 		local cost = snapshot.UpgradeCost
-		button({ Position = UDim2.new(0.5, -150, 0, 146), Size = UDim2.fromOffset(300, 58), Text = cost and ("Mejorar • " .. Util.Money(cost)) or "¡BASE AL MÁXIMO!", Color = cost and T.Accent2 or Color3.fromRGB(70, 70, 90), ZIndex = 7, Parent = c }, function()
+		button({ Position = UDim2.new(0.5, -150, 0, 146), Size = UDim2.fromOffset(300, 58), Text = cost and ("Mejorar • " .. Util.Money(cost)) or "¡CLÍNICA AL MÁXIMO!", Color = cost and T.Accent2 or Color3.fromRGB(70, 70, 90), ZIndex = 7, Parent = c }, function()
 			if cost then
 				local res = ask("Upgrade")
 				if res and res.Ok then
@@ -643,7 +683,7 @@ pages.Upgrade = {
 				end
 			end
 		end)
-		label({ Position = UDim2.fromOffset(0, 236), Size = UDim2.new(1, 0, 0, 60), Text = "💡 Cierra tu base con el botón láser (dura más con cada mejora).\nDurante el APAGÓN los láseres se caen: ¡defiéndela con el bate!", TextColor3 = T.Sub, Font = Enum.Font.GothamMedium, TextWrapped = true, ZIndex = 6, Parent = root })
+		label({ Position = UDim2.fromOffset(0, 236), Size = UDim2.new(1, 0, 0, 60), Text = "💡 Cierra tu clínica con el botón láser (dura más con cada mejora).\nEn el TURNO DE NOCHE los láseres caen: ¡defiéndela con el bate!", TextColor3 = T.Sub, Font = Enum.Font.GothamMedium, TextWrapped = true, ZIndex = 6, Parent = root })
 	end,
 }
 
@@ -660,7 +700,7 @@ pages.Rebirth = {
 		local t = label({ Position = UDim2.fromOffset(16, 10), Size = UDim2.new(1, -32, 0, 50), Text = ("x%.1f  ➜  x%.1f dinero"):format(cur, nxt), Font = Enum.Font.FredokaOne, TextColor3 = T.Gold, ZIndex = 7, Parent = c })
 		tstroke(3).Parent = t
 		label({ Position = UDim2.fromOffset(16, 66), Size = UDim2.new(1, -32, 0, 28), Text = "Ascensos actuales: " .. snapshot.Rebirths, TextColor3 = T.Sub, ZIndex = 7, Parent = c })
-		label({ Position = UDim2.fromOffset(16, 100), Size = UDim2.new(1, -32, 0, 44), Text = "⚠ Perderás tu dinero y tus anomalías.\nConservas el Índice, las mejoras de base y obtienes un título.", TextColor3 = Color3.fromRGB(255, 160, 160), Font = Enum.Font.GothamMedium, TextWrapped = true, ZIndex = 7, Parent = c })
+		label({ Position = UDim2.fromOffset(16, 100), Size = UDim2.new(1, -32, 0, 44), Text = "⚠ Perderás tu dinero, tus pacientes y tus huevos.\nConservas el Índice, las mejoras de clínica y obtienes un título.", TextColor3 = Color3.fromRGB(255, 160, 160), Font = Enum.Font.GothamMedium, TextWrapped = true, ZIndex = 7, Parent = c })
 		local cash = player:GetAttribute("Cash") or 0
 		local can = cash >= snapshot.RebirthCost
 		button({ Position = UDim2.new(0.5, -160, 0, 168), Size = UDim2.fromOffset(320, 62), Text = "Ascender • " .. Util.Money(snapshot.RebirthCost), Color = can and Color3.fromRGB(230, 80, 200) or Color3.fromRGB(110, 90, 140), ZIndex = 7, Parent = c }, function()
@@ -691,9 +731,9 @@ pages.Daily = {
 			local c = card(row, { Size = UDim2.fromOffset(74, 140), ZIndex = 6, BackgroundColor3 = isNext and Color3.fromRGB(255, 170, 60) or (claimed and Color3.fromRGB(50, 110, 70) or Color3.fromRGB(58, 38, 94)) })
 			local t = label({ Size = UDim2.new(1, 0, 0, 26), Position = UDim2.fromOffset(0, 6), Text = "Día " .. day, Font = Enum.Font.FredokaOne, ZIndex = 7, Parent = c })
 			tstroke(2).Parent = t
-			label({ Size = UDim2.new(1, 0, 0, 44), Position = UDim2.fromOffset(0, 36), Text = day == 7 and "👤" or "💰", MaxText = 36, ZIndex = 7, Parent = c })
+			label({ Size = UDim2.new(1, 0, 0, 44), Position = UDim2.fromOffset(0, 36), Text = day == 7 and "🥚" or "💰", MaxText = 36, ZIndex = 7, Parent = c })
 			local reward = Config.DailyRewards[day]
-			label({ Size = UDim2.new(1, -6, 0, 36), Position = UDim2.fromOffset(3, 86), Text = day == 7 and AnomalyData.ById[Config.Day7Anomaly].Name or Util.Money(reward), TextWrapped = true, ZIndex = 7, Parent = c })
+			label({ Size = UDim2.new(1, -6, 0, 36), Position = UDim2.fromOffset(3, 86), Text = day == 7 and Config.EggById[Config.Day7Egg].Name or Util.Money(reward), TextWrapped = true, ZIndex = 7, Parent = c })
 			if claimed then
 				label({ Size = UDim2.new(1, 0, 0, 20), Position = UDim2.new(0, 0, 1, -22), Text = "✔", TextColor3 = T.Green, ZIndex = 7, Parent = c })
 			end
@@ -707,7 +747,7 @@ pages.Daily = {
 				end
 			end
 		end)
-		label({ Position = UDim2.fromOffset(0, 256), Size = UDim2.new(1, 0, 0, 50), Text = "Entra cada día para no perder la racha.\nEl día 7 te regala una anomalía ÉPICA.", TextColor3 = T.Sub, Font = Enum.Font.GothamMedium, ZIndex = 6, Parent = root })
+		label({ Position = UDim2.fromOffset(0, 256), Size = UDim2.new(1, 0, 0, 50), Text = "Entra cada día para no perder la racha.\nEl día 7 te regala un HUEVO ÉPICO.", TextColor3 = T.Sub, Font = Enum.Font.GothamMedium, ZIndex = 6, Parent = root })
 	end,
 }
 
@@ -836,7 +876,7 @@ local function updateHomeMarker()
 		stroke(T.Dark, 3),
 		gradient(T.Green, Color3.fromRGB(30, 130, 70)),
 	})
-	local l = label({ Size = UDim2.new(1, -10, 1, -8), Position = UDim2.fromOffset(5, 4), Font = Enum.Font.FredokaOne, Text = "🏠 TU BASE", Parent = f })
+	local l = label({ Size = UDim2.new(1, -10, 1, -8), Position = UDim2.fromOffset(5, 4), Font = Enum.Font.FredokaOne, Text = "🏥 TU CLÍNICA", Parent = f })
 	tstroke(2).Parent = l
 end
 player:GetAttributeChangedSignal("BaseIndex"):Connect(updateHomeMarker)
@@ -859,12 +899,145 @@ task.spawn(function()
 				Parent = playerGui,
 			})
 			local bg = new("Frame", { Size = UDim2.fromScale(1, 1), BackgroundColor3 = Color3.new(1, 1, 1), Parent = sg }, { gradient(T.Panel2, T.Dark) })
-			local title = label({ Size = UDim2.new(1, -20, 0.4, 0), Position = UDim2.new(0, 10, 0.06, 0), Font = Enum.Font.FredokaOne, Text = "", MaxText = 200, Parent = bg })
-			local time = label({ Size = UDim2.new(1, -20, 0.5, 0), Position = UDim2.new(0, 10, 0.45, 0), Font = Enum.Font.FredokaOne, Text = "", MaxText = 300, Parent = bg })
-			table.insert(timerLabels, { Title = title, Time = time })
+			local title = label({ Size = UDim2.new(1, -20, 0.22, 0), Position = UDim2.new(0, 10, 0.04, 0), Font = Enum.Font.FredokaOne, Text = "", MaxText = 200, Parent = bg })
+			local time = label({ Size = UDim2.new(1, -20, 0.32, 0), Position = UDim2.new(0, 10, 0.24, 0), Font = Enum.Font.FredokaOne, Text = "", MaxText = 300, Parent = bg })
+			local rTitle = label({ Size = UDim2.new(1, -20, 0.16, 0), Position = UDim2.new(0, 10, 0.6, 0), Font = Enum.Font.FredokaOne, Text = "🥚 RESTOCK DEL MERCADO", TextColor3 = Color3.fromRGB(210, 170, 255), MaxText = 200, Parent = bg })
+			local rTime = label({ Size = UDim2.new(1, -20, 0.22, 0), Position = UDim2.new(0, 10, 0.76, 0), Font = Enum.Font.FredokaOne, Text = "", MaxText = 300, Parent = bg })
+			table.insert(timerLabels, { Title = title, Time = time, RTime = rTime, RTitle = rTitle })
 		end
 	end
 end)
+
+---------------------------------------------------------------------------
+-- Monitores de las camas (ECG animado) e incubadoras (barra de progreso)
+---------------------------------------------------------------------------
+local monitors = {}
+local incDisplays = {}
+local STATUS_STYLE = {
+	ok = { Color = Color3.fromRGB(80, 255, 140), Rate = 1.1, Text = "ESTABLE" },
+	empty = { Color = Color3.fromRGB(110, 120, 140), Rate = 0, Text = "CAMA LIBRE" },
+	locked = { Color = Color3.fromRGB(90, 60, 80), Rate = 0, Text = "🔒 BLOQUEADA" },
+	critical = { Color = Color3.fromRGB(255, 40, 60), Rate = 3.4, Text = "☠ CRÍTICO" },
+}
+for _, c in ipairs(Config.Conditions) do
+	STATUS_STYLE[c.Id] = { Color = c.Color, Rate = 2.2, Text = c.Icon .. " " .. c.Name:upper() }
+end
+
+local function ecg(p)
+	return math.exp(-((p - 0.12) / 0.018) ^ 2) - 0.35 * math.exp(-((p - 0.17) / 0.025) ^ 2) + 0.15 * math.exp(-((p - 0.45) / 0.06) ^ 2)
+end
+
+local function setupMonitor(part)
+	local bedModel = part.Parent
+	local sg = new("SurfaceGui", {
+		Face = Enum.NormalId.Front,
+		SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud,
+		PixelsPerStud = 40,
+		LightInfluence = 0,
+		Adornee = part,
+		Parent = playerGui,
+	})
+	local bg = new("Frame", { Size = UDim2.fromScale(1, 1), BackgroundColor3 = Color3.fromRGB(6, 14, 16), Parent = sg })
+	local name = label({ Position = UDim2.fromScale(0.04, 0.03), Size = UDim2.fromScale(0.92, 0.24), Font = Enum.Font.GothamBlack, Text = "", TextXAlignment = Enum.TextXAlignment.Left, MaxText = 60, Parent = bg })
+	local status = label({ Position = UDim2.fromScale(0.04, 0.72), Size = UDim2.fromScale(0.92, 0.24), Font = Enum.Font.GothamBlack, Text = "", TextXAlignment = Enum.TextXAlignment.Left, MaxText = 60, Parent = bg })
+	local area = new("Frame", { Position = UDim2.fromScale(0.04, 0.3), Size = UDim2.fromScale(0.92, 0.4), BackgroundTransparency = 1, ClipsDescendants = true, Parent = bg })
+	local dots = {}
+	for i = 1, 18 do
+		dots[i] = new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Size = UDim2.new(0, 5, 0, 5), BorderSizePixel = 0, Parent = area }, { corner(3) })
+	end
+	local m = { Part = part, Bed = bedModel, Name = name, Status = status, Dots = dots, Bg = bg, Phase = math.random() }
+	table.insert(monitors, m)
+end
+
+local function setupIncubator(incModel)
+	local anchor = incModel:FindFirstChild("Anchor")
+	if not anchor then
+		return
+	end
+	local bb = new("BillboardGui", { Size = UDim2.fromOffset(150, 46), StudsOffset = Vector3.new(0, 6.6, 0), MaxDistance = 70, LightInfluence = 0, Adornee = anchor, Parent = playerGui })
+	local t = label({ Size = UDim2.new(1, 0, 0, 22), Font = Enum.Font.FredokaOne, Text = "", Parent = bb })
+	tstroke(2).Parent = t
+	local track = new("Frame", { Position = UDim2.fromOffset(10, 26), Size = UDim2.new(1, -20, 0, 14), BackgroundColor3 = T.Dark, Parent = bb }, { corner(7), stroke(Color3.new(1, 1, 1), 1.5) })
+	local fill = new("Frame", { Size = UDim2.fromScale(0, 1), BackgroundColor3 = Color3.fromRGB(120, 220, 255), Parent = track }, { corner(7) })
+	table.insert(incDisplays, { Model = incModel, Label = t, Track = track, Fill = fill, Gui = bb })
+end
+
+task.spawn(function()
+	local bases = workspace:WaitForChild("Bases", 30)
+	if not bases then
+		return
+	end
+	for _, d in ipairs(bases:GetDescendants()) do
+		if d:IsA("BasePart") and d.Name == "Monitor" then
+			setupMonitor(d)
+		elseif d:IsA("Model") and d.Name:match("^Inc%d+$") then
+			setupIncubator(d)
+		end
+	end
+end)
+
+local monitorAcc = 0
+local function updateMonitors(dt)
+	monitorAcc += dt
+	if monitorAcc < 1 / 30 then
+		return
+	end
+	monitorAcc = 0
+	local camPos = camera.CFrame.Position
+	local t = os.clock()
+	for _, m in ipairs(monitors) do
+		if (m.Part.Position - camPos).Magnitude < 70 then
+			local st = m.Bed:GetAttribute("Status") or "empty"
+			local style = STATUS_STYLE[st] or STATUS_STYLE.ok
+			m.Name.Text = m.Bed:GetAttribute("Patient") or ""
+			m.Status.Text = style.Text
+			m.Status.TextColor3 = style.Color
+			m.Name.TextColor3 = style.Color:Lerp(Color3.new(1, 1, 1), 0.5)
+			local alarm = st == "critical" or (STATUS_STYLE[st] and style.Rate > 2)
+			m.Bg.BackgroundColor3 = (alarm and math.floor(t * 3) % 2 == 0) and Color3.fromRGB(40, 6, 10) or Color3.fromRGB(6, 14, 16)
+			local n = #m.Dots
+			for i, dot in ipairs(m.Dots) do
+				local x = (i - 1) / (n - 1)
+				local y = 0
+				if style.Rate > 0 then
+					local p = ((t * style.Rate * 0.6 + m.Phase) - x * 0.6) % 1
+					y = ecg(p)
+				end
+				dot.Position = UDim2.fromScale(x, 0.6 - y * 0.5)
+				dot.BackgroundColor3 = style.Color
+				dot.BackgroundTransparency = 0.15 + x * 0.5
+			end
+		end
+	end
+	local now = workspace:GetServerTimeNow()
+	for _, d in ipairs(incDisplays) do
+		local st = d.Model:GetAttribute("Status") or "empty"
+		if st == "incubating" or st == "waiting" then
+			d.Gui.Enabled = true
+			d.Track.Visible = true
+			local total = d.Model:GetAttribute("HatchTotal") or 1
+			local left = math.max(0, (d.Model:GetAttribute("HatchEnd") or now) - now)
+			if st == "waiting" then
+				d.Label.Text = "🛏 ¡Sin cama libre!"
+				d.Label.TextColor3 = Color3.fromRGB(255, 170, 80)
+				d.Fill.Size = UDim2.fromScale(1, 1)
+			else
+				d.Label.Text = "🐣 " .. Util.Time(left)
+				d.Label.TextColor3 = Color3.new(1, 1, 1)
+				d.Fill.Size = UDim2.fromScale(math.clamp(1 - left / math.max(1, total), 0, 1), 1)
+			end
+		elseif st == "empty" then
+			d.Gui.Enabled = true
+			d.Track.Visible = false
+			d.Label.Text = "Incubadora libre"
+			d.Label.TextColor3 = Color3.fromRGB(170, 200, 220)
+		else
+			d.Gui.Enabled = st ~= "locked" and true or false
+			d.Track.Visible = false
+			d.Label.Text = "🔒"
+		end
+	end
+end
 
 local flashlight
 local function setFlashlight(on)
@@ -903,29 +1076,61 @@ player.CharacterAdded:Connect(function()
 	setFlashlight(workspace:GetAttribute("Phase") == "Blackout")
 end)
 
-RunService.RenderStepped:Connect(function()
+local heartbeatAt = 0
+local function updateSanity()
+	local v = (player:GetAttribute("Sanity") or 100) / Config.SanityMax
+	sanityFill.Size = UDim2.fromScale(math.clamp(v, 0, 1), 1)
+	sanityFill.BackgroundColor3 = Color3.fromRGB(255, 60, 90):Lerp(Color3.fromRGB(110, 200, 255), v)
+	sanityText.Text = "🧠 Cordura " .. math.floor(v * 100 + 0.5)
+	local k = math.clamp((0.65 - v) / 0.65, 0, 1)
+	for _, e in ipairs(vignetteEdges) do
+		e.BackgroundTransparency = 1 - k * 0.9
+	end
+	sanityCC.Saturation = -k * 0.7
+	sanityCC.TintColor = Color3.new(1, 1, 1):Lerp(Color3.fromRGB(200, 150, 255), k)
+	sanityCC.Contrast = k * 0.2
+	sanityBlur.Size = v < 0.3 and (0.3 - v) * 40 or 0
+	if v < 0.3 and os.clock() > heartbeatAt then
+		heartbeatAt = os.clock() + 0.5 + v * 2
+		sfx("Alarm", 0.35, 0.35)
+		shake(0.12, 0.25)
+	end
+end
+
+RunService.RenderStepped:Connect(function(dt)
+	updateMonitors(dt)
+	updateSanity()
+	local restockLeft = math.max(0, (workspace:GetAttribute("RestockAt") or 0) - workspace:GetServerTimeNow())
+	restockText.Text = "🥚 Restock " .. Util.Time(restockLeft)
 	local phase = workspace:GetAttribute("Phase") or "Day"
 	local ends = workspace:GetAttribute("PhaseEnds") or 0
 	local left = math.max(0, ends - workspace:GetServerTimeNow())
 	local total = phase == "Blackout" and Config.BlackoutDuration or (Config.CycleLength - Config.BlackoutDuration)
 	local blink = math.floor(os.clock() * 2) % 2 == 0
 	if phase == "Blackout" then
-		cycleText.Text = "☾ ¡APAGÓN! " .. Util.Time(left) .. " ☽"
+		cycleText.Text = "☾ TURNO DE NOCHE " .. Util.Time(left) .. " ☽"
 		cycleText.TextColor3 = blink and T.Red or Color3.fromRGB(255, 180, 180)
 		cycleGrad.Color = ColorSequence.new(Color3.fromRGB(120, 10, 30), Color3.fromRGB(40, 0, 10))
 		cycleFill.BackgroundColor3 = T.Red
 	else
-		cycleText.Text = "☀ Apagón en " .. Util.Time(left)
+		cycleText.Text = "☀ Turno de noche en " .. Util.Time(left)
 		cycleText.TextColor3 = (left <= Config.BlackoutWarning and blink) and Color3.fromRGB(255, 140, 60) or T.Text
 		cycleGrad.Color = ColorSequence.new(T.Panel2, T.Panel)
 		cycleFill.BackgroundColor3 = T.Gold
 	end
 	cycleFill.Size = UDim2.fromScale(math.clamp(left / total, 0, 1), 1)
 	for _, tl in ipairs(timerLabels) do
-		tl.Title.Text = phase == "Blackout" and "☾ APAGÓN ☽" or "PRÓXIMO APAGÓN"
+		tl.Title.Text = phase == "Blackout" and "☾ TURNO DE NOCHE ☽" or "☾ TURNO DE NOCHE EN"
+		tl.RTime.Text = Util.Time(restockLeft)
 		tl.Title.TextColor3 = phase == "Blackout" and T.Red or T.Gold
 		tl.Time.Text = Util.Time(left)
 		tl.Time.TextColor3 = phase == "Blackout" and Color3.fromRGB(255, 120, 120) or T.Text
+	end
+	if polaroid.Visible and photoModel then
+		local h = photoModel:GetAttribute("Height") or 5
+		local a = math.sin(os.clock() * 0.7) * 0.35
+		local dist = h * 1.45 + 3
+		photoCam.CFrame = CFrame.lookAt(Vector3.new(math.sin(a) * dist, h * 0.55, -math.cos(a) * dist), Vector3.new(0, h * 0.45, 0))
 	end
 	if currentMenu == "Index" then
 		local t = os.clock()
@@ -994,15 +1199,28 @@ local function updateGuide()
 	local state, pos, text, color
 	if carrying and base then
 		local c = base:FindFirstChild("Collector")
-		state, pos, text, color = "home", c and c.Position or base:GetPivot().Position, "🏠 ¡Llévala aquí!", T.Green
+		state, pos, text, color = "home", c and c.Position or base:GetPivot().Position, "🏥 ¡Llévalo a tu clínica!", T.Green
 	elseif snapshot and not snapshot.Tutorial and base then
+		local function at(path)
+			local o = base
+			for _, n in ipairs(path) do
+				o = o and o:FindFirstChild(n)
+			end
+			return o
+		end
 		if (snapshot.Buys or 0) == 0 then
-			local zone = base:FindFirstChild("Zone")
-			local x = zone and zone.Position.X or 0
-			state, pos, text, color = "buy", Vector3.new(x, 3, 0), "👇 Mantén E para comprar una anomalía", T.Gold
+			local market = workspace:FindFirstChild("Map") and workspace.Map:FindFirstChild("Market")
+			local center = market and market:FindFirstChild("MarketCenter")
+			state, pos, text, color = "buy", center and center.Position + Vector3.new(0, 6, 0) or Vector3.new(0, 6, 0), "🥚 Compra un huevo en el Mercado (mantén E)", T.Gold
+		elseif (snapshot.Hatched or 0) == 0 then
+			local inc = at({ "Incubators", "Inc1", "Anchor" })
+			state, pos, text, color = "hatch", inc and inc.Position + Vector3.new(0, 4, 0), "🐣 Tu huevo incuba aquí. ¡Que no te lo roben!", Color3.fromRGB(120, 220, 255)
+		elseif (snapshot.Treated or 0) == 0 then
+			local bed = at({ "Beds", "Bed1", "Anchor" })
+			state, pos, text, color = "treat", bed and bed.Position + Vector3.new(0, 5, 0), "🩺 Si tu paciente enferma, mantén R para tratarlo", Color3.fromRGB(255, 140, 90)
 		elseif (snapshot.Collected or 0) == 0 then
 			local c = base:FindFirstChild("Collector")
-			state, pos, text, color = "collect", c and c.Position + Vector3.new(0, 2, 0), "💰 Pisa aquí para cobrar", T.Green
+			state, pos, text, color = "collect", c and c.Position + Vector3.new(0, 2, 0), "💰 Pisa la caja para cobrar honorarios", T.Green
 		else
 			state = "done"
 		end
@@ -1013,12 +1231,12 @@ local function updateGuide()
 	guideState = state
 	clearGuide()
 	if state == "done" then
-		toast("🔬 Usa el ESCÁNER (tecla 1) para descubrir IMITADORES", T.Accent2)
-		task.delay(2, function()
-			toast("🏏 Usa el BATE (tecla 2) contra los ladrones", T.Gold)
+		toast("📸 Usa la CÁMARA (tecla 1): la foto revela las señales de un IMITADOR", T.Accent2)
+		task.delay(2.5, function()
+			toast("🏏 Usa el BATE (tecla 2): los ladrones sueltan tus huevos", T.Gold)
 		end)
-		task.delay(4, function()
-			toast("☾ En cada APAGÓN caen los láseres y despiertan los Imitadores", T.Red)
+		task.delay(5, function()
+			toast("☾ En el TURNO DE NOCHE caen los láseres y baja tu cordura", T.Red)
 		end)
 		task.spawn(ask, "Tutorial")
 		snapshot.Tutorial = true
@@ -1031,7 +1249,7 @@ player:GetAttributeChangedSignal("Carrying"):Connect(function()
 	local c = player:GetAttribute("Carrying")
 	banner.Visible = c ~= nil
 	if c then
-		bannerText.Text = "✋ Llevas " .. c .. " — ¡Corre a tu base!"
+		bannerText.Text = "✋ Llevas " .. c .. " — ¡Corre a tu clínica!"
 	end
 	updateGuide()
 end)
@@ -1127,6 +1345,34 @@ Remotes:WaitForChild("Effect").OnClientEvent:Connect(function(kind, pos, color)
 		sfx("Hit", 0.6, 1)
 	elseif kind == "poof" then
 		burst(pos, color, 14, 8, 1)
+	elseif kind == "hatch" then
+		burst(pos, color, 45, 26, 1.3)
+		burst(pos, Color3.fromRGB(255, 250, 235), 25, 18, 0.9)
+		ring(pos, color, 14, 0.6)
+		for i = 1, 6 do
+			local shard = new("Part", {
+				Size = Vector3.new(0.7, 0.15, 0.5),
+				Color = color,
+				Material = Enum.Material.SmoothPlastic,
+				CanCollide = false,
+				CanQuery = false,
+				CanTouch = false,
+				CFrame = CFrame.new(pos) * CFrame.Angles(math.random() * 6, math.random() * 6, 0),
+				Parent = workspace,
+			})
+			shard.AssemblyLinearVelocity = Vector3.new(math.random(-14, 14), math.random(14, 26), math.random(-14, 14))
+			shard.AssemblyAngularVelocity = Vector3.new(math.random(-10, 10), math.random(-10, 10), math.random(-10, 10))
+			Debris:AddItem(shard, 2.5)
+		end
+		sfx("Hatch", 0.7, 1.4)
+	elseif kind == "heal" then
+		burst(pos, color, 16, 10, 0.8)
+		for i = 0, 2 do
+			task.delay(i * 0.12, function()
+				floatText(pos + Vector3.new((math.random() - 0.5) * 3, i, (math.random() - 0.5) * 3), "✚", Color3.fromRGB(120, 255, 170))
+			end)
+		end
+		sfx("Cash", 0.4, 1.8)
 	end
 end)
 
@@ -1149,7 +1395,7 @@ Remotes:WaitForChild("Sync").OnClientEvent:Connect(function(snap)
 	updateGuide()
 end)
 
-Remotes:WaitForChild("Knock").OnClientEvent:Connect(function(dir, force)
+Remotes:WaitForChild("Knock").OnClientEvent:Connect(function(dir, force, faint)
 	local char = player.Character
 	local hrp = char and char:FindFirstChild("HumanoidRootPart")
 	local hum = char and char:FindFirstChildOfClass("Humanoid")
@@ -1157,17 +1403,33 @@ Remotes:WaitForChild("Knock").OnClientEvent:Connect(function(dir, force)
 		return
 	end
 	hum.PlatformStand = true
-	hrp.AssemblyLinearVelocity = dir * force + Vector3.new(0, force * 0.45, 0)
-	hrp.AssemblyAngularVelocity = Vector3.new(math.random(-8, 8), 0, math.random(-8, 8))
-	shake(0.4, 0.8)
-	screenFlash(Color3.fromRGB(255, 255, 255), 0.4)
-	task.delay(1, function()
+	if faint then
+		screenFlash(Color3.fromRGB(120, 40, 200), 0.9)
+		shake(1, 0.9)
+	else
+		hrp.AssemblyLinearVelocity = dir * force + Vector3.new(0, force * 0.45, 0)
+		hrp.AssemblyAngularVelocity = Vector3.new(math.random(-8, 8), 0, math.random(-8, 8))
+		shake(0.4, 0.8)
+		screenFlash(Color3.fromRGB(255, 255, 255), 0.4)
+	end
+	task.delay(faint and 1.6 or 1, function()
 		hum.PlatformStand = false
 		hum:ChangeState(Enum.HumanoidStateType.GettingUp)
 	end)
 end)
 
-Remotes:WaitForChild("Alert").OnClientEvent:Connect(function(thief, name)
+local CondById = {}
+for _, c in ipairs(Config.Conditions) do
+	CondById[c.Id] = c
+end
+
+Remotes:WaitForChild("Alert").OnClientEvent:Connect(function(thief, name, condId)
+	if condId then
+		local cond = CondById[condId]
+		toast((cond and cond.Icon or "⚠") .. " " .. name .. " tiene " .. (cond and cond.Name or "un síntoma") .. ". ¡Mantén R para tratarlo!", cond and cond.Color or T.Gold)
+		sfx("Alarm", 0.4, 1.3)
+		return
+	end
 	toast("🚨 ¡" .. (thief and thief.DisplayName or "Alguien") .. " está robando tu " .. name .. "! ¡Golpéalo con el bate!", T.Red)
 	showAnnounce("🚨 ¡TE ESTÁN ROBANDO! 🚨", name, T.Red)
 	screenFlash(T.Red, 0.45)
@@ -1183,27 +1445,284 @@ Remotes:WaitForChild("Alert").OnClientEvent:Connect(function(thief, name)
 	end
 end)
 
-Remotes:WaitForChild("ScanResult").OnClientEvent:Connect(function(res)
-	scanToken += 1
-	local my = scanToken
-	scanCard.Visible = true
-	if res.Mimic then
-		scanGrad.Color = ColorSequence.new(T.Red, Color3.fromRGB(90, 10, 20))
-		scanTitle.Text = "☠ ¡IMITADOR EXPUESTO! ☠"
-		scanBody.Text = "Se hacía pasar por " .. res.Name .. "  •  +" .. Util.Money(res.Bounty)
-		scanLore.Text = "Los Imitadores devoran tus anomalías en el apagón."
+-- Combo de tratamientos
+local comboLabel = label({ AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.62), Size = UDim2.fromOffset(520, 60), Font = Enum.Font.FredokaOne, Text = "", TextColor3 = Color3.fromRGB(120, 255, 170), MaxText = 44, Visible = false, Parent = gui })
+tstroke(3).Parent = comboLabel
+local comboPop = new("UIScale", { Parent = comboLabel })
+local comboToken = 0
+Remotes:WaitForChild("Combo").OnClientEvent:Connect(function(count, tip, condName)
+	comboToken += 1
+	local my = comboToken
+	comboLabel.Text = "✚ Tratado  +" .. Util.Money(tip) .. (count > 1 and ("   COMBO x" .. count) or "")
+	comboLabel.TextColor3 = count >= 4 and T.Gold or Color3.fromRGB(120, 255, 170)
+	comboLabel.TextTransparency = 0
+	comboLabel.Visible = true
+	comboPop.Scale = 0.5
+	TweenService:Create(comboPop, TweenInfo.new(0.35, Enum.EasingStyle.Back), { Scale = 1 + math.min(count, 5) * 0.06 }):Play()
+	task.delay(1.6, function()
+		if my == comboToken then
+			TweenService:Create(comboLabel, TweenInfo.new(0.4), { TextTransparency = 1 }):Play()
+		end
+	end)
+end)
+
+-- Revelación al eclosionar
+local reveal = scaled(new("Frame", {
+	AnchorPoint = Vector2.new(0.5, 0.5),
+	Position = UDim2.fromScale(0.5, 0.45),
+	Size = UDim2.fromOffset(380, 400),
+	BackgroundColor3 = Color3.new(1, 1, 1),
+	Visible = false,
+	ZIndex = 8,
+	Parent = gui,
+}, { corner(20), stroke(T.Dark, 4) }))
+local revealGrad = gradient(T.Panel2, T.Panel)
+revealGrad.Parent = reveal
+local revealPop = new("UIScale", { Name = "Pop", Parent = reveal })
+local revealTitle = label({ Position = UDim2.fromOffset(10, 8), Size = UDim2.new(1, -20, 0, 46), Font = Enum.Font.FredokaOne, Text = "🐣 ¡HA NACIDO!", ZIndex = 9, Parent = reveal })
+tstroke(3).Parent = revealTitle
+local revealVp = new("ViewportFrame", { Position = UDim2.fromOffset(20, 60), Size = UDim2.new(1, -40, 0, 240), BackgroundTransparency = 1, Ambient = Color3.fromRGB(170, 160, 190), LightDirection = Vector3.new(-0.4, -1, 0.7), ZIndex = 9, Parent = reveal })
+local revealCam = new("Camera", { FieldOfView = 40, Parent = revealVp })
+revealVp.CurrentCamera = revealCam
+local revealName = label({ Position = UDim2.fromOffset(10, 304), Size = UDim2.new(1, -20, 0, 40), Font = Enum.Font.FredokaOne, Text = "", ZIndex = 9, Parent = reveal })
+tstroke(3).Parent = revealName
+local revealRarity = label({ Position = UDim2.fromOffset(10, 346), Size = UDim2.new(1, -20, 0, 30), Font = Enum.Font.GothamBlack, Text = "", ZIndex = 9, Parent = reveal })
+tstroke(2).Parent = revealRarity
+local revealModel, revealToken = nil, 0
+local confetti = {}
+
+Remotes:WaitForChild("Hatched").OnClientEvent:Connect(function(name, rarityId, mut, id)
+	revealToken += 1
+	local my = revealToken
+	local rarity = Config.RarityById[rarityId]
+	if revealModel then
+		revealModel:Destroy()
+	end
+	local ok, model = pcall(Builder.Build, id, mut, { NoFx = true })
+	if ok then
+		CollectionService:RemoveTag(model, "Anomaly")
+		model.Parent = revealVp
+		revealModel = model
+	end
+	revealName.Text = name
+	revealRarity.Text = rarity.Name:upper()
+	revealRarity.TextColor3 = rarity.Color
+	revealGrad.Color = ColorSequence.new(rarity.Color:Lerp(T.Panel, 0.55), T.Panel)
+	reveal.Visible = true
+	revealPop.Scale = 0.2
+	TweenService:Create(revealPop, TweenInfo.new(0.5, Enum.EasingStyle.Back), { Scale = 1 }):Play()
+	sfx("Hatch", 0.8, 1)
+	if rarity.Order >= 4 then
+		screenFlash(rarity.Color, 0.5)
+		shake(0.5, 0.5)
+	end
+	for _, c in ipairs(confetti) do
+		c:Destroy()
+	end
+	confetti = {}
+	for i = 1, 26 do
+		local c = new("Frame", {
+			AnchorPoint = Vector2.new(0.5, 0.5),
+			Position = UDim2.fromScale(0.5, 0.45),
+			Size = UDim2.fromOffset(math.random(8, 14), math.random(8, 14)),
+			Rotation = math.random(0, 360),
+			BackgroundColor3 = (i % 3 == 0) and T.Gold or ((i % 3 == 1) and rarity.Color or Color3.new(1, 1, 1)),
+			BorderSizePixel = 0,
+			ZIndex = 10,
+			Parent = gui,
+		})
+		table.insert(confetti, c)
+		local a = math.random() * math.pi * 2
+		local r = math.random(25, 45) / 100
+		TweenService:Create(c, TweenInfo.new(1.4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+			Position = UDim2.fromScale(0.5 + math.cos(a) * r, 0.45 + math.sin(a) * r * 0.9 + 0.1),
+			Rotation = c.Rotation + math.random(-360, 360),
+			BackgroundTransparency = 1,
+		}):Play()
+		Debris:AddItem(c, 1.5)
+	end
+	task.delay(3.4, function()
+		if my == revealToken then
+			reveal.Visible = false
+		end
+	end)
+end)
+
+RunService.RenderStepped:Connect(function()
+	if reveal.Visible and revealModel then
+		local h = revealModel:GetAttribute("Height") or 5
+		local a = os.clock() * 1.2
+		local dist = h * 1.4 + 3
+		revealCam.CFrame = CFrame.lookAt(Vector3.new(math.sin(a) * dist, h * 0.6, -math.cos(a) * dist), Vector3.new(0, h * 0.45, 0))
+	end
+end)
+
+---------------------------------------------------------------------------
+-- Fotos Polaroid: señales de Imitador
+---------------------------------------------------------------------------
+local ToolRemote = Remotes:WaitForChild("Tool")
+local photoStamp = label({ AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.35), Size = UDim2.new(1, -20, 0, 60), Rotation = -12, Font = Enum.Font.FredokaOne, Text = "", Visible = false, ZIndex = 9, Parent = polaroid })
+tstroke(4).Parent = photoStamp
+local photoStatic = {}
+local reportButton, realButton
+
+local function closePolaroid()
+	photoToken += 1
+	polaroid.Visible = false
+end
+
+reportButton = button({ Position = UDim2.new(0, 14, 1, -66), Size = UDim2.new(0.5, -18, 0, 50), Text = "🚨 Reportar", Color = T.Red, ZIndex = 6, Parent = polaroid }, function()
+	ToolRemote:FireServer("Report")
+	reportButton.Visible = false
+	realButton.Visible = false
+end)
+realButton = button({ Position = UDim2.new(0.5, 4, 1, -66), Size = UDim2.new(0.5, -18, 0, 50), Text = "✔ Es real", Color = T.Green, ZIndex = 6, Parent = polaroid }, function()
+	closePolaroid()
+end)
+
+local function markEyes(model, color)
+	local found = false
+	for _, p in ipairs(model:GetDescendants()) do
+		if p:IsA("BasePart") and (p.Name == "Eye" or p.Name == "Pupil" or p.Name == "Iris") then
+			p.Color = color
+			p.Material = Enum.Material.Neon
+			p.Transparency = 0
+			found = true
+		end
+	end
+	if not found then
+		local h = model:GetAttribute("Height") or 5
+		for x = -1, 1, 2 do
+			new("Part", { Shape = Enum.PartType.Ball, Size = Vector3.one * 0.5, Color = color, Material = Enum.Material.Neon, CFrame = CFrame.new(x * 0.4, h * 0.8, -1.2), Parent = model })
+		end
+	end
+end
+
+local function applySign(model, sign)
+	local h = model:GetAttribute("Height") or 5
+	if sign == "ojos" then
+		markEyes(model, Color3.fromRGB(255, 20, 30))
+	elseif sign == "silueta" then
+		for _, p in ipairs(model:GetDescendants()) do
+			if p:IsA("BasePart") and p.Name ~= "Eye" and p.Name ~= "Pupil" and p.Name ~= "Iris" then
+				p.Color = Color3.fromRGB(5, 5, 8)
+				p.Material = Enum.Material.SmoothPlastic
+			end
+		end
+		markEyes(model, Color3.fromRGB(255, 255, 255))
+	elseif sign == "invertida" then
+		model:PivotTo(CFrame.new(0, h, 0) * CFrame.Angles(0, 0, math.pi))
+	elseif sign == "sincabeza" then
+		for _, p in ipairs(model:GetDescendants()) do
+			if p:IsA("BasePart") and p.Position.Y > h * 0.62 then
+				p.Transparency = 1
+			end
+		end
+	elseif sign == "estatica" then
+		for i = 1, 40 do
+			local f = new("Frame", { BorderSizePixel = 0, ZIndex = 6, Parent = photoFx })
+			table.insert(photoStatic, f)
+		end
+	end
+end
+
+local function applyBenign(kind)
+	if kind == "luz" then
+		new("Frame", { Size = UDim2.fromScale(0.6, 1), BackgroundColor3 = Color3.fromRGB(255, 170, 80), BorderSizePixel = 0, ZIndex = 6, Parent = photoFx }, {
+			new("UIGradient", { Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.35), NumberSequenceKeypoint.new(1, 1) }) }),
+		})
+	elseif kind == "grano" then
+		for _ = 1, 60 do
+			new("Frame", { Position = UDim2.fromScale(math.random(), math.random()), Size = UDim2.fromOffset(2, 2), BackgroundColor3 = Color3.fromRGB(200, 200, 200), BackgroundTransparency = 0.4, BorderSizePixel = 0, ZIndex = 6, Parent = photoFx })
+		end
+	elseif kind == "borrosa" then
+		new("Frame", { Size = UDim2.fromScale(1, 1), BackgroundColor3 = Color3.fromRGB(235, 230, 220), BackgroundTransparency = 0.55, BorderSizePixel = 0, ZIndex = 6, Parent = photoFx })
+	end
+end
+
+RunService.RenderStepped:Connect(function()
+	if polaroid.Visible and #photoStatic > 0 then
+		for _, f in ipairs(photoStatic) do
+			f.Position = UDim2.fromScale(math.random(), math.random())
+			f.Size = UDim2.fromOffset(math.random(6, 40), math.random(2, 6))
+			f.BackgroundColor3 = math.random() < 0.5 and Color3.fromRGB(255, 40, 50) or Color3.fromRGB(240, 240, 240)
+			f.BackgroundTransparency = math.random() * 0.5
+		end
+	end
+end)
+
+Remotes:WaitForChild("PhotoResult").OnClientEvent:Connect(function(res)
+	photoToken += 1
+	local my = photoToken
+	if photoModel then
+		photoModel:Destroy()
+		photoModel = nil
+	end
+	for _, c in ipairs(photoFx:GetChildren()) do
+		c:Destroy()
+	end
+	photoStatic = {}
+	local ok, model = pcall(Builder.Build, res.Id, res.Mut, { NoFx = true })
+	if not ok then
+		return
+	end
+	CollectionService:RemoveTag(model, "Anomaly")
+	if res.Kind == "egg" then
+		-- Rayos X: se ve lo que hay dentro del huevo
+		for _, p in ipairs(model:GetDescendants()) do
+			if p:IsA("BasePart") and p.Name ~= "Root" and p.Name ~= "RarityRing" then
+				p.Color = Color3.fromRGB(120, 210, 255)
+				p.Material = Enum.Material.Neon
+				p.Transparency = 0.35
+			end
+		end
+		photo.BackgroundColor3 = Color3.fromRGB(8, 20, 40)
+		photoCaption.Text = res.Name .. " (rayos X)"
+	else
+		photo.BackgroundColor3 = Color3.fromRGB(18, 14, 26)
+		photoCaption.Text = res.Name
+	end
+	for _, sign in ipairs(res.Signs or {}) do
+		applySign(model, sign)
+	end
+	if res.Benign then
+		applyBenign(res.Benign)
+	end
+	model.Parent = photo
+	photoModel = model
+	photoStamp.Visible = false
+	reportButton.Visible = true
+	realButton.Visible = true
+	polaroid.Visible = true
+	polaroid.Rotation = math.random(-5, 5)
+	polaroidPop.Scale = 0.4
+	TweenService:Create(polaroidPop, TweenInfo.new(0.35, Enum.EasingStyle.Back), { Scale = 1 }):Play()
+	photoDevelop.BackgroundTransparency = 0
+	TweenService:Create(photoDevelop, TweenInfo.new(1.3, Enum.EasingStyle.Quad), { BackgroundTransparency = 1 }):Play()
+	task.delay(14, function()
+		if my == photoToken then
+			closePolaroid()
+		end
+	end)
+end)
+
+Remotes:WaitForChild("ReportResult").OnClientEvent:Connect(function(correct, amount)
+	local my = photoToken
+	photoStamp.Visible = true
+	if correct then
+		photoStamp.Text = "☠ IMITADOR  +" .. Util.Money(amount)
+		photoStamp.TextColor3 = T.Red
 		screenFlash(T.Red, 0.3)
 		shake(0.3, 0.5)
 		sfx("Cash", 0.7, 0.9)
 	else
-		scanGrad.Color = ColorSequence.new(T.Green, Color3.fromRGB(20, 90, 50))
-		scanTitle.Text = "✔ AUTÉNTICA: " .. res.Name
-		scanBody.Text = "Valor " .. Util.Money(res.Value) .. "  •  +" .. Util.Money(res.Income) .. "/s"
-		scanLore.Text = res.Lore or ""
+		photoStamp.Text = "✖ ERA REAL  -" .. Util.Money(amount)
+		photoStamp.TextColor3 = Color3.fromRGB(90, 90, 110)
+		sfx("Hit", 0.5, 0.6)
 	end
-	task.delay(3.5, function()
-		if my == scanToken then
-			scanCard.Visible = false
+	task.delay(2, function()
+		if my == photoToken then
+			closePolaroid()
 		end
 	end)
 end)
@@ -1216,20 +1735,18 @@ ProximityPromptService.PromptShown:Connect(function(prompt)
 	local owner = prompt:GetAttribute("OwnerId")
 	if kind == "Steal" and owner == player.UserId then
 		prompt.Enabled = false
-	elseif (kind == "Sell" or kind == "Lock") and owner ~= player.UserId then
+	elseif (kind == "Sell" or kind == "Lock" or kind == "Coffee") and owner ~= player.UserId then
 		prompt.Enabled = false
 	end
 end)
 
 ---------------------------------------------------------------------------
--- Herramientas: Escáner y Bate
+-- Herramientas: Cámara y Bate
 ---------------------------------------------------------------------------
-local ToolRemote = Remotes:WaitForChild("Tool")
-local scanning = false
-local lastScan = 0
+local lastPhotoAt = 0
 local lastSwing = 0
 
-local function findScanTarget()
+local function findTarget()
 	local char = player.Character
 	local hrp = char and char:FindFirstChild("HumanoidRootPart")
 	if not hrp then
@@ -1243,16 +1760,16 @@ local function findScanTarget()
 	for _, model in ipairs(CollectionService:GetTagged("Anomaly")) do
 		local root = model.PrimaryPart
 		local st = model:GetAttribute("State")
-		if root and model:IsDescendantOf(workspace) and (st == "conveyor" or st == "pod" or st == "roaming") then
+		if root and model:IsDescendantOf(workspace) and st and st ~= "carried" and st ~= "none" then
 			local center = root.Position + Vector3.new(0, (model:GetAttribute("Height") or 5) * 0.5, 0)
 			local d = (center - hrp.Position).Magnitude
-			if d <= Config.ScanRange then
+			if d <= Config.PhotoRange then
 				local toC = center - ray.Origin
 				local along = toC:Dot(dir)
 				if along > 0 then
 					local perp = (toC - dir * along).Magnitude
 					local score = perp / math.max(along, 1)
-					if score < 0.18 and (not bestScore or score < bestScore) then
+					if score < 0.16 and (not bestScore or score < bestScore) then
 						best, bestScore = model, score
 					end
 				end
@@ -1265,47 +1782,26 @@ local function findScanTarget()
 	return best or (nearestDist and nearestDist < 14 and nearest) or nil
 end
 
-local function doScan(tool)
-	local cd = player:GetAttribute("Pass_ScannerPro") and Config.ScanCooldownPro or Config.ScanCooldown
-	if scanning or os.clock() - lastScan < cd then
-		toast("🔬 Escáner recargando...", T.Sub)
+local function takePhoto(tool)
+	local cd = player:GetAttribute("Pass_CameraPro") and Config.PhotoCooldownPro or Config.PhotoCooldown
+	if os.clock() - lastPhotoAt < cd then
+		toast("📸 El carrete se está recargando...", T.Sub)
 		return
 	end
-	local target = findScanTarget()
+	local target = findTarget()
 	if not target then
-		toast("🔬 Apunta a una anomalía cercana", T.Sub)
+		toast("📸 Apunta a una anomalía o a un huevo cercano", T.Sub)
 		return
 	end
-	scanning = true
-	lastScan = os.clock()
-	sfx("Scan", 0.6, 1.5)
+	lastPhotoAt = os.clock()
+	sfx("Photo", 0.7, 1.6)
+	screenFlash(Color3.new(1, 1, 1), 0.7)
 	local handle = tool:FindFirstChild("Handle")
-	local tip = handle and handle:FindFirstChild("Tip")
-	local root = target.PrimaryPart
-	local fx = root and root:FindFirstChild("FX")
-	local beam
-	if tip and fx then
-		beam = new("Beam", {
-			Attachment0 = tip,
-			Attachment1 = fx,
-			Width0 = 0.15,
-			Width1 = 3,
-			FaceCamera = true,
-			LightEmission = 1,
-			Color = ColorSequence.new(Color3.fromRGB(80, 255, 170)),
-			Transparency = NumberSequence.new(0.3),
-			Parent = handle,
-		})
+	local light = handle and new("PointLight", { Brightness = 8, Range = 30, Color = Color3.fromRGB(255, 255, 235), Parent = handle })
+	if light then
+		Debris:AddItem(light, 0.12)
 	end
-	local hl = new("Highlight", { FillColor = Color3.fromRGB(80, 255, 170), FillTransparency = 0.6, OutlineColor = Color3.fromRGB(80, 255, 170), Parent = target })
-	local hold = player:GetAttribute("Pass_ScannerPro") and 0.4 or 1
-	task.wait(hold)
-	if beam then
-		beam:Destroy()
-	end
-	hl:Destroy()
-	ToolRemote:FireServer("Scan", target)
-	scanning = false
+	ToolRemote:FireServer("Photo", target)
 end
 
 local function swingAnim(char)
@@ -1339,9 +1835,9 @@ local function hookTool(tool)
 		return
 	end
 	tool:SetAttribute("Hooked", true)
-	if tool.Name == "Escáner" then
+	if tool.Name == "Cámara" then
 		tool.Activated:Connect(function()
-			task.spawn(doScan, tool)
+			takePhoto(tool)
 		end)
 	elseif tool.Name == "Bate" then
 		tool.Activated:Connect(function()
@@ -1388,7 +1884,7 @@ task.spawn(function()
 		end
 	end
 end)
-showAnnounce("STEAL AN ANOMALY", "Compra • Escanea • Roba • Sobrevive al apagón", T.Accent)
+showAnnounce("STEAL AN ANOMALY", "Incuba • Cura • Fotografía • Roba • Sobrevive a la noche", T.Accent)
 task.delay(600, function()
 	toast("👍 ¿Te diviertes? ¡Dale LIKE y ⭐ favorito para más actualizaciones!", T.Gold)
 end)

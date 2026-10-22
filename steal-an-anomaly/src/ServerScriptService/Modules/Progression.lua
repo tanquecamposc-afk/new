@@ -88,7 +88,7 @@ end
 local function rawIncome(player)
 	local data = ctx.Data.Get(player)
 	local total = 0
-	for _, rec in pairs(data.Pods) do
+	for _, rec in pairs(data.Beds) do
 		total += Util.Income(rec)
 	end
 	return total
@@ -172,19 +172,6 @@ local function dailyState(data)
 	return canClaim, nextStreak
 end
 
-local function grantAnomaly(player, id, mut)
-	local b = ctx.Bases.Get(player)
-	local idx = b and ctx.Bases.FreePod(b)
-	local rec = { Id = id, Mut = mut }
-	if idx then
-		ctx.Bases.PlaceInPod(player, idx, rec)
-		return true
-	end
-	Progression.AddCash(player, Util.Value(rec))
-	ctx.Notify(player, "Sin cápsulas libres: recibiste su valor en dinero", Color3.fromRGB(255, 200, 80))
-	return false
-end
-
 ---------------------------------------------------------------------------
 -- Sincronización con el cliente
 ---------------------------------------------------------------------------
@@ -215,7 +202,8 @@ function Progression.Snapshot(player)
 		Missions = missions,
 		Daily = { CanClaim = canClaim, Next = nextStreak, Streak = data.Daily.Streak },
 		BaseLevel = data.BaseLevel,
-		Unlocked = ctx.Bases.UnlockedCount(player),
+		Beds = select(1, ctx.Bases.Counts(player)),
+		Incubators = select(2, ctx.Bases.Counts(player)),
 		UpgradeCost = Config.BaseUpgradeCost[data.BaseLevel + 1],
 		Rebirths = data.Rebirths,
 		RebirthCost = Config.RebirthCost(data.Rebirths),
@@ -224,6 +212,8 @@ function Progression.Snapshot(player)
 		Tutorial = data.Tutorial,
 		Buys = data.Stats.Buys,
 		Collected = data.Stats.Collected or 0,
+		Hatched = data.Stats.Hatched or 0,
+		Treated = data.Stats.Treated or 0,
 	}
 end
 
@@ -395,12 +385,13 @@ function handlers.Upgrade(player)
 	data.BaseLevel += 1
 	local b = ctx.Bases.Get(player)
 	if b then
-		ctx.Bases.RefreshPods(b)
+		ctx.Bases.Refresh(b)
 		local zone = b.Model:FindFirstChild("Collector")
 		ctx.Effect("place", zone and zone.Position or Vector3.zero, Color3.fromRGB(120, 200, 255))
 	end
 	Progression.Sync(player)
-	return reply(true, "🏗 ¡Base mejorada! Ahora tienes " .. ctx.Bases.UnlockedCount(player) .. " cápsulas")
+	local beds, incs = ctx.Bases.Counts(player)
+	return reply(true, ("🏗 ¡Clínica mejorada! %d camas y %d incubadoras"):format(beds, incs))
 end
 
 function handlers.Rebirth(player)
@@ -459,9 +450,9 @@ function handlers.Daily(player)
 		Progression.AddCash(player, cash)
 	end
 	if nextStreak == 7 then
-		grantAnomaly(player, Config.Day7Anomaly)
+		ctx.Bases.GrantEgg(player, Config.Day7Egg)
 		Progression.Sync(player)
-		return reply(true, "🎁 ¡Día 7! Recibiste " .. AnomalyData.ById[Config.Day7Anomaly].Name)
+		return reply(true, "🎁 ¡Día 7! Recibiste un " .. Config.EggById[Config.Day7Egg].Name)
 	end
 	Progression.Sync(player)
 	return reply(true, "🎁 Día " .. nextStreak .. ": +" .. Util.Money(cash))
@@ -542,9 +533,11 @@ local function grantProduct(player, product)
 		Progression.AddCash(player, amount)
 		ctx.Notify(player, "💼 +" .. Util.Money(amount), Color3.fromRGB(110, 255, 140))
 	end
-	if product.Anomaly then
-		local defs = AnomalyData.ByRarity[product.Anomaly]
-		grantAnomaly(player, defs[math.random(1, #defs)].Id)
+	if product.Egg then
+		ctx.Bases.GrantEgg(player, product.Egg)
+	end
+	if product.HatchAll then
+		ctx.Bases.HatchAllNow(player)
 	end
 	if product.Blackout then
 		ctx.Announce("🌑 " .. player.DisplayName .. " PROVOCÓ UN APAGÓN", "¡Prepárense!", Color3.fromRGB(255, 60, 60))
@@ -584,28 +577,24 @@ function Progression.OnChat(player, msg)
 	local cmd = (args[1] or ""):lower()
 	if cmd == "apagon" then
 		ctx.Cycle.ForceBlackout()
-	elseif cmd == "surge" then
-		ctx.Rift.SpawnSurge()
+	elseif cmd == "restock" then
+		ctx.Market.Restock(true)
+	elseif cmd == "huevo" and args[2] and Config.EggById[args[2]] then
+		ctx.Bases.GrantEgg(player, args[2])
 	elseif cmd == "secreto" then
-		ctx.Rift.Spawn({ Id = "entity", Mut = args[2] })
-		ctx.Announce("👁 ADMIN ABUSE 👁", "¡La Entidad ∞ salió de la Grieta!", Color3.fromRGB(30, 255, 205))
-	elseif cmd == "spawn" and args[2] and AnomalyData.ById[args[2]] then
-		ctx.Rift.Spawn({ Id = args[2], Mut = args[3] and Config.MutationById[args[3]] and args[3] or nil })
+		ctx.Market.AdminSpawn("vacio")
+		ctx.Announce("👁 ADMIN ABUSE 👁", "¡Un Huevo del Vacío apareció en el mercado!", Color3.fromRGB(30, 255, 205))
 	elseif cmd == "imitador" then
-		local rec = ctx.Rift.RollRecord(3, 1, false)
-		rec.Mimic = true
-		rec.Tell = Config.MimicTells[math.random(1, #Config.MimicTells)]
-		ctx.Rift.Spawn(rec)
+		ctx.Market.AdminSpawn("legendario", true)
+	elseif cmd == "eclosionar" then
+		ctx.Bases.HatchAllNow(player)
 	elseif cmd == "dinero" then
 		Progression.AddCash(player, tonumber(args[2]) or 100000)
 	elseif cmd == "lluvia" then
-		ctx.Announce("💸 LLUVIA DE ANOMALÍAS 💸", "¡Admin abuse en la Grieta!", Color3.fromRGB(255, 220, 90))
-		task.spawn(function()
-			for _ = 1, 12 do
-				ctx.Rift.Spawn(ctx.Rift.RollRecord(3, 4, false))
-				task.wait(0.8)
-			end
-		end)
+		ctx.Announce("💸 LLUVIA DE HUEVOS 💸", "¡Admin abuse en el mercado!", Color3.fromRGB(255, 220, 90))
+		for _ = 1, 6 do
+			ctx.Market.AdminSpawn(math.random() < 0.3 and "mitico" or "legendario")
+		end
 	end
 end
 

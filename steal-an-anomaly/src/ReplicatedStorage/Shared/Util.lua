@@ -78,4 +78,40 @@ function Util.WeightedPick(list, weightKey, rng)
 	return list[#list]
 end
 
+-- Decide lo que contiene un huevo al aparecer en el mercado
+function Util.RollEgg(eggId, mutBoost, allowContamination)
+	local egg = Config.EggById[eggId]
+	local pool = {}
+	for rarityId, w in pairs(egg.Pool) do
+		if AnomalyData.ByRarity[rarityId] then
+			table.insert(pool, { Id = rarityId, W = w })
+		end
+	end
+	table.sort(pool, function(a, b)
+		return a.Id < b.Id
+	end)
+	local rarity = Util.WeightedPick(pool, "W")
+	local defs = AnomalyData.ByRarity[rarity.Id]
+	local def = defs[math.random(1, #defs)]
+	local mut
+	for i = #Config.Mutations, 1, -1 do
+		local m = Config.Mutations[i]
+		if math.random() < m.Chance * (mutBoost or 1) then
+			mut = m.Id
+			break
+		end
+	end
+	local result = { Id = def.Id, Mut = mut }
+	if allowContamination ~= false and egg.Order >= 2 and math.random() < Config.ContaminationChance then
+		result.Mimic = true
+		result.Tell = Config.MimicTells[math.random(1, #Config.MimicTells)]
+	end
+	return { Egg = eggId, Result = result }
+end
+
+function Util.EggName(record)
+	local egg = Config.EggById[record.Egg]
+	return egg and egg.Name or "Huevo"
+end
+
 return Util

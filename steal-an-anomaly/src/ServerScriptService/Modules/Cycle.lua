@@ -117,8 +117,30 @@ local function setupWorld()
 		sg.Parent = part
 	end
 	local void = map:FindFirstChild("VoidExit")
-	sign(rift and rift:FindFirstChild("RiftSign"), Enum.NormalId.Right, "LA GRIETA", Color3.fromRGB(200, 120, 255))
-	sign(void and void:FindFirstChild("VoidSign"), Enum.NormalId.Left, "EL VACÍO", Color3.fromRGB(255, 80, 100))
+	local market = map:FindFirstChild("Market")
+	if market then
+		for _, d in ipairs(market:GetChildren()) do
+			if d.Name == "MarketSign" then
+				sign(d, Enum.NormalId.Front, "🥚 MERCADO DE LA GRIETA", Color3.fromRGB(200, 140, 255))
+			end
+		end
+	end
+	for _, d in ipairs(workspace:WaitForChild("Bases"):GetDescendants()) do
+		if d:IsA("BasePart") and d.Name == "WardLight" then
+			local l = Instance.new("PointLight")
+			l.Color = Color3.fromRGB(220, 245, 255)
+			l.Range = 22
+			l.Brightness = 1.4
+			l.Shadows = false
+			l.Parent = d
+		elseif d:IsA("BasePart") and d.Name == "CrossSign" then
+			local l = Instance.new("PointLight")
+			l.Color = d.Color
+			l.Range = 14
+			l.Brightness = 2
+			l.Parent = d
+		end
+	end
 	local vcore = void and void:FindFirstChild("VoidCore")
 	if vcore then
 		local light = Instance.new("PointLight")
@@ -231,16 +253,16 @@ function Cycle.Init(c)
 				ends = now() + 5
 				setPhase("Day", 5)
 			end
-			ctx.Announce("⚠ APAGÓN EN " .. math.max(1, math.floor(ends - now())) .. "s ⚠", "¡Protege tu base! La Grieta va a despertar", Color3.fromRGB(255, 120, 60))
+			ctx.Announce("⚠ TURNO DE NOCHE EN " .. math.max(1, math.floor(ends - now())) .. "s ⚠", "Trata a tus pacientes CRÍTICOS • Gran Restock en camino", Color3.fromRGB(255, 120, 60))
 			waitUntil(ends, false)
 
 			-- APAGÓN
 			setPhase("Blackout", Config.BlackoutDuration)
 			applyNight(1.5)
 			ctx.Bases.UnlockAll()
-			ctx.Announce("☾ ¡APAGÓN! ☽", "Láseres caídos • Surge en la Grieta • Cuidado con los Imitadores", Color3.fromRGB(255, 40, 60))
+			ctx.Announce("☾ ¡TURNO DE NOCHE! ☽", "Láseres caídos • Gran Restock • Vigila tu cordura", Color3.fromRGB(255, 40, 60))
 			task.delay(1.5, function()
-				ctx.Rift.SpawnSurge()
+				ctx.Market.Restock(true)
 				ctx.Steal.RevealMimics()
 				ctx.Steal.TriggerBreaches()
 			end)
@@ -248,7 +270,7 @@ function Cycle.Init(c)
 			for _, player in ipairs(Players:GetPlayers()) do
 				ctx.Progression.Progress(player, "Survive", 1)
 			end
-			ctx.Announce("☀ AMANECE ☀", "Sobreviviste al apagón", Color3.fromRGB(255, 220, 120))
+			ctx.Announce("☀ AMANECE ☀", "Sobreviviste al turno de noche", Color3.fromRGB(255, 220, 120))
 		end
 	end)
 end
