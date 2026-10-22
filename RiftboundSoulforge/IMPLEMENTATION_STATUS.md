@@ -10,7 +10,7 @@ items still need the manual checklist in `TEST_PLAN.md`.
 | Syntax of all 93 Luau files | Luau compiler via `tools/luau-check` (mlua) | pass |
 | Lint | Selene 0.31 with offline `roblox_lite` std | 0 errors, 0 warnings |
 | Formatting | StyLua | clean |
-| Unit tests (31) | `tests/run.luau` | 31/31 pass |
+| Unit tests (32) | `tests/run.luau` | 32/32 pass |
 | Project mapping & properties | `rojo build` | builds `.rbxl` |
 | Enum / class / property names | `tools/api_check.py` vs Roblox API dump | 0 problems |
 | Type checking (`luau-analyze`) | not available offline | **not run** |

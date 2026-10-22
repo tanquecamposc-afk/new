@@ -149,6 +149,24 @@ function ProfileSchema.sanitize(data: any)
 			weapon.masteryXp = math.max(0, tonumber(weapon.masteryXp) or 0)
 		end
 	end
+	-- Repair any sparse quest-count arrays saved by older builds (DataStores reject them).
+	for _, bucket in { data.quests.progress, data.daily.progress } do
+		for _, progress in bucket do
+			if type(progress) == "table" and type(progress.counts) == "table" then
+				local maxIndex = 0
+				for k in progress.counts do
+					if type(k) == "number" and k > maxIndex then
+						maxIndex = k
+					end
+				end
+				local dense = {}
+				for i = 1, maxIndex do
+					dense[i] = tonumber(progress.counts[i]) or 0
+				end
+				progress.counts = dense
+			end
+		end
+	end
 	-- receipts are an ordered list of purchase ids; keep it bounded.
 	if #data.receipts > 200 then
 		local trimmed = {}

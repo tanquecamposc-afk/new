@@ -2,7 +2,7 @@
 
 ## A. Automated (offline, no Studio) — `tools/check.sh`
 1. StyLua format check, Selene lint, Luau compile of every file.
-2. `tests/run.luau` (31 tests): XP curves, cost atomicity, profile migrations/validation/newer-schema
+2. `tests/run.luau` (32 tests): XP curves, cost atomicity, profile migrations/validation/newer-schema
    refusal/receipt bounds, weapon builds (mastery gates, evolutions, tempers), fusion pairs, every
    ability has a server implementation, daily picks, quest events/filters, world regions vs spawns,
    telegraph-readable windups (≥0.5 s), recipe items, monetization ids unset, boss phase data.

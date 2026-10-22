@@ -110,6 +110,14 @@ test("public view strips receipts", function()
 	eq(#p.receipts, 1, "original untouched")
 end)
 
+test("sparse quest counts are densified", function()
+	local p = ProfileSchema.load({ schemaVersion = 2, quests = { progress = { m02_guard = { counts = { [2] = 1 } } }, completed = {}, claimed = {} } })
+	local counts = p.quests.progress.m02_guard.counts
+	eq(#counts, 2)
+	eq(counts[1], 0)
+	eq(counts[2], 1)
+end)
+
 print("CombatMath")
 local function state(m, u, t, e)
 	return { mastery = m, upgrade = u, temper = t, evolution = e }

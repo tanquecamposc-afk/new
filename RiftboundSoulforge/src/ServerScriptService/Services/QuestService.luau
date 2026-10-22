@@ -58,7 +58,9 @@ local function advance(player: Player, profile: any, def: any, event: string, ev
 	for i, objective in def.objectives do
 		if QuestConfig.matches(objective, event, eventData) then
 			if not progress then
-				progress = { counts = {} }
+				-- Dense array of zeros: DataStores reject sparse arrays (e.g. { [2] = 1 }).
+				local counts = table.create(#def.objectives, 0)
+				progress = { counts = counts }
 				if def.daily or def.dailyPick then
 					profile.daily.progress[def.id] = progress
 				else
