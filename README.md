@@ -57,3 +57,9 @@ Cada torre puede **mejorarse** (⬆), **venderse** (70% de reembolso) y cambiar 
 ## 🔊 Sonido
 
 Todos los efectos de sonido se generan en tiempo real con WebAudio (sin archivos de audio). Botón 🔊 para silenciar.
+
+---
+
+# 👁 Steal an Anomaly (Roblox)
+
+Juego viral para Roblox en la carpeta [`steal-an-anomaly/`](steal-an-anomaly/README.md). Abre `steal-an-anomaly/StealAnAnomaly.rbxlx` en Roblox Studio y pulsa Play.
