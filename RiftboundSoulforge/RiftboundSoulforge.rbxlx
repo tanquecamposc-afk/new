@@ -6358,11 +6358,11 @@ local function pullLever(player: Player)
 		local up = bridge:GetAttribute("UpCFrame") :: CFrame?
 		if down and up then
 			bridge.CanCollide = true
-			TweenService:Create(bridge, TweenInfo.new(2, Enum.EasingStyle.Bounce), { CFrame = down }):Play()
+			TweenService:Create(bridge, TweenInfo.new(2.5, Enum.EasingStyle.Quart), { CFrame = down, Transparency = 0 }):Play()
 			task.delay(600, function()
 				if os.clock() >= bridgeDownUntil - 1 then
 					bridge.CanCollide = false
-					TweenService:Create(bridge, TweenInfo.new(2), { CFrame = up }):Play()
+					TweenService:Create(bridge, TweenInfo.new(2), { CFrame = up, Transparency = 1 }):Play()
 				end
 			end)
 		end
@@ -10427,14 +10427,74 @@ end
 local rng = Random.new(7331)
 Build.rng = rng
 
+local LEAVES_AUTUMN = {
+	Color3.fromRGB(214, 104, 44),
+	Color3.fromRGB(232, 150, 52),
+	Color3.fromRGB(190, 70, 46),
+	Color3.fromRGB(240, 186, 74),
+}
+local LEAVES_GREEN = { Color3.fromRGB(74, 132, 66), Color3.fromRGB(96, 150, 70), Color3.fromRGB(60, 112, 70) }
+
+-- Broadleaf tree: tapered trunk, two branches and a clustered, colour-varied canopy.
 function Build.tree(parent: Instance, position: Vector3, scale: number, autumn: boolean?)
 	local model = Build.model(parent, "Tree")
-	local h = 14 * scale
-	Build.cylinder(model, 2.2 * scale, h, position + Vector3.new(0, h / 2, 0), Color3.fromRGB(78, 54, 40), Enum.Material.Wood, "Trunk")
-	local leaf = if autumn then Color3.fromRGB(196, 92, 40) else Color3.fromRGB(70, 120, 60)
-	for i = 1, 3 do
-		local offset = Vector3.new(rng:NextNumber(-2, 2), h + (i - 1) * 2.5 * scale, rng:NextNumber(-2, 2)) * Vector3.new(scale, 1, scale)
-		Build.ball(model, (9 - i * 1.6) * scale, position + offset, leaf:Lerp(Color3.fromRGB(255, 160, 60), (i - 1) * 0.12), Enum.Material.Grass, "Canopy")
+	local h = 12 * scale
+	local bark = Color3.fromRGB(86, 60, 44)
+	Build.cylinder(model, 2.4 * scale, h * 0.55, position + Vector3.new(0, h * 0.275, 0), bark, Enum.Material.Wood, "Trunk")
+	Build.cylinder(model, 1.6 * scale, h * 0.5, position + Vector3.new(0, h * 0.75, 0), bark, Enum.Material.Wood, "Trunk2")
+	local palette = if autumn then LEAVES_AUTUMN else LEAVES_GREEN
+	local lean = rng:NextNumber(0, math.pi * 2)
+	for b = 1, 2 do
+		local dir = lean + b * math.pi
+		Build.part(model, {
+			size = Vector3.new(0.8 * scale, 5 * scale, 0.8 * scale),
+			cframe = CFrame.new(position + Vector3.new(0, h * 0.7, 0)) * CFrame.Angles(0, dir, 0) * CFrame.Angles(0, 0, math.rad(40)) * CFrame.new(0, 2 * scale, 0),
+			color = bark,
+			material = Enum.Material.Wood,
+			name = "Branch",
+		})
+	end
+	for i = 1, 6 do
+		local a = i / 6 * math.pi * 2 + rng:NextNumber(-0.3, 0.3)
+		local spread = if i == 6 then 0 else rng:NextNumber(2.2, 3.6)
+		local center = position + Vector3.new(math.cos(a) * spread * scale, h + rng:NextNumber(-1, 2.5) * scale, math.sin(a) * spread * scale)
+		if i == 6 then
+			center = position + Vector3.new(0, h + 3 * scale, 0)
+		end
+		Build.ball(model, rng:NextNumber(4.5, 6.5) * scale, center, palette[rng:NextInteger(1, #palette)], Enum.Material.Grass, "Canopy")
+	end
+	return model
+end
+
+-- Stylised low-poly conifer: stacked, rotated tiers.
+function Build.pine(parent: Instance, position: Vector3, scale: number)
+	local model = Build.model(parent, "Pine")
+	Build.cylinder(model, 1.4 * scale, 5 * scale, position + Vector3.new(0, 2.5 * scale, 0), Color3.fromRGB(80, 56, 42), Enum.Material.Wood, "Trunk")
+	local y = 4 * scale
+	for i = 1, 4 do
+		local w = (9 - i * 1.8) * scale
+		local h = 3.2 * scale
+		Build.part(model, {
+			size = Vector3.new(w, h, w),
+			cframe = CFrame.new(position + Vector3.new(0, y + h / 2, 0)) * CFrame.Angles(0, math.rad(i * 25), 0),
+			color = Color3.fromRGB(46, 92 + i * 8, 60),
+			material = Enum.Material.Grass,
+			name = "Tier",
+		})
+		y += h * 0.78
+	end
+	return model
+end
+
+-- Small flower bed: a mossy mound with coloured blossoms.
+function Build.flowers(parent: Instance, position: Vector3, r: Random)
+	local model = Build.model(parent, "Flowers")
+	local colors = { Color3.fromRGB(255, 120, 160), Color3.fromRGB(255, 220, 110), Color3.fromRGB(180, 140, 255), Color3.fromRGB(255, 255, 255) }
+	for _ = 1, 9 do
+		local p = position + Vector3.new(r:NextNumber(-3, 3), 0, r:NextNumber(-3, 3))
+		Build.part(model, { size = Vector3.new(0.15, 1, 0.15), cframe = CFrame.new(p + Vector3.new(0, 0.5, 0)), color = Color3.fromRGB(70, 130, 60), material = Enum.Material.Grass, name = "Stem", collide = false })
+		local bloom = Build.ball(model, 0.55, p + Vector3.new(0, 1.05, 0), colors[r:NextInteger(1, #colors)], Enum.Material.SmoothPlastic, "Bloom")
+		bloom.CanCollide = false
 	end
 	return model
 end
@@ -10727,7 +10787,11 @@ local function frontier(parent: Instance)
 			if placed % 3 == 0 then
 				Build.rock(model, at(x, z), rng:NextNumber(0.8, 1.6), CLIFF)
 			else
-				Build.tree(model, at(x, z), rng:NextNumber(0.9, 1.4), true)
+				if placed % 5 == 1 then
+					Build.pine(model, at(x, z), rng:NextNumber(0.9, 1.3))
+				else
+					Build.tree(model, at(x, z), rng:NextNumber(0.9, 1.4), true)
+				end
 			end
 		end
 	end
@@ -10857,9 +10921,11 @@ local function ravine(parent: Instance)
 	-- drawbridge shortcut (lowered by the lever on the far side)
 	local hinge = at(340, -30, -0.75)
 	local down = CFrame.new(hinge) * CFrame.new(-39, 0, 0)
-	local up = CFrame.new(hinge) * CFrame.Angles(0, 0, math.rad(-75)) * CFrame.new(-39, 0, 0)
+	-- Raised = folded away under the far ledge and invisible; lowering it slides it into place.
+	local up = down * CFrame.new(39, -6, 0)
 	local bridge = Build.block(model, Vector3.new(78, 1.5, 10), up, Color3.fromRGB(100, 72, 50), Enum.Material.WoodPlanks, "Drawbridge")
 	bridge.CanCollide = false
+	bridge.Transparency = 1
 	bridge:SetAttribute("DownCFrame", down)
 	bridge:SetAttribute("UpCFrame", up)
 	local lever = P.ShortcutLever
@@ -11509,19 +11575,7 @@ local function buildPlaza(parent: Instance)
 	Build.cylinder(parent, 120, 0.4, Vector3.new(0, 0.2, 0), MARBLE, Enum.Material.Marble, "Plaza")
 	Build.cylinder(parent, 92, 0.5, Vector3.new(0, 0.25, 0), Color3.fromRGB(150, 140, 175), Enum.Material.Marble, "PlazaInner")
 	Build.cylinder(parent, 40, 0.6, Vector3.new(0, 0.3, 0), TRIM, Enum.Material.Slate, "SpireBase")
-	-- island underside rocks (silhouette from afar)
-	for i = 1, 14 do
-		local angle = i / 14 * math.pi * 2
-		local r = 120 + Build.rng:NextNumber(-20, 20)
-		Build.part(parent, {
-			size = Vector3.new(30, Build.rng:NextNumber(20, 50), 30),
-			cframe = CFrame.new(math.cos(angle) * r, -20, math.sin(angle) * r) * CFrame.Angles(0, angle, math.rad(180)),
-			color = Color3.fromRGB(46, 42, 58),
-			material = Enum.Material.Slate,
-			class = "WedgePart",
-			name = "Underside",
-		})
-	end
+	-- (the island underside is sculpted in Smooth Terrain by TerrainGen)
 	-- rim: crystal pillars + invisible safety wall
 	for i = 1, 24 do
 		local angle = i / 24 * math.pi * 2
@@ -11557,42 +11611,96 @@ end
 
 local function buildSpire(parent: Instance)
 	local model = Build.model(parent, "SoulforgeSpire")
-	Build.cylinder(model, 16, 4, Vector3.new(0, 2, 0), TRIM, Enum.Material.Slate, "Base")
-	Build.cylinder(model, 12, 2, Vector3.new(0, 5, 0), STONE, Enum.Material.Slate, "Base2")
-	for i = 1, 4 do
-		local angle = i / 4 * math.pi * 2
+	-- stepped marble plinth with gold inlay rings
+	Build.cylinder(model, 22, 1.6, Vector3.new(0, 0.8, 0), MARBLE, Enum.Material.Marble, "Plinth1")
+	Build.cylinder(model, 17, 1.6, Vector3.new(0, 2.4, 0), TRIM, Enum.Material.Slate, "Plinth2")
+	Build.cylinder(model, 12, 1.4, Vector3.new(0, 3.9, 0), STONE, Enum.Material.Slate, "Plinth3")
+	Build.cylinder(model, 17.4, 0.25, Vector3.new(0, 3.25, 0), GOLD, Enum.Material.Neon, "InlayRing")
+	Build.cylinder(model, 22.4, 0.25, Vector3.new(0, 1.65, 0), RIFT, Enum.Material.Neon, "InlayRing")
+	-- tapered obsidian obelisk with glowing veins
+	local y = 4.6
+	for i, w in { 4.2, 3.4, 2.6, 1.8 } do
+		local h = 6 - i * 0.6
 		Build.part(model, {
-			size = Vector3.new(2.2, 26, 2.2),
-			cframe = CFrame.new(math.cos(angle) * 4.5, 17, math.sin(angle) * 4.5) * CFrame.Angles(math.cos(angle) * 0.12, 0, math.sin(angle) * 0.12),
+			size = Vector3.new(w, h, w),
+			cframe = CFrame.new(0, y + h / 2, 0) * CFrame.Angles(0, math.rad(45), 0),
+			color = Color3.fromRGB(30, 26, 42),
+			material = Enum.Material.Basalt,
+			name = "Obelisk" .. i,
+		})
+		for _, side in { 0, 90, 180, 270 } do
+			Build.part(model, {
+				size = Vector3.new(0.18, h * 0.8, 0.12),
+				cframe = CFrame.new(0, y + h / 2, 0) * CFrame.Angles(0, math.rad(45 + side), 0) * CFrame.new(0, 0, -w / 2 - 0.02),
+				color = RIFT,
+				material = Enum.Material.Neon,
+				collide = false,
+				castShadow = false,
+				name = "Vein",
+			})
+		end
+		y += h
+	end
+	-- four slender crystal shards leaning outward, glass shell + thin neon core
+	for i = 1, 4 do
+		local angle = i / 4 * math.pi * 2 + math.pi / 4
+		local base = CFrame.new(math.cos(angle) * 6.5, 0, math.sin(angle) * 6.5)
+			* CFrame.Angles(0, -angle, 0)
+			* CFrame.Angles(0, 0, math.rad(-14))
+		local shell = Build.part(model, {
+			size = Vector3.new(1.3, 14, 1.3),
+			cframe = base * CFrame.new(0, 10, 0) * CFrame.Angles(0, math.rad(45), 0),
+			color = Color3.fromRGB(150, 110, 230),
+			material = Enum.Material.Glass,
+			collide = false,
+			name = "Shard",
+		})
+		shell.Transparency = 0.35
+		Build.part(model, {
+			size = Vector3.new(0.35, 13, 0.35),
+			cframe = base * CFrame.new(0, 10, 0),
 			color = RIFT,
 			material = Enum.Material.Neon,
 			collide = false,
-			name = "Prong",
+			castShadow = false,
+			name = "ShardCore",
 		})
 	end
+	-- floating soul core: glass diamond around a smaller neon heart
 	local core = Build.part(model, {
-		size = Vector3.new(7, 11, 7),
-		cframe = CFrame.new(0, 40, 0) * CFrame.Angles(0, math.rad(45), 0),
-		color = Color3.fromRGB(200, 150, 255),
-		material = Enum.Material.Neon,
+		size = Vector3.new(4.5, 4.5, 4.5),
+		cframe = CFrame.new(0, 34, 0) * CFrame.Angles(math.rad(45), 0, math.rad(35)),
+		color = Color3.fromRGB(190, 150, 255),
+		material = Enum.Material.Glass,
 		collide = false,
 		name = "Core",
 	})
-	Build.light(core, Color3.fromRGB(190, 140, 255), 60, 3)
-	Build.particles(core, Color3.fromRGB(200, 160, 255), 20, {
+	core.Transparency = 0.3
+	local heart = Build.part(model, {
+		size = Vector3.new(2.2, 2.2, 2.2),
+		cframe = CFrame.new(0, 34, 0) * CFrame.Angles(math.rad(45), 0, math.rad(35)),
+		color = Color3.fromRGB(210, 170, 255),
+		material = Enum.Material.Neon,
+		collide = false,
+		castShadow = false,
+		name = "CoreHeart",
+	})
+	Build.light(heart, Color3.fromRGB(190, 140, 255), 60, 3)
+	Build.particles(heart, Color3.fromRGB(200, 160, 255), 18, {
 		speed = NumberRange.new(3, 6),
 		lifetime = NumberRange.new(1.5, 2.5),
-		size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.8), NumberSequenceKeypoint.new(1, 0) }),
+		size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.6), NumberSequenceKeypoint.new(1, 0) }),
 	})
 	core:SetAttribute("Spin", 0.6)
-	-- orbiting ring (rotated client-side; tagged by attribute)
+	heart:SetAttribute("Spin", -0.9)
+	-- orbiting rune ring (rotated client-side)
 	local ring = Build.model(model, "Ring")
-	for i = 1, 18 do
-		local angle = i / 18 * math.pi * 2
+	for i = 1, 24 do
+		local angle = i / 24 * math.pi * 2
 		Build.part(ring, {
-			size = Vector3.new(1.2, 1.2, 3),
-			cframe = CFrame.lookAt(Vector3.new(math.cos(angle) * 12, 34, math.sin(angle) * 12), Vector3.new(0, 34, 0)),
-			color = GOLD,
+			size = Vector3.new(0.5, 0.5, 2.2),
+			cframe = CFrame.lookAt(Vector3.new(math.cos(angle) * 9, 34, math.sin(angle) * 9), Vector3.new(0, 34, 0)),
+			color = if i % 3 == 0 then RIFT else GOLD,
 			material = Enum.Material.Neon,
 			collide = false,
 			name = "RingShard",
@@ -11601,7 +11709,58 @@ local function buildSpire(parent: Instance)
 	end
 	ring:SetAttribute("SpinModel", 0.25)
 	ring.PrimaryPart = ring:FindFirstChildWhichIsA("BasePart")
-	ring:SetAttribute("Pivot", Vector3.new(0, 34, 0))
+end
+
+-- Scatter trees, rocks, flower beds and lanterns over the grass ring, away from paths/stations.
+local function decorate(parent: Instance)
+	local model = Build.model(parent, "Decoration")
+	local rng = Random.new(4242)
+	local blockers = {}
+	for _, point in P do
+		if typeof(point) == "Vector3" and point.Magnitude < 200 then
+			table.insert(blockers, point)
+		end
+	end
+	local function nearPath(pos: Vector3): boolean
+		for _, target in blockers do
+			local flatTarget = Vector3.new(target.X, 0, target.Z)
+			local len = flatTarget.Magnitude
+			if len > 1 then
+				local along = math.clamp(pos:Dot(flatTarget.Unit), 0, len)
+				if (pos - flatTarget.Unit * along).Magnitude < 9 then
+					return true
+				end
+			end
+			if (pos - flatTarget).Magnitude < 32 then
+				return true
+			end
+		end
+		return false
+	end
+	local placed = 0
+	for _ = 1, 400 do
+		if placed >= 70 then
+			break
+		end
+		local angle = rng:NextNumber(0, math.pi * 2)
+		local r = rng:NextNumber(66, 158)
+		local pos = Vector3.new(math.cos(angle) * r, 0, math.sin(angle) * r)
+		if not nearPath(pos) then
+			placed += 1
+			local roll = rng:NextNumber()
+			if roll < 0.45 then
+				Build.tree(model, pos, rng:NextNumber(0.8, 1.25), rng:NextNumber() < 0.6)
+			elseif roll < 0.6 then
+				Build.pine(model, pos, rng:NextNumber(0.8, 1.2))
+			elseif roll < 0.75 then
+				Build.rock(model, pos, rng:NextNumber(0.6, 1.1), Color3.fromRGB(110, 104, 120))
+			elseif roll < 0.92 then
+				Build.flowers(model, pos, rng)
+			else
+				Build.crystal(model, pos, if rng:NextNumber() < 0.5 then RIFT else Color3.fromRGB(110, 190, 255), 0.9)
+			end
+		end
+	end
 end
 
 local function buildForge(parent: Instance)
@@ -11884,6 +12043,7 @@ function Nexus.build(world: Instance)
 	for _, target in { P.Forge, P.FusionChamber, P.TrainingArena, P.ExpeditionPortal, P.QuestBoard, P.BossGate, P.SocialGarden, P.HallOfEchoes, P.CosmeticKiosk, P.ArtisanBench } do
 		path(folder, Vector3.zero, target, 10)
 	end
+	decorate(folder)
 	buildForge(folder)
 	buildBench(folder)
 	buildFusion(folder)

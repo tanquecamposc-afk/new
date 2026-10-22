@@ -197,14 +197,74 @@ end
 local rng = Random.new(7331)
 Build.rng = rng
 
+local LEAVES_AUTUMN = {
+	Color3.fromRGB(214, 104, 44),
+	Color3.fromRGB(232, 150, 52),
+	Color3.fromRGB(190, 70, 46),
+	Color3.fromRGB(240, 186, 74),
+}
+local LEAVES_GREEN = { Color3.fromRGB(74, 132, 66), Color3.fromRGB(96, 150, 70), Color3.fromRGB(60, 112, 70) }
+
+-- Broadleaf tree: tapered trunk, two branches and a clustered, colour-varied canopy.
 function Build.tree(parent: Instance, position: Vector3, scale: number, autumn: boolean?)
 	local model = Build.model(parent, "Tree")
-	local h = 14 * scale
-	Build.cylinder(model, 2.2 * scale, h, position + Vector3.new(0, h / 2, 0), Color3.fromRGB(78, 54, 40), Enum.Material.Wood, "Trunk")
-	local leaf = if autumn then Color3.fromRGB(196, 92, 40) else Color3.fromRGB(70, 120, 60)
-	for i = 1, 3 do
-		local offset = Vector3.new(rng:NextNumber(-2, 2), h + (i - 1) * 2.5 * scale, rng:NextNumber(-2, 2)) * Vector3.new(scale, 1, scale)
-		Build.ball(model, (9 - i * 1.6) * scale, position + offset, leaf:Lerp(Color3.fromRGB(255, 160, 60), (i - 1) * 0.12), Enum.Material.Grass, "Canopy")
+	local h = 12 * scale
+	local bark = Color3.fromRGB(86, 60, 44)
+	Build.cylinder(model, 2.4 * scale, h * 0.55, position + Vector3.new(0, h * 0.275, 0), bark, Enum.Material.Wood, "Trunk")
+	Build.cylinder(model, 1.6 * scale, h * 0.5, position + Vector3.new(0, h * 0.75, 0), bark, Enum.Material.Wood, "Trunk2")
+	local palette = if autumn then LEAVES_AUTUMN else LEAVES_GREEN
+	local lean = rng:NextNumber(0, math.pi * 2)
+	for b = 1, 2 do
+		local dir = lean + b * math.pi
+		Build.part(model, {
+			size = Vector3.new(0.8 * scale, 5 * scale, 0.8 * scale),
+			cframe = CFrame.new(position + Vector3.new(0, h * 0.7, 0)) * CFrame.Angles(0, dir, 0) * CFrame.Angles(0, 0, math.rad(40)) * CFrame.new(0, 2 * scale, 0),
+			color = bark,
+			material = Enum.Material.Wood,
+			name = "Branch",
+		})
+	end
+	for i = 1, 6 do
+		local a = i / 6 * math.pi * 2 + rng:NextNumber(-0.3, 0.3)
+		local spread = if i == 6 then 0 else rng:NextNumber(2.2, 3.6)
+		local center = position + Vector3.new(math.cos(a) * spread * scale, h + rng:NextNumber(-1, 2.5) * scale, math.sin(a) * spread * scale)
+		if i == 6 then
+			center = position + Vector3.new(0, h + 3 * scale, 0)
+		end
+		Build.ball(model, rng:NextNumber(4.5, 6.5) * scale, center, palette[rng:NextInteger(1, #palette)], Enum.Material.Grass, "Canopy")
+	end
+	return model
+end
+
+-- Stylised low-poly conifer: stacked, rotated tiers.
+function Build.pine(parent: Instance, position: Vector3, scale: number)
+	local model = Build.model(parent, "Pine")
+	Build.cylinder(model, 1.4 * scale, 5 * scale, position + Vector3.new(0, 2.5 * scale, 0), Color3.fromRGB(80, 56, 42), Enum.Material.Wood, "Trunk")
+	local y = 4 * scale
+	for i = 1, 4 do
+		local w = (9 - i * 1.8) * scale
+		local h = 3.2 * scale
+		Build.part(model, {
+			size = Vector3.new(w, h, w),
+			cframe = CFrame.new(position + Vector3.new(0, y + h / 2, 0)) * CFrame.Angles(0, math.rad(i * 25), 0),
+			color = Color3.fromRGB(46, 92 + i * 8, 60),
+			material = Enum.Material.Grass,
+			name = "Tier",
+		})
+		y += h * 0.78
+	end
+	return model
+end
+
+-- Small flower bed: a mossy mound with coloured blossoms.
+function Build.flowers(parent: Instance, position: Vector3, r: Random)
+	local model = Build.model(parent, "Flowers")
+	local colors = { Color3.fromRGB(255, 120, 160), Color3.fromRGB(255, 220, 110), Color3.fromRGB(180, 140, 255), Color3.fromRGB(255, 255, 255) }
+	for _ = 1, 9 do
+		local p = position + Vector3.new(r:NextNumber(-3, 3), 0, r:NextNumber(-3, 3))
+		Build.part(model, { size = Vector3.new(0.15, 1, 0.15), cframe = CFrame.new(p + Vector3.new(0, 0.5, 0)), color = Color3.fromRGB(70, 130, 60), material = Enum.Material.Grass, name = "Stem", collide = false })
+		local bloom = Build.ball(model, 0.55, p + Vector3.new(0, 1.05, 0), colors[r:NextInteger(1, #colors)], Enum.Material.SmoothPlastic, "Bloom")
+		bloom.CanCollide = false
 	end
 	return model
 end

@@ -60,19 +60,7 @@ local function buildPlaza(parent: Instance)
 	Build.cylinder(parent, 120, 0.4, Vector3.new(0, 0.2, 0), MARBLE, Enum.Material.Marble, "Plaza")
 	Build.cylinder(parent, 92, 0.5, Vector3.new(0, 0.25, 0), Color3.fromRGB(150, 140, 175), Enum.Material.Marble, "PlazaInner")
 	Build.cylinder(parent, 40, 0.6, Vector3.new(0, 0.3, 0), TRIM, Enum.Material.Slate, "SpireBase")
-	-- island underside rocks (silhouette from afar)
-	for i = 1, 14 do
-		local angle = i / 14 * math.pi * 2
-		local r = 120 + Build.rng:NextNumber(-20, 20)
-		Build.part(parent, {
-			size = Vector3.new(30, Build.rng:NextNumber(20, 50), 30),
-			cframe = CFrame.new(math.cos(angle) * r, -20, math.sin(angle) * r) * CFrame.Angles(0, angle, math.rad(180)),
-			color = Color3.fromRGB(46, 42, 58),
-			material = Enum.Material.Slate,
-			class = "WedgePart",
-			name = "Underside",
-		})
-	end
+	-- (the island underside is sculpted in Smooth Terrain by TerrainGen)
 	-- rim: crystal pillars + invisible safety wall
 	for i = 1, 24 do
 		local angle = i / 24 * math.pi * 2
@@ -108,42 +96,96 @@ end
 
 local function buildSpire(parent: Instance)
 	local model = Build.model(parent, "SoulforgeSpire")
-	Build.cylinder(model, 16, 4, Vector3.new(0, 2, 0), TRIM, Enum.Material.Slate, "Base")
-	Build.cylinder(model, 12, 2, Vector3.new(0, 5, 0), STONE, Enum.Material.Slate, "Base2")
-	for i = 1, 4 do
-		local angle = i / 4 * math.pi * 2
+	-- stepped marble plinth with gold inlay rings
+	Build.cylinder(model, 22, 1.6, Vector3.new(0, 0.8, 0), MARBLE, Enum.Material.Marble, "Plinth1")
+	Build.cylinder(model, 17, 1.6, Vector3.new(0, 2.4, 0), TRIM, Enum.Material.Slate, "Plinth2")
+	Build.cylinder(model, 12, 1.4, Vector3.new(0, 3.9, 0), STONE, Enum.Material.Slate, "Plinth3")
+	Build.cylinder(model, 17.4, 0.25, Vector3.new(0, 3.25, 0), GOLD, Enum.Material.Neon, "InlayRing")
+	Build.cylinder(model, 22.4, 0.25, Vector3.new(0, 1.65, 0), RIFT, Enum.Material.Neon, "InlayRing")
+	-- tapered obsidian obelisk with glowing veins
+	local y = 4.6
+	for i, w in { 4.2, 3.4, 2.6, 1.8 } do
+		local h = 6 - i * 0.6
 		Build.part(model, {
-			size = Vector3.new(2.2, 26, 2.2),
-			cframe = CFrame.new(math.cos(angle) * 4.5, 17, math.sin(angle) * 4.5) * CFrame.Angles(math.cos(angle) * 0.12, 0, math.sin(angle) * 0.12),
+			size = Vector3.new(w, h, w),
+			cframe = CFrame.new(0, y + h / 2, 0) * CFrame.Angles(0, math.rad(45), 0),
+			color = Color3.fromRGB(30, 26, 42),
+			material = Enum.Material.Basalt,
+			name = "Obelisk" .. i,
+		})
+		for _, side in { 0, 90, 180, 270 } do
+			Build.part(model, {
+				size = Vector3.new(0.18, h * 0.8, 0.12),
+				cframe = CFrame.new(0, y + h / 2, 0) * CFrame.Angles(0, math.rad(45 + side), 0) * CFrame.new(0, 0, -w / 2 - 0.02),
+				color = RIFT,
+				material = Enum.Material.Neon,
+				collide = false,
+				castShadow = false,
+				name = "Vein",
+			})
+		end
+		y += h
+	end
+	-- four slender crystal shards leaning outward, glass shell + thin neon core
+	for i = 1, 4 do
+		local angle = i / 4 * math.pi * 2 + math.pi / 4
+		local base = CFrame.new(math.cos(angle) * 6.5, 0, math.sin(angle) * 6.5)
+			* CFrame.Angles(0, -angle, 0)
+			* CFrame.Angles(0, 0, math.rad(-14))
+		local shell = Build.part(model, {
+			size = Vector3.new(1.3, 14, 1.3),
+			cframe = base * CFrame.new(0, 10, 0) * CFrame.Angles(0, math.rad(45), 0),
+			color = Color3.fromRGB(150, 110, 230),
+			material = Enum.Material.Glass,
+			collide = false,
+			name = "Shard",
+		})
+		shell.Transparency = 0.35
+		Build.part(model, {
+			size = Vector3.new(0.35, 13, 0.35),
+			cframe = base * CFrame.new(0, 10, 0),
 			color = RIFT,
 			material = Enum.Material.Neon,
 			collide = false,
-			name = "Prong",
+			castShadow = false,
+			name = "ShardCore",
 		})
 	end
+	-- floating soul core: glass diamond around a smaller neon heart
 	local core = Build.part(model, {
-		size = Vector3.new(7, 11, 7),
-		cframe = CFrame.new(0, 40, 0) * CFrame.Angles(0, math.rad(45), 0),
-		color = Color3.fromRGB(200, 150, 255),
-		material = Enum.Material.Neon,
+		size = Vector3.new(4.5, 4.5, 4.5),
+		cframe = CFrame.new(0, 34, 0) * CFrame.Angles(math.rad(45), 0, math.rad(35)),
+		color = Color3.fromRGB(190, 150, 255),
+		material = Enum.Material.Glass,
 		collide = false,
 		name = "Core",
 	})
-	Build.light(core, Color3.fromRGB(190, 140, 255), 60, 3)
-	Build.particles(core, Color3.fromRGB(200, 160, 255), 20, {
+	core.Transparency = 0.3
+	local heart = Build.part(model, {
+		size = Vector3.new(2.2, 2.2, 2.2),
+		cframe = CFrame.new(0, 34, 0) * CFrame.Angles(math.rad(45), 0, math.rad(35)),
+		color = Color3.fromRGB(210, 170, 255),
+		material = Enum.Material.Neon,
+		collide = false,
+		castShadow = false,
+		name = "CoreHeart",
+	})
+	Build.light(heart, Color3.fromRGB(190, 140, 255), 60, 3)
+	Build.particles(heart, Color3.fromRGB(200, 160, 255), 18, {
 		speed = NumberRange.new(3, 6),
 		lifetime = NumberRange.new(1.5, 2.5),
-		size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.8), NumberSequenceKeypoint.new(1, 0) }),
+		size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.6), NumberSequenceKeypoint.new(1, 0) }),
 	})
 	core:SetAttribute("Spin", 0.6)
-	-- orbiting ring (rotated client-side; tagged by attribute)
+	heart:SetAttribute("Spin", -0.9)
+	-- orbiting rune ring (rotated client-side)
 	local ring = Build.model(model, "Ring")
-	for i = 1, 18 do
-		local angle = i / 18 * math.pi * 2
+	for i = 1, 24 do
+		local angle = i / 24 * math.pi * 2
 		Build.part(ring, {
-			size = Vector3.new(1.2, 1.2, 3),
-			cframe = CFrame.lookAt(Vector3.new(math.cos(angle) * 12, 34, math.sin(angle) * 12), Vector3.new(0, 34, 0)),
-			color = GOLD,
+			size = Vector3.new(0.5, 0.5, 2.2),
+			cframe = CFrame.lookAt(Vector3.new(math.cos(angle) * 9, 34, math.sin(angle) * 9), Vector3.new(0, 34, 0)),
+			color = if i % 3 == 0 then RIFT else GOLD,
 			material = Enum.Material.Neon,
 			collide = false,
 			name = "RingShard",
@@ -152,7 +194,58 @@ local function buildSpire(parent: Instance)
 	end
 	ring:SetAttribute("SpinModel", 0.25)
 	ring.PrimaryPart = ring:FindFirstChildWhichIsA("BasePart")
-	ring:SetAttribute("Pivot", Vector3.new(0, 34, 0))
+end
+
+-- Scatter trees, rocks, flower beds and lanterns over the grass ring, away from paths/stations.
+local function decorate(parent: Instance)
+	local model = Build.model(parent, "Decoration")
+	local rng = Random.new(4242)
+	local blockers = {}
+	for _, point in P do
+		if typeof(point) == "Vector3" and point.Magnitude < 200 then
+			table.insert(blockers, point)
+		end
+	end
+	local function nearPath(pos: Vector3): boolean
+		for _, target in blockers do
+			local flatTarget = Vector3.new(target.X, 0, target.Z)
+			local len = flatTarget.Magnitude
+			if len > 1 then
+				local along = math.clamp(pos:Dot(flatTarget.Unit), 0, len)
+				if (pos - flatTarget.Unit * along).Magnitude < 9 then
+					return true
+				end
+			end
+			if (pos - flatTarget).Magnitude < 32 then
+				return true
+			end
+		end
+		return false
+	end
+	local placed = 0
+	for _ = 1, 400 do
+		if placed >= 70 then
+			break
+		end
+		local angle = rng:NextNumber(0, math.pi * 2)
+		local r = rng:NextNumber(66, 158)
+		local pos = Vector3.new(math.cos(angle) * r, 0, math.sin(angle) * r)
+		if not nearPath(pos) then
+			placed += 1
+			local roll = rng:NextNumber()
+			if roll < 0.45 then
+				Build.tree(model, pos, rng:NextNumber(0.8, 1.25), rng:NextNumber() < 0.6)
+			elseif roll < 0.6 then
+				Build.pine(model, pos, rng:NextNumber(0.8, 1.2))
+			elseif roll < 0.75 then
+				Build.rock(model, pos, rng:NextNumber(0.6, 1.1), Color3.fromRGB(110, 104, 120))
+			elseif roll < 0.92 then
+				Build.flowers(model, pos, rng)
+			else
+				Build.crystal(model, pos, if rng:NextNumber() < 0.5 then RIFT else Color3.fromRGB(110, 190, 255), 0.9)
+			end
+		end
+	end
 end
 
 local function buildForge(parent: Instance)
@@ -435,6 +528,7 @@ function Nexus.build(world: Instance)
 	for _, target in { P.Forge, P.FusionChamber, P.TrainingArena, P.ExpeditionPortal, P.QuestBoard, P.BossGate, P.SocialGarden, P.HallOfEchoes, P.CosmeticKiosk, P.ArtisanBench } do
 		path(folder, Vector3.zero, target, 10)
 	end
+	decorate(folder)
 	buildForge(folder)
 	buildBench(folder)
 	buildFusion(folder)

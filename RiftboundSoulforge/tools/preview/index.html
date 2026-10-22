@@ -1,0 +1,279 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Riftbound preview</title>
+<style>
+html,body{margin:0;background:#000;overflow:hidden;font-family:"Segoe UI",Arial,sans-serif}
+#hud{position:absolute;inset:0;pointer-events:none;color:#eef0f8}
+.panel{position:absolute;background:rgba(22,24,34,.78);border:1px solid rgba(64,68,92,.9);border-radius:10px;padding:10px}
+.bar{height:14px;border-radius:6px;background:#0a0a10;overflow:hidden;margin:4px 0;position:relative}
+.bar>i{display:block;height:100%;border-radius:6px}
+.bar>b{position:absolute;inset:0;font-size:11px;text-align:center;line-height:14px}
+.slot{width:62px;height:62px;border-radius:10px;background:rgba(22,24,34,.85);border:1px solid #40445c;display:inline-block;margin:0 3px;position:relative;font-size:10px;text-align:center;vertical-align:top}
+.slot .k{position:absolute;left:5px;top:3px;color:#ffcd6e;font-weight:700}
+.slot .n{position:absolute;left:3px;right:3px;top:20px;font-weight:700}
+.slot .cd{position:absolute;left:0;right:0;bottom:0;background:rgba(0,0,0,.55);border-radius:0 0 10px 10px}
+.tag{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);font-size:12px;color:#ccc;background:rgba(0,0,0,.5);padding:3px 10px;border-radius:8px}
+</style>
+<script type="importmap">{"imports":{"three":"./node_modules/three/build/three.module.js","three/addons/":"./node_modules/three/examples/jsm/"}}</script>
+</head><body><div id="hud"></div>
+<script type="module">
+import * as THREE from 'three';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+
+const params = new URLSearchParams(location.search);
+const viewName = params.get('view') || 'nexus';
+const W = 1600, H = 900;
+const E = new THREE.Vector3(1000, 0, 0);
+const e = (x, z, y = 0) => new THREE.Vector3(E.x + x, y, z);
+const ARENA = e(640, 0);
+
+const VIEWS = {
+  nexus:   { cam: new THREE.Vector3(150, 95, 190), at: new THREE.Vector3(0, 0, 0), fog: 0x8a7fb8, fogD: 0.0016, sky: ['#2b2350', '#b07a9c', '#ffb98a'] },
+  plaza:   { cam: new THREE.Vector3(18, 9, 52), at: new THREE.Vector3(-2, 16, -40), fog: 0x9086c0, fogD: 0.004, sky: ['#2b2350', '#b07a9c', '#ffb98a'] },
+  frontier:{ cam: e(55, 50, 22), at: e(165, -15, 2), fog: 0xc07a5a, fogD: 0.0045, sky: ['#3a2a52', '#d98a6a', '#ffc68a'] },
+  combat:  { cam: e(95, 4, 7.5), at: e(112, -24, 2.5), fog: 0xc07a5a, fogD: 0.005, sky: ['#3a2a52', '#d98a6a', '#ffc68a'], hud: 'combat' },
+  ravine:  { cam: e(258, 18, 34), at: e(305, -8, -4), fog: 0xd06040, fogD: 0.004, sky: ['#40222a', '#d9704a', '#ffb070'] },
+  keep:    { cam: e(348, 14, 12), at: e(430, -4, 4), fog: 0x3c3250, fogD: 0.006, sky: ['#1a1428', '#4a3a60', '#806090'] },
+  arena:   { cam: e(612, 46, 26), at: e(640, -16, 9), fog: 0x5a2070, fogD: 0.0035, sky: ['#14081e', '#5a1e60', '#d0507a'], hud: 'boss' },
+};
+const V = VIEWS[viewName];
+
+const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+renderer.setSize(W, H);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.05;
+document.body.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+// sky gradient
+{ const c = document.createElement('canvas'); c.width = 4; c.height = 256; const g = c.getContext('2d');
+  const gr = g.createLinearGradient(0, 0, 0, 256); gr.addColorStop(0, V.sky[0]); gr.addColorStop(0.55, V.sky[1]); gr.addColorStop(1, V.sky[2]);
+  g.fillStyle = gr; g.fillRect(0, 0, 4, 256); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; scene.background = t; }
+scene.fog = new THREE.FogExp2(V.fog, V.fogD);
+
+const camera = new THREE.PerspectiveCamera(62, W / H, 0.5, 4000);
+camera.position.copy(V.cam); camera.lookAt(V.at);
+
+scene.add(new THREE.HemisphereLight(0xb8a8ff, 0x5a4030, 1.1));
+const sun = new THREE.DirectionalLight(0xffc89a, 2.6);
+const sunDir = new THREE.Vector3(-0.75, 0.42, 0.35).normalize();
+sun.position.copy(V.at).addScaledVector(sunDir, 300); sun.target.position.copy(V.at);
+sun.castShadow = true; sun.shadow.mapSize.set(4096, 4096);
+const sc = sun.shadow.camera; sc.left = -170; sc.right = 170; sc.top = 170; sc.bottom = -170; sc.near = 1; sc.far = 800; sun.shadow.bias = -0.0004;
+scene.add(sun, sun.target);
+
+// procedural noise textures for material variety
+const texCache = {};
+function noiseTex(kind) {
+  if (texCache[kind]) return texCache[kind];
+  const c = document.createElement('canvas'); c.width = c.height = 128; const g = c.getContext('2d');
+  const img = g.createImageData(128, 128);
+  for (let y = 0; y < 128; y++) for (let x = 0; x < 128; x++) {
+    let v = 200 + Math.random() * 55;
+    if (kind === 'brick' || kind === 'cobble') { const by = y % 16, bx = (x + (Math.floor(y / 16) % 2) * 16) % 32; if (by < 2 || bx < 2) v = 120; }
+    if (kind === 'planks') { if (y % 21 < 2) v = 130; v -= (Math.sin(x * 0.4 + y * 0.05) + 1) * 12; }
+    if (kind === 'slate' || kind === 'rock') v = 170 + (Math.sin(x * 0.2) * Math.cos(y * 0.15) + 1) * 30 + Math.random() * 40;
+    const i = (y * 128 + x) * 4; img.data[i] = img.data[i + 1] = img.data[i + 2] = v; img.data[i + 3] = 255;
+  }
+  g.putImageData(img, 0, 0);
+  const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.colorSpace = THREE.SRGBColorSpace;
+  return texCache[kind] = t;
+}
+const MAT = {
+  Neon: { neon: true }, ForceField: { ff: true }, Glass: { glass: true },
+  Metal: { metal: 0.8, rough: 0.35 }, Marble: { rough: 0.3 }, SmoothPlastic: { rough: 0.5 }, Plastic: { rough: 0.6 },
+  Slate: { tex: 'slate' }, Basalt: { tex: 'rock' }, Rock: { tex: 'rock' }, Cobblestone: { tex: 'cobble' }, Brick: { tex: 'brick' },
+  WoodPlanks: { tex: 'planks' }, Wood: { tex: 'planks' }, Grass: { tex: 'grass' }, Ground: { tex: 'grass' }, Sandstone: { tex: 'slate' },
+  Pavement: { tex: 'slate' }, Fabric: { tex: 'grass', rough: 1 },
+};
+const matCache = {};
+function material(p) {
+  const key = p.mat + '|' + p.col.join(',') + '|' + p.t;
+  if (matCache[key]) return matCache[key];
+  const spec = MAT[p.mat] || {};
+  const color = new THREE.Color(p.col[0], p.col[1], p.col[2]);
+  let m;
+  if (spec.neon) {
+    m = new THREE.MeshBasicMaterial({ color }); m.toneMapped = false;
+  } else if (spec.ff) {
+    m = new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.35 * (1 - p.t) + 0.05, depthWrite: false });
+  } else {
+    m = new THREE.MeshStandardMaterial({ color, roughness: spec.rough ?? 0.85, metalness: spec.metal ?? 0.05, map: spec.tex ? noiseTex(spec.tex) : null });
+  }
+  if (p.t > 0 || spec.glass) { m.transparent = true; m.opacity = Math.min(m.opacity ?? 1, 1 - p.t) * (spec.glass ? 0.5 : 1); }
+  return matCache[key] = m;
+}
+function wedgeGeometry() {
+  const g = new THREE.BufferGeometry();
+  const v = [-.5,-.5,-.5, .5,-.5,-.5, .5,-.5,.5, -.5,-.5,.5, -.5,.5,.5, .5,.5,.5];
+  const idx = [0,2,1, 0,3,2, 3,4,5, 3,5,2, 0,4,3, 1,2,5, 0,1,5, 0,5,4];
+  g.setAttribute('position', new THREE.Float32BufferAttribute(v, 3)); g.setIndex(idx); g.computeVertexNormals(); return g;
+}
+const GEO = { box: new THREE.BoxGeometry(1, 1, 1), ball: new THREE.SphereGeometry(0.5, 24, 16), cyl: new THREE.CylinderGeometry(0.5, 0.5, 1, 28).rotateZ(Math.PI / 2), wedge: wedgeGeometry() };
+function matrix(p, m) {
+  return new THREE.Matrix4().set(m[0], m[3], m[6], p[0], m[1], m[4], m[7], p[1], m[2], m[5], m[8], p[2], 0, 0, 0, 1);
+}
+function textPlane(p) {
+  const [sx, sy, sz] = p.sz; const c = document.createElement('canvas'); const s = 64;
+  c.width = Math.max(64, sx * s); c.height = Math.max(32, sy * s); const g = c.getContext('2d');
+  g.fillStyle = `rgb(${p.col.map(v => v * 255).join(',')})`; g.fillRect(0, 0, c.width, c.height);
+  const lines = p.txt.split('\n'); const fs = Math.min(c.height * 0.8 / lines.length, c.width * 1.6 / Math.max(...lines.map(l => l.length || 1)));
+  g.font = `900 ${fs}px Arial Black, Arial`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillStyle = `rgb(${p.tc.map(v => v * 255).join(',')})`;
+  lines.forEach((l, i) => g.fillText(l, c.width / 2, c.height / 2 + (i - (lines.length - 1) / 2) * fs * 1.1));
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
+  const mesh = new THREE.Mesh(new THREE.PlaneGeometry(sx, sy), new THREE.MeshBasicMaterial({ map: t }));
+  const front = p.face !== 'Back';
+  mesh.position.set(0, 0, front ? -(sz / 2 + 0.03) : sz / 2 + 0.03); if (front) mesh.rotation.y = Math.PI;
+  return mesh;
+}
+
+const world = await (await fetch('world.json')).json();
+const lights = [];
+for (const p of world.parts) {
+  const geo = p.s === 'Ball' ? GEO.ball : p.s === 'Cylinder' ? GEO.cyl : (p.c === 'WedgePart' || p.c === 'CornerWedgePart') ? GEO.wedge : GEO.box;
+  const mesh = new THREE.Mesh(geo, material(p));
+  const holder = new THREE.Object3D();
+  holder.matrixAutoUpdate = false; holder.matrix.copy(matrix(p.p, p.m));
+  mesh.scale.set(p.sz[0], p.sz[1], p.sz[2]);
+  if (p.s === 'Ball') { const d = Math.min(...p.sz); mesh.scale.set(d, d, d); }
+  if (p.s === 'Cylinder') { const d = Math.min(p.sz[1], p.sz[2]); mesh.scale.set(p.sz[0], d, d); }
+  mesh.castShadow = p.mat !== 'Neon' && p.t < 0.5; mesh.receiveShadow = true;
+  holder.add(mesh);
+  if (p.txt) holder.add(textPlane(p));
+  scene.add(holder);
+  if (p.light) lights.push({ pos: new THREE.Vector3(...p.p), ...p.light });
+}
+// nearest point lights to the view target
+lights.sort((a, b) => a.pos.distanceTo(V.at) - b.pos.distanceTo(V.at));
+for (const l of lights.slice(0, 14)) {
+  const pl = new THREE.PointLight(new THREE.Color(...l.c), l.b * 18, l.r * 1.6, 1.6); pl.position.copy(l.pos); scene.add(pl);
+}
+
+// terrain
+const tcol = world.terrainColors;
+world.terrain.forEach((f, i) => {
+  const col = new THREE.Color(...(tcol[f.mat] || [0.5, 0.5, 0.5]));
+  const texKind = f.mat.includes('Grass') ? 'grass' : f.mat === 'CrackedLava' ? 'cobble' : 'rock';
+  const m = f.mat === 'CrackedLava' ? new THREE.MeshBasicMaterial({ color: col.clone().multiplyScalar(1.8) }) : new THREE.MeshStandardMaterial({ color: col, roughness: 0.95, map: noiseTex(texKind) });
+  let mesh;
+  if (f.k === 'ball') { mesh = new THREE.Mesh(new THREE.IcosahedronGeometry(f.r, 3), m); mesh.position.set(...f.p); }
+  else if (f.k === 'block') { mesh = new THREE.Mesh(GEO.box, m); const h = new THREE.Object3D(); h.matrixAutoUpdate = false; h.matrix.copy(matrix([f.p[0], f.p[1] + i * 0.004, f.p[2]], f.m)); mesh.scale.set(...f.sz); h.add(mesh); mesh.receiveShadow = true; scene.add(h); return; }
+  else { mesh = new THREE.Mesh(new THREE.CylinderGeometry(f.r, f.r, f.h, 64), m); mesh.position.set(f.p[0], f.p[1], f.p[2]); }
+  mesh.receiveShadow = true; mesh.castShadow = false; scene.add(mesh);
+});
+
+// grass decoration (Terrain.Decoration = true in the place)
+{
+  const blade = new THREE.ConeGeometry(0.07, 0.85, 3).translate(0, 0.42, 0);
+  const n = 60000;
+  const inst = new THREE.InstancedMesh(blade, new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 1 }), n);
+  const d = new THREE.Object3D(); let k = 0; const c = new THREE.Color();
+  const green = new THREE.Color(...tcol.Grass), autumn = new THREE.Color(...tcol.LeafyGrass);
+  while (k < n) {
+    let x, z;
+    if (k % 3 === 0) { const a = Math.random() * Math.PI * 2, r = 62 + Math.random() * 100; x = Math.cos(a) * r; z = Math.sin(a) * r; }
+    else { x = E.x + Math.random() * 300 - 40; z = Math.random() * 196 - 98; if (Math.abs(z) < 7 || (x > E.x - 40 && x < E.x + 50 && Math.abs(z) < 50)) continue; }
+    d.position.set(x, 0, z); d.rotation.set((Math.random() - .5) * .5, Math.random() * 6, (Math.random() - .5) * .5);
+    const s = 0.6 + Math.random() * 0.9; d.scale.set(s, s, s); d.updateMatrix(); inst.setMatrixAt(k, d.matrix);
+    c.copy(green).lerp(autumn, Math.random() * 0.6).multiplyScalar(0.8 + Math.random() * 0.4); inst.setColorAt(k, c); k++;
+  }
+  scene.add(inst);
+}
+
+// scene extras per view: VFX the game spawns during play (telegraphs, slash arcs, auras)
+function telegraphCircle(center, r, color = 0xff4632) {
+  const g = new THREE.Group();
+  const ring = new THREE.Mesh(new THREE.CircleGeometry(r, 48), new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.28, depthWrite: false }));
+  const fill = new THREE.Mesh(new THREE.CircleGeometry(r * 0.62, 48), new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.45, depthWrite: false }));
+  ring.rotation.x = fill.rotation.x = -Math.PI / 2; ring.position.y = 0.15; fill.position.y = 0.18;
+  g.add(ring, fill); g.position.copy(center); scene.add(g);
+}
+function telegraphLine(origin, dir, len, width, color = 0xff4632) {
+  const g = new THREE.Group();
+  const a = new THREE.Mesh(new THREE.PlaneGeometry(width, len), new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.3, depthWrite: false }));
+  const f = new THREE.Mesh(new THREE.PlaneGeometry(width, len * 0.6), new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.45, depthWrite: false }));
+  a.rotation.x = f.rotation.x = -Math.PI / 2; a.position.set(0, 0.15, -len / 2); f.position.set(0, 0.18, -len * 0.3);
+  g.add(a, f); g.position.copy(origin); g.lookAt(origin.clone().add(dir)); g.rotateY(Math.PI); scene.add(g);
+}
+function slashArc(root, facing, tilt, from, to, radius, color, width = 1.8) {
+  const base = new THREE.Object3D(); base.position.copy(root).add(new THREE.Vector3(0, 0.6, 0)); base.lookAt(root.clone().add(facing)); base.rotateY(Math.PI); base.rotateZ(tilt * Math.PI / 180); base.updateMatrixWorld();
+  const segs = 28;
+  for (let i = 0; i < segs; i++) {
+    const t0 = (from + (to - from) * i / segs) * Math.PI / 180, t1 = (from + (to - from) * (i + 1) / segs) * Math.PI / 180;
+    const p0 = new THREE.Vector3(-Math.sin(t0) * radius, 0, -Math.cos(t0) * radius).applyMatrix4(base.matrixWorld);
+    const p1 = new THREE.Vector3(-Math.sin(t1) * radius, 0, -Math.cos(t1) * radius).applyMatrix4(base.matrixWorld);
+    const taper = Math.sin(Math.PI * (i + .5) / segs) * (0.35 + 0.65 * i / segs);
+    const len = p0.distanceTo(p1) + 0.12;
+    for (const [w, col, op] of [[width * taper + .1, color, 0.85], [width * taper * 0.35, 0xffffff, 1]]) {
+      const m = new THREE.Mesh(new THREE.BoxGeometry(w, 0.06, len), new THREE.MeshBasicMaterial({ color: new THREE.Color(col).multiplyScalar(1.8), transparent: true, opacity: op * (0.3 + 0.7 * i / segs) }));
+      m.position.copy(p0).lerp(p1, 0.5); m.up.copy(new THREE.Vector3(0, 1, 0).applyQuaternion(base.quaternion)); m.lookAt(p1); scene.add(m);
+    }
+  }
+}
+function aura(pos, color) {
+  const s = new THREE.Mesh(new THREE.SphereGeometry(3.2, 24, 16), new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.18, depthWrite: false }));
+  s.position.copy(pos).add(new THREE.Vector3(0, 3, 0)); scene.add(s);
+  for (let i = 0; i < 40; i++) { const p = new THREE.Mesh(new THREE.SphereGeometry(0.12 + Math.random() * .12, 6, 4), new THREE.MeshBasicMaterial({ color: new THREE.Color(color).multiplyScalar(2) }));
+    p.position.copy(pos).add(new THREE.Vector3((Math.random() - .5) * 4, Math.random() * 6.5, (Math.random() - .5) * 4)); scene.add(p); }
+}
+if (viewName === 'combat') {
+  const me = e(104, -8);
+  slashArc(me, new THREE.Vector3(0.1, 0, -1), -55, -80, 90, 7, 0x6ee6ff);
+  telegraphLine(e(110, -30), new THREE.Vector3(-0.3, 0, 1).normalize(), 11, 5);
+  telegraphCircle(e(150, 62), 13, 0xff6a30);
+  aura(me, 0x6ec8ff);
+}
+if (viewName === 'arena') {
+  telegraphLine(ARENA.clone().add(new THREE.Vector3(0, 0, -20)), new THREE.Vector3(0, 0, 1), 28, 6);
+  telegraphCircle(ARENA.clone().add(new THREE.Vector3(-22, 0, -8)), 6, 0xbe3cff);
+  telegraphCircle(ARENA.clone().add(new THREE.Vector3(24, 0, -4)), 6, 0xbe3cff);
+  slashArc(ARENA.clone().add(new THREE.Vector3(10, 0, 8)), new THREE.Vector3(-0.3, 0, -1), 80, -100, 75, 10, 0xffcd5a, 2.6);
+  aura(ARENA.clone().add(new THREE.Vector3(-8, 0, 6)), 0xff6a3d);
+}
+
+const composer = new EffectComposer(renderer);
+composer.addPass(new RenderPass(scene, camera));
+composer.addPass(new UnrealBloomPass(new THREE.Vector2(W, H), 0.5, 0.4, 0.88));
+composer.addPass(new OutputPass());
+composer.render();
+
+// HUD overlay (layout and colours copied from HUDController / Theme)
+const hud = document.getElementById('hud');
+if (V.hud) {
+  const slots = [['LMB','Combo\n4 hits',''],['V','Drawn Cut',''],['SHIFT','Dodge',''],['Q','Arc Bolt','40%'],['E','Thunder-step',''],['R','Magnetic Rift','70%'],['G','Tempest Sovereign',''],['H','Ember Tonic\nx3','']];
+  hud.innerHTML = `
+  <div class="panel" style="left:16px;top:16px;width:300px;font-size:13px"><b>Lv 7</b> <span style="color:#a0a5bc">Aventurero</span>
+    <div class="bar" style="height:8px"><i style="width:62%;background:#ffcd6e"></i></div>
+    <span style="color:#ffcd6e">◆ 1,240</span>&nbsp; Iron 18 • Cobalt 6 • Ember 9<br>Shards 7 • Sigils 2 • Cores 0</div>
+  <div class="panel" style="left:16px;top:122px;width:300px;font-size:13px;border-color:#ffb450">
+    <b>${V.hud === 'boss' ? 'Fracture Arena' : 'Emberfall Frontier'}</b><br>
+    <span style="color:${V.hud === 'boss' ? '#ff6464' : '#ffdc8c'}"><b>DEPTH ${V.hud === 'boss' ? 3 : 1}</b> • death loses ${V.hud === 'boss' ? 75 : 25}% of your Satchel</span><br>
+    SATCHEL (unbanked):<br>◆ 86 coins<br>Iron Ore x6<br>Emberstone x2</div>
+  <div class="panel" style="right:16px;top:66px;width:280px;font-size:12px"><span style="color:#ffcd6e;font-weight:700">CONTRACTS</span><br>
+    <b>${V.hud === 'boss' ? 'Break the Warden' : 'Stalker Cull'}</b><br>• ${V.hud === 'boss' ? 'Defeat the Fracture Warden 0/1' : 'Defeat Rift Stalkers 1/3'}<br>
+    <span style="color:#6e7288">${V.hud === 'boss' ? 'Study its attacks: some can be parried.' : 'Their lunge is a straight red line.'}</span></div>
+  <div class="panel" style="right:16px;top:16px;width:128px;text-align:center;font-weight:700;padding:8px">☰ MENU (M)</div>
+  <div class="panel" style="left:16px;bottom:16px;width:280px">
+    <div class="bar" style="height:20px"><i style="width:78%;background:#e64858"></i><b style="line-height:20px">104 / 130</b></div>
+    <div class="bar" style="height:10px"><i style="width:64%;background:#6ed28c"></i></div>
+    <div class="bar"><i style="width:100%;background:#ffcd6e"></i><b>FULL</b></div>
+    <div style="font-size:13px;color:#ffcd6e;font-weight:700">AWAKENED — 11s • press G for your signature</div></div>
+  <div style="position:absolute;bottom:12px;left:50%;transform:translateX(-50%);text-align:center;width:640px">
+    <div style="font-size:14px;font-weight:700;margin-bottom:10px;text-shadow:0 0 4px #000">Riftsteel Katana +2 (Tempest Edge) • <span style="color:#4fc3ff">Storm</span> + <span style="color:#a27bff">Gravity</span></div>
+    ${slots.map(s => `<div class="slot"><span class="k">${s[0]}</span><span class="n">${s[1].replace('\n','<br>')}</span>${s[2] ? `<div class="cd" style="height:${s[2]}"></div>` : ''}</div>`).join('')}</div>
+  ${V.hud === 'boss' ? `<div class="panel" style="left:50%;transform:translateX(-50%);top:74px;width:600px;text-align:center;border-color:#ff468c">
+    <div style="font-weight:900;font-size:18px">THE FRACTURE WARDEN — Keeper of the Broken Seal</div>
+    <div class="bar" style="height:20px"><i style="width:55%;background:#e63c78"></i><b style="line-height:20px">4,290 / 7,800</b></div>
+    <div style="font-size:13px;color:#a0a5bc">Phase 2: Rift Fractures &nbsp;<b style="color:#ffe68c">◆ WEAK POINT EXPOSED — strike its back</b></div></div>` :
+    `<div class="panel" style="left:50%;transform:translateX(-50%);top:10px;width:440px;text-align:center"><b style="color:#c850ff">★ Rift Surge — 2:31 left</b><br><span style="font-size:12px;color:#a0a5bc">Emberfall enemies are surged and drop Essence Shards.</span></div>`}
+  `;
+}
+const tag = document.createElement('div'); tag.className = 'tag';
+tag.textContent = 'Vista previa aproximada (Three.js) con la geometría exacta generada por el juego — no es una captura de Roblox';
+document.body.appendChild(tag);
+window.done = true;
+</script></body></html>

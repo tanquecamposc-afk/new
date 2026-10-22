@@ -208,7 +208,11 @@ local function frontier(parent: Instance)
 			if placed % 3 == 0 then
 				Build.rock(model, at(x, z), rng:NextNumber(0.8, 1.6), CLIFF)
 			else
-				Build.tree(model, at(x, z), rng:NextNumber(0.9, 1.4), true)
+				if placed % 5 == 1 then
+					Build.pine(model, at(x, z), rng:NextNumber(0.9, 1.3))
+				else
+					Build.tree(model, at(x, z), rng:NextNumber(0.9, 1.4), true)
+				end
 			end
 		end
 	end
@@ -338,9 +342,11 @@ local function ravine(parent: Instance)
 	-- drawbridge shortcut (lowered by the lever on the far side)
 	local hinge = at(340, -30, -0.75)
 	local down = CFrame.new(hinge) * CFrame.new(-39, 0, 0)
-	local up = CFrame.new(hinge) * CFrame.Angles(0, 0, math.rad(-75)) * CFrame.new(-39, 0, 0)
+	-- Raised = folded away under the far ledge and invisible; lowering it slides it into place.
+	local up = down * CFrame.new(39, -6, 0)
 	local bridge = Build.block(model, Vector3.new(78, 1.5, 10), up, Color3.fromRGB(100, 72, 50), Enum.Material.WoodPlanks, "Drawbridge")
 	bridge.CanCollide = false
+	bridge.Transparency = 1
 	bridge:SetAttribute("DownCFrame", down)
 	bridge:SetAttribute("UpCFrame", up)
 	local lever = P.ShortcutLever

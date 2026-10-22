@@ -186,11 +186,11 @@ local function pullLever(player: Player)
 		local up = bridge:GetAttribute("UpCFrame") :: CFrame?
 		if down and up then
 			bridge.CanCollide = true
-			TweenService:Create(bridge, TweenInfo.new(2, Enum.EasingStyle.Bounce), { CFrame = down }):Play()
+			TweenService:Create(bridge, TweenInfo.new(2.5, Enum.EasingStyle.Quart), { CFrame = down, Transparency = 0 }):Play()
 			task.delay(600, function()
 				if os.clock() >= bridgeDownUntil - 1 then
 					bridge.CanCollide = false
-					TweenService:Create(bridge, TweenInfo.new(2), { CFrame = up }):Play()
+					TweenService:Create(bridge, TweenInfo.new(2), { CFrame = up, Transparency = 1 }):Play()
 				end
 			end)
 		end
