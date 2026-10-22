@@ -120,6 +120,7 @@ function CombatController.light()
 	local dir = aimDirection(root)
 	face(root, dir)
 	AnimationController.swing(c, comboIndex, false, strike.windup / speed)
+	EffectsController.slash(c, comboIndex, player:GetAttribute("TrailColor"), false, strike.windup / speed * 0.7)
 	SoundController.play("LightAttack")
 	remote:FireServer("Light", { dir = dir })
 end
@@ -144,6 +145,10 @@ function CombatController.heavy()
 	local dir = aimDirection(root)
 	face(root, dir)
 	AnimationController.swing(c, 0, true, b.heavy.windup / speed)
+	EffectsController.slash(c, 0, player:GetAttribute("TrailColor"), true, b.heavy.windup / speed * 0.8)
+	task.delay(b.heavy.windup / speed, function()
+		CameraController.punch(4)
+	end)
 	SoundController.play("HeavyAttack")
 	remote:FireServer("Heavy", { dir = dir })
 end
@@ -187,6 +192,7 @@ function CombatController.dodge()
 	local move = humanoid.MoveDirection
 	local dir = if move.Magnitude > 0.1 then Vector3.new(move.X, 0, move.Z).Unit else -Vector3.new(root.CFrame.LookVector.X, 0, root.CFrame.LookVector.Z).Unit
 	remote:FireServer("Dodge", { dir = dir })
+	AnimationController.play(c, "Dodge")
 	EffectsController.burst(root.Position, Color3.fromRGB(200, 220, 255), 10, 8)
 	local finish = now + b.dodge.duration
 	local connection
@@ -308,6 +314,10 @@ local function onFeedback(kind: string, data: any)
 		end
 		SoundController.play("EnemyHit")
 		CameraController.shake(if data.finisher then 0.3 else 0.12)
+		if data.finisher then
+			CameraController.flash(Color3.new(1, 1, 1), 0.25)
+			CameraController.punch(-3)
+		end
 		if c then
 			AnimationController.hitStop(c, GameConfig.Combat.HitStop)
 		end
@@ -318,6 +328,7 @@ local function onFeedback(kind: string, data: any)
 			EffectsController.floatText(root.Position + Vector3.new(0, 4, 0), reason, Color3.fromRGB(255, 180, 140), 20, 1.0)
 		end
 	elseif kind == "Parry" and root then
+		CameraController.flash(Color3.fromRGB(255, 250, 220), 0.35)
 		SoundController.play("ParrySuccess")
 		CameraController.shake(0.3)
 		EffectsController.floatText(root.Position + Vector3.new(0, 5, 0), "PERFECT PARRY", Color3.fromRGB(255, 240, 180), 34, 0.9)
@@ -333,6 +344,10 @@ local function onFeedback(kind: string, data: any)
 		EffectsController.floatText(root.Position + Vector3.new(0, 4, 0), "GUARD BROKEN", Color3.fromRGB(255, 120, 120), 30, 1)
 		CameraController.shake(0.4)
 	elseif kind == "Hurt" then
+		if c and (data.amount or 0) >= 8 then
+			AnimationController.play(c, "Hurt")
+			CameraController.flash(Color3.fromRGB(255, 40, 40), 0.18)
+		end
 		CameraController.shake(math.clamp((data.amount or 10) / 40, 0.1, 0.6))
 	elseif kind == "Interrupt" then
 		EffectsController.floatText(data.position + Vector3.new(0, 6, 0), "INTERRUPT!", Color3.fromRGB(120, 255, 200), 30, 0.9)

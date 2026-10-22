@@ -9,6 +9,12 @@ asset ids, paid assets or third-party libraries are required.**
 > Status: code-complete vertical slice, verified with offline tooling only. **It has not been
 > play-tested inside Roblox Studio yet** — see `IMPLEMENTATION_STATUS.md` and `TEST_PLAN.md`.
 
+## 0. Quick start (no tools needed)
+
+Open **`RiftboundSoulforge.rbxlx`** in Roblox Studio and press **Play**. The file already contains
+all scripts; the world, terrain and NPCs are generated when the server starts.
+(Rebuild it after code changes with `rojo build default.project.json -o RiftboundSoulforge.rbxlx`.)
+
 ## 1. Project structure
 
 ```

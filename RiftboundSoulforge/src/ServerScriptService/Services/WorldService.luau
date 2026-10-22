@@ -8,6 +8,7 @@ local Build = require(script.Parent.Parent.World.Build)
 local Lighting = require(script.Parent.Parent.World.Lighting)
 local Nexus = require(script.Parent.Parent.World.Nexus)
 local Emberfall = require(script.Parent.Parent.World.Emberfall)
+local TerrainGen = require(script.Parent.Parent.World.TerrainGen)
 
 local WorldService = {}
 
@@ -21,6 +22,10 @@ function WorldService.Init()
 	local started = os.clock()
 	Nexus.build(world)
 	Emberfall.build(world)
+	local ok, err = pcall(TerrainGen.build, world)
+	if not ok then
+		warn("[World] terrain generation failed (parts remain visible): " .. tostring(err))
+	end
 	-- Remove the default baseplate if the place template had one.
 	local baseplate = Workspace:FindFirstChild("Baseplate")
 	if baseplate then

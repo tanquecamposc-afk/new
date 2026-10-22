@@ -274,23 +274,48 @@ function Models.katana(character: Model, trailColor: Color3): Model?
 		weld.Parent = part
 		return part
 	end
-	piece("Handle", Vector3.new(0.3, 0.3, 1.4), CFrame.new(0, 0, 0), Color3.fromRGB(40, 30, 50), Enum.Material.Fabric)
-	piece("Guard", Vector3.new(0.9, 0.2, 0.9), CFrame.new(0, 0, -0.75), Color3.fromRGB(210, 170, 80), Enum.Material.Metal)
-	local blade = piece("Blade", Vector3.new(0.12, 0.32, 4.4), CFrame.new(0, 0.02, -3.0), Color3.fromRGB(215, 222, 235), Enum.Material.Metal)
-	piece("Edge", Vector3.new(0.13, 0.08, 4.3), CFrame.new(0, -0.14, -3.0), trailColor, Enum.Material.Neon)
+	-- Handle: dark wrap with diamond-pattern bands, gold pommel
+	piece("Handle", Vector3.new(0.3, 0.3, 1.5), CFrame.new(0, 0, 0), Color3.fromRGB(30, 22, 36), Enum.Material.Fabric)
+	for i = -2, 2 do
+		piece("Wrap", Vector3.new(0.33, 0.33, 0.08), CFrame.new(0, 0, i * 0.28) * CFrame.Angles(0, 0, math.rad(45)), Color3.fromRGB(150, 30, 50), Enum.Material.Fabric)
+	end
+	piece("Pommel", Vector3.new(0.36, 0.36, 0.14), CFrame.new(0, 0, 0.8), Color3.fromRGB(220, 175, 80), Enum.Material.Metal)
+	-- Tsuba (round guard) + habaki collar
+	local guard = piece("Guard", Vector3.new(0.14, 1.0, 1.0), CFrame.new(0, 0, -0.8) * CFrame.Angles(0, math.rad(90), 0), Color3.fromRGB(215, 170, 75), Enum.Material.Metal)
+	if guard:IsA("Part") then
+		guard.Shape = Enum.PartType.Cylinder
+	end
+	piece("Collar", Vector3.new(0.16, 0.36, 0.25), CFrame.new(0, 0.02, -1.0), Color3.fromRGB(230, 190, 110), Enum.Material.Metal)
+	-- Curved blade: four segments with a slight upward sori, a glowing hamon edge on each
+	local blade
+	local z, y, angle = -1.1, 0.02, 0
+	for i = 1, 4 do
+		local length = 1.15
+		local center = CFrame.new(0, y, z) * CFrame.Angles(math.rad(angle), 0, 0) * CFrame.new(0, 0, -length / 2)
+		local seg = piece(if i == 2 then "Blade" else "BladeSeg" .. i, Vector3.new(0.1, 0.3 - i * 0.025, length + 0.04), center, Color3.fromRGB(220, 226, 238), Enum.Material.Metal)
+		seg.Reflectance = 0.25
+		piece(if i == 2 then "Edge" else "EdgeSeg" .. i, Vector3.new(0.11, 0.07, length), center * CFrame.new(0, -0.13 + i * 0.01, 0), trailColor, Enum.Material.Neon)
+		if i == 2 then
+			blade = seg
+		end
+		local tip = center * CFrame.new(0, 0, -length / 2)
+		z, y = tip.Position.Z, tip.Position.Y
+		angle += 4
+	end
+	piece("Tip", Vector3.new(0.09, 0.18, 0.4), CFrame.new(0, y + 0.03, z - 0.15) * CFrame.Angles(math.rad(angle + 10), 0, 0), Color3.fromRGB(235, 240, 250), Enum.Material.Metal)
 	local a0 = Instance.new("Attachment")
 	a0.Name = "TrailBase"
-	a0.Position = Vector3.new(0, 0, 2.0)
+	a0.Position = Vector3.new(0, 0, 1.2)
 	a0.Parent = blade
 	local a1 = Instance.new("Attachment")
 	a1.Name = "TrailTip"
-	a1.Position = Vector3.new(0, 0, -2.2)
+	a1.Position = Vector3.new(0, 0.1, -3.4)
 	a1.Parent = blade
 	local trail = Instance.new("Trail")
 	trail.Name = "SwingTrail"
 	trail.Attachment0 = a0
 	trail.Attachment1 = a1
-	trail.Lifetime = 0.18
+	trail.Lifetime = 0.22
 	trail.MinLength = 0.05
 	trail.LightEmission = 1
 	trail.Color = ColorSequence.new(trailColor)

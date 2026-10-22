@@ -31,7 +31,7 @@ rayParams.FilterType = Enum.RaycastFilterType.Include
 local function groundY(position: Vector3): number
 	local world = workspace:FindFirstChild("World")
 	if world then
-		rayParams.FilterDescendantsInstances = { world }
+		rayParams.FilterDescendantsInstances = { world, workspace.Terrain }
 		local result = workspace:Raycast(position + Vector3.new(0, 6, 0), Vector3.new(0, -40, 0), rayParams)
 		if result then
 			return result.Position.Y

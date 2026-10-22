@@ -13,6 +13,7 @@ items still need the manual checklist in `TEST_PLAN.md`.
 | Unit tests (32) | `tests/run.luau` | 32/32 pass |
 | Project mapping & properties | `rojo build` | builds `.rbxl` |
 | Enum / class / property names | `tools/api_check.py` vs Roblox API dump | 0 problems |
+| Cross-module wiring (requires, service calls, remotes, request kinds, effects, feedback) | `tools/integrity_check.py` | 0 problems |
 | Type checking (`luau-analyze`) | not available offline | **not run** |
 | In-engine playtest | Roblox Studio | **not run** |
 
@@ -23,10 +24,11 @@ items still need the manual checklist in `TEST_PLAN.md`.
 | Persistence | ✅ | session lock, migrations v0→v2, retries, autosave, BindToClose, temp profile on failure; needs live DataStore test |
 | Security layer | ✅ | token-bucket per category, validators, distance checks, bounded logs |
 | Nexus hub | ✅ | all stations physical, signage, live boards |
+| Graphics | ✅ | Smooth Terrain with grass decoration, mountain ranges, lava bed, floating rock, volumetric clouds, Future lighting, atmosphere/bloom/grade, per-zone moods |
 | Emberfall biome | ✅ | camp, forest/outpost, chamber, ravine (3 routes), keep, approach, arena |
 | Katana combat | ✅ | chain, heavy, block, parry (anti-spam), dodge i-frames, stagger, LoS hit checks |
 | Lock-on targeting | ✅ | T / R3 / LOCK |
-| Animations | 🟡 | procedural arm poses + trails; real animation ids are empty hooks |
+| Animations | ✅/🟡 | full-body procedural keyframe animator (11 R15 joints: 5 slashes, heavy, guard, dodge, cast, awaken, hurt, mine) + anime slash arcs, trails, impact flashes, FOV punches; uploaded animation ids optional (empty) |
 | Ember / Storm / Gravity | ✅ | 2 abilities each + passives |
 | Fusions | ✅ | Collapsing Sun, Magnetic Rift; research + attunement; Plasma Lance sealed |
 | Awakening | ✅ | 3 forms + signatures, burnout, suppression |
@@ -53,7 +55,8 @@ items still need the manual checklist in `TEST_PLAN.md`.
 
 ## Known risks to check first in Studio
 1. Procedural enemy rigs (Humanoid R15 + HipHeight, no limbs): confirm they stand at the right height and path with `MoveTo`.
-2. Procedural arm poses on Motor6D C0 for R15 and R6 avatars.
+2. Procedural full-body poses (tuned for R15; R6 only moves the arms) — check angles look right on blocky and Rthro avatars.
+6. Terrain fills are generated at server start (~1–2 s); confirm surfaces sit flush with the invisible gameplay floors.
 3. Lighting/zone moods may need tuning per monitor.
 4. Boss balance (5200 HP base) and enemy damage are first-pass numbers.
 5. Telegraph ground raycast near tree canopies / arena seams.

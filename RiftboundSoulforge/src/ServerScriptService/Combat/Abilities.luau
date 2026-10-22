@@ -103,7 +103,7 @@ impl.Thunderstep = function(ctx)
 	params.FilterType = Enum.RaycastFilterType.Include
 	local world = workspace:FindFirstChild("World")
 	if world then
-		params.FilterDescendantsInstances = { world }
+		params.FilterDescendantsInstances = { world, workspace.Terrain }
 		local hit = workspace:Raycast(start, ctx.dir * distance, params)
 		if hit then
 			distance = math.max(0, (hit.Position - start).Magnitude - 2.5)

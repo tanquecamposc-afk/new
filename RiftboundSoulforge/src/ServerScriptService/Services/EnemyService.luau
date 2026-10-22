@@ -252,7 +252,7 @@ function EnemyService.displace(record: Record, target: Vector3, duration: number
 	local goal = Vector3.new(target.X, start.Y, target.Z)
 	local world = workspace:FindFirstChild("World")
 	if world then
-		rayParams.FilterDescendantsInstances = { world }
+		rayParams.FilterDescendantsInstances = { world, workspace.Terrain }
 		local delta = goal - start
 		if delta.Magnitude > 0.1 then
 			local hit = workspace:Raycast(start, delta, rayParams)

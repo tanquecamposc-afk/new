@@ -109,9 +109,10 @@ function CombatService.refresh(player: Player)
 	local katana = ps.character:FindFirstChild("Katana")
 	local color = trailColorFor(player, ps.build)
 	if katana then
-		local edge = katana:FindFirstChild("Edge") :: BasePart?
-		if edge then
-			edge.Color = color
+		for _, part in katana:GetChildren() do
+			if part:IsA("BasePart") and part.Name:sub(1, 4) == "Edge" then
+				part.Color = color
+			end
 		end
 		local blade = katana:FindFirstChild("Blade")
 		local trail = blade and blade:FindFirstChild("SwingTrail") :: Trail?
@@ -383,7 +384,7 @@ local function lineOfSight(from: Vector3, to: Vector3, padding: number): boolean
 	if not world then
 		return true
 	end
-	losParams.FilterDescendantsInstances = { world }
+	losParams.FilterDescendantsInstances = { world, workspace.Terrain }
 	local origin = from + Vector3.new(0, 1.5, 0)
 	local target = to + Vector3.new(0, 1.5, 0)
 	local delta = target - origin
@@ -583,7 +584,7 @@ local function heavyAttack(player: Player, ps: PState, dir: Vector3)
 			local distance = heavy.lunge
 			local world = workspace:FindFirstChild("World")
 			if world then
-				losParams.FilterDescendantsInstances = { world }
+				losParams.FilterDescendantsInstances = { world, workspace.Terrain }
 				local hit = workspace:Raycast(start, dir * distance, losParams)
 				if hit then
 					distance = math.max(0, (hit.Position - start).Magnitude - 2)

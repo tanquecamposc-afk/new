@@ -19,13 +19,19 @@
         }
       },
       "$properties": {
-        "EnableMouseLockOption": false
+        "EnableMouseLockOption": false,
+        "GameSettingsAvatar": "R15"
       }
     },
     "Workspace": {
       "$properties": {
         "StreamingEnabled": false,
         "Gravity": 196.2
+      },
+      "Terrain": {
+        "$properties": {
+          "Decoration": true
+        }
       }
     },
     "Players": {
@@ -37,7 +43,11 @@
       "$properties": {
         "Brightness": 2,
         "ClockTime": 17.4,
-        "GlobalShadows": true
+        "GlobalShadows": true,
+        "Technology": "Future",
+        "ShadowSoftness": 0.25,
+        "EnvironmentDiffuseScale": 0.6,
+        "EnvironmentSpecularScale": 0.6
       }
     }
   }

@@ -180,6 +180,55 @@ local function clutter(character: any): boolean
 	return ClientState.settings().reducedClutter and isOther(character)
 end
 
+-- Anime-style crescent slash: a tapered neon arc swept around the character.
+-- index picks the arc plane (matches the procedural animation of that strike).
+local ARCS = {
+	{ tilt = 0, from = -85, to = 85, radius = 6.5 }, -- 1 right -> left
+	{ tilt = 12, from = 85, to = -85, radius = 6.5 }, -- 2 backhand
+	{ tilt = -55, from = -80, to = 90, radius = 7 }, -- 3 rising diagonal
+	{ tilt = 88, from = -70, to = 95, radius = 7.5 }, -- 4 overhead cleave
+	{ tilt = 0, from = -25, to = 25, radius = 9 }, -- 5 thrust burst
+}
+
+function EffectsController.slash(character: any, index: number, color: Color3?, heavy: boolean?, delay: number?)
+	local root = rootOf(character)
+	if not root then
+		return
+	end
+	local arc = if heavy then { tilt = 80, from = -100, to = 75, radius = 10 } else ARCS[((math.max(1, index) - 1) % #ARCS) + 1]
+	local c = color or Color3.fromRGB(235, 240, 255)
+	local segments = if fxScale() < 0.5 then 8 else 14
+	local width = if heavy then 2.6 else 1.7
+	task.delay(delay or 0, function()
+		if not root.Parent then
+			return
+		end
+		local base = root.CFrame * CFrame.new(0, 0.6, -0.5) * CFrame.Angles(0, 0, math.rad(arc.tilt))
+		local normal = base.UpVector
+		local function point(i: number): Vector3
+			local theta = arc.from + (arc.to - arc.from) * (i / segments)
+			return (base * CFrame.Angles(0, math.rad(theta), 0) * CFrame.new(0, 0, -arc.radius)).Position
+		end
+		local sweep = if heavy then 0.12 else 0.08
+		for i = 0, segments - 1 do
+			task.delay(sweep * i / segments, function()
+				local a, b = point(i), point(i + 1)
+				local length = (b - a).Magnitude + 0.15
+				local taper = math.sin(math.pi * (i + 0.5) / segments)
+				local cf = CFrame.lookAt((a + b) / 2, b, normal)
+				local outer = part({ size = Vector3.new(width * taper + 0.15, 0.08, length), cframe = cf, color = c, transparency = 0.15 })
+				tween(outer, 0.22, { Transparency = 1, Size = Vector3.new(0.05, 0.05, length) })
+				Debris:AddItem(outer, 0.25)
+				if fxScale() >= 0.5 then
+					local core = part({ size = Vector3.new(width * taper * 0.35 + 0.05, 0.1, length), cframe = cf, color = Color3.new(1, 1, 1), transparency = 0 })
+					tween(core, 0.16, { Transparency = 1 })
+					Debris:AddItem(core, 0.2)
+				end
+			end)
+		end
+	end)
+end
+
 -- Handlers ----------------------------------------------------------------------------------
 
 local handlers: { [string]: (any) -> () } = {}
@@ -187,6 +236,9 @@ local handlers: { [string]: (any) -> () } = {}
 handlers.Swing = function(d)
 	if typeof(d.character) == "Instance" then
 		AnimationController.swing(d.character, d.index, d.heavy)
+		if not clutter(d.character) then
+			EffectsController.slash(d.character, d.index, d.color, d.heavy, if d.heavy then 0.3 else 0.08)
+		end
 	end
 end
 
@@ -245,6 +297,9 @@ handlers.Riposte = function(d)
 end
 
 handlers.Dodge = function(d)
+	if typeof(d.character) == "Instance" then
+		AnimationController.play(d.character, "Dodge")
+	end
 	local root = rootOf(d.character)
 	if root and not clutter(d.character) then
 		EffectsController.burst(root.Position, Color3.fromRGB(200, 220, 255), 10, 8)
@@ -265,9 +320,12 @@ handlers.Awaken = function(d)
 	EffectsController.sphere(root.Position, 2, 22, d.color, 0.6)
 	EffectsController.ring(root.Position - Vector3.new(0, 2.5, 0), 18, d.color, 0.7)
 	EffectsController.burst(root.Position, d.color, 40, 26)
+	AnimationController.play(d.character, "Awaken")
 	CameraController.shake(0.6 * nearLocal(root.Position, 60))
 	if not isOther(d.character) then
 		SoundController.play("Awakening")
+		CameraController.punch(8)
+		CameraController.flash(d.color, 0.45)
 	end
 end
 
@@ -393,7 +451,7 @@ end
 
 handlers.MineSwing = function(d)
 	if typeof(d.character) == "Instance" then
-		AnimationController.swing(d.character, 3, false, 0.05)
+		AnimationController.play(d.character, "Mine")
 	end
 end
 
@@ -509,6 +567,7 @@ handlers.FinalOpening = function(d)
 end
 
 handlers.BossDefeated = function(d)
+	CameraController.flash(Color3.fromRGB(255, 240, 200), 0.6)
 	EffectsController.sphere(d.position, 4, 80, Color3.fromRGB(255, 220, 160), 1.6, 0)
 	EffectsController.burst(d.position, Color3.fromRGB(255, 200, 120), 120, 50)
 	CameraController.shake(1)
