@@ -3,3 +3,4 @@ RiftboundSoulforge/tools/luau-check/target/
 *.rbxlx
 *.lock.rbxl
 build/
+.anchor/
