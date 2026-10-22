@@ -213,7 +213,7 @@ local function frontier(parent: Instance)
 		end
 	end
 	-- glowing rift cracks in the ground (environmental storytelling)
-	for i = 1, 10 do
+	for _ = 1, 10 do
 		local x, z = rng:NextNumber(70, 250), rng:NextNumber(-90, 90)
 		if clearOf(x, z) then
 			Build.neon(model, Vector3.new(0.5, 0.1, rng:NextNumber(6, 14)), CFrame.new(at(x, z, 0.06)) * CFrame.Angles(0, rng:NextNumber(0, math.pi), 0), Color3.fromRGB(200, 90, 255), "RiftCrack")

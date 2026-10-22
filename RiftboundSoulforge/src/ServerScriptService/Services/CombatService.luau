@@ -11,7 +11,6 @@ local RunService = game:GetService("RunService")
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local Config = Shared.Config
 local GameConfig = require(Config.GameConfig)
-local WeaponConfig = require(Config.WeaponConfig)
 local EssenceConfig = require(Config.EssenceConfig)
 local FusionConfig = require(Config.FusionConfig)
 local AwakeningConfig = require(Config.AwakeningConfig)
@@ -201,7 +200,7 @@ local function alive(ps: PState?): boolean
 	return ps ~= nil and ps.humanoid.Health > 0 and ps.character.Parent ~= nil
 end
 
-local function updateMovement(player: Player, ps: PState)
+local function updateMovement(_player: Player, ps: PState)
 	local t = now()
 	local speed = PCFG.BaseWalkSpeed
 	if t < ps.stunUntil then

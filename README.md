@@ -57,3 +57,10 @@ Cada torre puede **mejorarse** (⬆), **venderse** (70% de reembolso) y cambiar 
 ## 🔊 Sonido
 
 Todos los efectos de sonido se generan en tiempo real con WebAudio (sin archivos de audio). Botón 🔊 para silenciar.
+
+---
+
+## 🗡 RIFTBOUND: SOULFORGE (Roblox)
+
+Este repositorio también contiene un proyecto de Roblox independiente en
+[`RiftboundSoulforge/`](RiftboundSoulforge/README.md): un action RPG multijugador en Luau sincronizado con Rojo.

@@ -87,6 +87,10 @@ function ClientState.init()
 		ClientState.trial = data
 		ClientState.Changed:Fire("trial")
 	end)
+	task.spawn(function()
+		task.wait(1)
+		ClientState.request("Sync", {}, true)
+	end)
 	Net.event("Cooldown").OnClientEvent:Connect(function(slot, endsAt, duration)
 		ClientState.cooldowns[slot] = { endsAt = endsAt, duration = duration }
 		ClientState.Changed:Fire("cooldowns")

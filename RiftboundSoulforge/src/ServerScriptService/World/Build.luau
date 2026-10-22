@@ -229,7 +229,7 @@ end
 
 function Build.crystal(parent: Instance, position: Vector3, color: Color3, scale: number, collide: boolean?)
 	local model = Build.model(parent, "Crystal")
-	for i = 1, 4 do
+	for _ = 1, 4 do
 		local h = rng:NextNumber(3, 7) * scale
 		local part = Build.part(model, {
 			size = Vector3.new(1.2 * scale, h, 1.2 * scale),

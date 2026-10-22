@@ -17,6 +17,9 @@
         "Client": {
           "$path": "src/StarterPlayer/StarterPlayerScripts"
         }
+      },
+      "$properties": {
+        "EnableMouseLockOption": false
       }
     },
     "Workspace": {
@@ -32,7 +35,6 @@
     },
     "Lighting": {
       "$properties": {
-        "Technology": "Future",
         "Brightness": 2,
         "ClockTime": 17.4,
         "GlobalShadows": true

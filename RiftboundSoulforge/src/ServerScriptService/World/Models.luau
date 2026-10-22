@@ -151,6 +151,7 @@ function Models.enemy(def: any, position: Vector3): Model
 	end
 
 	local humanoid = Instance.new("Humanoid")
+	humanoid.RigType = Enum.HumanoidRigType.R15 -- R15 honours HipHeight for limbless custom rigs
 	humanoid.HipHeight = hip
 	humanoid.WalkSpeed = def.moveSpeed
 	humanoid.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
@@ -225,6 +226,7 @@ function Models.warden(position: Vector3): Model
 	})
 
 	local humanoid = Instance.new("Humanoid")
+	humanoid.RigType = Enum.HumanoidRigType.R15 -- R15 honours HipHeight for limbless custom rigs
 	humanoid.HipHeight = hip
 	humanoid.WalkSpeed = 13
 	humanoid.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None

@@ -13,7 +13,6 @@ local WaypointController = {}
 
 local player = Players.LocalPlayer
 local marker: Part? = nil
-local beam: Beam? = nil
 local playerAttachment: Attachment? = nil
 local enabled = true
 
@@ -127,7 +126,6 @@ function WaypointController.init()
 	b.LightEmission = 1
 	b.Segments = 1
 	b.Parent = m
-	beam = b
 
 	local function attach()
 		local character = player.Character or player.CharacterAdded:Wait()

@@ -1,0 +1,39 @@
+---
+# Offline Roblox std for selene: Roblox globals as `any`. If your machine can reach
+# Roblox's API dump, prefer `std = "roblox"` (selene generate-roblox-std).
+base: luau
+name: roblox_lite
+globals:
+  game: {any: true}
+  workspace: {any: true}
+  script: {any: true}
+  plugin: {any: true}
+  Instance: {any: true}
+  Enum: {any: true}
+  Vector2: {any: true}
+  Vector3: {any: true}
+  CFrame: {any: true}
+  Color3: {any: true}
+  ColorSequence: {any: true}
+  ColorSequenceKeypoint: {any: true}
+  NumberSequence: {any: true}
+  NumberSequenceKeypoint: {any: true}
+  NumberRange: {any: true}
+  UDim: {any: true}
+  UDim2: {any: true}
+  TweenInfo: {any: true}
+  Random: {any: true}
+  RaycastParams: {any: true}
+  OverlapParams: {any: true}
+  Rect: {any: true}
+  BrickColor: {any: true}
+  Font: {any: true}
+  task: {any: true}
+  tick: {any: true}
+  time: {any: true}
+  wait: {any: true}
+  warn: {any: true}
+  typeof: {any: true}
+  require: {any: true}
+  DateTime: {any: true}
+  utf8: {any: true}

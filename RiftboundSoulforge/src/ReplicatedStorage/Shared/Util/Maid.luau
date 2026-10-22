@@ -19,18 +19,14 @@ function Maid:Clean()
 	for i = #tasks, 1, -1 do
 		local task_ = tasks[i]
 		local kind = typeof(task_)
-		if kind == "RBXScriptConnection" then
+		if kind == "RBXScriptConnection" or (kind == "table" and type(task_.Disconnect) == "function") then
 			task_:Disconnect()
-		elseif kind == "Instance" then
+		elseif kind == "Instance" or (kind == "table" and type(task_.Destroy) == "function") then
 			task_:Destroy()
 		elseif kind == "thread" then
 			pcall(task.cancel, task_)
 		elseif kind == "function" then
 			pcall(task_)
-		elseif kind == "table" and type(task_.Disconnect) == "function" then
-			task_:Disconnect()
-		elseif kind == "table" and type(task_.Destroy) == "function" then
-			task_:Destroy()
 		end
 	end
 end

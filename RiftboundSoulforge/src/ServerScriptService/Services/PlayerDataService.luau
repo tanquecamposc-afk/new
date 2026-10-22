@@ -127,6 +127,16 @@ function PlayerDataService.load(player: Player): any
 				break
 			end
 			lastError = if ok then "profile is locked by another server" else tostring(err)
+			-- Studio without API access (or an unpublished place) will never succeed: stop now.
+			if
+				not ok
+				and (
+					string.find(lastError, "StudioAccessToApisNotAllowed", 1, true)
+					or string.find(lastError, "publish", 1, true)
+				)
+			then
+				break
+			end
 			backoff(attempt)
 		end
 
@@ -275,6 +285,14 @@ local function release(player: Player)
 end
 
 function PlayerDataService.Start()
+	-- Clients ask for a full snapshot once their listeners are connected.
+	require(script.Parent.Parent.Registry).get("RequestService").on("Sync", "Request", function(player, _args)
+		local profile = profiles[player]
+		if profile then
+			profile.syncDirty = true
+		end
+		return true, nil
+	end, false)
 	Players.PlayerRemoving:Connect(function(player)
 		release(player)
 	end)
