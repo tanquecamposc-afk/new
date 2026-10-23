@@ -2,6 +2,7 @@
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local Config = Shared.Config
 local FusionConfig = require(Config.FusionConfig)
+local EssenceConfig = require(Config.EssenceConfig)
 local EnemyConfig = require(Config.EnemyConfig)
 local BossConfig = require(Config.BossConfig)
 local DiscoveryConfig = require(Config.DiscoveryConfig)
@@ -27,7 +28,7 @@ function View.mount(container: Instance, _ctx: any)
 		for _, id in FusionConfig.Order do
 			local def = FusionConfig.Fusions[id]
 			local record = profile.fusions[id]
-			local card = Kit.card(body, def.displayName .. "  (" .. table.concat(def.essences, " + ") .. ")", next(), def.color)
+			local card = Kit.card(body, def.displayName .. "  (" .. EssenceConfig.names(def.essences) .. ")", next(), def.color)
 			if not def.implemented then
 				ViewUtil.para(card, def.summary, C.TextMuted, 1)
 			elseif record and record.unlocked then
@@ -44,7 +45,7 @@ function View.mount(container: Instance, _ctx: any)
 			local card = Kit.card(body, def.displayName, next(), def.color)
 			ViewUtil.para(card, def.description, C.TextDim, 1)
 		end
-		ViewUtil.heading(body, "Bestiary", next())
+		ViewUtil.heading(body, "Bestiario", next())
 		for _, id in EnemyConfig.BestiaryOrder do
 			local entry = profile.codex.enemies[id]
 			local def = EnemyConfig.Enemies[id] or BossConfig[id]
@@ -53,6 +54,17 @@ function View.mount(container: Instance, _ctx: any)
 				ViewUtil.para(card, def.lore, C.TextDim, 1)
 				if def.tip then
 					ViewUtil.para(card, "Consejo: " .. def.tip, C.Accent, 2, 13)
+				end
+				if def.weakTo or def.resists then
+					local weak = def.weakTo and EssenceConfig.Essences[def.weakTo]
+					local resist = def.resists and EssenceConfig.Essences[def.resists]
+					ViewUtil.para(
+						card,
+						string.format("Débil a: %s   •   Resiste: %s", if weak then weak.displayName else "—", if resist then resist.displayName else "—"),
+						C.Gold,
+						2,
+						13
+					)
 				end
 				ViewUtil.para(card, "Derrotados: " .. entry.defeated, C.Text, 3, 13)
 			end

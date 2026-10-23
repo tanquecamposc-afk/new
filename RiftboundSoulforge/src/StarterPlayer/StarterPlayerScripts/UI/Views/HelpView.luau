@@ -25,10 +25,16 @@ local SECTIONS = {
 		"Las zonas rojas se llenan antes de golpear. '!' = se puede parar. '⚠' = esquiva o sal. Anillo '◎' = quédate en el centro o fuera.",
 		"'¡ABIERTO! GOLPEA' sobre un enemigo = ventana de castigo. Los Guardianes bloquean golpes ligeros de frente: usa ataques pesados.",
 	} },
+	{ "Combo, críticos y elementos", {
+		"Cada golpe suma al COMBO si encadenas otro antes de 3 s. Rangos D (5) • C (12) • B (25) • A (40) • S (60): más daño y más resonancia. Si te golpean, el combo se rompe.",
+		"Críticos: 10% de probabilidad (+1% cada 5 de combo, máx. 25%) para x1,6 de daño con la katana.",
+		"Cada enemigo es DÉBIL a una esencia (x1,5) y RESISTE otra (x0,6). Consúltalo en el Bestiario del Códice.",
+		"Esquiva justo cuando acaba tu golpe para cancelar la recuperación. Esquivar un ataque anunciado activa FLUJO: +20% de daño durante 3 s.",
+	} },
 	{ "Resonancia y Despertar", { "La resonancia crece con golpes, combos, paradas perfectas, esquivas de ataques anunciados e interrupciones. Llena = pulsa G. Tras un despertar quedas agotado 10 s. El Pulso Supresor del Celador termina los despertares." } },
-	{ "Fusion", { "Consigue el conocimiento, investiga la unión en la Cámara de Fusión y sintonízala en combate encadenando una esencia tras la otra sobre el mismo enemigo." } },
+	{ "Fusión", { "Consigue el conocimiento, investiga la unión en la Cámara de Fusión y sintonízala en combate encadenando una esencia tras la otra sobre el mismo enemigo." } },
 	{ "Cooperativo", { "Si varios jugadores encadenan esencias complementarias sobre los mismos enemigos, se activa la Resonancia Cooperativa. Contra el Celador, una parada perfecta seguida del golpe de un compañero en su espalda abre una Brecha." } },
-	{ "Risk", { "Las profundidades 1/2/3 pierden el 25/50/75% de la Mochila al morir. Maestría, EXP, desbloqueos, logros y compras nunca se pierden." } },
+	{ "Riesgo", { "Las profundidades 1/2/3 pierden el 25/50/75% de la Mochila al morir. Maestría, EXP, desbloqueos, logros y compras nunca se pierden." } },
 }
 
 function View.mount(container: Instance, _ctx: any)

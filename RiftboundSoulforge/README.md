@@ -137,7 +137,12 @@ Implemented: Nexus hub, Emberfall biome, katana moveset + evolution branches, Em
 (2 abilities each), 2 fusions, awakening per essence, co-op resonance (2 combos + boss Breach),
 3 enemy archetypes + 2 champions + training targets, Fracture Warden (4 phases), mining, crafting,
 forge, hidden chamber puzzle, ravine shortcut, extraction/satchel risk, quests/dailies, parties,
-3 world events, mastery trial, persistence, monetization scaffolding, HUD + 15 UI views, touch/gamepad.
+3 world events, mastery trial, persistence, monetization scaffolding, HUD + 15 UI views, touch/gamepad,
+combo ranks D→S, critical hits, elemental weaknesses/resistances, dodge-cancel and the "Flujo" buff.
+All player-facing text is in Spanish. Creatures and props are sculpted from ellipsoids and wedge
+spikes; cliffs, mountains and floating islands are craggy Smooth Terrain (no box walls / ball hills).
+Approximate renders of the generated world: `docs/preview/shot_*.png` (made with `tools/preview`,
+which now voxelises terrain like Roblox does; it is NOT a Roblox screenshot).
 
 Partial / missing: no in-engine playtest yet; animation & audio ids are empty (fallbacks only);
 PvP, guilds, prestige, cross-server parties and the other 5 regions are **not** implemented.

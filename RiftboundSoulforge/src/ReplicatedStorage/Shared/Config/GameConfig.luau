@@ -33,6 +33,27 @@ local GameConfig = {
 		AwakeningBurnout = 10, -- seconds with no resonance gain after awakening ends
 		PvPEnabled = false, -- foundation flag only; no PvP mode ships in this build
 		HitStop = 0.05,
+		-- Combo meter: consecutive hits within the window build a rank that adds damage and
+		-- resonance. Taking a real hit (not blocked/parried/evaded) breaks the combo.
+		ComboWindow = 3.0,
+		ComboRanks = {
+			{ min = 60, rank = "S", bonus = 0.18 },
+			{ min = 40, rank = "A", bonus = 0.12 },
+			{ min = 25, rank = "B", bonus = 0.08 },
+			{ min = 12, rank = "C", bonus = 0.05 },
+			{ min = 5, rank = "D", bonus = 0.02 },
+		},
+		-- Critical hits (katana strikes): base chance, +1% per 5 combo, capped.
+		CritBase = 0.10,
+		CritPerFiveCombo = 0.01,
+		CritCap = 0.25,
+		CritMult = 1.6,
+		-- Elemental affinities (essence abilities vs. enemy weak / resist element).
+		WeakMult = 1.5,
+		ResistMult = 0.6,
+		-- "Flujo": evading a telegraphed attack grants bonus damage for a short time.
+		FlowDuration = 3.0,
+		FlowBonus = 0.2,
 	},
 
 	Party = {

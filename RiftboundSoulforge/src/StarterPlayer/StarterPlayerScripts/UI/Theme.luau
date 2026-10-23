@@ -27,6 +27,8 @@ Theme.Colors = {
 
 Theme.Fonts = {
 	Title = Enum.Font.GothamBlack,
+	Display = Enum.Font.LuckiestGuy, -- punchy combat numbers / combo ranks
+	Fantasy = Enum.Font.Fondamento, -- world signs, lore and headings
 	Bold = Enum.Font.GothamBold,
 	Medium = Enum.Font.GothamMedium,
 	Body = Enum.Font.Gotham,

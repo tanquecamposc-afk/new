@@ -286,7 +286,7 @@ local function sunfall(parent: Instance)
 	label.BackgroundTransparency = 1
 	label.Text = "☾   ☀   ✦\n\nTres llamas recuerdan\nel orden del cielo."
 	label.TextScaled = true
-	label.Font = Enum.Font.Fantasy
+	label.Font = Enum.Font.Fondamento
 	label.TextColor3 = Color3.fromRGB(70, 40, 20)
 	label.Parent = gui
 	holder(model, "SunfallMural", P.SunfallMural, "Leer", "Mural Antiguo", 0)
@@ -333,8 +333,18 @@ local function ravine(parent: Instance)
 	for i, p in pillars do
 		local top = p[3]
 		local h = top + 31
-		Build.block(model, Vector3.new(5.5, h, 5.5), CFrame.new(at(p[1], p[2], top - h / 2)), Color3.fromRGB(60, 46, 44), Enum.Material.Basalt, "Pillar" .. i)
-		Build.neon(model, Vector3.new(5.6, 0.15, 5.6), CFrame.new(at(p[1], p[2], top - 0.5)), Color3.fromRGB(255, 120, 50), "PillarGlow")
+		-- the flat-topped core keeps jumps predictable; the columns around it give the silhouette
+		-- of a cluster of cooling basalt organ-pipes instead of a single square post
+		local core = Build.block(model, Vector3.new(5.5, h, 5.5), CFrame.new(at(p[1], p[2], top - h / 2)) * CFrame.Angles(0, i * 0.7, 0), Color3.fromRGB(60, 46, 44), Enum.Material.Basalt, "Pillar" .. i)
+		for j = 1, 5 do
+			local a = i * 0.7 + j * (math.pi * 2 / 5)
+			local ch = h - Build.rng:NextNumber(1, 7)
+			local col = Build.cylinder(model, Build.rng:NextNumber(2.2, 3.2), ch, at(p[1] + math.cos(a) * 2.6, p[2] + math.sin(a) * 2.6, top - h + ch / 2), Color3.fromRGB(52, 40, 40), Enum.Material.Basalt, "PillarColumn")
+			col.CanCollide = false
+		end
+		Build.spike(model, CFrame.new(at(p[1] + 2.4, p[2] - 2.2, top - 6)) * CFrame.Angles(0.3, i, -0.4), 2.2, 4, { color = Color3.fromRGB(70, 52, 48), material = Enum.Material.Basalt, collide = false, name = "PillarShard" })
+		core.TopSurface = Enum.SurfaceType.Smooth
+		Build.neon(model, Vector3.new(5.6, 0.15, 5.6), core.CFrame * CFrame.new(0, h / 2 - 0.5, 0), Color3.fromRGB(255, 120, 50), "PillarGlow")
 	end
 	-- ledge route (south, longer)
 	for _, seg in { { 262, 283 }, { 287, 309 }, { 313, 340 } } do
@@ -467,13 +477,13 @@ local function arena(parent: Instance)
 	-- floating ruins around the platform (silhouette)
 	for i = 1, 10 do
 		local angle = i / 10 * math.pi * 2
-		Build.part(model, {
-			size = Vector3.new(Build.rng:NextNumber(8, 16), Build.rng:NextNumber(4, 10), Build.rng:NextNumber(8, 16)),
-			cframe = CFrame.new(c + Vector3.new(math.cos(angle) * 95, Build.rng:NextNumber(-10, 30), math.sin(angle) * 95)) * CFrame.Angles(Build.rng:NextNumber(0, 1), Build.rng:NextNumber(0, 3), 0),
-			color = Color3.fromRGB(50, 42, 60),
-			material = Enum.Material.Basalt,
-			name = "FloatingRuin",
-		})
+		local r = Build.rng
+		local w, h = r:NextNumber(8, 16), r:NextNumber(5, 9)
+		local center = CFrame.new(c + Vector3.new(math.cos(angle) * 95, r:NextNumber(-10, 30), math.sin(angle) * 95)) * CFrame.Angles(r:NextNumber(-0.2, 0.2), r:NextNumber(0, 3), r:NextNumber(-0.2, 0.2))
+		local rock = { color = Color3.fromRGB(50, 42, 60), material = Enum.Material.Basalt, name = "FloatingRuin" }
+		Build.ellipsoid(model, { size = Vector3.new(w, h * 0.55, w * 0.85), cframe = center, color = rock.color, material = rock.material, name = "FloatingRuin" })
+		Build.spike(model, center * CFrame.Angles(math.pi, 0, 0), w * 0.8, h * 1.8, rock)
+		Build.spike(model, center * CFrame.new(w * 0.2, 0, 0) * CFrame.Angles(0, 0.5, 0), w * 0.3, h * 0.6, { color = Color3.fromRGB(150, 90, 255), material = Enum.Material.Neon, name = "RuinCrystal", collide = false })
 	end
 	for i = 1, 8 do
 		local angle = i / 8 * math.pi * 2

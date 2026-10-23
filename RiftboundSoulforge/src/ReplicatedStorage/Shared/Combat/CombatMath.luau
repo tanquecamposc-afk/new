@@ -4,6 +4,7 @@
 
 local Config = script.Parent.Parent.Config
 local WeaponConfig = require(Config.WeaponConfig)
+local GameConfig = require(Config.GameConfig)
 
 local CombatMath = {}
 
@@ -63,6 +64,46 @@ function CombatMath.abilityPower(playerLevel: number, essenceMastery: number, ab
 		power *= 1.15
 	end
 	return power * abilityMult
+end
+
+-- Combo rank for a hit count: returns the rank letter (or nil below the first rank) and the
+-- damage / resonance bonus it grants.
+function CombatMath.comboRank(count: number): (string?, number)
+	for _, tier in GameConfig.Combat.ComboRanks do
+		if count >= tier.min then
+			return tier.rank, tier.bonus
+		end
+	end
+	return nil, 0
+end
+
+-- Critical chance for katana strikes at a given combo count.
+function CombatMath.critChance(combo: number): number
+	local c = GameConfig.Combat
+	return math.min(c.CritCap, c.CritBase + math.floor(math.max(0, combo) / 5) * c.CritPerFiveCombo)
+end
+
+-- Elemental affinity of an enemy definition against the essences of a cast.
+-- Weakness wins if any essence matches it; resistance applies only if every essence is resisted.
+function CombatMath.affinity(def: any, essences: { string }): (number, string?)
+	local c = GameConfig.Combat
+	if not def or #essences == 0 then
+		return 1, nil
+	end
+	for _, essence in essences do
+		if def.weakTo == essence then
+			return c.WeakMult, "weak"
+		end
+	end
+	if def.resists then
+		for _, essence in essences do
+			if def.resists ~= essence then
+				return 1, nil
+			end
+		end
+		return c.ResistMult, "resist"
+	end
+	return 1, nil
 end
 
 -- Human readable stats for UI comparisons.

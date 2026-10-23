@@ -59,6 +59,10 @@ type PState = {
 	swingSerial: number,
 	castSerial: number,
 	aura: { Instance },
+	combo: number,
+	comboExpires: number,
+	cancelAfter: number,
+	flowUntil: number,
 }
 
 local states: { [Player]: PState } = {}
@@ -168,6 +172,10 @@ function CombatService.onCharacter(player: Player, character: Model)
 		swingSerial = 0,
 		castSerial = 0,
 		aura = {},
+		combo = 0,
+		comboExpires = 0,
+		cancelAfter = math.huge,
+		flowUntil = 0,
 	}
 	states[player] = ps
 	cooldowns[player] = cooldowns[player] or {}
@@ -179,6 +187,9 @@ function CombatService.onCharacter(player: Player, character: Model)
 	setAttr(player, "AwakenEnds", 0)
 	setAttr(player, "Blocking", false)
 	setAttr(player, "BurnoutEnds", 0)
+	setAttr(player, "Combo", 0)
+	setAttr(player, "ComboEnds", 0)
+	setAttr(player, "FlowEnds", 0)
 	CombatService.refresh(player)
 	humanoid.Died:Connect(function()
 		if states[player] == ps then
@@ -447,6 +458,50 @@ local function awakenOnHit(player: Player, ps: PState, record: any)
 	end
 end
 
+-- Combo meter & offensive buffs ---------------------------------------------------------------
+
+local rng = Random.new()
+
+local function comboCount(ps: PState): number
+	return if now() <= ps.comboExpires then ps.combo else 0
+end
+
+local function addCombo(player: Player, ps: PState, hits: number)
+	local t = now()
+	if t > ps.comboExpires then
+		ps.combo = 0
+	end
+	local before = CombatMath.comboRank(ps.combo)
+	ps.combo = math.min(999, ps.combo + hits)
+	ps.comboExpires = t + CFG.ComboWindow
+	setAttr(player, "Combo", ps.combo)
+	setAttr(player, "ComboEnds", workspace:GetServerTimeNow() + CFG.ComboWindow)
+	local after = CombatMath.comboRank(ps.combo)
+	if after and after ~= before then
+		feedback(player, "ComboRank", { rank = after, combo = ps.combo })
+	end
+end
+
+local function breakCombo(player: Player, ps: PState)
+	if comboCount(ps) >= 5 then
+		feedback(player, "ComboBreak", { combo = ps.combo })
+	end
+	ps.combo = 0
+	ps.comboExpires = 0
+	setAttr(player, "Combo", 0)
+	setAttr(player, "ComboEnds", 0)
+end
+
+-- Damage multiplier from the combo rank and the "Flujo" (perfect evade) buff.
+local function offenseMult(ps: PState): number
+	local _, bonus = CombatMath.comboRank(comboCount(ps))
+	local mult = 1 + bonus
+	if now() < ps.flowUntil then
+		mult *= 1 + CFG.FlowBonus
+	end
+	return mult
+end
+
 -- Applies a weapon strike to every enemy inside `shape`. Returns hit list.
 local function weaponHits(player: Player, ps: PState, shape: any, strike: any, mult: number, extra: any?): { any }
 	local Enemy = Registry.get("EnemyService")
@@ -459,7 +514,11 @@ local function weaponHits(player: Player, ps: PState, shape: any, strike: any, m
 	local trainingHits, realHits = 0, 0
 	for _, record in targets do
 		if lineOfSight(origin, record.root.Position, record.radius + 1) then
-			local amount = ps.build.base * strike.damage * mult * awakenMult(ps) * statusBonus(record)
+			local amount = ps.build.base * strike.damage * mult * awakenMult(ps) * statusBonus(record) * offenseMult(ps)
+			local crit = record.kind ~= "Training" and rng:NextNumber() < CombatMath.critChance(comboCount(ps))
+			if crit then
+				amount *= CFG.CritMult
+			end
 			local result = Enemy.damage(record, amount, {
 				player = player,
 				position = origin,
@@ -474,6 +533,7 @@ local function weaponHits(player: Player, ps: PState, shape: any, strike: any, m
 					amount = math.floor(result.dealt + 0.5),
 					guarded = result.guarded,
 					killed = result.killed,
+					crit = crit and not result.guarded,
 				})
 				if record.kind == "Training" then
 					trainingHits += 1
@@ -491,7 +551,9 @@ local function weaponHits(player: Player, ps: PState, shape: any, strike: any, m
 		end
 	end
 	if #hits > 0 then
-		CombatService.addResonance(player, strike.resonance)
+		addCombo(player, ps, #hits)
+		local _, comboBonus = CombatMath.comboRank(comboCount(ps))
+		CombatService.addResonance(player, strike.resonance * (1 + comboBonus))
 		local Progression = Registry.get("ProgressionService")
 		local mastery = math.min(3, realHits) * 3 + (if trainingHits > 0 and realHits == 0 then 1 else 0)
 		Progression.addWeaponMastery(player, "Katana", mastery)
@@ -530,6 +592,7 @@ local function lightAttack(player: Player, ps: PState, dir: Vector3)
 	ps.comboIndex = index
 	ps.lastLightAt = t
 	ps.busyUntil = t + duration
+	ps.cancelAfter = t + strike.windup / speed -- recovery can be dodge-cancelled
 	ps.actionStart = t
 	ps.swingSerial += 1
 	local serial = ps.swingSerial
@@ -568,6 +631,7 @@ local function heavyAttack(player: Player, ps: PState, dir: Vector3)
 	end
 	local speed = build.attackSpeed
 	ps.busyUntil = t + (heavy.windup + heavy.recovery) / speed
+	ps.cancelAfter = t + heavy.windup / speed
 	ps.actionStart = t
 	ps.comboIndex = 0
 	ps.swingSerial += 1
@@ -642,6 +706,9 @@ end
 local function dodge(player: Player, ps: PState, dir: Vector3)
 	local t = now()
 	local ok, reason = canAct(ps, t)
+	if not ok and reason == "busy" and t >= ps.cancelAfter - CFG.ActionTolerance then
+		ok = true -- dodge-cancel: the strike already landed, skip its recovery
+	end
 	if not ok then
 		feedback(player, "Rejected", { action = "Dodge", reason = reason })
 		return
@@ -663,6 +730,7 @@ local function dodge(player: Player, ps: PState, dir: Vector3)
 	ps.dodgeReadyAt = t + cooldown
 	ps.iframesUntil = t + d.iframes + 0.05
 	ps.busyUntil = t + d.duration
+	ps.cancelAfter = math.huge
 	ps.comboIndex = 0
 	Net.fireAllExcept("Effect", player, "Dodge", { character = ps.character, dir = dir })
 end
@@ -759,6 +827,7 @@ function CombatService.cast(player: Player, ps: PState, abilityId: string, aim: 
 	end
 	local anyHit = false
 	local hitCount = 0
+	local affinityShown: { [any]: boolean } = {}
 	local ctx = {
 		player = player,
 		ps = ps,
@@ -782,7 +851,8 @@ function CombatService.cast(player: Player, ps: PState, abilityId: string, aim: 
 		end, 10)
 		for _, record in targets do
 			if lineOfSight(shape.center or shape.origin or ps.root.Position, record.root.Position, record.radius + 2) then
-				local amount = power * mult * statusBonus(record)
+				local affinity, tag = CombatMath.affinity(record.def, essences)
+				local amount = power * mult * statusBonus(record) * offenseMult(ps) * affinity
 				local result = Enemy.damage(record, amount, {
 					player = player,
 					position = ps.root.Position,
@@ -793,6 +863,11 @@ function CombatService.cast(player: Player, ps: PState, abilityId: string, aim: 
 				if result.dealt > 0 then
 					table.insert(out, { record = record, result = result })
 					hitCount += 1
+					addCombo(player, ps, 1)
+					if tag and not affinityShown[record] then
+						affinityShown[record] = true
+						feedback(player, "Affinity", { position = record.root.Position, tag = tag })
+					end
 					if not anyHit then
 						anyHit = true
 						CombatService.addResonance(player, (def and def.resonance) or 4)
@@ -877,6 +952,7 @@ local function ability(player: Player, ps: PState, slot: string, aim: any)
 	local aimPoint = Security.clampAim(player, aim, def.range or 20)
 	cds[abilityId] = t + def.cooldown
 	ps.busyUntil = t + 0.35
+	ps.cancelAfter = t -- casts resolve immediately, so their short lock can be dodged out of
 	ps.actionStart = t
 	ps.comboIndex = 0
 	Net.event("Cooldown"):FireClient(player, slot, workspace:GetServerTimeNow() + def.cooldown, def.cooldown)
@@ -907,7 +983,9 @@ function CombatService.damagePlayer(player: Player, amount: number, src: any): s
 			CombatService.addResonance(player, AwakeningConfig.Gains.DodgeTelegraph)
 			Registry.get("QuestService").record(player, "DodgeTelegraph", {})
 			Registry.get("ProgressionService").stat(player, "dodges")
-			feedback(player, "Evaded")
+			ps.flowUntil = t + CFG.FlowDuration
+			setAttr(player, "FlowEnds", workspace:GetServerTimeNow() + CFG.FlowDuration)
+			feedback(player, "Evaded", { flow = CFG.FlowDuration })
 		end
 		return "Evaded"
 	end
@@ -973,6 +1051,7 @@ function CombatService.damagePlayer(player: Player, amount: number, src: any): s
 			ps.burnDps = src.burn.dps
 		end
 		feedback(player, "Hurt", { amount = math.floor(amount + 0.5) })
+		breakCombo(player, ps)
 	end
 	if src.endsAwakening and t < ps.awakenedUntil then
 		CombatService.endAwakening(player, true)

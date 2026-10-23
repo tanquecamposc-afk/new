@@ -490,7 +490,7 @@ local function buildAnnouncement(parent: Instance)
 	label.Position = UDim2.fromScale(0.03, 0.07)
 	label.BackgroundTransparency = 1
 	label.TextScaled = true
-	label.Font = Enum.Font.GothamBlack
+	label.Font = Enum.Font.Fondamento
 	label.TextColor3 = Color3.fromRGB(230, 225, 255)
 	label.Text = "EL NEXO"
 	label.Parent = gui

@@ -340,8 +340,60 @@ local function refreshTrial()
 	end
 end
 
+local RANK_COLORS = {
+	D = Color3.fromRGB(180, 190, 210),
+	C = Color3.fromRGB(120, 220, 160),
+	B = Color3.fromRGB(110, 180, 255),
+	A = Color3.fromRGB(255, 170, 70),
+	S = Color3.fromRGB(255, 80, 140),
+}
+
+-- Combo meter (right side): rank letter, hit count and the time left to keep the chain alive.
+local function buildCombo(root: Instance)
+	local frame = Kit.new("Frame", {
+		Name = "Combo",
+		BackgroundTransparency = 1,
+		Size = UDim2.fromOffset(190, 120),
+		AnchorPoint = Vector2.new(1, 0.5),
+		Position = UDim2.new(1, -24, 0.42, 0),
+		Visible = false,
+		Parent = root,
+	})
+	refs.comboRank = Kit.text({ parent = frame, text = "", textSize = 64, font = Theme.Fonts.Display, alignX = Enum.TextXAlignment.Right, size = UDim2.new(1, 0, 0, 66), strokeT = 0.2 })
+	refs.comboCount = Kit.text({ parent = frame, text = "", textSize = 22, font = Theme.Fonts.Display, alignX = Enum.TextXAlignment.Right, position = UDim2.fromOffset(0, 64), size = UDim2.new(1, 0, 0, 26), strokeT = 0.3 })
+	local back = Kit.new("Frame", { BackgroundColor3 = Color3.fromRGB(20, 20, 30), BackgroundTransparency = 0.3, BorderSizePixel = 0, AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, 0, 0, 94), Size = UDim2.fromOffset(150, 6), Parent = frame })
+	refs.comboTimer = Kit.new("Frame", { BackgroundColor3 = C.Gold, BorderSizePixel = 0, Size = UDim2.fromScale(1, 1), Parent = back })
+	refs.flow = Kit.text({ parent = frame, text = "", textSize = 16, font = Theme.Fonts.Bold, color = Color3.fromRGB(120, 230, 255), alignX = Enum.TextXAlignment.Right, position = UDim2.fromOffset(0, 102), size = UDim2.new(1, 0, 0, 18), strokeT = 0.4 })
+	refs.combo = frame
+end
+
+local function refreshCombo(now: number)
+	local combo = player:GetAttribute("Combo") or 0
+	local ends = player:GetAttribute("ComboEnds") or 0
+	local flowEnds = player:GetAttribute("FlowEnds") or 0
+	local flowing = now < flowEnds
+	local active = combo > 0 and now < ends
+	refs.combo.Visible = active or flowing
+	if active then
+		local rank, bonus = CombatMath.comboRank(combo)
+		local color = if rank then RANK_COLORS[rank] else C.Text
+		refs.comboRank.Text = rank or ""
+		refs.comboRank.TextColor3 = color
+		refs.comboCount.Text = string.format("%d GOLPES", combo) .. (if bonus > 0 then string.format("  +%d%%", math.floor(bonus * 100 + 0.5)) else "")
+		refs.comboCount.TextColor3 = color
+		refs.comboTimer.Size = UDim2.fromScale(math.clamp((ends - now) / 3, 0, 1), 1)
+		refs.comboTimer.BackgroundColor3 = color
+	else
+		refs.comboRank.Text = ""
+		refs.comboCount.Text = ""
+		refs.comboTimer.Size = UDim2.fromScale(0, 1)
+	end
+	refs.flow.Text = if flowing then string.format("FLUJO %.1fs  •  +20%% daño", flowEnds - now) else ""
+end
+
 local function refreshTimers()
 	local now = ClientState.serverNow()
+	refreshCombo(now)
 	-- world event
 	local event = ClientState.worldEvent
 	if event and event.phase ~= "Idle" and event.name then
@@ -474,6 +526,7 @@ function HUDController.init()
 	buildTopLeft(gui)
 	buildRight(gui)
 	buildTop(gui)
+	buildCombo(gui)
 	if UserInputService.TouchEnabled then
 		buildTouch(gui)
 	end
@@ -502,7 +555,7 @@ function HUDController.init()
 	end)
 	player:GetAttributeChangedSignal("Resonance"):Connect(function()
 		local r = player:GetAttribute("Resonance") or 0
-		refs.resonance.set(r / 100, if r >= 100 then "FULL" else "")
+		refs.resonance.set(r / 100, if r >= 100 then "LLENA" else "")
 		refs.resonance.fill.BackgroundColor3 = if r >= 100 then C.Gold else C.Resonance
 	end)
 	player.CharacterAdded:Connect(bindCharacter)

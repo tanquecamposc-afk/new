@@ -28,14 +28,73 @@ local function slab(terrain: Terrain, center: Vector3, sizeX: number, sizeZ: num
 	terrain:FillBlock(CFrame.new(center.X, center.Y - depth / 2, center.Z), Vector3.new(sizeX, depth, sizeZ), material)
 end
 
+-- Craggy rock mass: a randomly tilted terrain block. Overlapping tilted blocks read as layered,
+-- faceted crags (smooth terrain softens their edges) instead of round blobs.
+local function crag(terrain: Terrain, rng: Random, center: Vector3, size: Vector3, material: Enum.Material, maxTilt: number?)
+	local m = maxTilt or 0.3
+	local tilt = CFrame.Angles(rng:NextNumber(-m, m), rng:NextNumber(0, math.pi), rng:NextNumber(-m, m))
+	terrain:FillBlock(CFrame.new(center) * tilt, size, material)
+end
+
+-- Floating rock: a grassy (or bare) top with tilted rock layers tapering downwards into a
+-- jagged keel, like the underside of a torn-off island.
+local function floatingRock(terrain: Terrain, rng: Random, top: Vector3, radius: number, cap: Enum.Material?)
+	local layers = 5
+	for i = 0, layers - 1 do
+		local t = i / layers
+		local w = radius * 2 * (1 - t * 0.8)
+		local h = radius * 0.55
+		local c = top - Vector3.new(rng:NextNumber(-1, 1) * radius * 0.12, h * 0.5 + i * h * 0.75, rng:NextNumber(-1, 1) * radius * 0.12)
+		-- big slabs tilt less so their edges never rise through the floor above
+		crag(terrain, rng, c, Vector3.new(w, h, w * rng:NextNumber(0.8, 1)), if i % 2 == 0 then M.Rock else M.Slate, math.min(0.3, 5 / radius))
+	end
+	if cap then
+		terrain:FillBlock(CFrame.new(top - Vector3.new(0, 2, 0)) * CFrame.Angles(0, rng:NextNumber(0, math.pi), 0), Vector3.new(radius * 1.8, 4, radius * 1.6), cap)
+	end
+end
+
 local function hills(terrain: Terrain, rng: Random, x1: number, x2: number, z: number, step: number)
 	for x = x1, x2, step do
-		local r = rng:NextNumber(28, 46)
-		local p = at(x + rng:NextNumber(-8, 8), z + rng:NextNumber(-10, 10), rng:NextNumber(4, 16))
-		terrain:FillBall(p, r, M.Rock)
-		terrain:FillBall(p + Vector3.new(0, r * 0.55, 0), r * 0.55, M.Grass)
+		local r = rng:NextNumber(26, 40)
+		local p = at(x + rng:NextNumber(-8, 8), z + rng:NextNumber(-10, 10), rng:NextNumber(0, 10))
+		crag(terrain, rng, p, Vector3.new(r * 2, r * 1.3, r * 1.7), M.Rock)
+		crag(terrain, rng, p + Vector3.new(rng:NextNumber(-10, 10), r * 0.8, rng:NextNumber(-6, 6)), Vector3.new(r * 1.3, r * 0.9, r * 1.1), if rng:NextNumber() < 0.5 then M.Slate else M.Rock)
+		crag(terrain, rng, p + Vector3.new(rng:NextNumber(-8, 8), r * 1.35, 0), Vector3.new(r * 0.8, r * 0.45, r * 0.8), M.Rock)
+		terrain:FillBall(p + Vector3.new(0, r * 0.55, 0), r * 0.5, M.Grass)
 		if rng:NextNumber() < 0.4 then
-			terrain:FillBall(p + Vector3.new(rng:NextNumber(-15, 15), r * 0.9, 0), r * 0.35, M.LeafyGrass)
+			terrain:FillBall(p + Vector3.new(rng:NextNumber(-15, 15), r * 0.9, 0), r * 0.3, M.LeafyGrass)
+		end
+	end
+end
+
+-- Organic cliff face: a chain of stacked, jittered rock masses whose inner edge stays just
+-- outside the playable boundary line a -> b. `normal` points away from the playfield.
+local function cliffLine(terrain: Terrain, rng: Random, a: Vector2, b: Vector2, normal: Vector2, yBase: number, height: number)
+	local length = (b - a).Magnitude
+	local dir = (b - a).Unit
+	local steps = math.max(1, math.floor(length / 12))
+	for i = 0, steps do
+		local p = a + dir * (length * i / steps) + dir * rng:NextNumber(-3, 3)
+		local w = rng:NextNumber(18, 26) -- along the cliff
+		local d = rng:NextNumber(14, 20) -- into the cliff
+		local c = p + normal * (d * 0.75 + 2)
+		local y = yBase
+		local top = yBase + height + rng:NextNumber(-6, 10)
+		while y < top do
+			local h = rng:NextNumber(9, 15)
+			local material = if rng:NextNumber() < 0.35 then M.Slate else M.Rock
+			local size = Vector3.new(w, h, d)
+			local yaw = math.atan2(dir.Y, dir.X)
+			local cf = CFrame.new(at(c.X, c.Y, y + h / 2))
+				* CFrame.Angles(0, -yaw, 0)
+				* CFrame.Angles(rng:NextNumber(-0.18, 0.18), rng:NextNumber(-0.2, 0.2), rng:NextNumber(-0.22, 0.22))
+			terrain:FillBlock(cf, size, material)
+			y += h * rng:NextNumber(0.75, 0.95)
+			w *= rng:NextNumber(0.78, 0.95)
+			c += normal * rng:NextNumber(1.5, 4) + dir * rng:NextNumber(-3, 3)
+		end
+		if rng:NextNumber() < 0.4 then
+			terrain:FillBall(at(c.X + rng:NextNumber(-3, 3), c.Y, y), rng:NextNumber(5, 8), if rng:NextNumber() < 0.5 then M.Grass else M.LeafyGrass)
 		end
 	end
 end
@@ -52,6 +111,7 @@ function TerrainGen.build(world: Instance)
 	terrain:SetMaterialColor(M.Basalt, Color3.fromRGB(46, 40, 54))
 	terrain:SetMaterialColor(M.CrackedLava, Color3.fromRGB(255, 110, 40))
 	terrain:SetMaterialColor(M.Pebble, Color3.fromRGB(120, 112, 104))
+	terrain:SetMaterialColor(M.Slate, Color3.fromRGB(88, 78, 76))
 	terrain.WaterColor = Color3.fromRGB(70, 120, 170)
 	terrain.WaterTransparency = 0.6
 	terrain.WaterWaveSize = 0.1
@@ -66,19 +126,17 @@ function TerrainGen.build(world: Instance)
 
 	-- The Nexus: grass island with rocky underside and floating islets.
 	terrain:FillCylinder(CFrame.new(0, -4, 0), 8, 168, M.Grass)
-	for i = 1, 16 do
-		local angle = i / 16 * math.pi * 2
-		local r = rng:NextNumber(110, 150)
-		terrain:FillBall(Vector3.new(math.cos(angle) * r, -46, math.sin(angle) * r), rng:NextNumber(26, 36), M.Rock)
+	-- underside: the island tapers into a craggy inverted mountain
+	floatingRock(terrain, rng, Vector3.new(0, -10, 0), 112, nil)
+	for i = 1, 10 do
+		local angle = i / 10 * math.pi * 2
+		local r = rng:NextNumber(90, 130)
+		floatingRock(terrain, rng, Vector3.new(math.cos(angle) * r, -20, math.sin(angle) * r), rng:NextNumber(26, 38), nil)
 	end
-	terrain:FillBall(Vector3.new(0, -100, 0), 85, M.Rock)
-	terrain:FillBall(Vector3.new(0, -170, 0), 55, M.Basalt)
 	for i = 1, 8 do
 		local angle = i / 8 * math.pi * 2 + 0.3
 		local p = Vector3.new(math.cos(angle) * 260, rng:NextNumber(-10, 40), math.sin(angle) * 260)
-		local r = rng:NextNumber(14, 24)
-		terrain:FillBall(p, r, M.Rock)
-		terrain:FillBall(p + Vector3.new(0, r * 0.6, 0), r * 0.6, M.Grass)
+		floatingRock(terrain, rng, p, rng:NextNumber(12, 20), M.Grass)
 	end
 
 	-- Emberfall ground: grass with leafy autumn patches and a dirt trail.
@@ -101,10 +159,27 @@ function TerrainGen.build(world: Instance)
 	hills(terrain, rng, -60, 560, -165, 34)
 	hills(terrain, rng, -60, 560, 165, 34)
 	for z = -120, 120, 40 do
-		local p = at(-90, z, 10)
-		terrain:FillBall(p, 45, M.Rock)
-		terrain:FillBall(p + Vector3.new(0, 26, 0), 24, M.Grass)
+		local p = at(-95, z, 10)
+		crag(terrain, rng, p, Vector3.new(60, 50, 50), M.Rock)
+		crag(terrain, rng, p + Vector3.new(-6, 30, 0), Vector3.new(40, 26, 34), M.Slate)
+		terrain:FillBall(p + Vector3.new(0, 30, 0), 18, M.Grass)
 	end
+
+	-- Rocky cliffs enclosing Emberfall (replace the old straight cliff walls visually).
+	local V = Vector2.new
+	cliffLine(terrain, rng, V(-44, -100), V(262, -100), V(0, -1), 0, 38)
+	cliffLine(terrain, rng, V(-44, 100), V(262, 100), V(0, 1), 0, 38)
+	cliffLine(terrain, rng, V(-44, -100), V(-44, 100), V(-1, 0), 0, 38)
+	cliffLine(terrain, rng, V(262, -100), V(340, -100), V(0, -1), -32, 70)
+	cliffLine(terrain, rng, V(262, 100), V(340, 100), V(0, 1), -32, 70)
+	cliffLine(terrain, rng, V(340, -100), V(545, -100), V(0, -1), 0, 38)
+	cliffLine(terrain, rng, V(340, 100), V(545, 100), V(0, 1), 0, 38)
+	-- Ravine walls become rough basalt instead of flat slabs.
+	terrain:FillBlock(CFrame.new(at(253, 0, -16)), Vector3.new(18, 32, 200), M.Basalt)
+	terrain:FillBlock(CFrame.new(at(349, 0, -16)), Vector3.new(18, 32, 200), M.Basalt)
+	-- Keep the hidden Sunfall Chamber and its doorway hollow inside the north cliff.
+	terrain:FillBlock(CFrame.new(at(200, -118, 10)), Vector3.new(34, 20, 36), M.Air)
+	terrain:FillBlock(CFrame.new(at(200, -101, 9)), Vector3.new(14, 18, 10), M.Air)
 
 	-- Cinder Ravine: cracked lava bed and basalt outcrops on the walls.
 	terrain:FillBlock(CFrame.new(at(301, 0, -36)), Vector3.new(78, 8, 200), M.CrackedLava)
@@ -115,16 +190,30 @@ function TerrainGen.build(world: Instance)
 
 	-- The Fracture Arena floats on a basalt mass with drifting shards.
 	local arena = WorldConfig.Arena.center
-	terrain:FillBall(arena + Vector3.new(0, -70, 0), 62, M.Basalt)
-	terrain:FillBall(arena + Vector3.new(0, -130, 0), 34, M.Basalt)
+	floatingRock(terrain, rng, arena + Vector3.new(0, -10, 0), 62, nil)
 	terrain:FillBall(at(562, 0, -26), 20, M.Basalt) -- under the approach walkway
 	for i = 1, 6 do
 		local angle = i / 6 * math.pi * 2
-		terrain:FillBall(arena + Vector3.new(math.cos(angle) * 120, rng:NextNumber(-20, 25), math.sin(angle) * 120), rng:NextNumber(8, 14), M.Basalt)
+		floatingRock(terrain, rng, arena + Vector3.new(math.cos(angle) * 120, rng:NextNumber(-20, 25), math.sin(angle) * 120), rng:NextNumber(8, 13), nil)
 	end
 
 	-- Parts that the terrain now visually replaces (they keep their collision).
-	hide(world, { "Island", "FrontierGround", "Trail", "KeepGround" })
+	hide(world, {
+		"Island",
+		"FrontierGround",
+		"Trail",
+		"KeepGround",
+		"NorthCliff",
+		"SouthCliff",
+		"WestCliff",
+		"RavineNorth",
+		"RavineSouth",
+		"RavineFaceW",
+		"RavineFaceE",
+		"KeepNorth",
+		"KeepSouth",
+		"CliffSpike",
+	})
 end
 
 return TerrainGen

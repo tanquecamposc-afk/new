@@ -114,7 +114,20 @@ Color3 = {
 
 local function dummyCtor() return { new = function(...) return { ... } end, fromOffset = function(...) return { ... } end, fromScale = function(...) return { ... } end } end
 UDim2, UDim, Vector2, NumberRange, NumberSequence, NumberSequenceKeypoint, ColorSequence, TweenInfo = dummyCtor(), dummyCtor(), dummyCtor(), dummyCtor(), dummyCtor(), dummyCtor(), dummyCtor(), dummyCtor()
-Vector2.new = function(x, y) return { X = x or 0, Y = y or 0 } end
+local V2 = {}
+V2.__index = function(v, k)
+	if k == "Magnitude" then return math.sqrt(v.X * v.X + v.Y * v.Y) end
+	if k == "Unit" then local m = math.sqrt(v.X * v.X + v.Y * v.Y) return Vector2.new(v.X / m, v.Y / m) end
+	return nil
+end
+V2.__add = function(a, b) return Vector2.new(a.X + b.X, a.Y + b.Y) end
+V2.__sub = function(a, b) return Vector2.new(a.X - b.X, a.Y - b.Y) end
+V2.__mul = function(a, b)
+	if type(a) == "number" then return Vector2.new(b.X * a, b.Y * a) end
+	if type(b) == "number" then return Vector2.new(a.X * b, a.Y * b) end
+	return Vector2.new(a.X * b.X, a.Y * b.Y)
+end
+Vector2.new = function(x, y) return setmetatable({ X = x or 0, Y = y or 0 }, V2) end
 Vector2.zero = Vector2.new(0, 0)
 
 Enum = setmetatable({}, { __index = function(_, t)
@@ -308,14 +321,16 @@ local function emitParts(container)
 				end
 			end
 			local light = methods.FindFirstChildOfClass(o, "PointLight")
+			local mesh = methods.FindFirstChildOfClass(o, "SpecialMesh")
 			table.insert(out, string.format(
-				'{"n":"%s","c":"%s","s":"%s","sz":[%s,%s,%s],"p":[%s,%s,%s],"m":%s,"col":%s,"mat":"%s","t":%s%s%s}',
+				'{"n":"%s","c":"%s","s":"%s","sz":[%s,%s,%s],"p":[%s,%s,%s],"m":%s,"col":%s,"mat":"%s","t":%s%s%s%s}',
 				esc(o.Name), o.ClassName, tostring(o.Shape or "Block"),
 				num(o.Size.X), num(o.Size.Y), num(o.Size.Z),
 				num(o.CFrame.p.X), num(o.CFrame.p.Y), num(o.CFrame.p.Z),
 				mat3(o.CFrame), color(o.Color), tostring(o.Material), num(o.Transparency or 0),
 				if text ~= "" then string.format(',"txt":"%s","tc":%s,"face":"%s"', esc(text), color(textColor or Color3.new(1, 1, 1)), face) else "",
-				if light then string.format(',"light":{"c":%s,"r":%s,"b":%s}', color(light.Color), num(light.Range), num(light.Brightness)) else ""
+				if light then string.format(',"light":{"c":%s,"r":%s,"b":%s}', color(light.Color), num(light.Range), num(light.Brightness)) else "",
+				if mesh then string.format(',"mesh":"%s"', tostring(mesh.MeshType)) else ""
 			))
 		end
 	end

@@ -125,7 +125,7 @@ function EffectsController.floatText(position: Vector3, text: string, color: Col
 	label.BackgroundTransparency = 1
 	label.Text = text
 	label.TextScaled = true
-	label.Font = Enum.Font.GothamBlack
+	label.Font = Enum.Font.LuckiestGuy
 	label.TextColor3 = color
 	label.TextStrokeTransparency = 0.2
 	label.Parent = gui
@@ -510,7 +510,7 @@ handlers.WeakPoint = function(d)
 		label.BackgroundTransparency = 1
 		label.Text = "◆ PUNTO DÉBIL ◆"
 		label.TextScaled = true
-		label.Font = Enum.Font.GothamBlack
+		label.Font = Enum.Font.LuckiestGuy
 		label.TextColor3 = Color3.fromRGB(255, 235, 140)
 		label.TextStrokeTransparency = 0
 		label.Parent = gui
@@ -664,7 +664,7 @@ local function statusBillboard(model: Model, text: string, color: Color3, durati
 	label.BackgroundTransparency = 1
 	label.Text = text
 	label.TextScaled = true
-	label.Font = Enum.Font.GothamBlack
+	label.Font = Enum.Font.LuckiestGuy
 	label.TextColor3 = color
 	label.TextStrokeTransparency = 0.2
 	label.Parent = gui

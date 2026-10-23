@@ -51,6 +51,18 @@ No timers gate play, no Robux needed, no paid randomness.
 * **Warden Breach**: A perfect-parries the Warden, B strikes the exposed back within 2.5 s → 5% max HP + stagger.
 * Different players only, both within 60 studs, per-pair cooldown, once per cast; both are rewarded.
 
+### E. Combat depth (combo, crits, elements, flow)
+* **Combo meter**: every hit (katana or ability) extends a 3 s chain. Ranks D (5) • C (12) • B (25) •
+  A (40) • S (60) add +2/+5/+8/+12/+18% damage and the same bonus to resonance gain. Taking a hit
+  that is not blocked, parried or evaded breaks the combo.
+* **Critical hits**: katana strikes crit at 10% (+1% per 5 combo, capped at 25%) for x1.6.
+* **Elemental affinities**: each enemy is weak to one essence (x1.5) and resists another (x0.6;
+  a fusion is only resisted if both essences are). Shown in the Bestiary.
+  Stalker: weak Gravity / resists Storm • Rune Guardian: Storm / Ember • Ember Beast: Gravity / Ember •
+  Ashen Sentinel: Storm / Gravity • Eclipse Stalker: Ember / Gravity • Blade Wraith: Ember / Storm.
+* **Dodge-cancel**: once a strike has landed, dodging skips its recovery.
+* **Flujo**: evading a telegraphed attack grants +20% damage for 3 s.
+
 ## World
 * **The Nexus** (floating island): Soulforge Spire landmark, Forge, Artisan Bench, Fusion Chamber,
   Training Arena (dummies, Sparring Golem, Trial pedestal), Rift Portal, Quest Board, Warden Gate,

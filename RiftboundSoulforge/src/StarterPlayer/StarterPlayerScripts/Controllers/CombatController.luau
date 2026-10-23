@@ -22,6 +22,7 @@ local CombatController = {}
 local player = Players.LocalPlayer
 local remote: RemoteEvent
 local busyUntil = 0
+local cancelAfter = math.huge -- after a strike lands its recovery can be dodge-cancelled
 local comboIndex = 0
 local lastLight = 0
 local dodgeReadyAt = 0
@@ -117,6 +118,7 @@ function CombatController.light()
 	local strike = b.light[comboIndex]
 	local speed = speedMult(b)
 	busyUntil = now + (strike.windup + strike.recovery) / speed
+	cancelAfter = now + strike.windup / speed
 	local dir = aimDirection(root)
 	face(root, dir)
 	AnimationController.swing(c, comboIndex, false, strike.windup / speed)
@@ -141,6 +143,7 @@ function CombatController.heavy()
 	end
 	local speed = b.attackSpeed
 	busyUntil = now + (b.heavy.windup + b.heavy.recovery) / speed
+	cancelAfter = now + b.heavy.windup / speed
 	comboIndex = 0
 	local dir = aimDirection(root)
 	face(root, dir)
@@ -173,7 +176,7 @@ function CombatController.dodge()
 	end
 	local now = os.clock()
 	local b = build()
-	if now < dodgeReadyAt or now < busyUntil - 0.1 then
+	if now < dodgeReadyAt or (now < busyUntil - 0.1 and now < cancelAfter) then
 		return
 	end
 	if (player:GetAttribute("Stamina") or 0) < b.dodge.stamina then
@@ -188,6 +191,7 @@ function CombatController.dodge()
 	end
 	dodgeReadyAt = now + cooldown
 	busyUntil = now + b.dodge.duration
+	cancelAfter = math.huge
 	comboIndex = 0
 	local move = humanoid.MoveDirection
 	local dir = if move.Magnitude > 0.1 then Vector3.new(move.X, 0, move.Z).Unit else -Vector3.new(root.CFrame.LookVector.X, 0, root.CFrame.LookVector.Z).Unit
@@ -304,16 +308,21 @@ end
 local function onFeedback(kind: string, data: any)
 	local c, root = character()
 	if kind == "Hits" then
+		local crits = 0
 		for _, hit in data.hits do
-			local color = if hit.guarded then Color3.fromRGB(160, 170, 190) else Color3.fromRGB(255, 255, 255)
-			EffectsController.damageNumber(hit.position, hit.amount, color, data.finisher)
+			local color = if hit.guarded then Color3.fromRGB(160, 170, 190) elseif hit.crit then Color3.fromRGB(255, 214, 90) else Color3.fromRGB(255, 255, 255)
+			EffectsController.damageNumber(hit.position, hit.amount, color, data.finisher or hit.crit)
+			if hit.crit then
+				EffectsController.floatText(hit.position + Vector3.new(0, 6.5, 0), "¡CRÍTICO!", Color3.fromRGB(255, 200, 60), 30, 0.6)
+				crits += 1
+			end
 			EffectsController.burst(hit.position, Color3.fromRGB(255, 240, 220), 10, 16)
 			if hit.guarded then
 				EffectsController.floatText(hit.position + Vector3.new(0, 5, 0), "BLOQUEADO", color, 22, 0.6)
 			end
 		end
 		SoundController.play("EnemyHit")
-		CameraController.shake(if data.finisher then 0.3 else 0.12)
+		CameraController.shake(if data.finisher or crits > 0 then 0.3 else 0.12)
 		if data.finisher then
 			CameraController.flash(Color3.new(1, 1, 1), 0.25)
 			CameraController.punch(-3)
@@ -334,6 +343,10 @@ local function onFeedback(kind: string, data: any)
 		EffectsController.floatText(root.Position + Vector3.new(0, 5, 0), "PARADA PERFECTA", Color3.fromRGB(255, 240, 180), 34, 0.9)
 	elseif kind == "Evaded" and root then
 		EffectsController.floatText(root.Position + Vector3.new(0, 4, 0), "¡ESQUIVA!", Color3.fromRGB(180, 220, 255), 26, 0.7)
+		if data and data.flow then
+			EffectsController.floatText(root.Position + Vector3.new(0, 6, 0), "FLUJO  +20% daño", Color3.fromRGB(120, 230, 255), 22, 1.0)
+			CameraController.flash(Color3.fromRGB(150, 220, 255), 0.15)
+		end
 	elseif kind == "Blocked" and root then
 		EffectsController.burst(root.Position + root.CFrame.LookVector * 2, Color3.fromRGB(200, 210, 230), 10, 10)
 	elseif kind == "GuardBroken" and root then
@@ -355,6 +368,26 @@ local function onFeedback(kind: string, data: any)
 		EffectsController.floatText(root.Position + root.CFrame.LookVector * 6 + Vector3.new(0, 6, 0), "PUNTO DÉBIL x2", Color3.fromRGB(255, 230, 120), 26, 0.6)
 	elseif kind == "Immune" and root then
 		EffectsController.floatText(root.Position + root.CFrame.LookVector * 6 + Vector3.new(0, 6, 0), "INMUNE", Color3.fromRGB(200, 200, 220), 22, 0.5)
+	elseif kind == "ComboRank" and root then
+		local rankColors = {
+			D = Color3.fromRGB(180, 190, 210),
+			C = Color3.fromRGB(120, 220, 160),
+			B = Color3.fromRGB(110, 180, 255),
+			A = Color3.fromRGB(255, 170, 70),
+			S = Color3.fromRGB(255, 80, 140),
+		}
+		EffectsController.floatText(root.Position + Vector3.new(0, 7, 0), "RANGO " .. data.rank, rankColors[data.rank] or Color3.new(1, 1, 1), 36, 0.9)
+		if data.rank == "S" or data.rank == "A" then
+			CameraController.flash(rankColors[data.rank], 0.12)
+		end
+	elseif kind == "ComboBreak" and root then
+		EffectsController.floatText(root.Position + Vector3.new(0, 5, 0), "COMBO ROTO", Color3.fromRGB(200, 120, 120), 20, 0.6)
+	elseif kind == "Affinity" then
+		if data.tag == "weak" then
+			EffectsController.floatText(data.position + Vector3.new(0, 7, 0), "¡DÉBIL! x1.5", Color3.fromRGB(255, 220, 80), 28, 0.8)
+		else
+			EffectsController.floatText(data.position + Vector3.new(0, 7, 0), "RESISTE", Color3.fromRGB(170, 170, 190), 22, 0.6)
+		end
 	elseif kind == "ResonanceFull" then
 		ClientState.toast("Resonance", "¡Resonancia llena! Pulsa G para DESPERTAR.")
 	elseif kind == "Suppressed" then

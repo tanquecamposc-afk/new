@@ -77,6 +77,40 @@ function Build.ball(parent: Instance, diameter: number, position: Vector3, color
 	})
 end
 
+-- Ellipsoid: a part whose SpecialMesh stretches a sphere to the part's full box, so bodies,
+-- canopies and boulders can be squashed and stretched instead of being perfect balls.
+function Build.ellipsoid(parent: Instance, p: PartProps): BasePart
+	local part = Build.part(parent, p)
+	local mesh = Instance.new("SpecialMesh")
+	mesh.MeshType = Enum.MeshType.Sphere
+	mesh.Parent = part
+	return part
+end
+
+-- Triangular ridge (two back-to-back wedges): `cf` is the centre of the base, the ridge
+-- runs along local X at height `h`. Width = X extent, depth = Z extent.
+function Build.ridge(parent: Instance, cf: CFrame, width: number, h: number, depth: number, props: any?): { BasePart }
+	local q: any = table.clone(props or {})
+	local out = {}
+	for side = -1, 1, 2 do
+		q.class = "WedgePart"
+		q.size = Vector3.new(width, h, depth / 2)
+		-- a wedge's tall edge is at its back (+Z): mirror one half so both tall edges meet
+		q.cframe = cf * CFrame.Angles(0, if side == 1 then math.pi else 0, 0) * CFrame.new(0, h / 2, -depth / 4)
+		table.insert(out, Build.part(parent, q))
+	end
+	return out
+end
+
+-- Pointed spike / shard: two crossed ridges whose union tapers to a single tip.
+function Build.spike(parent: Instance, cf: CFrame, width: number, h: number, props: any?): { BasePart }
+	local out = Build.ridge(parent, cf, width * 0.42, h, width, props)
+	for _, part in Build.ridge(parent, cf * CFrame.Angles(0, math.pi / 2, 0), width * 0.42, h, width, props) do
+		table.insert(out, part)
+	end
+	return out
+end
+
 function Build.neon(parent: Instance, size: Vector3, cf: CFrame, color: Color3, name: string?): BasePart
 	local part = Build.part(parent, {
 		size = size,
@@ -152,7 +186,7 @@ function Build.sign(parent: Instance, text: string, cf: CFrame, size: Vector2, c
 	label.BackgroundTransparency = 1
 	label.Text = text
 	label.TextScaled = true
-	label.Font = Enum.Font.GothamBlack
+	label.Font = Enum.Font.Fondamento
 	label.TextColor3 = textColor or Color3.fromRGB(255, 236, 200)
 	label.Parent = gui
 	return board
@@ -224,34 +258,44 @@ function Build.tree(parent: Instance, position: Vector3, scale: number, autumn: 
 			name = "Branch",
 		})
 	end
-	for i = 1, 6 do
-		local a = i / 6 * math.pi * 2 + rng:NextNumber(-0.3, 0.3)
-		local spread = if i == 6 then 0 else rng:NextNumber(2.2, 3.6)
-		local center = position + Vector3.new(math.cos(a) * spread * scale, h + rng:NextNumber(-1, 2.5) * scale, math.sin(a) * spread * scale)
-		if i == 6 then
-			center = position + Vector3.new(0, h + 3 * scale, 0)
-		end
-		Build.ball(model, rng:NextNumber(4.5, 6.5) * scale, center, palette[rng:NextInteger(1, #palette)], Enum.Material.Grass, "Canopy")
+	-- Canopy: overlapping squashed leaf clumps of varied tint, wider than tall, so the crown
+	-- reads as foliage rather than a stack of balls.
+	for i = 1, 14 do
+		local a = i * 2.4 + rng:NextNumber(-0.35, 0.35)
+		local layer = (i - 1) / 13 -- low wide clumps first, smaller ones towards the crown
+		local spread = rng:NextNumber(1.2, 3.8) * (1 - layer * 0.6)
+		local center = position + Vector3.new(math.cos(a) * spread * scale, h + (layer * 4.2 + rng:NextNumber(-1, 1)) * scale, math.sin(a) * spread * scale)
+		local w = rng:NextNumber(3.6, 5.4) * (1 - layer * 0.3) * scale
+		Build.ellipsoid(model, {
+			size = Vector3.new(w, w * rng:NextNumber(0.7, 0.9), w * rng:NextNumber(0.85, 1.05)),
+			cframe = CFrame.new(center) * CFrame.Angles(rng:NextNumber(-0.25, 0.25), a, rng:NextNumber(-0.25, 0.25)),
+			color = palette[rng:NextInteger(1, #palette)],
+			material = Enum.Material.Grass,
+			name = "Canopy",
+		})
 	end
 	return model
 end
 
--- Stylised low-poly conifer: stacked, rotated tiers.
+-- Stylised conifer: each tier is three crossed triangular ridges, giving a star-shaped cone
+-- that narrows towards a pointed top.
 function Build.pine(parent: Instance, position: Vector3, scale: number)
 	local model = Build.model(parent, "Pine")
-	Build.cylinder(model, 1.4 * scale, 5 * scale, position + Vector3.new(0, 2.5 * scale, 0), Color3.fromRGB(80, 56, 42), Enum.Material.Wood, "Trunk")
-	local y = 4 * scale
+	Build.cylinder(model, 1.3 * scale, 5 * scale, position + Vector3.new(0, 2.5 * scale, 0), Color3.fromRGB(80, 56, 42), Enum.Material.Wood, "Trunk")
+	local y = 3 * scale
+	local twist = rng:NextNumber(0, math.pi)
 	for i = 1, 4 do
-		local w = (9 - i * 1.8) * scale
-		local h = 3.2 * scale
-		Build.part(model, {
-			size = Vector3.new(w, h, w),
-			cframe = CFrame.new(position + Vector3.new(0, y + h / 2, 0)) * CFrame.Angles(0, math.rad(i * 25), 0),
-			color = Color3.fromRGB(46, 92 + i * 8, 60),
-			material = Enum.Material.Grass,
-			name = "Tier",
-		})
-		y += h * 0.78
+		local w = (10 - i * 1.9) * scale
+		local h = (4.6 - i * 0.35) * scale
+		local color = Color3.fromRGB(40, 86 + i * 9, 56)
+		for j = 0, 2 do
+			Build.ridge(model, CFrame.new(position + Vector3.new(0, y, 0)) * CFrame.Angles(0, twist + i * 0.5 + j * math.pi / 3, 0), w * 0.34, h, w, {
+				color = color,
+				material = Enum.Material.Grass,
+				name = "Tier",
+			})
+		end
+		y += h * 0.62
 	end
 	return model
 end
@@ -263,45 +307,61 @@ function Build.flowers(parent: Instance, position: Vector3, r: Random)
 	for _ = 1, 9 do
 		local p = position + Vector3.new(r:NextNumber(-3, 3), 0, r:NextNumber(-3, 3))
 		Build.part(model, { size = Vector3.new(0.15, 1, 0.15), cframe = CFrame.new(p + Vector3.new(0, 0.5, 0)), color = Color3.fromRGB(70, 130, 60), material = Enum.Material.Grass, name = "Stem", collide = false })
-		local bloom = Build.ball(model, 0.55, p + Vector3.new(0, 1.05, 0), colors[r:NextInteger(1, #colors)], Enum.Material.SmoothPlastic, "Bloom")
-		bloom.CanCollide = false
+		Build.ellipsoid(model, { size = Vector3.new(0.7, 0.35, 0.7), cframe = CFrame.new(p + Vector3.new(0, 1.05, 0)), color = colors[r:NextInteger(1, #colors)], name = "Bloom", collide = false })
 	end
 	return model
 end
 
+-- Weathered boulder pile: a large squashed boulder, smaller stones leaning on it and a
+-- sharp broken chip, so outcrops look eroded instead of boxy.
 function Build.rock(parent: Instance, position: Vector3, scale: number, color: Color3?)
 	local model = Build.model(parent, "Rock")
 	local c = color or Color3.fromRGB(92, 84, 80)
-	for i = 1, 3 do
-		local s = Vector3.new(rng:NextNumber(3, 6), rng:NextNumber(2, 5), rng:NextNumber(3, 6)) * scale
-		Build.block(
-			model,
-			s,
-			CFrame.new(position + Vector3.new(rng:NextNumber(-2, 2) * scale, s.Y / 2 - 0.5, rng:NextNumber(-2, 2) * scale))
-				* CFrame.Angles(rng:NextNumber(-0.3, 0.3), rng:NextNumber(0, math.pi), rng:NextNumber(-0.3, 0.3)),
-			c,
-			Enum.Material.Slate,
-			"Stone" .. i
-		)
+	local main = Vector3.new(rng:NextNumber(5, 7), rng:NextNumber(3, 4.5), rng:NextNumber(4.5, 6.5)) * scale
+	Build.ellipsoid(model, {
+		size = main,
+		cframe = CFrame.new(position + Vector3.new(0, main.Y * 0.35, 0)) * CFrame.Angles(rng:NextNumber(-0.2, 0.2), rng:NextNumber(0, math.pi), rng:NextNumber(-0.2, 0.2)),
+		color = c,
+		material = Enum.Material.Slate,
+		name = "Stone1",
+	})
+	for i = 2, 3 do
+		local sz = Vector3.new(rng:NextNumber(2, 3.5), rng:NextNumber(1.5, 3), rng:NextNumber(2, 3.5)) * scale
+		local a = rng:NextNumber(0, math.pi * 2)
+		Build.ellipsoid(model, {
+			size = sz,
+			cframe = CFrame.new(position + Vector3.new(math.cos(a) * main.X * 0.45, sz.Y * 0.3, math.sin(a) * main.Z * 0.45)) * CFrame.Angles(rng:NextNumber(-0.5, 0.5), a, rng:NextNumber(-0.5, 0.5)),
+			color = c:Lerp(Color3.new(0, 0, 0), rng:NextNumber(0, 0.15)),
+			material = Enum.Material.Slate,
+			name = "Stone" .. i,
+		})
 	end
+	Build.spike(model, CFrame.new(position + Vector3.new(rng:NextNumber(-1, 1) * scale, main.Y * 0.45, rng:NextNumber(-1, 1) * scale)) * CFrame.Angles(rng:NextNumber(-0.4, 0.4), rng:NextNumber(0, math.pi), rng:NextNumber(-0.4, 0.4)), 2.2 * scale, main.Y * 0.8, {
+		color = c:Lerp(Color3.new(1, 1, 1), 0.06),
+		material = Enum.Material.Slate,
+		name = "Chip",
+	})
 	return model
 end
 
+-- Crystal cluster: pointed shards fanning out from a shared root.
 function Build.crystal(parent: Instance, position: Vector3, color: Color3, scale: number, collide: boolean?)
 	local model = Build.model(parent, "Crystal")
-	for _ = 1, 4 do
-		local h = rng:NextNumber(3, 7) * scale
-		local part = Build.part(model, {
-			size = Vector3.new(1.2 * scale, h, 1.2 * scale),
-			cframe = CFrame.new(position + Vector3.new(rng:NextNumber(-1.5, 1.5) * scale, h / 2 - 0.3, rng:NextNumber(-1.5, 1.5) * scale))
-				* CFrame.Angles(rng:NextNumber(-0.4, 0.4), rng:NextNumber(0, math.pi), rng:NextNumber(-0.4, 0.4)),
+	for i = 1, 5 do
+		local h = (if i == 1 then rng:NextNumber(6, 8) else rng:NextNumber(2.5, 5.5)) * scale
+		local tilt = if i == 1 then 0.1 else 0.55
+		local cf = CFrame.new(position + Vector3.new(rng:NextNumber(-1, 1) * scale, -0.3, rng:NextNumber(-1, 1) * scale))
+			* CFrame.Angles(rng:NextNumber(-tilt, tilt), rng:NextNumber(0, math.pi), rng:NextNumber(-tilt, tilt))
+		for _, part in Build.spike(model, cf, (if i == 1 then 1.8 else 1.2) * scale, h, {
 			color = color,
 			material = Enum.Material.Neon,
 			collide = collide == true,
 			name = "Shard",
 			castShadow = false,
-		})
-		part.Transparency = 0.15
+			transparency = 0.15,
+		}) do
+			part.CanQuery = collide == true
+		end
 	end
 	return model
 end
@@ -329,7 +389,17 @@ end
 function Build.torch(parent: Instance, position: Vector3, color: Color3?)
 	local model = Build.model(parent, "Torch")
 	Build.cylinder(model, 0.6, 5, position + Vector3.new(0, 2.5, 0), Color3.fromRGB(60, 46, 36), Enum.Material.Wood, "Pole")
-	local flame = Build.neon(model, Vector3.new(0.9, 1.2, 0.9), CFrame.new(position + Vector3.new(0, 5.4, 0)), color or Color3.fromRGB(255, 150, 60), "Flame")
+	Build.part(model, { size = Vector3.new(1.1, 0.5, 1.1), cframe = CFrame.new(position + Vector3.new(0, 5.05, 0)), color = Color3.fromRGB(70, 60, 54), material = Enum.Material.Metal, name = "Bowl" })
+	local flame = Build.ellipsoid(model, {
+		size = Vector3.new(0.9, 1.6, 0.9),
+		cframe = CFrame.new(position + Vector3.new(0, 5.8, 0)),
+		color = color or Color3.fromRGB(255, 150, 60),
+		material = Enum.Material.Neon,
+		name = "Flame",
+		collide = false,
+		castShadow = false,
+	})
+	Build.spike(model, CFrame.new(position + Vector3.new(0, 6.2, 0)), 0.6, 1.1, { color = Color3.fromRGB(255, 220, 140), material = Enum.Material.Neon, collide = false, castShadow = false, name = "FlameTip" })
 	Build.light(flame, color or Color3.fromRGB(255, 160, 80), 18, 1.6)
 	Build.particles(flame, color or Color3.fromRGB(255, 140, 50), 6, {
 		speed = NumberRange.new(1, 2),
