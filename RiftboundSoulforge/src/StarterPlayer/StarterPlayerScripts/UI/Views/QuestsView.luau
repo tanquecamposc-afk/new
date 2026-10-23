@@ -21,19 +21,19 @@ local CATEGORY_COLORS = {
 local function rewardText(r: any): string
 	local parts = {}
 	if r.coins then
-		table.insert(parts, r.coins .. " coins")
+		table.insert(parts, r.coins .. " monedas")
 	end
 	if r.xp then
-		table.insert(parts, r.xp .. " XP")
+		table.insert(parts, r.xp .. " EXP")
 	end
 	for item, n in r.items or {} do
 		table.insert(parts, n .. " " .. ViewUtil.itemName(item))
 	end
 	if r.essence then
-		table.insert(parts, r.essence .. " essence")
+		table.insert(parts, r.essence .. " (esencia)")
 	end
 	if r.weaponMastery then
-		table.insert(parts, r.weaponMastery .. " katana mastery")
+		table.insert(parts, r.weaponMastery .. " maestría de katana")
 	end
 	return table.concat(parts, ", ")
 end
@@ -43,7 +43,7 @@ function View.mount(container: Instance, _ctx: any)
 		local order = 0
 		local entries = QuestLogic.entries(profile)
 		local sections = {
-			{ "Ready to claim", function(e)
+			{ "Lista para reclamar", function(e)
 				return e.available and e.complete and not e.claimed
 			end },
 			{ "Active", function(e)
@@ -71,22 +71,22 @@ function View.mount(container: Instance, _ctx: any)
 					local def = e.def
 					local color = CATEGORY_COLORS[def.category] or C.Text
 					local card = Kit.card(body, def.title, order, color)
-					Kit.chip(card, def.category .. (if e.daily then " • resets daily" else ""), color, 1)
+					Kit.chip(card, def.category .. (if e.daily then " • se reinicia a diario" else ""), color, 1)
 					ViewUtil.para(card, def.description or "", C.TextDim, 2, 13)
 					if section[1] == "Locked" then
-						ViewUtil.para(card, "Requires: " .. table.concat(def.requires or {}, ", "), C.TextMuted, 3, 12)
+						ViewUtil.para(card, "Requiere: " .. table.concat(def.requires or {}, ", "), C.TextMuted, 3, 12)
 					elseif not e.claimed then
 						for j, objective in def.objectives do
 							local n = math.min(e.counts[j] or 0, objective.count)
 							ViewUtil.para(card, string.format("%s %s  %d/%d", if n >= objective.count then "✔" else "•", objective.label, n, objective.count), if n >= objective.count then C.Good else C.Text, 3 + j, 13)
 						end
 						if def.hint then
-							ViewUtil.para(card, "Tip: " .. def.hint, C.TextMuted, 10, 12)
+							ViewUtil.para(card, "Consejo: " .. def.hint, C.TextMuted, 10, 12)
 						end
 					end
-					ViewUtil.para(card, "Rewards: " .. rewardText(def.rewards), C.Gold, 11, 12)
+					ViewUtil.para(card, "Recompensas: " .. rewardText(def.rewards), C.Gold, 11, 12)
 					if e.complete and not e.claimed and e.available then
-						Kit.button({ parent = card, text = "Claim reward", color = C.Good, order = 12, onClick = function()
+						Kit.button({ parent = card, text = "Reclamar recompensa", color = C.Good, order = 12, onClick = function()
 							ClientState.request("ClaimQuest", { id = def.id })
 						end })
 					end

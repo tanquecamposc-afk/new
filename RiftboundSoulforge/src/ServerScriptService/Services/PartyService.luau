@@ -60,14 +60,14 @@ local function removeMember(player: Player, reason: string?)
 		for _, m in party.members do
 			membership[m] = nil
 			clearFor(m)
-			Net.event("Notify"):FireClient(m, "Party", "Your party was disbanded.")
+			Net.event("Notify"):FireClient(m, "Party", "Tu grupo se disolvió.")
 		end
 		parties[party.id] = nil
 		return
 	end
 	if party.leader == player then
 		party.leader = party.members[1]
-		Net.event("Notify"):FireClient(party.leader, "Party", "You are now the party leader.")
+		Net.event("Notify"):FireClient(party.leader, "Party", "Ahora eres el líder del grupo.")
 	end
 	syncParty(party)
 end
@@ -102,37 +102,37 @@ function PartyService.Start()
 	Requests.on("PartyInvite", "Party", function(player, args)
 		local target = type(args.userId) == "number" and Players:GetPlayerByUserId(args.userId)
 		if not target or target == player then
-			return false, "Player not found."
+			return false, "Jugador no encontrado."
 		end
 		local party = partyOf(player)
 		if party and party.leader ~= player then
-			return false, "Only the leader can invite."
+			return false, "Solo el líder puede invitar."
 		end
 		if party and #party.members >= GameConfig.Party.MaxSize then
-			return false, "Party is full (max " .. GameConfig.Party.MaxSize .. ")."
+			return false, "El grupo está lleno (máx. " .. GameConfig.Party.MaxSize .. ")."
 		end
 		if partyOf(target) then
-			return false, target.DisplayName .. " is already in a party."
+			return false, target.DisplayName .. " ya está en un grupo."
 		end
 		invites[target] = invites[target] or {}
 		invites[target][player] = os.clock() + GameConfig.Party.InviteTimeout
-		Net.event("Notify"):FireClient(target, "PartyInvite", player.DisplayName .. " invited you to a party.", { from = player.UserId, name = player.DisplayName })
-		return true, "Invite sent to " .. target.DisplayName .. "."
+		Net.event("Notify"):FireClient(target, "PartyInvite", player.DisplayName .. " te invitó a su grupo.", { from = player.UserId, name = player.DisplayName })
+		return true, "Invitación enviada a " .. target.DisplayName .. "."
 	end)
 
 	Requests.on("PartyRespond", "Party", function(player, args)
 		local inviter = type(args.userId) == "number" and Players:GetPlayerByUserId(args.userId)
 		local pending = invites[player]
 		if not inviter or not pending or not pending[inviter] or pending[inviter] < os.clock() then
-			return false, "That invite expired."
+			return false, "Esa invitación caducó."
 		end
 		pending[inviter] = nil
 		if args.accept ~= true then
-			Net.event("Notify"):FireClient(inviter, "Party", player.DisplayName .. " declined your invite.")
-			return true, "Invite declined."
+			Net.event("Notify"):FireClient(inviter, "Party", player.DisplayName .. " rechazó tu invitación.")
+			return true, "Invitación rechazada."
 		end
 		if partyOf(player) then
-			return false, "Leave your current party first."
+			return false, "Sal primero de tu grupo actual."
 		end
 		local party = partyOf(inviter)
 		if not party then
@@ -142,23 +142,23 @@ function PartyService.Start()
 			membership[inviter] = party.id
 		end
 		if #party.members >= GameConfig.Party.MaxSize then
-			return false, "Party is full."
+			return false, "El grupo está lleno."
 		end
 		table.insert(party.members, player)
 		membership[player] = party.id
 		invites[player] = nil
 		syncParty(party)
 		for _, m in party.members do
-			Net.event("Notify"):FireClient(m, "Party", player.DisplayName .. " joined the party.")
+			Net.event("Notify"):FireClient(m, "Party", player.DisplayName .. " se unió al grupo.")
 		end
-		return true, "Joined " .. inviter.DisplayName .. "'s party."
+		return true, "Te uniste al grupo de " .. inviter.DisplayName .. "."
 	end)
 
 	Requests.on("PartyLeave", "Party", function(player, _args)
 		if not partyOf(player) then
-			return false, "You are not in a party."
+			return false, "No estás en un grupo."
 		end
-		removeMember(player, "You left the party.")
+		removeMember(player, "Saliste del grupo.")
 		return true, nil
 	end)
 
@@ -166,13 +166,13 @@ function PartyService.Start()
 		local party = partyOf(player)
 		local target = type(args.userId) == "number" and Players:GetPlayerByUserId(args.userId)
 		if not party or party.leader ~= player then
-			return false, "Only the leader can remove members."
+			return false, "Solo el líder puede expulsar miembros."
 		end
 		if not target or partyOf(target) ~= party or target == player then
-			return false, "Not in your party."
+			return false, "No está en tu grupo."
 		end
-		removeMember(target, "You were removed from the party.")
-		return true, target.DisplayName .. " removed."
+		removeMember(target, "Te expulsaron del grupo.")
+		return true, target.DisplayName .. " eliminado."
 	end)
 
 	Players.PlayerRemoving:Connect(function(player)

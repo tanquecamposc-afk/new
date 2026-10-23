@@ -111,10 +111,10 @@ end
 function ExpeditionService.bank(player: Player, beaconId: string): (boolean, string?)
 	local s = stateOf(player)
 	if s.banking then
-		return false, "Already banking."
+		return false, "Ya estás asegurando el botín."
 	end
 	if satchelEmpty(s) then
-		return false, "Your Satchel is empty."
+		return false, "Tu Mochila está vacía."
 	end
 	s.banking = true
 	local satchel = s.satchel
@@ -129,12 +129,12 @@ function ExpeditionService.bank(player: Player, beaconId: string): (boolean, str
 	end
 	Registry.get("QuestService").record(player, "Extract", { beacon = beaconId })
 	Registry.get("PartyService").onExtract(player)
-	Net.event("Notify"):FireClient(player, "Extract", "Loot secured!", { items = satchel.items, coins = satchel.coins })
+	Net.event("Notify"):FireClient(player, "Extract", "¡Botín asegurado!", { items = satchel.items, coins = satchel.coins })
 	Net.event("Effect"):FireAllClients("Extract", { character = player.Character })
 	Progression.present(player, "FirstExtraction", {
-		title = "Loot Secured",
-		subtitle = "Extraction",
-		body = "Banked loot is permanent. Spend it at the Forge and Artisan Bench in the Nexus.",
+		title = "Botín Asegurado",
+		subtitle = "Extracción",
+		body = "El botín asegurado es permanente. Gástalo en la Forja y el Banco del Artesano del Nexo.",
 		color = Color3.fromRGB(120, 255, 190),
 	})
 	sync(player)
@@ -216,23 +216,23 @@ local function updateRegion(player: Player)
 		Registry.get("QuestService").record(player, "EnterRegion", { region = region.id })
 		if region.id == "Frontier" then
 			Progression.present(player, "Region_Frontier", {
-				title = "Emberfall Frontier",
-				subtitle = "Depth 1 - 25% of your Satchel is lost if you fall",
-				body = "Mine ore, hunt Rift Stalkers and find what the cliffs hide.",
+				title = "Frontera de Emberfall",
+				subtitle = "Profundidad 1 - pierdes el 25% de tu Mochila si caes",
+				body = "Mina mineral, caza Acechadores de la Grieta y descubre lo que esconden los acantilados.",
 				color = Color3.fromRGB(255, 140, 80),
 			})
 		elseif region.id == "Keep" then
 			Progression.present(player, "Region_Keep", {
-				title = "The Ruined Keep",
-				subtitle = "Depth 2 - drops x1.3, 50% Satchel loss on death",
-				body = "Rune Guardians block light strikes from the front. Break them with heavy attacks.",
+				title = "La Fortaleza en Ruinas",
+				subtitle = "Profundidad 2 - botín x1,3, 50% de pérdida de Mochila al morir",
+				body = "Los Guardianes Rúnicos bloquean golpes ligeros de frente. Rómpelos con ataques pesados.",
 				color = Color3.fromRGB(150, 140, 255),
 			})
 		elseif region.id == "Arena" or region.id == "Approach" then
 			Progression.present(player, "Region_Arena", {
-				title = "The Rift Edge",
-				subtitle = "Depth 3 - drops x1.6, 75% Satchel loss on death",
-				body = "The Fracture Warden waits beyond the seal.",
+				title = "El Borde de la Grieta",
+				subtitle = "Profundidad 3 - botín x1,6, 75% de pérdida de Mochila al morir",
+				body = "El Celador de la Fractura espera tras el sello.",
 				color = Color3.fromRGB(255, 80, 160),
 			})
 		end
@@ -254,12 +254,12 @@ local function connectBeacon(prompt: ProximityPrompt, beaconId: string, position
 			return
 		end
 		if not Security.within(player, position, prompt.MaxActivationDistance + 6) then
-			Security.flag(player, "beacon out of range")
+			Security.flag(player, "faro fuera de alcance")
 			return
 		end
 		local beacon = ExpeditionConfig.Beacons[beaconId]
 		if beacon.requiresVictory and not Registry.get("BossService").victoryBeaconOpen() then
-			Net.event("Notify"):FireClient(player, "Error", "The Warden's Beacon only ignites after the Warden falls.")
+			Net.event("Notify"):FireClient(player, "Error", "El Faro del Celador solo se enciende cuando el Celador cae.")
 			return
 		end
 		local ok, message = ExpeditionService.bank(player, beaconId)
@@ -305,7 +305,7 @@ function ExpeditionService.Start()
 	local Requests = Registry.get("RequestService")
 	Requests.on("EnterExpedition", "Request", function(player, args)
 		if not Registry.get("SecurityService").within(player, points.ExpeditionPortal, 22) then
-			return false, "Stand at the Rift Portal to launch."
+			return false, "Colócate en el Portal de la Grieta para partir."
 		end
 		local moved = { player }
 		if args.withParty == true then
@@ -316,10 +316,10 @@ function ExpeditionService.Start()
 		for _, p in moved do
 			ExpeditionService.teleport(p, points.CampArrival + Vector3.new(math.random(-4, 4), 0, math.random(-4, 4)))
 			if p ~= player then
-				Net.event("Notify"):FireClient(p, "Info", player.DisplayName .. " launched the expedition with your party.")
+				Net.event("Notify"):FireClient(p, "Info", player.DisplayName .. " lanzó la expedición con tu grupo.")
 			end
 		end
-		return true, "Entering Emberfall Frontier..."
+		return true, "Entrando en la Frontera de Emberfall..."
 	end)
 
 	-- Region tracking (cheap: a handful of AABB checks per player twice a second).

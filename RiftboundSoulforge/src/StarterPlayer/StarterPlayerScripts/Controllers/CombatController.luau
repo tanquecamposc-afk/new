@@ -136,7 +136,7 @@ function CombatController.heavy()
 	end
 	local b = build()
 	if (player:GetAttribute("Stamina") or 0) < b.heavy.stamina then
-		EffectsController.floatText(root.Position + Vector3.new(0, 4, 0), "NO STAMINA", Color3.fromRGB(255, 160, 120), 22, 0.6)
+		EffectsController.floatText(root.Position + Vector3.new(0, 4, 0), "SIN AGUANTE", Color3.fromRGB(255, 160, 120), 22, 0.6)
 		return
 	end
 	local speed = b.attackSpeed
@@ -309,7 +309,7 @@ local function onFeedback(kind: string, data: any)
 			EffectsController.damageNumber(hit.position, hit.amount, color, data.finisher)
 			EffectsController.burst(hit.position, Color3.fromRGB(255, 240, 220), 10, 16)
 			if hit.guarded then
-				EffectsController.floatText(hit.position + Vector3.new(0, 5, 0), "GUARDED", color, 22, 0.6)
+				EffectsController.floatText(hit.position + Vector3.new(0, 5, 0), "BLOQUEADO", color, 22, 0.6)
 			end
 		end
 		SoundController.play("EnemyHit")
@@ -331,9 +331,9 @@ local function onFeedback(kind: string, data: any)
 		CameraController.flash(Color3.fromRGB(255, 250, 220), 0.35)
 		SoundController.play("ParrySuccess")
 		CameraController.shake(0.3)
-		EffectsController.floatText(root.Position + Vector3.new(0, 5, 0), "PERFECT PARRY", Color3.fromRGB(255, 240, 180), 34, 0.9)
+		EffectsController.floatText(root.Position + Vector3.new(0, 5, 0), "PARADA PERFECTA", Color3.fromRGB(255, 240, 180), 34, 0.9)
 	elseif kind == "Evaded" and root then
-		EffectsController.floatText(root.Position + Vector3.new(0, 4, 0), "EVADED", Color3.fromRGB(180, 220, 255), 26, 0.7)
+		EffectsController.floatText(root.Position + Vector3.new(0, 4, 0), "¡ESQUIVA!", Color3.fromRGB(180, 220, 255), 26, 0.7)
 	elseif kind == "Blocked" and root then
 		EffectsController.burst(root.Position + root.CFrame.LookVector * 2, Color3.fromRGB(200, 210, 230), 10, 10)
 	elseif kind == "GuardBroken" and root then
@@ -341,7 +341,7 @@ local function onFeedback(kind: string, data: any)
 		if c then
 			AnimationController.block(c, false)
 		end
-		EffectsController.floatText(root.Position + Vector3.new(0, 4, 0), "GUARD BROKEN", Color3.fromRGB(255, 120, 120), 30, 1)
+		EffectsController.floatText(root.Position + Vector3.new(0, 4, 0), "GUARDIA ROTA", Color3.fromRGB(255, 120, 120), 30, 1)
 		CameraController.shake(0.4)
 	elseif kind == "Hurt" then
 		if c and (data.amount or 0) >= 8 then
@@ -350,15 +350,15 @@ local function onFeedback(kind: string, data: any)
 		end
 		CameraController.shake(math.clamp((data.amount or 10) / 40, 0.1, 0.6))
 	elseif kind == "Interrupt" then
-		EffectsController.floatText(data.position + Vector3.new(0, 6, 0), "INTERRUPT!", Color3.fromRGB(120, 255, 200), 30, 0.9)
+		EffectsController.floatText(data.position + Vector3.new(0, 6, 0), "¡INTERRUMPIDO!", Color3.fromRGB(120, 255, 200), 30, 0.9)
 	elseif kind == "WeakPoint" and root then
-		EffectsController.floatText(root.Position + root.CFrame.LookVector * 6 + Vector3.new(0, 6, 0), "WEAK POINT x2", Color3.fromRGB(255, 230, 120), 26, 0.6)
+		EffectsController.floatText(root.Position + root.CFrame.LookVector * 6 + Vector3.new(0, 6, 0), "PUNTO DÉBIL x2", Color3.fromRGB(255, 230, 120), 26, 0.6)
 	elseif kind == "Immune" and root then
-		EffectsController.floatText(root.Position + root.CFrame.LookVector * 6 + Vector3.new(0, 6, 0), "IMMUNE", Color3.fromRGB(200, 200, 220), 22, 0.5)
+		EffectsController.floatText(root.Position + root.CFrame.LookVector * 6 + Vector3.new(0, 6, 0), "INMUNE", Color3.fromRGB(200, 200, 220), 22, 0.5)
 	elseif kind == "ResonanceFull" then
-		ClientState.toast("Resonance", "Resonance full! Press G to AWAKEN.")
+		ClientState.toast("Resonance", "¡Resonancia llena! Pulsa G para DESPERTAR.")
 	elseif kind == "Suppressed" then
-		ClientState.toast("Error", "Your Awakening was suppressed!")
+		ClientState.toast("Error", "¡Tu Despertar fue suprimido!")
 	end
 end
 
@@ -372,19 +372,19 @@ function CombatController.slotInfo(slot: string): (any?, string?)
 	if slot == "Q" or slot == "E" then
 		local essence = EssenceConfig.Essences[primary]
 		if not essence then
-			return nil, "No essence"
+			return nil, "Sin esencia"
 		end
 		local ability = EssenceConfig.Abilities[essence.abilities[slot]]
 		local record = profile.essences[primary]
 		if record.mastery < ability.masteryRequired then
-			return ability, string.format("%s mastery %d", essence.displayName, ability.masteryRequired)
+			return ability, string.format("%s maestría %d", essence.displayName, ability.masteryRequired)
 		end
 		return ability, nil
 	end
 	local FusionConfig = require(Shared.Config.FusionConfig)
 	local fusionId = FusionConfig.forPair(primary, profile.loadout.secondary)
 	if not fusionId then
-		return nil, "Equip 2 essences"
+		return nil, "Equipa 2 esencias"
 	end
 	local def = FusionConfig.Fusions[fusionId]
 	local record = profile.fusions[fusionId]
@@ -392,7 +392,7 @@ function CombatController.slotInfo(slot: string): (any?, string?)
 		return nil, "Unavailable"
 	end
 	if not record or not record.unlocked then
-		return EssenceConfig.Abilities[def.ability], "Locked (Codex)"
+		return EssenceConfig.Abilities[def.ability], "Bloqueada (Códice)"
 	end
 	return EssenceConfig.Abilities[def.ability], nil
 end

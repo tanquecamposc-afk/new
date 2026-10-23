@@ -53,14 +53,14 @@ local function finish(player: Player, success: boolean, reason: string?)
 		end
 		Registry.get("QuestService").record(player, "Trial", { id = a.id })
 		Registry.get("ProgressionService").present(player, "Trial_" .. a.id, {
-			title = "Trial Complete",
+			title = "Prueba Completada",
 			subtitle = TrialConfig.Trials[a.id].displayName,
 			body = TrialConfig.Trials[a.id].reward,
 			color = Color3.fromRGB(120, 230, 255),
 		})
-		Net.event("Notify"):FireClient(player, "QuestComplete", "Katana Trial complete!")
+		Net.event("Notify"):FireClient(player, "QuestComplete", "¡Prueba de la Katana completada!")
 	else
-		Net.event("Notify"):FireClient(player, "Error", "Trial failed: " .. (reason or "time ran out"))
+		Net.event("Notify"):FireClient(player, "Error", "Prueba fallida: " .. (reason or "se acabó el tiempo"))
 	end
 	sync(player)
 end
@@ -87,7 +87,7 @@ local function spawnChampion(player: Player, a: Active)
 			if complete(a) then
 				finish(player, true)
 			else
-				Net.event("Notify"):FireClient(player, "Info", "The echo reforms. Finish your remaining objectives!")
+				Net.event("Notify"):FireClient(player, "Info", "El eco se recompone. ¡Termina los objetivos restantes!")
 				task.delay(1.5, function()
 					if active[player] == a then
 						spawnChampion(player, a)
@@ -131,17 +131,17 @@ function TrialService.Start()
 	Requests.on("StartTrial", "Request", function(player, args)
 		local def = TrialConfig.Trials[args.id or ""]
 		if not def then
-			return false, "Unknown trial."
+			return false, "Prueba desconocida."
 		end
 		if active[player] then
-			return false, "You are already in a trial."
+			return false, "Ya estás en una prueba."
 		end
 		if not Registry.get("SecurityService").within(player, WorldConfig.Points.TrialPedestal, 25) then
-			return false, "Start the trial at the Training Arena pedestal."
+			return false, "Inicia la prueba en el pedestal de la Arena de Entrenamiento."
 		end
 		local profile = Registry.get("PlayerDataService").get(player)
 		if profile.weapons[def.weapon].mastery < def.masteryRequired then
-			return false, string.format("Requires %s mastery %d.", def.weapon, def.masteryRequired)
+			return false, string.format("Requiere maestría %s %d.", def.weapon, def.masteryRequired)
 		end
 		local a: Active = { id = def.id, deadline = os.clock() + def.timeLimit, counts = {}, record = nil, done = false }
 		active[player] = a
@@ -149,14 +149,14 @@ function TrialService.Start()
 		sync(player)
 		task.delay(def.timeLimit, function()
 			if active[player] == a then
-				finish(player, false, "time ran out")
+				finish(player, false, "se acabó el tiempo")
 			end
 		end)
-		return true, "The Echo Duel begins!"
+		return true, "¡Comienza el Duelo del Eco!"
 	end)
 	Requests.on("AbandonTrial", "Request", function(player, _args)
 		if not active[player] then
-			return false, "No active trial."
+			return false, "No hay prueba activa."
 		end
 		finish(player, false, "abandoned")
 		return true, nil
@@ -168,9 +168,9 @@ function TrialService.Start()
 			for player, a in active do
 				local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart") :: BasePart?
 				if not root or (root.Position - WorldConfig.Points.TrainingArena).Magnitude > 70 then
-					finish(player, false, "you left the Training Arena")
+					finish(player, false, "saliste de la Arena de Entrenamiento")
 				elseif not a.done and os.clock() > a.deadline then
-					finish(player, false, "time ran out")
+					finish(player, false, "se acabó el tiempo")
 				end
 			end
 		end

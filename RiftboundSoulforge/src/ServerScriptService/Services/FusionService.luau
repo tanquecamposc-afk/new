@@ -31,22 +31,22 @@ function FusionService.researchStatus(profile: any, fusionId: string): (boolean,
 	local def = FusionConfig.Fusions[fusionId]
 	local missing = {}
 	if not def or not def.implemented then
-		return false, { "Not available in this version" }
+		return false, { "No disponible en esta versión" }
 	end
 	for _, essence in def.essences do
 		if not profile.essences[essence] or not profile.essences[essence].unlocked then
-			table.insert(missing, essence .. " essence")
+			table.insert(missing, essence .. " (esencia)")
 		end
 	end
 	local research = def.research
 	for essence, level in research.masteries do
 		local record = profile.essences[essence]
 		if not record or record.mastery < level then
-			table.insert(missing, string.format("%s mastery %d", essence, level))
+			table.insert(missing, string.format("%s maestría %d", essence, level))
 		end
 	end
 	if research.discovery and not profile.codex.discoveries[research.discovery] then
-		table.insert(missing, "Discovery: ???")
+		table.insert(missing, "Descubrimiento: ???")
 	end
 	local affordable, lacking = Costs.canAfford(profile, research.cost)
 	if not affordable then
@@ -66,11 +66,11 @@ local function unlockFusion(player: Player, profile: any, fusionId: string)
 	Progression.achieve(player, "FirstFusion")
 	Progression.present(player, "Fusion_" .. fusionId, {
 		title = def.displayName,
-		subtitle = "Fusion Technique Unlocked",
-		body = def.summary .. " Equip " .. table.concat(def.essences, " + ") .. " and press R.",
+		subtitle = "Técnica de Fusión Desbloqueada",
+		body = def.summary .. " Equipa " .. EssenceConfig.names(def.essences) .. " y pulsa R.",
 		color = def.color,
 	})
-	notify(player, "Unlock", def.displayName .. " unlocked! (R)", { color = def.color })
+	notify(player, "Unlock", def.displayName .. " ¡desbloqueado! (R)", { color = def.color })
 	Net.event("Effect"):FireClient(player, "Sound", { name = "FusionActivation" })
 end
 
@@ -97,7 +97,7 @@ function FusionService.onAbilityHit(player: Player, record: any, essences: { str
 						lastAttuneCast[player] = castId
 						fusion.attunement = math.min(def.attunement.count, fusion.attunement + 1)
 						Registry.get("PlayerDataService").markDirty(player)
-						notify(player, "Attune", string.format("%s attunement %d/%d", def.displayName, fusion.attunement, def.attunement.count), { color = def.color })
+						notify(player, "Attune", string.format("%s sintonía %d/%d", def.displayName, fusion.attunement, def.attunement.count), { color = def.color })
 						if fusion.attunement >= def.attunement.count then
 							unlockFusion(player, profile, fusionId)
 						end
@@ -109,7 +109,7 @@ function FusionService.onAbilityHit(player: Player, record: any, essences: { str
 						notify(
 							player,
 							"Hint",
-							string.format("%s and %s resonate... Research this union at the Fusion Chamber.", def.essences[1], def.essences[2]),
+							string.format("%s y %s resuenan... Investiga esta unión en la Cámara de Fusión.", def.essences[1], def.essences[2]),
 							{ color = def.color }
 						)
 					end
@@ -136,56 +136,56 @@ function FusionService.Start()
 	Requests.on("ResearchFusion", "Request", function(player, args)
 		local id = args.id
 		if type(id) ~= "string" or not FusionConfig.Fusions[id] then
-			return false, "Unknown fusion."
+			return false, "Fusión desconocida."
 		end
 		if not nearChamber(player) then
-			return false, "Research happens at the Fusion Chamber."
+			return false, "La investigación se hace en la Cámara de Fusión."
 		end
 		local profile = data(player)
 		local fusion = profile.fusions[id]
 		if not fusion then
-			return false, "This fusion cannot be researched yet."
+			return false, "Esta fusión aún no se puede investigar."
 		end
 		if fusion.researched then
-			return false, "Already researched."
+			return false, "Ya investigado."
 		end
 		local ok, missing = FusionService.researchStatus(profile, id)
 		if not ok then
-			return false, "Missing: " .. table.concat(missing, ", ")
+			return false, "Falta: " .. table.concat(missing, ", ")
 		end
 		if not Registry.get("InventoryService").spend(player, FusionConfig.Fusions[id].research.cost) then
-			return false, "Cannot afford research."
+			return false, "No puedes pagar la investigación."
 		end
 		fusion.researched = true
 		Registry.get("PlayerDataService").markDirty(player)
 		local def = FusionConfig.Fusions[id]
-		return true, "Research complete. Now attune: " .. def.attunement.description
+		return true, "Investigación completa. Ahora sintoniza: " .. def.attunement.description
 	end)
 
 	Requests.on("AttuneEssence", "Request", function(player, args)
 		local essence = args.essence
 		if not EssenceConfig.isPlayable(essence) then
-			return false, "Unknown essence."
+			return false, "Esencia desconocida."
 		end
 		if not nearChamber(player) then
-			return false, "Attunement happens at the Fusion Chamber."
+			return false, "La sintonía se hace en la Cámara de Fusión."
 		end
 		local profile = data(player)
 		local def = EssenceConfig.Essences[essence]
 		if profile.essences[essence].unlocked then
-			return false, "Already attuned."
+			return false, "Ya sintonizada."
 		end
 		if not def.attuneCost then
-			return false, "This essence cannot be attuned here."
+			return false, "Esta esencia no se puede sintonizar aquí."
 		end
 		if profile.level < (def.attuneLevel or 1) then
-			return false, "Requires level " .. tostring(def.attuneLevel)
+			return false, "Requiere nivel " .. tostring(def.attuneLevel)
 		end
 		if not Registry.get("InventoryService").spend(player, def.attuneCost) then
-			return false, "Missing: " .. Costs.describe(def.attuneCost)
+			return false, "Falta: " .. Costs.describe(def.attuneCost)
 		end
-		Registry.get("ProgressionService").unlockEssence(player, essence, "Attuned at the Fusion Chamber.")
-		return true, def.displayName .. " attuned."
+		Registry.get("ProgressionService").unlockEssence(player, essence, "Sintonizada en la Cámara de Fusión.")
+		return true, def.displayName .. " sintonizada."
 	end)
 
 	Players.PlayerRemoving:Connect(function(player)

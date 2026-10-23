@@ -25,24 +25,24 @@ local activeName: string? = nil
 local tabButtons: { [string]: any } = {}
 
 local MENU_TABS = {
-	{ id = "Inventory", label = "Inventory" },
-	{ id = "Loadout", label = "Loadout" },
-	{ id = "Mastery", label = "Mastery" },
-	{ id = "Quests", label = "Quests" },
-	{ id = "Codex", label = "Codex" },
-	{ id = "Party", label = "Party" },
-	{ id = "Stats", label = "Stats" },
-	{ id = "Settings", label = "Settings" },
-	{ id = "Store", label = "Store" },
-	{ id = "Help", label = "Help" },
+	{ id = "Inventory", label = "Inventario" },
+	{ id = "Loadout", label = "Equipo" },
+	{ id = "Mastery", label = "Maestría" },
+	{ id = "Quests", label = "Contratos" },
+	{ id = "Codex", label = "Códice" },
+	{ id = "Party", label = "Grupo" },
+	{ id = "Stats", label = "Estadísticas" },
+	{ id = "Settings", label = "Ajustes" },
+	{ id = "Store", label = "Tienda" },
+	{ id = "Help", label = "Ayuda" },
 }
 
 local STATION_TITLES = {
-	Forge = "THE SOULFORGE",
-	Fusion = "FUSION CHAMBER",
-	Expedition = "RIFT PORTAL",
-	BossGate = "WARDEN GATE",
-	Trial = "KATANA TRIAL",
+	Forge = "LA SOULFORGE",
+	Fusion = "CÁMARA DE FUSIÓN",
+	Expedition = "PORTAL DE LA GRIETA",
+	BossGate = "PUERTA DEL CELADOR",
+	Trial = "PRUEBA DE LA KATANA",
 }
 
 local function close()
@@ -69,7 +69,7 @@ local function mountView(name: string, data: any?)
 	Kit.clear(content :: Frame)
 	local module = Views:FindFirstChild(name .. "View")
 	if not module then
-		Kit.text({ parent = content, text = "This view is not available yet.", color = C.TextDim })
+		Kit.text({ parent = content, text = "Esta vista aún no está disponible.", color = C.TextDim })
 		return
 	end
 	local view = require(module) :: any

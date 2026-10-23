@@ -295,7 +295,7 @@ local function awaken(player: Player, ps: PState)
 	if t < ps.awakenedUntil then
 		-- Second press: signature technique (once per awakening).
 		if ps.signatureUsed then
-			feedback(player, "Rejected", { action = "Awaken", reason = "Signature already used" })
+			feedback(player, "Rejected", { action = "Awaken", reason = "Técnica firma ya usada" })
 			return
 		end
 		local ok = canAct(ps, t)
@@ -309,7 +309,7 @@ local function awaken(player: Player, ps: PState)
 		return
 	end
 	if ps.resonance < CFG.ResonanceMax then
-		feedback(player, "Rejected", { action = "Awaken", reason = "Resonance not full" })
+		feedback(player, "Rejected", { action = "Awaken", reason = "Resonancia incompleta" })
 		return
 	end
 	local primary = profile.loadout.primary
@@ -367,8 +367,8 @@ local function awaken(player: Player, ps: PState)
 	Progression.achieve(player, "FirstAwakening")
 	Progression.present(player, "FirstAwakening", {
 		title = form.displayName,
-		subtitle = "Resonance Awakening",
-		body = form.description .. " Press G again for " .. form.signature.displayName .. ". Lasts " .. duration .. "s.",
+		subtitle = "Despertar de Resonancia",
+		body = form.description .. " Pulsa G otra vez para " .. form.signature.displayName .. ". Dura " .. duration .. "s.",
 		color = form.color,
 	})
 	Registry.get("QuestService").record(player, "Awaken", { form = form.id })
@@ -673,11 +673,11 @@ local function useTonic(player: Player, ps: PState)
 		return
 	end
 	if ps.humanoid.Health >= ps.humanoid.MaxHealth then
-		feedback(player, "Rejected", { action = "Tonic", reason = "Health is full" })
+		feedback(player, "Rejected", { action = "Tonic", reason = "La salud está llena" })
 		return
 	end
 	if not Registry.get("InventoryService").spend(player, { EmberTonic = 1 }) then
-		feedback(player, "Rejected", { action = "Tonic", reason = "No Ember Tonics (craft them at the Artisan Bench)" })
+		feedback(player, "Rejected", { action = "Tonic", reason = "No tienes Tónicos de Brasa (fabrícalos en el Banco del Artesano)" })
 		return
 	end
 	ps.tonicReadyAt = t + 8
@@ -693,34 +693,34 @@ local function abilityForSlot(profile: any, slot: string): (string?, string?, { 
 	if slot == "Q" or slot == "E" then
 		local essence = EssenceConfig.Essences[primary]
 		if not essence or not essence.implemented then
-			return nil, "No essence equipped", nil
+			return nil, "Sin esencia equipada", nil
 		end
 		local abilityId = essence.abilities[slot]
 		local ability = EssenceConfig.Abilities[abilityId]
 		local record = profile.essences[primary]
 		if not record or not record.unlocked then
-			return nil, "Essence locked", nil
+			return nil, "Esencia bloqueada", nil
 		end
 		if record.mastery < ability.masteryRequired then
-			return nil, string.format("%s needs %s mastery %d", ability.displayName, essence.displayName, ability.masteryRequired), nil
+			return nil, string.format("%s necesita %s maestría %d", ability.displayName, essence.displayName, ability.masteryRequired), nil
 		end
 		return abilityId, nil, { primary }
 	elseif slot == "R" then
 		local fusionId = FusionConfig.forPair(primary, profile.loadout.secondary)
 		if not fusionId then
-			return nil, "Equip two compatible essences for a fusion", nil
+			return nil, "Equipa dos esencias compatibles para una fusión", nil
 		end
 		local def = FusionConfig.Fusions[fusionId]
 		if not def.implemented then
-			return nil, def.displayName .. " cannot be cast yet", nil
+			return nil, def.displayName .. " aún no se puede lanzar", nil
 		end
 		local record = profile.fusions[fusionId]
 		if not record or not record.unlocked then
-			return nil, def.displayName .. " is not unlocked (see the Fusion Codex)", nil
+			return nil, def.displayName .. " no está desbloqueada (mira el Códice de Fusiones)", nil
 		end
 		return def.ability, nil, def.essences
 	end
-	return nil, "Invalid slot", nil
+	return nil, "Ranura no válida", nil
 end
 CombatService.abilityForSlot = abilityForSlot
 

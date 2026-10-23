@@ -8,27 +8,27 @@ local C = Theme.Colors
 local View = {}
 
 local SECTIONS = {
-	{ "Getting started", {
-		"1. Follow the golden beam: it points to your current main contract.",
-		"2. Training Arena (east): strike the dummies, then parry and dodge the Sparring Golem.",
-		"3. Rift Portal (south): enter Emberfall Frontier. Mine ore, hunt, explore.",
-		"4. Bank your Satchel at an Extraction Beacon, then upgrade at the Forge.",
+	{ "Primeros pasos", {
+		"1. Sigue el haz dorado: apunta a tu contrato principal.",
+		"2. Arena de Entrenamiento (este): golpea los muñecos, luego para y esquiva al Gólem de Práctica.",
+		"3. Portal de la Grieta (sur): entra en la Frontera de Emberfall. Mina, caza y explora.",
+		"4. Asegura tu Mochila en un Faro de Extracción y mejora tu arma en la Forja.",
 	} },
-	{ "Keyboard & mouse", {
-		"LMB light combo (hold to chain) • V heavy • RMB block (tap right before a hit = Perfect Parry)",
-		"Shift dodge (invulnerable briefly) • Q / E essence abilities • R fusion technique",
-		"G Awaken when Resonance is full (G again = signature) • H Ember Tonic • T lock-on • M menu • F interact",
+	{ "Teclado y ratón", {
+		"Clic izq. combo ligero (mantén para encadenar) • V pesado • Clic der. bloquear (justo antes del golpe = Parada Perfecta)",
+		"Shift esquivar (invulnerable un instante) • Q / E habilidades de esencia • R técnica de fusión",
+		"G Despertar con Resonancia llena (G otra vez = técnica firma) • H Tónico de Brasa • T fijar objetivo • M menú • F interactuar",
 	} },
-	{ "Gamepad", { "R2 light • R1 heavy • L2 block • B dodge • X / Y abilities • L1 fusion • D-Pad Up awaken • D-Pad Down tonic • R3 lock-on • Select menu" } },
-	{ "Touch", { "On-screen buttons on the right: ATTACK, HEAVY, BLOCK (hold), DODGE, Q, E, R, AWAKEN, LOCK, TONIC. Tap prompts to interact." } },
-	{ "Reading attacks", {
-		"Red areas fill up before they hit. '!' = can be parried. '⚠' = dodge or leave. '◎' ring = stand in the centre or outside.",
-		"'OPEN! STRIKE' above an enemy = punish window. Guardians block light hits from the front: use heavy attacks.",
+	{ "Gamepad", { "R2 ligero • R1 pesado • L2 bloquear • B esquivar • X / Y habilidades • L1 fusión • Cruceta arriba despertar • Cruceta abajo tónico • R3 fijar • Select menú" } },
+	{ "Táctil", { "Botones en pantalla a la derecha: ATAQUE, PESADO, BLOQUEO (mantener), ESQUIVA, Q, E, R, DESPERTAR, FIJAR, TÓNICO. Toca los avisos para interactuar." } },
+	{ "Leer los ataques", {
+		"Las zonas rojas se llenan antes de golpear. '!' = se puede parar. '⚠' = esquiva o sal. Anillo '◎' = quédate en el centro o fuera.",
+		"'¡ABIERTO! GOLPEA' sobre un enemigo = ventana de castigo. Los Guardianes bloquean golpes ligeros de frente: usa ataques pesados.",
 	} },
-	{ "Resonance & Awakening", { "Resonance builds from hits, combos, perfect parries, dodging telegraphs and interrupting. Full = press G. After an awakening you burn out for 10s. The Warden's Suppression Pulse ends awakenings." } },
-	{ "Fusion", { "Find the right knowledge, research the union at the Fusion Chamber, then attune it in combat by chaining one essence into the other on the same enemy." } },
-	{ "Co-op", { "Different players chaining complementary essences on the same enemies trigger Cooperative Resonance. Against the Warden, a perfect parry followed by a teammate's strike on its back opens a Breach." } },
-	{ "Risk", { "Depth 1/2/3 loses 25/50/75% of your Satchel on death. Mastery, XP, unlocks, achievements and purchases are never lost." } },
+	{ "Resonancia y Despertar", { "La resonancia crece con golpes, combos, paradas perfectas, esquivas de ataques anunciados e interrupciones. Llena = pulsa G. Tras un despertar quedas agotado 10 s. El Pulso Supresor del Celador termina los despertares." } },
+	{ "Fusion", { "Consigue el conocimiento, investiga la unión en la Cámara de Fusión y sintonízala en combate encadenando una esencia tras la otra sobre el mismo enemigo." } },
+	{ "Cooperativo", { "Si varios jugadores encadenan esencias complementarias sobre los mismos enemigos, se activa la Resonancia Cooperativa. Contra el Celador, una parada perfecta seguida del golpe de un compañero en su espalda abre una Brecha." } },
+	{ "Risk", { "Las profundidades 1/2/3 pierden el 25/50/75% de la Mochila al morir. Maestría, EXP, desbloqueos, logros y compras nunca se pierden." } },
 }
 
 function View.mount(container: Instance, _ctx: any)
@@ -40,7 +40,7 @@ function View.mount(container: Instance, _ctx: any)
 			end
 		end
 		if UserInputService.TouchEnabled then
-			ViewUtil.para(body, "Touch device detected: touch controls are enabled.", C.Good, 99)
+			ViewUtil.para(body, "Dispositivo táctil detectado: controles táctiles activados.", C.Good, 99)
 		end
 	end, {})
 end

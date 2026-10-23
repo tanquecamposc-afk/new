@@ -21,17 +21,17 @@ WeaponConfig.Weapons = {
 	Katana = {
 		id = "Katana",
 		implemented = true,
-		displayName = "Riftsteel Katana",
+		displayName = "Katana de Acero de Grieta",
 		family = "Blade",
-		description = "A fast, precise blade. Chains light strikes, punishes with a drawn heavy cut and rewards perfect guards.",
+		description = "Una hoja rápida y precisa. Encadena golpes ligeros, castiga con un tajo pesado desenvainado y premia las guardias perfectas.",
 		baseDamage = 12,
 		comboResetTime = 0.9,
 		light = {
-			{ name = "Rising Cut", damage = 1.0, windup = 0.12, recovery = 0.26, range = 8, width = 8, resonance = 2 },
-			{ name = "Return Cut", damage = 1.0, windup = 0.11, recovery = 0.26, range = 8, width = 8, resonance = 2 },
-			{ name = "Crescent Sweep", damage = 1.25, windup = 0.14, recovery = 0.34, range = 8.5, width = 11, resonance = 3 },
+			{ name = "Tajo Ascendente", damage = 1.0, windup = 0.12, recovery = 0.26, range = 8, width = 8, resonance = 2 },
+			{ name = "Tajo de Retorno", damage = 1.0, windup = 0.11, recovery = 0.26, range = 8, width = 8, resonance = 2 },
+			{ name = "Barrido Creciente", damage = 1.25, windup = 0.14, recovery = 0.34, range = 8.5, width = 11, resonance = 3 },
 			{
-				name = "Rift Severance",
+				name = "Corte de Grieta",
 				damage = 1.8,
 				windup = 0.2,
 				recovery = 0.5,
@@ -44,7 +44,7 @@ WeaponConfig.Weapons = {
 			},
 		} :: { Strike },
 		heavy = {
-			name = "Drawn Cut",
+			name = "Tajo Desenvainado",
 			damage = 2.6,
 			windup = 0.42,
 			recovery = 0.55,
@@ -60,12 +60,12 @@ WeaponConfig.Weapons = {
 		trailColor = Color3.fromRGB(235, 240, 255),
 		-- Mastery level -> human readable unlock. Mechanics read the numbers on the moves themselves.
 		masteryUnlocks = {
-			[2] = "Rising Draw: heavy attacks stagger standard enemies for longer.",
-			[3] = "Rift Severance: a 4th light strike finisher.",
-			[4] = "Katana Trial unlocked at the Training Arena.",
-			[5] = "Evolution: choose Tempest Edge or Aegis Edge (requires the Katana Trial).",
-			[7] = "Edge Resonance: +15% resonance from katana hits.",
-			[10] = "Rift Master: +10% katana damage.",
+			[2] = "Desenvaine Ascendente: los ataques pesados aturden más tiempo a los enemigos comunes.",
+			[3] = "Corte de Grieta: un 4.º golpe ligero de remate.",
+			[4] = "Prueba de la Katana desbloqueada en la Arena de Entrenamiento.",
+			[5] = "Evolución: elige Filo Tempestad o Filo Égida (requiere la Prueba de la Katana).",
+			[7] = "Resonancia del Filo: +15% de resonancia con golpes de katana.",
+			[10] = "Maestro de la Grieta: +10% de daño de katana.",
 		},
 		maxMastery = 10,
 		evolutionMastery = 5,
@@ -73,19 +73,19 @@ WeaponConfig.Weapons = {
 		evolutions = {
 			Tempest = {
 				id = "Tempest",
-				displayName = "Tempest Edge",
-				summary = "Rapid combos, mobility and precise counters.",
+				displayName = "Filo Tempestad",
+				summary = "Combos rápidos, movilidad y contraataques precisos.",
 				details = {
-					"Attack speed +15%.",
-					"5th light strike: Gale Flurry.",
-					"Heavy becomes Gale Thrust: a lunging dash strike.",
-					"Dodge cooldown -40%.",
+					"Velocidad de ataque +15%.",
+					"5.º golpe ligero: Ráfaga de Vendaval.",
+					"El pesado se convierte en Estocada de Vendaval: un tajo con embestida.",
+					"Enfriamiento de esquiva -40%.",
 				},
 				trailColor = Color3.fromRGB(110, 230, 255),
 				attackSpeed = 1.15,
 				dodgeCooldownMult = 0.6,
 				extraLight = {
-					name = "Gale Flurry",
+					name = "Ráfaga de Vendaval",
 					damage = 1.6,
 					windup = 0.12,
 					recovery = 0.45,
@@ -96,7 +96,7 @@ WeaponConfig.Weapons = {
 					stagger = 0.3,
 				},
 				heavy = {
-					name = "Gale Thrust",
+					name = "Estocada de Vendaval",
 					damage = 2.3,
 					windup = 0.25,
 					recovery = 0.5,
@@ -111,13 +111,13 @@ WeaponConfig.Weapons = {
 			},
 			Aegis = {
 				id = "Aegis",
-				displayName = "Aegis Edge",
-				summary = "Defensive parries, heavy punishments and protective energy.",
+				displayName = "Filo Égida",
+				summary = "Paradas defensivas, castigos pesados y energía protectora.",
 				details = {
-					"Perfect parry window +0.08s.",
-					"Perfect parries trigger Aegis Riposte (2x damage counter).",
-					"Heavy becomes Bulwark Slam: an area slam that grants a 30% damage shield.",
-					"Block damage reduction +15%.",
+					"Ventana de parada perfecta +0,08 s.",
+					"Las paradas perfectas activan Réplica Égida (contraataque de daño x2).",
+					"El pesado se convierte en Golpe Baluarte: un golpe en área que otorga un escudo del 30% del daño.",
+					"Reducción de daño al bloquear +15%.",
 				},
 				trailColor = Color3.fromRGB(255, 205, 90),
 				attackSpeed = 1.0,
@@ -125,7 +125,7 @@ WeaponConfig.Weapons = {
 				blockBonus = 0.15,
 				riposteDamage = 2.0,
 				heavy = {
-					name = "Bulwark Slam",
+					name = "Golpe Baluarte",
 					damage = 2.4,
 					windup = 0.5,
 					recovery = 0.6,
@@ -145,12 +145,12 @@ WeaponConfig.Weapons = {
 
 	-- Planned families. They are listed so the Codex can tease them, but `implemented = false`
 	-- keeps them out of every equip / craft path until a real moveset exists.
-	Greatsword = { id = "Greatsword", implemented = false, displayName = "Greatsword", family = "Heavy" },
-	DualBlades = { id = "DualBlades", implemented = false, displayName = "Dual Blades", family = "Blade" },
-	ArcaneStaff = { id = "ArcaneStaff", implemented = false, displayName = "Arcane Staff", family = "Caster" },
-	Gauntlets = { id = "Gauntlets", implemented = false, displayName = "Gauntlets", family = "Fist" },
-	Spear = { id = "Spear", implemented = false, displayName = "Spear", family = "Polearm" },
-	Scythe = { id = "Scythe", implemented = false, displayName = "Scythe", family = "Reaper" },
+	Greatsword = { id = "Greatsword", implemented = false, displayName = "Mandoble", family = "Heavy" },
+	DualBlades = { id = "DualBlades", implemented = false, displayName = "Doble Hoja", family = "Blade" },
+	ArcaneStaff = { id = "ArcaneStaff", implemented = false, displayName = "Bastón Arcano", family = "Caster" },
+	Gauntlets = { id = "Gauntlets", implemented = false, displayName = "Guanteletes", family = "Fist" },
+	Spear = { id = "Spear", implemented = false, displayName = "Lanza", family = "Polearm" },
+	Scythe = { id = "Scythe", implemented = false, displayName = "Guadaña", family = "Reaper" },
 }
 
 WeaponConfig.Order = { "Katana", "Greatsword", "DualBlades", "ArcaneStaff", "Gauntlets", "Spear", "Scythe" }
@@ -161,39 +161,39 @@ WeaponConfig.MaxUpgrade = 5
 
 -- Tempers: one active modification per weapon, chosen at the forge.
 WeaponConfig.Tempers = {
-	None = { id = "None", displayName = "Untempered", description = "No modification." },
+	None = { id = "None", displayName = "Sin temple", description = "Sin modificación." },
 	Swift = {
 		id = "Swift",
-		displayName = "Swift Temper",
-		description = "Attack speed +10%, damage -5%.",
+		displayName = "Temple Veloz",
+		description = "Velocidad de ataque +10%, daño -5%.",
 		attackSpeed = 1.1,
 		damage = 0.95,
 	},
 	Heavy = {
 		id = "Heavy",
-		displayName = "Heavy Temper",
-		description = "Heavy attacks +25% damage and +0.3s stagger.",
+		displayName = "Temple Pesado",
+		description = "Ataques pesados +25% de daño y +0,3 s de aturdimiento.",
 		heavyDamage = 1.25,
 		heavyStagger = 0.3,
 	},
 	Guard = {
 		id = "Guard",
-		displayName = "Guard Temper",
-		description = "Block reduction +15%, parry window +0.03s.",
+		displayName = "Temple de Guardia",
+		description = "Reducción al bloquear +15%, ventana de parada +0,03 s.",
 		blockBonus = 0.15,
 		parryWindowBonus = 0.03,
 	},
 	Resonant = {
 		id = "Resonant",
-		displayName = "Resonant Temper",
-		description = "Essence abilities +20% damage, resonance gain +15%.",
+		displayName = "Temple Resonante",
+		description = "Habilidades de esencia +20% de daño, ganancia de resonancia +15%.",
 		abilityDamage = 1.2,
 		resonanceGain = 1.15,
 	},
 	Fracture = {
 		id = "Fracture",
-		displayName = "Fracture Temper",
-		description = "+12% damage and finishers release a rift shockwave.",
+		displayName = "Temple de Fractura",
+		description = "+12% de daño y los remates liberan una onda de grieta.",
 		damage = 1.12,
 		finisherShockwave = true,
 	},

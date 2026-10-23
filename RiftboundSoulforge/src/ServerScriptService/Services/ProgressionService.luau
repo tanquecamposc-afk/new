@@ -51,7 +51,7 @@ function ProgressionService.addXp(player: Player, amount: number)
 	dirty(player)
 	if result.gained > 0 then
 		local unlock = ProgressionConfig.LevelUnlocks[profile.level]
-		notify(player, "LevelUp", "Level " .. profile.level .. "!", { unlock = unlock })
+		notify(player, "LevelUp", "¡Nivel " .. profile.level .. "!", { unlock = unlock })
 		Net.event("Effect"):FireAllClients("LevelUp", { player = player })
 	end
 end
@@ -75,14 +75,14 @@ function ProgressionService.addWeaponMastery(player: Player, weaponId: string, a
 		notify(
 			player,
 			"Mastery",
-			string.format("%s mastery %d", def.displayName, weapon.mastery),
+			string.format("%s maestría %d", def.displayName, weapon.mastery),
 			{ unlock = unlock, color = def.trailColor }
 		)
 		if weapon.mastery >= def.evolutionMastery and weapon.evolution == "None" then
 			if profile.trials[def.evolutionTrial] then
 				ProgressionService.present(player, "EvolutionReady", { weapon = weaponId })
 			else
-				notify(player, "Info", "Complete the Katana Trial at the Training Arena to unlock evolution.")
+				notify(player, "Info", "Completa la Prueba de la Katana en la Arena de Entrenamiento para desbloquear la evolución.")
 			end
 		end
 	end
@@ -105,7 +105,7 @@ function ProgressionService.addEssenceXp(player: Player, essence: string, amount
 		notify(
 			player,
 			"Mastery",
-			string.format("%s mastery %d", def.displayName, record.mastery),
+			string.format("%s maestría %d", def.displayName, record.mastery),
 			{ unlock = def.masteryUnlocks[record.mastery], color = def.color }
 		)
 		Registry.get("FusionService").refreshResearchHints(player)
@@ -126,12 +126,12 @@ function ProgressionService.unlockEssence(player: Player, essence: string, reaso
 	local def = EssenceConfig.Essences[essence]
 	Registry.get("PlayerDataService").markDirty(player)
 	ProgressionService.present(player, "Essence_" .. essence, {
-		title = def.displayName .. " Essence Awakened",
+		title = def.displayName .. " Esencia Despertada",
 		subtitle = def.theme,
-		body = reason .. " Equip it in Loadout (Tab).",
+		body = reason .. " Equípala en Equipamiento (Tab).",
 		color = def.color,
 	})
-	notify(player, "Unlock", def.displayName .. " essence unlocked!", { color = def.color })
+	notify(player, "Unlock", def.displayName .. " ¡esencia desbloqueada!", { color = def.color })
 	local unlockedCount = 0
 	for _, r in profile.essences do
 		if r.unlocked then
@@ -158,7 +158,7 @@ function ProgressionService.achieve(player: Player, id: string)
 	for _, cosmetic in ProgressionConfig.Cosmetics do
 		if cosmetic.achievement == id then
 			profile.cosmetics.owned[cosmetic.id] = true
-			notify(player, "Unlock", "Cosmetic unlocked: " .. cosmetic.name)
+			notify(player, "Unlock", "Cosmético desbloqueado: " .. cosmetic.name)
 		end
 	end
 end

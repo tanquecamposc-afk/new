@@ -54,7 +54,7 @@ local function onMine(node: Node, player: Player)
 		return
 	end
 	if not Security.within(player, node.position, node.prompt.MaxActivationDistance + 5) then
-		Security.flag(player, "mining out of range")
+		Security.flag(player, "mena fuera de alcance")
 		return
 	end
 	local profile = Registry.get("PlayerDataService").get(player)
@@ -65,7 +65,7 @@ local function onMine(node: Node, player: Player)
 		Net.event("Notify"):FireClient(
 			player,
 			"Error",
-			string.format("%s requires a %s (craft one at the Artisan Bench).", node.def.displayName, ResourceConfig.ToolTiers[node.def.tier])
+			string.format("%s requiere %s (fabrícalo en el Banco del Artesano).", node.def.displayName, ResourceConfig.ToolTiers[node.def.tier])
 		)
 		return
 	end
@@ -102,8 +102,8 @@ function ResourceService.spawnNode(nodeId: string, position: Vector3, opts: any?
 	local o = opts or {}
 	local model, base = Models.node(def, position, folder)
 	local prompt = Instance.new("ProximityPrompt")
-	prompt.ActionText = "Mine"
-	prompt.ObjectText = def.displayName .. (if def.tier > 1 and not o.softTier then " (Cobalt Pick)" else "")
+	prompt.ActionText = "Minar"
+	prompt.ObjectText = def.displayName .. (if def.tier > 1 and not o.softTier then " (Pico de Cobalto)" else "")
 	prompt.HoldDuration = def.holdDuration
 	prompt.MaxActivationDistance = 10
 	prompt.RequiresLineOfSight = false

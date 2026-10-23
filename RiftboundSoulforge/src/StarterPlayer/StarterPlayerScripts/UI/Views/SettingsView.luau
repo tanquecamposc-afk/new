@@ -8,16 +8,16 @@ local C = Theme.Colors
 local View = {}
 
 local NUMBERS = {
-	{ key = "cameraShake", label = "Camera shake", min = 0, max = 1, step = 0.25 },
-	{ key = "effects", label = "Effects intensity", min = 0.2, max = 1, step = 0.2 },
-	{ key = "music", label = "Music volume", min = 0, max = 1, step = 0.1 },
-	{ key = "sfx", label = "Effects volume", min = 0, max = 1, step = 0.1 },
-	{ key = "hudScale", label = "HUD scale", min = 0.7, max = 1.3, step = 0.1 },
+	{ key = "cameraShake", label = "Temblor de cámara", min = 0, max = 1, step = 0.25 },
+	{ key = "effects", label = "Intensidad de efectos", min = 0.2, max = 1, step = 0.2 },
+	{ key = "music", label = "Volumen de música", min = 0, max = 1, step = 0.1 },
+	{ key = "sfx", label = "Volumen de efectos", min = 0, max = 1, step = 0.1 },
+	{ key = "hudScale", label = "Escala de la interfaz", min = 0.7, max = 1.3, step = 0.1 },
 }
 
 local TOGGLES = {
-	{ key = "reducedClutter", label = "Reduced visual clutter (hide other players' minor effects)" },
-	{ key = "highContrastTelegraphs", label = "High-contrast attack telegraphs (bright yellow)" },
+	{ key = "reducedClutter", label = "Menos ruido visual (oculta efectos menores de otros jugadores)" },
+	{ key = "highContrastTelegraphs", label = "Avisos de ataque de alto contraste (amarillo brillante)" },
 }
 
 local function apply(key: string, value: any)
@@ -32,7 +32,7 @@ end
 function View.mount(container: Instance, _ctx: any)
 	return ViewUtil.simple(container, function(body, profile)
 		local s = profile.settings
-		local card = Kit.card(body, "Accessibility & audio", 1)
+		local card = Kit.card(body, "Accesibilidad y audio", 1)
 		for i, opt in NUMBERS do
 			local row = Kit.row(card, i, 40)
 			Kit.text({ parent = row, text = string.format("%s: %d%%", opt.label, math.floor(s[opt.key] * 100 + 0.5)), size = UDim2.fromOffset(260, 36), order = 1 })
@@ -45,12 +45,12 @@ function View.mount(container: Instance, _ctx: any)
 		end
 		for i, opt in TOGGLES do
 			local row = Kit.row(card, 20 + i, 40)
-			Kit.button({ parent = row, text = if s[opt.key] then "ON" else "OFF", size = UDim2.fromOffset(70, 34), color = if s[opt.key] then C.Good else C.PanelLight, order = 1, onClick = function()
+			Kit.button({ parent = row, text = if s[opt.key] then "SÍ" else "NO", size = UDim2.fromOffset(70, 34), color = if s[opt.key] then C.Good else C.PanelLight, order = 1, onClick = function()
 				apply(opt.key, not s[opt.key])
 			end })
 			Kit.text({ parent = row, text = opt.label, size = UDim2.fromOffset(460, 36), order = 2 })
 		end
-		ViewUtil.para(body, "Telegraphs always combine colour with a shape, a growing fill and a warning glyph (! parryable, ⚠ not parryable, ◎ ring with safe centre, ☠ hazard), so they never rely on colour alone.", C.TextDim, 2, 13)
+		ViewUtil.para(body, "Los avisos de ataque siempre combinan color con forma, un relleno creciente y un símbolo (! se puede parar, ⚠ no se puede parar, ◎ anillo con centro seguro, ☠ peligro), así que nunca dependen solo del color.", C.TextDim, 2, 13)
 	end, { "profile" })
 end
 

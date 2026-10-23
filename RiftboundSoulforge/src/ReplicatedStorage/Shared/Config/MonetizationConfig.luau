@@ -11,14 +11,14 @@ MonetizationConfig.GamePasses = {
 	ExtraLoadouts = {
 		id = 0,
 		key = "ExtraLoadouts",
-		displayName = "Loadout Archive",
-		description = "+3 saved loadout slots. Pure convenience.",
+		displayName = "Archivo de Equipamientos",
+		description = "+3 ranuras de equipamiento guardado. Pura comodidad.",
 	},
 	AuraPack = {
 		id = 0,
 		key = "AuraPack",
-		displayName = "Resonant Aura Pack",
-		description = "Cosmetic: awakening auras gain a prismatic shimmer.",
+		displayName = "Pack de Auras Resonantes",
+		description = "Cosmético: las auras de despertar ganan un brillo prismático.",
 	},
 }
 
@@ -26,8 +26,8 @@ MonetizationConfig.Products = {
 	SupporterDye = {
 		id = 0,
 		key = "SupporterDye",
-		displayName = "Supporter Dye Pack",
-		description = "Cosmetic: unlocks the Prismatic Edge katana trail. Granted once; re-purchasing has no extra effect.",
+		displayName = "Pack de Tintes de Apoyo",
+		description = "Cosmético: desbloquea la estela de katana Filo Prismático. Se concede una vez; recomprarlo no tiene efecto extra.",
 		grant = { cosmetic = "Prismatic" },
 	},
 }

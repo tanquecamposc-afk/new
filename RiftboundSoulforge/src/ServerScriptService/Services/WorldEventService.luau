@@ -50,13 +50,13 @@ local function updateBoard()
 	local remaining = math.max(0, math.floor(state.phaseEnds - os.clock()))
 	local timeText = string.format("%d:%02d", remaining // 60, remaining % 60)
 	if state.phase == "Warning" and def then
-		label.Text = string.format("⚠ %s IN %s\n%s", string.upper(def.displayName), timeText, def.description)
+		label.Text = string.format("⚠ %s EN %s\n%s", string.upper(def.displayName), timeText, def.description)
 		label.TextColor3 = def.color
 	elseif state.phase == "Active" and def then
-		label.Text = string.format("★ %s ACTIVE — %s left\n%s", string.upper(def.displayName), timeText, def.description)
+		label.Text = string.format("★ %s ACTIVO — quedan %s\n%s", string.upper(def.displayName), timeText, def.description)
 		label.TextColor3 = def.color
 	else
-		label.Text = string.format("THE NEXUS\nNext rift disturbance in ~%s", timeText)
+		label.Text = string.format("EL NEXO\nPróxima perturbación de la grieta en ~%s", timeText)
 		label.TextColor3 = Color3.fromRGB(230, 225, 255)
 	end
 end
@@ -111,7 +111,7 @@ local function begin(id: string)
 			table.insert(spawnedEnemies, record)
 		end
 	end
-	Net.event("Notify"):FireAllClients("WorldEvent", WorldEventConfig.Events[id].displayName .. " has begun!", { color = WorldEventConfig.Events[id].color })
+	Net.event("Notify"):FireAllClients("WorldEvent", WorldEventConfig.Events[id].displayName .. " ha comenzado.", { color = WorldEventConfig.Events[id].color })
 end
 
 local function finish(id: string)
@@ -130,7 +130,7 @@ local function finish(id: string)
 		end
 	end
 	spawnedEnemies = {}
-	Net.event("Notify"):FireAllClients("WorldEvent", WorldEventConfig.Events[id].displayName .. " has ended.")
+	Net.event("Notify"):FireAllClients("WorldEvent", WorldEventConfig.Events[id].displayName .. " ha terminado.")
 end
 
 -- Waits until the deadline unless an event is forced (dev). Returns true if forced.
@@ -196,17 +196,17 @@ function WorldEventService.Start()
 	end)
 	Registry.get("RequestService").on("DevStartEvent", "Request", function(_player, args)
 		if not (RunService:IsStudio() and GameConfig.Dev.AllowStudioCommands) then
-			return false, "Dev commands are only available in Studio."
+			return false, "Los comandos de desarrollo solo funcionan en Studio."
 		end
 		local def = WorldEventConfig.Events[args.id or ""]
 		if not def or not def.implemented then
-			return false, "Unknown or unimplemented event."
+			return false, "Evento desconocido o sin implementar."
 		end
 		if state.phase ~= "Idle" then
-			return false, "An event is already scheduled or running."
+			return false, "Ya hay un evento programado o en curso."
 		end
 		forced = args.id
-		return true, "Event forced: " .. def.displayName
+		return true, "Evento forzado: " .. def.displayName
 	end)
 end
 

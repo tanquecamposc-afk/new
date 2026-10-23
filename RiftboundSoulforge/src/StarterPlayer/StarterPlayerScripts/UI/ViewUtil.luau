@@ -17,7 +17,7 @@ function ViewUtil.simple(container: Instance, render: (ScrollingFrame, any) -> (
 		Kit.clear(body)
 		local profile = ClientState.profile
 		if not profile then
-			Kit.text({ parent = body, text = "Loading your profile...", color = C.TextDim })
+			Kit.text({ parent = body, text = "Cargando tu perfil...", color = C.TextDim })
 			return
 		end
 		render(body, profile)

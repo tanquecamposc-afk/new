@@ -59,7 +59,7 @@ function NotificationController.toast(kind: string, text: string, extra: any?)
 	})
 	frame.BackgroundTransparency = 0.08
 	Kit.list(frame, 2)
-	local title = if kind == "Achievement" then "★ ACHIEVEMENT" elseif kind == "QuestComplete" then "✔ CONTRACT COMPLETE" else nil
+	local title = if kind == "Achievement" then "★ LOGRO" elseif kind == "QuestComplete" then "✔ CONTRATO COMPLETADO" else nil
 	if title then
 		Kit.text({ parent = frame, text = title, color = color, font = Theme.Fonts.Bold, textSize = 13, order = 1 })
 	end
@@ -69,7 +69,7 @@ function NotificationController.toast(kind: string, text: string, extra: any?)
 		Kit.text({ parent = frame, text = extra.description, color = C.TextDim, textSize = 13, order = 3, size = UDim2.new(1, 0, 0, 0), autoSize = Enum.AutomaticSize.Y })
 	end
 	if extra and extra.unlock then
-		Kit.text({ parent = frame, text = "Unlocked: " .. extra.unlock, color = C.Gold, textSize = 13, order = 4, size = UDim2.new(1, 0, 0, 0), autoSize = Enum.AutomaticSize.Y })
+		Kit.text({ parent = frame, text = "Desbloqueado: " .. extra.unlock, color = C.Gold, textSize = 13, order = 4, size = UDim2.new(1, 0, 0, 0), autoSize = Enum.AutomaticSize.Y })
 	end
 	if extra and extra.actions then
 		local row = Kit.row(frame, 5, 32)
@@ -110,7 +110,7 @@ end
 local function loot(items: any, coins: number, satchel: boolean)
 	local lines = {}
 	if coins and coins > 0 then
-		table.insert(lines, string.format("+%d coins", coins))
+		table.insert(lines, string.format("+%d monedas", coins))
 	end
 	for item, n in items or {} do
 		local def = ItemConfig.Items[item]
@@ -119,7 +119,7 @@ local function loot(items: any, coins: number, satchel: boolean)
 	for _, line in lines do
 		local label = Kit.text({
 			parent = lootHolder,
-			text = line .. (if satchel then "  (Satchel)" else ""),
+			text = line .. (if satchel then "  (Mochila)" else ""),
 			color = if satchel then Color3.fromRGB(255, 220, 150) else C.Good,
 			font = Theme.Fonts.Bold,
 			textSize = 15,
@@ -171,7 +171,7 @@ local function showNextPresentation()
 	Kit.text({ parent = card, text = string.upper(data.subtitle or ""), color = color, font = Theme.Fonts.Bold, textSize = 14, alignX = Enum.TextXAlignment.Center, order = 1 })
 	Kit.text({ parent = card, text = data.title or "", color = C.Text, font = Theme.Fonts.Title, textSize = 34, alignX = Enum.TextXAlignment.Center, order = 2, size = UDim2.new(1, 0, 0, 0), autoSize = Enum.AutomaticSize.Y })
 	Kit.text({ parent = card, text = data.body or "", color = C.TextDim, textSize = 16, alignX = Enum.TextXAlignment.Center, order = 3, size = UDim2.new(1, 0, 0, 0), autoSize = Enum.AutomaticSize.Y })
-	Kit.text({ parent = card, text = "click to dismiss", color = C.TextMuted, textSize = 12, alignX = Enum.TextXAlignment.Center, order = 4 })
+	Kit.text({ parent = card, text = "clic para cerrar", color = C.TextMuted, textSize = 12, alignX = Enum.TextXAlignment.Center, order = 4 })
 	local scale = Kit.new("UIScale", { Scale = 0.8, Parent = card })
 	TweenService:Create(scale, TweenInfo.new(0.35, Enum.EasingStyle.Back), { Scale = 1 }):Play()
 	SoundController.play("ItemDiscovery")
@@ -204,7 +204,7 @@ local function onNotify(kind: string, text: string, extra: any)
 		loot(extra.items, extra.coins or 0, extra.satchel == true)
 	elseif kind == "Extract" then
 		SoundController.play("Extraction")
-		NotificationController.toast("Extract", "Loot banked! It is now permanent.", { color = KIND_COLORS.Extract })
+		NotificationController.toast("Extract", "¡Botín asegurado! Ahora es permanente.", { color = KIND_COLORS.Extract })
 	elseif kind == "Death" then
 		local lines = {}
 		for item, n in extra.lostItems or {} do
@@ -212,36 +212,36 @@ local function onNotify(kind: string, text: string, extra: any)
 			table.insert(lines, string.format("-%d %s", n, def and def.name or item))
 		end
 		if (extra.lostCoins or 0) > 0 then
-			table.insert(lines, string.format("-%d coins", extra.lostCoins))
+			table.insert(lines, string.format("-%d monedas", extra.lostCoins))
 		end
 		NotificationController.present({
-			title = "You Fell",
-			subtitle = string.format("Depth %d", extra.depth or 0),
-			body = if #lines > 0 then "Lost from your Satchel: " .. table.concat(lines, ", ") .. ". Mastery, XP and unlocks are safe." else "Nothing was lost. Mastery, XP and unlocks are always safe.",
+			title = "Has Caído",
+			subtitle = string.format("Profundidad %d", extra.depth or 0),
+			body = if #lines > 0 then "Perdido de tu Mochila: " .. table.concat(lines, ", ") .. ". Maestría, EXP y desbloqueos están a salvo." else "No se perdió nada. Maestría, EXP y desbloqueos siempre están a salvo.",
 			color = C.Bad,
 		})
 	elseif kind == "LevelUp" then
 		SoundController.play("LevelUp")
 		NotificationController.banner(text, C.Gold, 3)
 		if extra.unlock then
-			NotificationController.toast("Unlock", "Unlocked: " .. extra.unlock)
+			NotificationController.toast("Unlock", "Desbloqueado: " .. extra.unlock)
 		end
 	elseif kind == "Coop" then
-		NotificationController.banner("CO-OP RESONANCE: " .. string.upper(text), extra.color, 3)
-		NotificationController.toast("Success", table.concat(extra.players or {}, " + ") .. " triggered " .. text .. "!", { color = extra.color })
+		NotificationController.banner("RESONANCIA COOPERATIVA: " .. string.upper(text), extra.color, 3)
+		NotificationController.toast("Success", table.concat(extra.players or {}, " + ") .. " activaron " .. text .. "!", { color = extra.color })
 	elseif kind == "Boss" or kind == "BossPhase" or kind == "WorldEvent" then
 		NotificationController.banner(text, extra.color or Color3.fromRGB(255, 120, 170), 3.5)
 	elseif kind == "QuestComplete" then
 		SoundController.play("QuestComplete")
-		NotificationController.toast(kind, text .. "  (claim it in the Quests menu)", extra)
+		NotificationController.toast(kind, text .. " (reclámala en el menú de Contratos)", extra)
 	elseif kind == "PartyInvite" then
 		NotificationController.toast("Party", text, {
 			duration = 30,
 			actions = {
-				{ text = "Accept", color = C.Good, fn = function()
+				{ text = "Aceptar", color = C.Good, fn = function()
 					ClientState.request("PartyRespond", { userId = extra.from, accept = true })
 				end },
-				{ text = "Decline", color = C.Bad, fn = function()
+				{ text = "Rechazar", color = C.Bad, fn = function()
 					ClientState.request("PartyRespond", { userId = extra.from, accept = false })
 				end },
 			},

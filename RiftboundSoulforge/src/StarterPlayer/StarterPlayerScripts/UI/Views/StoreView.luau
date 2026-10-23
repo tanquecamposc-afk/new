@@ -13,21 +13,21 @@ local View = {}
 
 function View.mount(container: Instance, _ctx: any)
 	return ViewUtil.simple(container, function(body, profile)
-		ViewUtil.para(body, "Everything here is cosmetic or convenience. No power, no random rolls. Purchases are verified by the server.", C.TextDim, 0)
+		ViewUtil.para(body, "Todo aquí es cosmético o de comodidad. Sin poder ni azar. El servidor verifica las compras.", C.TextDim, 0)
 		local order = 1
 		for _, key in MonetizationConfig.PassOrder do
 			local pass = MonetizationConfig.GamePasses[key]
 			order += 1
-			local card = Kit.card(body, pass.displayName .. "  (Game Pass)", order, C.Gold)
+			local card = Kit.card(body, pass.displayName .. " (Pase de juego)", order, C.Gold)
 			ViewUtil.para(card, pass.description, C.TextDim, 1)
 			local owned = profile.passes[key] == true
-			local b = Kit.button({ parent = card, text = if owned then "Owned" else "Buy", order = 2, onClick = function()
+			local b = Kit.button({ parent = card, text = if owned then "Comprado" else "Comprar", order = 2, onClick = function()
 				MarketplaceService:PromptGamePassPurchase(Players.LocalPlayer, pass.id)
 			end })
 			if not MonetizationConfig.isConfigured(pass) then
 				b.setEnabled(false, "Unavailable")
 			elseif owned then
-				b.setEnabled(false, "Owned")
+				b.setEnabled(false, "Comprado")
 			end
 		end
 		for _, key in MonetizationConfig.ProductOrder do
@@ -36,13 +36,13 @@ function View.mount(container: Instance, _ctx: any)
 			local card = Kit.card(body, product.displayName, order, C.Accent)
 			ViewUtil.para(card, product.description, C.TextDim, 1)
 			local owned = product.grant.cosmetic and profile.cosmetics.owned[product.grant.cosmetic]
-			local b = Kit.button({ parent = card, text = "Buy", order = 2, onClick = function()
+			local b = Kit.button({ parent = card, text = "Comprar", order = 2, onClick = function()
 				MarketplaceService:PromptProductPurchase(Players.LocalPlayer, product.id)
 			end })
 			if not MonetizationConfig.isConfigured(product) then
 				b.setEnabled(false, "Unavailable")
 			elseif owned then
-				b.setEnabled(false, "Owned")
+				b.setEnabled(false, "Comprado")
 			end
 		end
 	end, { "profile" })

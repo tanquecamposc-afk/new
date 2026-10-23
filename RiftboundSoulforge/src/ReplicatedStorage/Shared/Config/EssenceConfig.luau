@@ -8,8 +8,8 @@ EssenceConfig.Essences = {
 	Ember = {
 		id = "Ember",
 		implemented = true,
-		displayName = "Ember",
-		theme = "Fire, explosive attacks, damage over time.",
+		displayName = "Brasa",
+		theme = "Fuego, ataques explosivos, daño en el tiempo.",
 		color = Color3.fromRGB(255, 106, 61),
 		maxMastery = 5,
 		abilities = {
@@ -17,19 +17,19 @@ EssenceConfig.Essences = {
 			E = "EmberNova",
 		},
 		masteryUnlocks = {
-			[1] = "Flare Burst (Q).",
-			[2] = "Ember Nova (E).",
-			[3] = "Wildfire: enemies that die while burning spread their burn.",
-			[4] = "Infernal Ascension awakening lasts 3s longer.",
-			[5] = "Ember abilities +15% damage.",
+			[1] = "Estallido Ígneo (Q).",
+			[2] = "Nova de Brasas (E).",
+			[3] = "Fuego Salvaje: los enemigos que mueren ardiendo propagan su quemadura.",
+			[4] = "El despertar Ascensión Infernal dura 3 s más.",
+			[5] = "Habilidades de Brasa +15% de daño.",
 		},
-		unlockHint = "Your first essence. Always available.",
+		unlockHint = "Tu primera esencia. Siempre disponible.",
 	},
 	Storm = {
 		id = "Storm",
 		implemented = true,
-		displayName = "Storm",
-		theme = "Lightning, fast movement, linked attacks.",
+		displayName = "Tormenta",
+		theme = "Rayos, movimiento rápido, ataques encadenados.",
 		color = Color3.fromRGB(79, 195, 255),
 		maxMastery = 5,
 		abilities = {
@@ -37,21 +37,21 @@ EssenceConfig.Essences = {
 			E = "Thunderstep",
 		},
 		masteryUnlocks = {
-			[1] = "Arc Bolt (Q).",
-			[2] = "Thunderstep (E).",
-			[3] = "Static Charge: Charged enemies take +10% damage.",
-			[4] = "Tempest Sovereign awakening lasts 3s longer.",
-			[5] = "Storm abilities +15% damage.",
+			[1] = "Rayo en Arco (Q).",
+			[2] = "Paso Trueno (E).",
+			[3] = "Carga Estática: los enemigos Cargados reciben +10% de daño.",
+			[4] = "El despertar Soberano de la Tempestad dura 3 s más.",
+			[5] = "Habilidades de Tormenta +15% de daño.",
 		},
-		unlockHint = "Complete the contract 'Stalker Cull' in Emberfall, or attune at the Fusion Chamber.",
+		unlockHint = "Completa el contrato 'Purga de Acechadores' en Emberfall, o sintonízala en la Cámara de Fusión.",
 		attuneCost = { EssenceShard = 6, Coins = 250 },
 		attuneLevel = 3,
 	},
 	Gravity = {
 		id = "Gravity",
 		implemented = true,
-		displayName = "Gravity",
-		theme = "Attraction, displacement, battlefield control.",
+		displayName = "Gravedad",
+		theme = "Atracción, desplazamiento, control del campo de batalla.",
 		color = Color3.fromRGB(162, 123, 255),
 		maxMastery = 5,
 		abilities = {
@@ -59,13 +59,13 @@ EssenceConfig.Essences = {
 			E = "CrushingField",
 		},
 		masteryUnlocks = {
-			[1] = "Graviton Pull (Q).",
-			[2] = "Crushing Field (E).",
-			[3] = "Event Pressure: Gathered enemies take +15% damage.",
-			[4] = "Singularity Throne awakening lasts 3s longer.",
-			[5] = "Gravity abilities +15% damage.",
+			[1] = "Atracción Gravitón (Q).",
+			[2] = "Campo Aplastante (E).",
+			[3] = "Presión de Evento: los enemigos Agrupados reciben +15% de daño.",
+			[4] = "El despertar Trono de Singularidad dura 3 s más.",
+			[5] = "Habilidades de Gravedad +15% de daño.",
 		},
-		unlockHint = "Defeat the Ashen Sentinel in the Ruined Keep, or attune at the Fusion Chamber.",
+		unlockHint = "Derrota al Centinela Ceniciento en la Fortaleza en Ruinas, o sintonízala en la Cámara de Fusión.",
 		attuneCost = { EssenceShard = 10, Coins = 400 },
 		attuneLevel = 5,
 	},
@@ -73,26 +73,26 @@ EssenceConfig.Essences = {
 	Frost = {
 		id = "Frost",
 		implemented = false,
-		displayName = "Frost",
-		theme = "Freezing, defensive structures, area control.",
+		displayName = "Escarcha",
+		theme = "Congelación, estructuras defensivas, control de área.",
 		color = Color3.fromRGB(170, 230, 255),
-		unlockHint = "Sealed. Expected with the Frostgrave region.",
+		unlockHint = "Sellado. Llegará con la región de Frostgrave.",
 	},
 	Umbra = {
 		id = "Umbra",
 		implemented = false,
 		displayName = "Umbra",
-		theme = "Shadows, deception, mobility.",
+		theme = "Sombras, engaño, movilidad.",
 		color = Color3.fromRGB(120, 90, 160),
-		unlockHint = "Sealed. Its whispers have not reached the Nexus yet.",
+		unlockHint = "Sellado. Sus susurros aún no han llegado al Nexo.",
 	},
 	Verdant = {
 		id = "Verdant",
 		implemented = false,
-		displayName = "Verdant",
-		theme = "Roots, regeneration, battlefield manipulation.",
+		displayName = "Verdor",
+		theme = "Raíces, regeneración, manipulación del campo de batalla.",
 		color = Color3.fromRGB(110, 210, 120),
-		unlockHint = "Sealed. Expected with the Verdant Reach region.",
+		unlockHint = "Sellado. Llegará con la región de Alcance Verdeante.",
 	},
 }
 
@@ -106,8 +106,8 @@ EssenceConfig.Abilities = {
 	FlareBurst = {
 		id = "FlareBurst",
 		essence = "Ember",
-		displayName = "Flare Burst",
-		description = "A cone of flame in front of you. Burns for 4s.",
+		displayName = "Estallido Ígneo",
+		description = "Un cono de fuego frente a ti. Quema durante 4 s.",
 		cooldown = 6,
 		damage = 1.8,
 		range = 14,
@@ -120,8 +120,8 @@ EssenceConfig.Abilities = {
 	EmberNova = {
 		id = "EmberNova",
 		essence = "Ember",
-		displayName = "Ember Nova",
-		description = "Detonate around yourself, knocking enemies back and burning them.",
+		displayName = "Nova de Brasas",
+		description = "Detonas a tu alrededor, repeliendo y quemando a los enemigos.",
 		cooldown = 12,
 		damage = 2.2,
 		radius = 12,
@@ -134,8 +134,8 @@ EssenceConfig.Abilities = {
 	ArcBolt = {
 		id = "ArcBolt",
 		essence = "Storm",
-		displayName = "Arc Bolt",
-		description = "Lightning strikes the enemy you aim at and chains to 3 more. Applies Charged.",
+		displayName = "Rayo en Arco",
+		description = "Un rayo golpea al enemigo apuntado y salta a 3 más. Aplica Cargado.",
 		cooldown = 5,
 		damage = 1.6,
 		range = 32,
@@ -149,8 +149,8 @@ EssenceConfig.Abilities = {
 	Thunderstep = {
 		id = "Thunderstep",
 		essence = "Storm",
-		displayName = "Thunderstep",
-		description = "Blink forward in a bolt, damaging everything on the path. Brief invulnerability.",
+		displayName = "Paso Trueno",
+		description = "Te teletransportas como un rayo, dañando todo a tu paso. Breve invulnerabilidad.",
 		cooldown = 9,
 		damage = 1.5,
 		distance = 18,
@@ -162,8 +162,8 @@ EssenceConfig.Abilities = {
 	GravitonPull = {
 		id = "GravitonPull",
 		essence = "Gravity",
-		displayName = "Graviton Pull",
-		description = "Pull enemies around the aim point together. Applies Gathered for 3s.",
+		displayName = "Atracción Gravitón",
+		description = "Atrae a los enemigos alrededor del punto apuntado. Aplica Agrupado durante 3 s.",
 		cooldown = 8,
 		damage = 1.0,
 		range = 30,
@@ -176,8 +176,8 @@ EssenceConfig.Abilities = {
 	CrushingField = {
 		id = "CrushingField",
 		essence = "Gravity",
-		displayName = "Crushing Field",
-		description = "A zone of heavy gravity: slows enemies by 50% and crushes them every 0.5s.",
+		displayName = "Campo Aplastante",
+		description = "Una zona de gravedad intensa: ralentiza a los enemigos un 50% y los aplasta cada 0,5 s.",
 		cooldown = 14,
 		damage = 0.5,
 		range = 30,
@@ -192,8 +192,8 @@ EssenceConfig.Abilities = {
 	CollapsingSun = {
 		id = "CollapsingSun",
 		essence = "Fusion",
-		displayName = "Collapsing Sun",
-		description = "A compact gravity well drags enemies in, then erupts in a solar blast that burns.",
+		displayName = "Sol Colapsante",
+		description = "Un pozo de gravedad compacto atrae a los enemigos y estalla en una explosión solar que quema.",
 		cooldown = 20,
 		damage = 4.0,
 		range = 30,
@@ -207,8 +207,8 @@ EssenceConfig.Abilities = {
 	MagneticRift = {
 		id = "MagneticRift",
 		essence = "Fusion",
-		displayName = "Magnetic Rift",
-		description = "Tear a magnetic rift that holds enemies together and lashes them with chained lightning for 3s.",
+		displayName = "Grieta Magnética",
+		description = "Abre una grieta magnética que mantiene juntos a los enemigos y los azota con rayos encadenados durante 3 s.",
 		cooldown = 22,
 		damage = 0.9,
 		range = 30,
@@ -226,6 +226,16 @@ function EssenceConfig.isPlayable(id: any): boolean
 	end
 	local def = EssenceConfig.Essences[id]
 	return def ~= nil and def.implemented == true
+end
+
+-- Display names for a list of essence ids, joined with " + ".
+function EssenceConfig.names(ids: { string }): string
+	local out = {}
+	for _, id in ids do
+		local def = EssenceConfig.Essences[id]
+		table.insert(out, if def then def.displayName else id)
+	end
+	return table.concat(out, " + ")
 end
 
 return EssenceConfig

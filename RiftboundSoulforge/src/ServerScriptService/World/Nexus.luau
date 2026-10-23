@@ -271,8 +271,8 @@ local function buildForge(parent: Instance)
 	for i = 1, 5 do
 		Build.block(model, Vector3.new(0.4, 6, 0.4), base * CFrame.new(10 + i * 1.2, 4, -13.6) * CFrame.Angles(0, 0, math.rad(8)), Color3.fromRGB(150, 150, 160), Enum.Material.Metal, "RackBlade")
 	end
-	Build.sign(model, "THE SOULFORGE", base * CFrame.new(0, 15, 7.2) * CFrame.Angles(0, math.rad(180), 0), Vector2.new(20, 3.5), Color3.fromRGB(30, 22, 30), GOLD)
-	station(model, "ForgeStation", c + Vector3.new(6, 0, 0), "Forge", "Forge", "Upgrades & Tempers", "Forge")
+	Build.sign(model, "LA SOULFORGE", base * CFrame.new(0, 15, 7.2) * CFrame.Angles(0, math.rad(180), 0), Vector2.new(20, 3.5), Color3.fromRGB(30, 22, 30), GOLD)
+	station(model, "ForgeStation", c + Vector3.new(6, 0, 0), "Forge", "Forjar", "Mejoras y Temples", "Forge")
 end
 
 local function buildBench(parent: Instance)
@@ -285,8 +285,8 @@ local function buildBench(parent: Instance)
 	end
 	Build.neon(model, Vector3.new(1, 1, 1), cf * CFrame.new(-2, 4, 0), Color3.fromRGB(80, 150, 255), "Vial")
 	Build.neon(model, Vector3.new(1, 1.4, 1), cf * CFrame.new(2, 4.2, 0), Color3.fromRGB(255, 140, 80), "Vial")
-	Build.sign(model, "ARTISAN BENCH", cf * CFrame.new(0, 8, 1.5), Vector2.new(10, 2), nil, Color3.fromRGB(200, 230, 255))
-	station(model, "BenchStation", c, "Forge", "Craft", "Artisan Bench", "Bench")
+	Build.sign(model, "BANCO DEL ARTESANO", cf * CFrame.new(0, 8, 1.5), Vector2.new(10, 2), nil, Color3.fromRGB(200, 230, 255))
+	station(model, "BenchStation", c, "Forge", "Fabricar", "Banco del Artesano", "Bench")
 end
 
 local function buildFusion(parent: Instance)
@@ -315,8 +315,8 @@ local function buildFusion(parent: Instance)
 	})
 	heart:SetAttribute("Spin", 1.2)
 	Build.light(heart, Color3.fromRGB(240, 200, 255), 24, 2)
-	Build.sign(model, "FUSION CHAMBER", CFrame.lookAt(c + Vector3.new(0, 20, 0), Vector3.new(0, 20, 0)), Vector2.new(16, 3), nil, Color3.fromRGB(230, 200, 255))
-	station(model, "FusionStation", c, "Fusion", "Open", "Fusion Codex & Attunement", "Fusion")
+	Build.sign(model, "CÁMARA DE FUSIÓN", CFrame.lookAt(c + Vector3.new(0, 20, 0), Vector3.new(0, 20, 0)), Vector2.new(16, 3), nil, Color3.fromRGB(230, 200, 255))
+	station(model, "FusionStation", c, "Fusion", "Abrir", "Códice de Fusiones y Sintonía", "Fusion")
 	local _ = altar
 end
 
@@ -333,14 +333,14 @@ local function buildTraining(parent: Instance)
 	for _, corner in { Vector3.new(-29, 0, -29), Vector3.new(29, 0, -29), Vector3.new(-29, 0, 29), Vector3.new(29, 0, 29) } do
 		Build.torch(model, c + corner, Color3.fromRGB(120, 255, 190))
 	end
-	Build.sign(model, "TRAINING ARENA", CFrame.new(c + Vector3.new(0, 10, -30)) * CFrame.Angles(0, math.rad(180), 0), Vector2.new(18, 3), nil, Color3.fromRGB(150, 255, 200))
+	Build.sign(model, "ARENA DE ENTRENAMIENTO", CFrame.new(c + Vector3.new(0, 10, -30)) * CFrame.Angles(0, math.rad(180), 0), Vector2.new(18, 3), nil, Color3.fromRGB(150, 255, 200))
 	-- trial pedestal
 	local t = P.TrialPedestal
 	Build.cylinder(model, 5, 3, t + Vector3.new(0, 1.5, 0), STONE, Enum.Material.Slate, "TrialPedestal")
 	local blade = Build.neon(model, Vector3.new(0.4, 6, 1), CFrame.new(t + Vector3.new(0, 6, 0)) * CFrame.Angles(0, 0, math.rad(10)), Color3.fromRGB(120, 230, 255), "TrialBlade")
 	Build.light(blade, Color3.fromRGB(120, 230, 255), 14, 1.5)
-	Build.label(blade, "KATANA TRIAL", Vector3.new(0, 5, 0), Color3.fromRGB(150, 235, 255))
-	station(model, "TrialStation", t, "Trial", "Inspect", "Katana Trial", "Trial")
+	Build.label(blade, "PRUEBA DE LA KATANA", Vector3.new(0, 5, 0), Color3.fromRGB(150, 235, 255))
+	station(model, "TrialStation", t, "Trial", "Examinar", "Prueba de la Katana", "Trial")
 end
 
 local function buildPortal(parent: Instance)
@@ -372,8 +372,8 @@ local function buildPortal(parent: Instance)
 	disc.Transparency = 0.35
 	Build.light(disc, Color3.fromRGB(255, 130, 70), 40, 3)
 	Build.particles(disc, Color3.fromRGB(255, 150, 90), 25, { speed = NumberRange.new(2, 5) })
-	Build.sign(model, "RIFT PORTAL\nEMBERFALL FRONTIER", CFrame.new(c + Vector3.new(0, 28, 0)), Vector2.new(18, 4.5), nil, Color3.fromRGB(255, 180, 120))
-	station(model, "PortalStation", c + Vector3.new(0, 0, -4), "Expedition", "Expedition", "Emberfall Frontier", "Portal")
+	Build.sign(model, "PORTAL DE LA GRIETA\nFRONTERA DE EMBERFALL", CFrame.new(c + Vector3.new(0, 28, 0)), Vector2.new(18, 4.5), nil, Color3.fromRGB(255, 180, 120))
+	station(model, "PortalStation", c + Vector3.new(0, 0, -4), "Expedition", "Partir", "Frontera de Emberfall", "Portal")
 end
 
 local function buildQuestBoard(parent: Instance)
@@ -383,9 +383,9 @@ local function buildQuestBoard(parent: Instance)
 	for _, x in { -5, 5 } do
 		Build.block(model, Vector3.new(1, 10, 1), cf * CFrame.new(x, 5, 0), Color3.fromRGB(90, 62, 44), Enum.Material.Wood, "Post")
 	end
-	local board = Build.sign(model, "CONTRACTS\n\nMain path • Exploration\nGathering • Mastery\nCo-op • Boss • Daily", cf * CFrame.new(0, 6, 0.6), Vector2.new(10, 7), Color3.fromRGB(60, 44, 34), Color3.fromRGB(255, 230, 190))
+	local board = Build.sign(model, "CONTRATOS\n\nHistoria • Exploración\nRecolección • Maestría\nCooperativo • Jefe • Diario", cf * CFrame.new(0, 6, 0.6), Vector2.new(10, 7), Color3.fromRGB(60, 44, 34), Color3.fromRGB(255, 230, 190))
 	board.Name = "QuestBoardFace"
-	station(model, "QuestStation", c, "Quests", "Read", "Quest & Bounty Board", "QuestBoard")
+	station(model, "QuestStation", c, "Quests", "Leer", "Tablón de Contratos y Recompensas", "QuestBoard")
 end
 
 local function buildBossGate(parent: Instance)
@@ -400,8 +400,8 @@ local function buildBossGate(parent: Instance)
 	local veil = Build.part(model, { size = Vector3.new(11, 20, 0.3), cframe = cf * CFrame.new(0, 11, 0), color = Color3.fromRGB(120, 20, 60), material = Enum.Material.ForceField, collide = false, name = "Veil" })
 	veil.Transparency = 0.2
 	Build.light(veil, Color3.fromRGB(255, 60, 120), 22, 2)
-	Build.sign(model, "WARDEN GATE", cf * CFrame.new(0, 27, -1.6), Vector2.new(14, 2.5), nil, Color3.fromRGB(255, 120, 160))
-	station(model, "BossGateStation", c, "BossGate", "Inspect", "The Fracture Warden", "BossGate")
+	Build.sign(model, "PUERTA DEL CELADOR", cf * CFrame.new(0, 27, -1.6), Vector2.new(14, 2.5), nil, Color3.fromRGB(255, 120, 160))
+	station(model, "BossGateStation", c, "BossGate", "Examinar", "El Celador de la Fractura", "BossGate")
 end
 
 local function buildGarden(parent: Instance)
@@ -421,7 +421,7 @@ local function buildGarden(parent: Instance)
 		Build.block(model, Vector3.new(6, 2, 0.4), cf * CFrame.new(0, 2.6, 1), Color3.fromRGB(120, 86, 60), Enum.Material.WoodPlanks, "BenchBack")
 		Build.tree(model, c + Vector3.new(math.cos(angle + 0.5) * 20, 0, math.sin(angle + 0.5) * 20), 0.8, i % 2 == 0)
 	end
-	Build.sign(model, "THE GATHERING GARDEN", CFrame.new(c + Vector3.new(0, 1.5, 22)) * CFrame.new(0, 3, 0), Vector2.new(12, 2), nil, Color3.fromRGB(190, 255, 200))
+	Build.sign(model, "EL JARDÍN DE RECOLECCIÓN", CFrame.new(c + Vector3.new(0, 1.5, 22)) * CFrame.new(0, 3, 0), Vector2.new(12, 2), nil, Color3.fromRGB(190, 255, 200))
 end
 
 local function buildEchoes(parent: Instance)
@@ -429,7 +429,7 @@ local function buildEchoes(parent: Instance)
 	local c = P.HallOfEchoes
 	local cf = facing(c, Vector3.zero)
 	Build.block(model, Vector3.new(30, 1, 16), cf * CFrame.new(0, 0.5, 0), TRIM, Enum.Material.Marble, "Floor")
-	local board = Build.sign(model, "HALL OF ECHOES", cf * CFrame.new(0, 9, 7), Vector2.new(22, 12), Color3.fromRGB(24, 20, 34), Color3.fromRGB(230, 220, 255))
+	local board = Build.sign(model, "SALÓN DE LOS ECOS", cf * CFrame.new(0, 9, 7), Vector2.new(22, 12), Color3.fromRGB(24, 20, 34), Color3.fromRGB(230, 220, 255))
 	board.Name = "EchoBoard"
 	local label = board:FindFirstChildWhichIsA("SurfaceGui", true):FindFirstChildWhichIsA("TextLabel")
 	if label then
@@ -450,7 +450,7 @@ local function buildEchoes(parent: Instance)
 		})
 		relic:SetAttribute("Spin", 0.8)
 	end
-	station(model, "EchoStation", c, "Codex", "Open", "Codex & Achievements", "Codex")
+	station(model, "EchoStation", c, "Codex", "Abrir", "Códice y Logros", "Codex")
 end
 
 local function buildKiosk(parent: Instance)
@@ -462,8 +462,8 @@ local function buildKiosk(parent: Instance)
 		Build.block(model, Vector3.new(0.6, 9, 0.6), cf * CFrame.new(x, 4.5, 1.5), Color3.fromRGB(60, 40, 70), Enum.Material.Wood, "Pole")
 	end
 	Build.part(model, { size = Vector3.new(12, 0.6, 6), cframe = cf * CFrame.new(0, 9, 0.5) * CFrame.Angles(math.rad(10), 0, 0), color = Color3.fromRGB(200, 90, 200), material = Enum.Material.Fabric, name = "Canopy" })
-	Build.sign(model, "STYLE KIOSK", cf * CFrame.new(0, 10.5, -2.2), Vector2.new(9, 1.6), nil, Color3.fromRGB(255, 190, 255))
-	station(model, "KioskStation", c, "Store", "Browse", "Cosmetics", "Store")
+	Build.sign(model, "QUIOSCO DE ESTILO", cf * CFrame.new(0, 10.5, -2.2), Vector2.new(9, 1.6), nil, Color3.fromRGB(255, 190, 255))
+	station(model, "KioskStation", c, "Store", "Ver", "Cosméticos", "Store")
 end
 
 local function buildAnnouncement(parent: Instance)
@@ -492,7 +492,7 @@ local function buildAnnouncement(parent: Instance)
 	label.TextScaled = true
 	label.Font = Enum.Font.GothamBlack
 	label.TextColor3 = Color3.fromRGB(230, 225, 255)
-	label.Text = "THE NEXUS"
+	label.Text = "EL NEXO"
 	label.Parent = gui
 	-- a duplicate face so it reads from both sides
 	local back = gui:Clone()
@@ -506,9 +506,9 @@ local function buildSignposts(parent: Instance)
 		{ "FORGE", P.Forge },
 		{ "FUSION", P.FusionChamber },
 		{ "TRAINING", P.TrainingArena },
-		{ "RIFT PORTAL", P.ExpeditionPortal },
-		{ "WARDEN GATE", P.BossGate },
-		{ "HALL OF ECHOES", P.HallOfEchoes },
+		{ "PORTAL DE LA GRIETA", P.ExpeditionPortal },
+		{ "PUERTA DEL CELADOR", P.BossGate },
+		{ "SALÓN DE LOS ECOS", P.HallOfEchoes },
 	}
 	for i, entry in entries do
 		local target = entry[2]

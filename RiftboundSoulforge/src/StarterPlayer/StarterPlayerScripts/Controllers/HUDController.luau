@@ -58,7 +58,7 @@ local function buildVitals(root: Instance)
 	refs.stamina = Kit.bar({ parent = panel, color = C.Stamina, size = UDim2.new(1, 0, 0, 10), order = 2, instant = true })
 	local resRow = Kit.new("Frame", { BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, 18), LayoutOrder = 3, Parent = panel })
 	refs.resonance = Kit.bar({ parent = resRow, color = C.Resonance, size = UDim2.new(1, -86, 1, 0), textSize = 11 })
-	refs.resonanceLabel = Kit.text({ parent = resRow, text = "RESONANCE", textSize = 11, font = Theme.Fonts.Bold, color = C.Resonance, size = UDim2.new(0, 82, 1, 0), position = UDim2.new(1, -82, 0, 0), alignX = Enum.TextXAlignment.Right })
+	refs.resonanceLabel = Kit.text({ parent = resRow, text = "RESONANCIA", textSize = 11, font = Theme.Fonts.Bold, color = C.Resonance, size = UDim2.new(0, 82, 1, 0), position = UDim2.new(1, -82, 0, 0), alignX = Enum.TextXAlignment.Right })
 	refs.awaken = Kit.text({ parent = panel, text = "", textSize = 13, font = Theme.Fonts.Bold, color = C.Gold, order = 4 })
 end
 
@@ -68,7 +68,7 @@ local function buildAbilityBar(root: Instance)
 	local row = Kit.new("Frame", { BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, 70), Position = UDim2.fromOffset(0, 32), Parent = holder })
 	local layout = Kit.list(row, 6, true, Enum.HorizontalAlignment.Center)
 	layout.VerticalAlignment = Enum.VerticalAlignment.Center
-	makeSlot(row, "Light", "LMB", 1)
+	makeSlot(row, "Light", "CLIC", 1)
 	makeSlot(row, "Heavy", "V", 2)
 	makeSlot(row, "Dodge", "SHIFT", 3)
 	makeSlot(row, "Q", "Q", 4)
@@ -82,7 +82,7 @@ local function buildTopLeft(root: Instance)
 	local panel = Kit.panel({ parent = root, size = UDim2.fromOffset(320, 0), autoSize = Enum.AutomaticSize.Y, position = UDim2.fromOffset(16, 16), pad = 10, name = "Profile" })
 	panel.BackgroundTransparency = 0.25
 	Kit.list(panel, 4)
-	refs.level = Kit.text({ parent = panel, text = "Lv 1", textSize = 16, font = Theme.Fonts.Bold, order = 1, rich = true })
+	refs.level = Kit.text({ parent = panel, text = "Nv 1", textSize = 16, font = Theme.Fonts.Bold, order = 1, rich = true })
 	refs.xp = Kit.bar({ parent = panel, color = C.Gold, size = UDim2.new(1, 0, 0, 8), order = 2 })
 	refs.currency = Kit.text({ parent = panel, text = "", textSize = 13, color = C.TextDim, order = 3, size = UDim2.new(1, 0, 0, 0), autoSize = Enum.AutomaticSize.Y, rich = true })
 	-- satchel / expedition
@@ -101,7 +101,7 @@ local function buildTopLeft(root: Instance)
 end
 
 local function buildRight(root: Instance)
-	local menu = Kit.button({ parent = root, text = "☰  MENU  (M)", size = UDim2.fromOffset(150, 38), anchor = Vector2.new(1, 0), position = UDim2.new(1, -16, 0, 16), color = C.PanelLight, onClick = function()
+	local menu = Kit.button({ parent = root, text = "☰  MENÚ  (M)", size = UDim2.fromOffset(150, 38), anchor = Vector2.new(1, 0), position = UDim2.new(1, -16, 0, 16), color = C.PanelLight, onClick = function()
 		InputController.toggleMenu()
 	end })
 	menu.instance.Name = "MenuButton"
@@ -175,7 +175,7 @@ end
 
 local function buildTouch(root: Instance)
 	local pad = Kit.new("Frame", { Name = "TouchControls", BackgroundTransparency = 1, Size = UDim2.fromOffset(330, 300), AnchorPoint = Vector2.new(1, 1), Position = UDim2.new(1, -10, 1, -110), Parent = root })
-	touchButton(pad, "ATTACK", "Light", UDim2.new(1, -60, 1, -60), 96, Color3.fromRGB(200, 60, 80))
+	touchButton(pad, "ATAQUE", "Light", UDim2.new(1, -60, 1, -60), 96, Color3.fromRGB(200, 60, 80))
 	touchButton(pad, "HEAVY", "Heavy", UDim2.new(1, -170, 1, -40), 62, Color3.fromRGB(160, 80, 60))
 	touchButton(pad, "BLOCK", "Block", UDim2.new(1, -60, 1, -170), 62, Color3.fromRGB(80, 90, 130))
 	touchButton(pad, "DODGE", "Dodge", UDim2.new(1, -150, 1, -130), 62, Color3.fromRGB(70, 120, 150))
@@ -195,11 +195,11 @@ local function refreshProfile()
 	if not profile then
 		return
 	end
-	refs.level.Text = string.format("<b>Lv %d</b>  <font color=\"#a0a5bc\">%s</font>", profile.level, player.DisplayName)
+	refs.level.Text = string.format("<b>Nv %d</b>  <font color=\"#a0a5bc\">%s</font>", profile.level, player.DisplayName)
 	refs.xp.set(Leveling.progress(profile.level, profile.xp, ProgressionConfig.levelXp, ProgressionConfig.MaxLevel))
 	local m = profile.materials
 	refs.currency.Text = string.format(
-		"<font color=\"#ffcd6e\">◆ %s</font>   Iron %d  •  Cobalt %d  •  Ember %d\nShards %d  •  Sigils %d  •  Cores %d",
+		"<font color=\"#ffcd6e\">◆ %s</font>   Hierro %d  •  Cobalto %d  •  Ascua %d\nFragmentos %d  •  Sellos %d  •  Núcleos %d",
 		Format.number(profile.coins),
 		m.Iron or 0,
 		m.Cobalt or 0,
@@ -226,11 +226,11 @@ local function refreshProfile()
 		if secondary then string.format(" + <font color=\"%s\">%s</font>", hex(secondary.color), secondary.displayName) else ""
 	)
 	local build = CombatMath.weaponBuild("Katana", weapon)
-	slots.Light.title.Text = string.format("Combo\n%d hits", #build.light)
+	slots.Light.title.Text = string.format("Combo\n%d golpes", #build.light)
 	slots.Heavy.title.Text = build.heavy.name
-	slots.Heavy.sub.Text = build.heavy.stamina .. " stam"
+	slots.Heavy.sub.Text = build.heavy.stamina .. " aguante"
 	slots.Dodge.title.Text = "Dodge"
-	slots.Dodge.sub.Text = build.dodge.stamina .. " stam"
+	slots.Dodge.sub.Text = build.dodge.stamina .. " aguante"
 	for _, key in { "Q", "E", "R" } do
 		local ability, reason = CombatController.slotInfo(key)
 		local slot = slots[key]
@@ -241,17 +241,17 @@ local function refreshProfile()
 	end
 	local form = AwakeningConfig.Forms[profile.loadout.primary]
 	slots.G.title.Text = if form then form.displayName else "Awaken"
-	slots.H.title.Text = "Ember Tonic"
+	slots.H.title.Text = "Tónico de Brasa"
 	slots.H.sub.Text = "x" .. tostring(m.EmberTonic or 0)
 	-- quest tracker
 	Kit.clear(refs.tracker)
-	Kit.text({ parent = refs.tracker, text = "CONTRACTS", textSize = 12, font = Theme.Fonts.Bold, color = C.Gold, order = 0 })
+	Kit.text({ parent = refs.tracker, text = "CONTRATOS", textSize = 12, font = Theme.Fonts.Bold, color = C.Gold, order = 0 })
 	local tracked = QuestLogic.tracked(profile, 3)
 	for i, entry in tracked do
 		local def2 = entry.def
 		Kit.text({ parent = refs.tracker, text = def2.title, textSize = 14, font = Theme.Fonts.Bold, order = i * 10, color = if entry.complete then C.Good else C.Text })
 		if entry.complete then
-			Kit.text({ parent = refs.tracker, text = "✔ Complete — claim in Menu > Quests", textSize = 12, color = C.Good, order = i * 10 + 1 })
+			Kit.text({ parent = refs.tracker, text = "✔ Completado — reclámalo en Menú > Contratos", textSize = 12, color = C.Good, order = i * 10 + 1 })
 		else
 			for j, objective in def2.objectives do
 				Kit.text({
@@ -268,7 +268,7 @@ local function refreshProfile()
 		end
 	end
 	if #tracked == 0 then
-		Kit.text({ parent = refs.tracker, text = "Visit the Quest Board for new contracts.", textSize = 12, color = C.TextDim, order = 1 })
+		Kit.text({ parent = refs.tracker, text = "Visita el Tablón de Contratos para nuevos encargos.", textSize = 12, color = C.TextDim, order = 1 })
 	end
 end
 
@@ -283,15 +283,15 @@ local function refreshExpedition()
 	local region = WorldConfig.regionById(e.region or "")
 	refs.region.Text = region and region.name or "Emberfall"
 	if e.depth > 0 then
-		refs.risk.Text = string.format("<b>DEPTH %d</b> • death loses %d%% of your Satchel", e.depth, math.floor(e.loss * 100))
+		refs.risk.Text = string.format("<b>PROFUNDIDAD %d</b> • morir pierde el %d%% de tu Mochila", e.depth, math.floor(e.loss * 100))
 		refs.risk.TextColor3 = if e.depth >= 3 then C.Bad elseif e.depth == 2 then C.Warn else Color3.fromRGB(255, 220, 140)
 	else
-		refs.risk.Text = "<b>SAFE ZONE</b> • nothing can be lost here"
+		refs.risk.Text = "<b>ZONA SEGURA</b> • aquí no se pierde nada"
 		refs.risk.TextColor3 = C.Good
 	end
 	local lines = {}
 	if e.satchel.coins > 0 then
-		table.insert(lines, string.format("◆ %d coins", e.satchel.coins))
+		table.insert(lines, string.format("◆ %d monedas", e.satchel.coins))
 	end
 	for _, id in ItemConfig.Order do
 		local n = e.satchel.items[id]
@@ -299,7 +299,7 @@ local function refreshExpedition()
 			table.insert(lines, string.format("%s x%d", ItemConfig.Items[id].name, n))
 		end
 	end
-	refs.satchel.Text = if #lines > 0 then "SATCHEL (unbanked):\n" .. table.concat(lines, "\n") else "Satchel empty. Loot found here must be extracted at a beacon."
+	refs.satchel.Text = if #lines > 0 then "MOCHILA (sin asegurar):\n" .. table.concat(lines, "\n") else "Mochila vacía. El botín de aquí debe extraerse en un faro."
 end
 
 local function refreshParty()
@@ -310,7 +310,7 @@ local function refreshParty()
 	if not party then
 		return
 	end
-	Kit.text({ parent = panel, text = "PARTY", textSize = 12, font = Theme.Fonts.Bold, color = Color3.fromRGB(140, 200, 255), order = 0 })
+	Kit.text({ parent = panel, text = "GRUPO", textSize = 12, font = Theme.Fonts.Bold, color = Color3.fromRGB(140, 200, 255), order = 0 })
 	for i, member in party.members do
 		local row = Kit.new("Frame", { BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, 30), LayoutOrder = i, Parent = panel })
 		Kit.text({ parent = row, text = (if member.userId == party.leader then "★ " else "") .. member.name, textSize = 12, size = UDim2.new(1, 0, 0, 14) })
@@ -347,7 +347,7 @@ local function refreshTimers()
 	if event and event.phase ~= "Idle" and event.name then
 		refs.event.Visible = true
 		local remaining = Format.time(event.endsAt - now)
-		refs.eventTitle.Text = if event.phase == "Warning" then string.format("⚠ %s begins in %s", event.name, remaining) else string.format("★ %s — %s left", event.name, remaining)
+		refs.eventTitle.Text = if event.phase == "Warning" then string.format("⚠ %s empieza en %s", event.name, remaining) else string.format("★ %s — quedan %s", event.name, remaining)
 		refs.eventTitle.TextColor3 = event.color or C.Text
 		refs.eventBody.Text = event.description or ""
 	else
@@ -361,7 +361,7 @@ local function refreshTimers()
 	if showBoss then
 		refs.bossName.Text = string.upper(boss.name) .. "  —  " .. boss.title
 		if boss.state == "Countdown" then
-			refs.bossBar.set(1, string.format("The arena seals in %ds — step inside!", math.max(0, math.ceil(boss.countdownEnds - now))))
+			refs.bossBar.set(1, string.format("La arena se sella en %ds — ¡entra!", math.max(0, math.ceil(boss.countdownEnds - now))))
 			refs.bossPhase.Text = ""
 			refs.overload.frame.Visible = false
 		else
@@ -369,22 +369,22 @@ local function refreshTimers()
 			refs.bossBar.set(fraction, string.format("%s / %s", Format.number(boss.health), Format.number(boss.maxHealth)))
 			local tags = {}
 			if boss.exposed then
-				table.insert(tags, "<font color=\"#ffe68c\"><b>◆ WEAK POINT EXPOSED — strike its back</b></font>")
+				table.insert(tags, "<font color=\"#ffe68c\"><b>◆ PUNTO DÉBIL EXPUESTO — golpea su espalda</b></font>")
 			end
 			if boss.opening then
-				table.insert(tags, "<font color=\"#ffffff\"><b>FINAL OPENING x3</b></font>")
+				table.insert(tags, "<font color=\"#ffffff\"><b>APERTURA FINAL x3</b></font>")
 			end
-			refs.bossPhase.Text = string.format("Phase %d: %s   %s", boss.phase, boss.phaseName, table.concat(tags, "  "))
+			refs.bossPhase.Text = string.format("Fase %d: %s   %s", boss.phase, boss.phaseName, table.concat(tags, "  "))
 			refs.overload.frame.Visible = boss.overload ~= nil
 			if boss.overload then
-				refs.overload.set(boss.overload.progress, string.format("INTERRUPT %d%%  (%ds)", math.floor(boss.overload.progress * 100), math.max(0, math.ceil(boss.overload.endsAt - now))))
+				refs.overload.set(boss.overload.progress, string.format("INTERRUMPE %d%%  (%ds)", math.floor(boss.overload.progress * 100), math.max(0, math.ceil(boss.overload.endsAt - now))))
 			end
 		end
 	end
 	-- trial timer
 	local trial = ClientState.trial
 	if trial and refs.trialTimer then
-		refs.trialTimer.Text = "Time left: " .. Format.time(trial.endsAt - now)
+		refs.trialTimer.Text = "Tiempo restante: " .. Format.time(trial.endsAt - now)
 	end
 	-- cooldowns
 	for _, key in { "Q", "E", "R", "H" } do
@@ -406,16 +406,16 @@ local function refreshTimers()
 	local gslot = slots.G
 	if awakened then
 		local left = (player:GetAttribute("AwakenEnds") or 0) - now
-		refs.awaken.Text = string.format("AWAKENED — %ds  •  press G for your signature", math.max(0, math.ceil(left)))
-		gslot.sub.Text = "SIGNATURE"
+		refs.awaken.Text = string.format("DESPERTADO — %ds  •  pulsa G para tu técnica firma", math.max(0, math.ceil(left)))
+		gslot.sub.Text = "FIRMA"
 		gslot.overlay.Size = UDim2.fromScale(1, 0)
 	elseif burnout > 0 then
-		refs.awaken.Text = string.format("Burnout: resonance returns in %ds", math.ceil(burnout))
+		refs.awaken.Text = string.format("Agotado: la resonancia vuelve en %ds", math.ceil(burnout))
 		gslot.sub.Text = "burnout"
 		gslot.overlay.Size = UDim2.fromScale(1, 1)
 	elseif resonance >= 100 then
-		refs.awaken.Text = "RESONANCE FULL — press G to Awaken"
-		gslot.sub.Text = "READY"
+		refs.awaken.Text = "RESONANCIA LLENA — pulsa G para Despertar"
+		gslot.sub.Text = "LISTO"
 		gslot.overlay.Size = UDim2.fromScale(1, 0)
 	else
 		refs.awaken.Text = ""
@@ -436,7 +436,7 @@ local function refreshTimers()
 	end
 	-- lock on
 	local target = ClientState.lockTarget
-	refs.lock.Text = if target then "LOCKED: " .. tostring(target.Name) .. "  (T to release)" else ""
+	refs.lock.Text = if target then "FIJADO: " .. tostring(target.Name) .. " (T para soltar)" else ""
 end
 
 local function bindCharacter(character: Model)

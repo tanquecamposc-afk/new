@@ -402,7 +402,7 @@ attacks.Overload = function(id, attack, _target)
 	local threshold = record.maxHealth * attack.interruptFraction
 	encounter.overload = { damage = 0, threshold = threshold, endsAt = now() + attack.channel }
 	record.model:SetAttribute("Attacking", attack.name)
-	Net.event("Notify"):FireAllClients("Boss", "RESONANCE OVERLOAD: interrupt it with damage, or reach a SAFE zone!")
+	Net.event("Notify"):FireAllClients("Boss", "SOBRECARGA DE RESONANCIA: ¡interrúmpela con daño o llega a una zona SEGURA!")
 	local safe = {}
 	for i = 1, attack.safeZones do
 		local angle = (i / attack.safeZones) * math.pi * 2 + math.random()
@@ -432,7 +432,7 @@ attacks.Overload = function(id, attack, _target)
 	if interrupted then
 		Registry.get("EnemyService").stagger(record, attack.stunOnInterrupt, true)
 		exposeWeakPoint(attack.exposeOnInterrupt)
-		Net.event("Notify"):FireAllClients("Boss", "Overload interrupted! The Warden is exposed!")
+		Net.event("Notify"):FireAllClients("Boss", "¡Sobrecarga interrumpida! ¡El Celador está expuesto!")
 		local Combat = Registry.get("CombatService")
 		for _, player in activeParticipants() do
 			Combat.addResonance(player, 10)
@@ -504,7 +504,7 @@ local function finalSequence(id: number)
 				table.insert(doomed, tiles[i])
 				track(Telegraph.square(tiles[i], half, final.warnTime, { glyph = "⚠" }))
 			end
-			Net.event("Notify"):FireAllClients("Boss", string.format("The floor fractures! (%d/%d)", wave, final.waves))
+			Net.event("Notify"):FireAllClients("Boss", string.format("¡El suelo se fractura! (%d/%d)", wave, final.waves))
 			if not windup(id, final.warnTime, false) then
 				return
 			end
@@ -529,13 +529,13 @@ local function finalSequence(id: number)
 		encounter.openingUntil = now() + final.openingTime
 		Registry.get("EnemyService").stagger(record, final.openingTime, true)
 		exposeWeakPoint(final.openingTime)
-		Net.event("Notify"):FireAllClients("Boss", "THE CORE IS EXPOSED! Strike now!")
+		Net.event("Notify"):FireAllClients("Boss", "¡EL NÚCLEO ESTÁ EXPUESTO! ¡Golpea ahora!")
 		Net.event("Effect"):FireAllClients("FinalOpening", { model = record.model, duration = final.openingTime })
 		if not windup(id, final.openingTime, false) then
 			return
 		end
 		encounter.openingUntil = 0
-		Net.event("Notify"):FireAllClients("Boss", "The Warden pulls itself together...")
+		Net.event("Notify"):FireAllClients("Boss", "El Celador se recompone...")
 	end
 end
 
@@ -593,7 +593,7 @@ local function onParried(record: any, player: Player, attack: any)
 		Enemy.stagger(record, attack.parryStagger or 2.5, true)
 		exposeWeakPoint(4)
 		Registry.get("ProgressionService").discover(player, "WardenLanceWeakness")
-		Net.event("Notify"):FireAllClients("Boss", player.DisplayName .. " turned the Rift Lance! Strike its back!")
+		Net.event("Notify"):FireAllClients("Boss", player.DisplayName .. " devolvió la Lanza de la Grieta. ¡Golpea su espalda!")
 	else
 		Enemy.stagger(record, 0.6, true)
 	end
@@ -617,7 +617,7 @@ local function reset(reason: string)
 	Net.event("Effect"):FireAllClients("ArenaTransform", { active = false })
 	for _, player in encounter.participants do
 		if player.Parent then
-			Net.event("Notify"):FireClient(player, "Boss", "The Fracture Warden resets. " .. reason)
+			Net.event("Notify"):FireClient(player, "Boss", "El Celador de la Fractura se reinicia. " .. reason)
 		end
 	end
 	setBarrier(false)
@@ -694,15 +694,15 @@ local function victory(record: any)
 				Progression.achieve(player, "WardenSlayer")
 				Quest.record(player, "BossDefeated", { boss = "FractureWarden" })
 				Progression.present(player, "WardenDefeated", {
-					title = "The Warden Falls",
-					subtitle = string.format("Cleared in %s", string.format("%d:%02d", elapsed // 60, elapsed % 60)),
-					body = "Rewards are in your Satchel. Extract at the Warden's Beacon to secure them!",
+					title = "Cae el Celador",
+					subtitle = string.format("Superada en %s", string.format("%d:%02d", elapsed // 60, elapsed % 60)),
+					body = "Las recompensas están en tu Mochila. ¡Extrae en el Faro del Celador para asegurarlas!",
 					color = Color3.fromRGB(255, 210, 120),
 				})
-				Net.event("Notify"):FireClient(player, "Boss", "Victory! Extract at the Warden's Beacon to bank your rewards.")
+				Net.event("Notify"):FireClient(player, "Boss", "¡Victoria! Extrae en el Faro del Celador para asegurar tus recompensas.")
 			end
 		elseif player.Parent and not rewarded[id][userId] then
-			Net.event("Notify"):FireClient(player, "Boss", "The Warden falls, but you did not contribute enough for rewards.")
+			Net.event("Notify"):FireClient(player, "Boss", "El Celador cae, pero no contribuiste lo suficiente para recibir recompensas.")
 		end
 	end
 	encounter.record = nil
@@ -819,19 +819,19 @@ end
 
 function BossService.trigger(player: Player): (boolean, string?)
 	if encounter.state == "Countdown" then
-		return false, "The seal is already breaking."
+		return false, "El sello ya se está rompiendo."
 	end
 	if encounter.state ~= "Dormant" then
-		return false, "The arena is not ready."
+		return false, "La arena no está lista."
 	end
 	if now() < readyAt then
-		return false, "The Warden is reforming. Try again soon."
+		return false, "El Celador se está recomponiendo. Inténtalo pronto."
 	end
 	encounter.id += 1
 	encounter.state = "Countdown"
 	encounter.countdownEnds = now() + CFG.countdown
 	encounter.participants = {}
-	Net.event("Notify"):FireAllClients("Boss", player.DisplayName .. " broke the Fracture Seal! The arena locks in " .. CFG.countdown .. "s.")
+	Net.event("Notify"):FireAllClients("Boss", player.DisplayName .. " rompió el Sello de la Fractura. La arena se cierra en " .. CFG.countdown .. "s.")
 	broadcastState()
 	local id = encounter.id
 	task.delay(CFG.countdown, function()
@@ -889,7 +889,7 @@ local function tick()
 		return
 	end
 	if #activeParticipants() == 0 then
-		reset("Every challenger has fallen or left.")
+		reset("Todos los retadores han caído o se han ido.")
 		return
 	end
 	-- phase transitions
@@ -900,7 +900,7 @@ local function tick()
 		encounter.invulnerableUntil = math.max(encounter.invulnerableUntil, now() + 2.5)
 		local info = CFG.phases[phase]
 		Net.event("Effect"):FireAllClients("BossPhase", { phase = phase, name = info.name, model = record.model })
-		Net.event("Notify"):FireAllClients("BossPhase", string.format("Phase %d: %s", phase, info.name))
+		Net.event("Notify"):FireAllClients("BossPhase", string.format("Fase %d: %s", phase, info.name))
 		if phase == 3 then
 			record.humanoid.WalkSpeed = CFG.enrageMoveSpeed
 		end
@@ -983,7 +983,7 @@ function BossService.Start()
 	if retreatPrompt then
 		retreatPrompt.Triggered:Connect(function(player)
 			Registry.get("ExpeditionService").teleport(player, WorldConfig.Points.CampArrival)
-			Net.event("Notify"):FireClient(player, "Info", "You retreat to the camp. Your Satchel is safe for now.")
+			Net.event("Notify"):FireClient(player, "Info", "Te retiras al campamento. Tu Mochila está a salvo por ahora.")
 		end)
 	end
 
@@ -991,13 +991,13 @@ function BossService.Start()
 	Requests.on("WardenShortcut", "Request", function(player, _args)
 		local profile = Registry.get("PlayerDataService").get(player)
 		if profile.bosses.FractureWarden.clears < 1 then
-			return false, "Defeat the Warden once to unlock the shortcut."
+			return false, "Derrota al Celador una vez para desbloquear el atajo."
 		end
 		if not Registry.get("SecurityService").within(player, WorldConfig.Points.BossGate, 25) then
-			return false, "Use the Warden Gate in the Nexus."
+			return false, "Usa la Puerta del Celador en el Nexo."
 		end
 		Registry.get("ExpeditionService").teleport(player, WorldConfig.Points.WardenAntechamber)
-		return true, "You step through the Warden Gate."
+		return true, "Cruzas la Puerta del Celador."
 	end)
 
 	local accumulator, broadcastAccumulator = 0, 0

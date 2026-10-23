@@ -67,7 +67,7 @@ local function notifyState(player: Player, profile: Profile)
 		remote:FireClient(
 			player,
 			"DataWarning",
-			"Progress is NOT being saved this session: " .. (profile.reason or "data unavailable"),
+			"El progreso NO se está guardando en esta sesión: " .. (profile.reason or "datos no disponibles"),
 			{ persistent = true }
 		)
 	end
@@ -91,8 +91,8 @@ function PlayerDataService.load(player: Player): any
 		profile.data = ProfileSchema.default()
 		profile.state = "Temporary"
 		profile.reason = if RunService:IsStudio()
-			then "Studio has no DataStore access (enable 'Studio Access to API Services')"
-			else "DataStore unavailable"
+			then "Studio no tiene acceso a DataStore (activa 'Studio Access to API Services')"
+			else "DataStore no disponible"
 	else
 		local loadedRaw: any = nil
 		local lockedBy: any = nil
@@ -126,7 +126,7 @@ function PlayerDataService.load(player: Player): any
 				success = true
 				break
 			end
-			lastError = if ok then "profile is locked by another server" else tostring(err)
+			lastError = if ok then "el perfil está bloqueado por otro servidor" else tostring(err)
 			-- Studio without API access (or an unpublished place) will never succeed: stop now.
 			if
 				not ok
@@ -247,7 +247,7 @@ local function doSave(player: Player, profile: Profile, release: boolean): boole
 	end
 	if lostLock then
 		profile.state = "Temporary"
-		profile.reason = "another server took ownership of this profile"
+		profile.reason = "otro servidor tomó el control de este perfil"
 		warn("[PlayerData] session lock lost for " .. player.Name)
 		if player.Parent then
 			notifyState(player, profile)

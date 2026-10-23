@@ -39,7 +39,7 @@ local function grantProduct(player: Player, profile: any, product: any)
 		profile.cosmetics.owned[grant.cosmetic] = true
 	end
 	Registry.get("PlayerDataService").markDirty(player)
-	Net.event("Notify"):FireClient(player, "Unlock", "Thank you! " .. product.displayName .. " unlocked.")
+	Net.event("Notify"):FireClient(player, "Unlock", "¡Gracias! " .. product.displayName .. " desbloqueado.")
 end
 
 local function processReceipt(receipt: any): Enum.ProductPurchaseDecision
@@ -104,7 +104,7 @@ function EconomyService.Start()
 	MarketplaceService.PromptGamePassPurchaseFinished:Connect(function(player, passId, purchased)
 		if purchased and passById(passId) then
 			refreshPasses(player)
-			Net.event("Notify"):FireClient(player, "Unlock", "Thank you! Game pass active.")
+			Net.event("Notify"):FireClient(player, "Unlock", "¡Gracias! Pase de juego activo.")
 		end
 	end)
 end

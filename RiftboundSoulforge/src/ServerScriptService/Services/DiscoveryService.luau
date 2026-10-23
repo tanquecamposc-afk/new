@@ -87,7 +87,7 @@ local function openWall(opener: Player)
 	wallOpen = true
 	moveWall(true)
 	Net.event("Effect"):FireAllClients("Shake", { position = WorldConfig.Points.SunfallWall, intensity = 0.6 })
-	Net.event("Notify"):FireAllClients("Discovery", "Stone grinds in the Frontier cliffs... (" .. opener.DisplayName .. ")")
+	Net.event("Notify"):FireAllClients("Discovery", "La piedra cruje en los acantilados de la Frontera... (" .. opener.DisplayName .. ")")
 	local function scheduleClose()
 		task.delay(WorldConfig.SunfallOpenTime, function()
 			if playersInChamber() then
@@ -107,7 +107,7 @@ end
 
 local function kindle(player: Player, id: string)
 	if wallOpen then
-		Net.event("Notify"):FireClient(player, "Info", "The flames already burn. The way is open.")
+		Net.event("Notify"):FireClient(player, "Info", "Las llamas ya arden. El camino está abierto.")
 		return
 	end
 	if table.find(sequence, id) then
@@ -123,13 +123,13 @@ local function kindle(player: Player, id: string)
 				setBrazier(b.id, false)
 			end
 		end)
-		Net.event("Notify"):FireClient(player, "Info", "The flames gutter out. The order was wrong.")
+		Net.event("Notify"):FireClient(player, "Info", "Las llamas se apagan. El orden era incorrecto.")
 		return
 	end
 	if #sequence == #WorldConfig.BrazierOrder then
 		openWall(player)
 	else
-		Net.event("Notify"):FireClient(player, "Info", "The flame holds.")
+		Net.event("Notify"):FireClient(player, "Info", "La llama se mantiene.")
 	end
 end
 
@@ -147,13 +147,13 @@ local function readTablet(player: Player)
 	end
 	Progression.achieve(player, "SecretKeeper")
 	Progression.present(player, "SunfallTablet", {
-		title = "The Sunfall Tablet",
-		subtitle = "Secret Discovered",
-		body = "You learned the theory of COLLAPSING SUN (Ember + Gravity) and the Resonant Temper blueprint. Research the fusion at the Fusion Chamber.",
+		title = "La Tablilla del Ocaso Solar",
+		subtitle = "Secreto Descubierto",
+		body = "Aprendiste la teoría del SOL COLAPSANTE (Brasa + Gravedad) y el plano del Temple Resonante. Investiga la fusión en la Cámara de Fusión.",
 		color = Color3.fromRGB(255, 200, 90),
 	})
 	if not first then
-		Net.event("Notify"):FireClient(player, "Info", "You already know what the tablet teaches.")
+		Net.event("Notify"):FireClient(player, "Info", "Ya sabes lo que enseña la tablilla.")
 	end
 	Net.event("Effect"):FireClient(player, "Sound", { name = "ItemDiscovery" })
 end
@@ -164,7 +164,7 @@ local function openCache(player: Player)
 		return
 	end
 	if profile.codex.discoveries.SunfallCache then
-		Net.event("Notify"):FireClient(player, "Info", "The cache is empty for you.")
+		Net.event("Notify"):FireClient(player, "Info", "El alijo está vacío para ti.")
 		return
 	end
 	profile.codex.discoveries.SunfallCache = os.time() -- claimed flag first (idempotent)
@@ -176,7 +176,7 @@ local function pullLever(player: Player)
 	local t = os.clock()
 	Registry.get("ProgressionService").discover(player, "RavineShortcut")
 	if t < bridgeDownUntil then
-		Net.event("Notify"):FireClient(player, "Info", "The drawbridge is already down.")
+		Net.event("Notify"):FireClient(player, "Info", "El puente levadizo ya está bajado.")
 		return
 	end
 	bridgeDownUntil = t + 600
@@ -195,7 +195,7 @@ local function pullLever(player: Player)
 			end)
 		end
 	end
-	Net.event("Notify"):FireAllClients("Discovery", player.DisplayName .. " lowered the Cinder Ravine drawbridge (10 min).")
+	Net.event("Notify"):FireAllClients("Discovery", player.DisplayName .. " bajó el puente levadizo del Barranco de Ceniza (10 min).")
 end
 
 local lavaDebounce: { [Player]: number } = {}
@@ -219,7 +219,7 @@ local function connectLava()
 					humanoid:TakeDamage(humanoid.MaxHealth * 0.3)
 					if humanoid.Health > 0 then
 						Registry.get("ExpeditionService").teleport(player, WorldConfig.Points.RavineCheckpoint)
-						Net.event("Notify"):FireClient(player, "Info", "Scorched! You scramble back to the ravine edge.")
+						Net.event("Notify"):FireClient(player, "Info", "¡Chamuscado! Vuelves a trompicones al borde del barranco.")
 					end
 				end
 			end)
@@ -252,13 +252,13 @@ local function updateEchoes()
 		end
 		return a.level > b.level
 	end)
-	local lines = { "HALL OF ECHOES", "" }
+	local lines = { "SALÓN DE LOS ECOS", "" }
 	for i = 1, math.min(6, #entries) do
 		local e = entries[i]
-		table.insert(lines, string.format("%d. %s  Lv %d  Katana M%d  Warden x%d  ★%d", i, e.name, e.level, e.mastery, e.clears, e.achievements))
+		table.insert(lines, string.format("%d. %s  Nv %d  Katana M%d  Celador x%d  ★%d", i, e.name, e.level, e.mastery, e.clears, e.achievements))
 	end
 	if #entries == 0 then
-		table.insert(lines, "No echoes yet.")
+		table.insert(lines, "Aún no hay ecos.")
 	end
 	for _, board in world():GetDescendants() do
 		if board.Name == "EchoBoard" then
@@ -303,7 +303,7 @@ function DiscoveryService.Start()
 	local mural = promptOf(find("SunfallMural"))
 	if mural then
 		mural.Triggered:Connect(function(player)
-			Net.event("Notify"):FireClient(player, "Lore", DiscoveryConfig.Discoveries.SunfallChamber.hint .. " First the Moon that rises, then the Sun at its height, last the Star that never sets.")
+			Net.event("Notify"):FireClient(player, "Lore", DiscoveryConfig.Discoveries.SunfallChamber.hint .. " Primero la Luna que se alza, luego el Sol en su cénit y, al final, la Estrella que nunca se pone.")
 		end)
 	end
 	local lever = promptOf(find("ShortcutLever"))

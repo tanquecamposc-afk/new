@@ -184,7 +184,7 @@ function ProfileSchema.load(raw: any): (any?, string?)
 		return ProfileSchema.default(), nil
 	end
 	if type(raw) ~= "table" then
-		return nil, "stored profile is not a table"
+		return nil, "el perfil guardado no es una tabla"
 	end
 	local data = deepCopy(raw)
 	local version = tonumber(data.schemaVersion) or 0

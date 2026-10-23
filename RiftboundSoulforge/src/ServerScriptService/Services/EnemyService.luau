@@ -423,7 +423,7 @@ function EnemyService.kill(record: Record, killer: Player?)
 			Expedition.giveLoot(player, items, coins, position)
 			if def.kind == "Champion" then
 				Progression.present(player, "Champion_" .. record.archetype, {
-					title = def.displayName .. " Defeated",
+					title = def.displayName .. " derrotado",
 					subtitle = "Champion",
 					body = def.lore,
 					color = def.look.accent,

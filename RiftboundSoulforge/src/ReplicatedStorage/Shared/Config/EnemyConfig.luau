@@ -8,11 +8,11 @@ local EnemyConfig = {}
 EnemyConfig.Enemies = {
 	RiftStalker = {
 		id = "RiftStalker",
-		displayName = "Rift Stalker",
+		displayName = "Acechador de la Grieta",
 		kind = "Standard",
 		behaviour = "Stalker",
-		lore = "Fast hunters that slip between fractures. They strike, then retreat to strike again.",
-		tip = "Its lunge is a straight line: sidestep or dodge through it, then punish the retreat.",
+		lore = "Cazadores veloces que se deslizan entre fracturas. Golpean, se retiran y vuelven a golpear.",
+		tip = "Su embestida es una línea recta: apártate o esquiva a través y castiga su retirada.",
 		maxHealth = 110,
 		moveSpeed = 22,
 		aggroRange = 55,
@@ -27,7 +27,7 @@ EnemyConfig.Enemies = {
 		attacks = {
 			{
 				id = "Lunge",
-				name = "Rift Lunge",
+				name = "Embestida de Grieta",
 				shape = "Line",
 				windup = 0.6,
 				damage = 10,
@@ -42,11 +42,11 @@ EnemyConfig.Enemies = {
 	},
 	RuneGuardian = {
 		id = "RuneGuardian",
-		displayName = "Rune Guardian",
+		displayName = "Guardián Rúnico",
 		kind = "Standard",
 		behaviour = "Guardian",
-		lore = "Animated keep-wardens. Their rune shield turns aside light blows from the front.",
-		tip = "Heavy attacks break its guard. After its Rune Slam it is exposed: punish then.",
+		lore = "Guardianes animados de la fortaleza. Su escudo rúnico desvía los golpes ligeros frontales.",
+		tip = "Los ataques pesados rompen su guardia. Tras su Golpe Rúnico queda expuesto: castígalo entonces.",
 		maxHealth = 260,
 		moveSpeed = 11,
 		aggroRange = 45,
@@ -63,7 +63,7 @@ EnemyConfig.Enemies = {
 		attacks = {
 			{
 				id = "RuneSlam",
-				name = "Rune Slam",
+				name = "Golpe Rúnico",
 				shape = "Circle",
 				windup = 1.0,
 				damage = 18,
@@ -78,11 +78,11 @@ EnemyConfig.Enemies = {
 	},
 	EmberBeast = {
 		id = "EmberBeast",
-		displayName = "Ember Beast",
+		displayName = "Bestia de Brasas",
 		kind = "Standard",
 		behaviour = "Beast",
-		lore = "Furnace-hearted predators that erupt in rings of fire and charge through anything.",
-		tip = "Fire Ring has a safe centre and a safe outside. Its charge is a long line: step aside.",
+		lore = "Depredadores con corazón de horno que estallan en anillos de fuego y embisten contra todo.",
+		tip = "El Anillo de Fuego tiene el centro y el exterior seguros. Su carga es una línea larga: apártate.",
 		maxHealth = 200,
 		moveSpeed = 15,
 		aggroRange = 50,
@@ -96,7 +96,7 @@ EnemyConfig.Enemies = {
 		attacks = {
 			{
 				id = "FireRing",
-				name = "Fire Ring",
+				name = "Anillo de Fuego",
 				shape = "Ring",
 				windup = 1.1,
 				damage = 15,
@@ -109,7 +109,7 @@ EnemyConfig.Enemies = {
 			},
 			{
 				id = "Charge",
-				name = "Molten Charge",
+				name = "Carga Fundida",
 				shape = "Line",
 				windup = 0.85,
 				damage = 16,
@@ -126,11 +126,11 @@ EnemyConfig.Enemies = {
 	},
 	AshenSentinel = {
 		id = "AshenSentinel",
-		displayName = "Ashen Sentinel",
+		displayName = "Centinela Ceniciento",
 		kind = "Champion",
 		behaviour = "Guardian",
-		lore = "Champion of the Ruined Keep. A gravity core still turns inside its chest.",
-		tip = "Same rules as a Rune Guardian, but its Shockwave ring has a safe centre.",
+		lore = "Campeón de la Fortaleza en Ruinas. Un núcleo de gravedad aún gira en su pecho.",
+		tip = "Mismas reglas que un Guardián Rúnico, pero el anillo de su Onda tiene el centro seguro.",
 		maxHealth = 1500,
 		moveSpeed = 12,
 		aggroRange = 50,
@@ -148,7 +148,7 @@ EnemyConfig.Enemies = {
 		attacks = {
 			{
 				id = "RuneSlam",
-				name = "Rune Slam",
+				name = "Golpe Rúnico",
 				shape = "Circle",
 				windup = 1.0,
 				damage = 24,
@@ -160,7 +160,7 @@ EnemyConfig.Enemies = {
 			},
 			{
 				id = "Shockwave",
-				name = "Ashen Shockwave",
+				name = "Onda Cenicienta",
 				shape = "Ring",
 				windup = 1.3,
 				damage = 22,
@@ -172,7 +172,7 @@ EnemyConfig.Enemies = {
 			},
 			{
 				id = "Cleave",
-				name = "Gravecleave",
+				name = "Tajo Sepulcral",
 				shape = "Line",
 				windup = 0.8,
 				damage = 20,
@@ -187,11 +187,11 @@ EnemyConfig.Enemies = {
 	},
 	EclipseStalker = {
 		id = "EclipseStalker",
-		displayName = "Eclipse Stalker",
+		displayName = "Acechador del Eclipse",
 		kind = "Champion",
 		behaviour = "Stalker",
-		lore = "Appears only during an Eclipse Hunt. Its hide is used in sigil-grade forging.",
-		tip = "A faster Rift Stalker with a double lunge. Parry the first, dodge the second.",
+		lore = "Solo aparece durante una Cacería del Eclipse. Su piel se usa en forjas de grado sello.",
+		tip = "Un Acechador de la Grieta más rápido con doble embestida. Para la primera, esquiva la segunda.",
 		maxHealth = 900,
 		moveSpeed = 26,
 		aggroRange = 70,
@@ -208,7 +208,7 @@ EnemyConfig.Enemies = {
 		attacks = {
 			{
 				id = "Lunge",
-				name = "Eclipse Lunge",
+				name = "Embestida del Eclipse",
 				shape = "Line",
 				windup = 0.5,
 				damage = 18,
@@ -224,11 +224,11 @@ EnemyConfig.Enemies = {
 	},
 	BladeWraith = {
 		id = "BladeWraith",
-		displayName = "Blade Wraith",
+		displayName = "Espectro de Hoja",
 		kind = "Champion",
 		behaviour = "Stalker",
-		lore = "A training echo summoned for the Katana Trial.",
-		tip = "Parry its lunge, dodge its sweep, keep your combo going.",
+		lore = "Un eco de entrenamiento invocado para la Prueba de la Katana.",
+		tip = "Para su embestida, esquiva su barrido y mantén el combo.",
 		maxHealth = 650,
 		moveSpeed = 18,
 		aggroRange = 60,
@@ -242,7 +242,7 @@ EnemyConfig.Enemies = {
 		attacks = {
 			{
 				id = "Lunge",
-				name = "Echo Lunge",
+				name = "Embestida del Eco",
 				shape = "Line",
 				windup = 0.7,
 				damage = 9,
@@ -254,7 +254,7 @@ EnemyConfig.Enemies = {
 			},
 			{
 				id = "Sweep",
-				name = "Echo Sweep",
+				name = "Barrido del Eco",
 				shape = "Circle",
 				windup = 0.9,
 				damage = 9,
@@ -268,11 +268,11 @@ EnemyConfig.Enemies = {
 	},
 	TrainingDummy = {
 		id = "TrainingDummy",
-		displayName = "Training Dummy",
+		displayName = "Muñeco de Entrenamiento",
 		kind = "Training",
 		behaviour = "Dummy",
-		lore = "Rift-bound straw. Feels nothing, forgives everything.",
-		tip = "Practice your light chain (Left Mouse) and your heavy attack (V, or the HEAVY button).",
+		lore = "Paja atada a la Grieta. No siente nada, lo perdona todo.",
+		tip = "Practica tu cadena ligera (clic izquierdo) y tu ataque pesado (V o el botón PESADO).",
 		maxHealth = 400,
 		moveSpeed = 0,
 		aggroRange = 0,
@@ -287,11 +287,11 @@ EnemyConfig.Enemies = {
 	},
 	SparringGolem = {
 		id = "SparringGolem",
-		displayName = "Sparring Golem",
+		displayName = "Gólem de Práctica",
 		kind = "Training",
 		behaviour = "Golem",
-		lore = "A patient stone teacher. Its strikes are slow and honest.",
-		tip = "Hold Block (Right Mouse) just before its strike lands for a Perfect Parry. Dodge (Shift) through the slam.",
+		lore = "Un paciente maestro de piedra. Sus golpes son lentos y honestos.",
+		tip = "Mantén Bloquear (clic derecho) justo antes de que impacte para una Parada Perfecta. Esquiva (Shift) a través del golpe en el suelo.",
 		maxHealth = 800,
 		moveSpeed = 0,
 		aggroRange = 22,
@@ -304,7 +304,7 @@ EnemyConfig.Enemies = {
 		attacks = {
 			{
 				id = "TrainingStrike",
-				name = "Training Strike",
+				name = "Tajo de Entrenamiento",
 				shape = "Line",
 				windup = 1.2,
 				damage = 4,
@@ -316,7 +316,7 @@ EnemyConfig.Enemies = {
 			},
 			{
 				id = "TrainingSlam",
-				name = "Training Slam",
+				name = "Golpe de Entrenamiento",
 				shape = "Circle",
 				windup = 1.4,
 				damage = 4,

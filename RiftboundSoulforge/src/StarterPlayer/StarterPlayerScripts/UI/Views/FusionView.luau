@@ -14,29 +14,29 @@ local View = {}
 
 function View.mount(container: Instance, _ctx: any)
 	return ViewUtil.simple(container, function(body, profile)
-		ViewUtil.para(body, "Fusions are new techniques, not damage multipliers. Step 1: research here. Step 2: attune in combat by chaining the two essences on the same enemy. Then equip both essences and press R.", C.TextDim, 0)
+		ViewUtil.para(body, "Las fusiones son técnicas nuevas, no multiplicadores de daño. Paso 1: investiga aquí. Paso 2: sintoniza en combate encadenando las dos esencias sobre el mismo enemigo. Luego equipa ambas y pulsa R.", C.TextDim, 0)
 		for i, id in FusionConfig.Order do
 			local def = FusionConfig.Fusions[id]
 			local record = profile.fusions[id]
-			local card = Kit.card(body, def.displayName .. "  (" .. table.concat(def.essences, " + ") .. ")", i, def.color)
+			local card = Kit.card(body, def.displayName .. "  (" .. EssenceConfig.names(def.essences) .. ")", i, def.color)
 			ViewUtil.para(card, def.summary, C.TextDim, 1)
 			if not def.implemented then
-				ViewUtil.para(card, "This resonance cannot be stabilised yet (future update).", C.TextMuted, 2)
+				ViewUtil.para(card, "Esta resonancia aún no se puede estabilizar (actualización futura).", C.TextMuted, 2)
 			elseif record.unlocked then
-				ViewUtil.para(card, "✔ Unlocked. Equip " .. table.concat(def.essences, " + ") .. " and press R.", C.Good, 2)
+				ViewUtil.para(card, "✔ Desbloqueado. Equipa " .. EssenceConfig.names(def.essences) .. " y pulsa R.", C.Good, 2)
 			elseif record.researched then
-				ViewUtil.para(card, string.format("Research complete. Attunement %d/%d: %s", record.attunement, def.attunement.count, def.attunement.description), C.Warn, 2)
+				ViewUtil.para(card, string.format("Investigación completa. Sintonía %d/%d: %s", record.attunement, def.attunement.count, def.attunement.description), C.Warn, 2)
 			else
 				local lines = {}
 				for _, essence in def.essences do
-					table.insert(lines, { text = essence .. " essence unlocked", met = profile.essences[essence].unlocked })
+					table.insert(lines, { text = essence .. " esencia desbloqueada", met = profile.essences[essence].unlocked })
 				end
 				for essence, level in def.research.masteries do
-					table.insert(lines, { text = essence .. " mastery " .. level, met = profile.essences[essence].mastery >= level and profile.essences[essence].unlocked })
+					table.insert(lines, { text = EssenceConfig.Essences[essence].displayName .. " · maestría " .. level, met = profile.essences[essence].mastery >= level and profile.essences[essence].unlocked })
 				end
 				if def.research.discovery then
 					local found = profile.codex.discoveries[def.research.discovery] ~= nil
-					table.insert(lines, { text = if found then "Sunfall Tablet studied" else "Missing knowledge — " .. def.hint, met = found })
+					table.insert(lines, { text = if found then "Tablilla del Ocaso Solar estudiada" else "Falta conocimiento — " .. def.hint, met = found })
 				end
 				for _, line in ViewUtil.costLines(profile, def.research.cost) do
 					table.insert(lines, line)
@@ -46,28 +46,28 @@ function View.mount(container: Instance, _ctx: any)
 				for _, line in lines do
 					all = all and line.met
 				end
-				local b = Kit.button({ parent = card, text = "Research", color = def.color, order = 4, onClick = function()
+				local b = Kit.button({ parent = card, text = "Investigar", color = def.color, order = 4, onClick = function()
 					ClientState.request("ResearchFusion", { id = id })
 				end })
-				b.setEnabled(all, if not all then "Requirements missing" else nil)
+				b.setEnabled(all, if not all then "Faltan requisitos" else nil)
 			end
 		end
-		local attune = Kit.card(body, "Essence attunement", 10, C.Accent)
-		ViewUtil.para(attune, "Essences can also be earned through contracts. Attunement is the deterministic alternative.", C.TextDim, 0, 13)
+		local attune = Kit.card(body, "Sintonía de esencias", 10, C.Accent)
+		ViewUtil.para(attune, "Las esencias también se ganan con contratos. La sintonía es la alternativa garantizada.", C.TextDim, 0, 13)
 		for i, id in { "Storm", "Gravity" } do
 			local def = EssenceConfig.Essences[id]
 			local card = Kit.card(attune, def.displayName, i, def.color)
 			if profile.essences[id].unlocked then
-				ViewUtil.para(card, "✔ Attuned.", C.Good, 1)
+				ViewUtil.para(card, "✔ Sintonizada.", C.Good, 1)
 			else
 				local lines = ViewUtil.costLines(profile, def.attuneCost)
-				table.insert(lines, 1, { text = "Player level " .. def.attuneLevel, met = profile.level >= def.attuneLevel })
+				table.insert(lines, 1, { text = "Nivel de jugador " .. def.attuneLevel, met = profile.level >= def.attuneLevel })
 				Kit.requirements(card, lines, 1)
 				local ok = profile.level >= def.attuneLevel and Costs.canAfford(profile, def.attuneCost)
-				local b = Kit.button({ parent = card, text = "Attune " .. def.displayName, color = def.color, order = 2, onClick = function()
+				local b = Kit.button({ parent = card, text = "Sintonizar " .. def.displayName, color = def.color, order = 2, onClick = function()
 					ClientState.request("AttuneEssence", { essence = id })
 				end })
-				b.setEnabled(ok, if not ok then "Requirements missing" else nil)
+				b.setEnabled(ok, if not ok then "Faltan requisitos" else nil)
 			end
 		end
 	end, { "profile" })

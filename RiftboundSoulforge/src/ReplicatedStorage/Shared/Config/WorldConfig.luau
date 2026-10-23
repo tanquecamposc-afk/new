@@ -14,14 +14,14 @@ WorldConfig.e = e
 
 -- Axis-aligned regions. depth drives expedition risk (0 = safe).
 WorldConfig.Regions = {
-	{ id = "Nexus", name = "The Nexus", min = Vector3.new(-170, -50, -170), max = Vector3.new(170, 200, 170), depth = 0, safe = true, expedition = false },
-	{ id = "Camp", name = "Emberfall Camp", min = e(-40, -70) - Vector3.new(0, 50, 0), max = e(60, 70) + Vector3.new(0, 200, 0), depth = 0, safe = true, expedition = true },
-	{ id = "Frontier", name = "Emberfall Frontier", min = e(60, -100) - Vector3.new(0, 50, 0), max = e(262, 100) + Vector3.new(0, 200, 0), depth = 1, expedition = true },
-	{ id = "SunfallChamber", name = "Sunfall Chamber", min = e(180, -135) - Vector3.new(0, 50, 0), max = e(220, -100) + Vector3.new(0, 200, 0), depth = 1, expedition = true },
-	{ id = "Ravine", name = "Cinder Ravine", min = e(262, -100) - Vector3.new(0, 80, 0), max = e(340, 100) + Vector3.new(0, 200, 0), depth = 1, expedition = true },
-	{ id = "Keep", name = "Ruined Keep", min = e(340, -60) - Vector3.new(0, 50, 0), max = e(542, 60) + Vector3.new(0, 200, 0), depth = 2, expedition = true },
-	{ id = "Approach", name = "Warden's Approach", min = e(542, -40) - Vector3.new(0, 50, 0), max = e(580, 40) + Vector3.new(0, 200, 0), depth = 3, expedition = true },
-	{ id = "Arena", name = "Fracture Arena", min = e(580, -60) - Vector3.new(0, 50, 0), max = e(700, 60) + Vector3.new(0, 200, 0), depth = 3, expedition = true },
+	{ id = "Nexus", name = "El Nexo", min = Vector3.new(-170, -50, -170), max = Vector3.new(170, 200, 170), depth = 0, safe = true, expedition = false },
+	{ id = "Camp", name = "Campamento de Emberfall", min = e(-40, -70) - Vector3.new(0, 50, 0), max = e(60, 70) + Vector3.new(0, 200, 0), depth = 0, safe = true, expedition = true },
+	{ id = "Frontier", name = "Frontera de Emberfall", min = e(60, -100) - Vector3.new(0, 50, 0), max = e(262, 100) + Vector3.new(0, 200, 0), depth = 1, expedition = true },
+	{ id = "SunfallChamber", name = "Cámara del Ocaso Solar", min = e(180, -135) - Vector3.new(0, 50, 0), max = e(220, -100) + Vector3.new(0, 200, 0), depth = 1, expedition = true },
+	{ id = "Ravine", name = "Barranco de Ceniza", min = e(262, -100) - Vector3.new(0, 80, 0), max = e(340, 100) + Vector3.new(0, 200, 0), depth = 1, expedition = true },
+	{ id = "Keep", name = "Fortaleza en Ruinas", min = e(340, -60) - Vector3.new(0, 50, 0), max = e(542, 60) + Vector3.new(0, 200, 0), depth = 2, expedition = true },
+	{ id = "Approach", name = "Antesala del Celador", min = e(542, -40) - Vector3.new(0, 50, 0), max = e(580, 40) + Vector3.new(0, 200, 0), depth = 3, expedition = true },
+	{ id = "Arena", name = "Arena de la Fractura", min = e(580, -60) - Vector3.new(0, 50, 0), max = e(700, 60) + Vector3.new(0, 200, 0), depth = 3, expedition = true },
 }
 
 -- Visual mood per region (client ZoneController).
@@ -185,11 +185,11 @@ end
 
 -- Planned regions (Codex only; none of these exist in the world yet).
 WorldConfig.FutureRegions = {
-	{ id = "Frostgrave", name = "Frostgrave", teaser = "Glaciers, frozen ruins and defensive magic." },
-	{ id = "VerdantReach", name = "Verdant Reach", teaser = "Ancient forests, living ruins and nature powers." },
-	{ id = "ObsidianCrown", name = "Obsidian Crown", teaser = "Volcanoes, dangerous mining and heavy weapons." },
-	{ id = "HollowSky", name = "The Hollow Sky", teaser = "Floating ruins, unusual gravity and dimensional puzzles." },
-	{ id = "LastRift", name = "The Last Rift", teaser = "Advanced dungeons, rare materials and endgame encounters." },
+	{ id = "Frostgrave", name = "Frostgrave", teaser = "Glaciares, ruinas heladas y magia defensiva." },
+	{ id = "VerdantReach", name = "Alcance Verdeante", teaser = "Bosques ancestrales, ruinas vivas y poderes de la naturaleza." },
+	{ id = "ObsidianCrown", name = "Corona de Obsidiana", teaser = "Volcanes, minería peligrosa y armas pesadas." },
+	{ id = "HollowSky", name = "El Cielo Hueco", teaser = "Ruinas flotantes, gravedad extraña y acertijos dimensionales." },
+	{ id = "LastRift", name = "La Última Grieta", teaser = "Mazmorras avanzadas, materiales raros y encuentros de final de juego." },
 }
 
 return WorldConfig

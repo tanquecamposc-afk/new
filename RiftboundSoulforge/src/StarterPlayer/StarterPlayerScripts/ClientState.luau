@@ -48,8 +48,8 @@ function ClientState.request(kind: string, args: any?, silent: boolean?): (boole
 		return Net.func("Request"):InvokeServer(kind, args or {})
 	end)
 	if not ok then
-		ClientState.toast("Error", "Connection problem. Try again.")
-		return false, "Connection problem", nil
+		ClientState.toast("Error", "Problema de conexión. Inténtalo de nuevo.")
+		return false, "Problema de conexión", nil
 	end
 	if not silent and b then
 		ClientState.toast(if a then "Success" else "Error", b)

@@ -5,9 +5,9 @@ local BossConfig = {}
 
 BossConfig.FractureWarden = {
 	id = "FractureWarden",
-	displayName = "The Fracture Warden",
-	title = "Keeper of the Broken Seal",
-	lore = "It was built to hold the Rift shut. Now it guards the crack it failed to close.",
+	displayName = "El Celador de la Fractura",
+	title = "Guardián del Sello Roto",
+	lore = "Fue creado para mantener cerrada la Grieta. Ahora custodia la fisura que no logró sellar.",
 	baseHealth = 5200,
 	healthPerExtraPlayer = 0.75, -- +75% health per additional participant
 	moveSpeed = 13,
@@ -16,15 +16,15 @@ BossConfig.FractureWarden = {
 	resetDelay = 8,
 	victoryCooldown = 30,
 	phases = {
-		{ id = 1, name = "Guarded Assault", threshold = 1.0 },
-		{ id = 2, name = "Rift Fractures", threshold = 0.7 },
-		{ id = 3, name = "Resonance Overload", threshold = 0.4 },
-		{ id = 4, name = "The Last Fracture", threshold = 0.15 },
+		{ id = 1, name = "Asalto en Guardia", threshold = 1.0 },
+		{ id = 2, name = "Fracturas de Grieta", threshold = 0.7 },
+		{ id = 3, name = "Sobrecarga de Resonancia", threshold = 0.4 },
+		{ id = 4, name = "La Última Fractura", threshold = 0.15 },
 	},
 	attacks = {
 		Cleave = {
 			id = "Cleave",
-			name = "Warden's Cleave",
+			name = "Hendidura del Celador",
 			shape = "Line",
 			windup = 1.0,
 			damage = 22,
@@ -35,7 +35,7 @@ BossConfig.FractureWarden = {
 		},
 		Sweep = {
 			id = "Sweep",
-			name = "Sundering Sweep",
+			name = "Barrido Desgarrador",
 			shape = "Circle",
 			windup = 1.3,
 			damage = 20,
@@ -45,7 +45,7 @@ BossConfig.FractureWarden = {
 		},
 		FractureSlam = {
 			id = "FractureSlam",
-			name = "Fracture Slam",
+			name = "Golpe de Fractura",
 			shape = "CircleAtTarget",
 			windup = 1.1,
 			damage = 26,
@@ -56,7 +56,7 @@ BossConfig.FractureWarden = {
 		},
 		RiftLance = {
 			id = "RiftLance",
-			name = "Rift Lance",
+			name = "Lanza de la Grieta",
 			shape = "Line",
 			windup = 0.9,
 			damage = 24,
@@ -68,7 +68,7 @@ BossConfig.FractureWarden = {
 		},
 		Fractures = {
 			id = "Fractures",
-			name = "Rift Fractures",
+			name = "Fracturas de Grieta",
 			windup = 1.2,
 			damage = 7,
 			radius = 6,
@@ -79,7 +79,7 @@ BossConfig.FractureWarden = {
 		},
 		ShardVolley = {
 			id = "ShardVolley",
-			name = "Shard Volley",
+			name = "Andanada de Esquirlas",
 			windup = 1.0,
 			damage = 16,
 			radius = 5,
@@ -88,7 +88,7 @@ BossConfig.FractureWarden = {
 		},
 		RiftStep = {
 			id = "RiftStep",
-			name = "Rift Step",
+			name = "Paso de Grieta",
 			windup = 0.9,
 			radius = 8,
 			damage = 14,
@@ -96,7 +96,7 @@ BossConfig.FractureWarden = {
 		},
 		Overload = {
 			id = "Overload",
-			name = "Resonance Overload",
+			name = "Sobrecarga de Resonancia",
 			channel = 5.5,
 			interruptFraction = 0.06, -- of max health, dealt during the channel
 			damage = 45,
@@ -108,7 +108,7 @@ BossConfig.FractureWarden = {
 		},
 		Suppression = {
 			id = "Suppression",
-			name = "Suppression Pulse",
+			name = "Pulso Supresor",
 			shape = "Ring",
 			windup = 1.2,
 			damage = 12,

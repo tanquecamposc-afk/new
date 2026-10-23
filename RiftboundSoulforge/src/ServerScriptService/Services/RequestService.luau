@@ -24,26 +24,26 @@ function RequestService.Start()
 	Net.func("Request").OnServerInvoke = function(player: Player, kind: any, args: any)
 		if type(kind) ~= "string" or #kind > 40 then
 			Security.flag(player, "bad request kind")
-			return false, "Invalid request."
+			return false, "Petición no válida."
 		end
 		local entry = handlers[kind]
 		if not entry then
 			Security.flag(player, "unknown request " .. kind)
-			return false, "Unknown request."
+			return false, "Petición desconocida."
 		end
 		if not Security.allow(player, entry.category) then
-			return false, "Slow down a little."
+			return false, "Más despacio."
 		end
 		if args ~= nil and type(args) ~= "table" then
-			return false, "Invalid arguments."
+			return false, "Argumentos no válidos."
 		end
 		if entry.needsProfile and not PlayerData.get(player) then
-			return false, "Your profile is still loading."
+			return false, "Tu perfil aún se está cargando."
 		end
 		local ok, a, b, c = pcall(entry.fn, player, args or {})
 		if not ok then
 			warn(string.format("[Request] %s failed for %s: %s", kind, player.Name, tostring(a)))
-			return false, "Something went wrong. Try again."
+			return false, "Algo salió mal. Inténtalo de nuevo."
 		end
 		return a, b, c
 	end

@@ -104,7 +104,7 @@ function QuestService.dailyDefs(): { any }
 			id = entry.id,
 			title = entry.title,
 			category = "Daily",
-			description = "Daily challenge. Resets at 00:00 UTC.",
+			description = "Desafío diario. Se reinicia a las 00:00 UTC.",
 			objectives = entry.objectives,
 			rewards = entry.rewards,
 			dailyPick = true,
@@ -154,28 +154,28 @@ local function grantRewards(player: Player, rewards: any)
 		Progression.addWeaponMastery(player, "Katana", rewards.weaponMastery)
 	end
 	if rewards.essence then
-		Progression.unlockEssence(player, rewards.essence, "Contract reward.")
+		Progression.unlockEssence(player, rewards.essence, "Recompensa de contrato.")
 	end
 end
 
 function QuestService.claim(player: Player, questId: string): (boolean, string?)
 	local profile = data(player)
 	if not profile then
-		return false, "Profile not loaded."
+		return false, "Perfil no cargado."
 	end
 	refreshDaily(profile)
 	local def = QuestConfig.Quests[questId]
 	if def and not def.daily then
 		if not profile.quests.completed[questId] then
-			return false, "Not complete yet."
+			return false, "Aún no completado."
 		end
 		if profile.quests.claimed[questId] then
-			return false, "Already claimed."
+			return false, "Ya reclamado."
 		end
 		profile.quests.claimed[questId] = true -- set BEFORE granting: duplicate requests fail here
 		Registry.get("PlayerDataService").markDirty(player)
 		grantRewards(player, def.rewards)
-		return true, "Reward claimed: " .. def.title
+		return true, "Recompensa reclamada: " .. def.title
 	end
 	-- Daily quest or daily pick
 	local dailyDef = def
@@ -187,19 +187,19 @@ function QuestService.claim(player: Player, questId: string): (boolean, string?)
 		end
 	end
 	if not dailyDef then
-		return false, "Unknown quest."
+		return false, "Contrato desconocido."
 	end
 	local progress = profile.daily.progress[questId]
 	if not progress or not progress.done then
-		return false, "Not complete yet."
+		return false, "Aún no completado."
 	end
 	if profile.daily.claimed[questId] then
-		return false, "Already claimed today."
+		return false, "Ya reclamado hoy."
 	end
 	profile.daily.claimed[questId] = true
 	Registry.get("PlayerDataService").markDirty(player)
 	grantRewards(player, dailyDef.rewards)
-	return true, "Reward claimed: " .. dailyDef.title
+	return true, "Recompensa reclamada: " .. dailyDef.title
 end
 
 function QuestService.Init() end
@@ -208,7 +208,7 @@ function QuestService.Start()
 	local Requests = Registry.get("RequestService")
 	Requests.on("ClaimQuest", "Request", function(player, args)
 		if type(args.id) ~= "string" or #args.id > 40 then
-			return false, "Invalid quest."
+			return false, "Contrato no válido."
 		end
 		return QuestService.claim(player, args.id)
 	end)

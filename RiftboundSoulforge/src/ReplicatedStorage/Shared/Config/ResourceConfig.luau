@@ -6,7 +6,7 @@ local ResourceConfig = {}
 ResourceConfig.Nodes = {
 	IronVein = {
 		id = "IronVein",
-		displayName = "Iron Vein",
+		displayName = "Veta de Hierro",
 		item = "Iron",
 		tier = 1,
 		holdDuration = 1.1,
@@ -19,7 +19,7 @@ ResourceConfig.Nodes = {
 	},
 	EmberstoneDeposit = {
 		id = "EmberstoneDeposit",
-		displayName = "Emberstone Deposit",
+		displayName = "Depósito de Piedra Ascua",
 		item = "Emberstone",
 		tier = 1,
 		holdDuration = 1.5,
@@ -32,7 +32,7 @@ ResourceConfig.Nodes = {
 	},
 	CobaltCluster = {
 		id = "CobaltCluster",
-		displayName = "Cobalt Cluster",
+		displayName = "Racimo de Cobalto",
 		item = "Cobalt",
 		tier = 2,
 		holdDuration = 1.9,
@@ -45,7 +45,7 @@ ResourceConfig.Nodes = {
 	},
 	RiftCrystal = {
 		id = "RiftCrystal",
-		displayName = "Rift Crystal",
+		displayName = "Cristal de Grieta",
 		item = "EssenceShard",
 		tier = 1,
 		holdDuration = 1.6,
@@ -59,8 +59,8 @@ ResourceConfig.Nodes = {
 }
 
 ResourceConfig.ToolTiers = {
-	[1] = "Iron Pick",
-	[2] = "Cobalt Pick",
+	[1] = "Pico de Hierro",
+	[2] = "Pico de Cobalto",
 }
 
 return ResourceConfig

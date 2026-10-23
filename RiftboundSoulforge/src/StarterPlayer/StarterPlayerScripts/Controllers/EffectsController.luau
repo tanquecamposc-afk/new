@@ -284,7 +284,7 @@ end
 
 handlers.GuardBreak = function(d)
 	EffectsController.burst(d.position, Color3.fromRGB(255, 255, 255), 20, 18)
-	EffectsController.floatText(d.position + Vector3.new(0, 4, 0), "GUARD BREAK", Color3.fromRGB(255, 220, 120), 30, 0.9)
+	EffectsController.floatText(d.position + Vector3.new(0, 4, 0), "GUARDIA ROTA", Color3.fromRGB(255, 220, 120), 30, 0.9)
 end
 
 handlers.Parry = function(d)
@@ -334,7 +334,7 @@ handlers.AwakenEnd = function(d)
 	if root then
 		EffectsController.burst(root.Position, Color3.fromRGB(150, 150, 170), 16, 8)
 		if d.suppressed then
-			EffectsController.floatText(root.Position + Vector3.new(0, 4, 0), "SUPPRESSED", Color3.fromRGB(255, 120, 160), 30, 1)
+			EffectsController.floatText(root.Position + Vector3.new(0, 4, 0), "SUPRIMIDO", Color3.fromRGB(255, 120, 160), 30, 1)
 		end
 	end
 end
@@ -491,7 +491,7 @@ handlers.Coop = function(d)
 	EffectsController.sphere(d.position, 2, 30, d.color, 0.7, 0)
 	EffectsController.ring(d.position - Vector3.new(0, 2.4, 0), 16, d.color, 0.8)
 	EffectsController.burst(d.position, d.color, 60, 30)
-	EffectsController.floatText(d.position + Vector3.new(0, 8, 0), "CO-OP RESONANCE", d.color, 44, 1.5)
+	EffectsController.floatText(d.position + Vector3.new(0, 8, 0), "RESONANCIA COOPERATIVA", d.color, 44, 1.5)
 	CameraController.shake(0.6 * nearLocal(d.position, 80))
 end
 
@@ -508,7 +508,7 @@ handlers.WeakPoint = function(d)
 		local label = Instance.new("TextLabel")
 		label.Size = UDim2.fromScale(1, 1)
 		label.BackgroundTransparency = 1
-		label.Text = "◆ WEAK POINT ◆"
+		label.Text = "◆ PUNTO DÉBIL ◆"
 		label.TextScaled = true
 		label.Font = Enum.Font.GothamBlack
 		label.TextColor3 = Color3.fromRGB(255, 235, 140)
@@ -718,9 +718,9 @@ local function watchEnemy(model: Instance)
 			highlight.DepthMode = Enum.HighlightDepthMode.Occluded
 			highlight.Parent = model
 		elseif attr == "StaggeredUntil" and type(value) == "number" then
-			statusBillboard(model, "STAGGERED", Color3.fromRGB(255, 230, 120), math.max(0.3, value - ClientState.serverNow()))
+			statusBillboard(model, "ATURDIDO", Color3.fromRGB(255, 230, 120), math.max(0.3, value - ClientState.serverNow()))
 		elseif attr == "GuardOpenUntil" and type(value) == "number" then
-			statusBillboard(model, "OPEN! STRIKE", Color3.fromRGB(120, 255, 170), math.max(0.3, value - ClientState.serverNow()))
+			statusBillboard(model, "¡ABIERTO! GOLPEA", Color3.fromRGB(120, 255, 170), math.max(0.3, value - ClientState.serverNow()))
 		elseif attr == "Attacking" and type(value) == "string" then
 			statusBillboard(model, value, Color3.fromRGB(255, 120, 100), 0.9)
 		end

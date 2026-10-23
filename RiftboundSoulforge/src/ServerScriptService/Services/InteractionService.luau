@@ -22,7 +22,7 @@ function InteractionService.Start()
 					return
 				end
 				if not Security.within(player, holder.Position, prompt.MaxActivationDistance + 8) then
-					Security.flag(player, "station out of range")
+					Security.flag(player, "estación fuera de alcance")
 					return
 				end
 				Net.event("OpenView"):FireClient(player, prompt:GetAttribute("View"), { station = prompt:GetAttribute("Station") })

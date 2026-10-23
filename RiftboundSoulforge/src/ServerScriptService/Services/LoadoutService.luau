@@ -30,10 +30,10 @@ local function validateEssence(profile: any, essence: any, allowEmpty: boolean):
 		return true, nil
 	end
 	if not EssenceConfig.isPlayable(essence) then
-		return false, "That essence is not available."
+		return false, "Esa esencia no está disponible."
 	end
 	if not profile.essences[essence] or not profile.essences[essence].unlocked then
-		return false, "You have not unlocked " .. tostring(essence) .. "."
+		return false, "No has desbloqueado " .. tostring(essence) .. "."
 	end
 	return true, nil
 end
@@ -58,17 +58,17 @@ function LoadoutService.Start()
 		local profile = PlayerData.get(player)
 		local slot = args.slot
 		if slot ~= "primary" and slot ~= "secondary" then
-			return false, "Invalid slot."
+			return false, "Ranura no válida."
 		end
 		if not inSafeZone(player) then
-			return false, "Change essences in the Nexus or at camp."
+			return false, "Cambia de esencias en el Nexo o en el campamento."
 		end
 		local ok, err = validateEssence(profile, args.essence, slot == "secondary")
 		if not ok then
 			return false, err
 		end
 		if slot == "secondary" and args.essence ~= "" and profile.level < EssenceConfig.SecondarySlotLevel then
-			return false, "Secondary slot unlocks at level " .. EssenceConfig.SecondarySlotLevel .. "."
+			return false, "La ranura secundaria se desbloquea en el nivel " .. EssenceConfig.SecondarySlotLevel .. "."
 		end
 		local loadout = profile.loadout
 		if slot == "primary" then
@@ -78,22 +78,22 @@ function LoadoutService.Start()
 			loadout.primary = args.essence
 		else
 			if loadout.primary == args.essence then
-				return false, "Already your primary essence."
+				return false, "Ya es tu esencia principal."
 			end
 			loadout.secondary = args.essence
 		end
 		PlayerData.markDirty(player)
-		return true, "Loadout updated."
+		return true, "Equipamiento actualizado."
 	end)
 
 	Requests.on("SaveLoadout", "Request", function(player, args)
 		local profile = PlayerData.get(player)
 		local index = args.index
 		if type(index) ~= "number" or index % 1 ~= 0 or index < 1 or index > slotCount(player) then
-			return false, "That loadout slot is locked."
+			return false, "Esa ranura de equipamiento está bloqueada."
 		end
 		if index == 2 and profile.level < 4 then
-			return false, "Second loadout slot unlocks at level 4."
+			return false, "La segunda ranura de equipamiento se desbloquea en el nivel 4."
 		end
 		profile.loadouts[tostring(index)] = {
 			primary = profile.loadout.primary,
@@ -101,17 +101,17 @@ function LoadoutService.Start()
 			saved = os.time(),
 		}
 		PlayerData.markDirty(player)
-		return true, "Loadout " .. index .. " saved."
+		return true, "Equipamiento " .. index .. " guardado."
 	end)
 
 	Requests.on("ApplyLoadout", "Request", function(player, args)
 		local profile = PlayerData.get(player)
 		local saved = type(args.index) == "number" and profile.loadouts[tostring(args.index)]
 		if not saved then
-			return false, "Empty loadout slot."
+			return false, "Ranura de equipamiento vacía."
 		end
 		if not inSafeZone(player) then
-			return false, "Change loadouts in the Nexus or at camp."
+			return false, "Cambia de equipamiento en el Nexo o en el campamento."
 		end
 		local ok, err = validateEssence(profile, saved.primary, false)
 		if not ok then
@@ -124,19 +124,19 @@ function LoadoutService.Start()
 		profile.loadout.primary = saved.primary
 		profile.loadout.secondary = if profile.level >= EssenceConfig.SecondarySlotLevel then saved.secondary else ""
 		PlayerData.markDirty(player)
-		return true, "Loadout applied."
+		return true, "Equipamiento aplicado."
 	end)
 
 	Requests.on("SelectCosmetic", "Request", function(player, args)
 		local profile = PlayerData.get(player)
 		local id = args.id
 		if type(id) ~= "string" or not ProgressionConfig.Cosmetics[id] or not profile.cosmetics.owned[id] then
-			return false, "You do not own that cosmetic."
+			return false, "No tienes ese cosmético."
 		end
 		profile.cosmetics.trail = id
 		PlayerData.markDirty(player)
 		Registry.get("CombatService").refresh(player)
-		return true, "Cosmetic equipped."
+		return true, "Cosmético equipado."
 	end)
 
 	Requests.on("UpdateSettings", "Request", function(player, args)

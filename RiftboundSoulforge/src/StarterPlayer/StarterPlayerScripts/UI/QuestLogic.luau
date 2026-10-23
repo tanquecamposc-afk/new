@@ -27,7 +27,7 @@ function QuestLogic.dailyDefs(): { any }
 			id = entry.id,
 			title = entry.title,
 			category = "Daily",
-			description = "Daily challenge. Resets at 00:00 UTC.",
+			description = "Desafío diario. Se reinicia a las 00:00 UTC.",
 			objectives = entry.objectives,
 			rewards = entry.rewards,
 			dailyPick = true,

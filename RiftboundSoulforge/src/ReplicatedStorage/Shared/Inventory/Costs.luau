@@ -1,7 +1,18 @@
 --!strict
 -- Pure helpers for cost checks. "Coins" is a pseudo-item mapped to profile.coins.
 
+local ItemConfig = require(script.Parent.Parent.Config.ItemConfig)
+
 local Costs = {}
+
+-- Player-facing name for a cost key.
+function Costs.label(key: string): string
+	if key == "Coins" then
+		return "monedas"
+	end
+	local def = ItemConfig.Items[key]
+	return if def then def.name else key
+end
 
 export type Cost = { [string]: number }
 
@@ -17,7 +28,7 @@ function Costs.canAfford(profile: any, cost: Cost): (boolean, { string })
 	for key, amount in cost do
 		local have = Costs.have(profile, key)
 		if have < amount then
-			table.insert(missing, string.format("%s (%d/%d)", key, have, amount))
+			table.insert(missing, string.format("%s (%d/%d)", Costs.label(key), have, amount))
 		end
 	end
 	table.sort(missing)
@@ -42,7 +53,7 @@ end
 function Costs.describe(cost: Cost): string
 	local parts = {}
 	for key, amount in cost do
-		table.insert(parts, string.format("%d %s", amount, key))
+		table.insert(parts, string.format("%d %s", amount, Costs.label(key)))
 	end
 	table.sort(parts)
 	return table.concat(parts, ", ")

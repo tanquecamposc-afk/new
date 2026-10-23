@@ -73,14 +73,14 @@ function CombatMath.summary(build): { { label: string, value: string } }
 	end
 	local heavy = build.heavy
 	return {
-		{ label = "Strike damage", value = string.format("%.1f", build.base) },
-		{ label = "Combo length", value = tostring(#build.light) .. " hits" },
-		{ label = "Full combo damage", value = string.format("%.0f", build.base * lightTotal) },
-		{ label = "Heavy (" .. heavy.name .. ")", value = string.format("%.0f", build.base * heavy.damage * build.heavyMult) },
-		{ label = "Attack speed", value = string.format("x%.2f", build.attackSpeed) },
-		{ label = "Parry window", value = string.format("%.2fs", build.parryWindow) },
-		{ label = "Block reduction", value = string.format("%d%%", math.floor(build.blockReduction * 100 + 0.5)) },
-		{ label = "Ability damage", value = string.format("x%.2f", build.abilityMult) },
+		{ label = "Daño de golpe", value = string.format("%.1f", build.base) },
+		{ label = "Longitud del combo", value = tostring(#build.light) .. " golpes" },
+		{ label = "Daño del combo completo", value = string.format("%.0f", build.base * lightTotal) },
+		{ label = "Pesado (" .. heavy.name .. ")", value = string.format("%.0f", build.base * heavy.damage * build.heavyMult) },
+		{ label = "Velocidad de ataque", value = string.format("x%.2f", build.attackSpeed) },
+		{ label = "Ventana de parada", value = string.format("%.2fs", build.parryWindow) },
+		{ label = "Reducción al bloquear", value = string.format("%d%%", math.floor(build.blockReduction * 100 + 0.5)) },
+		{ label = "Daño de habilidades", value = string.format("x%.2f", build.abilityMult) },
 	}
 end
 

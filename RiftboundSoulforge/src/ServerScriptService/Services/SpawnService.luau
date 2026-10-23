@@ -41,7 +41,7 @@ local function onCharacter(player: Player, character: Model)
 	humanoid.Died:Connect(function()
 		Registry.get("ProgressionService").stat(player, "deaths")
 		Registry.get("ExpeditionService").onDeath(player)
-		Registry.get("TrialService").fail(player, "you were defeated")
+		Registry.get("TrialService").fail(player, "fuiste derrotado")
 		task.delay(GameConfig.Player.RespawnDelay, function()
 			if player.Parent and loaded[player] then
 				player:LoadCharacter()

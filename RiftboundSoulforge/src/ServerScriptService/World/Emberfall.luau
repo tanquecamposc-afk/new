@@ -11,6 +11,7 @@ local Emberfall = {}
 
 local E = WorldConfig.EmberfallOrigin
 local P = WorldConfig.Points
+local BRAZIER_NAMES = { Moon = "la Luna", Sun = "el Sol", Star = "la Estrella" }
 
 local function at(x: number, z: number, y: number?): Vector3
 	return E + Vector3.new(x, y or 0, z)
@@ -60,7 +61,7 @@ local function beacon(parent: Instance, name: string, position: Vector3, color: 
 	crystal:SetAttribute("Spin", 1)
 	Build.light(crystal, color, 26, 2.5)
 	Build.particles(crystal, color, 10, { acceleration = Vector3.new(0, 6, 0), speed = NumberRange.new(1, 2) })
-	Build.label(crystal, "EXTRACTION", Vector3.new(0, 3.5, 0), color, 160)
+	Build.label(crystal, "EXTRACCIÓN", Vector3.new(0, 3.5, 0), color, 160)
 	holder(model, name, position, action, object, hold)
 end
 
@@ -131,7 +132,7 @@ local function camp(parent: Instance)
 			Build.part(model, { size = Vector3.new(1.4, 7, 1.4), cframe = CFrame.new(at(58, z, 3.5)) * CFrame.Angles(0, 0, math.rad((z % 8) - 4)), color = Color3.fromRGB(96, 70, 48), material = Enum.Material.Wood, name = "Stake" })
 		end
 	end
-	beacon(model, "CampBeacon", P.CampBeacon, Color3.fromRGB(110, 255, 210), "Extract", "Bank your Satchel", 1)
+	beacon(model, "CampBeacon", P.CampBeacon, Color3.fromRGB(110, 255, 210), "Extract", "Asegura tu Mochila", 1)
 	-- return portal
 	local portal = P.CampReturnPortal
 	for i = 1, 16 do
@@ -148,9 +149,9 @@ local function camp(parent: Instance)
 	local disc = Build.part(model, { size = Vector3.new(0.3, 11, 11), cframe = CFrame.new(portal + Vector3.new(0, 7, 0)), color = Color3.fromRGB(150, 100, 255), material = Enum.Material.Neon, shape = Enum.PartType.Cylinder, collide = false, name = "PortalSurface" })
 	disc.Transparency = 0.4
 	Build.light(disc, Color3.fromRGB(170, 120, 255), 24, 2)
-	holder(model, "CampReturnPortal", portal + Vector3.new(3, 0, 0), "Return", "Nexus (banks your Satchel)", 0.5)
-	signFacing(model, "EMBERFALL CAMP\nSAFE ZONE", at(40, -14, 6), at(0, -14), Vector2.new(10, 3.5), Color3.fromRGB(150, 255, 200))
-	signFacing(model, "FRONTIER AHEAD\nDEPTH 1 • 25% SATCHEL RISK", at(60, 14, 6), at(0, 14), Vector2.new(12, 3.5), Color3.fromRGB(255, 180, 120))
+	holder(model, "CampReturnPortal", portal + Vector3.new(3, 0, 0), "Volver", "Nexo (asegura tu Mochila)", 0.5)
+	signFacing(model, "CAMPAMENTO DE EMBERFALL\nZONA SEGURA", at(40, -14, 6), at(0, -14), Vector2.new(10, 3.5), Color3.fromRGB(150, 255, 200))
+	signFacing(model, "FRONTERA A LA VISTA\nPROFUNDIDAD 1 • 25% DE RIESGO DE MOCHILA", at(60, 14, 6), at(0, 14), Vector2.new(12, 3.5), Color3.fromRGB(255, 180, 120))
 end
 
 -- Frontier -------------------------------------------------------------------------------------
@@ -242,7 +243,7 @@ local function frontier(parent: Instance)
 	Build.part(outpost, { size = Vector3.new(9, 3, 9), cframe = CFrame.new(tower + Vector3.new(0, 16, 0)), color = Color3.fromRGB(140, 60, 40), material = Enum.Material.Fabric, name = "TowerRoof" })
 	Build.torch(outpost, at(150, -10), Color3.fromRGB(255, 150, 70))
 	Build.torch(outpost, at(150, 10), Color3.fromRGB(255, 150, 70))
-	signFacing(outpost, "OLD WATCH OUTPOST", at(146, 14, 7), at(100, 14), Vector2.new(9, 2), Color3.fromRGB(255, 220, 180))
+	signFacing(outpost, "VIEJO PUESTO DE GUARDIA", at(146, 14, 7), at(100, 14), Vector2.new(9, 2), Color3.fromRGB(255, 220, 180))
 end
 
 -- Sunfall secret ---------------------------------------------------------------------------------
@@ -259,7 +260,7 @@ local function brazier(parent: Instance, info: any)
 	local emitter = Build.particles(flame, Color3.fromRGB(255, 160, 60), 12, { acceleration = Vector3.new(0, 6, 0), spread = Vector2.new(15, 15) })
 	emitter.Enabled = false
 	Build.label(model:FindFirstChild("Pedestal") :: BasePart, info.symbol, Vector3.new(0, 6.5, 0), Color3.fromRGB(255, 230, 160), 70)
-	holder(model, "BrazierHolder_" .. info.id, p, "Kindle", "Brazier of the " .. info.id, 0.6)
+	holder(model, "BrazierHolder_" .. info.id, p, "Encender", "Brasero de " .. BRAZIER_NAMES[info.id], 0.6)
 end
 
 local function sunfall(parent: Instance)
@@ -283,12 +284,12 @@ local function sunfall(parent: Instance)
 	local label = Instance.new("TextLabel")
 	label.Size = UDim2.fromScale(1, 1)
 	label.BackgroundTransparency = 1
-	label.Text = "☾   ☀   ✦\n\nThree flames remember\nthe order of the sky."
+	label.Text = "☾   ☀   ✦\n\nTres llamas recuerdan\nel orden del cielo."
 	label.TextScaled = true
 	label.Font = Enum.Font.Fantasy
 	label.TextColor3 = Color3.fromRGB(70, 40, 20)
 	label.Parent = gui
-	holder(model, "SunfallMural", P.SunfallMural, "Read", "Ancient Mural", 0)
+	holder(model, "SunfallMural", P.SunfallMural, "Leer", "Mural Antiguo", 0)
 	-- the cracked wall (slides down when solved)
 	local wall = Build.block(model, Vector3.new(12, 18, 4), CFrame.new(at(200, -102, 9)), Color3.fromRGB(112, 92, 80), Enum.Material.Rock, "SunfallWall")
 	wall:SetAttribute("ClosedCFrame", wall.CFrame)
@@ -309,11 +310,11 @@ local function sunfall(parent: Instance)
 	Build.cylinder(model, 4, 3, t + Vector3.new(0, 1.5, 0), Color3.fromRGB(80, 60, 40), Enum.Material.Sandstone, "TabletBase")
 	local slab = Build.neon(model, Vector3.new(4, 5, 0.6), CFrame.new(t + Vector3.new(0, 5.5, 0)), Color3.fromRGB(255, 210, 110), "TabletSlab")
 	Build.light(slab, Color3.fromRGB(255, 200, 110), 30, 2.5)
-	holder(model, "SunfallTablet", t, "Read", "Sunfall Tablet", 1.2)
+	holder(model, "SunfallTablet", t, "Leer", "Tablilla del Ocaso Solar", 1.2)
 	local c = P.SunfallChest
 	Build.block(model, Vector3.new(4, 2.5, 3), CFrame.new(c + Vector3.new(0, 1.25, 0)), Color3.fromRGB(110, 70, 40), Enum.Material.WoodPlanks, "Cache")
 	Build.neon(model, Vector3.new(4.1, 0.3, 3.1), CFrame.new(c + Vector3.new(0, 2.2, 0)), Color3.fromRGB(255, 210, 110), "CacheTrim")
-	holder(model, "SunfallChest", c, "Open", "Forgotten Cache", 0.8)
+	holder(model, "SunfallChest", c, "Abrir", "Alijo Olvidado", 0.8)
 end
 
 -- Ravine -----------------------------------------------------------------------------------------
@@ -352,8 +353,8 @@ local function ravine(parent: Instance)
 	local lever = P.ShortcutLever
 	Build.block(model, Vector3.new(2, 3, 2), CFrame.new(lever + Vector3.new(0, 1.5, 0)), KEEP_DARK, Enum.Material.Metal, "LeverBase")
 	Build.neon(model, Vector3.new(0.4, 3, 0.4), CFrame.new(lever + Vector3.new(0, 4, 0)) * CFrame.Angles(0, 0, math.rad(30)), Color3.fromRGB(255, 200, 80), "LeverHandle")
-	holder(model, "ShortcutLever", lever, "Pull", "Drawbridge Lever", 0.8)
-	signFacing(model, "CINDER RAVINE\nJump the pillars or take the south ledge", at(256, 16, 6), at(200, 16), Vector2.new(12, 3), Color3.fromRGB(255, 170, 110))
+	holder(model, "ShortcutLever", lever, "Tirar", "Palanca del Puente", 0.8)
+	signFacing(model, "BARRANCO DE CENIZA\nSalta por los pilares o toma la cornisa sur", at(256, 16, 6), at(200, 16), Vector2.new(12, 3), Color3.fromRGB(255, 170, 110))
 end
 
 -- Keep --------------------------------------------------------------------------------------------
@@ -396,9 +397,9 @@ local function keep(parent: Instance)
 	for i = 1, 12 do
 		Build.rock(model, at(Build.rng:NextNumber(350, 530), if i % 2 == 0 then Build.rng:NextNumber(30, 44) else Build.rng:NextNumber(-44, -30)), 0.6, KEEP)
 	end
-	beacon(model, "KeepBeacon", P.KeepBeacon, Color3.fromRGB(90, 220, 255), "Extract", "Keep Beacon (deep extraction)", 4)
-	signFacing(model, "THE RUINED KEEP\nDEPTH 2 • DROPS x1.3", at(336, 12, 18), at(300, 12), Vector2.new(12, 3.5), Color3.fromRGB(190, 180, 255))
-	signFacing(model, "SENTINEL'S COURT", at(452, 14, 14), at(430, 14), Vector2.new(8, 2), Color3.fromRGB(210, 180, 255))
+	beacon(model, "KeepBeacon", P.KeepBeacon, Color3.fromRGB(90, 220, 255), "Extract", "Faro de la Fortaleza (extracción profunda)", 4)
+	signFacing(model, "LA FORTALEZA EN RUINAS\nPROFUNDIDAD 2 • BOTÍN x1,3", at(336, 12, 18), at(300, 12), Vector2.new(12, 3.5), Color3.fromRGB(190, 180, 255))
+	signFacing(model, "PATIO DEL CENTINELA", at(452, 14, 14), at(430, 14), Vector2.new(8, 2), Color3.fromRGB(210, 180, 255))
 end
 
 -- Approach & Arena -----------------------------------------------------------------------------
@@ -419,9 +420,9 @@ local function arena(parent: Instance)
 	Build.cylinder(model, 4, 3, seal + Vector3.new(0, 1.5, 0), KEEP_DARK, Enum.Material.Slate, "SealBase")
 	local sealCrystal = Build.part(model, { size = Vector3.new(2, 4, 2), cframe = CFrame.new(seal + Vector3.new(0, 5.5, 0)) * CFrame.Angles(0, math.rad(45), 0), color = RIFT, material = Enum.Material.Neon, collide = false, name = "SealCrystal" })
 	sealCrystal:SetAttribute("Spin", 1.5)
-	Build.label(sealCrystal, "FRACTURE SEAL", Vector3.new(0, 4, 0), RIFT, 120)
-	holder(model, "WardenSeal", seal, "Break the Seal", "Challenge the Fracture Warden", 1.5)
-	signFacing(model, "FRACTURE ARENA\nDEPTH 3 • DROPS x1.6", at(574, 11, 10), at(540, 11), Vector2.new(10, 3), Color3.fromRGB(255, 140, 200))
+	Build.label(sealCrystal, "SELLO DE LA FRACTURA", Vector3.new(0, 4, 0), RIFT, 120)
+	holder(model, "WardenSeal", seal, "Romper el Sello", "Desafía al Celador de la Fractura", 1.5)
+	signFacing(model, "ARENA DE LA FRACTURA\nPROFUNDIDAD 3 • BOTÍN x1,6", at(574, 11, 10), at(540, 11), Vector2.new(10, 3), Color3.fromRGB(255, 140, 200))
 
 	-- arena tiles
 	local c = WorldConfig.Arena.center
@@ -488,8 +489,8 @@ local function arena(parent: Instance)
 	-- retreat & victory beacon
 	local retreat = P.ArenaRetreat
 	Build.cylinder(model, 6, 0.4, retreat + Vector3.new(0, 0.2, 0), Color3.fromRGB(120, 255, 220), Enum.Material.Neon, "RetreatSigil")
-	holder(model, "ArenaRetreat", retreat, "Retreat", "Teleport to camp", 1)
-	beacon(model, "ArenaVictoryBeacon", P.ArenaVictoryBeacon, Color3.fromRGB(255, 215, 120), "Extract", "Warden's Beacon (after victory)", 2)
+	holder(model, "ArenaRetreat", retreat, "Retirarse", "Teletransporte al campamento", 1)
+	beacon(model, "ArenaVictoryBeacon", P.ArenaVictoryBeacon, Color3.fromRGB(255, 215, 120), "Extract", "Faro del Celador (tras la victoria)", 2)
 end
 
 function Emberfall.build(world: Instance)

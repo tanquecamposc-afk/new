@@ -18,10 +18,10 @@ function ProgressionConfig.essenceMasteryXp(level: number): number
 end
 
 ProgressionConfig.LevelUnlocks = {
-	[2] = "Daily challenges appear on the Quest Board.",
-	[3] = "Secondary essence slot.",
-	[4] = "Second saved loadout slot.",
-	[5] = "Gravity attunement available at the Fusion Chamber.",
+	[2] = "Los desafíos diarios aparecen en el Tablón de Contratos.",
+	[3] = "Ranura de esencia secundaria.",
+	[4] = "Segunda ranura de equipamiento guardado.",
+	[5] = "Sintonía de Gravedad disponible en la Cámara de Fusión.",
 }
 
 ProgressionConfig.FreeLoadoutSlots = 2
@@ -29,19 +29,19 @@ ProgressionConfig.PassLoadoutSlots = 3 -- extra slots from the optional game pas
 
 -- Achievements: unlocked by ProgressionService when the matching stat/event happens.
 ProgressionConfig.Achievements = {
-	FirstSteel = { id = "FirstSteel", name = "First Steel", description = "Land your first katana strike." },
-	PerfectGuard = { id = "PerfectGuard", name = "Perfect Guard", description = "Perform a perfect parry." },
-	Unbroken = { id = "Unbroken", name = "Unbroken", description = "Perform 25 perfect parries.", stat = "perfectParries", target = 25 },
-	SecondSoul = { id = "SecondSoul", name = "Second Soul", description = "Unlock a second essence." },
-	FirstFusion = { id = "FirstFusion", name = "Impossible Union", description = "Unlock your first fusion technique." },
-	FirstAwakening = { id = "FirstAwakening", name = "Resonant", description = "Activate a Resonance Awakening." },
-	Evolved = { id = "Evolved", name = "Living Steel", description = "Evolve your katana." },
-	SecretKeeper = { id = "SecretKeeper", name = "Secret Keeper", description = "Discover the Sunfall Chamber." },
-	Bonded = { id = "Bonded", name = "Bonded", description = "Trigger a Cooperative Resonance." },
-	Extractor = { id = "Extractor", name = "Safe Hands", description = "Extract from 10 expeditions.", stat = "extractions", target = 10 },
-	DeepDelver = { id = "DeepDelver", name = "Deep Delver", description = "Extract from the Keep Beacon." },
-	WardenSlayer = { id = "WardenSlayer", name = "Seal Breaker", description = "Defeat the Fracture Warden." },
-	Prospector = { id = "Prospector", name = "Prospector", description = "Mine 100 ore.", stat = "oreMined", target = 100 },
+	FirstSteel = { id = "FirstSteel", name = "Primer Acero", description = "Acierta tu primer golpe de katana." },
+	PerfectGuard = { id = "PerfectGuard", name = "Guardia Perfecta", description = "Haz una parada perfecta." },
+	Unbroken = { id = "Unbroken", name = "Intacto", description = "Haz 25 paradas perfectas.", stat = "perfectParries", target = 25 },
+	SecondSoul = { id = "SecondSoul", name = "Segunda Alma", description = "Desbloquea una segunda esencia." },
+	FirstFusion = { id = "FirstFusion", name = "Unión Imposible", description = "Desbloquea tu primera técnica de fusión." },
+	FirstAwakening = { id = "FirstAwakening", name = "Resonante", description = "Activa un Despertar de Resonancia." },
+	Evolved = { id = "Evolved", name = "Acero Vivo", description = "Evoluciona tu katana." },
+	SecretKeeper = { id = "SecretKeeper", name = "Guardián de Secretos", description = "Descubre la Cámara del Ocaso Solar." },
+	Bonded = { id = "Bonded", name = "Vinculados", description = "Activa una Resonancia Cooperativa." },
+	Extractor = { id = "Extractor", name = "Manos Seguras", description = "Extrae en 10 expediciones.", stat = "extractions", target = 10 },
+	DeepDelver = { id = "DeepDelver", name = "Explorador de las Profundidades", description = "Extrae en el Faro de la Fortaleza." },
+	WardenSlayer = { id = "WardenSlayer", name = "Rompesellos", description = "Derrota al Celador de la Fractura." },
+	Prospector = { id = "Prospector", name = "Prospector", description = "Mina 100 minerales.", stat = "oreMined", target = 100 },
 }
 
 ProgressionConfig.AchievementOrder = {
@@ -62,26 +62,26 @@ ProgressionConfig.AchievementOrder = {
 
 -- Cosmetics earned through play (no Robux). Paid cosmetics are listed in MonetizationConfig.
 ProgressionConfig.Cosmetics = {
-	Default = { id = "Default", name = "Riftsteel", color = nil, source = "Starter" },
+	Default = { id = "Default", name = "Acero de Grieta", color = nil, source = "Starter" },
 	Wardenbane = {
 		id = "Wardenbane",
-		name = "Wardenbane Edge",
+		name = "Filo Matacelador",
 		color = Color3.fromRGB(255, 80, 120),
-		source = "Achievement: Seal Breaker",
+		source = "Logro: Rompesellos",
 		achievement = "WardenSlayer",
 	},
 	Parrymaster = {
 		id = "Parrymaster",
-		name = "Mirror Edge",
+		name = "Filo Espejo",
 		color = Color3.fromRGB(200, 255, 250),
-		source = "Achievement: Unbroken",
+		source = "Logro: Intacto",
 		achievement = "Unbroken",
 	},
 	Prismatic = {
 		id = "Prismatic",
-		name = "Prismatic Edge",
+		name = "Filo Prismático",
 		color = Color3.fromRGB(255, 140, 255),
-		source = "Supporter Dye Pack (optional purchase)",
+		source = "Pack de Tintes de Apoyo (compra opcional)",
 		product = "SupporterDye",
 	},
 }
