@@ -70,13 +70,13 @@ def hueco_sobre_cable(x_punta, x=15):
 
 
 # -------------------------------------------------------- PRUEBA DE AJUSTE
-probeta = caja(0, 0, 0, 54, 10, 16)
+probeta = caja(0, 0, 0, 54, 15, 5)                    # placa acostada, túneles pasantes
 for i, j in enumerate((0.1, 0.2, 0.3)):
     cx = 9 + i * 18
-    probeta = B.difference([probeta, caja(cx - 6 - j, -1, 3, 12 + 2 * j, 12, 11)])
-    for k in range(i + 1):
-        probeta = B.difference([probeta, caja(cx - 2 + k * 1.6, 3, 15.4, 0.8, 4, 1)])
-barra_prueba = caja(0, 0, 0, 40, 12, 6)
+    probeta = B.difference([probeta, caja(cx - 6 - j, 2, -1, 12 + 2 * j, 11, 7)])
+    for k in range(i + 1):                                # 1, 2 y 3 rayas
+        probeta = B.difference([probeta, caja(cx - 2 + k * 1.6, 13.8, 4.4, 0.8, 2, 1)])
+barra_prueba = caja(0, 0, 0, 30, 12, 4)
 
 if __name__ == "__main__":
     print("Base:", base.extents.round(2), "estanca", base.is_watertight, "vol", round(base.volume / 1000, 2), "cm3")

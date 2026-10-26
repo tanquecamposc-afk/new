@@ -66,14 +66,14 @@ Regla en la esquina de la base. X = largo (por donde corre la cuña), Y = ancho 
 
 Para armarla: dala vuelta (lomo arriba) y métela por el lado X = 0 de la base, con la punta delgada primero.
 
-## Prueba de ajuste (imprimir primero, ~15 min)
+## Prueba de ajuste (imprimir primero, ~18 min)
 
-- `prueba_tuneles.stl`: bloque con 3 túneles de 12,2 · 12,4 · 12,6 mm de ancho (1, 2 y 3 rayas).
+- `prueba_tuneles.stl`: placa con 3 ranuras pasantes de 12,2 · 12,4 · 12,6 × 11 mm (1, 2 y 3 rayas).
 - `prueba_barra.stl`: barra de 12 mm de ancho, como la cuña.
 
 | Resultado | Qué hacer |
 |---|---|
-| La barra corre suave en el de 2 rayas sin bailar | dejar 12,4 mm |
+| La barra pasa suave por la de 2 rayas sin bailar | dejar 12,4 mm |
 | Solo corre en el de 3 rayas | cambiar el ancho del túnel (paso 4) a 12,6 y su posición Y a 13,7 |
 | Ya corre bien en el de 1 raya | cambiar el ancho del túnel a 12,2 y su posición Y a 13,9 |
 
