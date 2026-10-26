@@ -13,9 +13,7 @@ exec(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "generar_sopo
      .read().split("# ------------------------------------------------------- PRUEBA DE AJUSTE")[0])
 
 botones = trimesh.util.concatenate([cilindro(x, y, 3, D_BOTON, H_BOTON) for x, y in BOTONES])
-placa = B.union([caja(3.5, 0, 0, 9, 76, 3),       # base sin botones
-                 caja(51.5, 0, 0, 9, 76, 3),
-                 caja(3.5, 68, 0, 57, 8, 3)])
+placa = placa_base()                                # base sin botones
 partes = {"base_azul": placa, "respaldo_rojo": respaldo, "botones_amarillo": botones}
 todo = trimesh.util.concatenate(list(partes.values()))
 lo, hi = todo.bounds

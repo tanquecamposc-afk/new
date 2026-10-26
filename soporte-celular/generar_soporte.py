@@ -4,7 +4,7 @@ Unión tipo LEGO: la base tiene 4 botones redondos y cada respaldo tiene
 2 agujeros redondos en su pie que encajan a presión.
 
 2 piezas, sin pegamento ni tornillos:
-  1) BASE: marco en U de 57 x 76 x 3 mm con 4 botones (Ø 4,8 x 3,5 mm).
+  1) BASE: placa sólida de 57 x 76 x 3 mm con muesca para el cable y 4 botones (Ø 4,8 x 3,5 mm).
   2) RESPALDO: una pieza con dos laterales en V (repisa a 25° + apoyo a 65°)
      unidos por una barra trasera; 4 agujeros Ø 5,0 x 4 mm en los pies.
 La repisa elevada deja el centro libre para enchufar el cargador.
@@ -49,10 +49,13 @@ def cuna(x, y, z, lx, ly, lz, alta="atras"):
 BOTONES = [(8, 7), (8, 22), (56, 7), (56, 22)]   # centros (x, y)
 
 # ------------------------------------------------------------------- BASE
-# Marco en U: dos brazos bajo los pies del respaldo + barra trasera.
-base = B.union([caja(3.5, 0, 0, 9, 76, 3),                  # brazo izquierdo
-                caja(51.5, 0, 0, 9, 76, 3),                 # brazo derecho
-                caja(3.5, 68, 0, 57, 8, 3)])                # barra trasera
+# Placa sólida (más peso y rigidez) con una muesca adelante para el enchufe del cargador.
+def placa_base():
+    return B.difference([caja(3.5, 0, 0, 57, 76, 3),        # placa sólida
+                         caja(24, -1, -1, 16, 23, 5)])      # muesca del cable
+
+
+base = placa_base()
 base = B.union([base] + [cilindro(x, y, 3, D_BOTON, H_BOTON) for x, y in BOTONES])
 
 

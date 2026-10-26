@@ -12,6 +12,7 @@ redondos y el respaldo 4 agujeros en sus pies. Se arma a presión y se desarma t
 - **Centro libre:** el celular se apoya en los dos laterales a 20 mm de altura;
   por el medio entra el cargador y no se tapa el parlante.
 - **Vertical u horizontal:** los laterales están a 48 mm entre centros.
+- **Base sólida:** placa llena de 3 mm (más peso y rigidez), con una muesca adelante por donde baja el enchufe.
 - **No se vuelca:** la base tiene 76 mm de fondo y el centro de masa del celular queda
   a unos 30 mm del borde trasero.
 
@@ -26,7 +27,7 @@ redondos y el respaldo 4 agujeros en sus pies. Se arma a presión y se desarma t
 | Unión | 4 botones Ø 4,8 × 3,5 mm en agujeros Ø 5,0 × 4 mm (0,1 mm de juego por lado) |
 | Ángulo del celular | 65° respecto a la mesa |
 | Grosor de celular | 7 a 12 mm (con funda) |
-| Material | PLA, ~12,5 g |
+| Material | PLA, ~17 g |
 | Impresión | sin soportes; base acostada, respaldo acostado sobre su espalda |
 
 ## Paso a paso en Tinkercad
@@ -38,11 +39,11 @@ La posición es la esquina de cada figura (lo que marca la Regla).
 
 | Paso | Figura | Tipo | Tamaño X × Y × Z | Posición X ; Y ; Z |
 |---|---|---|---|---|
-| 1 | Brazo izquierdo | Caja sólida | 9 × 76 × 3 | 3,5 ; 0 ; 0 |
-| 2 | Brazo derecho | Caja sólida | 9 × 76 × 3 | 51,5 ; 0 ; 0 |
-| 3 | Barra trasera | Caja sólida | 57 × 8 × 3 | 3,5 ; 68 ; 0 |
+| 1 | Placa sólida | Caja sólida | 57 × 76 × 3 | 3,5 ; 0 ; 0 |
+| 2 | Muesca del cable | Caja agujero | 16 × 23 × 5 | 24 ; −1 ; −1 |
+| 3 | **Agrupar 1 + 2** | | | |
 | 4 | 4 botones | Cilindro sólido | 4,8 × 4,8 × 3,5 | (5,6 ; 4,6 ; 3) · (5,6 ; 19,6 ; 3) · (53,6 ; 4,6 ; 3) · (53,6 ; 19,6 ; 3) |
-| — | **Agrupar 1 a 4 → base** | | | |
+| — | **Agrupar todo → base** | | | |
 
 ### Pieza 2 · Respaldo
 
@@ -87,15 +88,16 @@ espalda (la cara plana de atrás, Y = 29) sobre la cama. Así no necesita soport
 
 | Ajuste | Base + respaldo |
 |---|---|
-| Capa 0,20 mm · relleno 15 % · 2 paredes | **~66 min · 12,5 g** |
-| Capa 0,28 mm · relleno 15 % · 2 paredes | ~52 min · 13 g |
+| Capa 0,20 mm · relleno 15 % · 2 paredes | **~78 min · 17 g** |
+| Capa 0,20 mm · relleno 25 % (base más pesada) | ~83 min · 18 g |
+| Capa 0,28 mm · relleno 15 % · 2 paredes | ~65 min · 18 g |
 
 ## Dos alternativas (objetivo B)
 
 | Criterio | A: base + respaldo con pestañas | B: base + respaldo tipo LEGO con cuna en V (elegida) |
 |---|---|---|
 | Medidas | 68 × 62 × 56,6 mm | 57 × 76 × 53 mm |
-| Tiempo (capa 0,20) | ~91 min, pasa el límite | ~66 min |
+| Tiempo (capa 0,20) | ~91 min, pasa el límite | ~78 min |
 | Unión | 2 pestañas de 4 mm, se sueltan fácil | 4 botones redondos, encaje firme |
 | Cargar el celular | el enchufe choca con la base | centro libre a 20 mm de altura |
 | Grosor de celular | canal fijo de 12 mm | cuna en V: 7 a 12 mm |
@@ -134,3 +136,4 @@ Llevan 2 cubitos de 0,2 mm en las esquinas para alinearse; para imprimir usa `1_
 | Versión | Cambio | Por qué |
 |---|---|---|
 | 3 → 3.1 | Tope delantero bajado a Z = 28,2 y de 4 mm de alto | en la v3 el tope solo tocaba la repisa por una línea y quedaba suelto |
+| 3.1 → 4 | Base en U → placa sólida con muesca para el cable | más peso y rigidez para sostener el celular; el enchufe sigue pasando por la muesca |
