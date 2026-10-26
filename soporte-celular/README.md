@@ -8,7 +8,7 @@ redondos y el respaldo 4 agujeros en sus pies. Se arma a presión y se desarma t
 ## Cómo funciona
 
 - **Cuna en V:** la repisa baja hacia atrás a 25° y forma 90° con el apoyo de 65°.
-  El celular se calza solo en la esquina y no resbala, tenga o no funda (de 7 a 13 mm de grosor).
+  El celular se calza solo en la esquina y no resbala, tenga o no funda (de 7 a 12 mm de grosor).
 - **Centro libre:** el celular se apoya en los dos laterales a 20 mm de altura;
   por el medio entra el cargador y no se tapa el parlante.
 - **Vertical u horizontal:** los laterales están a 48 mm entre centros.
@@ -25,7 +25,7 @@ redondos y el respaldo 4 agujeros en sus pies. Se arma a presión y se desarma t
 | Medida armado | **57 × 76 × 53 mm** (límite 80 × 80 × 60) |
 | Unión | 4 botones Ø 4,8 × 3,5 mm en agujeros Ø 5,0 × 4 mm (0,1 mm de juego por lado) |
 | Ángulo del celular | 65° respecto a la mesa |
-| Grosor de celular | 7 a 13 mm (con funda) |
+| Grosor de celular | 7 a 12 mm (con funda) |
 | Material | PLA, ~12,5 g |
 | Impresión | sin soportes; base acostada, respaldo acostado sobre su espalda |
 
@@ -52,7 +52,7 @@ Primero el lateral izquierdo:
 |---|---|---|---|---|
 | 5 | Cuerpo | Caja sólida | 4 × 29 × 20 | 6 ; 0 ; 3 |
 | 6 | Repisa | Cuña sólida, **alta adelante** | 4 × 15 × 7 | 6 ; 0 ; 23 |
-| 7 | Tope | Cuña sólida, **alta adelante** | 4 × 4 × 3 | 6 ; 0 ; 30 |
+| 7 | Tope | Cuña sólida, **alta adelante** | 4 × 4 × 4 | 6 ; 0 ; 28,2 |
 | 8 | Apoyo | Cuña sólida, **alta atrás** | 4 × 14 × 30 | 6 ; 15 ; 23 |
 | 9 | Pie | Caja sólida | 9 × 29 × 6 | 3,5 ; 0 ; 3 |
 
@@ -98,7 +98,7 @@ espalda (la cara plana de atrás, Y = 29) sobre la cama. Así no necesita soport
 | Tiempo (capa 0,20) | ~91 min, pasa el límite | ~66 min |
 | Unión | 2 pestañas de 4 mm, se sueltan fácil | 4 botones redondos, encaje firme |
 | Cargar el celular | el enchufe choca con la base | centro libre a 20 mm de altura |
-| Grosor de celular | canal fijo de 12 mm | cuna en V: 7 a 13 mm |
+| Grosor de celular | canal fijo de 12 mm | cuna en V: 7 a 12 mm |
 | Soportes de impresión | no | no |
 
 ![alternativa A](alternativa_A_vista.png)
@@ -124,3 +124,13 @@ espalda (la cara plana de atrás, Y = 29) sobre la cama. Así no necesita soport
 | Estabilidad | celular vertical y horizontal, tocar la pantalla 20 veces | no se vuelca ni se mueve |
 | Carga | enchufar el cargador con el celular puesto | el enchufe entra sin forzar |
 | Grosor | probar sin funda y con funda | se calza en la V en los dos casos |
+
+## Archivos para ver en Tinkercad con colores
+
+Importa los 3 (mm, 100 %) sin moverlos; entran en su lugar solos:
+`tinkercad_base_azul.stl` (azul) · `tinkercad_respaldo_rojo.stl` (rojo) · `tinkercad_botones_amarillo.stl` (amarillo).
+Llevan 2 cubitos de 0,2 mm en las esquinas para alinearse; para imprimir usa `1_base.stl` y `2_respaldo.stl`.
+
+| Versión | Cambio | Por qué |
+|---|---|---|
+| 3 → 3.1 | Tope delantero bajado a Z = 28,2 y de 4 mm de alto | en la v3 el tope solo tocaba la repisa por una línea y quedaba suelto |

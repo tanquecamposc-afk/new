@@ -64,7 +64,7 @@ def lateral(cx):
     x = cx - 2                                          # placa de 4 mm centrada en cx
     return [caja(x, 0, 3, 4, 29, 20),                   # cuerpo
             cuna(x, 0, 23, 4, 15, 7, alta="frente"),    # repisa inclinada (25°)
-            cuna(x, 0, 30, 4, 4, 3, alta="frente"),     # tope delantero
+            cuna(x, 0, 28.2, 4, 4, 4, alta="frente"),   # tope delantero (apoyado en la repisa)
             cuna(x, 15, 23, 4, 14, 30, alta="atras"),   # apoyo inclinado (65°)
             caja(cx - 4.5, 0, 3, 9, 29, 6)]             # pie de 9 mm
 
