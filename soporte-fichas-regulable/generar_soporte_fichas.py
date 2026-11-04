@@ -2,7 +2,7 @@
 Soporte regulable para fichas / carteles (inspirado en la imagen de referencia).
 
 Piezas (cada tipo en su color):
-  1) BASE            72 x 70 x 3 mm, con 4 ranuras para los laterales.
+  1) BASE            72 x 70 x 3 mm sólida, con 4 ranuras para los laterales.
   2) LATERALES (x2)  aletas de 4 mm con 1 agujero de giro y 3 agujeros de
                      inclinación (60°, 45° y 30°); 2 pestañas que entran en la base.
   3) TABLERO         placa de 65 x 54 mm con repisa y tope para la ficha y dos
@@ -26,7 +26,7 @@ R_TRABA = 28.0                         # distancia eje -> agujero de traba
 ANGULOS = (60, 45, 30)
 L_TABLERO = 48.0
 W = 72.0                               # ancho de la base (con perillas: W + 8 = 80 mm)
-T_BASE, T_LAT, T_OREJA, T_PLACA = 2.4, 3.0, 3.0, 2.0
+T_BASE, T_LAT, T_OREJA, T_PLACA = 3.0, 3.0, 3.0, 2.0
 JL = 0.4                               # espacio entre lateral y oreja del tablero
 
 
@@ -58,7 +58,7 @@ def traba(ang):
 # ----------------------------------------------------------- 1) BASE
 TABS = [(14, 10), (34, 10)]            # (y inicio, largo) de las pestañas de cada lateral
 base = caja(0, 0, 0, W, 70, T_BASE)
-huecos = [caja(9, 8, -1, W - 18, 54, 5)]                    # ventana central (marco más liviano)
+huecos = []                                                 # base sólida, como en la foto
 for x in (0, W - T_LAT):
     for y, l in TABS:
         huecos.append(caja(x - 0.15, y - 0.15, -1, T_LAT + 0.3, l + 0.3, 5))
@@ -95,13 +95,12 @@ def prisma_uw(puntos, x0, lx):
 def tablero_local():
     """Placa delante del eje y orejas detrás (no estorban a las fichas)."""
     placa = caja(X0, -6, -7, ANCHO, L_TABLERO + 6, T_PLACA)          # w de -7 a -5
-    ventana = caja(X0 + 9, 8, -8, ANCHO - 18, 30, T_PLACA + 2)       # la ficha la tapa
     orejas = []
     for x in (X0, W - X0 - T_OREJA):
         perfil_o = unary_union([Point(0, 0).buffer(6, 48), Point(R_TRABA, 0).buffer(6, 48)]).convex_hull
         perfil_o = unary_union([perfil_o, rect(-6, -7, R_TRABA + 6, 0)])
         orejas.append(placa_yz(perfil_o, x, T_OREJA))
-    cuerpo = B.difference([B.union([placa] + orejas), ventana])
+    cuerpo = B.union([placa] + orejas)                               # tablero sólido
     agujeros = []
     for x in (X0 - 1, W - X0 - T_OREJA - 1):
         agujeros += [cil_x(x, T_OREJA + 2, 0, 0, D_AGUJERO), cil_x(x, T_OREJA + 2, R_TRABA, 0, D_AGUJERO)]
@@ -244,4 +243,5 @@ if __name__ == "__main__":
         anclas = [trimesh.creation.box(bounds=[q, q + 0.2]) for q in (lo, hi - 0.2)]
         trimesh.util.concatenate([m] + anclas).export(os.path.join(out, f"tinkercad_{n}.stl"))
     todo.export(os.path.join(out, "soporte_armado_45.stl"))
+    todo.export(os.path.join(out, "tinkercad_TODO_JUNTO_un_color.stl"))   # respaldo: una sola pieza
     print("Listo ->", out)
