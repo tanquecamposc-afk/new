@@ -39,15 +39,19 @@ El tablero gira sobre dos perillas (eje) y otras dos perillas lo traban en el á
 
 ## En Tinkercad (con colores)
 
-1. Importa los 5 archivos (mm, 100 %):
-`tinkercad_base_madera.stl` · `tinkercad_laterales_azul.stl` · `tinkercad_tablero_blanco.stl` · `tinkercad_repisa_verde.stl` · `tinkercad_perillas_amarillo.stl`.
-2. Pinta cada uno con su color.
-3. **Para que queden armados:** selecciona los 5 (Ctrl + A) → **Alinear** (tecla L) → haz clic en el
-   punto de alineación **izquierdo**, el **delantero** y el **inferior**. Como todos los archivos tienen
-   la misma caja (gracias a 2 cubitos de 0,2 mm en las esquinas), quedan exactamente en su lugar.
-4. Si algo falla, importa `tinkercad_TODO_JUNTO_un_color.stl`: es el soporte entero en una sola pieza.
+![guía](guia_tinkercad.png)
 
-Para imprimir usa los archivos `1_` a `5_` (no tienen cubitos).
+1. **Import** → los 5 archivos `tinkercad_armado_1_base_madera.stl` … `tinkercad_armado_5_perillas_amarillo.stl`
+   (Millimeters, escala 100).
+2. Pinta cada pieza: 1 base `#D9A366` · 2 laterales `#1F5ABF` · 3 tablero `#EDEDE6` · 4 repisa `#3FA64D` · 5 perillas `#FFCC1A`.
+3. **Ctrl + A → tecla L (Alinear) →** clic en el punto **izquierdo**, el **de adelante** y el **de abajo**.
+   Todos los archivos tienen la misma caja (2 cubitos de 0,2 mm en las esquinas), así que quedan exactos
+   en su lugar aunque Tinkercad los haya puesto en sitios distintos. Comprobado simulando la importación:
+   desfase 0 mm y ninguna pieza se cruza con otra.
+4. Para mostrar las piezas separadas, haz lo mismo con `tinkercad_despiece_1 … 5`.
+5. Si algo falla: `tinkercad_TODO_JUNTO_un_color.stl` es el soporte entero en una sola pieza.
+
+Para imprimir usa los archivos `1_` a `5_` (sin cubitos).
 
 ## Prueba de ajuste
 

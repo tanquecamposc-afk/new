@@ -230,18 +230,33 @@ if __name__ == "__main__":
     probeta.export(os.path.join(out, "prueba_agujeros.stl"))
     pp = per.copy(); pp.apply_translation(-pp.bounds[0]); pp.export(os.path.join(out, "prueba_perilla.stl"))
 
-    # Archivos para Tinkercad: ya en su lugar (tablero a 45°), un color por archivo.
-    # Cada uno lleva 2 cubitos de 0,2 mm en las esquinas para que entren alineados.
-    partes = {"base_madera": base,
-              "laterales_azul": trimesh.util.concatenate([lat_izq, lat_der]),
-              "tablero_blanco": tablero_armado(45),
-              "repisa_verde": repisa_armada(45),
-              "perillas_amarillo": perillas_armadas(45)}
-    todo = trimesh.util.concatenate(list(partes.values()))
-    lo, hi = todo.bounds
-    for n, m in partes.items():
-        anclas = [trimesh.creation.box(bounds=[q, q + 0.2]) for q in (lo, hi - 0.2)]
-        trimesh.util.concatenate([m] + anclas).export(os.path.join(out, f"tinkercad_{n}.stl"))
+    # Archivos para Tinkercad, numerados en el orden de importación y con su color.
+    # ARMADO: cada pieza en su lugar (tablero a 45°).  DESPIECE: las piezas separadas
+    # y ordenadas, para mostrarlas. Cada archivo de un mismo grupo lleva 2 cubitos de
+    # 0,2 mm en las esquinas: así todos tienen la misma caja y, con Alinear
+    # (izquierda + adelante + abajo), quedan exactos en su lugar.
+    t45, r45, p45 = tablero_armado(45), repisa_armada(45), perillas_armadas(45)
+    armado = [("1_base_madera", base),
+              ("2_laterales_azul", trimesh.util.concatenate([lat_izq, lat_der])),
+              ("3_tablero_blanco", t45),
+              ("4_repisa_verde", r45),
+              ("5_perillas_amarillo", p45)]
+
+    def mover(m, d):
+        m = m.copy(); m.apply_translation(d); return m
+    perillas_sep = [mover(q, [(-14 if q.centroid[0] < W / 2 else 14), 0, 0]) for q in p45.split()]
+    despiece = [("1_base_madera", base),
+                ("2_laterales_azul", trimesh.util.concatenate([mover(lat_izq, [-12, 0, 0]), mover(lat_der, [12, 0, 0])])),
+                ("3_tablero_blanco", mover(t45, [0, 0, 45])),
+                ("4_repisa_verde", mover(r45, [0, -30, 18])),
+                ("5_perillas_amarillo", trimesh.util.concatenate(perillas_sep))]
+
+    for grupo, partes in (("armado", armado), ("despiece", despiece)):
+        lo, hi = trimesh.util.concatenate([m for _, m in partes]).bounds
+        for n, m in partes:
+            anclas = [trimesh.creation.box(bounds=[q, q + 0.2]) for q in (lo, hi - 0.2)]
+            trimesh.util.concatenate([m] + anclas).export(os.path.join(out, f"tinkercad_{grupo}_{n}.stl"))
+    todo = trimesh.util.concatenate([m for _, m in armado])
     todo.export(os.path.join(out, "soporte_armado_45.stl"))
     todo.export(os.path.join(out, "tinkercad_TODO_JUNTO_un_color.stl"))   # respaldo: una sola pieza
     print("Listo ->", out)
