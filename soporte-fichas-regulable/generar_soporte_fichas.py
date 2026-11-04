@@ -5,8 +5,9 @@ Piezas (cada tipo en su color):
   1) BASE            72 x 70 x 3 mm, con 4 ranuras para los laterales.
   2) LATERALES (x2)  aletas de 4 mm con 1 agujero de giro y 3 agujeros de
                      inclinación (60°, 45° y 30°); 2 pestañas que entran en la base.
-  3) TABLERO         placa de 63 x 58 mm con repisa y tope para la ficha y dos
+  3) TABLERO         placa de 65 x 54 mm con repisa y tope para la ficha y dos
                      orejas con agujero de giro y agujero de traba.
+  5) REPISA         se encaja en el borde de abajo del tablero y sostiene la ficha.
   4) PERILLAS (x4)   2 hacen de eje de giro y 2 traban el ángulo: se meten por
                      el agujero del lateral y entran en la oreja del tablero.
 
@@ -20,10 +21,10 @@ from shapely.ops import unary_union
 
 B = trimesh.boolean
 D_PERNO, D_AGUJERO = 4.0, 4.3          # 0,15 mm de juego por lado (ajustar con la probeta)
-PIVOTE = np.array([14.0, 16.0])        # (y, z) del eje de giro
+PIVOTE = np.array([14.0, 14.0])        # (y, z) del eje de giro
 R_TRABA = 28.0                         # distancia eje -> agujero de traba
 ANGULOS = (60, 45, 30)
-L_TABLERO = 52.0
+L_TABLERO = 48.0
 W = 72.0                               # ancho de la base (con perillas: W + 8 = 80 mm)
 T_BASE, T_LAT, T_OREJA, T_PLACA = 2.4, 3.0, 3.0, 2.0
 JL = 0.4                               # espacio entre lateral y oreja del tablero
@@ -82,7 +83,7 @@ lat_izq, lat_der = lateral(0), lateral(W - T_LAT)
 
 # ------------------------------------------------------- 3) TABLERO
 # Sistema propio: u = a lo largo del tablero (y), w = hacia atrás (z).
-# La espalda (w = 5 + T_PLACA) va sobre la cama al imprimir.
+# Se imprime parado sobre el borde de la repisa (u = -6 sobre la cama).
 X0 = T_LAT + JL                        # borde izquierdo del tablero
 ANCHO = W - 2 * X0
 
@@ -92,35 +93,59 @@ def prisma_uw(puntos, x0, lx):
 
 
 def tablero_local():
-    placa = caja(X0, -6, 5, ANCHO, L_TABLERO + 6, T_PLACA)
-    ventana = caja(X0 + 9, 8, 4, ANCHO - 18, 40, T_PLACA + 2)       # la ficha la tapa
-    repisa = caja(X0, -6, -6, ANCHO, 3, 11)                          # repisa para la ficha
-    tope = prisma_uw([(-3, -6), (0, -6), (-3, -3)], X0, ANCHO)       # tope en rampa (45°)
+    """Placa delante del eje y orejas detrás (no estorban a las fichas)."""
+    placa = caja(X0, -6, -7, ANCHO, L_TABLERO + 6, T_PLACA)          # w de -7 a -5
+    ventana = caja(X0 + 9, 8, -8, ANCHO - 18, 30, T_PLACA + 2)       # la ficha la tapa
     orejas = []
     for x in (X0, W - X0 - T_OREJA):
         perfil_o = unary_union([Point(0, 0).buffer(6, 48), Point(R_TRABA, 0).buffer(6, 48)]).convex_hull
-        perfil_o = unary_union([perfil_o, rect(-6, 0, R_TRABA + 6, 5)])
+        perfil_o = unary_union([perfil_o, rect(-6, -7, R_TRABA + 6, 0)])
         orejas.append(placa_yz(perfil_o, x, T_OREJA))
-    cuerpo = B.difference([B.union([placa, repisa, tope] + orejas), ventana])
+    cuerpo = B.difference([B.union([placa] + orejas), ventana])
     agujeros = []
     for x in (X0 - 1, W - X0 - T_OREJA - 1):
         agujeros += [cil_x(x, T_OREJA + 2, 0, 0, D_AGUJERO), cil_x(x, T_OREJA + 2, R_TRABA, 0, D_AGUJERO)]
     return B.difference([cuerpo] + agujeros)
 
 
-tab_local = tablero_local()
+# Repisa: pieza aparte que abraza el borde inferior del tablero (canal de 2,2 mm
+# para la placa de 2 mm) y sostiene la ficha. Entra entre las dos orejas.
+RX0, RX1 = X0 + T_OREJA + 0.3, W - X0 - T_OREJA - 0.3
 
 
-def tablero_armado(ang):
-    """Gira el tablero alrededor del eje (u = 0, w = 0) y lo pone en el pivote."""
+def repisa_local():
+    perfil_r = unary_union([
+        rect(-8, -18, -6, -3.4),             # piso de la repisa
+        rect(-6, -4.9, 0, -3.4),             # pared trasera del canal (detrás de la placa)
+        rect(-6, -8.5, -3, -7.1),            # pared delantera del canal
+        Polygon([(-6, -18), (-6, -15), (-3, -18)]),   # tope en rampa (45°)
+    ])
+    return placa_yz(perfil_r, RX0, RX1 - RX0)
+
+
+rep_local = repisa_local()
+
+
+def a_posicion(m_local, ang):
     a = np.radians(ang)
     M = np.eye(4)
     M[:3, :3] = [[1, 0, 0], [0, np.cos(a), np.sin(a)], [0, np.sin(a), -np.cos(a)]]
     M[:3, 3] = [0, PIVOTE[0], PIVOTE[1]]
-    m = tab_local.copy()
+    m = m_local.copy()
     m.apply_transform(M)
     m.fix_normals()
     return m
+
+
+tab_local = tablero_local()
+
+
+def tablero_armado(ang):
+    return a_posicion(tab_local, ang)
+
+
+def repisa_armada(ang):
+    return a_posicion(rep_local, ang)
 
 
 # ------------------------------------------------------- 4) PERILLA
@@ -169,14 +194,16 @@ for i, d in enumerate((4.1, 4.2, 4.3, 4.4)):
 if __name__ == "__main__":
     for ang in ANGULOS:
         t = tablero_armado(ang)
-        choques = [B.intersection([t, m]) for m in (base, lat_izq, lat_der)]
+        r = repisa_armada(ang)
+        choques = [B.intersection([t, m]) for m in (base, lat_izq, lat_der)] + \
+                  [B.intersection([r, m]) for m in (base, lat_izq, lat_der, t)]
         v = sum(c.volume for c in choques if len(c.faces))
         pe = perillas_armadas(ang)
         vp = sum(c.volume for c in [B.intersection([pe, m]) for m in (base, lat_izq, lat_der, t)] if len(c.faces))
-        todo = trimesh.util.concatenate([base, lat_izq, lat_der, t, pe])
+        todo = trimesh.util.concatenate([base, lat_izq, lat_der, t, r, pe])
         print(f"{ang}°: choque tablero={v:.2f} mm3  perillas={vp:.2f} mm3  "
               f"tamaño={np.round(todo.extents, 1)}  z mín tablero={t.bounds[0][2]:.1f}")
-    for n, m in (("base", base), ("lateral", lat_izq), ("tablero", tab_local), ("perilla", per), ("probeta", probeta)):
+    for n, m in (("base", base), ("lateral", lat_izq), ("tablero", tab_local), ("repisa", rep_local), ("perilla", per), ("probeta", probeta)):
         print(f"  {n:8s} estanco={m.is_watertight} cuerpos={len(m.split())} {np.round(m.extents, 1)} vol={m.volume/1000:.2f} cm3")
 
     # ------------------------------------------------------------ exportar
@@ -191,10 +218,13 @@ if __name__ == "__main__":
     lat.apply_transform(trimesh.transformations.rotation_matrix(np.pi / 2, [0, 1, 0]))
     lat.apply_translation(-lat.bounds[0])
     lat.export(os.path.join(out, "2_lateral_imprimir_x2.stl"))
-    t = tab_local.copy()                                   # espalda del tablero sobre la cama
-    t.apply_transform(trimesh.transformations.rotation_matrix(np.pi, [1, 0, 0]))
+    t = tab_local.copy()                                   # cara delantera sobre la cama, orejas arriba
     t.apply_translation(-t.bounds[0])
     t.export(os.path.join(out, "3_tablero.stl"))
+    r = rep_local.copy()                                   # apoyada en su piso, paredes hacia arriba
+    r.apply_transform(trimesh.transformations.rotation_matrix(np.pi / 2, [1, 0, 0]))
+    r.apply_translation(-r.bounds[0])
+    r.export(os.path.join(out, "5_repisa.stl"))
     p = per.copy()
     p.apply_translation(-p.bounds[0])
     p.export(os.path.join(out, "4_perilla_imprimir_x4.stl"))
@@ -206,6 +236,7 @@ if __name__ == "__main__":
     partes = {"base_madera": base,
               "laterales_azul": trimesh.util.concatenate([lat_izq, lat_der]),
               "tablero_blanco": tablero_armado(45),
+              "repisa_verde": repisa_armada(45),
               "perillas_amarillo": perillas_armadas(45)}
     todo = trimesh.util.concatenate(list(partes.values()))
     lo, hi = todo.bounds
