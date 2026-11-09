@@ -1,0 +1,452 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>New — tu asistente de IA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&family=JetBrains+Mono&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0b0d17;
+    --panel: #12152a;
+    --panel-2: #191d38;
+    --border: #262b52;
+    --text: #e8eaf6;
+    --muted: #8f95c2;
+    --accent: #5eead4;
+    --accent-2: #818cf8;
+    --danger: #f87171;
+    --user-bubble: linear-gradient(135deg, #4f46e5, #0d9488);
+    --radius: 16px;
+  }
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) {
+      --bg: #f6f7fc; --panel: #ffffff; --panel-2: #eef0fa; --border: #d9dcf0;
+      --text: #161935; --muted: #5d6390; --accent: #0d9488; --accent-2: #4f46e5;
+    }
+  }
+  :root[data-theme="light"] {
+    --bg: #f6f7fc; --panel: #ffffff; --panel-2: #eef0fa; --border: #d9dcf0;
+    --text: #161935; --muted: #5d6390; --accent: #0d9488; --accent-2: #4f46e5;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    background: var(--bg); color: var(--text);
+    font: 15px/1.6 Inter, system-ui, sans-serif;
+    display: flex; overflow: hidden;
+  }
+  button { font: inherit; cursor: pointer; }
+
+  /* ---------- Sidebar ---------- */
+  aside {
+    width: 270px; flex-shrink: 0; background: var(--panel);
+    border-right: 1px solid var(--border);
+    display: flex; flex-direction: column; padding: 16px; gap: 12px;
+    transition: transform .25s;
+  }
+  .logo {
+    font: 700 28px/1 "Space Grotesk", sans-serif; letter-spacing: -1px;
+    display: flex; align-items: center; gap: 10px; padding: 4px 6px 10px;
+  }
+  .logo-mark {
+    width: 34px; height: 34px; border-radius: 10px;
+    background: conic-gradient(from 200deg, var(--accent), var(--accent-2), var(--accent));
+    display: grid; place-items: center; color: #0b0d17; font-size: 18px;
+  }
+  .logo span.dot { color: var(--accent); }
+  .btn {
+    border: 1px solid var(--border); background: var(--panel-2); color: var(--text);
+    border-radius: 12px; padding: 10px 12px; text-align: left;
+  }
+  .btn:hover { border-color: var(--accent); }
+  .btn-primary {
+    background: var(--user-bubble); border: 0; color: #fff; font-weight: 600; text-align: center;
+  }
+  #chatList { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; }
+  .chat-item {
+    display: flex; align-items: center; gap: 6px; padding: 8px 10px; border-radius: 10px;
+    color: var(--muted); background: none; border: 0; text-align: left; width: 100%;
+  }
+  .chat-item:hover, .chat-item.active { background: var(--panel-2); color: var(--text); }
+  .chat-item .t { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .chat-item .del { opacity: 0; background: none; border: 0; color: var(--muted); padding: 0 4px; }
+  .chat-item:hover .del { opacity: 1; }
+  .side-foot { display: flex; flex-direction: column; gap: 8px; font-size: 13px; }
+  select {
+    width: 100%; padding: 9px 10px; border-radius: 10px; background: var(--panel-2);
+    color: var(--text); border: 1px solid var(--border); font: inherit;
+  }
+
+  /* ---------- Main ---------- */
+  main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+  header {
+    display: none; align-items: center; gap: 10px; padding: 10px 16px;
+    border-bottom: 1px solid var(--border); background: var(--panel);
+  }
+  #messages { flex: 1; overflow-y: auto; padding: 24px 16px 8px; }
+  .inner { max-width: 760px; margin: 0 auto; }
+  .empty {
+    text-align: center; margin-top: 12vh;
+  }
+  .empty h1 {
+    font: 700 clamp(34px, 6vw, 54px)/1.1 "Space Grotesk", sans-serif; letter-spacing: -2px; margin: 0 0 8px;
+    background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .empty p { color: var(--muted); margin: 0 0 28px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+  .chip {
+    border: 1px solid var(--border); background: var(--panel); color: var(--text);
+    border-radius: 999px; padding: 8px 14px; font-size: 14px;
+  }
+  .chip:hover { border-color: var(--accent); }
+
+  .msg { display: flex; gap: 12px; margin: 0 0 22px; }
+  .msg.user { justify-content: flex-end; }
+  .msg.user .bubble {
+    background: var(--user-bubble); color: #fff; border-radius: var(--radius) var(--radius) 4px var(--radius);
+    padding: 10px 16px; max-width: 80%; white-space: pre-wrap; word-wrap: break-word;
+  }
+  .avatar {
+    width: 32px; height: 32px; flex-shrink: 0; border-radius: 10px; margin-top: 2px;
+    background: conic-gradient(from 200deg, var(--accent), var(--accent-2), var(--accent));
+    display: grid; place-items: center; color: #0b0d17; font: 700 15px "Space Grotesk";
+  }
+  .msg.bot .bubble { flex: 1; min-width: 0; word-wrap: break-word; }
+  .bubble p { margin: 0 0 10px; }
+  .bubble p:last-child { margin-bottom: 0; }
+  .bubble pre {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 12px;
+    padding: 12px 14px; overflow-x: auto; font: 13px/1.5 "JetBrains Mono", monospace;
+  }
+  .bubble code { font-family: "JetBrains Mono", monospace; font-size: 13px; }
+  .bubble :not(pre) > code { background: var(--panel-2); padding: 1px 6px; border-radius: 6px; }
+  .bubble ul, .bubble ol { margin: 0 0 10px; padding-left: 22px; }
+  .bubble h3 { font: 600 17px "Space Grotesk"; margin: 14px 0 6px; }
+  .bubble.error { color: var(--danger); }
+  .cursor::after {
+    content: ""; display: inline-block; width: 8px; height: 16px; margin-left: 2px;
+    background: var(--accent); vertical-align: -3px; animation: blink 1s steps(2) infinite;
+  }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  /* ---------- Composer ---------- */
+  .composer-wrap { padding: 8px 16px 18px; }
+  .composer {
+    max-width: 760px; margin: 0 auto; background: var(--panel); border: 1px solid var(--border);
+    border-radius: 20px; padding: 10px 10px 10px 16px; display: flex; align-items: flex-end; gap: 8px;
+    box-shadow: 0 10px 30px rgba(0,0,0,.18);
+  }
+  .composer:focus-within { border-color: var(--accent); }
+  textarea {
+    flex: 1; resize: none; border: 0; outline: 0; background: none; color: var(--text);
+    font: inherit; max-height: 200px; padding: 6px 0;
+  }
+  #sendBtn {
+    width: 40px; height: 40px; border-radius: 12px; border: 0; background: var(--user-bubble);
+    color: #fff; font-size: 18px; flex-shrink: 0;
+  }
+  #sendBtn:disabled { opacity: .4; cursor: default; }
+  .hint { text-align: center; color: var(--muted); font-size: 12px; margin-top: 8px; }
+
+  /* ---------- Modal ---------- */
+  .modal-bg {
+    position: fixed; inset: 0; background: rgba(5,6,15,.7); display: none;
+    align-items: center; justify-content: center; padding: 16px; z-index: 10;
+  }
+  .modal-bg.open { display: flex; }
+  .modal {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 20px;
+    padding: 24px; width: 100%; max-width: 440px;
+  }
+  .modal h2 { font: 700 22px "Space Grotesk"; margin: 0 0 6px; }
+  .modal p { color: var(--muted); font-size: 14px; margin: 0 0 14px; }
+  .modal input {
+    width: 100%; padding: 11px 12px; border-radius: 12px; border: 1px solid var(--border);
+    background: var(--panel-2); color: var(--text); font: 14px "JetBrains Mono", monospace; margin-bottom: 14px;
+  }
+  .modal .row { display: flex; gap: 8px; justify-content: flex-end; }
+  .modal a { color: var(--accent); }
+
+  /* ---------- Mobile ---------- */
+  @media (max-width: 760px) {
+    aside { position: fixed; inset: 0 auto 0 0; z-index: 5; transform: translateX(-100%); }
+    aside.open { transform: none; box-shadow: 0 0 0 100vmax rgba(0,0,0,.5); }
+    header { display: flex; }
+    .msg.user .bubble { max-width: 90%; }
+  }
+</style>
+</head>
+<body>
+
+<aside id="sidebar">
+  <div class="logo"><div class="logo-mark">✦</div>new<span class="dot">.</span></div>
+  <button class="btn btn-primary" id="newChatBtn">+ Nuevo chat</button>
+  <div id="chatList"></div>
+  <div class="side-foot">
+    <label for="modelSel" style="color:var(--muted)">Modelo</label>
+    <select id="modelSel">
+      <option value="claude-opus-5-5">New Pro (Claude Opus 5.5)</option>
+      <option value="claude-sonnet-5-5">New Rápido (Claude Sonnet 5.5)</option>
+      <option value="claude-haiku-5-5">New Mini (Claude Haiku 5.5)</option>
+    </select>
+    <button class="btn" id="keyBtn">🔑 API key</button>
+    <button class="btn" id="themeBtn">◐ Cambiar tema</button>
+  </div>
+</aside>
+
+<main>
+  <header>
+    <button class="btn" id="menuBtn" aria-label="Menú">☰</button>
+    <div class="logo" style="padding:0;font-size:22px"><div class="logo-mark" style="width:28px;height:28px;font-size:14px">✦</div>new<span class="dot">.</span></div>
+  </header>
+
+  <div id="messages"><div class="inner" id="inner"></div></div>
+
+  <div class="composer-wrap">
+    <form class="composer" id="form">
+      <textarea id="input" rows="1" placeholder="Escríbele algo a New…"></textarea>
+      <button id="sendBtn" type="submit" aria-label="Enviar">➤</button>
+    </form>
+    <div class="hint">New puede equivocarse. Verifica la información importante.</div>
+  </div>
+</main>
+
+<div class="modal-bg" id="keyModal">
+  <div class="modal">
+    <h2>Conecta tu API key</h2>
+    <p>New funciona con la API de Anthropic. Crea una key en
+      <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">console.anthropic.com</a>
+      y pégala aquí. Se guarda solo en este navegador.</p>
+    <input id="keyInput" type="password" placeholder="sk-ant-..." autocomplete="off">
+    <div class="row">
+      <button class="btn" id="keyCancel">Cancelar</button>
+      <button class="btn btn-primary" id="keySave">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import Anthropic from "https://cdn.jsdelivr.net/npm/@anthropic-ai/sdk@1.3.0/+esm";
+
+const SYSTEM = `Eres New, un asistente de IA amable, claro y útil. Respondes en el idioma del usuario.
+Usa Markdown cuando ayude (listas, **negritas**, bloques de código). Sé directo y no rellenes.
+Si te preguntan qué modelo eres, explica que New funciona con Claude, un modelo de Anthropic.`;
+
+// ---------- Almacenamiento seguro ----------
+const store = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
+};
+
+let chats = store.get("new.chats", []);
+let currentId = store.get("new.current", null);
+let busy = false;
+let abortCtrl = null;
+
+const $ = (id) => document.getElementById(id);
+const inner = $("inner"), messagesEl = $("messages"), input = $("input"), sendBtn = $("sendBtn");
+$("modelSel").value = store.get("new.model", "claude-opus-5-5");
+const theme = store.get("new.theme", null);
+if (theme) document.documentElement.dataset.theme = theme;
+
+// ---------- Markdown mínimo (seguro: escapa HTML primero) ----------
+function esc(s) { return s.replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c])); }
+function inline(s) {
+  return s
+    .replace(/`([^`]+)`/g, "<code>$1</code>")
+    .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
+    .replace(/(^|[^*])\*([^*\n]+)\*/g, "$1<em>$2</em>");
+}
+function md(text) {
+  const parts = text.split(/```/);
+  let html = "";
+  parts.forEach((part, i) => {
+    if (i % 2 === 1) {
+      const code = part.replace(/^[\w+-]*\n/, "");
+      html += `<pre><code>${esc(code)}</code></pre>`;
+      return;
+    }
+    const lines = esc(part).split("\n");
+    let list = null, para = [];
+    const flushPara = () => { if (para.length) { html += `<p>${inline(para.join("<br>"))}</p>`; para = []; } };
+    const flushList = () => { if (list) { html += `<${list.tag}>${list.items.map(x => `<li>${inline(x)}</li>`).join("")}</${list.tag}>`; list = null; } };
+    for (const line of lines) {
+      let m;
+      if ((m = line.match(/^\s*[-*]\s+(.*)/))) { flushPara(); if (!list || list.tag !== "ul") { flushList(); list = { tag: "ul", items: [] }; } list.items.push(m[1]); }
+      else if ((m = line.match(/^\s*\d+[.)]\s+(.*)/))) { flushPara(); if (!list || list.tag !== "ol") { flushList(); list = { tag: "ol", items: [] }; } list.items.push(m[1]); }
+      else if ((m = line.match(/^#{1,6}\s+(.*)/))) { flushPara(); flushList(); html += `<h3>${inline(m[1])}</h3>`; }
+      else if (line.trim() === "") { flushPara(); flushList(); }
+      else { flushList(); para.push(line); }
+    }
+    flushPara(); flushList();
+  });
+  return html;
+}
+
+// ---------- Chats ----------
+const current = () => chats.find(c => c.id === currentId);
+function save() { store.set("new.chats", chats); store.set("new.current", currentId); }
+function textOf(content) {
+  if (typeof content === "string") return content;
+  return content.filter(b => b.type === "text").map(b => b.text).join("");
+}
+
+function renderList() {
+  const list = $("chatList");
+  list.innerHTML = "";
+  for (const c of chats) {
+    const item = document.createElement("div");
+    item.className = "chat-item" + (c.id === currentId ? " active" : "");
+    item.innerHTML = `<span class="t"></span><button class="del" title="Borrar">✕</button>`;
+    item.querySelector(".t").textContent = c.title;
+    item.onclick = () => { if (busy) return; currentId = c.id; save(); render(); $("sidebar").classList.remove("open"); };
+    item.querySelector(".del").onclick = (e) => {
+      e.stopPropagation(); if (busy) return;
+      chats = chats.filter(x => x.id !== c.id);
+      if (currentId === c.id) currentId = null;
+      save(); render();
+    };
+    list.appendChild(item);
+  }
+}
+
+function addBubble(role, html, extraClass = "") {
+  const wrap = document.createElement("div");
+  wrap.className = `msg ${role}`;
+  if (role === "bot") wrap.innerHTML = `<div class="avatar">n</div>`;
+  const b = document.createElement("div");
+  b.className = "bubble " + extraClass;
+  if (role === "user") b.textContent = html; else b.innerHTML = html;
+  wrap.appendChild(b);
+  inner.appendChild(wrap);
+  return b;
+}
+
+function render() {
+  renderList();
+  inner.innerHTML = "";
+  const c = current();
+  if (!c || c.messages.length === 0) {
+    inner.innerHTML = `
+      <div class="empty">
+        <h1>Hola, soy New.</h1>
+        <p>¿En qué te ayudo hoy?</p>
+        <div class="chips">
+          <button class="chip">Explícame la fotosíntesis fácil</button>
+          <button class="chip">Ideas para un juego en HTML</button>
+          <button class="chip">Corrige mi código de JavaScript</button>
+          <button class="chip">Hazme un plan de estudio</button>
+        </div>
+      </div>`;
+    inner.querySelectorAll(".chip").forEach(ch => ch.onclick = () => { input.value = ch.textContent; send(); });
+    return;
+  }
+  for (const m of c.messages) {
+    if (m.role === "user") addBubble("user", textOf(m.content));
+    else addBubble("bot", md(textOf(m.content)));
+  }
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+}
+
+// ---------- API key ----------
+function getKey() { return store.get("new.key", ""); }
+function openKeyModal() { $("keyInput").value = getKey(); $("keyModal").classList.add("open"); $("keyInput").focus(); }
+$("keyBtn").onclick = openKeyModal;
+$("keyCancel").onclick = () => $("keyModal").classList.remove("open");
+$("keySave").onclick = () => { store.set("new.key", $("keyInput").value.trim()); $("keyModal").classList.remove("open"); };
+
+// ---------- Enviar ----------
+async function send() {
+  const text = input.value.trim();
+  if (busy) { abortCtrl?.abort(); return; }
+  if (!text) return;
+  const key = getKey();
+  if (!key) { openKeyModal(); return; }
+
+  let c = current();
+  if (!c) {
+    c = { id: Date.now().toString(36), title: text.slice(0, 40), messages: [] };
+    chats.unshift(c); currentId = c.id;
+  }
+  c.messages.push({ role: "user", content: text });
+  input.value = ""; autosize(); save(); render();
+
+  const bubble = addBubble("bot", "", "cursor");
+  busy = true; sendBtn.textContent = "■"; sendBtn.title = "Detener";
+  abortCtrl = new AbortController();
+
+  const client = new Anthropic({ apiKey: key, dangerouslyAllowBrowser: true });
+  const model = $("modelSel").value;
+  const params = { model, max_tokens: 16000, system: SYSTEM, messages: c.messages };
+  // Fallback automático si el modelo rechaza una petición (Opus/Sonnet 5.5)
+  const useFallback = model !== "claude-haiku-5-5";
+
+  let shown = "";
+  try {
+    const stream = useFallback
+      ? client.beta.messages.stream({ ...params, betas: ["server-side-fallback-2026-07-01"], fallbacks: "default" }, { signal: abortCtrl.signal })
+      : client.messages.stream(params, { signal: abortCtrl.signal });
+
+    stream.on("text", (delta) => {
+      shown += delta;
+      bubble.innerHTML = md(shown);
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+    });
+
+    const final = await stream.finalMessage();
+    bubble.classList.remove("cursor");
+    if (final.stop_reason === "refusal") {
+      bubble.classList.add("error");
+      bubble.textContent = "New no puede ayudar con eso. Prueba a reformular tu mensaje.";
+      c.messages.pop(); // quitamos la pregunta rechazada para no bloquear el chat
+    } else {
+      // Guardamos el contenido completo (incluye bloques de razonamiento) tal cual
+      c.messages.push({ role: "assistant", content: final.content });
+      if (final.stop_reason === "max_tokens") bubble.innerHTML += "<p><em>(respuesta cortada por longitud)</em></p>";
+    }
+  } catch (err) {
+    bubble.classList.remove("cursor");
+    if (abortCtrl.signal.aborted) {
+      if (shown) c.messages.push({ role: "assistant", content: shown });
+      else c.messages.pop();
+      bubble.innerHTML = md(shown || "_(detenido)_");
+    } else {
+      c.messages.pop();
+      bubble.classList.add("error");
+      const status = err?.status;
+      bubble.textContent =
+        status === 401 ? "API key inválida. Revísala con el botón 🔑." :
+        status === 429 ? "Demasiadas peticiones. Espera un momento y vuelve a intentar." :
+        status === 529 || status >= 500 ? "Los servidores están ocupados. Intenta de nuevo." :
+        "Error: " + (err?.message || err);
+      if (status === 401) openKeyModal();
+    }
+  } finally {
+    busy = false; sendBtn.textContent = "➤"; sendBtn.title = "Enviar";
+    save(); renderList();
+  }
+}
+
+// ---------- UI ----------
+function autosize() { input.style.height = "auto"; input.style.height = Math.min(input.scrollHeight, 200) + "px"; }
+input.addEventListener("input", autosize);
+input.addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } });
+$("form").onsubmit = (e) => { e.preventDefault(); send(); };
+$("newChatBtn").onclick = () => { if (busy) return; currentId = null; save(); render(); $("sidebar").classList.remove("open"); input.focus(); };
+$("modelSel").onchange = (e) => store.set("new.model", e.target.value);
+$("menuBtn").onclick = () => $("sidebar").classList.toggle("open");
+$("themeBtn").onclick = () => {
+  const cur = document.documentElement.dataset.theme
+    || (matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark");
+  const next = cur === "light" ? "dark" : "light";
+  document.documentElement.dataset.theme = next; store.set("new.theme", next);
+};
+
+render();
+if (!getKey()) openKeyModal();
+</script>
+</body>
+</html>
