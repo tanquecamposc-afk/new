@@ -1,0 +1,114 @@
+{
+  "schemaVersion": 1,
+  "asOf": "2026-11-10",
+  "copyright": "original game configs; references are for research only",
+  "modes": [
+    {
+      "id": "battle_royale",
+      "name": "Royale",
+      "reference": "battle royale",
+      "players": 80,
+      "build": true,
+      "ranked": false,
+      "respawn": "none",
+      "storm": "br_default",
+      "win": "last_team_alive",
+      "evidenceStatus": "original_proposal"
+    },
+    {
+      "id": "zero_build",
+      "name": "Royale Sin Construcción",
+      "reference": "zero build",
+      "players": 80,
+      "build": false,
+      "ranked": false,
+      "respawn": "none",
+      "storm": "br_default",
+      "win": "last_team_alive",
+      "evidenceStatus": "original_proposal"
+    },
+    {
+      "id": "reload",
+      "name": "Recarga",
+      "reference": "reload",
+      "players": 40,
+      "build": true,
+      "ranked": false,
+      "respawn": "team_timer",
+      "storm": "reload_quick",
+      "win": "last_team_alive",
+      "evidenceStatus": "original_proposal"
+    },
+    {
+      "id": "ranked_br",
+      "name": "Royale Clasificatorio",
+      "reference": "ranked br",
+      "players": 80,
+      "build": true,
+      "ranked": true,
+      "respawn": "none",
+      "storm": "br_default",
+      "win": "last_team_alive",
+      "evidenceStatus": "original_proposal"
+    },
+    {
+      "id": "ranked_reload",
+      "name": "Recarga Clasificatoria",
+      "reference": "ranked reload",
+      "players": 40,
+      "build": true,
+      "ranked": true,
+      "respawn": "team_timer",
+      "storm": "reload_quick",
+      "win": "last_team_alive",
+      "evidenceStatus": "original_proposal"
+    },
+    {
+      "id": "pillars_nexiph_style",
+      "name": "Pilares: Duelo Relámpago",
+      "reference": "THE PILLARS Nexiph v121, 2026-11-08",
+      "players": 8,
+      "build": true,
+      "ranked": false,
+      "respawn": "round_reset",
+      "itemIntervalSeconds": 5,
+      "win": "last_survivor",
+      "evidenceStatus": "original_proposal"
+    },
+    {
+      "id": "pillars_hive_style",
+      "name": "Pilares: Arena Abierta",
+      "reference": "PILLARS Hive v34, 2026-10",
+      "players": 12,
+      "build": true,
+      "ranked": false,
+      "respawn": "round_reset",
+      "itemIntervalSeconds": 6,
+      "win": "last_survivor",
+      "evidenceStatus": "original_proposal"
+    },
+    {
+      "id": "pillars_sprites_style",
+      "name": "Pilares: Espíritus",
+      "reference": "community variants",
+      "players": 12,
+      "build": true,
+      "ranked": false,
+      "respawn": "round_reset",
+      "itemIntervalSeconds": 5,
+      "win": "last_survivor",
+      "evidenceStatus": "original_proposal"
+    },
+    {
+      "id": "creative",
+      "name": "Estudio Creativo",
+      "reference": "creative editor",
+      "players": 16,
+      "build": true,
+      "ranked": false,
+      "respawn": "round_reset",
+      "win": "configurable",
+      "evidenceStatus": "original_proposal"
+    }
+  ]
+}

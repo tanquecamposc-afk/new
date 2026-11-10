@@ -1,0 +1,9 @@
+QUIERO QUE CONSTRUYAS MI VIDEOJUEGO 3D ORIGINAL NEXUS ROYALE.
+
+Lee primero CLAUDE.md, README_EMPIEZA_AQUI.md, docs/PROGRESO.md y docs/00-PLAN_MAESTRO.md; usa references/PROMPT_MAESTRO_FINAL_CLAUDE.md como especificación de producto y el PDF anterior para los detalles de los modos. Las imágenes de references/images son referencias visuales originales, no recursos 3D del juego.
+
+A continuación inspecciona todo lo que ya existe, ejecuta npm install si hace falta, npm run check y npm test; no inventes su salida. Inicia en MODO PLAN: enumera archivos a crear/modificar, dependencias, rutas de navegación y criterios de aceptación para construir la primera escena 3D jugable: lobby mínimo, jugador controlado con WASD y mouse, salto y colisiones reales. NO hagas tienda, pases ni 15 modos antes de completar el primer vertical slice funcional.
+
+Si apruebo tu plan, implementa F1 con pruebas, una escena que pueda abrir y jugar, y evidencia de verificación. En cada futura sesión lee docs/PROGRESO.md y no borres componentes ni cambies de stack sin autorización. Después avanzaremos a armas, bots, BR, Recarga, Pillars, Ranked, pase, tienda, Creativo y multijugador real, siempre comprobando el funcionamiento.
+
+Recuerda: producto original, no copies assets protegidos ni afirmes que hay servidores/jugadores reales si no existen.

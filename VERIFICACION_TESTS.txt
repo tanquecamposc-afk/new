@@ -1,0 +1,10 @@
+Verificación realizada en el entorno de preparación el 10 de noviembre de 2026:
+node: v22.16.0
+TypeScript (global en entorno): 5.8.3
+Comando: npm run check
+Resultado: compilación de TypeScript sin errores.
+Comando: npm test
+Resultado: 8 pruebas, 8 aprobadas, 0 fallidas.
+
+NOTA: estas pruebas cubren únicamente la lógica de ejemplo bajo src/core. No demuestran que exista cliente 3D, multijugador ni assets finales.
+En tu máquina, ejecuta npm install y vuelve a ejecutar npm run check y npm test.

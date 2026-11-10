@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "seasonId": "demo-season-1",
+  "questGroups": [
+    {
+      "id": "daily",
+      "reset": "daily",
+      "quests": [
+        {
+          "id": "d1",
+          "event": "open_chest",
+          "target": 3,
+          "rewardXp": 250
+        },
+        {
+          "id": "d2",
+          "event": "deal_damage",
+          "target": 500,
+          "rewardXp": 300
+        },
+        {
+          "id": "d3",
+          "event": "survive_seconds",
+          "target": 600,
+          "rewardXp": 400
+        }
+      ]
+    },
+    {
+      "id": "weekly",
+      "reset": "weekly",
+      "quests": [
+        {
+          "id": "w1",
+          "event": "eliminate_player",
+          "target": 10,
+          "rewardXp": 1500
+        },
+        {
+          "id": "w2",
+          "event": "win_match",
+          "target": 2,
+          "rewardXp": 2000
+        }
+      ]
+    }
+  ]
+}

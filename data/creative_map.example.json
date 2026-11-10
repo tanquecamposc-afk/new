@@ -1,0 +1,142 @@
+{
+  "schemaVersion": 1,
+  "mapId": "sky-pillars-starter",
+  "title": "Pilares del Amanecer",
+  "author": "original-demo",
+  "minPlayers": 2,
+  "maxPlayers": 8,
+  "bounds": {
+    "min": [
+      -128,
+      -32,
+      -128
+    ],
+    "max": [
+      128,
+      100,
+      128
+    ]
+  },
+  "entities": [
+    {
+      "id": "pillar_1",
+      "type": "platform",
+      "position": [
+        25.0,
+        10,
+        0.0
+      ],
+      "scale": [
+        5,
+        1,
+        5
+      ],
+      "material": "original_stone"
+    },
+    {
+      "id": "pillar_2",
+      "type": "platform",
+      "position": [
+        17.678,
+        10,
+        17.678
+      ],
+      "scale": [
+        5,
+        1,
+        5
+      ],
+      "material": "original_stone"
+    },
+    {
+      "id": "pillar_3",
+      "type": "platform",
+      "position": [
+        0.0,
+        10,
+        25.0
+      ],
+      "scale": [
+        5,
+        1,
+        5
+      ],
+      "material": "original_stone"
+    },
+    {
+      "id": "pillar_4",
+      "type": "platform",
+      "position": [
+        -17.678,
+        10,
+        17.678
+      ],
+      "scale": [
+        5,
+        1,
+        5
+      ],
+      "material": "original_stone"
+    },
+    {
+      "id": "pillar_5",
+      "type": "platform",
+      "position": [
+        -25.0,
+        10,
+        0.0
+      ],
+      "scale": [
+        5,
+        1,
+        5
+      ],
+      "material": "original_stone"
+    },
+    {
+      "id": "pillar_6",
+      "type": "platform",
+      "position": [
+        -17.678,
+        10,
+        -17.678
+      ],
+      "scale": [
+        5,
+        1,
+        5
+      ],
+      "material": "original_stone"
+    },
+    {
+      "id": "pillar_7",
+      "type": "platform",
+      "position": [
+        -0.0,
+        10,
+        -25.0
+      ],
+      "scale": [
+        5,
+        1,
+        5
+      ],
+      "material": "original_stone"
+    },
+    {
+      "id": "pillar_8",
+      "type": "platform",
+      "position": [
+        17.678,
+        10,
+        -17.678
+      ],
+      "scale": [
+        5,
+        1,
+        5
+      ],
+      "material": "original_stone"
+    }
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "abilities": [
+    {
+      "id": "speed_sprite",
+      "name": "Impulso veloz",
+      "charges": 2,
+      "durationSeconds": 6,
+      "cooldownSeconds": 20,
+      "effect": {
+        "type": "movement_multiplier",
+        "value": 1.25
+      },
+      "license": "original"
+    },
+    {
+      "id": "shield_sprite",
+      "name": "Pulso protector",
+      "charges": 1,
+      "durationSeconds": 0,
+      "cooldownSeconds": 30,
+      "effect": {
+        "type": "restore_shield",
+        "value": 30
+      },
+      "license": "original"
+    },
+    {
+      "id": "dash_sprite",
+      "name": "Salto de fase",
+      "charges": 2,
+      "durationSeconds": 0.4,
+      "cooldownSeconds": 12,
+      "effect": {
+        "type": "dash",
+        "meters": 6
+      },
+      "license": "original"
+    }
+  ]
+}

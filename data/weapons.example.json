@@ -1,0 +1,71 @@
+{
+  "schemaVersion": 1,
+  "balanceLabel": "original prototype values, not Fortnite stats",
+  "weapons": [
+    {
+      "id": "starter_ar",
+      "displayName": "rifle",
+      "category": "ar",
+      "damage": 25,
+      "headshotMultiplier": 1.8,
+      "magazineSize": 30,
+      "reloadSeconds": 2.0,
+      "shotsPerSecond": 8,
+      "rangeMeters": 60,
+      "rarity": "common",
+      "iconId": "icons/weapons/starter_ar"
+    },
+    {
+      "id": "starter_smg",
+      "displayName": "subfusil",
+      "category": "smg",
+      "damage": 18,
+      "headshotMultiplier": 1.5,
+      "magazineSize": 32,
+      "reloadSeconds": 2.4,
+      "shotsPerSecond": 11,
+      "rangeMeters": 30,
+      "rarity": "common",
+      "iconId": "icons/weapons/starter_smg"
+    },
+    {
+      "id": "starter_shotgun",
+      "displayName": "escopeta",
+      "category": "shotgun",
+      "damage": 10,
+      "headshotMultiplier": 1.5,
+      "magazineSize": 5,
+      "reloadSeconds": 3.6,
+      "shotsPerSecond": 0.85,
+      "rangeMeters": 12,
+      "rarity": "common",
+      "iconId": "icons/weapons/starter_shotgun"
+    },
+    {
+      "id": "starter_sniper",
+      "displayName": "francotirador",
+      "category": "sniper",
+      "damage": 90,
+      "headshotMultiplier": 2,
+      "magazineSize": 1,
+      "reloadSeconds": 2.8,
+      "shotsPerSecond": 0.65,
+      "rangeMeters": 160,
+      "rarity": "common",
+      "iconId": "icons/weapons/starter_sniper"
+    },
+    {
+      "id": "starter_pistol",
+      "displayName": "pistola",
+      "category": "pistol",
+      "damage": 32,
+      "headshotMultiplier": 1.75,
+      "magazineSize": 12,
+      "reloadSeconds": 1.6,
+      "shotsPerSecond": 4,
+      "rangeMeters": 40,
+      "rarity": "common",
+      "iconId": "icons/weapons/starter_pistol"
+    }
+  ]
+}

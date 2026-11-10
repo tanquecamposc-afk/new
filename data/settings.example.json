@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "display": {
+    "fullscreen": false,
+    "maxFps": 60,
+    "renderScale": 1.0,
+    "qualityPreset": "medium",
+    "shadows": "medium",
+    "motionBlur": false,
+    "fov": 75
+  },
+  "audio": {
+    "master": 0.8,
+    "music": 0.4,
+    "sfx": 0.9,
+    "voice": 0.6
+  },
+  "controls": {
+    "mouseSensitivity": 0.7,
+    "invertY": false,
+    "bindings": {
+      "moveForward": "KeyW",
+      "moveBack": "KeyS",
+      "moveLeft": "KeyA",
+      "moveRight": "KeyD",
+      "jump": "Space",
+      "sprint": "ShiftLeft",
+      "crouch": "ControlLeft",
+      "fire": "Mouse0",
+      "aim": "Mouse2",
+      "reload": "KeyR",
+      "interact": "KeyE",
+      "build": "KeyQ",
+      "map": "KeyM"
+    }
+  },
+  "accessibility": {
+    "reducedMotion": false,
+    "subtitles": true,
+    "colorVisionPreset": "default",
+    "uiScale": 1.0
+  }
+}
