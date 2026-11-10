@@ -77,7 +77,7 @@ export async function openGame(browser, url, viewport = { width: 1280, height: 7
 
 export const state = (page) => page.evaluate(() => window.__NEXUS__.getState());
 
-/** Waits until `predicate(state)` is true; the predicate runs in the page. */
-export function waitForState(page, predicate, timeout = 30_000) {
-  return page.waitForFunction(predicate, null, { timeout, polling: 50 });
+/** Waits until `predicate(arg)` is true; the predicate runs in the page. */
+export function waitForState(page, predicate, timeout = 30_000, arg = null) {
+  return page.waitForFunction(predicate, arg, { timeout, polling: 50 });
 }

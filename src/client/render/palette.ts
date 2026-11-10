@@ -1,6 +1,7 @@
 /**
- * Colour identity of NEXUS ROYALE: a warm golden-hour world — ink-blue zenith, peach horizon,
- * amber and turquoise accents with a touch of coral. Everything visible is generated from these
+ * Colour identity of NEXUS ROYALE: a warm golden-hour world — ink-blue zenith, peach horizon —
+ * with the project's accent set: amber (action), turquoise/cyan (energy), violet and blue
+ * (secondary accents) and coral (alerts). Everything visible is generated from these
  * values; there are no imported textures or models.
  */
 export const PALETTE = Object.freeze({
@@ -8,6 +9,8 @@ export const PALETTE = Object.freeze({
   amber: 0xffb547,
   turquoise: 0x2fd6c3,
   coral: 0xff6b5e,
+  violet: 0x8f6bff,
+  blue: 0x46a6ff,
   cream: 0xf4ead8,
 
   skyTop: 0x1d4a73,

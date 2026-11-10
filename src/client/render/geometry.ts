@@ -78,6 +78,21 @@ export class MeshBuilder {
     this.indices.push(base, base + 1, base + 2);
   }
 
+  /** Horizontal triangle with UVs projected straight down, so caps show an even grid. */
+  planarTriangle(a: V3, b: V3, c: V3, hex: number, shade = 1): void {
+    const base = this.positions.length / 3;
+    const n = normalOf(a, b, c);
+    this.color.setHex(hex).multiplyScalar(shade);
+    const { r, g, b: blue } = this.color;
+    for (const p of [a, b, c]) {
+      this.positions.push(p[0], p[1], p[2]);
+      this.normals.push(n[0], n[1], n[2]);
+      this.uvs.push(p[0] / this.tile, p[2] / this.tile);
+      this.colors.push(r, g, blue);
+    }
+    this.indices.push(base, base + 1, base + 2);
+  }
+
   box(minX: number, minY: number, minZ: number, maxX: number, maxY: number, maxZ: number, hex: number): void {
     // Slight per-face shading keeps flat-lit boxes readable even in shadow.
     this.quad([maxX, minY, maxZ], [maxX, minY, minZ], [maxX, maxY, minZ], [maxX, maxY, maxZ], hex, 0.94);
@@ -134,7 +149,7 @@ export class MeshBuilder {
     for (let i = 0; i < segments; i++) {
       const p = ring[i]!;
       const q = ring[(i + 1) % segments]!;
-      this.triangle([x, maxY, z], [q[0], maxY, q[1]], [p[0], maxY, p[1]], hex, 1.05);
+      this.planarTriangle([x, maxY, z], [q[0], maxY, q[1]], [p[0], maxY, p[1]], hex, 1.05);
     }
   }
 

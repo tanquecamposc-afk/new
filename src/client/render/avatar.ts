@@ -13,16 +13,18 @@ export interface AvatarLook {
   primary: number;
   secondary: number;
   accent: number;
+  scarf: number;
   skin: number;
   dark: number;
 }
 
 export const DEFAULT_LOOK: AvatarLook = Object.freeze({
   primary: 0xf2a33a,
-  secondary: 0x21414f,
+  secondary: 0x2b6076,
   accent: PALETTE.turquoise,
+  scarf: PALETTE.coral,
   skin: 0xc98e6b,
-  dark: 0x16242e,
+  dark: 0x17262f,
 });
 
 /** Everything the animation needs to know for one rendered frame. */
@@ -61,23 +63,31 @@ function limbGeometry(radius: number, length: number): THREE.BufferGeometry {
 }
 
 function createGeometry() {
+  // Sphere band facing -Z (the front): used for the glowing visor.
+  const visor = new THREE.SphereGeometry(0.182, 20, 6, Math.PI * 1.5 - 1.05, 2.1, Math.PI * 0.4, Math.PI * 0.17).translate(0, 0.16, 0);
   return {
-    pelvis: new THREE.SphereGeometry(1, 14, 10).scale(0.19, 0.13, 0.15),
-    torso: new THREE.CapsuleGeometry(0.165, 0.24, 4, 12).scale(1.12, 1, 0.82).translate(0, 0.3, 0),
-    chest: new THREE.BoxGeometry(0.3, 0.17, 0.06).translate(0, 0.4, -0.125),
-    pack: new THREE.BoxGeometry(0.27, 0.34, 0.15).translate(0, 0.33, 0.185),
-    packCore: new THREE.SphereGeometry(0.055, 10, 8).translate(0, 0.36, 0.265),
-    head: new THREE.SphereGeometry(0.155, 16, 12).translate(0, 0.17, 0),
-    helmet: new THREE.SphereGeometry(0.178, 16, 10, 0, Math.PI * 2, 0, Math.PI * 0.6).translate(0, 0.175, 0.008),
-    visor: new THREE.BoxGeometry(0.25, 0.062, 0.1).translate(0, 0.17, -0.105),
-    crest: new THREE.ConeGeometry(0.035, 0.2, 6).rotateX(-0.5).translate(0, 0.37, 0.05),
-    scarf: new THREE.BoxGeometry(0.11, 0.34, 0.022).translate(0, -0.17, 0),
-    upperArm: limbGeometry(0.06, UPPER_ARM),
-    forearm: limbGeometry(0.052, FOREARM),
-    hand: new THREE.SphereGeometry(0.058, 10, 8).translate(0, -FOREARM - 0.02, 0),
-    thigh: limbGeometry(0.086, THIGH),
-    shin: limbGeometry(0.07, SHIN),
-    boot: new THREE.BoxGeometry(0.13, 0.11, 0.28).translate(0, -SHIN - 0.03, -0.05),
+    pelvis: new THREE.SphereGeometry(1, 14, 10).scale(0.205, 0.14, 0.165),
+    belt: new THREE.TorusGeometry(0.19, 0.036, 6, 20).rotateX(Math.PI / 2).scale(1.05, 1, 0.86).translate(0, 0.07, 0),
+    torso: new THREE.CapsuleGeometry(0.19, 0.2, 5, 14).scale(1.16, 1, 0.84).translate(0, 0.3, 0),
+    emblem: new THREE.OctahedronGeometry(0.075, 0).scale(1, 1.25, 0.35).translate(0, 0.36, -0.175),
+    strapL: new THREE.BoxGeometry(0.05, 0.36, 0.03).rotateZ(0.16).translate(-0.12, 0.33, -0.158),
+    strapR: new THREE.BoxGeometry(0.05, 0.36, 0.03).rotateZ(-0.16).translate(0.12, 0.33, -0.158),
+    pack: new THREE.CapsuleGeometry(0.115, 0.16, 4, 10).scale(1.15, 1, 0.75).translate(0, 0.31, 0.205),
+    packCore: new THREE.SphereGeometry(0.06, 12, 8).scale(1, 1, 0.6).translate(0, 0.34, 0.292),
+    shoulder: new THREE.SphereGeometry(0.108, 12, 8).scale(1, 0.8, 1),
+    head: new THREE.SphereGeometry(0.168, 18, 12).translate(0, 0.16, 0),
+    helmet: new THREE.SphereGeometry(0.192, 18, 10, 0, Math.PI * 2, 0, Math.PI * 0.56).translate(0, 0.165, 0.012),
+    visor,
+    crest: new THREE.BoxGeometry(0.03, 0.11, 0.26).rotateX(0.32).translate(0, 0.365, 0.03),
+    scarf: new THREE.BoxGeometry(0.15, 0.26, 0.022).translate(0, -0.13, 0),
+    scarfTip: new THREE.BoxGeometry(0.13, 0.22, 0.02).translate(0, -0.11, 0),
+    upperArm: limbGeometry(0.07, UPPER_ARM),
+    forearm: limbGeometry(0.072, FOREARM),
+    hand: new THREE.SphereGeometry(0.078, 10, 8).translate(0, -FOREARM - 0.03, 0),
+    thigh: limbGeometry(0.105, THIGH),
+    shin: limbGeometry(0.088, SHIN),
+    boot: new THREE.BoxGeometry(0.18, 0.13, 0.33).translate(0, -SHIN - 0.02, -0.06),
+    sole: new THREE.BoxGeometry(0.19, 0.04, 0.35).translate(0, -SHIN - 0.075, -0.06),
     blob: new THREE.CircleGeometry(0.46, 20).rotateX(-Math.PI / 2),
   };
 }
@@ -88,6 +98,7 @@ export class Avatar {
   private readonly spine = new THREE.Group();
   private readonly neck = new THREE.Group();
   private readonly scarf = new THREE.Group();
+  private readonly scarfTip = new THREE.Group();
   private readonly armL: Limb;
   private readonly armR: Limb;
   private readonly legL: Limb;
@@ -118,11 +129,12 @@ export class Avatar {
       this.materials.push(material);
       return material;
     };
-    const primary = standard(look.primary, 0.62);
-    const secondary = standard(look.secondary, 0.75);
+    const primary = standard(look.primary, 0.6);
+    const secondary = standard(look.secondary, 0.72);
     const dark = standard(look.dark, 0.85);
     const skin = standard(look.skin, 0.8);
-    const accent = new THREE.MeshStandardMaterial({ color: look.accent, emissive: look.accent, emissiveIntensity: 1.4, roughness: 0.4 });
+    const scarf = standard(look.scarf, 0.8);
+    const accent = new THREE.MeshStandardMaterial({ color: look.accent, emissive: look.accent, emissiveIntensity: 1.6, roughness: 0.35 });
     this.materials.push(accent);
 
     const mesh = (geometry: THREE.BufferGeometry, material: THREE.Material): THREE.Mesh => {
@@ -136,34 +148,42 @@ export class Avatar {
     this.body.position.y = PELVIS_HEIGHT;
     this.group.add(this.body);
 
-    this.body.add(mesh(geo.pelvis, secondary));
+    this.body.add(mesh(geo.pelvis, secondary), mesh(geo.belt, dark));
     this.spine.position.y = 0.05;
     this.body.add(this.spine);
     this.torsoMesh = mesh(geo.torso, primary);
-    this.spine.add(this.torsoMesh, mesh(geo.chest, secondary), mesh(geo.pack, secondary), mesh(geo.packCore, accent));
+    this.spine.add(this.torsoMesh, mesh(geo.emblem, accent), mesh(geo.strapL, dark), mesh(geo.strapR, dark), mesh(geo.pack, secondary), mesh(geo.packCore, accent));
 
-    this.neck.position.y = 0.55;
+    this.neck.position.y = 0.5;
     this.spine.add(this.neck);
-    this.neck.add(mesh(geo.head, skin), mesh(geo.helmet, primary), mesh(geo.visor, accent), mesh(geo.crest, accent));
+    this.neck.add(mesh(geo.head, skin), mesh(geo.helmet, primary), mesh(geo.visor, accent), mesh(geo.crest, secondary));
 
-    this.scarf.position.set(0, 0.5, 0.13);
-    this.scarf.add(mesh(geo.scarf, accent));
+    // Scarf: two hinged ribbons hanging from the back of the neck.
+    this.scarf.position.set(0, 0.5, 0.15);
+    this.scarf.add(mesh(geo.scarf, scarf));
+    this.scarfTip.position.y = -0.25;
+    this.scarfTip.add(mesh(geo.scarfTip, scarf));
+    this.scarf.add(this.scarfTip);
     this.spine.add(this.scarf);
 
-    const makeLimb = (parent: THREE.Group, x: number, y: number, upper: THREE.BufferGeometry, lower: THREE.BufferGeometry, upperLength: number, end: THREE.BufferGeometry, upperMat: THREE.Material, lowerMat: THREE.Material, endMat: THREE.Material): Limb => {
+    const makeLimb = (parent: THREE.Group, x: number, y: number, upperLength: number, upper: THREE.Mesh[], lower: THREE.Mesh[]): Limb => {
       const root = new THREE.Group();
       root.position.set(x, y, 0);
       const joint = new THREE.Group();
       joint.position.y = -upperLength;
-      root.add(mesh(upper, upperMat), joint);
-      joint.add(mesh(lower, lowerMat), mesh(end, endMat));
+      root.add(...upper, joint);
+      joint.add(...lower);
       parent.add(root);
       return { root, joint };
     };
-    this.armL = makeLimb(this.spine, -0.25, 0.47, geo.upperArm, geo.forearm, UPPER_ARM, geo.hand, primary, secondary, dark);
-    this.armR = makeLimb(this.spine, 0.25, 0.47, geo.upperArm, geo.forearm, UPPER_ARM, geo.hand, primary, secondary, dark);
-    this.legL = makeLimb(this.body, -0.1, -0.02, geo.thigh, geo.shin, THIGH, geo.boot, secondary, secondary, dark);
-    this.legR = makeLimb(this.body, 0.1, -0.02, geo.thigh, geo.shin, THIGH, geo.boot, secondary, secondary, dark);
+    const arm = (x: number): Limb =>
+      makeLimb(this.spine, x, 0.46, UPPER_ARM, [mesh(geo.upperArm, primary), mesh(geo.shoulder, secondary)], [mesh(geo.forearm, dark), mesh(geo.hand, dark)]);
+    const leg = (x: number): Limb =>
+      makeLimb(this.body, x, -0.02, THIGH, [mesh(geo.thigh, secondary)], [mesh(geo.shin, secondary), mesh(geo.boot, primary), mesh(geo.sole, dark)]);
+    this.armL = arm(-0.275);
+    this.armR = arm(0.275);
+    this.legL = leg(-0.105);
+    this.legR = leg(0.105);
 
     const blobMaterial = new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.28, depthWrite: false });
     this.materials.push(blobMaterial);
@@ -254,20 +274,21 @@ export class Avatar {
     };
     const [hipL, kneeL] = legSwing(p);
     const [hipR, kneeR] = legSwing(p + Math.PI);
-    const airHipL = 0.55 * Math.max(0, rising) + 0.12;
-    const airHipR = 0.1 - 0.2 * Math.max(0, -rising);
+    // In the air the character holds a leap: lead knee driven up, trailing leg back.
+    const airHipL = 0.7 + 0.25 * rising;
+    const airHipR = -0.28 - 0.12 * rising;
     const idleStance = (1 - this.gaitK) * (1 - air) * (1 - crouch) * (1 - slide);
     this.setLimb(
       this.legL,
       hipL * (1 - air) + crouch * 1.05 + slide * 1.3 + air * airHipL + climb * 0.2 + idleStance * 0.03,
-      kneeL * (1 - air) - crouch * 1.75 - slide * 0.2 - air * (0.35 + 0.55 * Math.max(0, rising)) - climb * 0.3 - this.landSquash * 0.5,
+      kneeL * (1 - air) - crouch * 1.75 - slide * 0.2 - air * 1.1 - climb * 0.3 - this.landSquash * 0.5,
       -0.03 - slide * 0.08,
       blend,
     );
     this.setLimb(
       this.legR,
       hipR * (1 - air) + crouch * 1.05 + slide * 0.85 + air * airHipR + climb * (1.3 * (1 - reach)) - idleStance * 0.03,
-      kneeR * (1 - air) - crouch * 1.75 - slide * 1.85 - air * 0.3 - climb * (1.5 * (1 - reach)) - this.landSquash * 0.5,
+      kneeR * (1 - air) - crouch * 1.75 - slide * 1.85 - air * 0.55 - climb * (1.5 * (1 - reach)) - this.landSquash * 0.5,
       0.03 + slide * 0.08,
       blend,
     );
@@ -276,19 +297,21 @@ export class Avatar {
     const armSwing = (0.35 + 0.6 * intensity) * this.gaitK;
     const elbow = 0.18 + (0.3 + 0.75 * intensity) * this.gaitK;
     const falling = air * Math.max(0, -rising);
-    const armUp = air * Math.max(0, rising) * 0.9 + climb * (0.5 + 2.2 * reach);
+    const armUp = climb * (0.5 + 2.2 * reach);
+    // Airborne arms counter the legs and spread for balance, wider while falling.
+    const airSpread = air * (0.42 + 0.6 * falling);
     this.setLimb(
       this.armL,
-      -Math.sin(p) * armSwing + armUp - slide * 0.9 + crouch * 0.3,
-      elbow + air * 0.5 + climb * 0.4 + crouch * 0.5,
-      -(0.1 + falling * 0.95 + idleStance * 0.05),
+      -Math.sin(p) * armSwing * (1 - air) + armUp - air * (0.5 - 0.3 * rising) - slide * 0.9 + crouch * 0.3,
+      elbow + air * 0.6 + climb * 0.4 + crouch * 0.5,
+      -(0.1 + airSpread + idleStance * 0.05),
       blend,
     );
     this.setLimb(
       this.armR,
-      Math.sin(p) * armSwing + armUp + slide * 0.55 + crouch * 0.3,
-      elbow + air * 0.5 + climb * 0.4 + crouch * 0.5,
-      0.1 + falling * 0.95 + idleStance * 0.05,
+      Math.sin(p) * armSwing * (1 - air) + armUp + air * (0.75 + 0.25 * rising) + slide * 0.55 + crouch * 0.3,
+      elbow + air * 0.6 + climb * 0.4 + crouch * 0.5,
+      0.1 + airSpread + idleStance * 0.05,
       blend,
     );
 
@@ -297,6 +320,7 @@ export class Avatar {
     const lift = Math.min(1.25, 0.18 + pose.speed * 0.14 + falling * 0.8);
     this.scarf.rotation.x = blend(this.scarf.rotation.x, -(lift + flutter * Math.min(1, pose.speed / 4 + falling)), 10);
     this.scarf.rotation.z = flutter * 0.4;
+    this.scarfTip.rotation.x = blend(this.scarfTip.rotation.x, -(lift * 0.35 + flutter * 1.4), 8);
 
     this.blob.position.y = 0.03 - groundOffset;
     const fade = THREE.MathUtils.clamp(1 - groundOffset / 5, 0, 1);

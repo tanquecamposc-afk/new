@@ -16,6 +16,8 @@ const RADIANS_PER_PIXEL = 0.0022;
 const KEY_LOOK_YAW_SPEED = 2.4;
 const KEY_LOOK_PITCH_SPEED = 1.5;
 const MAX_MOUSE_DELTA = 240;
+/** Browsers often report one huge movement right after the pointer is captured: skip that window. */
+const LOCK_SETTLE_MS = 150;
 
 /** Actions that fire once per key press and are handled by the app, not the simulation. */
 const EDGE_ACTIONS: readonly InputAction[] = ['pause', 'restart', 'help'];
@@ -49,6 +51,7 @@ export class InputManager {
   private lastPointerX = 0;
   private lastPointerY = 0;
   private wasLocked = false;
+  private ignoreMouseUntil = 0;
   private readonly disposers: Array<() => void> = [];
 
   constructor(
@@ -226,6 +229,7 @@ export class InputManager {
 
   private onMouseMove(event: MouseEvent): void {
     if (!this.gameplayEnabled || !this.pointerLocked) return;
+    if (performance.now() < this.ignoreMouseUntil) return;
     this.applyLookDelta(event.movementX, event.movementY);
   }
 
@@ -257,6 +261,7 @@ export class InputManager {
     const locked = this.pointerLocked;
     if (locked) {
       this.wasLocked = true;
+      this.ignoreMouseUntil = performance.now() + LOCK_SETTLE_MS;
       this.setLookMode('locked');
     } else if (this.wasLocked) {
       this.wasLocked = false;

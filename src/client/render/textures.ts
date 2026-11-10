@@ -6,7 +6,7 @@
 import * as THREE from 'three';
 import { makeRng } from '../../core/rng.js';
 
-export type DetailTexture = 'panel' | 'crate' | 'metal';
+export type DetailTexture = 'panel' | 'crate' | 'metal' | 'ground';
 
 function makeCanvas(size: number): { canvas: HTMLCanvasElement; ctx: CanvasRenderingContext2D } {
   const canvas = document.createElement('canvas');
@@ -118,11 +118,34 @@ function metalTexture(anisotropy: number): THREE.CanvasTexture {
   return finish(canvas, anisotropy);
 }
 
+/** Ground detail: soft mottling plus a faint survey grid, so speed and distance read at a glance. */
+function groundTexture(anisotropy: number): THREE.CanvasTexture {
+  const size = 256;
+  const { canvas, ctx } = makeCanvas(size);
+  ctx.fillStyle = '#f0f0f0';
+  ctx.fillRect(0, 0, size, size);
+  const rng = makeRng(53);
+  for (let i = 0; i < 140; i++) {
+    const shade = rng() < 0.5 ? 255 : 0;
+    ctx.fillStyle = `rgba(${shade},${shade},${shade},${(0.008 + rng() * 0.02).toFixed(3)})`;
+    const r = 10 + rng() * 34;
+    ctx.beginPath();
+    ctx.arc(rng() * size, rng() * size, r, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  speckle(ctx, size, 59, 2200, 0.09);
+  ctx.strokeStyle = 'rgba(0,0,0,0.085)';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(0, 0, size, size);
+  return finish(canvas, anisotropy);
+}
+
 export function createDetailTextures(anisotropy: number): Record<DetailTexture, THREE.CanvasTexture> {
   return {
     panel: panelTexture(anisotropy),
     crate: crateTexture(anisotropy),
     metal: metalTexture(anisotropy),
+    ground: groundTexture(anisotropy),
   };
 }
 

@@ -90,6 +90,7 @@ export class GameClient {
     player: { x: 0, y: 0, z: 0, yaw: 0, pose: this.pose, groundOffset: 0, visible: true },
     nextAnchor: -1,
     reducedMotion: false,
+    lobby: true,
   };
 
   constructor(private readonly host: HTMLElement) {
@@ -495,6 +496,7 @@ export class GameClient {
     view.player.groundOffset = groundOffset;
     view.player.visible = true;
     view.nextAnchor = player.course ? player.course.nextIndex : -1;
+    view.lobby = false;
   }
 
   /** Lobby: the avatar idles on the central pedestal while the camera drifts in front of it. */
@@ -538,6 +540,7 @@ export class GameClient {
     view.player.groundOffset = 0;
     view.player.visible = true;
     view.nextAnchor = -1;
+    view.lobby = true;
   }
 
   /* ---- HUD --------------------------------------------------------------------------------- */

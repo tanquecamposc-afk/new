@@ -48,6 +48,8 @@ export interface BurstOptions {
   gravity: number;
   /** 0 = spread in the horizontal plane only, 1 = full sphere. */
   vertical: number;
+  /** Peak opacity, 0..1. */
+  opacity: number;
 }
 
 export class Particles {
@@ -63,6 +65,7 @@ export class Particles {
   private readonly maxLife = new Float32Array(CAPACITY);
   private readonly gravity = new Float32Array(CAPACITY);
   private readonly baseSize = new Float32Array(CAPACITY);
+  private readonly baseAlpha = new Float32Array(CAPACITY);
   private cursor = 0;
   private alive = 0;
   private readonly geometry = new THREE.BufferGeometry();
@@ -113,6 +116,7 @@ export class Particles {
       this.maxLife[i] = life;
       this.gravity[i] = options.gravity;
       this.baseSize[i] = options.size[0] + Math.random() * (options.size[1] - options.size[0]);
+      this.baseAlpha[i] = options.opacity;
       const shade = 0.85 + Math.random() * 0.3;
       this.colors[i * 3] = this.color.r * shade;
       this.colors[i * 3 + 1] = this.color.g * shade;
@@ -146,7 +150,7 @@ export class Particles {
       this.positions[i * 3 + 1] = this.positions[i * 3 + 1]! + this.velocities[i * 3 + 1]! * dt;
       this.positions[i * 3 + 2] = this.positions[i * 3 + 2]! + this.velocities[i * 3 + 2]! * dt;
       const t = life / this.maxLife[i]!;
-      this.alphas[i] = Math.min(1, t * 2.2) * 0.85;
+      this.alphas[i] = Math.min(1, t * 2.2) * this.baseAlpha[i]!;
       this.sizes[i] = this.baseSize[i]! * (1.6 - 0.6 * t);
     }
     this.alive = alive;
@@ -163,7 +167,7 @@ export class Particles {
   }
 }
 
-export const DUST: BurstOptions = { count: 5, color: 0xd9c3a0, speed: [0.4, 1.4], lift: 0.5, life: [0.35, 0.7], size: [0.25, 0.5], gravity: -0.4, vertical: 0.1 };
-export const LANDING: BurstOptions = { count: 14, color: 0xdcc9a8, speed: [1.2, 3.2], lift: 0.6, life: [0.4, 0.8], size: [0.3, 0.65], gravity: 0.6, vertical: 0.12 };
-export const ANCHOR_BURST: BurstOptions = { count: 40, color: 0xffc766, speed: [2.5, 7], lift: 1.5, life: [0.5, 1.1], size: [0.14, 0.34], gravity: 4, vertical: 0.9 };
-export const SLIDE_SPRAY: BurstOptions = { count: 2, color: 0xe6d3b3, speed: [0.5, 1.6], lift: 0.7, life: [0.25, 0.5], size: [0.22, 0.42], gravity: 0.5, vertical: 0.1 };
+export const DUST: BurstOptions = { count: 4, color: 0xdcc9a8, speed: [0.3, 1.1], lift: 0.4, life: [0.3, 0.6], size: [0.1, 0.22], gravity: -0.3, vertical: 0.1, opacity: 0.38 };
+export const LANDING: BurstOptions = { count: 14, color: 0xdcc9a8, speed: [1.2, 3.2], lift: 0.6, life: [0.4, 0.8], size: [0.16, 0.36], gravity: 0.6, vertical: 0.12, opacity: 0.5 };
+export const ANCHOR_BURST: BurstOptions = { count: 40, color: 0xffc766, speed: [2.5, 7], lift: 1.5, life: [0.5, 1.1], size: [0.1, 0.24], gravity: 4, vertical: 0.9, opacity: 0.95 };
+export const SLIDE_SPRAY: BurstOptions = { count: 2, color: 0xe6d3b3, speed: [0.5, 1.6], lift: 0.7, life: [0.25, 0.5], size: [0.12, 0.26], gravity: 0.5, vertical: 0.1, opacity: 0.45 };

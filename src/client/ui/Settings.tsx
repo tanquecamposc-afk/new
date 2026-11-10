@@ -112,6 +112,7 @@ export function Settings() {
                 step={0.05}
                 format={percent}
                 onChange={(value) => edit((s) => void (s.display.renderScale = value))}
+                testId="render-scale"
               />
               <Segmented
                 label={t('settings.maxFps')}

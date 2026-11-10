@@ -17,6 +17,8 @@
   --amber-ink: #2b1a00;
   --turq: #2fd6c3;
   --coral: #ff6b5e;
+  --violet: #8f6bff;
+  --blue: #46a6ff;
   --cut: 0.9rem;
   --font-ui: 'Segoe UI', system-ui, -apple-system, 'Helvetica Neue', Arial, sans-serif;
 }
@@ -170,13 +172,14 @@ kbd {
 }
 
 .chip-outline {
-  border: 1px solid var(--line);
-  color: var(--muted);
+  border: 1px solid rgba(70, 166, 255, 0.5);
+  color: #a9d4ff;
 }
 
 .chip-muted {
-  background: rgba(244, 234, 216, 0.08);
-  color: var(--muted);
+  background: rgba(143, 107, 255, 0.16);
+  color: #c9b8ff;
+  border: 1px solid rgba(143, 107, 255, 0.4);
 }
 
 /* ---- buttons ----------------------------------------------------------------------------- */
@@ -795,6 +798,13 @@ input[type='range']:focus-visible {
   gap: 0.6rem;
   min-width: 20rem;
   padding: 1.6rem 1.7rem;
+}
+
+/* Dialogs are fully opaque so nothing from the scene shows through the text. */
+.menu,
+.settings,
+.click-to-play {
+  background: var(--panel-solid);
 }
 
 .menu-title {

@@ -22,6 +22,7 @@
   },
   "include": [
     "src/core/**/*.ts",
+    "src/client/app/i18n.ts",
     "tests/**/*.ts"
   ],
   "exclude": [

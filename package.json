@@ -11,7 +11,7 @@
     "dev": "vite",
     "build": "npm run check && vite build",
     "preview": "vite preview",
-    "test:e2e": "node tests/e2e/run.mjs"
+    "test:e2e": "vite build && node tests/e2e/run.mjs"
   },
   "engines": {
     "node": ">=22.12"

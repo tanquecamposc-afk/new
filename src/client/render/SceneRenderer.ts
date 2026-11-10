@@ -20,6 +20,8 @@ export interface QualityProfile {
   shadowMapSize: number;
   particles: boolean;
   clouds: boolean;
+  /** Lambert world shading instead of PBR. */
+  cheapShading: boolean;
   decorDensity: number;
   viewDistance: number;
   anisotropy: number;
@@ -27,10 +29,10 @@ export interface QualityProfile {
 
 /** Every preset changes real renderer state; nothing here is cosmetic to the settings panel. */
 export const QUALITY_PROFILES: Readonly<Record<QualityPreset, QualityProfile>> = Object.freeze({
-  low: { antialias: false, maxPixelRatio: 1, shadows: false, shadowMapSize: 0, particles: false, clouds: false, decorDensity: 0.35, viewDistance: 240, anisotropy: 1 },
-  medium: { antialias: true, maxPixelRatio: 1.25, shadows: true, shadowMapSize: 1024, particles: true, clouds: true, decorDensity: 0.8, viewDistance: 320, anisotropy: 4 },
-  high: { antialias: true, maxPixelRatio: 1.6, shadows: true, shadowMapSize: 2048, particles: true, clouds: true, decorDensity: 1, viewDistance: 420, anisotropy: 8 },
-  epic: { antialias: true, maxPixelRatio: 2, shadows: true, shadowMapSize: 4096, particles: true, clouds: true, decorDensity: 1, viewDistance: 520, anisotropy: 16 },
+  low: { antialias: false, maxPixelRatio: 1, shadows: false, shadowMapSize: 0, particles: false, clouds: false, cheapShading: true, decorDensity: 0.35, viewDistance: 240, anisotropy: 1 },
+  medium: { antialias: true, maxPixelRatio: 1.25, shadows: true, shadowMapSize: 1024, particles: true, clouds: true, cheapShading: false, decorDensity: 0.8, viewDistance: 320, anisotropy: 4 },
+  high: { antialias: true, maxPixelRatio: 1.6, shadows: true, shadowMapSize: 2048, particles: true, clouds: true, cheapShading: false, decorDensity: 1, viewDistance: 420, anisotropy: 8 },
+  epic: { antialias: true, maxPixelRatio: 2, shadows: true, shadowMapSize: 4096, particles: true, clouds: true, cheapShading: false, decorDensity: 1, viewDistance: 520, anisotropy: 16 },
 });
 
 export class WebGLUnavailableError extends Error {
@@ -69,6 +71,8 @@ export interface FrameView {
   /** Index of the next course anchor, or -1 when there is no course to show. */
   nextAnchor: number;
   reducedMotion: boolean;
+  /** Lobby presentation: studio lights on the character, zone signs hidden. */
+  lobby: boolean;
 }
 
 export interface RendererCallbacks {
@@ -90,6 +94,9 @@ export class SceneRenderer {
   private readonly camera = new THREE.PerspectiveCamera(75, 16 / 9, 0.1, 1200);
   private readonly sun = new THREE.DirectionalLight(PALETTE.sunLight, 2.6);
   private readonly hemisphere = new THREE.HemisphereLight(PALETTE.skyLight, PALETTE.groundLight, 1.15);
+  /** Key and rim lights that follow the character while it is on show in the lobby. */
+  private readonly keyLight = new THREE.PointLight(0xffe2bd, 0, 14, 1.6);
+  private readonly rimLight = new THREE.PointLight(PALETTE.violet, 0, 12, 1.6);
   private readonly sky = new Sky();
   private readonly avatar = new Avatar();
   private readonly glow: THREE.Texture;
@@ -121,7 +128,7 @@ export class SceneRenderer {
 
     this.camera.rotation.order = 'YXZ';
     this.scene.fog = new THREE.Fog(PALETTE.fog, 60, this.profile.viewDistance);
-    this.scene.add(this.sky.mesh, this.hemisphere, this.sun, this.sun.target, this.avatar.group, this.particles.points);
+    this.scene.add(this.sky.mesh, this.hemisphere, this.sun, this.sun.target, this.keyLight, this.rimLight, this.avatar.group, this.particles.points);
 
     this.sun.shadow.bias = -0.0004;
     this.sun.shadow.normalBias = 0.045;
@@ -140,7 +147,11 @@ export class SceneRenderer {
   setQuality(preset: QualityPreset, renderScale: number): void {
     const next = QUALITY_PROFILES[preset];
     const antialiasChanged = next.antialias !== this.profile.antialias;
-    const worldChanged = next.shadows !== this.profile.shadows || next.decorDensity !== this.profile.decorDensity || next.anisotropy !== this.profile.anisotropy;
+    const worldChanged =
+      next.shadows !== this.profile.shadows ||
+      next.cheapShading !== this.profile.cheapShading ||
+      next.decorDensity !== this.profile.decorDensity ||
+      next.anisotropy !== this.profile.anisotropy;
     const changed = preset !== this.preset || renderScale !== this.renderScale;
     this.preset = preset;
     this.profile = next;
@@ -165,6 +176,7 @@ export class SceneRenderer {
     this.world = new WorldView(map, {
       textures: this.textures,
       shadows: this.profile.shadows,
+      cheapShading: this.profile.cheapShading,
       decorDensity: this.profile.decorDensity,
       translate,
     });
@@ -224,6 +236,18 @@ export class SceneRenderer {
       this.sun.target.position.set(tx, player.y, tz);
       this.sun.position.set(tx + this.sunDirection.x * 90, player.y + this.sunDirection.y * 90, tz + this.sunDirection.z * 90);
     }
+
+    // Studio lighting for the lobby: warm key from the camera side, violet rim from behind.
+    if (view.lobby) {
+      this.keyLight.intensity = 26;
+      this.rimLight.intensity = 34;
+      this.keyLight.position.set(camera.position.x * 0.55 + player.x * 0.45 - 1.4, player.y + 2.6, camera.position.z * 0.55 + player.z * 0.45);
+      this.rimLight.position.set(player.x * 2 - camera.position.x * 0.6 + 1.2, player.y + 2.2, player.z * 2 - camera.position.z * 0.6);
+    } else {
+      this.keyLight.intensity = 0;
+      this.rimLight.intensity = 0;
+    }
+    this.world?.setLabelsVisible(!view.lobby);
 
     this.sky.update(camera.position, view.timeSeconds);
     this.world?.update(view.reducedMotion ? 0 : view.timeSeconds);

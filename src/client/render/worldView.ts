@@ -19,8 +19,14 @@ import { EdgeBuilder, MeshBuilder } from './geometry.js';
 import { PALETTE } from './palette.js';
 import { createLabelTexture, type DetailTexture } from './textures.js';
 
+/** Height of a zone sign in metres. */
+const LABEL_HEIGHT = 0.95;
+
+/** Detail textures used by built pieces (the ground has its own). */
+type PieceTexture = Exclude<DetailTexture, 'ground'>;
+
 interface StyleLook {
-  texture: DetailTexture;
+  texture: PieceTexture;
   colors: readonly number[];
 }
 
@@ -40,6 +46,8 @@ const STYLE_LOOK: Readonly<Record<StaticStyle, StyleLook>> = {
 export interface WorldViewOptions {
   textures: Record<DetailTexture, THREE.Texture>;
   shadows: boolean;
+  /** Lambert instead of physically based shading: much cheaper per pixel (low preset). */
+  cheapShading: boolean;
   /** 0..1 share of decorative props (bushes) to draw; colliding props are always drawn. */
   decorDensity: number;
   translate: (key: string) => string;
@@ -77,12 +85,17 @@ export class WorldView {
       const { texture, aspect } = createLabelTexture(translate(entry.key));
       material.map = texture;
       material.needsUpdate = true;
-      entry.sprite.scale.set(1.25 * aspect, 1.25, 1);
+      entry.sprite.scale.set(LABEL_HEIGHT * aspect, LABEL_HEIGHT, 1);
     }
   }
 
   update(timeSeconds: number): void {
     this.wind.value = timeSeconds;
+  }
+
+  /** Zone signs only make sense during a match. */
+  setLabelsVisible(visible: boolean): void {
+    for (const entry of this.labelSprites) entry.sprite.visible = visible;
   }
 
   dispose(): void {
@@ -99,6 +112,7 @@ export class WorldView {
     const count = stride * (rows + 1);
     const positions = new Float32Array(count * 3);
     const colors = new Float32Array(count * 3);
+    const uvs = new Float32Array(count * 2);
     const color = new THREE.Color();
     const grassA = new THREE.Color(PALETTE.grassA);
     const grassB = new THREE.Color(PALETTE.grassB);
@@ -113,6 +127,9 @@ export class WorldView {
         positions[index * 3] = x;
         positions[index * 3 + 1] = h;
         positions[index * 3 + 2] = z;
+        // One ground tile every 4 m, in world space.
+        uvs[index * 2] = x / 4;
+        uvs[index * 2 + 1] = z / 4;
 
         const kind = TERRAIN_SURFACES[surface[index] ?? 0] ?? 'grass';
         const variation = fractalNoise2D(x * 0.08, z * 0.08, 91, 3);
@@ -151,10 +168,11 @@ export class WorldView {
     const geometry = new THREE.BufferGeometry();
     geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
     geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+    geometry.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
     geometry.setIndex(new THREE.BufferAttribute(indices, 1));
     geometry.computeVertexNormals();
     geometry.computeBoundingSphere();
-    const material = new THREE.MeshStandardMaterial({ vertexColors: true, flatShading: true, roughness: 0.96, metalness: 0 });
+    const material = this.surfaceMaterial({ map: this.options.textures.ground, vertexColors: true, flatShading: true }, 0.96, 0);
     const mesh = new THREE.Mesh(geometry, material);
     mesh.name = 'terrain';
     mesh.receiveShadow = true;
@@ -165,7 +183,7 @@ export class WorldView {
   /* ---- static pieces ----------------------------------------------------------------------- */
 
   private buildStatics(statics: readonly StaticDef[]): void {
-    const builders: Record<DetailTexture, MeshBuilder> = {
+    const builders: Record<PieceTexture, MeshBuilder> = {
       panel: new MeshBuilder(2),
       crate: new MeshBuilder(1.6),
       metal: new MeshBuilder(2),
@@ -211,15 +229,10 @@ export class WorldView {
     }
   }
 
-  private addMesh(builder: MeshBuilder, texture: DetailTexture, roughness: number, metalness: number): void {
+  private addMesh(builder: MeshBuilder, texture: PieceTexture, roughness: number, metalness: number): void {
     if (builder.isEmpty) return;
     const geometry = builder.build();
-    const material = new THREE.MeshStandardMaterial({
-      map: this.options.textures[texture],
-      vertexColors: true,
-      roughness,
-      metalness,
-    });
+    const material = this.surfaceMaterial({ map: this.options.textures[texture], vertexColors: true }, roughness, metalness);
     const mesh = new THREE.Mesh(geometry, material);
     mesh.name = `statics:${texture}`;
     mesh.castShadow = this.options.shadows;
@@ -241,9 +254,9 @@ export class WorldView {
       byType.set(p.type, list);
     }
 
-    const trunkMaterial = this.track(new THREE.MeshStandardMaterial({ color: PALETTE.trunk, roughness: 1, flatShading: true }));
+    const trunkMaterial = this.track(this.surfaceMaterial({ color: PALETTE.trunk, flatShading: true }, 1, 0));
     const foliageMaterial = this.track(this.makeFoliageMaterial());
-    const rockMaterial = this.track(new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.95, flatShading: true }));
+    const rockMaterial = this.track(this.surfaceMaterial({ color: 0xffffff, flatShading: true }, 0.95, 0));
 
     const pines = byType.get('tree_pine');
     if (pines) {
@@ -301,8 +314,8 @@ export class WorldView {
   }
 
   /** Standard material with a gentle vertex sway so trees are never frozen. */
-  private makeFoliageMaterial(): THREE.MeshStandardMaterial {
-    const material = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.9, flatShading: true });
+  private makeFoliageMaterial(): THREE.Material {
+    const material = this.surfaceMaterial({ color: 0xffffff, flatShading: true }, 0.9, 0);
     const wind = this.wind;
     material.onBeforeCompile = (shader) => {
       shader.uniforms['uWind'] = wind;
@@ -359,11 +372,21 @@ export class WorldView {
       const material = new THREE.SpriteMaterial({ map: texture, transparent: true, depthWrite: false, fog: true });
       const sprite = new THREE.Sprite(material);
       sprite.position.set(label.x, label.y, label.z);
-      sprite.scale.set(1.25 * aspect, 1.25, 1);
+      sprite.scale.set(LABEL_HEIGHT * aspect, LABEL_HEIGHT, 1);
       this.group.add(sprite);
       this.disposables.push(material);
       this.labelSprites.push({ sprite, key: label.key, y: label.y });
     }
+  }
+
+  /** Lit surface material for the current quality: PBR normally, Lambert on the low preset. */
+  private surfaceMaterial(
+    params: { map?: THREE.Texture; color?: number; vertexColors?: boolean; flatShading?: boolean },
+    roughness: number,
+    metalness: number,
+  ): THREE.MeshStandardMaterial | THREE.MeshLambertMaterial {
+    if (this.options.cheapShading) return new THREE.MeshLambertMaterial(params);
+    return new THREE.MeshStandardMaterial({ ...params, roughness, metalness });
   }
 
   private track<T extends { dispose(): void }>(item: T): T {
