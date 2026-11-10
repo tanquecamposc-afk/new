@@ -6,3 +6,5 @@ export * from './pillars.js';
 export * from './reload.js';
 export * from './rewards.js';
 export * from './rng.js';
+export * from './sim/index.js';
+export * from './maps/trainingGrounds.js';
