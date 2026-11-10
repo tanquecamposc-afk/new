@@ -9,3 +9,6 @@ coverage/
 *.log
 *.tsbuildinfo
 *.heapsnapshot
+
+dist-web/
+test-results/

@@ -8,3 +8,5 @@ export * from './rewards.js';
 export * from './rng.js';
 export * from './sim/index.js';
 export * from './maps/trainingGrounds.js';
+export * from './meta/settings.js';
+export * from './meta/save.js';

@@ -21,7 +21,7 @@
     "declaration": true
   },
   "include": [
-    "src/**/*.ts",
+    "src/core/**/*.ts",
     "tests/**/*.ts"
   ],
   "exclude": [
