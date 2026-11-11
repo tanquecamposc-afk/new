@@ -14,9 +14,21 @@ Desarrolla un videojuego shooter 3D original, inspirado en la amplitud funcional
 10. No almacenes secretos en repositorio ni uses permisos irrestrictos por defecto.
 
 ## Comandos
-- `npm run check`: comprobar tipos del núcleo TypeScript.
-- `npm test`: compilar y ejecutar tests del núcleo.
-- Cuando exista cliente web: `npm run dev`, `npm run build`, `npm run test:e2e` (crearlos y verificar en esa fase).
+- `npm run check`: comprobar tipos del núcleo, las pruebas y el cliente.
+- `npm test`: compilar y ejecutar tests del núcleo (`node:test`).
+- `npm run dev`: cliente web en desarrollo (Vite).
+- `npm run build`: tipos + build de producción en `dist-web/`.
+- `npm run test:e2e`: build + prueba en Chromium real (teclado, ratón y táctil). `--filter=<regex>` ejecuta solo algunos pasos; `--evidence` copia capturas a `docs/evidence/`.
+- `npm run build:artifact`: el juego en un único HTML autocontenido (`dist-artifact/`).
+- `node tests/e2e/perf.mjs`: tiempo de cuadro por preset gráfico en la máquina actual.
+
+## Stack y estructura (decididos en la fase 1; no cambiar sin migración explícita)
+- TypeScript estricto + Vite + Three.js (render) + React (solo menús y HUD). Sin React Three Fiber ni Rapier.
+- `src/core/sim`: simulación determinista a 60 Hz (mundo de colisiones, personaje, cámara). `src/core/maps`: mapas como datos. `src/core/meta`: ajustes y guardado validados.
+- `src/client`: `game/` (bucle e integración), `render/`, `input/`, `audio/`, `ui/`, `app/` (estado, textos es-PE/en, persistencia).
+- La simulación es la única fuente de verdad; el cliente solo envía `InputFrame` y dibuja. Los efectos visuales y sonoros reaccionan a eventos de la simulación.
+- Todo el arte y el audio se generan por código. No añadir assets externos sin registrarlos en `assets/LICENSES.md`.
+- En navegador, agacharse es `C`: `Ctrl+W` cierra la pestaña y no se puede bloquear.
 
 ## Archivos importantes
 - `README_EMPIEZA_AQUI.md`: instalación y límites de este kit.
@@ -33,7 +45,9 @@ Desarrolla un videojuego shooter 3D original, inspirado en la amplitud funcional
 - `docs/10-DATOS_SEGURIDAD_ECONOMIA.md`: cuentas, XP, tienda, recompensas.
 - `docs/11-CREATIVO.md`: editor de mapas y aislamiento del sandbox.
 - `docs/12-REFERENCIAS.md`: fuentes y fechas.
-- `src/core`: reglas de ejemplo ejecutables. `tests`: pruebas.
+- `docs/13-GUIA_VISUAL.md`: guía visual de 18 paneles del proyecto y decisiones de identidad propia.
+- `docs/PROGRESO.md`: estado real con evidencias. `ROADMAP.md`: fases y dependencias.
+- `src/core`: dominio (reglas del kit + simulación). `tests`: unitarias y `tests/e2e`.
 
 ## Entregable al cerrar cada iteración
 - Qué está **jugable** realmente y cómo se prueba.

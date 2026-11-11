@@ -8,7 +8,7 @@ está implementado se dice tal cual.
 |---|---|---|
 | Núcleo de reglas del kit (daño, tormenta, Pillars, Recarga, XP, moneda) | Incluido, sin cambios | `npm test` (8 pruebas originales siguen en verde) |
 | F0 Fundamentos (repo, build, tests, lint de tipos) | **HECHO** | `npm run check`, `npm test`, `npm run build` |
-| F1 Movimiento, cámara y colisiones | **HECHO y jugable** | 47 pruebas unitarias + 17 pasos en navegador real |
+| F1 Movimiento, cámara y colisiones | **HECHO y jugable** | 47 pruebas unitarias + 20 pasos en navegador real |
 | Lobby mínimo, HUD, pausa, resultados, ajustes básicos | **HECHO** (alcance de F1) | `npm run test:e2e`, capturas en `docs/evidence/` |
 | F2 Combate (armas, escudo, inventario) | NO implementado | Pendiente |
 | F3 Bots | NO implementado | Pendiente |
@@ -29,6 +29,9 @@ y parciales, se guarda tu mejor marca y puedes repetir o volver al lobby.
 
 No hay enemigos, armas ni otros jugadores todavía: es práctica local, y así lo dice la interfaz.
 
+Versión publicada para jugar sin instalar nada (privada, se actualiza con cada fase):
+<https://claude.ai/artifact/WwSRHF94gLVuTfzmAGApTr>
+
 ### Cómo probarlo
 ```bash
 npm install
@@ -40,6 +43,13 @@ Abre la dirección que imprime Vite (por defecto `http://localhost:5173`). Contr
 moverse, ratón mirar, `Espacio` saltar y trepar, `Mayús` esprintar, `C` agacharse (deslizarse si
 vas esprintando), `P` o `Esc` pausa, `Retroceso` reiniciar el circuito, `H` ayuda.
 Si el navegador no permite capturar el ratón, se puede mirar arrastrando o con las flechas.
+En pantallas táctiles: mitad izquierda para moverse (a fondo esprinta), el resto para mirar, y
+botones de saltar, agacharse y pausa.
+
+Para generar el juego como un único archivo HTML autocontenido:
+```bash
+npm run build:artifact
+```
 
 ## Evidencia de la fase 1 (salidas reales del 2026-11-10)
 Entorno: Node v22.23.4, npm 10.9.9, TypeScript 5.9.3, Vite 8.3.7, three 0.187.0, React 19.3.1,
@@ -49,11 +59,20 @@ Chromium headless (Playwright 1.63.0) con WebGL 2 por software (SwiftShader).
 |---|---|
 | `npm run check` | Sin errores (núcleo + pruebas, y cliente con su propio `tsconfig`) |
 | `npm test` | `tests 47`, `pass 47`, `fail 0` |
-| `npm run build` | `dist-web/assets/index-*.js 906.12 kB (gzip 248.75 kB)`, CSS 14.18 kB |
-| `npm run test:e2e` | `17/17 e2e steps passed`, circuito completado en `00:49.97` (2998 ticks) |
+| `npm run build` | `dist-web/assets/index-*.js` 910,9 kB (unos 250 kB con gzip), CSS 17,7 kB |
+| `npm run build:artifact` | `dist-artifact/nexus-royale.html  906.8 kB (self-contained)` |
+| `npm run test:e2e` | `20/20 e2e steps passed`, circuito completado en `00:47.70` (2862 ticks) |
 
 Capturas tomadas por la propia prueba de navegador (no son montajes): `docs/evidence/fase1-*.jpg`
-(lobby, partida, contenedor tras trepar, pausa, ajustes y resultados, a 1280×720 y 1920×1080).
+(lobby, partida, contenedor tras trepar, pausa, ajustes y resultados, a 1280×720 y 1920×1080, y
+lobby y partida en móvil a 844×390 y 390×844).
+
+Los 20 pasos de navegador, en cuatro sesiones: (1) ajustes por defecto con captura real del
+ratón — arranque, teclado, WASD, esprint, salto, cámara, muro, pausa, ajustes, idioma y
+persistencia; (2) navegador sin captura de ratón — arrastre, flechas y Esc; (3) el circuito
+completo de 8 anclas jugado por teclado y ratón hasta resultados y mejor tiempo; (4) el archivo
+único en un teléfono emulado — joystick, mirar con un segundo dedo, botones y encaje de la
+interfaz en horizontal y vertical.
 
 ### Criterios de `docs/08-CRITERIOS_QA.md` que tocan a esta fase
 | ID | Escenario | Estado | Evidencia |
@@ -63,6 +82,7 @@ Capturas tomadas por la propia prueba de navegador (no son montajes): `docs/evid
 | T20 | Ajustes: aplicar / cancelar / restablecer con efecto real | PASS (ajustes de F1) | e2e: FOV cambia la cámara, calidad cambia las llamadas de dibujo (63 vs 103), se guarda y sobrevive a recargar |
 | T24 | Medir FPS en perfil definido | NO PROBADO en hardware real | Existe `node tests/e2e/perf.mjs`; aquí solo hay render por CPU (ver abajo) |
 | T25 | Menús navegables por teclado, foco visible | PASS parcial | e2e: se inicia partida y se reanuda solo con teclado; no hay auditoría con lector de pantalla |
+| — | Compatibilidad táctil | PASS en emulación | e2e sesión 4 (Chromium con táctil emulado); **no probado en un teléfono físico** |
 | T03-T19, T21-T23 | Combate, bots, BR, modos, economía, red, Creativo | NO IMPLEMENTADO | Fases 2 a 6 |
 
 Tabla de movimiento de `docs/03` verificada por prueba: caminar 5,0 m/s, esprint 7,0, agachado
@@ -101,14 +121,16 @@ si el render va lento, el juego se ralentiza pero las reglas dan el mismo result
 ## Errores encontrados y corregidos durante la fase
 - Cambiar de calidad recreaba el canvas y el evento «contexto perdido» del canvas retirado
   dejaba la partida bloqueada. Corregido y cubierto por la prueba de ajustes.
-- Al capturarse el ratón llegaba un primer movimiento enorme que giraba la cámara. Se ignoran
-  los primeros 150 ms tras la captura.
+- Al capturarse el ratón llegaba un primer movimiento enorme que giraba la cámara. Se descartan
+  los primeros 150 ms y los dos primeros movimientos tras la captura (con la página cargada el
+  evento llegaba tarde y la guarda solo por tiempo fallaba).
 - El HUD usaba desenfoque de fondo y animaciones infinitas que obligaban a recomponer toda la
   interfaz en cada cuadro (unos 100 ms por cuadro en render por CPU). Eliminados.
 - Los árboles se colocaban con la altura analítica y no con la del terreno muestreado.
 
 ## Deudas y límites conocidos
-- Sin mando ni controles táctiles: solo teclado y ratón de escritorio.
+- Sin mando. Los controles táctiles existen pero solo están probados en emulación, y el
+  rendimiento en móviles reales no está medido.
 - No hay reasignación de teclas en la interfaz (el modelo de datos y la detección de conflictos
   sí existen y están probados).
 - Trepar solo funciona sobre piezas (cajas, muros, pilares), no sobre salientes del terreno.
@@ -127,8 +149,8 @@ y máquina de estados. Criterios T03 a T06.
 - **Sesión 0** — Kit de referencia, documentación y dominio aislado (sin frontend ni online).
 - **Sesión 1 (2026-11-10)** — Importación del kit, línea base (8/8), F0 y F1 completas:
   simulación determinista, cliente Three.js, lobby mínimo, HUD, ajustes, guardado local, 47
-  pruebas unitarias y 17 pasos de navegador. Commits `2cee7b7`, `ae809fb`, `e28336e`, `417b3df`
-  y el de cierre de documentación.
+  pruebas unitarias y 20 pasos de navegador, controles táctiles y build de un solo archivo.
+  Commits `2cee7b7`, `ae809fb`, `e28336e`, `417b3df`, `8b8dec9` y el de cierre de documentación.
 
 ### Plantilla de próxima sesión
 Fecha:
