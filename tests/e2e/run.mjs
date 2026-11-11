@@ -14,6 +14,8 @@ import { join } from 'node:path';
 import { ROOT, launchBrowser, openGame, startStaticServer, state, waitForState } from './lib.mjs';
 
 const EVIDENCE = process.argv.includes('--evidence');
+/** `--filter=<regex>` runs only the steps whose name matches (for iterating on one area). */
+const FILTER = process.argv.find((arg) => arg.startsWith('--filter='))?.slice('--filter='.length);
 const OUT = join(ROOT, 'test-results');
 const SAVE_KEY = 'nexus-royale.save.v1';
 const RADIANS_PER_PIXEL = 0.0022 * 0.7; // InputManager constant x default sensitivity
@@ -22,6 +24,10 @@ const results = [];
 let failed = false;
 
 async function step(name, fn) {
+  if (FILTER && !new RegExp(FILTER, 'i').test(name)) {
+    results.push({ name, status: 'SKIPPED', detail: 'filtered out' });
+    return;
+  }
   if (failed) {
     results.push({ name, status: 'NOT RUN', detail: 'an earlier step failed' });
     return;
@@ -605,6 +611,123 @@ async function main() {
       await shot(page, 'fase1-lobby-1920x1080');
     });
 
+    /* ------------------------------------------------------------------------------------ */
+    /* Session 4: the single-file build on a phone (touch stick, drag look, on-screen buttons). */
+    /* ------------------------------------------------------------------------------------ */
+    const packed = await startStaticServer(join(ROOT, 'dist-artifact'));
+    try {
+      const phone = await browser.newContext({ viewport: { width: 844, height: 390 }, hasTouch: true, isMobile: true, deviceScaleFactor: 1 });
+      await phone.addInitScript(
+        ([key, save]) => {
+          if (!localStorage.getItem(key)) localStorage.setItem(key, save);
+        },
+        [SAVE_KEY, JSON.stringify(FAST_SAVE)],
+      );
+      const mobile = await phone.newPage();
+      mobile.on('console', (message) => {
+        if (message.type() === 'error') problems.push(`console.error(touch): ${message.text()}`);
+      });
+      mobile.on('pageerror', (error) => problems.push(`pageerror(touch): ${error.message}`));
+      const cdp = await phone.newCDPSession(mobile);
+      const touch = (type, points) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: points });
+      const inViewport = (selectors) =>
+        mobile.evaluate((list) => {
+          const bad = [];
+          for (const selector of list) {
+            for (const el of document.querySelectorAll(selector)) {
+              const r = el.getBoundingClientRect();
+              if (r.width === 0 && r.height === 0) continue;
+              if (r.left < -1 || r.top < -1 || r.right > innerWidth + 1 || r.bottom > innerHeight + 1) bad.push(`${selector} [${Math.round(r.left)},${Math.round(r.top)},${Math.round(r.right)},${Math.round(r.bottom)}]`);
+            }
+          }
+          if (document.documentElement.scrollWidth > innerWidth + 1) bad.push('page scrolls horizontally');
+          return bad;
+        }, selectors);
+
+      await step('single-file build on a phone (844x390): lobby fits and starts by touch', async () => {
+        await mobile.goto(packed.url);
+        await mobile.waitForFunction(() => typeof window.__NEXUS__ !== 'undefined');
+        await mobile.waitForSelector('[data-testid=lobby]');
+        assert.deepEqual(await inViewport(['[data-testid=play]', '.mode-card', '.topbar']), []);
+        await shot(mobile, 'fase1-movil-lobby-844x390');
+        await mobile.tap('[data-testid=play]');
+        await mobile.tap('[data-testid=click-to-play]');
+        await waitForState(mobile, () => window.__NEXUS__.getState().overlay === 'none');
+        const s = await state(mobile);
+        assert.equal(s.touch, true, 'touch mode not detected');
+        assert.equal(s.lookMode, 'drag');
+        await mobile.waitForSelector('[data-testid=touch-jump]');
+        assert.deepEqual(await inViewport(['.touch-btn', '.hud-course', '.compass', '.hud-hint']), []);
+      });
+
+      await step('touch: stick moves and sprints, second finger looks, buttons jump / crouch / pause', async () => {
+        const start = (await state(mobile)).player;
+        // Left thumb: push the stick fully forward (beyond its radius) -> sprint.
+        await touch('touchStart', [{ x: 130, y: 260, id: 1 }]);
+        await touch('touchMove', [{ x: 130, y: 170, id: 1 }]);
+        await waitForState(mobile, () => window.__NEXUS__.getState().player.moveState === 'sprint', 60_000);
+        assert.ok(await mobile.isVisible('.touch-stick'), 'stick is not drawn');
+        // Right thumb at the same time: drag left -> the view turns left while still running.
+        const yawBefore = (await state(mobile)).look.yaw;
+        await touch('touchStart', [{ x: 130, y: 170, id: 1 }, { x: 620, y: 200, id: 2 }]);
+        await touch('touchMove', [{ x: 130, y: 170, id: 1 }, { x: 540, y: 200, id: 2 }]);
+        // The browser delivers the touch asynchronously: wait for the view to actually turn.
+        await waitForState(mobile, (yaw) => Math.abs(window.__NEXUS__.getState().look.yaw - yaw) > 0.2, 20_000, yawBefore);
+        const yawAfter = (await state(mobile)).look.yaw;
+        assert.ok(wrap(yawAfter - yawBefore) > 0.2, `dragging left should turn left: ${wrap(yawAfter - yawBefore)}`);
+        assert.equal((await state(mobile)).player.moveState, 'sprint', 'looking interrupted the stick');
+        await touch('touchEnd', []);
+        await waitForState(mobile, () => Math.hypot(window.__NEXUS__.getState().player.vx, window.__NEXUS__.getState().player.vz) < 0.01, 60_000);
+        const moved = (await state(mobile)).player;
+        assert.ok(Math.hypot(moved.x - start.x, moved.z - start.z) > 2, 'the stick did not move the character');
+        assert.equal(await mobile.isVisible('.touch-stick'), false, 'stick stays on screen after release');
+
+        // Jump button (held like a real press).
+        const jump = await mobile.locator('[data-testid=touch-jump]').boundingBox();
+        await touch('touchStart', [{ x: jump.x + jump.width / 2, y: jump.y + jump.height / 2, id: 3 }]);
+        await waitForState(mobile, () => window.__NEXUS__.getState().player.grounded === false, 60_000);
+        await touch('touchEnd', []);
+        await waitForState(mobile, () => window.__NEXUS__.getState().player.grounded === true, 60_000);
+
+        // Crouch is a toggle on touch.
+        await mobile.tap('[data-testid=touch-crouch]');
+        await waitForState(mobile, () => window.__NEXUS__.getState().player.moveState === 'crouch', 60_000);
+        await mobile.tap('[data-testid=touch-crouch]');
+        await waitForState(mobile, () => window.__NEXUS__.getState().player.moveState === 'idle', 60_000);
+        await shot(mobile, 'fase1-movil-partida-844x390');
+
+        await mobile.tap('[data-testid=touch-pause]');
+        await waitForState(mobile, () => window.__NEXUS__.getState().overlay === 'pause');
+        assert.deepEqual(await inViewport(['.menu', '.menu .btn']), []);
+        await mobile.tap('[data-testid=to-lobby]');
+        await mobile.waitForSelector('[data-testid=lobby]');
+        return 'stick + sprint, simultaneous look, jump, crouch toggle, pause';
+      });
+
+      await step('phone portrait (390x844): nothing overflows in lobby, match, pause or settings', async () => {
+        await mobile.setViewportSize({ width: 390, height: 844 });
+        await mobile.waitForTimeout(400);
+        assert.deepEqual(await inViewport(['[data-testid=play]', '.mode-card', '.topbar']), []);
+        await shot(mobile, 'fase1-movil-lobby-390x844');
+        await mobile.tap('[data-testid=play]');
+        await mobile.tap('[data-testid=click-to-play]');
+        await waitForState(mobile, () => window.__NEXUS__.getState().overlay === 'none');
+        await mobile.waitForSelector('[data-testid=touch-jump]');
+        assert.deepEqual(await inViewport(['.touch-btn', '.hud-course', '.compass', '.hud-hint']), []);
+        await shot(mobile, 'fase1-movil-partida-390x844');
+        await mobile.tap('[data-testid=touch-pause]');
+        await mobile.tap('[data-testid=pause-settings]');
+        await mobile.waitForSelector('[data-testid=settings]');
+        assert.deepEqual(await inViewport(['.settings', '.settings .btn', '.segment', 'input[type=range]']), []);
+        await mobile.tap('[data-testid=settings-cancel]');
+        await mobile.tap('[data-testid=to-lobby]');
+        await mobile.waitForSelector('[data-testid=lobby]');
+      });
+      await phone.close();
+    } finally {
+      await packed.close();
+    }
+
     await step('no console errors, page errors or failed requests', async () => {
       assert.deepEqual([...first.problems, ...problems], []);
     });
@@ -613,10 +736,11 @@ async function main() {
     await server.close();
   }
 
-  const passed = results.filter((r) => r.status === 'PASS').length;
-  console.log(`\n${passed}/${results.length} e2e steps passed`);
-  for (const r of results.filter((x) => x.status !== 'PASS')) console.log(`  ${r.status}: ${r.name} — ${r.detail}`);
-  process.exitCode = passed === results.length ? 0 : 1;
+  const ran = results.filter((r) => r.status !== 'SKIPPED');
+  const passed = ran.filter((r) => r.status === 'PASS').length;
+  console.log(`\n${passed}/${ran.length} e2e steps passed${ran.length < results.length ? ` (${results.length - ran.length} skipped by --filter)` : ''}`);
+  for (const r of ran.filter((x) => x.status !== 'PASS')) console.log(`  ${r.status}: ${r.name} — ${r.detail}`);
+  process.exitCode = passed === ran.length ? 0 : 1;
 }
 
 main().catch((error) => {

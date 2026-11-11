@@ -23,18 +23,18 @@ const MIME = {
   '.map': 'application/json',
 };
 
-/** Serves dist-web on a free local port. */
-export async function startStaticServer() {
-  if (!existsSync(join(DIST, 'index.html'))) {
-    throw new Error('dist-web/index.html not found. Run "npm run build" first.');
+/** Serves a build folder (dist-web by default) on a free local port. */
+export async function startStaticServer(directory = DIST) {
+  if (!existsSync(join(directory, 'index.html'))) {
+    throw new Error(`${directory}/index.html not found. Run the build first.`);
   }
   const server = createServer(async (request, response) => {
     try {
       const url = new URL(request.url ?? '/', 'http://localhost');
       let path = normalize(decodeURIComponent(url.pathname));
       if (path.endsWith('/')) path += 'index.html';
-      const file = join(DIST, path);
-      if (!file.startsWith(DIST)) {
+      const file = join(directory, path);
+      if (!file.startsWith(directory)) {
         response.writeHead(403).end();
         return;
       }

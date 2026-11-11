@@ -1,8 +1,10 @@
 import { formatTicks } from '../../core/meta/save.js';
 import { TRAINING_GROUNDS_ID } from '../../core/maps/trainingGrounds.js';
 import { activeSettings } from '../app/appState.js';
+import { hasTranslation } from '../app/i18n.js';
 import { ControlsList } from './ControlsList.js';
 import { useApp, useT } from './hooks.js';
+import { TouchControls } from './TouchControls.js';
 
 const COMPASS_POINTS: ReadonlyArray<{ label: string; angle: number; major: boolean }> = [
   { label: 'N', angle: 0, major: true },
@@ -109,7 +111,10 @@ function MoveChip() {
 
 function Hint() {
   const t = useT();
-  const hintKey = useApp((s) => s.hud.nextHintKey);
+  const touch = useApp((s) => s.touch);
+  const baseKey = useApp((s) => s.hud.nextHintKey);
+  // Touch screens get their own wording where the instruction names a key.
+  const hintKey = baseKey && touch && hasTranslation(`${baseKey}.touch`) ? `${baseKey}.touch` : baseKey;
   const running = useApp((s) => s.hud.timerRunning);
   const started = useApp((s) => s.hud.timerTicks > 0);
   if (!hintKey) return null;
@@ -129,11 +134,12 @@ export function Hud() {
   const frameMs = useApp((s) => s.hud.frameMs);
   const toast = useApp((s) => s.toast);
   const lookMode = useApp((s) => s.lookMode);
+  const touch = useApp((s) => s.touch);
   const contextLost = useApp((s) => s.contextLost);
   const playing = useApp((s) => s.overlay === 'none');
 
   return (
-    <div className="hud" data-testid="hud">
+    <div className={touch ? 'hud hud-touch' : 'hud'} data-testid="hud">
       <Compass />
       <CourseCard />
       {showFps ? (
@@ -149,13 +155,14 @@ export function Hud() {
           {toast.text}
         </div>
       ) : null}
-      {showHelp ? (
+      {touch && playing ? <TouchControls /> : null}
+      {showHelp && !touch ? (
         <div className="panel hud-help">
           <h3 className="section-title">{t('hud.help')}</h3>
           <ControlsList />
         </div>
       ) : null}
-      {playing && lookMode === 'drag' ? <div className="hud-notice">{t('play.dragLook')}</div> : null}
+      {playing && lookMode === 'drag' && !touch ? <div className="hud-notice">{t('play.dragLook')}</div> : null}
       {contextLost ? <div className="hud-notice warn">{t('hud.contextLost')}</div> : null}
     </div>
   );

@@ -4,11 +4,12 @@ import { useApp, useGame, useT } from './hooks.js';
 export function ClickToPlay() {
   const game = useGame();
   const t = useT();
+  const touch = useApp((s) => s.touch);
   return (
     <div className="overlay overlay-clear">
       <button type="button" className="panel click-to-play" autoFocus onClick={() => game.resume()} data-testid="click-to-play">
-        <span className="click-title">{t('play.clickToStart')}</span>
-        <span className="click-hint">{t('play.clickHint')}</span>
+        <span className="click-title">{t(touch ? 'play.tapToStart' : 'play.clickToStart')}</span>
+        <span className="click-hint">{t(touch ? 'play.touchHint' : 'play.clickHint')}</span>
       </button>
     </div>
   );

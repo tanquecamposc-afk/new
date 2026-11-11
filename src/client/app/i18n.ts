@@ -37,6 +37,11 @@ const es: Dictionary = {
   'play.clickToStart': 'Haz clic para tomar el control',
   'play.clickHint': 'El ratón controla la cámara. Pulsa Esc para liberarlo y pausar.',
   'play.dragLook': 'Sin captura de ratón: arrastra para mirar o usa las flechas.',
+  'play.tapToStart': 'Toca para tomar el control',
+  'play.touchHint': 'Mitad izquierda: mover (empuja a fondo para esprintar). Resto de la pantalla: mirar.',
+  'touch.jump': 'Saltar',
+  'touch.crouch': 'Agacharse',
+  'touch.pause': 'Pausa',
 
   'hud.anchors': 'Anclas',
   'hud.time': 'Tiempo',
@@ -59,6 +64,8 @@ const es: Dictionary = {
   'state.mantle': 'Trepando',
 
   'hint.sprint': 'Esprinta por la pista hasta la primera ancla (mantén Mayús).',
+  'hint.sprint.touch': 'Esprinta por la pista hasta la primera ancla (empuja el stick a fondo).',
+  'hint.crouch.touch': 'Cruza la puerta y agáchate (botón ▼) para entrar al túnel.',
   'hint.steps': 'Sube los escalones. El bordillo bajo se sube andando; el alto necesita salto.',
   'hint.mantle': 'Salta contra el contenedor y sigue avanzando para trepar al borde.',
   'hint.hill': 'Sube la colina: esta pendiente sí se puede caminar.',
@@ -171,6 +178,11 @@ const en: Dictionary = {
   'play.clickToStart': 'Click to take control',
   'play.clickHint': 'The mouse controls the camera. Press Esc to release it and pause.',
   'play.dragLook': 'Mouse capture unavailable: drag to look or use the arrow keys.',
+  'play.tapToStart': 'Tap to take control',
+  'play.touchHint': 'Left half: move (push all the way to sprint). Rest of the screen: look.',
+  'touch.jump': 'Jump',
+  'touch.crouch': 'Crouch',
+  'touch.pause': 'Pause',
 
   'hud.anchors': 'Anchors',
   'hud.time': 'Time',
@@ -193,6 +205,8 @@ const en: Dictionary = {
   'state.mantle': 'Climbing',
 
   'hint.sprint': 'Sprint down the lane to the first anchor (hold Shift).',
+  'hint.sprint.touch': 'Sprint down the lane to the first anchor (push the stick all the way).',
+  'hint.crouch.touch': 'Go through the doorway and crouch (▼ button) to enter the tunnel.',
   'hint.steps': 'Climb the steps. The low kerb is walked up; the tall one needs a jump.',
   'hint.mantle': 'Jump against the container and keep pushing forward to climb the ledge.',
   'hint.hill': 'Go up the hill: this slope is walkable.',
@@ -283,6 +297,11 @@ export function translate(locale: Locale, key: string, vars?: Record<string, str
     for (const [name, value] of Object.entries(vars)) text = text.replaceAll(`{${name}}`, String(value));
   }
   return text;
+}
+
+/** True when a key has its own text (lets the UI prefer a device-specific variant). */
+export function hasTranslation(key: string): boolean {
+  return key in es;
 }
 
 /** Keys present in one language but not the other (used by a unit test to keep them in sync). */

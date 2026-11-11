@@ -7,7 +7,7 @@
  */
 import { buildTrainingGrounds } from '../../core/maps/trainingGrounds.js';
 import { recordCourseResult, formatTicks } from '../../core/meta/save.js';
-import { defaultSettings, sanitizeSettings, type GameSettings } from '../../core/meta/settings.js';
+import { defaultSettings, sanitizeSettings, type GameSettings, type InputAction } from '../../core/meta/settings.js';
 import { computeCameraRig, makeCameraRig } from '../../core/sim/cameraRig.js';
 import { eyeHeight } from '../../core/sim/character.js';
 import { FixedStepper } from '../../core/sim/clock.js';
@@ -106,6 +106,7 @@ export class GameClient {
         if (this.sim && !this.paused) this.pause();
       },
       onLookModeChange: (mode) => appStore.set({ lookMode: mode }),
+      onTouchDetected: () => appStore.set({ touch: true, showHelp: false }),
     });
 
     try {
@@ -170,7 +171,7 @@ export class GameClient {
       overlay: 'clickToPlay',
       result: null,
       hud: { ...initialHud(), anchorsTotal: this.map.checkpoints.length, nextHintKey: this.map.checkpoints[0]?.hintKey ?? null },
-      showHelp: best === undefined,
+      showHelp: best === undefined && !appStore.get().touch,
     });
     this.audio.setAmbience(1);
   }
@@ -229,6 +230,12 @@ export class GameClient {
     this.sim = null;
     this.player = null;
     appStore.set({ screen: 'lobby', overlay: 'none', result: null, draftSettings: null });
+  }
+
+  /** On-screen buttons (touch) press and release actions through the same input layer. */
+  setTouchButton(action: InputAction, pressed: boolean): void {
+    this.audio.unlock();
+    this.input.setVirtualButton(action, pressed);
   }
 
   /* ---- settings ---------------------------------------------------------------------------- */
@@ -653,6 +660,7 @@ export class GameClient {
           overlay: app.overlay,
           paused: this.paused,
           lookMode: app.lookMode,
+          touch: app.touch,
           tick: this.sim?.tick ?? 0,
           player: c
             ? { x: c.x, y: c.y, z: c.z, vx: c.vx, vy: c.vy, vz: c.vz, yaw: c.yaw, grounded: c.grounded, moveState: c.moveState, height: c.height }

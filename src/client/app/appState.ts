@@ -50,6 +50,8 @@ export interface AppState {
   settingsReturn: Overlay;
   loading: boolean;
   lookMode: LookMode;
+  /** A touch screen is in use: show the on-screen controls. */
+  touch: boolean;
   showHelp: boolean;
   hud: HudState;
   result: ResultState | null;
@@ -86,6 +88,7 @@ export const appStore = createStore<AppState>({
   settingsReturn: 'none',
   loading: false,
   lookMode: 'locked',
+  touch: false,
   showHelp: true,
   hud: initialHud(),
   result: null,

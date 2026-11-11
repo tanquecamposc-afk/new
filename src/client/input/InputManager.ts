@@ -1,11 +1,12 @@
 /**
- * Translates physical devices (keyboard, mouse, pointer) into intent. Gameplay code never sees a
+ * Translates physical devices (keyboard, mouse, touch) into intent. Gameplay code never sees a
  * key code: it receives an `InputFrame` built from remappable action bindings.
  *
- * Camera look has three paths so the game stays playable everywhere:
+ * Camera look has several paths so the game stays playable everywhere:
  *   1. pointer lock (normal desktop play),
  *   2. click-and-drag when the browser refuses pointer lock (embedded previews, some frames),
- *   3. arrow keys (keyboard-only play and automated tests).
+ *   3. arrow keys (keyboard-only play and automated tests),
+ *   4. touch: left side of the screen is a movement stick, the rest drags the camera.
  */
 import { DEFAULT_CAMERA } from '../../core/sim/config.js';
 import type { InputFrame } from '../../core/sim/input.js';
@@ -16,10 +17,24 @@ const RADIANS_PER_PIXEL = 0.0022;
 const KEY_LOOK_YAW_SPEED = 2.4;
 const KEY_LOOK_PITCH_SPEED = 1.5;
 const MAX_MOUSE_DELTA = 240;
-/** Browsers often report one huge movement right after the pointer is captured: skip that window. */
+/**
+ * Browsers often report one huge movement right after the pointer is captured. It is filtered
+ * two ways, because a busy page can deliver it late: everything in the first LOCK_SETTLE_MS is
+ * dropped, and so are the first LOCK_SKIP_EVENTS movements within LOCK_SKIP_WINDOW_MS.
+ */
 const LOCK_SETTLE_MS = 150;
+const LOCK_SKIP_EVENTS = 2;
+const LOCK_SKIP_WINDOW_MS = 1500;
+/** Dragging covers less distance than a captured mouse, so it turns faster. */
+const DRAG_LOOK_GAIN = 1.6;
+const TOUCH_LOOK_GAIN = 2.6;
+/** Touch stick: travel in CSS pixels for full deflection, and the share of the screen it owns. */
+const STICK_RADIUS = 56;
+const STICK_ZONE = 0.45;
+/** Pushing the stick (nearly) all the way forward sprints. */
+const STICK_SPRINT_THRESHOLD = 0.92;
 
-/** Actions that fire once per key press and are handled by the app, not the simulation. */
+/** Actions that fire once per press and are handled by the app, not the simulation. */
 const EDGE_ACTIONS: readonly InputAction[] = ['pause', 'restart', 'help'];
 
 export type LookMode = 'locked' | 'drag';
@@ -31,6 +46,8 @@ export interface InputCallbacks {
   /** Pointer lock was lost (Esc, alt-tab...) while it was active. */
   onPointerUnlock(): void;
   onLookModeChange(mode: LookMode): void;
+  /** A touch screen is being used: the app shows on-screen controls. */
+  onTouchDetected(): void;
 }
 
 export class InputManager {
@@ -39,19 +56,34 @@ export class InputManager {
   /** When false no gameplay intent is produced (menus, pause). */
   gameplayEnabled = false;
   lookMode: LookMode = 'locked';
+  touchMode = false;
 
   private element: HTMLElement | null = null;
   private readonly down = new Set<string>();
+  /** Actions held through on-screen buttons. */
+  private readonly virtual = new Set<InputAction>();
   private bindings: Bindings;
   private sensitivity: number;
   private invertY: boolean;
   private toggleCrouch: boolean;
   private crouchLatched = false;
-  private dragging = false;
+  private wasLocked = false;
+  private lockedAt = 0;
+  private lockMovesToSkip = 0;
+
+  private lookPointerId: number | null = null;
+  private lookIsTouch = false;
   private lastPointerX = 0;
   private lastPointerY = 0;
-  private wasLocked = false;
-  private ignoreMouseUntil = 0;
+
+  private stickPointerId: number | null = null;
+  private stickOriginX = 0;
+  private stickOriginY = 0;
+  private stickX = 0;
+  private stickZ = 0;
+  private stickBase: HTMLElement | null = null;
+  private stickKnob: HTMLElement | null = null;
+
   private readonly disposers: Array<() => void> = [];
 
   constructor(
@@ -76,14 +108,9 @@ export class InputManager {
   attach(element: HTMLElement): void {
     this.detach();
     this.element = element;
-    const listen = <K extends keyof DocumentEventMap>(
-      target: Document | HTMLElement | Window,
-      type: K | string,
-      handler: (event: never) => void,
-      options?: AddEventListenerOptions,
-    ): void => {
-      target.addEventListener(type, handler as EventListener, options);
-      this.disposers.push(() => target.removeEventListener(type, handler as EventListener, options));
+    const listen = (target: Document | HTMLElement | Window, type: string, handler: (event: never) => void): void => {
+      target.addEventListener(type, handler as EventListener);
+      this.disposers.push(() => target.removeEventListener(type, handler as EventListener));
     };
 
     listen(window, 'keydown', (event: KeyboardEvent) => this.onKeyDown(event));
@@ -97,15 +124,30 @@ export class InputManager {
     listen(document, 'pointerlockerror', () => this.setLookMode('drag'));
     listen(element, 'pointerdown', (event: PointerEvent) => this.onPointerDown(event));
     listen(window, 'pointermove', (event: PointerEvent) => this.onPointerMove(event));
-    listen(window, 'pointerup', () => {
-      this.dragging = false;
-    });
+    listen(window, 'pointerup', (event: PointerEvent) => this.onPointerEnd(event));
+    listen(window, 'pointercancel', (event: PointerEvent) => this.onPointerEnd(event));
     listen(element, 'contextmenu', (event: Event) => event.preventDefault());
+
+    // On-screen stick, positioned wherever the left thumb lands.
+    const base = document.createElement('div');
+    base.className = 'touch-stick';
+    base.hidden = true;
+    const knob = document.createElement('div');
+    knob.className = 'touch-stick-knob';
+    base.appendChild(knob);
+    element.appendChild(base);
+    this.stickBase = base;
+    this.stickKnob = knob;
+    this.disposers.push(() => base.remove());
+
+    if (typeof window.matchMedia === 'function' && window.matchMedia('(pointer: coarse)').matches) this.enableTouchMode();
   }
 
   detach(): void {
     for (const dispose of this.disposers.splice(0)) dispose();
     this.element = null;
+    this.stickBase = null;
+    this.stickKnob = null;
     this.releaseAll();
   }
 
@@ -119,7 +161,7 @@ export class InputManager {
    */
   async requestPointerLock(): Promise<LookMode> {
     const element = this.element;
-    if (!element || typeof element.requestPointerLock !== 'function') {
+    if (this.touchMode || !element || typeof element.requestPointerLock !== 'function') {
       this.setLookMode('drag');
       return this.lookMode;
     }
@@ -141,6 +183,19 @@ export class InputManager {
   setLook(yaw: number, pitch: number): void {
     this.yaw = wrapAngle(yaw);
     this.pitch = clamp(pitch, DEFAULT_CAMERA.minPitch, DEFAULT_CAMERA.maxPitch);
+  }
+
+  /** Presses or releases an action from an on-screen button. */
+  setVirtualButton(action: InputAction, pressed: boolean): void {
+    if (pressed) {
+      if (EDGE_ACTIONS.includes(action)) {
+        this.callbacks.onAction(action);
+        return;
+      }
+      this.virtual.add(action);
+    } else {
+      this.virtual.delete(action);
+    }
   }
 
   /** Keyboard look; call once per rendered frame. */
@@ -166,24 +221,30 @@ export class InputManager {
       out.crouch = false;
       return out;
     }
-    out.moveZ = (this.isActive('moveForward') ? 1 : 0) - (this.isActive('moveBack') ? 1 : 0);
-    out.moveX = (this.isActive('moveRight') ? 1 : 0) - (this.isActive('moveLeft') ? 1 : 0);
+    const keyZ = (this.isActive('moveForward') ? 1 : 0) - (this.isActive('moveBack') ? 1 : 0);
+    const keyX = (this.isActive('moveRight') ? 1 : 0) - (this.isActive('moveLeft') ? 1 : 0);
+    out.moveZ = clamp(keyZ + this.stickZ, -1, 1);
+    out.moveX = clamp(keyX + this.stickX, -1, 1);
     out.jump = this.isActive('jump');
-    out.sprint = this.isActive('sprint');
+    const stickSprint = this.stickZ > 0.3 && Math.hypot(this.stickX, this.stickZ) >= STICK_SPRINT_THRESHOLD;
+    out.sprint = this.isActive('sprint') || stickSprint;
     out.crouch = this.toggleCrouch ? this.crouchLatched : this.isActive('crouch');
     return out;
   }
 
-  /** Drops every held key (window lost focus, pause...). */
+  /** Drops every held key, button and pointer (window lost focus, pause...). */
   releaseAll(): void {
     this.down.clear();
-    this.dragging = false;
+    this.virtual.clear();
     this.crouchLatched = false;
+    this.lookPointerId = null;
+    this.endStick();
   }
 
   /* ---------------------------------------------------------------------------------------- */
 
   private isActive(action: InputAction): boolean {
+    if (this.virtual.has(action)) return true;
     const codes = this.bindings[action];
     for (let i = 0; i < codes.length; i++) if (this.down.has(codes[i]!)) return true;
     return false;
@@ -201,6 +262,13 @@ export class InputManager {
     if (this.lookMode === mode) return;
     this.lookMode = mode;
     this.callbacks.onLookModeChange(mode);
+  }
+
+  private enableTouchMode(): void {
+    if (this.touchMode) return;
+    this.touchMode = true;
+    this.setLookMode('drag');
+    this.callbacks.onTouchDetected();
   }
 
   private onKeyDown(event: KeyboardEvent): void {
@@ -229,25 +297,81 @@ export class InputManager {
 
   private onMouseMove(event: MouseEvent): void {
     if (!this.gameplayEnabled || !this.pointerLocked) return;
-    if (performance.now() < this.ignoreMouseUntil) return;
+    const sinceLock = performance.now() - this.lockedAt;
+    if (sinceLock < LOCK_SETTLE_MS) return;
+    if (this.lockMovesToSkip > 0 && sinceLock < LOCK_SKIP_WINDOW_MS) {
+      this.lockMovesToSkip--;
+      return;
+    }
     this.applyLookDelta(event.movementX, event.movementY);
   }
 
   private onPointerDown(event: PointerEvent): void {
+    const touch = event.pointerType === 'touch';
+    if (touch) this.enableTouchMode();
     if (!this.gameplayEnabled || this.pointerLocked) return;
-    this.dragging = true;
-    this.lastPointerX = event.clientX;
-    this.lastPointerY = event.clientY;
+
+    if (touch && this.stickPointerId === null && event.clientX < window.innerWidth * STICK_ZONE) {
+      this.stickPointerId = event.pointerId;
+      this.stickOriginX = event.clientX;
+      this.stickOriginY = event.clientY;
+      this.stickX = 0;
+      this.stickZ = 0;
+      this.showStick(0, 0);
+      return;
+    }
+    if (this.lookPointerId === null) {
+      this.lookPointerId = event.pointerId;
+      this.lookIsTouch = touch;
+      this.lastPointerX = event.clientX;
+      this.lastPointerY = event.clientY;
+    }
   }
 
   private onPointerMove(event: PointerEvent): void {
-    if (!this.dragging || !this.gameplayEnabled || this.pointerLocked) return;
+    if (!this.gameplayEnabled) return;
+    if (event.pointerId === this.stickPointerId) {
+      let dx = event.clientX - this.stickOriginX;
+      let dy = event.clientY - this.stickOriginY;
+      const length = Math.hypot(dx, dy);
+      if (length > STICK_RADIUS) {
+        dx = (dx / length) * STICK_RADIUS;
+        dy = (dy / length) * STICK_RADIUS;
+      }
+      this.stickX = dx / STICK_RADIUS;
+      this.stickZ = -dy / STICK_RADIUS;
+      this.showStick(dx, dy);
+      return;
+    }
+    if (event.pointerId !== this.lookPointerId || this.pointerLocked) return;
     const dx = event.clientX - this.lastPointerX;
     const dy = event.clientY - this.lastPointerY;
     this.lastPointerX = event.clientX;
     this.lastPointerY = event.clientY;
-    // Dragging covers less distance than a locked mouse, so it turns a little faster.
-    this.applyLookDelta(dx * 1.6, dy * 1.6);
+    const gain = this.lookIsTouch ? TOUCH_LOOK_GAIN : DRAG_LOOK_GAIN;
+    this.applyLookDelta(dx * gain, dy * gain);
+  }
+
+  private onPointerEnd(event: PointerEvent): void {
+    if (event.pointerId === this.stickPointerId) this.endStick();
+    if (event.pointerId === this.lookPointerId) this.lookPointerId = null;
+  }
+
+  private showStick(dx: number, dy: number): void {
+    const base = this.stickBase;
+    const knob = this.stickKnob;
+    if (!base || !knob) return;
+    base.hidden = false;
+    base.style.left = `${this.stickOriginX}px`;
+    base.style.top = `${this.stickOriginY}px`;
+    knob.style.transform = `translate(${dx}px, ${dy}px)`;
+  }
+
+  private endStick(): void {
+    this.stickPointerId = null;
+    this.stickX = 0;
+    this.stickZ = 0;
+    if (this.stickBase) this.stickBase.hidden = true;
   }
 
   private applyLookDelta(dx: number, dy: number): void {
@@ -261,7 +385,8 @@ export class InputManager {
     const locked = this.pointerLocked;
     if (locked) {
       this.wasLocked = true;
-      this.ignoreMouseUntil = performance.now() + LOCK_SETTLE_MS;
+      this.lockedAt = performance.now();
+      this.lockMovesToSkip = LOCK_SKIP_EVENTS;
       this.setLookMode('locked');
     } else if (this.wasLocked) {
       this.wasLocked = false;
