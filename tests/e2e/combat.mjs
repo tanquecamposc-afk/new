@@ -436,7 +436,10 @@ export async function runCombatSessions(tools) {
       assert.equal(await page.locator('[data-testid=results] .standings .tag-bot').count(), 3, 'every bot row carries a BOT tag');
       if (result.won) wins++;
       eliminations += result.eliminations;
-      if (attempt === 0) await shot(page, 'fase2-escaramuza-resultados');
+      if (attempt === 0) {
+        await page.waitForFunction(() => document.getAnimations().every((a) => a.playState !== 'running' || a.effect?.getComputedTiming().iterations === Infinity));
+        await shot(page, 'fase2-escaramuza-resultados');
+      }
       if (eliminations > 0) break;
       await page.click('[data-testid=run-again]');
       await waitForState(page, () => window.__NEXUS__.getState().overlay === 'none');
@@ -481,6 +484,8 @@ export async function runCombatSessions(tools) {
     assert.ok((await page.textContent('[data-testid=results]')).includes(result.eliminatedBy));
     // Whoever is still fighting has no position yet; nobody else shares the player's.
     assert.equal(result.standings.filter((row) => row.placement === result.placement).length, 1);
+    // Let the panel finish fading in, so the capture shows what a player reads.
+    await page.waitForFunction(() => document.getAnimations().every((a) => a.playState !== 'running' || a.effect?.getComputedTiming().iterations === Infinity));
     await shot(page, 'fase2-escaramuza-derrota');
     await page.click('[data-testid=results-lobby]');
     await page.waitForSelector('[data-testid=lobby]');

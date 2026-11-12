@@ -147,7 +147,7 @@ export class SceneRenderer {
   private readonly remotes = new Map<string, { avatar: Avatar; seen: boolean }>();
   private readonly lootView = new LootView();
   private readonly tracers = new Tracers();
-  private readonly muzzleLight = new THREE.PointLight(0xffd9a0, 0, 9, 1.8);
+  /** Seconds left of the muzzle flash light (it borrows the lobby's key light: no extra light). */
   private muzzleLightTime = 0;
   private readonly glow: THREE.Texture;
   private readonly particles: Particles;
@@ -186,7 +186,6 @@ export class SceneRenderer {
       this.sun.target,
       this.keyLight,
       this.rimLight,
-      this.muzzleLight,
       this.avatar.group,
       this.lootView.group,
       this.tracers.mesh,
@@ -345,7 +344,14 @@ export class SceneRenderer {
       this.keyLight.position.set(camera.position.x * 0.55 + player.x * 0.45 - 1.4, player.y + 2.6, camera.position.z * 0.55 + player.z * 0.45);
       this.rimLight.position.set(player.x * 2 - camera.position.x * 0.6 + 1.2, player.y + 2.2, player.z * 2 - camera.position.z * 0.6);
     } else {
-      this.keyLight.intensity = 0;
+      // In a match the key light doubles as the muzzle flash: every extra light makes every
+      // lit surface more expensive, so the scene keeps a fixed, small set.
+      if (this.muzzleLightTime > 0) {
+        this.muzzleLightTime -= view.frameSeconds;
+        this.keyLight.intensity = this.muzzleLightTime > 0 ? 28 * (this.muzzleLightTime / 0.06) : 0;
+      } else {
+        this.keyLight.intensity = 0;
+      }
       this.rimLight.intensity = 0;
     }
     this.world?.setLabelsVisible(!view.lobby);
@@ -356,10 +362,6 @@ export class SceneRenderer {
     this.lootView.update(view.loot, view.timeSeconds, view.reducedMotion);
     this.tracers.update(view.frameSeconds);
     this.particles.update(view.frameSeconds);
-    if (this.muzzleLightTime > 0) {
-      this.muzzleLightTime -= view.frameSeconds;
-      this.muzzleLight.intensity = this.muzzleLightTime > 0 ? 28 * (this.muzzleLightTime / 0.06) : 0;
-    }
 
     this.renderer.render(this.scene, camera);
     this.stats.drawCalls = this.renderer.info.render.calls;
@@ -403,9 +405,8 @@ export class SceneRenderer {
   muzzleFlash(x: number, y: number, z: number, light: boolean): void {
     this.particles.burst(x, y, z, MUZZLE_FLASH);
     if (light) {
-      this.muzzleLight.position.set(x, y, z);
+      this.keyLight.position.set(x, y, z);
       this.muzzleLightTime = 0.06;
-      this.muzzleLight.intensity = 28;
     }
   }
 

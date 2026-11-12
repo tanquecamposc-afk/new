@@ -75,10 +75,10 @@ Chromium headless (Playwright 1.63.0) con WebGL 2 por software (SwiftShader).
 | Comando | Resultado |
 |---|---|
 | `npm run check` | Sin errores (núcleo + pruebas, y cliente con su propio `tsconfig`) |
-| `npm test` | `tests @UNIT@`, `pass @UNIT@`, `fail 0` |
-| `npm run build` | `dist-web/assets/index-*.js` @JS@ kB (@GZIP@ kB con gzip), CSS @CSS@ kB |
-| `npm run build:artifact` | `dist-artifact/nexus-royale.html  @ARTIFACT@ kB (self-contained)` |
-| `npm run test:e2e` | `@E2E@ e2e steps passed` |
+| `npm test` | `tests 90`, `pass 90`, `fail 0` |
+| `npm run build` | `dist-web/assets/index-*.js` 1 044,00 kB (291,51 kB con gzip), CSS 30,91 kB |
+| `npm run build:artifact` | `dist-artifact/nexus-royale.html  1049.9 kB (self-contained)` |
+| `npm run test:e2e` | `36/36 e2e steps passed` (todas las sesiones seguidas, unos 8 minutos sin GPU) |
 
 Pruebas unitarias nuevas de esta fase (todas con semilla fija y sin depender de los FPS):
 `tests/combat.test.ts` (19), `tests/loot.test.ts` (10), `tests/bots.test.ts` (12), más las de
@@ -86,8 +86,8 @@ guardado y textos ampliadas.
 
 Capturas tomadas por la propia prueba de navegador (no son montajes), en `docs/evidence/`:
 `fase2-lobby-1920x1080`, `fase2-galeria-1280x720`, `fase2-escaramuza-1280x720`,
-`fase2-escaramuza-1920x1080`, `fase2-escaramuza-resultados` y `fase2-movil-galeria-844x390`,
-además de las de la fase 1 (regeneradas con el lobby nuevo).
+`fase2-escaramuza-1920x1080`, `fase2-escaramuza-resultados`, `fase2-escaramuza-derrota` y
+`fase2-movil-galeria-844x390`, además de las de la fase 1 (regeneradas con el lobby nuevo).
 
 ### Criterios de `docs/08-CRITERIOS_QA.md`
 | ID | Escenario | Estado | Evidencia |
@@ -113,11 +113,11 @@ no 7,5). Consumibles de `docs/03`: célula +25 hasta 50, batería +50 hasta 100,
 75 y botiquín a vida completa, todos con tiempo de uso y cancelables al cambiar de casilla.
 
 ### Rendimiento: lo que se midió y lo que no
-- **Simulación** (Node, este contenedor): 16 bots peleando sin parar cuestan **@SIM@ ms por tick**
+- **Simulación** (Node, este contenedor): 16 bots peleando sin parar cuestan **0,08 ms por tick**
   de un presupuesto de 16,67 ms (`tests/bots.test.ts`). Preparar una Escaramuza (mapa, navegación
   de unos 7 500 nodos y 12 participantes) tarda unos 0,2-0,6 s.
-- **Render**: con 8 corredores en la Cantera Ámbar, calidad alta: @DRAW@ llamadas de dibujo y
-  @TRIS@ triángulos. Lobby: 85 llamadas y 53 802 triángulos.
+- **Render**: con 8 corredores en la Cantera Ámbar, calidad alta: 436 llamadas de dibujo y
+  94 650 triángulos. Lobby: 85 llamadas y 53 802 triángulos.
 - **FPS**: este contenedor no tiene GPU; el render por CPU (SwiftShader) da entre 4 y 14 FPS según
   el preset y **no dice nada de un equipo con tarjeta gráfica**. El objetivo de 60 FPS sigue sin
   comprobarse en hardware real. Cada corredor son unas 30 mallas: hay margen claro de mejora
@@ -162,6 +162,11 @@ no 7,5). Consumibles de `docs/03`: célula +25 hasta 50, batería +50 hasta 100,
   techo.
 - A 1280×720 la tarjeta del modo se salía por encima de la cabecera del lobby. Ahora la columna
   se desplaza.
+- La prueba de navegador completa fallaba por tiempo de espera a mitad de camino: una sesión
+  dejaba abierta su página renderizando el lobby a 1920×1080 y, sin GPU, dejaba sin CPU a las
+  sesiones siguientes. Ahora cada sesión cierra su página y todas las esperas comparten un mismo
+  límite (`WAIT_TIMEOUT_MS`). Además el fogonazo del disparo reutiliza la luz principal en vez de
+  encender una luz puntual extra, que encarecía el sombreado de toda la escena.
 
 ## Deudas y límites conocidos
 - No hay arma cuerpo a cuerpo ni tecla para soltar objetos (se intercambia al recoger con el
@@ -192,7 +197,8 @@ Sin Construcción), victoria y resultados. Criterios T07 a T10.
   Commits `2cee7b7`, `ae809fb`, `e28336e`, `417b3df`, `8b8dec9`, `e4d4278`.
 - **Sesión 2 (2026-11-11 y 12)** — F2 y F3: armas, daño, inventario, botín y consumibles
   (`99478e9`); bots, navegación y reglas por modo (`fd01789`); cliente con Galería de Tiro y
-  Escaramuza, HUD de combate, sonido y pruebas de navegador (commit de cierre de la fase).
+  Escaramuza, HUD de combate, sonido y pruebas de navegador (`3684fd2`); cierre con la suite
+  de navegador completa en verde, 36/36.
 
 ### Plantilla de próxima sesión
 Fecha:

@@ -51,13 +51,31 @@ export async function startStaticServer(directory = DIST) {
   return { url: `http://127.0.0.1:${port}/`, close: () => new Promise((done) => server.close(done)) };
 }
 
-/** Launches headless Chromium. Set PW_CHROMIUM_PATH to use a specific browser binary. */
+/**
+ * Limit for every wait in the suite (selectors, navigations, state predicates). Generous on
+ * purpose: without a GPU the game renders a few frames per second, and slower still while the
+ * machine is busy, so a tight limit only measures the test machine.
+ */
+export const WAIT_TIMEOUT_MS = 120_000;
+
+/**
+ * Launches headless Chromium. Set PW_CHROMIUM_PATH to use a specific browser binary. Every
+ * context it opens gets WAIT_TIMEOUT_MS as its default, so no wait is left on Playwright's 30 s.
+ */
 export async function launchBrowser() {
   const executablePath = process.env.PW_CHROMIUM_PATH;
-  return chromium.launch({
+  const browser = await chromium.launch({
     ...(executablePath ? { executablePath } : {}),
     args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist', '--autoplay-policy=no-user-gesture-required'],
   });
+  const newContext = browser.newContext.bind(browser);
+  browser.newContext = async (options) => {
+    const context = await newContext(options);
+    context.setDefaultTimeout(WAIT_TIMEOUT_MS);
+    context.setDefaultNavigationTimeout(WAIT_TIMEOUT_MS);
+    return context;
+  };
+  return browser;
 }
 
 /** Opens the game and collects everything the page logs as an error. */
@@ -71,13 +89,13 @@ export async function openGame(browser, url, viewport = { width: 1280, height: 7
   page.on('pageerror', (error) => problems.push(`pageerror: ${error.message}`));
   page.on('requestfailed', (request) => problems.push(`requestfailed: ${request.url()}`));
   await page.goto(url, { waitUntil: 'load' });
-  await page.waitForFunction(() => typeof window.__NEXUS__ !== 'undefined', null, { timeout: 30_000 });
+  await page.waitForFunction(() => typeof window.__NEXUS__ !== 'undefined');
   return { context, page, problems };
 }
 
 export const state = (page) => page.evaluate(() => window.__NEXUS__.getState());
 
 /** Waits until `predicate(arg)` is true; the predicate runs in the page. */
-export function waitForState(page, predicate, timeout = 30_000, arg = null) {
+export function waitForState(page, predicate, timeout = WAIT_TIMEOUT_MS, arg = null) {
   return page.waitForFunction(predicate, arg, { timeout, polling: 50 });
 }

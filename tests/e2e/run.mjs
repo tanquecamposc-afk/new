@@ -611,6 +611,8 @@ async function main() {
       await page.waitForTimeout(800);
       await shot(page, 'fase1-lobby-1920x1080');
     });
+    // Close it: an open page keeps rendering the lobby at 1920x1080 and starves the next sessions.
+    await context.close();
 
     /* ------------------------------------------------------------------------------------ */
     /* Session 4: the single-file build on a phone (touch stick, drag look, on-screen buttons). */
