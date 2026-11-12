@@ -13,7 +13,7 @@ import { makeRng } from '../rng.js';
 import { computeCameraRig, makeCameraRig } from './cameraRig.js';
 import { eyeHeight } from './character.js';
 import { DEFAULT_CAMERA, TICK_RATE, secondsToTicks } from './config.js';
-import { makeCharacterHit, rayCharacter } from './hitscan.js';
+import { makeCharacterHit, rayCharacter, type HitZone } from './hitscan.js';
 import { NO_SLOT } from './input.js';
 import {
   activeItem,
@@ -171,6 +171,90 @@ function updateWeapon(sim: Simulation, player: SimPlayer, item: WeaponItem, def:
 /* Shooting                                                                                    */
 /* ------------------------------------------------------------------------------------------ */
 
+export interface AimRay {
+  ox: number;
+  oy: number;
+  oz: number;
+  dx: number;
+  dy: number;
+  dz: number;
+}
+
+/**
+ * The line a shot would follow right now, before spread. Humans aim with the third-person
+ * camera, so their shots leave from the camera's shoulder pivot along the view direction and land
+ * exactly under the crosshair (the rig keeps that pivot out of walls). Bots shoot from their eyes.
+ */
+export function aimRay(sim: Simulation, player: SimPlayer, out: AimRay): AimRay {
+  const c = player.char;
+  const input = player.input;
+  const cosPitch = Math.cos(input.pitch);
+  out.dx = -Math.sin(input.yaw) * cosPitch;
+  out.dy = Math.sin(input.pitch);
+  out.dz = -Math.cos(input.yaw) * cosPitch;
+  const eye = eyeHeight(c, sim.movement);
+  if (player.aimMode === 'camera') {
+    computeCameraRig(sim.world, c.x, c.y, c.z, eye, input.yaw, input.pitch, DEFAULT_CAMERA, player.combat.adsBlend, rig);
+    out.ox = rig.pivotX;
+    out.oy = rig.pivotY;
+    out.oz = rig.pivotZ;
+  } else {
+    out.ox = c.x;
+    out.oy = c.y + eye;
+    out.oz = c.z;
+  }
+  return out;
+}
+
+export interface AimTrace {
+  kind: 'none' | 'world' | 'player';
+  targetId: string | null;
+  zone: HitZone | null;
+  distance: number;
+  x: number;
+  y: number;
+  z: number;
+}
+
+export function makeAimTrace(): AimTrace {
+  return { kind: 'none', targetId: null, zone: null, distance: 0, x: 0, y: 0, z: 0 };
+}
+
+const scratchRay: AimRay = { ox: 0, oy: 0, oz: 0, dx: 0, dy: 0, dz: -1 };
+
+/**
+ * What is under a player's crosshair: the first thing a perfectly accurate shot would hit. It
+ * uses the same origin, direction and hit zones as a real shot, so a HUD or a test that reads it
+ * sees exactly what the simulation would resolve. Read-only.
+ */
+export function traceAim(sim: Simulation, player: SimPlayer, maxDistance: number, out: AimTrace): AimTrace {
+  const ray = aimRay(sim, player, scratchRay);
+  let t = maxDistance;
+  out.kind = 'none';
+  out.targetId = null;
+  out.zone = null;
+  if (sim.world.raycast(ray.ox, ray.oy, ray.oz, ray.dx, ray.dy, ray.dz, t, rayHit)) {
+    t = rayHit.t;
+    out.kind = 'world';
+  }
+  const roster = sim.roster;
+  for (let i = 0; i < roster.length; i++) {
+    const other = roster[i]!;
+    if (other === player || other.combat.aliveState !== 'alive') continue;
+    if (rayCharacter(ray.ox, ray.oy, ray.oz, ray.dx, ray.dy, ray.dz, other.char, t, charHit)) {
+      t = charHit.t;
+      out.kind = 'player';
+      out.targetId = other.id;
+      out.zone = charHit.zone;
+    }
+  }
+  out.distance = t;
+  out.x = ray.ox + ray.dx * t;
+  out.y = ray.oy + ray.dy * t;
+  out.z = ray.oz + ray.dz * t;
+  return out;
+}
+
 /** Half-angle of the spread cone the next shot would have, in degrees. */
 export function currentSpreadDegrees(sim: Simulation, player: SimPlayer, def: WeaponDef): number {
   const c = player.char;
@@ -212,17 +296,10 @@ function fireWeapon(sim: Simulation, player: SimPlayer, item: WeaponItem, def: W
   const uz = cosYaw * fy;
 
   const eye = eyeHeight(c, sim.movement);
-  let ox = c.x;
-  let oy = c.y + eye;
-  let oz = c.z;
-  if (player.aimMode === 'camera') {
-    // The shot leaves from the camera's shoulder pivot along the view direction, so it lands
-    // exactly under the crosshair. The pivot is already kept out of walls by the rig.
-    computeCameraRig(sim.world, c.x, c.y, c.z, eye, input.yaw, input.pitch, DEFAULT_CAMERA, combat.adsBlend, rig);
-    ox = rig.pivotX;
-    oy = rig.pivotY;
-    oz = rig.pivotZ;
-  }
+  const origin = aimRay(sim, player, scratchRay);
+  const ox = origin.ox;
+  const oy = origin.oy;
+  const oz = origin.oz;
 
   // Reproducible spread: the same match seed, shooter, weapon instance and shot number always
   // give the same pellet pattern, whatever anyone else is doing.

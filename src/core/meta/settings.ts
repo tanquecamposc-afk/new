@@ -24,9 +24,21 @@ export type InputAction =
   | 'jump'
   | 'sprint'
   | 'crouch'
+  | 'fire'
+  | 'aim'
+  | 'reload'
+  | 'interact'
+  | 'slot1'
+  | 'slot2'
+  | 'slot3'
+  | 'slot4'
+  | 'slot5'
   | 'pause'
   | 'restart'
   | 'help';
+
+/** Actions that select an inventory slot, in slot order. */
+export const SLOT_ACTIONS: readonly InputAction[] = ['slot1', 'slot2', 'slot3', 'slot4', 'slot5'];
 
 export const INPUT_ACTIONS: readonly InputAction[] = [
   'moveForward',
@@ -36,11 +48,24 @@ export const INPUT_ACTIONS: readonly InputAction[] = [
   'jump',
   'sprint',
   'crouch',
+  'fire',
+  'aim',
+  'reload',
+  'interact',
+  'slot1',
+  'slot2',
+  'slot3',
+  'slot4',
+  'slot5',
   'pause',
   'restart',
   'help',
 ];
 
+/**
+ * Codes are `KeyboardEvent.code` values, plus `Mouse0` (left), `Mouse1` (middle) and `Mouse2`
+ * (right) for mouse buttons.
+ */
 export type Bindings = Record<InputAction, string[]>;
 
 export interface GameSettings {
@@ -65,6 +90,8 @@ export interface GameSettings {
     mouseSensitivity: number;
     invertY: boolean;
     toggleCrouch: boolean;
+    /** Aim stays on after one press instead of having to be held. */
+    toggleAim: boolean;
     bindings: Bindings;
   };
   accessibility: {
@@ -92,6 +119,15 @@ export function defaultBindings(): Bindings {
     // Not Ctrl: in a browser Ctrl+W / Ctrl+S / Ctrl+D are shortcuts the page cannot block, and
     // crouch-walking would close the tab.
     crouch: ['KeyC'],
+    fire: ['Mouse0'],
+    aim: ['Mouse2'],
+    reload: ['KeyR'],
+    interact: ['KeyE'],
+    slot1: ['Digit1'],
+    slot2: ['Digit2'],
+    slot3: ['Digit3'],
+    slot4: ['Digit4'],
+    slot5: ['Digit5'],
     pause: ['KeyP'],
     restart: ['Backspace'],
     help: ['KeyH'],
@@ -104,7 +140,7 @@ export function defaultSettings(): GameSettings {
     locale: 'es-PE',
     display: { qualityPreset: 'medium', renderScale: 1, maxFps: 60, fov: 75, showFps: false },
     audio: { master: 0.8, sfx: 0.9, ambience: 0.4, ui: 0.7 },
-    controls: { mouseSensitivity: 0.7, invertY: false, toggleCrouch: false, bindings: defaultBindings() },
+    controls: { mouseSensitivity: 0.7, invertY: false, toggleCrouch: false, toggleAim: false, bindings: defaultBindings() },
     accessibility: { reducedMotion: false, uiScale: 1 },
   };
 }
@@ -177,6 +213,7 @@ export function sanitizeSettings(raw: unknown): GameSettings {
       ),
       invertY: bool(controls['invertY'], base.controls.invertY),
       toggleCrouch: bool(controls['toggleCrouch'], base.controls.toggleCrouch),
+      toggleAim: bool(controls['toggleAim'], base.controls.toggleAim),
       bindings: sanitizeBindings(controls['bindings']),
     },
     accessibility: {

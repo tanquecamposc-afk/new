@@ -10,7 +10,17 @@ import type { GameSettings } from '../../core/meta/settings.js';
 type Bus = 'sfx' | 'ui' | 'ambience';
 
 /** Never let more than this many one-shot voices overlap (docs/06 §6.8). */
-const MAX_VOICES = 14;
+const MAX_VOICES = 26;
+/** Beyond this distance a gunshot is not heard at all. */
+const GUNSHOT_RANGE = 130;
+const FOOTSTEP_RANGE = 22;
+
+export type GunSound = 'ar' | 'smg' | 'shotgun' | 'sniper' | 'pistol' | 'melee';
+
+interface Spatial {
+  gain: number;
+  pan: number;
+}
 
 export class AudioEngine {
   private context: AudioContext | null = null;
@@ -21,6 +31,11 @@ export class AudioEngine {
   private slideGain: GainNode | null = null;
   private voices = 0;
   private volumes = { master: 0.8, sfx: 0.9, ambience: 0.4, ui: 0.7 };
+  private listenerX = 0;
+  private listenerY = 0;
+  private listenerZ = 0;
+  private listenerYaw = 0;
+  private readonly spatialScratch: Spatial = { gain: 1, pan: 0 };
 
   applySettings(settings: GameSettings): void {
     this.volumes = { ...settings.audio };
@@ -46,6 +61,30 @@ export class AudioEngine {
 
   suspend(): void {
     if (this.context?.state === 'running') void this.context.suspend();
+  }
+
+  /** Where the player's ears are (the camera) and which way they face. */
+  setListener(x: number, y: number, z: number, yaw: number): void {
+    this.listenerX = x;
+    this.listenerY = y;
+    this.listenerZ = z;
+    this.listenerYaw = yaw;
+  }
+
+  /** Loudness and stereo position of a sound at a world position; null when out of earshot. */
+  private locate(x: number, y: number, z: number, range: number): Spatial | null {
+    const dx = x - this.listenerX;
+    const dy = y - this.listenerY;
+    const dz = z - this.listenerZ;
+    const distance = Math.hypot(dx, dy, dz);
+    if (distance >= range) return null;
+    const falloff = 1 - distance / range;
+    const out = this.spatialScratch;
+    out.gain = falloff * falloff;
+    // Component of the direction along the listener's right-hand side.
+    const right = distance > 0.5 ? (dx * Math.cos(this.listenerYaw) - dz * Math.sin(this.listenerYaw)) / distance : 0;
+    out.pan = Math.max(-1, Math.min(1, right)) * 0.85;
+    return out;
   }
 
   /* ---- ambience ---------------------------------------------------------------------------- */
@@ -155,6 +194,157 @@ export class AudioEngine {
     });
   }
 
+  /* ---- combat ------------------------------------------------------------------------------ */
+
+  /** A shot. With a position it is placed in the world; without one it is the player's own. */
+  gunshot(kind: GunSound, x?: number, y?: number, z?: number): void {
+    let gain = 1;
+    let pan = 0;
+    if (x !== undefined && y !== undefined && z !== undefined) {
+      const spatial = this.locate(x, y, z, GUNSHOT_RANGE);
+      if (!spatial) return;
+      gain = spatial.gain * 0.85;
+      pan = spatial.pan;
+    }
+    const jitter = 0.94 + Math.random() * 0.12;
+    switch (kind) {
+      case 'ar':
+        this.noiseBurst('sfx', 1900 * jitter, 0.7, 0.11, 0.5 * gain, 560, 0, pan);
+        this.tone('sfx', 'sine', 165 * jitter, 58, 0.09, 0.34 * gain, 0, pan);
+        break;
+      case 'smg':
+        this.noiseBurst('sfx', 2700 * jitter, 0.8, 0.07, 0.4 * gain, 900, 0, pan);
+        this.tone('sfx', 'triangle', 230 * jitter, 95, 0.05, 0.22 * gain, 0, pan);
+        break;
+      case 'shotgun':
+        this.noiseBurst('sfx', 950 * jitter, 0.5, 0.28, 0.7 * gain, 190, 0, pan);
+        this.tone('sfx', 'sine', 112 * jitter, 38, 0.22, 0.55 * gain, 0, pan);
+        this.noiseBurst('sfx', 2400, 1.2, 0.05, 0.25 * gain, 1200, 0.34, pan); // pump
+        break;
+      case 'sniper':
+        this.noiseBurst('sfx', 3300 * jitter, 0.6, 0.34, 0.62 * gain, 460, 0, pan);
+        this.tone('sfx', 'sine', 132 * jitter, 34, 0.3, 0.6 * gain, 0, pan);
+        this.noiseBurst('sfx', 620, 0.5, 0.55, 0.16 * gain, 240, 0.09, pan); // tail
+        break;
+      default:
+        this.noiseBurst('sfx', 2250 * jitter, 0.8, 0.08, 0.42 * gain, 700, 0, pan);
+        this.tone('sfx', 'sine', 195 * jitter, 70, 0.07, 0.3 * gain, 0, pan);
+        break;
+    }
+  }
+
+  dryFire(): void {
+    this.noiseBurst('sfx', 3400, 3, 0.03, 0.2);
+    this.tone('sfx', 'square', 1500, 1100, 0.025, 0.05);
+  }
+
+  reloadStart(): void {
+    this.noiseBurst('sfx', 1700, 2.2, 0.05, 0.22);
+    this.tone('sfx', 'triangle', 320, 210, 0.07, 0.1, 0.05);
+  }
+
+  reloadFinish(): void {
+    this.noiseBurst('sfx', 2600, 2.5, 0.04, 0.24);
+    this.tone('sfx', 'triangle', 420, 640, 0.06, 0.12, 0.03);
+  }
+
+  switchItem(): void {
+    this.noiseBurst('sfx', 1300, 1.4, 0.06, 0.16, 2300);
+  }
+
+  /** Confirmation that one of the player's shots landed (reported by the simulation). */
+  hitMarker(headshot: boolean, shield: boolean): void {
+    const base = shield ? 1250 : 980;
+    this.tone('ui', 'triangle', base, base * 0.8, 0.045, 0.2);
+    if (headshot) this.tone('ui', 'sine', 1900, 2400, 0.09, 0.16, 0.02);
+  }
+
+  eliminationConfirm(): void {
+    this.tone('ui', 'triangle', 660, 660, 0.12, 0.2);
+    this.tone('ui', 'triangle', 990, 990, 0.22, 0.2, 0.09);
+    this.tone('ui', 'sine', 1320, 1320, 0.3, 0.1, 0.09);
+  }
+
+  /** The player was hit. */
+  hurt(shieldAbsorbed: boolean): void {
+    if (shieldAbsorbed) {
+      this.tone('sfx', 'sine', 720, 430, 0.1, 0.22);
+      this.noiseBurst('sfx', 2800, 1.5, 0.06, 0.12);
+    } else {
+      this.tone('sfx', 'sine', 150, 70, 0.16, 0.42);
+      this.noiseBurst('sfx', 500, 0.7, 0.1, 0.22);
+    }
+  }
+
+  shieldBreak(): void {
+    this.noiseBurst('sfx', 4200, 1.4, 0.3, 0.3, 900);
+    this.tone('sfx', 'sawtooth', 880, 180, 0.3, 0.12);
+  }
+
+  pickup(kind: 'weapon' | 'consumable' | 'ammo'): void {
+    if (kind === 'ammo') {
+      this.noiseBurst('sfx', 2500, 2, 0.04, 0.16);
+      this.tone('sfx', 'triangle', 520, 700, 0.06, 0.1);
+    } else if (kind === 'weapon') {
+      this.noiseBurst('sfx', 1500, 1.6, 0.07, 0.22);
+      this.tone('sfx', 'triangle', 300, 450, 0.09, 0.14, 0.03);
+    } else {
+      this.tone('sfx', 'sine', 620, 930, 0.1, 0.14);
+    }
+  }
+
+  useStart(): void {
+    this.tone('sfx', 'sine', 260, 520, 0.4, 0.09);
+  }
+
+  useFinish(shield: boolean): void {
+    const base = shield ? 660 : 523.25;
+    this.tone('sfx', 'sine', base, base, 0.25, 0.16);
+    this.tone('sfx', 'triangle', base * 1.5, base * 1.5, 0.35, 0.1, 0.07);
+  }
+
+  countdownBeep(final: boolean): void {
+    if (final) {
+      this.tone('ui', 'triangle', 880, 880, 0.4, 0.22);
+      this.tone('ui', 'sine', 1320, 1320, 0.45, 0.1);
+    } else {
+      this.tone('ui', 'triangle', 440, 440, 0.12, 0.18);
+    }
+  }
+
+  showdownPing(): void {
+    this.tone('ui', 'sine', 1040, 1040, 0.5, 0.12);
+    this.tone('ui', 'sine', 1560, 1560, 0.6, 0.06, 0.12);
+  }
+
+  victory(): void {
+    const notes = [523.25, 659.25, 783.99, 1046.5, 1318.5];
+    notes.forEach((note, i) => {
+      this.tone('sfx', 'triangle', note, note, 0.6, 0.17, i * 0.12);
+      this.tone('sfx', 'sine', note * 2, note * 2, 0.5, 0.05, i * 0.12);
+    });
+  }
+
+  defeat(): void {
+    const notes = [392, 329.63, 261.63];
+    notes.forEach((note, i) => this.tone('sfx', 'triangle', note, note * 0.97, 0.5, 0.16, i * 0.16));
+  }
+
+  /** Somebody else's footstep, placed in the world. */
+  remoteFootstep(x: number, y: number, z: number, intensity: number): void {
+    const spatial = this.locate(x, y, z, FOOTSTEP_RANGE);
+    if (!spatial) return;
+    this.noiseBurst('sfx', 620 + Math.random() * 180, 1.1, 0.07, 0.22 * intensity * spatial.gain, undefined, 0, spatial.pan);
+  }
+
+  /** An elimination somewhere in the world (not the player's own). */
+  remoteElimination(x: number, y: number, z: number): void {
+    const spatial = this.locate(x, y, z, 70);
+    if (!spatial) return;
+    this.noiseBurst('sfx', 3000, 1.2, 0.3, 0.18 * spatial.gain, 700, 0, spatial.pan);
+    this.tone('sfx', 'sine', 700, 220, 0.3, 0.1 * spatial.gain, 0, spatial.pan);
+  }
+
   uiClick(): void {
     this.tone('ui', 'triangle', 880, 660, 0.06, 0.12);
   }
@@ -204,10 +394,21 @@ export class AudioEngine {
     return true;
   }
 
-  private tone(bus: Bus, type: OscillatorType, from: number, to: number, seconds: number, volume: number, delay = 0): void {
+  /** Routes a voice to its bus, through a stereo panner when it has a position. */
+  private output(ctx: AudioContext, node: AudioNode, out: AudioNode, pan: number): void {
+    if (pan !== 0 && typeof ctx.createStereoPanner === 'function') {
+      const panner = ctx.createStereoPanner();
+      panner.pan.value = pan;
+      node.connect(panner).connect(out);
+    } else {
+      node.connect(out);
+    }
+  }
+
+  private tone(bus: Bus, type: OscillatorType, from: number, to: number, seconds: number, volume: number, delay = 0, pan = 0): void {
     const ctx = this.context;
     const out = this.buses[bus];
-    if (!ctx || !out || ctx.state !== 'running' || !this.beginVoice(seconds + delay)) return;
+    if (!ctx || !out || ctx.state !== 'running' || volume < 0.004 || !this.beginVoice(seconds + delay)) return;
     const start = ctx.currentTime + delay;
     const osc = ctx.createOscillator();
     osc.type = type;
@@ -217,16 +418,17 @@ export class AudioEngine {
     gain.gain.setValueAtTime(0.0001, start);
     gain.gain.exponentialRampToValueAtTime(Math.max(0.0002, volume), start + 0.008);
     gain.gain.exponentialRampToValueAtTime(0.0001, start + seconds);
-    osc.connect(gain).connect(out);
+    osc.connect(gain);
+    this.output(ctx, gain, out, pan);
     osc.start(start);
     osc.stop(start + seconds + 0.03);
   }
 
-  private noiseBurst(bus: Bus, frequency: number, q: number, seconds: number, volume: number, sweepTo?: number): void {
+  private noiseBurst(bus: Bus, frequency: number, q: number, seconds: number, volume: number, sweepTo?: number, delay = 0, pan = 0): void {
     const ctx = this.context;
     const out = this.buses[bus];
-    if (!ctx || !out || !this.noiseBuffer || ctx.state !== 'running' || !this.beginVoice(seconds)) return;
-    const start = ctx.currentTime;
+    if (!ctx || !out || !this.noiseBuffer || ctx.state !== 'running' || volume < 0.004 || !this.beginVoice(seconds + delay)) return;
+    const start = ctx.currentTime + delay;
     const source = ctx.createBufferSource();
     source.buffer = this.noiseBuffer;
     const filter = ctx.createBiquadFilter();
@@ -237,7 +439,8 @@ export class AudioEngine {
     const gain = ctx.createGain();
     gain.gain.setValueAtTime(Math.max(0.0002, volume), start);
     gain.gain.exponentialRampToValueAtTime(0.0001, start + seconds);
-    source.connect(filter).connect(gain).connect(out);
+    source.connect(filter).connect(gain);
+    this.output(ctx, gain, out, pan);
     source.start(start, Math.random() * 1.5);
     source.stop(start + seconds + 0.03);
   }

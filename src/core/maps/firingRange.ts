@@ -57,8 +57,8 @@ export function buildFiringRange(): MapDefinition {
   const b = new MapBuilder();
   const line = FIRING_LINE_Z;
 
-  /* ---- Firing line: canopy and two benches with a gap to walk downrange ------------------------ */
-  b.box(-11, 3.3, line - 3, 11, 3.6, line + 8, 'roof', 'metal');
+  /* ---- Firing line: corner posts and two benches with a gap to walk downrange ------------------- */
+  // No roof on purpose: from the third-person camera a canopy would cover half of the view.
   for (const [px, pz] of [
     [-10.5, line - 2.5],
     [10.5, line - 2.5],
@@ -66,6 +66,7 @@ export function buildFiringRange(): MapDefinition {
     [10.5, line + 7.5],
   ] as const) {
     b.cylinder(px, pz, 0.28, 0, 3.3, 'pillar', 'metal');
+    b.box(px - 0.5, 3.3, pz - 0.5, px + 0.5, 3.5, pz + 0.5, 'trim', 'metal');
   }
   b.box(-9, 0, line - 0.9, -1.6, 0.9, line - 0.1, 'crate', 'wood');
   b.box(1.6, 0, line - 0.9, 9, 0.9, line - 0.1, 'crate', 'wood');

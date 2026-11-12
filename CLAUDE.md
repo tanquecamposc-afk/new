@@ -18,17 +18,20 @@ Desarrolla un videojuego shooter 3D original, inspirado en la amplitud funcional
 - `npm test`: compilar y ejecutar tests del núcleo (`node:test`).
 - `npm run dev`: cliente web en desarrollo (Vite).
 - `npm run build`: tipos + build de producción en `dist-web/`.
-- `npm run test:e2e`: build + prueba en Chromium real (teclado, ratón y táctil). `--filter=<regex>` ejecuta solo algunos pasos; `--evidence` copia capturas a `docs/evidence/`.
+- `npm run test:e2e`: build + prueba en Chromium real (teclado, ratón y táctil; circuito, galería de tiro y escaramuza). `--filter=<regex>` ejecuta solo algunos pasos; `--evidence` copia capturas a `docs/evidence/`. Tarda varios minutos: no reconstruir (`vite build`) mientras corre.
 - `npm run build:artifact`: el juego en un único HTML autocontenido (`dist-artifact/`).
 - `node tests/e2e/perf.mjs`: tiempo de cuadro por preset gráfico en la máquina actual.
 
 ## Stack y estructura (decididos en la fase 1; no cambiar sin migración explícita)
 - TypeScript estricto + Vite + Three.js (render) + React (solo menús y HUD). Sin React Three Fiber ni Rapier.
-- `src/core/sim`: simulación determinista a 60 Hz (mundo de colisiones, personaje, cámara). `src/core/maps`: mapas como datos. `src/core/meta`: ajustes y guardado validados.
+- `src/core/sim`: simulación determinista a 60 Hz (mundo de colisiones, personaje, cámara, armas en `gunplay.ts`, inventario, botín, navegación en `nav.ts`, bots en `bot.ts`, reglas por modo en `rules.ts`, partidas listas en `matchSetup.ts`). `src/core/maps`: mapas como datos, con `builder.ts` para edificios. `src/core/meta`: ajustes y guardado validados (el guardado va por la versión 2; añadir campos exige migración y prueba).
+- Un modo nuevo es un `MatchRules` nuevo, no un motor nuevo. Los bots solo producen `InputFrame`: nunca leen ni escriben estado de otro jugador fuera de su percepción.
+- Las puertas de los mapas van centradas en medio metro (…, 24.5, 25.5) y miden al menos 1,6 m: la navegación de los bots usa una rejilla de 1 m.
 - `src/client`: `game/` (bucle e integración), `render/`, `input/`, `audio/`, `ui/`, `app/` (estado, textos es-PE/en, persistencia).
 - La simulación es la única fuente de verdad; el cliente solo envía `InputFrame` y dibuja. Los efectos visuales y sonoros reaccionan a eventos de la simulación.
 - Todo el arte y el audio se generan por código. No añadir assets externos sin registrarlos en `assets/LICENSES.md`.
 - En navegador, agacharse es `C`: `Ctrl+W` cierra la pestaña y no se puede bloquear.
+- En las pruebas de navegador los botones del ratón y la rueda se envían como eventos del DOM (como los movimientos): con el puntero capturado, el Chromium sin cabeza convierte un clic sintético en un movimiento enorme.
 
 ## Archivos importantes
 - `README_EMPIEZA_AQUI.md`: instalación y límites de este kit.

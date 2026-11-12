@@ -158,6 +158,7 @@ export function Settings() {
               />
               <Toggle label={t('settings.invertY')} value={draft.controls.invertY} on={on} off={off} onChange={(value) => edit((s) => void (s.controls.invertY = value))} testId="invert-y" />
               <Toggle label={t('settings.toggleCrouch')} value={draft.controls.toggleCrouch} on={on} off={off} onChange={(value) => edit((s) => void (s.controls.toggleCrouch = value))} />
+              <Toggle label={t('settings.toggleAim')} value={draft.controls.toggleAim} on={on} off={off} onChange={(value) => edit((s) => void (s.controls.toggleAim = value))} testId="toggle-aim" />
             </>
           ) : null}
 

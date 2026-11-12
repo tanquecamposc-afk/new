@@ -333,7 +333,19 @@ input[type='range']:focus-visible {
   flex-direction: column;
   gap: 1rem;
   min-height: 0;
-  justify-content: center;
+  /* Centred while it fits; when it does not, it scrolls from the top instead of spilling over
+     the header. */
+  overflow-y: auto;
+  pointer-events: auto;
+  scrollbar-width: thin;
+}
+
+.lobby-main > :first-child {
+  margin-top: auto;
+}
+
+.lobby-main > :last-child {
+  margin-bottom: auto;
 }
 
 .mode-card {
@@ -1378,5 +1390,1174 @@ input[type='range'] {
   }
   .click-to-play {
     padding: 1rem 1.4rem;
+  }
+}
+
+/* ============================================================================================
+   Phase 2: mode selection, combat HUD and skirmish results
+   ============================================================================================ */
+
+/* ---- lobby: mode tabs and options ------------------------------------------------------------ */
+
+.mode-tabs {
+  display: flex;
+  gap: 0.3rem;
+  margin-bottom: 0.45rem;
+}
+
+.mode-tab {
+  flex: 1 1 0;
+  min-width: 0;
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  line-height: 1.15;
+  color: var(--muted);
+  background: rgba(244, 234, 216, 0.07);
+  border: 1px solid var(--line);
+  padding: 0.55rem 0.35rem;
+  cursor: pointer;
+}
+
+.mode-tab.on {
+  color: var(--amber-ink);
+  background: var(--amber);
+  border-color: var(--amber);
+}
+
+.mode-tab:focus-visible,
+.slot:focus-visible,
+.pickup-prompt.touch:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 2px var(--turq);
+}
+
+.option-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  margin-top: 0.15rem;
+}
+
+.stat-row-wide {
+  flex-wrap: wrap;
+  gap: 0.5rem 1.3rem;
+}
+
+/* ---- shared bits ----------------------------------------------------------------------------- */
+
+.tag {
+  display: inline-block;
+  font-size: 0.56rem;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  line-height: 1;
+  padding: 0.14rem 0.3rem;
+  vertical-align: middle;
+  margin-left: 0.35rem;
+}
+
+.tag-bot {
+  color: var(--cream);
+  background: rgba(244, 234, 216, 0.16);
+  border: 1px solid var(--line);
+}
+
+.tag-dummy {
+  color: var(--ink);
+  background: var(--coral);
+}
+
+.bar {
+  position: relative;
+  display: block;
+  height: 0.62rem;
+  background: rgba(244, 234, 216, 0.14);
+  overflow: hidden;
+}
+
+.bar-thin {
+  height: 0.32rem;
+}
+
+.bar-fill {
+  display: block;
+  height: 100%;
+  transition: width 0.12s linear;
+}
+
+.bar-shield {
+  background: var(--blue);
+}
+
+.bar-health {
+  background: var(--turq);
+}
+
+.bar-health.low {
+  background: var(--coral);
+}
+
+/* ---- match status (top left) ----------------------------------------------------------------- */
+
+.hud-status {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  gap: 1.4rem;
+  padding: 0.6rem 1rem 0.65rem;
+}
+
+.status-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.status-value {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.status-value strong {
+  font-size: 1.55rem;
+  font-weight: 900;
+  color: var(--cream);
+}
+
+.status-name {
+  font-size: 0.95rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  line-height: 1.75;
+}
+
+/* ---- health and shield (bottom left) ---------------------------------------------------------- */
+
+.hud-vitals {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 17.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.7rem 1rem 0.75rem;
+}
+
+.vital {
+  display: grid;
+  grid-template-columns: 3.4rem 1fr 2.4rem;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.vital-value {
+  font-size: 1.1rem;
+  font-weight: 900;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- weapon and inventory (bottom right) ------------------------------------------------------ */
+
+.hud-weapon {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.4rem;
+}
+
+.weapon-readout {
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+  padding: 0.45rem 1rem 0.5rem;
+}
+
+.weapon-name {
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.ammo {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.ammo strong {
+  font-size: 2rem;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.ammo.empty strong {
+  color: var(--coral);
+}
+
+.ammo-reserve {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--muted);
+  margin-left: 0.25rem;
+}
+
+.slots {
+  display: flex;
+  gap: 0.3rem;
+}
+
+.slot {
+  position: relative;
+  width: 3.5rem;
+  height: 3.1rem;
+  padding: 0;
+  font: inherit;
+  color: var(--cream);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  cursor: pointer;
+}
+
+.slot:disabled {
+  cursor: default;
+}
+
+.slot.empty {
+  background: rgba(12, 26, 36, 0.5);
+}
+
+.slot.on {
+  border-color: var(--amber);
+  box-shadow: inset 0 -0.2rem 0 var(--amber);
+}
+
+.slot-key {
+  position: absolute;
+  left: 0.25rem;
+  top: 0.12rem;
+  font-size: 0.6rem;
+  font-weight: 800;
+  color: var(--muted);
+}
+
+.slot-icon {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 2.5rem;
+  height: 2.2rem;
+  transform: translate(-50%, -52%);
+  fill: currentColor;
+}
+
+.slot.on .slot-icon {
+  fill: var(--amber);
+}
+
+.slot-count {
+  position: absolute;
+  right: 0.25rem;
+  bottom: 0.1rem;
+  font-size: 0.68rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- crosshair, hit marker and what surrounds it ---------------------------------------------- */
+
+/* A zero-size box on the exact centre of the screen: every part is placed relative to it. */
+.reticle {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  width: 0;
+  height: 0;
+  --gap: 0.6vh;
+}
+
+.reticle-dot {
+  position: absolute;
+  left: -0.09rem;
+  top: -0.09rem;
+  width: 0.18rem;
+  height: 0.18rem;
+  border-radius: 50%;
+  background: var(--cream);
+  box-shadow: 0 0 0.2rem rgba(0, 0, 0, 0.9);
+}
+
+.reticle-tick {
+  position: absolute;
+  background: rgba(244, 234, 216, 0.95);
+  box-shadow: 0 0 0.2rem rgba(0, 0, 0, 0.8);
+  transition:
+    top 0.06s linear,
+    bottom 0.06s linear,
+    left 0.06s linear,
+    right 0.06s linear;
+}
+
+.reticle-tick.top,
+.reticle-tick.bottom {
+  left: -0.06rem;
+  width: 0.12rem;
+  height: 0.55rem;
+}
+
+.reticle-tick.top {
+  bottom: var(--gap);
+}
+
+.reticle-tick.bottom {
+  top: var(--gap);
+}
+
+.reticle-tick.left,
+.reticle-tick.right {
+  top: -0.06rem;
+  width: 0.55rem;
+  height: 0.12rem;
+}
+
+.reticle-tick.left {
+  right: var(--gap);
+}
+
+.reticle-tick.right {
+  left: var(--gap);
+}
+
+/* Through a scope: fine hairlines out to the edge of the lens. */
+.reticle.scoped .reticle-tick {
+  background: rgba(12, 26, 36, 0.9);
+  box-shadow: none;
+}
+
+.reticle.scoped .reticle-tick.top,
+.reticle.scoped .reticle-tick.bottom {
+  left: -0.03rem;
+  width: 0.06rem;
+  height: 34vh;
+}
+
+.reticle.scoped .reticle-tick.left,
+.reticle.scoped .reticle-tick.right {
+  top: -0.03rem;
+  height: 0.06rem;
+  width: 34vh;
+}
+
+.reticle.scoped .reticle-dot {
+  background: var(--coral);
+}
+
+.hit-marker {
+  position: absolute;
+  left: -0.9rem;
+  top: -0.9rem;
+  width: 1.8rem;
+  height: 1.8rem;
+  color: var(--cream);
+  animation: hit-pop 0.3s ease-out both;
+}
+
+.hit-marker::before,
+.hit-marker::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: 0.16rem;
+  height: 100%;
+  margin-left: -0.08rem;
+  /* Open in the middle so the centre dot stays visible. */
+  background: linear-gradient(to bottom, currentColor 0 30%, transparent 30% 70%, currentColor 70% 100%);
+  filter: drop-shadow(0 0 0.15rem rgba(0, 0, 0, 0.9));
+}
+
+.hit-marker::before {
+  transform: rotate(45deg);
+}
+
+.hit-marker::after {
+  transform: rotate(-45deg);
+}
+
+.hit-shield {
+  color: var(--blue);
+}
+
+.hit-head {
+  color: var(--amber);
+}
+
+.hit-kill {
+  color: var(--coral);
+  left: -1.2rem;
+  top: -1.2rem;
+  width: 2.4rem;
+  height: 2.4rem;
+}
+
+.action-progress {
+  position: fixed;
+  left: 50%;
+  top: calc(50% + 3.4rem);
+  transform: translateX(-50%);
+  width: 11rem;
+  text-align: center;
+}
+
+.action-label {
+  display: block;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+  margin-bottom: 0.25rem;
+}
+
+.action-track {
+  display: block;
+  height: 0.34rem;
+  background: rgba(12, 26, 36, 0.7);
+  border: 1px solid var(--line);
+}
+
+.action-fill {
+  display: block;
+  height: 100%;
+  background: var(--amber);
+}
+
+.pickup-prompt {
+  position: fixed;
+  left: 50%;
+  top: calc(50% + 6.2rem);
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.8rem;
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: var(--cream);
+  background: rgba(12, 26, 36, 0.82);
+  border: 1px solid var(--line);
+  white-space: nowrap;
+}
+
+.pickup-prompt.touch {
+  border-color: var(--amber);
+  color: var(--amber);
+  padding: 0.7rem 1.1rem;
+  font-size: 0.95rem;
+}
+
+.target-info {
+  position: absolute;
+  left: 50%;
+  top: 2.75rem;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+  white-space: nowrap;
+}
+
+.target-line {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.86rem;
+  font-weight: 800;
+}
+
+.target-line .tag {
+  margin-left: 0;
+}
+
+.target-distance {
+  font-size: 0.74rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.target-bars {
+  display: grid;
+  grid-template-columns: 9rem;
+  gap: 0.12rem;
+  justify-items: stretch;
+}
+
+.target-numbers {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.damage-arcs {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  width: 0;
+  height: 0;
+}
+
+/* A wedge 7 rem above the centre, rotated around the centre to point at the attacker. */
+.damage-arc {
+  position: absolute;
+  left: -2.4rem;
+  top: -7.4rem;
+  width: 4.8rem;
+  height: 0.7rem;
+  transform-origin: 2.4rem 7.4rem;
+  background: radial-gradient(ellipse at 50% 100%, rgba(255, 107, 94, 0.95) 0%, rgba(255, 107, 94, 0.55) 55%, rgba(255, 107, 94, 0) 100%);
+  border-radius: 50% 50% 0 0;
+  animation: arc-fade 1.6s ease-out both;
+}
+
+.damage-numbers {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+}
+
+.damage-number {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  font-size: 1.15rem;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  color: var(--cream);
+  text-shadow:
+    0 1px 0 rgba(0, 0, 0, 0.9),
+    0 0 0.4rem rgba(0, 0, 0, 0.8);
+  animation: dmg-rise 0.9s ease-out both;
+}
+
+.dmg-shield {
+  color: #8fd0ff;
+}
+
+.dmg-head {
+  color: var(--amber);
+  font-size: 1.45rem;
+}
+
+/* ---- elimination feed (top right) ------------------------------------------------------------- */
+
+.feed {
+  position: absolute;
+  top: 2.6rem;
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.2rem;
+}
+
+.feed-entry {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.22rem 0.6rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  background: rgba(12, 26, 36, 0.78);
+  border-right: 0.18rem solid transparent;
+  animation: fade-in 0.2s ease both;
+}
+
+.feed-entry.own-killer {
+  border-right-color: var(--amber);
+}
+
+.feed-entry.own-victim {
+  border-right-color: var(--coral);
+}
+
+.feed-name.own {
+  color: var(--amber);
+}
+
+.feed-verb {
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.feed-icon {
+  width: 1.7rem;
+  height: 1.3rem;
+  fill: var(--muted);
+}
+
+.feed-icon.head {
+  fill: var(--amber);
+}
+
+/* ---- countdown and banners -------------------------------------------------------------------- */
+
+.countdown {
+  position: fixed;
+  left: 50%;
+  top: 26%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.85);
+}
+
+.countdown-label {
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--cream);
+  background: rgba(12, 26, 36, 0.72);
+  padding: 0.25rem 0.8rem;
+  margin-bottom: 0.3rem;
+}
+
+.countdown strong {
+  font-size: 5.5rem;
+  font-weight: 900;
+  line-height: 1;
+  color: var(--amber);
+  animation: count-pop 0.45s ease-out both;
+}
+
+.banner {
+  position: fixed;
+  left: 50%;
+  top: 21%;
+  transform: translateX(-50%);
+  font-size: 1.7rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-align: center;
+  white-space: nowrap;
+  text-shadow:
+    0 2px 0 rgba(0, 0, 0, 0.6),
+    0 0 1rem rgba(0, 0, 0, 0.75);
+  animation: banner-in 0.3s ease-out both;
+}
+
+.banner-go {
+  color: var(--turq);
+}
+
+.banner-elimination {
+  color: var(--cream);
+  font-size: 1.25rem;
+  top: 63%;
+}
+
+.banner-eliminated {
+  color: var(--coral);
+}
+
+.banner-victory {
+  color: var(--amber);
+  font-size: 2.6rem;
+}
+
+/* ---- full-screen layers (drawn under the rest of the HUD) ------------------------------------- */
+
+.scope-overlay,
+.hurt-flash {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+}
+
+.scope-overlay {
+  background: radial-gradient(circle at center, rgba(5, 10, 14, 0) 0, rgba(5, 10, 14, 0) 33vh, rgba(5, 10, 14, 0.94) 34.5vh, rgba(5, 10, 14, 0.98) 100%);
+}
+
+.hurt-flash {
+  background: radial-gradient(ellipse at center, rgba(255, 107, 94, 0) 52%, rgba(255, 107, 94, 0.5) 100%);
+  animation: hurt-fade 0.55s ease-out both;
+}
+
+.compass-ping {
+  position: absolute;
+  top: 0.14rem;
+  width: 0.6rem;
+  height: 0.6rem;
+  background: var(--coral);
+  transform: translateX(-50%) rotate(45deg);
+  box-shadow: 0 0 0.6rem var(--coral);
+}
+
+.compass-ping.edge {
+  opacity: 0.6;
+  border-radius: 50%;
+}
+
+/* With the combat HUD the bottom corners are taken: messages and help move out of the way. */
+.hud-combat .toast {
+  top: 6.4rem;
+}
+
+.hud-combat .hud-help {
+  bottom: 8.6rem;
+}
+
+/* ---- skirmish results ------------------------------------------------------------------------- */
+
+.results.skirmish {
+  min-width: min(27rem, 100%);
+}
+
+.outcome {
+  font-size: 2rem;
+  color: var(--coral);
+  margin-bottom: 0.1rem;
+}
+
+.results.won .outcome {
+  color: var(--amber);
+}
+
+.result-stats {
+  display: grid;
+  grid-template-columns: repeat(5, auto);
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  margin: 0.2rem 0;
+}
+
+.result-stats dt {
+  font-size: 0.6rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.result-stats dd {
+  font-size: 1.1rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.standings ol {
+  grid-template-columns: minmax(0, 1fr);
+  max-height: 9.2rem;
+  overflow-y: auto;
+}
+
+.standings li {
+  display: grid;
+  grid-template-columns: 4.6rem minmax(0, 1fr) 1.6rem;
+  align-items: center;
+}
+
+.standings li span:last-child {
+  text-align: right;
+  font-weight: 800;
+}
+
+.standings li.local {
+  background: rgba(255, 181, 71, 0.2);
+}
+
+.standing-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.results-note {
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+
+/* ---- motion ----------------------------------------------------------------------------------- */
+
+@keyframes hit-pop {
+  0% {
+    opacity: 1;
+    transform: scale(0.65);
+  }
+  35% {
+    opacity: 1;
+    transform: scale(1.12);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1);
+  }
+}
+
+@keyframes arc-fade {
+  0% {
+    opacity: 1;
+  }
+  60% {
+    opacity: 0.85;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes dmg-rise {
+  0% {
+    opacity: 0;
+    margin-top: 0;
+  }
+  12% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    margin-top: -2.6rem;
+  }
+}
+
+@keyframes count-pop {
+  from {
+    opacity: 0.2;
+    transform: scale(1.5);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes banner-in {
+  from {
+    opacity: 0;
+    letter-spacing: 0.3em;
+  }
+  to {
+    opacity: 1;
+    letter-spacing: 0.12em;
+  }
+}
+
+@keyframes hurt-fade {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+/* ---- touch: combat buttons -------------------------------------------------------------------- */
+
+.touch-fire {
+  right: 0.3rem;
+  bottom: 7.2rem;
+  width: 5.4rem;
+  height: 5.4rem;
+  border-color: var(--coral);
+  color: var(--coral);
+}
+
+.touch-aim {
+  right: 6.3rem;
+  bottom: 7.8rem;
+}
+
+.touch-aim.on {
+  background: var(--amber);
+  border-color: var(--amber);
+  color: var(--amber-ink);
+}
+
+.touch-reload {
+  right: 0.9rem;
+  bottom: 13.2rem;
+  width: 3.6rem;
+  height: 3.6rem;
+}
+
+/* On touch screens the thumbs own the bottom corners: vitals go up, the inventory to the middle. */
+.hud-touch.hud-combat .hud-vitals {
+  top: 3.6rem;
+  bottom: auto;
+  width: 11.5rem;
+  padding: 0.5rem 0.75rem 0.55rem;
+  gap: 0.3rem;
+}
+
+.hud-touch.hud-combat .vital {
+  grid-template-columns: 1fr 2rem;
+  gap: 0.4rem;
+}
+
+.hud-touch.hud-combat .vital .hud-label {
+  display: none;
+}
+
+.hud-touch.hud-combat .vital-value {
+  font-size: 0.95rem;
+}
+
+.hud-touch.hud-combat .hud-weapon {
+  right: auto;
+  left: 50%;
+  transform: translateX(-50%);
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.hud-touch.hud-combat .weapon-readout {
+  padding: 0.25rem 0.75rem 0.3rem;
+}
+
+.hud-touch.hud-combat .ammo strong {
+  font-size: 1.35rem;
+}
+
+.hud-touch.hud-combat .feed {
+  top: 3.4rem;
+  right: 3.4rem;
+}
+
+.hud-touch .pickup-prompt {
+  top: calc(50% + 3.6rem);
+}
+
+/* ---- responsive ------------------------------------------------------------------------------- */
+
+@media (max-width: 1100px), (max-height: 640px) {
+  .hud-vitals {
+    width: 15rem;
+  }
+
+  .slot {
+    width: 3.1rem;
+    height: 2.8rem;
+  }
+
+  .slot-icon {
+    width: 2.2rem;
+    height: 1.95rem;
+  }
+
+  .banner {
+    font-size: 1.4rem;
+  }
+
+  .banner-victory {
+    font-size: 2rem;
+  }
+
+  .countdown strong {
+    font-size: 4.4rem;
+  }
+}
+
+/* Phone portrait. */
+@media (max-width: 760px) {
+  .mode-tab {
+    font-size: 0.66rem;
+    padding: 0.5rem 0.2rem;
+  }
+
+  .option-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.3rem;
+  }
+
+  .hud-status {
+    top: 3.5rem;
+    gap: 0.9rem;
+    padding: 0.45rem 0.7rem 0.5rem;
+  }
+
+  .hud-touch.hud-combat .hud-vitals {
+    top: 7.6rem;
+  }
+
+  .hud-touch.hud-combat .feed,
+  .feed {
+    top: 7.6rem;
+    right: 0;
+  }
+
+  .feed-entry {
+    font-size: 0.7rem;
+  }
+
+  .target-info {
+    top: 2.6rem;
+  }
+
+  .hud-combat .toast {
+    top: 12.6rem;
+  }
+
+  .slot {
+    width: 2.9rem;
+    height: 2.6rem;
+  }
+
+  .slot-icon {
+    width: 2rem;
+    height: 1.8rem;
+  }
+
+  .weapon-name {
+    display: none;
+  }
+
+  .banner {
+    font-size: 1.15rem;
+    white-space: normal;
+    width: 92%;
+  }
+
+  .banner-victory {
+    font-size: 1.7rem;
+  }
+
+  .result-stats {
+    grid-template-columns: repeat(3, auto);
+  }
+
+  .hud-touch.hud-combat .hud-weapon {
+    bottom: 0;
+  }
+}
+
+/* Phone landscape. */
+@media (max-height: 520px) {
+  .mode-tabs {
+    margin-bottom: 0.2rem;
+  }
+
+  .mode-tab {
+    padding: 0.38rem 0.3rem;
+  }
+
+  .option-row {
+    margin-top: 0;
+  }
+
+  .hud-status {
+    padding: 0.35rem 0.7rem 0.4rem;
+    gap: 0.9rem;
+  }
+
+  .status-value strong {
+    font-size: 1.2rem;
+  }
+
+  .hud-touch.hud-combat .hud-vitals {
+    top: 3.1rem;
+    width: 10rem;
+  }
+
+  .touch-fire {
+    bottom: 6.3rem;
+    width: 4.8rem;
+    height: 4.8rem;
+  }
+
+  .touch-aim {
+    right: 5.6rem;
+    bottom: 6.6rem;
+    width: 3.7rem;
+    height: 3.7rem;
+  }
+
+  .touch-reload {
+    right: 6rem;
+    bottom: 11.2rem;
+    width: 3.2rem;
+    height: 3.2rem;
+  }
+
+  .slot {
+    width: 2.7rem;
+    height: 2.3rem;
+  }
+
+  .slot-icon {
+    width: 1.9rem;
+    height: 1.6rem;
+  }
+
+  .weapon-name {
+    display: none;
+  }
+
+  .ammo strong {
+    font-size: 1.3rem;
+  }
+
+  .action-progress {
+    top: calc(50% + 2.4rem);
+  }
+
+  .hud-touch .pickup-prompt {
+    top: calc(50% - 5.4rem);
+  }
+
+  .countdown {
+    top: 16%;
+  }
+
+  .countdown strong {
+    font-size: 3.4rem;
+  }
+
+  .banner {
+    top: 15%;
+    font-size: 1.1rem;
+  }
+
+  .banner-victory {
+    font-size: 1.6rem;
+  }
+
+  .banner-elimination {
+    top: 66%;
+    font-size: 0.95rem;
+  }
+
+  .outcome {
+    font-size: 1.4rem;
+  }
+
+  .standings ol {
+    max-height: 4.6rem;
+  }
+
+  .results-note {
+    display: none;
+  }
+
+  .result-stats {
+    margin: 0;
   }
 }

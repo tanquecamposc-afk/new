@@ -7,6 +7,7 @@
  */
 import * as THREE from 'three';
 import type { MoveState } from '../../core/sim/character.js';
+import { itemGeometry, weaponModel } from './models.js';
 import { PALETTE } from './palette.js';
 
 export interface AvatarLook {
@@ -27,6 +28,28 @@ export const DEFAULT_LOOK: AvatarLook = Object.freeze({
   dark: 0x17262f,
 });
 
+/** Looks for practice bots: same silhouette, clearly different colours from the player. */
+export const BOT_LOOKS: readonly AvatarLook[] = Object.freeze([
+  { primary: 0x8f6bff, secondary: 0x2d2a52, accent: PALETTE.coral, scarf: PALETTE.amber, skin: 0xb98463, dark: 0x17182b },
+  { primary: 0x46a6ff, secondary: 0x1f3b5c, accent: PALETTE.amber, scarf: PALETTE.cream, skin: 0xd9a57f, dark: 0x13202e },
+  { primary: 0xff6b5e, secondary: 0x4a2330, accent: PALETTE.amber, scarf: PALETTE.blue, skin: 0x9c6b4c, dark: 0x24141a },
+  { primary: 0x2fd6c3, secondary: 0x1d4f4a, accent: PALETTE.coral, scarf: PALETTE.violet, skin: 0xc98e6b, dark: 0x10262a },
+  { primary: 0xf4ead8, secondary: 0x5b5068, accent: PALETTE.violet, scarf: PALETTE.coral, skin: 0x8a5a3c, dark: 0x221d2b },
+  { primary: 0x4f9a62, secondary: 0x23402c, accent: PALETTE.amber, scarf: PALETTE.coral, skin: 0xe0b08c, dark: 0x122018 },
+  { primary: 0xd9a441, secondary: 0x5a3d1d, accent: PALETTE.blue, scarf: PALETTE.turquoise, skin: 0xb07a55, dark: 0x25190c },
+  { primary: 0xc45ad6, secondary: 0x3a1f47, accent: PALETTE.amber, scarf: PALETTE.cream, skin: 0xd3a17c, dark: 0x1c1024 },
+]);
+
+/** Target dummies on the range: plain, pale and obviously not a runner. */
+export const DUMMY_LOOK: AvatarLook = Object.freeze({
+  primary: 0xe9dfcf,
+  secondary: 0x8f8b99,
+  accent: PALETTE.coral,
+  scarf: 0x8f8b99,
+  skin: 0xcfc6b6,
+  dark: 0x4a4854,
+});
+
 /** Everything the animation needs to know for one rendered frame. */
 export interface AvatarPose {
   moveState: MoveState;
@@ -43,6 +66,38 @@ export interface AvatarPose {
   mantleProgress: number;
   /** Metres walked on foot, from the simulation; keeps feet and footsteps in sync. */
   strideMeters: number;
+  /** What is in hand: a weapon, a consumable or nothing. */
+  heldKind: 'weapon' | 'consumable' | null;
+  /** Weapon id or item id of what is in hand. */
+  heldId: string | null;
+  /** 0 = weapon at the hip, 1 = aiming down sights. */
+  aim: number;
+  /** Seconds since this character last fired (large when it has not). */
+  shotAge: number;
+  /** 0..1 progress of a reload, or -1. */
+  reload: number;
+  /** 0..1 progress of using a consumable, or -1. */
+  use: number;
+}
+
+export function neutralPose(): AvatarPose {
+  return {
+    moveState: 'idle',
+    grounded: true,
+    speed: 0,
+    forwardSpeed: 0,
+    rightSpeed: 0,
+    verticalSpeed: 0,
+    pitch: 0,
+    mantleProgress: -1,
+    strideMeters: 0,
+    heldKind: null,
+    heldId: null,
+    aim: 0,
+    shotAge: 99,
+    reload: -1,
+    use: -1,
+  };
 }
 
 interface Limb {
@@ -55,6 +110,47 @@ const THIGH = 0.42;
 const SHIN = 0.42;
 const UPPER_ARM = 0.28;
 const FOREARM = 0.26;
+/** Shoulder position in the spine's space. */
+const SHOULDER_X = 0.275;
+const SHOULDER_Y = 0.46;
+/** Shoulder-to-palm reach used by the arm solver. */
+const HAND_REACH = FOREARM + 0.03;
+
+let heldMaterial: THREE.MeshStandardMaterial | null = null;
+
+interface ArmSolution {
+  rootX: number;
+  rootZ: number;
+  bend: number;
+}
+
+/**
+ * Two-bone solve for an arm whose shoulder rotates about X then Z and whose elbow is a hinge:
+ * finds the angles that put the hand on a target given relative to the shoulder.
+ */
+function solveArm(tx: number, ty: number, tz: number, out: ArmSolution): ArmSolution {
+  const maxReach = UPPER_ARM + HAND_REACH - 0.004;
+  let distance = Math.hypot(tx, ty, tz);
+  if (distance > maxReach) {
+    const k = maxReach / distance;
+    tx *= k;
+    ty *= k;
+    tz *= k;
+    distance = maxReach;
+  } else if (distance < 0.09) {
+    distance = 0.09;
+  }
+  const cosElbow = (UPPER_ARM * UPPER_ARM + HAND_REACH * HAND_REACH - distance * distance) / (2 * UPPER_ARM * HAND_REACH);
+  const bend = Math.PI - Math.acos(THREE.MathUtils.clamp(cosElbow, -1, 1));
+  const a = UPPER_ARM + HAND_REACH * Math.cos(bend);
+  const b = HAND_REACH * Math.sin(bend);
+  const rootZ = Math.abs(a) > 1e-4 ? Math.asin(THREE.MathUtils.clamp(tx / a, -1, 1)) : 0;
+  const c = a * Math.cos(rootZ);
+  out.rootX = Math.atan2(-tz, -ty) - Math.atan2(b, c);
+  out.rootZ = rootZ;
+  out.bend = bend;
+  return out;
+}
 
 let sharedGeometry: ReturnType<typeof createGeometry> | null = null;
 
@@ -106,6 +202,13 @@ export class Avatar {
   private readonly torsoMesh: THREE.Mesh;
   private readonly blob: THREE.Mesh<THREE.BufferGeometry, THREE.MeshBasicMaterial>;
   private readonly materials: THREE.Material[] = [];
+  /** Where the held item lives, in the avatar's own space (so it always points where it aims). */
+  private readonly mount = new THREE.Group();
+  private readonly heldMeshes = new Map<string, THREE.Mesh>();
+  private heldKey = '';
+  private heldMuzzle: THREE.Vector3 | null = null;
+  private heldSupport: THREE.Vector3 | null = null;
+  private shadowCasting = true;
 
   private phase = 0;
   private lastStride = 0;
@@ -120,6 +223,14 @@ export class Avatar {
   private mantleK = 0;
   private gaitK = 0;
   private hipsYaw = 0;
+  private armedK = 0;
+  private aimK = 0;
+  private loweredK = 0;
+  private useK = 0;
+  private kick = 0;
+  private lastShotAge = 99;
+  private readonly scratch = new THREE.Vector3();
+  private readonly armSolution: ArmSolution = { rootX: 0, rootZ: 0, bend: 0 };
 
   constructor(look: AvatarLook = DEFAULT_LOOK) {
     sharedGeometry ??= createGeometry();
@@ -146,7 +257,7 @@ export class Avatar {
 
     this.group.name = 'avatar';
     this.body.position.y = PELVIS_HEIGHT;
-    this.group.add(this.body);
+    this.group.add(this.body, this.mount);
 
     this.body.add(mesh(geo.pelvis, secondary), mesh(geo.belt, dark));
     this.spine.position.y = 0.05;
@@ -199,9 +310,58 @@ export class Avatar {
   }
 
   setShadowCasting(enabled: boolean): void {
+    this.shadowCasting = enabled;
     this.group.traverse((object) => {
       if (object instanceof THREE.Mesh && object !== this.blob) object.castShadow = enabled;
     });
+  }
+
+  /**
+   * World position of the tip of the held weapon (where its tracers start). Valid after
+   * `update()`; falls back to chest height when nothing is held.
+   */
+  getMuzzleWorld(out: THREE.Vector3): THREE.Vector3 {
+    if (this.heldMuzzle) return this.mount.localToWorld(out.copy(this.heldMuzzle));
+    return this.group.localToWorld(out.set(0, 1.3, -0.3));
+  }
+
+  /** 0 = whole, 1 = gone: an eliminated runner comes apart instead of dropping dead. */
+  setDissolve(amount: number): void {
+    const k = THREE.MathUtils.clamp(1 - amount, 0.001, 1);
+    this.group.scale.set(k, 1 + (1 - k) * 0.35, k);
+  }
+
+  private syncHeld(kind: AvatarPose['heldKind'], id: string | null): void {
+    const key = kind !== null && id !== null ? `${kind}:${id}` : '';
+    if (key === this.heldKey) return;
+    const previous = this.heldMeshes.get(this.heldKey);
+    if (previous) previous.visible = false;
+    this.heldKey = key;
+    this.heldMuzzle = null;
+    this.heldSupport = null;
+    if (key === '' || id === null) return;
+
+    const spec = kind === 'weapon' ? weaponModel(id) : undefined;
+    const geometry = spec ? spec.geometry : itemGeometry(id);
+    if (!geometry) return;
+    let mesh = this.heldMeshes.get(key);
+    if (!mesh) {
+      heldMaterial ??= new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.5, metalness: 0.25 });
+      mesh = new THREE.Mesh(geometry, heldMaterial);
+      mesh.castShadow = this.shadowCasting;
+      // Consumables are modelled standing on the ground: hold them a little lower and smaller.
+      if (!spec) {
+        mesh.scale.setScalar(0.8);
+        mesh.position.set(0, -0.1, 0);
+      }
+      this.mount.add(mesh);
+      this.heldMeshes.set(key, mesh);
+    }
+    mesh.visible = true;
+    if (spec) {
+      this.heldMuzzle = spec.muzzle;
+      this.heldSupport = spec.support;
+    }
   }
 
   /** `groundOffset` = how far below the feet the ground is (keeps the blob on the floor mid-jump). */
@@ -300,20 +460,78 @@ export class Avatar {
     const armUp = climb * (0.5 + 2.2 * reach);
     // Airborne arms counter the legs and spread for balance, wider while falling.
     const airSpread = air * (0.42 + 0.6 * falling);
-    this.setLimb(
-      this.armL,
-      -Math.sin(p) * armSwing * (1 - air) + armUp - air * (0.5 - 0.3 * rising) - slide * 0.9 + crouch * 0.3,
-      elbow + air * 0.6 + climb * 0.4 + crouch * 0.5,
-      -(0.1 + airSpread + idleStance * 0.05),
-      blend,
-    );
-    this.setLimb(
-      this.armR,
-      Math.sin(p) * armSwing * (1 - air) + armUp + air * (0.75 + 0.25 * rising) + slide * 0.55 + crouch * 0.3,
-      elbow + air * 0.6 + climb * 0.4 + crouch * 0.5,
-      0.1 + airSpread + idleStance * 0.05,
-      blend,
-    );
+    let leftRootX = -Math.sin(p) * armSwing * (1 - air) + armUp - air * (0.5 - 0.3 * rising) - slide * 0.9 + crouch * 0.3;
+    let leftBend = elbow + air * 0.6 + climb * 0.4 + crouch * 0.5;
+    let leftRootZ = -(0.1 + airSpread + idleStance * 0.05);
+    let rightRootX = Math.sin(p) * armSwing * (1 - air) + armUp + air * (0.75 + 0.25 * rising) + slide * 0.55 + crouch * 0.3;
+    let rightBend = elbow + air * 0.6 + climb * 0.4 + crouch * 0.5;
+    let rightRootZ = 0.1 + airSpread + idleStance * 0.05;
+
+    /* ---- held weapon or item --------------------------------------------------------------- */
+    this.syncHeld(climbing ? null : pose.heldKind, climbing ? null : pose.heldId);
+    const holding = this.heldKey !== '';
+    this.armedK = blend(this.armedK, holding ? 1 : 0, 14);
+    this.aimK = blend(this.aimK, holding ? pose.aim : 0, 18);
+    const busy = pose.shotAge < 0.4 || pose.aim > 0.1 || pose.reload >= 0 || pose.use >= 0;
+    this.loweredK = blend(this.loweredK, holding && pose.moveState === 'sprint' && !busy ? 1 : 0, 9);
+    this.useK = blend(this.useK, pose.use >= 0 ? 1 : 0, 10);
+    if (pose.shotAge < this.lastShotAge) this.kick = 1; // a new shot
+    this.lastShotAge = pose.shotAge;
+    this.kick = blend(this.kick, 0, 18);
+    this.mount.visible = holding;
+
+    if (this.armedK > 0.01) {
+      const armed = this.armedK;
+      const low = this.loweredK;
+      const aimed = this.aimK * (1 - low);
+      const reloading = pose.reload >= 0 ? Math.sin(Math.min(1, pose.reload) * Math.PI) : 0;
+      const using = this.useK;
+      const isWeapon = pose.heldKind === 'weapon';
+      const lookPitch = pose.pitch * (1 - low) * (1 - using);
+      const chestY = this.body.position.y + 0.05;
+      const pulse = reducedMotion ? 0 : Math.sin(this.time * 9) * 0.012 * using;
+
+      // The mount lives in the avatar's own space: it points exactly where the character aims,
+      // whatever the hips and the torso are doing.
+      this.mount.position.set(
+        THREE.MathUtils.lerp(isWeapon ? 0.17 : 0.1, 0.085, aimed) + low * 0.05 - using * 0.06,
+        chestY + THREE.MathUtils.lerp(0.33, 0.47, aimed) - low * 0.13 - reloading * 0.05 + Math.sin(lookPitch) * 0.13 + using * 0.08 + pulse,
+        THREE.MathUtils.lerp(-0.24, -0.3, aimed) + low * 0.12 + this.kick * 0.05 + using * 0.08,
+      );
+      this.mount.rotation.set(
+        lookPitch - low * 0.4 + this.kick * 0.07 - reloading * 0.25 + using * 0.5,
+        low * 0.75 + reloading * 0.3,
+        reloading * 0.45,
+      );
+
+      // Bladed stance: the support shoulder comes forward, the head keeps facing the target.
+      const blade = 0.28 * armed * (1 - low);
+      this.spine.rotation.y -= blade;
+      this.neck.rotation.y = blade * 0.9;
+
+      this.spine.updateWorldMatrix(true, false);
+      this.mount.updateWorldMatrix(true, true);
+      const hand = this.scratch;
+      // Right hand on the grip.
+      this.spine.worldToLocal(this.mount.localToWorld(hand.set(0, 0, 0)));
+      const right = solveArm(hand.x - SHOULDER_X, hand.y - SHOULDER_Y, hand.z, this.armSolution);
+      rightRootX = THREE.MathUtils.lerp(rightRootX, right.rootX, armed);
+      rightRootZ = THREE.MathUtils.lerp(rightRootZ, right.rootZ, armed);
+      rightBend = THREE.MathUtils.lerp(rightBend, right.bend, armed);
+      // Left hand on the fore-end (or steadying the item); it drops to the magazine while reloading.
+      const support = this.heldSupport;
+      if (support) hand.set(support.x, support.y - reloading * 0.12, support.z + reloading * 0.14);
+      else hand.set(-0.1, 0.02 + using * 0.06, 0.02);
+      this.spine.worldToLocal(this.mount.localToWorld(hand));
+      const left = solveArm(hand.x + SHOULDER_X, hand.y - SHOULDER_Y, hand.z, this.armSolution);
+      leftRootX = THREE.MathUtils.lerp(leftRootX, left.rootX, armed);
+      leftRootZ = THREE.MathUtils.lerp(leftRootZ, left.rootZ, armed);
+      leftBend = THREE.MathUtils.lerp(leftBend, left.bend, armed);
+    } else {
+      this.neck.rotation.y = 0;
+    }
+    this.setLimb(this.armL, leftRootX, leftBend, leftRootZ, blend);
+    this.setLimb(this.armR, rightRootX, rightBend, rightRootZ, blend);
 
     // The scarf lifts with speed and flutters.
     const flutter = reducedMotion ? 0 : Math.sin(this.time * 11) * 0.09 + Math.sin(this.time * 17.3) * 0.05;

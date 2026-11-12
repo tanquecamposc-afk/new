@@ -7,11 +7,14 @@
  *   2. click-and-drag when the browser refuses pointer lock (embedded previews, some frames),
  *   3. arrow keys (keyboard-only play and automated tests),
  *   4. touch: left side of the screen is a movement stick, the rest drags the camera.
+ *
+ * Mouse buttons are treated as keys named `Mouse0` / `Mouse1` / `Mouse2`, so firing and aiming
+ * go through the same bindings as everything else.
  */
 import { DEFAULT_CAMERA } from '../../core/sim/config.js';
-import type { InputFrame } from '../../core/sim/input.js';
+import { NO_SLOT, type InputFrame } from '../../core/sim/input.js';
 import { clamp, wrapAngle } from '../../core/sim/math.js';
-import type { Bindings, GameSettings, InputAction } from '../../core/meta/settings.js';
+import { SLOT_ACTIONS, type Bindings, type GameSettings, type InputAction } from '../../core/meta/settings.js';
 
 const RADIANS_PER_PIXEL = 0.0022;
 const KEY_LOOK_YAW_SPEED = 2.4;
@@ -48,6 +51,8 @@ export interface InputCallbacks {
   onLookModeChange(mode: LookMode): void;
   /** A touch screen is being used: the app shows on-screen controls. */
   onTouchDetected(): void;
+  /** Mouse wheel moved while playing: +1 = next inventory slot, -1 = previous. */
+  onWheel(direction: number): void;
 }
 
 export class InputManager {
@@ -60,13 +65,24 @@ export class InputManager {
 
   private element: HTMLElement | null = null;
   private readonly down = new Set<string>();
+  /**
+   * Keys and buttons pressed since the last sample. A press shorter than a frame (a quick click
+   * on a slow machine) is still seen by the simulation for one tick instead of being lost.
+   */
+  private readonly tapped = new Set<string>();
   /** Actions held through on-screen buttons. */
   private readonly virtual = new Set<InputAction>();
+  /** On-screen buttons tapped since the last sample (same idea as `tapped`). */
+  private readonly virtualTapped = new Set<InputAction>();
   private bindings: Bindings;
   private sensitivity: number;
   private invertY: boolean;
   private toggleCrouch: boolean;
   private crouchLatched = false;
+  private toggleAim: boolean;
+  private aimLatched = false;
+  /** Slot asked for since the last sample; sent to the simulation once. */
+  private pendingSlot = NO_SLOT;
   private wasLocked = false;
   private lockedAt = 0;
   private lockMovesToSkip = 0;
@@ -94,6 +110,7 @@ export class InputManager {
     this.sensitivity = settings.controls.mouseSensitivity;
     this.invertY = settings.controls.invertY;
     this.toggleCrouch = settings.controls.toggleCrouch;
+    this.toggleAim = settings.controls.toggleAim;
   }
 
   applySettings(settings: GameSettings): void {
@@ -102,6 +119,8 @@ export class InputManager {
     this.invertY = settings.controls.invertY;
     if (this.toggleCrouch !== settings.controls.toggleCrouch) this.crouchLatched = false;
     this.toggleCrouch = settings.controls.toggleCrouch;
+    if (this.toggleAim !== settings.controls.toggleAim) this.aimLatched = false;
+    this.toggleAim = settings.controls.toggleAim;
   }
 
   /** Starts listening. `element` is the surface that captures the pointer (the canvas host). */
@@ -120,6 +139,9 @@ export class InputManager {
       if (document.hidden) this.releaseAll();
     });
     listen(document, 'mousemove', (event: MouseEvent) => this.onMouseMove(event));
+    listen(document, 'mousedown', (event: MouseEvent) => this.onMouseButton(event, true));
+    listen(document, 'mouseup', (event: MouseEvent) => this.onMouseButton(event, false));
+    listen(element, 'wheel', (event: WheelEvent) => this.onWheel(event));
     listen(document, 'pointerlockchange', () => this.onPointerLockChange());
     listen(document, 'pointerlockerror', () => this.setLookMode('drag'));
     listen(element, 'pointerdown', (event: PointerEvent) => this.onPointerDown(event));
@@ -185,6 +207,16 @@ export class InputManager {
     this.pitch = clamp(pitch, DEFAULT_CAMERA.minPitch, DEFAULT_CAMERA.maxPitch);
   }
 
+  /** Nudges the view (weapon recoil reported by the simulation). */
+  addLook(yawDelta: number, pitchDelta: number): void {
+    this.setLook(this.yaw + yawDelta, this.pitch + pitchDelta);
+  }
+
+  /** Asks the simulation to select an inventory slot on the next tick. */
+  requestSlot(slot: number): void {
+    if (this.gameplayEnabled && Number.isInteger(slot) && slot >= 0 && slot < SLOT_ACTIONS.length) this.pendingSlot = slot;
+  }
+
   /** Presses or releases an action from an on-screen button. */
   setVirtualButton(action: InputAction, pressed: boolean): void {
     if (pressed) {
@@ -193,6 +225,7 @@ export class InputManager {
         return;
       }
       this.virtual.add(action);
+      if (this.gameplayEnabled) this.virtualTapped.add(action);
     } else {
       this.virtual.delete(action);
     }
@@ -219,6 +252,12 @@ export class InputManager {
       out.jump = false;
       out.sprint = false;
       out.crouch = false;
+      out.fire = false;
+      out.ads = false;
+      out.reload = false;
+      out.interact = false;
+      out.slot = NO_SLOT;
+      this.pendingSlot = NO_SLOT;
       return out;
     }
     const keyZ = (this.isActive('moveForward') ? 1 : 0) - (this.isActive('moveBack') ? 1 : 0);
@@ -229,14 +268,26 @@ export class InputManager {
     const stickSprint = this.stickZ > 0.3 && Math.hypot(this.stickX, this.stickZ) >= STICK_SPRINT_THRESHOLD;
     out.sprint = this.isActive('sprint') || stickSprint;
     out.crouch = this.toggleCrouch ? this.crouchLatched : this.isActive('crouch');
+    out.fire = this.isActive('fire');
+    out.ads = this.toggleAim ? this.aimLatched : this.isActive('aim');
+    out.reload = this.isActive('reload');
+    out.interact = this.isActive('interact');
+    out.slot = this.pendingSlot;
+    this.pendingSlot = NO_SLOT;
+    this.tapped.clear();
+    this.virtualTapped.clear();
     return out;
   }
 
   /** Drops every held key, button and pointer (window lost focus, pause...). */
   releaseAll(): void {
     this.down.clear();
+    this.tapped.clear();
     this.virtual.clear();
+    this.virtualTapped.clear();
     this.crouchLatched = false;
+    this.aimLatched = false;
+    this.pendingSlot = NO_SLOT;
     this.lookPointerId = null;
     this.endStick();
   }
@@ -244,9 +295,12 @@ export class InputManager {
   /* ---------------------------------------------------------------------------------------- */
 
   private isActive(action: InputAction): boolean {
-    if (this.virtual.has(action)) return true;
+    if (this.virtual.has(action) || this.virtualTapped.has(action)) return true;
     const codes = this.bindings[action];
-    for (let i = 0; i < codes.length; i++) if (this.down.has(codes[i]!)) return true;
+    for (let i = 0; i < codes.length; i++) {
+      const code = codes[i]!;
+      if (this.down.has(code) || this.tapped.has(code)) return true;
+    }
     return false;
   }
 
@@ -287,8 +341,46 @@ export class InputManager {
     if (event.code === 'Escape') this.callbacks.onEscape();
     if (typing) return;
 
-    if (this.toggleCrouch && this.gameplayEnabled && actions.includes('crouch')) this.crouchLatched = !this.crouchLatched;
-    this.down.add(event.code);
+    this.press(event.code, actions);
+  }
+
+  /** Registers a key or mouse button going down. */
+  private press(code: string, actions: readonly InputAction[]): void {
+    if (this.gameplayEnabled) {
+      if (this.toggleCrouch && actions.includes('crouch')) this.crouchLatched = !this.crouchLatched;
+      if (this.toggleAim && actions.includes('aim')) this.aimLatched = !this.aimLatched;
+      for (const action of actions) {
+        const slot = SLOT_ACTIONS.indexOf(action);
+        if (slot >= 0) this.pendingSlot = slot;
+      }
+      this.tapped.add(code);
+    }
+    this.down.add(code);
+  }
+
+  private onMouseButton(event: MouseEvent, pressed: boolean): void {
+    const code = `Mouse${event.button}`;
+    if (!pressed) {
+      this.down.delete(code);
+      return;
+    }
+    // Clicks on menus and on-screen buttons are not gameplay.
+    if (!this.gameplayEnabled || this.touchMode) return;
+    const target = event.target;
+    if (target instanceof Element && target.closest('button, a, input, select, textarea, [role="dialog"]')) return;
+    const actions = this.actionsFor(code);
+    for (const action of actions) {
+      if (EDGE_ACTIONS.includes(action)) this.callbacks.onAction(action);
+    }
+    // Middle click would otherwise start the browser's auto-scroll.
+    if (event.button === 1) event.preventDefault();
+    this.press(code, actions);
+  }
+
+  private onWheel(event: WheelEvent): void {
+    if (!this.gameplayEnabled || event.deltaY === 0) return;
+    event.preventDefault();
+    this.callbacks.onWheel(event.deltaY > 0 ? 1 : -1);
   }
 
   private onKeyUp(event: KeyboardEvent): void {

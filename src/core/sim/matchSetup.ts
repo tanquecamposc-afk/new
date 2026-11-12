@@ -29,17 +29,17 @@ export const BOT_CALLSIGNS: readonly string[] = [
   'Vega',
   'Rayo',
   'Nube',
-  'Tizon',
+  'Tizón',
   'Lince',
   'Eco',
   'Brasa',
   'Musgo',
   'Cierzo',
-  'Opalo',
+  'Ópalo',
   'Nogal',
   'Zarza',
   'Faro',
-  'Garua',
+  'Garúa',
 ];
 
 export interface MatchSetup {

@@ -8,6 +8,8 @@ import type { RampDirection } from '../../core/sim/world.js';
 
 type V3 = readonly [number, number, number];
 
+const CEILING_NORMAL: V3 = [0, 1, 0];
+
 export class MeshBuilder {
   private readonly positions: number[] = [];
   private readonly normals: number[] = [];
@@ -26,11 +28,11 @@ export class MeshBuilder {
    * Quad with corners given counter-clockwise as seen from outside: a = bottom-left,
    * b = bottom-right, c = top-right, d = top-left. The normal comes from the winding.
    */
-  quad(a: V3, b: V3, c: V3, d: V3, hex: number, shade = 1): void {
+  quad(a: V3, b: V3, c: V3, d: V3, hex: number, shade = 1, normal?: V3): void {
     const width = Math.hypot(b[0] - a[0], b[1] - a[1], b[2] - a[2]) / this.tile;
     const height = Math.hypot(d[0] - a[0], d[1] - a[1], d[2] - a[2]) / this.tile;
     const base = this.positions.length / 3;
-    const n = normalOf(a, b, d);
+    const n = normal ?? normalOf(a, b, d);
     this.color.setHex(hex).multiplyScalar(shade);
     const { r, g, b: blue } = this.color;
     const corners: readonly V3[] = [a, b, c, d];
@@ -100,7 +102,9 @@ export class MeshBuilder {
     this.quad([minX, minY, maxZ], [maxX, minY, maxZ], [maxX, maxY, maxZ], [minX, maxY, maxZ], hex, 0.97);
     this.quad([maxX, minY, minZ], [minX, minY, minZ], [minX, maxY, minZ], [maxX, maxY, minZ], hex, 0.88);
     this.quad([minX, maxY, maxZ], [maxX, maxY, maxZ], [maxX, maxY, minZ], [minX, maxY, minZ], hex, 1.05);
-    if (minY > 0.05) this.quad([minX, minY, minZ], [maxX, minY, minZ], [maxX, minY, maxZ], [minX, minY, maxZ], hex, 0.7);
+    // Undersides (ceilings, the belly of a deck) are shaded as if they caught the sky: with a
+    // true downward normal they get almost no light and read as a black hole from below.
+    if (minY > 0.05) this.quad([minX, minY, minZ], [maxX, minY, minZ], [maxX, minY, maxZ], [minX, minY, maxZ], hex, 0.6, CEILING_NORMAL);
   }
 
   /** Solid wedge: `lowY` at the start of the run, `highY` at the end, in direction `dir`. */

@@ -4,12 +4,20 @@ Shooter 3D original en tercera persona para navegador, construido por fases. **N
 de ningún juego existente**: nombre, universo, personajes, mapas, interfaz y sonido son propios,
 y todo el arte se genera por código (no hay modelos, texturas ni audio de terceros).
 
-**Estado: fase 1 de 6 completada.** Se puede jugar un circuito de práctica en solitario que
-ejercita todo el movimiento. Combate, bots, partida Royale y el resto están planificados y aún no
-existen — ver [`ROADMAP.md`](ROADMAP.md) y el estado verificable en
-[`docs/PROGRESO.md`](docs/PROGRESO.md).
+**Estado: fase 2 de 6 completada.** Hay tres experiencias jugables en solitario:
 
-![Partida en el Campo de Pruebas](docs/evidence/fase1-partida-1920x1080.jpg)
+| Experiencia | Mapa | Qué es |
+|---|---|---|
+| **Circuito de Anclas** | Campo de Pruebas | Contrarreloj de movimiento: esprintar, saltar, trepar, deslizarse |
+| **Galería de Tiro** | Galería de Tiro | Práctica libre con las cinco armas contra maniquíes a 10, 25, 50 y 80 m |
+| **Escaramuza** | Cantera Ámbar | Todos contra todos frente a 3, 5, 7 u 11 bots de práctica; gana el último en pie |
+
+Los rivales de la Escaramuza son **bots**, y el juego lo dice en el lobby, en el HUD y en los
+resultados. No hay multijugador todavía. La partida Royale con zona, botín y construcción, los
+demás modos, la taquilla y el editor están planificados y aún no existen — ver
+[`ROADMAP.md`](ROADMAP.md) y el estado verificable en [`docs/PROGRESO.md`](docs/PROGRESO.md).
+
+![Escaramuza en la Cantera Ámbar](docs/evidence/fase2-escaramuza-1920x1080.jpg)
 
 ## Jugar
 
@@ -32,9 +40,17 @@ npm run dev
 | Saltar y trepar bordes | `Espacio` | Botón ▲ |
 | Esprintar | `Mayús` | Empujar el stick a fondo |
 | Agacharse / deslizarse | `C` (deslizarse si vas esprintando) | Botón ▼ |
+| Disparar / usar objeto | Clic izquierdo | Botón de disparo |
+| Apuntar | Clic derecho (mantener, o alternar en Ajustes) | Botón de mira (alterna) |
+| Recargar | `R` | Botón de recarga |
+| Recoger | `E` | Tocar el aviso «Recoger…» |
+| Cambiar de casilla | `1`–`5` o rueda del ratón | Tocar la casilla |
 | Pausa | `P` o `Esc` | Botón de pausa |
 | Reiniciar circuito | `Retroceso` | Menú de pausa |
 | Ayuda | `H` | — |
+
+Añade `?seed=123` a la dirección para repetir exactamente la misma Escaramuza (mismos puntos de
+aparición, equipo y decisiones de los bots).
 
 ## Comandos
 
@@ -58,9 +74,10 @@ npx playwright install chromium
 
 ```text
 src/core/         Dominio puro: sin DOM, sin Three.js, sin reloj ni azar implícitos.
-  sim/            Mundo de colisiones, controlador del personaje, cámara, simulación a 60 Hz.
-  maps/           Mapas como datos (Campo de Pruebas).
-  meta/           Ajustes y guardado versionado con validación.
+  sim/            Mundo de colisiones, personaje, cámara, armas, inventario, botín, navegación,
+                  bots y reglas por modo: la simulación completa a 60 Hz.
+  maps/           Mapas como datos (Campo de Pruebas, Galería de Tiro, Cantera Ámbar).
+  meta/           Ajustes y guardado versionado con validación y migración.
   *.ts            Reglas del kit: daño, tormenta, Pilares, Recarga, XP, moneda.
 src/client/       Navegador: render (Three.js), entrada, audio, interfaz (React).
 tests/            Pruebas unitarias (node:test) y tests/e2e (Playwright).

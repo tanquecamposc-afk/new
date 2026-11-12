@@ -171,3 +171,17 @@ export const DUST: BurstOptions = { count: 4, color: 0xdcc9a8, speed: [0.3, 1.1]
 export const LANDING: BurstOptions = { count: 14, color: 0xdcc9a8, speed: [1.2, 3.2], lift: 0.6, life: [0.4, 0.8], size: [0.16, 0.36], gravity: 0.6, vertical: 0.12, opacity: 0.5 };
 export const ANCHOR_BURST: BurstOptions = { count: 40, color: 0xffc766, speed: [2.5, 7], lift: 1.5, life: [0.5, 1.1], size: [0.1, 0.24], gravity: 4, vertical: 0.9, opacity: 0.95 };
 export const SLIDE_SPRAY: BurstOptions = { count: 2, color: 0xe6d3b3, speed: [0.5, 1.6], lift: 0.7, life: [0.25, 0.5], size: [0.12, 0.26], gravity: 0.5, vertical: 0.1, opacity: 0.45 };
+
+/* ---- combat ---------------------------------------------------------------------------------- */
+export const MUZZLE_FLASH: BurstOptions = { count: 5, color: 0xffe2a3, speed: [0.4, 2.2], lift: 0, life: [0.04, 0.09], size: [0.22, 0.46], gravity: 0, vertical: 1, opacity: 0.95 };
+export const IMPACT_DUST: BurstOptions = { count: 6, color: 0xdcc9a8, speed: [0.8, 2.6], lift: 0.9, life: [0.25, 0.5], size: [0.1, 0.22], gravity: 2, vertical: 0.5, opacity: 0.6 };
+export const IMPACT_CHIPS: BurstOptions = { count: 7, color: 0xcfc8ba, speed: [1.5, 4], lift: 0.6, life: [0.2, 0.45], size: [0.06, 0.14], gravity: 6, vertical: 0.8, opacity: 0.9 };
+export const IMPACT_WOOD: BurstOptions = { ...IMPACT_CHIPS, color: 0xc48a45 };
+export const IMPACT_SPARKS: BurstOptions = { count: 8, color: 0xffd98a, speed: [2.5, 6], lift: 0.4, life: [0.12, 0.3], size: [0.05, 0.11], gravity: 5, vertical: 0.9, opacity: 1 };
+/** Hits on a runner break off light, not blood: blue for shield, warm white for health. */
+export const HIT_SHIELD: BurstOptions = { count: 9, color: 0x7fc4ff, speed: [1.5, 4.5], lift: 0.5, life: [0.2, 0.4], size: [0.07, 0.17], gravity: 1, vertical: 1, opacity: 0.95 };
+export const HIT_BODY: BurstOptions = { count: 8, color: 0xfff0c4, speed: [1.5, 4], lift: 0.5, life: [0.18, 0.36], size: [0.07, 0.15], gravity: 2, vertical: 1, opacity: 0.95 };
+export const ELIMINATION_SHARDS: BurstOptions = { count: 44, color: 0x2fd6c3, speed: [1.5, 6.5], lift: 2.4, life: [0.5, 1.2], size: [0.1, 0.26], gravity: -1.2, vertical: 0.9, opacity: 0.95 };
+export const ELIMINATION_GLOW: BurstOptions = { count: 18, color: 0xffc766, speed: [0.5, 3], lift: 3, life: [0.6, 1.3], size: [0.14, 0.32], gravity: -2, vertical: 0.6, opacity: 0.9 };
+export const PICKUP_SPARKLE: BurstOptions = { count: 8, color: 0xfff3d6, speed: [0.6, 2.2], lift: 1.6, life: [0.25, 0.5], size: [0.06, 0.13], gravity: 1, vertical: 0.6, opacity: 0.9 };
+export const HEAL_SPARKLE: BurstOptions = { count: 12, color: 0x8ef0c8, speed: [0.4, 1.6], lift: 1.8, life: [0.4, 0.8], size: [0.08, 0.16], gravity: -0.6, vertical: 0.4, opacity: 0.9 };

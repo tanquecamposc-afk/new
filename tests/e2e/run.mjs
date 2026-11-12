@@ -11,6 +11,7 @@
 import assert from 'node:assert/strict';
 import { copyFile, mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
+import { runCombatSessions } from './combat.mjs';
 import { ROOT, launchBrowser, openGame, startStaticServer, state, waitForState } from './lib.mjs';
 
 const EVIDENCE = process.argv.includes('--evidence');
@@ -724,6 +725,9 @@ async function main() {
         await mobile.waitForSelector('[data-testid=lobby]');
       });
       await phone.close();
+
+      /* Sessions 5-7: phase 2 (firing range, skirmish against bots, combat by touch). */
+      await runCombatSessions({ browser, serverUrl: server.url, packedUrl: packed.url, step, shot, waitTicks, Keys, drive, problems, FAST_SAVE });
     } finally {
       await packed.close();
     }

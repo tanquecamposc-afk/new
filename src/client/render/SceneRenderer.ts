@@ -3,12 +3,34 @@
  * tells it (camera, character pose, course state) and never mutates gameplay state.
  */
 import * as THREE from 'three';
+import type { LootItem } from '../../core/sim/loot.js';
 import type { MapDefinition } from '../../core/sim/map.js';
+import type { SurfaceMaterial } from '../../core/sim/world.js';
 import type { QualityPreset } from '../../core/meta/settings.js';
-import { Avatar, type AvatarPose } from './avatar.js';
+import { Avatar, BOT_LOOKS, DEFAULT_LOOK, DUMMY_LOOK, type AvatarPose } from './avatar.js';
 import { CheckpointView } from './checkpoints.js';
+import { Tracers } from './effects.js';
+import { LootView } from './lootView.js';
 import { PALETTE, SUN_DIRECTION } from './palette.js';
-import { ANCHOR_BURST, DUST, LANDING, Particles, SLIDE_SPRAY, type BurstOptions } from './particles.js';
+import {
+  ANCHOR_BURST,
+  DUST,
+  ELIMINATION_GLOW,
+  ELIMINATION_SHARDS,
+  HEAL_SPARKLE,
+  HIT_BODY,
+  HIT_SHIELD,
+  IMPACT_CHIPS,
+  IMPACT_DUST,
+  IMPACT_SPARKS,
+  IMPACT_WOOD,
+  LANDING,
+  MUZZLE_FLASH,
+  PICKUP_SPARKLE,
+  Particles,
+  SLIDE_SPRAY,
+  type BurstOptions,
+} from './particles.js';
 import { Sky } from './sky.js';
 import { createDetailTextures, createGlowTexture, type DetailTexture } from './textures.js';
 import { WorldView } from './worldView.js';
@@ -61,6 +83,23 @@ export interface PlayerView {
   /** Distance from the feet down to the ground (0 when standing). */
   groundOffset: number;
   visible: boolean;
+  /** 0 = whole, 1 = dissolved (eliminated). */
+  dissolve: number;
+}
+
+/** Another participant (a bot or a target dummy) to draw this frame. */
+export interface RemoteView extends PlayerView {
+  id: string;
+  /** Index into the bot looks, or -1 for a target dummy. */
+  look: number;
+}
+
+export interface ScreenPoint {
+  /** 0..1 from the left / top of the view. */
+  x: number;
+  y: number;
+  /** False when the point is behind the camera or outside the view. */
+  visible: boolean;
 }
 
 export interface FrameView {
@@ -68,6 +107,11 @@ export interface FrameView {
   frameSeconds: number;
   camera: CameraView;
   player: PlayerView;
+  /** Everyone else, in a pooled array: only the first `otherCount` entries are valid. */
+  others: RemoteView[];
+  otherCount: number;
+  /** Items on the ground, straight from the simulation (null in the lobby). */
+  loot: Iterable<LootItem> | null;
   /** Index of the next course anchor, or -1 when there is no course to show. */
   nextAnchor: number;
   reducedMotion: boolean;
@@ -99,8 +143,15 @@ export class SceneRenderer {
   private readonly rimLight = new THREE.PointLight(PALETTE.violet, 0, 12, 1.6);
   private readonly sky = new Sky();
   private readonly avatar = new Avatar();
+  /** Avatars of the other participants, by id. `seen` marks the ones drawn this frame. */
+  private readonly remotes = new Map<string, { avatar: Avatar; seen: boolean }>();
+  private readonly lootView = new LootView();
+  private readonly tracers = new Tracers();
+  private readonly muzzleLight = new THREE.PointLight(0xffd9a0, 0, 9, 1.8);
+  private muzzleLightTime = 0;
   private readonly glow: THREE.Texture;
   private readonly particles: Particles;
+  private readonly projected = new THREE.Vector3();
   private textures!: Record<DetailTexture, THREE.CanvasTexture>;
   private world: WorldView | null = null;
   private checkpoints: CheckpointView | null = null;
@@ -128,7 +179,19 @@ export class SceneRenderer {
 
     this.camera.rotation.order = 'YXZ';
     this.scene.fog = new THREE.Fog(PALETTE.fog, 60, this.profile.viewDistance);
-    this.scene.add(this.sky.mesh, this.hemisphere, this.sun, this.sun.target, this.keyLight, this.rimLight, this.avatar.group, this.particles.points);
+    this.scene.add(
+      this.sky.mesh,
+      this.hemisphere,
+      this.sun,
+      this.sun.target,
+      this.keyLight,
+      this.rimLight,
+      this.muzzleLight,
+      this.avatar.group,
+      this.lootView.group,
+      this.tracers.mesh,
+      this.particles.points,
+    );
 
     this.sun.shadow.bias = -0.0004;
     this.sun.shadow.normalBias = 0.045;
@@ -193,6 +256,18 @@ export class SceneRenderer {
     this.checkpoints?.dispose();
     this.checkpoints = null;
     this.map = null;
+    this.clearRemotes();
+  }
+
+  /** Id of the map currently loaded, or null. */
+  get mapId(): string | null {
+    return this.map ? this.map.id : null;
+  }
+
+  /** Drops the avatars of the other participants (between matches). */
+  clearRemotes(): void {
+    for (const remote of this.remotes.values()) remote.avatar.dispose();
+    this.remotes.clear();
   }
 
   setTranslator(translate: (key: string) => string): void {
@@ -226,8 +301,34 @@ export class SceneRenderer {
     if (player.visible) {
       this.avatar.group.position.set(player.x, player.y, player.z);
       this.avatar.group.rotation.y = player.yaw;
+      this.avatar.setDissolve(player.dissolve);
       this.avatar.update(player.pose, view.frameSeconds, view.reducedMotion, player.groundOffset);
     }
+
+    // Everyone else: reuse an avatar per participant, hide the ones not in this frame.
+    for (const remote of this.remotes.values()) remote.seen = false;
+    for (let i = 0; i < view.otherCount; i++) {
+      const other = view.others[i]!;
+      let remote = this.remotes.get(other.id);
+      if (!remote) {
+        const look = other.look < 0 ? DUMMY_LOOK : (BOT_LOOKS[other.look % BOT_LOOKS.length] ?? DEFAULT_LOOK);
+        const avatar = new Avatar(look);
+        avatar.setShadowCasting(this.profile.shadows);
+        avatar.setBlobShadow(!this.profile.shadows);
+        this.scene.add(avatar.group);
+        remote = { avatar, seen: true };
+        this.remotes.set(other.id, remote);
+      }
+      remote.seen = true;
+      const group = remote.avatar.group;
+      group.visible = other.visible;
+      if (!other.visible) continue;
+      group.position.set(other.x, other.y, other.z);
+      group.rotation.y = other.yaw;
+      remote.avatar.setDissolve(other.dissolve);
+      remote.avatar.update(other.pose, view.frameSeconds, view.reducedMotion, other.groundOffset);
+    }
+    for (const remote of this.remotes.values()) if (!remote.seen) remote.avatar.group.visible = false;
 
     // The shadow frustum follows the player in 2 m steps so shadow edges do not swim.
     if (this.profile.shadows) {
@@ -252,7 +353,13 @@ export class SceneRenderer {
     this.sky.update(camera.position, view.timeSeconds);
     this.world?.update(view.reducedMotion ? 0 : view.timeSeconds);
     this.checkpoints?.update(view.nextAnchor < 0 ? Number.MAX_SAFE_INTEGER : view.nextAnchor, view.timeSeconds, view.frameSeconds, view.reducedMotion);
+    this.lootView.update(view.loot, view.timeSeconds, view.reducedMotion);
+    this.tracers.update(view.frameSeconds);
     this.particles.update(view.frameSeconds);
+    if (this.muzzleLightTime > 0) {
+      this.muzzleLightTime -= view.frameSeconds;
+      this.muzzleLight.intensity = this.muzzleLightTime > 0 ? 28 * (this.muzzleLightTime / 0.06) : 0;
+    }
 
     this.renderer.render(this.scene, camera);
     this.stats.drawCalls = this.renderer.info.render.calls;
@@ -278,10 +385,80 @@ export class SceneRenderer {
     this.particles.burst(x, y, z, ANCHOR_BURST);
   }
 
+  /**
+   * World position of the muzzle of a participant's weapon (`null` = the local player), as posed
+   * in the last rendered frame. Returns false when that participant is not being drawn.
+   */
+  muzzleOf(id: string | null, out: { x: number; y: number; z: number }): boolean {
+    const avatar = id === null ? this.avatar : this.remotes.get(id)?.avatar;
+    if (!avatar || !avatar.group.visible) return false;
+    avatar.getMuzzleWorld(this.projected);
+    out.x = this.projected.x;
+    out.y = this.projected.y;
+    out.z = this.projected.z;
+    return true;
+  }
+
+  /** A shot leaving a barrel: flash, brief light (for the local player) and one streak per pellet. */
+  muzzleFlash(x: number, y: number, z: number, light: boolean): void {
+    this.particles.burst(x, y, z, MUZZLE_FLASH);
+    if (light) {
+      this.muzzleLight.position.set(x, y, z);
+      this.muzzleLightTime = 0.06;
+      this.muzzleLight.intensity = 28;
+    }
+  }
+
+  tracer(ax: number, ay: number, az: number, bx: number, by: number, bz: number, own: boolean): void {
+    this.tracers.add(ax, ay, az, bx, by, bz, own ? 0xffe6b0 : 0xff9a7a, own ? 0.03 : 0.04);
+  }
+
+  /** A round hitting the world. */
+  impact(x: number, y: number, z: number, material: SurfaceMaterial): void {
+    const options =
+      material === 'metal' || material === 'energy'
+        ? IMPACT_SPARKS
+        : material === 'wood'
+          ? IMPACT_WOOD
+          : material === 'grass' || material === 'dirt' || material === 'sand'
+            ? IMPACT_DUST
+            : IMPACT_CHIPS;
+    this.particles.burst(x, y, z, options);
+  }
+
+  /** A round hitting a runner: light breaks off (blue while the shield holds). */
+  runnerHit(x: number, y: number, z: number, shield: boolean): void {
+    this.particles.burst(x, y, z, shield ? HIT_SHIELD : HIT_BODY);
+  }
+
+  eliminationBurst(x: number, y: number, z: number): void {
+    this.particles.burst(x, y + 1, z, ELIMINATION_SHARDS);
+    this.particles.burst(x, y + 0.6, z, ELIMINATION_GLOW);
+  }
+
+  pickupSparkle(x: number, y: number, z: number): void {
+    this.particles.burst(x, y + 0.4, z, PICKUP_SPARKLE);
+  }
+
+  healSparkle(x: number, y: number, z: number): void {
+    this.particles.burst(x, y + 1, z, HEAL_SPARKLE);
+  }
+
+  /** Where a world position falls on the screen, using the camera of the last rendered frame. */
+  project(x: number, y: number, z: number, out: ScreenPoint): ScreenPoint {
+    const v = this.projected.set(x, y, z).project(this.camera);
+    out.x = v.x * 0.5 + 0.5;
+    out.y = 0.5 - v.y * 0.5;
+    out.visible = v.z > -1 && v.z < 1 && out.x >= 0 && out.x <= 1 && out.y >= 0 && out.y <= 1;
+    return out;
+  }
+
   dispose(): void {
     this.resizeObserver.disconnect();
     this.clearMap();
     this.avatar.dispose();
+    this.lootView.dispose();
+    this.tracers.dispose();
     this.particles.dispose();
     this.sky.dispose();
     this.glow.dispose();
@@ -358,6 +535,10 @@ export class SceneRenderer {
     }
     this.avatar.setShadowCasting(profile.shadows);
     this.avatar.setBlobShadow(!profile.shadows);
+    for (const remote of this.remotes.values()) {
+      remote.avatar.setShadowCasting(profile.shadows);
+      remote.avatar.setBlobShadow(!profile.shadows);
+    }
     this.particles.enabled = profile.particles;
     this.sky.setClouds(profile.clouds);
     const fog = this.scene.fog as THREE.Fog;

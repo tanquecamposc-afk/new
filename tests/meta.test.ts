@@ -7,6 +7,7 @@ import {
   formatTicks,
   parseSave,
   recordCourseResult,
+  recordSkirmishResult,
   sanitizeSave,
   sanitizeSettings,
 } from '../src/core/index.js';
@@ -95,6 +96,56 @@ test('course records: only a faster time replaces the best, every finish is coun
   assert.throws(() => recordCourseResult(start, 'training_grounds', 0));
   assert.throws(() => recordCourseResult(start, 'training_grounds', 1.5));
   assert.throws(() => recordCourseResult(start, '../etc', 100));
+});
+
+test('save file: version 1 is migrated, skirmish stats are validated and recorded', () => {
+  // A phase 1 save keeps everything it had and gains the new fields at their defaults.
+  const migrated = sanitizeSave({
+    schemaVersion: 1,
+    updatedAt: 99,
+    settings: { locale: 'en', controls: { bindings: { jump: ['KeyJ'] } } },
+    profile: { alias: 'Vieja', coursesCompleted: 4, bestCourseTicks: { training_grounds: 2862 } },
+  });
+  assert.equal(migrated.schemaVersion, 2);
+  assert.equal(migrated.profile.alias, 'Vieja');
+  assert.deepEqual(migrated.profile.bestCourseTicks, { training_grounds: 2862 });
+  assert.deepEqual(migrated.profile.skirmish, { played: 0, wins: 0, eliminations: 0, bestPlacement: null });
+  assert.deepEqual(migrated.profile.skirmishOptions, { bots: 5, difficulty: 'easy' });
+  assert.equal(migrated.profile.lastMode, 'course');
+  // Old bindings survive and the actions that did not exist yet get their defaults.
+  assert.deepEqual(migrated.settings.controls.bindings.jump, ['KeyJ']);
+  assert.deepEqual(migrated.settings.controls.bindings.fire, ['Mouse0']);
+  assert.deepEqual(migrated.settings.controls.bindings.reload, ['KeyR']);
+  assert.equal(migrated.settings.controls.toggleAim, false);
+
+  // Tampered statistics are repaired: no more wins than matches, no impossible values.
+  const tampered = sanitizeSave({
+    schemaVersion: 2,
+    profile: {
+      skirmish: { played: 3, wins: 50, eliminations: -4, bestPlacement: 0 },
+      skirmishOptions: { bots: 400, difficulty: 'impossible' },
+      lastMode: 'royale',
+    },
+  });
+  assert.deepEqual(tampered.profile.skirmish, { played: 3, wins: 3, eliminations: 0, bestPlacement: null });
+  assert.deepEqual(tampered.profile.skirmishOptions, { bots: 5, difficulty: 'easy' });
+  assert.equal(tampered.profile.lastMode, 'course');
+
+  const start = defaultSave().profile;
+  const lost = recordSkirmishResult(start, { placement: 4, eliminations: 2 });
+  assert.deepEqual(lost.profile.skirmish, { played: 1, wins: 0, eliminations: 2, bestPlacement: 4 });
+  assert.equal(lost.isBestPlacement, true);
+  const won = recordSkirmishResult(lost.profile, { placement: 1, eliminations: 5 });
+  assert.deepEqual(won.profile.skirmish, { played: 2, wins: 1, eliminations: 7, bestPlacement: 1 });
+  const worse = recordSkirmishResult(won.profile, { placement: 6, eliminations: 0 });
+  assert.deepEqual([worse.isBestPlacement, worse.profile.skirmish.bestPlacement, worse.profile.skirmish.played], [false, 1, 3]);
+  assert.deepEqual(start.skirmish, { played: 0, wins: 0, eliminations: 0, bestPlacement: null }, 'the input is not mutated');
+  assert.throws(() => recordSkirmishResult(start, { placement: 0, eliminations: 0 }));
+  assert.throws(() => recordSkirmishResult(start, { placement: 1.5, eliminations: 0 }));
+  assert.throws(() => recordSkirmishResult(start, { placement: 2, eliminations: -1 }));
+  // A round trip through JSON keeps a valid save intact.
+  const save = { ...defaultSave(), profile: won.profile, updatedAt: 5 };
+  assert.deepEqual(parseSave(JSON.stringify(save)), save);
 });
 
 test('time formatting', () => {
