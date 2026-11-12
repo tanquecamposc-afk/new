@@ -238,6 +238,7 @@ export function buildTrainingGrounds(): MapDefinition {
     checkpoints,
     labels,
     markings,
+    loot: [],
   };
 }
 

@@ -7,6 +7,7 @@ import {
   createCharacter,
   createHeightfield,
   makeGroundInfo,
+  neutralInput,
   stepCharacter,
   yawToward,
   type CharacterEvent,
@@ -48,7 +49,7 @@ export function standAt(world: World, x: number, z: number, yaw = 0, nearY = 0):
 }
 
 export function frame(partial: Partial<InputFrame> = {}): InputFrame {
-  return { seq: 0, moveX: 0, moveZ: 0, yaw: 0, pitch: 0, jump: false, sprint: false, crouch: false, ...partial };
+  return { ...neutralInput(), ...partial };
 }
 
 export type InputSource = InputFrame | ((tick: number, c: CharacterState) => InputFrame);

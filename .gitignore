@@ -13,3 +13,6 @@ coverage/
 dist-web/
 test-results/
 dist-artifact/
+
+# Estado local de plugins del editor
+.anchor/

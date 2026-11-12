@@ -95,6 +95,8 @@ export interface SpawnPoint {
   y: number;
   z: number;
   yaw: number;
+  /** Who the point is meant for ('player', 'target', 'pacer'...); modes pick spawns by role. */
+  role?: string;
 }
 
 export interface CheckpointDef {
@@ -122,6 +124,18 @@ export interface GroundMarking {
   maxX: number;
   maxZ: number;
   color: 'lane' | 'start' | 'finish' | 'zone';
+}
+
+/** Something lying on the ground at match start that a player can pick up. */
+export interface LootSpawnDef {
+  kind: 'weapon' | 'consumable' | 'ammo';
+  /** Weapon id, consumable id or ammo type, depending on `kind`. */
+  defId: string;
+  /** Stack size or rounds; ignored for weapons. */
+  count: number;
+  x: number;
+  y: number;
+  z: number;
 }
 
 /** Palette index stored per terrain vertex. */
@@ -154,6 +168,8 @@ export interface MapDefinition {
   checkpoints: CheckpointDef[];
   labels: ZoneLabel[];
   markings: GroundMarking[];
+  /** Pickups placed by the map. Only used by modes with combat. */
+  loot: LootSpawnDef[];
 }
 
 export function terrainToHeightfield(terrain: TerrainData): Heightfield {
