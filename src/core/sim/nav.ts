@@ -48,8 +48,11 @@ const DEFAULT_MAX_NODES = 80000;
 const WALK_SAMPLE = 0.2;
 /** Extra clearance around the body so paths do not scrape along walls. */
 const BODY_MARGIN = 0.05;
-/** Bots keep a little below the real slope limit. */
-const SLOPE_MARGIN_DEGREES = 3;
+/**
+ * Bots stay well below the real slope limit: near it a character loses traction and slides back,
+ * so a route that is only just walkable on paper is a trap in practice.
+ */
+const SLOPE_MARGIN_DEGREES = 12;
 /** Two surfaces in the same column closer than this are the same node. */
 const SAME_LEVEL = 0.75;
 const DROP_COST_PER_METER = 1.5;
@@ -99,8 +102,7 @@ export function walkSegment(
   }
   const steps = Math.max(1, Math.ceil(distance / WALK_SAMPLE));
   const stepLength = distance / steps;
-  const climbLimit = Math.tan(((cfg.maxSlopeDegrees - SLOPE_MARGIN_DEGREES) * Math.PI) / 180);
-  const standLimit = Math.tan((cfg.maxSlopeDegrees * Math.PI) / 180);
+  const slopeLimit = Math.tan(((cfg.maxSlopeDegrees - SLOPE_MARGIN_DEGREES) * Math.PI) / 180);
   let y = y0;
   for (let i = 1; i <= steps; i++) {
     const t = i / steps;
@@ -111,8 +113,8 @@ export function walkSegment(
     if (ground.colliderId === TERRAIN_ID) {
       // Terrain is reported even when it is far above the feet: reject climbs that are too steep
       // and ground the character could not stand on.
-      if (nextY - y > stepLength * climbLimit + 0.02) return Number.NaN;
-      if (world.terrainSlope(px, pz) > standLimit) return Number.NaN;
+      if (nextY - y > stepLength * slopeLimit + 0.02) return Number.NaN;
+      if (world.terrainSlope(px, pz) > slopeLimit) return Number.NaN;
     }
     if (y - nextY > maxDrop) return Number.NaN;
     if (nextY < world.killY + 1) return Number.NaN;

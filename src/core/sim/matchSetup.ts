@@ -118,9 +118,16 @@ export function botKit(rng: () => number, difficulty: BotDifficulty): BotKit {
   const weaponId =
     roll < 0.34 ? 'starter_ar' : roll < 0.58 ? 'starter_smg' : roll < 0.76 ? 'starter_shotgun' : roll < 0.93 ? 'starter_pistol' : 'starter_sniper';
   const def = getWeaponDef(weaponId)!;
-  const loadout: LoadoutEntry[] = [{ weaponId }, { itemId: 'bandage', count: 2 }];
+  const loadout: LoadoutEntry[] = [{ weaponId }];
+  const ammo: Partial<Record<AmmoType, number>> = { [def.ammoType]: def.magazine * 3 };
+  // Everyone but pistol carriers has a pistol as a fallback.
+  if (weaponId !== 'starter_pistol') {
+    loadout.push({ weaponId: 'starter_pistol' });
+    ammo.light = (ammo.light ?? 0) + 24;
+  }
+  loadout.push({ itemId: 'bandage', count: 2 });
   if (difficulty !== 'easy') loadout.push({ itemId: 'shield_cell', count: 1 });
-  return { loadout, ammo: { [def.ammoType]: def.magazine * 4 } };
+  return { loadout, ammo };
 }
 
 /**

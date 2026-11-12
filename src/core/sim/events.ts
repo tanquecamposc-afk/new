@@ -35,6 +35,7 @@ export const SIM_EVENTS = Object.freeze({
   itemUseRejected: 'ItemUseRejected',
   itemUsed: 'ItemUsed',
   lootSpawned: 'LootSpawned',
+  showdownPing: 'ShowdownPing',
 } as const);
 
 export type SimEventType = (typeof SIM_EVENTS)[keyof typeof SIM_EVENTS];

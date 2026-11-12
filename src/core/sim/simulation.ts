@@ -8,7 +8,16 @@
  */
 import { applyDamage } from '../combat.js';
 import type { MatchEvent, MatchPhase } from '../types.js';
-import { BOT_SKILLS, createBotBrain, resetBotBrain, thinkBot, type BotBehavior, type BotDifficulty, type BotSkill } from './bot.js';
+import {
+  BOT_SKILLS,
+  createBotBrain,
+  notifyBotOfPing,
+  resetBotBrain,
+  thinkBot,
+  type BotBehavior,
+  type BotDifficulty,
+  type BotSkill,
+} from './bot.js';
 import { DEFAULT_MOVEMENT, DT, type MovementConfig } from './config.js';
 import { createCharacter, stepCharacter, type CharacterEvent } from './character.js';
 import { createCourse, resetCourse, updateCourse } from './course.js';
@@ -261,6 +270,7 @@ export class Simulation {
       this.resolveIfDecided(null);
     }
     this.processRespawns();
+    if (this.phase === 'active' && this.rules.showdown.enabled) this.updateShowdown();
 
     // Bots hear what happened during the previous tick.
     const heard = this.pendingNoises;
@@ -324,9 +334,13 @@ export class Simulation {
     if (combat.aliveState !== 'alive') return false;
     if (this.tick < combat.protectedUntilTick) return false;
     if (!(amount > 0) || !Number.isFinite(amount)) return false;
+    let incoming = amount;
+    if (info.attacker !== null && info.attacker !== target && info.attacker.brain !== null && target.brain !== null) {
+      incoming = Math.max(1, Math.round(amount * this.rules.botVsBotDamageScale));
+    }
 
     const hadShield = combat.stats.shield > 0;
-    const result = applyDamage(combat.stats, amount);
+    const result = applyDamage(combat.stats, incoming);
     combat.stats = result.next;
     const dealt = result.shieldDamage + result.healthDamage;
     combat.totals.damageTaken += dealt;
@@ -603,6 +617,41 @@ export class Simulation {
     };
     this.emit(SIM_EVENTS.matchPhaseChanged, '', { phase: 'results' });
     this.emit(SIM_EVENTS.matchEnded, '', { winnerTeamId, winnerIds: [...winnerIds], activeTicks: this.result.activeTicks });
+  }
+
+  /**
+   * End-game reveal: at fixed intervals, once few contenders remain or the match has run long,
+   * everyone learns where everyone is. Humans get it as an event (the HUD marks the compass);
+   * bots get an approximate position to go and investigate.
+   */
+  private updateShowdown(): void {
+    const showdown = this.rules.showdown;
+    const activeTicks = this.tick - this.activeSinceTick;
+    if (activeTicks <= 0 || activeTicks % showdown.pingEveryTicks !== 0) return;
+    const alive = this.aliveContenders();
+    if (alive < 2 || (alive > showdown.contendersAtMost && activeTicks < showdown.afterTicks)) return;
+
+    const positions: Array<{ id: string; x: number; y: number; z: number }> = [];
+    for (const player of this.roster) {
+      if (!player.contender || player.combat.aliveState !== 'alive') continue;
+      positions.push({ id: player.id, x: player.char.x, y: player.char.y, z: player.char.z });
+    }
+    this.emit(SIM_EVENTS.showdownPing, '', { positions });
+
+    for (const bot of this.roster) {
+      if (!bot.brain || bot.combat.aliveState !== 'alive') continue;
+      let nearest: SimPlayer | null = null;
+      let nearestDistance = Infinity;
+      for (const other of this.roster) {
+        if (other === bot || !other.contender || other.teamId === bot.teamId || other.combat.aliveState !== 'alive') continue;
+        const distance = Math.hypot(other.char.x - bot.char.x, other.char.z - bot.char.z);
+        if (distance < nearestDistance) {
+          nearest = other;
+          nearestDistance = distance;
+        }
+      }
+      if (nearest) notifyBotOfPing(bot.brain, this.tick, nearest.char.x, nearest.char.y, nearest.char.z);
+    }
   }
 
   private processRespawns(): void {

@@ -21,7 +21,11 @@ export type WallSide = 'north' | 'south' | 'east' | 'west';
 
 export interface Opening {
   side: WallSide;
-  /** Centre of the opening along the wall (x for north/south walls, z for east/west walls). */
+  /**
+   * Centre of the opening along the wall (x for north/south walls, z for east/west walls).
+   * Doors should be centred on a half metre (…, 24.5, 25.5, …) and be at least 1.6 m wide: bots
+   * navigate on a 1 m grid whose lines fall on half metres, and one of them has to fit through.
+   */
   at: number;
   width: number;
   kind: 'door' | 'window';

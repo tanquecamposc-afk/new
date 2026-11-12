@@ -86,8 +86,8 @@ export function buildQuarryArena(): MapDefinition {
     maxX: -22,
     maxZ: -22,
     openings: [
-      { side: 'east', at: -27, width: 1.4, kind: 'door' },
-      { side: 'south', at: -24.4, width: 1.4, kind: 'door' },
+      { side: 'east', at: -26.5, width: 1.6, kind: 'door' },
+      { side: 'south', at: -24.5, width: 1.6, kind: 'door' },
       { side: 'north', at: -28, width: 3, kind: 'window' },
       { side: 'west', at: -27, width: 2.4, kind: 'window' },
     ],
@@ -136,7 +136,7 @@ export function buildQuarryArena(): MapDefinition {
     maxX: 31,
     maxZ: 28,
     openings: [
-      { side: 'west', at: 25, width: 1.4, kind: 'door' },
+      { side: 'west', at: 25.5, width: 1.6, kind: 'door' },
       { side: 'north', at: 27.5, width: 2.4, kind: 'window' },
     ],
   });

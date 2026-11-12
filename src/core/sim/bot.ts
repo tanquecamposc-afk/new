@@ -7,15 +7,17 @@
  * approximate hearing, and a vague sense of where pain came from. Nothing reads another player's
  * position without passing one of those tests.
  *
- * State machine: PATROL -> INVESTIGATE -> CHASE -> ATTACK -> RETREAT -> SEARCH -> PATROL.
+ * State machine: PATROL -> INVESTIGATE -> CHASE -> ATTACK -> RETREAT -> SEARCH -> PATROL, plus
+ * SCAVENGE for a bot that has run dry and goes looking for a weapon or ammunition it can see.
  * Every random decision comes from the bot's own seeded generator, so matches are reproducible.
  */
 import { makeRng } from '../rng.js';
 import { eyeHeight } from './character.js';
 import { TICK_RATE } from './config.js';
 import { releaseInput, type InputFrame } from './input.js';
-import { INVENTORY_SLOTS, activeItem, findWeaponSlot } from './inventory.js';
+import { INVENTORY_SLOTS, activeItem, type Inventory } from './inventory.js';
 import { consumableGain, getConsumableDef } from './items.js';
+import { PICKUP_RADIUS, isAmmoType, type LootItem } from './loot.js';
 import { angleDelta, approach, clamp, wrapAngle, yawToward } from './math.js';
 import { nearestNode, walkSegment } from './nav.js';
 import type { SimPlayer } from './player.js';
@@ -24,7 +26,7 @@ import { fireIntervalTicks, getWeaponDef } from './weapons.js';
 import { makeRayHit } from './world.js';
 
 export type BotBehavior = 'fighter' | 'dummy' | 'pacer';
-export type BotState = 'patrol' | 'investigate' | 'chase' | 'attack' | 'retreat' | 'search';
+export type BotState = 'patrol' | 'investigate' | 'chase' | 'attack' | 'retreat' | 'search' | 'scavenge';
 export type BotDifficulty = 'easy' | 'normal' | 'hard';
 export const BOT_DIFFICULTIES: readonly BotDifficulty[] = ['easy', 'normal', 'hard'];
 
@@ -53,11 +55,11 @@ export interface BotSkill {
 
 export const BOT_SKILLS: Readonly<Record<BotDifficulty, Readonly<BotSkill>>> = Object.freeze({
   easy: Object.freeze({
-    reactionTicks: 42,
-    aimErrorDegrees: 4.8,
+    reactionTicks: 45,
+    aimErrorDegrees: 5.4,
     turnRateDegreesPerSecond: 150,
     fovDegrees: 100,
-    viewDistance: 45,
+    viewDistance: 32,
     hearingScale: 0.7,
     burstTicks: [10, 22] as const,
     pauseTicks: [38, 72] as const,
@@ -68,11 +70,11 @@ export const BOT_SKILLS: Readonly<Record<BotDifficulty, Readonly<BotSkill>>> = O
     headAimChance: 0,
   }),
   normal: Object.freeze({
-    reactionTicks: 26,
-    aimErrorDegrees: 2.8,
+    reactionTicks: 28,
+    aimErrorDegrees: 3.1,
     turnRateDegreesPerSecond: 250,
     fovDegrees: 110,
-    viewDistance: 60,
+    viewDistance: 44,
     hearingScale: 1,
     burstTicks: [16, 34] as const,
     pauseTicks: [22, 46] as const,
@@ -83,11 +85,11 @@ export const BOT_SKILLS: Readonly<Record<BotDifficulty, Readonly<BotSkill>>> = O
     headAimChance: 0.1,
   }),
   hard: Object.freeze({
-    reactionTicks: 15,
-    aimErrorDegrees: 1.6,
+    reactionTicks: 16,
+    aimErrorDegrees: 1.8,
     turnRateDegreesPerSecond: 360,
     fovDegrees: 120,
-    viewDistance: 75,
+    viewDistance: 58,
     hearingScale: 1.25,
     burstTicks: [24, 46] as const,
     pauseTicks: [12, 28] as const,
@@ -151,6 +153,9 @@ export interface BotBrain {
   scanDirection: number;
   retreatUntilTick: number;
   retreatCooldownUntilTick: number;
+  /** Item a bot without a usable weapon is walking to (-1 = none). */
+  scavengeLootId: number;
+  scavengeUntilTick: number;
   paceSign: number;
 }
 
@@ -170,6 +175,11 @@ const RETREAT_COOLDOWN_TICKS = 15 * TICK_RATE;
 const REPATH_TICKS = 30;
 const PROGRESS_WINDOW_TICKS = 36;
 const PACER_SPAN = 4;
+/** How far a bot that needs gear can spot an item lying on the ground. */
+const SCAVENGE_VIEW_DISTANCE = 45;
+const SCAVENGE_TIMEOUT_TICKS = 20 * TICK_RATE;
+/** A bot only opens fire within this many times its weapon's comfortable distance. */
+const EFFECTIVE_RANGE_FACTOR = 2.0;
 
 const rayHit = makeRayHit();
 
@@ -218,6 +228,8 @@ export function createBotBrain(behavior: BotBehavior, skill: Readonly<BotSkill>,
     scanDirection: 1,
     retreatUntilTick: 0,
     retreatCooldownUntilTick: 0,
+    scavengeLootId: -1,
+    scavengeUntilTick: 0,
     paceSign: 1,
   };
 }
@@ -240,7 +252,17 @@ export function resetBotBrain(brain: BotBrain, yaw: number, tick: number): void 
   brain.errorPitch = 0;
   brain.burstUntilTick = 0;
   brain.pauseUntilTick = 0;
+  brain.scavengeLootId = -1;
   brain.paceSign = 1;
+}
+
+/**
+ * Tells a bot roughly where an enemy is (the end-of-match reveal). It is only a hint to go and
+ * look: the bot still has to see its target before it can attack.
+ */
+export function notifyBotOfPing(brain: BotBrain, tick: number, x: number, y: number, z: number): void {
+  if (brain.behavior !== 'fighter' || brain.targetVisible) return;
+  setStimulus(brain, tick, x, y, z, 5);
 }
 
 /* ------------------------------------------------------------------------------------------ */
@@ -440,7 +462,27 @@ function decide(sim: Simulation, me: SimPlayer, brain: BotBrain): void {
     return;
   }
 
+  // Out of usable weapons: go and find something to fight with.
+  if (brain.state !== 'retreat' && brain.state !== 'scavenge' && usableWeaponSlot(me.combat.inventory, 10) < 0) {
+    const loot = findUsefulLoot(sim, me);
+    if (loot !== null) {
+      setState(brain, 'scavenge', tick);
+      brain.scavengeLootId = loot.id;
+      brain.scavengeUntilTick = tick + SCAVENGE_TIMEOUT_TICKS;
+      setGoal(sim, me, brain, loot.x, loot.y, loot.z);
+      return;
+    }
+  }
+
   switch (brain.state) {
+    case 'scavenge': {
+      const armed = usableWeaponSlot(me.combat.inventory, 10) >= 0;
+      if (armed || tick >= brain.scavengeUntilTick || !sim.loot.has(brain.scavengeLootId)) {
+        brain.scavengeLootId = -1;
+        setState(brain, armed && brain.targetVisible ? 'attack' : 'patrol', tick);
+      }
+      break;
+    }
     case 'patrol':
     case 'investigate':
     case 'search':
@@ -664,11 +706,81 @@ function randomTicks(brain: BotBrain, range: readonly [number, number]): number 
   return range[0] + Math.floor(brain.rng() * (range[1] - range[0] + 1));
 }
 
-function ensureWeaponSelected(me: SimPlayer, out: InputFrame): void {
+/** Lower is better: how far a weapon's comfortable distance is from the fight at hand. */
+function weaponFit(idealRange: number, distance: number, ammoInMag: number): number {
+  // An empty magazine is a reload away from being useful, which counts against it.
+  return Math.abs(Math.log((idealRange + 2) / (distance + 2))) + (ammoInMag <= 0 ? 0.6 : 0);
+}
+
+/**
+ * Slot of the weapon best suited to a fight at `distance` among those that can still shoot
+ * (rounds in the magazine or in reserve). -1 when the bot has nothing to shoot with.
+ */
+function usableWeaponSlot(inventory: Inventory, distance: number): number {
+  let best = -1;
+  let bestFit = Infinity;
+  for (let i = 0; i < INVENTORY_SLOTS; i++) {
+    const item = inventory.slots[i];
+    if (!item || item.kind !== 'weapon') continue;
+    const def = getWeaponDef(item.weaponId);
+    if (!def) continue;
+    if (item.ammoInMag <= 0 && inventory.ammo[def.ammoType] <= 0) continue;
+    const fit = weaponFit(def.idealRangeMeters, distance, item.ammoInMag);
+    if (fit < bestFit) {
+      best = i;
+      bestFit = fit;
+    }
+  }
+  return best;
+}
+
+/** Asks for the best usable weapon, without interrupting a reload or dithering between two. */
+function ensureWeaponSelected(me: SimPlayer, out: InputFrame, distance = 15): void {
+  const combat = me.combat;
+  const inventory = combat.inventory;
+  if (combat.reload !== null) return;
+  const best = usableWeaponSlot(inventory, distance);
+  if (best < 0 || best === inventory.active) return;
+  const current = activeItem(inventory);
+  const other = inventory.slots[best];
+  if (current !== null && current.kind === 'weapon' && other && other.kind === 'weapon') {
+    const def = getWeaponDef(current.weaponId);
+    const otherDef = getWeaponDef(other.weaponId);
+    if (def && otherDef && (current.ammoInMag > 0 || inventory.ammo[def.ammoType] > 0)) {
+      // Keep a working weapon unless the other one suits the distance clearly better.
+      const gain = weaponFit(def.idealRangeMeters, distance, current.ammoInMag) - weaponFit(otherDef.idealRangeMeters, distance, other.ammoInMag);
+      if (gain < 0.5) return;
+    }
+  }
+  out.slot = best;
+}
+
+/** Nearest item on the ground that would let an unarmed bot shoot again, if it can see one. */
+function findUsefulLoot(sim: Simulation, me: SimPlayer): LootItem | null {
   const inventory = me.combat.inventory;
-  if (activeItem(inventory)?.kind === 'weapon') return;
-  const slot = findWeaponSlot(inventory);
-  if (slot >= 0) out.slot = slot;
+  const c = me.char;
+  const eyeY = c.y + eyeHeight(c, sim.movement);
+  let best: LootItem | null = null;
+  let bestDistance = SCAVENGE_VIEW_DISTANCE;
+  for (const item of sim.loot.values()) {
+    let useful = false;
+    if (item.kind === 'weapon' && item.weapon) {
+      const def = getWeaponDef(item.defId);
+      useful = def !== undefined && (item.weapon.ammoInMag > 0 || inventory.ammo[def.ammoType] > 0);
+    } else if (item.kind === 'ammo' && isAmmoType(item.defId)) {
+      for (let i = 0; i < INVENTORY_SLOTS && !useful; i++) {
+        const held = inventory.slots[i];
+        if (held && held.kind === 'weapon') useful = getWeaponDef(held.weaponId)?.ammoType === item.defId;
+      }
+    }
+    if (!useful) continue;
+    const distance = Math.hypot(item.x - c.x, item.z - c.z, item.y - c.y);
+    if (distance >= bestDistance) continue;
+    if (!sim.world.hasLineOfSight(c.x, eyeY, c.z, item.x, item.y + 0.4, item.z, rayHit)) continue;
+    best = item;
+    bestDistance = distance;
+  }
+  return best;
 }
 
 function act(sim: Simulation, me: SimPlayer, brain: BotBrain, out: InputFrame): void {
@@ -680,6 +792,15 @@ function act(sim: Simulation, me: SimPlayer, brain: BotBrain, out: InputFrame): 
     case 'patrol': {
       ensureWeaponSelected(me, out);
       if (!brain.hasGoal) choosePatrolGoal(sim, me, brain);
+      if (!brain.hasGoal) {
+        // Off the navigation graph (knocked somewhere odd): head for the middle of the map.
+        const bounds = sim.world.bounds;
+        const centreX = (bounds.minX + bounds.maxX) * 0.5;
+        const centreZ = (bounds.minZ + bounds.maxZ) * 0.5;
+        turnToward(brain, yawToward(c.x, c.z, centreX, centreZ), 0, turnStep * 0.5);
+        steerToward(me, brain, out, centreX, centreZ, false);
+        break;
+      }
       followPath(sim, me, brain, out, false);
       const heading = waypointYaw(sim, me, brain);
       if (heading !== null) {
@@ -724,6 +845,17 @@ function act(sim: Simulation, me: SimPlayer, brain: BotBrain, out: InputFrame): 
     case 'retreat':
       actRetreat(sim, me, brain, out, turnStep);
       break;
+    case 'scavenge': {
+      const loot = sim.loot.get(brain.scavengeLootId);
+      if (!loot) break;
+      const arrived = followPath(sim, me, brain, out, true);
+      turnToward(brain, yawToward(c.x, c.z, loot.x, loot.z), 0, turnStep);
+      if (arrived) steerToward(me, brain, out, loot.x, loot.z, false);
+      else steerAgain(sim, me, brain, out, true);
+      // Ammunition is collected by walking over it; anything else needs the interact key.
+      if (Math.hypot(loot.x - c.x, loot.z - c.z) < PICKUP_RADIUS * 0.8) out.interact = (tick + brain.phase) % 6 < 2;
+      break;
+    }
     case 'attack':
       actAttack(sim, me, brain, out, turnStep);
       break;
@@ -765,7 +897,6 @@ function actAttack(sim: Simulation, me: SimPlayer, brain: BotBrain, out: InputFr
   const c = me.char;
   const target = brain.targetId !== null ? sim.getPlayer(brain.targetId) : undefined;
   if (!target) return;
-  ensureWeaponSelected(me, out);
 
   // Aim at where the target is while visible, at where it was last seen otherwise.
   const o = target.char;
@@ -775,6 +906,7 @@ function actAttack(sim: Simulation, me: SimPlayer, brain: BotBrain, out: InputFr
   const aimY = baseY + (brain.aimAtHead ? o.height - 0.2 : o.height * 0.62);
   const eyeY = c.y + eyeHeight(c, sim.movement);
   const distance = Math.hypot(tx - c.x, tz - c.z);
+  ensureWeaponSelected(me, out, distance);
   const desiredYaw = yawToward(c.x, c.z, tx, tz);
   const desiredPitch = Math.atan2(aimY - eyeY, Math.max(distance, 0.1));
 
@@ -818,7 +950,7 @@ function actAttack(sim: Simulation, me: SimPlayer, brain: BotBrain, out: InputFr
   const reacted = tick - brain.seenSinceTick >= skill.reactionTicks;
   const cone = Math.max(3 * DEG, Math.atan2(0.5, Math.max(distance, 0.5))) + skill.aimErrorDegrees * DEG * 1.5;
   const aligned = Math.abs(angleDelta(brain.aimYaw, desiredYaw)) < cone && Math.abs(brain.aimPitch - desiredPitch) < cone;
-  if (!reacted || !aligned || distance > ideal * 3.2) return;
+  if (!reacted || !aligned || distance > ideal * EFFECTIVE_RANGE_FACTOR) return;
 
   if (def.automatic) {
     if (tick >= brain.burstUntilTick && tick >= brain.pauseUntilTick) {

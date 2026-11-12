@@ -30,6 +30,11 @@ export interface MatchRules {
   shield: { start: number; max: number };
   fallDamage: { enabled: boolean; startMeters: number; perMeter: number };
   friendlyFire: boolean;
+  /**
+   * Multiplier on the damage one bot deals to another (1 = no change). Practice modes lower it so
+   * bots do not wipe each other out before the human has had a fight.
+   */
+  botVsBotDamageScale: number;
   switchCancelsReload: boolean;
   /** An empty magazine reloads by itself when there is reserve ammunition. */
   autoReload: boolean;
@@ -40,9 +45,16 @@ export interface MatchRules {
   startingAmmo: Readonly<Record<AmmoType, number>>;
   /** Ticks of invulnerability after (re)spawning. */
   spawnProtectionTicks: number;
+  /**
+   * End-game reveal for modes without a closing zone: once few contenders are left (or the match
+   * has gone on long enough) everyone's position is revealed at regular intervals, so the last
+   * runners always find each other.
+   */
+  showdown: { enabled: boolean; contendersAtMost: number; afterTicks: number; pingEveryTicks: number };
 }
 
 const NO_AMMO: Readonly<Record<AmmoType, number>> = Object.freeze({ light: 0, medium: 0, shells: 0, heavy: 0 });
+const NO_SHOWDOWN = Object.freeze({ enabled: false, contendersAtMost: 0, afterTicks: 0, pingEveryTicks: 1 });
 
 /** Phase 1 mode: run the checkpoint course. No weapons at all. */
 export const TRAINING_COURSE_RULES: Readonly<MatchRules> = Object.freeze({
@@ -60,6 +72,7 @@ export const TRAINING_COURSE_RULES: Readonly<MatchRules> = Object.freeze({
   shield: { start: 0, max: 100 },
   fallDamage: { enabled: false, startMeters: 8, perMeter: 14 },
   friendlyFire: false,
+  botVsBotDamageScale: 1,
   switchCancelsReload: true,
   autoReload: true,
   dropLootOnElimination: false,
@@ -67,6 +80,7 @@ export const TRAINING_COURSE_RULES: Readonly<MatchRules> = Object.freeze({
   loadout: [],
   startingAmmo: NO_AMMO,
   spawnProtectionTicks: 0,
+  showdown: NO_SHOWDOWN,
 });
 
 /**
@@ -88,6 +102,7 @@ export const FIRING_RANGE_RULES: Readonly<MatchRules> = Object.freeze({
   shield: { start: 0, max: 100 },
   fallDamage: { enabled: true, startMeters: 8, perMeter: 14 },
   friendlyFire: false,
+  botVsBotDamageScale: 1,
   switchCancelsReload: true,
   autoReload: true,
   dropLootOnElimination: false,
@@ -95,6 +110,7 @@ export const FIRING_RANGE_RULES: Readonly<MatchRules> = Object.freeze({
   loadout: [{ weaponId: 'starter_ar' }, { weaponId: 'starter_shotgun' }, { weaponId: 'starter_pistol' }],
   startingAmmo: Object.freeze({ light: 96, medium: 120, shells: 20, heavy: 0 }),
   spawnProtectionTicks: 0,
+  showdown: NO_SHOWDOWN,
 });
 
 /** Every runner for themselves against practice bots; the last one standing wins. */
@@ -110,9 +126,10 @@ export const SKIRMISH_RULES: Readonly<MatchRules> = Object.freeze({
   respawnDelayTicks: 0,
   voidOutcome: 'eliminate',
   health: { start: 100, max: 100 },
-  shield: { start: 0, max: 100 },
+  shield: { start: 50, max: 100 },
   fallDamage: { enabled: true, startMeters: 8, perMeter: 14 },
   friendlyFire: false,
+  botVsBotDamageScale: 0.4,
   switchCancelsReload: true,
   autoReload: true,
   dropLootOnElimination: true,
@@ -120,6 +137,7 @@ export const SKIRMISH_RULES: Readonly<MatchRules> = Object.freeze({
   loadout: [{ weaponId: 'starter_pistol' }, { itemId: 'bandage', count: 3 }],
   startingAmmo: Object.freeze({ light: 48, medium: 0, shells: 0, heavy: 0 }),
   spawnProtectionTicks: 0,
+  showdown: Object.freeze({ enabled: true, contendersAtMost: 2, afterTicks: secondsToTicks(150), pingEveryTicks: secondsToTicks(6) }),
 });
 
 /** Throws when a ruleset is malformed, so bad data never reaches a running match. */
@@ -151,6 +169,13 @@ export function validateRules(rules: MatchRules): void {
     fail('invalid fall damage');
   }
   if (rules.respawn === 'timer' && rules.win !== 'none') fail('timed respawn cannot be combined with last-team-alive');
+  if (!Number.isFinite(rules.botVsBotDamageScale) || rules.botVsBotDamageScale < 0 || rules.botVsBotDamageScale > 1) {
+    fail('botVsBotDamageScale out of range');
+  }
+  const showdown = rules.showdown;
+  if (!Number.isInteger(showdown.pingEveryTicks) || showdown.pingEveryTicks < 1) fail('showdown.pingEveryTicks out of range');
+  if (!Number.isInteger(showdown.afterTicks) || showdown.afterTicks < 0) fail('showdown.afterTicks out of range');
+  if (!Number.isInteger(showdown.contendersAtMost) || showdown.contendersAtMost < 0) fail('showdown.contendersAtMost out of range');
   for (const type of AMMO_TYPES) {
     const amount = rules.startingAmmo[type];
     if (!Number.isInteger(amount) || amount < 0 || amount > AMMO_RESERVE_CAP) fail(`startingAmmo.${type} out of range`);
