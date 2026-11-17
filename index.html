@@ -153,6 +153,14 @@ canvas#lienzo{display:block; width:100%; height:auto; background:#0a0f18; touch-
 .filaBotones{display:flex; gap:10px; justify-content:center; flex-wrap:wrap;}
 #tituloFin.derrota{color:var(--rojo);}
 #tituloFin.victoria{color:var(--verde);}
+@keyframes brilloTitulo{0%{background-position:200% 0;}100%{background-position:-100% 0;}}
+.tarjetaModal h1{
+  background:linear-gradient(100deg,#e8eefc 35%,#5cc8ff 48%,#ffd25e 52%,#e8eefc 65%);
+  background-size:250% auto; -webkit-background-clip:text; background-clip:text;
+  color:transparent; animation:brilloTitulo 3.5s linear infinite;
+}
+@keyframes pulsoListo{0%,100%{box-shadow:0 0 8px rgba(255,210,94,.25);}50%{box-shadow:0 0 20px rgba(255,210,94,.8);}}
+.hab.lista{animation:pulsoListo 1.3s ease-in-out infinite;}
 @media (max-width:700px){
   .cartaTorre{width:78px;}
   #panelTorre{width:190px;}
@@ -587,6 +595,8 @@ function nuevaPartida(mapa){
     colaSpawn: [], tOla: 0, olaActiva: false, entreOlas: true, cuentaAtras: 0,
     velocidad: 1, pausa: false, terminado: false, infinito: false,
     bajas: 0, dineroGanado: 0, sacudida: 0, tGlobal: 0,
+    racha: 0, rachaT: 0, flashRojo: 0, tToque: 0, banners: [], monedas: [],
+    nubes: Array.from({length:4}, () => ({x:Math.random()*1280, y:Math.random()*720, r:90+Math.random()*70, vx:6+Math.random()*8})),
     habs: {bomba:{cd:0, max:45}, dinero:{cd:0, max:60}}, apuntandoBomba: false
   };
   avisados.clear();
@@ -662,8 +672,8 @@ function iniciarOla(){
   $('btnOla').style.display = 'none';
   Sonido.fx('ola');
   const esJefe = G.ola % 10 === 0;
-  aviso(esJefe ? `⚠️ OLA ${G.ola} — ¡SE ACERCA UN JEFE! ⚠️` : `Ola ${G.ola}`, esJefe);
-  if (esJefe) Sonido.fx('jefe');
+  banner('OLA ' + G.ola, esJefe ? '#ff6b6b' : '#ffffff', esJefe ? '¡SE ACERCA UN JEFE!' : null);
+  if (esJefe){ Sonido.fx('jefe'); G.flashRojo = 0.5; }
   actualizarUI();
   actualizarProxima();
 }
@@ -725,7 +735,8 @@ function crearEnemigo(tipo, dInicial=0, fraccionHP=1){
     aviso('🗿 ¡Un GIGANTE se acerca!', true);
   }
   if (tipo === 'coloso'){
-    aviso('💀 EL COLOSO DEL VACÍO HA DESPERTADO 💀', true);
+    banner('EL COLOSO', '#b18cff', 'DEL VACÍO HA DESPERTADO');
+    G.flashRojo = 0.6;
     Sonido.fx('jefe');
   }
 }
@@ -778,6 +789,7 @@ function actualizarEnemigos(dt){
   const ahora = G.tGlobal;
   for (let i=G.enemigos.length-1; i>=0; i--){
     const e = G.enemigos[i];
+    if (e.flash) e.flash = Math.max(0, e.flash - dt);
     if (e.quemaHasta > ahora && e.quemaDPS > 0){
       e.hp -= e.quemaDPS * dt;
       if (Math.random() < dt*8) particula(e.x+rnd(-6,6), e.y+rnd(-6,6), '#ff7043', 2.5, 0.4);
@@ -806,6 +818,7 @@ function actualizarEnemigos(dt){
       G.vidas -= e.dano;
       G.enemigos.splice(i,1);
       Sonido.fx('fuga');
+      G.flashRojo = Math.max(G.flashRojo, 0.3);
       const fin = G.mapa.puntos[G.mapa.puntos.length-1];
       texto(Math.min(fin[0], ANCHO-60), fin[1]-20, '-' + Math.min(e.dano, 150) + ' ❤', '#ff6b6b');
       G.sacudida = Math.max(G.sacudida, 0.2);
@@ -822,10 +835,14 @@ function actualizarEnemigos(dt){
 }
 
 function dañarEnemigo(e, cantidad, sinSangre){
+  let crit = false;
+  if (!sinSangre && Math.random() < 0.1){ cantidad *= 2; crit = true; }
   e.hp -= cantidad;
+  e.flash = 0.09;
   if (!sinSangre && cantidad >= 8 && Math.random() < 0.5)
     particula(e.x+rnd(-5,5), e.y+rnd(-5,5), '#6d9440', 2.5, 0.35);
-  if (cantidad >= 15) texto(e.x+rnd(-8,8), e.y-e.radio-4, Math.round(cantidad), '#ffffff');
+  if (crit) texto(e.x+rnd(-8,8), e.y-e.radio-6, '¡' + Math.round(cantidad) + '!', '#ffb74d', 18);
+  else if (cantidad >= 15) texto(e.x+rnd(-8,8), e.y-e.radio-4, Math.round(cantidad), '#ffffff');
   if (e.hp <= 0){
     const i = G.enemigos.indexOf(e);
     if (i >= 0) matarEnemigo(i);
@@ -841,6 +858,15 @@ function matarEnemigo(i){
   const rec = Math.round(e.rec * (1 + G.ola*0.015));
   ganarDinero(rec);
   texto(e.x, e.y-18, '+' + fmt$(rec), '#ffd25e');
+  G.monedas.push({x:e.x, y:e.y, t:0});
+  if (G.monedas.length > 40) G.monedas.shift();
+  G.racha++; G.rachaT = 2.5;
+  if ([5,10,20,30,50].includes(G.racha) || (G.racha > 50 && G.racha % 25 === 0)){
+    const bono = G.racha * 5;
+    ganarDinero(bono);
+    banner('¡RACHA x' + G.racha + '!', '#ffd25e', '+' + fmt$(bono));
+    Sonido.tono(500 + Math.min(G.racha,50)*14, 760 + Math.min(G.racha,50)*14, 0.14, 'triangle', 0.06);
+  }
   for (let k=0;k<(e.jefe?26:9);k++)
     particula(e.x, e.y, k%3===0 ? '#3d5226' : e.color, rnd(2, e.jefe?6:4), rnd(0.3,0.7));
   if (e.divide){
@@ -1130,8 +1156,8 @@ function casquillo(t){
     r:1.6, vida:0.45, vidaMax:0.45, color:'#e0c060'
   });
 }
-function texto(x,y,txt,color){
-  G.textos.push({x, y, txt, color, vida:0.9, vidaMax:0.9});
+function texto(x,y,txt,color,tam){
+  G.textos.push({x, y, txt, color, tam: tam || 14, vida:0.9, vidaMax:0.9});
 }
 function trazo(t, obj, color, grosor, ttl){
   const bx = t.x + Math.cos(t.ang)*18, by = t.y - 6 + Math.sin(t.ang)*18;
@@ -1154,11 +1180,26 @@ function actualizarEfectos(dt){
     if (G.rayos[i].ttl <= 0) G.rayos.splice(i,1);
   }
   G.sacudida = Math.max(0, G.sacudida - dt*1.6);
+  G.flashRojo = Math.max(0, G.flashRojo - dt*1.1);
+  if (G.rachaT > 0){ G.rachaT -= dt; if (G.rachaT <= 0) G.racha = 0; }
+  for (let i=G.banners.length-1;i>=0;i--){
+    G.banners[i].vida -= dt;
+    if (G.banners[i].vida <= 0) G.banners.splice(i,1);
+  }
+  for (let i=G.monedas.length-1;i>=0;i--){
+    G.monedas[i].t += dt*1.7;
+    if (G.monedas[i].t >= 1) G.monedas.splice(i,1);
+  }
+  for (const nb of G.nubes){
+    nb.x += nb.vx*dt;
+    if (nb.x - nb.r > ANCHO){ nb.x = -nb.r; nb.y = Math.random()*ALTO; }
+  }
 }
 
 // ---------- Habilidades ----------
 function actualizarHabilidades(dt){
   for (const h of Object.values(G.habs)) h.cd = Math.max(0, h.cd - dt);
+  G.tToque = Math.max(0, G.tToque - dt);
 }
 function usarBomba(x, y){
   explosion(x, y, 120 + G.ola*10, 100, true);
@@ -1291,6 +1332,10 @@ function aviso(txt, importante){
   $('avisos').appendChild(d);
   setTimeout(()=>{ d.style.transition='opacity .4s'; d.style.opacity='0'; }, 2600);
   setTimeout(()=> d.remove(), 3100);
+}
+
+function banner(txt, color, sub){
+  G.banners.push({txt, color: color || '#ffffff', sub, vida:1.6, vidaMax:1.6});
 }
 
 // ---------- Interfaz ----------
@@ -1484,6 +1529,12 @@ function prerenderizarFondo(){
   c.fillStyle = '#ffd25e';
   c.fillRect(-20, -8, 6, 9); c.fillRect(14, -8, 6, 9);
   c.restore();
+  // viñeta para dar profundidad
+  const vg = c.createRadialGradient(ANCHO/2, ALTO/2, ALTO*0.42, ANCHO/2, ALTO/2, ALTO*0.9);
+  vg.addColorStop(0, 'rgba(0,0,0,0)');
+  vg.addColorStop(1, 'rgba(4,8,18,.35)');
+  c.fillStyle = vg;
+  c.fillRect(0,0,ANCHO,ALTO);
   G.baseXY = {x:bx, y:by};
 }
 
@@ -1741,6 +1792,18 @@ function dibujarRetrato(c, clave, nivel, x, y, esc){
 // Monstruos enemigos: criaturas humanoides con animación de caminado
 function dibujarEnemigo(e){
   const t = G.tGlobal;
+  if (!e.aereo && e.vel >= 80){
+    ctx.save();
+    ctx.globalAlpha = e.oculto ? 0.12 : 0.28;
+    ctx.fillStyle = e.color;
+    for (let i=1;i<=2;i++){
+      ctx.beginPath();
+      ctx.ellipse(e.x - Math.cos(e.ang)*i*9, e.y - Math.sin(e.ang)*i*9,
+        e.radio*(1-i*0.25), e.radio*(1-i*0.25)*0.8, 0, 0, Math.PI*2);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
   ctx.save();
   const vuelo = e.aereo ? -16 + Math.sin(e.osc)*3 : 0;
   ctx.translate(e.x, e.y + Math.sin(e.osc)*1.2 + vuelo);
@@ -1866,6 +1929,13 @@ function dibujarEnemigo(e){
   ctx.save();
   ctx.translate(e.x, e.y + vuelo);
   if (e.oculto) ctx.globalAlpha = 0.5;
+  if (e.flash > 0){
+    ctx.save();
+    ctx.globalAlpha = Math.min(1, e.flash/0.09) * 0.55;
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath(); ctx.arc(0, -2, e.radio*1.05, 0, Math.PI*2); ctx.fill();
+    ctx.restore();
+  }
   if (e.lentoHasta > G.tGlobal){
     ctx.strokeStyle = 'rgba(120,220,255,.9)'; ctx.lineWidth = 2;
     ctx.beginPath(); ctx.arc(0, 0, e.radio+4, 0, Math.PI*2); ctx.stroke();
@@ -1899,6 +1969,14 @@ function dibujar(){
     ctx.translate(rnd(-1,1)*G.sacudida*9, rnd(-1,1)*G.sacudida*9);
   }
   ctx.drawImage(fondo, 0, 0);
+
+  // sombras de nubes a la deriva
+  ctx.save();
+  ctx.fillStyle = 'rgba(10,16,28,.10)';
+  for (const nb of G.nubes){
+    ctx.beginPath(); ctx.ellipse(nb.x, nb.y, nb.r, nb.r*0.45, 0, 0, Math.PI*2); ctx.fill();
+  }
+  ctx.restore();
 
   // portal animado de entrada
   const ini = G.mapa.puntos[0];
@@ -2018,12 +2096,28 @@ function dibujar(){
   }
 
   // textos flotantes
-  ctx.textAlign = 'center'; ctx.font = 'bold 14px "Segoe UI", sans-serif';
+  ctx.textAlign = 'center';
   for (const t of G.textos){
     ctx.save();
+    ctx.font = 'bold ' + (t.tam || 14) + 'px "Segoe UI", sans-serif';
     ctx.globalAlpha = clamp(t.vida/t.vidaMax, 0, 1);
     ctx.fillStyle = '#000'; ctx.fillText(t.txt, t.x+1, t.y+1);
     ctx.fillStyle = t.color; ctx.fillText(t.txt, t.x, t.y);
+    ctx.restore();
+  }
+
+  // monedas que vuelan hacia el contador
+  for (const mo of G.monedas){
+    const tt = Math.min(1, mo.t);
+    const ease = tt*tt*(3-2*tt);
+    const mx = mo.x + (70 - mo.x)*ease;
+    const my = mo.y + (16 - mo.y)*ease;
+    ctx.save();
+    ctx.globalAlpha = 1 - ease*0.25;
+    ctx.fillStyle = '#ffd25e';
+    ctx.beginPath(); ctx.arc(mx, my, 5, 0, Math.PI*2); ctx.fill();
+    ctx.strokeStyle = '#b8902a'; ctx.lineWidth = 1.4;
+    ctx.beginPath(); ctx.arc(mx, my, 3, 0, Math.PI*2); ctx.stroke();
     ctx.restore();
   }
 
@@ -2073,7 +2167,39 @@ function dibujar(){
     ctx.restore();
   }
 
+  // carteles grandes (olas, rachas, jefes)
+  for (const b of G.banners){
+    const prog = 1 - b.vida/b.vidaMax;
+    let esc = 1, alpha = 1;
+    if (prog < 0.18) esc = 2.1 - 1.1*(prog/0.18);
+    if (b.vida < 0.4) alpha = b.vida/0.4;
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.translate(ANCHO/2, 170);
+    ctx.scale(esc, esc);
+    ctx.textAlign = 'center';
+    ctx.font = '900 56px "Segoe UI", sans-serif';
+    ctx.lineWidth = 8; ctx.strokeStyle = 'rgba(0,0,0,.8)';
+    ctx.strokeText(b.txt, 0, 0);
+    ctx.fillStyle = b.color;
+    ctx.fillText(b.txt, 0, 0);
+    if (b.sub){
+      ctx.font = '800 20px "Segoe UI", sans-serif';
+      ctx.lineWidth = 5;
+      ctx.strokeText(b.sub, 0, 34);
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText(b.sub, 0, 34);
+    }
+    ctx.restore();
+  }
+
   ctx.restore(); // sacudida
+
+  // destello rojo (jefes y fugas)
+  if (G.flashRojo > 0){
+    ctx.fillStyle = 'rgba(255,45,45,' + (G.flashRojo*0.4).toFixed(3) + ')';
+    ctx.fillRect(0,0,ANCHO,ALTO);
+  }
 
   if (G.pausa && !G.terminado){
     ctx.save();
@@ -2229,6 +2355,21 @@ lienzo.addEventListener('pointerdown', ev => {
       actualizarUI();
     }
     return;
+  }
+  // toque manual: golpea a un enemigo con el dedo
+  if (G.tToque <= 0){
+    let golpeado = null, mg = 24;
+    for (const e of G.enemigos){
+      const dd = dist(p.x, p.y, e.x, e.y + (e.aereo ? -16 : 0));
+      if (dd < mg){ mg = dd; golpeado = e; }
+    }
+    if (golpeado){
+      G.tToque = 0.3;
+      dañarEnemigo(golpeado, 2 + G.ola*0.6);
+      for (let k=0;k<5;k++) particula(golpeado.x, golpeado.y, '#ffffff', 2, 0.3);
+      Sonido.fx('muerte');
+      return;
+    }
   }
   let elegida = null, mejor = 26;
   for (const t of G.torres){
