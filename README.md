@@ -1,3 +1,5 @@
+> **Nuevo:** este repositorio también contiene **[VELOCITY ARENA](velocity-arena/README.md)**, un juego 3D original de fútbol con coches en Godot 4 (carpeta `velocity-arena/`).
+
 # NEXO: Tower Defense 🏰
 
 Juego de defensa de torres hecho en **HTML5 + Canvas + JavaScript puro** — un solo archivo, sin dependencias ni assets externos. Interfaz completamente en español, con personajes dibujados a mano por código.
