@@ -1,0 +1,14 @@
+# Local or VPS deployment of the dedicated game server.
+#   cp .env.example .env && docker compose up -d --build
+services:
+  game-server:
+    build: .
+    image: velocity-arena-server:0.4
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - "${VA_PORT:-7777}:${VA_PORT:-7777}/udp"
+      - "7778:7778/udp"   # LAN discovery (optional on a public server)
+    logging:
+      driver: json-file
+      options: {max-size: "10m", max-file: "5"}

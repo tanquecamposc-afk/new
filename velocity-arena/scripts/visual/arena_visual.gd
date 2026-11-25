@@ -9,6 +9,7 @@ const WALL_SHADER := preload("res://assets/shaders/arena_wall.gdshader")
 const NET_SHADER := preload("res://assets/shaders/goal_net.gdshader")
 const CROWD_SHADER := preload("res://assets/shaders/crowd.gdshader")
 const PAD_SHADER := preload("res://assets/shaders/boost_pad.gdshader")
+const SKY_SHADER := preload("res://assets/shaders/sky.gdshader")
 
 var shape: ArenaShape
 var lighting: String = "night"
@@ -29,6 +30,7 @@ func build(p_shape: ArenaShape, pads: Array, p_lighting: String = "night", team_
 	_build_environment()
 	_build_floor()
 	_build_shell()
+	_build_structure()
 	_build_goals()
 	_build_stands()
 	_build_lights()
@@ -413,10 +415,95 @@ func _build_lights() -> void:
 				spot.look_at_from_position(lamp.position, Vector3(sx * -8.0, 0, sz * -10.0), Vector3.UP)
 				spot.spot_range = 140.0
 				spot.spot_angle = 38.0
-				spot.light_energy = 6.0 if lighting == "night" else 3.0
+				spot.light_energy = 9.0 if lighting == "night" else 4.0
 				spot.spot_attenuation = 0.6
 				spot.shadow_enabled = false
 				add_child(spot)
+
+
+## Structural ribs along the shell and an LED ring where wall meets ceiling.
+func _build_structure() -> void:
+	var per: Array = _core_perimeter()
+	var pts: Array[Vector3] = per[0]
+	var nrm: Array[Vector3] = per[1]
+	var re: float = shape.edge_radius
+	var h: float = shape.height
+	var rib_mat := StandardMaterial3D.new()
+	rib_mat.albedo_color = Color(0.55, 0.6, 0.7)
+	rib_mat.metallic = 0.9
+	rib_mat.roughness = 0.25
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var step_len: float = 0.0
+	var acc: float = 0.0
+	for i in pts.size():
+		if i > 0:
+			acc += pts[i].distance_to(pts[i - 1])
+		if acc < 9.0:
+			continue
+		acc = 0.0
+		var base: Vector3 = pts[i]
+		var n_out: Vector3 = nrm[i]
+		var tangent: Vector3 = n_out.cross(Vector3.UP).normalized()
+		# Skip ribs crossing the goal mouths.
+		if absf(base.z) > shape.half_length - re - 0.5 and absf(base.x) < shape.goal_half_width + 1.0:
+			continue
+		var prof: Array = []
+		for k in 7:
+			var a: float = -PI * 0.5 + (PI * 0.5) * float(k) / 6.0
+			prof.append(base + n_out * (re * cos(a) + 0.12) + Vector3.UP * (re + re * sin(a)))
+		prof.append(base + n_out * (re + 0.12) + Vector3.UP * (h - re))
+		for k in 7:
+			var a2: float = (PI * 0.5) * float(k) / 6.0
+			prof.append(base + n_out * (re * cos(a2) + 0.12) + Vector3.UP * (h - re + re * sin(a2)))
+		for k in prof.size() - 1:
+			var p0: Vector3 = prof[k]
+			var p1: Vector3 = prof[k + 1]
+			var w: Vector3 = tangent * 0.18
+			var o: Vector3 = n_out * 0.25
+			for quad in [[p0 - w, p1 - w, p1 + w, p0 + w], [p0 - w, p0 - w + o, p1 - w + o, p1 - w], [p0 + w, p1 + w, p1 + w + o, p0 + w + o]]:
+				for idx in [0, 1, 2, 0, 2, 3]:
+					st.add_vertex(quad[idx])
+	st.generate_normals()
+	var ribs := MeshInstance3D.new()
+	ribs.mesh = st.commit()
+	rib_mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+	ribs.material_override = rib_mat
+	ribs.name = "Ribs"
+	add_child(ribs)
+	# LED ring.
+	var ring_st := SurfaceTool.new()
+	ring_st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var ring_y: float = h - re
+	for i in pts.size():
+		var a_p: Vector3 = pts[i] + nrm[i] * (re - 0.05)
+		var b_p: Vector3 = pts[(i + 1) % pts.size()] + nrm[(i + 1) % pts.size()] * (re - 0.05)
+		var lo := Vector3.UP * (ring_y - 0.35)
+		var hi := Vector3.UP * (ring_y + 0.35)
+		for v in [a_p + lo, b_p + lo, b_p + hi, a_p + lo, b_p + hi, a_p + hi]:
+			ring_st.set_color(_team_colors[0].lerp(_team_colors[1], clampf(v.z / (shape.half_length * 2.0) + 0.5, 0.0, 1.0)))
+			ring_st.add_vertex(v)
+	var ring := MeshInstance3D.new()
+	ring.mesh = ring_st.commit()
+	var ring_mat := StandardMaterial3D.new()
+	ring_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	ring_mat.vertex_color_use_as_albedo = true
+	ring_mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+	ring_mat.emission_enabled = true
+	ring_mat.emission_energy_multiplier = 2.0
+	ring.material_override = ring_mat
+	ring.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	ring.name = "LedRing"
+	add_child(ring)
+	# Soft fill lights above the pitch so cars and ball read clearly.
+	for z in [-28.0, 0.0, 28.0]:
+		var fill := OmniLight3D.new()
+		fill.position = Vector3(0, h - 2.0, z)
+		fill.omni_range = 45.0
+		fill.light_energy = 1.2 if lighting == "night" else 0.5
+		fill.light_color = Color(0.9, 0.95, 1.0)
+		fill.shadow_enabled = false
+		add_child(fill)
 
 
 func _build_pads(pads: Array) -> void:
@@ -489,27 +576,26 @@ func _build_environment() -> void:
 	var we := WorldEnvironment.new()
 	env = Environment.new()
 	var sky := Sky.new()
-	var sky_mat := ProceduralSkyMaterial.new()
+	var sky_mat := ShaderMaterial.new()
+	sky_mat.shader = SKY_SHADER
 	match lighting:
 		"day":
-			sky_mat.sky_top_color = Color(0.22, 0.45, 0.85)
-			sky_mat.sky_horizon_color = Color(0.7, 0.82, 0.95)
-			sky_mat.ground_horizon_color = Color(0.45, 0.5, 0.55)
-			sky_mat.ground_bottom_color = Color(0.1, 0.1, 0.12)
+			sky_mat.set_shader_parameter("top_color", Color(0.18, 0.4, 0.82))
+			sky_mat.set_shader_parameter("horizon_color", Color(0.68, 0.8, 0.95))
+			sky_mat.set_shader_parameter("ground_color", Color(0.3, 0.32, 0.36))
+			sky_mat.set_shader_parameter("glow_color", Color(0.9, 0.95, 1.0))
+			sky_mat.set_shader_parameter("night", 0.0)
 			env.ambient_light_energy = 1.0
 		"sunset":
-			sky_mat.sky_top_color = Color(0.16, 0.18, 0.42)
-			sky_mat.sky_horizon_color = Color(1.0, 0.52, 0.3)
-			sky_mat.ground_horizon_color = Color(0.5, 0.3, 0.25)
-			sky_mat.ground_bottom_color = Color(0.08, 0.06, 0.08)
-			env.ambient_light_energy = 0.8
+			sky_mat.set_shader_parameter("top_color", Color(0.13, 0.15, 0.38))
+			sky_mat.set_shader_parameter("horizon_color", Color(1.0, 0.5, 0.28))
+			sky_mat.set_shader_parameter("ground_color", Color(0.12, 0.08, 0.1))
+			sky_mat.set_shader_parameter("glow_color", Color(1.0, 0.55, 0.3))
+			sky_mat.set_shader_parameter("night", 0.25)
+			env.ambient_light_energy = 0.85
 		_:
-			sky_mat.sky_top_color = Color(0.01, 0.015, 0.05)
-			sky_mat.sky_horizon_color = Color(0.07, 0.09, 0.2)
-			sky_mat.ground_horizon_color = Color(0.05, 0.05, 0.08)
-			sky_mat.ground_bottom_color = Color(0.01, 0.01, 0.02)
-			sky_mat.sun_angle_max = 1.0
-			env.ambient_light_energy = 0.55
+			sky_mat.set_shader_parameter("night", 1.0)
+			env.ambient_light_energy = 0.6
 	sky.sky_material = sky_mat
 	env.background_mode = Environment.BG_SKY
 	env.sky = sky

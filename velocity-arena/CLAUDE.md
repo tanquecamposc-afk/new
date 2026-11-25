@@ -14,6 +14,7 @@ godot --headless --path velocity-arena --import          # genera .godot/ (class
 godot --headless --path velocity-arena --script res://tests/run_tests.gd   # tests (exit 0 = OK)
 godot --path velocity-arena                               # jugar
 # Capturas sin monitor (Xvfb + render por software):
+python3 velocity-arena/tests/multiplayer/run_mp_tests.py   # multijugador real (servidor + 2 clientes)
 xvfb-run -a -s "-screen 0 1600x900x24" godot --rendering-driver opengl3 --path velocity-arena \
   --script res://tools/screenshot.gd -- res://scenes/gameplay/match.tscn out.png 2.0 soccar_2v2 none night
 ```
@@ -28,6 +29,8 @@ Tras crear un script nuevo con `class_name`, ejecutar `--import` antes de los te
 2. Todo parámetro de física va en `PhysicsConfig` (exportado, editable). Los modos
    sobreescriben valores con `physics_overrides` en `GameModeRegistry`.
 3. Los bots **solo escriben `CarControls`**, igual que un cliente humano.
+   En red, los clientes solo envían entradas; el servidor es la única autoridad.
+   Todo mensaje nuevo se añade a `ServerHost.EXPECTED` (validación de tipos).
 4. Nunca marcar una función como terminada sin test o verificación visual real.
    Si no se puede probar aquí (p. ej. mando físico, red real), marcarla "sin verificar".
 5. Después de cada hito: tests en verde → actualizar `PROGRESS.md`, `TASKS.md`,
@@ -47,7 +50,9 @@ Tras crear un script nuevo con `class_name`, ejecutar `--import` antes de los te
 | `scripts/bots/` | `BotController` (FSM + utilidad + predicción, 7 dificultades) |
 | `scripts/visual/` | Estadio, coche, balón, efectos (todo procedural) |
 | `scripts/ui/` | Menú, HUD, ajustes, estilos |
-| `tests/` | `run_tests.gd`, `test_physics.gd`, `test_gameplay.gd` |
+| `scripts/multiplayer/` | `NetProtocol`, `NetEndpoint` (RPC), `ServerHost`, `RoomManager`, `MatchRoom`, `ClientPrediction`, `network_manager.gd` (autoload `Net`) |
+| `server/` | scripts de arranque/parada del servidor dedicado |
+| `tests/` | `run_tests.gd` + suites física/juego/red; `tests/multiplayer/run_mp_tests.py` (3 procesos reales) |
 | `tools/` | Capturas y scripts de depuración |
 
 Convenciones: unidades en metros/segundos; adelante = -Z local; equipo 0 (azul)

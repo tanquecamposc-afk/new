@@ -53,7 +53,15 @@ func _ready() -> void:
 	add_child(_audio)
 	_build_ui()
 	I18n.language_changed.connect(func(): _rebuild())
-	_show_home()
+	if GameState.has_meta("open_online_lobby") or Net.cli_args.has("client") or not Net.room.is_empty():
+		if GameState.has_meta("open_online_lobby"):
+			GameState.remove_meta("open_online_lobby")
+		_show_online()
+		if Net.cli_args.has("client") and Net.status == "offline" and not Net.has_meta("auto_connected"):
+			Net.set_meta("auto_connected", true)
+			Net.connect_to(str(Net.cli_args.get("address", "127.0.0.1")), int(Net.cli_args.get("port", NetProtocol.DEFAULT_PORT)), str(Net.cli_args.get("name", GameState.profile["name"])))
+	else:
+		_show_home()
 
 
 func _process(dt: float) -> void:
@@ -95,7 +103,7 @@ func _build_ui() -> void:
 	var title := UiStyle.label("VELOCITY ARENA", 64, Color.WHITE, 10)
 	title.position = Vector2(60, 36)
 	root.add_child(title)
-	var sub := UiStyle.label("FÚTBOL DE COCHES · ALFA 0.3", 18, UiStyle.ACCENT)
+	var sub := UiStyle.label("FÚTBOL DE COCHES · ALFA 0.4 · MULTIJUGADOR", 18, UiStyle.ACCENT)
 	sub.position = Vector2(64, 118)
 	root.add_child(sub)
 	var prof := UiStyle.label("%s · %s" % [str(GameState.profile["name"]), I18n.t("level", [GameState.level()])], 18, UiStyle.TEXT_DIM)
@@ -134,6 +142,9 @@ func _show_home() -> void:
 	play.custom_minimum_size = Vector2(420, 64)
 	play.pressed.connect(func(): _click(); _show_play())
 	v.add_child(play)
+	var online := UiStyle.button("EN LÍNEA (multijugador)", 26, true)
+	online.pressed.connect(func(): _click(); _show_online())
+	v.add_child(online)
 	var training := UiStyle.button(I18n.t("training"), 24)
 	training.pressed.connect(func(): _click(); _show_training())
 	v.add_child(training)
@@ -332,6 +343,14 @@ func _show_profile() -> void:
 	back.pressed.connect(_show_home)
 	v.add_child(back)
 	back.grab_focus()
+
+
+func _show_online() -> void:
+	for ch in _content.get_children():
+		ch.queue_free()
+	var om := OnlineMenu.new()
+	_content.add_child(om)
+	om.back.connect(_show_home)
 
 
 func _show_settings() -> void:

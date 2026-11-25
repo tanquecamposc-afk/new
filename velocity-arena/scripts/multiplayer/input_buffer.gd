@@ -16,12 +16,15 @@ var missing: int = 0
 
 
 func add(tick: int, c: CarControls, server_tick: int) -> bool:
+	# Redundant copies of inputs we already have (every packet repeats the
+	# last few) are ignored silently.
+	if tick <= newest_received and (tick <= last_applied_tick or _inputs.has(tick)):
+		return false
 	if tick <= last_applied_tick:
 		late += 1
 		# Too late to simulate, but it is still the player's latest intent.
-		if tick > newest_received:
-			newest_received = tick
-			last = c
+		newest_received = tick
+		last = c
 		return false
 	if tick > server_tick + WINDOW_AHEAD:
 		return false  # absurdly far ahead: ignore (bogus or desynced client)

@@ -1,6 +1,6 @@
 # Progreso
 
-_Última actualización: 2026-11-24 — alfa 0.3_
+_Última actualización: 2026-11-25 — alfa 0.4_
 
 ## Verificado (tests automáticos y/o capturas reales)
 
@@ -23,8 +23,15 @@ _Última actualización: 2026-11-24 — alfa 0.3_
 | Modo rastreador (homing) | test |
 | Partida de bots 2v2 completa sin errores | test (prueba de humo) |
 | Menú principal, partida 1v1/2v2/3v3, juego libre, 3 ambientes, HUD | capturas con Xvfb |
+| **Multijugador: servidor dedicado + 2 clientes en procesos separados** (salas, contraseña, permisos, movimiento, gol 1-0 sincronizado, reconexión, fin de partida, vuelta al lobby) | `tests/multiplayer/run_mp_tests.py`, 3 escenarios de red, en localhost |
+| Protocolo, validación, lobby, cola, reconexión, predicción | `tests/test_multiplayer.gd` |
+| Menú EN LÍNEA, lobby y partida online con gráficos | capturas contra un servidor real |
 
 ## Implementado pero sin verificar en este entorno
+
+- **Multijugador por internet entre redes distintas**: requiere un servidor público (no desplegado).
+- **Imagen Docker**: no hay daemon de Docker en este entorno.
+- Descubrimiento LAN por difusión entre dos máquinas reales (probado solo por unicast a 127.0.0.1).
 
 - **Mando físico** y vibración (no hay mando conectado al contenedor).
 - **Audio** (el contenedor no tiene tarjeta de sonido: se usa el driver nulo).
@@ -40,6 +47,7 @@ _Última actualización: 2026-11-24 — alfa 0.3_
   rodea el balón; aéreos poco fiables.
 - La marca de tiempo de la herramienta de capturas cuenta fotogramas, por lo que
   con render por software la simulación avanza más que los segundos indicados.
+- Multijugador: cuentas solo de invitado (sin base de datos); sin amigos, grupos, competitivo ni torneos en línea.
 - Sin repeticiones de gol (la cámara orbita el punto del gol durante 3 s).
 - La reasignación de controles en el menú no está hecha (InputMap sí es remapeable).
 - No hay builds exportados: requieren descargar las plantillas de exportación.

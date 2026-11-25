@@ -365,6 +365,11 @@ func _begin_match(cfg: Dictionary) -> void:
 	match_started.emit(cfg)
 
 
+func _physics_process(_delta: float) -> void:
+	# Network delivery runs at the fixed 120 Hz tick, independent of render FPS.
+	lag.flush()
+
+
 func _process(delta: float) -> void:
 	lag.flush()
 	if prediction:

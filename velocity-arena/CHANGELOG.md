@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.4.0] — 2026-11-25
+### Añadido
+- **Multijugador real**:
+  - servidor dedicado autoritativo (`--server`) sobre ENet/UDP, simulación a 120 Hz y snapshots a 60 Hz;
+  - los clientes envían solo entradas, con redundancia;
+  - predicción del coche local con rebobinado y re-simulación, y suavizado visual;
+  - sincronización de ticks por RTT;
+  - salas con código `VA-XXXXXX` y contraseña, anfitrión, equipos, listo, espectadores y chat (texto y rápido);
+  - navegador de salas, cola casual con conteo real y relleno con bots etiquetados;
+  - reconexión con token (plaza reservada 60 s), LAN con descubrimiento UDP y host desde el juego;
+  - simulador de latencia/jitter/pérdida, overlay de red (F4) y validación de todos los mensajes en el servidor.
+- Menú EN LÍNEA, lobby y escena de partida online.
+- Despliegue: `Dockerfile`, `docker-compose.yml`, `.env.example`, `server/start_server.sh`, `server/stop_server.sh`.
+- Tests: 11 unitarios de red y un test de integración con 3 procesos reales en 3 condiciones de red.
+- Visual: vehículo "Velocity X" v2 (pasos de rueda, llantas de radios, LED), césped mejorado, costillas estructurales, anillo LED, cielo nocturno estrellado y luces de relleno.
+### Corregido
+- Emojis que la fuente no podía mostrar, sustituidos por texto.
+
 ## [0.3.0] — 2026-11-24
 ### Añadido
 - Proyecto Godot 4.4 `velocity-arena/` con arquitectura modular.

@@ -2,8 +2,8 @@ shader_type spatial;
 // Procedural pitch: mowed turf stripes, field markings and team-tinted halves.
 // Everything is computed from world position, so no texture assets are needed.
 
-uniform vec3 grass_a : source_color = vec3(0.10, 0.30, 0.13);
-uniform vec3 grass_b : source_color = vec3(0.12, 0.36, 0.15);
+uniform vec3 grass_a : source_color = vec3(0.11, 0.36, 0.13);
+uniform vec3 grass_b : source_color = vec3(0.16, 0.46, 0.18);
 uniform vec3 blue_tint : source_color = vec3(0.10, 0.35, 1.0);
 uniform vec3 orange_tint : source_color = vec3(1.0, 0.45, 0.05);
 uniform vec3 line_color : source_color = vec3(0.92, 0.96, 1.0);
@@ -37,10 +37,15 @@ void vertex() {
 
 void fragment() {
 	vec2 p = wpos.xz;
+	// Two-direction mowing pattern (wide bands along z, faint bands along x).
 	float stripe = step(0.5, fract(p.y / 8.0));
-	vec3 col = mix(grass_a, grass_b, stripe);
-	float n = noise(p * 3.0) * 0.5 + noise(p * 17.0) * 0.5;
-	col *= 0.85 + 0.3 * n;
+	float cross = step(0.5, fract(p.x / 10.0));
+	vec3 col = mix(grass_a, grass_b, stripe * 0.8 + cross * 0.2);
+	float n = noise(p * 3.0) * 0.45 + noise(p * 17.0) * 0.35 + noise(p * 61.0) * 0.2;
+	col *= 0.82 + 0.34 * n;
+	// Darker, worn grass near the walls; brighter centre.
+	float edge = max(abs(p.x) / half_width, abs(p.y) / half_length);
+	col *= mix(1.08, 0.82, smoothstep(0.55, 1.0, edge));
 	// Team halves.
 	float side = smoothstep(-2.0, 2.0, p.y);
 	col = mix(col, mix(blue_tint, orange_tint, side), tint_strength);
@@ -65,7 +70,8 @@ void fragment() {
 	}
 	col = mix(col, line_color, lines * 0.85);
 	ALBEDO = col;
-	ROUGHNESS = 0.85 - lines * 0.4;
+	ROUGHNESS = 0.78 - lines * 0.35;
+	SPECULAR = 0.35;
 	METALLIC = 0.0;
 	EMISSION = line_color * lines * 0.08;
 }

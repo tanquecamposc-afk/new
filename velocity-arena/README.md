@@ -1,10 +1,10 @@
 # VELOCITY ARENA
 
 Juego 3D original de fútbol con coches, hecho con **Godot 4.4** y un motor de
-físicas propio a 120 Hz. Estado actual: **alfa 0.3 jugable offline** (partidas
-contra bots 1v1–4v4, 7 modos arcade, juego libre).
+físicas propio a 120 Hz. Estado actual: **alfa 0.4**: offline contra bots (1v1–4v4, 7 modos arcade,
+juego libre) y **multijugador real** con servidor dedicado, salas con código, LAN y reconexión.
 
-![estado](https://img.shields.io/badge/estado-alfa%200.3-orange) ![tests](https://img.shields.io/badge/tests-135%20OK-brightgreen)
+![estado](https://img.shields.io/badge/estado-alfa%200.4-orange) ![tests](https://img.shields.io/badge/tests-185%20OK-brightgreen)
 
 ## Cómo jugar
 
@@ -49,10 +49,23 @@ portería · H = balón sobre el coche · B = turbo infinito · G = baja graveda
 - Menú principal 3D, HUD, marcador, pausa, ajustes persistentes (gráficos,
   audio, cámara, accesibilidad, idioma ES/EN), perfil local con XP y niveles.
 
-![Partida 3v3](docs/screenshots/match_3v3.png)
+![Partida en línea](docs/screenshots/online_match.png)
+
+## Multijugador
+
+Guía rápida en `MULTIPLAYER_SETUP.md`:
+
+```bash
+godot --headless --path velocity-arena -- --server --port 7777
+```
+```bash
+godot --path velocity-arena -- --client --address 127.0.0.1 --port 7777 --name Juan
+```
+
+Arquitectura: `NETWORK_ARCHITECTURE.md` · despliegue: `SERVER_DEPLOYMENT.md` · resultados: `MULTIPLAYER_TEST_RESULTS.md`.
 
 Ver `PROGRESS.md` para el estado detallado y `ROADMAP.md` para lo que falta
-(multijugador en línea, ranked, garaje, tienda, modos con estadios especiales…).
+(servidor público, cuentas, ranked, garaje, tienda, modos con estadios especiales…).
 
 ## Tests
 

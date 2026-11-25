@@ -16,6 +16,7 @@ func _initialize() -> void:
 	var suites: Array = [
 		preload("res://tests/test_physics.gd").new(),
 		preload("res://tests/test_gameplay.gd").new(),
+		preload("res://tests/test_multiplayer.gd").new(),
 	]
 	for suite in suites:
 		for m in suite.get_method_list():

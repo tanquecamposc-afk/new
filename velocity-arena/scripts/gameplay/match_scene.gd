@@ -191,7 +191,7 @@ func _handle_events() -> void:
 				fx.pickup(e["pos"], e["big"])
 			"save":
 				var c: int = int(e["car"])
-				hud.add_feed("🛡 " + names[c] + " · " + I18n.t("saves"), team_colors[world.cars[c].team].lightened(0.3))
+				hud.add_feed("PARADA: " + names[c], team_colors[world.cars[c].team].lightened(0.3))
 				audio.excite_crowd(0.7)
 			"shot":
 				audio.excite_crowd(0.45)

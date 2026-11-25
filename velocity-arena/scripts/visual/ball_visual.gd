@@ -11,6 +11,8 @@ var _shadow: MeshInstance3D
 var _shadow_mat: StandardMaterial3D
 var _trail: GPUParticles3D
 var _light: OmniLight3D
+## Render-only offset used by online play to hide reconciliation corrections.
+var visual_offset := Vector3.ZERO
 
 
 func setup(p_ball: BallBody, particles: bool = true) -> void:
@@ -94,17 +96,18 @@ func sync(_dt: float, arena: ArenaShape, hidden: bool) -> void:
 	visible = not hidden
 	if hidden:
 		return
-	mesh_inst.global_transform = Transform3D(ball.basis, ball.pos)
+	var bp: Vector3 = ball.pos + visual_offset
+	mesh_inst.global_transform = Transform3D(ball.basis, bp)
 	var spd: float = ball.vel.length()
 	_mat.set_shader_parameter("speed_glow", clampf((spd - 15.0) / 35.0, 0.0, 1.0))
-	_light.global_position = ball.pos
+	_light.global_position = bp
 	# Ground indicator under the ball (only on the floor).
 	var h: float = ball.pos.y - ball.radius
 	_shadow.visible = h > 0.4
-	_shadow.global_position = Vector3(ball.pos.x, 0.03, ball.pos.z)
+	_shadow.global_position = Vector3(bp.x, 0.03, bp.z)
 	var s: float = ball.radius * 2.2 * clampf(1.0 + h * 0.03, 1.0, 1.6)
 	_shadow.scale = Vector3(s, s, s)
 	_shadow_mat.albedo_color.a = clampf(0.75 - h * 0.03, 0.15, 0.75)
 	if _trail:
-		_trail.global_position = ball.pos
+		_trail.global_position = bp
 		_trail.emitting = spd > 25.0
