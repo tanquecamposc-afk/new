@@ -16,6 +16,10 @@ var _audio: SynthAudio
 
 
 func _ready() -> void:
+	if Net.dedicated:
+		# Dedicated server: no menus, no rendering work.
+		set_process(false)
+		return
 	PlayerInput.register_actions()
 	var cfg := PhysicsConfig.new()
 	var world := SimWorld.new(cfg)
