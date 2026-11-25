@@ -1,5 +1,28 @@
 # Changelog
 
+## [0.6.0] — 2026-11-25 — versión web: gráficos, física y rendimiento
+### Añadido
+- Flota de 3 coches originales en Blender (`tools/blender/build_fleet.py`): **Velocity X**
+  (equilibrado), **Bastion** (alto y compacto) y **Lancer** (largo y bajo), cada uno con su
+  propia hitbox, inercia, posición y radio de ruedas en la física web. Garaje para elegir coche;
+  el coche viaja en la presencia de la sala y el anfitrión lo aplica.
+- Fluidez: física fija a 120 Hz con **interpolación de render** entre ticks; cámara con muelle
+  críticamente amortiguado y giro con velocidad angular limitada; rutas calientes sin
+  asignaciones (vectores temporales reutilizados); balón con subpasos anti-túnel.
+- Efectos con partículas en pool: llama y partículas de turbo, estela supersónica, humo de
+  neumáticos, marcas de derrape, chispas contra paredes, impacto del balón con onda,
+  demolición, explosión de gol (partículas + onda + destello + sacudida de cámara).
+- Estadio: césped 2048 con mapa de normales, costillas estructurales, anillos LED, porterías
+  tubulares con red hexagonal, cinta LED animada, público animado, cubierta, torres de luz,
+  skyline, sombras de contacto, ambiente noche/día/atardecer.
+- Balón con paneles hexagonales y costuras emisivas que brillan con la velocidad.
+- Presets gráficos Competitivo/Bajo/Medio/Alto/Ultra y medidor de rendimiento (F3):
+  FPS medio, 1 % low, frame time, coste de física por tick, draw calls.
+- Pantalla de carga con progreso y límite de 20 s.
+### Corregido
+- La carrocería del coche no se dibujaba en la versión web (se buscaba un Mesh "Body" y
+  GLTFLoader crea un Group con hijos).
+
 ## [0.5.0] — 2026-11-25 — pasada de calidad
 ### Añadido
 - Vehículo "Velocity X" v3 modelado en **Blender** con superficies de subdivisión

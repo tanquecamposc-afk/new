@@ -93,3 +93,33 @@ renderizador de compatibilidad (OpenGL por software, llvmpipe) en
 - Rendimiento con GPU real / Forward+ (SSAO no disponible en el renderizador por software).
 - Audio (no hay dispositivo de sonido; se usó el driver nulo).
 - Mandos físicos.
+
+## Versión web 0.6.0 (Chromium + Playwright, render por software SwiftShader, sin GPU)
+
+Pruebas en `/tmp` (no versionadas): carga, solo contra bots y sala simulada con 2 pestañas
+(mock de `claude.use("room")` sobre BroadcastChannel, solo en test).
+
+| Prueba | Resultado |
+|---|---|
+| Los 3 modelos cargan; la carrocería se dibuja | OK (`models: velocity_x, bastion, lancer`) |
+| Partida solo: fase play, coche acelera | OK (13,2 m/s tras 3 s) |
+| Sala: aparece en "salas abiertas" | OK |
+| Cliente entra con código, el anfitrión ve su coche | OK |
+| Predicción del cliente vs anfitrión (desfase visual) | 0,02–0,13 m tras reconciliar |
+| Gol sincronizado anfitrión → cliente | OK (1-1 en ambos) |
+| Errores JS | ninguno |
+
+Física por tick (8 coches, 2400 ticks, 3 ejecuciones): antes 0,060–0,087 ms, ahora
+0,059–0,088 ms → **igual** (ruido); ~1 % del presupuesto de 8,3 ms a 120 Hz.
+
+Render a 640×360 con **SwiftShader (CPU)** — solo sirve para comparar costes, no son FPS reales:
+
+| Versión / preset | FPS | 1 % low | draw calls | triángulos |
+|---|---|---|---|---|
+| 0.5 (antes) | 8,2 | 5,5 | 92 | 33k |
+| 0.6 Bajo | 9,9 | 3,8 | 100 | 110k |
+| 0.6 Competitivo | 8,3 | 4,3 | 219 | 307k |
+| 0.6 Alto | 2,3 | 1,9 | 248 | 256k |
+
+Sin verificar: FPS con GPU real (60/120/144), mandos físicos, sala real de Claude con
+varias personas, móviles. Capturas en `docs/screenshots/web/`.
