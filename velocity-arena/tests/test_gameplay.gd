@@ -184,3 +184,21 @@ func test_bot_match_soak() -> void:
 	runner.check(not bad, "no NaN during bot match")
 	runner.check(touches > 30, "bots engage the ball (smoke test, not a quality bar)")
 	runner.check(goals >= 1, "bots score goals")
+
+
+func test_replay_buffer() -> void:
+	var w := SimWorld.new(PhysicsConfig.new())
+	w.add_car(0)
+	w.cars[0].set_transform(Vector3(0, 0.17, 20), Basis.looking_at(Vector3.FORWARD, Vector3.UP))
+	w.ball.reset(Vector3(0, 5, 0))
+	var rb := ReplayBuffer.new()
+	for i in 120 * 8:
+		w.cars[0].controls.throttle = 1.0
+		w.step(DT)
+		rb.record(w, DT)
+	runner.info("replay buffer: %d frames, %.2f s" % [rb.frames.size(), rb.duration()])
+	runner.check(rb.duration() > 6.5 and rb.duration() < 7.2, "keeps ~7 s of history")
+	var last: Array = rb.sample(rb.duration())
+	runner.check((last[2][0][0] as Vector3).distance_to(w.cars[0].pos) < 0.5, "last frame matches live car")
+	var mid: Array = rb.sample(rb.duration() * 0.5)
+	runner.check(mid.size() == 3 and (mid[0] as Vector3).is_finite(), "interpolated mid frame is valid")

@@ -1,6 +1,7 @@
-extends SceneTree
+extends Node
 ## Captures screenshots of real game scenes (needs a display, e.g. xvfb-run).
-## Usage: godot --path . --script res://tools/screenshot.gd -- <scene> <out.png> <seconds> [mode] [setup]
+## Usage: godot --path . res://tools/screenshot.tscn -- <scene> <out.png> <seconds> [mode] [setup] [lighting]
+## (Runs as a scene so autoloads exist, exactly like the real game.)
 ## setup can be: none | kickoff | wall | aerial | goal
 
 var _scene: Node
@@ -11,20 +12,20 @@ var _t: float = 0.0
 var _shot_done: bool = false
 var _applied: bool = false
 
-func _initialize() -> void:
+func _ready() -> void:
 	var args := OS.get_cmdline_user_args()
 	var scene_path: String = args[0] if args.size() > 0 else "res://scenes/main/main_menu.tscn"
 	_out = args[1] if args.size() > 1 else "user://shot.png"
 	_secs = float(args[2]) if args.size() > 2 else 2.0
-	var gs: Node = root.get_node_or_null("/root/GameState")
+	var gs: Node = get_node_or_null("/root/GameState")
 	if args.size() > 3 and gs:
 		gs.mode_id = args[3]
 	_setup = args[4] if args.size() > 4 else "none"
 	if gs and args.size() > 5:
 		gs.lighting = args[5]
 	_scene = load(scene_path).instantiate()
-	root.add_child(_scene)
-	process_frame.connect(_on_frame)
+	add_child(_scene)
+	get_tree().process_frame.connect(_on_frame)
 
 func _on_frame() -> void:
 	_t += 1.0 / 60.0
@@ -34,10 +35,10 @@ func _on_frame() -> void:
 	if _t >= _secs and not _shot_done:
 		_shot_done = true
 		await RenderingServer.frame_post_draw
-		var img: Image = root.get_viewport().get_texture().get_image()
+		var img: Image = get_viewport().get_texture().get_image()
 		img.save_png(_out)
 		print("saved ", _out, " ", img.get_size())
-		quit()
+		get_tree().quit()
 
 func _apply_setup() -> void:
 	var w: SimWorld = _scene.world

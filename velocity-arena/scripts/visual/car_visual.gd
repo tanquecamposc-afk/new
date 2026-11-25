@@ -53,119 +53,11 @@ func setup(p_car: CarBody, color: Color, display_name: String = "", show_name: b
 	_particles_enabled = particles
 	body_root = Node3D.new()
 	add_child(body_root)
-	_paint = StandardMaterial3D.new()
-	_paint.albedo_color = team_color
-	_paint.metallic = 0.55
-	_paint.metallic_specular = 0.6
-	_paint.roughness = 0.25
-	_paint.clearcoat_enabled = true
-	_paint.clearcoat = 1.0
-	_paint.clearcoat_roughness = 0.05
-	_paint.rim_enabled = true
-	_paint.rim = 0.25
-	var dark := StandardMaterial3D.new()
-	dark.albedo_color = Color(0.035, 0.037, 0.045)
-	dark.metallic = 0.6
-	dark.roughness = 0.35
-	var carbon := StandardMaterial3D.new()
-	carbon.albedo_color = Color(0.06, 0.065, 0.075)
-	carbon.metallic = 0.3
-	carbon.roughness = 0.55
-	var glass := StandardMaterial3D.new()
-	glass.albedo_color = Color(0.03, 0.05, 0.09, 0.9)
-	glass.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	glass.metallic = 1.0
-	glass.roughness = 0.04
-	glass.rim_enabled = true
-	glass.rim = 0.6
-	var led := StandardMaterial3D.new()
-	led.albedo_color = team_color.lightened(0.4)
-	led.emission_enabled = true
-	led.emission = team_color.lightened(0.25)
-	led.emission_energy_multiplier = 3.5
-	_add_mesh(_loft(BODY_SECTIONS, 20, 2.6), _paint)
-	_add_mesh(_loft(CABIN_SECTIONS, 16, 2.2), glass)
-	# Wheel arches: curved fender flares over the top of each wheel.
-	var arch_mesh: ArrayMesh = _arch_mesh(0.235, 0.05, 0.2)
-	for i in 4:
-		var anc: Vector3 = car.cfg.wheel_anchors[i] if car else Vector3.ZERO
-		var arch := MeshInstance3D.new()
-		arch.mesh = arch_mesh
-		arch.position = Vector3(anc.x + signf(anc.x) * 0.02, 0.048, anc.z)
-		arch.material_override = _paint
-		body_root.add_child(arch)
-		var lip := MeshInstance3D.new()
-		lip.mesh = _arch_mesh(0.255, 0.018, 0.06)
-		lip.position = Vector3(anc.x + signf(anc.x) * 0.085, 0.048, anc.z)
-		lip.material_override = carbon
-		body_root.add_child(lip)
-	# Side skirts with team LED, front splitter, rear diffuser with fins.
-	for sx in [-1.0, 1.0]:
-		_add_box(Vector3(sx * 0.452, 0.075, -0.07), Vector3(0.035, 0.06, 0.62), carbon)
-		_add_box(Vector3(sx * 0.452, 0.115, -0.07), Vector3(0.012, 0.012, 0.4), led)
-		# Side intake behind the door.
-		_add_box(Vector3(sx * 0.452, 0.2, 0.19), Vector3(0.02, 0.07, 0.14), dark)
-		# Mirrors.
-		_add_box(Vector3(sx * 0.32, 0.335, -0.2), Vector3(0.06, 0.03, 0.045), _paint)
-	_add_box(Vector3(0, 0.055, -0.745), Vector3(0.68, 0.025, 0.09), carbon)
-	_add_box(Vector3(0, 0.1, 0.465), Vector3(0.62, 0.07, 0.05), carbon)
-	for fx in [-0.2, -0.07, 0.07, 0.2]:
-		_add_box(Vector3(fx, 0.085, 0.47), Vector3(0.012, 0.06, 0.08), dark)
-	# Hood vents and twin racing stripes.
-	var stripe := StandardMaterial3D.new()
-	stripe.albedo_color = Color(0.95, 0.96, 1.0)
-	stripe.metallic = 0.5
-	stripe.roughness = 0.25
-	for sx in [-0.07, 0.07]:
-		var st_box := _add_box(Vector3(sx, 0.287, -0.42), Vector3(0.05, 0.008, 0.5), stripe)
-		st_box.rotation.x = deg_to_rad(-6.0)
-	for vz in [-0.5, -0.43]:
-		_add_box(Vector3(0, 0.272, vz), Vector3(0.22, 0.01, 0.025), dark).rotation.x = deg_to_rad(-6.0)
-	# Rear wing on swan-neck supports.
-	_add_box(Vector3(0, 0.5, 0.41), Vector3(0.86, 0.03, 0.15), carbon).rotation.x = deg_to_rad(-6.0)
-	_add_box(Vector3(0, 0.513, 0.36), Vector3(0.86, 0.006, 0.02), led)
-	for sx in [-1.0, 1.0]:
-		_add_box(Vector3(sx * 0.22, 0.43, 0.43), Vector3(0.025, 0.13, 0.05), dark)
-		_add_box(Vector3(sx * 0.43, 0.5, 0.41), Vector3(0.015, 0.11, 0.2), _paint)
-	# Lights: slim LED headlights and full-width tail bar.
-	var head := StandardMaterial3D.new()
-	head.albedo_color = Color.WHITE
-	head.emission_enabled = true
-	head.emission = Color(0.85, 0.95, 1.0)
-	head.emission_energy_multiplier = 4.0
-	var tail := StandardMaterial3D.new()
-	tail.albedo_color = Color(1, 0.2, 0.2)
-	tail.emission_enabled = true
-	tail.emission = Color(1.0, 0.08, 0.1)
-	tail.emission_energy_multiplier = 3.0
-	for sx in [-1.0, 1.0]:
-		var hl := _add_box(Vector3(sx * 0.25, 0.165, -0.735), Vector3(0.17, 0.022, 0.03), head)
-		hl.rotation.y = sx * deg_to_rad(10.0)
-		_add_box(Vector3(sx * 0.3, 0.135, -0.725), Vector3(0.09, 0.012, 0.02), led)
-	_add_box(Vector3(0, 0.28, 0.468), Vector3(0.7, 0.03, 0.015), tail)
-	# Twin boost nozzles.
-	for sx in [-0.12, 0.12]:
-		var nozzle := MeshInstance3D.new()
-		var nm := CylinderMesh.new()
-		nm.top_radius = 0.055
-		nm.bottom_radius = 0.07
-		nm.height = 0.09
-		nozzle.mesh = nm
-		nozzle.rotation.x = PI * 0.5
-		nozzle.position = Vector3(sx, 0.19, 0.49)
-		nozzle.material_override = dark
-		body_root.add_child(nozzle)
-		var glow := MeshInstance3D.new()
-		var gm := CylinderMesh.new()
-		gm.top_radius = 0.04
-		gm.bottom_radius = 0.04
-		gm.height = 0.01
-		glow.mesh = gm
-		glow.rotation.x = PI * 0.5
-		glow.position = Vector3(sx, 0.19, 0.535)
-		glow.material_override = led
-		body_root.add_child(glow)
-	_build_wheels()
+	_make_team_materials()
+	if ResourceLoader.exists(MODEL_PATH):
+		_build_from_model()
+	else:
+		_build_procedural()
 	_build_particles()
 	_boost_light = OmniLight3D.new()
 	_boost_light.position = Vector3(0, 0.2, 0.8)
@@ -184,6 +76,82 @@ func setup(p_car: CarBody, color: Color, display_name: String = "", show_name: b
 		name_label.no_depth_test = true
 		name_label.fixed_size = false
 		add_child(name_label)
+
+
+const MODEL_PATH := "res://assets/vehicles/velocity_x.glb"
+var _led: StandardMaterial3D
+
+
+func _make_team_materials() -> void:
+	_paint = StandardMaterial3D.new()
+	_paint.albedo_color = team_color
+	_paint.metallic = 0.35
+	_paint.metallic_specular = 0.6
+	_paint.roughness = 0.3
+	_paint.clearcoat_enabled = true
+	_paint.clearcoat = 1.0
+	_paint.clearcoat_roughness = 0.04
+	_paint.rim_enabled = true
+	_paint.rim = 0.3
+	_led = StandardMaterial3D.new()
+	_led.albedo_color = team_color.lightened(0.4)
+	_led.emission_enabled = true
+	_led.emission = team_color.lightened(0.2)
+	_led.emission_energy_multiplier = 4.0
+
+
+## Blender-built model (tools/blender/build_car.py): "Body" + one "Wheel".
+func _build_from_model() -> void:
+	var scene: Node = (load(MODEL_PATH) as PackedScene).instantiate()
+	var body_mesh: Mesh = null
+	var wheel_mesh: Mesh = null
+	for n in scene.find_children("*", "MeshInstance3D", true, false):
+		var mi := n as MeshInstance3D
+		if mi.name.begins_with("Body"):
+			body_mesh = mi.mesh
+		elif mi.name.begins_with("Wheel"):
+			wheel_mesh = mi.mesh
+	scene.free()
+	var body := MeshInstance3D.new()
+	body.mesh = body_mesh
+	_retint(body)
+	body_root.add_child(body)
+	var r: float = car.cfg.wheel_radius if car else 0.2
+	for i in 4:
+		var w := Node3D.new()
+		var anchor: Vector3 = car.cfg.wheel_anchors[i] if car else Vector3.ZERO
+		w.position = anchor
+		add_child(w)
+		var spin := Node3D.new()
+		spin.name = "Spin"
+		w.add_child(spin)
+		var wm := MeshInstance3D.new()
+		wm.mesh = wheel_mesh
+		wm.scale = Vector3.ONE * (r / 0.2)
+		if anchor.x < 0.0:
+			wm.rotation.y = PI  # outer face toward -X
+		_retint(wm)
+		spin.add_child(wm)
+		wheels.append(w)
+
+
+func _retint(mi: MeshInstance3D) -> void:
+	if mi.mesh == null:
+		return
+	for i in mi.mesh.get_surface_count():
+		var m: Material = mi.mesh.surface_get_material(i)
+		var nm: String = m.resource_name if m else ""
+		if nm.begins_with("Paint"):
+			mi.set_surface_override_material(i, _paint)
+		elif nm.begins_with("LED"):
+			mi.set_surface_override_material(i, _led)
+		elif nm.begins_with("Glass") and m is BaseMaterial3D:
+			var g := (m as BaseMaterial3D).duplicate() as BaseMaterial3D
+			g.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+			g.metallic = 1.0
+			g.roughness = 0.04
+			g.albedo_color = Color(0.02, 0.03, 0.06, 0.88)
+			mi.set_surface_override_material(i, g)
 
 
 func set_paint(color: Color) -> void:
@@ -477,3 +445,119 @@ func sync(dt: float) -> void:
 	_boost_light.light_energy = 2.0 if car.boosting else 0.0
 	if name_label:
 		name_label.position = car.basis.transposed() * Vector3(0, 1.3, 0)
+
+
+func _build_procedural() -> void:
+	_paint = _paint if _paint else StandardMaterial3D.new()
+	_paint.albedo_color = team_color
+	_paint.metallic = 0.55
+	_paint.metallic_specular = 0.6
+	_paint.roughness = 0.25
+	_paint.clearcoat_enabled = true
+	_paint.clearcoat = 1.0
+	_paint.clearcoat_roughness = 0.05
+	_paint.rim_enabled = true
+	_paint.rim = 0.25
+	var dark := StandardMaterial3D.new()
+	dark.albedo_color = Color(0.035, 0.037, 0.045)
+	dark.metallic = 0.6
+	dark.roughness = 0.35
+	var carbon := StandardMaterial3D.new()
+	carbon.albedo_color = Color(0.06, 0.065, 0.075)
+	carbon.metallic = 0.3
+	carbon.roughness = 0.55
+	var glass := StandardMaterial3D.new()
+	glass.albedo_color = Color(0.03, 0.05, 0.09, 0.9)
+	glass.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	glass.metallic = 1.0
+	glass.roughness = 0.04
+	glass.rim_enabled = true
+	glass.rim = 0.6
+	var led := StandardMaterial3D.new()
+	led.albedo_color = team_color.lightened(0.4)
+	led.emission_enabled = true
+	led.emission = team_color.lightened(0.25)
+	led.emission_energy_multiplier = 3.5
+	_add_mesh(_loft(BODY_SECTIONS, 20, 2.6), _paint)
+	_add_mesh(_loft(CABIN_SECTIONS, 16, 2.2), glass)
+	# Wheel arches: curved fender flares over the top of each wheel.
+	var arch_mesh: ArrayMesh = _arch_mesh(0.235, 0.05, 0.2)
+	for i in 4:
+		var anc: Vector3 = car.cfg.wheel_anchors[i] if car else Vector3.ZERO
+		var arch := MeshInstance3D.new()
+		arch.mesh = arch_mesh
+		arch.position = Vector3(anc.x + signf(anc.x) * 0.02, 0.048, anc.z)
+		arch.material_override = _paint
+		body_root.add_child(arch)
+		var lip := MeshInstance3D.new()
+		lip.mesh = _arch_mesh(0.255, 0.018, 0.06)
+		lip.position = Vector3(anc.x + signf(anc.x) * 0.085, 0.048, anc.z)
+		lip.material_override = carbon
+		body_root.add_child(lip)
+	# Side skirts with team LED, front splitter, rear diffuser with fins.
+	for sx in [-1.0, 1.0]:
+		_add_box(Vector3(sx * 0.452, 0.075, -0.07), Vector3(0.035, 0.06, 0.62), carbon)
+		_add_box(Vector3(sx * 0.452, 0.115, -0.07), Vector3(0.012, 0.012, 0.4), led)
+		# Side intake behind the door.
+		_add_box(Vector3(sx * 0.452, 0.2, 0.19), Vector3(0.02, 0.07, 0.14), dark)
+		# Mirrors.
+		_add_box(Vector3(sx * 0.32, 0.335, -0.2), Vector3(0.06, 0.03, 0.045), _paint)
+	_add_box(Vector3(0, 0.055, -0.745), Vector3(0.68, 0.025, 0.09), carbon)
+	_add_box(Vector3(0, 0.1, 0.465), Vector3(0.62, 0.07, 0.05), carbon)
+	for fx in [-0.2, -0.07, 0.07, 0.2]:
+		_add_box(Vector3(fx, 0.085, 0.47), Vector3(0.012, 0.06, 0.08), dark)
+	# Hood vents and twin racing stripes.
+	var stripe := StandardMaterial3D.new()
+	stripe.albedo_color = Color(0.95, 0.96, 1.0)
+	stripe.metallic = 0.5
+	stripe.roughness = 0.25
+	for sx in [-0.07, 0.07]:
+		var st_box := _add_box(Vector3(sx, 0.287, -0.42), Vector3(0.05, 0.008, 0.5), stripe)
+		st_box.rotation.x = deg_to_rad(-6.0)
+	for vz in [-0.5, -0.43]:
+		_add_box(Vector3(0, 0.272, vz), Vector3(0.22, 0.01, 0.025), dark).rotation.x = deg_to_rad(-6.0)
+	# Rear wing on swan-neck supports.
+	_add_box(Vector3(0, 0.5, 0.41), Vector3(0.86, 0.03, 0.15), carbon).rotation.x = deg_to_rad(-6.0)
+	_add_box(Vector3(0, 0.513, 0.36), Vector3(0.86, 0.006, 0.02), led)
+	for sx in [-1.0, 1.0]:
+		_add_box(Vector3(sx * 0.22, 0.43, 0.43), Vector3(0.025, 0.13, 0.05), dark)
+		_add_box(Vector3(sx * 0.43, 0.5, 0.41), Vector3(0.015, 0.11, 0.2), _paint)
+	# Lights: slim LED headlights and full-width tail bar.
+	var head := StandardMaterial3D.new()
+	head.albedo_color = Color.WHITE
+	head.emission_enabled = true
+	head.emission = Color(0.85, 0.95, 1.0)
+	head.emission_energy_multiplier = 4.0
+	var tail := StandardMaterial3D.new()
+	tail.albedo_color = Color(1, 0.2, 0.2)
+	tail.emission_enabled = true
+	tail.emission = Color(1.0, 0.08, 0.1)
+	tail.emission_energy_multiplier = 3.0
+	for sx in [-1.0, 1.0]:
+		var hl := _add_box(Vector3(sx * 0.25, 0.165, -0.735), Vector3(0.17, 0.022, 0.03), head)
+		hl.rotation.y = sx * deg_to_rad(10.0)
+		_add_box(Vector3(sx * 0.3, 0.135, -0.725), Vector3(0.09, 0.012, 0.02), led)
+	_add_box(Vector3(0, 0.28, 0.468), Vector3(0.7, 0.03, 0.015), tail)
+	# Twin boost nozzles.
+	for sx in [-0.12, 0.12]:
+		var nozzle := MeshInstance3D.new()
+		var nm := CylinderMesh.new()
+		nm.top_radius = 0.055
+		nm.bottom_radius = 0.07
+		nm.height = 0.09
+		nozzle.mesh = nm
+		nozzle.rotation.x = PI * 0.5
+		nozzle.position = Vector3(sx, 0.19, 0.49)
+		nozzle.material_override = dark
+		body_root.add_child(nozzle)
+		var glow := MeshInstance3D.new()
+		var gm := CylinderMesh.new()
+		gm.top_radius = 0.04
+		gm.bottom_radius = 0.04
+		gm.height = 0.01
+		glow.mesh = gm
+		glow.rotation.x = PI * 0.5
+		glow.position = Vector3(sx, 0.19, 0.535)
+		glow.material_override = led
+		body_root.add_child(glow)
+	_build_wheels()

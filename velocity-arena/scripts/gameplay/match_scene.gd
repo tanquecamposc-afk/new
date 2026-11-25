@@ -32,6 +32,11 @@ var _last_countdown: int = -1
 var _recorded: bool = false
 var _base_gravity: float = 6.5
 var _demo_frames: int = 0
+var replay := ReplayBuffer.new()
+var _replay_active: bool = false
+var _replay_t: float = 0.0
+var _replay_end: float = 0.0
+var _speed_lines: ColorRect
 
 
 func _ready() -> void:
@@ -50,6 +55,8 @@ func _ready() -> void:
 	if not free_play:
 		rules.set_duration(GameState.match_minutes)
 	rules.skip_countdown = free_play
+	if not free_play:
+		rules.goal_pause = 6.0
 	_build_presentation()
 	rules.start()
 	_handle_events()
@@ -124,11 +131,18 @@ func _physics_process(delta: float) -> void:
 		b.update(dt)
 	var t0: int = Time.get_ticks_usec()
 	rules.step(dt)
+	if rules.phase == MatchRules.Phase.PLAYING and not free_play:
+		replay.record(world, dt)
 	_phys_ms = lerpf(_phys_ms, float(Time.get_ticks_usec() - t0) / 1000.0, 0.1)
 	_handle_events()
 
 
 func _process(delta: float) -> void:
+	_update_speed_lines(delta)
+	if _replay_active:
+		_process_replay(delta)
+		hud.tick(delta)
+		return
 	for cv in car_visuals:
 		cv.sync(delta)
 	var ball_hidden: bool = rules.phase == MatchRules.Phase.GOAL and not free_play
@@ -220,6 +234,7 @@ func _on_goal(e: Dictionary) -> void:
 	hud.show_center(I18n.t("goal"), sub, 2.8, col.lightened(0.25))
 	if not free_play:
 		cam.start_orbit(e["pos"])
+		get_tree().create_timer(1.4).timeout.connect(_start_replay, CONNECT_ONE_SHOT)
 	else:
 		# Free play: put the ball back after the celebration, keep driving.
 		get_tree().create_timer(1.2).timeout.connect(func():
@@ -409,3 +424,90 @@ func _show_post_match(winner: int, xp: int) -> void:
 	menu.pressed.connect(func(): get_tree().change_scene_to_file("res://scenes/main/main_menu.tscn"))
 	h.add_child(menu)
 	again.grab_focus()
+
+
+# ------------------------------------------------------------------ replays
+func _start_replay() -> void:
+	if replay.duration() < 1.0 or rules.phase != MatchRules.Phase.GOAL:
+		return
+	_replay_active = true
+	_replay_end = replay.duration()
+	_replay_t = maxf(0.0, _replay_end - 3.6)
+	hud.show_center("REPETICIÓN", "", 999.0, Color(1, 0.85, 0.3))
+	hud.center_big.add_theme_font_size_override("font_size", 40)
+
+
+func _process_replay(delta: float) -> void:
+	_replay_t += delta * 0.6
+	if _replay_t >= _replay_end or rules.phase != MatchRules.Phase.GOAL:
+		_stop_replay()
+		return
+	var f: Array = replay.sample(_replay_t)
+	if f.is_empty():
+		return
+	var ball_p: Vector3 = f[0]
+	ball_visual.show_at(ball_p, f[1])
+	var cars: Array = f[2]
+	for i in mini(cars.size(), car_visuals.size()):
+		var cv: CarVisual = car_visuals[i]
+		var flags: int = cars[i][2]
+		cv.visible = (flags & 2) == 0
+		cv.global_transform = Transform3D(Basis(cars[i][1] as Quaternion), cars[i][0])
+		if cv.boost_particles:
+			cv.boost_particles.emitting = (flags & 1) != 0
+	# Cinematic camera: trails the ball from behind its direction of travel.
+	var ahead: Array = replay.sample(minf(_replay_t + 0.15, _replay_end))
+	var dir: Vector3 = ((ahead[0] as Vector3) - ball_p) if not ahead.is_empty() else Vector3.FORWARD
+	dir.y = 0.0
+	if dir.length() < 0.05:
+		dir = Vector3(0, 0, 1)
+	dir = dir.normalized()
+	var want: Vector3 = ball_p - dir * 9.0 + Vector3.UP * 3.5 + dir.cross(Vector3.UP) * 3.0
+	want.y = maxf(want.y, 1.5)
+	cam.mode = CarCamera.Mode.FREE
+	cam.global_position = cam.global_position.lerp(want, clampf(delta * 3.0, 0.0, 1.0))
+	cam.look_at(ball_p, Vector3.UP)
+
+
+func _stop_replay() -> void:
+	_replay_active = false
+	replay.clear()
+	hud.center_big.remove_theme_font_size_override("font_size")
+	hud.show_center("", "", 0.01)
+	cam.load_settings()
+
+
+# ------------------------------------------------------------------ speed lines
+func _update_speed_lines(delta: float) -> void:
+	if _speed_lines == null:
+		var layer := CanvasLayer.new()
+		layer.layer = 2
+		add_child(layer)
+		_speed_lines = ColorRect.new()
+		UiStyle.full_rect(_speed_lines)
+		_speed_lines.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var sh := Shader.new()
+		sh.code = """shader_type canvas_item;
+uniform float amount = 0.0;
+float hash(float n) { return fract(sin(n) * 43758.5453); }
+void fragment() {
+	vec2 p = UV - 0.5;
+	float ang = atan(p.y, p.x);
+	float r = length(p);
+	float ray = floor(ang * 60.0);
+	float h = hash(ray);
+	float streak = step(0.82, h) * smoothstep(0.25, 0.55, r) * fract(r * 3.0 - TIME * (3.0 + h * 4.0));
+	COLOR = vec4(1.0, 1.0, 1.0, streak * amount * 0.35);
+}"""
+		var m := ShaderMaterial.new()
+		m.shader = sh
+		m.set_shader_parameter("amount", 0.0)
+		_speed_lines.material = m
+		layer.add_child(_speed_lines)
+	var target: float = 0.0
+	if player_car.supersonic and not _replay_active and not bool(Settings.get_value("game", "reduced_motion")):
+		target = 1.0
+	var m2: ShaderMaterial = _speed_lines.material
+	var raw: Variant = m2.get_shader_parameter("amount")
+	var cur: float = float(raw) if raw != null else 0.0
+	m2.set_shader_parameter("amount", lerpf(cur, target, clampf(delta * 4.0, 0.0, 1.0)))

@@ -13,6 +13,10 @@ de juegos comerciales.
 godot --headless --path velocity-arena --import          # genera .godot/ (class_name cache)
 godot --headless --path velocity-arena --script res://tests/run_tests.gd   # tests (exit 0 = OK)
 godot --path velocity-arena                               # jugar
+# Coche: blender -b -P tools/blender/build_car.py -- assets/vehicles/velocity_x.glb  (apt: blender python3-numpy)
+# Capturas Forward+ reales sin GPU (apt: mesa-vulkan-drivers), como escena para que existan los autoloads:
+#   VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json xvfb-run -a -s "-screen 0 1600x900x24" godot --rendering-driver vulkan \
+#     --path velocity-arena res://tools/screenshot.tscn -- res://scenes/gameplay/match.tscn out.png 1.2 soccar_2v2 none day
 # Capturas sin monitor (Xvfb + render por software):
 python3 velocity-arena/tests/multiplayer/run_mp_tests.py   # multijugador real (servidor + 2 clientes)
 xvfb-run -a -s "-screen 0 1600x900x24" godot --rendering-driver opengl3 --path velocity-arena \

@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.5.0] — 2026-11-25 — pasada de calidad
+### Añadido
+- Vehículo "Velocity X" v3 modelado en **Blender** con superficies de subdivisión
+  (`tools/blender/build_car.py` → `assets/vehicles/velocity_x.glb`), pintura por equipo.
+- Estadio: graderío continuo de 26 filas alrededor del campo con público por asiento,
+  cinta LED animada, cubierta con tira de luz y pantallas gigantes.
+- Iluminación: tonemapping AgX, SSAO, SSIL, SSR, niebla volumétrica nocturna, sonda de
+  reflexión, luz ambiente neutra; césped con mapa de normales; cielo con estrellas finas.
+- Repeticiones de gol (búfer de 7 s, cámara lenta, cámara cinematográfica) en partidas offline.
+- Líneas de velocidad en supersónico (desactivadas con "reducir movimiento").
+- Capturas con Forward+ real (Vulkan por software) mediante `tools/screenshot.tscn`.
+### Corregido
+- La herramienta de capturas no aplicaba el ambiente (se ejecutaba sin autoloads).
+
 ## [0.4.0] — 2026-11-25
 ### Añadido
 - **Multijugador real**:

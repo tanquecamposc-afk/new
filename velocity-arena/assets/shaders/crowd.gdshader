@@ -1,6 +1,7 @@
 shader_type spatial;
-// Cheap stylised crowd: a grid of coloured "spectators" that bob and flash.
-// One draw call per stand block instead of thousands of meshes.
+// Stylised crowd for the seating bowl. UV.x = metres along the row,
+// UV.y = tier index (+0.5 on the seat tread). Each 0.6 m cell is a seat with
+// a spectator silhouette (body + head) that bobs; some seats are empty.
 
 uniform float excitement = 0.0;
 uniform vec3 blue_tint : source_color = vec3(0.10, 0.45, 1.0);
@@ -17,16 +18,30 @@ void vertex() {
 }
 
 void fragment() {
-	vec2 cell = floor(vec2(wpos.x + wpos.z, wpos.y) / vec2(0.7, 0.8));
+	float tier = floor(UV.y);
+	float face = fract(UV.y) * 2.0;           // 0..1 riser, 1..2 tread
+	vec2 cell = vec2(floor(UV.x / 0.62), tier);
 	float h = hash(cell);
-	vec2 f = fract(vec2(wpos.x + wpos.z, wpos.y) / vec2(0.7, 0.8));
-	float bob = sin(TIME * (3.0 + h * 4.0) + h * 30.0) * (0.04 + excitement * 0.12);
-	float body = step(abs(f.x - 0.5), 0.28) * step(f.y, 0.75 + bob) * step(0.15, f.y);
-	float team = step(0.0, wpos.z) ;
-	vec3 shirt = mix(vec3(h, fract(h * 7.3), fract(h * 13.1)) * 0.6 + 0.2, mix(blue_tint, orange_tint, team), step(0.45, h));
-	vec3 seat = vec3(0.07, 0.08, 0.11);
-	float flash = step(0.995 - excitement * 0.02, hash(cell + floor(TIME * 6.0)));
-	ALBEDO = mix(seat, shirt, body);
-	EMISSION = vec3(1.0) * flash * 2.0 + shirt * body * 0.12;
-	ROUGHNESS = 0.9;
+	float fx = fract(UV.x / 0.62);
+	vec3 seat = mix(vec3(0.05, 0.055, 0.07), vec3(0.11, 0.12, 0.15), step(0.5, fract(tier * 0.5)));
+	vec3 col = seat;
+	float occupied = step(0.12, h);
+	// On the riser face we see the spectator standing in front of the seat.
+	float fy = clamp(face, 0.0, 1.0);
+	float bob = sin(TIME * (2.5 + h * 3.0) + h * 40.0) * (0.03 + excitement * 0.12);
+	float body = step(abs(fx - 0.5), 0.27) * step(fy, 0.62 + bob) * step(0.0, fy);
+	float head = step(length(vec2((fx - 0.5) * 1.3, fy - (0.78 + bob))), 0.15);
+	float person = max(body, head) * occupied * step(face, 1.0);
+	float team = step(0.0, wpos.z);
+	vec3 shirt = mix(vec3(h, fract(h * 7.3), fract(h * 13.1)) * 0.55 + 0.25, mix(blue_tint, orange_tint, team), step(0.4, fract(h * 3.7)));
+	vec3 skin = mix(vec3(0.35, 0.22, 0.15), vec3(0.85, 0.65, 0.5), fract(h * 11.0));
+	col = mix(col, mix(shirt, skin, head), person);
+	// Tread: seat rows with a subtle stripe.
+	if (face > 1.0) {
+		col = seat * (0.8 + 0.2 * step(0.5, fract(UV.x / 0.62)));
+	}
+	float flash = step(0.997 - excitement * 0.01, hash(cell + floor(TIME * 5.0))) * occupied;
+	ALBEDO = col;
+	EMISSION = vec3(1.0) * flash * 3.0 + col * 0.06;
+	ROUGHNESS = 0.85;
 }

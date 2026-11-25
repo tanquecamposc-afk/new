@@ -13,6 +13,7 @@ uniform float goal_height = 6.43;
 uniform float alpha_base = 0.05;
 uniform float grid_glow = 0.3;
 uniform float is_ceiling = 0.0;
+uniform float grid_alpha = 0.18;
 
 varying vec3 wpos;
 
@@ -47,8 +48,8 @@ void fragment() {
 	float fres = pow(1.0 - clamp(abs(dot(normalize(NORMAL), normalize(VIEW))), 0.0, 1.0), 3.0);
 	float low = 1.0 - smoothstep(0.0, 4.0, wpos.y);
 	ALBEDO = col * 0.4;
-	EMISSION = col * (grid * grid_glow * (0.5 + end_weight) + fres * 0.25 + low * 0.25);
-	ALPHA = clamp(alpha_base + grid * 0.18 + fres * 0.12 + low * 0.3, 0.0, 0.85);
+	EMISSION = col * (grid * grid_glow * (0.5 + end_weight) + fres * 0.12 + low * 0.25) * (1.0 - is_ceiling * 0.8);
+	ALPHA = clamp(alpha_base + grid * grid_alpha + fres * 0.08 * (1.0 - is_ceiling) + low * 0.3 * (1.0 - is_ceiling), 0.0, 0.85);
 	ROUGHNESS = 0.2;
 	METALLIC = 0.3;
 }

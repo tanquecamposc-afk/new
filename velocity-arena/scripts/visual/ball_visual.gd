@@ -92,6 +92,16 @@ static func _ring_texture(filled: bool = false) -> ImageTexture:
 	return ImageTexture.create_from_image(img)
 
 
+## Replay: place the ball directly from recorded data.
+func show_at(p: Vector3, q: Quaternion) -> void:
+	visible = true
+	mesh_inst.global_transform = Transform3D(Basis(q), p)
+	_light.global_position = p
+	_shadow.global_position = Vector3(p.x, 0.03, p.z)
+	if _trail:
+		_trail.global_position = p
+
+
 func sync(_dt: float, arena: ArenaShape, hidden: bool) -> void:
 	visible = not hidden
 	if hidden:

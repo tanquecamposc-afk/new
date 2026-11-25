@@ -90,6 +90,17 @@ func _build_floor() -> void:
 	mat.set_shader_parameter("goal_half_width", shape.goal_half_width)
 	mat.set_shader_parameter("blue_tint", _team_colors[0])
 	mat.set_shader_parameter("orange_tint", _team_colors[1])
+	var nt := NoiseTexture2D.new()
+	nt.width = 512
+	nt.height = 512
+	nt.seamless = true
+	nt.as_normal_map = true
+	nt.bump_strength = 6.0
+	var fn := FastNoiseLite.new()
+	fn.frequency = 0.09
+	fn.fractal_octaves = 3
+	nt.noise = fn
+	mat.set_shader_parameter("turf_normal", nt)
 	mi.material_override = mat
 	mi.name = "Pitch"
 	add_child(mi)
@@ -166,8 +177,12 @@ func _wall_material(ceiling: bool) -> ShaderMaterial:
 	mat.set_shader_parameter("orange_tint", _team_colors[1])
 	mat.set_shader_parameter("is_ceiling", 1.0 if ceiling else 0.0)
 	if ceiling:
-		mat.set_shader_parameter("alpha_base", 0.04)
-		mat.set_shader_parameter("grid_glow", 0.15)
+		mat.set_shader_parameter("alpha_base", 0.0)
+		mat.set_shader_parameter("grid_glow", 0.03)
+		mat.set_shader_parameter("grid_alpha", 0.04)
+	else:
+		mat.set_shader_parameter("grid_glow", 0.14)
+		mat.set_shader_parameter("grid_alpha", 0.1)
 	return mat
 
 
@@ -267,97 +282,191 @@ func _build_goals() -> void:
 		goal_lights.append(gl)
 
 
+## Continuous stepped seating bowl around the whole arena + roof ring.
 func _build_stands() -> void:
-	var hw: float = shape.half_width
-	var hl: float = shape.half_length
-	var seat_mat_list: Array[ShaderMaterial] = []
-	var base_mat := StandardMaterial3D.new()
-	base_mat.albedo_color = Color(0.09, 0.1, 0.13)
-	base_mat.metallic = 0.4
-	base_mat.roughness = 0.5
-	# Long sides and ends: stepped tiers of seats.
-	var blocks: Array = [
-		[Vector3(hw + 4.0, 0, 0), hl * 1.6, 0.0],
-		[Vector3(-hw - 4.0, 0, 0), hl * 1.6, PI],
-		[Vector3(0, 0, hl + 13.0), hw * 1.5, -PI * 0.5],
-		[Vector3(0, 0, -hl - 13.0), hw * 1.5, PI * 0.5],
-	]
-	for blk in blocks:
-		var root := Node3D.new()
-		root.position = blk[0]
-		root.rotation.y = blk[2]
-		add_child(root)
-		var length: float = blk[1]
-		var tiers: int = 9
-		var cm := ShaderMaterial.new()
-		cm.shader = CROWD_SHADER
-		cm.set_shader_parameter("blue_tint", _team_colors[0])
-		cm.set_shader_parameter("orange_tint", _team_colors[1])
-		crowd_materials.append(cm)
+	var per: Array = _core_perimeter(14)
+	var pts: Array[Vector3] = per[0]
+	var nrm: Array[Vector3] = per[1]
+	var re: float = shape.edge_radius
+	var tiers: int = 26
+	var start_off: float = re + 12.5          # outside the goal boxes
+	var tread: float = 0.95
+	var rise: float = 0.62
+	var base_h: float = 2.4
+	var cm := ShaderMaterial.new()
+	cm.shader = CROWD_SHADER
+	cm.set_shader_parameter("blue_tint", _team_colors[0])
+	cm.set_shader_parameter("orange_tint", _team_colors[1])
+	crowd_materials.append(cm)
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var n_pts: int = pts.size()
+	# Cumulative perimeter distance -> U coordinate (seat columns).
+	var dist := PackedFloat32Array()
+	var acc: float = 0.0
+	for i in n_pts:
+		if i > 0:
+			acc += pts[i].distance_to(pts[i - 1])
+		dist.append(acc)
+	var total: float = acc + pts[n_pts - 1].distance_to(pts[0])
+	for i in n_pts:
+		var i2: int = (i + 1) % n_pts
+		var u0: float = dist[i]
+		var u1: float = total if i2 == 0 else dist[i2]
 		for t in tiers:
-			var tier := MeshInstance3D.new()
-			var bm := BoxMesh.new()
-			bm.size = Vector3(2.2, 1.0 + t * 1.6, length)
-			tier.mesh = bm
-			tier.position = Vector3(1.2 + t * 2.2, (1.0 + t * 1.6) * 0.5 + 2.0, 0)
-			tier.material_override = cm
-			tier.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-			root.add_child(tier)
-		# Roof canopy and support columns.
-		var roof := MeshInstance3D.new()
-		var rm := BoxMesh.new()
-		rm.size = Vector3(24.0, 0.6, length + 6.0)
-		roof.mesh = rm
-		roof.position = Vector3(10.0, 22.5 + tiers * 0.2, 0)
-		roof.rotation.z = deg_to_rad(-8.0)
-		roof.material_override = base_mat
-		root.add_child(roof)
-		# Light strip under the roof edge.
-		var strip := MeshInstance3D.new()
-		var sm := BoxMesh.new()
-		sm.size = Vector3(0.4, 0.25, length + 6.0)
-		strip.mesh = sm
-		strip.position = Vector3(-1.5, 23.6, 0)
-		var strip_mat := StandardMaterial3D.new()
-		strip_mat.emission_enabled = true
-		strip_mat.emission = Color(0.85, 0.92, 1.0)
-		strip_mat.emission_energy_multiplier = 4.0
-		strip_mat.albedo_color = Color.WHITE
-		strip.material_override = strip_mat
-		root.add_child(strip)
-		# Base wall below the seats.
-		var base := MeshInstance3D.new()
-		var bbm := BoxMesh.new()
-		bbm.size = Vector3(22.0, 2.0, length)
-		base.mesh = bbm
-		base.position = Vector3(10.0, 1.0, 0)
-		base.material_override = base_mat
-		root.add_child(base)
-	# Giant screens above each end.
+			var off0: float = start_off + t * tread
+			var off1: float = off0 + tread
+			var y0: float = base_h + t * rise
+			var y1: float = y0 + rise
+			# Riser (vertical face) then tread (horizontal seat row).
+			var r0a: Vector3 = pts[i] + nrm[i] * off0
+			var r0b: Vector3 = pts[i2] + nrm[i2] * off0
+			var r1a: Vector3 = pts[i] + nrm[i] * off1
+			var r1b: Vector3 = pts[i2] + nrm[i2] * off1
+			var quads: Array = [
+				[r0a + Vector3.UP * y0, r0b + Vector3.UP * y0, r0b + Vector3.UP * y1, r0a + Vector3.UP * y1, -nrm[i], t, 0.0],
+				[r0a + Vector3.UP * y1, r0b + Vector3.UP * y1, r1b + Vector3.UP * y1, r1a + Vector3.UP * y1, Vector3.UP, t, 1.0],
+			]
+			for q in quads:
+				var uvs := [Vector2(u0, q[5] + q[6] * 0.5), Vector2(u1, q[5] + q[6] * 0.5), Vector2(u1, q[5] + q[6] * 0.5 + 0.5), Vector2(u0, q[5] + q[6] * 0.5 + 0.5)]
+				for idx in [0, 2, 1, 0, 3, 2]:
+					st.set_normal(q[4])
+					st.set_uv(uvs[idx])
+					st.add_vertex(q[idx])
+	var bowl := MeshInstance3D.new()
+	bowl.mesh = st.commit()
+	bowl.material_override = cm
+	bowl.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	bowl.name = "Bowl"
+	add_child(bowl)
+	# Concourse wall below the first tier and the outer back wall.
+	var wall_mat := StandardMaterial3D.new()
+	wall_mat.albedo_color = Color(0.07, 0.075, 0.09)
+	wall_mat.metallic = 0.3
+	wall_mat.roughness = 0.6
+	var outer_off: float = start_off + tiers * tread
+	var top_y: float = base_h + tiers * rise
+	var wst := SurfaceTool.new()
+	wst.begin(Mesh.PRIMITIVE_TRIANGLES)
+	for i in n_pts:
+		var i2: int = (i + 1) % n_pts
+		for spec in [[start_off, 0.0, base_h], [outer_off, 0.0, top_y + 6.0]]:
+			var a_p: Vector3 = pts[i] + nrm[i] * spec[0]
+			var b_p: Vector3 = pts[i2] + nrm[i2] * spec[0]
+			var q := [a_p + Vector3.UP * spec[1], b_p + Vector3.UP * spec[1], b_p + Vector3.UP * spec[2], a_p + Vector3.UP * spec[2]]
+			for idx in [0, 2, 1, 0, 3, 2]:
+				wst.add_vertex(q[idx])
+	wst.generate_normals()
+	var walls := MeshInstance3D.new()
+	walls.mesh = wst.commit()
+	wall_mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+	walls.material_override = wall_mat
+	add_child(walls)
+	# LED advertising ribbon along the front of the first tier (team gradient).
+	var rst := SurfaceTool.new()
+	rst.begin(Mesh.PRIMITIVE_TRIANGLES)
+	for i in n_pts:
+		var i2: int = (i + 1) % n_pts
+		var a_p: Vector3 = pts[i] + nrm[i] * (start_off - 0.05)
+		var b_p: Vector3 = pts[i2] + nrm[i2] * (start_off - 0.05)
+		var q := [a_p + Vector3.UP * (base_h - 1.1), b_p + Vector3.UP * (base_h - 1.1), b_p + Vector3.UP * (base_h - 0.1), a_p + Vector3.UP * (base_h - 0.1)]
+		var uvq := [Vector2(dist[i], 0), Vector2(total if i2 == 0 else dist[i2], 0), Vector2(total if i2 == 0 else dist[i2], 1), Vector2(dist[i], 1)]
+		for idx in [0, 2, 1, 0, 3, 2]:
+			rst.set_uv(uvq[idx])
+			rst.set_color(_team_colors[0].lerp(_team_colors[1], clampf(q[idx].z / (shape.half_length * 2.4) + 0.5, 0.0, 1.0)))
+			rst.add_vertex(q[idx])
+	var ribbon := MeshInstance3D.new()
+	ribbon.mesh = rst.commit()
+	var rib_sh := Shader.new()
+	rib_sh.code = """shader_type spatial;
+render_mode unshaded, cull_disabled;
+void fragment() {
+	float scroll = fract(UV.x / 14.0 - TIME * 0.12);
+	float band = smoothstep(0.0, 0.05, scroll) * smoothstep(0.55, 0.5, scroll);
+	float chevron = step(0.5, fract((UV.x + abs(UV.y - 0.5) * 2.0) / 1.2 - TIME * 0.8));
+	vec3 c = COLOR.rgb * (0.35 + band * 1.6 + chevron * 0.25);
+	ALBEDO = c;
+}"""
+	var rib_mat := ShaderMaterial.new()
+	rib_mat.shader = rib_sh
+	ribbon.material_override = rib_mat
+	ribbon.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(ribbon)
+	# Roof ring: cantilevered canopy over the upper tiers with a light strip.
+	var roof_mat := StandardMaterial3D.new()
+	roof_mat.albedo_color = Color(0.12, 0.13, 0.16)
+	roof_mat.metallic = 0.7
+	roof_mat.roughness = 0.35
+	roof_mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+	var lst := SurfaceTool.new()
+	lst.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var roof_in: float = start_off + tiers * tread * 0.45
+	var roof_y: float = top_y + 5.5
+	for i in n_pts:
+		var i2: int = (i + 1) % n_pts
+		var a_in: Vector3 = pts[i] + nrm[i] * roof_in + Vector3.UP * (roof_y + 1.5)
+		var b_in: Vector3 = pts[i2] + nrm[i2] * roof_in + Vector3.UP * (roof_y + 1.5)
+		var a_out: Vector3 = pts[i] + nrm[i] * (outer_off + 1.0) + Vector3.UP * roof_y
+		var b_out: Vector3 = pts[i2] + nrm[i2] * (outer_off + 1.0) + Vector3.UP * roof_y
+		for v in [a_in, b_out, b_in, a_in, a_out, b_out]:
+			lst.add_vertex(v)
+	lst.generate_normals()
+	var roof := MeshInstance3D.new()
+	roof.mesh = lst.commit()
+	roof.material_override = roof_mat
+	add_child(roof)
+	var strip_st := SurfaceTool.new()
+	strip_st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	for i in n_pts:
+		var i2: int = (i + 1) % n_pts
+		var a_p: Vector3 = pts[i] + nrm[i] * (roof_in - 0.1) + Vector3.UP * (roof_y + 1.5)
+		var b_p: Vector3 = pts[i2] + nrm[i2] * (roof_in - 0.1) + Vector3.UP * (roof_y + 1.5)
+		for v in [a_p, b_p + Vector3.DOWN * 0.5, b_p, a_p, a_p + Vector3.DOWN * 0.5, b_p + Vector3.DOWN * 0.5]:
+			strip_st.add_vertex(v)
+	var strip := MeshInstance3D.new()
+	strip.mesh = strip_st.commit()
+	var strip_mat := StandardMaterial3D.new()
+	strip_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	strip_mat.albedo_color = Color(1.6, 1.7, 2.0)
+	strip_mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+	strip.material_override = strip_mat
+	add_child(strip)
+	# Giant screens above each end, hung under the roof.
 	for side in [-1.0, 1.0]:
 		var screen := MeshInstance3D.new()
 		var qm := QuadMesh.new()
-		qm.size = Vector2(26.0, 9.0)
+		qm.size = Vector2(30.0, 11.0)
 		screen.mesh = qm
-		screen.position = Vector3(0, 30.0, side * (hl + 24.0))
+		screen.position = Vector3(0, top_y + 1.0, side * (shape.half_length + start_off + 6.0))
 		screen.rotation.y = 0.0 if side < 0.0 else PI
-		var sc_mat := StandardMaterial3D.new()
-		sc_mat.albedo_color = Color(0.02, 0.03, 0.05)
-		sc_mat.emission_enabled = true
-		var tc: Color = _team_colors[0].lerp(_team_colors[1], 0.5)
-		sc_mat.emission = tc * 0.35
-		sc_mat.emission_energy_multiplier = 1.5
+		var sc_sh := Shader.new()
+		sc_sh.code = """shader_type spatial;
+render_mode unshaded;
+uniform vec3 a : source_color;
+uniform vec3 b : source_color;
+void fragment() {
+	vec2 uv = UV;
+	float g = smoothstep(0.0, 1.0, uv.x + sin(TIME * 0.6 + uv.y * 3.0) * 0.15);
+	vec3 c = mix(a, b, g) * 0.55;
+	float px = step(0.12, fract(uv.x * 120.0)) * step(0.12, fract(uv.y * 44.0));
+	float frame = step(0.02, uv.x) * step(uv.x, 0.98) * step(0.04, uv.y) * step(uv.y, 0.96);
+	ALBEDO = mix(vec3(0.02), c * (0.6 + 0.4 * px) + vec3(0.9) * step(0.47, abs(uv.y - 0.5)) * 0.0, frame);
+}"""
+		var sc_mat := ShaderMaterial.new()
+		sc_mat.shader = sc_sh
+		sc_mat.set_shader_parameter("a", _team_colors[0])
+		sc_mat.set_shader_parameter("b", _team_colors[1])
 		screen.material_override = sc_mat
 		screen.name = "Screen"
 		add_child(screen)
 	# Outer ground plane.
 	var ground := MeshInstance3D.new()
 	var gm := PlaneMesh.new()
-	gm.size = Vector2(400, 400)
+	gm.size = Vector2(500, 500)
 	ground.mesh = gm
 	ground.position = Vector3(0, -0.05, 0)
 	var g_mat := StandardMaterial3D.new()
-	g_mat.albedo_color = Color(0.05, 0.06, 0.08)
+	g_mat.albedo_color = Color(0.04, 0.045, 0.055)
 	g_mat.roughness = 0.95
 	ground.material_override = g_mat
 	add_child(ground)
@@ -391,21 +500,21 @@ func _build_lights() -> void:
 	lamp_mat.emission_energy_multiplier = 8.0
 	for sx in [-1.0, 1.0]:
 		for sz in [-1.0, 1.0]:
-			var base := Vector3(sx * (shape.half_width + 30.0), 0, sz * (shape.half_length + 30.0))
+			var base := Vector3(sx * (shape.half_width + 46.0), 0, sz * (shape.half_length + 46.0))
 			var pole := MeshInstance3D.new()
 			var cm := CylinderMesh.new()
 			cm.top_radius = 0.6
 			cm.bottom_radius = 1.0
-			cm.height = 42.0
+			cm.height = 52.0
 			pole.mesh = cm
-			pole.position = base + Vector3(0, 21.0, 0)
+			pole.position = base + Vector3(0, 26.0, 0)
 			pole.material_override = tower_mat
 			add_child(pole)
 			var lamp := MeshInstance3D.new()
 			var lm := BoxMesh.new()
 			lm.size = Vector3(7.0, 4.0, 0.8)
 			lamp.mesh = lm
-			lamp.position = base + Vector3(0, 43.0, 0)
+			lamp.position = base + Vector3(0, 53.0, 0)
 			lamp.look_at_from_position(lamp.position, Vector3(0, 0, 0), Vector3.UP)
 			lamp.material_override = lamp_mat
 			add_child(lamp)
@@ -413,8 +522,8 @@ func _build_lights() -> void:
 				var spot := SpotLight3D.new()
 				spot.position = lamp.position
 				spot.look_at_from_position(lamp.position, Vector3(sx * -8.0, 0, sz * -10.0), Vector3.UP)
-				spot.spot_range = 140.0
-				spot.spot_angle = 38.0
+				spot.spot_range = 170.0
+				spot.spot_angle = 30.0
 				spot.light_energy = 9.0 if lighting == "night" else 4.0
 				spot.spot_attenuation = 0.6
 				spot.shadow_enabled = false
@@ -599,24 +708,52 @@ func _build_environment() -> void:
 	sky.sky_material = sky_mat
 	env.background_mode = Environment.BG_SKY
 	env.sky = sky
-	env.ambient_light_source = Environment.AMBIENT_SOURCE_SKY
+	# Neutral ambient: the sky colour must not tint the whole stadium.
+	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
+	env.ambient_light_color = Color(0.55, 0.6, 0.7) if lighting == "night" else Color(0.75, 0.78, 0.85)
+	env.ambient_light_energy = 0.35 if lighting == "night" else 0.6
 	env.reflected_light_source = Environment.REFLECTION_SOURCE_SKY
-	env.tonemap_mode = Environment.TONE_MAPPER_ACES
-	env.tonemap_exposure = 1.0 if lighting != "night" else 1.15
+	env.tonemap_mode = Environment.TONE_MAPPER_AGX
+	env.tonemap_exposure = 1.15 if lighting == "night" else 1.0
 	env.glow_enabled = bool(_setting("video", "glow", true))
-	env.glow_intensity = 0.7
-	env.glow_bloom = 0.05
-	env.glow_hdr_threshold = 1.1
-	env.ssao_enabled = bool(_setting("video", "ssao", true))
-	env.ssao_radius = 1.2
-	env.ssao_intensity = 1.5
+	env.glow_intensity = 0.55
+	env.glow_strength = 1.0
+	env.glow_bloom = 0.02
+	env.glow_hdr_threshold = 1.2
+	env.glow_blend_mode = Environment.GLOW_BLEND_MODE_SCREEN
+	var hq: bool = bool(_setting("video", "ssao", true))
+	env.ssao_enabled = hq
+	env.ssao_radius = 1.0
+	env.ssao_intensity = 2.0
+	env.ssao_power = 1.6
+	env.ssil_enabled = hq
+	env.ssil_intensity = 0.8
+	env.ssr_enabled = hq
+	env.ssr_max_steps = 48
+	env.ssr_fade_in = 0.15
+	env.ssr_fade_out = 2.0
 	env.fog_enabled = true
-	env.fog_light_color = Color(0.3, 0.35, 0.5) if lighting == "night" else Color(0.7, 0.75, 0.85)
-	env.fog_density = 0.0015
+	env.fog_light_color = Color(0.12, 0.14, 0.2) if lighting == "night" else Color(0.7, 0.76, 0.86)
+	env.fog_density = 0.0004
+	env.fog_sky_affect = 0.2
+	env.volumetric_fog_enabled = hq and lighting == "night"
+	env.volumetric_fog_density = 0.006
+	env.volumetric_fog_albedo = Color(0.9, 0.92, 1.0)
+	env.volumetric_fog_length = 160.0
 	env.adjustment_enabled = true
-	env.adjustment_saturation = 1.1
+	env.adjustment_contrast = 1.08
+	env.adjustment_saturation = 1.12
 	we.environment = env
 	add_child(we)
+	# Reflection probe so the car paint and glass reflect the stadium.
+	var probe := ReflectionProbe.new()
+	probe.size = Vector3(shape.half_width * 2.0 + 60.0, 60.0, shape.half_length * 2.0 + 60.0)
+	probe.position = Vector3(0, 6.0, 0)
+	probe.update_mode = ReflectionProbe.UPDATE_ONCE
+	probe.box_projection = true
+	probe.intensity = 0.9
+	probe.max_distance = 300.0
+	add_child(probe)
 
 
 func _setting(section: String, key: String, def: Variant) -> Variant:

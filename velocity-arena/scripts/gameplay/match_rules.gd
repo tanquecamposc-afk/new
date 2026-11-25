@@ -43,6 +43,8 @@ var last_scorer: int = -1
 var events: Array[Dictionary] = []
 ## Free play: kickoffs start immediately with no countdown.
 var skip_countdown: bool = false
+## Seconds between a goal and the next kickoff (longer offline for replays).
+var goal_pause: float = GOAL_PAUSE
 var _time_limit: float = 300.0
 var _rng := RandomNumberGenerator.new()
 ## Ball heading into a goal before a touch (for save detection).
@@ -153,7 +155,7 @@ func _check_goal() -> void:
 	world.ball_frozen = true
 	world.ball.vel = Vector3.ZERO
 	phase = Phase.GOAL
-	phase_timer = GOAL_PAUSE
+	phase_timer = goal_pause
 
 
 func _match_should_end() -> bool:

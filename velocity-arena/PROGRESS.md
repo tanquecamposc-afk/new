@@ -1,6 +1,6 @@
 # Progreso
 
-_Última actualización: 2026-11-25 — alfa 0.4_
+_Última actualización: 2026-11-25 — alfa 0.5_
 
 ## Verificado (tests automáticos y/o capturas reales)
 
@@ -26,6 +26,8 @@ _Última actualización: 2026-11-25 — alfa 0.4_
 | **Multijugador: servidor dedicado + 2 clientes en procesos separados** (salas, contraseña, permisos, movimiento, gol 1-0 sincronizado, reconexión, fin de partida, vuelta al lobby) | `tests/multiplayer/run_mp_tests.py`, 3 escenarios de red, en localhost |
 | Protocolo, validación, lobby, cola, reconexión, predicción | `tests/test_multiplayer.gd` |
 | Menú EN LÍNEA, lobby y partida online con gráficos | capturas contra un servidor real |
+| Coche modelado en Blender, estadio con graderío, iluminación Forward+ (día/noche/atardecer) | capturas Forward+ con Vulkan por software |
+| Búfer de repeticiones | test `test_replay_buffer` |
 
 ## Implementado pero sin verificar en este entorno
 
@@ -48,6 +50,7 @@ _Última actualización: 2026-11-25 — alfa 0.4_
 - La marca de tiempo de la herramienta de capturas cuenta fotogramas, por lo que
   con render por software la simulación avanza más que los segundos indicados.
 - Multijugador: cuentas solo de invitado (sin base de datos); sin amigos, grupos, competitivo ni torneos en línea.
-- Sin repeticiones de gol (la cámara orbita el punto del gol durante 3 s).
+- Repetición de gol: la lógica está probada, pero no se ha visto en una captura de un gol real (solo con goles forzados, que no tienen jugada previa).
+- Audio sintetizado básico: no hay acceso a bibliotecas de sonido libres desde este entorno.
 - La reasignación de controles en el menú no está hecha (InputMap sí es remapeable).
 - No hay builds exportados: requieren descargar las plantillas de exportación.

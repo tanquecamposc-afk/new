@@ -28,11 +28,13 @@ void sky() {
 	}
 	// Stars.
 	if (night > 0.01 && h > 0.0) {
-		vec3 cell = floor(d * 220.0);
+		vec3 q = d * 700.0;
+		vec3 cell = floor(q);
 		float st = hash(cell);
-		float star = step(0.9965, st);
+		float r = length(fract(q) - 0.5);
+		float star = step(0.9975, st) * smoothstep(0.35, 0.0, r);
 		float tw = 0.6 + 0.4 * sin(TIME * (2.0 + st * 5.0) + st * 40.0);
-		col += vec3(0.9, 0.95, 1.0) * star * tw * night * smoothstep(0.02, 0.25, h) * 1.6;
+		col += vec3(0.9, 0.95, 1.0) * star * tw * night * smoothstep(0.05, 0.35, h) * 1.2;
 	}
 	COLOR = col;
 }

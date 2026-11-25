@@ -1,10 +1,10 @@
 # VELOCITY ARENA
 
 Juego 3D original de fútbol con coches, hecho con **Godot 4.4** y un motor de
-físicas propio a 120 Hz. Estado actual: **alfa 0.4**: offline contra bots (1v1–4v4, 7 modos arcade,
+físicas propio a 120 Hz. Estado actual: **alfa 0.5**: offline contra bots (1v1–4v4, 7 modos arcade,
 juego libre) y **multijugador real** con servidor dedicado, salas con código, LAN y reconexión.
 
-![estado](https://img.shields.io/badge/estado-alfa%200.4-orange) ![tests](https://img.shields.io/badge/tests-185%20OK-brightgreen)
+![estado](https://img.shields.io/badge/estado-alfa%200.5-orange) ![tests](https://img.shields.io/badge/tests-188%20OK-brightgreen)
 
 ## Cómo jugar
 
@@ -49,7 +49,9 @@ portería · H = balón sobre el coche · B = turbo infinito · G = baja graveda
 - Menú principal 3D, HUD, marcador, pausa, ajustes persistentes (gráficos,
   audio, cámara, accesibilidad, idioma ES/EN), perfil local con XP y niveles.
 
-![Partida en línea](docs/screenshots/online_match.png)
+![Partida de día](docs/screenshots/match_day_v3.png)
+
+![Coche Velocity X v3](docs/screenshots/car_velocity_x_v3.png)
 
 ## Multijugador
 
