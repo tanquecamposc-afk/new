@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.7.0] — 2026-11-25 — coches deportivos y estadio nuevo
+### Cambiado
+- Coches rediseñados (`tools/blender/build_fleet.py`): carrocería con secciones de aristas
+  marcadas (pliegue de hombro, cintura de botella), morro en cuña, carrocería baja con pasos
+  de rueda reales recortados con booleanas, techo pintado y ventanas tintadas, splitter con
+  canards, faros rasgados, capó con abultamiento y rejillas, tomas laterales, difusor con
+  aletas, escapes dobles. Velocity X con alerón cuello de cisne y toma en el techo; Bastion
+  estilo rally-raid (barra de luces, snorkel, defensa, placa); Lancer con aletas de tiburón y
+  alerón de doble plano. Mismas hitboxes que antes.
+- Estadio web reconstruido: pared inferior sólida con paneles y color de equipo, vidrio con
+  rejilla hexagonal animada, dos anillos de gradas escalonadas con asientos, palcos
+  iluminados, público 3D instanciado que se balancea y salta con los goles, cubo marcador
+  colgante y pantallas en los fondos con el marcador en vivo, techo con batería de focos,
+  emblema central original y zonas de fondo hexagonales en el césped.
+- Densidad de público por preset (Medio 55 %, Alto 85 %, Ultra 100 %; Bajo/Competitivo sin público).
+### Corregido
+- La cámara (muelle) se volvía inestable por debajo de ~10 FPS y podía meterse en la pared:
+  ahora usa la solución exacta del muelle críticamente amortiguado.
+### Herramientas
+- `tools/glb_to_gltf_json.py`: convierte .glb a glTF JSON con buffer embebido (para la web).
+
 ## [0.6.0] — 2026-11-25 — versión web: gráficos, física y rendimiento
 ### Añadido
 - Flota de 3 coches originales en Blender (`tools/blender/build_fleet.py`): **Velocity X**

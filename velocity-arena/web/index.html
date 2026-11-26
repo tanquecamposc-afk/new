@@ -568,8 +568,8 @@ function botControl(w, car, c) {
 const PRESETS = {
   competitive: { label: "Competitivo", pr: 0.85, shadows: 0, particles: 0.35, crowd: false, scenery: false, shake: 0, aa: false },
   low: { label: "Bajo", pr: 0.75, shadows: 0, particles: 0.4, crowd: false, scenery: false, shake: 0.6, aa: false },
-  medium: { label: "Medio", pr: 1.0, shadows: 1024, particles: 0.7, crowd: true, scenery: true, shake: 1, aa: true },
-  high: { label: "Alto", pr: 1.5, shadows: 2048, particles: 1.0, crowd: true, scenery: true, shake: 1, aa: true },
+  medium: { label: "Medio", crowdDensity: 0.55, pr: 1.0, shadows: 1024, particles: 0.7, crowd: true, scenery: true, shake: 1, aa: true },
+  high: { label: "Alto", crowdDensity: 0.85, pr: 1.5, shadows: 2048, particles: 1.0, crowd: true, scenery: true, shake: 1, aa: true },
   ultra: { label: "Ultra", pr: 2.0, shadows: 4096, particles: 1.3, crowd: true, scenery: true, shake: 1, aa: true },
 };
 const store = { get(k, d) { try { const v = localStorage.getItem("va_" + k); return v === null ? d : v; } catch (e) { return d; } }, set(k, v) { try { localStorage.setItem("va_" + k, v); } catch (e) { /* storage blocked */ } } };
@@ -657,7 +657,7 @@ function corePerimeter(seg = 12) {
 const TEAM = [new THREE.Color("#2f7bff"), new THREE.Color("#ff8a1f")];
 
 /* ----------------------------------------------------------------- stadium */
-const arena = { sun: null, hemi: null, spots: [], lamps: [], crowdTex: [], crowdMat: null, led: null, ledCtx: null, scenery: null, sky: null, stars: null, padOrbs: [], padRings: [], padLights: [] };
+const arena = { sun: null, hemi: null, spots: [], lamps: [], crowd: null, crowdU: null, crowdMax: 0, glassMat: null, sbCtx: null, sbTex: null, cube: null, stands: null, led: null, ledCtx: null, scenery: null, sky: null, stars: null, padOrbs: [], padRings: [], padLights: [] };
 function buildArena() {
   // Sky dome with gradient + stars.
   const skyMat = new THREE.ShaderMaterial({ side: THREE.BackSide, depthWrite: false, uniforms: { top: { value: new THREE.Color() }, mid: { value: new THREE.Color() }, bot: { value: new THREE.Color() } },
@@ -680,6 +680,21 @@ function buildArena() {
     g.beginPath(); g.ellipse(X(0), Z(0), 9 * sx, 9 * sz, 0, 0, Math.PI * 2); g.stroke();
     for (const s of [-1, 1]) g.strokeRect(X(-(C.GW + 4)), s < 0 ? Z(-C.L) - 10 : Z(C.L - 7), (C.GW + 4) * 2 * sx, 7 * sz + 10);
     g.fillStyle = "rgba(240,248,255,0.95)"; g.beginPath(); g.arc(X(0), Z(0), 9, 0, Math.PI * 2); g.fill();
+    // Original centre emblem: split hexagon with a double chevron.
+    g.save(); g.translate(X(0), Z(0)); g.scale(sx, sz);
+    const hexPath = (r) => { g.beginPath(); for (let k = 0; k < 6; k++) { const a = Math.PI / 3 * k + Math.PI / 6; g.lineTo(Math.cos(a) * r, Math.sin(a) * r); } g.closePath(); };
+    hexPath(6.2); g.save(); g.clip(); g.fillStyle = "rgba(47,123,255,0.30)"; g.fillRect(-7, -7, 14, 7); g.fillStyle = "rgba(255,138,31,0.30)"; g.fillRect(-7, 0, 14, 7); g.restore();
+    hexPath(6.2); g.lineWidth = 0.28; g.strokeStyle = "rgba(240,248,255,0.95)"; g.stroke(); hexPath(5.3); g.lineWidth = 0.1; g.stroke();
+    g.fillStyle = "rgba(240,248,255,0.9)";
+    for (const dy of [-1.6, 0.4]) { g.beginPath(); g.moveTo(-3.2, dy - 0.9); g.lineTo(0, dy + 1.3); g.lineTo(3.2, dy - 0.9); g.lineTo(3.2, dy + 0.1); g.lineTo(0, dy + 2.3); g.lineTo(-3.2, dy + 0.1); g.closePath(); g.fill(); }
+    g.restore();
+    // Team end zones: faint hexagon tiling fading toward midfield.
+    for (const [side, col] of [[-1, "47,123,255"], [1, "255,138,31"]]) {
+      for (let zz = 0; zz < 16; zz += 1.7) for (let xx = -C.W; xx < C.W; xx += 2) {
+        const zw = side * (C.L - zz) , xo = xx + ((Math.round(zz / 1.7) % 2) ? 1 : 0); const a = 0.16 * (1 - zz / 16);
+        g.save(); g.translate(X(xo), Z(zw)); g.scale(sx, sz); hexPath(0.92); g.strokeStyle = `rgba(${col},${a.toFixed(3)})`; g.lineWidth = 0.09; g.stroke(); g.restore();
+      }
+    }
     // Faint team tint at each end.
     const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, "rgba(47,123,255,0.10)"); gr.addColorStop(0.45, "rgba(0,0,0,0)"); gr.addColorStop(0.55, "rgba(0,0,0,0)"); gr.addColorStop(1, "rgba(255,138,31,0.10)"); g.fillStyle = gr; g.fillRect(0, 0, w, h);
   });
@@ -691,37 +706,65 @@ function buildArena() {
   const turfN = noiseNormal(256, 3, 90);
   const floor = new THREE.Mesh(floorGeo, new THREE.MeshStandardMaterial({ map: turf, normalMap: turfN, normalScale: new THREE.Vector2(0.22, 0.22), roughness: 0.82, side: THREE.DoubleSide }));
   floor.receiveShadow = true; scene.add(floor);
-  // Curved shell (same profile as physics), glass with team tint and structural ribs.
+  // Arena shell (same profile as physics): solid panelled lower wall + hex-grid glass above.
   const prof = [];
   for (let k = 0; k <= 8; k++) { const a = -Math.PI / 2 + (Math.PI / 2) * k / 8; prof.push([C.Re * Math.cos(a), C.Re + C.Re * Math.sin(a)]); }
-  for (let k = 1; k < 5; k++) prof.push([C.Re, C.Re + (C.H - 2 * C.Re) * k / 5]);
+  for (let k = 1; k < 8; k++) prof.push([C.Re, C.Re + (C.H - 2 * C.Re) * k / 8]);
   for (let k = 0; k <= 8; k++) { const a = (Math.PI / 2) * k / 8; prof.push([C.Re * Math.cos(a), C.H - C.Re + C.Re * Math.sin(a)]); }
-  const verts = [], cols = [];
+  let per = 0; const pd = [0]; for (let i = 1; i <= pts.length; i++) { const a = pts[i - 1], b = pts[i % pts.length]; per += Math.hypot(b[0] - a[0], b[1] - a[1]); pd.push(per); }
+  const SOLID_Y = 4.6; const solid = { v: [], c: [], uv: [] }, glass = { v: [], c: [], uv: [] };
   for (let i = 0; i < pts.length; i++) {
     const i2 = (i + 1) % pts.length;
     for (let j = 0; j < prof.length - 1; j++) {
-      const q = [[i, j], [i2, j], [i2, j + 1], [i, j + 1]].map(([pi, pj]) => [pts[pi][0] + nrm[pi][0] * prof[pj][0], prof[pj][1], pts[pi][1] + nrm[pi][1] * prof[pj][0]]);
+      const ids = [[i, j], [i2, j], [i2, j + 1], [i, j + 1]];
+      const q = ids.map(([pi, pj]) => [pts[pi][0] + nrm[pi][0] * prof[pj][0], prof[pj][1], pts[pi][1] + nrm[pi][1] * prof[pj][0]]);
       const cz = (q[0][2] + q[2][2]) / 2, cy = (q[0][1] + q[2][1]) / 2, cx = (q[0][0] + q[2][0]) / 2;
       if (Math.abs(cz) > C.L - C.Re - 0.05 && Math.abs(cx) < C.GW && cy < C.GH) continue;
-      for (const id of [0, 1, 2, 0, 2, 3]) { verts.push(...q[id]); const tc = TEAM[0].clone().lerp(TEAM[1], clamp(q[id][2] / (2 * C.L) + 0.5, 0, 1)).lerp(new THREE.Color("#a9c4ff"), 0.45); cols.push(tc.r, tc.g, tc.b); }
+      const dst = cy < SOLID_Y ? solid : glass;
+      const arc = (pj) => { let a = 0; for (let k = 1; k <= pj; k++) a += Math.hypot(prof[k][0] - prof[k - 1][0], prof[k][1] - prof[k - 1][1]); return a; };
+      const uvq = [[pd[i], arc(j)], [pd[i + 1], arc(j)], [pd[i + 1], arc(j + 1)], [pd[i], arc(j + 1)]];
+      for (const id of [0, 1, 2, 0, 2, 3]) { dst.v.push(...q[id]); dst.uv.push(...uvq[id]); const tc = TEAM[0].clone().lerp(TEAM[1], clamp(q[id][2] / (2 * C.L) + 0.5, 0, 1)); dst.c.push(tc.r, tc.g, tc.b); }
     }
   }
-  const shellGeo = new THREE.BufferGeometry(); shellGeo.setAttribute("position", new THREE.Float32BufferAttribute(verts, 3)); shellGeo.setAttribute("color", new THREE.Float32BufferAttribute(cols, 3)); shellGeo.computeVertexNormals();
-  scene.add(new THREE.Mesh(shellGeo, new THREE.MeshStandardMaterial({ vertexColors: true, transparent: true, opacity: 0.11, roughness: 0.08, metalness: 0.6, side: THREE.DoubleSide, depthWrite: false })));
-  const ribMat = new THREE.MeshStandardMaterial({ color: "#8d98b0", metalness: 0.9, roughness: 0.3 });
+  const mkGeo = (d) => { const g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.Float32BufferAttribute(d.v, 3)); g.setAttribute("color", new THREE.Float32BufferAttribute(d.c, 3)); g.setAttribute("uv", new THREE.Float32BufferAttribute(d.uv, 2)); g.computeVertexNormals(); return g; };
+  // Lower wall: dark composite panels with seams and a team-tinted glow line (texture in metres via uv).
+  const panelTex = canvasTex(512, 256, (g, w, h) => {
+    g.fillStyle = "#1a2130"; g.fillRect(0, 0, w, h);
+    for (let x = 0; x < w; x += 128) { const gr = g.createLinearGradient(x, 0, x + 128, h); gr.addColorStop(0, "#232c3f"); gr.addColorStop(1, "#151b27"); g.fillStyle = gr; g.fillRect(x + 3, 3, 122, h - 6); }
+    g.fillStyle = "#0b0f17"; for (let x = 0; x < w; x += 128) g.fillRect(x, 0, 3, h); g.fillRect(0, h / 2 - 1, w, 2);
+    g.fillStyle = "rgba(255,255,255,0.06)"; for (let x = 0; x < w; x += 128) for (let k = 0; k < 4; k++) g.fillRect(x + 20 + k * 26, h - 40, 14, 4);
+  }, true);
+  panelTex.repeat.set(1 / 6, 1 / 4.6);
+  const solidMat = new THREE.MeshStandardMaterial({ map: panelTex, vertexColors: true, metalness: 0.55, roughness: 0.42, side: THREE.DoubleSide });
+  solidMat.onBeforeCompile = (sh) => { sh.fragmentShader = sh.fragmentShader.replace("#include <color_fragment>", "diffuseColor.rgb *= mix(vec3(1.0), vColor * 1.6, 0.35);"); };
+  const solidMesh = new THREE.Mesh(mkGeo(solid), solidMat); solidMesh.receiveShadow = true; scene.add(solidMesh);
+  // Upper wall + ceiling: glass with a hex grid, fresnel rim and team tint.
+  arena.glassMat = new THREE.ShaderMaterial({ transparent: true, depthWrite: false, side: THREE.DoubleSide, vertexColors: true, uniforms: { time: { value: 0 }, op: { value: 1 } },
+    vertexShader: "varying vec2 vUv; varying vec3 vC; varying vec3 vN; varying vec3 vV; void main(){ vUv = uv; vC = color; vec4 wp = modelMatrix * vec4(position,1.0); vN = normalize(mat3(modelMatrix) * normal); vV = normalize(cameraPosition - wp.xyz); gl_Position = projectionMatrix * viewMatrix * wp; }",
+    fragmentShader: `uniform float time; uniform float op; varying vec2 vUv; varying vec3 vC; varying vec3 vN; varying vec3 vV;
+      float hexd(vec2 p){ p = abs(p); return max(dot(p, normalize(vec2(1.0,1.732))), p.x); }
+      void main(){ vec2 p = vUv / 1.5; vec2 r = vec2(1.0, 1.732); vec2 h = r * 0.5; vec2 a = mod(p, r) - h; vec2 b = mod(p - h, r) - h; vec2 g = dot(a,a) < dot(b,b) ? a : b;
+        float edge = smoothstep(0.47, 0.5, hexd(g)); float fres = pow(1.0 - abs(dot(normalize(vN), normalize(vV))), 2.5);
+        float scan = 0.5 + 0.5 * sin(vUv.y * 0.6 - time * 1.5 + vUv.x * 0.05); float base = smoothstep(4.6, 7.5, vUv.y);
+        vec3 col = mix(vC, vec3(0.75, 0.88, 1.0), 0.35); float alpha = (0.03 + edge * (0.12 + 0.08 * scan) + fres * 0.2) * mix(1.6, 1.0, base) * mix(1.0, 0.35, smoothstep(13.0, 19.0, vUv.y)) * op;
+        gl_FragColor = vec4(col * (1.0 + edge * 0.8), alpha); }` });
+  scene.add(new THREE.Mesh(mkGeo(glass), arena.glassMat));
+  // Structural ribs, fewer and chunkier, only on the glass part.
+  const ribMat = new THREE.MeshStandardMaterial({ color: "#a3adc2", metalness: 0.9, roughness: 0.28 });
   let acc = 0;
   for (let i = 1; i < pts.length; i++) {
-    acc += Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]); if (acc < 10) continue; acc = 0;
+    acc += Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]); if (acc < 12) continue; acc = 0;
     const [x, z] = pts[i]; if (Math.abs(z) > C.L - C.Re - 0.5 && Math.abs(x) < C.GW + 1) continue;
     const path = new THREE.CurvePath(); const P = (k) => V(x + nrm[i][0] * (prof[k][0] + 0.12), prof[k][1], z + nrm[i][1] * (prof[k][0] + 0.12));
-    for (let k = 0; k < prof.length - 1; k++) path.add(new THREE.LineCurve3(P(k), P(k + 1)));
-    const rib = new THREE.Mesh(new THREE.TubeGeometry(path, 18, 0.11, 5, false), ribMat); scene.add(rib);
+    const k0 = prof.findIndex((q) => q[1] > SOLID_Y);
+    for (let k = k0; k < prof.length - 1; k++) path.add(new THREE.LineCurve3(P(k), P(k + 1)));
+    scene.add(new THREE.Mesh(new THREE.TubeGeometry(path, 14, 0.14, 6, false), ribMat));
   }
-  // LED rings at the floor edge and at the top of the wall.
-  for (const [yy, rad] of [[0.12, 0.08], [C.H - C.Re, 0.1]]) {
-    const ring = pts.map(([x, z], i) => V(x + nrm[i][0] * C.Re * 0.985, yy, z + nrm[i][1] * C.Re * 0.985));
-    const curve3 = new THREE.CatmullRomCurve3(ring, true); const tg = new THREE.TubeGeometry(curve3, 400, rad, 6, true);
-    const cc = []; const p = tg.attributes.position; for (let i = 0; i < p.count; i++) { const t = TEAM[0].clone().lerp(TEAM[1], clamp(p.getZ(i) / (2 * C.L) + 0.5, 0, 1)); cc.push(t.r * 2.2, t.g * 2.2, t.b * 2.2); }
+  // LED rings: where the ramp meets the wall, at the top of the solid wall, and along the ceiling edge.
+  for (const [off, yy, rad, bright] of [[C.Re * 0.985, 0.12, 0.07, 2.2], [C.Re + 0.06, SOLID_Y, 0.09, 2.6], [C.Re * 0.985, C.H - C.Re, 0.1, 2.0]]) {
+    const ringPts = pts.map(([x, z], i) => V(x + nrm[i][0] * off, yy, z + nrm[i][1] * off));
+    const tg = new THREE.TubeGeometry(new THREE.CatmullRomCurve3(ringPts, true), 400, rad, 6, true);
+    const cc = []; const p = tg.attributes.position; for (let i = 0; i < p.count; i++) { const t = TEAM[0].clone().lerp(TEAM[1], clamp(p.getZ(i) / (2 * C.L) + 0.5, 0, 1)); cc.push(t.r * bright, t.g * bright, t.b * bright); }
     tg.setAttribute("color", new THREE.Float32BufferAttribute(cc, 3)); scene.add(new THREE.Mesh(tg, new THREE.MeshBasicMaterial({ vertexColors: true, toneMapped: false })));
   }
   // Goals: tubular frames, fine nets, dark goal floor, glow.
@@ -740,58 +783,107 @@ function buildArena() {
     const glow = new THREE.Mesh(new THREE.PlaneGeometry(C.GW * 2, 0.25), new THREE.MeshBasicMaterial({ color: col, toneMapped: false })); glow.rotation.x = -Math.PI / 2; glow.position.set(0, 0.02, side * (C.L - 0.2)); scene.add(glow);
     const gl = new THREE.PointLight(col, 1.4, 24); gl.position.set(0, C.GH * 0.6, side * (C.L + 2)); scene.add(gl);
   }
-  // Seating bowl: animated crowd (two frames), LED advertising band, roof canopy.
-  const mkCrowd = (frame) => canvasTex(1024, 512, (g, w, h) => {
-    const rnd = mulberry(7); g.fillStyle = "#0a0e18"; g.fillRect(0, 0, w, h);
-    for (let y = 0; y < h; y += 16) { g.fillStyle = "#121827"; g.fillRect(0, y + 13, w, 3); for (let x = 0; x < w; x += 12) {
-      const r = rnd(); if (r < 0.1) continue; const bob = frame && rnd() < 0.5 ? -2 : 0; const c = rnd();
-      g.fillStyle = c < 0.32 ? "#3570e0" : c < 0.64 ? "#e57a26" : `hsl(${Math.floor(rnd() * 360)},40%,${40 + Math.floor(rnd() * 25)}%)`;
-      g.fillRect(x + 2, y + 6 + bob, 8, 8); g.fillStyle = ["#e0b896", "#b07a55", "#7a5038", "#f1cfb0"][Math.floor(rnd() * 4)]; g.beginPath(); g.arc(x + 6, y + 4 + bob, 3, 0, Math.PI * 2); g.fill();
-      if (frame && rnd() < 0.05) { g.fillStyle = "#ffffff"; g.fillRect(x + 1, y + bob, 2, 3); }
-    } }
-  }, true);
-  arena.crowdTex = [mkCrowd(0), mkCrowd(1)]; for (const t of arena.crowdTex) t.repeat.set(26, 8);
-  const tiers = 1, start = C.Re + 12.5, depth = 23, base = 2.4, top = base + 16;
-  const bowl = [], buv = [];
-  let acc2 = 0; const dist0 = [0]; for (let i = 1; i < pts.length; i++) { acc2 += Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]); dist0.push(acc2); }
-  const total = acc2 + Math.hypot(pts[0][0] - pts[pts.length - 1][0], pts[0][1] - pts[pts.length - 1][1]);
+  // ---- Stands: two stepped tiers with seats, private boxes between them, roof with floodlight rig.
   const P2 = (pi, o, y) => [pts[pi][0] + nrm[pi][0] * o, y, pts[pi][1] + nrm[pi][1] * o];
-  for (let i = 0; i < pts.length; i++) {
-    const i2 = (i + 1) % pts.length, u0 = dist0[i] / total, u1 = i2 === 0 ? 1 : dist0[i2] / total;
-    const q = [P2(i, start, base), P2(i2, start, base), P2(i2, start + depth, top), P2(i, start + depth, top)];
-    const uvq = [[u0, 0], [u1, 0], [u1, 1], [u0, 1]];
-    for (const id of [0, 2, 1, 0, 3, 2]) { bowl.push(...q[id]); buv.push(...uvq[id]); }
-  }
-  const bg = new THREE.BufferGeometry(); bg.setAttribute("position", new THREE.Float32BufferAttribute(bowl, 3)); bg.setAttribute("uv", new THREE.Float32BufferAttribute(buv, 2)); bg.computeVertexNormals();
-  arena.crowdMat = new THREE.MeshStandardMaterial({ map: arena.crowdTex[0], roughness: 0.95, side: THREE.DoubleSide, emissive: "#ffffff", emissiveMap: arena.crowdTex[0], emissiveIntensity: 0.22 });
-  arena.crowd = new THREE.Mesh(bg, arena.crowdMat); scene.add(arena.crowd);
-  // LED band (canvas animated) in front of the stands.
+  const START = 13, ROWD = 0.95, LOW = { rows: 16, y0: 1.2, rise: 0.55 }, UP = { rows: 14, rise: 0.72 };
+  const lowEnd = START + LOW.rows * ROWD, boxY0 = LOW.y0 + LOW.rows * LOW.rise, boxY1 = boxY0 + 3.2, upStart = lowEnd + 2.2, upY0 = boxY1 + 0.4;
+  const upEnd = upStart + UP.rows * ROWD, upTop = upY0 + UP.rows * UP.rise;
+  const st = { v: [], c: [] }; const tmpC = new THREE.Color();
+  const seatCol = (pi, row, tier) => { const z = pts[pi][1], x = pts[pi][0]; const aisle = Math.floor((pd[pi] / 9)) % 4 === 0 && (pd[pi] % 9) < 1.2;
+    if (aisle) return tmpC.set("#2a2f3a"); const t = clamp(z / (2 * C.L) + 0.5, 0, 1); const team = TEAM[0].clone().lerp(TEAM[1], t);
+    const mid = Math.abs(z) < 18 && Math.abs(x) > C.W; return tmpC.copy(mid ? new THREE.Color(tier ? "#3b4256" : "#c9d2e6") : team).multiplyScalar(row % 2 ? 0.85 : 1); };
+  const quad = (a, b, c2, d, col) => { for (const q of [a, b, c2, a, c2, d]) { st.v.push(...q); st.c.push(col.r, col.g, col.b); } };
+  const concrete = new THREE.Color("#3a3f4a");
+  const tier = (o0, y0, rows, rise, tierIdx) => {
+    for (let r = 0; r < rows; r++) {
+      const o = o0 + r * ROWD, y = y0 + r * rise;
+      for (let i = 0; i < pts.length; i++) {
+        const i2 = (i + 1) % pts.length;
+        quad(P2(i, o, y), P2(i2, o, y), P2(i2, o, y + rise), P2(i, o, y + rise), concrete);                         // riser
+        const col = seatCol(i, r, tierIdx).clone();
+        quad(P2(i, o, y + rise), P2(i2, o, y + rise), P2(i2, o + ROWD, y + rise), P2(i, o + ROWD, y + rise), col);   // tread with seats
+      }
+    }
+  };
+  tier(START, LOW.y0, LOW.rows, LOW.rise, 0); tier(upStart, upY0, UP.rows, UP.rise, 1);
+  for (let i = 0; i < pts.length; i++) { const i2 = (i + 1) % pts.length; const dark = new THREE.Color("#141821");
+    quad(P2(i, START - 0.3, 0), P2(i2, START - 0.3, 0), P2(i2, START - 0.3, LOW.y0), P2(i, START - 0.3, LOW.y0), dark);           // front wall of lower tier
+    quad(P2(i, lowEnd, boxY0), P2(i2, lowEnd, boxY0), P2(i2, upStart, boxY0), P2(i, upStart, boxY0), concrete);                     // concourse floor
+    quad(P2(i, upEnd, upTop), P2(i2, upEnd, upTop), P2(i2, upEnd, upTop + 4), P2(i, upEnd, upTop + 4), dark); }                    // back wall
+  const stG = new THREE.BufferGeometry(); stG.setAttribute("position", new THREE.Float32BufferAttribute(st.v, 3)); stG.setAttribute("color", new THREE.Float32BufferAttribute(st.c, 3)); stG.computeVertexNormals();
+  arena.stands = new THREE.Mesh(stG, new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide, emissive: "#1b2130" })); scene.add(arena.stands);
+  // Private boxes: glowing window band between the tiers.
+  const boxTex = canvasTex(256, 64, (g, w, h) => { g.fillStyle = "#0d121c"; g.fillRect(0, 0, w, h); for (let x = 0; x < w; x += 32) { const gr = g.createLinearGradient(0, 8, 0, 56); gr.addColorStop(0, "#ffe2a8"); gr.addColorStop(1, "#b77d3c"); g.fillStyle = gr; g.fillRect(x + 3, 10, 26, 40); g.fillStyle = "rgba(0,0,0,0.35)"; g.fillRect(x + 6, 30, 8, 20); } }, true);
+  boxTex.repeat.set(per / 16, 1);
+  const bx = [], buv = []; for (let i = 0; i < pts.length; i++) { const i2 = (i + 1) % pts.length; const q = [P2(i, lowEnd + 0.1, boxY0 + 0.4), P2(i2, lowEnd + 0.1, boxY0 + 0.4), P2(i2, lowEnd + 0.1, boxY1), P2(i, lowEnd + 0.1, boxY1)]; const u0 = pd[i] / per, u1 = pd[i + 1] / per; for (const [id, uvv] of [[0, [u0, 0]], [1, [u1, 0]], [2, [u1, 1]], [0, [u0, 0]], [2, [u1, 1]], [3, [u0, 1]]]) { bx.push(...q[id]); buv.push(...uvv); } }
+  const bxG = new THREE.BufferGeometry(); bxG.setAttribute("position", new THREE.Float32BufferAttribute(bx, 3)); bxG.setAttribute("uv", new THREE.Float32BufferAttribute(buv, 2));
+  scene.add(new THREE.Mesh(bxG, new THREE.MeshBasicMaterial({ map: boxTex, side: THREE.DoubleSide })));
+  // LED advertising ribbon on the front wall of the lower tier and along the box band.
   const ledCv = document.createElement("canvas"); ledCv.width = 1024; ledCv.height = 64; arena.ledCtx = ledCv.getContext("2d");
-  arena.led = new THREE.CanvasTexture(ledCv); arena.led.wrapS = THREE.RepeatWrapping; arena.led.repeat.set(10, 1); arena.led.encoding = THREE.sRGBEncoding;
-  const band = [], bandUv = [];
-  for (let i = 0; i < pts.length; i++) {
-    const i2 = (i + 1) % pts.length, u0 = dist0[i] / total, u1 = i2 === 0 ? 1 : dist0[i2] / total;
-    const q = [P2(i, start - 0.1, base - 1.3), P2(i2, start - 0.1, base - 1.3), P2(i2, start - 0.1, base - 0.1), P2(i, start - 0.1, base - 0.1)];
-    for (const [id, uvv] of [[0, [u0, 0]], [2, [u1, 1]], [1, [u1, 0]], [0, [u0, 0]], [3, [u0, 1]], [2, [u1, 1]]]) { band.push(...q[id]); bandUv.push(...uvv); }
+  arena.led = new THREE.CanvasTexture(ledCv); arena.led.wrapS = THREE.RepeatWrapping; arena.led.repeat.set(per / 60, 1); arena.led.encoding = THREE.sRGBEncoding;
+  const ledBand = (o, y0, y1) => { const b = [], u = []; for (let i = 0; i < pts.length; i++) { const i2 = (i + 1) % pts.length; const q = [P2(i, o, y0), P2(i2, o, y0), P2(i2, o, y1), P2(i, o, y1)]; const u0 = pd[i] / per, u1 = pd[i + 1] / per; for (const [id, uvv] of [[0, [u0, 0]], [1, [u1, 0]], [2, [u1, 1]], [0, [u0, 0]], [2, [u1, 1]], [3, [u0, 1]]]) { b.push(...q[id]); u.push(...uvv); } } const g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.Float32BufferAttribute(b, 3)); g.setAttribute("uv", new THREE.Float32BufferAttribute(u, 2)); return g; };
+  const ledMat = new THREE.MeshBasicMaterial({ map: arena.led, side: THREE.DoubleSide, toneMapped: false });
+  scene.add(new THREE.Mesh(ledBand(START - 0.35, 0.1, LOW.y0 - 0.05), ledMat), new THREE.Mesh(ledBand(lowEnd + 0.12, boxY0 - 0.05, boxY0 + 0.38), ledMat));
+  // 3D crowd: one instanced mesh, idle sway, jumps on goals.
+  const body = new THREE.BoxGeometry(0.46, 0.62, 0.3); body.translate(0, 0.31, 0); const head = new THREE.BoxGeometry(0.22, 0.24, 0.22); head.translate(0, 0.76, 0);
+  const arm = new THREE.BoxGeometry(0.1, 0.42, 0.1); const armL = arm.clone(); armL.translate(-0.3, 0.75, 0); const armR = arm.clone(); armR.translate(0.3, 0.75, 0);
+  const parts = [[body, 0, 0], [head, 1, 0], [armL, 0, 1], [armR, 0, 1]].map(([g, isHead, isArm]) => { const n = g.toNonIndexed(); const c = n.attributes.position.count; n.setAttribute("aHead", new THREE.Float32BufferAttribute(new Float32Array(c).fill(isHead), 1)); n.setAttribute("aArm", new THREE.Float32BufferAttribute(new Float32Array(c).fill(isArm), 1)); return n; });
+  const person = new THREE.BufferGeometry(); for (const name of ["position", "normal", "aHead", "aArm"]) { const arrs = parts.map((g) => g.attributes[name].array); const tot = arrs.reduce((a, b) => a + b.length, 0); const out = new Float32Array(tot); let o2 = 0; for (const a of arrs) { out.set(a, o2); o2 += a.length; } person.setAttribute(name, new THREE.BufferAttribute(out, name === "position" || name === "normal" ? 3 : 1)); }
+  const seats = []; const rndC = mulberry(11);
+  const addSeats = (o0, y0, rows, rise, occ) => { for (let r = 0; r < rows; r++) { const o = o0 + r * ROWD + 0.45, y = y0 + (r + 1) * rise; for (let i = 0; i < pts.length; i++) { const i2 = (i + 1) % pts.length; const seg = pd[i + 1] - pd[i]; const n = Math.round(seg / 0.62); for (let k = 0; k < n; k++) { if (rndC() > occ) continue; const t = (k + 0.5) / n; const aisle = (pd[i] + t * seg) % 36 < 1.2; if (aisle) continue; const a = P2(i, o, y), b = P2(i2, o, y); seats.push([a[0] + (b[0] - a[0]) * t, y, a[2] + (b[2] - a[2]) * t, Math.atan2(-(nrm[i][0]), -(nrm[i][1]))]); } } } };
+  addSeats(START, LOW.y0, LOW.rows, LOW.rise, 0.82); addSeats(upStart, upY0, UP.rows, UP.rise, 0.7);
+  const crowdN = seats.length; arena.crowdMax = crowdN;
+  const crowd = new THREE.InstancedMesh(person, new THREE.MeshLambertMaterial({ vertexColors: false }), crowdN);
+  const phase = new Float32Array(crowdN); const m4c = new THREE.Matrix4(), qc = new THREE.Quaternion(), one = V(1, 1, 1), shirt = new THREE.Color();
+  const shirts = ["#e8ecf4", "#20242e", "#c63b3b", "#3aa565", "#e3c443", "#8a5ad8"];
+  seats.forEach(([x, y, z, yaw], n) => {
+    qc.setFromAxisAngle(V(0, 1, 0), yaw); const sc = 0.9 + rndC() * 0.22; m4c.compose(V(x, y, z), qc, V(sc, sc, sc)); crowd.setMatrixAt(n, m4c); phase[n] = rndC() * 6.283;
+    const t = clamp(z / (2 * C.L) + 0.5, 0, 1); const r0 = rndC(); if (r0 < 0.62) shirt.copy(t < 0.5 ? TEAM[0] : TEAM[1]).offsetHSL(0, -0.1 * rndC(), (rndC() - 0.5) * 0.15); else shirt.set(shirts[Math.floor(rndC() * shirts.length)]);
+    crowd.setColorAt(n, shirt);
+  });
+  person.setAttribute("aPhase", new THREE.InstancedBufferAttribute(phase, 1));
+  arena.crowdU = { time: { value: 0 }, excite: { value: 0 } };
+  crowd.material.onBeforeCompile = (sh) => {
+    Object.assign(sh.uniforms, arena.crowdU);
+    sh.vertexShader = "uniform float time; uniform float excite; attribute float aPhase; attribute float aHead; attribute float aArm;\n" + sh.vertexShader
+      .replace("#include <begin_vertex>", "#include <begin_vertex>\n float j = max(0.0, sin(time * (2.0 + excite * 5.0) + aPhase)); transformed.y += j * (0.03 + excite * 0.32); transformed.x += sin(time * 0.7 + aPhase) * 0.04 * (1.0 - excite);\n if (aArm > 0.5) { transformed.y += excite * (0.45 + 0.15 * j); }")
+      .replace("#include <color_vertex>", "#include <color_vertex>\n vColor.xyz = mix(vColor.xyz, vec3(0.86, 0.66, 0.52) * (0.75 + 0.25 * fract(aPhase)), aHead);");
+  };
+  crowd.frustumCulled = false; arena.crowd = crowd; scene.add(crowd);
+  // Roof: canopy over the upper tier, inner fascia with floodlight rig.
+  const roofIn = START + 4, roofY = upTop + 6.5;
+  const rf = []; for (let i = 0; i < pts.length; i++) { const i2 = (i + 1) % pts.length; const q = [P2(i, roofIn, roofY), P2(i2, roofIn, roofY), P2(i2, upEnd + 1, upTop + 4.5), P2(i, upEnd + 1, upTop + 4.5)]; for (const id of [0, 2, 1, 0, 3, 2]) rf.push(...q[id]); }
+  const rfG = new THREE.BufferGeometry(); rfG.setAttribute("position", new THREE.Float32BufferAttribute(rf, 3)); rfG.computeVertexNormals();
+  scene.add(new THREE.Mesh(rfG, new THREE.MeshStandardMaterial({ color: "#232a38", metalness: 0.6, roughness: 0.45, side: THREE.DoubleSide })));
+  const fascia = []; for (let i = 0; i < pts.length; i++) { const i2 = (i + 1) % pts.length; const q = [P2(i, roofIn, roofY - 2.2), P2(i2, roofIn, roofY - 2.2), P2(i2, roofIn, roofY), P2(i, roofIn, roofY)]; for (const id of [0, 2, 1, 0, 3, 2]) fascia.push(...q[id]); }
+  const fG = new THREE.BufferGeometry(); fG.setAttribute("position", new THREE.Float32BufferAttribute(fascia, 3)); fG.computeVertexNormals();
+  scene.add(new THREE.Mesh(fG, new THREE.MeshStandardMaterial({ color: "#3a4356", metalness: 0.8, roughness: 0.3, side: THREE.DoubleSide })));
+  // Floodlight rig: rows of glowing lamp heads along the fascia, aimed at the pitch.
+  const lampGeo = new THREE.PlaneGeometry(0.9, 0.6); const lampCount = Math.floor(per / 2.2) * 2;
+  const lamps = new THREE.InstancedMesh(lampGeo, new THREE.MeshBasicMaterial({ color: "#f2f6ff", toneMapped: false, side: THREE.DoubleSide }), lampCount); let li = 0;
+  for (let i = 0; i < pts.length && li < lampCount; i++) { const seg = pd[i + 1] - pd[i]; const n = Math.max(1, Math.round(seg / 2.2)); const i2 = (i + 1) % pts.length;
+    for (let k = 0; k < n && li < lampCount; k++) for (const yy of [roofY - 0.6, roofY - 1.5]) { if (li >= lampCount) break; const t = (k + 0.5) / n; const a = P2(i, roofIn - 0.15, yy), b = P2(i2, roofIn - 0.15, yy); const p = V(a[0] + (b[0] - a[0]) * t, yy, a[2] + (b[2] - a[2]) * t);
+      const o = new THREE.Object3D(); o.position.copy(p); o.lookAt(p.x * 0.3, 0, p.z * 0.3); o.updateMatrix(); lamps.setMatrixAt(li++, o.matrix); } }
+  lamps.count = li; scene.add(lamps); arena.lamps.push(lamps);
+  for (const [x, z] of [[-1, -1], [1, -1], [-1, 1], [1, 1], [-1, 0], [1, 0]]) {
+    const s = new THREE.SpotLight("#eef3ff", 0.55, 320, 0.6, 0.7); s.position.set(x * (C.W + roofIn), roofY, z * (C.L + roofIn * 0.8)); s.target.position.set(-x * 8, 0, -z * 10); scene.add(s, s.target); arena.spots.push(s);
   }
-  const bandG = new THREE.BufferGeometry(); bandG.setAttribute("position", new THREE.Float32BufferAttribute(band, 3)); bandG.setAttribute("uv", new THREE.Float32BufferAttribute(bandUv, 2));
-  scene.add(new THREE.Mesh(bandG, new THREE.MeshBasicMaterial({ map: arena.led, side: THREE.DoubleSide, toneMapped: false })));
-  const wallMat = new THREE.MeshStandardMaterial({ color: "#0f131d", metalness: 0.4, roughness: 0.55, side: THREE.DoubleSide });
-  const ring = (o, y0, y1) => { const vv = []; for (let i = 0; i < pts.length; i++) { const i2 = (i + 1) % pts.length; const q = [P2(i, o, y0), P2(i2, o, y0), P2(i2, o, y1), P2(i, o, y1)]; for (const id of [0, 2, 1, 0, 3, 2]) vv.push(...q[id]); } const g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.Float32BufferAttribute(vv, 3)); g.computeVertexNormals(); return g; };
-  scene.add(new THREE.Mesh(ring(start, 0, base - 1.3), wallMat), new THREE.Mesh(ring(start + depth, top, top + 7), wallMat));
-  // Roof canopy ring with light strip.
-  const roofV = []; for (let i = 0; i < pts.length; i++) { const i2 = (i + 1) % pts.length; const q = [P2(i, start + depth * 0.35, top + 8), P2(i2, start + depth * 0.35, top + 8), P2(i2, start + depth + 2, top + 7), P2(i, start + depth + 2, top + 7)]; for (const id of [0, 2, 1, 0, 3, 2]) roofV.push(...q[id]); }
-  const roofG = new THREE.BufferGeometry(); roofG.setAttribute("position", new THREE.Float32BufferAttribute(roofV, 3)); roofG.computeVertexNormals();
-  scene.add(new THREE.Mesh(roofG, new THREE.MeshStandardMaterial({ color: "#1a1f2b", metalness: 0.7, roughness: 0.4, side: THREE.DoubleSide })));
-  const stripCurve = new THREE.CatmullRomCurve3(pts.map(([x, z], i) => V(x + nrm[i][0] * (start + depth * 0.35), top + 7.8, z + nrm[i][1] * (start + depth * 0.35))), true);
-  scene.add(new THREE.Mesh(new THREE.TubeGeometry(stripCurve, 300, 0.22, 6, true), new THREE.MeshBasicMaterial({ color: "#e8f0ff", toneMapped: false })));
-  // Light towers (glowing lamp panels + spot lights).
-  for (const [x, z] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) {
-    const bx = x * (C.W + 48), bz = z * (C.L + 46);
-    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 1.2, 58, 10), new THREE.MeshStandardMaterial({ color: "#2a2f3a", metalness: 0.7, roughness: 0.4 })); pole.position.set(bx, 29, bz); scene.add(pole);
-    const lamp = new THREE.Mesh(new THREE.PlaneGeometry(10, 5), new THREE.MeshBasicMaterial({ color: "#f4f8ff", toneMapped: false, side: THREE.DoubleSide })); lamp.position.set(bx, 59, bz); lamp.lookAt(0, 0, 0); scene.add(lamp); arena.lamps.push(lamp);
-    const s = new THREE.SpotLight("#eef3ff", 0.6, 300, 0.55, 0.65); s.position.set(bx, 59, bz); s.target.position.set(-x * 6, 0, -z * 8); scene.add(s, s.target); arena.spots.push(s);
+  // Scoreboards: a cube hung over midfield and a screen above each end, all fed by the live match.
+  const sbCv = document.createElement("canvas"); sbCv.width = 512; sbCv.height = 256; arena.sbCtx = sbCv.getContext("2d");
+  arena.sbTex = new THREE.CanvasTexture(sbCv); arena.sbTex.encoding = THREE.sRGBEncoding; arena.sbTex.anisotropy = 4;
+  const sbMat = new THREE.MeshBasicMaterial({ map: arena.sbTex, toneMapped: false }); const frameMat = new THREE.MeshStandardMaterial({ color: "#151a24", metalness: 0.8, roughness: 0.35 });
+  const cube = new THREE.Group(); cube.position.set(0, C.H + 7, 0);
+  for (let k = 0; k < 4; k++) { const f = new THREE.Mesh(new THREE.PlaneGeometry(9, 4.5), sbMat); f.rotation.y = k * Math.PI / 2; f.translateZ(4.61); cube.add(f); }
+  cube.add(new THREE.Mesh(new THREE.BoxGeometry(9.2, 4.8, 9.2), frameMat));
+  const cubeRing = new THREE.Mesh(new THREE.TorusGeometry(6.6, 0.12, 6, 48), new THREE.MeshBasicMaterial({ color: "#3fe0ff", toneMapped: false })); cubeRing.rotation.x = Math.PI / 2; cubeRing.position.y = -2.6; cube.add(cubeRing);
+  for (const sx of [-1, 1]) for (const sz of [-1, 1]) { const c2 = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 30, 4), frameMat); c2.position.set(sx * 4, 17, sz * 4); cube.add(c2); }
+  scene.add(cube); arena.cube = cube;
+  for (const side of [-1, 1]) {
+    const scr = new THREE.Group(); scr.position.set(0, roofY - 8.5, side * (C.L - C.Re + roofIn + 1.5)); scr.lookAt(0, roofY - 14, 0);
+    const pane = new THREE.Mesh(new THREE.PlaneGeometry(20, 10), sbMat); pane.position.z = 0.32; scr.add(pane); scr.add(new THREE.Mesh(new THREE.BoxGeometry(20.8, 10.8, 0.55), frameMat));
+    scene.add(scr);
   }
+  drawScoreboard(true);
   // City skyline scenery (instanced towers with lit windows).
   const winTex = canvasTex(64, 128, (g, w, h) => { g.fillStyle = "#0c1220"; g.fillRect(0, 0, w, h); for (let y = 4; y < h; y += 8) for (let x = 4; x < w; x += 8) if (Math.random() < 0.45) { g.fillStyle = Math.random() < 0.8 ? "#ffd89a" : "#9fd4ff"; g.fillRect(x, y, 4, 4); } }, true);
   const towers = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshStandardMaterial({ color: "#1a2234", map: winTex, emissive: "#ffffff", emissiveMap: winTex, emissiveIntensity: 0.9, roughness: 0.8 }), 140);
@@ -827,8 +919,27 @@ function applyLighting() {
 function applyQuality() {
   renderer.shadowMap.enabled = Q.shadows > 0; arena.sun.castShadow = Q.shadows > 0;
   if (Q.shadows > 0) { arena.sun.shadow.mapSize.set(Q.shadows, Q.shadows); if (arena.sun.shadow.map) { arena.sun.shadow.map.dispose(); arena.sun.shadow.map = null; } }
-  arena.crowd.visible = Q.crowd; arena.scenery.visible = Q.scenery;
+  arena.crowd.visible = Q.crowd; arena.crowd.count = Math.floor(arena.crowdMax * (Q.crowdDensity || 1)); arena.scenery.visible = Q.scenery;
   scene.traverse((o) => { if (o.material) o.material.needsUpdate = true; });
+}
+let sbKey = "";
+function drawScoreboard(force) {
+  const g = arena.sbCtx, w = 512, h = 256; const W2 = game ? game.world : null;
+  const sc = W2 ? W2.score : [0, 0], secs = W2 ? Math.ceil(W2.left) : 300, ot = W2 && W2.ot, goal = W2 && W2.phase === "goal";
+  const clock = ot ? "PRÓRROGA" : `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, "0")}`; const blink = goal && Math.floor(performance.now() / 300) % 2;
+  const key = sc.join("-") + clock + (goal ? "g" + blink : "") + (W2 ? W2.phase : "menu"); if (!force && key === sbKey) return; sbKey = key;
+  const bg = g.createLinearGradient(0, 0, 0, h); bg.addColorStop(0, "#0b1426"); bg.addColorStop(1, "#05080f"); g.fillStyle = bg; g.fillRect(0, 0, w, h);
+  g.fillStyle = "#2f7bff"; g.fillRect(0, 0, w / 2, 10); g.fillStyle = "#ff8a1f"; g.fillRect(w / 2, 0, w / 2, 10);
+  g.textAlign = "center"; g.textBaseline = "middle";
+  if (goal) { g.fillStyle = blink ? "#ffd166" : "#ffffff"; g.font = "700 120px Chakra Petch, sans-serif"; g.fillText("¡GOL!", w / 2, h / 2 + 6); }
+  else {
+    g.font = "700 116px Chakra Petch, sans-serif"; g.fillStyle = "#86b6ff"; g.fillText(String(sc[0]), w * 0.2, h * 0.5); g.fillStyle = "#ffb46a"; g.fillText(String(sc[1]), w * 0.8, h * 0.5);
+    g.font = "700 64px Chakra Petch, sans-serif"; g.fillStyle = "#ffffff"; g.fillText(clock, w / 2, h * 0.46);
+    g.font = "600 22px Chakra Petch, sans-serif"; g.fillStyle = "#8f9bb8"; g.fillText("VELOCITY ARENA", w / 2, h * 0.78);
+    g.fillText("AZUL", w * 0.2, h * 0.86); g.fillText("NARANJA", w * 0.8, h * 0.86);
+  }
+  for (let y = 0; y < h; y += 3) { g.fillStyle = "rgba(0,0,0,0.18)"; g.fillRect(0, y, w, 1); }
+  arena.sbTex.needsUpdate = true;
 }
 function drawLed(t) {
   const g = arena.ledCtx, w = 1024, h = 64; const grad = g.createLinearGradient(0, 0, w, 0);
@@ -1077,7 +1188,9 @@ function frame(now) {
     render(dt, now, game.mode === "client" ? 1 : acc / DT);
   } else menuScene(dt, now);
   ledT += dt; if (ledT > 1 / 15) { ledT = 0; drawLed(now / 1000); }
-  crowdT += dt; if (crowdT > (game && game.excite > 0 ? 0.18 : 0.45)) { crowdT = 0; crowdF ^= 1; arena.crowdMat.map = arena.crowdTex[crowdF]; arena.crowdMat.emissiveMap = arena.crowdTex[crowdF]; }
+  const ex = game && game.excite > 0 ? Math.min(1, game.excite / 2) : 0; arena.crowdU.time.value = now / 1000; arena.crowdU.excite.value += (ex - arena.crowdU.excite.value) * Math.min(1, dt * 4);
+  arena.glassMat.uniforms.time.value = now / 1000; arena.cube.rotation.y += dt * 0.05;
+  crowdT += dt; if (crowdT > 0.25) { crowdT = 0; drawScoreboard(false); }
   updateFx(dt); renderer.render(scene, camera);
   if (showPerf && (Math.floor(now / 250) !== Math.floor((now - rawDt * 1000) / 250))) perfText();
 }
@@ -1199,8 +1312,9 @@ function updateCamera(dt, bp) {
   const want = _r.w.copy(target).addScaledVector(camDir, -2.95 - ballH).addScaledVector(camUp, 1.1 + ballH);
   if (distV(want) < 0.45) { const d0 = _r.d.copy(want).sub(target); const L = d0.length(); d0.normalize(); let t = 0; while (t < L && dist(target.x + d0.x * t, target.y + d0.y * t, target.z + d0.z * t) > 0.5) t += 0.1; want.copy(target).addScaledVector(d0, Math.max(0.3, t - 0.1)); }
   // Critically damped spring (smooth at any frame rate).
-  const k = 120, dmp = 2 * Math.sqrt(k); const ax = (want.x - camPos.x) * k - camVel.x * dmp, ay = (want.y - camPos.y) * k - camVel.y * dmp, az = (want.z - camPos.z) * k - camVel.z * dmp;
-  camVel.x += ax * dt; camVel.y += ay * dt; camVel.z += az * dt; camPos.addScaledVector(camVel, dt);
+  // Exact critically damped spring step: stable at any frame rate (explicit Euler blew up below ~10 FPS).
+  const om = Math.sqrt(120), ex = Math.exp(-om * dt);
+  for (const ax of ["x", "y", "z"]) { const x = camPos[ax] - want[ax], tmp = (camVel[ax] + om * x) * dt; camVel[ax] = (camVel[ax] - om * tmp) * ex; camPos[ax] = want[ax] + (x + tmp) * ex; }
   if (camPos.distanceTo(want) > 12) { camPos.copy(want); camVel.set(0, 0, 0); }
   camera.position.copy(camPos); camera.up.copy(camUp);
   const lookAt = ballCam ? camLook.copy(target).addScaledVector(camUp, 0.55).lerp(bp, 0.1) : camLook.copy(target).addScaledVector(camUp, 0.55).addScaledVector(camDir, 3);

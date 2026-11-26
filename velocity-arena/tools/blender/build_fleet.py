@@ -256,34 +256,131 @@ def build_wheel(M, R, width, spokes):
     return w
 
 
-# ---------------------------------------------------------------- designs
+# ---------------------------------------------------------------- sporty body loft
+def loft2(name, sections, materials_list, creases=(1.0, 0.7, 0.5), roof_split=None, levels=3):
+    """Loft of creased cross-sections: (z, half_width, y_bottom, y_top, deck_ratio).
+
+    Ring (right half, bottom to top): bottom edge, rocker, shoulder crease, deck edge,
+    top centre; mirrored for the left. Edge creases keep sharp character lines under
+    subdivision, which reads far more aggressive than a superellipse blob."""
+    bm = bmesh.new()
+    rings = []
+    for (z, hw, y0, y1, sh) in sections:
+        h = y1 - y0
+        half = [(hw * 0.80, y0), (hw * 0.97, y0 + 0.22 * h), (hw, y0 + 0.60 * h), (hw * sh, y1 - 0.02 * h)]
+        pts = [(0.0, y0)] + half + [(0.0, y1)] + [(-x, y) for (x, y) in reversed(half)]
+        rings.append([bm.verts.new(G(x, y, z)) for (x, y) in pts])
+    n = len(rings[0])
+    try:
+        cl = bm.edges.layers.float.get("crease_edge") or bm.edges.layers.float.new("crease_edge")
+    except Exception:
+        cl = None
+    crease_of = {3: creases[0], 8: creases[0], 4: creases[1], 7: creases[1], 1: creases[2], 9: creases[2]}
+    roof_faces = []
+    for r in range(len(rings) - 1):
+        a, b = rings[r], rings[r + 1]
+        for k in range(n):
+            k2 = (k + 1) % n
+            f = bm.faces.new((a[k], a[k2], b[k2], b[k]))
+            # Top band (deck edge -> centre -> deck edge), skipping windscreen and rear window rows.
+            if k in (4, 5) and 2 <= r <= len(rings) - 3:
+                roof_faces.append(f)
+        if cl is not None:
+            for k, c in crease_of.items():
+                e = bm.edges.get((a[k], b[k]))
+                if e:
+                    e[cl] = c
+    bm.faces.new(list(reversed(rings[0])))
+    bm.faces.new(rings[-1])
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+    if roof_split is not None:
+        for f in bm.faces:
+            f.material_index = 0
+        for f in roof_faces:
+            f.material_index = 1
+    me = bpy.data.meshes.new(name)
+    bm.to_mesh(me)
+    bm.free()
+    o = link(name, me)
+    for m in materials_list:
+        o.data.materials.append(m)
+    s = o.modifiers.new("sub", "SUBSURF")
+    s.levels = levels
+    s.render_levels = levels
+    for p in o.data.polygons:
+        p.use_smooth = True
+    return o
+
+
+def cut_wells(shell, d, M):
+    """Boolean-cut a wheel well per wheel so tyres sit inside real arches."""
+    R = d["R"]
+    yc = -0.155 + R
+    cutters = []
+    for (wx, wz) in d["wheels"]:
+        for sx in (-1, 1):
+            bpy.ops.mesh.primitive_cylinder_add(radius=R + 0.035, depth=0.42, vertices=40,
+                                                location=G(sx * (wx + 0.12), yc, wz), rotation=(0, math.radians(90), 0))
+            c = bpy.context.active_object
+            c.data.materials.append(M["Carbon"])
+            cutters.append(c)
+    bpy.ops.object.select_all(action="DESELECT")
+    for c in cutters:
+        c.select_set(True)
+    bpy.context.view_layer.objects.active = cutters[0]
+    bpy.ops.object.join()
+    cutter = bpy.context.active_object
+    bpy.ops.object.select_all(action="DESELECT")
+    shell.select_set(True)
+    bpy.context.view_layer.objects.active = shell
+    bpy.ops.object.convert(target="MESH")  # bake the subdivision before cutting
+    mod = shell.modifiers.new("wells", "BOOLEAN")
+    mod.operation = "DIFFERENCE"
+    mod.solver = "EXACT"
+    mod.object = cutter
+    try:
+        mod.material_mode = "TRANSFER"
+    except Exception:
+        pass
+    bpy.ops.object.modifier_apply(modifier=mod.name)
+    bpy.data.objects.remove(cutter, do_unlink=True)
+
+
+# ---------------------------------------------------------------- designs (all original)
 DESIGNS = {
+    # Balanced coupe: wedge nose, coke-bottle waist, wide rear haunches, fastback canopy, swan-neck wing.
     "velocity_x": {
-        "body": [(-0.77, 0.24, 0.10, 0.15), (-0.73, 0.38, 0.065, 0.21), (-0.62, 0.44, 0.045, 0.25), (-0.44, 0.455, 0.04, 0.275),
-                 (-0.22, 0.455, 0.04, 0.30), (-0.02, 0.455, 0.04, 0.33), (0.16, 0.468, 0.04, 0.36), (0.32, 0.47, 0.05, 0.37),
-                 (0.43, 0.44, 0.08, 0.36), (0.48, 0.36, 0.12, 0.32)],
-        "cabin": [(-0.33, 0.24, 0.27, 0.29), (-0.22, 0.29, 0.28, 0.40), (-0.06, 0.315, 0.30, 0.50), (0.10, 0.315, 0.32, 0.53),
-                  (0.24, 0.295, 0.34, 0.49), (0.34, 0.26, 0.35, 0.42), (0.40, 0.2, 0.35, 0.36)],
-        "exp": 3.2, "wheels": [(0.36, -0.50), (0.36, 0.35)], "R": 0.2, "tire_w": 0.15, "spokes": 6,
-        "wing": (0.5, 0.41, 0.86), "nose_z": -0.75, "tail_z": 0.47,
+        "body": [(-0.80, 0.30, 0.07, 0.12, 0.80), (-0.76, 0.42, 0.05, 0.16, 0.85), (-0.66, 0.46, 0.04, 0.20, 0.86),
+                 (-0.50, 0.47, 0.04, 0.245, 0.84), (-0.34, 0.45, 0.04, 0.25, 0.80), (-0.14, 0.445, 0.04, 0.27, 0.78),
+                 (0.08, 0.46, 0.04, 0.30, 0.78), (0.26, 0.48, 0.045, 0.33, 0.80), (0.40, 0.475, 0.06, 0.34, 0.80),
+                 (0.48, 0.42, 0.09, 0.335, 0.78), (0.51, 0.34, 0.12, 0.32, 0.75)],
+        "cabin": [(-0.30, 0.20, 0.235, 0.255, 0.6), (-0.20, 0.29, 0.245, 0.37, 0.6), (-0.04, 0.32, 0.26, 0.445, 0.62),
+                  (0.10, 0.315, 0.28, 0.455, 0.62), (0.24, 0.29, 0.30, 0.43, 0.6), (0.36, 0.24, 0.32, 0.37, 0.6),
+                  (0.42, 0.19, 0.33, 0.34, 0.6)],
+        "wheels": [(0.36, -0.50), (0.36, 0.35)], "R": 0.2, "tire_w": 0.15, "spokes": 6,
+        "wing": (0.50, 0.44, 0.92, "swan"), "nose_z": -0.79, "tail_z": 0.50, "hood_y": 0.215, "deck_y": 0.33, "scoop": True,
     },
+    # Rally-raid brute: tall slab sides, armoured skid plate, roof rack with light bar, snorkel, ducktail.
     "bastion": {
-        "body": [(-0.70, 0.36, 0.12, 0.24), (-0.66, 0.45, 0.07, 0.30), (-0.55, 0.47, 0.05, 0.33), (-0.35, 0.47, 0.05, 0.35),
-                 (-0.10, 0.47, 0.05, 0.37), (0.15, 0.47, 0.05, 0.38), (0.35, 0.47, 0.06, 0.38), (0.45, 0.45, 0.09, 0.37),
-                 (0.49, 0.40, 0.12, 0.35)],
-        "cabin": [(-0.30, 0.34, 0.33, 0.36), (-0.20, 0.38, 0.34, 0.56), (0.05, 0.39, 0.36, 0.62), (0.28, 0.38, 0.36, 0.62),
-                  (0.40, 0.36, 0.36, 0.58), (0.45, 0.33, 0.36, 0.42)],
-        "exp": 5.0, "wheels": [(0.37, -0.47), (0.37, 0.37)], "R": 0.22, "tire_w": 0.17, "spokes": 5,
-        "wing": None, "nose_z": -0.69, "tail_z": 0.48, "roof_rack": True,
+        "body": [(-0.74, 0.36, 0.12, 0.22, 0.90), (-0.70, 0.45, 0.08, 0.29, 0.92), (-0.58, 0.48, 0.06, 0.33, 0.92),
+                 (-0.42, 0.48, 0.06, 0.345, 0.90), (-0.20, 0.47, 0.06, 0.36, 0.90), (0.04, 0.47, 0.06, 0.37, 0.90),
+                 (0.26, 0.48, 0.06, 0.375, 0.90), (0.42, 0.48, 0.07, 0.375, 0.90), (0.50, 0.44, 0.10, 0.37, 0.88),
+                 (0.53, 0.38, 0.13, 0.36, 0.85)],
+        "cabin": [(-0.30, 0.30, 0.34, 0.36, 0.8), (-0.20, 0.38, 0.35, 0.52, 0.78), (0.04, 0.40, 0.36, 0.58, 0.8),
+                  (0.28, 0.39, 0.36, 0.58, 0.8), (0.42, 0.37, 0.36, 0.55, 0.78), (0.47, 0.34, 0.36, 0.42, 0.75)],
+        "wheels": [(0.37, -0.47), (0.37, 0.37)], "R": 0.22, "tire_w": 0.17, "spokes": 5,
+        "wing": None, "nose_z": -0.73, "tail_z": 0.52, "hood_y": 0.30, "deck_y": 0.37, "roof_rack": True,
     },
+    # Long, low hypercar: needle nose, cab-rear canopy, twin shark fins and a big dual-plane wing.
     "lancer": {
-        "body": [(-0.85, 0.22, 0.09, 0.12), (-0.80, 0.37, 0.055, 0.17), (-0.68, 0.43, 0.04, 0.21), (-0.48, 0.45, 0.035, 0.23),
-                 (-0.25, 0.45, 0.035, 0.25), (0.00, 0.45, 0.035, 0.29), (0.22, 0.465, 0.04, 0.31), (0.40, 0.465, 0.05, 0.30),
-                 (0.52, 0.43, 0.07, 0.28), (0.58, 0.34, 0.10, 0.25)],
-        "cabin": [(-0.38, 0.20, 0.22, 0.24), (-0.25, 0.26, 0.23, 0.35), (-0.08, 0.29, 0.25, 0.43), (0.10, 0.28, 0.27, 0.44),
-                  (0.26, 0.24, 0.28, 0.37), (0.36, 0.18, 0.28, 0.30)],
-        "exp": 2.6, "wheels": [(0.36, -0.56), (0.36, 0.42)], "R": 0.19, "tire_w": 0.16, "spokes": 10,
-        "wing": (0.40, 0.52, 0.9), "nose_z": -0.83, "tail_z": 0.57, "fins": True,
+        "body": [(-0.88, 0.28, 0.06, 0.10, 0.80), (-0.84, 0.42, 0.045, 0.14, 0.85), (-0.72, 0.46, 0.035, 0.18, 0.86),
+                 (-0.56, 0.47, 0.035, 0.22, 0.84), (-0.38, 0.445, 0.035, 0.215, 0.80), (-0.16, 0.435, 0.035, 0.23, 0.78),
+                 (0.06, 0.45, 0.035, 0.26, 0.78), (0.26, 0.48, 0.04, 0.29, 0.80), (0.44, 0.48, 0.05, 0.30, 0.80),
+                 (0.56, 0.43, 0.08, 0.295, 0.76), (0.61, 0.34, 0.11, 0.28, 0.72)],
+        "cabin": [(-0.22, 0.18, 0.205, 0.22, 0.6), (-0.12, 0.27, 0.215, 0.32, 0.58), (0.04, 0.30, 0.23, 0.39, 0.6),
+                  (0.18, 0.29, 0.25, 0.39, 0.6), (0.32, 0.25, 0.27, 0.34, 0.58), (0.42, 0.18, 0.28, 0.30, 0.55)],
+        "wheels": [(0.36, -0.56), (0.36, 0.42)], "R": 0.19, "tire_w": 0.16, "spokes": 10,
+        "wing": (0.40, 0.56, 0.96, "dual"), "nose_z": -0.87, "tail_z": 0.60, "hood_y": 0.18, "deck_y": 0.29, "fins": True,
     },
 }
 
@@ -291,55 +388,95 @@ DESIGNS = {
 def build(name, d):
     reset()
     M = materials()
-    loft("Shell", d["body"], 16, d["exp"], M["Paint"])
-    loft("Canopy", d["cabin"], 12, 2.4 if d["exp"] < 4 else 4.0, M["Glass"])
+    LO = -0.085  # lower the body so it hides the top of the wheels (sporty stance, no "floating" shell)
+    shell = loft2("Shell", [(z, hw, y0 + LO, y1, sh) for (z, hw, y0, y1, sh) in d["body"]], [M["Paint"]])
+    cut_wells(shell, d, M)
+    loft2("Canopy", d["cabin"], [M["Glass"], M["Paint"]], creases=(0.6, 0.9, 0.3), roof_split=0.82)
     R = d["R"]
     for (wx, wz) in d["wheels"]:
         for sx in (-1, 1):
-            flare("Flare", sx * wx, wz, R + 0.028, R + 0.075, 0.2, 0.035, M["Paint"])
-    nz, tz = d["nose_z"], d["tail_z"]
-    # Front: splitter, grille, headlight housings with LED DRL strips.
-    box("Splitter", (0, 0.05, nz), (0.72, 0.025, 0.1), M["Carbon"], 0.008)
-    box("Grille", (0, 0.11, nz + 0.005), (0.44, 0.06, 0.03), M["Trim"], 0.01)
+            # Wide, aggressive arches with a carbon lip underneath.
+            flare("Flare", sx * (wx + 0.015), wz, R + 0.025, R + 0.07, 0.22, 0.035, M["Paint"], a0=8, a1=172)
+            flare("ArchLip", sx * (wx + 0.115), wz, R + 0.025, R + 0.045, 0.025, 0.035, M["Carbon"], a0=4, a1=176)
+    nz, tz, hy, dy = d["nose_z"], d["tail_z"], d["hood_y"], d["deck_y"]
+    brute = name == "bastion"
+    # ---- Front: wide splitter, canards, slit headlights, lower intakes.
+    box("Splitter", (0, -0.035, nz + 0.02), (0.86, 0.02, 0.14), M["Carbon"], 0.006)
+    box("SplitterLED", (0, -0.025, nz - 0.045), (0.7, 0.006, 0.01), M["LED"], 0.0)
+    box("Grille", (0, 0.06 + (0.05 if brute else 0), nz + 0.015), (0.38, 0.05 + (0.04 if brute else 0), 0.03), M["Trim"], 0.008)
     for sx in (-1, 1):
-        box("HeadHousing", (sx * 0.25, 0.165, nz + 0.02), (0.2, 0.045, 0.05), M["Trim"], 0.012, rot=(0, sx * 12, 0))
-        box("Head", (sx * 0.25, 0.167, nz + 0.0), (0.17, 0.024, 0.03), M["LightFront"], 0.006, rot=(0, sx * 12, 0))
-        box("DRL", (sx * 0.29, 0.135, nz + 0.01), (0.12, 0.01, 0.025), M["LED"], 0.003, rot=(0, sx * 12, 0))
-        # Sides: skirts, accent decal stripe, intake, mirror.
-        box("Skirt", (sx * 0.458, 0.07, -0.07), (0.035, 0.05, 0.62), M["Carbon"], 0.008)
-        box("SkirtLED", (sx * 0.477, 0.075, -0.07), (0.006, 0.01, 0.46), M["LED"], 0.0)
-        box("Decal", (sx * 0.462, 0.2, -0.02), (0.006, 0.04, 0.55), M["Accent"], 0.0, rot=(-4, 0, 0))
-        box("Intake", (sx * 0.455, 0.2, 0.2), (0.03, 0.08, 0.13), M["Trim"], 0.01)
-        box("Mirror", (sx * 0.33, 0.33 + (0.06 if name == "bastion" else 0), -0.2), (0.07, 0.035, 0.05), M["Paint"], 0.012)
-        # Rear: twin exhaust tips.
-        cyl("Exhaust", (sx * 0.27, 0.11, tz + 0.01), 0.032, 0.08, M["Chrome"], "z", 20)
-    # Hood stripes (decal) and vents.
-    for sx in (-0.07, 0.07):
-        box("Stripe", (sx, 0.29 if name != "lancer" else 0.24, -0.42), (0.05, 0.006, 0.5), M["Accent"], 0.0, rot=(-6, 0, 0))
-    # Rear: diffuser with fins, tail light bar, rocket booster.
-    box("Diffuser", (0, 0.1, tz), (0.64, 0.08, 0.06), M["Carbon"], 0.01)
-    for fx in (-0.2, -0.07, 0.07, 0.2):
-        box("Fin", (fx, 0.085, tz + 0.02), (0.012, 0.06, 0.07), M["Trim"], 0.003)
-    box("Tail", (0, 0.28 if name != "lancer" else 0.23, tz), (0.72, 0.03, 0.02), M["LightRear"], 0.006)
-    cyl("Booster", (0, 0.2 if name != "lancer" else 0.17, tz + 0.03), 0.085, 0.12, M["Chrome"], "z", 28, 0.01)
-    cyl("BoosterCore", (0, 0.2 if name != "lancer" else 0.17, tz + 0.09), 0.055, 0.01, M["Glow"], "z", 28)
-    if d.get("wing"):
-        wy, wz2, ww = d["wing"]
-        box("Wing", (0, wy, wz2), (ww, 0.03, 0.15), M["Carbon"], 0.01, rot=(-6, 0, 0))
-        box("WingLED", (0, wy + 0.013, wz2 - 0.06), (ww, 0.006, 0.02), M["LED"], 0.0)
+        box("Canard", (sx * 0.43, 0.05, nz + 0.07), (0.1, 0.008, 0.07), M["Carbon"], 0.003, rot=(0, sx * 18, sx * -16))
+        box("Intake", (sx * 0.3, 0.02, nz + 0.03), (0.14, 0.05, 0.04), M["Trim"], 0.01, rot=(0, sx * 10, 0))
+        hl_y = 0.14 if not brute else 0.24
+        box("HeadHousing", (sx * 0.28, hl_y, nz + 0.05), (0.2, 0.035, 0.05), M["Trim"], 0.008, rot=(0, sx * 16, sx * -9))
+        box("Head", (sx * 0.28, hl_y + 0.002, nz + 0.03), (0.17, 0.014, 0.03), M["LightFront"], 0.004, rot=(0, sx * 16, sx * -9))
+        box("DRL", (sx * 0.27, hl_y - 0.025, nz + 0.04), (0.16, 0.007, 0.02), M["LED"], 0.0, rot=(0, sx * 16, sx * -16))
+        # ---- Sides: carbon skirt with LED, slash decal, side scoop ahead of the rear wheel, mirror.
+        box("Skirt", (sx * 0.47, -0.03, -0.07), (0.03, 0.07, 0.62), M["Carbon"], 0.01)
+        box("SkirtLED", (sx * 0.488, -0.045, -0.07), (0.006, 0.008, 0.5), M["LED"], 0.0)
+        box("Slash", (sx * 0.468, 0.17 if not brute else 0.22, -0.05), (0.006, 0.035, 0.42), M["Accent"], 0.0, rot=(-9, 0, 0))
+        box("Slash2", (sx * 0.468, 0.12 if not brute else 0.17, 0.02), (0.006, 0.02, 0.3), M["Accent"], 0.0, rot=(-9, 0, 0))
+        scoop_z = d["wheels"][1][1] - R - 0.12
+        box("Scoop", (sx * 0.455, 0.17 if not brute else 0.22, scoop_z), (0.05, 0.09, 0.15), M["Carbon"], 0.008, rot=(0, sx * -14, 0))
+        box("ScoopMouth", (sx * 0.475, 0.17 if not brute else 0.22, scoop_z - 0.05), (0.012, 0.07, 0.05), M["Trim"], 0.004, rot=(0, sx * -14, 0))
+        box("Mirror", (sx * 0.34, dy + 0.02 if brute else hy + 0.08, -0.2), (0.08, 0.03, 0.05), M["Paint"], 0.01, rot=(0, sx * -10, 0))
+        box("MirrorStalk", (sx * 0.3, dy if brute else hy + 0.06, -0.2), (0.05, 0.012, 0.02), M["Carbon"], 0.003)
+        # ---- Rear: angular tail light blades and exhausts.
+        box("TailBlade", (sx * 0.27, dy - 0.03, tz + 0.012), (0.24, 0.022, 0.02), M["LightRear"], 0.004, rot=(0, sx * -8, sx * 8))
+        for ex in (0.2, 0.3):
+            cyl("Exhaust", (sx * ex, 0.04, tz + 0.02), 0.026, 0.09, M["Chrome"], "z", 20)
+    box("TailBar", (0, dy - 0.025, tz + 0.012), (0.2, 0.01, 0.018), M["LightRear"], 0.003)
+    # ---- Hood: power bulge, twin vents with LED edges, racing stripes over hood and roof.
+    box("Bulge", (0, hy + 0.012, -0.47 if name != "lancer" else -0.55), (0.24, 0.03, 0.4), M["Paint"], 0.03, rot=(-4, 0, 0))
+    for sx in (-1, 1):
+        box("Vent", (sx * 0.2, hy + 0.012, -0.38), (0.1, 0.012, 0.13), M["Trim"], 0.004, rot=(-5, sx * 10, 0))
+        box("VentLED", (sx * 0.2, hy + 0.02, -0.44), (0.1, 0.005, 0.008), M["LED"], 0.0, rot=(-5, sx * 10, 0))
+        box("Stripe", (sx * 0.055, hy + 0.03, -0.5), (0.035, 0.006, 0.52), M["Accent"], 0.0, rot=(-5, 0, 0))
+    # ---- Diffuser with tall fins, rocket booster.
+    box("Diffuser", (0, 0.0, tz + 0.01), (0.7, 0.08, 0.1), M["Carbon"], 0.008, rot=(12, 0, 0))
+    for fx in (-0.24, -0.12, 0.0, 0.12, 0.24):
+        box("Fin", (fx, -0.005, tz + 0.04), (0.01, 0.09, 0.11), M["Trim"], 0.003, rot=(12, 0, 0))
+    by = 0.19 if name != "lancer" else 0.16
+    cyl("Booster", (0, by, tz + 0.03), 0.068, 0.13, M["Chrome"], "z", 28, 0.01)
+    cyl("BoosterRing", (0, by, tz + 0.095), 0.078, 0.015, M["Accent"], "z", 28)
+    cyl("BoosterCore", (0, by, tz + 0.1), 0.046, 0.01, M["Glow"], "z", 28)
+    if d.get("scoop"):
+        box("RoofScoop", (0, 0.465, 0.02), (0.16, 0.04, 0.18), M["Carbon"], 0.015)
+        box("RoofScoopMouth", (0, 0.47, -0.065), (0.12, 0.025, 0.01), M["Trim"], 0.003)
+    w = d.get("wing")
+    if w:
+        wy, wz2, ww, kind = w
+        box("Wing", (0, wy, wz2), (ww, 0.022, 0.17), M["Carbon"], 0.008, rot=(-9, 0, 0))
+        box("WingLED", (0, wy + 0.012, wz2 + 0.08), (ww * 0.95, 0.005, 0.012), M["LED"], 0.0)
+        if kind == "dual":
+            box("Wing2", (0, wy + 0.06, wz2 + 0.05), (ww * 0.96, 0.016, 0.09), M["Carbon"], 0.006, rot=(-18, 0, 0))
         for sx in (-1, 1):
-            box("WingPost", (sx * 0.22, wy - 0.07, wz2 + 0.02), (0.025, 0.13, 0.05), M["Trim"], 0.006)
-            box("Endplate", (sx * ww / 2, wy, wz2), (0.015, 0.11, 0.2), M["Paint"], 0.006)
+            box("Endplate", (sx * ww / 2, wy + 0.015, wz2 + 0.01), (0.012, 0.09, 0.22), M["Carbon"], 0.006, rot=(-6, 0, 0))
+            if kind == "swan":
+                # Swan-neck posts: rise from the deck, hook over the wing.
+                box("Post", (sx * 0.2, wy - 0.05, wz2 - 0.02), (0.022, 0.12, 0.05), M["Trim"], 0.005, rot=(15, 0, 0))
+                box("PostHook", (sx * 0.2, wy + 0.025, wz2 - 0.005), (0.022, 0.03, 0.08), M["Trim"], 0.005)
+            else:
+                box("Post", (sx * 0.24, wy - 0.12, wz2 + 0.02), (0.02, 0.2, 0.05), M["Trim"], 0.005, rot=(-10, 0, 0))
     if d.get("roof_rack"):
         for zz in (-0.05, 0.25):
-            box("RackBar", (0, 0.632, zz), (0.62, 0.025, 0.03), M["Trim"], 0.006)
+            box("RackBar", (0, 0.632, zz), (0.66, 0.025, 0.03), M["Trim"], 0.006)
             for sx in (-1, 1):
-                box("RackPost", (sx * 0.29, 0.6, zz), (0.025, 0.06, 0.025), M["Trim"], 0.004)
-        box("LightBar", (0, 0.648, -0.05), (0.5, 0.03, 0.04), M["LightFront"], 0.006)
-        box("SkidPlate", (0, 0.07, nz + 0.04), (0.6, 0.04, 0.08), M["Chrome"], 0.01)
+                box("RackPost", (sx * 0.31, 0.6, zz), (0.025, 0.06, 0.025), M["Trim"], 0.004)
+        box("LightBar", (0, 0.65, -0.07), (0.56, 0.035, 0.045), M["Trim"], 0.006)
+        for lx in (-0.2, -0.07, 0.07, 0.2):
+            cyl("Lamp", (lx, 0.65, -0.095), 0.022, 0.01, M["LightFront"], "z", 16)
+        box("SkidPlate", (0, 0.0, nz + 0.05), (0.66, 0.05, 0.1), M["Chrome"], 0.01, rot=(-20, 0, 0))
+        box("Bullbar", (0, 0.2, nz - 0.03), (0.5, 0.03, 0.03), M["Trim"], 0.008)
+        for sx in (-1, 1):
+            box("BullPost", (sx * 0.2, 0.1, nz - 0.03), (0.03, 0.13, 0.03), M["Trim"], 0.006)
+            box("Armor", (sx * 0.47, 0.25, 0.08), (0.012, 0.1, 0.5), M["Trim"], 0.004)
+        box("Snorkel", (0.44, 0.43, -0.27), (0.05, 0.3, 0.06), M["Carbon"], 0.01)
+        box("SnorkelHead", (0.44, 0.59, -0.29), (0.06, 0.05, 0.1), M["Carbon"], 0.012)
+        box("Ducktail", (0, 0.39, tz - 0.02), (0.84, 0.02, 0.1), M["Carbon"], 0.006, rot=(12, 0, 0))
     if d.get("fins"):
         for sx in (-1, 1):
-            box("Fin", (sx * 0.2, 0.36, 0.35), (0.015, 0.12, 0.3), M["Paint"], 0.008, rot=(-15, 0, 0))
+            box("SharkFin", (sx * 0.13, 0.35, 0.36), (0.012, 0.1, 0.32), M["Paint"], 0.006, rot=(-12, 0, 0))
     body = finish_body()
     tris = sum(len(p.vertices) - 2 for p in body.data.polygons)
     bpy.ops.object.select_all(action="DESELECT")

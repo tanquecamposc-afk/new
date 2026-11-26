@@ -123,3 +123,19 @@ Render a 640×360 con **SwiftShader (CPU)** — solo sirve para comparar costes,
 
 Sin verificar: FPS con GPU real (60/120/144), mandos físicos, sala real de Claude con
 varias personas, móviles. Capturas en `docs/screenshots/web/`.
+
+## Versión web 0.7.0 (coches deportivos + estadio)
+
+| Prueba | Resultado |
+|---|---|
+| 3 modelos nuevos cargan, carrocería visible | OK |
+| Solo contra bots | OK |
+| Sala: listada, unirse con código, coche del cliente visible en anfitrión | OK |
+| Gol sincronizado anfitrión → cliente | OK (1-1 en ambos) |
+| Errores JS | ninguno |
+| Tests Godot (con el nuevo `velocity_x.glb`) | 188/188 OK |
+
+Render SwiftShader (CPU, sin GPU) a 640×360 — solo comparativo:
+Competitivo 6,9 FPS, Bajo 8,0 FPS, Medio 1,3 FPS (público 3D + sombras: ~630k triángulos,
+~300 draw calls). El estadio nuevo cuesta más; en GPU real no se ha medido (sin verificar).
+Nota: la prueba de 2 pestañas usa el preset Competitivo porque ambas comparten una CPU.
