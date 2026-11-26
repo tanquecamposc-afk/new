@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.8.0] — 2026-11-26 — carrocerías de verdad
+### Cambiado
+- Los coches ya no son una caja con ruedas: nueva carrocería continua (`car_shell` en
+  `tools/blender/build_fleet.py`) muestreada en 56 secciones a partir de curvas suaves de
+  perfil lateral, planta, línea de hombro y techo. Capó, habitáculo y maletero son una sola
+  superficie; el habitáculo se estrecha sobre la línea de hombro y lleva parabrisas, luna
+  trasera y ventanillas integradas; guardabarros elevados sobre cada rueda (el capó baja
+  entre ellos), pasos de rueda recortados con booleanas y aletines de carbono.
+- Detalles colocados sobre la superficie real (faros rasgados, pilotos en cuchilla,
+  splitter, canards, tomas, difusor, alerones). Diseños originales; hitboxes sin cambios.
+- No se copian modelos de juegos comerciales: las referencias se usaron solo como nivel de calidad.
+
 ## [0.7.0] — 2026-11-25 — coches deportivos y estadio nuevo
 ### Cambiado
 - Coches rediseñados (`tools/blender/build_fleet.py`): carrocería con secciones de aristas
