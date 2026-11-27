@@ -1,5 +1,26 @@
 # Changelog
 
+## [1.0.0] — 2026-11-27 — controles Pro PC, 6 coches y progresión
+Especificación previa: `docs/PROMPT_PROGRESION.md`.
+### Añadido
+- **Controles Pro PC** por defecto: clic derecho salta, clic izquierdo turbo, Shift derrape /
+  giro aéreo libre, Q/E giro aéreo, Espacio cámara de balón. Esquema Clásico y reasignación de
+  cada acción (teclas o botones del ratón), guardada en el navegador.
+- **3 coches nuevos** generados en Blender: Striker (cuña agresiva), Specter (furtivo con
+  aletas) y Nova GT (GT ancho). Usan las hitbox de los gratuitos: comprar no da ventaja.
+- **Economía**: créditos (CR) y XP al terminar partidas de ≥ 60 s (más si ganas o marcas).
+- **Tienda** con catálogo y 4 ofertas del día (−25 %, iguales para todos ese día).
+- **Ruleta diaria** (una tirada por día local) y **pase de temporada** de 30 niveles con
+  recompensas que se reclaman (créditos, cosméticos, potenciadores, Striker y Nova GT).
+- **Garaje** con coche, pintura (metalizado, mate, satinado, perla, cromo), acento, llantas
+  (incluidas de neón) y estela de turbo (incluida arcoíris). Se ven también en línea.
+- **Bonus**: potenciador de XP +50 % y créditos ×2; solo aceleran la progresión.
+- Guardado: navegador + copia en la cuenta (base de datos del artefacto) cuando el visor
+  puede escribir; el guardado se sanea al cargar.
+### Pruebas
+- `progression.js` (Playwright, con la CSP del visor): 20/20 comprobaciones.
+- Multijugador de 2 pestañas: el anfitrión ve el Striker y la estela arcoíris del invitado.
+
 ## [0.9.0] — 2026-11-27 — siempre de pie, bloom y controles
 ### Añadido
 - **Asistente de aterrizaje** (web y Godot, `_upright_assist` en `car_body.gd`): cerca de una

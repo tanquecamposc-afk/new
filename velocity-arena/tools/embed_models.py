@@ -11,7 +11,7 @@ import re
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 HTML = os.path.join(ROOT, "web", "index.html")
-IDS = ["velocity_x", "bastion", "lancer"]
+IDS = ["velocity_x", "bastion", "lancer", "striker", "specter", "nova_gt"]
 
 blocks = []
 for car in IDS:
