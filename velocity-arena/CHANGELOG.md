@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.8.1] — 2026-11-27 — los coches no cargaban dentro de Claude
+### Corregido
+- En el visor de Claude los coches 3D nunca cargaban y se veía la caja de emergencia: el
+  glTF JSON llevaba la geometría en una URL `data:` y la política de seguridad del visor
+  bloquea esas peticiones ("Fetch API cannot load data:…"). Reproducido con una CSP
+  equivalente en Chromium. Ahora los tres coches van incrustados en la página como GLB en
+  base64 y se decodifican en memoria (`tools/embed_models.py`), sin ninguna petición.
+- Si un coche no carga, la pantalla de carga muestra el error en vez de fallar en silencio.
+- Cámara del garaje más cerca para ver el coche.
+### Pruebas
+- La prueba web ahora sirve la página con una CSP como la del visor (`connect-src 'self'`).
+
 ## [0.8.0] — 2026-11-26 — carrocerías de verdad
 ### Cambiado
 - Los coches ya no son una caja con ruedas: nueva carrocería continua (`car_shell` en
