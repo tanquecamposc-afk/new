@@ -51,6 +51,10 @@ var supersonic: bool = false
 var boosting: bool = false
 var powersliding: bool = false
 var demolished: bool = false
+## Landing-assist strength this tick (0..1) and recovery timers.
+var assist: float = 0.0
+var stuck_timer: float = 0.0
+var recover_timer: float = 0.0
 var respawn_timer: float = 0.0
 
 # --- Debug telemetry ---
@@ -266,6 +270,7 @@ func step(dt: float, arena: ArenaShape, ball: BallBody) -> void:
 	if wheel_contacts == 0:
 		ang_acc += _air_control(c, dt)
 		lin_acc += fwd * c.throttle * cfg.air_throttle_accel
+	ang_acc += _upright_assist(dt, arena, up_v, fwd)
 	if is_flipping:
 		flip_time += dt
 		if flip_time < cfg.dodge_vertical_damp_time and vel.y > 0.0:
@@ -342,6 +347,47 @@ func _apply_flip_rotation() -> void:
 	if absf(flip_dir.y) > 0.1:
 		lw.z = -flip_dir.y * cfg.flip_angular_speed
 	ang_vel = basis * lw
+
+
+## Always land on the wheels: close to a surface the car turns its roof away from it, and a car
+## left on its roof or side rights itself. High in the air the player keeps full air control.
+func _upright_assist(dt: float, arena: ArenaShape, up_v: Vector3, fwd: Vector3) -> Vector3:
+	var acc := Vector3.ZERO
+	assist = 0.0
+	if wheel_contacts == 0 and not is_flipping:
+		var d: float = arena.distance(pos)
+		var n: Vector3 = arena.normal(pos)
+		var closing: float = -vel.dot(n)
+		var tti: float = (d - 0.35) / maxf(closing, 0.4)
+		recover_timer = maxf(0.0, recover_timer - dt)
+		var s: float = 1.0 if recover_timer > 0.0 else clampf(1.0 - tti / cfg.land_assist_time, 0.0, 1.0) * (1.0 if d < cfg.land_assist_max_dist else 0.0)
+		if s > 0.0:
+			var axis: Vector3 = up_v.cross(n)
+			var sin_a: float = axis.length()
+			var cos_a: float = up_v.dot(n)
+			if sin_a < 1e-3 and cos_a < 0.0:
+				axis = fwd
+			elif sin_a > 1e-6:
+				axis /= sin_a
+			var ang: float = atan2(sin_a, cos_a)
+			var tilt_w: Vector3 = ang_vel - n * ang_vel.dot(n)
+			acc += axis * cfg.land_assist_stiffness * ang * s - tilt_w * cfg.land_assist_damping * s
+			assist = s
+	if body_contact and wheel_contacts < 3 and up_v.dot(body_contact_normal) < 0.35 and vel.length() < 6.0:
+		stuck_timer += dt
+		if stuck_timer > cfg.recover_delay:
+			stuck_timer = 0.0
+			var ax: Vector3 = up_v.cross(body_contact_normal)
+			if ax.length_squared() < 1e-4:
+				ax = fwd
+			vel += body_contact_normal * cfg.recover_impulse
+			ang_vel = ax.normalized() * cfg.recover_spin
+			has_jumped = true
+			has_flip = false
+			recover_timer = 0.6
+	else:
+		stuck_timer = maxf(0.0, stuck_timer - dt * 2.0)
+	return acc
 
 
 func _air_control(c: CarControls, _dt: float) -> Vector3:

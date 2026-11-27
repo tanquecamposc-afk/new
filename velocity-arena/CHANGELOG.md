@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.9.0] — 2026-11-27 — siempre de pie, bloom y controles
+### Añadido
+- **Asistente de aterrizaje** (web y Godot, `_upright_assist` en `car_body.gd`): cerca de una
+  superficie (suelo, pared o rampa; < 0,6 s para tocarla y < 7 m) el coche gira para caer
+  sobre las ruedas respecto a esa superficie. A más altura el control aéreo no cambia y no
+  actúa durante un esquive. Si queda de techo o de lado 0,35 s, se endereza solo.
+  Medido: 60/60 caídas aleatorias en la web y 40/40 en Godot acaban sobre las ruedas
+  (antes 50/60, 8 de techo); de techo a ruedas en 1,3 s (antes no se recuperaba solo).
+- Bloom (Medio/Alto/Ultra): escena HDR → UnrealBloomPass → sRGB; reflejos en la pintura,
+  cromados y cristales de los coches (entorno PMREM generado en código, solo coches).
+- Porterías cerradas: marco grueso con núcleo de luz del color del equipo y LED blanco,
+  paredes interiores iluminadas, galones en el suelo. Haces de focos nocturnos.
+### Cambiado
+- Controles: **Shift salta**, **Espacio turbo** (mando sin cambios).
+- Césped más vivo y mitades con tinte de equipo suave.
+### Corregido
+- Con bloom los marcadores se veían negros (z-fighting por precisión de profundidad):
+  pantallas separadas del marco, plano cercano de la cámara 0,12 m y depth texture de 32 bits.
+- Nota técnica: three r147 aplica el tone mapping también dentro de render targets; el pase
+  final solo codifica a sRGB (aplicar ACES otra vez lavaba la imagen).
+
 ## [0.8.1] — 2026-11-27 — los coches no cargaban dentro de Claude
 ### Corregido
 - En el visor de Claude los coches 3D nunca cargaban y se veía la caja de emergencia: el

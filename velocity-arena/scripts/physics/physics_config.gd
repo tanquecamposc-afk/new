@@ -102,6 +102,18 @@ extends Resource
 @export var backflip_impulse: float = 5.333
 @export var side_dodge_speed_bonus: float = 0.9
 @export var flip_torque_time: float = 0.65
+
+@export_group("Landing assist")
+## Seconds before touchdown at which the car starts turning its wheels toward the surface.
+@export var land_assist_time: float = 0.6
+## Only active this close (m) to a surface, so high aerials keep full control.
+@export var land_assist_max_dist: float = 7.0
+@export var land_assist_stiffness: float = 55.0
+@export var land_assist_damping: float = 9.0
+## Time stuck on the roof/side before the car rights itself.
+@export var recover_delay: float = 0.35
+@export var recover_impulse: float = 2.2
+@export var recover_spin: float = 6.5
 @export var flip_angular_speed: float = 5.5
 @export var dodge_vertical_damp_time: float = 0.15
 @export var dodge_vertical_damp: float = 0.65

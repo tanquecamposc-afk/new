@@ -226,6 +226,48 @@ func test_air_control_rates() -> void:
 	runner.check((car.basis.transposed() * car.ang_vel).x > 2.0, "pitch up rotates nose up")
 
 
+func test_always_lands_upright() -> void:
+	# Random drops with random orientation and spin must end on the wheels.
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 12345
+	var ok := 0
+	var on_roof := 0
+	var n := 40
+	for t in n:
+		var w := _world()
+		var car: CarBody = w.cars[0]
+		var b := Basis.from_euler(Vector3(rng.randf() * TAU, rng.randf() * TAU, rng.randf() * TAU))
+		car.set_transform(Vector3(rng.randf_range(-20, 20), rng.randf_range(2, 9), rng.randf_range(-20, 20)), b)
+		car.ang_vel = Vector3(rng.randf_range(-4, 4), rng.randf_range(-4, 4), rng.randf_range(-4, 4))
+		car.vel = Vector3(rng.randf_range(-5, 5), rng.randf_range(-2, 2), rng.randf_range(-5, 5))
+		car.has_jumped = true
+		_run(w, 3.0)
+		if car.wheel_contacts >= 3 and car.up().y > 0.85:
+			ok += 1
+		if car.up().y < 0.0:
+			on_roof += 1
+	runner.info("landed upright %d/%d, on roof %d" % [ok, n, on_roof])
+	runner.check(ok == n, "every random drop lands on its wheels")
+	# Upside down at rest rights itself.
+	var w2 := _world()
+	var c2: CarBody = w2.cars[0]
+	c2.set_transform(Vector3(0, 0.5, -10), Basis(Vector3.BACK, PI))
+	var t_up := -1.0
+	for i in 480:
+		w2.step(DT)
+		if t_up < 0.0 and c2.wheel_contacts >= 3 and c2.up().y > 0.9:
+			t_up = i * DT
+	runner.info("roof recovery %.2f s" % t_up)
+	runner.check(t_up > 0.0 and t_up < 2.5, "car on its roof recovers by itself")
+	# High aerials are not touched by the assist.
+	var w3 := _world()
+	var c3: CarBody = w3.cars[0]
+	_place(c3, Vector3(0, 15, 0))
+	c3.has_jumped = true
+	_run(w3, 0.2)
+	runner.check(c3.assist == 0.0, "no landing assist 15 m up")
+
+
 func test_wall_driving() -> void:
 	var w := _world()
 	var car: CarBody = w.cars[0]
